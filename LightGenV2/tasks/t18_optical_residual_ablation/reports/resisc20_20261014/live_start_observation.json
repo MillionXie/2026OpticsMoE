@@ -1,0 +1,121 @@
+{
+  "time_unix": 1791946042.6348357,
+  "parent_exited": false,
+  "source_commit": "513f0e884a16be5f37846974deaeea55fac95f94",
+  "source_count": 136,
+  "source_current_original_match": true,
+  "head": "513f0e884a16be5f37846974deaeea55fac95f94",
+  "status": {
+    "state": "pair_running",
+    "completed": [],
+    "failures": [],
+    "active": 2,
+    "pending": 0,
+    "test_evaluations": 0
+  },
+  "jobs": [
+    {
+      "case": "L4_rho03",
+      "rho": 0.3,
+      "pid": 3579968,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "status": {},
+      "smoke": {
+        "passed": true,
+        "depth": 4,
+        "rho": 0.3,
+        "micro": 1,
+        "classes_checked": 20,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 4.501999910644372e-07,
+        "gradient_min_cosine": 0.9999999999998987,
+        "all_phase_gradients_finite_nonzero": true,
+        "phase_gradients": {
+          "raw_router": 0.07614624500274658,
+          "phase_sets.0": 0.04669513925909996,
+          "phase_sets.1": 0.05060231313109398,
+          "phase_sets.2": 0.023978376761078835,
+          "phase_sets.3": 0.04574819654226303,
+          "phase_sets.4": 0.03339724242687225,
+          "phase_sets.5": 0.02735111303627491,
+          "phase_sets.6": 0.07634865492582321,
+          "phase_sets.7": 0.022823218256235123,
+          "phase_sets.8": 0.0721866711974144,
+          "phase_sets.9": 0.06090226024389267
+        },
+        "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+        "parameters": 908552,
+        "test_evaluations": 0
+      },
+      "log_tail": ""
+    },
+    {
+      "case": "L4_rho0",
+      "rho": 0.0,
+      "pid": 3580043,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "status": {},
+      "smoke": {
+        "passed": true,
+        "depth": 4,
+        "rho": 0.0,
+        "micro": 1,
+        "classes_checked": 20,
+        "probability_max_error": 0.0,
+        "gradient_max_relative_l2": 4.809656957149855e-07,
+        "gradient_min_cosine": 0.9999999999998843,
+        "all_phase_gradients_finite_nonzero": true,
+        "phase_gradients": {
+          "raw_router": 0.07455016672611237,
+          "phase_sets.0": 0.025599578395485878,
+          "phase_sets.1": 0.03544031083583832,
+          "phase_sets.2": 0.017143895849585533,
+          "phase_sets.3": 0.03326382115483284,
+          "phase_sets.4": 0.025441734120249748,
+          "phase_sets.5": 0.021328238770365715,
+          "phase_sets.6": 0.04998254403471947,
+          "phase_sets.7": 0.015932952985167503,
+          "phase_sets.8": 0.05706767365336418,
+          "phase_sets.9": 0.04856627807021141
+        },
+        "initial_parameter_sha256": "f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37",
+        "parameters": 908552,
+        "test_evaluations": 0
+      },
+      "log_tail": ""
+    }
+  ],
+  "slots": {
+    "jobs": [
+      {
+        "pid": 3509913,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3509980,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      },
+      {
+        "pid": 3510049,
+        "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
+      },
+      {
+        "pid": 3579968,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3580043,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      }
+    ],
+    "counts": {
+      "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": 2,
+      "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": 1,
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55": 2
+    },
+    "total": 5,
+    "maximum": 6,
+    "per_card_maximum": 2
+  },
+  "test_evaluations": 0
+}

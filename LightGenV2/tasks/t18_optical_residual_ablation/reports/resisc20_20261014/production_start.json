@@ -1,0 +1,41 @@
+{
+  "pid": 3579436,
+  "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_validate30_sharedgpu256_20261014",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/resisc20.py",
+    "--phase",
+    "queue",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_validate30_sharedgpu256_20261014"
+  ],
+  "started_unix": 1791945583.1090698,
+  "source_commit": "513f0e884a16be5f37846974deaeea55fac95f94",
+  "source_count": 136,
+  "slots_at_start": {
+    "jobs": [
+      {
+        "pid": 3509913,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3509980,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      },
+      {
+        "pid": 3510049,
+        "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
+      }
+    ],
+    "counts": {
+      "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": 1,
+      "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": 1,
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55": 1
+    },
+    "total": 3,
+    "maximum": 6,
+    "per_card_maximum": 2
+  },
+  "phase": "Full-resolution RESISC20 bounded L4 pair, not formal six",
+  "test_evaluations": 0
+}

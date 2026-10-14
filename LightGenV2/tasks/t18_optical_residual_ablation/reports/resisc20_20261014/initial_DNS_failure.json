@@ -1,0 +1,4 @@
+{
+  "error": "URLError(gaierror(-3, 'Temporary failure in name resolution'))",
+  "automatic_retry": false
+}

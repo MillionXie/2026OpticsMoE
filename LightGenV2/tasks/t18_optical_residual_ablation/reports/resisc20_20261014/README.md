@@ -46,22 +46,32 @@ acquisition_receipt.json. Preparation/download/original-file/group/manifest
 receipts are in the groupeddata directory. No failed directory re-entered or
 overwritten; source synchronized only throughGit.
 
-## Bounded first pair, preparation stage
+## Bounded first pair, actually started
 
 Independentresisc20.py/audit_resisc20.py/check_resisc20.py are implemented. Unfrozen
 dataqueue and CUDA-invisibleCPU numeric launch were actually rejected before
 creating output; model_constructed/forward/images/test/GPU0. This is only an
 admission rejection check, not successfuldata fitting or numericgate proof.
 
-Newdata profile now binds actualcache/manifest. Next: publish/hash-boundsource,
-CPU full-resolution pairedinit/unchangednative proof, actualGPU20class numerical
-and source/memory/slots checks, then exactlytwofresh L4rho0/.3fits. Eachmax30epochs
+Newdata profile binds actualcache/manifest. CPU pairedinit/unchangednative proof
+and actualGPU20class numeric/source/memory/slots checks passed. Exactlytwofresh
+L4rho0/.3fits actually started2026-10-14 10:39:43 Beijing, CPUparent3579436,
+GPU6rho.3child3579968/GPU2rho0child3580043. Running136-source closure frozen
+`513f0e884a16be5f37846974deaeea55fac95f94`, current/originalGitblobs checked.
+Both908552parameters, pairedinitialSHA
+`f7de57b62eb33f6531128061deaa9ec2fb1bacbeea7ba02ecc50528189e60f37`.
+Standalone actualGPUgate probabilityerror0/gradrel<=4.891210e-7/mincosine
+0.9999999999998803/all11phasefinite nonzero. Both productionchildfresh gates
+passed;10:47:22 observation actualtwoactive/no failures/no pending/test0,
+parentCUDAinvisible and all5projectGPUchildren verified, card2/6two each/card5one.
+First completeepoch metrics/elapsed not yetavailable at that observation.
+Eachmax30epochs
 or14400fitsec, min10early10delta.002, same seed17init/order/affine/MixUp.6,
 LS.08/capture.05/phaseTV.005/lr.002/EMA.95, macro16tail14/micro1. Actual700optimizer
 steps/epoch (11198train), not old78. No retries/extensions/extra candidates.
 
-This report does not yet claim a startedpair or its results. Actualelapsed/epoch
-time is pending and must be measured under sharing. NominaltrainN is~9times the
+This report claims actualstartup/gates, not finishedpair/performance results.
+Actualelapsed/epoch time is pending and must be measured under sharing. TrainN is~9times the
 oldtask, so moreimages do not imply a fasterepoch. Reporttraining/validationfit,
 allclassrecalls/supports/CM/NLL/routing and selectedEMAtrainvalgap. No temporary
 highestaccuracyepoch substitution, no test selection.
@@ -74,3 +84,8 @@ argmaxCMsupportmacroNLL, noforward/test. Numericalchecks are not performancepass
 Matching selectedtrained native and independent2/3 precede formal6/once-testlocks.
 30epochs may not converge; no automatic budget expansion. Differentdataset is a
 changed task, not a controlled Caltech accuracy recovery;75% remains unassessed.
+
+OriginalJSONreceipts are linked by `artifact_transfer.json`, actualserverSHA exact;
+`data_manifest_original.json` preserves originalmanifestbytes/hash, while the earlier
+`data_manifest.json` is a parsedreport representation. Acquisition/networkfailures,
+CPUgraph/native-reference, realGPUgate, earlyrejection and productionstart included.

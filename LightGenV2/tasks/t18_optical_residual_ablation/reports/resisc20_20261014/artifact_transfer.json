@@ -1,0 +1,16 @@
+{
+  "files": {
+    "cpu_graph_checks.json": "082a6960eafe369c36efa3f700d0c08d72918b897b2d352802a4183ff211c38f",
+    "gpu_numeric_checks.json": "295effecfbaa85ccacb3ad0c06b341582524b1e4ca0038b6d6d6b3a799b311df",
+    "production_start.json": "dc71c20a46d22154e66af984c3968430203a6ec661df45c64429ca52de08c4f3",
+    "data_manifest_original.json": "895587ea2c3c2d953bfa012eb958a51696df99b072daeb70bf403c2a4567a82b",
+    "acquisition_receipt.json": "084786d3998662ac8d14bd96afcd967002cd627242d370305b68ffa277522766",
+    "initial_DNS_failure.json": "bbd37a6b785bcb8397c77c9380f191229b1fc192fbc0349a3b1a3134ceca814e",
+    "direct_TLS_failure.json": "4bcb2a1fd6a40043100be4efdb4292c93496f08f31febb177321a211606b53e3",
+    "admission_rejection_checks.json": "a73f1d2b81f6c3ec9d40a604451e89a3f72c9ff818cfeb29bb209c985f369037"
+  },
+  "remote_head": "513f0e884a16be5f37846974deaeea55fac95f94",
+  "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_validate30_sharedgpu256_20261014",
+  "source_transfer": false,
+  "sha_exact": true
+}

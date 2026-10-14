@@ -1,0 +1,4 @@
+{
+  "error": "URLError(ConnectionResetError(104, 'Connection reset by peer'))",
+  "automatic_retry": false
+}

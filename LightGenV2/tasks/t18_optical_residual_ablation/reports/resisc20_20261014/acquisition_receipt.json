@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "archive": "/DATA/DATA1/guest3/t18_resisc45_mirror_archive_20261014/NWPU-RESISC45.zip",
+  "sha256": "beeecd0b63656290ae6d65cf7763185b0c1c4c54a753ef8088d6fba3faaf1f53",
+  "bytes": 427389445,
+  "resolved_host": "cas-bridge.xethub.hf.co",
+  "completed_unix": 1791944459.0467277,
+  "tls_certificate_verification": true,
+  "original_hostname_SNI": true,
+  "requested_url": "https://hf-mirror.com/datasets/isaaccorley/resisc45/resolve/883edc0eee77b2c84225472f10f126e3ed83fa6e/NWPU-RESISC45.zip",
+  "alternate_transport": true,
+  "source_scope": "Same canonical archive pinned revision and SHA; DNS answers affect only this process, or ordinaryDNS for alternate mirror",
+  "automatic_retry": false
+}
