@@ -1,0 +1,3 @@
+case,label,rho,execution_microbatch,prefix_epochs,additional_fit_seconds,free_phase_parameters,epochs,selected_epoch,train_accuracy,val_accuracy,train_macro,val_macro,train_balanced_nll,val_balanced_nll,selected_gap_pp,eligible,chosen_profile,input_tile,seconds,test_evaluations
+L4_10opt_rho03,10 classes rho0.3,0.3,8,0,0,908552,92,92,0.8680357142857142,0.7814285714285715,0.8680357142857144,0.7814285714285715,0.5872830751013922,0.7893088410228574,8.660714285714278,True,False,100,2894.9776098430157,0
+L4_10opt_rho0,10 classes rho0,0.0,8,0,0,908552,120,113,0.8485714285714285,0.7714285714285715,0.8485714285714285,0.7714285714285715,0.6489674394795856,0.8206856996015217,7.714285714285706,True,False,100,7297.929184861481,0

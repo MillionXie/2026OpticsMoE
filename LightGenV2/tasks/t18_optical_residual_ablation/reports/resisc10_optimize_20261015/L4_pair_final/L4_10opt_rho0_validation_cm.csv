@@ -1,0 +1,11 @@
+class_true,support,bridge,desert,harbor,intersection,island,lake,meadow,tennis_court,thermal_power_station,wetland
+bridge,70,45,0,2,2,1,1,0,8,3,8
+desert,70,0,65,0,2,0,1,0,0,0,2
+harbor,70,2,0,57,5,0,0,0,1,3,2
+intersection,70,1,0,2,54,0,0,0,5,5,3
+island,70,1,0,2,0,61,3,0,0,0,3
+lake,70,1,0,0,0,0,55,3,0,4,7
+meadow,70,0,0,0,0,0,1,64,1,0,4
+tennis_court,70,2,0,6,10,0,0,2,45,1,4
+thermal_power_station,70,1,3,11,7,2,0,0,2,44,0
+wetland,70,3,2,0,3,0,2,4,6,0,50

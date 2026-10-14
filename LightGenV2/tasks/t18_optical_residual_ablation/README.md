@@ -1,3 +1,11 @@
+## 最新165优化已全完成科学与四图QA 条件490CPUhead已启动 2026-10-15
+
+165/6c230残差92轮选E92 train86.8036/val78.1429%；无残差120轮选E113 train84.8571/val77.1429%。原规则early/maximum_epochs先到停止，父及两子actualrc0、fail0/test0/GPU释放。独占新science SHA ddf43abb366dc0f26a2dec9b0102c48dbc2cb81ced3df0d1a5002e098ab9d346及所有严格逐类准入passed，四PDF真作者/marker/SHA传输/Poppler/全部四页actualQA完成，不重做。仍未80、未test/native/formal；[完整165结果](reports/resisc10_optimize_20261015/L4_pair_final/README.md)。
+
+165所选残差<80后已立即一次启动获批167 CPUhead子947019，光alpha固定.8、电.2概率融合、冻结E92光EMA，仅490电参数，明确hybrid非纯光。只真实对应train/val原RGB与保存光概率，不构造/forward光模型或新增GPU/A100/test。自己的actualexit+fit_result/status+独占NumPy科学和条件三PDFactualQA完成之前不宣称80或正式通过；[真实head启动与界限](reports/resisc10_small_electrical_20261015/start/README.md)。
+
+原160与165的科学/图已完成不得重审或重图；当前需推进的是167 CPUhead自己的有界完成与审核。08:50统一成绩/未完成状态，03:30取消，09晨报保留。覆盖下文所有165在训、science/图待执行以及head尚未启动旧文字。
+
 条件490CPU小电后备的独立保存图工具已准备，真实Linux拒绝准入passed、models/forward/images/test/GPU/图/marker0，167及当前165源/PID保持；head尚未拟合，未来专属三PDF需要自己的真实hybrid科学和actualQA，不能套纯光出口。[条件后备三图准入与边界](reports/resisc10_small_electrical_20261015/plot_preparation/README.md)。
 
 ## 最新原十类已完成且准入通过 一次MixUp.2优化已真实启动 2026-10-15

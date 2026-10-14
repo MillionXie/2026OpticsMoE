@@ -1,0 +1,3 @@
+# Four optimized-pair PDFs: actual review passed
+
+Poppler rendered all four final single-page PDFs at120dpi once. All four rendered pages were actually viewed with view_image. Titles, legends, selectedE92/E113 markers, class names, full ten-class validation matrices and color scales are legible and unclipped. Curves end at the actual92/120 completed epochs; eligibility refers to the65% admission criteria, not the80% target. Recall-cell integers are display-rounded; CSV preserves exact values/support. No reauthoring, second marker or rerender occurred. These are saved simulation/development results, no test or trained native/hardware acceptance.
