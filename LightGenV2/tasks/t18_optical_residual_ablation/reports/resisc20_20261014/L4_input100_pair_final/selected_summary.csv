@@ -1,0 +1,3 @@
+case,label,rho,execution_microbatch,prefix_epochs,additional_fit_seconds,free_phase_parameters,epochs,selected_epoch,train_accuracy,val_accuracy,train_macro,val_macro,train_balanced_nll,val_balanced_nll,selected_gap_pp,eligible,chosen_profile,input_tile,seconds,test_evaluations
+L4_tile100_rho03,Input100 rho0.3,0.3,8,0,0,908552,114,111,0.5717985354527594,0.4960686204431737,0.5717444316436252,0.4958385093167702,1.5688669140804952,1.7566044435764756,7.572991500958571,False,False,100,7282.055377714336,0
+L4_tile100_rho0,Input100 rho0,0.0,8,0,0,908552,58,58,0.466869083764958,0.411722659042173,0.46682123655913965,0.411511387163561,1.874015806066152,1.9577413462051911,5.514642472278503,False,False,100,7254.058416590095,0
