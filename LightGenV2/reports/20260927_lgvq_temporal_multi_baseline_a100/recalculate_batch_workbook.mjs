@@ -54,6 +54,10 @@ if(process.argv.includes('--paired-telemetry') || process.argv.includes('--verif
   check();
   console.log('Reimport verified20 plot points,19 paired load regimes and historical Qwen anchor.');
   console.log((await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30}})).ndjson);
+  for(const [name,range,tag] of [['Summary','A28:J41','summary_notes'],['Batch results','A25:J33','batch_notes'],['Sources','A1:B42','Sources']]) {
+   const preview=await wb.render({sheetName:name,range,scale:1.1});
+   await fs.writeFile(out+`/workbook_${tag}_preview.png`,new Uint8Array(await preview.arrayBuffer()));
+  }
   process.exit(0);
  }
  // Extend the existing three-sheet report. Old pre-refresh workbook is archived.
@@ -101,10 +105,19 @@ if(process.argv.includes('--paired-telemetry') || process.argv.includes('--verif
  summary.getRange('C6:C25').setNumberFormat('0.000000');
  summary.getRange('I6:J25').setNumberFormat('0.000000');
  summary.getRange('K6:P25').setNumberFormat('0.000');
+ summary.getRange('L6:L25').setNumberFormat('0');
+ summary.getRange('P6:P25').setNumberFormat('0');
+ for(const col of ['AE','AF','AL','AM']) build.getRange(`${col}2:${col}21`).setNumberFormat('0');
  summary.getRange('A28').values=[['Historical total-table anchor, excluded from new paired curves']];
+ summary.getRange('A28:J28').merge();
  summary.getRange('A29:H29').copyFrom(summary.getRange('A5:H5'),'all');
+ summary.getRange('A29:H29').format.rowHeight=52;
  summary.getRange('A30:H30').values=[['Qwen3-VL-2B',1,.7663428036522781,1188.3861464262009,462.1134010767563,null,null,null]];
- summary.getRange('J30').values=[['GPU utilization not recorded in historical round']];
+ summary.getRange('J30').values=[['Util: not recorded']];
+ summary.getRange('C30').setNumberFormat('0.000000');
+ summary.getRange('D30:E30').setNumberFormat('0.000');
+ sources.getRange('B7').values=[['B1/2/4/8; YOLO B3; CLIP B9/10. Partial calls retained at200 and558.']];
+ sources.getRange('B13').values=[['Each B: independently recomputed full558 TEST SRCC from saved predictions']];
  sources.getRange('A15:B26').values=[
   ['Refresh date','2026-10-14; only completed full_remeasurement02'],['Ours source',data.ours.source],
   ['Ours energy formula','topt*(80.358+41.388)+telec*(41.388+62.842), seconds'],['Performance','19 independent full558 TEST predictions; all same IDs and fixed per-model PT'],
@@ -130,6 +143,10 @@ if(process.argv.includes('--paired-telemetry') || process.argv.includes('--verif
  build.getRange('M2').values=[[oldEnergy*2]]; wb.recalculate();
  if(Math.abs(summary.getRange('H7').values[0][0]-oldRatio/2)>1e-8) throw Error('Energy dependency is not live');
  build.getRange('M2').values=[[oldEnergy]]; wb.recalculate(); check();
+ const oldSum=build.getRange('AA3').values[0][0], time=summary.getRange('D7').values[0][0], residentTime=summary.getRange('M7').values[0][0];
+ build.getRange('AA3').values=[[oldSum*2]]; wb.recalculate();
+ if(Math.abs(summary.getRange('D7').values[0][0]-time*2)>1e-8 || summary.getRange('M7').values[0][0]!==residentTime) throw Error('Cost sum dependency or workload isolation failed');
+ build.getRange('AA3').values=[[oldSum]]; wb.recalculate(); check();
  console.log((await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30}})).ndjson);
  for(const [name,range,tag] of [['Summary','A5:H25','summary'],['Summary','K5:P25','telemetry'],['Batch results','AA1:AN21','paired_build'],['Sources','A15:B26','sources']]) {
   const preview=await wb.render({sheetName:name,range,scale:1.1});
