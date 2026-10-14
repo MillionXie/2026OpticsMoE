@@ -14,6 +14,16 @@ timing-only profiles and the historical workbook below remain protected.
 
 This directory is the paper-facing replacement for the earlier mixed-task comparison table. It compares LightGenV2 with Qwen3-VL-2B, DeepSeek-VL2-Tiny, CLIP ViT-B/32 and YOLO11s on LGVQ temporal quality.
 
+## Source and artifact retention
+
+Source, protocol, calculation builders and README files remain Git-tracked.
+The local `.gitignore` lists only 43 individually reviewed measurement,
+table, plot and inspection artifacts from the October 13 update. It does
+not hide the whole report directory or future code/configuration files.
+Ignored files stay in place. The canonical T06 run's `delivery_manifest.json`
+and `batch_audit.json` retain the data/PT/report SHA evidence; these private
+artifacts are not externally uploaded. Source synchronization uses main only.
+
 ## Historical comparison contract (2026-09-27)
 
 - Device: one NVIDIA A100-PCIE-40GB, physical GPU index 6.

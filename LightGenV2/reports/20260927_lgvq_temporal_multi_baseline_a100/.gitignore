@@ -1,0 +1,46 @@
+# LGVQ temporal comparison: reviewed data and derived artifacts only.
+# Keep all files on disk; data/weights use manifest + SHA, not Git upload.
+# Exact paths deliberately leave future source, configs and docs visible.
+/raw_remote/frozen_batch_20261013/qwen_batch01/batch_timing.csv
+/raw_remote/frozen_batch_20261013/qwen_batch01/power_samples.csv
+/raw_remote/frozen_batch_20261013/qwen_batch01/predictions.csv
+/raw_remote/frozen_batch_20261013/qwen_batch01/report.json
+/raw_remote/frozen_batch_20261013/qwen_batch01/status.json
+/raw_remote/frozen_batch_20261013/qwen_batch02/batch_timing.csv
+/raw_remote/frozen_batch_20261013/qwen_batch02/power_samples.csv
+/raw_remote/frozen_batch_20261013/qwen_batch02/predictions.csv
+/raw_remote/frozen_batch_20261013/qwen_batch02/report.json
+/raw_remote/frozen_batch_20261013/qwen_batch02/status.json
+/raw_remote/frozen_batch_20261013/qwen_batch04/batch_timing.csv
+/raw_remote/frozen_batch_20261013/qwen_batch04/power_samples.csv
+/raw_remote/frozen_batch_20261013/qwen_batch04/predictions.csv
+/raw_remote/frozen_batch_20261013/qwen_batch04/report.json
+/raw_remote/frozen_batch_20261013/qwen_batch04/status.json
+/raw_remote/frozen_batch_20261013/qwen_batch08/batch_timing.csv
+/raw_remote/frozen_batch_20261013/qwen_batch08/power_samples.csv
+/raw_remote/frozen_batch_20261013/qwen_batch08/predictions.csv
+/raw_remote/frozen_batch_20261013/qwen_batch08/report.json
+/raw_remote/frozen_batch_20261013/qwen_batch08/status.json
+/recalculated_20261013/LGVQ_temporal_multi_baseline_recalculated.xlsx
+/recalculated_20261013/LGVQ_temporal_multi_baseline_recalculated.xlsx.inspect.ndjson
+/recalculated_20261013/batch_cost_comparison.svg
+/recalculated_20261013/batch_metric_audit.csv
+/recalculated_20261013/qwen_batch_metric_audit.svg
+/recalculated_20261013/recalculation.json
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch01/batch_timing.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch01/predictions.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch01/report.json
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch01/sample_preprocessing.jsonl
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch02/batch_timing.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch02/predictions.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch02/report.json
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch02/sample_preprocessing.jsonl
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch04/batch_timing.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch04/predictions.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch04/report.json
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch08/batch_timing.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch08/predictions.csv
+/recalculated_20261013/server_prediction_evidence/qwen_full558_batch08/report.json
+/recalculated_20261013/server_prediction_evidence/source_manifest.json
+/recalculated_20261013/srcc_cost_comparison_reference.svg
+/recalculated_20261013/timing_energy_recalculated.csv
