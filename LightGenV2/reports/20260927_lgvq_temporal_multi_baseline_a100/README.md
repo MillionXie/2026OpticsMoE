@@ -17,7 +17,7 @@ This directory is the paper-facing replacement for the earlier mixed-task compar
 ## Source and artifact retention
 
 Source, protocol, calculation builders and README files remain Git-tracked.
-The local `.gitignore` lists only 43 individually reviewed measurement,
+The local `.gitignore` lists only 44 individually reviewed measurement,
 table, plot and inspection artifacts from the October 13 update. It does
 not hide the whole report directory or future code/configuration files.
 Ignored files stay in place. The canonical T06 run's `delivery_manifest.json`

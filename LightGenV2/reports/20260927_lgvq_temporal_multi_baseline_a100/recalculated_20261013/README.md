@@ -1,5 +1,77 @@
 # LGVQ batch comparison: frozen reevaluation and recalculation, 2026-10-13
 
+## 2026-10-14：论文用表、计时边界和图形复核
+
+本次只复核存档并修正展示，未启动训练、推理测速或光路采集。所有正式
+SRCC、时间和能耗数值保持不变；旧图表已先可恢复备份到既有 T06 canonical
+运行目录的 `plot_presentation_before_20261014.zip`。原始历史工作簿、预测、
+功率采样和逐调用计时均不改写。
+
+### 表一：Summary（可直接用于论文/画图）
+
+LGVQ 固定划分共 2,808 个不同视频，其中 TRAIN 2,250、TEST 558。四个电子
+baseline 分别在 B=1、2、4、8 下冻结推理，同一模型每个 B 均对完整 558 个
+TEST 视频产生独立预测并重新计算 SRCC；总共 16 组设置、8,928 次模型—视频
+评估，不是 8,928 个不同视频。主列 C 现在是每组实际 full558 SRCC，列 I 的
+历史参考分数及列 J 的 first200 SRCC 不用于主图。成本取同一 TEST 顺序的前
+200 个不同视频，按 16 视频工作量折算；并非仅测 16 个视频。B=1/2/4/8 对应
+200/100/50/25 次成本测量调用、16/8/4/2 次折算调用，每个视频输入 4 帧。
+LightGen-II 是唯一 N=16 视频/光场点，物理参考 SRCC 为 0.7977138739，沿用
+总表成本 10.245569591370225 ms、1.1776895097085185 J（表中四舍五入
+10.246 ms、1.178 J）；没有虚构其 GPU B=1/2/4/8 曲线。Qwen B=1 保留总表
+锚点：SRCC 0.7663428036522781、1188.3861464262009 ms、462.1134010767563 J。
+`plot_data.csv` 将模型、B/N、实际 full558 SRCC、16 视频时间和能耗合并为
+17 行未提前四舍五入的绘图数据，附样本量、计算精度和来源口径。
+
+### 表二：Batch results（逐 batch 时间与能耗的计算审计）
+
+每个电子模型/B 设置在指定 A100 的独立新进程运行，模型仅加载一次；逐
+batch 顺序执行 CPU 解码/裁剪/预处理、H2D、冻结前向、输出 MOS，非先准备
+完全部视频、也无预处理和推理流水重叠。计时起点是第一个视觉 Transformer
+block 的 forward-pre-hook（Qwen、CLIP、DeepSeek）；YOLO 对应第一个卷积
+block，不能称 TF。终点是 GPU 上五级质量读出计算完成、MOS 就绪并等待 CUDA
+同步之后；不含随后预测下载到 CPU，也不含模型加载、解码、预处理和 H2D。
+无显式 warm-up，首次调用保留。T16=(16/B)×前 200 视频的平均 batch 同步
+墙钟时间，E16=(338.2 W 主机代理功率+该 B 实测 active A100 平均功率)×T16/1000。
+完整 558 TEST 在 B=1/2/4/8 下实际运行 558/279/140/70 次，B=4/8 尾批分别为
+2/6 个真实视频，不补充虚假样本。计时钩子内部未再次 CUDA 同步，因此这是
+实际实现的“首 block 入口至 GPU 分数就绪”的同步墙钟边界，不能声称严格
+剔除了所有钩子前已排队的 embedding GPU 工作。功率为 50 ms 采样、整段
+forward 活跃标签窗口的均值；与上述边界时间相乘是估算，不是每个短调用的
+校准能量积分。U 列是实际 full558 SRCC，C 列仅历史参考。
+
+### 表三：Sources（来源、精度与适用范围）
+
+每个 B 的 SRCC 均由对应 `predictions.csv` 独立重算，已核验 558 个样本 ID、
+标签，以及同一模型不同 B 的选帧一致；各模型间 ID/标签相同。CLIP 和 YOLO
+的实际 SRCC 跨 B 最大变化分别约 0.00001699、0.00000660，近水平曲线不是
+复制分数；DeepSeek 为 0.5680463058–0.5703507558，Qwen 为
+0.7663428037–0.7694958345。不要求 batching 导致性能单调变化。Qwen 使用原
+冻结质量行；原 CLIP/YOLO/DeepSeek PT 未找回，当前为原协议重训的质量头，
+最高 TEST 选模应注明 development/no VAL。Qwen 新 B=1 审计成本为
+1150.4916036128998 ms、442.9714733293941 J，仅保留记录，不进入最终数据；
+B=1 历史锚点和后续 B=2/4/8 同协议复测不是同日测量。LightGen-II 的时间是
+既有六次光学周期 6.2682 ms 加串行电子部件 3.9773695913702247 ms 的估算，
+不是新实测全链路；电子部件采用 FP32 CUDA event，baseline 为 FP16/BF16
+同步墙钟，并非相同数值精度/相同计时器。CSV 与 JSON 保留源文件、PT 身份、
+SHA、功率限制和异常原始采样。相关限制须随论文结果说明，不应将均值乘
+功率估算表述为逐视频直接能量实测。
+
+### 图形坐标与使用说明
+
+- `srcc_cost_comparison_reference.png/svg`：纵轴为 SRCC 系数、范围 0–1，
+  不是 Accuracy (%)。能量横轴对数范围 0.7–3000 J，时间横轴对数范围
+  7–5000 ms，端点均明确标注，覆盖所有数据与标注。B=1/2/4/8 文字通过
+  同色细引线绑定各点；N=16 仅标 LightGen-II 光场容量，不冒充 GPU batch。
+- `batch_cost_comparison.png/svg`：横轴为每次 GPU 调用/光场的视频数；电子
+  曲线仅有 B=1/2/4/8，N=16 光学点独立。纵轴均为 16 视频折算成本。
+- `qwen_batch_metric_audit.png/svg`：完整 558 TEST 与前 200 子集分开显示，
+  均用完整 0–1 SRCC 纵轴，标出真实数值，不能混用两个样本总体。
+
+三个工作表均附一段英文表注，可复制给论文同学。`timing_energy_recalculated.csv`
+是 16 组电子设置的计算明细；`batch_metric_audit.csv` 是实际精度与历史参考的
+分离审计；画主图优先用已合并的 `plot_data.csv`，避免按行号误拼两份表。
+
 ## Completed original-protocol reproduction, 20:27 +0800
 
 CLIP, YOLO and DeepSeek have completed the authorized original-protocol
@@ -42,8 +114,9 @@ All own suite/evaluation PIDs have exited; the specified A100 was idle with
 Every SRCC was independently recomputed from its own predictions. CLIP and
 YOLO vary by less than .000017 SRCC across batch settings. DeepSeek ranges
 from .5680463058 to .5703507558. No monotonic quality trend is imposed.
-Historical reference scores remain separately labelled in workbook column C;
-column I is the actual full558 SRCC measured at the displayed batch size.
+Historical reference scores remain separately labelled: Summary column I and
+Batch results column C. Summary column C is now the plot-ready actual full558
+SRCC; Batch results column U contains the same actual batch-specific metric.
 
 Costs remain inference-only mean-power estimates under the confirmed formula.
 The A100 reported a 250 W power limit in every process. Raw DeepSeek telemetry
@@ -95,6 +168,7 @@ are kept, rather than rewritten to match the final table.
 - `qwen_batch_metric_audit.png/svg`: actual SRCC recomputed from saved Qwen predictions. Full TEST and first-200 subset are separate panels; neither substitutes for the other.
 - `LGVQ_temporal_multi_baseline_recalculated.xlsx`: original three-tab structure retained, with updated Ours inputs and explicit measured-at-batch SRCC columns. Original workbook is unchanged.
 - `timing_energy_recalculated.csv`: all 16 baseline settings, unrounded calculation values, per-video amortized quantities and precision/source fields.
+- `plot_data.csv`: 17 plot-ready rows (one optical N16 point and sixteen actual electronic B settings), explicitly joined by model and batch identity.
 - `batch_metric_audit.csv`: separate historical references, actual full558/subset200 results, checkpoint origin/SHA and reference differences.
 - `recalculation.json`: optical/electronic components, source SHA-256 records and calculation inputs.
 
