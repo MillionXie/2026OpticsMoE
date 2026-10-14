@@ -190,7 +190,9 @@ def prepare_batch(rows, processor, prompt):
     from . import quality_token_common as core
     decoded = [core.decode_random_seek(Path(row["video_path"]), core.FRAME_FRACTIONS[4], 448) for row in rows]
     inputs = processor(text=[prompt] * len(rows),
-                       videos=[np.stack([np.asarray(f) for f in item[0]]) for item in decoded],
+                       # Native Smol batches are [sample][video][frame,H,W,C],
+                       # not [sample][frame,H,W,C] as in the Qwen processor.
+                       videos=[[np.stack([np.asarray(f) for f in item[0]])] for item in decoded],
                        video_metadata=[item[1] for item in decoded],
                        padding=True, return_tensors="pt", do_sample_frames=False)
     pixels = inputs["pixel_values"]
