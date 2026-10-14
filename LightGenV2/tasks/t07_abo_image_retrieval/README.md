@@ -100,6 +100,13 @@ SHA256 `94947127262ead3fc440b5e67b513f0038949b25795c5be0b916305d251e6eef`，含8
 权重/报告身份见 [FINAL_IDENTITY](reports/reproduction/FINAL_IDENTITY_20261002.json)。
 原始有效CCD、收据、原数据、best/last及baseline保持原位置，整理不复制或删除。
 
+2026-10-14新增只读统计入口：`reports/physical_qwen_statistics_20261014/build_statistics.py`，
+配对该实拍报告与原冻结Qwen-64D的800条查询，核验同一protocol SHA、图库／查询身份及
+原manifest类别。Ours命中649/800=.81125，Qwen命中681/800=.85125；原10类各20商品、
+80查询，类别汇总仍要求匹配正确SKU，不是“同类即正确”。生成英文类别Top-1柱状图、
+整体Hit@1/5/10对比、Excel和原始／整理数据；本地从该目录`index.html`浏览。
+这是历史固定结果的描述性分析，不是重评、重训或独立泛化验证，原粗类别未人工重标。
+
 当前工作目录的完整历史README保持原样；Git `508a1c35447e0ef91de57251ef24750fab715a21`
 保留其全部内容。旧480-query/120商品中心协议、不同数据集筛选、旧权重实拍、
 完整测速等不是本页800-query/1600真实图库结果，不混表、不丢弃、不按“不是最终版”删除。
