@@ -1,5 +1,7 @@
 ## 最新人工目标80与九点前汇报 小电残差条件许可 2026-10-15
 
+165纯光优化专属保存图工具已独立准备，Linux真实CPU导入/编译及错run、缺真正优化科学审查时创建out前拒绝passed；模型/forward/images/test/GPU/图/PDFmarker0，当前160源及GPU PID集合保持，新优化尚未实际fit。[真实165图准入与未来四PDF](reports/resisc10_optimize_20261015/plot_preparation/README.md)。
+
 用户取消03:30汇报，要求今天09点前给结果，并要求有残差组冲80%；若纯光不足，允许极少量侧边电残差，光alpha必须>.6。单次汇报已经改为08:50，同聊天给实际成绩/完成或未完成状态；09晨报保留。80为目标不能保证，当前都是验证数值，test仍未授权。
 当前160/e380纯光两组继续原预算不改源码；实际全部退出和saved science后，若所选有残差验证不足80，执行一次新fresh配对MixUp.6->.2纯光优化，其他因素/10类/网络/划分/输入保持，每组max120或7200拟合秒、两组最多4新增fitGPU小时，仅2/5各一。若已到80，优先真实性/逐类/native验收，不盲搜。
 若这一纯光优化仍不足80，后备固定光alpha=.8、电=.2概率混合，区别于rho.3的相干70/30场振幅。保留科学审核所选光EMA冻结，电支路固定RGB100的4x4均值池化48features+Linear48x10/bias仅490可训练参数，无CNN/hidden/pretrain/大型电子替代。仅CPU拟合已审查train/val保存光概率和对应固定输入特征，max120或7200CPU秒，firstminval EMA balancedNLL选；明确hybrid非纯光，不读取test/新GPU第三子或使用A100。
