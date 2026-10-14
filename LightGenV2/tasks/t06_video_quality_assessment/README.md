@@ -2,6 +2,13 @@
 
 ## 2026-10-14：配套 GPU 遥测复测与 batch 数值诊断
 
+**用户质询后的图注更正：**主成本图已在每个batch点标与其负载配套的平均GPU利用率。
+主交错与resident成本图分开，另有resident配套图；B8 resident平均Qwen89.22%、
+CLIP71.30%、YOLO97.10%、DeepSeek95.26%，不混峰值与平均。输入resident但仍有逐调用
+同步、CPU MOS拷贝和记录，不能将此循环称为无CPU间隙的纯GPU饱和实验。
+复测/诊断完成不代表数值稳定化已应用：正式BF16/FP16分数仍有batch差异，FP32仅是
+8视频诊断，未运行新558 FP32正式对照，不修改原曲线分数。详细证据与限制在原比较报告。
+
 **完整交付更新：**`full_remeasurement02`19组冻结测量及两项8视频诊断均完成，
 226份原始记录已SHA备份，558 TEST/前200成本/尾批/固定PT/manifest/PID审计通过。
 DeepSeek接口修复后的诊断在`diagnostic_deepseek_interfacefix`，原失败证据不删除。

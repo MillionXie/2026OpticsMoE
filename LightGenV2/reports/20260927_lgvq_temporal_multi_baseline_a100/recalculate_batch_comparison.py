@@ -99,8 +99,8 @@ def batch_labels(ax, points):
     allowed=ax.get_window_extent(renderer).padded(-3)
     placements=[]
     for x,y,text,color in points:
-        candidates=[(0,dy) for dy in (10,-10,20,-20,30,-30)]
-        candidates += [(dx,dy) for dy in (10,-10,20,-20,30,-30) for dx in (-12,12,-24,24)]
+        candidates=[(0,dy) for dy in (10,-10,20,-20,30,-30,40,-40,50,-50)]
+        candidates += [(dx,dy) for dy in (10,-10,20,-20,30,-30,40,-40,50,-50) for dx in (-12,12,-24,24,-36,36)]
         chosen=None
         for offset in candidates:
             ann=ax.annotate(text,(x,y),xytext=offset,textcoords='offset points',
@@ -395,6 +395,66 @@ def main():
     (OUT/'recalculation.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     print(json.dumps(dict(output=str(OUT),ours=ours,rows=len(timing)),ensure_ascii=False))
 
+def annotate_utilization():
+    """Figure-only correction from immutable report JSON; never changes measured data."""
+    data=json.loads((OUT/'recalculation.json').read_text(encoding='utf8'))
+    rows,ours=data['paired_rows'],data['ours']
+    plt.rcParams.update({'font.family':'Arial','font.size':8,'axes.labelsize':8,'axes.linewidth':.65,'svg.fonttype':'none'})
+    markers={'Qwen3-VL-2B':'o','DeepSeek-VL2-Tiny':'s','CLIP ViT-B/32':'D','YOLO11s':'^'}
+    annotation_record={}
+    for resident,stem in [(False,'srcc_cost_comparison_reference'),(True,'srcc_cost_comparison_resident')]:
+        fig,axes=plt.subplots(1,2,figsize=(183/25.4,130/25.4))
+        fig.subplots_adjust(left=.09,right=.98,bottom=.25,top=.78,wspace=.32)
+        fig.suptitle('GPU-resident repeated inference' if resident else 'Interleaved preparation and inference',fontsize=9,y=.86)
+        audit={}
+        for ax,key,label,panel in zip(axes,['energy_16_videos_j','time_16_videos_ms'],['Energy per 16 videos (J)','Inference time per 16 videos (ms)'],['a','b']):
+            field='sustained_'+key if resident else key
+            utilization='sustained_gpu_util_mean_percent' if resident else 'gpu_util_mean_percent'
+            points=[]
+            for model,color in COLORS.items():
+                rr=[r for r in rows if r['model']==model]
+                ax.plot([r[field] for r in rr],[r['srcc'] for r in rr],color=color,marker=markers[model],ms=3.5,lw=1,label=model)
+                points += [(r[field],r['srcc'],f"B={r['batch_size']}\nU={r[utilization]:.1f}%",color) for r in rr]
+            ax.plot(ours[key],ours['physical_reference_srcc'],'*',ms=10,color='#7B2CBF',label='LightGen-II (reference)')
+            points.append((ours[key],ours['physical_reference_srcc'],'N=16\nU: n.a.','#7B2CBF'))
+            limits=(.7,2000) if key.startswith('energy') else (7,4000)
+            # Some resident CLIP costs fall below the optical reference.
+            log_axis(ax,'x',limits,[1,10,100,1000] if key.startswith('energy') else [10,100,1000])
+            ax.set_ylim(0,1); ax.set_yticks([0,.2,.4,.6,.8,1]); ax.set_xlabel(label); ax.set_ylabel('Temporal quality SRCC')
+            ax.text(-.17,1.02,panel,transform=ax.transAxes,fontweight='bold',fontsize=10)
+            for side in ('top','right'): ax.spines[side].set_visible(False)
+            audit[panel]=batch_labels(ax,points)
+        fig.legend(*axes[0].get_legend_handles_labels(),loc='upper center',ncol=2,frameon=False,fontsize=7)
+        fig.text(.02,.14,'U = mean GPU kernel-busy utilization, not peak utilization or SM occupancy.',fontsize=6.5)
+        fig.text(.02,.10,'Paired costs and U: 15-s resident-input loop; SRCC: separate full558 pass at the same PT/B.' if resident else
+                 'Paired costs and U: first200 TEST inference-tagged windows. CPU preparation excluded from cost.',fontsize=6.5)
+        fig.text(.02,.06,'LightGen-II: unchanged N=16 component-cost estimate and physical SRCC; GPU U not measured.',fontsize=6.5)
+        fig.text(.02,.025,'14 October 2026 full02. No timing, energy, prediction or utilization measurement has been changed.',fontsize=6.5)
+        for ext in ('png','svg'): fig.savefig(OUT/f'{stem}.{ext}',dpi=450)
+        plt.close(fig)
+        annotation_record[stem]=audit
+    fig,axes=plt.subplots(1,2,figsize=(183/25.4,100/25.4))
+    fig.subplots_adjust(left=.10,right=.98,bottom=.20,top=.75,wspace=.35)
+    for ax,key,title in zip(axes,['gpu_util_mean_percent','sustained_gpu_util_mean_percent'],['Interleaved inference','GPU-resident repeated input']):
+        points=[]
+        for model,color in COLORS.items():
+            rr=[r for r in rows if r['model']==model]
+            ax.plot([r['batch_size'] for r in rr],[r[key] for r in rr],'-o',ms=3,lw=1,color=color,label=model)
+            points += [(r['batch_size'],r[key],f"{r[key]:.1f}%",color) for r in rr]
+        ax.set_xlim(.5,10.5); ax.set_ylim(-5,115); ax.set_xticks([1,2,3,4,8,9,10]); ax.set_yticks([0,20,40,60,80,100])
+        ax.set_xlabel('Batch size (videos)'); ax.set_ylabel('Mean GPU utilization (%)'); ax.set_title(title,fontsize=8)
+        for side in ('top','right'): ax.spines[side].set_visible(False)
+        if key=='sustained_gpu_util_mean_percent':
+            batch_labels(ax,points)
+    fig.legend(*axes[0].get_legend_handles_labels(),loc='upper center',ncol=2,frameon=False,fontsize=7)
+    fig.text(.02,.09,'Means, not peaks. Resident input still uses per-call synchronization and CPU score copies.',fontsize=6.5)
+    fig.text(.02,.045,'Each workload retains its own paired latency and energy; no values were substituted.',fontsize=6.5)
+    for ext in ('png','svg'): fig.savefig(OUT/f'gpu_utilization_comparison.{ext}',dpi=450)
+    plt.close(fig)
+    (OUT/'utilization_annotation_audit.json').write_text(json.dumps(annotation_record,indent=2)+'\n')
+    print('Annotated all19 electronic points with workload-matched mean GPU utilization; measurements unchanged.')
+
+
 def refresh_paired():
     """Publish only the completed full02 round, with separate paired load regimes."""
     run=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_telemetry_a100_20261014/full_remeasurement02'
@@ -643,4 +703,7 @@ Formal run: `{run.relative_to(REPO).as_posix()}`. Measurement entry SHA28fc58f1;
     print(json.dumps(dict(rows=len(rows),plot_points=len(plot),diagnoses=list(diagnostics),output=str(OUT))))
 
 if __name__=='__main__':
-    refresh_paired() if '--paired-telemetry' in sys.argv else main()
+    if '--annotate-utilization' in sys.argv:
+        annotate_utilization()
+    else:
+        refresh_paired() if '--paired-telemetry' in sys.argv else main()

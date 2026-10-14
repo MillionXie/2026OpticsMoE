@@ -2,3 +2,5 @@
 sustained_load_data.csv
 *.inspect.ndjson
 gpu_utilization_comparison.svg
+srcc_cost_comparison_resident.svg
+utilization_annotation_audit.json

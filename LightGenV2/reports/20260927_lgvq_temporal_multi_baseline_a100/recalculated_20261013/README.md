@@ -2,6 +2,23 @@
 
 Updated 14 October 2026. All 19 frozen settings and both bounded numerical diagnoses are complete. The displayed curves now use only the uninterrupted `full_remeasurement02` measurements. Interrupted rounds and the initial failed DeepSeek input-fingerprint diagnostic remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
 
+## 关键更正：利用率标注与尚未修复的数值差异
+
+前次交付把GPU利用率放在表格和单独曲线中，却遗漏了主成本图逐batch标注，且最终汇报未展开诊断结论。现在主图每个电子点直接标`B`和`U`，`U`明确为与该图成本同负载的平均GPU kernel-busy利用率，不是峰值。`srcc_cost_comparison_reference`为主交错负载；`srcc_cost_comparison_resident`为另存的15秒resident负载及其自身成本，不能互相替换。LightGen-II未测此轮GPU利用率，标为n.a.。这次只更正图和解释，不改变任何实测分数、时延、能量或利用率。
+
+| B=8模型 | 主交错平均U (%) | Resident平均U (%) | Resident峰值U (%) |
+| --- | ---: | ---: | ---: |
+| Qwen3-VL-2B | 13.555556 | 89.220000 | 95 |
+| CLIP ViT-B/32 | 3.272727 | 71.295302 | 89 |
+| YOLO11s | 3.935484 | 97.097643 | 99 |
+| DeepSeek-VL2-Tiny | 62.196891 | 95.258278 | 100 |
+
+因此并非所有B8利用率都低于90%。Qwen当前89.22%是整段约15秒的平均，95%是该段峰值。已定位的一份历史Qwen B8报告记录平均70.341463%、峰95%，不能把历史95%峰值与本轮89.22%平均解释成平均利用率降低。历史出处：`raw_remote/qwen3_vl_2b_independent/batch_8/formal/batch_08/report.json`；测量负载/范围不同，仍不将两轮拼接。若另有曾展示的B8平均>90%记录，须绑定其原报告和负载才可判断变化原因。
+
+Resident只表示输入驻GPU、不重复解码与H2D；每次仍调用原`forward`，CUDA同步、执行hook/计时，最后把MOS拷回CPU列表，之后再发下一次调用。它不是CUDA Graph或无CPU间隙的纯GPU kernel饱和实验，不能保证100%利用率。已发现这些间隙，但尚未做逐kernel剖析，不能将89.22%的每一项损失归因到某个算子。主交错统计还受到前序CPU准备和驱动平均窗口影响；按active标签筛选不能把驱动已平均的历史空闲“消掉”。NVIDIA的[利用率定义](https://docs.nvidia.com/deploy/nvidia-smi/index.html)是采样窗口内有kernel运行的时间占比，不是SM occupancy、显存占用率或峰值算力使用率。
+
+精度方面，**复测和诊断完成，不等于正式数值稳定化修复完成**。以下8视频输入SHA/重复前向/FP32探针证据支持低精度批计算是主要贡献，但未逐层定位全部算子，也未做558视频FP32正式评估。正式曲线仍按原BF16/FP16合同运行，因此保留真实batch差异。统一FP32或调整积累/attention执行方式需要新正式对照，并重新配套测SRCC、时延、能量和利用率；不能拿8视频探针分数替换558分数，更不能将B1分数复制到其他B来“修复”图。[PyTorch数值文档](https://docs.pytorch.org/docs/2.6/notes/numerical_accuracy.html)也明确说明，批计算与逐样本计算不保证逐位一致。
+
 ## 两图含义与实验方法
 
 图a展示每16视频推理能量与时间质量SRCC的关系，图b展示相同工作量的推理时间与SRCC的关系。横轴分别为Energy per 16 videos (J)和Inference time per 16 videos (ms)，使用对数坐标；纵轴为无量纲Temporal quality SRCC，范围0–1。B为每次GPU调用的视频数，N为每幅光场的视频数。每一个电子点都有其batch自己的558个TEST预测和同轮成本，不复制统一分数。LightGen-II仅为N=16物理SRCC参考和部件成本估算点，不是本轮重测光路。
