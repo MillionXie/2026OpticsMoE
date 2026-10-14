@@ -1,9 +1,32 @@
 """Numbering and full/split PDF lookup must stay one-to-one."""
 import unittest
-from LightGenV2.tasks.t04_semantic_interaction.comparison_catalogue import OPERATIONS, plan_pages
+import tempfile
+from pathlib import Path
+from LightGenV2.tasks.t04_semantic_interaction.comparison_catalogue import (
+    OPERATIONS, plan_pages, ensure_artifact_ignore, GENERATED_IGNORE,
+)
 
 
 class CataloguePlanTest(unittest.TestCase):
+    def test_generated_outputs_get_scoped_ignore(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            ensure_artifact_ignore(root)
+            self.assertEqual((root / '.gitignore').read_text(), GENERATED_IGNORE)
+            ensure_artifact_ignore(root)  # Idempotent; does not touch assets.
+            self.assertNotIn('*.json', GENERATED_IGNORE)
+            self.assertNotIn('*.py', GENERATED_IGNORE)
+            self.assertNotIn('README', '\n'.join(line for line in GENERATED_IGNORE.splitlines()
+                                               if not line.startswith('#')))
+
+    def test_custom_ignore_is_not_replaced(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / '.gitignore').write_text('/custom_asset.png\n')
+            with self.assertRaises(ValueError):
+                ensure_artifact_ignore(root)
+            self.assertEqual((root / '.gitignore').read_text(), '/custom_asset.png\n')
+
     def test_complete_page_plan(self):
         pairs = []
         for split, count in (('test', 250), ('train', 1250)):

@@ -1,0 +1,9 @@
+# Generated comparison assets stay on disk; synchronize source and README only.
+# These exact names are reserved outputs, not a blanket reports/ or JSON ignore.
+/00_browse.html
+/00_index.json
+/01_test/
+/02_train/
+/pdf/
+/pdf_manifest.json
+/qa/

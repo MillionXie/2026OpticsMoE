@@ -17,6 +17,26 @@ import tarfile
 OPERATIONS = ('add', 'replace', 'move', 'remove')
 FILES = ('01_input.png', '02_target.png', '03_ours.png', '04_qwen.png')
 ROOT = Path(__file__).resolve().parent
+GENERATED_IGNORE = '''# Generated comparison assets stay on disk; synchronize source and README only.
+# These exact names are reserved outputs, not a blanket reports/ or JSON ignore.
+/00_browse.html
+/00_index.json
+/01_test/
+/02_train/
+/pdf/
+/pdf_manifest.json
+/qa/
+'''
+
+
+def ensure_artifact_ignore(output):
+    """Keep large deliverables local without hiding new root source or docs."""
+    path = output / '.gitignore'
+    if path.exists():
+        if path.read_text(encoding='utf-8') != GENERATED_IGNORE:
+            raise ValueError('Existing custom .gitignore differs; inspect it instead of overwriting')
+    else:
+        path.write_text(GENERATED_IGNORE, encoding='utf-8')
 
 
 def digest(path):
@@ -107,6 +127,7 @@ def images(args):
     if args.output.exists() and not args.resume:
         raise FileExistsError('Use a fresh catalogue directory')
     args.output.mkdir(parents=True, exist_ok=args.resume)
+    ensure_artifact_ignore(args.output)
     archive = args.evidence / 'original_pngs.tar.gz'
     assert digest(archive) == provenance['original_images']['archive_sha256']
 
@@ -210,6 +231,7 @@ def images(args):
 
 
 def write_viewer(pairs, output):
+    ensure_artifact_ignore(output)
     # Offline searchable viewer; results are not filtered or reordered by score.
     html = r'''<!doctype html><meta charset="utf-8"><title>Full scene comparison index</title>
 <style>body{font:15px Arial;margin:28px;background:#fafafa}table{border-collapse:collapse;width:100%}
@@ -235,6 +257,7 @@ def pdf(args):
     from reportlab.lib.colors import HexColor
     from reportlab.lib.utils import ImageReader
     from pypdf import PdfReader
+    ensure_artifact_ignore(args.output)
     index = json.loads((args.output / '00_index.json').read_text())
     pairs = index['cases']
     destination = args.output / 'pdf'

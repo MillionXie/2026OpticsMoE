@@ -132,6 +132,9 @@ Ours全部逐样本指标复现。Qwen `test_000486` 的对象F1从原封存0.5�
 `runs/simulation/full_comparison_export_20261013_final/`：两模型各两份TRAIN/TEST JSONL、
 原图归档、下载SHA清单及 `provenance.json`。证据/图片/PDF不进入Git。
 本次图片/PDF保存在本地本目录，没有上传师姐服务器；Git只同步源码和说明。
+本目录`.gitignore`仅忽略上表列出的生成素材和索引，不删除文件，不忽略README、
+绘图源码或新的根目录说明。绘图入口会为以后新生成的同类目录自动建立相同局部规则；
+若已有自定义规则则拒绝覆盖。代码三端同步不表示大图册也自动传到服务器。
 
 从仓库根目录执行，输出必须是新的目录。绘图环境需要本任务的Torch/Pillow/numpy、
 `resvg-py==0.5.0`；PDF步骤额外需要reportlab和pypdf，不加载模型、不使用GPU。
