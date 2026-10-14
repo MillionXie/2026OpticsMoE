@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "sha256": "bcea3e8e9b4ec196315f71c99ec45ed1bb3d5a4f2d4881c9fba7dfccc4441590",
+  "artifact": "cpu_admission_checks.json",
+  "source_transfer": false,
+  "weights_transfer": false
+}
