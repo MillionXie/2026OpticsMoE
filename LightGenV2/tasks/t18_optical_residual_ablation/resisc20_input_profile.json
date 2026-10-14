@@ -1,0 +1,51 @@
+{
+  "dataset": "NWPU_RESISC45_prespecified20_20261014",
+  "data": "/DATA/DATA1/guest3/t18_resisc20_grouped_20261014/resisc20_fixed_split.npz",
+  "cache_sha256": "652912ee341b51dfce1a5dfc9a2b7618d6d1869bb16a8a38d1f21b7e82447431",
+  "manifest_sha256": "895587ea2c3c2d953bfa012eb958a51696df99b072daeb70bf403c2a4567a82b",
+  "seed": 17,
+  "maximum_epochs": 120,
+  "maximum_seconds": 7200,
+  "minimum_epochs": 10,
+  "early_patience": 10,
+  "early_min_delta": 0.002,
+  "lr": 0.002,
+  "label_smoothing": 0.08,
+  "phase_smooth_weight": 0.005,
+  "capture_weight": 0.05,
+  "ema_decay": 0.95,
+  "batch_size": 16,
+  "microbatch": 8,
+  "mixup_alpha": 0.6,
+  "augmentation": {
+    "rotation_degrees": 20,
+    "translation_pixels": 5,
+    "scale_range": [
+      0.9,
+      1.1
+    ]
+  },
+  "phase_init_raw_uniform": 0.1,
+  "optimizer": "AdamW with weight_decay0, gradient_clip_norm1; same frozen primitives for both rho",
+  "shared_spare_memory_gib": 2,
+  "maximum_gpu_children": 6,
+  "maximum_gpu_children_per_card": 2,
+  "numeric_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/resisc20_input_gpu6_numeric_20261014/checks.json",
+  "cpu_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/resisc20_input_cpu_native_20261014/checks.json",
+  "automatic_retry": false,
+  "scope": "Approved fresh original-size input-detail controls; no test or network resizing.",
+  "cases": {
+    "L4_tile50_rho03": [
+      50,
+      0.3
+    ],
+    "L4_tile100_rho03": [
+      100,
+      0.3
+    ],
+    "L4_tile100_rho0": [
+      100,
+      0.0
+    ]
+  }
+}
