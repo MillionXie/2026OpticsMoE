@@ -3,7 +3,9 @@
 用户取消03:30汇报，要求今天09点前给结果，并要求有残差组冲80%；若纯光不足，允许极少量侧边电残差，光alpha必须>.6。单次汇报已经改为08:50，同聊天给实际成绩/完成或未完成状态；09晨报保留。80为目标不能保证，当前都是验证数值，test仍未授权。
 当前160/e380纯光两组继续原预算不改源码；实际全部退出和saved science后，若所选有残差验证不足80，执行一次新fresh配对MixUp.6->.2纯光优化，其他因素/10类/网络/划分/输入保持，每组max120或7200拟合秒、两组最多4新增fitGPU小时，仅2/5各一。若已到80，优先真实性/逐类/native验收，不盲搜。
 若这一纯光优化仍不足80，后备固定光alpha=.8、电=.2概率混合，区别于rho.3的相干70/30场振幅。保留科学审核所选光EMA冻结，电支路固定RGB100的4x4均值池化48features+Linear48x10/bias仅490可训练参数，无CNN/hidden/pretrain/大型电子替代。仅CPU拟合已审查train/val保存光概率和对应固定输入特征，max120或7200CPU秒，firstminval EMA balancedNLL选；明确hybrid非纯光，不读取test/新GPU第三子或使用A100。
-新纯光优化五文件165source与条件入口、490参数小电支路/独立numpy保存审查已准备，尚未执行新准入/拟合/科学审查；不称成功。需要真实新claims/config/source/parentSHA/490params/alpha>.6/IDs/CM/NLL/更新步数核，不套旧11phase训练门槛或当前纯光native出口。原全部160/159/151和旧数据/PT/run/失败/claims/markers保留，源码只Git，所有新步骤独占out不重跑、不无限扩搜索。详情见[夜间优化与电残差合同](RESISC10_NIGHT_OPTIMIZATION_20261015.md)。
+新纯光优化五文件165source与条件入口、490参数小电支路/独立numpy保存审查已准备；只完成工具数学CPU准入，尚未执行实际新profile门槛/拟合/科学审查，不称80成功。
+夜间新工具CPU准入已真实一次passed（source167，检查SHA51eb72fc4b0b27db0048dab7710cb2afc4f4f68232ed207a5d81b20dea0c81d3）：Linux导入/条件pure-parent未完成提前拒绝、固定alpha.8和拒绝.6/490参数/独立NumPy池化与概率/两个电参数梯度finite非零均通过。仅12synthetic输入、2电forward、实际dataset/test/GPU/opticalmodel/opticalforward0，当前160及GPU PID集合保持；不是已训练hybrid、80成绩或native。新smoke/claim及私有helper已经一次完成不得重跑，raw JSON仅本地服务器。
+需要真实新claims/config/source/parentSHA/490params/alpha>.6/IDs/CM/NLL/更新步数核，不套旧11phase训练门槛或当前纯光native出口。原全部160/159/151和旧数据/PT/run/失败/claims/markers保留，源码只Git，所有新步骤独占out不重跑、不无限扩搜索。详情见[夜间优化与电残差合同](RESISC10_NIGHT_OPTIMIZATION_20261015.md)。
 
 ## 最新人工要求当前十类完成后继续针对性优化 2026-10-15
 
