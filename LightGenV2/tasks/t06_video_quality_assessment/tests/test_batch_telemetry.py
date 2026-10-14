@@ -52,6 +52,41 @@ def test_diagnostic_has_no_weight_training():
     assert not {"backward", "step", "train"}.intersection(calls)
 
 
+def test_diagnostic_deepseek_dict_output_uses_explicit_keys(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+    import numpy as np
+    from LightGenV2.tasks.t06_video_quality_assessment import diagnose_batch_numerics as diagnosis
+
+    class Tensor(np.ndarray):
+        def bool(self):
+            return self.astype(bool)
+
+    def tensor(values):
+        return np.asarray(values).view(Tensor)
+
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(Tensor=Tensor))
+
+    class DictOutput:
+        def __init__(self, values):
+            self.values = values
+        def keys(self):
+            return self.values.keys()
+        def __getitem__(self, key):
+            return self.values[key]
+
+    values = dict(input_ids=tensor([[1, 2, 0], [1, 2, 0]]),
+                  attention_mask=tensor([[1, 1, 0], [1, 1, 0]]),
+                  images=tensor(np.zeros((2, 4, 3, 2, 2))),
+                  images_spatial_crop=tensor(np.ones((2, 4, 2))),
+                  images_seq_mask=tensor([[0, 1, 0], [0, 1, 0]]))
+    monkeypatch.setattr(diagnosis, "tensor_hash", lambda tensor: str(tensor.tolist()))
+    records = diagnosis.input_records(DictOutput(values), 2)
+    assert len(records) == 2 and records[0] == records[1]
+    assert records[0]["input_ids"] == "[1, 2]"
+    assert records[0]["images_seq_mask"] == "[0, 1]"
+
+
 def test_reservation_ignores_other_cards_but_not_foreign_a100():
     from LightGenV2.tasks.t06_video_quality_assessment import reserve_temporal_a100 as reservation
     records = [{"pid": "1", "gpu_uuid": reservation.frozen.A100_UUID},

@@ -19,11 +19,14 @@ def input_records(inputs, count):
     if isinstance(inputs, torch.Tensor):
         return [{"frames": tensor_hash(part)} for part in inputs.reshape(count, 4, *inputs.shape[1:])]
     result = [{} for _ in range(count)]
+    # DeepSeek's DictOutput exposes keys()/__getitem__, not Mapping.__contains__.
+    # Membership on the object itself attempts integer indexing and raises KeyError(0).
+    keys = set(inputs.keys())
     for key in ("input_ids", "attention_mask"):
-        if key in inputs:
+        if key in keys:
             for index in range(count):
                 result[index][key] = tensor_hash(inputs[key][index][inputs["attention_mask"][index].bool()])
-    if "pixel_values_videos" in inputs:
+    if "pixel_values_videos" in keys:
         grid = inputs["video_grid_thw"]
         if len(grid) != count:
             raise RuntimeError("Unexpected video grid grouping")
@@ -35,9 +38,15 @@ def input_records(inputs, count):
             start += length
         if start != len(inputs["pixel_values_videos"]):
             raise RuntimeError("Video pixel grouping incomplete")
-    elif "images" in inputs:
+    elif "images" in keys:
         for index in range(count):
             result[index]["pixels"] = tensor_hash(inputs["images"][index])
+            for key in ("images_spatial_crop", "images_seq_mask"):
+                if key in keys:
+                    part = inputs[key][index]
+                    if key == "images_seq_mask":
+                        part = part[inputs["attention_mask"][index].bool()]
+                    result[index][key] = tensor_hash(part)
     else:
         raise RuntimeError("No recognized image tensor for exact input comparison")
     return result
@@ -110,7 +119,8 @@ def run(args):
                         inputs = transfer(cpu)
                         if fp32:
                             # Floating inputs only; token indices and masks unchanged.
-                            for key, value in inputs.items():
+                            for key in inputs.keys():
+                                value = inputs[key]
                                 if torch.is_tensor(value) and value.is_floating_point():
                                     inputs[key] = value.float()
                         if mode == "native":
