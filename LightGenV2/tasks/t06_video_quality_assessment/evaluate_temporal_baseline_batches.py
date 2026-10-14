@@ -315,12 +315,15 @@ def run(args: argparse.Namespace) -> None:
     args.output.mkdir(parents=True, exist_ok=False)
     write_json(args.output / "status.json", {"status": "loading", **identity})
     sampler, timer, handles = None, None, []
+    extended = getattr(args, "telemetry", False)
     try:
         with torch.inference_mode():
             model, head, rows, prepare, transfer, forward, timer, handles = load_runtime(args)
             if len(rows) != 558 or any(p.requires_grad for module in (model, head) for p in module.parameters()):
                 raise RuntimeError("Full 558 TEST / fully frozen model and head required")
-            sampler = measurement.NvidiaSmiPowerSampler(A100_UUID)
+            from . import batch_telemetry
+            sampler = (batch_telemetry.TelemetrySampler(A100_UUID) if extended
+                       else measurement.NvidiaSmiPowerSampler(A100_UUID))
             sampler.start()
             sampler.set_phase("idle")
             time.sleep(2)
@@ -332,8 +335,11 @@ def run(args: argparse.Namespace) -> None:
                 pred_writer.writerow(["sample_index", "sample_id", "target_mos", "prediction", "batch_index", "selected_frame_positions"])
                 timing_writer = csv.writer(timing_stream)
                 timing_writer.writerow(["batch_index", "videos", "in_cost_subset", "synchronized_wall_ms", "cuda_ms", "preprocessing_audit_ms", "h2d_audit_ms"])
-                for batch_index, start in enumerate(range(0, len(rows), args.batch)):
-                    selected = rows[start:start + args.batch]
+                plan = (batch_telemetry.inference_plan(len(rows), args.batch) if extended
+                        else [(start, min(start + args.batch, len(rows)))
+                              for start in range(0, len(rows), args.batch)])
+                for batch_index, (start, end) in enumerate(plan):
+                    selected = rows[start:end]
                     if batch_index % 25 == 0:
                         audits.append({"start_index": start, "processes": process_audit()})
                     started = time.perf_counter()
@@ -366,6 +372,8 @@ def run(args: argparse.Namespace) -> None:
             power_samples = sampler.stop()
             sampler = None
             measurement.save_power_samples(args.output / "power_samples.csv", power_samples)
+            if extended:
+                batch_telemetry.save_samples(args.output / "telemetry.csv", power_samples)
             cost_rows = [row for row in timings if row[2]]
             if sum(row[1] for row in cost_rows) != 200:
                 raise RuntimeError("Cost subset is not the first 200 videos")
@@ -381,7 +389,8 @@ def run(args: argparse.Namespace) -> None:
                 "excluded_from_final_latency_and_energy": ["model load", "decode", "crop/resize", "processor", "H2D", "audit overhead"],
                 "energy_formula": "(338.2 W host proxy + measured inference-active A100 mean W) * inference wall seconds",
                 "energy_measurement_note": "mean tagged-window board power times mean boundary duration, not a calibrated per-call energy integral; telemetry time resolution is 50 ms",
-                "cost": system_cost(statistics.mean(row[3] for row in cost_rows), power["active_mean_w"], args.batch),
+                "cost": (batch_telemetry.workload_cost(cost_rows, power["active_mean_w"])
+                         if extended else system_cost(statistics.mean(row[3] for row in cost_rows), power["active_mean_w"], args.batch)),
                 "inference_batch_wall_ms": measurement.summarize([row[3] for row in cost_rows]),
                 "inference_batch_cuda_ms_secondary": measurement.summarize([row[4] for row in cost_rows]),
                 "preprocessing_audit_ms_not_in_cost": measurement.summarize([row[5] for row in timings]),
@@ -389,6 +398,51 @@ def run(args: argparse.Namespace) -> None:
                 "power": power, "process_audits": audits, "process_audit_at_end": final_audit,
                 "checkpoint_selection": "previously TEST-selected quality rows (development metric); no training or selection in this evaluation",
             }
+            if extended:
+                report["telemetry"] = batch_telemetry.telemetry_report(power_samples)
+                report["cost_batch_videos"] = [row[1] for row in cost_rows]
+                report["test_batch_plan"] = plan
+                report["batch_boundary_note"] = "TEST order retained; separate boundaries at 200 and 558 protect exact cost subset; non-divisor batches have partial batches at both boundaries"
+                # A separate, fully labelled load test. No cost or SRCC from this
+                # repeated resident-input workload replaces the dataset-once run.
+                process_audit()
+                resident, _ = prepare(rows[:args.batch])
+                resident = transfer(resident)
+                torch.cuda.synchronize()
+                busy = batch_telemetry.TelemetrySampler(A100_UUID)
+                busy.start()
+                busy.set_phase("settling")
+                time.sleep(2)
+                busy.set_phase("sustained:")
+                busy_started = time.monotonic()
+                busy_latencies = []
+                try:
+                    while time.monotonic() - busy_started < 15:
+                        _, wall, _ = forward(resident)
+                        busy_latencies.append(wall)
+                    torch.cuda.synchronize()
+                finally:
+                    busy_samples = busy.stop()
+                    batch_telemetry.save_samples(args.output / "sustained_telemetry.csv", busy_samples)
+                busy_report = batch_telemetry.telemetry_report(busy_samples, "sustained:")
+                # Explicit fractional throughput equivalent, not ceil(16/B).
+                time16 = statistics.mean(busy_latencies) * 16 / args.batch
+                report["sustained_resident_input"] = {
+                    "duration_seconds": time.monotonic() - busy_started,
+                    "calls": len(busy_latencies), "telemetry": busy_report,
+                    "inference_batch_wall_ms": measurement.summarize(busy_latencies),
+                    "latency_16_videos_ms": time16,
+                    "energy_16_videos_j": (HOST_W + busy_report["mean_board_power_w"]) * time16 / 1000,
+                    "workload": "Repeated frozen inference on first B distinct TEST videos already resident on GPU; separate steady-load audit, no performance or model selection",
+                    "normalization": "mean boundary wall ms * 16/B, fractional throughput equivalent",
+                    "explicit_warmup_forwards": 0,
+                }
+                with (args.output / "sustained_timing.csv").open("w", encoding="utf-8", newline="") as stream:
+                    writer = csv.writer(stream)
+                    writer.writerow(["call_index", "synchronized_wall_ms"])
+                    writer.writerows(enumerate(busy_latencies))
+                del resident
+                report["process_audit_after_sustained"] = process_audit()
             write_json(args.output / "report.json", report)
             write_json(args.output / "status.json", {"status": "complete", "completed_test_videos": 558, **identity})
             print(json.dumps({"baseline": args.baseline, "batch": args.batch, "performance": report["performance"], "cost": report["cost"]}), flush=True)
@@ -399,6 +453,8 @@ def run(args: argparse.Namespace) -> None:
         if sampler is not None:
             samples = sampler.stop()
             measurement.save_power_samples(args.output / "power_samples.csv", samples)
+            if extended:
+                batch_telemetry.save_samples(args.output / "telemetry.csv", samples)
         if timer is not None:
             timer.close()
         for handle in handles:
@@ -408,12 +464,15 @@ def run(args: argparse.Namespace) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", choices=tuple(CHECKPOINT_SHA), required=True)
-    parser.add_argument("--batch", type=int, choices=(1, 2, 4, 8), required=True)
+    parser.add_argument("--batch", type=int, choices=(1, 2, 3, 4, 8, 9, 10), required=True)
+    parser.add_argument("--telemetry", action="store_true", help="Paired utilization/memory/power audit plus separate 15-second resident-input load test")
     for name in ("manifest", "checkpoint", "model", "output"):
         parser.add_argument(f"--{name}", type=Path, required=True)
     parser.add_argument("--reproduction-receipt", type=Path,
                         help="Explicit SHA-bound receipt for a newly retrained original-protocol head")
     args = parser.parse_args()
+    if args.batch not in (1, 2, 4, 8) and not args.telemetry:
+        parser.error("New non-divisor batches require --telemetry and exact-workload normalization")
     for name in ("manifest", "checkpoint", "model", "output"):
         setattr(args, name, getattr(args, name).expanduser().resolve())
     if args.reproduction_receipt is not None:
