@@ -17,6 +17,7 @@
   "train_fraction_groups": 0.8,
   "val_fraction_groups": 0.1,
   "split_policy": "Exact original/cache pixel connected groups together; preserve all selected photos. Per class80/10/rest groups, no test inference or category reselection. Not a geographic-independent split.",
-  "out": "/DATA/DATA1/guest3/t18_resisc20_20261014",
+  "out": "/DATA/DATA1/guest3/t18_resisc20_grouped_20261014",
+  "preserved_failed_acquisition": "/DATA/DATA1/guest3/t18_resisc20_20261014",
   "automatic_retry": false
 }

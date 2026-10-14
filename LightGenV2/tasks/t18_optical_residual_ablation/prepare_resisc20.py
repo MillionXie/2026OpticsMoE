@@ -14,24 +14,30 @@ def sha(path):
 def save(path,value):
     with Path(path).open('x',encoding='utf-8') as f:json.dump(value,f,indent=2);f.flush();os.fsync(f.fileno())
 
-def prepare(out):
+def prepare(out,verified_archive=None):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not out.exists()
     plan=json.loads(PLAN.read_text());assert out==Path(plan['out']) and len(plan['classes'])==20
     out.mkdir(parents=True,exist_ok=False)
     save(out/'preparation_claim.json',dict(pid=os.getpid(),started_unix=time.time(),command=os.sys.argv,plan=plan,
          git_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),
          source_sha256={p.name:sha(p) for p in (Path(__file__),PLAN,HERE/'prepare_caltech50.py')},automatic_retry=False))
-    archive=out/'NWPU-RESISC45.zip';part=out/'NWPU-RESISC45.download.part'
-    request=urllib.request.Request(plan['download_url'],headers={'User-Agent':'T18 research dataset preparation'})
-    with urllib.request.urlopen(request,timeout=60) as response,part.open('xb') as f:
-        transfer=dict(requested_url=plan['download_url'],resolved_url=response.geturl(),content_length=response.headers.get('Content-Length'),started_unix=time.time())
-        while True:
-            b=response.read(4*1024*1024)
-            if not b:break
-            f.write(b)
-        f.flush();os.fsync(f.fileno())
-    assert sha(part)==plan['archive_sha256'],'Archive differs from pinned known mirror'
-    part.rename(archive);transfer.update(archive_sha256=sha(archive),bytes=archive.stat().st_size,completed_unix=time.time())
+    if verified_archive is not None:
+        archive=Path(verified_archive);receipt=json.loads((archive.parent/'acquisition_receipt.json').read_text())
+        assert receipt['passed'] and receipt['sha256']==sha(archive)==plan['archive_sha256']
+        transfer=dict(verified_local_archive=str(archive),acquisition_receipt_sha256=sha(archive.parent/'acquisition_receipt.json'),network_download_repeated=False)
+    else:
+        archive=out/'NWPU-RESISC45.zip';part=out/'NWPU-RESISC45.download.part'
+        request=urllib.request.Request(plan['download_url'],headers={'User-Agent':'T18 research dataset preparation'})
+        with urllib.request.urlopen(request,timeout=60) as response,part.open('xb') as f:
+            transfer=dict(requested_url=plan['download_url'],content_length=response.headers.get('Content-Length'),started_unix=time.time())
+            while True:
+                b=response.read(4*1024*1024)
+                if not b:break
+                f.write(b)
+            f.flush();os.fsync(f.fileno())
+        assert sha(part)==plan['archive_sha256'],'Archive differs from pinned known mirror'
+        part.rename(archive)
+    transfer.update(archive_sha256=sha(archive),bytes=archive.stat().st_size,completed_unix=time.time())
     save(out/'download_receipt.json',transfer)
     with zipfile.ZipFile(archive) as z:
         assert z.testzip() is None
@@ -91,8 +97,8 @@ def prepare(out):
                          cache_sha256=manifest['cache_sha256'],manifest_sha256=sha(out/'data_manifest.json'),test_evaluations=0)),flush=True)
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);a=p.parse_args()
-    try:prepare(a.out)
+    p=argparse.ArgumentParser();p.add_argument('--out',type=Path,required=True);p.add_argument('--archive',type=Path);a=p.parse_args()
+    try:prepare(a.out,a.archive)
     except BaseException as e:
         if a.out.exists() and not (a.out/'failure.json').exists():save(a.out/'failure.json',dict(error=repr(e),automatic_retry=False))
         raise

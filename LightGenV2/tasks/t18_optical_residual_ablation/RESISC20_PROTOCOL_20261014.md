@@ -22,8 +22,13 @@ Exact-pixel image-level split is not geographic-independent validation.
 Prepare cache fullphotoRGB150 once to keep existing input encoding/affine contract;
 no crops, segmentation or learned features. Hash archive/cache/manifest/IDs/pixels/
 class supports, source/current/originalGitblob closure before fit. Data lives outside
-the project at /DATA/DATA1/guest3/t18_resisc20_20261014, all old assets protected.
+the project at /DATA/DATA1/guest3/t18_resisc20_grouped_20261014, all old assets protected.
 Preparation/output claims exclusive; failed artifacts retained/no auto retry.
+The first server download failed on DNS before data creation; its original directory
+/DATA/DATA1/guest3/t18_resisc20_20261014 is preserved. Separate verified acquisition
+may use fresh public DNS answers for only the download hostnames in that one process,
+with unchanged HTTPS hostname/SNI/certificate validation and canonical archive SHA.
+No global DNS/library/env changes; no automatic re-entry into the failed preparation.
 
 First bounded experiment exactly2fresh full-resolution L4rho0/.3, seed17 common
 randominitialrawuniform[-.1,.1] from frozen CorrectedMoE, paired init/orders/affine/
