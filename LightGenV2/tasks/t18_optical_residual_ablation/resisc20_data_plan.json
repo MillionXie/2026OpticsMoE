@@ -4,6 +4,7 @@
   "paper": "https://arxiv.org/abs/1703.00121",
   "license": "CC BY-NC 4.0 per author page; research dataset, archive not republished",
   "download_url": "https://hf.co/datasets/isaaccorley/resisc45/resolve/883edc0eee77b2c84225472f10f126e3ed83fa6e/NWPU-RESISC45.zip",
+  "alternate_download_url": "https://hf-mirror.com/datasets/isaaccorley/resisc45/resolve/883edc0eee77b2c84225472f10f126e3ed83fa6e/NWPU-RESISC45.zip",
   "archive_sha256": "beeecd0b63656290ae6d65cf7763185b0c1c4c54a753ef8088d6fba3faaf1f53",
   "checksum_provenance": "TorchGeo RESISC45 loader pinned mirror revision883edc0eee77b2c84225472f10f126e3ed83fa6e; not claimed as an author-published SHA",
   "selection_seed": 20261014,

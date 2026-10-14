@@ -29,6 +29,10 @@ The first server download failed on DNS before data creation; its original direc
 may use fresh public DNS answers for only the download hostnames in that one process,
 with unchanged HTTPS hostname/SNI/certificate validation and canonical archive SHA.
 No global DNS/library/env changes; no automatic re-entry into the failed preparation.
+That separate direct acquisition also failed on TLS connection reset before receiving
+archive bytes. Both failures remain. A reachable alternate hf-mirror transport may
+fetch the same pinned revision; identical canonical SHA is still mandatory. A new
+exclusive acquisition directory records its actual source, without retry loops.
 
 First bounded experiment exactly2fresh full-resolution L4rho0/.3, seed17 common
 randominitialrawuniform[-.1,.1] from frozen CorrectedMoE, paired init/orders/affine/
