@@ -19,6 +19,76 @@ Resident只表示输入驻GPU、不重复解码与H2D；每次仍调用原`forwa
 
 精度方面，**复测和诊断完成，不等于正式数值稳定化修复完成**。以下8视频输入SHA/重复前向/FP32探针证据支持低精度批计算是主要贡献，但未逐层定位全部算子，也未做558视频FP32正式评估。正式曲线仍按原BF16/FP16合同运行，因此保留真实batch差异。统一FP32或调整积累/attention执行方式需要新正式对照，并重新配套测SRCC、时延、能量和利用率；不能拿8视频探针分数替换558分数，更不能将B1分数复制到其他B来“修复”图。[PyTorch数值文档](https://docs.pytorch.org/docs/2.6/notes/numerical_accuracy.html)也明确说明，批计算与逐样本计算不保证逐位一致。
 
+## 2026-10-14进一步排查：差异已存在于质量头之前
+
+本轮新增的是**保存证据的CPU误差分解**，没有重跑骨干、重训、选模、修改正式精度或成本。
+使用同一8视频探针的原特征/logits、精确原head PT，将线性质量头在CPU FP64重算。
+设特征为F、五行权重为W，则batch引起的logits变化应为`(F_B−F_1)W^T`。
+比较此预测变化与保存的GPU logits变化，可以区分上游特征变化和质量头数值残差。
+CPU FP64仅用于误差分析，不是新的正式评估协议或替换分数。
+
+| 同一8视频，B4相对B1 | Qwen3-VL-2B | DeepSeek-VL2-Tiny |
+| --- | ---: | ---: |
+| 最终读出特征最大绝对差 | 2.750000 | 0.062500 |
+| 最终特征相对L2差 | 1.884409% | 1.270936% |
+| 保存的五路logits最大差 | 0.897963 | 0.162239 |
+| 由特征变化预测的logits最大差 | 0.897973 | 0.162234 |
+| 未被特征变化解释的logits变化最大残差 | 0.000040097 | 0.000021795 |
+| 保存logits经CPU FP64 softmax后的最大MOS差 | 3.395131 | 1.418310 |
+| 改变特征、固定head经CPU FP64重算的最大MOS差 | 3.395238 | 1.418287 |
+| CPU重投影与保存logits的MOS最大偏差（所有8视频） | 0.000448 | 0.000235 |
+| 固定特征仅改变CPU质量头batch分组的logits最大差 | 0 | 0 |
+
+**能支持的定位：**在这8个样本中，batch差异主要已经存在于末端质量头的输入特征；
+同一头权重即可近乎重现保存的评分差。质量头投影/softmax自身的读出舍入不是该数分MOS
+差异的主要来源，不能只把末端head改成更高精度就称解决。结合已有输入SHA、原精度重复
+前向、math-only及全骨干FP32探针，可支持低精度上游计算路径是主要贡献。
+DeepSeek的读出特征仍带原FP16量化，当前分析尚未分离其量化与此前BF16骨干各自贡献。
+**不能支持的定位：**尚不能指出误差最先出现于某个视觉block、某个语言block、attention、
+GEMM或MoE路由；FP32+math探针联合改变执行路径，不能直接指定某个算子为唯一原因。
+
+另独立复核保存的完整558视频预测：各batch样本顺序、标签和抽帧位置一致，
+SRCC由各自预测重新计算。下表是相对B1的严格视频对排序反转；共有155403对视频，
+预测相等的状态变化另计，本轮这些设置为0。不是训练随机性或不同batch用了不同标签。
+
+| 模型 | B | 最大MOS差（558视频） | 严格排序反转对数 | 最大预测名次变化 | SRCC |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen3-VL-2B | 1 | 0 | 0 | 0 | 0.7663428036522781 |
+| Qwen3-VL-2B | 2 | 3.311459 | 3315 | 52 | 0.7664148425389119 |
+| Qwen3-VL-2B | 4 | 3.971672 | 3454 | 61 | 0.7694958345192725 |
+| Qwen3-VL-2B | 8 | 3.971672 | 3461 | 61 | 0.7694089803486666 |
+| DeepSeek-VL2-Tiny | 1 | 0 | 0 | 0 | 0.5684669009566514 |
+| DeepSeek-VL2-Tiny | 2 | 2.147045 | 3739 | 75 | 0.5703507558300323 |
+| DeepSeek-VL2-Tiny | 4 | 2.559540 | 3638 | 73 | 0.5680463057503653 |
+| DeepSeek-VL2-Tiny | 8 | 1.639896 | 3524 | 61 | 0.5698244506371757 |
+
+Qwen B8最后一位与原汇总相差约1e−16，来自当前SciPy数值实现，保留原正式表值不替换。
+排序扰动会改变与真实MOS排序的相关性，既可能增加也可能减少SRCC；同一权重并不代表
+有限精度下逐位batch不变，更不存在“batch越大性能越好”的理论结论。
+
+**给论文作者/老师的解释：**
+
+The batch-dependent SRCC differences are reproducible numerical effects rather than changes
+in model weights or test-set identity. A CPU double-precision decomposition of the preserved
+eight-video probes shows that the differences are already present in the features supplied
+to the five-row quality head. Reprojecting those features with the identical trained head
+nearly reproduces the observed MOS differences, while the unexplained cross-batch logit
+residual is below 4.1×10⁻⁵ for Qwen and 2.2×10⁻⁵ for DeepSeek in the B4-versus-B1 probe.
+Across the full 558-video evaluation, 3,454 and 3,638 video pairs, respectively, reverse their
+predicted ordering at B4 relative to B1, explaining why SRCC is not exactly invariant.
+The existing FP32 probes substantially reduce these differences, supporting upstream
+low-precision computation as a major contributor. The first divergent internal operation
+has not yet been isolated; these diagnostic recomputations do not replace the formal
+BF16 results or their matched timing, energy and utilization measurements.
+
+分析入口`analyze_saved_batch_numerics`；本地与服务器30项CPU合同测试通过。
+原位证据：[Qwen分析](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_telemetry_a100_20261014/full_remeasurement02/diagnostic_saved_analysis_20261014_qwen/analysis.json)、
+[DeepSeek分析](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_telemetry_a100_20261014/full_remeasurement02/diagnostic_saved_analysis_20261014_deepseek/analysis.json)。
+每份记录保存原PT、原诊断JSON/12份特征PT/完整预测CSV及分析源码SHA；新增分析已逐SHA备份。
+逐层GPU前向尚未执行：本轮只读检查A100为250W、foreign PID260192、利用率100%，
+未抢卡或与之并发测量。后续须有空闲诊断窗口，在同一8视频/B1/2/4合同下比较视觉及语言
+各层输入/输出，记录实际执行后才能宣称定位首个分歧层。
+
 ## 两图含义与实验方法
 
 图a展示每16视频推理能量与时间质量SRCC的关系，图b展示相同工作量的推理时间与SRCC的关系。横轴分别为Energy per 16 videos (J)和Inference time per 16 videos (ms)，使用对数坐标；纵轴为无量纲Temporal quality SRCC，范围0–1。B为每次GPU调用的视频数，N为每幅光场的视频数。每一个电子点都有其batch自己的558个TEST预测和同轮成本，不复制统一分数。LightGen-II仅为N=16物理SRCC参考和部件成本估算点，不是本轮重测光路。
