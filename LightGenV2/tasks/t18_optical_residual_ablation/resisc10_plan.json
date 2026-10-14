@@ -65,7 +65,7 @@
   "test_evaluations": 0,
   "authorization": "Human explicitly requests continuing ten classes and selecting the strongest top10 from previous20 performance. Two fresh full-size L4 rho0/.3 arms, existing max120 or7200sec per arm, onlyGPU2/5; no A100, third candidate, retry, extension, or test.",
   "selection_source": "LightGenV2/tasks/t18_optical_residual_ablation/reports/resisc20_20261014/L4_input100_pair_final/class_support_recall.csv",
-  "selection_source_sha256": "b8498249bd1a6a5c36142bdd39d9c8834236a20f83fbfcafac89afee544e4960",
+  "selection_source_sha256": "82207360e23518b932fef7ad88610206bbc185eebe70506b984d92c211576671",
   "selection_source_commit": "7067973a6e9a727121303a6e9ca0256637607351",
   "selection_audit_sha256": "adf635d3f4c5876f43a4d2bf3aad15f1e4e953899fd5a07eeff600505ffb4b73",
   "selection_case": "L4_tile100_rho03",
