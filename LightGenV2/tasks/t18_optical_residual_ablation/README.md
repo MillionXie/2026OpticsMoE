@@ -1,3 +1,11 @@
+## 最新原十类已完成且准入通过 一次MixUp.2优化已真实启动 2026-10-15
+
+原160/e380两组120/119轮、firstminNLL均选E113：残差train83.50/val75.8571%，无残差train81.4286/val76.1429%。实际全部rc0退出，独占genuine science SHA c7c7af78dc0fc84d79dd0552dda6fc42c8f82c1e53e1bdbba9c243745b4ab5af、逐类/路由/预算门槛均passed，test0；4PDF真实作者/SHA传输/Poppler120dpi和全部四页实际view_image QA完成。80目标未达，不算原20验收。[完整保存结果与实际QA](reports/resisc10_20261015/L4_pair_final/README.md)。
+
+按最新人工授权立即新fresh纯光两rho优化，仅MixUp.6->.2作为拟合假设，其他10类/网络/划分/input100/训练设置保持，每组原120或7200秒、只GPU2/5各一。CPU/native和actualGPU2数值准入已真实一次passed，03:12:31启动CPU父767046/GPU2子768304/GPU5子768385；165冻结运行来源6c2309ba048f2fa12f13390ca6fbc62954dc2c74与current/original一致。A100禁止，test0，无第三候选/自动retry/延长旧run。[真实启动、证据假设和边界](reports/resisc10_optimize_20261015/start/README.md)。
+
+原160审核/图/marker已经完成不可重跑。新165自己全完成屏障后一次独占科学/四图实际QA；若所选残差仍<80才一次已授权490参数CPUhead概率融合光alpha.8。08:50统一汇报，03:30取消，09晨报保留；覆盖下文所有原十类在训、未审核/未图和03:30旧文字。当前新165尚未完成科学/最终成绩，167head未拟合。
+
 ## 最新人工目标80与九点前汇报 小电残差条件许可 2026-10-15
 
 165纯光优化专属保存图工具已独立准备，Linux真实CPU导入/编译及错run、缺真正优化科学审查时创建out前拒绝passed；模型/forward/images/test/GPU/图/PDFmarker0，当前160源及GPU PID集合保持，新优化尚未实际fit。[真实165图准入与未来四PDF](reports/resisc10_optimize_20261015/plot_preparation/README.md)。
