@@ -1,0 +1,63 @@
+{
+  "passed": true,
+  "pages": [
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\caltech_repair234_20261014\\capacity_final\\accuracy_macro_nll_curves.pdf",
+      "pdf_sha256": "c574c2d575a815052d0ca3887dcf4e98980f638dc41a2712f43f8c481ae61190",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_capacity_pdf_visual_20261014\\accuracy_macro_nll_curves.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "d126cf2d6753c84ae7cd49971621cc2c5309ba884c2df9c891c376f8b78702d1"
+    },
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\caltech_repair234_20261014\\capacity_final\\L4_rho03_phase_128_validation_cm.pdf",
+      "pdf_sha256": "5f08e698caaa5e5de6410cc4655a326e893891636eec821180cfa6b186c30621",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_capacity_pdf_visual_20261014\\L4_rho03_phase_128_validation_cm.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "f413427b3446fbec0ee5127727e974321315b75ae06e120b9727e62f0f9701d4"
+    },
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\caltech_repair234_20261014\\capacity_final\\L4_rho03_phase_64_validation_cm.pdf",
+      "pdf_sha256": "d6a5adda688eb78abd827f72a4cc3d483e12eabcdaa5cd2a3af3c629ca5ee9c6",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_capacity_pdf_visual_20261014\\L4_rho03_phase_64_validation_cm.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "e6c310d80f99ef8f436720ed3ab7345aa0afe2e4655c5cdf6289caba0f519197"
+    },
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\caltech_repair234_20261014\\capacity_final\\L4_rho03_phase_full_validation_cm.pdf",
+      "pdf_sha256": "88fd4ba0c99cd9aff6d0adc52706dfe9c7d12b9963353ecbc079f32571a2d9a1",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_capacity_pdf_visual_20261014\\L4_rho03_phase_full_validation_cm.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "80282946c937aa40fc49a6f13a5391cf05f102ebe14f476309dd04762515fbb6"
+    },
+    {
+      "pdf": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\LightGenV2\\tasks\\t18_optical_residual_ablation\\reports\\caltech_repair234_20261014\\capacity_final\\selected_class_recall.pdf",
+      "pdf_sha256": "8aaf78906b1dc51959f091f0e8d36076547601ee09984c32c5447e3cad33e838",
+      "rendered_image": "C:\\Users\\Xml12\\OneDrive\\2026OpticsMoE\\.codex_tmp\\t18_capacity_pdf_visual_20261014\\selected_class_recall.png",
+      "visual_inspection_pending": false,
+      "actual_view_image_inspected": true,
+      "passed": true,
+      "pages": 1,
+      "render_dpi": 120,
+      "rendered_image_sha256": "f62320ff823907b7a1a9c2a4d1134b2628dec82b658ebb43339b694f6ae7edf8"
+    }
+  ],
+  "reviewed_unix": 1791949307.897163,
+  "method": "Actual Poppler120dpi render + view_image inspection of all five final PDF pages; text, ticks, stars/diamonds, legends/colorbars and full class labels checked",
+  "no_layout_repair_required": true
+}

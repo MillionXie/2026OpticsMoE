@@ -1,0 +1,53 @@
+{
+  "time_unix": 1791949209.8270578,
+  "parent_pid": 3509387,
+  "completed": [
+    {
+      "case": "L4_rho03_phase_full",
+      "grid": "full",
+      "pid": 3509913,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "exit_code": 0
+    },
+    {
+      "case": "L4_rho03_phase_64",
+      "grid": "64",
+      "pid": 3510049,
+      "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb",
+      "exit_code": 0
+    },
+    {
+      "case": "L4_rho03_phase_128",
+      "grid": "128",
+      "pid": 3509980,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "exit_code": 0
+    }
+  ],
+  "active": 0,
+  "pending": 0,
+  "failures": [],
+  "all_this_study_processes_exited": true,
+  "remaining_project_gpu_slots": {
+    "jobs": [
+      {
+        "pid": 3579968,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3580043,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      }
+    ],
+    "counts": {
+      "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": 1,
+      "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": 0,
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55": 1
+    },
+    "total": 2,
+    "maximum": 6,
+    "per_card_maximum": 2
+  },
+  "training_source_commit": "cb7bfb3e2e34cb1fb03860b3db13649176b73c0f",
+  "test_evaluations": 0
+}

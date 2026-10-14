@@ -1,0 +1,17 @@
+{
+  "L4_rho03_phase_full": {
+    "previous10_mean_val_balanced_nll": 1.512436637596787,
+    "last10_mean_val_balanced_nll": 1.5014968068555183,
+    "improvement_percent": 0.7233248963508141
+  },
+  "L4_rho03_phase_128": {
+    "previous10_mean_val_balanced_nll": 1.8242939613799418,
+    "last10_mean_val_balanced_nll": 1.803237999812478,
+    "improvement_percent": 1.154197843835248
+  },
+  "L4_rho03_phase_64": {
+    "previous10_mean_val_balanced_nll": 2.0280796829078573,
+    "last10_mean_val_balanced_nll": 2.006385213312045,
+    "improvement_percent": 1.0697049913101573
+  }
+}

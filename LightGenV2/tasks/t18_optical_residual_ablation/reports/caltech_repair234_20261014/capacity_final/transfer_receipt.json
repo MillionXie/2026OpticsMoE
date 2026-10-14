@@ -1,0 +1,9 @@
+{
+  "zip_sha256": "2b955cf9b5bc7b779d967233e75aad44e47a00b8e91d179b1fff215bca98b82f",
+  "all_artifact_sha256_verified": true,
+  "evidence_files": {
+    "cpu_saved_audit.json": "282e5cf903709b375778cadbae354e8207def6c11ee7803d99cdcc5d84a99cb6",
+    "exit_receipt.json": "8202a3d2b59c40fad23b790a72d717951bad01cf29c4c193df9f4d99561be171"
+  },
+  "source_transferred": false
+}
