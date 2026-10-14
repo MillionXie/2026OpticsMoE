@@ -1,5 +1,33 @@
 # T06 视频质量评价
 
+## 2026-10-15：Qwen/DeepSeek batch根因定位（新授权）
+
+用户要求继续查清两模型差异：先不占GPU，A100空闲后再验证逐层误差和DeepSeek路由，
+及时报告，正式数据不改。新入口`run_batch_layer_diagnostics`/`diagnose_batch_layers`，
+唯一新run `runs/simulation/lgvq_batch_layers_a100_20261015`，源码发布`5e13ea536`。
+本地与服务器36项CPU合同检查通过；两模型CPU检查已实际complete，9份原位JSON/日志/
+命令按SHA备份本地，不是GPU逐层运行完成。
+
+同一原8 TEST视频、B1/2/4，输入图像/有效文本/抽帧SHA与旧诊断一致。
+Qwen各组全部446有效token、0 padding、读出index445；原生CPU `get_rope_index`的
+逐视频有效position SHA跨B一致，rope_delta均−364。DeepSeek全部1743有效token、
+0 padding、读出index1742；fresh无cache的位置arange按实际DeepseekV2Model源码推导
+一致，不冒称已观测实际GPU position tensor。此结论仅覆盖这8视频，不推广到全558。
+
+GPU阶段尚未启动：最近实际固定A100为250W，foreign PID429114占用约12.9GB/100%。
+不占位、抢卡或并发测试。空闲后只两个新进程串行，各最多600秒，原PT/receipt/
+manifest保持；仅同8视频/B1/2/4做观测边界全张量差和专家ID统计，CPU参考上限8GiB，
+磁盘只保存统计及小读出PT。原生预测必须与旧探针一致，否则停止、不作因果结论。
+Qwen受控对照只禁低精度GEMM归约；DeepSeek只在gate范围关闭autocast，通过hook管理
+上下文，不替换forward源码，不训练、不新增层，不把诊断写入正式指标或时延能耗图。
+首个观测分歧边界不等于已定位最早primitive，尚未宣称任何一个模型根因完全查清。
+
+监督`lgvq-qwen-deepseek-batch`每20分钟最多12次，等待/正常增量静默，重大发现、故障、
+完成或需要人工协调通知；到限如实交接并删除，不无限等待或复活Smol旧任务。
+GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次：
+`CUDA_VISIBLE_DEVICES=GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55 /DATA/DATA1/guest3/.venvs/lgvq-visual-baselines/bin/python -u -m LightGenV2.tasks.t06_video_quality_assessment.run_batch_layer_diagnostics --phase gpu --output LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_batch_layers_a100_20261015`。
+若已有GPU输出或失败，不盲重试覆盖；只Git同步源码、不接实验室。
+
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
 用户授权在固定A100上训练SmolVLM2-2.2B，再分别以B=1/4/8新进程冻结推理。

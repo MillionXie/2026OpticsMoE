@@ -4,6 +4,17 @@ Updated 15 October 2026 (CPU/source audit added; formal measurements unchanged).
 
 ## 2026-10-15：BatchNorm、模式切换和跨样本操作核查
 
+**新增实际CPU输入/位置检查（同一8视频/B1/2/4）：**新run
+`lgvq_batch_layers_a100_20261015`的两CPU子任务均complete，准备的图像/有效文本及抽帧
+指纹逐项匹配旧诊断。Qwen每条446有效token、0 padding、最后index445；调用原生
+`get_rope_index`得到的有效position SHA跨B完全一致，rope_delta均−364。
+DeepSeek每条1743有效token、0 padding、最后index1742；按实际DeepseekV2Model的fresh
+无cache源码推导的arange位置跨B一致，这项不是GPU位置tensor观测。
+这组探针的评分差不能解释为padding数量变化或选错最后token；未推广至全部558视频。
+同run CPU证据9文件已本地SHA备份，源码`5e13ea536`、36项CPU检查两端通过。
+后续只在固定A100空闲后做原生逐层/路由及有限数值控制对照，每模型600秒、只8视频，
+所有结果单独留为诊断。正式表格、预测、时延、能量、利用率与PT不替换。
+
 用户提出BatchNorm假设后，在**原服务器、原依赖环境、CUDA_VISIBLE_DEVICES=-1**下核查。
 Qwen/DeepSeek以原config构建meta结构，不加载骨干权重、不做前向；CLIP/YOLO原骨干只加载
 到CPU，不做前向。归一化/Dropout模块清单、实际原生类源码与SHA保存在同一canonical run。
