@@ -1,0 +1,22 @@
+{
+  "dataset": "NWPU_RESISC45_prespecified20_20261014",
+  "author_source": "https://gcheng-nwpu.github.io/#Datasets",
+  "paper": "https://arxiv.org/abs/1703.00121",
+  "license": "CC BY-NC 4.0 per author page; research dataset, archive not republished",
+  "download_url": "https://hf.co/datasets/isaaccorley/resisc45/resolve/883edc0eee77b2c84225472f10f126e3ed83fa6e/NWPU-RESISC45.zip",
+  "archive_sha256": "beeecd0b63656290ae6d65cf7763185b0c1c4c54a753ef8088d6fba3faaf1f53",
+  "checksum_provenance": "TorchGeo RESISC45 loader pinned mirror revision883edc0eee77b2c84225472f10f126e3ed83fa6e; not claimed as an author-published SHA",
+  "selection_seed": 20261014,
+  "split_seed": 20261014,
+  "classes": ["airport", "basketball_court", "bridge", "desert", "forest", "golf_course", "ground_track_field", "harbor", "intersection", "island", "lake", "meadow", "parking_lot", "railway", "railway_station", "roundabout", "tennis_court", "terrace", "thermal_power_station", "wetland"],
+  "selection_policy": "Exactly20 names from alphabetically sorted official45 with numpy default_rng(20261014).choice without replacement, then sorted; fixed before download/images/model scores. No validation or test category screening.",
+  "source_classes": 45,
+  "source_images_per_class": 700,
+  "original_rgb_shape": [256,256,3],
+  "cache_rgb_shape": [150,150,3],
+  "train_fraction_groups": 0.8,
+  "val_fraction_groups": 0.1,
+  "split_policy": "Exact original/cache pixel connected groups together; preserve all selected photos. Per class80/10/rest groups, no test inference or category reselection. Not a geographic-independent split.",
+  "out": "/DATA/DATA1/guest3/t18_resisc20_20261014",
+  "automatic_retry": false
+}
