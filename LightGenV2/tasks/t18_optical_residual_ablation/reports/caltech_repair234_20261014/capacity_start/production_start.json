@@ -1,0 +1,22 @@
+{
+  "pid": 3509387,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/caltech_capacity.py",
+    "--phase",
+    "queue",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_revised20_s17_mainL4rho03_phase_capacity150_gpu256_20261014"
+  ],
+  "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_revised20_s17_mainL4rho03_phase_capacity150_gpu256_20261014",
+  "source_commit": "cb7bfb3e2e34cb1fb03860b3db13649176b73c0f",
+  "source_count": 135,
+  "started_unix": 1791941350.8923728,
+  "gpu_indices": [
+    2,
+    5,
+    6
+  ],
+  "phase": "human_authorized_capacity_diagnostic_not_formal",
+  "test_evaluations": 0
+}

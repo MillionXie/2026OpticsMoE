@@ -1,0 +1,11 @@
+{
+  "files": {
+    "cpu_initial_native_checks.json": "a072ea1bf1b25bb52aca3c4d3d5ea0aace935b86aa946c85b1ff726e096f6522",
+    "gpu_numeric_checks.json": "a1c0a0902cb1fef6a43fca27bf771f56ae3e50ac942a59b16c824171db9c6638",
+    "production_start.json": "5320c863908b07edb2c23a3c4d56b1394a104f380fca48522b6b42265fcefec7"
+  },
+  "remote_head": "cb7bfb3e2e34cb1fb03860b3db13649176b73c0f",
+  "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_revised20_s17_mainL4rho03_phase_capacity150_gpu256_20261014",
+  "source_transfer": false,
+  "method": "Existing SSH helper JSON artifact content; SHA exact; no project source copy"
+}

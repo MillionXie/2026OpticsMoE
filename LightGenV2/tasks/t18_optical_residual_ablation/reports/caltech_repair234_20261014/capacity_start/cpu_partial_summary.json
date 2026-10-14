@@ -1,0 +1,44 @@
+{
+  "out": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech_revised20_s17_mainL4rho03_phase_capacity150_gpu256_20261014/cpu_partial_capacity_20261014",
+  "passed": true,
+  "checks": [
+    {
+      "grid": "full",
+      "snapshot_epoch": 9,
+      "snapshot_sha256": "0902e8407a1cfc8d710846cd7efad9cb8649851f9d47e3caa42ae739a730ad75",
+      "optimizer_steps_per_parameter": 702,
+      "scheduler_epoch": 9,
+      "all_11_phase_gradients_finite_nonzero": true,
+      "parameter_count": 908552,
+      "initial_tensor_sha256": "035b9affed9605f4108408c0c79434b46f1530854a90920950fef34ed146d52e",
+      "independent_order_affine_mixup_with_tail14": true
+    },
+    {
+      "grid": "128",
+      "snapshot_epoch": 9,
+      "snapshot_sha256": "0f8a78e617bc3faf17e03e55be3ece2eafcdc6e828bf0b5ccaad59173eb1865e",
+      "optimizer_steps_per_parameter": 702,
+      "scheduler_epoch": 9,
+      "all_11_phase_gradients_finite_nonzero": true,
+      "parameter_count": 214016,
+      "initial_tensor_sha256": "82baf5272455c2fcd2f95ae9689ac2e675741e7726d50c1760b9129d5f2722cb",
+      "independent_order_affine_mixup_with_tail14": true
+    },
+    {
+      "grid": "64",
+      "snapshot_epoch": 9,
+      "snapshot_sha256": "3cf32331a3f93d33291ace6589d15a63e2ae5cb3b469ab2edc6220d1600340c0",
+      "optimizer_steps_per_parameter": 702,
+      "scheduler_epoch": 9,
+      "all_11_phase_gradients_finite_nonzero": true,
+      "parameter_count": 91136,
+      "initial_tensor_sha256": "1966a39aac62e60432602c5468ff4fb1fd58c844afbd287ff8e91ccc9d344ebb",
+      "independent_order_affine_mixup_with_tail14": true
+    }
+  ],
+  "model_constructed": 0,
+  "model_forward_calls": 0,
+  "test_evaluations": 0,
+  "scope": "Midrun saved CPU byte snapshots, not complete audit or selection",
+  "automatic_retry": false
+}
