@@ -1,0 +1,17 @@
+case,check,passed
+L4_15_rho03,val_accuracy,False
+L4_15_rho03,val_macro,False
+L4_15_rho03,no_zero_train_val,True
+L4_15_rho03,val_each_recall,False
+L4_15_rho03,no_persistent_zero,True
+L4_15_rho03,gap,True
+L4_15_rho03,routing_all_slots,True
+L4_15_rho03,routing_input_dependent,True
+L4_15_rho0,val_accuracy,False
+L4_15_rho0,val_macro,False
+L4_15_rho0,no_zero_train_val,True
+L4_15_rho0,val_each_recall,False
+L4_15_rho0,no_persistent_zero,True
+L4_15_rho0,gap,True
+L4_15_rho0,routing_all_slots,True
+L4_15_rho0,routing_input_dependent,True

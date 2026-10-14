@@ -1,4 +1,12 @@
-## 最新人工要求选十五类 完整两卡训练已经启动 2026-10-14
+## 最新十五类配对已结束 验证准入未通过 2026-10-14
+
+残差组120轮选E120 train61.7052%/val51.4776%/macro51.4465%；无残差78轮选E78 train53.3341%/val47.3785%/macro47.3485%。分别轮数上限和时间预算先到，父146495/两子147208、147277实际rc0退出，本项目GPU全部释放，A100仍禁止。
+真正新保存科学CPU审核passed（SHAeb6d1bf0f77ed131b270aaf193b6bd5557fc6ee10d9ccd8f591c06d4ad12016e），独占claim/completedreceipt齐全；159原4574来源保持。两组仍failval65/macro60/each20，test0，无eligible，不启动native/depth2或3/正式六组/test或扩预算。
+不同卡速度使实际120/78轮不同，最终差不是纯残差因果；共同E78 val48.62%/47.38%仅single-seed描述。十五类是明确改动后的任务，不能冒称原20类目标成功。
+四PDF/PNG/SVG/聚合CSV真实生成，Poppler120dpi逐页渲染及全部四页view_image视检passed，所有旧data/PT/source/run/history/failure/claims/marker保留。按人工约定22:30统一汇报，持续monitor/09晨报仍ACTIVE。
+[全部实际结果、门槛、预算和图表](reports/resisc15_20261014/L4_pair_final/README.md)。
+
+## 十五类人工要求与历史真实启动 2026-10-14
 
 用户明确要求选15类继续尝试，已固定随机seed20261014选15类、保留原划分。train8398/val1049、macro16/micro8/525updates每轮尾14，原908552相位和expert224/global478不变，只15个原坐标固定检测窗口。
 159源码闭包冻结4574b3e84，CPU/native及actualGPU2数值检查与GPU2/5两生产门槛均passed、概率/capture0、gradrelative<6.65e-7、all11finite非零。父146495、两子147208/147277实际健康，A100项目0，仅两卡各1；PID只历史以实际proc核。

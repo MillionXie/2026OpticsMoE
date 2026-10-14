@@ -1,0 +1,16 @@
+class_true,support,airport,basketball_court,forest,golf_course,ground_track_field,harbor,intersection,island,lake,meadow,parking_lot,railway,railway_station,roundabout,thermal_power_station
+airport,69,13,1,4,3,6,2,4,0,0,2,1,4,9,11,9
+basketball_court,70,2,15,2,7,11,4,10,0,1,0,3,1,0,12,2
+forest,70,0,0,54,7,4,0,0,0,2,2,0,1,0,0,0
+golf_course,70,0,3,26,19,13,1,1,0,1,3,0,1,0,2,0
+ground_track_field,70,0,3,3,6,43,6,1,0,0,1,1,0,1,3,2
+harbor,70,0,0,0,1,2,59,0,0,3,0,0,0,0,2,3
+intersection,70,0,5,1,4,1,4,44,0,0,0,2,0,1,4,4
+island,70,0,0,1,1,1,3,0,59,5,0,0,0,0,0,0
+lake,70,1,1,2,2,0,1,0,0,59,1,1,0,0,0,2
+meadow,70,0,0,5,2,1,0,0,0,0,61,0,0,0,1,0
+parking_lot,70,3,5,0,0,2,13,12,0,0,0,17,7,2,4,5
+railway,70,7,6,1,1,12,3,5,1,0,0,3,17,3,2,9
+railway_station,70,8,4,0,2,7,2,4,0,0,0,3,3,22,4,11
+roundabout,70,1,5,1,0,6,5,18,0,0,0,3,4,1,25,1
+thermal_power_station,70,3,0,1,1,2,16,2,2,0,0,2,2,5,1,33
