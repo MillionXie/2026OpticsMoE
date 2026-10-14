@@ -61,8 +61,10 @@ def load_cpu_structure(args):
         config=AutoConfig.from_pretrained(str(args.model),local_files_only=True,trust_remote_code=True)
         with init_empty_weights():
             model=AutoModelForCausalLM.from_config(config,trust_remote_code=True)
-        from deepseek_vl2.models.modeling_deepseek import MoEGate,DeepseekV2MoE,DeepseekV2RMSNorm,DeepseekV2Attention
-        sources=[source_record(c) for c in (MoEGate,DeepseekV2MoE,DeepseekV2RMSNorm,DeepseekV2Attention)]
+        from deepseek_vl2.models.modeling_deepseek import MoEGate,DeepseekV2MoE,DeepseekV2RMSNorm
+        actual_attention={m.__class__ for m in model.modules() if "Attention" in m.__class__.__name__}
+        sources=[source_record(c) for c in (MoEGate,DeepseekV2MoE,DeepseekV2RMSNorm)]
+        sources.extend(source_record(c) for c in sorted(actual_attention,key=lambda c:c.__name__))
         sources.append(source_record(model.prepare_inputs_embeds))
         return model,"meta architecture only, no pretrained weight load",sources
     if args.baseline=="clip":
@@ -101,6 +103,14 @@ def run(args):
         result["moe_config"]=[dict(top_k=g.top_k,experts=g.n_routed_experts,
             scoring_func=g.scoring_func,topk_method=g.topk_method,seq_aux=g.seq_aux,
             auxiliary_loss_alpha=g.alpha,training=g.training) for g in gates]
+        # A synthetic CPU illustration only; it is NOT deployed CUDA gate evidence.
+        values=torch.arange(24,dtype=torch.float32).reshape(4,6)/24
+        weight=torch.arange(18,dtype=torch.float32).reshape(3,6)/18
+        with torch.autocast("cpu",dtype=torch.bfloat16):
+            example=torch.nn.functional.linear(values.float(),weight.float())
+        result["autocast_caution"]=dict(scope="synthetic CPU dtype illustration, no trained weights",
+            input_dtype=str(values.dtype),weight_dtype=str(weight.dtype),linear_output_dtype=str(example.dtype),
+            note="Explicit .float() does not disable autocast on eligible linear operations; deployed CUDA gate dtype/route changes still require a live hook")
     args.output.mkdir(parents=True,exist_ok=False)
     frozen.write_json(args.output/"audit.json",result)
     summary={k:result["architecture"][k] for k in ("module_counts","batchnorm_count","training_modules")}
