@@ -1,0 +1,197 @@
+{
+  "dataset": "NWPU_RESISC45_validation_top10_of_fixed20_20261015",
+  "selection_seed": null,
+  "selection_rule": "Descending saved validation class recall of selected EMA L4_tile100_rho03 in original20 input100 study; class name ascending tie break. Human explicitly requests top10 performance; no test access.",
+  "parent_classes": [
+    "airport",
+    "basketball_court",
+    "bridge",
+    "desert",
+    "forest",
+    "golf_course",
+    "ground_track_field",
+    "harbor",
+    "intersection",
+    "island",
+    "lake",
+    "meadow",
+    "parking_lot",
+    "railway",
+    "railway_station",
+    "roundabout",
+    "tennis_court",
+    "terrace",
+    "thermal_power_station",
+    "wetland"
+  ],
+  "classes": [
+    "bridge",
+    "desert",
+    "harbor",
+    "intersection",
+    "island",
+    "lake",
+    "meadow",
+    "tennis_court",
+    "thermal_power_station",
+    "wetland"
+  ],
+  "original_indices": [
+    2,
+    3,
+    7,
+    8,
+    9,
+    10,
+    11,
+    16,
+    18,
+    19
+  ],
+  "parent_data": "/DATA/DATA1/guest3/t18_resisc20_grouped_20261014/resisc20_fixed_split.npz",
+  "parent_cache_sha256": "652912ee341b51dfce1a5dfc9a2b7618d6d1869bb16a8a38d1f21b7e82447431",
+  "parent_manifest_sha256": "895587ea2c3c2d953bfa012eb958a51696df99b072daeb70bf403c2a4567a82b",
+  "out": "/DATA/DATA1/guest3/t18_resisc10_subset_20261015",
+  "input_tile": 100,
+  "maximum_epochs": 120,
+  "maximum_seconds": 7200,
+  "gpus": [
+    2,
+    5
+  ],
+  "maximum_gpu_children": 2,
+  "maximum_gpu_children_per_card": 1,
+  "automatic_retry": false,
+  "test_evaluations": 0,
+  "authorization": "Human explicitly requests continuing ten classes and selecting the strongest top10 from previous20 performance. Two fresh full-size L4 rho0/.3 arms, existing max120 or7200sec per arm, onlyGPU2/5; no A100, third candidate, retry, extension, or test.",
+  "selection_source": "LightGenV2/tasks/t18_optical_residual_ablation/reports/resisc20_20261014/L4_input100_pair_final/class_support_recall.csv",
+  "selection_source_sha256": "b8498249bd1a6a5c36142bdd39d9c8834236a20f83fbfcafac89afee544e4960",
+  "selection_source_commit": "7067973a6e9a727121303a6e9ca0256637607351",
+  "selection_audit_sha256": "adf635d3f4c5876f43a4d2bf3aad15f1e4e953899fd5a07eeff600505ffb4b73",
+  "selection_case": "L4_tile100_rho03",
+  "selection_epoch": 111,
+  "selection_ranking": [
+    {
+      "rank": 1,
+      "class_name": "meadow",
+      "val_recall": 0.9,
+      "val_support": 70
+    },
+    {
+      "rank": 2,
+      "class_name": "desert",
+      "val_recall": 0.8857142857142857,
+      "val_support": 70
+    },
+    {
+      "rank": 3,
+      "class_name": "island",
+      "val_recall": 0.8571428571428571,
+      "val_support": 70
+    },
+    {
+      "rank": 4,
+      "class_name": "lake",
+      "val_recall": 0.8142857142857143,
+      "val_support": 70
+    },
+    {
+      "rank": 5,
+      "class_name": "bridge",
+      "val_recall": 0.6857142857142857,
+      "val_support": 70
+    },
+    {
+      "rank": 6,
+      "class_name": "harbor",
+      "val_recall": 0.6857142857142857,
+      "val_support": 70
+    },
+    {
+      "rank": 7,
+      "class_name": "intersection",
+      "val_recall": 0.6428571428571429,
+      "val_support": 70
+    },
+    {
+      "rank": 8,
+      "class_name": "tennis_court",
+      "val_recall": 0.5285714285714286,
+      "val_support": 70
+    },
+    {
+      "rank": 9,
+      "class_name": "wetland",
+      "val_recall": 0.4857142857142857,
+      "val_support": 70
+    },
+    {
+      "rank": 10,
+      "class_name": "thermal_power_station",
+      "val_recall": 0.45714285714285713,
+      "val_support": 70
+    },
+    {
+      "rank": 11,
+      "class_name": "terrace",
+      "val_recall": 0.44285714285714284,
+      "val_support": 70
+    },
+    {
+      "rank": 12,
+      "class_name": "forest",
+      "val_recall": 0.42857142857142855,
+      "val_support": 70
+    },
+    {
+      "rank": 13,
+      "class_name": "railway_station",
+      "val_recall": 0.4142857142857143,
+      "val_support": 70
+    },
+    {
+      "rank": 14,
+      "class_name": "ground_track_field",
+      "val_recall": 0.32857142857142857,
+      "val_support": 70
+    },
+    {
+      "rank": 15,
+      "class_name": "golf_course",
+      "val_recall": 0.3,
+      "val_support": 70
+    },
+    {
+      "rank": 16,
+      "class_name": "parking_lot",
+      "val_recall": 0.2857142857142857,
+      "val_support": 70
+    },
+    {
+      "rank": 17,
+      "class_name": "railway",
+      "val_recall": 0.21428571428571427,
+      "val_support": 70
+    },
+    {
+      "rank": 18,
+      "class_name": "roundabout",
+      "val_recall": 0.21428571428571427,
+      "val_support": 70
+    },
+    {
+      "rank": 19,
+      "class_name": "airport",
+      "val_recall": 0.17391304347826086,
+      "val_support": 69
+    },
+    {
+      "rank": 20,
+      "class_name": "basketball_court",
+      "val_recall": 0.17142857142857143,
+      "val_support": 70
+    }
+  ],
+  "validation_informed_class_selection": true,
+  "scope": "Development subset selected using previous validation performance, not untouched original20 validation or original20 target success"
+}
