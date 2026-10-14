@@ -1,0 +1,26 @@
+{
+  "pid": 3804063,
+  "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/resisc20_continue120.py",
+    "--phase",
+    "queue",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014"
+  ],
+  "started_unix": 1791959330.3803277,
+  "source_commit": "bbdaf0a852aaf9001b0c82d74dcdd592ea9865ad",
+  "source_count": 144,
+  "parent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_microbatch_continue30_gpu256_20261014",
+  "parent_audit_sha256": "e66aa40f2868de4fdf6b13a2c8ffa5df40c693920c7af7e1b2f77ed3e0ab5a83",
+  "maximum_total_epochs": 120,
+  "additional_fit_seconds_per_arm": 7200,
+  "optimizer_ema_scheduler_reset": false,
+  "microbatch": 8,
+  "effective_batch": 16,
+  "train_samples": 11198,
+  "steps_per_epoch": 700,
+  "user_authorization": "Human explicitly approved continuing same two full-size models to at most120 in response to proposal of two additional hours per arm",
+  "test_evaluations": 0
+}

@@ -1,3 +1,12 @@
+## 人工批准RESISC继续至120轮，完整网络已实际接续（2026-10-14）
+
+原30轮已审核完成后，用户明确批准两组继续至总计最多120轮，每组新增最多2小时，先预算/既有early-stop到即停。
+新144文件入口来源bbdaf0a85，CPU父3804063、GPU6 rho.3子3804643/GPU2 rho0子3804652实际启动；恢复原E30 raw/EMA/Adam/scheduler，无重置/重播。
+两生产20类+尾14数值检查passed，首完整E31实测rho0 val36.74%/56.99秒、rho.3 val40.67%/61.23秒；尚未选最终权重或达精度门槛。
+全11198train/1399val、原908552网络、micro8/macro16/700steps及数据/光图/门槛不变；旧141/136及完成报告全保留，test0。
+[真实启动、恢复、预算与首轮收据](continue120_start/README.md)。
+后续需实际全部退出后新有界接续CPU审核；无合格不强行2/3/native/正式六组，不无限追加。
+
 ## Latest completed result
 
 Both original-resolutionL4rhofits completed30 andactualexit aftervalidatedspeed

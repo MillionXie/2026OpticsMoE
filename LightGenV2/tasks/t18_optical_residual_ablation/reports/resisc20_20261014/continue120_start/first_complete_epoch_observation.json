@@ -1,0 +1,49 @@
+{
+  "time_unix": 1791959453.9115014,
+  "source_commit": "bbdaf0a852aaf9001b0c82d74dcdd592ea9865ad",
+  "source_count": 144,
+  "current_original_source_match": true,
+  "active": 2,
+  "failures": [],
+  "test_evaluations": 0,
+  "jobs": [
+    {
+      "case": "L4_rho03",
+      "pid": 3804643,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "status": {
+        "state": "training",
+        "depth": 4,
+        "rho": 0.3,
+        "epoch": 31,
+        "val_accuracy": 0.40671908506075766,
+        "val_macro_recall": 0.4064803312629399,
+        "val_balanced_nll": 1.9989829617145518,
+        "epoch_seconds": 61.23284277319908,
+        "test_evaluations": 0
+      },
+      "gate_passed": true,
+      "restored_epoch": 30,
+      "first_new_epoch": 31
+    },
+    {
+      "case": "L4_rho0",
+      "pid": 3804652,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "status": {
+        "state": "training",
+        "depth": 4,
+        "rho": 0.0,
+        "epoch": 31,
+        "val_accuracy": 0.3674052894924946,
+        "val_macro_recall": 0.3671946169772256,
+        "val_balanced_nll": 2.1107648355963087,
+        "epoch_seconds": 56.988145902752876,
+        "test_evaluations": 0
+      },
+      "gate_passed": true,
+      "restored_epoch": 30,
+      "first_new_epoch": 31
+    }
+  ]
+}

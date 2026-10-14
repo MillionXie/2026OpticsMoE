@@ -1,0 +1,44 @@
+{
+  "passed": true,
+  "files": [
+    {
+      "name": "cpu_admission_checks.json",
+      "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/resisc20_continue120_cpu_admission_20261014/checks.json",
+      "sha256": "61b99f0abeb457a6d5202fbb5cb171098db1505a4fd055e3d91dda96464e7aea",
+      "bytes": 24700
+    },
+    {
+      "name": "production_start.json",
+      "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014.production_start.json",
+      "sha256": "1d7606ca44492d3d4859e7bbd92ecef1c3825e7ea8368364a8bef38c836edc20",
+      "bytes": 1403
+    },
+    {
+      "name": "L4_rho0_production_gate.json",
+      "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014/L4_rho0/smoke.json",
+      "sha256": "41dc67226a187718331f0ff974ec0d1d7be21595bee2be28ba62ab44f7f71ec0",
+      "bytes": 1319
+    },
+    {
+      "name": "L4_rho0_resume_receipt.json",
+      "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014/L4_rho0/resume_receipt.json",
+      "sha256": "29fc5b0b3c843f9d2a1b84527673d3e599e8401c7e998da22d17093e5e51cb33",
+      "bytes": 1049
+    },
+    {
+      "name": "L4_rho03_production_gate.json",
+      "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014/L4_rho03/smoke.json",
+      "sha256": "09999ccbb38ca19f74100b7235417286dde18238dc6a34c1be0ddb7520a150b0",
+      "bytes": 1316
+    },
+    {
+      "name": "L4_rho03_resume_receipt.json",
+      "remote_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_continue120_micro8_gpu256_20261014/L4_rho03/resume_receipt.json",
+      "sha256": "05a0baeb781c0e163d8c91e7df700d9acd0ee76cf35cd540a64f91d7db7bab52",
+      "bytes": 1049
+    }
+  ],
+  "source_transfer": false,
+  "weights_transfer": false,
+  "time_unix": 1791959431.2864413
+}

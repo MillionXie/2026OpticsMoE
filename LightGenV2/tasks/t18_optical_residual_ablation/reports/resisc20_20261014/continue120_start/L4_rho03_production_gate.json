@@ -1,0 +1,43 @@
+{
+  "passed": true,
+  "depth": 4,
+  "rho": 0.3,
+  "micro": 8,
+  "classes_checked": 20,
+  "tail_checked": 14,
+  "checks": [
+    {
+      "passed": true,
+      "probability_max_error": 0.0,
+      "capture_max_error": 0.0,
+      "gradient_max_relative_l2": 6.869491357974766e-07,
+      "gradient_min_cosine": 0.9999999999997642,
+      "all11phase_gradients_finite_nonzero": true
+    },
+    {
+      "passed": true,
+      "probability_max_error": 0.0,
+      "capture_max_error": 0.0,
+      "gradient_max_relative_l2": 3.744234220448561e-07,
+      "gradient_min_cosine": 0.9999999999999318,
+      "all11phase_gradients_finite_nonzero": true
+    }
+  ],
+  "all_phase_gradients_finite_nonzero": true,
+  "phase_gradients": {
+    "raw_router": 0.026253925636410713,
+    "phase_sets.0": 0.1373898983001709,
+    "phase_sets.1": 0.08505544811487198,
+    "phase_sets.2": 0.1453462392091751,
+    "phase_sets.3": 0.05782167986035347,
+    "phase_sets.4": 0.14701424539089203,
+    "phase_sets.5": 0.07079474627971649,
+    "phase_sets.6": 0.023460853844881058,
+    "phase_sets.7": 0.011294940486550331,
+    "phase_sets.8": 0.010384074412286282,
+    "phase_sets.9": 0.02794540487229824
+  },
+  "initial_parameter_sha256": "2108b74a5e15cc36e8c48eea50a77622ed8aeaa9c43c072ec6687e4eda808656",
+  "parameters": 908552,
+  "test_evaluations": 0
+}
