@@ -26,6 +26,9 @@ DNS暂失败，允许公开镜像下载，但配置/tokenizer用官方Git blob S
 运行目录仅`runs/simulation/lgvq_smolvlm2_temporal_a100_20261014`。唯一物理卡
 `GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`，要求A100/250W及无foreign compute PID；
 不抢卡、占空计算、杀人或改功率。suite自动下载→冻结特征→末端训练→B1/4/8各完整558。
+2026-10-14启动前出现他人A100进程，守卫拒绝GPU启动，没有训练或正式结果。
+CPU下载不占GPU；suite对foreign PID仅CPU等待，最多从suite开始3小时，超过即失败退出，
+不扩大预算或建立显存占位。GPU阶段中出现foreign PID继续失败保护，不盲重启。
 成本首200视频并保留200/558处尾批，无warmup，起点原生视觉Transformer block0输入，
 终点GPU MOS同步。保留末token完整native词表投影，与Qwen计时边界一致。
 T16=前200视频推理墙钟之和×16/200；E16=(338.2W主机代理+同轮active A100 W)×T16/1000。

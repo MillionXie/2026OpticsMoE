@@ -464,6 +464,7 @@ def run_evaluation(args, config, identity):
 def suite(args, config):
     import fcntl
     source = sources()
+    wait_deadline = time.monotonic() + 3 * 3600
     state = {"status": "running", "phase": "prepare", "completed": [], "pid": os.getpid(),
              "source_sha256": source, "contract": config}
     with (TASK / "runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
@@ -473,7 +474,24 @@ def suite(args, config):
                 if sources() != source:
                     raise RuntimeError("Source changed during suite")
                 if phase != "prepare":
-                    guard()
+                    while True:
+                        try:
+                            guard()
+                            break
+                        except RuntimeError as error:
+                            if "occupied by other compute processes" not in str(error):
+                                raise
+                            if time.monotonic() >= wait_deadline:
+                                raise RuntimeError("A100 wait exceeded three-hour bound; no GPU context created") from error
+                            state.update(status="waiting_for_idle_a100", waiting_error=str(error),
+                                         wait_deadline_unix=time.time()+wait_deadline-time.monotonic(),
+                                         updated_at_unix=time.time())
+                            frozen.write_json(args.output / "suite_status.json", state)
+                            print(f"[waiting] A100 occupied; CPU-only bounded wait: {error}", flush=True)
+                            time.sleep(30)
+                            if sources() != source:
+                                raise RuntimeError("Source changed while waiting")
+                    state["status"] = "running"
                 name = phase if batch is None else f"batch{batch:02d}"
                 state["phase"] = name
                 frozen.write_json(args.output / "suite_status.json", state)

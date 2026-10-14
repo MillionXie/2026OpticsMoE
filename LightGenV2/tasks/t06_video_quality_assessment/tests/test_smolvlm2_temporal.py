@@ -62,6 +62,9 @@ def test_prompt_matches_qwen_source():
 
 
 def test_only_five_rows_can_update():
+    import sys
+    if sys.platform == "win32":
+        pytest.skip("Run Torch gradient isolation on server; local Torch DLL is unavailable")
     try:
         import torch
     except (ImportError, OSError):
