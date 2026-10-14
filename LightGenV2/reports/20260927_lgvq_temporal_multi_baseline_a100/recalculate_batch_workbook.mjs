@@ -32,6 +32,113 @@ if(process.argv.includes('--inspect-only')) {
  process.exit(0);
 }
 const data=JSON.parse(await fs.readFile(out+'/recalculation.json','utf8'));
+if(process.argv.includes('--paired-telemetry') || process.argv.includes('--verify-paired')) {
+ const summary=wb.worksheets.getItem('Summary'), build=wb.worksheets.getItem('Batch results'), sources=wb.worksheets.getItem('Sources');
+ const check=()=>{
+  const vals=summary.getRange('A6:P25').values;
+  for(let i=0;i<data.plot_data.length;i++) {
+   const p=data.plot_data[i], v=vals[i];
+   for(const [c,key] of [[2,'measured_full558_srcc'],[3,'time_16_videos_ms'],[4,'energy_16_videos_j']])
+    if(Math.abs(v[c]-p[key])>1e-9) throw Error(`Exported paired mismatch ${i}/${key}`);
+   if(v[0]!==p.model) throw Error('Model order mismatch');
+   if(i>0) {
+    const r=data.paired_rows[i-1];
+    for(const [c,key] of [[10,'gpu_util_mean_percent'],[11,'memory_peak_mib'],[12,'sustained_time_16_videos_ms'],[13,'sustained_energy_16_videos_j'],[14,'sustained_gpu_util_mean_percent'],[15,'sustained_memory_peak_mib']])
+     if(Math.abs(v[c]-r[key])>1e-8) throw Error(`Paired telemetry mismatch ${i}/${key}`);
+   }
+  }
+  const anchor=summary.getRange('C30:E30').values[0];
+  if(Math.abs(anchor[0]-.7663428036522781)>1e-12||Math.abs(anchor[1]-1188.3861464262009)>1e-9||Math.abs(anchor[2]-462.1134010767563)>1e-9) throw Error('Historical anchor changed');
+ };
+ if(process.argv.includes('--verify-paired')) {
+  check();
+  console.log('Reimport verified20 plot points,19 paired load regimes and historical Qwen anchor.');
+  console.log((await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30}})).ndjson);
+  process.exit(0);
+ }
+ // Extend the existing three-sheet report. Old pre-refresh workbook is archived.
+ for(const [sheet,ranges] of [[summary,['A25:J25','A26:J32']],[build,['A21:J21','A22:J30']],[sources,['A28:B28','A29:B42']]])
+  for(const range of ranges) sheet.getRange(range).unmerge();
+ summary.getRange('A25:J32').clear({applyTo:'contents'});
+ build.getRange('A21:J30').clear({applyTo:'contents'});
+ sources.getRange('A28:B42').clear({applyTo:'contents'});
+ for(let r=19;r<=21;r++) build.getRange(`A${r}:Z${r}`).copyFrom(build.getRange('A3:Z3'),'all');
+ for(let r=23;r<=25;r++) summary.getRange(`A${r}:J${r}`).copyFrom(summary.getRange('A7:J7'),'all');
+ build.getRange('AA1:AN1').copyFrom(build.getRange('A1:N1'),'all');
+ build.getRange('AA1:AN1').values=[['Cost wall sum (ms)','Interleaved mean util (%)','Interleaved peak util (%)','Interleaved mean VRAM (MiB)','Interleaved peak VRAM (MiB)','Active telemetry samples','Resident time/16 (ms)','Resident energy/16 (J)','Resident mean board power (W)','Resident mean util (%)','Resident peak util (%)','Resident peak VRAM (MiB)','Resident calls','Resident duration (s)']];
+ build.getRange('AA1:AN21').format.columnWidth=23;
+ build.getRange('AA1:AN1').format.wrapText=true;
+ build.getRange('A1:AN1').format.rowHeight=55;
+ build.getRange('K1').values=[['Component reference flag']];
+ build.getRange('J1').values=[['16/B throughput-equivalent calls']];
+ build.getRange('A2:AN2').values=[['LightGen-II',16,data.ours.physical_reference_srcc,'n.a.','n.a.',null,null,null,null,1,1,data.ours.time_16_videos_ms,data.ours.energy_16_videos_j,null,null,null,null,null,null,data.ours.source,'n.a.','n.a.','Physical reference and component-cost estimate','FP32 electronics',null,data.ours.simulation_reference_srcc,...Array(14).fill('n.a.')]];
+ build.getRange('O2:S2').formulas=[['=L2','=M2','=16/P2','=1','=1']];
+ build.getRange('Y2').formulas=[['=P2/16']];
+ for(let i=0;i<data.paired_rows.length;i++) {
+  const t=data.paired_rows[i], r=i+3;
+  build.getRange(`A${r}:M${r}`).values=[[t.model,t.batch_size,data.metrics[i].historical_reference_srcc,200,t.cost_calls,t.wall_mean_ms,t.wall_p95_ms,t.board_mean_w,338.2,null,0,null,null]];
+  build.getRange(`J${r}`).formulas=[[`=16/B${r}`]];
+  build.getRange(`N${r}:S${r}`).formulas=[[`=H${r}+I${r}`,`=AA${r}*16/D${r}`,`=N${r}*O${r}/1000`,`=16/P${r}`,`=O${r}/$O$2`,`=P${r}/$P$2`]];
+  build.getRange(`T${r}:Z${r}`).values=[[t.source,t.srcc,t.first200_srcc,t.checkpoint_origin,t.inference_precision,null,null]];
+  build.getRange(`Y${r}`).formulas=[[`=P${r}/16`]];
+  build.getRange(`AA${r}:AN${r}`).values=[[t.cost_wall_sum_ms,t.gpu_util_mean_percent,t.gpu_util_peak_percent,t.memory_mean_mib,t.memory_peak_mib,t.active_samples,t.sustained_time_16_videos_ms,t.sustained_energy_16_videos_j,t.sustained_board_mean_w,t.sustained_gpu_util_mean_percent,t.sustained_gpu_util_peak_percent,t.sustained_memory_peak_mib,t.sustained_calls,t.sustained_duration_s]];
+ }
+ build.getRange('AA2:AN21').setNumberFormat('0.000');
+ build.getRange('U2:V21').setNumberFormat('0.000000');
+ build.getRange('Y2:Z21').setNumberFormat('0.000000');
+ summary.getRange('A2').values=[['LGVQ temporal quality and matched A100 inference costs']];
+ summary.getRange('A3').values=[['14 October 2026 full02. Interleaved costs and resident-load costs have separate matched telemetry.']];
+ summary.getRange('K5:P5').copyFrom(summary.getRange('C5:H5'),'all');
+ summary.getRange('K5:P5').values=[['Interleaved mean util (%)','Interleaved peak VRAM (MiB)','Resident time/16 (ms)','Resident energy/16 (J)','Resident mean util (%)','Resident peak VRAM (MiB)']];
+ summary.getRange('K5:P25').format.columnWidth=23;
+ summary.getRange('K5:P5').format.wrapText=true;
+ summary.getRange('A5:P5').format.rowHeight=52;
+ for(let i=0;i<20;i++) {
+  const r=i+6,b=i+2;
+  summary.getRange(`A${r}:J${r}`).formulas=[[`='Batch results'!A${b}`,i===0?'="N = 16"':`='Batch results'!B${b}`,i===0?`='Batch results'!C${b}`:`='Batch results'!U${b}`,`='Batch results'!O${b}`,`='Batch results'!P${b}`,`='Batch results'!Q${b}`,`='Batch results'!R${b}`,`='Batch results'!S${b}`,`='Batch results'!C${b}`,`='Batch results'!V${b}`]];
+  summary.getRange(`K${r}:P${r}`).formulas=[[`='Batch results'!AB${b}`,`='Batch results'!AE${b}`,`='Batch results'!AG${b}`,`='Batch results'!AH${b}`,`='Batch results'!AJ${b}`,`='Batch results'!AL${b}`]];
+ }
+ summary.getRange('C6:C25').setNumberFormat('0.000000');
+ summary.getRange('I6:J25').setNumberFormat('0.000000');
+ summary.getRange('K6:P25').setNumberFormat('0.000');
+ summary.getRange('A28').values=[['Historical total-table anchor, excluded from new paired curves']];
+ summary.getRange('A29:H29').copyFrom(summary.getRange('A5:H5'),'all');
+ summary.getRange('A30:H30').values=[['Qwen3-VL-2B',1,.7663428036522781,1188.3861464262009,462.1134010767563,null,null,null]];
+ summary.getRange('J30').values=[['GPU utilization not recorded in historical round']];
+ sources.getRange('A15:B26').values=[
+  ['Refresh date','2026-10-14; only completed full_remeasurement02'],['Ours source',data.ours.source],
+  ['Ours energy formula','topt*(80.358+41.388)+telec*(41.388+62.842), seconds'],['Performance','19 independent full558 TEST predictions; all same IDs and fixed per-model PT'],
+  ['Checkpoint origins','Qwen exact historical head; others retrained_original_protocol, TEST-selected development/noVAL'],
+  ['Main timing','First native block to GPU MOS sync; decode/processor/H2D excluded'],['Measurement round','lgvq_temporal_telemetry_a100_20261014 / full_remeasurement02'],
+  ['Historical Qwen B1','1188.3861464262009ms /462.1134010767563J; no util; excluded from new curves'],
+  ['Current Qwen B1','1180.8067452907562ms /458.3507566057941J with same-round telemetry'],
+  ['Resident load','15seconds of already-resident distinct B inputs, separate time/energy/utilization'],
+  ['Utilization','Driver-window kernel-busy fraction; 50ms polling is not instantaneous SM occupancy'],
+  ['Power limitation','Tagged mean x walltime estimate; raw short peaks over configured250W retained, not calibrated call integrals']];
+ sources.getRange('A15:B26').format.wrapText=true;
+ sources.getRange('A15:B26').format.rowHeight=44;
+ const notes=[[summary,'A34:J34','A35:J41'],[build,'A25:J25','A26:J33'],[sources,'A28:B28','A29:B42']];
+ for(const [sheet,title,body] of notes) {
+  sheet.getRange(title).merge(); sheet.getRange(title).values=[['Measurement methods and interpretation']];
+  sheet.getRange(title).format.fill='#1F4E78'; sheet.getRange(title).format.font={name:'Arial',size:11,color:'#FFFFFF',bold:true};
+  sheet.getRange(body).merge(); sheet.getRange(body).values=[[data.table_descriptions[sheet.name]]];
+  sheet.getRange(body).format.wrapText=true; sheet.getRange(body).format.verticalAlignment='top'; sheet.getRange(body).format.font={name:'Arial',size:11};
+  sheet.getRange(body).format.rowHeight=20;
+ }
+ wb.recalculate(); check();
+ const oldEnergy=build.getRange('M2').values[0][0], oldRatio=summary.getRange('H7').values[0][0];
+ build.getRange('M2').values=[[oldEnergy*2]]; wb.recalculate();
+ if(Math.abs(summary.getRange('H7').values[0][0]-oldRatio/2)>1e-8) throw Error('Energy dependency is not live');
+ build.getRange('M2').values=[[oldEnergy]]; wb.recalculate(); check();
+ console.log((await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30}})).ndjson);
+ for(const [name,range,tag] of [['Summary','A5:H25','summary'],['Summary','K5:P25','telemetry'],['Batch results','AA1:AN21','paired_build'],['Sources','A15:B26','sources']]) {
+  const preview=await wb.render({sheetName:name,range,scale:1.1});
+  await fs.writeFile(out+`/workbook_${tag}_preview.png`,new Uint8Array(await preview.arrayBuffer()));
+ }
+ await(await SpreadsheetFile.exportXlsx(wb)).save(out+'/LGVQ_temporal_multi_baseline_recalculated.xlsx');
+ console.log('Updated existing3-sheet workbook with20 points and matched telemetry.');
+ process.exit(0);
+}
 const summary=wb.worksheets.getItem('Summary');
 const audit=wb.worksheets.getItem('Batch results');
 const originalIdentities=JSON.stringify(audit.getRange('A3:E18').values);

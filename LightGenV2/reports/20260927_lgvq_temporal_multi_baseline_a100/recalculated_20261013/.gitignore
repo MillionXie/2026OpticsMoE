@@ -1,0 +1,4 @@
+# Derived telemetry data and document previews stay local, with SHA manifests.
+sustained_load_data.csv
+*.inspect.ndjson
+gpu_utilization_comparison.svg

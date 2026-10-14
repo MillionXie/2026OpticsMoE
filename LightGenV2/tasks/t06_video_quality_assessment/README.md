@@ -2,6 +2,20 @@
 
 ## 2026-10-14：配套 GPU 遥测复测与 batch 数值诊断
 
+**完整交付更新：**`full_remeasurement02`19组冻结测量及两项8视频诊断均完成，
+226份原始记录已SHA备份，558 TEST/前200成本/尾批/固定PT/manifest/PID审计通过。
+DeepSeek接口修复后的诊断在`diagnostic_deepseek_interfacefix`，原失败证据不删除。
+其B2/B4原精度MOS差1.472775/1.418304，math-only不变，FP32探针降到.001331/.001549；
+Qwen/DeepSeek输入与抽帧SHA一致，重复原精度前向相同，支持低精度计算路径为主要贡献，
+8视频探针不作为全部算子的唯一因果证明，也不改正式精度/权重。
+原[比较报告](../../reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/README.md)
+已更新为20绘图点（19电子+1光场参考），原三页Excel、CSV、PNG/SVG及中英文论文说明同路径。
+主交错与15秒resident连续负载各自保留配套时延/能量/利用率/显存，绝不交换使用。
+新同轮Qwen B1为1180.806745ms/458.350757J；历史总表锚1188.386146ms/462.113401J
+单独保留，不将新util配旧成本。LightGen-II原N16成本参考10.245570ms/1.177690J未改，
+其电子3.977370ms为整16槽场计时。原报告可恢复备份在同run的`report_before_refresh`。
+全部自有A100 suite/诊断进程已退出；不再启动推理/占位/训练。
+
 **20:14 核验：**`full_remeasurement02`的19组正式测量均完成，各558个TEST视频。
 Qwen附加8视频数值诊断完成：输入/抽帧SHA逐视频跨B相同，原精度重复前向相同；
 BF16原生B2/B4对B1最大MOS差2.350662/3.395130，math SDPA仍为1.700470/1.902405；
