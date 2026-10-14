@@ -1,0 +1,20 @@
+# 剩余input100配对保存审核：独立工具准备完成
+
+用户主动停止A100上的input50控制后，只允许GPU2/5的input100 rho.3/rho0继续原120轮/7200秒预算。原三完整审查和五PDF工具不适用，不放宽旧入口或伪造三完成。
+独立audit_resisc20_input_pair.py位于151训练闭包之外，来源59e0f87b5b4d82dd8baab1e923d3197349d04950、SHA9bee138135b1cfb5f616208629f541aebf4021a96325e32e561aa7d4e5a4013b；新文件不进入d515训练身份。最新已发布main内容保留，今后Git提交仅明确T18文件路径。
+
+Linux CPU真实导入、错误旧run拒绝、两组仍在训时在创建新审核out/failure前拒绝均passed。另以停止A已有checkpoint/history真实独立重建全部26轮order/affine/MixUp尾14、LR/early-stop及epoch时间边界通过；没有构造模型、前向、图像/测试数组、GPU/图/PDFmarker动作。
+新smoke resisc20_input_remaining_pair_admission_20261014/checks.json及.dispatch_claim存在，私有t18_resisc_input_pair_admission_20261014.py已执行一次，不重复。机器JSON及SHA仅服务器/本地保留，Git仅本聚合Markdown。
+这只是工具准入与有限前缀检查，尚未执行新完整科学CPU审核、未宣称B/C性能合格。
+
+## 新完成屏障与实际科学检查
+
+CPU父/两个健康GPU子和已停A全部实际退出；B/C两fit_result完整且各rc0，producer的唯一failure必须精确等于原human stop A rc-15，并有durable stopclaim/receipt及正确SHA、A文件不变。新目录cpu_remaining_pair_report，failure cpu_remaining_pair_report_failure.json，使用专属dispatchclaim/completedreceipt/log，旧cpu_report和旧三完整dispatcher不重跑。
+独立审查复用封存的saved science verify，仅将固定30上限按实际cfg120适配；核B/C原data/cache/manifest/来源151current-original/config/PT/init/全部独立order-affine-MixUp/Adam700E/scheduler11grad/保存ID-label-argmax-CM-support-macro-NLL/firstminNLL。
+新数学重建全部LR、early-stop和epoch开始前原时间边界；原终点评估粒度披露，不伪称精确硬秒上限。
+A只核其immutable26前缀/config/source/checkpoint/Adam18200/scheduler26/11phasegrad/26次order-affineMix及既有val_predictions ID/标签/CM/NLL；A没有最终选中EMA的train预测，不能造selectedtrain指标或完整预算eligibility。
+完整审查会构造3个CPU模型核shape/seed，无任何forward/test；两个完整模型按原门槛判断pair，A明确eligible=false/complete_budget=false。共享控制前缀最多26轮，不宣称完整同预算input50vs100结论。
+
+私有t18_resisc_input_pair_audit_dispatch_20261014.py已准备，--action inspect只读；本次真实readyfalse、audit/out/failure/claim均无，full science未执行。--action audit-ready仅自己屏障ready且所有新out/claim/failure/completed/log均无时一次durableclaim后调用新工具，CPU CUDA不可见，成功才保存正确auditSHA completedreceipt；失败全部保留不retry。
+剩余pair-aware绘图尚需独立准备，不能套原三完整五PDFhelper；真正科学passed/全退出/freshout后按正确count一次PDFmarker、manifestSHA传输、Poppler逐页真实render/view_image全页视检再发布。
+原65/60/每类20/gap15/路由/zero/实际selectedtrainedBMP与独立2/3/正式六组/首次一次test前置全部不变；不恢复A100或增GPU预算，75目标未验收。
