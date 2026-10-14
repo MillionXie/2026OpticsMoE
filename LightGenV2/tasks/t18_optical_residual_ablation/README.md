@@ -3,6 +3,7 @@
 用户明确要求选15类继续尝试，已固定随机seed20261014选15类、保留原划分。train8398/val1049、macro16/micro8/525updates每轮尾14，原908552相位和expert224/global478不变，只15个原坐标固定检测窗口。
 159源码闭包冻结4574b3e84，CPU/native及actualGPU2数值检查与GPU2/5两生产门槛均passed、概率/capture0、gradrelative<6.65e-7、all11finite非零。父146495、两子147208/147277实际健康，A100项目0，仅两卡各1；PID只历史以实际proc核。
 各fresh max120或7200秒沿用有界规则，两组总最多4新增拟合GPU小时，无额外候选/test或扩预算。15类任务成绩不得直接验收原20类目标；原全部数据/PT/source/run/收据保留。
+独立15类保存图工具已准备，Linux缺真正科学审核时在创建out前拒绝，未产生图/PDF。[工具准入和未来四图](reports/resisc15_20261014/plot_preparation/README.md)。
 [15类名单和实际启动](reports/resisc15_20261014/start/README.md)；[四层精度变化已知证据与未分离原因](reports/resisc15_20261014/ACCURACY_CHANGE_EVIDENCE_20261014.md)。首轮不作最终精度结论，75目标未验收，监控与09晨报继续。
 
 ## 二十类输入100配对已结束 精度准入未通过 2026-10-14
