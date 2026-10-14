@@ -1,0 +1,101 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "kind": "capacity",
+      "rejected_before_output": true,
+      "reason": "Complete saved CPU audit is absent",
+      "out_exists": false,
+      "sources_current_original_match": true,
+      "training_source_commit": "cb7bfb3e2e34cb1fb03860b3db13649176b73c0f",
+      "source_count": 135
+    },
+    {
+      "kind": "resisc",
+      "rejected_before_output": true,
+      "reason": "Complete saved CPU audit is absent",
+      "out_exists": false,
+      "sources_current_original_match": true,
+      "training_source_commit": "513f0e884a16be5f37846974deaeea55fac95f94",
+      "source_count": 136
+    }
+  ],
+  "plotter_sha256": "338aa2a6c9ed15fcde8c39eb27b5d037b085c6266123c610c923e0f8aadadbb8",
+  "git_commit": "c447a63299a4a79b8d9143c345e1dee5dd008524",
+  "matplotlib_version": "3.8.4",
+  "slots_before": {
+    "jobs": [
+      {
+        "pid": 3509913,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3509980,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      },
+      {
+        "pid": 3510049,
+        "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
+      },
+      {
+        "pid": 3579968,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3580043,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      }
+    ],
+    "counts": {
+      "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": 2,
+      "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": 1,
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55": 2
+    },
+    "total": 5,
+    "maximum": 6,
+    "per_card_maximum": 2
+  },
+  "slots_after": {
+    "jobs": [
+      {
+        "pid": 3509913,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3509980,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      },
+      {
+        "pid": 3510049,
+        "gpu_uuid": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
+      },
+      {
+        "pid": 3579968,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3580043,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      }
+    ],
+    "counts": {
+      "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": 2,
+      "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": 1,
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55": 2
+    },
+    "total": 5,
+    "maximum": 6,
+    "per_card_maximum": 2
+  },
+  "model_constructed": 0,
+  "model_forward_calls": 0,
+  "image_arrays_read": 0,
+  "test_arrays_read": 0,
+  "test_evaluations": 0,
+  "devices_initialized": 0,
+  "gpu_actions": 0,
+  "figures_created": 0,
+  "pdf_marker_actions": 0,
+  "scope": "Actual CPU import and two premature-admission rejections only; not a positive plot/native/fit audit proof",
+  "time_unix": 1791948357.978432
+}
