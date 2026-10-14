@@ -1,3 +1,9 @@
+## 最新490CPUhead拟合完成 独立科学首次失败 混合未验收 2026-10-15
+
+一次获批CPUhead子947019已actualexit/fit_result完整，167拟合来源0d15f4137，35轮选E34、生产记录train86.7321/val79.00%、alpha光.8、电490。真实第一次独占NumPy审核在独立RGB池化对Torch特征误差<2e-6断言失败，audit/completed不存在，全部claim/log/failure保留。混合数字仅未经审核生产记录，不是80或有效混合通过。没有hybrid图/marker，不改167、不放宽阈值或自动重试/新候选。[真实审核失败与状态](reports/resisc10_small_electrical_20261015/audit_failure/README.md)。
+
+165纯光真实science+四图QA完成，残差有效验证78.1429%、无残差77.1429%；原160有效75.8571/76.1429%保留。当前全部获批拟合已结束，80目标未达，GPU项目已释放、A100/test/native/formal未授权。新失败提前通知一次，普通巡检不重复，08:50统一报告与09晨报保留ACTIVE。覆盖下文所有head仍在训、未执行审核的旧状态，不重审任何已完成科学/图。
+
 ## 最新165优化已全完成科学与四图QA 条件490CPUhead已启动 2026-10-15
 
 165/6c230残差92轮选E92 train86.8036/val78.1429%；无残差120轮选E113 train84.8571/val77.1429%。原规则early/maximum_epochs先到停止，父及两子actualrc0、fail0/test0/GPU释放。独占新science SHA ddf43abb366dc0f26a2dec9b0102c48dbc2cb81ced3df0d1a5002e098ab9d346及所有严格逐类准入passed，四PDF真作者/marker/SHA传输/Poppler/全部四页actualQA完成，不重做。仍未80、未test/native/formal；[完整165结果](reports/resisc10_optimize_20261015/L4_pair_final/README.md)。

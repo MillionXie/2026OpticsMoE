@@ -1,0 +1,9 @@
+# 小电后备拟合已结束，独立审核首次失败：混合成绩未验收
+
+run resisc10_small_electrical_alpha08_fixed_optics_20261015，CPU子947019实际退出且fit_result/status完整，原始returncode未另保存，不声称读到rc0。冻结167拟合来源0d15f41373971ddf0e5c1f4a43717d12634a0be2；训练35轮、按firstminimum验证EMA balancedNLL选E34、validation_plateau。生产fit_result记载train86.7321/val79.00%、光alpha固定.8、490电参数、test0；这些混合数字尚未通过独立完整科学审核，不能称80成功或有效混合验收。
+
+独占第一次saved CPU head审核已实际执行并失败，保留saved_cpu_head_audit_dispatch_20261015.json/.log、cpu_report_failure.json、所有拟合/PT/history/claims。cpu_report/audit.json和completed receipt不存在。日志定位resisc10_small_electrical.py第105行：NumPy独立4x4 RGB均值池化与实际Torch特征的最大绝对误差未满足<2e-6断言。这里只定位失败门槛，尚未量化实际误差、证明数据/实现原因或完成后续概率/CM/NLL核验；不能宣称只因无害舍入、伪造passed或擅自放宽阈值。
+
+不修改冻结167，不删失败claim/out/log，不自动retry/重训/新候选/放宽门槛/继续搜索，不执行hybrid三PDF作者或marker。已准备plot工具的CPU拒绝准入不等于这一真实数据科学通过。混合图仍未生成，不能套pure-optical出口。
+
+有效的165纯光残差结果仍是78.1429%，对应genuine science SHA ddf43abb366dc0f26a2dec9b0102c48dbc2cb81ced3df0d1a5002e098ab9d346和四PDF实际QA均通过；原160纯光75.8571%也已真审。当前有界原始/纯光优化/一次小电候选已结束，80目标尚未达成，没有test/native/正式六组/2或3层/实拍验收，A100继续禁止。该新的审核失败已提前通知一次，普通monitor不重复；08:50按人工要求统一完整报告，09晨报继续，t18保留ACTIVE。全部数据/源/PT/失败/claims/markers保护，源只Git；原始机器JSON/完整日志只本地服务器。
