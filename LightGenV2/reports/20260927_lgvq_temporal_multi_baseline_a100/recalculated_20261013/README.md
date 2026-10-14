@@ -1,6 +1,75 @@
 # LGVQ temporal quality: matched A100 inference costs and batch diagnostics
 
-Updated 14 October 2026. All 19 frozen settings and both bounded numerical diagnoses are complete. The displayed curves now use only the uninterrupted `full_remeasurement02` measurements. Interrupted rounds and the initial failed DeepSeek input-fingerprint diagnostic remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
+Updated 15 October 2026 (CPU/source audit added; formal measurements unchanged). All 19 frozen settings and both bounded numerical diagnoses are complete. The displayed curves now use only the uninterrupted `full_remeasurement02` measurements. Interrupted rounds and the initial failed DeepSeek input-fingerprint diagnostic remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
+
+## 2026-10-15：BatchNorm、模式切换和跨样本操作核查
+
+用户提出BatchNorm假设后，在**原服务器、原依赖环境、CUDA_VISIBLE_DEVICES=-1**下核查。
+Qwen/DeepSeek以原config构建meta结构，不加载骨干权重、不做前向；CLIP/YOLO原骨干只加载
+到CPU，不做前向。归一化/Dropout模块清单、实际原生类源码与SHA保存在同一canonical run。
+结构审计按正式loader的`.eval().requires_grad_(False)`设置执行；这不是历史运行逐层旗标的
+补造收据。正式loader本身已逐处核查eval调用，无新增train调用或模式修复。
+
+| 骨干 | BatchNorm层数 | 非BatchNorm归一化 | 审计eval后的training模块 | 特别核查 |
+| --- | ---: | --- | ---: | --- |
+| Qwen3-VL-2B | 0 | 52 LayerNorm、113 TextRMSNorm | 0 | LayerNorm维度1024/4096；RMS按末维 |
+| DeepSeek-VL2-Tiny | 0 | 56 LayerNorm、25 RMSNorm | 0 | 86个Dropout模块，配置p均为0且eval |
+| CLIP ViT-B/32 | 0 | 51 LayerNorm | 0 | 含完整视觉/文本结构，维度512/768 |
+| YOLO11s | 81 | BatchNorm2d | 0 | 全部track_running_stats=True，均有running_mean/var |
+
+**结论：BatchNorm不是当前Qwen/DeepSeek较大评分差的解释，它们根本没有该模块。**
+YOLO虽然有BatchNorm，原CPU模型的81层均使用已保存的运行统计条件，而不是当前batch统计。
+不能只看“调用了eval”就忽略`track_running_stats=False`这个例外；本轮已实际检查该条件和
+统计buffer存在性。LayerNorm/RMSNorm的统计轴是token/位置内部的特征末维，不是batch维，
+不因为同批增加另一条视频而在数学上重新计算该视频的batch均值/方差。
+正式五行头为独立线性读出，softmax沿五个质量级别的末维，不沿视频batch维。
+
+**DeepSeek确实有batch相关的执行分组，但不是BatchNorm式跨样本统计。**
+实际12个语言层中11个为MoE，每token在64专家中选Top-6，greedy/softmax。
+原`MoEGate.forward`的softmax和Top-k沿每token的专家维；均衡辅助损失只在
+`self.training and alpha>0`执行，eval不计算/注入该项。`moe_infer`将整批token按专家排序，
+`tokens_per_expert=cnts.sum(dim=0)`确实统计了整批数量，但只用于决定每个专家的输入切片，
+不是归一化分母，审查的单卡分支没有capacity-factor限额或token-dropping。
+末端按排序逆映射回原token，再对该token自己的专家输出加权，不对不同视频取平均。
+这保证了代码意图上的逐token独立性；改变batch会改变专家GEMM输入行数/分组形状，
+有限精度结果仍可能变化，不能据源码就证明实际路由完全不变或首个误差层。
+
+**新发现的待验证点：路由里的`.float()`不等于已关闭autocast。**
+DeepSeek原gate将特征和权重显式转FP32，再调用`F.linear`；但正式外层处在BF16 autocast。
+对符合autocast规则的linear，仅将输入转float32并不强制该操作全程FP32。
+本轮小型CPU dtype示例确认：float32输入+float32权重在CPU BF16 autocast下，linear输出
+仍是BF16。该示例不用训练权重，只证明dtype规则，不冒称测到了正式CUDA gate dtype或
+专家切换。PyTorch 2.6的[AMP规则及关闭autocast子区域说明](https://docs.pytorch.org/docs/2.6/amp.html)
+支持这一执行语义。Top-k是离散选择，若临界专家分数次序变化可切换专家，这是具体的候选
+机制；它不是已被该批视频的gate日志证明的事实，且Qwen不是MoE，不能用此解释全部模型。
+
+**其他检查：**DeepSeek图像tile先批量提取，但再按各样本tile数/`images_seq_mask[idx]`
+写回`input_embeds[idx]`，不是跨视频融合。Qwen视觉attention保留`cu_seqlens`分段；语言
+attention保留样本batch轴和attention_mask。正式读出按每行mask找最后有效token，未直接
+把补齐位置当评分位置，且两模型`use_cache=False`。已有8视频指纹只证明有效输入/抽帧
+一致；未用源码检查替代全部内部mask/position_ids数值运行验证。
+DeepSeek实际语言attention类为**LlamaAttention**，不是包中另一个未用的DeepseekV2Attention；
+本轮补核绑定到实例里的实际类。首份较粗的DeepSeek源码清单原位保留，最新引用下方
+`deepseek_actual_attention`审计，不将未用类当正式路径。
+
+**给老师的当前解释：**
+
+BatchNorm does not account for the larger batch-dependent differences in Qwen3-VL or
+DeepSeek-VL2: neither instantiated architecture contains BatchNorm. Their LayerNorm/RMSNorm
+operations normalize feature dimensions rather than pooling statistics across videos.
+The deployed loaders explicitly use evaluation mode. YOLO11s contains BatchNorm, but all
+81 audited layers retain running statistics and are in evaluation mode. DeepSeek's
+evaluation-time MoE dispatch groups tokens across the batch for expert computation without
+batch-dependent normalization or capacity-based token dropping in the inspected single-GPU
+path. This grouping changes computation shapes; together with autocast and discrete top-k
+routing, it provides a concrete numerical mechanism to investigate. It has not yet been
+verified as the first divergent operation on the actual videos. The current evidence rules
+out the proposed BatchNorm explanation, not every possible implementation-level defect.
+
+32项CPU检查两端通过；四份审计JSON已SHA备份至本地。最新证据在同run的
+`diagnostic_batch_semantics_20261015_qwen`、`diagnostic_batch_semantics_20261015_deepseek_actual_attention`、
+`diagnostic_batch_semantics_20261015_clip`、`diagnostic_batch_semantics_20261015_yolo`内`audit.json`。
+本轮无GPU测量，无新视频推理，不更改正式表格、分数、时延、能量、利用率或原PT。
 
 ## 关键更正：利用率标注与尚未修复的数值差异
 
