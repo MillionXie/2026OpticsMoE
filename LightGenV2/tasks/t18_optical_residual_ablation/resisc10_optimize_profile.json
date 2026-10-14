@@ -1,0 +1,16 @@
+{
+  "parent_run": "resisc10_s17_mainL4_input100_rho_pair120_micro8_gpu25_20261015",
+  "parent_source_commit": "e380a206b5b032d5d6bf1a855846a73de556564f",
+  "target_validation_accuracy": 0.8,
+  "mixup_alpha": 0.2,
+  "maximum_epochs": 120,
+  "maximum_seconds": 7200,
+  "gpus": [
+    2,
+    5
+  ],
+  "pure_optical": true,
+  "automatic_retry": false,
+  "test_evaluations": 0,
+  "scope": "One fresh paired pure optical optimization. Only MixUp .6 to .2 changes; conditional on completed saved science parent residual below .80. No target guarantee."
+}

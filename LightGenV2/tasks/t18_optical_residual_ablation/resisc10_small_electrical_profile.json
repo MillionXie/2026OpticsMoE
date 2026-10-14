@@ -1,0 +1,22 @@
+{
+  "optical_alpha": 0.8,
+  "electrical_weight": 0.2,
+  "feature_grid": 4,
+  "input_rgb_size": 100,
+  "electronic_parameters": 490,
+  "lr": 0.01,
+  "ema_decay": 0.95,
+  "seed": 17,
+  "batch_size": 16,
+  "maximum_epochs": 120,
+  "maximum_seconds": 7200,
+  "minimum_epochs": 10,
+  "early_patience": 10,
+  "early_min_delta": 0.002,
+  "parent_required_study_case": "mixup02",
+  "parent_target_validation_accuracy": 0.8,
+  "automatic_retry": false,
+  "cpu_only": true,
+  "test_evaluations": 0,
+  "run": "resisc10_small_electrical_alpha08_fixed_optics_20261015"
+}
