@@ -50,3 +50,13 @@ def test_diagnostic_has_no_weight_training():
     calls = {node.func.attr for node in ast.walk(tree)
              if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)}
     assert not {"backward", "step", "train"}.intersection(calls)
+
+
+def test_reservation_ignores_other_cards_but_not_foreign_a100():
+    from LightGenV2.tasks.t06_video_quality_assessment import reserve_temporal_a100 as reservation
+    records = [{"pid": "1", "gpu_uuid": reservation.frozen.A100_UUID},
+               {"pid": "2", "gpu_uuid": reservation.frozen.A100_UUID},
+               {"pid": "3", "gpu_uuid": "other_gpu"}]
+    assert reservation.foreign_processes(records, 1) == [records[1]]
+    assert reservation.RESERVATION_BYTES == 64*1024*1024
+    assert reservation.MIN_FREE_BYTES >= 2*1024*1024*1024
