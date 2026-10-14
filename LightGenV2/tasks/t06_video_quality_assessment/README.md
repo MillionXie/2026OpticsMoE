@@ -1,5 +1,41 @@
 # T06 视频质量评价
 
+## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
+
+用户授权在固定A100上训练SmolVLM2-2.2B，再分别以B=1/4/8新进程冻结推理。
+入口`smolvlm2_temporal_baseline`及配置
+`configs/baselines/smolvlm2_temporal_4f_a100.json`；不改原Qwen/CLIP/YOLO/DeepSeek结果。
+只训练五个无偏置、与输入embedding解绑的原生质量输出行，5×2048=10240参数，
+与Qwen改造程度相同。所有视觉/语言/connector/原LM head冻结；无LoRA、新adapter、
+backbone更新或超参扫描。Smol使用前导空格质量词，各自单token；不带空格的Excellent
+是两token，故不能直接沿用Qwen的token ID。token ID和初始行SHA进入收据。
+
+保持原2250 TRAIN/558 TEST/无VAL、四帧位置[.10,.37,.63,.90]、65%中心裁剪和
+同一Temporal问题。解码先448×448；Smol原生视频processor再处理为384×384，
+每帧81个视觉token，四帧324个。该原生几何差异公开记录，不声称与Qwen视觉token数相同。
+BF16冻结骨干、B2提取FP16特征后转FP32训练五行头，seed42/50epoch/b512/
+AdamW .001 wd0/cosine/CE。best按TEST SRCC选取，是开发指标，不冒称独立泛化。
+保存best/last、50轮history、完整特征/分片、558预测、strictCPU best/last及SHA。
+
+模型固定官方revision`482adb537c021c86670beed01cd58990d01e72e4`；服务器官方域名
+DNS暂失败，允许公开镜像下载，但配置/tokenizer用官方Git blob SHA1、权重两分片
+用官方LFS SHA256逐项核验。已有不同文件和失败partial保留且拒绝覆盖；不读凭据。
+服务器现有Torch2.6/cu124、Transformers4.57.3支持模型；仅在专属system-site-packages
+环境补num2words，不升级或改写现有baseline环境。源码只Git main发布同步。
+
+运行目录仅`runs/simulation/lgvq_smolvlm2_temporal_a100_20261014`。唯一物理卡
+`GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`，要求A100/250W及无foreign compute PID；
+不抢卡、占空计算、杀人或改功率。suite自动下载→冻结特征→末端训练→B1/4/8各完整558。
+成本首200视频并保留200/558处尾批，无warmup，起点原生视觉Transformer block0输入，
+终点GPU MOS同步。保留末token完整native词表投影，与Qwen计时边界一致。
+T16=前200视频推理墙钟之和×16/200；E16=(338.2W主机代理+同轮active A100 W)×T16/1000。
+解码/预处理/H2D只审计，不计最终成本。50ms遥测同时记录power/util/显存，util是
+驱动窗口kernel-busy而非SM occupancy。另15秒resident重复负载与主交错结果分开，
+不混配利用率/功率/时延。各B精度独立原生前向，不能用缓存B1替代。
+
+本段是新授权协议，不是训练完成或更高性能结论；实际阶段以run status/log/receipt为准。
+原图表的共享报告暂不修改，本轮新证据审核完成后再确定纳入方式。
+
 ## 2026-10-14：配套 GPU 遥测复测与 batch 数值诊断
 
 **用户质询后的图注更正：**主成本图已在每个batch点标与其负载配套的平均GPU利用率。
