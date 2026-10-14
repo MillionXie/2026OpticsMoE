@@ -7,6 +7,7 @@ CPU父无pending，GPU2 B100rho.3/GPU5 C100rho0继续各原120/7200预算，不�
 producer的input_study_failed/rc-15记录指人工停止A，不是另外两组数值失败；原三完整CPU审查/5PDF入口不适用于当前partial，需独立剩余pair审查，不放宽旧门槛。
 [实际释放、存档、两卡进度与后续审核边界](reports/resisc20_20261014/GPU2ONLY_STOP_A100_20261014.md)。
 剩余input100配对的独立保存CPU审核已准备，Linux提前拒绝及停止A26独立order/增强/MixUp/LR检查passed，但完整科学审核未执行。[真实准入与新屏障](reports/resisc20_20261014/remaining_pair_audit_preparation/README.md)。
+相应“两完整组＋停止前缀”独立保存图工具已准备，Linux缺新科学审核时创建out前拒绝passed，未生成图/PDF。[未来5PDF口径与真实准入](reports/resisc20_20261014/remaining_pair_plot_preparation/README.md)。
 
 ## 人工批准输入细节三组对照，完整网络已实际启动（历史启动，2026-10-14）
 

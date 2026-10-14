@@ -1,0 +1,15 @@
+# 两完整组＋已停控制前缀：保存图工具准备完成
+
+新plot_resisc20_input_pair.py在151训练闭包之外，来源454b98f6d8adca9d6593114fec8504cc5267550b，SHA793d09882b73b1c556c2c31f5325c93eef4e8dc164bb51dcd34aaaf00eb7c188；原151/d515训练源码、旧图工具和旧审查都不改。
+新guard只接受真正cpu_remaining_pair_report/audit.json科学passed＋其completeddispatch正确SHA＋全父子实际退出＋唯一停止A rc-15/stop receipt frozenSHA＋两个完整fit原data/config/PT/history/init/orderaug/NLL/来源。旧三完整入口不放宽。
+复用已核验generic renderer的原指标绘图数学，只在进程内编译时做一次明确审查文件路径替换；新guard和case labels/order、预算、151来源、停止前缀全部独立处理。原generic SHA bbce2491d452389667339c4fef1ad53c8bc07b941a7dce7672845281c9489ebb必须匹配，不能随意换版本。
+
+Linux实际CPU Matplotlib3.8.4导入/单一审查路径替换真实编译成功；错run拒绝，缺新科学审核在创建cpu_remaining_pair_report/figures前真实拒绝passed。GPU PID集合不变，151current/original核一致；模型构造/forward/images/test/GPU/PDFmarker/图均0，不是成功绘图或完整科学审查。
+新smoke resisc20_input_remaining_pair_plot_admission_20261014/checks.json及.dispatch_claim存在，私有t18_resisc_input_pair_plot_admission_20261014.py已执行一次禁止复跑。原机器收据/SHA只本地服务器保留，Git仅本聚合Markdown。
+
+未来真实5PDF：完整B/C的稀疏train/逐E val和firstminNLL选中val星/同selectedEMAtrain空心菱形、选中逐类support/recall、两臂完整valCM（共4份）；另外一份严格共同已测前缀最多26轮的A/B/C验证accuracy/macro/NLL，不做最终选模标记，不造A selectedtrain或完整预算结果。
+PNG/SVG/CSV同步保留实际epochs/预算/门槛/末20zero/routing及共同前缀scope。完整终点可能不同epoch，不能称纯rho因果；输入50 vs100没有完整同预算控制，仅共测前缀描述。test始终0。
+
+专属私有t18_resisc_input_pair_figures_20261014.py --kind resisc_input_pair已准备并静态语法核，尚未执行。新科学audit实际passed/完整correct SHA completedreceipt/全exit/当前和原始151sources/meta/history/PT/新guard全部通过，且remote cpu_remaining_pair_report/figures、local L4_input100_pair_final、t18_resisc_input_pair_pdf_creation_started_20261014.json和t18_resisc_input_pair_pdf_visual_20261014全不存在才能一次作者。
+作者前先读PDFskill，助手自带成功一次count5/create/pdf marker立即后真实作者，不提前另手动marker。manifestSHA传输后Poppler每5PDF逐页真实120dpi render，仍须view_image全部5页实际视检才visual_review/发布。失败/partial/marker/out保留不retry，旧三完整5PDF helper不套用。
+原65/60/每类20/gap15/路由/zero/actualselectedBMP和独立2/3/正式六组/once-test前置不变。当前只GPU2/5，A100禁止，预算不追加，75目标未验收。
