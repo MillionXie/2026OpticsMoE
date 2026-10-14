@@ -1,3 +1,5 @@
+条件490CPU小电后备的独立保存图工具已准备，真实Linux拒绝准入passed、models/forward/images/test/GPU/图/marker0，167及当前165源/PID保持；head尚未拟合，未来专属三PDF需要自己的真实hybrid科学和actualQA，不能套纯光出口。[条件后备三图准入与边界](reports/resisc10_small_electrical_20261015/plot_preparation/README.md)。
+
 ## 最新原十类已完成且准入通过 一次MixUp.2优化已真实启动 2026-10-15
 
 原160/e380两组120/119轮、firstminNLL均选E113：残差train83.50/val75.8571%，无残差train81.4286/val76.1429%。实际全部rc0退出，独占genuine science SHA c7c7af78dc0fc84d79dd0552dda6fc42c8f82c1e53e1bdbba9c243745b4ab5af、逐类/路由/预算门槛均passed，test0；4PDF真实作者/SHA传输/Poppler120dpi和全部四页实际view_image QA完成。80目标未达，不算原20验收。[完整保存结果与实际QA](reports/resisc10_20261015/L4_pair_final/README.md)。
