@@ -12,8 +12,16 @@ DeepSeek每条1743有效token、0 padding、最后index1742；按实际DeepseekV
 无cache源码推导的arange位置跨B一致，这项不是GPU位置tensor观测。
 这组探针的评分差不能解释为padding数量变化或选错最后token；未推广至全部558视频。
 同run CPU证据9文件已本地SHA备份，源码`5e13ea536`、36项CPU检查两端通过。
-后续只在固定A100空闲后做原生逐层/路由及有限数值控制对照，每模型600秒、只8视频，
-所有结果单独留为诊断。正式表格、预测、时延、能量、利用率与PT不替换。
+**GPU诊断尝试失败，尚无逐层结论（15 October 2026）：**第11次核查时A100空闲，
+连续两次确认无compute PID、250W、源码SHA匹配CPU后派发一次。Qwen第一次前向
+因诊断集成错误`KeyError('vision_calls')`退出，DeepSeek未启动；没有生成有效边界差
+或专家路由结果。复用正式loader时遗留`BoundaryTimer`钩子，直接诊断forward未reset
+计数状态；这是诊断程序的错误，不是解释batch精度差异的证据。正式推理路径每次
+forward调用timer.reset，本次失败不回写正式测量。自有进程退出；14份状态/日志/
+命令按SHA备份同名run，收据`backup_receipt_gpu_failed_check11.json`。保留失败原位，
+未重新派发；恢复需先修正诊断钩子生命周期、补测试并明确新来源与批准的运行方式。
+后续仍限固定A100空闲、每模型600秒、同8视频，不改正式数据。首个观测边界也不
+等于最早primitive证明。六份正式表格/测量文件的SHA均保持原值。
 
 用户提出BatchNorm假设后，在**原服务器、原依赖环境、CUDA_VISIBLE_DEVICES=-1**下核查。
 Qwen/DeepSeek以原config构建meta结构，不加载骨干权重、不做前向；CLIP/YOLO原骨干只加载
@@ -165,9 +173,9 @@ BF16 results or their matched timing, energy and utilization measurements.
 原位证据：[Qwen分析](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_telemetry_a100_20261014/full_remeasurement02/diagnostic_saved_analysis_20261014_qwen/analysis.json)、
 [DeepSeek分析](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_telemetry_a100_20261014/full_remeasurement02/diagnostic_saved_analysis_20261014_deepseek/analysis.json)。
 每份记录保存原PT、原诊断JSON/12份特征PT/完整预测CSV及分析源码SHA；新增分析已逐SHA备份。
-逐层GPU前向尚未执行：本轮只读检查A100为250W、foreign PID260192、利用率100%，
-未抢卡或与之并发测量。后续须有空闲诊断窗口，在同一8视频/B1/2/4合同下比较视觉及语言
-各层输入/输出，记录实际执行后才能宣称定位首个分歧层。
+前期逐层GPU诊断因A100外部占用等待；第11次空闲后的第一次尝试在Qwen首前向因
+上述诊断计时钩子错误退出，DeepSeek未启动，未得到有效逐层证据。后续须先修复和
+明确恢复方式，再在同一8视频/B1/2/4合同下比较视觉及语言边界；不能宣称已定位首个分歧层。
 
 ## 两图含义与实验方法
 

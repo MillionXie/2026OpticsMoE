@@ -14,8 +14,17 @@ Qwen各组全部446有效token、0 padding、读出index445；原生CPU `get_rop
 0 padding、读出index1742；fresh无cache的位置arange按实际DeepseekV2Model源码推导
 一致，不冒称已观测实际GPU position tensor。此结论仅覆盖这8视频，不推广到全558。
 
-GPU阶段尚未启动：最近实际固定A100为250W，foreign PID429114占用约12.9GB/100%。
-不占位、抢卡或并发测试。空闲后只两个新进程串行，各最多600秒，原PT/receipt/
+2026-10-15第11次监督核查时，固定A100已空闲；连续两次核无compute PID、250W、
+0%/17MiB且源码SHA与CPU收据一致后，实际派发一次GPU suite PID889806／Qwen889816。
+Qwen第一次前向触发`KeyError('vision_calls')`，suite失败，DeepSeek未启动，未生成
+`gpu_layers.json`或有效逐层/路由结论。原因是诊断复用正式loader后保留了
+`BoundaryTimer`的原钩子，但直接调用诊断forward未先reset计数状态；该错误属于
+诊断集成，不是模型batch差异的根因，也不意味着正式测速存在同一问题（正式路径
+每次forward先调用timer.reset）。全部14份CPU/GPU状态、日志、命令已逐SHA备份本地，
+收据`backup_receipt_gpu_failed_check11.json`。失败记录原位保留，不盲重启覆盖；
+下一步须隔离非计时诊断中的遗留计时钩子、补CPU合同测试并以新Git/CPU来源收据
+明确批准恢复方式后再测。自有suite/子进程已退出，A100无自有compute PID。
+不占位、抢卡或并发测试。后续仍只允许两个新进程串行，各最多600秒，原PT/receipt/
 manifest保持；仅同8视频/B1/2/4做观测边界全张量差和专家ID统计，CPU参考上限8GiB，
 磁盘只保存统计及小读出PT。原生预测必须与旧探针一致，否则停止、不作因果结论。
 Qwen受控对照只禁低精度GEMM归约；DeepSeek只在gate范围关闭autocast，通过hook管理
