@@ -1,3 +1,11 @@
+## Latest: actual execution speed continuation
+
+Human requested batch/speed optimization. Originalpair savedE21 and intentionally
+stopped with alloutputs retained; newmicro8continuation restores allstate and
+keepsfulltrainN/macro16/700steps/total30/14400budget. Realfirstcompleteepochs
+~58-62sec, productiongatespassed. See [speed/resume evidence](speed_continuation/README.md).
+The initial10:47snapshot below is historical, not currentprogress.
+
 # RESISC45 fixed20, original full-resolution network
 
 Human chose RESISC45 fixed20 and explicitly permits at most6projectGPU children,

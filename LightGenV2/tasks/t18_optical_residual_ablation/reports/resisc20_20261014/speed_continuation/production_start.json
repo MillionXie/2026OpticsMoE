@@ -1,0 +1,29 @@
+{
+  "pid": 3740234,
+  "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_microbatch_continue30_gpu256_20261014",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/resisc20_microbatch.py",
+    "--phase",
+    "queue",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_microbatch_continue30_gpu256_20261014"
+  ],
+  "started_unix": 1791955452.5587423,
+  "source_commit": "75be74b96e49e221c6b35a8edd94f98c0bfedac5",
+  "source_count": 141,
+  "microbatch": 8,
+  "effective_batch16": true,
+  "train_samples11198": true,
+  "steps_per_epoch700": true,
+  "stop_receipt_sha256": "69bea824afd975d68c6f4cbb626f6e4a882991aac0aba540b4fadd37209ec445",
+  "prefix_epochs": {
+    "L4_rho03": 21,
+    "L4_rho0": 21
+  },
+  "conservative_prior_seconds": 9868.58915734291,
+  "maximum_total_epochs": 30,
+  "maximum_total_fit_seconds": 14400,
+  "optimizer_ema_scheduler_reset": false,
+  "test_evaluations": 0
+}

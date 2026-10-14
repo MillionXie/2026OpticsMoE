@@ -1,0 +1,15 @@
+{
+  "files": {
+    "direct_batch_failure_checks.json": "2e4d76687b6b88b80830117c97cc449c5cf7c5b356a0b4fe67aa95a017974a20",
+    "scalar_mask_batch_checks.json": "0ea3edc55b4ccd603cd129f68958d4e2871698e89d8d4333df56ebf2b0bb9b66",
+    "cpu_admission_checks.json": "58c256977fcab923e9a0e8c1a52bb9f82ff5c86b973ed7dc06e8e5afd330cdc1",
+    "preserved_stop_receipt.json": "69bea824afd975d68c6f4cbb626f6e4a882991aac0aba540b4fadd37209ec445",
+    "production_start.json": "60c89466ebb4607c8c820ffc8d992e59d617eb860d34edcac46b6b31fdda0688",
+    "L4_rho0_production_gate.json": "174b13e2755ba74c7df9c1056ee89f18196b23cd3c2e2d7e5b462b626c3804ac",
+    "L4_rho0_resume_receipt.json": "ea755f53a366aab7aa1d7470b08bc3d2c779c5ce061423499d8ac40103d57e8d",
+    "L4_rho03_production_gate.json": "962a61b8488b263a503b08aa82870af061188010db5ee30710e5b089ea14ae33",
+    "L4_rho03_resume_receipt.json": "b8f4706835fe0765fa1f9403fca37e6f31d5890e73be1f5af9ea164a4ab3eeeb"
+  },
+  "all_sha_exact": true,
+  "source_transferred": false
+}

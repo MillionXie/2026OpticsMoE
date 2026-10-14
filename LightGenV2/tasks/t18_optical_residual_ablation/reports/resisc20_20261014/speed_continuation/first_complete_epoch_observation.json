@@ -1,0 +1,203 @@
+{
+  "time_unix": 1791955624.5983427,
+  "head": "75be74b96e49e221c6b35a8edd94f98c0bfedac5",
+  "training_source_commit": "75be74b96e49e221c6b35a8edd94f98c0bfedac5",
+  "source_count": 141,
+  "source_current_original_match": true,
+  "parent_exited": false,
+  "status": {
+    "state": "speed_pair_running",
+    "completed": [],
+    "failures": [],
+    "active": 2,
+    "pending": 0,
+    "test_evaluations": 0
+  },
+  "jobs": [
+    {
+      "case": "L4_rho03",
+      "rho": 0.3,
+      "pid": 3740747,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "status": {
+        "state": "training",
+        "depth": 4,
+        "rho": 0.3,
+        "epoch": 23,
+        "val_accuracy": 0.39671193709792707,
+        "val_macro_recall": 0.3964699792960663,
+        "val_balanced_nll": 2.044389304056863,
+        "epoch_seconds": 61.07526335865259,
+        "test_evaluations": 0
+      },
+      "gate": {
+        "passed": true,
+        "depth": 4,
+        "rho": 0.3,
+        "micro": 8,
+        "classes_checked": 20,
+        "tail_checked": 14,
+        "checks": [
+          {
+            "passed": true,
+            "probability_max_error": 0.0,
+            "capture_max_error": 0.0,
+            "gradient_max_relative_l2": 7.057545872157789e-07,
+            "gradient_min_cosine": 0.999999999999751,
+            "all11phase_gradients_finite_nonzero": true
+          },
+          {
+            "passed": true,
+            "probability_max_error": 0.0,
+            "capture_max_error": 0.0,
+            "gradient_max_relative_l2": 3.9308469013121794e-07,
+            "gradient_min_cosine": 0.9999999999999265,
+            "all11phase_gradients_finite_nonzero": true
+          }
+        ],
+        "all_phase_gradients_finite_nonzero": true,
+        "phase_gradients": {
+          "raw_router": 0.04489265754818916,
+          "phase_sets.0": 0.10443427413702011,
+          "phase_sets.1": 0.07310093939304352,
+          "phase_sets.2": 0.118082694709301,
+          "phase_sets.3": 0.05721430107951164,
+          "phase_sets.4": 0.11424239724874496,
+          "phase_sets.5": 0.059408243745565414,
+          "phase_sets.6": 0.023870879784226418,
+          "phase_sets.7": 0.010888954624533653,
+          "phase_sets.8": 0.008016352541744709,
+          "phase_sets.9": 0.030174141749739647
+        },
+        "initial_parameter_sha256": "23e3a0c2aba782178062406dbe8adddaea3a58577eaa646bd6dea053479724e9",
+        "parameters": 908552,
+        "test_evaluations": 0
+      },
+      "resume": {
+        "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_validate30_sharedgpu256_20261014/L4_rho03",
+        "parent_epoch": 21,
+        "first_new_epoch": 22,
+        "last_checkpoint_sha256": "da16b8975a9c4f30ae05aabd75a3781efa777d412eb42924cd19126799642143",
+        "best_checkpoint_sha256": "e065c268898f0ffd3b376dd94753ff5d4c083cfc030109af3174d54ad8638638",
+        "restored_state_sha256": {
+          "model": "23e3a0c2aba782178062406dbe8adddaea3a58577eaa646bd6dea053479724e9",
+          "ema": "5f605e0c3e3d899ad6fd61ca6dbbd86f70d12a7eb25692431ff1319e4c6d505e"
+        },
+        "optimizer_reset": false,
+        "ema_reset": false,
+        "scheduler_reset": false,
+        "model_source_unchanged": true,
+        "old_memory_gib": 2,
+        "new_memory_gib": 2,
+        "old_microbatch": 1,
+        "new_microbatch": 8,
+        "conservative_prior_seconds": 9868.58915734291,
+        "prefix_history_sha256": "6799b13c7aec89cefc1b9cf5e5556c59fa0247227b514fa0dda00376bac2ee2b"
+      },
+      "log_tail": "{\"state\": \"training\", \"depth\": 4, \"rho\": 0.3, \"epoch\": 22, \"val_accuracy\": 0.38313080771979985, \"val_macro_recall\": 0.3828881987577639, \"val_balanced_nll\": 2.0617219051620697, \"epoch_seconds\": 61.77295885235071, \"test_evaluations\": 0}\n{\"state\": \"training\", \"depth\": 4, \"rho\": 0.3, \"epoch\": 23, \"val_accuracy\": 0.39671193709792707, \"val_macro_recall\": 0.3964699792960663, \"val_balanced_nll\": 2.044389304056863, \"epoch_seconds\": 61.07526335865259, \"test_evaluations\": 0}\n"
+    },
+    {
+      "case": "L4_rho0",
+      "rho": 0.0,
+      "pid": 3740819,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "status": {
+        "state": "training",
+        "depth": 4,
+        "rho": 0.0,
+        "epoch": 23,
+        "val_accuracy": 0.35954253037884204,
+        "val_macro_recall": 0.35932712215320906,
+        "val_balanced_nll": 2.1572908704982927,
+        "epoch_seconds": 57.1411661952734,
+        "test_evaluations": 0
+      },
+      "gate": {
+        "passed": true,
+        "depth": 4,
+        "rho": 0.0,
+        "micro": 8,
+        "classes_checked": 20,
+        "tail_checked": 14,
+        "checks": [
+          {
+            "passed": true,
+            "probability_max_error": 0.0,
+            "capture_max_error": 0.0,
+            "gradient_max_relative_l2": 6.855285050733073e-07,
+            "gradient_min_cosine": 0.9999999999997652,
+            "all11phase_gradients_finite_nonzero": true
+          },
+          {
+            "passed": true,
+            "probability_max_error": 0.0,
+            "capture_max_error": 0.0,
+            "gradient_max_relative_l2": 3.794771146203857e-07,
+            "gradient_min_cosine": 0.999999999999931,
+            "all11phase_gradients_finite_nonzero": true
+          }
+        ],
+        "all_phase_gradients_finite_nonzero": true,
+        "phase_gradients": {
+          "raw_router": 0.06368330866098404,
+          "phase_sets.0": 0.07713261246681213,
+          "phase_sets.1": 0.037188854068517685,
+          "phase_sets.2": 0.05572637915611267,
+          "phase_sets.3": 0.030437741428613663,
+          "phase_sets.4": 0.06662888079881668,
+          "phase_sets.5": 0.02924603782594204,
+          "phase_sets.6": 0.011433122679591179,
+          "phase_sets.7": 0.003590197069570422,
+          "phase_sets.8": 0.0035319477319717407,
+          "phase_sets.9": 0.020978448912501335
+        },
+        "initial_parameter_sha256": "b91e51e142a3570877c4696d94763c275b69589c8095dc95b87454e5349692b6",
+        "parameters": 908552,
+        "test_evaluations": 0
+      },
+      "resume": {
+        "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_validate30_sharedgpu256_20261014/L4_rho0",
+        "parent_epoch": 21,
+        "first_new_epoch": 22,
+        "last_checkpoint_sha256": "1833fafe3081e68871d5fdc3bfd06513fc079d627d9bdc1fac9980bc899dc2df",
+        "best_checkpoint_sha256": "e96ceaa77ef4b486189291744f26c61610625a7ba0bb6ef1b3af860336a9deba",
+        "restored_state_sha256": {
+          "model": "b91e51e142a3570877c4696d94763c275b69589c8095dc95b87454e5349692b6",
+          "ema": "0184876707a5c69203272cfaa292aa011816ce3df9caf8077573d6c65fb14dd9"
+        },
+        "optimizer_reset": false,
+        "ema_reset": false,
+        "scheduler_reset": false,
+        "model_source_unchanged": true,
+        "old_memory_gib": 2,
+        "new_memory_gib": 2,
+        "old_microbatch": 1,
+        "new_microbatch": 8,
+        "conservative_prior_seconds": 9868.58915734291,
+        "prefix_history_sha256": "91e8f49be73aca6542299577e73ce374b831dd7f936ec8b7c9350d50c98fe055"
+      },
+      "log_tail": "{\"state\": \"training\", \"depth\": 4, \"rho\": 0.0, \"epoch\": 22, \"val_accuracy\": 0.3545389563974267, \"val_macro_recall\": 0.35432712215320905, \"val_balanced_nll\": 2.168139647302743, \"epoch_seconds\": 58.66100228577852, \"test_evaluations\": 0}\n{\"state\": \"training\", \"depth\": 4, \"rho\": 0.0, \"epoch\": 23, \"val_accuracy\": 0.35954253037884204, \"val_macro_recall\": 0.35932712215320906, \"val_balanced_nll\": 2.1572908704982927, \"epoch_seconds\": 57.1411661952734, \"test_evaluations\": 0}\n"
+    }
+  ],
+  "slots": {
+    "jobs": [
+      {
+        "pid": 3740747,
+        "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      },
+      {
+        "pid": 3740819,
+        "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b"
+      }
+    ],
+    "counts": {
+      "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": 1,
+      "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": 0,
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55": 1
+    },
+    "total": 2,
+    "maximum": 6,
+    "per_card_maximum": 2
+  },
+  "test_evaluations": 0
+}

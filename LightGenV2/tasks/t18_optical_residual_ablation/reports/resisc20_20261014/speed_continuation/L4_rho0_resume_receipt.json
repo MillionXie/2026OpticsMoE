@@ -1,0 +1,21 @@
+{
+  "parent": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/resisc20_s17_mainL4_rho0rho03_fullres_validate30_sharedgpu256_20261014/L4_rho0",
+  "parent_epoch": 21,
+  "first_new_epoch": 22,
+  "last_checkpoint_sha256": "1833fafe3081e68871d5fdc3bfd06513fc079d627d9bdc1fac9980bc899dc2df",
+  "best_checkpoint_sha256": "e96ceaa77ef4b486189291744f26c61610625a7ba0bb6ef1b3af860336a9deba",
+  "restored_state_sha256": {
+    "model": "b91e51e142a3570877c4696d94763c275b69589c8095dc95b87454e5349692b6",
+    "ema": "0184876707a5c69203272cfaa292aa011816ce3df9caf8077573d6c65fb14dd9"
+  },
+  "optimizer_reset": false,
+  "ema_reset": false,
+  "scheduler_reset": false,
+  "model_source_unchanged": true,
+  "old_memory_gib": 2,
+  "new_memory_gib": 2,
+  "old_microbatch": 1,
+  "new_microbatch": 8,
+  "conservative_prior_seconds": 9868.58915734291,
+  "prefix_history_sha256": "91e8f49be73aca6542299577e73ce374b831dd7f936ec8b7c9350d50c98fe055"
+}
