@@ -1,0 +1,37 @@
+{
+  "time_unix": 1791956381.949334,
+  "parent_pid": 3740234,
+  "completed": [
+    {
+      "case": "L4_rho0",
+      "rho": 0.0,
+      "pid": 3740819,
+      "gpu_uuid": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+      "exit_code": 0
+    },
+    {
+      "case": "L4_rho03",
+      "rho": 0.3,
+      "pid": 3740747,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "exit_code": 0
+    }
+  ],
+  "active": 0,
+  "pending": 0,
+  "failures": [],
+  "all_this_study_processes_exited": true,
+  "remaining_project_gpu_slots": {
+    "jobs": [],
+    "counts": {
+      "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": 0,
+      "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": 0,
+      "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55": 0
+    },
+    "total": 0,
+    "maximum": 6,
+    "per_card_maximum": 2
+  },
+  "training_source_commit": "75be74b96e49e221c6b35a8edd94f98c0bfedac5",
+  "test_evaluations": 0
+}

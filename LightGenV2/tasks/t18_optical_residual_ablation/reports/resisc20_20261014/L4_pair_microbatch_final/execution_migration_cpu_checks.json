@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "case": "L4_rho0",
+      "prefix_epoch": 21,
+      "first_continued_epoch": 22,
+      "prefix_checkpoint_sha256": "1833fafe3081e68871d5fdc3bfd06513fc079d627d9bdc1fac9980bc899dc2df",
+      "raw_ema_restored_exact": true,
+      "optimizer_ema_scheduler_reset": false,
+      "all_prefix_orders_transforms_gradients_history_preserved": true,
+      "effective_batch16_full_train11198_steps700_tail14_preserved": true,
+      "old_microbatch": 1,
+      "new_microbatch": 8,
+      "conservative_prior_seconds": 9868.58915734291
+    },
+    {
+      "case": "L4_rho03",
+      "prefix_epoch": 21,
+      "first_continued_epoch": 22,
+      "prefix_checkpoint_sha256": "da16b8975a9c4f30ae05aabd75a3781efa777d412eb42924cd19126799642143",
+      "raw_ema_restored_exact": true,
+      "optimizer_ema_scheduler_reset": false,
+      "all_prefix_orders_transforms_gradients_history_preserved": true,
+      "effective_batch16_full_train11198_steps700_tail14_preserved": true,
+      "old_microbatch": 1,
+      "new_microbatch": 8,
+      "conservative_prior_seconds": 9868.58915734291
+    }
+  ],
+  "old_training_source_commit": "513f0e884a16be5f37846974deaeea55fac95f94",
+  "continuation_source_commit": "75be74b96e49e221c6b35a8edd94f98c0bfedac5",
+  "audit_sha256": "e66aa40f2868de4fdf6b13a2c8ffa5df40c693920c7af7e1b2f77ed3e0ab5a83",
+  "model_forward_calls": 0,
+  "test_arrays_read": 0,
+  "test_evaluations": 0,
+  "formal_authorized_by_this_receipt": false
+}

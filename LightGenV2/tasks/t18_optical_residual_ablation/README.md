@@ -1,3 +1,13 @@
+## RESISC完整30轮已结束：提速成功，精度准入未通过（2026-10-14）
+
+两rho全30轮，原E1-21及micro8接续E22-30保持；父/两子实际退出，项目2/5/6显存释放，完整CPU+执行接续审核passed，test0。
+同按firstminvalEMA balancedNLL选E29：rho0train41.45/val37.96/macro37.93/gap3.50pp；rho.3train45.24/val40.89/macro40.86/gap4.35pp。
+两组failval65/macro60/eachclass20，低训练拟合而非此前Caltech高train大gap；小gap不合格，不认为75/泛化已解决。
+每轮全11198train/1399val、macro16/700steps/tail14保持，micro1改8后普通完整轮57-61秒，约快7倍；最终网格未缩小。
+141接续运行源75be/原136513不变，所有PT/history/失败收据保留，4PDF真Poppler渲染逐view_image视检通过。
+[完整结果、速度、恢复、逐类CM和审核](reports/resisc20_20261014/L4_pair_microbatch_final/README.md)。
+原30轮预算已完，不自动更多训练/换类/扩预算/提前test；正式6和独立2/3/native仍未准入。
+
 ## 用户要求提速：RESISC原完整网络micro8已实际接续（2026-10-14）
 
 完整11198train/1399val，macro16/每轮700Adam更新/tail14不变；实际micro1改8，模型/数据/总30轮与14400秒预算保持。

@@ -1,3 +1,12 @@
+## Latest completed result
+
+Both original-resolutionL4rhofits completed30 andactualexit aftervalidatedspeed
+continuation. FullsavedCPU/migrationauditpassed, test0, allGPUallocationsreleased.
+SelectedE29train/val41.45/37.96% rho0,45.24/40.89% rho.3; bothfailadmission.
+[Final actualresults and fourvisuallyreviewedPDFs](L4_pair_microbatch_final/README.md).
+Belowstartup/resumeobservations arehistorical; neverrestart oldqueues orrerun
+existingaudits/markers/figures. Additionaltrainingneeds anewexplicitboundedbudget.
+
 ## Latest: actual execution speed continuation
 
 Human requested batch/speed optimization. Originalpair savedE21 and intentionally
