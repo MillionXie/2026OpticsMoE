@@ -1,0 +1,13 @@
+{
+  "run":"caltech10_equal100_residual_open_20261015",
+  "baseline_run":"caltech10_depth432_s17_equal100_correction_20261015",
+  "depth_targets_pp":{"2":4,"3":6,"4":10},
+  "maximum_total_epochs":null,
+  "checkpoint_block_epochs":25,
+  "additional_mixup_alpha":0.3,
+  "plateau_patience_epochs":75,
+  "plateau_minimum_improvement":0.0002,
+  "maximum_gpu_children":4,
+  "physical_gpu_indices":[0,2,4,5],
+  "scope":"Human 20261015: both100, freeze control, residual-only open-ended continuation. No total epoch cap. Checkpoints every25 are operational blocks, not a global training limit. Stop on achieved test-gap target or validation stagnation75 at minimum LR; report unmet target honestly. Test-informed development, not independent generalization."
+}
