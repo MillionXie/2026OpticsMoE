@@ -1,3 +1,15 @@
+## 最新人工允许三张非A100继续优化：原20接续200 + 一次新十类开发（2026-10-15）
+
+用户要求真实曲线、分析收敛/过拟合、继续冲80并保残差优势，必要时可挑类别。原100轮[真实曲线PNG/SVG/逐点CSV与诊断](reports/caltech20_current4_20261015/curve_review/README.md)已实际生成、view_image QA并在本chat展示。末段验证NLL继续降、LR一直.002，但残差train-val gap扩大，所以既未充分收敛也有泛化差，不能保证加轮数到80。此新人工范围覆盖下方旧完成后的禁止继续，仅下面两个有界方案，不自动test或无限候选。
+
+**A：原20同预算继续。** caltech20_current4_s17_pair_continue200_gpu25_20261015，新160训练来源c266b7973b105be6caa0dcdb95cfe2fe7cba2abc。双方E100 raw/EMA/Adam8600/scheduler100/LR.002完整恢复，prefix100不重播/重置，保持配置接续E101-200，无early、各3600新增fitsec上限。新CPU状态准入真passed/0forward，双方生产恢复态gate真passed。CPU campaign2199729/queue2200431，GPU2残差2201158/GPU5对照2201161实际在训；最近E168/E165仅临时观察，不跨E拼gain。[实际启动和独占科学条件](reports/caltech20_continue200_20261015/start/README.md)。
+
+**B：新十类开发配对。** caltech10_gap_s17_current4_pair150_gpu425_20261015，新169来源259cdcfdec6edc9b8ca29f9c7ddf18fb3668cffa。一次验证规则兼顾自身recall和非负残差差距，固定Faces/Leopards/Motorbikes/airplanes/bonsai/grand_piano/revolver/schooner/trilobite/yin_yang；原坐标窗口/划分保持，train761/val157，新任务不能当原20/完整101达到80，不把挑旧行均值当训练成绩。fresh双方150无early、各3600fitsec上限、每E48Adam尾9。metadata/新CPU native14forward黑10归一/新GPU4两rho数值门槛均真一次passed，0test。CPU campaign2220246/queue2220984、GPU4残差2221711实际在训，自己的生产gate真passed；对照pending待允许卡空槽自动启动。与A合计GPU2/5/4三子一卡一子、A1000，不抢杀外国任务。[固定名单、实际准入/启动及边界](reports/caltech10_gap_20261015/start/README.md)。
+
+两个新source身份均真实current/original，别与旧RESISC160/169混淆。各自campaign负责完整约定轮数及实际rc0退出后的唯一独占保存科学，自己的audit/completedSHA和父退出才完成，不手动再审/启动或扩预算。每条真完成后报告同预算train/val/macro/NLL/逐类正负结果，类别开发与原20分开。旧全部source/data/PT/history/失败/claims/markers保持；rawJSON/逐样本ID/PT/完整日志私有。t18/09 ACTIVE保留，普通健康静默。
+
+**下方旧已完成100轮、未授权继续等文字均为历史，由本次人工范围覆盖；旧审核/测试/图不能重做。**
+
 ## Caltech筛选20类当前四层已完整100轮并独立科学通过：验证差+7.0671pp（2026-10-15）
 
 两组均100轮/maximum_epochs、无early，GPUproducer原始rc0并实际退出，CPU campaign/queue全部退出；GPU2/5项目0/A1000/test0。自己的独占保存科学第一次passed，audit SHA588b5a7046f4f7e4ca6349459d9515874c153a6c31e2a943e48203bed54508a0与completed真实匹配，额外独立审核助手SHA/Git也实际核一致。按首次最低验证EMA balancedNLL均选E100。
