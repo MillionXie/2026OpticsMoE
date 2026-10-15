@@ -186,6 +186,25 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 DeepSeek非Tiny接续（仅CPU准备，GPU让出）：**已发布main`260ce67ae`的
+独立入口`deepseek_vl2_small_temporal_baseline`及固定官方Small profile，本地33pass/2serveronlyskip、
+原DeepSeek环境服务器35项全过（含实际2048/4096头更新及冻结回归），旧Tiny源码未改且
+SHA与原重训receipt一致；官方包原生processor/forward只读审查并绑定SHA，未升级依赖。
+Small仍原四个有序384图像、65%crop及Temporal prompt，全骨干冻结、仅五行10240；
+因40GB容量，特征提取及最终558推理都固定B1，原seed42/50e/b512/AdamW.001wd0/cosine/CE。
+新run`lgvq_deepseek_vl2_small_temporal_20261015`只启动CPU `prepare01`wrapper2154720/child2154722，
+7项官方元数据Git blob已核，第一片已实际536,870,912字节；下载不是训练。
+Small权重总32,297,441,224字节/16B总参数约2.8B激活，不能只按激活参数估算显存或存储。
+`cpu_interface01`wrapper2157638真实TRAIN B1 CPU预检已通过，无CUDA：输入1745token，
+1684视觉token，四帧原生global/local共8tiles，crop[1,4,2]全1；五词原生单token
+24215/36859/46885/11083/44974。GPU smoke/训练尚未启动，不能用CPU接口通过代替精度。
+入口SHA`93e9a7f79ceffe156bd52844468a6627ed53590ab85ac58426d01e14eb68eb39`，运行中不改。
+下载一小时界1792056049.796847、整个Small一次总界1792063249.796847，均不延长。
+优先利用率窗口内不派GPU，先读共享完成回执并核实际A100，再启动唯一有界suite。
+原生B1 GPU smoke先比官方完整末token logits与feature-tap/仅五行更新/骨干冻结；
+默认直接原生前向。显存不足仅保错误并研究已授权官方chunk512等价性，不擅自量化、
+offload、多卡、改帧或重试预算；不启动ResNet/U-Net或再扫第三候选。
+
 **2026-10-15 GLM完整结果（最新）：**`lgvq_glm46v_flash_temporal_20261015/head_width_recovery01`
 已完整结束：2808特征/44分片逐值、样本顺序及标签核对通过，原50轮训练完成。
 best e42 strictCPU缓存开发SRCC=.8103099733982221，last e50=.8093292637612969；
@@ -200,7 +219,8 @@ last SHA`2dc8535edecb377265d092da1f2b365e7efe376801f1691a63caa6eda3126b62`，
 训练收据SHA`8a39b743e761dbf83aed914bd78d26976a91b9abe20d5952dcf78cb977712db5`。
 独立CPU审核`cpu_final_verification.json`核53项artifact、运行源码/官方模型前后SHA、
 bestlast CPU逐样本复算与原生B1，均通过；131份原证据48,680,248字节已本地SHA备份，
-收据`backup_receipt_glm_complete01.json`，最终CPU审核另随收尾备份保护。
+收据`backup_receipt_glm_complete01.json`；含最终CPU审核共132份48,681,237字节另已SHA备份
+`backup_receipt_glm_final_audit01.json`。
 suite及自有GPU2025336/2025338/2031433/2106050均退出，A100已释放；本轮只精度，无正式成本。
 已核用户在另一窗口明确让统一利用率复测优先，协调文件标released_for_utilization，
 至Unix1792054119.450691暂缓后续GPU；GLM不复活，DeepSeek仅CPU准备，释放回执与实际GPU
