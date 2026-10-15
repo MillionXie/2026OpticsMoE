@@ -1,0 +1,5 @@
+depth,arm,actual_epochs,new_epochs_this_strategy,selected_epoch,train_pct,val_pct,test_pct,test_macro_pct,control_test_pct,gap_pp,state
+2,residual,1170,30,1143,80.6833114323259,75.79617834394905,81.7239498090562,76.77258184871407,77.68685215493726,4.037097654118938,strategy_review_required_target_unmet
+2,frozen_no_residual,100,0,98,67.9369251,64.9681529,77.68685215493726,71.89485708056765,,,frozen_unchanged
+3,accepted_residual,125,0,123,90.9329829,81.5286624,87.452264,84.6657022,80.2509547,7.2013093,accepted_untouched
+4,accepted_residual,765,0,488,99.6057819,87.2611465,93.3987998,90.1104069,83.9061648,9.492635,accepted_untouched
