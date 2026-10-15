@@ -1,11 +1,10 @@
-# LGVQ temporal quality: matched A100 inference costs and batch diagnostics
+# LGVQ temporal quality: frozen A100 costs and independent resident utilization
 
-15 October utilization-only follow-up: [execution gaps, startup windows and native CUDA Graph controls](UTILIZATION_METHOD_20261015.md).
-Seven cases/21 controls and three graph feasibility attempts are complete, with 98 SHA-backed raw files.
-Qwen B8 steady utilization is approximately 92%; the supported CLIP B10/YOLO B3 graph controls exceed 98% over their full phases.
-These independent load tests do not change the existing six measurement/table files or the historical Qwen B1 reference. No precision diagnosis was reopened.
+Updated 16 October 2026: all six models and all thirty previously measured batch configurations are complete. Each configuration has 558 frozen TEST predictions, a first-200-video cost record, matched power telemetry and a SHA-backed raw-data receipt. Only the interrupted GLM B=2 was retried; its failed evidence and the completed prefix were preserved. No new training, precision change, CUDA Graph or batch expansion was introduced.
 
-Updated 15 October 2026 (both bounded layer diagnoses complete; formal measurements unchanged). All 19 frozen settings, earlier numerical probes, and the new eight-video Qwen/DeepSeek boundary and route experiments are complete. This does not mean every primitive or CUDA kernel has been isolated or a stable full-558 replacement evaluation has been performed. The displayed curves still use only uninterrupted `full_remeasurement02` measurements. Interrupted rounds and failed diagnostics remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
+Current [figure data](plot_data.csv), [full costs and telemetry](timing_energy_recalculated.csv), [performance audit](batch_metric_audit.csv), [workbook](LGVQ_temporal_multi_baseline_recalculated.xlsx) and [two-panel figure](srcc_cost_comparison_reference.png) are in this same directory. The methods, complete numerical table and manuscript-ready descriptions are under “两图含义与实验方法” below. Qwen B=1 retains the finalized historical cost, explicitly distinguished from its new cost audit. LightGen-II retains the approved physical-performance reference and component-cost estimate.
+
+GPU-utilization labels use the independent, uniform native resident queue8 experiment of 15 October 2026, not the utilization of the dataset-once cost run. The earlier execution/Graph controls and precision diagnoses below are preserved historical evidence, not replacements for these current measurements. No precision diagnosis was reopened in this campaign. The original three-sheet workbook structure is retained.
 
 ## 最新因果隔离：相同输入、不同批形状的运算差异（15 October 2026）
 
@@ -377,62 +376,85 @@ BF16 results or their matched timing, energy and utilization measurements.
 
 ## 两图含义与实验方法
 
-图a展示每16视频推理能量与时间质量SRCC的关系，图b展示相同工作量的推理时间与SRCC的关系。横轴分别为Energy per 16 videos (J)和Inference time per 16 videos (ms)，使用对数坐标；纵轴为无量纲Temporal quality SRCC，范围0–1。B为每次GPU调用的视频数，N为每幅光场的视频数。每一个电子点都有其batch自己的558个TEST预测和同轮成本，不复制统一分数。LightGen-II仅为N=16物理SRCC参考和部件成本估算点，不是本轮重测光路。
+图a给出能量与时间质量性能的关系，图b给出推理时间与相同性能指标的关系。横轴分别为 Energy per 16 videos (J) 和 Inference time per 16 videos (ms)，均使用对数坐标，范围覆盖全部测量点；纵轴 Temporal quality SRCC 为无量纲量，显示0–1。B表示每次原生GPU前向调用中的视频数，N表示同幅光场中的视频数。电子曲线连接同一模型按B递增的独立测量，并非不同batch共用一个性能值。LightGen-II为N=16物理SRCC参考及既定部件成本估算，不是本轮新测光路。
 
-LGVQ固定划分含2250 TRAIN、558 TEST，共2808个不同视频。每视频在10%、37%、63%、90%相对位置取4帧。Qwen/DeepSeek/CLIP/YOLO输入分别448/384/224/640像素正方形；后三者沿原短边65%中心裁剪。权重冻结，eval模式；各模型各B独立新进程。Qwen采用原历史head，其他三者采用2026-10-13原协议重训head，均保持PT/manifest SHA不变。重训head为50epoch/seed42/五级质量行/冻结backbone/CE，最高TEST选模为开发指标，无VAL。本轮无训练或选模。正式骨干精度Qwen与DeepSeek为BF16，CLIP与YOLO为FP16，质量头FP32；后三者保留FP16特征量化再FP32读出。
+LGVQ固定划分包含2250个TRAIN和558个TEST视频，共2808个不同视频。每个视频按10%、37%、63%、90%的相对位置取原4帧。Qwen与GLM原解码尺寸为448，Small/Tiny为384，CLIP为224，YOLO为640像素；保持各模型原中心裁剪、原生processor及图像/视频token路径，不减帧或额外改分辨率。所有原PT冻结，eval/inference模式，每模型、每B使用全新进程。Qwen、GLM、Small和Tiny维持原BF16骨干，CLIP与YOLO维持FP16骨干，质量读出为FP32，原FP16特征量化路径不变。本轮不训练、不选模；此前根据该TEST划分选出的head仍属于开发指标，冻结复测不使其自动成为独立泛化测试。
 
-每批先CPU解码、裁剪和processor，再H2D，再推理，随后下一批。计时从首原生backbone block入口到GPU标量MOS就绪并完成同步；YOLO首block为卷积，其余为视觉Transformer。模型加载、CPU准备、H2D、之后CPU预测复制和审计开销不计最终成本。起点预钩子内无额外同步，因此为操作定义的同步墙钟边界，不是纯GPU kernel积分。无显式预热，第一调用保留。完整558视频统计SRCC，成本仅固定前200视频，并在200/558边界拆批，不丢尾样本。
+30种设置为Qwen B=1/2/3/4/6/8/10、GLM B=1/2、Small B=1/2/3/4、CLIP B=1/2/3/4/6/8/9/10、YOLO B=1/2/3、Tiny B=1/2/3/4/6/8。每种设置对相同顺序的完整558个TEST视频独立推理，按该B自己的预测计算SRCC与PLCC；逐视频ID、目标MOS、抽帧位置及PT/划分SHA均核对。近水平曲线不是复制B=1分数，也不意味着逐视频输出逐位相同。
 
-T16=sum(first200 synchronized inference wall ms)×16/200；E16=(338.2 W主机代理+同轮tagged-active A100平均板卡W)×T16/1000。B=1/2/4/8时等价于mean batch ms×16/B；B=3/9/10含实际不足满批的尾批，不能用均值×16/B偷换。16仅为吞吐工作量归一化，不是仅测试16视频。
+每批先在CPU上准备该批输入，再H2D，再执行一次原生批前向并输出MOS，之后处理下一批。同步墙钟从首原生backbone block输入开始，到GPU MOS完成并同步为止；YOLO首block为卷积，其他为视觉Transformer。计时包含此边界内的视觉/语言骨干、相关GPU处理和质量读出，不是只统计单个Transformer层。模型加载、CPU解码/裁剪/processor、H2D、随后CPU复制预测及审计开销不计最终成本，但原始逐批表保留审计字段。无显式预热，首调用保留；预钩子不额外同步，因此这是既定软件边界的同步墙钟，不是校准的纯kernel时间积分。
 
-| B | Full TEST calls | Final TEST call videos | First200 cost calls | Final cost call videos |
+成本固定使用前200个不同TEST视频，不是只测16个视频。分别在200和558处拆批，保留全部不足满批的尾样本。设这200个视频各实际调用的边界墙钟为tᵢ（ms），则
+`T16 = Σtᵢ × 16/200`，
+`E16 = (338.2 W主机功率代理 + 同轮前200视频inference-active平均A100板卡功率) × T16/1000`。
+16是固定工作量的吞吐归一化；B并不意味着GPU同时处理16个视频。只有前200恰好整除B时，才可等价写成mean batch ms×16/B；B=3/6/9的尾批必须按实际总时间统计。表中的每视频摊销成本为T16/16与E16/16，不应将光学16槽并行的摊销时间称为单视频独立调用延迟。
+
+| B | Full558 calls | Final TEST call videos | First200 cost calls | Final cost call videos |
 | --- | --- | --- | --- | --- |
 | 1 | 558 | 1 | 200 | 1 |
 | 2 | 279 | 2 | 100 | 2 |
+| 3 | 187 | 1 | 67 | 2 |
 | 4 | 140 | 2 | 50 | 4 |
+| 6 | 94 | 4 | 34 | 2 |
 | 8 | 70 | 6 | 25 | 8 |
 | 9 | 63 | 7 | 23 | 2 |
 | 10 | 56 | 8 | 20 | 10 |
-| 3 | 187 | 1 | 67 | 2 |
 
-功率、GPU利用率与显存同轮按50ms轮询并标记阶段。主表统计只取前200视频各调用的active标签窗口，与成本子集配套；后358视频仍计算性能，但不混入这些active均值。驱动自己的平均窗口并非50ms瞬时值，util是kernel-busy而非SM occupancy或峰值FLOPS使用率。短推理窗口可包含前序CPU间隔影响，CLIP/YOLO主交错util较低不代表算子没有GPU运行。均值功率×边界时间是沿用的能量估算，不是校准短调用积分。A100设250W；原始短功率读数中存在超过250W的峰值（DeepSeek约321–342W），保留不裁掉，不把设置值描述为瞬时硬限。
+本轮均使用同一NVIDIA A100-PCIE-40GB、固定250W设置和同一manifest。板卡功率、驱动利用率和显存以名义50ms轮询并记录阶段。成本功率/active均值仅使用同轮前200视频的推理标签窗口，不把后358视频的遥测混入，也不使用独立驻留负载的功率。利用率是驱动平均窗口内kernel忙碌时间比例，不是SM occupancy或峰值FLOPS比例；50ms轮询并不使驱动窗口变成50ms瞬时值，前序CPU等待可影响短窗口的读数。均值板卡功率加338.2W主机代理再乘边界时间是沿用的能量估算口径，不冒称短调用精密积分或实测整机墙插能量。250W是功率设置，原始峰值不因此被裁去。
+
+图中每点的百分数为另一项独立的统一利用率测量：预先准备前B个不同TEST视频的原4帧输入，一次H2D后驻留GPU；原生前向同流连续提交8次后同步，再继续同样循环。每次前向仍为B个视频，不是8B视频的一个大batch。各B三次完全相同重复，每次至少5秒预热、至少30秒完整测量，合并全部测量窗口样本计算均值，不选三次最高值，无CUDA Graph。它用于描述减少CPU供数间隙后的原生忙碌率，独立于本轮逐批准备输入的成本测量；其利用率不代入E16，也不冒称与Qwen历史成本同轮。完整原始值、三次重复及方法保留于本目录的`LGVQ_temporal_gpu_utilization.xlsx/.csv`、`LGVQ_temporal_gpu_utilization_repeats.csv`和`UTILIZATION_METHOD_20261015.md`。
 
 ## 图a：能量与时间质量性能
 
-LightGen-II物理SRCC为0.7977，每16视频能量估算1.1777J。新同轮Qwen B1为458.3508J，B8为228.3324J，分别对应389.19和193.88倍任务能效比（相同工作量的能量反比），能量降低99.7431%和99.4842%。多数基线增大batch后每视频成本下降，但这不是必须单调的理论：CLIP B9高于B8，包含尾批及运行噪声，不能人为平滑。性能曲线近水平源于SRCC变化很小，不是固定分数复制。
+图a比较完成等效16视频工作量所需的能量估算及相应的全558视频SRCC。LightGen-II物理SRCC为0.7977，E16为1.1777J。以已定稿Qwen B=1为对照，其E16为462.1134J，等效任务能效比为392.39倍，能量降低99.7452%；这一定稿点使用历史成本身份，而非新测功率推算的值。Qwen B=10的本轮E16为222.9824J，对应189.34倍能效比。这里能效指同工作量能量的反比，不等于TOPS/W。随B增大，调用次数减少且开销被摊销，但板卡功率、尾批与启动开销同时变化，能量不必单调下降；例如CLIP B=9的14.025980J高于B=8的13.160310J。图中不人为平滑这些实测差异，也不将独立高利用率视为该成本运行的遥测。
 
 ## 图b：时间与时间质量性能
 
-LightGen-II每16视频时间估算10.2456ms。新同轮Qwen B1与B8为1180.8067与512.4304ms，时间比分别115.25与50.01。增大B通常使单调用更长，但完成固定工作量的调用数下降并摊销开销，吞吐改善随后可能饱和或因显存/计算限制退化；不要求所有成本点单调，也不存在同权重准确率随batch上升的理论趋势。
+图b比较相同16视频归一化工作量的推理边界时间及全558视频SRCC。LightGen-II沿既定部件估算为10.2456ms。定稿Qwen B=1为1188.3861ms，时间比为115.99倍；Qwen B=10本轮为479.1690ms，时间比为46.77倍。增大B通常增加单调用计算量，却减少固定工作量的调用数，因此摊销时间可下降，之后趋于饱和或非单调。该图不是只比较一次GPU调用，更不是把B=8的八视频调用时间与光路16视频时间直接相除。不同batch的SRCC来自各自的真实预测；本轮保持原精度，不为获得相同SRCC而改变数值路径。
 
-## 全部绘图数据及主交错遥测
+## 全部绘图数据与配套成本遥测
 
-数据来源同一轮14 October 2026。以下20点含19电子设置和1光学参考。成本保留6位用于核对，不表示6位有效精度。对应未提前舍入数据为`plot_data.csv`与`timing_energy_recalculated.csv`；后者还保留mean/peak功率、利用率、显存、调用数及SHA。
+成本测量日期为2026-10-15、2026-10-16（北京时间）；以下31行包含30种电子设置和1个不变光学参考。独立驻留利用率来自2026-10-15统一测量。保留多位小数用于复核，不表示相同位数的测量有效精度。未提前舍入值及逐点来源、PT SHA、PLCC、成本调用数/尾批、active样本数、峰值功率和独立利用率日期均保存在`timing_energy_recalculated.csv`及`recalculation.json`；直接绘图输入为`plot_data.csv`，逐B精度复核为`batch_metric_audit.csv`。
 
-| Model | B / N | SRCC (558 TEST) | Time/16 (ms) | Energy/16 (J) | Active util mean (%) | Peak VRAM (MiB) |
-| --- | --- | --- | --- | --- | --- | --- |
-| LightGen-II | N=16 | 0.7977138739 | 10.245570 | 1.177690 | not measured | not measured |
-| Qwen3-VL-2B | 1 | 0.7663428037 | 1180.806745 | 458.350757 | 14.972 | 4705 |
-| Qwen3-VL-2B | 2 | 0.7664148425 | 765.604070 | 296.237303 | 11.183 | 4883 |
-| Qwen3-VL-2B | 4 | 0.7694958345 | 553.714911 | 233.495159 | 3.121 | 5107 |
-| Qwen3-VL-2B | 8 | 0.7694089803 | 512.430360 | 228.332385 | 13.556 | 5603 |
-| CLIP ViT-B/32 | 1 | 0.7252558080 | 166.339300 | 63.111235 | 1.898 | 903 |
-| CLIP ViT-B/32 | 2 | 0.7252452404 | 94.548801 | 35.723075 | 2.474 | 923 |
-| CLIP ViT-B/32 | 4 | 0.7252388170 | 52.953970 | 20.029098 | 0.600 | 931 |
-| CLIP ViT-B/32 | 8 | 0.7252388170 | 34.412313 | 13.029472 | 3.273 | 975 |
-| CLIP ViT-B/32 | 9 | 0.7252247615 | 36.311530 | 13.795622 | 2.000 | 995 |
-| CLIP ViT-B/32 | 10 | 0.7252388170 | 31.707193 | 12.048240 | 4.444 | 999 |
-| DeepSeek-VL2-Tiny | 1 | 0.5684669010 | 2917.680463 | 1332.941805 | 20.556 | 7771 |
-| DeepSeek-VL2-Tiny | 2 | 0.5703507558 | 2039.096788 | 1008.243099 | 18.043 | 8479 |
-| DeepSeek-VL2-Tiny | 4 | 0.5680463058 | 1714.183199 | 883.138613 | 38.224 | 9609 |
-| DeepSeek-VL2-Tiny | 8 | 0.5698244506 | 1543.665272 | 819.439993 | 62.197 | 12065 |
-| YOLO11s | 1 | 0.7015970082 | 336.490797 | 127.530261 | 4.358 | 841 |
-| YOLO11s | 2 | 0.7015940037 | 189.279941 | 71.566832 | 3.409 | 1037 |
-| YOLO11s | 3 | 0.7015940037 | 154.108012 | 58.414706 | 3.188 | 1259 |
-| YOLO11s | 4 | 0.7015916554 | 132.892382 | 50.314170 | 2.032 | 1467 |
-| YOLO11s | 8 | 0.7015904121 | 121.058940 | 45.901801 | 3.935 | 2327 |
+| Model | B / N | SRCC (558 TEST) | Time/16 (ms) | Energy/16 (J) | New-run board mean (W) | New-run active util (%) | Independent resident util (%) | Peak VRAM (MiB) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| LightGen-II | N=16 | 0.7977138739 | 10.245570 | 1.177690 | n.a. | n.a. | n.a. | n.a. |
+| Qwen3-VL-2B † | 1 | 0.7663428037 | 1188.386146 | 462.113401 | 49.057 | 13.897 | 71.175 | 4705 |
+| Qwen3-VL-2B | 2 | 0.7664148425 | 775.464571 | 299.266888 | 47.719 | 12.519 | 87.273 | 4883 |
+| Qwen3-VL-2B | 3 | 0.7688994244 | 594.155985 | 241.654724 | 68.519 | 5.927 | 89.268 | 4995 |
+| Qwen3-VL-2B | 4 | 0.7694958345 | 529.877741 | 220.545789 | 78.020 | 3.886 | 91.068 | 5107 |
+| Qwen3-VL-2B | 6 | 0.7690275127 | 530.216597 | 228.256550 | 92.297 | 8.347 | 91.384 | 5363 |
+| Qwen3-VL-2B | 8 | 0.7694089803 | 510.585322 | 231.044964 | 114.310 | 14.261 | 91.634 | 5603 |
+| Qwen3-VL-2B | 10 | 0.7689643492 | 479.169046 | 222.982372 | 127.152 | 21.757 | 90.629 | 5847 |
+| GLM-4.6V-Flash | 1 | 0.8092619561 | 1823.807501 | 804.723114 | 103.032 | 24.582 | 97.684 | 20495 |
+| GLM-4.6V-Flash | 2 | 0.8103099734 | 1637.954050 | 793.101065 | 146.002 | 14.726 | 98.069 | 20743 |
+| DeepSeek-VL2-Small | 1 | 0.7000797712 | 6394.885049 | 3249.991677 | 170.017 | 40.074 | 78.485 | 32093 |
+| DeepSeek-VL2-Small | 2 | 0.7011629394 | 4962.690410 | 2713.023316 | 208.484 | 56.002 | 91.331 | 32719 |
+| DeepSeek-VL2-Small | 3 | 0.7006516273 | 4438.846306 | 2469.259451 | 218.084 | 65.897 | 96.723 | 33393 |
+| DeepSeek-VL2-Small | 4 | 0.6975365498 | 4275.846012 | 2391.574259 | 221.122 | 72.734 | 98.495 | 34053 |
+| CLIP ViT-B/32 | 1 | 0.7252558080 | 182.672089 | 69.161005 | 40.407 | 2.160 | 38.934 | 903 |
+| CLIP ViT-B/32 | 2 | 0.7252452404 | 98.634829 | 37.260293 | 39.560 | 1.844 | 42.402 | 923 |
+| CLIP ViT-B/32 | 3 | 0.7252388170 | 82.313271 | 31.075554 | 39.328 | 1.727 | 48.610 | 925 |
+| CLIP ViT-B/32 | 4 | 0.7252388170 | 58.950832 | 22.270524 | 39.581 | 3.600 | 53.061 | 931 |
+| CLIP ViT-B/32 | 6 | 0.7252201339 | 45.331876 | 17.114467 | 39.337 | 2.000 | 67.841 | 953 |
+| CLIP ViT-B/32 | 8 | 0.7252388170 | 34.831300 | 13.160310 | 39.630 | 1.250 | 75.929 | 975 |
+| CLIP ViT-B/32 | 9 | 0.7252247615 | 37.140156 | 14.025980 | 39.450 | 4.182 | 88.806 | 995 |
+| CLIP ViT-B/32 | 10 | 0.7252388170 | 34.106913 | 12.895483 | 39.890 | 4.222 | 94.894 | 999 |
+| YOLO11s | 1 | 0.7015970082 | 374.377717 | 141.922212 | 40.888 | 4.000 | 44.456 | 841 |
+| YOLO11s | 2 | 0.7015940037 | 209.886779 | 79.243728 | 39.355 | 3.071 | 73.517 | 1037 |
+| YOLO11s | 3 | 0.7015940037 | 167.186430 | 63.184433 | 39.728 | 2.725 | 98.430 | 1259 |
+| DeepSeek-VL2-Tiny | 1 | 0.5684669010 | 2962.976354 | 1358.412224 | 120.262 | 21.773 | 74.497 | 7771 |
+| DeepSeek-VL2-Tiny | 2 | 0.5703507558 | 2106.624516 | 1038.187488 | 154.620 | 19.910 | 84.115 | 8479 |
+| DeepSeek-VL2-Tiny | 3 | 0.5718993847 | 1802.669920 | 910.704630 | 166.998 | 24.852 | 88.851 | 9035 |
+| DeepSeek-VL2-Tiny | 4 | 0.5680463058 | 1678.749006 | 868.184257 | 178.961 | 35.333 | 92.303 | 9609 |
+| DeepSeek-VL2-Tiny | 6 | 0.5705645932 | 1618.090537 | 840.004509 | 180.933 | 49.801 | 96.084 | 10883 |
+| DeepSeek-VL2-Tiny | 8 | 0.5698244506 | 1537.324385 | 817.289328 | 193.431 | 60.676 | 97.782 | 12065 |
 
-## 连续负载：配套时延、能量与GPU利用率
+† Qwen B=1的Time/16与Energy/16为历史定稿成本；本行New-run功率、active util、显存及当前精度属于本轮审计，不构成“历史成本与新功率配套”的声明。本轮实际审计T16=1230.453189611ms、E16=476.501019216J，另存工作表审计列，未覆盖定稿值。当前B=1全558 SRCC=0.7663428036522781，与历史定稿一致。独立驻留利用率为71.17536071%，历史63.13311148%参考仍在原利用率文件中单列，不用来替换统一协议新值。
+
+## 历史连续负载存档：2026-10-14（不用于当前两图）
+
+本节仅保留旧15秒连续负载的原始对照；不是当前统一三次驻留利用率，也不替代当前30种设置的成本。下列19行均属历史测量，未混入上方完整新表。
 
 另在同一进程、同一PT/B下，用前B个不同TEST视频已驻GPU的输入重复推理约15秒。此处没有每次CPU准备，成本和util来自连续负载自己的记录，严禁将本表高util配给上一表交错成本。时间折算mean boundary ms×16/B，B=3/9/10为吞吐等效值，不宣称整数次调用刚好处理16条。连续负载未独立计算新的全TEST性能，性能仍来自同PT/B的558视频独立前向。CLIP B9平均80.7617%触发补B10；B10平均89.1913%未达98%，不扫描更大B。YOLO B3平均85.6284%，B4为96.5436%，B8为97.0976%；不能把峰值98%当作平均98%。
 
@@ -458,7 +480,7 @@ LightGen-II每16视频时间估算10.2456ms。新同轮Qwen B1与B8为1180.8067�
 | YOLO11s | 4 | 53.780790 | 31.315951 | 96.544 | 99 | 244.089 | 1469 |
 | YOLO11s | 8 | 49.939259 | 29.122482 | 97.098 | 99 | 244.958 | 2329 |
 
-## 精度变化的诊断证据
+## 历史精度变化的诊断证据（本轮未重测）
 
 同权重精确数学推理不应因batch而改变输出，也无性能随B单调提升或下降的预期。第一步核所有558个样本ID、MOS及每模型抽帧一致；同模型PT与manifest SHA一致。Qwen和DeepSeek另对前8个固定TEST做B1/2/4输入tensor SHA及重复前向。逐视频有效文本、图像、抽帧相同，DeepSeek还核图像crop及图像token mask；原精度重复结果相同，原精度诊断与正式前向最大差0。
 
@@ -473,24 +495,33 @@ LightGen-II每16视频时间估算10.2456ms。新同轮Qwen B1与B8为1180.8067�
 | deepseek | native_math_sdpa | 1.472774506 | 1.418304443 |
 | deepseek | cast_deployed_weights_fp32_math_sdpa | 0.001331329 | 0.001548767 |
 
-FP32探针同时将部署BF16权重转FP32并使用math SDPA，不恢复权重被量化丢弃的位，也不替代正式结果。DeepSeek保留部署FP16特征取值；math SDPA不控制未调用torch SDPA的算子。Qwen math-only未消除差异，DeepSeek math-only无改变；FP32探针大幅减小差异，支持低精度计算路径是主要贡献，而不是输入改变或随机重训。范围仅8视频，未逐层分解每一算子，不能声称完整唯一因果证明。SRCC基于MOS排序，数值差异可改变秩；近水平曲线不意味着每条MOS完全相同。正式19组未改精度、权重或选模。
+FP32探针同时将部署BF16权重转FP32并使用math SDPA，不恢复权重被量化丢弃的位，也不替代正式结果。DeepSeek保留部署FP16特征取值；math SDPA不控制未调用torch SDPA的算子。Qwen math-only未消除差异，DeepSeek math-only无改变；FP32探针大幅减小差异，支持低精度计算路径是主要贡献，而不是输入改变或随机重训。范围仅8视频，未逐层分解每一算子，不能声称完整唯一因果证明。SRCC基于MOS排序，数值差异可改变秩；近水平曲线不意味着每条MOS完全相同。2026-10-14的19组正式测量未改精度、权重或选模；当前30组也沿用原数值路径。该八视频诊断不冒称已逐层解释六模型的全部差异。
 
 ## 历史总表锚点与LightGen-II口径
 
-历史Qwen B1仍保留SRCC0.7663428036522781、1188.3861464262009ms/16、462.1134010767563J/16，不写入新同轮曲线，也没有GPUutil记录。新B1为1180.8067452907562ms/16、458.3507566057941J/16，性能相同但成本为独立测量；不能新util与旧成本拼接冒称配套。九任务总表未被本轮修改。
+根据用户确认，当前两图及正式表中的Qwen B=1继续使用SRCC0.7663428036522781、1188.3861464262009ms/16、462.1134010767563J/16。当前新SRCC与其完全一致；新成本1230.453189611435ms/16、476.5010192155209J/16仅作审计，不替换历史定稿。历史成本来源为`LightGenV2/reports/20260928_nine_task_a100_table/latest_nine_task_summary.csv`中的01a及批准配置保存的未舍入值。图注、Sources与逐点provenance均标明此唯一成本例外；没有把旧成本、新功率和独立驻留util冒称同一轮。九任务总表未被本轮修改。
 
 LightGen-II沿此前表格参考：N=16同光场，六周期6×(.714+.300+.0307)=6.2682ms；电子部件3.9773695913702247ms是整幅16槽场计时，不是测一条视频再乘16。router .8302489486336708、CCD后处理2.0079718434810636、bridge .2413414404541254、head .8978073588013649ms。总10.245569591370225ms；E16=.0062682×(80.358+41.388)+.0039773695913702247×(41.388+62.842)=1.1776895097085185J。每视频摊销.0736055943567824J，13.5859238518309videos/J；.6403480994606391ms/video为摊销服务时间而非单视频调用时延。光周期与电子FP32 CUDA-event部件估算不冒称本轮实测精确正式PT光路端到端，不能与baseline同步墙钟说成相同仪器/精度。
 
+
 ## English Methods
 
-We evaluated temporal video-quality prediction on the fixed LGVQ split of 2,250 training and 558 test videos. Each video contributed four frames at relative positions of 10%, 37%, 63% and 90%. All 19 frozen model–batch configurations were evaluated independently on the same 558 test videos. Inference cost was measured on the first 200 videos and normalized to a workload of 16 videos. Partial batches were retained at the 200- and 558-video boundaries. Each configuration ran in a fresh process on the same NVIDIA A100-PCIE-40GB. For each batch, CPU preprocessing and host-to-device transfer preceded inference; these stages were recorded for audit but excluded from the reported costs. Synchronized wall-clock timing began at the first native backbone block and ended after the scalar quality score was available on the GPU. No explicit warm-up was performed, and the first measured call was retained. Energy was estimated as inference duration multiplied by the sum of the 338.2-W host-power proxy and the same-run inference-active mean board power.
+We evaluated temporal video-quality prediction on the fixed LGVQ split of 2,250 training and 558 test videos. Four frames were sampled at relative positions of 10%, 37%, 63% and 90%, retaining each model's original crop, native processor and resolution. All 30 previously established configurations of six frozen models were independently evaluated on the same ordered 558 test videos in fresh processes on an NVIDIA A100-PCIE-40GB at a 250-W power-limit setting. Original BF16/FP16 backbone execution, feature quantization and FP32 quality readout were retained. No training, checkpoint selection, precision modification or CUDA Graph was introduced. Checkpoints previously selected using this test split retain development-set status; frozen reevaluation does not create an independent generalization test.
 
-GPU utilization, board power and memory use were sampled together at a nominal 50-ms polling interval. Main telemetry statistics used only inference-active windows for the same first 200 videos as the cost subset. GPU utilization denotes the driver-window fraction of time during which kernels were active, not streaming-multiprocessor occupancy. A separate approximately 15-s continuous-load experiment repeatedly processed the first B distinct test inputs already resident on the GPU. Continuous-load latency, energy and utilization are reported together and are not assigned to the interleaved-inference costs. Qwen and DeepSeek retained BF16 backbone execution, CLIP and YOLO retained FP16 execution, and quality heads used FP32. The LightGen-II point retains the physical SRCC reference and the previously approved optical-cycle plus electronic-component cost estimate; it is not a new end-to-end optical measurement.
+For each batch, CPU input preparation and host-to-device transfer preceded native inference. These stages, model loading and post-inference CPU audit were excluded from the reported cost boundary. Synchronized host-wall timing began at the first native backbone block input (the first convolution for YOLO) and ended after the GPU MOS output was complete and synchronized. The boundary includes the subsequent native visual/language computation and quality readout, not only one Transformer layer. No explicit warm-up was performed, and the first call was retained. Costs used the first 200 distinct test videos, with all partial batches retained and batches split at the 200- and 558-video boundaries. Inference time was normalized as T16=(sum of the first-200-video boundary times)×16/200. Energy was estimated as E16=(338.2-W host-power proxy + same-run inference-active mean A100 board power)×T16/1000. This is the agreed power-times-duration estimate, not a calibrated per-call or whole-system wall-plug energy integral. SRCC and PLCC were calculated separately for each configuration using all 558 predictions.
+
+Board power, driver utilization and memory were polled together at nominal 50-ms intervals with phase tags. Cost telemetry statistics used only inference-active windows for the first 200 videos; driver utilization represents kernel-busy time over the driver's averaging window, not SM occupancy or a 50-ms instantaneous quantity. Figure annotations instead report independently measured utilization under one uniform GPU-resident native protocol: the first B distinct inputs were prepared and transferred once; eight same-stream native forward calls were queued before synchronization. Each call still processed B videos, not a single batch of 8B videos. Each B used three identical repeats, each with at least 5 s of warm-up and 30 s of measurement, and all measured telemetry samples were pooled without selecting the highest repeat. No CUDA Graph was used. These utilization values are descriptive independent measurements; their power or timing is not substituted into the dataset-once costs.
+
+Qwen B=1 retains the finalized historical T16=1188.3861464262009 ms and E16=462.1134010767563 J as the sole electronic-cost exception. Its new full-test SRCC matches the historical value exactly; new cost and telemetry are retained separately as audit data. The LightGen-II point uses the unchanged physical SRCC reference and optical-cycle/electronic-component estimate for a 16-video optical field, not a new exact-checkpoint end-to-end optical benchmark.
 
 ## English figure description
 
-Temporal quality versus inference cost on LGVQ. (a) Energy and (b) inference time normalized to 16 videos. Electronic points use the complete matched A100 remeasurement of 14 October 2026; B indicates videos per GPU call. SRCC is calculated separately from all 558 test predictions at each batch size. The LightGen-II reference represents 16 videos per optical field (N=16), with physical SRCC 0.7977 and component-estimated costs of 1.1777 J and 10.2456 ms. Larger batches generally reduce amortized electronic cost, but this trend need not be monotonic. The nearly horizontal performance curves do not imply batch-invariant predictions: bounded same-input probes support low-precision computation as a major contributor to the observed batch-dependent differences. Historical measurements, preprocessing costs and continuous-load telemetry are not mixed into these points.
+Temporal video-quality performance versus normalized inference cost on LGVQ. (a) Energy per 16 videos and (b) inference time per 16 videos, shown on logarithmic horizontal axes. The vertical axis is dimensionless temporal-quality SRCC. Each electronic point represents an independent full-558-video evaluation at the indicated maximum batch size B, with costs normalized from the first 200 videos and all partial batches retained. Lines connect increasing B within each model, without imposing monotonic cost or performance. Percentages beside the points denote independently measured native GPU-resident utilization under the uniform three-repeat queue8 protocol; they are not utilization measurements paired with the plotted dataset-once costs. Qwen B=1 retains the finalized historical cost, explicitly distinguished from its new audit measurements. The LightGen-II reference represents N=16 videos per optical field, with physical SRCC 0.7977 and unchanged component-estimated costs of 1.1777 J and 10.2456 ms. Numerical data, separate provenance, methods and raw-data receipts are retained in the accompanying tables.
 
 ## Reproducibility and evidence
 
-Formal run: `LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_telemetry_a100_20261014/full_remeasurement02`. Measurement entry SHA28fc58f1; telemetry28ad0666. Manifest SHA607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc. Original Qwen PT e102adc6; reproduced CLIP28729f41/YOLO47606708/DeepSeek3748b08f. Exact per-file SHA and sources are in `recalculation.json` and the canonical run backup receipts. Old refreshed report files are recoverably archived in the same run's `report_before_refresh` with a manifest; all original measurements and failed attempts remain unchanged. The historical side-effecting `build_analysis.py` was not executed. Report refresh is CPU-only and launches no GPU processes.
+Canonical run: `LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_frozen_batch_costs_a100_20261015`. Its original eight completed configurations are retained in place. The original GLM B=2 attempt stopped before producing any prediction when a foreign GPU process entered; it remains failed evidence and is excluded. Under the subsequent explicit user authorization, `continuation01` validated and reused the completed prefix and measured only the interrupted/unstarted configurations. Its suite and child reports are complete; the old failed parent status was deliberately not overwritten. All 30 valid settings passed offline recomputation from per-sample predictions, actual batch plans, tagged power samples and process audits.
+
+Original measurement source was main344c0e3a9 (entry SHA c34444be26cf0cd62bc14be5002061a8388a98d8172b9b23566b63842297101e). Continuation source main d5f0d2603 uses entry SHA6222b7edbb7654fbfa11cad4c1579e673ef81070ea4fa095dfedd1c45d264ab4. CPU AST tests verify unchanged worker arithmetic, batching, cost formula, native timing, model hashes and idle guards; only orchestration for preserving completed settings changed. Later unrelated main commits do not change this bound source identity. Manifest SHA607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc is unchanged. Exact six checkpoint identities, per-point sources and source-file hashes are in `recalculation.json` and the SHA-backed raw receipts.
+
+The final full-run backup contains 251 original files, with the initial adjacent launch/admission controls additionally archived by their own receipt. The offline verifier checks 252 distinct immutable/snapshot records across the receipts, including previously preserved failed/control evidence; this is an evidence-file count, not a number of measurements. Failed attempts never contribute to the 30 valid results. Earlier report bytes are recoverably archived under the same canonical run's `prior_report_archive`, with a SHA manifest. Old 15-s resident controls, precision diagnoses and the historical Qwen reference remain separate. The previous side-effecting `build_analysis.py` was not executed. Figure/table refresh is CPU-only and launches no GPU processes.
