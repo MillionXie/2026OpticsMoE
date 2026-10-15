@@ -187,6 +187,15 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
 **2026-10-15 新授权 GLM-4.6V-Flash（准备阶段，尚无训练/精度结果）：**
+实际派发已完成：CPU`cpu_interface02`真实TRAIN B1/B2通过，输入各566token、
+grid[2,32,32]、512视觉token，质量词ID17063/83409/60369/15204/49337；无CUDA初始化。
+专属环境实际导入Torch2.6cu124/Transformers5.0.0通过，15项合同测试两端通过。
+唯一`suite01` wrapper1952580/CPUparent1952581已运行、当前waiting_for_assets；
+原CPU下载wrapper1941644第一片完整SHA过、第二片实际2,483,027,968字节，尚未训练。
+运行源main`59bd2b1ce`、入口SHA
+`fac2aa8e08e5d81e8efabe1f7d214bf3868e261343ce04295c6b8ac4e6b5bf99`。
+suite总截止Unix1792057184.9830482，资产等待截止1792049984.9830482，不延长；
+监督`glm-flash-a100`每20分钟最多12次，仅重大结果/故障/人工动作通知。
 用户明确同意试智普官方 `zai-org/GLM-4.6V-Flash`，固定revision
 `411bb4d77144a3f03accbf4b780f5acb8b7cde4e`。它是9B级、完整多模态约10B，
 不是与此前2–3B候选总参数等规模；官方4片BF16权重20,585,644,048字节，13项资产
