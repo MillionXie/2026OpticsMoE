@@ -1,3 +1,13 @@
+## 新人工授权：冻结十类四层一次配对测试完成，继续残差正则与三/二层（2026-10-15）
+
+当前冻结E149有/无残差模型已各一次仿真test、真实rc0退出并保存预测独立核验passed：1833张有残差92.7987%(1701)、无残差88.3797%(1620)，测试差+4.4190pp；macro89.7096/86.2398差+3.4698pp，未达到10pp目标。原验证+7.6433不能当test差。类别开发/此前Caltech test观察过，支持不均须看macro与逐类。详见[真实冻结测试报告](reports/caltech10_gap_20261015/paired_once_test/README.md)。不得重这两个模型测试或用test换类别/epoch/反调参。
+
+人工明确允许继续缓解有残差过拟合、完成后跑三层与二层、最多四张非A100。这覆盖旧禁止新训练仅此有界followup：caltech10_regularize_then_L3L2_s17_20261015，177来源084e7be07be831d627bbafa98f87a378a2cf97a1；先残差full E150 raw/EMA/Adam7200/scheduler/LR.001恢复，E151-200仅MixUp.2->.4，无额外手动LR减半/重置、1800新增fit秒、无early、firstmin全prefix+50验证EMA balancedNLL选；旧已测权重若仍被选则复用已测结果不再forward，新权重冻好最多一次测试并复用固定对照。额外残差预算不是新同预算因果优势。
+
+随后fresh三层E-G-E和二层E-G，各rho.3/0同150完整无early、各3600fit秒/7200Adam，原10类/角色/坐标/input100/4专家/8bit保持，不用test选模。各配对自己的独占科学passed才各一次冻测。新CPU恢复态+depth2/3黑十路归一8synthetic forward准入SHA17e3db1d52460bb4c35a093bf958230a8051d314d3b97847c84681e52ca452bb、GPU0五种depth/rho/恢复态all10/macro16/tail9数值与梯度准入SHA79629de6758c972b3eb1376d856f3abde357c0fcce09b2b565b45fe8a4691a43实际一次passed/optimizer0/test0，不能重入。GPU0/2/4/5全球最多4一卡一子、Torch2GiB+800MiB、A100禁止、不杀外国任务，总新增fit<=4.5GPU小时。失败保留停下游不retry/放宽/扩预算，不无限追10pp。t18与09 ACTIVE保留，普通健康静默、新真实失败/完成主动报。
+
+此新范围覆盖下方两条优化已结束之后不再实验等旧文字；旧sources/PT/data/history/claims/失败/markers继续保护。全部原始JSON/逐样本ID/PT/完整日志私有，源码仅Git，报告HEAD不是实际训练来源。
+
 ## 本轮两条优化均全完成：新Caltech十类验证86.62%，配对残差差+7.64pp（2026-10-15）
 
 新固定十类双方完整150且独占科学第一次passed，CPU campaign/queue与两GPU子actualexit/原始rc0，所有T18GPU项目0/A1000/test0。按firstminimum验证EMA balancedNLL均选E149：有残差train99.3430/val86.6242/macro86.3258/NLL.5708938839；无残差train90.2760/val78.9809/macro78.9135/NLL.8056351399，净多12/157正确，验证差+7.6433pp、macro+7.4123pp。真实同150预算/单seed17、无电子分类器，未测试；验证知情筛类新开发任务，不是原20或完整101达到80、也不称完全未见泛化。训练验证gap12.7188/11.2951仍在，不能称无过拟合。
