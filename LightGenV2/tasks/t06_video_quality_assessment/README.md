@@ -1,5 +1,24 @@
 # T06 视频质量评价
 
+## 2026-10-15 统一利用率测量新授权
+
+本聊天统一利用率入口为`unified_resident_utilization`，配置
+`configs/baselines/unified_resident_utilization_20261015.json`。仅A100 UUID
+`GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`、250W且无foreign compute进程时启动；
+只测利用率，不训练、不改变原SRCC/时延/能耗或用户已定稿Qwen B1 63.13%的历史身份。
+Qwen、CLIP、YOLO、DeepSeek Tiny与新GLM/Small使用同一测量循环：前B个TEST视频原四帧
+只准备/传输一次，GPU输出、同流八次前向后同步，无Graph。每点连续三次相同方法，各真实
+预热至少5秒、记录至少30秒完整窗口；保留全部重复均值并按原始计数采样数合并，不选最高
+重复或最高窗口。新增原始clock/温度与测量前后CPU调度计数用于观察波动，不改频率/亲和性。
+首四个候选含B1/2/3/4，随后有限小步配置；首个B>=2合并均值>=98%即停，前一个已测batch
+保留。上限Qwen/CLIP10、Tiny8、GLM6、Small4；Small原B1容量合同不被训练入口覆盖，
+新测试只用官方batchify扩展真实推理batch，原B1输出对原始预测CSV核验。遇原生OOM只记录
+容量边界、不重试/量化/offload/减帧。新模型有限值审计置于计时外，模型内部原生同步不改。
+数据仅同canonical run `lgvq_utilization_execution_20261015/unified_repeat_suite01`，
+父队列两小时绝对界，六模型串行，模型/数据/已训练PT SHA及环境绑定；原始遥测/调用/重复
+结果按一致结构保留，完成后原目录利用率Excel/CSV更新并保留历史参考。源码CPU合同14项
+通过后Git发布及服务器检查，再启动GPU；此段是协议，不是已测出性能的声明。
+
 ## 2026-10-15：利用率执行对照完成（不改定稿成本与精度）
 
 本轮新授权只查利用率/统计窗口/执行开销，不再处理精度诊断。原目录

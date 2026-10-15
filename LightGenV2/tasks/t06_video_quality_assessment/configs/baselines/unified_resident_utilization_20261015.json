@@ -1,0 +1,20 @@
+{
+  "protocol": "resident_native_queue8_three_identical_repeats_v1",
+  "warmup_s": 5,
+  "measurement_s": 30,
+  "repeats": 3,
+  "queue_depth": 8,
+  "target_mean_percent": 98,
+  "repeat_spread_warning_pp": 5,
+  "maximum_suite_s": 7200,
+  "cuda_graph": false,
+  "historical_costs_and_metrics_unchanged": true,
+  "batches": {
+    "qwen": [1, 2, 3, 4, 6, 8, 10],
+    "glm": [1, 2, 3, 4, 6],
+    "small": [1, 2, 3, 4],
+    "clip": [1, 2, 3, 4, 6, 8, 9, 10],
+    "yolo": [1, 2, 3, 4],
+    "deepseek": [1, 2, 3, 4, 6, 8]
+  }
+}
