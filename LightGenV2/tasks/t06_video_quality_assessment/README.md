@@ -186,6 +186,27 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 Ovis单B1最终核验（本轮有限筛选结束，未达到超过ours的目标）：**
+`lgvq_ovis25_temporal_20261015/suite01`已完成原2250TRAIN/558TEST、2808条冻结特征、
+44分片与完整FP16缓存逐值及样本顺序/标签核对、50轮原预算五行训练；训练收据53项
+artifact SHA与全部运行源码SHA通过。best e40 strictCPU缓存开发SRCC=.7933612885340906，
+last e50=.7929585476443863，不能用缓存开发分数代替独立原生B1。
+freshprocess A100 B1完整558唯一视频的SRCC=.7918416340914095、PLCC=.8061727368258899，
+均从逐样本CSV独立重算吻合；相对参考ours约.7977低.0058583659，未达标。
+best PT SHA `ee4b4e823391d018b39871cf53c18ab30eccfd5f62405b8cb3e3eb3527837ecc`，
+training receipt SHA `aed3a8d259a4cf3347c5fcd9cd252318a3fba5d3998f4e0ac80c949b877fb4b1`。
+全部77文件24,428,620字节已按SHA备份本地同名canonical suite，见
+`backup_receipt_complete01.json`；suite及子进程已退出，A100无本聊天compute进程。
+仅accuracy-only，无本轮时延/能耗结论；按TEST最高SRCC选模，全部为开发指标、无VAL。
+不改分、不另扫PT或超参，不重启旧模型；本轮监督按已批准有限规则结束。后续若需新
+候选/更高模型规模或预算，应先明确有限方案，不自动无限续跑。
+
+| 本聊天候选 | A100原生B1 SRCC（558视频） | 相对ours约.7977 |
+|---|---:|---:|
+| SmolVLM2-2.2B | .7699090393508032 | -.0277909606 |
+| InternVL3.5-2B | .7707267117951120 | -.0269732882 |
+| Ovis2.5-2B | .7918416340914095 | -.0058583659 |
+
 **2026-10-15 Ovis准备恢复与原生输入合同：**Git待发布的`ccb677caf`已确认在远端，
 服务器通过main同步后14项CPU合同测试通过，`lgvq_ovis25_temporal_20261015/prepare`
 已实际启动单CPU固定SHA下载（wrapper1708546）；不是训练。官方`configuration_ovis2_5.py`
