@@ -48,9 +48,10 @@ def test_native_backbone_no_thinking_generation_or_patch():
 
 def test_four_frames_geometry_metadata_and_no_resampling():
     s = source('prepare_batch')
-    assert 'do_sample_frames=False' in s and "'video_metadata'" in s
-    assert '448 * 448' in s and 'len(d[0]) != 4' in s
+    assert "'do_sample_frames': False" in s and "'video_metadata'" in s
+    assert "'do_resize': False" in s and 'len(d[0]) != 4' in s
     assert 'core.FRAME_FRACTIONS[4]' in s
+    assert "grid[:, 0].eq(2)" in s
 
 
 def test_original_single_loss_optimizer_no_scan():

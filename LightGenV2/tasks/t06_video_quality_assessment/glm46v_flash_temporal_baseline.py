@@ -100,12 +100,14 @@ def prepare_batch(rows, model):
         raise RuntimeError("Exactly four decoded frames required")
     inputs = model._quality_processor(text=[model._quality_prompt]*len(rows),
         videos=[np.stack([np.asarray(f) for f in d[0]]) for d in decoded],
-        padding=True, return_tensors="pt", do_sample_frames=False,
-        videos_kwargs={"size":{"shortest_edge":448*448,"longest_edge":448*448},
+        padding=True, return_tensors="pt",
+        # GLM5 processor only honors these controls inside videos_kwargs. Frames
+        # are already448 from the original decoder: no extra resize or sampling.
+        videos_kwargs={"do_sample_frames":False,"do_resize":False,
                        "video_metadata":[d[1] for d in decoded]})
     inputs.pop("token_type_ids", None)
     grid = inputs["video_grid_thw"]
-    if len(grid) != len(rows) or not bool(grid[:, 1:].eq(32).all()):
+    if len(grid) != len(rows) or not bool(grid[:, 1:].eq(32).all()) or not bool(grid[:, 0].eq(2).all()):
         raise RuntimeError(f"Native448/14 spatial patch geometry differs: {grid.tolist()}")
     counts = inputs["input_ids"].eq(model.config.image_token_id).sum(1)
     if not bool(counts.eq(grid.prod(-1)//4).all()):
@@ -199,7 +201,9 @@ def run(args,c,identity):
         results=[]
         for n in (1,2):
             inputs,pos=prepare_batch([r for r in rows if r["split"]=="train"][:n],model)
-            results.append(dict(batch=n,shapes={k:list(v.shape) for k,v in inputs.items()},frame_positions=pos))
+            results.append(dict(batch=n,shapes={k:list(v.shape) for k,v in inputs.items()},frame_positions=pos,
+                video_grid_thw=inputs["video_grid_thw"].tolist(),
+                visual_tokens_per_video=inputs["input_ids"].eq(model.config.image_token_id).sum(1).tolist()))
         frozen.write_json(args.output/"cpu_preflight_report.json",dict(status="passed",results=results,
             native_quality_token_ids=ids,thinking=False,gpu_initialized=torch.cuda.is_initialized(), prompt=model._quality_prompt,
             trainable_output_parameters=20480, runtime_sha256=runtime_sources()))

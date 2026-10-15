@@ -196,6 +196,10 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 seed42/50epoch/b512/AdamW.001wd0/cosine/CE不变。原生hidden4096，因此仅五行20480参数，
 而非旧2048维的10240；原骨干、connector、embedding及LMhead全冻结，无LoRA/adapter。
 使用官方non-thinking模板、原生视频processor，禁止额外抽帧/crop/生成CoT或修改第三方图。
+CPU接口首次检查保留在`cpu_interface01`：顶层do_sample_frames在此官方版本被忽略，
+导致对已抽四帧二次采样失败。按原生接口把do_sample_frames=False及do_resize=False明确
+放入videos_kwargs（解码已448），不修改库源码；GLM的size上限是全视频像素而非每帧面积，
+因此不拿单帧448²当全视频budget。原四帧应形成grid[2,32,32]/512视觉token，需CPU复核。
 专属入口`glm46v_flash_temporal_baseline`先真实CPU B1/B2、两TRAIN GPU smoke及官方
 forward与末token特征读出一致性，再原预算训练、freshprocess A100 B1完整558。
 只accuracy-only，不做B4/B8或正式成本，TEST最高选模仍为开发指标；不保证超过ours。
