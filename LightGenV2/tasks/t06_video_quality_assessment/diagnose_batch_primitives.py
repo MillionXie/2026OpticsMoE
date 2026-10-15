@@ -320,6 +320,109 @@ def deepseek_gpu(output, gpu_uuid):
     device_audit(gpu_uuid)
 
 
+def deepseek_isolated_attention(output, gpu_uuid):
+    """Stop at first attention, then isolate it with identical repeated video0.
+
+    This distinguishes inherited upstream error from attention's own batch-shape
+    error. It does not produce complete-model MOS, SRCC, latency or energy.
+    """
+    import torch
+    from . import run_batch_layer_diagnostics as suite
+    device_audit(gpu_uuid)
+    command = suite.child_command("deepseek", "gpu", output)
+    options = {key: Path(command[command.index("--"+key.replace("_", "-"))+1])
+               for key in ("manifest", "checkpoint", "model", "previous_diagnostic", "reproduction_receipt")}
+    args = argparse.Namespace(baseline="deepseek", output=output, **options)
+    preflight = argparse.Namespace(**vars(args)); preflight.output = output / "preflight_unused"
+    frozen.preflight_files(preflight)
+    old = json.loads((args.previous_diagnostic / "diagnosis.json").read_text())
+    model, head, rows, prepare, transfer, _, timer, original_handles = frozen.load_runtime(args)
+    layers.detach_cost_instrumentation(timer, original_handles)
+    attention = model.language.model.layers[0].self_attn
+    if attention.__class__.__name__ != "LlamaAttention":
+        raise ValueError("Unexpected actual first attention")
+    # A private exception stops before any first-attention arithmetic or MoE.
+    class InputCaptured(Exception):
+        pass
+    class Video0Trace(layers.Trace):
+        def split(self, tensor, kind):
+            return super().split(tensor, kind)[:1]
+    captured, upstream, boundary_trace = {}, {}, Video0Trace()
+    handles = layers.install_hooks(model, boundary_trace)
+    current_batch = 1
+    def stop_before_attention(_module, positional, keyword):
+        hidden = positional[0] if positional else keyword["hidden_states"]
+        record = {"hidden_states": hidden.detach().cpu().clone()}
+        for key, value in keyword.items():
+            if key != "hidden_states":
+                record[key] = value.detach().cpu().clone() if torch.is_tensor(value) else value
+        if record.get("past_key_value") is not None:
+            raise ValueError("Unexpected attention cache")
+        captured[current_batch] = record
+        raise InputCaptured()
+    handles.append(attention.register_forward_pre_hook(stop_before_attention, with_kwargs=True))
+    try:
+        for batch in BATCHES:
+            current_batch = batch
+            device_audit(gpu_uuid)
+            cpu, _ = prepare(rows[:batch])
+            inputs = layers.verified_transfer(cpu, batch,
+                old["inputs"][str(batch)]["input_fingerprints"][:batch], transfer)
+            boundary_trace.setup(inputs, 0)
+            boundary_trace.mode = "reference" if batch==1 else "compare"
+            boundary_trace.statistics = {}
+            try:
+                numerics.diagnostic_forward(args, model, head, inputs, False)
+            except InputCaptured:
+                pass
+            else:
+                raise ValueError("Attention pre-hook did not stop native forward")
+            stats = boundary_trace.report()
+            upstream[str(batch)] = dict(stages=stats,
+                first_observed=next((key for key, value in stats.items()
+                    if value.get("changed_entries", 0)), None),
+                attention_input_video0_sha256=numerics.tensor_hash(captured[batch]["hidden_states"][:1]))
+            torch.save(captured, output / "actual_attention_inputs.pt")
+            frozen.write_json(output / "upstream_boundaries.json", upstream)
+            del inputs
+    finally:
+        for handle in handles: handle.remove()
+        timer.close()
+    del boundary_trace
+    first = captured[1]["hidden_states"]
+    # Preserve exact deployed first-attention parameters for CPU-only follow-up.
+    torch.save(dict(state_dict={k:v.detach().cpu() for k,v in attention.state_dict().items()},
+                    config=attention.config.to_dict(), source=__import__("inspect").getsource(type(attention))),
+               output / "first_attention_deployed_operands.pt")
+    torch.backends.cuda.matmul.allow_tf32 = False
+    results = {}
+    for mode in ("native_fixed_input", "fp32_attention_gemm_fixed_input"):
+        capture, single = OperatorCapture(), None
+        groups = {}
+        for batch in BATCHES:
+            device_audit(gpu_uuid)
+            values = {k:(v.cuda() if torch.is_tensor(v) else v) for k,v in captured[batch].items()}
+            values["hidden_states"] = first.repeat(batch,1,1).cuda()
+            capture.reset(batch)
+            for key in ("hidden_states", "attention_mask", "position_ids", "cache_position"):
+                if torch.is_tensor(values.get(key)):
+                    capture.record("fixed_input_"+key, values[key])
+            with torch.autocast("cuda", dtype=torch.bfloat16), attention_mode(capture, mode.startswith("fp32")):
+                out = attention(**values)[0][:1].cpu()
+            if single is None: single = out
+            groups[str(batch)] = dict(output_vs_own_b1=difference(out, single), statistics=capture.stats,
+                first_observed=next((key for key in capture.events if capture.stats.get(key,{}).get("changed")),None))
+            torch.save(dict(operators=capture.samples, attention_output_video0=out),
+                       output / f"{mode}_b{batch}.pt")
+            frozen.write_json(output / "fixed_input_attention.json", dict(results={**results,mode:groups},
+                scope="Isolated native first attention; repeated exact captured B1 input, real positions/masks; no full-model scores"))
+            print(json.dumps(dict(mode=mode,batch=batch,first=groups[str(batch)]["first_observed"],
+                output_delta=groups[str(batch)]["output_vs_own_b1"]["max_abs"])),flush=True)
+            del values
+        results[mode] = groups
+    device_audit(gpu_uuid)
+
+
 @contextlib.contextmanager
 def gpu_slot(gpu_uuid):
     """Cooperate with T06 measurement/Smol queues; no GPU occupancy while busy."""
@@ -350,6 +453,7 @@ def run_checked(args):
                 if args.baseline!="qwen": raise ValueError("CPU mechanism phase only supports saved Qwen operands")
                 qwen_cpu(args.output)
             elif args.baseline=="qwen": qwen_gpu(args.output, args.gpu_uuid)
+            elif args.isolated_attention: deepseek_isolated_attention(args.output, args.gpu_uuid)
             else: deepseek_gpu(args.output, args.gpu_uuid)
         frozen.write_json(args.output / "status.json", {**identity, "status":"complete"})
     except BaseException as error:
@@ -363,6 +467,7 @@ def main():
     parser.add_argument("--baseline", choices=("qwen", "deepseek"), required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--gpu-uuid", choices=tuple(DIAGNOSTIC_GPUS), default=frozen.A100_UUID)
+    parser.add_argument("--isolated-attention", action="store_true")
     args = parser.parse_args(); args.output = args.output.resolve()
     if not args.output.is_relative_to(OWNER.resolve()):
         raise ValueError("Canonical diagnostic run required")

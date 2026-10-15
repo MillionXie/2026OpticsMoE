@@ -75,3 +75,12 @@ def test_cross_hardware_comparison_is_not_same_gpu_fidelity_guard():
     assert 'original_a100_prediction_max_abs' in source
     assert 'mode == "native" and gpu_uuid == frozen.A100_UUID' in source
     assert 'physical_gpu' in source
+
+
+def test_isolated_attention_preserves_actual_input_then_repeats_exact_b1():
+    source = Path(primitives.__file__).read_text(encoding="utf-8")
+    assert 'raise InputCaptured()' in source
+    assert 'actual_attention_inputs.pt' in source
+    assert 'values["hidden_states"] = first.repeat(batch,1,1).cuda()' in source
+    assert 'first_attention_deployed_operands.pt' in source
+    assert 'upstream_boundaries.json' in source
