@@ -2,22 +2,63 @@
 
 ## Unified resident inference measurements
 
-The current protocol uses **one execution mode with three identical repeats**.
-The earlier three-mode comparison below is historical and is not pooled with
-these results. As of 21:20 on 15 October 2026, GLM completed both predefined
-points. The other five models are pending because an external YOLO process
-occupied the A100 between models. No overlapping measurement is included.
+All six models completed the same native resident-inference protocol on 15 October
+2026: **one execution mode, repeated three times per batch**. The earlier
+three-mode experiments below are historical controls and are not pooled with this
+round. The 30 model–batch points contain 90 repeats, 55,249 retained utilization
+samples and 158,408 forwards over 2,786.797 measured seconds. Every complete repeat
+is included. No CUDA Graph, maximum-window selection or retraining is used.
 
-| Model | Video batch B | Repeat 1 (%) | Repeat 2 (%) | Repeat 3 (%) | Pooled utilization (%) | Peak (%) |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| GLM-4.6V-Flash | 1 | 97.66446 | 97.61765 | 97.77104 | 97.68360 | 98 |
-| GLM-4.6V-Flash | 2 | 98.09437 | 98.04290 | 98.06908 | 98.06876 | 99 |
+| Model | Video batch B | Repeat 1 (%) | Repeat 2 (%) | Repeat 3 (%) | Pooled utilization (%) | SD (pp) | Peak (%) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Qwen3-VL-2B | 1 | 71.41860 | 71.92000 | 70.18667 | 71.17536 | 0.89196 | 73 |
+| Qwen3-VL-2B | 2 | 87.45714 | 87.28047 | 87.08472 | 87.27339 | 0.18629 | 89 |
+| Qwen3-VL-2B | 3 | 89.24463 | 89.24544 | 89.31457 | 89.26821 | 0.04015 | 91 |
+| Qwen3-VL-2B | 4 | 90.73632 | 91.06312 | 91.40667 | 91.06814 | 0.33521 | 93 |
+| Qwen3-VL-2B | 6 | 91.90296 | 91.79639 | 90.46764 | 91.38420 | 0.79970 | 94 |
+| Qwen3-VL-2B | 8 | 91.69672 | 91.63399 | 91.57259 | 91.63433 | 0.06206 | 96 |
+| Qwen3-VL-2B | 10 | 90.03060 | 91.25325 | 90.60680 | 90.62857 | 0.61166 | 96 |
+| GLM-4.6V-Flash | 1 | 97.66446 | 97.61765 | 97.77104 | 97.68360 | 0.07861 | 98 |
+| GLM-4.6V-Flash | 2 | 98.09437 | 98.04290 | 98.06908 | 98.06876 | 0.02573 | 99 |
+| DeepSeek-VL2-Small | 1 | 78.69040 | 78.09846 | 78.66770 | 78.48482 | 0.33539 | 83 |
+| DeepSeek-VL2-Small | 2 | 90.88060 | 91.35426 | 91.76048 | 91.33134 | 0.44037 | 96 |
+| DeepSeek-VL2-Small | 3 | 96.69878 | 96.77301 | 96.69878 | 96.72347 | 0.04286 | 99 |
+| DeepSeek-VL2-Small | 4 | 97.32353 | 99.09687 | 99.08036 | 98.49530 | 1.01911 | 100 |
+| CLIP ViT-B/32 | 1 | 38.55201 | 38.90772 | 39.34228 | 38.93400 | 0.39579 | 42 |
+| CLIP ViT-B/32 | 2 | 42.39028 | 42.46901 | 42.34564 | 42.40168 | 0.06247 | 44 |
+| CLIP ViT-B/32 | 3 | 48.45805 | 48.56951 | 48.80235 | 48.61006 | 0.17567 | 50 |
+| CLIP ViT-B/32 | 4 | 53.32496 | 52.82915 | 53.03020 | 53.06145 | 0.24938 | 55 |
+| CLIP ViT-B/32 | 6 | 68.00838 | 67.82550 | 67.68960 | 67.84125 | 0.15996 | 69 |
+| CLIP ViT-B/32 | 8 | 75.45134 | 75.88926 | 76.44556 | 75.92901 | 0.49828 | 79 |
+| CLIP ViT-B/32 | 9 | 89.36471 | 87.59228 | 89.46218 | 88.80571 | 1.05258 | 93 |
+| CLIP ViT-B/32 | 10 | 95.72987 | 95.82689 | 93.12584 | 94.89368 | 1.53221 | 99 |
+| YOLO11s | 1 | 42.37919 | 45.06208 | 45.92295 | 44.45556 | 1.84829 | 49 |
+| YOLO11s | 2 | 73.19128 | 73.71477 | 73.64381 | 73.51676 | 0.28398 | 75 |
+| YOLO11s | 3 | 98.96309 | 98.78655 | 97.54271 | 98.43009 | 0.77414 | 99 |
+| DeepSeek-VL2-Tiny | 1 | 74.92545 | 74.19667 | 74.35667 | 74.49697 | 0.38302 | 82 |
+| DeepSeek-VL2-Tiny | 2 | 84.30924 | 83.96315 | 84.07191 | 84.11453 | 0.17698 | 87 |
+| DeepSeek-VL2-Tiny | 3 | 88.90563 | 88.76568 | 88.88119 | 88.85077 | 0.07475 | 95 |
+| DeepSeek-VL2-Tiny | 4 | 92.14603 | 92.39557 | 92.36809 | 92.30343 | 0.13683 | 99 |
+| DeepSeek-VL2-Tiny | 6 | 96.08974 | 96.15705 | 96.00480 | 96.08382 | 0.07630 | 100 |
+| DeepSeek-VL2-Tiny | 8 | 97.81214 | 97.78499 | 97.74964 | 97.78221 | 0.03134 | 100 |
 
-The B1 and B2 measurements contain 1,811 and 1,818 retained driver samples,
-respectively, over 91.476 and 91.646 measured seconds. Their three-repeat standard
-deviations are 0.07861 and 0.02573 percentage points. B2 meets the predefined 98%
-mean criterion, so no larger GLM batch is measured. Kernel-busy utilization is
-not SM occupancy or a percentage of peak floating-point throughput.
+The 98% stopping criterion was first reached at GLM B2 (98.06876%), Small B4
+(98.49530%) and YOLO B3 (98.43009%). Their immediately preceding tested batches
+remain in the table. Tiny stopped at its predefined B8 cap with 97.78221%;
+CLIP stopped at B10 with 94.89368%. Qwen stopped at B10 with 90.62857%; its B8
+measurement was 91.63433%. No larger batches or repeat selection were added
+after observing these results. Utilization need not increase strictly with batch.
+These driver counters measure kernel-busy time, not SM occupancy or achieved
+FLOPS relative to peak capacity. They do not establish that 98% is an overload limit.
+
+The largest within-point spread among the three repeat means was 3.54375
+percentage points (YOLO B1), below the predefined five-point warning threshold.
+The reported SD is the sample standard deviation of the three repeat means,
+not a confidence interval based on thousands of independent observations.
+The clocks, temperature and CPU scheduling records are available for explaining
+variability, but this experiment does not isolate a causal explanation for the
+earlier Qwen B1 fluctuation. Its new three-repeat mean is 71.17536%; the finalized
+historical 63.133111480865225% observation remains separate, not silently replaced.
 
 ### Common execution and aggregation
 
@@ -56,36 +97,72 @@ measured point is retained. A native out-of-memory error instead records the
 capacity boundary and ends the series without quantization, offload or fewer
 frames. A driver counter cannot exceed 100%, and 98% does not define overload.
 
-### Retained data and pending work
+### Data records and manuscript use
 
-The existing utilization workbook contains the verified current GLM points and
-explicit pending statuses for Qwen, Small, CLIP, YOLO and Tiny. Its `Repeat
-measurements` sheet and `LGVQ_temporal_gpu_utilization_repeats.csv` contain one row
-per original repeat: mean and peak utilization, measured duration, sample count,
-forward count, board power, memory, SM clock, temperature, CPU queue-wait time,
-warmup duration, timestamp and source path. Each canonical repeat additionally
-retains `telemetry.csv`, `clock_telemetry.csv`, `forward_groups.json`,
-`process_audit.json` and `report.json`. Units and fields are the same for all models.
-The preceding 12-point workbook and CSV are archived under the historical
-`continuous_suite01/published_table_before_unified_repeat` filenames.
+The existing utilization workbook contains all 30 points. Its `Repeat measurements`
+sheet and `LGVQ_temporal_gpu_utilization_repeats.csv` contain all 90 original repeats,
+one row per observation. Fields are mean and peak utilization, actual measured
+duration, counter sample count, forward count, same-window board power and memory,
+SM clock, temperature, CPU queue-wait time, actual warmup duration, UTC+8 timestamp
+and source path. Percentages remain numeric in Excel; the mean formulas use
+the original counter sum divided by sample count. The summary pools all three
+repeats' counters, rather than taking their highest value. Unrounded data remain
+in the CSV and canonical JSON. The repeated input is the first B TEST videos,
+not 558 distinct videos or a new full-dataset accuracy evaluation.
 
-The canonical current run is
-`lgvq_utilization_execution_20261015/unified_repeat_suite01`. GLM's 35 original
-files have been backed up locally with SHA256 verification. An initial Qwen
-preflight-order error occurred before CUDA initialization and yielded no Qwen
-measurement. That admission error was fixed in published main `f97048b64`;
-the measurement-loop AST is identical to its original `5f73f4e71` version.
-The continuation was subsequently blocked before CUDA by another external
-YOLO process. Completed GLM records remain valid. User-authorized waiting checks
-are bounded by the original 22:55:30 deadline; this is not an indefinitely
-restarting measurement queue.
+Each canonical repeat retains `telemetry.csv`, `clock_telemetry.csv`,
+`forward_groups.json`, `process_audit.json` and `report.json`. The raw driver
+and clock records have monotonic and wall-clock timestamps, so their windows
+can be reconstructed. The same fields and aggregation apply to all six models.
+All original model reports remain bound to the unchanged checkpoint, split,
+input-tensor identities and native output checks. Small B1 was also checked
+against its finalized native prediction; this is not an independent B>1 SRCC audit.
+The dataset remains the original 2,250 TRAIN and 558 TEST split, with no training
+or test-set checkpoint selection in this utilization experiment.
 
-**Historical Qwen B1 63.133111480865225% remains a separate reference.** It is not
-relabelled as a new three-repeat result. Utilization is measured independently of
-the finalized SRCC, latency and energy. All six formal cost and accuracy files
-remain SHA-identical; neither this resident workload's power nor its forward
-timings replace the published cost protocol. In particular, Qwen B1 remains
-1,188.3861464262009 ms and 462.1134010767563 J per 16 videos in that historical table.
+The canonical run is
+`lgvq_utilization_execution_20261015/unified_repeat_suite01`. GLM has 35 original
+files; the successful five-model continuation `remaining_native01` has 474 files,
+including its command records and parent status. All 509 original files have
+local per-file SHA256 backups. Independent CPU reconciliation binds 492 source
+records and checks every repeat's timestamps, driver counters, eight-call groups,
+process ownership, power limit and unchanged MOS outputs. The workbook has also
+been recalculated, error-scanned, rendered and reimported to verify all 30 means
+and 90 repeat records. The six formal cost/accuracy files remain SHA-identical.
+
+An initial Qwen admission-order error failed before CUDA and produced no result.
+The admission fix was published as main `f97048b64`; its measurement-loop AST is
+identical to the original `5f73f4e71` GLM version. External YOLO activity at two
+admission boundaries was excluded, not measured concurrently. After the A100
+was verified idle, the unchanged continuation completed at 22:21:30, before
+the original 22:55:30 deadline. The parent and final worker exited and no own
+A100 compute process remained. Failed starts and historical measurements are
+retained separately; they are not additional points in the table. The earlier
+12-point workbook/CSV and the interim GLM-only publication are preserved under
+the same canonical run's archive records.
+
+Utilization is reported **independently** of the finalized SRCC, latency and energy.
+Neither these resident forward timings nor their board-power observations replace
+the published processing-cost protocol. Qwen B1 retains
+1,188.3861464262009 ms and 462.1134010767563 J per 16 videos in the historical
+cost table; the new utilization must not be described as a simultaneous
+measurement of those historical costs.
+
+### Manuscript description
+
+GPU utilization was characterized on an NVIDIA A100-PCIE-40GB GPU configured
+with a 250 W power limit. For each frozen model, the inputs from B fixed LGVQ
+test videos, with four frames per video, were prepared once and retained in GPU
+memory. Native forward inference was then repeated on one CUDA stream, retaining
+outputs on the GPU and synchronizing after every eight serial calls. Each
+forward processed B videos. Three identical repetitions were acquired per batch,
+each comprising at least 5 s of warmup followed by at least 30 s of measurement.
+The primary utilization statistic pooled all driver samples from the three complete
+measurement windows. Individual repeat means, standard deviations, power,
+memory use, clock frequencies and temperature were retained. Batch sizes were
+increased according to predefined sequences until the pooled mean first reached
+98% or the preset batch cap was reached. These GPU-resident workload measurements
+were independent of the latency, energy and accuracy evaluations.
 
 ## Historical continuous inference measurements
 
