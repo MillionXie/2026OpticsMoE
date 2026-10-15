@@ -7,9 +7,7 @@ import numpy as np
 import torch
 from PIL import Image
 from caltech_repair234_model import CorrectedMoE
-from resisc10_model import SubsetMoE as TenReadout
-from resisc20_input_encoder import encode
-from export_caltech_repair234 import routing_from_ccd,encode_stage
+from caltech_deploy234_model import rms_encode
 INDICES=(0,1,2,3,4,7,14,15,16,19)
 EXPECTED={'residual':'b3d89f3ab2b177bd85997453cb0d0f8289d25b600243ca59c824ac529f59172d',
           'control':'62154e9067aa75494189955421a0d32e74cbe8ff14b4f3caf929262ed11445cc'}
@@ -26,7 +24,31 @@ def save(p,v):
 class LabMoE(CorrectedMoE):
     def __init__(self,rho):
         super().__init__(3,rho);self.detectors=self.detectors[list(INDICES)].clone()
-    forward=TenReadout.forward
+    def forward(self,amplitude,callback=None,ids=None):
+        # Exact frozen ten-window body, avoiding training-only sklearn imports.
+        self.last={};intensity=self.capture(amplitude,'router',callback=callback,ids=ids)
+        weights=routing_from_ccd(self,intensity);self.routing_weights=weights.detach()
+        for k in range(self.depth):
+            intensity=self.capture(amplitude,str(k),weights,callback,ids)
+            if k<self.depth-1:amplitude=self.nonlinear(intensity,self.stages[k+1])
+        energy=torch.einsum('bhw,khw->bk',intensity,self.detectors)
+        return (energy+1e-12)/(energy.sum(1,keepdim=True)+10e-12),energy.sum(1)/intensity.sum((-2,-1)).clamp_min(1e-12)
+
+def encode(images,theta=None,tile=100):
+    assert theta is None and tile==100,'Hardware uses the frozen evaluation encoder only'
+    f=torch.nn.functional;x=images.float()/255
+    x=f.interpolate(x,(100,100),mode='bicubic',align_corners=False,antialias=True).clamp(0,1)
+    mosaic=torch.cat([torch.cat([x[:,0:1],x[:,1:2]],3),torch.cat([x[:,2:3],x.mean(1,keepdim=True)],3)],2)
+    return rms_encode(f.interpolate(mosaic,(224,224),mode='bilinear',align_corners=False)[:,0])
+
+def routing_from_ccd(model,value):
+    energy=torch.einsum('bhw,khw->bk',value,model.router_masks);centered=energy-energy.mean(1,keepdim=True)
+    dense=torch.softmax(centered/(centered.square().mean(1,keepdim=True)+1e-8).sqrt()/2,1)
+    return dense/dense.square().sum(1,keepdim=True).sqrt().clamp_min(1e-8)
+
+def encode_stage(model,amplitude,stage,weights=None):
+    _,amp,phase=model.physical_fields(amplitude,stage,weights)
+    return np.rint(amp.numpy().clip(0,1)*255).astype(np.uint8),np.rint(phase.numpy()*256).astype(np.uint8)
 
 def model_for(assets,arm):
     p=assets/(arm+'.pt');assert sha(p)==EXPECTED[arm]
@@ -73,8 +95,14 @@ def phase_native(gray):
 @torch.inference_mode()
 def selftest(a):
     a.out.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4);x,y,ids=dataset(a.assets,'train',10);proof=[]
+    metadata=json.loads((a.assets/'bridge_reference.json').read_text());assert sha(a.assets/'bridge_reference.npz')==metadata['sha256']
+    reference=np.load(a.assets/'bridge_reference.npz',allow_pickle=False)
+    assert ids.tolist()==reference['ids'].tolist() and metadata['checkpoints']==EXPECTED
     for arm in EXPECTED:
         model=model_for(a.assets,arm);inp=encode(x,None,100);ref=model(inp)[0];calls=[]
+        assert np.allclose(inp.numpy(),reference['input'],atol=1e-6,rtol=0)
+        training_error=float(np.max(np.abs(ref.numpy()-reference[arm])))
+        assert training_error<=1e-6,'Lab graph differs from actual training model'
         def callback(stage,amp,phase,ids):
             qa=np.rint(amp.clip(0,1)*255).astype(np.uint8)
             assert np.allclose(qa.astype(np.float32)/255,amp,atol=1e-7,rtol=0)
@@ -87,7 +115,7 @@ def selftest(a):
             return model.propagator(field).abs().square()[:,20:498,20:498].numpy()
         actual=model(inp,callback,ids)[0];err=float((actual-ref).abs().max())
         assert err<=1e-6 and calls==['router','0','1','2']
-        proof.append(dict(arm=arm,checkpoint_sha256=EXPECTED[arm],bridge_error=err,captures_per_sample=4,train_samples=10))
+        proof.append(dict(arm=arm,checkpoint_sha256=EXPECTED[arm],bridge_error=err,training_graph_error=training_error,captures_per_sample=4,train_samples=10))
     save(a.out/'selftest.json',dict(passed=True,proof=proof,devices_opened=0,electronic_finetuning=False))
     print(json.dumps({'selftest':'passed','proof':proof}),flush=True)
 
