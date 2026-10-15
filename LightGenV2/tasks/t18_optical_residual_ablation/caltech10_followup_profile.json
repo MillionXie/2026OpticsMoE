@@ -1,0 +1,14 @@
+{
+  "run": "caltech10_regularize_then_L3L2_s17_20261015",
+  "residual_parent_last_sha256": "3dd438d7dd6b59ed3625ce20a140e38fb1a0841b658fe1e84a035b0285a33e74",
+  "residual_parent_history_sha256": "2db7ed346978b4c40079a9b00167ee47d48c655a09709d2f44b58fd0cc94d154",
+  "regularization": {"prefix_epochs":150,"maximum_epochs":200,"additional_fit_seconds":1800,"mixup_alpha":0.4,"manual_lr_factor":1.0,"optimizer_reset":false,"ema_reset":false,"scheduler_reset":false},
+  "depths": [3,2],
+  "fresh_epochs_per_depth_per_rho":150,
+  "maximum_fit_seconds_per_fresh_arm":3600,
+  "maximum_new_fit_gpu_hours":4.5,
+  "maximum_gpu_children":4,
+  "physical_gpu_indices":[0,2,4,5],
+  "test_rule":"Freeze on first minimum validation EMA balancedNLL. Original selected pair tested once; regularized distinct selected weights may test once, reusing frozen control test; each new depth/rho once after own science. No test-guided selection or retries.",
+  "authorization":"Human20261015: keep fixed ten classes; test both selected models; residual may optimize overfit; test residual advantage>=10pp is target, not guarantee; after four-layer stage run depths3/2; four non-A100 cards."
+}
