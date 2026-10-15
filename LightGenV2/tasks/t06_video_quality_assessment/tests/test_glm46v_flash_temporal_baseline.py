@@ -96,6 +96,34 @@ def test_recovery_accepts_exact_range_only():
     validate_range(SimpleNamespace(status_code=206, headers={'Content-Range': 'bytes 4-7/12', 'Content-Length': '4'}), 4, 7, 12)
 
 
+def test_transient_range_retry_bounded_and_does_not_retry_identity(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    import requests
+    from LightGenV2.tasks.t06_video_quality_assessment import glm46v_assets as assets
+    calls = []
+    class Response:
+        status_code = 503
+        headers = {}
+        def close(self):
+            pass
+    def get(*args, **kwargs):
+        calls.append(kwargs)
+        return Response()
+    monkeypatch.setattr(assets.time, 'sleep', lambda _: None)
+    receipts = []
+    monkeypatch.setattr(assets.shared.frozen, 'write_json', lambda path, value: receipts.append(value))
+    fake = SimpleNamespace(get=get, HTTPError=requests.HTTPError, RequestException=requests.RequestException)
+    with pytest.raises(requests.HTTPError):
+        assets.range_request(fake, 'https://example.invalid', 4, 7, 12, assets.time.time()+30, tmp_path)
+    assert len(calls) == 3
+    assert [r['attempt'] for r in receipts] == [1, 2, 3]
+    calls.clear()
+    Response.status_code = 200
+    with pytest.raises(RuntimeError):
+        assets.range_request(fake, 'https://example.invalid', 4, 7, 12, assets.time.time()+30, tmp_path)
+    assert len(calls) == 1
+
+
 def test_refuse_old_outputs_before_loading(tmp_path):
     with pytest.raises(FileExistsError):
         run.shared.new_output(tmp_path)

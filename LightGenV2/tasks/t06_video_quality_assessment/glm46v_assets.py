@@ -1,6 +1,7 @@
 """One bounded, SHA-verified GLM download recovery; preserve failed partial bytes.
 
-Uses small exact HTTP ranges instead of one multi-GB connection. No retry loop.
+Uses small exact HTTP ranges instead of one multi-GB connection. At most three
+attempts for transient network errors only; never retry an identity/range error.
 Only pinned public model data, never executable patches or repository source.
 """
 from __future__ import annotations
@@ -22,9 +23,37 @@ CHUNK = 64 * 1024 * 1024
 
 def validate_range(response, start, end, total):
     if response.status_code != 206 or response.headers.get('Content-Range') != f'bytes {start}-{end}/{total}':
-        raise RuntimeError('Server did not honor exact public HTTP range; preserve partial')
+        raise RuntimeError(f"Server did not honor exact range: status={response.status_code}, "
+                           f"Content-Range={response.headers.get('Content-Range')!r}; preserve partial")
     if int(response.headers.get('Content-Length', -1)) != end - start + 1:
         raise RuntimeError('Unexpected HTTP range content length')
+
+
+def range_request(requests, url, start, end, total, deadline, output):
+    for attempt in range(1, 4):
+        if time.time() >= deadline:
+            raise TimeoutError('Original asset deadline reached')
+        response = None
+        try:
+            response = requests.get(url, params={'range_start': start, 'range_end': end},
+                headers={'Range': f'bytes={start}-{end}', 'Accept-Encoding': 'identity'},
+                stream=True, timeout=(20, 60))
+            if response.status_code in (429, 500, 502, 503, 504):
+                raise requests.HTTPError(f'Transient HTTP {response.status_code}')
+            validate_range(response, start, end, total)
+            return response
+        except requests.RequestException as e:
+            if response is not None:
+                response.close()
+            shared.frozen.write_json(output / f'network_{start}_{attempt}.json',
+                dict(start=start, end=end, attempt=attempt, error=repr(e), at_unix=time.time()))
+            if attempt == 3:
+                raise
+            time.sleep(min(3, max(0, deadline - time.time())))
+        except BaseException:
+            if response is not None:
+                response.close()
+            raise
 
 
 def main():
@@ -33,6 +62,7 @@ def main():
     p.add_argument('--model', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--deadline-unix', type=float, required=True)
+    p.add_argument('--resume-partial', choices=('recovery02',), help='Preserve verified failed recovery bytes')
     args = p.parse_args()
     if not time.time() < args.deadline_unix <= time.time() + 3600:
         raise ValueError('Recovery must retain original asset deadline, at most one hour')
@@ -63,8 +93,9 @@ def main():
                 if not shared.asset_valid(target, spec):
                     raise ValueError('Preserve conflicting existing target: ' + name)
                 continue
-            failed = model / (name + '.partial')
-            working = model / (name + '.recovery02.partial')
+            prior = model / (name + '.recovery02.partial')
+            failed = prior if args.resume_partial == 'recovery02' and prior.exists() else model / (name + '.partial')
+            working = model / (name + ('.recovery03.partial' if args.resume_partial else '.recovery02.partial'))
             if working.exists():
                 raise FileExistsError('No blind recovery restart: ' + str(working))
             if failed.exists():
@@ -88,9 +119,7 @@ def main():
                 end = min(start + CHUNK, total) - 1
                 url = f"https://hf-mirror.com/{c['model_id']}/resolve/{c['model_revision']}/{name}"
                 # Cache keys must distinguish ranges on public mirrors/CDNs.
-                with requests.get(url, params={'range_start': start}, headers={'Range': f'bytes={start}-{end}',
-                        'Accept-Encoding': 'identity'}, stream=True, timeout=(20, 60)) as response:
-                    validate_range(response, start, end, total)
+                with range_request(requests, url, start, end, total, args.deadline_unix, output) as response:
                     count = 0
                     with working.open('ab') as f:
                         for block in response.iter_content(4 * 1024 * 1024):
