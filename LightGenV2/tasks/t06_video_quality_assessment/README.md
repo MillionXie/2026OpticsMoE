@@ -186,6 +186,18 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 Small完整训练已核验，原生B1进行中（第13次）：**
+`assetio_recovery01/train`已真实完成2808条特征/44分片和50epoch；CPU独立审核44分片与
+完整FP16缓存逐值相等、2250TRAIN/558TEST顺序/标签/唯一ID、53项训练收据artifact SHA及
+运行源码/runtime/官方模型身份均通过。best e40 strictCPU缓存开发SRCC=.7000972456029934、
+PLCC=.6987606030341419；last e50 SRCC=.6981206311660946。两PT独立CPU预测与保存558行
+逐样本结果max_abs=0，独立CSV复算吻合；最后训练CE=1.2151667168。best SHA
+`c5c3e377917ffc6a78afb915e7c8f114b11654a02a328a0652a698581fdad41d`，训练receipt SHA
+`5a296cdb961cb552ac829ea99e7fd8777b5c4a95ce799e0e3a56ce1f6ffcdc7f`；本地CPU独立审核
+`assetio_recovery01/cpu_training_final_audit.json`。原A100提取子2392776已结束，自动独立新进程
+2514720在`a100_batch01`真实B1前向（已实际139/558条），同best PT/原划分与精度。
+上述.7001是TEST选模的缓存开发指标，不冒称原生B1或最终泛化，当前无Small成本结果。
+
 **2026-10-15 用户指出空卡后的实际根因与修复（覆盖下文“已恢复”快照）：**
 `dtype_recovery01`数值预检在Unix1792058491已通过（max_abs=.03125、TRAIN probeCE=.949303925），
 但300秒阶段上限在1792058613触发exit124，收尾官方权重SHA未结束，故0分片/0epoch/0预测；
