@@ -1,0 +1,74 @@
+{
+  "model_id": "deepseek-ai/deepseek-vl2-small",
+  "model_revision": "6033e16432a1d771cf9fe4a6f894ff5e5e1459af",
+  "stage": "planned_after_GLM_complete_not_started",
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "frames": 4,
+  "frame_fractions": [
+    0.1,
+    0.37,
+    0.63,
+    0.9
+  ],
+  "center_crop_short_side_fraction": 0.65,
+  "native_frame_size": 384,
+  "hidden_width": 2048,
+  "quality_output_trainable_parameters": 10240,
+  "backbone_trainable_parameters": 0,
+  "epochs": 50,
+  "training_batch_size": 512,
+  "feature_batch_size": 1,
+  "learning_rate": 0.001,
+  "weight_decay": 0,
+  "seed": 42,
+  "loss": "cross_entropy_only",
+  "scheduler": "cosine",
+  "selection": "highest_TEST_SRCC_development_no_VAL",
+  "train_samples": 2250,
+  "test_samples": 558,
+  "inference_batches": [
+    1
+  ],
+  "thinking": false,
+  "accuracy_only": true,
+  "protocol_notes": "User authorized non-Tiny after GLM, cancelled ResNet and UNet. VL2-Small is16B total, about2.8B activated; preserve original Tiny native four ordered384 frames, final valid prompt hidden, BF16 frozen backbone and FP16 feature cache toFP32 five rows. Feature extraction B1 for40GB admission. Native smoke before full extraction; official incremental_prefilling may be used only if necessary and parity audited, not generation/CoT or quantization. No model assets downloaded yet.",
+  "official_assets": {
+    "README.md": {
+      "git_blob_sha1": "e64ff084f3ea29c755f3e1fe78cf9f80eb43809e"
+    },
+    "config.json": {
+      "git_blob_sha1": "c4271be1da3c45b1f568471ccdab1e15ea7f10cb"
+    },
+    "model.safetensors.index.json": {
+      "git_blob_sha1": "52a2370b066f4fdc56f23a35b31ef1765d8d81a9"
+    },
+    "processor_config.json": {
+      "git_blob_sha1": "24bc978114fb92d43d9a3eb523c50a54fc26491c"
+    },
+    "special_tokens_map.json": {
+      "git_blob_sha1": "437695b8895c272e78e78f1ee38bf166861e0aae"
+    },
+    "tokenizer.json": {
+      "git_blob_sha1": "d7c602ecf74b0f4272d593772f9160f2b90c0a86"
+    },
+    "tokenizer_config.json": {
+      "git_blob_sha1": "b25a970308d3e93865d6c92c9b61461f785fa69f"
+    },
+    "model-00001-of-000004.safetensors": {
+      "sha256": "1bff387143793c7786707473eae522e4f0a24ae41d29d86532d0b5b9d3e5cab7",
+      "size": 8591541424
+    },
+    "model-00002-of-000004.safetensors": {
+      "sha256": "7693542b1ba539e0f12db0c25210bdaf7aaeb298f1663be7142bd41316663842",
+      "size": 8590731304
+    },
+    "model-00003-of-000004.safetensors": {
+      "sha256": "c9a0eab9f1918617e991346617ca9222bc928218f418577384004b6dadd5ed25",
+      "size": 8591771352
+    },
+    "model-00004-of-000004.safetensors": {
+      "sha256": "20a550172ad5761a9a6bad8543968ea421f2963f33d5d4a2822cfeca1b6542fd",
+      "size": 6523397144
+    }
+  }
+}
