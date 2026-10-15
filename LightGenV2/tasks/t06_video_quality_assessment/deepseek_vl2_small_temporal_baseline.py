@@ -387,6 +387,18 @@ def suite(args,identity):
             state.update(status="yielding_for_utilization",updated_at_unix=time.time())
             frozen.write_json(args.output/"suite_status.json",state)
             time.sleep(min(15,args.gpu_not_before_unix-time.time()))
+        if args.allocator_recovery:
+            # User-authorized single recovery: CPU-only wait, never reserve GPU memory.
+            while True:
+                if sources()!=identity["source_sha256"]:raise RuntimeError("Source changed during recovery wait")
+                if time.time()>=deadline:raise TimeoutError("Original total deadline during memory wait")
+                free=float(subprocess.check_output(["nvidia-smi",f"--id={frozen.A100_UUID}",
+                    "--query-gpu=memory.free","--format=csv,noheader,nounits"],text=True).strip())
+                if free>=37000:break
+                state.update(status="waiting_for_memory_without_reservation",free_memory_mib=free,
+                    minimum_free_memory_mib=37000,updated_at_unix=time.time())
+                frozen.write_json(args.output/"suite_status.json",state)
+                time.sleep(min(15,max(0,deadline-time.time())))
         for phase,name,bound in (("cpu-preflight","cpu_preflight",180),("gpu-smoke","gpu_smoke",300),
                                   ("train","train",7200),("evaluate","a100_batch01",1800)):
             if sources()!=identity["source_sha256"]:raise RuntimeError("Source changed during suite")
@@ -398,6 +410,7 @@ def suite(args,identity):
                 "-u","-m",__package__+".deepseek_vl2_small_temporal_baseline","--phase",phase,"--model",str(args.model),
                 "--manifest",str(args.manifest),"--output",str(args.output/name),"--accuracy-only-concurrent"]
             if phase=="evaluate":cmd += ["--checkpoint",str(args.output/"train/best_checkpoint.pt")]
+            if args.allocator_recovery:cmd += ["--allocator-recovery"]
             frozen.write_json(args.output/f"{name}.command.json",cmd)
             with (args.output/f"{name}.log").open("x") as log:
                 result=subprocess.run(cmd,cwd=REPO,env={**os.environ,"HF_HUB_OFFLINE":"1",
@@ -422,7 +435,14 @@ def main():
     p.add_argument("--deadline-unix",type=float,help="Absolute original suite deadline; never extend a recovery")
     p.add_argument("--accuracy-only-concurrent",action="store_true")
     p.add_argument("--gpu-not-before-unix",type=float,default=0.)
+    p.add_argument("--allocator-recovery",action="store_true",
+        help="One user-authorized recovery: expandable allocator only; native graph and precision unchanged")
     args=p.parse_args();args.gpu_uuid=frozen.A100_UUID;c=config()
+    if args.allocator_recovery:
+        if args.phase=="prepare":p.error("Recovery must not download assets again")
+        if args.deadline_unix is None and args.phase=="suite":p.error("Recovery requires original absolute deadline")
+        # Set before the first Torch import/CUDA context; only allocation policy changes.
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"]="expandable_segments:True"
     args.model=args.model.resolve();args.output=args.output.resolve();args.manifest=args.manifest.resolve()
     if frozen.sha256(args.manifest)!=frozen.MANIFEST_SHA:raise ValueError("Original manifest differs")
     if args.phase=="evaluate" and args.checkpoint is None:p.error("Evaluation needs fixed best checkpoint")
@@ -430,6 +450,8 @@ def main():
     identity=dict(source_sha256=sources(),manifest_sha256=frozen.MANIFEST_SHA,contract=c,pid=os.getpid(),
         git_commit=subprocess.check_output(["git","rev-parse","HEAD"],cwd=REPO,text=True).strip(),
         command=sys.argv,created_at_unix=time.time(),accuracy_only=True,gpu_uuid=frozen.A100_UUID)
+    identity.update(allocator_recovery=args.allocator_recovery,
+        pytorch_cuda_alloc_conf=os.environ.get("PYTORCH_CUDA_ALLOC_CONF"))
     frozen.write_json(args.output/"run_identity.json",identity)
     try:
         if args.phase not in ("suite","prepare"):

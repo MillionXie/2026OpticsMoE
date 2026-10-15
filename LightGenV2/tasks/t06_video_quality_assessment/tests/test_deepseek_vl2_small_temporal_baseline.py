@@ -108,3 +108,42 @@ def test_actual_CPU_2048_head_only_native_copy_updates():
 
 def test_existing_output_never_reused(tmp_path):
     with pytest.raises(FileExistsError):run.shared.new_output(tmp_path)
+
+
+def test_allocator_recovery_changes_memory_policy_not_native_graph():
+    s=source('suite');m=source('main')
+    assert 'waiting_for_memory_without_reservation' in s
+    assert 'free >= 37000' in s and 'Original total deadline during memory wait' in s
+    assert s.index('waiting_for_memory_without_reservation')<s.index('for phase, name, bound')
+    assert "cmd += ['--allocator-recovery']" in s
+    assert "os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'" in m
+    assert m.index("os.environ['PYTORCH_CUDA_ALLOC_CONF']")<m.index('import torch, transformers')
+    assert 'use_cache=False' in source('features') and 'incremental_prefilling' not in source('features')
+
+
+def test_recovery_waits_CPU_only_then_dispatches_once_and_preserves_failure(tmp_path,monkeypatch):
+    import json
+    import time
+    from types import SimpleNamespace
+    output=tmp_path/'recovery';output.mkdir()
+    prepare=tmp_path/'prepare';prepare.mkdir()
+    (prepare/'status.json').write_text(json.dumps(dict(status='complete')))
+    args=SimpleNamespace(deadline_unix=time.time()+100,prepare_run=prepare,output=output,
+        gpu_not_before_unix=0,allocator_recovery=True,model=tmp_path/'model',manifest=tmp_path/'split.csv')
+    calls=[];states=[];free=iter(['33000','37000'])
+    monkeypatch.setattr(run.frozen,'write_json',lambda path,payload:states.append(json.loads(json.dumps(payload))))
+    monkeypatch.setattr(run,'sources',lambda:{'entry':'unchanged'})
+    monkeypatch.setattr(run.subprocess,'check_output',lambda *a,**k:next(free))
+    monkeypatch.setattr(run.time,'sleep',lambda seconds:calls.append(('CPU_wait',seconds)))
+    def dispatch(cmd,**kwargs):
+        calls.append(('dispatch',cmd,kwargs))
+        return SimpleNamespace(returncode=1)
+    monkeypatch.setattr(run.subprocess,'run',dispatch)
+    with pytest.raises(RuntimeError,match='no automatic retry'):
+        run.suite(args,dict(source_sha256={'entry':'unchanged'}))
+    assert calls[0][0]=='CPU_wait'
+    dispatched=[c for c in calls if c[0]=='dispatch']
+    assert len(dispatched)==1 and '--allocator-recovery' in dispatched[0][1]
+    assert dispatched[0][2]['env']['CUDA_VISIBLE_DEVICES']==''
+    assert states[-1]['status']=='failed'
+    assert any(s.get('status')=='waiting_for_memory_without_reservation' for s in states)
