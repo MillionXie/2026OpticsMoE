@@ -372,5 +372,5 @@ if __name__=='__main__':
     p.add_argument('--resume',action='store_true')
     a=p.parse_args()
     if sys.stdout is None:
-        sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
+        sys.stdout=a.out.with_suffix('.log').open('a' if a.resume else 'x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
     {'selftest':selftest,'capture':capture,'signalcheck':signalcheck,'supportcheck':supportcheck,'responsecheck':responsecheck}[a.mode](a)
