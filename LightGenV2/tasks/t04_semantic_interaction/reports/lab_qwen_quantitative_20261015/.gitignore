@@ -1,0 +1,11 @@
+# Only generated quantitative deliverables; keep source and explanation tracked.
+/01_overall_comparison.png
+/01_overall_comparison.svg
+/02_operation_comparison.png
+/02_operation_comparison.svg
+/plot_data.json
+/plot_data.csv
+/metrics.xlsx
+/metrics.xlsx.inspect.ndjson
+/qa/
+/node_modules/
