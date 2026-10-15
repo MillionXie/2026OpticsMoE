@@ -304,13 +304,73 @@ def run_eval(args, config, identity):
         selection=config["selection"], identity=identity))
 
 
+def suite(args, identity):
+    """One bounded CPU coordinator: official download -> smoke -> train -> B1 accuracy."""
+    deadline = time.time() + 10800
+    state = dict(status="waiting_for_assets", pid=os.getpid(), completed=[],
+        deadline_unix=deadline, source_sha256=identity["source_sha256"],
+        inference_batches=[1], accuracy_only=True)
+    status_path = args.output / "suite_status.json"
+    try:
+        if args.prepare_run is None:
+            raise ValueError("Suite requires existing prepare-run; never launches duplicate download")
+        while True:
+            if sources() != identity["source_sha256"]:
+                raise RuntimeError("Source changed while waiting; preserve evidence")
+            path = args.prepare_run / "status.json"
+            progress = json.loads(path.read_text()) if path.exists() else {}
+            if progress.get("status") == "complete":
+                break
+            if progress.get("status") == "failed":
+                raise RuntimeError("Asset download failed: " + str(progress.get("error")))
+            if time.time() > deadline-7200:
+                raise TimeoutError("Asset wait exceeded one-hour bound")
+            state.update(asset_progress=progress, updated_at_unix=time.time())
+            frozen.write_json(status_path, state)
+            time.sleep(15)
+        for phase, name, seconds in (("cpu-preflight", "cpu_preflight", 180),
+                                     ("gpu-smoke", "gpu_smoke", 300),
+                                     ("train", "train", 7200), ("evaluate", "a100_batch01", 1800)):
+            if sources() != identity["source_sha256"]:
+                raise RuntimeError("Source changed during suite")
+            remaining = int(deadline-time.time())
+            if remaining < 1:
+                raise TimeoutError("Suite total three-hour bound reached")
+            state.update(status="running", phase=name, updated_at_unix=time.time())
+            frozen.write_json(status_path, state)
+            command = ["timeout", "--signal=TERM", "--kill-after=30s", str(min(seconds, remaining)),
+                sys.executable, "-u", "-m", __package__+".internvl35_temporal_baseline",
+                "--phase", phase, "--model", str(args.model), "--manifest", str(args.manifest),
+                "--output", str(args.output/name), "--gpu-uuid", frozen.A100_UUID, "--accuracy-only-concurrent"]
+            if phase == "evaluate":
+                command += ["--batch", "1", "--checkpoint", str(args.output/"train/best_checkpoint.pt")]
+            frozen.write_json(args.output / f"{name}.command.json", command)
+            with (args.output / f"{name}.log").open("x") as log:
+                result = subprocess.run(command, cwd=REPO,
+                    env={**os.environ, "CUDA_VISIBLE_DEVICES": "" if phase == "cpu-preflight" else frozen.A100_UUID},
+                    stdout=log, stderr=subprocess.STDOUT)
+            child = json.loads((args.output/name/"status.json").read_text()) if (args.output/name/"status.json").exists() else {}
+            if result.returncode != 0 or child.get("status") != "complete":
+                raise RuntimeError(f"{name} exited {result.returncode}: {child}; no automatic retry")
+            state["completed"].append(name)
+            frozen.write_json(status_path, state)
+        state.update(status="complete", phase=None, updated_at_unix=time.time(),
+            final_report=json.loads((args.output/"a100_batch01/report.json").read_text()))
+    except BaseException as error:
+        state.update(status="failed", error=repr(error), updated_at_unix=time.time())
+        raise
+    finally:
+        frozen.write_json(status_path, state)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("cpu-preflight", "gpu-smoke", "train", "evaluate"), required=True)
+    parser.add_argument("--phase", choices=("cpu-preflight", "gpu-smoke", "train", "evaluate", "suite"), required=True)
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--prepare-run", type=Path)
     parser.add_argument("--batch", choices=(1, 4, 8), type=int)
     parser.add_argument("--gpu-uuid", choices=(frozen.A100_UUID, shared.TRAINING_3090_UUID), default=frozen.A100_UUID)
     parser.add_argument("--accuracy-only-concurrent", action="store_true")
@@ -331,7 +391,9 @@ def main():
         command=sys.argv, accuracy_only=True, concurrent_a100_authorized=args.accuracy_only_concurrent)
     frozen.write_json(args.output / "run_identity.json", identity)
     try:
-        if args.phase == "cpu-preflight":
+        if args.phase == "suite":
+            suite(args, identity)
+        elif args.phase == "cpu-preflight":
             from . import quality_token_common as core
             processor, ids, prompt = processor_runtime(args.model)
             rows = [r for r in core.read_manifest(args.manifest) if r["split"] == "train"][:2]

@@ -64,3 +64,13 @@ def test_original_training_algorithm_is_not_an_extended_search():
     assert "cross_entropy" in source
     assert "CosineAnnealingLR(optimizer, T_max=50)" in source
     assert "LoRA" not in source
+
+
+def test_latest_accuracy_only_suite_is_single_batch_and_bounded():
+    tree = ast.parse(Path(run.__file__).read_text())
+    fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "suite")
+    source = ast.unparse(fn)
+    assert "inference_batches=[1]" in source
+    assert "'--batch', '1'" in source
+    assert "10800" in source and "7200" in source
+    assert "no automatic retry" in source
