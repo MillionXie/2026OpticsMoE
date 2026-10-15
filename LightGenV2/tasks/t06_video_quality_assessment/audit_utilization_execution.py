@@ -156,6 +156,7 @@ def measure_mode(args, mode, forward, compute, timer, resident):
     steady = [r for r in calls if r["start_s"] >= STEADY_START_S and r["end_s"] <= DURATION_S]
     steady_duration = sum(r["end_s"]-r["start_s"] for r in steady)
     result = dict(mode=mode, calls=total, duration_s=ended-started, windows=windows,
+        started_monotonic_s=started, ended_monotonic_s=ended,
         complete_loop_time16_ms=(ended-started)*16000/(total*args.batch),
         steady_complete_groups=len(steady),
         steady_complete_loop_time16_ms=(steady_duration*16000/(sum(r["calls"] for r in steady)*args.batch)
@@ -178,12 +179,14 @@ def run_gpu(args):
     reproduction.cuda_guard()
     frozen.preflight_files(args)
     args.output.mkdir(parents=True, exist_ok=False)
+    b1_cost_audit = args.baseline == "qwen" and args.batch == 1 and not getattr(args, "utilization_only", False)
     identity = dict(status="loading", pid=os.getpid(), baseline=args.baseline, batch=args.batch,
         gpu_uuid=frozen.A100_UUID, checkpoint_sha256=frozen.sha256(args.checkpoint),
         manifest_sha256=frozen.sha256(args.manifest),
         source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         source_sha256={p.name: frozen.sha256(p) for p in (Path(__file__), Path(frozen.__file__), Path(telemetry.__file__))},
         duration_s=DURATION_S, fixed_steady_window_s=[STEADY_START_S, DURATION_S],
+        utilization_only=getattr(args, "utilization_only", False), extra_b1_cost_audit=b1_cost_audit,
         historical_qwen_b1_anchor=dict(time16_ms=1188.3861464262009, energy16_j=462.1134010767563,
                                        measured_utilization=None, unchanged=True))
     frozen.write_json(args.output / "status.json", identity)
@@ -194,7 +197,7 @@ def run_gpu(args):
             if len(rows) != 558 or any(p.requires_grad for m in (model, head) for p in m.parameters()):
                 raise RuntimeError("Frozen full TEST identity required")
             # A fresh, same-order Qwen B1 first-200 audit. Never forces the anchor.
-            if args.baseline == "qwen" and args.batch == 1:
+            if b1_cost_audit:
                 sampler = telemetry.TelemetrySampler(frozen.A100_UUID)
                 sampler.start()
                 timings = []
@@ -235,7 +238,7 @@ def run_gpu(args):
             compute = make_gpu_forward(args, model, head, forward)
             report = {**identity, "status": "running", "sample_ids": [r["sample_id"] for r in rows[:args.batch]],
                       "frame_positions": positions, "input_fingerprints": fingerprints, "modes": [],
-                      "preceding_forwards": 200 if args.baseline == "qwen" and args.batch == 1 else 0,
+                      "preceding_forwards": 200 if b1_cost_audit else 0,
                       "order_limitation": "Fixed legacy then GPU-output then queue; separate cold-inclusive and fixed steady windows, not randomized causal effect size."}
             # Original CPU-output mode runs first, retaining its timer hooks.
             for mode in MODES:
@@ -338,7 +341,9 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--baseline", choices=tuple(frozen.CHECKPOINT_SHA))
-    parser.add_argument("--batch", type=int, choices=(1, 3, 8, 10))
+    parser.add_argument("--batch", type=int, choices=range(1, 12))
+    parser.add_argument("--utilization-only", action="store_true",
+                        help="Uniform three-phase utilization; skip separate Qwen B1 first-200 cost audit")
     parser.add_argument("--checkpoint", type=Path)
     parser.add_argument("--model", type=Path)
     parser.add_argument("--reproduction-receipt", type=Path)
