@@ -1,0 +1,82 @@
+{
+  "model_id": "zai-org/GLM-4.6V-Flash",
+  "model_revision": "411bb4d77144a3f03accbf4b780f5acb8b7cde4e",
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "frames": 4,
+  "frame_fractions": [
+    0.1,
+    0.37,
+    0.63,
+    0.9
+  ],
+  "center_crop_short_side_fraction": 0.65,
+  "decode_resize": 448,
+  "hidden_width": 4096,
+  "quality_output_trainable_parameters": 20480,
+  "backbone_trainable_parameters": 0,
+  "epochs": 50,
+  "training_batch_size": 512,
+  "feature_batch_size": 2,
+  "learning_rate": 0.001,
+  "weight_decay": 0,
+  "seed": 42,
+  "loss": "cross_entropy_only",
+  "scheduler": "cosine",
+  "selection": "highest_TEST_SRCC_development_no_VAL",
+  "train_samples": 2250,
+  "test_samples": 558,
+  "inference_batches": [
+    1
+  ],
+  "thinking": false,
+  "native_frame_size": 448,
+  "quality_token_prefix": "",
+  "accuracy_only": true,
+  "asset_metadata_source": "Public hf-mirror API upstream Git blob/LFS hashes; official HF config and model card independently checked. Fixed native GLM interface, no custom modeling patch.",
+  "official_assets": {
+    "README.md": {
+      "git_blob_sha1": "0652693cb988579d64d3467c28d8892e2f0b96d0"
+    },
+    "chat_template.jinja": {
+      "git_blob_sha1": "efe6364aa1a49684fe075d7ff43003340e1db78a"
+    },
+    "config.json": {
+      "git_blob_sha1": "42c50c55d9e02eda7d5daea8e607c7600d7a1ac3"
+    },
+    "generation_config.json": {
+      "git_blob_sha1": "51d9c1b834b0e321854231ad3618c0e4db30ece6"
+    },
+    "model.safetensors.index.json": {
+      "git_blob_sha1": "4a6927af1c5a5e53c837beb0c56abecf8d0b792e"
+    },
+    "preprocessor_config.json": {
+      "git_blob_sha1": "308553695af766b3e3d05e68279d2c690e73273e"
+    },
+    "tokenizer_config.json": {
+      "git_blob_sha1": "a06c65d8bd9907f0088f1c2971aa363642f761c3"
+    },
+    "video_preprocessor_config.json": {
+      "git_blob_sha1": "cc98c7078b8b0a86db2674571caaa281d1fcd203"
+    },
+    "tokenizer.json": {
+      "sha256": "9340665016419c825c4bdabbcc9acc43b7ca2c68ce142724afa829abb1be5efd",
+      "size": 19970699
+    },
+    "model-00001-of-00004.safetensors": {
+      "sha256": "058745e42d1003c9fb6d1707838902478cd5acb0d7cb277a7e074ceaecf06402",
+      "size": 5320911456
+    },
+    "model-00002-of-00004.safetensors": {
+      "sha256": "56e35e399921aa4d20ee0e20639bbb7e86e7036b11b74b643487d591206f071c",
+      "size": 5303216664
+    },
+    "model-00003-of-00004.safetensors": {
+      "sha256": "7f57230ee36c64f3c5d2986674ddba5db3df26df828db1833f4792d4ef21ce48",
+      "size": 5303216664
+    },
+    "model-00004-of-00004.safetensors": {
+      "sha256": "8c12ad6165dc9a2895a46547d611ed24990eae6fb357dddf066e239582fece2e",
+      "size": 4658299264
+    }
+  }
+}
