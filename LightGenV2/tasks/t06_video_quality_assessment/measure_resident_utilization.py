@@ -198,7 +198,7 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", choices=tuple(frozen.CHECKPOINT_SHA), required=True)
-    parser.add_argument("--batch", type=int, choices=(1, 2, 3, 4, 8, 9, 10), required=True)
+    parser.add_argument("--batch", type=int, choices=range(1, 33), required=True)
     for name in ("manifest", "checkpoint", "model", "output"):
         parser.add_argument("--"+name, type=Path, required=True)
     parser.add_argument("--reproduction-receipt", type=Path)
