@@ -4,7 +4,7 @@
 
 本次新授权仅一次恢复原十类残差E100完整状态接续E101-140（最多1800新增fit秒），保持MixUp.2、原Adam/EMA/scheduler和恢复LR.0005，不重复上次MixUp.4+额外LR减半设置。新173源为原169+四文件，不改旧源/数据/PT/claims；只GPU2一子，无early/无限retry/A100/test/电子支路/正式6/lab。原无残差是固定历史参考，新的残差额外40轮不是新的同预算消融；不靠削弱对照扩大差距。
 
-目前已核实E100父last SHA856e377e5892e27540f8910c3ed1bc9b1121e870f1c4146e136ee289dc99d12b、history SHA86a20ca5da70638ea99dc2b52bb9d109c64afb70d7bd4aa2ff8eb45c293775f0、独占SCI4dbbe3c948fa93ad8895573dc405a1ad2c265217b3a99c09e9cba146357e0e01。新状态准入/实际启动尚未执行，不把准备当已在训。详见[新一致接续合同](RESISC10_RESTORE_STEADY40_PROTOCOL_20261015.md)。目标80不能保证，按真实验证选模，不自动新test或更多候选。
+目前已核实E100父last SHA856e377e5892e27540f8910c3ed1bc9b1121e870f1c4146e136ee289dc99d12b、history SHA86a20ca5da70638ea99dc2b52bb9d109c64afb70d7bd4aa2ff8eb45c293775f0、独占SCI4dbbe3c948fa93ad8895573dc405a1ad2c265217b3a99c09e9cba146357e0e01。新173 CPU状态准入已真实一次passed（E100/Adam35000/scheduler100/LR.0005/MixUp.2/编译，0models/forward/images/test），checksSHA b56e988d155c97f012c27101566590ad984eaa3668dc85096f9d1414337b1f11。已实际一次启动CPU父1816946/GPU2子1817647，新恢复态producer gate真实passed/all11finite非零/maxgradrel8.4891e-7，173current/original一致，实际训练来源6ddd95fa90691714ef9d0e5ba96a78f38af41e05。仅一张GPU2、GPU5项目0/A1000/test0，尚未完成140或新科学；不重CPUproof/start。详见[实际接续启动](reports/resisc10_restore_20261015/start/README.md)。详见[新一致接续合同](RESISC10_RESTORE_STEADY40_PROTOCOL_20261015.md)。目标80不能保证，按真实验证选模，不自动新test或更多候选。
 
 **以下旧“不再继续优化”等范围被这次人工新授权覆盖，仅本173一次；旧所有实验/审核/测试/图仍不可重做。**
 
