@@ -213,6 +213,7 @@ def run_gpu(args):
                         sampler.set_phase(None)
                         timings.append([i, 1, True, wall, cuda, (prepared-tick)*1000, (transferred-prepared)*1000])
                         if i % 25 == 0:
+                            frozen.write_json(args.output / "b1_partial_calls.json", timings)
                             frozen.write_json(args.output / "status.json", {**identity, "status": "b1_anchor_audit", "videos": i+1})
                     torch.cuda.synchronize()
                 finally:
@@ -274,13 +275,23 @@ def suite(args):
                  source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
                  cases=CASES, no_cuda_while_waiting=True)
     with (TASK / "runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
+        idle_checks = 0
         while time.time() < args.deadline:
             try:
                 fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 reproduction.cuda_guard()
+                idle_checks += 1
+                state["consecutive_idle_checks"] = idle_checks
+                state["checked_unix"] = time.time()
+                frozen.write_json(args.output / "suite_status.json", state)
+                if idle_checks < 3:
+                    fcntl.flock(lock, fcntl.LOCK_UN)
+                    time.sleep(15)
+                    continue
                 break
             except (BlockingIOError, RuntimeError) as error:
                 fcntl.flock(lock, fcntl.LOCK_UN)
+                idle_checks = 0
                 state["last_wait_reason"] = str(error)
                 state["checked_unix"] = time.time()
                 frozen.write_json(args.output / "suite_status.json", state)

@@ -38,3 +38,5 @@ def test_queue_not_historical_boundary():
     source = Path(audit.__file__).read_text()
     assert "NOT historical first-block synchronous host latency" in source
     assert "No old cost replacement" in source
+    assert "idle_checks < 3" in source
+    assert "b1_partial_calls.json" in source
