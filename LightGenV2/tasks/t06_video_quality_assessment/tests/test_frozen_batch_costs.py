@@ -1,5 +1,6 @@
 """CPU admission tests only: no model assets or CUDA initialization."""
 import ast
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -116,3 +117,21 @@ def test_idle_wait_expires_without_gpu_work(monkeypatch):
     with pytest.raises(TimeoutError, match="no GPU work started"):
         m.wait_for_idle(SimpleNamespace(output=Path("unused"), deadline=20), m.config())
     assert now[0] == 20
+
+
+def test_continuation_does_not_change_any_measurement_arithmetic():
+    original = subprocess.check_output(["git", "show", "344c0e3a9:LightGenV2/tasks/t06_video_quality_assessment/measure_frozen_batch_costs.py"], text=True)
+    current = Path(m.__file__).read_text(encoding="utf-8")
+    for name in ["worker", "plan", "cost_report", "model_hashes", "child_command", "wait_for_idle"]:
+        functions = [next(n for n in ast.parse(t).body if isinstance(n, ast.FunctionDef) and n.name == name) for t in [original, current]]
+        assert ast.dump(functions[0], include_attributes=False) == ast.dump(functions[1], include_attributes=False)
+
+
+def test_continuation_preserves_evidence_deadline_and_skips_completed():
+    text = Path(m.__file__).read_text(encoding="utf-8")
+    assert "if name in reused:" in text
+    assert "args.deadline != prior_state[\"deadline\"]" in text
+    assert "names != expected[:len(names)]" in text
+    assert "Unrecognized original measurement source" in text
+    assert "Original loader/runtime/measurement dependencies changed" in text
+    assert "Cannot reuse an incomplete or changed measurement" in text

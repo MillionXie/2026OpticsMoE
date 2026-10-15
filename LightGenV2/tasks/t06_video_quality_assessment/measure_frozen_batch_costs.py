@@ -261,28 +261,75 @@ def wait_for_idle(args, c):
             time.sleep(min(10, max(0, until-time.time())))
 
 
+def completed_from_previous(args, c):
+    """Reuse verified completed points; only failed/unstarted batches are run."""
+    previous = getattr(args, "completed_from", None)
+    if previous is None:
+        return {}
+    owner = TASK / "runs/simulation/lgvq_frozen_batch_costs_a100_20261015"
+    if previous.resolve() != owner.resolve() or not args.output.is_relative_to(previous):
+        raise ValueError("Continuation must stay under the original canonical run")
+    prior_state = json.loads((previous / "suite_status.json").read_text())
+    if prior_state["status"] != "failed" or args.deadline != prior_state["deadline"]:
+        raise ValueError("Preserve failed evidence and original absolute deadline")
+    expected = [f"{model}_batch{b:02d}" for model, batches in c["batches"].items() for b in batches]
+    names = prior_state["completed"]
+    if not names or names != expected[:len(names)] or len(names) == len(expected):
+        raise ValueError("Only an intact completed prefix can be reused")
+    current = sources()
+    entry = str(Path(__file__).relative_to(REPO))
+    if prior_state["source_sha256"][entry] != "c34444be26cf0cd62bc14be5002061a8388a98d8172b9b23566b63842297101e":
+        raise ValueError("Unrecognized original measurement source")
+    if any(current.get(k) != v for k, v in prior_state["source_sha256"].items() if k != entry):
+        raise ValueError("Original loader/runtime/measurement dependencies changed")
+    result = {}
+    for name in names:
+        folder = previous / name
+        report = json.loads((folder / "report.json").read_text())
+        model = name.split("_batch")[0]
+        if (report["status"], report["test_videos"], report["cost_test_videos"],
+                report["checkpoint_sha256"], report["manifest_sha256"]) != (
+                    "complete", 558, 200, CHECKPOINTS[model], frozen.MANIFEST_SHA):
+            raise ValueError("Cannot reuse an incomplete or changed measurement")
+        with (folder / "predictions.csv").open() as stream:
+            predictions = list(csv.DictReader(stream))
+        with (folder / "batch_timing.csv").open() as stream:
+            timings = list(csv.DictReader(stream))
+        if len({r["sample_id"] for r in predictions}) != 558 or len(predictions) != 558:
+            raise ValueError("Completed point must contain all 558 unique predictions")
+        if sum(int(r["videos"]) for r in timings if r["in_cost_subset"] == "True") != 200:
+            raise ValueError("Completed point must retain the exact first 200 cost videos")
+        result[name] = {"folder": str(folder), "sha256": {
+            p.name: frozen.sha256(p) for p in folder.iterdir() if p.is_file()}}
+    return result
+
+
 def suite(args, c):
     import fcntl
     reproduction.require_new_output(args.output)
+    reused = completed_from_previous(args, c)
     with (TASK / "runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         wait_for_idle(args, c)
         args.output.mkdir()
         bound = sources()
         state = dict(status="running", pid=os.getpid(), source_sha256=bound, protocol=c,
-                     started_unix=time.time(), deadline=args.deadline, completed=[])
+                     started_unix=time.time(), deadline=args.deadline, completed=list(reused),
+                     reused_completed=reused, continuation_authorization="User: retry only the interrupted batch, preserve completed results")
         def save():
             frozen.write_json(args.output / "suite_status.json", state)
         save()
         try:
             for baseline, batches in c["batches"].items():
                 for batch in batches:
+                    name = f"{baseline}_batch{batch:02d}"
+                    if name in reused:
+                        continue
                     reproduction.cuda_guard()
                     if sources() != bound:
                         raise RuntimeError("Bound suite source changed")
                     if time.time() >= args.deadline:
                         raise TimeoutError("Finite suite deadline reached")
-                    name = f"{baseline}_batch{batch:02d}"
                     command = child_command(baseline, batch, args, args.output / name)
                     state.update(phase=name, phase_started_unix=time.time())
                     save()
@@ -313,11 +360,12 @@ def main():
     p.add_argument("--phase", choices=("suite", "worker"), required=True)
     p.add_argument("--baseline", choices=tuple(CHECKPOINTS))
     p.add_argument("--batch", type=int)
+    p.add_argument("--completed-from", type=Path)
     for name in ("manifest", "output", "model", "checkpoint", "reproduction-receipt"):
         p.add_argument("--"+name, type=Path, required=name in ("manifest", "output"))
     p.add_argument("--deadline", type=float, required=True)
     args = p.parse_args()
-    for key in ("manifest", "output", "model", "checkpoint", "reproduction_receipt"):
+    for key in ("manifest", "output", "model", "checkpoint", "reproduction_receipt", "completed_from"):
         if getattr(args, key) is not None:
             setattr(args, key, getattr(args, key).resolve())
     c = config()
