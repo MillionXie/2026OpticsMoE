@@ -15,6 +15,7 @@
   "explicit_warmup_forwards": 0,
   "maximum_suite_seconds": 28800,
   "maximum_point_seconds": 3600,
+  "maximum_initial_idle_wait_seconds": 3600,
   "qwen_b1_anchor": {
     "latency_16_videos_ms": 1188.3861464262009,
     "energy_16_videos_j": 462.1134010767563,

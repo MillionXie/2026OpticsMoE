@@ -75,7 +75,8 @@ def test_bounded_serial_suite_no_reservation_or_retry():
     assert "for baseline, batches in c[\"batches\"].items()" in text
     assert "ForeignGuard" in text and "guard.check()" in text
     assert "fcntl.LOCK_EX | fcntl.LOCK_NB" in text
-    assert "range(3)" in text
+    assert "while consecutive < 3:" in text
+    assert "maximum_initial_idle_wait_seconds" in text
 
 
 def test_source_and_pt_guard_not_later_git_head():
@@ -83,3 +84,35 @@ def test_source_and_pt_guard_not_later_git_head():
     assert len(bound) >= 16
     assert m.CHECKPOINTS["qwen"] == m.config()["qwen_b1_anchor"]["checkpoint_sha256"]
     assert len(set(m.CHECKPOINTS.values())) == 6
+
+
+def test_idle_wait_requires_three_consecutive_checks(monkeypatch):
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", m.frozen.A100_UUID)
+    now, records, checks = [0], [], [0]
+    monkeypatch.setattr(m.time, "time", lambda: now[0])
+    monkeypatch.setattr(m.time, "sleep", lambda n: now.__setitem__(0, now[0]+n))
+    monkeypatch.setattr(m.frozen, "write_json", lambda p, v: records.append(v))
+    def audit():
+        checks[0] += 1
+        if checks[0] == 2:
+            raise RuntimeError("A100 occupied by other compute processes: external")
+        return []
+    monkeypatch.setattr(m.frozen, "process_audit", audit)
+    m.wait_for_idle(SimpleNamespace(output=Path("unused"), deadline=100), m.config())
+    assert checks[0] == 5
+    assert [r["consecutive_idle"] for r in records] == [1, 0, 1, 2, 3]
+    assert now[0] == 40
+
+
+def test_idle_wait_expires_without_gpu_work(monkeypatch):
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", m.frozen.A100_UUID)
+    now = [0]
+    monkeypatch.setattr(m.time, "time", lambda: now[0])
+    monkeypatch.setattr(m.time, "sleep", lambda n: now.__setitem__(0, now[0]+n))
+    monkeypatch.setattr(m.frozen, "write_json", lambda p, v: None)
+    def busy():
+        raise RuntimeError("A100 occupied by other compute processes: external")
+    monkeypatch.setattr(m.frozen, "process_audit", busy)
+    with pytest.raises(TimeoutError, match="no GPU work started"):
+        m.wait_for_idle(SimpleNamespace(output=Path("unused"), deadline=20), m.config())
+    assert now[0] == 20

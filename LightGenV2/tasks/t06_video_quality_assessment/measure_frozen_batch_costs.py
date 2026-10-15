@@ -236,15 +236,37 @@ def child_command(baseline, batch, args, output):
     return command + ["--phase", "worker", "--deadline", str(args.deadline)]
 
 
+def wait_for_idle(args, c):
+    """Bounded CPU-only admission, never create a GPU context or reservation."""
+    if os.environ.get("CUDA_VISIBLE_DEVICES") != frozen.A100_UUID:
+        raise RuntimeError("Only the approved physical A100 UUID is allowed")
+    until = min(args.deadline, time.time() + c["maximum_initial_idle_wait_seconds"])
+    consecutive = 0
+    while consecutive < 3:
+        if time.time() >= until:
+            raise TimeoutError("Initial idle wait expired; no GPU work started")
+        error = None
+        try:
+            frozen.process_audit()
+            consecutive += 1
+        except RuntimeError as exception:
+            if not str(exception).startswith("A100 occupied by other compute processes:"):
+                raise
+            consecutive, error = 0, str(exception)
+        frozen.write_json(args.output.with_suffix(".admission_status.json"),
+                          dict(status="admitted" if consecutive == 3 else "waiting_for_idle",
+                               pid=os.getpid(), consecutive_idle=consecutive, error=error,
+                               checked_unix=time.time(), wait_deadline=until, suite_deadline=args.deadline))
+        if consecutive < 3:
+            time.sleep(min(10, max(0, until-time.time())))
+
+
 def suite(args, c):
     import fcntl
     reproduction.require_new_output(args.output)
     with (TASK / "runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        for check in range(3):
-            reproduction.cuda_guard()
-            if check < 2:
-                time.sleep(10)
+        wait_for_idle(args, c)
         args.output.mkdir()
         bound = sources()
         state = dict(status="running", pid=os.getpid(), source_sha256=bound, protocol=c,
