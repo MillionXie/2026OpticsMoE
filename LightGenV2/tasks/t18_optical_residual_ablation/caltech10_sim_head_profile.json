@@ -1,0 +1,103 @@
+{
+  "run": "caltech10_sim_head8554_frozen_L234_s17_20261016",
+  "cpu_run": "caltech10_sim_head8554_cpu_20261016",
+  "parents": {
+    "L2_rho03": {
+      "depth": 2,
+      "rho": 0.3,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2_error_focused_distill_s17_20261016/L2_error/block0001/L2_error/best_checkpoint.pt",
+      "sha": "5c62ae252e3dfd2e4ab752f06546a4698fef8cebf962cce94d667cb0178d5709",
+      "digest": "782696cfc593a4bd327ac58e3b8ec3ffa2a6413b5c3b5eae5125af572ce9c1c0",
+      "optical_epoch": 1143,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    },
+    "L3_rho03": {
+      "depth": 3,
+      "rho": 0.3,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_equal100_residual_open_20261015/L3_rho03/block0001/L3_rho03/best_checkpoint.pt",
+      "sha": "b3d89f3ab2b177bd85997453cb0d0f8289d25b600243ca59c824ac529f59172d",
+      "digest": "267293c93a996afe3e2ab5ac8ad2501b2877ffc20c2563e9041274c2b799c3b8",
+      "optical_epoch": 123,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    },
+    "L4_rho03": {
+      "depth": 4,
+      "rho": 0.3,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_equal100_residual_open_20261015/L4_rho03/block0016/L4_rho03/best_checkpoint.pt",
+      "sha": "9b7c135d5f902d542d6d765f96b096f2990cdbc1004bf8ff7d26a5e710a54d27",
+      "digest": "dba67338fa0b3018e29df03b4731e2e2a1c51aa7230537af38b7905fa8c6ee4a",
+      "optical_epoch": 488,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    },
+    "L2_rho0": {
+      "depth": 2,
+      "rho": 0.0,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_depth432_s17_equal100_correction_20261015/L2_rho0/best_checkpoint.pt",
+      "sha": "5d0c8c2bee0e48d9d9297d31c68ce2163347e031af764e2c7c5e6d6afcded2d3",
+      "digest": "18f3261066e3c1f333a2b01f6580fd0f089313d8b9ebf79df30dfee9e823eb1a",
+      "optical_epoch": 98,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    },
+    "L3_rho0": {
+      "depth": 3,
+      "rho": 0.0,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_depth432_s17_equal100_correction_20261015/L3_rho0/best_checkpoint.pt",
+      "sha": "62154e9067aa75494189955421a0d32e74cbe8ff14b4f3caf929262ed11445cc",
+      "digest": "e1328fcf0da28ca0d3fbb8997f83b22be99d8274e117b6b3f88ca27a0b691679",
+      "optical_epoch": 100,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    },
+    "L4_rho0": {
+      "depth": 4,
+      "rho": 0.0,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_depth432_s17_equal100_correction_20261015/L4_rho0/best_checkpoint.pt",
+      "sha": "693226bbac3fcdc166741a8df18f1005408e08314e384f6bdf7db8ad01ca6f36",
+      "digest": "2bc223cf89208c417a2ce3e55eacbbca757cf13f6584524a8918963550a01819",
+      "optical_epoch": 100,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    }
+  },
+  "targets": {
+    "2": {
+      "residual_accuracy": 0.817239498090562,
+      "gap_pp": 4.037097654118938
+    },
+    "3": {
+      "residual_accuracy": 0.8745226404800873,
+      "gap_pp": 7.201309328968907
+    },
+    "4": {
+      "residual_accuracy": 0.9339879978177851,
+      "gap_pp": 9.492635024549923
+    }
+  },
+  "segment_epochs": 3,
+  "learning_rate": 0.0001,
+  "weight_decay": 0.001,
+  "seed": 17,
+  "batch_size": 64,
+  "maximum_non_A100_children": 4,
+  "freeze_optical_weights": true,
+  "paired_initial_head_epochs": 3,
+  "extra_residual_head_finetune": true,
+  "hardware_same_head_and_simulation_mean_std": true,
+  "test_informed_development": true
+}
