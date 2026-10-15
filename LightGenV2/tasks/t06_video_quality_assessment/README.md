@@ -1,5 +1,22 @@
 # T06 视频质量评价
 
+## 2026-10-15：继续逐算子因果排查（未替换正式数据）
+
+用户要求不止定位边界，还要验证误差机制及最小数值修正。新增诊断入口
+`diagnose_batch_primitives`，仍在同一canonical诊断run内保存、不得覆盖旧证据。
+Qwen先用已存真实BF16操作数CPU检验固定split-K舍入假说；空闲A100上仅重放该
+linear的B1/2/4矩阵形状并保存实际kernel名，以及FP32/GEMM归约/显式bias对照。
+重复视频0的operator重放不是全模型吞吐或精度结果。
+
+DeepSeek下一步观测实际首LlamaAttention内mm/bmm、RoPE算术、softmax及实际mask/
+position参数，保全视频0差统计和大attention矩阵固定query切片；仍用同8 TEST、
+同原PT/B1/2/4验证原生MOS。数值对照仅在语言attention内将GEMM以FP32计算并
+回转原输出dtype，不改变权重值、不训练、不将对照填入正式558表格。
+每模型GPU命令必须外层600秒上限；A100仅250W且无foreign compute PID才运行。
+当前外部PID1365456占用，未启动本轮GPU，不占位或抢卡。仅CPU假说检验及源码
+准备不受影响。此前简单“dot先BF16舍入再加bias”的CPU比对未能复现Qwen差异，
+因此不作为已证实原因。新算子入口尚待服务器实际合同测试，不能称已完成修复。
+
 ## 2026-10-15：两模型实际定位完成并退卡（focused03最新证据）
 
 `lgvq_batch_layers_a100_20261015/focused_merger_routes03`，执行main `e34b2a586`，
