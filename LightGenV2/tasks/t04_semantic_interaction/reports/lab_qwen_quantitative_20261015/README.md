@@ -60,6 +60,10 @@ match 要求整个输出网格完全正确。所有指标沿用原报告逐场�
 
 ## 每项指标是什么意思，论文建议放哪些
 
+给论文撰写与绘图同学的完整说明见 [METRICS_EXPLAINED.md](METRICS_EXPLAINED.md)：
+包含任务/输出解释、贯穿八指标的小狗移动例子、公式与逐步计算、统计单位、边界处理和
+可用于论文方法部分的表述。教学例子明确标为假设，不与真实结果混用。下表为速查版。
+
 本项目输出并评估 **6×6 语义类别网格和编辑位置网格**，不是对渲染 RGB 图做逐像素比较。
 依据为原评估器 `experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/metrics.py`
 的 `compose_prediction` 与 `MetricAccumulator.update/compute`。类别 0 表示背景；先由编辑头
@@ -136,5 +140,6 @@ Excel/CSV 构建使用 Codex bundled Node 的 `@oai/artifact-tool`。本机已�
 & "$env:USERPROFILE\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" LightGenV2/tasks/t04_semantic_interaction/reports/lab_qwen_quantitative_20261015/build_workbook.mjs
 ```
 
-构建时复核 80 个公式、40 行原始值，并渲染工作表截图到 `qa/` 进行视觉核对。
+构建时复核 160 个公式（包括两张图的链接/单位换算）、40 行原始值，
+并渲染工作表截图到 `qa/` 进行视觉核对。
 本次没有启动训练、连接实验室设备，或上传到师姐服务器。
