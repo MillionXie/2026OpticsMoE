@@ -47,6 +47,7 @@ def verify(root,case):
     budget=independent_scheduler(c)(dict(cfg,maximum_seconds=float('inf'),minimum_epochs=float('inf')),hist,last,'maximum_epochs');assert last['scheduler']['last_epoch']==len(hist) and all(int(v['step'])==48*len(hist) for v in last['optimizer']['state'].values());return fit,budget,dict(Adam_updates=steps,gradient_passes=passes,method_records_verified=True,deterministic_dropout_replayed=True,SAM_exact_restore_records=True)
 
 def audit(a):
+    torch.set_num_threads(4)
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and a.out==a.root/'science' and not a.out.exists();meta=s.read(a.root/'metadata.json');study.TARGET=meta['target_epoch'];study.PARENT=Path(meta['parent']);assert meta['case']==a.case and meta['sources']==study.sources();s.engine.verify_sources(meta['sources'],meta['git_commit']);claim=s.read(a.root/'audit_claim.json');assert claim['sources']==meta['sources'] and claim['case']==a.case;rec=s.read(a.root/a.case/'producer_exit.json');assert rec['returncode']==0 and rec['actual_exit'] and study.parent.base.exited(rec['pid']) and not (a.root/a.case/'failure.json').exists();study.bind(a.case);fit,budget,method=verify(a.root,a.case);a.out.mkdir();s.save(a.out/'audit.json',dict(passed=True,sources=meta['sources'],fit=fit,budget=budget,method=method,model_forward_calls=0,test_image_arrays_read=0,test_informed_development=True),exclusive=True)
 
 if __name__=='__main__':
