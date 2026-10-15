@@ -1,3 +1,15 @@
+## 最新替换十类已完整100轮且科学通过：73.00%／74.14%（2026-10-15）
+
+本轮已真实全完成，两组都100轮、maximum_epochs停止，无提前终止；CPU campaign/queue和两GPU producer实际退出，producer rc0，GPU2/5项目释放、A1000/test0。自己的独占保存科学首次passed，audit SHA aea29618e70b4f865b36f2498d35bd2cf3bcbc25f898cb47576ccf6faddea247 与completed实际一致，不重审。
+
+事先固定firstminimum验证EMA balancedNLL选中残差E95/无残差E100：训练83.8929%/80.8750%，验证**73.0000%/74.1429%，差−1.1429个百分点**，NLL.8365082536/.8755160900，gap10.8929/6.7321pp。选E95不等于95轮停止，有残差实际继续完成了100。若只看同一E100保存历史，73.5714%/74.1429%，差−.5714pp，也没有残差accuracy优势。**换类没有达到预期，80未达，不自动继续搜索。**
+
+新铁路站/梯田的残差选中验证召回45.71%/61.43%，仍偏低。[完整训练耗时、两种比较口径、全部逐类和真实科学收据](reports/resisc10_reselect_20261015/L4_pair_final/README.md)。两组本轮拟合约54–55分钟，未读取本轮test，无电子分类支路，没有新PDF/native/formal输出。
+
+实际164训练来源仍f405eaf2214f9da0ada739fb5cb661747f1b8933，current/original真实一致；报告HEAD不同运行来源。原160/165/167/169/171及全部数据/PT/history/失败/claims/旧图markers保持。保留t18和09晨报ACTIVE，后续此已完成状态/旧失败不重复通知。
+
+**以下“仍在训/待审核/首轮/新一轮准备”等内容保留为历史，当前以本节最终结果为准。旧77.86是旧名单test，不当本轮成绩。**
+
 ## 最新人工确认换入铁路站和梯田，新的十类同100轮配对（2026-10-15）
 
 用户已明确选择保持10类，换出bridge/tennis_court，加入railway_station/terrace；新名单固定desert,harbor,intersection,island,lake,meadow,railway_station,terrace,thermal_power_station,wetland，原坐标indices[3,7,8,9,10,11,14,17,18,19]。这是新人工授权的一次重新训练，覆盖旧不得新训练/换类文字仅此范围，不自动测试或搜索其他名单。两组fresh seed17，有/无光学残差均100轮，不early；其余网络/划分/输入100/MixUp.2/350Adam每轮等保持，仍纯光无电子分类支路。每组10800拟合秒安全上限，最多合计6fitGPU小时；若意外未到100不得宣称完成或自动延长。只GPU2/5各一，A100禁止。
