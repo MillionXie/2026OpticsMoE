@@ -186,6 +186,25 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 新授权 GLM-4.6V-Flash（准备阶段，尚无训练/精度结果）：**
+用户明确同意试智普官方 `zai-org/GLM-4.6V-Flash`，固定revision
+`411bb4d77144a3f03accbf4b780f5acb8b7cde4e`。它是9B级、完整多模态约10B，
+不是与此前2–3B候选总参数等规模；官方4片BF16权重20,585,644,048字节，13项资产
+固定Git blob/LFS SHA。唯一目录`runs/simulation/lgvq_glm46v_flash_temporal_20261015`；
+官方资产仅CPU下载，逐项核SHA，不复用其他模型特征或删除Ovis备用。
+原2250TRAIN/558TEST/noVAL、四帧位置/65%crop/448输入、B2冻结特征与FP16缓存→FP32头、
+seed42/50epoch/b512/AdamW.001wd0/cosine/CE不变。原生hidden4096，因此仅五行20480参数，
+而非旧2048维的10240；原骨干、connector、embedding及LMhead全冻结，无LoRA/adapter。
+使用官方non-thinking模板、原生视频processor，禁止额外抽帧/crop/生成CoT或修改第三方图。
+专属入口`glm46v_flash_temporal_baseline`先真实CPU B1/B2、两TRAIN GPU smoke及官方
+forward与末token特征读出一致性，再原预算训练、freshprocess A100 B1完整558。
+只accuracy-only，不做B4/B8或正式成本，TEST最高选模仍为开发指标；不保证超过ours。
+新增独立system-site-packages环境`/DATA/DATA1/guest3/.venvs/lgvq-glm46v`固定
+Transformers5.0.0，复用Torch2.6cu124，不改原Smol/其他baseline环境或依赖源码。
+唯一A100 UUID及250W不改，至少32000MiB空闲才初次准入，不挤占/驱逐/改功率；
+仅允许已授权accuracy-only并发，不把重叠期间成本冒充正式数据。suite最多3h、下载等待1h、
+训练2h、B1半小时，失败原位保留且无自动重试或无限候选扫描。源码仅Git main同步。
+
 **2026-10-15 用户确认保留 Ovis 备用：** Ovis2.5-2B 来自阿里巴巴 Ovis 团队
 （官方仓库 `https://github.com/ATH-MaaS/Ovis` 的 Team 节）。用户要求保留本候选，
 不纳入后续空间清理。服务器官方模型目录
