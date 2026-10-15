@@ -187,6 +187,17 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
 **2026-10-15 新授权 GLM-4.6V-Flash（准备阶段，尚无训练/精度结果）：**
+**最新恢复状态覆盖下方首次派发记录：**原prepare在第二片2,856,321,024字节发生
+网络BrokenPipe，suite01收到失败后退出，三个旧PID均确认消失，未启动GPU/训练。
+保留旧partial/失败日志；原偏移1KB HTTP Range探针206与Content-Range精确通过后，
+专属`glm46v_assets`按64MiB精确范围做一次有界恢复，复制旧partial并SHA核对、旧件不删，
+完整官方SHA通过才采用；无异常自动重试。当前唯一`prepare02` wrapper1958833，
+第二片实际续传到3,393,191,936字节；唯一`suite02` wrapper1958834/parent1958836在
+waiting_for_assets，自动等prepare02后衔接下述CPU/GPU/训练/B1。原资产/总截止均不变。
+恢复源码main`4a306c96c`、入口SHA
+`0889bcc0f069f81b843aa73788de60ac91c1d94b91663197a43e5e9cbbb9a220`，
+数据恢复源码SHA`b56430bde65292e3a8c94c90c021175a191901b5a4b55b2676a0386b53702d97`；
+21项CPU合同测试两端全过。只修改数据传输/绝对截止，不改原生模型或训练科学合同。
 实际派发已完成：CPU`cpu_interface02`真实TRAIN B1/B2通过，输入各566token、
 grid[2,32,32]、512视觉token，质量词ID17063/83409/60369/15204/49337；无CUDA初始化。
 专属环境实际导入Torch2.6cu124/Transformers5.0.0通过，15项合同测试两端通过。
