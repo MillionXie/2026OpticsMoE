@@ -1,3 +1,11 @@
+## 最新：四层正则无提升并复用原测试；三层、二层四卡已实际在训（2026-10-15）
+
+原冻结十类四层各一次仿真test92.7987/88.3797差+4.4190pp、macro89.7096/86.2398差+3.4698，未10；用户已本turn获告，详见[测试与逐类](reports/caltech10_gap_20261015/paired_once_test/README.md)。一次MixUp.4正则接续已完整E151-200、GPU子2315182actualrc0退出，新增fit238.30716秒，自己独占SCI SHA4e2ae5722d27c63266714a1de4c0a49b67feac3e8a414a8ab9e818fc3daa0c9a passed。新50最低valNLL.5828911649未胜父E149 .5708938839，按规则仍选E149、model参数digest实际相同，真实regularize_test_reused复用原test、无第二次forward；不声称缓解过拟合成功。[完整负结果](reports/caltech10_followup_20261015/regularize_final/README.md)。
+
+按人工顺序已自动开始三/二层fresh同150四臂：L3rho.3 GPU0子2323784，L3rho0 GPU2子2323855，L2rho.3 GPU4子2323921，L2rho0 GPU5子2323987；CPU campaign2314182、177实际训练来源084e7be07be831d627bbafa98f87a378a2cf97a1=current/original，四own gate已真passed，global4一卡1/A1000，无fail，非临时成绩最终验收。各150/7200Adam/3600fit秒/noearly，own独占保存science通过后各一次val冻结测试。source/PT/data/claims保持，不手动重审/另起队列/重试/扩预算或test选模，10pp不保证。[四卡实际启动与验收合同](reports/caltech10_followup_20261015/depth_pairs_start/README.md)。
+
+本节覆盖下方正则仍在训/浅层pending等旧文字；本新授权继续有效仅这四臂与各一次科学/测试，不扩范围。t18/09 ACTIVE保留，普通健康静默，真完成/新失败通知。
+
 ## 新人工授权：冻结十类四层一次配对测试完成，继续残差正则与三/二层（2026-10-15）
 
 当前冻结E149有/无残差模型已各一次仿真test、真实rc0退出并保存预测独立核验passed：1833张有残差92.7987%(1701)、无残差88.3797%(1620)，测试差+4.4190pp；macro89.7096/86.2398差+3.4698pp，未达到10pp目标。原验证+7.6433不能当test差。类别开发/此前Caltech test观察过，支持不均须看macro与逐类。详见[真实冻结测试报告](reports/caltech10_gap_20261015/paired_once_test/README.md)。不得重这两个模型测试或用test换类别/epoch/反调参。
