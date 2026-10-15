@@ -229,6 +229,9 @@ def worker(args, c):
     if abs(gpu_power_limit_w()-250) > .1:
         raise RuntimeError("Unchanged250W power limit required")
     frozen.process_audit()
+    # Existing-output protection must run before creating the worker directory.
+    if args.baseline not in SPECIAL:
+        frozen.preflight_files(args)
     args.output.mkdir()
     identity = dict(protocol=c, baseline=args.baseline, pid=os.getpid(), gpu_uuid=frozen.A100_UUID,
                     source_sha256=sources(), source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
@@ -239,7 +242,6 @@ def worker(args, c):
         if args.baseline in SPECIAL:
             model, head, prepare, transfer, compute, reference, finish = special_runtime(args)
         else:
-            frozen.preflight_files(args)
             model, head, _, prepare, transfer, native, timer, handles = frozen.load_runtime(args)
             compute = execution.make_gpu_forward(args, model, head, native)
             native_checked = False
@@ -339,12 +341,15 @@ def suite(args, c):
     reproduction.require_new_output(args.output)
     with (TASK / "runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        reproduction.cuda_guard()
+        for check in range(3):
+            reproduction.cuda_guard()
+            if check < 2:
+                time.sleep(10)
         args.output.mkdir()
         hashes = sources()
         state = dict(status="running", pid=os.getpid(), started_unix=time.time(), deadline=args.deadline,
                      protocol=c, source_sha256=hashes, completed=[], failed=[])
-        for baseline in c["batches"]:
+        for baseline in (args.models or c["batches"]):
             if time.time() >= args.deadline or hashes != sources():
                 raise RuntimeError("Suite deadline/source guard")
             reproduction.cuda_guard()
@@ -390,11 +395,15 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--phase", choices=("suite", "worker"), required=True)
     p.add_argument("--baseline", choices=tuple(config()["batches"]))
+    p.add_argument("--models", choices=tuple(config()["batches"]), nargs="+",
+                   help="Continue only explicitly selected unmeasured models, keeping the original absolute deadline")
     for name in ("manifest", "output", "model", "checkpoint", "reproduction-receipt"):
         p.add_argument("--" + name, type=Path, required=name in ("manifest", "output"))
     p.add_argument("--batch", type=int, default=1)
     p.add_argument("--deadline", type=float, required=True)
     args = p.parse_args()
+    if args.models and len(set(args.models)) != len(args.models):
+        p.error("Duplicate model selection")
     if os.environ.get("CUDA_VISIBLE_DEVICES") != frozen.A100_UUID or frozen.sha256(args.manifest) != frozen.MANIFEST_SHA:
         raise RuntimeError("Only approved A100 and original split")
     if not 0 < args.deadline-time.time() <= config()["maximum_suite_s"]:

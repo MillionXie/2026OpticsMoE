@@ -46,3 +46,17 @@ def test_no_unbounded_search_or_training_and_source_binding():
     assert 'raise RuntimeError("Bound measurement source changed")' in source
     assert 'torch.cuda.OutOfMemoryError' in source
     assert 'max(means)-min(means)' in source
+
+
+def test_existing_output_preflight_precedes_directory_creation():
+    source=Path(u.__file__).read_text()
+    worker=next(n for n in ast.walk(ast.parse(source)) if isinstance(n,ast.FunctionDef) and n.name=='worker')
+    body=ast.unparse(worker)
+    assert body.index('frozen.preflight_files(args)') < body.index('args.output.mkdir()')
+
+
+def test_continuation_keeps_config_and_deadline_and_idle_guard():
+    source=Path(u.__file__).read_text()
+    assert 'for baseline in (args.models or c["batches"])' in source
+    assert 'for check in range(3)' in source
+    assert 'args.deadline-time.time()' in source
