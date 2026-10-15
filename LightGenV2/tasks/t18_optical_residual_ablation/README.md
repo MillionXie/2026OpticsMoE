@@ -1,3 +1,9 @@
+## 最新主动针对性优化：二层蒸馏/四层量化SAM已实际短段训练（2026-10-15）
+
+新203run caltech10_L2_distill_L4_quantSAM_s17_20261015，来源1c76b60c5c67b38864eb6f2aae84698700b80e9e=current/original，CPU3057111/GPU2二层蒸馏/GPU4四层量化SAM实际运行，不用繁忙GPU0。新199训练诊断证明旧SAM实际只动.17-.32%8bit相位码，.5动1.6-2.9%；辅助捕获梯度仅5-12%不是主导。二层针对欠拟合加入冻结已接受四层光教师训练期蒸馏，推理仍原二层；四层针对量化尺度SAM半径.5，原候选保护。CPU/两numeric/actualproducer own gates和首段独占科学/测试SHA均真实passed，无failure/A1000。最新二层20新轮test80.4692未82，四层新10仍E488/test93.3988差9.492635未10。[诊断与真实train/val/test/macro/轮次、旧四方法负结果](reports/caltech10_targeted_20261015/start/README.md)。
+
+每10新轮完整保存/独占科学/新selected一次测试，旧digest复用；按全prefix firstminimum valEMA balancedNLL。联合NLL/valaccuracy及二层训练改善复盘，不死等旧75轮，t18现5分钟静默复盘/09 ACTIVE。此次人工明确授权证据驱动换训练策略，覆盖下方旧“全结束/不得新候选”，但不换类别/物理推理结构/电子头/A100/native/formal/lab，也不重开旧worker或篡改来源。无残差100/三层冻结，旧所有源/PT/data/claims/失败/图保持。额外预算、蒸馏影响、测试知情开发与非独立泛化如实说明。
+
 ## 最新人工要求SAM/dropout：二/四层四路线已实际并行（2026-10-15）
 
 新run caltech10_L2L4_sam_vs_dropout_s17_20261015，197实际训练来源925a8a7a4278e60c1da93dd0771fa9ad6b3eb66d=current/original，CPU2889673，GPU0二层SAM/2二层输入dropout/4四层SAM/5四层输入dropout各一子已实际运行；CPU与四numeric、四actualproducer自己的恢复态普通+新方法gate均真实passed，global4/A1000，无failure。完整恢复二层725/四层650 rawEMA/Adam34800或31200，不重播/重置Adam矩；新方法分开比较、SAM2次完整macro反传只1次Adam，dropout仅训练光输入遮挡且评估关闭。旧候选/三层及无残差100保留。早期正常不是已达82/10pp。[实际启动/准入和验收合同](reports/caltech10_sam_dropout_20261015/start/README.md)。
