@@ -33,15 +33,23 @@
 
 ## 给画图同学
 
-- `01_overall_comparison.png/.svg`：总体五项主要指标，300 dpi PNG 与可编辑文字 SVG。
+- `01_overall_comparison.png/.svg`：总体八项指标的横向配对点图，300 dpi PNG 与可编辑文字 SVG。
+  名称统一左对齐，双方百分数在右侧固定列对齐；LightGen-II 是本次 Ours 实测的展示名称。
+  横轴显示 50%–100% 附近，刻度明确，不是从零开始的柱状图；连接线只是同指标的两系统配对，
+  不是误差条。两种标记轻微上下错开，使完全相同的 100% 也能看到两者。
 - `02_operation_comparison.png/.svg`：四类操作的 changed-cell accuracy 和 edit-grid IoU。
-- `metrics.xlsx`：Comparison 表包含 5 组 × 8 项，共 40 行；Protocol 表包含来源与限制。
-- `plot_data.csv`：同样 40 行，适合 Origin / Python / R。
+- `metrics.xlsx`：Figure1 / Figure2 表分别对应两张图的顺序，链接到原始 Comparison 表；
+  Comparison 包含 5 组 × 8 项，共 40 行，Protocol 保留来源与限制。
+- `figure1_data.csv`：图一 8 项总体指标，顺序与图完全一致，并标出建议进入论文主图的项目。
+- `figure2_data.csv`：图二 a/b 两个面板 × 四种操作，共 8 行。
+- `plot_data.csv`：完整 40 行指标，保留原交付接口，适合 Origin / Python / R。
 - `plot_data.json`：包含完整原报告、来源 SHA、绘图源码 SHA、Git commit 和统计口径。
 
 CSV 的 `ours_fraction` 和 `qwen_fraction` 是 0–1 数值；绘图显示百分数时乘 100。
 `difference_pp` 已乘 100，不要再乘；`relative_change_percent` 是相对提升，不能混用。
 Excel 的 D/E 列是原始数值、以百分数格式显示，F/G 为可重算公式。
+这里的 D/E、F/G 指 Comparison 表；Figure1/Figure2 则同时提供 0–1 原值与 0–100 百分数，
+按各自列标题使用，不要把百分数再乘 100。
 
 Changed-cell accuracy 衡量目标编辑格子的类别预测是否正确；Edit-grid IoU 衡量编辑位置
 集合的交并比，不等于类别正确率。Object F1 比较“类别、行、列”对象集合；Scene exact
@@ -49,6 +57,31 @@ match 要求整个输出网格完全正确。所有指标沿用原报告逐场�
 没有把全部格子重新拼接计算另一套指标。All-cell accuracy 易受大量未编辑格子影响，
 所以主图不以它替代 Changed-cell accuracy。Operation accuracy 是操作类别识别，
 两者均为 1 不代表编辑结果完美。
+
+## 每项指标是什么意思，论文建议放哪些
+
+本项目输出并评估 **6×6 语义类别网格和编辑位置网格**，不是对渲染 RGB 图做逐像素比较。
+依据为原评估器 `experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/metrics.py`
+的 `compose_prediction` 与 `MetricAccumulator.update/compute`。类别 0 表示背景；先由编辑头
+的 sigmoid >= 0.5 得到编辑位置，再在预测编辑格使用生成类别，其他格复制原输入网格。
+
+| 图中指标 | 精确定义及直观解释 | 建议 |
+|---|---|---|
+| Task accuracy | 四分类操作头预测 add/replace/move/remove 是否正确。只知道“做哪种操作”，不保证做对对象或位置。 | 补充；两者都是 100%，区分度低 |
+| Preserved-cell accuracy | 在数据标记应保留的格子上，最终类别等于目标类别的比例。衡量有没有误伤不该改变的地方。 | 补充；解释编辑保真度 |
+| Cell accuracy | 整幅 6×6、共 36 格中最终类别正确的比例，包含背景和未编辑格。 | 补充；大量无需修改的格子会抬高分数 |
+| Foreground category accuracy | 只在目标网格类别 > 0 的格子上，最终类别正确的比例。排除目标背景，但仍包含未被编辑的物体。 | 可选第 5 项；与 Object F1 有重叠 |
+| Object F1 | 将所有非背景格写成“类别、行、列”三元组，完全匹配算 TP，按对象集合算 precision、recall 的调和平均。兼顾漏物体和多生成物体。 | 推荐主图；看对象集合整体质量 |
+| Changed-cell accuracy | 只在真实要求编辑的格子上，最终类别预测正确的比例。移动通常涉及原位置和目标位置，先在每个场景内部平均。 | 推荐主图，主指标；看修改内容是否正确 |
+| Edit-grid IoU | 预测编辑位置集合与真实编辑位置集合的交集大小 / 并集大小。看“改哪里”，不直接判断改成了正确类别。 | 推荐主图；看定位是否准确 |
+| Scene exact match | 最终 36 格类别全部与目标网格相同时计 1，否则计 0，再对场景平均。不是要求渲染图片逐像素完全相同。 | 推荐主图；最严格的完整场景成功率 |
+
+**建议论文主图放四项：Changed-cell accuracy、Edit-grid IoU、Object F1、Scene exact match；
+附录/补充材料放完整八项。** 如果版面允许可再加 Foreground category accuracy。
+该选择按指标互补性，而不是按哪个数字更好：分别回答“改得对吗、改对地方吗、对象整体对吗、
+一整张场景能完全成功吗”。本次仍按要求把八项全部画出，方便后续取舍。
+保留/全格/前景准确率较高，部分原因是系统按编辑网格复制未修改内容，不能只拿这些高分证明
+全部编辑能力；也不应把不同含义的八个指标再平均成一个综合“准确率”。
 
 ## 来源与版本身份
 

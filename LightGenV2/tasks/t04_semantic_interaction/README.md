@@ -1,5 +1,14 @@
 # T04 语义交互（OpenMoji）
 
+## 实测定量图表（2026-10-15）
+
+[`reports/lab_qwen_quantitative_20261015/README.md`](reports/lab_qwen_quantitative_20261015/README.md)
+集中提供指定 epoch45 的 **Ours 实验室 0.8655 / Qwen epoch30 数字 baseline 0.8120**
+原始报告核验、总体八指标图、分操作图及两张图各自的 CSV/Excel 数据和指标释义。
+实验室 complete 报告为1000 TEST/6000 CCD，无下游重训；不把下方同 PT 的仿真0.8765
+当作实测。来源 SHA、TEST选模开发口径及未完成逐样本配对审计的限制均写在该说明中。
+图表更新不改变训练、模型、硬件合同或运行中的实验。
+
 ## 最新完整展示素材（2026-10-13）
 
 [`reports/full_comparison_20261013/README.md`](reports/full_comparison_20261013/README.md)

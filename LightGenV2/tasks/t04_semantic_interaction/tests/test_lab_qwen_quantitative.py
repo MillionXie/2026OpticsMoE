@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from LightGenV2.tasks.t04_semantic_interaction.plot_lab_qwen_quantitative import (
-    GROUPS, METRICS, OURS_SHA, QWEN_SHA, audit, sha,
+    GROUPS, METRICS, OURS_SHA, QWEN_SHA, audit, sha, figure_tables,
 )
 
 
@@ -46,6 +46,18 @@ class QuantitativeAuditTests(unittest.TestCase):
             handle.write('\n')
         with self.assertRaisesRegex(AssertionError, 'Source SHA changed'):
             audit(self.root)
+
+    def test_figure_tables_cover_all_metrics_and_both_operation_panels(self):
+        result = audit(self.root)
+        figures = figure_tables(result)
+        self.assertEqual(len(figures['figure1_rows']), 8)
+        self.assertEqual({r['metric'] for r in figures['figure1_rows']}, set(METRICS))
+        self.assertEqual(sum(r['recommended_for_main'] for r in figures['figure1_rows']), 4)
+        self.assertEqual([r['panel'] for r in figures['figure2_rows']], ['a']*4+['b']*4)
+        for row in figures['figure1_rows']+figures['figure2_rows']:
+            original = result['rows'][row['source_row']-6]
+            self.assertEqual((row['group'], row['metric'], row['ours'], row['qwen']),
+                             (original['group'], original['metric'], original['ours'], original['qwen']))
 
     def test_simulation_substitution_is_rejected_even_after_rehash(self):
         path = self.root/'ours_lab_full_report.json'

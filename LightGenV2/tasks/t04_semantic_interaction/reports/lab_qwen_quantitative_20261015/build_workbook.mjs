@@ -12,6 +12,8 @@ const {Workbook, SpreadsheetFile} = await import(pathToFileURL(dependencyLoader.
 const input = JSON.parse(await fs.readFile(path.join(output, 'plot_data.json'), 'utf8'));
 assert.equal(input.rows.length, 40);
 const workbook = Workbook.create();
+const figure1 = workbook.worksheets.add('Figure1');
+const figure2 = workbook.worksheets.add('Figure2');
 const sheet = workbook.worksheets.add('Comparison');
 const protocol = workbook.worksheets.add('Protocol');
 sheet.showGridLines = false; protocol.showGridLines = false;
@@ -66,6 +68,50 @@ protocol.getRange('A5:A18').format.columnWidth = 25;
 protocol.getRange('B5:B18').format.columnWidth = 103;
 protocol.getRange('A5:B18').format.rowHeight = 30;
 protocol.getRange('B6:B18').format.wrapText = true;
+// Two requested figure-order tables link back to the unchanged 40-row source.
+assert.equal(input.figure1_rows.length, 8);
+assert.equal(input.figure2_rows.length, 8);
+for(const target of [figure1, figure2]){
+  target.showGridLines = false;
+  target.getRange('A1:H16').format.font = {name:'Arial',size:10,color:'#202b36'};
+  target.getRange('A2').format.font = {name:'Arial',size:14,bold:true};
+  target.getRange('A5:H5').format = {fill:'#23445b',font:{name:'Arial',size:10,bold:true,color:'#ffffff'},horizontalAlignment:'center'};
+  target.getRange('A5:H13').format.rowHeight = 24;
+  target.getRange('A6:H13').format.verticalAlignment = 'center';
+}
+figure1.getRange('A2').values = [['Figure 1: overall semantic editing metrics']];
+figure1.getRange('A3').values = [['LightGen-II is Ours laboratory; 1,000 TEST scenes per system']];
+figure1.getRange('A5:H5').values = [['Order','Metric','Ours fraction','Qwen fraction','Ours (%)','Qwen (%)','Delta (pp)','Suggested use']];
+figure1.getRange('A6:H13').values = input.figure1_rows.map(r=>[
+  r.order,r.figure_label,null,null,null,null,null,r.recommended_for_main?'Main figure':'Supplement']);
+figure2.getRange('A2').values = [['Figure 2: per-operation accuracy and edit IoU']];
+figure2.getRange('A3').values = [['Panel a: changed-cell accuracy; panel b: edit-grid IoU; 250 scenes per operation']];
+figure2.getRange('A5:H5').values = [['Panel','Operation','Metric','Ours fraction','Qwen fraction','Ours (%)','Qwen (%)','Delta (pp)']];
+figure2.getRange('A6:H13').values = input.figure2_rows.map(r=>[
+  r.panel,r.operation,r.label,null,null,null,null,null]);
+for(let i=0;i<8;i++){
+  const row=i+6, first=input.figure1_rows[i], second=input.figure2_rows[i];
+  figure1.getRange(`C${row}:G${row}`).formulas = [[`=Comparison!D${first.source_row}`,`=Comparison!E${first.source_row}`,`=100*C${row}`,`=100*D${row}`,`=100*(C${row}-D${row})`]];
+  figure2.getRange(`D${row}:H${row}`).formulas = [[`=Comparison!D${second.source_row}`,`=Comparison!E${second.source_row}`,`=100*D${row}`,`=100*E${row}`,`=100*(D${row}-E${row})`]];
+}
+figure1.getRange('A5:A13').format.columnWidth = 7;
+figure1.getRange('B5:B13').format.columnWidth = 31;
+figure1.getRange('C5:G13').format.columnWidth = 16;
+figure1.getRange('H5:H13').format.columnWidth = 18;
+figure2.getRange('A5:A13').format.columnWidth = 7;
+figure2.getRange('B5:B13').format.columnWidth = 13;
+figure2.getRange('C5:C13').format.columnWidth = 29;
+figure2.getRange('D5:H13').format.columnWidth = 16;
+figure1.getRange('C6:D13').setNumberFormat('0.000000');
+figure2.getRange('D6:E13').setNumberFormat('0.000000');
+figure1.getRange('E6:F13').setNumberFormat('0.00');
+figure2.getRange('F6:G13').setNumberFormat('0.00');
+figure1.getRange('G6:G13').setNumberFormat('+0.00;-0.00;0.00');
+figure2.getRange('H6:H13').setNumberFormat('+0.00;-0.00;0.00');
+figure1.getRange('C6:G13').format.horizontalAlignment = 'right';
+figure2.getRange('D6:H13').format.horizontalAlignment = 'right';
+figure1.getRange('A15').values = [['Fractions are 0-1; percentage columns are 0-100; delta is percentage points.']];
+figure2.getRange('A15').values = [['Fractions are 0-1; percentage columns are 0-100; delta is percentage points.']];
 workbook.recalculate();
 const checked = sheet.getRange('D6:G45').values;
 for(let i=0;i<input.rows.length;i++){
@@ -74,10 +120,18 @@ for(let i=0;i<input.rows.length;i++){
   assert(Math.abs(checked[i][2]-input.rows[i].difference_pp)<1e-9);
   assert(Math.abs(checked[i][3]-input.rows[i].relative_change_percent)<1e-9);
 }
+const firstValues=figure1.getRange('C6:G13').values;
+const secondValues=figure2.getRange('D6:H13').values;
+for(const [values,rows] of [[firstValues,input.figure1_rows],[secondValues,input.figure2_rows]]){
+  for(let i=0;i<rows.length;i++){
+    const expected=[rows[i].ours,rows[i].qwen,100*rows[i].ours,100*rows[i].qwen,rows[i].difference_pp];
+    for(let j=0;j<5;j++) assert(Math.abs(values[i][j]-expected[j])<1e-9);
+  }
+}
 const errors = await workbook.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},summary:'formula errors'});
 await fs.mkdir(path.join(output,'qa'),{recursive:true});
 await fs.writeFile(path.join(output,'qa','workbook_error_scan.ndjson'),errors.ndjson);
-for(const [name,range] of [['Comparison','A1:G15'],['Protocol','A1:B18']]){
+for(const [name,range] of [['Figure1','A1:H15'],['Figure2','A1:H15'],['Comparison','A1:G15'],['Protocol','A1:B18']]){
   const preview = await workbook.render({sheetName:name,range,scale:1.5,format:'png'});
   await fs.writeFile(path.join(output,'qa',`${name.toLowerCase()}.png`),new Uint8Array(await preview.arrayBuffer()));
 }
@@ -87,5 +141,13 @@ await xlsx.save(path.join(output,'metrics.xlsx'));
 const csv = [['group','samples','metric','ours_fraction','qwen_fraction','difference_pp','relative_change_percent'],
   ...input.rows.map((r,i)=>[r.group,r.samples,r.metric,...checked[i]])];
 await fs.writeFile(path.join(output,'plot_data.csv'),'\ufeff'+csv.map(row=>row.join(',')).join('\r\n')+'\r\n','utf8');
-await fs.writeFile(path.join(output,'qa','workbook_audit.json'),JSON.stringify({rows:40,formulas_verified:80,all_report_values_preserved:true,cca_difference_pp:checked[0][2]},null,2)+'\n');
+const quote = value => '"'+String(value).replaceAll('"','""')+'"';
+const writeCsv = (name,rows) => fs.writeFile(path.join(output,name),'\ufeff'+rows.map(r=>r.map(quote).join(',')).join('\r\n')+'\r\n','utf8');
+await writeCsv('figure1_data.csv',[
+  ['order','metric','label','ours_fraction','qwen_fraction','ours_percent','qwen_percent','difference_pp','recommended_for_main'],
+  ...input.figure1_rows.map((r,i)=>[r.order,r.metric,r.figure_label,...firstValues[i],r.recommended_for_main])]);
+await writeCsv('figure2_data.csv',[
+  ['panel','operation','metric','ours_fraction','qwen_fraction','ours_percent','qwen_percent','difference_pp'],
+  ...input.figure2_rows.map((r,i)=>[r.panel,r.operation,r.metric,...secondValues[i]])]);
+await fs.writeFile(path.join(output,'qa','workbook_audit.json'),JSON.stringify({rows:40,figure1_rows:8,figure2_rows:8,formulas_verified:160,all_report_values_preserved:true,cca_difference_pp:checked[0][2]},null,2)+'\n');
 console.log(JSON.stringify({xlsx:path.join(output,'metrics.xlsx'),csv:path.join(output,'plot_data.csv'),rows:40,cca_difference_pp:checked[0][2]}));
