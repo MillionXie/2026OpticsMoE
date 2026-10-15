@@ -1,3 +1,13 @@
+## 最新人工要求恢复原十类继续优化；真实曲线诊断（2026-10-15）
+
+用户已明确要求查看本轮有/无残差训练曲线、分析收敛/过拟合，并换回原bridge/tennis_court等十类继续优化。[真实曲线、逐轮聚合CSV与诊断](reports/resisc10_reselect_20261015/curve_review/README.md)已生成2PNG/SVG并全部实际view_image QA；无新PDF。曲线显示两组后期验证NLL仍缓降，残差训练提升更快且train-val差更大；铁路站train本身也低，不能只归过拟合。
+
+本次新授权仅一次恢复原十类残差E100完整状态接续E101-140（最多1800新增fit秒），保持MixUp.2、原Adam/EMA/scheduler和恢复LR.0005，不重复上次MixUp.4+额外LR减半设置。新173源为原169+四文件，不改旧源/数据/PT/claims；只GPU2一子，无early/无限retry/A100/test/电子支路/正式6/lab。原无残差是固定历史参考，新的残差额外40轮不是新的同预算消融；不靠削弱对照扩大差距。
+
+目前已核实E100父last SHA856e377e5892e27540f8910c3ed1bc9b1121e870f1c4146e136ee289dc99d12b、history SHA86a20ca5da70638ea99dc2b52bb9d109c64afb70d7bd4aa2ff8eb45c293775f0、独占SCI4dbbe3c948fa93ad8895573dc405a1ad2c265217b3a99c09e9cba146357e0e01。新状态准入/实际启动尚未执行，不把准备当已在训。详见[新一致接续合同](RESISC10_RESTORE_STEADY40_PROTOCOL_20261015.md)。目标80不能保证，按真实验证选模，不自动新test或更多候选。
+
+**以下旧“不再继续优化”等范围被这次人工新授权覆盖，仅本173一次；旧所有实验/审核/测试/图仍不可重做。**
+
 ## 最新替换十类已完整100轮且科学通过：73.00%／74.14%（2026-10-15）
 
 本轮已真实全完成，两组都100轮、maximum_epochs停止，无提前终止；CPU campaign/queue和两GPU producer实际退出，producer rc0，GPU2/5项目释放、A1000/test0。自己的独占保存科学首次passed，audit SHA aea29618e70b4f865b36f2498d35bd2cf3bcbc25f898cb47576ccf6faddea247 与completed实际一致，不重审。

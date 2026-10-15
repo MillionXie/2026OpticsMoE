@@ -1,0 +1,23 @@
+{
+  "run": "resisc10_original_rho03_steady40_mixup02_20261015",
+  "parent_run": "resisc10_rho03_resume100_regularize20_20261015",
+  "parent_stage": "complete100",
+  "parent_commit": "bbbc212f5af9a509e7bd7c25b3300dfaaa83e45d",
+  "parent_last_sha256": "856e377e5892e27540f8910c3ed1bc9b1121e870f1c4146e136ee289dc99d12b",
+  "parent_history_sha256": "86a20ca5da70638ea99dc2b52bb9d109c64afb70d7bd4aa2ff8eb45c293775f0",
+  "parent_audit_sha256": "4dbbe3c948fa93ad8895573dc405a1ad2c265217b3a99c09e9cba146357e0e01",
+  "classes": ["bridge", "desert", "harbor", "intersection", "island", "lake", "meadow", "tennis_court", "thermal_power_station", "wetland"],
+  "maximum_epochs": 140,
+  "additional_epochs": 40,
+  "additional_fitting_seconds": 1800,
+  "cpu_proof": "resisc10_original_steady40_state_admission_20261015",
+  "physical_gpu": 2,
+  "optical_rho": 0.3,
+  "mixup_alpha": 0.2,
+  "manual_lr_factor": 1.0,
+  "earlystop_disabled": true,
+  "automatic_retry": false,
+  "test_evaluations": 0,
+  "selection": "First minimum validation EMA balancedNLL over preserved100 plus new40; no test selection",
+  "scope": "Human explicitly restores original10 and asks continued optimization. One residual-only E101-140 bounded continuation; historical control is not a new equal-budget ablation. No new class search/electrical branch/A100/test/hardware."
+}
