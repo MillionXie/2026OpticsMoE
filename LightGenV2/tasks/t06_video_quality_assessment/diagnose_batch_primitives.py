@@ -22,6 +22,7 @@ FOCUSED = OWNER / "focused_merger_routes03"
 BATCHES = (1, 2, 4)
 REFERENCE_LIMIT = 2 * 1024**3
 WATCHED = {"aten.mm.default", "aten.addmm.default", "aten.bmm.default",
+           "aten.linear.default", "aten.matmul.default", "aten.softmax.int",
            "aten._softmax.default", "aten.add.Tensor", "aten.mul.Tensor",
            "aten.div.Tensor", "aten.cos.default", "aten.sin.default"}
 
@@ -186,7 +187,8 @@ def attention_mode(capture, controlled=False, record=True):
         def __torch_dispatch__(self, function, types, args=(), kwargs=None):
             kwargs = kwargs or {}
             name = str(function)
-            arithmetic = name in {"aten.mm.default", "aten.addmm.default", "aten.bmm.default"}
+            arithmetic = name in {"aten.mm.default", "aten.addmm.default", "aten.bmm.default",
+                                  "aten.linear.default", "aten.matmul.default"}
             if controlled and arithmetic:
                 dtype = next(x.dtype for x in args if torch.is_tensor(x) and x.is_floating_point())
                 converted = tuple(x.float() if torch.is_tensor(x) and x.is_floating_point() else x for x in args)
@@ -251,6 +253,9 @@ def deepseek_gpu(output):
                             old["inputs"][str(batch)]["input_fingerprints"][start:start+batch], transfer)
                         capture.record_group = start == 0
                         feature, logit = numerics.diagnostic_forward(args, model, head, inputs, False)
+                        if start == 0 and not all(any(event.startswith(name+"/") for event in capture.events)
+                            for name in ("aten.linear.default", "aten.matmul.default", "aten.softmax.int")):
+                            raise ValueError("Missing native composite attention operators; no causal conclusion")
                         values = (logit.softmax(-1) @ scores).tolist()
                         if mode == "native" and max(abs(a-b) for a,b in zip(values,
                             old["probes"]["native"][str(batch)]["predictions"][start:start+batch])) > .001:

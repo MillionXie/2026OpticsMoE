@@ -18,12 +18,14 @@ def test_fixed_scope_and_no_training_or_forward_patch():
 
 
 def test_real_attention_primitives_and_explicit_numerical_control():
-    assert {"aten.mm.default", "aten.bmm.default", "aten._softmax.default"} <= primitives.WATCHED
+    assert {"aten.mm.default", "aten.bmm.default", "aten._softmax.default",
+            "aten.linear.default", "aten.matmul.default", "aten.softmax.int"} <= primitives.WATCHED
     source = Path(primitives.__file__).read_text(encoding="utf-8")
     assert '"actual_argument_"+key' in source
     assert '"attention_fp32_gemm_control"' in source
     assert "query-sliced" in source
     assert "Same eight TEST" in source
+    assert "Missing native composite attention operators" in source
 
 
 def test_qwen_reference_quantizes_effective_operands_before_double_replay():
