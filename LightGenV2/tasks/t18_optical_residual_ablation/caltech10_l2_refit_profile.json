@@ -1,0 +1,22 @@
+{
+  "run": "caltech10_L2_rho03_refit82_s17_20261015",
+  "target_test_accuracy": 0.82,
+  "parent_epoch": 325,
+  "parent_arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_equal100_residual_open_20261015/L2_rho03/block0009/L2_rho03",
+  "parent_last_sha256": "c119e2ab83d37353a3fcdc97f6910acbef36ec177ae12e81352fa759db596dd2",
+  "parent_best_sha256": "00cc6a33a4c41b3b4df483b4d62a628d30544bded1b7291d9060e3945d189cb4",
+  "parent_history_sha256": "24043be41fb7d16d09d4a5a28ac64ad73e71c62baa5d4b19796f0b03bc690088",
+  "parent_audit_sha256": "b63586e325276093f9e0c0a38504363bc73086dfa94609f298c89e4016b9bf4a",
+  "mixup_alpha": 0.1,
+  "label_smoothing": 0.02,
+  "phase_smooth_weight": 0.01,
+  "restart_lr": 0.0005,
+  "restart_epoch": 326,
+  "block_epochs": 25,
+  "maximum_total_epochs": null,
+  "block_fit_seconds": 1800,
+  "plateau_patience": 75,
+  "plateau_delta": 0.0002,
+  "physical_gpu_index": 2,
+  "scope": "New human authorizes only L2 residual optimization toward82 test; frozen100 control and accepted L3/L4 untouched. Test-informed development, extra residual budget, no independent generalization claim."
+}
