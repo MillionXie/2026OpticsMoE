@@ -15,6 +15,17 @@ Calibration dark is used only to fit the response, not silently subtracted from
 network input. A passing calibration still requires a fresh TRAIN pilot before
 full TEST; this is a radiometric calibration, not a result or electronic fit.
 
+The first69-frame measured inverse failed held-out validation: normalized
+intensity RMSE0.0741/max0.2479; original device LUT hash remained unchanged. Do
+not deploy it. Full expert-aperture means varied31.37-35.61 at identical gray255;
+center gray237 even exceeded its earlier255 reference. One bounded follow-up
+uses the same69 patterns/exposure but nine fresh frames per unchanged display,
+retaining all621 raw CCDs and per-frame means/IDs. This separates single-frame
+temporal variability from a repeatable spatial transfer. No loosened tolerance,
+per-image normalization, TEST use or blind repeat is permitted. If this averaged
+calibration still fails, retain evidence and stop before full TEST. Averaging for
+calibration is not automatically applied to inference or called a performance gain.
+
 Human request 2026-10-15 authorizes this new bench session, superseding earlier
 offline-only/no-lab limits only for these two L3 models. Other training windows,
 historical runs and equipment configurations remain protected. Use the existing

@@ -227,7 +227,17 @@ def responsecheck(a):
         bmp=a.out/(tag+'.bmp');Image.fromarray(native(gray,'amplitude')).save(bmp)
         raw,meta=bench.capture(bmp);image=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA)).copy()
         Image.fromarray(raw).save(a.out/(tag+'_raw.png'));Image.fromarray(image).save(a.out/(tag+'.png'))
-        row=dict(pattern=kind,drive=int(drive),desired=desired,frame_id=meta['frame_id'],mean=float(image.mean()),p99=float(np.percentile(image,99)),maximum=int(image.max()),saturation_fraction=float((image==255).mean()),input_sha256=sha(bmp),raw_sha256=sha(a.out/(tag+'_raw.png')))
+        samples=[image.astype(np.float32)];frame_ids=[meta['frame_id']];saturations=[float((image==255).mean())]
+        for repeat in range(1,a.response_repeats):
+            # Same persistent display; fresh camera frames diagnose temporal
+            # variability without repeatedly releasing/reloading the SLM handle.
+            extra,extra_meta=bench.hw.camera.fresh()
+            crop=np.flipud(cv2.warpPerspective(extra,warp,(478,478),flags=cv2.INTER_AREA)).copy()
+            Image.fromarray(extra).save(a.out/(tag+f'_raw_{repeat}.png'))
+            samples.append(crop.astype(np.float32));frame_ids.append(extra_meta['frame_id']);saturations.append(float((crop==255).mean()))
+        average=np.mean(samples,axis=0)
+        row=dict(pattern=kind,drive=int(drive),desired=desired,frame_id=meta['frame_id'],frame_ids=frame_ids,mean=float(average.mean()),repeat_means=[float(v.mean()) for v in samples],p99=float(np.percentile(average,99)),maximum=float(average.max()),saturation_fraction=max(saturations),input_sha256=sha(bmp),raw_sha256=sha(a.out/(tag+'_raw.png')))
+        save(a.out/(tag+'.json'),row)
         rows.append(row);save(a.out/'progress.json',dict(frames=len(rows),latest=row));print(json.dumps(row),flush=True)
         assert row['saturation_fraction']<.001,'Calibration clipped; retain data, do not fit a clipped response'
         return row['mean']
@@ -246,7 +256,7 @@ def responsecheck(a):
                     normalized=(value-low)/(high-low);target=(desired/255.)**2
                     checks.append(dict(pattern=kind,desired=desired,measured=normalized,target=target,error=normalized-target))
             errors=np.array([v['error'] for v in checks]);passed=bool(np.max(np.abs(errors))<=.08 and np.sqrt(np.mean(errors**2))<=.04)
-        save(a.out/'response_lut.json',dict(passed=passed,sdk_released=True,scope='this paired session only; common mapping both arms',target='field amplitude; intensity=(canonical_gray/255)^2',drive=lut,fit_grays=grays,fit_means=means,normalized_response=response,checks=checks,validation_rmse=float(np.sqrt(np.mean(errors**2))),validation_max_error=float(np.max(np.abs(errors))),exposure_us=a.exposure_us,gain='Gain_X4',coordinates_sha256=sha(a.coordinates),phase_sha256=sha(phase),source_sha256=sha(__file__),raw_rows=rows,devices_original_lut_modified=False,dark_subtracted_in_network=False))
+        save(a.out/'response_lut.json',dict(passed=passed,sdk_released=True,scope='this paired session only; common mapping both arms',target='field amplitude; intensity=(canonical_gray/255)^2',drive=lut,fit_grays=grays,fit_means=means,normalized_response=response,checks=checks,validation_rmse=float(np.sqrt(np.mean(errors**2))),validation_max_error=float(np.max(np.abs(errors))),exposure_us=a.exposure_us,frames_per_pattern=a.response_repeats,gain='Gain_X4',coordinates_sha256=sha(a.coordinates),phase_sha256=sha(phase),source_sha256=sha(__file__),raw_rows=rows,devices_original_lut_modified=False,dark_subtracted_in_network=False))
         if not passed:raise RuntimeError('Held-out response validation failed; do not deploy this mapping')
     except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),frames=len(rows),automatic_retry=False));raise
     finally:lock.unlink()
@@ -324,6 +334,7 @@ if __name__=='__main__':
     for name in ('assets','out','coordinates','selftest','machine-config','amplitude-sdk','phase-sdk','phase-lut'):p.add_argument('--'+name,type=Path,required=name in ('assets','out'))
     p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
     p.add_argument('--response-lut',type=Path)
+    p.add_argument('--response-repeats',type=int,choices=[1,9],default=1)
     a=p.parse_args()
     if sys.stdout is None:
         sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
