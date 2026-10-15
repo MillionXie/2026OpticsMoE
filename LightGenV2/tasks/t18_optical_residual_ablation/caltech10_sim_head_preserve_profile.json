@@ -1,0 +1,1051 @@
+{
+  "run": "caltech10_sim_head8554_preserve_L34_s17_20261016",
+  "cpu_run": "caltech10_sim_head8554_preserve_cpu_20261016",
+  "cache_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_sim_head8554_frozen_L234_s17_20261016",
+  "cases": {
+    "L3_rho03": {
+      "head_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_sim_head8554_frozen_L234_s17_20261016/L3_rho03/segment0001/best_checkpoint.pt",
+      "head_sha256": "a2dda912d21d67e4362962f63f3ca00c922b06eb4e2f2ba9f9802497fad22bbb",
+      "head_digest": "5578ac622b8828c45a58aaf6c083bed607544018ea97dcc33e346974996dc47b"
+    },
+    "L4_rho03": {
+      "head_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_sim_head8554_frozen_L234_s17_20261016/L4_rho03/segment0001/best_checkpoint.pt",
+      "head_sha256": "b98cc1df1964b442ae58dd7ddf4c206ef879cd333ace0c989760294adfc088f9",
+      "head_digest": "a009ae91728af878b30c7c8622cd753bd32de07b294261d3dd9cc4b09a0cd61f"
+    }
+  },
+  "optical_parents": {
+    "L3_rho03": {
+      "depth": 3,
+      "rho": 0.3,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_equal100_residual_open_20261015/L3_rho03/block0001/L3_rho03/best_checkpoint.pt",
+      "sha": "b3d89f3ab2b177bd85997453cb0d0f8289d25b600243ca59c824ac529f59172d",
+      "digest": "267293c93a996afe3e2ab5ac8ad2501b2877ffc20c2563e9041274c2b799c3b8",
+      "optical_epoch": 123,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    },
+    "L4_rho03": {
+      "depth": 4,
+      "rho": 0.3,
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_equal100_residual_open_20261015/L4_rho03/block0016/L4_rho03/best_checkpoint.pt",
+      "sha": "9b7c135d5f902d542d6d765f96b096f2990cdbc1004bf8ff7d26a5e710a54d27",
+      "digest": "dba67338fa0b3018e29df03b4731e2e2a1c51aa7230537af38b7905fa8c6ee4a",
+      "optical_epoch": 488,
+      "config": {
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1"
+      }
+    }
+  },
+  "controls": {
+    "L3_rho03": {
+      "case": "L3_rho0",
+      "actual_head_epochs": 3,
+      "selected_head_epoch": 3,
+      "train": {
+        "n": 761,
+        "accuracy": 0.8002628120893561,
+        "balanced_accuracy": 0.7826635258484178,
+        "recall": [
+          0.89,
+          0.82,
+          0.94,
+          0.8,
+          0.6404494382022472,
+          0.782608695652174,
+          0.8421052631578947,
+          0.6590909090909091,
+          0.8333333333333334,
+          0.6190476190476191
+        ],
+        "support": [
+          100,
+          100,
+          100,
+          100,
+          89,
+          69,
+          57,
+          44,
+          60,
+          42
+        ],
+        "confusion_matrix": [
+          [
+            89,
+            2,
+            1,
+            2,
+            0,
+            3,
+            0,
+            3,
+            0,
+            0
+          ],
+          [
+            1,
+            82,
+            0,
+            0,
+            7,
+            0,
+            1,
+            9,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            94,
+            3,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            1,
+            12,
+            80,
+            0,
+            0,
+            0,
+            6,
+            0,
+            1
+          ],
+          [
+            4,
+            8,
+            4,
+            5,
+            57,
+            6,
+            3,
+            2,
+            0,
+            0
+          ],
+          [
+            5,
+            0,
+            4,
+            1,
+            2,
+            54,
+            1,
+            1,
+            1,
+            0
+          ],
+          [
+            2,
+            1,
+            1,
+            2,
+            2,
+            0,
+            48,
+            1,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            1,
+            8,
+            2,
+            0,
+            2,
+            29,
+            0,
+            0
+          ],
+          [
+            1,
+            3,
+            0,
+            0,
+            1,
+            1,
+            2,
+            1,
+            50,
+            1
+          ],
+          [
+            2,
+            2,
+            5,
+            0,
+            5,
+            0,
+            2,
+            0,
+            0,
+            26
+          ]
+        ],
+        "nll": 1.0017792221931314,
+        "balanced_nll": 1.0320357211153393
+      },
+      "validation": {
+        "n": 157,
+        "accuracy": 0.7515923566878981,
+        "balanced_accuracy": 0.7466791979949875,
+        "recall": [
+          0.85,
+          0.7,
+          0.95,
+          0.75,
+          0.5263157894736842,
+          0.8571428571428571,
+          0.5833333333333334,
+          0.6,
+          0.75,
+          0.9
+        ],
+        "support": [
+          20,
+          20,
+          20,
+          20,
+          19,
+          14,
+          12,
+          10,
+          12,
+          10
+        ],
+        "confusion_matrix": [
+          [
+            17,
+            0,
+            1,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            14,
+            0,
+            0,
+            1,
+            1,
+            0,
+            2,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            19,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            4,
+            15,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            1,
+            1,
+            10,
+            2,
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0,
+            1,
+            12,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            2,
+            1,
+            1,
+            7,
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1,
+            1,
+            1,
+            0,
+            0,
+            6,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            9,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            9
+          ]
+        ],
+        "nll": 1.128196028497727,
+        "balanced_nll": 1.1387974416498203
+      },
+      "test": {
+        "n": 1833,
+        "accuracy": 0.8134206219312602,
+        "balanced_accuracy": 0.7567310163230256,
+        "recall": [
+          0.8095238095238095,
+          0.775,
+          0.9144542772861357,
+          0.7338235294117647,
+          0.6,
+          0.6875,
+          0.7692307692307693,
+          0.7777777777777778,
+          0.5,
+          1.0
+        ],
+        "support": [
+          315,
+          80,
+          678,
+          680,
+          20,
+          16,
+          13,
+          9,
+          14,
+          8
+        ],
+        "confusion_matrix": [
+          [
+            255,
+            3,
+            3,
+            6,
+            11,
+            13,
+            12,
+            7,
+            1,
+            4
+          ],
+          [
+            3,
+            62,
+            1,
+            3,
+            4,
+            1,
+            0,
+            5,
+            0,
+            1
+          ],
+          [
+            6,
+            3,
+            620,
+            21,
+            8,
+            7,
+            2,
+            4,
+            0,
+            7
+          ],
+          [
+            5,
+            7,
+            88,
+            499,
+            4,
+            6,
+            7,
+            61,
+            0,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            0,
+            12,
+            5,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            2,
+            1,
+            0,
+            1,
+            11,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            1,
+            0,
+            1,
+            10,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0,
+            7,
+            0,
+            0
+          ],
+          [
+            4,
+            0,
+            1,
+            1,
+            0,
+            0,
+            1,
+            0,
+            7,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8
+          ]
+        ],
+        "nll": 0.9764713814177001,
+        "balanced_nll": 1.1039410497863114
+      },
+      "test_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_sim_head8554_frozen_L234_s17_20261016/L3_rho0/once_tests/5335df6881a83b0db852b0caf72b0d58a76216bee8da19fe3d9a9eaf4cd6e5b2",
+      "test_reused": false,
+      "head_digest": "5335df6881a83b0db852b0caf72b0d58a76216bee8da19fe3d9a9eaf4cd6e5b2",
+      "initial_head_net_digest": "9c88a947f2e3c6dc874406ed5bf798a9a0838259c3eb4fe0f7f693b63d87fcd6",
+      "optical_checkpoint_sha256": "62154e9067aa75494189955421a0d32e74cbe8ff14b4f3caf929262ed11445cc",
+      "optical_model_digest": "e1328fcf0da28ca0d3fbb8997f83b22be99d8274e117b6b3f88ca27a0b691679",
+      "optical_weights_unchanged": true,
+      "optical_optimizer_steps": 0,
+      "head_optimizer_steps": 36,
+      "head_parameters": 8554,
+      "head_contract": "CCD478_mean_log1p_pool16_trainSTD_MLP256_32_10_plus_log_optical_v1",
+      "git_commit": "4b21e2fe81825c3fb571a5c5e537ed64bbe7086d",
+      "fit_seconds": 32.73253919929266
+    },
+    "L4_rho03": {
+      "case": "L4_rho0",
+      "actual_head_epochs": 3,
+      "selected_head_epoch": 3,
+      "train": {
+        "n": 761,
+        "accuracy": 0.8436268068331143,
+        "balanced_accuracy": 0.8350545764197321,
+        "recall": [
+          0.93,
+          0.85,
+          0.97,
+          0.8,
+          0.6853932584269663,
+          0.8405797101449275,
+          0.8421052631578947,
+          0.8181818181818182,
+          0.9,
+          0.7142857142857143
+        ],
+        "support": [
+          100,
+          100,
+          100,
+          100,
+          89,
+          69,
+          57,
+          44,
+          60,
+          42
+        ],
+        "confusion_matrix": [
+          [
+            93,
+            1,
+            1,
+            0,
+            1,
+            3,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            85,
+            0,
+            1,
+            5,
+            0,
+            0,
+            9,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            97,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            18,
+            80,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0
+          ],
+          [
+            3,
+            9,
+            2,
+            1,
+            61,
+            7,
+            1,
+            4,
+            1,
+            0
+          ],
+          [
+            6,
+            1,
+            2,
+            1,
+            0,
+            58,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            2,
+            2,
+            2,
+            2,
+            0,
+            48,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            1,
+            3,
+            3,
+            0,
+            0,
+            36,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            0,
+            0,
+            1,
+            1,
+            1,
+            0,
+            54,
+            1
+          ],
+          [
+            1,
+            1,
+            3,
+            0,
+            6,
+            1,
+            0,
+            0,
+            0,
+            30
+          ]
+        ],
+        "nll": 0.8922512733674302,
+        "balanced_nll": 0.901597054371317
+      },
+      "validation": {
+        "n": 157,
+        "accuracy": 0.7834394904458599,
+        "balanced_accuracy": 0.7841353383458647,
+        "recall": [
+          0.85,
+          0.65,
+          0.95,
+          0.75,
+          0.6842105263157895,
+          0.8571428571428571,
+          0.5833333333333334,
+          0.7,
+          0.9166666666666666,
+          0.9
+        ],
+        "support": [
+          20,
+          20,
+          20,
+          20,
+          19,
+          14,
+          12,
+          10,
+          12,
+          10
+        ],
+        "confusion_matrix": [
+          [
+            17,
+            0,
+            0,
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            13,
+            0,
+            0,
+            1,
+            2,
+            0,
+            2,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            19,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            4,
+            15,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            0,
+            1,
+            13,
+            2,
+            1,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0,
+            1,
+            12,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            3,
+            1,
+            1,
+            7,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            1,
+            0,
+            0,
+            0,
+            0,
+            7,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            11,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            9
+          ]
+        ],
+        "nll": 1.0211426431313586,
+        "balanced_nll": 1.0197970421161482
+      },
+      "test": {
+        "n": 1833,
+        "accuracy": 0.839607201309329,
+        "balanced_accuracy": 0.7973432966333799,
+        "recall": [
+          0.8063492063492064,
+          0.775,
+          0.9247787610619469,
+          0.7867647058823529,
+          0.7,
+          0.6875,
+          0.7692307692307693,
+          0.6666666666666666,
+          0.8571428571428571,
+          1.0
+        ],
+        "support": [
+          315,
+          80,
+          678,
+          680,
+          20,
+          16,
+          13,
+          9,
+          14,
+          8
+        ],
+        "confusion_matrix": [
+          [
+            254,
+            1,
+            1,
+            3,
+            17,
+            13,
+            13,
+            7,
+            1,
+            5
+          ],
+          [
+            2,
+            62,
+            0,
+            5,
+            4,
+            0,
+            1,
+            5,
+            0,
+            1
+          ],
+          [
+            4,
+            3,
+            627,
+            16,
+            5,
+            9,
+            3,
+            3,
+            0,
+            8
+          ],
+          [
+            1,
+            3,
+            87,
+            535,
+            6,
+            11,
+            7,
+            27,
+            0,
+            3
+          ],
+          [
+            0,
+            1,
+            2,
+            0,
+            14,
+            3,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0,
+            0,
+            2,
+            11,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            1,
+            1,
+            0,
+            0,
+            10,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            2,
+            1,
+            0,
+            0,
+            6,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            12,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            8
+          ]
+        ],
+        "nll": 0.8842032645087974,
+        "balanced_nll": 0.9889962018814018
+      },
+      "test_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_sim_head8554_frozen_L234_s17_20261016/L4_rho0/once_tests/c5cfbbe6fbc17030c9e355f4fd073d353cea1cb9c36403bfdd15df59a245f24f",
+      "test_reused": false,
+      "head_digest": "c5cfbbe6fbc17030c9e355f4fd073d353cea1cb9c36403bfdd15df59a245f24f",
+      "initial_head_net_digest": "9c88a947f2e3c6dc874406ed5bf798a9a0838259c3eb4fe0f7f693b63d87fcd6",
+      "optical_checkpoint_sha256": "693226bbac3fcdc166741a8df18f1005408e08314e384f6bdf7db8ad01ca6f36",
+      "optical_model_digest": "2bc223cf89208c417a2ce3e55eacbbca757cf13f6584524a8918963550a01819",
+      "optical_weights_unchanged": true,
+      "optical_optimizer_steps": 0,
+      "head_optimizer_steps": 36,
+      "head_parameters": 8554,
+      "head_contract": "CCD478_mean_log1p_pool16_trainSTD_MLP256_32_10_plus_log_optical_v1",
+      "git_commit": "4b21e2fe81825c3fb571a5c5e537ed64bbe7086d",
+      "fit_seconds": 32.59207832813263
+    }
+  },
+  "targets": {
+    "2": {
+      "residual_accuracy": 0.817239498090562,
+      "gap_pp": 4.037097654118938
+    },
+    "3": {
+      "residual_accuracy": 0.8745226404800873,
+      "gap_pp": 7.201309328968907
+    },
+    "4": {
+      "residual_accuracy": 0.9339879978177851,
+      "gap_pp": 9.492635024549923
+    }
+  },
+  "learning_rate": 0.0001,
+  "correct_CE_weight": 0.05,
+  "correct_KL_weight": 1.0,
+  "diagnosis_train_val": {
+    "L3_rho03": {
+      "train": {
+        "base_correct": 692,
+        "head_correct": 719,
+        "base_correct_head_wrong": 7,
+        "base_wrong_head_correct": 34,
+        "samples": 761
+      },
+      "val": {
+        "base_correct": 128,
+        "head_correct": 131,
+        "base_correct_head_wrong": 0,
+        "base_wrong_head_correct": 3,
+        "samples": 157
+      }
+    },
+    "L4_rho03": {
+      "train": {
+        "base_correct": 758,
+        "head_correct": 756,
+        "base_correct_head_wrong": 4,
+        "base_wrong_head_correct": 2,
+        "samples": 761
+      },
+      "val": {
+        "base_correct": 137,
+        "head_correct": 135,
+        "base_correct_head_wrong": 4,
+        "base_wrong_head_correct": 2,
+        "samples": 157
+      }
+    }
+  },
+  "scope": "Same8554 architecture, preserve correct TRAIN optical decisions, errors learn; no new optical forward, control3 frozen, original test floors. Extra residual head updates and reset explicit. New selection validationaccuracy-first fixed before new test. No lab device execution here."
+}
