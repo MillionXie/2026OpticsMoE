@@ -1,0 +1,38 @@
+{
+  "dataset": "Caltech101_validation_screened20_current4_20261015",
+  "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+  "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+  "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+  "seed": 17,
+  "maximum_epochs": 100,
+  "maximum_seconds": 10800,
+  "minimum_epochs": 1000,
+  "early_patience": 10,
+  "early_min_delta": 0.002,
+  "lr": 0.002,
+  "label_smoothing": 0.08,
+  "phase_smooth_weight": 0.05,
+  "capture_weight": 0.2,
+  "ema_decay": 0.95,
+  "batch_size": 16,
+  "microbatch": 8,
+  "mixup_alpha": 0.2,
+  "augmentation": {
+    "rotation_degrees": 20,
+    "translation_pixels": 5,
+    "scale_range": [
+      0.9,
+      1.1
+    ]
+  },
+  "phase_init_raw_uniform": 0.1,
+  "optimizer": "AdamW with weight_decay0, gradient_clip_norm1; same frozen primitives for both rho",
+  "shared_spare_memory_gib": 2,
+  "maximum_gpu_children": 2,
+  "maximum_gpu_children_per_card": 1,
+  "numeric_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech20_current4_gpu2_numeric_20261015/checks.json",
+  "cpu_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech20_current4_cpu_native_20261015/checks.json",
+  "automatic_retry": false,
+  "scope": "Human prioritizes residual gap and returns to frozen screened Caltech20, current four experts, fresh equal100 pair; previously observed test; validation only, no automatic test",
+  "input_tile": 100
+}
