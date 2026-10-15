@@ -1,0 +1,182 @@
+"""Explicit, layer-major Caltech10 L3 bench replay; no training or device-on import."""
+import argparse,hashlib,json,math,os,re,sys,time
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[3]
+sys.path[:0]=[str(ROOT),str(Path(__file__).parent)]
+import numpy as np
+import torch
+from PIL import Image
+from caltech_repair234_model import CorrectedMoE
+from resisc10_model import SubsetMoE as TenReadout
+from resisc20_input_encoder import encode
+from export_caltech_repair234 import routing_from_ccd,encode_stage
+INDICES=(0,1,2,3,4,7,14,15,16,19)
+EXPECTED={'residual':'b3d89f3ab2b177bd85997453cb0d0f8289d25b600243ca59c824ac529f59172d',
+          'control':'62154e9067aa75494189955421a0d32e74cbe8ff14b4f3caf929262ed11445cc'}
+
+def sha(p):
+    h=hashlib.sha256()
+    with Path(p).open('rb') as f:
+        for b in iter(lambda:f.read(4<<20),b''):h.update(b)
+    return h.hexdigest()
+
+def save(p,v):
+    p=Path(p);q=p.with_suffix(p.suffix+'.tmp');q.write_text(json.dumps(v,indent=2),encoding='utf-8');q.replace(p)
+
+class LabMoE(CorrectedMoE):
+    def __init__(self,rho):
+        super().__init__(3,rho);self.detectors=self.detectors[list(INDICES)].clone()
+    forward=TenReadout.forward
+
+def model_for(assets,arm):
+    p=assets/(arm+'.pt');assert sha(p)==EXPECTED[arm]
+    c=torch.load(p,map_location='cpu',weights_only=False)
+    assert c['epoch']==(123 if arm=='residual' else 100)
+    m=LabMoE(.3 if arm=='residual' else 0.).eval().requires_grad_(False)
+    m.load_state_dict(c['model'],strict=True)
+    assert c['config']['original_indices']==list(INDICES) and c['config']['input_tile']==100
+    return m
+
+def dataset(assets,role,limit=0):
+    p=assets/'caltech10.npz';manifest=json.loads((assets/'manifest.json').read_text())
+    assert sha(p)==manifest['data_sha256']
+    with np.load(p,allow_pickle=False) as z:x,y,ids=[z[role+'_'+n].copy() for n in ('images','labels','ids')]
+    assert len(y)=={'train':761,'val':157,'test':1833}[role]
+    assert len(set(ids.tolist()))==len(ids) and x.shape==(len(y),150,150,3)
+    if limit:
+        # Calibration uses TRAIN only, balanced over all ten classes, no TEST selection.
+        assert role=='train' and limit>=10
+        order=[i for k in range(10) for i in np.flatnonzero(y==k)[:max(1,limit//10)]]
+        x,y,ids=x[order],y[order],ids[order]
+    return torch.from_numpy(x.transpose(0,3,1,2).copy()),y,ids
+
+def metrics(y,p):
+    pred=p.argmax(1);cm=np.zeros((10,10),np.int64);np.add.at(cm,(y,pred),1)
+    support=cm.sum(1);recall=np.divide(cm.diagonal(),support,out=np.zeros(10),where=support>0)
+    return dict(samples=len(y),accuracy=float((y==pred).mean()),macro_recall=float(recall[support>0].mean()),support=support.tolist(),confusion_matrix=cm.tolist())
+
+def corners(txt):
+    rows={k:[float(x),float(y)] for k,x,y in re.findall(r'(TL|TR|BL|BR)\s*\[\s*([\d.]+)\s*,\s*([\d.]+)\s*\]',txt.read_text())}
+    assert set(rows)=={'TL','TR','BR','BL'}
+    return [rows[k] for k in ('TL','TR','BR','BL')]
+
+def native(gray,kind):
+    h=1080 if kind=='amplitude' else 1200
+    a=np.zeros((h,1920),np.uint8);v=np.asarray(Image.fromarray(gray).resize((1016,1016),Image.Resampling.NEAREST))
+    a[(h-1016)//2:(h+1016)//2,452:1468]=v
+    return a
+
+def phase_native(gray):
+    # Exact established machine convention, not a learned geometry correction.
+    return 255-native(np.flipud(np.fliplr(gray)),'phase')
+
+@torch.inference_mode()
+def selftest(a):
+    a.out.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4);x,y,ids=dataset(a.assets,'train',10);proof=[]
+    for arm in EXPECTED:
+        model=model_for(a.assets,arm);inp=encode(x,None,100);ref=model(inp)[0];calls=[]
+        def callback(stage,amp,phase,ids):
+            qa=np.rint(amp.clip(0,1)*255).astype(np.uint8)
+            assert np.allclose(qa.astype(np.float32)/255,amp,atol=1e-7,rtol=0)
+            ph=phase_native(phase)
+            decoded=np.flipud(np.fliplr(255-ph[92:1108,452:1468]))
+            decoded=np.asarray(Image.fromarray(decoded).resize((478,478),Image.Resampling.NEAREST))
+            assert np.array_equal(decoded,phase)
+            field=torch.from_numpy(qa.astype(np.float32)/255)*torch.exp(2j*math.pi*torch.from_numpy(phase.astype(np.float32)/256))[None]
+            field=torch.nn.functional.pad(field,(20,20,20,20));calls.append(stage)
+            return model.propagator(field).abs().square()[:,20:498,20:498].numpy()
+        actual=model(inp,callback,ids)[0];err=float((actual-ref).abs().max())
+        assert err<=1e-6 and calls==['router','0','1','2']
+        proof.append(dict(arm=arm,checkpoint_sha256=EXPECTED[arm],bridge_error=err,captures_per_sample=4,train_samples=10))
+    save(a.out/'selftest.json',dict(passed=True,proof=proof,devices_opened=0,electronic_finetuning=False))
+    print(json.dumps({'selftest':'passed','proof':proof}),flush=True)
+
+class Bench:
+    def __init__(self,a):self.a=a
+    def __enter__(self):
+        from contextlib import ExitStack
+        from LightGenV2.hardware_common.shs.slm_camera import Controller
+        from LightGenV2.hardware_common.shs.phase_hdmi import PhaseHDMI
+        self.stack=ExitStack()
+        try:
+            c=json.loads(self.a.machine_config.read_text(encoding='utf-8-sig'))
+            c['amplitude_slm']['sdk_path']=str(self.a.amplitude_sdk.resolve())
+            c['camera'].update(exposure_us=self.a.exposure_us,gain='Gain_X4');c['settle_delay_ms']=240
+            self.phase=self.stack.enter_context(PhaseHDMI(self.a.phase_sdk,self.a.phase_lut,settle_s=.8,pixel_format='rgba'))
+            self.hw=self.stack.enter_context(Controller(c,config_base=self.a.machine_config.parent))
+            save(self.a.out/'camera_readback.json',self.hw.camera_settings)
+            assert abs(float(self.hw.camera.get('ExposureTime'))-self.a.exposure_us)<1
+            assert self.hw.camera.get('Gain')=='Gain_X4'
+            return self
+        except BaseException:self.stack.close();raise
+    def __exit__(self,*args):return self.stack.__exit__(*args)
+    def stage(self,path):self.phase.show(path);self.hw.camera.fresh()
+    def capture(self,bmp):return self.hw.capture(bmp)
+
+@torch.inference_mode()
+def capture(a):
+    import cv2
+    assert a.role=='test' or (a.role=='train' and a.limit>=10),'TRAIN only for bounded calibration in this runner'
+    assert json.loads((a.selftest/'selftest.json').read_text())['passed']
+    assert not a.out.exists(),'Never overwrite or blindly restart a physical session'
+    a.out.mkdir(parents=True);torch.set_num_threads(4);x,y,ids=dataset(a.assets,a.role,a.limit);n=len(y)
+    pts=np.float32(corners(a.coordinates));dest=np.float32([[0,0],[477,0],[477,477],[0,477]])
+    warp=cv2.getPerspectiveTransform(pts,dest)
+    contract=dict(coordinates_sha256=sha(a.coordinates),corners_TL_TR_BR_BL=pts.tolist(),checkpoint_sha256=EXPECTED,
+        samples=n,role=a.role,exposure_us=a.exposure_us,gain='Gain_X4',wait_ms=240,phase_transform='hv_inverse',camera_orientation='flip_v',
+        data_sha256=sha(a.assets/'caltech10.npz'),source_sha256=sha(__file__),fine_tuned=False,routing='continuous all4',main_stages=['expert','global','expert'],native_active=1016)
+    save(a.out/'contract.json',contract);started=time.perf_counter();rows=[]
+    lock=a.out.parents[1]/'.t18_sdk_owner.lock';lock.parent.mkdir(parents=True,exist_ok=True)
+    with lock.open('x') as f:f.write(json.dumps({'pid':os.getpid(),'out':str(a.out)}))
+    try:
+        with Bench(a) as bench:
+            for arm in EXPECTED:
+                model=model_for(a.assets,arm);folder=a.out/arm;folder.mkdir();route=None;previous=None
+                for stage in ('router','0','1','2'):
+                    target=folder/stage;target.mkdir();ccd=np.lib.format.open_memmap(target/'ccd.npy',mode='w+',dtype=np.uint8,shape=(n,478,478))
+                    phase_path=target/'phase.bmp';phase_set=False;current_weights=[]
+                    for start in range(0,n,8):
+                        stop=min(start+8,n)
+                        if stage in ('router','0'):amp=encode(x[start:stop],None,100)
+                        else:amp=model.nonlinear(torch.from_numpy(np.asarray(previous[start:stop]).copy()).float(),model.stages[int(stage)])
+                        weights=None if stage=='router' else torch.from_numpy(route[start:stop]).float()
+                        amplitudes,phase=encode_stage(model,amp,stage,weights)
+                        if not phase_set:
+                            Image.fromarray(phase_native(phase)).save(phase_path);bench.stage(phase_path);phase_set=True
+                        else:assert np.array_equal(np.asarray(Image.open(phase_path)),phase_native(phase))
+                        for j,gray in enumerate(amplitudes,start):
+                            sid=f'{j:06d}';canonical=target/(sid+'_input.png');Image.fromarray(gray).save(canonical)
+                            bmp=target/(sid+'_transient.bmp');Image.fromarray(native(gray,'amplitude')).save(bmp)
+                            raw,meta=bench.capture(bmp);assert raw.shape==(1080,1920)
+                            image=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0)).copy()
+                            row=dict(arm=arm,stage=stage,index=j,sample_id=str(ids[j]),frame_id=meta.get('frame_id'),mean=float(image.mean()),p99=float(np.percentile(image,99)),maximum=int(image.max()),saturation_fraction=float((image==255).mean()),capture_total_ms=meta['capture_total_ms'],amplitude_sha256=sha(bmp),canonical_sha256=sha(canonical),phase_sha256=sha(phase_path))
+                            if a.limit:
+                                field=torch.from_numpy(gray.astype(np.float32)/255)[None]*torch.exp(2j*math.pi*torch.from_numpy(phase.astype(np.float32)/256))[None]
+                                ideal=model.propagator(torch.nn.functional.pad(field,(20,20,20,20))).abs().square()[0,20:498,20:498].numpy()
+                                row['ideal_ccd_pcc']=float(np.corrcoef(ideal.ravel(),image.ravel())[0,1])
+                                Image.fromarray(np.uint8(ideal/(ideal.max()+1e-12)*255)).save(target/(sid+'_ideal_diagnostic_only.png'))
+                            Image.fromarray(raw).save(target/(sid+'_raw.png'));Image.fromarray(image).save(target/(sid+'.png'));save(target/(sid+'.json'),row)
+                            ccd[j]=image;ccd.flush();bmp.unlink() # Only this generated native input; canonical bytes retained.
+                            rows.append(row)
+                            save(a.out/'progress.json',dict(state='capturing',arm=arm,stage=stage,stage_completed=j+1,stage_total=n,total_ccd=len(rows),elapsed_s=time.perf_counter()-started))
+                            if row['p99']<15:raise RuntimeError('Dark CCD: p99<15; retain evidence, do not retry blindly')
+                            if row['saturation_fraction']>.15:raise RuntimeError('CCD saturation>15%; retain evidence')
+                        if stage=='router':current_weights.append(routing_from_ccd(model,torch.from_numpy(np.asarray(ccd[start:stop]).copy()).float()).numpy())
+                    if stage=='router':route=np.concatenate(current_weights);np.save(folder/'routing.npy',route)
+                    previous=ccd
+                    print(json.dumps(dict(arm=arm,stage=stage,samples=n,total_ccd=len(rows),elapsed_s=time.perf_counter()-started)),flush=True)
+                energy=np.concatenate([np.einsum('bhw,khw->bk',np.asarray(previous[k:k+8]).astype(np.float32),model.detectors.numpy()) for k in range(0,n,8)])
+                p=(energy+1e-12)/(energy.sum(1,keepdims=True)+10e-12)
+                np.savez_compressed(folder/'predictions.npz',ids=ids,labels=y,probabilities=p)
+                save(folder/'metrics.json',dict(metrics(y,p),physical=True,fine_tuned=False,checkpoint_sha256=EXPECTED[arm]))
+        elapsed=time.perf_counter()-started
+        save(a.out/'report.json',dict(state='complete',samples_per_arm=n,physical_ccd=len(rows),elapsed_s=elapsed,seconds_per_ccd=elapsed/len(rows),projected_two_arm_test_seconds=elapsed/len(rows)*14664,signal_rows=rows if a.limit else [],results={k:json.loads((a.out/k/'metrics.json').read_text()) for k in EXPECTED},sdk_released=True))
+        save(a.out/'progress.json',dict(state='complete',total_ccd=len(rows),sdk_released=True))
+    except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),total_ccd=len(rows),automatic_retry=False));raise
+    finally:lock.unlink()
+
+if __name__=='__main__':
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture'],required=True)
+    for name in ('assets','out','coordinates','selftest','machine-config','amplitude-sdk','phase-sdk','phase-lut'):p.add_argument('--'+name,type=Path,required=name in ('assets','out'))
+    p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
+    a=p.parse_args();selftest(a) if a.mode=='selftest' else capture(a)
