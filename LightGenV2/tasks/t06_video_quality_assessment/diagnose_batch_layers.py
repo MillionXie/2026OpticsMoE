@@ -119,6 +119,7 @@ class Trace:
     """Full boundary tensors in bounded CPU memory; only statistics reach disk."""
     def __init__(self):
         self.references, self.statistics, self.events = {}, {}, []
+        self.snapshots = {}
         self.byte_count, self.mode, self.start, self.mask, self.grid, self.tiles = 0, "reference", 0, None, None, None
 
     def setup(self, inputs, start):
@@ -158,6 +159,9 @@ class Trace:
             self.events.append(stage)
         for i,value in enumerate(self.split(tensor,kind)):
             key = (stage,self.start+i)
+            # Durable small forensic evidence: all expert IDs, and video-0 merger internals.
+            if kind == "route" or (self.start+i==0 and stage.startswith("model.visual.deepstack_merger_list.0")):
+                self.snapshots[f"{stage}/video{self.start+i}"] = value.clone()
             if self.mode == "reference":
                 if key in self.references:
                     raise ValueError("Repeated boundary for the same video")
@@ -207,7 +211,8 @@ def install_hooks(model, trace):
         language = cls.endswith("DecoderLayer")
         vision = cls in ("Qwen3VLVisionBlock","Block","PatchEmbed","Qwen3VLVisionPatchEmbed","Qwen3VLVisionPatchMerger","MlpProjector")
         first_component = (".blocks.0." in name or ".layers.0." in name) and name.endswith((".self_attn",".attn",".mlp"))
-        if language or vision or first_component:
+        merger_component = name.startswith("model.visual.deepstack_merger_list.0.") and name.endswith((".norm",".linear_fc1",".act_fn",".linear_fc2"))
+        if language or vision or first_component or merger_component:
             kind = "language" if language or ".layers." in name else "vision"
             def before(_module,args,kwargs,stage=name,kind=kind):
                 value = first_tensor(args)
@@ -273,6 +278,7 @@ def gpu_checks(args):
             for batch in BATCHES:
                 trace.mode = "reference" if batch==1 else "compare"
                 trace.statistics = {}
+                trace.snapshots = {}
                 predictions, features, logits = [], [], []
                 for start in range(0,8,batch):
                     frozen.process_audit()
@@ -293,6 +299,9 @@ def gpu_checks(args):
                 mode_result[str(batch)] = dict(predictions=predictions,stages=stats,first_observed_divergent_boundary=first,
                     reference_bytes=trace.byte_count)
                 torch.save(dict(sample_ids=[r["sample_id"] for r in rows],features=torch.cat(features),logits=torch.cat(logits)),args.output/f"{mode}_b{batch}_readout.pt")
+                torch.save(dict(sample_ids=[r["sample_id"] for r in rows],tensors=trace.snapshots,
+                    scope="all observed expert IDs; video0 first-deepstack-merger internal boundaries only"),
+                    args.output/f"{mode}_b{batch}_focused_boundaries.pt")
                 frozen.write_json(args.output/"gpu_layers.json",dict(baseline=args.baseline,mode_in_progress=mode,results={**result,mode:mode_result}))
                 print(json.dumps(dict(mode=mode,batch=batch,first_observed=first)),flush=True)
             result[mode] = mode_result

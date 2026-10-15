@@ -1,5 +1,15 @@
 # T06 视频质量评价
 
+## 2026-10-15：用户再次确认空闲后的短窗口细分诊断
+
+用户明确授权现在继续使用空闲A100，优先DeepSeek路由、随后Qwen合并内部；
+仅T06诊断/说明，不改正式测量。当前main的指纹顺序修复已两端39项CPU测试通过。
+本轮同run子目录`focused_merger_routes03`，仅原8 TEST/B1/2/4，CPU/GPU都按
+`--baselines deepseek qwen`串行、各600秒上限；CPU收据绑定选择顺序与源码SHA。
+Qwen新增首deepstack merger内部norm/linear/GELU观测，不改模型forward；每组保存
+视频0这些边界完整张量及所有已观测专家ID，连同末端特征/logits和差统计，避免只留
+聚合数据无法离线复核。保留旧失败/成功原位，结束立刻退卡、不占位或重训。
+
 ## 2026-10-15：短诊断已退卡，Qwen完成、DeepSeek待补实际路由
 
 用户后续要求尽可能保存中间数据、A100还需用于其他工作。本轮不再追加GPU任务。

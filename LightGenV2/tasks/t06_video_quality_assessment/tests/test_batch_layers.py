@@ -102,3 +102,14 @@ def test_input_fingerprint_precedes_inplace_transfer(monkeypatch):
     with pytest.raises(ValueError,match="Traced inputs"):
         trace.verified_transfer(original,1,["fp32"],transfer)
     assert original["pixels"] == "changed"
+
+
+def test_focus_capture_is_persisted_per_batch_and_model_order_is_bound():
+    source=Path(trace.__file__).read_text(encoding="utf-8")
+    assert 'trace.snapshots = {}' in source
+    assert 'focused_boundaries.pt' in source
+    assert 'merger_component' in source and '".linear_fc1"' in source
+    from LightGenV2.tasks.t06_video_quality_assessment import run_batch_layer_diagnostics as suite
+    runner=Path(suite.__file__).read_text(encoding="utf-8")
+    assert 'Baseline selection/order differs from CPU receipt' in runner
+    assert 'for name in baselines:' in runner

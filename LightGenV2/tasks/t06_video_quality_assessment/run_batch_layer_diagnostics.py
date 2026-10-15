@@ -30,6 +30,9 @@ def child_command(name, phase, output):
 
 def run(args):
     import fcntl
+    baselines = tuple(getattr(args,"baselines",("qwen","deepseek")))
+    if not baselines or len(set(baselines)) != len(baselines) or set(baselines)-{"qwen","deepseek"}:
+        raise ValueError("Unique supported baselines required")
     if not args.output.is_relative_to((TASK/"runs/simulation").resolve()):
         raise ValueError("Canonical task run required")
     if args.phase=="cpu":
@@ -38,6 +41,8 @@ def run(args):
     else:
         cpu = json.loads((args.output/"suite_cpu.json").read_text())
         if cpu["status"]!="complete": raise ValueError("CPU identity/position audit not complete")
+        if list(baselines) != cpu.get("baselines",["qwen","deepseek"]):
+            raise ValueError("Baseline selection/order differs from CPU receipt")
         if any((args.output/f"gpu_{name}").exists() for name in ("qwen","deepseek")):
             raise FileExistsError("Preserve previous GPU attempt; do not retry blindly")
         if os.environ.get("CUDA_VISIBLE_DEVICES")!=frozen.A100_UUID:
@@ -51,12 +56,12 @@ def run(args):
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         state = dict(status="running",pid=os.getpid(),phase=args.phase,completed=[],source_sha256=sha,
             git_commit=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip(),
-            samples=8,batches=[1,2,4],child_timeout_seconds=CHILD_TIMEOUT_SECONDS,
+            samples=8,batches=[1,2,4],baselines=list(baselines),child_timeout_seconds=CHILD_TIMEOUT_SECONDS,
             limits="No training, full558 re-evaluation, cost replacement, lab access or foreign process interference")
         destination = args.output/f"suite_{args.phase}.json"
         frozen.write_json(destination,state)
         try:
-            for name in ("qwen","deepseek"):
+            for name in baselines:
                 if sha != {f.name:frozen.sha256(f) for f in sources}: raise ValueError("Running source changed")
                 if args.phase=="gpu": reproduction.cuda_guard()
                 state["current"]=name; frozen.write_json(destination,state)
@@ -81,6 +86,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--phase",choices=("cpu","gpu"),required=True)
     parser.add_argument("--output",type=Path,required=True)
+    parser.add_argument("--baselines",nargs="+",choices=("qwen","deepseek"),default=["qwen","deepseek"])
     args=parser.parse_args(); args.output=args.output.resolve(); run(args)
 
 
