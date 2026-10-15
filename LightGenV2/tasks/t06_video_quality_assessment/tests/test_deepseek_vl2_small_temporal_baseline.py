@@ -170,3 +170,38 @@ def test_native_parity_still_rejects_changed_nonfinite_or_wrong_shape_values():
         run.native_logit_parity(torch.tensor([[float('nan')]]),torch.ones(1,1,dtype=torch.bfloat16))
     with pytest.raises(RuntimeError,match='shape mismatch'):
         run.native_logit_parity(torch.ones(1,3),torch.ones(1,2,dtype=torch.bfloat16))
+
+
+def test_official_assets_hashed_once_with_progress_and_no_mtime_cache(tmp_path,monkeypatch):
+    import hashlib
+    from types import SimpleNamespace
+    weight=b'original fixed official weight';metadata=b'{"native":true}'
+    (tmp_path/'weight.safetensors').write_bytes(weight)
+    (tmp_path/'config.json').write_bytes(metadata)
+    spec={'official_assets':{
+        'weight.safetensors':dict(size=len(weight),sha256=hashlib.sha256(weight).hexdigest()),
+        'config.json':dict(git_blob_sha1=hashlib.sha1(b'blob '+str(len(metadata)).encode()+b'\0'+metadata).hexdigest())}}
+    calls=[];states=[]
+    def hash_once(path):
+        calls.append(path.name)
+        return hashlib.sha256(path.read_bytes()).hexdigest()
+    monkeypatch.setattr(run.frozen,'sha256',hash_once)
+    monkeypatch.setattr(run.frozen,'write_json',lambda path,payload:states.append(payload.copy()))
+    args=SimpleNamespace(model=tmp_path,output=tmp_path/'out')
+    expected={n:hashlib.sha256((tmp_path/n).read_bytes()).hexdigest() for n in spec['official_assets']}
+    assert run.verify_model_assets(args,spec,'before_GPU')==expected
+    assert calls==['weight.safetensors'] and states[-1]['verified_assets']==2
+    assert run.verify_model_assets(args,spec,'after_GPU')==expected
+    assert calls==['weight.safetensors','weight.safetensors']
+    assert states[-1]['status']=='verifying_model_assets_after_GPU'
+    (tmp_path/'weight.safetensors').write_bytes(b'x'*len(weight))
+    with pytest.raises(ValueError,match='SHA mismatch'):run.verify_model_assets(args,spec,'after_GPU')
+
+
+def test_smoke_bound_includes_asset_IO_but_never_extends_absolute_total_deadline():
+    s=source('suite')
+    assert "('gpu-smoke', 'gpu_smoke', 600)" in s
+    assert 'str(min(bound, remaining))' in s and 'deadline - time.time()' in s
+    assert 'shared.model_files' not in source('run') and 'shared.model_files' not in source('main')
+    assert "verify_model_assets(args, c, 'before_GPU')" in source('main')
+    assert "verify_model_assets(args, c, 'after_GPU')" in source('run')

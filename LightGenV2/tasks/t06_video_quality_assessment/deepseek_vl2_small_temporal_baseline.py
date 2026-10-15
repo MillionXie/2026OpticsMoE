@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -161,6 +162,33 @@ def native_logit_parity(native_logits,tapped_logits):
     return dict(status="passed",max_abs=difference,rtol=.01,atol=.125,
         native_dtype=str(native_logits.dtype),tapped_dtype=str(tapped_logits.dtype),
         comparison_dtype="torch.float32",audit_only_cast=True)
+
+
+def verify_model_assets(args,c,stage):
+    """Full official checks once per asset, before AND after every GPU stage.
+
+    Do not call the shared checker here: it separately validates and then hashes
+    each large shard, reading the same bytes twice. No mtime-only cache is used.
+    """
+    result={};started=time.time()
+    for name,spec in c["official_assets"].items():
+        path=args.model/name
+        if not path.is_file() or ("size" in spec and path.stat().st_size!=spec["size"]):
+            raise ValueError("Official model asset size mismatch: "+name)
+        if "sha256" in spec:
+            actual=frozen.sha256(path)
+            if actual!=spec["sha256"]:raise ValueError("Official model asset SHA mismatch: "+name)
+        else:
+            data=path.read_bytes()
+            blob=hashlib.sha1(b"blob "+str(len(data)).encode()+b"\0"+data).hexdigest()
+            if blob!=spec["git_blob_sha1"]:raise ValueError("Official model Git blob mismatch: "+name)
+            actual=hashlib.sha256(data).hexdigest()
+        result[name]=actual
+        frozen.write_json(args.output/"status.json",dict(status="verifying_model_assets_"+stage,
+            verified_assets=len(result),total_assets=len(c["official_assets"]),last_verified_asset=name,
+            elapsed_s=time.time()-started,updated_at_unix=time.time()))
+        print(f"[assets {stage}] {len(result)}/{len(c['official_assets'])} {name}",flush=True)
+    return result
 
 
 def prepare_assets(args,c,identity):
@@ -379,7 +407,7 @@ def run(args,c,identity):
     if args.phase=="train":
         del model;torch.cuda.empty_cache()
         train_rows(payload,initial,ids,args,c,identity)
-    if shared.model_files(args.model,c)!=identity["model_sha256"]:raise RuntimeError("Official model files changed")
+    if verify_model_assets(args,c,"after_GPU")!=identity["model_sha256"]:raise RuntimeError("Official model files changed")
     if args.phase=="train":
         artifacts={str(p.relative_to(args.output)):frozen.sha256(p) for p in args.output.rglob("*") if p.is_file() and p.name!="status.json"}
         frozen.write_json(args.output/"training_receipt.json",dict(status="complete",identity=identity,artifacts=artifacts))
@@ -418,7 +446,8 @@ def suite(args,identity):
                     minimum_free_memory_mib=37000,updated_at_unix=time.time())
                 frozen.write_json(args.output/"suite_status.json",state)
                 time.sleep(min(15,max(0,deadline-time.time())))
-        for phase,name,bound in (("cpu-preflight","cpu_preflight",180),("gpu-smoke","gpu_smoke",300),
+        # Include two full32GB official SHA passes, not just the short GPU probe.
+        for phase,name,bound in (("cpu-preflight","cpu_preflight",180),("gpu-smoke","gpu_smoke",600),
                                   ("train","train",7200),("evaluate","a100_batch01",1800)):
             if sources()!=identity["source_sha256"]:raise RuntimeError("Source changed during suite")
             remaining=int(deadline-time.time())
@@ -478,7 +507,7 @@ def main():
             frozen.write_json(args.output/"run_identity.json",identity)
         if args.phase not in ("cpu-preflight","suite","prepare"):
             identity["process_audit_before"]=guard(args,identity)
-            identity["model_sha256"]=shared.model_files(args.model,c)
+            identity["model_sha256"]=verify_model_assets(args,c,"before_GPU")
             import torch,transformers
             identity.update(torch=torch.__version__,transformers=transformers.__version__,cuda=torch.version.cuda)
             frozen.write_json(args.output/"run_identity.json",identity)
