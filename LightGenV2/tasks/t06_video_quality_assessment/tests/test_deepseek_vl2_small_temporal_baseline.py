@@ -147,3 +147,26 @@ def test_recovery_waits_CPU_only_then_dispatches_once_and_preserves_failure(tmp_
     assert dispatched[0][2]['env']['CUDA_VISIBLE_DEVICES']==''
     assert states[-1]['status']=='failed'
     assert any(s.get('status')=='waiting_for_memory_without_reservation' for s in states)
+
+
+@pytest.mark.skipif(sys.platform=='win32',reason='Actual mixed-dtype Torch audit uses unchanged server environment')
+def test_native_parity_accepts_FP32_BF16_values_without_changing_input_dtypes():
+    import torch
+    tapped=torch.tensor([[.125,1.,-3.5]],dtype=torch.bfloat16)
+    native=tapped.float()
+    audit=run.native_logit_parity(native,tapped)
+    assert audit['status']=='passed' and audit['max_abs']==0
+    assert audit['native_dtype']=='torch.float32' and audit['tapped_dtype']=='torch.bfloat16'
+    assert native.dtype==torch.float32 and tapped.dtype==torch.bfloat16
+    assert audit['rtol']==.01 and audit['atol']==.125 and audit['audit_only_cast']
+
+
+@pytest.mark.skipif(sys.platform=='win32',reason='Actual Torch audit uses unchanged server environment')
+def test_native_parity_still_rejects_changed_nonfinite_or_wrong_shape_values():
+    import torch
+    with pytest.raises(RuntimeError,match='parity failed'):
+        run.native_logit_parity(torch.zeros(1,3),torch.ones(1,3,dtype=torch.bfloat16))
+    with pytest.raises(RuntimeError,match='Nonfinite'):
+        run.native_logit_parity(torch.tensor([[float('nan')]]),torch.ones(1,1,dtype=torch.bfloat16))
+    with pytest.raises(RuntimeError,match='shape mismatch'):
+        run.native_logit_parity(torch.ones(1,3),torch.ones(1,2,dtype=torch.bfloat16))

@@ -144,6 +144,25 @@ def transfer(inputs):
     return {k:v.to("cuda",dtype=torch.bfloat16 if k=="images" else v.dtype) for k,v in inputs.items()}
 
 
+def native_logit_parity(native_logits,tapped_logits):
+    """Compare values in FP32; official forward casts logits to FP32 itself.
+
+    This is an audit-only cast, not a change to either model forward path.
+    """
+    import torch
+    if native_logits.shape!=tapped_logits.shape:
+        raise RuntimeError("Native final-token logit shape mismatch")
+    a,b=native_logits.detach().float(),tapped_logits.detach().float()
+    if not bool(torch.isfinite(a).all() and torch.isfinite(b).all()):
+        raise RuntimeError("Nonfinite native final-token logits")
+    difference=float((a-b).abs().max())
+    if not torch.allclose(a,b,rtol=.01,atol=.125):
+        raise RuntimeError(f"Native final-token feature tap parity failed: {difference}")
+    return dict(status="passed",max_abs=difference,rtol=.01,atol=.125,
+        native_dtype=str(native_logits.dtype),tapped_dtype=str(tapped_logits.dtype),
+        comparison_dtype="torch.float32",audit_only_cast=True)
+
+
 def prepare_assets(args,c,identity):
     import requests
     from .glm46v_assets import range_request,CHUNK
@@ -295,9 +314,9 @@ def run(args,c,identity):
         with torch.inference_mode(),torch.autocast("cuda",dtype=torch.bfloat16):
             native_logits=model(**gpu_inputs,use_cache=False,return_dict=True).logits[:,-1]
             tapped_logits=model.language.lm_head(tapped.to(model.language.lm_head.weight.dtype))
-        native_difference=float((native_logits-tapped_logits).abs().max())
-        if not torch.allclose(native_logits,tapped_logits,rtol=.01,atol=.125):
-            raise RuntimeError(f"Native final-token feature tap parity failed: {native_difference}")
+        parity=native_logit_parity(native_logits,tapped_logits)
+        frozen.write_json(args.output/"native_logit_parity.json",parity)
+        native_difference=parity["max_abs"]
         x=tapped.cpu().half().clone()
         head=five_native_rows(initial).cuda()
         # Isolated TRAIN-only optimization probe; no performance claim or model selection.
