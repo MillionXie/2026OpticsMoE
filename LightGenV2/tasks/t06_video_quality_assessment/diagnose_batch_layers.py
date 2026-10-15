@@ -223,6 +223,14 @@ def install_hooks(model, trace):
     return handles
 
 
+def detach_cost_instrumentation(timer, handles):
+    """Direct diagnostic forwards do not use/reset the formal cost timer."""
+    timer.close()
+    for handle in handles:
+        handle.remove()
+    handles.clear()
+
+
 def gpu_checks(args):
     import torch
     from . import reproduce_temporal_baseline as reproduction
@@ -233,6 +241,7 @@ def gpu_checks(args):
     handles, gate_contexts, saved_flags = [], [], None
     result = {}
     try:
+        detach_cost_instrumentation(timer, original_handles)
         for mode in ("native","bf16_accumulation_control" if args.baseline=="qwen" else "gate_autocast_disabled"):
             trace = Trace()
             handles = install_hooks(model,trace)
