@@ -50,6 +50,16 @@ the original frozen training forward/encoder bodies must independently match the
 deployment body on the same Windows runtime at<=1e-6. Cross-platform numerical
 differences are separately recorded, with calibration argmax identity required.
 
+First real pilot stopped after11 CCDs: router ten p9924-33 and PCC.51-.60;
+first expert p9911/PCC-.0011, raw maximum23 with background mean6.64 at400us.
+All evidence retained, task rc1, SDK lock removed; no full TEST started.
+Bounded signal diagnosis uses exactly six frames:400/2000us times black, same
+TRAIN router and same TRAIN expert patterns. No masks/ROI/gain/encoding change,
+no accuracy selection, no exposure sweep beyond these two values. Record raw
+background, phase response, saturation and signal shape, restore camera settings.
+If2000us provides usable signal, a new two-arm session may fix2000us equally;
+never mix exposure identities, silently replace old data or alter the dark guard.
+
 Report direct physical scores first, overall/macro/support/confusion matrices and
 both checkpoint identities. If poor, user permits electronic adaptation, but the
 original model has no learned classifier. Latest human instruction explicitly

@@ -155,6 +155,31 @@ class Bench:
     def stage(self,path):self.phase.show(path);self.hw.camera.fresh()
     def capture(self,bmp):return self.hw.capture(bmp)
 
+def signalcheck(a):
+    """Six TRAIN-pattern frames only; never normalize or turn them into accuracy."""
+    import cv2
+    assert not a.out.exists();a.out.mkdir(parents=True)
+    pilot=a.out.parent/'pilot80';assert (pilot/'failure.json').exists()
+    pts=np.float32(corners(a.coordinates));warp=cv2.getPerspectiveTransform(pts,np.float32([[0,0],[477,0],[477,477],[0,477]]))
+    rows=[];lock=a.out.parents[1]/'.t18_sdk_owner.lock'
+    with lock.open('x') as f:f.write(json.dumps({'pid':os.getpid(),'out':str(a.out)}))
+    try:
+        with Bench(a) as bench:
+            for exposure in (400,2000):
+                bench.hw.camera.set('ExposureTime',exposure)
+                for kind,stage in (('black','0'),('router','router'),('expert','0')):
+                    src=pilot/'residual'/stage;phase=src/'phase.bmp';bench.stage(phase)
+                    gray=np.zeros((478,478),np.uint8) if kind=='black' else np.asarray(Image.open(src/'000000_input.png'))
+                    bmp=a.out/f'{exposure}_{kind}.bmp';Image.fromarray(native(gray,'amplitude')).save(bmp)
+                    raw,meta=bench.capture(bmp);image=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA)).copy()
+                    Image.fromarray(raw).save(a.out/f'{exposure}_{kind}_raw.png');Image.fromarray(image).save(a.out/f'{exposure}_{kind}.png')
+                    v=dict(exposure_us=float(bench.hw.camera.get('ExposureTime')),pattern=kind,frame_id=meta['frame_id'],p99=float(np.percentile(image,99)),mean=float(image.mean()),maximum=int(image.max()),saturation_fraction=float((image==255).mean()),phase_sha256=sha(phase),input_sha256=sha(bmp))
+                    if kind!='black':v['ideal_pcc']=float(np.corrcoef(np.asarray(Image.open(src/'000000_ideal_diagnostic_only.png')).ravel(),image.ravel())[0,1])
+                    rows.append(v);save(a.out/'signal.json',dict(rows=rows,complete=False));print(json.dumps(v),flush=True)
+        save(a.out/'signal.json',dict(rows=rows,complete=True,sdk_released=True,accuracy_evaluated=False))
+    except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),automatic_retry=False));raise
+    finally:lock.unlink()
+
 @torch.inference_mode()
 def capture(a):
     import cv2
@@ -218,10 +243,10 @@ def capture(a):
     finally:lock.unlink()
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture'],required=True)
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture','signalcheck'],required=True)
     for name in ('assets','out','coordinates','selftest','machine-config','amplitude-sdk','phase-sdk','phase-lut'):p.add_argument('--'+name,type=Path,required=name in ('assets','out'))
     p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
     a=p.parse_args()
     if sys.stdout is None:
         sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    selftest(a) if a.mode=='selftest' else capture(a)
+    {'selftest':selftest,'capture':capture,'signalcheck':signalcheck}[a.mode](a)
