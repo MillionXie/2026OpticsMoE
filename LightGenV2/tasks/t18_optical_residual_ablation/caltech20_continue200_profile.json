@@ -1,0 +1,21 @@
+{
+  "parent_commit": "763e6a242a3fe27a513044dc6a6282a0ef574b7d",
+  "parent_campaign_pid": 2104530,
+  "parent_audit_sha256": "588b5a7046f4f7e4ca6349459d9515874c153a6c31e2a943e48203bed54508a0",
+  "audit_helper_sha256": "9bee138135b1cfb5f616208629f541aebf4021a96325e32e561aa7d4e5a4013b",
+  "parent_last_sha256": {
+    "L4_current_rho03": "5d2ba471929a677991e61ba1f32dc7e1c3295b2bcfc90db5cc7bd4c159844957",
+    "L4_current_rho0": "397997922184bf030b9c8a3357e936f8a49c57a59c8fd60b7e69dd537c73f737"
+  },
+  "maximum_epochs": 200,
+  "additional_epochs": 100,
+  "additional_seconds_per_arm": 3600,
+  "maximum_concurrent_gpu_children": 3,
+  "allowed_physical_gpus": [
+    2,
+    5,
+    4
+  ],
+  "automatic_retry": false,
+  "test_evaluations": 0
+}
