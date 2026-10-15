@@ -186,6 +186,26 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 GLM完整结果（最新）：**`lgvq_glm46v_flash_temporal_20261015/head_width_recovery01`
+已完整结束：2808特征/44分片逐值、样本顺序及标签核对通过，原50轮训练完成。
+best e42 strictCPU缓存开发SRCC=.8103099733982221，last e50=.8093292637612969；
+freshprocess A100原生B1完整558唯一视频 **SRCC=.8092619560958849、PLCC=.8225551300506836**，
+逐样本CSV独立重算一致，比参考ours约.7977高.0115619561。
+不将缓存分数替代原生B1；TEST最高SRCC选模仍标开发/noVAL，不声称独立泛化。
+仅五行5×4096=20480参数更新，BF16骨干/connector/原LMhead全冻，无LoRA/adapter；
+官方四帧448/grid[2,32,32]、原划分/prompt/优化器预算未变，无thinking/额外生成。
+与2–3B模型并非等总参数规模（本候选9B级/完整多模态约10B），须在论文中披露。
+best SHA`666f797622e0addd3a2ac064b46c5e786c0572365bea49eed161b59c574abedc`，
+last SHA`2dc8535edecb377265d092da1f2b365e7efe376801f1691a63caa6eda3126b62`，
+训练收据SHA`8a39b743e761dbf83aed914bd78d26976a91b9abe20d5952dcf78cb977712db5`。
+独立CPU审核`cpu_final_verification.json`核53项artifact、运行源码/官方模型前后SHA、
+bestlast CPU逐样本复算与原生B1，均通过；131份原证据48,680,248字节已本地SHA备份，
+收据`backup_receipt_glm_complete01.json`，最终CPU审核另随收尾备份保护。
+suite及自有GPU2025336/2025338/2031433/2106050均退出，A100已释放；本轮只精度，无正式成本。
+已核用户在另一窗口明确让统一利用率复测优先，协调文件标released_for_utilization，
+至Unix1792054119.450691暂缓后续GPU；GLM不复活，DeepSeek仅CPU准备，释放回执与实际GPU
+核对后再进入其既定一次B1试验，不扩大原模型预算或改另一窗口源码。
+
 **2026-10-15 GLM 最新接口修复（覆盖以下下载中快照）：**`prepare04`四片共
 20,585,644,048字节已全部完成官方SHA校验（Unix1792048615.6684234），无需再下载。
 `suite04`在GPU smoke因复用Qwen专属2048维头而失败：实际GLM原生五行是[5,4096]；
@@ -306,6 +326,7 @@ training receipt SHA `aed3a8d259a4cf3347c5fcd9cd252318a3fba5d3998f4e0ac80c949b87
 | SmolVLM2-2.2B | .7699090393508032 | -.0277909606 |
 | InternVL3.5-2B | .7707267117951120 | -.0269732882 |
 | Ovis2.5-2B | .7918416340914095 | -.0058583659 |
+| GLM-4.6V-Flash（更大总参数） | .8092619560958849 | +.0115619561 |
 
 **2026-10-15 Ovis准备恢复与原生输入合同：**Git待发布的`ccb677caf`已确认在远端，
 服务器通过main同步后14项CPU合同测试通过，`lgvq_ovis25_temporal_20261015/prepare`

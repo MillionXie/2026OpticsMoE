@@ -1,0 +1,110 @@
+import ast
+from pathlib import Path
+import sys
+
+import pytest
+
+from LightGenV2.tasks.t06_video_quality_assessment import deepseek_vl2_small_temporal_baseline as run
+from LightGenV2.tasks.t06_video_quality_assessment.prepare_vlm_assets import validate_profile
+
+
+def source(name):
+    tree=ast.parse(Path(run.__file__).read_text())
+    return ast.unparse(next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name))
+
+
+def test_original_finite_protocol_only_B1_no_backbone_updates():
+    c=run.config()
+    assert c['epochs']==50 and c['inference_batches']==[1]
+    assert c['feature_batch_size']==1 and c['native_frame_size']==384
+    assert c['quality_output_trainable_parameters']==10240 and c['backbone_trainable_parameters']==0
+    assert c['selection']=='highest_TEST_SRCC_development_no_VAL'
+    assert (c['train_samples'],c['test_samples'])==(2250,558)
+
+
+def test_fixed_official_assets_and_total_not_active_parameter_storage():
+    c=run.config();validate_profile(c)
+    assert c['model_id']=='deepseek-ai/deepseek-vl2-small'
+    assert c['model_revision']=='6033e16432a1d771cf9fe4a6f894ff5e5e1459af'
+    assert len(c['official_assets'])==11
+    assert sum(s['size'] for n,s in c['official_assets'].items() if n.endswith('.safetensors'))==32297441224
+
+
+def test_native_image_input_reuses_tiny_without_extra_frames_or_crops():
+    s=source('prepare_batch')
+    assert 'tiny.decode_ordered_frames' in s and 'core.FRAME_FRACTIONS[4], 384' in s
+    assert "tiny.build_conversation('temporal', 4)" in s
+    assert '(1, 8, 3, 384, 384)' in s and '(1, 4, 2)' in s
+    assert 'len(rows) != 1' in s and 'force_batchify=True' in s
+    assert 'labels' not in s
+
+
+def test_native_full_forward_and_last_valid_readout_no_generation():
+    s=source('features')
+    assert 'model.prepare_inputs_embeds(**inputs)' in s and 'model.language.model(' in s
+    assert 'use_cache=False' in s and 'last_hidden_state' in s and 'masked_fill(~mask, -1)' in s
+    n=source('native_model')
+    assert '4.38.2' in source('runtime_sources') and '0.0.29.post2' in source('runtime_sources')
+    assert 'requires_grad_(False)' in n and 'torch_dtype=torch.bfloat16' in n
+    assert 'reproduction_receipt.json' in n
+    assert '.generate(' not in Path(run.__file__).read_text()
+
+
+def test_same_fifty_epoch_five_row_optimizer_and_cpu_validation():
+    s=source('train_rows')
+    assert 'range(1, 51)' in s and 'cross_entropy' in s
+    assert 'lr=0.001, weight_decay=0.0' in s and 'T_max=50' in s
+    assert '10240' in s and 'strict_cpu_metrics' in s
+
+
+def test_prepare_stays_CPU_only_and_respects_official_hash_and_retry_limits():
+    s=source('prepare_assets')
+    assert 'range(1, 4)' in s and "'Retry-After'" in s
+    assert 'range_request(' in s and 'shared.asset_valid' in s
+    assert 'Preserve partial; no blind restart' in s and '3600' in s
+    assert 'guard(' not in s and '.cuda(' not in s
+    assert source('main').count("('cpu-preflight', 'suite', 'prepare')")==2
+
+
+def test_finite_total_and_utilization_yield_before_GPU_dispatch():
+    s=source('suite')
+    assert '10800' in s and '7200' in s and '1800' in s and 'no automatic retry' in s
+    assert s.index('args.gpu_not_before_unix')<s.index('for phase, name, bound')
+    assert 'yielding_for_utilization' in s and 'deadline' in s
+    assert 'a100_batch04' not in s and 'a100_batch08' not in s
+
+
+def test_source_identity_memory_admission_and_fresh_full_test():
+    assert all(len(v)==64 for v in run.sources().values())
+    assert any(n.endswith('deepseek_vl2_quality.py') for n in run.sources())
+    assert '37000' in source('guard')
+    s=source('run')
+    assert 'for i, row in enumerate(test)' in s and 'test_videos=558' in s
+    assert 'formal_latency_energy_measured=False' in s
+    assert 'native_forward_last_logits_vs_feature_tap_max_abs' in s
+
+
+@pytest.mark.skipif(sys.platform=='win32',reason='Real Torch regression uses unchanged server environment')
+def test_actual_CPU_2048_head_only_native_copy_updates():
+    import torch
+    from LightGenV2.tasks.t06_video_quality_assessment import quality_token_train as q
+    torch.manual_seed(42)
+    native=torch.randn(5,2048,dtype=torch.bfloat16,requires_grad=True)
+    original=native.detach().clone();head=run.five_native_rows(native)
+    x=torch.randn(12,2048,dtype=torch.float16);labels=torch.arange(12)%5
+    assert sum(p.numel() for p in head.parameters())==10240
+    assert list(head.state_dict())==['weight'] and head.weight.dtype==torch.float32
+    torch.testing.assert_close(head(x),torch.nn.functional.linear(x.float(),original.float()),rtol=0,atol=0)
+    loss=torch.nn.functional.cross_entropy(head(x),labels);loss.backward()
+    assert native.grad is None and torch.isfinite(head.weight.grad).all()
+    torch.optim.AdamW(head.parameters(),lr=.001,weight_decay=0.).step()
+    assert not torch.equal(head.weight.detach(),original.float())
+    torch.testing.assert_close(native.detach(),original,rtol=0,atol=0)
+    clone=run.five_native_rows(head.state_dict()['weight']).eval().requires_grad_(False)
+    metrics,mos,*_=q.evaluate(clone,x,torch.linspace(0.,1.,12),labels,torch.linspace(0.,1.,5),torch.device('cpu'))
+    assert torch.isfinite(mos).all() and all(torch.isfinite(torch.tensor(v)) for v in metrics.values())
+    with pytest.raises(ValueError):run.five_native_rows(torch.zeros(5,4096))
+
+
+def test_existing_output_never_reused(tmp_path):
+    with pytest.raises(FileExistsError):run.shared.new_output(tmp_path)

@@ -1,7 +1,7 @@
 {
   "model_id": "deepseek-ai/deepseek-vl2-small",
   "model_revision": "6033e16432a1d771cf9fe4a6f894ff5e5e1459af",
-  "stage": "planned_after_GLM_complete_not_started",
+  "stage": "approved_single_B1_accuracy_trial",
   "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
   "frames": 4,
   "frame_fractions": [
@@ -31,7 +31,7 @@
   ],
   "thinking": false,
   "accuracy_only": true,
-  "protocol_notes": "User authorized non-Tiny after GLM, cancelled ResNet and UNet. VL2-Small is16B total, about2.8B activated; preserve original Tiny native four ordered384 frames, final valid prompt hidden, BF16 frozen backbone and FP16 feature cache toFP32 five rows. Feature extraction B1 for40GB admission. Native smoke before full extraction; official incremental_prefilling may be used only if necessary and parity audited, not generation/CoT or quantization. No model assets downloaded yet.",
+  "protocol_notes": "User authorized non-Tiny after GLM, cancelled ResNet and UNet. VL2-Small is16B total, about2.8B activated; preserve original Tiny native four ordered384 frames, final valid prompt hidden, BF16 frozen backbone and FP16 feature cache toFP32 five rows. Feature extraction B1 for40GB admission. Native smoke before full extraction; official incremental_prefilling may be used only if necessary and parity audited, not generation/CoT or quantization. Runtime download/training state belongs only to canonical run receipts.",
   "official_assets": {
     "README.md": {
       "git_blob_sha1": "e64ff084f3ea29c755f3e1fe78cf9f80eb43809e"
