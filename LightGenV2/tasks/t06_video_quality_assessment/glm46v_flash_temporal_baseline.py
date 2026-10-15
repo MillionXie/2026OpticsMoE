@@ -128,6 +128,28 @@ def features(model, inputs):
     return value
 
 
+def five_native_rows(rows):
+    """Independent GLM output rows; do not reuse Qwen's fixed 2048-wide head.
+
+    Import Torch lazily so metadata-only contract checks remain CPU-runtime-free.
+    Only the native hidden width differs; initialization and FP32 linear algebra
+    are identical to the original five-row protocol.
+    """
+    import torch
+
+    class GLMFiveNativeRows(torch.nn.Module):
+        def __init__(self, native_rows):
+            super().__init__()
+            if native_rows.shape != (5, 4096):
+                raise ValueError(f"Expected GLM [5,4096] native rows, got {tuple(native_rows.shape)}")
+            self.weight = torch.nn.Parameter(native_rows.detach().float().clone())
+
+        def forward(self, hidden):
+            return hidden.float() @ self.weight.t()
+
+    return GLMFiveNativeRows(rows)
+
+
 def train_rows(payload, initial, ids, args, c, identity):
     import numpy as np
     import torch
@@ -141,7 +163,7 @@ def train_rows(payload, initial, ids, args, c, identity):
     boundaries = torch.linspace(float(y[tr].min()), float(y[tr].max()), 6)[1:-1]
     levels = torch.linspace(float(y[tr].min()), float(y[tr].max()), 5)
     labels = torch.bucketize(y, boundaries, right=False)
-    head = q.FiveNativeTokenRows(initial).cuda()
+    head = five_native_rows(initial).cuda()
     optimizer = torch.optim.AdamW(head.parameters(), lr=.001, weight_decay=0.)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=50)
     loader = torch.utils.data.DataLoader(torch.utils.data.TensorDataset(x[tr], labels[tr]), batch_size=512,
@@ -173,7 +195,7 @@ def train_rows(payload, initial, ids, args, c, identity):
     for name,state,epoch in (("best",best_state,best_epoch),("last",last,50)):
         head.load_state_dict(state)
         gm,gp,*_ = q.evaluate(head,x[te],y[te],labels[te],levels,torch.device("cuda"))
-        cpu = q.FiveNativeTokenRows(state["weight"]).eval().requires_grad_(False)
+        cpu = five_native_rows(state["weight"]).eval().requires_grad_(False)
         cm,cp,*_ = q.evaluate(cpu,x[te],y[te],labels[te],levels,torch.device("cpu"))
         q.atomic_save(args.output/f"{name}_checkpoint.pt",dict(architecture="frozen_glm46v_flash_five_untied_native_rows",
             state_dict=state, initial_native_rows=initial, quality_token_ids=ids, selected_epoch=epoch,
@@ -221,7 +243,7 @@ def run(args,c,identity):
         if not torch.allclose(native_logits,tapped_logits,rtol=.01,atol=.125):
             raise RuntimeError(f"Native final-token feature tap parity failed: {native_difference}")
         x=tapped.cpu().half().clone()
-        head=q.FiveNativeTokenRows(initial).cuda()
+        head=five_native_rows(initial).cuda()
         # Isolated TRAIN-only optimization probe; no performance claim or model selection.
         ys=[r["temporal"] for r in rows if r["split"]=="train"]
         boundaries=torch.linspace(min(ys),max(ys),6)[1:-1]
@@ -260,7 +282,7 @@ def run(args,c,identity):
             if receipt["identity"][key]!=identity[key]:raise ValueError("Train/eval identity differs: "+key)
         pt=torch.load(args.checkpoint,map_location="cpu",weights_only=False)
         if pt["quality_token_ids"]!=ids:raise ValueError("Native quality token ids changed")
-        head=q.FiveNativeTokenRows(pt["state_dict"]["weight"]).eval().requires_grad_(False).cuda()
+        head=five_native_rows(pt["state_dict"]["weight"]).eval().requires_grad_(False).cuda()
         test=[r for r in rows if r["split"]=="test"];pred=[];audits=[]
         with (args.output/"predictions.csv").open("x",newline="") as f:
             w=csv.writer(f);w.writerow(["sample_index","sample_id","target_mos","prediction","frame_positions"])

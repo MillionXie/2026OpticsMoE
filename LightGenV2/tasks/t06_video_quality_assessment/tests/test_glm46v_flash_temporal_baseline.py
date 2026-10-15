@@ -1,5 +1,6 @@
 import ast
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -58,8 +59,45 @@ def test_original_single_loss_optimizer_no_scan():
     s = source('train_rows')
     assert 'range(1, 51)' in s and 'cross_entropy' in s
     assert 'lr=0.001, weight_decay=0.0' in s and 'T_max=50' in s
-    assert 'FiveNativeTokenRows(initial)' in s
+    assert 'five_native_rows(initial)' in s
     assert '20480' in s and 'strict_cpu_metrics' in s
+
+
+def test_glm_private_head_used_in_smoke_train_cpu_and_native_evaluation():
+    assert 'FiveNativeTokenRows' not in Path(run.__file__).read_text()
+    assert source('train_rows').count('five_native_rows(') == 2
+    assert source('run').count('five_native_rows(') == 2
+    assert '(5, 4096)' in source('five_native_rows')
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='Real Torch regression runs in fixed server environment')
+def test_real_4096_cpu_head_parity_update_freeze_and_shared_evaluator():
+    import torch
+    from LightGenV2.tasks.t06_video_quality_assessment import quality_token_train as q
+    torch.manual_seed(42)
+    native = torch.randn(5, 4096, dtype=torch.bfloat16, requires_grad=True)
+    original = native.detach().clone()
+    head = run.five_native_rows(native)
+    assert list(head.state_dict()) == ['weight']
+    assert sum(p.numel() for p in head.parameters()) == 20480
+    assert head.weight.dtype == torch.float32
+    assert head.weight.data_ptr() != native.data_ptr()
+    x = torch.randn(12, 4096, dtype=torch.float16)
+    torch.testing.assert_close(head(x), torch.nn.functional.linear(x.float(), original.float()), rtol=0, atol=0)
+    labels = torch.arange(12) % 5
+    loss = torch.nn.functional.cross_entropy(head(x), labels)
+    loss.backward()
+    assert torch.isfinite(head.weight.grad).all() and native.grad is None
+    torch.optim.AdamW(head.parameters(), lr=.001, weight_decay=0.).step()
+    assert not torch.equal(head.weight.detach(), original.float())
+    torch.testing.assert_close(native.detach(), original, rtol=0, atol=0)
+    clone = run.five_native_rows(head.state_dict()['weight']).eval().requires_grad_(False)
+    levels = torch.linspace(0., 1., 5)
+    metrics, mos, _, logits = q.evaluate(clone, x, torch.linspace(0., 1., 12), labels, levels, torch.device('cpu'))
+    assert logits.shape == (12, 5) and torch.isfinite(mos).all()
+    assert all(torch.isfinite(torch.tensor(v)) for v in metrics.values())
+    with pytest.raises(ValueError, match='4096'):
+        run.five_native_rows(torch.zeros(5, 2048))
 
 
 def test_accuracy_only_and_fresh_full_test():
