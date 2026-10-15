@@ -186,6 +186,22 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 两候选完整交付（监督第13次结束）：**Small `assetio_recovery01`已全部complete，
+完整2808特征/44分片/50epoch及strictCPU bestlast核验通过，随后独立新进程A100 B1真实
+558唯一视频 **SRCC=.7000797711654877、PLCC=.6987605447107231**；逐样本CSV独立复算一致，
+比ours参考约.7977低.0976202288，未超过。缓存CPU best e40=.7000972456仅开发指标，
+不替代原生B1。训练与推理的模型/源/runtime/划分身份和best PT SHA逐项绑定通过；
+预测SHA`780bb7ec28dbb5da1d9c8d0c0351cd9a59e5c60479c7a02bf6cefb58f111885b`，
+report SHA`274e9efbb21770f1e4e08a49a63539009e908e6545410c4ba7c815d43c99a65c`。
+原2250TRAIN/558TEST无VAL、四帧/65%crop、BF16骨干冻结及五行10240训练未变；
+仅accuracy-only，无本轮正式时延/能耗；TEST最高选模仍标开发，不强凑高分或扫描候选。
+本地同canonical run留`cpu_training_final_audit.json`、`cpu_native_final_audit.json`及
+`backup_receipt_small_final01.json`完整逐SHA备份。Unix1792061712核suite/train/B1全部结束，
+自有2385470/2385472/2392776/2514720均退出，A100无compute PID/40310MiBfree/250W。
+GLM完整原生B1=.8092619561已超过参考约.7977（约10B多模态，非2–3B等总参数）；
+Small约16B总/2.8B激活仍未超过。两组结果及全部失败证据保护，Ovis备用继续保留，
+不自动再训练/换候选；完整交付与退卡核验后删除本监督，仅删除调度，不删除实验资产。
+
 **2026-10-15 Small完整训练已核验，原生B1进行中（第13次）：**
 `assetio_recovery01/train`已真实完成2808条特征/44分片和50epoch；CPU独立审核44分片与
 完整FP16缓存逐值相等、2250TRAIN/558TEST顺序/标签/唯一ID、53项训练收据artifact SHA及
@@ -435,6 +451,7 @@ training receipt SHA `aed3a8d259a4cf3347c5fcd9cd252318a3fba5d3998f4e0ac80c949b87
 | InternVL3.5-2B | .7707267117951120 | -.0269732882 |
 | Ovis2.5-2B | .7918416340914095 | -.0058583659 |
 | GLM-4.6V-Flash（更大总参数） | .8092619560958849 | +.0115619561 |
+| DeepSeek-VL2-Small（16B总/2.8B激活） | .7000797711654877 | -.0976202288 |
 
 **2026-10-15 Ovis准备恢复与原生输入合同：**Git待发布的`ccb677caf`已确认在远端，
 服务器通过main同步后14项CPU合同测试通过，`lgvq_ovis25_temporal_20261015/prepare`
