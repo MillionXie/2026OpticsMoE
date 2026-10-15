@@ -1,0 +1,13 @@
+{
+  "parent_run": "caltech10_gap_s17_current4_pair150_gpu425_20261015",
+  "parent_commit": "259cdcfdec6edc9b8ca29f9c7ddf18fb3668cffa",
+  "parent_audit_sha256": "617825b1c2d628b7a2cefdd13874d4c4ca3e468ed16338def5561b3d723051db",
+  "selected_checkpoint_sha256": {
+    "L4_gap10_rho03": "8f7037445a77defbec297e5d24f8abfb639a89565e7992216976314a971c6815",
+    "L4_gap10_rho0": "95886e6af086bafb2915baf050cf37e2e3241f4ec503f1d539b5f09d069970ea"
+  },
+  "output": "paired_once_test_20261015",
+  "maximum_test_evaluations_per_model": 1,
+  "test_used_for_selection": false,
+  "authorization": "Human20261015 explicitly requests both selected ten-class models tested; continue residual optimization using validation, target test gap>=10pp, then depths3/2; up to four non-A100 cards."
+}
