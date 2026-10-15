@@ -77,12 +77,13 @@ def load_features(session,arm,role):
     contract=json.loads((session/'contract.json').read_text())
     report=json.loads((session/'report.json').read_text())
     assert contract['role']==role and report['state']=='complete' and report['sdk_released']
+    depth=contract.get('main_depth',len(contract['main_stages']));assert depth in (2,3,4)
     n={'train':761,'test':1833}[role]
-    assert contract['samples']==n and report['samples_per_arm']==n and report['physical_ccd']==n*8
+    assert contract['samples']==n and report['samples_per_arm']==n and report['physical_ccd']==n*2*(depth+1)
     folder=session/arm;rows=np.load(folder/'predictions.npz',allow_pickle=False)
     ids=rows['ids'].copy();labels=rows['labels'].copy();base=rows['probabilities'].copy()
     assert len(ids)==n and len(set(ids.tolist()))==n and base.shape==(n,10)
-    ccd=np.load(folder/'2/ccd.npy',mmap_mode='r',allow_pickle=False)
+    final_stage=str(depth-1);ccd=np.load(folder/final_stage/'ccd.npy',mmap_mode='r',allow_pickle=False)
     assert ccd.shape==(n,478,478) and ccd.dtype==np.uint8
     features=[]
     with torch.inference_mode():
@@ -90,10 +91,10 @@ def load_features(session,arm,role):
             x=torch.from_numpy(np.asarray(ccd[start:start+32]).copy()).float()
             x=torch.log1p(x/x.mean((-2,-1),keepdim=True).clamp_min(1e-6))
             features.append(F.adaptive_avg_pool2d(x[:,None],(16,16)).flatten(1).numpy())
-    receipts=sorted((folder/'2').glob('[0-9]*.json'))
+    receipts=sorted((folder/final_stage).glob('[0-9]*.json'))
     assert len(receipts)==n
     for j,path in enumerate(receipts):
-        r=json.loads(path.read_text());assert r['index']==j and r['sample_id']==str(ids[j]) and r['arm']==arm and r['stage']=='2'
+        r=json.loads(path.read_text());assert r['index']==j and r['sample_id']==str(ids[j]) and r['arm']==arm and r['stage']==final_stage
     return dict(features=np.concatenate(features),ids=ids,labels=labels,base=base,contract=contract,session_report_sha256=sha(session/'report.json'),predictions_sha256=sha(folder/'predictions.npz'))
 
 
@@ -102,7 +103,7 @@ def fit(a):
     a.epochs=handoff['finetune_epochs']
     assert not a.out.exists();a.out.mkdir(parents=True);torch.set_num_threads(4)
     assert 1<=a.epochs<=300
-    assets=a.train.parent/'assets';data=assets/'caltech10.npz'
+    assets=getattr(a,'assets',None) or a.train.parent/'assets';data=assets/'caltech10.npz'
     for arm in ('residual','control'):
         folder=a.out/arm;folder.mkdir();started=time.perf_counter()
         train=load_features(a.train,arm,'train');test=load_features(a.test,arm,'test')
@@ -110,7 +111,7 @@ def fit(a):
         with np.load(data,allow_pickle=False) as original:
             for role,value in (('train',train),('test',test)):
                 assert np.array_equal(value['ids'],original[role+'_ids']) and np.array_equal(value['labels'],original[role+'_labels'])
-        assert sha(assets/(arm+'.pt'))==train['contract']['checkpoint_sha256'][arm]
+        assert sha(assets/train['contract'].get('checkpoint_files',{}).get(arm,arm+'.pt'))==train['contract']['checkpoint_sha256'][arm]
         assert not set(train['ids'].tolist())&set(test['ids'].tolist())
         for key in ('coordinates_sha256','checkpoint_sha256','exposure_us','gain','wait_ms','phase_transform','camera_orientation','response_lut_sha256','data_sha256'):
             assert train['contract'][key]==test['contract'][key],key
@@ -162,5 +163,5 @@ def fit(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--train',type=Path,required=True);p.add_argument('--test',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--epochs',type=int,default=300)
+    p=argparse.ArgumentParser();p.add_argument('--train',type=Path,required=True);p.add_argument('--test',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--epochs',type=int,default=300);p.add_argument('--assets',type=Path)
     fit(p.parse_args())
