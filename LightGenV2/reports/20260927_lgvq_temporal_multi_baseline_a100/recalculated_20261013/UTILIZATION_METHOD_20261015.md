@@ -1,5 +1,66 @@
 # LGVQ GPU utilization: execution gaps and steady-state measurement
 
+## User approved independent utilization measurement
+
+The subsequently approved reporting protocol measures GPU utilization separately
+from the finalized inference latency and energy. Its common execution method is
+resident native inference without CUDA Graph: prepare the first B TEST videos
+once, transfer their four-frame inputs once, retain MOS outputs on the GPU, and
+repeat serial forwards on one stream. Synchronization follows every eight
+invocations; each invocation still processes B videos, not 8B. Five seconds of
+real inference warmup precede a separately timed measurement of at least 30 s.
+Complete groups are retained, so actual durations can slightly exceed 30 s.
+All samples in the exact recorded interval contribute to the average, including
+low and zero values. This common method has now been newly measured for Qwen B1
+only; earlier multi-model controls below are historical, not new measurements
+under this protocol. No model-specific Graph advantage is used in this result.
+
+On 15 October 2026 at 14:52 +0800, **Qwen3-VL-2B, B=1** completed this measurement
+on the NVIDIA A100-PCIE-40GB at its unchanged 250 W power limit. Mean GPU
+utilization was **63.133111480865225%**, peak 73%, median 59%, and minimum 47%.
+The exact post-warmup interval lasted 30.241928331553936 s and contained 601
+telemetry samples and 576 forward invocations (72 groups). Warmup lasted
+5.06046400219202 s; its 99 samples are retained separately, not included in the
+reported mean. The resident input was the first TEST video, four frames at
+positions 10, 35, 60 and 86, at the unchanged 448-pixel input resolution. This is
+a repeated single-video utilization experiment, not 576 distinct videos or a
+new full-dataset accuracy evaluation. Driver utilization is kernel-busy time,
+not SM occupancy or percent of peak arithmetic throughput. Input residency
+removes repeated preparation and H2D, but does not remove all native model
+CPU dispatch or internal synchronization.
+
+The original checkpoint SHA starts `e102adc6`, and the dataset manifest SHA
+starts `607c50d2`. Both initial and final GPU-output MOS matched the original
+native inference exactly (57.99810791015625, absolute difference zero). All 33
+periodic process audits contained no foreign A100 compute process. The task
+exited and released the A100; five original files were transferred to the same
+local canonical run with per-file SHA verification. An independent calculation
+from the raw telemetry timestamps reproduced the mean, peak, sample count and
+576 forward invocations. Source main was `42a48af0e87c3ebd075c0d8fbdc34c7f0d87395c`,
+with entry SHA `33d63dacf1dfe6411830769d233d452566465539cedbb795282732be2e46dab8`.
+
+[Exact result and input identity](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_utilization_execution_20261015/unified_qwen_b1_5s30s01/report.json),
+[raw telemetry](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_utilization_execution_20261015/unified_qwen_b1_5s30s01/telemetry.csv)
+and [SHA transfer receipt](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_utilization_execution_20261015/unified_qwen_b1_5s30s01/backup_receipt_unified_qwen_b1.json)
+provide the retained evidence. The historical 1188.3861464262009 ms and
+462.1134010767563 J per 16 videos remain unchanged. If shown beside this
+utilization, they must be labelled as separate-protocol measurements, not
+simultaneous observations. This approved separation supersedes the earlier
+recommendation below to require every displayed utilization to share its cost
+measurement run. The new B1 mean is retained even though it is below the earlier
+approximately 68% controls; no highest-window or highest-run substitution is made.
+
+Suggested manuscript wording: GPU utilization was evaluated independently under
+a sustained resident-input protocol. For each batch size, the first B test
+videos were prepared and transferred to the GPU once and repeatedly processed
+using the frozen native model, without CUDA Graph. Following 5 s of inference
+warmup, GPU utilization was sampled at 50 ms polling intervals over at least
+30 s. For Qwen3-VL-2B at B=1, the mean and peak utilization were 63.13% and 73%,
+respectively. These measurements characterize resident inference duty and are
+reported separately from the dataset-once latency and energy measurements.
+
+## Earlier execution controls
+
 15 October 2026. The original Qwen B=8 resident mean of 89.22% includes a
 startup transient. Its fixed seconds 1–15 mean is 91.05%. CPU preparation explains
 substantial GPU waiting in the interleaved workload. The new controls below
