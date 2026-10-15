@@ -1,3 +1,15 @@
+## 新十类四/三/二层与一次正则已全部完整科学/冻结测试通过（2026-10-15）
+
+本轮CPU2314182与全部GPU真退出、rootstate complete_science_and_frozen_tests_passed，全部producer原始rc0、各独占科学和每个冻结测试completedSHA正确，GPU0/2/4/5项目0/A1000。四层原配对各150选149测试后一次正则50未改善NLL、所选参数相同故复用原test不重测；三层/二层各freshrho.3/0完整150、同valfirstminimum冻结各test一次。177训练来源084e7be07be831d627bbafa98f87a378a2cf97a1=current/original，报告HEAD不同。
+
+| 深度 | 有/无选中E | 有/无验证 | 有残差test | 无残差test | test差 | macro差 |
+|---|---:|---:|---:|---:|---:|---:|
+| 4层 | 149/149 | 86.62/78.98% | 92.7987% | 88.3797% | +4.4190pp | +3.4698pp |
+| 3层 | 149/149 | 82.17/75.80% | 88.8707% | 82.7605% | +6.1102pp | +10.4842pp |
+| 2层 | 146/149 | 71.34/68.79% | 79.0507% | 79.4326% | -0.3819pp | -1.1844pp |
+
+本轮四/三/二层都未达到测试10个百分点目标。本表测试为固定十类验证知情开发、先前Caltech test已观察，支持极不均，macro及逐类见[完整最终报告](reports/caltech10_followup_20261015/final/README.md)。所有结果按原选模、不用test换模型/类别、不扩大差距或削弱对照，不追加任何自动实验或重测，旧source/PT/data/history/claims保持，t18/09 ACTIVE保留。此完成事实覆盖下方仍在训/待审/条件可执行旧文字。
+
 ## 最新：四层正则无提升并复用原测试；三层、二层四卡已实际在训（2026-10-15）
 
 原冻结十类四层各一次仿真test92.7987/88.3797差+4.4190pp、macro89.7096/86.2398差+3.4698，未10；用户已本turn获告，详见[测试与逐类](reports/caltech10_gap_20261015/paired_once_test/README.md)。一次MixUp.4正则接续已完整E151-200、GPU子2315182actualrc0退出，新增fit238.30716秒，自己独占SCI SHA4e2ae5722d27c63266714a1de4c0a49b67feac3e8a414a8ab9e818fc3daa0c9a passed。新50最低valNLL.5828911649未胜父E149 .5708938839，按规则仍选E149、model参数digest实际相同，真实regularize_test_reused复用原test、无第二次forward；不声称缓解过拟合成功。[完整负结果](reports/caltech10_followup_20261015/regularize_final/README.md)。
