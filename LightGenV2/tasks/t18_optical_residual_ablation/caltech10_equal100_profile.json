@@ -1,0 +1,12 @@
+{
+  "run":"caltech10_depth432_s17_equal100_correction_20261015",
+  "depths":[4,3,2],
+  "rhos":[0.3,0.0],
+  "maximum_epochs":100,
+  "minimum_epochs":1000,
+  "maximum_fit_seconds_per_arm":1800,
+  "maximum_total_new_fit_gpu_hours":3.0,
+  "maximum_gpu_children":4,
+  "physical_gpu_indices":[0,2,4,5],
+  "scope":"Human corrects original100-epoch requirement. Six fresh matched100 baselines; prior150 results remain historical budget deviations. No residual-only extra optimization in this baseline batch. Selected-model train/val/test always displayed together. Fixed ten classes, no test-informed reselection or weakening control."
+}
