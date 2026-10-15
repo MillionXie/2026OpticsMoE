@@ -20,6 +20,16 @@ def test_official_fixed_revision_and_training_budget():
     assert len(p["official_assets"]) == 13
 
 
+def test_ovis_candidate_is_same_budget_and_metadata_precedes_weight_shards():
+    p = json.loads((assets.shared.TASK / "configs/baselines/ovis25_temporal_4f.json").read_text())
+    assets.validate_profile(p)
+    assert p["frames"] == 4 and p["epochs"] == 50
+    assert p["inference_batches"] == [1] and p["thinking"] is False
+    assert p["hidden_width"]*5 == p["quality_output_trainable_parameters"] == 10240
+    ordered = sorted(p["official_assets"], key=lambda n: n.endswith(".safetensors"))
+    assert ordered[-2:] == ["model-00001-of-00002.safetensors", "model-00002-of-00002.safetensors"]
+
+
 @pytest.mark.parametrize("kind", ["revision", "path", "size", "blob"])
 def test_unsafe_or_unpinned_assets_rejected(kind):
     p = copy.deepcopy(profile())

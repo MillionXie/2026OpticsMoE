@@ -1,0 +1,90 @@
+{
+  "model_id": "ATH-MaaS/Ovis2.5-2B",
+  "model_revision": "393c932b2a03e28eb9aaa503e3c4ab3ad384d958",
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "frames": 4,
+  "frame_fractions": [
+    0.1,
+    0.37,
+    0.63,
+    0.9
+  ],
+  "center_crop_short_side_fraction": 0.65,
+  "decode_resize": 448,
+  "hidden_width": 2048,
+  "quality_output_trainable_parameters": 10240,
+  "backbone_trainable_parameters": 0,
+  "epochs": 50,
+  "training_batch_size": 512,
+  "feature_batch_size": 2,
+  "learning_rate": 0.001,
+  "weight_decay": 0,
+  "seed": 42,
+  "loss": "cross_entropy_only",
+  "scheduler": "cosine",
+  "selection": "highest_TEST_SRCC_development_no_VAL",
+  "train_samples": 2250,
+  "test_samples": 558,
+  "inference_batches": [
+    1
+  ],
+  "thinking": false,
+  "primary_goal": "Accuracy only; verify official custom-code compatibility first; no generation/CoT or extra frames",
+  "asset_metadata_source": "Public hf-mirror API reports upstream Git blob/LFS hashes; pinned revision and hidden2048 independently confirmed against official HF config page; dependency source must be inspected before execution",
+  "official_assets": {
+    "LICENSE": {
+      "git_blob_sha1": "522e362a614385ed1d4d5fb9763eca960784b6c4"
+    },
+    "NOTICE": {
+      "git_blob_sha1": "c75e4d61437703cd5567ac0b3e84a6f2cf4b4c84"
+    },
+    "added_tokens.json": {
+      "git_blob_sha1": "b54f9135e44c1e81047e8d05cb027af8bc039eed"
+    },
+    "chat_template.json": {
+      "git_blob_sha1": "622708c37df0b4cec4bfb72bd282a45d6e990228"
+    },
+    "config.json": {
+      "git_blob_sha1": "3a02d6f873a24ba1a410453738b84aebebb3b422"
+    },
+    "configuration_ovis2_5.py": {
+      "git_blob_sha1": "0a90e12def7a1ae18e663bda3741eb197c44d2e0"
+    },
+    "generation_config.json": {
+      "git_blob_sha1": "d44b45bfc98fbdf410b07eda1b654fc9bce96b47"
+    },
+    "merges.txt": {
+      "git_blob_sha1": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+    },
+    "model.safetensors.index.json": {
+      "git_blob_sha1": "0c14295984d0e5f0812e6a7c4175803821e6bc06"
+    },
+    "modeling_ovis2_5.py": {
+      "git_blob_sha1": "97284cbfe225fb36ca5e49529e01d56474be2384"
+    },
+    "preprocessor_config.json": {
+      "git_blob_sha1": "64b9bf1b69656ce79e8c6b34fd066d37b4edb534"
+    },
+    "special_tokens_map.json": {
+      "git_blob_sha1": "ac23c0aaa2434523c494330aeb79c58395378103"
+    },
+    "tokenizer_config.json": {
+      "git_blob_sha1": "dde2dcb5a0b35b5f5de513353663c368d0f07355"
+    },
+    "vocab.json": {
+      "git_blob_sha1": "4783fe10ac3adce15ac8f358ef5462739852c569"
+    },
+    "tokenizer.json": {
+      "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "size": 11422654
+    },
+    "model-00001-of-00002.safetensors": {
+      "sha256": "4bd7cec79fedabcd8149c62934fdffff7d840de111e8a17335d346bcbeba0c12",
+      "size": 4872524976
+    },
+    "model-00002-of-00002.safetensors": {
+      "sha256": "0bb2d37fcbf03254938b72d4bf88da9f84c8c0307b4f7d6ee79aa0a3c2f7732d",
+      "size": 268435576
+    }
+  }
+}

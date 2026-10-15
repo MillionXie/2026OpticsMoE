@@ -171,6 +171,22 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 InternVL单B1实际交付与下一候选准备：**
+`lgvq_internvl35_temporal_20261015/suite01`已完成：官方资产SHA、真实CPU/GPU smoke、
+2808冻结特征（44分片逐值等于完整FP16缓存）、原2250/558划分、50轮五行头训练，
+best e43 strictCPU缓存开发SRCC=.7726929658935687，last e50=.7724298823660634。
+freshprocess A100 B1完整558结果SRCC=.770726711795112、PLCC=.7814365039173818，
+低于参考.7977约.0269733；accuracy-only，无正式时延/能耗结论。best PT SHA
+`ad20dd527da4ea7c6ea5fb175a9e8744b93f6247bd1a92d814ccd386182d3712`，
+训练55文件24,182,768字节及B1四文件83,551字节已逐SHA备份到本地同名canonical run；
+suite complete，自有A100推理进程已退出，不重训/不扫PT强凑超过ours。
+按用户“不成功即换下一个”的授权，有限下一候选采用官方`ATH-MaaS/Ovis2.5-2B`，
+固定revision`393c932b2a03e28eb9aaa503e3c4ab3ad384d958`；官方配置hidden2048，
+仍只五行10240、原4帧/划分/50epoch/B1，不thinking/CoT/LoRA/全微调。
+profile为`configs/baselines/ovis25_temporal_4f.json`，资产blob/LFS来自公开镜像API，
+revision及维度已独立对照官方HF配置页；官方自定义依赖源码须先审查/CPU兼容性核验，
+不得通过修改第三方计算图或升级既有环境绕过失败。准备/下载不称训练，结果未保证。
+
 **2026-10-15最新简化与清理授权（覆盖下文三batch候选计划）：**寻找后续候选只固定
 测B=1完整558TEST判断性能，不再为筛选候选跑B4/B8或正式成本。InternVL入口的有界
 CPU suite自动等待已启动的官方权重下载，依次CPU输入核验、真实TRAIN两视频GPU smoke、

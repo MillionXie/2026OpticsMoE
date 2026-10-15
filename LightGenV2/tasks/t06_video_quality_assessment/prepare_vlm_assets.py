@@ -45,7 +45,7 @@ def main():
         gpu_initialized=False, created_at_unix=time.time())
     shared.frozen.write_json(output / "run_identity.json", identity)
     try:
-        for name in sorted(profile["official_assets"], key=lambda n: n.endswith("model.safetensors")):
+        for name in sorted(profile["official_assets"], key=lambda n: n.endswith(".safetensors")):
             spec = profile["official_assets"][name]
             path = args.model / name
             if path.exists():
