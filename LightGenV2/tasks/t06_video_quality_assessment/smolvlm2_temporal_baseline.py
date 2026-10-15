@@ -24,6 +24,7 @@ TASK = Path(__file__).resolve().parent
 REPO = TASK.parents[2]
 CONFIG = TASK / "configs/baselines/smolvlm2_temporal_4f_a100.json"
 WORDS = ("Bad", "Poor", "Fair", "Good", "Excellent")
+TRAINING_3090_UUID = "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
 PROMPT = ("Please evaluate the temporal quality of this video and rate it using one of "
           "the following five levels: Excellent, Good, Fair, Poor, or Bad.")
 
@@ -77,6 +78,41 @@ def guard():
     if limit != 250:
         raise RuntimeError(f"A100 power limit changed: {limit}; will not change it")
     return records
+
+
+def select_gpu(phase, training_gpu_uuid=None):
+    """3090 is an explicit training-only override; all cost evaluation stays A100."""
+    if training_gpu_uuid is None:
+        return frozen.A100_UUID
+    if phase not in ("train", "gpu-smoke") or training_gpu_uuid != TRAINING_3090_UUID:
+        raise ValueError("Only the authorized 3090 may override train/gpu-smoke; evaluation stays A100")
+    return training_gpu_uuid
+
+
+def training_guard(gpu_uuid):
+    if gpu_uuid == frozen.A100_UUID:
+        return guard()
+    if gpu_uuid != TRAINING_3090_UUID or os.environ.get("CUDA_VISIBLE_DEVICES") != gpu_uuid:
+        raise RuntimeError("Training GPU must be the explicitly authorized physical 3090 UUID")
+    name = subprocess.check_output(["nvidia-smi", f"--id={gpu_uuid}",
+        "--query-gpu=name", "--format=csv,noheader,nounits"], text=True).strip()
+    if "RTX 3090" not in name:
+        raise RuntimeError(f"Authorized training device is not RTX 3090: {name}")
+    result = subprocess.run(["nvidia-smi", "--query-compute-apps=pid,gpu_uuid,process_name",
+        "--format=csv,noheader,nounits"], check=True, text=True, capture_output=True)
+    records = []
+    for fields in csv.reader(result.stdout.splitlines()):
+        if len(fields) == 3 and fields[1].strip() == gpu_uuid:
+            records.append(dict(zip(("pid", "gpu_uuid", "process"), map(str.strip, fields))))
+    if any(row["pid"] != str(os.getpid()) for row in records):
+        raise RuntimeError(f"3090 occupied by other compute processes: {records}")
+    return records
+
+
+def run_training_guard(identity):
+    if sources() != identity["source_sha256"]:
+        raise RuntimeError("Smol source changed during run; partial evidence preserved")
+    return training_guard(identity["gpu_uuid"])
 
 
 def asset_valid(path, spec):
@@ -248,7 +284,7 @@ def train_head(payload, initial, output, config, identity):
         batch_size=512, shuffle=True, generator=torch.Generator().manual_seed(42), pin_memory=True)
     history, best_srcc, best_state, best_epoch = [], -float("inf"), None, None
     for epoch in range(1, 51):
-        guard()
+        run_training_guard(identity)
         head.train()
         loss_sum, count = 0., 0
         for x, y in loader:
@@ -300,6 +336,49 @@ def train_head(payload, initial, output, config, identity):
         "best_rows_sha256": training.sha256_tensor(best_state["weight"]), "identity": identity})
 
 
+def run_gpu_smoke(args, config, identity):
+    """Two real TRAIN videos and one isolated head update; not a benchmark/result."""
+    import torch
+    from . import quality_token_common as core
+    from .quality_token_train import FiveNativeTokenRows, atomic_save, sha256_tensor
+    rows = core.read_manifest(args.manifest)
+    selected = [row for row in rows if row["split"] == "train"][:2]
+    processor, model, _, initial, prompt = load_runtime(args.model, config)
+    torch.cuda.reset_peak_memory_stats()
+    inputs, positions = prepare_batch(selected, processor, prompt)
+    gpu_inputs = transfer(inputs)
+    features = pooled_features(model, gpu_inputs).detach().cpu().half().clone()
+    run_training_guard(identity)
+    head = FiveNativeTokenRows(initial).cuda()
+    train_targets = [float(row["temporal"]) for row in rows if row["split"] == "train"]
+    boundaries = torch.linspace(min(train_targets), max(train_targets), 6)[1:-1]
+    labels = torch.bucketize(torch.tensor([float(row["temporal"]) for row in selected]), boundaries)
+    optimizer = torch.optim.AdamW(head.parameters(), lr=.001, weight_decay=0.)
+    loss = torch.nn.functional.cross_entropy(head(features.float().cuda()), labels.cuda())
+    if not bool(torch.isfinite(loss)):
+        raise RuntimeError("Non-finite smoke head loss")
+    loss.backward()
+    optimizer.step()
+    after_native = model.lm_head.weight.detach()[config["quality_token_ids"]].float().cpu()
+    frozen_ok = all(not p.requires_grad and p.grad is None for p in model.parameters())
+    if not frozen_ok or not torch.equal(initial, after_native) or torch.equal(head.weight.detach().cpu(), initial):
+        raise RuntimeError("Smoke failed frozen backbone/isolated five-row update audit")
+    atomic_save(args.output / "smoke_evidence.pt", {"features": features,
+        "initial_native_rows": initial, "updated_smoke_rows": head.weight.detach().cpu(),
+        "sample_ids": [row["sample_id"] for row in selected], "identity": identity})
+    frozen.write_json(args.output / "gpu_smoke_report.json", {"status": "passed",
+        "real_train_videos": 2, "batch": 2, "trainable_parameters": 10240,
+        "train_cross_entropy_one_probe_step": float(loss.detach()), "backbone_frozen": frozen_ok,
+        "original_native_rows_unchanged": True, "initial_rows_sha256": sha256_tensor(initial),
+        "updated_rows_sha256": sha256_tensor(head.weight.detach().cpu()),
+        "frame_positions": positions, "native_shapes": {k: list(v.shape) for k, v in inputs.items()},
+        "peak_allocated_bytes_capacity_check_only": torch.cuda.max_memory_allocated(),
+        "peak_reserved_bytes_capacity_check_only": torch.cuda.max_memory_reserved(),
+        "not_a_performance_latency_or_energy_result": True, "identity": identity,
+        "process_audit_after_probe": run_training_guard(identity)})
+    print("[gpu-smoke] two real TRAIN videos; frozen BF16 backbone and five-row update passed", flush=True)
+
+
 def run_training(args, config, identity):
     import torch
     from . import quality_token_common as core
@@ -313,7 +392,7 @@ def run_training(args, config, identity):
     parts.mkdir()
     shapes = None
     for begin in range(0, 2808, 64):
-        guard()
+        run_training_guard(identity)
         end = min(begin + 64, 2808)
         for start in range(begin, end, 2):
             selected = rows[start:min(start+2, end)]
@@ -323,6 +402,8 @@ def run_training(args, config, identity):
             with torch.inference_mode():
                 features[start:start+len(selected)] = pooled_features(model, gpu_inputs).cpu().half()
             del inputs, gpu_inputs
+        # Do not accept a newly completed shard if a foreign process entered the device.
+        run_training_guard(identity)
         atomic_save(parts / f"rows_{begin:05d}_{end:05d}.pt", {
             "sample_ids": [r["sample_id"] for r in rows[begin:end]], "features": features[begin:end].clone(), "identity": identity})
         frozen.write_json(args.output / "status.json", {"status": "extracting", "videos": end,
@@ -335,6 +416,7 @@ def run_training(args, config, identity):
     del processor, model, head
     torch.cuda.empty_cache()
     train_head(payload, initial, args.output, config, identity)
+    run_training_guard(identity)
     if model_files(args.model, config) != identity["model_sha256"]:
         raise RuntimeError("Pretrained model files changed")
     artifacts = {str(p.relative_to(args.output)): frozen.sha256(p) for p in args.output.iterdir()
@@ -519,14 +601,17 @@ def suite(args, config):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("prepare", "train", "evaluate", "suite"), required=True)
+    parser.add_argument("--phase", choices=("prepare", "train", "gpu-smoke", "evaluate", "suite"), required=True)
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--batch", type=int, choices=(1, 4, 8))
     parser.add_argument("--checkpoint", type=Path)
+    parser.add_argument("--training-gpu-uuid", choices=(TRAINING_3090_UUID,),
+                        help="Explicit 3090 training/smoke only; formal evaluation remains A100")
     parser.add_argument("--endpoint", choices=("https://huggingface.co", "https://hf-mirror.com"), default="https://huggingface.co")
     args = parser.parse_args()
+    gpu_uuid = select_gpu(args.phase, args.training_gpu_uuid)
     for name in ("model", "manifest", "output", "checkpoint"):
         if getattr(args, name) is not None:
             setattr(args, name, getattr(args, name).resolve())
@@ -549,16 +634,21 @@ def main():
         elif args.phase == "prepare":
             prepare_assets(args, config)
         else:
-            guard()
+            training_guard(gpu_uuid)
             import torch, transformers
-            if "A100" not in torch.cuda.get_device_name(0):
-                raise RuntimeError("A100 required")
+            expected_name = "A100" if gpu_uuid == frozen.A100_UUID else "RTX 3090"
+            if expected_name not in torch.cuda.get_device_name(0) or not torch.cuda.is_bf16_supported():
+                raise RuntimeError(f"Expected {expected_name} with BF16 support")
             identity.update(model_sha256=model_files(args.model, config),
                             torch=torch.__version__, transformers=transformers.__version__,
-                            gpu_uuid=frozen.A100_UUID, cuda=torch.version.cuda)
+                            gpu_uuid=gpu_uuid, gpu_name=torch.cuda.get_device_name(0),
+                            cuda=torch.version.cuda, formal_evaluation_gpu_uuid=frozen.A100_UUID,
+                            training_only_device_override=args.training_gpu_uuid is not None)
             frozen.write_json(args.output / "run_identity.json", identity)
             if args.phase == "train":
                 run_training(args, config, identity)
+            elif args.phase == "gpu-smoke":
+                run_gpu_smoke(args, config, identity)
             else:
                 run_evaluation(args, config, identity)
         frozen.write_json(args.output / "status.json", {"status": "complete", "updated_at_unix": time.time(), "identity": identity})

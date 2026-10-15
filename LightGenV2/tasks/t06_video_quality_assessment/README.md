@@ -87,6 +87,20 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15新授权覆盖训练设备限制：**用户要求先在空闲3090上验证、提取冻结特征并
+完成末端训练，正式B1/4/8准确率与时延/能耗/利用率仍在A100上配套复测。只允许训练和
+两视频`gpu-smoke`显式传入`--training-gpu-uuid GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb`；
+3090为物理GPU5，不碰GPU0或其他进程，不改变功率。`evaluate`和旧`suite`拒绝3090覆盖，
+保持A100/250W测量守卫。BF16原生前向、B2特征提取、FP16缓存→FP32五行头及其余科学
+协议不变；不因换卡改精度/LoRA/帧数/训练预算，不保证提高SRCC。新训练特征完整重提，
+不混用上次A100失败的128条部分特征；原失败证据保护。
+两条真实TRAIN视频的smoke只验证显存容量、有限特征及五行头一次更新/骨干冻结，不是
+正式精度或成本结果。通过后同canonical run下`rtx3090_train_20261015`完成2808特征、
+50epoch与CPU best/last核查，不在3090测正式速度/功耗或自动占A100。
+旧监督已删除；本条是用户新的有界运行授权，非延长旧等待。源码发布后运行，既有共享
+Qwen/CLIP/YOLO/DeepSeek测量与图表不改。后续A100必须读训练收据与同SHA best PT、
+同划分/模型/源码，逐B原生重算558预测；3090缓存CPU开发分数不冒称A100 batch性能。
+
 用户授权在固定A100上训练SmolVLM2-2.2B，再分别以B=1/4/8新进程冻结推理。
 入口`smolvlm2_temporal_baseline`及配置
 `configs/baselines/smolvlm2_temporal_4f_a100.json`；不改原Qwen/CLIP/YOLO/DeepSeek结果。

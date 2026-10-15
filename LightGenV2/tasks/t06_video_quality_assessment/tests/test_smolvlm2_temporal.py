@@ -15,6 +15,58 @@ def test_fixed_contract():
     assert len(c["official_assets"]) == 14
 
 
+@pytest.mark.parametrize("phase", ["evaluate", "suite", "prepare"])
+def test_3090_override_rejected_for_cost_and_suite(phase):
+    with pytest.raises(ValueError):
+        smol.select_gpu(phase, smol.TRAINING_3090_UUID)
+
+
+@pytest.mark.parametrize("phase", ["train", "gpu-smoke"])
+def test_3090_is_training_only(phase):
+    assert smol.select_gpu(phase, smol.TRAINING_3090_UUID) == smol.TRAINING_3090_UUID
+    assert smol.select_gpu(phase) == smol.frozen.A100_UUID
+    with pytest.raises(ValueError):
+        smol.select_gpu(phase, "GPU-other")
+    assert smol.select_gpu("evaluate") == smol.frozen.A100_UUID
+
+
+def test_3090_guard_requires_exact_visible_uuid(monkeypatch):
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "5")
+    with pytest.raises(RuntimeError, match="explicitly authorized"):
+        smol.training_guard(smol.TRAINING_3090_UUID)
+
+
+@pytest.mark.parametrize("foreign", [False, True])
+def test_3090_guard_does_not_ignore_foreign_process(monkeypatch, foreign):
+    from types import SimpleNamespace
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", smol.TRAINING_3090_UUID)
+    monkeypatch.setattr(smol.subprocess, "check_output", lambda *a, **k: "NVIDIA GeForce RTX 3090\n")
+    records = f"{smol.os.getpid()}, {smol.TRAINING_3090_UUID}, python\n"
+    records += "12345, GPU-other, other\n"
+    if foreign:
+        records += f"999999, {smol.TRAINING_3090_UUID}, foreign\n"
+    monkeypatch.setattr(smol.subprocess, "run", lambda *a, **k: SimpleNamespace(stdout=records))
+    if foreign:
+        with pytest.raises(RuntimeError, match="occupied"):
+            smol.training_guard(smol.TRAINING_3090_UUID)
+    else:
+        rows = smol.training_guard(smol.TRAINING_3090_UUID)
+        assert len(rows) == 1 and rows[0]["pid"] == str(smol.os.getpid())
+
+
+def test_training_guard_preserves_a100_guard(monkeypatch):
+    called = []
+    monkeypatch.setattr(smol, "guard", lambda: called.append("a100") or [])
+    assert smol.training_guard(smol.frozen.A100_UUID) == []
+    assert called == ["a100"]
+
+
+def test_running_source_change_rejected(monkeypatch):
+    monkeypatch.setattr(smol, "sources", lambda: {"x": "changed"})
+    with pytest.raises(RuntimeError, match="source changed"):
+        smol.run_training_guard({"source_sha256": {"x": "original"}, "gpu_uuid": smol.TRAINING_3090_UUID})
+
+
 @pytest.mark.parametrize("key,value", [("epochs", 100), ("learning_rate", .01),
     ("frames", 8), ("backbone_trainable_parameters", 1), ("quality_output_trainable_parameters", 20480),
     ("selection", "validation"), ("inference_batches", [1, 2, 4, 8]), ("processor_native_frame_size", 448)])
