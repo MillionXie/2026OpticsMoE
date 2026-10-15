@@ -271,6 +271,33 @@ def responsecheck(a):
     except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),frames=len(rows),automatic_retry=False));raise
     finally:lock.unlink()
 
+
+@torch.inference_mode()
+def phaseaudit(a):
+    """Read-only TRAIN diagnostic; hypotheses only, no masks/LUT/CCD changes."""
+    assert not a.out.exists();a.out.mkdir(parents=True);torch.set_num_threads(4)
+    session=a.out.parent/'mapped_pilot80';assert json.loads((session/'report.json').read_text())['state']=='complete'
+    assert json.loads((session/'contract.json').read_text())['role']=='train'
+    gains=[-2,-1.5,-1,-.75,-.5,-.25,0,.25,.5,.75,1,1.25,1.5,2];rows=[]
+    for arm in EXPECTED:
+        model=model_for(a.assets,arm)
+        for stage in ('router','0','1','2'):
+            source=session/arm/stage
+            panel=np.asarray(Image.open(source/'phase.bmp'))
+            decoded=np.flipud(np.fliplr(255-panel[92:1108,452:1468]))
+            phase=torch.from_numpy(np.asarray(Image.fromarray(decoded).resize((478,478),Image.Resampling.NEAREST)).copy()).float()/256
+            for j in range(3):
+                receipt=json.loads((source/f'{j:06d}.json').read_text())
+                assert receipt['phase_sha256']==sha(source/'phase.bmp')
+                amplitude=torch.from_numpy(np.asarray(Image.open(source/f'{j:06d}_input.png')).copy()).float()/255
+                field=amplitude[None]*torch.exp(2j*math.pi*torch.tensor(gains)[:,None,None]*phase[None])
+                ideal=model.propagator(torch.nn.functional.pad(field,(20,20,20,20))).abs().square()[:,20:498,20:498].numpy()
+                actual=np.asarray(Image.open(source/f'{j:06d}.png'),dtype=float)
+                pcc=[float(np.corrcoef(v.ravel(),actual.ravel())[0,1]) for v in ideal]
+                rows.append(dict(arm=arm,stage=stage,index=j,gains=gains,pcc=pcc,best_gain=gains[int(np.argmax(pcc))],best_pcc=max(pcc),nominal_pcc=pcc[gains.index(1)],zero_phase_pcc=pcc[gains.index(0)]))
+    save(a.out/'phase_audit.json',dict(rows=rows,source_sha256=sha(__file__),physical_frames_added=0,train_only=True,weights_changed=False,lut_changed=False,scope='Diagnostic phase-gain hypotheses, not phase calibration or a performance result'))
+    print(json.dumps(rows),flush=True)
+
 @torch.inference_mode()
 def capture(a):
     import cv2
@@ -364,7 +391,7 @@ def capture(a):
     finally:lock.unlink()
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture','signalcheck','supportcheck','responsecheck'],required=True)
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture','signalcheck','supportcheck','responsecheck','phaseaudit'],required=True)
     for name in ('assets','out','coordinates','selftest','machine-config','amplitude-sdk','phase-sdk','phase-lut'):p.add_argument('--'+name,type=Path,required=name in ('assets','out'))
     p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
     p.add_argument('--response-lut',type=Path)
@@ -373,4 +400,4 @@ if __name__=='__main__':
     a=p.parse_args()
     if sys.stdout is None:
         sys.stdout=a.out.with_suffix('.log').open('a' if a.resume else 'x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    {'selftest':selftest,'capture':capture,'signalcheck':signalcheck,'supportcheck':supportcheck,'responsecheck':responsecheck}[a.mode](a)
+    {'selftest':selftest,'capture':capture,'signalcheck':signalcheck,'supportcheck':supportcheck,'responsecheck':responsecheck,'phaseaudit':phaseaudit}[a.mode](a)
