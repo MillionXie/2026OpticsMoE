@@ -18,7 +18,7 @@ class ProgressTest(unittest.TestCase):
         def busy(path,target):
             if Path(target).name=='progress.json':raise PermissionError('Windows reader')
             return original(path,target)
-        with tempfile.TemporaryDirectory() as directory:
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent/'runs') as directory:
             target=Path(directory)/'progress.json';target.write_text('{"old":true}')
             with patch.object(Path,'replace',busy),patch.object(time,'sleep'):
                 ns['save'](target,{'frames':21})
