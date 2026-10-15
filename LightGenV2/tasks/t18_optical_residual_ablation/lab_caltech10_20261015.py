@@ -208,6 +208,49 @@ def supportcheck(a):
     except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),automatic_retry=False));raise
     finally:lock.unlink()
 
+
+def responsecheck(a):
+    """Measured field inverse and held-out levels; never overwrite a device LUT."""
+    import cv2
+    from amplitude_response import inverse_field
+    assert not a.out.exists();a.out.mkdir(parents=True)
+    phase=a.out.parent/'pilot80/residual/0/phase.bmp';assert phase.is_file()
+    warp=cv2.getPerspectiveTransform(np.float32(corners(a.coordinates)),np.float32([[0,0],[477,0],[477,477],[0,477]]))
+    rows=[];lock=a.out.parents[1]/'.t18_sdk_owner.lock'
+    with lock.open('x') as f:f.write(json.dumps({'pid':os.getpid(),'out':str(a.out)}))
+    def frame(bench,kind,drive,tag,desired=None):
+        gray=np.zeros((478,478),np.uint8)
+        if kind=='experts':
+            for yy in (0,254):
+                for xx in (0,254):gray[yy:yy+224,xx:xx+224]=drive
+        else:gray[127:351,127:351]=drive
+        bmp=a.out/(tag+'.bmp');Image.fromarray(native(gray,'amplitude')).save(bmp)
+        raw,meta=bench.capture(bmp);image=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA)).copy()
+        Image.fromarray(raw).save(a.out/(tag+'_raw.png'));Image.fromarray(image).save(a.out/(tag+'.png'))
+        row=dict(pattern=kind,drive=int(drive),desired=desired,frame_id=meta['frame_id'],mean=float(image.mean()),p99=float(np.percentile(image,99)),maximum=int(image.max()),saturation_fraction=float((image==255).mean()),input_sha256=sha(bmp),raw_sha256=sha(a.out/(tag+'_raw.png')))
+        rows.append(row);save(a.out/'progress.json',dict(frames=len(rows),latest=row));print(json.dumps(row),flush=True)
+        assert row['saturation_fraction']<.001,'Calibration clipped; retain data, do not fit a clipped response'
+        return row['mean']
+    try:
+        with Bench(a) as bench:
+            bench.stage(phase);grays=list(range(0,256,16))+[255];measure={g:[] for g in grays}
+            for repeat in range(3):
+                for g in (grays if repeat%2==0 else grays[::-1]):measure[g].append(frame(bench,'experts',g,f'fit_{repeat}_{g:03d}'))
+            means=[float(np.mean(measure[g])) for g in grays];lut,response=inverse_field(grays,means)
+            checks=[]
+            for kind in ('experts','center'):
+                low=frame(bench,kind,0,f'{kind}_zero');high=frame(bench,kind,255,f'{kind}_full')
+                assert high-low>1
+                for desired in (32,64,96,128,160,192,224):
+                    value=frame(bench,kind,lut[desired],f'validate_{kind}_{desired}',desired)
+                    normalized=(value-low)/(high-low);target=(desired/255.)**2
+                    checks.append(dict(pattern=kind,desired=desired,measured=normalized,target=target,error=normalized-target))
+            errors=np.array([v['error'] for v in checks]);passed=bool(np.max(np.abs(errors))<=.08 and np.sqrt(np.mean(errors**2))<=.04)
+        save(a.out/'response_lut.json',dict(passed=passed,sdk_released=True,scope='this paired session only; common mapping both arms',target='field amplitude; intensity=(canonical_gray/255)^2',drive=lut,fit_grays=grays,fit_means=means,normalized_response=response,checks=checks,validation_rmse=float(np.sqrt(np.mean(errors**2))),validation_max_error=float(np.max(np.abs(errors))),exposure_us=a.exposure_us,gain='Gain_X4',coordinates_sha256=sha(a.coordinates),phase_sha256=sha(phase),source_sha256=sha(__file__),raw_rows=rows,devices_original_lut_modified=False,dark_subtracted_in_network=False))
+        if not passed:raise RuntimeError('Held-out response validation failed; do not deploy this mapping')
+    except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),frames=len(rows),automatic_retry=False));raise
+    finally:lock.unlink()
+
 @torch.inference_mode()
 def capture(a):
     import cv2
@@ -217,9 +260,15 @@ def capture(a):
     a.out.mkdir(parents=True);torch.set_num_threads(4);x,y,ids=dataset(a.assets,a.role,a.limit);n=len(y)
     pts=np.float32(corners(a.coordinates));dest=np.float32([[0,0],[477,0],[477,477],[0,477]])
     warp=cv2.getPerspectiveTransform(pts,dest)
+    response=json.loads(a.response_lut.read_text()) if a.response_lut else None
+    if response:
+        assert response['passed'] and response['sdk_released'] and response['coordinates_sha256']==sha(a.coordinates)
+        drive=np.asarray(response['drive'],dtype=np.uint8);assert drive.shape==(256,) and drive[0]==0 and drive[-1]==255
     contract=dict(coordinates_sha256=sha(a.coordinates),corners_TL_TR_BR_BL=pts.tolist(),checkpoint_sha256=EXPECTED,
         samples=n,role=a.role,exposure_us=a.exposure_us,gain='Gain_X4',wait_ms=240,phase_transform='hv_inverse',camera_orientation='flip_v',
         data_sha256=sha(a.assets/'caltech10.npz'),source_sha256=sha(__file__),fine_tuned=False,routing='continuous all4',main_stages=['expert','global','expert'],native_active=1016)
+    contract['response_lut_sha256']=sha(a.response_lut) if response else None
+    contract['response_calibration_exposure_us']=response['exposure_us'] if response else None
     save(a.out/'contract.json',contract);started=time.perf_counter();rows=[]
     lock=a.out.parents[1]/'.t18_sdk_owner.lock';lock.parent.mkdir(parents=True,exist_ok=True)
     with lock.open('x') as f:f.write(json.dumps({'pid':os.getpid(),'out':str(a.out)}))
@@ -241,7 +290,7 @@ def capture(a):
                         else:assert np.array_equal(np.asarray(Image.open(phase_path)),phase_native(phase))
                         for j,gray in enumerate(amplitudes,start):
                             sid=f'{j:06d}';canonical=target/(sid+'_input.png');Image.fromarray(gray).save(canonical)
-                            bmp=target/(sid+'_transient.bmp');Image.fromarray(native(gray,'amplitude')).save(bmp)
+                            bmp=target/(sid+'_transient.bmp');Image.fromarray(native(drive[gray] if response else gray,'amplitude')).save(bmp)
                             raw,meta=bench.capture(bmp);assert raw.shape==(1080,1920)
                             image=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0)).copy()
                             row=dict(arm=arm,stage=stage,index=j,sample_id=str(ids[j]),frame_id=meta.get('frame_id'),mean=float(image.mean()),p99=float(np.percentile(image,99)),maximum=int(image.max()),saturation_fraction=float((image==255).mean()),capture_total_ms=meta['capture_total_ms'],amplitude_sha256=sha(bmp),canonical_sha256=sha(canonical),phase_sha256=sha(phase_path))
@@ -271,10 +320,11 @@ def capture(a):
     finally:lock.unlink()
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture','signalcheck','supportcheck'],required=True)
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture','signalcheck','supportcheck','responsecheck'],required=True)
     for name in ('assets','out','coordinates','selftest','machine-config','amplitude-sdk','phase-sdk','phase-lut'):p.add_argument('--'+name,type=Path,required=name in ('assets','out'))
     p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
+    p.add_argument('--response-lut',type=Path)
     a=p.parse_args()
     if sys.stdout is None:
         sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    {'selftest':selftest,'capture':capture,'signalcheck':signalcheck,'supportcheck':supportcheck}[a.mode](a)
+    {'selftest':selftest,'capture':capture,'signalcheck':signalcheck,'supportcheck':supportcheck,'responsecheck':responsecheck}[a.mode](a)

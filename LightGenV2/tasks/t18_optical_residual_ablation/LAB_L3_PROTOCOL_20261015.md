@@ -1,5 +1,20 @@
 # Caltech10 three-main-layer laboratory deployment
 
+Latest human approval: perform a session-only measured gray-to-field-amplitude
+inverse, preserving the original device LUTs. Both paired models use the same
+mapping, without changing weights, labels, geometry or per-image normalization.
+Bounded acquisition at200us/Gain_X4:17 flat expert-aperture gray levels, three
+repeats, followed by independent seven desired amplitude levels on both expert
+and center supports (69 frames total including zero/full references). Fixed
+previous expert phase; ascending/descending repeats record drift. Reject any
+frame with saturation>=0.1%, insufficient dynamic range, or held-out normalized
+intensity RMSE>0.04 / maximum error>0.08. Fit an isotonic intensity curve and
+invert target I=(gray/255)^2, not target I=gray/255. Preserve raw images and all
+receipts, calibration phase/coordinates/source hashes and256-entry mapping.
+Calibration dark is used only to fit the response, not silently subtracted from
+network input. A passing calibration still requires a fresh TRAIN pilot before
+full TEST; this is a radiometric calibration, not a result or electronic fit.
+
 Human request 2026-10-15 authorizes this new bench session, superseding earlier
 offline-only/no-lab limits only for these two L3 models. Other training windows,
 historical runs and equipment configurations remain protected. Use the existing
