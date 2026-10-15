@@ -1,3 +1,11 @@
+## 本轮两条优化均全完成：新Caltech十类验证86.62%，配对残差差+7.64pp（2026-10-15）
+
+新固定十类双方完整150且独占科学第一次passed，CPU campaign/queue与两GPU子actualexit/原始rc0，所有T18GPU项目0/A1000/test0。按firstminimum验证EMA balancedNLL均选E149：有残差train99.3430/val86.6242/macro86.3258/NLL.5708938839；无残差train90.2760/val78.9809/macro78.9135/NLL.8056351399，净多12/157正确，验证差+7.6433pp、macro+7.4123pp。真实同150预算/单seed17、无电子分类器，未测试；验证知情筛类新开发任务，不是原20或完整101达到80、也不称完全未见泛化。训练验证gap12.7188/11.2951仍在，不能称无过拟合。
+
+固定Faces/Leopards/Motorbikes/airplanes/bonsai/grand_piano/revolver/schooner/trilobite/yin_yang，未更换；新169训练Git259cdcfdec6edc9b8ca29f9c7ddf18fb3668cffa=current/original。scienceSHA617825b1c2d628b7a2cefdd13874d4c4ca3e468ed16338def5561b3d723051db/completed实际一致。完整真实曲线/逐类与来源见[新十类最终报告](reports/caltech10_gap_20261015/final/README.md)。
+
+原20双方同200也已全结束/自己SCIpassed，68.1979/62.8975、差5.3004pp，未80；不能与新十类跨任务拼gap。原20完整200曲线和逐类见[原20续训最终报告](reports/caltech20_continue200_20261015/final/README.md)。已按新人工三张非A100并行完成两个有界方案，现不再运行训练/审核/准备/图/markers/重试/换类/新候选/扩预算或test。旧全部源码/PT/data/history/claims/失败保持。t18和09 ACTIVE保留，正常完成/已通知结果静默；本节覆盖下方仍在训/待审核/条件可执行旧文字。
+
 ## 原20同200轮已完成；新十类150轮仍在训（2026-10-15）
 
 原20双方真实完成200并独占科学passed/CPU与两GPU退出：有残差选E193训练94.5335/验证68.1979/macro65.7161%，无残差选E200训练77.7697/验证62.8975/macro60.2210%，差+5.3004pp（原100轮+7.0671）。训练-验证差26.3356/14.8722pp，双方继续提高而对照追上，原20未80、过拟合仍明显；不是test。完整200轮曲线与逐类在[新最终报告](reports/caltech20_continue200_20261015/final/README.md)，科学SHA3d381ac398a03e8b7a4ede3476049c238cbc4ed12148deff8874e9ddec28525d。
