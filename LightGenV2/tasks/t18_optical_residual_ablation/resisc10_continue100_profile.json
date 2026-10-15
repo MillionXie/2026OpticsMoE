@@ -1,0 +1,18 @@
+{
+  "run": "resisc10_rho03_resume100_regularize20_20261015",
+  "parent_run": "resisc10_s17_mainL4_input100_rho_pair120_mixup02_micro8_gpu25_20261015",
+  "parent_case": "L4_10opt_rho03",
+  "parent_commit": "6c2309ba048f2fa12f13390ca6fbc62954dc2c74",
+  "parent_audit_sha256": "ddf43abb366dc0f26a2dec9b0102c48dbc2cb81ced3df0d1a5002e098ab9d346",
+  "parent_last_sha256": "1e7409a4c7697ab36b4aea67fec8a252a014ff1e7febfdc44bddb793e1dbfaf0",
+  "prefix_epochs": 92,
+  "complete100": {"maximum_epochs": 100, "maximum_seconds": 1800, "mixup_alpha": 0.2, "resume_lr_factor": 1.0},
+  "regularize20": {"maximum_epochs": 120, "maximum_seconds": 1800, "mixup_alpha": 0.4, "resume_lr_factor": 0.5},
+  "disable_earlystop": true,
+  "physical_gpu": 2,
+  "optical_rho": 0.3,
+  "automatic_retry": false,
+  "test_evaluations_during_fit": 0,
+  "selection": "first minimum validation EMA balancedNLL, including preserved prefix",
+  "control": "readonly first100 history; minimum NLL E100; E100 PT not retained; no control retraining"
+}
