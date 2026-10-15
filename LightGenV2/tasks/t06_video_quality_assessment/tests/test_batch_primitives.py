@@ -50,3 +50,28 @@ def test_gpu_cooperates_with_existing_measurement_queue_before_output_creation()
     outer = next(n for n in main.body if isinstance(n, ast.With))
     assert isinstance(outer.body[0], ast.Expr)
     assert outer.body[0].value.func.id == "run_checked"
+
+
+def test_diagnostic_non_a100_ignores_other_cards_but_rejects_target_foreign(monkeypatch):
+    import pytest
+    selected = "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", selected)
+    def response(command, **_):
+        if "--query-compute-apps=pid,gpu_uuid,process_name" in command:
+            return "999, " + primitives.frozen.A100_UUID + ", foreign_timing\n"
+        return selected + ", NVIDIA GeForce RTX 4090, 450\n"
+    monkeypatch.setattr(primitives.subprocess, "check_output", response)
+    assert primitives.device_audit(selected)["name"] == "NVIDIA GeForce RTX 4090"
+    monkeypatch.setattr(primitives.subprocess, "check_output", lambda *a, **k: "999, " + selected + ", foreign\n")
+    with pytest.raises(RuntimeError, match="occupied"):
+        primitives.device_audit(selected)
+    with pytest.raises(ValueError, match="Unapproved"):
+        primitives.device_audit("GPU-afc19890-6209-ee4d-622d-e619da5bd5b2")
+
+
+def test_cross_hardware_comparison_is_not_same_gpu_fidelity_guard():
+    source = Path(primitives.__file__).read_text(encoding="utf-8")
+    assert 'same_gpu_native_observation_max_abs' in source
+    assert 'original_a100_prediction_max_abs' in source
+    assert 'mode == "native" and gpu_uuid == frozen.A100_UUID' in source
+    assert 'physical_gpu' in source

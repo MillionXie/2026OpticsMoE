@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import csv
 import json
 import os
 from pathlib import Path
@@ -22,6 +23,13 @@ OWNER = TASK / "runs/simulation/lgvq_batch_layers_a100_20261015"
 FOCUSED = OWNER / "focused_merger_routes03"
 BATCHES = (1, 2, 4)
 REFERENCE_LIMIT = 2 * 1024**3
+DIAGNOSTIC_GPUS = {
+    frozen.A100_UUID: "A100",
+    "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd": "RTX 4090",
+    "GPU-1b963983-7909-af6e-0528-f0f0661ab549": "RTX 4090",
+    "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb": "RTX 3090",
+    "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b": "RTX 3090",
+}
 WATCHED = {"aten.mm.default", "aten.addmm.default", "aten.bmm.default",
            "aten.linear.default", "aten.matmul.default", "aten.softmax.int",
            "aten._softmax.default", "aten.add.Tensor", "aten.mul.Tensor",
@@ -92,10 +100,30 @@ def qwen_cpu(output):
         limits="CPU emulation can falsify specified reductions; no CUDA-kernel identity claim"))
 
 
-def qwen_gpu(output):
+def device_audit(gpu_uuid):
+    """Only the explicitly selected card is in scope; never acquire GPU0."""
+    if gpu_uuid not in DIAGNOSTIC_GPUS or os.environ.get("CUDA_VISIBLE_DEVICES") != gpu_uuid:
+        raise ValueError("Unapproved diagnostic GPU or visibility")
+    records = subprocess.check_output(["nvidia-smi", "--query-compute-apps=pid,gpu_uuid,process_name",
+                                      "--format=csv,noheader,nounits"], text=True)
+    foreign = [r for r in csv.reader(records.splitlines()) if len(r)==3
+               and r[1].strip()==gpu_uuid and r[0].strip()!=str(os.getpid())]
+    if foreign:
+        raise RuntimeError(f"Selected diagnostic GPU occupied: {foreign}")
+    fields = subprocess.check_output(["nvidia-smi", "--id="+gpu_uuid,
+        "--query-gpu=uuid,name,power.limit", "--format=csv,noheader,nounits"], text=True)
+    selected = next(csv.reader(fields.splitlines()))
+    if selected[0].strip()!=gpu_uuid or DIAGNOSTIC_GPUS[gpu_uuid] not in selected[1]:
+        raise ValueError("Physical diagnostic card identity mismatch")
+    if gpu_uuid == frozen.A100_UUID and abs(float(selected[2])-250)>0.1:
+        raise ValueError("Original A100 power limit changed")
+    return dict(uuid=gpu_uuid, name=selected[1].strip(), observed_power_limit_w=float(selected[2]),
+                scope="Numerical diagnosis only; non-A100 results cannot replace A100 measurements")
+
+
+def qwen_gpu(output, gpu_uuid):
     import torch
-    from .reproduce_temporal_baseline import cuda_guard
-    cuda_guard()
+    device_audit(gpu_uuid)
     x, weight, bias, captured = qwen_operands()
     x, weight, bias = [v.cuda() for v in (x, weight, bias)]
     torch.backends.cuda.matmul.allow_tf32 = False
@@ -108,7 +136,7 @@ def qwen_gpu(output):
             rows = {}
             single = None
             for batch in BATCHES:
-                frozen.process_audit()
+                device_audit(gpu_uuid)
                 inputs = x.repeat(batch, 1)
                 def operation():
                     if mode == "matmul_then_bias":
@@ -135,7 +163,7 @@ def qwen_gpu(output):
         finally:
             torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = previous_flag
     torch.save(saved, output / "qwen_operator_outputs.pt")
-    frozen.process_audit()
+    device_audit(gpu_uuid)
 
 
 class OperatorCapture:
@@ -203,11 +231,10 @@ def attention_mode(capture, controlled=False, record=True):
     return Mode()
 
 
-def deepseek_gpu(output):
+def deepseek_gpu(output, gpu_uuid):
     import torch
     from . import run_batch_layer_diagnostics as suite
-    from .reproduce_temporal_baseline import cuda_guard
-    cuda_guard()
+    device_audit(gpu_uuid)
     command = suite.child_command("deepseek", "gpu", output)
     # Extract only file options explicitly; no dependence on positional command layout.
     options = {key: Path(command[command.index("--"+key.replace("_", "-"))+1])
@@ -231,12 +258,13 @@ def deepseek_gpu(output):
             capture, contexts, handles = OperatorCapture(), [], []
             for index, (name, module) in enumerate(attentions):
                 def enter(_module, positional, keyword, index=index):
-                    if index == 0 and capture.record_group:
+                    if index == 0 and capture.record_group and capture.observe:
                         for key in ("attention_mask", "position_ids", "cache_position"):
                             value = keyword.get(key)
                             if torch.is_tensor(value):
                                 capture.record("actual_argument_"+key, value)
-                    context = attention_mode(capture, mode != "native", index == 0 and capture.record_group)
+                    context = (attention_mode(capture, mode != "native", index == 0 and capture.record_group)
+                               if capture.observe else contextlib.nullcontext())
                     context.__enter__(); contexts.append(context)
                 def leave(_module, positional, result):
                     contexts.pop().__exit__(None, None, None)
@@ -246,26 +274,38 @@ def deepseek_gpu(output):
             try:
                 for batch in BATCHES:
                     capture.reset(batch)
-                    predictions, features, logits = [], [], []
+                    predictions, features, logits, fidelity = [], [], [], []
                     for start in range(0, 8, batch):
-                        frozen.process_audit()
+                        device_audit(gpu_uuid)
                         cpu, _ = prepare(rows[start:start+batch])
                         inputs = layers.verified_transfer(cpu, batch,
                             old["inputs"][str(batch)]["input_fingerprints"][start:start+batch], transfer)
                         capture.record_group = start == 0
+                        capture.observe = False
+                        if mode == "native":
+                            _, plain_logit = numerics.diagnostic_forward(args, model, head, inputs, False)
+                            plain_values = plain_logit.softmax(-1) @ scores
+                        capture.observe = True
                         feature, logit = numerics.diagnostic_forward(args, model, head, inputs, False)
                         if start == 0 and not all(any(event.startswith(name+"/") for event in capture.events)
                             for name in ("aten.linear.default", "aten.matmul.default", "aten.softmax.int")):
                             raise ValueError("Missing native composite attention operators; no causal conclusion")
                         values = (logit.softmax(-1) @ scores).tolist()
-                        if mode == "native" and max(abs(a-b) for a,b in zip(values,
+                        if mode == "native":
+                            fidelity.append(float((torch.tensor(values)-plain_values).abs().max()))
+                            if fidelity[-1] > .001:
+                                raise ValueError("Instrumentation changed same-GPU native predictions")
+                        if mode == "native" and gpu_uuid == frozen.A100_UUID and max(abs(a-b) for a,b in zip(values,
                             old["probes"]["native"][str(batch)]["predictions"][start:start+batch])) > .001:
                             raise ValueError("Instrumentation changed native predictions")
                         predictions.extend(values); features.append(feature); logits.append(logit)
                         del inputs
                     first = next((key for key in capture.events if capture.stats.get(key, {}).get("changed")), None)
                     mode_results[str(batch)] = dict(predictions=predictions, first_divergent_observed_operator=first,
-                        statistics=capture.stats, events=capture.events, reference_bytes=capture.byte_count)
+                        statistics=capture.stats, events=capture.events, reference_bytes=capture.byte_count,
+                        same_gpu_native_observation_max_abs=max(fidelity) if fidelity else None,
+                        original_a100_prediction_max_abs=max(abs(a-b) for a,b in zip(predictions,
+                            old["probes"]["native"][str(batch)]["predictions"])))
                     torch.save(dict(operators=capture.samples, features=torch.cat(features), logits=torch.cat(logits)),
                                output / f"{mode}_b{batch}_operators.pt")
                     frozen.write_json(output / "deepseek_operators.json", dict(results={**results, mode:mode_results},
@@ -277,17 +317,18 @@ def deepseek_gpu(output):
                 for handle in handles: handle.remove()
     finally:
         timer.close()
-    frozen.process_audit()
+    device_audit(gpu_uuid)
 
 
 @contextlib.contextmanager
-def gpu_slot():
+def gpu_slot(gpu_uuid):
     """Cooperate with T06 measurement/Smol queues; no GPU occupancy while busy."""
     import fcntl
-    from .reproduce_temporal_baseline import cuda_guard
-    with (TASK / "runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
+    filename = (".temporal_telemetry_a100.lock" if gpu_uuid == frozen.A100_UUID
+                else ".temporal_diagnostics_"+gpu_uuid+".lock")
+    with (TASK / "runs/simulation" / filename).open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        cuda_guard()
+        device_audit(gpu_uuid)
         yield
 
 
@@ -296,6 +337,8 @@ def run_checked(args):
     identity = dict(status="running", pid=os.getpid(), phase=args.phase, baseline=args.baseline,
         git_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
         source_sha256=frozen.sha256(Path(__file__)), scope="Diagnostic only; original weights/data/costs untouched")
+    if args.phase == "gpu":
+        identity["physical_gpu"] = device_audit(args.gpu_uuid)
     frozen.write_json(args.output / "status.json", identity)
     try:
         import torch
@@ -306,8 +349,8 @@ def run_checked(args):
             if args.phase=="cpu":
                 if args.baseline!="qwen": raise ValueError("CPU mechanism phase only supports saved Qwen operands")
                 qwen_cpu(args.output)
-            elif args.baseline=="qwen": qwen_gpu(args.output)
-            else: deepseek_gpu(args.output)
+            elif args.baseline=="qwen": qwen_gpu(args.output, args.gpu_uuid)
+            else: deepseek_gpu(args.output, args.gpu_uuid)
         frozen.write_json(args.output / "status.json", {**identity, "status":"complete"})
     except BaseException as error:
         frozen.write_json(args.output / "status.json", {**identity, "status":"failed", "error":repr(error)})
@@ -319,13 +362,14 @@ def main():
     parser.add_argument("--phase", choices=("cpu", "gpu"), required=True)
     parser.add_argument("--baseline", choices=("qwen", "deepseek"), required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--gpu-uuid", choices=tuple(DIAGNOSTIC_GPUS), default=frozen.A100_UUID)
     args = parser.parse_args(); args.output = args.output.resolve()
     if not args.output.is_relative_to(OWNER.resolve()):
         raise ValueError("Canonical diagnostic run required")
-    if os.environ.get("CUDA_VISIBLE_DEVICES") != ("-1" if args.phase=="cpu" else frozen.A100_UUID):
+    if os.environ.get("CUDA_VISIBLE_DEVICES") != ("-1" if args.phase=="cpu" else args.gpu_uuid):
         raise ValueError("Wrong device visibility")
     # Busy/shared-lock checks precede output creation and CUDA initialization.
-    with gpu_slot() if args.phase=="gpu" else contextlib.nullcontext():
+    with gpu_slot(args.gpu_uuid) if args.phase=="gpu" else contextlib.nullcontext():
         run_checked(args)
 
 
