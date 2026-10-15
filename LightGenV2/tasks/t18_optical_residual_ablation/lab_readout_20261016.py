@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
+from caltech10_sim_head_model import CCDHead,ccd_features
 
 
 def sha(path):
@@ -27,8 +28,7 @@ def metrics(labels,probability):
 
 
 def build_head():
-    model=nn.Sequential(nn.Linear(256,32),nn.ReLU(),nn.Linear(32,10))
-    nn.init.zeros_(model[-1].weight);nn.init.zeros_(model[-1].bias)
+    model=CCDHead().net
     assert sum(p.numel() for p in model.parameters())==8554
     return model
 
@@ -89,8 +89,7 @@ def load_features(session,arm,role):
     with torch.inference_mode():
         for start in range(0,n,32):
             x=torch.from_numpy(np.asarray(ccd[start:start+32]).copy()).float()
-            x=torch.log1p(x/x.mean((-2,-1),keepdim=True).clamp_min(1e-6))
-            features.append(F.adaptive_avg_pool2d(x[:,None],(16,16)).flatten(1).numpy())
+            features.append(ccd_features(x).numpy())
     receipts=sorted((folder/final_stage).glob('[0-9]*.json'))
     assert len(receipts)==n
     for j,path in enumerate(receipts):

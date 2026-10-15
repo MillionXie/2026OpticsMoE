@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 import tempfile
 from lab_readout_20261016 import build_head,numpy_probability,initialized_head,require_simulation_handoff,sha
+from caltech10_sim_head_model import CCDHead,ccd_features
 
 
 class ReadoutTest(unittest.TestCase):
@@ -42,6 +43,16 @@ class ReadoutTest(unittest.TestCase):
             with patch('lab_readout_20261016.time.monotonic',side_effect=[0,3001]):
                 with self.assertRaises(TimeoutError):require_simulation_handoff(args)
             self.assertFalse(args.out.exists())
+    def test_same_simulation_class_and_physical_math(self):
+        torch.manual_seed(17);simulation=CCDHead();physical=build_head()
+        physical.load_state_dict(simulation.net.state_dict(),strict=True)
+        with torch.no_grad():simulation.net[-1].weight.normal_(0,.02);physical.load_state_dict(simulation.net.state_dict())
+        ccd=torch.rand(3,478,478)*60;prob=torch.rand(3,10);prob=prob/prob.sum(1,keepdim=True)
+        with torch.no_grad():
+            simulation.mean.copy_(torch.arange(256)/256);simulation.std.fill_(.2)
+            expected=simulation(ccd,prob)
+            actual=prob.clamp_min(1e-8).log()+physical((ccd_features(ccd)-simulation.mean)/simulation.std)
+        torch.testing.assert_close(actual,expected,atol=1e-7,rtol=0)
 
 
 if __name__=='__main__':unittest.main()
