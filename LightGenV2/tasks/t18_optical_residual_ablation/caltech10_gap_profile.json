@@ -1,0 +1,38 @@
+{
+  "dataset": "Caltech_validation_informed_gap10_20261015",
+  "classes": [
+    "Faces",
+    "Leopards",
+    "Motorbikes",
+    "airplanes",
+    "bonsai",
+    "grand_piano",
+    "revolver",
+    "schooner",
+    "trilobite",
+    "yin_yang"
+  ],
+  "original_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    7,
+    14,
+    15,
+    16,
+    19
+  ],
+  "selection_rule": "Existing current4 E100 validation: residual recall>=60%, residual-control recall>=0; rank residual recall +0.5*gain descending, ties name; freeze top10. Single pass, no test.",
+  "selection_source": "LightGenV2/tasks/t18_optical_residual_ablation/reports/caltech20_current4_20261015/final/class_recall.csv",
+  "selection_source_sha256": "cdfede055f36d7f98b29c34b9341a1164bd888f3cc2f76307e89839aacebe1e4",
+  "parent_data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+  "out": "/DATA/DATA1/guest3/t18_caltech_gap10_20261015",
+  "parent_cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+  "parent_manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+  "maximum_epochs": 150,
+  "maximum_seconds": 3600,
+  "minimum_epochs": 1000,
+  "scope": "Validation-informed new ten-class task, not original20 or untouched generalization; frozen class choice is an attempt, no guaranteed80/gap."
+}
