@@ -180,6 +180,34 @@ def signalcheck(a):
     except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),automatic_retry=False));raise
     finally:lock.unlink()
 
+def supportcheck(a):
+    """Nine flat-gray diagnostic frames distinguish response and illumination."""
+    import cv2
+    assert not a.out.exists();a.out.mkdir(parents=True)
+    phase=a.out.parent/'pilot80/residual/0/phase.bmp';assert phase.is_file()
+    warp=cv2.getPerspectiveTransform(np.float32(corners(a.coordinates)),np.float32([[0,0],[477,0],[477,477],[0,477]]))
+    patterns=[('black',0)] + [(kind,g) for kind in ('center','experts') for g in (64,128,192,255)]
+    rows=[];lock=a.out.parents[1]/'.t18_sdk_owner.lock'
+    with lock.open('x') as f:f.write(json.dumps({'pid':os.getpid(),'out':str(a.out)}))
+    try:
+        with Bench(a) as bench:
+            bench.stage(phase)
+            for kind,g in patterns:
+                gray=np.zeros((478,478),np.uint8)
+                if kind=='center':gray[127:351,127:351]=g
+                elif kind=='experts':
+                    for yy in (0,254):
+                        for xx in (0,254):gray[yy:yy+224,xx:xx+224]=g
+                bmp=a.out/f'{kind}_{g}.bmp';Image.fromarray(native(gray,'amplitude')).save(bmp)
+                raw,meta=bench.capture(bmp);image=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA)).copy()
+                Image.fromarray(raw).save(a.out/f'{kind}_{g}_raw.png');Image.fromarray(image).save(a.out/f'{kind}_{g}.png')
+                row=dict(pattern=kind,gray=g,frame_id=meta['frame_id'],mean=float(image.mean()),p99=float(np.percentile(image,99)),maximum=int(image.max()),raw_mean=float(raw.mean()),raw_maximum=int(raw.max()),saturation_fraction=float((image==255).mean()),phase_sha256=sha(phase),input_sha256=sha(bmp))
+                rows.append(row);save(a.out/'support.json',dict(rows=rows,complete=False));print(json.dumps(row),flush=True)
+                if row['saturation_fraction']>.15:raise RuntimeError('Diagnostic saturated>15%; retain evidence')
+        save(a.out/'support.json',dict(rows=rows,complete=True,sdk_released=True,exposure_us=a.exposure_us,accuracy_evaluated=False))
+    except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),automatic_retry=False));raise
+    finally:lock.unlink()
+
 @torch.inference_mode()
 def capture(a):
     import cv2
@@ -243,10 +271,10 @@ def capture(a):
     finally:lock.unlink()
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture','signalcheck'],required=True)
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture','signalcheck','supportcheck'],required=True)
     for name in ('assets','out','coordinates','selftest','machine-config','amplitude-sdk','phase-sdk','phase-lut'):p.add_argument('--'+name,type=Path,required=name in ('assets','out'))
     p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
     a=p.parse_args()
     if sys.stdout is None:
         sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    {'selftest':selftest,'capture':capture,'signalcheck':signalcheck}[a.mode](a)
+    {'selftest':selftest,'capture':capture,'signalcheck':signalcheck,'supportcheck':supportcheck}[a.mode](a)

@@ -60,6 +60,14 @@ background, phase response, saturation and signal shape, restore camera settings
 If2000us provides usable signal, a new two-arm session may fix2000us equally;
 never mix exposure identities, silently replace old data or alter the dark guard.
 
+Six-frame result: expert and black nearly indistinguishable at both exposures;
+at2000us means12.4051 vs12.3933, whereas router23.1232, PCC.5611. Exposure alone
+is not a valid recovery, despite background p99 exceeding15. Do not start TEST.
+Next bounded nine-frame diagnostic holds the same expert phase and400us, using
+black plus center224 and four expert apertures at gray64/128/192/255. Record raw
+full-sensor and cropped responses. This diagnoses gray response vs illuminated
+support, does not create/apply a LUT, stretch model inputs or move optical devices.
+
 Report direct physical scores first, overall/macro/support/confusion matrices and
 both checkpoint identities. If poor, user permits electronic adaptation, but the
 original model has no learned classifier. Latest human instruction explicitly
