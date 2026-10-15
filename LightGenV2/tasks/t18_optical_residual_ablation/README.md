@@ -1,3 +1,7 @@
+## 最新二/四层新优化均实际结束：仍未82/10pp，保留已接受四层9.49pp（2026-10-15）
+
+最新两条新方案均因最低LR验证平台保护暂停，CPU/GPU已退出，自己的科学/测试收据SHA实际核一致，无failure。二层新189的最新真实训练/验证/测试、选中轮数及macro，与四层新193、冻结100无残差及已接受三层一并见[本轮最终比较](reports/caltech10_l2l4_refinement_20261015/final/README.md)。四层未改善验证最低NLL，仍保留旧E488/test93.3988 vs83.9062、差9.492635pp，没有重测同一权重。二层仍未82；三层差7.2013pp保持。不能把GPU计算完成称全部目标成功，也不自动重开已暂停方案。旧权重/来源/claims/数据保持，t18与09 ACTIVE，普通完成与已通知结果静默。下方仍在训是历史启动快照。
+
 ## 最新人工新增四层继续争取10pp，与二层82并行（2026-10-15）
 
 新四层run caltech10_L4_rho03_refine10pp_s17_20261015已实际启动CPU2816233/GPU4，193来源67107db28338e56a2be26c22afe152fdc4e7acc5=current/original，CPU/numeric/自己的生产gate真实passed。旧575轮raw/EMA/Adam27600完整恢复；576起MixUp.4/EMA.98，一次LR.0001与scheduler统计重启，其他光学/类别/数据保持。旧E488测试93.3988 vs冻结无残差100的83.9062，差9.4926pp保留；新目标实际总体10pp，不保证实现。每25保存段独占科学通过才对新selected一次测试，继承12旧digest不重测；无总epoch cap，最低LR平台保护暂停。详见[新四层实际启动合同](reports/caltech10_l4_refine10pp_20261015/start/README.md)。
