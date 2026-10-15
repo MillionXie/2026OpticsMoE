@@ -1,0 +1,662 @@
+{
+  "run": "caltech10_L2L4_sam_vs_dropout_s17_20261015",
+  "cases": {
+    "L2_sam": {
+      "parent_arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2_rho03_refit82_s17_20261015/block0016/L2_rho03",
+      "parent_epoch": 725,
+      "parent_last_sha256": "d73973fce1355cbf87fce11eaed9611ee9db1a5237d1abfdc58778078a37108e",
+      "parent_best_sha256": "1a55cdb317bce12ed96cc7d5a63bb4b186053fc15f0e3ea0f706596051f9efe3",
+      "parent_history_sha256": "6be4d15871569b8a5f5ae3b4a3ec295bd9c3a5cb897373add4c58d0e62df0fea",
+      "parent_audit_sha256": "cb4a522cd814b0bacfb2fec87ef14a98b18c62980b4d6dd4899829bb50fed089",
+      "parent_config": {
+        "dataset": "Caltech_validation_informed_gap10_20261015",
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+        "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+        "seed": 17,
+        "maximum_epochs": 725,
+        "maximum_seconds": 1800,
+        "minimum_epochs": 1000,
+        "early_patience": 10,
+        "early_min_delta": 0.002,
+        "lr": 0.002,
+        "label_smoothing": 0.02,
+        "phase_smooth_weight": 0.01,
+        "capture_weight": 0.2,
+        "ema_decay": 0.95,
+        "batch_size": 16,
+        "microbatch": 8,
+        "mixup_alpha": 0.1,
+        "augmentation": {
+          "rotation_degrees": 20,
+          "translation_pixels": 5,
+          "scale_range": [
+            0.9,
+            1.1
+          ]
+        },
+        "phase_init_raw_uniform": 0.1,
+        "optimizer": "AdamW with weight_decay0, gradient_clip_norm1; same frozen primitives for both rho",
+        "shared_spare_memory_gib": 2,
+        "maximum_gpu_children": 1,
+        "maximum_gpu_children_per_card": 1,
+        "numeric_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l2_refit82_gpu2_numeric_20261015/checks.json",
+        "cpu_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l2_refit82_state_20261015/checks.json",
+        "automatic_retry": false,
+        "scope": "New human authorizes only L2 residual optimization toward82 test; frozen100 control and accepted L3/L4 untouched. Test-informed development, extra residual budget, no independent generalization claim.",
+        "input_tile": 100,
+        "class_count": 10,
+        "original_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          14,
+          15,
+          16,
+          19
+        ],
+        "subset_plan_sha256": "061f9aa34e373f804264d7859a4e52084a640d4f3464b4dc99965bea3700e566",
+        "subset_manifest_sha256": "3227d5c1fbd86a2454b1df51d8b58e2ca772bfbe32c26733650d15a06b463f71",
+        "refit_restart_epoch": 326,
+        "refit_restart_lr": 0.0005,
+        "depth": 2,
+        "residual_rho": 0.3,
+        "classes": [
+          "Faces",
+          "Leopards",
+          "Motorbikes",
+          "airplanes",
+          "bonsai",
+          "grand_piano",
+          "revolver",
+          "schooner",
+          "trilobite",
+          "yin_yang"
+        ],
+        "contract": {
+          "main_depth": 2,
+          "router_count": 1,
+          "total_captures": 3,
+          "stages": [
+            "expert",
+            "global"
+          ],
+          "geometry": {
+            "wavelength_m": 5.32e-07,
+            "distance_m": 0.1,
+            "logical_pitch_m": 1.7e-05,
+            "numerical_canvas": 518,
+            "active": 478,
+            "expert": 224,
+            "expert_array": "2x2",
+            "gap": 30,
+            "active_expert_origins": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                254
+              ],
+              [
+                254,
+                0
+              ],
+              [
+                254,
+                254
+              ]
+            ],
+            "native_active": 1016,
+            "amplitude_native": [
+              1080,
+              1920
+            ],
+            "phase_native": [
+              1200,
+              1920
+            ]
+          },
+          "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+          "phase": "floor256 modulo2pi; calibrated phase LUT required",
+          "rho": 0.3,
+          "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+          "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+          "nonlinearity": "relative mean clamp12/log1p ->pool478 for global or224 for expert ->rowLN/ReLU/RMS.25",
+          "readout": "Ten frozen retained original20 windows, normalized ten probabilities; no learned electronic head",
+          "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+          "physical_status": "Offline contract only; native amplitude1920x1080/phase1920x1200, fresh LUT/ROI/exposure/orientation calibration required",
+          "graph": "RGB fixed input + continuous all4 routing + preserve478 expert-to-global",
+          "input_encoding": "Fixed RGB150 ->bicubicAA100/clamp/affine100 ->channel tile100 ->R/G/B/mean mosaic200 ->bilinear224/RMS.25; no learned encoder",
+          "routing": "Optical router energy -> centered RMS logits /temperature2 ->softmax ->L2 amplitude weights; all4 enabled, input dependent",
+          "global_input": "Expert CCD478 retained when next is global; no224 pool/refanout before global; expert transitions224",
+          "static_export": "Per-stage angle(M) and abs(M); dynamic amplitude uses actual478 global or224 expert; old224-only exporter incompatible",
+          "input_channel_tile": 100,
+          "input_network_aperture_unchanged": 224,
+          "task": "Frozen screened Caltech20; current four experts/four main stages; fixed20 windows; no electronic classifier",
+          "class_count": 10,
+          "original_detector_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            7,
+            14,
+            15,
+            16,
+            19
+          ]
+        }
+      },
+      "parent_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2_rho03_refit82_s17_20261015",
+      "parent_git": "97e80cc572e63664eb93843bf06cd85780463657",
+      "inherited_tests": 19,
+      "old_test": 0.7970540098199672,
+      "depth": 2,
+      "method": "sam",
+      "gpu": 0,
+      "sam_radius": 0.05,
+      "input_dropout": 0.0,
+      "restart_lr": 0.0003
+    },
+    "L2_dropout": {
+      "parent_arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2_rho03_refit82_s17_20261015/block0016/L2_rho03",
+      "parent_epoch": 725,
+      "parent_last_sha256": "d73973fce1355cbf87fce11eaed9611ee9db1a5237d1abfdc58778078a37108e",
+      "parent_best_sha256": "1a55cdb317bce12ed96cc7d5a63bb4b186053fc15f0e3ea0f706596051f9efe3",
+      "parent_history_sha256": "6be4d15871569b8a5f5ae3b4a3ec295bd9c3a5cb897373add4c58d0e62df0fea",
+      "parent_audit_sha256": "cb4a522cd814b0bacfb2fec87ef14a98b18c62980b4d6dd4899829bb50fed089",
+      "parent_config": {
+        "dataset": "Caltech_validation_informed_gap10_20261015",
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+        "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+        "seed": 17,
+        "maximum_epochs": 725,
+        "maximum_seconds": 1800,
+        "minimum_epochs": 1000,
+        "early_patience": 10,
+        "early_min_delta": 0.002,
+        "lr": 0.002,
+        "label_smoothing": 0.02,
+        "phase_smooth_weight": 0.01,
+        "capture_weight": 0.2,
+        "ema_decay": 0.95,
+        "batch_size": 16,
+        "microbatch": 8,
+        "mixup_alpha": 0.1,
+        "augmentation": {
+          "rotation_degrees": 20,
+          "translation_pixels": 5,
+          "scale_range": [
+            0.9,
+            1.1
+          ]
+        },
+        "phase_init_raw_uniform": 0.1,
+        "optimizer": "AdamW with weight_decay0, gradient_clip_norm1; same frozen primitives for both rho",
+        "shared_spare_memory_gib": 2,
+        "maximum_gpu_children": 1,
+        "maximum_gpu_children_per_card": 1,
+        "numeric_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l2_refit82_gpu2_numeric_20261015/checks.json",
+        "cpu_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l2_refit82_state_20261015/checks.json",
+        "automatic_retry": false,
+        "scope": "New human authorizes only L2 residual optimization toward82 test; frozen100 control and accepted L3/L4 untouched. Test-informed development, extra residual budget, no independent generalization claim.",
+        "input_tile": 100,
+        "class_count": 10,
+        "original_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          14,
+          15,
+          16,
+          19
+        ],
+        "subset_plan_sha256": "061f9aa34e373f804264d7859a4e52084a640d4f3464b4dc99965bea3700e566",
+        "subset_manifest_sha256": "3227d5c1fbd86a2454b1df51d8b58e2ca772bfbe32c26733650d15a06b463f71",
+        "refit_restart_epoch": 326,
+        "refit_restart_lr": 0.0005,
+        "depth": 2,
+        "residual_rho": 0.3,
+        "classes": [
+          "Faces",
+          "Leopards",
+          "Motorbikes",
+          "airplanes",
+          "bonsai",
+          "grand_piano",
+          "revolver",
+          "schooner",
+          "trilobite",
+          "yin_yang"
+        ],
+        "contract": {
+          "main_depth": 2,
+          "router_count": 1,
+          "total_captures": 3,
+          "stages": [
+            "expert",
+            "global"
+          ],
+          "geometry": {
+            "wavelength_m": 5.32e-07,
+            "distance_m": 0.1,
+            "logical_pitch_m": 1.7e-05,
+            "numerical_canvas": 518,
+            "active": 478,
+            "expert": 224,
+            "expert_array": "2x2",
+            "gap": 30,
+            "active_expert_origins": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                254
+              ],
+              [
+                254,
+                0
+              ],
+              [
+                254,
+                254
+              ]
+            ],
+            "native_active": 1016,
+            "amplitude_native": [
+              1080,
+              1920
+            ],
+            "phase_native": [
+              1200,
+              1920
+            ]
+          },
+          "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+          "phase": "floor256 modulo2pi; calibrated phase LUT required",
+          "rho": 0.3,
+          "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+          "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+          "nonlinearity": "relative mean clamp12/log1p ->pool478 for global or224 for expert ->rowLN/ReLU/RMS.25",
+          "readout": "Ten frozen retained original20 windows, normalized ten probabilities; no learned electronic head",
+          "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+          "physical_status": "Offline contract only; native amplitude1920x1080/phase1920x1200, fresh LUT/ROI/exposure/orientation calibration required",
+          "graph": "RGB fixed input + continuous all4 routing + preserve478 expert-to-global",
+          "input_encoding": "Fixed RGB150 ->bicubicAA100/clamp/affine100 ->channel tile100 ->R/G/B/mean mosaic200 ->bilinear224/RMS.25; no learned encoder",
+          "routing": "Optical router energy -> centered RMS logits /temperature2 ->softmax ->L2 amplitude weights; all4 enabled, input dependent",
+          "global_input": "Expert CCD478 retained when next is global; no224 pool/refanout before global; expert transitions224",
+          "static_export": "Per-stage angle(M) and abs(M); dynamic amplitude uses actual478 global or224 expert; old224-only exporter incompatible",
+          "input_channel_tile": 100,
+          "input_network_aperture_unchanged": 224,
+          "task": "Frozen screened Caltech20; current four experts/four main stages; fixed20 windows; no electronic classifier",
+          "class_count": 10,
+          "original_detector_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            7,
+            14,
+            15,
+            16,
+            19
+          ]
+        }
+      },
+      "parent_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2_rho03_refit82_s17_20261015",
+      "parent_git": "97e80cc572e63664eb93843bf06cd85780463657",
+      "inherited_tests": 19,
+      "old_test": 0.7970540098199672,
+      "depth": 2,
+      "method": "dropout",
+      "gpu": 2,
+      "sam_radius": 0.0,
+      "input_dropout": 0.02,
+      "restart_lr": 0.0003
+    },
+    "L4_sam": {
+      "parent_arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L4_rho03_refine10pp_s17_20261015/block0003/L4_rho03",
+      "parent_epoch": 650,
+      "parent_last_sha256": "c838951d7cc65d4d68b8874b8b0d31edde68d5172880327ced669f36c9fadeec",
+      "parent_best_sha256": "416034b49dba8f8661cfe7fd7ceed8b25151f74b1f4967e3f73a1d00071f7670",
+      "parent_history_sha256": "cce5cf0073552fa5a61aa09346423442cce979401e6c1b266a98e3dcd102221e",
+      "parent_audit_sha256": "7a95fd10336dbe2bad066c55c7aa13521169f5d958c05e01b7321e3bd62fb6c9",
+      "parent_config": {
+        "dataset": "Caltech_validation_informed_gap10_20261015",
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+        "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+        "seed": 17,
+        "maximum_epochs": 650,
+        "maximum_seconds": 1800,
+        "minimum_epochs": 1000,
+        "early_patience": 10,
+        "early_min_delta": 0.002,
+        "lr": 0.002,
+        "label_smoothing": 0.08,
+        "phase_smooth_weight": 0.05,
+        "capture_weight": 0.2,
+        "ema_decay": 0.98,
+        "batch_size": 16,
+        "microbatch": 8,
+        "mixup_alpha": 0.4,
+        "augmentation": {
+          "rotation_degrees": 20,
+          "translation_pixels": 5,
+          "scale_range": [
+            0.9,
+            1.1
+          ]
+        },
+        "phase_init_raw_uniform": 0.1,
+        "optimizer": "AdamW with weight_decay0, gradient_clip_norm1; same frozen primitives for both rho",
+        "shared_spare_memory_gib": 2,
+        "maximum_gpu_children": 1,
+        "maximum_gpu_children_per_card": 1,
+        "numeric_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l4_refine10pp_gpu4_numeric_20261015/checks.json",
+        "cpu_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l4_refine10pp_state_20261015/checks.json",
+        "automatic_retry": false,
+        "scope": "Human authorizes L4 residual refinement toward actual overall test gap>=10pp versus frozen100 control; preserve accepted old L4 and L3, concurrent L2 independent. Test-informed development, additional residual budget, no independent generalization claim.",
+        "input_tile": 100,
+        "class_count": 10,
+        "original_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          14,
+          15,
+          16,
+          19
+        ],
+        "subset_plan_sha256": "061f9aa34e373f804264d7859a4e52084a640d4f3464b4dc99965bea3700e566",
+        "subset_manifest_sha256": "3227d5c1fbd86a2454b1df51d8b58e2ca772bfbe32c26733650d15a06b463f71",
+        "refit_restart_epoch": 576,
+        "refit_restart_lr": 0.0001,
+        "depth": 4,
+        "residual_rho": 0.3,
+        "classes": [
+          "Faces",
+          "Leopards",
+          "Motorbikes",
+          "airplanes",
+          "bonsai",
+          "grand_piano",
+          "revolver",
+          "schooner",
+          "trilobite",
+          "yin_yang"
+        ],
+        "contract": {
+          "main_depth": 4,
+          "router_count": 1,
+          "total_captures": 5,
+          "stages": [
+            "expert",
+            "global",
+            "expert",
+            "global"
+          ],
+          "geometry": {
+            "wavelength_m": 5.32e-07,
+            "distance_m": 0.1,
+            "logical_pitch_m": 1.7e-05,
+            "numerical_canvas": 518,
+            "active": 478,
+            "expert": 224,
+            "expert_array": "2x2",
+            "gap": 30,
+            "active_expert_origins": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                254
+              ],
+              [
+                254,
+                0
+              ],
+              [
+                254,
+                254
+              ]
+            ],
+            "native_active": 1016,
+            "amplitude_native": [
+              1080,
+              1920
+            ],
+            "phase_native": [
+              1200,
+              1920
+            ]
+          },
+          "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+          "phase": "floor256 modulo2pi; calibrated phase LUT required",
+          "rho": 0.3,
+          "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+          "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+          "nonlinearity": "relative mean clamp12/log1p ->pool478 for global or224 for expert ->rowLN/ReLU/RMS.25",
+          "readout": "Ten frozen retained original20 windows, normalized ten probabilities; no learned electronic head",
+          "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+          "physical_status": "Offline contract only; native amplitude1920x1080/phase1920x1200, fresh LUT/ROI/exposure/orientation calibration required",
+          "graph": "RGB fixed input + continuous all4 routing + preserve478 expert-to-global",
+          "input_encoding": "Fixed RGB150 ->bicubicAA100/clamp/affine100 ->channel tile100 ->R/G/B/mean mosaic200 ->bilinear224/RMS.25; no learned encoder",
+          "routing": "Optical router energy -> centered RMS logits /temperature2 ->softmax ->L2 amplitude weights; all4 enabled, input dependent",
+          "global_input": "Expert CCD478 retained when next is global; no224 pool/refanout before global; expert transitions224",
+          "static_export": "Per-stage angle(M) and abs(M); dynamic amplitude uses actual478 global or224 expert; old224-only exporter incompatible",
+          "input_channel_tile": 100,
+          "input_network_aperture_unchanged": 224,
+          "task": "Frozen screened Caltech20; current four experts/four main stages; fixed20 windows; no electronic classifier",
+          "class_count": 10,
+          "original_detector_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            7,
+            14,
+            15,
+            16,
+            19
+          ]
+        }
+      },
+      "parent_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L4_rho03_refine10pp_s17_20261015",
+      "parent_git": "67107db28338e56a2be26c22afe152fdc4e7acc5",
+      "inherited_tests": 12,
+      "old_test": 0.9339879978177851,
+      "depth": 4,
+      "method": "sam",
+      "gpu": 4,
+      "sam_radius": 0.05,
+      "input_dropout": 0.0,
+      "restart_lr": 0.0001
+    },
+    "L4_dropout": {
+      "parent_arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L4_rho03_refine10pp_s17_20261015/block0003/L4_rho03",
+      "parent_epoch": 650,
+      "parent_last_sha256": "c838951d7cc65d4d68b8874b8b0d31edde68d5172880327ced669f36c9fadeec",
+      "parent_best_sha256": "416034b49dba8f8661cfe7fd7ceed8b25151f74b1f4967e3f73a1d00071f7670",
+      "parent_history_sha256": "cce5cf0073552fa5a61aa09346423442cce979401e6c1b266a98e3dcd102221e",
+      "parent_audit_sha256": "7a95fd10336dbe2bad066c55c7aa13521169f5d958c05e01b7321e3bd62fb6c9",
+      "parent_config": {
+        "dataset": "Caltech_validation_informed_gap10_20261015",
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+        "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+        "seed": 17,
+        "maximum_epochs": 650,
+        "maximum_seconds": 1800,
+        "minimum_epochs": 1000,
+        "early_patience": 10,
+        "early_min_delta": 0.002,
+        "lr": 0.002,
+        "label_smoothing": 0.08,
+        "phase_smooth_weight": 0.05,
+        "capture_weight": 0.2,
+        "ema_decay": 0.98,
+        "batch_size": 16,
+        "microbatch": 8,
+        "mixup_alpha": 0.4,
+        "augmentation": {
+          "rotation_degrees": 20,
+          "translation_pixels": 5,
+          "scale_range": [
+            0.9,
+            1.1
+          ]
+        },
+        "phase_init_raw_uniform": 0.1,
+        "optimizer": "AdamW with weight_decay0, gradient_clip_norm1; same frozen primitives for both rho",
+        "shared_spare_memory_gib": 2,
+        "maximum_gpu_children": 1,
+        "maximum_gpu_children_per_card": 1,
+        "numeric_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l4_refine10pp_gpu4_numeric_20261015/checks.json",
+        "cpu_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_l4_refine10pp_state_20261015/checks.json",
+        "automatic_retry": false,
+        "scope": "Human authorizes L4 residual refinement toward actual overall test gap>=10pp versus frozen100 control; preserve accepted old L4 and L3, concurrent L2 independent. Test-informed development, additional residual budget, no independent generalization claim.",
+        "input_tile": 100,
+        "class_count": 10,
+        "original_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          14,
+          15,
+          16,
+          19
+        ],
+        "subset_plan_sha256": "061f9aa34e373f804264d7859a4e52084a640d4f3464b4dc99965bea3700e566",
+        "subset_manifest_sha256": "3227d5c1fbd86a2454b1df51d8b58e2ca772bfbe32c26733650d15a06b463f71",
+        "refit_restart_epoch": 576,
+        "refit_restart_lr": 0.0001,
+        "depth": 4,
+        "residual_rho": 0.3,
+        "classes": [
+          "Faces",
+          "Leopards",
+          "Motorbikes",
+          "airplanes",
+          "bonsai",
+          "grand_piano",
+          "revolver",
+          "schooner",
+          "trilobite",
+          "yin_yang"
+        ],
+        "contract": {
+          "main_depth": 4,
+          "router_count": 1,
+          "total_captures": 5,
+          "stages": [
+            "expert",
+            "global",
+            "expert",
+            "global"
+          ],
+          "geometry": {
+            "wavelength_m": 5.32e-07,
+            "distance_m": 0.1,
+            "logical_pitch_m": 1.7e-05,
+            "numerical_canvas": 518,
+            "active": 478,
+            "expert": 224,
+            "expert_array": "2x2",
+            "gap": 30,
+            "active_expert_origins": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                254
+              ],
+              [
+                254,
+                0
+              ],
+              [
+                254,
+                254
+              ]
+            ],
+            "native_active": 1016,
+            "amplitude_native": [
+              1080,
+              1920
+            ],
+            "phase_native": [
+              1200,
+              1920
+            ]
+          },
+          "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+          "phase": "floor256 modulo2pi; calibrated phase LUT required",
+          "rho": 0.3,
+          "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+          "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+          "nonlinearity": "relative mean clamp12/log1p ->pool478 for global or224 for expert ->rowLN/ReLU/RMS.25",
+          "readout": "Ten frozen retained original20 windows, normalized ten probabilities; no learned electronic head",
+          "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+          "physical_status": "Offline contract only; native amplitude1920x1080/phase1920x1200, fresh LUT/ROI/exposure/orientation calibration required",
+          "graph": "RGB fixed input + continuous all4 routing + preserve478 expert-to-global",
+          "input_encoding": "Fixed RGB150 ->bicubicAA100/clamp/affine100 ->channel tile100 ->R/G/B/mean mosaic200 ->bilinear224/RMS.25; no learned encoder",
+          "routing": "Optical router energy -> centered RMS logits /temperature2 ->softmax ->L2 amplitude weights; all4 enabled, input dependent",
+          "global_input": "Expert CCD478 retained when next is global; no224 pool/refanout before global; expert transitions224",
+          "static_export": "Per-stage angle(M) and abs(M); dynamic amplitude uses actual478 global or224 expert; old224-only exporter incompatible",
+          "input_channel_tile": 100,
+          "input_network_aperture_unchanged": 224,
+          "task": "Frozen screened Caltech20; current four experts/four main stages; fixed20 windows; no electronic classifier",
+          "class_count": 10,
+          "original_detector_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            7,
+            14,
+            15,
+            16,
+            19
+          ]
+        }
+      },
+      "parent_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L4_rho03_refine10pp_s17_20261015",
+      "parent_git": "67107db28338e56a2be26c22afe152fdc4e7acc5",
+      "inherited_tests": 12,
+      "old_test": 0.9339879978177851,
+      "depth": 4,
+      "method": "dropout",
+      "gpu": 5,
+      "sam_radius": 0.0,
+      "input_dropout": 0.05,
+      "restart_lr": 0.0001
+    }
+  },
+  "scope": "Human explicitly authorizes dropout/SAM alternatives for residual L2 test82 and L4 overall gap10pp; fixed10, frozen100 controls, accepted L3 unchanged. Additional residual budget and test-informed development, not independent generalization."
+}
