@@ -1,3 +1,15 @@
+## 最新人工选择差距优先，Caltech筛选20类当前四层配对已实际启动（2026-10-15）
+
+用户明确切回筛选20类Caltech，要求尽快训练当前四层；已按当前四专家/四主层的rho.3与rho0 fresh同100轮、无early一次新配对实际启动。此新人工范围覆盖下方旧173等完成后“不再训练”的文字仅本轮；旧实验/数据/PT/失败/claims/markers继续保护，不重做。
+
+run `caltech20_screened_current4_s17_pair100_input100_mixup02_gpu25_20261015`，实际训练来源763e6a242a3fe27a513044dc6a6282a0ef574b7d，155登记来源current/original一致；额外审核助手Git/SHA身份单独记录，不改冻结运行来源。CPU campaign2104530/queue2105395，GPU2残差2106051/GPU5无残差2106196实际运行，active2/pending0/fail0/A1000/test0，PID须实时核。新CPU native14forward/20黑图归一化与真实ID支持、新GPU2全20/macro16/tail12数值检查和两生产own gate都已真实一次passed，禁止重入准入/启动。
+
+原20名单与train1372/val283/test2064原划分复用，不重选类或读取test。当前全908552光相位/四专家/E-G-E-G+router/RGB100/8bit/固定20窗口，无电子可训练分类支路。相同seed17/init/order/affineMix及公共MixUp.2/LS.08/TV.05/capture.2/EMA.95/lr.002，仅rho不同。完整100各8600Adam，每组10800拟合秒安全限、不扩预算/retry，只GPU2/5各1。
+
+最近残差E10 val28.62%、无残差E9 val14.13%仅早期健康，不能跨E拼最终差距。初期约9秒/轮，预计100轮约15–20分钟，非保证。双方实际100/退出后campaign自己独占保存科学，CPU0forward/test；真正通过并全退出才主动汇报同预算train/val/macro/NLL/逐类差距。旧九专家Caltech优势只历史参考，不保证迁移；本轮不自动测试/更多候选/电子分支/正式6/native/lab/A100。详见[真实启动、数据、准入和审核身份](reports/caltech20_current4_20261015/start/README.md)与[本轮合同](CALTECH20_CURRENT4_PROTOCOL_20261015.md)。t18与09晨报ACTIVE保留，普通健康静默。
+
+**以下旧完成结果和停止范围均保留作历史，本轮最新状态以本节为准。**
+
 ## 原十类一致接续已完整140轮并通过独立核验：验证78.7143%（2026-10-15）
 
 原十类纯光有光学残差E101–140已全部完成，CPU queue/GPU producer实际退出、producer rc0，自己的独占保存科学首次passed，audit SHA `139891ea639703b8c7e02d23a95db04df626570d582bbb1f5889cabd3071bb7d` 与completed真实一致。GPU2/5项目释放、A1000/test0。按首次最低验证EMA balancedNLL选E139（不是139轮提前停止）：训练89.8750%、验证/macro78.7143%、NLL0.7545565714，训练/验证差11.1607个百分点。相较父E100的78.1429%仅提高+0.5714个百分点，仍未80；本次权重没有新测试。
