@@ -13,9 +13,18 @@ position参数，保全视频0差统计和大attention矩阵固定query切片；
 同原PT/B1/2/4验证原生MOS。数值对照仅在语言attention内将GEMM以FP32计算并
 回转原输出dtype，不改变权重值、不训练、不将对照填入正式558表格。
 每模型GPU命令必须外层600秒上限；A100仅250W且无foreign compute PID才运行。
-当前外部PID1365456占用，未启动本轮GPU，不占位或抢卡。仅CPU假说检验及源码
-准备不受影响。此前简单“dot先BF16舍入再加bias”的CPU比对未能复现Qwen差异，
-因此不作为已证实原因。新算子入口尚待服务器实际合同测试，不能称已完成修复。
+本轮GPU尚未启动，不占位或抢卡；入口先取得既有`.temporal_telemetry_a100.lock`
+并核无foreign，再创建输出/初始化CUDA，尊重另一T06 Smol测量队列。CPU阶段已完成：
+`operator_mechanisms04/cpu_qwen/qwen_cpu_mechanisms.json`，同BF16操作数的单次舍入
+参考与实际B1/B4分别有374788/2111项不同（1605632项）；2/4/8/16段的部分和BF16
+舍入、顺序BF16累加等固定假说均未精确复现实际B1，因此不称split-K已获证明。
+较小的该层数值误差不等于任务SRCC更优。简单“dot先舍入再加bias”同样未复现。
+
+实际部署Torch2.6cu124的LlamaAttention小型CPU接口检查覆盖两模式×B1/2/4共6组，
+原生观测逐位保持输出、18个目标事件含linear/matmul/softmax；该版本inference
+dispatch保留这些复合算子名，不能只盯mm/bmm而漏记。首份接口证据保留，更正完整
+证据为`cpu_attention_interface_fixed.json`。两端45项合同测试通过后执行GPU；
+这些是诊断接口及CPU机制结果，不是实际全模型GPU修复已验证。新证据已逐SHA备份本地。
 
 ## 2026-10-15：两模型实际定位完成并退卡（focused03最新证据）
 

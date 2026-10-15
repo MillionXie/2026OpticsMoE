@@ -40,3 +40,13 @@ def test_cpu_import_does_not_require_torch_or_initialize_cuda():
     tree = ast.parse(Path(primitives.__file__).read_text(encoding="utf-8"))
     imports = [n for n in tree.body if isinstance(n, (ast.Import, ast.ImportFrom))]
     assert not any(isinstance(n, ast.Import) and any(x.name == "torch" for x in n.names) for n in imports)
+
+
+def test_gpu_cooperates_with_existing_measurement_queue_before_output_creation():
+    source = Path(primitives.__file__).read_text(encoding="utf-8")
+    assert '.temporal_telemetry_a100.lock' in source
+    assert 'fcntl.LOCK_EX | fcntl.LOCK_NB' in source
+    main = next(n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef) and n.name == "main")
+    outer = next(n for n in main.body if isinstance(n, ast.With))
+    assert isinstance(outer.body[0], ast.Expr)
+    assert outer.body[0].value.func.id == "run_checked"

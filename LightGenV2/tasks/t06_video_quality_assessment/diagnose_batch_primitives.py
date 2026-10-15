@@ -7,6 +7,7 @@ and an explicitly labelled FP32-primitives numerical control. No training.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 from pathlib import Path
@@ -124,7 +125,7 @@ def qwen_gpu(output):
                 if single is None:
                     single = first
                 rows[str(batch)] = dict(vs_own_b1=difference(first, single),
-                    vs_original_capture=difference(first, captured[1 if batch==1 else 4]),
+                    vs_original_capture=difference(first, captured[batch]) if batch in captured else None,
                     cuda_kernel_names=sorted({e.name for e in prof.events()
                         if e.device_type == torch.autograd.DeviceType.CUDA}))
                 saved[f"{mode}_b{batch}_video0"] = first
@@ -279,16 +280,18 @@ def deepseek_gpu(output):
     frozen.process_audit()
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("cpu", "gpu"), required=True)
-    parser.add_argument("--baseline", choices=("qwen", "deepseek"), required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args(); args.output = args.output.resolve()
-    if not args.output.is_relative_to(OWNER.resolve()):
-        raise ValueError("Canonical diagnostic run required")
-    if os.environ.get("CUDA_VISIBLE_DEVICES") != ("-1" if args.phase=="cpu" else frozen.A100_UUID):
-        raise ValueError("Wrong device visibility")
+@contextlib.contextmanager
+def gpu_slot():
+    """Cooperate with T06 measurement/Smol queues; no GPU occupancy while busy."""
+    import fcntl
+    from .reproduce_temporal_baseline import cuda_guard
+    with (TASK / "runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        cuda_guard()
+        yield
+
+
+def run_checked(args):
     args.output.mkdir(parents=True, exist_ok=False)
     identity = dict(status="running", pid=os.getpid(), phase=args.phase, baseline=args.baseline,
         git_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
@@ -297,6 +300,8 @@ def main():
     try:
         import torch
         torch.set_num_threads(2)
+        identity.update(torch=torch.__version__, cuda=torch.version.cuda)
+        frozen.write_json(args.output / "status.json", identity)
         with torch.inference_mode():
             if args.phase=="cpu":
                 if args.baseline!="qwen": raise ValueError("CPU mechanism phase only supports saved Qwen operands")
@@ -307,6 +312,21 @@ def main():
     except BaseException as error:
         frozen.write_json(args.output / "status.json", {**identity, "status":"failed", "error":repr(error)})
         raise
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--phase", choices=("cpu", "gpu"), required=True)
+    parser.add_argument("--baseline", choices=("qwen", "deepseek"), required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(); args.output = args.output.resolve()
+    if not args.output.is_relative_to(OWNER.resolve()):
+        raise ValueError("Canonical diagnostic run required")
+    if os.environ.get("CUDA_VISIBLE_DEVICES") != ("-1" if args.phase=="cpu" else frozen.A100_UUID):
+        raise ValueError("Wrong device visibility")
+    # Busy/shared-lock checks precede output creation and CUDA initialization.
+    with gpu_slot() if args.phase=="gpu" else contextlib.nullcontext():
+        run_checked(args)
 
 
 if __name__ == "__main__":
