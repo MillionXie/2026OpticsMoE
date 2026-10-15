@@ -8,3 +8,4 @@ utilization_annotation_audit.json
 # Independent native resident utilization measurements (raw sources in T06 run).
 LGVQ_temporal_gpu_utilization.xlsx
 LGVQ_temporal_gpu_utilization.csv
+LGVQ_temporal_gpu_utilization_repeats.csv
