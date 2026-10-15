@@ -26,6 +26,18 @@ per-image normalization, TEST use or blind repeat is permitted. If this averaged
 calibration still fails, retain evidence and stop before full TEST. Averaging for
 calibration is not automatically applied to inference or called a performance gain.
 
+Nine-frame calibration passed unchanged held-out criteria (RMSE0.0117883,
+maximum0.0264906). Use the resulting common inverse only for this session.
+Mapped paired TRAIN pilot at2000us recovered useful expert signals, but Windows
+denied replacing progress.json while a backup reader had it open, after21 valid
+CCDs. All receipts/raw/cropped/memmap preserved, SDK released. Progress pointer
+publication now has bounded retry plus immutable fallback; per-frame receipts
+are authoritative. An explicit resume is restricted to this file-publication
+failure. Before reusing each frame verify same hardware contract/LUT/PT/data,
+exact recomputed canonical input and phase hashes, sample identity, raw-derived
+crop and memmap equality plus original signal guards. No dark-frame retry, no
+reacquisition of accepted frames, no backup reads of mutable files during capture.
+
 Human request 2026-10-15 authorizes this new bench session, superseding earlier
 offline-only/no-lab limits only for these two L3 models. Other training windows,
 historical runs and equipment configurations remain protected. Use the existing

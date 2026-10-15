@@ -19,7 +19,17 @@ def sha(p):
     return h.hexdigest()
 
 def save(p,v):
-    p=Path(p);q=p.with_suffix(p.suffix+'.tmp');q.write_text(json.dumps(v,indent=2),encoding='utf-8');q.replace(p)
+    p=Path(p);q=p.with_suffix(p.suffix+'.tmp');q.write_text(json.dumps(v,indent=2),encoding='utf-8')
+    for attempt in range(8):
+        try:q.replace(p);return
+        except PermissionError:
+            if attempt<7:time.sleep(.1*(attempt+1));continue
+            if p.name=='progress.json':
+                # Windows readers may deny replacement. Immutable per-frame
+                # receipts remain authoritative; never abort valid acquisition
+                # just because the convenience progress pointer is busy.
+                q.replace(p.with_name('progress_'+str(time.time_ns())+'.json'));return
+            raise
 
 class LabMoE(CorrectedMoE):
     def __init__(self,rho):
@@ -266,8 +276,13 @@ def capture(a):
     import cv2
     assert a.role in ('train','test') and (not a.limit or a.role=='train'),'No VAL acquisition; calibration uses TRAIN only'
     assert json.loads((a.selftest/'selftest.json').read_text())['passed']
-    assert not a.out.exists(),'Never overwrite or blindly restart a physical session'
-    a.out.mkdir(parents=True);torch.set_num_threads(4);x,y,ids=dataset(a.assets,a.role,a.limit);n=len(y)
+    if a.resume:
+        failure=json.loads((a.out/'failure.json').read_text())
+        assert 'PermissionError' in failure['error'],'Only audited file-publication failure is resumable'
+    else:
+        assert not a.out.exists(),'Never overwrite or blindly restart a physical session'
+        a.out.mkdir(parents=True)
+    torch.set_num_threads(4);x,y,ids=dataset(a.assets,a.role,a.limit);n=len(y)
     pts=np.float32(corners(a.coordinates));dest=np.float32([[0,0],[477,0],[477,477],[0,477]])
     warp=cv2.getPerspectiveTransform(pts,dest)
     response=json.loads(a.response_lut.read_text()) if a.response_lut else None
@@ -279,15 +294,21 @@ def capture(a):
         data_sha256=sha(a.assets/'caltech10.npz'),source_sha256=sha(__file__),fine_tuned=False,routing='continuous all4',main_stages=['expert','global','expert'],native_active=1016)
     contract['response_lut_sha256']=sha(a.response_lut) if response else None
     contract['response_calibration_exposure_us']=response['exposure_us'] if response else None
-    save(a.out/'contract.json',contract);started=time.perf_counter();rows=[]
+    if a.resume:
+        before=json.loads((a.out/'contract.json').read_text())
+        assert {k:v for k,v in before.items() if k!='source_sha256'}=={k:v for k,v in contract.items() if k!='source_sha256'}
+        save(a.out/('resume_'+str(time.time_ns())+'.json'),dict(previous_failure=failure,source_sha256=sha(__file__),no_recapture=True))
+    else:save(a.out/'contract.json',contract)
+    started=time.perf_counter();rows=[];cached=0
     lock=a.out.parents[1]/'.t18_sdk_owner.lock';lock.parent.mkdir(parents=True,exist_ok=True)
     with lock.open('x') as f:f.write(json.dumps({'pid':os.getpid(),'out':str(a.out)}))
     try:
         with Bench(a) as bench:
             for arm in EXPECTED:
-                model=model_for(a.assets,arm);folder=a.out/arm;folder.mkdir();route=None;previous=None
+                model=model_for(a.assets,arm);folder=a.out/arm;folder.mkdir(exist_ok=a.resume);route=None;previous=None
                 for stage in ('router','0','1','2'):
-                    target=folder/stage;target.mkdir();ccd=np.lib.format.open_memmap(target/'ccd.npy',mode='w+',dtype=np.uint8,shape=(n,478,478))
+                    target=folder/stage;target.mkdir(exist_ok=a.resume);ccd=np.lib.format.open_memmap(target/'ccd.npy',mode='r+' if (target/'ccd.npy').exists() else 'w+',dtype=np.uint8,shape=(n,478,478))
+                    assert ccd.shape==(n,478,478) and ccd.dtype==np.uint8
                     phase_path=target/'phase.bmp';phase_set=False;current_weights=[]
                     for start in range(0,n,8):
                         stop=min(start+8,n)
@@ -296,10 +317,23 @@ def capture(a):
                         weights=None if stage=='router' else torch.from_numpy(route[start:stop]).float()
                         amplitudes,phase=encode_stage(model,amp,stage,weights)
                         if not phase_set:
-                            Image.fromarray(phase_native(phase)).save(phase_path);bench.stage(phase_path);phase_set=True
+                            if phase_path.exists():assert np.array_equal(np.asarray(Image.open(phase_path)),phase_native(phase))
+                            else:Image.fromarray(phase_native(phase)).save(phase_path)
+                            bench.stage(phase_path);phase_set=True
                         else:assert np.array_equal(np.asarray(Image.open(phase_path)),phase_native(phase))
                         for j,gray in enumerate(amplitudes,start):
-                            sid=f'{j:06d}';canonical=target/(sid+'_input.png');Image.fromarray(gray).save(canonical)
+                            sid=f'{j:06d}';canonical=target/(sid+'_input.png');receipt=target/(sid+'.json')
+                            if a.resume and receipt.exists():
+                                row=json.loads(receipt.read_text());assert row['sample_id']==str(ids[j]) and row['index']==j and row['arm']==arm and row['stage']==stage
+                                assert row['canonical_sha256']==sha(canonical) and row['phase_sha256']==sha(phase_path)
+                                assert np.array_equal(np.asarray(Image.open(canonical)),gray)
+                                cropped=np.asarray(Image.open(target/(sid+'.png')))
+                                raw=np.asarray(Image.open(target/(sid+'_raw.png')))
+                                expected=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0)).copy()
+                                assert np.array_equal(cropped,expected) and np.array_equal(ccd[j],cropped)
+                                assert row['p99']>=15 and row['saturation_fraction']<=.15
+                                rows.append(row);cached+=1;continue
+                            Image.fromarray(gray).save(canonical)
                             bmp=target/(sid+'_transient.bmp');Image.fromarray(native(drive[gray] if response else gray,'amplitude')).save(bmp)
                             raw,meta=bench.capture(bmp);assert raw.shape==(1080,1920)
                             image=np.flipud(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0)).copy()
@@ -324,9 +358,9 @@ def capture(a):
                 np.savez_compressed(folder/'predictions.npz',ids=ids,labels=y,probabilities=p)
                 save(folder/'metrics.json',dict(metrics(y,p),physical=True,fine_tuned=False,checkpoint_sha256=EXPECTED[arm]))
         elapsed=time.perf_counter()-started
-        save(a.out/'report.json',dict(state='complete',samples_per_arm=n,physical_ccd=len(rows),elapsed_s=elapsed,seconds_per_ccd=elapsed/len(rows),projected_two_arm_test_seconds=elapsed/len(rows)*14664,signal_rows=rows if a.limit else [],results={k:json.loads((a.out/k/'metrics.json').read_text()) for k in EXPECTED},sdk_released=True))
+        save(a.out/'report.json',dict(state='complete',samples_per_arm=n,physical_ccd=len(rows),reused_verified_ccd=cached,new_ccd=len(rows)-cached,elapsed_s=elapsed,seconds_per_ccd=elapsed/max(1,len(rows)-cached),projected_two_arm_test_seconds=elapsed/max(1,len(rows)-cached)*14664,signal_rows=rows if a.limit else [],results={k:json.loads((a.out/k/'metrics.json').read_text()) for k in EXPECTED},sdk_released=True))
         save(a.out/'progress.json',dict(state='complete',total_ccd=len(rows),sdk_released=True))
-    except BaseException as ex:save(a.out/'failure.json',dict(error=repr(ex),total_ccd=len(rows),automatic_retry=False));raise
+    except BaseException as ex:save(a.out/('failure_resume_'+str(time.time_ns())+'.json' if a.resume else 'failure.json'),dict(error=repr(ex),total_ccd=len(rows),automatic_retry=False));raise
     finally:lock.unlink()
 
 if __name__=='__main__':
@@ -335,6 +369,7 @@ if __name__=='__main__':
     p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
     p.add_argument('--response-lut',type=Path)
     p.add_argument('--response-repeats',type=int,choices=[1,9],default=1)
+    p.add_argument('--resume',action='store_true')
     a=p.parse_args()
     if sys.stdout is None:
         sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
