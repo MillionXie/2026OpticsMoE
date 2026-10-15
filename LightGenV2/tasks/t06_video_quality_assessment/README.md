@@ -186,6 +186,14 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 DeepSeek衔接流程已实际接管（最新）：**另一窗口12组优先利用率已完整结束，
+共享完成回执complete_and_released，自有父2141622已退出；本聊天独立核A100无compute PID、
+40310MiBfree/250W后解除让卡。Small原prepare01继续，第一片8,591,541,424字节官方SHA
+已过，第二片实际6,979,321,856字节，源码身份未变。唯一CPU `suite01`已启动wrapper2188429，
+父CUDA不可见，先等现有prepare01全部完成，自动原生CPU/GPU预检→2808冻结特征/50epoch→
+freshprocess A100 B1全558；不是下载完成或训练已开始。仍沿用Small资产界1792056049.796847、
+原总界1792063249.796847，不重给3小时、不新增下载/重复GPU任务；GLM已完成不复活。
+
 **2026-10-15 DeepSeek非Tiny接续（仅CPU准备，GPU让出）：**已发布main`260ce67ae`的
 独立入口`deepseek_vl2_small_temporal_baseline`及固定官方Small profile，本地33pass/2serveronlyskip、
 原DeepSeek环境服务器35项全过（含实际2048/4096头更新及冻结回归），旧Tiny源码未改且
