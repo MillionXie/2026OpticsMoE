@@ -4,3 +4,7 @@ sustained_load_data.csv
 gpu_utilization_comparison.svg
 srcc_cost_comparison_resident.svg
 utilization_annotation_audit.json
+
+# Independent native resident utilization measurements (raw sources in T06 run).
+LGVQ_temporal_gpu_utilization.xlsx
+LGVQ_temporal_gpu_utilization.csv
