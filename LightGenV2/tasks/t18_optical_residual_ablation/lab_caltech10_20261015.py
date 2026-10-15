@@ -116,7 +116,7 @@ class Bench:
 @torch.inference_mode()
 def capture(a):
     import cv2
-    assert a.role=='test' or (a.role=='train' and a.limit>=10),'TRAIN only for bounded calibration in this runner'
+    assert a.role in ('train','test') and (not a.limit or a.role=='train'),'No VAL acquisition; calibration uses TRAIN only'
     assert json.loads((a.selftest/'selftest.json').read_text())['passed']
     assert not a.out.exists(),'Never overwrite or blindly restart a physical session'
     a.out.mkdir(parents=True);torch.set_num_threads(4);x,y,ids=dataset(a.assets,a.role,a.limit);n=len(y)
@@ -179,4 +179,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mode',choices=['selftest','capture'],required=True)
     for name in ('assets','out','coordinates','selftest','machine-config','amplitude-sdk','phase-sdk','phase-lut'):p.add_argument('--'+name,type=Path,required=name in ('assets','out'))
     p.add_argument('--role',choices=['train','test'],default='test');p.add_argument('--limit',type=int,default=0);p.add_argument('--exposure-us',type=float,default=400)
-    a=p.parse_args();selftest(a) if a.mode=='selftest' else capture(a)
+    a=p.parse_args()
+    if sys.stdout is None:
+        sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
+    selftest(a) if a.mode=='selftest' else capture(a)
