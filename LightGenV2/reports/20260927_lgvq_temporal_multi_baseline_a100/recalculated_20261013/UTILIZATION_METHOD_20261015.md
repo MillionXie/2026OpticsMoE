@@ -1,6 +1,93 @@
 # LGVQ GPU utilization measurements
 
-## Current continuous inference measurements
+## Unified resident inference measurements
+
+The current protocol uses **one execution mode with three identical repeats**.
+The earlier three-mode comparison below is historical and is not pooled with
+these results. As of 21:20 on 15 October 2026, GLM completed both predefined
+points. The other five models are pending because an external YOLO process
+occupied the A100 between models. No overlapping measurement is included.
+
+| Model | Video batch B | Repeat 1 (%) | Repeat 2 (%) | Repeat 3 (%) | Pooled utilization (%) | Peak (%) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| GLM-4.6V-Flash | 1 | 97.66446 | 97.61765 | 97.77104 | 97.68360 | 98 |
+| GLM-4.6V-Flash | 2 | 98.09437 | 98.04290 | 98.06908 | 98.06876 | 99 |
+
+The B1 and B2 measurements contain 1,811 and 1,818 retained driver samples,
+respectively, over 91.476 and 91.646 measured seconds. Their three-repeat standard
+deviations are 0.07861 and 0.02573 percentage points. B2 meets the predefined 98%
+mean criterion, so no larger GLM batch is measured. Kernel-busy utilization is
+not SM occupancy or a percentage of peak floating-point throughput.
+
+### Common execution and aggregation
+
+For every model, the first B TEST videos supply the original four frames per
+video. CPU preparation and input transfer occur once per batch. The inputs then
+remain on the GPU. One native forward processes B videos and produces B MOS
+outputs on the GPU. Eight forwards execute serially on the same CUDA stream
+before synchronization. This does not change the simultaneous batch to 8B.
+No CUDA Graph, extra head, training, artificial load or precision change is used.
+Native model-internal synchronization is retained. Finite-value audit checks for
+GLM and Small are outside the timed loop; their native GPU arithmetic is unchanged.
+
+Each batch is measured three times using exactly that same loop. Each repeat
+has at least five seconds of actual warmup followed by a complete measured
+window of at least 30 seconds. The final eight-forward group may extend the
+window slightly beyond 30 seconds. All measured driver samples are retained,
+including low values. No peak window or highest repeat is selected. The primary
+mean is the sum of all three repeats' utilization counters divided by their
+total retained sample count. The repeat means and their sample standard deviation
+are also reported. A spread greater than five percentage points is flagged,
+not removed or remeasured to obtain a higher value.
+
+The A100-PCIE-40GB is restricted to UUID
+`GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55` at its existing 250 W limit. Admission
+requires no foreign compute process; process checks continue during execution.
+Driver utilization, board power and memory are polled every 50 ms. A separate
+200 ms record retains SM and memory clocks, temperature, P-state and power limit.
+CPU runtime and scheduler-queue counters are recorded before and after the
+measured window. These are raw observations for diagnosing variability, not
+evidence that a particular cause of the earlier Qwen fluctuation is established.
+
+The ascending batch candidates are Qwen 1/2/3/4/6/8/10, CLIP 1/2/3/4/6/8/9/10,
+YOLO 1/2/3/4, Tiny 1/2/3/4/6/8, GLM 1/2/3/4/6 and Small 1/2/3/4. The first
+B >= 2 with pooled utilization >= 98% ends that model's series; its preceding
+measured point is retained. A native out-of-memory error instead records the
+capacity boundary and ends the series without quantization, offload or fewer
+frames. A driver counter cannot exceed 100%, and 98% does not define overload.
+
+### Retained data and pending work
+
+The existing utilization workbook contains the verified current GLM points and
+explicit pending statuses for Qwen, Small, CLIP, YOLO and Tiny. Its `Repeat
+measurements` sheet and `LGVQ_temporal_gpu_utilization_repeats.csv` contain one row
+per original repeat: mean and peak utilization, measured duration, sample count,
+forward count, board power, memory, SM clock, temperature, CPU queue-wait time,
+warmup duration, timestamp and source path. Each canonical repeat additionally
+retains `telemetry.csv`, `clock_telemetry.csv`, `forward_groups.json`,
+`process_audit.json` and `report.json`. Units and fields are the same for all models.
+The preceding 12-point workbook and CSV are archived under the historical
+`continuous_suite01/published_table_before_unified_repeat` filenames.
+
+The canonical current run is
+`lgvq_utilization_execution_20261015/unified_repeat_suite01`. GLM's 35 original
+files have been backed up locally with SHA256 verification. An initial Qwen
+preflight-order error occurred before CUDA initialization and yielded no Qwen
+measurement. That admission error was fixed in published main `f97048b64`;
+the measurement-loop AST is identical to its original `5f73f4e71` version.
+The continuation was subsequently blocked before CUDA by another external
+YOLO process. Completed GLM records remain valid. User-authorized waiting checks
+are bounded by the original 22:55:30 deadline; this is not an indefinitely
+restarting measurement queue.
+
+**Historical Qwen B1 63.133111480865225% remains a separate reference.** It is not
+relabelled as a new three-repeat result. Utilization is measured independently of
+the finalized SRCC, latency and energy. All six formal cost and accuracy files
+remain SHA-identical; neither this resident workload's power nor its forward
+timings replace the published cost protocol. In particular, Qwen B1 remains
+1,188.3861464262009 ms and 462.1134010767563 J per 16 videos in that historical table.
+
+## Historical continuous inference measurements
 
 All **12 new model–batch points** completed on 15 October 2026, using the same
 three-phase continuous inference procedure on the NVIDIA A100-PCIE-40GB at

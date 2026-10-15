@@ -2,6 +2,15 @@
 
 ## 2026-10-15 统一利用率测量新授权
 
+截至21:20，本轮GLM已真实完成B1/B2各三次相同重复，pooled均值97.68360022%和
+98.06875688%，达到B2>=98%即停，35份原文件已SHA备份本地。Qwen入口准入顺序错误
+在CUDA前退出，无有效新分数；准入修复已发布f97048b64、两端16项CPU测试通过，
+measure_repeat循环AST与原5f73f4e71一致。GLM后外部YOLO进入导致父守卫退出，接续
+也被外部YOLO2825641在CUDA前拦截，Small及另四模型未测，不冒称正在运行。
+用户21:14授权等空闲，不抢占；每10分钟有限跟进，原绝对截止Unix1792076130.5616086
+即22:55:30不延长，只接续qwen/small/clip/yolo/deepseek，不重测GLM。原利用率表已
+更新为GLM有效点及五模型待测状态，另有统一repeat明细，历史Qwen B1 63.13%独立保留。
+
 本聊天统一利用率入口为`unified_resident_utilization`，配置
 `configs/baselines/unified_resident_utilization_20261015.json`。仅A100 UUID
 `GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`、250W且无foreign compute进程时启动；
