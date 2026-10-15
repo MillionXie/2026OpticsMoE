@@ -186,6 +186,15 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 用户确认保留 Ovis 备用：** Ovis2.5-2B 来自阿里巴巴 Ovis 团队
+（官方仓库 `https://github.com/ATH-MaaS/Ovis` 的 Team 节）。用户要求保留本候选，
+不纳入后续空间清理。服务器官方模型目录
+`/DATA/DATA1/guest3/models/ovis25-2b-393c932b` 的固定 revision
+`393c932b2a03e28eb9aaa503e3c4ab3ad384d958` 两份 safetensors
+共5,140,960,552字节，本次重新核对大小与profile SHA均通过；同canonical运行目录的
+best/last、特征、训练收据、558条原生B1预测和代码继续保留，现有本地逐SHA数据备份不变。
+此保留要求不改变下文正式结果或开发指标口径，也不表示继续重训/测速。
+
 **2026-10-15 Ovis单B1最终核验（本轮有限筛选结束，未达到超过ours的目标）：**
 `lgvq_ovis25_temporal_20261015/suite01`已完成原2250TRAIN/558TEST、2808条冻结特征、
 44分片与完整FP16缓存逐值及样本顺序/标签核对、50轮原预算五行训练；训练收据53项
