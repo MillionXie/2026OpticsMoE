@@ -4,7 +4,7 @@
 
 已复核原20输入100实际有残差114、无残差58，双方均time_budget而非验证early，独立保存SCI SHA adf635d3f4c5876f43a4d2bf3aad15f1e4e953899fd5a07eeff600505ffb4b73。残差E100铁路站51.43%、梯田41.43%、森林28.57%；不能据旧选中轮次成绩断言剩余类别一定弱，也不能保证换类增益。名单由用户根据旧验证分析确定；之前10类测试已见，此后不声称重叠测试仍未经开发观察。
 
-新run resisc10_reselect_station_terrace_s17_pair100_mixup02_gpu25_20261015；164源闭包=原160+新runner/profile/protocol/audit四文件，旧160/165/167/169/171等不改。新的metadata子集/CPU黑图及native/GPU两rho数值门槛和实际producer门槛须各自真实通过，新的CPUcampaign只在两生产子rc0及100完成后独占一次保存科学。此处为准备状态，尚未启动，不混用旧已完成77.86测试或旧8PDF；后续记录实际准入与启动。详见[本轮新合同](RESISC10_RESELECT_PROTOCOL_20261015.md)。
+新run resisc10_reselect_station_terrace_s17_pair100_mixup02_gpu25_20261015；164源闭包=原160+新runner/profile/protocol/audit四文件，旧160/165/167/169/171等不改。新的metadata子集/CPU黑图及native/GPU两rho数值门槛和实际producer门槛须各自真实通过，新的CPUcampaign只在两生产子rc0及100完成后独占一次保存科学。新prepare/CPU14forward及native/GPU2两rho数值检查已实际一次通过，164源运行来源f405eaf2214f9da0ada739fb5cb661747f1b8933，current/original一致。已一次启动CPU campaign父1500151/queue1500964/GPU2残差1501738/GPU5无残差1501804，两个producer own gate真实passed。首E1验证24.8571%/15.5714%仅普通早期值，active2/pending0/fail0/test0/A1000，不当最终差距。详见[新十类实际准入与启动](reports/resisc10_reselect_20261015/start/README.md)；不重任何新prepare/CPU/numeric/start或旧审核图。详见[本轮新合同](RESISC10_RESELECT_PROTOCOL_20261015.md)。
 
 **下方已完成77.86与所有“不再训练/不改类别”等文字保留为旧阶段历史，由本节新人工范围覆盖；旧数据、PT、claims、失败及图markers继续保护。**
 
