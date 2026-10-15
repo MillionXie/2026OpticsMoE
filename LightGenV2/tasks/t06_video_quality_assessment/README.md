@@ -144,6 +144,15 @@ Qwen/CLIP/YOLO/DeepSeek测量与图表不改。后续A100必须读训练收据�
 每个B的558独立预测与前200成本、同轮功率/利用率/显存/时延配套；resident另计不混。
 该入口只编排既有训练与评估，不改变正在运行的Smol模型、训练源码或测量算法。
 
+**本轮训练完成核验：**`rtx3090_train_20261015`已完成2808条冻结特征、50轮五行头训练，
+44分片与完整缓存逐值相同，样本顺序/标签/2250 TRAIN+558 TEST与原manifest一致、FP16有限。
+best e41 strictCPU缓存开发SRCC=0.773713217488881，last e50=0.7736313362807273；
+这不是A100原生B1/4/8性能。55文件共24,176,071字节已逐SHA备份到本地同名run，
+两个3090自有进程均退出。best PT SHA `8e8ca80d00adae93ad19a787c6e8f22fd2ac2590490e6c3095f22fe1c4dc3ec9`。
+队列`a100_queue_20261015`（PID1407887/timeout1407885，发布源码`6c2dc11b8`）两端CPU
+合同测试通过（服务器48项），已实际验证训练收据并进入空卡等待；当次foreign PID1365456。
+每15秒主动衔接，不等心跳或用户提醒；不另起重复队列。单次等待上限仍1小时，总界不延长。
+
 用户授权在固定A100上训练SmolVLM2-2.2B，再分别以B=1/4/8新进程冻结推理。
 入口`smolvlm2_temporal_baseline`及配置
 `configs/baselines/smolvlm2_temporal_4f_a100.json`；不改原Qwen/CLIP/YOLO/DeepSeek结果。
