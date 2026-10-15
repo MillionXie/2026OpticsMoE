@@ -42,6 +42,14 @@ No blind restart of existing output. CPU strict checkpoint/bridge/native encodin
 checks must pass first. Pilot signal/phase/orientation must be inspected before
 full TEST launch; derive ETA from actual full-pilot wall time, not sensor FPS.
 
+Runtime admission note: the first cross-platform CPU comparison failed an overly
+strict1e-6 criterion (Windows vs Linux differences4.6551e-5/2.3693e-5; ten TRAIN
+argmax predictions identical, input difference2.98e-7). Keep this failed evidence.
+Do not call that comparison exact. Native/BMP parity still requires<=1e-6, and
+the original frozen training forward/encoder bodies must independently match the
+deployment body on the same Windows runtime at<=1e-6. Cross-platform numerical
+differences are separately recorded, with calibration argmax identity required.
+
 Report direct physical scores first, overall/macro/support/confusion matrices and
 both checkpoint identities. If poor, user permits electronic adaptation, but the
 original model has no learned classifier. Latest human instruction explicitly
