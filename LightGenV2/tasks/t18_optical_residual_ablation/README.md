@@ -1,3 +1,9 @@
+## 最新人工要求SAM/dropout：二/四层四路线已实际并行（2026-10-15）
+
+新run caltech10_L2L4_sam_vs_dropout_s17_20261015，197实际训练来源925a8a7a4278e60c1da93dd0771fa9ad6b3eb66d=current/original，CPU2889673，GPU0二层SAM/2二层输入dropout/4四层SAM/5四层输入dropout各一子已实际运行；CPU与四numeric、四actualproducer自己的恢复态普通+新方法gate均真实passed，global4/A1000，无failure。完整恢复二层725/四层650 rawEMA/Adam34800或31200，不重播/重置Adam矩；新方法分开比较、SAM2次完整macro反传只1次Adam，dropout仅训练光输入遮挡且评估关闭。旧候选/三层及无残差100保留。早期正常不是已达82/10pp。[实际启动/准入和验收合同](reports/caltech10_sam_dropout_20261015/start/README.md)。
+
+每25保存段后自己的独占科学通过再对新selected一次测试、历史参数复用、跨候选digest共享去重；无总epoch cap，最低LR验证平台保护暂停。目标二层test82/四层总体gap10pp，不保证成功、不改类别/削弱对照；额外预算与测试知情开发明确。此新人工授权覆盖下方“全部结束/不再新候选”仅本新四路线，旧所有来源/PT/数据/失败/claims/图不重入。t18/09 ACTIVE，普通健康静默。
+
 ## 最新二/四层新优化均实际结束：仍未82/10pp，保留已接受四层9.49pp（2026-10-15）
 
 最新两条新方案均因最低LR验证平台保护暂停，CPU/GPU已退出，自己的科学/测试收据SHA实际核一致，无failure。二层新189的最新真实训练/验证/测试、选中轮数及macro，与四层新193、冻结100无残差及已接受三层一并见[本轮最终比较](reports/caltech10_l2l4_refinement_20261015/final/README.md)。四层未改善验证最低NLL，仍保留旧E488/test93.3988 vs83.9062、差9.492635pp，没有重测同一权重。二层仍未82；三层差7.2013pp保持。不能把GPU计算完成称全部目标成功，也不自动重开已暂停方案。旧权重/来源/claims/数据保持，t18与09 ACTIVE，普通完成与已通知结果静默。下方仍在训是历史启动快照。
