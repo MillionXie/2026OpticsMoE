@@ -236,6 +236,13 @@ def detach_cost_instrumentation(timer, handles):
     handles.clear()
 
 
+def verified_transfer(cpu, batch, expected, transfer):
+    """Fingerprint preprocessing before DictOutput.to mutates dtype/device in place."""
+    if previous.input_records(cpu,batch) != expected:
+        raise ValueError("Traced inputs differ from original probe")
+    return transfer(cpu)
+
+
 def gpu_checks(args):
     import torch
     from . import reproduce_temporal_baseline as reproduction
@@ -269,9 +276,9 @@ def gpu_checks(args):
                 predictions, features, logits = [], [], []
                 for start in range(0,8,batch):
                     frozen.process_audit()
-                    cpu,where = prepare(rows[start:start+batch]); inputs = transfer(cpu)
-                    if previous.input_records(cpu,batch) != old["inputs"][str(batch)]["input_fingerprints"][start:start+batch]:
-                        raise ValueError("Traced inputs differ from original probe")
+                    cpu,where = prepare(rows[start:start+batch])
+                    inputs = verified_transfer(cpu,batch,
+                        old["inputs"][str(batch)]["input_fingerprints"][start:start+batch],transfer)
                     trace.setup(inputs,start)
                     feature,logit = previous.diagnostic_forward(args,model,head,inputs,False)
                     scores = torch.load(args.checkpoint,map_location="cpu",weights_only=False)["level_scores"].float()

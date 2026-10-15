@@ -88,3 +88,17 @@ def test_native_keyword_hidden_state_hook_contract(monkeypatch):
     trace.install_hooks(Model(),recorder)
     decoder.before(decoder,(),{"position_embeddings":object(),"hidden_states":marker})
     assert recorder.events == [("model.language_model.layers.0:input",marker,"language")]
+
+
+def test_input_fingerprint_precedes_inplace_transfer(monkeypatch):
+    cpu={"pixels":"fp32"}
+    monkeypatch.setattr(trace.previous,"input_records",lambda value,count:[value["pixels"]])
+    def transfer(value):
+        value["pixels"]="bf16"
+        return value
+    assert trace.verified_transfer(cpu,1,["fp32"],transfer) is cpu
+    assert cpu["pixels"] == "bf16"
+    original={"pixels":"changed"}
+    with pytest.raises(ValueError,match="Traced inputs"):
+        trace.verified_transfer(original,1,["fp32"],transfer)
+    assert original["pixels"] == "changed"

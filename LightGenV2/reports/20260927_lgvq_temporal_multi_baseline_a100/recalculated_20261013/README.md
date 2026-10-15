@@ -1,6 +1,46 @@
 # LGVQ temporal quality: matched A100 inference costs and batch diagnostics
 
-Updated 15 October 2026 (CPU/source audit added; formal measurements unchanged). All 19 frozen settings and both bounded numerical diagnoses are complete. The displayed curves now use only the uninterrupted `full_remeasurement02` measurements. Interrupted rounds and the initial failed DeepSeek input-fingerprint diagnostic remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
+Updated 15 October 2026 (Qwen layer-boundary evidence added; DeepSeek layer/route validation pending; formal measurements unchanged). All 19 frozen settings and the earlier bounded numerical probes are complete; this does not mean the new layer diagnosis is complete for both models. The displayed curves now use only the uninterrupted `full_remeasurement02` measurements. Interrupted rounds and failed diagnostics remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
+
+## 新增逐层证据与退卡交接（15 October 2026）
+
+用户要求短时采集并保存中间数据，GPU前向结束立即释放、后续CPU核对。
+同canonical诊断run的`recovery_hooks02`（执行源码`881393f78`）中，Qwen已经完成
+native和仅关闭低精度GEMM归约两模式、各B1/2/4；DeepSeek未完成。自有GPU进程已退出，
+没有占位或自动补跑。24份CPU/GPU证据SHA备份本地，包括6份8视频末端features/logits、
+全部已观测边界的差统计、命令/日志与状态；完整逐层激活只在诊断时CPU内存中使用，
+未存成可离线重放的全模型激活包，不声称后续无需任何GPU即可定位每个primitive。
+
+| Qwen对照 | MOS最大B2−B1绝对差 | MOS最大B4−B1绝对差 | 首个观测分歧（B2/B4） |
+| --- | ---: | ---: | --- |
+| 原生部署BF16 | 2.350662 | 3.395130 | deepstack_merger_list.0输出 |
+| 仅禁低精度GEMM归约 | 2.585449 | 2.585453 | 同一模块输出 |
+
+原生模式每组8视频MOS与旧探针最大偏差<.001守卫通过；不是更换权重后得到的新结果。
+首个观测分歧全名为`model.visual.deepstack_merger_list.0:output`，之前19个记录边界
+跨batch逐位一致。B4该合并模块输入max_abs=0；输出max_abs=.0625、relativeL2=
+.0029048164295297028（3299780/6422528元素变化）。原生源码含LayerNorm、Linear、GELU、
+Linear。此证据把首个已观测差异界定在视觉合并模块内、语言模型之前；不能据此指定
+哪个内部primitive最早产生误差。只禁归约未消除差异，不能宣称该开关足以修复，亦不能
+用DeepSeek的MoE机制解释非MoE的Qwen。
+
+DeepSeek在前向前被诊断指纹守卫拦下，无实际专家ID或有效边界差输出。纯CPU同视频
+审计`cpu_transfer_fingerprint_audit.json`确认：预处理指纹匹配旧探针；原生
+DictOutput.to(cpu,BF16)会原地修改同一容器，images FP32→BF16，仅pixels SHA改变。
+诊断错误地在transfer后比较transfer前指纹，故误报。已修正比较顺序、补回归测试，
+未为此再占A100；此解释是CPU转换复现和代码证据，不冒称保存到了失败时真实GPU输入。
+DeepSeek的路由及首分歧层仍待短窗口验证，先不重跑已完成的Qwen或修改正式图表。
+
+For the same eight videos, Qwen3-VL's first observed batch-dependent discrepancy arose
+at the output of the first deep-stack visual merger, while the preceding 19 recorded
+boundaries were bitwise identical. The merger input was unchanged, whereas its B4 output
+differed by up to 0.0625 from the B1 reference. This localizes the first instrumented
+discrepancy to the visual merger, before the language model, but does not isolate the
+earliest internal primitive. Disabling reduced-precision GEMM reductions did not eliminate
+the batch dependence. DeepSeek's new layer/route experiment stopped before inference due
+to an instrumentation fingerprint-order error; its routing mechanism therefore remains
+unverified by this experiment. Neither diagnostic replaces the frozen 558-video metrics
+or their matched inference-cost measurements.
 
 ## 2026-10-15：BatchNorm、模式切换和跨样本操作核查
 

@@ -1,5 +1,28 @@
 # T06 视频质量评价
 
+## 2026-10-15：短诊断已退卡，Qwen完成、DeepSeek待补实际路由
+
+用户后续要求尽可能保存中间数据、A100还需用于其他工作。本轮不再追加GPU任务。
+自有suite1251252、Qwen1251256和DeepSeek1254035已退出，未保留占位/等待进程。
+`lgvq_batch_layers_a100_20261015/recovery_hooks02`执行源码`881393f78`；CPU同源收据
+完成，Qwen原生及关闭低精度GEMM归约对照各B1/2/4全部完成，原生8视频MOS与旧探针
+最大偏差守卫<.001通过。6份8视频features/logits PT、逐边界统计、CPU身份、命令/日志
+共24份证据按SHA备份本地，随后另存DeepSeek纯CPU转换审计；不保存/冒称完整逐层激活。
+
+Qwen首个观测分歧为`model.visual.deepstack_merger_list.0:output`：B2/B4相同，之前
+19个记录边界逐位一致；B4该模块输入差0、输出max_abs .0625、relativeL2 .0029048164。
+原生MOS最大B2/B1差2.350662、B4/B1差3.395130；关闭低精度归约后分别2.585449／
+2.585453，未消除差异。该模块含LayerNorm和两层Linear/GELU；不能仅凭模块边界指定
+最早primitive，也不能把Qwen差异解释为MoE。8视频诊断不替代正式558性能和成本。
+
+DeepSeek在首次前向前因指纹检查顺序被拦截，没有有效逐层/路由输出。
+`cpu_transfer_fingerprint_audit.json`使用同一视频和原processor，仅CPU复现：转换前
+指纹与旧探针一致，原生DictOutput.to(cpu,BF16)返回同一容器，images从FP32转BF16，
+仅pixels SHA改变。诊断曾在transfer之后比较转换前指纹；不是模型输入身份改变的
+证据，更不是已查清DeepSeek路由。已将指纹守卫移到transfer前，补原地变异回归，
+本地39项CPU检查通过；修复后未再启动GPU、不重跑已完成Qwen。下次只需在新CPU来源
+和明确短窗口下补DeepSeek。正式六份表/测量SHA仍保持原值；旧失败证据全部保留。
+
 ## 2026-10-15：用户确认A100空闲后授权恢复逐层诊断
 
 本轮只负责T06诊断源码/测试/说明，不改正式表格、558预测、成本或PT。
