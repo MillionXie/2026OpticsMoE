@@ -1,6 +1,74 @@
 # LGVQ temporal quality: matched A100 inference costs and batch diagnostics
 
-Updated 15 October 2026 (Qwen layer-boundary evidence added; DeepSeek layer/route validation pending; formal measurements unchanged). All 19 frozen settings and the earlier bounded numerical probes are complete; this does not mean the new layer diagnosis is complete for both models. The displayed curves now use only the uninterrupted `full_remeasurement02` measurements. Interrupted rounds and failed diagnostics remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
+Updated 15 October 2026 (both bounded layer diagnoses complete; formal measurements unchanged). All 19 frozen settings, earlier numerical probes, and the new eight-video Qwen/DeepSeek boundary and route experiments are complete. This does not mean every primitive or CUDA kernel has been isolated or a stable full-558 replacement evaluation has been performed. The displayed curves still use only uninterrupted `full_remeasurement02` measurements. Interrupted rounds and failed diagnostics remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
+
+## 最新结论：实际差异来源、路由和论文可用解释（15 October 2026）
+
+本次同canonical诊断run的`focused_merger_routes03`，源main `e34b2a586`；先完成
+同源CPU输入/位置收据，再在空闲250W A100上串行DeepSeek→Qwen，各原生与一个控制
+模式、各B1/2/4、同8 TEST。40项CPU合同测试两端通过，两GPU子任务均complete。
+自有进程均已退出、显卡释放；44份JSON/日志/PT（257439718字节）保存同名run，含
+12组features/logits和12组focused边界/专家ID张量，后续复核只用CPU。
+
+**与“诊断修复”严格区分：**此前的计时钩子、命名参数钩子、指纹比较顺序错误都属于
+新诊断程序，已保留失败证据并修复；不是已发现正式评分有同样bug。新原生探针重现
+旧8视频结果，最大MOS差Qwen7.6293945e-6、DeepSeek1.1444092e-5，支持诊断未改变
+正式forward含义。正式六份表/测量文件SHA仍保持原值，不以探针或控制分数替换正式值。
+
+| 模型 | 首个已观测分歧（B2/B4 vs B1） | 此前相同边界 | 该输出最大绝对差 |
+| --- | --- | ---: | ---: |
+| Qwen3-VL | 首deepstack merger的linear_fc1输出 | 22 | .125 |
+| DeepSeek-VL2 | 首语言层self_attn输出 | 64 | .001953125 |
+
+Qwen全名`model.visual.deepstack_merger_list.0.linear_fc1:output`。归一化输出和
+linear_fc1输入相同，故已将范围从“整个合并模块”细分到该线性算子；不是MoE或
+BatchNorm解释。保存的视频0输入B1/B4逐位相同，形状[392,4096]。钩子观测输入为FP32，
+正式autocast执行linear时量化BF16，输出BF16；固定权重而改变batch行数时，输出出现
+数值差异，符合有限精度矩阵计算路径随形状变化的表现。尚未证明具体cuBLAS kernel/
+归约指令的唯一责任；禁低精度GEMM归约也未消除。CPU参考使用**先量化到部署BF16的
+输入/权重，再FP64点积**，不称恢复量化位或新性能结果。该视频B1/B4相对于此参考的
+最大绝对误差分别.149562/.062613；这不是“B4任务精度更高”的结论。
+
+DeepSeek全名`language.model.layers.0.self_attn:output`。此前已观测视觉/投影/语言
+输入均一致；17848320元素中4930项改变，relativeL2=3.2440191e-5。**最早已观测
+差异早于MoE gate**，不能再只说“MoE分组导致差异”。实际11层专家集合随后都有变化。
+下表按同一token在同一层的6专家集合是否改变计一次，忽略Top-k返回顺序；分母
+153384=8视频×1743有效token×11层，不是视频数、专家调用数或GPU利用率。
+
+| DeepSeek模式 | B2/B1集合变化事件 | B4/B1集合变化事件 | 最大MOS差B2/B1 | 最大MOS差B4/B1 |
+| --- | ---: | ---: | ---: | ---: |
+| 原生部署 | 22247/153384 (14.5041%) | 22251/153384 (14.5067%) | 1.472759 | 1.418308 |
+| 仅gate关闭autocast | 21401/153384 (13.9526%) | 21504/153384 (14.0197%) | .697479 | .628998 |
+
+Qwen原生MOS最大批差B2/B1=2.350662、B4/B1=3.395130；禁低精度归约对照为
+2.585449和2.585453。两模型控制均未归零，而且各自B1也会变化；这些只是机制诊断，
+不是重新选模、SRCC改善或稳定化修复。DeepSeekattention内部的Q/K/V、RoPE、注意力
+matmul/softmax/o_proj未逐primitive区分，亦未通过固定专家干预证明路由的独立因果
+贡献。因而能支持“低精度数值差异先出现、后续专家选择敏感”，不能声称路由是唯一
+根因或已经排除一切实现问题。结合原重复推理和FP32探针，现证据不支持换权重、抽帧
+变化或BatchNorm导致这些8视频的批差；不推广为所有558视频内部路径已完全审计。
+
+最新派生汇总为`focused_cpu_analysis_corrected.json`。首份`focused_cpu_analysis.json`
+的CPU fc1参考使用了量化前FP32输入，原位保留但不引用其参考误差；更正版显式先复现
+部署BF16操作数量化。原始GPU边界数据及专家ID并未改动。
+
+### 可供论文使用的英文说明
+
+Batch-dependent predictions were investigated using the same frozen checkpoints and eight
+fixed test videos at batch sizes of 1, 2 and 4. In Qwen3-VL, the first instrumented
+discrepancy occurred at the output of the first linear projection in the first deep-stack
+visual merger; its input and the preceding 22 recorded boundaries were bitwise identical.
+This directly localizes the first observed discrepancy to a low-precision linear computation,
+rather than a change in video identity or model parameters. In DeepSeek-VL2, the first
+observed discrepancy arose at the first language self-attention output, before MoE routing,
+with a maximum absolute difference of 0.001953125. The subsequent top-six expert sets differed
+for 22,251 of 153,384 token–layer events (14.51%) between B4 and B1. Disabling autocast only
+within the gates reduced, but did not eliminate, batch-dependent score differences. These
+observations, together with repeated-inference and higher-precision probes, support
+finite-precision batch-shape effects and downstream routing sensitivity. They do not isolate
+every attention primitive, establish routing as the sole cause, or constitute a full-test-set
+stabilization experiment. Consequently, the reported SRCC and matched costs remain those
+measured independently for each deployed batch configuration, rather than a shared B1 score.
 
 ## 新增逐层证据与退卡交接（15 October 2026）
 

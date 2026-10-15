@@ -1,5 +1,39 @@
 # T06 视频质量评价
 
+## 2026-10-15：两模型实际定位完成并退卡（focused03最新证据）
+
+`lgvq_batch_layers_a100_20261015/focused_merger_routes03`，执行main `e34b2a586`，
+同8 TEST/B1/2/4、同原PT与manifest；DeepSeek→Qwen串行，两个模式各3组全部complete。
+40项CPU合同测试两端通过。自有suite1293705、DeepSeek1296180、Qwen1302609均退出；
+A100已无自有compute进程，不保留占位。44份JSON/日志/PT共257439718字节原位保存，
+含12组末端features/logits、12组focused边界张量/专家ID；SHA备份仍在同名本地run。
+此为诊断证据，不改正式558分数、成本、利用率、表格或PT。
+
+**现在查到了什么：**Qwen首个已观测分歧细分到
+`model.visual.deepstack_merger_list.0.linear_fc1:output`，B2/B4相同，此前22个记录
+边界（含归一化输出及fc1输入）逐位一致；fc1输出max_abs=.125。保存的视频0 fc1
+输入B1/B4逐位相同，形状[392,4096]；观测输入FP32，正式autocast将linear操作数转
+BF16，输出BF16。用同一BF16权重及显式量化的输入在CPU FP64重算，B1/B4输出均为
+同一数学输入的近似，不能把差异解释为换输入/权重/BatchNorm/MoE。未追踪具体cuBLAS
+kernel，不声称禁低精度归约即可修复（该对照仍有差）。
+
+DeepSeek的首个已观测分歧为`language.model.layers.0.self_attn:output`，此前64个
+边界（含已观测视觉/投影输出和该attention输入）相同；max_abs=.001953125，
+17848320个元素中4930项改变。**差异早于第一个MoE gate**；随后11层实际专家集合
+均有变化：B4/B1为22251/153384个token–layer事件（14.5067%，不是视频比例）。
+只在gate关闭autocast仍为21504/153384（14.0197%），未消除；不能把MoE作为最早来源
+或唯一原因。未细分该attention内部Q/K/V、RoPE、matmul、softmax等primitive。
+
+原生新旧8视频MOS最大差：Qwen7.6293945e-6、DeepSeek1.1444092e-5，原生守卫通过。
+对照中最大MOS批差：Qwen B4/B1 3.395130→2.585453；DeepSeek 1.418308→.628998，
+均未归零，且对照自身B1也变化；不是正式SRCC提升。证据支持低精度批形状相关数值
+路径及后续传播/路由敏感性，没有发现正式输入/权重身份错误；不宣称排除所有实现
+问题，也未做完整558稳定化重测。此前修复的是**诊断脚本**，不是修改正式成绩。
+
+最新派生汇总只用`focused_cpu_analysis_corrected.json`：首份CPU fc1参考曾用量化前
+FP32输入，保留在`focused_cpu_analysis.json`，更正版本明确先做部署BF16操作数量化。
+两版均不改变原始GPU证据。完整边界/专家ID及原生一致性证据见对应PT/JSON与SHA收据。
+
 ## 2026-10-15：用户再次确认空闲后的短窗口细分诊断
 
 用户明确授权现在继续使用空闲A100，优先DeepSeek路由、随后Qwen合并内部；
