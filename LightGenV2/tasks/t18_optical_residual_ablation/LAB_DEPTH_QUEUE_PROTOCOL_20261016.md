@@ -1,5 +1,24 @@
 # Accepted L2/L4 one-owner optical queue
 
+## First completed simulation-head handoff: L2
+
+Accepted L2 residual head selected/actualE12 SHA
+5c8b60a7f45cf2800c5fd657ca7f4496b32c54e7b543db4927034a265a906ad3;
+control selected/actualE3 SHA
+1ff43adebf21699bb0688890cfe994c18f574e7e16c18fdf2367435846a1e803.
+Both original producer exits rc0/actual and independent NumPy audit/completed SHA
+were read and verified before artifact transfer. Internal optical SHA must match
+the accepted optical parents below; contract and mean/std/head keys also checked.
+Simulation TEST83.96072/79.70540, gap4.25532pp; macro76.70393 is slightly below
+original residual optical76.77258, not improvement of every metric. These are
+TEST-informed simulation metrics, not physical results. L3/L4 not yet delivered.
+
+The L2 fine-tuning dependency waits for its full TRAIN/TEST capture and exact
+manifest (stored in common assets without precreating the future capture folder).
+Only then3epochs/lr2e-5 of the same head, frozen simulation normalization, TRAIN
+gradients/TEST development selection/no VAL. No capture SDK is opened by this
+dependency. Capture queue remains sole device owner and is not interrupted.
+
 Direct human authorization in the coordinating optical-residual chat was verified
 2026-10-16. Only this window owns lab queue/capture/readout files. Preserve all L3
 TRAIN6088/TEST14664 and running capture. The old from-zero MLP is prohibited;

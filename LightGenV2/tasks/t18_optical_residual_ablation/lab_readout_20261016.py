@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
-from caltech10_sim_head_model import CCDHead,ccd_features
+from caltech10_sim_head_model import CCDHead,ccd_features,CONTRACT
 
 
 def sha(path):
@@ -42,7 +42,7 @@ def numpy_probability(state,features,base):
 
 def require_simulation_handoff(a):
     """No random-initialization fallback after the corrected human instruction."""
-    path=a.train.parent/'simulation_head_handoff_20261016.json'
+    path=getattr(a,'simulation_head_manifest',None) or a.train.parent/'simulation_head_handoff_20261016.json'
     deadline=time.monotonic()+3000
     if not path.exists():
         status=a.out.parent/'awaiting_simulation_head.json'
@@ -63,6 +63,8 @@ def initialized_head(entry,optical_sha):
     path=Path(entry['checkpoint']);assert sha(path)==entry['sha256']
     assert entry['optical_checkpoint_sha256']==optical_sha
     ck=torch.load(path,map_location='cpu',weights_only=False)
+    assert ck.get('optical_checkpoint_sha256',optical_sha)==optical_sha
+    assert ck.get('contract',CONTRACT)==CONTRACT and ck.get('epoch',1)>=1
     state=ck[entry['model_key']];prefix=entry.get('state_prefix','')
     model=build_head();mapped={k:state[prefix+k].detach().cpu().clone() for k in model.state_dict()}
     model.load_state_dict(mapped,strict=True)
@@ -162,5 +164,5 @@ def fit(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--train',type=Path,required=True);p.add_argument('--test',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--epochs',type=int,default=300);p.add_argument('--assets',type=Path)
+    p=argparse.ArgumentParser();p.add_argument('--train',type=Path,required=True);p.add_argument('--test',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--epochs',type=int,default=300);p.add_argument('--assets',type=Path);p.add_argument('--simulation-head-manifest',type=Path)
     fit(p.parse_args())
