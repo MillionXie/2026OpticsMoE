@@ -74,6 +74,28 @@ def test_admission_not_small_model_threshold():
     assert '32000' in source('guard')
 
 
+def test_recovery_keeps_original_absolute_budget():
+    s = source('suite')
+    assert 'min(time.time() + 10800, args.deadline_unix)' in s
+    assert 'Original suite deadline already passed' in s
+
+
+@pytest.mark.parametrize('status,header,length', [
+    (200, 'bytes 4-7/12', '4'), (206, 'bytes 0-3/12', '4'),
+    (206, 'bytes 4-7/13', '4'), (206, 'bytes 4-7/12', '5')])
+def test_recovery_rejects_unmatched_range(status, header, length):
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t06_video_quality_assessment.glm46v_assets import validate_range
+    with pytest.raises(RuntimeError):
+        validate_range(SimpleNamespace(status_code=status, headers={'Content-Range': header, 'Content-Length': length}), 4, 7, 12)
+
+
+def test_recovery_accepts_exact_range_only():
+    from types import SimpleNamespace
+    from LightGenV2.tasks.t06_video_quality_assessment.glm46v_assets import validate_range
+    validate_range(SimpleNamespace(status_code=206, headers={'Content-Range': 'bytes 4-7/12', 'Content-Length': '4'}), 4, 7, 12)
+
+
 def test_refuse_old_outputs_before_loading(tmp_path):
     with pytest.raises(FileExistsError):
         run.shared.new_output(tmp_path)

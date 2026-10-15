@@ -289,7 +289,9 @@ def run(args,c,identity):
 
 
 def suite(args,identity):
-    deadline=time.time()+10800
+    deadline=min(time.time()+10800, args.deadline_unix) if args.deadline_unix is not None else time.time()+10800
+    if deadline <= time.time():
+        raise TimeoutError("Original suite deadline already passed")
     state=dict(status="waiting_for_assets",pid=os.getpid(),completed=[],deadline_unix=deadline,
         source_sha256=identity["source_sha256"],inference_batches=[1],accuracy_only=True)
     try:
@@ -334,6 +336,7 @@ def main():
     p.add_argument("--model",type=Path,required=True);p.add_argument("--manifest",type=Path,required=True)
     p.add_argument("--output",type=Path,required=True);p.add_argument("--checkpoint",type=Path)
     p.add_argument("--prepare-run",type=Path)
+    p.add_argument("--deadline-unix",type=float,help="Absolute original suite deadline; never extend a recovery")
     p.add_argument("--accuracy-only-concurrent",action="store_true")
     args=p.parse_args();args.gpu_uuid=frozen.A100_UUID;c=config()
     args.model=args.model.resolve();args.output=args.output.resolve();args.manifest=args.manifest.resolve()
