@@ -1,7 +1,11 @@
 import unittest
 import numpy as np
 import torch
-from lab_readout_20261016 import build_head,numpy_probability
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+import tempfile
+from lab_readout_20261016 import build_head,numpy_probability,initialized_head,require_simulation_handoff,sha
 
 
 class ReadoutTest(unittest.TestCase):
@@ -21,6 +25,23 @@ class ReadoutTest(unittest.TestCase):
             opt.zero_grad();torch.nn.functional.cross_entropy(model(x),labels).backward();opt.step()
         self.assertEqual(sum(p.numel() for p in model.parameters()),8554)
         self.assertTrue(all(not torch.equal(v,initial[k]) for k,v in model.state_dict().items()))
+    def test_simulation_weights_and_buffers_loaded_exactly(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent/'runs') as directory:
+            model=build_head()
+            with torch.no_grad():model[-1].weight.fill_(.123)
+            mean=np.arange(256,dtype=np.float32)/256;std=np.ones(256,dtype=np.float32)*.2
+            path=Path(directory)/'head.pt';torch.save(dict(head=model.state_dict(),mean=mean,std=std),path)
+            entry=dict(checkpoint=str(path),sha256=sha(path),optical_checkpoint_sha256='frozen',model_key='head',mean_key='mean',std_key='std')
+            actual,m,s=initialized_head(entry,'frozen')
+            for key,v in model.state_dict().items():self.assertTrue(torch.equal(actual.state_dict()[key],v))
+            np.testing.assert_array_equal(m,mean);np.testing.assert_array_equal(s,std)
+            with self.assertRaises(AssertionError):initialized_head(entry,'wrong optical parent')
+    def test_missing_simulation_head_never_trains_random_fallback(self):
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent/'runs') as directory:
+            root=Path(directory);args=SimpleNamespace(train=root/'train',out=root/'readout')
+            with patch('lab_readout_20261016.time.monotonic',side_effect=[0,3001]):
+                with self.assertRaises(TimeoutError):require_simulation_handoff(args)
+            self.assertFalse(args.out.exists())
 
 
 if __name__=='__main__':unittest.main()

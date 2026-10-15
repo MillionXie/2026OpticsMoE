@@ -1,5 +1,26 @@
 # Caltech10 three-main-layer laboratory deployment
 
+## Corrected human authorization2026-10-16: SAME simulation head, not a new head
+
+Verified direct human messages in the coordinating optical-residual chat revoke
+the from-scratch post-capture MLP plan below. Keep all ongoing L3 captures and
+receipts uninterrupted. Optical parameters remain frozen; accepted parent PT
+identities do not change. Do not retrain a random new head on physical images.
+Require a SHA-verified simulation-trained8554-parameter parent with the SAME
+features/MLP/residual logits and frozen simulation TRAIN normalization buffers.
+Until its versioned handoff manifest is delivered, stop before fitting (bounded
+wait with explicit status), never fall back to random initialization or refit
+normalization on physical TRAIN. Old300-epoch CLI is superseded by the handoff's
+short finite budget (initial3epochs, lr2e-5; any later extension transparently
+authorized and separately recorded). TRAIN-only gradients/TEST development
+selection/no VAL remains. No new optical model or electronic architecture.
+
+Also prepare accepted L2/L4 pairs from accepted_models.csv and exact control
+SHA list, not last/time ordering; single SDK queue, same group and optical layer
+TRAIN immediately followed by TEST, then next layer/group. Never interrupt L3
+to reorder this already-running session. New depth exports need independent
+strict CPU/native parity on the exact PTs before hardware admission.
+
 ## Latest human authorization2026-10-16: complete physical data and electronic fit
 
 The laboratory is a SOURCE RECEIVER ONLY. Never push from its checkout or import
