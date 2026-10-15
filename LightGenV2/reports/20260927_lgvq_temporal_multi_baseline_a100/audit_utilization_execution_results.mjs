@@ -82,7 +82,39 @@ const priorManifest=read(path.join(task,'runs/simulation/lgvq_temporal_telemetry
 const protectedFiles=priorManifest.files.filter(f=>!f.name.endsWith('.png')&&!f.name.endsWith('.svg'));
 for(const f of protectedFiles)assert.equal(sha(path.join(reportDir,f.name)),f.sha256,'Historical measurement/table changed: '+f.name);
 if(process.argv.includes('--require-complete'))assert.equal(Object.keys(provenance).length,7);
-const output={completed_cases:Object.keys(provenance).length,expected_cases:7,results,qwen_b1:b1,provenance,
+const graphResults=[];
+for(const name of ['qwen_batch08','clip_batch10','yolo_batch03']){
+  const dir=path.join(run,'cuda_graph_suite01',name),status=path.join(dir,'status.json');
+  if(!fs.existsSync(status))continue;
+  const state=read(status);
+  if(state.status==='unsupported_or_failed'){
+    graphResults.push({case:name,status:state.status,error:state.error,status_sha256:sha(status)});continue;
+  }
+  const p=path.join(dir,'report.json');if(!fs.existsSync(p))continue;
+  const report=read(p);assert.equal(report.status,'complete');
+  const raw=csv(path.join(dir,'telemetry.csv'));
+  const windows=[[0,report.duration_actual_s,report.full_phase],[5,30,report.steady_5_30s]];
+  for(const [start,end,window] of windows){
+    const selected=raw.filter(r=>Number(r.host_monotonic_s)>=report.started_monotonic_s+start&&Number(r.host_monotonic_s)<report.started_monotonic_s+end);
+    assert.equal(selected.length,window.samples);
+    assert(Math.abs(mean(selected.map(r=>Number(r.utilization_percent)))-window.utilization_percent.mean)<1e-10);
+    assert(Math.abs(mean(selected.map(r=>Number(r.watts)))-window.board_power_w.mean)<1e-10);
+  }
+  const groups=read(path.join(dir,'calls.json'));
+  assert.equal(groups.reduce((s,r)=>s+r.calls,0),report.calls);
+  assert(Math.abs(report.duration_actual_s*16000/(report.calls*report.batch)-report.full_forward_time16_ms)<1e-8);
+  assert(Math.abs((338.2+report.full_phase.board_power_w.mean)*report.full_forward_time16_ms/1000-report.energy16_j)<1e-8);
+  assert(report.max_abs_mos_delta<=.0002&&report.second_batch_validation.max_abs_delta<=.0002);
+  assert(report.second_batch_validation.sample_ids.every(id=>!report.sample_ids.includes(id)));
+  assert(report.process_audit_end.every(r=>Number(r.pid)===report.pid));
+  graphResults.push({case:name,status:report.status,full_phase_utilization_percent:report.full_phase.utilization_percent.mean,
+    steady_5_30s_utilization_percent:report.steady_5_30s.utilization_percent.mean,
+    full_forward_time16_ms:report.full_forward_time16_ms,energy16_j:report.energy16_j,
+    output_max_abs_delta:report.max_abs_mos_delta,second_batch_max_abs_delta:report.second_batch_validation.max_abs_delta,
+    source_commit:report.source_commit,report_sha256:sha(p)});
+}
+if(process.argv.includes('--require-graphs'))assert.equal(graphResults.length,3);
+const output={completed_cases:Object.keys(provenance).length,expected_cases:7,results,qwen_b1:b1,provenance,graph_results:graphResults,
   historical_data_files_verified_unchanged:protectedFiles.length,
   no_new_srcc_or_precision_changes:true,
   note:'Raw whole-phase and source fixed-window statistics are separate. Fixed windows were set before measurement, not chosen for maxima.'};

@@ -1,5 +1,10 @@
 # LGVQ temporal quality: matched A100 inference costs and batch diagnostics
 
+15 October utilization-only follow-up: [execution gaps, startup windows and native CUDA Graph controls](UTILIZATION_METHOD_20261015.md).
+Seven cases/21 controls and three graph feasibility attempts are complete, with 98 SHA-backed raw files.
+Qwen B8 steady utilization is approximately 92%; the supported CLIP B10/YOLO B3 graph controls exceed 98% over their full phases.
+These independent load tests do not change the existing six measurement/table files or the historical Qwen B1 reference. No precision diagnosis was reopened.
+
 Updated 15 October 2026 (both bounded layer diagnoses complete; formal measurements unchanged). All 19 frozen settings, earlier numerical probes, and the new eight-video Qwen/DeepSeek boundary and route experiments are complete. This does not mean every primitive or CUDA kernel has been isolated or a stable full-558 replacement evaluation has been performed. The displayed curves still use only uninterrupted `full_remeasurement02` measurements. Interrupted rounds and failed diagnostics remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
 
 ## 最新因果隔离：相同输入、不同批形状的运算差异（15 October 2026）
