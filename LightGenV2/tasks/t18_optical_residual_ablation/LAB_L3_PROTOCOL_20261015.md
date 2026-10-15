@@ -1,5 +1,41 @@
 # Caltech10 three-main-layer laboratory deployment
 
+## Latest human authorization2026-10-16: complete physical data and electronic fit
+
+The laboratory is a SOURCE RECEIVER ONLY. Never push from its checkout or import
+its private/local source changes into main. Source is authored/tested/committed
+locally, received by the existing lab checkout through verified Git objects;
+experiment data/PT/reports remain separate artifacts. GitHub availability does
+not authorize copying lab code upstream. Any pending local publication is stated.
+
+Human explicitly requests full acquisition and subsequent electronic recovery
+despite poor direct pilot recognition. Supersedes the previous pause before full
+TEST, not signal/saturation guards. Original phase LUT/ROI/weights untouched.
+Use the passing response621 inverse equally for both arms,2000us/Gain_X4/wait240,
+same coordinates/hv_inverse/flip_v. Complete TRAIN761/arm first (6088CCDs), then
+TEST1833/arm (14664CCDs), each dataset layer-major with one SDK owner. No VAL.
+The TRAIN pilot is diagnostic, not a TEST result; preserve direct full TEST and
+all data regardless of hybrid performance. No optical retraining or automatic
+failure retries, geometric/LUT sweeps or exposure tuning are authorized here.
+
+Automatic finite continuation waits for the actual TRAIN completion report and
+SDK release, then captures full TEST and fits identical tiny residual readouts
+for both arms. Optical PTs/masks remain frozen; no SDK, RGB-input bypass, CNN or
+pretraining in electronic fitting. Fixed features are16x16 average-pool of
+log1p(final raw CCD / its spatial mean); standardization is fitted on TRAIN only.
+MLP256->32ReLU->10,8554 parameters, final layer zero-initialized; logits equal
+log(fixed detector probabilities)+learned residual. Both arms seed17,300 epochs,
+AdamW lr.001/weight_decay.001, cosine minimum1e-5, batch64, ordinary CE. TEST is
+inference-only every epoch, first highest accuracy chooses best (including the
+zero-residual E0 if nothing improves); last preserved. This is a new hybrid
+readout adaptation, not the original pure-optical model or a causal claim.
+All TEST-selected numbers are development metrics, not independent generalization.
+CPU best/last are reloaded, independently checked by NumPy, with ID/role/support/
+CM/step counts, predictions and SHA retained. No VAL gradients/selection or TEST
+gradients. No performance guarantee. No interference with other T18 training.
+
+## Earlier calibration and deployment record
+
 Latest human approval: perform a session-only measured gray-to-field-amplitude
 inverse, preserving the original device LUTs. Both paired models use the same
 mapping, without changing weights, labels, geometry or per-image normalization.
