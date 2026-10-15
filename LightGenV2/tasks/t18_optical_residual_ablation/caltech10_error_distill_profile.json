@@ -1,0 +1,194 @@
+{
+  "run": "caltech10_L2_error_focused_distill_s17_20261016",
+  "cases": {
+    "L2_error": {
+      "parent_arm": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2_hard_target_consolidation_s17_20261015/L2_hard/block0005/L2_hard",
+      "parent_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2_hard_target_consolidation_s17_20261015",
+      "parent_case": "L2_hard",
+      "parent_epoch": 1140,
+      "parent_last_sha256": "faf30d92a67ba63d3b0c2ab4177983ce5f099a98d12700acaea0c6128307aa6f",
+      "parent_best_sha256": "c702ed3ee11c4fb4b434a6c56ae3ceccb3989cf0494dbc08ef6d3ca19a256eed",
+      "parent_history_sha256": "bbb0a243c3e679e269080119459a7bcfa300c231bdd0e6a07eade58288cf6cc6",
+      "parent_audit_sha256": "02ca97fd5a452c733c5c8c475185cf528d7623ef5674622ad0721c51c7238977",
+      "parent_config": {
+        "dataset": "Caltech_validation_informed_gap10_20261015",
+        "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+        "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+        "manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+        "seed": 17,
+        "maximum_epochs": 1140,
+        "maximum_seconds": 1800,
+        "minimum_epochs": 1000,
+        "early_patience": 10,
+        "early_min_delta": 0.002,
+        "lr": 0.002,
+        "label_smoothing": 0.0,
+        "phase_smooth_weight": 0.01,
+        "capture_weight": 0.2,
+        "ema_decay": 0.95,
+        "batch_size": 16,
+        "microbatch": 8,
+        "mixup_alpha": 0.0,
+        "augmentation": {
+          "rotation_degrees": 20,
+          "translation_pixels": 5,
+          "scale_range": [
+            0.9,
+            1.1
+          ]
+        },
+        "phase_init_raw_uniform": 0.1,
+        "optimizer": "AdamW with weight_decay0, gradient_clip_norm1; same frozen primitives for both rho",
+        "shared_spare_memory_gib": 2,
+        "maximum_gpu_children": 2,
+        "maximum_gpu_children_per_card": 1,
+        "numeric_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_hard_targets_numeric_20261015/L2_hard/checks.json",
+        "cpu_gate": "LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_hard_targets_cpu_20261015/checks.json",
+        "automatic_retry": false,
+        "scope": "Human explicitly requests continued direct follow-up without scheduled tasks. L2 underfit: real-label consolidation after verified focal1090 plateau, remove training MixUp and LS, retain supported teacher/focal, same fixed data/optical inference/frozen100 controls. Test-informed extra residual training, not independent generalization or same-budget causal advantage.",
+        "input_tile": 100,
+        "class_count": 10,
+        "original_indices": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          14,
+          15,
+          16,
+          19
+        ],
+        "subset_plan_sha256": "061f9aa34e373f804264d7859a4e52084a640d4f3464b4dc99965bea3700e566",
+        "subset_manifest_sha256": "3227d5c1fbd86a2454b1df51d8b58e2ca772bfbe32c26733650d15a06b463f71",
+        "refit_restart_epoch": 326,
+        "refit_restart_lr": 0.0005,
+        "depth": 2,
+        "residual_rho": 0.3,
+        "classes": [
+          "Faces",
+          "Leopards",
+          "Motorbikes",
+          "airplanes",
+          "bonsai",
+          "grand_piano",
+          "revolver",
+          "schooner",
+          "trilobite",
+          "yin_yang"
+        ],
+        "contract": {
+          "main_depth": 2,
+          "router_count": 1,
+          "total_captures": 3,
+          "stages": [
+            "expert",
+            "global"
+          ],
+          "geometry": {
+            "wavelength_m": 5.32e-07,
+            "distance_m": 0.1,
+            "logical_pitch_m": 1.7e-05,
+            "numerical_canvas": 518,
+            "active": 478,
+            "expert": 224,
+            "expert_array": "2x2",
+            "gap": 30,
+            "active_expert_origins": [
+              [
+                0,
+                0
+              ],
+              [
+                0,
+                254
+              ],
+              [
+                254,
+                0
+              ],
+              [
+                254,
+                254
+              ]
+            ],
+            "native_active": 1016,
+            "amplitude_native": [
+              1080,
+              1920
+            ],
+            "phase_native": [
+              1200,
+              1920
+            ]
+          },
+          "amplitude": "RMS .25 -> tanh(abs/.5), zeros remain zero, round255; NO extra peak normalization",
+          "phase": "floor256 modulo2pi; calibrated phase LUT required",
+          "rho": 0.3,
+          "residual": "((1-rho)*exp(i*phi)+rho); expert/global only, router rho0",
+          "residual_export": "joint amplitude*abs(modulation) and angle(modulation), not phase-only",
+          "nonlinearity": "relative mean clamp12/log1p ->pool478 for global or224 for expert ->rowLN/ReLU/RMS.25",
+          "readout": "Ten frozen retained original20 windows, normalized ten probabilities; no learned electronic head",
+          "quantization": "8-bit amplitude AND phase in training/validation/export, straight-through gradients",
+          "physical_status": "Offline contract only; native amplitude1920x1080/phase1920x1200, fresh LUT/ROI/exposure/orientation calibration required",
+          "graph": "RGB fixed input + continuous all4 routing + preserve478 expert-to-global",
+          "input_encoding": "Fixed RGB150 ->bicubicAA100/clamp/affine100 ->channel tile100 ->R/G/B/mean mosaic200 ->bilinear224/RMS.25; no learned encoder",
+          "routing": "Optical router energy -> centered RMS logits /temperature2 ->softmax ->L2 amplitude weights; all4 enabled, input dependent",
+          "global_input": "Expert CCD478 retained when next is global; no224 pool/refanout before global; expert transitions224",
+          "static_export": "Per-stage angle(M) and abs(M); dynamic amplitude uses actual478 global or224 expert; old224-only exporter incompatible",
+          "input_channel_tile": 100,
+          "input_network_aperture_unchanged": 224,
+          "task": "Frozen screened Caltech20; current four experts/four main stages; fixed20 windows; no electronic classifier",
+          "class_count": 10,
+          "original_detector_indices": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            7,
+            14,
+            15,
+            16,
+            19
+          ]
+        },
+        "sam_radius": 0.0,
+        "input_dropout": 0.0,
+        "method_restart_epoch": 1091,
+        "method_restart_lr": 0.0003,
+        "teacher_alpha": 0.5,
+        "teacher_temperature": 2.0,
+        "teacher_min_confidence": 0.5,
+        "teacher_checkpoint_sha256": "60d21da0fe1536651bf19a08ddf307bf54fec1f39239d06fe91cab9e193f9495",
+        "diagnosis_sha256": "2170e946282cd54e373faaa72d9ff64fad25d1bf5b161898ac785c2472f1c2aa",
+        "focal_gamma": 1.5,
+        "color_strength": 0.0
+      },
+      "best_epoch": 1117,
+      "best_model_digest": "f3fee4b4ff244214ded5f3b5961dcb2e59f1beeaed56c298c40329efea68122d",
+      "depth": 2,
+      "method": "teacher_correct_student_error_focused_KD",
+      "gpu": 2,
+      "sam_radius": 0.0,
+      "input_dropout": 0.0,
+      "restart_lr": 0.0003,
+      "teacher_alpha": 0.5,
+      "teacher_temperature": 2.0,
+      "teacher_min_confidence": 0.5,
+      "error_teacher_multiplier": 4.0,
+      "focal_gamma": 1.5,
+      "color_strength": 0.0,
+      "minimum_inherited_tests": 40
+    }
+  },
+  "diagnosis_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_objective_photometric_probe_20261015/diagnosis.json",
+  "diagnosis_sha256": "2170e946282cd54e373faaa72d9ff64fad25d1bf5b161898ac785c2472f1c2aa",
+  "teacher_checkpoint": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech10_L2L4_sam_vs_dropout_s17_20261015/L4_sam/block0003/L4_sam/best_checkpoint.pt",
+  "teacher_checkpoint_sha256": "60d21da0fe1536651bf19a08ddf307bf54fec1f39239d06fe91cab9e193f9495",
+  "teacher_model_digest": "dba67338fa0b3018e29df03b4731e2e2a1c51aa7230537af38b7905fa8c6ee4a",
+  "review_stale_epochs": 20,
+  "review_delta": 0.001,
+  "scope": "Human requests ongoing direct expert follow-up, scheduled tasks PAUSED. Error-focused KD only on existing TRAIN where frozen teacher is correct/confident and student wrong; prior measured KDgrad aligned but small, L2 still underfit. Same fixed data/optical graph/frozen100 controls. Test-informed extra residual budget, no independent generalization/causal claim. Publish only after resolving shared-main foreign-commit authorization; no source-private server copy."
+}
