@@ -18,7 +18,7 @@ import time
 from . import smolvlm2_temporal_baseline as shared
 
 PROFILE = shared.TASK / 'configs/baselines/glm46v_flash_temporal_4f.json'
-CHUNK = 64 * 1024 * 1024
+CHUNK = 256 * 1024 * 1024
 
 
 def validate_range(response, start, end, total):
@@ -46,10 +46,22 @@ def range_request(requests, url, start, end, total, deadline, output):
             if response is not None:
                 response.close()
             shared.frozen.write_json(output / f'network_{start}_{attempt}.json',
-                dict(start=start, end=end, attempt=attempt, error=repr(e), at_unix=time.time()))
+                dict(start=start, end=end, attempt=attempt, error=repr(e), at_unix=time.time(),
+                     retry_after=response.headers.get('Retry-After') if response is not None else None))
             if attempt == 3:
                 raise
-            time.sleep(min(3, max(0, deadline - time.time())))
+            retry_after = response.headers.get('Retry-After') if response is not None else None
+            from email.utils import parsedate_to_datetime
+            try:
+                delay = max(0, float(retry_after)) if retry_after is not None else 30 * attempt
+            except ValueError:
+                delay = max(0, parsedate_to_datetime(retry_after).timestamp() - time.time())
+            if time.time() + delay >= deadline:
+                raise TimeoutError('Server retry delay exceeds authorized deadline')
+            # Respect Retry-After, reduce request frequency; never change endpoint/IP.
+            until = time.time() + delay
+            while time.time() < until:
+                time.sleep(min(60, until - time.time()))
         except BaseException:
             if response is not None:
                 response.close()
@@ -62,7 +74,7 @@ def main():
     p.add_argument('--model', type=Path, required=True)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--deadline-unix', type=float, required=True)
-    p.add_argument('--resume-partial', choices=('recovery02',), help='Preserve verified failed recovery bytes')
+    p.add_argument('--resume-partial', choices=('recovery02', 'recovery03'), help='Preserve verified failed recovery bytes')
     args = p.parse_args()
     if not time.time() < args.deadline_unix <= time.time() + 3600:
         raise ValueError('Recovery must retain original asset deadline, at most one hour')
@@ -93,9 +105,10 @@ def main():
                 if not shared.asset_valid(target, spec):
                     raise ValueError('Preserve conflicting existing target: ' + name)
                 continue
-            prior = model / (name + '.recovery02.partial')
-            failed = prior if args.resume_partial == 'recovery02' and prior.exists() else model / (name + '.partial')
-            working = model / (name + ('.recovery03.partial' if args.resume_partial else '.recovery02.partial'))
+            prior = model / (name + '.' + args.resume_partial + '.partial') if args.resume_partial else None
+            failed = prior if prior is not None and prior.exists() else model / (name + '.partial')
+            suffix = '.recovery04.partial' if args.resume_partial == 'recovery03' else '.recovery03.partial' if args.resume_partial else '.recovery02.partial'
+            working = model / (name + suffix)
             if working.exists():
                 raise FileExistsError('No blind recovery restart: ' + str(working))
             if failed.exists():

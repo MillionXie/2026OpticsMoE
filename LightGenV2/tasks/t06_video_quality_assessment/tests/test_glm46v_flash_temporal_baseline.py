@@ -109,21 +109,45 @@ def test_transient_range_retry_bounded_and_does_not_retry_identity(tmp_path, mon
     def get(*args, **kwargs):
         calls.append(kwargs)
         return Response()
-    monkeypatch.setattr(assets.time, 'sleep', lambda _: None)
+    clock = [0.0]
+    monkeypatch.setattr(assets.time, 'time', lambda: clock[0])
+    monkeypatch.setattr(assets.time, 'sleep', lambda delay: clock.__setitem__(0, clock[0]+delay))
     receipts = []
     monkeypatch.setattr(assets.shared.frozen, 'write_json', lambda path, value: receipts.append(value))
     fake = SimpleNamespace(get=get, HTTPError=requests.HTTPError, RequestException=requests.RequestException)
     with pytest.raises(requests.HTTPError):
-        assets.range_request(fake, 'https://example.invalid', 4, 7, 12, assets.time.time()+30, tmp_path)
+        assets.range_request(fake, 'https://example.invalid', 4, 7, 12, assets.time.time()+300, tmp_path)
     assert len(calls) == 3
     assert [r['attempt'] for r in receipts] == [1, 2, 3]
     calls.clear()
     Response.status_code = 200
     with pytest.raises(RuntimeError):
-        assets.range_request(fake, 'https://example.invalid', 4, 7, 12, assets.time.time()+30, tmp_path)
+        assets.range_request(fake, 'https://example.invalid', 4, 7, 12, assets.time.time()+300, tmp_path)
     assert len(calls) == 1
 
 
 def test_refuse_old_outputs_before_loading(tmp_path):
     with pytest.raises(FileExistsError):
         run.shared.new_output(tmp_path)
+
+
+def test_server_retry_after_is_respected_without_extending_deadline(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    import requests
+    from LightGenV2.tasks.t06_video_quality_assessment import glm46v_assets as assets
+    clock = [0.0]
+    monkeypatch.setattr(assets.time, 'time', lambda: clock[0])
+    monkeypatch.setattr(assets.time, 'sleep', lambda delay: clock.__setitem__(0, clock[0]+delay))
+    monkeypatch.setattr(assets.shared.frozen, 'write_json', lambda *args: None)
+    limited = SimpleNamespace(status_code=429, headers={'Retry-After': '120'}, close=lambda: None)
+    good = SimpleNamespace(status_code=206, headers={'Content-Range': 'bytes 4-7/12', 'Content-Length': '4'})
+    responses = iter([limited, good])
+    fake = SimpleNamespace(get=lambda *a, **k: next(responses), HTTPError=requests.HTTPError,
+                           RequestException=requests.RequestException)
+    assert assets.range_request(fake, 'https://example.invalid', 4, 7, 12, 300, tmp_path) is good
+    assert clock[0] == 120
+    clock[0] = 0
+    fake.get = lambda *a, **k: limited
+    with pytest.raises(TimeoutError):
+        assets.range_request(fake, 'https://example.invalid', 4, 7, 12, 60, tmp_path)
+    assert clock[0] == 0
