@@ -1,6 +1,123 @@
-# LGVQ GPU utilization: execution gaps and steady-state measurement
+# LGVQ GPU utilization measurements
 
-## Figure 5 native resident utilization measurements
+## Current continuous inference measurements
+
+All **12 new model–batch points** completed on 15 October 2026, using the same
+three-phase continuous inference procedure on the NVIDIA A100-PCIE-40GB at
+250 W. The table below supersedes the earlier five-second-warmup table for
+independent utilization reporting. Every attempted point is included; earlier
+measurements remain available as historical records.
+
+| Model | Video batch B | Mean GPU utilization (%) | Peak GPU utilization (%) |
+| --- | ---: | ---: | ---: |
+| Qwen3-VL-2B | 1 | 55.32 | 57 |
+| Qwen3-VL-2B | 8 | 91.97 | 96 |
+| Qwen3-VL-2B | 10 | 92.61 | 96 |
+| CLIP ViT-B/32 | 1 | 38.90 | 40 |
+| CLIP ViT-B/32 | 9 | 89.39 | 93 |
+| CLIP ViT-B/32 | 10 | 98.55 | 99 |
+| YOLO11s | 1 | 45.28 | 47 |
+| YOLO11s | 2 | 68.52 | 74 |
+| YOLO11s | 3 | 99.54 | 100 |
+| DeepSeek-VL2-Tiny | 1 | 74.95 | 81 |
+| DeepSeek-VL2-Tiny | 4 | 90.64 | 98 |
+| DeepSeek-VL2-Tiny | 8 | 96.73 | 100 |
+
+Means and peaks both refer to the fixed seconds 5–30 of the third phase, a
+25-second interval. A peak of 100% is not a mean of 100%. Qwen B8 reproduces
+approximately 92% utilization without a batch of 16 or 24. CLIP B10 and YOLO B3
+reach the predefined 98% reference. Qwen B10 and DeepSeek B8 do not; their
+measured means are retained without expanding the batch search. Higher values
+from an earlier run or another execution phase are not substituted.
+
+### Measurement procedure
+
+Each model–batch point runs in a fresh process with its previously frozen
+checkpoint, native precision and quality head. The dataset manifest remains
+the original 2,250 TRAIN and 558 TEST split. Only the first B TEST videos are
+used for this utilization experiment, with four frames per video and unchanged
+frame selection. Their inputs are prepared and transferred to the GPU once.
+The same resident input is then reused, without repeating video decoding,
+preprocessing or input transfer between forwards. This is not a new full-558 accuracy evaluation, and repeated
+forwards are not additional distinct videos.
+
+Every point executes three ordered 30-second phases:
+
+1. Native synchronized inference with MOS returned to the CPU after each call.
+2. Synchronized inference with the same numerical work and MOS retained on the GPU.
+3. Native inference with GPU outputs, eight serial forwards on one CUDA stream,
+   followed by a group synchronization. Timing hooks are removed for this phase.
+
+Each forward processes B videos. The eight-call queue does not increase the
+simultaneous video batch to 8B. There is a two-second settling interval before
+each phase. The primary statistic, fixed in source before measurement, is the
+third phase's seconds 5–30 mean. The full 0–30-second mean and both fixed windows
+of the first two phases are also retained. No CUDA Graph, extra layer, training,
+precision change or artificial background load is used. All models, including
+Qwen B1, follow the same sequence. Unlike the earliest Qwen B1 control, this
+round does not insert an additional 200-video cost audit before its three phases.
+
+Utilization is polled every 50 ms. The reported mean is the arithmetic mean of
+all driver counters whose monotonic timestamps fall inside the fixed interval,
+including low and zero values. The 496–498 retained samples per point are polls,
+not independent driver averaging windows. GPU utilization denotes kernel-busy
+time, not SM occupancy or a fraction of peak FLOPS. The phases have a fixed order,
+so differences between phases are not randomized estimates of a single cause.
+Longer preceding inference did not uniformly increase all utilization values.
+
+Initial higher batches were Qwen8, CLIP9, YOLO3 and DeepSeek4. A mean below 98%
+allowed one predefined larger batch, respectively 10, 10, 4 and 8. A mean of at
+least 99.5% triggered the adjacent lower batch if not already measured. This
+produced the YOLO B2/B3 comparison; the counter itself cannot exceed 100%.
+These thresholds describe observed kernel-busy utilization, not arithmetic
+saturation or overload. All four B1 references were newly measured.
+
+### Data and manuscript use
+
+The existing [spreadsheet](LGVQ_temporal_gpu_utilization.xlsx) and
+[CSV](LGVQ_temporal_gpu_utilization.csv) now contain these 12 points. They include
+the fixed-window mean and peak, sample count, complete-window forward count,
+measurement role, timestamp in UTC+8 and source location. Forward counts include
+only entire eight-forward groups contained within seconds 5–30. Additional
+columns retain the third phase's full mean and the first two phases' steady
+means. Timestamps identify the last retained telemetry sample. Means are
+calculated in Excel from the sum of raw counters divided by the retained sample
+count; raw observations and unrounded values remain separate.
+
+Utilization is measured **independently** of the previously finalized latency,
+energy and SRCC. In particular, the historical Qwen B1 values of
+1,188.3861464262009 ms and 462.1134010767563 J per 16 videos are unchanged.
+The new 55.32% B1 utilization must not be described as a simultaneous observation
+from that historical cost measurement. It also does not replace or rescale the
+earlier 63.13% five-second-warmup result or the 67.88% earlier control; those used
+different preceding execution sequences. All six formal cost/metric data files
+remain SHA-identical to the previous protected versions.
+
+The canonical run is `lgvq_utilization_execution_20261015/continuous_suite01`.
+Its 121 original files were backed up locally with per-file SHA256 verification.
+`verified_summary.json` independently reconciles all 36 phase call counts and
+72 fixed telemetry windows, binds 97 source records, checks unchanged PT and
+measurement-module identities, and confirms exact MOS agreement across phases.
+Startup source was published main `85e6a99c7`; later unrelated HEAD changes did
+not alter the measured modules. The preceding spreadsheet and CSV are archived
+under `figure5_native_suite01/published_table_before_continuous.*` before in-place
+replacement. All 13 owned parent/child PIDs were confirmed absent, and the A100
+had no compute process at 16:37:14 +0800. The coordinated model task was notified
+that it could resume; no utilization reservation or queued rerun remains.
+
+Suggested manuscript wording: GPU utilization was evaluated independently of
+latency and energy using frozen native inference on an NVIDIA A100 GPU with a
+250-W power limit. For each video batch size, four-frame inputs from the first B
+test videos were prepared and transferred once, then reused for three ordered
+30-s resident-inference phases. We report the mean driver utilization over the
+predefined seconds 5–30 of the final phase, which retained outputs on the GPU and
+synchronized after every eight serial forwards on one CUDA stream. No CUDA Graph
+was used. Mean utilization reached 98.55% for CLIP ViT-B/32 at B=10 and 99.54%
+for YOLO11s at B=3. Qwen3-VL-2B achieved 91.97% at B=8 and 92.61% at B=10;
+DeepSeek-VL2-Tiny achieved 96.73% at B=8. These values characterize sustained
+kernel-busy duty rather than arithmetic occupancy or peak FLOPS.
+
+## Historical five second warmup measurements
 
 The unified protocol has produced **10 valid points: nine new measurements and
 the retained Qwen B1 measurement**. DeepSeek's high-batch points remain pending:
