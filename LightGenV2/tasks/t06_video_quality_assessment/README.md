@@ -171,6 +171,19 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-15 Ovis准备恢复与原生输入合同：**Git待发布的`ccb677caf`已确认在远端，
+服务器通过main同步后14项CPU合同测试通过，`lgvq_ovis25_temporal_20261015/prepare`
+已实际启动单CPU固定SHA下载（wrapper1708546）；不是训练。官方`configuration_ovis2_5.py`
+及`modeling_ovis2_5.py`均已完整只读审查：原生video/NaViT、视觉soft-token→VTE、原Qwen3
+未改图；元数据CPU meta模型已构造通过，质量词均原生单token17082/84103/60795/15216/49655，
+尚无GPU性能结论，不需要升级现有环境。专属入口`ovis25_temporal_baseline`固定每视频
+四帧/原65%crop/448，原生preprocess显式min=max448²、grid[4,28,28]、784视觉token，
+Siglip原生0.5归一化，无额外帧/crop/thinking/生成；B2仅批处理独立视频，B1评估。
+原视觉merge后取原语言骨干最后有效token，只更新独立五行原生LMhead副本；GPU smoke须
+核原生forward末token logits与feature tap一致、原骨干及原生行无梯度/不改。数据配置及
+固定官方依赖SHA均入身份；suite一次有界CPU预检→两TRAIN smoke→2808特征/原50e→
+A100 B1完整558，3h总界/训练2h，错误保部分证据无自动重试，不更改已封存Smol/InternVL。
+
 **2026-10-15 InternVL单B1实际交付与下一候选准备：**
 `lgvq_internvl35_temporal_20261015/suite01`已完成：官方资产SHA、真实CPU/GPU smoke、
 2808冻结特征（44分片逐值等于完整FP16缓存）、原2250/558划分、50轮五行头训练，
