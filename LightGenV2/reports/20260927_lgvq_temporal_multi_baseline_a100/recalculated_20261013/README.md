@@ -64,8 +64,11 @@ SHA已不同。因此前一探针的Q投影差不能全归因于该投影本身�
 
 所有实际注意力输入、原始首注意力参数/config/source、逐算子输出/大矩阵固定query
 切片、8视频features/logits、原始kernel名、命令/状态保存在上述run；诊断PT不是
-新训练权重。Qwen和整模型DeepSeek证据已按SHA备份本地；最后固定输入隔离证据的
-本地SHA备份仍在进行，原服务器数据完整保留，后续优先CPU分析，不继续占卡。
+新训练权重。本轮45份证据共885092364字节已全部按SHA备份本地同名run，见
+`backup_receipt_operator_all04.json`。另用CPU独立从原始PT重算Qwen各控制、DeepSeek
+固定输入/Q投影/注意力输出差，逐项与JSON精确一致；hidden/mask/position跨B SHA
+一致，结果在`cpu_final_verification.json`，三GPU子PID均已退出。无需占卡即可复核
+这些结果，但原A100特定kernel及全558稳定化仍未完成，不在本轮自动追加GPU任务。
 
 ### 可供论文使用的新增英文说明（须与原A100结果分开）
 
