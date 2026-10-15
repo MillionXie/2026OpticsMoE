@@ -69,6 +69,22 @@ def run(args):
         reused_qwen_b1=dict(path=str(args.reuse_qwen_b1),
                            report_sha256=frozen.sha256(args.reuse_qwen_b1 / "report.json")),
         note="Independent utilization only. Keep all attempted points; do not replace paper latency/energy/SRCC.")
+    resume_from = getattr(args, "resume_from", None)
+    if resume_from is not None:
+        previous = json.loads((resume_from / "suite_status.json").read_text())
+        if (previous.get("status") != "failed"
+                or previous.get("reused_qwen_b1", {}).get("report_sha256") != state["reused_qwen_b1"]["report_sha256"]):
+            raise ValueError("Resume only a failed suite with the same frozen Qwen B1 reference")
+        for item in previous["completed"]:
+            directory = (REPO / item["source_directory"]) if "source_directory" in item else resume_from / item["name"]
+            report = json.loads((directory / "report.json").read_text())
+            if (report.get("status") != "complete" or report.get("baseline") != item["baseline"]
+                    or report.get("batch") != item["batch"] or report.get("manifest_sha256") != frozen.MANIFEST_SHA):
+                raise ValueError("Previously completed point failed identity verification")
+            state["completed"].append({**item, "source_directory": directory.relative_to(REPO).as_posix()})
+        state["resume_from"] = str(resume_from)
+        state["resume_status_sha256"] = frozen.sha256(resume_from / "suite_status.json")
+        state["previously_completed_groups"] = len(state["completed"])
 
     def save():
         frozen.write_json(args.output / "suite_status.json", state)
@@ -95,16 +111,19 @@ def run(args):
         value = report["measurement"]["mean_gpu_utilization_percent"]
         if not 0 <= value <= 100:
             raise RuntimeError("Invalid driver GPU utilization")
-        state["completed"].append(dict(name=name, baseline=baseline, batch=batch, mean_utilization_percent=value))
+        state["completed"].append(dict(name=name, baseline=baseline, batch=batch, mean_utilization_percent=value,
+                                       source_directory=(args.output / name).relative_to(REPO).as_posix()))
         save()
         return value
 
     save()
     try:
         for baseline in ("clip", "yolo", "deepseek"):
-            dispatch(baseline, 1)
+            if not any(x["baseline"] == baseline and x["batch"] == 1 for x in state["completed"]):
+                dispatch(baseline, 1)
         for baseline in INITIAL:
-            observed = {}
+            observed = {x["batch"]: x["mean_utilization_percent"] for x in state["completed"]
+                        if x["baseline"] == baseline and x["batch"] != 1}
             while (batch := next_batch(baseline, observed)) is not None:
                 observed[batch] = dispatch(baseline, batch)
         reproduction.cuda_guard()
@@ -121,6 +140,7 @@ def main():
     for name in ("manifest", "output", "reuse-qwen-b1"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--deadline", type=float, required=True)
+    parser.add_argument("--resume-from", type=Path)
     args = parser.parse_args()
     for name, value in vars(args).items():
         if isinstance(value, Path):

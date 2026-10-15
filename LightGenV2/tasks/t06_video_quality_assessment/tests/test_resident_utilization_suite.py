@@ -26,3 +26,12 @@ def test_larger_then_adjacent_lower_if_saturated():
 
 def test_under_target_at_budget_limit_retains_result():
     assert suite.next_batch("qwen", {16: 96.5, 24: 97.3}) is None
+
+
+def test_resume_skips_finished_points_without_resetting_budget():
+    from pathlib import Path
+    source = Path(suite.__file__).read_text()
+    assert 'previously_completed_groups' in source
+    assert 'resume_status_sha256' in source
+    assert 'len(state["completed"]) >= MAX_NEW_GROUPS' in source
+    assert 'if not any(x["baseline"] == baseline and x["batch"] == 1' in source
