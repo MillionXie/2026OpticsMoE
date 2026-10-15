@@ -2,6 +2,88 @@
 
 Updated 15 October 2026 (both bounded layer diagnoses complete; formal measurements unchanged). All 19 frozen settings, earlier numerical probes, and the new eight-video Qwen/DeepSeek boundary and route experiments are complete. This does not mean every primitive or CUDA kernel has been isolated or a stable full-558 replacement evaluation has been performed. The displayed curves still use only uninterrupted `full_remeasurement02` measurements. Interrupted rounds and failed diagnostics remain preserved, excluded from final data. The original report location and three-workbook-sheet structure are retained.
 
+## 最新因果隔离：相同输入、不同批形状的运算差异（15 October 2026）
+
+以下补充不是正式A100复测。用户允许利用空闲4090/3090排查、避开另一窗口A100
+测速，因此使用物理RTX4090 `GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`，
+Torch2.6cu124/CUDA12.4、原部署BF16权重。`operator_mechanisms04/rtx4090_qwen`
+与`rtx4090_deepseek`执行main `f405eaf22`，随后针对性固定输入隔离
+`rtx4090_deepseek_isolated`执行`34e61ca2f`；各有600秒上限、单卡串行并已实际
+完成/退卡。原A100派发因共享锁busy在CUDA初始化前退出，没有产生新的A100结果。
+正式六份数据文件仍逐SHA一致，不将跨卡探针、固定输入重复行或数值控制填入图表。
+
+### Qwen：矩阵形状确实改变实际计算内核
+
+取此前A100保存的真实视频0首deepstack merger fc1操作数，先按部署语义量化BF16，
+固定相同输入/权重/偏置，把同一[392,4096]输入重复成392/784/1568行。
+RTX4090 profiler实际记录的原生GEMM核分别含
+`128x64_sliced1x2`、`128x64`、`64x128_sliced1x2`，完整名称见
+`qwen_operator_gpu.json`，证明本探针的矩阵形状会切换执行核，而非仅凭源代码推测。
+这些核名不能反推原A100执行了同一核，也不能仅凭`sliced`断言全部split-K舍入机制。
+
+| Qwen孤立fc1，B4相对自身B1 | 不同元素/总数 | RMS绝对差 | 最大绝对差 |
+| --- | ---: | ---: | ---: |
+| 原生BF16 linear | 422346/1605632 | .009572562 | .125 |
+| BF16 matmul与bias显式分开 | 558/1605632 | .000330096 | .125 |
+| 操作数转FP32计算、再回BF16 | 118/1605632 | .000078509 | .0625 |
+| 仅关闭BF16低精度归约开关 | 422346/1605632 | .009572562 | .125 |
+
+FP32控制没有恢复已量化丢失的位，也没有改变权重数值；差异明显减少但仍非零，不能
+称逐位稳定或完整模型修复。该孤立算子的控制结果不是8视频或558视频SRCC结果。
+CPU先前检验的简单两次bias舍入及2/4/8/16段BF16部分和均未精确复现原A100 B1，
+保留否定证据，不把未经验证的具体累加方式写成结论。
+
+### DeepSeek：上游继承误差与注意力自身误差已分离
+
+先在RTX4090整模型同8视频/B1/2/4记录首语言注意力内部算子；原生无观测/有观测
+MOS逐位一致，排除本次观测改变评分。单独把语言attention GEMM转FP32并未稳定
+整模型：B4/B1最大MOS差由.7458458变为1.4039307，不能作为修复采用。
+
+进一步在原生首注意力pre-hook保存真实hidden/mask/position并受控停止forward，
+同时检查视频0的上游边界。4090上B2最早已观测差为首vision block注意力输出
+（max_abs=.015625），B4为首vision block MLP输出（.0625）；到语言注意力时输入
+SHA已不同。因此前一探针的Q投影差不能全归因于该投影本身。此定位不同于旧A100
+上此前64边界一致、首语言注意力输出才变的结果，须保留硬件区别，不能互相替代。
+
+随后取同一份实际B1注意力输入，精确重复为B2/B4；实际mask/position同样比较，
+使用原首LlamaAttention参数，隔离该注意力本身。即使固定了上游输入，B2/B4第一个
+已观测数值差仍出现在Q投影`aten.linear.default/0`，不是MoE gate、BatchNorm或
+不同视频内容。B4/B1结果如下：
+
+| DeepSeek固定输入首注意力 | 原生BF16 | FP32 GEMM后回原dtype |
+| --- | ---: | ---: |
+| Q投影不同元素/2231040 | 435414 | 265 |
+| Q投影RMS绝对差 | .001978964 | .000023548 |
+| 注意力输出不同元素/2231040 | 1535499 | 17787 |
+| 注意力输出RMS绝对差 | .000330167 | .000012077 |
+| 注意力输出最大绝对差 | .015625 | .00390625 |
+
+这给出了“相同输入也会因有限精度运算路径随batch形状改变而产生差异”的直接干预
+证据，同时说明只稳定注意力、忽略上游视觉误差并不足以稳定整模型。原A100上的
+后续MoE专家集合变化证据仍有效，但不能称MoE是最早来源或唯一因果贡献。
+
+所有实际注意力输入、原始首注意力参数/config/source、逐算子输出/大矩阵固定query
+切片、8视频features/logits、原始kernel名、命令/状态保存在上述run；诊断PT不是
+新训练权重。Qwen和整模型DeepSeek证据已按SHA备份本地；最后固定输入隔离证据的
+本地SHA备份仍在进行，原服务器数据完整保留，后续优先CPU分析，不继续占卡。
+
+### 可供论文使用的新增英文说明（须与原A100结果分开）
+
+To test whether batch-shape effects can arise independently of changes in model inputs,
+we conducted additional operator-level interventions on an idle RTX 4090, using the
+deployed quantized operands and frozen weights. Repeating the same input rows at different
+matrix sizes in the first Qwen visual-merger projection selected different GEMM kernels
+and produced different outputs. FP32 computation followed by conversion back to BF16
+reduced, but did not eliminate, these differences. In DeepSeek, an additional fixed-input
+experiment separated inherited visual-stream discrepancies from numerical variation
+generated within the first language attention module. With identical attention inputs,
+the first observed discrepancy occurred at the query projection; higher-precision GEMM
+substantially reduced the attention-output discrepancy. However, applying this control
+only to language attention did not stabilize complete-model predictions. These experiments
+provide causal evidence for finite-precision, shape-dependent arithmetic effects, but do
+not identify every original A100 kernel, establish complete-model numerical invariance,
+or replace the independently measured A100 SRCC and matched inference costs.
+
 ## 最新结论：实际差异来源、路由和论文可用解释（15 October 2026）
 
 本次同canonical诊断run的`focused_merger_routes03`，源main `e34b2a586`；先完成
