@@ -209,11 +209,16 @@ def install_hooks(model, trace):
         first_component = (".blocks.0." in name or ".layers.0." in name) and name.endswith((".self_attn",".attn",".mlp"))
         if language or vision or first_component:
             kind = "language" if language or ".layers." in name else "vision"
-            def before(_module,args,stage=name,kind=kind):
-                trace.capture(stage+":input",first_tensor(args),kind)
+            def before(_module,args,kwargs,stage=name,kind=kind):
+                value = first_tensor(args)
+                if value is None:
+                    value = first_tensor(kwargs.get("hidden_states", kwargs.get("x")))
+                if value is None:
+                    raise ValueError(f"No hidden-state tensor at {stage}; keys={tuple(kwargs)}")
+                trace.capture(stage+":input",value,kind)
             def after(_module,args,out,stage=name,kind=kind):
                 trace.capture(stage+":output",first_tensor(out),kind)
-            handles.extend([module.register_forward_pre_hook(before),module.register_forward_hook(after)])
+            handles.extend([module.register_forward_pre_hook(before,with_kwargs=True),module.register_forward_hook(after)])
         if cls == "MoEGate":
             def route(_module,args,out,stage=name):
                 trace.capture(stage+":expert_ids",out[0],"route")

@@ -7,6 +7,10 @@
 forward、权重或精度。补计时状态回归和调用顺序测试，本地37项CPU检查通过。
 上次失败原位保护；恢复使用同一run内`recovery_timerfix01`，按修复后Git源码先新做
 CPU输入/位置收据，再同源GPU串行Qwen/DeepSeek各600秒上限、同8 TEST/B1/2/4。
+`recovery_timerfix01`越过计时错误，但在首视频Qwen语言注意力的命名参数输入钩子处
+失败；14份证据已SHA备份，无有效批比较，DeepSeek未启动，GPU进程已退出。
+已据实际栈修正pre-hook的`with_kwargs=True`及hidden_states显式取值，补回归测试，
+两端核接口后在`recovery_hooks02`重新生成修复来源CPU收据；不是原位覆盖或盲重启。
 用户要求尽可能保存中间数据并尽快释放卡：每个模式/批量完成即落盘边界差统计及
 8视频features/logits；不为分析占位、不跑全558、不中途改变正式成本。GPU阶段结束
 立即退出并备份，后续复核用已保存数据。旧监督已删除，不复活其旧派发命令。

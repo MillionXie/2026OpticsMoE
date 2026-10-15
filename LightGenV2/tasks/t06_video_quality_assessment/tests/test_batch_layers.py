@@ -64,3 +64,27 @@ def test_timer_detached_before_trace_hooks_and_native_forward():
     installed = next(n.lineno for n in calls if isinstance(n.func, ast.Name) and n.func.id == "install_hooks")
     forwarded = next(n.lineno for n in calls if isinstance(n.func, ast.Attribute) and n.func.attr == "diagnostic_forward")
     assert detached < installed < forwarded
+
+
+def test_native_keyword_hidden_state_hook_contract(monkeypatch):
+    marker = object()
+    monkeypatch.setattr(trace,"first_tensor",lambda value: marker if value is marker else None)
+    class Module:
+        def register_forward_pre_hook(self, hook, **options):
+            assert options == {"with_kwargs": True}
+            self.before = hook
+            return object()
+        def register_forward_hook(self, hook):
+            self.after = hook
+            return object()
+    decoder = type("Qwen3VLTextDecoderLayer",(Module,),{})()
+    class Model:
+        def named_modules(self):
+            return [("model.language_model.layers.0",decoder)]
+    class Recorder:
+        def __init__(self): self.events=[]
+        def capture(self,*args): self.events.append(args)
+    recorder = Recorder()
+    trace.install_hooks(Model(),recorder)
+    decoder.before(decoder,(),{"position_embeddings":object(),"hidden_states":marker})
+    assert recorder.events == [("model.language_model.layers.0:input",marker,"language")]
