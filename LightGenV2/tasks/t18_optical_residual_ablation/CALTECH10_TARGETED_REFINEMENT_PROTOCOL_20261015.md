@@ -44,8 +44,10 @@ unchanged model exact reuse, shared digest claims. Frozen100 controls/L3 never
 trained or evaluated again. Do not choose highesttest epoch or weaken control.
 
 Review every10 new epochs, not wait75. If validationNLL fails .001 significant
-improvement for20 new epochs, stop that unchanged strategy for explicit expert
-review regardless of LR. No preset total epoch cap; improve and continue, or
+improvement AND validation accuracy makes no new high for20 new epochs, stop
+L4 for expert review regardless of LR; L2 additionally requires no .5pp training
+accuracy gain for10 epochs, distinguishing continued fit progress from stagnation.
+Record last-endpoint train/val separately from selected-model metrics. No preset total epoch cap; improve and continue, or
 actual L2test>=82 / L4overallgap>=10pp stops.1800fitsec stage faultguard. Actual
 review pause is not target success. New human permits evidence-led subsequent
 training-strategy changes within these fixed optical/data/control constraints;
