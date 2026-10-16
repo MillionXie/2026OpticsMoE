@@ -1,0 +1,27 @@
+{
+  "scope": "one evidence-backed regularization recipe per residual depth, after verified equal100; controls frozen",
+  "baseline_run": "caltech20_alt246_biasfree_rmslearned_linear_s17_equal100_20261016",
+  "baseline_science_sha256": "548c5a90f818b5cb6f3f77f34edbe429d28e6e5d20ffdf01a013437689303ba3",
+  "baseline_test_audit_sha256": "93db16f16e4f8ecbae1b07591595a8399dfe308ae3245dd3f7b4927e13fde8a7",
+  "diagnosis": "selected train-val gaps2/4/6:26.2167/32.5088/36.5305pp; deeper fits near100 but held-out validation worsens; wrong validation margins mostly not close. Strengthen training invariance/regularization rather than change labels, classes, inference graph or controls.",
+  "common": {
+    "block_epochs": 10,
+    "method_review_epochs": 20,
+    "maximum_seconds": 1800,
+    "lr": 0.0003,
+    "label_smoothing": 0.05,
+    "electronic_weight_decay": 0.01,
+    "capture_weight": 0.05,
+    "ema_decay": 0.95,
+    "horizontal_flip_probability": 0.5,
+    "automatic_retry": false,
+    "scheduler": "Restore full Adam/EMA; replace completed cosine schedule with ReduceLROnPlateau factor.5/patience3/delta.002/min2e-5, no Adam or EMA reset",
+    "selection": "first minimum validation EMA balancedNLL over complete baseline100 plus all extra epochs",
+    "test_informed_development": true
+  },
+  "depths": {
+    "2": {"feature_dropout": 0.1, "mixup_alpha": 0.3, "phase_smooth_weight": 0.02},
+    "4": {"feature_dropout": 0.2, "mixup_alpha": 0.4, "phase_smooth_weight": 0.05},
+    "6": {"feature_dropout": 0.3, "mixup_alpha": 0.5, "phase_smooth_weight": 0.08}
+  }
+}
