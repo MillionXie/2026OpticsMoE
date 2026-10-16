@@ -472,14 +472,15 @@ def utilization(args,identity,guard):
                 for _ in range(8):mos,raw=compute(inputs)
                 torch.cuda.synchronize()
                 groups.append(dict(phase=name,start=tick,end=time.monotonic(),forwards=8))
-            return started,time.monotonic()
+            return started,time.monotonic(),mos
         try:
-            phase("warmup",5);start,end=phase("measured",30)
+            phase("warmup",5);start,end,final_mos=phase("measured",30)
             samples=sampler.stop();selected=[s for s in samples if start<=s.host_monotonic_s<end]
             result=telemetry.telemetry_report(selected,prefix="")
             result.update(start_monotonic_s=start,end_monotonic_s=end,duration_s=end-start,
                 measured_forwards=sum(g["forwards"] for g in groups if g["phase"]=="measured"),
-                sample_id=test[0]["sample_id"],positions=positions,batch=1)
+                sample_id=test[0]["sample_id"],positions=positions,batch=1,
+                final_mos=final_mos.detach().cpu().tolist())
             result["full_forward_mean_ms"]=1000*(end-start)/result["measured_forwards"]
             write(folder/"report.json",result);reports.append(result)
         finally:
