@@ -1,0 +1,7 @@
+# Actual visual review
+
+Both corrected PNG previews were actually inspected using view_image after rendering. The three depths2/4/6 share one TEST comparison axes,60%–100%, with 80% reference and exact signed gaps. Six-layer negative gap−0.49 points remains visible. Both arms explicitly refer to optical residual, sharing the learned electronic readout. Labels, bars, legend and values are readable; no clipping or overlap. Full100 train/validation curves retain all600 observations without smoothing/interpolation and use0%–100% to retain early learning. No macro chart.
+
+Initial local rendering showed a locale-decoding glyph error in the E-G axis label. Its initial plot source and figures are retained locally, not published as accepted output. The corrected standalone source explicitly read UTF-8 and uses ASCII E-G; it rendered into a fresh figures_corrected directory, whose two pages were actually viewed again. Metric CSV hashes are identical before/after this visual repair. No model, scientific audit, inference or dataset operation was repeated.
+
+Accepted reproducible source: plot_metrics_utf8.py. Accepted vectors/previews: figures_corrected/test_accuracy_depth246.svg/.png and figures_corrected/training_accuracy_depth246.svg/.png. Byte identities are recorded by figures_corrected/artifact_sha256.csv; all entries were checked against actual files. PNGs are local previews; SVG/CSV/source are public artifacts. These are the full100 baseline, not the currently running six-layer residual refinement.
