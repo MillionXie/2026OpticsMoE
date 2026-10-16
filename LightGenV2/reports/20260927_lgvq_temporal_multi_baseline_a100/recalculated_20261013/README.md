@@ -6,6 +6,29 @@ Current [figure data](plot_data.csv), [full costs and telemetry](timing_energy_r
 
 GPU-utilization labels use independent native resident queue8 experiments, not the utilization of the dataset-once cost run. Following the user's explicit finalization on 16 October, Qwen B=1 displays its historical **63.133111480865225%** single-run result; all other points retain the uniform three-repeat pooled means. The newer Qwen B=1 pooled result, 71.17536071032187%, remains an audit record, not the selected display value. The earlier execution/Graph controls and precision diagnoses below are preserved historical evidence. No precision diagnosis was reopened in this update. The original three-sheet cost workbook structure is retained.
 
+## 完整比较图与绘图入口
+
+完整图包含LightGen-II及全部六个电子模型：Qwen3-VL-2B、GLM-4.6V-Flash、
+DeepSeek-VL2-Small、CLIP ViT-B/32、YOLO11s、DeepSeek-VL2-Tiny。
+每个面板均含30个电子model/batch点和1个光学参考，不只展示Tiny版DeepSeek，
+也没有遗漏GLM的B1/B2或Small的B1/B2/B3/B4。
+
+- 双面板：[PNG](srcc_cost_comparison_reference.png)、[可编辑SVG](srcc_cost_comparison_reference.svg)。
+- 时延单图：[PNG](latency_comparison_reference.png)、[可编辑SVG](latency_comparison_reference.svg)。
+- 能耗单图：[PNG](energy_comparison_reference.png)、[可编辑SVG](energy_comparison_reference.svg)。
+
+PNG为300 dpi，横轴分别为每16视频时间(ms)和能耗(J)，采用对数轴完整覆盖所有点，
+纵轴为558 TEST上的Temporal SRCC(0–1)。标签给出B和独立resident利用率，
+不把利用率代入成本；Qwen B1定稿锚点及LightGen-II参考性质不变。
+可复现绘图入口为本报告上级目录的`plot_current_comparison.py --cost-only`，
+从受保护测量JSON及批准展示映射读取，并逐项核对`plot_data.csv`后绘制。
+原旧`build_analysis.py`不作为本轮绘图入口，不能导入执行以免覆盖历史。
+
+`plot_data.xlsx`已按服务器SHA核验的上一版完整恢复，保留原颜色、公式、batch列及来源；
+误改版先行备份在canonical成本run的`presentation_prior_20261016/accidental_edit_48763b6ec126_plot_data.xlsx`。
+恢复后文件SHA仍为`342e1814ba7bc185b16dfb1578bdd5b0c58a10a41d2d3cc1bc8a03c44351046b`，
+CSV未改变。恢复收据与图的逐点覆盖/输出SHA收据保存在同一canonical run，不改原测量。
+
 ## 2026-10-16：教师展示版、定稿锚点与倍数定义
 
 本轮只整理已经测完的数据，没有启动新的 GPU 测试或训练。优先展示文件为同目录的

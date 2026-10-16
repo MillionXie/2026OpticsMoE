@@ -14,6 +14,13 @@ LightGen-II时间/能效优势及同模型相对B1改善；模型总量/MoE激�
 新派生记录为成本canonical run内`presentation_update_20261016.json`，修改前表图在
 `presentation_prior_20261016`中逐SHA备份；不另建工程或outputs目录。
 
+完整时延/能耗比较图已明确纳入GLM-4.6V-Flash与DeepSeek-VL2-Small，连同原四模型共30个
+电子batch点及1个LightGen-II参考。报告目录保留双面板总图，并提供`latency_comparison_reference`
+与`energy_comparison_reference`单图，各PNG300dpi及SVG；不会只画Tiny而遗漏Small。
+绘图源码统一为`LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/plot_current_comparison.py`，
+使用`--cost-only`只更新成本比较图，先核批准CSV与受保护JSON一致；不运行GPU或旧build_analysis。
+用户误改的plot_data.xlsx已先备份再按上一版SHA精确恢复，CSV及测量JSON均不变。
+
 ## 2026-10-15 全部已有 batch 的冻结精度与成本复测
 
 用户在统一利用率测量结束后授权，按原成本协议串行复测六模型的全部30个已有batch点。
