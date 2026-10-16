@@ -1,5 +1,15 @@
 # LGVQ GPU utilization measurements
 
+## CLIP B11 extension — 16 October 2026
+
+The original 30-point/90-repeat cohort below is preserved. A new CLIP B11 point uses exactly the same native resident queue8 loop, frozen checkpoint, 4-frame inputs, 250 W A100 and three complete repeats. Means of 99.6806722689%, 99.3819095477% and 99.7231543624% pool to 99.5950782998% over 1,788 samples and 90.108401 s (14,680 forwards). The first new batch already exceeds 98%, so no B12–16 was run. This is a measured result, not a configured utilization target or best-window selection. B10 remains its original different-date observation of 94.89367655%.
+
+All three workbooks and display CSVs append the new point; the original90 repeats remain unchanged and three B11 repeats are appended. `plot_data.xlsx` adds the separately measured full558 SRCC0.725202866664, T16=34.6894103289ms and E16=13.2737767190J. These costs use their own interleaved-run power estimate, not resident-load power. The original cost CSV/JSON remain the immutable30-point cohort; the extension's independently recomputed `verified_costs.json` is separate.
+
+Qwen B2/4/8/10 were profiled for diagnosis only. Eight native forwards per batch contain148/206/322/380 CUDA stream synchronizations per forward and58/108/208/258 scalar-read operators per forward. Scalar-sized D2H copies correlate with native scalar/indexing operations even when inputs are already GPU resident. Profiler timing is intrusive and is not NVML utilization, SM occupancy or a replacement cost. One unprofiled repeat at each diagnostic B is retained only as a control. Formal Qwen values, including the63.133111480865225% historical B1 anchor, are unchanged. This demonstrates internal synchronization overhead, without assigning a causal percentage of the plateau or promising98% after optimization.
+
+Raw reports, traces, identity/SHA records and independent audits reside in T06 `runs/simulation/lgvq_clip_saturation_qwen_plateau_a100_20261016/continuation01`. See the current comparison README for the numerical extension and manuscript paragraph.
+
 ## Finalized display selection — 16 October 2026
 
 The user explicitly retains Qwen B=1 **63.133111480865225%** from

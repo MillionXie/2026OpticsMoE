@@ -1,5 +1,36 @@
 # LGVQ temporal quality: frozen A100 costs and independent resident utilization
 
+## 16 October 2026: CLIP saturation extension and Qwen execution diagnosis
+
+The current figures and three workbooks now contain **31 electronic model–batch points plus one LightGen-II reference**. The original30 accuracy/cost records and90 utilization repeats remain unchanged. The new CLIP B=11 row is appended in green in `plot_data.xlsx`; raw repeats are appended in the utilization workbook. This extension used the same frozen PT, original4-frame inputs and measurement loops, without training, Graph capture, clock/power changes or selection of a high-utilization subwindow. Qwen B=1 remains63.133111480865225%,1188.3861464262009ms and462.1134010767563J from its declared historical sources.
+
+| New model–batch point | Resident repeat1 (%) | Repeat2 (%) | Repeat3 (%) | Pooled utilization (%) | Full558 SRCC | Full558 PLCC | T16 (ms) | E16 (J) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| CLIP ViT-B/32, B=11 | 99.6806722689 | 99.3819095477 | 99.7231543624 | 99.5950782998 | 0.725202866664 | 0.728218319846 | 34.6894103289 | 13.2737767190 |
+
+This was the first new batch tested above B=10, so the 98% stopping criterion was met without testing B12–16. The three complete windows total 90.108401 s, 1,788 driver samples and 14,680 forward calls. Each call processes 11 videos, not 88 videos; queue8 means eight consecutive calls on the same stream. The prior B10 result of 94.89367655% remains a different-date observation, not a same-round threshold bracket or proof of a monotonic batch response.
+
+Accuracy/cost were measured in a separate fresh process on all558 unique TEST videos. The first200 determine costs:19 calls including a2-video tail, followed by33 further TEST calls including a6-video tail. Their synchronized inference times sum to433.617629110813ms, giving `T16=433.617629110813×16/200`. The same cost run has11 inference-tagged power samples with mean44.4463636364W; `E16=(338.2+44.4463636364)×T16/1000`. This is the user-approved host-proxy and sampled-board-power estimate, not an integrated energy-meter measurement. Short calls and the driver's averaging window limit attribution of instantaneous power. The first call248.082ms is included under the unchanged no-explicit-warmup rule. The99.60% utilization belongs to the independent resident load, not to this interleaved cost run; neither its utilization nor its approximately247W board power is substituted into E16. Higher resident utilization does not guarantee lower cost: the retained B10 costs are34.107ms and12.895J, slightly lower than this new B11 observation.
+
+### Qwen: what the native execution trace establishes
+
+Four diagnostic points used the original first B TEST inputs prepared and copied to GPU once, then eight native forwards. Input preparation and MOS transfer to CPU are outside the profiler window. Native outputs before/after profiling match exactly at the recorded FP32 MOS output. No weights or model computation were altered. Correlation IDs link scalar-sized device-to-host copies to `aten::_local_scalar_dense` and `aten::nonzero` inside forward.
+
+| Video batch B | GPU scalar reads (`aten::item`) per forward | Device-to-host events per forward | CUDA stream synchronizations per forward |
+| --- | ---: | ---: | ---: |
+| 2 | 58 | 143 | 148 |
+| 4 | 108 | 199 | 206 |
+| 8 | 208 | 311 | 322 |
+| 10 | 258 | 367 | 380 |
+
+Thus, removing external decoding/H2D does not remove Qwen's internal host–device dependencies. These operations increase with video batch rather than being fully amortized. Source inspection also identifies dynamic video-position/geometry preparation in the official native model. This is evidence for a synchronization-overhead contribution to the observed utilization plateau, **not a causal ablation proving its unique cause or predicting98% after optimization**. The GPU kernel-union fractions of the instrumented traces (55.72%,73.06%,79.86%,81.08%) are not NVML utilization; profiler overhead prevents using them as formal performance or cost values. The one-repeat unprofiled diagnostic controls are also separate audit records, not replacements for the original three-repeat table. No accuracy correction was reopened.
+
+For manuscript use: “An additional CLIP batch of 11 videos reached a pooled resident GPU utilization of 99.60% across three complete 30-s measurement windows, following at least 5 s warmup per repeat. Frozen evaluation on 558 LGVQ test videos yielded an SRCC of 0.7252. Under the separately measured original inference-cost protocol, processing time and estimated energy normalized to 16 videos were 34.689 ms and 13.274 J, respectively. Native Qwen execution traces revealed batch-dependent scalar reads, dynamic indexing and stream synchronizations despite GPU-resident input, indicating internal host–device dependencies that are not removed by eliminating external preprocessing. These diagnostic traces were not used to replace the finalized comparison measurements.”
+
+Evidence is in T06 `runs/simulation/lgvq_clip_saturation_qwen_plateau_a100_20261016/continuation01`: `verified_costs.json`, `qwen_trace_audit.json`, original reports/telemetry, four native traces and SHA receipts. All GPU phases completed; the measurement context exited. The first parent run's earlier CPU-only idle timeout is preserved. To reproduce the updated figures, use `plot_current_comparison.py --clip-extension` (add `--cost-only` to leave the utilization figure unchanged). The following30-point descriptions and tables describe the preserved original cohort unless stated otherwise.
+
+## Original30-point cohort
+
 Updated 16 October 2026: all six models and all thirty previously measured batch configurations are complete. Each configuration has 558 frozen TEST predictions, a first-200-video cost record, matched power telemetry and a SHA-backed raw-data receipt. Only the interrupted GLM B=2 was retried; its failed evidence and the completed prefix were preserved. No new training, precision change, CUDA Graph or batch expansion was introduced.
 
 Current [figure data](plot_data.csv), [full costs and telemetry](timing_energy_recalculated.csv), [performance audit](batch_metric_audit.csv), [workbook](LGVQ_temporal_multi_baseline_recalculated.xlsx) and [two-panel figure](srcc_cost_comparison_reference.png) are in this same directory. The methods, complete numerical table and manuscript-ready descriptions are under “两图含义与实验方法” below. Qwen B=1 retains the finalized historical cost, explicitly distinguished from its new cost audit. LightGen-II retains the approved physical-performance reference and component-cost estimate.
@@ -10,7 +41,7 @@ GPU-utilization labels use independent native resident queue8 experiments, not t
 
 完整图包含LightGen-II及全部六个电子模型：Qwen3-VL-2B、GLM-4.6V-Flash、
 DeepSeek-VL2-Small、CLIP ViT-B/32、YOLO11s、DeepSeek-VL2-Tiny。
-每个面板均含30个电子model/batch点和1个光学参考，不只展示Tiny版DeepSeek，
+原版每个面板均含30个电子model/batch点和1个光学参考；本次追加CLIP B11后为31个电子点和1个光学参考。不只展示Tiny版DeepSeek，
 也没有遗漏GLM的B1/B2或Small的B1/B2/B3/B4。
 
 - 双面板：[PNG](srcc_cost_comparison_reference.png)、[可编辑SVG](srcc_cost_comparison_reference.svg)。
@@ -26,8 +57,9 @@ PNG为300 dpi，横轴分别为每16视频时间(ms)和能耗(J)，采用对数�
 
 `plot_data.xlsx`已按服务器SHA核验的上一版完整恢复，保留原颜色、公式、batch列及来源；
 误改版先行备份在canonical成本run的`presentation_prior_20261016/accidental_edit_48763b6ec126_plot_data.xlsx`。
-恢复后文件SHA仍为`342e1814ba7bc185b16dfb1578bdd5b0c58a10a41d2d3cc1bc8a03c44351046b`，
-CSV未改变。恢复收据与图的逐点覆盖/输出SHA收据保存在同一canonical run，不改原测量。
+当时恢复文件SHA为`342e1814ba7bc185b16dfb1578bdd5b0c58a10a41d2d3cc1bc8a03c44351046b`，CSV当时未改变。
+此后追加B11导致当前展示文件SHA更新，旧展示版已在本轮接续run的`prior_report_archive`逐SHA保留。
+恢复收据与原图输出SHA收据仍在原canonical run，不改原测量。
 
 ## 2026-10-16：教师展示版、定稿锚点与倍数定义
 

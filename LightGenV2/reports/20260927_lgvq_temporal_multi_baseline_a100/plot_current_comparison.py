@@ -15,12 +15,24 @@ import numpy as np
 p=argparse.ArgumentParser()
 p.add_argument('--preview-partial',action='store_true')
 p.add_argument('--cost-only',action='store_true',help='Leave the independently measured utilization figure unchanged')
+p.add_argument('--clip-extension',action='store_true',help='Append independently verified 20261016 CLIP points; preserve original30 evidence')
 args=p.parse_args()
 repo=Path(__file__).resolve().parents[3]
 run=repo/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_frozen_batch_costs_a100_20261015'
 data=json.loads((run/'verified_costs.json').read_text())
 display_path=run/'presentation_update_20261016.json'
 display=json.loads(display_path.read_text()) if display_path.exists() else None
+extension_root=None
+if args.clip_extension:
+    extension_root=run.parent/'lgvq_clip_saturation_qwen_plateau_a100_20261016/continuation01'
+    extension=json.loads((extension_root/'verified_costs.json').read_text())
+    if extension['status']!='complete' or not extension['paired_rows']:
+        raise RuntimeError('Require complete independently verified CLIP extension')
+    if any(x['baseline']!='clip' or x['batch_size'] not in range(11,17) for x in extension['paired_rows']):
+        raise RuntimeError('Unauthorized extension point')
+    data=dict(data,paired_rows=data['paired_rows']+extension['paired_rows'],verified_points=data['verified_points']+extension['verified_points'])
+    display_path=extension_root/'presentation_extension_20261016.json'
+    display=json.loads(display_path.read_text())
 selected_util={(r['model'],r['batch_size_videos']):r['display_gpu_util_mean_percent'] for r in display['rows']} if display else {}
 if data['status']!='complete' and not args.preview_partial:
     raise RuntimeError('Do not publish incomplete measurements')
@@ -31,10 +43,12 @@ markers=['o','P','s','D','^','v']
 expected_batches={'Qwen3-VL-2B':[1,2,3,4,6,8,10],'GLM-4.6V-Flash':[1,2],
     'DeepSeek-VL2-Small':[1,2,3,4],'CLIP ViT-B/32':[1,2,3,4,6,8,9,10],
     'YOLO11s':[1,2,3],'DeepSeek-VL2-Tiny':[1,2,3,4,6,8]}
+if extension_root:
+    expected_batches['CLIP ViT-B/32']+=sorted(x['batch_size'] for x in extension['paired_rows'])
 if not args.preview_partial:
     if not display or display['status']!='complete':
         raise RuntimeError('Require the approved presentation data, including finalized Qwen B1')
-    if len(data['paired_rows'])!=30 or {x['model'] for x in data['paired_rows']}!=set(names):
+    if len(data['paired_rows'])!=sum(map(len,expected_batches.values())) or {x['model'] for x in data['paired_rows']}!=set(names):
         raise RuntimeError('Incomplete model coverage')
     with (out/'plot_data.csv').open(newline='',encoding='utf-8-sig') as f:
         plot_rows={(x['model'],int(x['batch_size_videos']) if x['batch_size_videos'] else None):x for x in csv.DictReader(f)}
@@ -47,7 +61,8 @@ if not args.preview_partial:
             if abs(float(record[key])-x[source])>1e-9:raise RuntimeError('CSV/source mismatch')
         if abs(float(record['display_gpu_util_mean_percent'])-selected_util[(x['model'],x['batch_size'])])>1e-9:
             raise RuntimeError('Selected utilization mismatch')
-    archive=run/'presentation_prior_20261016'
+    archive=(extension_root/'prior_report_archive' if extension_root else run/'presentation_prior_20261016')
+    archive.mkdir(exist_ok=True)
     for stem in ['srcc_cost_comparison_reference','latency_comparison_reference','energy_comparison_reference']:
         for ext in ['png','svg']:
             source=out/(stem+'.'+ext)
@@ -112,7 +127,7 @@ def draw_panel(fig,ax,key,label,panel=None):
     if panel is not None:ax.text(-.065,1.025,chr(97+panel),transform=ax.transAxes,fontweight='bold',fontsize=14)
     all_points.append(dict(x=ours[key],y=ours['physical_reference_srcc'],text='N=16',color='#7828A8'))
     fig.canvas.draw();place_labels(ax,all_points,fig)
-    if len(all_points)!=31 and not args.preview_partial:raise RuntimeError('Not all 31 points are drawn')
+    if len(all_points)!=1+len(data['paired_rows']) and not args.preview_partial:raise RuntimeError('Not all verified points are drawn')
     if not all(ax.get_xlim()[0]<x<ax.get_xlim()[1] for x in values):raise RuntimeError('Clipped data coordinates')
     return legend
 
@@ -142,15 +157,18 @@ if not args.preview_partial:
         for ext in ['png','svg']:fig.savefig(out/(stem+'.'+ext),dpi=300,facecolor='white')
         plt.close(fig)
     paths=[out/(stem+'.'+ext) for stem in ['srcc_cost_comparison_reference','latency_comparison_reference','energy_comparison_reference'] for ext in ['png','svg']]
-    receipt=dict(models=expected_batches,electronic_points_per_panel=30,optical_reference_points_per_panel=1,
+    receipt=dict(models=expected_batches,electronic_points_per_panel=len(data['paired_rows']),optical_reference_points_per_panel=1,
         qwen_b1_finalized_util_percent=selected_util[('Qwen3-VL-2B',1)],workload_videos=16,
         axes=dict(x='log scale, complete min/max coverage',y='Temporal quality SRCC, 0 to 1'),
-        source_sha256={str(p.relative_to(repo)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [run/'verified_costs.json',display_path,out/'plot_data.csv']},
+        source_sha256={str(p.relative_to(repo)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [run/'verified_costs.json',display_path,out/'plot_data.csv']+([extension_root/'verified_costs.json'] if extension_root else [])},
         figures=[dict(file=str(p.relative_to(repo)),sha256=hashlib.sha256(p.read_bytes()).hexdigest(),bytes=p.stat().st_size) for p in paths])
-    (run/'complete_comparison_figures_20261016.json').write_text(json.dumps(receipt,indent=2)+'\n')
+    ((extension_root or run)/'complete_comparison_figures_20261016.json').write_text(json.dumps(receipt,indent=2)+'\n')
 
 if not args.preview_partial and not args.cost_only:
     util=json.loads((run.parent/'lgvq_utilization_execution_20261015/unified_repeat_suite01/verified_summary.json').read_text())
+    if extension_root:
+        points=json.loads((extension_root/'clip_utilization/report.json').read_text())['points']
+        util=dict(util,rows=util['rows']+[dict(model='CLIP ViT-B/32',baseline='clip',batch=x['batch'],mean_percent=x['mean']) for x in points])
     fig,axes=plt.subplots(2,3,figsize=(12,6.8),sharey=True)
     for ax,name,color,marker in zip(axes.flat,names,colors,markers):
         r=[dict(v,mean_percent=selected_util.get((v['model'],v['batch']),v['mean_percent'])) for v in util['rows'] if v['model']==name]
