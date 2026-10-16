@@ -1,5 +1,32 @@
 # T06 视频质量评价
 
+## 2026-10-16 图五稀疏选点配套复测（用户新授权）
+
+用户要求每模型只展示B1及1–2个近满载点，并重测新执行实现的精度、时延、能耗和独立利用率。
+固定选择Qwen3/4，GLM1/2，Small1/3/4，CLIP1/9/10，YOLO1/2/3，Tiny1/6/8，共16个新点。
+历史Qwen B1作为第17个GPU展示点保留，不重新执行，不用其他精度/利用率覆盖定稿。
+仅Qwen B3/B4使用BatchedVisualQwen（含整数元数据和整数索引）；其他五模型保留原生实现，
+不为了方法“统一”将Qwen专属适配硬套其他架构。属于执行实现改动，非权重、结构或注意力语义修改；
+已验证的B3严格相同不推广为所有输入和任意batch保证，B4必须本轮真实验证后才用。
+这是等价性审计过的optimized inference，不宣称“完全未修改原生源码”。
+Qwen B1历史原生与优化B3/B4的差异包含batch和执行优化，不能写成纯batch扩展收益。
+
+入口measure_selected_execution，配置selected_execution_20261016.json，唯一新run
+runs/simulation/lgvq_selected_execution_a100_20261016；源码main Git-only、不新branch/worktree工程。
+五模型直接调用未改的measure_frozen_batch_costs.worker和unified_resident_utilization.worker。
+成本每点fresh process，完整558TEST独立SRCC/PLCC；前200按原边界分批含尾批、无显式预热。
+Qwen成本使用同一BoundaryTimer，在执行适配后的等价首vision block调用入口计时至GPU MOS同步，
+保留原事件/host计时顺序。不得把首block wrapper绕过旧hook后的缺失时间当优化。
+无native或等价验证forward放在冷成本首批前；另fresh process做独立驻留util三次5s/30s queue8，
+并完整558逐元素比较native/candidate hidden、完整词表logits、质量logits、MOS和成本预测。
+T16=sum(首200同步host wall)*16/200；E16=(338.2W主机代理+同轮active A100 W)*T16/1000。
+解码、预处理、H2D仅审计不计成本；util另测独立记录，不拿驻留功率代入交错成本。
+原PT/官方资产/manifest/4帧/crop/精度/250W均保留，无Graph、训练、loss或采样率变动。
+仅固定UUID；连续3次间隔10秒空闲准入、初次CPU等空闲最多20分钟；总3小时、单阶段30分钟，
+到限或foreign干扰保全部证据停止，不抢卡/占位/杀他人或无限重试。不创建定时任务，聊天持续核查。
+完成后原报告目录更新图、plot_data表和论文方法；先归档旧文件及SHA，中间点不再出现在主图，
+原始记录仍保留。QwenB1必须清楚标为历史锚点，而非本轮新配套测量。
+
 ## 2026-10-16 剩余同步诊断与严格执行对照（本轮结果）
 
 只负责T06；原B1、plot_data及正式时延/能耗不替换。原生驻留queue8循环、每路3次

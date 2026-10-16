@@ -1,0 +1,18 @@
+{
+  "protocol": "selected_frozen_costs_and_independent_queue8_utilization_v1",
+  "batches": {"qwen": [3, 4], "glm": [1, 2], "small": [1, 3, 4], "clip": [1, 9, 10], "yolo": [1, 2, 3], "deepseek": [1, 6, 8]},
+  "qwen_execution": "BatchedVisualQwen_including_integer_metadata_and_indexing",
+  "other_execution": "unchanged_native",
+  "qwen_B1": "protected_historical_anchor_no_execution",
+  "test_videos": 558,
+  "cost_videos": 200,
+  "equivalent_videos": 16,
+  "host_proxy_w": 338.2,
+  "maximum_suite_seconds": 10800,
+  "maximum_initial_idle_wait_seconds": 1200,
+  "maximum_stage_seconds": 1800,
+  "no_training_or_graph_or_precision_change": true,
+  "no_automatic_retry_after_interference": true,
+  "utilization_is_independent_of_dataset_once_cost": true,
+  "retain_intermediate_history_not_in_main_figure": true
+}
