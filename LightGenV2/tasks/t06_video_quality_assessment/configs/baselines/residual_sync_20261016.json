@@ -1,0 +1,15 @@
+{
+  "authorization": "2026-10-16 user authorized continued Qwen residual synchronization diagnosis and equivalent optimization, plus CLIP small-batch diagnosis; weights precision method and finalized B1 protected",
+  "cases": {"qwen": [2, 4], "clip": [4, 8, 10]},
+  "profile_forward_calls": 4,
+  "profile_maximum_bytes": 134217728,
+  "maximum_suite_seconds": 3600,
+  "maximum_initial_idle_wait_seconds": 1800,
+  "maximum_worker_seconds": 900,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "power_limit_w": 250,
+  "profile_is_diagnostic_not_utilization_or_cost": true,
+  "no_B1_execution_or_replacement": true,
+  "no_weights_precision_attention_graph_or_clock_changes": true,
+  "no_automatic_retry_after_interference": true
+}
