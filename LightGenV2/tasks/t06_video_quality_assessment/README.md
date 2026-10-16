@@ -1,5 +1,19 @@
 # T06 视频质量评价
 
+## 2026-10-16 Qwen整数元数据主机执行候选（预检中）
+
+用户授权优化Qwen内部同步，保持原权重、精度和利用率测法，优先较小batch接近98%；
+B1定稿所有数据和原30点均保护，不能覆盖。仅T06源码main发布，不改site-packages或共享测量worker。
+候选`qwen_host_metadata_execution.HostMetadataQwenModel`复用完整原生forward及同一参数对象，
+只把video grid/注意力分段长度保留在CPU，并在原get_rope_index调用位置以CPU整数计算位置，
+结果传GPU仍在每次forward内部。无视觉特征、位置编码结果、hidden/logit缓存，无Graph/compile、
+换attention、精度/功率/时钟改变，不把模型计算移到计时前。原学习层、完整词表投影和FP32质量头仍执行。
+配置`qwen_host_metadata_20261016.json`仅B2/3/4/6/8递增，原queue8、三次5s预热/30s测量；
+先原生与候选完整hidden/质量logits/MOS逐元素严格相同，再测；选定点还须完整558TEST逐样本比对，
+任何差异停止且不替换正式数据。达到98%即停止增batch，不保证达标。原协议精度/成本本轮不重写。
+本地只运行不依赖Torch的合同检查；原Torch/Transformers环境的微型CPU前向等价测试在服务器执行，
+不申请GPU、不连接实验室。预检时A100外部YOLO仍占用，无本轮CUDA进程；GPU试验须空闲守卫通过后另记真实启动。
+
 ## 2026-10-16 CLIP接近98%的新增batch与Qwen利用率平台诊断
 
 本轮已在用户16:11左右新授权后完成，实测源码main `15a8c2d75`，入口SHA仍为`65cf27db`，

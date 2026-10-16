@@ -1,0 +1,20 @@
+{
+  "authorization": "2026-10-16 user requested equivalent Qwen internal-synchronization optimization without weights, precision or measurement-method changes; finalized B1 protected",
+  "batches": [2, 3, 4, 6, 8],
+  "target_pooled_util_percent": 98,
+  "repeats": 3,
+  "warmup_seconds": 5,
+  "measurement_seconds": 30,
+  "queue_depth": 8,
+  "maximum_suite_seconds": 3600,
+  "maximum_initial_idle_wait_seconds": 1800,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "power_limit_w": 250,
+  "final_validation_test_videos": 558,
+  "strict_hidden_logits_mos_equality": true,
+  "no_weights_precision_attention_graph_clock_or_measurement_changes": true,
+  "no_feature_or_position_cache": true,
+  "metadata_preparation_stays_inside_native_forward_boundary": true,
+  "no_B1_execution_or_replacement": true,
+  "no_automatic_retry_after_interference": true
+}
