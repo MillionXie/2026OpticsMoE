@@ -22,6 +22,14 @@ B6完整558TEST与原生严格相同；B1与原图表未动。CLIP在正式测�
 原因是该环境的matmul复合算子未被原mm拦截器记录，非已确认输出差异；
 补齐matmul/linear/conv2d实际dtype审计并新增CPU回归，旧失败无性能数据、原位保留。
 用户新增要求查B2→B3增幅，补新indexed候选B2/B3四次前向时间线，仍只诊断、不改正式测法。
+新增独立候选`batched_visual_qwen_execution`只把原等长度、互相独立的视觉attention片段
+变成同一原SDPA调用的独立batch成员，不拼接attention上下文，不改权重/精度或SDPA后端。
+当前只作为CPU预检候选，不宣称有效；须完整hidden/logits/MOS逐元素相同并核实际dtype及
+归一化后的独立SDPA工作量一致。非等长度片段原样回退原生调用，参数对象身份保留。
+如CPU与真实GPU门禁通过，在前两阶段结束后以`measure_batched_visual`独立B3单点验证：
+同方法各3重复及完整558TEST，最多15分钟、初次等空闲最多2分钟，无B1或候选扫描。
+此为用户新增B2→B3排查后的单列执行候选，不延长原前两阶段的绝对截止或覆盖旧run，
+只写同run的`batched_visual01`；不通过严格等价便停止，不以精度容差换利用率。
 
 用户授权继续定位Qwen剩余同步，并检查CLIP B10约94.9%的原因，在空闲A100上尝试更小batch。
 权重/精度/attention/原利用率测法不改，B1定稿与原始图表保护；不连接实验室、不新建工程或分支。
