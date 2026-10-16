@@ -1,0 +1,14 @@
+{
+  "automatic_retry": false,
+  "ema_decay": 0.999,
+  "additional_epochs": 20,
+  "maximum_seconds": 3600,
+  "TRAIN_diagnosis_sha256": "4f27cdc3bf2cfa00fde94040eb7fc8050d37c07f811c6216ba6456227cbc3825",
+  "selection": "whole prefix highest validation EMA overall accuracy; ties natural NLL then earliest epoch",
+  "parent_choice": "fresh cohort highest validation accuracy, ties natural NLL, earliest epoch, lexical case; never TEST scores",
+  "scope": "two fixed20-epoch candidates from the same validation-chosen fresh100 parent: EMA-only vs same EMA plus calibrated-strength phase TV; no class/inference changes",
+  "phase_smooth_weights": {
+    "ema_only": 0.05,
+    "ema_phaseTV25": 25.0
+  }
+}
