@@ -1,5 +1,28 @@
 # T06 视频质量评价
 
+## 2026-10-16 CLIP接近98%的新增batch与Qwen利用率平台诊断
+
+用户新授权追加CLIP接近98%利用率的batch，并独立补测对应原协议精度/时延/功耗；
+同时排查Qwen B4后约91%的平台，不重开精度修复、不改Qwen B1定稿锚点。
+入口`extend_clip_diagnose_qwen`，配置`configs/baselines/clip_saturation_qwen_plateau_20261016.json`。
+CLIP仅B11/12/13/14/15/16逐一向上，原native resident queue8循环、每点3次5s预热/30s完整测量，
+全部样本pooled mean首个>=98%即停；不取最高窗口或设置功率/配额/假负载。不保证到上限一定达标。
+随后仅对末两个新测batch（若B11即达标则仅B11）各新进程完整558TEST/前200成本，
+原native首block→GPU MOS同步边界、无显式预热、338.2W主机代理+同轮active GPU功率公式不变，
+不把resident功率/利用率代入成本。原两个测量worker及核心循环直接复用、未改计算图。
+
+Qwen只对B2/4/8/10的原首B个TEST/4帧驻留输入排查：每B先保存一次原5s/30s/queue8
+未插桩诊断基准，再记录8个原生前向的CPU/CUDA时间线、kernel区间并集/间隙、CUDA API同步/拷贝
+及CPU算子。profile前后核原生MOS一致；profiler有开销，时间线忙碌比不等于NVML利用率，
+不能当正式成本/利用率。此轮不运行Graph、不修改位置嵌入或数据，不训权重。
+
+仅原A100 UUID/250W、共享锁及foreign守卫；初次只CPU等待最多30分钟，3次间隔10秒空闲才CUDA，
+本轮绝对总预算1小时，单worker最多900秒、Qwen诊断最多600秒；外部进入立即停并保证据，
+不抢占/杀他人、不自动重试/排队延长。输出仅同T06 runs/simulation下
+`lgvq_clip_saturation_qwen_plateau_a100_20261016`，不覆盖旧30点；原文档/图表待新结果审计后增补。
+本地44项CPU测试已通过，包括原利用率循环和成本worker对28f3ceb69的AST完全一致；
+完成Git发布、服务器同项测试及SHA校验后才启动。用户要求本聊天持续跟进，本轮不创建定时监督。
+
 ## 2026-10-16 用户指定的展示锚点与彩色表格
 
 用户最新要求恢复Qwen B=1定稿利用率，展示采用历史原始记录

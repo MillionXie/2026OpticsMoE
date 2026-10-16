@@ -1,0 +1,16 @@
+{
+  "authorization": "2026-10-16 user requested small-step CLIP extension near98% with separate original-protocol costs, plus Qwen plateau diagnosis",
+  "clip_candidates": [11, 12, 13, 14, 15, 16],
+  "target_mean_percent": 98,
+  "qwen_diagnostic_batches": [2, 4, 8, 10],
+  "maximum_suite_s": 3600,
+  "maximum_initial_idle_wait_s": 1800,
+  "maximum_worker_s": 900,
+  "maximum_qwen_diagnostic_s": 600,
+  "profile_forward_calls": 8,
+  "profile_maximum_bytes": 134217728,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "power_limit_w": 250,
+  "no_training_or_graph_or_power_changes": true,
+  "no_automatic_retry_after_foreign_interference": true
+}
