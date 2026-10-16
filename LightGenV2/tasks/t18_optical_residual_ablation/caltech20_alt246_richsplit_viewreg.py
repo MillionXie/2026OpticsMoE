@@ -17,7 +17,7 @@ CPU=HERE/'runs/smoke/caltech20_richsplit_viewreg_cpu_20261016'
 def versions():return dict(torch=str(torch.__version__),numpy=np.__version__,Pillow=PIL.__version__)
 
 def config():
-    p=s.read(PROFILE);cfg=b.config();cfg.pop('maximum_epochs');cfg.update(p['training']);assert cfg['block_epochs']==20 and p['automatic_retry'] is False and cfg['cache_sha256']==p['cache_sha256'] and cfg['manifest_sha256']==p['manifest_sha256'];return cfg
+    p=s.read(PROFILE);cfg=b.config();cfg.pop('maximum_epochs');cfg.update(p['training']);cfg.update(scope=p['scope'],selection=p['selection'],rho=[.3],baseline_maximum_epochs=100,teacher=None);assert cfg['block_epochs']==20 and p['automatic_retry'] is False and cfg['cache_sha256']==p['cache_sha256'] and cfg['manifest_sha256']==p['manifest_sha256'];return cfg
 
 def sources():
     src=b.sources()
