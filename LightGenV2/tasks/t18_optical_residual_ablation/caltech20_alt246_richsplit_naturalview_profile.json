@@ -1,0 +1,46 @@
+{
+  "baseline_run": "caltech20_rich20_alt246_s17_equal100_20261016",
+  "cache_sha256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "manifest_sha256": "d4921172a9cc8aa427b89e03772733837be64a3fdaaf826d91050e44df2c459c",
+  "supported_depths": [
+    6
+  ],
+  "training": {
+    "block_epochs": 20,
+    "maximum_seconds": 3600,
+    "lr": 0.0005,
+    "minimum_lr": 2e-05,
+    "crop_area": [
+      0.75,
+      1.0
+    ],
+    "crop_aspect": [
+      0.9,
+      1.1
+    ],
+    "brightness": [
+      0.85,
+      1.15
+    ],
+    "contrast": [
+      0.9,
+      1.1
+    ],
+    "gamma": [
+      0.9,
+      1.1
+    ],
+    "view_seed_tag": 20261016,
+    "method": "unweighted end-to-end smoothed CE plus TRAIN crop/photometric coverage; same inference"
+  },
+  "scope": "One evidence-driven six-layer20-epoch review; controls and accepted four-layer reference remain frozen",
+  "scheduler": "Keep LAST100 raw/EMA/Adam moments and global counter19700; at101 explicitly change cosine endpoint.0002 to.0005 and start ReduceLROnPlateau natural VAL NLL; factor.5/patience3/delta.002/min2e-5",
+  "selection": "first minimum natural VAL EMA NLL among preserved baseline selectedE86 and new101..120; baseline100 balanced-NLL selection is not rewritten; not a claim to minimum natural NLL over all100 unavailable checkpoints",
+  "inference_parameters_added": 0,
+  "teacher": null,
+  "data_or_class_changes": false,
+  "test_informed_development": true,
+  "automatic_retry": false,
+  "classification_weights": "all20 weights exactly1; no inverse-class weighting",
+  "evidence": "Head-only natural objective improves VAL but not TEST; frozen features alone insufficient. Baseline six TRAIN95.86/VAL78.59 plus preserved natural-vs-balanced gradient diagnosis supports adapting the representation itself. Hypothesis, not proven cause or guaranteed TEST gain."
+}
