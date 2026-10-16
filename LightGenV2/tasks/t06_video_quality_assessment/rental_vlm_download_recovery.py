@@ -26,7 +26,7 @@ def range_plan(offset,total):
 def run(key,attempt=1):
     root=Path("/data/models")/key
     recovery=root/f"range_recovery{attempt:02d}";recovery.mkdir(exist_ok=False)
-    prior=root/"range_recovery01"
+    priors=[root/f"range_recovery{i:02d}" for i in range(1,attempt)]
     metadata=json.loads((root/"official_metadata.json").read_text())
     if (metadata["model"],metadata["revision"])!=MODELS[key]:raise RuntimeError("Pinned metadata changed")
     records=[]
@@ -46,12 +46,16 @@ def run(key,attempt=1):
         def download(bounds):
             start,end=bounds
             p=recovery/f"{name}.{start}_{end}.chunk"
-            old=prior/p.name
-            if attempt==2 and old.exists():shutil.copyfile(old,p)
+            old=[directory/p.name for directory in priors if (directory/p.name).exists()]
+            if old:shutil.copyfile(max(old,key=lambda f:f.stat().st_size),p)
             received=p.stat().st_size if p.exists() else 0
             if received>end-start+1:raise RuntimeError("Oversized preserved transport piece")
             if received==end-start+1:return p
-            for request_number in range(3):
+            failures=0;slow_continuations=0
+            # Progressing bounded bodies are new exact ranges, not failed retries.
+            # Transport errors/429 retain a three-request failure budget; even
+            # progress resumes stop after24 pieces or the original absolute deadline.
+            while failures<3 and slow_continuations<24:
                 if time.time()>=DEADLINE:raise TimeoutError("Rental continuation deadline reached")
                 cursor=start+received
                 response=None
@@ -61,7 +65,7 @@ def run(key,attempt=1):
                         value=response.headers.get("Retry-After","30")
                         response.close();delay=int(value) if value.isdigit() else 30
                         if time.time()+delay>=DEADLINE:raise TimeoutError("Retry-After exceeds finite deadline")
-                        time.sleep(delay);continue
+                        time.sleep(delay);failures+=1;continue
                     response.raise_for_status()
                     if response.status_code!=206 or response.headers.get("Content-Range")!=f"bytes {cursor}-{end}/{spec['size']}":
                         response.close();raise RuntimeError("Exact HTTP range mismatch; do not adopt bytes")
@@ -78,10 +82,18 @@ def run(key,attempt=1):
                     response.close()
                     if p.stat().st_size!=end-start+1:raise RuntimeError("Incomplete exact range")
                     return p
-                except requests.RequestException:
-                    if request_number==2:raise
+                except requests.Timeout as error:
+                    if str(error)=="Bounded slow-body request; continue from received bytes":
+                        slow_continuations+=1
+                    else:
+                        failures+=1
+                        if failures==3:raise
                     print(f"[resume piece] {key}/{name} offset={start+received}",flush=True)
-                    time.sleep(3*(request_number+1))
+                    time.sleep(1)
+                except requests.RequestException:
+                    failures+=1
+                    if failures==3:raise
+                    time.sleep(3*failures)
                 finally:
                     if response is not None:response.close()
             raise RuntimeError("Finite HTTP retry budget exhausted")
@@ -118,7 +130,7 @@ def run(key,attempt=1):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument("--model",choices=MODELS,required=True)
-    p.add_argument("--attempt",type=int,choices=(1,2),default=1)
+    p.add_argument("--attempt",type=int,choices=(1,2,3),default=1)
     args=p.parse_args()
     try:run(args.model,args.attempt)
     except BaseException as error:

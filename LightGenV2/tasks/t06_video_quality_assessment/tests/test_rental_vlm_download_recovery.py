@@ -30,5 +30,5 @@ def test_no_slow_piece_batch_barrier_or_unbounded_request():
     assert "as_completed(futures)" in text
     assert "received=end-start+1" not in text
     assert "time.monotonic()-request_started>45" in text
-    assert "range(3)" in text
+    assert "failures<3 and slow_continuations<24" in text
     assert 'p.open("ab")' in text
