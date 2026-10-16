@@ -1,0 +1,45 @@
+{
+  "automatic_retry": false,
+  "kd_alpha": {
+    "regularized": 0.0,
+    "regularized_kd": 0.5
+  },
+  "selection": "maximum validation EMA overall accuracy; ties lower natural NLL then earliest epoch; fixed before new TEST",
+  "training": {
+    "maximum_epochs": 100,
+    "maximum_seconds": 10800,
+    "mixup_alpha": 0.4,
+    "label_smoothing": 0.05,
+    "phase_smooth_weight": 0.05,
+    "capture_weight": 0.05,
+    "ema_decay": 0.99,
+    "electronic_weight_decay": 0.02,
+    "horizontal_flip_probability": 0.5,
+    "feature_dropout": 0.2,
+    "lr": 0.002,
+    "minimum_lr": 2e-05,
+    "crop_area": [
+      0.85,
+      1.0
+    ],
+    "crop_aspect": [
+      0.9,
+      1.1
+    ],
+    "brightness": [
+      0.95,
+      1.05
+    ],
+    "contrast": [
+      0.95,
+      1.05
+    ],
+    "gamma": [
+      0.95,
+      1.05
+    ],
+    "view_seed_tag": 20261017,
+    "kd_temperature": 2.0,
+    "teacher_confidence": 0.5
+  }
+}
