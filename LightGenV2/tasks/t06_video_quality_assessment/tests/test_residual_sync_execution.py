@@ -53,3 +53,23 @@ def test_native_tiny_indexed_cpu_hidden_rope_and_parameter_identity():
         assert torch.equal(a.last_hidden_state,b.last_hidden_state)
         assert torch.equal(a.rope_deltas,b.rope_deltas)
         assert {id(p) for p in adapter.parameters()}=={id(p) for p in native.model.parameters()}
+
+
+@pytest.mark.skipif(sys.platform!='linux',reason='Native Torch CPU capture test on Linux')
+def test_clip_capture_records_composite_matmul_quality_logits():
+    import torch
+    from types import SimpleNamespace
+    class Visual(torch.nn.Module):
+        def __init__(self):super().__init__();self.transformer=torch.nn.Identity()
+        def forward(self,x):return self.transformer(x)
+    visual=Visual();model=SimpleNamespace(visual=visual)
+    head=torch.nn.Linear(2048,5,bias=False).eval().requires_grad_(False)
+    inputs=torch.randn(16,512);scores=torch.arange(5).float()
+    def compute(x):
+        feature=torch.nn.functional.normalize(visual(x).float(),dim=-1).reshape(-1,2048).half().float()
+        return (feature@head.weight.t()).softmax(-1)@scores
+    with torch.inference_mode():
+        result,ops=m.capture(compute,inputs,None,model,head,'clip',True)
+    assert set(result)=={'hidden','image_features','quality_logits','mos'}
+    assert result['quality_logits'].shape==(4,5)
+    assert any(x['op'] in ['aten.mm.default','aten.matmul.default'] for x in ops)

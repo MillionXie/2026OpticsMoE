@@ -41,9 +41,9 @@ def capture(fn,inputs,core,model,head,baseline,check_dtypes=False):
     class AuditMath(TorchDispatchMode):
         def __torch_dispatch__(self,func,types,args=(),kwargs=None):
             value=func(*args,**(kwargs or {}));name=str(func)
-            if check_dtypes and any(x in name for x in ['aten.mm.','aten.addmm.','aten.bmm.','aten.convolution.','layer_norm','scaled_dot_product']):
+            if check_dtypes and any(x in name for x in ['aten.mm.','aten.matmul.','aten.linear.','aten.addmm.','aten.bmm.','aten.conv2d.','aten.convolution.','layer_norm','scaled_dot_product']):
                 operators.append(dict(op=name,tensors=[dict(shape=list(x.shape),dtype=str(x.dtype)) for x in args if torch.is_tensor(x)]))
-            if baseline=='clip' and name=='aten.mm.default' and torch.is_tensor(value) and tuple(value.shape)==(batch,5):
+            if baseline=='clip' and name in ['aten.mm.default','aten.matmul.default'] and torch.is_tensor(value) and tuple(value.shape)==(batch,5):
                 evidence['quality_logits']=value.detach().cpu().clone()
             return value
     def output_hook(key):
