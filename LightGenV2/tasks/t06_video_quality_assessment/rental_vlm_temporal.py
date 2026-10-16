@@ -385,6 +385,8 @@ def train(args,identity,guard):
     train_head(payload,initial,ids,args,identity)
     if verify_assets(path)!=identity["model_sha256"]:raise RuntimeError("Official files changed")
     guard.check()
+    # Persist all fields before hashing; main's final same-byte write is then safe.
+    write(args.output/"identity.json",identity)
     artifacts={str(f.relative_to(args.output)):sha(f) for f in args.output.rglob("*") if f.is_file() and f.name not in ("status.json","training_receipt.json")}
     write(args.output/"training_receipt.json",dict(status="complete",identity=identity,artifacts=artifacts))
 

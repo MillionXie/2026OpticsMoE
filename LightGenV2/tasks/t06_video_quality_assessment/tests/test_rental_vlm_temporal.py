@@ -52,6 +52,16 @@ def test_kimi_nested_official_backend_is_explicit_and_audited():
     assert 'cfg.text_config._attn_implementation="flash_attention_2"' in text
     assert 'actual_attention=attention' in text
 
+def test_receipt_hashes_final_identity_before_artifacts():
+    tree=ast.parse(Path(r.__file__).read_text())
+    train=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=="train")
+    persisted=[n.lineno for n in ast.walk(train) if isinstance(n,ast.Call)
+               and ast.unparse(n.func)=="write" and any(isinstance(c,ast.Constant)
+               and c.value=="identity.json" for c in ast.walk(n))]
+    artifact=next(n.lineno for n in train.body if isinstance(n,ast.Assign)
+                  and any(isinstance(t,ast.Name) and t.id=="artifacts" for t in n.targets))
+    assert max(persisted)==artifact-1
+
 def test_fresh_process_stages():
     text=Path(s.__file__).read_text()
     assert '("cpu-preflight","train","evaluate","utilization")' in text
