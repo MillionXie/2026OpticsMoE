@@ -1,0 +1,15 @@
+{
+  "parent_run": "caltech20_rich20_L6_cached_teacher2_s17_to120_20261017",
+  "main_depth": 6,
+  "fixed_optical_candidate": "LAST EMA120, fixed before its new TEST; not the best TEST or maximum historical VAL accuracy epoch",
+  "calibration_uses_VAL_labels": true,
+  "temperature_bounds": [0.5, 3.0],
+  "objective": "balanced VAL NLL of logits/T, one scalar only; native float32 folded-head selection between T1 and bounded optimum",
+  "inference_parameters_added": 0,
+  "terminal_linear_parameters": 5140,
+  "trainable_degrees_of_freedom": 1,
+  "maximum_seconds": 1800,
+  "no_additional_optical_epochs": true,
+  "test_informed_development": true,
+  "automatic_retry": false
+}
