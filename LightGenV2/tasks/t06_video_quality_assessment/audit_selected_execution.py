@@ -58,11 +58,81 @@ def work(ops):
     return counter
 
 
-def audit(selected_points=None):
+def native_history_comparison(output):
+    """Audit old/new raw complete windows, not a causal thermal experiment."""
+    runs=TASK/'runs/simulation'
+    old=runs/'lgvq_utilization_execution_20261015/unified_repeat_suite01/remaining_native01'
+    high=runs/'lgvq_residual_sync_a100_20261016/optimization01/clip_recovery02/clip'
+    latest=runs/'lgvq_selected_execution_a100_20261016'
+    entries=[('YOLO old sequential B3','yolo',3,old/'yolo/batch03',old/'yolo/identity.json','repeat'),
+        ('YOLO selected fresh B3','yolo',3,latest/'yolo_batch03/util/batch03',latest/'yolo_batch03/util/identity.json','repeat'),
+        ('CLIP old sequential B10','clip',10,old/'clip/batch10',old/'clip/identity.json','repeat'),
+        ('CLIP native control after earlier work B10','clip',10,high/'batch10',high/'identity.json','control_repeat'),
+        ('CLIP selected fresh B10','clip',10,latest/'clip_batch10/util/batch10',latest/'clip_batch10/util/identity.json','repeat')]
+    for row in output['paired_rows']:
+        folder=ROOT/f"{row['baseline']}_batch{row['batch_size']:02d}/util"
+        entries.append((f"{row['model']} prescribed recheck B{row['batch_size']}",row['baseline'],row['batch_size'],folder/f"batch{row['batch_size']:02d}",folder/'identity.json','repeat'))
+    methods=['unified_resident_utilization.py','evaluate_temporal_baseline_batches.py','audit_utilization_execution.py','batch_telemetry.py']
+    identical={};window_rows=[];files={};cohorts=[]
+    for label,model,batch,folder,identity_path,prefix in entries:
+        identity=read(identity_path);files[identity_path.relative_to(REPO).as_posix()]=sha(identity_path)
+        assert identity['checkpoint_sha256']==next(x['checkpoint_sha256'] for x in output['paired_rows'] if x['baseline']==model)
+        for name in methods:
+            key=(TASK/name).relative_to(REPO).as_posix();h=identity['source_sha256'][key]
+            if name in identical:assert identical[name]==h
+            identical[name]=h
+        vals=[]
+        for repeat in [1,2,3]:
+            p=folder/f'{prefix}{repeat:02d}';report=read(p/'report.json');w=report['measurement']
+            raw=csvrows(p/'telemetry.csv');raw=[x for x in raw if w['start_monotonic_s']<=float(x['host_monotonic_s'])<w['end_monotonic_s']]
+            u=[float(x['utilization_percent']) for x in raw];assert len(u)==w['samples']
+            assert w['duration_s']>=30 and report['warmup']['duration_s']>=5
+            assert abs(statistics.mean(u)-w['mean_gpu_utilization_percent'])<1e-10
+            clocks=csvrows(p/'clock_telemetry.csv');clocks=[x for x in clocks if w['start_monotonic_s']<=float(x['host_monotonic_s'])<w['end_monotonic_s']]
+            row=dict(cohort=label,baseline=model,batch=batch,repeat=repeat,mean_percent=statistics.mean(u),samples=len(u),duration_s=w['duration_s'],forwards_per_second=report['measured_forward_invocations']/w['duration_s'],sm_clock_mhz=statistics.mean(float(x['sm_clock_mhz']) for x in clocks),temperature_c=statistics.mean(float(x['temperature_c']) for x in clocks),cpu_queue_wait_ms=(report['cpu_measurement_end']['main_thread_schedstat'][1]-report['cpu_measurement_start']['main_thread_schedstat'][1])/1e6,source=p.relative_to(REPO).as_posix())
+            window_rows.append(row);vals.extend(u)
+            for name in ['report.json','telemetry.csv','clock_telemetry.csv']:files[(p/name).relative_to(REPO).as_posix()]=sha(p/name)
+        cohorts.append(dict(label=label,mean_percent=statistics.mean(vals),repeat_means=[x['mean_percent'] for x in window_rows[-3:]]))
+    a=read(old/'yolo/batch03/report.json');b=read(latest/'yolo_batch03/util/batch03/report.json')
+    equal={k:a[k]==b[k] for k in ['sample_ids','frame_positions','input_tensor_identity','reference_mos']};assert all(equal.values())
+    current_input_checks={}
+    for model,batch in [('yolo',3),('clip',10)]:
+        a=read(latest/f'{model}_batch{batch:02d}/util/batch{batch:02d}/report.json')
+        b=read(ROOT/f'{model}_batch{batch:02d}/util/batch{batch:02d}/report.json')
+        current_input_checks[model]={k:a[k]==b[k] for k in ['sample_ids','frame_positions','input_tensor_identity','reference_mos']}
+        assert all(current_input_checks[model].values())
+    evidence=dict(core_module_sha256_identical=identical,yolo_original_selected_input_identity_equal=equal,recheck_same_batch_input_checks=current_input_checks,cohorts=cohorts,windows=window_rows,source_files_sha256=files,thermal_causality_is_not_isolated=True)
+    (ROOT/'method_comparison.json').open('x',encoding='utf-8').write(json.dumps(evidence,indent=2)+'\n')
+    with (ROOT/'method_comparison.csv').open('x',encoding='utf-8-sig',newline='') as f:
+        writer=csv.DictWriter(f,fieldnames=list(window_rows[0]));writer.writeheader();writer.writerows(window_rows)
+    lines=['### YOLO/CLIP reproducibility check (17 October 2026)','',
+        'The inference-loop/statistics modules have identical SHA256 across the compared native runs: resident inputs prepared once, same-stream queue8, three complete ≥5-s warmups and ≥30-s measurement windows, all 50-ms samples pooled. YOLO B3 sample IDs, frames, resident tensor identity and reference outputs also match.',
+        '',
+        'The full execution histories were not identical. The old YOLO B3 followed B1/B2 in one loaded process. The old high CLIP B10 native control followed earlier batches/controls in one process. The recent selected run and this prescribed recheck start a fresh process for each point/phase. Clock, temperature and launch/host execution state therefore need not match despite an identical inner loop. The prior statement “completely identical” applied only to the loop/statistics, not this process history.',
+        '',
+        '| Native record | Repeat1 (%) | Repeat2 (%) | Repeat3 (%) | Pooled mean (%) |',
+        '| --- | ---: | ---: | ---: | ---: |']
+    for x in cohorts:lines.append('| '+x['label']+' | '+' | '.join(f'{v:.5f}' for v in x['repeat_means'])+f" | {x['mean_percent']:.5f} |")
+    lines+=['','The recheck uses the unchanged fresh-process method, not selected high windows or longer conditioning. If YOLO3/CLIP10 pooled means remain below98%, only the predeclared adjacent YOLO4/CLIP11 is added. Latest complete prescribed results replace the corresponding old displayed point regardless of direction. Earlier data remain historical and are never pooled across rounds.',
+        '', 'Clock/temperature co-variation is diagnostic evidence, not an isolated causal attribution. The recheck YOLO B3 repeat2 was near97% while repeats1/3 were near82%; main-thread run-queue waiting was only about14ms per30s, so neither pure thermal warmup nor CPU scheduling delay alone explains the spread. Host launch service, CPU/GPU frequency and driver-window effects remain possible contributors. We do not claim to have eliminated all environmental variance. The GPU utilization counter is kernel-busy time, not compute occupancy and not a batch-linear quantity.',
+        '', 'The per-repeat clocks, temperatures, forward throughput and CPU scheduling evidence are retained in T06 canonical recheck run `method_comparison.csv` with source SHA receipts. Precision, weights, original four frames, clock/power settings and finalized Qwen B1 are unchanged. Utilization is independent of the newly paired first200 latency/power cost measurements.','']
+    (ROOT/'method_comparison.md').open('x',encoding='utf-8').write('\n'.join(lines))
+
+
+def audit(selected_points=None,recheck=False):
     suite=read(ROOT/'suite_status.json') if (ROOT/'suite_status.json').exists() else None
     if not selected_points:assert suite and suite['status']=='complete'
-    cfg=read(TASK/'configs/baselines/selected_execution_20261016.json')
-    expected=[f'{m}_batch{b:02d}' for m,bs in cfg['batches'].items() for b in bs]
+    cfg=read(TASK/('configs/baselines/yolo_clip_recheck_20261017.json' if recheck else 'configs/baselines/selected_execution_20261016.json'))
+    batches_by_model=cfg['cases'] if recheck else cfg['batches']
+    expected=[f'{m}_batch{b:02d}' for m,bs in batches_by_model.items() for b in bs]
+    if recheck:
+        assert suite['status']=='complete'
+        for model,bs in batches_by_model.items():
+            assert f'{model}_batch{bs[0]:02d}' in suite['completed']
+            has_extra=f'{model}_batch{bs[1]:02d}' in suite['completed']
+            first=read(ROOT/f'{model}_batch{bs[0]:02d}/util/report.json')['points'][0]['mean']
+            assert has_extra==(first<98)
+        expected=suite['completed']
     if selected_points:assert set(selected_points)<=set(expected)
     checkpoints=next(ast.literal_eval(n.value) for n in ast.parse((TASK/'measure_frozen_batch_costs.py').read_text()).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='CHECKPOINTS' for t in n.targets))
     verified={}
@@ -75,18 +145,20 @@ def audit(selected_points=None):
     anchor=next(x for x in old_plot if x['baseline']=='qwen' and x['batch_size_videos']=='1')
     assert [float(anchor[k]) for k in ['time_16_videos_ms','energy_16_videos_j','display_gpu_util_mean_percent','measured_full558_srcc']]==[1188.3861464262009,462.1134010767563,63.133111480865225,.7663428036522781]
     result=[];repeats=[];history={};source_checks={}
-    for model,batches in cfg['batches'].items():
+    for model,batches in batches_by_model.items():
         reference=(REPO/next(x['source'] for x in old['paired_rows'] if x['baseline']==model)).with_name('predictions.csv')
         previous=csvrows(reference)
         for batch in batches:
+            if recheck and f'{model}_batch{batch:02d}' not in expected:continue
             if selected_points and f'{model}_batch{batch:02d}' not in selected_points:continue
             folder=ROOT/f'{model}_batch{batch:02d}';cost=folder/'cost';util=folder/'util'
             cr,ur=read(cost/'report.json'),read(util/'report.json')
             assert cr['status']==ur['status']=='complete' and cr['test_videos']==558 and cr['cost_test_videos']==200
+            assert cr['explicit_warmup_forwards']==0 and cr['first_test_batch_included'] is True
             assert cr['checkpoint_sha256']==checkpoints[model] and cr['manifest_sha256']==SHA
             guard(cost/'process_audit.json',cr['pid'])
             for stage in [cost,util]:
-                receipt=read(stage/'selected_driver_receipt.json')
+                receipt=read(stage/('recheck_driver_receipt.json' if recheck else 'selected_driver_receipt.json'))
                 assert receipt['checkpoint_sha256']==checkpoints[model] and receipt['batch']==batch and receipt['baseline']==model
                 for path,h in receipt['source_sha256'].items():
                     if suite:assert suite['source_sha256'].get(path)==h
@@ -146,6 +218,7 @@ def audit(selected_points=None):
             sample_srcc=pearson(ranks(ys[:200]),ranks(ps[:200]))
             row=dict(model=NAMES[model],baseline=model,batch_size=batch,srcc=srcc,plcc=plcc,first200_srcc=sample_srcc,
                 time_16_videos_ms=t16,energy_16_videos_j=e16,board_mean_w=watts,cost_wall_sum_ms=wall,cost_calls=len(first),
+                first_cost_call_ms=float(first[0]['synchronized_wall_ms']),first_call_fraction_percent=100*float(first[0]['synchronized_wall_ms'])/wall,
                 wall_mean_ms=wall/len(first),wall_p95_ms=sorted(float(x['synchronized_wall_ms']) for x in first)[int(.95*(len(first)-1))],
                 active_samples=len(active),gpu_util_peak_percent=max(float(x['utilization_percent']) for x in active),
                 memory_mean_mib=statistics.mean(float(x['memory_used_mib']) for x in active),memory_peak_mib=max(float(x['memory_used_mib']) for x in active),
@@ -160,17 +233,20 @@ def audit(selected_points=None):
                 parameter_metadata={k:catalog[model][k] for k in ['model_total_parameters_billion','moe_active_parameters_billion','parameter_basis','parameter_source']})
             result.append(row)
     if selected_points:assert len(result)==len(selected_points) and len(repeats)==3*len(selected_points)
-    else:assert suite['completed']==expected and len(result)==16 and len(repeats)==48
+    else:assert suite['completed']==expected and len(result)==len(expected) and len(repeats)==3*len(expected)
     target=ROOT/('verified_points_'+'_'.join(selected_points)+'.json' if selected_points else 'verified_selected_execution.json')
     output=dict(status='verified_partial' if selected_points else 'complete',paired_rows=result,repeats=repeats,ours=old['ours'],historical_qwen_B1=anchor,
         raw_files_SHA_verified=len(verified),published_source_checks=len(source_checks),no_Qwen_B1_execution=True,
         utilization_and_cost_are_distinct_workloads=True,all_cost_videos=200,all_performance_videos=558)
     target.open('x',encoding='utf-8').write(json.dumps(output,indent=2)+'\n')
+    if recheck:native_history_comparison(output)
     print(json.dumps(dict(status=output['status'],points=len(result),repeats=len(repeats),source_checks=len(source_checks),raw_SHA_files=len(verified))))
     return output
 
 
 if __name__=='__main__':
     import argparse
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+')
-    audit(parser.parse_args().points)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true')
+    args=parser.parse_args()
+    if args.yolo_clip_recheck:ROOT=TASK/'runs/simulation/lgvq_yolo_clip_recheck_a100_20261017'
+    audit(args.points,args.yolo_clip_recheck)

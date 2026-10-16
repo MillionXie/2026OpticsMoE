@@ -7,7 +7,9 @@ const bundledRequire=createRequire(path.join(process.env.CODEX_ARTIFACT_RUNTIME_
 const {FileBlob,SpreadsheetFile}=await import(pathToFileURL(bundledRequire.resolve('@oai/artifact-tool')).href);
 const repo=process.cwd();
 const out=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
-const run=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016');
+const recheck=process.argv.includes('--yolo-clip-recheck');
+const baseRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016');
+const run=recheck?path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_yolo_clip_recheck_a100_20261017'):baseRun;
 const scratch=path.join(repo,'.codex_tmp');
 function chooseDisplayPoints(points){
  const selected=new Set();
@@ -38,8 +40,20 @@ if(process.argv.includes('--inspect')){
 }
 const json=async p=>JSON.parse(await fs.readFile(p,'utf8'));
 const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
-const data=await json(path.join(run,'verified_selected_execution.json'));
+const data=await json(path.join(baseRun,'verified_selected_execution.json'));
 if(data.status!=='complete'||data.paired_rows.length!==16||data.repeats.length!==48)throw Error('All selected evidence must be complete and independently verified');
+let historicalRepeats=[],newCount=16;
+if(recheck){
+ const extra=await json(path.join(run,'verified_selected_execution.json'));
+ if(extra.status!=='complete'||![2,3,4].includes(extra.paired_rows.length)||extra.repeats.length!==extra.paired_rows.length*3)throw Error('Incomplete prescribed recheck');
+ const keys=new Set(extra.paired_rows.map(x=>x.baseline+':'+x.batch_size));
+ if(extra.paired_rows.some(x=>!['clip','yolo'].includes(x.baseline)))throw Error('Recheck scope');
+ historicalRepeats=data.repeats.filter(x=>keys.has(x.baseline+':'+x.batch)).map(x=>({...x,role:'Historical superseded round; never pooled with new repeats'}));
+ data.paired_rows=[...data.paired_rows.filter(x=>!keys.has(x.baseline+':'+x.batch_size)),...extra.paired_rows];
+ const order=['qwen','glm','small','clip','yolo','deepseek'];
+ data.paired_rows.sort((a,b)=>order.indexOf(a.baseline)-order.indexOf(b.baseline)||a.batch_size-b.batch_size);
+ data.repeats=[...data.repeats.filter(x=>!keys.has(x.baseline+':'+x.batch)),...extra.repeats];newCount=extra.paired_rows.length;
+}
 const palette={ours:['#7828A8','#F2E9FA'],qwen:['#0072B2','#EAF3FA'],glm:['#92527F','#F5EBF3'],small:['#C25B18','#FFF0E5'],clip:['#007F63','#E8F5EF'],yolo:['#9B7000','#FFF7DD'],deepseek:['#5B6470','#EEF0F3']};
 const asNumber=v=>v===''||v===undefined||v===null?null:Number(v);
 const anchor=data.historical_qwen_B1;
@@ -76,7 +90,7 @@ for(const r of data.paired_rows){
 }
 for(const model of Object.keys(palette).filter(k=>k!=='ours')){const count=rows.filter(x=>x.baseline===model).length;if(count<2||count>3)throw Error('Need2–3 displayed points per GPU model');}
 if(rows.length<13||rows.length>18)throw Error('Invalid sparse display');
-for(const x of rows){const r=data.paired_rows.find(v=>v.baseline===x.baseline&&v.batch_size===x.batch_size_videos);Object.assign(x,{cost_wall_sum_ms:r?.cost_wall_sum_ms??null,cost_video_count:r?200:null,cost_call_count:r?.cost_calls??null,cost_active_A100_mean_W:r?.board_mean_w??null,cost_active_samples:r?.active_samples??null,util_repeat1_mean_percent:r?.util_repeat_means[0]??(x.baseline==='qwen'&&x.batch_size_videos===1?h.mean_gpu_utilization_percent:null),util_repeat2_mean_percent:r?.util_repeat_means[1]??null,util_repeat3_mean_percent:r?.util_repeat_means[2]??null,util_measurement_seconds:r?.util_duration_s??(x.baseline==='qwen'&&x.batch_size_videos===1?h.duration_s:null),util_samples:r?.util_samples??(x.baseline==='qwen'&&x.batch_size_videos===1?h.samples:null)});}
+for(const x of rows){const r=data.paired_rows.find(v=>v.baseline===x.baseline&&v.batch_size===x.batch_size_videos);Object.assign(x,{cost_wall_sum_ms:r?.cost_wall_sum_ms??null,cost_video_count:r?200:null,cost_call_count:r?.cost_calls??null,cost_active_A100_mean_W:r?.board_mean_w??null,cost_active_samples:r?.active_samples??null,util_repeat1_mean_percent:r?.util_repeat_means[0]??(x.baseline==='qwen'&&x.batch_size_videos===1?h.mean_gpu_utilization_percent:null),util_repeat2_mean_percent:r?.util_repeat_means[1]??null,util_repeat3_mean_percent:r?.util_repeat_means[2]??null,util_measurement_seconds:r?.util_duration_s??(x.baseline==='qwen'&&x.batch_size_videos===1?h.duration_s:null),util_samples:r?.util_samples??(x.baseline==='qwen'&&x.batch_size_videos===1?h.samples:null),util_repeat_spread_pp:r?Math.max(...r.util_repeat_means)-Math.min(...r.util_repeat_means):null,util_unstable_repeat_warning:r?Math.max(...r.util_repeat_means)-Math.min(...r.util_repeat_means)>5:null});}
 const namesToArchive=[...filenames,'plot_data.csv','LGVQ_temporal_gpu_utilization.csv','LGVQ_temporal_gpu_utilization_repeats.csv','timing_energy_recalculated.csv','batch_metric_audit.csv','README.md','UTILIZATION_METHOD_20261015.md','latency_comparison_reference.png','latency_comparison_reference.svg','energy_comparison_reference.png','energy_comparison_reference.svg','srcc_cost_comparison_reference.png','srcc_cost_comparison_reference.svg','gpu_utilization_comparison.png','gpu_utilization_comparison.svg','batch_cost_comparison.png','batch_cost_comparison.svg'];
 function polishReadability(){
  const input=plot.worksheets.getItem('Measurements'),s=main.worksheets.getItem('Summary'),src=main.worksheets.getItem('Sources'),u=util.worksheets.getItem('GPU utilization'),repeat=util.worksheets.getItem('Repeat measurements');
@@ -85,11 +99,13 @@ function polishReadability(){
  input.getRange(`F5:L${rows.length+4}`).setNumberFormat('#,##0.000000');
  s.getRange(`B6:T${rows.length+5}`).format.horizontalAlignment='right';
  s.getRange('E5').values=[['Estimated energy\nper 16 videos (J)']];s.getRange('E5').format.wrapText=true;
+ s.getRange('J5:L5').values=[['First 200 TEST SRCC\n(audit)','Independent resident\nGPU utilization (%)','Independent resident\npeak utilization (%)']];
+ s.getRange('A5:T5').format.wrapText=true;s.getRange('A5:T5').format.rowHeight=62;
  src.getRange('A25:B25').format.rowHeight=10;
  src.getRange('A26:B31').format={fill:'#F2F6FA',font:{name:'Arial',size:10,color:'#243447',bold:false},wrapText:true,verticalAlignment:'center',rowHeight:50};
  src.getRange('A26:A31').format.font={name:'Arial',size:10,bold:true,color:'#243447'};
  u.getRange(`E7:E${rows.length+5}`).setNumberFormat('0.000');u.getRange(`F7:G${rows.length+5}`).setNumberFormat('#,##0');
- repeat.getRange('F5:N53').format.horizontalAlignment='right';
+ repeat.getRange(`F5:N${data.repeats.length+historicalRepeats.length+5}`).format.horizontalAlignment='right';
 }
 async function renderQA(){
  for(const [book,label,sheetName,range]of[[plot,'selected_plot','Comparison',`A1:L${rows.length+12}`],[plot,'selected_inputs','Measurements',`A1:L${rows.length+4}`],[main,'selected_summary','Summary',`A1:L${rows.length+5}`],[main,'selected_build','Batch results',`A1:S${rows.length+1}`],[main,'selected_sources','Sources','A19:B31'],[util,'selected_util','GPU utilization',`A1:I${rows.length+5}`],[util,'selected_repeats','Repeat measurements','A1:O18']]){const image=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(scratch,label+'.png'),new Uint8Array(await image.arrayBuffer()));}
@@ -164,15 +180,17 @@ for(let i=0;i<urows.length;i++){
 }
 uv.getRange(`C7:D${urows.length+6}`).setNumberFormat('0.00%');uv.getRange(`I7:I${urows.length+6}`).setNumberFormat('yyyy-mm-dd hh:mm:ss');
 const historicRepeat={model:'Qwen3-VL-2B',baseline:'qwen',batch:1,repeat:1,mean_percent:h.mean_gpu_utilization_percent,peak_percent:h.peak_gpu_utilization_percent,duration_s:h.duration_s,samples:h.samples,forwards:historical.measured_forward_invocations,power_w:h.mean_board_power_w,memory_mib:h.mean_memory_used_mib,warmup_s:historical.warmup.duration_s,measured_local:'2026-10-15 14:52:05',source:path.relative(repo,historicalFile).replaceAll('\\','/'),role:'Historical native B1'};
-const repeatRows=[historicRepeat,...data.repeats.map(x=>({...x,role:selectedKeys.has(x.baseline+':'+x.batch)?'New displayed point':'Audit only; not in main figure'}))];
+const repeatRows=[historicRepeat,...data.repeats.map(x=>({...x,role:selectedKeys.has(x.baseline+':'+x.batch)?'Displayed point; see source/date':'Audit only; not in main figure'})),...historicalRepeats];
 ur.getRange(`A5:R${repeatRows.length+4}`).values=repeatRows.map(x=>[x.model,x.batch,x.repeat,x.mean_percent/100,x.peak_percent/100,x.duration_s,x.samples,x.forwards,x.power_w,x.memory_mib,na(x.sm_clock_mhz),na(x.temperature_c),na(x.cpu_queue_wait_ms),x.warmup_s,new Date(x.measured_local.replace(' ','T')+'Z'),x.baseline,x.role??'New three-repeat measurement',x.source]);
 ur.getRange('P4:R4').values=[['Baseline key','Measurement identity','Raw source']];ur.getRange(`D5:E${repeatRows.length+4}`).setNumberFormat('0.00%');ur.getRange(`O5:O${repeatRows.length+4}`).setNumberFormat('yyyy-mm-dd hh:mm:ss');
 for(let i=0;i<repeatRows.length;i++)ur.getRange(`A${i+5}:R${i+5}`).format={fill:palette[repeatRows[i].baseline][1],font:{name:'Arial',size:10,color:'#243447'},rowHeight:25};
 ur.getRange(`D5:E${repeatRows.length+4}`).setNumberFormat('0.00%');ur.getRange(`F5:N${repeatRows.length+4}`).setNumberFormat('0.00');ur.getRange(`G5:H${repeatRows.length+4}`).setNumberFormat('#,##0');ur.getRange(`O5:O${repeatRows.length+4}`).setNumberFormat('yyyy-mm-dd hh:mm:ss');
-sources.getRange('A7:B7').values=[['Measured candidate batches','Qwen historical1 + optimized3/4; GLM1/2; Small1/3/4; CLIP1/9/10; YOLO1/2/3; Tiny1/6/8. Main view applies the95% rule below.']];
+sources.getRange('A7:B7').values=[['Measured candidate batches',data.paired_rows.map(x=>x.baseline+':'+x.batch_size).join(', ')+'. Historical Qwen1 retained. Main view applies the95% rule.']];
 sources.getRange('A19:B20').values=[['Resident utilization','Independent unchanged queue8 three-repeat 5s/30s method; no Graph. Qwen B1 is one historical retained run.'],['Cost run','lgvq_selected_execution_a100_20261016;16 new sparse points, preserved historical Qwen B1']];
+if(recheck)sources.getRange('B20').values=[['Original selected round plus lgvq_yolo_clip_recheck_a100_20261017. Latest prescribed YOLO3/CLIP10 replaces previous round regardless of direction; conditional adjacent4/11.']];
 sources.getRange('A14:B14').values=[['Performance','Full558 evaluated at each batch. Previously TEST-selected checkpoints retain their development/no-VAL interpretation; no new training or selection.']];
 sources.getRange('A23:B24').values=[['Dates','See each point source/driver telemetry for actual +0800 dates'],['Historical evidence','lgvq_selected_execution_a100_20261016/prior_report_archive/manifest.json']];
+if(recheck)sources.getRange('B24').values=[['lgvq_yolo_clip_recheck_a100_20261017/prior_report_archive/manifest.json. Previous selected round and all original repeats retained.']];
 sources.getRange('A26:B31').values=[['Qwen execution','B3/B4: CPU integer metadata/indexing and grouped independent equal-length vision SDPA; original weights, precision and attention semantics.'],['Qwen equivalence','Full558 hidden/full vocabulary logits/quality logits/MOS compared exactly after cold cost in another process; each point has a receipt.'],['Gain definitions','Time/energy divided by LightGen-II reference. Qwen changes versus historical B1 include execution optimization and batch, not batch alone.'],['Model size','Total parameter definitions and original nominal/loaded sources retained in plot_data Measurements.'],['Selected data','B1 plus at most2 predeclared higher-B settings with resident mean>=95%. If none qualify, show highest predeclared B and disclose unmet target. Other measurements remain raw audit only.'],['Utilization and energy','Resident utilization is independent; energy uses same-cost-run active A100 power plus338.2W host proxy. Not a calibrated whole-system energy integral.']];
 sources.getRange('A26:B31').format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true,rowHeight:50};
 polishReadability();for(const book of books)book.recalculate();
@@ -188,10 +206,10 @@ const quote=v=>v===null||v===undefined?'':/[",\r\n]/.test(String(v))?'"'+String(
 const csv=(objects,keys=[...new Set(objects.flatMap(x=>Object.keys(x)))])=>[keys,...objects.map(x=>keys.map(k=>x[k]))].map(r=>r.map(quote).join(',')).join('\r\n')+'\r\n';
 await fs.writeFile(path.join(out,'plot_data.csv'),csv(rows));
 await fs.writeFile(path.join(out,'timing_energy_recalculated.csv'),csv(rows));
-await fs.writeFile(path.join(out,'batch_metric_audit.csv'),csv(data.paired_rows.map(x=>({model:x.model,batch_size_videos:x.batch_size,full558_srcc:x.srcc,full558_plcc:x.plcc,first200_srcc:x.first200_srcc,checkpoint_sha256:x.checkpoint_sha256,source:x.source,execution:x.execution}))));
+await fs.writeFile(path.join(out,'batch_metric_audit.csv'),csv(data.paired_rows.map(x=>({model:x.model,batch_size_videos:x.batch_size,full558_srcc:x.srcc,full558_plcc:x.plcc,first200_srcc:x.first200_srcc,independent_resident_util_mean_percent:x.independent_resident_util_mean_percent,repeat_means_percent:x.util_repeat_means.join(','),repeat_spread_pp:Math.max(...x.util_repeat_means)-Math.min(...x.util_repeat_means),displayed:selectedKeys.has(x.baseline+':'+x.batch_size),checkpoint_sha256:x.checkpoint_sha256,source:x.source,utilization_source:x.utilization_source,execution:x.execution}))));
 await fs.writeFile(path.join(out,'LGVQ_temporal_gpu_utilization.csv'),csv(urows.map(x=>{const raw=getRaw(x);return{model:x.model,baseline:x.baseline,batch:x.batch_size_videos,mean_percent:x.display_gpu_util_mean_percent,peak_percent:raw?.independent_resident_util_peak_percent??h.peak_gpu_utilization_percent,repeat_means:raw?.util_repeat_means.join(',')??'',samples:raw?.util_samples??h.samples,duration_s:raw?.util_duration_s??h.duration_s,forwards:raw?.util_forward_calls??historical.measured_forward_invocations,execution:x.execution_profile,source:x.utilization_source,measured_local:x.util_measured_local};})));
 await fs.writeFile(path.join(out,'LGVQ_temporal_gpu_utilization_repeats.csv'),csv(repeatRows));
-await fs.writeFile(path.join(run,'presentation_selected.json'),JSON.stringify({status:'complete',rows,display_selection_rule:'B1 plus at most2 predeclared higher-B settings with resident mean>=95%; if none, show highest predeclared B as unmet target',source: 'verified_selected_execution.json',source_sha256:digest(await fs.readFile(path.join(run,'verified_selected_execution.json'))),prior_archive:'prior_report_archive/manifest.json',workbook_files:filenames},null,2)+'\n',{flag:'wx'});
+await fs.writeFile(path.join(run,'presentation_selected.json'),JSON.stringify({status:'complete',rows,display_selection_rule:'B1 plus at most2 predeclared higher-B settings with resident mean>=95%; if none, show highest predeclared B as unmet target',source: 'verified_selected_execution.json',source_sha256:digest(await fs.readFile(path.join(run,'verified_selected_execution.json'))),base_source:path.relative(repo,path.join(baseRun,'verified_selected_execution.json')).replaceAll('\\','/'),base_source_sha256:digest(await fs.readFile(path.join(baseRun,'verified_selected_execution.json'))),prior_archive:'prior_report_archive/manifest.json',workbook_files:filenames},null,2)+'\n',{flag:'wx'});
 const f=(v,n=3)=>v===null||v===undefined?'—':Number(v).toFixed(n);
 const pointTable=['| Model | B / optical N | Resident GPU utilization (%) | Full558 SRCC | T16 (ms) | Estimated E16 (J) | LightGen-II time advantage (×) | LightGen-II energy-efficiency advantage (×) |',
  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
@@ -199,11 +217,15 @@ const pointTable=['| Model | B / optical N | Resident GPU utilization (%) | Full
 const repeatTable=['| Model | B | Repeat1 (%) | Repeat2 (%) | Repeat3 (%) | Pooled mean (%) | Full-window samples | Duration (s) | Execution |',
  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
  ...data.paired_rows.map(x=>`| ${x.model} | ${x.batch_size} | ${f(x.util_repeat_means[0],5)} | ${f(x.util_repeat_means[1],5)} | ${f(x.util_repeat_means[2],5)} | ${f(x.independent_resident_util_mean_percent,8)} | ${x.util_samples} | ${f(x.util_duration_s)} | ${x.execution} |`)].join('\n');
+const recheckNotes=recheck?await fs.readFile(path.join(run,'method_comparison.md'),'utf8'):'';
+const cohort=recheck?`The independently audited 16-point selected round is retained, with ${newCount} prescribed YOLO/CLIP recheck points from 17 October replacing the corresponding older points regardless of increase or decrease. Both old and new raw repeats are retained separately. All other models, including the historical Qwen B1, are unchanged. The no-explicit-warmup cost protocol still includes each first call. CLIP B10 first-call latency changed from534.974873 to197.230 ms (rounded), which explains most of the lower first200 normalized cost in this round; the timing boundary was not shortened. These cold-first-call costs retain initialization/cache-state variability and are not a steady-state throughput measurement.`:'All 16 predeclared new model–batch points and their 48 complete resident-utilization repeats have been independently audited.';
 const currentNotes=`# LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
 
 ## Current comparison — 16–17 October 2026
 
-All 16 predeclared new model–batch points and their 48 complete resident-utilization repeats have been independently audited. The main figures and the three original workbooks now show ${rows.length-1} electronic points plus one unchanged LightGen-II reference: B=1 and one or two near-saturation settings per model. Intermediate candidates remain in the raw evidence and performance audit, not in the main figures. Numerical source: [plot_data.csv](plot_data.csv); teacher-facing colored table: [plot_data.xlsx](plot_data.xlsx). Unrounded values, parameter definitions, checkpoint hashes and distinct cost/utilization sources are retained there. Previous presentation files are preserved with SHA receipts in T06's canonical new run, under \`prior_report_archive\`.
+${cohort} The main figures and the three original workbooks now show ${rows.length-1} electronic points plus one unchanged LightGen-II reference: B=1 and one or two near-saturation settings per model. Intermediate candidates remain in the raw evidence and performance audit, not in the main figures. Numerical source: [plot_data.csv](plot_data.csv); colored comparison: [plot_data.xlsx](plot_data.xlsx). Unrounded values, parameter definitions, checkpoint hashes and distinct cost/utilization sources are retained there. Previous presentation files are preserved with SHA receipts in T06's canonical run, under \`prior_report_archive\`.
+
+${recheckNotes}
 
 The display rule was fixed before the remaining models completed: keep B=1 and at most two predeclared higher batches with pooled resident utilization ≥95%; if none qualifies, retain the largest predeclared batch and disclose the unmet target. The 98% line is a reference, not a selectable utilization setting or an overload boundary. No point was selected by SRCC, latency or energy. All new measurements use the same A100 UUID and 250-W power limit; no training, precision change, CUDA Graph, artificial load or highest-window selection was introduced.
 
@@ -235,7 +257,7 @@ LightGen-II time advantage is baseline T16 / LightGen-II T16; energy-efficiency 
 
 **Energy panel.** The same per-configuration temporal SRCC is plotted against estimated energy normalized to 16 videos. For each new GPU point, energy combines its synchronized inference timing with its own active A100 power samples and the fixed 338.2-W host-power proxy. Resident-utilization measurements are used only for annotation and do not supply the power in this calculation. The LightGen-II and finalized Qwen B=1 references retain their approved historical cost estimates. The logarithmic horizontal axis covers every displayed point. These results compare estimated inference energy under the declared boundaries, rather than wall-meter energy for decoding and all host processing.
 
-Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [latency](latency_comparison_reference.png), [estimated energy](energy_comparison_reference.png). Their editable SVG counterparts and [independent utilization data](LGVQ_temporal_gpu_utilization.csv) are in this same directory. Reproduce the evidence audit with T06 \`audit_selected_execution.py\`, initial workbook authoring with \`reports/build_selected_execution.mjs --build\` (refuses to overwrite a changed archive), saved-workbook verification with \`--verify\`, formatting-only updates with \`--polish\`, and the figures with \`reports/plot_selected_execution.py\`. Do not import the old overwrite-on-import \`build_analysis.py\`.
+Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [latency](latency_comparison_reference.png), [estimated energy](energy_comparison_reference.png). Their editable SVG counterparts and [independent utilization data](LGVQ_temporal_gpu_utilization.csv) are in this same directory. Reproduce the evidence audit with T06 \`audit_selected_execution.py\`, initial workbook authoring with \`reports/build_selected_execution.mjs --build\` (refuses to overwrite a changed archive), saved-workbook verification with \`--verify\`, formatting-only updates with \`--polish\`, and the figures with \`reports/plot_selected_execution.py\`. ${recheck?'For this recheck add `--yolo-clip-recheck` to the audit, workbook and figure commands; both original and recheck verified-source SHA values are recorded in the new presentation receipt.':''} Do not import the old overwrite-on-import \`build_analysis.py\`.
 
 ---
 
@@ -244,10 +266,12 @@ Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [la
 Earlier descriptions and intermediate configurations are archived for provenance, not included in the current comparison.
 
 `;
-await fs.writeFile(path.join(out,'README.md'),currentNotes+'[Archived prior README](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016/prior_report_archive/README.md).\n');
+await fs.writeFile(path.join(out,'README.md'),currentNotes+'[Archived prior README](../../../tasks/t06_video_quality_assessment/runs/simulation/'+path.basename(run)+'/prior_report_archive/README.md).\n');
 const utilNotes=`# LGVQ GPU utilization: current selected-execution comparison
 
-Sixteen new model–batch points were remeasured on 16–17 October 2026; all 48 complete repeats are retained below. Main figures use B=1 plus at most two predeclared higher batches with pooled resident utilization ≥95% (largest tested batch if none qualifies). All other points remain audit evidence. The three workbooks and CSV identify displayed versus audit-only repeats. See the current comparison README for paired inference-cost data and the two figure descriptions.
+${cohort} Current point means and repeats are shown below. Superseded repeats remain separately labeled in the raw-repeat workbook/CSV, never pooled with a later round. Main figures use B=1 plus at most two predeclared higher batches with pooled resident utilization ≥95% (largest tested batch if none qualifies). All other points remain audit evidence. The three workbooks and CSV identify displayed versus audit-only repeats. See the current comparison README for paired inference-cost data and the two figure descriptions.
+
+${recheckNotes}
 
 The measurement method is unchanged: first B TEST videos prepared/H2D once, original four frames, original precision, same-stream queue8, three identical ≥5-s warmup/≥30-s full measurement repeats, all 50-ms samples pooled. Each call processes B videos, not 8B. Driver-window utilization is kernel-busy time, not SM occupancy or a configured percentage. There is no CUDA Graph, synthetic load, best-window selection, clock change or new training. Qwen B3/4 change execution grouping/indexing under full558 exact-equivalence checks; the other models use native execution.
 
@@ -255,7 +279,7 @@ Qwen B1 stays at the finalized 63.133111480865225% historical one-repeat value a
 
 ${repeatTable}
 
-Full source hashes, raw telemetry, forward counts, clocks, temperatures and process guards are independently audited in T06 \`runs/simulation/lgvq_selected_execution_a100_20261016/verified_selected_execution.json\`. Raw reports and their transfer SHA receipts are retained alongside it. The 98% line is a reporting reference, not an overload limit; results below it are not rounded upward.
+Full source hashes, raw telemetry, forward counts, clocks, temperatures and process guards are independently audited in T06 \`runs/simulation/lgvq_selected_execution_a100_20261016/verified_selected_execution.json\` ${recheck?'and `runs/simulation/lgvq_yolo_clip_recheck_a100_20261017/verified_selected_execution.json`':''}. Raw reports and their transfer SHA receipts are retained alongside them. The 98% line is a reporting reference, not an overload limit; results below it are not rounded upward.
 
 ---
 
@@ -264,5 +288,5 @@ Full source hashes, raw telemetry, forward counts, clocks, temperatures and proc
 Earlier descriptions and intermediate configurations are archived for provenance, not included in the current comparison.
 
 `;
-await fs.writeFile(path.join(out,'UTILIZATION_METHOD_20261015.md'),utilNotes+'[Archived prior utilization methods](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016/prior_report_archive/UTILIZATION_METHOD_20261015.md).\n');
-console.log(JSON.stringify({updated_workbooks:3,main_rows:rows.length,new_measurement_points:16,historical_Qwen_B1_unchanged:true}));
+await fs.writeFile(path.join(out,'UTILIZATION_METHOD_20261015.md'),utilNotes+'[Archived prior utilization methods](../../../tasks/t06_video_quality_assessment/runs/simulation/'+path.basename(run)+'/prior_report_archive/UTILIZATION_METHOD_20261015.md).\n');
+console.log(JSON.stringify({updated_workbooks:3,main_rows:rows.length,new_measurement_points:newCount,historical_Qwen_B1_unchanged:true}));

@@ -2,7 +2,32 @@
 
 ## Current comparison — 16–17 October 2026
 
-All 16 predeclared new model–batch points and their 48 complete resident-utilization repeats have been independently audited. The main figures and the three original workbooks now show 14 electronic points plus one unchanged LightGen-II reference: B=1 and one or two near-saturation settings per model. Intermediate candidates remain in the raw evidence and performance audit, not in the main figures. Numerical source: [plot_data.csv](plot_data.csv); teacher-facing colored table: [plot_data.xlsx](plot_data.xlsx). Unrounded values, parameter definitions, checkpoint hashes and distinct cost/utilization sources are retained there. Previous presentation files are preserved with SHA receipts in T06's canonical new run, under `prior_report_archive`.
+The independently audited 16-point selected round is retained, with 4 prescribed YOLO/CLIP recheck points from 17 October replacing the corresponding older points regardless of increase or decrease. Both old and new raw repeats are retained separately. All other models, including the historical Qwen B1, are unchanged. The no-explicit-warmup cost protocol still includes each first call. CLIP B10 first-call latency changed from534.974873 to197.230 ms (rounded), which explains most of the lower first200 normalized cost in this round; the timing boundary was not shortened. These cold-first-call costs retain initialization/cache-state variability and are not a steady-state throughput measurement. The main figures and the three original workbooks now show 15 electronic points plus one unchanged LightGen-II reference: B=1 and one or two near-saturation settings per model. Intermediate candidates remain in the raw evidence and performance audit, not in the main figures. Numerical source: [plot_data.csv](plot_data.csv); colored comparison: [plot_data.xlsx](plot_data.xlsx). Unrounded values, parameter definitions, checkpoint hashes and distinct cost/utilization sources are retained there. Previous presentation files are preserved with SHA receipts in T06's canonical run, under `prior_report_archive`.
+
+### YOLO/CLIP reproducibility check (17 October 2026)
+
+The inference-loop/statistics modules have identical SHA256 across the compared native runs: resident inputs prepared once, same-stream queue8, three complete ≥5-s warmups and ≥30-s measurement windows, all 50-ms samples pooled. YOLO B3 sample IDs, frames, resident tensor identity and reference outputs also match.
+
+The full execution histories were not identical. The old YOLO B3 followed B1/B2 in one loaded process. The old high CLIP B10 native control followed earlier batches/controls in one process. The recent selected run and this prescribed recheck start a fresh process for each point/phase. Clock, temperature and launch/host execution state therefore need not match despite an identical inner loop. The prior statement “completely identical” applied only to the loop/statistics, not this process history.
+
+| Native record | Repeat1 (%) | Repeat2 (%) | Repeat3 (%) | Pooled mean (%) |
+| --- | ---: | ---: | ---: | ---: |
+| YOLO old sequential B3 | 98.96309 | 98.78655 | 97.54271 | 98.43009 |
+| YOLO selected fresh B3 | 94.15217 | 95.33779 | 96.64824 | 95.37869 |
+| CLIP old sequential B10 | 95.72987 | 95.82689 | 93.12584 | 94.89368 |
+| CLIP native control after earlier work B10 | 98.96309 | 98.88926 | 98.41779 | 98.75671 |
+| CLIP selected fresh B10 | 95.73658 | 97.80168 | 98.17617 | 97.23783 |
+| YOLO11s prescribed recheck B3 | 81.82915 | 97.34338 | 82.30486 | 87.15913 |
+| YOLO11s prescribed recheck B4 | 99.77685 | 99.73950 | 99.10906 | 99.54169 |
+| CLIP ViT-B/32 prescribed recheck B10 | 97.22185 | 95.74664 | 97.60840 | 96.85834 |
+| CLIP ViT-B/32 prescribed recheck B11 | 98.66611 | 98.83221 | 98.71477 | 98.73770 |
+
+The recheck uses the unchanged fresh-process method, not selected high windows or longer conditioning. If YOLO3/CLIP10 pooled means remain below98%, only the predeclared adjacent YOLO4/CLIP11 is added. Latest complete prescribed results replace the corresponding old displayed point regardless of direction. Earlier data remain historical and are never pooled across rounds.
+
+Clock/temperature co-variation is diagnostic evidence, not an isolated causal attribution. The recheck YOLO B3 repeat2 was near97% while repeats1/3 were near82%; main-thread run-queue waiting was only about14ms per30s, so neither pure thermal warmup nor CPU scheduling delay alone explains the spread. Host launch service, CPU/GPU frequency and driver-window effects remain possible contributors. We do not claim to have eliminated all environmental variance. The GPU utilization counter is kernel-busy time, not compute occupancy and not a batch-linear quantity.
+
+The per-repeat clocks, temperatures, forward throughput and CPU scheduling evidence are retained in T06 canonical recheck run `method_comparison.csv` with source SHA receipts. Precision, weights, original four frames, clock/power settings and finalized Qwen B1 are unchanged. Utilization is independent of the newly paired first200 latency/power cost measurements.
+
 
 The display rule was fixed before the remaining models completed: keep B=1 and at most two predeclared higher batches with pooled resident utilization ≥95%; if none qualifies, retain the largest predeclared batch and disclose the unmet target. The 98% line is a reference, not a selectable utilization setting or an overload boundary. No point was selected by SRCC, latency or energy. All new measurements use the same A100 UUID and 250-W power limit; no training, precision change, CUDA Graph, artificial load or highest-window selection was introduced.
 
@@ -36,9 +61,10 @@ Qwen B=3/4 use CPU integer metadata, equivalent indexing and grouped independent
 | DeepSeek-VL2-Small | 3 | 95.85 | 0.70065163 | 4454.141151 | 2483.077033 | 434.738 | 2108.431 |
 | DeepSeek-VL2-Small | 4 | 98.58 | 0.69753655 | 4277.833742 | 2390.636129 | 417.530 | 2029.938 |
 | CLIP ViT-B/32 | 1 | 39.59 | 0.72525581 | 167.503529 | 63.381562 | 16.349 | 53.819 |
-| CLIP ViT-B/32 | 10 | 97.24 | 0.72523882 | 59.471630 | 22.791523 | 5.805 | 19.353 |
+| CLIP ViT-B/32 | 10 | 96.86 | 0.72523882 | 30.817941 | 11.816369 | 3.008 | 10.034 |
+| CLIP ViT-B/32 | 11 | 98.74 | 0.72520287 | 30.721120 | 11.756414 | 2.998 | 9.983 |
 | YOLO11s | 1 | 45.00 | 0.70159701 | 367.670324 | 140.508523 | 35.886 | 119.309 |
-| YOLO11s | 3 | 95.38 | 0.70159400 | 167.396341 | 63.960811 | 16.338 | 54.310 |
+| YOLO11s | 4 | 99.54 | 0.70159166 | 133.947075 | 51.452286 | 13.074 | 43.689 |
 | DeepSeek-VL2-Tiny | 1 | 72.41 | 0.56846690 | 2962.932000 | 1348.909189 | 289.192 | 1145.386 |
 | DeepSeek-VL2-Tiny | 8 | 96.96 | 0.56982445 | 1560.458820 | 827.419736 | 152.306 | 702.579 |
 
@@ -50,7 +76,7 @@ LightGen-II time advantage is baseline T16 / LightGen-II T16; energy-efficiency 
 
 **Energy panel.** The same per-configuration temporal SRCC is plotted against estimated energy normalized to 16 videos. For each new GPU point, energy combines its synchronized inference timing with its own active A100 power samples and the fixed 338.2-W host-power proxy. Resident-utilization measurements are used only for annotation and do not supply the power in this calculation. The LightGen-II and finalized Qwen B=1 references retain their approved historical cost estimates. The logarithmic horizontal axis covers every displayed point. These results compare estimated inference energy under the declared boundaries, rather than wall-meter energy for decoding and all host processing.
 
-Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [latency](latency_comparison_reference.png), [estimated energy](energy_comparison_reference.png). Their editable SVG counterparts and [independent utilization data](LGVQ_temporal_gpu_utilization.csv) are in this same directory. Reproduce the evidence audit with T06 `audit_selected_execution.py`, initial workbook authoring with `reports/build_selected_execution.mjs --build` (refuses to overwrite a changed archive), saved-workbook verification with `--verify`, formatting-only updates with `--polish`, and the figures with `reports/plot_selected_execution.py`. Do not import the old overwrite-on-import `build_analysis.py`.
+Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [latency](latency_comparison_reference.png), [estimated energy](energy_comparison_reference.png). Their editable SVG counterparts and [independent utilization data](LGVQ_temporal_gpu_utilization.csv) are in this same directory. Reproduce the evidence audit with T06 `audit_selected_execution.py`, initial workbook authoring with `reports/build_selected_execution.mjs --build` (refuses to overwrite a changed archive), saved-workbook verification with `--verify`, formatting-only updates with `--polish`, and the figures with `reports/plot_selected_execution.py`. For this recheck add `--yolo-clip-recheck` to the audit, workbook and figure commands; both original and recheck verified-source SHA values are recorded in the new presentation receipt. Do not import the old overwrite-on-import `build_analysis.py`.
 
 ---
 
@@ -58,4 +84,4 @@ Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [la
 
 Earlier descriptions and intermediate configurations are archived for provenance, not included in the current comparison.
 
-[Archived prior README](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016/prior_report_archive/README.md).
+[Archived prior README](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_yolo_clip_recheck_a100_20261017/prior_report_archive/README.md).

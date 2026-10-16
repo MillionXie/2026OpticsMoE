@@ -1,6 +1,7 @@
 """Replot verified sparse figure points, never reconstruct model measurements."""
 from __future__ import annotations
 import json
+import sys
 from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')
@@ -10,6 +11,7 @@ import numpy as np
 
 REPO=Path(__file__).resolve().parents[4]
 RUN=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016'
+if '--yolo-clip-recheck' in sys.argv:RUN=RUN.with_name('lgvq_yolo_clip_recheck_a100_20261017')
 OUT=REPO/'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013'
 COLORS=dict(ours='#7828A8',qwen='#0072B2',glm='#92527F',small='#C25B18',clip='#007F63',yolo='#9B7000',deepseek='#5B6470')
 MARKERS=dict(ours='*',qwen='o',glm='P',small='s',clip='D',yolo='^',deepseek='v')
@@ -23,10 +25,10 @@ def panel(ax,rows,kind):
     slots={
         'latency':{('qwen',1):(.77,.70),('qwen',3):(.61,.75),('qwen',4):(.53,.64),
                    ('glm',1):(.86,.85),('glm',2):(.70,.87),('clip',1):(.46,.61),('clip',10):(.26,.65),
-                   ('yolo',1):(.59,.46),('yolo',3):(.40,.43)},
+                   ('yolo',1):(.59,.46),('yolo',3):(.40,.43),('yolo',4):(.50,.35),('clip',11):(.16,.43)},
         'energy':{('qwen',1):(.70,.71),('qwen',3):(.54,.78),('qwen',4):(.64,.59),
                   ('glm',1):(.80,.86),('glm',2):(.68,.85),('clip',1):(.48,.62),('clip',10):(.31,.65),
-                  ('yolo',1):(.60,.46),('yolo',3):(.43,.43)}}
+                  ('yolo',1):(.60,.46),('yolo',3):(.43,.43),('yolo',4):(.53,.35),('clip',11):(.20,.50)}}
     for model,color in COLORS.items():
         selected=[x for x in rows if x['baseline']==model]
         if not selected:continue
@@ -61,7 +63,7 @@ def verify_label_geometry(fig,axes):
         for i,box in enumerate(boxes):
             assert bounds.contains(box.x0,box.y0) and bounds.contains(box.x1,box.y1),'Label outside axes'
             assert all(not box.padded(1).overlaps(other) for other in boxes[i+1:]),'Overlapping data labels'
-            assert all(not box.padded(2).contains(*ax.transData.transform(point)) for point in ax._audited_points),'Label covers data marker'
+            assert all(not box.padded(2).contains(*ax.transData.transform(point)) for point in ax._audited_points),f'Label covers data marker: annotation {i}'
         checks.append(dict(labels=len(boxes),overlaps=0,covered_markers=0,all_labels_within_axes=True,xlim=list(ax.get_xlim()),ylim=list(ax.get_ylim())))
     return checks
 
@@ -101,12 +103,13 @@ def main():
             ax.scatter(b,u,color=COLORS[m],marker=MARKERS[m],s=35)
             offsets_by_point={('qwen',1):(7,7),('qwen',3):(7,15),('qwen',4):(7,-17),
                 ('glm',1):(-8,15),('glm',2):(-8,7),('small',1):(7,20),('small',3):(7,-20),('small',4):(7,5),
-                ('clip',1):(7,-14),('clip',9):(-7,-16),('clip',10):(7,8),
-                ('yolo',1):(7,8),('yolo',3):(-7,2),('deepseek',1):(7,-10),('deepseek',6):(7,-16),('deepseek',8):(7,8)}
+                ('clip',1):(7,-14),('clip',9):(-7,-16),('clip',10):(-7,-17),('clip',11):(-7,8),
+                ('yolo',1):(7,8),('yolo',3):(-7,2),('yolo',4):(7,15),('deepseek',1):(7,-10),('deepseek',6):(7,-16),('deepseek',8):(7,8)}
             offset=offsets_by_point.get((m,b),(7,7))
             ax.annotate(f'{u:.2f}%'+('†' if historic else ''),(b,u),xytext=offset,textcoords='offset points',ha='left' if offset[0]>0 else 'right',color=COLORS[m],fontsize=8)
     ax.axhline(98,color='#6B7280',ls='--',lw=.7);ax.text(.58,.93,'98% reference',transform=ax.transAxes,color='#6B7280',fontsize=8)
-    ax.set_xlim(.7,10.6);ax.set_ylim(20,105);ax.set_xticks(range(1,11))
+    maxbatch=max(x['batch_size_videos'] for x in rows if x['baseline']!='ours')
+    ax.set_xlim(.7,maxbatch+.6);ax.set_ylim(20,105);ax.set_xticks(range(1,maxbatch+1))
     ax.set_xlabel('Video batch size');ax.set_ylabel('Resident GPU utilization (%)');ax.grid(color='#E5E7EB',lw=.5)
     ax.spines['top'].set_visible(False);ax.spines['right'].set_visible(False)
     fig.subplots_adjust(left=.09,right=.97,bottom=.25,top=.95)
