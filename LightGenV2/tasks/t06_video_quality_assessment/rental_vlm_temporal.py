@@ -196,7 +196,30 @@ def runtime_identity(model):
     for name in ("torch","torchvision","transformers","accelerate","xformers","flash-attn","numpy","opencv-python"):
         try:packages[name]=importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:pass
-    return dict(model_class=type(model).__name__,official_runtime_source_sha256=files,packages=packages)
+    return dict(model_class=type(model).__name__,official_runtime_source_sha256=files,packages=packages,
+                total_model_parameters=sum(p.numel() for p in model.parameters()),
+                backbone_trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad))
+
+class ClockSampler:
+    """Independent raw clocks/temperature stream; no clock/power mutations."""
+    def start(self):
+        self.records=[]
+        self.process=subprocess.Popen(["nvidia-smi",f"--id={GPU}",
+            "--query-gpu=clocks.sm,clocks.mem,temperature.gpu,pstate,power.limit",
+            "--format=csv,noheader,nounits","--loop-ms=200"],stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,text=True)
+        def read():
+            for line in self.process.stdout:
+                fields=[v.strip() for v in line.split(",")]
+                if len(fields)==5:self.records.append([time.time(),time.monotonic(),*fields])
+        self.thread=threading.Thread(target=read,daemon=True);self.thread.start()
+    def stop(self,path):
+        self.process.terminate();self.process.wait(timeout=5);self.thread.join(timeout=5)
+        if not self.records:raise RuntimeError("Missing independent clock telemetry")
+        with path.open("x",newline="") as stream:
+            writer=csv.writer(stream);writer.writerow(["host_time_unix","host_monotonic_s","sm_clock_mhz",
+                "memory_clock_mhz","temperature_c","pstate","power_limit_w"])
+            writer.writerows(self.records)
 
 def features(key,model,language,inputs):
     import torch
@@ -386,7 +409,8 @@ def evaluate(args,identity,guard):
     from LightGenV2.common import baseline_measurement as measurement
     test=[r for r in rows() if r["split"]=="test"]
     model,p,prompt,first,compute=inference_runtime(args,identity,guard)
-    timer=measurement.FirstBlockTimer(first);sampler=telemetry.TelemetrySampler(GPU)
+    timer=measurement.FirstBlockTimer(first);sampler=telemetry.TelemetrySampler(GPU);clocks=ClockSampler()
+    clocks.start()
     sampler.start();sampler.set_phase("idle");time.sleep(2);sampler.set_phase(None)
     predictions=[];timings=[]
     try:
@@ -426,6 +450,7 @@ def evaluate(args,identity,guard):
         guard.check();write(args.output/"report.json",report)
     finally:
         if sampler.process is not None:telemetry.save_samples(args.output/"telemetry.csv",sampler.stop())
+        clocks.stop(args.output/"clock_telemetry.csv")
         timer.close()
 
 def utilization(args,identity,guard):
@@ -439,7 +464,7 @@ def utilization(args,identity,guard):
     # No hook/timer overhead in resident forwards; same one-stream queue8 method.
     for repeat in range(1,4):
         folder=args.output/f"repeat{repeat:02d}";folder.mkdir()
-        sampler=telemetry.TelemetrySampler(GPU);groups=[];sampler.start()
+        sampler=telemetry.TelemetrySampler(GPU);groups=[];sampler.start();clocks=ClockSampler();clocks.start()
         def phase(name,minimum):
             sampler.set_phase(name);started=time.monotonic()
             while time.monotonic()-started<minimum:
@@ -460,6 +485,7 @@ def utilization(args,identity,guard):
         finally:
             if sampler.process is not None:samples=sampler.stop()
             telemetry.save_samples(folder/"telemetry.csv",samples);write(folder/"forward_groups.json",groups)
+            clocks.stop(folder/"clock_telemetry.csv")
     total=sum(r["samples"] for r in reports)
     guard.stop_monitor()
     pooled=sum(r["mean_gpu_utilization_percent"]*r["samples"] for r in reports)/total
@@ -507,7 +533,9 @@ def main():
         write(args.output/"status.json",dict(status="failed",error=repr(error),time=time.time()))
         raise
     finally:
-        if guard.thread and guard.thread.is_alive():guard.stop_monitor()
-        write(args.output/"process_audit.json",guard.audit)
+        try:
+            if guard.thread and guard.thread.is_alive():guard.stop_monitor()
+        finally:
+            write(args.output/"process_audit.json",guard.audit)
 
 if __name__=="__main__":main()
