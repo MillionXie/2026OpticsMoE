@@ -28,6 +28,20 @@ def test_no_model_math_copy_or_feature_cache():
     assert 'self.wrapped.get_rope_index(' in text
 
 
+def test_measurement_loop_is_reused_and_validation_outside_it():
+    text=(TASK/'measure_qwen_host_metadata.py').read_text()
+    tree=ast.parse(text)
+    calls=[n for n in ast.walk(tree) if isinstance(n,ast.Call)]
+    assert any(isinstance(n.func,ast.Attribute) and isinstance(n.func.value,ast.Name) and n.func.value.id=='uniform' and n.func.attr=='measure_repeat' for n in calls)
+    assert 'native_values!=candidate_values' in text
+    assert "'no_formal_table_replacement'" not in text or 'no_formal_table_replacement=True' in text
+    assert "range(0,558,batch)" in text
+    forbidden={'CUDAGraph','compile','backward','step','optimizer','load_state_dict'}
+    assert not any(isinstance(n.func,ast.Attribute) and n.func.attr in forbidden for n in calls)
+    capture_node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='capture')
+    assert any(isinstance(n,ast.Try) and n.finalbody for n in ast.walk(capture_node))
+
+
 @pytest.mark.skipif(sys.platform != 'linux', reason='Run native Torch equality in the original Linux server environment only')
 def test_native_tiny_cpu_forward_and_metadata_parity():
     torch=pytest.importorskip('torch')
@@ -44,6 +58,9 @@ def test_native_tiny_cpu_forward_and_metadata_parity():
     for batch in [2,3]:
         tokens=[1,90]+[91]*4+[92,90]+[91]*4+[92,2]
         inputs=dict(input_ids=torch.tensor([tokens]*batch),attention_mask=torch.ones(batch,len(tokens),dtype=torch.long),video_grid_thw=torch.tensor([[2,4,4]]*batch),pixel_values_videos=torch.randn(32*batch,24))
+        # Mixed valid lengths and left padding use the same integer RoPE path.
+        inputs['input_ids'][1]=torch.tensor([0]+tokens[:-1])
+        inputs['attention_mask'][1,0]=0
         opt=HostMetadataQwenModel(native.model,inputs,inputs)
         with torch.inference_mode():
             a=native.model(**inputs,return_dict=True,use_cache=False)

@@ -11,7 +11,12 @@ B1定稿所有数据和原30点均保护，不能覆盖。仅T06源码main发布
 配置`qwen_host_metadata_20261016.json`仅B2/3/4/6/8递增，原queue8、三次5s预热/30s测量；
 先原生与候选完整hidden/质量logits/MOS逐元素严格相同，再测；选定点还须完整558TEST逐样本比对，
 任何差异停止且不替换正式数据。达到98%即停止增batch，不保证达标。原协议精度/成本本轮不重写。
-本地只运行不依赖Torch的合同检查；原Torch/Transformers环境的微型CPU前向等价测试在服务器执行，
+服务器原Torch/Transformers禁用CUDA的微型CPU前向等价测试已通过（3/3，完整hidden与rope delta严格相同，
+共享原参数对象）；本机Torch DLL加载失败，不修本机环境，改为仅运行不依赖Torch的合同检查。
+新入口`measure_qwen_host_metadata`采用同一`uniform.measure_repeat`，每B原生/候选交替各3重复，
+完整hidden/词表logits/质量logits/MOS的D2H审计hooks只在非测量阶段安装，正式重复前移除。
+选定首达98%或最后B后完整558逐样本原生/候选严格比对，不把失败候选入正式表。
+原Torch/Transformers环境的CPU测试在服务器执行，
 不申请GPU、不连接实验室。预检时A100外部YOLO仍占用，无本轮CUDA进程；GPU试验须空闲守卫通过后另记真实启动。
 
 ## 2026-10-16 CLIP接近98%的新增batch与Qwen利用率平台诊断
