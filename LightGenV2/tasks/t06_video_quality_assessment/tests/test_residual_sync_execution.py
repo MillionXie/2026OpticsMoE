@@ -25,7 +25,9 @@ def test_no_new_learning_math_or_feature_cache_in_adapter():
     assert 'type(self.wrapped).forward(self,**kwargs)' in text
     assert 'hidden_states[batch_index,token_index,:].clone()+visual_embeds' in text
     assert 'hidden_states[batch_index,token_index,:]=local_this' in text
-    assert 'attention_mask=None' not in text
+    cls=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='IndexedQwenText')
+    forward=next(n for n in cls.body if isinstance(n,ast.FunctionDef) and n.name=='forward')
+    assert len(forward.body)==1 and isinstance(forward.body[0],ast.Return)
     assert 'non_blocking=True' in text
 
 
