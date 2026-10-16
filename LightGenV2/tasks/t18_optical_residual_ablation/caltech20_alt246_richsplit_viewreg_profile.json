@@ -1,0 +1,27 @@
+{
+  "baseline_run": "caltech20_rich20_alt246_s17_equal100_20261016",
+  "cache_sha256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "manifest_sha256": "d4921172a9cc8aa427b89e03772733837be64a3fdaaf826d91050e44df2c459c",
+  "supported_depths": [2, 4, 6],
+  "training": {
+    "block_epochs": 20,
+    "maximum_seconds": 3600,
+    "lr": 0.0002,
+    "minimum_lr": 0.00002,
+    "crop_area": [0.75, 1.0],
+    "crop_aspect": [0.9, 1.1],
+    "brightness": [0.85, 1.15],
+    "contrast": [0.9, 1.1],
+    "gamma": [0.9, 1.1],
+    "view_seed_tag": 20261016,
+    "method": "TRAIN-only RGB crop and photometric coverage; unchanged optical/electronic inference graph"
+  },
+  "scope": "Evidence-driven residual-only20-epoch reviews; no total epoch cap, no automatic retry or unreviewed repeated candidates",
+  "scheduler": "At global101 extend the completed cosine schedule with ReduceLROnPlateau, factor.5/patience3/absolute delta.002/min2e-5; preserve global epoch/raw/EMA/Adam moments; later blocks preserve this scheduler state",
+  "selection": "first minimum validation EMA balancedNLL over the complete prefix; never highest TEST epoch",
+  "inference_parameters_added": 0,
+  "teacher": null,
+  "data_or_class_changes": false,
+  "test_informed_development": true,
+  "automatic_retry": false
+}
