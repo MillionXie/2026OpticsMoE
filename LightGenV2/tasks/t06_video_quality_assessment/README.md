@@ -1,5 +1,24 @@
 # T06 视频质量评价
 
+## 2026-10-17 YOLO/CLIP 利用率复现与小步补测（新授权）
+
+用户要求核查旧YOLO B3>=98、CLIP B10约98.76与最新95.38/97.24的差异，尽量稳定在98附近。
+原始循环仍是同一resident native queue8、每次5s预热/完整>=30s、三次全部样本合并；
+但旧YOLO/CLIP较高值来自同进程前序batch/对照之后，最新单点fresh process的初始热状态不同。
+原始YOLO B3输入样本/帧/张量SHA/MOS一致。记录中的温度/频率与利用率共同变化只是线索，
+不能宣称已隔离温度的因果贡献，之前“完全相同”应限定为推理循环/统计窗口而非进程历史。
+
+固定新run runs/simulation/lgvq_yolo_clip_recheck_a100_20261017，入口measure_yolo_clip_recheck。
+先复核YOLO3、CLIP10；仅各自三次合并<98时补唯一小步YOLO4、CLIP11，最多4点不继续扩batch。
+每点分别fresh process直接复用原cost/native resident worker，仍5s/30s*3/queue8/250W，
+不改热身时长、clock/power/affinity、模型/精度/4帧/划分，不Graph、不挑重复/窗口。
+每点全558独立精度、首200同步边界成本及同轮active功率，util另测不代入成本。
+T16=sum(first200)*16/200；E16=(338.2W+同成本轮active A100 W)*T16/1000，首批/尾批保留。
+最新完整规定复核按轮次替换同模型batch展示点，无论数值升降；旧原始记录完整保留，
+不是在旧/新重复中择最高。Qwen B1及其他模型本轮不执行、不改定稿。
+仅原A100 UUID/250W，连续3次10s空闲才准入、最多20min CPU等待，总1h/单阶段15min；
+foreign/错误保留证据停止不自动重启，聊天持续监督不用定时任务。源码main Git发布后才服务器执行。
+
 ## 2026-10-17 图五本轮完成与交付
 
 固定16个新测点全部完成，每点558 TEST预测、首200成本和独立驻留util三次完整重复；

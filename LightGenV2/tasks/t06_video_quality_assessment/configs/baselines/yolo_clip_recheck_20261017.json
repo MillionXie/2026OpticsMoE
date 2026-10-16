@@ -1,0 +1,18 @@
+{
+  "protocol": "native_freshprocess_yolo_clip_fixed_small_step_recheck_v1",
+  "cases": {"yolo": [3, 4], "clip": [10, 11]},
+  "target_percent": 98,
+  "extra_batch_only_if_first_pooled_below_target": true,
+  "warmup_s": 5,
+  "measurement_s": 30,
+  "repeats": 3,
+  "queue_depth": 8,
+  "maximum_suite_seconds": 3600,
+  "maximum_initial_idle_wait_seconds": 1200,
+  "maximum_stage_seconds": 900,
+  "same_frozen_weights_precision_frames_cost_boundary": true,
+  "no_graph_no_clock_power_affinity_changes": true,
+  "no_retry_or_best_repeat_selection": true,
+  "historical_Qwen_B1_protected": true,
+  "replacement_policy": "latest complete prescribed recheck replaces that model-batch point regardless of increase/decrease; previous results remain historical"
+}
