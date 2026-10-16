@@ -1,0 +1,13 @@
+{
+  "fixed_candidate": "cached-teacher LAST EMA120, unscaled; use previously audited unscaled TRAIN/VAL features",
+  "folds": 5,
+  "seed": 20261017,
+  "ridge": 0.1,
+  "inverse_temperature_bounds": [0.3333333333333333, 2.0],
+  "calibration_degrees_of_freedom": 21,
+  "inference_parameters_added": 0,
+  "CV_admission": "OOF overall accuracy strictly above unscaled LAST EMA120 and natural NLL improves at least .001; otherwise no full calibration or new TEST",
+  "VAL_labels_used_for_calibration": true,
+  "test_informed_development": true,
+  "automatic_retry": false
+}
