@@ -1,0 +1,30 @@
+{
+  "baseline_run": "caltech20_rich20_alt246_s17_equal100_20261016",
+  "cache_sha256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "manifest_sha256": "d4921172a9cc8aa427b89e03772733837be64a3fdaaf826d91050e44df2c459c",
+  "supported_depths": [
+    6
+  ],
+  "training": {
+    "block_epochs": 20,
+    "maximum_seconds": 3600,
+    "lr": 0.0002,
+    "minimum_lr": 2e-05,
+    "method": "Original balanced supervision plus correct-confident clean TRAIN teacher2 soft targets; existing affine/flip/MixUp/dropout, no crop/photometric branch",
+    "kd_alpha": 0.5,
+    "kd_temperature": 2.0,
+    "teacher_confidence": 0.5,
+    "teacher_checkpoint_sha256": "7d8c79092dc3323acd9392302c9bc53346d9166ebb457bfe481f8ebf2cb50920",
+    "teacher_TRAIN_prediction_sha256": "aab4efb1eec68531c8e05b8a7422143360ff92f154a6f244dbee3c69e72f3cf5",
+    "view_augmentation_enabled": false
+  },
+  "scope": "One six-layer20-epoch cached-TRAIN-teacher review, protected full100 controls and accepted models",
+  "scheduler": "At global101 extend the completed cosine schedule with ReduceLROnPlateau, factor.5/patience3/absolute delta.002/min2e-5; preserve global epoch/raw/EMA/Adam moments; later blocks preserve this scheduler state",
+  "selection": "Original first minimum balanced VAL EMA NLL over full100+20 prefix; no favorable TEST epoch",
+  "inference_parameters_added": 0,
+  "teacher": "Fixed two-layer baseline opticalE86 with same-head natural calibration step27/40; saved TRAIN only, no teacher inference during fit/val/test",
+  "data_or_class_changes": false,
+  "test_informed_development": true,
+  "automatic_retry": false,
+  "evidence": "Teacher2 TRAIN93.60/VAL82.77 with83.2537% correct/conf>=.5 coverage; six-layer TRAIN95.86/VAL78.59. Natural-only representation attempt TEST76.40/macro60.08 failed, so retain balanced ground-truth CE for rare classes and ADD temperature-soft target regularization, not replace labels or reuse the failed weights."
+}
