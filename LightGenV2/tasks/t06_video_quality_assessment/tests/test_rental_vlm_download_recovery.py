@@ -24,3 +24,11 @@ def test_preserved_prefix_and_complete_official_sha():
     assert 'partial.rename(target)' in text
     assert 'time.sleep(delay)' in text and 'min(delay,60)' not in text
     assert r.DEADLINE<1792185600
+
+def test_no_slow_piece_batch_barrier_or_unbounded_request():
+    text=Path(r.__file__).read_text()
+    assert "as_completed(futures)" in text
+    assert "received=end-start+1" not in text
+    assert "time.monotonic()-request_started>45" in text
+    assert "range(3)" in text
+    assert 'p.open("ab")' in text

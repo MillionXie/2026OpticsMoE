@@ -46,6 +46,12 @@ def test_readout_and_native_parity_guard():
     assert "torch.allclose(full,projection,rtol=.01,atol=.125)" in text
     assert "before!=after" in text
 
+def test_kimi_nested_official_backend_is_explicit_and_audited():
+    text=Path(r.__file__).read_text()
+    assert 'cfg.vision_config._attn_implementation="flash_attention_2"' in text
+    assert 'cfg.text_config._attn_implementation="flash_attention_2"' in text
+    assert 'actual_attention=attention' in text
+
 def test_fresh_process_stages():
     text=Path(s.__file__).read_text()
     assert '("cpu-preflight","train","evaluate","utilization")' in text

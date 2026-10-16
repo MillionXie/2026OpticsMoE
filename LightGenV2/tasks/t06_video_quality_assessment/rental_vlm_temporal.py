@@ -174,8 +174,15 @@ def transfer(values):
 
 def load_model(key,path):
     import torch
-    from transformers import AutoModelForCausalLM
-    options=dict(attn_implementation="flash_attention_2") if key=="kimi" else {}
+    from transformers import AutoModelForCausalLM,AutoConfig
+    options={}
+    if key=="kimi":
+        cfg=AutoConfig.from_pretrained(str(path),trust_remote_code=True,local_files_only=True)
+        # This official config predates sub_configs dispatch in Transformers.
+        # Use its supported native per-config backend setting, never patch a forward.
+        cfg.vision_config._attn_implementation="flash_attention_2"
+        cfg.text_config._attn_implementation="flash_attention_2"
+        options=dict(config=cfg,attn_implementation="flash_attention_2")
     model=AutoModelForCausalLM.from_pretrained(str(path),local_files_only=True,trust_remote_code=True,
                 torch_dtype=torch.bfloat16,low_cpu_mem_usage=True,**options).eval().requires_grad_(False).cuda()
     if key=="deepseek":
@@ -184,6 +191,8 @@ def load_model(key,path):
     else:
         language=model.language_model
         first=model.vision_tower.encoder.blocks[0]
+        if first.attn_implementation!="flash_attention_2" or type(language.model.layers[0].self_attn).__name__!="DeepseekV3FlashAttention2":
+            raise RuntimeError("Requested official Kimi vision/text backend was not applied")
     return model,language,first
 
 def runtime_identity(model):
@@ -196,7 +205,14 @@ def runtime_identity(model):
     for name in ("torch","torchvision","transformers","accelerate","xformers","flash-attn","numpy","opencv-python"):
         try:packages[name]=importlib.metadata.version(name)
         except importlib.metadata.PackageNotFoundError:pass
+    if hasattr(model,"vision_tower"):
+        attention=dict(vision=model.vision_tower.encoder.blocks[0].attn_implementation,
+                       text_class=type(model.language_model.model.layers[0].self_attn).__name__)
+    else:
+        attention=dict(vision_class=type(model.vision.blocks[0]).__name__,
+                       text_class=type(model.language.model.layers[0].self_attn).__name__)
     return dict(model_class=type(model).__name__,official_runtime_source_sha256=files,packages=packages,
+                actual_attention=attention,
                 total_model_parameters=sum(p.numel() for p in model.parameters()),
                 backbone_trainable_parameters=sum(p.numel() for p in model.parameters() if p.requires_grad))
 
@@ -316,6 +332,7 @@ def train(args,identity,guard):
     p,prompt,ids=processor(args.model,path)
     model,language,_=load_model(args.model,path);guard.bind()
     identity["runtime"]=runtime_identity(model)
+    write(args.output/"identity.json",identity)
     initial=language.lm_head.weight.detach()[ids].float().cpu().clone()
     identity["initial_rows_sha256"]=q.sha256_tensor(initial)
     write(args.output/"status.json",dict(status="auditing_backbone_before",time=time.time()))
@@ -385,6 +402,7 @@ def inference_runtime(args,identity,guard):
     model,language,first=load_model(args.model,path);guard.bind()
     identity["runtime"]=runtime_identity(model)
     if receipt["identity"]["runtime"]!=identity["runtime"]:raise RuntimeError("Frozen runtime changed")
+    write(args.output/"identity.json",identity)
     pt=torch.load(ptpath,map_location="cpu",weights_only=False)
     if ids!=pt["quality_token_ids"]:raise RuntimeError("Quality token IDs changed")
     head=five_rows(pt["state_dict"]["weight"]).cuda().eval().requires_grad_(False)
