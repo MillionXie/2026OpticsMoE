@@ -2,6 +2,21 @@
 
 ## 2026-10-16 Qwen剩余同步与CLIP小batch继续诊断（新授权）
 
+诊断入口已由main `8b2fc4695`发布，两端18项CPU合同通过（本地17通过/1原生CPU跳过），
+原A100准入后Qwen B2/B4和CLIP B4/B8/B10时间线均完整完成，父1532675退出。
+Qwen host-metadata每4次前向仍有48次流同步：16次copy、16次index/nonzero、
+12次index_put/nonzero及4次GPU布尔读取；对应占位符校验与DeepStack布尔索引读写。
+CLIP未观察到item/nonzero或逐前向流同步，主要迹象是kernel提交开销/间隙，不能套用Qwen解释。
+profile有插桩开销，区间并集比例不作正式GPU利用率；当前构建未提供Python stack，
+同步归因依据CPU事件父子链与精确官方源码，不冒称已取得完整Python调用栈。
+据此新增独立候选`residual_sync_execution`与`measure_residual_sync`：Qwen用CPU整数位置
+在原DeepStack调用点重算索引，保原加法，异步传整数元数据；仅全1注意力mask的冗余检查在CPU完成，
+原SDPA计算不换。CLIP只尝试减少冗余autocast管理，实际FP16/FP32算子签名必须完全一致。
+候选Qwen B2/3/4/6、CLIP B4/8/10，逐点原方法配对各3次/5s预热/30s完整窗口/queue8；
+98%即停，各模型最终选定点完整558TEST与原生hidden/logits/MOS严格相同才可完成。
+本轮两阶段共用首次诊断启动的一小时绝对截止，不另延长预算。数据仅原run的`optimization01`，
+无精度容差/缓存模型结果/Graph/权重训练/正式表替换；新候选尚未获得GPU性能结论。
+
 用户授权继续定位Qwen剩余同步，并检查CLIP B10约94.9%的原因，在空闲A100上尝试更小batch。
 权重/精度/attention/原利用率测法不改，B1定稿与原始图表保护；不连接实验室、不新建工程或分支。
 入口`diagnose_residual_sync`，配置`residual_sync_20261016.json`，运行只在

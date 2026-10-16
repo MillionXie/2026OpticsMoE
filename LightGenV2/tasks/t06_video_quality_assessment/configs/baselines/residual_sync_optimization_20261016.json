@@ -1,0 +1,17 @@
+{
+  "authorization": "2026-10-16 continue equivalent Qwen residual-sync and CLIP small-batch execution optimization; protect finalized B1 and measurement method",
+  "cases": {"qwen": [2, 3, 4, 6], "clip": [4, 8, 10]},
+  "target_mean_percent": 98,
+  "maximum_suite_seconds": 3600,
+  "maximum_initial_idle_wait_seconds": 1800,
+  "maximum_worker_seconds": 2400,
+  "warmup_s": 5,
+  "measurement_s": 30,
+  "queue_depth": 8,
+  "repeats": 3,
+  "strict_hidden_logits_MOS_equality": true,
+  "strict_actual_learned_operator_dtypes": true,
+  "full_TEST_videos": 558,
+  "no_B1_execution_or_replacement": true,
+  "no_graph_attention_weights_precision_clock_or_measurement_changes": true
+}
