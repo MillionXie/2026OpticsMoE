@@ -1,5 +1,21 @@
 # LGVQ GPU utilization measurements
 
+## Finalized display selection — 16 October 2026
+
+The user explicitly retains Qwen B=1 **63.133111480865225%** from
+`unified_qwen_b1_5s30s01/report.json` as the presentation anchor. This historical
+record uses one native resident queue8 repeat (5.060464 s warmup, 30.241928 s
+measurement, 601 samples, 576 forwards). Other displayed batches use the uniform
+three-repeat pooled means below. The basic resident/native queue8 method is the
+same, but the historical B1 record is not a three-repeat or same-round estimate.
+
+The newer Qwen B1 pooled **71.17536071032187%** is retained unchanged as an audit:
+column Q of the utilization workbook and column K of plot_data.xlsx Measurements.
+The repeated-measurement table below and raw repeats remain unchanged. Only the
+selected display value, its matched historical sample counts/date/source, and
+derived labels change; finalized latency, energy and SRCC do not change.
+No new GPU run, graph, batch expansion or best-window selection was performed.
+
 ## Unified resident inference measurements
 
 All six models completed the same native resident-inference protocol on 15 October

@@ -4,7 +4,68 @@ Updated 16 October 2026: all six models and all thirty previously measured batch
 
 Current [figure data](plot_data.csv), [full costs and telemetry](timing_energy_recalculated.csv), [performance audit](batch_metric_audit.csv), [workbook](LGVQ_temporal_multi_baseline_recalculated.xlsx) and [two-panel figure](srcc_cost_comparison_reference.png) are in this same directory. The methods, complete numerical table and manuscript-ready descriptions are under “两图含义与实验方法” below. Qwen B=1 retains the finalized historical cost, explicitly distinguished from its new cost audit. LightGen-II retains the approved physical-performance reference and component-cost estimate.
 
-GPU-utilization labels use the independent, uniform native resident queue8 experiment of 15 October 2026, not the utilization of the dataset-once cost run. The earlier execution/Graph controls and precision diagnoses below are preserved historical evidence, not replacements for these current measurements. No precision diagnosis was reopened in this campaign. The original three-sheet workbook structure is retained.
+GPU-utilization labels use independent native resident queue8 experiments, not the utilization of the dataset-once cost run. Following the user's explicit finalization on 16 October, Qwen B=1 displays its historical **63.133111480865225%** single-run result; all other points retain the uniform three-repeat pooled means. The newer Qwen B=1 pooled result, 71.17536071032187%, remains an audit record, not the selected display value. The earlier execution/Graph controls and precision diagnoses below are preserved historical evidence. No precision diagnosis was reopened in this update. The original three-sheet cost workbook structure is retained.
+
+## 2026-10-16：教师展示版、定稿锚点与倍数定义
+
+本轮只整理已经测完的数据，没有启动新的 GPU 测试或训练。优先展示文件为同目录的
+[彩色完整数据表](plot_data.xlsx)，共六模型30种batch及LightGen-II参考；
+[绘图输入CSV](plot_data.csv)含相同完整精度数据与来源。CSV不支持颜色，故保留机器可读CSV，
+同时提供可筛查、按模型分色的Excel展示版，不另放outputs目录。
+
+Qwen B=1恢复用户定稿的63.133111480865225%，对应原记录
+`lgvq_utilization_execution_20261015/unified_qwen_b1_5s30s01/report.json`：
+一次原生resident queue8测量，实际预热5.060464秒、完整测量30.241928秒、601个利用率样本、576次前向。
+它与后来三次重复测量使用相同的基本驻留输入/原生queue8方式，但重复次数和测量时刻不同，
+不能称为全部同轮或三次均值。本次是用户指定历史测量为展示锚点，不是把71.17536071032187%的
+原始复测改写成63.13%。原始`verified_costs.json`、`verified_summary.json`、90份重复记录、
+逐样本精度、时延及能耗均未改变。Excel、展示CSV和图中已明确该单行来源例外；
+`timing_energy_recalculated.csv`与`recalculation.json`仍保留测量审计值，不冒充展示选择。
+
+每个batch都列出以下两组倍数，避免“加速比”指代不清：
+
+- **LightGen-II时间加速比** = 当前基线T16 / LightGen-II T16；
+  **LightGen-II能效优势** = 当前基线E16 / LightGen-II E16。
+  两者比较相同16视频工作量；后者是每任务能耗比，不是TOPS/W。
+- **同模型相对B=1的时间/能效改善** = 该模型B1的T16或E16 / 当前B的对应值。
+  Qwen的B1分子仍采用定稿历史成本，其他模型用配套新成本。
+
+例如Qwen B=1的定稿T16=1188.3861464262009 ms、E16=462.1134010767563 J，
+对应LightGen-II时间优势**115.9902468894624×**、能效优势**392.3898423712127×**。
+Qwen B=8则分别约为49.83×、196.18×，完整未舍入计算在表中，不因恢复利用率改变成本。
+
+### 参数量口径
+
+| 模型 | 总参数规模 | MoE激活参数规模 | 依据与限制 |
+| --- | ---: | ---: | --- |
+| Qwen3-VL-2B | 约2B | 不适用 | [官方模型卡](https://huggingface.co/Qwen/Qwen3-VL-2B-Instruct)，标称完整模型规格 |
+| GLM-4.6V-Flash | 约9B | 不适用 | [官方模型卡](https://huggingface.co/zai-org/GLM-4.6V-Flash)，Flash标称规格 |
+| DeepSeek-VL2-Small | 约16B | 约2.8B | [官方模型卡](https://huggingface.co/deepseek-ai/deepseek-vl2-small)，总量与激活量分列 |
+| CLIP ViT-B/32 | 151,277,313 | 不适用 | 冻结特征收据实载总量，包含本次视觉推理不执行的文本分支 |
+| YOLO11s | 9,458,752 | 不适用 | 冻结特征收据实载完整检测模型；前向运行原模型并读取C2PSA特征 |
+| DeepSeek-VL2-Tiny | 3,370,501,440 | 约1.0B | 冻结特征收据实载总量；[官方激活量](https://huggingface.co/deepseek-ai/deepseek-vl2-tiny) |
+
+参数以模型本体口径列示，不把小质量头、显存、每次执行参数量或光学等效连接混在一起。
+CLIP/YOLO/Tiny的精确实载计数位于原协议重训run的`features/*report.json`，逐项路径列在展示表Measurements。
+LightGen-II光学自由度/等效连接与GPU存储权重不是同一种数量，故本次不填一个貌似可比的总参数。
+
+### 为什么Qwen不随batch继续趋近100%
+
+当前曲线：Qwen B1（历史展示）63.13%、B2 87.27%、B3 89.27%、B4 91.07%、B6 91.38%、
+B8 91.63%、B10 90.63%。因此它是在本次已测范围进入约91%的平台，而非硬件上限只有90%，
+也不保证batch增大必然单调。其他模型中GLM B2为98.07%、Small B4为98.50%、YOLO B3为98.43%；
+CLIP B10实际仍为94.89%，Tiny B8为97.78%，不能一概说所有其他模型都达到近100%。
+
+这里是[NVIDIA定义的驱动采样窗口内至少一个kernel运行的时间占比](https://docs.nvidia.com/deploy/archive/R550/nvml-api/structnvmlUtilization__t.html)，
+不是SM occupancy，也不是峰值FLOPS利用率。驻留输入只排除了反复解码/预处理/H2D的供数等待，
+没有消除原生模型内部的主机调度、动态准备和同步间隙。模型的算子组合、形状、单次计算持续时间及
+执行栈不同，参数多寡不能单独预测这个百分数。较小batch可能让调用间隙占比更高，增大后间隙
+相对变小；继续增大也可能进入平台，而不必到100%。这是与现有数据一致的解释，不是已完成的
+Qwen全路径瓶颈归因。
+
+旧Qwen B8对照中，固定5–30秒原生负载约91.89%，去CPU输出约92.06%，queue8约92.30%，
+说明仅去掉末端CPU拷回或多排几个前向并未使该原生路径升至98%。不能用CLIP/YOLO的Graph
+对照值替换当前原生协议，也不能只挑Qwen最高窗口；本次未修改输入、精度、模型或采样窗口来凑高值。
 
 ## 最新因果隔离：相同输入、不同批形状的运算差异（15 October 2026）
 
@@ -402,7 +463,7 @@ LGVQ固定划分包含2250个TRAIN和558个TEST视频，共2808个不同视频�
 
 本轮均使用同一NVIDIA A100-PCIE-40GB、固定250W设置和同一manifest。板卡功率、驱动利用率和显存以名义50ms轮询并记录阶段。成本功率/active均值仅使用同轮前200视频的推理标签窗口，不把后358视频的遥测混入，也不使用独立驻留负载的功率。利用率是驱动平均窗口内kernel忙碌时间比例，不是SM occupancy或峰值FLOPS比例；50ms轮询并不使驱动窗口变成50ms瞬时值，前序CPU等待可影响短窗口的读数。均值板卡功率加338.2W主机代理再乘边界时间是沿用的能量估算口径，不冒称短调用精密积分或实测整机墙插能量。250W是功率设置，原始峰值不因此被裁去。
 
-图中每点的百分数为另一项独立的统一利用率测量：预先准备前B个不同TEST视频的原4帧输入，一次H2D后驻留GPU；原生前向同流连续提交8次后同步，再继续同样循环。每次前向仍为B个视频，不是8B视频的一个大batch。各B三次完全相同重复，每次至少5秒预热、至少30秒完整测量，合并全部测量窗口样本计算均值，不选三次最高值，无CUDA Graph。它用于描述减少CPU供数间隙后的原生忙碌率，独立于本轮逐批准备输入的成本测量；其利用率不代入E16，也不冒称与Qwen历史成本同轮。完整原始值、三次重复及方法保留于本目录的`LGVQ_temporal_gpu_utilization.xlsx/.csv`、`LGVQ_temporal_gpu_utilization_repeats.csv`和`UTILIZATION_METHOD_20261015.md`。
+图中每点的百分数为独立resident利用率测量：预先准备前B个不同TEST视频的原4帧输入，一次H2D后驻留GPU；原生前向同流连续提交8次后同步，再继续同样循环。每次前向仍为B个视频，不是8B视频的一个大batch。除用户指定的Qwen B1历史单次63.13%展示锚点外，其余各B三次完全相同重复，每次至少5秒预热、至少30秒完整测量，合并全部测量窗口样本计算均值，不选三次最高值，无CUDA Graph。它用于描述减少CPU供数间隙后的原生忙碌率，独立于本轮逐批准备输入的成本测量；其利用率不代入E16，也不冒称与Qwen历史成本同轮。原Qwen B1新三次均值71.18%与全部重复原始证据仍保留，不被历史展示选择覆写。完整方法见`UTILIZATION_METHOD_20261015.md`。
 
 ## 图a：能量与时间质量性能
 
@@ -419,7 +480,7 @@ LGVQ固定划分包含2250个TRAIN和558个TEST视频，共2808个不同视频�
 | Model | B / N | SRCC (558 TEST) | Time/16 (ms) | Energy/16 (J) | New-run board mean (W) | New-run active util (%) | Independent resident util (%) | Peak VRAM (MiB) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | LightGen-II | N=16 | 0.7977138739 | 10.245570 | 1.177690 | n.a. | n.a. | n.a. | n.a. |
-| Qwen3-VL-2B † | 1 | 0.7663428037 | 1188.386146 | 462.113401 | 49.057 | 13.897 | 71.175 | 4705 |
+| Qwen3-VL-2B † | 1 | 0.7663428037 | 1188.386146 | 462.113401 | 49.057 | 13.897 | 63.133 | 4705 |
 | Qwen3-VL-2B | 2 | 0.7664148425 | 775.464571 | 299.266888 | 47.719 | 12.519 | 87.273 | 4883 |
 | Qwen3-VL-2B | 3 | 0.7688994244 | 594.155985 | 241.654724 | 68.519 | 5.927 | 89.268 | 4995 |
 | Qwen3-VL-2B | 4 | 0.7694958345 | 529.877741 | 220.545789 | 78.020 | 3.886 | 91.068 | 5107 |
@@ -450,7 +511,7 @@ LGVQ固定划分包含2250个TRAIN和558个TEST视频，共2808个不同视频�
 | DeepSeek-VL2-Tiny | 6 | 0.5705645932 | 1618.090537 | 840.004509 | 180.933 | 49.801 | 96.084 | 10883 |
 | DeepSeek-VL2-Tiny | 8 | 0.5698244506 | 1537.324385 | 817.289328 | 193.431 | 60.676 | 97.782 | 12065 |
 
-† Qwen B=1的Time/16与Energy/16为历史定稿成本；本行New-run功率、active util、显存及当前精度属于本轮审计，不构成“历史成本与新功率配套”的声明。本轮实际审计T16=1230.453189611ms、E16=476.501019216J，另存工作表审计列，未覆盖定稿值。当前B=1全558 SRCC=0.7663428036522781，与历史定稿一致。独立驻留利用率为71.17536071%，历史63.13311148%参考仍在原利用率文件中单列，不用来替换统一协议新值。
+† Qwen B=1的Time/16与Energy/16为历史定稿成本；本行New-run功率、active util、显存及当前精度属于本轮审计，不构成“历史成本与新功率配套”的声明。本轮实际审计T16=1230.453189611ms、E16=476.501019216J，另存工作表审计列，未覆盖定稿值。当前B=1全558 SRCC=0.7663428036522781，与历史定稿一致。独立驻留利用率按2026-10-16用户最新指定展示历史63.13311148%；新三次均值71.17536071%仍作为审计保留，不声称它们是同一轮或同一重复次数。
 
 ## 历史连续负载存档：2026-10-14（不用于当前两图）
 
