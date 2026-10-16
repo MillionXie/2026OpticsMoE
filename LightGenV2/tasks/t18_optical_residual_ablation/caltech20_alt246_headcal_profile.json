@@ -1,0 +1,51 @@
+{
+  "case": "L6_rho03",
+  "maximum_head_updates": 20,
+  "trainable_parameters": 5140,
+  "new_inference_parameters": 0,
+  "feature_std_floor": 0.1,
+  "label_smoothing": 0.05,
+  "initial_penalty_fraction": 0.2,
+  "l2_bounds": [
+    0.0001,
+    0.01
+  ],
+  "head_ema": 0.8,
+  "selection_tie_tolerance": 1e-06,
+  "seed": 17,
+  "automatic_retry": false,
+  "regularization_receipts": {
+    "block0001": {
+      "fit": "d7982e78b436a8da86b51c0501a4c87e3423795cdc4a7643d253e1ab0037c464",
+      "test": "befb2998c948553e77ff8bece285f5d481d35948cbbafbc9ae52079388bf3ce9"
+    },
+    "block0002": {
+      "fit": "c8968e7f440c8996829da4969d79b01410d079e4e9a63454415469c2553653dd",
+      "test": "2187cfe00e1fd625284ede0916a166a6b1b4572c5b09e198828875774e15bbaf"
+    }
+  },
+  "parent": {
+    "best_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_alt246_biasfree_rmslearned_linear_s17_equal100_20261016/L6_rho03/best.pt",
+    "best_sha256": "3ca93e61a84a998cc3946e345d3fe0ef05b1b625b864f7418b01230567371b47",
+    "train_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_alt246_biasfree_rmslearned_linear_s17_equal100_20261016/L6_rho03/selected_train.npz",
+    "train_sha256": "9e31b4ea5588880e0c4c4856684034908da5c67a29e6254e8d5782659e872a1c",
+    "val_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_alt246_biasfree_rmslearned_linear_s17_equal100_20261016/L6_rho03/selected_val.npz",
+    "val_sha256": "ffed3ee387fa2e7723e7ce8039e0ab10188003abb6c45418a76c6de56cb02e29",
+    "test_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_alt246_biasfree_rmslearned_linear_s17_equal100_20261016/once_tests/L6_rho03/predictions.npz",
+    "test_sha256": "f669f8a671c8006237d85accce5dfb14da477c40d23a749dba34551e5eb9e363",
+    "selected_epoch": 100,
+    "model_digest": "2d003d2c8b08eccf8dfbd6ca2360bd78fb340f763d15f691757f30b625b84a88",
+    "test_accuracy": 0.8304263565891473,
+    "actual_optical_training_epochs_spent": 120,
+    "selected_optical_epoch": 100
+  },
+  "reference_four": {
+    "best_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_alt246_residual_genreg_s17_20261016/blocks/block0002/L4_rho03/best.pt",
+    "best_sha256": "e743d1eb3d853adfc5db2b4190b31d29f6f768c5029020ee62087f14efaac146",
+    "test_result_path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_alt246_residual_genreg_s17_20261016/blocks/block0002/once_tests/L4_rho03/result.json",
+    "test_accuracy": 0.8347868217054264
+  },
+  "inference": "same Linear256to20; optimizer standardization is folded into existing W/b; every non-linear parameter frozen",
+  "selection": "first validation balancedNLL minimum of parent and head EMA updates,1e-6 numerical ties retain earliest; no maximum TEST update selection",
+  "test_informed_development": true
+}
