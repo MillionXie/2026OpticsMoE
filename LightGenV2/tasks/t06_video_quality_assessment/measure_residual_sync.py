@@ -60,7 +60,7 @@ def capture(fn,inputs,core,model,head,baseline,check_dtypes=False):
     finally:
         for h in hooks:h.remove()
     required={'hidden','quality_logits','mos','full_vocab_logits' if baseline=='qwen' else 'image_features'}
-    if set(evidence)!=required:raise RuntimeError('Incomplete exact-output evidence')
+    if set(evidence)!=required:raise RuntimeError('Incomplete exact-output evidence: keys='+str(sorted(evidence))+'; videos='+str(batch)+'; matrix_ops='+str(operators[-5:]))
     return evidence,operators
 
 
@@ -164,7 +164,7 @@ def suite(args):
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         try:
             costs.wait_for_idle(args,config())
-            for model in config()['cases']:
+            for model in (args.models or config()['cases']):
                 reproduction.cuda_guard()
                 if sources()!=bound:raise RuntimeError('Source changed')
                 state.update(status='running',model=model,updated_unix=time.time());save()
@@ -184,6 +184,7 @@ def suite(args):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['suite','worker'],required=True)
     p.add_argument('--baseline',choices=['qwen','clip']);p.add_argument('--batch',type=int,default=2)
+    p.add_argument('--models',nargs='+',choices=['qwen','clip'])
     for name in ['manifest','output','model','checkpoint','reproduction-receipt']:p.add_argument('--'+name,type=Path,required=name in ['manifest','output'])
     p.add_argument('--deadline',type=float,required=True);args=p.parse_args();args.output=args.output.resolve()
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=frozen.A100_UUID or frozen.sha256(args.manifest)!=frozen.MANIFEST_SHA:raise RuntimeError('Original A100/manifest')

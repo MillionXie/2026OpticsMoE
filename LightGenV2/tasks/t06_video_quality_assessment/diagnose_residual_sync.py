@@ -34,6 +34,8 @@ def config():
 def sources():
     return {**metadata.sources(),str(Path(__file__).relative_to(REPO)):frozen.sha256(Path(__file__)),
             str(CONFIG.relative_to(REPO)):frozen.sha256(CONFIG),
+            str((TASK/'measure_residual_sync.py').relative_to(REPO)):frozen.sha256(TASK/'measure_residual_sync.py'),
+            str((TASK/'residual_sync_execution.py').relative_to(REPO)):frozen.sha256(TASK/'residual_sync_execution.py'),
             str(Path(previous.__file__).relative_to(REPO)):frozen.sha256(Path(previous.__file__))}
 
 
@@ -61,7 +63,7 @@ def worker(args):
             rows=[r for r in core.read_manifest(args.manifest) if r['split']=='test']
             if len(rows)!=558:raise RuntimeError('Original TEST required')
             timer_closed=False
-            for batch in config()['cases'][args.baseline]:
+            for batch in ([2,3] if args.candidate_execution else config()['cases'][args.baseline]):
                 if time.time()>=args.deadline or sources()!=bound:raise RuntimeError('Deadline/source guard')
                 folder=args.output/f'batch{batch:02d}';folder.mkdir()
                 cpu,positions=prepare(rows[:batch]);inputs=transfer(cpu)
@@ -70,7 +72,16 @@ def worker(args):
                 else:reference=compute(inputs).detach().cpu()
                 if not torch.equal(reference,compute(inputs).detach().cpu()):raise RuntimeError('Original native MOS changed')
                 modes=[('native',compute)]
-                if args.baseline=='qwen':
+                if args.candidate_execution:
+                    from .residual_sync_execution import IndexedHostQwen
+                    from . import measure_residual_sync as strict
+                    adapter=IndexedHostQwen(model.model,cpu,inputs)
+                    candidate=execution.make_gpu_forward(args,SimpleNamespace(model=adapter,lm_head=model.lm_head),head,original)
+                    with metadata.validation_guard(folder/'equality_process_audit.json'):
+                        eq,_,_=strict.strict_pair(compute,candidate,inputs,model.model,adapter,model,head,'qwen',True)
+                        frozen.write_json(folder/'strict_equality.json',eq)
+                    modes=[('indexed_candidate',candidate)]
+                elif args.baseline=='qwen':
                     adapter=HostMetadataQwenModel(model.model,cpu,inputs)
                     candidate=execution.make_gpu_forward(args,SimpleNamespace(model=adapter,lm_head=model.lm_head),head,original)
                     with metadata.validation_guard(folder/'equality_process_audit.json'):
@@ -125,13 +136,14 @@ def suite(args):
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         try:
             costs.wait_for_idle(args,config())
-            for model in config()['cases']:
+            for model in (['qwen'] if args.candidate_execution else config()['cases']):
                 reproduction.cuda_guard()
                 if sources()!=bound:raise RuntimeError('Source changed')
                 state.update(status='running',model=model,updated_unix=time.time());save()
                 cmd=prior.child_command(model,config()['cases'][model][0],args.manifest,args.output/model)
                 cmd[cmd.index(__package__+'.evaluate_temporal_baseline_batches')]=__package__+'.diagnose_residual_sync'
                 cmd.remove('--telemetry');cmd+=['--phase','worker','--deadline',str(args.deadline)]
+                if args.candidate_execution:cmd+=['--candidate-execution']
                 frozen.write_json(args.output/(model+'.command.json'),cmd)
                 with (args.output/(model+'.log')).open('x') as stream:
                     subprocess.run(cmd,cwd=REPO,stdout=stream,stderr=subprocess.STDOUT,check=True,timeout=min(config()['maximum_worker_seconds'],args.deadline-time.time()))
@@ -146,6 +158,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phase',choices=['suite','worker'],required=True)
     p.add_argument('--baseline',choices=['qwen','clip']);p.add_argument('--batch',type=int,default=2)
+    p.add_argument('--candidate-execution',action='store_true')
     for name in ['manifest','output','model','checkpoint','reproduction-receipt']:
         p.add_argument('--'+name,type=Path,required=name in ['manifest','output'])
     p.add_argument('--deadline',type=float,required=True)
