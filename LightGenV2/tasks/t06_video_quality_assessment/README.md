@@ -10,8 +10,9 @@ CLIP未观察到item/nonzero或逐前向流同步，主要迹象是kernel提交�
 profile有插桩开销，区间并集比例不作正式GPU利用率；当前构建未提供Python stack，
 同步归因依据CPU事件父子链与精确官方源码，不冒称已取得完整Python调用栈。
 据此新增独立候选`residual_sync_execution`与`measure_residual_sync`：Qwen用CPU整数位置
-在原DeepStack调用点重算索引，保原加法，异步传整数元数据；仅全1注意力mask的冗余检查在CPU完成，
-原SDPA计算不换。CLIP只尝试减少冗余autocast管理，实际FP16/FP32算子签名必须完全一致。
+在原DeepStack调用点重算索引，保原加法与非连续张量写回，异步传整数元数据；
+注意力mask参数与原SDPA决策完全保留。首个候选在CPU等价测试被拦截，未GPU启动，
+修正只通过Git发布，不放宽严格输出标准。CLIP只尝试减少冗余autocast管理，实际FP16/FP32算子签名必须完全一致。
 候选Qwen B2/3/4/6、CLIP B4/8/10，逐点原方法配对各3次/5s预热/30s完整窗口/queue8；
 98%即停，各模型最终选定点完整558TEST与原生hidden/logits/MOS严格相同才可完成。
 本轮两阶段共用首次诊断启动的一小时绝对截止，不另延长预算。数据仅原run的`optimization01`，

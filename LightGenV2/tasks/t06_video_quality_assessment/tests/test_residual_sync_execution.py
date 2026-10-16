@@ -23,8 +23,9 @@ def test_no_new_learning_math_or_feature_cache_in_adapter():
     names={n.func.attr for n in ast.walk(tree) if isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute)}
     assert not {'CUDAGraph','compile','backward','step','load_state_dict','scaled_dot_product_attention','Linear','Embedding'}.intersection(names)
     assert 'type(self.wrapped).forward(self,**kwargs)' in text
-    assert 'flat.index_select(0,index).clone()+visual_embeds' in text
-    assert 'flat.index_copy_(0,index,local_this)' in text
+    assert 'hidden_states[batch_index,token_index,:].clone()+visual_embeds' in text
+    assert 'hidden_states[batch_index,token_index,:]=local_this' in text
+    assert 'attention_mask=None' not in text
     assert 'non_blocking=True' in text
 
 

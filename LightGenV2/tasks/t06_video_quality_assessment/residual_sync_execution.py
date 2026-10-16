@@ -19,20 +19,18 @@ class IndexedQwenText(torch.nn.Module):
         # Recompute integer indices HERE, at the original deepstack call point.
         # No position/feature/hidden result cache or moved learned computation.
         if tuple(visual_pos_masks.shape)!=tuple(self.host_ids.shape):raise ValueError('Mask shape changed')
-        index=torch.nonzero((self.host_ids==self.video_id).reshape(-1),as_tuple=False).flatten()
+        index=torch.nonzero(self.host_ids==self.video_id,as_tuple=False)
         if len(index)!=visual_embeds.shape[0]:raise ValueError('Visual feature count mismatch')
         index=index.to(hidden_states.device,non_blocking=True)
         visual_embeds=visual_embeds.to(hidden_states.device,hidden_states.dtype)
-        flat=hidden_states.reshape(-1,hidden_states.shape[-1])
-        local_this=flat.index_select(0,index).clone()+visual_embeds
-        flat.index_copy_(0,index,local_this)
+        batch_index,token_index=index.unbind(-1)
+        # Native hidden states can be non-contiguous; never write a reshape copy.
+        local_this=hidden_states[batch_index,token_index,:].clone()+visual_embeds
+        hidden_states[batch_index,token_index,:]=local_this
         return hidden_states
 
     def forward(self,**kwargs):
-        # Native SDPA already elides this all-one mask. Only its integer test
-        # moves to CPU, with the same no-padding attention semantics.
-        if kwargs.get('attention_mask') is not None and bool(self.host_attention.all()):
-            kwargs=dict(kwargs,attention_mask=None)
+        # Preserve the exact native attention-mask argument and SDPA decisions.
         return type(self.wrapped).forward(self,**kwargs)
 
 
