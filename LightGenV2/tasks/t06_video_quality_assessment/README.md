@@ -594,6 +594,58 @@ GPU显卡空闲后，按同run CPU保存的源码SHA核验一致再派发一次�
 
 ## 2026-10-14：SmolVLM2 等规模末端读出对照（独立授权）
 
+**2026-10-17 完整版 DeepSeek-VL2／Kimi 租赁实验交付（用户批准补充本小节）：**
+本轮为独立候选，不覆盖另一聊天的三表和图。canonical run 为
+`runs/simulation/lgvq_full_deepseek_kimi_rental_20261017`，实际训练源码
+`9d64e07b1158b3a1212587fa1e9d431eb52dadfe`。使用 NVIDIA A100-SXM4-80GB
+（81920 MiB，保留默认400 W功率上限），不是此前40GB／250 W平台；数据、模型、环境和
+运行产物均在租赁机 `/data`。仅获准传输本轮LGVQ固定数据及结果，未恢复其他外部数据上传。
+
+官方 `deepseek-ai/deepseek-vl2` 固定revision
+`f363772d1c47f4239dd844015b4bd53beb87951b`，总参数27,480,134,248，仅训练五行
+5×2560=12,800参数；`moonshotai/Kimi-VL-A3B-Instruct` 固定revision
+`398eede0903cd983a2bfa0cc634e9ac1d843f375`，总参数16,407,656,048，仅训练五行
+5×2048=10,240参数。两者BF16骨干、connector和原LM head全部冻结，无LoRA、adapter、
+量化或额外生成；K2.5未运行。沿用原manifest SHA
+`607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc`，
+2250 TRAIN／558 TEST，无VAL；四帧位置[.1,.37,.63,.9]，中心裁剪边长为短边的65%。
+DeepSeek每帧原生384，四图的官方global/local共8 tiles不是8帧；Kimi每帧448，
+每帧256视觉token。B1提取全部2808特征，FP16缓存→FP32质量头，seed42、50 epoch、
+head batch512、AdamW lr=.001／wd=0、cosine、CE；512仅为缓存特征训练批量。
+按TEST最高SRCC选best（DeepSeek e50、Kimi e43），以下均为开发指标，不冒称独立泛化。
+
+| 模型（真实原生B1，各558 TEST） | SRCC | PLCC | T16（ms） | E16（J） | 独立常驻负载GPU利用率（%） |
+|---|---:|---:|---:|---:|---:|
+| DeepSeek-VL2（完整版） | 0.7167352585 | 0.7263679548 | 8360.056700 | 4727.746492 | 88.049155 |
+| Kimi-VL-A3B-Instruct | 0.8054652719 | 0.8154060131 | 3843.721292 | 1882.920884 | 74.155906 |
+
+每组独立新进程对558视频实际原生前向，不复用缓存冒充B1精度；首200视频统计成本，
+冷首批计入、无显式warmup。时延边界从首个原生视觉Transformer block输入到GPU MOS同步，
+保留末token完整词表投影及质量头；解码、裁剪、processor、H2D、加载、训练及审计不计入。
+`T16=首200视频同步墙钟时延总和×16/200`，是B1结果归一到16视频，不是实测batch16。
+`E16=(338.2 W主机代理+同轮有效模型调用GPU平均板卡功率)×T16/1000`；
+338.2 W不是租赁主机实测墙插功率。DeepSeek／Kimi同成本轮GPU均值分别227.316080／
+151.669255 W。GPU利用率另用独立新进程、固定首TEST输入常驻GPU、单流队列深度8，
+每次至少5秒预热及30秒测量，重复3次，50 ms采样全部按样本数汇总，分别1953／1905点；
+它是driver-window kernel-busy，不是SM occupancy或峰值算力。不得把该独立负载的功率、
+时延或利用率替换进首200视频成本口径；数据集成本调用的利用率另存原报告。
+
+两组2808特征／44分片、50轮history、best/last、strictCPU逐样本复算、原模型前后SHA、
+运行源码及收据均通过；真实B1 CSV独立复算吻合。Kimi高于ours参考约.7977，完整版
+DeepSeek未超过；未做超参或seed扫描，不推断差值具有统计显著性。完整精度、成本及独立
+利用率证据见同run的 `measurement_summary.json`、`MEASUREMENT_NOTES_CN.txt`、
+各模型 `independent_cpu_audit.json` 和 `delivery_verification.json`；463项manifest文件
+及436份接收版本已逐SHA核验，历史快照保护。终态回执确认自有GPU进程退出、显存释放。
+
+**2026-10-17 后续保存约定：**用户说明租赁机尚未开机，只要求记录。后续真实原生推理
+仍需要两套官方预训练大权重，best/last仅为五行质量读出头，不能单独替代骨干；已有结果
+核对和画图不需要加载它们。因此“不再需要才删除”的条件未满足，保留 `/data/models/`
+下两套共87,777,291,056字节官方大权重，不启动或连接租赁机、不执行删除。这些官方大权重
+未备份到本地；固定revision及全部SHA收据已留存，若将来明确删除则需重新下载才能推理。
+安装临时包可待下次开机且核实无使用后按精确范围清理；best/last、特征、逐样本、源码与
+环境/SHA记录继续保护。本次授权补充说明另存同run
+`POST_RUN_RETENTION_AUTHORIZATION_20261017.json`，不改写已校验的原始交付记录。
+
 **2026-10-15 两候选完整交付（监督第13次结束）：**Small `assetio_recovery01`已全部complete，
 完整2808特征/44分片/50epoch及strictCPU bestlast核验通过，随后独立新进程A100 B1真实
 558唯一视频 **SRCC=.7000797711654877、PLCC=.6987605447107231**；逐样本CSV独立复算一致，
