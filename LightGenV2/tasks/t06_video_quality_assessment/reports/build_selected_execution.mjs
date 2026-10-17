@@ -8,6 +8,7 @@ const {FileBlob,SpreadsheetFile}=await import(pathToFileURL(bundledRequire.resol
 const repo=process.cwd();
 const out=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
 const rental=process.argv.includes('--rental-extension');
+const includeCrossDeviceAudit=process.argv.includes('--include-cross-device-audit');
 const sequential=process.argv.includes('--yolo-clip-sequential')||rental;
 const recheck=process.argv.includes('--yolo-clip-recheck')||sequential;
 const baseRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016');
@@ -75,9 +76,13 @@ if(sequential){
 if(rental){
  const extra=await json(path.join(rentalRun,'verified_figure5_extension.json'));
  if(extra.status!=='complete'||extra.paired_rows.length!==5||extra.repeats.length!==15||!extra.no_original_point_replacement)throw Error('Incomplete supplementary hardware evidence');
- data.paired_rows.push(...extra.paired_rows);data.repeats.push(...extra.repeats);newCount=5;
+ data.paired_rows.push(...extra.paired_rows.filter(r=>includeCrossDeviceAudit||r.baseline!=='qwen80'));
+ data.repeats.push(...extra.repeats.filter(r=>includeCrossDeviceAudit||r.baseline!=='qwen80'));
+ historicalRepeats.push(...extra.repeats.filter(r=>!includeCrossDeviceAudit&&r.baseline==='qwen80').map(r=>({...r,role:'Audit-only cross-device Qwen; explicitly excluded from paper by user on 17 October'})));
+ newCount=includeCrossDeviceAudit?5:4;
 }
 const palette={ours:['#7828A8','#F2E9FA'],qwen:['#0072B2','#EAF3FA'],glm:['#92527F','#F5EBF3'],small:['#C25B18','#FFF0E5'],clip:['#007F63','#E8F5EF'],yolo:['#9B7000','#FFF7DD'],deepseek:['#5B6470','#EEF0F3'],...(rental?{full:['#79502C','#F6EEDC'],kimi:['#B64058','#FCECEF'],qwen80:['#256F99','#E9F2F8']}:{})};
+if(!includeCrossDeviceAudit)delete palette.qwen80;
 const asNumber=v=>v===''||v===undefined||v===null?null:Number(v);
 const anchor=data.historical_qwen_B1;
 if(+anchor.time_16_videos_ms!==1188.3861464262009||+anchor.energy_16_videos_j!==462.1134010767563||+anchor.display_gpu_util_mean_percent!==63.133111480865225)throw Error('Historical anchor drift');

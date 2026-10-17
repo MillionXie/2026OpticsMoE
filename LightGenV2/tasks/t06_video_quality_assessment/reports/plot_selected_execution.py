@@ -1,6 +1,8 @@
 """Replot verified sparse figure points, never reconstruct model measurements."""
 from __future__ import annotations
 import json
+import hashlib
+import shutil
 import sys
 from pathlib import Path
 import matplotlib
@@ -14,13 +16,21 @@ RUN=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_sel
 if '--yolo-clip-recheck' in sys.argv:RUN=RUN.with_name('lgvq_yolo_clip_recheck_a100_20261017')
 if '--yolo-clip-sequential' in sys.argv:RUN=RUN.with_name('lgvq_yolo_clip_sequential_a100_20261017')
 RENTAL='--rental-extension' in sys.argv
+INCLUDE_CROSS_DEVICE_AUDIT='--include-cross-device-audit' in sys.argv
 if RENTAL:RUN=RUN.with_name('lgvq_full_deepseek_kimi_rental_20261017')
 OUT=REPO/'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013'
 COLORS=dict(ours='#7828A8',qwen='#0072B2',glm='#92527F',small='#C25B18',clip='#007F63',yolo='#9B7000',deepseek='#5B6470')
 MARKERS=dict(ours='*',qwen='o',glm='P',small='s',clip='D',yolo='^',deepseek='v')
 if RENTAL:
-    COLORS.update(full='#79502C',kimi='#B64058',qwen80='#256F99')
-    MARKERS.update(full='s',kimi='X',qwen80='h')
+    COLORS.update(full='#79502C',kimi='#B64058')
+    MARKERS.update(full='s',kimi='X')
+    if INCLUDE_CROSS_DEVICE_AUDIT:
+        COLORS['qwen80']='#256F99';MARKERS['qwen80']='h'
+
+
+def paper_rows(rows):
+    """17 October user decision: rental Qwen is audit-only, not a paper point."""
+    return list(rows) if INCLUDE_CROSS_DEVICE_AUDIT else [r for r in rows if r['baseline']!='qwen80']
 
 
 def place_labels(fig,ax):
@@ -95,7 +105,20 @@ def verify_label_geometry(fig,axes):
 
 def main():
     state=json.loads((RUN/'presentation_selected.json').read_text());assert state['status']=='complete'
-    rows=state['rows'];assert 13<=len(rows)<=(20 if RENTAL else 18)
+    rows=paper_rows(state['rows']);assert 13<=len(rows)<=(20 if RENTAL else 18)
+    if RENTAL and not INCLUDE_CROSS_DEVICE_AUDIT:
+        archive=RUN/'paper_qwen80_exclusion_archive'
+        if not archive.exists():
+            archive.mkdir();receipts={}
+            for name in ['latency_comparison_reference','energy_comparison_reference','srcc_cost_comparison_reference','batch_cost_comparison','gpu_utilization_comparison']:
+                for ext in ['png','svg']:
+                    source=OUT/(name+'.'+ext)
+                    if source.exists():
+                        shutil.copy2(source,archive/source.name)
+                        receipts[source.name]=hashlib.sha256(source.read_bytes()).hexdigest()
+            source=RUN/'figure_label_audit.json'
+            if source.exists():shutil.copy2(source,archive/source.name)
+            (archive/'manifest.json').write_text(json.dumps(dict(reason='User excluded rental Qwen B1 from paper; original evidence retained',files=receipts),indent=2)+'\n')
     sequential='--yolo-clip-sequential' in sys.argv or RENTAL
     assert [(x['batch_size_videos'],x['display_gpu_util_mean_percent']) for x in rows if x['baseline']=='qwen' and x['batch_size_videos']==1]==[(1,63.133111480865225)]
     plt.rcParams.update({'font.family':'Arial','font.size':10,'svg.fonttype':'none','axes.linewidth':.8,'savefig.facecolor':'white'})
@@ -153,7 +176,7 @@ def main():
         fig.text(.09,.015,'80GB series: SXM4 /400W; other GPU points: PCIe40GB /250W. Dashed rental links span different cards; † retains native40GB Qwen B=1.',fontsize=8,color='#4B5563')
     for ext in ['png','svg']:fig.savefig(OUT/('gpu_utilization_comparison.'+ext),dpi=240)
     plt.close(fig)
-    (RUN/'figure_label_audit.json').write_text(json.dumps(dict(status='passed',panels=label_checks),indent=2)+'\n')
+    (RUN/'figure_label_audit.json').write_text(json.dumps(dict(status='passed',panels=label_checks,paper_points=len(rows),excluded_from_paper=[] if INCLUDE_CROSS_DEVICE_AUDIT else ['qwen80'],raw_presentation_and_cross_device_measurements_preserved=True),indent=2)+'\n')
     print(json.dumps(dict(figures_updated=5,selected_points=len(rows),historical_Qwen_B1_preserved=True)))
 
 
