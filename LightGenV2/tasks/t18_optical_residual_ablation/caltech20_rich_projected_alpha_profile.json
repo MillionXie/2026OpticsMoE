@@ -1,0 +1,52 @@
+{
+  "run": "caltech20_rich20_projectedAlpha04_curriculum_FRESH246_s17_20261018",
+  "alpha_restart": 0.45,
+  "alpha_curriculum_end": 0.65,
+  "alpha_curriculum_epochs": 10,
+  "alpha_anchor_weight": 0.0,
+  "alpha_lr": 0.0005,
+  "minimum_alpha_lr": 0.0001,
+  "crop_area_min": 0.8,
+  "mixup_alpha": 0.2,
+  "label_smoothing": 0.05,
+  "feature_dropout": 0.1,
+  "phase_dropout": 0.005,
+  "input_dropout": 0.005,
+  "ccd_gain_noise": 0.005,
+  "ccd_read_noise": 0.001,
+  "phase_smooth_weight": 0.01,
+  "capture_weight": 0.02,
+  "electronic_weight_decay": 0.02,
+  "KD_weight": 0.1,
+  "ema_decay": 0.99,
+  "gpu_order": [
+    2,
+    0,
+    1
+  ],
+  "cases": {
+    "L4_projected": {
+      "depth": 4,
+      "fresh": true,
+      "epochs": 50,
+      "electronic_warm_epochs": 0,
+      "phase_lr": 0.002
+    },
+    "L6_projected": {
+      "depth": 6,
+      "fresh": true,
+      "epochs": 50,
+      "electronic_warm_epochs": 0,
+      "phase_lr": 0.002
+    },
+    "L2_projected": {
+      "depth": 2,
+      "fresh": true,
+      "epochs": 50,
+      "electronic_warm_epochs": 0,
+      "phase_lr": 0.002
+    }
+  },
+  "human_deadline": "2026-10-18T09:00:00+08:00",
+  "alpha_coordinate": "effective float64 coefficient, project .4001..95 after Adam; old key fusion_logits no longer sigmoid coordinates"
+}
