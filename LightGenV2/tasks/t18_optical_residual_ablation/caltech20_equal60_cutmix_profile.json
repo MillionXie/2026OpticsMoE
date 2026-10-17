@@ -1,0 +1,19 @@
+{
+  "parent_run": "caltech20_rich20_equal60_residual_sqrt_objective10_s17_20261017",
+  "tune_epochs": 10,
+  "maximum_seconds": 1800,
+  "class_weight_exponent": 0.5,
+  "class_weight_normalization": "sample-weighted mean1",
+  "phase_lr": 0.0002,
+  "electronic_lr": 8e-05,
+  "minimum_tune_lr": 2e-05,
+  "electronic_weight_decay": 0.05,
+  "cutmix_probability": 0.5,
+  "cutmix_alpha": 1.0,
+  "cutmix_geometry": "same112x112 box in all four R/G/B/mean tiles of224 amplitude; area-correct target; per-sample RMS.25",
+  "selection": "first minimum natural validation EMA NLL among retained parent selection and71-80",
+  "scope": "One new train-only augmentation strategy per depth2/4/6, exact70 raw/EMA/Adam restore, no inference changes or automatic TEST",
+  "new_inference_parameters": 0,
+  "automatic_retry": false,
+  "test_informed_development": true
+}
