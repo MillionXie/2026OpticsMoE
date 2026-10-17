@@ -1,0 +1,21 @@
+{
+  "tune_epochs": 20,
+  "class_weight_exponent": 1.0,
+  "new_inference_parameters": 0,
+  "phase_lr": 0.001,
+  "electronic_lr": 0.0002,
+  "electronic_weight_decay": 0.01,
+  "minimum_tune_lr": 2e-05,
+  "maximum_seconds": 1800,
+  "temperature": 4.0,
+  "teacher_science_sha256": "3042c35a4f2d55ea991bace6f30891b59ce66e351289c01cd93676a65cf2d45b",
+  "teacher_head_sha256": "b1c91057716a529b4dce98ee09ccc368dde627abd04a64e51e36130cc0c9328b",
+  "selection": "wholeprefix firstminimum VAL EMA balancedNLL, retain accepted baseline selected EMA as tune0",
+  "teacher_targets": "Frozen original20 clean TRAIN teacher correct/conf>=.5 only. Same student MixUp lambda/permutation. Normalize valid pair targets by their validmass; weight KL by that mass. Never VAL/TEST targets.",
+  "new_inference_models": 0,
+  "extra_budget_not_causal": true,
+  "KD_gradient_fraction": 0.25,
+  "KD_scale_cap": 0.1,
+  "teacher_correct_confidence_gate": 0.5,
+  "update": "Separate full-macro CE+regularizer and KD gradients; phase/electronic groups independently eta=min(.1,.25*normCE/(normKD+1e-12)); detach eta, combine CE+eta*KD, globalclip1, one AdamW, one EMA. Adaptive gradient rule, not gradient of a single scalar objective."
+}
