@@ -1,0 +1,11 @@
+{
+  "run": "caltech20_rich20_postrobust_same5140_head_20261018",
+  "anchor_by_depth": {"2": 1.0, "4": 10.0, "6": 10.0},
+  "label_smoothing": 0.02,
+  "temperature": 4.0,
+  "teacher_temperature": 16.0,
+  "parent_selection": "For each depth, maximum clean endpoint VAL accuracy, ties minimum VAL balancedNLL, among completed10-epoch robustness and geometry trials. Freeze chosen lastEMA80; no TEST used for this optical-parent selection.",
+  "head": "Identical Linear256to20+bias5140, no calibration/newhead/projector. Clean TRAIN inverse-count weighted CE.98 + teacherKD.02 + anchored L2 lambda/(2N). CPU contiguous float64 LBFGS max200/maxeval300/history20/strongWolfe; one candidate perdepth. Diagnose initial gradient before deciding fit;skip if<=1e-5. All optics/stageelectronics/alpha frozen exactly.",
+  "TEST": "Reuse already-produced endpoint TEST411 optical features; no new optical TESTforward or TESTimage. At most one new cached linear-head evaluation perdepth after fit science, then independent saved audit. Explicit TEST-informed PT selection/development, not independent generalization. Retain earlier incumbent unless actual accuracy improves.",
+  "scope": "Three fixed CPU heads after feature mismatch diagnosis, not a hyperparameter grid or new inference network; preserve sources/oldPT/failures/controls50; source only Git, raw private."
+}
