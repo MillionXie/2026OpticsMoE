@@ -104,7 +104,7 @@ def input_identity(cpu, selected, positions):
 
 def measure(args, compute, inputs, batch, folder, guard, paced, reference):
     import torch
-    c = config(); folder.mkdir()
+    c = run_config(args); folder.mkdir()
     sampler = telemetry.TelemetrySampler(args.gpu_uuid)
     clocks = previous.ClockSampler(args.gpu_uuid)
     groups, updates, repeats = [], [], []
@@ -130,11 +130,12 @@ def measure(args, compute, inputs, batch, folder, guard, paced, reference):
             groups.append(dict(phase=name, start_monotonic_s=tick, compute_end_monotonic_s=computed,
                 end_monotonic_s=end, requested_idle_s=idle, duty=duty, forwards=8))
             if adaptive and end-last_update >= 2:
+                feedback_start = tick if getattr(args,"context_limited",False) else max(start,end-2)
                 recent = [s.utilization_percent for s in list(sampler.samples)
-                          if max(start, end-2) <= s.host_monotonic_s < end]
+                          if feedback_start <= s.host_monotonic_s < end]
                 if len(recent) >= 10:
                     observed = sum(recent)/len(recent); new = update_duty(duty, observed)
-                    updates.append(dict(at_monotonic_s=end, observed_percent=observed, old_duty=duty, new_duty=new))
+                    updates.append(dict(at_monotonic_s=end, sample_start_monotonic_s=feedback_start, sample_count=len(recent), observed_percent=observed, old_duty=duty, new_duty=new))
                     duty = new
                 last_update = end
         return start, time.monotonic(), output, duty

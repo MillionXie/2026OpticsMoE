@@ -119,3 +119,10 @@ def test_context_cost_is_fresh_process_not_after_resident_warmup():
     assert 'timer = measurement.FirstBlockTimer(first)' in cost
     assert 'explicit_warmup_forwards=0' in cost
     assert 'cost_videos=200' in cost and 'not_proven_exclusive_device=True' in cost
+
+
+def test_limited_context_feedback_covers_whole_group_not_only_idle_tail():
+    text=inspect.getsource(m.measure)
+    assert 'feedback_start = tick if getattr(args,"context_limited",False) else max(start,end-2)' in text
+    assert 'if feedback_start <= s.host_monotonic_s < end' in text
+    assert 'sample_count=len(recent)' in text

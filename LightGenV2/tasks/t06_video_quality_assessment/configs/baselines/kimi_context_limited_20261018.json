@@ -6,6 +6,7 @@
   "maximum_model_seconds": 900,
   "known_baseline_memory_used_mib": 36616,
   "not_proven_exclusive_device": true,
+  "feedback_window": "whole_completed_compute_idle_group; declared before GPU measurements to avoid end-of-idle two-second aliasing",
   "authorization": "2026-10-18 user: first measure Kimi with all previously requested requirements, after explicit disclosure of36GB unattributed VRAM and successful nativeB1 probe",
   "admission": "At least40000MiB free,400W unchanged, no visible foreign process; guard against new visible PID throughout. This does not prove absence of an invisible allocation owner.",
   "interpretation": "Conditional measurements in a memory-constrained rental context, not an empty-card causal comparison",
