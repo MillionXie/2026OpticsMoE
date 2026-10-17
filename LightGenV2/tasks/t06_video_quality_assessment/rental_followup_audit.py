@@ -88,6 +88,21 @@ def audit_cost(folder,test,batch):
     return dict(status="passed",videos=558,cost_videos=200,batch=batch,srcc=srcc,plcc=plcc,T16_ms=t16,E16_j=energy,active_board_power_w=watts,active_samples=len(active),gpu_uuid=report["identity"]["gpu_uuid"],checkpoint_sha256=report["identity"]["checkpoint_sha256"],source_report_sha256=sha(folder/"report.json"),predictions_sha256=sha(folder/"predictions.csv"))
 
 
+def audit_device_difference(run):
+    new_root=run/"qwen_device_control_20261017/native_batch01_cost"
+    old_native=run.parent/"lgvq_temporal_telemetry_a100_20261014/full_remeasurement02/qwen_batch01"
+    anchor_path=run.parent/"lgvq_frozen_batch_costs_a100_20261015/qwen_batch01/report.json"
+    previous=read_csv(old_native/"predictions.csv");current=read_csv(new_root/"predictions.csv")
+    assert len(previous)==len(current)==558
+    assert [r["sample_id"] for r in previous]==[r["sample_id"] for r in current]
+    differences=[abs(float(a["prediction"])-float(b["prediction"])) for a,b in zip(previous,current)]
+    anchor=json.loads(anchor_path.read_text());new=json.loads((new_root/"report.json").read_text())
+    assert anchor["checkpoint_sha256"]==new["identity"]["checkpoint_sha256"]
+    t0=anchor["cost"]["latency_16_videos_ms"];e0=anchor["cost"]["energy_16_videos_j"]
+    t1=new["cost"]["latency_16_videos_ms"];e1=new["cost"]["energy_16_videos_j"]
+    return dict(status="passed",prediction_videos=558,max_abs_mos_difference=max(differences),nonidentical_mos_count=sum(d!=0 for d in differences),historical_anchor_unchanged=True,old_anchor=dict(T16_ms=t0,E16_j=e0,report_sha256=sha(anchor_path)),new_measurement=dict(T16_ms=t1,E16_j=e1),observed_time_ratio=t0/t1,observed_energy_efficiency_ratio=e0/e1,time_reduction_percent=100*(1-t1/t0),estimated_energy_reduction_percent=100*(1-e1/e0),limitation="Different GPU/host/Python environments and dates; not a pure form-factor causal experiment. Old cost is protected historical reference; new cost independently measured.",old_native_prediction_sha256=sha(old_native/"predictions.csv"),new_native_prediction_sha256=sha(new_root/"predictions.csv"))
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument("--run",type=Path,required=True);p.add_argument("--output",type=Path,required=True);p.add_argument("--partial",action="store_true");args=p.parse_args()
     assert not args.output.exists()
@@ -104,8 +119,10 @@ def main():
     elif not args.partial:raise RuntimeError("Qwen native B1 not complete")
     resident=args.run/"qwen_device_control_20261017/native_batch01_resident"
     if (resident/"report.json").exists():results["qwen/utilization"]=audit_resident(resident,1)
+    elif not args.partial:raise RuntimeError("Qwen resident utilization not complete")
     input_root=args.run/"qwen_device_control_20261017"
     if (input_root/"rental_cpu_input_identity.json").exists():results["qwen/input_identity"]=audit_inputs(input_root)
+    if (qwen/"report.json").exists():results["qwen/device_difference"]=audit_device_difference(args.run)
     result=dict(status="passed",partial=args.partial,cuda_initialized=False,time=time.time(),entry_sha256=sha(Path(__file__)),results=results)
     args.output.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(result,indent=2))
