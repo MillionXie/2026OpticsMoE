@@ -1,0 +1,8 @@
+{
+  "run": "caltech20_rich20_L6_CCD_dropout_alpha06_precise_coordinates_20261018",
+  "cases": {"L6_robust_precise": {"depth": 6, "gpu": 0, "sam": false}},
+  "repair": "Only L6 failed before optimizer at unchanged clean parity3e-6; retain original failure. Invert float32 parent alpha in float64 and retain six double raw alpha scalars, cast effective coefficient tofloat32. Physical graph/parameter count/recipe unchanged. Not a relaxed gate or old-worker retry.",
+  "failed_original_run": "caltech20_rich20_residual_CCD_dropout_SAM_alpha06_20261018",
+  "failed_original_case": "L6_robust",
+  "failed_sha256": "6b7bccd08d2350e07b2116ce6b3b21a8707a9d105475f4342095c39c99cbd0bb"
+}
