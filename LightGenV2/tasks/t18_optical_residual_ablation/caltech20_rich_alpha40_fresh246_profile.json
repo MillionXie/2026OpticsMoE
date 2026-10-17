@@ -1,0 +1,29 @@
+{
+  "run": "caltech20_rich20_alpha04_FRESH246_full50_s17_20261018",
+  "cases": {
+    "L2_fresh": {
+      "depth": 2,
+      "fresh": true,
+      "epochs": 50,
+      "electronic_warm_epochs": 0,
+      "phase_lr": 0.002
+    },
+    "L4_fresh": {
+      "depth": 4,
+      "fresh": true,
+      "epochs": 50,
+      "electronic_warm_epochs": 0,
+      "phase_lr": 0.002
+    },
+    "L6_fresh": {
+      "depth": 6,
+      "fresh": true,
+      "epochs": 50,
+      "electronic_warm_epochs": 0,
+      "phase_lr": 0.002
+    }
+  },
+  "human_deadline": "2026-10-18T09:00:00+08:00",
+  "new_science_namespace": "Full original independent audit namespace including math, owned study-module binding only",
+  "legacy_review": "Separate new saved verification tool, original failed audit and316 sources untouched"
+}
