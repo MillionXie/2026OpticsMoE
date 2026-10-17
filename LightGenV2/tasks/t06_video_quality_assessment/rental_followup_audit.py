@@ -37,6 +37,16 @@ def near(a,b):
     if not math.isclose(a,b,rel_tol=1e-10,abs_tol=1e-10):raise ValueError(f"Numerical mismatch {a} versus {b}")
 
 
+def audit_inputs(root):
+    original=json.loads((root/"original_cpu_input_identity.json").read_text())
+    current=json.loads((root/"rental_cpu_input_identity.json").read_text())
+    assert not original["cuda_initialized"] and not current["cuda_initialized"]
+    assert original["prompt_sha256"]==current["prompt_sha256"]
+    assert original["frame_positions"]==current["positions"]
+    assert original["input_tensor_identity"]==current["inputs"]
+    return dict(status="passed",scope="First fixed TEST video only; not a claim of hashing all558 inputs",prompt_sha256=current["prompt_sha256"],inputs=current["inputs"],original_receipt_sha256=sha(root/"original_cpu_input_identity.json"),rental_receipt_sha256=sha(root/"rental_cpu_input_identity.json"))
+
+
 def audit_resident(folder,batch=2):
     report=json.loads((folder/"report.json").read_text());values=[];parts=[]
     assert report["status"]=="complete" and report["batch"]==batch
@@ -94,6 +104,8 @@ def main():
     elif not args.partial:raise RuntimeError("Qwen native B1 not complete")
     resident=args.run/"qwen_device_control_20261017/native_batch01_resident"
     if (resident/"report.json").exists():results["qwen/utilization"]=audit_resident(resident,1)
+    input_root=args.run/"qwen_device_control_20261017"
+    if (input_root/"rental_cpu_input_identity.json").exists():results["qwen/input_identity"]=audit_inputs(input_root)
     result=dict(status="passed",partial=args.partial,cuda_initialized=False,time=time.time(),entry_sha256=sha(Path(__file__)),results=results)
     args.output.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(result,indent=2))
