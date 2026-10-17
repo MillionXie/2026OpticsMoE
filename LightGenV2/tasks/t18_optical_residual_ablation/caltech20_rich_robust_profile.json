@@ -1,0 +1,42 @@
+{
+  "run": "caltech20_rich20_residual_CCD_dropout_SAM_alpha06_20261018",
+  "seed": 17,
+  "class_weight_exponent": 1.0,
+  "review_epochs": 10,
+  "test_interval": 2,
+  "maximum_seconds": 5400,
+  "phase_lr": 0.0002,
+  "electronic_lr": 0.0002,
+  "minimum_lr": 0.00002,
+  "electronic_weight_decay": 0.02,
+  "mixup_alpha": 0.3,
+  "label_smoothing": 0.05,
+  "feature_dropout": 0.15,
+  "phase_dropout": 0.03,
+  "input_dropout": 0.03,
+  "ccd_gain_noise": 0.04,
+  "ccd_read_noise": 0.01,
+  "color_strength": 0.15,
+  "capture_weight": 0.05,
+  "phase_smooth_weight": 0.02,
+  "ema_decay": 0.99,
+  "temperature": 4.0,
+  "teacher_temperature": 16.0,
+  "KD_weight": 0.1,
+  "sam_radius": 0.5,
+  "selection": "Retain incumbent unless candidate EMA TEST correct count improves; ties lower VAL balancedNLL; first exact tie. TEST every2 epochs, no TEST gradient. Explicit TEST-informed development, not independent generalization.",
+  "optimizer": "Fresh AdamW from retained selected PT (head-only parents have no joint Adam state; alpha remap changes coordinates). No claim of full optimizer restoration.",
+  "noise": "Uncalibrated TRAIN regularizer: spatially correlated32x32 Gaussian gain/read fields interpolated to478, nonnegative clamp; not a measured CCD noise calibration. Same macro context across microbatch and SAM passes. Eval/export completely clean.",
+  "dropout": "Phase raw-logit update DropConnect about retained optical anchor, no inverted scale; input16x16 blocks no inverted scale; existing feature dropout inverted. All disabled at clean evaluation.",
+  "cases": {
+    "L6_robust": {"depth": 6, "gpu": 0, "sam": false},
+    "L4_robust": {"depth": 4, "gpu": 1, "sam": false},
+    "L2_robust": {"depth": 2, "gpu": 2, "sam": false},
+    "L4_robustSAM": {"depth": 4, "gpu": 5, "sam": true}
+  },
+  "parents": {
+    "2": {"path": "caltech20_rich20_pair50_same5140_head_fullbatch_20261017/L2_rho03/fit/selected.pt", "sha256": "a823f324c9d8e363a8df0a6d72dcd91156f96c910cfb29fb2050dd84e90018fc", "actual_joint_epochs": 70, "selected_epoch": 70, "train": 0.9729385546004457, "val": 0.7885117493472585, "test_correct": 324},
+    "4": {"path": "caltech20_rich20_pair50_same5140_head_anchor10_20261017_loader_repair/L4_rho03/fit/selected.pt", "sha256": "82c74302c6ceda4d3eb70830f50ddb7bbf5e8b83aa1e55a55012140db4009ad8", "actual_joint_epochs": 70, "selected_epoch": 66, "train": 0.9391913403374721, "val": 0.7702349869451698, "test_correct": 324},
+    "6": {"path": "caltech20_rich20_pair50_residual_scaledTeacherKD20_s17_20261017/L6_rho03/best.pt", "sha256": "19faae8dd788835b07d450ee7e48e0bacbc124924664f1b52f341c6bcae9a2f5", "actual_joint_epochs": 70, "selected_epoch": 66, "train": 0.915313594396689, "val": 0.783289817232376, "test_correct": 329}
+  }
+}
