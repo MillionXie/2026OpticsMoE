@@ -76,3 +76,15 @@ def test_measurement_has_native_queue8_and_whole_windows():
 def test_legacy_sources_are_immutable():
     assert m.old.sha(Path(m.previous.__file__)) == 'f6f88fc341b52e023671a770b351879a026d24321c3d6243769304af298be698'
     assert m.old.sha(Path(m.old.__file__)) == '00dbe21d9d4b89b8c8c8f0454549c5df3a4e1fd3b877cfdf6ba319eadc0780ba'
+
+
+def test_capacity_probe_not_formal_cost_and_does_not_relax_worker_gate():
+    text = inspect.getsource(m.capacity_check)
+    assert 'args.model != "kimi"' in text
+    assert 'if args.output.exists()' in text
+    assert 'full558_accuracy=False' in text
+    assert 'formal_utilization_or_cost=False' in text
+    assert 'rtol=.01, atol=.125' in text
+    assert 'free < required_weight_bytes + 8*1024**3' in text
+    assert 'float(free) < 75000' in inspect.getsource(m.worker)
+    assert 'measure(' not in text and '.backward(' not in text

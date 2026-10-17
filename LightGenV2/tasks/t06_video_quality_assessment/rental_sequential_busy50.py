@@ -296,18 +296,80 @@ def suite(args):
     finally: old.write(ROOT/"suite_status.json", state)
 
 
+def capacity_check(args):
+    """One Kimi TRAIN B1 feasibility probe, never formal cost or utilization."""
+    if args.model != "kimi":
+        raise ValueError("Only one Kimi B1 diagnostic; DS resident weights already exceed free memory")
+    args.output = old.RUN/"capacity_check_20261018"/"kimi"
+    if args.output.exists(): raise RuntimeError("Single diagnostic only; preserve prior evidence")
+    args.output.mkdir(parents=True)
+    identity = dict(sources=sources(), model=args.model, gpu_uuid=args.gpu_uuid,
+        pid=os.getpid(), created=time.time(), command=sys.argv,
+        git_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
+        purpose="capacity_only_not_performance_measurement", no_cost_or_utilization_claim=True)
+    guard = Guard(args, identity)
+    state = dict(status="loading", no_formal_measurement=True)
+    try:
+        guard.check()
+        import torch
+        torch.set_num_threads(8)
+        free, total = torch.cuda.mem_get_info()
+        # Separate diagnostic threshold, never replaces the formal 75000MiB gate.
+        required_weight_bytes = 32815315552
+        if free < required_weight_bytes + 8*1024**3:
+            raise RuntimeError("Insufficient free memory even for bounded Kimi B1 capacity probe")
+        identity.update(free_before_bytes=free, total_bytes=total,
+                        required_weight_bytes=required_weight_bytes, diagnostic_margin_bytes=8*1024**3)
+        old.write(args.output/"status.json", state)
+        model, processor, prompt, first, compute = previous.runtime(args, identity, guard)
+        old.write(args.output/"identity.json", identity); guard.start()
+        train = [r for r in old.rows() if r["split"] == "train"][:1]
+        cpu, positions = previous.prepare_batch("kimi", train, processor, prompt)
+        inputs = old.transfer(cpu)
+        mos, tapped = compute(inputs)
+        with torch.inference_mode(), torch.autocast("cuda", dtype=torch.bfloat16):
+            native = model(**inputs, use_cache=False, return_dict=True).logits[:, -1].float()
+        torch.cuda.synchronize()
+        if not torch.isfinite(native).all() or not torch.isfinite(mos).all():
+            raise RuntimeError("Nonfinite native capacity probe")
+        if not torch.allclose(native, tapped, rtol=.01, atol=.125):
+            raise RuntimeError("Native full-vocabulary/tap parity failed")
+        if any(p.requires_grad for p in model.parameters()):
+            raise RuntimeError("Frozen original model required")
+        old.write(args.output/"input_identity.json", input_identity(cpu, train, positions))
+        result = dict(status="passed", identity=identity, batch=1, train_videos=1,
+            native_logit_max_abs=float((native-tapped).abs().max()), rtol=.01, atol=.125,
+            output_mos=mos.detach().cpu().tolist(),
+            peak_allocated_bytes=torch.cuda.max_memory_allocated(),
+            peak_reserved_bytes=torch.cuda.max_memory_reserved(),
+            cuda_free_after_forward_bytes=torch.cuda.mem_get_info()[0],
+            formal_utilization_or_cost=False, full558_accuracy=False,
+            limitation="Unattributed baseline VRAM remains; this only proves this one input executed")
+        if old.verify_assets(Path("/data/models/kimi")) != identity["assets"]:
+            raise RuntimeError("Official frozen assets changed")
+        guard.check(); old.write(args.output/"report.json", result)
+        state.update(status="complete")
+    except BaseException as error:
+        state.update(status="failed", error=repr(error)); raise
+    finally:
+        guard.stop.set()
+        if guard.thread: guard.thread.join(10)
+        old.write(args.output/"process_audit.json", guard.audit)
+        old.write(args.output/"status.json", dict(**state, time=time.time()))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", choices=("suite", "worker"), required=True)
+    parser.add_argument("--phase", choices=("suite", "worker", "capacity-check"), required=True)
     parser.add_argument("--model", choices=("deepseek", "kimi"))
     parser.add_argument("--gpu-uuid", required=True)
     parser.add_argument("--deadline", type=float, required=True)
     args = parser.parse_args()
     if not old.REPO.is_relative_to("/data") or not 0 < args.deadline-time.time() <= config()["maximum_suite_seconds"]:
         raise RuntimeError("New /data run within this one-hour rental, backup reserve required")
-    if args.phase == "worker" and os.environ.get("CUDA_VISIBLE_DEVICES") != args.gpu_uuid:
+    if args.phase != "suite" and os.environ.get("CUDA_VISIBLE_DEVICES") != args.gpu_uuid:
         raise RuntimeError("Exact authorized GPU UUID required")
-    (suite if args.phase == "suite" else worker)(args)
+    {"suite": suite, "worker": worker, "capacity-check": capacity_check}[args.phase](args)
 
 
 if __name__ == "__main__": main()
