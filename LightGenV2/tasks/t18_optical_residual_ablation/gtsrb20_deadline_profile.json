@@ -1,0 +1,30 @@
+{
+  "dataset": "GTSRB_count_selected20_track_grouped_development_20261017",
+  "data_directory": "/DATA/DATA1/guest3/t18_gtsrb20_track_20261017",
+  "archive_directory": "/DATA/DATA1/guest3/t18_gtsrb_archives_20261017",
+  "source": "https://github.com/houbensebastian/GermanTrafficSignBenchmarks#GTSRB",
+  "archive_base_url": "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/",
+  "archives": {
+    "GTSRB-Training_fixed.zip": "513f3c79a4c5141765e10e952eaa2478",
+    "GTSRB_Final_Test_Images.zip": "c7e4e6327067d32654124b0fe9e82185",
+    "GTSRB_Final_Test_GT.zip": "fe31e9c9270bbcd7b84b7f21a9d9d9e5"
+  },
+  "archive_checksum_source": "https://docs.pytorch.org/vision/main/_modules/torchvision/datasets/gtsrb.html",
+  "class_selection": "largest20 by competition-training PPM count, numeric ID tie-break; no model metrics",
+  "class_count": 20, "split_seed": 20261017,
+  "TRAIN_cap_per_class": 200, "VAL_cap_per_class": 100,
+  "sampling": "whole sign-track plus exact-pixel components assigned80/20 TRAIN/VAL, then seeded round-robin frames across every track, fixed caps; TEST all selected-class official final images",
+  "crop": "official annotated ROI inclusive endpoints, bicubic RGB150; same rule for every role",
+  "seed": 17, "maximum_epochs": 100, "maximum_seconds": 14400,
+  "batch_size": 16, "microbatch": 4, "input_tile": 100,
+  "lr": 0.002, "minimum_lr": 0.0002, "electronic_weight_decay": 0.01,
+  "ema_decay": 0.99, "mixup_alpha": 0.3, "label_smoothing": 0.05,
+  "capture_weight": 0.05, "phase_smooth_weight": 0.02,
+  "horizontal_flip_probability": 0.0, "feature_dropout": 0.1,
+  "alpha_bounds": [0.7001,0.95], "alpha_initial": 0.8,
+  "depths": [2,4,6], "rho": [0.3,0.0], "maximum_gpu_children": 4,
+  "a100_prohibited": true, "automatic_retry": false, "test_informed_development": true,
+  "selection": "first minimum validation EMA balanced NLL, never TEST epoch selection",
+  "targets": {"L4_residual_test_above": 0.8, "L6_residual_test_above_L4": true, "preferred_gap_pp": 10},
+  "scope": "Only this new non-paper dataset, full100 six arms then controls freeze; any residual continuation needs actual curve evidence and a new fixed profile. Today simulation cutoff, no scheduled task."
+}
