@@ -1,0 +1,78 @@
+{
+  "run": "caltech20_rich20_alpha04_electronicWarm_vs_fresh_s17_20261018",
+  "seed": 17,
+  "alpha_bounds_by_arm": {
+    "rho0": [
+      0.8501,
+      0.95
+    ],
+    "rho03": [
+      0.4001,
+      0.95
+    ]
+  },
+  "alpha_restart": 0.45,
+  "alpha_anchor_weight": 0.1,
+  "electronic_lr": 0.001,
+  "alpha_lr": 0.003,
+  "minimum_lr": 2e-05,
+  "minimum_alpha_lr": 0.0002,
+  "electronic_weight_decay": 0.05,
+  "crop_area_min": 0.65,
+  "mixup_alpha": 0.3,
+  "label_smoothing": 0.08,
+  "feature_dropout": 0.2,
+  "phase_dropout": 0.01,
+  "input_dropout": 0.01,
+  "ccd_gain_noise": 0.01,
+  "ccd_read_noise": 0.002,
+  "color_strength": 0.2,
+  "capture_weight": 0.05,
+  "phase_smooth_weight": 0.02,
+  "ema_decay": 0.95,
+  "KD_weight": 0.05,
+  "temperature": 4.0,
+  "teacher_temperature": 16.0,
+  "class_weight_exponent": 0.5,
+  "test_interval": 5,
+  "maximum_seconds": 7200,
+  "gpu_order": [
+    2,
+    0,
+    1
+  ],
+  "automatic_retry": false,
+  "test_used_for_selection": true,
+  "cases": {
+    "L2_rebalance": {
+      "depth": 2,
+      "fresh": false,
+      "epochs": 20,
+      "electronic_warm_epochs": 3,
+      "phase_lr": 0.0002
+    },
+    "L4_rebalance": {
+      "depth": 4,
+      "fresh": false,
+      "epochs": 20,
+      "electronic_warm_epochs": 3,
+      "phase_lr": 0.0002
+    },
+    "L6_rebalance": {
+      "depth": 6,
+      "fresh": false,
+      "epochs": 20,
+      "electronic_warm_epochs": 3,
+      "phase_lr": 0.0002
+    },
+    "L4_fresh": {
+      "depth": 4,
+      "fresh": true,
+      "epochs": 50,
+      "electronic_warm_epochs": 0,
+      "phase_lr": 0.002
+    }
+  },
+  "human_deadline": "2026-10-18T09:00:00+08:00",
+  "human_continuation": "Evidence-driven additional strategies authorized until morning; each new strategy gets fixed source/config/own admission and protected old outputs, no blind retry."
+}

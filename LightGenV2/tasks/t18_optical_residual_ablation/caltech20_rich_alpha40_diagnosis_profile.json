@@ -1,0 +1,52 @@
+{
+  "seed": 17,
+  "alpha_probe_values": [
+    0.85,
+    0.75,
+    0.65,
+    0.5,
+    0.45,
+    0.41
+  ],
+  "parents": {
+    "2": {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_pair50_same5140_head_fullbatch_20261017/L2_rho03/fit/selected.pt",
+      "sha256": "a823f324c9d8e363a8df0a6d72dcd91156f96c910cfb29fb2050dd84e90018fc",
+      "source_git": "24aec86eac9b3ca51357cc5eef07ec78840c4f23",
+      "module": "caltech20_rich_pair50_alpha_model",
+      "class_name": "PairModel",
+      "alpha_low": 0.7001,
+      "joint_budget_epochs": 70,
+      "selected_optical_epoch": 70
+    },
+    "4": {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_postrobust_same5140_head_20261018_source_identity_repair/L4_rho03/candidate.pt",
+      "sha256": "cbbdf037c0dc13425427f6a4cba09b93fbc850ce1a79e415a770cb680df623d6",
+      "source_git": "9b1daef9dbcc1bfd6f620a5aad7b78aae4789177",
+      "module": "caltech20_rich_robust",
+      "class_name": "RobustMoE",
+      "alpha_low": 0.6001,
+      "joint_budget_epochs": 80,
+      "selected_optical_epoch": 80
+    },
+    "6": {
+      "path": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_postrobust_same5140_head_20261018_source_identity_repair/L6_rho03/candidate.pt",
+      "sha256": "881aeb07280875def1e558897a30480e7b5bc7cc25ccb4d03bf743fc006a956a",
+      "source_git": "9b1daef9dbcc1bfd6f620a5aad7b78aae4789177",
+      "module": "caltech20_rich_robust_precise",
+      "class_name": "RobustMoE",
+      "alpha_low": 0.6001,
+      "joint_budget_epochs": 80,
+      "selected_optical_epoch": 80
+    }
+  },
+  "alpha_bounds": [
+    0.4001,
+    0.95
+  ],
+  "TEST_images_read": 0,
+  "training_samples": 3141,
+  "validation_samples": 383,
+  "test_samples": 411,
+  "automatic_retry": false
+}
