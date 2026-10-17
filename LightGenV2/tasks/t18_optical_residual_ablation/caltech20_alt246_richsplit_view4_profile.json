@@ -1,0 +1,52 @@
+{
+  "seed": 17,
+  "depth": 4,
+  "rho": 0.3,
+  "additional_epochs": 20,
+  "maximum_seconds": 3600,
+  "automatic_retry": false,
+  "parent_checkpoint_sha256": "413b2eeb74a2716241fc753bb754212dd3e294d869a7aa81de66a3c49d2e18dd",
+  "teacher_TRAIN_prediction_sha256": "c00b5cd958080c54e4996bd8687a38170bf3ca26069058cfa514865289842c98",
+  "training": {
+    "lr": 0.0001,
+    "electronic_weight_decay": 0.02,
+    "ema_decay": 0.999,
+    "mixup_alpha": 0.3,
+    "label_smoothing": 0.05,
+    "capture_weight": 0.05,
+    "phase_smooth_weight": 0.02,
+    "horizontal_flip_probability": 0.5,
+    "feature_dropout": 0.2,
+    "crop_area": [
+      0.75,
+      1.0
+    ],
+    "crop_aspect": [
+      0.9,
+      1.1
+    ],
+    "brightness": [
+      0.85,
+      1.15
+    ],
+    "contrast": [
+      0.85,
+      1.15
+    ],
+    "gamma": [
+      0.85,
+      1.15
+    ],
+    "view_seed_tag": 20261017,
+    "kd_alpha": 0.5,
+    "kd_temperature": 2.0,
+    "teacher_confidence": 0.5
+  },
+  "class_weights": "sqrt(3141/(20*TRAINsupport)): weighted softtarget row mass preserved",
+  "initialization": "warm-start full accepted four selected opticalE86/head4; NEW AdamW empty moments, not LAST100 restoration",
+  "epoch_accounting": "100 optical spent +20 tune =120; head20 spent/select4 inherited; seeds101-120 bookkeeping only",
+  "selection": "include retained tune0; highest VAL overall accuracy, ties natural NLL then earliest tune epoch",
+  "adoption": "only replace retained candidate if actual once TEST overall accuracy does not decrease; test-informed development",
+  "scope": "ONE four-layer TRAIN-view invariance candidate from independently verified four sqrt-head improvement; exact cached selfteacher only TRAIN, no new teacher forward",
+  "teacher_checkpoint_sha256": "413b2eeb74a2716241fc753bb754212dd3e294d869a7aa81de66a3c49d2e18dd"
+}
