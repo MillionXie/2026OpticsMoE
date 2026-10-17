@@ -119,6 +119,87 @@ def native_history_comparison(output):
     (ROOT/'method_comparison.md').open('x',encoding='utf-8').write('\n'.join(lines))
 
 
+def audit_sequential():
+    """Utilization-only same-process reproduction; no cost substitution."""
+    root=TASK/'runs/simulation/lgvq_yolo_clip_sequential_a100_20261017'
+    cfg=read(TASK/'configs/baselines/yolo_clip_sequential_20261017.json')
+    state=read(root/'suite_status.json');assert state['status']=='complete' and state['completed']==['yolo','clip']
+    assert cfg['cases']=={'yolo':[1,2,3],'clip':[1,2,3,4,6,8,9,10]}
+    checkpoint=next(ast.literal_eval(n.value) for n in ast.parse((TASK/'measure_frozen_batch_costs.py').read_text()).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='CHECKPOINTS' for t in n.targets))
+    verified={}
+    for receipt in root.glob('backup_receipt*.json'):
+        for item in read(receipt)['verified_files']:
+            p=receipt.parent/item['path'];assert sha(p)==item['sha256'];verified[p.resolve()]=item['sha256']
+    assert len(verified)>=180
+    result=[];repeats=[];sources={};identities={}
+    for model,batches in cfg['cases'].items():
+        folder=root/model;identity=read(folder/'identity.json');receipt=read(folder/'sequential_driver_receipt.json');r=read(folder/'report.json')
+        assert r['status']=='complete' and [x['batch'] for x in r['points']]==batches
+        assert identity['checkpoint_sha256']==receipt['checkpoint_sha256']==checkpoint[model] and identity['manifest_sha256']==SHA
+        assert identity['protocol']['required_terminal_batch']==cfg['target_batches'][model]
+        assert identity['protocol']['batches']=={model:batches}
+        identities[model]=identity['pid']
+        for path,h in receipt['source_sha256'].items():
+            assert state['source_sha256'][path]==h
+            key=(path,h)
+            if key not in sources:
+                content=subprocess.check_output(['git','show',identity['source_commit']+':'+path],cwd=REPO)
+                assert hashlib.sha256(content).hexdigest()==h;sources[key]=True
+        for batch in batches:
+            point=folder/f'batch{batch:02d}';pr=read(point/'report.json');means=[];total=0;n=0;duration=0;calls=0;peak=0;stamp=0
+            assert pr['status']=='complete' and pr['batch']==batch and len(pr['sample_ids'])==len(set(pr['sample_ids']))==batch
+            if batch==cfg['target_batches'][model]:
+                old=read(TASK/f'runs/simulation/lgvq_yolo_clip_recheck_a100_20261017/{model}_batch{batch:02d}/util/batch{batch:02d}/report.json')
+                assert all(pr[k]==old[k] for k in ['sample_ids','frame_positions','input_tensor_identity','reference_mos'])
+            for repeat in [1,2,3]:
+                p=point/f'repeat{repeat:02d}';d=read(p/'report.json');w=d['measurement'];raw=csvrows(p/'telemetry.csv')
+                chosen=[x for x in raw if w['start_monotonic_s']<=float(x['host_monotonic_s'])<w['end_monotonic_s']]
+                u=[float(x['utilization_percent']) for x in chosen]
+                assert len(u)==w['samples'] and w['duration_s']>=30 and d['warmup']['duration_s']>=5
+                mean=statistics.mean(u);assert abs(mean-w['mean_gpu_utilization_percent'])<1e-9
+                assert all(abs(a-b)<.0002 for a,b in zip(d['output'],pr['reference_mos']))
+                guard(p/'process_audit.json',identity['pid'])
+                groups=read(p/'forward_groups.json');assert all(g['forwards']==8 for g in groups)
+                assert sum(g['forwards'] for g in groups if g['phase']=='measured')==d['measured_forward_invocations']
+                clocks=[x for x in csvrows(p/'clock_telemetry.csv') if w['start_monotonic_s']<=float(x['host_monotonic_s'])<w['end_monotonic_s']]
+                assert clocks and all(float(x['power_limit_w'])==250 for x in clocks)
+                for name in ['report.json','telemetry.csv','clock_telemetry.csv','forward_groups.json','process_audit.json']:assert (p/name).resolve() in verified
+                repeats.append(dict(model=NAMES[model],baseline=model,batch=batch,repeat=repeat,mean_percent=mean,peak_percent=max(u),power_w=w['mean_board_power_w'],memory_mib=w['mean_memory_used_mib'],warmup_s=d['warmup']['duration_s'],measured_local=datetime.fromtimestamp(float(chosen[-1]['host_time_unix']),timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S'),samples=len(u),duration_s=w['duration_s'],forwards=d['measured_forward_invocations'],forwards_per_second=d['measured_forward_invocations']/w['duration_s'],sm_clock_mhz=statistics.mean(float(x['sm_clock_mhz']) for x in clocks),temperature_c=statistics.mean(float(x['temperature_c']) for x in clocks),cpu_queue_wait_ms=(d['cpu_measurement_end']['main_thread_schedstat'][1]-d['cpu_measurement_start']['main_thread_schedstat'][1])/1e6,pid=identity['pid'],source=(p/'report.json').relative_to(REPO).as_posix()))
+                total+=sum(u);n+=len(u);means.append(mean)
+                duration+=w['duration_s'];calls+=d['measured_forward_invocations'];peak=max(peak,max(u));stamp=max(stamp,float(chosen[-1]['host_time_unix']))
+            assert abs(total/n-pr['mean_utilization_percent'])<1e-9
+            result.append(dict(model=NAMES[model],baseline=model,batch=batch,pid=identity['pid'],repeat_means=means,pooled_mean_percent=total/n,peak_percent=peak,samples=n,duration_s=duration,forwards=calls,sum_percent_points=total,measured_local=datetime.fromtimestamp(stamp,timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S'),all_three_at_least98=all(x>=98 for x in means),pooled_at_least98=total/n>=98,target_point=batch==cfg['target_batches'][model],spread_pp=max(means)-min(means),source=(point/'report.json').relative_to(REPO).as_posix()))
+    assert len(result)==11 and len(repeats)==33 and identities['yolo']!=identities['clip']
+    # The only uniform change is terminal-batch orchestration, not the measured loop.
+    name='LightGenV2/tasks/t06_video_quality_assessment/unified_resident_utilization.py'
+    body=lambda s:ast.dump(next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='measure_repeat'))
+    old=subprocess.check_output(['git','show','91ebe416c5e0696d8420104009f8164667dbd185:'+name],cwd=REPO,text=True)
+    new=subprocess.check_output(['git','show',identity['source_commit']+':'+name],cwd=REPO,text=True)
+    assert body(old)==body(new)
+    name='LightGenV2/tasks/t06_video_quality_assessment/audit_utilization_execution.py'
+    old_compute=subprocess.check_output(['git','show','91ebe416c5e0696d8420104009f8164667dbd185:'+name],cwd=REPO,text=True)
+    new_compute=subprocess.check_output(['git','show',identity['source_commit']+':'+name],cwd=REPO,text=True)
+    compute=lambda s:ast.dump(next(n for n in ast.parse(s).body if isinstance(n,ast.FunctionDef) and n.name=='make_gpu_forward'))
+    assert compute(old_compute)==compute(new_compute)
+    name='LightGenV2/tasks/t06_video_quality_assessment/evaluate_temporal_baseline_batches.py'
+    assert subprocess.check_output(['git','show','91ebe416c5e0696d8420104009f8164667dbd185:'+name],cwd=REPO)==subprocess.check_output(['git','show',identity['source_commit']+':'+name],cwd=REPO)
+    out=dict(status='complete',points=result,repeats=repeats,raw_files_SHA_verified=len(verified),published_source_checks=len(sources),one_PID_per_model=identities,original_measurement_loop_AST_equal=True,original_native_compute_AST_equal=True,original_loader_source_equal=True,no_cost_accuracy_or_Qwen_B1_change=True)
+    (root/'verified_sequential.json').open('x',encoding='utf-8').write(json.dumps(out,indent=2)+'\n')
+    lines=['### Same-process native reproduction (17 October 2026)','',
+        'YOLO was loaded once for B=1,2,3. CLIP was loaded once for B=1,2,3,4,6,8,9,10. Every batch retains all three complete repeats. The terminal targets B3/B10 were required regardless of whether an earlier batch reached98%. No additional B4/B11 target or retry was substituted.',
+        '',
+        '| Model | B | Repeat1 (%) | Repeat2 (%) | Repeat3 (%) | Pooled mean (%) | All three ≥98% |',
+        '| --- | ---: | ---: | ---: | ---: | ---: | --- |']
+    for x in result:lines.append('| '+x['model']+' | '+str(x['batch'])+' | '+' | '.join(f'{v:.5f}' for v in x['repeat_means'])+f" | {x['pooled_mean_percent']:.8f} | {x['all_three_at_least98']} |")
+    lines+=['','The measured loop is AST-identical to the original: resident first-B four-frame inputs prepared once, native same-stream queue8, each repeat ≥5s warmup plus a complete ≥30s window, all50ms driver samples pooled. All repeat process guards use one PID per model. Source/config/PT/manifest hashes and target input tensor/reference-output identities were verified. No Graph, weight/precision change, clocks/power setting change, training or highest-repeat selection was introduced.',
+        '', 'The earlier98.76% CLIP B10 native control was interleaved with a candidate implementation after previous batches. This run uses only the prescribed all-native ascending plan and does not claim an exact reproduction of that interleaved history. The same-process profile is disclosed rather than silently pooled with the previous fresh-process round. One three-repeat run supports within-run reproducibility, not a guarantee for every subsequent run or machine state.',
+        '', 'This is utilization-only. Original per-batch accuracy, timing and energy remain from their separately identified verified cost runs. New resident power is never used to recompute those costs. The finalized historical Qwen B1 is neither executed nor changed. The previous fresh-process observations (including YOLO B3 at87.15912898%) remain preserved, not deleted or relabeled as invalid.',
+        '', 'All11 batch points and33 complete repeats are retained in the canonical sequential run and raw-repeat table with source roles. Only requested YOLO B3/CLIP B10 replace their displayed utilization annotations. Other B1 measurements are predecessor audit, not replacements of finalized references.','']
+    (root/'method_comparison.md').open('x',encoding='utf-8').write('\n'.join(lines))
+    print(json.dumps(dict(status='complete',points=len(result),repeats=len(repeats),targets=[x for x in result if x['target_point']])))
+    return out
+
+
 def audit(selected_points=None,recheck=False):
     suite=read(ROOT/'suite_status.json') if (ROOT/'suite_status.json').exists() else None
     if not selected_points:assert suite and suite['status']=='complete'
@@ -246,7 +327,9 @@ def audit(selected_points=None,recheck=False):
 
 if __name__=='__main__':
     import argparse
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true')
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true');parser.add_argument('--yolo-clip-sequential',action='store_true')
     args=parser.parse_args()
-    if args.yolo_clip_recheck:ROOT=TASK/'runs/simulation/lgvq_yolo_clip_recheck_a100_20261017'
-    audit(args.points,args.yolo_clip_recheck)
+    if args.yolo_clip_sequential:audit_sequential()
+    else:
+        if args.yolo_clip_recheck:ROOT=TASK/'runs/simulation/lgvq_yolo_clip_recheck_a100_20261017'
+        audit(args.points,args.yolo_clip_recheck)

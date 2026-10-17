@@ -12,6 +12,7 @@ import numpy as np
 REPO=Path(__file__).resolve().parents[4]
 RUN=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016'
 if '--yolo-clip-recheck' in sys.argv:RUN=RUN.with_name('lgvq_yolo_clip_recheck_a100_20261017')
+if '--yolo-clip-sequential' in sys.argv:RUN=RUN.with_name('lgvq_yolo_clip_sequential_a100_20261017')
 OUT=REPO/'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013'
 COLORS=dict(ours='#7828A8',qwen='#0072B2',glm='#92527F',small='#C25B18',clip='#007F63',yolo='#9B7000',deepseek='#5B6470')
 MARKERS=dict(ours='*',qwen='o',glm='P',small='s',clip='D',yolo='^',deepseek='v')
@@ -71,6 +72,7 @@ def verify_label_geometry(fig,axes):
 def main():
     state=json.loads((RUN/'presentation_selected.json').read_text());assert state['status']=='complete'
     rows=state['rows'];assert 13<=len(rows)<=18
+    sequential='--yolo-clip-sequential' in sys.argv
     assert [(x['batch_size_videos'],x['display_gpu_util_mean_percent']) for x in rows if x['baseline']=='qwen' and x['batch_size_videos']==1]==[(1,63.133111480865225)]
     plt.rcParams.update({'font.family':'Arial','font.size':10,'svg.fonttype':'none','axes.linewidth':.8,'savefig.facecolor':'white'})
     legend=[Line2D([],[],marker=MARKERS[m],color=COLORS[m],lw=1,markersize=8 if m=='ours' else 5,label=next(x['model'] for x in rows if x['baseline']==m)+(' (optimized B=3,4)' if m=='qwen' else '')) for m in COLORS];label_checks=[]
@@ -78,7 +80,7 @@ def main():
         fig,ax=plt.subplots(figsize=(10.0,6.0));panel(ax,rows,kind)
         fig.subplots_adjust(left=.10,right=.95,top=.96,bottom=.24)
         fig.legend(handles=legend,loc='lower center',bbox_to_anchor=(.5,.07),ncol=4,frameon=False,fontsize=9)
-        fig.text(.10,.035,'Labels: batch size and independent resident GPU utilization. Qwen B=3,4 use equivalence-validated execution optimization.',fontsize=8,color='#4B5563')
+        fig.text(.10,.035,'Independent resident utilization. YOLO B=3 / CLIP B=10: sequential model process. Qwen B=3,4: validated execution optimization.' if sequential else 'Labels: batch size and independent resident GPU utilization. Qwen B=3,4 use equivalence-validated execution optimization.',fontsize=8,color='#4B5563')
         fig.text(.10,.012,'† Qwen B=1 and LightGen-II are retained references. GPU costs normalize the first 200 TEST videos to 16 videos.',fontsize=8,color='#4B5563')
         label_checks+=verify_label_geometry(fig,[ax])
         for ext in ['png','svg']:fig.savefig(OUT/(name+'.'+ext),dpi=240)
@@ -88,7 +90,7 @@ def main():
         panel(ax,rows,kind);ax.text(-.13,1.02,label,transform=ax.transAxes,fontweight='bold',fontsize=14)
     axes[1].set_ylabel('');fig.subplots_adjust(left=.065,right=.98,top=.95,bottom=.24,wspace=.16)
     fig.legend(handles=legend,loc='lower center',bbox_to_anchor=(.5,.07),ncol=4,frameon=False,fontsize=9)
-    fig.text(.065,.025,'GPU SRCC: 558 TEST videos. Costs: first 200 normalized to 16. Independent resident utilization. LightGen-II and † Qwen B=1: retained references.',fontsize=8,color='#4B5563')
+    fig.text(.065,.025,'GPU SRCC: 558 TEST. Original costs normalized to 16. YOLO B=3 / CLIP B=10 utilization: sequential model process. LightGen-II and † Qwen B=1 retained.' if sequential else 'GPU SRCC: 558 TEST videos. Costs: first 200 normalized to 16. Independent resident utilization. LightGen-II and † Qwen B=1: retained references.',fontsize=8,color='#4B5563')
     label_checks+=verify_label_geometry(fig,axes)
     for name in ['srcc_cost_comparison_reference','batch_cost_comparison']:
         for ext in ['png','svg']:fig.savefig(OUT/(name+'.'+ext),dpi=240)
