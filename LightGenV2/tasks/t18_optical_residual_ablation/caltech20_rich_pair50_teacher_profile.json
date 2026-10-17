@@ -1,0 +1,14 @@
+{
+  "teacher_checkpoint": "/home/guest3/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth",
+  "teacher_checkpoint_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "teacher_epochs": 100,
+  "teacher_learning_rate": 0.01,
+  "teacher_weight_decay": 0.001,
+  "teacher_feature_batch": 32,
+  "teacher_device": "cpu",
+  "teacher_backbone_optimizer_steps": 0,
+  "TEST_images_read": 0,
+  "inference_teacher": false,
+  "selection": "first minimum natural VAL NLL within100 CPU head steps",
+  "pretraining": "official ResNet18 IMAGENET1K_V1, frozen features, training-only teacher"
+}
