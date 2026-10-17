@@ -1,0 +1,16 @@
+{
+  "parent_run": "caltech20_rich20_current246_s17_equal60_logrepair_20261017",
+  "tune_epochs": 10,
+  "maximum_seconds": 1800,
+  "class_weight_exponent": 0.5,
+  "phase_lr": 0.0003,
+  "electronic_lr": 0.0001,
+  "minimum_tune_lr": 0.00002,
+  "electronic_weight_decay": 0.05,
+  "selection": "first minimum natural validation EMA NLL among retained baseline selected model and these10 new epochs",
+  "scope": "One evidence-based residual-only objective correction for each2/4/6; controls fixed60; no automatic TEST or automatic next block",
+  "automatic_retry": false,
+  "test_informed_development": true,
+  "new_inference_parameters": 0,
+  "evidence": "Existing saved Caltech20 same-head gradient diagnosis: natural TRAIN versus natural VAL cosine+.6663, balanced TRAIN versus natural VAL-.1742. Old balanced-loss rare classes approach97% TRAIN with12.5% heldout recall. Sqrt weights soften rare-class amplification while retaining minority supervision; slower electronics and higher decay limit rapid head readaptation. A hypothesis, not proven causal diagnosis or promised10pp."
+}

@@ -1,0 +1,7 @@
+case,target_epochs,early_completed_epochs,actual_own_gate_passed,test_evaluations,state
+L6_rho03,60,2,True,0,running
+L6_rho0,60,2,True,0,running
+L4_rho03,60,2,True,0,running
+L4_rho0,60,1,True,0,running
+L2_rho03,60,0,,0,queued
+L2_rho0,60,0,,0,queued
