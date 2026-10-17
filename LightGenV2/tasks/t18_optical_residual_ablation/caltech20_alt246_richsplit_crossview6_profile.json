@@ -1,0 +1,52 @@
+{
+  "seed": 17,
+  "depth": 6,
+  "rho": 0.3,
+  "additional_epochs": 20,
+  "maximum_seconds": 3600,
+  "automatic_retry": false,
+  "parent_checkpoint_sha256": "253b807e34949b8e91f3aad463e728402c6dadfd04cd22db55a7f1cb81ef2921",
+  "teacher_TRAIN_prediction_sha256": "c00b5cd958080c54e4996bd8687a38170bf3ca26069058cfa514865289842c98",
+  "training": {
+    "lr": 0.0001,
+    "electronic_weight_decay": 0.02,
+    "ema_decay": 0.999,
+    "mixup_alpha": 0.3,
+    "label_smoothing": 0.05,
+    "capture_weight": 0.05,
+    "phase_smooth_weight": 25.0,
+    "horizontal_flip_probability": 0.5,
+    "feature_dropout": 0.2,
+    "crop_area": [
+      0.75,
+      1.0
+    ],
+    "crop_aspect": [
+      0.9,
+      1.1
+    ],
+    "brightness": [
+      0.85,
+      1.15
+    ],
+    "contrast": [
+      0.85,
+      1.15
+    ],
+    "gamma": [
+      0.85,
+      1.15
+    ],
+    "view_seed_tag": 20261017,
+    "kd_alpha": 0.5,
+    "kd_temperature": 2.0,
+    "teacher_confidence": 0.5
+  },
+  "class_weights": "sqrt(3141/(20*TRAINsupport)): weighted softtarget row mass preserved",
+  "initialization": "warm-start accepted selected E108 full six-layer state; new AdamW moments empty; original120 optical budget retained, not a LAST120 restoration",
+  "epoch_accounting": "120 spent +20 tune =140; augmentation seed epochs121-140 are bookkeeping and do not claim contiguous LAST restoration",
+  "selection": "include retained tune0; highest VAL overall accuracy, ties natural NLL then earliest tune epoch",
+  "adoption": "only replace retained candidate if actual once TEST overall accuracy does not decrease; test-informed development",
+  "scope": "ONE six-layer same-graph candidate; accepted four-layer cached clean TRAIN predictions only, both MixUp partners correct/confident; no teacher/new-network forward",
+  "teacher_checkpoint_sha256": "413b2eeb74a2716241fc753bb754212dd3e294d869a7aa81de66a3c49d2e18dd"
+}
