@@ -1,0 +1,4 @@
+experiment,classes,TRAIN,VAL,TEST,control_epochs,residual_epochs,alpha_rho0,alpha_rho03,alpha_initial,status,manifest_sha256
+quoted_rich20_100plus_refinement,20,3141,383,411,100,L2:100+40headupdates;L4:100+20headupdates;L6:120,"learned(.7001,.95)","learned(.7001,.95)",.8,completed_historical_retained,d4921172a9cc8aa427b89e03772733837be64a3fdaaf826d91050e44df2c459c
+last_report_original20_60plus20,20,1372,283,2064,60,80; L2 plus existing head1ridge,"learned(.7001,.95)","learned(.7001,.95)",.8,completed_different_task_preserved,91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e
+current_human_confirmed_rich20_pair50,20,3141,383,411,50_fresh_complete_required,50_fresh_then_separate_residual_only_optimization,"learned(.8501,.95)","learned(.7001,.95)",.9_both_effective,actually_started_not_completed,d4921172a9cc8aa427b89e03772733837be64a3fdaaf826d91050e44df2c459c
