@@ -1,0 +1,34 @@
+{
+  "run": "caltech20_rich20_pair50_same5140_head_anchor10_20261017",
+  "cases": [
+    "L2_rho03",
+    "L4_rho03",
+    "L6_rho03"
+  ],
+  "label_smoothing": 0.02,
+  "teacher_temperature": 4.0,
+  "teacher_weight": 0.02,
+  "CE_weight": 0.98,
+  "anchor_lambda": "10/TRAIN_count",
+  "class_weights": "inverse_TRAIN_count_normalized_to_sample_mean1",
+  "teacher_correct_confidence_gate": 0.5,
+  "max_iter": 200,
+  "max_eval": 300,
+  "history_size": 20,
+  "tolerance_grad": 1e-07,
+  "tolerance_change": 1e-12,
+  "calibration_inverse_temperature_bounds": [
+    0.05,
+    5.0
+  ],
+  "calibration_iterations": 60,
+  "new_inference_parameters": 0,
+  "core_frozen": true,
+  "selection": "One terminal candidate only; accept strictly lower VAL balancedNLL than verified70 parent, else preserve parent. No VAL temperature calibration or best-closure selection.",
+  "test_informed_development": true,
+  "class_weight_exponent": 1,
+  "teacher_target_temperature": 16,
+  "diagnosis_sha256": "76a98ae985e0a48244087e68c3dea427080f6ae24db54240a7f0d50b8bccc1b6",
+  "branch": "One stronger anchor factor10 due actual97%TRAIN/76-79%VAL head overfit; same fixed70 core, same5140 parameters, no other changes",
+  "anchor_scale": 10
+}
