@@ -1,0 +1,72 @@
+{
+  "tune_epochs": 20,
+  "class_weight_exponent": 1.0,
+  "new_inference_parameters": 0,
+  "phase_lr": 0.0003,
+  "electronic_lr": 0.0001,
+  "electronic_weight_decay": 0.01,
+  "minimum_tune_lr": 2e-05,
+  "maximum_seconds": 3600,
+  "temperature": 4.0,
+  "teacher_science_sha256": "a7e07a10c57036a2e84ac2298a16c2509d45f8500db6225e154bbc175f411fee",
+  "teacher_head_sha256": "b1d02a921413f5c8a7118878aee585f17156875c8e65581d0ebd7f701aacdf61",
+  "selection": "wholeprefix firstminimum VAL EMA balancedNLL, retain accepted baseline selected EMA as tune0",
+  "teacher_targets": "TRAIN-only fixed teacher T16, student T4. Calibration from clean TRAIN logit std teacher5.919/student1.50 (ratio~4), not TEST. Correct/conf>=.5 gate and exact same MixUp pairing; detached per-group <=25% KD gradient budget retained.",
+  "new_inference_models": 0,
+  "extra_budget_not_causal": true,
+  "KD_gradient_fraction": 0.25,
+  "KD_scale_cap": 0.5,
+  "teacher_correct_confidence_gate": 0.5,
+  "update": "Same two complete macro gradients, eta=min(.5,.25*normCE/(normKD+1e-12)); one clip/Adam/EMA. Per-case config recorded, independently replayed in auditor. No old source/global patches.",
+  "parent_actual_epochs": 70,
+  "parent_Adam_steps": 13790,
+  "final_actual_epochs": 90,
+  "final_Adam_steps": 17730,
+  "scope": "Only after calibrated222 parent70 own science/once tests/all actual exits. Resume all raw/EMA/Adam13790 from70 to90, 20-epoch review segment. Frozen nores50 stays untouched. Per-depth training recipes only; inference209 unchanged. Heavy6 first onGPU0,4 onGPU1,2 onGPU2; source fixed. Positive/underweighted parent TRAIN KD gradient evidence is a hard admission prerequisite.",
+  "comparison_scope": "Extra residual budget+pretraining+asymmetric alpha bounds; not pure optical-rho causal gain",
+  "teacher_temperature": 16.0,
+  "calibration_evidence_sha256": "570d3d69778d1d3d244a9280aa39d24279e02593d7e5acc7a8e12bef99222fed",
+  "per_depth": {
+    "2": {
+      "mixup_alpha": 0.1,
+      "label_smoothing": 0.02,
+      "feature_dropout": 0.05,
+      "phase_lr": 0.0005,
+      "electronic_lr": 0.0002
+    },
+    "4": {
+      "mixup_alpha": 0.3,
+      "label_smoothing": 0.05,
+      "feature_dropout": 0.1,
+      "phase_lr": 0.0003,
+      "electronic_lr": 0.0001
+    },
+    "6": {
+      "mixup_alpha": 0.3,
+      "label_smoothing": 0.05,
+      "feature_dropout": 0.1,
+      "phase_lr": 0.0003,
+      "electronic_lr": 0.0001
+    }
+  },
+  "parent_TRAIN_evidence_sha256": "e680623050b374dd1a167136653d609bb6995ca9fb8d1da35f0a8ffbae289036",
+  "active_depths": [
+    6,
+    4,
+    2
+  ],
+  "active_depth_selection": "Before source freeze and proof, retain only depths whose parent70 verified TEST targets remain unmet; this is TEST-informed stopping, not epoch selection. Heaviest remaining depth first on least-contended allowed0/1, then free3090 GPU2. Never hot-migrate frozen running jobs.",
+  "GPU_launch_order": [
+    0,
+    1,
+    2,
+    5
+  ],
+  "GPU_depth_assignment": {
+    "6": 0,
+    "4": 1,
+    "2": 2
+  },
+  "GPU_permission": "Human explicitly permits idle and low-util non-A100 GPUs including3090. Shared foreign allocations untouched. New own guard, no frozen parent globals edited.",
+  "verified_parent_collect_sha256": "174aa5a59ce8608aff1ef2d118574435f1b6c5d9c8de155a98e975b0fac3bbff"
+}
