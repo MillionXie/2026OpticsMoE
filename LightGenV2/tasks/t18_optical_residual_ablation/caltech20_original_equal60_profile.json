@@ -1,0 +1,94 @@
+{
+  "dataset": "Caltech_original_fixed20_identical_electronics_opticalrho_paired60_20261017",
+  "classes": [
+    "Faces",
+    "Leopards",
+    "Motorbikes",
+    "airplanes",
+    "bonsai",
+    "crab",
+    "crayfish",
+    "grand_piano",
+    "helicopter",
+    "kangaroo",
+    "ketch",
+    "laptop",
+    "lotus",
+    "minaret",
+    "revolver",
+    "schooner",
+    "trilobite",
+    "umbrella",
+    "watch",
+    "yin_yang"
+  ],
+  "seed": 17,
+  "maximum_epochs": 60,
+  "maximum_seconds": 3600,
+  "batch_size": 16,
+  "microbatch": 4,
+  "input_tile": 100,
+  "lr": 0.002,
+  "minimum_lr": 0.0002,
+  "electronic_weight_decay": 0.01,
+  "ema_decay": 0.99,
+  "mixup_alpha": 0.3,
+  "label_smoothing": 0.05,
+  "capture_weight": 0.05,
+  "phase_smooth_weight": 0.02,
+  "horizontal_flip_probability": 0.5,
+  "feature_dropout": 0.1,
+  "alpha_bounds": [
+    0.7001,
+    0.95
+  ],
+  "alpha_initial": 0.8,
+  "depths": [
+    2,
+    4,
+    6
+  ],
+  "rho": [
+    0.3,
+    0.0
+  ],
+  "maximum_gpu_children": 4,
+  "a100_prohibited": true,
+  "automatic_retry": false,
+  "test_informed_development": true,
+  "targets": {
+    "L4_residual_test_above": 0.8,
+    "L6_residual_test_above_L4": true,
+    "preferred_gap_pp": 10
+  },
+  "selection": "first minimum validation EMA balanced NLL, never maximum TEST accuracy",
+  "scope": "Original fixed20, unmodified original roles1372/283/2064; original10-only investigation weak gap preserved. Same current2/4/6 graph/electronics in both arms. First teacherTRAIN/VAL review, then depth2 paired60 only if support; no TEST-driven classlist changes.",
+  "gpu_preference": [
+    0,
+    1,
+    3,
+    4
+  ],
+  "early_review": {
+    "every_epochs": 10,
+    "excessively_easy_control_val": 0.88,
+    "small_paired_val_gap": 0.03
+  },
+  "test_requires_explicit_review": true,
+  "data": "/DATA/DATA1/guest3/t18_caltech_selected20_20261012/caltech20_selected_split.npz",
+  "cache_sha256": "a81e78bbff06ea65e7ceba3771b688178276464e33fdcdedf3796fa2930fa6e1",
+  "parent_manifest_sha256": "91f7aa36a97713e300699367904c8866551996de199b9630c0545bb24dc5f60e",
+  "teacher_checkpoint": "/home/guest3/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth",
+  "teacher_checkpoint_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "teacher_epochs": 100,
+  "teacher_learning_rate": 0.01,
+  "teacher_weight_decay": 0.001,
+  "teacher_feature_batch": 32,
+  "legacy_teacher_out": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/smoke/caltech10_fixed10_resnet18_trainval_teacher_20261017",
+  "legacy_teacher_science_sha256": "c37a6b75dd31f757c51a13e48920df5303ac3bb612f795310b18c876b9613963",
+  "legacy_teacher_backbone_digest": "de620ffcedf6c2818d8b6575ad3b3fc89a41351a1588ef8c0d904defc28ebf8e",
+  "legacy_feature_sha256": {
+    "train": "3110dca88c36c3d9f120621a1af5d62f1804d126fc684848dfd1587395f94def",
+    "val": "ec346e67c876df9c6218b615732d3e79e191dce54ed5f1191de760cd509d5827"
+  }
+}
