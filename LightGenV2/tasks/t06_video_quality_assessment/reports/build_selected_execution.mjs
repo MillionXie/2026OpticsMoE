@@ -7,11 +7,14 @@ const bundledRequire=createRequire(path.join(process.env.CODEX_ARTIFACT_RUNTIME_
 const {FileBlob,SpreadsheetFile}=await import(pathToFileURL(bundledRequire.resolve('@oai/artifact-tool')).href);
 const repo=process.cwd();
 const out=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
-const sequential=process.argv.includes('--yolo-clip-sequential');
+const rental=process.argv.includes('--rental-extension');
+const sequential=process.argv.includes('--yolo-clip-sequential')||rental;
 const recheck=process.argv.includes('--yolo-clip-recheck')||sequential;
 const baseRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016');
 const recheckRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_yolo_clip_recheck_a100_20261017');
-const run=sequential?path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_yolo_clip_sequential_a100_20261017'):recheck?recheckRun:baseRun;
+const sequentialRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_yolo_clip_sequential_a100_20261017');
+const rentalRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_full_deepseek_kimi_rental_20261017');
+const run=rental?rentalRun:sequential?sequentialRun:recheck?recheckRun:baseRun;
 const scratch=path.join(repo,'.codex_tmp');
 function chooseDisplayPoints(points){
  const selected=new Set();
@@ -57,7 +60,7 @@ if(recheck){
  data.repeats=[...data.repeats.filter(x=>!keys.has(x.baseline+':'+x.batch)),...extra.repeats];newCount=extra.paired_rows.length;
 }
 if(sequential){
- const seq=await json(path.join(run,'verified_sequential.json'));
+ const seq=await json(path.join(sequentialRun,'verified_sequential.json'));
  if(seq.status!=='complete'||seq.points.length!==11||seq.repeats.length!==33||!seq.original_measurement_loop_AST_equal)throw Error('Incomplete sequential reproduction');
  for(const s of seq.points.filter(x=>x.target_point)){
   const raw=data.paired_rows.find(x=>x.baseline===s.baseline&&x.batch_size===s.batch);if(!raw)throw Error('No original frozen accuracy/cost for target');
@@ -69,7 +72,12 @@ if(sequential){
  historicalRepeats.push(...seq.repeats.filter(x=>!((x.baseline==='yolo'&&x.batch===3)||(x.baseline==='clip'&&x.batch===10))).map(x=>({...x,role:'Sequential predecessor batch; retained audit, not replacement of finalized B1 or cost'})));
  newCount=2;
 }
-const palette={ours:['#7828A8','#F2E9FA'],qwen:['#0072B2','#EAF3FA'],glm:['#92527F','#F5EBF3'],small:['#C25B18','#FFF0E5'],clip:['#007F63','#E8F5EF'],yolo:['#9B7000','#FFF7DD'],deepseek:['#5B6470','#EEF0F3']};
+if(rental){
+ const extra=await json(path.join(rentalRun,'verified_figure5_extension.json'));
+ if(extra.status!=='complete'||extra.paired_rows.length!==5||extra.repeats.length!==15||!extra.no_original_point_replacement)throw Error('Incomplete supplementary hardware evidence');
+ data.paired_rows.push(...extra.paired_rows);data.repeats.push(...extra.repeats);newCount=5;
+}
+const palette={ours:['#7828A8','#F2E9FA'],qwen:['#0072B2','#EAF3FA'],glm:['#92527F','#F5EBF3'],small:['#C25B18','#FFF0E5'],clip:['#007F63','#E8F5EF'],yolo:['#9B7000','#FFF7DD'],deepseek:['#5B6470','#EEF0F3'],...(rental?{full:['#79502C','#F6EEDC'],kimi:['#B64058','#FCECEF'],qwen80:['#256F99','#E9F2F8']}:{})};
 const asNumber=v=>v===''||v===undefined||v===null?null:Number(v);
 const anchor=data.historical_qwen_B1;
 if(+anchor.time_16_videos_ms!==1188.3861464262009||+anchor.energy_16_videos_j!==462.1134010767563||+anchor.display_gpu_util_mean_percent!==63.133111480865225)throw Error('Historical anchor drift');
@@ -102,10 +110,12 @@ for(const r of data.paired_rows){
   same_model_time_gain_vs_b1_x:b1[r.baseline].time_16_videos_ms/r.time_16_videos_ms,same_model_energy_gain_vs_b1_x:b1[r.baseline].energy_16_videos_j/r.energy_16_videos_j,
   independent_resident_util_mean_percent:r.independent_resident_util_mean_percent,same_round_active_util_mean_percent:r.gpu_util_mean_percent,
   utilization_basis:r.utilization_profile??'Independent resident queue8, three complete 5s/30s repeats, all samples pooled',utilization_source:r.utilization_source,parameter_basis:meta.parameter_basis,parameter_source:meta.parameter_source,
-  cost_basis:'Same-run first200 synchronized wall and active board-power estimate; '+r.execution,execution_profile:r.execution,cost_source:r.source,checkpoint_sha256:r.checkpoint_sha256,cost_measured_local:r.cost_measured_local,util_measured_local:r.measured_local});
+  cost_basis:'Same-run first200 synchronized wall and active board-power estimate; '+r.execution,execution_profile:r.execution,cost_source:r.source,checkpoint_sha256:r.checkpoint_sha256,cost_measured_local:r.cost_measured_local,util_measured_local:r.measured_local,
+  ...(rental?{hardware_platform:r.hardware_platform??'A100-PCIE-40GB',power_limit_w:r.power_limit_w??250,gpu_uuid:r.gpu_uuid??'GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55',hardware_session:r.hardware_session??'original PCIe measurements',same_card_batch_ablation:r.same_card_batch_ablation??null}:{})});
 }
-for(const model of Object.keys(palette).filter(k=>k!=='ours')){const count=rows.filter(x=>x.baseline===model).length;if(count<2||count>3)throw Error('Need2–3 displayed points per GPU model');}
-if(rows.length<13||rows.length>18)throw Error('Invalid sparse display');
+for(const model of Object.keys(palette).filter(k=>k!=='ours')){const count=rows.filter(x=>x.baseline===model).length;if(count<(model==='qwen80'?1:2)||count>3)throw Error('Invalid displayed count per GPU model');}
+if(rows.length<13||rows.length>(rental?20:18))throw Error('Invalid sparse display');
+if(rental){rows[0].hardware_platform='Optical system';rows[1].hardware_platform='A100-PCIE-40GB';rows[1].power_limit_w=250;rows[1].gpu_uuid='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55';}
 for(const x of rows){const r=data.paired_rows.find(v=>v.baseline===x.baseline&&v.batch_size===x.batch_size_videos);Object.assign(x,{cost_wall_sum_ms:r?.cost_wall_sum_ms??null,cost_video_count:r?200:null,cost_call_count:r?.cost_calls??null,cost_active_A100_mean_W:r?.board_mean_w??null,cost_active_samples:r?.active_samples??null,util_repeat1_mean_percent:r?.util_repeat_means[0]??(x.baseline==='qwen'&&x.batch_size_videos===1?h.mean_gpu_utilization_percent:null),util_repeat2_mean_percent:r?.util_repeat_means[1]??null,util_repeat3_mean_percent:r?.util_repeat_means[2]??null,util_measurement_seconds:r?.util_duration_s??(x.baseline==='qwen'&&x.batch_size_videos===1?h.duration_s:null),util_samples:r?.util_samples??(x.baseline==='qwen'&&x.batch_size_videos===1?h.samples:null),util_repeat_spread_pp:r?Math.max(...r.util_repeat_means)-Math.min(...r.util_repeat_means):null,util_unstable_repeat_warning:r?Math.max(...r.util_repeat_means)-Math.min(...r.util_repeat_means)>5:null});}
 const namesToArchive=[...filenames,'plot_data.csv','LGVQ_temporal_gpu_utilization.csv','LGVQ_temporal_gpu_utilization_repeats.csv','timing_energy_recalculated.csv','batch_metric_audit.csv','README.md','UTILIZATION_METHOD_20261015.md','latency_comparison_reference.png','latency_comparison_reference.svg','energy_comparison_reference.png','energy_comparison_reference.svg','srcc_cost_comparison_reference.png','srcc_cost_comparison_reference.svg','gpu_utilization_comparison.png','gpu_utilization_comparison.svg','batch_cost_comparison.png','batch_cost_comparison.svg'];
 function polishReadability(){
@@ -122,9 +132,15 @@ function polishReadability(){
  src.getRange('A26:A31').format.font={name:'Arial',size:10,bold:true,color:'#243447'};
  u.getRange(`E7:E${rows.length+5}`).setNumberFormat('0.000');u.getRange(`F7:G${rows.length+5}`).setNumberFormat('#,##0');
  repeat.getRange(`F5:N${data.repeats.length+historicalRepeats.length+5}`).format.horizontalAlignment='right';
+ if(rental){
+  s.getRange('U5:W5').values=[['GPU platform','Power limit (W)','Physical GPU UUID']];
+  s.getRange(`U6:W${rows.length+5}`).values=rows.map(x=>[x.hardware_platform??'Optical system',x.power_limit_w??'n.a.',x.gpu_uuid??'n.a.']);
+  s.getRange(`U5:W${rows.length+5}`).format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true};s.getRange('U5:W5').format={fill:'#105A85',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'}};s.getRange('U5:W40').format.columnWidth=29;
+  for(const[i,x]of rows.filter(x=>x.baseline!=='ours').entries())if(['full','kimi','qwen80'].includes(x.baseline))u.getRange('H'+(i+7)).values=[['Native; SXM4-80GB /400W']];
+ }
 }
 async function renderQA(){
- for(const [book,label,sheetName,range]of[[plot,'selected_plot','Comparison',`A1:L${rows.length+12}`],[plot,'selected_inputs','Measurements',`A1:L${rows.length+4}`],[main,'selected_summary','Summary',`A1:L${rows.length+5}`],[main,'selected_build','Batch results',`A1:S${rows.length+1}`],[main,'selected_sources','Sources','A19:B31'],[util,'selected_util','GPU utilization',`A1:I${rows.length+5}`],[util,'selected_repeats','Repeat measurements','A1:O18']]){const image=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(scratch,label+'.png'),new Uint8Array(await image.arrayBuffer()));}
+ for(const [book,label,sheetName,range]of[[plot,'selected_plot','Comparison',`A1:${rental?'M':'L'}${rows.length+12}`],[plot,'selected_inputs','Measurements',`A1:L${rows.length+4}`],[main,'selected_summary','Summary',`A1:L${rows.length+5}`],[main,'selected_build','Batch results',`A1:S${rows.length+1}`],[main,'selected_sources','Sources',rental?'A26:B36':'A19:B31'],[util,'selected_util','GPU utilization',`A1:I${rows.length+5}`],[util,'selected_repeats','Repeat measurements',rental?'A60:O74':'A1:O18']]){const image=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(scratch,label+'.png'),new Uint8Array(await image.arrayBuffer()));}
 }
 if(process.argv.includes('--polish')){
  polishReadability();for(const book of books)book.recalculate();await renderQA();
@@ -151,8 +167,8 @@ const getRaw=x=>rawMap.get(x.baseline+':'+x.batch_size_videos);
 comparison.getRange('A7:L44').unmerge();comparison.getRange('A7:L44').clear({applyTo:'all'});
 comparison.getRange('A1').values=[['LGVQ 时间质量评价：精度与推理成本']];inputs.getRange('A1').values=[['Measurements and provenance']];
 inputs.getRange('A5:T40').clear({applyTo:'all'});summary.getRange('A6:T43').clear({applyTo:'all'});detail.getRange('A2:AR38').clear({applyTo:'all'});
-uv.getRange('A7:Q40').clear({applyTo:'all'});ur.getRange('A5:R100').clear({applyTo:'all'});
-comparison.getRange('A2').values=[['A100 250 W。558 TEST 计算精度，首200视频成本归一到16视频。每模型仅展示 B1 及1–2个近满载点。']];
+uv.getRange('A7:Q40').clear({applyTo:'all'});ur.getRange('A5:R160').clear({applyTo:'all'});
+comparison.getRange('A2').values=[[rental?'原A100 PCIe40GB/250W；新增SXM4 80GB/400W。558 TEST精度，首200视频成本归一至16视频。':'A100 250 W。558 TEST 计算精度，首200视频成本归一到16视频。每模型仅展示 B1 及1–2个近满载点。']];
 comparison.getRange('A3').values=[['Qwen B1 定稿不变。Qwen B3/4 为严格等价验证的优化执行，其余模型原生执行；不能把二者差异解释为纯 batch 效应。']];
 comparison.getRange('A4').values=[['GPU 利用率为独立驻留测量，不代入成本功率。时延及能耗估计使用同轮交错推理数据。历史完整表和中间点已归档。']];
 comparison.getRange('H6').values=[['16 视频\n能耗估计 (J)']];summary.getRange('E5').values=[['16-video estimated energy (J)']];detail.getRange('P1').values=[['16-video estimated energy (J)']];
@@ -181,12 +197,20 @@ for(let i=0;i<rows.length;i++){
  for(const[sh,range]of[[comparison,`A${r}:L${r}`],[inputs,`A${ir}:T${ir}`],[summary,`A${sr}:T${sr}`],[detail,`A${dr}:AR${dr}`]]){sh.getRange(range).format={fill:colors[1],font:{name:'Arial',size:10,color:'#243447'},rowHeight:27,verticalAlignment:'center'};}
  comparison.getRange(`A${r}`).format.font={name:'Arial',size:10,bold:true,color:colors[0]};comparison.getRange(`I${r}:J${r}`).format.font={name:'Arial',size:10,bold:true,color:colors[0]};
  comparison.getRange(`B${r}`).setNumberFormat(x.model_total_parameters_billion<1?'0.0" M"':'0.00" B"');comparison.getRange(`C${r}`).setNumberFormat('0.0" B"');
+ if(rental&&['full','kimi','qwen80'].includes(x.baseline))comparison.getRange(`A${r}`).format={wrapText:true,rowHeight:38};
+}
+if(rental){
+ comparison.getRange('M6').values=[['GPU platform /\npower limit']];comparison.getRange('M6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,horizontalAlignment:'center'};comparison.getRange('M6:M40').format.columnWidth=27;
+ for(let i=0;i<rows.length;i++){const x=rows[i];comparison.getRange('M'+(i+7)).values=[[x.baseline==='ours'?'Optical system':x.hardware_platform.replace('A100-','')+' / '+x.power_limit_w+' W']];comparison.getRange('M'+(i+7)).format={fill:palette[x.baseline][1],font:{name:'Arial',size:10,color:'#243447'},verticalAlignment:'center'};}
+ inputs.getRange('U4:Y4').values=[['GPU platform','Power limit (W)','Physical GPU UUID','Hardware session','Same-card batch-only ablation']];
+ inputs.getRange(`U5:Y${rows.length+4}`).values=rows.map(x=>[x.hardware_platform??'Optical system',x.power_limit_w??'n.a.',x.gpu_uuid??'n.a.',x.hardware_session??'retained historical reference',x.same_card_batch_ablation??'Not established']);
+ inputs.getRange(`U4:Y${rows.length+4}`).format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true};inputs.getRange('U4:Y4').format.font={name:'Arial',size:10,bold:true,color:'#FFFFFF'};inputs.getRange('U4:Y4').format.fill='#214D68';inputs.getRange('U4:Y40').format.columnWidth=26;
 }
 comparison.getRange(`E7:E${rows.length+6}`).setNumberFormat('0.0000');comparison.getRange(`F7:F${rows.length+6}`).setNumberFormat('0.00%');comparison.getRange(`G7:H${rows.length+6}`).setNumberFormat('#,##0.000');comparison.getRange(`I7:L${rows.length+6}`).setNumberFormat('0.00"×"');comparison.getRange(`B7:L${rows.length+6}`).format.horizontalAlignment='right';
 for(const[sh,range]of[[summary,`C6:J${rows.length+5}`],[detail,`F2:S${rows.length+1}`]])sh.getRange(range).setNumberFormat('#,##0.000');
 summary.getRange(`C6:C${rows.length+5}`).setNumberFormat('0.000000');summary.getRange(`K6:M${rows.length+5}`).setNumberFormat('0.00');
 summary.getRange(`I6:J${rows.length+5}`).setNumberFormat('0.000000');detail.getRange(`U2:V${rows.length+1}`).setNumberFormat('0.000000');detail.getRange(`AN2:AN${rows.length+1}`).setNumberFormat('0.000000');detail.getRange(`C2:C${rows.length+1}`).setNumberFormat('0.000000');
-const notes=['Qwen B1：历史原生定稿锚点，并非本轮复测。B3/4 使用经过完整558样本严格验证的执行优化。','LightGen-II 时间和能耗优势分别为 baseline T16 / LightGen-II T16、baseline E16 / LightGen-II E16。','同模型相对 B1：Qwen 同时包含 batch 与执行优化，其余模型为原生不同 batch 对照。','利用率为独立驻留负载的驱动窗口活跃比例，不是 SM occupancy，也不用于推算交错推理能耗。','本轮只冻结推理。既有 PT 若曾按 TEST 选模，相关精度仍属开发口径（无独立 VAL），并非新的独立泛化结论。'];
+const notes=['Qwen 40GB B1：历史原生定稿锚点不变。80GB B1为单列跨设备对照，不能替换或当作batch曲线。','LightGen-II 时间和能耗优势分别为 baseline T16 / LightGen-II T16、baseline E16 / LightGen-II E16。',rental?'80GB租赁B1与B2来自同SKU的不同物理卡/会话，不是严格同卡batch-only；Kimi B2利用率86.11%，未达98%。':'同模型相对 B1：Qwen 同时包含 batch 与执行优化，其余模型为原生不同 batch 对照。','利用率为独立驻留负载的驱动窗口活跃比例，不是 SM occupancy，也不用于推算交错推理能耗。','本轮只冻结推理。既有 PT 若曾按 TEST 选模，相关精度仍属开发口径（无独立 VAL），并非新的独立泛化结论。'];
 for(let i=0;i<notes.length;i++){const r=rows.length+8+i;comparison.getRange(`A${r}:L${r}`).merge();comparison.getRange(`A${r}`).values=[[notes[i]]];comparison.getRange(`A${r}:L${r}`).format={font:{name:'Microsoft YaHei',size:10,color:'#53687A'},rowHeight:25};}
 const urows=rows.filter(x=>x.baseline!=='ours');
 for(let i=0;i<urows.length;i++){
@@ -209,6 +233,11 @@ sources.getRange('A14:B14').values=[['Performance','Full558 evaluated at each ba
 sources.getRange('A23:B24').values=[['Dates','See each point source/driver telemetry for actual +0800 dates'],['Historical evidence','lgvq_selected_execution_a100_20261016/prior_report_archive/manifest.json']];
 if(recheck)sources.getRange('B24').values=[['lgvq_yolo_clip_recheck_a100_20261017/prior_report_archive/manifest.json. Previous selected round and all original repeats retained.']];
 if(sequential)sources.getRange('B24').values=[['lgvq_yolo_clip_sequential_a100_20261017/prior_report_archive/manifest.json. Old fresh-process and sequential predecessor repeats remain separately identified.']];
+if(rental){
+ sources.getRange('A32:B36').values=[['Supplementary platform','DeepSeek-VL2 full / Kimi B1,B2 and native Qwen B1 use A100-SXM4-80GB /400W. Original PCIe40GB /250W data retained. Not a common-hardware speed comparison.'],['Physical GPU sessions','Rental DS/Kimi B1: GPU-780326a6-79bc-7a45-36f6-683c5b278bee; B2/Qwen: GPU-d06c95d0-7066-9768-0f6e-fc1ee877f9f9. Same SKU but distinct physical cards.'],['Qwen cross-device control','Same revision/head. First TEST tensor identities match; all558 native MOS match exactly. Hosts and Python3.12/3.11 differ. No pure form-factor causal inference.'],['Rental evidence','T06 canonical rental run: verified_figure5_extension.json, followup_delivery_20261017.json, followup_cpu_audit_final01.json; all raw data SHA checked.'],['Retained estimates','338.2W is the same host-power proxy, not measured rental wall power. 400W is a limit, never a substituted average power.']];
+ sources.getRange('A32:B36').format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true,rowHeight:54};
+ sources.getRange('B24').values=[['Current pre-extension files archived in canonical rental run/prior_report_archive. All original PCIe points and earlier evidence retained.']];
+}
 sources.getRange('A26:B31').values=[['Qwen execution','B3/B4: CPU integer metadata/indexing and grouped independent equal-length vision SDPA; original weights, precision and attention semantics.'],['Qwen equivalence','Full558 hidden/full vocabulary logits/quality logits/MOS compared exactly after cold cost in another process; each point has a receipt.'],['Gain definitions','Time/energy divided by LightGen-II reference. Qwen changes versus historical B1 include execution optimization and batch, not batch alone.'],['Model size','Total parameter definitions and original nominal/loaded sources retained in plot_data Measurements.'],['Selected data','B1 plus at most2 predeclared higher-B settings with resident mean>=95%. If none qualify, show highest predeclared B and disclose unmet target. Other measurements remain raw audit only.'],['Utilization and energy','Resident utilization is independent; energy uses same-cost-run active A100 power plus338.2W host proxy. Not a calibrated whole-system energy integral.']];
 sources.getRange('A26:B31').format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true,rowHeight:50};
 polishReadability();for(const book of books)book.recalculate();
@@ -227,18 +256,18 @@ await fs.writeFile(path.join(out,'timing_energy_recalculated.csv'),csv(rows));
 await fs.writeFile(path.join(out,'batch_metric_audit.csv'),csv(data.paired_rows.map(x=>({model:x.model,batch_size_videos:x.batch_size,full558_srcc:x.srcc,full558_plcc:x.plcc,first200_srcc:x.first200_srcc,independent_resident_util_mean_percent:x.independent_resident_util_mean_percent,repeat_means_percent:x.util_repeat_means.join(','),repeat_spread_pp:Math.max(...x.util_repeat_means)-Math.min(...x.util_repeat_means),displayed:selectedKeys.has(x.baseline+':'+x.batch_size),checkpoint_sha256:x.checkpoint_sha256,source:x.source,utilization_source:x.utilization_source,execution:x.execution}))));
 await fs.writeFile(path.join(out,'LGVQ_temporal_gpu_utilization.csv'),csv(urows.map(x=>{const raw=getRaw(x);return{model:x.model,baseline:x.baseline,batch:x.batch_size_videos,mean_percent:x.display_gpu_util_mean_percent,peak_percent:raw?.independent_resident_util_peak_percent??h.peak_gpu_utilization_percent,repeat_means:raw?.util_repeat_means.join(',')??'',samples:raw?.util_samples??h.samples,duration_s:raw?.util_duration_s??h.duration_s,forwards:raw?.util_forward_calls??historical.measured_forward_invocations,execution:x.execution_profile,resident_protocol:x.utilization_basis,source:x.utilization_source,measured_local:x.util_measured_local};})));
 await fs.writeFile(path.join(out,'LGVQ_temporal_gpu_utilization_repeats.csv'),csv(repeatRows));
-const verifiedName=sequential?'verified_sequential.json':'verified_selected_execution.json';
+const verifiedName=rental?'verified_figure5_extension.json':sequential?'verified_sequential.json':'verified_selected_execution.json';
 await fs.writeFile(path.join(run,'presentation_selected.json'),JSON.stringify({status:'complete',rows,display_selection_rule:'B1 plus at most2 predeclared higher-B settings with resident mean>=95%; if none, show highest predeclared B as unmet target. Sequential reproduction caps YOLO at3 and CLIP at10 as explicitly requested.',source:verifiedName,source_sha256:digest(await fs.readFile(path.join(run,verifiedName))),base_source:path.relative(repo,path.join(baseRun,'verified_selected_execution.json')).replaceAll('\\','/'),base_source_sha256:digest(await fs.readFile(path.join(baseRun,'verified_selected_execution.json'))),recheck_source_sha256:recheck?digest(await fs.readFile(path.join(recheckRun,'verified_selected_execution.json'))):null,prior_archive:'prior_report_archive/manifest.json',workbook_files:filenames},null,2)+'\n',{flag:'wx'});
 const f=(v,n=3)=>v===null||v===undefined?'—':Number(v).toFixed(n);
-const pointTable=['| Model | B / optical N | Resident GPU utilization (%) | Full558 SRCC | T16 (ms) | Estimated E16 (J) | LightGen-II time advantage (×) | LightGen-II energy-efficiency advantage (×) |',
- '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
- ...rows.map(x=>`| ${x.model}${x.baseline==='qwen'&&x.batch_size_videos===1?' †':''} | ${x.baseline==='ours'?'N=16':x.batch_size_videos} | ${f(x.display_gpu_util_mean_percent,2)} | ${f(x.measured_full558_srcc,8)} | ${f(x.time_16_videos_ms,6)} | ${f(x.energy_16_videos_j,6)} | ${f(x.lightgen_time_speedup_x)} | ${f(x.lightgen_energy_efficiency_gain_x)} |`)].join('\n');
+const pointTable=['| Model | B / optical N | Resident GPU utilization (%) | Full558 SRCC | T16 (ms) | Estimated E16 (J) | LightGen-II time advantage (×) | LightGen-II energy-efficiency advantage (×) |'+(rental?' Platform / limit |':''),
+ '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |'+(rental?' --- |':''),
+ ...rows.map(x=>`| ${x.model}${x.baseline==='qwen'&&x.batch_size_videos===1?' †':''} | ${x.baseline==='ours'?'N=16':x.batch_size_videos} | ${f(x.display_gpu_util_mean_percent,2)} | ${f(x.measured_full558_srcc,8)} | ${f(x.time_16_videos_ms,6)} | ${f(x.energy_16_videos_j,6)} | ${f(x.lightgen_time_speedup_x)} | ${f(x.lightgen_energy_efficiency_gain_x)} |`+(rental?` ${x.hardware_platform}${x.power_limit_w?' / '+x.power_limit_w+'W':''} |`:''))].join('\n');
 const repeatTable=['| Model | B | Repeat1 (%) | Repeat2 (%) | Repeat3 (%) | Pooled mean (%) | Full-window samples | Duration (s) | Execution |',
  '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
  ...data.paired_rows.map(x=>`| ${x.model} | ${x.batch_size} | ${f(x.util_repeat_means[0],5)} | ${f(x.util_repeat_means[1],5)} | ${f(x.util_repeat_means[2],5)} | ${f(x.independent_resident_util_mean_percent,8)} | ${x.util_samples} | ${f(x.util_duration_s)} | ${x.execution} |`)].join('\n');
-const recheckNotes=recheck?await fs.readFile(path.join(run,'method_comparison.md'),'utf8'):'';
+const recheckNotes=recheck?await fs.readFile(path.join(sequential?sequentialRun:run,'method_comparison.md'),'utf8'):'';
 const cohort=sequential?`On 17 October, independent GPU utilization at YOLO B=3 and CLIP B=10 was remeasured using one loaded model process for each ascending batch sequence. All 11 predecessor/target batches and 33 complete repeats were retained. Only the two requested target utilizations replace the corresponding displayed annotations, regardless of direction. Accuracy, inference latency and energy were not remeasured in this utilization-only run: they retain their separately verified same-checkpoint, same-batch sources. Prior fresh-process repeats remain distinct historical records and are never pooled with this run. All other displayed utilization values, including finalized Qwen B=1, remain unchanged. The main display now caps YOLO at B=3 and CLIP at B=10 rather than substituting B=4/B=11.`:recheck?`The independently audited 16-point selected round is retained, with ${newCount} prescribed YOLO/CLIP recheck points from 17 October replacing the corresponding older points regardless of increase or decrease. Both old and new raw repeats are retained separately. All other models, including the historical Qwen B1, are unchanged. The no-explicit-warmup cost protocol still includes each first call. CLIP B10 first-call latency changed from 534.974873 to 197.230 ms (rounded), which explains most of the lower first200 normalized cost in this round; the timing boundary was not shortened. These cold-first-call costs retain initialization/cache-state variability and are not a steady-state throughput measurement.`:'All 16 predeclared new model–batch points and their 48 complete resident-utilization repeats have been independently audited.';
-const currentNotes=`# LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
+let currentNotes=`# LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
 
 ## Current comparison — 16–17 October 2026
 
@@ -285,8 +314,24 @@ Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [la
 Earlier descriptions and intermediate configurations are archived for provenance, not included in the current comparison.
 
 `;
+const rentalNotes=rental?`### Supplementary A100-SXM4-80GB platform (17 October 2026)
+
+Five complete supplementary points were added while retaining all 15 original displayed rows: DeepSeek-VL2 B=1/2, Kimi-VL-A3B-Instruct B=1/2 and native Qwen3-VL-2B B=1. The 80-GB supplementary series use hollow symbols and A100-SXM4-80GB at a 400-W power limit. The daggered historical 40-GB native Qwen B=1 is also an open circle and has a separate legend entry. The original measurements use A100-PCIE-40GB at 250 W, with the historical native Qwen B=1 separately marked. Results across these platforms are descriptive deployment comparisons, not common-hardware model rankings. Energy calculations use measured active board power, not the power limit.
+
+Rental B=1 measurements for DeepSeek and Kimi used physical GPU UUID GPU-780326a6-79bc-7a45-36f6-683c5b278bee. Their B=2 measurements and the new Qwen B=1 control used GPU-d06c95d0-7066-9768-0f6e-fc1ee877f9f9 after the instance was restarted. Dashed connectors guide the eye only. These B=1 and B=2 results do not constitute a strict same-card batch-only ablation. No batch beyond the authorized B=2 was tested. DeepSeek B=2 utilization was 96.54% and Kimi B=2 utilization was 86.11%. Neither reached the 98% reference.
+
+Each of the five points includes independent predictions for all 558 TEST videos and costs measured over the first 200 videos. No explicit warmup is used for cost measurement, and the first inference is included. Timing starts at the input to the first native visual block and ends at synchronized GPU MOS output. Video decoding, preprocessing and host-to-device transfer are excluded. The 338.2-W host proxy is retained and is not a wall-power measurement of the rental host. All 15 resident-utilization repeats use native queue8 execution, at least 5 s of warmup, a complete measurement window of at least 30 s, and pooling of every 50-ms sample in those windows. Each model-batch point uses a separate process. This differs from the cross-batch process lifecycle of the latest YOLO B=3 and CLIP B=10 reproduction.
+
+The 80-GB Qwen control uses the same official revision 89644892e4d85e24eaac8bacfd4f463576704203, quality-head SHA e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2, native SDPA and original BF16/FP32 precision. Input shapes, dtypes, tensor hashes and the prompt match for the first fixed TEST video. All 558 native MOS outputs match the earlier native B=1 outputs exactly. The new T16 of 789.168774 ms and estimated E16 of 324.899880 J are reported separately from the protected 40-GB historical values of 1188.386146 ms and 462.113401 J. The observed ratios are 1.50587 and 1.42233, respectively. Different hosts, dates and Python versions (3.12.13 versus 3.11.15) prevent attribution solely to GPU form factor. The finalized 40-GB utilization of 63.13311148% is unchanged. The independent 80-GB mean is 74.38873551%.
+
+Raw point sources, all repeats and hardware UUIDs are retained in the canonical rental run and verified_figure5_extension.json, bound to followup_delivery_20261017.json and the full CPU audit. Prior presentation files have a separate SHA archive. Kimi and DeepSeek heads were previously selected by highest TEST SRCC, so their scores remain development/no-independent-VAL metrics. No head was retrained for this followup.
+
+**Supplementary figure description.** The latency and energy panels retain the original 40-GB measurements and add five hollow 80-GB points. Each point uses accuracy evaluated on all 558 TEST videos and costs measured over the first 200 videos. Marker fill indicates the platform. Labels show video batch size and independently measured resident GPU utilization. Dashed connectors between rental sessions are descriptive only. The observed accuracy-cost positions do not isolate model architecture, GPU form factor, host, date or batch effects. The cross-device Qwen B=1 control is not connected to the optimized B=3/4 series on the original platform.
+
+`:'';
+if(rental)currentNotes=currentNotes.replace('## Current comparison — 16–17 October 2026','## Current comparison — 16–17 October 2026\n\n'+rentalNotes).replace('All new measurements use the same A100 UUID and 250-W power limit','The original40GB cohort uses its retained A100 UUID and250-W limit; supplementary80GB measurements use the separately disclosed400-W platform and sessions').replace('† Qwen B=1 is not reexecuted:','† The finalized40GB Qwen B=1 point is not replaced:').replace('Each electronic model is represented by B=1 and one or two predeclared near-saturation configurations.','Original-platform models retain B=1 and selected high-batch points; the80GB supplementary cohort adds B1/B2, including unmet saturation targets.');
 await fs.writeFile(path.join(out,'README.md'),currentNotes+'[Archived prior README](../../../tasks/t06_video_quality_assessment/runs/simulation/'+path.basename(run)+'/prior_report_archive/README.md).\n');
-const utilNotes=`# LGVQ GPU utilization: current selected-execution comparison
+let utilNotes=`# LGVQ GPU utilization: current selected-execution comparison
 
 ${cohort} Current point means and repeats are shown below. Superseded repeats remain separately labeled in the raw-repeat workbook/CSV, never pooled with a later round. Main figures use B=1 plus at most two predeclared higher batches with pooled resident utilization ≥95% (largest tested batch if none qualifies). All other points remain audit evidence. The three workbooks and CSV identify displayed versus audit-only repeats. See the current comparison README for paired inference-cost data and the two figure descriptions.
 
@@ -307,5 +352,6 @@ Full source hashes, raw telemetry, forward counts, clocks, temperatures and proc
 Earlier descriptions and intermediate configurations are archived for provenance, not included in the current comparison.
 
 `;
+if(rental)utilNotes=utilNotes.replace('\n\n','\n\n'+rentalNotes).replace('Qwen B1 stays at the finalized','The original40GB Qwen B1 stays at the finalized');
 await fs.writeFile(path.join(out,'UTILIZATION_METHOD_20261015.md'),utilNotes+'[Archived prior utilization methods](../../../tasks/t06_video_quality_assessment/runs/simulation/'+path.basename(run)+'/prior_report_archive/UTILIZATION_METHOD_20261015.md).\n');
 console.log(JSON.stringify({updated_workbooks:3,main_rows:rows.length,new_measurement_points:newCount,historical_Qwen_B1_unchanged:true}));

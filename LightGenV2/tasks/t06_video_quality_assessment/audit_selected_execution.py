@@ -119,6 +119,79 @@ def native_history_comparison(output):
     (ROOT/'method_comparison.md').open('x',encoding='utf-8').write('\n'.join(lines))
 
 
+def audit_rental_extension():
+    """Normalize independently rechecked supplementary hardware points, without replacing PCIe data."""
+    import importlib.util
+    root=TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017'
+    delivery=root/'followup_delivery_20261017.json'
+    assert sha(delivery)=='9d14e7ed61635f2a13ab766286d5bb04d82a960b8674ae9aea3b65d7e5802c95'
+    # The received summary was exported by Windows with GBK text; hash raw bytes first.
+    try:final=json.loads(delivery.read_text(encoding='utf-8-sig'))
+    except UnicodeDecodeError:final=json.loads(delivery.read_text(encoding='gb18030'))
+    assert final['status']=='complete_verified_and_gpu_released' and not final['unavailable_requested_points']
+    for item in final['artifact_manifest']:assert sha(root/item['path'])==item['sha256']
+    for key in ['cpu_audit','terminal_release','verified_backup_receipt']:
+        item=final[key];assert sha(root/item['path'])==item['sha256']
+    audit=read(root/final['cpu_audit']['path']);assert audit['status']=='passed' and not audit['partial'] and not audit['cuda_initialized']
+    assert len(audit['results'])==8 and all(x['status']=='passed' for x in audit['results'].values())
+    spec=importlib.util.spec_from_file_location('rental_cpu_auditor',TASK/'rental_followup_audit.py');helper=importlib.util.module_from_spec(spec);spec.loader.exec_module(helper)
+    manifest=root/'provisioning/original_manifest.csv';assert sha(manifest)==SHA
+    test=[r for r in csvrows(manifest) if r['split']=='test'];assert len(test)==558
+    original=read(root/'measurement_summary.json');old_models={x['key']:x for x in original['models']}
+    # Every relevant original B1 artifact must match a retained transfer receipt.
+    bound={}
+    for receipt in root.glob('backup_receipt*.json'):
+        for item in read(receipt).get('verified_files',[]):bound.setdefault(item['path'],set()).add(item['sha256'])
+    definitions={'deepseek':('full','DeepSeek-VL2',27480134248,4.5),'kimi':('kimi','Kimi-VL-A3B-Instruct',16407656048,3.0),'qwen':('qwen80','Qwen3-VL-2B [80GB]',2_000_000_000,None)}
+    normalized=[];repeats=[]
+    for point in final['points']:
+        model='qwen' if point['model'].startswith('Qwen/') else ('kimi' if point['model'].startswith('moonshotai/') else 'deepseek')
+        baseline,name,total,active=definitions[model];batch=point['batch']
+        if point.get('cost_source'):
+            cost_folder=root/point['cost_source'];cost_folder=cost_folder.parent
+            util_folder=(root/point['util_source']).parent
+        else:
+            cost_folder=root/model/'a100_batch01_cost';util_folder=root/model/'resident_batch01'
+            assert sha(root/old_models[model]['audit_path'])==old_models[model]['audit_sha256']
+        cost=read(cost_folder/'report.json');util=read(util_folder/'report.json')
+        checked=helper.audit_cost(cost_folder,test,batch)
+        for k,j in [('T16_ms','T16_ms'),('E16_j','E16_j'),('srcc','srcc'),('plcc','plcc')]:assert abs(checked[k]-point[j])<1e-9
+        assert cost['identity']['checkpoint_sha256']==util['identity']['checkpoint_sha256']
+        assert cost['identity']['gpu_uuid']==util['identity']['gpu_uuid']==point['gpu_uuid']
+        assert cost['test_videos']==558 and cost['cost_videos']==200 and cost['explicit_warmup_forwards']==0 and cost['first_batch_included']
+        assert cost['power']['rated_power_limit_w']==400 and cost['cost']['host_proxy_w']==338.2
+        if batch==1 and model!='qwen':
+            for file in list(cost_folder.glob('*.csv'))+[cost_folder/'report.json',util_folder/'report.json']+list(util_folder.glob('repeat*/*.json'))+list(util_folder.glob('repeat*/*.csv')):
+                assert sha(file) in bound.get(file.relative_to(root).as_posix(),set()),file
+        telemetry=csvrows(cost_folder/'telemetry.csv');tagged=[r for r in telemetry if r['phase'].startswith('active:')]
+        timing=[r for r in csvrows(cost_folder/'batch_timing.csv') if r['in_cost_subset']=='True'];walls=[float(r['synchronized_wall_ms']) for r in timing]
+        pred=csvrows(cost_folder/'predictions.csv');ys=[float(r['target_mos']) for r in pred];xs=[float(r['prediction']) for r in pred]
+        means=[];samples=0;counter=0;duration=0;forwards=0;peaks=[];stamp=0
+        for index in (1,2,3):
+            folder=util_folder/f'repeat{index:02d}';d=read(folder/'report.json')
+            selected=[r for r in csvrows(folder/'telemetry.csv') if d['start_monotonic_s']<=float(r['host_monotonic_s'])<d['end_monotonic_s']]
+            values=[float(r['utilization_percent']) for r in selected];assert len(values)==d['samples'] and d['duration_s']>=30
+            assert abs(statistics.mean(values)-d['mean_gpu_utilization_percent'])<1e-9
+            groups=read(folder/'forward_groups.json');warm=[g for g in groups if g['phase']=='warmup'];assert warm[-1]['end']-warm[0]['start']>=5 and all(g['forwards']==8 for g in groups)
+            calls=sum(g['forwards'] for g in groups if g['phase']=='measured');assert calls==d['measured_forwards']
+            clocks=[r for r in csvrows(folder/'clock_telemetry.csv') if d['start_monotonic_s']<=float(r['host_monotonic_s'])<d['end_monotonic_s']]
+            assert clocks and all(float(r['power_limit_w'])==400 for r in clocks)
+            stamp=max(stamp,float(selected[-1]['host_time_unix']));means.append(statistics.mean(values));samples+=len(values);counter+=sum(values);duration+=d['duration_s'];forwards+=calls;peaks.append(max(values))
+            repeats.append(dict(model=name,baseline=baseline,batch=batch,repeat=index,mean_percent=means[-1],peak_percent=max(values),duration_s=d['duration_s'],samples=len(values),forwards=calls,power_w=d['mean_board_power_w'],memory_mib=d['mean_memory_used_mib'],warmup_s=warm[-1]['end']-warm[0]['start'],sm_clock_mhz=statistics.mean(float(r['sm_clock_mhz']) for r in clocks),temperature_c=statistics.mean(float(r['temperature_c']) for r in clocks),cpu_queue_wait_ms=None,measured_local=datetime.fromtimestamp(float(selected[-1]['host_time_unix']),timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S'),source=(folder/'report.json').relative_to(REPO).as_posix(),gpu_uuid=point['gpu_uuid'],hardware='A100-SXM4-80GB / 400W',role='Supplementary hardware; three complete native queue8 repeats'))
+        assert abs(counter/samples-point['resident_utilization_percent'])<1e-9 and abs(counter/samples-util['pooled_mean_utilization_percent'])<1e-9
+        sorted_walls=sorted(walls);q=(len(walls)-1)*.95;lo=int(q);p95=sorted_walls[lo]+(sorted_walls[min(lo+1,len(walls)-1)]-sorted_walls[lo])*(q-lo)
+        row=dict(model=name,baseline=baseline,batch_size=batch,srcc=point['srcc'],plcc=point['plcc'],first200_srcc=pearson(ranks(xs[:200]),ranks(ys[:200])),time_16_videos_ms=point['T16_ms'],energy_16_videos_j=point['E16_j'],board_mean_w=checked['active_board_power_w'],cost_wall_sum_ms=sum(walls),cost_calls=len(walls),wall_mean_ms=statistics.mean(walls),wall_p95_ms=p95,active_samples=len(tagged),gpu_util_mean_percent=statistics.mean(float(r['utilization_percent']) for r in tagged),gpu_util_peak_percent=max(float(r['utilization_percent']) for r in tagged),memory_mean_mib=statistics.mean(float(r['memory_used_mib']) for r in tagged),memory_peak_mib=max(float(r['memory_used_mib']) for r in tagged),independent_resident_util_mean_percent=counter/samples,independent_resident_util_peak_percent=max(peaks),util_repeat_means=means,util_samples=samples,util_duration_s=duration,util_forward_calls=forwards,util_sum_percent_points=counter,measured_local=datetime.fromtimestamp(stamp,timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S'),cost_measured_local=datetime.fromtimestamp(float(telemetry[-1]['host_time_unix']),timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S'),checkpoint_sha256=cost['identity']['checkpoint_sha256'],source=(cost_folder/'report.json').relative_to(REPO).as_posix(),utilization_source=(util_folder/'report.json').relative_to(REPO).as_posix(),execution='Native frozen; supplementary A100-SXM4-80GB /400W',parameter_metadata=dict(model_total_parameters_billion=total/1e9,moe_active_parameters_billion=active,parameter_basis='Loaded total (Qwen official nominal); MoE active is declared nominal, not measured FLOPS',parameter_source='https://huggingface.co/'+point['model']),hardware_platform='A100-SXM4-80GB',power_limit_w=400,gpu_uuid=point['gpu_uuid'],hardware_session='original rental B1' if batch==1 and model!='qwen' else 'followup rental B2 and Qwen control',same_card_batch_ablation=False)
+        normalized.append(row)
+    assert len(normalized)==5 and len(repeats)==15
+    helper.audit_inputs(root/'qwen_device_control_20261017');difference=helper.audit_device_difference(root);assert difference['max_abs_mos_difference']==0
+    output=dict(status='complete',paired_rows=normalized,repeats=repeats,followup_summary_sha256=sha(delivery),raw_files_SHA_verified=len(final['artifact_manifest']),cpu_audit_SHA=final['cpu_audit']['sha256'],qwen_device_difference=difference,no_original_point_replacement=True,source='followup_delivery_20261017.json')
+    target=root/'verified_figure5_extension.json'
+    if target.exists():assert read(target)==output
+    else:target.open('x',encoding='utf-8').write(json.dumps(output,indent=2)+'\n')
+    print(json.dumps(dict(status='complete',new_points=5,complete_repeats=15,all558_and200_recomputed=True,original_points_unchanged=True)))
+    return output
+
+
 def audit_sequential():
     """Utilization-only same-process reproduction; no cost substitution."""
     root=TASK/'runs/simulation/lgvq_yolo_clip_sequential_a100_20261017'
@@ -327,9 +400,10 @@ def audit(selected_points=None,recheck=False):
 
 if __name__=='__main__':
     import argparse
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true');parser.add_argument('--yolo-clip-sequential',action='store_true')
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true');parser.add_argument('--yolo-clip-sequential',action='store_true');parser.add_argument('--rental-extension',action='store_true')
     args=parser.parse_args()
-    if args.yolo_clip_sequential:audit_sequential()
+    if args.rental_extension:audit_rental_extension()
+    elif args.yolo_clip_sequential:audit_sequential()
     else:
         if args.yolo_clip_recheck:ROOT=TASK/'runs/simulation/lgvq_yolo_clip_recheck_a100_20261017'
         audit(args.points,args.yolo_clip_recheck)
