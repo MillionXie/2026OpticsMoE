@@ -1,0 +1,59 @@
+{
+  "seed": 17,
+  "rho": 0.3,
+  "additional_epochs": 10,
+  "maximum_seconds": 3600,
+  "automatic_retry": false,
+  "training": {
+    "lr": 0.0001,
+    "electronic_weight_decay": 0.02,
+    "ema_decay": 0.999,
+    "mixup_alpha": 0.1,
+    "label_smoothing": 0.05,
+    "capture_weight": 0.05,
+    "phase_smooth_weight": 0.02,
+    "horizontal_flip_probability": 0.5,
+    "feature_dropout": 0.0,
+    "crop_area": [
+      0.9,
+      1.0
+    ],
+    "crop_aspect": [
+      0.95,
+      1.05
+    ],
+    "brightness": [
+      0.95,
+      1.05
+    ],
+    "contrast": [
+      0.95,
+      1.05
+    ],
+    "gamma": [
+      0.95,
+      1.05
+    ],
+    "view_seed_tag": 20261017,
+    "kd_alpha": 0.5,
+    "kd_temperature": 2.0,
+    "teacher_confidence": 0.5
+  },
+  "class_weights": "L2 natural all1; L4 sqrt TRAIN frequency",
+  "initialization": "Each accepted selected E86 optical state plus its SAME calibrated head; NEW AdamW empty moments, no LAST restoration",
+  "epoch_accounting": "100 optical spent +10 tune=110 on this path; seed epochs201-210 bookkeeping; two forward/backward branches per macro, exactlyONE Adam/EMA",
+  "selection": "include retained tune0; highest VAL overall accuracy, ties natural NLL then earliest tune epoch",
+  "adoption": "only replace retained candidate if actual once TEST overall accuracy does not decrease; test-informed development",
+  "scope": "One candidate per L2/L4; clean supervised branch.75 and mild-view CE+cached-selfKD branch.25. Followup to rejected stronger-view L2, not a blind repeated strong augmentation",
+  "strong_branch_weight": 0.25,
+  "parents": {
+    "2": {
+      "checkpoint_sha256": "7d8c79092dc3323acd9392302c9bc53346d9166ebb457bfe481f8ebf2cb50920",
+      "TRAIN_prediction_sha256": "aab4efb1eec68531c8e05b8a7422143360ff92f154a6f244dbee3c69e72f3cf5"
+    },
+    "4": {
+      "checkpoint_sha256": "413b2eeb74a2716241fc753bb754212dd3e294d869a7aa81de66a3c49d2e18dd",
+      "TRAIN_prediction_sha256": "c00b5cd958080c54e4996bd8687a38170bf3ca26069058cfa514865289842c98"
+    }
+  }
+}
