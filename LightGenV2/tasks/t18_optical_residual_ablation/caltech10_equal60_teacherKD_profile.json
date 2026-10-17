@@ -1,0 +1,18 @@
+{
+  "tune_epochs": 20,
+  "class_weight_exponent": 1.0,
+  "new_inference_parameters": 0,
+  "phase_lr": 0.0003,
+  "electronic_lr": 0.0001,
+  "electronic_weight_decay": 0.01,
+  "minimum_tune_lr": 2e-05,
+  "maximum_seconds": 1800,
+  "temperature": 4.0,
+  "KD_fraction": 0.1,
+  "teacher_science_sha256": "c37a6b75dd31f757c51a13e48920df5303ac3bb612f795310b18c876b9613963",
+  "teacher_head_sha256": "3467900bd399c6a33ab7e79acd14ce49a48ae864e99e9a8bd596026b8383f19c",
+  "selection": "wholeprefix firstminimum VAL EMA balancedNLL, retain accepted baseline selected EMA as tune0",
+  "teacher_targets": "Frozen clean TRAIN teacher logits/T4 -> probability; same macro image indices, same MixUp lambda and permutation as student; no VAL or TEST teacher used as optimization targets",
+  "new_inference_models": 0,
+  "extra_budget_not_causal": true
+}
