@@ -37,9 +37,9 @@ def near(a,b):
     if not math.isclose(a,b,rel_tol=1e-10,abs_tol=1e-10):raise ValueError(f"Numerical mismatch {a} versus {b}")
 
 
-def audit_resident(folder):
+def audit_resident(folder,batch=2):
     report=json.loads((folder/"report.json").read_text());values=[];parts=[]
-    assert report["status"]=="complete" and report["batch"]==2
+    assert report["status"]=="complete" and report["batch"]==batch
     for repeat in range(1,4):
         root=folder/f"repeat{repeat:02d}";r=json.loads((root/"report.json").read_text())
         raw=read_csv(root/"telemetry.csv");selected=[x for x in raw if r["start_monotonic_s"]<=float(x["host_monotonic_s"])<r["end_monotonic_s"]]
@@ -52,7 +52,8 @@ def audit_resident(folder):
         values.extend(v);parts.append(dict(samples=len(v),utilization=statistics.mean(v),duration_s=r["duration_s"]))
     near(statistics.mean(values),report["pooled_mean_utilization_percent"])
     assert len(values)==report["total_samples"]
-    parity=json.loads((folder/"parity.json").read_text());assert parity["train_samples"]==2
+    parity=json.loads((folder/"parity.json").read_text()) if (folder/"parity.json").exists() else None
+    if batch==2:assert parity["train_samples"]==2
     return dict(status="passed",utilization_percent=statistics.mean(values),samples=len(values),repeats=parts,checkpoint_sha256=report["identity"]["checkpoint_sha256"],gpu_uuid=report["identity"]["gpu_uuid"],parity=parity,source_report_sha256=sha(folder/"report.json"))
 
 
@@ -91,6 +92,8 @@ def main():
     qwen=args.run/"qwen_device_control_20261017/native_batch01_cost"
     if (qwen/"report.json").exists():results["qwen/evaluate"]=audit_cost(qwen,test,1)
     elif not args.partial:raise RuntimeError("Qwen native B1 not complete")
+    resident=args.run/"qwen_device_control_20261017/native_batch01_resident"
+    if (resident/"report.json").exists():results["qwen/utilization"]=audit_resident(resident,1)
     result=dict(status="passed",partial=args.partial,cuda_initialized=False,time=time.time(),entry_sha256=sha(Path(__file__)),results=results)
     args.output.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(result,indent=2))

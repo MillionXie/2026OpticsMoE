@@ -71,6 +71,65 @@ class Guard(follow.Guard):
         if old.sha(Path(__file__))!=self.identity["entry_sha256"]:raise RuntimeError("Qwen control source changed")
 
 
+def utilization(args):
+    import torch
+    from . import quality_token_batch_benchmark_200 as native,batch_telemetry as telemetry
+    args.output=OUT/"native_batch01_resident";args.output.mkdir(parents=True,exist_ok=False)
+    identity=dict(sources=follow.sources(),entry_sha256=old.sha(Path(__file__)),gpu_uuid=args.gpu_uuid,batch=1,checkpoint_sha256=HEAD_SHA,revision=REVISION,git_commit=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip())
+    guard=Guard(args,identity)
+    try:
+        guard.check();old.rows()
+        receipt=json.loads((MODEL_DIR/"asset_receipt.json").read_text())
+        for name,digest in receipt["hashes"].items():
+            if old.sha(MODEL_DIR/name)!=digest:raise RuntimeError("Qwen resident asset mismatch")
+        if old.sha(args.checkpoint)!=HEAD_SHA:raise RuntimeError("Not original Qwen head")
+        torch.set_num_threads(8)
+        cfg=argparse.Namespace(model=MODEL_DIR,checkpoint=args.checkpoint,manifest=Path("/data/lgvq/manifest.csv"),image_size=448)
+        processor,model,head,scores,rows,prompt=native.load_runtime(cfg);head.requires_grad_(False)
+        guard.bind();guard.start()
+        inputs,positions=native.prepare_batch(rows[:1],processor,prompt,torch.device("cuda:0"),448)
+        identity.update(torch=torch.__version__,sample_ids=[rows[0]["sample_id"]],positions=positions)
+        old.write(args.output/"identity.json",identity)
+        def compute():
+            with torch.inference_mode(),torch.autocast("cuda",dtype=torch.bfloat16):
+                hidden=model.model(**inputs,return_dict=True,use_cache=False).last_hidden_state
+            mask=inputs["attention_mask"].bool();indices=torch.arange(mask.shape[1],device=hidden.device).expand_as(mask);last=indices.masked_fill(~mask,-1).amax(1)
+            with torch.inference_mode():
+                pooled=hidden[torch.arange(hidden.shape[0],device=hidden.device),last].float()
+                logits=model.lm_head(pooled.to(model.lm_head.weight.dtype));mos=head(pooled).softmax(-1)@scores
+            return mos,logits
+        torch.cuda.synchronize();reports=[]
+        for repeat in range(1,4):
+            folder=args.output/f"repeat{repeat:02d}";folder.mkdir();sampler=telemetry.TelemetrySampler(args.gpu_uuid);clocks=follow.ClockSampler(args.gpu_uuid);groups=[]
+            sampler.start();clocks.start()
+            def phase(label,minimum):
+                sampler.set_phase(label);start=time.monotonic()
+                while time.monotonic()-start<minimum:
+                    guard.fast();tick=time.monotonic()
+                    for _ in range(8):mos,raw=compute()
+                    torch.cuda.synchronize();groups.append(dict(phase=label,start=tick,end=time.monotonic(),forwards=8))
+                return start,time.monotonic(),mos
+            try:
+                phase("warmup",5);start,end,mos=phase("measured",30);samples=sampler.stop()
+                selected=[s for s in samples if start<=s.host_monotonic_s<end];report=telemetry.telemetry_report(selected,prefix="")
+                report.update(start_monotonic_s=start,end_monotonic_s=end,duration_s=end-start,batch=1,final_mos=mos.cpu().tolist(),measured_forwards=sum(g["forwards"] for g in groups if g["phase"]=="measured"))
+                old.write(folder/"report.json",report);reports.append(report)
+            finally:
+                if sampler.process is not None:samples=sampler.stop()
+                telemetry.save_samples(folder/"telemetry.csv",samples);old.write(folder/"forward_groups.json",groups);clocks.stop(folder/"clock_telemetry.csv")
+        for name,digest in receipt["hashes"].items():
+            if old.sha(MODEL_DIR/name)!=digest:raise RuntimeError("Qwen resident model changed")
+        guard.check();total=sum(r["samples"] for r in reports)
+        old.write(args.output/"report.json",dict(status="complete",identity=identity,batch=1,repeats=reports,total_samples=total,pooled_mean_utilization_percent=sum(r["mean_gpu_utilization_percent"]*r["samples"] for r in reports)/total,costs_not_derived_from_resident_power=True))
+        old.write(args.output/"status.json",dict(status="complete",time=time.time()))
+    except BaseException as error:
+        old.write(args.output/"status.json",dict(status="failed",error=repr(error),time=time.time()));raise
+    finally:
+        guard.stop.set()
+        if guard.thread:guard.thread.join(10)
+        old.write(args.output/"process_audit.json",guard.audit)
+
+
 def evaluate(args):
     import torch
     import numpy as np
@@ -130,7 +189,7 @@ def evaluate(args):
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument("--phase",choices=("prepare","evaluate"),required=True)
+    p=argparse.ArgumentParser();p.add_argument("--phase",choices=("prepare","evaluate","utilization"),required=True)
     p.add_argument("--deadline",type=float,required=True);p.add_argument("--gpu-uuid")
     p.add_argument("--checkpoint",type=Path,default=OUT/"original_best_checkpoint.pt")
     args=p.parse_args()
@@ -138,7 +197,7 @@ def main():
     if args.phase=="prepare":download(args.deadline)
     else:
         if os.environ.get("CUDA_VISIBLE_DEVICES")!=args.gpu_uuid:raise RuntimeError("Exact GPU binding required")
-        evaluate(args)
+        {"evaluate":evaluate,"utilization":utilization}[args.phase](args)
 
 
 if __name__=="__main__":main()
