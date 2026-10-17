@@ -6,7 +6,7 @@ import torch
 import caltech20_equal60_objective as m
 def check(out):
     assert out==m.CPU and not out.exists() and os.environ.get('CUDA_VISIBLE_DEVICES')=='' and m.base.slots()['total']==0;controls=m.admit();cfg=m.config();torch.set_num_threads(4)
-    counts=np.asarray(m.base.dataset.manifest()['supports']['train'],np.float64);weights=np.sqrt(counts.sum()/(20*counts));assert np.allclose(weights,m.class_weights(cfg,'cpu').numpy(),atol=1e-7,rtol=1e-7)
+    counts=np.asarray(m.base.dataset.manifest()['supports']['train'],np.float64);weights=np.sqrt(counts.sum()/(20*counts));weights*=counts.sum()/np.dot(counts,weights);assert abs(np.dot(counts,weights)/counts.sum()-1)<1e-12 and np.allclose(weights,m.class_weights(cfg,'cpu').numpy(),atol=1e-7,rtol=1e-7)
     logits=torch.linspace(-2,2,400,dtype=torch.float64).reshape(20,20).requires_grad_();target=torch.eye(20,dtype=torch.float64)*.95+.05/20;weighted=target*torch.tensor(weights)[None];value=-(weighted*torch.log_softmax(logits,1)).sum(1).mean();grad=torch.autograd.grad(value,logits)[0].numpy();z=logits.detach().numpy();p=np.exp(z-z.max(1,keepdims=True));p/=p.sum(1,keepdims=True);expected=(p*weighted.numpy().sum(1,keepdims=True)-weighted.numpy())/20;error=float(np.abs(expected-grad).max());assert error<1e-12
     restored={}
     for key in m.CASES:

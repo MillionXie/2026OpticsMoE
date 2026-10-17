@@ -36,7 +36,9 @@ def admit():
     return controls
 def cpu_ready():
     p=s.read(CPU/'checks.json');assert p['passed'] and p['sources']==sources();engine.verify_sources(p['sources'],p['git_commit'])
-def class_weights(cfg,device):return torch.tensor(np.power(len(base.dataset.manifest()['split_ids']['train'])/(20*np.asarray(base.dataset.manifest()['supports']['train'],np.float64)),cfg['class_weight_exponent']),dtype=torch.float32,device=device)
+def class_weights(cfg,device):
+    counts=np.asarray(base.dataset.manifest()['supports']['train'],np.float64);weights=np.power(counts.sum()/(20*counts),cfg['class_weight_exponent']);weights*=counts.sum()/np.dot(counts,weights)
+    return torch.tensor(weights,dtype=torch.float32,device=device)
 def gate(depth,state,data,cfg):
     engine.seed(17);model=base.RegularizedMoE(depth,.3).cuda();model.load_state_dict(state,strict=True);initial=s.digest(model.state_dict());weights=class_weights(cfg,'cuda');order,theta=engine.epoch_plan(61,len(data[1]),cfg);checks=[];tail=cfg['tail_samples']
     for name,idx,batch in [('all20',np.array([int((data[1]==k).nonzero()[0]) for k in range(20)]),0),('macro16',order[:16],0),('tail5',order[-tail:],cfg['steps_per_epoch']-1)]:

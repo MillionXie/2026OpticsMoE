@@ -3,6 +3,7 @@
   "tune_epochs": 10,
   "maximum_seconds": 1800,
   "class_weight_exponent": 0.5,
+  "class_weight_normalization": "sample-weighted mean1, matching original inverse-frequency objective scale",
   "phase_lr": 0.0003,
   "electronic_lr": 0.0001,
   "minimum_tune_lr": 0.00002,
