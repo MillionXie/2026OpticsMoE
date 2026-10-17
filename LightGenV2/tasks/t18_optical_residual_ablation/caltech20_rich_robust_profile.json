@@ -2,6 +2,8 @@
   "run": "caltech20_rich20_residual_CCD_dropout_SAM_alpha06_20261018",
   "seed": 17,
   "class_weight_exponent": 1.0,
+  "alpha_bounds_by_arm": {"rho0": [0.8501, 0.95], "rho03": [0.6001, 0.95]},
+  "test_requires_explicit_review": false,
   "review_epochs": 10,
   "test_interval": 2,
   "maximum_seconds": 5400,
