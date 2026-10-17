@@ -4,7 +4,8 @@ from pathlib import Path
 import numpy as np
 import torch
 import caltech20_alt246_richsplit as b
-dataset=b.dataset;HERE,ROOT,s,engine=b.HERE,b.ROOT,b.s,b.engine
+import caltech20_alt246_richsplit_data as dataset
+HERE,ROOT,s,engine=dataset.HERE,dataset.ROOT,dataset.s,dataset.engine
 RegularizedMoE=b.RegularizedMoE
 RUN='caltech20_rich20_current246_s17_equal60_20261017'
 OUT=HERE/'runs/simulation'/RUN
@@ -24,7 +25,7 @@ def identity():
 def claim(path,phase):s.save(path,dict(identity(),pid=os.getpid(),phase=phase,automatic_retry=False),exclusive=True)
 def cpu_ready():
     p=s.read(CPU/'checks.json');assert p['passed'] and p['sources']==sources();engine.verify_sources(p['sources'],p['git_commit'])
-b.config=config;b.sources=sources;b.identity=identity;b.claim=claim;b.cpu_ready=cpu_ready;b.GPU=GPU;b.CASES=CASES
+b.dataset=dataset;b.config=config;b.sources=sources;b.identity=identity;b.claim=claim;b.cpu_ready=cpu_ready;b.GPU=GPU;b.CASES=CASES
 slots,load,gate,evaluate,save_np,loss,mixed=b.slots,b.load,b.gate,b.evaluate,b.save_np,b.loss,b.mixed
 
 def fit(a):
