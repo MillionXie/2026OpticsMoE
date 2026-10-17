@@ -1,0 +1,20 @@
+{
+  "run": "caltech20_original_same_linear_teacher_ridge_20261017",
+  "parents": {
+    "L2_rho03": "caltech20_original_equal60_residual_balancedKD20_pilot_20261017",
+    "L4_rho03": "caltech20_original_equal60_residual_balancedKD20_deep_20261017",
+    "L6_rho03": "caltech20_original_equal60_residual_balancedKD20_deep_20261017"
+  },
+  "ridge_relative_regularization": 0.01,
+  "head_weight_trust_fraction": 0.5,
+  "teacher_correct_confidence_gate": 0.5,
+  "teacher_head_sha256": "b1c91057716a529b4dce98ee09ccc368dde627abd04a64e51e36130cc0c9328b",
+  "teacher_science_sha256": "3042c35a4f2d55ea991bace6f30891b59ce66e351289c01cd93676a65cf2d45b",
+  "calibration_inverse_temperature_bounds": [0.05, 5.0],
+  "calibration_iterations": 60,
+  "calibration_uses_VAL_labels": true,
+  "new_inference_parameters": 0,
+  "selection": "One TRAIN ridge candidate only, no lambda/beta sweep. Calibrate positive logit scale on balanced VAL NLL and absorb into same linear W/b. Keep candidate only if VAL accuracy improves; tie requires balancedNLL improvement>1e-6. Otherwise retain parent. No TEST input before selection and own saved science.",
+  "test_informed_development": true,
+  "optical_and_intermediate_electronics_frozen": true
+}
