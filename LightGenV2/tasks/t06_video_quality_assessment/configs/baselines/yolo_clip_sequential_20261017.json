@@ -1,0 +1,20 @@
+{
+  "protocol": "native_single_model_process_ascending_plan_reproduction_v1",
+  "cases": {"yolo": [1, 2, 3], "clip": [1, 2, 3, 4, 6, 8, 9, 10]},
+  "target_batches": {"yolo": 3, "clip": 10},
+  "target_percent": 98,
+  "warmup_s": 5,
+  "measurement_s": 30,
+  "repeats": 3,
+  "queue_depth": 8,
+  "maximum_suite_seconds": 3600,
+  "maximum_initial_idle_wait_seconds": 1200,
+  "maximum_stage_seconds": 1800,
+  "one_model_load_per_model_process": true,
+  "no_early_exit_before_requested_terminal_batch": true,
+  "no_graph_no_clock_power_affinity_changes": true,
+  "no_retry_or_best_repeat_selection": true,
+  "historical_Qwen_B1_protected": true,
+  "utilization_only_costs_accuracy_unchanged": true,
+  "historical_context": "Ascending all-native model plan; old high CLIP control additionally alternated a candidate implementation, which is not reproduced or claimed identical here."
+}

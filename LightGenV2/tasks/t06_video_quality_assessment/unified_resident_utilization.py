@@ -105,6 +105,9 @@ def pooled_mean(repeats):
 
 
 def stop_at_target(batch, value, c):
+    # Explicit reproduction profiles must reach the user-requested terminal B.
+    if batch < c.get("required_terminal_batch", 0):
+        return False
     return batch >= 2 and value >= c["target_mean_percent"]
 
 

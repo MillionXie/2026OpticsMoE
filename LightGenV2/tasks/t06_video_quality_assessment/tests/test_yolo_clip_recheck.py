@@ -20,3 +20,14 @@ def test_worker_reuses_native_without_model_changes():
     calls={ast.unparse(x.func) for x in ast.walk(tree) if isinstance(x,ast.Call)}
     assert {'costs.worker','uniform.worker','reproduction.cuda_guard'}<=calls
     assert not any(x.endswith(('set_device','set_num_threads','set_float32_matmul_precision')) for x in calls)
+
+
+def test_same_process_fixed_order_reaches_requested_targets():
+    c=m.config('sequential')
+    assert c['cases']=={'yolo':[1,2,3],'clip':[1,2,3,4,6,8,9,10]}
+    for model,target in c['target_batches'].items():
+        p=m.sequential_protocol(model)
+        assert not m.uniform.stop_at_target(target-1,100,p)
+        assert m.uniform.stop_at_target(target,98,p)
+        assert p['required_terminal_batch']==target
+    assert 'qwen' not in c['cases']
