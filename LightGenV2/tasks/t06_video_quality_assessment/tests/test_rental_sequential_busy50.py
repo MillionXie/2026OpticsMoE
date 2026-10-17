@@ -70,7 +70,7 @@ def test_measurement_has_native_queue8_and_whole_windows():
     assert 'No new full558 SRCC' in text
     assert 'FirstBlockTimer' not in text
     assert 'selected = [s for s in list(sampler.samples) if start <=' in text
-    assert len(m.sources()) == len(m.previous.sources())+2
+    assert len(m.sources()) == len(m.previous.sources())+3
 
 
 def test_legacy_sources_are_immutable():
@@ -86,5 +86,36 @@ def test_capacity_probe_not_formal_cost_and_does_not_relax_worker_gate():
     assert 'formal_utilization_or_cost=False' in text
     assert 'rtol=.01, atol=.125' in text
     assert 'free < required_weight_bytes + 8*1024**3' in text
-    assert 'float(free) < 75000' in inspect.getsource(m.worker)
+    from types import SimpleNamespace
+    assert not m.admitted(SimpleNamespace(context_limited=False,model='kimi'),'A100-SXM4-80GB',44537,400)
     assert 'measure(' not in text and '.backward(' not in text
+
+
+def test_user_limited_context_is_explicit_kimi_only_and_separate_run():
+    from types import SimpleNamespace
+    args=SimpleNamespace(context_limited=True,model='kimi')
+    assert m.admitted(args,'A100-SXM4-80GB',44537,400)
+    assert not m.admitted(args,'A100-SXM4-80GB',39000,400)
+    assert not m.admitted(args,'A100-SXM4-80GB',44537,250)
+    assert m.run_config(args)['not_proven_exclusive_device']
+    assert m.run_root(args)!=m.ROOT
+    args.model='deepseek'
+    assert not m.admitted(args,'A100-SXM4-80GB',44537,400)
+
+
+@pytest.mark.parametrize('batch',[1,2,3,4,7,16])
+def test_full558_plan_retains_exact200_boundary_and_tail(batch):
+    plan=m.dataset_plan(batch)
+    assert [i for begin,end in plan for i in range(begin,end)]==list(range(558))
+    assert sum(end-begin for begin,end in plan if begin<200)==200
+    assert not any(begin<200<end for begin,end in plan)
+
+
+def test_context_cost_is_fresh_process_not_after_resident_warmup():
+    text=inspect.getsource(m.context_suite)
+    assert 'launch("worker")' in text and 'launch("evaluate-context",batch)' in text
+    assert 'subprocess.Popen' in text and 'no automatic retry' in text
+    cost=inspect.getsource(m.evaluate_context)
+    assert 'timer = measurement.FirstBlockTimer(first)' in cost
+    assert 'explicit_warmup_forwards=0' in cost
+    assert 'cost_videos=200' in cost and 'not_proven_exclusive_device=True' in cost

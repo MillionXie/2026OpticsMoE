@@ -1,0 +1,15 @@
+{
+  "protocol": "kimi_native_user_authorized_unattributed_baseline_vram_v1",
+  "models": ["kimi"],
+  "minimum_initial_free_mib": 40000,
+  "reserve_after_ascending_seconds": 330,
+  "maximum_model_seconds": 900,
+  "known_baseline_memory_used_mib": 36616,
+  "not_proven_exclusive_device": true,
+  "authorization": "2026-10-18 user: first measure Kimi with all previously requested requirements, after explicit disclosure of36GB unattributed VRAM and successful nativeB1 probe",
+  "admission": "At least40000MiB free,400W unchanged, no visible foreign process; guard against new visible PID throughout. This does not prove absence of an invisible allocation owner.",
+  "interpretation": "Conditional measurements in a memory-constrained rental context, not an empty-card causal comparison",
+  "dataset_once_cost": "Separate fresh processes forB1 and highest successful batch,558TEST/first200 inference-boundary cost, no explicit warmup; retain exact partial boundary batches",
+  "busy50": "Separate resident service cost including all imposed wait, never replace dataset-once timing or energy",
+  "old_protocol_and_results_unchanged": true
+}
