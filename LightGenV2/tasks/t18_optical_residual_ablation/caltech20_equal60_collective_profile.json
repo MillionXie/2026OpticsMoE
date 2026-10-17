@@ -1,0 +1,20 @@
+{
+  "parent_run": "caltech20_rich20_equal60_residual_cutmix10_s17_20261017",
+  "tune_epochs": 10,
+  "maximum_seconds": 1800,
+  "class_weight_exponent": 0.5,
+  "new_inference_parameters": 0,
+  "phase_lr": 0.0001,
+  "electronic_lr": 5e-05,
+  "minimum_tune_lr": 2e-05,
+  "electronic_weight_decay": 0.05,
+  "cutmix_probability": 0.5,
+  "cutmix_alpha": 1.0,
+  "collective_lr": 0.0005,
+  "collective_limit": 0.7853981633974483,
+  "selection": "first minimum natural validation EMA NLL among retained accepted objective70 model and81-90; CutMix LAST80 is optimizer parent, its lower-TEST selected model is not adopted",
+  "scope": "One additional stagewise collective phase-coordinate optimizer after ordinary pixel Adam, EMA once; no new inference/trainable network parameters",
+  "automatic_retry": false,
+  "test_informed_development": true,
+  "incumbent_run": "caltech20_rich20_equal60_residual_sqrt_objective10_s17_20261017"
+}
