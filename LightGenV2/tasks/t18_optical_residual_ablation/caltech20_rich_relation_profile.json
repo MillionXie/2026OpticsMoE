@@ -1,0 +1,17 @@
+{
+  "run": "caltech20_rich20_L2L4_teacher_geometry_CCD_20261018",
+  "cases": {"L2_relation": {"depth": 2, "gpu": 2, "sam": false}, "L4_relation": {"depth": 4, "gpu": 1, "sam": false}},
+  "ccd_gain_noise": 0.02,
+  "ccd_read_noise": 0.005,
+  "input_dropout": 0.01,
+  "phase_dropout": 0.01,
+  "feature_dropout": 0.1,
+  "color_strength": 0.1,
+  "mixup_alpha": 0.2,
+  "relation_feature_gradient_fraction": 0.3,
+  "relation_scale_cap": 10.0,
+  "relation": "Off-diagonal cosine-Gram MSE student256 vs centered normalized official teacher TRAIN512; same MixUp and IDs; no learned projector. Full-macro graph-free feature pass, exact feature-gradient surrogate through second optical pass. No micro-only pair approximation. Feature-gradient norm cap30% of CE+KD gradient at feature level, not a claim about phase gradient ratio.",
+  "evidence": "Original L2/L4 ten-epoch noise/dropout review audited, TRAIN decreased but TEST below incumbents, retainedtune0; teacher TRAIN100/VAL98.9556 vs studentVAL77-79. Target semantic feature relationships rather than repeatedly sharpening memorized labels. Halve CCD/input perturbation after first batch underperformance; old scripts/outputs unchanged.",
+  "not_exact_RKD_reproduction": true,
+  "reference": "Park et al CVPR2019 relational distillation; Tung and Mori ICCV2019 similarity preserving distillation. Adapted cosine-Gram loss, not a claim of their exact losses/benchmarks."
+}
