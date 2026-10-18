@@ -1,0 +1,16 @@
+{
+  "run":"caltech20_rich20_TRAIN_class_prototype_consistency_246_s17_20261018",
+  "phase_anchor_weight":0.03,
+  "electronic_lr":0.0005,
+  "alpha_lr":0.0003,
+  "cases":{
+    "L2_prototype":{"depth":2,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.00015,"full_rms_gradient":true},
+    "L4_prototype":{"depth":4,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.00015,"full_rms_gradient":true},
+    "L6_prototype":{"depth":6,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.00015,"full_rms_gradient":true}
+  },
+  "gpu_order":[3,4,1,2,0],
+  "new_inference_parameters":0,
+  "automatic_scope_end_after_segment":false,
+  "TEST_used_for_selection":true,
+  "independent_generalization":false
+}
