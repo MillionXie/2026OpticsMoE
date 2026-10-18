@@ -51,6 +51,10 @@ def selftest():
 
 def fit(a):
     assert not a.out.exists();torch.set_num_threads(2);torch.manual_seed(73);a.out.mkdir();cfg=read(a.profile);t0=time.perf_counter();parent=a.arm/cfg.get('parent_run','head_guarded_margin_20261018');feature_parent=a.arm/cfg.get('feature_run','head_guarded_margin_20261018');report=read(parent/'report.json');assert report['state']=='complete'
+    if cfg.get('absolute_deadline_CST'):
+        from datetime import datetime,timezone
+        remaining=(datetime.fromisoformat(cfg['absolute_deadline_CST'])-datetime.now(timezone.utc)).total_seconds();assert remaining>0,'User absolute deadline has passed; no new fitting'
+        cfg['maximum_fit_seconds']=min(cfg['maximum_fit_seconds'],remaining)
     path=parent/'best.pt';assert sha(path)==report['results']['best']['PT_SHA256'];saved=torch.load(path,map_location='cpu',weights_only=False);original=saved['model'];head=existing_head(original).cpu().eval();data={};files={}
     feature_state=torch.load(feature_parent/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'))
     fproof=read(feature_parent/'selected_features/report.json');assert fproof['passed']
