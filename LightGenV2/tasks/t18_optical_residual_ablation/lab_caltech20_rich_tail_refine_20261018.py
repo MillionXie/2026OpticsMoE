@@ -20,6 +20,10 @@ from caltech20_alt246_biasfree_model import SmallElectronicResidual,rms,features
 def read(p):return json.loads(Path(p).read_text(encoding='utf-8'))
 
 
+def gpu_process_allowed(pid,name,self_pid,platform,allowlist):
+    return pid==self_pid or (platform=='nt' and name.lower() in allowlist)
+
+
 def tail(electronic,head,alpha,x,optical):
     e=electronic(x,478);re,ro=rms(e).detach(),rms(optical).detach()
     mix=(1-alpha.float())*(e/re)+alpha.float()*(optical/ro)
@@ -31,6 +35,9 @@ def selftest():
     x=torch.rand(2,478,478);o=torch.rand_like(x);loss=F.cross_entropy(tail(e,head,alpha,x,o),torch.tensor([0,1]));loss.backward()
     params=[*e.parameters(),*head.parameters(),alpha];assert sum(p.numel() for p in params)==5150
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
+    assert gpu_process_allowed(10,'pythonw.exe',10,'nt',[])
+    assert not gpu_process_allowed(11,'pythonw.exe',10,'nt',[])
+    assert gpu_process_allowed(11,'dwm.exe',10,'nt',['dwm.exe'])
     print('Original9conv+alpha+5140head gradient test passed;5150 parameters, no new layer or SDK')
 
 
@@ -76,7 +83,8 @@ def fit(a):
         parts=row.split(',',2)
         if parts[0].strip()!=cfg['GPU_UUID']:continue
         name=Path(parts[2].strip()).name.lower()
-        assert os.name=='nt' and name in cfg.get('desktop_graphics_process_allowlist',[]),'Chosen GPU has another compute process; do not share or kill it'
+        allowed=gpu_process_allowed(int(parts[1]),name,os.getpid(),os.name,cfg.get('desktop_graphics_process_allowlist',[]))
+        assert allowed,('Chosen GPU has another process; do not share or kill it',dict(pid=int(parts[1]),name=name,self_pid=os.getpid()))
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and 'A100' not in torch.cuda.get_device_name(0)
     assert not a.out.exists();a.out.mkdir(parents=True);torch.manual_seed(cfg['seed']);torch.set_num_threads(cfg['cpu_threads']);torch.cuda.set_per_process_memory_fraction(cfg.get('memory_fraction',.40),0)
     for name,item in manifest['files'].items():assert sha(a.assets/name)==item['sha256']
