@@ -58,7 +58,7 @@ class DirectAlphaHybridMoE(HybridMoE):
         return probability,energy.sum(1)/intensity.sum((-2,-1)).clamp_min(1e-12)
 
     def contract(self):
-        c=super().contract();c.update(id=CONTRACT,alpha_schema=DIRECT,alpha_coordinate='fusion_logits.* store DIRECT effective alpha in float64; float32 fusion, NEVER sigmoid',alpha_bounds=[.4001,.95],readout='last fused amplitude ->pool16->per-sample non-affine LN->existing trained Linear256to20',physical_capture_release=False)
+        c=super().contract();c.update(id=CONTRACT,alpha_schema=DIRECT,alpha_coordinate='fusion_logits.* store DIRECT effective alpha in float64; float32 fusion, NEVER sigmoid',alpha_bounds=[.4001,.95],alpha_initial=None,readout='last fused amplitude ->pool16->per-sample non-affine LN->existing trained Linear256to20',physical_capture_release=False,comparison_scope='Retained models have different learned-alpha constraints and training histories; not isolated optical-rho causality')
         return c
 
 
