@@ -1,5 +1,18 @@
 # LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
 
+## Current compact figure sets (18 October 2026)
+
+Each requested panel is78×88mm (600-dpi PNG and SVG/PDF), so two panels occupy156mm side by side in Word. The original expanded workbooks, figures and raw measurements remain preserved. Current compact figures omit DeepSeek-VL2-Tiny, DeepSeek-VL2-Small and rental Qwen.
+
+- **Batch1 and near-saturation:** [plotting Excel](LGVQ_batch1_near_saturation_plot_data.xlsx), [paired preview](batch1_near_saturation_pair.png), [latency](batch1_near_saturation_latency.svg), [estimated energy](batch1_near_saturation_energy.svg).
+- **Approximately50% and near-saturation:** [plotting Excel](LGVQ_busy50_near_saturation_plot_data.xlsx), [paired preview](busy50_near_saturation_pair.png), [service time](busy50_near_saturation_latency.svg), [estimated service energy](busy50_near_saturation_energy.svg).
+
+**First set.** Each model has B=1 and one retained near-saturation configuration: Qwen B3, GLM B2, CLIP B10, YOLO B3, DeepSeek full B2 and Kimi B6. Each accuracy is independently evaluated full558 temporal SRCC. Costs retain the approved first200 dataset-once inference boundary, normalized to16 videos. Annotation percentages are independently measured resident kernel-busy rates, not utilization of the dataset-once cost window. All endpoints of a model use the same symbol and are connected. Qwen's descriptive dashed link spans finalized native B1 and equivalence-validated optimized B3; the DeepSeek full dashed link spans different physical80GB cards. These are not batch-only causal effects. Finalized Qwen B1 remains63.133111480865225%,1188.3861464262009ms and462.1134010767563J.
+
+**Second set.** Each available pair uses the same batch and physical GPU at approximately50% and near-saturation resident execution. Open symbols denote pacing; filled symbols denote native execution. Both ends use complete resident service windows, including every imposed wait at the paced end. Native ends were recalculated offline from all18 complete repeats (six models, three repeats each), matching raw telemetry counts, power and utilization. Service T16=16000×total window seconds/(batch×total forward calls). Board power is the duration-weighted mean of complete-window sample means. Estimated E16=(338.2W host proxy+same-window board power)×service T16/1000. Neither electronic endpoint substitutes conventional dataset-once costs. The optical component-cost estimate remains a separate retained reference, not a matching resident GPU experiment. Different dates and loading histories remain disclosed; pairs are descriptive, not controlled causal estimates of duty alone.
+
+The50% points retain same-batch full558 SRCC as an independent reference, not a new558-video evaluation under pacing. CLIP uses B10 (49.77168439%), not its below-target B1. **DeepSeek-VL2 full has no50% measurement:** only its96.53918348% high-batch point is plotted, with an explicit missing row in Excel. Tiny/Small data never substitute. Near-saturation does not imply every model reached98%: Qwen is97.13550885%, DeepSeek full96.53918348%. Optical approximately50% is the author's spatial-use estimate, not equivalent GPU time-busy. PCIe40GB/250W and SXM4-80GB/400W remain distinct platforms. Full precision, repeat means, parameter counts, source paths, hardware identities, cost formulas and missing-data flags are retained in the two workbooks.
+
 ## Current comparison — 16–18 October 2026
 
 ### Supplementary platforms and clean Kimi follow-up (18 October 2026)

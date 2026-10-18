@@ -43,3 +43,21 @@ def test_original_measurement_source_unchanged():
         return ast.dump(next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='measure_repeat'),include_attributes=False)
     assert loop(original)==loop(current)
     assert m.frozen.sha256(m.Path(m.costs.__file__))=='6222b7edbb7654fbfa11cad4c1579e673ef81070ea4fa095dfedd1c45d264ab4'
+
+
+def test_compact_service_metrics_keep_all_repeats_and_two_weightings():
+    from LightGenV2.tasks.t06_video_quality_assessment.reports.plot_selected_execution import compact_resident_metrics
+    repeats=[dict(duration_s=d,calls=c,board_w=w,utilization_percent=u,samples=n)
+             for d,c,w,u,n in [(30,10,100,90,60),(40,20,200,95,80),(50,30,300,100,90)]]
+    result=compact_resident_metrics(repeats,2)
+    assert result['time_ms']==16000
+    assert result['board_w']==pytest.approx((3000+8000+15000)/120)
+    assert result['utilization_percent']==pytest.approx((5400+7600+9000)/230)
+    assert result['energy_j']==pytest.approx((338.2+26000/120)*16)
+    with pytest.raises(AssertionError):compact_resident_metrics(repeats[:2],2)
+
+
+def test_compact_cohort_and_symbols_exclude_tiny_small_rental_qwen():
+    from LightGenV2.tasks.t06_video_quality_assessment.reports.plot_selected_execution import COMPACT_HIGH, COMPACT_MARKERS
+    assert COMPACT_HIGH==dict(qwen=3,glm=2,clip=10,yolo=3,full=2,kimi=6)
+    assert set(COMPACT_MARKERS)==set(COMPACT_HIGH)|{'ours'}

@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 const bundledRequire=createRequire(path.join(process.env.CODEX_ARTIFACT_RUNTIME_BASE??path.join(process.cwd(),'.codex_tmp'),'artifact-runtime.cjs'));
-const {FileBlob,SpreadsheetFile}=await import(pathToFileURL(bundledRequire.resolve('@oai/artifact-tool')).href);
+const {FileBlob,SpreadsheetFile,Workbook}=await import(pathToFileURL(bundledRequire.resolve('@oai/artifact-tool')).href);
 const repo=process.cwd();
 const out=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
 const cleanKimi=process.argv.includes('--kimi-clean-extension');
@@ -18,6 +18,88 @@ const sequentialRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessmen
 const rentalRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_full_deepseek_kimi_rental_20261017');
 const run=cleanKimi?path.join(rentalRun,'figure5_kimi_refresh_20261018'):rental?rentalRun:sequential?sequentialRun:recheck?recheckRun:baseRun;
 const scratch=path.join(repo,'.codex_tmp');
+if(process.argv.includes('--compact-groups')){
+ const source=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018/service_presentation/compact_groups_20261018.json');
+ const data=JSON.parse(await fs.readFile(source,'utf8'));if(data.status!=='complete')throw Error('Unverified group input');
+ const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
+ for(const[file,sha]of Object.entries(data.source_sha256))if(digest(await fs.readFile(path.join(repo,file)))!==sha)throw Error('Bound evidence changed '+file);
+ const results=[];
+ for(const[group,rows]of Object.entries(data.groups)){
+  const book=Workbook.create(),sheet=book.worksheets.add('Plot data'),inputs=book.worksheets.add('Measurements');
+  const file=path.join(out,'LGVQ_'+group+'_plot_data.xlsx');
+  sheet.showGridLines=false;inputs.showGridLines=false;sheet.tabColor='#214D68';
+  const title=group.startsWith('batch1')?'Batch1 and near-saturation inference':'Approximately50% and near-saturation service';
+  sheet.getRange('A2').values=[[title]];sheet.getRange('A2').format.font={name:'Arial',size:14,bold:true,color:'#1D3345'};
+  sheet.getRange('A4').values=[[group.startsWith('batch1')?'Costs: first200 test videos normalized to16; utilization measured independently.':'Costs and utilization: the same complete resident windows; all pacing waits included.']];
+  sheet.getRange('A4').format.font={name:'Arial',size:10,color:'#53687A'};
+  const headers=['Model','Condition','Video B','Temporal SRCC','GPU busy','Time /16 (ms)','Estimated energy /16 (J)','Time / optical ref.','Energy / optical ref.','Parameters (B)','Platform','Data status'];
+  sheet.getRange('A6:L6').values=[headers];
+  inputs.getRange('A2').values=[['Measurement inputs and provenance']];
+  inputs.getRange('A2').format.font={name:'Arial',size:14,bold:true,color:'#1D3345'};
+  const keys=['model','baseline','condition','batch','srcc','utilization_percent','time_ms','energy_j','duration_s','calls','board_w','host_proxy_w','parameters_billion','platform','gpu_uuid','cost_source','utilization_source','accuracy_source','checkpoint_sha256','protocol','notes','repeat1','repeat2','repeat3'];
+  inputs.getRange('A6:X6').values=[keys];
+  for(const[i,x]of rows.entries()){
+   const r=i+7,values={...x,repeat1:x.repeats[0]??null,repeat2:x.repeats[1]??null,repeat3:x.repeats[2]??null};
+   inputs.getRange(`A${r}:X${r}`).values=[keys.map(k=>values[k]??null)];
+   for(const[c,s]of [['A','A'],['B','C'],['C','D'],['D','E'],['J','M'],['K','N']]){
+    if((c==='C'&&x.baseline==='ours')||(c==='J'&&x.parameters_billion==null))sheet.getRange(c+r).values=[['n.a.']];
+    else if(c==='D'&&!x.plotted)sheet.getRange(c+r).values=[['Not measured']];
+    else sheet.getRange(c+r).formulas=[[`=Measurements!${s}${r}`]];
+   }
+   if(!x.plotted){sheet.getRange(`E${r}:I${r}`).values=[['Not measured','Not measured','Not measured','n.a.','n.a.']];}
+   else{
+    if(x.baseline==='ours')sheet.getRange('E'+r).values=[['n.a. (optical)']];
+    else sheet.getRange('E'+r).formulas=[[`=Measurements!F${r}/100`]];
+    const resident=x.duration_s!=null;
+    sheet.getRange('F'+r).formulas=[[resident?`=Measurements!I${r}*16000/(Measurements!J${r}*C${r})`:`=Measurements!G${r}`]];
+    sheet.getRange('G'+r).formulas=[[resident?`=(Measurements!K${r}+Measurements!L${r})*F${r}/1000`:`=Measurements!H${r}`]];
+    sheet.getRange('H'+r).formulas=[[`=F${r}/$F$7`]];sheet.getRange('I'+r).formulas=[[`=G${r}/$G$7`]];
+   }
+   sheet.getRange('L'+r).values=[[!x.plotted?'Missing50% measurement':x.baseline==='ours'?'Retained optical reference':group.startsWith('busy50')?'SRCC: separate full558 reference':'Full558; finalized B1 preserved']];
+   const color=x.color;
+   const pale={ours:'#F2EAF7',qwen:'#EAF3FA',glm:'#F5EBF3',clip:'#E8F5EF',yolo:'#FFF7DD',full:'#F4ECE3',kimi:'#FCECEF'}[x.baseline];
+   sheet.getRange(`A${r}:L${r}`).format={fill:pale,font:{name:'Arial',size:10,color:'#243447'},rowHeight:29,verticalAlignment:'center'};
+   sheet.getRange(`A${r}`).format.font={name:'Arial',size:10,bold:true,color};
+   sheet.getRange(`D${r}:J${r}`).format.horizontalAlignment='right';
+  }
+  const end=rows.length+6;
+  sheet.getRange(`A6:L${end}`).format.columnWidth=18;sheet.getRange(`A6:A${end}`).format.columnWidth=24;
+  sheet.getRange(`B6:B${end}`).format.columnWidth=31;sheet.getRange(`C6:C${end}`).format.columnWidth=9;
+  sheet.getRange(`J6:J${end}`).format.columnWidth=15;sheet.getRange(`K6:K${end}`).format.columnWidth=26;sheet.getRange(`L6:L${end}`).format.columnWidth=38;
+  sheet.getRange(`D7:D${end}`).setNumberFormat('0.000000');sheet.getRange(`E7:E${end}`).setNumberFormat('0.0%');
+  sheet.getRange(`F7:G${end}`).setNumberFormat('#,##0.000');sheet.getRange(`H7:I${end}`).setNumberFormat('0.00"×"');sheet.getRange(`J7:J${end}`).setNumberFormat('0.000');
+  for(const s of [sheet,inputs])s.getRange(s===sheet?'A6:L6':'A6:X6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:42,horizontalAlignment:'center',verticalAlignment:'center'};
+  inputs.getRange(`A7:X${end}`).format={font:{name:'Arial',size:10,color:'#243447'},columnWidth:21,rowHeight:26,verticalAlignment:'center'};
+  inputs.getRange(`P7:U${end}`).format.columnWidth=66;inputs.getRange(`O7:O${end}`).format.columnWidth=48;
+  inputs.getRange(`E7:M${end}`).setNumberFormat('0.000000');inputs.getRange(`J7:J${end}`).setNumberFormat('#,##0');inputs.getRange(`V7:X${end}`).setNumberFormat('0.000000');
+  const notes=[
+   ['图示规则','同一模型保持同一颜色和符号；标注为视频batch与GPU时间忙碌率。光学约50%为空间使用的作者估计，不是GPU利用率。'],
+   ['常规成本',group.startsWith('batch1')?'558个TEST视频独立评估SRCC；前200个视频的同步推理边界时间归一至16视频。利用率来自独立驻留测量。':'驻留服务T16=完整测量秒数×16000/(batch×前向次数)；能量=(338.2W主机代理+同窗口均值板卡功率)×T16/1000。'],
+   ['连线解释',group.startsWith('batch1')?'Qwen虚线：历史B1与等价审计优化B3，非纯batch因果对照；完整版DS虚线跨不同物理卡。':'同batch、同权重、同物理卡的50%和近满载服务窗口相连；测量日期、加载历史和控制器差异不消失。'],
+   ['精度边界',group.startsWith('batch1')?'每个batch各自的full558 SRCC，不统一覆盖成同一精度。':'50%下仅核对重复输入输出一致性；SRCC引用同batch独立full558评估，不冒称在节流状态重评558条。'],
+   ['缺失与排除',group.startsWith('batch1')?'仅展示B1与一个近满载点；不含DS Tiny/Small或租赁Qwen。':'CLIP使用B10约50%点，不使用B1的39.20%；完整版DS无50%数据，图中只显示近满载参考，缺项不填造。'],
+   ['平台','Qwen/GLM/CLIP/YOLO：A100 PCIe40GB、250W；完整版DS/Kimi：SXM4 80GB、400W。非严格统一硬件排行。'],
+   ['图幅','每张图78×88mm，600dpi PNG和矢量SVG/PDF；同组两图并排宽156mm。图轴为对数成本轴，保留全部实际值。']
+  ];
+  for(const[i,[label,text]]of notes.entries()){const r=end+3+i*2;sheet.getRange(`A${r}`).values=[[label]];sheet.getRange(`B${r}:L${r}`).merge();sheet.getRange('B'+r).values=[[text]];sheet.getRange(`A${r}:L${r}`).format={font:{name:'Arial',size:10,color:'#53687A'},rowHeight:32,wrapText:true,verticalAlignment:'center'};}
+  book.recalculate();
+  const verify=wb=>{const s=wb.worksheets.getItem('Plot data');for(const[i,x]of rows.entries()){if(!x.plotted)continue;for(const[c,k]of [['D','srcc'],['F','time_ms'],['G','energy_j']])if(Math.abs(s.getRange(c+(i+7)).values[0][0]-x[k])>1e-8)throw Error('Group workbook value mismatch '+group+c+(i+7));}};
+  verify(book);
+  const before=sheet.getRange('F8').values[0][0];
+  const driver=group.startsWith('batch1')?'G8':'I8',driverOriginal=inputs.getRange(driver).values[0][0];
+  inputs.getRange(driver).values=[[driverOriginal*1.01]];book.recalculate();if(Math.abs(sheet.getRange('F8').values[0][0]-before*1.01)>1e-8)throw Error('Recalculation test');inputs.getRange(driver).values=[[driverOriginal]];book.recalculate();verify(book);
+  const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1000})).ndjson;
+  if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
+  console.log((await book.inspect({kind:'table',range:"'Plot data'!A6:G9",tableMaxRows:4,tableMaxCols:7,maxChars:1600})).ndjson);
+  for(const[name,range]of [['Plot data',`A1:G${end}`],['Measurements','A1:N11']]){
+   const preview=await book.render({sheetName:name,range,scale:1.3,format:'png'});await fs.writeFile(path.join(scratch,group+'_'+name.replaceAll(' ','_')+'.png'),new Uint8Array(await preview.arrayBuffer()));
+  }
+  await(await SpreadsheetFile.exportXlsx(book)).save(file);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(file)));
+  results.push({file:path.relative(repo,file).replaceAll('\\','/'),sha256:digest(await fs.readFile(file)),rows:rows.length,plotted:rows.filter(x=>x.plotted).length,formula_errors:0,recalculation_verified:true,reimport_verified:true});
+ }
+ await fs.writeFile(path.join(path.dirname(source),'compact_workbooks_receipt_20261018.json'),JSON.stringify({status:'complete',source_sha256:digest(await fs.readFile(source)),workbooks:results},null,2)+'\n');
+ console.log(JSON.stringify({created_workbooks:2,original_workbooks_unchanged:true}));process.exit(0);
+}
 function chooseDisplayPoints(points){
  const selected=new Set();
  for(const model of new Set(points.map(x=>x.baseline))){

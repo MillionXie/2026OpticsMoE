@@ -4,6 +4,8 @@ import json
 import hashlib
 import shutil
 import sys
+import csv
+import math
 from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')
@@ -106,6 +108,12 @@ def verify_label_geometry(fig,axes):
 
 
 def main():
+    if '--compact-groups-data' in sys.argv:
+        compact_group_data()
+        return
+    if '--compact-groups-render' in sys.argv:
+        compact_group_figures()
+        return
     state=json.loads((RUN/'presentation_selected.json').read_text());assert state['status']=='complete'
     rows=paper_rows(state['rows']);assert 13<=len(rows)<=(20 if RENTAL else 18)
     if RENTAL and not INCLUDE_CROSS_DEVICE_AUDIT and not CLEAN_KIMI:
@@ -181,6 +189,206 @@ def main():
     plt.close(fig)
     (RUN/'figure_label_audit.json').write_text(json.dumps(dict(status='passed',panels=label_checks,paper_points=len(rows),excluded_from_paper=[] if INCLUDE_CROSS_DEVICE_AUDIT else ['qwen80'],raw_presentation_and_cross_device_measurements_preserved=True),indent=2)+'\n')
     print(json.dumps(dict(figures_updated=5,selected_points=len(rows),historical_Qwen_B1_preserved=True)))
+
+
+COMPACT_SOURCE = REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018/service_presentation/compact_groups_20261018.json'
+COMPACT_HIGH = dict(qwen=3, glm=2, clip=10, yolo=3, full=2, kimi=6)
+COMPACT_COLORS = dict(ours='#7A3E9D', qwen='#0072B2', glm='#9B567C', clip='#008B70', yolo='#B17D00', full='#79502C', kimi='#D14F64')
+COMPACT_MARKERS = dict(ours='*', qwen='o', glm='P', clip='D', yolo='^', full='s', kimi='X')
+
+
+def compact_resident_metrics(repeats, batch):
+    """Duration-weight power, sample-pool utilization, and retain every repeat."""
+    assert isinstance(batch,int) and batch>0 and len(repeats)==3
+    assert all(r['duration_s']>=30 and r['calls']>0 and r['samples']>0 for r in repeats)
+    duration=sum(r['duration_s'] for r in repeats);calls=sum(r['calls'] for r in repeats)
+    board=sum(r['duration_s']*r['board_w'] for r in repeats)/duration
+    util=sum(r['samples']*r['utilization_percent'] for r in repeats)/sum(r['samples'] for r in repeats)
+    time=duration*16000/(batch*calls)
+    return dict(duration_s=duration,calls=calls,board_w=board,utilization_percent=util,
+                time_ms=time,energy_j=(338.2+board)*time/1000)
+
+
+def compact_group_data():
+    """Two explicitly different cost protocols; no new GPU measurements."""
+    sources = {}
+    def bind(file):
+        file = Path(file)
+        sources[file.relative_to(REPO).as_posix()] = hashlib.sha256(file.read_bytes()).hexdigest()
+        return file
+    selected = json.loads(bind(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/figure5_kimi_refresh_20261018/presentation_selected.json').read_text())['rows']
+    paced = json.loads(bind(COMPACT_SOURCE.parent.parent/'verified_busy50_service_extension.json').read_text())['rows']
+    bind(OUT/'plot_data.xlsx')
+    bind(OUT/'plot_data.csv')
+    names = {'ours': 'LightGen-II', 'qwen': 'Qwen3-VL-2B', 'glm': 'GLM-4.6V-Flash', 'clip': 'CLIP ViT-B/32', 'yolo': 'YOLO11s', 'full': 'DeepSeek-VL2', 'kimi': 'Kimi-VL-A3B-Instruct'}
+    def base(x, condition, protocol):
+        return dict(model=names[x['baseline']], baseline=x['baseline'], batch=x['batch_size_videos'],
+                    condition=condition, srcc=x['measured_full558_srcc'],
+                    utilization_percent=x.get('display_gpu_util_mean_percent'),
+                    time_ms=x['time_16_videos_ms'], energy_j=x['energy_16_videos_j'],
+                    platform=x.get('hardware_platform', 'Optical system'),
+                    parameters_billion=x.get('model_total_parameters_billion'),
+                    gpu_uuid=x.get('gpu_uuid'), checkpoint_sha256=x.get('checkpoint_sha256'),
+                    cost_source=x.get('cost_source'), utilization_source=x.get('utilization_source'),
+                    accuracy_source=x.get('cost_source'), accuracy_basis='Independent full558 conventional evaluation',
+                    protocol=protocol, plotted=True, repeats=[], repeat_inputs=[],
+                    color=COMPACT_COLORS[x['baseline']], marker=COMPACT_MARKERS[x['baseline']],
+                    link_style='dashed' if x['baseline'] in ('qwen','full') else 'solid',
+                    notes='')
+    ours = next(x for x in selected if x['baseline']=='ours')
+    conventional=[base(ours, 'Optical reference', 'Approved optical component-cost reference')]
+    conventional[0]['notes']='N=16; approximately 50% spatial use is author-provided, not GPU temporal busy time.'
+    resident=[dict(conventional[0])]
+    for model, high in COMPACT_HIGH.items():
+        points=[x for x in selected if x['baseline']==model and x['batch_size_videos'] in (1,high)]
+        assert len(points)==2
+        for x in points:
+            row=base(x, 'B=1 reference' if x['batch_size_videos']==1 else 'Near-saturation reference', 'Dataset-once inference: first200 normalized to16')
+            if model=='qwen':row['notes']='B1 finalized native anchor; B3 equivalence-validated execution optimization. Dashed link is descriptive, not batch-only.'
+            if model=='full':row['notes']='B1 and B2 measured on different physical 80GB cards; descriptive dashed link.'
+            conventional.append(row)
+        x=next(v for v in points if v['batch_size_videos']==high)
+        file=bind(REPO/x['utilization_source']);report=json.loads(file.read_text())
+        assert report['status']=='complete' and len(report['repeats'])==3
+        repeats=[]
+        for i,r in enumerate(report['repeats'],1):
+            m=r.get('measurement',r)
+            calls=r.get('measured_forward_invocations',r.get('measured_forwards',r.get('forward_calls')))
+            assert isinstance(calls,int) and calls>0 and m['duration_s']>=30
+            telemetry=file.parent/(f'repeat{i:02d}/telemetry.csv' if model!='kimi' else 'telemetry.csv')
+            raw=list(csv.DictReader(bind(telemetry).open(newline='')))
+            a,b=m['start_monotonic_s'],m['end_monotonic_s']
+            values=[v for v in raw if a<=float(v['host_monotonic_s'])<=b]
+            assert len(values)==m['samples']
+            watts=sum(float(v['watts']) for v in values)/len(values)
+            util=sum(float(v['utilization_percent']) for v in values)/len(values)
+            assert math.isclose(watts,m['mean_board_power_w'],abs_tol=1e-8)
+            assert math.isclose(util,m['mean_gpu_utilization_percent'],abs_tol=1e-8)
+            repeats.append(dict(duration_s=m['duration_s'], calls=calls, board_w=watts, utilization_percent=util, samples=len(values)))
+        metrics=compact_resident_metrics(repeats,high)
+        assert math.isclose(metrics['utilization_percent'],x['display_gpu_util_mean_percent'],abs_tol=1e-8)
+        full=base(x,'Near-saturation','Resident service; complete measured windows')
+        full.update(**metrics,host_proxy_w=338.2,
+                    repeats=[r['utilization_percent'] for r in repeats],repeat_inputs=repeats,
+                    cost_source=file.relative_to(REPO).as_posix(),link_style='solid',
+                    notes='Costs recomputed from the same resident windows as utilization; not conventional first200 costs. Separate dates and process histories remain disclosed.')
+        low=next((r for r in paced if r['baseline']==model and r['batch']==high),None)
+        if low is not None:
+            assert low['target50_reached'] and .45<=low['mean_busy_percent']/100<=.55
+            if model=='kimi':
+                identity=json.loads(bind((REPO/low['source']).parent.parent/'identity.json').read_text())
+                low_head=identity['checkpoint_sha256']
+            else:low_head=low['checkpoint_sha256']
+            assert low_head==x['checkpoint_sha256']
+            row=base(x,'Approximately 50%','Resident service; complete measured windows including pacing waits')
+            row.update(utilization_percent=low['mean_busy_percent'],time_ms=low['service_T16_ms'],energy_j=low['service_E16_j'],
+                       board_w=low['board_mean_w'],host_proxy_w=low['host_proxy_w'],duration_s=low['duration_s'],
+                       calls=low['completed_forward_calls'],repeats=low['repeat_means_percent'],cost_source=low['source'],
+                       utilization_source=low['source'],gpu_uuid=low['gpu_uuid'],link_style='solid',
+                       notes='SRCC is a separate full558 reference, not re-evaluated on558 distinct videos under pacing. All imposed waits included.')
+            assert row['gpu_uuid']==full['gpu_uuid'], 'Same-batch pair must use same physical GPU'
+            resident.append(row)
+        else:
+            assert model=='full'
+            missing=base(x,'Approximately 50%: unavailable','Not measured')
+            missing.update(time_ms=None,energy_j=None,utilization_percent=None,srcc=None,plotted=False,
+                           notes='No paced50% DeepSeek-VL2 full measurement exists. Tiny/Small cannot substitute.')
+            resident.append(missing)
+        resident.append(full)
+    assert conventional[1]['utilization_percent']==63.133111480865225
+    assert conventional[1]['time_ms']==1188.3861464262009
+    assert conventional[1]['energy_j']==462.1134010767563
+    payload=dict(status='complete',groups={'batch1_near_saturation':conventional,'busy50_near_saturation':resident},
+                 source_sha256=sources,figure_width_mm=78,figure_height_mm=88,
+                 omitted_models=['DeepSeek-VL2-Tiny','DeepSeek-VL2-Small','Rental Qwen80GB'],
+                 missing_measurements=['DeepSeek-VL2 full paced50%'],
+                 optical_spatial_use_basis='Author estimate approximately50%; not measured GPU temporal busy time')
+    COMPACT_SOURCE.write_text(json.dumps(payload,indent=2)+'\n')
+    print(json.dumps(dict(group_rows={k:len(v) for k,v in payload['groups'].items()},raw_window_replays=18,
+                          missing=payload['missing_measurements'],no_GPU_rerun=True)))
+
+
+def compact_panel(fig,ax,rows,group,kind):
+    key='energy_j' if kind=='energy' else 'time_ms'
+    rows=[r for r in rows if r['plotted']]
+    xmin=min(r[key] for r in rows)*.62;xmax=max(r[key] for r in rows)*1.6
+    ax.set_xscale('log');ax.set_xlim(xmin,xmax);ax.set_ylim(.681,.843)
+    ax.set_yticks([.70,.75,.80]);ax.set_ylabel('Temporal quality (SRCC)',labelpad=3)
+    ax.set_xlabel(('Estimated energy (J / 16 videos)' if kind=='energy' else 'Latency (ms / 16 videos)') if group.startswith('batch1') else
+                  ('Estimated service energy (J / 16 videos)' if kind=='energy' else 'Service time (ms / 16 videos)'),labelpad=3)
+    ax.grid(axis='both',which='major',color='#DBDFE3',lw=.45,zorder=0)
+    ax.spines['top'].set_visible(False);ax.spines['right'].set_visible(False)
+    ax.tick_params(direction='out',length=2.5,width=.6,pad=2,labelsize=7)
+    ax._audited_points=[];annotations=[]
+    for model in COMPACT_COLORS:
+        points=[r for r in rows if r['baseline']==model]
+        if not points:continue
+        if len(points)>1:
+            ax.plot([r[key] for r in points],[r['srcc'] for r in points],color=COMPACT_COLORS[model],
+                    ls='--' if points[0]['link_style']=='dashed' else '-',lw=.9,alpha=.75,zorder=2)
+        for r in points:
+            x,y=r[key],r['srcc'];ax._audited_points.append((x,y))
+            low=r['condition']=='Approximately 50%'
+            ax.scatter(x,y,marker=r['marker'],s=49 if model=='ours' else 20,
+                       facecolors='white' if low else r['color'],edgecolors=r['color'],linewidths=.8,zorder=4)
+            label='N=16\n~50% spatial' if model=='ours' else f"B={r['batch']}\n{r['utilization_percent']:.1f}%"
+            annotations.append(ax.annotate(label,(x,y),xytext=(.5,.5),textcoords='axes fraction',
+                               fontsize=6.5,color=r['color'],ha='center',va='center',
+                               bbox=dict(boxstyle='square,pad=.08',fc='white',ec='none',alpha=.96),
+                               arrowprops=dict(arrowstyle='-',lw=.45,color=r['color'],alpha=.65),zorder=5))
+    # Bounded label packing at the final physical figure size. Every endpoint is kept.
+    fig.canvas.draw();renderer=fig.canvas.get_renderer();bounds=ax.get_window_extent(renderer)
+    placed=[];xy=[ax.transData.transform(p) for p in ax._audited_points]
+    grid=[(x,y) for x in np.linspace(.08,.92,31) for y in np.linspace(.06,.94,36)]
+    for ann in annotations:
+        old=ax.transAxes.transform(ann.get_position());box=ann.get_bbox_patch().get_window_extent(renderer)
+        target=ax.transData.transform(ann.xy)
+        choices=sorted(grid,key=lambda p:np.linalg.norm((ax.transAxes.transform(p)-target)*[1,1.2]))
+        for p in choices:
+            candidate=box.translated(*(ax.transAxes.transform(p)-old))
+            if not(bounds.contains(candidate.x0,candidate.y0) and bounds.contains(candidate.x1,candidate.y1)):continue
+            if any(candidate.padded(1.0).overlaps(v) for v in placed):continue
+            if any(candidate.padded(2).contains(*v) for v in xy):continue
+            ann.set_position(p);placed.append(candidate);break
+        else:raise AssertionError('Compact labels do not fit at physical width78mm')
+    fig.canvas.draw()
+    return verify_label_geometry(fig,[ax])
+
+
+def compact_group_figures():
+    data=json.loads(COMPACT_SOURCE.read_text());assert data['status']=='complete'
+    for name,sha in data['source_sha256'].items():
+        assert hashlib.sha256((REPO/name).read_bytes()).hexdigest()==sha, 'Source changed: '+name
+    plt.rcParams.update({'font.family':'Arial','font.size':7.2,'svg.fonttype':'none','axes.linewidth':.6,
+                         'savefig.facecolor':'white','pdf.fonttype':42})
+    audits=[]
+    for group,rows in data['groups'].items():
+        handles=[Line2D([],[],marker=COMPACT_MARKERS[m],color=COMPACT_COLORS[m],lw=.8,
+                        ls='--' if group.startswith('batch1') and m in ('qwen','full') else '-',
+                        markersize=4,label='Kimi-VL-A3B' if m=='kimi' else next(r['model'] for r in rows if r['baseline']==m)) for m in COMPACT_COLORS]
+        for kind in ('latency','energy'):
+            fig,ax=plt.subplots(figsize=(78/25.4,88/25.4))
+            fig.subplots_adjust(left=.19,right=.97,top=.965,bottom=.29)
+            audits+=compact_panel(fig,ax,rows,group,kind)
+            fig.legend(handles=handles,loc='lower center',bbox_to_anchor=(.53,.04),ncol=2,
+                       frameon=False,fontsize=6.5,columnspacing=.9,handlelength=1.4,labelspacing=.45)
+            fig.text(.19,.012,'Dashed: execution or GPU-session differences.' if group.startswith('batch1') else
+                     'Open: paced; filled: native. DS50% unavailable.',fontsize=5.5,color='#526170')
+            for ext in ('png','svg','pdf'):fig.savefig(OUT/f'{group}_{kind}.{ext}',dpi=600)
+            plt.close(fig)
+        # Same-size placement preview: two78-mm panels form one156-mm Word row.
+        from PIL import Image
+        first=Image.open(OUT/f'{group}_latency.png');second=Image.open(OUT/f'{group}_energy.png')
+        paired=Image.new('RGB',(first.width+second.width,first.height),'white')
+        paired.paste(first,(0,0));paired.paste(second,(first.width,0))
+        paired.save(OUT/f'{group}_pair.png',dpi=(600,600))
+    receipt=dict(status='passed',panels=audits,individual_width_mm=78,individual_height_mm=88,
+                 identical_marker_by_model=True,all_available_same_model_points_connected=True,
+                 low50_hollow_high_native_filled=True,group1_qwen_and_deepseek_descriptive_dashed_links=True,
+                 group2_costs_all_resident_full_window=True,excluded=data['omitted_models'],
+                 missing=data['missing_measurements'],source_sha256=hashlib.sha256(COMPACT_SOURCE.read_bytes()).hexdigest())
+    (COMPACT_SOURCE.parent/'compact_figure_audit_20261018.json').write_text(json.dumps(receipt,indent=2)+'\n')
+    print(json.dumps(dict(figures=4,formats=['png','svg','pdf'],geometry_audit='passed',width_mm=78)))
 
 
 if __name__=='__main__':main()

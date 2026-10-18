@@ -1,5 +1,24 @@
 # T06 视频质量评价
 
+## 2026-10-18 两组精简成本图与独立绘图Excel
+
+当前精简展示在原recalculated_20261013目录，新增两份绘图Excel，未覆盖原三表、
+旧19点图或Qwen B1定稿。每组时延/能耗各一图，单图78×88mm，600dpi PNG及SVG/PDF，
+pair预览并排宽156mm。仅保留光学参考、Qwen、GLM、CLIP、YOLO、完整版DeepSeek和Kimi。
+模型符号一致、全部有效端点连线；Qwen历史B1→优化B3及DS跨卡为说明性虚线。
+
+第一组batch1_near_saturation沿用常规dataset-once成本与独立resident利用率。
+第二组busy50_near_saturation按同batch两端完整resident窗口统一计算服务成本，
+不是把满载利用率贴到旧成本。六个高batch共18个完整重复从原CSV重算样本数、
+忙碌率、功率、窗口和前向数；功率按窗口时长加权，原50%结果引用已审计数据。
+CLIP用B10约49.77%，不用B1的39.20%；完整版DS缺50%测量，Excel明确缺项，图中只显示高端点。
+50%下SRCC引用同batch独立full558评估，非在节流状态重评558个不同视频。
+光学约50%注明作者估计的空间使用，不等同GPU时间忙碌率；平台、日期及加载历史边界保留。
+
+复现：reports/plot_selected_execution.py --compact-groups-data及--compact-groups-render；
+原JS builder --compact-groups。输入绑定SHA、18重复重算、四图无碰撞几何审计及两表
+公式扰动/恢复/重导入收据见attempt03的service_presentation/compact_*。本轮未新跑GPU。
+
 ## 2026-10-18 原40GB补充服务实验全部完成
 
 新授权窗口内，attempt03_remaining_20261018按固定顺序完成余8点，未重测前4点，
