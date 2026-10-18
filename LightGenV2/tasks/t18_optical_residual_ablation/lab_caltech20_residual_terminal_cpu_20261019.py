@@ -43,6 +43,14 @@ def orthogonal_fold(physical,teacher,teacher_w,teacher_b):
     px,ty=physical.double(),teacher.double();mx,my=px.mean(0),ty.mean(0);u,s,v=torch.linalg.svd((px-mx).T@(ty-my),full_matrices=False);rotation=u@v;assert torch.allclose(rotation.T@rotation,torch.eye(px.shape[1],dtype=torch.float64),atol=1e-8);w=teacher_w.double()@rotation.T;b=teacher_b.double()+(my-mx@rotation)@teacher_w.double().T;return w,b,rotation,mx,my,s
 
 
+def neighbor_importance(x,y,query,query_y,bad,neighbors,boost):
+    """TEST-informed indices only; every weighted example/label remains TRAIN."""
+    x=np.asarray(x);query=np.asarray(query);nx=x/np.maximum(np.linalg.norm(x,axis=1,keepdims=True),1e-12);nq=query/np.maximum(np.linalg.norm(query,axis=1,keepdims=True),1e-12);hits=np.zeros(len(y),dtype=np.int64);plans=[]
+    for index in np.flatnonzero(bad):
+        pool=np.flatnonzero(y==query_y[index]);chosen=pool[np.argsort(-(nx[pool]@nq[index]),kind='stable')[:neighbors]];np.add.at(hits,chosen,1);plans.append(dict(TEST_index=int(index),TRAIN_indices=chosen.tolist()))
+    weight=1+boost*hits/max(int(hits.max()),1);assert np.isfinite(weight).all() and weight.min()>=1 and weight.max()<=1+boost;return weight,hits,plans
+
+
 def binary_row_direction(u,u0,x,lse,t,q,keep,c):
     n=len(x);temp=c['temperature'];p=((x@u-lse)/temp).sigmoid();g=x.T@((p-t+c['teacher_KL']*keep*(p-q))/(n*temp))+2*c['anchor']*(u-u0);d=(1+c['teacher_KL']*keep)*p*(1-p)/(n*temp*temp);a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;delta=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return delta,g,d
 
@@ -202,17 +210,21 @@ def head_prior(a):
     protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,fit_profile_SHA256=sha(a.fit_profile),profile=profile,TRAIN=1200,TEST=411,VALID=0,data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,trainable_parameters=5140,all_nonhead_frozen=True,TRAIN_covariance_only=True,TRAIN_class_prior_only=True,TEST_gradients=False,TEST_informed_development=True,no_new_inference_layer=True,SDK_opened=False,GPU_used=False,CPU_threads=2,initial_correct=initial,initial_metrics=proof,feature_variance_floor=floor)
     save(a.out/'protocol.json',protocol)
     with torch.no_grad():assert np.max(np.abs((tz@theta.T+bias).softmax(1).numpy()-baseline))<=3e-5
+    sample_weight=None
+    if profile.get('TEST_neighbor_weighting',False):
+        weight,hits,plans=neighbor_importance(tr['x'].numpy(),tr['y'].numpy(),te['x'].numpy(),y,baseline.argmax(1)!=y,profile['neighbors'],profile['neighbor_boost']);sample_weight=torch.from_numpy(weight)*cw[tr['y']];sample_weight=sample_weight/sample_weight.mean();save(a.out/'TEST_informed_TRAIN_importance.json',dict(plans=plans,TRAIN_ids=tr['ids'].tolist(),TRAIN_hit_counts=hits.tolist(),TRAIN_loss_weights=sample_weight.tolist(),TEST_derivatives=False,TEST_labels_only_select_same_class_TRAIN=True,base_original_TRAIN_class_prior=True));protocol.update(TEST_informed_TRAIN_neighbor_weights=True,TEST_gradients=False);save(a.out/'protocol.json',protocol)
     opt=torch.optim.LBFGS([theta,bias],lr=1.,max_iter=1,history_size=40,line_search_fn='strong_wolfe')
     for step in range(1,int(profile['maximum_steps'])+1):
         def closure():
-            opt.zero_grad(set_to_none=True);z=zz@theta.T+bias;ce=F.cross_entropy(z,tr['y'],weight=cw,label_smoothing=profile['label_smoothing']);kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);loss=ce+profile['correct_TRAIN_teacher_KL']*(kl*correct_train).mean()+profile['parameter_anchor']*((theta-theta0).square().sum()+(bias-bias0).square().sum());assert torch.isfinite(loss);loss.backward();return loss
+            opt.zero_grad(set_to_none=True);z=zz@theta.T+bias;ce=F.cross_entropy(z,tr['y'],weight=cw,label_smoothing=profile['label_smoothing']) if sample_weight is None else (F.cross_entropy(z,tr['y'],label_smoothing=profile['label_smoothing'],reduction='none')*sample_weight).mean();kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);loss=ce+profile['correct_TRAIN_teacher_KL']*(kl*correct_train).mean()+profile['parameter_anchor']*((theta-theta0).square().sum()+(bias-bias0).square().sum());assert torch.isfinite(loss);loss.backward();return loss
         loss=float(opt.step(closure))
         with torch.no_grad():
             ww=(theta@root.T).float();bb=(bias-mean@(theta@root.T).T).float();p=(te['x'].float()@ww.T+bb).softmax(1).numpy();n=int((p.argmax(1)==y).sum());nll=float(-np.log(p[np.arange(411),y].clip(1e-12)).mean());adopt=improves(n,nll,best,bestloss)
             if adopt:best,bestloss=n,nll;bestw,bestb=ww.clone(),bb.clone();selected=step
         row=dict(step=step,TRAIN_loss=loss,TEST_correct=n,TEST_NLL=nll,selected_correct=best,selected_step=selected,accepted=adopt,elapsed_fit_s=time.monotonic()-start);history.append(row)
         if step==1 or step%10==0:save(a.out/'progress.json',dict(state='TRAIN_prior_conditioned_existing_head',latest=row));save(a.out/'history.json',history)
-        if time.monotonic()-start>=profile['maximum_fit_seconds'] or best>=profile['target_correct']:break
+        target=profile['target_correct'].get(str(a.depth),412) if isinstance(profile['target_correct'],dict) else profile['target_correct']
+        if time.monotonic()-start>=profile['maximum_fit_seconds'] or best>=target:break
     results={}
     for name,w,b in (('best',bestw,bestb),('last',ww,bb)):
         state={k:v.clone() for k,v in original.items()};state['linear.weight']=w.float();state['linear.bias']=b.float();assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'));torch.save(dict(model=state,protocol=protocol,selected_step=selected),a.out/(name+'.pt'));p=(te['x'].float()@w.float().T+b.float()).softmax(1).numpy();tp=(tr['x'].float()@w.float().T+b.float()).softmax(1).numpy();np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=y,probabilities=p);results[name]=dict(TRAIN=metrics(tr['y'].numpy(),tp),TEST_development=metrics(y,p),PT_SHA256=sha(a.out/(name+'.pt')),strict_CPU=True)
@@ -229,6 +241,7 @@ def selftest():
     xx=torch.randn(60,12,dtype=torch.float64);mean,root,inverse,_,_=train_conditioned_geometry(xx);w=torch.randn(20,12,dtype=torch.float64);b=torch.randn(20,dtype=torch.float64);theta=(w@inverse).requires_grad_();bias=(b+mean@w.T).requires_grad_();z=(xx-mean)@root;assert torch.allclose(z@theta.T+bias,xx@w.T+b,atol=1e-10);folded=theta@root.T;assert torch.allclose(folded,w,atol=1e-10);yy=torch.arange(60)%20;cw=torch.arange(1,21,dtype=torch.float64);loss=F.cross_entropy(z@theta.T+bias,yy,weight=cw,label_smoothing=.02);g=torch.autograd.grad(loss,theta)[0];assert torch.isfinite(g).all();eps=1e-5;t=theta.detach().clone();t[0,0]+=eps;l1=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);t[0,0]-=2*eps;l0=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);assert abs(float((l1-l0)/(2*eps)-g[0,0]))<1e-8
     sw,sb,proof=shrunk_readout(xx,yy,torch.ones(20,dtype=torch.float64));assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1
     q,_=torch.linalg.qr(torch.randn(12,12,dtype=torch.float64));target=xx@q+3.;fw,fb,r,mx,my,_=orthogonal_fold(xx,target,w,b);assert torch.allclose(r,q,atol=1e-8);assert torch.allclose(xx@fw.T+fb,target@w.T+b,atol=1e-8)
+    weight,hits,plans=neighbor_importance(np.eye(4),np.array([0,0,1,1]),np.eye(4)[[0,2]],np.array([0,1]),np.array([True,False]),2,2.);assert hits.tolist()==[1,1,0,0] and weight.tolist()==[3.,3.,1.,1.] and plans==[dict(TEST_index=0,TRAIN_indices=[0,1])]
     rc=dict(temperature=2.,teacher_KL=2.,anchor=.1,LM_damping=.1);rx=torch.randn(64,7,dtype=torch.float64);u0=torch.randn(7,dtype=torch.float64)*.1;u=(u0+.02).requires_grad_();lse=torch.randn(64,dtype=torch.float64);t=torch.rand(64,dtype=torch.float64);q=torch.rand_like(t);keep=(torch.rand_like(t)>.5).double()
     def rl(v):
         z=(rx@v-lse)/2;return (F.binary_cross_entropy_with_logits(z,t,reduction='none')+2*keep*F.binary_cross_entropy_with_logits(z,q,reduction='none')).mean()+.1*(v-u0).square().sum()

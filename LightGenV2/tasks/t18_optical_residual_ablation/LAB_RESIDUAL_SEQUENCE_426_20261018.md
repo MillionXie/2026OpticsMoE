@@ -1,5 +1,21 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Actual fixed-head10 fits ended E0 (L2 48epochs,L4 46epochs); no new10-param
+weights adopted. Fresh selected feature exports/fullCPU audits passed. Huber
+first segments improved L2 304->305,L4 244->255. Same-method continuous-RNG
+continuation then selected L2 312/411(75.9124%), L4 260/411(63.2603%), both
+stopped at first no-progress. Still not within1pp, all parents preserved.
+
+Next finite comparison addresses coupled boundaries rather than repeating row
+fits: original5140 full-head conditioned LBFGS with capped TRAIN sample importance
+from the3 same-class TRAIN neighbors of TEST-wrong examples (weight1to3), plus
+original TRAIN prior, correct-TRAIN parentKL2 and .001 anchor. Config
+`lab_caltech20_residual_neighborhead_profile_20261019.json`, max120steps/180sec.
+Exact TRAIN indices/weights are logged; TEST labels/features choose TRAIN examples
+but never enter gradients. It is expressly TEST-informed development, not
+independent generalization. Full measured graph replay/frozen nonhead audits,
+bestlast and E0 preservation required. No new layer, capture, SDK or GPU.
+
 TRAIN-margin diagnosis at accepted304/244 parents: L2 920/1200 correct,
 515 below margin1; L4 554/1200 correct,948 below1. Thus unlike the old saturated
 router case, a TRAIN-margin objective has active examples here. Next configured

@@ -1,0 +1,9 @@
+{
+  "maximum_steps":120,"maximum_fit_seconds":180,
+  "label_smoothing":0.02,"correct_TRAIN_teacher_KL":2.0,"parameter_anchor":0.001,
+  "TEST_neighbor_weighting":true,"neighbors":3,"neighbor_boost":2.0,
+  "target_correct":{"2":333,"4":342,"6":350},
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "scope":"One bounded globally coupled original5140 readout fit from latest accepted Huber parent. TRAIN-only covariance conditioning folds analytically into same inference head; original3141 TRAIN prior weights. Fixed TEST-wrong examples select3 same-class TRAIN cosine neighbors; capped TRAIN importance1to3 directs full-head TRAIN CE, plus correct-TRAIN parentKL2 and stronger .001 parameter anchor. This is explicitly TEST-informed development, never TEST gradients/VALID or independent generalization. Compare complete411 accuracy then tied NLL, preserve E0 on no gain. All nonhead/optics/captured inputs byte-frozen, no new layers/SDK/GPU/CCD. Records exact TRAIN weights and neighbor indices, bestlast/protocol/history/predictions and strict full physical replay. Not a seed/parameter sweep or permission to refit captured upstream."
+}
