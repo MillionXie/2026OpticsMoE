@@ -1,5 +1,24 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+2026-10-19 overnight authorization keeps both tracks active without a recurring
+monitor. All L4 optics/8055 physical CCDs are complete and frozen. Its original
+fullphysical128/411 improved to224/411(54.5012%) by the existing5140-head TRAIN
+covariance-conditioned fit; strictCPU full-graph replay passed. This is not the
+desired342/411 and is TEST-informed development. Next joint original5150 CPU
+fit runs independently of newL2 hardware, at most80epochs/600fitseconds. Preserve
+the224 parent if no improvement. No new L4 capture or inference layer.
+
+An evidence-driven follow-up addresses physical TRAIN's60/class sampling versus
+the original3141 TRAIN distribution. Only the latter's independently verified
+TRAIN counts set importance weights, never TEST/VALID frequencies. Profile
+`lab_caltech20_L4_residual_terminal_prior_profile_20261019.json` allows one
+240step/120fitsecond, original5140-head-only weighted CE/LS.02/correct-TRAIN KL.02
+and anchor.0001 fit. TRAIN covariance reparameterization is analytically folded
+back into the same Linear256to20 head. Full411 CPU accuracy-first/NLL-tie selection,
+all nonhead bytes frozen, best/last/predictions/history/dataSHA retained. This
+is a hypothesis, not a promised gain. The already-running joint5150 source must
+finish before its newer file version is synchronized to the lab.
+
 2026-10-19 latest clarification: L4 has all8055 CCDs, so its terminal electronic
 optimization runs on CPU separately from hardware. `--mode capture-queue` starts
 newL2 then newL6 on the singleSDK; it does not wait for L4's electronic accuracy

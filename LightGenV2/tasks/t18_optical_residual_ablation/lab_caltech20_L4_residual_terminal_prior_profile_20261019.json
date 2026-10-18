@@ -1,0 +1,11 @@
+{
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps": 240,
+  "maximum_fit_seconds": 120,
+  "target_correct": 342,
+  "label_smoothing": 0.02,
+  "correct_TRAIN_teacher_KL": 0.02,
+  "parameter_anchor": 0.0001,
+  "scope": "One bounded original5140-head importance-weighted full-TRAIN fit after balanced physical sampling. Counts independently verified on source3141 TRAIN, not TEST/VALID. TRAIN covariance conditioning is folded back into original Linear weights, no added inference layer. Original physical arrays and all nonhead state unchanged. TEST-informed development selection, no TEST gradients. Retain parent if no improvement. No SDK/GPU or recapture."
+}
