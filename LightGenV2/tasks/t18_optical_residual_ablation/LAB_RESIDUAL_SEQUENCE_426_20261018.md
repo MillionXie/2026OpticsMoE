@@ -1,5 +1,15 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+First actual pair segment raised L4 232->241/411(58.6375%),13 newly correct/4
+newly wrong. L2 stayed303 but NLL fell1.1697800->1.1607912; do not call that
+an accuracy increase. FullCPU/nonhead freeze passed. Each may therefore continue
+the SAME pair method under the same finite12-new-segment/first-no-progress/
+07:00 limit, reconstructing all2304 prior TRAIN batches before advancing its RNG.
+Entry `--pair-sequence`, profile
+`lab_caltech20_residual_paircontinuation_profile_20261019.json`. No revised
+radius/loss/seed search and no reset to a worse parent. This does not change the
+live L6 controller, its masks or any collected incident fields.
+
 The continuous-RNG row continuation stopped at its FIRST no-progress segment:
 L2 best303/411(73.7226%),four new segments attempted, selectedstage04; L4
 still232/411 after one new segment. It did not use the remaining12-segment
