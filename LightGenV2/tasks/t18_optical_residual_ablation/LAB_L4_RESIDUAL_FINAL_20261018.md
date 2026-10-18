@@ -18,7 +18,12 @@ non-residual CPU refinements are not interrupted. No recurring monitor.
   then fits only the original5140 readout on TRAIN, CPU120epochs. TEST selection
   is explicitly a development metric, never gradients or independent validation.
 - Full411 CPU simulation/source-bridge parity and layer-major replay must pass
-  before SDK use. First24 TRAIN frames are retained, signal-gated full-capture
+  before SDK use. Parity compares both graphs on the same host; cross-host FFT
+  probability differences are recorded separately, not called bitwise equality.
+  The laboratory fullTEST result must independently remain346/411. Historical
+  simulation-cache/CPU comparison changed one already-wrong sample's predicted
+  wrong class, with every sample's correctness unchanged; that evidence remains.
+  First24 TRAIN frames are retained, signal-gated full-capture
   frames, not an additional acquisition or automatic retry.
 - Preserve the current 20261015 coordinates,2000us/Gain_X4/wait240,1016 active
   native pixels, HV-inverse phase, vertical camera flip, zero-border amplitude
