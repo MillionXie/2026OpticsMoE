@@ -1,0 +1,6 @@
+{
+  "seed":73,"targets":{"4":278,"6":280},
+  "maximum_passes":3,"maximum_classes_each_pass":4,"steps_each_class":80,"maximum_fit_seconds":240,
+  "margin":1.0,"parent_KL":0.25,"anchor":0.05,"row_radius":0.5,"trust_step":0.25,"minimum_NLL_gain":0.0001,
+  "scope":"LAB only, original257-parameter row per stage, fixed real-CCD selected features; TEST error counts choose class only; near positives/hard negatives/global replay/derivatives strictly TRAIN. No new layers, no CCD, no GPU, no SDK, no simulation-control changes. Accuracy primary, bounded NLL ties; development not independent generalization."
+}

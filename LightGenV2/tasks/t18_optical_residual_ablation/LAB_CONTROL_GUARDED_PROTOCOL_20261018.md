@@ -38,3 +38,25 @@ L4 residual layerwise acquisition/training continues independently. Its entry,
 model, generic layerwise helper, profile, hardware contract and SDK ownership
 are protected by before/after SHA checks during this source-only Git deployment.
 No recurring monitor or new branch/worktree/project is created.
+
+## Completed first stage and evidence-led local-row continuation
+
+First stage finished with full selected-feature replay and strict CPU checks:
+L4 270->273/411 (66.42336%); L6 retained parent247/411 (60.09732%), not its
+235/411 last state. The global head change did not solve six-layer errors.
+
+The next stage uses `lab_caltech20_control_localrow_20261018.py`: update only one
+existing category row (257 parameters), freezing the other19 rows per stage.
+TEST error counts choose the category; TRAIN margins alone choose difficult
+positives and negatives. Each64 batch has16 low-margin positives,16 random
+positives,16 hard negatives,16 global TRAIN replay examples. No TEST features
+enter neighbor selection or gradients. Squared signed margin plus parent KL on
+parent-correct TRAIN and an L2 anchor; exact257-variable curvature solved through
+a64x64 Woodbury system, bounded step and row radius. All other inference layers
+remain unchanged. Synthetic autograd/Hessian and frozen-row checks must pass.
+
+Budget: at most3 passes,4 classes/pass,80 updates/class or240 seconds, stopping
+after a pass without accepted progress. Accuracy-primary/NLL-tie selection as
+above; every update's TRAIN indices and all TEST correct/NLL results are logged.
+This is finite development, not an unlimited candidate scan. Preserve all
+parents, baseline/best/last, new-correct/new-wrong, full confusion and source SHA.
