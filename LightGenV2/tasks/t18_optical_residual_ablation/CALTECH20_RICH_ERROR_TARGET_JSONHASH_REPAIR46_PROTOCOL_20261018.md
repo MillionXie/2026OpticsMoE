@@ -1,0 +1,7 @@
+# 采样名单JSON校验工程修复
+
+前一入口在CPU准入阶段，已独立确认采样索引/角色之后，试图将包含list的采样计划传给只支持张量字典的digest，因此抛AttributeError。没有GPU训练/更新/测试。原source、CPU claim、dispatch log及failure保留，不重跑原入口。
+
+新四叶明确修复该单点：以sort_keys的紧凑JSON字节做SHA256，独立检查字典键序不影响结果、改变索引必改变校验值，核原失败SHA前后保持。随后在新唯一CPU与运行目录执行原先所有独立样本序列/梯度检查和相同64步策略。没有调整采样、损失、梯度阈值、CPU模型数或预算，不把原失败称passed。新GPU生产和独占科学审查均绑定新来源和目录；所有旧文件字节冻结。
+
+具体采样、TEST知情开发限制、TRAIN-only梯度、两视图、原模型warm start、每16步TEST选模、GPU限制、保护二层及冻结对照均继承CALTECH20_RICH_ERROR_TARGET_STEPS46_PROTOCOL_20261018.md。
