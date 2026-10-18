@@ -22,7 +22,7 @@ def run():
     assert 'allocated_terms' in m.gradient_kernel.__code__.co_names and set(m.config()['cases'])=={f'L{d}_{mode}' for d in (4,6) for mode in ('prototype_both','KD_both')};assert m.config()['test_interval']==1
     # The fitter and independent auditor both use TEST integer count only.
     assert max([(0,337,-5),(1,337,100),(2,336,999)],key=lambda row:row[1])[0]==0
-    proof=m.s.read(m.CPU/'checks.json');proof.update(analytic_independent_two_view_allocation=True,actual_gradient_kernel_uses_allocation=True,allocation_checks=checks,direct_TEST_tie_ignores_VALID=True,real_models=0,real_forwards=0,optimizer_steps=0,TEST_images_read=0);m.s.save(m.CPU/'checks.json',proof)
+    proof=m.s.read(m.CPU/'checks.json');assert proof['real_model_constructions']==2 and proof['real_model_forward_calls']==0;proof.update(analytic_independent_two_view_allocation=True,actual_gradient_kernel_uses_allocation=True,allocation_checks=checks,direct_TEST_tie_ignores_VALID=True,additional_real_models=0,optimizer_steps=0,TEST_images_read=0);m.s.save(m.CPU/'checks.json',proof)
 if __name__=='__main__':
     try:run()
     except BaseException as e:
