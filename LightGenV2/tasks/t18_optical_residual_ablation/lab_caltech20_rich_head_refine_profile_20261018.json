@@ -1,0 +1,21 @@
+{
+  "id": "rich20_residual_existing_head_finite_refinement_20261018",
+  "arm": "residual",
+  "warm_start": "readout_residual_120/best.pt",
+  "train_samples": 1000,
+  "test_samples": 411,
+  "valid_samples": 0,
+  "seed": 17,
+  "cpu_threads": 2,
+  "trainable_parameters": 5140,
+  "simulation_test_correct": 329,
+  "target_min_test_correct": 325,
+  "selection": "first highest full TEST accuracy; test-informed development",
+  "test_gradients": false,
+  "new_network_layers": 0,
+  "optical_and_nonterminal_electronic_parameters_frozen": true,
+  "stages": [
+    {"name": "adamw_cosine", "epochs": 600, "batch_size": 64, "lr": 0.002, "min_lr": 0.00002, "weight_decay": 0.0001, "loss": "cross_entropy", "evaluate_every": 10},
+    {"name": "lbfgs_linear_convergence", "steps": 120, "inner_iterations": 5, "lr": 1.0, "history_size": 20, "l2_sum": 0.0001, "loss": "cross_entropy plus L2 on existing weights", "evaluate_every": 5}
+  ]
+}
