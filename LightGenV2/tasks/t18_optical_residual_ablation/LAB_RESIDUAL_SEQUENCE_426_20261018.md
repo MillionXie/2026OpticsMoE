@@ -1,5 +1,11 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+2026-10-19 latest clarification: L4 has all8055 CCDs, so its terminal electronic
+optimization runs on CPU separately from hardware. `--mode capture-queue` starts
+newL2 then newL6 on the singleSDK; it does not wait for L4's electronic accuracy
+target. No L4 recapture. Each new2/6 stage still fits downstream masks before the
+next fresh stage. Fully measured L4 original baseline128/411 is preserved.
+
 Latest human approval supersedes prior L4->L6 planning and the earlier5pp middle
 tolerance. This chat owns residual only; no-residual data/code belong to another
 active task. No recurring monitor or new branch/worktree/project copy.

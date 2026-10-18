@@ -168,7 +168,7 @@ def selftest():
 
 def run_queue(a):
     import psutil
-    torch.set_num_threads(2);cfg=core.read(a.profile);root=a.sequence;out=root/'controller';assert not out.exists();out.mkdir();save(out/'controller.json',dict(pid=os.getpid(),entry_SHA256=sha(__file__),source_SHA256=sha(core.__file__),profile_SHA256=sha(a.profile),source_git=subprocess.check_output([str(ROOT/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'),'rev-parse','HEAD'],cwd=ROOT,text=True).strip(),order=[4,2,6],recurring_trigger=False));history=[]
+    torch.set_num_threads(2);cfg=core.read(a.profile);root=a.sequence;capture_only=a.mode=='capture-queue';order=(2,6) if capture_only else (4,2,6);out=root/('capture_controller' if capture_only else 'controller');assert not out.exists();out.mkdir();save(out/'controller.json',dict(pid=os.getpid(),entry_SHA256=sha(__file__),source_SHA256=sha(core.__file__),profile_SHA256=sha(a.profile),source_git=subprocess.check_output([str(ROOT/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'),'rev-parse','HEAD'],cwd=ROOT,text=True).strip(),order=list(order),parallel_L4_terminal_CPU=capture_only,recurring_trigger=False));history=[]
     # The existing L4 worker finishes its current complete fit unchanged. Only
     # a proven SDK-free full-stage handoff admits this continuation.
     old=cfg['L4_session'];old=HERE/old;handoff=core.read(old/'sequence_handoff.json');assert handoff['old_controller_exited'] and 2<=handoff['prefix']<=5 and not LOCK.exists()
@@ -176,7 +176,7 @@ def run_queue(a):
         args=[str(Path(sys.executable).with_name('python.exe')),str(Path(__file__).resolve()),'--mode',mode,'--session',str(session),'--depth',str(depth),'--prefix',str(prefix),'--checkpoint',str(checkpoint),'--checkpoint-sha',digest,'--profile',str(a.profile),'--out',str(folder),'--controller-pid',str(os.getpid()),'--controller-receipt',str(receipt)]
         with folder.with_suffix('.log').open('x',encoding='utf-8',buffering=1) as stream:q=subprocess.run(args,env=dict(os.environ,CUDA_VISIBLE_DEVICES=cfg['GPU_UUID'] if mode=='fit' else ''),stdout=stream,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW)
         assert q.returncode==0,('No blind retry',depth,prefix,mode,q.returncode);r=core.read(folder/'report.json');assert r['state']=='complete' and r['frozen_parameters_unchanged'];p=folder/'best.pt';digest=r['results']['best']['PT_SHA256'];assert sha(p)==digest;assert not [p.pid for p in psutil.process_iter(['cmdline']) if p.info['cmdline'] and '--out' in p.info['cmdline'] and str(folder) in p.info['cmdline']];return p,digest,r
-    for depth in (4,2,6):
+    for depth in order:
         session=old if depth==4 else root/f'L{depth}';a.session=session;a.depth=depth;gateproof=core.read(session/'lab_gate.json' if depth!=4 else session/'lab_bridge_gate.json');assert gateproof['passed'];work=session/'sequence_stagewise_20261018';assert not work.exists();work.mkdir();receipt=work/'controller.json';save(receipt,dict(pid=os.getpid(),entry_SHA256=sha(__file__),source_SHA256=sha(core.__file__),session=str(session.resolve()),depth=depth))
         if depth==4:
             checkpoint=old/handoff['selected_relative'];digest=handoff['selected_PT_SHA256'];start_prefix=handoff['prefix']+1
@@ -192,16 +192,16 @@ def run_queue(a):
                 save(out/'progress.json',dict(state='bounded_middle_binary_repair',depth=depth,stage=stage,prefix=prefix));checkpoint,digest,r=child('terminal',work/('middle_'+stage),session,depth,prefix,checkpoint,digest,receipt)
             records.append(dict(stage=stage,PT_SHA256=digest,selected_correct=r['selected_correct'],selected_epoch=fit_epoch,scope='fullphysical' if prefix==depth+1 else 'mixed_measured_prefix',fit_report_SHA256=fit_sha));save(work/'stage_history.json',records)
         a.prefix=depth+1;folder=work/'final_targeted';save(out/'progress.json',dict(state='final_targeted_TRAIN_repair',depth=depth));checkpoint,digest,r=child('terminal',folder,session,depth,depth+1,checkpoint,digest,receipt);score=r['selected_correct'];result=dict(state='complete',depth=depth,correct=score,TEST=411,accuracy=score/411,simulation_correct=cfg['simulation_correct'][str(depth)],gap_pp=100*(cfg['simulation_correct'][str(depth)]-score)/411,target_within1pp=cfg['simulation_correct'][str(depth)]-score<=4.11,PT_SHA256=digest,PT=str(checkpoint),physical_frames=(depth+1)*1611,SDK_released=not LOCK.exists(),TEST_development=True,TEST_gradients=False,records=records);save(work/'report.json',result);history.append(result);save(out/'completed_models.json',history);print(json.dumps(result),flush=True)
-    save(out/'report.json',dict(state='complete',order=[4,2,6],results=history,SDK_released=not LOCK.exists(),all_training_children_exited=True,recurring_monitor=False))
+    save(out/'report.json',dict(state='complete',order=list(order),results=history,SDK_released=not LOCK.exists(),all_training_children_exited=True,recurring_monitor=False))
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('test','gate','fit','terminal','queue'),required=True);p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha');p.add_argument('--controller-pid',type=int)
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('test','gate','fit','terminal','queue','capture-queue'),required=True);p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha');p.add_argument('--controller-pid',type=int)
     for n in ('sequence','session','profile','parent','out','checkpoint','controller-receipt','coordinates','machine-config','phase-lut','response-lut','phase-sdk','amplitude-sdk'):p.add_argument('--'+n,type=Path)
     a=p.parse_args()
-    if sys.stdout is None:sys.stdout=(a.sequence/'queue.log' if a.mode=='queue' else a.out.with_suffix('.log')).open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
+    if sys.stdout is None:sys.stdout=(a.sequence/('capture_queue.log' if a.mode=='capture-queue' else 'queue.log') if a.mode in ('queue','capture-queue') else a.out.with_suffix('.log')).open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
     try:selftest() if a.mode=='test' else gate(a) if a.mode=='gate' else fit(a) if a.mode=='fit' else terminal_refine(a) if a.mode=='terminal' else run_queue(a)
     except BaseException as e:
-        folder=a.sequence/'controller' if a.mode=='queue' else a.out if a.out else a.session
+        folder=a.sequence/('capture_controller' if a.mode=='capture-queue' else 'controller') if a.mode in ('queue','capture-queue') else a.out if a.out else a.session
         if folder and folder.exists():save(folder/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise
