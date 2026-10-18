@@ -24,6 +24,28 @@ def gpu_process_allowed(pid,name,self_pid,platform,allowlist):
     return pid==self_pid or (platform=='nt' and name.lower() in allowlist)
 
 
+def windows_process_names():
+    """Toolhelp names need no access to another process's executable path."""
+    import ctypes
+    from ctypes import wintypes
+    class Entry(ctypes.Structure):
+        _fields_=[('dwSize',wintypes.DWORD),('cntUsage',wintypes.DWORD),('th32ProcessID',wintypes.DWORD),('th32DefaultHeapID',ctypes.c_size_t),('th32ModuleID',wintypes.DWORD),('cntThreads',wintypes.DWORD),('th32ParentProcessID',wintypes.DWORD),('pcPriClassBase',wintypes.LONG),('dwFlags',wintypes.DWORD),('szExeFile',wintypes.WCHAR*260)]
+    kernel=ctypes.WinDLL('kernel32',use_last_error=True)
+    kernel.CreateToolhelp32Snapshot.argtypes=[wintypes.DWORD,wintypes.DWORD];kernel.CreateToolhelp32Snapshot.restype=wintypes.HANDLE
+    for name in ('Process32FirstW','Process32NextW'):
+        f=getattr(kernel,name);f.argtypes=[wintypes.HANDLE,ctypes.POINTER(Entry)];f.restype=wintypes.BOOL
+    kernel.CloseHandle.argtypes=[wintypes.HANDLE];kernel.CloseHandle.restype=wintypes.BOOL
+    handle=kernel.CreateToolhelp32Snapshot(2,0);assert handle not in (None,ctypes.c_void_p(-1).value)
+    result={};entry=Entry();entry.dwSize=ctypes.sizeof(Entry)
+    try:
+        ok=kernel.Process32FirstW(handle,ctypes.byref(entry))
+        while ok:
+            result[int(entry.th32ProcessID)]=entry.szExeFile.lower();ok=kernel.Process32NextW(handle,ctypes.byref(entry))
+    finally:kernel.CloseHandle(handle)
+    assert os.getpid() in result
+    return result
+
+
 def tail(electronic,head,alpha,x,optical):
     e=electronic(x,478);re,ro=rms(e).detach(),rms(optical).detach()
     mix=(1-alpha.float())*(e/re)+alpha.float()*(optical/ro)
@@ -38,6 +60,7 @@ def selftest():
     assert gpu_process_allowed(10,'pythonw.exe',10,'nt',[])
     assert not gpu_process_allowed(11,'pythonw.exe',10,'nt',[])
     assert gpu_process_allowed(11,'dwm.exe',10,'nt',['dwm.exe'])
+    if os.name=='nt':assert windows_process_names()[os.getpid()]==Path(sys.executable).name.lower()
     print('Original9conv+alpha+5140head gradient test passed;5150 parameters, no new layer or SDK')
 
 
@@ -79,10 +102,12 @@ def fit(a):
     cfg=read(a.profile);manifest=read(a.assets/'manifest.json');assert manifest['TRAIN']==1000 and manifest['TEST']==411 and manifest['VALID']==0
     assert not (HERE/'runs/hardware/.t18_sdk_owner.lock').exists(),'Never train the bench GPU while SDK is owned'
     active=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name','--format=csv,noheader'],text=True)
+    actual_names=windows_process_names() if os.name=='nt' else {}
     for row in active.splitlines():
         parts=row.split(',',2)
         if parts[0].strip()!=cfg['GPU_UUID']:continue
         name=Path(parts[2].strip()).name.lower()
+        if os.name=='nt':name=actual_names.get(int(parts[1]),name)
         allowed=gpu_process_allowed(int(parts[1]),name,os.getpid(),os.name,cfg.get('desktop_graphics_process_allowlist',[]))
         assert allowed,('Chosen GPU has another process; do not share or kill it',dict(pid=int(parts[1]),name=name,self_pid=os.getpid()))
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and 'A100' not in torch.cuda.get_device_name(0)
