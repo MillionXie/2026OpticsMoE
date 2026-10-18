@@ -48,9 +48,17 @@ Local run root has the same relative path as the server root. LAB corresponding
 arm directories contain `server_head_target_20261019` (L2/L4) and
 `server_head_rest_afterpair_20261019` (L6). No new physical capture is claimed:
 these are full previously measured data replays with adapted existing heads.
-L2/L4 fresh full-graph TEST probabilities agree with head replay within
-1.78814e-7 /5.96047e-7 respectively. L6 audit status is recorded in its actual
-artifact, never inferred from a process PID.
+All three fresh full measured-graph audits passed. L2/L4/L6 TEST probabilities
+agree with head replay within1.78814e-7 /5.96047e-7 /1.31130e-6 respectively;
+features are unchanged (maximum difference0). Actual TRAIN counts are
+787/795/674 of1000. Macro TEST recall is56.27678/53.89369/54.69544%, so the
+overall accuracy targets do not establish uniformly strong minority recall.
+
+Selected PT SHA256:
+
+- L2: `c782b57766b9ab669b7247dda9d7868b5fe2181097df97e05eb03935243d78fd`
+- L4: `e7c876939d7639d879a8607b5087795a6fcaebf8785364a87e7ca8701a88f0de`
+- L6: `3c2f2c39895f8d2dc7b2a795cd01c7c67e67ea953a9356daf9283de48799353e`
 
 ## L6 diagnosis and rejected attempts
 
