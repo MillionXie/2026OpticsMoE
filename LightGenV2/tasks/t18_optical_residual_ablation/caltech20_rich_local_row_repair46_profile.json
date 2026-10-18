@@ -1,0 +1,8 @@
+{
+ "run":"caltech20_rich20_L4_8248_L6_8127_oneRow_TRAIN_repair_20261018",
+ "parents":{"4":"4aef3d12b540b4b9b63c388d1fb0b67830019556684a8d3068333c2ec44aa07d","6":"8793faacfa68f55e297157debaa043083c2d6a6f6034041bf5d061159f376794"},
+ "target_correct":{"4":346,"6":350},"maximum_classes":6,"steps_per_class":32,"seed":1810469,
+ "margin":1.0,"KL":2.0,"anchor":0.2,"lr":0.001,"momentum":0.9,"row_delta_radius":0.08,
+ "L2_frozen":true,"controls_frozen":true,"optical_and_intermediate_electronics_frozen":true,
+ "TEST_informed_development":true,"independent_generalization":false
+}
