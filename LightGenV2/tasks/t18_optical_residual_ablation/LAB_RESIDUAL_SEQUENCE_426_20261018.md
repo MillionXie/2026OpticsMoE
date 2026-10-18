@@ -1,5 +1,25 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L6 Huber chain stopped first no-progress at165/411(40.146%), no restart;
+TRAIN-prior full-head comparison retained E0 165, last41 rejected. Original5150
+recovery is an independent finite comparison; fresh selected feature exports are
+mandatory. If the selected feature producer changes, a new bounded row correction
+may use that NEW basis, never stale features. Otherwise do not restart the stalled
+row chain: one coupled two-row comparison uses
+`lab_caltech20_L6_residual_finalpair_profile_20261019.json`, original257 independent
+antisymmetric variables/other18 raw scores fixed, same tested Huber/KL/LM/radius,
+finite continuation with reconstructed TRAIN RNG and first-no-progress stop.
+
+Read-only paired last-stage counterfactual at accepted L2/L4 parameters: nominal
+last-stage inference after the same measured prefix273/115 correct versus actual
+fullphysical318/260. These are NOT new performance results or evidence that the
+original simulation models are273/115; readouts are already adapted to measured
+fields. They caution against blindly retraining another mask with an uncalibrated
+nominal last-stage model. TRAIN-only L2 canonical input audit also rejects simple
+gain2: allTRAIN peak codes168(expert)/215(global), gain2 would clip; no gain applied.
+No hardware, LUT, exposure, input encoding, CCD or PT modification follows from
+either diagnostic, and neither proves the physical cause.
+
 L6 all11277 frames/7stages audited: each TRAIN1200/TEST411, IDs/canonical SHA,
 CCD PNG-to-array pixels/native phase/PT identities passed, SDK released. First
 ordinary final fit103/411, conditioned+bounded head132/411, fullCPU proof. At132,

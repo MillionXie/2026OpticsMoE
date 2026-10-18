@@ -1,0 +1,8 @@
+{
+  "objective":"huber_pair","margin":1.0,"huber_delta":1.0,
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"trust_radius":0.20,"max_pairs":12,"steps_per_pair":192,
+  "fit_seconds":180,"seed":73,"target_correct":{"6":350},
+  "maximum_new_segments":12,"absolute_deadline_UTC":"2026-10-18T23:00:00+00:00",
+  "scope":"Single finite L6 coupled-confusion comparison after bounded original5150 recovery: original rowa+=delta,rowb-=delta, other18 raw scores fixed,257 independent variables. Single-row Huber fixed43/broke11 then plateaued165/411 after first-no-progress continuation; joint pair constraints address coupled decision changes, not an inactive TRAIN margin (all intended TRAIN neighbors active at1). Same fixed Huber/KL/anchor/LM/radius coefficients as the tested paired method, no loss/radius/seed sweep. Use selected recovery feature bank, verify exact nonhead match, and only accepted highest full411 TEST development parent. TRAIN nearest-neighbor/same-class/hard-negative/global batches, no TEST derivatives/VALID, no new layer/CCD/SDK/GPU. All upstream/optics frozen, full physical CPU audit, preserve E0. Continuous reconstructed TRAIN RNG continuation max12newsegments, first no progress/target/07:00 stops."
+}
