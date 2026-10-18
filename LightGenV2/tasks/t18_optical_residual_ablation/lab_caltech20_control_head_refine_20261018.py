@@ -10,7 +10,7 @@ HERE=Path(__file__).resolve().parent;sys.path[:0]=[str(HERE),str(HERE.parents[2]
 import numpy as np
 import torch
 from torch.nn import functional as F
-from lab_caltech20_rich_readout_20261018 import existing_head,load_features,evaluate,selftest
+from lab_caltech20_rich_readout_20261018 import existing_head,load_features,evaluate,selftest as base_selftest
 from lab_caltech10_20261015 import save,sha
 
 
@@ -19,7 +19,7 @@ def read(p):return json.loads(Path(p).read_text())
 
 def load_completed_control(a):
     """Read one completed L4/L6 arm, without opening devices or changing features."""
-    root=a.control_root;capture=read(root/'capture_report.json');contract=read(root/'contract.json');parent=root/'readout120';report=read(parent/'report.json');profile=read(a.profile)
+    root=a.control_root;capture=read(root/'capture_report.json');contract=read(root/'contract.json');profile=read(a.profile);parent=root/profile.get('warm_start_run','readout120');report=read(parent/'report.json')
     assert capture['state']==report['state']=='complete' and capture['sdk_released'] and capture['depth'] in (4,6)
     assert capture['physical_ccd']==1411*(capture['depth']+1) and contract['TRAIN']==1000 and contract['TEST']==411 and contract['VALID']==0
     spec=contract['model'];assert spec['sha256']==capture['PT_SHA256'] and sha(root.parent/spec['file'])==spec['sha256']
@@ -30,7 +30,7 @@ def load_completed_control(a):
     data={};files={};capture_root=root/'capture'
     with np.load(a.session/'assets'/manifest['file'],allow_pickle=False) as identity:
         for role,n in (('train',1000),('test',411)):
-            path=capture_root/role/'predictions.npz';files[role]=sha(path);assert files[role]==read(parent/'protocol.json')['features_SHA256'][role]
+            path=capture_root/role/'predictions.npz';files[role]=sha(path);assert files[role]==read(root/'readout120/protocol.json')['features_SHA256'][role]
             with np.load(path,allow_pickle=False) as z:
                 x,y,ids,p=[z[k].copy() for k in ('features','labels','ids','probabilities')]
             assert x.shape==(n,256) and p.shape==(n,20) and np.isfinite(x).all() and np.array_equal(y,identity[role+'_labels']) and np.array_equal(ids,identity[role+'_ids'])
@@ -61,28 +61,41 @@ def fit(a):
     np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=data['test']['ids'],labels=data['test']['y'].numpy(),probabilities=baseline_p)
     git=HERE.parents[2]/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'
     protocol=dict(arm='control',TRAIN=1000,TEST=411,VALID=0,source_SHA256=sha(__file__),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),warm_start_SHA256=sha(warm),original_PT_SHA256=spec['sha256'],feature_SHA256=files,new_CCD=0,SDK_opened=False,GPU_used=False,trainable_parameters=5140,new_layers=0,all_nonterminal_parameters_frozen=True,TEST_is_development=True,TEST_gradients=False,simulation_correct=simulation_correct,target_min_correct=target,maximum_gap_pp=gap_pp,epochs_max=epochs_max,maximum_seconds=max_seconds,optimizer='AdamW cosine then bounded full-TRAIN LBFGS if needed',lr=lr,weight_decay=wd,label_smoothing=smoothing,lbfgs_steps_max=lbfgs_steps,lbfgs_l2=lbfgs_l2,optimizer_moments='new optimizer; prior saved PT has no moments',selection='first highest full TEST; terminate when target correct count met',parent_best_retained=True,profile=cfg,profile_SHA256=sha(a.profile) if cfg else None,baseline_predictions_SHA256=sha(a.out/'baseline_TEST_predictions.npz'))
+    normalize=bool(cfg and cfg.get('TRAIN_feature_standardization',False));dropout=float(cfg.get('TRAIN_feature_dropout',0.)) if cfg else 0.
+    mean=data['train']['x'].mean(0) if normalize else torch.zeros(256);scale=data['train']['x'].std(0,unbiased=False).clamp_min(1e-4) if normalize else torch.ones(256)
+    before=existing_head({'linear.'+k:v.detach().clone() for k,v in head.state_dict().items()})
+    if normalize:
+        with torch.no_grad():
+            head.bias.add_(head.weight@mean);head.weight.mul_(scale)
+    def deployed_head():
+        state={'linear.weight':head.weight.detach()/scale,'linear.bias':head.bias.detach()-(head.weight.detach()/scale)@mean}
+        return existing_head(state).eval()
+    with torch.no_grad():assert torch.max(torch.abs(before(data['train']['x'])-deployed_head()(data['train']['x'])))<1e-4
+    train_x=(data['train']['x']-mean)/scale
+    protocol.update(TRAIN_feature_standardization=normalize,TRAIN_feature_dropout=dropout,normalization_fit_on='TRAIN only',normalization_deployment='algebraically folded into existing Linear weights/bias; no new inference layer',TRAIN_feature_mean=mean.tolist() if normalize else None,TRAIN_feature_scale=scale.tolist() if normalize else None)
     save(a.out/'protocol.json',protocol);best=baseline['accuracy'];tag={'stage':'parent','source':str(warm)};history=[]
     def checkpoint(name,selected):
         state={k:v.detach().clone() for k,v in original.items()}
-        for k,v in head.state_dict().items():state['linear.'+k]=v.detach().clone()
+        for k,v in deployed_head().state_dict().items():state['linear.'+k]=v.detach().clone()
         assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'))
         torch.save(dict(model=state,selected=selected,protocol=protocol),a.out/(name+'.pt'))
     def assess(stage,iteration,loss):
         nonlocal best,tag
-        train,_=evaluate(head,data['train']);test,_=evaluate(head,data['test']);row=dict(stage=stage,iteration=iteration,TRAIN_loss=float(loss),TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy'],elapsed_s=time.perf_counter()-start)
+        deployed=deployed_head();train,_=evaluate(deployed,data['train']);test,_=evaluate(deployed,data['test']);row=dict(stage=stage,iteration=iteration,TRAIN_loss=float(loss),TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy'],elapsed_s=time.perf_counter()-start)
         if test['accuracy']>best:best=test['accuracy'];tag=dict(stage=stage,iteration=iteration);checkpoint('best',tag)
         history.append(row);save(a.out/'history.json',history);save(a.out/'progress.json',dict(state='fitting',latest=row,best=best,selected=tag,target_met=round(best*411)>=target));print(json.dumps(row),flush=True)
     checkpoint('best',tag);optim=torch.optim.AdamW(head.parameters(),lr=lr,weight_decay=wd);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(optim,epochs_max,eta_min=1e-5)
     for epoch in range(1,epochs_max+1):
         order=torch.randperm(1000);total=0.
         for begin in range(0,1000,64):
-            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);loss=F.cross_entropy(head(data['train']['x'][ix]),data['train']['y'][ix],label_smoothing=smoothing)
+            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);loss=F.cross_entropy(head(F.dropout(train_x[ix],p=dropout,training=dropout>0)),data['train']['y'][ix],label_smoothing=smoothing)
             assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());optim.step();total+=float(loss.detach())*len(ix)
         schedule.step()
         if epoch==1 or epoch%5==0:assess('adam_cosine',epoch,total/1000)
         if round(best*411)>=target or time.perf_counter()-start>=max_seconds:break
     last=dict(stage='adam_cosine',iteration=epoch)
-    if round(best*411)<target and time.perf_counter()-start<max_seconds:
+    if lbfgs_steps and round(best*411)<target and time.perf_counter()-start<max_seconds:
+        assert not normalize and dropout==0.,'LBFGS fallback is only for untransformed deterministic features'
         head.load_state_dict(existing_head(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']).state_dict())
         optim=torch.optim.LBFGS(head.parameters(),lr=1.,max_iter=5,history_size=30,line_search_fn='strong_wolfe')
         for step in range(1,lbfgs_steps+1):
@@ -101,6 +114,16 @@ def fit(a):
     assert all(sha(capture_root/role/'predictions.npz')==digest for role,digest in files.items())
     save(a.out/'report.json',dict(state='complete',results=results,simulation_correct=simulation_correct,baseline_correct=baseline_correct,baseline_TEST=baseline,TEST=411,TRAIN=1000,VALID=0,target_min_correct=target,target_met=round(best*411)>=target,gap_pp=(simulation_correct/411-best)*100,elapsed_s=time.perf_counter()-start,SDK_opened=False,GPU_used=False,original_files_unchanged=True,TEST_development=True,source_SHA256=sha(__file__),baseline_predictions_SHA256=sha(a.out/'baseline_TEST_predictions.npz')))
     print(json.dumps(dict(state='complete',best=best,target_met=round(best*411)>=target,gap_pp=(simulation_correct/411-best)*100)),flush=True)
+
+
+def selftest():
+    base_selftest();torch.manual_seed(17)
+    x=torch.randn(16,256)*torch.rand(256)+torch.randn(256);head=torch.nn.Linear(256,20);mean=x.mean(0);scale=x.std(0,unbiased=False).clamp_min(1e-4)
+    with torch.no_grad():
+        u=head.weight*scale;v=head.bias+head.weight@mean
+        assert torch.max(torch.abs(F.linear((x-mean)/scale,u,v)-head(x)))<1e-5
+        assert torch.max(torch.abs(F.linear(x,u/scale,v-(u/scale)@mean)-head(x)))<1e-5
+    print('TRAIN-only normalization can fold exactly into original5140 Linear; no new inference layer')
 
 
 if __name__=='__main__':
