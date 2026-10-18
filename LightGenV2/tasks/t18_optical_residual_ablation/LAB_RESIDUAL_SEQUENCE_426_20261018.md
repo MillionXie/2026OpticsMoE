@@ -1,5 +1,15 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L6 joint5150 recovery ended54epochs/615fitseconds, retained E0 165, last145;
+paired2304 TRAIN updates retained165, no accepted correction, no continuation.
+Direct alpha audit at the selected165 model: [.95,.66805,.95,.93077,.93896,.89199].
+One targeted10 block-coordinate fit now freezes the accepted classifier rather
+than moving it simultaneously; selected final alpha.89199 has room within the
+ORIGINAL bounds, unlike L2/L4's lower-bound parents. Profile
+`lab_caltech20_L6_residual_targeted10_profile_20261019.json`, existing tested
+TRAIN-only2/2/2/2 sampler, original final9conv+alpha, max30epochs/360seconds,
+all upstream/masks/data untouched, strictCPU/freshfeatures/retain E0 on no gain.
+
 L6 Huber chain stopped first no-progress at165/411(40.146%), no restart;
 TRAIN-prior full-head comparison retained E0 165, last41 rejected. Original5150
 recovery is an independent finite comparison; fresh selected feature exports are
