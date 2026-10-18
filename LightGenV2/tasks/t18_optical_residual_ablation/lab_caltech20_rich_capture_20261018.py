@@ -119,6 +119,7 @@ def capture(a):
     assert release['TRAIN']==1000 and release['TEST']==411 and release['VALID']==0
     assert [s['arm'] for s in release['models']]==['residual','control']
     assert [s['rho'] for s in release['models']]==[.3,0.]
+    assert a.arm in ('residual','control')
     assert release['capture_source_sha256']==sha(__file__)
     assert release['model_source_sha256']==sha(Path(__file__).with_name('lab_caltech20_rich_model_20261018.py'))
     assert sha(a.release)==a.release_sha
@@ -132,21 +133,26 @@ def capture(a):
         response=json.loads(a.response_lut.read_text());assert response['passed'] and response['coordinates_sha256']==sha(a.coordinates)
         drive=np.asarray(response['drive'],np.uint8);assert drive.shape==(256,) and drive[0]==0 and drive[-1]==255
     else:drive=np.arange(256,dtype=np.uint8)
+    if a.arm=='control':
+        prior=json.loads((a.previous_arm/'report.json').read_text())
+        assert prior['state']=='complete' and prior['sdk_released'] and not prior['pilot']
+        assert prior['arm']=='residual' and prior['physical_ccd']==4233 and prior['release_sha256']==a.release_sha
     if a.mode=='full':
         pilot=json.loads((a.pilot/'report.json').read_text())
         assert pilot['state']=='complete' and pilot['sdk_released'] and pilot['pilot'] and pilot['release_sha256']==a.release_sha
-        assert pilot['physical_ccd']==120,'Both 20-TRAIN arm pilots must pass first'
+        assert pilot['arm']==a.arm and pilot['physical_ccd']==60,'Same-arm 20-TRAIN pilot must pass first'
     assert not a.out.exists();assert shutil.disk_usage(a.out.parent).free>=20*(1<<30),'Need20GiB free before opening devices'
     a.out.mkdir(parents=True);torch.set_num_threads(4)
     datasets,manifest=data(a,a.mode=='pilot');assert manifest['sha256']==release['data_sha256']
     a.exposure_us=2000;start=time.perf_counter();frames=0;phase_root=a.out/'phases';phase_root.mkdir()
     warp=cv2.getPerspectiveTransform(np.float32(corners(a.coordinates)),np.float32([[0,0],[477,0],[477,477],[0,477]]))
-    save(a.out/'contract.json',dict(release=release,release_sha256=a.release_sha,pilot=a.mode=='pilot',order='one arm; router TRAIN then TEST, expert TRAIN then TEST, global TRAIN then TEST; then next arm',exposure_us=2000,gain='Gain_X4',wait_ms=240,native_active=1016,phase_transform='hv_inverse',camera_orientation='flip_v',response_mode=release['radiometric_mode'],fine_tuned=False))
+    save(a.out/'contract.json',dict(release=release,release_sha256=a.release_sha,arm=a.arm,pilot=a.mode=='pilot',order='residual pilot -> residual full -> control pilot -> control full; within arm router TRAIN then TEST, expert TRAIN then TEST, global TRAIN then TEST',exposure_us=2000,gain='Gain_X4',wait_ms=240,native_active=1016,phase_transform='hv_inverse',camera_orientation='flip_v',response_mode=release['radiometric_mode'],fine_tuned=False))
     lock=Path(__file__).parent/'runs/hardware/.t18_sdk_owner.lock';lock.parent.mkdir(parents=True,exist_ok=True)
     with lock.open('x') as stream:stream.write(json.dumps(dict(pid=os.getpid(),out=str(a.out),release_sha256=a.release_sha)))
     try:
         with Bench(a) as bench:
             for spec in release['models']:
+                if spec['arm']!=a.arm:continue
                 arm=spec['arm'];model,_=load_checkpoint(a.assets/spec['file'],spec['sha256'],2,spec['rho'],alpha_schema=spec['alpha_schema']);armroot=a.out/arm;armroot.mkdir()
                 previous={role:{} for role in datasets};final={role:[] for role in datasets}
                 for stage in ('router','0','1'):
@@ -184,7 +190,8 @@ def capture(a):
                     results[role]=dict(metrics(labels,probabilities),samples=len(labels),physical=True,fine_tuned=False,checkpoint_sha256=spec['sha256']);save(armroot/role/'metrics.json',results[role])
                 save(armroot/'report.json',dict(state='complete',results=results,release_sha256=a.release_sha,physical_ccd=frames,elapsed_s=time.perf_counter()-start,SDK_still_owned=True))
                 print(json.dumps(dict(arm=arm,results=results)),flush=True)
-        save(a.out/'report.json',dict(state='complete',pilot=a.mode=='pilot',physical_ccd=frames,elapsed_s=time.perf_counter()-start,sdk_released=True,release_sha256=a.release_sha,VALID_captured=0))
+        expected=60 if a.mode=='pilot' else 4233;assert frames==expected
+        save(a.out/'report.json',dict(state='complete',arm=a.arm,pilot=a.mode=='pilot',physical_ccd=frames,elapsed_s=time.perf_counter()-start,sdk_released=True,release_sha256=a.release_sha,VALID_captured=0))
     except BaseException as error:
         save(a.out/'failure.json',dict(error=repr(error),physical_ccd=frames,automatic_retry=False,traceback=traceback.format_exc()));raise
     finally:lock.unlink()
@@ -192,7 +199,8 @@ def capture(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mode',choices=('pack','offline','pilot','full'),required=True)
-    for name in ('out','cache','selection','assets','release','bridge','pilot','coordinates','machine-config','phase-lut','phase-sdk','amplitude-sdk','response-lut'):p.add_argument('--'+name,type=Path,required=name=='out')
+    p.add_argument('--arm',choices=('residual','control'))
+    for name in ('out','cache','selection','assets','release','bridge','pilot','previous-arm','coordinates','machine-config','phase-lut','phase-sdk','amplitude-sdk','response-lut'):p.add_argument('--'+name,type=Path,required=name=='out')
     for name in ('cache-sha','selection-sha','release-sha'):p.add_argument('--'+name)
     a=p.parse_args()
     if sys.stdout is None:
