@@ -1,0 +1,14 @@
+{
+  "run":"caltech20_rich_TRAIN_teacher_procrustes_targets_20261018",
+  "class_weight_exponent":0.5,
+  "label_smoothing":0.05,
+  "classification_feature_gradient_fraction":0.2,
+  "coefficient_cap":0.1,
+  "teacher_feature_dimensions":512,
+  "student_feature_dimensions":256,
+  "TRAIN_only":true,
+  "VAL_images_read":0,
+  "TEST_images_read":0,
+  "optimizer_steps":0,
+  "new_inference_parameters":0
+}
