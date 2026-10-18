@@ -1,0 +1,6 @@
+{
+ "run":"caltech20_rich20_L4_8248_L6_8102_TRAIN_ambiguity_margin_head128_20261018",
+ "parents":{"4":"4aef3d12b540b4b9b63c388d1fb0b67830019556684a8d3068333c2ec44aa07d","6":"4f9d5e1b6a9d0a3a7c15484236d53e82ad341d9c347ee09857629e26e2aa92ae"},
+ "steps":128,"seed":1810462,"margin":1.0,"KL":2.0,"anchor":0.2,"lr":0.001,"momentum":0.9,"delta_radius":0.1,
+ "TEST_informed_development":true,"independent_generalization":false,"L2_frozen":true,"controls_frozen":true
+}
