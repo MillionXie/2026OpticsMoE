@@ -24,6 +24,10 @@ ORIGINAL='e7c140ecd11d52a91bef882a01bc947c3da7f9f72df63d7fcf23055ab503be69'
 LOCK=HERE/'runs/hardware/.t18_sdk_owner.lock'
 
 
+def own_sdk_controller(pid,name,actual_parent,verified_controller):
+    return verified_controller is not None and pid==actual_parent==verified_controller and name.lower() in ('python.exe','pythonw.exe')
+
+
 def read(p):return json.loads(Path(p).read_text(encoding='utf-8'))
 
 
@@ -88,6 +92,10 @@ def prepare(a):
 
 def selftest():
     torch.set_num_threads(2);torch.manual_seed(17)
+    assert own_sdk_controller(10,'pythonw.exe',10,10)
+    assert not own_sdk_controller(11,'pythonw.exe',10,10)
+    assert not own_sdk_controller(10,'pythonw.exe',10,None)
+    assert not own_sdk_controller(10,'pythonw.exe',12,10)
     ref=DirectAlphaHybridMoE(2,.3).eval()
     with torch.no_grad():
         for p in ref.fusion_logits:p.fill_(.8)
@@ -119,6 +127,12 @@ def state_cpu(model):return {k:v.detach().cpu().clone() for k,v in model.state_d
 def fit(a):
     """A separate GPU child; exits before the next SDK stage is opened."""
     cfg=read(a.profile);assert not LOCK.exists() and a.prefix in (1,2,3)
+    controller=None
+    if a.controller_receipt is not None:
+        assert a.controller_receipt.resolve().is_relative_to(a.session.resolve())
+        controller=read(a.controller_receipt)
+        assert controller['pid']==os.getppid()==a.controller_pid
+        assert controller['source_SHA256']==sha(__file__) and Path(controller['session']).resolve()==a.session.resolve()
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and 'A100' not in torch.cuda.get_device_name(0)
     active=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name','--format=csv,noheader'],text=True)
     names=windows_process_names() if os.name=='nt' else {}
@@ -126,7 +140,8 @@ def fit(a):
         parts=row.split(',',2)
         if parts[0].strip()!=cfg['GPU_UUID']:continue
         pid=int(parts[1]);name=names.get(pid,Path(parts[2].strip()).name.lower())
-        assert gpu_process_allowed(pid,name,os.getpid(),os.name,cfg['desktop_graphics_process_allowlist']),('GPU occupied; do not kill/share',pid,name)
+        own_idle_SDK_controller=own_sdk_controller(pid,name,os.getppid(),a.controller_pid if controller is not None else None)
+        assert own_idle_SDK_controller or gpu_process_allowed(pid,name,os.getpid(),os.name,cfg['desktop_graphics_process_allowlist']),('GPU occupied; do not kill/share',pid,name)
     torch.set_num_threads(cfg['cpu_threads']);torch.manual_seed(cfg['seed']);torch.cuda.set_per_process_memory_fraction(.70,0)
     data,dm=load_data(a.session);base,_=load_checkpoint(a.checkpoint,a.checkpoint_sha,2,.3,alpha_schema=DIRECT)
     original=state_cpu(base);model=MeasuredPrefix().cuda();model.load_state_dict(original);model.requires_grad_(False)
@@ -252,12 +267,12 @@ def run(a):
     assert sha(a.session/'assets/original.pt')==ORIGINAL
     for name in ('residual_tail5150_lab_processnames_20261018/report.json','resume_chain_20261018/report.json'):
         assert read(a.parent/name)['state']=='complete'
-    save(a.session/'pipeline_started.json',dict(pid=os.getpid(),time_ns=time.time_ns(),TRAIN=1200,TEST=411,VALID=0,TRAIN_each_class=60,planned_physical_frames=4833,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),original_PT_SHA256=ORIGINAL,control_frozen=True,recurring_monitor=False,order='router TRAIN/TEST -> suffix fit -> expert TRAIN/TEST -> suffix fit -> global TRAIN/TEST -> original terminal fit',TEST_selects_development=True))
+    save(a.session/'pipeline_started.json',dict(pid=os.getpid(),session=str(a.session.resolve()),time_ns=time.time_ns(),TRAIN=1200,TEST=411,VALID=0,TRAIN_each_class=60,planned_physical_frames=4833,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),original_PT_SHA256=ORIGINAL,control_frozen=True,recurring_monitor=False,order='router TRAIN/TEST -> suffix fit -> expert TRAIN/TEST -> suffix fit -> global TRAIN/TEST -> original terminal fit',TEST_selects_development=True))
     checkpoint=a.session/'assets/original.pt';checkpoint_sha=ORIGINAL;stages=[]
     for i,stage in enumerate(STAGES,1):
         acquire_layer(a,stage,checkpoint,checkpoint_sha)
         out=a.session/'fits'/stage;out.parent.mkdir(exist_ok=True);env=dict(os.environ,CUDA_VISIBLE_DEVICES=cfg['GPU_UUID'])
-        cli=[sys.executable,str(Path(__file__).resolve()),'--mode','fit','--session',str(a.session),'--parent',str(a.parent),'--profile',str(a.profile),'--prefix',str(i),'--checkpoint',str(checkpoint),'--checkpoint-sha',checkpoint_sha,'--out',str(out)]
+        cli=[sys.executable,str(Path(__file__).resolve()),'--mode','fit','--session',str(a.session),'--parent',str(a.parent),'--profile',str(a.profile),'--prefix',str(i),'--checkpoint',str(checkpoint),'--checkpoint-sha',checkpoint_sha,'--out',str(out),'--controller-pid',str(os.getpid()),'--controller-receipt',str(a.session/'pipeline_started.json')]
         save(a.session/'progress.json',dict(state='suffix_fitting',after_stage=stage,planned_epochs=(cfg['tail'] if i==3 else cfg['mask'])['epochs']))
         with out.with_suffix('.log').open('x',encoding='utf-8',buffering=1) as log:
             result=subprocess.run(cli,env=env,stdout=log,stderr=subprocess.STDOUT)
@@ -270,15 +285,48 @@ def run(a):
     print(json.dumps(dict(state='complete',TEST_development_accuracy=score,physical_ccd=4833)),flush=True)
 
 
+def resume_after_router(a):
+    """Explicit engineering recovery, preserving the exact1611 valid router CCDs.
+
+    No old failure/report/log is overwritten and no failed optimizer is replayed:
+    prior child rejected the controller PID before out/model/optimizer creation.
+    """
+    assert not LOCK.exists() and not a.out.exists()
+    failure=read(a.session/'failure.json');assert 'Suffix fit failed' in failure['error']
+    old=read(a.session/'pipeline_started.json');log=(a.session/'fits/router.log').read_text()
+    assert "'GPU occupied; do not kill/share', "+str(old['pid']) in log
+    assert not (a.session/'fits/router').exists() and not (a.session/'capture/0').exists() and not (a.session/'capture/1').exists()
+    router=a.session/'capture/router';report=read(router/'report.json');assert report['state']=='complete' and report['physical_ccd']==1611 and report['sdk_released'] and report['checkpoint_sha256']==ORIGINAL
+    for role in ('train','test'):assert sha(router/role/'ccd.npy')==report['arrays'][role]['sha256']
+    a.out.mkdir();state=a.out;cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads'])
+    receipt=state/'controller.json';save(receipt,dict(pid=os.getpid(),session=str(a.session.resolve()),source_SHA256=sha(__file__),time_ns=time.time_ns(),reason='Own SDK controller graphics context rejected before optimizer; exact-parent identity fix',old_failure_SHA256=sha(a.session/'failure.json'),old_router_report_SHA256=sha(router/'report.json'),reused_valid_router_frames=1611,recaptured_router_frames=0))
+    checkpoint=a.session/'assets/original.pt';digest=ORIGINAL;rows=[]
+    for i,stage in enumerate(STAGES,1):
+        if stage!='router':acquire_layer(a,stage,checkpoint,digest)
+        target=state/'fits'/stage;target.parent.mkdir(exist_ok=True)
+        cli=[str(Path(sys.executable).with_name('python.exe')),str(Path(__file__).resolve()),'--mode','fit','--session',str(a.session),'--parent',str(a.parent),'--profile',str(a.profile),'--prefix',str(i),'--checkpoint',str(checkpoint),'--checkpoint-sha',digest,'--out',str(target),'--controller-pid',str(os.getpid()),'--controller-receipt',str(receipt)]
+        save(state/'progress.json',dict(state='suffix_fitting',after_stage=stage,prefix=i))
+        with target.with_suffix('.log').open('x',encoding='utf-8') as stream:
+            child=subprocess.run(cli,env=dict(os.environ,CUDA_VISIBLE_DEVICES=cfg['GPU_UUID']),stdout=stream,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+        assert child.returncode==0,('Recovered suffix failed; no next capture',stage,child.returncode)
+        fitted=read(target/'report.json');assert fitted['state']=='complete' and fitted['frozen_parameters_unchanged']
+        checkpoint=target/'best.pt';digest=fitted['results']['best']['PT_SHA256'];assert sha(checkpoint)==digest
+        rows.append(dict(stage=stage,fit=fitted,capture=read(a.session/'capture'/stage/'report.json'),selected_PT_SHA256=digest))
+    score=rows[-1]['fit']['results']['best']['TEST_development']['accuracy']
+    assert sha(router/'report.json')==read(receipt)['old_router_report_SHA256']
+    save(state/'report.json',dict(state='complete',stages=rows,physical_ccd=4833,new_CCD_after_resume=3222,reused_valid_router_frames=1611,TRAIN=1200,TEST=411,VALID=0,final_PT=str(checkpoint),final_PT_SHA256=digest,TEST_development_accuracy=score,gap_pp=100*(329/411-score),target_within_1pp=abs(329/411-score)<=.01,sdk_released=not LOCK.exists(),GPU_child_exited=True,all_old_failure_and_router_data_preserved=True,source_SHA256=sha(__file__)))
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('prepare','selftest','run','fit'),required=True)
-    for n in ('session','parent','profile','out','checkpoint','coordinates','machine-config','phase-lut','phase-sdk','amplitude-sdk','response-lut'):p.add_argument('--'+n,type=Path)
-    p.add_argument('--checkpoint-sha');p.add_argument('--prefix',type=int);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('prepare','selftest','run','fit','resume-after-router'),required=True)
+    for n in ('session','parent','profile','out','checkpoint','controller-receipt','coordinates','machine-config','phase-lut','phase-sdk','amplitude-sdk','response-lut'):p.add_argument('--'+n,type=Path)
+    p.add_argument('--checkpoint-sha');p.add_argument('--prefix',type=int);p.add_argument('--controller-pid',type=int);a=p.parse_args()
     if sys.stdout is None:
         log=a.session/'pipeline.log' if a.mode=='run' else a.out.with_suffix('.log');sys.stdout=log.open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
+    failure_folder=a.out if a.mode in ('fit','resume-after-router') else a.session
     try:
-        selftest() if a.mode=='selftest' else prepare(a) if a.mode=='prepare' else fit(a) if a.mode=='fit' else run(a)
+        selftest() if a.mode=='selftest' else prepare(a) if a.mode=='prepare' else fit(a) if a.mode=='fit' else resume_after_router(a) if a.mode=='resume-after-router' else run(a)
     except BaseException as e:
-        folder=a.out if a.mode=='fit' else a.session
+        folder=failure_folder
         if folder is not None and folder.exists():save(folder/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False,source_SHA256=sha(__file__)))
         raise
