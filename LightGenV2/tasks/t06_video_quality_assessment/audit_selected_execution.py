@@ -8,7 +8,7 @@ import statistics
 import subprocess
 from collections import Counter
 from datetime import datetime,timedelta,timezone
-from math import sqrt
+from math import sqrt,isfinite
 from pathlib import Path
 
 TASK=Path(__file__).resolve().parent
@@ -262,6 +262,101 @@ def audit_kimi_clean_extension():
     return result
 
 
+def audit_busy50_point(folder):
+    """Independent raw-window replay, including all paced idle time and failures."""
+    report,identity=read(folder/'report.json'),read(folder/'identity.json')
+    assert folder.name==f"{identity['baseline']}_batch{identity['batch']:02d}"
+    heads=next(ast.literal_eval(n.value) for n in ast.parse((TASK/'measure_frozen_batch_costs.py').read_text()).body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='CHECKPOINTS' for t in n.targets))
+    assert identity['checkpoint_sha256']==heads[identity['baseline']]
+    receipt=read(folder/'backup_receipt_check01.json')
+    for item in receipt['verified_files']:assert sha(folder/item['path'])==item['sha256']
+    assert report['status']=='complete' and len(report['repeats'])==3
+    assert identity['gpu_uuid']=='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55' and identity['manifest_sha256']==SHA
+    assert identity['protocol']['protocol'].endswith('v2_complete_group_feedback')
+    raw=csvrows(folder/'measurement/telemetry.csv');groups=read(folder/'measurement/forward_groups.json')
+    clocks=csvrows(folder/'measurement/clock_telemetry.csv');assert clocks and all(float(c['power_limit_w'])==250 for c in clocks)
+    for r in raw:
+        values=[float(r[k]) for k in ('watts','utilization_percent','memory_used_mib')]
+        assert all(map(isfinite,values)) and values[0]>0 and 0<=values[1]<=100 and values[2]>=0
+    raw_stdout=folder/'measurement/telemetry_stdout.jsonl'
+    if raw_stdout.exists():
+        records=[json.loads(line) for line in raw_stdout.read_text().splitlines()]
+        assert len(records)==len(raw) and all(r['valid_numeric_row'] for r in records)
+        assert read(folder/'measurement/measurement_evidence_status.json')['status']=='recorded'
+        for event,r in zip(records,raw):assert list(map(float,event['raw_line'].split(',')))==[float(r[k]) for k in ('watts','utilization_percent','memory_used_mib')]
+    def close(a,b):assert abs(a-b)<=max(1e-8,abs(b)*1e-11),(a,b)
+    duration=0;calls=0;power_duration=0;util_sum=0;samples=0;means=[]
+    for index,r in enumerate(report['repeats'],1):
+        w=r['measurement'];start,end=w['start_monotonic_s'],w['end_monotonic_s']
+        selected=[x for x in raw if start<=float(x['host_monotonic_s'])<end]
+        assert len(selected)==w['samples'] and end-start>=30
+        busy=statistics.mean(float(x['utilization_percent']) for x in selected)
+        watts=statistics.mean(float(x['watts']) for x in selected)
+        close(busy,w['mean_gpu_utilization_percent']);close(watts,w['mean_board_power_w'])
+        warm=[g for g in groups if g['phase']==f'warmup{index}'];assert warm[-1]['end_monotonic_s']-warm[0]['start_monotonic_s']>=5
+        measured=[g for g in groups if g['phase']==f'measured{index}'];assert measured and all(g['forwards']==8 and g['duty']==report['frozen_duty'] for g in measured)
+        n=sum(g['forwards'] for g in measured);assert n==r['forward_calls']
+        for g in measured:
+            assert start<=g['start_monotonic_s']<g['compute_end_monotonic_s']<=g['end_monotonic_s']<=end
+            close(g['requested_idle_s'],(g['compute_end_monotonic_s']-g['start_monotonic_s'])*(1/g['duty']-1))
+        t16=(end-start)*16000/(n*identity['batch']);close(t16,r['cost']['service_time_16_videos_ms'])
+        close((338.2+watts)*t16/1000,r['cost']['estimated_energy_16_videos_j'])
+        assert max(abs(a-b) for a,b in zip(r['output'],identity['native_reference_mos']))<=.0002
+        duration+=end-start;calls+=n;power_duration+=watts*(end-start);util_sum+=busy*len(selected);samples+=len(selected);means.append(busy)
+    for update in report['calibration_updates']:
+        selected=[r for r in raw if update['sample_start_monotonic_s']<=float(r['host_monotonic_s'])<update['sample_end_monotonic_s']]
+        assert len(selected)==update['sample_count'];close(statistics.mean(float(r['utilization_percent']) for r in selected),update['observed_percent'])
+    watts=power_duration/duration;t16=duration*16000/(calls*identity['batch']);e16=(338.2+watts)*t16/1000
+    close(util_sum/samples,report['mean_gpu_busy_percent']);close(t16,report['pooled_service_cost']['service_time_16_videos_ms']);close(e16,report['pooled_service_cost']['estimated_energy_16_videos_j'])
+    guard(folder/'measurement/process_audit.json',identity['pid'])
+    baseline=identity['baseline']
+    return dict(model=NAMES[baseline],baseline=baseline,batch=identity['batch'],mean_busy_percent=util_sum/samples,
+        repeat_means_percent=means,duration_s=duration,completed_forward_calls=calls,completed_video_evaluations=calls*identity['batch'],unique_videos=identity['batch'],
+        board_mean_w=watts,host_proxy_w=338.2,service_T16_ms=t16,service_E16_j=e16,target50_reached=abs(util_sum/samples-50)<=5,
+        source=(folder/'report.json').relative_to(REPO).as_posix(),gpu_uuid=identity['gpu_uuid'],platform='A100-PCIE-40GB /250W',
+        not_dataset_once_cost=True,calibration='v2 complete groups since preceding update,30s then frozen duty;3x5s warmup/complete>=30s',
+        checkpoint_sha256=identity['checkpoint_sha256'],telemetry_profile='durable raw stdout,fail-fast reader' if raw_stdout.exists() else 'original numeric reader; pre-failure complete point',numeric_samples=samples,
+        frozen_duty_fraction=report['frozen_duty'],measured_imposed_wait_s=sum(g['requested_idle_s'] for g in groups if g['phase'].startswith('measured')))
+
+
+def audit_busy50_service_extension():
+    base=TASK/'runs/simulation/lgvq_resident_busy50_a100_20261017'
+    new=base/'attempt03_remaining_20261018';old=base/'attempt02_20261018'
+    final=read(new/'live_followup_final.json');assert final['all_expected_complete'] and final['expected_points']==8
+    receipt=read(new/'backup_receipt_terminal_complete01.json')
+    status_file=next(x for x in receipt['verified_files'] if x['path'].startswith('server_suite_status_'))
+    assert sha(new/status_file['path'])==status_file['sha256'];state=read(new/status_file['path'])
+    assert state['status']=='complete' and len(state['completed'])==8
+    preserved=state['continuation'];assert len(preserved['preserved_points'])==4 and len(preserved['files_sha256'])==45
+    for name,h in preserved['files_sha256'].items():
+        actual=old/(f'server_suite_status_{h[:12]}.json' if name=='suite_status.json' else name)
+        assert sha(actual)==h
+    names=preserved['preserved_points']+state['completed']
+    expected=['qwen_batch01','qwen_batch03','glm_batch01','glm_batch02','small_batch01','small_batch03','clip_batch01','clip_batch10','yolo_batch01','yolo_batch03','deepseek_batch01','deepseek_batch08']
+    assert names==expected
+    rows=[audit_busy50_point((old if i<4 else new)/name) for i,name in enumerate(names)]
+    presentation=read(TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/figure5_kimi_refresh_20261018/presentation_selected.json')
+    assert presentation['status']=='complete' and len(presentation['rows'])==19
+    references={(r['baseline'],r['batch_size_videos']):r for r in presentation['rows'] if r['baseline']!='ours'}
+    for r in rows:
+        ref=references[r['baseline'],r['batch']]
+        r.update(separate_full558_srcc=ref['measured_full558_srcc'],full558_srcc_separate_source=ref['cost_source'],full558_accuracy_remeasured_under_pacing=False)
+    kimi=audit_kimi_clean_extension()
+    assert kimi['status']=='complete' and len(kimi['paced_service'])==2
+    for r in kimi['paced_service']:
+        row=dict(r,separate_full558_srcc=float(references['kimi',r['batch']]['measured_full558_srcc']),full558_accuracy_remeasured_under_pacing=False,
+                 telemetry_profile='rental last-complete-group feedback,not identical to original40GB v2 controller')
+        rows.append(row)
+    result=dict(status='complete',original40GB_points=12,preserved_original_points=names[:4],new_completed_points=names[4:],
+        rows=rows,all_rows_have_three_full_repeats=True,no_model_GPU_or_remote_access=True,Qwen_B1_paper_anchor_unchanged=True,
+        interpretation='Supplementary paced resident service costs including waits; not dataset-once costs, not optical spatial-occupancy equivalence')
+    target=new/'verified_busy50_service_extension.json'
+    if target.exists():assert read(target)==result
+    else:target.open('x',encoding='utf-8').write(json.dumps(result,indent=2)+'\n')
+    print(json.dumps(dict(status='complete',original40GB_points=12,new_points=8,Kimi_paced_points=2,total_service_rows=len(rows))))
+    return result
+
+
 def audit_sequential():
     """Utilization-only same-process reproduction; no cost substitution."""
     root=TASK/'runs/simulation/lgvq_yolo_clip_sequential_a100_20261017'
@@ -471,8 +566,10 @@ def audit(selected_points=None,recheck=False):
 if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true');parser.add_argument('--yolo-clip-sequential',action='store_true');parser.add_argument('--rental-extension',action='store_true');parser.add_argument('--kimi-clean-extension',action='store_true')
+    parser.add_argument('--busy50-service-extension',action='store_true')
     args=parser.parse_args()
-    if args.kimi_clean_extension:audit_kimi_clean_extension()
+    if args.busy50_service_extension:audit_busy50_service_extension()
+    elif args.kimi_clean_extension:audit_kimi_clean_extension()
     elif args.rental_extension:audit_rental_extension()
     elif args.yolo_clip_sequential:audit_sequential()
     else:

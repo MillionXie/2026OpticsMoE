@@ -35,6 +35,87 @@ if(process.argv.includes('--test-selection')){
 const filenames=['plot_data.xlsx','LGVQ_temporal_multi_baseline_recalculated.xlsx','LGVQ_temporal_gpu_utilization.xlsx'];
 const books=await Promise.all(filenames.map(async f=>SpreadsheetFile.importXlsx(await FileBlob.load(path.join(out,f)))));
 const [plot,main,util]=books;
+async function updateBusy50Service(){
+ const base=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018');
+ const source=path.join(base,'verified_busy50_service_extension.json');
+ const evidence=JSON.parse(await fs.readFile(source,'utf8'));
+ if(evidence.status!=='complete'||evidence.original40GB_points!==12||evidence.rows.length!==14)throw Error('All authorized service points must pass raw audit');
+ const service=plot.worksheets.getItem('Paced service'),points=evidence.rows;
+ const verify=()=>{for(const[i,x]of points.entries()){const r=i+7;for(const[c,key]of[['C','mean_busy_percent'],['G','service_T16_ms'],['H','service_E16_j']])if(Math.abs(service.getRange(c+r).values[0][0]-(c==='C'?x[key]/100:x[key]))>1e-8)throw Error('Paced service source mismatch '+c+r);}}
+ if(process.argv.includes('--verify-busy50-service')){verify();console.log(JSON.stringify({service_rows_reimported_verified:14,conventional_costs_unchanged:true}));return;}
+ if(process.argv.includes('--polish-busy50-service')){
+  service.getRange('J7:K20').format.horizontalAlignment='center';service.getRange('M7:M20').format.horizontalAlignment='center';plot.recalculate();verify();
+  const preview=await plot.render({sheetName:'Paced service',range:'A1:M26',scale:1,format:'png'});await fs.writeFile(path.join(scratch,'busy50_service_complete.png'),new Uint8Array(await preview.arrayBuffer()));
+  const file=path.join(out,filenames[0]);await(await SpreadsheetFile.exportXlsx(plot)).save(file);
+  const receiptFile=path.join(base,'service_presentation/receipt.json'),receipt=JSON.parse(await fs.readFile(receiptFile,'utf8'));receipt.output_workbook_sha256=crypto.createHash('sha256').update(await fs.readFile(file)).digest('hex');receipt.visual_QA_formatting=true;await fs.writeFile(receiptFile,JSON.stringify(receipt,null,2)+'\n');
+  console.log(JSON.stringify({workbook_polished:1,service_values_unchanged:true}));return;
+ }
+ const checksum=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+ const archive=path.join(base,'service_presentation/prior_report_archive');await fs.mkdir(archive,{recursive:true});
+ const documentation=await Promise.all(['README.md','UTILIZATION_METHOD_20261015.md'].map(async name=>({name,text:await fs.readFile(path.join(out,name),'utf8')})));
+ const oldStatement='The original40GB paced experiment is incomplete after a telemetry-reader failure: four points passed independent raw audit, eight remain uncompleted. Neither failed telemetry nor inferred values enter these Kimi tables. Completion of this Kimi follow-up does not imply completion of that separate suite.';
+ for(const doc of documentation){if(!doc.text.includes(oldStatement))throw Error('Unexpected methods edit; preserve other writer');try{await fs.copyFile(path.join(out,doc.name),path.join(archive,doc.name),fs.constants.COPYFILE_EXCL);}catch(error){if(error.code!=='EEXIST'||await fs.readFile(path.join(archive,doc.name),'utf8')!==doc.text)throw error;}}
+ const filename=path.join(out,filenames[0]),prior=await fs.readFile(filename),priorPath=path.join(archive,filenames[0]);
+ try{await fs.copyFile(filename,priorPath,fs.constants.COPYFILE_EXCL);}catch(error){if(error.code!=='EEXIST'||checksum(await fs.readFile(priorPath))!==checksum(prior))throw error;}
+ const before={Comparison:{values:plot.worksheets.getItem('Comparison').getRange('A1:M32').values,formulas:plot.worksheets.getItem('Comparison').getRange('A1:M32').formulas},Measurements:{values:plot.worksheets.getItem('Measurements').getRange('A1:Y24').values,formulas:plot.worksheets.getItem('Measurements').getRange('A1:Y24').formulas}};
+ service.getRange('A1:Q70').unmerge();service.getRange('A1:Q70').clear({applyTo:'all'});
+ service.getRange('A1:M1').merge();service.getRange('A1').values=[['Paced resident inference at approximately 50% GPU busy time']];
+ service.getRange('A2:M2').merge();service.getRange('A2').values=[['All imposed waits included. These service costs do not replace conventional dataset-once inference measurements.']];
+ service.getRange('A3:M3').merge();service.getRange('A3').values=[['Original 40GB: 12 completed points. Kimi 80GB: 2 separate points. Three complete repeats per point; all samples retained.']];
+ service.getRange('A4:M4').merge();service.getRange('A4').values=[['50% driver-window busy time is not equivalent to optical spatial occupancy. Existing full558 SRCC is a separate reference, not remeasured under pacing.']];
+ service.getRange('A6:M6').values=[['Model','Video B','GPU busy mean','Repeat1','Repeat2','Repeat3','Service T16 (ms)','Estimated service E16 (J)','Board mean (W)','50±5pp target','Platform / limit','Existing full558 SRCC','Measurement profile']];
+ service.getRange('A30:O30').values=[['Model','B','Full duration (s)','Forward calls','Same-window board (W)','Host proxy (W)','Busy mean (%)','Repeat1 (%)','Repeat2 (%)','Repeat3 (%)','Raw report source','GPU UUID','Full558 source','Telemetry profile','Calibration profile']];
+ const colors={qwen:['#0072B2','#EAF3FA'],glm:['#92527F','#F5EBF3'],small:['#C25B18','#FFF0E5'],clip:['#007F63','#E8F5EF'],yolo:['#9B7000','#FFF7DD'],deepseek:['#5B6470','#EEF0F3'],kimi:['#B64058','#FCECEF']};
+ const comparison=plot.worksheets.getItem('Comparison'),measurements=plot.worksheets.getItem('Measurements');
+ for(const[i,x]of points.entries()){
+  const r=i+7,s=i+31,color=colors[x.baseline];
+  const candidates=measurements.getRange('A5:D23').values;const index=candidates.findIndex(v=>v[0]===x.model&&v[3]===x.batch);if(index<0)throw Error('Missing separately sourced full558 point');
+  const ref=index+7;if(Math.abs(comparison.getRange('E'+ref).values[0][0]-x.separate_full558_srcc)>1e-10)throw Error('Accuracy reference drift');
+  service.getRange(`A${s}:O${s}`).values=[[x.model,x.batch,x.duration_s,x.completed_forward_calls,x.board_mean_w,x.host_proxy_w,x.mean_busy_percent,...x.repeat_means_percent,x.source,x.gpu_uuid,x.full558_srcc_separate_source??'Conventional Comparison row'+ref,x.telemetry_profile,x.calibration]];
+  service.getRange(`A${r}:M${r}`).formulas=[[`=A${s}`,`=B${s}`,`=G${s}/100`,`=H${s}/100`,`=I${s}/100`,`=J${s}/100`,`=C${s}*16000/(D${s}*B${s})`,`=(E${s}+F${s})*G${r}/1000`,`=E${s}`,`=IF(AND(C${r}>=0.45,C${r}<=0.55),"Within","Not reached")`,'=""',`=Comparison!E${ref}`,'=""']];
+  service.getRange('K'+r).values=[[x.platform]];service.getRange('M'+r).values=[[x.baseline==='kimi'?'80GB, last-group feedback':i<4?'40GB, original logging':'40GB, raw-line logging']];
+  service.getRange(`A${r}:M${r}`).format={fill:color[1],font:{name:'Arial',size:10,color:'#243447'},rowHeight:32,verticalAlignment:'center'};service.getRange(`A${r}`).format.font={name:'Arial',size:10,bold:true,color:color[0]};
+ }
+ service.getRange('A1:O45').format.columnWidth=17;service.getRange('A1:A45').format.columnWidth=25;service.getRange('B1:B45').format.columnWidth=9;service.getRange('C1:F45').format.columnWidth=13;service.getRange('G1:H45').format.columnWidth=22;service.getRange('K1:K45').format.columnWidth=27;service.getRange('M1:O45').format.columnWidth=28;
+ service.getRange('A1:M1').format={fill:'#214D68',font:{name:'Arial',size:15,bold:true,color:'#FFFFFF'},rowHeight:35};service.getRange('A2:M4').format={font:{name:'Arial',size:10,color:'#53687A'},wrapText:true,rowHeight:30};
+ for(const range of ['A6:M6','A30:O30'])service.getRange(range).format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:48,verticalAlignment:'center',horizontalAlignment:'center'};
+ service.getRange('C7:F20').setNumberFormat('0.00%');service.getRange('G7:I20').setNumberFormat('#,##0.000');service.getRange('L7:L20').setNumberFormat('0.000000');service.getRange('B7:L20').format.horizontalAlignment='right';service.getRange('A31:O44').format={font:{name:'Arial',size:10,color:'#243447'},rowHeight:25};
+ service.getRange('J7:K20').format.horizontalAlignment='center';service.getRange('M7:M20').format.horizontalAlignment='center';
+ service.getRange('J7:J20').conditionalFormats.add('containsText',{text:'Not reached',format:{fill:'#FFF4D6',font:{bold:true,color:'#9C6500'}}});
+ service.getRange('A22:M23').merge();service.getRange('A22').values=[['Service T16 = complete measured duration ×16000 / (forward calls ×B). Estimated E16 = (338.2 W + same-window mean board W) ×service T16/1000. Resident repeats are not558 distinct videos. Missing or below-target utilization is never rounded up.']];service.getRange('A22:M23').format={font:{name:'Arial',size:10,color:'#53687A'},wrapText:true,rowHeight:30};
+ service.getRange('A25:M26').merge();service.getRange('A25').values=[['The reference SRCC is linked to the conventional full558 evaluation at the same model/batch. Pacing checks repeated first-B output parity only. The first four 40GB points retain their prior reader; later eight add raw stdout and fail-fast evidence preservation. Kimi uses its separately disclosed last-group controller and400W platform.']];service.getRange('A25:M26').format={font:{name:'Arial',size:10,color:'#53687A'},wrapText:true,rowHeight:30};
+ plot.recalculate();const old=service.getRange('C31').values[0][0],answer=service.getRange('G7').values[0][0];service.getRange('C31').values=[[old*1.01]];plot.recalculate();if(Math.abs(service.getRange('G7').values[0][0]-answer*1.01)>1e-8)throw Error('Service recalculation failed');service.getRange('C31').values=[[old]];plot.recalculate();verify();
+ for(const[name,state]of Object.entries(before)){const sheet=plot.worksheets.getItem(name),range=name==='Comparison'?'A1:M32':'A1:Y24';if(JSON.stringify({values:sheet.getRange(range).values,formulas:sheet.getRange(range).formulas})!==JSON.stringify(state))throw Error('Unrelated conventional sheet changed');}
+ const errors=(await plot.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1000})).ndjson;if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
+ const preview=await plot.render({sheetName:'Paced service',range:'A1:M26',scale:1,format:'png'});await fs.writeFile(path.join(scratch,'busy50_service_complete.png'),new Uint8Array(await preview.arrayBuffer()));
+ await(await SpreadsheetFile.exportXlsx(plot)).save(filename);
+ const quote=v=>/[",\r\n]/.test(String(v??''))?'"'+String(v??'').replaceAll('"','""')+'"':String(v??'');const keys=[...new Set(points.flatMap(x=>Object.keys(x)))];await fs.writeFile(path.join(out,'LGVQ_paced_service.csv'),[keys,...points.map(x=>keys.map(k=>Array.isArray(x[k])?x[k].join(';'):x[k]))].map(r=>r.map(quote).join(',')).join('\r\n')+'\r\n');
+ const f=(v,n=6)=>Number(v).toFixed(n);
+ const table=['| Model | B | Pooled GPU busy (%) | Repeat1 /2 /3 (%) | Service T16 (ms) | Estimated service E16 (J) | Same-window board mean (W) | Platform |',
+ '| --- | ---: | ---: | --- | ---: | ---: | ---: | --- |',...points.map(x=>`| ${x.model} | ${x.batch} | ${f(x.mean_busy_percent)} | ${x.repeat_means_percent.map(v=>f(v)).join(' / ')} | ${f(x.service_T16_ms)} | ${f(x.service_E16_j)} | ${f(x.board_mean_w)} | ${x.platform} |`)].join('\n');
+ const outside=points.filter(x=>!x.target50_reached).map(x=>`${x.model} B=${x.batch} (${f(x.mean_busy_percent,2)}%)`).join(', ');
+ const text=`**Supplementary paced resident service: completed original 40GB suite.** We measured the six frozen original-platform models at their predeclared batch pairs on A100-PCIE-40GB at 250 W: Qwen B=1/3, GLM B=1/2, DeepSeek-VL2-Small B=1/3, CLIP B=1/10, YOLO B=1/3 and DeepSeek-VL2-Tiny B=1/8. Kimi B=1/6 retains the separate same-card A100-SXM4-80GB/400W measurements. On the original 40GB platform, a fresh process was used for each model–batch point, retaining one loaded model through calibration and all three repeats. At each point, only the first B TEST videos, each retaining the original four frames, were prepared and transferred once. Subsequent forwards reused these resident inputs and each processed B videos. Queue8 denotes eight sequential forwards before synchronization, not 8B simultaneously processed videos.
+
+The original 40GB controller calibrated on complete compute-plus-imposed-idle groups for at least 30 s, then froze the duty fraction for all three repeats. Each repeat included at least 5 s of warmup and a complete measurement window of at least 30 s. All 50-ms driver samples in the three complete windows were pooled. The target was 50%, with a tolerance of ±5 percentage points of kernel-busy time, not SM occupancy or optical spatial occupancy. ${outside?'The target was not reached at '+outside+'. These observations are retained without rounding up or adding unrelated GPU work.':'All measured means fell within the declared target band.'} CLIP B=1 reached duty1 with zero imposed idle time, so its lower busy fraction is a recorded native-execution outcome, not a50% observation. Kimi used its separately disclosed last-completed-group feedback controller rather than the original 40GB aggregation across groups since the preceding update. No weights, numerical precision, frames, power limits or clocks were changed.
+
+For a model batch B, normalized service T16 equals 16000×the sum of complete measured durations in seconds divided by B×the total completed forward calls. Mean board power is calculated within each complete window and duration-weighted across repeats. Estimated service E16=(338.2 W host-power proxy+same-window board mean)×service T16/1000, with T16 in milliseconds. Every imposed wait is included. These sampled-power service estimates are not calibrated whole-system energy-meter integrals. Repeating the first B inputs is not an evaluation of 558 distinct videos: the displayed full558 SRCC is linked to the separately measured conventional point, and paced runs check repeated-input MOS parity with an absolute MOS tolerance of 0.0002. Different input populations and warmup boundaries mean these resident service costs must not replace, or be interpreted as a causal slowdown ratio against, the first-200 dataset-once inference costs. The finalized Qwen B=1 conventional reference remains unchanged.
+
+The first four 40GB points were preserved with 45 bound evidence hashes. After explicit authorization, only the remaining eight were measured in attempt03_remaining_20261018 using the published telemetry repair. The repair retains raw stdout, rejects unavailable numeric fields and saves available evidence before propagating failure; it does not impute or skip missing observations. All 12 original points passed independent raw-window, waiting-time and cost replay. The failed Small attempt remains excluded and archived. Full-precision service data and per-point source paths are retained in [LGVQ_paced_service.csv](LGVQ_paced_service.csv), alongside the updated Paced service worksheet.
+
+${table}
+
+`;
+ for(const doc of documentation){const updated=doc.text.replace(/\*\*Separate paced service measurements\.\*\*[\s\S]*?(?=The 120 delivered raw files)/,text);if(updated===doc.text)throw Error('Missing paced Methods section');await fs.writeFile(path.join(out,doc.name),updated);}
+ await fs.writeFile(path.join(base,'service_presentation/receipt.json'),JSON.stringify({status:'complete',rows:14,original40GB_points:12,source_sha256:checksum(await fs.readFile(source)),prior_workbook_sha256:checksum(prior),output_workbook_sha256:checksum(await fs.readFile(filename)),conventional_sheets_values_and_formulas_unchanged:true,formula_errors:0},null,2)+'\n');
+ console.log(JSON.stringify({workbooks_updated:1,service_rows:14,conventional_sheets_unchanged:true}));
+}
+if(process.argv.includes('--busy50-service-inspect')){
+ console.log((await plot.inspect({kind:'table',range:"'Paced service'!A1:K18",tableMaxRows:8,tableMaxCols:11,maxChars:2200})).ndjson);
+ const preview=await plot.render({sheetName:'Paced service',range:'A1:F11',scale:1,format:'png'});await fs.writeFile(path.join(scratch,'busy50_service_before.png'),new Uint8Array(await preview.arrayBuffer()));process.exit(0);
+}
+if(process.argv.includes('--busy50-service-extension')||process.argv.includes('--verify-busy50-service')||process.argv.includes('--polish-busy50-service')){
+ await updateBusy50Service();process.exit(0);
+}
 if(process.argv.includes('--inspect')){
  for(let i=0;i<books.length;i++)console.log(filenames[i],(await books[i].inspect({kind:'sheet',include:'id,name',maxChars:1500})).ndjson);
  for(const [book,sheetName,range,file] of [[plot,'Comparison','A1:L17','plot'],[main,'Summary','A1:L13','summary'],[util,'GPU utilization','A1:I13','util']]){
@@ -177,7 +258,7 @@ if(process.argv.includes('--polish')){
  console.log(JSON.stringify({workbooks_polished:3,measurement_values_unchanged:true}));process.exit(0);
 }
 if(process.argv.includes('--verify')){
- if(cleanKimi){const service=plot.worksheets.getItem('Paced service');for(const[i,x]of cleanData.paced_service.entries())for(const[c,k]of[['D','service_T16_ms'],['E','service_E16_j']])if(Math.abs(service.getRange(c+(i+7)).values[0][0]-x[k])>1e-8)throw Error('Saved service mismatch');}
+ if(cleanKimi){const service=plot.worksheets.getItem('Paced service'),expanded=service.getRange('G6').values[0][0]==='Service T16 (ms)';for(const x of cleanData.paced_service){const index=service.getRange('A7:B20').values.findIndex(v=>v[0]===x.model&&v[1]===x.batch);if(index<0)throw Error('Missing saved Kimi service');for(const[c,k]of [[expanded?'G':'D','service_T16_ms'],[expanded?'H':'E','service_E16_j']])if(Math.abs(service.getRange(c+(index+7)).values[0][0]-x[k])>1e-8)throw Error('Saved service mismatch');}}
  const p=plot.worksheets.getItem('Comparison');
  for(let i=0;i<rows.length;i++){const r=i+7,x=rows[i];for(const[c,k]of[['E','measured_full558_srcc'],['G','time_16_videos_ms'],['H','energy_16_videos_j'],['I','lightgen_time_speedup_x'],['J','lightgen_energy_efficiency_gain_x']])if(Math.abs(p.getRange(c+r).values[0][0]-x[k])>1e-8)throw Error('Saved plot mismatch '+c+r);if(i&&Math.abs(p.getRange('F'+r).values[0][0]*100-x.display_gpu_util_mean_percent)>1e-8)throw Error('Saved util mismatch');}
  const savedSummary=main.worksheets.getItem('Summary'),savedUtil=util.worksheets.getItem('GPU utilization');
@@ -398,7 +479,7 @@ ${paced}
 
 Paced data are retained in [LGVQ_kimi_paced_service.csv](LGVQ_kimi_paced_service.csv) and the separate Paced service worksheet; the six-batch native trend is retained in [LGVQ_kimi_native_utilization_trend.csv](LGVQ_kimi_native_utilization_trend.csv). The original40GB paced experiment is incomplete after a telemetry-reader failure: four points passed independent raw audit, eight remain uncompleted. Neither failed telemetry nor inferred values enter these Kimi tables. Completion of this Kimi follow-up does not imply completion of that separate suite.
 
-The 120 delivered raw files passed length and SHA256 checks, and utilization, costs and predictions were independently replayed on CPU in verified_kimi_clean_extension.json. The delivery and original audit remain under the canonical rental run. Previously TEST-selected quality heads retain the development/no-independent-VAL interpretation; no head or backbone was retrained for this follow-up. The model process has exited and its GPU was released.
+The 120 delivered Kimi raw files passed length and SHA256 checks, and utilization, costs and predictions were independently replayed on CPU in verified_kimi_clean_extension.json. The delivery and original audit remain under the canonical rental run. Previously TEST-selected quality heads retain the development/no-independent-VAL interpretation; no head or backbone was retrained for this follow-up. The model process has exited and its GPU was released.
 
 **Figure interpretation.** The two panels show independently evaluated temporal SRCC against normalized inference latency and estimated energy for the same configurations. Labels give B and separately measured resident utilization. The Kimi solid connector links same-card B=1/B=6; the DeepSeek full dashed connector spans different sessions. Neither the platform differences nor the sampled-power estimates permit attribution solely to model architecture. Paced service costs are intentionally absent from these conventional inference panels.
 
