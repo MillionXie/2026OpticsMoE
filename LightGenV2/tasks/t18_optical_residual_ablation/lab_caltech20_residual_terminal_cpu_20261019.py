@@ -132,14 +132,30 @@ def pair_repair(a,rng=None):
     model.load_state_dict(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']);m,p,_=assess(model,data,fields,canonical,'test',4);assert np.max(np.abs(p-probability(te['x'],w,b)))<=3e-6 and round(m['accuracy']*411)==best;save(a.out/'plans.json',plans);save(a.out/'history.json',history);save(a.out/'report.json',dict(state='complete',initial_correct=initial,selected_correct=best,actual_steps=len(history),results=results,new_correct=int(((baseline.argmax(1)!=te['y'])&(p.argmax(1)==te['y'])).sum()),new_wrong=int(((baseline.argmax(1)==te['y'])&(p.argmax(1)!=te['y'])).sum()),full_CPU_replay_passed=True,all_nonhead_frozen=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False))
 
 
+def reconstruct_TRAIN_rng(previous,labels,c,pair,depth):
+    segments=[]
+    def visit(path):
+        r=json.loads((path/'report.json').read_text());assert r['state']=='complete' and r['full_CPU_replay_passed']
+        if 'actual_new_segments' in r:
+            assert r['reason']=='bounded_segments_exhausted','Never resume first-no-progress or deadline/target stops';p=json.loads((path/'protocol.json').read_text());visit(Path(p['previous_run']));children=sorted(path.glob('stage*/report.json'));assert len(children)==r['actual_new_segments']
+            assert json.loads((path/'history.json').read_text())[-1]['improved']
+            segments.extend(p.parent for p in children)
+        else:segments.append(path)
+    visit(previous);rng=np.random.default_rng(c['seed']+depth);steps=0;proof=[]
+    for path in segments:
+        old=json.loads((path/'protocol.json').read_text())['profile'];keys=('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed','objective','margin','huber_delta','adaptive_TRAIN_positive_margin','positive_margin_quantile','maximum_positive_margin');assert all(old.get(k)==c.get(k) for k in keys),'Continuation changed optimization method';plans={tuple(p['classes']) if pair else p['class_index']:p for p in json.loads((path/'plans.json').read_text())};history=json.loads((path/'history.json').read_text());assert any(row['accepted'] for row in history)
+        for row in history:
+            k=tuple(row['classes']) if pair else row['class_index'];p=plans[k];ix=pair_batch(rng,p['TRAIN_neighbors'],[np.flatnonzero(labels==j) for j in k],p['TRAIN_hard_negatives']) if pair else row_batch(rng,p['TRAIN_neighbors'],np.flatnonzero(labels==k),p['TRAIN_hard_negatives']);assert ix.tolist()==row['TRAIN_indices'];steps+=1
+        proof.append(dict(path=str(path),history_SHA256=sha(path/'history.json'),plans_SHA256=sha(path/'plans.json')))
+    return rng,len(segments),steps,proof
+
+
 def row_sequence(a):
     from datetime import datetime,timezone
-    c=json.loads(a.fit_profile.read_text());assert 1<=c['maximum_new_segments']<=12 and c['fit_seconds']<=180;root=a.out;assert not root.exists();root.mkdir();previous=a.previous_run;r=json.loads((previous/'report.json').read_text());assert r['state']=='complete' and r['full_CPU_replay_passed'];assert r['selected_correct']>=r['initial_correct'];old=json.loads((previous/'protocol.json').read_text())['profile'];assert all(old[k]==c[k] for k in ('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed'));z=np.load(a.feature_run/'train_features.npz');labels=z['labels'];pair=a.pair_sequence;plans={tuple(p['classes']) if pair else p['class_index']:p for p in json.loads((previous/'plans.json').read_text())};history=json.loads((previous/'history.json').read_text());rng=np.random.default_rng(c['seed']+a.depth)
-    assert any(row['accepted'] for row in history),'Do not resume a segment with no genuine accuracy or tied-NLL progress'
-    for row in history:
-        k=tuple(row['classes']) if pair else row['class_index'];p=plans[k];ix=pair_batch(rng,p['TRAIN_neighbors'],[np.flatnonzero(labels==j) for j in k],p['TRAIN_hard_negatives']) if pair else row_batch(rng,p['TRAIN_neighbors'],np.flatnonzero(labels==k),p['TRAIN_hard_negatives']);assert ix.tolist()==row['TRAIN_indices']
-    save(root/'protocol.json',dict(source_SHA256=sha(__file__),profile=c,profile_SHA256=sha(a.fit_profile),previous_run=str(previous),previous_history_SHA256=sha(previous/'history.json'),previous_plans_SHA256=sha(previous/'plans.json'),all_prior_TRAIN_sampler_indices_reconstructed=True,continuous_TRAIN_RNG_not_seed_grid=True,SDK_opened=False,GPU_used=False,recurring_monitor=False));checkpoint=previous/'best.pt';digest=r['results']['best']['PT_SHA256'];assert sha(checkpoint)==digest;current=r['selected_correct'];nll=r['results']['best']['NLL'];records=[];deadline=datetime.fromisoformat(c['absolute_deadline_UTC']);reason='bounded_segments_exhausted'
+    c=json.loads(a.fit_profile.read_text());assert 1<=c['maximum_new_segments']<=12 and c['fit_seconds']<=180;root=a.out;assert not root.exists();root.mkdir();previous=a.previous_run;r=json.loads((previous/'report.json').read_text());assert r['state']=='complete' and r['full_CPU_replay_passed'];z=np.load(a.feature_run/'train_features.npz');labels=z['labels'];pair=a.pair_sequence;rng,prior_count,prior_steps,proof=reconstruct_TRAIN_rng(previous,labels,c,pair,a.depth);limit=c.get('maximum_total_segments',13);assert prior_count<limit<=37
+    save(root/'protocol.json',dict(source_SHA256=sha(__file__),profile=c,profile_SHA256=sha(a.fit_profile),previous_run=str(previous),previous_history_SHA256=sha(previous/'history.json'),all_prior_TRAIN_sampler_indices_reconstructed=True,prior_segments=prior_count,prior_TRAIN_batches=prior_steps,lineage=proof,maximum_total_segments=limit,continuous_TRAIN_RNG_not_seed_grid=True,SDK_opened=False,GPU_used=False,recurring_monitor=False));chain='selected_PT' in r;checkpoint=Path(r['selected_PT']) if chain else previous/'best.pt';digest=r['selected_PT_SHA256'] if chain else r['results']['best']['PT_SHA256'];assert sha(checkpoint)==digest;current=r['selected_correct'];nll=r['selected_NLL'] if chain else r['results']['best']['NLL'];records=[];deadline=datetime.fromisoformat(c['absolute_deadline_UTC']);reason='bounded_segments_exhausted'
     for segment in range(2,c['maximum_new_segments']+2):
+        if prior_count+len(records)>=limit:reason='total_segment_budget_exhausted';break
         if datetime.now(timezone.utc)>=deadline:reason='user_morning_deadline';break
         if current>=c['target_correct'][str(a.depth)]:reason='target_reached';break
         out=root/f'stage{segment:02d}';a.out=out;a.checkpoint=checkpoint;a.checkpoint_sha=digest
@@ -302,6 +318,15 @@ def selftest():
     r1=np.random.default_rng(75);r2=np.random.default_rng(75)
     for _ in range(3):assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r2,[0,1,2],np.arange(60),np.arange(60,188)))
     r3=np.random.default_rng();r3.bit_generator.state=r1.bit_generator.state;assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r3,[0,1,2],np.arange(60),np.arange(60,188)))
+    import tempfile
+    with tempfile.TemporaryDirectory(prefix='t18_rng_lineage_') as tmp:
+        root=Path(tmp);first=root/'first';chain=root/'chain';child=chain/'stage02';first.mkdir();child.mkdir(parents=True);cc=dict(rc,seed=73);yy=np.repeat(np.arange(20),60);expected=np.random.default_rng(75);plan=[dict(class_index=0,TRAIN_neighbors=[0,1,2],TRAIN_hard_negatives=list(range(60,188)))];save(first/'report.json',dict(state='complete',full_CPU_replay_passed=True));save(first/'protocol.json',dict(profile=cc));save(child/'report.json',dict(state='complete',full_CPU_replay_passed=True));save(child/'protocol.json',dict(profile=cc))
+        for path in (first,child):save(path/'plans.json',plan);save(path/'history.json',[dict(class_index=0,TRAIN_indices=row_batch(expected,[0,1,2],np.arange(60),np.arange(60,188)).tolist(),accepted=True) for _ in range(2)])
+        save(chain/'protocol.json',dict(profile=cc,previous_run=str(first)));save(chain/'history.json',[dict(improved=True)]);save(chain/'report.json',dict(state='complete',full_CPU_replay_passed=True,reason='bounded_segments_exhausted',actual_new_segments=1));replayed,count,steps,_=reconstruct_TRAIN_rng(chain,yy,cc,False,2);assert count==2 and steps==4;assert np.array_equal(row_batch(expected,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(replayed,[0,1,2],np.arange(60),np.arange(60,188)))
+        save(chain/'report.json',dict(state='complete',full_CPU_replay_passed=True,reason='first_no_accuracy_or_tied_NLL_progress',actual_new_segments=1))
+        try:reconstruct_TRAIN_rng(chain,yy,cc,False,2)
+        except AssertionError:pass
+        else:raise AssertionError('Restarted a first-no-progress sequence')
     z0=torch.randn(64,20,dtype=torch.float64);teacher=z0.softmax(1);labels=torch.arange(64)%20;v=torch.randn(7,dtype=torch.float64)*.03;v.requires_grad_()
     def pl(v):
         z=z0.clone();offset=rx@v;z[:,0]+=offset;z[:,1]-=offset;mask=((labels==0)|(labels==1)).double();target=torch.where(labels==0,.99,.01);binary=F.binary_cross_entropy_with_logits((z[:,0]-z[:,1])/2,target,reduction='none');kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);return (binary*mask).sum()/mask.sum()+2*(kl*keep).mean()+.1*v.square().sum()

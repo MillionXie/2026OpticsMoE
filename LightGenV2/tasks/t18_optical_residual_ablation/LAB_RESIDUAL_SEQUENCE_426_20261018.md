@@ -1,5 +1,16 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L2 adaptive margin completed317/411(77.12895%), selectedstage13, NLL1.0827771.
+Its last segment still improved NLL and it stopped ONLY the initial13-segment
+budget. Given the user's overnight persistence request, allow at most37 TOTAL
+adaptive-margin segments including these13, at most12 per dispatch, no change
+of method/radius/seed and FIRST no-progress/target/07:00 still stops. Profile
+`lab_caltech20_L2_residual_adaptmargin_extension_profile_20261019.json`. Reconstruct
+EVERY original/continued TRAIN batch before carrying RNG; reject restarting a
+first-no-progress/deadline/target stop. Fixture test verifies2-level sampler
+lineage and refusal of a no-progress chain. This is finite continued training,
+not a fresh-seed or candidate grid; never reset the37 total budget.
+
 L4 within-class comparison retained E0 260; last122 rejected. L2 adaptive
 positive margin first segment improved312->314 with2 newly correct/0 lost;
 its continuous-RNG finite continuation is active (at least317 already fullCPU
