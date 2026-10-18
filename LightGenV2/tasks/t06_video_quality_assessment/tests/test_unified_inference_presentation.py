@@ -31,3 +31,12 @@ def test_labels_keep_independent_utilization_only():
     source=ast.unparse(label)
     assert 'utilization_percent' in source and 'spatial' in source
     assert 'batch' not in source
+
+
+def test_raw_audit_preserves_manifest_and_checks_exact_measured_source_blob():
+    text=(TASK/'reports/plot_selected_execution.py').read_text(encoding='utf-8')
+    assert 'for actual,metric_expected' in text
+    assert 'raw_source.replace(b\'\\r\\n\',b\'\\n\')==blob' in text
+    assert 'identity[\'git_commit\']+\':\'+p' in text
+    assert "resumed['completed']==['glm_paced_b02_r01']" in text
+    assert "last['completed']==['clip_paced_b10_r01','yolo_paced_b03_r01']" in text

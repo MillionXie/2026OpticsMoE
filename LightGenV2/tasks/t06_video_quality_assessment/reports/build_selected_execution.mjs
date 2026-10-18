@@ -50,10 +50,11 @@ if(process.argv.includes('--compact-groups')){
     const r=24+i,v={...x,model:x.baseline,condition:x.kind,protocol:'First200 dataset-once; no warmup; pacing excluded',accuracy_source:x.cost_source};
     inputs.getRange(`A${r}:AF${r}`).values=[keys.map(k=>v[k]??null)];
     inputs.getRange('G'+r).formulas=[[`=Y${r}*16/Z${r}`]];inputs.getRange('H'+r).formulas=[[`=(K${r}+L${r})*G${r}/1000`]];
+    inputs.getRange('AF'+r).formulas=[[`=AE${r}*16000/Z${r}`]];
    }
   }
   for(const[i,x]of rows.entries()){
-   const r=i+7,values={...x,repeat1:x.repeats[0]??null,repeat2:x.repeats[1]??null,repeat3:x.repeats[2]??null};
+   const r=i+7,values={...x,aggregation:x.energy_aggregation??null,repeat1:x.repeats[0]??null,repeat2:x.repeats[1]??null,repeat3:x.repeats[2]??null};
    inputs.getRange(`A${r}:${last}${r}`).values=[keys.map(k=>values[k]??null)];
    if(unified&&x.repeat_inputs?.length&&x.repeat_inputs.every(v=>v.name)){
     const refs=x.repeat_inputs.map(v=>24+data.audit_points.findIndex(p=>p.name===v.name));
@@ -114,7 +115,17 @@ if(process.argv.includes('--compact-groups')){
   }
   for(const[i,[label,text]]of notes.entries()){const r=end+3+i*2;sheet.getRange(`A${r}`).values=[[label]];sheet.getRange(`B${r}:L${r}`).merge();sheet.getRange('B'+r).values=[[text]];sheet.getRange(`A${r}:L${r}`).format={font:{name:'Arial',size:10,color:'#53687A'},rowHeight:32,wrapText:true,verticalAlignment:'center'};}
   book.recalculate();
-  const verify=wb=>{const s=wb.worksheets.getItem('Plot data');for(const[i,x]of rows.entries()){if(!x.plotted)continue;for(const[c,k]of [['D','srcc'],['F','time_ms'],['G','energy_j']])if(Math.abs(s.getRange(c+(i+7)).values[0][0]-x[k])>1e-8)throw Error('Group workbook value mismatch '+group+c+(i+7));}};
+  const verify=wb=>{
+   const s=wb.worksheets.getItem('Plot data'),m=wb.worksheets.getItem('Measurements');
+   for(const[i,x]of rows.entries()){
+    const r=i+7;if(s.getRange('A'+r).values[0][0]!==x.model)throw Error('Model row identity');
+    if(!x.plotted){if(typeof s.getRange('F'+r).values[0][0]==='number')throw Error('Missing cost became number');continue;}
+    for(const[c,k]of [['D','srcc'],['F','time_ms'],['G','energy_j']])if(Math.abs(s.getRange(c+r).values[0][0]-x[k])>1e-8)throw Error('Group workbook value mismatch '+group+c+r);
+    if(x.baseline!=='ours'&&Math.abs(s.getRange('E'+r).values[0][0]-x.utilization_percent/100)>1e-12)throw Error('Independent utilization changed');
+    for(const[c,value]of [['H',x.time_ms/rows[0].time_ms],['I',x.energy_j/rows[0].energy_j]])if(Math.abs(s.getRange(c+r).values[0][0]-value)>1e-8)throw Error('Gain mismatch');
+   }
+   if(unified)for(const[i,x]of data.audit_points.entries())for(const[c,key]of [['G','time_ms'],['H','energy_j'],['AF','excluded_wait_16_ms']])if(Math.abs(m.getRange(c+(i+24)).values[0][0]-x[key])>1e-8)throw Error('Raw-repeat formula mismatch');
+  };
   verify(book);
   const before=sheet.getRange('F8').values[0][0];
   const driver=unified?'G8':group.startsWith('batch1')?'G8':'I8',driverOriginal=inputs.getRange(driver).values[0][0],driverFormula=inputs.getRange(driver).formulas[0][0];
@@ -134,7 +145,7 @@ if(process.argv.includes('--compact-groups')){
   results.push({file:path.relative(repo,file).replaceAll('\\','/'),sha256:digest(await fs.readFile(file)),rows:rows.length,plotted:rows.filter(x=>x.plotted).length,formula_errors:0,recalculation_verified:true,reimport_verified:true});
  }
  await fs.writeFile(path.join(path.dirname(source),'compact_workbooks_receipt_20261018.json'),JSON.stringify({status:'complete',source_sha256:digest(await fs.readFile(source)),workbooks:results},null,2)+'\n');
- console.log(JSON.stringify({created_workbooks:2,original_workbooks_unchanged:true}));process.exit(0);
+ console.log(JSON.stringify({updated_workbooks:2,expanded_workbooks_not_edited:true}));process.exit(0);
 }
 function chooseDisplayPoints(points){
  const selected=new Set();

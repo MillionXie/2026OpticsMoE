@@ -1,38 +1,100 @@
 # LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
 
-## Unified-cost remeasurement pending — 18 October 2026
+## Current compact figure sets — unified inference boundary, 18 October 2026
 
-The author-approved replacement uses the finalized Qwen B1 inference boundary for both figure sets. Inter-inference pacing waits are excluded from formal latency and estimated energy and retained separately. Utilization annotations remain independently measured resident kernel-busy rates, not the utilization of the cost window. Qwen B1 is unchanged. DeepSeek-VL2 full and Kimi are not remeasured; their existing compliant first200 costs are retained, and missing paced dataset-once costs remain unavailable.
+The two compact plotting workbooks and four figures now use the same dataset-once inference-cost definition. The former resident-service costs, including the9.177-ms CLIP value, are not used in either current set. Ten prescribed cost points completed: six CLIP native repeats and four paced-setting points. Two interrupted partial runs are retained but excluded. All139 original remote files and launch controls were SHA-verified locally. No additional training, precision change, frame reduction, CUDA Graph or power-limit change was made. Finalized Qwen B1 remains63.133111480865225% utilization,1188.3861464262009ms and462.1134010767563J.
 
-Eight points are complete: three CLIP B1 repeats, three CLIP B10 repeats, Qwen B3 paced, and GLM B2 paced. A second external YOLO interference stopped CLIP B10 paced at30/558; YOLO B3 paced has not started. All complete and failed evidence is preserved in T06 run `lgvq_unified_inference_recheck_20261018`, including the distinct `resume03_20261018` continuation. **The two compact workbooks and four figures below have not yet been replaced. Their second set still uses the historical resident-service definition and must not be used as the new unified-cost paper comparison.** The old9.177-ms CLIP resident-service value is not a first200 dataset-once cost. Completion and raw-data verification are required before replacing those files.
+### Methods for both figure sets
 
-## Current compact figure sets (18 October 2026)
+We evaluated temporal quality assessment on the fixed558-video LGVQ TEST partition. The frozen quality heads and original four-frame input protocol were retained. Each new point evaluated all558 distinct videos; inference costs were calculated from the first200 videos in the same fixed order. Batches were split at the200-video cost boundary and558-video test boundary, retaining partial batches rather than dropping or padding them. Each point used a fresh process, with no explicit model-forward warmup; its first inference was included. Timing started at the input to the first native backbone block, or its equality-audited equivalent for optimized Qwen B3, and ended when the GPU MOS output had completed and synchronized. YOLO used its first convolutional block. CPU video decoding, cropping, preprocessing, host-to-device transfer, model loading and inter-inference pacing waits were recorded separately and excluded. These are inference-boundary costs, not CPU-inclusive end-to-end service times.
 
-**Label revision and CLIP cost check.** Point labels now show utilization only, without batch or optical-count annotations. Optical percentages retain the spatial qualifier. Text placement rejects overlap with model connectors, annotation leaders and markers; figure legends are checked against axis titles and protocol notes. Numerical inputs and both plotting workbooks are unchanged.
+For synchronized inference times t_i in milliseconds covering exactly200 videos, T16=(sum t_i)×16/200. Estimated E16=(338.2W host-power proxy+same-cost-run mean active board power)×T16/1000. Board power came from numeric50-ms telemetry samples tagged active during the corresponding first200 inference calls. Neither independent resident-utilization power nor the GPU power limit was substituted. The338.2-W term is a retained host proxy, not a new wall-power measurement. CLIP B1 and B10 each had three prescribed cold-process repeats. Their displayed times and energies are arithmetic means of all three paired estimates; energy was not reconstructed by multiplying the mean power by the mean time. Each repeat used the same200 unique cost videos, so three repeats represent600 evaluations, not600 different videos.
 
-The identical98.613878% CLIP annotation in both sets refers to the same independent resident measurement. It does not identify the same cost measurement. The first set retains the first200 distinct-video, per-batch synchronized inference timings (no explicit warmup); the second set derives complete-window resident throughput after warmup on repeated inputs, with synchronization after eight sequential forwards. Both exclude decoding, preprocessing and H2D. These differences were not individually isolated, so the time difference must not be attributed to a single overhead. The first set's sampled board mean is45.225W over only10 active samples, with driver-window averaging limitations; the second uses247.638029577W duration-weighted over the complete resident windows. Each energy calculation uses its own power and time, never the other experiment's power.
+GPU utilization was measured independently to reduce CPU input-preparation gaps. The first B TEST videos were prepared and transferred once, then reused in native resident inference, with eight sequential forwards on the same stream before synchronization. Each call still processed B videos, not8B. The pre-existing three complete repeats used at least5s warmup and at least30s measurement each, pooling all50-ms samples rather than selecting a favorable interval. Finalized Qwen B1 retains its separately identified historical reference. Approximately50% labels refer to these independent resident measurements. Their frozen duty settings were applied between calls in the new distinct-video cost runs, but those cost runs need not themselves average50% GPU busy because their input-preparation gaps differ. Driver-window kernel-busy time is not SM occupancy or achieved FLOPS.
 
-| CLIP cost definition | Annotated GPU busy | Time /16 videos (ms) | Estimated energy /16 videos (J) |
+Qwen, GLM, CLIP and YOLO costs use the original A100-PCIE-40GB at250W. DeepSeek-VL2 full and Kimi retain their locally re-audited first200 costs on disclosed A100-SXM4-80GB/400W sessions and were not remeasured. Their retained conventional timing rows, telemetry and558-video identities satisfy the same arithmetic boundary, but they are not a common-hardware causal comparison. No compliant paced dataset-once costs exist for those two models; the corresponding cells remain unavailable. Optical approximately50% denotes author-estimated spatial use, not an equivalent GPU time-busy constraint. The optical component-cost reference remains unchanged.
+
+### Figure description: batch1 and near-saturation
+
+Temporal-quality SRCC is plotted against inference latency and estimated energy normalized to16 videos. Each electronic model is represented by its B1 reference and one predeclared higher-batch configuration. Percent labels show independently measured GPU kernel-busy time only; batch sizes remain in the source tables. A model keeps the same color and symbol across its points, with connectors retained. The Qwen dashed connector spans finalized native B1 and equivalence-audited optimized B3, while the DeepSeek dashed connector spans different physical80GB GPU sessions. These links are descriptive rather than batch-only effects. CLIP uses all three new native cost repeats. The latency and energy panels share identical accuracy and utilization sources.
+
+| Model | Condition | Video batch | Temporal SRCC | Independent GPU busy (%) | Inference time /16 (ms) | Estimated energy /16 (J) |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| LightGen-II | Optical reference | n.a. | 0.797714 | ~50 spatial (not GPU busy) | 10.245570 | 1.177690 |
+| Qwen3-VL-2B | Finalized B1 | 1 | 0.766343 | 63.133111 | 1188.386146 | 462.113401 |
+| Qwen3-VL-2B | Native reference | 3 | 0.768899 | 97.135509 | 526.553994 | 209.058386 |
+| GLM-4.6V-Flash | B1 reference | 1 | 0.809262 | 96.881933 | 1810.626785 | 805.188484 |
+| GLM-4.6V-Flash | Native reference | 2 | 0.810310 | 98.035320 | 1631.116714 | 775.784796 |
+| CLIP ViT-B/32 | B1 reference | 1 | 0.725256 | 39.591620 | 171.119088 | 64.656916 |
+| CLIP ViT-B/32 | Native reference | 10 | 0.725239 | 98.613878 | 33.753106 | 12.740406 |
+| YOLO11s | B1 reference | 1 | 0.701597 | 44.997767 | 367.670324 | 140.508523 |
+| YOLO11s | Native reference | 3 | 0.701594 | 98.653609 | 151.266861 | 57.283617 |
+| DeepSeek-VL2 | B1 reference | 1 | 0.716735 | 88.049155 | 8360.056700 | 4727.746492 |
+| DeepSeek-VL2 | Native reference | 2 | 0.716584 | 96.539183 | 7189.600891 | 4372.864338 |
+| Kimi-VL-A3B-Instruct | B1 reference | 1 | 0.805465 | 73.987439 | 3745.677059 | 1803.738445 |
+| Kimi-VL-A3B-Instruct | Native reference | 6 | 0.809021 | 98.392966 | 1380.524297 | 734.780588 |
+
+### Figure description: approximately50% setting and near-saturation
+
+The second pair of panels uses the same inference boundary as the first pair. Open symbols identify paced settings; filled symbols identify native references. Every native endpoint uses exactly the same cost values as the corresponding endpoint in the first set. All four new paced-setting points have558-video SRCC evaluations and first200 paired costs. Their imposed waits are excluded from formal time and energy and listed separately below. Consequently, the panels do not show the complete service-time or service-energy penalty of throttling, nor a controlled causal effect of utilization. Similar or reversed pure-inference costs, such as CLIP31.061844ms versus the native three-repeat mean33.753106ms, must not be interpreted as evidence that throttling accelerates the model. Cold-first-call and run-to-run variation remain in this no-warmup protocol. DeepSeek full and Kimi show only their valid native endpoints; missing paced costs are not replaced by resident-service estimates.
+
+| Model | Condition | Video batch | Temporal SRCC | Independent GPU busy (%) | Inference time /16 (ms) | Estimated energy /16 (J) |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| LightGen-II | Optical reference | n.a. | 0.797714 | ~50 spatial (not GPU busy) | 10.245570 | 1.177690 |
+| Qwen3-VL-2B | Paced setting | 3 | 0.768899 | 46.345564 | 534.142060 | 213.350874 |
+| Qwen3-VL-2B | Native reference | 3 | 0.768899 | 97.135509 | 526.553994 | 209.058386 |
+| GLM-4.6V-Flash | Paced setting | 2 | 0.810310 | 53.236225 | 1631.684928 | 782.776978 |
+| GLM-4.6V-Flash | Native reference | 2 | 0.810310 | 98.035320 | 1631.116714 | 775.784796 |
+| CLIP ViT-B/32 | Paced setting | 10 | 0.725239 | 49.771684 | 31.061844 | 11.744483 |
+| CLIP ViT-B/32 | Native reference | 10 | 0.725239 | 98.613878 | 33.753106 | 12.740406 |
+| YOLO11s | Paced setting | 3 | 0.701594 | 49.619632 | 157.906160 | 59.726234 |
+| YOLO11s | Native reference | 3 | 0.701594 | 98.653609 | 151.266861 | 57.283617 |
+| DeepSeek-VL2 | Paced cost unavailable | 2 | Not measured | Not measured | Not measured | Not measured |
+| DeepSeek-VL2 | Native reference | 2 | 0.716584 | 96.539183 | 7189.600891 | 4372.864338 |
+| Kimi-VL-A3B-Instruct | Paced cost unavailable | 6 | Not measured | Not measured | Not measured | Not measured |
+| Kimi-VL-A3B-Instruct | Native reference | 6 | 0.809021 | 98.392966 | 1380.524297 | 734.780588 |
+
+### CLIP power check and all native repeats
+
+| CLIP condition / repeat | Time /16 (ms) | Estimated energy /16 (J) | Sampled active board power (W) | Active samples |
+| --- | ---: | ---: | ---: | ---: |
+| b01_r01 | 171.096227 | 64.610640 | 39.427500 | 44 |
+| b01_r02 | 171.251271 | 64.704672 | 39.634694 | 49 |
+| b01_r03 | 171.009766 | 64.655437 | 39.880377 | 53 |
+| b10_r01 | 34.692538 | 13.106067 | 39.577692 | 13 |
+| b10_r02 | 29.769459 | 11.231099 | 39.069167 | 12 |
+| b10_r03 | 36.797320 | 13.884053 | 39.111538 | 13 |
+
+CLIP B1 active means were39.4275–39.8804W with44–53 tagged samples per repeat. B10 means were39.0692–39.5777W with only12–13 samples, and the paced B10 mean was39.9W with12 samples. These readings are close to recorded idle values. Reproducible sampled readings do not establish accurate instantaneous compute power: short calls and driver averaging windows limit attribution. The resulting energy values remain estimates under the author-approved formula, not calibrated board-energy or whole-system energy integrals. The higher continuous-resident board power is retained in its own history and is not mixed into these cost rows. First-call times and raw sample counts are exposed in both workbooks.
+
+### Waiting excluded from formal costs
+
+| Paced setting | Pure inference /16 (ms) | Excluded waiting /16 (ms) | Estimated pure-inference energy /16 (J) |
 | --- | ---: | ---: | ---: |
-| Dataset-once first200 inference |98.613878% (independent resident annotation)|30.817940831|11.816368963|
-| Native resident service |98.613878% (same service windows)|9.177268892|5.376393125|
-| Paced resident service |49.771684%|17.134323161|8.809634977|
-| Retained optical reference |approximately50% spatial use, not GPU busy|10.245569591|1.177689510|
+| qwen b03_r01 | 534.142060 | 537.136698 | 213.350874 |
+| glm b02_r01 | 1631.684928 | 1375.071713 | 782.776978 |
+| clip b10_r01 | 31.061844 | 25.244689 | 11.744483 |
+| yolo b03_r01 | 157.906160 | 135.049286 | 59.726234 |
 
-The native resident CLIP time is slightly lower than the retained optical time, but its estimated energy is still higher and its SRCC is lower. The optical reference is not a matching resident-service measurement. The second set therefore must not be presented as a matched-protocol optical-versus-GPU ranking. Keeping numerical records intact is preferable to replacing one time with the other to force consistent positions across the two cost definitions. Underlying sources are `lgvq_yolo_clip_recheck_a100_20261017/clip_batch10/cost/report.json`, `lgvq_yolo_clip_sequential_a100_20261017/clip/batch10/report.json`, and `lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018/clip_batch10/report.json` in the T06 canonical runs.
+Waiting above is the measured interval following first200 inference calls, normalized by16/200. It is not included in T16 or E16. Full558 waiting and per-call requested/actual intervals remain in the raw JSON and workbook measurements. Native requested pacing is zero; tiny recorded native intervals are bookkeeping overhead, not imposed idle cycles.
 
-Each requested panel is78×88mm (600-dpi PNG and SVG/PDF), so two panels occupy156mm side by side in Word. The original expanded workbooks, figures and raw measurements remain preserved. Current compact figures omit DeepSeek-VL2-Tiny, DeepSeek-VL2-Small and rental Qwen.
+### Files and terminology
 
-- **Batch1 and near-saturation:** [plotting Excel](LGVQ_batch1_near_saturation_plot_data.xlsx), [paired preview](batch1_near_saturation_pair.png), [latency](batch1_near_saturation_latency.svg), [estimated energy](batch1_near_saturation_energy.svg).
-- **Approximately50% and near-saturation:** [plotting Excel](LGVQ_busy50_near_saturation_plot_data.xlsx), [paired preview](busy50_near_saturation_pair.png), [service time](busy50_near_saturation_latency.svg), [estimated service energy](busy50_near_saturation_energy.svg).
+- First set: [plotting Excel](LGVQ_batch1_near_saturation_plot_data.xlsx), [source CSV](LGVQ_batch1_near_saturation_plot_data.csv), [latency](batch1_near_saturation_latency.svg), [energy](batch1_near_saturation_energy.svg), [paired preview](batch1_near_saturation_pair.png).
+- Second set: [plotting Excel](LGVQ_busy50_near_saturation_plot_data.xlsx), [source CSV](LGVQ_busy50_near_saturation_plot_data.csv), [latency](busy50_near_saturation_latency.svg), [energy](busy50_near_saturation_energy.svg), [paired preview](busy50_near_saturation_pair.png).
 
-**First set.** Each model has B=1 and one retained near-saturation configuration: Qwen B3, GLM B2, CLIP B10, YOLO B3, DeepSeek full B2 and Kimi B6. Each accuracy is independently evaluated full558 temporal SRCC. Costs retain the approved first200 dataset-once inference boundary, normalized to16 videos. Annotation percentages are independently measured resident kernel-busy rates, not utilization of the dataset-once cost window. All endpoints of a model use the same symbol and are connected. Qwen's descriptive dashed link spans finalized native B1 and equivalence-validated optimized B3; the DeepSeek full dashed link spans different physical80GB cards. These are not batch-only causal effects. Finalized Qwen B1 remains63.133111480865225%,1188.3861464262009ms and462.1134010767563J.
+Each panel is78×88mm with600-dpi PNG plus SVG/PDF, giving156mm for a two-panel Word row. Labels avoid markers, model connectors and other annotation leaders; legends are checked against axis titles and notes. The actual cost positions are not jittered to separate close endpoints. No DS Tiny/Small or rental Qwen control is shown.
 
-**Second set.** Each available pair uses the same batch and physical GPU at approximately50% and near-saturation resident execution. Open symbols denote pacing; filled symbols denote native execution. Both ends use complete resident service windows, including every imposed wait at the paced end. Native ends were recalculated offline from all18 complete repeats (six models, three repeats each), matching raw telemetry counts, power and utilization. Service T16=16000×total window seconds/(batch×total forward calls). Board power is the duration-weighted mean of complete-window sample means. Estimated E16=(338.2W host proxy+same-window board power)×service T16/1000. Neither electronic endpoint substitutes conventional dataset-once costs. The optical component-cost estimate remains a separate retained reference, not a matching resident GPU experiment. Different dates and loading histories remain disclosed; pairs are descriptive, not controlled causal estimates of duty alone.
+| Canonical term | Definition used here |
+| --- | --- |
+| Inference latency | First-backbone-block input to synchronized GPU MOS output |
+| Estimated inference energy | Retained338.2-W host proxy plus same-cost-run sampled active board mean, multiplied by inference time |
+| Independent GPU utilization | Driver-window kernel-busy fraction in the separate resident protocol |
+| Spatial use | Author-estimated optical spatial occupancy, not GPU time-busy |
 
-The50% points retain same-batch full558 SRCC as an independent reference, not a new558-video evaluation under pacing. CLIP uses B10 (49.77168439%), not its below-target B1. **DeepSeek-VL2 full has no50% measurement:** only its96.53918348% high-batch point is plotted, with an explicit missing row in Excel. Tiny/Small data never substitute. Near-saturation does not imply every model reached98%: Qwen is97.13550885%, DeepSeek full96.53918348%. Optical approximately50% is the author's spatial-use estimate, not equivalent GPU time-busy. PCIe40GB/250W and SXM4-80GB/400W remain distinct platforms. Full precision, repeat means, parameter counts, source paths, hardware identities, cost formulas and missing-data flags are retained in the two workbooks.
+Reproduction uses the T06 run `lgvq_unified_inference_recheck_20261018`: original seven complete points, GLM under `resume03_20261018`, and final CLIP/YOLO under `resume02_20261018`. Failed GLM34-video and CLIP30-video attempts remain excluded. Source, split, frozen-head and raw-data SHAs, all-repeat arithmetic, waiting audit, formula checks and figure geometry receipts are retained there. Local CRLF versus server LF differences were checked against the exact measured Git blobs, without changing runtime sources. Earlier expanded comparison files and resident-service records below are historical and were not overwritten.
 
-## Current comparison — 16–18 October 2026
+## Historical expanded comparison — 16–18 October 2026
 
 ### Supplementary platforms and clean Kimi follow-up (18 October 2026)
 

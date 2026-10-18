@@ -6,6 +6,7 @@ import shutil
 import sys
 import csv
 import math
+import subprocess
 from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')
@@ -349,19 +350,35 @@ def unified_inference_group_data():
     if state['status']=='failed':
         assert len(state['completed'])==7
         resumed=json.loads(bind(root/'resume03_20261018/suite_status.json').read_text())
-        assert resumed['status']=='complete' and len(resumed['completed'])==3
-        wrapper=bind(REPO/'LightGenV2/tasks/t06_video_quality_assessment/resume_unified_inference_recheck.py')
-        assert hashlib.sha256(wrapper.read_bytes()).hexdigest()==resumed['continuation_source_sha256']
+        wrapper_name='LightGenV2/tasks/t06_video_quality_assessment/resume_unified_inference_recheck.py'
+        wrapper=bind(REPO/wrapper_name)
+        if resumed['status']=='complete':
+            assert len(resumed['completed'])==3
+            assert hashlib.sha256(wrapper.read_bytes()).hexdigest()==resumed['continuation_source_sha256']
+        else:
+            assert resumed['status']=='failed' and resumed['completed']==['glm_paced_b02_r01']
+            old_wrapper=subprocess.check_output(['git','show','18a818d78:'+wrapper_name],cwd=REPO)
+            assert hashlib.sha256(old_wrapper).hexdigest()==resumed['continuation_source_sha256']
+            last=json.loads(bind(root/'resume02_20261018/suite_status.json').read_text())
+            assert last['status']=='complete' and last['completed']==['clip_paced_b10_r01','yolo_paced_b03_r01']
+            assert hashlib.sha256(wrapper.read_bytes()).hexdigest()==last['continuation_source_sha256']
+            for name,sha in last['protected_original_sha256'].items():
+                assert hashlib.sha256(bind(root/name).read_bytes()).hexdigest()==sha
+            folders.update({name:root/'resume02_20261018'/name for name in last['completed']})
         for name,sha in resumed['protected_original_sha256'].items():
             assert hashlib.sha256(bind(root/name).read_bytes()).hexdigest()==sha
         folders.update({name:root/'resume03_20261018'/name for name in resumed['completed']})
     else:assert state['status']=='complete' and len(state['completed'])==10
     assert len(folders)==10
+    if len(state['completed'])==7:
+        ordered=state['completed']+['glm_paced_b02_r01','clip_paced_b10_r01','yolo_paced_b03_r01']
+        assert set(ordered)==set(folders)
+        folders={name:folders[name] for name in ordered}
     manifest=bind(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_reproduction_a100_20261013/lgvq_train2250_test558.csv')
     assert hashlib.sha256(manifest.read_bytes()).hexdigest()=='607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc'
     expected=[r for r in csv.DictReader(manifest.open(newline='',encoding='utf-8-sig')) if r['split']=='test']
     assert len(expected)==558
-    audited={}
+    audited={};line_endings={};verified_sources=set()
     for name,folder in folders.items():
         report=json.loads(bind(folder/'report.json').read_text())
         identity=json.loads(bind(folder/'identity.json').read_text())
@@ -382,7 +399,13 @@ def unified_inference_group_data():
         assert sum(int(t['videos']) for t in cost)==200
         assert report['actual_checkpoint_verified'] and report['manifest_sha256']==identity['manifest_sha256']
         for p,h in identity['source_sha256'].items():
-            assert hashlib.sha256((REPO/p).read_bytes()).hexdigest()==h, p
+            raw_source=(REPO/p).read_bytes();local_sha=hashlib.sha256(raw_source).hexdigest()
+            if (p,h) not in verified_sources and local_sha!=h:
+                blob=subprocess.check_output(['git','show',identity['git_commit']+':'+p],cwd=REPO)
+                assert hashlib.sha256(blob).hexdigest()==h and raw_source.replace(b'\r\n',b'\n')==blob, p
+                line_endings[p]=dict(local_byte_sha256=local_sha,measured_LF_sha256=h,
+                                     exact_measured_git_blob=identity['git_commit']+':'+p,only_difference='CRLF versus LF')
+            sources[p]=local_sha;verified_sources.add((p,h))
         active=[v for v in raw if v['phase'].startswith('active:')]
         assert active
         cost_indices={int(v['batch_index']) for v in cost}
@@ -392,9 +415,9 @@ def unified_inference_group_data():
         t16=wall*16/200;e16=(338.2+watts)*t16/1000
         srcc=float(spearmanr([float(p['target_mos']) for p in prediction],[float(p['prediction']) for p in prediction]).statistic)
         plcc=float(pearsonr([float(p['target_mos']) for p in prediction],[float(p['prediction']) for p in prediction]).statistic)
-        for actual,expected in [(t16,report['cost']['latency_16_videos_ms']),(e16,report['cost']['energy_16_videos_j']),
+        for actual,metric_expected in [(t16,report['cost']['latency_16_videos_ms']),(e16,report['cost']['energy_16_videos_j']),
                                 (watts,report['power']['active_mean_w']),(srcc,report['performance']['srcc']),(plcc,report['performance']['plcc'])]:
-            assert math.isclose(actual,expected,rel_tol=1e-10,abs_tol=1e-9)
+            assert math.isclose(actual,metric_expected,rel_tol=1e-10,abs_tol=1e-9)
         independent=report['independent_utilization'];util=bind(REPO/independent['utilization_source'])
         assert hashlib.sha256(util.read_bytes()).hexdigest()==independent['utilization_source_sha256']
         assert len(waits)==len(timing) and report['explicit_warmup_forwards']==0 and report['first_test_batch_included']
@@ -428,6 +451,7 @@ def unified_inference_group_data():
         predictions=list(csv.DictReader(bind(report_file.parent/'predictions.csv').open(newline='')))
         cost=[r for r in timing if r['in_cost_subset']=='True'];active=[r for r in raw if r['phase'].startswith('active:')]
         assert len(predictions)==558 and sum(int(r['videos']) for r in cost)==200
+        assert [r['sample_id'] for r in predictions]==[r['sample_id'] for r in expected]
         wall=sum(float(r['synchronized_wall_ms']) for r in cost)
         board=sum(float(r['watts']) for r in active)/len(active)
         assert math.isclose(row['time_ms'],wall*16/200,abs_tol=1e-8)
@@ -472,6 +496,7 @@ def unified_inference_group_data():
         missing_measurements=['DeepSeek-VL2 full paced dataset-once cost','Kimi paced dataset-once cost'],
         all_costs_dataset_once=True,pacing_waits_excluded=True,independent_utilization_not_same_cost_window=True,
         audit_points=list(audited.values()),protected_qwen_B1_unchanged=True)
+    payload['local_line_ending_equivalence']=line_endings
     COMPACT_SOURCE.parent.mkdir(exist_ok=True)
     COMPACT_SOURCE.write_text(json.dumps(payload,indent=2)+'\n')
     for group,rows in payload['groups'].items():
@@ -482,7 +507,8 @@ def unified_inference_group_data():
                     'platform','gpu_uuid','plotted','cost_source','utilization_source','accuracy_source','checkpoint_sha256','protocol','notes']
             writer=csv.DictWriter(stream,fieldnames=fields,extrasaction='ignore');writer.writeheader();writer.writerows(rows)
     (root/'verified_unified_inference.json').write_text(json.dumps(dict(status='complete',points=list(audited.values()),
-        point_count=10,protected_qwen_B1_unchanged=True,source_sha256=sources),indent=2)+'\n')
+        point_count=10,protected_qwen_B1_unchanged=True,source_sha256=sources,
+        local_line_ending_equivalence=line_endings),indent=2)+'\n')
     print(json.dumps(dict(audited_points=10,unique_test_videos_per_point=558,all_repeats_retained=True)))
 
 
