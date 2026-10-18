@@ -379,7 +379,7 @@ def head_prior(a):
 
 def selftest():
     torch.set_num_threads(2);tail_selftest();torch.manual_seed(73)
-    ap=torch.rand(2,7,7);pg=torch.randint(0,256,(7,7),dtype=torch.uint8);assert torch.equal(phase_response_field(ap,pg,1.,1.),ap.to(torch.complex64)*torch.exp(2j*np.pi*pg.float()/256)[None]);assert torch.isfinite(phase_response_field(ap,pg,.5,2.)).all()
+    ap=torch.rand(2,7,7);pg=torch.randint(0,256,(7,7),dtype=torch.uint8);reference=ap.to(torch.complex64)*torch.exp(2j*np.pi*(pg.float()/256))[None];assert torch.equal(phase_response_field(ap,pg,1.,1.),reference);assert torch.isfinite(phase_response_field(ap,pg,.5,2.)).all()
     fx=np.random.default_rng(73).normal(size=(80,7));fy=np.arange(80)%20;ty=np.arange(20);tp=np.roll(np.eye(20),1,axis=1)*.98+.001;fp=np.eye(20)[fy]*.98+.001;plans=terminal_neighbor_plans(fx,fy,fx[:20],ty,fp,tp);assert len(plans)==20
     for epoch in (1,20,21):
         order,label=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);same,_=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);assert np.array_equal(order,same);batches=order.reshape(-1,8);assert (fy[batches[:,:4]]==label).all() and (fy[batches[:,4:6]]!=label).all() and order.max()<80
