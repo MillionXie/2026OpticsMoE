@@ -1,5 +1,64 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+## Foreground morning status, 2026-10-19, Asia/Shanghai
+
+The final1pp target has NOT been achieved. Full measured optical-pipeline
+development results remain L2=318/411(77.3723%), L4=260/411(63.2603%),
+L6=165/411(40.1460%), against fixed original simulation337/346/354 correct.
+The respective gaps are4.6229/20.9246/45.9854pp. Do not substitute no-residual
+results, weaker simulation PTs, or mixed-prefix scores into this comparison.
+All3/5/7 captured stages are complete,1200TRAIN+411TEST each,4833/8055/11277
+frames. NoVALID. Original CCDs remain on the laboratory drive; local backups
+cover PTs, predictions, protocol/history/metadata/phase and SHA manifests, not
+a claim that every raw CCD was downloaded toC.
+
+L6 targeted terminal10 retained E0 165. A finite original remaining-mask
+continuation from measured router+0+1+2 completed57epochs at its1200fitsecond
+boundary plus fullCPU auditing: mixed best171(E0), last127. No new upstream
+was adopted, and no downstream CCD was re-acquired. TRAIN reached100% while
+TEST declined. A TRAIN-spectrum-conditioned original5140-head comparison also
+completed240steps for each depth: all retained E0 318/260/165, all last TRAIN
+accuracies100%, last TEST239/107/48. This rejects more fitting of weak modes
+as an observed improvement; it does not prove a universal accuracy ceiling.
+
+One original L2 teacher-constrained suffix comparison completed70epochs at the
+600fitsecond epoch boundary plus fullCPU auditing: mixed best283(E0), last277.
+No new upstream was adopted and no new global CCD was captured. Entry/profile:
+`lab_caltech20_teacher_suffix_20261019.py` with
+`lab_caltech20_L2_teacher_suffix_profile_20261019.json`, max80epochs/600fitseconds.
+It replaces the prepared-but-UNRUN plainCE prefix2 extension. The earlier
+prefix2 admission still proves all411 saved-parent probabilities and60TRAIN
+native-phase/canonical input identities. Freeze actual router/expert0; train
+only existing global1mask and postexpert0 electronic/alpha/original5140head.
+Correct-TRAIN-only original simulation teacher featureMSE.5 andT2KL.2 constrain
+geometry, with no teacherTEST input or TEST derivative. It remains MIXED and
+requires new global CCDs if a genuinely useful new mask is later adopted;
+existing fullphysical318 is independently protected. No new inference layer.
+
+L6's fixed354/411 cached simulation uses the SAME original frozen PT whose
+original fullCPU count was352(server)/353(lab); the recorded cross-backend
+differences do not authorize a different baseline or selection. The gap table
+continues to use original354, and no difference here approaches the final gap.
+
+Read-only balanced TRAIN diagnostics found no large fix from numerical FFT
+padding518->1024->1536. Native incident/phase identities passed all7 L6 stages;
+expert-layer coarse16 Pearson medians were appreciably below router's~.94.
+These observations do NOT establish a device fault, calibrated phase response,
+or the physical cause. All-stage metadata show TRAINend->TESTstart0.695-1.364s,
+class-matched median TEST/TRAIN p99 ratios~1 and all signal guards passed;
+different images within each class still confound an optical-drift inference.
+Hardware/LUT/exposure/input gain/coordinates/ROI remain unchanged. The existing
+linear-voltage LUT is NOT a measured linear-phase calibration. No blind recapture
+or automatic phase-LUT substitution follows from the diagnostic hypotheses.
+
+All outcomes are heavily TEST-informed DEVELOPMENT selections, not independent
+generalization estimates. Source travels throughGit only, no new engineering
+clone/branch/worktree, no-residual work untouched, no recurring monitor created.
+The records below are the chronological protocol/execution history, not a list
+of still-running jobs or permission to restart no-progress chains.
+
+## Historical protocol and execution trail
+
 Remaining foreground work may exceed07:00 for a new COMPLETE physical result.
 Rather than mechanically repeating final-head losses, one finite L6 optical
 suffix continuation reopens the ORIGINAL router+0+1+2 measured prefix, at the
