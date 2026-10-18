@@ -75,3 +75,10 @@ features/labels enter derivatives; this explicit TEST-feature-informed sampling
 is additional development leakage, not independent generalization. No new
 inference layers or physical data. Budget1 pass,20 classes,80 updates/class,
 240 seconds; first target stops, lower accuracy never adopted. L4 is not rerun.
+
+This L6 stage completed1600 updates:252->265/411=64.47689%, still15 short of280.
+Retain the265 parent and continue the same accepted objective for at most2 more
+passes (20 classes/pass,80 updates/class,240 seconds). No hyperparameter grid;
+same temperature/KL/anchor/radius. Stop any full pass without accepted progress
+or the first280 target. Record the new parent and keep all lower-scoring last PTs
+as evidence, not as the selected result. L4 remains locked278.
