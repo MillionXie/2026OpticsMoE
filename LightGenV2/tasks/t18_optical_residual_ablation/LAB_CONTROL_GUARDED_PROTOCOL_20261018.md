@@ -60,3 +60,18 @@ after a pass without accepted progress. Accuracy-primary/NLL-tie selection as
 above; every update's TRAIN indices and all TEST correct/NLL results are logged.
 This is finite development, not an unlimited candidate scan. Preserve all
 parents, baseline/best/last, new-correct/new-wrong, full confusion and source SHA.
+
+Local-row completed: L4 reached278/411=67.63990% (target met), L6 reached252/411=
+61.31387% (not68%). Each gained5 correct and lost0 relative to its parent. L4
+training stops at its first target state. Save full measured-graph audit as well
+as cached-feature strict CPU results, and SHA-verified local backups.
+
+L6-only next bounded stage starts from that252 PT. The first3 passes repeatedly
+prioritized four high-error classes; instead allow each of20 error classes once,
+using a binary-one-versus-rest TRAIN objective and the same full-curvature,
+anchor/KL/radius guard. For each wrong TEST example, cosine-nearby same-class
+**TRAIN IDs** can select positives (3 per TEST example). Only the selected TRAIN
+features/labels enter derivatives; this explicit TEST-feature-informed sampling
+is additional development leakage, not independent generalization. No new
+inference layers or physical data. Budget1 pass,20 classes,80 updates/class,
+240 seconds; first target stops, lower accuracy never adopted. L4 is not rerun.

@@ -1,0 +1,7 @@
+{
+  "seed":173,"targets":{"4":278,"6":280},"parent_run":"head_localrow_curvature_20261018",
+  "maximum_passes":1,"maximum_classes_each_pass":20,"steps_each_class":80,"maximum_fit_seconds":240,
+  "objective":"binary_rest","temperature":0.7,"margin":1.0,"parent_KL":0.25,"anchor":0.05,"row_radius":0.5,"trust_step":0.25,"minimum_NLL_gain":0.0001,
+  "TEST_informed_TRAIN_neighbors":true,
+  "scope":"L6 LAB only. From strict252/411 selected PT, all20 potential error categories can be tried once, not just repeated top4. Existing257-variable row/full curvature; binary-rest supervised TRAIN objective, parent-correct TRAIN KL, anchor/radius. TEST error features choose nearest same-class TRAIN positive IDs only; every actual derivative uses TRAIN. This is explicit TEST-informed adaptation, NOT independent generalization. No new model/CCD/GPU/SDK; no L4 restart or SIM control changes."
+}
