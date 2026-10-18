@@ -1,0 +1,8 @@
+{
+ "run":"caltech20_rich20_L4_8345_L6_8224_symmetric_confusion_pair_TRAIN_20261018",
+ "parents":{"4":"7d5fb6965c3a245f8bb0d2af1190d0dcbe47e0aeaae4c10f082587aeb05c7dcc","6":"713d742b3c4bead72b396a2f9ac02d9b00bacdab0c36500a63ec095624843eb9"},
+ "target_correct":{"4":346,"6":350},"maximum_pairs":12,"steps_per_pair":48,"seed":1810469,
+ "margin":1.0,"KL":2.0,"anchor":0.2,"lr":0.001,"momentum":0.9,"delta_radius":0.1,
+ "L2_frozen":true,"controls_frozen":true,"optical_and_intermediate_electronics_frozen":true,
+ "TEST_informed_development":true,"independent_generalization":false
+}
