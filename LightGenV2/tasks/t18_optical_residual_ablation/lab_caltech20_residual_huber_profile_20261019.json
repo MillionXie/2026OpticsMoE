@@ -1,0 +1,19 @@
+{
+  "objective":"huber_margin",
+  "huber_delta":1.0,
+  "margin":1.0,
+  "temperature":2.0,
+  "teacher_KL":2.0,
+  "anchor":0.1,
+  "LM_damping":0.1,
+  "Newton_step":0.25,
+  "trust_radius":0.20,
+  "max_classes":20,
+  "steps_per_class":192,
+  "fit_seconds":180,
+  "seed":73,
+  "target_correct":{"2":333,"4":342,"6":350},
+  "maximum_new_segments":12,
+  "absolute_deadline_UTC":"2026-10-18T23:00:00+00:00",
+  "scope":"Bounded original257-parameter row repair with signed Huber margin on TRAIN: cap gradient influence of severely violated constraints, keep nonzero signal on near-boundary TRAIN cases. Original5140 head only; all optical/nonhead frozen. TEST errors and cosine neighbors select TRAIN examples; derivatives use TRAIN only. Correct-TRAIN parentKL2, anchor.1, exact curvature/LM, trust.20 and fixed RNG retained; no loss/seed/radius sweep, SDK/GPU/VALID/newCCD/layers. Preserve parent if no full411 TEST development gain; full physical CPU replay and all nonhead byte audit mandatory. Feature bank must match selected nonhead; fresh terminal10 export required after any finalconv/alpha change. Any same-method continuation reconstructs actual previous TRAIN RNG and stops first no progress, target or07:00."
+}

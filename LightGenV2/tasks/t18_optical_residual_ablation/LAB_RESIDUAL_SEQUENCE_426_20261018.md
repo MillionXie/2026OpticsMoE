@@ -1,5 +1,18 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+TRAIN-margin diagnosis at accepted304/244 parents: L2 920/1200 correct,
+515 below margin1; L4 554/1200 correct,948 below1. Thus unlike the old saturated
+router case, a TRAIN-margin objective has active examples here. Next configured
+alternative is signed Huber margin(delta1), reducing influence of severely
+violated constraints while retaining exact analytic curvature/LM and bounded
+original-row updates. Profile `lab_caltech20_residual_huber_profile_20261019.json`.
+Keep teacherKL2/anchor.1/radius.20/continuous TRAIN sampling, no parameter grid.
+Reference is max other score for positives and true-class score for negatives.
+Only TRAIN contributes derivatives; TEST errors select same-class TRAIN neighbors
+and checkpoints, explicitly development leakage. The CPU source is not synced
+while its earlier terminal10 process runs; first finish/audit that process and
+use its recomputed selected feature bank, preserving parent if E0.
+
 Finite pair continuation stopped at first no-progress: L2 selected304/411
 (73.9659%), L4 selected244/411(59.3674%), complete physical CPU replay passed.
 Both remain below the final ~1pp goal. Next bounded block-coordinate comparison

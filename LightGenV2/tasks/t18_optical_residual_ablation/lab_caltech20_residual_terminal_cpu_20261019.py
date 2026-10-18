@@ -47,6 +47,11 @@ def binary_row_direction(u,u0,x,lse,t,q,keep,c):
     n=len(x);temp=c['temperature'];p=((x@u-lse)/temp).sigmoid();g=x.T@((p-t+c['teacher_KL']*keep*(p-q))/(n*temp))+2*c['anchor']*(u-u0);d=(1+c['teacher_KL']*keep)*p*(1-p)/(n*temp*temp);a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;delta=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return delta,g,d
 
 
+def huber_row_direction(u,u0,x,reference,sign,lse,q,keep,c):
+    """TRAIN signed margin with bounded outlier gradient and exact curvature."""
+    n=len(x);temperature=c['temperature'];delta=c['huber_delta'];assert delta>0;score=x@u;h=(c['margin']-sign*(score-reference)).clamp_min(0);p=((score-lse)/temperature).sigmoid();supervision=-sign*h.clamp_max(delta)/delta;curvature=((h>0)&(h<delta)).double()/delta;g=x.T@((supervision+c['teacher_KL']*keep*(p-q)/temperature)/n)+2*c['anchor']*(u-u0);d=(curvature+c['teacher_KL']*keep*p*(1-p)/temperature**2)/n;a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;step=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return step,g,d
+
+
 def row_batch(rng,near,positive,hard):
     return np.r_[rng.choice(near,16,True),rng.choice(positive,16,False),rng.choice(hard,16,False),rng.choice(1200,16,False)]
 
@@ -118,8 +123,12 @@ def row_repair(a,rng=None):
         label=min(available,key=lambda k:(-counts[k],k));used.append(label);positive=np.flatnonzero(tr['y']==label);negative=np.flatnonzero(tr['y']!=label);near=[]
         for i in np.flatnonzero(bad&(te['y']==label)):near.extend(positive[np.argsort(-(xn[positive]@zn[i]),kind='stable')[:3]].tolist())
         z=xx@np.c_[w,b].T;rest=z.copy();rest[:,label]=-np.inf;maximum=rest.max(1);lse=maximum+np.log(np.exp(rest-maximum[:,None]).sum(1));q=1/(1+np.exp(-np.clip((z[:,label]-lse)/c['temperature'],-60,60)));target=np.where(tr['y']==label,.99,.01);keep=(z.argmax(1)==tr['y']).astype(float);risk=z[negative,label]-z[negative,tr['y'][negative]];hard=negative[np.argsort(-risk,kind='stable')[:128]];u0=torch.tensor(np.r_[w[label],b[label]],dtype=torch.float64);u=u0.clone();chosen=u.clone();plans.append(dict(class_index=label,TEST_errors=int(counts[label]),TRAIN_neighbors=near,TRAIN_neighbor_ids=tr['ids'][near].tolist(),TRAIN_hard_negatives=hard.tolist()))
+        reference=np.where(tr['y']==label,maximum,z[np.arange(1200),tr['y']]);sign=np.where(tr['y']==label,1.,-1.)
         for step in range(c['steps_per_class']):
-            ix=row_batch(rng,near,positive,hard);x=torch.tensor(xx[ix],dtype=torch.float64);delta,g,d=binary_row_direction(u,u0,x,torch.tensor(lse[ix]),torch.tensor(target[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c);assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy();ww[label]=u[:-1].float().numpy();bb[label]=float(u[-1]);p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accept=improves(n,ll,best,bestloss)
+            ix=row_batch(rng,near,positive,hard);x=torch.tensor(xx[ix],dtype=torch.float64)
+            if c.get('objective')=='huber_margin':delta,g,d=huber_row_direction(u,u0,x,torch.tensor(reference[ix]),torch.tensor(sign[ix]),torch.tensor(lse[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c)
+            else:delta,g,d=binary_row_direction(u,u0,x,torch.tensor(lse[ix]),torch.tensor(target[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c)
+            assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy();ww[label]=u[:-1].float().numpy();bb[label]=float(u[-1]);p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accept=improves(n,ll,best,bestloss)
             if accept:best,bestloss=n,ll;chosen=u.clone()
             history.append(dict(class_index=label,step=step,TRAIN_indices=ix.tolist(),correct=n,NLL=ll,accepted=accept,gradient_norm=float(g.norm()),update_radius=float((u-u0).norm())))
             if time.monotonic()-start>=c['fit_seconds'] or best>=c['target_correct'][str(a.depth)]:break
@@ -224,6 +233,10 @@ def selftest():
     def rl(v):
         z=(rx@v-lse)/2;return (F.binary_cross_entropy_with_logits(z,t,reduction='none')+2*keep*F.binary_cross_entropy_with_logits(z,q,reduction='none')).mean()+.1*(v-u0).square().sum()
     delta,g,d=binary_row_direction(u.detach(),u0,rx,lse,t,q,keep,rc);assert torch.allclose(g,torch.autograd.grad(rl(u),u)[0],atol=1e-12);h=torch.autograd.functional.hessian(rl,u);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
+    hc=dict(rc,margin=1.,huber_delta=.7);sign=torch.where(torch.arange(64)%2==0,1.,-1.).double();reference=torch.randn(64,dtype=torch.float64)
+    def hl(v):
+        violation=(1-sign*(rx@v-reference)).clamp_min(0);huber=torch.where(violation<.7,.5*violation.square()/.7,violation-.35);z=(rx@v-lse)/2;return (huber+2*keep*F.binary_cross_entropy_with_logits(z,q,reduction='none')).mean()+.1*(v-u0).square().sum()
+    delta,g,d=huber_row_direction(u.detach(),u0,rx,reference,sign,lse,q,keep,hc);assert torch.allclose(g,torch.autograd.grad(hl(u),u)[0],atol=1e-12);h=torch.autograd.functional.hessian(hl,u);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
     r1=np.random.default_rng(75);r2=np.random.default_rng(75)
     for _ in range(3):assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r2,[0,1,2],np.arange(60),np.arange(60,188)))
     r3=np.random.default_rng();r3.bit_generator.state=r1.bit_generator.state;assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r3,[0,1,2],np.arange(60),np.arange(60,188)))
