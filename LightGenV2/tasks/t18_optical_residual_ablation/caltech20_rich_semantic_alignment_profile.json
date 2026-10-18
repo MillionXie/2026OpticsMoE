@@ -1,0 +1,15 @@
+{
+  "run":"caltech20_rich20_TRAINsemantic_alignment_L4L6_s17_20261018",
+  "alignment_science_sha256":"9cb9af5e1a2460cdc6b9d2a898937905bbcf8971948efae6daa5aeee0a480168",
+  "phase_anchor_weight":0.01,
+  "electronic_lr":0.0005,
+  "alpha_lr":0.0003,
+  "cases":{
+    "L4_semantic":{"depth":4,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.0002,"full_rms_gradient":true},
+    "L6_semantic":{"depth":6,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.0002,"full_rms_gradient":true}
+  },
+  "gpu_order":[2,0,3,4,1],
+  "new_inference_parameters":0,
+  "automatic_scope_end_after_segment":false,
+  "test_used_for_selection":true
+}
