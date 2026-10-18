@@ -1,0 +1,13 @@
+{
+  "depth":4,"TRAIN_each_class":60,"TRAIN":1200,"TEST":411,"VALID":0,
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "seed":17,"cpu_threads":2,"batch_size":4,"evaluate_every":5,
+  "phase_lr":0.001,"electronic_lr":0.0005,"alpha_lr":0.0005,"head_lr":0.001,
+  "weight_decay":0.001,"label_smoothing":0.03,
+  "mask":{"epochs":60,"seconds":900},"tail":{"epochs":120,"seconds":900},
+  "TEST_CPU_selection":true,
+  "canonical_reference_SHA256":"b508321c0d3d14cf66b6c58fc0b8d61b6788806f0fa00283491c935ba65c88ea",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","lockapp.exe","phoneexperiencehost.exe","textinputhost.exe","msedgewebview2.exe","systemsettings.exe","shellexperiencehost.exe","weixin.exe","wechatappex.exe","msedge.exe"],
+  "guarded_head":{"margin":1.0,"KL":0.2,"anchor":0.02,"damping":0.1,"step_scale":0.25,"row_delta_radius":0.05,"maximum_classes":6,"steps_per_class":48,"seconds":180,"minimum_NLL_gain":0.0001},
+  "scope":"Residual L4 only; user explicitly withdrew no-residual scope. Each newly captured stage gets downstream mask/electronic adaptation then bounded existing-head row repair informed by developed TEST errors. TRAIN-only optimizer samples, correct-TRAIN KL replay, full CPU TEST accuracy-primary/NLL-secondary selection. Preserve original simulation and all acquired data. No VALID, TEST gradient, new inference layer, recurring monitor, or changed hardware."
+}

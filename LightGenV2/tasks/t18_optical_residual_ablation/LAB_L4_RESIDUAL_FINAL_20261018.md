@@ -1,5 +1,44 @@
 # Frozen L4 residual physical deployment (2026-10-18)
 
+## Latest scope: this controller owns residual only; TEST-informed local repair
+
+The user moved non-residual optimization to another chat/branch. This residual
+controller must not modify or run non-residual fits. L2 residual remains paused;
+the active physical target is the frozen L4 simulation346/411. A <=1percentage
+point drop needs at least342/411 full physical correct predictions (83.21168%).
+This is an optimization target, not a guarantee.
+
+The original router suffix fit reached331/411 with TRAIN100%; the parent
+controller is held at its SDK-free boundary while its strictCPU audit finishes.
+All1611 router frames and the original fit best/last remain immutable evidence.
+The new `lab_caltech20_residual_guarded_20261018.py` continuation consumes that
+completed fit, not the initial simulation PT and not any old downstream CCD.
+
+After each ordinary downstream-mask/electronic fit, cache the exact retained
+model's TRAIN1200/TEST411 terminal features on CPU and verify original-head
+output parity. Diagnose TEST confusion and use its wrong examples only to plan
+same-class TRAIN feature-neighbors. For each of at most6 difficult classes,
+update only its existing257-parameter head row using TRAIN64 batches:16 nearby
+positives,16 random positives,16 hard negatives and16 full-class replay. Use
+squared classification-margin loss, probability KL on parent-correct TRAIN
+samples only, parameter anchoring, bounded full-curvature Newton steps and a
+0.05 row-update radius. At most48steps/class or180optimization seconds.
+No new inference layer, no TEST gradients, no VALID, and no synthetic CCD.
+
+Selection uses full CPU411 accuracy first; equal correct count may continue
+only if NLL decreases by more than0.0001. A lower correct count is never adopted.
+Save the original parent/best/last, all actual TRAIN indices, confusion plans,
+new-correct/new-wrong counts, full-CPU graph replay and frozen-upstream SHA.
+These are TEST-informed development results, not independent generalization.
+Fixed-feature curvature is not applied to optical-mask Hessians. Optical suffix
+optimization remains the existing bounded fit; row repair is additional and
+does not replace per-layer mask optimization.
+
+The controller then captures the next fresh stage with its exact selected PT.
+Previous measured-prefix fields stay frozen. Head-only changes cannot alter an
+SLM input; any later suffix mask/electronic input change still requires fresh
+downstream CCD. No recurring monitor and no no-residual task launches.
+
 ## Latest human correction: layerwise mask adaptation, not head-only
 
 The user explicitly corrected the initial fixed-mask acquisition plan. That
