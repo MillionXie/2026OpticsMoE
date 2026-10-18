@@ -19,6 +19,16 @@ unchanged. Profile `lab_caltech20_residual_independent_pair_profile_20261019.jso
 max3passes/300fitseconds, stop first full no-progress pass, no seed scan or
 restart of earlier stopped methods. E0 retained if no improvement.
 
+The independent signed-Huber comparison completed3072/1536 actual updates
+for L2/L4 with original fullCPU parity, but retained318/260 correct. L2 only
+improved tied-count NLL1.070204 to1.069678; this is NOT accuracy progress.
+One additional loss comparison uses standard full20-class CE with.02 label
+smoothing, retaining the same independent two-row subspace and TRAIN-only
+parent-correct T2 KL/anchor. No change to radius, learning rate, seed or
+upstream. Its separate profile is
+`lab_caltech20_residual_independent_CE_profile_20261019.json`, max3passes or
+180fitseconds, stop first no-progress pass. Not an unbounded candidate scan.
+
 ## Foreground morning status, 2026-10-19, Asia/Shanghai
 
 The final1pp target has NOT been achieved. Full measured optical-pipeline

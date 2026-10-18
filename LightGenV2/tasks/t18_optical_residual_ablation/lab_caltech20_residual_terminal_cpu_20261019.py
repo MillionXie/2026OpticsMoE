@@ -169,10 +169,14 @@ def independent_pair_direction(v,x,z0,y,keep,classes,c):
         references.append(torch.where(y==label,other.max(1).values,z0[torch.arange(n),y]))
     reference=torch.stack(references,1);required=torch.where(sign>0,torch.tensor(c['positive_margins'],dtype=x.dtype),c['margin'])
     violation=(required-sign*(z[:,group]-reference)).clamp_min(0);threshold=c['huber_delta']
-    supervision=-sign*violation.clamp_max(threshold)/threshold/(2*n)
     p=(z/temp).softmax(1);q=(z0/temp).softmax(1);pg=p[:,group]
+    if c.get('objective')=='independent_full20_CE':
+        supervised=z.softmax(1);target=F.one_hot(y,20).to(x.dtype)*(1-c['label_smoothing'])+c['label_smoothing']/20;supervision=(supervised[:,group]-target[:,group])/n
+        selected=supervised[:,group];curvature=(torch.diag_embed(selected)-selected[:,:,None]*selected[:,None,:])/n
+    else:
+        supervision=-sign*violation.clamp_max(threshold)/threshold/(2*n)
+        curvature=torch.diag_embed(((violation>0)&(violation<threshold)).to(x.dtype)/(2*n*threshold))
     gradient=(supervision+c['teacher_KL']*keep[:,None]*(pg-q[:,group])/(n*temp)).T@x+2*c['anchor']*v
-    curvature=torch.diag_embed(((violation>0)&(violation<threshold)).to(x.dtype)/(2*n*threshold))
     curvature+=(torch.diag_embed(pg)-pg[:,:,None]*pg[:,None,:])*(c['teacher_KL']*keep/(n*temp**2))[:,None,None]
     values,vectors=torch.linalg.eigh(curvature);root=vectors@torch.diag_embed(values.clamp_min(0).sqrt())@vectors.transpose(1,2)
     aa=torch.einsum('nab,nd->nabd',root,x).reshape(n*2,2*d);damping=2*c['anchor']+c['LM_damping'];flat=gradient.flatten()
@@ -503,6 +507,10 @@ def selftest():
         huber=torch.where(violation<.7,.5*violation.square()/.7,violation-.35);kl=F.kl_div((z/2).log_softmax(1),(z0/2).softmax(1),reduction='none').sum(1)
         return huber.mean()+2*(kl*keep).mean()+.1*flat.square().sum()
     delta,g,aa=independent_pair_direction(vv.detach(),rx,z0,labels,keep,(0,1),ic);assert torch.allclose(g.flatten(),torch.autograd.grad(independent_loss(vv.flatten()),vv)[0].flatten(),atol=1e-9);h=torch.autograd.functional.hessian(independent_loss,vv.detach().flatten());assert torch.allclose(h,aa.T@aa+.2*torch.eye(14),atol=1e-9);assert torch.allclose((h+.1*torch.eye(14))@delta.flatten(),g.flatten(),atol=1e-10)
+    def independent_ce_loss(flat):
+        z=z0.clone();z[:,:2]+=rx@flat.reshape(2,7).T;kl=F.kl_div((z/2).log_softmax(1),(z0/2).softmax(1),reduction='none').sum(1)
+        return F.cross_entropy(z,labels,label_smoothing=.02)+2*(kl*keep).mean()+.1*flat.square().sum()
+    ic.update(objective='independent_full20_CE',label_smoothing=.02);delta,g,aa=independent_pair_direction(vv.detach(),rx,z0,labels,keep,(0,1),ic);assert torch.allclose(g.flatten(),torch.autograd.grad(independent_ce_loss(vv.flatten()),vv)[0].flatten(),atol=1e-9);h=torch.autograd.functional.hessian(independent_ce_loss,vv.detach().flatten());assert torch.allclose(h,aa.T@aa+.2*torch.eye(14),atol=1e-9);assert torch.allclose((h+.1*torch.eye(14))@delta.flatten(),g.flatten(),atol=1e-10)
     common=torch.ones(2,7,dtype=torch.float64)*.01;offset=rx@common.T;shifted=z0.clone();shifted[:,:2]+=offset;assert torch.equal(shifted[:,2:],z0[:,2:]) and torch.equal(offset[:,0],offset[:,1]) and offset.abs().sum()>0
     r1=np.random.default_rng(75);r2=np.random.default_rng(75)
     for _ in range(3):assert np.array_equal(pair_batch(r1,[[0,1],[60,61]],[np.arange(60),np.arange(60,120)],np.arange(120,248)),pair_batch(r2,[[0,1],[60,61]],[np.arange(60),np.arange(60,120)],np.arange(120,248)))
