@@ -1,0 +1,16 @@
+{
+  "run": "caltech20_rich20_appearanceMix_erasing46_local5_20261018",
+  "gpu_order": [0, 1, 3, 4, 2],
+  "cases": {
+    "L4_appearance": {"depth": 4, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true, "erasing": false},
+    "L6_appearance": {"depth": 6, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true, "erasing": false},
+    "L4_appearance_erase": {"depth": 4, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true, "erasing": true},
+    "L6_appearance_erase": {"depth": 6, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true, "erasing": true}
+  },
+  "TEST_used_for_selection": true,
+  "independent_generalization": false,
+  "L2_FINAL_untouched": true,
+  "new_inference_parameters": 0,
+  "not_full_original_AugMix_reproduction": true,
+  "augmentation_only_on_TRAIN_augmented_view": true
+}
