@@ -1,0 +1,10 @@
+{
+  "TRAIN":1200,"TRAIN_each_class":60,"TEST":411,"VALID":0,
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "seed":17,"cpu_threads":2,"batch_size":4,"evaluate_every":5,"TEST_CPU_selection":true,
+  "phase_lr":0.001,"electronic_lr":0.001,"alpha_lr":0.003,"head_lr":0.0003,
+  "weight_decay":0.001,"label_smoothing":0.03,
+  "mask":{"epochs":120,"seconds":1200},"tail":{"epochs":120,"seconds":900},
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","lockapp.exe","phoneexperiencehost.exe","textinputhost.exe","msedgewebview2.exe","systemsettings.exe","shellexperiencehost.exe","weixin.exe","wechatappex.exe","msedge.exe"],
+  "scope":"Single bounded optical-suffix continuation at earliest severe L6 prefix failure: measured router/expert0/global1/expert2, old selected mixed171/411 after previous30epoch budget, not a completed no-progress chain. Reuse existing original fit algorithm and architecture; freeze observed optical masks/router and all prior incident producers, optimize only original remaining phase3/4/5 plus postexpert2 onward electronics/alpha and5140 head. Higher alphaLR.003 permits correcting selected near.95 intermediate optical dominance; slower head.0003 avoids putting all adaptation in readout, same phaseLR.001. Max120epochs/1200seconds, TESTCPU every5 highest development, TRAIN gradients only/noVALID, no new layer/CCD/SDK or exposure/LUT/coordinate changes. Own idle lab4060 only; reject foreign compute, do not move terminalCPU jobs ontoGPU. Full prefix TRAIN60 canonical/native-phase and all411 saved-parent parity admission, bestlast strictCPU/frozen-prefix audit. This produces MIXED diagnostics only. Do NOT evaluate new PT on old downstream3/4/5 CCDs; fresh affected downstream capture requires an explicit later handoff. Preserve previous fullphysical165 and all old data."
+}

@@ -1,5 +1,20 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Remaining foreground work may exceed07:00 for a new COMPLETE physical result.
+Rather than mechanically repeating final-head losses, one finite L6 optical
+suffix continuation reopens the ORIGINAL router+0+1+2 measured prefix, at the
+first severe intermediate drop (selected mixed171). Existing original `core.fit`
+is reused with a tested depth6 wrapper, no source hot patch or inference change.
+Files `lab_caltech20_residual_prefix_extension_20261019.py` and
+`lab_caltech20_L6_residual_prefix4_extension_profile_20261019.json`;
+120epochs/1200seconds maximum on the OWN idle4060, original masks3/4/5 and
+postexpert2 onward electronic/alpha/head only. No SDK/capture in this worker.
+All411 saved-parent probability parity and60TRAIN incident/native phase identities
+must pass before GPU work; captured prefix byte-frozen, no TEST derivatives/VALID.
+This remains a MIXED score, never substitutes for fullphysical165. Any later
+deployment requires FRESH affected downstream CCDs3/4/5; no old downstream reuse,
+automatic capture, new branch/worktree/project copy, exposure/LUT/input-gain change.
+
 L6 joint5150 recovery ended54epochs/615fitseconds, retained E0 165, last145;
 paired2304 TRAIN updates retained165, no accepted correction, no continuation.
 Direct alpha audit at the selected165 model: [.95,.66805,.95,.93077,.93896,.89199].
