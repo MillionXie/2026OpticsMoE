@@ -1,0 +1,14 @@
+{
+ "families":["binary_rest_full_curvature_trust"],"maximum_passes_per_family":12,"maximum_classes":20,"steps_per_class":64,"seed":1810826,"trust_step":0.25,"minimum_NLL_gain":0.0001,
+ "temperature":2.0,"label_smoothing":0.02,"neighbor_weight":2.0,"KL":2.0,"anchor":0.2,"lr":0.001,"momentum":0.9,"row_radius":0.08,
+ "cases":{
+  "2":{"run":"caltech20_rich20_L2_original8005_head_target815_TRAIN_20261018","initial_parent_SHA256":"e7c140ecd11d52a91bef882a01bc947c3da7f9f72df63d7fcf23055ab503be69","initial_correct":329,"target_correct":335,"target_percent_strictly_above":81.5},
+  "6":{"run":"caltech20_rich20_L6_first8516_head_target855_TRAIN_20261018","initial_parent_SHA256":"a53499a2f355ebb10520553793cf93ea68e7d5b3da3a872bcfcb62fb9f9595c5","initial_correct":350,"target_correct":352,"target_percent_strictly_above":85.5}
+ },
+ "protected":{
+  "L4_FINAL":{"path":"runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/L4/best.pt","sha256":"7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5"},
+  "L2_LAB_ORIGINAL":{"path":"runs/simulation/caltech20_rich20_sameNetwork_VALID_weight_average246_20261018/L2/candidate.pt","sha256":"e7c140ecd11d52a91bef882a01bc947c3da7f9f72df63d7fcf23055ab503be69"},
+  "L6_FIRST_10PP":{"path":"runs/simulation/caltech20_rich20_L6_8467_progressive_Newton_bridge_TRAIN_20261018/case01/best.pt","sha256":"a53499a2f355ebb10520553793cf93ea68e7d5b3da3a872bcfcb62fb9f9595c5"}
+ },
+ "controls_frozen":true,"all_optics_and_intermediate_electronics_frozen":true,"no_automation":true,"TEST_informed_development":true,"independent_generalization":false
+}
