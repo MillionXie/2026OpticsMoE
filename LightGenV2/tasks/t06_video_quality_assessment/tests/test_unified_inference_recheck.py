@@ -51,3 +51,13 @@ def test_sources_bind_implementation_and_protocol():
     values=m.source_identity()
     assert len(values)>15
     assert values['LightGenV2/tasks/t06_video_quality_assessment/measure_unified_inference_recheck.py']==m.frozen.sha256(Path(m.__file__))
+
+
+def test_authorized_continuation_is_only_remaining_three_original_deadline():
+    from LightGenV2.tasks.t06_video_quality_assessment import resume_unified_inference_recheck as r
+    assert r.REMAINING==[('glm',2,'paced',1),('clip',10,'paced',1),('yolo',3,'paced',1)]
+    assert len(r.EXPECTED)==7 and r.DEADLINE==1792312442.3183658
+    text=Path(r.__file__).read_text(encoding='utf-8')
+    assert 'original.child_command' in text and 'original.costs.wait_for_idle' in text
+    assert 'protected_files(args.base)!=protected' in text
+    assert "'resume03_20261018'" in text and "original16:34" in text
