@@ -1,0 +1,10 @@
+{
+ "depth":6,"warm_start_run":"head_rest_afterpair_20261019","feature_run":"head_guarded_margin_20261018",
+ "simulation_correct":308,"maximum_gap_pp":6.0,"target_min_correct":284,
+ "adam_epochs_max":300,"maximum_seconds":120,"lr":0.0001,"weight_decay":0.001,"label_smoothing":0.02,
+ "lbfgs_steps_max":0,"lbfgs_l2":0.0005,"TRAIN_feature_standardization":true,
+ "TRAIN_feature_dropout":0.0,"TRAIN_focal_gamma":0.5,"TRAIN_focus_pair_margin":0.1,"TRAIN_pair_margin":1.0,
+ "TRAIN_parent_KL":0.25,"TRAIN_parent_KL_only_correct":true,"TEST_equal_accuracy_NLL_improvement":0.0001,
+ "TEST_informed_TRAIN_neighbor_replay":2,
+ "scope":"One finite whole-original-head refinement after277/411. Parent TRAIN68% indicates remaining underfit minority boundaries, not a 100%-TRAIN overfit solution. Cosine neighbors of remaining TEST errors select existing same-class TRAIN replay IDs; TRAIN-only focal CE, supported-pair margin and parent-correct TRAIN KL. No TEST tensors in optimizer/loss, but explicit TEST-informed development leakage. Original5140 head only, all upstream/terminal features frozen; no new model/CCD/SDK/GPU/VALID. Max300epochs or120fit seconds, stop284; retain277 if no gain. No seed or parameter grid."
+}

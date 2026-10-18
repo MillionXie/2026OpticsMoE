@@ -84,11 +84,25 @@ def load_completed_control(a):
     return spec,original,head,data,files,warm,capture_root,profile,report
 
 
+def load_frozen_export(a):
+    """Server copy of a SHA-verified LAB feature export, never synthetic CCD."""
+    root=a.frozen_feature_arm;cfg=read(a.profile);parent=root/cfg['warm_start_run'];report=read(parent/'report.json');assert report['state']=='complete'
+    warm=parent/'best.pt';assert sha(warm)==report['results']['best']['PT_SHA256'];state=torch.load(warm,map_location='cpu',weights_only=False)['model']
+    feature=root/cfg.get('feature_run','head_guarded_margin_20261018');fs=torch.load(feature/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,fs[k]) for k,v in state.items() if not k.startswith('linear.'))
+    proof=read(feature/'selected_features/report.json');assert proof['passed'];data={};files={}
+    for role,n in (('train',1000),('test',411)):
+        path=feature/'selected_features'/role/'predictions.npz';files[role]=sha(path);assert files[role]==proof['features_SHA256'][role]
+        with np.load(path,allow_pickle=False) as z:data[role]=dict(x=torch.from_numpy(z['features'].copy()),y=torch.from_numpy(z['labels'].astype(np.int64)),ids=z['ids'].copy())
+        assert data[role]['x'].shape==(n,256) and torch.isfinite(data[role]['x']).all()
+    assert not set(data['train']['ids'])&set(data['test']['ids']);assert np.bincount(data['train']['y'].numpy(),minlength=20).tolist()==[50]*20
+    return dict(sha256=sha(warm)),state,existing_head(state),data,files,warm,feature/'selected_features',cfg,report
+
+
 def fit(a):
     assert not a.out.exists();torch.set_num_threads(2);torch.manual_seed(17);a.out.mkdir();start=time.perf_counter()
-    if a.control_root:
+    if a.control_root or getattr(a,'frozen_feature_arm',None):
         assert a.profile is not None
-        spec,original,head,data,files,warm,capture_root,cfg,parent_report=load_completed_control(a)
+        spec,original,head,data,files,warm,capture_root,cfg,parent_report=load_frozen_export(a) if getattr(a,'frozen_feature_arm',None) else load_completed_control(a)
         simulation_correct=cfg['simulation_correct'];gap_pp=cfg['maximum_gap_pp'];epochs_max=cfg['adam_epochs_max'];max_seconds=cfg['maximum_seconds'];lr=cfg['lr'];wd=cfg['weight_decay'];smoothing=cfg['label_smoothing'];lbfgs_steps=cfg['lbfgs_steps_max'];lbfgs_l2=cfg['lbfgs_l2']
     else:
         a.arm='control';a.assets=a.session/'assets';a.release=a.session/'release.json';a.capture=a.session/'resume_chain_20261018/full_control'
@@ -154,10 +168,19 @@ def fit(a):
         increase=test['accuracy']>best;tie=threshold>0 and test['accuracy']==best and nll<best_nll-threshold;row=dict(stage=stage,iteration=iteration,TRAIN_loss=float(loss),TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy'],TEST_development_NLL=nll,accuracy_increase=increase,NLL_only_improvement=tie,elapsed_s=time.perf_counter()-start)
         if increase or tie:best=test['accuracy'];best_nll=nll;tag=dict(stage=stage,iteration=iteration,NLL_only_improvement=not increase);checkpoint('best',tag)
         history.append(row);save(a.out/'history.json',history);save(a.out/'progress.json',dict(state='fitting',latest=row,best=best,selected=tag,target_met=round(best*411)>=target));print(json.dumps(row),flush=True)
+    replay=None
+    if cfg and cfg.get('TEST_informed_TRAIN_neighbor_replay',0):
+        wrong=np.flatnonzero(baseline_p.argmax(1)!=data['test']['y'].numpy());neighbors=[]
+        for i in wrong:
+            pool=torch.where(data['train']['y']==int(data['test']['y'][i]))[0];xx=data['train']['x'][pool].double();zz=data['test']['x'][i].double();similarity=(xx@zz)/(xx.norm(dim=1)*zz.norm()).clamp_min(1e-12);neighbors.extend(pool[similarity.topk(3).indices].tolist())
+        replay=torch.tensor(neighbors,dtype=torch.long).repeat(int(cfg['TEST_informed_TRAIN_neighbor_replay']));assert len(replay) and bool(((replay>=0)&(replay<1000)).all())
+        save(a.out/'TRAIN_replay_selection.json',dict(TRAIN_indices=replay.tolist(),TRAIN_ids=data['train']['ids'][replay.numpy()].tolist(),TEST_error_count=len(wrong),TEST_features_select_TRAIN_only=True,TEST_gradients=False,independent_generalization=False))
+        protocol.update(TEST_informed_TRAIN_neighbor_replay=True,replay_count=len(replay),TEST_features_select_TRAIN_only=True,independent_generalization=False);save(a.out/'protocol.json',protocol)
     checkpoint('best',tag);optim=torch.optim.AdamW(head.parameters(),lr=lr,weight_decay=wd);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(optim,epochs_max,eta_min=1e-5)
     for epoch in range(1,epochs_max+1):
         order=torch.randperm(1000);total=0.
-        for begin in range(0,1000,64):
+        if replay is not None:order=torch.cat([order,replay[torch.randperm(len(replay))]])
+        for begin in range(0,len(order),64):
             ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);xx=train_x[ix].clone();yy=data['train']['y'][ix]
             mix=float(cfg.get('TRAIN_same_class_feature_mix',0.)) if cfg else 0.;noise=float(cfg.get('TRAIN_feature_noise',0.)) if cfg else 0.
             if mix:
@@ -180,7 +203,7 @@ def fit(a):
                 if keep.any():loss=loss+float(cfg['TRAIN_parent_KL'])*F.kl_div(F.log_softmax(head(train_x[ix][keep]),1),teacher[keep],reduction='batchmean')
             assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());optim.step();total+=float(loss.detach())*len(ix)
         schedule.step()
-        if epoch==1 or epoch%5==0:assess('adam_cosine',epoch,total/1000)
+        if epoch==1 or epoch%5==0:assess('adam_cosine',epoch,total/len(order))
         if round(best*411)>=target or time.perf_counter()-fit_started>=max_seconds:break
     last=dict(stage='adam_cosine',iteration=epoch)
     if lbfgs_steps and round(best*411)<target and time.perf_counter()-fit_started<max_seconds:
@@ -225,7 +248,7 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--session',type=Path);p.add_argument('--out',type=Path);p.add_argument('--control-root',type=Path);p.add_argument('--profile',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--session',type=Path);p.add_argument('--out',type=Path);p.add_argument('--control-root',type=Path);p.add_argument('--frozen-feature-arm',type=Path);p.add_argument('--profile',type=Path);a=p.parse_args()
     if a.selftest:selftest()
     else:
         if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
