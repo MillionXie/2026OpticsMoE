@@ -1,0 +1,12 @@
+{
+ "depth":4,"warm_start_run":"terminal_joint_cpu_20261018","warm_start_PT_SHA256":"d2acc00152cedff8cfd86977ada1a9a9fe376d2784fcf37c3600f721af0b3daa",
+ "replay_selected_terminal":true,"trainable_parameters":5140,"SDK_opened":false,"GPU_used":false,
+ "simulation_correct":304,"maximum_gap_pp":6.5,"target_min_correct":278,
+ "adam_epochs_max":600,"maximum_seconds":240,"lr":0.0003,"weight_decay":0.001,"label_smoothing":0.02,"lbfgs_steps_max":0,"lbfgs_l2":0.0005,
+ "TRAIN_feature_standardization":true,"TRAIN_feature_dropout":0.0,"TRAIN_focal_gamma":0.0,
+ "TRAIN_focus_pair_margin":0.2,"TRAIN_pair_margin":1.0,"TRAIN_parent_KL":0.25,"TRAIN_parent_KL_only_correct":true,
+ "TRAIN_same_class_feature_mix":0.0,"TRAIN_feature_noise":0.0,"TEST_equal_accuracy_NLL_improvement":0.0001,
+ "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+ "original_TRAIN_class_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+ "scope":"Full measured-parent graph replay and exact selected270/411 baseline. Diagnose TEST confusion with TRAIN support; only TRAIN hinge-margin supervision and correct-TRAIN parent KL replay. Original Linear5140 only; selected terminal conv/alpha and all optics frozen. Accuracy-primary bounded NLL tie handling; no independent-generalization claim or fake CCD augmentation."
+}

@@ -27,6 +27,29 @@ def training_loss(logits,labels,class_weights,smoothing,gamma=0.):
     return ce.sum()/denominator
 
 
+def replay_selected_control(a,root,spec,original,warmstate,identity,parent_report):
+    """Export features from the CURRENT selected terminal electronics, not old CCD features."""
+    from lab_caltech20_rich_model_20261018 import load_checkpoint,encode_images,BOUNDED
+    depth=read(root/'capture_report.json')['depth'];last=depth-1;allowed={'linear.weight','linear.bias',f'electronic.{last}.local.weight',f'fusion_logits.{last}'}
+    assert all(torch.equal(v,warmstate[k]) for k,v in original.items() if k not in allowed)
+    model,_=load_checkpoint(root.parent/spec['file'],spec['sha256'],depth,0.,alpha_schema=BOUNDED);model.load_state_dict(warmstate,strict=True);capture=read(root/'capture_report.json');out=a.out/'selected_features';out.mkdir();data={};files={};proof=[]
+    with torch.no_grad():
+        for role,n in (('train',1000),('test',411)):
+            images=torch.from_numpy(identity[role+'_images'].transpose(0,3,1,2).copy());y=identity[role+'_labels'];ids=identity[role+'_ids'];fields={}
+            for stage in ['router']+[str(k) for k in range(depth)]:
+                p=root/'capture'/role/stage/'ccd.npy';assert sha(p)==capture['arrays'][role+'/'+stage]['sha256'];fields[stage]=np.load(p,mmap_mode='r')
+            parts=[];prob=[]
+            for begin in range(0,n,8):
+                def measured(stage,amplitude,phase,sample_ids):return np.asarray(fields[stage][begin:begin+8]).copy()
+                p=model(encode_images(images[begin:begin+8]),callback=measured,ids=ids[begin:begin+8])[0];parts.append(model.readout['features'].numpy().copy());prob.append(p.numpy())
+                save(a.out/'progress.json',dict(state='replaying_selected_full_physical_model',role=role,completed=min(begin+8,n),total=n,SDK_opened=False,GPU_used=False))
+            x=np.concatenate(parts);p=np.concatenate(prob);fresh=existing_head(warmstate);err=float(np.abs(torch.softmax(fresh(torch.from_numpy(x)),1).numpy()-p).max());assert err<=3e-6
+            assert float((p.argmax(1)==y).mean())==parent_report['results']['best']['TRAIN' if role=='train' else 'TEST_development']['accuracy']
+            dest=out/role;dest.mkdir();path=dest/'predictions.npz';np.savez_compressed(path,features=x,probabilities=p,labels=y,ids=ids);files[role]=sha(path);data[role]=dict(x=torch.from_numpy(x),y=torch.from_numpy(y.astype(np.int64)),ids=ids);proof.append(dict(role=role,samples=n,head_replay_error=err))
+    save(out/'report.json',dict(passed=True,proof=proof,parent_PT_unchanged=True,features_SHA256=files,no_new_CCD=True))
+    return data,files,out
+
+
 def load_completed_control(a):
     """Read one completed L4/L6 arm, without opening devices or changing features."""
     root=a.control_root;capture=read(root/'capture_report.json');contract=read(root/'contract.json');profile=read(a.profile);parent=root/profile.get('warm_start_run','readout120');report=read(parent/'report.json')
@@ -34,12 +57,18 @@ def load_completed_control(a):
     assert capture['physical_ccd']==1411*(capture['depth']+1) and contract['TRAIN']==1000 and contract['TEST']==411 and contract['VALID']==0
     spec=contract['model'];assert spec['sha256']==capture['PT_SHA256'] and sha(root.parent/spec['file'])==spec['sha256']
     original=torch.load(root.parent/spec['file'],map_location='cpu',weights_only=False)['model'];warm=parent/'best.pt';assert sha(warm)==report['results']['best']['PT_SHA256']
+    if profile.get('warm_start_PT_SHA256'):assert sha(warm)==profile['warm_start_PT_SHA256']
     warmstate=torch.load(warm,map_location='cpu',weights_only=False)['model'];assert set(original)==set(warmstate)
-    assert all(torch.equal(v,warmstate[k]) for k,v in original.items() if not k.startswith('linear.'))
+    selected_terminal=profile.get('replay_selected_terminal',False)
+    if not selected_terminal:assert all(torch.equal(v,warmstate[k]) for k,v in original.items() if not k.startswith('linear.'))
     head=existing_head(warmstate);manifest=read(a.session/'assets/data_manifest.json');assert manifest['sha256']==contract['data_SHA256'] and sha(a.session/'assets'/manifest['file'])==manifest['sha256']
     data={};files={};capture_root=root/'capture'
     with np.load(a.session/'assets'/manifest['file'],allow_pickle=False) as identity:
-        for role,n in (('train',1000),('test',411)):
+        if selected_terminal:
+            data,files,capture_root=replay_selected_control(a,root,spec,original,warmstate,identity,report);original={k:v.clone() for k,v in warmstate.items()}
+        else:
+            data={};files={}
+        for role,n in (() if selected_terminal else (('train',1000),('test',411))):
             path=capture_root/role/'predictions.npz';files[role]=sha(path);assert files[role]==read(root/'readout120/protocol.json')['features_SHA256'][role]
             with np.load(path,allow_pickle=False) as z:
                 x,y,ids,p=[z[k].copy() for k in ('features','labels','ids','probabilities')]
@@ -69,6 +98,7 @@ def fit(a):
         warmstate=torch.load(warm,map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,warmstate[k]) for k,v in original.items() if not k.startswith('linear.'))
         head.load_state_dict(existing_head(warmstate).state_dict());capture_root=a.capture/'control';cfg=None
         simulation_correct=299;gap_pp=6.;epochs_max=600;max_seconds=900.;lr=.001;wd=.001;smoothing=.02;lbfgs_steps=60;lbfgs_l2=.0005
+    cache_seconds=time.perf_counter()-start;fit_started=time.perf_counter()
     baseline,baseline_p=evaluate(head,data['test']);assert baseline['accuracy']==parent_report['results']['best']['TEST_development']['accuracy']
     baseline_correct=round(baseline['accuracy']*411);target=int(cfg.get('target_min_correct',math.ceil(simulation_correct-gap_pp*.01*411))) if cfg else math.ceil(simulation_correct-gap_pp*.01*411)
     np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=data['test']['ids'],labels=data['test']['y'].numpy(),probabilities=baseline_p)
@@ -96,34 +126,64 @@ def fit(a):
         return existing_head(state).eval()
     with torch.no_grad():assert torch.max(torch.abs(before(data['train']['x'])-deployed_head()(data['train']['x'])))<1e-4
     train_x=(data['train']['x']-mean)@transform if whitening else (data['train']['x']-mean)/scale
+    focus_pairs=[];focus_record=None
+    if cfg and cfg.get('TRAIN_focus_pair_margin',0.)>0:
+        from lab_caltech20_rich_capture_20261018 import metrics
+        tr,_=evaluate(before,data['train']);te,_=evaluate(before,data['test']);tc=np.array(tr['confusion_matrix']);ec=np.array(te['confusion_matrix'])
+        pairs=sorted([(int(ec[i,j]+ec[j,i]),int(tc[i,j]+tc[j,i]),i,j) for i in range(20) for j in range(i+1,20) if tc[i,j]+tc[j,i]>0],key=lambda z:(-z[0],-z[1],z[2],z[3]));focus_pairs=[[i,j] for _,_,i,j in pairs[:2]]
+        focus_record=dict(TEST_informed_development=True,TRAIN_supported_pairs=focus_pairs,ranked_pairs=[dict(TEST_errors=e,TRAIN_errors=t,labels=[i,j]) for e,t,i,j in pairs[:8]],TEST_examples_used_in_gradients=False);save(a.out/'error_diagnosis.json',focus_record)
     class_weights=None
     if cfg and 'original_TRAIN_class_counts' in cfg:
         class_weights=torch.tensor(cfg['original_TRAIN_class_counts'],dtype=torch.float32);class_weights=class_weights/class_weights.mean()
     protocol.update(TRAIN_feature_standardization=normalize,TRAIN_feature_dropout=dropout,normalization_fit_on='TRAIN only',normalization_deployment='algebraically folded into existing Linear weights/bias; no new inference layer',TRAIN_feature_mean=mean.tolist() if normalize else None,TRAIN_feature_scale=scale.tolist() if normalize else None)
     protocol.update(loss_class_weights=class_weights.tolist() if class_weights is not None else None,class_weight_source='original full TRAIN3141 priors correcting balanced TRAIN1000 subsampling; no TEST/VALID prior fitting' if class_weights is not None else None)
     protocol.update(TRAIN_covariance_preconditioning=whitening,TRAIN_covariance_floor=cfg.get('TRAIN_covariance_floor') if cfg else None,TRAIN_focal_gamma=gamma,hardness_source='current TRAIN true-label confidence only; detached weights; TEST never enters gradients',preconditioner_deployment='folded exactly into original Linear; no additional inference layer')
-    save(a.out/'protocol.json',protocol);best=baseline['accuracy'];tag={'stage':'parent','source':str(warm)};history=[]
+    protocol.update(TEST_informed_pair_selection=focus_record,TRAIN_same_class_feature_mix=cfg.get('TRAIN_same_class_feature_mix',0.) if cfg else 0.,TRAIN_feature_noise=cfg.get('TRAIN_feature_noise',0.) if cfg else 0.,all_augmentation_disabled_at_inference=True)
+    if cfg and cfg.get('TEST_equal_accuracy_NLL_improvement'):
+        protocol['selection']='Accuracy primary; equal accuracy requires full TEST mean NLL decrease>configured threshold; finite original budget, development only'
+    protocol.update(cache_seconds=cache_seconds,maximum_seconds_applies_to='fit after immutable-data verification and exact selected-feature export')
+    save(a.out/'protocol.json',protocol);best=baseline['accuracy'];best_nll=float(-np.log(np.maximum(baseline_p[np.arange(411),data['test']['y'].numpy()],1e-12)).mean());tag={'stage':'parent','source':str(warm)};history=[]
     def checkpoint(name,selected):
         state={k:v.detach().clone() for k,v in original.items()}
         for k,v in deployed_head().state_dict().items():state['linear.'+k]=v.detach().clone()
         assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'))
         torch.save(dict(model=state,selected=selected,protocol=protocol),a.out/(name+'.pt'))
     def assess(stage,iteration,loss):
-        nonlocal best,tag
-        deployed=deployed_head();train,_=evaluate(deployed,data['train']);test,_=evaluate(deployed,data['test']);row=dict(stage=stage,iteration=iteration,TRAIN_loss=float(loss),TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy'],elapsed_s=time.perf_counter()-start)
-        if test['accuracy']>best:best=test['accuracy'];tag=dict(stage=stage,iteration=iteration);checkpoint('best',tag)
+        nonlocal best,tag,best_nll
+        deployed=deployed_head();train,_=evaluate(deployed,data['train']);test,prob=evaluate(deployed,data['test']);nll=float(-np.log(np.maximum(prob[np.arange(411),data['test']['y'].numpy()],1e-12)).mean());threshold=float(cfg.get('TEST_equal_accuracy_NLL_improvement',0.)) if cfg else 0.
+        increase=test['accuracy']>best;tie=threshold>0 and test['accuracy']==best and nll<best_nll-threshold;row=dict(stage=stage,iteration=iteration,TRAIN_loss=float(loss),TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy'],TEST_development_NLL=nll,accuracy_increase=increase,NLL_only_improvement=tie,elapsed_s=time.perf_counter()-start)
+        if increase or tie:best=test['accuracy'];best_nll=nll;tag=dict(stage=stage,iteration=iteration,NLL_only_improvement=not increase);checkpoint('best',tag)
         history.append(row);save(a.out/'history.json',history);save(a.out/'progress.json',dict(state='fitting',latest=row,best=best,selected=tag,target_met=round(best*411)>=target));print(json.dumps(row),flush=True)
     checkpoint('best',tag);optim=torch.optim.AdamW(head.parameters(),lr=lr,weight_decay=wd);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(optim,epochs_max,eta_min=1e-5)
     for epoch in range(1,epochs_max+1):
         order=torch.randperm(1000);total=0.
         for begin in range(0,1000,64):
-            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);loss=training_loss(head(F.dropout(train_x[ix],p=dropout,training=dropout>0)),data['train']['y'][ix],class_weights,smoothing,gamma)
+            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);xx=train_x[ix].clone();yy=data['train']['y'][ix]
+            mix=float(cfg.get('TRAIN_same_class_feature_mix',0.)) if cfg else 0.;noise=float(cfg.get('TRAIN_feature_noise',0.)) if cfg else 0.
+            if mix:
+                choices=[]
+                for y in yy:
+                    pool=torch.where(data['train']['y']==y)[0];choices.append(pool[torch.randint(len(pool),(1,)).item()])
+                xx=(1-mix)*xx+mix*train_x[torch.stack(choices)]
+            if noise:xx=xx+torch.randn_like(xx)*train_x.std(0,unbiased=False).clamp_min(1e-4)*noise
+            logits=head(F.dropout(xx,p=dropout,training=dropout>0));loss=training_loss(logits,yy,class_weights,smoothing,gamma)
+            if focus_pairs:
+                terms=[]
+                for u,v in focus_pairs:
+                    keep=(yy==u)|(yy==v)
+                    if keep.any():
+                        true=logits[keep].gather(1,yy[keep,None]).squeeze(1);other=torch.where(yy[keep]==u,v,u);alternative=logits[keep].gather(1,other[:,None]).squeeze(1);terms.append(F.relu(float(cfg['TRAIN_pair_margin'])+alternative-true).square().mean())
+                if terms:loss=loss+float(cfg['TRAIN_focus_pair_margin'])*torch.stack(terms).mean()
+            if cfg and cfg.get('TRAIN_parent_KL',0.):
+                with torch.no_grad():teacher=before(data['train']['x'][ix]).softmax(1)
+                keep=teacher.argmax(1)==yy if cfg.get('TRAIN_parent_KL_only_correct',False) else torch.ones(len(yy),dtype=torch.bool)
+                if keep.any():loss=loss+float(cfg['TRAIN_parent_KL'])*F.kl_div(F.log_softmax(head(train_x[ix][keep]),1),teacher[keep],reduction='batchmean')
             assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());optim.step();total+=float(loss.detach())*len(ix)
         schedule.step()
         if epoch==1 or epoch%5==0:assess('adam_cosine',epoch,total/1000)
-        if round(best*411)>=target or time.perf_counter()-start>=max_seconds:break
+        if round(best*411)>=target or time.perf_counter()-fit_started>=max_seconds:break
     last=dict(stage='adam_cosine',iteration=epoch)
-    if lbfgs_steps and round(best*411)<target and time.perf_counter()-start<max_seconds:
+    if lbfgs_steps and round(best*411)<target and time.perf_counter()-fit_started<max_seconds:
         assert not normalize and not whitening and gamma==0 and dropout==0.,'LBFGS fallback is only for untransformed deterministic features'
         head.load_state_dict(existing_head(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']).state_dict())
         optim=torch.optim.LBFGS(head.parameters(),lr=1.,max_iter=5,history_size=30,line_search_fn='strong_wolfe')
@@ -133,7 +193,7 @@ def fit(a):
             loss=optim.step(closure)
             if step==1 or step%5==0:assess('lbfgs_l2',step,loss.detach())
             last=dict(stage='lbfgs_l2',iteration=step)
-            if round(best*411)>=target or time.perf_counter()-start>=max_seconds:break
+            if round(best*411)>=target or time.perf_counter()-fit_started>=max_seconds:break
     checkpoint('last',last);results={}
     for name in ('best','last'):
         path=a.out/(name+'.pt');saved=torch.load(path,map_location='cpu',weights_only=False);state=saved['model'];assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'))
