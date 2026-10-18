@@ -24,6 +24,16 @@ def gate(a):
     reference_gate=json.loads((a.session/'portable_reference_gate.json').read_text());assert reference_gate['passed'] and reference_gate['PT_SHA256']==PT_SHA
     source_path=a.session/'source_reference.ts';assert sha(source_path)==reference_gate['TorchScript_SHA256']
     source_model=torch.jit.load(str(source_path),map_location='cpu').eval()
+    # This non-persistent buffer is absent from the checkpoint. Windows/Linux
+    # complex exp differ by one float32 ulp; quantized cascades amplify it.
+    # Freeze the original server constant for simulation audit only. During
+    # physical layer-major capture every propagation is replaced by real CCD.
+    canonical=dict(source_model.named_buffers());buffer_differences={}
+    for name,value in model.named_buffers():
+        assert name in canonical and value.shape==canonical[name].shape
+        difference=float((value-canonical[name]).abs().max());buffer_differences[name]=difference
+        assert difference<1e-6 if name=='propagator.transfer' else difference==0.
+        value.copy_(canonical[name])
     proof=json.loads((a.session/'server_bridge_gate.json').read_text());assert proof['passed'] and proof['correct']==346 and proof['PT_SHA256']==PT_SHA
     reference=a.session/'simulation_TEST_reference.npz';assert sha(reference)==proof['reference_SHA256']
     images,y,ids=datasets['test'];parts=[];source_error=0.
@@ -44,7 +54,7 @@ def gate(a):
             value=model.propagator(torch.nn.functional.pad(field,(20,20,20,20))).abs().square()[:,20:498,20:498].numpy();previous[current]=value;return value
         actual=layer_forward(model,images,ids,stage,dict(previous),simulated)
     replay_error=float(np.abs(actual['probabilities']-expected).max());assert replay_error<=3e-6
-    result=dict(passed=True,PT_SHA256=PT_SHA,TEST=411,correct=346,accuracy=346/411,full_TEST_same_host_source_model_error=source_error,portable_source_reference_SHA256=sha(source_path),reference_only_not_capture_model=True,padded_samples_excluded=True,cross_host_probability_error=err,cross_host_prediction_disagreements=cross_host_disagreements,cross_host_bitwise_equivalence_claimed=False,layer_major_replay_error=replay_error,data_SHA256=dm['sha256'],TRAIN=1200,VALID=0,planned_CCD=8055,source_SHA256=sha(__file__),capture_source_SHA256=sha(HERE/'lab_caltech20_controls46_20261018.py'),SDK_opened=False,GPU_used=False)
+    result=dict(passed=True,PT_SHA256=PT_SHA,TEST=411,correct=346,accuracy=346/411,full_TEST_same_host_source_model_error=source_error,portable_source_reference_SHA256=sha(source_path),reference_only_not_capture_model=True,canonical_propagation_buffer_used_for_audit_only=True,original_buffer_max_differences=buffer_differences,padded_samples_excluded=True,cross_host_probability_error=err,cross_host_prediction_disagreements=cross_host_disagreements,cross_host_bitwise_equivalence_claimed=False,layer_major_replay_error=replay_error,data_SHA256=dm['sha256'],TRAIN=1200,VALID=0,planned_CCD=8055,source_SHA256=sha(__file__),capture_source_SHA256=sha(HERE/'lab_caltech20_controls46_20261018.py'),SDK_opened=False,GPU_used=False)
     save(a.session/'lab_bridge_gate.json',result);print(json.dumps(result),flush=True)
 
 

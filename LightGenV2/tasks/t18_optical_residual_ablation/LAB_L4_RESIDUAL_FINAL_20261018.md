@@ -30,6 +30,13 @@ non-residual CPU refinements are not interrupted. No recurring monitor.
   It is used only for audit, never hardware acquisition or optimization. Its
   fixed batch8 pads the last3 with5 zeros and excludes all5 padded outputs;
   this avoids installing simulation-training-only dependencies on the bench.
+  The checkpoint omits the non-persistent angular-spectrum transfer buffer.
+  Linux/Windows regeneration differed by5.96e-8 in complexfloat32. For the
+  numerical audit, copy the original reference's transfer buffer after checking
+  that all masks match exactly and transfer difference is<1e-6. Then enforce
+  full411 source/bridge output agreement<=3e-6. This does not change wavelength,
+  distance, inference parameters or hardware encoding: actual propagation is
+  always real CCD during physical capture, not this simulation-only buffer.
 - Preserve the current 20261015 coordinates,2000us/Gain_X4/wait240,1016 active
   native pixels, HV-inverse phase, vertical camera flip, zero-border amplitude
   encoding, session amplitude inverse, and linear-voltage phase LUT. The latter
