@@ -1,0 +1,15 @@
+{
+  "run":"caltech20_rich20_TRAIN_class_prototype_strongview_L4L6_s17_20261018",
+  "crop_area_min":0.75,
+  "input_dropout":0.03,
+  "feature_dropout":0.1,
+  "cases":{
+    "L4_prototype_strong":{"depth":4,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.00015,"full_rms_gradient":true},
+    "L6_prototype_strong":{"depth":6,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.00015,"full_rms_gradient":true}
+  },
+  "gpu_order":[2,0,3,4,1],
+  "new_inference_parameters":0,
+  "automatic_scope_end_after_segment":false,
+  "TEST_used_for_selection":true,
+  "independent_generalization":false
+}
