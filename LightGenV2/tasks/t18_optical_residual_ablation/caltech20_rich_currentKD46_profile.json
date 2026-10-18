@@ -1,0 +1,18 @@
+{
+  "run": "caltech20_rich20_currentTRAIN_calibrated_teacherKD46_local5_20261018",
+  "teacher_temperature_by_depth": {"4": 14.81079925472054, "6": 11.850853105663951},
+  "temperature": 4.0,
+  "test_interval": 5,
+  "maximum_seconds": 1800,
+  "gpu_order": [3, 4, 0, 1, 2],
+  "cases": {
+    "L4_currentKD": {"depth": 4, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true},
+    "L6_currentKD": {"depth": 6, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true}
+  },
+  "new_inference_parameters": 0,
+  "reset_trained_weights": false,
+  "alpha_restart": null,
+  "L2_FINAL_untouched": true,
+  "TEST_used_for_selection": true,
+  "independent_generalization": false
+}
