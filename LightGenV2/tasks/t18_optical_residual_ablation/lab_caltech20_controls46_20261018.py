@@ -32,6 +32,7 @@ def selftest():
 
 
 def adapt_head(root,model,datasets):
+    train_n=len(datasets['train'][1]);assert train_n in (1000,1200)
     out=root/'readout120';out.mkdir();original={k:v.detach().clone() for k,v in model.state_dict().items()};head=existing_head(original);parts={};files={}
     for role,(_,y,ids) in datasets.items():
         path=root/'capture'/role/'predictions.npz';files[role]=sha(path)
@@ -40,7 +41,7 @@ def adapt_head(root,model,datasets):
         with torch.no_grad():assert np.abs(torch.softmax(head(x),1).numpy()-p).max()<=3e-6
         parts[role]=dict(x=x,y=torch.from_numpy(y.astype(np.int64)),ids=ids)
     torch.manual_seed(17);torch.set_num_threads(2);optim=torch.optim.AdamW(head.parameters(),lr=.0005,weight_decay=.0001);baseline,_=evaluate(head,parts['test']);best=baseline['accuracy'];selected=0;history=[]
-    protocol=dict(TRAIN=1000,TEST=411,VALID=0,epochs=120,seed=17,batch_size=64,lr=.0005,weight_decay=.0001,optimizer='AdamW',loss='cross entropy',trainable=5140,features_SHA256=files,all_nonterminal_frozen=True,TEST_development_selection=True,TEST_gradients=False,new_layers=0,GPU_used=False,SDK_opened=False)
+    protocol=dict(TRAIN=train_n,TEST=411,VALID=0,epochs=120,seed=17,batch_size=64,lr=.0005,weight_decay=.0001,optimizer='AdamW',loss='cross entropy',trainable=5140,features_SHA256=files,all_nonterminal_frozen=True,TEST_development_selection=True,TEST_gradients=False,new_layers=0,GPU_used=False,SDK_opened=False)
     save(out/'protocol.json',protocol)
     def ckpt(name,epoch):
         state={k:v.detach().clone() for k,v in original.items()}
@@ -49,11 +50,11 @@ def adapt_head(root,model,datasets):
         torch.save(dict(model=state,epoch=epoch,protocol=protocol),out/(name+'.pt'))
     ckpt('best',0)
     for epoch in range(1,121):
-        order=torch.randperm(1000);total=0.
-        for start in range(0,1000,64):
+        order=torch.randperm(train_n);total=0.
+        for start in range(0,train_n,64):
             ix=order[start:start+64];optim.zero_grad();loss=torch.nn.functional.cross_entropy(head(parts['train']['x'][ix]),parts['train']['y'][ix]);assert torch.isfinite(loss);loss.backward();optim.step();total+=float(loss.detach())*len(ix)
         if epoch==1 or epoch%10==0:
-            train,_=evaluate(head,parts['train']);test,_=evaluate(head,parts['test']);row=dict(epoch=epoch,TRAIN_loss=total/1000,TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy']);history.append(row)
+            train,_=evaluate(head,parts['train']);test,_=evaluate(head,parts['test']);row=dict(epoch=epoch,TRAIN_loss=total/train_n,TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy']);history.append(row)
             if test['accuracy']>best:best=test['accuracy'];selected=epoch;ckpt('best',epoch)
             save(out/'progress.json',dict(state='fitting',latest=row,best=best));save(out/'history.json',history)
     ckpt('last',120);results={}
@@ -69,13 +70,16 @@ def adapt_head(root,model,datasets):
 def capture_group(a,spec):
     import cv2
     assert not LOCK.exists();root=a.session/('L'+str(spec['depth']));assert not root.exists();root.mkdir()
-    a.assets=a.parent/'assets';datasets,dm=data(a,False);model,_=load_checkpoint(a.session/spec['file'],spec['sha256'],spec['depth'],0.,alpha_schema=BOUNDED)
+    if hasattr(a,'residual_datasets'):datasets,dm=a.residual_datasets,a.residual_data_manifest
+    else:a.assets=a.parent/'assets';datasets,dm=data(a,False)
+    train_n=len(datasets['train'][1]);assert train_n in (1000,1200) and len(datasets['test'][1])==411
+    model,_=load_checkpoint(a.session/spec['file'],spec['sha256'],spec['depth'],spec.get('rho',0.),alpha_schema=spec.get('alpha_schema',BOUNDED))
     release=read(a.parent/'release.json')
     for k,p in (('coordinates_sha256',a.coordinates),('phase_lut_sha256',a.phase_lut),('machine_config_sha256',a.machine_config),('response_lut_sha256',a.response_lut)):assert sha(p)==release[k]
     response=read(a.response_lut);drive=np.asarray(response['drive'],np.uint8);assert response['passed'] and drive.shape==(256,)
     assert shutil.disk_usage(a.session).free>=22*(1<<30);a.out=root/'capture';a.out.mkdir();a.exposure_us=2000
     warp=cv2.getPerspectiveTransform(np.float32(corners(a.coordinates)),np.float32([[0,0],[477,0],[477,477],[0,477]]));frames=0;started=time.perf_counter();arrays={}
-    save(root/'contract.json',dict(model=spec,data_SHA256=dm['sha256'],order='one complete TRAIN1000 then TEST411 for every layer, L4 before L6; dependency '+a.dependency_kind,TRAIN=1000,TEST=411,VALID=0,exposure_us=2000,gain='Gain_X4',wait_ms=240,native_active=1016,phase='hv_inverse',camera='flip_v',source_SHA256=sha(__file__),hardware_release_SHA256=sha(a.parent/'release.json')))
+    save(root/'contract.json',dict(model=spec,data_SHA256=dm['sha256'],order='one complete TRAIN then TEST411 for every layer; dependency '+a.dependency_kind,TRAIN=train_n,TEST=411,VALID=0,exposure_us=2000,gain='Gain_X4',wait_ms=240,native_active=1016,phase='hv_inverse',camera='flip_v',source_SHA256=sha(__file__),hardware_release_SHA256=sha(a.parent/'release.json')))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),out=str(a.out),depth=spec['depth'])))
     try:
         with Bench(a) as bench:
@@ -107,7 +111,7 @@ def capture_group(a,spec):
             results={}
             for role,(_,y,ids) in datasets.items():
                 p=np.concatenate([v['probabilities'] for v in final[role]]);features=np.concatenate([v['features'] for v in final[role]]);np.savez_compressed(a.out/role/'predictions.npz',ids=ids,labels=y,probabilities=p,features=features);results[role]=dict(metrics(y,p),physical=True,samples=len(y),adapted=False);save(a.out/role/'metrics.json',results[role])
-        assert frames==(spec['depth']+1)*1411
+        assert frames==(spec['depth']+1)*(train_n+411)
         save(root/'capture_report.json',dict(state='complete',depth=spec['depth'],physical_ccd=frames,sdk_released=True,results=results,arrays=arrays,PT_SHA256=spec['sha256'],elapsed_s=time.perf_counter()-started))
     finally:LOCK.unlink()
     return model,datasets
