@@ -41,7 +41,7 @@ def selftest():
 
 def run(a):
     assert a.depth==2 and a.prefix==2 and not a.out.exists() and not seq.LOCK.exists()
-    cfg=json.loads(a.profile.read_text());assert cfg['mask']['seconds']==600 and cfg['mask']['epochs']==80 and cfg['TRAIN']==1200 and cfg['TEST']==411 and cfg['VALID']==0
+    cfg=json.loads(a.profile.read_text());assert cfg['mask']['seconds']==600 and cfg['mask']['epochs']==80 and cfg['TRAIN']==1200 and cfg['TEST']==411 and cfg['VALID']==0;assert cfg['teacher']==dict(temperature=2,prediction_KL=.2,feature_MSE=.5,correct_TRAIN_only=True)
     assert not torch.cuda.is_initialized();os.environ['CUDA_VISIBLE_DEVICES']=cfg['GPU_UUID'];torch.set_num_threads(2);torch.manual_seed(cfg['seed'])
     admission=json.loads(a.admission.read_text());assert admission['state']=='admitted' and admission['parent_PT_SHA256']==a.checkpoint_sha and admission['TRAIN60_canonical_native_phase_passed']
     _,data,dm,model,original,canonical,fields,identities=seq.dataset_model(a);assert identities==admission['prefix_SHA256'] and list(fields)==['router','0'];assert sha(a.session/'source_reference.ts')==cfg['canonical_reference_SHA256'];assert sha(a.checkpoint)==a.checkpoint_sha

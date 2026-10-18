@@ -1,0 +1,11 @@
+{
+  "TRAIN":1200,"TRAIN_each_class":60,"TEST":411,"VALID":0,
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "canonical_reference_SHA256":"590c3b5cce474faacdc58174315590fb6c185d5c425b80d6220db6875a9c1425",
+  "seed":17,"cpu_threads":2,"batch_size":4,"evaluate_every":5,"TEST_CPU_selection":true,
+  "phase_lr":0.001,"electronic_lr":0.001,"alpha_lr":0.003,"head_lr":0.0003,
+  "weight_decay":0.001,"label_smoothing":0.03,
+  "mask":{"epochs":80,"seconds":600},"teacher":{"temperature":2,"prediction_KL":0.2,"feature_MSE":0.5,"correct_TRAIN_only":true},
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","lockapp.exe","phoneexperiencehost.exe","textinputhost.exe","msedgewebview2.exe","systemsettings.exe","shellexperiencehost.exe","weixin.exe","wechatappex.exe","msedge.exe"],
+  "scope":"Single finite original L2 suffix TRAIN comparison after ordinary L6 suffix CE overfit TRAIN100% and TEST dropped. Use original immutable simulation teacher TRAIN features/probabilities, correct-TRAIN-only T2 KL.2 plus featureMSE.5, unchanged original inference architecture. Exact measured router/expert0 frozen, only original remaining global1mask, postexpert0 electronics/alpha and5140 head train. Use already verified all411 parent parity and TRAIN60 canonical/native-phase input admission; no old global CCD loaded. No TEST gradient/noVALID, original source TRAIN only for teacher. CPU full411 TEST development selects best includingE0. Max80epochs/600fit seconds, own lab4060 only after L6GPU exit, no SDK/newCCD. Result MIXED, never replace fullphysical318 with it. New adopted global mask requires fresh global TRAIN thenTEST in an audited separate handoff. No blind recapture, exposure/LUT/gain change or parameter grid."
+}
