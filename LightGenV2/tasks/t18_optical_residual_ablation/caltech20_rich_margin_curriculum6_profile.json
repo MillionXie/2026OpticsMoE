@@ -1,0 +1,7 @@
+{
+ "run":"caltech20_rich20_L6_from8127_gain_conditioned_margin_head_20261018",
+ "initial_parent_SHA256":"8793faacfa68f55e297157debaa043083c2d6a6f6034041bf5d061159f376794",
+ "maximum_rounds":4,"target_correct":350,"control_correct":308,"test_n":411,
+ "steps":128,"seed":1811463,"margin":1.0,"KL":2.0,"anchor":0.2,"lr":0.00075,"momentum":0.9,"delta_radius":0.06,
+ "TEST_informed_development":true,"independent_generalization":false,"L2_frozen":true,"L4_frozen_current_8248":true,"controls_frozen":true
+}
