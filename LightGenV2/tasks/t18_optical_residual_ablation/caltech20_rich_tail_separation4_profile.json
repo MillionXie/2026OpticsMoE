@@ -1,0 +1,8 @@
+{
+ "run":"caltech20_rich20_L4_from8248_lastGlobal_TRAIN_triplet_replay64_20261018",
+ "parent_SHA256":"4aef3d12b540b4b9b63c388d1fb0b67830019556684a8d3068333c2ec44aa07d",
+ "steps":64,"interval":8,"seed":181104,"margin":0.1,
+ "phase_lr":0.0002,"electronic_lr":0.00008,"alpha_lr":0.00001,"ema":0.9,
+ "L2_frozen":true,"control_frozen":true,"prefix3_frozen":true,
+ "TEST_informed_development":true,"independent_generalization":false
+}
