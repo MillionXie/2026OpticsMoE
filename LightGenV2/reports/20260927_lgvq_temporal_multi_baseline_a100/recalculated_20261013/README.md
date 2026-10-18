@@ -1,5 +1,11 @@
 # LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
 
+## Unified-cost remeasurement pending — 18 October 2026
+
+The author-approved replacement uses the finalized Qwen B1 inference boundary for both figure sets. Inter-inference pacing waits are excluded from formal latency and estimated energy and retained separately. Utilization annotations remain independently measured resident kernel-busy rates, not the utilization of the cost window. Qwen B1 is unchanged. DeepSeek-VL2 full and Kimi are not remeasured; their existing compliant first200 costs are retained, and missing paced dataset-once costs remain unavailable.
+
+Eight points are complete: three CLIP B1 repeats, three CLIP B10 repeats, Qwen B3 paced, and GLM B2 paced. A second external YOLO interference stopped CLIP B10 paced at30/558; YOLO B3 paced has not started. All complete and failed evidence is preserved in T06 run `lgvq_unified_inference_recheck_20261018`, including the distinct `resume03_20261018` continuation. **The two compact workbooks and four figures below have not yet been replaced. Their second set still uses the historical resident-service definition and must not be used as the new unified-cost paper comparison.** The old9.177-ms CLIP resident-service value is not a first200 dataset-once cost. Completion and raw-data verification are required before replacing those files.
+
 ## Current compact figure sets (18 October 2026)
 
 **Label revision and CLIP cost check.** Point labels now show utilization only, without batch or optical-count annotations. Optical percentages retain the spatial qualifier. Text placement rejects overlap with model connectors, annotation leaders and markers; figure legends are checked against axis titles and protocol notes. Numerical inputs and both plotting workbooks are unchanged.
