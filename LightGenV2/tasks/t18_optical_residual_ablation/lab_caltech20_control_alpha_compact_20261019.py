@@ -1,8 +1,10 @@
-"""Exact compact training replay of the EXISTING final bounded fusion and head.
+"""NOT ADMITTED: compact replay prototype for existing final fusion and head.
 
 Both images in final fusion are fixed when terminal convolution is frozen.
 Pooling is linear; their two pooled fields and three second moments suffice.
-This is a training-time algebraic cache, NOT a new deployed model or new CCD.
+Float32 pooling order failed the predeclared3e-6 feature parity, so production
+export and fitting are disabled. Retain this negative implementation evidence;
+no accuracy or real-data training claim is permitted for this prototype.
 """
 import argparse,json,sys,time,traceback,subprocess
 from pathlib import Path
@@ -14,6 +16,7 @@ from lab_caltech20_control_head_refine_20261018 import read,existing_head,evalua
 from lab_caltech20_rich_tail_refine_20261018 import rms,features,metrics
 from lab_caltech10_20261015 import save,sha
 HERE=Path(__file__).resolve().parent
+NOT_ADMITTED=True
 
 
 def compact_features(raw,d):
@@ -31,11 +34,13 @@ def compact_fields(e,o):
 
 
 def selftest():
-    torch.set_num_threads(2);torch.manual_seed(73);e=torch.rand(3,478,478);o=torch.rand_like(e);d=compact_fields(e,o);a=torch.tensor(.7,requires_grad=True);b=a.detach().clone().requires_grad_();aa=.8501+.0999*a.sigmoid();mix=(1-aa)*(e/rms(e))+aa*(o/rms(o));actual=features(rms(e)*mix/rms(mix).detach());cached=compact_features(b,d);err=float((actual-cached).abs().max());assert err<=3e-6;probe=torch.randn_like(actual);ga=torch.autograd.grad((actual*probe).sum(),a)[0];gb=torch.autograd.grad((cached*probe).sum(),b)[0];assert torch.allclose(ga,gb,atol=2e-5,rtol=1e-4)
-    print(json.dumps(dict(passed=True,original_final_fusion_forward_gradient_equivalent=True,max_feature_error=err,SDK=False,GPU=False)),flush=True)
+    torch.set_num_threads(2);torch.manual_seed(73);e=torch.rand(3,478,478);o=torch.rand_like(e);d=compact_fields(e,o);a=torch.tensor(.7,requires_grad=True);b=a.detach().clone().requires_grad_();aa=.8501+.0999*a.sigmoid();mix=(1-aa)*(e/rms(e))+aa*(o/rms(o));actual=features(rms(e)*mix/rms(mix).detach());cached=compact_features(b,d);err=float((actual-cached).abs().max());probe=torch.randn_like(actual);ga=torch.autograd.grad((actual*probe).sum(),a)[0];gb=torch.autograd.grad((cached*probe).sum(),b)[0]
+    assert NOT_ADMITTED
+    print(json.dumps(dict(admitted=False,status='rejected_before_real_data',predeclared_feature_tolerance=3e-6,max_feature_error=err,gradient_error=float((ga-gb).abs()),SDK=False,GPU=False)),flush=True)
 
 
 def export(a):
+    if NOT_ADMITTED:raise RuntimeError('Compact cache NOT ADMITTED: float32 feature parity failed; no export or training allowed')
     assert not a.out.exists();a.out.mkdir();torch.set_num_threads(2);r=read(a.parent/'report.json');warm=a.parent/'best.pt';assert r['state']=='complete' and sha(warm)==r['results']['best']['PT_SHA256'];state=torch.load(warm,map_location='cpu',weights_only=False)['model'];contract=read(a.arm/'contract.json');capture=read(a.arm/'capture_report.json');spec=contract['model'];model,_=load_checkpoint(a.arm.parent/spec['file'],spec['sha256'],6,0.,alpha_schema=BOUNDED);base=model.state_dict();allowed={'linear.weight','linear.bias','fusion_logits.5','electronic.5.local.weight'};assert all(torch.equal(v,state[k]) for k,v in base.items() if k not in allowed);model.load_state_dict(state,strict=True);assets=HERE/'runs/hardware/caltech20_rich20_L2_20261018/assets';dm=read(assets/'data_manifest.json');assert sha(assets/dm['file'])==dm['sha256']==contract['data_SHA256'];held={};hook=model.electronic[5].register_forward_pre_hook(lambda m,args:held.update(x=args[0]));files={};proof=[];arrays={}
     try:
         with np.load(assets/dm['file'],allow_pickle=False) as identity,torch.inference_mode():
@@ -55,6 +60,7 @@ def export(a):
 
 
 def fit(a):
+    if NOT_ADMITTED:raise RuntimeError('Compact cache NOT ADMITTED: float32 feature parity failed; no export or training allowed')
     assert not a.out.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(17);cfg=read(a.profile);proof=read(a.cache/'report.json');assert proof['passed'];pr=read(a.parent/'report.json');warm=a.parent/'best.pt';assert sha(warm)==pr['results']['best']['PT_SHA256']==proof['parent_PT_SHA256'];state=torch.load(warm,map_location='cpu',weights_only=False)['model'];head=existing_head(state);raw=torch.nn.Parameter(state['fusion_logits.5'].clone());data={}
     for role,n in [('train',1000),('test',411)]:
         p=a.cache/(role+'.npz');assert sha(p)==proof['files_SHA256'][role]

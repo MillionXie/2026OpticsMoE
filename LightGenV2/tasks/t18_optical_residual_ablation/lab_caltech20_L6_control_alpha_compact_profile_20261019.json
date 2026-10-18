@@ -1,4 +1,5 @@
 {
+ "admitted":false,"rejection":"Predeclared3e-6 feature-parity failed before real-data export/fit; implementation production entrypoints disabled. Retained negative evidence only.",
  "epochs":200,"maximum_seconds":90,"target_min_correct":284,
  "head_lr":0.000003,"alpha_lr":0.01,"weight_decay":0.001,"parent_KL":0.5,
  "original_TRAIN_class_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],

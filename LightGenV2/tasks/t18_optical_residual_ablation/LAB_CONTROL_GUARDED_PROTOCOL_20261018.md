@@ -143,3 +143,12 @@ select difficult classes and nearby TRAIN IDs, and TEST picks checkpoints:
 explicit development leakage, not independent generalization. No VALID,
 new network, new CCD, SDK, GPU or recurring monitor. Fresh complete measured
 graph CPU audit and SHA-verified best/last/report/predictions backup follow.
+Actual selected counts: L2=280, L4=282, L6=277. L2/L4 targets achieved; L6 is
+still7 correct short of284. Whole-head neighbor/focal and TRAIN-prior fits did
+not exceed277; wider-row stage stopped at first no-progress pass. A proposed
+compact-alpha cache failed the original3e-6 feature gate (1.14381e-4 observed),
+so it is explicitly NOT ADMITTED and both export/fit entrypoints disabled.
+No threshold relaxation, real-data alpha fitting or claimed accuracy from it.
+All failed states and exact parents remain preserved. The full report is
+reports/lab_nores_targets_20261019/README.md; TEST-aware development remains
+explicit and no independent generalization is claimed.
