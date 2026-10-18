@@ -1,0 +1,12 @@
+{
+  "run": "caltech20_rich20_TRAIN_sameclass_patch46_local5_20261018",
+  "sameclass_patch_probability": 0.5,
+  "sameclass_patch_area_min": 0.1,
+  "sameclass_patch_area_max": 0.25,
+  "gpu_order": [3, 0, 1, 4],
+  "KD_weight": 0.25,
+  "cases": {
+    "L4_sameclass_patch": {"depth": 4, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true},
+    "L6_sameclass_patch": {"depth": 6, "fresh": false, "epochs": 5, "electronic_warm_epochs": 0, "phase_lr": 0.00015, "full_rms_gradient": true}
+  }
+}
