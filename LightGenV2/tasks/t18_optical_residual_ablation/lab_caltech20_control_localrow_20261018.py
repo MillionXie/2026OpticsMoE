@@ -39,6 +39,8 @@ def selftest():
     assert improves(270,1.3,270,1.4,.0001) and not improves(269,1.,270,1.4,.0001)
     cfg.update(objective='binary_rest',temperature=.7);actual,_=direction(a,sign,r,lse,q,keep,u,origin,cfg)
     t=u.clone().requires_grad_();score=a@t;z=score-lse;target=(sign>0).double();loss=torch.nn.functional.binary_cross_entropy_with_logits(z/.7,target)+cfg['parent_KL']*(torch.nn.functional.softplus(z)-q*z).mean()+.5*cfg['anchor']*(t-origin).square().sum();g=torch.autograd.grad(loss,t,create_graph=True)[0];H=torch.stack([torch.autograd.grad(g[i],t,retain_graph=True)[0] for i in range(257)]);assert torch.allclose(actual,torch.linalg.solve(H,g.detach()),atol=1e-8,rtol=1e-6)
+    from lab_caltech20_rich_tail_refine_20261018 import SmallElectronicResidual,tail
+    e=SmallElectronicResidual();head=torch.nn.Linear(256,20);raw=torch.nn.Parameter(torch.tensor(1.));xx=torch.rand(4,478,478);oo=torch.rand_like(xx);alpha=.8501+.0999*raw.sigmoid();logits=tail(e,head,alpha,xx,oo);teacher=logits.detach().softmax(1);yy=teacher.argmax(1);yy[0]=(yy[0]+1)%20;loss=torch.nn.functional.cross_entropy(logits,yy);keep=teacher.argmax(1)==yy;loss=loss+.25*torch.nn.functional.kl_div(logits[keep].log_softmax(1),teacher[keep],reduction='batchmean');loss.backward();params=[*e.parameters(),*head.parameters(),raw];assert sum(p.numel() for p in params)==5150 and all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
     print(json.dumps(dict(passed=True,TRAIN_margin_KL_gradient_Hessian_and_Woodbury_verified=True,accuracy_primary_NLL_secondary=True,real_data=False,SDK=False,GPU=False)),flush=True)
 
 
@@ -109,11 +111,13 @@ def audit_full_graph(a):
             for stage in ['router']+[str(k) for k in range(a.depth)]:
                 p=a.arm/'capture'/role/stage/'ccd.npy';digest=sha(p);assert digest==capture['arrays'][role+'/'+stage]['sha256'];arrays[role+'/'+stage]=digest;fields[stage]=np.load(p,mmap_mode='r')
             with np.load(base/role/'predictions.npz',allow_pickle=False) as z:expected_features=z['features'].copy();assert np.array_equal(z['ids'],identity[role+'_ids']) and np.array_equal(z['labels'],identity[role+'_labels'])
-            imgs=torch.from_numpy(identity[role+'_images'].transpose(0,3,1,2).copy());prob=[];features_error=0.
+            imgs=torch.from_numpy(identity[role+'_images'].transpose(0,3,1,2).copy());prob=[];fresh_features=[];features_error=0.
             for begin in range(0,n,8):
                 def measured(stage,amplitude,phase,ids):return np.asarray(fields[stage][begin:begin+8]).copy()
-                p=model(encode_images(imgs[begin:begin+8]),callback=measured,ids=identity[role+'_ids'][begin:begin+8])[0];prob.append(p.numpy());features_error=max(features_error,float(np.abs(model.readout['features'].numpy()-expected_features[begin:begin+8]).max()))
-            prob=np.concatenate(prob);head_prob=existing_head(state)(torch.from_numpy(expected_features)).softmax(1).numpy();error=float(np.abs(prob-head_prob).max());assert error<=3e-6 and features_error<=3e-6;correct=int((prob.argmax(1)==identity[role+'_labels']).sum());assert correct==round(r['results']['best']['TRAIN' if role=='train' else 'TEST_development']['accuracy']*n);proof.append(dict(role=role,samples=n,correct=correct,probability_error=error,features_error=features_error))
+                p=model(encode_images(imgs[begin:begin+8]),callback=measured,ids=identity[role+'_ids'][begin:begin+8])[0];prob.append(p.numpy());fresh_features.append(model.readout['features'].numpy().copy());features_error=max(features_error,float(np.abs(model.readout['features'].numpy()-expected_features[begin:begin+8]).max()))
+            prob=np.concatenate(prob);head_prob=existing_head(state)(torch.from_numpy(np.concatenate(fresh_features))).softmax(1).numpy();error=float(np.abs(prob-head_prob).max());assert error<=3e-6
+            if not r.get('only_existing_post_final_CCD_changed',False):assert features_error<=3e-6
+            correct=int((prob.argmax(1)==identity[role+'_labels']).sum());assert correct==round(r['results']['best']['TRAIN' if role=='train' else 'TEST_development']['accuracy']*n);proof.append(dict(role=role,samples=n,correct=correct,probability_error=error,previous_parent_feature_max_change=features_error,changed_features_allowed_only_for_postfinal_CCD=r.get('only_existing_post_final_CCD_changed',False)))
     q=dict(passed=True,fresh_complete_measured_graph=True,depth=a.depth,proof=proof,CCD_arrays_SHA256=arrays,selected_PT_SHA256=sha(path),all_optical_and_captured_upstream_unchanged=True,SDK=False,GPU=False,TRAIN=1000,TEST=411,VALID=0,TEST_informed_development=True);save(a.out/'audit_fullgraph.json',q);print(json.dumps(q),flush=True)
 
 
@@ -143,12 +147,67 @@ def chain(a):
     print(json.dumps(dict(state='complete',finite_same_method_chain=True,baseline_correct=baseline,best_correct=old,actual_rounds=len(records))),flush=True)
 
 
+def postccd(a):
+    """Only existing terminal9 convolution + raw bounded alpha +5140 head."""
+    from lab_caltech20_rich_model_20261018 import load_checkpoint,BOUNDED,encode_images
+    from lab_caltech20_rich_tail_refine_20261018 import SmallElectronicResidual,tail,metrics
+    import psutil
+    assert a.depth==6 and not a.out.exists() and psutil.virtual_memory().available>8*(1<<30);torch.set_num_threads(2);torch.manual_seed(173);a.out.mkdir();cfg=read(a.profile);parent=a.arm/cfg['parent_run'];pr=read(parent/'report.json');assert pr['state']=='complete';warm=parent/'best.pt';assert sha(warm)==pr['results']['best']['PT_SHA256'];state=torch.load(warm,map_location='cpu',weights_only=False)['model'];contract=read(a.arm/'contract.json');capture=read(a.arm/'capture_report.json');spec=contract['model'];model,_=load_checkpoint(a.arm.parent/spec['file'],spec['sha256'],6,0.,alpha_schema=BOUNDED);original=model.state_dict();last=5;allowed={'linear.weight','linear.bias','electronic.5.local.weight','fusion_logits.5'};assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed);model.load_state_dict(state,strict=True);assets=HERE/'runs/hardware/caltech20_rich20_L2_20261018/assets';dm=read(assets/'data_manifest.json');assert sha(assets/dm['file'])==dm['sha256']==contract['data_SHA256'];cached={};arr={};held={};hook=model.electronic[last].register_forward_pre_hook(lambda module,args:held.update(x=args[0].detach()))
+    try:
+        with np.load(assets/dm['file'],allow_pickle=False) as ident,torch.inference_mode():
+            for role,n in [('train',1000),('test',411)]:
+                fields={}
+                for stage in ['router']+[str(k) for k in range(6)]:
+                    p=a.arm/'capture'/role/stage/'ccd.npy';digest=sha(p);assert digest==capture['arrays'][role+'/'+stage]['sha256'];arr[role+'/'+stage]=digest;fields[stage]=np.load(p,mmap_mode='r')
+                x=torch.empty(n,478,478);o=torch.empty_like(x);images=torch.from_numpy(ident[role+'_images'].transpose(0,3,1,2).copy());y=ident[role+'_labels'];ids=ident[role+'_ids'];prob=[]
+                for begin in range(0,n,8):
+                    end=min(begin+8,n)
+                    def measured(stage,amplitude,phase,sample_ids):return np.asarray(fields[stage][begin:end]).copy()
+                    p=model(encode_images(images[begin:end]),callback=measured,ids=ids[begin:end])[0];x[begin:end]=held['x'];o[begin:end]=model.nonlinear(model.readout['ccd'],'global');prob.append(p.numpy());save(a.out/'progress.json',dict(state='caching_selected_terminal_inputs',role=role,completed=end,total=n,SDK=False,GPU=False))
+                prob=np.concatenate(prob);assert int((prob.argmax(1)==y).sum())==round(pr['results']['best']['TRAIN' if role=='train' else 'TEST_development']['accuracy']*n);cached[role]=dict(x=x,o=o,y=torch.from_numpy(y.astype(np.int64)),ids=ids)
+    finally:hook.remove()
+    cached={r:{k:v.clone() if isinstance(v,torch.Tensor) else v for k,v in d.items()} for r,d in cached.items()};del model
+    electronic=SmallElectronicResidual();electronic.load_state_dict({'local.weight':state['electronic.5.local.weight']});head=existing_head(state);raw=torch.nn.Parameter(state['fusion_logits.5'].clone());params=[*electronic.parameters(),*head.parameters(),raw];assert sum(p.numel() for p in params)==5150
+    def alpha():return .8501+(.95-.8501)*raw.sigmoid()
+    def assess(role):
+        d=cached[role];prob=[]
+        with torch.no_grad():
+            for begin in range(0,len(d['ids']),8):prob.append(tail(electronic,head,alpha(),d['x'][begin:begin+8],d['o'][begin:begin+8]).softmax(1).numpy())
+        p=np.concatenate(prob);return metrics(d['y'].numpy(),p),p
+    baseline,bp=assess('test');assert round(baseline['accuracy']*411)==pr['best_correct'];before,btrain=assess('train');teacher=torch.from_numpy(btrain);baseline_correct=round(411*baseline['accuracy']);best=baseline_correct;best_nll=float(-np.log(bp[np.arange(411),cached['test']['y'].numpy()].clip(1e-12)).mean());selected=0;hist=[]
+    import subprocess
+    git=HERE.parents[2]/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe';protocol=dict(config=cfg,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),parent_PT_SHA256=sha(warm),CCD_arrays_SHA256=arr,allowed_keys=sorted(allowed),trainable_parameters=5150,TRAIN=1000,TEST=411,VALID=0,TRAIN_gradients_only=True,TEST_development=True,SDK=False,GPU=False,new_CCD=0,new_layers=0,raw_alpha_schema=BOUNDED,upstream_optical_and_electronic_frozen=True);save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=cached['test']['ids'],labels=cached['test']['y'].numpy(),probabilities=bp)
+    def checkpoint(name,epoch):
+        z={k:v.clone() for k,v in state.items()};z['electronic.5.local.weight']=electronic.local.weight.detach().clone();z['fusion_logits.5']=raw.detach().clone()
+        for k,v in head.state_dict().items():z['linear.'+k]=v.detach().clone()
+        assert all(torch.equal(v,z[k]) for k,v in state.items() if k not in allowed);torch.save(dict(model=z,selected=dict(epoch=epoch),protocol=protocol),a.out/(name+'.pt'))
+    checkpoint('best',0);optim=torch.optim.AdamW([dict(params=head.parameters(),lr=cfg['head_lr']),dict(params=electronic.parameters(),lr=cfg['conv_lr']),dict(params=[raw],lr=cfg['alpha_lr'],weight_decay=0.)],weight_decay=cfg['weight_decay']);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(optim,cfg['epochs'],eta_min=1e-6);cw=torch.tensor(cfg['original_TRAIN_class_counts'],dtype=torch.float32);cw=cw/cw.mean();started=time.perf_counter();d=cached['train']
+    for epoch in range(1,cfg['epochs']+1):
+        order=torch.randperm(1000);total=0.
+        for begin in range(0,1000,8):
+            ix=order[begin:begin+8];optim.zero_grad(set_to_none=True);logits=tail(electronic,head,alpha(),d['x'][ix],d['o'][ix]);yy=d['y'][ix];loss=torch.nn.functional.cross_entropy(logits,yy,weight=cw,label_smoothing=cfg['label_smoothing']);keep=teacher[ix].argmax(1)==yy
+            if keep.any():loss=loss+cfg['parent_KL']*torch.nn.functional.kl_div(logits[keep].log_softmax(1),teacher[ix][keep],reduction='batchmean')
+            assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params);torch.nn.utils.clip_grad_norm_(params,1.);optim.step();total+=float(loss.detach())*len(ix)
+        schedule.step()
+        if epoch==1 or epoch%cfg['evaluate_every']==0 or epoch==cfg['epochs'] or time.perf_counter()-started>=cfg['maximum_fit_seconds']:
+            tr,_=assess('train');te,tp=assess('test');n=round(te['accuracy']*411);nll=float(-np.log(tp[np.arange(411),cached['test']['y'].numpy()].clip(1e-12)).mean());adopt=improves(n,nll,best,best_nll,.0001)
+            if adopt:best,best_nll,selected=n,nll,epoch;checkpoint('best',epoch)
+            row=dict(epoch=epoch,TRAIN_loss=total/1000,TRAIN_accuracy=tr['accuracy'],TEST_correct=n,TEST_NLL=nll,best_correct=best,selected_epoch=selected,effective_alpha=float(alpha().detach()),elapsed_fit_s=time.perf_counter()-started);hist.append(row);save(a.out/'history.json',hist);save(a.out/'progress.json',dict(state='fitting_terminal5150',latest=row));print(json.dumps(row),flush=True)
+        if best>=280 or time.perf_counter()-started>=cfg['maximum_fit_seconds']:break
+    checkpoint('last',epoch);results={}
+    for name in ('best','last'):
+        path=a.out/(name+'.pt');z=torch.load(path,map_location='cpu',weights_only=False);s=z['model'];assert all(torch.equal(v,s[k]) for k,v in state.items() if k not in allowed);electronic.load_state_dict({'local.weight':s['electronic.5.local.weight']});head.load_state_dict(existing_head(s).state_dict());raw.data.copy_(s['fusion_logits.5']);tr,trp=assess('train');te,tp=assess('test')
+        for role,p in [('train',trp),('test',tp)]:np.savez_compressed(a.out/(name+'_'+role.upper()+'_predictions.npz'),ids=cached[role]['ids'],labels=cached[role]['y'].numpy(),probabilities=p)
+        old=bp.argmax(1)==cached['test']['y'].numpy();now=tp.argmax(1)==cached['test']['y'].numpy();results[name]=dict(TRAIN=tr,TEST_development=te,selected=z['selected'],PT_SHA256=sha(path),strict_CPU=True,all_optical_and_captured_upstream_unchanged=True,new_correct=int((now&~old).sum()),new_wrong=int((old&~now).sum()))
+    assert best>=baseline_correct and round(results['best']['TEST_development']['accuracy']*411)==best and sha(warm)==protocol['parent_PT_SHA256'];save(a.out/'report.json',dict(state='complete',baseline_correct=baseline_correct,best_correct=best,best_NLL=best_nll,actual_epochs=epoch,results=results,target_min_correct=280,target_met=best>=280,TRAIN=1000,TEST=411,VALID=0,TEST_development=True,SDK=False,GPU=False,only_existing_post_final_CCD_changed=True))
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--audit',action='store_true');p.add_argument('--chain',action='store_true');p.add_argument('--depth',type=int,choices=[4,6]);p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--audit',action='store_true');p.add_argument('--chain',action='store_true');p.add_argument('--postccd',action='store_true');p.add_argument('--depth',type=int,choices=[4,6]);p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
     if a.selftest:selftest()
     else:
         if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf8',buffering=1);sys.stderr=sys.stdout
-        try:audit_full_graph(a) if a.audit else chain(a) if a.chain else fit(a)
+        try:audit_full_graph(a) if a.audit else postccd(a) if a.postccd else chain(a) if a.chain else fit(a)
         except BaseException as e:
             if a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
             raise

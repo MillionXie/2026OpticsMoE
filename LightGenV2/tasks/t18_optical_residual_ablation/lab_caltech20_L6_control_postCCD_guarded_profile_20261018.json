@@ -1,0 +1,7 @@
+{
+  "parent_run":"head_binaryrest_chain_20261018","depth":6,"target_min_correct":280,
+  "epochs":40,"maximum_fit_seconds":600,"evaluate_every":5,
+  "head_lr":0.0001,"conv_lr":0.0005,"alpha_lr":0.001,"weight_decay":0.005,"label_smoothing":0.02,"parent_KL":0.25,
+  "original_TRAIN_class_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "scope":"Only L6 LAB from retained269/411 after same-head method plateau. Fine-tune original post-final-CCD9conv/raw boundedalpha/5140 head=5150 params, no new structure, all captured-upstream inputs frozen. Exact complete physical-parent cache and baseline269 gate; TRAIN-only CE/correct-TRAIN KL/priors. Same411 TEST development accuracy-primary NLL tie selects PT. No GPU/SDK/newCCD/VALID or SIM/L4 modifications; at most40 epochs/600fit seconds."
+}

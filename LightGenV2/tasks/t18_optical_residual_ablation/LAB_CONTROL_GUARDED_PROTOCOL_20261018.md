@@ -89,3 +89,16 @@ total, each max2 passes; stop the first no-progress segment or first280 target.
 No parameter grid, ensemble, new layers or data. Retain parent269 and all failed
 last states. `--chain` stores each effective config, source/PT SHA, round history,
 original best/last and predictions, with explicit TEST-aware selection.
+
+The chain stopped at its first no-progress segment (1600 updates), retaining269
+and not using its265 last. No further repetition of the same head-only method.
+One bounded L6-only terminal fit may now update the **existing** post-final-CCD
+9-parameter convolution, raw bounded alpha (.8501,.95) and original5140 head:
+5150 parameters, no new architecture. Freeze every optical mask and every
+electronic parameter affecting captured SLM inputs. Cache the exact269 parent
+full measured graph and require TRAIN691/1000 and TEST269/411 before fitting;
+never compare it to stale original-head features. TRAIN-weighted CE plus mild
+parent-correct TRAIN KL, smaller group learning rates, max40 epochs/600 fit
+seconds. Accuracy-primary meaningful NLL tie selection, retain E0. After any
+selected terminal change, fresh full graph replay is required; old features are
+not interchangeable. No new CCD/SDK/GPU. This is laboratory-only development.
