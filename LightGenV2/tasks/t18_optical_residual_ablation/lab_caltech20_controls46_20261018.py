@@ -1,4 +1,4 @@
-"""One-shot frozen-control L4 then L6 queue AFTER L2 residual fully finishes.
+"""One-shot frozen-control L4 then L6 queue after an explicit user dependency.
 
 One complete TRAIN50/class1000 then TEST411 per physical layer, same fixed bench
 contract. No overlap, VAL, mask update, new layer, restart or recurring monitor.
@@ -75,7 +75,7 @@ def capture_group(a,spec):
     response=read(a.response_lut);drive=np.asarray(response['drive'],np.uint8);assert response['passed'] and drive.shape==(256,)
     assert shutil.disk_usage(a.session).free>=22*(1<<30);a.out=root/'capture';a.out.mkdir();a.exposure_us=2000
     warp=cv2.getPerspectiveTransform(np.float32(corners(a.coordinates)),np.float32([[0,0],[477,0],[477,477],[0,477]]));frames=0;started=time.perf_counter();arrays={}
-    save(root/'contract.json',dict(model=spec,data_SHA256=dm['sha256'],order='one complete TRAIN1000 then TEST411 for every layer, L4 before L6; after L2 residual capture AND training complete',TRAIN=1000,TEST=411,VALID=0,exposure_us=2000,gain='Gain_X4',wait_ms=240,native_active=1016,phase='hv_inverse',camera='flip_v',source_SHA256=sha(__file__),hardware_release_SHA256=sha(a.parent/'release.json')))
+    save(root/'contract.json',dict(model=spec,data_SHA256=dm['sha256'],order='one complete TRAIN1000 then TEST411 for every layer, L4 before L6; dependency '+a.dependency_kind,TRAIN=1000,TEST=411,VALID=0,exposure_us=2000,gain='Gain_X4',wait_ms=240,native_active=1016,phase='hv_inverse',camera='flip_v',source_SHA256=sha(__file__),hardware_release_SHA256=sha(a.parent/'release.json')))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),out=str(a.out),depth=spec['depth'])))
     try:
         with Bench(a) as bench:
@@ -116,13 +116,20 @@ def capture_group(a,spec):
 def main(a):
     assert not (a.session/'queue_started.json').exists();manifest=read(a.session/'models_manifest.json');assert manifest['state']=='CPU_verified'
     assert [q['depth'] for q in manifest['models']]==[4,6]
-    save(a.session/'queue_started.json',dict(pid=os.getpid(),source_SHA256=sha(__file__),manifest_SHA256=sha(a.session/'models_manifest.json'),wait_for=str(a.wait_for),condition='L2 residual full pipeline report complete, SDK released and training child exited; no insertion in between layers',planned_frames=16932,TRAIN_each_class=50,TRAIN=1000,TEST=411,VALID=0,recurring_monitor=False))
+    condition='L2 residual full pipeline report complete, SDK released and training child exited; no insertion in between layers' if a.dependency_kind=='full_residual' else 'Latest human: L2 expert TRAIN1200/TEST411 complete and old controller stopped, SDK released; prioritize controls46 while independent CPU suffix fits; defer residual global'
+    save(a.session/'queue_started.json',dict(pid=os.getpid(),source_SHA256=sha(__file__),manifest_SHA256=sha(a.session/'models_manifest.json'),wait_for=str(a.wait_for),condition=condition,dependency_kind=a.dependency_kind,planned_frames=16932,TRAIN_each_class=50,TRAIN=1000,TEST=411,VALID=0,recurring_monitor=False))
     deadline=time.monotonic()+3*3600
-    while not (a.wait_for/'report.json').exists():
+    dependency=a.wait_for/'report.json' if a.dependency_kind=='full_residual' else a.wait_for
+    while not dependency.exists():
         if (a.wait_for/'failure.json').exists():raise RuntimeError('Prior L2 failed; do not overlap or automatically restart it')
         if time.monotonic()>deadline:raise TimeoutError('L2 dependency deadline; no infinite wait')
         time.sleep(5)
-    prior=read(a.wait_for/'report.json');assert prior['state']=='complete' and prior['sdk_released'] and prior['GPU_child_exited'] and not LOCK.exists()
+    prior=read(dependency)
+    if a.dependency_kind=='full_residual':assert prior['state']=='complete' and prior['sdk_released'] and prior['GPU_child_exited']
+    else:
+        assert prior['state']=='explicit_user_handoff_at_complete_expert' and prior['residual_controller_stopped'] and prior['old_controls_queue_stopped'] and prior['expert_valid_frames']==1611
+        assert all(sha(Path(p))==digest for p,digest in prior['expert_SHA256'].items())
+    assert not LOCK.exists()
     torch.set_num_threads(4);rows=[]
     for spec in manifest['models']:
         model,datasets=capture_group(a,spec)
@@ -134,7 +141,7 @@ def main(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true')
     for name in ('session','parent','wait-for','coordinates','machine-config','phase-lut','response-lut','phase-sdk','amplitude-sdk'):p.add_argument('--'+name,type=Path)
-    a=p.parse_args()
+    p.add_argument('--dependency-kind',choices=('full_residual','complete_expert'),default='full_residual');a=p.parse_args()
     if a.selftest:selftest()
     else:
         if sys.stdout is None:sys.stdout=(a.session/'queue.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout

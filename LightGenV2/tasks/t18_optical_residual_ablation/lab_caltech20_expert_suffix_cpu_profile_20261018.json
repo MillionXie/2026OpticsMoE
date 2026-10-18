@@ -1,0 +1,23 @@
+{
+  "TRAIN_each_class": 60,
+  "TRAIN": 1200,
+  "TEST": 411,
+  "VALID": 0,
+  "GPU_UUID": null,
+  "seed": 17,
+  "cpu_threads": 2,
+  "batch_size": 4,
+  "evaluate_every": 5,
+  "phase_lr": 0.001,
+  "electronic_lr": 0.0005,
+  "alpha_lr": 0.0005,
+  "head_lr": 0.001,
+  "weight_decay": 0.001,
+  "label_smoothing": 0.03,
+  "mask": {"epochs": 60, "seconds": 900},
+  "tail": {"epochs": 180, "seconds": 300},
+  "selection": "Highest full TEST development accuracy, first tie; no TEST gradients or VALID",
+  "device": "cpu",
+  "scope": "Only global mask and existing post-expert electronics/head; frozen router/expert; actual measured prefixes; concurrent controls46 capture; no residual global acquisition",
+  "desktop_graphics_process_allowlist": []
+}

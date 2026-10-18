@@ -150,7 +150,8 @@ def state_cpu(model):return {k:v.detach().cpu().clone() for k,v in model.state_d
 
 def fit(a):
     """A separate GPU child; exits before the next SDK stage is opened."""
-    cfg=read(a.profile);assert not LOCK.exists() and a.prefix in (1,2,3)
+    cfg=read(a.profile);device=a.device;assert a.prefix in (1,2,3)
+    if device=='cuda':assert not LOCK.exists(),'GPU training requires SDK release; CPU read-only suffix may run alongside another capture'
     controller=None
     if a.controller_receipt is not None:
         assert a.controller_receipt.resolve().is_relative_to(a.session.resolve())
@@ -158,8 +159,8 @@ def fit(a):
         assert controller['pid']==a.controller_pid
         ancestry=python_parent_chain(a.controller_pid);assert ancestry and ancestry[-1]==a.controller_pid,('Not own Python parent lineage',os.getpid(),os.getppid(),a.controller_pid,ancestry)
         assert controller['source_SHA256']==sha(__file__) and Path(controller['session']).resolve()==a.session.resolve()
-    assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and 'A100' not in torch.cuda.get_device_name(0)
-    active=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name','--format=csv,noheader'],text=True)
+    if device=='cuda':assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and 'A100' not in torch.cuda.get_device_name(0)
+    active=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name','--format=csv,noheader'],text=True) if device=='cuda' else ''
     names=windows_process_names() if os.name=='nt' else {}
     for row in active.splitlines():
         parts=row.split(',',2)
@@ -167,9 +168,10 @@ def fit(a):
         pid=int(parts[1]);name=names.get(pid,Path(parts[2].strip()).name.lower())
         own_idle_SDK_controller=own_sdk_controller(pid,name,ancestry[-1] if controller is not None else os.getppid(),a.controller_pid if controller is not None else None)
         assert own_idle_SDK_controller or gpu_process_allowed(pid,name,os.getpid(),os.name,cfg['desktop_graphics_process_allowlist']),('GPU occupied; do not kill/share',pid,name)
-    torch.set_num_threads(cfg['cpu_threads']);torch.manual_seed(cfg['seed']);torch.cuda.set_per_process_memory_fraction(.70,0)
+    torch.set_num_threads(cfg['cpu_threads']);torch.manual_seed(cfg['seed'])
+    if device=='cuda':torch.cuda.set_per_process_memory_fraction(.70,0)
     data,dm=load_data(a.session);base,_=load_checkpoint(a.checkpoint,a.checkpoint_sha,2,.3,alpha_schema=DIRECT)
-    original=state_cpu(base);model=MeasuredPrefix().cuda();model.load_state_dict(original);model.requires_grad_(False)
+    original=state_cpu(base);model=MeasuredPrefix().to(device);model.load_state_dict(original);model.requires_grad_(False)
     allowed=allowed_keys(model,a.prefix)
     for n,p in model.named_parameters():p.requires_grad_(n in allowed)
     assert not a.out.exists();a.out.mkdir();prefix_shas={};datasets={}
@@ -184,17 +186,19 @@ def fit(a):
     def forward(role,ix,device):
         d=datasets[role];model.measured={k:torch.from_numpy(np.asarray(v[ix]).copy()).to(device) for k,v in d['fields'].items()}
         return model(encode_images(d['x'][ix].to(device)))[0]
-    def assess(role,device='cuda'):
+    def assess(role,device=device):
         parts=[];d=datasets[role]
         with torch.no_grad():
             for begin in range(0,len(d['ids']),cfg['batch_size']):parts.append(forward(role,slice(begin,begin+cfg['batch_size']),device).cpu().numpy())
         p=np.concatenate(parts);return metrics(d['y'].numpy(),p),p
     kind='measured_all_layers' if a.prefix==3 else 'measured_prefix_simulated_suffix'
     budget=cfg['tail'] if a.prefix==3 else cfg['mask']
-    start=time.perf_counter();history=[];baseline,_=assess('test');best=baseline['accuracy'];selected=0
+    start=time.perf_counter();history=[];baseline,baseline_p=assess('test');best=baseline['accuracy'];selected=0
+    np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=datasets['test']['ids'],labels=datasets['test']['y'].numpy(),probabilities=baseline_p)
     git=ROOT/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'
-    protocol=dict(config=cfg,prefix=list(STAGES[:a.prefix]),parent_PT_SHA256=a.checkpoint_sha,data_SHA256=dm['sha256'],captured_prefix_SHA256=prefix_shas,allowed_keys=sorted(allowed),source_SHA256=sha(__file__),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),evaluation_kind=kind,TEST_development_selection=True,TEST_gradients=False,VALID=0,control_untouched=True)
+    protocol=dict(config=cfg,prefix=list(STAGES[:a.prefix]),parent_PT_SHA256=a.checkpoint_sha,data_SHA256=dm['sha256'],captured_prefix_SHA256=prefix_shas,allowed_keys=sorted(allowed),source_SHA256=sha(__file__),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),evaluation_kind=kind,device=device,GPU_used=device=='cuda',SDK_opened=False,TEST_development_selection=True,TEST_gradients=False,VALID=0,control_untouched=True,baseline_TEST_development=baseline,baseline_predictions_SHA256=sha(a.out/'baseline_TEST_predictions.npz'))
     save(a.out/'protocol.json',protocol)
+    save(a.out/'progress.json',dict(state='fitting',epoch=0,baseline_TEST_development=baseline,best_TEST_development=best,evaluation_kind=kind,device=device))
     def checkpoint(name,epoch):
         state=state_cpu(model);assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed)
         torch.save(dict(model=state,epoch=epoch,protocol=protocol),a.out/(name+'.pt'))
@@ -207,7 +211,7 @@ def fit(a):
     for epoch in range(1,budget['epochs']+1):
         model.train();total=0.;order=torch.randperm(1200).numpy()
         for begin in range(0,1200,cfg['batch_size']):
-            ix=order[begin:begin+cfg['batch_size']];optimizer.zero_grad(set_to_none=True);p=forward('train',ix,'cuda');logp=p.clamp_min(1e-12).log();y=datasets['train']['y'][ix].cuda()
+            ix=order[begin:begin+cfg['batch_size']];optimizer.zero_grad(set_to_none=True);p=forward('train',ix,device);logp=p.clamp_min(1e-12).log();y=datasets['train']['y'][ix].to(device)
             smooth=cfg['label_smoothing'];loss=(1-smooth)*F.nll_loss(logp,y)-smooth*logp.mean()
             assert torch.isfinite(loss);loss.backward()
             assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in model.parameters() if v.requires_grad)
@@ -229,7 +233,7 @@ def fit(a):
         test,p=assess('test','cpu');train,_=assess('train','cpu');np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=datasets['test']['ids'],labels=datasets['test']['y'].numpy(),probabilities=p)
         results[name]=dict(TRAIN=train,TEST_development=test,PT_SHA256=sha(a.out/(name+'.pt')),prediction_SHA256=sha(a.out/(name+'_TEST_predictions.npz')),strict_CPU=True)
     assert results['best']['TEST_development']['accuracy']==best,'CPU selected-score mismatch'
-    save(a.out/'report.json',dict(state='complete',results=results,selected_epoch=selected,actual_epochs=epoch,elapsed_s=time.perf_counter()-start,prefix=list(STAGES[:a.prefix]),evaluation_kind=kind,frozen_parameters_unchanged=True,data_sha256=dm['sha256'],SDK_opened=False,TEST_development=True))
+    save(a.out/'report.json',dict(state='complete',results=results,baseline_TEST_development=baseline,baseline_predictions_SHA256=sha(a.out/'baseline_TEST_predictions.npz'),selected_epoch=selected,actual_epochs=epoch,elapsed_s=time.perf_counter()-start,prefix=list(STAGES[:a.prefix]),evaluation_kind=kind,device=device,GPU_used=device=='cuda',frozen_parameters_unchanged=True,data_sha256=dm['sha256'],SDK_opened=False,TEST_development=True))
     print(json.dumps(dict(state='complete',prefix=a.prefix,selected_epoch=selected,best=best,elapsed_s=time.perf_counter()-start)),flush=True)
 
 
@@ -345,7 +349,7 @@ def resume_after_router(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mode',choices=('prepare','selftest','run','fit','resume-after-router'),required=True)
     for n in ('session','parent','profile','out','checkpoint','controller-receipt','coordinates','machine-config','phase-lut','phase-sdk','amplitude-sdk','response-lut'):p.add_argument('--'+n,type=Path)
-    p.add_argument('--checkpoint-sha');p.add_argument('--prefix',type=int);p.add_argument('--controller-pid',type=int);a=p.parse_args()
+    p.add_argument('--checkpoint-sha');p.add_argument('--prefix',type=int);p.add_argument('--controller-pid',type=int);p.add_argument('--device',choices=('cuda','cpu'),default='cuda');a=p.parse_args()
     if sys.stdout is None:
         log=a.session/'pipeline.log' if a.mode=='run' else a.out.with_suffix('.log');sys.stdout=log.open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
     failure_folder=a.out if a.mode in ('fit','resume-after-router') else a.session
