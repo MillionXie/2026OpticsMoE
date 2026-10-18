@@ -1,5 +1,16 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L2 radius.40 stopped first no-progress after4 new segments: still318/411,
+NLL1.0702038; do not claim extra accuracy. L4 triple block completed1024 TRAIN
+updates and stopped first no-progress pass, retained260. No restart of either
+plateau. Next read-only diagnostic tests only the finite physical ambiguities
+D4 image orientations(8) and nominal/opposite phase sign(2) on the same balanced
+60 TRAIN samples. Entry `--optical-transform-diagnostic`; no TEST, no PT, data,
+orientation, LUT, exposure or hardware write, no fit/calibration/deployment.
+Record all16 hypothesis statistics, not just the best, after exact incident/phase
+identity checks. A higher agreement may motivate a future calibrated experiment,
+not automatically change current acquisition or prove the physical cause.
+
 Joint dropout fits completed44epochs/600fitseconds each, selected E0 318/260;
 last275/177 rejected. Fresh selected feature exports/fullCPU/nonhead audits
 passed. One evidence-led L2 radius comparison now changes ONLY.20->.40:
