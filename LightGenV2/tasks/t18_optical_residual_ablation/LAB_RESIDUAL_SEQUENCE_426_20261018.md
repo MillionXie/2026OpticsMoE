@@ -1,5 +1,18 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L4 within-class comparison retained E0 260; last122 rejected. L2 adaptive
+positive margin first segment improved312->314 with2 newly correct/0 lost;
+its continuous-RNG finite continuation is active (at least317 already fullCPU
+verified), not yet a completed final result. Rather than mechanically adding
+more L4 terminal-loss variants, a read-only optical agreement diagnostic now
+uses3 source TRAIN/class=60 balanced samples, NEVER TEST. For each physical stage,
+replay actual measured upstream, compare the original quantized incident-field
+propagation to that exact stage's CCD (pixel/coarse16 Pearson, unit-RMS error).
+No fitted spatial shift/gain, new inference graph/PT/CCD/SDK/GPU, optical settings
+or calibration change. Entry `--optical-diagnostic`; all params frozen, all CCD
+array/PT/data SHA recorded. These statistics diagnose mismatch only, not prove
+its cause or an accuracy upper bound. No claim linear-voltage LUT is linear-phase.
+
 TRAIN-only ridge-teacher comparison completed, retained E0 312/260 (last
 299/206 rejected). The next two bounded comparisons have distinct diagnosed
 failure modes, not a seed/coefficient grid. L2's targeted TRAIN neighbors have

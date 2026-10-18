@@ -60,6 +60,26 @@ def ridge_logit_readout(x,target):
     w=(v@chosen[1]).T;b=my-mx@w.T;assert torch.isfinite(w).all() and torch.isfinite(b).all();return w,b,dict(TRAIN_samples=n,TRAIN_only_regularization_selection=True,selected=chosen[2],curve=records)
 
 
+def field_agreement(predicted,observed):
+    def correlation(a,b):
+        a=a.flatten(1);b=b.flatten(1);a=a-a.mean(1,keepdim=True);b=b-b.mean(1,keepdim=True);return (a*b).sum(1)/(a.norm(dim=1)*b.norm(dim=1)).clamp_min(1e-12)
+    p,o=predicted.float(),observed.float();pr=p.square().mean((-2,-1),keepdim=True).sqrt().clamp_min(1e-12);ob=o.square().mean((-2,-1),keepdim=True).sqrt().clamp_min(1e-12);coarse=lambda x:F.adaptive_avg_pool2d(x[:,None],(16,16));return dict(pixel_Pearson=correlation(p,o).tolist(),coarse16_Pearson=correlation(coarse(p),coarse(o)).tolist(),unit_RMS_error=((p/pr-o/ob).square().mean((-2,-1)).sqrt()).tolist())
+
+
+def optical_diagnostic(a):
+    """Read-only local propagation comparison with actual incident prefixes."""
+    assert a.prefix==a.depth+1 and not a.out.exists();torch.set_num_threads(2);a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);indices=np.concatenate([np.flatnonzero(data['train'][1]==k)[:3] for k in range(20)]);assert len(indices)==60;records={stage:[] for stage in fields}
+    with torch.inference_mode():
+        for begin in range(0,60,4):
+            ix=indices[begin:begin+4]
+            def replay(stage,amplitude,phase,sample_ids):
+                assert stage in fields and np.array_equal(sample_ids,data['train'][2][ix]);field=torch.from_numpy(amplitude.copy()).to(torch.complex64)*torch.exp(2j*np.pi*torch.from_numpy(phase.astype(np.float32)/256))[None];predicted=model.propagator(F.pad(field,(20,20,20,20))).abs().square()[:,20:498,20:498];observed=torch.from_numpy(np.asarray(fields[stage]['train'][ix]).copy());agreement=field_agreement(predicted,observed)
+                for j,index in enumerate(ix):records[stage].append(dict(TRAIN_index=int(index),sample_id=str(sample_ids[j]),**{k:v[j] for k,v in agreement.items()},observed_p99=float(np.quantile(observed[j].numpy(),.99))))
+                return observed
+            model(encode_images(data['train'][0][ix]),callback=replay,ids=data['train'][2][ix]);save(a.out/'progress.json',dict(state='TRAIN_only_readonly_optical_agreement',samples=begin+len(ix),total=60))
+    assert all(torch.equal(v,model.state_dict()[k]) for k,v in original.items());summary={stage:{key:dict(median=float(np.median([r[key] for r in rows])),minimum=float(min(r[key] for r in rows)),maximum=float(max(r[key] for r in rows))) for key in ('pixel_Pearson','coarse16_Pearson','unit_RMS_error','observed_p99')} for stage,rows in records.items()};save(a.out/'records.json',records);save(a.out/'report.json',dict(state='complete',depth=a.depth,TRAIN_samples=60,TRAIN_each_class=3,TEST_used=False,VALID_used=False,PT_SHA256=a.checkpoint_sha,data_SHA256=dm['sha256'],CCD_arrays_SHA256=identities,source_SHA256=sha(__file__),summary=summary,all_parameters_frozen=True,actual_measured_prefix_drives_each_incident=True,prediction='original quantized amplitude/phase + canonical original propagator; same actual incident prefix, no fitted spatial warp/gain or LUT change',limitation='Agreement statistics diagnose mismatch, not prove its physical cause, accuracy ceiling, calibration, or a new performance score',SDK_opened=False,GPU_used=False,new_CCD=0))
+
+
 def binary_row_direction(u,u0,x,lse,t,q,keep,c):
     n=len(x);temp=c['temperature'];p=((x@u-lse)/temp).sigmoid();g=x.T@((p-t+c['teacher_KL']*keep*(p-q))/(n*temp))+2*c['anchor']*(u-u0);d=(1+c['teacher_KL']*keep)*p*(1-p)/(n*temp*temp);a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;delta=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return delta,g,d
 
@@ -268,6 +288,7 @@ def selftest():
     sw,sb,proof=shrunk_readout(xx,yy,torch.ones(20,dtype=torch.float64));assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1
     q,_=torch.linalg.qr(torch.randn(12,12,dtype=torch.float64));target=xx@q+3.;fw,fb,r,mx,my,_=orthogonal_fold(xx,target,w,b);assert torch.allclose(r,q,atol=1e-8);assert torch.allclose(xx@fw.T+fb,target@w.T+b,atol=1e-8)
     rw,rb,proof=ridge_logit_readout(xx,target);assert proof['TRAIN_only_regularization_selection'] and len(proof['curve'])==33;assert torch.allclose(xx@rw.T+rb,target,atol=1e-4)
+    field=torch.rand(2,32,32);agreement=field_agreement(field,field*5);assert min(agreement['pixel_Pearson'])>.99999 and max(agreement['unit_RMS_error'])<1e-6;agreement=field_agreement(field,field*5+7);assert min(agreement['pixel_Pearson'])>.99999 and min(agreement['unit_RMS_error'])>0
     weight,hits,plans=neighbor_importance(np.eye(4),np.array([0,0,1,1]),np.eye(4)[[0,2]],np.array([0,1]),np.array([True,False]),2,2.);assert hits.tolist()==[1,1,0,0] and weight.tolist()==[3.,3.,1.,1.] and plans==[dict(TEST_index=0,TRAIN_indices=[0,1])]
     noise_theta=theta.detach().clone().requires_grad_();residual=xx-torch.stack([xx[yy==k].mean(0) for k in range(20)])[yy];noise_loss=(residual@noise_theta.T).square().mean();assert torch.allclose(torch.autograd.grad(noise_loss,noise_theta)[0],2*noise_theta.detach()@(residual.T@residual)/(len(xx)*20),atol=1e-10)
     rc=dict(temperature=2.,teacher_KL=2.,anchor=.1,LM_damping=.1);rx=torch.randn(64,7,dtype=torch.float64);u0=torch.randn(7,dtype=torch.float64)*.1;u=(u0+.02).requires_grad_();lse=torch.randn(64,dtype=torch.float64);t=torch.rand(64,dtype=torch.float64);q=torch.rand_like(t);keep=(torch.rand_like(t)>.5).double()
@@ -355,11 +376,11 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--teacher-alignment',action='store_true');p.add_argument('--row-repair',action='store_true');p.add_argument('--row-sequence',action='store_true');p.add_argument('--pair-repair',action='store_true');p.add_argument('--pair-sequence',action='store_true');p.add_argument('--terminal-block10',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--teacher-alignment',action='store_true');p.add_argument('--row-repair',action='store_true');p.add_argument('--row-sequence',action='store_true');p.add_argument('--pair-repair',action='store_true');p.add_argument('--pair-sequence',action='store_true');p.add_argument('--terminal-block10',action='store_true');p.add_argument('--optical-diagnostic',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
     for n in ('session','profile','out','checkpoint','fit-profile','feature-run','teacher-checkpoint','previous-run'):p.add_argument('--'+n,type=Path)
     a=p.parse_args()
     if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:selftest() if a.selftest else native_admission(a) if a.admit_native_cpu else row_sequence(a) if a.row_sequence or a.pair_sequence else pair_repair(a) if a.pair_repair else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
+    try:selftest() if a.selftest else optical_diagnostic(a) if a.optical_diagnostic else native_admission(a) if a.admit_native_cpu else row_sequence(a) if a.row_sequence or a.pair_sequence else pair_repair(a) if a.pair_repair else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
     except BaseException as e:
         if a.out and a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise
