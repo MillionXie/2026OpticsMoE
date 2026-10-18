@@ -1,0 +1,7 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps":240,"maximum_fit_seconds":120,"target_correct":350,
+  "label_smoothing":0.02,"correct_TRAIN_teacher_KL":0.02,"parameter_anchor":0.0001,
+  "scope":"Single finite L6 original5140 conditioned readout TRAIN-prior comparison, after full11277 measured frames and bounded Huber repair. Baseline fullphysical TRAIN177/1200 and TEST132/411, entropy rank2.428; all selected TRAIN neighbors active at margin1, so do NOT blindly apply L2's larger adaptive margin. Balanced60/class physical sampling differs from original3141 TRAIN; use only independently verified original TRAIN priors, not TEST frequencies/VALID. Same prior-head algorithm and coefficients used previously on L4; no coefficient/seed grid. All nonhead/optics frozen, no new inference layer/CCD/SDK/GPU, full411 TEST development selection, strict CPU and E0 preservation."
+}

@@ -1,0 +1,8 @@
+{
+  "epochs":80,"fit_seconds":600,"conv_lr":0.003,"alpha_lr":0.0005,"head_lr":0.0003,
+  "weight_decay":0.001,"teacher_KL":0.1,"anchor":0.001,"label_smoothing":0.02,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "export_selected_features":true,"target_correct":{"6":350},
+  "scope":"One bounded L6 recovery of original final9conv/direct-effective-alpha/5140head=5150 parameters only. Begin from best fully measured accepted head state after Huber and TRAIN-prior comparisons. Severe TRAIN+TEST underfit (177/1200,132/411 baseline) and low effective feature rank justify adapting the EXISTING terminal feature producer rather than adding dropout/layers or merely scanning head loss coefficients. TRAIN-only original-prior CE + correct-TRAIN parent KL.1/conv-alpha anchor.001, convLR.003 vs prior.0005 and slower head.0003, fixed bounds(.4001,.95). CPU2/batch8, max80epochs/600fitseconds, noSDK/GPU/recapture/VALID or TEST derivatives. Whole optical/upstream graph byte-frozen; best/last full physical CPU, preserve E0 on no gain. Recompute selected TRAIN/TEST feature banks before any later row correction; old feature banks cannot be reused if finalconv/alpha is selected. No LR/seed sweep, no inference architecture change."
+}

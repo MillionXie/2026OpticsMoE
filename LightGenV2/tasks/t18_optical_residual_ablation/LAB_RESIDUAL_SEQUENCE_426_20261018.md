@@ -1,5 +1,24 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L6 all11277 frames/7stages audited: each TRAIN1200/TEST411, IDs/canonical SHA,
+CCD PNG-to-array pixels/native phase/PT identities passed, SDK released. First
+ordinary final fit103/411, conditioned+bounded head132/411, fullCPU proof. At132,
+TRAIN177/1200, Shannon feature rank2.428 (participation ratio2.029), ALL intended
+TRAIN neighbors active at margin1; this is not L2's inactive-positive-margin case.
+First signed-Huber original-row correction reached164/411, strictCPU/nonhead
+freeze, finite continuous-RNG continuation follows, stops first no progress.
+L2/L4 sameclass-Mixup comparison retained E0 318/260, last286/116 rejected.
+
+After that finite L6 row chain, use one original-TRAIN-prior conditioned head
+comparison (`lab_caltech20_L6_residual_TRAINprior_profile_20261019.json`) without
+TEST prior estimates, then one original terminal5150 recovery comparison
+(`lab_caltech20_L6_residual_recovery5150_profile_20261019.json`) from the better
+accepted fullphysical parent. Only existing finalconv/directalpha/head; severe
+TRAIN+TEST underfit motivates terminal feature adaptation, not extra dropout.
+Original masks/upstream/CCD input identity frozen; no new layer/CCD/GPU/SDK/VALID,
+no TEST derivatives. FullCPU/fresh selected features/bestlast/freeze SHA required;
+E0 retained on no gain. These are finite comparisons, not a loss/LR/seed grid.
+
 One finite TRAIN feature-augmentation comparison uses
 `lab_caltech20_residual_mixuphead_profile_20261019.json` from accepted318/260:
 same-class TRAIN-only Mixup, half original/half augmented CE, fixed derangement
