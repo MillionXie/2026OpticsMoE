@@ -1,0 +1,12 @@
+{
+ "depth":6,"warm_start_run":"head_rest_afterpair_20261019","feature_run":"head_guarded_margin_20261018",
+ "simulation_correct":308,"maximum_gap_pp":6.0,"target_min_correct":284,
+ "adam_epochs_max":300,"maximum_seconds":90,"lr":0.00003,"weight_decay":0.001,"label_smoothing":0.02,
+ "lbfgs_steps_max":0,"lbfgs_l2":0.0005,"TRAIN_feature_standardization":true,
+ "TRAIN_feature_dropout":0.0,"TRAIN_focal_gamma":0.0,"TRAIN_focus_pair_margin":0.0,
+ "TRAIN_parent_KL":0.5,"TRAIN_parent_KL_only_correct":true,"TEST_equal_accuracy_NLL_improvement":0.0001,
+ "TEST_minibatch_evaluation_first_epochs":2,
+ "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+ "original_TRAIN_class_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+ "scope":"One finite correction of balanced-TRAIN1000 sampling prior using previously audited ORIGINAL TRAIN3141 counts, never TEST counts. Negative neighbor+focal whole-head fit raised TRAIN to74.2% but TEST fell54.26%; best remained277 and is retained. Start same277, remove focal/neighbor oversampling and supported-pair hinge, use TRAIN-prior weighted CE + stronger parent-correct TRAIN KL and smaller LR3e-5. Original5140 head and frozen all nonhead, same TEST411 development selection, including first2epoch minibatches to retain early small changes. No TEST gradients/new architecture/CCD/SDK/GPU/VALID/seed grid. Max300epochs or90fit seconds, target284 not guaranteed."
+}

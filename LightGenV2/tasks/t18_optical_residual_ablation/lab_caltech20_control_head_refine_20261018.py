@@ -177,6 +177,7 @@ def fit(a):
         save(a.out/'TRAIN_replay_selection.json',dict(TRAIN_indices=replay.tolist(),TRAIN_ids=data['train']['ids'][replay.numpy()].tolist(),TEST_error_count=len(wrong),TEST_features_select_TRAIN_only=True,TEST_gradients=False,independent_generalization=False))
         protocol.update(TEST_informed_TRAIN_neighbor_replay=True,replay_count=len(replay),TEST_features_select_TRAIN_only=True,independent_generalization=False);save(a.out/'protocol.json',protocol)
     checkpoint('best',tag);optim=torch.optim.AdamW(head.parameters(),lr=lr,weight_decay=wd);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(optim,epochs_max,eta_min=1e-5)
+    optimizer_steps=0
     for epoch in range(1,epochs_max+1):
         order=torch.randperm(1000);total=0.
         if replay is not None:order=torch.cat([order,replay[torch.randperm(len(replay))]])
@@ -201,7 +202,10 @@ def fit(a):
                 with torch.no_grad():teacher=before(data['train']['x'][ix]).softmax(1)
                 keep=teacher.argmax(1)==yy if cfg.get('TRAIN_parent_KL_only_correct',False) else torch.ones(len(yy),dtype=torch.bool)
                 if keep.any():loss=loss+float(cfg['TRAIN_parent_KL'])*F.kl_div(F.log_softmax(head(train_x[ix][keep]),1),teacher[keep],reduction='batchmean')
-            assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());optim.step();total+=float(loss.detach())*len(ix)
+            assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());optim.step();total+=float(loss.detach())*len(ix);optimizer_steps+=1
+            if cfg and epoch<=int(cfg.get('TEST_minibatch_evaluation_first_epochs',0)):
+                assess('adam_minibatch',optimizer_steps,float(loss.detach()))
+                if round(best*411)>=target:break
         schedule.step()
         if epoch==1 or epoch%5==0:assess('adam_cosine',epoch,total/len(order))
         if round(best*411)>=target or time.perf_counter()-fit_started>=max_seconds:break
