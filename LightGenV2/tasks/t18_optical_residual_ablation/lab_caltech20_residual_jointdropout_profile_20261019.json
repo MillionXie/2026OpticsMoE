@@ -1,0 +1,10 @@
+{
+  "epochs":60,"fit_seconds":600,
+  "conv_lr":0.001,"alpha_lr":0.0001,"head_lr":0.00005,
+  "weight_decay":0.001,"teacher_KL":2.0,"anchor":0.1,"label_smoothing":0.02,
+  "feature_dropout":0.10,"export_selected_features":true,
+  "target_correct":{"2":333,"4":342,"6":350},
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "scope":"One bounded joint adaptation from best accepted318/260 parents, only original final9conv+directalpha+5140 head=5150 parameters after last measured CCD. Earlier simultaneous5150 from224 overfit; retain much better accepted boundaries with correct-TRAIN parentKL2, anchor.1, slower readout5e-5 and TRAIN feature dropout.10. Dropout acts on original pooled256 features only during TRAIN, never during evaluation/inference, adds no state/inference layer/physical measurement. Original3141 TRAIN prior only. All optical/captured upstream byte-frozen; CPU2/batch8/max60epochs or600fitseconds/noSDK/GPU/VALID. Full411 TEST-informed development selection, no TEST gradients; bestlast/fullphysical CPU/frozenSHA and freshly recomputed best feature banks mandatory. Preserve E0/no claimed gain on a worse last; no LR/seed/dropout grid or further budget extension."
+}

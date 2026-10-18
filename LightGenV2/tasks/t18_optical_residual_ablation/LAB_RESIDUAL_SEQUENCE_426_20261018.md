@@ -1,5 +1,25 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L2 adaptive margin extension stopped FIRST no-progress after9 attempted new
+segments:318/411(77.3723%), NLL1.0734336, no further extension02 permitted.
+L2 all60 sampled incident PNG/native phase identities passed; L4 diagnostic
+stopped on a receipt path convention, NOT missing CCD or signal failure:
+its exact original router is adopted through `arrays.train.original_receipts`
+under `L4/capture/train/router`, not the new `capture/router/train` array-only
+alias. New diagnostic source follows that manifest path within the same session,
+verifies adoption manifest SHA and original receipt keys, preserves old failure,
+and uses a fresh output on one bounded rerun.
+
+One final bounded joint-electronics comparison from the MUCH better318/260
+parents uses `lab_caltech20_residual_jointdropout_profile_20261019.json`:
+original final9conv/directalpha/5140head=5150 only, max60epochs/600fitseconds,
+TRAIN feature dropout.10 (off in evaluation), correct-TRAIN parentKL2/anchor.1,
+slower original readout5e-5. Earlier weak-KL simultaneous fit overfit, so this
+protects accepted boundaries while permitting the original terminal feature
+producer to adapt jointly. No new inference layer/CCD/SDK/GPU/VALID; class prior
+is ORIGINAL TRAIN only. FullCPU bestlast/frozen upstream/fresh selected feature
+exports required, preserve E0 on no gain, no LR/dropout/seed grid or budget reset.
+
 Balanced TRAIN60 optical agreement diagnostic completed (no device access):
 L2 coarse16 median Pearson router.93495/expert.31173/global.79238;
 L4 router.93962/expert0.45502/global1.82513/expert2.50458/global3.80579.

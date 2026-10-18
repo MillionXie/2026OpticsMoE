@@ -76,11 +76,13 @@ def optical_diagnostic(a):
             ix=indices[begin:begin+4]
             def replay(stage,amplitude,phase,sample_ids):
                 assert stage in fields and np.array_equal(sample_ids,data['train'][2][ix]);field=torch.from_numpy(amplitude.copy()).to(torch.complex64)*torch.exp(2j*np.pi*torch.from_numpy(phase.astype(np.float32)/256))[None];predicted=model.propagator(F.pad(field,(20,20,20,20))).abs().square()[:,20:498,20:498];observed=torch.from_numpy(np.asarray(fields[stage]['train'][ix]).copy());agreement=field_agreement(predicted,observed)
-                stage_root=a.session/'capture'/stage
+                stage_root=a.session/'capture'/stage;capture=json.loads((stage_root/'report.json').read_text());receipt_root=Path(capture['arrays']['train'].get('original_receipts',str(stage_root/'train')));assert receipt_root.resolve().is_relative_to(a.session.resolve())
                 if stage not in checked_phase:
-                    capture=json.loads((stage_root/'report.json').read_text());assert sha(stage_root/'phase.bmp')==capture['phase_sha256'];assert np.array_equal(np.asarray(Image.open(stage_root/'phase.bmp')),phase_native(phase));checked_phase.add(stage)
+                    assert sha(stage_root/'phase.bmp')==capture['phase_sha256'];assert np.array_equal(np.asarray(Image.open(stage_root/'phase.bmp')),phase_native(phase))
+                    if capture.get('receipt_manifest_SHA256'):assert sha(stage_root/'adoption_receipts.json')==capture['receipt_manifest_SHA256']
+                    checked_phase.add(stage)
                 for j,index in enumerate(ix):
-                    path=stage_root/'train'/f'{index:06d}_input.png';receipt=json.loads((stage_root/'train'/f'{index:06d}.json').read_text());assert receipt['sample_id']==str(sample_ids[j]) and sha(path)==receipt['canonical_SHA256'];gray=np.rint(amplitude[j].clip(0,1)*255).astype(np.uint8);assert np.array_equal(gray,np.asarray(Image.open(path))),'Current incident producer differs from captured canonical input';records[stage].append(dict(TRAIN_index=int(index),sample_id=str(sample_ids[j]),canonical_input_pixels_and_receipt_SHA_match=True,phase_native_pixels_and_report_SHA_match=True,**{k:v[j] for k,v in agreement.items()},observed_p99=float(np.quantile(observed[j].numpy(),.99))))
+                    path=receipt_root/f'{index:06d}_input.png';receipt=json.loads((receipt_root/f'{index:06d}.json').read_text());assert receipt['sample_id']==str(sample_ids[j]) and sha(path)==receipt.get('canonical_SHA256',receipt.get('canonical_sha256'));gray=np.rint(amplitude[j].clip(0,1)*255).astype(np.uint8);assert np.array_equal(gray,np.asarray(Image.open(path))),'Current incident producer differs from captured canonical input';records[stage].append(dict(TRAIN_index=int(index),sample_id=str(sample_ids[j]),receipt_root=str(receipt_root.relative_to(a.session)),canonical_input_pixels_and_receipt_SHA_match=True,phase_native_pixels_and_report_SHA_match=True,**{k:v[j] for k,v in agreement.items()},observed_p99=float(np.quantile(observed[j].numpy(),.99))))
                 return observed
             model(encode_images(data['train'][0][ix]),callback=replay,ids=data['train'][2][ix]);save(a.out/'progress.json',dict(state='TRAIN_only_readonly_optical_agreement',samples=begin+len(ix),total=60))
     assert all(torch.equal(v,model.state_dict()[k]) for k,v in original.items());summary={stage:{key:dict(median=float(np.median([r[key] for r in rows])),minimum=float(min(r[key] for r in rows)),maximum=float(max(r[key] for r in rows))) for key in ('pixel_Pearson','coarse16_Pearson','unit_RMS_error','observed_p99')} for stage,rows in records.items()};save(a.out/'records.json',records);save(a.out/'report.json',dict(state='complete',depth=a.depth,TRAIN_samples=60,TRAIN_each_class=3,TEST_used=False,VALID_used=False,PT_SHA256=a.checkpoint_sha,data_SHA256=dm['sha256'],CCD_arrays_SHA256=identities,source_SHA256=sha(__file__),summary=summary,all_parameters_frozen=True,actual_measured_prefix_drives_each_incident=True,prediction='original quantized amplitude/phase + canonical original propagator; same actual incident prefix, no fitted spatial warp/gain or LUT change',limitation='Agreement statistics diagnose mismatch, not prove its physical cause, accuracy ceiling, calibration, or a new performance score',SDK_opened=False,GPU_used=False,new_CCD=0))
@@ -311,6 +313,7 @@ def selftest():
     q,_=torch.linalg.qr(torch.randn(12,12,dtype=torch.float64));target=xx@q+3.;fw,fb,r,mx,my,_=orthogonal_fold(xx,target,w,b);assert torch.allclose(r,q,atol=1e-8);assert torch.allclose(xx@fw.T+fb,target@w.T+b,atol=1e-8)
     rw,rb,proof=ridge_logit_readout(xx,target);assert proof['TRAIN_only_regularization_selection'] and len(proof['curve'])==33;assert torch.allclose(xx@rw.T+rb,target,atol=1e-4)
     field=torch.rand(2,32,32);agreement=field_agreement(field,field*5);assert min(agreement['pixel_Pearson'])>.99999 and max(agreement['unit_RMS_error'])<1e-6;agreement=field_agreement(field,field*5+7);assert min(agreement['pixel_Pearson'])>.99999 and min(agreement['unit_RMS_error'])>0
+    dropout_head=torch.nn.Linear(256,20);f=torch.randn(8,256);assert torch.equal(dropout_head(f),dropout_head(F.dropout(f,p=.1,training=False)));z=dropout_head(F.dropout(f,p=.1,training=True));assert not torch.equal(z,dropout_head(f));F.cross_entropy(z,torch.arange(8)).backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in dropout_head.parameters());assert sum(p.numel() for p in dropout_head.parameters())==5140
     weight,hits,plans=neighbor_importance(np.eye(4),np.array([0,0,1,1]),np.eye(4)[[0,2]],np.array([0,1]),np.array([True,False]),2,2.);assert hits.tolist()==[1,1,0,0] and weight.tolist()==[3.,3.,1.,1.] and plans==[dict(TEST_index=0,TRAIN_indices=[0,1])]
     noise_theta=theta.detach().clone().requires_grad_();residual=xx-torch.stack([xx[yy==k].mean(0) for k in range(20)])[yy];noise_loss=(residual@noise_theta.T).square().mean();assert torch.allclose(torch.autograd.grad(noise_loss,noise_theta)[0],2*noise_theta.detach()@(residual.T@residual)/(len(xx)*20),atol=1e-10)
     rc=dict(temperature=2.,teacher_KL=2.,anchor=.1,LM_damping=.1);rx=torch.randn(64,7,dtype=torch.float64);u0=torch.randn(7,dtype=torch.float64)*.1;u=(u0+.02).requires_grad_();lse=torch.randn(64,dtype=torch.float64);t=torch.rand(64,dtype=torch.float64);q=torch.rand_like(t);keep=(torch.rand_like(t)>.5).double()
@@ -356,8 +359,8 @@ def selftest():
 
 
 def run(a):
-    torch.set_num_threads(2);torch.manual_seed(73);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);block=a.terminal_block10;c=json.loads(a.fit_profile.read_text()) if block else dict(epochs=80,fit_seconds=600,conv_lr=.003,alpha_lr=.003,head_lr=.0003,weight_decay=.001,teacher_KL=.05,anchor=.001,label_smoothing=.02);cw=None
-    if block:
+    torch.set_num_threads(2);torch.manual_seed(73);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);block=a.terminal_block10;c=json.loads(a.fit_profile.read_text()) if a.fit_profile else dict(epochs=80,fit_seconds=600,conv_lr=.003,alpha_lr=.003,head_lr=.0003,weight_decay=.001,teacher_KL=.05,anchor=.001,label_smoothing=.02);cw=None
+    if c.get('original_TRAIN_counts'):
         assert c['original_TRAIN_cache_SHA256']==dm['source_cache_sha256'];counts=torch.tensor(c['original_TRAIN_counts'],dtype=torch.float32);assert int(counts.sum())==3141;cw=counts/counts.mean()
     last=a.depth-1;held={};hook=model.electronic[last].register_forward_pre_hook(lambda _,args:held.update(x=args[0].detach()))
     cached={};proof=[]
@@ -387,7 +390,7 @@ def run(a):
     for epoch in range(1,c['epochs']+1):
         order=torch.randperm(1200);total=0.
         for begin in range(0,1200,8):
-            ix=order[begin:begin+8];opt.zero_grad(set_to_none=True);z=tail(electronic,head,alpha,d['x'][ix],d['o'][ix]);ce=F.cross_entropy(z,d['y'][ix],weight=cw,label_smoothing=c['label_smoothing']);kl=F.kl_div(z.log_softmax(1),teacher[ix],reduction='none').sum(1);loss=ce+c['teacher_KL']*(kl*keep[ix]).mean()+c['anchor']*((electronic.local.weight-conv0).square().sum()+(alpha-alpha0).square());assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params);torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
+            ix=order[begin:begin+8];opt.zero_grad(set_to_none=True);training_head=lambda features:head(F.dropout(features,p=c.get('feature_dropout',0.),training=True));z=tail(electronic,training_head,alpha,d['x'][ix],d['o'][ix]);ce=F.cross_entropy(z,d['y'][ix],weight=cw,label_smoothing=c['label_smoothing']);kl=F.kl_div(z.log_softmax(1),teacher[ix],reduction='none').sum(1);loss=ce+c['teacher_KL']*(kl*keep[ix]).mean()+c['anchor']*((electronic.local.weight-conv0).square().sum()+(alpha-alpha0).square());assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params);torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
             with torch.no_grad():alpha.clamp_(.4001001,.95)
             total+=float(loss.detach())*len(ix)
         schedule.step()
@@ -400,10 +403,11 @@ def run(a):
     for name in ('best','last'):
         state=torch.load(a.out/(name+'.pt'),map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed);electronic.local.weight.data.copy_(state[f'electronic.{last}.local.weight']);head.load_state_dict(dict(weight=state['linear.weight'],bias=state['linear.bias']));alpha.data.copy_(state[f'fusion_logits.{last}']);tr,_,_=evaluate('train');te,p,nll=evaluate('test');np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=cached['test']['ids'],labels=labels,probabilities=p);results[name]=dict(TRAIN=tr,TEST_development=te,NLL=nll,PT_SHA256=sha(a.out/(name+'.pt')),strict_CPU=True)
     state=torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model'];model.load_state_dict(state);full,p,_=assess(model,data,fields,canonical,'test',4);expected=np.load(a.out/'best_TEST_predictions.npz')['probabilities'];assert np.max(np.abs(p-expected))<=3e-6 and np.array_equal(p.argmax(1),expected.argmax(1));assert round(full['accuracy']*411)==best
-    if block:
+    export_features=block or c.get('export_selected_features',False)
+    if export_features:
         for role in ('train','test'):
             _,p,f=assess(model,data,fields,canonical,role,4,True);np.savez_compressed(a.out/(role+'_features.npz'),features=f,labels=data[role][1],ids=data[role][2],probabilities=p)
-    save(a.out/'report.json',dict(state='complete',results=results,initial_correct=initial,selected_correct=best,selected_epoch=selected,actual_epochs=epoch,head_frozen=block,gradient_parameters=10 if block else 5150,frozen_upstream_and_optics_unchanged=True,full_CPU_replay_passed=True,selected_feature_bank_recomputed=block,SDK_opened=False,GPU_used=False,TEST_development=True,TEST_gradients=False))
+    save(a.out/'report.json',dict(state='complete',results=results,initial_correct=initial,selected_correct=best,selected_epoch=selected,actual_epochs=epoch,head_frozen=block,gradient_parameters=10 if block else 5150,TRAIN_feature_dropout=c.get('feature_dropout',0.),evaluation_dropout_disabled=True,frozen_upstream_and_optics_unchanged=True,full_CPU_replay_passed=True,selected_feature_bank_recomputed=export_features,SDK_opened=False,GPU_used=False,TEST_development=True,TEST_gradients=False))
 
 
 if __name__=='__main__':
