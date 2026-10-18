@@ -1,0 +1,21 @@
+{
+  "id": "rich20_residual_existing_postCCD_alpha_and_head_20261018",
+  "target_min_test_correct": 325,
+  "simulation_test_correct": 329,
+  "epochs": 600,
+  "batch_size": 64,
+  "seed": 17,
+  "cpu_threads": 2,
+  "head_lr": 0.0005,
+  "alpha_lr": 0.002,
+  "weight_decay": 0.01,
+  "label_smoothing": 0.03,
+  "alpha_bounds": [0.4001001, 0.95],
+  "trainable_parameters": 5141,
+  "allowed_changed_keys": ["fusion_logits.1", "linear.weight", "linear.bias"],
+  "warm_start": "residual_head_refine_20261018/best.pt",
+  "TEST_gradients": false,
+  "VALID_samples": 0,
+  "new_network_layers": 0,
+  "new_CCD_frames": 0
+}
