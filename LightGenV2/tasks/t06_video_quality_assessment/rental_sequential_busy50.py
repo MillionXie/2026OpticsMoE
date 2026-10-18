@@ -20,6 +20,7 @@ from . import batch_telemetry as telemetry
 
 CONFIG = old.TASK / "configs/baselines/rental_sequential_busy50_20261018.json"
 CONTEXT_CONFIG = old.TASK / "configs/baselines/kimi_context_limited_20261018.json"
+CLEAN_CONFIG = old.TASK / "configs/baselines/kimi_clean_session_20261018.json"
 ROOT = old.RUN / "sequential_busy50_20261018"
 
 
@@ -33,20 +34,26 @@ def config():
 
 def sources():
     return {**previous.sources(), **{p.relative_to(old.REPO).as_posix(): old.sha(p)
-                                     for p in (Path(__file__), CONFIG, CONTEXT_CONFIG)}}
+                                     for p in (Path(__file__), CONFIG, CONTEXT_CONFIG, CLEAN_CONFIG)}}
 
 
 def run_config(args):
+    if getattr(args,"clean_session",False): return {**config(),**json.loads(CLEAN_CONFIG.read_text())}
     return {**config(), **json.loads(CONTEXT_CONFIG.read_text())} if getattr(args, "context_limited", False) else config()
 
 
 def run_root(args):
+    if getattr(args,"clean_session",False): return ROOT/"kimi_clean_morning01_20261018"
     return ROOT/"kimi_context_limited01" if getattr(args, "context_limited", False) else ROOT
+
+
+def group_feedback(args):
+    return getattr(args,"context_limited",False) or getattr(args,"clean_session",False)
 
 
 def admitted(args, name, free, watts):
     c = run_config(args)
-    if getattr(args, "context_limited", False) and args.model != "kimi": return False
+    if group_feedback(args) and args.model != "kimi": return False
     return "A100-SXM4-80GB" in name and float(watts) == 400 and float(free) >= c["minimum_initial_free_mib"]
 
 
@@ -130,7 +137,7 @@ def measure(args, compute, inputs, batch, folder, guard, paced, reference):
             groups.append(dict(phase=name, start_monotonic_s=tick, compute_end_monotonic_s=computed,
                 end_monotonic_s=end, requested_idle_s=idle, duty=duty, forwards=8))
             if adaptive and end-last_update >= 2:
-                feedback_start = tick if getattr(args,"context_limited",False) else max(start,end-2)
+                feedback_start = tick if group_feedback(args) else max(start,end-2)
                 recent = [s.utilization_percent for s in list(sampler.samples)
                           if feedback_start <= s.host_monotonic_s < end]
                 if len(recent) >= 10:
@@ -217,7 +224,7 @@ def worker(args):
         # One audited TRAIN parity before the sequence; no cache clearing between batches.
         torch.cuda.empty_cache()
         for batch in range(1, c["safety_maximum_batch"]+1):
-            if args.deadline-time.time() < c["reserve_after_ascending_seconds"]:
+            if args.deadline-time.time() < c["reserve_after_ascending_seconds"]+c.get("reserve_next_native_seconds",0):
                 state["ascending_stop"] = "finite_time_reserve_for_busy50"; break
             guard.fast(); state.update(status="ascending", batch=batch); save()
             cpu = inputs = reference = raw_logits = None
@@ -385,13 +392,13 @@ def evaluate_context(args):
     import numpy as np
     from . import quality_token_common as core
     from LightGenV2.common import baseline_measurement as measurement
-    if not args.context_limited or args.model != "kimi": raise ValueError("Explicit Kimi context profile required")
+    if not group_feedback(args) or args.model != "kimi": raise ValueError("Explicit Kimi session profile required")
     args.output = run_root(args)/"kimi"/f"evaluate_batch{args.batch:02d}"
     if args.output.exists(): raise RuntimeError("New frozen evaluation only")
     args.output.mkdir(parents=True)
     identity = dict(sources=sources(), protocol=run_config(args), model="kimi", batch=args.batch,
         gpu_uuid=args.gpu_uuid, pid=os.getpid(), created=time.time(), command=sys.argv,
-        not_proven_exclusive_device=True,
+        not_proven_exclusive_device=getattr(args,"context_limited",False),
         git_commit=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip())
     guard = Guard(args, identity); sampler = clocks = timer = None
     try:
@@ -435,7 +442,7 @@ def evaluate_context(args):
             cost=telemetry.workload_cost(costs,power["active_mean_w"]),power=power,
             explicit_warmup_forwards=0,first_batch_included=True,
             boundary="native first vision block input to GPU MOS synchronization",excluded=["decode","processor","H2D","loading","audit"],
-            not_proven_exclusive_device=True)
+            not_proven_exclusive_device=getattr(args,"context_limited",False))
         if old.verify_assets(Path("/data/models/kimi"))!=identity["assets"]: raise RuntimeError("Official assets changed")
         guard.check(); old.write(args.output/"report.json",report)
         old.write(args.output/"status.json",dict(status="complete",videos=558,time=time.time()))
@@ -455,13 +462,14 @@ def context_suite(args):
     root=run_root(args)
     if root.exists(): raise RuntimeError("Preserve previous context run")
     root.mkdir(parents=True)
-    state=dict(status="running",completed=[],created=time.time(),deadline=args.deadline,sources=sources(),not_proven_exclusive_device=True)
+    state=dict(status="running",completed=[],created=time.time(),deadline=args.deadline,sources=sources(),not_proven_exclusive_device=getattr(args,"context_limited",False))
     def launch(phase,batch=None):
         stage=phase if batch is None else f"{phase}_batch{batch:02d}"
         state.update(phase=stage); old.write(root/"suite_status.json",state)
-        deadline=min(args.deadline-540,time.time()+900) if phase=="worker" else args.deadline
+        deadline=min(args.deadline-540,time.time()+run_config(args)["maximum_model_seconds"]) if phase=="worker" else args.deadline
         if deadline-time.time()<180: raise TimeoutError("Insufficient remaining budget for complete stage")
-        command=["/data/venvs/kimi/bin/python","-u","-m",__package__+".rental_sequential_busy50","--phase",phase,"--model","kimi","--context-limited","--gpu-uuid",args.gpu_uuid,"--deadline",str(deadline)]
+        session_flag="--clean-session" if getattr(args,"clean_session",False) else "--context-limited"
+        command=["/data/venvs/kimi/bin/python","-u","-m",__package__+".rental_sequential_busy50","--phase",phase,"--model","kimi",session_flag,"--gpu-uuid",args.gpu_uuid,"--deadline",str(deadline)]
         if batch is not None: command.extend(["--batch",str(batch)])
         old.write(root/(stage+".command.json"),command)
         env=dict(os.environ,CUDA_VISIBLE_DEVICES=args.gpu_uuid,HF_HUB_OFFLINE="1",TRANSFORMERS_OFFLINE="1",HF_HOME="/data/cache",TMPDIR="/data/tmp")
@@ -494,14 +502,16 @@ def main():
     parser.add_argument("--model", choices=("deepseek", "kimi"))
     parser.add_argument("--gpu-uuid", required=True)
     parser.add_argument("--deadline", type=float, required=True)
-    parser.add_argument("--context-limited",action="store_true")
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument("--context-limited",action="store_true")
+    mode.add_argument("--clean-session",action="store_true")
     parser.add_argument("--batch",type=int)
     args = parser.parse_args()
     if not old.REPO.is_relative_to("/data") or not 0 < args.deadline-time.time() <= config()["maximum_suite_seconds"]:
         raise RuntimeError("New /data run within this one-hour rental, backup reserve required")
     if args.phase not in ("suite","context-suite") and os.environ.get("CUDA_VISIBLE_DEVICES") != args.gpu_uuid:
         raise RuntimeError("Exact authorized GPU UUID required")
-    if args.phase in ("context-suite","evaluate-context") and (not args.context_limited or args.model!="kimi"):
+    if args.phase in ("context-suite","evaluate-context") and (not group_feedback(args) or args.model!="kimi"):
         raise ValueError("Explicit Kimi-only limited context required")
     {"suite": suite, "worker": worker, "capacity-check": capacity_check,"context-suite":context_suite,"evaluate-context":evaluate_context}[args.phase](args)
 

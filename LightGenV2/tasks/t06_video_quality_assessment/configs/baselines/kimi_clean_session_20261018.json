@@ -1,0 +1,16 @@
+{
+  "protocol": "kimi_native_clean_card_ascending_groupfeedback_service_v1",
+  "models": ["kimi"],
+  "minimum_initial_free_mib": 75000,
+  "maximum_model_seconds": 2400,
+  "reserve_after_ascending_seconds": 420,
+  "reserve_next_native_seconds": 120,
+  "not_proven_exclusive_device": false,
+  "feedback_window": "whole_completed_compute_idle_group",
+  "admission": "New user-rented A100SXM80 at unchanged400W; at least75000MiB free and no visible foreign process before each fresh process; sole own visible PID guarded throughout",
+  "authorization": "2026-10-18 user resumed Kimi on a new actually empty80GB GPU; rental release11:00 local, originalPT/BF16/fourframes unchanged",
+  "quality_and_cost": "Fresh-process full558 TEST and first200 inference-boundary cost forB1 and highest successful native batch",
+  "same_process_native_sequence": "B1 then adjacent batch increments until pooled mean strictly above98, capacity failure, safety16 or finite time reserve; keep all three complete windows at every batch",
+  "service_busy50": "OnlyB1 and highest successful native batch, fixed30s complete-group calibration then frozen duty for three full windows; all imposed idle enters service cost",
+  "historical_results": "Preserve interrupted limited-memory session and all previous results; do not combine them with this empty-device session"
+}
