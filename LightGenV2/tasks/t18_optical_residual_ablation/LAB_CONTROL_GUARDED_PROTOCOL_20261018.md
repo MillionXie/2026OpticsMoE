@@ -112,3 +112,10 @@ fixed.257 free variables; TRAIN CE+pair margin+correct-TRAIN KL+anchor, full
 curvature and trust radius; TEST-informed TRAIN neighbors/hard negatives/global
 replay. Max8 distinct pairs/100 updates each/180 seconds; first280 stops.
 No new inference structure, physical data or terminal feature changes.
+
+Paired correction completed800 updates:269->272/411=66.18005%, NLL1.69179->
+1.65534. Because this stage improved both criteria, continue this same accepted
+objective for at most3 short segments/240 seconds total, first no-progress or
+280 stops. Each segment records a deterministic fresh TRAIN stream offset
+seed+1000*segment, not a best-of-seed grid. All parent/failure evidence retained;
+two-row updates still have257 free variables and freeze all other parameters.

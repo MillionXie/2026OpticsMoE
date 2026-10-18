@@ -55,11 +55,15 @@ def fit(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--chain',action='store_true');p.add_argument('--depth',type=int,default=6,choices=[6]);p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
     if a.selftest:selftest()
     else:
         if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf8',buffering=1);sys.stderr=sys.stdout
-        try:fit(a)
+        try:
+            if a.chain:
+                from lab_caltech20_control_localrow_20261018 import chain
+                chain(a,trainer=fit)
+            else:fit(a)
         except BaseException as e:
             if a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
             raise

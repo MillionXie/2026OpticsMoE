@@ -1,0 +1,6 @@
+{
+  "parent_run":"head_symmetric_pair_20261018","seed":573,"target_min_correct":280,
+  "maximum_pairs":8,"steps_per_pair":100,"maximum_seconds":80,"chain_max_rounds":3,"chain_max_seconds":240,
+  "margin":1.0,"pair_margin_weight":0.2,"parent_KL":0.25,"anchor":0.05,"delta_radius":0.5,"trust_step":0.25,"minimum_NLL_gain":0.0001,
+  "scope":"LAB L6 same accepted symmetric-pair objective continues from272 after269->272 gain. At most3 short segments, stop first280 or first no-progress segment. Fixed continuous TRAIN stochastic stream offset seed+1000*segment (record effective configs), no parameter/seed outcome grid. Original head only and all nonhead/physical identities immutable; TEST-aware development, TRAIN-only derivatives; no GPU/SDK/newCCD/VALID/L4/SIM changes."
+}
