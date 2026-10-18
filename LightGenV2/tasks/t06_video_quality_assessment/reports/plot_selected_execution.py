@@ -199,7 +199,7 @@ def main():
     print(json.dumps(dict(figures_updated=5,selected_points=len(rows),historical_Qwen_B1_preserved=True)))
 
 
-COMPACT_SOURCE = REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018/service_presentation/compact_groups_20261018.json'
+COMPACT_SOURCE = REPO/('LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_unified_inference_recheck_20261018/presentation/compact_groups_20261018.json' if '--unified-inference' in sys.argv else 'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018/service_presentation/compact_groups_20261018.json')
 COMPACT_HIGH = dict(qwen=3, glm=2, clip=10, yolo=3, full=2, kimi=6)
 COMPACT_COLORS = dict(ours='#7A3E9D', qwen='#0072B2', glm='#9B567C', clip='#008B70', yolo='#B17D00', full='#79502C', kimi='#D14F64')
 COMPACT_MARKERS = dict(ours='*', qwen='o', glm='P', clip='D', yolo='^', full='s', kimi='X')
@@ -219,6 +219,8 @@ def compact_resident_metrics(repeats, batch):
 
 def compact_group_data():
     """Two explicitly different cost protocols; no new GPU measurements."""
+    if '--unified-inference' in sys.argv:
+        return unified_inference_group_data()
     sources = {}
     def bind(file):
         file = Path(file)
@@ -316,6 +318,174 @@ def compact_group_data():
                           missing=payload['missing_measurements'],no_GPU_rerun=True)))
 
 
+def unified_inference_group_data():
+    """Replay all ten raw runs; retain protected anchors and independent utilization."""
+    from scipy.stats import spearmanr, pearsonr
+    root=COMPACT_SOURCE.parent.parent
+    archive=COMPACT_SOURCE.parent/'prior_report_archive'
+    archive.mkdir(parents=True,exist_ok=True)
+    archive_manifest=archive/'manifest.json'
+    if not archive_manifest.exists():
+        saved={}
+        names=['README.md','LGVQ_batch1_near_saturation_plot_data.xlsx','LGVQ_busy50_near_saturation_plot_data.xlsx']
+        for group in ('batch1_near_saturation','busy50_near_saturation'):
+            names += [f'{group}_{kind}.{ext}' for kind in ('latency','energy') for ext in ('png','svg','pdf')]+[group+'_pair.png']
+        for name in names:
+            data=(OUT/name).read_bytes()
+            with (archive/name).open('xb') as stream:stream.write(data)
+            saved[name]=hashlib.sha256(data).hexdigest()
+        archive_manifest.write_text(json.dumps(saved,indent=2)+'\n')
+    else:
+        for name,sha in json.loads(archive_manifest.read_text()).items():
+            assert hashlib.sha256((archive/name).read_bytes()).hexdigest()==sha
+    old=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018/service_presentation/compact_groups_20261018.json'
+    payload=json.loads(old.read_text());sources=dict(payload['source_sha256'])
+    def bind(p):
+        sources[p.relative_to(REPO).as_posix()]=hashlib.sha256(p.read_bytes()).hexdigest()
+        return p
+    bind(old)
+    state=json.loads(bind(root/'suite_status.json').read_text())
+    folders={name:root/name for name in state['completed']}
+    if state['status']=='failed':
+        assert len(state['completed'])==7
+        resumed=json.loads(bind(root/'resume03_20261018/suite_status.json').read_text())
+        assert resumed['status']=='complete' and len(resumed['completed'])==3
+        wrapper=bind(REPO/'LightGenV2/tasks/t06_video_quality_assessment/resume_unified_inference_recheck.py')
+        assert hashlib.sha256(wrapper.read_bytes()).hexdigest()==resumed['continuation_source_sha256']
+        for name,sha in resumed['protected_original_sha256'].items():
+            assert hashlib.sha256(bind(root/name).read_bytes()).hexdigest()==sha
+        folders.update({name:root/'resume03_20261018'/name for name in resumed['completed']})
+    else:assert state['status']=='complete' and len(state['completed'])==10
+    assert len(folders)==10
+    manifest=bind(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_temporal_reproduction_a100_20261013/lgvq_train2250_test558.csv')
+    assert hashlib.sha256(manifest.read_bytes()).hexdigest()=='607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc'
+    expected=[r for r in csv.DictReader(manifest.open(newline='',encoding='utf-8-sig')) if r['split']=='test']
+    assert len(expected)==558
+    audited={}
+    for name,folder in folders.items():
+        report=json.loads(bind(folder/'report.json').read_text())
+        identity=json.loads(bind(folder/'identity.json').read_text())
+        prediction=list(csv.DictReader(bind(folder/'predictions.csv').open(newline='')))
+        timing=list(csv.DictReader(bind(folder/'batch_timing.csv').open(newline='')))
+        raw=list(csv.DictReader(bind(folder/'telemetry.csv').open(newline='')))
+        bind(folder/'telemetry_stdout.jsonl')
+        process_audit=json.loads(bind(folder/'process_audit.json').read_text())
+        assert process_audit and all(str(p['pid'])==str(report['pid']) for a in process_audit for p in a['processes'])
+        waits=json.loads(bind(folder/'excluded_pacing_waits.json').read_text())
+        assert report['status']=='complete' and len(prediction)==558
+        assert len({p['sample_id'] for p in prediction})==558
+        assert [int(p['sample_index']) for p in prediction]==list(range(558))
+        assert [p['sample_id'] for p in prediction]==[p['sample_id'] for p in expected]
+        assert all(float(a['target_mos'])==float(b['temporal']) for a,b in zip(prediction,expected))
+        assert sum(int(t['videos']) for t in timing)==558
+        cost=[t for t in timing if t['in_cost_subset']=='True']
+        assert sum(int(t['videos']) for t in cost)==200
+        assert report['actual_checkpoint_verified'] and report['manifest_sha256']==identity['manifest_sha256']
+        for p,h in identity['source_sha256'].items():
+            assert hashlib.sha256((REPO/p).read_bytes()).hexdigest()==h, p
+        active=[v for v in raw if v['phase'].startswith('active:')]
+        assert active
+        cost_indices={int(v['batch_index']) for v in cost}
+        assert all(int(v['phase'].split(':')[1]) in cost_indices for v in active)
+        watts=sum(float(v['watts']) for v in active)/len(active)
+        wall=sum(float(t['synchronized_wall_ms']) for t in cost)
+        t16=wall*16/200;e16=(338.2+watts)*t16/1000
+        srcc=float(spearmanr([float(p['target_mos']) for p in prediction],[float(p['prediction']) for p in prediction]).statistic)
+        plcc=float(pearsonr([float(p['target_mos']) for p in prediction],[float(p['prediction']) for p in prediction]).statistic)
+        for actual,expected in [(t16,report['cost']['latency_16_videos_ms']),(e16,report['cost']['energy_16_videos_j']),
+                                (watts,report['power']['active_mean_w']),(srcc,report['performance']['srcc']),(plcc,report['performance']['plcc'])]:
+            assert math.isclose(actual,expected,rel_tol=1e-10,abs_tol=1e-9)
+        independent=report['independent_utilization'];util=bind(REPO/independent['utilization_source'])
+        assert hashlib.sha256(util.read_bytes()).hexdigest()==independent['utilization_source_sha256']
+        assert len(waits)==len(timing) and report['explicit_warmup_forwards']==0 and report['first_test_batch_included']
+        excluded=sum(w['end_monotonic_s']-w['start_monotonic_s'] for w in waits)
+        excluded_cost=sum(w['end_monotonic_s']-w['start_monotonic_s'] for w in waits if w['in_cost_subset'])
+        assert math.isclose(excluded,report['excluded_pacing_total_s'],abs_tol=1e-8)
+        requested=sum(w['requested_s'] for w in waits if w['in_cost_subset'])
+        audited[name]=dict(name=name,baseline=report['baseline'],batch=report['batch'],kind=report['kind'],
+            repeat=report['repeat'],time_ms=t16,energy_j=e16,board_w=watts,active_samples=len(active),
+            cost_wall_sum_ms=wall,cost_video_count=200,srcc=srcc,plcc=plcc,
+            first_call_ms=float(timing[0]['synchronized_wall_ms']),excluded_wait_total_s=excluded,
+            excluded_cost_wait_s=excluded_cost,excluded_wait_16_ms=excluded_cost*1000*16/200,
+            requested_cost_wait_s=requested,checkpoint_sha256=report['checkpoint_sha256'],
+            utilization_percent=independent['independent_util_percent'],utilization_source=independent['utilization_source'],
+            cost_source=(folder/'report.json').relative_to(REPO).as_posix(),host_proxy_w=338.2)
+    conventional=payload['groups']['batch1_near_saturation']
+    for row in conventional:
+        if row['baseline']=='ours' or (row['baseline']=='qwen' and row['batch']==1):continue
+        util_report=json.loads(bind(REPO/row['utilization_source']).read_text())
+        repeats=[r.get('measurement',r) for r in util_report['repeats']]
+        assert len(repeats)==3
+        row['repeats']=[r['mean_gpu_utilization_percent'] for r in repeats]
+        pooled=sum(r['samples']*r['mean_gpu_utilization_percent'] for r in repeats)/sum(r['samples'] for r in repeats)
+        assert math.isclose(pooled,row['utilization_percent'],abs_tol=1e-8)
+    # Rental models are audited locally only. No conversion from resident costs.
+    for row in conventional:
+        if row['baseline'] not in ('full','kimi'):continue
+        report_file=bind(REPO/row['cost_source']);report=json.loads(report_file.read_text())
+        timing=list(csv.DictReader(bind(report_file.parent/'batch_timing.csv').open(newline='')))
+        raw=list(csv.DictReader(bind(report_file.parent/'telemetry.csv').open(newline='')))
+        predictions=list(csv.DictReader(bind(report_file.parent/'predictions.csv').open(newline='')))
+        cost=[r for r in timing if r['in_cost_subset']=='True'];active=[r for r in raw if r['phase'].startswith('active:')]
+        assert len(predictions)==558 and sum(int(r['videos']) for r in cost)==200
+        wall=sum(float(r['synchronized_wall_ms']) for r in cost)
+        board=sum(float(r['watts']) for r in active)/len(active)
+        assert math.isclose(row['time_ms'],wall*16/200,abs_tol=1e-8)
+        assert math.isclose(row['energy_j'],(338.2+board)*wall*16/200/1000,abs_tol=1e-8)
+        assert report['explicit_warmup_forwards']==0
+        row.update(cost_wall_sum_ms=wall,cost_video_count=200,board_w=board,host_proxy_w=338.2,active_samples=len(active))
+    for b in (1,10):
+        values=[x for x in audited.values() if x['baseline']=='clip' and x['kind']=='native' and x['batch']==b]
+        assert len(values)==3
+        row=next(r for r in conventional if r['baseline']=='clip' and r['batch']==b)
+        row.update(time_ms=sum(x['time_ms'] for x in values)/3,energy_j=sum(x['energy_j'] for x in values)/3,
+            srcc=sum(x['srcc'] for x in values)/3,board_w=sum(x['board_w'] for x in values)/3,
+            cost_source='; '.join(x['cost_source'] for x in values),accuracy_source='; '.join(x['cost_source'] for x in values),
+            cost_wall_sum_ms=sum(x['cost_wall_sum_ms'] for x in values),cost_video_count=600,
+            native_repeat_times_ms=[x['time_ms'] for x in values],native_repeat_energies_j=[x['energy_j'] for x in values],
+            repeat_inputs=values,energy_aggregation='Arithmetic mean of three separately paired energy estimates',
+            notes='Three cold fresh-process repeats, all retained; the same200 unique cost videos in each repeat,600 evaluations not600 unique videos. Sparse50ms power samples.')
+    resident=[dict(conventional[0])]
+    for model,b in COMPACT_HIGH.items():
+        high=dict(next(r for r in conventional if r['baseline']==model and r['batch']==b))
+        high.update(condition='Near-saturation reference')
+        low=dict(high);low.update(condition='Approximately 50%',link_style='solid')
+        if model in ('full','kimi'):
+            low.update(plotted=False,time_ms=None,energy_j=None,srcc=None,utilization_percent=None,
+                       cost_source=None,accuracy_source=None,utilization_source=None,board_w=None,
+                       cost_wall_sum_ms=None,cost_video_count=None,active_samples=None,
+                       notes='No compliant dataset-once paced cost; existing resident service cost is not substituted. No remeasurement authorized.')
+        else:
+            x=next(v for v in audited.values() if v['baseline']==model and v['kind']=='paced')
+            assert x['checkpoint_sha256']==high['checkpoint_sha256']
+            independent=json.loads(bind(REPO/x['utilization_source']).read_text())
+            low.update(**{k:v for k,v in x.items() if k not in ('name','baseline','batch','kind','repeat')},
+                       accuracy_source=x['cost_source'],repeats=independent['repeat_means_percent'],repeat_inputs=[x],
+                       notes='558 distinct TEST predictions re-evaluated; inter-inference pacing excluded. Displayed utilization is independent resident measurement, not cost-run utilization.')
+        for row in (low,high):
+            row['protocol']='Dataset-once first200 inference boundary; pacing excluded; independent utilization'
+            row.pop('duration_s',None);row.pop('calls',None)
+        resident.extend([low,high])
+    anchor=next(r for r in conventional if r['baseline']=='qwen' and r['batch']==1)
+    assert (anchor['time_ms'],anchor['energy_j'],anchor['utilization_percent'])==(1188.3861464262009,462.1134010767563,63.133111480865225)
+    payload.update(groups={'batch1_near_saturation':conventional,'busy50_near_saturation':resident},source_sha256=sources,
+        missing_measurements=['DeepSeek-VL2 full paced dataset-once cost','Kimi paced dataset-once cost'],
+        all_costs_dataset_once=True,pacing_waits_excluded=True,independent_utilization_not_same_cost_window=True,
+        audit_points=list(audited.values()),protected_qwen_B1_unchanged=True)
+    COMPACT_SOURCE.parent.mkdir(exist_ok=True)
+    COMPACT_SOURCE.write_text(json.dumps(payload,indent=2)+'\n')
+    for group,rows in payload['groups'].items():
+        with (OUT/f'LGVQ_{group}_plot_data.csv').open('w',newline='',encoding='utf-8-sig') as stream:
+            fields=['model','condition','batch','srcc','utilization_percent','time_ms','energy_j','board_w','host_proxy_w',
+                    'cost_wall_sum_ms','cost_video_count','active_samples','excluded_wait_total_s','parameters_billion',
+                    'excluded_cost_wait_s','excluded_wait_16_ms',
+                    'platform','gpu_uuid','plotted','cost_source','utilization_source','accuracy_source','checkpoint_sha256','protocol','notes']
+            writer=csv.DictWriter(stream,fieldnames=fields,extrasaction='ignore');writer.writeheader();writer.writerows(rows)
+    (root/'verified_unified_inference.json').write_text(json.dumps(dict(status='complete',points=list(audited.values()),
+        point_count=10,protected_qwen_B1_unchanged=True,source_sha256=sources),indent=2)+'\n')
+    print(json.dumps(dict(audited_points=10,unique_test_videos_per_point=558,all_repeats_retained=True)))
+
+
 def compact_point_label(row):
     return '~50% spatial' if row['baseline']=='ours' else f"{row['utilization_percent']:.1f}%"
 
@@ -326,7 +496,7 @@ def compact_panel(fig,ax,rows,group,kind):
     xmin=min(r[key] for r in rows)*.62;xmax=max(r[key] for r in rows)*1.6
     ax.set_xscale('log');ax.set_xlim(xmin,xmax);ax.set_ylim(.681,.843)
     ax.set_yticks([.70,.75,.80]);ax.set_ylabel('Temporal quality (SRCC)',labelpad=3)
-    ax.set_xlabel(('Estimated energy (J / 16 videos)' if kind=='energy' else 'Latency (ms / 16 videos)') if group.startswith('batch1') else
+    ax.set_xlabel(('Estimated energy (J / 16 videos)' if kind=='energy' else 'Latency (ms / 16 videos)') if group.startswith('batch1') or '--unified-inference' in sys.argv else
                   ('Estimated service energy (J / 16 videos)' if kind=='energy' else 'Service time (ms / 16 videos)'),labelpad=3)
     ax.grid(axis='both',which='major',color='#DBDFE3',lw=.45,zorder=0)
     ax.spines['top'].set_visible(False);ax.spines['right'].set_visible(False)
@@ -391,6 +561,8 @@ def compact_group_figures():
                        frameon=False,fontsize=6.5,columnspacing=.9,handlelength=1.4,labelspacing=.45)
             if group.startswith('batch1'):
                 footer=fig.text(.19,.009,'Dataset-once costs; independent utilization labels.\nDashed: execution or GPU-session differences.',fontsize=5.3,color='#526170')
+            elif '--unified-inference' in sys.argv:
+                footer=fig.text(.19,.009,'Inference costs; pacing waits excluded.\nUtilization measured independently.\nDS/Kimi50% costs unavailable.',fontsize=5.3,color='#526170')
             else:
                 footer=fig.text(.19,.009,'Resident service, not dataset-once inference.\nOpen: paced; filled: native. Optical: reference only.\nOptical uses a different protocol; DS50% unavailable.',fontsize=5.3,color='#526170')
             fig.canvas.draw();renderer=fig.canvas.get_renderer()
@@ -409,7 +581,8 @@ def compact_group_figures():
                  identical_marker_by_model=True,all_available_same_model_points_connected=True,
                  low50_hollow_high_native_filled=True,group1_qwen_and_deepseek_descriptive_dashed_links=True,
                  utilization_only_point_labels=True,batch_and_optical_count_not_annotated=True,
-                 group2_costs_all_resident_full_window=True,excluded=data['omitted_models'],
+                 group2_costs_all_resident_full_window='--unified-inference' not in sys.argv,
+                 all_costs_dataset_once='--unified-inference' in sys.argv,excluded=data['omitted_models'],
                  missing=data['missing_measurements'],source_sha256=hashlib.sha256(COMPACT_SOURCE.read_bytes()).hexdigest())
     (COMPACT_SOURCE.parent/'compact_figure_audit_20261018.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print(json.dumps(dict(figures=4,formats=['png','svg','pdf'],geometry_audit='passed',width_mm=78)))
