@@ -82,11 +82,16 @@ def field_agreement(predicted,observed):
     p,o=predicted.float(),observed.float();pr=p.square().mean((-2,-1),keepdim=True).sqrt().clamp_min(1e-12);ob=o.square().mean((-2,-1),keepdim=True).sqrt().clamp_min(1e-12);coarse=lambda x:F.adaptive_avg_pool2d(x[:,None],(16,16));return dict(pixel_Pearson=correlation(p,o).tolist(),coarse16_Pearson=correlation(coarse(p),coarse(o)).tolist(),unit_RMS_error=((p/pr-o/ob).square().mean((-2,-1)).sqrt()).tolist())
 
 
+def phase_response_field(amplitude,phase,scale,gamma):
+    assert scale>0 and gamma>0
+    return amplitude.to(torch.complex64)*torch.exp(2j*np.pi*scale*(phase.float()/256).pow(gamma))[None]
+
+
 def optical_diagnostic(a):
     """Read-only local propagation comparison with actual incident prefixes."""
     from PIL import Image
     from lab_caltech10_20261015 import phase_native
-    assert a.prefix==a.depth+1 and not a.out.exists();torch.set_num_threads(2);a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);indices=np.concatenate([np.flatnonzero(data['train'][1]==k)[:3] for k in range(20)]);assert len(indices)==60;records={stage:[] for stage in fields};checked_phase=set();transform_diagnostic=a.optical_transform_diagnostic
+    assert a.prefix==a.depth+1 and not a.out.exists();torch.set_num_threads(2);a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);indices=np.concatenate([np.flatnonzero(data['train'][1]==k)[:3] for k in range(20)]);assert len(indices)==60;records={stage:[] for stage in fields};checked_phase=set();transform_diagnostic=a.optical_transform_diagnostic;phasecurve_diagnostic=a.optical_phasecurve_diagnostic
     with torch.inference_mode():
         for begin in range(0,60,4):
             ix=indices[begin:begin+4]
@@ -99,6 +104,13 @@ def optical_diagnostic(a):
                         for turns in range(4):
                             rotated=torch.rot90(observed,turns,(-2,-1))
                             for mirror,value in ((False,rotated),(True,rotated.flip(-1))):transforms[f'{sign}|rot{90*turns}|mirror{int(mirror)}']=field_agreement(prediction,value)
+                if phasecurve_diagnostic:
+                    # Linear voltage is not a calibrated linear-phase response.
+                    # Finite TRAIN-only hypotheses; never write or adopt a LUT.
+                    for scale,gamma in ((1.,1.),(.5,1.),(.75,1.),(1.25,1.),(1.5,1.),(2.,1.),(1.,.5),(1.,.75),(1.,1.25),(1.,1.5),(1.,2.)):
+                        candidate=phase_response_field(torch.from_numpy(amplitude.copy()),torch.from_numpy(phase),scale,gamma);prediction=model.propagator(F.pad(candidate,(20,20,20,20))).abs().square()[:,20:498,20:498]
+                        if scale==gamma==1.:assert torch.equal(candidate,field) and torch.equal(prediction,predicted)
+                        transforms[f'phase_scale{scale:g}|gamma{gamma:g}']=field_agreement(prediction,observed)
                 stage_root=a.session/'capture'/stage;capture=json.loads((stage_root/'report.json').read_text());receipt_root=Path(capture['arrays']['train'].get('original_receipts',str(stage_root/'train')));assert receipt_root.resolve().is_relative_to(a.session.resolve())
                 if stage not in checked_phase:
                     assert sha(stage_root/'phase.bmp')==capture['phase_sha256'];assert np.array_equal(np.asarray(Image.open(stage_root/'phase.bmp')),phase_native(phase))
@@ -367,6 +379,7 @@ def head_prior(a):
 
 def selftest():
     torch.set_num_threads(2);tail_selftest();torch.manual_seed(73)
+    ap=torch.rand(2,7,7);pg=torch.randint(0,256,(7,7),dtype=torch.uint8);assert torch.equal(phase_response_field(ap,pg,1.,1.),ap.to(torch.complex64)*torch.exp(2j*np.pi*pg.float()/256)[None]);assert torch.isfinite(phase_response_field(ap,pg,.5,2.)).all()
     fx=np.random.default_rng(73).normal(size=(80,7));fy=np.arange(80)%20;ty=np.arange(20);tp=np.roll(np.eye(20),1,axis=1)*.98+.001;fp=np.eye(20)[fy]*.98+.001;plans=terminal_neighbor_plans(fx,fy,fx[:20],ty,fp,tp);assert len(plans)==20
     for epoch in (1,20,21):
         order,label=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);same,_=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);assert np.array_equal(order,same);batches=order.reshape(-1,8);assert (fy[batches[:,:4]]==label).all() and (fy[batches[:,4:6]]!=label).all() and order.max()<80
@@ -488,9 +501,9 @@ def run(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--teacher-alignment',action='store_true');p.add_argument('--row-repair',action='store_true');p.add_argument('--row-sequence',action='store_true');p.add_argument('--pair-repair',action='store_true');p.add_argument('--pair-sequence',action='store_true');p.add_argument('--terminal-block10',action='store_true');p.add_argument('--optical-diagnostic',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
     for n in ('session','profile','out','checkpoint','fit-profile','feature-run','teacher-checkpoint','previous-run'):p.add_argument('--'+n,type=Path)
-    p.add_argument('--triple-repair',action='store_true');p.add_argument('--optical-transform-diagnostic',action='store_true');a=p.parse_args()
+    p.add_argument('--triple-repair',action='store_true');p.add_argument('--optical-transform-diagnostic',action='store_true');p.add_argument('--optical-phasecurve-diagnostic',action='store_true');a=p.parse_args()
     if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:selftest() if a.selftest else optical_diagnostic(a) if a.optical_diagnostic or a.optical_transform_diagnostic else native_admission(a) if a.admit_native_cpu else row_sequence(a) if a.row_sequence or a.pair_sequence else triple_repair(a) if a.triple_repair else pair_repair(a) if a.pair_repair else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
+    try:selftest() if a.selftest else optical_diagnostic(a) if a.optical_diagnostic or a.optical_transform_diagnostic or a.optical_phasecurve_diagnostic else native_admission(a) if a.admit_native_cpu else row_sequence(a) if a.row_sequence or a.pair_sequence else triple_repair(a) if a.triple_repair else pair_repair(a) if a.pair_repair else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
     except BaseException as e:
         if a.out and a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise

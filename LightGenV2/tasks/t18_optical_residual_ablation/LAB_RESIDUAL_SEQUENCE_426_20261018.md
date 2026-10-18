@@ -1,5 +1,16 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Targeted terminal10 completed L2 28epochs/L4 27epochs at the360fitsecond
+complete-epoch boundary; neither beat accepted318/260, E0 retained, last307/231
+rejected. All fullCPU/5140-head/upstream audits passed, fresh feature banks saved.
+No restart. A further READ-ONLY phase-response diagnosis uses the same60 TRAIN
+samples, explicit11 fixed hypotheses: linear phase range scales .5,.75,1,1.25,1.5,2
+and unit-range power curves gamma .5,.75,1,1.25,1.5,2 (nominal counted once).
+The current LUT is linear VOLTAGE, not calibrated phase. Record all11 agreement
+statistics, exact nominal-field identity, incident/native-phase/receipt checks.
+This neither calibrates/adopts a LUT nor changes a CCD/PT/hardware/inference graph;
+no TEST or VALID is used, and higher TRAIN agreement does not prove the cause.
+
 The finite D4/sign TRAIN diagnostic found no compelling common orientation/sign
 explanation; no hardware or data transform is adopted. A distinct bounded
 terminal10 comparison follows the fine-tuning-summary TRAIN sampling design:
