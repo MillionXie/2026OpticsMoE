@@ -1,5 +1,16 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+The finite D4/sign TRAIN diagnostic found no compelling common orientation/sign
+explanation; no hardware or data transform is adopted. A distinct bounded
+terminal10 comparison follows the fine-tuning-summary TRAIN sampling design:
+fixed accepted318/260 readouts, only original final9conv/directalpha optimized,
+batch8=2 same-class TRAIN neighbors of wrong TEST queries,2 same-class TRAIN
+replay,2 hard-negative TRAIN,2 global TRAIN. Fixed E0 feature-distance plans,
+error-class round-robin, all actual TRAIN indices logged. No TEST derivative,
+prior estimate, new layer or CCD. Profile `lab_caltech20_residual_targeted10_profile_20261019.json`,
+max30epochs/360fitseconds, KL2/anchor.1, original alpha bounds, retain E0 if no
+improvement; fresh selected feature exports/fullCPU/frozen upstream audit.
+
 L2 radius.40 stopped first no-progress after4 new segments: still318/411,
 NLL1.0702038; do not claim extra accuracy. L4 triple block completed1024 TRAIN
 updates and stopped first no-progress pass, retained260. No restart of either

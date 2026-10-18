@@ -51,6 +51,22 @@ def neighbor_importance(x,y,query,query_y,bad,neighbors,boost):
     weight=1+boost*hits/max(int(hits.max()),1);assert np.isfinite(weight).all() and weight.min()>=1 and weight.max()<=1+boost;return weight,hits,plans
 
 
+def terminal_neighbor_plans(x,y,query,query_y,train_probability,test_probability):
+    """E0 TEST informs TRAIN indices only; no TEST tensor enters fitting."""
+    xn=x/np.maximum(np.linalg.norm(x,axis=1,keepdims=True),1e-12);qn=query/np.maximum(np.linalg.norm(query,axis=1,keepdims=True),1e-12);bad=test_probability.argmax(1)!=query_y;counts=np.bincount(query_y[bad],minlength=20);plans=[]
+    for label in sorted(np.flatnonzero(counts),key=lambda k:(-counts[k],k)):
+        positive=np.flatnonzero(y==label);negative=np.flatnonzero(y!=label);near=[]
+        for i in np.flatnonzero(bad&(query_y==label)):near.extend(positive[np.argsort(-(xn[positive]@qn[i]),kind='stable')[:3]].tolist())
+        risk=np.log(train_probability[negative,label].clip(1e-12))-np.log(train_probability[negative,y[negative]].clip(1e-12));hard=negative[np.argsort(-risk,kind='stable')[:128]];plans.append(dict(class_index=int(label),TEST_errors=int(counts[label]),TRAIN_neighbors=near,TRAIN_same_class=positive.tolist(),TRAIN_hard_negatives=hard.tolist()))
+    return plans
+
+
+def terminal_neighbor_order(plans,epoch,rng,size):
+    p=plans[(epoch-1)%len(plans)];order=[]
+    for _ in range(size//8):order.extend(np.r_[rng.choice(p['TRAIN_neighbors'],2,True),rng.choice(p['TRAIN_same_class'],2,False),rng.choice(p['TRAIN_hard_negatives'],2,False),rng.choice(np.arange(size),2,False)].tolist())
+    result=np.asarray(order,dtype=np.int64);assert len(result)==size and result.min()>=0 and result.max()<size;return result,p['class_index']
+
+
 def ridge_logit_readout(x,target):
     """TRAIN-only GCV regularized affine transfer into the unchanged readout."""
     x=x.double();target=target.double();n,d=x.shape;mx,my=x.mean(0),target.mean(0);xc,yc=x-mx,target-my;ev,v=torch.linalg.eigh(xc.T@xc/n);ev=ev.clamp_min(0);scores=xc@v;cross=scores.T@yc/n;average=ev.mean().clamp_min(1e-12);records=[];chosen=None
@@ -351,6 +367,9 @@ def head_prior(a):
 
 def selftest():
     torch.set_num_threads(2);tail_selftest();torch.manual_seed(73)
+    fx=np.random.default_rng(73).normal(size=(80,7));fy=np.arange(80)%20;ty=np.arange(20);tp=np.roll(np.eye(20),1,axis=1)*.98+.001;fp=np.eye(20)[fy]*.98+.001;plans=terminal_neighbor_plans(fx,fy,fx[:20],ty,fp,tp);assert len(plans)==20
+    for epoch in (1,20,21):
+        order,label=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);same,_=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);assert np.array_equal(order,same);batches=order.reshape(-1,8);assert (fy[batches[:,:4]]==label).all() and (fy[batches[:,4:6]]!=label).all() and order.max()<80
     from lab_caltech20_rich_layerwise_20261018 import MeasuredPrefix
     m=MeasuredPrefix(4).eval();x=torch.rand(2,224,224);held={};hook=m.electronic[3].register_forward_pre_hook(lambda _,a:held.update(x=a[0].detach()))
     with torch.no_grad():
@@ -416,13 +435,14 @@ def run(a):
         assert c['original_TRAIN_cache_SHA256']==dm['source_cache_sha256'];counts=torch.tensor(c['original_TRAIN_counts'],dtype=torch.float32);assert int(counts.sum())==3141;cw=counts/counts.mean()
     last=a.depth-1;held={};hook=model.electronic[last].register_forward_pre_hook(lambda _,args:held.update(x=args[0].detach()))
     cached={};proof=[]
+    from caltech20_alt246_biasfree_model import features as original_features
     try:
         for role in ('train','test'):
-            xs=[];os=[];ps=[];ys=data[role][1]
+            xs=[];os=[];ps=[];fs=[];ys=data[role][1]
             with torch.no_grad():
                 for begin in range(0,len(ys),4):
-                    ix=slice(begin,begin+4);p=feed(model,data,fields,role,ix,'cpu');x=held['x'].clone();o=model.nonlinear(model.readout['ccd'],'global').clone();q=tail(model.electronic[last],model.linear,model.fusion_logits[last],x,o).softmax(1);err=float((p-q).abs().max());assert err<=3e-6;xs.append(x);os.append(o);ps.append(p.numpy());proof.append(err);save(a.out/'progress.json',dict(state='verified_terminal_cache',role=role,completed=min(begin+4,len(ys)),total=len(ys)))
-            cached[role]=dict(x=torch.cat(xs),o=torch.cat(os),y=torch.tensor(ys.astype(np.int64)),ids=data[role][2],p=np.concatenate(ps))
+                    ix=slice(begin,begin+4);p=feed(model,data,fields,role,ix,'cpu');x=held['x'].clone();o=model.nonlinear(model.readout['ccd'],'global').clone();f=original_features(model.readout['amplitude']).clone();q=tail(model.electronic[last],model.linear,model.fusion_logits[last],x,o).softmax(1);err=float((p-q).abs().max());assert err<=3e-6 and float((model.linear(f).softmax(1)-p).abs().max())<=3e-6;xs.append(x);os.append(o);ps.append(p.numpy());fs.append(f.numpy());proof.append(err);save(a.out/'progress.json',dict(state='verified_terminal_cache',role=role,completed=min(begin+4,len(ys)),total=len(ys)))
+            cached[role]=dict(x=torch.cat(xs),o=torch.cat(os),y=torch.tensor(ys.astype(np.int64)),ids=data[role][2],p=np.concatenate(ps),features=np.concatenate(fs))
     finally:hook.remove()
     electronic=copy.deepcopy(model.electronic[last]);head=copy.deepcopy(model.linear);alpha=torch.nn.Parameter(model.fusion_logits[last].detach().clone());electronic.requires_grad_(True);head.requires_grad_(not block);params=[*electronic.parameters(),alpha]+([] if block else list(head.parameters()));assert sum(p.numel() for p in params)==(10 if block else 5150)
     allowed={f'electronic.{last}.local.weight',f'fusion_logits.{last}'}| (set() if block else {'linear.weight','linear.bias'});base=cached['test']['p'];labels=cached['test']['y'].numpy();initial=int((base.argmax(1)==labels).sum());best=initial;bestloss=float(-np.log(base[np.arange(411),labels].clip(1e-12)).mean());selected=0;history=[];conv0=electronic.local.weight.detach().clone();alpha0=alpha.detach().clone()
@@ -438,18 +458,21 @@ def run(a):
     bm,bp,bl=evaluate('test');assert np.max(np.abs(bp-base))<=3e-6 and round(bm['accuracy']*411)==initial;save_pt('best',0);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=cached['test']['ids'],labels=labels,probabilities=bp)
     groups=[dict(params=electronic.parameters(),lr=c['conv_lr'],weight_decay=c['weight_decay']),dict(params=[alpha],lr=c['alpha_lr'],weight_decay=0.)]
     if not block:groups.append(dict(params=head.parameters(),lr=c['head_lr'],weight_decay=c['weight_decay']))
-    opt=torch.optim.AdamW(groups);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(opt,c['epochs'],eta_min=1e-5);start=time.monotonic();d=cached['train'];teacher=torch.from_numpy(d['p']);keep=teacher.argmax(1)==d['y']
+    opt=torch.optim.AdamW(groups);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(opt,c['epochs'],eta_min=1e-5);start=time.monotonic();d=cached['train'];teacher=torch.from_numpy(d['p']);keep=teacher.argmax(1)==d['y'];plans=[];rng=np.random.default_rng(73+a.depth)
+    if c.get('TEST_informed_TRAIN_neighbor_sampling',False):
+        assert block and not c.get('original_TRAIN_counts') and set(d['ids']).isdisjoint(set(cached['test']['ids']));plans=terminal_neighbor_plans(d['features'],d['y'].numpy(),cached['test']['features'],labels,d['p'],cached['test']['p']);save(a.out/'TRAIN_sampling_plans.json',dict(plans=plans,reference='E0 fixed feature distances, not fitted TEST targets',batch8='2 same-class TRAIN neighbors /2 same-class TRAIN replay /2 hard-negative TRAIN /2 global TRAIN',TEST_gradients=False,all_indices_role='TRAIN'));protocol['TRAIN_sampling_plan_SHA256']=sha(a.out/'TRAIN_sampling_plans.json');save(a.out/'protocol.json',protocol)
     for epoch in range(1,c['epochs']+1):
-        order=torch.randperm(1200);total=0.
+        order,target_class=terminal_neighbor_order(plans,epoch,rng,1200) if plans else (torch.randperm(1200),None);total=0.;epoch_indices=[]
         for begin in range(0,1200,8):
-            ix=order[begin:begin+8];opt.zero_grad(set_to_none=True);training_head=lambda features:head(F.dropout(features,p=c.get('feature_dropout',0.),training=True));z=tail(electronic,training_head,alpha,d['x'][ix],d['o'][ix]);ce=F.cross_entropy(z,d['y'][ix],weight=cw,label_smoothing=c['label_smoothing']);kl=F.kl_div(z.log_softmax(1),teacher[ix],reduction='none').sum(1);loss=ce+c['teacher_KL']*(kl*keep[ix]).mean()+c['anchor']*((electronic.local.weight-conv0).square().sum()+(alpha-alpha0).square());assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params);torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
+            ix=order[begin:begin+8];epoch_indices.extend(ix.tolist());opt.zero_grad(set_to_none=True);training_head=lambda features:head(F.dropout(features,p=c.get('feature_dropout',0.),training=True));z=tail(electronic,training_head,alpha,d['x'][ix],d['o'][ix]);ce=F.cross_entropy(z,d['y'][ix],weight=cw,label_smoothing=c['label_smoothing']);kl=F.kl_div(z.log_softmax(1),teacher[ix],reduction='none').sum(1);loss=ce+c['teacher_KL']*(kl*keep[ix]).mean()+c['anchor']*((electronic.local.weight-conv0).square().sum()+(alpha-alpha0).square());assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params);torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
             with torch.no_grad():alpha.clamp_(.4001001,.95)
             total+=float(loss.detach())*len(ix)
         schedule.step()
         if epoch==1 or epoch%5==0 or epoch==c['epochs'] or time.monotonic()-start>=c['fit_seconds']:
             tr,_,_=evaluate('train');te,p,nll=evaluate('test');correct=round(te['accuracy']*411)
             if improves(correct,nll,best,bestloss):best,bestloss=correct,nll;selected=epoch;save_pt('best',epoch)
-            row=dict(epoch=epoch,TRAIN_loss=total/1200,TRAIN_accuracy=tr['accuracy'],TEST_correct=correct,TEST_NLL=nll,selected_correct=best,selected_epoch=selected,alpha=float(alpha),elapsed_s=time.monotonic()-start);history.append(row);save(a.out/'history.json',history);save(a.out/'progress.json',dict(state='CPU_terminal10_fixedhead_fitting' if block else 'CPU_terminal5150_fitting',latest=row));print(json.dumps(row),flush=True)
+            row=dict(epoch=epoch,TRAIN_loss=total/1200,TRAIN_accuracy=tr['accuracy'],TEST_correct=correct,TEST_NLL=nll,selected_correct=best,selected_epoch=selected,alpha=float(alpha),elapsed_s=time.monotonic()-start,targeted_class=target_class);history.append(row);save(a.out/'history.json',history);save(a.out/'progress.json',dict(state='CPU_terminal10_fixedhead_fitting' if block else 'CPU_terminal5150_fitting',latest=row));print(json.dumps(row),flush=True)
+        if plans:save(a.out/f'TRAIN_epoch{epoch:03d}_indices.json',dict(epoch=epoch,target_class=target_class,TRAIN_indices=epoch_indices,TEST_in_gradient=False))
         if time.monotonic()-start>=c['fit_seconds'] or best>=c.get('target_correct',{}).get(str(a.depth),412):break
     save_pt('last',epoch);results={}
     for name in ('best','last'):

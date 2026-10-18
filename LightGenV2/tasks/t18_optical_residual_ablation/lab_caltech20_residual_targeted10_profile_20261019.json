@@ -1,0 +1,7 @@
+{
+  "epochs":30,"fit_seconds":360,"conv_lr":0.002,"alpha_lr":0.0005,
+  "weight_decay":0.001,"teacher_KL":2.0,"anchor":0.1,"label_smoothing":0.02,
+  "TEST_informed_TRAIN_neighbor_sampling":true,
+  "target_correct":{"2":333,"4":342,"6":350},
+  "scope":"One bounded targeted original terminal10 fit from accepted318/260 parents. Earlier all-TRAIN fixedhead10 and simultaneous5150 fits retained E0; use the fine-tuning-summary 2/2/2/2 TRAIN batch design for final feature producer instead, fixed original5140 head. Error classes ordered by E0 fullTEST errors, one class per epoch round-robin. TEST features select same-class TRAIN nearest-neighbor indices only. No TEST example/label in derivatives, no VALID, no TEST prior. Original9conv/directalpha only, correct-TRAIN parentKL2/anchor.1, fixed bounds(.4001,.95). CPU2/batch8/max30epochs or360fitseconds; full411 TEST development selection, preserve E0 on no gain. Recompute selected feature banks and full physical CPU replay before readout continuation. No new layer/CCD/SDK/GPU, no radius/LR/seed grid."
+}
