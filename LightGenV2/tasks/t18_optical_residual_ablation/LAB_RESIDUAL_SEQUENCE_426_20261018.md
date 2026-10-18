@@ -1,5 +1,18 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Finite pair continuation stopped at first no-progress: L2 selected304/411
+(73.9659%), L4 selected244/411(59.3674%), complete physical CPU replay passed.
+Both remain below the final ~1pp goal. Next bounded block-coordinate comparison
+freezes the accepted5140 head EXACTLY and fits only original final9conv plus
+direct effective alpha (10 parameters), max60epochs/600fitseconds, CPU2/batch8.
+Profile `lab_caltech20_residual_fixedhead10_profile_20261019.json`: TRAIN-only
+original3141 prior weighting, correct-TRAIN parentKL1, anchor.1. This prevents
+simultaneous classifier drift observed in the earlier5150 overfit; not a promised
+improvement. Optical masks/incident producers/CCDs and inference graph stay fixed.
+Full411 TEST informs development selection, never gradients. Export newly
+recomputed selected TRAIN/TEST features before any subsequent head fit; alpha/
+conv changes invalidate old feature banks. Preserve E0 if no improvement.
+
 First actual pair segment raised L4 232->241/411(58.6375%),13 newly correct/4
 newly wrong. L2 stayed303 but NLL fell1.1697800->1.1607912; do not call that
 an accuracy increase. FullCPU/nonhead freeze passed. Each may therefore continue
