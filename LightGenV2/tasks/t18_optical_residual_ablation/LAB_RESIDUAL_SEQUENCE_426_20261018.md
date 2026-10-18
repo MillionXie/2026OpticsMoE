@@ -1,5 +1,22 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Joint dropout fits completed44epochs/600fitseconds each, selected E0 318/260;
+last275/177 rejected. Fresh selected feature exports/fullCPU/nonhead audits
+passed. One evidence-led L2 radius comparison now changes ONLY.20->.40:
+at accepted318,16/93 wrong TEST examples cannot geometrically flip at.20 even
+under an ideal single-row direction, zero cannot at.40 (maxrequired.34673).
+Profile `lab_caltech20_L2_residual_radius040_profile_20261019.json`. This is not
+a guarantee those16 recover or a radius grid; gradients still TRAIN only.
+
+L4 has a separate bounded coupled-three-row comparison rather than blindly
+increasing radius: original rows a+=v0,b+=v1,c-=v0+v1,514 variables, other17 raw
+scores fixed, TRAIN LSCE/full20-class correct-TRAIN KL2/anchor.1, exact curvature
+Woodbury/LM validated against autograd. Profile
+`lab_caltech20_L4_residual_triple_profile_20261019.json`, max3passes/8blocks each/
+128steps/180fitseconds, first no-progress pass stops. TEST confused triples and
+same-class TRAIN neighbors inform development; no TEST derivatives/VALID/new
+layer/CCD/SDK/GPU. Both preserve E0 and require complete physical CPU replay.
+
 L2 adaptive margin extension stopped FIRST no-progress after9 attempted new
 segments:318/411(77.3723%), NLL1.0734336, no further extension02 permitted.
 L2 all60 sampled incident PNG/native phase identities passed; L4 diagnostic

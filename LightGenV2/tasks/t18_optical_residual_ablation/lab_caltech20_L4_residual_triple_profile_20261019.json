@@ -1,0 +1,7 @@
+{
+  "label_smoothing":0.02,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"trust_radius":0.20,
+  "maximum_passes":3,"maximum_blocks":8,"steps_per_block":128,"fit_seconds":180,"seed":73,
+  "target_correct":{"2":333,"4":342,"6":350},
+  "scope":"One bounded L4 original-head three-row sum-zero block repair: first+=v0,second+=v1,third-=v0+v1,514 TRAIN variables/block, other17 raw scores fixed. Unlike globally refitting5140 which overfit, permits coupled dominant class boundaries under full20-class correct-TRAIN KL2/anchor.1 and exact514-dimensional curvature via128-rank Woodbury/LM. TRAIN batch64=6 neighbor+6 replay per each3 classes,16 hard outside negatives,12 global replay. TEST confusion graph selects up to8 triples/pass and same-class TRAIN neighbors, never TEST derivatives. At most3passes/180fitseconds, first no-progress pass or target stops; no candidate/seed/radius grid. Complete411 development selection/strict fullphysical CPU/frozen nonhead/bestlast mandatory. No new inference layer, CCD, SDK, GPU or VALID; preserve260 parent if no gain."
+}
