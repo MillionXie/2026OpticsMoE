@@ -1,5 +1,15 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Balanced TRAIN60 optical agreement diagnostic completed (no device access):
+L2 coarse16 median Pearson router.93495/expert.31173/global.79238;
+L4 router.93962/expert0.45502/global1.82513/expert2.50458/global3.80579.
+Pixel Pearson is lower; no calibrated-phase, device failure, causal source or
+accuracy ceiling claim follows. Current source strengthens the read-only audit
+by comparing every sampled incident canonical PNG pixel and receipt SHA to the
+current producer, plus native phase BMP pixels and report SHA, before interpreting
+agreement. A new diagnostic output must be used; old reports remain evidence.
+This is identity/diagnostic work only, no training/calibration/hardware changes.
+
 L2 adaptive margin completed317/411(77.12895%), selectedstage13, NLL1.0827771.
 Its last segment still improved NLL and it stopped ONLY the initial13-segment
 budget. Given the user's overnight persistence request, allow at most37 TOTAL

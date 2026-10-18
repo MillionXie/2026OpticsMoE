@@ -68,13 +68,19 @@ def field_agreement(predicted,observed):
 
 def optical_diagnostic(a):
     """Read-only local propagation comparison with actual incident prefixes."""
-    assert a.prefix==a.depth+1 and not a.out.exists();torch.set_num_threads(2);a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);indices=np.concatenate([np.flatnonzero(data['train'][1]==k)[:3] for k in range(20)]);assert len(indices)==60;records={stage:[] for stage in fields}
+    from PIL import Image
+    from lab_caltech10_20261015 import phase_native
+    assert a.prefix==a.depth+1 and not a.out.exists();torch.set_num_threads(2);a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);indices=np.concatenate([np.flatnonzero(data['train'][1]==k)[:3] for k in range(20)]);assert len(indices)==60;records={stage:[] for stage in fields};checked_phase=set()
     with torch.inference_mode():
         for begin in range(0,60,4):
             ix=indices[begin:begin+4]
             def replay(stage,amplitude,phase,sample_ids):
                 assert stage in fields and np.array_equal(sample_ids,data['train'][2][ix]);field=torch.from_numpy(amplitude.copy()).to(torch.complex64)*torch.exp(2j*np.pi*torch.from_numpy(phase.astype(np.float32)/256))[None];predicted=model.propagator(F.pad(field,(20,20,20,20))).abs().square()[:,20:498,20:498];observed=torch.from_numpy(np.asarray(fields[stage]['train'][ix]).copy());agreement=field_agreement(predicted,observed)
-                for j,index in enumerate(ix):records[stage].append(dict(TRAIN_index=int(index),sample_id=str(sample_ids[j]),**{k:v[j] for k,v in agreement.items()},observed_p99=float(np.quantile(observed[j].numpy(),.99))))
+                stage_root=a.session/'capture'/stage
+                if stage not in checked_phase:
+                    capture=json.loads((stage_root/'report.json').read_text());assert sha(stage_root/'phase.bmp')==capture['phase_sha256'];assert np.array_equal(np.asarray(Image.open(stage_root/'phase.bmp')),phase_native(phase));checked_phase.add(stage)
+                for j,index in enumerate(ix):
+                    path=stage_root/'train'/f'{index:06d}_input.png';receipt=json.loads((stage_root/'train'/f'{index:06d}.json').read_text());assert receipt['sample_id']==str(sample_ids[j]) and sha(path)==receipt['canonical_SHA256'];gray=np.rint(amplitude[j].clip(0,1)*255).astype(np.uint8);assert np.array_equal(gray,np.asarray(Image.open(path))),'Current incident producer differs from captured canonical input';records[stage].append(dict(TRAIN_index=int(index),sample_id=str(sample_ids[j]),canonical_input_pixels_and_receipt_SHA_match=True,phase_native_pixels_and_report_SHA_match=True,**{k:v[j] for k,v in agreement.items()},observed_p99=float(np.quantile(observed[j].numpy(),.99))))
                 return observed
             model(encode_images(data['train'][0][ix]),callback=replay,ids=data['train'][2][ix]);save(a.out/'progress.json',dict(state='TRAIN_only_readonly_optical_agreement',samples=begin+len(ix),total=60))
     assert all(torch.equal(v,model.state_dict()[k]) for k,v in original.items());summary={stage:{key:dict(median=float(np.median([r[key] for r in rows])),minimum=float(min(r[key] for r in rows)),maximum=float(max(r[key] for r in rows))) for key in ('pixel_Pearson','coarse16_Pearson','unit_RMS_error','observed_p99')} for stage,rows in records.items()};save(a.out/'records.json',records);save(a.out/'report.json',dict(state='complete',depth=a.depth,TRAIN_samples=60,TRAIN_each_class=3,TEST_used=False,VALID_used=False,PT_SHA256=a.checkpoint_sha,data_SHA256=dm['sha256'],CCD_arrays_SHA256=identities,source_SHA256=sha(__file__),summary=summary,all_parameters_frozen=True,actual_measured_prefix_drives_each_incident=True,prediction='original quantized amplitude/phase + canonical original propagator; same actual incident prefix, no fitted spatial warp/gain or LUT change',limitation='Agreement statistics diagnose mismatch, not prove its physical cause, accuracy ceiling, calibration, or a new performance score',SDK_opened=False,GPU_used=False,new_CCD=0))
