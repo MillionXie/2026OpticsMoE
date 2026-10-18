@@ -7,7 +7,8 @@ const bundledRequire=createRequire(path.join(process.env.CODEX_ARTIFACT_RUNTIME_
 const {FileBlob,SpreadsheetFile}=await import(pathToFileURL(bundledRequire.resolve('@oai/artifact-tool')).href);
 const repo=process.cwd();
 const out=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
-const rental=process.argv.includes('--rental-extension');
+const cleanKimi=process.argv.includes('--kimi-clean-extension');
+const rental=process.argv.includes('--rental-extension')||cleanKimi;
 const includeCrossDeviceAudit=process.argv.includes('--include-cross-device-audit');
 const sequential=process.argv.includes('--yolo-clip-sequential')||rental;
 const recheck=process.argv.includes('--yolo-clip-recheck')||sequential;
@@ -15,7 +16,7 @@ const baseRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs
 const recheckRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_yolo_clip_recheck_a100_20261017');
 const sequentialRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_yolo_clip_sequential_a100_20261017');
 const rentalRun=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_full_deepseek_kimi_rental_20261017');
-const run=rental?rentalRun:sequential?sequentialRun:recheck?recheckRun:baseRun;
+const run=cleanKimi?path.join(rentalRun,'figure5_kimi_refresh_20261018'):rental?rentalRun:sequential?sequentialRun:recheck?recheckRun:baseRun;
 const scratch=path.join(repo,'.codex_tmp');
 function chooseDisplayPoints(points){
  const selected=new Set();
@@ -82,7 +83,16 @@ if(rental){
  newCount=includeCrossDeviceAudit?5:4;
 }
 const palette={ours:['#7828A8','#F2E9FA'],qwen:['#0072B2','#EAF3FA'],glm:['#92527F','#F5EBF3'],small:['#C25B18','#FFF0E5'],clip:['#007F63','#E8F5EF'],yolo:['#9B7000','#FFF7DD'],deepseek:['#5B6470','#EEF0F3'],...(rental?{full:['#79502C','#F6EEDC'],kimi:['#B64058','#FCECEF'],qwen80:['#256F99','#E9F2F8']}:{})};
+const auditPalette={...palette};
 if(!includeCrossDeviceAudit)delete palette.qwen80;
+const cleanData=cleanKimi?await json(path.join(rentalRun,'verified_kimi_clean_extension.json')):null;
+if(cleanKimi){
+ if(cleanData.status!=='complete'||cleanData.paired_rows.length!==2||cleanData.repeats.length!==18||cleanData.paced_service.length!==2||!cleanData.historical_B1_all558_exact)throw Error('Incomplete clean Kimi delivery');
+ historicalRepeats.push(...data.repeats.filter(x=>x.baseline==='kimi').map(x=>({...x,role:'Historical superseded Kimi rental session; not pooled with clean same-card run'})));
+ data.paired_rows=[...data.paired_rows.filter(x=>x.baseline!=='kimi'),...cleanData.paired_rows];
+ data.repeats=[...data.repeats.filter(x=>x.baseline!=='kimi'),...cleanData.repeats];
+ newCount=2;
+}
 const asNumber=v=>v===''||v===undefined||v===null?null:Number(v);
 const anchor=data.historical_qwen_B1;
 if(+anchor.time_16_videos_ms!==1188.3861464262009||+anchor.energy_16_videos_j!==462.1134010767563||+anchor.display_gpu_util_mean_percent!==63.133111480865225)throw Error('Historical anchor drift');
@@ -144,15 +154,30 @@ function polishReadability(){
   for(const[i,x]of rows.filter(x=>x.baseline!=='ours').entries())if(['full','kimi','qwen80'].includes(x.baseline))u.getRange('H'+(i+7)).values=[['Native; SXM4-80GB /400W']];
  }
 }
+function writeKimiTrend(){
+ util.worksheets.getItem('GPU utilization').getRange('A28:G38').unmerge();util.worksheets.getItem('GPU utilization').getRange('A28:G38').clear({applyTo:'all'});
+ let trend;try{trend=util.worksheets.getItem('Kimi native trend');}catch{trend=util.worksheets.add('Kimi native trend');}
+ trend.getRange('A1:G12').format={font:{name:'Arial',size:10,color:'#243447'},rowHeight:27,verticalAlignment:'center'};
+ trend.getRange('A1:F1').merge();trend.getRange('A1').values=[['Kimi: same-card native resident GPU utilization']];trend.getRange('A1:F1').format={fill:'#B64058',font:{name:'Arial',size:14,bold:true,color:'#FFFFFF'},rowHeight:35};
+ trend.getRange('A2:F2').merge();trend.getRange('A2').values=[['One model process, B1 through B6; three complete queue8 repeats per batch. Every forward processes B videos.']];
+ trend.getRange('A3:F3').merge();trend.getRange('A3').values=[['SXM4-80GB /400W. B2–5 are utilization-only evidence, not new accuracy or cost measurements.']];trend.getRange('A2:F3').format={wrapText:true,rowHeight:37};
+ trend.getRange('A5:G5').values=[['Video batch B','Pooled mean (%)','Repeat1 (%)','Repeat2 (%)','Repeat3 (%)','Full558 accuracy/cost','Raw source']];
+ trend.getRange('A6:G11').values=cleanData.utilization_only_trend.map(x=>[x.batch,x.mean_percent,...x.repeat_means,x.full558_accuracy_available?'Measured':'Not measured',x.source]);
+ trend.getRange('A5:G5').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:44};trend.getRange('A6:G11').format.fill='#FCECEF';
+ trend.getRange('A1:A12').format.columnWidth=14;trend.getRange('B1:E12').format.columnWidth=19;trend.getRange('F1:F12').format.columnWidth=28;trend.getRange('G1:G12').format.columnWidth=85;trend.getRange('B6:E11').setNumberFormat('0.00000');trend.getRange('A6:F11').format.horizontalAlignment='right';
+}
 async function renderQA(){
+ if(cleanKimi){for(const [book,sheetName,range,file]of[[plot,'Paced service','A1:F11','selected_service'],[util,'Kimi native trend','A1:F12','selected_kimi_trend']]){const image=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(scratch,file+'.png'),new Uint8Array(await image.arrayBuffer()));}}
  for(const [book,label,sheetName,range]of[[plot,'selected_plot','Comparison',`A1:${rental?'M':'L'}${rows.length+12}`],[plot,'selected_inputs','Measurements',`A1:L${rows.length+4}`],[main,'selected_summary','Summary',`A1:L${rows.length+5}`],[main,'selected_build','Batch results',`A1:S${rows.length+1}`],[main,'selected_sources','Sources',rental?'A26:B36':'A19:B31'],[util,'selected_util','GPU utilization',`A1:I${rows.length+5}`],[util,'selected_repeats','Repeat measurements',rental?'A60:O74':'A1:O18']]){const image=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(scratch,label+'.png'),new Uint8Array(await image.arrayBuffer()));}
 }
 if(process.argv.includes('--polish')){
+ if(cleanKimi)writeKimiTrend();
  polishReadability();for(const book of books)book.recalculate();await renderQA();
  for(let i=0;i<books.length;i++)await(await SpreadsheetFile.exportXlsx(books[i])).save(path.join(out,filenames[i]));
  console.log(JSON.stringify({workbooks_polished:3,measurement_values_unchanged:true}));process.exit(0);
 }
 if(process.argv.includes('--verify')){
+ if(cleanKimi){const service=plot.worksheets.getItem('Paced service');for(const[i,x]of cleanData.paced_service.entries())for(const[c,k]of[['D','service_T16_ms'],['E','service_E16_j']])if(Math.abs(service.getRange(c+(i+7)).values[0][0]-x[k])>1e-8)throw Error('Saved service mismatch');}
  const p=plot.worksheets.getItem('Comparison');
  for(let i=0;i<rows.length;i++){const r=i+7,x=rows[i];for(const[c,k]of[['E','measured_full558_srcc'],['G','time_16_videos_ms'],['H','energy_16_videos_j'],['I','lightgen_time_speedup_x'],['J','lightgen_energy_efficiency_gain_x']])if(Math.abs(p.getRange(c+r).values[0][0]-x[k])>1e-8)throw Error('Saved plot mismatch '+c+r);if(i&&Math.abs(p.getRange('F'+r).values[0][0]*100-x.display_gpu_util_mean_percent)>1e-8)throw Error('Saved util mismatch');}
  const savedSummary=main.worksheets.getItem('Summary'),savedUtil=util.worksheets.getItem('GPU utilization');
@@ -171,7 +196,8 @@ const rawMap=new Map(data.paired_rows.map(x=>[x.baseline+':'+x.batch_size,x]));
 const getRaw=x=>rawMap.get(x.baseline+':'+x.batch_size_videos);
 comparison.getRange('A7:L44').unmerge();comparison.getRange('A7:L44').clear({applyTo:'all'});
 comparison.getRange('A1').values=[['LGVQ 时间质量评价：精度与推理成本']];inputs.getRange('A1').values=[['Measurements and provenance']];
-inputs.getRange('A5:T40').clear({applyTo:'all'});summary.getRange('A6:T43').clear({applyTo:'all'});detail.getRange('A2:AR38').clear({applyTo:'all'});
+inputs.getRange('A5:Y40').clear({applyTo:'all'});summary.getRange('A6:W43').clear({applyTo:'all'});detail.getRange('A2:AR38').clear({applyTo:'all'});
+comparison.getRange('M7:M44').clear({applyTo:'all'});
 uv.getRange('A7:Q40').clear({applyTo:'all'});ur.getRange('A5:R160').clear({applyTo:'all'});
 comparison.getRange('A2').values=[[rental?'原A100 PCIe40GB/250W；新增SXM4 80GB/400W。558 TEST精度，首200视频成本归一至16视频。':'A100 250 W。558 TEST 计算精度，首200视频成本归一到16视频。每模型仅展示 B1 及1–2个近满载点。']];
 comparison.getRange('A3').values=[['Qwen B1 定稿不变。Qwen B3/4 为严格等价验证的优化执行，其余模型原生执行；不能把二者差异解释为纯 batch 效应。']];
@@ -215,7 +241,7 @@ comparison.getRange(`E7:E${rows.length+6}`).setNumberFormat('0.0000');comparison
 for(const[sh,range]of[[summary,`C6:J${rows.length+5}`],[detail,`F2:S${rows.length+1}`]])sh.getRange(range).setNumberFormat('#,##0.000');
 summary.getRange(`C6:C${rows.length+5}`).setNumberFormat('0.000000');summary.getRange(`K6:M${rows.length+5}`).setNumberFormat('0.00');
 summary.getRange(`I6:J${rows.length+5}`).setNumberFormat('0.000000');detail.getRange(`U2:V${rows.length+1}`).setNumberFormat('0.000000');detail.getRange(`AN2:AN${rows.length+1}`).setNumberFormat('0.000000');detail.getRange(`C2:C${rows.length+1}`).setNumberFormat('0.000000');
-const notes=['Qwen 40GB B1：历史原生定稿锚点不变。80GB B1为单列跨设备对照，不能替换或当作batch曲线。','LightGen-II 时间和能耗优势分别为 baseline T16 / LightGen-II T16、baseline E16 / LightGen-II E16。',rental?'80GB租赁B1与B2来自同SKU的不同物理卡/会话，不是严格同卡batch-only；Kimi B2利用率86.11%，未达98%。':'同模型相对 B1：Qwen 同时包含 batch 与执行优化，其余模型为原生不同 batch 对照。','利用率为独立驻留负载的驱动窗口活跃比例，不是 SM occupancy，也不用于推算交错推理能耗。','本轮只冻结推理。既有 PT 若曾按 TEST 选模，相关精度仍属开发口径（无独立 VAL），并非新的独立泛化结论。'];
+const notes=['Qwen 40GB B1：历史原生定稿锚点不变。租赁80GB Qwen仅留审计，不进入论文图表。','LightGen-II 时间和能耗优势分别为 baseline T16 / LightGen-II T16、baseline E16 / LightGen-II E16。',cleanKimi?'Kimi B1/B6为同一80GB卡/400W；DeepSeek完整版本B1/B2来自不同物理卡。50%服务成本见独立页。':rental?'80GB租赁B1与B2来自同SKU的不同物理卡/会话，不是严格同卡batch-only；Kimi B2利用率86.11%，未达98%。':'同模型相对 B1：Qwen 同时包含 batch 与执行优化，其余模型为原生不同 batch 对照。','利用率为独立驻留负载的驱动窗口活跃比例，不是 SM occupancy，也不用于推算交错推理能耗。','本轮只冻结推理。既有 PT 若曾按 TEST 选模，相关精度仍属开发口径（无独立 VAL），并非新的独立泛化结论。'];
 for(let i=0;i<notes.length;i++){const r=rows.length+8+i;comparison.getRange(`A${r}:L${r}`).merge();comparison.getRange(`A${r}`).values=[[notes[i]]];comparison.getRange(`A${r}:L${r}`).format={font:{name:'Microsoft YaHei',size:10,color:'#53687A'},rowHeight:25};}
 const urows=rows.filter(x=>x.baseline!=='ours');
 for(let i=0;i<urows.length;i++){
@@ -228,7 +254,7 @@ const historicRepeat={model:'Qwen3-VL-2B',baseline:'qwen',batch:1,repeat:1,mean_
 const repeatRows=[historicRepeat,...data.repeats.map(x=>({...x,role:selectedKeys.has(x.baseline+':'+x.batch)?'Displayed point; see source/date':'Audit only; not in main figure'})),...historicalRepeats];
 ur.getRange(`A5:R${repeatRows.length+4}`).values=repeatRows.map(x=>[x.model,x.batch,x.repeat,x.mean_percent/100,x.peak_percent/100,x.duration_s,x.samples,x.forwards,x.power_w,x.memory_mib,na(x.sm_clock_mhz),na(x.temperature_c),na(x.cpu_queue_wait_ms),x.warmup_s,new Date(x.measured_local.replace(' ','T')+'Z'),x.baseline,x.role??'New three-repeat measurement',x.source]);
 ur.getRange('P4:R4').values=[['Baseline key','Measurement identity','Raw source']];ur.getRange(`D5:E${repeatRows.length+4}`).setNumberFormat('0.00%');ur.getRange(`O5:O${repeatRows.length+4}`).setNumberFormat('yyyy-mm-dd hh:mm:ss');
-for(let i=0;i<repeatRows.length;i++)ur.getRange(`A${i+5}:R${i+5}`).format={fill:palette[repeatRows[i].baseline][1],font:{name:'Arial',size:10,color:'#243447'},rowHeight:25};
+for(let i=0;i<repeatRows.length;i++)ur.getRange(`A${i+5}:R${i+5}`).format={fill:auditPalette[repeatRows[i].baseline][1],font:{name:'Arial',size:10,color:'#243447'},rowHeight:25};
 ur.getRange(`D5:E${repeatRows.length+4}`).setNumberFormat('0.00%');ur.getRange(`F5:N${repeatRows.length+4}`).setNumberFormat('0.00');ur.getRange(`G5:H${repeatRows.length+4}`).setNumberFormat('#,##0');ur.getRange(`O5:O${repeatRows.length+4}`).setNumberFormat('yyyy-mm-dd hh:mm:ss');
 sources.getRange('A7:B7').values=[['Measured candidate batches',data.paired_rows.map(x=>x.baseline+':'+x.batch_size).join(', ')+'. Historical Qwen1 retained. Main view applies the95% rule.']];
 sources.getRange('A19:B20').values=[['Resident utilization','Independent unchanged queue8 three-repeat 5s/30s method; no Graph. Qwen B1 is one historical retained run.'],['Cost run','lgvq_selected_execution_a100_20261016;16 new sparse points, preserved historical Qwen B1']];
@@ -245,6 +271,21 @@ if(rental){
 }
 sources.getRange('A26:B31').values=[['Qwen execution','B3/B4: CPU integer metadata/indexing and grouped independent equal-length vision SDPA; original weights, precision and attention semantics.'],['Qwen equivalence','Full558 hidden/full vocabulary logits/quality logits/MOS compared exactly after cold cost in another process; each point has a receipt.'],['Gain definitions','Time/energy divided by LightGen-II reference. Qwen changes versus historical B1 include execution optimization and batch, not batch alone.'],['Model size','Total parameter definitions and original nominal/loaded sources retained in plot_data Measurements.'],['Selected data','B1 plus at most2 predeclared higher-B settings with resident mean>=95%. If none qualify, show highest predeclared B and disclose unmet target. Other measurements remain raw audit only.'],['Utilization and energy','Resident utilization is independent; energy uses same-cost-run active A100 power plus338.2W host proxy. Not a calibrated whole-system energy integral.']];
 sources.getRange('A26:B31').format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true,rowHeight:50};
+if(cleanKimi){
+ sources.getRange('A32:B38').values=[['Supplementary platform','Original PCIe40GB /250W preserved; DS full and Kimi use separately disclosed SXM4-80GB /400W. Not a common-hardware model ranking.'],['Physical GPU sessions','Kimi B1/B6 both GPU-ecac2c49-306a-9ec5-1572-8fcd2d232165. DS full B1/B2 retain different historical physical cards.'],['Qwen cross-device audit','Rental80GB Qwen excluded from paper tables and figures by user; original files and repeats preserved in audit history.'],['Clean Kimi evidence','verified_kimi_clean_extension.json; 120 SHA-verified raw files. All558 historical B1 predictions exactly equal.'],['Retained estimates','338.2W host proxy is not rental wall power; 400W is a limit, not substituted for recorded mean board power.'],['Kimi utilization','One loaded model, ascending B1..6; three complete native queue8 repeats per B. B2..5 utilization only, no new full558 accuracy or cost.'],['50% service costs','Separate Paced service tab/CSV: whole resident windows including imposed idle time. Never substitutes for dataset-once inference cost.']];
+ sources.getRange('A32:B38').format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true,rowHeight:58};
+ writeKimiTrend();
+ const service=plot.worksheets.add('Paced service');
+ service.getRange('A1:F1').merge();service.getRange('A1').values=[['Kimi: approximately 50% GPU-busy paced service']];
+ service.getRange('A2:F2').merge();service.getRange('A2').values=[['Resident repeated inputs; complete windows include all pacing waits. Not dataset-once inference costs.']];
+ service.getRange('A3:F3').merge();service.getRange('A3').values=[['SXM4-80GB /400W; same card B1/B6. Three complete repeats; all samples pooled, no best-window selection.']];
+ service.getRange('A4:F4').merge();service.getRange('A4').values=[['GPU time-busy percentage is not equivalent to optical spatial occupancy. Accuracy is evaluated in the separate dataset-once runs.']];
+ service.getRange('A6:F6').values=[['Model','Video batch B','GPU busy (%)','Service time /16 videos (ms)','Estimated service energy /16 (J)','Board power (W)']];
+ service.getRange('A16:K16').values=[['Model','B','GPU busy (%)','Window duration (s)','Forward calls','Video evaluations','Mean board W','Host proxy W','Unique videos','Raw source','GPU UUID']];
+ for(const[i,x]of cleanData.paced_service.entries()){const r=i+17,t=i+7;service.getRange(`A${r}:K${r}`).values=[[x.model,x.batch,x.mean_busy_percent,x.duration_s,x.completed_forward_calls,null,x.board_mean_w,338.2,x.unique_videos,x.source,x.gpu_uuid]];service.getRange(`F${r}`).formulas=[[`=B${r}*E${r}`]];service.getRange(`A${t}:F${t}`).formulas=[[`=A${r}`,`=B${r}`,`=C${r}`,`=D${r}*16000/F${r}`,`=(G${r}+H${r})*D${t}/1000`,`=G${r}`]];}
+ service.getRange('A1:K18').format={font:{name:'Arial',size:10,color:'#243447'},columnWidth:23,rowHeight:27,verticalAlignment:'center'};service.getRange('A1:F1').format={fill:'#B64058',font:{name:'Arial',size:15,bold:true,color:'#FFFFFF'},rowHeight:34};service.getRange('A2:F4').format={wrapText:true,rowHeight:36};service.getRange('A6:F6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:45};service.getRange('A7:F8').format.fill='#FCECEF';service.getRange('C7:F8').setNumberFormat('#,##0.000000');service.getRange('A16:K16').format={fill:'#214D68',font:{name:'Arial',size:10,color:'#FFFFFF',bold:true},wrapText:true,rowHeight:40};service.getRange('A10:F11').merge();service.getRange('A10').values=[['Service T16 = full measured duration × 16 / completed video evaluations. E16 = (338.2 W + same-window mean board W) × service T16 / 1000. Raw inputs and source paths are retained below.']];service.getRange('A10:F11').format={wrapText:true,rowHeight:30};
+ plot.recalculate();const original=service.getRange('D17').values[0][0],before=service.getRange('D7').values[0][0];service.getRange('D17').values=[[original*1.01]];plot.recalculate();if(Math.abs(service.getRange('D7').values[0][0]-before*1.01)>1e-8)throw Error('Paced service recalculation');service.getRange('D17').values=[[original]];
+}
 polishReadability();for(const book of books)book.recalculate();
 const checkInput=inputs.getRange('G7'),oldInput=checkInput.values[0][0],oldGain=comparison.getRange('I9').values[0][0];
 checkInput.values=[[oldInput*1.01]];plot.recalculate();if(Math.abs(comparison.getRange('G9').values[0][0]-oldInput*1.01)>1e-8||Math.abs(comparison.getRange('I9').values[0][0]-oldGain*1.01)>1e-8)throw Error('Plot formula recalculation failed');checkInput.values=[[oldInput]];plot.recalculate();
@@ -261,7 +302,11 @@ await fs.writeFile(path.join(out,'timing_energy_recalculated.csv'),csv(rows));
 await fs.writeFile(path.join(out,'batch_metric_audit.csv'),csv(data.paired_rows.map(x=>({model:x.model,batch_size_videos:x.batch_size,full558_srcc:x.srcc,full558_plcc:x.plcc,first200_srcc:x.first200_srcc,independent_resident_util_mean_percent:x.independent_resident_util_mean_percent,repeat_means_percent:x.util_repeat_means.join(','),repeat_spread_pp:Math.max(...x.util_repeat_means)-Math.min(...x.util_repeat_means),displayed:selectedKeys.has(x.baseline+':'+x.batch_size),checkpoint_sha256:x.checkpoint_sha256,source:x.source,utilization_source:x.utilization_source,execution:x.execution}))));
 await fs.writeFile(path.join(out,'LGVQ_temporal_gpu_utilization.csv'),csv(urows.map(x=>{const raw=getRaw(x);return{model:x.model,baseline:x.baseline,batch:x.batch_size_videos,mean_percent:x.display_gpu_util_mean_percent,peak_percent:raw?.independent_resident_util_peak_percent??h.peak_gpu_utilization_percent,repeat_means:raw?.util_repeat_means.join(',')??'',samples:raw?.util_samples??h.samples,duration_s:raw?.util_duration_s??h.duration_s,forwards:raw?.util_forward_calls??historical.measured_forward_invocations,execution:x.execution_profile,resident_protocol:x.utilization_basis,source:x.utilization_source,measured_local:x.util_measured_local};})));
 await fs.writeFile(path.join(out,'LGVQ_temporal_gpu_utilization_repeats.csv'),csv(repeatRows));
-const verifiedName=rental?'verified_figure5_extension.json':sequential?'verified_sequential.json':'verified_selected_execution.json';
+if(cleanKimi){
+ await fs.writeFile(path.join(out,'LGVQ_kimi_paced_service.csv'),csv(cleanData.paced_service));
+ await fs.writeFile(path.join(out,'LGVQ_kimi_native_utilization_trend.csv'),csv(cleanData.utilization_only_trend.map(x=>({...x,repeat_means:x.repeat_means.join(',')}))));
+}
+const verifiedName=cleanKimi?'../verified_kimi_clean_extension.json':rental?'verified_figure5_extension.json':sequential?'verified_sequential.json':'verified_selected_execution.json';
 await fs.writeFile(path.join(run,'presentation_selected.json'),JSON.stringify({status:'complete',rows,display_selection_rule:'B1 plus at most2 predeclared higher-B settings with resident mean>=95%; if none, show highest predeclared B as unmet target. Sequential reproduction caps YOLO at3 and CLIP at10 as explicitly requested.',source:verifiedName,source_sha256:digest(await fs.readFile(path.join(run,verifiedName))),base_source:path.relative(repo,path.join(baseRun,'verified_selected_execution.json')).replaceAll('\\','/'),base_source_sha256:digest(await fs.readFile(path.join(baseRun,'verified_selected_execution.json'))),recheck_source_sha256:recheck?digest(await fs.readFile(path.join(recheckRun,'verified_selected_execution.json'))):null,prior_archive:'prior_report_archive/manifest.json',workbook_files:filenames},null,2)+'\n',{flag:'wx'});
 const f=(v,n=3)=>v===null||v===undefined?'—':Number(v).toFixed(n);
 const pointTable=['| Model | B / optical N | Resident GPU utilization (%) | Full558 SRCC | T16 (ms) | Estimated E16 (J) | LightGen-II time advantage (×) | LightGen-II energy-efficiency advantage (×) |'+(rental?' Platform / limit |':''),
@@ -319,7 +364,7 @@ Current figures: [two-panel comparison](srcc_cost_comparison_reference.png), [la
 Earlier descriptions and intermediate configurations are archived for provenance, not included in the current comparison.
 
 `;
-const rentalNotes=rental?`### Supplementary A100-SXM4-80GB platform (17 October 2026)
+let rentalNotes=rental?`### Supplementary A100-SXM4-80GB platform (17 October 2026)
 
 Five complete supplementary points were added while retaining all 15 original displayed rows: DeepSeek-VL2 B=1/2, Kimi-VL-A3B-Instruct B=1/2 and native Qwen3-VL-2B B=1. The 80-GB supplementary series use hollow symbols and A100-SXM4-80GB at a 400-W power limit. The daggered historical 40-GB native Qwen B=1 is also an open circle and has a separate legend entry. The original measurements use A100-PCIE-40GB at 250 W, with the historical native Qwen B=1 separately marked. Results across these platforms are descriptive deployment comparisons, not common-hardware model rankings. Energy calculations use measured active board power, not the power limit.
 
@@ -334,8 +379,33 @@ Raw point sources, all repeats and hardware UUIDs are retained in the canonical 
 **Supplementary figure description.** The latency and energy panels retain the original 40-GB measurements and add five hollow 80-GB points. Each point uses accuracy evaluated on all 558 TEST videos and costs measured over the first 200 videos. Marker fill indicates the platform. Labels show video batch size and independently measured resident GPU utilization. Dashed connectors between rental sessions are descriptive only. The observed accuracy-cost positions do not isolate model architecture, GPU form factor, host, date or batch effects. The cross-device Qwen B=1 control is not connected to the optimized B=3/4 series on the original platform.
 
 `:'';
-if(rental)currentNotes=currentNotes.replace('## Current comparison — 16–17 October 2026','## Current comparison — 16–17 October 2026\n\n'+rentalNotes).replace('All new measurements use the same A100 UUID and 250-W power limit','The original40GB cohort uses its retained A100 UUID and250-W limit; supplementary80GB measurements use the separately disclosed400-W platform and sessions').replace('† Qwen B=1 is not reexecuted:','† The finalized40GB Qwen B=1 point is not replaced:').replace('Each electronic model is represented by B=1 and one or two predeclared near-saturation configurations.','Original-platform models retain B=1 and selected high-batch points; the80GB supplementary cohort adds B1/B2, including unmet saturation targets.');
-await fs.writeFile(path.join(out,'README.md'),currentNotes+'[Archived prior README](../../../tasks/t06_video_quality_assessment/runs/simulation/'+path.basename(run)+'/prior_report_archive/README.md).\n');
+if(cleanKimi){
+ const trend=['| B | Repeat1 (%) | Repeat2 (%) | Repeat3 (%) | Pooled mean (%) | Full558 accuracy/cost |','| ---: | ---: | ---: | ---: | ---: | --- |',...cleanData.utilization_only_trend.map(x=>`| ${x.batch} | ${x.repeat_means.map(v=>f(v,8)).join(' | ')} | ${f(x.mean_percent,8)} | ${x.full558_accuracy_available?'Measured':'Not measured'} |`)].join('\n');
+ const paced=['| B | Busy mean (%) | Repeat1 / 2 / 3 (%) | Full-window board mean (W) | Service T16 (ms) | Estimated service E16 (J) |','| ---: | ---: | --- | ---: | ---: | ---: |',...cleanData.paced_service.map(x=>`| ${x.batch} | ${f(x.mean_busy_percent,8)} | ${x.repeat_means_percent.map(v=>f(v,8)).join(' / ')} | ${f(x.board_mean_w,8)} | ${f(x.service_T16_ms,8)} | ${f(x.service_E16_j,8)} |`)].join('\n');
+ rentalNotes=`### Supplementary platforms and clean Kimi follow-up (18 October 2026)
+
+The paper comparison retains all 15 original displayed rows and four supplementary points: DeepSeek-VL2 B=1/2 and Kimi-VL-A3B-Instruct B=1/6. The rental Qwen B=1 control is excluded from the paper tables and figures at the author's request; its raw data and historical repeats remain available for audit. Hollow symbols identify A100-SXM4-80GB /400W, whereas the original GPU cohort uses A100-PCIE-40GB /250W. These are descriptive deployment comparisons, not a common-hardware model ranking. Energy uses recorded active board power, never the nominal power limit.
+
+Kimi B=1 and B=6 were measured on the same physical GPU, GPU-ecac2c49-306a-9ec5-1572-8fcd2d232165, with unchanged frozen head SHA256 e6bf55b3b7ff318d37c973b67c4a6ce1062e4760ac91c2bdc748628988022586. Each point has all 558 TEST predictions and its own first-200 timing/power samples. New B=1 predictions match all 558 historical B=1 predictions exactly. The previous Kimi B=1/B=2 session is superseded for display, not deleted. DeepSeek full B=1/B=2 retains its historical distinct-card sessions (GPU-780326a6-79bc-7a45-36f6-683c5b278bee and GPU-d06c95d0-7066-9768-0f6e-fc1ee877f9f9); its dashed connector is descriptive, not a strict same-card batch ablation. The 338.2-W host proxy is retained and is not a measured rental-host wall-power value.
+
+**Independent native utilization.** One Kimi model process was loaded once and measured sequentially at B=1 through B=6. Inputs retain four frames and the deployed precision. Each point has three identical complete queue8 repeats (at least 5 s warmup and 30 s measurement); all 50-ms driver samples are pooled. Each forward processes B videos, not 8B. B=6 is the first measured point strictly above 98%. B=2–5 have utilization-only evidence, not new full558 accuracy or dataset-once costs. No intermediate accuracy or cost is interpolated.
+
+${trend}
+
+**Separate paced service measurements.** Kimi B=1 and B=6 were also measured at approximately 50% driver-window kernel-busy time. This is a temporal duty-cycle constraint, not an equivalence to optical spatial occupancy. The first B videos are resident and repeated; complete-group feedback includes both compute and imposed idle time during a ≥30-s calibration, then freezes the duty for three complete repeats. Service T16 = total complete-window duration × 16 / completed video evaluations; estimated service E16 = (338.2 W + duration-weighted same-window mean board power) × service T16/1000 (with T16 in milliseconds). All imposed waits are included. These are not the dataset-once inference costs plotted in the main panels, and their resident board power must not enter the first-200 cost formula. Arithmetic telemetry means retain the limitations of sampled driver windows, rather than representing a calibrated energy integral. This rental controller uses the last complete compute-plus-idle group for feedback; the paused original40GB v2 run aggregates completed groups since the preceding update. They must not be described as bit-identical controller profiles.
+
+${paced}
+
+Paced data are retained in [LGVQ_kimi_paced_service.csv](LGVQ_kimi_paced_service.csv) and the separate Paced service worksheet; the six-batch native trend is retained in [LGVQ_kimi_native_utilization_trend.csv](LGVQ_kimi_native_utilization_trend.csv). The original40GB paced experiment is incomplete after a telemetry-reader failure: four points passed independent raw audit, eight remain uncompleted. Neither failed telemetry nor inferred values enter these Kimi tables. Completion of this Kimi follow-up does not imply completion of that separate suite.
+
+The 120 delivered raw files passed length and SHA256 checks, and utilization, costs and predictions were independently replayed on CPU in verified_kimi_clean_extension.json. The delivery and original audit remain under the canonical rental run. Previously TEST-selected quality heads retain the development/no-independent-VAL interpretation; no head or backbone was retrained for this follow-up. The model process has exited and its GPU was released.
+
+**Figure interpretation.** The two panels show independently evaluated temporal SRCC against normalized inference latency and estimated energy for the same configurations. Labels give B and separately measured resident utilization. The Kimi solid connector links same-card B=1/B=6; the DeepSeek full dashed connector spans different sessions. Neither the platform differences nor the sampled-power estimates permit attribution solely to model architecture. Paced service costs are intentionally absent from these conventional inference panels.
+
+`;
+}
+if(rental)currentNotes=currentNotes.replace('## Current comparison — 16–17 October 2026','## Current comparison — 16–18 October 2026\n\n'+rentalNotes).replace('All new measurements use the same A100 UUID and 250-W power limit','The original 40GB cohort uses its retained A100 UUID and 250-W limit; supplementary 80GB measurements use the separately disclosed 400-W platform and sessions').replace('† Qwen B=1 is not reexecuted:','† The finalized40GB Qwen B=1 point is not replaced:').replace('Each electronic model is represented by B=1 and one or two predeclared near-saturation configurations.',cleanKimi?'Original-platform models retain their selected B=1 and high-batch points; the80GB supplementary cohort retains DeepSeek B1/B2 and adds same-card Kimi B1/B6.':'Original-platform models retain B=1 and selected high-batch points; the80GB supplementary cohort adds B1/B2, including unmet saturation targets.');
+await fs.writeFile(path.join(out,'README.md'),currentNotes+'[Archived prior README]('+path.relative(out,path.join(run,'prior_report_archive/README.md')).replaceAll('\\','/')+').\n');
 let utilNotes=`# LGVQ GPU utilization: current selected-execution comparison
 
 ${cohort} Current point means and repeats are shown below. Superseded repeats remain separately labeled in the raw-repeat workbook/CSV, never pooled with a later round. Main figures use B=1 plus at most two predeclared higher batches with pooled resident utilization ≥95% (largest tested batch if none qualifies). All other points remain audit evidence. The three workbooks and CSV identify displayed versus audit-only repeats. See the current comparison README for paired inference-cost data and the two figure descriptions.
@@ -358,5 +428,5 @@ Earlier descriptions and intermediate configurations are archived for provenance
 
 `;
 if(rental)utilNotes=utilNotes.replace('\n\n','\n\n'+rentalNotes).replace('Qwen B1 stays at the finalized','The original40GB Qwen B1 stays at the finalized');
-await fs.writeFile(path.join(out,'UTILIZATION_METHOD_20261015.md'),utilNotes+'[Archived prior utilization methods](../../../tasks/t06_video_quality_assessment/runs/simulation/'+path.basename(run)+'/prior_report_archive/UTILIZATION_METHOD_20261015.md).\n');
+await fs.writeFile(path.join(out,'UTILIZATION_METHOD_20261015.md'),utilNotes+'[Archived prior utilization methods]('+path.relative(out,path.join(run,'prior_report_archive/UTILIZATION_METHOD_20261015.md')).replaceAll('\\','/')+').\n');
 console.log(JSON.stringify({updated_workbooks:3,main_rows:rows.length,new_measurement_points:newCount,historical_Qwen_B1_unchanged:true}));

@@ -192,6 +192,76 @@ def audit_rental_extension():
     return output
 
 
+def audit_kimi_clean_extension():
+    """Replay the clean-card Kimi handoff locally, with no GPU or remote access."""
+    from . import rental_followup_audit as helper
+    root=TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017'
+    delivery=read(root/'kimi_clean_delivery_20261018.json')
+    assert delivery['status']=='complete_and_released' and delivery['two_end_audits_agree']
+    assert delivery['final_audit_sha256']=='b102de3ef69e1c8a35b0acc9b5d99b076615e13578f2df91b520bc78f02610c9'
+    assert sha(root/delivery['final_audit'])==delivery['final_audit_sha256']
+    assert sha(root/delivery['backup_receipt'])==delivery['backup_receipt_sha256']
+    backup=read(root/delivery['backup_receipt']);assert backup['status']=='complete' and len(backup['files'])==120
+    for item in backup['files']:
+        assert sha(root/item['path'])==item['sha256'],item['path']
+        assert (root/item['path']).stat().st_size==item['bytes']
+    manifest=root/'provisioning/original_manifest.csv';assert sha(manifest)==SHA
+    test=[r for r in csvrows(manifest) if r['split']=='test'];assert len(test)==558
+    saved=read(root/delivery['final_audit'])
+    replay=helper.audit_sequential_session(root,'kimi_clean_morning01_20261018',test,False)
+    assert replay['status']=='passed' and replay['results']==saved['results']
+    assert replay['highest_native_batch']==6 and replay['native_above98']
+    run=root/'sequential_busy50_20261018/kimi_clean_morning01_20261018/kimi'
+    template=next(r for r in read(root/'verified_figure5_extension.json')['paired_rows'] if r['baseline']=='kimi' and r['batch_size']==1)
+    paired=[];repeats=[];trend=[];service=[]
+    def resident(folder,batch,paced):
+        raw=read(folder/'report.json');assert raw['status']=='complete' and raw['paced']==paced
+        rows=csvrows(folder/'telemetry.csv');clocks=csvrows(folder/'clock_telemetry.csv')
+        groups=read(folder/'forward_groups.json');rr=[];counter=0;samples=0;duration=0;calls=0;stamp=0;peak=0
+        for r in raw['repeats']:
+            index=r['repeat'];start,end=r['start_monotonic_s'],r['end_monotonic_s']
+            selected=[s for s in rows if start<=float(s['host_monotonic_s'])<end]
+            values=[float(s['utilization_percent']) for s in selected];assert len(values)==r['samples'] and end-start>=30
+            assert abs(statistics.mean(values)-r['mean_gpu_utilization_percent'])<1e-9
+            warm=[g for g in groups if g['phase']==f'warmup{index}'];assert warm[-1]['end_monotonic_s']-warm[0]['start_monotonic_s']>=5
+            count=sum(g['forwards'] for g in groups if g['phase']==f'measured{index}');assert count==r['forward_calls']
+            cs=[c for c in clocks if start<=float(c['host_monotonic_s'])<end];assert cs and all(float(c['power_limit_w'])==400 for c in cs)
+            date=datetime.fromtimestamp(float(selected[-1]['host_time_unix']),timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S')
+            rr.append(dict(model=template['model'],baseline='kimi',batch=batch,repeat=index,mean_percent=statistics.mean(values),peak_percent=max(values),duration_s=end-start,samples=len(selected),forwards=count,power_w=statistics.mean(float(s['watts']) for s in selected),memory_mib=statistics.mean(float(s['memory_used_mib']) for s in selected),sm_clock_mhz=statistics.mean(float(c['sm_clock_mhz']) for c in cs),temperature_c=statistics.mean(float(c['temperature_c']) for c in cs),cpu_queue_wait_ms=None,warmup_s=warm[-1]['end_monotonic_s']-warm[0]['start_monotonic_s'],measured_local=date,source=(folder/f'repeat{index:02d}.json').relative_to(REPO).as_posix(),gpu_uuid=delivery['gpu_uuid'],hardware='A100-SXM4-80GB /400W',paced_service=paced))
+            counter+=sum(values);samples+=len(values);duration+=end-start;calls+=count;stamp=max(stamp,float(selected[-1]['host_time_unix']));peak=max(peak,max(values))
+        assert len(rr)==3 and abs(counter/samples-raw['pooled_mean_utilization_percent'])<1e-9
+        return raw,rr,dict(counter=counter,samples=samples,duration=duration,calls=calls,stamp=stamp,peak=peak)
+    for batch in range(1,7):
+        folder=run/f'batch{batch:02d}';raw,rr,aggregate=resident(folder,batch,False)
+        repeats.extend(rr);trend.append(dict(batch=batch,mean_percent=aggregate['counter']/aggregate['samples'],repeat_means=[r['mean_percent'] for r in rr],full558_accuracy_available=batch in (1,6),source=(folder/'report.json').relative_to(REPO).as_posix()))
+        if batch not in (1,6):continue
+        cost_folder=run/f'evaluate_batch{batch:02d}';cost=read(cost_folder/'report.json')
+        checked=helper.audit_cost(cost_folder,test,batch);assert cost['identity']['gpu_uuid']==delivery['gpu_uuid']
+        assert not cost['not_proven_exclusive_device'] and cost['power']['rated_power_limit_w']==400
+        assert cost['identity']['checkpoint_sha256']==saved['checkpoint_sha256']
+        pred=csvrows(cost_folder/'predictions.csv');ys=[float(r['target_mos']) for r in pred];xs=[float(r['prediction']) for r in pred]
+        timings=[r for r in csvrows(cost_folder/'batch_timing.csv') if r['in_cost_subset']=='True'];walls=[float(r['synchronized_wall_ms']) for r in timings]
+        telemetry=csvrows(cost_folder/'telemetry.csv');active=[r for r in telemetry if r['phase'].startswith('active:')]
+        ordered=sorted(walls);q=(len(ordered)-1)*.95;lo=int(q);p95=ordered[lo]+(ordered[min(lo+1,len(ordered)-1)]-ordered[lo])*(q-lo)
+        row=dict(template,batch_size=batch,srcc=checked['srcc'],plcc=checked['plcc'],first200_srcc=pearson(ranks(xs[:200]),ranks(ys[:200])),time_16_videos_ms=checked['T16_ms'],energy_16_videos_j=checked['E16_j'],board_mean_w=checked['active_board_power_w'],cost_wall_sum_ms=sum(walls),cost_calls=len(walls),wall_mean_ms=statistics.mean(walls),wall_p95_ms=p95,active_samples=len(active),gpu_util_mean_percent=statistics.mean(float(r['utilization_percent']) for r in active),gpu_util_peak_percent=max(float(r['utilization_percent']) for r in active),memory_mean_mib=statistics.mean(float(r['memory_used_mib']) for r in active),memory_peak_mib=max(float(r['memory_used_mib']) for r in active),independent_resident_util_mean_percent=aggregate['counter']/aggregate['samples'],independent_resident_util_peak_percent=aggregate['peak'],util_repeat_means=[r['mean_percent'] for r in rr],util_samples=aggregate['samples'],util_duration_s=aggregate['duration'],util_forward_calls=aggregate['calls'],util_sum_percent_points=aggregate['counter'],measured_local=datetime.fromtimestamp(aggregate['stamp'],timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S'),cost_measured_local=datetime.fromtimestamp(float(telemetry[-1]['host_time_unix']),timezone(timedelta(hours=8))).strftime('%Y-%m-%d %H:%M:%S'),checkpoint_sha256=saved['checkpoint_sha256'],source=(cost_folder/'report.json').relative_to(REPO).as_posix(),utilization_source=(folder/'report.json').relative_to(REPO).as_posix(),execution='Native frozen; clean same-card A100-SXM4-80GB /400W; utilization B1 to6 in one model process',utilization_profile='Independent native queue8; same model process B1 to6, three complete repeats; no highest-window selection',gpu_uuid=delivery['gpu_uuid'],hardware_session='Clean rental session20261018 ecac2c49',same_card_batch_ablation=True)
+        paired.append(row)
+        paced_folder=run/f'busy50_batch{batch:02d}';pr,prr,pa=resident(paced_folder,batch,True)
+        duration=pa['duration'];power=sum(r['power_w']*r['duration_s'] for r in prr)/duration
+        t16=duration*16000/(pa['calls']*batch);e16=(338.2+power)*t16/1000
+        assert abs(t16-saved['results'][f'busy50_batch{batch:02d}']['service_T16_ms'])<1e-8
+        assert abs(e16-saved['results'][f'busy50_batch{batch:02d}']['service_E16_j'])<1e-8
+        service.append(dict(model=template['model'],baseline='kimi',batch=batch,mean_busy_percent=pa['counter']/pa['samples'],repeat_means_percent=[r['mean_percent'] for r in prr],duration_s=duration,completed_forward_calls=pa['calls'],completed_video_evaluations=pa['calls']*batch,unique_videos=batch,board_mean_w=power,host_proxy_w=338.2,service_T16_ms=t16,service_E16_j=e16,full558_srcc_separate_source=row['source'],target50_reached=pr['target50_reached'],source=(paced_folder/'report.json').relative_to(REPO).as_posix(),gpu_uuid=delivery['gpu_uuid'],platform='A100-SXM4-80GB /400W',not_dataset_once_cost=True,calibration='complete compute-plus-idle group feedback,30s then fixed duty;3x5s warmup and complete>=30s measurement'))
+    assert all(x['mean_percent']<=98 for x in trend[:-1]) and trend[-1]['mean_percent']>98
+    old=csvrows(root/'kimi/a100_batch01_cost/predictions.csv');new=csvrows(run/'evaluate_batch01/predictions.csv')
+    assert [(r['sample_id'],r['prediction']) for r in old]==[(r['sample_id'],r['prediction']) for r in new]
+    result=dict(status='complete',paired_rows=paired,repeats=repeats,utilization_only_trend=trend,paced_service=service,raw_files_SHA_verified=len(backup['files']),delivery_sha256=sha(root/'kimi_clean_delivery_20261018.json'),cpu_audit_sha256=sha(root/delivery['final_audit']),historical_B1_all558_exact=True,non_kimi_data_unchanged=True,no_GPU_or_remote_access=True)
+    target=root/'verified_kimi_clean_extension.json'
+    if target.exists():assert read(target)==result
+    else:target.open('x',encoding='utf-8').write(json.dumps(result,indent=2)+'\n')
+    print(json.dumps(dict(status='complete',native_utilization_batches=6,complete_native_repeats=18,cost_and_accuracy_points=2,paced_service_points=2,raw_SHA_files=120)))
+    return result
+
+
 def audit_sequential():
     """Utilization-only same-process reproduction; no cost substitution."""
     root=TASK/'runs/simulation/lgvq_yolo_clip_sequential_a100_20261017'
@@ -400,9 +470,10 @@ def audit(selected_points=None,recheck=False):
 
 if __name__=='__main__':
     import argparse
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true');parser.add_argument('--yolo-clip-sequential',action='store_true');parser.add_argument('--rental-extension',action='store_true')
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--points',nargs='+');parser.add_argument('--yolo-clip-recheck',action='store_true');parser.add_argument('--yolo-clip-sequential',action='store_true');parser.add_argument('--rental-extension',action='store_true');parser.add_argument('--kimi-clean-extension',action='store_true')
     args=parser.parse_args()
-    if args.rental_extension:audit_rental_extension()
+    if args.kimi_clean_extension:audit_kimi_clean_extension()
+    elif args.rental_extension:audit_rental_extension()
     elif args.yolo_clip_sequential:audit_sequential()
     else:
         if args.yolo_clip_recheck:ROOT=TASK/'runs/simulation/lgvq_yolo_clip_recheck_a100_20261017'

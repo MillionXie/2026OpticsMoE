@@ -15,9 +15,11 @@ REPO=Path(__file__).resolve().parents[4]
 RUN=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_selected_execution_a100_20261016'
 if '--yolo-clip-recheck' in sys.argv:RUN=RUN.with_name('lgvq_yolo_clip_recheck_a100_20261017')
 if '--yolo-clip-sequential' in sys.argv:RUN=RUN.with_name('lgvq_yolo_clip_sequential_a100_20261017')
-RENTAL='--rental-extension' in sys.argv
+CLEAN_KIMI='--kimi-clean-extension' in sys.argv
+RENTAL='--rental-extension' in sys.argv or CLEAN_KIMI
 INCLUDE_CROSS_DEVICE_AUDIT='--include-cross-device-audit' in sys.argv
 if RENTAL:RUN=RUN.with_name('lgvq_full_deepseek_kimi_rental_20261017')
+if CLEAN_KIMI:RUN=RUN/'figure5_kimi_refresh_20261018'
 OUT=REPO/'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013'
 COLORS=dict(ours='#7828A8',qwen='#0072B2',glm='#92527F',small='#C25B18',clip='#007F63',yolo='#9B7000',deepseek='#5B6470')
 MARKERS=dict(ours='*',qwen='o',glm='P',small='s',clip='D',yolo='^',deepseek='v')
@@ -67,7 +69,7 @@ def panel(ax,rows,kind):
         selected=[x for x in rows if x['baseline']==model]
         if not selected:continue
         connected=[x for x in selected if not(model=='qwen' and x['batch_size_videos']==1)]
-        if len(connected)>1:ax.plot([x[key] for x in connected],[x['measured_full558_srcc'] for x in connected],color=color,lw=1,ls='--' if model in ('full','kimi') else '-',alpha=.55,zorder=2)
+        if len(connected)>1:ax.plot([x[key] for x in connected],[x['measured_full558_srcc'] for x in connected],color=color,lw=1,ls='--' if model=='full' or (model=='kimi' and not CLEAN_KIMI) else '-',alpha=.55,zorder=2)
         for x in selected:
             historic=model=='qwen' and x['batch_size_videos']==1
             ax.scatter(x[key],x['measured_full558_srcc'],s=125 if model=='ours' else 39,marker=MARKERS[model],facecolors='white' if historic or model in ('full','kimi','qwen80') else color,edgecolors=color,linewidths=1.1,zorder=4)
@@ -106,7 +108,7 @@ def verify_label_geometry(fig,axes):
 def main():
     state=json.loads((RUN/'presentation_selected.json').read_text());assert state['status']=='complete'
     rows=paper_rows(state['rows']);assert 13<=len(rows)<=(20 if RENTAL else 18)
-    if RENTAL and not INCLUDE_CROSS_DEVICE_AUDIT:
+    if RENTAL and not INCLUDE_CROSS_DEVICE_AUDIT and not CLEAN_KIMI:
         archive=RUN/'paper_qwen80_exclusion_archive'
         if not archive.exists():
             archive.mkdir();receipts={}
@@ -122,7 +124,8 @@ def main():
     sequential='--yolo-clip-sequential' in sys.argv or RENTAL
     assert [(x['batch_size_videos'],x['display_gpu_util_mean_percent']) for x in rows if x['baseline']=='qwen' and x['batch_size_videos']==1]==[(1,63.133111480865225)]
     plt.rcParams.update({'font.family':'Arial','font.size':10,'svg.fonttype':'none','axes.linewidth':.8,'savefig.facecolor':'white'})
-    legend=[Line2D([],[],marker=MARKERS[m],color=COLORS[m],lw=1,ls='--' if m in ('full','kimi') else '-',markerfacecolor='white' if m in ('full','kimi','qwen80') else COLORS[m],markersize=8 if m=='ours' else 5,label=next(x['model'] for x in rows if x['baseline']==m)+(' (optimized B=3,4)' if m=='qwen' else (' (80GB)' if m in ('full','kimi') else ''))) for m in COLORS];label_checks=[]
+    legend=[Line2D([],[],marker=MARKERS[m],color=COLORS[m],lw=1,ls='--' if m=='full' or (m=='kimi' and not CLEAN_KIMI) else '-',markerfacecolor='white' if m in ('full','kimi','qwen80') else COLORS[m],markersize=8 if m=='ours' else 5,label=next(x['model'] for x in rows if x['baseline']==m)+(' (optimized B=3,4)' if m=='qwen' else (' (80GB)' if m in ('full','kimi') else ''))) for m in COLORS];label_checks=[]
+    platform_note='80GB: SXM4 /400W; other GPU points: PCIe40GB /250W. Kimi B1/B6: same card; dashed DeepSeek full links: different cards.'
     if RENTAL:legend.insert(1,Line2D([],[],marker='o',color=COLORS['qwen'],markerfacecolor='white',lw=0,markersize=5,label='Qwen3-VL-2B B=1† (40GB reference)'))
     for kind,name in [('latency','latency_comparison_reference'),('energy','energy_comparison_reference')]:
         fig,ax=plt.subplots(figsize=(11.0,7.0) if RENTAL else (10.0,6.0));panel(ax,rows,kind)
@@ -131,7 +134,7 @@ def main():
         fig.text(.10,.035,'Independent resident utilization. YOLO B=3 / CLIP B=10: sequential model process. Qwen B=3,4: validated execution optimization.' if sequential else 'Labels: batch size and independent resident GPU utilization. Qwen B=3,4 use equivalence-validated execution optimization.',fontsize=8,color='#4B5563')
         fig.text(.10,.012,'† Qwen B=1 and LightGen-II are retained references. GPU costs normalize the first 200 TEST videos to 16 videos.',fontsize=8,color='#4B5563')
         if RENTAL:
-            fig.text(.10,.045,'80GB series: A100-SXM4 /400W; other GPU points: PCIe40GB /250W. Dashed rental B1/B2: different card sessions.',fontsize=8,color='#4B5563')
+            fig.text(.10,.045,platform_note if CLEAN_KIMI else '80GB series: A100-SXM4 /400W; other GPU points: PCIe40GB /250W. Dashed rental B1/B2: different card sessions.',fontsize=8,color='#4B5563')
             place_labels(fig,ax)
         label_checks+=verify_label_geometry(fig,[ax])
         for ext in ['png','svg']:fig.savefig(OUT/(name+'.'+ext),dpi=240)
@@ -143,7 +146,7 @@ def main():
     fig.legend(handles=legend,loc='lower center',bbox_to_anchor=(.5,.07),ncol=4,frameon=False,fontsize=9)
     fig.text(.065,.025,'GPU SRCC: 558 TEST. Inference costs normalized to 16. YOLO B=3 / CLIP B=10 utilization: sequential model process. LightGen-II and † Qwen B=1 retained.' if sequential else 'GPU SRCC: 558 TEST videos. Costs: first 200 normalized to 16. Independent resident utilization. LightGen-II and † Qwen B=1: retained references.',fontsize=8,color='#4B5563')
     if RENTAL:
-        fig.text(.065,.050,'80GB series: A100-SXM4 /400W; other GPU points: PCIe40GB /250W. Rental B1/B2 use different cards; † denotes the retained40GB native Qwen B=1.',fontsize=8,color='#4B5563')
+        fig.text(.065,.050,platform_note if CLEAN_KIMI else '80GB series: A100-SXM4 /400W; other GPU points: PCIe40GB /250W. Rental B1/B2 use different cards; † denotes the retained40GB native Qwen B=1.',fontsize=8,color='#4B5563')
         for ax in axes:place_labels(fig,ax)
     label_checks+=verify_label_geometry(fig,axes)
     for name in ['srcc_cost_comparison_reference','batch_cost_comparison']:
@@ -153,7 +156,7 @@ def main():
     for m in COLORS:
         if m=='ours':continue
         points=[x for x in rows if x['baseline']==m]
-        if m!='qwen':ax.plot([x['batch_size_videos'] for x in points],[x['display_gpu_util_mean_percent'] for x in points],lw=1,ls='--' if m in ('full','kimi') else '-',alpha=.6,color=COLORS[m])
+        if m!='qwen':ax.plot([x['batch_size_videos'] for x in points],[x['display_gpu_util_mean_percent'] for x in points],lw=1,ls='--' if m=='full' or (m=='kimi' and not CLEAN_KIMI) else '-',alpha=.6,color=COLORS[m])
         for x in points:
             b=x['batch_size_videos'];u=x['display_gpu_util_mean_percent'];historic=m=='qwen' and b==1
             ax.scatter(b,u,facecolors='white' if m in ('full','kimi','qwen80') else COLORS[m],edgecolors=COLORS[m],marker=MARKERS[m],s=35);util_points.append((b,u))
@@ -173,7 +176,7 @@ def main():
     fig.legend(handles=legend[1:],loc='lower center',bbox_to_anchor=(.5,.04),ncol=3,frameon=False,fontsize=9)
     if RENTAL:
         ax._audited_points=util_points;place_labels(fig,ax);label_checks+=verify_label_geometry(fig,[ax])
-        fig.text(.09,.015,'80GB series: SXM4 /400W; other GPU points: PCIe40GB /250W. Dashed rental links span different cards; † retains native40GB Qwen B=1.',fontsize=8,color='#4B5563')
+        fig.text(.09,.015,platform_note if CLEAN_KIMI else '80GB series: SXM4 /400W; other GPU points: PCIe40GB /250W. Dashed rental links span different cards; † retains native40GB Qwen B=1.',fontsize=8,color='#4B5563')
     for ext in ['png','svg']:fig.savefig(OUT/('gpu_utilization_comparison.'+ext),dpi=240)
     plt.close(fig)
     (RUN/'figure_label_audit.json').write_text(json.dumps(dict(status='passed',panels=label_checks,paper_points=len(rows),excluded_from_paper=[] if INCLUDE_CROSS_DEVICE_AUDIT else ['qwen80'],raw_presentation_and_cross_device_measurements_preserved=True),indent=2)+'\n')
