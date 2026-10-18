@@ -17,6 +17,10 @@ from lab_caltech20_residual_guarded_20261018 import improves,probability
 HERE,ROOT,LOCK=core.HERE,core.ROOT,core.LOCK
 
 
+def train_conditioned_geometry(x):
+    x=torch.as_tensor(x,dtype=torch.float64);mean=x.mean(0);centered=x-mean;cov=centered.T@centered/len(x);ev,vec=torch.linalg.eigh(cov);floor=max(float(cov.trace())/x.shape[1]*.02,1e-6);root=vec@torch.diag(ev.clamp_min(floor).rsqrt())@vec.T;inverse=vec@torch.diag(ev.clamp_min(floor).sqrt())@vec.T;return mean,root,inverse,ev,floor
+
+
 def dataset_model(a):
     cfg=core.read(a.profile);data,dm=core.load_data(a.session);base,_=load_checkpoint(a.checkpoint,a.checkpoint_sha,a.depth,.3,alpha_schema=DIRECT);state=core.state_cpu(base);model=core.MeasuredPrefix(a.depth).eval();model.load_state_dict(state);model.requires_grad_(False)
     ref=a.session/'source_reference.ts';gate=core.read(a.session/'server_gate.json');assert sha(ref)==gate['TorchScript_SHA256'];canonical=dict(torch.jit.load(str(ref),map_location='cpu').named_buffers())['propagator.transfer'];model.propagator.transfer.copy_(canonical);fields={};identities={}
@@ -114,7 +118,7 @@ def terminal_refine(a):
     # When both TRAIN and TEST are low, repair the global optimization first;
     # a few output-row margin edits cannot fix an unconverged linear head.
     if float((tr['p'].argmax(1)==tr['y']).mean())<.8:
-        xf=torch.tensor(tr['x'],dtype=torch.float64);mean=xf.mean(0);centered=xf-mean;cov=centered.T@centered/len(xf);ev,vec=torch.linalg.eigh(cov);floor=max(float(cov.trace())/256*.02,1e-6);root=vec@torch.diag(ev.clamp_min(floor).rsqrt())@vec.T;inverse=vec@torch.diag(ev.clamp_min(floor).sqrt())@vec.T;z=centered@root;parentw=torch.tensor(w,dtype=torch.float64);theta=(parentw@inverse).clone().requires_grad_();bias=(torch.tensor(b,dtype=torch.float64)+mean@parentw.T).clone().requires_grad_();theta0=theta.detach().clone();bias0=bias.detach().clone();yy=torch.tensor(tr['y'],dtype=torch.long);opt=torch.optim.LBFGS([theta,bias],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe');global_start=time.monotonic()
+        xf=torch.tensor(tr['x'],dtype=torch.float64);mean,root,inverse,ev,floor=train_conditioned_geometry(xf);z=(xf-mean)@root;parentw=torch.tensor(w,dtype=torch.float64);theta=(parentw@inverse).clone().requires_grad_();bias=(torch.tensor(b,dtype=torch.float64)+mean@parentw.T).clone().requires_grad_();theta0=theta.detach().clone();bias0=bias.detach().clone();yy=torch.tensor(tr['y'],dtype=torch.long);opt=torch.optim.LBFGS([theta,bias],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe');global_start=time.monotonic()
         with torch.no_grad():initial_probability=(z@theta.T+bias).softmax(1).numpy();assert np.max(np.abs(initial_probability-tr['p']))<=3e-5
         for step in range(cfg['terminal_repair'].get('conditioned_steps',120)):
             def closure():
@@ -145,6 +149,7 @@ def terminal_refine(a):
 
 def selftest():
     torch.set_num_threads(2);torch.manual_seed(73);records=[]
+    xx=torch.randn(80,7,dtype=torch.float64);ww=torch.randn(20,7,dtype=torch.float64);bb=torch.randn(20,dtype=torch.float64);mean,root,inverse,_,_=train_conditioned_geometry(xx);theta=ww@inverse;bias=bb+mean@ww.T;folded=theta@root.T;folded_bias=bias-mean@folded.T;assert torch.allclose((xx-mean)@root@theta.T+bias,xx@ww.T+bb,atol=1e-10);assert torch.allclose(folded,ww,atol=1e-10) and torch.allclose(folded_bias,bb,atol=1e-10)
     for depth in (2,4,6):
         model=core.MeasuredPrefix(depth).eval()
         with torch.no_grad():
