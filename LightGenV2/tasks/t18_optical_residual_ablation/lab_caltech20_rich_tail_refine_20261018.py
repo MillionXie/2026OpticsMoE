@@ -57,6 +57,9 @@ def selftest():
     x=torch.rand(2,478,478);o=torch.rand_like(x);loss=F.cross_entropy(tail(e,head,alpha,x,o),torch.tensor([0,1]));loss.backward()
     params=[*e.parameters(),*head.parameters(),alpha];assert sum(p.numel() for p in params)==5150
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
+    raw=torch.nn.Parameter(torch.tensor(.3));e.zero_grad();head.zero_grad()
+    F.cross_entropy(tail(e,head,.8501+(.95-.8501)*raw.sigmoid(),x,o),torch.tensor([0,1])).backward()
+    assert raw.grad is not None and torch.isfinite(raw.grad) and all(p.grad is not None and torch.isfinite(p.grad).all() for p in [*e.parameters(),*head.parameters()])
     assert gpu_process_allowed(10,'pythonw.exe',10,'nt',[])
     assert not gpu_process_allowed(11,'pythonw.exe',10,'nt',[])
     assert gpu_process_allowed(11,'dwm.exe',10,'nt',['dwm.exe'])
@@ -175,14 +178,87 @@ def fit(a):
     save(a.out/'report.json',report);torch.cuda.empty_cache();print(json.dumps({k:report[k] for k in ('state','target_met','simulation_gap_pp','actual_epochs','elapsed_s')}),flush=True)
 
 
+def control_cpu(a):
+    """Original post-final-CCD5150 suffix; frozen measured L4/L6, CPU only."""
+    from lab_caltech20_rich_model_20261018 import BOUNDED
+    import psutil,math
+    cfg=read(a.profile);arm=a.control_root;capture=read(arm/'capture_report.json');contract=read(arm/'contract.json');depth=capture['depth'];last=depth-1
+    assert depth==cfg['depth']==4 and capture['state']=='complete' and capture['physical_ccd']==7055 and capture['sdk_released']
+    assert not a.out.exists() and not cfg['GPU_used'] and not cfg['SDK_opened'] and psutil.virtual_memory().available>8*(1<<30)
+    torch.set_num_threads(2);torch.manual_seed(17);a.out.mkdir();started=time.perf_counter()
+    spec=contract['model'];base_path=arm.parent/spec['file'];base,_=load_checkpoint(base_path,spec['sha256'],depth,0.,alpha_schema=BOUNDED)
+    warm=arm/cfg['warm_start_run']/'best.pt';parent=read(warm.parent/'report.json');assert parent['state']=='complete' and sha(warm)==parent['results']['best']['PT_SHA256']
+    original={k:v.detach().clone() for k,v in base.state_dict().items()};state=torch.load(warm,map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'));base.load_state_dict(state,strict=True)
+    a.assets=a.session/'assets';datasets,dm=data(a,False);assert dm['sha256']==contract['data_SHA256'] and dm['source_cache_sha256']==cfg['original_TRAIN_cache_SHA256']
+    fields={};prefix_shas={};stages=['router']+[str(k) for k in range(depth)]
+    for role in ('train','test'):
+        fields[role]={}
+        for stage in stages:
+            p=arm/'capture'/role/stage/'ccd.npy';digest=capture['arrays'][role+'/'+stage]['sha256'];assert sha(p)==digest;prefix_shas[role+'/'+stage]=digest;fields[role][stage]=np.load(p,mmap_mode='r')
+    held={};hook=base.electronic[last].register_forward_pre_hook(lambda module,args:held.update(x=args[0].detach()))
+    cached={};proof=[]
+    try:
+        with torch.inference_mode():
+            for role,(images,y,ids) in datasets.items():
+                save(a.out/'progress.json',dict(state='caching_original_suffix_inputs',role=role,completed=0,total=len(y),SDK_opened=False,GPU_used=False))
+                x=torch.empty((len(y),478,478));o=torch.empty_like(x)
+                with np.load(arm/'capture'/role/'predictions.npz',allow_pickle=False) as z:expected=z['features'].copy();assert np.array_equal(ids,z['ids']) and np.array_equal(y,z['labels'])
+                error=0.
+                for begin in range(0,len(y),8):
+                    end=min(begin+8,len(y))
+                    def measured(stage,amplitude,phase,sample_ids):return np.asarray(fields[role][stage][begin:end]).copy()
+                    base(encode_images(images[begin:end]),callback=measured,ids=ids[begin:end]);x[begin:end]=held['x'];o[begin:end]=base.nonlinear(base.readout['ccd'],'global')
+                    error=max(error,float(np.abs(base.readout['features'].numpy()-expected[begin:end]).max()));assert error<=3e-6
+                    if begin%80==0 or end==len(y):save(a.out/'progress.json',dict(state='caching_original_suffix_inputs',role=role,completed=end,total=len(y),maximum_feature_error=error,elapsed_s=time.perf_counter()-started,SDK_opened=False,GPU_used=False))
+                cached[role]=dict(x=x,o=o,y=torch.from_numpy(y.astype(np.int64)),ids=ids);proof.append(dict(role=role,samples=len(y),maximum_feature_error=error))
+    finally:hook.remove()
+    # Clone outside inference_mode before enabling parameter gradients.
+    cached={role:{k:(v.clone() if isinstance(v,torch.Tensor) else v) for k,v in d.items()} for role,d in cached.items()}
+    electronic=SmallElectronicResidual();electronic.load_state_dict({'local.weight':state[f'electronic.{last}.local.weight']});head=existing_head(state);raw=torch.nn.Parameter(state[f'fusion_logits.{last}'].clone());allowed={f'electronic.{last}.local.weight',f'fusion_logits.{last}','linear.weight','linear.bias'}
+    params=[*electronic.parameters(),*head.parameters(),raw];assert sum(p.numel() for p in params)==5150
+    def effective():return .8501+(.95-.8501)*raw.sigmoid()
+    def assess(role):
+        d=cached[role];parts=[]
+        with torch.no_grad():
+            for begin in range(0,len(d['ids']),8):parts.append(torch.softmax(tail(electronic,head,effective(),d['x'][begin:begin+8],d['o'][begin:begin+8]),1).numpy())
+        p=np.concatenate(parts);return metrics(d['y'].numpy(),p),p
+    baseline,bp=assess('test');assert baseline['accuracy']==parent['results']['best']['TEST_development']['accuracy'];np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=cached['test']['ids'],labels=cached['test']['y'].numpy(),probabilities=bp)
+    target=math.ceil(cfg['simulation_correct']-cfg['maximum_gap_pp']*.01*411);assert target==278
+    protocol=dict(config=cfg,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),original_PT_SHA256=spec['sha256'],warm_start_SHA256=sha(warm),captured_SHA256=prefix_shas,allowed_keys=sorted(allowed),TRAIN=1000,TEST=411,VALID=0,trainable_parameters=5150,new_layers=0,new_CCD_frames=0,SDK_opened=False,GPU_used=False,CPU_threads=2,only_post_final_CCD_changed=True,all_optical_and_upstream_parameters_frozen=True,TEST_development=True,TEST_gradients=False,cache_parity_proof=proof,raw_alpha_schema=BOUNDED,baseline_TEST=baseline,baseline_predictions_SHA256=sha(a.out/'baseline_TEST_predictions.npz'))
+    save(a.out/'protocol.json',protocol);best=baseline['accuracy'];selected=0;history=[]
+    def checkpoint(name,epoch):
+        result={k:v.detach().clone() for k,v in state.items()};result[f'electronic.{last}.local.weight']=electronic.local.weight.detach().clone();result[f'fusion_logits.{last}']=raw.detach().clone()
+        for k,v in head.state_dict().items():result['linear.'+k]=v.detach().clone()
+        assert all(torch.equal(v,result[k]) for k,v in original.items() if k not in allowed);torch.save(dict(model=result,epoch=epoch,protocol=protocol),a.out/(name+'.pt'))
+    checkpoint('best',0);cw=torch.tensor(cfg['original_TRAIN_class_counts'],dtype=torch.float32);assert cw.numel()==20 and int(cw.sum())==3141;cw=cw/cw.mean()
+    optimizer=torch.optim.AdamW([dict(params=head.parameters(),lr=cfg['head_lr']),dict(params=electronic.parameters(),lr=cfg['conv_lr']),dict(params=[raw],lr=cfg['alpha_lr'],weight_decay=0.)],weight_decay=cfg['weight_decay']);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg['epochs'],eta_min=1e-5);fit_started=time.perf_counter()
+    for epoch in range(1,cfg['epochs']+1):
+        order=torch.randperm(1000);total=0.;d=cached['train']
+        for begin in range(0,1000,cfg['batch_size']):
+            ix=order[begin:begin+cfg['batch_size']];optimizer.zero_grad(set_to_none=True);loss=F.cross_entropy(tail(electronic,head,effective(),d['x'][ix],d['o'][ix]),d['y'][ix],weight=cw,label_smoothing=cfg['label_smoothing']);assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params);torch.nn.utils.clip_grad_norm_(params,1.);optimizer.step();total+=float(loss.detach())*len(ix)
+        schedule.step()
+        if epoch==1 or epoch%cfg['evaluate_every']==0 or epoch==cfg['epochs'] or time.perf_counter()-fit_started>=cfg['maximum_seconds']:
+            train,_=assess('train');test,_=assess('test');row=dict(epoch=epoch,TRAIN_loss=total/1000,TRAIN_accuracy=train['accuracy'],TEST_development_accuracy=test['accuracy'],effective_alpha=float(effective().detach()),elapsed_s=time.perf_counter()-fit_started)
+            if test['accuracy']>best:best=test['accuracy'];selected=epoch;checkpoint('best',epoch)
+            history.append(row);save(a.out/'history.json',history);save(a.out/'progress.json',dict(state='fitting',latest=row,best=best,selected_epoch=selected,target_met=round(best*411)>=target));print(json.dumps(row),flush=True)
+        if round(best*411)>=target or time.perf_counter()-fit_started>=cfg['maximum_seconds']:break
+    checkpoint('last',epoch);results={}
+    for name in ('best','last'):
+        path=a.out/(name+'.pt');value=torch.load(path,map_location='cpu',weights_only=False);s=value['model'];assert all(torch.equal(v,s[k]) for k,v in original.items() if k not in allowed);electronic.load_state_dict({'local.weight':s[f'electronic.{last}.local.weight']});head.load_state_dict(existing_head(s).state_dict());raw.data.copy_(s[f'fusion_logits.{last}']);train,_=assess('train');test,p=assess('test');prediction=a.out/(name+'_TEST_predictions.npz');np.savez_compressed(prediction,ids=cached['test']['ids'],labels=cached['test']['y'].numpy(),probabilities=p)
+        results[name]=dict(epoch=value['epoch'],TRAIN=train,TEST_development=test,PT_SHA256=sha(path),predictions_SHA256=sha(prediction),strict_CPU=True,all_optical_and_upstream_parameters_unchanged=True)
+    assert results['best']['TEST_development']['accuracy']==best
+    assert all(sha(arm/'capture'/role/stage/'ccd.npy')==h for key,h in prefix_shas.items() for role,stage in [key.split('/')])
+    save(a.out/'report.json',dict(state='complete',baseline_TEST=baseline,results=results,selected_epoch=selected,actual_epochs=epoch,target_min_correct=target,target_met=round(best*411)>=target,gap_pp=(cfg['simulation_correct']/411-best)*100,TRAIN=1000,TEST=411,VALID=0,SDK_opened=False,GPU_used=False,only_post_final_CCD_changed=True,source_SHA256=sha(__file__),elapsed_s=time.perf_counter()-started))
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--mode',choices=('export','fit'))
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--mode',choices=('export','fit','control_cpu'));p.add_argument('--control-root',type=Path)
     for name in ('session','assets','profile','out'):p.add_argument('--'+name,type=Path)
     a=p.parse_args()
     if a.selftest:selftest()
     else:
         if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-        try:export(a) if a.mode=='export' else fit(a)
+        try:export(a) if a.mode=='export' else control_cpu(a) if a.mode=='control_cpu' else fit(a)
         except BaseException as error:
             if a.out.exists():save(a.out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),SDK_opened=False,automatic_retry=False))
             raise
