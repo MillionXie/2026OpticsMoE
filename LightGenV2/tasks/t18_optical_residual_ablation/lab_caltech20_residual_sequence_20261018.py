@@ -111,6 +111,19 @@ def terminal_refine(a):
     for role in ('train','test'):
         m,p,x=assess(model,data,fields,canonical,role,cfg['batch_size'],True);cached[role]=dict(x=x,y=data[role][1],ids=data[role][2],p=p);np.savez_compressed(a.out/(role+'_features.npz'),features=x,labels=data[role][1],ids=data[role][2],probabilities=p)
     tr,te=cached['train'],cached['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();n=lambda p:int((p.argmax(1)==te['y']).sum());nll=lambda p:float(-np.log(p[np.arange(411),te['y']].clip(1e-12)).mean());best,bestloss=n(te['p']),nll(te['p']);initial=best;baseline=te['p'];history=[];plans=[];used=[];rng=np.random.default_rng(73+a.depth);start=time.monotonic();target=math.ceil(cfg['simulation_correct'][str(a.depth)]-411*(.01 if a.prefix==a.depth+1 else .10));lastw,lastb=w.copy(),b.copy();xx=np.c_[tr['x'].astype(float),np.ones(1200)];xn=tr['x']/np.maximum(np.linalg.norm(tr['x'],axis=1,keepdims=True),1e-12);zn=te['x']/np.maximum(np.linalg.norm(te['x'],axis=1,keepdims=True),1e-12)
+    # When both TRAIN and TEST are low, repair the global optimization first;
+    # a few output-row margin edits cannot fix an unconverged linear head.
+    if float((tr['p'].argmax(1)==tr['y']).mean())<.8:
+        xf=torch.tensor(tr['x'],dtype=torch.float64);mean=xf.mean(0);centered=xf-mean;cov=centered.T@centered/len(xf);ev,vec=torch.linalg.eigh(cov);floor=max(float(cov.trace())/256*.02,1e-6);root=vec@torch.diag(ev.clamp_min(floor).rsqrt())@vec.T;inverse=vec@torch.diag(ev.clamp_min(floor).sqrt())@vec.T;z=centered@root;parentw=torch.tensor(w,dtype=torch.float64);theta=(parentw@inverse).clone().requires_grad_();bias=(torch.tensor(b,dtype=torch.float64)+mean@parentw.T).clone().requires_grad_();theta0=theta.detach().clone();bias0=bias.detach().clone();yy=torch.tensor(tr['y'],dtype=torch.long);opt=torch.optim.LBFGS([theta,bias],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe');global_start=time.monotonic()
+        with torch.no_grad():initial_probability=(z@theta.T+bias).softmax(1).numpy();assert np.max(np.abs(initial_probability-tr['p']))<=3e-5
+        for step in range(cfg['terminal_repair'].get('conditioned_steps',120)):
+            def closure():
+                opt.zero_grad(set_to_none=True);loss=F.cross_entropy(z@theta.T+bias,yy,label_smoothing=.03)+1e-4*((theta-theta0).square().sum()+(bias-bias0).square().sum());assert torch.isfinite(loss);loss.backward();return loss
+            loss=float(opt.step(closure));ww=(theta.detach()@root.T).float().numpy();bb=(bias.detach()-mean@(theta.detach()@root.T).T).float().numpy();p=probability(te['x'],ww,bb);nn,ll=n(p),nll(p);adopt=improves(nn,ll,best,bestloss)
+            if adopt:best,bestloss=nn,ll;w,b=ww.copy(),bb.copy()
+            lastw,lastb=ww.copy(),bb.copy();history.append(dict(strategy='TRAIN_covariance_conditioned_existing_head_LBFGS',step=step,TRAIN_all1200=True,TRAIN_loss=loss,correct=nn,NLL=ll,accepted=adopt));save(a.out/'progress.json',dict(state='conditioned_existing_head',step=step,best_correct=best,best_NLL=bestloss,elapsed_s=time.monotonic()-global_start))
+            if best>=target or time.monotonic()-global_start>=cfg['terminal_repair'].get('conditioned_seconds',120):break
+        save(a.out/'TRAIN_conditioning.json',dict(TRAIN_feature_eigenvalues=ev.tolist(),variance_floor=floor,TRAIN_only=True,architecture_unchanged=True,optimization_only_reparameterization=True,inference_weights_folded_back_to_original_5140=True))
     for stage in range(cfg['terminal_repair']['classes']):
         if best>=target or time.monotonic()-start>=cfg['terminal_repair']['seconds']:break
         p=probability(te['x'],w,b);bad=p.argmax(1)!=te['y'];counts=np.bincount(te['y'][bad],minlength=20);candidates=[k for k in range(20) if counts[k] and k not in used]
@@ -153,7 +166,7 @@ def run_queue(a):
     torch.set_num_threads(2);cfg=core.read(a.profile);root=a.sequence;out=root/'controller';assert not out.exists();out.mkdir();save(out/'controller.json',dict(pid=os.getpid(),entry_SHA256=sha(__file__),source_SHA256=sha(core.__file__),profile_SHA256=sha(a.profile),source_git=subprocess.check_output([str(ROOT/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'),'rev-parse','HEAD'],cwd=ROOT,text=True).strip(),order=[4,2,6],recurring_trigger=False));history=[]
     # The existing L4 worker finishes its current complete fit unchanged. Only
     # a proven SDK-free full-stage handoff admits this continuation.
-    old=cfg['L4_session'];old=HERE/old;handoff=core.read(old/'sequence_handoff.json');assert handoff['old_controller_exited'] and 2<=handoff['prefix']<=4 and not LOCK.exists()
+    old=cfg['L4_session'];old=HERE/old;handoff=core.read(old/'sequence_handoff.json');assert handoff['old_controller_exited'] and 2<=handoff['prefix']<=5 and not LOCK.exists()
     def child(mode,folder,session,depth,prefix,checkpoint,digest,receipt):
         args=[str(Path(sys.executable).with_name('python.exe')),str(Path(__file__).resolve()),'--mode',mode,'--session',str(session),'--depth',str(depth),'--prefix',str(prefix),'--checkpoint',str(checkpoint),'--checkpoint-sha',digest,'--profile',str(a.profile),'--out',str(folder),'--controller-pid',str(os.getpid()),'--controller-receipt',str(receipt)]
         with folder.with_suffix('.log').open('x',encoding='utf-8',buffering=1) as stream:q=subprocess.run(args,env=dict(os.environ,CUDA_VISIBLE_DEVICES=cfg['GPU_UUID'] if mode=='fit' else ''),stdout=stream,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW)
@@ -162,7 +175,7 @@ def run_queue(a):
         session=old if depth==4 else root/f'L{depth}';a.session=session;a.depth=depth;gateproof=core.read(session/'lab_gate.json' if depth!=4 else session/'lab_bridge_gate.json');assert gateproof['passed'];work=session/'sequence_stagewise_20261018';assert not work.exists();work.mkdir();receipt=work/'controller.json';save(receipt,dict(pid=os.getpid(),entry_SHA256=sha(__file__),source_SHA256=sha(core.__file__),session=str(session.resolve()),depth=depth))
         if depth==4:
             checkpoint=old/handoff['selected_relative'];digest=handoff['selected_PT_SHA256'];start_prefix=handoff['prefix']+1
-            if handoff['selected_correct']<math.ceil(cfg['simulation_correct']['4']-41.1):
+            if handoff['prefix']<5 and handoff['selected_correct']<math.ceil(cfg['simulation_correct']['4']-41.1):
                 save(out/'progress.json',dict(state='bounded_middle_binary_repair',depth=4,prefix=handoff['prefix']));checkpoint,digest,_=child('terminal',work/'middle_initial',session,4,handoff['prefix'],checkpoint,digest,receipt)
         else:
             checkpoint=session/'initial.pt';digest=core.read(session/'server_gate.json')['PT_SHA256'];start_prefix=1

@@ -6,7 +6,7 @@
   "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9","seed":17,"cpu_threads":2,"batch_size":4,"evaluate_every":5,
   "phase_lr":0.001,"electronic_lr":0.0005,"alpha_lr":0.0005,"head_lr":0.001,"weight_decay":0.001,"label_smoothing":0.03,
   "middle_fit":{"epochs":30,"seconds":600},"final_fit":{"epochs":120,"seconds":900},
-  "terminal_repair":{"classes":12,"steps_per_class":128,"seconds":180},
+  "terminal_repair":{"classes":12,"steps_per_class":128,"seconds":240,"conditioned_steps":120,"conditioned_seconds":120},
   "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","lockapp.exe","phoneexperiencehost.exe","textinputhost.exe","msedgewebview2.exe","systemsettings.exe","shellexperiencehost.exe","weixin.exe","wechatappex.exe","msedge.exe"],
   "scope":"Latest human order L4 then NEW L2 then NEW L6. One single SDK. Each full stage TRAIN/TEST -> downstream masks/electronics fit -> exact selected best -> next new capture. Middle early advance after >=1TRAIN epoch if selected complete CPU TEST drop <=10pp; finite max budget otherwise, no endless middle optimization. Final complete physical terminal gets bounded existing-row binary CE/KL/anchor/full-curvature TRAIN repair. TEST informs plans and checkpoint selection, no TEST gradients or VALID. Preserve original PTs and evidence. No recurring automation, no nores mutation or live source patch."
 }

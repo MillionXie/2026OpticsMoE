@@ -56,7 +56,21 @@ zero-border BMP, original amplitude inverse and linear-voltage phaseLUT; no
 claim that the latter is calibrated linear phase. p99<15 orsat>15% stops,
 preserves data and requires bounded diagnosis, never blind retry/exposure edits.
 
-User allowed cleanup of superseded CCD. Read-only inventory at23:28 found
+2026-10-19 clarification explicitly retires the old L2 residual capture, not
+no-residual data. Validate zero process references, preserve every receipt,
+phase/report/hash and PT/assets/hardware release, then send only its exact
+superseded `caltech20_rich20_L2_layerwise60_20261018/capture` to Windows Recycle
+Bin. This removes the old operational CCD paths while remaining recoverable.
+
+When both final TRAIN and TEST are low, first do one bounded full-batch TRAIN
+readout optimization rather than assuming a few wrong-class boundaries. Use
+TRAIN-only covariance preconditioning (eigenvalue floor2%mean variance), folded
+analytically back into the existing5140 head, not a new inference layer. At
+most120L-BFGS iterations/120seconds, then bounded local binary repair. Preserve
+parent and only accept fullCPU accuracy/NLL improvements. This is additional
+experimental adaptation, not a demonstrated gain or an isolated-method ablation.
+
+Historical initial cleanup assessment: Read-only inventory at23:28 found
 ~5.90TB disk free and~520GB available RAM, so no pressure requires deletion.
 Do not delete current L4 CCD, old hardware release/LUT/selection identities,
 or no-residual CCD still used by another task. Old L2 evidence remains until
