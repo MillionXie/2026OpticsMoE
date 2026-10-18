@@ -1,0 +1,9 @@
+{
+  "depth":4,"warm_start_run":"head_TRAINprior_20261018","simulation_correct":304,"maximum_gap_pp":6.5,"target_min_correct":278,
+  "epochs":160,"maximum_seconds":1800,"batch_size":8,"evaluate_every":5,
+  "head_lr":0.001,"conv_lr":0.002,"alpha_lr":0.005,"weight_decay":0.005,"label_smoothing":0.02,
+  "original_TRAIN_class_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "GPU_used":false,"SDK_opened":false,"trainable_parameters":5150,
+  "scope":"One bounded joint continuation of ORIGINAL final9conv+raw bounded alpha+5140head on fixed real CCD; all optics and upstream inputs frozen, exact feature cache parity required. Stronger terminal learning rate than previous low-rate30epoch negative trial; no new layer, CCD, hardware change or TEST gradients. Retain265 parent and stop if278 reached."
+}

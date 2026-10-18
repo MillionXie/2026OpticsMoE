@@ -183,7 +183,7 @@ def control_cpu(a):
     from lab_caltech20_rich_model_20261018 import BOUNDED
     import psutil,math
     cfg=read(a.profile);arm=a.control_root;capture=read(arm/'capture_report.json');contract=read(arm/'contract.json');depth=capture['depth'];last=depth-1
-    assert depth==cfg['depth']==4 and capture['state']=='complete' and capture['physical_ccd']==7055 and capture['sdk_released']
+    assert depth==cfg['depth'] and depth in (4,6) and capture['state']=='complete' and capture['physical_ccd']==1411*(depth+1) and capture['sdk_released']
     assert not a.out.exists() and not cfg['GPU_used'] and not cfg['SDK_opened'] and psutil.virtual_memory().available>8*(1<<30)
     torch.set_num_threads(2);torch.manual_seed(17);a.out.mkdir();started=time.perf_counter()
     spec=contract['model'];base_path=arm.parent/spec['file'];base,_=load_checkpoint(base_path,spec['sha256'],depth,0.,alpha_schema=BOUNDED)
@@ -223,7 +223,7 @@ def control_cpu(a):
             for begin in range(0,len(d['ids']),8):parts.append(torch.softmax(tail(electronic,head,effective(),d['x'][begin:begin+8],d['o'][begin:begin+8]),1).numpy())
         p=np.concatenate(parts);return metrics(d['y'].numpy(),p),p
     baseline,bp=assess('test');assert baseline['accuracy']==parent['results']['best']['TEST_development']['accuracy'];np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=cached['test']['ids'],labels=cached['test']['y'].numpy(),probabilities=bp)
-    target=math.ceil(cfg['simulation_correct']-cfg['maximum_gap_pp']*.01*411);assert target==278
+    target=int(cfg.get('target_min_correct',math.ceil(cfg['simulation_correct']-cfg['maximum_gap_pp']*.01*411)));assert target in (278,280)
     protocol=dict(config=cfg,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),original_PT_SHA256=spec['sha256'],warm_start_SHA256=sha(warm),captured_SHA256=prefix_shas,allowed_keys=sorted(allowed),TRAIN=1000,TEST=411,VALID=0,trainable_parameters=5150,new_layers=0,new_CCD_frames=0,SDK_opened=False,GPU_used=False,CPU_threads=2,only_post_final_CCD_changed=True,all_optical_and_upstream_parameters_frozen=True,TEST_development=True,TEST_gradients=False,cache_parity_proof=proof,raw_alpha_schema=BOUNDED,baseline_TEST=baseline,baseline_predictions_SHA256=sha(a.out/'baseline_TEST_predictions.npz'))
     save(a.out/'protocol.json',protocol);best=baseline['accuracy'];selected=0;history=[]
     def checkpoint(name,epoch):
