@@ -13,6 +13,27 @@ from lab_caltech20_rich_capture_20261018 import metrics
 from lab_caltech10_20261015 import save
 
 
+def validate_native_admission(r,g,dm):
+    assert r['state']=='diagnostic_complete' and r['same_exact_frozen_PT'] and r['PT_SHA256']==g['PT_SHA256'] and r['data_SHA256']==dm['sha256'];assert not r['SDK_opened'] and not r['GPU_used']
+    for role,n in (('train',1200),('test',411)):assert r['checks'][role]['samples']==n and r['checks'][role]['source_bridge_maxabs']<=3e-6
+
+
+def native_admission(a):
+    """Same-host graph parity, not a false cross-host exact-score requirement."""
+    import lab_caltech20_residual_sequence_20261018 as seq
+    assert a.depth==6 and not (a.session/'lab_gate.json').exists();d=a.session/'native_CPU_diagnostic_20261019';r=json.loads((d/'report.json').read_text());g=json.loads((a.session/'server_gate.json').read_text());data,dm=seq.core.load_data(a.session);validate_native_admission(r,g,dm);torch.set_num_threads(r['CPU_threads']);model,_=seq.load_checkpoint(a.session/'initial.pt',g['PT_SHA256'],6,.3,alpha_schema=seq.DIRECT);ref=a.session/'source_reference.ts';assert sha(ref)==g['TorchScript_SHA256'];model.propagator.transfer.copy_(dict(torch.jit.load(str(ref),map_location='cpu').named_buffers())['propagator.transfer'])
+    for role in ('train','test'):
+        p=d/(role+'_predictions.npz');assert sha(p)==r['checks'][role]['predictions_SHA256'];z=np.load(p);assert np.array_equal(z['ids'],data[role][2]) and np.array_equal(z['labels'],data[role][1]);assert int((z['probabilities'].argmax(1)==z['labels']).sum())==r['checks'][role]['correct'];assert np.isfinite(z['probabilities']).all() and np.allclose(z['probabilities'].sum(1),1.,atol=1e-5)
+    images=data['train'][0][:1];ids=data['train'][2][:1];previous={}
+    with torch.inference_mode():
+        expected=model(seq.encode_images(images))[0].numpy()
+        for stage in ('router',)+tuple(str(k) for k in range(6)):
+            def simulated(current,amplitude,phase,sample_ids):
+                field=torch.from_numpy(amplitude.copy())*torch.exp(2j*np.pi*torch.from_numpy(phase.astype(np.float32)/256))[None];value=model.propagator(F.pad(field,(20,20,20,20))).abs().square()[:,20:498,20:498].numpy();previous[current]=value;return value
+            result=seq.core.layer_forward(model,images,ids,stage,dict(previous),simulated)
+    error=float(np.max(np.abs(result['probabilities']-expected)));assert error<=3e-6;row=dict(passed=True,PT_SHA256=g['PT_SHA256'],data_SHA256=dm['sha256'],checks=r['checks'],layer_major_replay_maxabs=error,source_SHA256=sha(__file__),core_SHA256=sha(seq.core.__file__),native_diagnostic_report_SHA256=sha(d/'report.json'),CPU_threads=r['CPU_threads'],SDK_opened=False,GPU_used=False,cross_host_exact_score_not_claimed=True,cached_simulation_correct=g['expected_simulation_correct'],server_full_CPU_correct=g['full_original_CPU_correct'],laboratory_full_CPU_correct=r['checks']['test']['correct'],same_exact_frozen_PT_no_reselection=True,criterion='All1200TRAIN/all411TEST original portable source versus laboratory bridge same-host maxabs<=3e-6; record cross-host numeric score differences rather than forcing equality');save(a.session/'lab_gate.json',row);save(a.session/'admission_resolution_20261019.json',dict(previous_failure_SHA256=sha(a.session/'failure.json'),resolved_by_full_native_same_host_parity=True,gate_SHA256=sha(a.session/'lab_gate.json'),original_failure_preserved=True));print(json.dumps(row),flush=True)
+
+
 def shrunk_readout(x,y,prior_counts):
     """Pooled within-class TRAIN covariance with estimated diagonal shrinkage."""
     x=x.double();means=torch.stack([x[y==k].mean(0) for k in range(20)]);residual=x-means[y];n,d=x.shape;cov=residual.T@residual/n;average=cov.trace()/d;delta=(cov.square().sum()-d*average.square()).clamp_min(1e-20);beta=(residual.square().sum(1).square().mean()-cov.square().sum()).clamp_min(0)/n;shrink=(beta/delta).clamp(0,1);regular=(1-shrink)*cov+shrink*average*torch.eye(d,dtype=x.dtype);regular+=average.clamp_min(1e-12)*1e-6*torch.eye(d,dtype=x.dtype);w=torch.linalg.solve(regular,means.T).T;b=-.5*(means*w).sum(1)+(prior_counts/prior_counts.sum()).log();assert torch.isfinite(w).all() and torch.linalg.eigvalsh(regular).min()>0;return w,b,dict(TRAIN_estimated_shrinkage=float(shrink),TRAIN_withinclass_average_variance=float(average),minimum_regularized_eigenvalue=float(torch.linalg.eigvalsh(regular).min()))
@@ -80,7 +101,16 @@ def selftest():
         p=m(x)[0];o=m.nonlinear(m.readout['ccd'],'global');q=tail(m.electronic[3],m.linear,m.fusion_logits[3],held['x'],o).softmax(1);assert torch.max(torch.abs(p-q))<=3e-6
     hook.remove();xx=torch.randn(60,12,dtype=torch.float64);mean,root,inverse,_,_=train_conditioned_geometry(xx);w=torch.randn(20,12,dtype=torch.float64);b=torch.randn(20,dtype=torch.float64);theta=(w@inverse).requires_grad_();bias=(b+mean@w.T).requires_grad_();z=(xx-mean)@root;assert torch.allclose(z@theta.T+bias,xx@w.T+b,atol=1e-10);folded=theta@root.T;assert torch.allclose(folded,w,atol=1e-10);yy=torch.arange(60)%20;cw=torch.arange(1,21,dtype=torch.float64);loss=F.cross_entropy(z@theta.T+bias,yy,weight=cw,label_smoothing=.02);g=torch.autograd.grad(loss,theta)[0];assert torch.isfinite(g).all();eps=1e-5;t=theta.detach().clone();t[0,0]+=eps;l1=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);t[0,0]-=2*eps;l0=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);assert abs(float((l1-l0)/(2*eps)-g[0,0]))<1e-8
     sw,sb,proof=shrunk_readout(xx,yy,torch.ones(20,dtype=torch.float64));assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1
-    print(json.dumps(dict(passed=True,exact_original_terminal_forward=True,trainable_parameters=5150,TRAIN_prior_gradient_and_analytic_fold=True,TRAIN_shrinkage_positive_definite=True,SDK_opened=False,GPU_used=False)),flush=True)
+    example=dict(state='diagnostic_complete',same_exact_frozen_PT=True,PT_SHA256='p',data_SHA256='d',SDK_opened=False,GPU_used=False,checks={r:dict(samples=n,source_bridge_maxabs=0.) for r,n in (('train',1200),('test',411))});validate_native_admission(example,dict(PT_SHA256='p'),dict(sha256='d'))
+    for kind in ('PT','samples','error'):
+        bad=copy.deepcopy(example)
+        if kind=='PT':bad['PT_SHA256']='different'
+        elif kind=='samples':bad['checks']['test']['samples']=410
+        else:bad['checks']['test']['source_bridge_maxabs']=1e-3
+        try:validate_native_admission(bad,dict(PT_SHA256='p'),dict(sha256='d'))
+        except AssertionError:pass
+        else:raise AssertionError('Admission accepted an invalid identity/count/parity')
+    print(json.dumps(dict(passed=True,exact_original_terminal_forward=True,trainable_parameters=5150,TRAIN_prior_gradient_and_analytic_fold=True,TRAIN_shrinkage_positive_definite=True,native_admission_rejects_wrong_PT_count_and_graph=True,SDK_opened=False,GPU_used=False)),flush=True)
 
 
 def run(a):
@@ -126,11 +156,11 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
     for n in ('session','profile','out','checkpoint','fit-profile','feature-run'):p.add_argument('--'+n,type=Path)
     a=p.parse_args()
     if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:selftest() if a.selftest else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
+    try:selftest() if a.selftest else native_admission(a) if a.admit_native_cpu else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
     except BaseException as e:
         if a.out and a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise

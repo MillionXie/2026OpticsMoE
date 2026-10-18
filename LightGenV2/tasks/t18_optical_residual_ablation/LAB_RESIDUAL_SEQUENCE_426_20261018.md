@@ -1,5 +1,17 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L6 numerical admission explicitly uses same-host graph parity, consistent with
+the original L4 deployment contract. Exact frozenPTeb3d... retains historical
+cached354/411; original source/bridge/portable reference on serverCPU each give
+352/411, while laboratory source/bridge give353/411 with identical local outputs.
+No checkpoint was changed to obtain these numbers. The first lab gate's extra
+cross-host exact-count assertion failed and is preserved as evidence. A fresh
+full native TRAIN1200/TEST411 diagnostic must prove maxabs<=3e-6 on every row,
+matching IDs/labels/data/PT/reference SHA plus the actual layer-major contract.
+Only after all these pass may `--admit-native-cpu` emit the lab admission receipt.
+Cross-host scores stay separate; this is not a claim of bitwise equality or a
+replacement for cached354. The <=1pp desired physical target remains350/411.
+
 L4's joint5150 trial actually ended after51epochs/608.9fitseconds without an
 accuracy gain (best remains the224 parent, last153). The subsequent weighted
 TRAIN-prior conditioned head reached TRAIN100% but last TEST100/411, so that
