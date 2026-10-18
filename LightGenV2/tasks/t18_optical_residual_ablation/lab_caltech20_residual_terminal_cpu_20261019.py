@@ -65,7 +65,11 @@ def row_batch(rng,near,positive,hard):
 
 
 def pair_direction(v,x,z0,teacher,y,keep,first,second,c):
-    n=len(x);temp=c['temperature'];offset=x@v;z=z0.clone();z[:,first]+=offset;z[:,second]-=offset;p=z.softmax(1);mask=((y==first)|(y==second)).double();denom=mask.sum().clamp_min(1);target=torch.where(y==first,.99,.01);score=(z0[:,first]-z0[:,second]+2*offset)/temp;bp=score.sigmoid();difference=p[:,first]-p[:,second];g=x.T@((2/temp)*mask*(bp-target)/denom+c['teacher_KL']*keep*(difference-teacher[:,first]+teacher[:,second])/n)+2*c['anchor']*v;d=(4/temp**2)*mask*bp*(1-bp)/denom+c['teacher_KL']*keep*(p[:,first]+p[:,second]-difference.square())/n;aa=x*d.clamp_min(0).sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];delta=(g-aa.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+aa@aa.T/damping,aa@g/damping))/damping;return delta,g,d
+    n=len(x);temp=c['temperature'];offset=x@v;z=z0.clone();z[:,first]+=offset;z[:,second]-=offset;p=z.softmax(1);mask=((y==first)|(y==second)).double();denom=mask.sum().clamp_min(1);target=torch.where(y==first,.99,.01);score=(z0[:,first]-z0[:,second]+2*offset)/temp;bp=score.sigmoid();difference=p[:,first]-p[:,second]
+    if c.get('objective')=='huber_pair':
+        sign=torch.where(y==first,1.,-1.);h=(c['margin']-sign*(z[:,first]-z[:,second])).clamp_min(0);threshold=c['huber_delta'];assert threshold>0;supervision=-2*sign*h.clamp_max(threshold)/threshold;curvature=4*((h>0)&(h<threshold)).double()/threshold
+    else:supervision=(2/temp)*(bp-target);curvature=(4/temp**2)*bp*(1-bp)
+    g=x.T@(mask*supervision/denom+c['teacher_KL']*keep*(difference-teacher[:,first]+teacher[:,second])/n)+2*c['anchor']*v;d=mask*curvature/denom+c['teacher_KL']*keep*(p[:,first]+p[:,second]-difference.square())/n;aa=x*d.clamp_min(0).sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];delta=(g-aa.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+aa@aa.T/damping,aa@g/damping))/damping;return delta,g,d
 
 
 def pair_batch(rng,near,pools,hard):
@@ -257,6 +261,10 @@ def selftest():
     def pl(v):
         z=z0.clone();offset=rx@v;z[:,0]+=offset;z[:,1]-=offset;mask=((labels==0)|(labels==1)).double();target=torch.where(labels==0,.99,.01);binary=F.binary_cross_entropy_with_logits((z[:,0]-z[:,1])/2,target,reduction='none');kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);return (binary*mask).sum()/mask.sum()+2*(kl*keep).mean()+.1*v.square().sum()
     delta,g,d=pair_direction(v.detach(),rx,z0,teacher,labels,keep,0,1,rc);assert torch.allclose(g,torch.autograd.grad(pl(v),v)[0],atol=1e-9);h=torch.autograd.functional.hessian(pl,v);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
+    pc=dict(rc,objective='huber_pair',margin=1.,huber_delta=.7)
+    def ph(v):
+        z=z0.clone();offset=rx@v;z[:,0]+=offset;z[:,1]-=offset;mask=((labels==0)|(labels==1)).double();sign=torch.where(labels==0,1.,-1.);violation=(1-sign*(z[:,0]-z[:,1])).clamp_min(0);huber=torch.where(violation<.7,.5*violation.square()/.7,violation-.35);kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);return (huber*mask).sum()/mask.sum()+2*(kl*keep).mean()+.1*v.square().sum()
+    delta,g,d=pair_direction(v.detach(),rx,z0,teacher,labels,keep,0,1,pc);assert torch.allclose(g,torch.autograd.grad(ph(v),v)[0],atol=1e-9);h=torch.autograd.functional.hessian(ph,v);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
     r1=np.random.default_rng(75);r2=np.random.default_rng(75)
     for _ in range(3):assert np.array_equal(pair_batch(r1,[[0,1],[60,61]],[np.arange(60),np.arange(60,120)],np.arange(120,248)),pair_batch(r2,[[0,1],[60,61]],[np.arange(60),np.arange(60,120)],np.arange(120,248)))
     example=dict(state='diagnostic_complete',same_exact_frozen_PT=True,PT_SHA256='p',data_SHA256='d',SDK_opened=False,GPU_used=False,checks={r:dict(samples=n,source_bridge_maxabs=0.) for r,n in (('train',1200),('test',411))});validate_native_admission(example,dict(PT_SHA256='p'),dict(sha256='d'))

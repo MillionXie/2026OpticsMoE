@@ -1,5 +1,16 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+The neighbor-weighted coupled head comparison completed120steps, selected E0
+312/260; last L2 269 and L4 109 are rejected, not improvements. Diagnosis at
+accepted parents: TRAIN L2 943/1200,L4 592/1200; required single-row radius for
+remaining TEST-wrong median.10463/.04823, only16/4 cannot flip at.20 even under
+an ideal direction. Thus do not blindly increase radius. A bounded paired Huber
+comparison instead addresses interacting rows, keeping radius.20 and other18
+logits fixed. Profile `lab_caltech20_residual_huberpair_profile_20261019.json`:
+TRAIN signed pair margin(delta1), full20-class correct-TRAIN KL2, anchor.1,
+exact Hessian/LM, same continuous TRAIN sampler/bounded budget. Derivatives and
+curvature are checked against autograd; no new physical/model/TEST-gradient scope.
+
 Actual fixed-head10 fits ended E0 (L2 48epochs,L4 46epochs); no new10-param
 weights adopted. Fresh selected feature exports/fullCPU audits passed. Huber
 first segments improved L2 304->305,L4 244->255. Same-method continuous-RNG
