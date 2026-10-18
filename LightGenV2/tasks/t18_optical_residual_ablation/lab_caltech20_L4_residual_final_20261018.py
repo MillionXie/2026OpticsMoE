@@ -21,13 +21,16 @@ PT_SHA='7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5'
 def gate(a):
     torch.set_num_threads(2);datasets,dm=load_data(a.session)
     model,_=load_checkpoint(a.session/'residual_L4.pt',PT_SHA,4,.3,alpha_schema=DIRECT)
-    from caltech20_rich_prototype_consistency import Alpha40MoE
-    source_model=Alpha40MoE(4).eval();source_model.load_state_dict(model.state_dict(),strict=True)
+    reference_gate=json.loads((a.session/'portable_reference_gate.json').read_text());assert reference_gate['passed'] and reference_gate['PT_SHA256']==PT_SHA
+    source_path=a.session/'source_reference.ts';assert sha(source_path)==reference_gate['TorchScript_SHA256']
+    source_model=torch.jit.load(str(source_path),map_location='cpu').eval()
     proof=json.loads((a.session/'server_bridge_gate.json').read_text());assert proof['passed'] and proof['correct']==346 and proof['PT_SHA256']==PT_SHA
     reference=a.session/'simulation_TEST_reference.npz';assert sha(reference)==proof['reference_SHA256']
     images,y,ids=datasets['test'];parts=[];source_error=0.
     for b in range(0,411,8):
-        x=encode_images(images[b:b+8]);value=model(x)[0];original=source_model(x)[0];source_error=max(source_error,float((value-original).abs().max()));parts.append(value.numpy())
+        x=encode_images(images[b:b+8]);n=len(x)
+        if n<8:x=torch.cat([x,torch.zeros(8-n,224,224)],0)
+        value=model(x)[0];original=source_model(x)[0];source_error=max(source_error,float((value-original).abs().max()));parts.append(value[:n].numpy())
     assert source_error<=3e-6,'Full TEST same-host original-model/bridge parity is required'
     p=np.concatenate(parts)
     with np.load(reference,allow_pickle=False) as z:
@@ -41,7 +44,7 @@ def gate(a):
             value=model.propagator(torch.nn.functional.pad(field,(20,20,20,20))).abs().square()[:,20:498,20:498].numpy();previous[current]=value;return value
         actual=layer_forward(model,images,ids,stage,dict(previous),simulated)
     replay_error=float(np.abs(actual['probabilities']-expected).max());assert replay_error<=3e-6
-    result=dict(passed=True,PT_SHA256=PT_SHA,TEST=411,correct=346,accuracy=346/411,full_TEST_same_host_source_model_error=source_error,cross_host_probability_error=err,cross_host_prediction_disagreements=cross_host_disagreements,cross_host_bitwise_equivalence_claimed=False,layer_major_replay_error=replay_error,data_SHA256=dm['sha256'],TRAIN=1200,VALID=0,planned_CCD=8055,source_SHA256=sha(__file__),capture_source_SHA256=sha(HERE/'lab_caltech20_controls46_20261018.py'),SDK_opened=False,GPU_used=False)
+    result=dict(passed=True,PT_SHA256=PT_SHA,TEST=411,correct=346,accuracy=346/411,full_TEST_same_host_source_model_error=source_error,portable_source_reference_SHA256=sha(source_path),reference_only_not_capture_model=True,padded_samples_excluded=True,cross_host_probability_error=err,cross_host_prediction_disagreements=cross_host_disagreements,cross_host_bitwise_equivalence_claimed=False,layer_major_replay_error=replay_error,data_SHA256=dm['sha256'],TRAIN=1200,VALID=0,planned_CCD=8055,source_SHA256=sha(__file__),capture_source_SHA256=sha(HERE/'lab_caltech20_controls46_20261018.py'),SDK_opened=False,GPU_used=False)
     save(a.session/'lab_bridge_gate.json',result);print(json.dumps(result),flush=True)
 
 

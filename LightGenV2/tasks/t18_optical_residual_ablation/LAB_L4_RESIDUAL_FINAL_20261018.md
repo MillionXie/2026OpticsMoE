@@ -25,6 +25,11 @@ non-residual CPU refinements are not interrupted. No recurring monitor.
   wrong class, with every sample's correctness unchanged; that evidence remains.
   First24 TRAIN frames are retained, signal-gated full-capture
   frames, not an additional acquisition or automatic retry.
+  The source reference is a SHA-verified TorchScript export, independently
+  compared with the original source model on all411 examples on the server.
+  It is used only for audit, never hardware acquisition or optimization. Its
+  fixed batch8 pads the last3 with5 zeros and excludes all5 padded outputs;
+  this avoids installing simulation-training-only dependencies on the bench.
 - Preserve the current 20261015 coordinates,2000us/Gain_X4/wait240,1016 active
   native pixels, HV-inverse phase, vertical camera flip, zero-border amplitude
   encoding, session amplitude inverse, and linear-voltage phase LUT. The latter
