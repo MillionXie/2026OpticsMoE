@@ -4,7 +4,7 @@ Reuse the existing fit algorithm without its old CLI's depth4 ceiling. Admission
 proves the depth6/prefix4 graph, frozen observed prefix and native incident data.
 New PTs remain MIXED metrics and cannot be replayed on old downstream CCDs.
 """
-import argparse,json,sys,traceback
+import argparse,json,os,sys,traceback
 from pathlib import Path
 import numpy as np
 import torch
@@ -36,6 +36,7 @@ def selftest():
 
 def run(a):
     assert a.depth==6 and a.prefix==4 and not a.out.exists();torch.set_num_threads(2);cfg=core.read(a.profile);assert cfg['TRAIN']==1200 and cfg['TEST']==411 and cfg['VALID']==0 and cfg['mask']['seconds']<=1200 and cfg['mask']['epochs']<=120
+    assert not torch.cuda.is_initialized();os.environ['CUDA_VISIBLE_DEVICES']=cfg['GPU_UUID']
     parent=core.read(a.parent_report);assert parent['state']=='complete' and parent['full_CPU_replay_passed'] and parent['results']['best']['PT_SHA256']==a.checkpoint_sha and parent['selected_correct']==171
     cfg0,data,dm,model,original,canonical,fields,identities=seq.dataset_model(a);assert list(fields)==['router','0','1','2'];saved=np.load(a.parent_report.parent/'best_TEST_predictions.npz');assert np.array_equal(saved['ids'],data['test'][2]) and np.array_equal(saved['labels'],data['test'][1]);metric,p,_=seq.assess(model,data,fields,canonical,'test',4);error=float(np.max(np.abs(p-saved['probabilities'])));assert error<=3e-6 and np.array_equal(p.argmax(1),saved['probabilities'].argmax(1))
     indices=np.concatenate([np.flatnonzero(data['train'][1]==k)[:3] for k in range(20)]);model.measured={};checked=set()
