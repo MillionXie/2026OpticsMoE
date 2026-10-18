@@ -29,6 +29,16 @@ upstream. Its separate profile is
 `lab_caltech20_residual_independent_CE_profile_20261019.json`, max3passes or
 180fitseconds, stop first no-progress pass. Not an unbounded candidate scan.
 
+The full20 CE pair comparison also retained318/260 after1536 updates each.
+One final bounded low-capacity comparison isolates class-frequency calibration:
+freeze every weight/alpha/mask and optimize only the20 ORIGINAL head biases.
+Use original3141TRAIN counts already recorded in prior profiles, not TEST
+frequency estimates. Weighted TRAIN CE plus correct-TRAIN T2 KL/anchor;
+at most64 Newton updates/60fitseconds with monotone TRAIN-objective backtracking.
+Trust radius derives once from original TRAIN log-prior norm, not a TEST scan.
+This differs from earlier full5140-head prior fitting which overfit TRAIN.
+Profile `lab_caltech20_residual_bias_prior_profile_20261019.json`.
+
 ## Foreground morning status, 2026-10-19, Asia/Shanghai
 
 The final1pp target has NOT been achieved. Full measured optical-pipeline

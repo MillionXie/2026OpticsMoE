@@ -1,0 +1,17 @@
+{
+  "scope": "One bounded calibration comparison, only20 original head biases, no new inference layer",
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "temperature": 2.0,
+  "teacher_KL": 2.0,
+  "anchor": 0.1,
+  "LM_damping": 0.1,
+  "Newton_step": 0.25,
+  "steps": 64,
+  "fit_seconds": 60,
+  "target_correct": {"2":325,"4":305},
+  "TEST_gradient": false,
+  "VALID":0,
+  "SDK":false,
+  "GPU":false
+}

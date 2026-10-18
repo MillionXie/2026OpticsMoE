@@ -184,6 +184,45 @@ def independent_pair_direction(v,x,z0,y,keep,classes,c):
     return delta.reshape_as(v),gradient,aa
 
 
+def prior_bias_objective(v,z0,y,weight,keep,c):
+    z=z0+v;temp=c['temperature'];kl=F.kl_div((z/temp).log_softmax(1),(z0/temp).softmax(1),reduction='none').sum(1)
+    return (F.cross_entropy(z,y,reduction='none')*weight).mean()+c['teacher_KL']*(kl*keep).mean()+c['anchor']*v.square().sum()
+
+
+def prior_bias_direction(v,z0,y,weight,keep,c):
+    n,classes=z0.shape;temp=c['temperature'];z=z0+v;p=z.softmax(1);q=(z/temp).softmax(1);teacher=(z0/temp).softmax(1)
+    g=(weight[:,None]*(p-F.one_hot(y,classes))+c['teacher_KL']*keep[:,None]*(q-teacher)/temp).mean(0)+2*c['anchor']*v
+    cov=lambda p:torch.diag_embed(p)-p[:,:,None]*p[:,None,:]
+    h=(weight[:,None,None]*cov(p)+c['teacher_KL']*keep[:,None,None]*cov(q)/temp**2).mean(0)+2*c['anchor']*torch.eye(classes,dtype=v.dtype)
+    return torch.linalg.solve(h+c['LM_damping']*torch.eye(classes,dtype=v.dtype),g),g,h
+
+
+def bias_prior(a):
+    """Only the original20 intercepts; prior from original TRAIN, never TEST."""
+    torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);c=json.loads(a.fit_profile.read_text());source=torch.load(a.feature_run/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,source[k]) for k,v in original.items() if not k.startswith('linear.'));cached={}
+    for role in ('train','test'):
+        bank=np.load(a.feature_run/(role+'_features.npz'));assert np.array_equal(bank['ids'],data[role][2]) and np.array_equal(bank['labels'],data[role][1]);cached[role]=dict(x=bank['features'].copy(),y=bank['labels'].copy(),ids=bank['ids'].copy());_,p,f=assess(model,data,fields,canonical,role,4,True);assert np.max(np.abs(f-cached[role]['x']))<=3e-6
+        assert np.max(np.abs(p-probability(cached[role]['x'],original['linear.weight'].numpy(),original['linear.bias'].numpy())))<=3e-6
+    tr,te=cached['train'],cached['test'];assert set(tr['ids']).isdisjoint(set(te['ids']));w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();initial_p=probability(te['x'],w,b);count=lambda p:int((p.argmax(1)==te['y']).sum());nll=lambda p:float(-np.log(p[np.arange(411),te['y']].clip(1e-12)).mean());best,bestloss=count(initial_p),nll(initial_p);initial=best
+    counts=np.array(c['original_TRAIN_counts']);assert counts.shape==(20,) and counts.sum()==3141;z0=torch.tensor(tr['x'].astype(float)@w.astype(float).T+b.astype(float));y=torch.tensor(tr['y']).long();weight=torch.tensor((counts/counts.mean())[tr['y']]);keep=(z0.argmax(1)==y).double();v=torch.zeros(20,dtype=torch.float64);chosen=v.clone();history=[];radius=float(np.linalg.norm(np.log(counts/counts.mean())-np.log(counts/counts.mean()).mean()));start=time.monotonic()
+    protocol=dict(profile=c,parent_PT_SHA256=a.checkpoint_sha,source_SHA256=sha(__file__),feature_files_SHA256={r:sha(a.feature_run/(r+'_features.npz')) for r in cached},data_SHA256=dm['sha256'],CCD_arrays_SHA256=identities,TRAIN=1200,TEST=411,VALID=0,parameters=20,only_original_head_bias=True,all_weights_optics_alpha_frozen=True,prior_from_original_TRAIN3141_only=True,TEST_gradient=False,TEST_development=True,trust_radius_from_TRAIN_prior=radius,SDK=False,GPU=False);save(a.out/'protocol.json',protocol)
+    for step in range(c['steps']):
+        direction,g,_=prior_bias_direction(v,z0,y,weight,keep,c);assert torch.isfinite(direction).all();previous=float(prior_bias_objective(v,z0,y,weight,keep,c));rate=c['Newton_step'];accepted_train=False
+        for _ in range(12):
+            candidate=v-rate*direction;candidate*=min(1.,radius/max(float(candidate.norm()),1e-12));loss=float(prior_bias_objective(candidate,z0,y,weight,keep,c))
+            if loss<previous-1e-12:accepted_train=True;break
+            rate*=.5
+        if not accepted_train:break
+        v=candidate;p=probability(te['x'],w,b+v.float().numpy());correct,ll=count(p),nll(p);accepted=improves(correct,ll,best,bestloss)
+        if accepted:best,bestloss=correct,ll;chosen=v.clone()
+        row=dict(step=step,TRAIN_objective=loss,gradient_norm=float(g.norm()),correct=correct,NLL=ll,selected_correct=best,accepted=accepted,bias_delta=v.tolist());history.append(row);save(a.out/'progress.json',dict(state='TRAIN_prior_original_bias20',**row))
+        if best>=c['target_correct'][str(a.depth)] or float(g.norm())<1e-6 or time.monotonic()-start>=c['fit_seconds']:break
+    results={}
+    for name,offset in (('best',chosen),('last',v)):
+        state={k:t.clone() for k,t in original.items()};bb=b+offset.float().numpy();state['linear.bias']=torch.from_numpy(bb);assert all(torch.equal(t,state[k]) for k,t in original.items() if k!='linear.bias');torch.save(dict(model=state,protocol=protocol),a.out/(name+'.pt'));p=probability(te['x'],w,bb);np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=te['y'],probabilities=p);results[name]=dict(TRAIN=metrics(tr['y'],probability(tr['x'],w,bb)),TEST_development=metrics(te['y'],p),NLL=nll(p),PT_SHA256=sha(a.out/(name+'.pt')),strict_CPU=True)
+    model.load_state_dict(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']);m,p,_=assess(model,data,fields,canonical,'test',4);assert np.max(np.abs(p-probability(te['x'],w,b+chosen.float().numpy())))<=3e-6 and round(m['accuracy']*411)==best;save(a.out/'history.json',history);save(a.out/'report.json',dict(state='complete',initial_correct=initial,selected_correct=best,actual_steps=len(history),results=results,new_correct=int(((initial_p.argmax(1)!=te['y'])&(p.argmax(1)==te['y'])).sum()),new_wrong=int(((initial_p.argmax(1)==te['y'])&(p.argmax(1)!=te['y'])).sum()),all_nonhead_frozen=True,head_weights_frozen=True,full_CPU_replay_passed=True,TEST_gradients=False,SDK=False,GPU=False))
+
+
 def triple_repair(a):
     independent=getattr(a,'independent_pair',False)
     torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);c=json.loads(a.fit_profile.read_text());source=torch.load(a.feature_run/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,source[k]) for k,v in original.items() if not k.startswith('linear.'));cached={}
@@ -512,6 +551,8 @@ def selftest():
         return F.cross_entropy(z,labels,label_smoothing=.02)+2*(kl*keep).mean()+.1*flat.square().sum()
     ic.update(objective='independent_full20_CE',label_smoothing=.02);delta,g,aa=independent_pair_direction(vv.detach(),rx,z0,labels,keep,(0,1),ic);assert torch.allclose(g.flatten(),torch.autograd.grad(independent_ce_loss(vv.flatten()),vv)[0].flatten(),atol=1e-9);h=torch.autograd.functional.hessian(independent_ce_loss,vv.detach().flatten());assert torch.allclose(h,aa.T@aa+.2*torch.eye(14),atol=1e-9);assert torch.allclose((h+.1*torch.eye(14))@delta.flatten(),g.flatten(),atol=1e-10)
     common=torch.ones(2,7,dtype=torch.float64)*.01;offset=rx@common.T;shifted=z0.clone();shifted[:,:2]+=offset;assert torch.equal(shifted[:,2:],z0[:,2:]) and torch.equal(offset[:,0],offset[:,1]) and offset.abs().sum()>0
+    bv=torch.randn(20,dtype=torch.float64)*.02;bv.requires_grad_();weights=torch.linspace(.3,2.1,64,dtype=torch.float64);bc=dict(rc,Newton_step=.25)
+    delta,g,h=prior_bias_direction(bv.detach(),z0,labels,weights,keep,bc);objective=lambda v:prior_bias_objective(v,z0,labels,weights,keep,bc);assert torch.allclose(g,torch.autograd.grad(objective(bv),bv)[0],atol=1e-10);assert torch.allclose(h,torch.autograd.functional.hessian(objective,bv),atol=1e-10);assert torch.allclose((h+.1*torch.eye(20))@delta,g,atol=1e-10)
     r1=np.random.default_rng(75);r2=np.random.default_rng(75)
     for _ in range(3):assert np.array_equal(pair_batch(r1,[[0,1],[60,61]],[np.arange(60),np.arange(60,120)],np.arange(120,248)),pair_batch(r2,[[0,1],[60,61]],[np.arange(60),np.arange(60,120)],np.arange(120,248)))
     example=dict(state='diagnostic_complete',same_exact_frozen_PT=True,PT_SHA256='p',data_SHA256='d',SDK_opened=False,GPU_used=False,checks={r:dict(samples=n,source_bridge_maxabs=0.) for r,n in (('train',1200),('test',411))});validate_native_admission(example,dict(PT_SHA256='p'),dict(sha256='d'))
@@ -585,9 +626,9 @@ def run(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--teacher-alignment',action='store_true');p.add_argument('--row-repair',action='store_true');p.add_argument('--row-sequence',action='store_true');p.add_argument('--pair-repair',action='store_true');p.add_argument('--pair-sequence',action='store_true');p.add_argument('--terminal-block10',action='store_true');p.add_argument('--optical-diagnostic',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
     for n in ('session','profile','out','checkpoint','fit-profile','feature-run','teacher-checkpoint','previous-run'):p.add_argument('--'+n,type=Path)
-    p.add_argument('--triple-repair',action='store_true');p.add_argument('--independent-pair',action='store_true');p.add_argument('--optical-transform-diagnostic',action='store_true');p.add_argument('--optical-phasecurve-diagnostic',action='store_true');a=p.parse_args()
+    p.add_argument('--triple-repair',action='store_true');p.add_argument('--independent-pair',action='store_true');p.add_argument('--bias-prior',action='store_true');p.add_argument('--optical-transform-diagnostic',action='store_true');p.add_argument('--optical-phasecurve-diagnostic',action='store_true');a=p.parse_args()
     if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:selftest() if a.selftest else optical_diagnostic(a) if a.optical_diagnostic or a.optical_transform_diagnostic or a.optical_phasecurve_diagnostic else native_admission(a) if a.admit_native_cpu else row_sequence(a) if a.row_sequence or a.pair_sequence else triple_repair(a) if a.triple_repair or a.independent_pair else pair_repair(a) if a.pair_repair else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
+    try:selftest() if a.selftest else optical_diagnostic(a) if a.optical_diagnostic or a.optical_transform_diagnostic or a.optical_phasecurve_diagnostic else native_admission(a) if a.admit_native_cpu else bias_prior(a) if a.bias_prior else row_sequence(a) if a.row_sequence or a.pair_sequence else triple_repair(a) if a.triple_repair or a.independent_pair else pair_repair(a) if a.pair_repair else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
     except BaseException as e:
         if a.out and a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise
