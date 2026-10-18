@@ -1,0 +1,11 @@
+{
+  "TRAIN":1200,"TRAIN_each_class":60,"TEST":411,"VALID":0,
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "canonical_reference_SHA256":"590c3b5cce474faacdc58174315590fb6c185d5c425b80d6220db6875a9c1425",
+  "seed":17,"cpu_threads":2,"batch_size":4,"evaluate_every":5,"TEST_CPU_selection":true,
+  "phase_lr":0.001,"electronic_lr":0.001,"alpha_lr":0.003,"head_lr":0.0003,
+  "weight_decay":0.001,"label_smoothing":0.03,
+  "mask":{"epochs":80,"seconds":600},"tail":{"epochs":120,"seconds":900},
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","lockapp.exe","phoneexperiencehost.exe","textinputhost.exe","msedgewebview2.exe","systemsettings.exe","shellexperiencehost.exe","weixin.exe","wechatappex.exe","msedge.exe"],
+  "scope":"One finite original L2 suffix extension, only after the own L6 GPU child exits. Parent middle_0/best is the original mixed283/411 selected checkpoint; current fullphysical318 is independently protected. Freeze measured router/expert0 and their input producers, train only existing global1 mask, postexpert0 onward electronics/alpha and original5140 head with original published fit CLI depth2/prefix2. Max80epochs/600seconds, full411 CPU TEST selection every5, TRAIN gradients only/noVALID. Exact saved-parent CPU probabilities and TRAIN60 canonical/native-phase identity must pass before launch. No camera/SDK/new layer, no LUT/exposure/coordinate/gain changes. The result is MIXED measured-prefix/simulated-global and cannot replace a fullphysical result. If any new upstream is adopted, old global CCD is invalid for it and new global TRAIN/TEST capture requires a separately audited handoff. Reject duplicate run and foreign GPU owner, preserve all old artifacts; no restarting a completed no-progress repair chain."
+}
