@@ -220,7 +220,8 @@ def fit(a):
     checkpoint('last',last);results={}
     for name in ('best','last'):
         path=a.out/(name+'.pt');saved=torch.load(path,map_location='cpu',weights_only=False);state=saved['model'];assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'))
-        fresh=existing_head(state).cpu().eval();train,_=evaluate(fresh,data['train']);test,p=evaluate(fresh,data['test']);prediction=a.out/(name+'_TEST_predictions.npz');np.savez_compressed(prediction,ids=data['test']['ids'],labels=data['test']['y'].numpy(),probabilities=p)
+        fresh=existing_head(state).cpu().eval();train,trp=evaluate(fresh,data['train']);test,p=evaluate(fresh,data['test']);prediction=a.out/(name+'_TEST_predictions.npz');np.savez_compressed(prediction,ids=data['test']['ids'],labels=data['test']['y'].numpy(),probabilities=p)
+        np.savez_compressed(a.out/(name+'_TRAIN_predictions.npz'),ids=data['train']['ids'],labels=data['train']['y'].numpy(),probabilities=trp)
         results[name]=dict(selected=saved['selected'],TRAIN=train,TEST_development=test,PT_SHA256=sha(path),predictions_SHA256=sha(prediction),strict_CPU=True,nonterminal_parameters_unchanged=True)
     assert results['best']['TEST_development']['accuracy']==best and best>=baseline['accuracy']
     assert all(sha(capture_root/role/'predictions.npz')==digest for role,digest in files.items())
