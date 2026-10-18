@@ -1,5 +1,34 @@
 # Frozen L4 residual physical deployment (2026-10-18)
 
+## Latest human correction: layerwise mask adaptation, not head-only
+
+The user explicitly corrected the initial fixed-mask acquisition plan. That
+controller was stopped at the first complete router TRAIN1200+TEST411 boundary;
+the1611 valid router frames and all original files are preserved. The old
+head-only plan below is historical, not the current execution policy.
+
+Current entry mode is `layerwise`, with
+`lab_caltech20_L4_layerwise_profile_20261018.json`. Adopt the verified router CCD
+arrays by immutable hardlinks and retain their original receipt paths/hashes.
+After EACH complete stage's TRAIN then TEST, freeze the captured optical masks
+and every upstream electronic parameter that determined its incident fields.
+Optimize only the still-deployable suffix masks and original electronics/head;
+then choose the first highest complete CPU411-TEST development checkpoint before
+acquiring the next stage. No VALID and no TEST gradient. The original simulation
+checkpoint stays immutable; experimental adaptation has its own best/last.
+
+Router->fit four-stage suffix->expert0->fit three-stage suffix->global1->fit
+two-stage suffix->expert2->fit last global suffix->global3->fit original terminal
+5150. Each suffix gets60epochs/900seconds (last120/900), complete epoch boundary;
+GPU4060 only while SDK released, no other compute owner, CPU TEST selection.
+The original propagation transfer constant is retained in simulated suffixes
+for reproducibility. Fresh downstream CCDs are mandatory whenever their input
+or mask changes. Never use any old fixed-weight downstream CCD after an update.
+The first-stage scope is measured router plus simulated suffix, NOT fullphysical.
+The complete final scope is allfive physically measured stages,8055 valid frames.
+
+## Initial fixed deployment record (superseded)
+
 Latest human scope: pause further L2 residual fine-tuning after all three capture
 stages are complete; deploy the finalized L4 residual model. Existing L4/L6
 non-residual CPU refinements are not interrupted. No recurring monitor.

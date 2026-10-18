@@ -1,0 +1,12 @@
+{
+  "depth":4,"TRAIN_each_class":60,"TRAIN":1200,"TEST":411,"VALID":0,
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "seed":17,"cpu_threads":2,"batch_size":4,"evaluate_every":5,
+  "phase_lr":0.001,"electronic_lr":0.0005,"alpha_lr":0.0005,"head_lr":0.001,
+  "weight_decay":0.001,"label_smoothing":0.03,
+  "mask":{"epochs":60,"seconds":900},"tail":{"epochs":120,"seconds":900},
+  "TEST_CPU_selection":true,
+  "canonical_reference_SHA256":"b508321c0d3d14cf66b6c58fc0b8d61b6788806f0fa00283491c935ba65c88ea",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","lockapp.exe","phoneexperiencehost.exe","textinputhost.exe","msedgewebview2.exe","systemsettings.exe","shellexperiencehost.exe","weixin.exe","wechatappex.exe","msedge.exe"],
+  "scope":"Latest human correction: preserve complete1611-frame frozen router. After every complete TRAIN+TEST optical stage freeze its full upstream, optimize only still-deployable suffix masks and original electronics, retain first highest complete CPU TEST development PT, then capture next fresh stage. No VALID or TEST gradients. One idle bench4060 only while SDK released; existing CPU controls can run in parallel. No recurring monitor. Original simulation transfer constant used for simulated suffix reproducibility; no reference-model inference in actual capture."
+}

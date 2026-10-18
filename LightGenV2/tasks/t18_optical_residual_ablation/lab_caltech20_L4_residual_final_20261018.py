@@ -4,13 +4,13 @@ Same existing inference, layer-major capture and original5140 readout. No optica
 mask update in this first complete deployment; never reuse another model's CCD.
 The first24 TRAIN frames are retained and signal-gated as part of full capture.
 """
-import argparse,json,os,sys,traceback
+import argparse,json,os,sys,traceback,time,subprocess
 from pathlib import Path
 HERE=Path(__file__).resolve().parent;ROOT=HERE.parents[2];sys.path[:0]=[str(HERE),str(ROOT)]
 import numpy as np
 import torch
 from lab_caltech20_rich_model_20261018 import load_checkpoint,encode_images,sha,DIRECT
-from lab_caltech20_rich_layerwise_20261018 import load_data
+from lab_caltech20_rich_layerwise_20261018 import load_data,MeasuredPrefix,allowed_keys,state_cpu,acquire_layer
 from lab_caltech20_rich_capture_20261018 import layer_forward,metrics
 from lab_caltech20_controls46_20261018 import capture_group,adapt_head,LOCK
 from lab_caltech10_20261015 import save
@@ -70,10 +70,66 @@ def run(a):
     save(a.session/'report.json',dict(state='complete',capture=json.loads((a.session/'L4/capture_report.json').read_text()),readout=fit,SDK_released=not LOCK.exists(),TEST_is_development=True))
 
 
+def layerwise_selftest():
+    torch.set_num_threads(2);torch.manual_seed(17);ref=MeasuredPrefix(4).eval()
+    with torch.no_grad():
+        for p in ref.fusion_logits:p.fill_(.8)
+        x=torch.rand(1,224,224);expected=ref(x)[0];fields={k:v['intensity'].clone() for k,v in ref.last.items()}
+    records=[]
+    for prefix in range(1,6):
+        m=MeasuredPrefix(4).eval();m.load_state_dict(ref.state_dict());m.measured={k:fields[k] for k in ('router','0','1','2','3')[:prefix]};m.requires_grad_(False);keys=allowed_keys(m,prefix)
+        for n,p in m.named_parameters():p.requires_grad_(n in keys)
+        p=m(x)[0];assert torch.equal(p,expected)
+        if prefix in (1,3,5):
+            loss=-p[:,0].clamp_min(1e-12).log().mean();loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for n,v in m.named_parameters() if n in keys)
+            assert all(v.grad is None for n,v in m.named_parameters() if n not in keys)
+        assert 'raw_router' not in keys
+        if prefix==5:assert keys=={'electronic.3.local.weight','fusion_logits.3','linear.weight','linear.bias'}
+        records.append(dict(prefix=prefix,trainable=sum(v.numel() for n,v in m.named_parameters() if n in keys),allowed_keys=sorted(keys)))
+    print(json.dumps(dict(passed=True,depth=4,exact_measured_prefix_replay=True,gradient_and_frozen_upstream=True,proof=records,SDK_opened=False,GPU_used=False)),flush=True)
+
+
+def adopt_router(a,dm,datasets):
+    out=a.session/'capture/router';assert not out.exists();handoff=json.loads((a.session/'layerwise_handoff_20261018.json').read_text());assert handoff['router_valid_frames']==1611 and handoff['SDK_owner_process_exited']
+    phase=a.session/'L4/phase_router.bmp';assert sha(phase)==handoff['phase_SHA256'];out.mkdir(parents=True);os.link(phase,out/'phase.bmp');arrays={};receipt_hashes={}
+    for role,n in (('train',1200),('test',411)):
+        source=a.session/'L4/capture'/role/'router';dest=out/role;dest.mkdir();assert sha(source/'ccd.npy')==handoff['router_arrays_SHA256'][role];assert len(list(source.glob('[0-9]*.json')))==n
+        for index in range(n):
+            p=source/f'{index:06d}.json';r=json.loads(p.read_text());assert r['sample_id']==str(datasets[role][2][index]) and r['phase_SHA256']==sha(phase) and r['checkpoint_SHA256']==PT_SHA and r['p99']>=15 and r['saturation_fraction']<=.15;receipt_hashes[role+'/'+str(index)]=sha(p)
+        os.link(source/'ccd.npy',dest/'ccd.npy');arrays[role]=dict(sha256=handoff['router_arrays_SHA256'][role],samples=n,original_receipts=str(source))
+    save(out/'adoption_receipts.json',receipt_hashes)
+    save(out/'report.json',dict(state='complete',stage='router',physical_ccd=1611,TRAIN=1200,TEST=411,VALID=0,sdk_released=True,arrays=arrays,data_sha256=dm['sha256'],checkpoint_sha256=PT_SHA,phase_sha256=sha(phase),reused_exact_original_router=True,new_capture_frames=0,original_data_retained=True,receipt_manifest_SHA256=sha(out/'adoption_receipts.json'),handoff_SHA256=sha(a.session/'layerwise_handoff_20261018.json')))
+
+
+def layerwise(a):
+    import psutil
+    state=a.session/'layerwise_20261018';assert not state.exists() and not LOCK.exists();cfg=json.loads(a.profile.read_text());assert cfg['depth']==4 and cfg['TRAIN']==1200 and cfg['TEST']==411 and cfg['VALID']==0
+    torch.set_num_threads(cfg['cpu_threads']);datasets,dm=load_data(a.session);gateproof=json.loads((a.session/'lab_bridge_gate.json').read_text());assert gateproof['passed'] and gateproof['PT_SHA256']==PT_SHA
+    state.mkdir();receipt=state/'controller.json';generic=HERE/'lab_caltech20_rich_layerwise_20261018.py'
+    save(receipt,dict(pid=os.getpid(),session=str(a.session.resolve()),source_SHA256=sha(generic),entry_SHA256=sha(__file__),profile_SHA256=sha(a.profile),actual_git=subprocess.check_output([str(ROOT/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'),'rev-parse','HEAD'],cwd=ROOT,text=True).strip(),TRAIN=1200,TEST=411,VALID=0,depth=4,selection='First highest full CPU TEST development; TRAIN gradients only',order='Complete each TRAIN+TEST stage -> freeze captured upstream -> optimize remaining masks/electronics -> strictCPU best -> next fresh stage',reused_router_frames=1611,planned_new_frames=6444,recurring_monitor=False))
+    adopt_router(a,dm,datasets);checkpoint=a.session/'residual_L4.pt';digest=PT_SHA;records=[];a.depth=4
+    for index,stage in enumerate(('router','0','1','2','3'),1):
+        if stage!='router':acquire_layer(a,stage,checkpoint,digest)
+        target=state/'fits'/stage;target.parent.mkdir(exist_ok=True);save(state/'progress.json',dict(state='suffix_fitting',prefix=index,after_stage=stage,reused_router=1611,completed_capture_frames=index*1611))
+        cli=[str(Path(sys.executable).with_name('python.exe')),str(generic),'--mode','fit','--depth','4','--device',a.device,'--session',str(a.session),'--parent',str(a.parent),'--profile',str(a.profile),'--prefix',str(index),'--checkpoint',str(checkpoint),'--checkpoint-sha',digest,'--out',str(target),'--controller-pid',str(os.getpid()),'--controller-receipt',str(receipt)]
+        env=dict(os.environ,CUDA_VISIBLE_DEVICES=cfg['GPU_UUID'] if a.device=='cuda' else '')
+        with target.with_suffix('.log').open('x',encoding='utf-8',buffering=1) as log:child=subprocess.run(cli,env=env,stdout=log,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+        assert child.returncode==0,('Layerwise suffix failed; stop before next capture',stage,child.returncode)
+        report=json.loads((target/'report.json').read_text());assert report['state']=='complete' and report['frozen_parameters_unchanged'] and report['results']['best']['strict_CPU']
+        checkpoint=target/'best.pt';digest=report['results']['best']['PT_SHA256'];assert sha(checkpoint)==digest
+        workers=[p.info['pid'] for p in psutil.process_iter(['pid','cmdline']) if p.info['cmdline'] and str(target) in ' '.join(p.info['cmdline']) and '--mode' in p.info['cmdline']];assert not workers,('Training child must exit before SDK',workers)
+        records.append(dict(stage=stage,selected_PT_SHA256=digest,selected_epoch=report['selected_epoch'],TEST_development=report['results']['best']['TEST_development'],scope=report['evaluation_kind'],capture_report_SHA256=sha(a.session/'capture'/stage/'report.json'),fit_report_SHA256=sha(target/'report.json')));save(state/'stage_history.json',records)
+    score=records[-1]['TEST_development']['accuracy'];save(state/'report.json',dict(state='complete',stages=records,physical_ccd=8055,reused_router=1611,new_CCD=6444,TRAIN=1200,TEST=411,VALID=0,final_PT=str(checkpoint),final_PT_SHA256=digest,final_full_physical_TEST_development=score,simulation_reference=346/411,gap_pp=100*(346/411-score),SDK_released=not LOCK.exists(),GPU_children_exited=True,TEST_gradients=False))
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('gate','run'),required=True)
-    for n in ('session','parent','coordinates','machine-config','phase-lut','response-lut','phase-sdk','amplitude-sdk'):p.add_argument('--'+n,type=Path,required=n=='session')
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('gate','run','layerwise','layerwise-test'),required=True)
+    for n in ('session','parent','profile','coordinates','machine-config','phase-lut','response-lut','phase-sdk','amplitude-sdk'):p.add_argument('--'+n,type=Path)
+    p.add_argument('--device',choices=('cuda','cpu'),default='cuda')
     a=p.parse_args()
-    if sys.stdout is None:sys.stdout=(a.session/'controller.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:gate(a) if a.mode=='gate' else run(a)
-    except BaseException as e:save(a.session/('gate_failure.json' if a.mode=='gate' else 'failure.json'),dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False));raise
+    if sys.stdout is None:sys.stdout=(a.session/('layerwise_controller.log' if a.mode=='layerwise' else 'controller.log')).open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
+    try:layerwise_selftest() if a.mode=='layerwise-test' else layerwise(a) if a.mode=='layerwise' else gate(a) if a.mode=='gate' else run(a)
+    except BaseException as e:
+        folder=a.session/'layerwise_20261018' if a.mode=='layerwise' else a.session
+        if folder is not None and folder.exists():save(folder/('gate_failure.json' if a.mode=='gate' else 'failure.json'),dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
+        raise
