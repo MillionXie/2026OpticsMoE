@@ -1,0 +1,63 @@
+"""Independent frozen optics, target/loss/Adam/EMA and saved TEST selection."""
+import math,os
+from pathlib import Path
+import numpy as np
+import torch
+import caltech20_rich_postCCD_electronic_adapt as m
+import audit_caltech20_rich_pair50_alpha as saved
+def softmax(x):p=np.exp(x-x.max(1,keepdims=True));return p/p.sum(1,keepdims=True)
+def loss_parts(pc,pa,y,q,w,cfg):
+    a=-np.mean(np.sum(y*w[None]*np.log(np.maximum(pc,1e-12)),1));b=-np.mean(np.sum(y*w[None]*np.log(np.maximum(pa,1e-12)),1));student=softmax(np.log(np.maximum(pc,1e-12))/cfg['self_temperature']);k=np.mean(np.sum(q*(np.log(np.maximum(q,1e-12))-np.log(np.maximum(student,1e-12))),1))*cfg['self_temperature']**2;middle=(pc+pa)/2;j=.5*np.mean(np.sum(pc*(np.log(np.maximum(pc,1e-12))-np.log(np.maximum(middle,1e-12)))+pa*(np.log(np.maximum(pa,1e-12))-np.log(np.maximum(middle,1e-12))),1));return dict(CE_clean=a,CE_augmented=b,self_KL=k,JS=j)
+def verify_fit(depth):
+    f=m.OUT/f'L{depth}';meta=m.s.read(f/'metadata.json');fit=m.s.read(f/'fit_result.json');history=m.s.read(f/'history.json');trace=m.s.read(f/'method_trace.json');q,_,parent=m.parent(depth);cfg=m.config();initial=m.initial_state(depth);frozen=m.frozen_digest(initial,depth);names=m.names(depth);assert meta['sources']==m.sources() and meta['config']==cfg and meta['parent']==q and meta['trainable_names']==names and meta['trainable_parameters']==5150 and meta['new_joint_epochs']==meta['phase_updates']==0;m.engine.verify_sources(meta['sources'],meta['git_commit']);assert meta['initial_digest']==m.s.digest(initial) and meta['initial_frozen_digest']==frozen
+    ex=m.s.read(m.OUT/f'L{depth}.fit_exit.json');assert ex['returncode']==0 and ex['actual_exit'] and not Path('/proc',str(ex['pid']),'cmdline').exists();assert len(history)==6 and len(trace)==fit['optimizer_steps']==985 and fit['actual_electronic_epochs']==5 and fit['new_joint_epochs']==0 and fit['parent_experiment_joint_epochs']==q['joint_budget_epochs'] and fit['frozen_optical_selected_epoch']==q['selected_optical_epoch']
+    for k,p in [('last_SHA256','last.pt'),('boundary_SHA256','optimizer_boundary.pt'),('history_SHA256','history.json'),('trace_SHA256','method_trace.json')]:assert fit[k]==m.s.sha(f/p)
+    gate=m.s.read(f/'numeric_gate.json');assert gate['passed'] and gate['trainable_parameters']==5150 and gate['trainable_tensors']==4 and gate['frozen_gradients_all_None'] and gate['optimizer_steps']==gate['TEST_forward_calls']==0 and gate['parent_clean_probability_maxabs']<=3e-6 and gate['parent_capture_maxabs']<=3e-6
+    for z in gate['checks']:assert set(z['gradient_norms'])==set(names) and all(np.isfinite(v) and v>0 for v in z['gradient_norms'].values()) and z['probability_maxabs']<=3e-6 and z['capture_maxabs']<=3e-6 and z['gradient_max_relative']<=.02 and z['gradient_min_cosine']>=.999
+    for tune,row in enumerate(history):
+        p=f/f'epoch{tune:02d}.pt';assert fit['checkpoint_SHA256'][str(tune)]==m.s.sha(p);pt=torch.load(p,map_location='cpu',weights_only=False);assert pt['sources']==m.sources() and pt['config']==cfg and pt['head_epoch']==tune and pt['model_digest']==row['ema_digest']==m.s.digest(pt['model']) and m.frozen_digest(pt['model'],depth)==row['frozen_digest']==frozen
+        assert all(torch.equal(pt['model'][n],v) for n,v in initial.items() if n not in names);assert all(.4001<float(v.float())<.95 for n,v in pt['model'].items() if n.startswith('fusion_logits.'))
+        if tune==0:assert pt['model_digest']==meta['initial_digest']
+        for role in ('train','val'):
+            actual,_=saved.verify_predictions(f/f'epoch{tune:02d}_{role}.npz',pt['model'],role,m.base.manifest());saved.agree(actual,pt['metrics'][role]);saved.agree(actual,row[role]);saved.history_metric(row[role],m.base.manifest()['supports'][role],.4);assert abs(row[role]['detector_capture']-history[0][role]['detector_capture'])<=1e-8
+        if tune:
+            epoch=q['joint_budget_epochs']+tune;assert row['epoch_tag']==epoch and row['optimizer_steps']==197*tune;a,b,_=saved.plans(epoch,cfg,3141);assert row['order_SHA256']==a and row['affine_SHA256']==b and row['training_arrays_SHA256']==m.s.sha(f/f'training_epoch{tune:02d}.npz');fraction=(1+math.cos(math.pi*(tune-1)/5))/2;lr=[cfg['minimum_lr']+(cfg['conv_lr']-cfg['minimum_lr'])*fraction,cfg['minimum_lr']+(cfg['head_lr']-cfg['minimum_lr'])*fraction,cfg['minimum_alpha_lr']+(cfg['alpha_lr']-cfg['minimum_alpha_lr'])*fraction];assert np.allclose(lr,row['lr'],atol=1e-12,rtol=0)
+    assert fit['best_VAL_head_epoch']==min(range(6),key=lambda i:history[i]['val']['balanced_nll']);counts=np.asarray(m.base.manifest()['supports']['train'],float);w=np.sqrt(counts.sum()/(20*counts));w/=np.dot(counts,w)/counts.sum();parent_p=parent['train']['probabilities'].astype(float);teacher=softmax(np.log(np.maximum(parent_p,1e-12))/cfg['self_temperature']).astype(np.float32);labels=parent['train']['labels'];soft=np.eye(20,dtype=np.float32)[labels]*(1-cfg['label_smoothing'])+cfg['label_smoothing']/20
+    for tune in range(1,6):
+        arrays=m.load_np(f/f'training_epoch{tune:02d}.npz');epoch=q['joint_budget_epochs']+tune;order,_=m.engine.epoch_plan(epoch,3141,cfg);assert np.array_equal(arrays['order'],order)
+        for batch,off in enumerate(range(0,3141,16)):
+            row=trace[(tune-1)*197+batch];idx=order[off:off+16];n=len(idx);seed=int(np.random.SeedSequence([17,epoch,batch,20261018,407]).generate_state(1)[0]);assert row['head_epoch']==tune and row['epoch_tag']==epoch and row['batch']==batch and row['n']==n and row['seed']==seed and row['optimizer_steps']==197*(tune-1)+batch+1 and row['last_CCD_noise_augmented_only'];noise=np.random.default_rng(seed).standard_normal((n,2,32,32)).astype(np.float32);assert row['noise_SHA256']==m.s.digest(noise)
+            rg=np.random.default_rng(np.random.SeedSequence([17,epoch,batch,20261018,40,1]));area=rg.uniform(cfg['crop_area_min'],1,n);ratio=rg.uniform(.9,1.1,n);width=np.minimum(1,np.sqrt(area*ratio));height=np.minimum(1,np.sqrt(area/ratio));crop=np.zeros((n,2,3),np.float32);crop[:,0,0]=width;crop[:,1,1]=height;crop[:,0,2]=rg.uniform(-1,1,n)*(1-width);crop[:,1,2]=rg.uniform(-1,1,n)*(1-height);assert row['crop_SHA256']==m.s.digest(crop)
+            mix=np.random.default_rng(np.random.SeedSequence([17,epoch,batch,20261013,4]));lam=float(mix.beta(cfg['mixup_alpha'],cfg['mixup_alpha']));lam=max(lam,1-lam);perm=mix.permutation(n);ys=lam*soft[idx]+(1-lam)*soft[idx][perm];qs=lam*teacher[idx]+(1-lam)*teacher[idx][perm];sl=slice(off,off+n);assert np.max(np.abs(ys-arrays['y'][sl]))<=3e-6 and np.max(np.abs(qs-arrays['teacher_q'][sl]))<=3e-6
+            pc,pa,y,target=[arrays[k][sl].astype(float) for k in ('pc','pa','y','teacher_q')];assert np.isfinite(pc).all() and np.isfinite(pa).all() and np.allclose(pc.sum(1),1,atol=2e-6) and np.allclose(pa.sum(1),1,atol=2e-6);parts=loss_parts(pc,pa,y,target,w,cfg)
+            for k,v in parts.items():assert abs(v-row['parts'][k])<=2e-5*max(1,abs(v)),(k,v,row['parts'][k])
+            total=.5*parts['CE_clean']+.5*parts['CE_augmented']+cfg['self_KD_weight']*parts['self_KL']+cfg['JS_weight']*parts['JS'];assert abs(total-row['loss'])<=2e-5*max(1,abs(total)) and np.isfinite(row['clip_norm'])
+    boundary=torch.load(f/'optimizer_boundary.pt',map_location='cpu',weights_only=False);last=torch.load(f/'last.pt',map_location='cpu',weights_only=False);assert last['sources']==m.sources() and last['steps']==985 and m.s.digest(last['model'])==history[-1]['raw_digest'] and m.s.digest(last['ema'])==history[-1]['ema_digest'] and m.frozen_digest(last['model'],depth)==m.frozen_digest(last['ema'],depth)==frozen;assert set(boundary['gradients'])==set(names);norm=sum(float(g.double().square().sum()) for g in boundary['gradients'].values())**.5;assert abs(norm-boundary['clip_norm'])<=max(1e-6,1e-5*norm);clip=min(1.,1/(norm+1e-6));maximum=0
+    for group,group_names in zip(boundary['optimizer_before']['param_groups'],boundary['groups']):
+        b1,b2=group['betas']
+        for pid,n in zip(group['params'],group_names):
+            before=boundary['optimizer_before']['state'][pid];after=last['optimizer']['state'][pid];assert float(after['step'])==985;g=boundary['gradients'][n].double()*clip;t=float(before['step'])+1;exp=before['exp_avg'].double()*b1+(1-b1)*g;var=before['exp_avg_sq'].double()*b2+(1-b2)*g.square();raw=boundary['raw_before'][n].double()*(1-group['lr']*group['weight_decay'])-group['lr']*(exp/(1-b1**t))/(var.sqrt()/math.sqrt(1-b2**t)+group['eps'])
+            if n.startswith('fusion_logits.'):raw=raw.clamp(m.physics.ALPHA_MIN,.95)
+            maximum=max(maximum,float((raw-last['model'][n].double()).abs().max()));assert torch.allclose(raw,last['model'][n].double(),atol=2e-6,rtol=2e-5) and torch.allclose(exp,after['exp_avg'].double(),atol=1e-7,rtol=2e-5) and torch.allclose(var,after['exp_avg_sq'].double(),atol=1e-7,rtol=2e-5);ema=boundary['ema_before'][n].double()*cfg['ema_decay']+last['model'][n].double()*(1-cfg['ema_decay']);assert torch.allclose(ema,last['ema'][n].double(),atol=2e-7,rtol=1e-6)
+    return dict(frozen_upstream_state_proved=True,trainable_tensors=4,trainable_parameters=5150,new_joint_epochs=0,actual_electronic_epochs=5,optimizer_steps=985,Adam_last_update_maxabs=maximum,independent_targets_losses_noise_orders=True)
+def verify_test(depth):
+    f=m.OUT/f'L{depth}';ex=m.s.read(m.OUT/f'L{depth}.test_exit.json');assert ex['returncode']==0 and ex['actual_exit'] and not Path('/proc',str(ex['pid']),'cmdline').exists();rec=m.s.read(m.OUT/'fit_audit_completed.json');assert rec['actual_audit_returncode']==0 and rec['audit_sha256']==m.s.sha(m.OUT/'fit_science/audit.json');fit=m.s.read(f/'fit_result.json');result=m.s.read(f/'test_result.json');rows=result['records'];assert len(rows)==6 and result['parent_TEST_reused'] and result['TEST_used_for_selection'] and not result['independent_generalization'];known={m.s.digest(m.initial_state(depth)):'canonical_parent_TEST_reused'};new=0
+    for tune,row in enumerate(rows):
+        pt=torch.load(f/f'epoch{tune:02d}.pt',map_location='cpu',weights_only=False);assert m.s.sha(f/f'epoch{tune:02d}.pt')==fit['checkpoint_SHA256'][str(tune)] and row['head_epoch']==tune and row['model_digest']==pt['model_digest'];actual,_=saved.verify_predictions(f/f'test_epoch{tune:02d}.npz',pt['model'],'test',m.base.manifest());saved.agree(actual,row['metrics']);reused=row['model_digest'] in known;assert reused==row['reused']
+        if reused:
+            if tune==0:p=m.load_np(f/'test_epoch00.npz');old=m.parent(depth)[2]['test'];assert all(np.array_equal(p[k],old[k]) for k in old)
+        else:assert (f/'test_digest_claims'/(row['model_digest']+'.json')).exists();known[row['model_digest']]=row['reference'];new+=1
+    selected=max(range(6),key=lambda i:(int(np.trace(np.asarray(rows[i]['metrics']['confusion_matrix']))),-torch.load(f/f'epoch{i:02d}.pt',map_location='cpu',weights_only=False)['metrics']['val']['balanced_nll'],-i));pt=torch.load(f/'selected.pt',map_location='cpu',weights_only=False);ref=torch.load(f/f'epoch{selected:02d}.pt',map_location='cpu',weights_only=False);assert selected==result['selected_head_epoch']==pt['selected_head_epoch'] and result['selected_PT_SHA256']==m.s.sha(f/'selected.pt') and m.s.digest(pt['model'])==m.s.digest(ref['model'])==result['model_digest'] and result['new_TEST_model_evaluations']==new<=5
+    for role in ('train','val','test'):actual,_=saved.verify_predictions(f/('selected_'+role+'.npz'),pt['model'],role,m.base.manifest());saved.agree(actual,result['metrics'][role]);saved.agree(actual,pt['metrics'][role])
+    return dict(selected_head_epoch=selected,new_TEST_parameter_digests=new,parent_TEST_reused=True,all_six_saved_ID_label_CM_NLL_verified=True,PT_SHA256=result['selected_PT_SHA256'])
+def run(phase):
+    assert os.environ['CUDA_VISIBLE_DEVICES']=='';torch.set_num_threads(4);dest=m.OUT/(phase+'_science');assert not dest.exists();m.claim(m.OUT/(phase+'_audit_claim.json'),'independent_postCCD_'+phase);checks={}
+    for d in (2,4,6):checks[str(d)]=verify_fit(d) if phase=='fit' else verify_test(d)
+    m.identity();m.closure.diagnosis.closure.old.controls();dest.mkdir();m.s.save(dest/'audit.json',dict(m.identity(),passed=True,phase=phase,checks=checks,optical_model_forward_calls=0,TEST_images_read=0,TEST_used_for_selection=True,independent_generalization=False,new_inference_parameters=0),exclusive=True)
+if __name__=='__main__':
+    p=m.argparse.ArgumentParser();p.add_argument('--phase',choices=['fit','test'],required=True);a=p.parse_args()
+    try:run(a.phase)
+    except BaseException as e:
+        mark=m.OUT/(a.phase+'_audit_failure.json')
+        if not mark.exists():m.s.save(mark,dict(error=repr(e),automatic_retry=False),exclusive=True)
+        raise
