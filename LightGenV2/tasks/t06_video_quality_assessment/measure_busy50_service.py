@@ -24,7 +24,7 @@ from . import unified_resident_utilization as uniform
 from .measure_resident_utilization import ForeignGuard, summarize
 
 TASK, REPO = uniform.TASK, uniform.REPO
-CONFIG = TASK / "configs/baselines/resident_busy50_20261017.json"
+CONFIG = TASK / "configs/baselines/resident_busy50_groupfeedback_20261018.json"
 
 
 def config():
@@ -49,6 +49,15 @@ def imposed_wait(compute_seconds, duty):
     if compute_seconds <= 0 or not 0.05 <= duty <= 1:
         raise ValueError("Positive real-forward time and bounded duty required")
     return compute_seconds * (1 / duty - 1)
+
+
+def feedback_observation(samples, start, end):
+    """Use whole completed work/idle groups, avoiding idle-tail aliasing."""
+    values = [s.utilization_percent for s in samples if start <= s.host_monotonic_s < end]
+    if len(values) < 10:
+        return None
+    return dict(sample_start_monotonic_s=start, sample_end_monotonic_s=end,
+                sample_count=len(values), observed_percent=sum(values)/len(values))
 
 
 def service_cost(duration_s, calls, batch, board_w, host_w=338.2):
@@ -151,13 +160,12 @@ def measure(args, compute, inputs, folder, c):
             groups.append(dict(phase=name, start_monotonic_s=tick, compute_end_monotonic_s=computed,
                 end_monotonic_s=end, requested_idle_s=delay, duty=duty, forwards=c["queue_depth"]))
             if adaptive and end-last_update >= c["feedback_interval_seconds"]:
-                recent = [s.utilization_percent for s in list(sampler.samples)
-                          if max(start, end-c["feedback_sample_window_seconds"]) <= s.host_monotonic_s < end]
-                if len(recent) >= 10:
-                    observed = sum(recent)/len(recent); new = update_duty(duty, observed)
-                    updates.append(dict(at_monotonic_s=end, observed_percent=observed, old_duty=duty, new_duty=new))
+                observation = feedback_observation(list(sampler.samples), last_update, end)
+                if observation is not None:
+                    new = update_duty(duty, observation["observed_percent"])
+                    updates.append(dict(at_monotonic_s=end, **observation, old_duty=duty, new_duty=new))
                     duty = new
-                last_update = end
+                    last_update = end
         return start, time.monotonic(), output, duty
     try:
         _, _, _, duty = phase("calibration", c["calibration_seconds"], c["initial_duty_fraction"], True)

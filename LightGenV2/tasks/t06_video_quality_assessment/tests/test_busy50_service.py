@@ -1,5 +1,6 @@
 import math
 import inspect
+from types import SimpleNamespace
 import pytest
 from LightGenV2.tasks.t06_video_quality_assessment import measure_busy50_service as m
 
@@ -57,3 +58,13 @@ def test_same_reruns_are_not_claimed_unique():
     assert cost['completed_video_evaluations'] == 2400
     assert cost['unique_videos'] == 3
     assert cost['includes_all_imposed_wait']
+
+
+def test_feedback_covers_compute_and_idle_not_only_tail():
+    samples = [SimpleNamespace(host_monotonic_s=i*.1, utilization_percent=100 if i < 20 else 0)
+               for i in range(40)]
+    observation = m.feedback_observation(samples, 0, 4)
+    assert observation['observed_percent'] == 50
+    assert observation['sample_count'] == 40
+    assert m.feedback_observation(samples, 3.9, 4) is None
+    assert m.config()['protocol'].endswith('v2_complete_group_feedback')
