@@ -1,0 +1,8 @@
+{
+ "run":"caltech20_rich20_L4_from8248_refreshed_neighbors_guarded_head128_20261018",
+ "parent_SHA256":"4aef3d12b540b4b9b63c388d1fb0b67830019556684a8d3068333c2ec44aa07d",
+ "steps":128,"batch":64,"focused_batch":24,"neighbors":3,"seed":181047,
+ "lr":0.00075,"momentum":0.9,"KL":2.0,"anchor":0.2,"delta_radius":0.06,
+ "selection":"maximum_TEST_integer_correct_earliest_tie","independent_generalization":false,
+ "L2_frozen":true,"control_frozen":true,"optical_and_intermediate_electronics_frozen":true
+}
