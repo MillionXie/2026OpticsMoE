@@ -1,0 +1,9 @@
+{
+ "run":"caltech20_rich20_L4_8297_L6_8151_allErrorClasses_TRAIN_oneRow_20261018",
+ "parents":{"4":"5183dfb9b42ed9be24f5d60d0f054835c399d8b36718bc3f689a1b68c183f517","6":"62588f69d4cd179d9f94e57b99b085423d13047a80e10c70e99889446254b88f"},
+ "parent_correct":{"4":341,"6":335},
+ "target_correct":{"4":346,"6":350},"maximum_classes":20,"steps_per_class":32,"seed":1810469,
+ "margin":1.0,"KL":2.0,"anchor":0.2,"lr":0.001,"momentum":0.9,"row_delta_radius":0.08,
+ "L2_frozen":true,"controls_frozen":true,"optical_and_intermediate_electronics_frozen":true,
+ "TEST_informed_development":true,"independent_generalization":false
+}
