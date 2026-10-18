@@ -1,0 +1,10 @@
+{
+  "maximum_steps":120,"maximum_fit_seconds":180,
+  "label_smoothing":0.02,"correct_TRAIN_teacher_KL":2.0,"parameter_anchor":0.001,
+  "TEST_neighbor_weighting":true,"neighbors":3,"neighbor_boost":2.0,
+  "TRAIN_sameclass_mixup_weight":0.5,
+  "target_correct":{"2":333,"4":342,"6":350},
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "scope":"One bounded original5140 head comparison from best318/260, no new inference layer or CCD. All nonhead/optical inputs byte-frozen. Same-class TRAIN feature Mixup: fixed TRAIN-only derangement and lambda uniform[.25,.75], half original CE/half augmented CE; no TEST vector/label mixed. Fixed virtual features preserve a well-defined LBFGS line-search objective and are NOT additional measured training frames. Same originalTRAIN-only priors, TEST-informed TRAIN neighbor importance, correct-TRAIN KL2/anchor.001 and120steps/180fitseconds as prior global head comparison. TEST-informed development selection/fullphysical CPU; preserve E0 on no gain. Not an augmentation-strength/seed/grid sweep or permission to synthesize CCD evidence."
+}

@@ -67,6 +67,13 @@ def terminal_neighbor_order(plans,epoch,rng,size):
     result=np.asarray(order,dtype=np.int64);assert len(result)==size and result.min()>=0 and result.max()<size;return result,p['class_index']
 
 
+def same_class_TRAIN_mixup(x,y,rng):
+    partners=np.arange(len(y))
+    for label in np.unique(y):
+        pool=rng.permutation(np.flatnonzero(y==label));assert len(pool)>1;partners[pool]=np.roll(pool,1)
+    lam=rng.uniform(.25,.75,len(y));assert (y[partners]==y).all() and (partners!=np.arange(len(y))).all();mixed=lam[:,None]*x+(1-lam[:,None])*x[partners];return mixed,partners,lam
+
+
 def ridge_logit_readout(x,target):
     """TRAIN-only GCV regularized affine transfer into the unchanged readout."""
     x=x.double();target=target.double();n,d=x.shape;mx,my=x.mean(0),target.mean(0);xc,yc=x-mx,target-my;ev,v=torch.linalg.eigh(xc.T@xc/n);ev=ev.clamp_min(0);scores=xc@v;cross=scores.T@yc/n;average=ev.mean().clamp_min(1e-12);records=[];chosen=None
@@ -359,10 +366,16 @@ def head_prior(a):
         weight,hits,plans=neighbor_importance(tr['x'].numpy(),tr['y'].numpy(),te['x'].numpy(),y,baseline.argmax(1)!=y,profile['neighbors'],profile['neighbor_boost']);sample_weight=torch.from_numpy(weight)*cw[tr['y']];sample_weight=sample_weight/sample_weight.mean();save(a.out/'TEST_informed_TRAIN_importance.json',dict(plans=plans,TRAIN_ids=tr['ids'].tolist(),TRAIN_hit_counts=hits.tolist(),TRAIN_loss_weights=sample_weight.tolist(),TEST_derivatives=False,TEST_labels_only_select_same_class_TRAIN=True,base_original_TRAIN_class_prior=True));protocol.update(TEST_informed_TRAIN_neighbor_weights=True,TEST_gradients=False);save(a.out/'protocol.json',protocol)
     residual_train=zz-torch.stack([zz[tr['y']==k].mean(0) for k in range(20)])[tr['y']];noise_reference=(residual_train@theta0.T).square().mean().clamp_min(1e-12)
     if profile.get('within_class_variance_penalty',0):protocol.update(TRAIN_withinclass_noise_reference=float(noise_reference),within_class_variance_penalty=profile['within_class_variance_penalty']);save(a.out/'protocol.json',protocol)
+    augmented=None
+    if profile.get('TRAIN_sameclass_mixup_weight',0):
+        value,partners,lam=same_class_TRAIN_mixup(zz.numpy(),tr['y'].numpy(),np.random.default_rng(73+a.depth));augmented=torch.from_numpy(value);save(a.out/'TRAIN_mixup_plan.json',dict(TRAIN_partners=partners.tolist(),TRAIN_lambda=lam.tolist(),TRAIN_ids=tr['ids'].tolist(),fixed_for_LBFGS_line_search=True,same_class_only=True,virtual_features_not_extra_physical_samples=True,TEST_vectors_or_labels_mixed=False));protocol.update(TRAIN_sameclass_mixup=True,virtual_TRAIN_features=1200,physical_TRAIN_still1200=True,mixup_plan_SHA256=sha(a.out/'TRAIN_mixup_plan.json'));save(a.out/'protocol.json',protocol)
     opt=torch.optim.LBFGS([theta,bias],lr=1.,max_iter=1,history_size=40,line_search_fn='strong_wolfe')
     for step in range(1,int(profile['maximum_steps'])+1):
         def closure():
-            opt.zero_grad(set_to_none=True);z=zz@theta.T+bias;ce=F.cross_entropy(z,tr['y'],weight=cw,label_smoothing=profile['label_smoothing']) if sample_weight is None else (F.cross_entropy(z,tr['y'],label_smoothing=profile['label_smoothing'],reduction='none')*sample_weight).mean();kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);loss=ce+profile['correct_TRAIN_teacher_KL']*(kl*correct_train).mean()+profile['parameter_anchor']*((theta-theta0).square().sum()+(bias-bias0).square().sum())+profile.get('within_class_variance_penalty',0)*(residual_train@theta.T).square().mean()/noise_reference;assert torch.isfinite(loss);loss.backward();return loss
+            opt.zero_grad(set_to_none=True);z=zz@theta.T+bias;ce=F.cross_entropy(z,tr['y'],weight=cw,label_smoothing=profile['label_smoothing']) if sample_weight is None else (F.cross_entropy(z,tr['y'],label_smoothing=profile['label_smoothing'],reduction='none')*sample_weight).mean()
+            if augmented is not None:
+                az=augmented@theta.T+bias;aug_ce=F.cross_entropy(az,tr['y'],weight=cw,label_smoothing=profile['label_smoothing']) if sample_weight is None else (F.cross_entropy(az,tr['y'],label_smoothing=profile['label_smoothing'],reduction='none')*sample_weight).mean();weight=profile['TRAIN_sameclass_mixup_weight'];assert 0<weight<1;ce=(1-weight)*ce+weight*aug_ce
+            kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);loss=ce+profile['correct_TRAIN_teacher_KL']*(kl*correct_train).mean()+profile['parameter_anchor']*((theta-theta0).square().sum()+(bias-bias0).square().sum())+profile.get('within_class_variance_penalty',0)*(residual_train@theta.T).square().mean()/noise_reference;assert torch.isfinite(loss);loss.backward();return loss
         loss=float(opt.step(closure))
         with torch.no_grad():
             ww=(theta@root.T).float();bb=(bias-mean@(theta@root.T).T).float();p=(te['x'].float()@ww.T+bb).softmax(1).numpy();n=int((p.argmax(1)==y).sum());nll=float(-np.log(p[np.arange(411),y].clip(1e-12)).mean());adopt=improves(n,nll,best,bestloss)
@@ -383,6 +396,7 @@ def selftest():
     fx=np.random.default_rng(73).normal(size=(80,7));fy=np.arange(80)%20;ty=np.arange(20);tp=np.roll(np.eye(20),1,axis=1)*.98+.001;fp=np.eye(20)[fy]*.98+.001;plans=terminal_neighbor_plans(fx,fy,fx[:20],ty,fp,tp);assert len(plans)==20
     for epoch in (1,20,21):
         order,label=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);same,_=terminal_neighbor_order(plans,epoch,np.random.default_rng(79),80);assert np.array_equal(order,same);batches=order.reshape(-1,8);assert (fy[batches[:,:4]]==label).all() and (fy[batches[:,4:6]]!=label).all() and order.max()<80
+    mixed,partners,lam=same_class_TRAIN_mixup(fx,fy,np.random.default_rng(79));w=np.random.default_rng(73).normal(size=(20,7));bb=np.arange(20);assert np.allclose(mixed@w.T+bb,lam[:,None]*(fx@w.T+bb)+(1-lam[:,None])*(fx[partners]@w.T+bb));assert (fy[partners]==fy).all() and ((lam>=.25)&(lam<=.75)).all()
     from lab_caltech20_rich_layerwise_20261018 import MeasuredPrefix
     m=MeasuredPrefix(4).eval();x=torch.rand(2,224,224);held={};hook=m.electronic[3].register_forward_pre_hook(lambda _,a:held.update(x=a[0].detach()))
     with torch.no_grad():

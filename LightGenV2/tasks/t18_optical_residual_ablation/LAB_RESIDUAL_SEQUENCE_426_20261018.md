@@ -1,5 +1,13 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+One finite TRAIN feature-augmentation comparison uses
+`lab_caltech20_residual_mixuphead_profile_20261019.json` from accepted318/260:
+same-class TRAIN-only Mixup, half original/half augmented CE, fixed derangement
+and lambda[.25,.75], folded original5140 head; no new layer/CCD or TEST sample in
+the derivatives. Keep original neighbor-head KL2/anchor.001/120steps/180seconds
+unchanged; record every TRAIN pair/lambda, preserve E0 if no fullCPU gain.
+These are virtual electronic training features, NOT extra physical measurements.
+
 Targeted terminal10 completed L2 28epochs/L4 27epochs at the360fitsecond
 complete-epoch boundary; neither beat accepted318/260, E0 retained, last307/231
 rejected. All fullCPU/5140-head/upstream audits passed, fresh feature banks saved.
