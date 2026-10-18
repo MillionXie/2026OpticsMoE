@@ -1,0 +1,33 @@
+{
+  "run": "caltech20_rich20_retained_electronic_alpha_curriculum_246_20261018",
+  "electronic_epochs": 8,
+  "maximum_fit_seconds": 1800,
+  "microbatch_size": 2,
+  "mixup_alpha": 0.1,
+  "label_smoothing": 0.02,
+  "crop_area_min": 0.95,
+  "input_dropout": 0.0,
+  "feature_dropout": 0.05,
+  "self_temperature": 2.0,
+  "self_KD_weight": 0.25,
+  "JS_weight": 0.2,
+  "ema_decay": 0.95,
+  "conv_lr": 0.001,
+  "head_lr": 0.002,
+  "alpha_lr": 0.0003,
+  "minimum_lr": 0.00002,
+  "minimum_alpha_lr": 0.00002,
+  "conv_weight_decay": 0.01,
+  "head_weight_decay": 0.02,
+  "alpha_floor": 0.4001,
+  "review_epoch": 4,
+  "collapse_train_floor": 0.90,
+  "collapse_val_drop": 0.03,
+  "gpu_order": [3, 4, 0, 1],
+  "cases": {
+    "L2_gentle": {"depth": 2, "end_alpha_cap": 0.90},
+    "L2_stronger": {"depth": 2, "end_alpha_cap": 0.80},
+    "L4_gentle": {"depth": 4, "end_alpha_cap": 0.90},
+    "L6_gentle": {"depth": 6, "end_alpha_cap": 0.90}
+  }
+}
