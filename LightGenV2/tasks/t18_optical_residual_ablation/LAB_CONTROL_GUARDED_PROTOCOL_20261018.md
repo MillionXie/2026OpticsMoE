@@ -152,3 +152,20 @@ No threshold relaxation, real-data alpha fitting or claimed accuracy from it.
 All failed states and exact parents remain preserved. The full report is
 reports/lab_nores_targets_20261019/README.md; TEST-aware development remains
 explicit and no independent generalization is claimed.
+
+## New07:00 authorization completed
+
+L2=280 and L4=282 remain locked. L6 starts from audited277 and uses signed
+Huber margin with delta1.0, replacing quadratic influence for severely violated
+TRAIN margins. Its analytic gradient/Hessian and Woodbury direction match
+autograd; synthetic frozen-parameter/whole-fit and expired-deadline rejection
+tests passed. All captured upstream/terminal feature parameters remain frozen.
+TEST only chooses classes, nearby TRAIN examples and checkpoints, never a
+derivative. After1404 updates the first284/411=69.09976% checkpoint stops fitting.
+New-correct7/new-wrong0 vs277; TRAIN681/1000. Complete original measured graph
+CPU audit passed: unchanged features0 and TEST probability max difference
+8.94070e-7. Selected PT SHA4faea40e5d2aae4a43e01acdc298507c575c8c297cd5c481da56f1569f8359ff.
+All three new goals are met before07:00; best/last/predictions/protocol/history
+and complete audit copies are SHA-verified. Stop further fitting and remove
+the bounded07:00 follow-up. Old failed compact cache remains disabled and all
+older parents/negative results retained. No residual-task management occurred.
