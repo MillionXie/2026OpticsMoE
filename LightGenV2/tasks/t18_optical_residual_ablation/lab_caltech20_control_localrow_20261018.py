@@ -164,7 +164,7 @@ def postccd(a):
                     end=min(begin+8,n)
                     def measured(stage,amplitude,phase,sample_ids):return np.asarray(fields[stage][begin:end]).copy()
                     p=model(encode_images(images[begin:end]),callback=measured,ids=ids[begin:end])[0];x[begin:end]=held['x'];o[begin:end]=model.nonlinear(model.readout['ccd'],'global');prob.append(p.numpy());save(a.out/'progress.json',dict(state='caching_selected_terminal_inputs',role=role,completed=end,total=n,SDK=False,GPU=False))
-                prob=np.concatenate(prob);assert int((prob.argmax(1)==y).sum())==round(pr['results']['best']['TRAIN' if role=='train' else 'TEST_development']['accuracy']*n);cached[role]=dict(x=x,o=o,y=torch.from_numpy(y.astype(np.int64)),ids=ids)
+                prob=np.concatenate(prob);assert int((prob.argmax(1)==y).sum())==round(pr['results']['best']['TRAIN' if role=='train' else 'TEST_development']['accuracy']*n);cached[role]=dict(x=x,o=o,y=torch.from_numpy(y.astype(np.int64)),ids=ids,reference_probabilities=torch.from_numpy(prob.copy()))
     finally:hook.remove()
     cached={r:{k:v.clone() if isinstance(v,torch.Tensor) else v for k,v in d.items()} for r,d in cached.items()};del model
     electronic=SmallElectronicResidual();electronic.load_state_dict({'local.weight':state['electronic.5.local.weight']});head=existing_head(state);raw=torch.nn.Parameter(state['fusion_logits.5'].clone());params=[*electronic.parameters(),*head.parameters(),raw];assert sum(p.numel() for p in params)==5150
@@ -174,13 +174,14 @@ def postccd(a):
         with torch.no_grad():
             for begin in range(0,len(d['ids']),8):prob.append(tail(electronic,head,alpha(),d['x'][begin:begin+8],d['o'][begin:begin+8]).softmax(1).numpy())
         p=np.concatenate(prob);return metrics(d['y'].numpy(),p),p
-    baseline,bp=assess('test');assert round(baseline['accuracy']*411)==pr['best_correct'];before,btrain=assess('train');teacher=torch.from_numpy(btrain);baseline_correct=round(411*baseline['accuracy']);best=baseline_correct;best_nll=float(-np.log(bp[np.arange(411),cached['test']['y'].numpy()].clip(1e-12)).mean());selected=0;hist=[]
+    baseline,bp=assess('test');assert round(baseline['accuracy']*411)==pr['best_correct'];before,btrain=assess('train');parity={'train':float(np.abs(btrain-cached['train']['reference_probabilities'].numpy()).max()),'test':float(np.abs(bp-cached['test']['reference_probabilities'].numpy()).max())};assert max(parity.values())<=3e-6;teacher=torch.from_numpy(btrain);baseline_correct=round(411*baseline['accuracy']);best=baseline_correct;best_nll=float(-np.log(bp[np.arange(411),cached['test']['y'].numpy()].clip(1e-12)).mean());selected=0;hist=[]
     import subprocess
     git=HERE.parents[2]/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe';protocol=dict(config=cfg,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),parent_PT_SHA256=sha(warm),CCD_arrays_SHA256=arr,allowed_keys=sorted(allowed),trainable_parameters=5150,TRAIN=1000,TEST=411,VALID=0,TRAIN_gradients_only=True,TEST_development=True,SDK=False,GPU=False,new_CCD=0,new_layers=0,raw_alpha_schema=BOUNDED,upstream_optical_and_electronic_frozen=True);save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=cached['test']['ids'],labels=cached['test']['y'].numpy(),probabilities=bp)
     def checkpoint(name,epoch):
         z={k:v.clone() for k,v in state.items()};z['electronic.5.local.weight']=electronic.local.weight.detach().clone();z['fusion_logits.5']=raw.detach().clone()
         for k,v in head.state_dict().items():z['linear.'+k]=v.detach().clone()
         assert all(torch.equal(v,z[k]) for k,v in state.items() if k not in allowed);torch.save(dict(model=z,selected=dict(epoch=epoch),protocol=protocol),a.out/(name+'.pt'))
+    protocol.update(cache_full_model_probability_error=parity,baseline_TEST_correct=baseline_correct,baseline_TRAIN_correct=round(before['accuracy']*1000));save(a.out/'protocol.json',protocol)
     checkpoint('best',0);optim=torch.optim.AdamW([dict(params=head.parameters(),lr=cfg['head_lr']),dict(params=electronic.parameters(),lr=cfg['conv_lr']),dict(params=[raw],lr=cfg['alpha_lr'],weight_decay=0.)],weight_decay=cfg['weight_decay']);schedule=torch.optim.lr_scheduler.CosineAnnealingLR(optim,cfg['epochs'],eta_min=1e-6);cw=torch.tensor(cfg['original_TRAIN_class_counts'],dtype=torch.float32);cw=cw/cw.mean();started=time.perf_counter();d=cached['train']
     for epoch in range(1,cfg['epochs']+1):
         order=torch.randperm(1000);total=0.
