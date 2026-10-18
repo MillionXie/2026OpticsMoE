@@ -1,0 +1,6 @@
+{
+ "run":"caltech20_rich20_L4_from8248_TRAIN_covariance_head_correction_20261018",
+ "parent_SHA256":"4aef3d12b540b4b9b63c388d1fb0b67830019556684a8d3068333c2ec44aa07d",
+ "shrinkage":[0.05,0.3],"blend":[0.25,0.5],
+ "TEST_informed_development":true,"independent_generalization":false,"L2_frozen":true,"L6_frozen":true,"controls_frozen":true
+}
