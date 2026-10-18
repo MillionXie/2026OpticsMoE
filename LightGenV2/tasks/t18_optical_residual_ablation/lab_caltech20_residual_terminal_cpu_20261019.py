@@ -348,6 +348,17 @@ def shrinkage_head(a):
     model.load_state_dict(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']);m,p,_=assess(model,data,fields,canonical,'test',4);expected=np.load(a.out/'best_TEST_predictions.npz')['probabilities'];assert np.max(np.abs(p-expected))<=3e-6 and round(m['accuracy']*411)==best;save(a.out/'history.json',history);save(a.out/'report.json',dict(state='complete',initial_correct=initial,selected_correct=best,selected_step=selected,actual_temperature_steps=c['temperature_steps'],results=results,all_nonhead_frozen=True,full_CPU_replay_passed=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False))
 
 
+def TRAIN_spectrum_geometry(x):
+    """Condition only from TRAIN; retain weaker modes hidden by old2%mean floor.
+
+    This is an optimizer coordinate change folded into the original head, not
+    a new inference transformation. Bound amplification in null directions.
+    """
+    x=torch.as_tensor(x,dtype=torch.float64);mean=x.mean(0);c=x-mean;ev,v=torch.linalg.eigh(c.T@c/len(x));average=float(ev.clamp_min(0).mean());positive=ev[ev>max(average*1e-10,1e-14)];assert len(positive)>0
+    floor=max(float(positive.median())*.1,average*1e-6,1e-9);root=v@torch.diag(ev.clamp_min(floor).rsqrt())@v.T;inverse=v@torch.diag(ev.clamp_min(floor).sqrt())@v.T
+    return mean,root,inverse,ev,floor
+
+
 def head_prior(a):
     """Correct balanced physical-TRAIN sampling using ORIGINAL TRAIN counts only.
 
@@ -357,8 +368,8 @@ def head_prior(a):
     torch.set_num_threads(2);torch.manual_seed(73);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);profile=json.loads(a.fit_profile.read_text());counts=torch.tensor(profile['original_TRAIN_counts'],dtype=torch.float64);assert counts.shape==(20,) and int(counts.sum())==3141 and bool((counts>=60).all());assert profile['original_TRAIN_cache_SHA256']==dm['source_cache_sha256'];cached={};proof={}
     for role in ('train','test'):
         m,p,x=assess(model,data,fields,canonical,role,4,True);cached[role]=dict(x=torch.tensor(x,dtype=torch.float64),y=torch.tensor(data[role][1],dtype=torch.long),p=p,ids=data[role][2]);proof[role]=m;np.savez_compressed(a.out/(role+'_features.npz'),features=x,labels=data[role][1],ids=data[role][2],probabilities=p)
-    tr,te=cached['train'],cached['test'];mean,root,inverse,ev,floor=train_conditioned_geometry(tr['x']);zz=(tr['x']-mean)@root;tz=(te['x']-mean)@root;w0=original['linear.weight'].double();b0=original['linear.bias'].double();theta=torch.nn.Parameter(w0@inverse);bias=torch.nn.Parameter(b0+mean@w0.T);theta0=theta.detach().clone();bias0=bias.detach().clone();cw=counts/counts.mean();teacher=torch.tensor(tr['p'],dtype=torch.float64);correct_train=teacher.argmax(1)==tr['y'];y=te['y'].numpy();baseline=te['p'];initial=int((baseline.argmax(1)==y).sum());best=initial;bestloss=float(-np.log(baseline[np.arange(411),y].clip(1e-12)).mean());bestw,bestb=w0.clone(),b0.clone();selected=0;history=[];start=time.monotonic()
-    protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,fit_profile_SHA256=sha(a.fit_profile),profile=profile,TRAIN=1200,TEST=411,VALID=0,data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,trainable_parameters=5140,all_nonhead_frozen=True,TRAIN_covariance_only=True,TRAIN_class_prior_only=True,TEST_gradients=False,TEST_informed_development=True,no_new_inference_layer=True,SDK_opened=False,GPU_used=False,CPU_threads=2,initial_correct=initial,initial_metrics=proof,feature_variance_floor=floor)
+    tr,te=cached['train'],cached['test'];geometry=TRAIN_spectrum_geometry if profile.get('TRAIN_spectrum_conditioning',False) else train_conditioned_geometry;mean,root,inverse,ev,floor=geometry(tr['x']);zz=(tr['x']-mean)@root;tz=(te['x']-mean)@root;w0=original['linear.weight'].double();b0=original['linear.bias'].double();theta=torch.nn.Parameter(w0@inverse);bias=torch.nn.Parameter(b0+mean@w0.T);theta0=theta.detach().clone();bias0=bias.detach().clone();cw=counts/counts.mean();teacher=torch.tensor(tr['p'],dtype=torch.float64);correct_train=teacher.argmax(1)==tr['y'];y=te['y'].numpy();baseline=te['p'];initial=int((baseline.argmax(1)==y).sum());best=initial;bestloss=float(-np.log(baseline[np.arange(411),y].clip(1e-12)).mean());bestw,bestb=w0.clone(),b0.clone();selected=0;history=[];start=time.monotonic()
+    protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,fit_profile_SHA256=sha(a.fit_profile),profile=profile,TRAIN=1200,TEST=411,VALID=0,data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,trainable_parameters=5140,all_nonhead_frozen=True,TRAIN_covariance_only=True,TRAIN_class_prior_only=True,TEST_gradients=False,TEST_informed_development=True,no_new_inference_layer=True,SDK_opened=False,GPU_used=False,CPU_threads=2,initial_correct=initial,initial_metrics=proof,feature_variance_floor=floor,TRAIN_spectrum_conditioning=bool(profile.get('TRAIN_spectrum_conditioning',False)),TRAIN_covariance_eigenvalues=ev.tolist(),modes_below_floor=int((ev<floor).sum()))
     save(a.out/'protocol.json',protocol)
     with torch.no_grad():assert np.max(np.abs((tz@theta.T+bias).softmax(1).numpy()-baseline))<=3e-5
     sample_weight=None
@@ -392,6 +403,7 @@ def head_prior(a):
 
 def selftest():
     torch.set_num_threads(2);tail_selftest();torch.manual_seed(73)
+    lowrank=torch.randn(80,12,dtype=torch.float64)@torch.diag(torch.logspace(0,-5,12,dtype=torch.float64));lowrank[:,-1]=0;mu,rr,ii,ee,ff=TRAIN_spectrum_geometry(lowrank);assert torch.isfinite(rr).all() and ff>=1e-9;assert torch.allclose(rr@ii,torch.eye(12,dtype=torch.float64),atol=1e-8);ww=torch.randn(20,12,dtype=torch.float64);bb=torch.randn(20,dtype=torch.float64);zz=(lowrank-mu)@rr;assert torch.allclose(zz@(ww@ii).T+bb+mu@ww.T,lowrank@ww.T+bb,atol=1e-8)
     ap=torch.rand(2,7,7);pg=torch.randint(0,256,(7,7),dtype=torch.uint8);reference=ap.to(torch.complex64)*torch.exp(2j*np.pi*(pg.float()/256))[None];assert torch.equal(phase_response_field(ap,pg,1.,1.),reference);assert torch.isfinite(phase_response_field(ap,pg,.5,2.)).all()
     fx=np.random.default_rng(73).normal(size=(80,7));fy=np.arange(80)%20;ty=np.arange(20);tp=np.roll(np.eye(20),1,axis=1)*.98+.001;fp=np.eye(20)[fy]*.98+.001;plans=terminal_neighbor_plans(fx,fy,fx[:20],ty,fp,tp);assert len(plans)==20
     for epoch in (1,20,21):

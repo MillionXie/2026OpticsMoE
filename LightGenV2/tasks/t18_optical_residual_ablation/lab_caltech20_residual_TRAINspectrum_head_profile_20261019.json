@@ -1,0 +1,8 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps":240,"maximum_fit_seconds":120,"target_correct":{"2":333,"4":342,"6":350},
+  "label_smoothing":0.02,"correct_TRAIN_teacher_KL":0.02,"parameter_anchor":0.0001,
+  "TRAIN_spectrum_conditioning":true,
+  "scope":"One finite TRAIN-covariance diagnosis-driven comparison, not a seed or coefficient grid. At accepted unchanged fullphysical features the old2%mean variance floor clips nearly90% of L4/L6 modes. Use a TRAIN-only floor max(.1 median positive eigenvalue,1e-6 mean eigenvalue,1e-9) to retain weak discriminative directions while bounding null amplification. Everything else identical to published TRAIN-prior head objective; this is a reparameterization folded into the original5140 linear head, not a new inference layer. No optics/electronic/alpha change, no camera/new CCD/GPU, full411 TEST development selection, TRAIN derivatives only/noVALID. Preserve E0 if not better and strict full originalCPU replay. Same fixed rule for2/4/6; no restarts on plateau."
+}
