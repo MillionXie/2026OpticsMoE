@@ -6,7 +6,7 @@ import torch
 from torch.nn import functional as F
 from lab_caltech20_residual_sequence_20261018 import dataset_model,feed,assess,train_conditioned_geometry
 from lab_caltech20_rich_layerwise_20261018 import state_cpu
-from lab_caltech20_rich_model_20261018 import sha
+from lab_caltech20_rich_model_20261018 import sha,encode_images
 from lab_caltech20_residual_guarded_20261018 import improves
 from lab_caltech20_rich_tail_refine_20261018 import tail,selftest as tail_selftest
 from lab_caltech20_rich_capture_20261018 import metrics
@@ -37,6 +37,35 @@ def native_admission(a):
 def shrunk_readout(x,y,prior_counts):
     """Pooled within-class TRAIN covariance with estimated diagonal shrinkage."""
     x=x.double();means=torch.stack([x[y==k].mean(0) for k in range(20)]);residual=x-means[y];n,d=x.shape;cov=residual.T@residual/n;average=cov.trace()/d;delta=(cov.square().sum()-d*average.square()).clamp_min(1e-20);beta=(residual.square().sum(1).square().mean()-cov.square().sum()).clamp_min(0)/n;shrink=(beta/delta).clamp(0,1);regular=(1-shrink)*cov+shrink*average*torch.eye(d,dtype=x.dtype);regular+=average.clamp_min(1e-12)*1e-6*torch.eye(d,dtype=x.dtype);w=torch.linalg.solve(regular,means.T).T;b=-.5*(means*w).sum(1)+(prior_counts/prior_counts.sum()).log();assert torch.isfinite(w).all() and torch.linalg.eigvalsh(regular).min()>0;return w,b,dict(TRAIN_estimated_shrinkage=float(shrink),TRAIN_withinclass_average_variance=float(average),minimum_regularized_eigenvalue=float(torch.linalg.eigvalsh(regular).min()))
+
+
+def orthogonal_fold(physical,teacher,teacher_w,teacher_b):
+    px,ty=physical.double(),teacher.double();mx,my=px.mean(0),ty.mean(0);u,s,v=torch.linalg.svd((px-mx).T@(ty-my),full_matrices=False);rotation=u@v;assert torch.allclose(rotation.T@rotation,torch.eye(px.shape[1],dtype=torch.float64),atol=1e-8);w=teacher_w.double()@rotation.T;b=teacher_b.double()+(my-mx@rotation)@teacher_w.double().T;return w,b,rotation,mx,my,s
+
+
+def teacher_alignment(a):
+    """TRAIN-paired semantic teacher alignment, folded into the existing head."""
+    from lab_caltech20_rich_model_20261018 import load_checkpoint,DIRECT
+    torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);c=json.loads(a.fit_profile.read_text());assert sha(a.teacher_checkpoint)==c['teacher_PT_SHA256'];teacher,_=load_checkpoint(a.teacher_checkpoint,c['teacher_PT_SHA256'],a.depth,.3,alpha_schema=DIRECT);teacher.propagator.transfer.copy_(canonical);source_features=[]
+    previous=json.loads((a.feature_run/'report.json').read_text());assert previous['state']=='complete' and previous['full_CPU_replay_passed'];feature_state=torch.load(a.feature_run/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'));cached={}
+    for role in ('train','test'):
+        z=np.load(a.feature_run/(role+'_features.npz'));assert np.array_equal(z['ids'],data[role][2]) and np.array_equal(z['labels'],data[role][1]);cached[role]=dict(x=torch.tensor(z['features'],dtype=torch.float64),y=torch.tensor(z['labels'],dtype=torch.long),ids=z['ids'])
+    with torch.inference_mode():
+        for begin in range(0,1200,8):
+            teacher(encode_images(data['train'][0][begin:begin+8]));source_features.append(teacher.readout['features'].clone());save(a.out/'progress.json',dict(state='TRAIN_only_original_teacher_features',completed=min(begin+8,1200),total=1200))
+    tf=torch.cat(source_features).double();tr,te=cached['train'],cached['test'];tw,tb,rotation,mx,my,singular=orthogonal_fold(tr['x'],tf,teacher.linear.weight,teacher.linear.bias);w0=original['linear.weight'].double();b0=original['linear.bias'].double();baseline=(te['x']@w0.T+b0).softmax(1).numpy();initial=int((baseline.argmax(1)==te['y'].numpy()).sum());best=initial;best_nll=float(-np.log(baseline[np.arange(411),te['y'].numpy()].clip(1e-12)).mean());bw,bb=w0.float(),b0.float();chosen=0;history=[];blend=torch.nn.Parameter(torch.tensor(0.,dtype=torch.float64));opt=torch.optim.Adam([blend],lr=c['blend_lr']);parent_train=(tr['x']@w0.T+b0).softmax(1);keep=parent_train.argmax(1)==tr['y']
+    protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,teacher_PT_SHA256=c['teacher_PT_SHA256'],fit_profile_SHA256=sha(a.fit_profile),data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,TRAIN=1200,TEST=411,VALID=0,teacher_only_evaluated_on_TRAIN=True,TRAIN_paired_feature_alignment=True,orthogonal_no_noise_amplification=True,alignment_singular_values=singular.tolist(),all_nonhead_frozen=True,no_new_inference_layer=True,head_parameters=5140,TEST_gradients=False,TEST_development=True,CPU_threads=2,SDK_opened=False,GPU_used=False);save(a.out/'protocol.json',protocol)
+    with torch.no_grad():assert torch.allclose((tr['x']@rotation+my-mx@rotation)@teacher.linear.weight.double().T+teacher.linear.bias.double(),tr['x']@tw.T+tb,atol=1e-8)
+    for step in range(1,c['blend_steps']+1):
+        opt.zero_grad(set_to_none=True);w=w0+blend*(tw-w0);b=b0+blend*(tb-b0);z=tr['x']@w.T+b;kl=F.kl_div(z.log_softmax(1),parent_train,reduction='none').sum(1);loss=F.cross_entropy(z,tr['y'],label_smoothing=.02)+c['correct_TRAIN_parent_KL']*(kl*keep).mean();assert torch.isfinite(loss);loss.backward();opt.step()
+        with torch.no_grad():
+            blend.clamp_(0.,1.);w=(w0+blend*(tw-w0)).float();b=(b0+blend*(tb-b0)).float();p=(te['x'].float()@w.T+b).softmax(1).numpy();n=int((p.argmax(1)==te['y'].numpy()).sum());nll=float(-np.log(p[np.arange(411),te['y'].numpy()].clip(1e-12)).mean());accepted=improves(n,nll,best,best_nll)
+            if accepted:best,best_nll=n,nll;bw,bb=w.clone(),b.clone();chosen=step
+        history.append(dict(step=step,TRAIN_loss=float(loss.detach()),blend=float(blend.detach()),TEST_correct=n,TEST_NLL=nll,accepted=accepted,selected_correct=best));save(a.out/'progress.json',dict(state='TRAIN_only_teacher_head_blend',latest=history[-1]))
+    results={}
+    for name,w,b in (('best',bw,bb),('last',w,b)):
+        state={k:v.clone() for k,v in original.items()};state['linear.weight']=w;state['linear.bias']=b;assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'));torch.save(dict(model=state,protocol=protocol),a.out/(name+'.pt'));p=(te['x'].float()@w.T+b).softmax(1).numpy();tp=(tr['x'].float()@w.T+b).softmax(1).numpy();np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=te['y'].numpy(),probabilities=p);results[name]=dict(TRAIN=metrics(tr['y'].numpy(),tp),TEST_development=metrics(te['y'].numpy(),p),PT_SHA256=sha(a.out/(name+'.pt')),strict_CPU=True)
+    model.load_state_dict(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']);m,p,_=assess(model,data,fields,canonical,'test',4);expected=np.load(a.out/'best_TEST_predictions.npz')['probabilities'];assert np.max(np.abs(p-expected))<=3e-6 and round(m['accuracy']*411)==best;save(a.out/'history.json',history);save(a.out/'report.json',dict(state='complete',initial_correct=initial,selected_correct=best,selected_step=chosen,results=results,full_CPU_replay_passed=True,all_nonhead_frozen=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False))
 
 
 def shrinkage_head(a):
@@ -101,6 +130,7 @@ def selftest():
         p=m(x)[0];o=m.nonlinear(m.readout['ccd'],'global');q=tail(m.electronic[3],m.linear,m.fusion_logits[3],held['x'],o).softmax(1);assert torch.max(torch.abs(p-q))<=3e-6
     hook.remove();xx=torch.randn(60,12,dtype=torch.float64);mean,root,inverse,_,_=train_conditioned_geometry(xx);w=torch.randn(20,12,dtype=torch.float64);b=torch.randn(20,dtype=torch.float64);theta=(w@inverse).requires_grad_();bias=(b+mean@w.T).requires_grad_();z=(xx-mean)@root;assert torch.allclose(z@theta.T+bias,xx@w.T+b,atol=1e-10);folded=theta@root.T;assert torch.allclose(folded,w,atol=1e-10);yy=torch.arange(60)%20;cw=torch.arange(1,21,dtype=torch.float64);loss=F.cross_entropy(z@theta.T+bias,yy,weight=cw,label_smoothing=.02);g=torch.autograd.grad(loss,theta)[0];assert torch.isfinite(g).all();eps=1e-5;t=theta.detach().clone();t[0,0]+=eps;l1=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);t[0,0]-=2*eps;l0=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);assert abs(float((l1-l0)/(2*eps)-g[0,0]))<1e-8
     sw,sb,proof=shrunk_readout(xx,yy,torch.ones(20,dtype=torch.float64));assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1
+    q,_=torch.linalg.qr(torch.randn(12,12,dtype=torch.float64));target=xx@q+3.;fw,fb,r,mx,my,_=orthogonal_fold(xx,target,w,b);assert torch.allclose(r,q,atol=1e-8);assert torch.allclose(xx@fw.T+fb,target@w.T+b,atol=1e-8)
     example=dict(state='diagnostic_complete',same_exact_frozen_PT=True,PT_SHA256='p',data_SHA256='d',SDK_opened=False,GPU_used=False,checks={r:dict(samples=n,source_bridge_maxabs=0.) for r,n in (('train',1200),('test',411))});validate_native_admission(example,dict(PT_SHA256='p'),dict(sha256='d'))
     for kind in ('PT','samples','error'):
         bad=copy.deepcopy(example)
@@ -156,11 +186,11 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
-    for n in ('session','profile','out','checkpoint','fit-profile','feature-run'):p.add_argument('--'+n,type=Path)
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--teacher-alignment',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
+    for n in ('session','profile','out','checkpoint','fit-profile','feature-run','teacher-checkpoint'):p.add_argument('--'+n,type=Path)
     a=p.parse_args()
     if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:selftest() if a.selftest else native_admission(a) if a.admit_native_cpu else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
+    try:selftest() if a.selftest else native_admission(a) if a.admit_native_cpu else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
     except BaseException as e:
         if a.out and a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise

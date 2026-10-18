@@ -1,0 +1,7 @@
+{
+  "teacher_PT_SHA256": "7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5",
+  "blend_steps": 64,
+  "blend_lr": 0.025,
+  "correct_TRAIN_parent_KL": 0.5,
+  "scope": "One bounded TRAIN-only paired simulated-teacher feature alignment. Original frozen L4 teacher evaluated on physical1200 TRAIN identities only; no teacher TEST/VALID extraction. Orthogonal alignment has no feature noise amplification and is folded analytically into original5140-head weights; no added inference layer, optics/upstream change or new CCD. TRAIN CE and correct-TRAIN parent KL fit a single convex head-blend scalar. Full411 TEST development selection, no TEST gradients; preserve parent if no gain. CPU2threads, no SDK/GPU, no hyperparameter grid."
+}

@@ -1,5 +1,23 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+NewL2 has all4833 frames and strictCPU complete: ordinary final5150 fit selected
+274/411, then targeted original-head repair improved to291/411(70.8029%). It is
+still46 examples below frozen337, not within1pp. L6 admitted after full native
+TRAIN1200/TEST411 exact local parity and began fresh router capture; its hardware
+chain does not wait for further L2 electronic optimization.
+
+The next bounded L2/L4 readout comparison uses their original frozen simulation
+model as a TRAIN-only semantic teacher. Pair current measured TRAIN features
+with simulated features of the SAME1200 TRAIN images, estimate one orthogonal
+alignment, and analytically fold it into the existing Linear256to20 head. The
+alignment cannot amplify feature norms. A single convex parent/new-head blend
+gets64 TRAIN CE/LS.02/correct-TRAIN KL.5 updates, not a TEST-driven parameter
+gradient or a hyperparameter grid. Teacher is never evaluated on TEST/VALID in
+this fit. Both have parent/best/last and full411 CPU/frozen-nonhead audits; these
+remain TEST-informed development results, not independent generalization. No
+added inference layer, optical change, recapture, SDK or GPU. Prior/shrinkage
+failures remain and must not be relabelled as improvements.
+
 L6 numerical admission explicitly uses same-host graph parity, consistent with
 the original L4 deployment contract. Exact frozenPTeb3d... retains historical
 cached354/411; original source/bridge/portable reference on serverCPU each give
