@@ -58,13 +58,13 @@ def fit(a):
     assert not a.out.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(17);cfg=read(a.profile);proof=read(a.cache/'report.json');assert proof['passed'];pr=read(a.parent/'report.json');warm=a.parent/'best.pt';assert sha(warm)==pr['results']['best']['PT_SHA256']==proof['parent_PT_SHA256'];state=torch.load(warm,map_location='cpu',weights_only=False)['model'];head=existing_head(state);raw=torch.nn.Parameter(state['fusion_logits.5'].clone());data={}
     for role,n in [('train',1000),('test',411)]:
         p=a.cache/(role+'.npz');assert sha(p)==proof['files_SHA256'][role]
-        with np.load(p,allow_pickle=False) as z:data[role]={k:torch.from_numpy(z[k].copy()) for k in z.files}
+        with np.load(p,allow_pickle=False) as z:data[role]={k:z[k].copy() if k=='ids' else torch.from_numpy(z[k].copy()) for k in z.files}
         assert len(data[role]['ids'])==n
     assert not set(data['train']['ids'].tolist())&set(data['test']['ids'].tolist());assert torch.bincount(data['train']['labels'],minlength=20).tolist()==[50]*20
     def assess(role):
         with torch.no_grad():p=head(compact_features(raw,data[role])).softmax(1).numpy()
         return metrics(data[role]['labels'].numpy(),p),p
-    baseline,bp=assess('test');tr0,tp0=assess('train');assert baseline['accuracy']==pr['results']['best']['TEST_development']['accuracy'];assert float(np.abs(bp-data['test']['probabilities'].numpy()).max())<=3e-6;initial=best=round(411*baseline['accuracy']);best_nll=float(-np.log(bp[np.arange(411),data['test']['labels'].numpy()].clip(1e-12)).mean());teacher=torch.from_numpy(tp0);selected=0;history=[];allowed={'linear.weight','linear.bias','fusion_logits.5'};git=HERE.parents[2]/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe';protocol=dict(config=cfg,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),parent_PT_SHA256=sha(warm),cache_SHA256=proof['files_SHA256'],allowed_keys=sorted(allowed),trainable_parameters=5141,all_captured_upstream_frozen=True,terminal_conv_frozen=True,TRAIN=1000,TEST=411,VALID=0,TRAIN_gradients_only=True,TEST_development=True,SDK=False,GPU=False,new_layers=0,new_CCD=0);save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',probabilities=bp,labels=data['test']['labels'].numpy(),ids=data['test']['ids'].numpy())
+    baseline,bp=assess('test');tr0,tp0=assess('train');assert baseline['accuracy']==pr['results']['best']['TEST_development']['accuracy'];assert float(np.abs(bp-data['test']['probabilities'].numpy()).max())<=3e-6;initial=best=round(411*baseline['accuracy']);best_nll=float(-np.log(bp[np.arange(411),data['test']['labels'].numpy()].clip(1e-12)).mean());teacher=torch.from_numpy(tp0);selected=0;history=[];allowed={'linear.weight','linear.bias','fusion_logits.5'};git=HERE.parents[2]/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe';protocol=dict(config=cfg,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),parent_PT_SHA256=sha(warm),cache_SHA256=proof['files_SHA256'],allowed_keys=sorted(allowed),trainable_parameters=5141,all_captured_upstream_frozen=True,terminal_conv_frozen=True,TRAIN=1000,TEST=411,VALID=0,TRAIN_gradients_only=True,TEST_development=True,SDK=False,GPU=False,new_layers=0,new_CCD=0);save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',probabilities=bp,labels=data['test']['labels'].numpy(),ids=data['test']['ids'])
     def persist(kind,epoch):
         z={k:v.clone() for k,v in state.items()};z['fusion_logits.5']=raw.detach().clone()
         for k,v in head.state_dict().items():z['linear.'+k]=v.detach().clone()
@@ -73,7 +73,7 @@ def fit(a):
     for epoch in range(1,cfg['epochs']+1):
         order=torch.randperm(1000);loss_total=0.
         for begin in range(0,1000,64):
-            ix=order[begin:begin+64];part={k:v[ix] for k,v in d.items()};yy=part['labels'];optim.zero_grad();logits=head(compact_features(raw,part));loss=F.cross_entropy(logits,yy,weight=cw,label_smoothing=.02);keep=teacher[ix].argmax(1)==yy
+            ix=order[begin:begin+64];part={k:v[ix] for k,v in d.items() if k!='ids'};yy=part['labels'];optim.zero_grad();logits=head(compact_features(raw,part));loss=F.cross_entropy(logits,yy,weight=cw,label_smoothing=.02);keep=teacher[ix].argmax(1)==yy
             if keep.any():loss=loss+cfg['parent_KL']*F.kl_div(logits[keep].log_softmax(1),teacher[ix][keep],reduction='batchmean')
             assert torch.isfinite(loss);loss.backward();assert raw.grad is not None and torch.isfinite(raw.grad);optim.step();loss_total+=float(loss.detach())*len(ix)
         tr,_=assess('train');te,p=assess('test');n=round(te['accuracy']*411);nll=float(-np.log(p[np.arange(411),data['test']['labels'].numpy()].clip(1e-12)).mean())
@@ -83,7 +83,7 @@ def fit(a):
     persist('last',epoch);results={}
     for kind in ('best','last'):
         p=a.out/(kind+'.pt');s=torch.load(p,map_location='cpu',weights_only=False)['model'];head.load_state_dict(existing_head(s).state_dict());raw.data.copy_(s['fusion_logits.5']);tr,trp=assess('train');te,tep=assess('test')
-        for role,pp in [('train',trp),('test',tep)]:np.savez_compressed(a.out/(kind+'_'+role.upper()+'_predictions.npz'),probabilities=pp,labels=data[role]['labels'].numpy(),ids=data[role]['ids'].numpy())
+        for role,pp in [('train',trp),('test',tep)]:np.savez_compressed(a.out/(kind+'_'+role.upper()+'_predictions.npz'),probabilities=pp,labels=data[role]['labels'].numpy(),ids=data[role]['ids'])
         results[kind]=dict(TRAIN=tr,TEST_development=te,PT_SHA256=sha(p),strict_CPU=True,all_optical_and_captured_upstream_unchanged=True)
     assert best>=initial;save(a.out/'report.json',dict(state='complete',depth=6,baseline_correct=initial,best_correct=best,best_NLL=best_nll,selected_epoch=selected,actual_epochs=epoch,results=results,target_min_correct=cfg['target_min_correct'],target_met=best>=cfg['target_min_correct'],only_existing_post_final_CCD_changed=True,TRAIN=1000,TEST=411,VALID=0,TEST_development=True,SDK=False,GPU=False));print(json.dumps(dict(state='complete',baseline_correct=initial,best_correct=best,selected_epoch=selected)),flush=True)
 
