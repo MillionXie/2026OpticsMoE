@@ -1,0 +1,6 @@
+{
+  "alignment":"ridge_logits",
+  "teacher_PT_SHA256":{"2":"b08923b3b43731e2832fc0251a54af9c52535226176070b92b4954f636614c69","4":"7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5"},
+  "blend_steps":64,"blend_lr":0.025,"correct_TRAIN_parent_KL":0.5,
+  "scope":"One TRAIN-only regularized affine transfer from measured TRAIN features to frozen original simulation teacher logits. Unlike failed orthogonal alignment, permits anisotropic scaling, with regularization chosen by TRAIN-only GCV over33 fixed variance-relative values (NOT a TEST candidate sweep). Fold directly into same original5140 head; no new inference layer. Evaluate that TRAIN-fitted readout once and fit one convex parent/readout blend by TRAIN CE+correct-TRAIN parentKL.5; full411 TEST development selection, never TEST derivatives or teacher TEST/VALID extraction. All nonhead and measured input producers frozen, no CCD/SDK/GPU, CPU2. Record complete TRAIN GCV curve and source/PT/data identities, bestlast and strict fullphysical replay. Preserve accepted312/260 parent if no gain."
+}

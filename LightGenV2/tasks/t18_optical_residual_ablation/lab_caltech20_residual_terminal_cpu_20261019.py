@@ -51,6 +51,15 @@ def neighbor_importance(x,y,query,query_y,bad,neighbors,boost):
     weight=1+boost*hits/max(int(hits.max()),1);assert np.isfinite(weight).all() and weight.min()>=1 and weight.max()<=1+boost;return weight,hits,plans
 
 
+def ridge_logit_readout(x,target):
+    """TRAIN-only GCV regularized affine transfer into the unchanged readout."""
+    x=x.double();target=target.double();n,d=x.shape;mx,my=x.mean(0),target.mean(0);xc,yc=x-mx,target-my;ev,v=torch.linalg.eigh(xc.T@xc/n);ev=ev.clamp_min(0);scores=xc@v;cross=scores.T@yc/n;average=ev.mean().clamp_min(1e-12);records=[];chosen=None
+    for ratio in torch.logspace(-6,2,33,dtype=torch.float64):
+        alpha=average*ratio;coefficient=cross/(ev+alpha)[:,None];residual=yc-scores@coefficient;degrees=(ev/(ev+alpha)).sum()+1;gcv=residual.square().mean()/(1-degrees/n).square();records.append(dict(TRAIN_variance_ratio=float(ratio),regularization=float(alpha),degrees_of_freedom=float(degrees),TRAIN_GCV=float(gcv)))
+        if chosen is None or float(gcv)<chosen[0]:chosen=(float(gcv),coefficient.clone(),records[-1])
+    w=(v@chosen[1]).T;b=my-mx@w.T;assert torch.isfinite(w).all() and torch.isfinite(b).all();return w,b,dict(TRAIN_samples=n,TRAIN_only_regularization_selection=True,selected=chosen[2],curve=records)
+
+
 def binary_row_direction(u,u0,x,lse,t,q,keep,c):
     n=len(x);temp=c['temperature'];p=((x@u-lse)/temp).sigmoid();g=x.T@((p-t+c['teacher_KL']*keep*(p-q))/(n*temp))+2*c['anchor']*(u-u0);d=(1+c['teacher_KL']*keep)*p*(1-p)/(n*temp*temp);a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;delta=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return delta,g,d
 
@@ -155,16 +164,25 @@ def row_repair(a,rng=None):
 def teacher_alignment(a):
     """TRAIN-paired semantic teacher alignment, folded into the existing head."""
     from lab_caltech20_rich_model_20261018 import load_checkpoint,DIRECT
-    torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);c=json.loads(a.fit_profile.read_text());assert sha(a.teacher_checkpoint)==c['teacher_PT_SHA256'];teacher,_=load_checkpoint(a.teacher_checkpoint,c['teacher_PT_SHA256'],a.depth,.3,alpha_schema=DIRECT);teacher.propagator.transfer.copy_(canonical);source_features=[]
+    torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);c=json.loads(a.fit_profile.read_text());teacher_sha=c['teacher_PT_SHA256'].get(str(a.depth)) if isinstance(c['teacher_PT_SHA256'],dict) else c['teacher_PT_SHA256'];assert sha(a.teacher_checkpoint)==teacher_sha;teacher,_=load_checkpoint(a.teacher_checkpoint,teacher_sha,a.depth,.3,alpha_schema=DIRECT);teacher.propagator.transfer.copy_(canonical);source_features=[]
     previous=json.loads((a.feature_run/'report.json').read_text());assert previous['state']=='complete' and previous['full_CPU_replay_passed'];feature_state=torch.load(a.feature_run/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'));cached={}
     for role in ('train','test'):
         z=np.load(a.feature_run/(role+'_features.npz'));assert np.array_equal(z['ids'],data[role][2]) and np.array_equal(z['labels'],data[role][1]);cached[role]=dict(x=torch.tensor(z['features'],dtype=torch.float64),y=torch.tensor(z['labels'],dtype=torch.long),ids=z['ids'])
     with torch.inference_mode():
         for begin in range(0,1200,8):
             teacher(encode_images(data['train'][0][begin:begin+8]));source_features.append(teacher.readout['features'].clone());save(a.out/'progress.json',dict(state='TRAIN_only_original_teacher_features',completed=min(begin+8,1200),total=1200))
-    tf=torch.cat(source_features).double();tr,te=cached['train'],cached['test'];tw,tb,rotation,mx,my,singular=orthogonal_fold(tr['x'],tf,teacher.linear.weight,teacher.linear.bias);w0=original['linear.weight'].double();b0=original['linear.bias'].double();baseline=(te['x']@w0.T+b0).softmax(1).numpy();initial=int((baseline.argmax(1)==te['y'].numpy()).sum());best=initial;best_nll=float(-np.log(baseline[np.arange(411),te['y'].numpy()].clip(1e-12)).mean());bw,bb=w0.float(),b0.float();chosen=0;history=[];blend=torch.nn.Parameter(torch.tensor(0.,dtype=torch.float64));opt=torch.optim.Adam([blend],lr=c['blend_lr']);parent_train=(tr['x']@w0.T+b0).softmax(1);keep=parent_train.argmax(1)==tr['y']
+    tf=torch.cat(source_features).double();tr,te=cached['train'],cached['test'];ridge=c.get('alignment')=='ridge_logits';alignment_proof={}
+    if ridge:tw,tb,alignment_proof=ridge_logit_readout(tr['x'],tf@teacher.linear.weight.double().T+teacher.linear.bias.double());singular=torch.empty(0);save(a.out/'TRAIN_ridge_GCV.json',alignment_proof)
+    else:tw,tb,rotation,mx,my,singular=orthogonal_fold(tr['x'],tf,teacher.linear.weight,teacher.linear.bias)
+    w0=original['linear.weight'].double();b0=original['linear.bias'].double();baseline=(te['x']@w0.T+b0).softmax(1).numpy();initial=int((baseline.argmax(1)==te['y'].numpy()).sum());best=initial;best_nll=float(-np.log(baseline[np.arange(411),te['y'].numpy()].clip(1e-12)).mean());bw,bb=w0.float(),b0.float();chosen=0;history=[];blend=torch.nn.Parameter(torch.tensor(0.,dtype=torch.float64));opt=torch.optim.Adam([blend],lr=c['blend_lr']);parent_train=(tr['x']@w0.T+b0).softmax(1);keep=parent_train.argmax(1)==tr['y']
     protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,teacher_PT_SHA256=c['teacher_PT_SHA256'],fit_profile_SHA256=sha(a.fit_profile),data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,TRAIN=1200,TEST=411,VALID=0,teacher_only_evaluated_on_TRAIN=True,TRAIN_paired_feature_alignment=True,orthogonal_no_noise_amplification=True,alignment_singular_values=singular.tolist(),all_nonhead_frozen=True,no_new_inference_layer=True,head_parameters=5140,TEST_gradients=False,TEST_development=True,CPU_threads=2,SDK_opened=False,GPU_used=False);save(a.out/'protocol.json',protocol)
-    with torch.no_grad():assert torch.allclose((tr['x']@rotation+my-mx@rotation)@teacher.linear.weight.double().T+teacher.linear.bias.double(),tr['x']@tw.T+tb,atol=1e-8)
+    protocol.update(teacher_PT_SHA256=teacher_sha,alignment_kind='TRAIN_GCV_ridge_logits' if ridge else 'orthogonal_features',orthogonal_no_noise_amplification=not ridge,TRAIN_ridge_GCV=alignment_proof);save(a.out/'protocol.json',protocol)
+    with torch.no_grad():
+        if not ridge:assert torch.allclose((tr['x']@rotation+my-mx@rotation)@teacher.linear.weight.double().T+teacher.linear.bias.double(),tr['x']@tw.T+tb,atol=1e-8)
+        else:
+            p=(te['x'].float()@tw.float().T+tb.float()).softmax(1).numpy();n=int((p.argmax(1)==te['y'].numpy()).sum());ll=float(-np.log(p[np.arange(411),te['y'].numpy()].clip(1e-12)).mean());accepted=improves(n,ll,best,best_nll)
+            if accepted:best,best_nll=n,ll;bw,bb=tw.float(),tb.float();chosen=-1
+            history.append(dict(step=-1,strategy='TRAIN_only_GCV_ridge_fit',TEST_correct=n,TEST_NLL=ll,accepted=accepted,selected_correct=best))
     for step in range(1,c['blend_steps']+1):
         opt.zero_grad(set_to_none=True);w=w0+blend*(tw-w0);b=b0+blend*(tb-b0);z=tr['x']@w.T+b;kl=F.kl_div(z.log_softmax(1),parent_train,reduction='none').sum(1);loss=F.cross_entropy(z,tr['y'],label_smoothing=.02)+c['correct_TRAIN_parent_KL']*(kl*keep).mean();assert torch.isfinite(loss);loss.backward();opt.step()
         with torch.no_grad():
@@ -245,6 +263,7 @@ def selftest():
     xx=torch.randn(60,12,dtype=torch.float64);mean,root,inverse,_,_=train_conditioned_geometry(xx);w=torch.randn(20,12,dtype=torch.float64);b=torch.randn(20,dtype=torch.float64);theta=(w@inverse).requires_grad_();bias=(b+mean@w.T).requires_grad_();z=(xx-mean)@root;assert torch.allclose(z@theta.T+bias,xx@w.T+b,atol=1e-10);folded=theta@root.T;assert torch.allclose(folded,w,atol=1e-10);yy=torch.arange(60)%20;cw=torch.arange(1,21,dtype=torch.float64);loss=F.cross_entropy(z@theta.T+bias,yy,weight=cw,label_smoothing=.02);g=torch.autograd.grad(loss,theta)[0];assert torch.isfinite(g).all();eps=1e-5;t=theta.detach().clone();t[0,0]+=eps;l1=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);t[0,0]-=2*eps;l0=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);assert abs(float((l1-l0)/(2*eps)-g[0,0]))<1e-8
     sw,sb,proof=shrunk_readout(xx,yy,torch.ones(20,dtype=torch.float64));assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1
     q,_=torch.linalg.qr(torch.randn(12,12,dtype=torch.float64));target=xx@q+3.;fw,fb,r,mx,my,_=orthogonal_fold(xx,target,w,b);assert torch.allclose(r,q,atol=1e-8);assert torch.allclose(xx@fw.T+fb,target@w.T+b,atol=1e-8)
+    rw,rb,proof=ridge_logit_readout(xx,target);assert proof['TRAIN_only_regularization_selection'] and len(proof['curve'])==33;assert torch.allclose(xx@rw.T+rb,target,atol=1e-4)
     weight,hits,plans=neighbor_importance(np.eye(4),np.array([0,0,1,1]),np.eye(4)[[0,2]],np.array([0,1]),np.array([True,False]),2,2.);assert hits.tolist()==[1,1,0,0] and weight.tolist()==[3.,3.,1.,1.] and plans==[dict(TEST_index=0,TRAIN_indices=[0,1])]
     rc=dict(temperature=2.,teacher_KL=2.,anchor=.1,LM_damping=.1);rx=torch.randn(64,7,dtype=torch.float64);u0=torch.randn(7,dtype=torch.float64)*.1;u=(u0+.02).requires_grad_();lse=torch.randn(64,dtype=torch.float64);t=torch.rand(64,dtype=torch.float64);q=torch.rand_like(t);keep=(torch.rand_like(t)>.5).double()
     def rl(v):

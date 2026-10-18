@@ -1,5 +1,17 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Paired Huber retained L2 312 with tied-NLL1.1047536 after first-no-progress
+continuation; L4 stayed260 and no continuation was dispatched for its E0 result.
+No new accuracy claim. Next is a bounded regularized TRAIN teacher-logit transfer,
+because earlier orthogonal feature alignment could not rescale anisotropic
+measured/simulated channels. `lab_caltech20_residual_ridgeteacher_profile_20261019.json`
+fits an affine map on matched1200 TRAIN only; regularization selected by TRAIN-only
+GCV over33 fixed variance-relative values, NOT TEST selection of33 candidates.
+The learned readout is folded directly into original5140 head, then optionally
+one scalar convex blend is TRAIN-fitted. Original frozen teacher never evaluated
+on TEST/VALID. Complete411 TEST remains development selection, no TEST gradient.
+All optics/nonhead remain frozen, CPU2/no SDK/GPU/new CCD or inference layer.
+
 The neighbor-weighted coupled head comparison completed120steps, selected E0
 312/260; last L2 269 and L4 109 are rejected, not improvements. Diagnosis at
 accepted parents: TRAIN L2 943/1200,L4 592/1200; required single-row radius for
