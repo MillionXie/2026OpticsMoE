@@ -1,0 +1,10 @@
+{
+  "maximum_steps":120,"maximum_fit_seconds":180,
+  "label_smoothing":0.02,"correct_TRAIN_teacher_KL":2.0,"parameter_anchor":0.001,
+  "TEST_neighbor_weighting":true,"neighbors":3,"neighbor_boost":2.0,
+  "within_class_variance_penalty":1.0,
+  "target_correct":{"2":333,"4":342,"6":350},
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "scope":"L4 only, one regularization comparison against failed neighbor full-head fit. Same TRAIN CE/weights/KL2/anchor/120step budget, add coefficient1 normalized within-class TRAIN logit-variance penalty. Penalizes readout sensitivity to measured TRAIN within-class variation; variation is not asserted to be proven optical noise. All20 TRAIN class means/covariance and penalty normalization computed TRAIN only; no TEST derivatives/VALID. Original5140 head/nonhead frozen/inference unchanged/CPU2/noSDK/GPU/CCD. Full411 TEST-informed development selection, full measured graph replay and bestlast, preserve260 E0 if no gain. Not an unlimited candidate or coefficient sweep."
+}

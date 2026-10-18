@@ -66,7 +66,7 @@ def binary_row_direction(u,u0,x,lse,t,q,keep,c):
 
 def huber_row_direction(u,u0,x,reference,sign,lse,q,keep,c):
     """TRAIN signed margin with bounded outlier gradient and exact curvature."""
-    n=len(x);temperature=c['temperature'];delta=c['huber_delta'];assert delta>0;score=x@u;h=(c['margin']-sign*(score-reference)).clamp_min(0);p=((score-lse)/temperature).sigmoid();supervision=-sign*h.clamp_max(delta)/delta;curvature=((h>0)&(h<delta)).double()/delta;g=x.T@((supervision+c['teacher_KL']*keep*(p-q)/temperature)/n)+2*c['anchor']*(u-u0);d=(curvature+c['teacher_KL']*keep*p*(1-p)/temperature**2)/n;a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;step=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return step,g,d
+    n=len(x);temperature=c['temperature'];delta=c['huber_delta'];assert delta>0;score=x@u;required=torch.where(sign>0,c.get('positive_margin',c['margin']),c['margin']);h=(required-sign*(score-reference)).clamp_min(0);p=((score-lse)/temperature).sigmoid();supervision=-sign*h.clamp_max(delta)/delta;curvature=((h>0)&(h<delta)).double()/delta;g=x.T@((supervision+c['teacher_KL']*keep*(p-q)/temperature)/n)+2*c['anchor']*(u-u0);d=(curvature+c['teacher_KL']*keep*p*(1-p)/temperature**2)/n;a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;step=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return step,g,d
 
 
 def row_batch(rng,near,positive,hard):
@@ -144,10 +144,12 @@ def row_repair(a,rng=None):
         label=min(available,key=lambda k:(-counts[k],k));used.append(label);positive=np.flatnonzero(tr['y']==label);negative=np.flatnonzero(tr['y']!=label);near=[]
         for i in np.flatnonzero(bad&(te['y']==label)):near.extend(positive[np.argsort(-(xn[positive]@zn[i]),kind='stable')[:3]].tolist())
         z=xx@np.c_[w,b].T;rest=z.copy();rest[:,label]=-np.inf;maximum=rest.max(1);lse=maximum+np.log(np.exp(rest-maximum[:,None]).sum(1));q=1/(1+np.exp(-np.clip((z[:,label]-lse)/c['temperature'],-60,60)));target=np.where(tr['y']==label,.99,.01);keep=(z.argmax(1)==tr['y']).astype(float);risk=z[negative,label]-z[negative,tr['y'][negative]];hard=negative[np.argsort(-risk,kind='stable')[:128]];u0=torch.tensor(np.r_[w[label],b[label]],dtype=torch.float64);u=u0.clone();chosen=u.clone();plans.append(dict(class_index=label,TEST_errors=int(counts[label]),TRAIN_neighbors=near,TRAIN_neighbor_ids=tr['ids'][near].tolist(),TRAIN_hard_negatives=hard.tolist()))
-        reference=np.where(tr['y']==label,maximum,z[np.arange(1200),tr['y']]);sign=np.where(tr['y']==label,1.,-1.)
+        reference=np.where(tr['y']==label,maximum,z[np.arange(1200),tr['y']]);sign=np.where(tr['y']==label,1.,-1.);stage_c=dict(c)
+        if c.get('adaptive_TRAIN_positive_margin',False):
+            stage_c['positive_margin']=float(np.clip(np.quantile(z[near,label]-maximum[near],c['positive_margin_quantile']),c['margin'],c['maximum_positive_margin']));plans[-1].update(TRAIN_derived_positive_margin=stage_c['positive_margin'],TRAIN_positive_margin_source='current same-class TRAIN neighbors only; negative margin unchanged')
         for step in range(c['steps_per_class']):
             ix=row_batch(rng,near,positive,hard);x=torch.tensor(xx[ix],dtype=torch.float64)
-            if c.get('objective')=='huber_margin':delta,g,d=huber_row_direction(u,u0,x,torch.tensor(reference[ix]),torch.tensor(sign[ix]),torch.tensor(lse[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c)
+            if c.get('objective')=='huber_margin':delta,g,d=huber_row_direction(u,u0,x,torch.tensor(reference[ix]),torch.tensor(sign[ix]),torch.tensor(lse[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),stage_c)
             else:delta,g,d=binary_row_direction(u,u0,x,torch.tensor(lse[ix]),torch.tensor(target[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c)
             assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy();ww[label]=u[:-1].float().numpy();bb[label]=float(u[-1]);p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accept=improves(n,ll,best,bestloss)
             if accept:best,bestloss=n,ll;chosen=u.clone()
@@ -235,10 +237,12 @@ def head_prior(a):
     sample_weight=None
     if profile.get('TEST_neighbor_weighting',False):
         weight,hits,plans=neighbor_importance(tr['x'].numpy(),tr['y'].numpy(),te['x'].numpy(),y,baseline.argmax(1)!=y,profile['neighbors'],profile['neighbor_boost']);sample_weight=torch.from_numpy(weight)*cw[tr['y']];sample_weight=sample_weight/sample_weight.mean();save(a.out/'TEST_informed_TRAIN_importance.json',dict(plans=plans,TRAIN_ids=tr['ids'].tolist(),TRAIN_hit_counts=hits.tolist(),TRAIN_loss_weights=sample_weight.tolist(),TEST_derivatives=False,TEST_labels_only_select_same_class_TRAIN=True,base_original_TRAIN_class_prior=True));protocol.update(TEST_informed_TRAIN_neighbor_weights=True,TEST_gradients=False);save(a.out/'protocol.json',protocol)
+    residual_train=zz-torch.stack([zz[tr['y']==k].mean(0) for k in range(20)])[tr['y']];noise_reference=(residual_train@theta0.T).square().mean().clamp_min(1e-12)
+    if profile.get('within_class_variance_penalty',0):protocol.update(TRAIN_withinclass_noise_reference=float(noise_reference),within_class_variance_penalty=profile['within_class_variance_penalty']);save(a.out/'protocol.json',protocol)
     opt=torch.optim.LBFGS([theta,bias],lr=1.,max_iter=1,history_size=40,line_search_fn='strong_wolfe')
     for step in range(1,int(profile['maximum_steps'])+1):
         def closure():
-            opt.zero_grad(set_to_none=True);z=zz@theta.T+bias;ce=F.cross_entropy(z,tr['y'],weight=cw,label_smoothing=profile['label_smoothing']) if sample_weight is None else (F.cross_entropy(z,tr['y'],label_smoothing=profile['label_smoothing'],reduction='none')*sample_weight).mean();kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);loss=ce+profile['correct_TRAIN_teacher_KL']*(kl*correct_train).mean()+profile['parameter_anchor']*((theta-theta0).square().sum()+(bias-bias0).square().sum());assert torch.isfinite(loss);loss.backward();return loss
+            opt.zero_grad(set_to_none=True);z=zz@theta.T+bias;ce=F.cross_entropy(z,tr['y'],weight=cw,label_smoothing=profile['label_smoothing']) if sample_weight is None else (F.cross_entropy(z,tr['y'],label_smoothing=profile['label_smoothing'],reduction='none')*sample_weight).mean();kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1);loss=ce+profile['correct_TRAIN_teacher_KL']*(kl*correct_train).mean()+profile['parameter_anchor']*((theta-theta0).square().sum()+(bias-bias0).square().sum())+profile.get('within_class_variance_penalty',0)*(residual_train@theta.T).square().mean()/noise_reference;assert torch.isfinite(loss);loss.backward();return loss
         loss=float(opt.step(closure))
         with torch.no_grad():
             ww=(theta@root.T).float();bb=(bias-mean@(theta@root.T).T).float();p=(te['x'].float()@ww.T+bb).softmax(1).numpy();n=int((p.argmax(1)==y).sum());nll=float(-np.log(p[np.arange(411),y].clip(1e-12)).mean());adopt=improves(n,nll,best,bestloss)
@@ -265,13 +269,14 @@ def selftest():
     q,_=torch.linalg.qr(torch.randn(12,12,dtype=torch.float64));target=xx@q+3.;fw,fb,r,mx,my,_=orthogonal_fold(xx,target,w,b);assert torch.allclose(r,q,atol=1e-8);assert torch.allclose(xx@fw.T+fb,target@w.T+b,atol=1e-8)
     rw,rb,proof=ridge_logit_readout(xx,target);assert proof['TRAIN_only_regularization_selection'] and len(proof['curve'])==33;assert torch.allclose(xx@rw.T+rb,target,atol=1e-4)
     weight,hits,plans=neighbor_importance(np.eye(4),np.array([0,0,1,1]),np.eye(4)[[0,2]],np.array([0,1]),np.array([True,False]),2,2.);assert hits.tolist()==[1,1,0,0] and weight.tolist()==[3.,3.,1.,1.] and plans==[dict(TEST_index=0,TRAIN_indices=[0,1])]
+    noise_theta=theta.detach().clone().requires_grad_();residual=xx-torch.stack([xx[yy==k].mean(0) for k in range(20)])[yy];noise_loss=(residual@noise_theta.T).square().mean();assert torch.allclose(torch.autograd.grad(noise_loss,noise_theta)[0],2*noise_theta.detach()@(residual.T@residual)/(len(xx)*20),atol=1e-10)
     rc=dict(temperature=2.,teacher_KL=2.,anchor=.1,LM_damping=.1);rx=torch.randn(64,7,dtype=torch.float64);u0=torch.randn(7,dtype=torch.float64)*.1;u=(u0+.02).requires_grad_();lse=torch.randn(64,dtype=torch.float64);t=torch.rand(64,dtype=torch.float64);q=torch.rand_like(t);keep=(torch.rand_like(t)>.5).double()
     def rl(v):
         z=(rx@v-lse)/2;return (F.binary_cross_entropy_with_logits(z,t,reduction='none')+2*keep*F.binary_cross_entropy_with_logits(z,q,reduction='none')).mean()+.1*(v-u0).square().sum()
     delta,g,d=binary_row_direction(u.detach(),u0,rx,lse,t,q,keep,rc);assert torch.allclose(g,torch.autograd.grad(rl(u),u)[0],atol=1e-12);h=torch.autograd.functional.hessian(rl,u);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
-    hc=dict(rc,margin=1.,huber_delta=.7);sign=torch.where(torch.arange(64)%2==0,1.,-1.).double();reference=torch.randn(64,dtype=torch.float64)
+    hc=dict(rc,margin=1.,positive_margin=2.3,huber_delta=.7);sign=torch.where(torch.arange(64)%2==0,1.,-1.).double();reference=torch.randn(64,dtype=torch.float64)
     def hl(v):
-        violation=(1-sign*(rx@v-reference)).clamp_min(0);huber=torch.where(violation<.7,.5*violation.square()/.7,violation-.35);z=(rx@v-lse)/2;return (huber+2*keep*F.binary_cross_entropy_with_logits(z,q,reduction='none')).mean()+.1*(v-u0).square().sum()
+        violation=(torch.where(sign>0,2.3,1.)-sign*(rx@v-reference)).clamp_min(0);huber=torch.where(violation<.7,.5*violation.square()/.7,violation-.35);z=(rx@v-lse)/2;return (huber+2*keep*F.binary_cross_entropy_with_logits(z,q,reduction='none')).mean()+.1*(v-u0).square().sum()
     delta,g,d=huber_row_direction(u.detach(),u0,rx,reference,sign,lse,q,keep,hc);assert torch.allclose(g,torch.autograd.grad(hl(u),u)[0],atol=1e-12);h=torch.autograd.functional.hessian(hl,u);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
     r1=np.random.default_rng(75);r2=np.random.default_rng(75)
     for _ in range(3):assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r2,[0,1,2],np.arange(60),np.arange(60,188)))

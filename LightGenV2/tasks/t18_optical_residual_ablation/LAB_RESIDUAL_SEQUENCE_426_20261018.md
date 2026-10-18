@@ -1,5 +1,19 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+TRAIN-only ridge-teacher comparison completed, retained E0 312/260 (last
+299/206 rejected). The next two bounded comparisons have distinct diagnosed
+failure modes, not a seed/coefficient grid. L2's targeted TRAIN neighbors have
+40.4% inactive at margin1 (75th percentile1.86695): per-row positive required
+margin now uses TRAIN-neighbor75th percentile clipped[1,4], while negative
+margin stays1. Profile `lab_caltech20_residual_adaptmargin_profile_20261019.json`.
+L4 only10.8% neighbors inactive, so do NOT apply that change blindly; instead
+test a normalized within-class TRAIN logit-variance penalty on the failed
+neighbor-weighted full-head fit, coefficient1, otherwise same loss/budget.
+Profile `lab_caltech20_L4_residual_withinclass_profile_20261019.json`. Within-class
+variation is not asserted to be proven optical noise. Both preserve original
+5140 head/inference/nonhead, TRAIN-only derivatives, full411 TEST development
+selection, strict fullphysical replay, E0 preservation, no SDK/GPU/newCCD/VALID.
+
 Paired Huber retained L2 312 with tied-NLL1.1047536 after first-no-progress
 continuation; L4 stayed260 and no continuation was dispatched for its E0 result.
 No new accuracy claim. Next is a bounded regularized TRAIN teacher-logit transfer,
