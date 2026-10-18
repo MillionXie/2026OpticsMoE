@@ -28,6 +28,30 @@ def own_sdk_controller(pid,name,actual_parent,verified_controller):
     return verified_controller is not None and pid==actual_parent==verified_controller and name.lower() in ('python.exe','pythonw.exe')
 
 
+def python_parent_chain(controller_pid):
+    """Windows venv launchers insert a Python shim; verify <=3 Python-only hops."""
+    if os.name!='nt':return [os.getppid()] if os.getppid()==controller_pid else []
+    import ctypes
+    from ctypes import wintypes
+    class Entry(ctypes.Structure):
+        _fields_=[('dwSize',wintypes.DWORD),('cntUsage',wintypes.DWORD),('th32ProcessID',wintypes.DWORD),('th32DefaultHeapID',ctypes.c_size_t),('th32ModuleID',wintypes.DWORD),('cntThreads',wintypes.DWORD),('th32ParentProcessID',wintypes.DWORD),('pcPriClassBase',wintypes.LONG),('dwFlags',wintypes.DWORD),('szExeFile',wintypes.WCHAR*260)]
+    k=ctypes.WinDLL('kernel32',use_last_error=True);k.CreateToolhelp32Snapshot.argtypes=[wintypes.DWORD,wintypes.DWORD];k.CreateToolhelp32Snapshot.restype=wintypes.HANDLE
+    for n in ('Process32FirstW','Process32NextW'):getattr(k,n).argtypes=[wintypes.HANDLE,ctypes.POINTER(Entry)];getattr(k,n).restype=wintypes.BOOL
+    k.CloseHandle.argtypes=[wintypes.HANDLE];handle=k.CreateToolhelp32Snapshot(2,0);assert handle not in (None,ctypes.c_void_p(-1).value)
+    table={};e=Entry();e.dwSize=ctypes.sizeof(Entry)
+    try:
+        ok=k.Process32FirstW(handle,ctypes.byref(e))
+        while ok:table[int(e.th32ProcessID)]=(int(e.th32ParentProcessID),e.szExeFile.lower());ok=k.Process32NextW(handle,ctypes.byref(e))
+    finally:k.CloseHandle(handle)
+    path=[];pid=os.getpid()
+    for _ in range(3):
+        assert pid in table and table[pid][1] in ('python.exe','pythonw.exe')
+        pid=table[pid][0];path.append(pid)
+        if pid==controller_pid:
+            assert table.get(pid,(0,''))[1] in ('python.exe','pythonw.exe');return path
+    return []
+
+
 def read(p):return json.loads(Path(p).read_text(encoding='utf-8'))
 
 
@@ -131,7 +155,8 @@ def fit(a):
     if a.controller_receipt is not None:
         assert a.controller_receipt.resolve().is_relative_to(a.session.resolve())
         controller=read(a.controller_receipt)
-        assert controller['pid']==os.getppid()==a.controller_pid
+        assert controller['pid']==a.controller_pid
+        ancestry=python_parent_chain(a.controller_pid);assert ancestry and ancestry[-1]==a.controller_pid,('Not own Python parent lineage',os.getpid(),os.getppid(),a.controller_pid,ancestry)
         assert controller['source_SHA256']==sha(__file__) and Path(controller['session']).resolve()==a.session.resolve()
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and 'A100' not in torch.cuda.get_device_name(0)
     active=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name','--format=csv,noheader'],text=True)
@@ -140,7 +165,7 @@ def fit(a):
         parts=row.split(',',2)
         if parts[0].strip()!=cfg['GPU_UUID']:continue
         pid=int(parts[1]);name=names.get(pid,Path(parts[2].strip()).name.lower())
-        own_idle_SDK_controller=own_sdk_controller(pid,name,os.getppid(),a.controller_pid if controller is not None else None)
+        own_idle_SDK_controller=own_sdk_controller(pid,name,ancestry[-1] if controller is not None else os.getppid(),a.controller_pid if controller is not None else None)
         assert own_idle_SDK_controller or gpu_process_allowed(pid,name,os.getpid(),os.name,cfg['desktop_graphics_process_allowlist']),('GPU occupied; do not kill/share',pid,name)
     torch.set_num_threads(cfg['cpu_threads']);torch.manual_seed(cfg['seed']);torch.cuda.set_per_process_memory_fraction(.70,0)
     data,dm=load_data(a.session);base,_=load_checkpoint(a.checkpoint,a.checkpoint_sha,2,.3,alpha_schema=DIRECT)
