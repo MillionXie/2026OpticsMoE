@@ -7,6 +7,8 @@ VAL acquisition, electronic fitting or automatic failure/restart path is present
 import argparse,hashlib,json,math,os,shutil,sys,time,traceback
 from datetime import datetime,timezone
 from pathlib import Path
+HERE=Path(__file__).resolve().parent
+sys.path[:0]=[str(HERE),str(HERE.parents[2])]
 import numpy as np
 import torch
 from PIL import Image
