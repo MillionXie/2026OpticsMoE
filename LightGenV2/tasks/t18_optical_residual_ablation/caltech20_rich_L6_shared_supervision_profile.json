@@ -1,0 +1,11 @@
+{
+  "run":"caltech20_rich20_L6_sameHead_intermediate_supervision_s17_20261018",
+  "auxiliary_weight":0.1,
+  "cases":{"L6_shared_head":{"depth":6,"fresh":false,"epochs":10,"electronic_warm_epochs":0,"phase_lr":0.00015,"full_rms_gradient":true}},
+  "gpu_order":[4,1,3,2,0],
+  "new_inference_parameters":0,
+  "additional_inference_heads":0,
+  "automatic_scope_end_after_segment":false,
+  "TEST_used_for_selection":true,
+  "independent_generalization":false
+}
