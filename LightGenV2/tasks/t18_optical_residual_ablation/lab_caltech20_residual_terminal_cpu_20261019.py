@@ -13,6 +13,35 @@ from lab_caltech20_rich_capture_20261018 import metrics
 from lab_caltech10_20261015 import save
 
 
+def shrunk_readout(x,y,prior_counts):
+    """Pooled within-class TRAIN covariance with estimated diagonal shrinkage."""
+    x=x.double();means=torch.stack([x[y==k].mean(0) for k in range(20)]);residual=x-means[y];n,d=x.shape;cov=residual.T@residual/n;average=cov.trace()/d;delta=(cov.square().sum()-d*average.square()).clamp_min(1e-20);beta=(residual.square().sum(1).square().mean()-cov.square().sum()).clamp_min(0)/n;shrink=(beta/delta).clamp(0,1);regular=(1-shrink)*cov+shrink*average*torch.eye(d,dtype=x.dtype);regular+=average.clamp_min(1e-12)*1e-6*torch.eye(d,dtype=x.dtype);w=torch.linalg.solve(regular,means.T).T;b=-.5*(means*w).sum(1)+(prior_counts/prior_counts.sum()).log();assert torch.isfinite(w).all() and torch.linalg.eigvalsh(regular).min()>0;return w,b,dict(TRAIN_estimated_shrinkage=float(shrink),TRAIN_withinclass_average_variance=float(average),minimum_regularized_eigenvalue=float(torch.linalg.eigvalsh(regular).min()))
+
+
+def shrinkage_head(a):
+    torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);c=json.loads(a.fit_profile.read_text());assert c['original_TRAIN_cache_SHA256']==dm['source_cache_sha256'];counts=torch.tensor(c['original_TRAIN_counts'],dtype=torch.float64);assert int(counts.sum())==3141;previous=json.loads((a.feature_run/'report.json').read_text());assert previous['state']=='complete' and previous['full_CPU_replay_passed'];cached={}
+    feature_state=torch.load(a.feature_run/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'))
+    for role in ('train','test'):
+        z=np.load(a.feature_run/(role+'_features.npz'));assert np.array_equal(z['ids'],data[role][2]) and np.array_equal(z['labels'],data[role][1]);cached[role]=dict(x=torch.tensor(z['features'],dtype=torch.float64),y=torch.tensor(z['labels'],dtype=torch.long),ids=z['ids'])
+    m,baseline,features=assess(model,data,fields,canonical,'test',4,True);assert np.max(np.abs(features-cached['test']['x'].numpy()))<=3e-6;initial=round(m['accuracy']*411);tr,te=cached['train'],cached['test'];ww,bb,proof=shrunk_readout(tr['x'],tr['y'],counts);prior=(counts/counts.sum()).log();geometry_bias=bb-prior;scale=torch.nn.Parameter(torch.tensor(0.,dtype=torch.float64));opt=torch.optim.LBFGS([scale],lr=.5,max_iter=1,line_search_fn='strong_wolfe');cw=counts/counts.mean();train_logits=tr['x']@ww.T+geometry_bias;best=initial;best_nll=float(-np.log(baseline[np.arange(411),te['y'].numpy()].clip(1e-12)).mean());bw=original['linear.weight'].clone();bbest=original['linear.bias'].clone();history=[];selected=0
+    protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,profile=c,fit_profile_SHA256=sha(a.fit_profile),feature_files_SHA256={r:sha(a.feature_run/(r+'_features.npz')) for r in ('train','test')},data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,TRAIN=1200,TEST=411,VALID=0,TRAIN_only_covariance_and_class_prior=True,covariance=proof,all_nonhead_frozen=True,trainable_head_parameters=5140,no_new_inference_layer=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False)
+    save(a.out/'protocol.json',protocol)
+    for step in range(int(c['temperature_steps'])+1):
+        if step:
+            def closure():
+                opt.zero_grad(set_to_none=True);loss=F.cross_entropy(train_logits*scale.exp()+prior,tr['y'],weight=cw,label_smoothing=.02);assert torch.isfinite(loss);loss.backward();return loss
+            opt.step(closure)
+            with torch.no_grad():scale.clamp_(-9.,3.)
+        with torch.no_grad():
+            w=(ww*scale.exp()).float();b=(geometry_bias*scale.exp()+prior).float();p=(te['x'].float()@w.T+b).softmax(1).numpy();n=int((p.argmax(1)==te['y'].numpy()).sum());nll=float(-np.log(p[np.arange(411),te['y'].numpy()].clip(1e-12)).mean());adopt=improves(n,nll,best,best_nll)
+            if adopt:best,best_nll=n,nll;bw,bbest=w.clone(),b.clone();selected=step+1
+        history.append(dict(step=step,TEST_correct=n,TEST_NLL=nll,selected_correct=best,accepted=adopt,TRAIN_fitted_logit_scale=float(scale.exp())));save(a.out/'progress.json',history[-1])
+    results={}
+    for name,w,b in (('best',bw,bbest),('last',w,b)):
+        state={k:v.clone() for k,v in original.items()};state['linear.weight']=w;state['linear.bias']=b;assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'));torch.save(dict(model=state,protocol=protocol),a.out/(name+'.pt'));p=(te['x'].float()@w.T+b).softmax(1).numpy();tp=(tr['x'].float()@w.T+b).softmax(1).numpy();np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=te['y'].numpy(),probabilities=p);results[name]=dict(TRAIN=metrics(tr['y'].numpy(),tp),TEST_development=metrics(te['y'].numpy(),p),PT_SHA256=sha(a.out/(name+'.pt')),strict_CPU=True)
+    model.load_state_dict(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']);m,p,_=assess(model,data,fields,canonical,'test',4);expected=np.load(a.out/'best_TEST_predictions.npz')['probabilities'];assert np.max(np.abs(p-expected))<=3e-6 and round(m['accuracy']*411)==best;save(a.out/'history.json',history);save(a.out/'report.json',dict(state='complete',initial_correct=initial,selected_correct=best,selected_step=selected,actual_temperature_steps=c['temperature_steps'],results=results,all_nonhead_frozen=True,full_CPU_replay_passed=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False))
+
+
 def head_prior(a):
     """Correct balanced physical-TRAIN sampling using ORIGINAL TRAIN counts only.
 
@@ -50,7 +79,8 @@ def selftest():
     with torch.no_grad():
         p=m(x)[0];o=m.nonlinear(m.readout['ccd'],'global');q=tail(m.electronic[3],m.linear,m.fusion_logits[3],held['x'],o).softmax(1);assert torch.max(torch.abs(p-q))<=3e-6
     hook.remove();xx=torch.randn(60,12,dtype=torch.float64);mean,root,inverse,_,_=train_conditioned_geometry(xx);w=torch.randn(20,12,dtype=torch.float64);b=torch.randn(20,dtype=torch.float64);theta=(w@inverse).requires_grad_();bias=(b+mean@w.T).requires_grad_();z=(xx-mean)@root;assert torch.allclose(z@theta.T+bias,xx@w.T+b,atol=1e-10);folded=theta@root.T;assert torch.allclose(folded,w,atol=1e-10);yy=torch.arange(60)%20;cw=torch.arange(1,21,dtype=torch.float64);loss=F.cross_entropy(z@theta.T+bias,yy,weight=cw,label_smoothing=.02);g=torch.autograd.grad(loss,theta)[0];assert torch.isfinite(g).all();eps=1e-5;t=theta.detach().clone();t[0,0]+=eps;l1=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);t[0,0]-=2*eps;l0=F.cross_entropy(z@t.T+bias.detach(),yy,weight=cw,label_smoothing=.02);assert abs(float((l1-l0)/(2*eps)-g[0,0]))<1e-8
-    print(json.dumps(dict(passed=True,exact_original_terminal_forward=True,trainable_parameters=5150,TRAIN_prior_gradient_and_analytic_fold=True,SDK_opened=False,GPU_used=False)),flush=True)
+    sw,sb,proof=shrunk_readout(xx,yy,torch.ones(20,dtype=torch.float64));assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1
+    print(json.dumps(dict(passed=True,exact_original_terminal_forward=True,trainable_parameters=5150,TRAIN_prior_gradient_and_analytic_fold=True,TRAIN_shrinkage_positive_definite=True,SDK_opened=False,GPU_used=False)),flush=True)
 
 
 def run(a):
@@ -96,11 +126,11 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
-    for n in ('session','profile','out','checkpoint','fit-profile'):p.add_argument('--'+n,type=Path)
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
+    for n in ('session','profile','out','checkpoint','fit-profile','feature-run'):p.add_argument('--'+n,type=Path)
     a=p.parse_args()
     if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:selftest() if a.selftest else head_prior(a) if a.head_prior else run(a)
+    try:selftest() if a.selftest else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
     except BaseException as e:
         if a.out and a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise

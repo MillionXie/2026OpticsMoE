@@ -1,0 +1,6 @@
+{
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "temperature_steps": 25,
+  "scope": "One TRAIN-only shared-covariance shrinkage readout plus bounded TRAIN-fitted global temperature. Shrinkage intensity estimated from within-class TRAIN residual covariance, not a TEST-selected regularization grid. Original TRAIN priors only. Fold directly into existing5140 Linear parameters, no new inference layer or nonhead modification. TEST-informed development selection only, no TEST gradients. Parent preserved if no gain; no SDK/GPU or recapture. Motivation: unregularized conditioned head overfits balanced physical TRAIN100% versus TEST24.33%."
+}

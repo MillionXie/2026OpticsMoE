@@ -1,5 +1,16 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+L4's joint5150 trial actually ended after51epochs/608.9fitseconds without an
+accuracy gain (best remains the224 parent, last153). The subsequent weighted
+TRAIN-prior conditioned head reached TRAIN100% but last TEST100/411, so that
+last PT is rejected; best still224 with only a tied-accuracy NLL change. This
+supports stronger noise/overfit control, not indefinite extra epochs. One
+additional TRAIN-estimated pooled within-class covariance shrinkage readout is
+authorized within the existing electronic-head scope. It folds into the same
+5140 parameters, uses TRAIN priors and at most25 TRAIN temperature updates, no
+TEST-derived covariance or regularization grid. Preserve parent if no full411
+gain. Profile `lab_caltech20_L4_residual_shrinkage_profile_20261019.json`.
+
 2026-10-19 overnight authorization keeps both tracks active without a recurring
 monitor. All L4 optics/8055 physical CCDs are complete and frozen. Its original
 fullphysical128/411 improved to224/411(54.5012%) by the existing5140-head TRAIN
