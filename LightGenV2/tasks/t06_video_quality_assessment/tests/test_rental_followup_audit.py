@@ -47,3 +47,10 @@ def test_wrong_service_energy_rejected(tmp_path):
     report['repeats'][0]['service_cost']['estimated_energy_16_videos_j']=10
     (folder/'report.json').write_text(json.dumps(report))
     with pytest.raises(ValueError):a.audit_sequential_point(folder)
+
+
+def test_measured_source_uses_exact_git_blob_not_checkout_line_endings():
+    from pathlib import Path
+    repo=Path(a.__file__).resolve().parents[3]
+    assert a.measured_source_sha(repo,'03ab757e8','LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py')=='bfeec599ffecb105338b6f185ff6d6cbff2730024d0b195704e72c2a7cd082ba'
+    with pytest.raises(ValueError):a.measured_source_sha(repo,'HEAD','../outside.py')

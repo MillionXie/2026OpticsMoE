@@ -7,6 +7,7 @@ import json
 import math
 from pathlib import Path
 import statistics
+import subprocess
 import time
 
 
@@ -15,6 +16,13 @@ def read_csv(path):
 
 
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def measured_source_sha(repo,commit,name):
+    if Path(name).is_absolute() or '..' in Path(name).parts: raise ValueError("Repository-relative bound source required")
+    # Hash the precise measured Git blob, not a Windows checkout with CRLF conversion.
+    blob=subprocess.check_output(['git','show',f'{commit}:{name}'],cwd=repo,timeout=15)
+    return hashlib.sha256(blob).hexdigest()
 
 
 def ranks(values):
@@ -161,7 +169,7 @@ def audit_sequential_session(run,session,test,partial=False):
     root=run/"sequential_busy50_20261018"/session
     identity=json.loads((root/"kimi/identity.json").read_text())
     repo=Path(__file__).resolve().parents[3]
-    for name,digest in identity["sources"].items(): assert sha(repo/name)==digest, name
+    for name,digest in identity["sources"].items(): assert measured_source_sha(repo,identity['git_commit'],name)==digest, name
     assert sha(run/"kimi/train/best_checkpoint.pt")==identity["checkpoint_sha256"]
     results={}; native=[]
     for folder in sorted((root/"kimi").glob("*")):
