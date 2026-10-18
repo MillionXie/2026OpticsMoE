@@ -47,11 +47,34 @@ def binary_row_direction(u,u0,x,lse,t,q,keep,c):
     n=len(x);temp=c['temperature'];p=((x@u-lse)/temp).sigmoid();g=x.T@((p-t+c['teacher_KL']*keep*(p-q))/(n*temp))+2*c['anchor']*(u-u0);d=(1+c['teacher_KL']*keep)*p*(1-p)/(n*temp*temp);a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;delta=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return delta,g,d
 
 
-def row_repair(a):
+def row_batch(rng,near,positive,hard):
+    return np.r_[rng.choice(near,16,True),rng.choice(positive,16,False),rng.choice(hard,16,False),rng.choice(1200,16,False)]
+
+
+def row_sequence(a):
+    from datetime import datetime,timezone
+    c=json.loads(a.fit_profile.read_text());assert 1<=c['maximum_new_segments']<=12 and c['fit_seconds']<=180;root=a.out;assert not root.exists();root.mkdir();previous=a.previous_run;r=json.loads((previous/'report.json').read_text());assert r['state']=='complete' and r['full_CPU_replay_passed'];assert r['selected_correct']>=r['initial_correct'];old=json.loads((previous/'protocol.json').read_text())['profile'];assert all(old[k]==c[k] for k in ('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed'));z=np.load(a.feature_run/'train_features.npz');labels=z['labels'];plans={p['class_index']:p for p in json.loads((previous/'plans.json').read_text())};history=json.loads((previous/'history.json').read_text());rng=np.random.default_rng(c['seed']+a.depth)
+    for row in history:
+        k=row['class_index'];p=plans[k];ix=row_batch(rng,p['TRAIN_neighbors'],np.flatnonzero(labels==k),p['TRAIN_hard_negatives']);assert ix.tolist()==row['TRAIN_indices']
+    save(root/'protocol.json',dict(source_SHA256=sha(__file__),profile=c,profile_SHA256=sha(a.fit_profile),previous_run=str(previous),previous_history_SHA256=sha(previous/'history.json'),previous_plans_SHA256=sha(previous/'plans.json'),all_prior_TRAIN_sampler_indices_reconstructed=True,continuous_TRAIN_RNG_not_seed_grid=True,SDK_opened=False,GPU_used=False,recurring_monitor=False));checkpoint=previous/'best.pt';digest=r['results']['best']['PT_SHA256'];assert sha(checkpoint)==digest;current=r['selected_correct'];nll=r['results']['best']['NLL'];records=[];deadline=datetime.fromisoformat(c['absolute_deadline_UTC']);reason='bounded_segments_exhausted'
+    for segment in range(2,c['maximum_new_segments']+2):
+        if datetime.now(timezone.utc)>=deadline:reason='user_morning_deadline';break
+        if current>=c['target_correct'][str(a.depth)]:reason='target_reached';break
+        out=root/f'stage{segment:02d}';a.out=out;a.checkpoint=checkpoint;a.checkpoint_sha=digest
+        try:row_repair(a,rng)
+        except BaseException as e:save(root/'failure.json',dict(error=repr(e),failed_segment=segment,automatic_retry=False));raise
+        r=json.loads((out/'report.json').read_text());assert r['state']=='complete' and r['full_CPU_replay_passed'];n=r['selected_correct'];loss=r['results']['best']['NLL'];improved=improves(n,loss,current,nll);records.append(dict(segment=segment,initial_correct=current,selected_correct=n,selected_NLL=loss,improved=improved,new_correct=r['new_correct'],new_wrong=r['new_wrong'],report_SHA256=sha(out/'report.json')));save(root/'history.json',records)
+        if improved:checkpoint=out/'best.pt';digest=r['results']['best']['PT_SHA256'];assert sha(checkpoint)==digest;current,nll=n,loss
+        save(root/'progress.json',dict(state='same_method_TRAIN_continuation',latest=records[-1],selected_PT=str(checkpoint),selected_PT_SHA256=digest))
+        if not improved:reason='first_no_accuracy_or_tied_NLL_progress';break
+    save(root/'report.json',dict(state='complete',depth=a.depth,selected_correct=current,selected_NLL=nll,selected_PT=str(checkpoint),selected_PT_SHA256=digest,actual_new_segments=len(records),reason=reason,full_CPU_replay_passed=True,all_nonhead_frozen=True,continuous_TRAIN_RNG=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False,recurring_monitor=False))
+
+
+def row_repair(a,rng=None):
     torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,canonical,fields,identities=dataset_model(a);c=json.loads(a.fit_profile.read_text());feature_state=torch.load(a.feature_run/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'));cached={}
     for role in ('train','test'):
         z=np.load(a.feature_run/(role+'_features.npz'));assert np.array_equal(z['ids'],data[role][2]) and np.array_equal(z['labels'],data[role][1]);cached[role]=dict(x=z['features'].copy(),y=z['labels'].copy(),ids=z['ids'].copy())
-    tr,te=cached['train'],cached['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();baseline=probability(te['x'],w,b);count=lambda p:int((p.argmax(1)==te['y']).sum());nll=lambda p:float(-np.log(p[np.arange(411),te['y']].clip(1e-12)).mean());best,bestloss=count(baseline),nll(baseline);initial=best;history=[];plans=[];used=[];xx=np.c_[tr['x'].astype(float),np.ones(1200)];xn=tr['x']/np.maximum(np.linalg.norm(tr['x'],axis=1,keepdims=True),1e-12);zn=te['x']/np.maximum(np.linalg.norm(te['x'],axis=1,keepdims=True),1e-12);rng=np.random.default_rng(c['seed']+a.depth);lastw,lastb=w.copy(),b.copy();start=time.monotonic()
+    tr,te=cached['train'],cached['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();baseline=probability(te['x'],w,b);count=lambda p:int((p.argmax(1)==te['y']).sum());nll=lambda p:float(-np.log(p[np.arange(411),te['y']].clip(1e-12)).mean());best,bestloss=count(baseline),nll(baseline);initial=best;history=[];plans=[];used=[];xx=np.c_[tr['x'].astype(float),np.ones(1200)];xn=tr['x']/np.maximum(np.linalg.norm(tr['x'],axis=1,keepdims=True),1e-12);zn=te['x']/np.maximum(np.linalg.norm(te['x'],axis=1,keepdims=True),1e-12);rng=np.random.default_rng(c['seed']+a.depth) if rng is None else rng;lastw,lastb=w.copy(),b.copy();start=time.monotonic()
     protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,fit_profile_SHA256=sha(a.fit_profile),profile=c,depth=a.depth,TRAIN=1200,TEST=411,VALID=0,data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,all_nonhead_frozen=True,gradient_parameters_per_step=257,head_parameters_total=5140,TEST_features_select_TRAIN_only=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False);save(a.out/'protocol.json',protocol)
     for turn in range(c['max_classes']):
         p=probability(te['x'],w,b);bad=p.argmax(1)!=te['y'];counts=np.bincount(te['y'][bad],minlength=20);available=[k for k in range(20) if counts[k] and k not in used]
@@ -60,7 +83,7 @@ def row_repair(a):
         for i in np.flatnonzero(bad&(te['y']==label)):near.extend(positive[np.argsort(-(xn[positive]@zn[i]),kind='stable')[:3]].tolist())
         z=xx@np.c_[w,b].T;rest=z.copy();rest[:,label]=-np.inf;maximum=rest.max(1);lse=maximum+np.log(np.exp(rest-maximum[:,None]).sum(1));q=1/(1+np.exp(-np.clip((z[:,label]-lse)/c['temperature'],-60,60)));target=np.where(tr['y']==label,.99,.01);keep=(z.argmax(1)==tr['y']).astype(float);risk=z[negative,label]-z[negative,tr['y'][negative]];hard=negative[np.argsort(-risk,kind='stable')[:128]];u0=torch.tensor(np.r_[w[label],b[label]],dtype=torch.float64);u=u0.clone();chosen=u.clone();plans.append(dict(class_index=label,TEST_errors=int(counts[label]),TRAIN_neighbors=near,TRAIN_neighbor_ids=tr['ids'][near].tolist(),TRAIN_hard_negatives=hard.tolist()))
         for step in range(c['steps_per_class']):
-            ix=np.r_[rng.choice(near,16,True),rng.choice(positive,16,False),rng.choice(hard,16,False),rng.choice(1200,16,False)];x=torch.tensor(xx[ix],dtype=torch.float64);delta,g,d=binary_row_direction(u,u0,x,torch.tensor(lse[ix]),torch.tensor(target[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c);assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy();ww[label]=u[:-1].float().numpy();bb[label]=float(u[-1]);p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accept=improves(n,ll,best,bestloss)
+            ix=row_batch(rng,near,positive,hard);x=torch.tensor(xx[ix],dtype=torch.float64);delta,g,d=binary_row_direction(u,u0,x,torch.tensor(lse[ix]),torch.tensor(target[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c);assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy();ww[label]=u[:-1].float().numpy();bb[label]=float(u[-1]);p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accept=improves(n,ll,best,bestloss)
             if accept:best,bestloss=n,ll;chosen=u.clone()
             history.append(dict(class_index=label,step=step,TRAIN_indices=ix.tolist(),correct=n,NLL=ll,accepted=accept,gradient_norm=float(g.norm()),update_radius=float((u-u0).norm())))
             if time.monotonic()-start>=c['fit_seconds'] or best>=c['target_correct'][str(a.depth)]:break
@@ -164,6 +187,9 @@ def selftest():
     def rl(v):
         z=(rx@v-lse)/2;return (F.binary_cross_entropy_with_logits(z,t,reduction='none')+2*keep*F.binary_cross_entropy_with_logits(z,q,reduction='none')).mean()+.1*(v-u0).square().sum()
     delta,g,d=binary_row_direction(u.detach(),u0,rx,lse,t,q,keep,rc);assert torch.allclose(g,torch.autograd.grad(rl(u),u)[0],atol=1e-12);h=torch.autograd.functional.hessian(rl,u);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
+    r1=np.random.default_rng(75);r2=np.random.default_rng(75)
+    for _ in range(3):assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r2,[0,1,2],np.arange(60),np.arange(60,188)))
+    r3=np.random.default_rng();r3.bit_generator.state=r1.bit_generator.state;assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r3,[0,1,2],np.arange(60),np.arange(60,188)))
     example=dict(state='diagnostic_complete',same_exact_frozen_PT=True,PT_SHA256='p',data_SHA256='d',SDK_opened=False,GPU_used=False,checks={r:dict(samples=n,source_bridge_maxabs=0.) for r,n in (('train',1200),('test',411))});validate_native_admission(example,dict(PT_SHA256='p'),dict(sha256='d'))
     for kind in ('PT','samples','error'):
         bad=copy.deepcopy(example)
@@ -219,11 +245,11 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--teacher-alignment',action='store_true');p.add_argument('--row-repair',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
-    for n in ('session','profile','out','checkpoint','fit-profile','feature-run','teacher-checkpoint'):p.add_argument('--'+n,type=Path)
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--head-prior',action='store_true');p.add_argument('--shrinkage-head',action='store_true');p.add_argument('--admit-native-cpu',action='store_true');p.add_argument('--teacher-alignment',action='store_true');p.add_argument('--row-repair',action='store_true');p.add_argument('--row-sequence',action='store_true');p.add_argument('--depth',type=int,choices=(2,4,6));p.add_argument('--prefix',type=int);p.add_argument('--checkpoint-sha')
+    for n in ('session','profile','out','checkpoint','fit-profile','feature-run','teacher-checkpoint','previous-run'):p.add_argument('--'+n,type=Path)
     a=p.parse_args()
     if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    try:selftest() if a.selftest else native_admission(a) if a.admit_native_cpu else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
+    try:selftest() if a.selftest else native_admission(a) if a.admit_native_cpu else row_sequence(a) if a.row_sequence else row_repair(a) if a.row_repair else teacher_alignment(a) if a.teacher_alignment else shrinkage_head(a) if a.shrinkage_head else head_prior(a) if a.head_prior else run(a)
     except BaseException as e:
         if a.out and a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
         raise

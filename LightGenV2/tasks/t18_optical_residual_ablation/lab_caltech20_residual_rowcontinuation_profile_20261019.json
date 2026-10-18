@@ -1,0 +1,16 @@
+{
+  "temperature": 2.0,
+  "teacher_KL": 2.0,
+  "anchor": 0.1,
+  "LM_damping": 0.1,
+  "Newton_step": 0.25,
+  "trust_radius": 0.20,
+  "max_classes": 20,
+  "steps_per_class": 192,
+  "fit_seconds": 180,
+  "seed": 73,
+  "target_correct": {"2":333,"4":342,"6":350},
+  "maximum_new_segments": 12,
+  "absolute_deadline_UTC": "2026-10-18T23:00:00+00:00",
+  "scope": "Finite continuation of accepted radius.20 TRAIN-only row Newton method, not a candidate/seed grid or recurring monitor. Reconstruct every previous TRAIN batch from saved indices and continue the same RNG stream; warm-start accepted best weights without resetting model. At most12 new segments, first no accuracy/tied-NLL improvement, target, or user07:00 boundary stops. Each segment preserves parent/bestlast/full411CPU/indices/frozen-SHA; noTESTgrad/VALID, CPU2/noSDK/noGPU, no inference architecture or optical/capture changes. Actual stage01 improved L2 by6 and L4 by8 full411 correct predictions; further gains not guaranteed."
+}

@@ -1,5 +1,19 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Radius0.20 first actual segment improved L2 291->297/411(72.2628%),9 fixed/3
+newly wrong, and L4 224->232/411(56.4477%),26 fixed/18 newly wrong. Both fullCPU
+and nonhead freeze audits passed. These are additional TEST-informed updates,
+not isolated-method causal improvements. Preserve every earlier parent.
+
+Because both made genuine progress, each may continue the SAME accepted method
+for at most12 new segments (192steps/class/180fitseconds each), stop on first
+no accuracy or tied-NLL improvement, target, or2026-10-19 07:00 Beijing boundary.
+No new candidate/seed grid: reconstruct every previous actual TRAIN batch and
+continue its RNG stream. Original optical chain stays frozen; noSDK/GPU. Entry
+`--row-sequence`, profile `lab_caltech20_residual_rowcontinuation_profile_20261019.json`.
+This is a finite sequential fit, not a recurring automation or permission to
+resume old capture tasks. L6's independent SDK chain proceeds meanwhile.
+
 Both TRAIN-teacher comparisons ended without gain (blend selected0): L2 remains
 291/411 and L4 remains224/411. New score-gap diagnosis gives L2 wrong-example
 median required single-row radius0.10047 and90th percentile0.25317. Under the
