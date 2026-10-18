@@ -1,0 +1,22 @@
+{
+  "run": "caltech20_rich20_alpha04_same5140_head_after_encoder50_20261018",
+  "label_smoothing": 0.02,
+  "temperature": 4.0,
+  "anchor_by_depth": {
+    "2": 1,
+    "4": 10,
+    "6": 10
+  },
+  "teacher_science_sha256": "a7e07a10c57036a2e84ac2298a16c2509d45f8500db6225e154bbc175f411fee",
+  "teacher_head_sha256": "b1d02a921413f5c8a7118878aee585f17156875c8e65581d0ebd7f701aacdf61",
+  "families": [
+    "sigmoid",
+    "projected"
+  ],
+  "maximum_head_iterations": 200,
+  "maximum_new_cached_head_TEST_observations": 6,
+  "new_optical_TEST_forwards": 0,
+  "new_inference_parameters": 0,
+  "automatic_retry": false,
+  "human_deadline": "2026-10-18T09:00:00+08:00"
+}
