@@ -39,6 +39,9 @@ def load_completed_control(a):
             data[role]=dict(x=torch.from_numpy(x),y=torch.from_numpy(y.astype(np.int64)),ids=ids)
     assert not set(data['train']['ids'].tolist())&set(data['test']['ids'].tolist())
     assert profile['depth']==capture['depth'] and profile['trainable_parameters']==5140 and profile['SDK_opened'] is False and profile['GPU_used'] is False
+    if 'original_TRAIN_class_counts' in profile:
+        assert manifest['source_cache_sha256']==profile['original_TRAIN_cache_SHA256']
+        counts=profile['original_TRAIN_class_counts'];assert len(counts)==20 and sum(counts)==3141 and min(counts)>=60
     return spec,original,head,data,files,warm,capture_root,profile,report
 
 
@@ -72,7 +75,11 @@ def fit(a):
         return existing_head(state).eval()
     with torch.no_grad():assert torch.max(torch.abs(before(data['train']['x'])-deployed_head()(data['train']['x'])))<1e-4
     train_x=(data['train']['x']-mean)/scale
+    class_weights=None
+    if cfg and 'original_TRAIN_class_counts' in cfg:
+        class_weights=torch.tensor(cfg['original_TRAIN_class_counts'],dtype=torch.float32);class_weights=class_weights/class_weights.mean()
     protocol.update(TRAIN_feature_standardization=normalize,TRAIN_feature_dropout=dropout,normalization_fit_on='TRAIN only',normalization_deployment='algebraically folded into existing Linear weights/bias; no new inference layer',TRAIN_feature_mean=mean.tolist() if normalize else None,TRAIN_feature_scale=scale.tolist() if normalize else None)
+    protocol.update(loss_class_weights=class_weights.tolist() if class_weights is not None else None,class_weight_source='original full TRAIN3141 priors correcting balanced TRAIN1000 subsampling; no TEST/VALID prior fitting' if class_weights is not None else None)
     save(a.out/'protocol.json',protocol);best=baseline['accuracy'];tag={'stage':'parent','source':str(warm)};history=[]
     def checkpoint(name,selected):
         state={k:v.detach().clone() for k,v in original.items()}
@@ -88,7 +95,7 @@ def fit(a):
     for epoch in range(1,epochs_max+1):
         order=torch.randperm(1000);total=0.
         for begin in range(0,1000,64):
-            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);loss=F.cross_entropy(head(F.dropout(train_x[ix],p=dropout,training=dropout>0)),data['train']['y'][ix],label_smoothing=smoothing)
+            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);loss=F.cross_entropy(head(F.dropout(train_x[ix],p=dropout,training=dropout>0)),data['train']['y'][ix],weight=class_weights,label_smoothing=smoothing)
             assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());optim.step();total+=float(loss.detach())*len(ix)
         schedule.step()
         if epoch==1 or epoch%5==0:assess('adam_cosine',epoch,total/1000)
