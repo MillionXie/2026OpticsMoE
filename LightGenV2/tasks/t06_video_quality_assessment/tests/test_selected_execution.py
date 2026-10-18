@@ -61,3 +61,10 @@ def test_compact_cohort_and_symbols_exclude_tiny_small_rental_qwen():
     from LightGenV2.tasks.t06_video_quality_assessment.reports.plot_selected_execution import COMPACT_HIGH, COMPACT_MARKERS
     assert COMPACT_HIGH==dict(qwen=3,glm=2,clip=10,yolo=3,full=2,kimi=6)
     assert set(COMPACT_MARKERS)==set(COMPACT_HIGH)|{'ours'}
+
+
+def test_compact_point_labels_only_show_utilization():
+    from LightGenV2.tasks.t06_video_quality_assessment.reports.plot_selected_execution import compact_point_label
+    assert compact_point_label(dict(baseline='clip',batch=10,utilization_percent=98.613878))=='98.6%'
+    assert compact_point_label(dict(baseline='ours',batch=None))=='~50% spatial'
+    assert 'B=' not in compact_point_label(dict(baseline='clip',batch=1,utilization_percent=39.5916))

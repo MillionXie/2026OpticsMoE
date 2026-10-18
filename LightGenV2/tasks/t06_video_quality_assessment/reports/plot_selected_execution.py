@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.path import Path as PlotPath
 import numpy as np
 
 REPO=Path(__file__).resolve().parents[4]
@@ -93,7 +94,7 @@ def panel(ax,rows,kind):
     ax.spines['top'].set_visible(False);ax.spines['right'].set_visible(False);ax.tick_params(labelsize=9,direction='out')
 
 
-def verify_label_geometry(fig,axes):
+def verify_label_geometry(fig,axes,check_lines=False):
     fig.canvas.draw();renderer=fig.canvas.get_renderer();checks=[]
     for ax in axes:
         boxes=[text.get_bbox_patch().get_window_extent(renderer) for text in ax.texts if text.get_bbox_patch() is not None]
@@ -103,7 +104,14 @@ def verify_label_geometry(fig,axes):
             assert bounds.contains(box.x0,box.y0) and bounds.contains(box.x1,box.y1),'Label outside axes'
             assert all(not box.padded(1).overlaps(other) for other in boxes[i+1:]),'Overlapping data labels'
             assert all(not box.padded(2).contains(*ax.transData.transform(point)) for point in ax._audited_points),f'Label covers data marker: annotation {i}'
-        checks.append(dict(labels=len(boxes),overlaps=0,covered_markers=0,all_labels_within_axes=True,xlim=list(ax.get_xlim()),ylim=list(ax.get_ylim())))
+            if check_lines:
+                for line in ax.lines:
+                    vertices=line.get_transform().transform(line.get_xydata())
+                    assert not PlotPath(vertices).intersects_bbox(box.padded(1),filled=False),'Label covers model connector'
+                for j,text in enumerate(ax.texts):
+                    if j!=i and getattr(text,'arrow_patch',None) is not None:
+                        assert not text.arrow_patch.get_path().intersects_bbox(box.padded(.3),filled=False),'Label covers another annotation leader'
+        checks.append(dict(labels=len(boxes),overlaps=0,covered_markers=0,covered_connectors=0 if check_lines else None,all_labels_within_axes=True,xlim=list(ax.get_xlim()),ylim=list(ax.get_ylim())))
     return checks
 
 
@@ -308,6 +316,10 @@ def compact_group_data():
                           missing=payload['missing_measurements'],no_GPU_rerun=True)))
 
 
+def compact_point_label(row):
+    return '~50% spatial' if row['baseline']=='ours' else f"{row['utilization_percent']:.1f}%"
+
+
 def compact_panel(fig,ax,rows,group,kind):
     key='energy_j' if kind=='energy' else 'time_ms'
     rows=[r for r in rows if r['plotted']]
@@ -331,14 +343,15 @@ def compact_panel(fig,ax,rows,group,kind):
             low=r['condition']=='Approximately 50%'
             ax.scatter(x,y,marker=r['marker'],s=49 if model=='ours' else 20,
                        facecolors='white' if low else r['color'],edgecolors=r['color'],linewidths=.8,zorder=4)
-            label='N=16\n~50% spatial' if model=='ours' else f"B={r['batch']}\n{r['utilization_percent']:.1f}%"
+            label=compact_point_label(r)
             annotations.append(ax.annotate(label,(x,y),xytext=(.5,.5),textcoords='axes fraction',
                                fontsize=6.5,color=r['color'],ha='center',va='center',
                                bbox=dict(boxstyle='square,pad=.08',fc='white',ec='none',alpha=.96),
                                arrowprops=dict(arrowstyle='-',lw=.45,color=r['color'],alpha=.65),zorder=5))
     # Bounded label packing at the final physical figure size. Every endpoint is kept.
     fig.canvas.draw();renderer=fig.canvas.get_renderer();bounds=ax.get_window_extent(renderer)
-    placed=[];xy=[ax.transData.transform(p) for p in ax._audited_points]
+    placed=[];leaders=[];xy=[ax.transData.transform(p) for p in ax._audited_points]
+    connectors=[PlotPath(line.get_transform().transform(line.get_xydata())) for line in ax.lines]
     grid=[(x,y) for x in np.linspace(.08,.92,31) for y in np.linspace(.06,.94,36)]
     for ann in annotations:
         old=ax.transAxes.transform(ann.get_position());box=ann.get_bbox_patch().get_window_extent(renderer)
@@ -349,10 +362,14 @@ def compact_panel(fig,ax,rows,group,kind):
             if not(bounds.contains(candidate.x0,candidate.y0) and bounds.contains(candidate.x1,candidate.y1)):continue
             if any(candidate.padded(1.0).overlaps(v) for v in placed):continue
             if any(candidate.padded(2).contains(*v) for v in xy):continue
-            ann.set_position(p);placed.append(candidate);break
+            if any(line.intersects_bbox(candidate.padded(1.5),filled=False) for line in connectors):continue
+            if any(line.intersects_bbox(candidate.padded(.6),filled=False) for line in leaders):continue
+            leader=PlotPath([target,ax.transAxes.transform(p)])
+            if any(leader.intersects_bbox(box.padded(.6),filled=False) for box in placed):continue
+            ann.set_position(p);placed.append(candidate);leaders.append(leader);break
         else:raise AssertionError('Compact labels do not fit at physical width78mm')
     fig.canvas.draw()
-    return verify_label_geometry(fig,[ax])
+    return verify_label_geometry(fig,[ax],check_lines=True)
 
 
 def compact_group_figures():
@@ -368,12 +385,18 @@ def compact_group_figures():
                         markersize=4,label='Kimi-VL-A3B' if m=='kimi' else next(r['model'] for r in rows if r['baseline']==m)) for m in COMPACT_COLORS]
         for kind in ('latency','energy'):
             fig,ax=plt.subplots(figsize=(78/25.4,88/25.4))
-            fig.subplots_adjust(left=.19,right=.97,top=.965,bottom=.29)
+            fig.subplots_adjust(left=.19,right=.97,top=.965,bottom=.35)
             audits+=compact_panel(fig,ax,rows,group,kind)
-            fig.legend(handles=handles,loc='lower center',bbox_to_anchor=(.53,.04),ncol=2,
+            legend=fig.legend(handles=handles,loc='lower center',bbox_to_anchor=(.53,.07),ncol=2,
                        frameon=False,fontsize=6.5,columnspacing=.9,handlelength=1.4,labelspacing=.45)
-            fig.text(.19,.012,'Dashed: execution or GPU-session differences.' if group.startswith('batch1') else
-                     'Open: paced; filled: native. DS50% unavailable.',fontsize=5.5,color='#526170')
+            if group.startswith('batch1'):
+                footer=fig.text(.19,.009,'Dataset-once costs; independent utilization labels.\nDashed: execution or GPU-session differences.',fontsize=5.3,color='#526170')
+            else:
+                footer=fig.text(.19,.009,'Resident service, not dataset-once inference.\nOpen: paced; filled: native. Optical: reference only.\nOptical uses a different protocol; DS50% unavailable.',fontsize=5.3,color='#526170')
+            fig.canvas.draw();renderer=fig.canvas.get_renderer()
+            legend_box=legend.get_window_extent(renderer)
+            assert not legend_box.overlaps(ax.xaxis.label.get_window_extent(renderer)), 'Legend covers axis title'
+            assert not legend_box.overlaps(footer.get_window_extent(renderer)), 'Legend covers protocol note'
             for ext in ('png','svg','pdf'):fig.savefig(OUT/f'{group}_{kind}.{ext}',dpi=600)
             plt.close(fig)
         # Same-size placement preview: two78-mm panels form one156-mm Word row.
@@ -385,6 +408,7 @@ def compact_group_figures():
     receipt=dict(status='passed',panels=audits,individual_width_mm=78,individual_height_mm=88,
                  identical_marker_by_model=True,all_available_same_model_points_connected=True,
                  low50_hollow_high_native_filled=True,group1_qwen_and_deepseek_descriptive_dashed_links=True,
+                 utilization_only_point_labels=True,batch_and_optical_count_not_annotated=True,
                  group2_costs_all_resident_full_window=True,excluded=data['omitted_models'],
                  missing=data['missing_measurements'],source_sha256=hashlib.sha256(COMPACT_SOURCE.read_bytes()).hexdigest())
     (COMPACT_SOURCE.parent/'compact_figure_audit_20261018.json').write_text(json.dumps(receipt,indent=2)+'\n')

@@ -2,6 +2,19 @@
 
 ## Current compact figure sets (18 October 2026)
 
+**Label revision and CLIP cost check.** Point labels now show utilization only, without batch or optical-count annotations. Optical percentages retain the spatial qualifier. Text placement rejects overlap with model connectors, annotation leaders and markers; figure legends are checked against axis titles and protocol notes. Numerical inputs and both plotting workbooks are unchanged.
+
+The identical98.613878% CLIP annotation in both sets refers to the same independent resident measurement. It does not identify the same cost measurement. The first set retains the first200 distinct-video, per-batch synchronized inference timings (no explicit warmup); the second set derives complete-window resident throughput after warmup on repeated inputs, with synchronization after eight sequential forwards. Both exclude decoding, preprocessing and H2D. These differences were not individually isolated, so the time difference must not be attributed to a single overhead. The first set's sampled board mean is45.225W over only10 active samples, with driver-window averaging limitations; the second uses247.638029577W duration-weighted over the complete resident windows. Each energy calculation uses its own power and time, never the other experiment's power.
+
+| CLIP cost definition | Annotated GPU busy | Time /16 videos (ms) | Estimated energy /16 videos (J) |
+| --- | ---: | ---: | ---: |
+| Dataset-once first200 inference |98.613878% (independent resident annotation)|30.817940831|11.816368963|
+| Native resident service |98.613878% (same service windows)|9.177268892|5.376393125|
+| Paced resident service |49.771684%|17.134323161|8.809634977|
+| Retained optical reference |approximately50% spatial use, not GPU busy|10.245569591|1.177689510|
+
+The native resident CLIP time is slightly lower than the retained optical time, but its estimated energy is still higher and its SRCC is lower. The optical reference is not a matching resident-service measurement. The second set therefore must not be presented as a matched-protocol optical-versus-GPU ranking. Keeping numerical records intact is preferable to replacing one time with the other to force consistent positions across the two cost definitions. Underlying sources are `lgvq_yolo_clip_recheck_a100_20261017/clip_batch10/cost/report.json`, `lgvq_yolo_clip_sequential_a100_20261017/clip/batch10/report.json`, and `lgvq_resident_busy50_a100_20261017/attempt03_remaining_20261018/clip_batch10/report.json` in the T06 canonical runs.
+
 Each requested panel is78×88mm (600-dpi PNG and SVG/PDF), so two panels occupy156mm side by side in Word. The original expanded workbooks, figures and raw measurements remain preserved. Current compact figures omit DeepSeek-VL2-Tiny, DeepSeek-VL2-Small and rental Qwen.
 
 - **Batch1 and near-saturation:** [plotting Excel](LGVQ_batch1_near_saturation_plot_data.xlsx), [paired preview](batch1_near_saturation_pair.png), [latency](batch1_near_saturation_latency.svg), [estimated energy](batch1_near_saturation_energy.svg).
