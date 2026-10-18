@@ -1,0 +1,26 @@
+{
+  "run": "caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018",
+  "parents": {
+    "4": "0cef2848525a249bd9ffd39ee59bd958df4fa29cbd700cdbb46f555e263b9c96",
+    "6": "8cec1925ae76f0b5bbada1bd1afc179d62a3aa075932aacb4becb11a8e064548"
+  },
+  "target_correct": {
+    "4": 346,
+    "6": 350
+  },
+  "maximum_pairs": 32,
+  "steps_per_pair": 48,
+  "seed": 1810469,
+  "margin": 1.0,
+  "KL": 2.0,
+  "anchor": 0.2,
+  "lr": 0.001,
+  "momentum": 0.9,
+  "delta_radius": 0.1,
+  "L2_frozen": true,
+  "controls_frozen": true,
+  "optical_and_intermediate_electronics_frozen": true,
+  "TEST_informed_development": true,
+  "independent_generalization": false,
+  "maximum_rounds": 3
+}
