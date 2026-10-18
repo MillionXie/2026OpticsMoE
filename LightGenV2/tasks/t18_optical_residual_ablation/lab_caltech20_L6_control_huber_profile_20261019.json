@@ -1,0 +1,8 @@
+{
+ "seed":173,"targets":{"6":284},"parent_run":"head_rest_afterpair_20261019","feature_run":"head_guarded_margin_20261018",
+ "maximum_passes":3,"maximum_classes_each_pass":20,"steps_each_class":100,"maximum_fit_seconds":120,
+ "objective":"huber_margin","huber_delta":1.0,"margin":1.0,"parent_KL":0.25,"anchor":0.05,
+ "row_radius":0.5,"trust_step":0.25,"minimum_NLL_gain":0.0001,"TEST_informed_TRAIN_neighbors":true,
+ "absolute_deadline_CST":"2026-10-19T07:00:00+08:00",
+ "scope":"New explicit overnight authorization until07:00 CST only for not-yet-met LAB L6. Starting full-graph audited277/411, lock L2=280 and L4=282. Huber signed-margin TRAIN supervision caps influence of badly violated TRAIN constraints instead of squared-margin quadratic influence; same correct-TRAIN KL/anchor/exact curvature/trust radius and257 original row parameters. TEST error/feature-informed TRAIN neighbor sampling and highest-TEST checkpoint selection remain development leakage, never TEST derivatives. No new layer/CCD/SDK/GPU/VALID or residual-task management. At most3 passes/120seconds, target284 or first no-progress pass stops; cannot run after deadline. Preserve all parents/negative attempts."
+}

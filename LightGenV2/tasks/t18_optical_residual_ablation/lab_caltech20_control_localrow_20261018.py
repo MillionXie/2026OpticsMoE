@@ -20,6 +20,9 @@ def direction(a,sign,reference,lse,q,keep,theta,origin,cfg):
     family=cfg.get('objective','margin')
     if family=='binary_rest':
         temperature=cfg['temperature'];soft=((score-lse)/temperature).sigmoid();target=(sign>0).double();supervision=(soft-target)/temperature;supervision_cur=soft*(1-soft)/(temperature*temperature)
+    elif family=='huber_margin':
+        delta=float(cfg['huber_delta']);assert delta>0
+        supervision=-sign*h.clamp_max(delta)/delta;supervision_cur=((h>0)&(h<delta)).double()/delta
     else:
         assert family=='margin';supervision=-2*sign*h;supervision_cur=2*(h>0).double()
     dz=(supervision+cfg['parent_KL']*keep*(p-q))/len(a)
@@ -39,6 +42,8 @@ def selftest():
     assert improves(270,1.3,270,1.4,.0001) and not improves(269,1.,270,1.4,.0001)
     cfg.update(objective='binary_rest',temperature=.7);actual,_=direction(a,sign,r,lse,q,keep,u,origin,cfg)
     t=u.clone().requires_grad_();score=a@t;z=score-lse;target=(sign>0).double();loss=torch.nn.functional.binary_cross_entropy_with_logits(z/.7,target)+cfg['parent_KL']*(torch.nn.functional.softplus(z)-q*z).mean()+.5*cfg['anchor']*(t-origin).square().sum();g=torch.autograd.grad(loss,t,create_graph=True)[0];H=torch.stack([torch.autograd.grad(g[i],t,retain_graph=True)[0] for i in range(257)]);assert torch.allclose(actual,torch.linalg.solve(H,g.detach()),atol=1e-8,rtol=1e-6)
+    cfg.update(objective='huber_margin',huber_delta=.7);actual,_=direction(a,sign,r,lse,q,keep,u,origin,cfg)
+    t=u.clone().requires_grad_();score=a@t;h=torch.relu(1-sign*(score-r));penalty=torch.where(h<.7,h.square()/1.4,h-.35);z=score-lse;loss=penalty.mean()+cfg['parent_KL']*(torch.nn.functional.softplus(z)-q*z).mean()+.5*cfg['anchor']*(t-origin).square().sum();g=torch.autograd.grad(loss,t,create_graph=True)[0];H=torch.stack([torch.autograd.grad(g[i],t,retain_graph=True)[0] for i in range(257)]);assert torch.allclose(actual,torch.linalg.solve(H,g.detach()),atol=1e-8,rtol=1e-6)
     from lab_caltech20_rich_tail_refine_20261018 import SmallElectronicResidual,tail
     e=SmallElectronicResidual();head=torch.nn.Linear(256,20);raw=torch.nn.Parameter(torch.tensor(1.));xx=torch.rand(4,478,478);oo=torch.rand_like(xx);alpha=.8501+.0999*raw.sigmoid();logits=tail(e,head,alpha,xx,oo);teacher=logits.detach().softmax(1);yy=teacher.argmax(1);yy[0]=(yy[0]+1)%20;loss=torch.nn.functional.cross_entropy(logits,yy);keep=teacher.argmax(1)==yy;loss=loss+.25*torch.nn.functional.kl_div(logits[keep].log_softmax(1),teacher[keep],reduction='batchmean');loss.backward();params=[*e.parameters(),*head.parameters(),raw];assert sum(p.numel() for p in params)==5150 and all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
     print(json.dumps(dict(passed=True,TRAIN_margin_KL_gradient_Hessian_and_Woodbury_verified=True,accuracy_primary_NLL_secondary=True,real_data=False,SDK=False,GPU=False)),flush=True)
