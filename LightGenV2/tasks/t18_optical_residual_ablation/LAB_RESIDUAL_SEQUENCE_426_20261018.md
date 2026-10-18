@@ -1,5 +1,24 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+## Renewed terminal refinement request, 2026-10-19 morning
+
+User now asks residual L2 to drop at most3pp from fixed337/411 simulation
+(requires325/411), and residual L4 at most10pp from fixed346/411
+(requires305/411). Starting complete measured-pipeline results are318/260.
+No new L6/no-residual task, capture, upstream mask or LUT modification.
+
+One bounded new comparison removes the previous antisymmetric/zero-sum
+constraint: two existing head rows may shift independently,514 variables,
+other18 rows fixed per block. TRAIN signed Huber margin plus parent-correct
+TRAIN full20-class T2 KL and anchoring; margins use same-class TRAIN
+neighbors only. TEST confusion selects pairs and same-class TRAIN neighbors;
+TEST chooses PT but never contributes gradient. NoVALID; development metric.
+Fresh original-model CPU feature/probability parity precedes training;
+strict full411 CPU replay and nonhead SHA follow. Existing CCD identity is
+unchanged. Profile `lab_caltech20_residual_independent_pair_profile_20261019.json`:
+max3passes/300fitseconds, stop first full no-progress pass, no seed scan or
+restart of earlier stopped methods. E0 retained if no improvement.
+
 ## Foreground morning status, 2026-10-19, Asia/Shanghai
 
 The final1pp target has NOT been achieved. Full measured optical-pipeline
