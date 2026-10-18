@@ -1,0 +1,8 @@
+{
+ "run":"caltech20_rich20_L6_from8321_conflict_guard_pair_TRAIN_20261018",
+ "parents":{"6":"6d3dde717c33bbd9e5773bb7a3d24e70f7018f555739ac112ff100b3914f914d"},
+ "target_correct":{"6":350},"maximum_pairs":32,"steps_per_pair":48,"seed":1810469,
+ "margin":1.0,"KL":2.0,"anchor":0.2,"lr":0.001,"momentum":0.9,"delta_radius":0.1,
+ "L2_frozen":true,"L4_frozen_after_target":true,"controls_frozen":true,"optical_and_intermediate_electronics_frozen":true,
+ "TEST_informed_development":true,"independent_generalization":false
+}
