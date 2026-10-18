@@ -1,0 +1,7 @@
+# Prelaunch phase-code gate interface correction, 2026-10-18
+
+Before any source421 CPU claim, real forward, optimizer or GPU producer, static review found a producer/auditor field-name mismatch: the producer emits parent_capture_maxabs while the inherited independent verifier consumes parent_clean_capture_maxabs. Source421 remains published and unexecuted; its original CPU/run paths and claims stay absent. This is a new explicit four-file source closure and unique output, not a retry of a failed training or relaxed threshold.
+
+The adapter copies the same actual measured error into both exact keys, preserving the3e-6 limit and all actual all20/macro16/tail5/micro1vs2 gradient checks. Independent CPU verifies producer/consumer compatibility as well as the full previous rotation/RNG/state proof. Own independent science requires the two fields to be exactly equal in addition to all prior phase-code/prototype/Adam/EMA/source/ID-label-CM-NLL checks. Model state, initialization, losses, ten epochs, phase sigma1 code, noise streams and deployment graph are unchanged.
+
+Use this new main/check/audit entry with the existing frozen profile. Do not execute the original421 CPU/main entries. Parallel fresh source416 continues unchanged. Combined owned GPU children remain<=5, one per0/1/2/3/4; no A100 or foreign process actions. All existing best models and failed/unexecuted entries remain protected. TEST results are development results under the existing explicit human authorization.
