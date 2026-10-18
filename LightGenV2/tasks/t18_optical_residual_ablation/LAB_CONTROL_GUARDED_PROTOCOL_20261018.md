@@ -102,3 +102,13 @@ parent-correct TRAIN KL, smaller group learning rates, max40 epochs/600 fit
 seconds. Accuracy-primary meaningful NLL tie selection, retain E0. After any
 selected terminal change, fresh full graph replay is required; old features are
 not interchangeable. No new CCD/SDK/GPU. This is laboratory-only development.
+
+The terminal fit completed40 epochs/452.73 fit seconds: best remained E0269,
+last250/411 rejected. TRAIN695/1000 and lower TEST NLL did not translate to
+accuracy. Retain the same269 tensors. A final finite paired-row boundary stage
+addresses the remaining mutual errors (Motorbikes/airplanes11 TEST vs4 TRAIN):
+two original rows receive antisymmetric changes, other18 rows remain exactly
+fixed.257 free variables; TRAIN CE+pair margin+correct-TRAIN KL+anchor, full
+curvature and trust radius; TEST-informed TRAIN neighbors/hard negatives/global
+replay. Max8 distinct pairs/100 updates each/180 seconds; first280 stops.
+No new inference structure, physical data or terminal feature changes.

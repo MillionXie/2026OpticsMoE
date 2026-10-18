@@ -1,0 +1,6 @@
+{
+  "parent_run":"head_binaryrest_chain_20261018","seed":573,"target_min_correct":280,
+  "maximum_pairs":8,"steps_per_pair":100,"maximum_seconds":180,
+  "margin":1.0,"pair_margin_weight":0.2,"parent_KL":0.25,"anchor":0.05,"delta_radius":0.5,"trust_step":0.25,"minimum_NLL_gain":0.0001,
+  "scope":"LAB L6 only. At269 head-only plateau, explicit mutually confused boundaries (Motorbikes/airplanes remain11 TEST versus4 TRAIN errors) motivate joint two-row antisymmetric correction, not another single-row repetition. Original5140 head only,257 free variables/stage, other18 rows and all nonhead state frozen. TRAIN CE/pair margin/correct-TRAIN KL/hard negatives/replay, TEST pair errors and nearest TRAIN selection development only; no TEST gradient/VALID/GPU/SDK/CCD/new layers. Finite8 pairs/100updates or180sec, first280 stops, retain269."
+}
