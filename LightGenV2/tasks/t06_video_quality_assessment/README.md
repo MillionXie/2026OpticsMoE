@@ -1,5 +1,26 @@
 # T06 视频质量评价
 
+## 2026-10-18 用户确认统一纯推理补测协议
+
+用户明确：严格沿用Qwen B1首原生计算块输入→GPU MOS完成同步的host wall边界，
+两次推理之间的限流等待只记录审计，不计正式时间/能耗。利用率独立来源，不用成本运行
+的利用率代替，也不拿其驻留功率算成本。Qwen B1的1188.386146ms/462.113401J定稿不动。
+DS full与Kimi不重测，不新增租赁；只复用原first200合同数据，缺合格50%成本就留缺。
+
+入口measure_unified_inference_recheck/configs/baselines/unified_inference_recheck_20261018.json：
+CLIP native B1/B10各三次freshprocess（全部保留），然后Qwen3/GLM2/CLIP10/YOLO3各一项paced。
+每项558不同TEST视频独立评估、前200成本、无额外预热、首批保留；不重复驻留输入凑成本。
+除Qwen用已通过等价审计的B3图外，复用原loader、精度、四帧和权重，无训练/Graph/改功率。
+正式T16=sum前200同步推理ms×16/200，E16=(338.2W+同轮active板卡均值W)×T16/1000。
+限流按既有独立50%实验的冻结duty，在每批GPU输出完成后额外等待，全部等待单独保存。
+独立利用率仍是resident queue8协议，不保证含解码间隙的dataset-once整段GPU平均也为50%。
+CLIP保留50ms完整数值CSV、原始stdout、每批时间及active样本数；稀疏采样局限不靠
+连续负载功率或空闲功率替换来掩盖。三次均值/范围全部报告，不能挑一次好看的。
+
+canonical run：runs/simulation/lgvq_unified_inference_recheck_20261018。总窗口最多90分钟，
+初始CPU空闲等待最多30分钟、单点最多20分钟；共享锁+三次10秒无foreign准入，干扰或故障
+保存后停止，不自动重试，不抢占。旧实验/图表先保护，完整审计后再更新原目录两表四图。
+
 ## 2026-10-18 精简图标签与CLIP跨口径核对
 
 按最新要求，四图只标忙碌率，移除B和N的点标签；光学百分比保留spatial限定。

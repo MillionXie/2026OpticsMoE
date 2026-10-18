@@ -1,0 +1,23 @@
+{
+  "protocol": "Qwen_B1_boundary_dataset_once_inference_only_with_separate_pacing_audit",
+  "authorization": "2026-10-18 human: strict Qwen B1 boundary; inter-inference pacing waits excluded from formal latency and energy; DS full and Kimi not remeasured",
+  "paced_batches": {"qwen": 3, "glm": 2, "clip": 10, "yolo": 3},
+  "clip_native_batches": [1, 10],
+  "clip_native_repeats": 3,
+  "test_videos": 558,
+  "cost_videos": 200,
+  "equivalent_videos": 16,
+  "explicit_warmup_forwards": 0,
+  "host_proxy_w": 338.2,
+  "power_limit_w": 250,
+  "maximum_suite_seconds": 5400,
+  "maximum_initial_idle_wait_seconds": 1800,
+  "maximum_point_seconds": 1200,
+  "utilization": "Existing independent complete resident repeats, source and SHA bound; never derived from cost-run utilization or used as power",
+  "pacing": "Prior calibrated duty fraction, applied between distinct-video inference calls using measured inference-boundary wall time; all imposed waits audit-only",
+  "not_guaranteed_50_percent_during_dataset_once_cost_run": true,
+  "no_queue8_in_cost": true,
+  "preserve_qwen_B1_anchor": true,
+  "no_training_precision_frame_weight_clock_or_power_change": true,
+  "no_rental_or_lab_connection": true
+}
