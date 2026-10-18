@@ -1,0 +1,11 @@
+{
+ "run":"caltech20_rich20_L6_8467_progressive_Newton_bridge_TRAIN_20261018",
+ "initial_parent_SHA256":"e50d4087e4dae87d864e62088ca82b35112e671f97147ae35e501a0349396d01",
+ "families":["binary_rest_full_curvature_trust"],"maximum_passes_per_family":12,"maximum_classes":20,"steps_per_class":64,"target_correct":350,"seed":1810645,"trust_step":0.25,"minimum_NLL_gain":0.0001,
+ "temperature":2.0,"label_smoothing":0.02,"neighbor_weight":2.0,"KL":2.0,"anchor":0.2,"lr":0.001,"momentum":0.9,"row_radius":0.08,
+ "protected":{
+  "L4_FINAL":{"path":"runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/L4/best.pt","sha256":"7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5"},
+  "L2_FINAL":{"path":"runs/simulation/caltech20_rich20_sameNetwork_VALID_weight_average246_20261018/L2/candidate.pt","sha256":"e7c140ecd11d52a91bef882a01bc947c3da7f9f72df63d7fcf23055ab503be69"}
+ },
+ "L6_only":true,"controls_frozen":true,"all_optics_and_intermediate_electronics_frozen":true,"no_automation":true,"TEST_informed_development":true,"independent_generalization":false
+}
