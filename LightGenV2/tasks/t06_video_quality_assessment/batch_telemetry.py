@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import math
 import statistics
 import subprocess
@@ -23,15 +24,21 @@ class Sample:
 
 class TelemetrySampler:
     """50-ms polling does not change the driver's utilization averaging window."""
-    def __init__(self, gpu_uuid: str):
+    def __init__(self, gpu_uuid: str, raw_path: Path | None = None):
         self.gpu_uuid = gpu_uuid
         self.phase = "unlabelled"
         self.lock = threading.Lock()
         self.samples = []
         self.process = None
         self.error = None
+        self.raw_path = raw_path
+        self.raw_stream = None
+        self.stopping = False
 
     def start(self):
+        self.stopping = False
+        if self.raw_path is not None:
+            self.raw_stream = self.raw_path.open("x", encoding="utf-8")
         self.process = subprocess.Popen([
             "nvidia-smi", f"--id={self.gpu_uuid}",
             "--query-gpu=power.draw,utilization.gpu,memory.used",
@@ -43,25 +50,38 @@ class TelemetrySampler:
     def _read(self):
         try:
             for line in self.process.stdout:
-                fields = line.strip().split(",")
-                if len(fields) != 3:
-                    continue
-                watts, utilization, memory = map(float, fields)
-                if (not all(math.isfinite(x) for x in (watts, utilization, memory))
-                        or not 0 <= utilization <= 100 or watts <= 0 or memory < 0):
-                    raise ValueError(f"Invalid telemetry: {line.strip()}")
-                with self.lock:
-                    phase = self.phase
-                self.samples.append(Sample(time.time(), time.monotonic(), phase,
-                                           watts, utilization, memory))
+                record = dict(host_time_unix=time.time(), host_monotonic_s=time.monotonic(),
+                              phase=self.phase, raw_line=line.rstrip("\r\n"))
+                try:
+                    watts, utilization, memory = parse_telemetry_line(line)
+                    with self.lock:
+                        phase = self.phase
+                    self.samples.append(Sample(time.time(), time.monotonic(), phase,
+                                               watts, utilization, memory))
+                    record["valid_numeric_row"] = True
+                except BaseException as error:
+                    record.update(valid_numeric_row=False, error=repr(error))
+                    raise
+                finally:
+                    if self.raw_stream is not None:
+                        self.raw_stream.write(json.dumps(record, ensure_ascii=True)+"\n")
+                        self.raw_stream.flush()
+            # A live sampler must not silently finish with an unexpected EOF.
+            if not self.stopping:
+                self.error = RuntimeError("Telemetry subprocess stdout ended")
         except BaseException as error:
             self.error = error
+
+    def check(self):
+        if self.error:
+            raise RuntimeError(f"Telemetry reader failed: {self.error!r}") from self.error
 
     def set_phase(self, phase):
         with self.lock:
             self.phase = phase or "between_calls"
 
-    def stop(self):
+    def stop(self, raise_on_error=True):
+        self.stopping = True
         if self.process is not None:
             self.process.terminate()
             try:
@@ -70,14 +90,34 @@ class TelemetrySampler:
                 self.process.kill()
                 self.process.wait(timeout=3)
             self.thread.join(timeout=3)
+            if self.thread.is_alive():
+                self.error = RuntimeError("Telemetry reader did not stop")
             stderr = self.process.stderr.read().strip()
             code = self.process.returncode
             self.process = None
             if code not in (0, -15, 1) and stderr:
-                raise RuntimeError(stderr)
-        if self.error:
-            raise RuntimeError("Telemetry reader failed") from self.error
+                self.error = RuntimeError(stderr)
+        if self.raw_stream is not None:
+            self.raw_stream.close()
+            self.raw_stream = None
+        if raise_on_error:
+            self.check()
         return list(self.samples)
+
+
+def parse_telemetry_line(line):
+    """Reject malformed/N/A rows; never skip, impute or turn missing into zero."""
+    fields = line.strip().split(",")
+    if len(fields) != 3:
+        raise ValueError(f"Expected3 telemetry fields: {line.strip()!r}")
+    try:
+        watts, utilization, memory = map(float, fields)
+    except ValueError as error:
+        raise ValueError(f"Non-numeric telemetry: {line.strip()!r}") from error
+    if (not all(math.isfinite(x) for x in (watts, utilization, memory))
+            or not 0 <= utilization <= 100 or watts <= 0 or memory < 0):
+        raise ValueError(f"Invalid telemetry: {line.strip()!r}")
+    return watts, utilization, memory
 
 
 def save_samples(path: Path, samples):

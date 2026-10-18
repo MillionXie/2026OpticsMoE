@@ -133,13 +133,14 @@ def load(args):
 def measure(args, compute, inputs, folder, c):
     import torch
     folder.mkdir()
-    sampler, clocks, guard = telemetry.TelemetrySampler(frozen.A100_UUID), uniform.ClockSampler(), ForeignGuard()
+    sampler = telemetry.TelemetrySampler(frozen.A100_UUID, raw_path=folder/"telemetry_stdout.jsonl")
+    clocks, guard = uniform.ClockSampler(), ForeignGuard()
     groups, updates = [], []
-    sampler.start(); clocks.start(); guard.start()
     def safe_wait(seconds):
         until = time.monotonic() + seconds
         while time.monotonic() < until:
             guard.check()
+            sampler.check()
             if time.time() >= args.deadline:
                 raise TimeoutError("Original finite deadline reached")
             time.sleep(min(0.2, max(0, until-time.monotonic())))
@@ -148,6 +149,7 @@ def measure(args, compute, inputs, folder, c):
         output = None
         while time.monotonic() - start < minimum:
             guard.check()
+            sampler.check()
             if time.time() >= args.deadline:
                 raise TimeoutError("Original finite deadline reached")
             tick = time.monotonic()
@@ -168,6 +170,7 @@ def measure(args, compute, inputs, folder, c):
                     last_update = end
         return start, time.monotonic(), output, duty
     try:
+        sampler.start(); clocks.start(); guard.start()
         _, _, _, duty = phase("calibration", c["calibration_seconds"], c["initial_duty_fraction"], True)
         repeats = []
         for repeat in range(1, c["repeats"]+1):
@@ -193,13 +196,36 @@ def measure(args, compute, inputs, folder, c):
             accuracy="No new full558 evaluation: firstB repeated outputs only", no_window_or_repeat_selection=True)
         return result
     finally:
-        sampler.set_phase("after"); samples = sampler.stop(); guard.stop()
-        clocks.stop(folder/"clock_telemetry.csv")
-        telemetry.save_samples(folder/"telemetry.csv", samples)
-        frozen.write_json(folder/"forward_groups.json", groups)
-        frozen.write_json(folder/"controller_updates.json", updates)
-        frozen.write_json(folder/"process_audit.json", guard.records)
-        guard.check()
+        persist_measurement_evidence(folder, sampler, clocks, guard, groups, updates, sys.exc_info()[1])
+
+
+def persist_measurement_evidence(folder, sampler, clocks, guard, groups, updates, primary=None):
+    """Retain every available raw artifact even if a reader/cleanup operation fails."""
+    errors = []
+    def attempt(name, action):
+        try:
+            return action()
+        except BaseException as error:
+            errors.append(dict(operation=name, error=repr(error)))
+            return None
+    sampler.set_phase("after")
+    attempt("telemetry_stop", lambda: sampler.stop(raise_on_error=False))
+    attempt("guard_stop", guard.stop)
+    attempt("clock_stop", lambda: clocks.stop(folder/"clock_telemetry.csv"))
+    attempt("numeric_telemetry_save", lambda: telemetry.save_samples(folder/"telemetry.csv", list(sampler.samples)))
+    for name, value in [("forward_groups.json", groups), ("controller_updates.json", updates),
+                        ("process_audit.json", getattr(guard, "records", []))]:
+        attempt(name, lambda name=name, value=value: frozen.write_json(folder/name, value))
+    attempt("telemetry_integrity", sampler.check)
+    attempt("foreign_guard", guard.check)
+    frozen.write_json(folder/"measurement_evidence_status.json", dict(
+        status="incomplete" if primary is not None or errors else "recorded",
+        primary_exception=repr(primary) if primary is not None else None,
+        errors=errors, valid_numeric_samples=len(sampler.samples),
+        raw_stdout="telemetry_stdout.jsonl", missing_values_never_imputed=True,
+        not_a_complete_measurement_claim=True))
+    if errors and primary is None:
+        raise RuntimeError(f"Measurement failed; available raw evidence retained: {errors!r}")
 
 
 def worker(args):
@@ -242,49 +268,105 @@ def worker(args):
             finish()
 
 
+def continuation_evidence(args, c):
+    """Only the four verified original points may be reused; failed evidence stays intact."""
+    previous = getattr(args, "resume_from", None)
+    if previous is None:
+        return None
+    previous = previous.resolve()
+    owner = TASK/"runs/simulation/lgvq_resident_busy50_a100_20261017/attempt02_20261018"
+    if previous != owner.resolve() or args.output.parent.resolve() != previous.parent:
+        raise ValueError("Continuation must remain in the original canonical run")
+    state = json.loads((previous/"suite_status.json").read_text())
+    expected = ["qwen_batch01", "qwen_batch03", "glm_batch01", "glm_batch02"]
+    if state["status"] != "failed" or state["completed"] != expected or state["protocol"] != c:
+        raise ValueError("Exactly four original completed points and unchanged v2 protocol required")
+    bound = {p.replace("\\", "/"): h for p, h in sources().items()}
+    allowed_changes = {"batch_telemetry.py", "measure_busy50_service.py"}
+    hashes = {"suite_status.json": frozen.sha256(previous/"suite_status.json")}
+    for name in expected:
+        point = previous/name
+        identity = json.loads((point/"identity.json").read_text())
+        report = json.loads((point/"report.json").read_text())
+        if (report["status"] != "complete" or len(report["repeats"]) != 3
+                or identity["checkpoint_sha256"] != costs.CHECKPOINTS[identity["baseline"]]
+                or identity["gpu_uuid"] != frozen.A100_UUID or identity["manifest_sha256"] != frozen.MANIFEST_SHA
+                or identity["protocol"] != c):
+            raise RuntimeError("Original completed-point identity mismatch")
+        for source, old_hash in identity["source_sha256"].items():
+            if Path(source).name not in allowed_changes and bound.get(source.replace("\\", "/")) != old_hash:
+                raise RuntimeError(f"Unapproved arithmetic/input source change: {source}")
+        required = ["identity.json", "report.json", "status.json", "measurement/telemetry.csv",
+                    "measurement/clock_telemetry.csv", "measurement/forward_groups.json",
+                    "measurement/controller_updates.json", "measurement/process_audit.json",
+                    *[f"measurement/repeat{i:02d}.json" for i in (1, 2, 3)]]
+        for relative in required:
+            hashes[f"{name}/{relative}"] = frozen.sha256(point/relative)
+    return dict(source=str(previous), preserved_points=expected, files_sha256=hashes,
+                new_human_authorization="2026-10-18: repair and remaining8, new2h window; never rerun original4",
+                telemetry_change="strict missing-row rejection plus durable raw stdout and failure cleanup; no measurement arithmetic change")
+
+
+def planned_points(c, continuation=None):
+    points = [(model, batch) for model, batches in c["batches"].items() for batch in batches]
+    if continuation is None:
+        return points
+    remaining = [(model, batch) for model, batch in points
+                 if f"{model}_batch{batch:02d}" not in continuation["preserved_points"]]
+    if len(remaining) != 8 or remaining[0] != ("small", 1):
+        raise ValueError("Exactly the authorized remaining8 points required")
+    return remaining
+
+
 def suite(args):
     import fcntl
     import signal
     c = config(); reproduction.require_new_output(args.output)
+    continuation = continuation_evidence(args, c)
+    plan = planned_points(c, continuation)
     with (TASK/"runs/simulation/.temporal_telemetry_a100.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         costs.wait_for_idle(args, c); args.output.mkdir()
         state = dict(status="running", protocol=c, pid=os.getpid(), source_sha256=sources(),
-                     completed=[], deadline=args.deadline, started_unix=time.time())
+                     completed=[], deadline=args.deadline, started_unix=time.time(),
+                     continuation=continuation, planned_points=[f"{m}_batch{b:02d}" for m, b in plan])
         def save():
             frozen.write_json(args.output/"suite_status.json", state)
         try:
             save()
-            for baseline, batches in c["batches"].items():
-                for batch in batches:
-                    reproduction.cuda_guard()
-                    if time.time() >= args.deadline or sources() != state["source_sha256"]:
-                        raise RuntimeError("Finite deadline or source changed")
-                    point = f"{baseline}_batch{batch:02d}"; state["phase"] = point; save()
-                    command = costs.child_command(baseline, batch, args, args.output/point)
-                    command[command.index(__package__+".measure_frozen_batch_costs")] = __package__+".measure_busy50_service"
-                    frozen.write_json(args.output/(point+".command.json"), command)
-                    env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
-                    if baseline == "small":
-                        env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
-                    with (args.output/(point+".log")).open("x") as log:
-                        child = subprocess.Popen(command, cwd=REPO, env=env, stdout=log,
-                                                 stderr=subprocess.STDOUT, start_new_session=True)
+            for baseline, batch in plan:
+                reproduction.cuda_guard()
+                if time.time() >= args.deadline or sources() != state["source_sha256"]:
+                    raise RuntimeError("Finite deadline or source changed")
+                point = f"{baseline}_batch{batch:02d}"; state["phase"] = point; save()
+                command = costs.child_command(baseline, batch, args, args.output/point)
+                command[command.index(__package__+".measure_frozen_batch_costs")] = __package__+".measure_busy50_service"
+                frozen.write_json(args.output/(point+".command.json"), command)
+                env = dict(os.environ, HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
+                if baseline == "small":
+                    env["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+                with (args.output/(point+".log")).open("x") as log:
+                    child = subprocess.Popen(command, cwd=REPO, env=env, stdout=log,
+                                             stderr=subprocess.STDOUT, start_new_session=True)
+                    try:
+                        code = child.wait(timeout=min(c["maximum_stage_seconds"], max(1, args.deadline-time.time())))
+                    except BaseException:
+                        os.killpg(child.pid, signal.SIGTERM)
                         try:
-                            code = child.wait(timeout=min(c["maximum_stage_seconds"], max(1, args.deadline-time.time())))
-                        except BaseException:
-                            os.killpg(child.pid, signal.SIGTERM)
-                            try:
-                                child.wait(timeout=10)
-                            except subprocess.TimeoutExpired:
-                                os.killpg(child.pid, signal.SIGKILL); child.wait(timeout=10)
-                            raise
-                    if code:
-                        raise RuntimeError(f"{point} failed with exit{code}; no automatic retry")
-                    report = json.loads((args.output/point/"report.json").read_text())
-                    if report["status"] != "complete":
-                        raise RuntimeError("Incomplete point")
-                    state["completed"].append(point); save()
+                            child.wait(timeout=10)
+                        except subprocess.TimeoutExpired:
+                            os.killpg(child.pid, signal.SIGKILL); child.wait(timeout=10)
+                        raise
+                if code:
+                    raise RuntimeError(f"{point} failed with exit{code}; no automatic retry")
+                report = json.loads((args.output/point/"report.json").read_text())
+                if report["status"] != "complete":
+                    raise RuntimeError("Incomplete point")
+                state["completed"].append(point); save()
+            if continuation:
+                previous = Path(continuation["source"])
+                if any(frozen.sha256(previous/p) != h for p, h in continuation["files_sha256"].items()):
+                    raise RuntimeError("Protected original4 evidence changed")
             reproduction.cuda_guard(); state.update(status="complete", finished_unix=time.time())
         except BaseException as error:
             state.update(status="failed", error=repr(error)); raise
@@ -297,6 +379,7 @@ def main():
     p.add_argument("--phase", choices=["suite", "worker"], required=True)
     p.add_argument("--baseline", choices=list(config()["batches"]))
     p.add_argument("--batch", type=int)
+    p.add_argument("--resume-from", type=Path)
     for name in ("manifest", "output", "model", "checkpoint", "reproduction-receipt"):
         p.add_argument("--"+name, type=Path, required=name in ("manifest", "output"))
     p.add_argument("--deadline", type=float, required=True)

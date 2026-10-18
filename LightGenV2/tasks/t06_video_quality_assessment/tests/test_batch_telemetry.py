@@ -33,6 +33,40 @@ def test_missing_utilization_is_not_zero():
         audit.telemetry_report([])
 
 
+@pytest.mark.parametrize('line', ['[N/A], 20, 40', '100, [N/A], 40',
+    '100, 20, [N/A]', 'nan, 20, 40', '100, 101, 40', '100, 20',
+    '100, 20, 40, 50', '0, 20, 40', '100, 20, -1'])
+def test_raw_invalid_values_are_fatal_not_skipped(line):
+    with pytest.raises(ValueError):
+        audit.parse_telemetry_line(line)
+
+
+def test_valid_numeric_row_unchanged():
+    assert audit.parse_telemetry_line('125.5, 0, 2000\n') == (125.5, 0, 2000)
+
+
+def test_failed_reader_retains_exact_stdout_and_valid_prefix(tmp_path):
+    import json
+    from types import SimpleNamespace
+    raw = tmp_path/'stdout.jsonl'
+    sampler = audit.TelemetrySampler('test', raw_path=raw)
+    sampler.raw_stream = raw.open('x', encoding='utf-8')
+    sampler.process = SimpleNamespace(stdout=iter(['125.5, 50, 2000\n', '120, [N/A], 2000\n', '120, 0, 2000\n']))
+    sampler._read()
+    sampler.process = None
+    valid = sampler.stop(raise_on_error=False)
+    assert len(valid) == 1 and valid[0].utilization_percent == 50
+    records = [json.loads(line) for line in raw.read_text().splitlines()]
+    assert len(records) == 2
+    assert records[0]['valid_numeric_row'] is True
+    assert records[1]['raw_line'] == '120, [N/A], 2000'
+    assert records[1]['valid_numeric_row'] is False
+    with pytest.raises(RuntimeError, match='Non-numeric telemetry'):
+        sampler.check()
+    with pytest.raises(RuntimeError):
+        sampler.stop()
+
+
 def test_suite_reuses_pt_and_bounds_extra_batches(tmp_path):
     from LightGenV2.tasks.t06_video_quality_assessment import run_temporal_telemetry_suite as suite
     command = suite.child_command("yolo", 3, tmp_path / "manifest", tmp_path / "run")
