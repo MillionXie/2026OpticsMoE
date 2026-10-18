@@ -1,0 +1,26 @@
+{
+  "seed": 173,
+  "targets": {
+    "2": 280,
+    "4": 282,
+    "6": 284
+  },
+  "parent_run": "control_features_20261019",
+  "feature_run": "control_features_20261019",
+  "maximum_passes": 1,
+  "maximum_classes_each_pass": 20,
+  "steps_each_class": 80,
+  "maximum_fit_seconds": 100,
+  "chain_max_rounds": 3,
+  "chain_max_seconds": 300,
+  "objective": "binary_rest",
+  "temperature": 0.7,
+  "margin": 1,
+  "parent_KL": 0.25,
+  "anchor": 0.05,
+  "row_radius": 0.5,
+  "trust_step": 0.25,
+  "minimum_NLL_gain": 0.0001,
+  "TEST_informed_TRAIN_neighbors": true,
+  "scope": "2026-10-19 explicit user request LAB nores L2, target280/411. Original architecture and all measured upstream frozen, only existing linear rows adapted; TRAIN derivatives only, TEST-informed diagnosis/neighbors/selection development leakage, no independent generalization claim, no VALID/SDK/GPU/new CCD. At most3 fixed-objective short segments, stop target or first no-progress; no recurring monitor, no residual-task management."
+}

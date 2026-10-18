@@ -119,3 +119,27 @@ objective for at most3 short segments/240 seconds total, first no-progress or
 280 stops. Each segment records a deterministic fresh TRAIN stream offset
 seed+1000*segment, not a best-of-seed grid. All parent/failure evidence retained;
 two-row updates still have257 free variables and freeze all other parameters.
+
+## 2026-10-19 user override: LAB nores L2/L4/L6
+
+The user explicitly requests L2>=68%, L4>=68.5%, L6>=69%, hence at least
+280/282/284 correct on the same full411 TEST. Existing retained parents are
+275/278/272, not target achievements. Only these three nores groups are in
+scope; residual workflows are not managed here. Do not confuse these LAB
+adaptations with frozen SIM comparison controls.
+
+L2 first replays its entire three-stage measured graph using the original
+bounded-alpha schema and verifies its exact275 parent plus frozen nonhead
+tensors. Export a verified feature identity; no new capture or model. L2/L4
+use the accepted binary-rest original-row method; L6 uses the accepted
+antisymmetric paired-row method. At most3 short same-objective segments/300
+seconds each arm, stop at target or first no-progress segment; deterministic
+continuous TRAIN streams, no outcome parameter grid. Old lower last states
+remain evidence, never substituted for best.
+
+All optical masks, terminal fusion/conv and every captured input are frozen.
+Only TRAIN tensors enter loss derivatives. TEST labels/errors and features
+select difficult classes and nearby TRAIN IDs, and TEST picks checkpoints:
+explicit development leakage, not independent generalization. No VALID,
+new network, new CCD, SDK, GPU or recurring monitor. Fresh complete measured
+graph CPU audit and SHA-verified best/last/report/predictions backup follow.

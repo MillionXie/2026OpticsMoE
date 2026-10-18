@@ -45,7 +45,7 @@ def selftest():
 
 
 def fit(a):
-    assert not a.out.exists();torch.set_num_threads(2);torch.manual_seed(73);a.out.mkdir();cfg=read(a.profile);t0=time.perf_counter();parent=a.arm/cfg.get('parent_run','head_guarded_margin_20261018');feature_parent=a.arm/'head_guarded_margin_20261018';report=read(parent/'report.json');assert report['state']=='complete'
+    assert not a.out.exists();torch.set_num_threads(2);torch.manual_seed(73);a.out.mkdir();cfg=read(a.profile);t0=time.perf_counter();parent=a.arm/cfg.get('parent_run','head_guarded_margin_20261018');feature_parent=a.arm/cfg.get('feature_run','head_guarded_margin_20261018');report=read(parent/'report.json');assert report['state']=='complete'
     path=parent/'best.pt';assert sha(path)==report['results']['best']['PT_SHA256'];saved=torch.load(path,map_location='cpu',weights_only=False);original=saved['model'];head=existing_head(original).cpu().eval();data={};files={}
     feature_state=torch.load(feature_parent/'best.pt',map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'))
     fproof=read(feature_parent/'selected_features/report.json');assert fproof['passed']
@@ -125,12 +125,14 @@ def chain(a,trainer=None):
     """Finite same-method continuation, not a candidate/parameter grid."""
     import shutil,types
     if trainer is None:trainer=fit
-    assert a.depth==6 and not a.out.exists();cfg=read(a.profile);assert cfg['chain_max_rounds']<=3;root=a.out;root.mkdir();start=time.perf_counter();parent=a.arm/cfg['parent_run'];parent_report=read(parent/'report.json');old=parent_report['best_correct'];old_nll=parent_report['best_NLL'];baseline=old;records=[];selected=parent;last=parent;total=0
-    target=cfg['targets']['6'] if 'targets' in cfg else cfg['target_min_correct'];budget_key='maximum_fit_seconds' if 'maximum_fit_seconds' in cfg else 'maximum_seconds'
+    assert a.depth in (2,4,6) and not a.out.exists();cfg=read(a.profile);assert cfg['chain_max_rounds']<=3;root=a.out;root.mkdir();start=time.perf_counter();parent=a.arm/cfg['parent_run'];parent_report=read(parent/'report.json');old=parent_report.get('best_correct',round(411*parent_report['results']['best']['TEST_development']['accuracy']));old_nll=parent_report.get('best_NLL');baseline=old;records=[];selected=parent;last=parent;total=0
+    if old_nll is None:
+        with np.load(parent/'best_TEST_predictions.npz',allow_pickle=False) as z:old_nll=float(-np.log(z['probabilities'][np.arange(411),z['labels']].clip(1e-12)).mean())
+    target=cfg['targets'][str(a.depth)] if 'targets' in cfg else cfg['target_min_correct'];budget_key='maximum_fit_seconds' if 'maximum_fit_seconds' in cfg else 'maximum_seconds'
     save(root/'protocol.json',dict(config=cfg,source_SHA256=sha(__file__),trainer_source_SHA256=sha(sys.modules[trainer.__module__].__file__),profile_SHA256=sha(a.profile),initial_parent_PT_SHA256=sha(parent/'best.pt'),TRAIN=1000,TEST=411,VALID=0,TEST_development=True,TRAIN_gradients_only=True,SDK=False,GPU=False,maximum_rounds=cfg['chain_max_rounds'],maximum_seconds=cfg['chain_max_seconds'],selection='Only higher correct count or equal correct count with NLL gain>.0001 permits another bounded segment; stop at target or first no-progress segment'))
     for index in range(1,cfg['chain_max_rounds']+1):
         if old>=target or time.perf_counter()-start>=cfg['chain_max_seconds']:break
-        effective=dict(cfg);effective['parent_run']=parent.relative_to(a.arm).as_posix();effective['seed']=cfg['seed']+1000*index;effective[budget_key]=min(cfg[budget_key],cfg['chain_max_seconds']-(time.perf_counter()-start));profile=root/f'round{index:02d}_effective_profile.json';save(profile,effective);out=root/f'round{index:02d}';trainer(types.SimpleNamespace(arm=a.arm,profile=profile,depth=6,out=out));r=read(out/'report.json');n,nll=r['best_correct'],r['best_NLL'];accepted=improves(n,nll,old,old_nll,cfg['minimum_NLL_gain']);total+=r['actual_updates'];records.append(dict(round=index,parent=str(parent),baseline_correct=old,best_correct=n,best_NLL=nll,accepted=accepted,actual_updates=r['actual_updates']));save(root/'history.json',records);save(root/'progress.json',dict(state='finite_same_method_continuation',round=index,best_correct=n,actual_updates=total,latest=records[-1]));last=out
+        effective=dict(cfg);effective['parent_run']=parent.relative_to(a.arm).as_posix();effective['seed']=cfg['seed']+1000*index;effective[budget_key]=min(cfg[budget_key],cfg['chain_max_seconds']-(time.perf_counter()-start));profile=root/f'round{index:02d}_effective_profile.json';save(profile,effective);out=root/f'round{index:02d}';trainer(types.SimpleNamespace(arm=a.arm,profile=profile,depth=a.depth,out=out));r=read(out/'report.json');n,nll=r['best_correct'],r['best_NLL'];accepted=improves(n,nll,old,old_nll,cfg['minimum_NLL_gain']);total+=r['actual_updates'];records.append(dict(round=index,parent=str(parent),baseline_correct=old,best_correct=n,best_NLL=nll,accepted=accepted,actual_updates=r['actual_updates']));save(root/'history.json',records);save(root/'progress.json',dict(state='finite_same_method_continuation',round=index,best_correct=n,actual_updates=total,latest=records[-1]));last=out
         if not accepted:break
         selected=out;parent=out;old,old_nll=n,nll
     assert records,'No new segment is needed or allowed'
@@ -145,7 +147,7 @@ def chain(a,trainer=None):
         results[name]=dict(results[name])
         with np.load(root/(name+'_TEST_predictions.npz'),allow_pickle=False) as z:
             assert np.array_equal(z['labels'],truth);now=z['probabilities'].argmax(1)==truth;results[name].update(new_correct=int((now&~initial_correct).sum()),new_wrong=int((initial_correct&~now).sum()))
-    assert old>=baseline;save(root/'report.json',dict(state='complete',depth=6,baseline_correct=baseline,best_correct=old,best_NLL=old_nll,actual_updates=total,actual_rounds=len(records),selected_source_run=str(selected),results=results,target_min_correct=target,target_met=old>=target,TRAIN=1000,TEST=411,VALID=0,TEST_development=True,elapsed_s=time.perf_counter()-start,SDK=False,GPU=False,parent_PT_unchanged=True))
+    assert old>=baseline;save(root/'report.json',dict(state='complete',depth=a.depth,baseline_correct=baseline,best_correct=old,best_NLL=old_nll,actual_updates=total,actual_rounds=len(records),selected_source_run=str(selected),results=results,target_min_correct=target,target_met=old>=target,TRAIN=1000,TEST=411,VALID=0,TEST_development=True,elapsed_s=time.perf_counter()-start,SDK=False,GPU=False,parent_PT_unchanged=True))
     print(json.dumps(dict(state='complete',finite_same_method_chain=True,baseline_correct=baseline,best_correct=old,actual_rounds=len(records))),flush=True)
 
 
@@ -206,7 +208,7 @@ def postccd(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--audit',action='store_true');p.add_argument('--chain',action='store_true');p.add_argument('--postccd',action='store_true');p.add_argument('--depth',type=int,choices=[4,6]);p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--audit',action='store_true');p.add_argument('--chain',action='store_true');p.add_argument('--postccd',action='store_true');p.add_argument('--depth',type=int,choices=[2,4,6]);p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
     if a.selftest:selftest()
     else:
         if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf8',buffering=1);sys.stderr=sys.stdout
