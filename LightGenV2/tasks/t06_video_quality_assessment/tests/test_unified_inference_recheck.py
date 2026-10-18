@@ -59,5 +59,7 @@ def test_authorized_continuation_is_only_remaining_three_original_deadline():
     assert len(r.EXPECTED)==7 and r.DEADLINE==1792312442.3183658
     text=Path(r.__file__).read_text(encoding='utf-8')
     assert 'original.child_command' in text and 'original.costs.wait_for_idle' in text
-    assert 'protected_files(args.base)!=protected' in text
+    assert 'protected_files(args.base,args.final_two)!=protected' in text
     assert "'resume03_20261018'" in text and "original16:34" in text
+    assert 'REMAINING[1:] if args.final_two else REMAINING' in text
+    assert "'resume02_20261018'" in text and 'Exactly8 complete points required' in text
