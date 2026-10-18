@@ -1,5 +1,21 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+The continuous-RNG row continuation stopped at its FIRST no-progress segment:
+L2 best303/411(73.7226%),four new segments attempted, selectedstage04; L4
+still232/411 after one new segment. It did not use the remaining12-segment
+allowance for blind repeats. Both strictCPU/frozen audits passed, parents kept.
+
+Next is one bounded antisymmetric pair repair, because L4's first row pass fixed
+26 but broke18. Choose up to12 most-confused pairs using TEST diagnosis. Per
+pair, update original rows a+=delta,b-=delta with257 degrees of freedom, other
+18 scores fixed; TRAIN binary pair CE plus full20-class correct-TRAIN parentKL2,
+anchor.1, exact Hessian/LM and radius.20. Hard outside-pair TRAIN negatives and
+all-class replay protect collateral behavior.192steps/pair/180fitseconds; no
+new layer, SDK, GPU, optical change or TEST gradient. Full411 accuracy/NLL and
+new-correct/new-wrong still govern adoption. Profile
+`lab_caltech20_residual_pair_profile_20261019.json`. Analytic pair gradient,
+full Hessian and damped solve are checked against autograd before dispatch.
+
 Radius0.20 first actual segment improved L2 291->297/411(72.2628%),9 fixed/3
 newly wrong, and L4 224->232/411(56.4477%),26 fixed/18 newly wrong. Both fullCPU
 and nonhead freeze audits passed. These are additional TEST-informed updates,
