@@ -1,0 +1,24 @@
+{
+  "run":"caltech20_rich20_FRESH_alpha45_fullRMS_TRAINprototype_246_s17_20261018",
+  "alpha_restart":0.45,
+  "alpha_lr":0.001,
+  "minimum_alpha_lr":0.0001,
+  "electronic_lr":0.001,
+  "ema_decay":0.95,
+  "phase_anchor_weight":0.00001,
+  "maximum_seconds":10800,
+  "initialize_from_retained_selected_EMA_not_LAST":false,
+  "reset_trained_weights":true,
+  "reset_effective_alpha":true,
+  "fresh_candidate_retains_global_best_as_comparison_only":true,
+  "cases":{
+    "L2_fresh_fullRMS":{"depth":2,"fresh":true,"epochs":50,"electronic_warm_epochs":0,"phase_lr":0.002,"full_rms_gradient":true},
+    "L4_fresh_fullRMS":{"depth":4,"fresh":true,"epochs":50,"electronic_warm_epochs":0,"phase_lr":0.002,"full_rms_gradient":true},
+    "L6_fresh_fullRMS":{"depth":6,"fresh":true,"epochs":50,"electronic_warm_epochs":0,"phase_lr":0.002,"full_rms_gradient":true}
+  },
+  "gpu_order":[3,4,2,0,1],
+  "new_inference_parameters":0,
+  "automatic_scope_end_after_segment":false,
+  "TEST_used_for_selection":true,
+  "independent_generalization":false
+}
