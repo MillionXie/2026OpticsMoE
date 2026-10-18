@@ -18,6 +18,23 @@ def read_csv(path):
 def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def audit_process_identity(folder):
+    identity=json.loads((folder/"identity.json").read_text())
+    rows=json.loads((folder/"process_audit.json").read_text())
+    assert rows and [r["time"] for r in rows]==sorted(r["time"] for r in rows)
+    observed=0
+    for row in rows:
+        assert len(row["processes"])<=1
+        for process in row["processes"]:
+            assert int(process[0])==identity["pid"] and process[1].strip()==identity["gpu_uuid"]
+            observed+=1
+    assert observed
+    return dict(status="passed",pid=identity["pid"],observations=len(rows),
+                own_process_observations=observed,foreign_observations=0,
+                evidence_sha256=sha(folder/"process_audit.json"),
+                limitation="Periodic visible compute-process checks; not an operating-system exclusive GPU lock")
+
+
 def measured_source_sha(repo,commit,name):
     if Path(name).is_absolute() or '..' in Path(name).parts: raise ValueError("Repository-relative bound source required")
     # Hash the precise measured Git blob, not a Windows checkout with CRLF conversion.
@@ -172,6 +189,9 @@ def audit_sequential_session(run,session,test,partial=False):
     for name,digest in identity["sources"].items(): assert measured_source_sha(repo,identity['git_commit'],name)==digest, name
     assert sha(run/"kimi/train/best_checkpoint.pt")==identity["checkpoint_sha256"]
     results={}; native=[]
+    process_audits={}
+    if (root/"kimi/process_audit.json").exists():
+        process_audits["worker"]=audit_process_identity(root/"kimi")
     for folder in sorted((root/"kimi").glob("*")):
         if not folder.is_dir() or not (folder/"report.json").exists(): continue
         if folder.name.startswith("batch") or folder.name.startswith("busy50_batch"):
@@ -187,15 +207,19 @@ def audit_sequential_session(run,session,test,partial=False):
             results[folder.name]=audit_cost(folder,test,batch)
             assert results[folder.name]["checkpoint_sha256"]==identity["checkpoint_sha256"]
             assert results[folder.name]["gpu_uuid"]==identity["gpu_uuid"]
+            cost_identity=json.loads((folder/"identity.json").read_text())
+            assert cost_identity["sources"]==identity["sources"]
+            process_audits[folder.name]=audit_process_identity(folder)
     assert native and [r["batch"] for r in native]==list(range(1,len(native)+1))
     suite=json.loads((root/"suite_status.json").read_text())
     if not partial:
         assert suite["status"]=="complete"
         worker=json.loads((root/"kimi/report.json").read_text()); assert worker["status"]=="complete"
         assert len(worker["native_batches"])==len(native)
+        assert "worker" in process_audits
         for batch in sorted({1,native[-1]["batch"]}):
             assert f"evaluate_batch{batch:02d}" in results and f"busy50_batch{batch:02d}" in results
-    return dict(status="passed",partial=partial,suite_status=suite["status"],results=results,
+    return dict(status="passed",partial=partial,suite_status=suite["status"],results=results,process_audits=process_audits,
         checkpoint_sha256=identity["checkpoint_sha256"],gpu_uuid=identity["gpu_uuid"],
         source_identity_verified=True,highest_native_batch=native[-1]["batch"],
         highest_native_utilization_percent=native[-1]["pooled_mean_utilization_percent"],

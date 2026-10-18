@@ -54,3 +54,13 @@ def test_measured_source_uses_exact_git_blob_not_checkout_line_endings():
     repo=Path(a.__file__).resolve().parents[3]
     assert a.measured_source_sha(repo,'03ab757e8','LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py')=='bfeec599ffecb105338b6f185ff6d6cbff2730024d0b195704e72c2a7cd082ba'
     with pytest.raises(ValueError):a.measured_source_sha(repo,'HEAD','../outside.py')
+
+
+@pytest.mark.parametrize('processes,accepted', [([],False),([['42',' GPU-test','100']],True),([['43','GPU-test','100']],False),([['42','GPU-other','100']],False)])
+def test_process_identity_rejects_foreign_or_wrong_gpu(tmp_path,processes,accepted):
+    (tmp_path/'identity.json').write_text(json.dumps(dict(pid=42,gpu_uuid='GPU-test')))
+    (tmp_path/'process_audit.json').write_text(json.dumps([dict(time=1,processes=processes)]))
+    if accepted:
+        assert a.audit_process_identity(tmp_path)['foreign_observations']==0
+    else:
+        with pytest.raises(AssertionError):a.audit_process_identity(tmp_path)
