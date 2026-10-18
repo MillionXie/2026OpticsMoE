@@ -1,0 +1,10 @@
+{
+  "depth":4,"simulation_correct":304,"maximum_gap_pp":6.5,"target_min_correct":278,
+  "trainable_parameters":5140,"warm_start_run":"head_TRAINprior_20261018",
+  "original_TRAIN_class_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "TRAIN_feature_standardization":false,"TRAIN_covariance_preconditioning":false,"TRAIN_feature_dropout":0.05,"TRAIN_focal_gamma":0.5,
+  "adam_epochs_max":1200,"maximum_seconds":180,"lr":0.0002,"weight_decay":0.005,"label_smoothing":0.02,"lbfgs_steps_max":0,"lbfgs_l2":0,
+  "SDK_opened":false,"GPU_used":false,"TRAIN":1000,"TEST":411,"VALID":0,
+  "scope":"Original5140 head only; retain265/411 parent. Weak detached focal weighting based exclusively on each TRAIN sample confidence, mild training dropout and decay. TEST error analysis motivates development only; no TEST identities, labels, priors or gradients enter TRAIN. One finite continuation, no new capture/layer."
+}

@@ -17,6 +17,16 @@ from lab_caltech10_20261015 import save,sha
 def read(p):return json.loads(Path(p).read_text())
 
 
+def training_loss(logits,labels,class_weights,smoothing,gamma=0.):
+    """TRAIN-only hardness; no TEST confusion or example enters this loss."""
+    ce=F.cross_entropy(logits,labels,weight=class_weights,label_smoothing=smoothing,reduction='none')
+    if gamma:
+        confidence=logits.softmax(1).gather(1,labels[:,None]).squeeze(1).detach()
+        ce=ce*(1-confidence).clamp_min(1e-4).pow(gamma)
+    denominator=class_weights[labels].sum() if class_weights is not None else len(labels)
+    return ce.sum()/denominator
+
+
 def load_completed_control(a):
     """Read one completed L4/L6 arm, without opening devices or changing features."""
     root=a.control_root;capture=read(root/'capture_report.json');contract=read(root/'contract.json');profile=read(a.profile);parent=root/profile.get('warm_start_run','readout120');report=read(parent/'report.json')
@@ -60,26 +70,38 @@ def fit(a):
         head.load_state_dict(existing_head(warmstate).state_dict());capture_root=a.capture/'control';cfg=None
         simulation_correct=299;gap_pp=6.;epochs_max=600;max_seconds=900.;lr=.001;wd=.001;smoothing=.02;lbfgs_steps=60;lbfgs_l2=.0005
     baseline,baseline_p=evaluate(head,data['test']);assert baseline['accuracy']==parent_report['results']['best']['TEST_development']['accuracy']
-    baseline_correct=round(baseline['accuracy']*411);target=math.ceil(simulation_correct-gap_pp*.01*411)
+    baseline_correct=round(baseline['accuracy']*411);target=int(cfg.get('target_min_correct',math.ceil(simulation_correct-gap_pp*.01*411))) if cfg else math.ceil(simulation_correct-gap_pp*.01*411)
     np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=data['test']['ids'],labels=data['test']['y'].numpy(),probabilities=baseline_p)
     git=HERE.parents[2]/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'
     protocol=dict(arm='control',TRAIN=1000,TEST=411,VALID=0,source_SHA256=sha(__file__),actual_git=subprocess.check_output([str(git) if git.exists() else 'git','rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),warm_start_SHA256=sha(warm),original_PT_SHA256=spec['sha256'],feature_SHA256=files,new_CCD=0,SDK_opened=False,GPU_used=False,trainable_parameters=5140,new_layers=0,all_nonterminal_parameters_frozen=True,TEST_is_development=True,TEST_gradients=False,simulation_correct=simulation_correct,target_min_correct=target,maximum_gap_pp=gap_pp,epochs_max=epochs_max,maximum_seconds=max_seconds,optimizer='AdamW cosine then bounded full-TRAIN LBFGS if needed',lr=lr,weight_decay=wd,label_smoothing=smoothing,lbfgs_steps_max=lbfgs_steps,lbfgs_l2=lbfgs_l2,optimizer_moments='new optimizer; prior saved PT has no moments',selection='first highest full TEST; terminate when target correct count met',parent_best_retained=True,profile=cfg,profile_SHA256=sha(a.profile) if cfg else None,baseline_predictions_SHA256=sha(a.out/'baseline_TEST_predictions.npz'))
     normalize=bool(cfg and cfg.get('TRAIN_feature_standardization',False));dropout=float(cfg.get('TRAIN_feature_dropout',0.)) if cfg else 0.
+    whitening=bool(cfg and cfg.get('TRAIN_covariance_preconditioning',False));gamma=float(cfg.get('TRAIN_focal_gamma',0.)) if cfg else 0.
+    assert 0<=gamma<=2 and not (normalize and whitening)
     mean=data['train']['x'].mean(0) if normalize else torch.zeros(256);scale=data['train']['x'].std(0,unbiased=False).clamp_min(1e-4) if normalize else torch.ones(256)
     before=existing_head({'linear.'+k:v.detach().clone() for k,v in head.state_dict().items()})
+    transform=None
+    if whitening:
+        mean=data['train']['x'].mean(0);centered=data['train']['x'].double()-mean.double()
+        values,vectors=torch.linalg.eigh(centered.T@centered/len(centered));floor=values.max()*float(cfg['TRAIN_covariance_floor'])
+        inverse_roots=values.clamp_min(floor).rsqrt();transform=((vectors*inverse_roots)@vectors.T).float()
+        inverse=((vectors/inverse_roots)@vectors.T).float()
+        with torch.no_grad():
+            head.bias.add_(head.weight@mean);head.weight.copy_(head.weight@inverse.T)
     if normalize:
         with torch.no_grad():
             head.bias.add_(head.weight@mean);head.weight.mul_(scale)
     def deployed_head():
-        state={'linear.weight':head.weight.detach()/scale,'linear.bias':head.bias.detach()-(head.weight.detach()/scale)@mean}
+        weight=head.weight.detach()@transform.T if whitening else head.weight.detach()/scale
+        state={'linear.weight':weight,'linear.bias':head.bias.detach()-weight@mean}
         return existing_head(state).eval()
     with torch.no_grad():assert torch.max(torch.abs(before(data['train']['x'])-deployed_head()(data['train']['x'])))<1e-4
-    train_x=(data['train']['x']-mean)/scale
+    train_x=(data['train']['x']-mean)@transform if whitening else (data['train']['x']-mean)/scale
     class_weights=None
     if cfg and 'original_TRAIN_class_counts' in cfg:
         class_weights=torch.tensor(cfg['original_TRAIN_class_counts'],dtype=torch.float32);class_weights=class_weights/class_weights.mean()
     protocol.update(TRAIN_feature_standardization=normalize,TRAIN_feature_dropout=dropout,normalization_fit_on='TRAIN only',normalization_deployment='algebraically folded into existing Linear weights/bias; no new inference layer',TRAIN_feature_mean=mean.tolist() if normalize else None,TRAIN_feature_scale=scale.tolist() if normalize else None)
     protocol.update(loss_class_weights=class_weights.tolist() if class_weights is not None else None,class_weight_source='original full TRAIN3141 priors correcting balanced TRAIN1000 subsampling; no TEST/VALID prior fitting' if class_weights is not None else None)
+    protocol.update(TRAIN_covariance_preconditioning=whitening,TRAIN_covariance_floor=cfg.get('TRAIN_covariance_floor') if cfg else None,TRAIN_focal_gamma=gamma,hardness_source='current TRAIN true-label confidence only; detached weights; TEST never enters gradients',preconditioner_deployment='folded exactly into original Linear; no additional inference layer')
     save(a.out/'protocol.json',protocol);best=baseline['accuracy'];tag={'stage':'parent','source':str(warm)};history=[]
     def checkpoint(name,selected):
         state={k:v.detach().clone() for k,v in original.items()}
@@ -95,14 +117,14 @@ def fit(a):
     for epoch in range(1,epochs_max+1):
         order=torch.randperm(1000);total=0.
         for begin in range(0,1000,64):
-            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);loss=F.cross_entropy(head(F.dropout(train_x[ix],p=dropout,training=dropout>0)),data['train']['y'][ix],weight=class_weights,label_smoothing=smoothing)
+            ix=order[begin:begin+64];optim.zero_grad(set_to_none=True);loss=training_loss(head(F.dropout(train_x[ix],p=dropout,training=dropout>0)),data['train']['y'][ix],class_weights,smoothing,gamma)
             assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());optim.step();total+=float(loss.detach())*len(ix)
         schedule.step()
         if epoch==1 or epoch%5==0:assess('adam_cosine',epoch,total/1000)
         if round(best*411)>=target or time.perf_counter()-start>=max_seconds:break
     last=dict(stage='adam_cosine',iteration=epoch)
     if lbfgs_steps and round(best*411)<target and time.perf_counter()-start<max_seconds:
-        assert not normalize and dropout==0.,'LBFGS fallback is only for untransformed deterministic features'
+        assert not normalize and not whitening and gamma==0 and dropout==0.,'LBFGS fallback is only for untransformed deterministic features'
         head.load_state_dict(existing_head(torch.load(a.out/'best.pt',map_location='cpu',weights_only=False)['model']).state_dict())
         optim=torch.optim.LBFGS(head.parameters(),lr=1.,max_iter=5,history_size=30,line_search_fn='strong_wolfe')
         for step in range(1,lbfgs_steps+1):
@@ -131,6 +153,15 @@ def selftest():
         assert torch.max(torch.abs(F.linear((x-mean)/scale,u,v)-head(x)))<1e-5
         assert torch.max(torch.abs(F.linear(x,u/scale,v-(u/scale)@mean)-head(x)))<1e-5
     print('TRAIN-only normalization can fold exactly into original5140 Linear; no new inference layer')
+    q=torch.randn(256,256);cov=q@q.T/256;v,u=torch.linalg.eigh(cov.double());r=v.clamp_min(v.max()*.001).rsqrt();p=((u*r)@u.T).float();inv=((u/r)@u.T).float()
+    with torch.no_grad():
+        w=head.weight@inv.T;b=head.bias+head.weight@mean
+        assert torch.max(torch.abs(F.linear((x-mean)@p,w,b)-head(x)))<1e-4
+        deployed=w@p.T;assert torch.max(torch.abs(F.linear(x,deployed,b-deployed@mean)-head(x)))<1e-4
+    logits=torch.randn(16,20,requires_grad=True);labels=torch.arange(16);cw=torch.arange(1,21,dtype=torch.float32)
+    assert torch.allclose(training_loss(logits,labels,cw,0.,0.),F.cross_entropy(logits,labels,weight=cw))
+    training_loss(logits,labels,cw,.02,.5).backward();assert torch.isfinite(logits.grad).all()
+    print('TRAIN-only covariance folding and detached focal weighting synthetic checks passed')
 
 
 if __name__=='__main__':

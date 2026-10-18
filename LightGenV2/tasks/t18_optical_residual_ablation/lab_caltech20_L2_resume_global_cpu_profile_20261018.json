@@ -1,0 +1,8 @@
+{
+  "TRAIN_each_class":60,"TRAIN":1200,"TEST":411,"VALID":0,"GPU_UUID":null,"seed":17,"cpu_threads":2,"batch_size":4,"evaluate_every":5,
+  "phase_lr":0.001,"electronic_lr":0.0005,"alpha_lr":0.0005,"head_lr":0.001,"weight_decay":0.001,"label_smoothing":0.03,
+  "mask":{"epochs":60,"seconds":900},"tail":{"epochs":180,"seconds":1200},
+  "selection":"First highest full TEST development accuracy; gradients TRAIN only; no VALID",
+  "device":"cpu","desktop_graphics_process_allowlist":[],
+  "scope":"New human authorization to continue L2 residual global capture. Preserve measured TRAIN1200/TEST411 router+expert3222frames and CPU expert-suffix best283/411. Capture only new global1611frames, same TRAIN then TEST consecutively, then fit original post-global5150CPU parameters. No old controller restart, no upstream changes, no repeated prefix capture or new inference layer."
+}

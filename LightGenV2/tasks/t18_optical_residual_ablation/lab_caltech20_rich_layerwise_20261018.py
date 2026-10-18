@@ -346,15 +346,49 @@ def resume_after_router(a):
     save(state/'report.json',dict(state='complete',stages=rows,physical_ccd=4833,new_CCD_after_resume=3222,reused_valid_router_frames=1611,TRAIN=1200,TEST=411,VALID=0,final_PT=str(checkpoint),final_PT_SHA256=digest,TEST_development_accuracy=score,gap_pp=100*(329/411-score),target_within_1pp=abs(329/411-score)<=.01,sdk_released=not LOCK.exists(),GPU_child_exited=True,all_old_failure_and_router_data_preserved=True,source_SHA256=sha(__file__)))
 
 
+def resume_after_expert(a):
+    """New explicit human authorization: preserve3222 prefix frames; capture global.
+
+    Use the completed CPU-trained expert suffix, not the stopped old controller.
+    Only the new downstream global is captured; originals/failures stay intact.
+    """
+    assert a.device=='cpu' and not LOCK.exists() and not a.out.exists()
+    assert not (a.session/'capture/1').exists(),'Existing global data must be diagnosed, never overwritten'
+    cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);datasets,dm=load_data(a.session)
+    handoff=read(a.session/'expert_handoff_receipt_20261018.json');assert handoff['residual_controller_stopped'] and handoff['global_not_started']
+    parent=a.session/'expert_suffix_cpu_20261018';fit_report=read(parent/'report.json');checkpoint=parent/'best.pt';digest=fit_report['results']['best']['PT_SHA256']
+    assert fit_report['state']=='complete' and fit_report['frozen_parameters_unchanged'] and fit_report['results']['best']['strict_CPU'] and sha(checkpoint)==digest
+    protocol=read(parent/'protocol.json');before=torch.load(a.session/'resume_parent_lineage_20261018/fits/router/best.pt',map_location='cpu',weights_only=False)['model'];after=torch.load(checkpoint,map_location='cpu',weights_only=False)['model'];allowed=set(protocol['allowed_keys'])
+    assert all(torch.equal(v,after[k]) for k,v in before.items() if k not in allowed)
+    prefix_reports={}
+    for stage in STAGES[:2]:
+        root=a.session/'capture'/stage;r=read(root/'report.json');assert r['state']=='complete' and r['sdk_released'] and r['physical_ccd']==1611 and r['data_sha256']==dm['sha256']
+        assert sha(root/'phase.bmp')==r['phase_sha256']
+        for role in datasets:assert sha(root/role/'ccd.npy')==r['arrays'][role]['sha256']
+        prefix_reports[stage]=sha(root/'report.json')
+    a.out.mkdir();state=a.out;receipt=state/'controller.json'
+    save(receipt,dict(pid=os.getpid(),session=str(a.session.resolve()),source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),time_ns=time.time_ns(),human_authorization='2026-10-18 continue L2 residual capture and adaptation; overrides earlier global deferral',selected_expert_suffix_PT_SHA256=digest,reused_valid_prefix_CCD=3222,new_planned_CCD=1611,prefix_reports_SHA256=prefix_reports))
+    acquire_layer(a,'1',checkpoint,digest)
+    target=state/'final_CPU_fit';cli=[str(Path(sys.executable).with_name('python.exe')),str(Path(__file__).resolve()),'--mode','fit','--device','cpu','--session',str(a.session),'--parent',str(a.parent),'--profile',str(a.profile),'--prefix','3','--checkpoint',str(checkpoint),'--checkpoint-sha',digest,'--out',str(target),'--controller-pid',str(os.getpid()),'--controller-receipt',str(receipt)]
+    save(state/'progress.json',dict(state='final_CPU_fitting',global_capture_complete=True,new_CCD=1611))
+    with target.with_suffix('.log').open('x',encoding='utf-8') as stream:
+        child=subprocess.run(cli,env=dict(os.environ,CUDA_VISIBLE_DEVICES=''),stdout=stream,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW if os.name=='nt' else 0)
+    assert child.returncode==0,('Final CPU fit failed; no automatic restart',child.returncode)
+    result=read(target/'report.json');assert result['state']=='complete' and result['evaluation_kind']=='measured_all_layers' and result['frozen_parameters_unchanged']
+    assert all(sha(a.session/'capture'/k/'report.json')==v for k,v in prefix_reports.items())
+    score=result['results']['best']['TEST_development']['accuracy']
+    save(state/'report.json',dict(state='complete',new_CCD=1611,total_physical_CCD=4833,reused_prefix_CCD=3222,TRAIN=1200,TEST=411,VALID=0,baseline_full_physical_TEST=result['baseline_TEST_development'],final=result,TEST_development_accuracy=score,gap_pp=100*(329/411-score),target_within_1pp=abs(329/411-score)<=.01,sdk_released=not LOCK.exists(),CPU_child_exited=True,prefix_reports_unchanged=True,source_SHA256=sha(__file__)))
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('prepare','selftest','run','fit','resume-after-router'),required=True)
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('prepare','selftest','run','fit','resume-after-router','resume-after-expert'),required=True)
     for n in ('session','parent','profile','out','checkpoint','controller-receipt','coordinates','machine-config','phase-lut','phase-sdk','amplitude-sdk','response-lut'):p.add_argument('--'+n,type=Path)
     p.add_argument('--checkpoint-sha');p.add_argument('--prefix',type=int);p.add_argument('--controller-pid',type=int);p.add_argument('--device',choices=('cuda','cpu'),default='cuda');a=p.parse_args()
     if sys.stdout is None:
         log=a.session/'pipeline.log' if a.mode=='run' else a.out.with_suffix('.log');sys.stdout=log.open('x',encoding='utf-8',buffering=1);sys.stderr=sys.stdout
-    failure_folder=a.out if a.mode in ('fit','resume-after-router') else a.session
+    failure_folder=a.out if a.mode in ('fit','resume-after-router','resume-after-expert') else a.session
     try:
-        selftest() if a.mode=='selftest' else prepare(a) if a.mode=='prepare' else fit(a) if a.mode=='fit' else resume_after_router(a) if a.mode=='resume-after-router' else run(a)
+        selftest() if a.mode=='selftest' else prepare(a) if a.mode=='prepare' else fit(a) if a.mode=='fit' else resume_after_router(a) if a.mode=='resume-after-router' else resume_after_expert(a) if a.mode=='resume-after-expert' else run(a)
     except BaseException as e:
         folder=failure_folder
         if folder is not None and folder.exists():save(folder/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False,source_SHA256=sha(__file__)))

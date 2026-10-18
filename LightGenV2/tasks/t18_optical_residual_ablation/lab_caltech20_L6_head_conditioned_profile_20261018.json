@@ -1,0 +1,11 @@
+{
+  "depth":6,"simulation_correct":308,"maximum_gap_pp":6.94,"target_min_correct":280,
+  "trainable_parameters":5140,"warm_start_run":"readout120",
+  "original_TRAIN_class_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "TRAIN_covariance_preconditioning":true,"TRAIN_covariance_floor":0.001,
+  "TRAIN_feature_standardization":false,"TRAIN_feature_dropout":0.05,"TRAIN_focal_gamma":0,
+  "adam_epochs_max":1600,"maximum_seconds":180,"lr":0.001,"weight_decay":0.01,"label_smoothing":0.02,"lbfgs_steps_max":0,"lbfgs_l2":0,
+  "SDK_opened":false,"GPU_used":false,"TRAIN":1000,"TEST":411,"VALID":0,
+  "scope":"Original5140 head only. TRAIN covariance fitted once and algebraically folded into original weights, train-only priors; no extra inference layer. Underfitting and correlated saved features motivated this single bounded continuation. TEST is development selection, no gradients."
+}
