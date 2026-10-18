@@ -1,0 +1,14 @@
+{
+  "temperature": 2.0,
+  "teacher_KL": 2.0,
+  "anchor": 0.1,
+  "LM_damping": 0.1,
+  "Newton_step": 0.25,
+  "trust_radius": 0.20,
+  "max_classes": 20,
+  "steps_per_class": 192,
+  "fit_seconds": 180,
+  "seed": 73,
+  "target_correct": {"2":333,"4":342,"6":350},
+  "scope": "One bounded full-class continuation of the accepted binary one-row TRAIN Newton repair, not a radius/seed grid. L2 wrong-score analysis shows73 of120 wrong examples cannot flip under even the optimal single-row direction at radius.08, motivating radius.20. Each64 TRAIN batch:16 TEST-error-feature same-class TRAIN neighbors,16 same-class replay,16 hard TRAIN negatives,16 global TRAIN replay. Original257-row only, other19 rows fixed each step; parent-correct TRAIN KL, full Hessian plus LM and projection. TEST correct primary/NLL tie>1e-4, no TEST gradients/VALID. Entire inference still original5140 head and frozen nonhead state. No SDK/GPU or recapture; preserve parents and full predictions/indices/SHA."
+}

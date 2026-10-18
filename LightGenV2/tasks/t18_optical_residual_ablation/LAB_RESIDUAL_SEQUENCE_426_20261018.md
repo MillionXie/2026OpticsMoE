@@ -1,5 +1,21 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+Both TRAIN-teacher comparisons ended without gain (blend selected0): L2 remains
+291/411 and L4 remains224/411. New score-gap diagnosis gives L2 wrong-example
+median required single-row radius0.10047 and90th percentile0.25317. Under the
+old0.08 radius,73/120 wrong examples cannot flip even with their individually
+optimal single-row direction; for L4 this is59/187. This is a geometric bound,
+not a claim that all are fixable or that their optimal directions agree.
+
+Next is one bounded continuation of the accepted TRAIN-neighbor binary row
+Newton repair, radius0.20, all20 wrong classes eligible,192steps/class or180fit
+seconds. Other loss/sampling/CPU/freeze/selection rules stay fixed; profile
+`lab_caltech20_residual_rowradius_profile_20261019.json`. No radius/seed grid.
+Each257-variable row gradient/full Hessian/damped Woodbury solve is tested
+against autograd. Evaluate complete411, preserve parent and record both
+new-correct and new-wrong. Subsequent short segments require actual accuracy
+or tied-NLL progress; no endless repetition after no improvement.
+
 NewL2 has all4833 frames and strictCPU complete: ordinary final5150 fit selected
 274/411, then targeted original-head repair improved to291/411(70.8029%). It is
 still46 examples below frozen337, not within1pp. L6 admitted after full native
