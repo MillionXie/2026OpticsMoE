@@ -117,12 +117,38 @@ def audit_full_graph(a):
     q=dict(passed=True,fresh_complete_measured_graph=True,depth=a.depth,proof=proof,CCD_arrays_SHA256=arrays,selected_PT_SHA256=sha(path),all_optical_and_captured_upstream_unchanged=True,SDK=False,GPU=False,TRAIN=1000,TEST=411,VALID=0,TEST_informed_development=True);save(a.out/'audit_fullgraph.json',q);print(json.dumps(q),flush=True)
 
 
+def chain(a):
+    """Finite same-method continuation, not a candidate/parameter grid."""
+    import shutil,types
+    assert a.depth==6 and not a.out.exists();cfg=read(a.profile);assert cfg['chain_max_rounds']<=3;root=a.out;root.mkdir();start=time.perf_counter();parent=a.arm/cfg['parent_run'];parent_report=read(parent/'report.json');old=parent_report['best_correct'];old_nll=parent_report['best_NLL'];baseline=old;records=[];selected=parent;last=parent;total=0
+    save(root/'protocol.json',dict(config=cfg,source_SHA256=sha(__file__),profile_SHA256=sha(a.profile),initial_parent_PT_SHA256=sha(parent/'best.pt'),TRAIN=1000,TEST=411,VALID=0,TEST_development=True,TRAIN_gradients_only=True,SDK=False,GPU=False,maximum_rounds=cfg['chain_max_rounds'],maximum_seconds=cfg['chain_max_seconds'],selection='Only higher correct count or equal correct count with NLL gain>.0001 permits another bounded segment; stop at target or first no-progress segment'))
+    for index in range(1,cfg['chain_max_rounds']+1):
+        if old>=cfg['targets']['6'] or time.perf_counter()-start>=cfg['chain_max_seconds']:break
+        effective=dict(cfg);effective['parent_run']=parent.relative_to(a.arm).as_posix();effective['maximum_fit_seconds']=min(cfg['maximum_fit_seconds'],cfg['chain_max_seconds']-(time.perf_counter()-start));profile=root/f'round{index:02d}_effective_profile.json';save(profile,effective);out=root/f'round{index:02d}';fit(types.SimpleNamespace(arm=a.arm,profile=profile,depth=6,out=out));r=read(out/'report.json');n,nll=r['best_correct'],r['best_NLL'];accepted=improves(n,nll,old,old_nll,cfg['minimum_NLL_gain']);total+=r['actual_updates'];records.append(dict(round=index,parent=str(parent),baseline_correct=old,best_correct=n,best_NLL=nll,accepted=accepted,actual_updates=r['actual_updates']));save(root/'history.json',records);save(root/'progress.json',dict(state='finite_same_method_continuation',round=index,best_correct=n,actual_updates=total,latest=records[-1]));last=out
+        if not accepted:break
+        selected=out;parent=out;old,old_nll=n,nll
+    assert records,'No new segment is needed or allowed'
+    sr,lr=read(selected/'report.json'),read(last/'report.json');results=dict(best=sr['results']['best'],last=lr['results']['last'])
+    for name,source in [('best',selected),('last',last)]:
+        shutil.copy2(source/(name+'.pt'),root/(name+'.pt'))
+        for role in ('TRAIN','TEST'):shutil.copy2(source/(name+'_'+role+'_predictions.npz'),root/(name+'_'+role+'_predictions.npz'))
+        assert sha(root/(name+'.pt'))==results[name]['PT_SHA256']
+    shutil.copy2(root/'round01/baseline_TEST_predictions.npz',root/'baseline_TEST_predictions.npz')
+    with np.load(root/'baseline_TEST_predictions.npz',allow_pickle=False) as z:truth=z['labels'].copy();initial_correct=z['probabilities'].argmax(1)==truth
+    for name in ('best','last'):
+        results[name]=dict(results[name])
+        with np.load(root/(name+'_TEST_predictions.npz'),allow_pickle=False) as z:
+            assert np.array_equal(z['labels'],truth);now=z['probabilities'].argmax(1)==truth;results[name].update(new_correct=int((now&~initial_correct).sum()),new_wrong=int((initial_correct&~now).sum()))
+    assert old>=baseline;save(root/'report.json',dict(state='complete',depth=6,baseline_correct=baseline,best_correct=old,best_NLL=old_nll,actual_updates=total,actual_rounds=len(records),selected_source_run=str(selected),results=results,target_min_correct=cfg['targets']['6'],target_met=old>=cfg['targets']['6'],TRAIN=1000,TEST=411,VALID=0,TEST_development=True,elapsed_s=time.perf_counter()-start,SDK=False,GPU=False,parent_PT_unchanged=True))
+    print(json.dumps(dict(state='complete',finite_same_method_chain=True,baseline_correct=baseline,best_correct=old,actual_rounds=len(records))),flush=True)
+
+
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--audit',action='store_true');p.add_argument('--depth',type=int,choices=[4,6]);p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--audit',action='store_true');p.add_argument('--chain',action='store_true');p.add_argument('--depth',type=int,choices=[4,6]);p.add_argument('--arm',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
     if a.selftest:selftest()
     else:
         if sys.stdout is None:sys.stdout=a.out.with_suffix('.log').open('x',encoding='utf8',buffering=1);sys.stderr=sys.stdout
-        try:audit_full_graph(a) if a.audit else fit(a)
+        try:audit_full_graph(a) if a.audit else chain(a) if a.chain else fit(a)
         except BaseException as e:
             if a.out.exists():save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False))
             raise

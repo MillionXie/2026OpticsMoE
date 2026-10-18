@@ -1,0 +1,7 @@
+{
+  "seed":173,"targets":{"4":278,"6":280},"parent_run":"head_binaryrest_continue_20261018",
+  "maximum_passes":2,"maximum_classes_each_pass":20,"steps_each_class":80,"maximum_fit_seconds":120,
+  "objective":"binary_rest","temperature":0.7,"margin":1.0,"parent_KL":0.25,"anchor":0.05,"row_radius":0.5,"trust_step":0.25,"minimum_NLL_gain":0.0001,"TEST_informed_TRAIN_neighbors":true,
+  "chain_max_rounds":3,"chain_max_seconds":240,
+  "scope":"Only L6 LAB same accepted objective continuation after265->269 gain; no hyperparameter grid. At most3 short segments, stop first280 or first segment without accuracy/NLL selection progress, complete-epoch boundary. Original257-row update/strict TRAIN derivative/TEST-informed sampling, all physical data and upstream unchanged, original architecture, no GPU/SDK/CCD. L4 remains frozen278."
+}

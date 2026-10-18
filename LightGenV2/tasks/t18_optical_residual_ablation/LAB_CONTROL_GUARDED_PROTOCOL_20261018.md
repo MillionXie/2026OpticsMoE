@@ -82,3 +82,10 @@ passes (20 classes/pass,80 updates/class,240 seconds). No hyperparameter grid;
 same temperature/KL/anchor/radius. Stop any full pass without accepted progress
 or the first280 target. Record the new parent and keep all lower-scoring last PTs
 as evidence, not as the selected result. L4 remains locked278.
+
+The two-pass continuation completed3200 updates:265->269/411=65.45012%. A final
+finite same-objective continuation permits at most3 short segments/240 seconds
+total, each max2 passes; stop the first no-progress segment or first280 target.
+No parameter grid, ensemble, new layers or data. Retain parent269 and all failed
+last states. `--chain` stores each effective config, source/PT SHA, round history,
+original best/last and predictions, with explicit TEST-aware selection.
