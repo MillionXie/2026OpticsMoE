@@ -70,10 +70,15 @@ def export(a):
 
 def fit(a):
     cfg=read(a.profile);manifest=read(a.assets/'manifest.json');assert manifest['TRAIN']==1000 and manifest['TEST']==411 and manifest['VALID']==0
-    active=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid','--format=csv,noheader'],text=True)
-    assert cfg['GPU_UUID'] not in active,'Chosen GPU is no longer idle; do not share or kill another task'
+    assert not (HERE/'runs/hardware/.t18_sdk_owner.lock').exists(),'Never train the bench GPU while SDK is owned'
+    active=subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name','--format=csv,noheader'],text=True)
+    for row in active.splitlines():
+        parts=row.split(',',2)
+        if parts[0].strip()!=cfg['GPU_UUID']:continue
+        name=Path(parts[2].strip()).name.lower()
+        assert os.name=='nt' and name in cfg.get('desktop_graphics_process_allowlist',[]),'Chosen GPU has another compute process; do not share or kill it'
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and 'A100' not in torch.cuda.get_device_name(0)
-    assert not a.out.exists();a.out.mkdir(parents=True);torch.manual_seed(cfg['seed']);torch.set_num_threads(cfg['cpu_threads']);torch.cuda.set_per_process_memory_fraction(.40,0)
+    assert not a.out.exists();a.out.mkdir(parents=True);torch.manual_seed(cfg['seed']);torch.set_num_threads(cfg['cpu_threads']);torch.cuda.set_per_process_memory_fraction(cfg.get('memory_fraction',.40),0)
     for name,item in manifest['files'].items():assert sha(a.assets/name)==item['sha256']
     base=torch.load(a.assets/'original.pt',map_location='cpu',weights_only=False)['model'];warm=torch.load(a.assets/'warm_start.pt',map_location='cpu',weights_only=False)['model'];allowed=set(cfg['allowed_changed_keys'])
     assert all(torch.equal(v,warm[k]) for k,v in base.items() if k not in allowed)
@@ -97,7 +102,8 @@ def fit(a):
         p=np.concatenate(parts);return metrics(d['y'].cpu().numpy(),p),p
     baseline,baseline_p=assess('test');train0,_=assess('train');assert baseline['accuracy']==manifest['original_baseline_best']
     best_score=baseline['accuracy'];best_tag=dict(stage='parent',epoch=390);history=[]
-    protocol=dict(config=cfg,manifest_sha256=sha(a.assets/'manifest.json'),source_sha256=sha(__file__),profile_sha256=sha(a.profile),actual_git=subprocess.check_output(['git','rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),TEST_is_development_not_independent=True,TRAIN_samples=1000,TEST_samples=411,VALID_samples=0,TEST_gradients=False,trainable_parameters=5150,only_post_final_CCD_changed=True,all_optical_inputs_and_upstream_parameters_frozen=True,new_layers=0,new_CCD_frames=0,loss='cross_entropy label_smoothing.03',device=torch.cuda.get_device_name(0),GPU_UUID=cfg['GPU_UUID'])
+    bundled=HERE.parents[2]/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe';git=str(bundled) if bundled.exists() else shutil.which('git')
+    protocol=dict(config=cfg,manifest_sha256=sha(a.assets/'manifest.json'),source_sha256=sha(__file__),profile_sha256=sha(a.profile),actual_git=subprocess.check_output([git,'rev-parse','HEAD'],cwd=HERE.parents[2],text=True).strip(),TEST_is_development_not_independent=True,TRAIN_samples=1000,TEST_samples=411,VALID_samples=0,TEST_gradients=False,trainable_parameters=5150,only_post_final_CCD_changed=True,all_optical_inputs_and_upstream_parameters_frozen=True,new_layers=0,new_CCD_frames=0,loss='cross_entropy label_smoothing.03',device=torch.cuda.get_device_name(0),GPU_UUID=cfg['GPU_UUID'])
     save(a.out/'protocol.json',protocol)
     def checkpoint(kind,tag):
         state={k:v.detach().clone() for k,v in base.items()};state['electronic.1.local.weight']=electronic.local.weight.detach().cpu().clone();state['fusion_logits.1']=alpha.detach().cpu().clone()
