@@ -1,0 +1,8 @@
+{
+ "seed":2173,"targets":{"2":280,"4":282,"6":284},
+ "parent_run":"head_rest_afterpair_20261019","feature_run":"head_guarded_margin_20261018",
+ "maximum_passes":6,"maximum_classes_each_pass":20,"steps_each_class":100,"maximum_fit_seconds":120,
+ "objective":"binary_rest","temperature":0.7,"margin":1.0,"parent_KL":0.25,"anchor":0.05,
+ "row_radius":0.75,"trust_step":0.25,"minimum_NLL_gain":0.0001,"TEST_informed_TRAIN_neighbors":true,
+ "scope":"One finite controlled expansion of accepted local-row repair from277. Two whole5140-head fits (neighbor focal and TRAIN-prior CE) increased TRAIN but not TEST; both rejected, retain original277 tensors. Local protected rows had monotonic272->274->277; permit a modest radius.5->.75, same TRAIN objective/curvature/anchor/KL and original inference, at most6 full coordinate passes/120 seconds. Stop first no-progress full pass or target284. TEST-informed nearby TRAIN IDs and checkpoint selection explicitly development leakage; no TEST gradients, new architecture/CCD/SDK/GPU/VALID or residual management. No outcome grid or indefinite extension."
+}
