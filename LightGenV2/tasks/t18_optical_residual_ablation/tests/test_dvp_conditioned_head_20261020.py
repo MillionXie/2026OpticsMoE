@@ -169,5 +169,25 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertIn('no camera/SDK/GPU',cfg['scope'])
 
 
+    def test_TRAIN_teacher_uses_saved_native_TRAIN_only_and_original_head(self):
+        tree=ast.parse(SOURCE.read_text())
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='teacher_readout_fit')
+        text=ast.unparse(method)
+        self.assertIn("session / 'train_reference.npz'",text)
+        self.assertNotIn('test_reference.npz',text)
+        self.assertIn("gate['checks']['train']['original_reference_maxabs'] == 0",text)
+        self.assertIn("np.array_equal(z['ids'], data['train'][2])",text)
+        self.assertIn('ridge_logit_readout(x, target_logits)',text)
+        self.assertIn('nonhead_equal(original, state)',text)
+        self.assertIn('core.assess(model, data, fields',text)
+        objective=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='teacher_blend_objective')
+        self.assertFalse(any('test' in n.id.lower() for n in ast.walk(objective) if isinstance(n,ast.Name)))
+        cfg=json.loads((TASK/'lab_caltech20_DVP_L4_TRAINteacher_readout_profile_20261020.json').read_text())
+        old=json.loads((TASK/'lab_caltech20_L4_residual_teacher_profile_20261019.json').read_text())
+        for key in ('teacher_PT_SHA256','blend_steps','blend_lr','correct_TRAIN_parent_KL'):
+            self.assertEqual(cfg[key],old[key])
+        self.assertEqual(len(cfg['teacher_TRAIN_reference_SHA256']),64)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1,0 +1,7 @@
+{
+  "teacher_PT_SHA256":"7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5",
+  "teacher_TRAIN_reference_SHA256":"1066d4b2ddf89485a42a004228df40fc15d13e659a5a040b432816e10cbd2c48",
+  "ridge_source_SHA256":"682362a501823daf45dee5f3eb2c09e6684880c0729cd84c21cd643fb98893b4",
+  "blend_steps":64,"blend_lr":0.025,"correct_TRAIN_parent_KL":0.5,
+  "scope":"One DVP1600 adapter of the published original TRAIN-GCV ridge_logit_readout plus L4 TRAIN-only scalar head-blend method, reusing its fixed64steps/lr.025/KL.5. Use original same-PT native gate TRAIN1600 reference95.5625%, exact IDs/labels/reference/PT/source SHA, no teacher TEST. Positive saved probabilities permit exact centered logit recovery up to a sample-common offset; test this equivalence. GCV chooses its declared33 internal ridge regularizers from TRAIN residuals/degrees of freedom only, not a TEST coefficient sweep or a new VALID split. Fold all coefficients into the original5140Linear, freeze every other tensor and current complete optical ancestry. Initialize from independently audited highest282 physical parent, keep it if no gain; primary goal342 and previous10pp milestone305 remain separate. Full411 native bestlast CPU replay and frozen audit/localSHA backup mandatory. No camera/SDK/GPU/new layer/CCD, TEST derivative, seed grid or automatic retry; TEST-informed development, not independent generalization. User will notify camera recovery separately; do not query USB."
+}
