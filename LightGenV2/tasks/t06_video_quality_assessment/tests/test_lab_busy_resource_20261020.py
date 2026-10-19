@@ -9,6 +9,7 @@ def test_same_complete_window_engine_and_fixed_mps_batch():
     assert "args.method=='mps' and args.batch!=1" in text
     assert "('mps',100),('mps',50),('temporal',100)" in text
     assert 'frozen.preflight_files(pre)' in text
+    assert 'with torch.inference_mode():return compute(x),None' in text
     assert 'visible_sm_ratio_to100' in text
 
 

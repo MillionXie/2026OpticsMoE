@@ -73,7 +73,9 @@ def native_runtime(args,guard,identity):
     identity.update(checkpoint_sha256=frozen.sha256(args.checkpoint),assets=assets,
         sample_ids=[r['sample_id'] for r in rows[:args.batch]],frame_positions=positions,
         floating_parameter_dtypes=sorted({str(p.dtype) for p in model.parameters() if p.is_floating_point()}))
-    return model,inputs,first,lambda x:(compute(x),None),finish
+    def measured(x):
+        with torch.inference_mode():return compute(x),None
+    return model,inputs,first,measured,finish
 
 
 def worker(args):
