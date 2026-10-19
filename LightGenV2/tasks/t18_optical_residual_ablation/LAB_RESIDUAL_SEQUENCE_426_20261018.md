@@ -2,6 +2,31 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Actual attempt stopped at USB device loss, 2026-10-19
+
+Source7662f6366 was published and synchronized to lab/server. Fixed data1600
+SHAe6fae987... and all92augmentation replays independently verified locally;
+no TEST/VALID sources. L4 full1600TRAIN/411TEST original compiled reference
+versus deployment bridge CPU maxerror0, TEST346/411 matches frozen simulation.
+Actual24TRAIN router pilot completed33.54s, signals and all24ID/PT/phase/crop
+array audits passed; arraySHA5d0ef330... . These are valid new-camera data,
+not a full physical task accuracy. On the subsequent full-stage camera open,
+`dvpStart=-1001` occurred before any additional formal frames. Controller exited,
+SDK lock released. Both SDK versions now enumerate0 cameras; Windows reports
+USB BootLoader Device VID04B4/PID00F3, not the normal M3S2000M camera. Root
+cause (driver/USB/firmware/power) NOT proven. One discovery rescan and one
+exact bootloader-device restart returned successfully but did not restore the
+normal camera. No hub reset, driver reinstall or firmware flashing performed.
+
+**Blocked on camera USB power-cycle/normal enumeration; do not claim active
+full acquisition or tuning.** All24pilot frames/receipts and failed-start
+evidence preserved. Run `recovery_handoff_20261019.json` is authoritative;
+no automatic retry/recurring task. Before resuming, revalidate camera admission,
+retain old failure record, reuse matching24 valid pilot frames rather than
+repeat them, and audit a finite per-layer SDK lifecycle (persistent connection
+or isolated hardware process). Do not blindly rerun the original launcher or
+delete its gate/pilot. L2 frozen329, no-residual groups and old SHS data unchanged.
+
 ### User approved fixed TRAIN augmentation; fresh80 workflow
 
 User explicitly approved1508 original unique TRAIN+92fixed augmented inputs
