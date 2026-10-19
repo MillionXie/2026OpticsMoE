@@ -2,6 +2,27 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Offline preparation and IO overlap prototype, not yet production-enabled
+
+L6 full1600TRAIN/411TEST original-versus-bridge error0 passed. Native laboratory
+TEST353/411 exactly reproduces the previously audited native353, not cached354
+(prior serverCPU352). All411 pixels/labels/IDs and exact original PT unchanged;
+new-vs-old NATIVE prediction maxabs5.3644e-7/argmax0. Initial preparation wrapper
+wrongly asserted cached354==native; failure retained, no rerun/reselection.
+Independent `L6/offline_preparation.resolution.json` references old/native and
+new result SHA; six metadata/prediction artifacts locally SHA-verified. Do not
+treat cached354 as measured native score or compare cached to native as a new
+drop. Fixed simulation target354 remains unchanged/conservative.
+
+Pure IO helper `lab_caltech20_dvp_persistence_20261019.py` has six no-SDK tests:
+byte-identical serial PNG/SHA, owned array snapshots despite SDK buffer reuse,
+one outstanding frame only, bad-frame persistence after signal exception,
+unsuppressed IO error and no overwrite. It contains no camera/SLM/model calls.
+Prototype only: active stage0 keeps its original SERIAL persistence. Any future
+integration must be Git-published and switched at a completed capture/fit boundary,
+with ordered receipt drains before every TRAIN/TEST/error/exit boundary. No
+shorter240ms settling, fewer discarded frames, altered exposure or model inputs.
+
 ### Active follow-through and time arrangement (latest explicit user request)
 
 User requests continuous active outcome review, no scheduled monitor, performance
