@@ -1,5 +1,27 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+## New offline-only authorization, 2026-10-19
+
+User cannot access the optical path/camera now and explicitly requests further
+software optimization. No new capture/SDK, hardware/LUT change or changed
+already-captured upstream. Residual L2/L4 targets325/305 remain. Prior finite
+method stop records remain intact; this is a different new comparison.
+
+Only the ORIGINAL last direct alpha and5140 Linear head may change; last9conv
+and all earlier optical/electronic states freeze. First admit a pooled last
+fusion cache including per-sample electronic/optical RMS AND their cross moment.
+Full TRAIN1200/TEST411 at parent and both alpha bounds must reproduce original
+features within3e-6; failure explicitly freezes alpha and uses original exported
+features, never a relaxed/approximate inference graph. No VALID.
+
+Two bounded training procedures: rank4 delta folded into original head, and
+SAM on original head, each with correct-TRAIN T2 KL, parent anchoring and EMA.
+No inference layer added; cache/folding/alpha-gradient tests precede training;
+best/last require original full measured-model CPU replay afterward. Each
+max100epochs/180fitseconds, target stops. Full411 TEST used only for development
+selection/diagnosis, never gradients. Profiles and exact method parameters in
+`lab_caltech20_residual_offline_profile_20261019.json`. Source is Git-only.
+
 ## Renewed terminal refinement request, 2026-10-19 morning
 
 Outcome of this bounded round: targets remain UNMET. Six completed CPU fits

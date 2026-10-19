@@ -1,0 +1,13 @@
+{
+  "scope": "New user authorization: no optical access; existing complete captures, residual L2/L4 only",
+  "TRAIN":1200,"TEST":411,"VALID":0,
+  "target_correct":{"2":325,"4":305},
+  "cache_parity_tolerance":0.000003,
+  "fallback":"Freeze alpha and use exact parent features if compact alpha admission fails; never relax tolerance",
+  "comparisons":[
+    {"method":"low_rank","rank":4,"head_lr":0.001,"alpha_lr":0.002,"weight_decay":0.01,"epochs":100,"fit_seconds":180,"batch":64,"temperature":2.0,"teacher_KL":2.0,"anchor":1.0,"label_smoothing":0.02,"EMA_decay":0.98,"target_correct":{"2":325,"4":305}},
+    {"method":"SAM","rank":4,"head_lr":0.003,"alpha_lr":0.002,"weight_decay":0.0,"SAM_radius":0.03,"epochs":100,"fit_seconds":180,"batch":64,"temperature":2.0,"teacher_KL":2.0,"anchor":1.0,"label_smoothing":0.02,"EMA_decay":0.98,"target_correct":{"2":325,"4":305}}
+  ],
+  "TEST_gradient":false,"SDK":false,"GPU":false,
+  "selection":"complete411 TEST development correct first, tied NLL >1e-4; E0 protected"
+}
