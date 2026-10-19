@@ -107,7 +107,11 @@ class RecoveryTests(unittest.TestCase):
         fit=read(HERE/'lab_caltech20_DVP_remaining_adapt_profile_20261019.json')
         self.assertEqual(sha(HERE/fit['base_profile']),fit['base_profile_SHA256'])
         self.assertEqual(fit['overrides']['teacher_simulated_newest_layers'],1)
-        self.assertEqual(fit['overrides']['middle_fit'],dict(epochs=20,seconds=900))
+        recovery=read(HERE/'lab_caltech20_DVP_stage0_recovery_profile_20261019.json')
+        for key in ('phase_lr','electronic_lr','alpha_lr','head_lr','label_smoothing','confusion_emphasis','teacher_weight','middle_fit'):
+            self.assertEqual(fit['overrides'][key],recovery['overrides'][key])
+        self.assertEqual(fit['overrides']['middle_fit'],dict(epochs=24,seconds=1000))
+        self.assertEqual(fit['overrides']['final_fit'],dict(epochs=120,seconds=1200))
 
     def hardware(self):
         base=self.root/'calibration/admission/admitted_hardware.json';base.parent.mkdir(parents=True)

@@ -2,6 +2,32 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### First expert prefix passes314/411; next global-layer admission started
+
+Original-head local repair completed one pass/1361TRAIN-gradient head steps.
+Full original native CPU replay best/last314/411=76.39903%, NLL1.02844;
+cache-versus-full-network error0, all nonhead tensors bit-identical. Compared
+with parent286,34new correct/6new wrong, net28. Fixed346/411 simulation gap
+7.78589pp meets the intermediate8pp target. TRAIN1566/1600. This is measured
+router+expert1 with SIMULATED suffix, TEST-informed development, NOT full
+physical L4 or independent generalization; TEST gradients remain forbidden.
+BestSHA799d2571c802e7dee3de1a150a71310f6ad91ad5cf8e75d31faadb3e41e2202f,
+reportSHAc4c3b031c71e964f498eeef9f7a0c5c165999c0dc0308e2d847b4a23d2786171.
+Independent original411 replay/frozen/data/PT audit passed; bestlast, protocols,
+history/plans, predictions and exact feature caches are being backed up locally
+with SHA. No extra CCD or physical parameter changes in this head repair.
+
+At08:11UTC next L4stage1(global1) finite contrast admission launched from exact
+selected799d2571 parent; same physical contract and predetermined exposure
+ladder, no TEST-score exposure choice. Formal capture follows only independent
+signal/identity audit, then1600TRAIN/411TEST and suffix tuning. No timer/recurring
+task, no automatic retry. Remaining UNUSED adaptation profile now starts with
+empirically effective bounded recovery settings (24epochs/1000fitsec, same
+original graph/alpha bounds, no simulated-parent KL), rather than repeating
+initial weak20epochs. Combined settings are not an isolated loss ablation.
+The original frozen-head local method remains available after actual outcome
+review, never a claim that later stages will necessarily meet the target.
+
 ### Recovery completed286; next fixed-feature original-head local boundary repair
 
 Recovery24epochs complete, strictCPU bestE22=286/411=69.58637%, last285,

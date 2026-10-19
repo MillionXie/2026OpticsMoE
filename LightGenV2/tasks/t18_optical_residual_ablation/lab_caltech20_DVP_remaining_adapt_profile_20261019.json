@@ -3,19 +3,19 @@
   "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
   "overrides": {
     "fit_name_suffix": "_layerwise_adapt_20261019",
-    "phase_lr": 0.0003,
-    "electronic_lr": 0.0005,
-    "alpha_lr": 0.0001,
-    "head_lr": 0.0003,
-    "label_smoothing": 0.02,
-    "confusion_emphasis": 0.25,
-    "teacher_weight": 0.15,
+    "phase_lr": 0.0006,
+    "electronic_lr": 0.0015,
+    "alpha_lr": 0.002,
+    "head_lr": 0.0015,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.5,
+    "teacher_weight": 0,
     "teacher_temperature": 2.0,
     "teacher_simulated_newest_layers": 1,
     "minimum_epochs": 2,
     "evaluate_every": 1,
-    "middle_fit": {"epochs": 20, "seconds": 900},
+    "middle_fit": {"epochs": 24, "seconds": 1000},
     "final_fit": {"epochs": 120, "seconds": 1200}
   },
-  "scope": "Remaining new-camera L4 then L6 residual stages, after each complete TRAIN1600 then TEST411 capture. Keep every measured optical upstream frozen; train only original post-newest electronics/direct alpha/uncaptured masks/head. TRAIN-only frozen parent teacher simulates newest layer and keeps earlier actual prefix; TEST informs class emphasis/selection, never gradients or teacher. At least two epochs then stop on gap<=8pp or finite epoch/time budget. Review actual losses, confusion, strict CPU saved best/last and frozen SHA before next layer; no scheduler or blind chaining. E0 must be disclosed, no guarantee."
+  "scope": "Remaining new-camera L4 then L6 residual stages, after each complete TRAIN1600 then TEST411 capture. Keep every measured optical upstream frozen; train only original post-newest electronics/direct alpha/uncaptured masks/head, preserving original alpha bounds. Before any remaining stage launched, adopt bounded stage0 recovery settings: combined LR/loss change improved strict CPU261 to286, followed by exact-feature original-head repair to314. Not an isolated benefit of removing KL or lowering optical alpha (alpha0 actually increased). Do not mechanically repeat initial weak20epoch fit. Remove simulated-parent KL, lower smoothing, use bounded24epochs/1000fitsec middle budget; final120/1200 unchanged. At least two epochs then stop on gap<=8pp or finite budget. Review actual losses/errors, strict CPU bestlast and frozen SHA before next layer; consider separately audited fixed-feature head repair rather than blind extra epochs. Full TRAIN supplies gradients; TEST informs class emphasis/selection (development leakage), never gradients, no VALID. No scheduler or blind chaining; E0 disclosed, target not guaranteed."
 }
