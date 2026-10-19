@@ -151,7 +151,7 @@ def admit_stage(a):
     from lab_caltech20_dvp_stage_exposure_20261019 import calibration
     cfg=read(a.profile);torch.set_num_threads(2);data,dm=data_for(a.sequence);session=a.sequence/f'L{a.depth}';stages=['router']+[str(k) for k in range(a.depth)];prefix=stages.index(a.stage)
     assert sha(a.checkpoint)==a.digest;model,_=model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
-    packet=dict(stage=a.stage,PT_SHA256=a.digest,data_SHA256=dm['sha256'],prefix_SHA256=identities,records=[],inputs={});phase_pixels=None
+    packet=dict(stage=a.stage,PT_SHA256=a.digest,data_SHA256=dm['sha256'],prefix_SHA256=identities,source_git=git_head(),layerwise_source_SHA256=sha(__file__),records=[],inputs={});phase_pixels=None
     for begin in range(0,cfg['TRAIN_probe_samples'],8):
         x,n,end=padded(data,'train',begin);assert end<=cfg['TRAIN_probe_samples']
         def collect(stage,amplitudes,phase,ids):
@@ -508,5 +508,5 @@ if __name__=='__main__':
         else:run(a)
     except BaseException as ex:
         folder=a.sequence/('controller_resume_USB_20261019' if a.mode=='resume' else 'controller') if a.mode in ('run','resume') else a.out
-        if folder and folder.exists():save(folder/'failure.json',dict(error=repr(ex),traceback=traceback.format_exc(),automatic_retry=False))
+        if folder and folder.exists() and not (folder/'failure.json').exists():save(folder/'failure.json',dict(error=repr(ex),traceback=traceback.format_exc(),automatic_retry=False))
         raise

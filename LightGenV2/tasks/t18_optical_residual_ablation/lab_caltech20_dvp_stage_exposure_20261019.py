@@ -67,7 +67,7 @@ def calibration(out,packet,hardware,base_digest,cfg,recheck):
                 if trial['max_saturation']>.15:break
             assert selected,'No exposure in fixed ladder met TRAIN signal/clip/linearity admission; preserve all frames, no retry or relaxation'
         report=dict(state='complete',passed=True,selected=selected,trials=trials,TRAIN=40,TEST=0,VALID=0,TEST_used=False,PT_SHA256=packet['PT_SHA256'],data_SHA256=packet['data_SHA256'],prefix_SHA256=packet['prefix_SHA256'],phase_SHA256=sha(model_phase),base_admission_SHA256=base_digest,settings_selection='first fixed ladder exposure passing all40 TRAIN signal and known-pattern radiometric checks',inverse_LUT_unchanged=True,no_input_peak_normalization=True,SDK_released=True,elapsed_s=time.monotonic()-started,source_SHA256=sha(__file__),protocol=cfg)
-        save(out/'report.json',report)
+        report.update(source_git=packet['source_git'],layerwise_source_SHA256=packet['layerwise_source_SHA256']);save(out/'report.json',report)
         admitted=dict(hardware,scope='TRAIN-only per-stage exposure admission for capture',exposure_us=selected['actual']['exposure_us'],base_admission_SHA256=base_digest,stage=packet['stage'],PT_SHA256=packet['PT_SHA256'],data_SHA256=packet['data_SHA256'],stage_admission_report=str(out/'report.json'),stage_admission_report_SHA256=sha(out/'report.json'),probe_directory=selected['probe_directory'],probe_indices=[r['index'] for r in packet['records']],phase_SHA256=sha(model_phase),exposure_admission='TRAIN/known patterns only, no TEST',response_lut_scope='original amplitude-SLM inverse unchanged; exposure transfer checked using unsaturated known gray controls')
         save(out/'admitted_hardware.json',admitted)
         return admitted
