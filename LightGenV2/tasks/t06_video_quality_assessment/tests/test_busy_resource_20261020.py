@@ -36,3 +36,13 @@ def test_resume_only_after_idle_handover_and_complete_receipt():
     assert "previous['status']!='held_for_authorized_extension'" in text
     assert "receipt['status']!='complete'" in text
     assert text.index('if output.exists():')<text.index("if active and method!='mps'")
+
+
+def test_fp32_accuracy_is_independent_and_never_substitutes_pure_cost():
+    text=Path(r.__file__).with_name('rental_busy_accuracy_20261020.py').read_text()
+    ast.parse(text)
+    assert "args.precision='fp32';args.batch=1" in text
+    assert 'base.evaluate(args,compute,prepare,transfer,first' in text
+    assert 'costs_are_audit_not_complete_window_comparison=True' in text
+    assert "torch.set_float32_matmul_precision('highest')" in text
+    assert "test_videos=558" in text

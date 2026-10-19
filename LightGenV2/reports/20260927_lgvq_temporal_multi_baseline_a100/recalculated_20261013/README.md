@@ -1,6 +1,149 @@
-# LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
+# LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## 20 October2026: interpretation hold on the50%-busy cost comparison
+## 20 October 2026: complete-window resource-control comparison
+
+The revised experiment separates temporal duty control from GPU execution-resource
+provisioning. The eight requested views are in
+`LGVQ_busy_resource_precision_comparison.xlsx`: the two controls, original deployed
+precision or FP32, and processing time or estimated energy. Raw repeat inputs and
+recalculating normalization formulas are retained in the same workbook. Missing
+measurements remain unavailable rather than being filled with historical pure-cost
+values. This release is still partial: all eight native-precision DeepSeek/Kimi
+conditions and four Kimi FP32 cost conditions are complete and locally SHA-verified.
+The Kimi FP32 full558 accuracy evaluation is also complete and independently
+recomputed locally; its development SRCC is 0.7519302260. The original 40GB A100
+is occupied by another user. The full DeepSeek FP32
+weights alone require 109,920,536,992 bytes, exceeding the single 80GB device. The
+author has decided not to add a two-GPU rental. Historical Qwen B1 is unchanged.
+
+### Methods draft: temporal duty control
+
+To measure the cost of reduced GPU busy time without introducing CPU input-preparation
+gaps, we prepared the first B videos from the fixed LGVQ TEST partition and transferred
+their original four-frame inputs to the GPU once. These inputs were reused, but each
+forward pass performed the frozen model computation and produced a new GPU quality
+score. Frames were sampled at normalized positions 0.10, 0.37, 0.63 and 0.90 using
+the original central 65% crop. The80GB profiles retained384×384-pixel inputs for
+DeepSeek-VL2 and448×448-pixel inputs for Kimi. Eight forwards were issued sequentially on the same CUDA stream before
+synchronization. Each forward processed B videos, not 8B. Batch size was fixed between
+the restricted and unrestricted conditions; the original-precision 80GB experiments
+used B=2 for DeepSeek-VL2 and B=6 for Kimi-VL-A3B. A previously calibrated duty setting
+controlled idle intervals between completed inference groups. The unrestricted
+condition used the same model, precision, inputs and batch size without imposed idle
+intervals. Three complete measurement windows were retained for each condition,
+following at least 5 s of warm-up per window. Each formal window lasted at least 30 s.
+Timing began when the first native Transformer block received its input and ended
+when the final GPU quality output completed and synchronized. All internal imposed
+waits were included; no wait after the final output was included. Actual GPU busy
+time and board power were sampled within this same window. Calibration and warm-up
+were excluded from the reported costs. Target acceptance was 50±5 percentage points;
+no repeat or favorable subwindow was selected.
+
+### Methods draft: GPU execution-resource provisioning
+
+We separately evaluated execution-resource restriction using NVIDIA Multi-Process
+Service (MPS). Batch size was fixed at one video for both the nominal 100% and 50%
+active-thread limits. Each limit was set before the client CUDA context was created.
+The 100% and 50% settings exposed 108 and 54 multiprocessors, respectively, through the
+CUDA device attribute on the 80GB A100. This attribute verifies the resource limit;
+it does not establish a dedicated physical partition. No temporal idle intervals
+were imposed in this comparison. The resident-input protocol, first-block-to-final-output
+boundary, three complete repeats and same-window power measurement were otherwise
+retained. Measured GPU busy time was reported independently of the nominal resource
+limit. A 50% MPS setting was therefore not labelled as 50% GPU busy time. MPS does not
+halve all memory-system resources, so neither busy time nor processing time is
+assumed to scale linearly with its active-thread limit. A private MPS control
+directory was used without changing global compute mode, MIG configuration, GPU
+power limit or clocks. Only the experiment's own client and server were permitted
+on the target GPU during a valid measurement.
+
+### Normalization, power, accuracy and precision
+
+For formal window r with duration t_r in seconds and n_r completed video evaluations,
+we calculated T16=16,000×sum(t_r)/sum(n_r) in milliseconds and
+E16=16×sum[(338.2+P_r)×t_r]/sum(n_r) in joules, where P_r is the mean board power in
+watts sampled within that same complete window. All three windows contributed to
+the sums. The 338.2-W host term is the retained power proxy, not a new wall-power
+measurement; E16 is consequently an estimated system energy. The first B videos are
+reused, so n_r counts video evaluations rather than unique videos. These 16-video
+equivalents describe normalized steady-state processing time and energy, not a
+single batch of 16 videos or CPU-inclusive service latency. Loading, video decoding,
+preprocessing and host-to-device transfer occur outside the resident measurement.
+GPU busy time is the sampled fraction of time with kernel execution, not achieved
+FLOPS or streaming-multiprocessor occupancy. These costs characterize the specified
+fixed resident inputs, not the latency distribution across all 558 distinct videos.
+
+Cost windows do not constitute a new 558-video accuracy test. Any displayed temporal
+SRCC is explicitly bound to an independent frozen full 558-video evaluation at the
+same batch and precision. Native-precision SRCC is not copied into FP32 results.
+The original 2,250-training/558-test split contains 2,808 videos in total. No weights
+were trained in the present measurements. The frozen heads were originally selected
+by maximum TEST SRCC without a validation partition; reported SRCC values are therefore
+development estimates, not selection-independent generalization estimates. Here,
+independent evaluation means execution separate from cost windows, not a new test set.
+FP32 uses FP32 floating-point parameters and inputs with autocast and TF32 disabled.
+For Kimi, the official eager-attention backend replaces FlashAttention2 because the
+latter does not support this FP32 execution. This comparison therefore changes both
+dtype and attention backend, and is not interpreted as a dtype-only causal effect.
+Casting previously deployed rounded weights to FP32 does not restore discarded
+weight precision. The pending original-platform FP32 profiles also retain explicit
+execution differences: Qwen uses native SDPA rather than the audited BF16 B3 execution
+adapter, and CLIP/YOLO omit their FP16 feature-storage round trip. Those profiles must
+not be described as changing only a tensor dtype. The 80GB A100-SXM4 at 400 W and original 40GB A100-PCIE at 250 W are
+identified separately. Optical approximately 50% spatial use is retained only as an
+optical reference, not asserted to be equivalent to either GPU control. The two
+GPU controls are sensitivity analyses with different interventions, not interchangeable
+definitions of fair optical-versus-electronic resource utilization.
+
+### Audited native-precision 80GB data
+
+| Model | Control | Setting | Batch | Actual GPU busy (%) | Time /16 (ms) | Estimated energy /16 (J) |
+| --- | --- | --- | ---: | ---: | ---: | ---: |
+| DeepSeek-VL2 | Temporal duty | Unrestricted | 2 | 96.553112 | 7143.255698 | 4597.936589 |
+| DeepSeek-VL2 | Temporal duty | Approximately50% busy | 2 | 49.884321 | 13834.573833 | 7298.126373 |
+| Kimi-VL-A3B | Temporal duty | Unrestricted | 6 | 98.662351 | 2252.162317 | 1313.407062 |
+| Kimi-VL-A3B | Temporal duty | Approximately50% busy | 6 | 49.591940 | 4447.047202 | 2202.869899 |
+| DeepSeek-VL2 | MPS | 100% resource cap | 1 | 87.903719 | 8201.859339 | 4923.280878 |
+| DeepSeek-VL2 | MPS | 50% resource cap | 1 | 96.066944 | 12064.261718 | 6693.214902 |
+| Kimi-VL-A3B | MPS | 100% resource cap | 1 | 74.430678 | 4535.837685 | 2367.904791 |
+| Kimi-VL-A3B | MPS | 50% resource cap | 1 | 83.346545 | 5057.918594 | 2594.947504 |
+
+### Audited Kimi FP32 cost data
+
+| Control | Setting | Batch | Actual GPU busy (%) | Time /16 (ms) | Estimated energy /16 (J) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Temporal duty | Unrestricted | 1 | 99.243275 | 21166.494751 | 12654.723130 |
+| Temporal duty | Approximately50% busy | 1 | 49.826226 | 42013.489035 | 21135.254283 |
+| MPS | 100% resource cap | 1 | 99.210962 | 21180.647301 | 12653.536935 |
+| MPS | 50% resource cap | 1 | 99.421402 | 30196.481787 | 16721.370793 |
+
+The FP32 unrestricted-duty and100%-MPS arms use the same B1 workload and runtime.
+Their pooled times differ by approximately0.067%. This is a consistency check for
+this workload, not a universal claim that MPS has zero overhead. The nominal50%
+MPS setting still shows99.42% time busy and must not be relabelled50% time busy.
+
+### Terminology and evidence for author review
+
+| Term | Meaning used in this release | Distinction retained |
+| --- | --- | --- |
+| GPU busy time | Driver-sampled kernel-busy percentage | Not SM occupancy or resource fraction |
+| MPS resource cap | Nominal CUDA active-thread execution-resource limit | Not a target nvidia-smi percentage |
+| T16 and E16 | Throughput-normalized cost per16 video evaluations | Not16 different videos in one forward |
+| SRCC reference | Independent frozen full558-video accuracy | Not measured by repeating the cost inputs |
+
+Evidence is retained in the canonical `lgvq_busy_resource_20261020` run, per-point
+identity/report files, all three raw windows, telemetry, group timestamps, process
+audits and SHA-verified transfer receipts. The table generator rejects duplicate
+point identities and recomputes time, energy, utilization and terminal-wait boundaries
+from raw data. The Methods draft describes directly implemented operations; it makes
+no claim that either GPU restriction reproduces optical spatial utilization. Pending
+40GB measurements remain missing evidence, not estimated results. The independent
+FP32 reference is not a separate full558 test under each MPS cap. Kimi FP32 SRCC
+0.7519302260 is lower than the frozen native B1 reference 0.8054652719; the data do
+not support a claim that FP32 improves this head's predictive performance. No
+checkpoint was retuned or replaced in response to that result.
+
+## Earlier 20 October handover: interpretation hold on the old50%-busy cost comparison
 
 The author has now confirmed that imposed throttling waits must be included in the
 cost of a restricted workload. The18October pure-inference costs below are preserved
@@ -21,10 +164,11 @@ the new50%-versus-unrestricted experiment.
 
 Full raw reconciliation is retained under the canonical
 `lgvq_rental_precision_20261019/presentation/busy50_boundary_audit.json` andCSV.
-Further pure-cost queue stages were held while the author selects temporal duty
+Further pure-cost queue stages were held while the author selected temporal duty
 control versus MPS resource provisioning. The ongoing independent FP32 utilization
-stage is allowed to finish; no new resource-partitioning configuration has been enabled.
-The40GB laboratory GPU wait expired without measurements and will not be renewed.
+stage was allowed to finish; resource partitioning had not yet been enabled at that
+handover. The earlier40GB laboratory wait expired without measurements. The latest
+two-method authorization and renewed CPU-only idle guard are described above.
 
 NVIDIA defines GPU utilization as the fraction of a sampling period with a kernel
 executing, not the fraction of physical compute units in use
