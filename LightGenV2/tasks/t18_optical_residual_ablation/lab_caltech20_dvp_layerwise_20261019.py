@@ -273,6 +273,39 @@ CPU best. All paths stay in this session's fits directory. No PT substitution.
     raise AssertionError('Bounded ancestry depth exceeded; review exact lineage')
 
 
+def same_connection_replug_check(bench,out,hardware,original,warp):
+    """Recheck a VALID existing exposure admission without closing/reopening camera.
+
+    No new exposure search, background subtraction or model change.  Two fresh
+    zero-input frames only verify that the existing diagnostic background still
+    applies after USB power cycling; they never replace model inputs.
+    """
+    import cv2
+    folder=out/'same_connection_replug_check';assert not folder.exists();folder.mkdir()
+    selected=bench.settings.copy();assert abs(selected['exposure_us']-hardware['exposure_us'])<2 and selected['gain']==1
+    bench.settings=bench.camera.settings(exposure=original['exposure_us'],gain=1.)
+    for _ in range(original['discard_frames']):bench.read(check_settings=False)
+    revalidate_replug(bench,folder,original,warp)
+    bench.settings=bench.camera.settings(exposure=selected['exposure_us'],gain=1.)
+    assert abs(bench.settings['exposure_us']-hardware['exposure_us'])<2
+    for _ in range(original['discard_frames']):bench.read(check_settings=False)
+    phase=Path(hardware['stage_admission_report']).parent/'model_phase.bmp'
+    assert sha(phase)==hardware['phase_SHA256'];bench.stage(phase)
+    drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
+    zero=folder/'zero_input.bmp';Image.fromarray(native(drive[np.zeros((478,478),np.uint8)],'amplitude')).save(zero)
+    dark=[];records=[]
+    for j in range(2):
+        raw,meta=bench.capture(zero);crop=orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation'])
+        rawpath=folder/f'dark{j}_raw.png';path=folder/f'dark{j}.png';Image.fromarray(raw).save(rawpath,compress_level=1);Image.fromarray(crop).save(path,compress_level=1)
+        dark.append(crop.astype(np.float32));records.append(dict(raw_SHA256=sha(rawpath),crop_SHA256=sha(path),frame_metadata=meta))
+    current=(dark[0]+dark[1])/2;prior=np.load(hardware['quality_background']['path'],allow_pickle=False)
+    rmse=float(np.sqrt(np.mean((current-prior)**2)));p99=float(np.percentile(current,99));prior_p99=float(np.percentile(prior,99));noise=float(np.sqrt(np.mean((dark[0]-dark[1])**2)/2));clipping=float((current>=255).mean())
+    limits=dict(background_RMSE_max=3.,background_p99_delta_max=5.,background_p99_max=64.,background_saturation_max=.001,noise_sigma_max=2*hardware['quality_background']['noise_sigma']+.5)
+    q=dict(passed=rmse<=3 and abs(p99-prior_p99)<=5 and p99<=64 and clipping<.001 and noise<=limits['noise_sigma_max'],settings=bench.settings.copy(),background_RMSE=rmse,background_p99=p99,prior_background_p99=prior_p99,noise_sigma=noise,saturation_fraction=clipping,limits=limits,frames=records,last_recheck_frame_id=records[-1]['frame_metadata']['frame_id'],same_Bench_instance=True,camera_reopened=False,network_background_subtraction=False,prior_background_unchanged=True,prior_background_SHA256=sha(hardware['quality_background']['path']),original_settings_check_SHA256=sha(folder/'replug_validation/report.json'))
+    save(folder/'report.json',q);assert q['passed'],'Replug changed response/background: preserve evidence, no automatic retry or normalization'
+    return q
+
+
 @torch.no_grad()
 def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router=False):
     import cv2
@@ -285,6 +318,14 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         ancestry=validate_fit_ancestry(session,parent_name,digest,prefix,read(session/'capture'/prior_stage/'report.json')['PT_SHA256'],identities,dm['sha256'])
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
     out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else HARDWARE
+    if out.exists() and getattr(a,'archive_empty_start',False):
+        assert a.depth==4 and stage=='2' and getattr(a,'recheck_before_capture',False) and not LOCK.exists()
+        failure=read(out/'failure.json');prior_contract=read(out/'contract.json')
+        assert failure['frames']==0 and 'DVP Start: -1001' in failure['error'] and not (out/'report.json').exists()
+        assert prior_contract['PT_SHA256']==digest and prior_contract['hardware_SHA256']==hardware_digest
+        assert not list(out.rglob('ccd.npy')) and not list(out.rglob('*_raw.png'))
+        archive=out.with_name('2_failed_reopen_start_20261019');assert out.resolve().parent==(session/'capture').resolve() and not archive.exists();out.rename(archive)
+        save(archive/'archive_receipt.json',dict(original_path=str(out),preserved_path=str(archive),reason='Zero-frame DVP reopen failure, preserved before same-connection known-pattern capture',original_frames=0,deletion=False))
     if out.exists() and getattr(a,'archive_failed',False):
         assert a.depth==4 and stage=='0' and not pilot and not LOCK.exists() and not (out/'report.json').exists()
         failure=read(out/'failure.json');assert failure['frames']==1 and len(list((out/'train').glob('[0-9]*.json')))==1 and not (out/'test').exists()
@@ -308,7 +349,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         assert hardware['PT_SHA256']==digest and hardware['data_SHA256']==dm['sha256'] and hardware['stage']==stage and not pilot
         shutil.copy2(a.hardware_manifest,out/'hardware.json');assert sha(out/'hardware.json')==hardware_digest
     warp=cv2.getPerspectiveTransform(np.float32(corners(Path(hardware['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]));phasepath=out/'phase.bmp';phase_pixels=None;frames=0;start=time.perf_counter();arrays={};elapsed=[]
-    writer=None;pending_record=None
+    writer=None;pending_record=None;replug_check=None
     if getattr(a,'async_png',False):
         from lab_caltech20_dvp_persistence_20261019 import FrameWriter
         writer=FrameWriter()
@@ -326,11 +367,15 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
             save(out/'persistence_failure.json',dict(error=repr(error),receipt_candidate=row,index=index,role=role,raw_path=str(base.with_name(base.name+'_raw.png')),captured_data_may_be_partial=True,automatic_retry=False));raise
         row.update(raw_SHA256=result['raw_SHA256'],complete_sample_ms=(time.perf_counter()-sample_start)*1000)
         record_frame(base,row,index,total,role)
-    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,parent_fit_ancestry=ancestry,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__),persistence_mode=persistence_mode,max_uncommitted_frames=1 if writer is not None else 0))
+    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,parent_fit_ancestry=ancestry,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__),persistence_mode=persistence_mode,max_uncommitted_frames=1 if writer is not None else 0,same_connection_replug_recheck=getattr(a,'recheck_before_capture',False)))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),stage=stage,session=str(session),camera='DVP',pilot=pilot)))
     try:
         with Bench(hardware,out) as bench:
             if resume_router:revalidate_replug(bench,out,hardware,warp)
+            if getattr(a,'recheck_before_capture',False):
+                assert not pilot and not resume_router and hardware_digest!=HARDWARE and hardware.get('quality_mode')=='same_phase_contrast'
+                originalpath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(originalpath)==HARDWARE
+                replug_check=same_connection_replug_check(bench,out,hardware,read(originalpath),warp)
             for role in ('train',) if pilot else ('train','test'):
                 images,y,ids=data[role];n_total=24 if pilot else len(y);folder=out/role;folder.mkdir();ccd=np.lib.format.open_memmap(folder/'ccd.npy',mode='w+',dtype=np.uint8,shape=(n_total,478,478));last_end=0
                 for begin in range(0,n_total,8):
@@ -366,6 +411,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                                 row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=r['raw_SHA256'],frame_metadata=meta,p99=r['p99'],mean=r['mean'],saturation_fraction=r['saturation_fraction'],complete_sample_ms=meta['capture_total_ms'],captured_at_ns=r['captured_at_ns'],new_physical_capture=False,reused_from=str(old.with_suffix('.json')),source_receipt_SHA256=sha(old.with_suffix('.json')))
                             else:
                                 raw,meta=bench.capture(bmp);crop=orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation'])
+                                if replug_check is not None:assert meta['frame_id']>replug_check['last_recheck_frame_id']
                                 rawfile=base.with_name(base.name+'_raw.png');raw_digest=None
                                 if writer is None:
                                     Image.fromarray(raw).save(rawfile,compress_level=1);Image.fromarray(crop).save(base.with_suffix('.png'),compress_level=1);raw_digest=sha(rawfile)
@@ -407,6 +453,8 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                 with Image.open(base.with_suffix('.png')) as im:assert np.array_equal(np.asarray(im),stored[i])
             audit[role]=dict(receipts=count,crop_array_equality=True,IDs_PT_phase_canonical_SHA256=True)
         reused_calibration=len(hardware['probe_indices']) if probe_directory is not None else 0
+        if replug_check is not None:
+            save(out/'same_connection_release.json',dict(SDK_released=True,check_SHA256=sha(out/'same_connection_replug_check/report.json'),formal_capture_used_same_Bench=True,new_frame_IDs_after_recheck=True))
         save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,new_physical_ccd=frames-(24 if resume_router else 0)-reused_calibration,reused_pilot_ccd=24 if resume_router else 0,reused_calibration_ccd=reused_calibration,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=hardware_digest,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
         save(out/'persistence_report.json',dict(mode=persistence_mode,ordered_receipts=frames,TRAIN_TEST_boundaries_drained=True,SDK_calls_in_writer=False,max_uncommitted_frames=1 if writer is not None else 0,physical_timing_changed=False,completed_sample_rate_per_s=frames/(time.perf_counter()-start)))
     except BaseException as ex:
@@ -555,7 +603,7 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');p.add_argument('--recheck-before-capture',action='store_true');p.add_argument('--archive-empty-start',action='store_true');a=p.parse_args()
     try:
         if a.mode=='selftest':selftest()
         elif a.mode=='prepare':prepare(a)

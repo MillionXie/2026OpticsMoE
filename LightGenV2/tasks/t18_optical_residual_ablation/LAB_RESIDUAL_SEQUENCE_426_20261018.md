@@ -2,6 +2,43 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### User replug restored40-frame60ms admission; reopening capture failed again
+
+2026-10-19 user explicitly replugged camera. Fresh read-only Windows PID_D003
+normal camera and both SDKs enumerate1; no extra Camera.open probe. Existing
+published60ms admission in `2_contrast_mid60_after_replug` completed40TRAIN:
+actual60,006us/gain1/minraw72/minnet33.5/background55/noise.58221/maxclip.00015756.
+Original-setting known patterns and all original signal/linearity thresholds
+passed; independent all40identity/raw/input/crop/background/noise audit passed.
+HardwareSHA4515dfd5819eb82a81a516feb84ae541d9fc36fd67c97945ed697a6bddbe6a87,
+reportSHA405c334afba0ceadddfc236c3543a9c265867bbd697788d06e97d80938e39e5f.
+Exact parent0c731ec0 and phase173634bf remain unchanged; all earlier data protected.
+
+The immediately following formal capture reopened camera and again failed
+`DVP Start:-1001`, frames0, controller17104 exited. No TRAIN/TEST was lost or
+partly accepted. Both SDKs now enumerate0. Repeated observation locates failure
+at the close/reopen transition, NOT failed60ms signal or changed optics; exact
+USB/firmware cause is still unproven. Do not blindly repeat that two-open path.
+
+Optional published `--recheck-before-capture` instead uses the VALID existing
+60ms admission and ONE Bench connection for fresh original5ms known patterns,
+restore exact60ms, two same-phase zero-input drift/noise checks, then full
+1600TRAIN/411TEST. No extra exposure search or calibration open/close. Original
+hardware/phase/LUT/array inputs remain unchanged; diagnostic background is NOT
+subtracted or refitted. Additional limits: backgroundRMSE<=3gray, p99delta<=5,
+p99<=64, zero clip<.001, noise<=2*prior+.5. Preserve both raw check frames and
+release proof. New physical frame IDs must follow same-connection check IDs.
+
+`--archive-empty-start` is restricted to this L4stage2 exact matching PT/hardware
+and frames0/no arrays/no raw; recoverably rename failed capture to
+`2_failed_reopen_start_20261019`, never overwrite it or original failed controller.
+11 no-SDK/Torch tests cover same Bench and order, drift/noise/phase rejection,
+preserved evidence and guarded archival; original10 persistence/control-flow
+tests remain passing. Shared camera driver/model/optical graph untouched.
+New entry is a recovery workaround, NOT proof the device's USB fault is fixed.
+Before launch require a NEW user replug confirmation/normal enumeration (old
+09:28 receipt has already been consumed). No timer or blind retry is used.
+
 ### Current actionable blocker09:08UTC: camera enumerates BootLoader, not camera
 
 The independent60ms check did NOT measure60ms or fail signal criteria: it exited
