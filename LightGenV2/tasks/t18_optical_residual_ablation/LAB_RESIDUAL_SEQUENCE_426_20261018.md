@@ -2,6 +2,20 @@
 
 ## New offline-only authorization, 2026-10-19
 
+Whitened local repair produced a REAL gain, fully original-model CPU verified:
+L2 318->325/411=79.07543%, gap12/411=2.91971pp from fixed337, achieving <=3pp;
+stop L2. Best SHA `09339bf2813c9d8f1910e391c8a98a3c8640c3a8f10f3a78539044129c9ccf8a`.
+L4 260->269/411=65.45012%, still below305, fullCPU/nonhead freeze passed.
+Both under original sessions `terminal_whitened_local_gap3_gap10_20261019`.
+L2 executed2268 TRAIN updates; L4 executed10944 across three passes, not E0.
+
+Only L4 continues for at most3 same-method segments(each <=3passes/180fitsec),
+same continuous sampler reconstructed against EVERY saved TRAIN batch index.
+Repeated-class plans use ordered stage records, not a last-class dictionary.
+No new seed or optimization coefficient; stop first no-progress segment or305.
+Config `lab_caltech20_L4_whitened_continuation_profile_20261019.json`; its09:00
+internal safety cutoff is not a user deadline or a recurring task. L2 unchanged.
+
 Low-rank and SAM/EMA completed100epochs each for both depths, full original
 CPU best/last/TRAIN/TEST checks passed; selected E0 318/260, no accuracy gain.
 The actual compact proposals also failed1.0e-5 to3.1e-5 feature parity, remain

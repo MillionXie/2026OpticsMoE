@@ -317,9 +317,15 @@ def reconstruct_TRAIN_rng(previous,labels,c,pair,depth):
         else:segments.append(path)
     visit(previous);rng=np.random.default_rng(c['seed']+depth);steps=0;proof=[]
     for path in segments:
-        old=json.loads((path/'protocol.json').read_text())['profile'];keys=('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed','objective','margin','huber_delta','adaptive_TRAIN_positive_margin','positive_margin_quantile','maximum_positive_margin');assert all(old.get(k)==c.get(k) for k in keys),'Continuation changed optimization method';plans={tuple(p['classes']) if pair else p['class_index']:p for p in json.loads((path/'plans.json').read_text())};history=json.loads((path/'history.json').read_text());assert any(row['accepted'] for row in history)
+        old=json.loads((path/'protocol.json').read_text())['profile'];keys=('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed','objective','margin','huber_delta','adaptive_TRAIN_positive_margin','positive_margin_quantile','maximum_positive_margin','TRAIN_whitened_row_geometry');assert all(old.get(k)==c.get(k) for k in keys),'Continuation changed optimization method';ordered_plans=json.loads((path/'plans.json').read_text());plans={tuple(p['classes']) if pair else p['class_index']:p for p in ordered_plans};history=json.loads((path/'history.json').read_text());assert any(row['accepted'] for row in history);cursor=0;current_plan=None
         for row in history:
-            k=tuple(row['classes']) if pair else row['class_index'];p=plans[k];ix=pair_batch(rng,p['TRAIN_neighbors'],[np.flatnonzero(labels==j) for j in k],p['TRAIN_hard_negatives']) if pair else row_batch(rng,p['TRAIN_neighbors'],np.flatnonzero(labels==k),p['TRAIN_hard_negatives']);assert ix.tolist()==row['TRAIN_indices'];steps+=1
+            k=tuple(row['classes']) if pair else row['class_index'];p=plans[k]
+            if c.get('TRAIN_whitened_row_geometry',False):
+                assert not pair
+                if row['step']==0:current_plan=ordered_plans[cursor];cursor+=1
+                assert current_plan['class_index']==k;p=current_plan
+            ix=pair_batch(rng,p['TRAIN_neighbors'],[np.flatnonzero(labels==j) for j in k],p['TRAIN_hard_negatives']) if pair else row_batch(rng,p['TRAIN_neighbors'],np.flatnonzero(labels==k),p['TRAIN_hard_negatives']);assert ix.tolist()==row['TRAIN_indices'];steps+=1
+        if c.get('TRAIN_whitened_row_geometry',False):assert cursor==len(ordered_plans)
         proof.append(dict(path=str(path),history_SHA256=sha(path/'history.json'),plans_SHA256=sha(path/'plans.json')))
     return rng,len(segments),steps,proof
 
