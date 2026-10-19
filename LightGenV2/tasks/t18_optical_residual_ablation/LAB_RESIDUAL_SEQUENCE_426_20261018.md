@@ -2,6 +2,30 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### First expert fit completed; optional lossless IO overlap tested at boundary
+
+First stage0 fit completed20epochs/32000TRAIN presentations: strictCPU best
+E18=261/411=63.50365%, last259, versus baseline68. BestSHA82c020b858b424b499d2586fe5e65a77246a20227d160642f75edda0ac6f50a1;
+fixed346 simulation gap20.68127pp, NOT passing314/411 intermediate target.
+Measured router/expert parameters frozen; bestlast/original report remain.
+Controller exited/SDK released before any capture-source deployment. Bounded
+recovery profile above remains next authorized action, not an improvement claim.
+
+Optional `--async-png` persistence uses exactly one copied immutable raw/crop
+snapshot in one PNG-only worker. SDK/SLMs/model remain on original caller thread;
+same240ms/6discard/exposure/geometry. Drain prior receipt after next camera read,
+at EVERY role boundary and signal/error/exit. Previous IO failure also rescues
+the already-read following frame instead of silently losing it; no overwrite or
+automatic retry. Full raw/crop bytes and SHA, IDs/order/memmaps/phase/input records
+are equivalent to serial in no-SDK tests.10 persistence tests include production
+acquire control-flow serial vs async, TRAIN/TEST boundaries and padded final batch,
+signal-stop bad-frame receipt and previous-IO-error rescue.21 existing tests pass.
+Default remains serial; explicit next-stage launcher alone enables overlap.
+Offline actual-raw PNG+fixed.52sec sleep benchmark:3.912s serial vs2.553s overlap
+for4frames,34.7% reduction. This is NOT measured hardware throughput or a promised
+speedup. Active/completed stage0 stays serial; future observed stage wall time,
+signals and full data audit must verify the actual benefit.
+
 ### First expert captured; active domain diagnosis and bounded recovery plan
 
 L4stage0 full1600TRAIN/411TEST capture/audit complete,1971new+40verified probes,

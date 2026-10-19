@@ -287,7 +287,25 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         assert hardware['PT_SHA256']==digest and hardware['data_SHA256']==dm['sha256'] and hardware['stage']==stage and not pilot
         shutil.copy2(a.hardware_manifest,out/'hardware.json');assert sha(out/'hardware.json')==hardware_digest
     warp=cv2.getPerspectiveTransform(np.float32(corners(Path(hardware['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]));phasepath=out/'phase.bmp';phase_pixels=None;frames=0;start=time.perf_counter();arrays={};elapsed=[]
-    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__)))
+    writer=None;pending_record=None
+    if getattr(a,'async_png',False):
+        from lab_caltech20_dvp_persistence_20261019 import FrameWriter
+        writer=FrameWriter()
+    persistence_mode='bounded_one_frame_PNG_overlap' if writer is not None else 'serial'
+    def record_frame(base,row,index,total,role):
+        nonlocal frames
+        save(base.with_suffix('.json'),row);frames+=1;elapsed.append(row['complete_sample_ms'])
+        save(session/'progress.json',dict(state='pilot' if pilot else 'capturing',depth=a.depth,stage=stage,role=role,completed=index+1,total=total,stage_frames=frames,elapsed_s=time.perf_counter()-start,latest=row,persistence_mode=persistence_mode))
+    def finish_pending():
+        nonlocal pending_record
+        if pending_record is None:return
+        base,row,index,total,role,sample_start=pending_record;pending_record=None
+        try:result=writer.finish()
+        except BaseException as error:
+            save(out/'persistence_failure.json',dict(error=repr(error),receipt_candidate=row,index=index,role=role,raw_path=str(base.with_name(base.name+'_raw.png')),captured_data_may_be_partial=True,automatic_retry=False));raise
+        row.update(raw_SHA256=result['raw_SHA256'],complete_sample_ms=(time.perf_counter()-sample_start)*1000)
+        record_frame(base,row,index,total,role)
+    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__),persistence_mode=persistence_mode,max_uncommitted_frames=1 if writer is not None else 0))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),stage=stage,session=str(session),camera='DVP',pilot=pilot)))
     try:
         with Bench(hardware,out) as bench:
@@ -301,7 +319,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                         if n<8:cache[k]=np.concatenate([cache[k],np.zeros((8-n,478,478),np.uint8)])
                     padded_ids=np.concatenate([ids[begin:end],np.array(['__padding__']*(8-n))]) if n<8 else ids[begin:end]
                     def physical(current,amplitude,phase,sample_ids):
-                        nonlocal phase_pixels,frames
+                        nonlocal phase_pixels,frames,pending_record
                         if phase_pixels is None:
                             phase_pixels=phase.copy();Image.fromarray(phase_native(phase)).save(phasepath);bench.stage(phasepath)
                         assert current==stage and np.array_equal(phase_pixels,phase)
@@ -327,22 +345,37 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                                 row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=r['raw_SHA256'],frame_metadata=meta,p99=r['p99'],mean=r['mean'],saturation_fraction=r['saturation_fraction'],complete_sample_ms=meta['capture_total_ms'],captured_at_ns=r['captured_at_ns'],new_physical_capture=False,reused_from=str(old.with_suffix('.json')),source_receipt_SHA256=sha(old.with_suffix('.json')))
                             else:
                                 raw,meta=bench.capture(bmp);crop=orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation'])
-                                rawfile=base.with_name(base.name+'_raw.png');Image.fromarray(raw).save(rawfile,compress_level=1);Image.fromarray(crop).save(base.with_suffix('.png'),compress_level=1)
-                                row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=sha(rawfile),frame_metadata=meta,p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),complete_sample_ms=(time.perf_counter()-t)*1000,captured_at_ns=time.time_ns(),new_physical_capture=True)
+                                rawfile=base.with_name(base.name+'_raw.png');raw_digest=None
+                                if writer is None:
+                                    Image.fromarray(raw).save(rawfile,compress_level=1);Image.fromarray(crop).save(base.with_suffix('.png'),compress_level=1);raw_digest=sha(rawfile)
+                                else:
+                                    try:finish_pending()
+                                    except BaseException as error:
+                                        # A previous disk failure must not silently discard the already-read NEXT frame.
+                                        from lab_caltech20_dvp_persistence_20261019 import write_images
+                                        rescue=write_images(base,raw,crop)
+                                        save(out/'following_frame_rescue.json',dict(previous_error=repr(error),stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),frame_metadata=meta,preserved=rescue,not_a_complete_capture_receipt=True));raise
+                                row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=raw_digest,frame_metadata=meta,p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),complete_sample_ms=(time.perf_counter()-t)*1000,captured_at_ns=time.time_ns(),new_physical_capture=True)
                             if quality_background is not None:
                                 from lab_caltech20_dvp_stage_exposure_20261019 import contrast_statistics
                                 row.update(contrast_statistics(crop,quality_background,hardware['quality_background']['noise_sigma']))
                                 row['background_quality_only_no_network_subtraction']=True
+                            if writer is not None and row['new_physical_capture']:
+                                writer.submit(base,raw,crop);pending_record=(base,row,index,n_total,role,t)
                             ccd[index]=crop;ccd.flush()
-                            save(base.with_suffix('.json'),row);frames+=1;elapsed.append(row['complete_sample_ms']);values.append(crop);save(session/'progress.json',dict(state='pilot' if pilot else 'capturing',depth=a.depth,stage=stage,role=role,completed=index+1,total=n_total,stage_frames=frames,elapsed_s=time.perf_counter()-start,latest=row))
+                            if not (writer is not None and row['new_physical_capture']):
+                                finish_pending();record_frame(base,row,index,n_total,role)
+                            values.append(crop)
                             # Transient BMP is redundant; canonical input, exact drive LUT and digest remain.
                             bmp.unlink()
-                            if row['p99']<15 or row['saturation_fraction']>.15:raise RuntimeError('DVP signal guard: retain all valid/bad frames; no automatic retry or exposure change')
-                            if quality_background is not None and row['contrast_p99']<hardware['capture_min_contrast_p99']:raise RuntimeError('DVP net-signal quality guard: raw CCD preserved; no background subtraction or automatic retry')
+                            if row['p99']<15 or row['saturation_fraction']>.15:
+                                finish_pending();raise RuntimeError('DVP signal guard: retain all valid/bad frames; no automatic retry or exposure change')
+                            if quality_background is not None and row['contrast_p99']<hardware['capture_min_contrast_p99']:
+                                finish_pending();raise RuntimeError('DVP net-signal quality guard: raw CCD preserved; no background subtraction or automatic retry')
                         if n<8:values.extend([np.zeros((478,478),np.uint8)]*(8-n))
                         return np.stack(values)
                     result=layer_forward(model,x,padded_ids,stage,cache,physical);last_end=end
-                assert last_end==n_total;arrays[role]=dict(samples=n_total,SHA256=sha(folder/'ccd.npy'))
+                finish_pending();assert last_end==n_total;arrays[role]=dict(samples=n_total,SHA256=sha(folder/'ccd.npy'))
         assert frames==(24 if pilot else 2011)
         audit={}
         for role,item in arrays.items():
@@ -354,8 +387,16 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
             audit[role]=dict(receipts=count,crop_array_equality=True,IDs_PT_phase_canonical_SHA256=True)
         reused_calibration=len(hardware['probe_indices']) if probe_directory is not None else 0
         save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,new_physical_ccd=frames-(24 if resume_router else 0)-reused_calibration,reused_pilot_ccd=24 if resume_router else 0,reused_calibration_ccd=reused_calibration,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=hardware_digest,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
-    except BaseException as ex:save(out/'failure.json',dict(error=repr(ex),traceback=traceback.format_exc(),frames=frames,automatic_retry=False));raise
-    finally:LOCK.unlink()
+        save(out/'persistence_report.json',dict(mode=persistence_mode,ordered_receipts=frames,TRAIN_TEST_boundaries_drained=True,SDK_calls_in_writer=False,max_uncommitted_frames=1 if writer is not None else 0,physical_timing_changed=False,completed_sample_rate_per_s=frames/(time.perf_counter()-start)))
+    except BaseException as ex:
+        persistence_error=None
+        try:finish_pending()
+        except BaseException as error:persistence_error=repr(error)
+        save(out/'failure.json',dict(error=repr(ex),traceback=traceback.format_exc(),frames=frames,persistence_error=persistence_error,automatic_retry=False));raise
+    finally:
+        try:
+            if writer is not None:writer.close()
+        finally:LOCK.unlink()
 
 
 def fitting_model(a,data,dm,checkpoint,digest,prefix):
@@ -493,7 +534,7 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');a=p.parse_args()
     try:
         if a.mode=='selftest':selftest()
         elif a.mode=='prepare':prepare(a)
