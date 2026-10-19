@@ -2,6 +2,36 @@
 
 ## New offline-only authorization, 2026-10-19
 
+### Completed local round, 2026-10-19 09:00
+
+Full measured-graph CPU results verified before the connection interruption:
+L2 325/411=79.07543%, gap2.91971pp from337, target achieved;
+L4 279/411=67.88321%, gap16.30170pp from346, target305 NOT achieved.
+Local sealed-feature recovery reproduced both counts. Protective replay tied279
+with NLL1.76428->1.75090, then stopped first no-progress segment. The distinct
+coupled Newton-CG comparison completed256 TRAIN batches and retained E0 279;
+no accuracy gain, not adopted as a new improvement. No jobs left running.
+
+Local private run `runs/hardware/caltech20_residual_sealed_local_20261019`
+contains best/last, complete histories, original1200/411 IDs and predictions.
+`sealed_local_audit.json` verified10 completed fit runs, every best/last SHA,
+original-head probability composition<=3e-6, and every nonhead tensor identical.
+112 local files are SHA-manifested in `sealed_local_manifest.json` (manifest
+SHA4342966ef0a305ccb449ff70d28d9e28d5d20c91326ca697dfc8dedb0f4c93a9).
+These local recovery PTs are not claimed identical serializations of laboratory
+09339.../7e513... files or a fresh full raw-CCD replay.
+
+User reported computer restart. One short successful connection confirmed
+no owned workers/SDK lock, created a97,959,529-byte laboratory evidence archive
+(158files, SHAd3b4e675014262edd4d34ca217db3bfd6a8ea11f2f1a6ee4e0db76af15a7c584).
+Download was interrupted after14,712,832bytes; preserve it as incomplete, NOT
+a verified backup. Bounded resume and original raw-CCD review could not connect
+again; no review or new training was dispatched. Latest source is on main/
+GitHub, laboratory/server Git synchronization still pending restored SSH.
+Resume only the manifested archive, then original full-graph CPU review of
+local protective PT68f543553b523bf51659afbdd09b979b71c41a0de9f6e539cbf9a6530fad1325;
+do not recapture, restart stopped searches, or claim target success for L4.
+
 Laboratory SSH became unavailable after the verified325/279 results. No new
 protective-replay laboratory run was dispatched. Those latest PTs are still on
 laboratory E:; their local metric/audit summary is saved, but a local PT backup
