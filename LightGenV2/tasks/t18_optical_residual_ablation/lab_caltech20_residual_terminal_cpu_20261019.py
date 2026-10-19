@@ -229,6 +229,13 @@ def triple_repair(a):
     for role in ('train','test'):
         z=np.load(a.feature_run/(role+'_features.npz'));assert np.array_equal(z['ids'],data[role][2]) and np.array_equal(z['labels'],data[role][1]);cached[role]=dict(x=z['features'].copy(),y=z['labels'].copy(),ids=z['ids'].copy())
     tr,te=cached['train'],cached['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();baseline=probability(te['x'],w,b);count=lambda p:int((p.argmax(1)==te['y']).sum());nll=lambda p:float(-np.log(p[np.arange(411),te['y']].clip(1e-12)).mean());best,bestloss=count(baseline),nll(baseline);initial=best;xx=np.c_[tr['x'].astype(float),np.ones(1200)];xn=tr['x']/np.maximum(np.linalg.norm(tr['x'],axis=1,keepdims=True),1e-12);tn=te['x']/np.maximum(np.linalg.norm(te['x'],axis=1,keepdims=True),1e-12);rng=np.random.default_rng(c['seed']+a.depth);history=[];plans=[];lastw,lastb=w.copy(),b.copy();start=time.monotonic()
+    conditioned=c.get('TRAIN_whitened_pair_geometry',False);fitxx=xx;mean=root=None
+    if conditioned:
+        assert independent;mt,rt,_,ev,floor=train_conditioned_geometry(tr['x']);mean,root=mt.numpy(),rt.numpy();tx=(tr['x'].astype(float)-mean)@root;query=(te['x'].astype(float)-mean)@root;fitxx=np.c_[tx,np.ones(1200)];xn=tx/np.maximum(np.linalg.norm(tx,axis=1,keepdims=True),1e-12);tn=query/np.maximum(np.linalg.norm(query,axis=1,keepdims=True),1e-12);np.savez_compressed(a.out/'TRAIN_geometry.npz',mean=mean,root=root,eigenvalues=ev.numpy(),floor=floor)
+    def native_delta(offset):
+        if conditioned:
+            dw=offset[:-1].numpy()@root;return dw.astype(np.float32),float(offset[-1])-float(mean@dw)
+        return offset[:-1].float().numpy(),float(offset[-1])
     if independent:
         for role in ('train','test'):
             _,actual,features=assess(model,data,fields,canonical,role,4,features=True)
@@ -258,18 +265,20 @@ def triple_repair(a):
                 local_c['positive_margins']=margins
             plans.append(dict(pass_index=pass_index,classes=group,TRAIN_neighbors=near,TRAIN_hard_negatives=hard.tolist(),positive_margins=local_c.get('positive_margins')));v=torch.zeros(2,257,dtype=torch.float64);chosen=v.clone()
             for step in range(c['steps_per_block']):
-                ix=pair_batch(rng,near,pools,hard) if independent else np.r_[*[np.r_[rng.choice(neighbors,6,True),rng.choice(pool,6,False)] for neighbors,pool in zip(near,pools)],rng.choice(hard,16,False),rng.choice(1200,12,False)];assert len(ix)==64;x=torch.tensor(xx[ix],dtype=torch.float64)
+                ix=pair_batch(rng,near,pools,hard) if independent else np.r_[*[np.r_[rng.choice(neighbors,6,True),rng.choice(pool,6,False)] for neighbors,pool in zip(near,pools)],rng.choice(hard,16,False),rng.choice(1200,12,False)];assert len(ix)==64;x=torch.tensor(fitxx[ix],dtype=torch.float64)
                 if independent:delta,g,_=independent_pair_direction(v,x,torch.tensor(z[ix]),torch.tensor(tr['y'][ix]).long(),keep[ix],group,local_c)
                 else:delta,g,_=triple_direction(v,x,torch.tensor(z[ix]),teacher[ix],torch.tensor(tr['y'][ix]).long(),keep[ix],group,c)
                 assert torch.isfinite(delta).all();v-=c['Newton_step']*delta;v*=min(1.,c['trust_radius']/max(float(v.norm()),1e-12));ww,bb=w.copy(),b.copy()
-                for k,offset in zip(group,(v[0],v[1]) if independent else (v[0],v[1],-v.sum(0))):ww[k]+=offset[:-1].float().numpy();bb[k]+=float(offset[-1])
+                for k,offset in zip(group,(v[0],v[1]) if independent else (v[0],v[1],-v.sum(0))):
+                    dw,db=native_delta(offset);ww[k]+=dw;bb[k]+=db
                 assert np.array_equal(ww[outside_rows:=np.array([k for k in range(20) if k not in group])],w[outside_rows]) and np.array_equal(bb[outside_rows],b[outside_rows])
                 p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accepted=improves(n,ll,best,bestloss)
                 if accepted:best,bestloss=n,ll;chosen=v.clone()
                 history.append(dict(pass_index=pass_index,classes=group,step=step,TRAIN_indices=ix.tolist(),correct=n,NLL=ll,accepted=accepted,radius=float(v.norm()),gradient_norm=float(g.norm())))
                 if time.monotonic()-start>=c['fit_seconds'] or best>=c['target_correct'][str(a.depth)]:break
             lastw,lastb=ww.copy(),bb.copy()
-            for k,offset in zip(group,(chosen[0],chosen[1]) if independent else (chosen[0],chosen[1],-chosen.sum(0))):w[k]+=offset[:-1].float().numpy();b[k]+=float(offset[-1])
+            for k,offset in zip(group,(chosen[0],chosen[1]) if independent else (chosen[0],chosen[1],-chosen.sum(0))):
+                dw,db=native_delta(offset);w[k]+=dw;b[k]+=db
             save(a.out/'progress.json',dict(state='TRAIN_independent_two_row_repair' if independent else 'TRAIN_sumzero_three_row_repair',pass_index=pass_index,classes=group,selected_correct=best,selected_NLL=bestloss,actual_steps=len(history)),);print(json.dumps(dict(pass_index=pass_index,classes=group,selected_correct=best,steps=len(history))),flush=True)
             if time.monotonic()-start>=c['fit_seconds'] or best>=c['target_correct'][str(a.depth)]:break
         if not improves(best,bestloss,old,oldloss) or time.monotonic()-start>=c['fit_seconds'] or best>=c['target_correct'][str(a.depth)]:break

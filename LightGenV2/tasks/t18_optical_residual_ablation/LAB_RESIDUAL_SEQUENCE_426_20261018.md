@@ -2,6 +2,17 @@
 
 ## New offline-only authorization, 2026-10-19
 
+L4 same-method continuation completed: stage02 269->271/411=65.93674%,
+stage03 retained271 with NO gain, reason first_no_accuracy_or_tied_NLL_progress.
+Do not restart this single-row chain. Selected stage02 SHA
+`34f75a1d34c0126a76cd8a0848767164aafb3487695a8b437603965965f9bdd2`.
+Only a new two-row block comparison proceeds from271: independent offsets in
+the SAME TRAIN-only whitened geometry, full20 correct-TRAIN T2 KL, signed Huber,
+remaining18 rows byte-fixed. Joint standardized radius sqrt(2)*.4 preserves
+the prior per-row scale, no radius scan. Max3passes/20pairs/128steps,
+180fitseconds, target/first-no-progress stop; exact original-head delta folding.
+`lab_caltech20_L4_whitened_pair_profile_20261019.json`. L2 remains325 unchanged.
+
 Whitened local repair produced a REAL gain, fully original-model CPU verified:
 L2 318->325/411=79.07543%, gap12/411=2.91971pp from fixed337, achieving <=3pp;
 stop L2. Best SHA `09339bf2813c9d8f1910e391c8a98a3c8640c3a8f10f3a78539044129c9ccf8a`.
