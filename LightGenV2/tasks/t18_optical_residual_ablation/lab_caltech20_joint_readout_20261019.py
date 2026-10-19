@@ -14,8 +14,14 @@ from lab_caltech10_20261015 import save
 
 def derivatives(delta,x,base,y,teacher,keep,c):
     t=c['temperature'];z=base+x@delta.T;p=z.softmax(1);pt=(z/t).softmax(1);n=len(y);one=F.one_hot(y,20).double();g=((p-one)+c['teacher_KL']*t*(pt-teacher)*keep[:,None]).T@x/n+2*c['anchor']*delta
+    hinge=c.get('objective')=='multiclass_huber'
+    if hinge:
+        ix=torch.arange(n);other=z.clone();other[ix,y]=-torch.inf;rival=other.argmax(1);violation=(c['margin']-z[ix,y]+z[ix,rival]).clamp_min(0);rate=(violation/c['huber_delta']).clamp_max(1.);score=torch.zeros_like(z);score[ix,y]-=rate;score[ix,rival]+=rate;g=(score+c['teacher_KL']*t*(pt-teacher)*keep[:,None]).T@x/n+2*c['anchor']*delta;active=((violation>0)&(violation<c['huber_delta'])).double()/c['huber_delta']
     def hv(v):
-        a=x@v.T;ce=p*(a-(p*a).sum(1,keepdim=True));kl=pt*(a-(pt*a).sum(1,keepdim=True));return (ce+c['teacher_KL']*kl*keep[:,None]).T@x/n+(2*c['anchor']+c['LM_damping'])*v
+        a=x@v.T;ce=p*(a-(p*a).sum(1,keepdim=True))
+        if hinge:
+            d=(a[ix,y]-a[ix,rival])*active;ce=torch.zeros_like(a);ce[ix,y]+=d;ce[ix,rival]-=d
+        kl=pt*(a-(pt*a).sum(1,keepdim=True));return (ce+c['teacher_KL']*kl*keep[:,None]).T@x/n+(2*c['anchor']+c['LM_damping'])*v
     return g,hv
 
 
@@ -37,6 +43,10 @@ def selftest():
     def loss(v):
         z=base+x@v.T;return F.cross_entropy(z,y)+8*(F.kl_div((z/2).log_softmax(1),teacher,reduction='none').sum(1)*keep).mean()+.1*v.square().sum()
     g,hv=derivatives(d.detach(),x,base,y,teacher,keep,c);assert torch.allclose(g,torch.autograd.grad(loss(d),d)[0],atol=1e-10);v=torch.randn_like(d);h=torch.autograd.functional.hvp(loss,d,v)[1];assert torch.allclose(hv(v),h+.1*v,atol=1e-10);step=conjugate(g,hv,80);assert (g*step).sum()>0
+    hc=dict(c,objective='multiclass_huber',margin=1.,huber_delta=1.)
+    def hloss(v):
+        z=base+x@v.T;other=z.clone();other[torch.arange(len(y)),y]=-torch.inf;violation=(1-z[torch.arange(len(y)),y]+other.max(1).values).clamp_min(0);huber=torch.where(violation<1,.5*violation.square(),violation-.5);return huber.mean()+8*(F.kl_div((z/2).log_softmax(1),teacher,reduction='none').sum(1)*keep).mean()+.1*v.square().sum()
+    hg,hhv=derivatives(d.detach(),x,base,y,teacher,keep,hc);assert torch.allclose(hg,torch.autograd.grad(hloss(d),d)[0],atol=1e-10);assert torch.allclose(hhv(v),torch.autograd.functional.hvp(hloss,d,v)[1]+.1*v,atol=1e-10)
     tx=torch.randn(40,256,dtype=torch.float64);labels=torch.arange(40)%20;basis,_=TRAIN_class_basis(tx,labels);coef=torch.randn(20,19,dtype=torch.float64);assert torch.allclose((tx@basis)@coef.T,tx@(coef@basis.T).T,atol=1e-9);print('Joint original-head Newton-CG gradient/HVP and TRAIN-only19-direction folding selftest passed',flush=True)
 
 

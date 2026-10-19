@@ -1,0 +1,10 @@
+{
+  "scope":"One loss-only contrast after TRAIN-class-subspace CE retained E0; focus uncertain TRAIN margins instead of fitting confident probabilities",
+  "TRAIN_class_mean_subspace":true,"objective":"multiclass_huber","margin":1.0,"huber_delta":1.0,
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"per_row_trust_radius":0.4,"CG_iterations":12,
+  "steps":256,"batch_size":128,"fit_seconds":90,
+  "subspace":"Same19 TRAIN-class-mean directions and400 optimizer coordinates folded into original5140 head",
+  "stop":"at most256 TRAIN batches/90fitseconds/305correct; no automatic continuation or grid",
+  "TEST_gradient":false,"VALID":0,"SDK":false,"GPU":false
+}

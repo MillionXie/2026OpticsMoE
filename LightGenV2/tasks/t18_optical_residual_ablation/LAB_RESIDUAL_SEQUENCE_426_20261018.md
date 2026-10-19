@@ -50,6 +50,14 @@ scan/automatic continuation. Config `lab_caltech20_L4_class_subspace_profile_202
 original joint trainer adds a config-controlled TRAIN-only basis. Orthogonality,
 gradient/HVP and exact algebraic folding tested. Frozen native279 prefix only.
 
+TRAIN-class-subspace CE completed256 actual updates and retained E0 279.
+A single loss-only contrast in that SAME400-coordinate subspace uses smooth
+multiclass Huber margin1/delta1, preserving correct-TRAIN T2KL2 and all prior
+coefficients. It stops updating already sufficient TRAIN margins instead of
+fitting every confidence value. Analytic gradient/HVP checked to1e-10 against
+autograd. Config `lab_caltech20_L4_class_margin_profile_20261019.json`, max256
+TRAIN batches/90fitsec, no automatic continuation/parameter scan/new layer.
+
 ### Latest explicit user request: L2 residual gap <=2pp, 2026-10-19
 
 **Completed:329/411=80.04866%, fixed337 simulation gap1.94647pp; new target achieved.**
