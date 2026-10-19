@@ -6,6 +6,27 @@
 
 #### Reviewed finite-budget progression, not an invented hard8pp stop
 
+Full L4 original-head shrinkage reached260, exact row repair277; coupled-row
+remains277 with lower native NLL, not an accuracy increase. Full nativeCPU2
+is authoritative. One older private cached diagnostic used an unconstrained
+thread count and showed275 on the same head; fixedCPU2 recheck and a separate
+full/batch8 Linear diagnostic both exactly reproduce native277 with maxabs0.
+No model/data change or new inference batching was introduced to pick a score.
+
+One bounded `--mode terminal10-fit` DVP1600 adapter now tests the published
+fixedhead10 coefficients and exact native-RMS terminal method from
+`lab_caltech20_native_terminal_20261019.py`. The accepted5140 head stays frozen;
+only original last9conv and directF64alpha train, original bounds unchanged.
+The native RMS Jacobian differs from the detached-normalizer training surrogate,
+not inference. Every original TRAIN/TEST forward must first match the in-RAM
+terminal incident/optical cache within3e-6; refuse before training on failure.
+No compact-field approximation, TEST gradient or new model component. Both
+bestlast must subsequently match full original411 inference, including argmax.
+OriginalTRAIN3141 priors/correct-TRAIN KL1/anchor.1, original published rates,
+CPU2/batch8, max60epochs or600fitseconds at complete epoch boundary; target342
+not guaranteed, E0 retained if no gain. Same-run L6 capture admission remains
+strict. Profile `lab_caltech20_DVP_terminal10_profile_20261020.json`.
+
 Once L4 is fully captured/audited and its initial terminal fit is reviewed,
 L6 hardware need not wait for any additional L4 head-only CPU comparison.
 The conditioned-head adapter admits this ONE parallel workspace case: depth4

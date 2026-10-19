@@ -100,6 +100,19 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertNotIn('unlink',text)
         source=SOURCE.read_text();self.assertIn("core.save(a.out/'CPU_capture_admission.json'",source)
 
+    def test_terminal10_exact_forward_gate_and_TRAIN_only_loss(self):
+        tree=ast.parse(SOURCE.read_text());loss=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal10_objective')
+        self.assertFalse(any('test' in n.id.lower() for n in ast.walk(loss) if isinstance(n,ast.Name)))
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal10_fit');text=ast.unparse(method)
+        self.assertIn("trainable = {'electronic.3.local.weight', 'fusion_logits.3'}",text)
+        self.assertIn('sum((v.numel() for v in params)) == 10',text)
+        self.assertLess(text.index("max(cache_errors) <= 3e-06"),text.index('torch.optim.AdamW'))
+        self.assertIn('np.array_equal(p.argmax(1), expected.argmax(1))',text)
+        self.assertIn('used == 1600',text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_terminal10_profile_20261020.json').read_text())
+        self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
+        self.assertEqual((cfg['epochs'],cfg['fit_seconds'],cfg['batch']),(60,600,8))
+
 
 if __name__ == '__main__':
     unittest.main()

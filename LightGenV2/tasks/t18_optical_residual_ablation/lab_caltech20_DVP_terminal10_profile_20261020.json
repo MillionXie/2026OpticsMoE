@@ -1,0 +1,9 @@
+{
+  "epochs":60,"fit_seconds":600,"batch":8,
+  "conv_lr":0.002,"alpha_lr":0.0005,"weight_decay":0.001,
+  "teacher_KL":1.0,"anchor":0.1,"label_smoothing":0.02,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "native_tail_source_SHA256":"c6dfe2cdcf4598d9b7e488a06577c9c45b4c483e14ca4daf9084d28dacfbff5c",
+  "scope":"One DVP1600/411 adapter comparison of the already published fixedhead10 coefficients and native-RMS exact-forward method. Parent original classifier has native277/411 versus the separate cold original5150 GPU trial still below that score; keep the accepted5140 head exactly fixed and optimize only original last9convolution/directF64alpha. No new layer/mask/CCD/camera setting. Before any update, every TRAIN/TEST native original batch must match cached original terminal features and probabilities within3e-6; after fitting both bestlast must replay the whole original411 graph with matching labels and <=3e-6 probability error. Cache only exact frozen incident amplitude and nonlinear optical output in RAM, no approximate field substitution or TEST gradient. Mathematical native RMS backward differs from the original detached-normalizer surrogate, but inference remains identical and saved PT uses only original parameters/bounds. Reuse the published originalTRAIN3141 importance weights, correct-TRAIN KL1, anchor.1, convLR.002/alphaLR.0005, smoothing.02 and seed73; CPU2/batch8/max60epochs or600fitseconds at complete epoch boundary, stop if342. No coefficient/seed scan, no guarantee. Full L4 only; same-run L6 capture may continue under strict other-depth CPU admission, SDK/GPU unused. TRAIN80/class, TEST411, noVALID; TEST-informed development only. Retain parent ifE0, do not call it a successful update."
+}
