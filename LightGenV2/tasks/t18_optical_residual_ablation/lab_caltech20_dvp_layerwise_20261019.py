@@ -143,6 +143,9 @@ def validate_stage_hardware(path,sequence):
     assert r['passed'] and r['SDK_released'] and not r['TEST_used'] and r['TRAIN']==40 and r['selected']['actual']['exposure_us']==hardware['exposure_us']
     assert r['PT_SHA256']==hardware['PT_SHA256'] and r['phase_SHA256']==hardware['phase_SHA256']
     assert r['data_SHA256']==hardware['data_SHA256'] and r['selected']['probe_directory']==hardware['probe_directory'] and hardware['probe_indices']==list(range(40))
+    if hardware.get('quality_mode')=='same_phase_contrast':
+        b=hardware['quality_background'];assert b==r['selected']['background'] and sha(b['path'])==b['SHA256'] and b['phase_SHA256']==hardware['phase_SHA256']
+        assert hardware['network_background_subtraction'] is False and hardware['capture_min_contrast_p99']==r['protocol']['capture_min_contrast_p99']==15
     return hardware
 
 
@@ -276,6 +279,10 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         out.rename(archived)
     assert not out.exists();out.mkdir(parents=True)
     probe_directory=Path(hardware['probe_directory']) if hardware_digest!=HARDWARE else None
+    quality_background=None
+    if hardware.get('quality_mode')=='same_phase_contrast':
+        b=hardware['quality_background'];assert sha(b['path'])==b['SHA256'] and hardware['network_background_subtraction'] is False
+        quality_background=np.load(b['path'],allow_pickle=False);assert quality_background.shape==(478,478) and quality_background.dtype==np.float32
     if probe_directory is not None:
         assert hardware['PT_SHA256']==digest and hardware['data_SHA256']==dm['sha256'] and hardware['stage']==stage and not pilot
         shutil.copy2(a.hardware_manifest,out/'hardware.json');assert sha(out/'hardware.json')==hardware_digest
@@ -322,11 +329,16 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                                 raw,meta=bench.capture(bmp);crop=orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation'])
                                 rawfile=base.with_name(base.name+'_raw.png');Image.fromarray(raw).save(rawfile,compress_level=1);Image.fromarray(crop).save(base.with_suffix('.png'),compress_level=1)
                                 row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=sha(rawfile),frame_metadata=meta,p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),complete_sample_ms=(time.perf_counter()-t)*1000,captured_at_ns=time.time_ns(),new_physical_capture=True)
+                            if quality_background is not None:
+                                from lab_caltech20_dvp_stage_exposure_20261019 import contrast_statistics
+                                row.update(contrast_statistics(crop,quality_background,hardware['quality_background']['noise_sigma']))
+                                row['background_quality_only_no_network_subtraction']=True
                             ccd[index]=crop;ccd.flush()
                             save(base.with_suffix('.json'),row);frames+=1;elapsed.append(row['complete_sample_ms']);values.append(crop);save(session/'progress.json',dict(state='pilot' if pilot else 'capturing',depth=a.depth,stage=stage,role=role,completed=index+1,total=n_total,stage_frames=frames,elapsed_s=time.perf_counter()-start,latest=row))
                             # Transient BMP is redundant; canonical input, exact drive LUT and digest remain.
                             bmp.unlink()
                             if row['p99']<15 or row['saturation_fraction']>.15:raise RuntimeError('DVP signal guard: retain all valid/bad frames; no automatic retry or exposure change')
+                            if quality_background is not None and row['contrast_p99']<hardware['capture_min_contrast_p99']:raise RuntimeError('DVP net-signal quality guard: raw CCD preserved; no background subtraction or automatic retry')
                         if n<8:values.extend([np.zeros((478,478),np.uint8)]*(8-n))
                         return np.stack(values)
                     result=layer_forward(model,x,padded_ids,stage,cache,physical);last_end=end

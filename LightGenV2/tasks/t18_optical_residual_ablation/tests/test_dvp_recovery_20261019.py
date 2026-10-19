@@ -30,7 +30,7 @@ class RecoveryTests(unittest.TestCase):
         self.scope=dict(np=np,Path=Path,Image=Image,sha=sha,read=read,save=save,HARDWARE='hardware')
         functions(HERE/'lab_caltech20_dvp_20261019.py',('variants','orient','correlation'),self.scope)
         functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('admitted_pilot','revalidate_replug','validate_stage_hardware'),self.scope)
-        functions(HERE/'lab_caltech20_dvp_stage_exposure_20261019.py',('exposure_passes',),self.scope)
+        functions(HERE/'lab_caltech20_dvp_stage_exposure_20261019.py',('exposure_passes','contrast_statistics','contrast_passes'),self.scope)
 
     def pilot(self):
         folder=self.root/'router_pilot24';(folder/'train').mkdir(parents=True)
@@ -80,6 +80,23 @@ class RecoveryTests(unittest.TestCase):
     def test_exposure_clip_rejected(self):self.assertFalse(self.exposure(saturation=.02))
     def test_exposure_nonlinear_response_rejected(self):self.assertFalse(self.exposure(response_error=20))
     def test_exposure_noise_floor_rejected(self):self.assertFalse(self.exposure(dark_p99=25))
+
+    def contrast(self,contrast=30,snr=10,background_p99=20,clip=0,error=0):
+        cfg=dict(TRAIN_probe_samples=40,probe_min_p99=25,probe_max_saturation=.01,background_max_p99=64,probe_min_contrast_p99=25,probe_min_SNR=5,linearity_absolute_gray=2,linearity_relative_tolerance=.15)
+        rows=[dict(p99=50,saturation_fraction=clip,contrast_p99=contrast,contrast_SNR=snr) for _ in range(40)]
+        controls=[dict(tag='dark',mean=10),dict(tag='gray64',mean=18+error,saturation_fraction=0),dict(tag='gray96',mean=34+error,saturation_fraction=0)]
+        return self.scope['contrast_passes'](rows,controls,dict(dark=2,gray64=4,gray96=8),4,dict(p99=background_p99,saturation_fraction=0),cfg)
+
+    def test_contrast_has_independent_admission(self):self.assertTrue(self.contrast())
+    def test_contrast_low_signal_rejected(self):self.assertFalse(self.contrast(contrast=24))
+    def test_contrast_noise_rejected(self):self.assertFalse(self.contrast(snr=4))
+    def test_contrast_headroom_rejected(self):self.assertFalse(self.contrast(background_p99=65))
+    def test_contrast_clipping_rejected(self):self.assertFalse(self.contrast(clip=.02))
+    def test_contrast_linearity_rejected(self):self.assertFalse(self.contrast(error=15))
+    def test_contrast_does_not_modify_raw_array(self):
+        crop=np.full((478,478),50,np.uint8);background=np.full((478,478),20,np.float32)
+        result=self.scope['contrast_statistics'](crop,background,2)
+        self.assertEqual(result,dict(contrast_p99=30,contrast_SNR=15));self.assertTrue((crop==50).all());self.assertTrue((background==20).all())
 
     def hardware(self):
         base=self.root/'calibration/admission/admitted_hardware.json';base.parent.mkdir(parents=True)

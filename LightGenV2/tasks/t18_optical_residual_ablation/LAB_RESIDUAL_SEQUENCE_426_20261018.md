@@ -2,6 +2,30 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Absolute-dark exposure comparison FAILED; fresh same-phase contrast check
+
+The five predeclared exposures produced min TRAIN p99 7/13/25/50/99.17,
+with negligible clipping and near-linear known-gray above-black response.
+However, absolute black p99 rose3/6/10/19/36, so NONE passed the original
+max8 rule. All218 diagnostic records/failure retained, SDK released, no
+hardware admission or formal stage0 capture inferred from these results.
+Exposure-dependent background is observed; sensor dark signal versus optical
+leakage has not been separated and neither cause is claimed as established.
+
+A separately named finite protocol `lab_caltech20_DVP_stage_contrast_profile_20261019.json`
+tests20/40/80ms, first passing only, using fresh same-model-phase zero-input
+repeats and the same fixed40TRAIN (two/class); no TEST. Background mean is
+stored for QUALITY DIAGNOSTICS ONLY. Raw camera crops remain unmodified in
+the original model and CCD arrays; no network background subtraction.
+Criteria fixed before this measurement: background p99<=64 (at least75%
+uint8 headroom), no background clip, every TRAIN rawp99>=25, clip<=1%,
+contrastp99>=25 and contrastp99/max(1,RMS black-repeat difference/sqrt2)>=5;
+same existing known-gray linearity tolerance. Formal capture retains raw15/
+clip15% guards and ADDS contrastp99>=15. Old failed protocol is not relabelled.
+New hardware identity includes exact background/phase/report SHA. Fresh40
+probes only may be reused with full original ID/raw/input/phase/PT checks.
+If no candidate passes, stop with all evidence preserved, not another scan.
+
 ### Explicit per-layer exposure admission authorized; L4 stage0 next
 
 User replied "继续推进，标定...ok" to the explicit TRAIN/known-pattern-only
