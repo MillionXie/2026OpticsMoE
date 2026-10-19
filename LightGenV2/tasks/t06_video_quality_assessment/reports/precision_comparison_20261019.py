@@ -101,9 +101,25 @@ def audit_cost(folder):
 
 
 def build():
-    old=read(OLD);native=[dict(r,precision='native') for r in old['groups']['busy50_near_saturation'] if r['baseline'] in ('ours','qwen','glm','clip','yolo')]
+    old=read(OLD);native=[dict(r,precision='optical-reference' if r['baseline']=='ours' else 'native') for r in old['groups']['busy50_near_saturation'] if r['baseline'] in ('ours','qwen','glm','clip','yolo')]
+    # Recheck original-platform costs without changing any accepted old observation.
+    for r in native:
+        if r['baseline']=='ours':continue
+        if r['baseline']=='clip' and r['condition']=='Near-saturation reference':
+            assert len(r['repeat_inputs'])==3
+            close(r['time_ms'],statistics.mean(x['time_ms'] for x in r['repeat_inputs']))
+            close(r['energy_j'],statistics.mean(x['energy_j'] for x in r['repeat_inputs']))
+            r['host_proxy_w']=338.2
+            continue
+        source=REPO/r['cost_source'];folder=source.parent
+        t=rows(folder/'batch_timing.csv');raw=rows(folder/'telemetry.csv')
+        cost=[v for v in t if v['in_cost_subset']=='True'];active=[v for v in raw if v['phase'].startswith('active:')]
+        assert sum(int(v['videos']) for v in cost)==200 and active
+        wall=sum(float(v['synchronized_wall_ms']) for v in cost);watts=statistics.mean(float(v['watts']) for v in active)
+        close(wall*16/200,r['time_ms']);close((338.2+watts)*wall*16/200/1000,r['energy_j'])
+        r.update(cost_wall_sum_ms=wall,cost_video_count=200,board_w=watts,host_proxy_w=338.2,active_samples=len(active))
     templates={r['baseline']:r for r in old['groups']['busy50_near_saturation'] if r['condition']=='Near-saturation reference'}
-    audited=[];missing=[];fp32=[dict(native[0],precision='fp32')]
+    audited=[];missing=[];fp32=[dict(native[0],precision='optical-reference')]
     for root in (RENTAL,LAB):
         if not root.exists():continue
         for folder in root.iterdir():
@@ -125,6 +141,7 @@ def build():
         if r['baseline']=='ours':continue
         if r['condition']=='Approximately 50%' and abs(r['utilization_percent']-50)>5:
             r.update(plotted=False,target50_failed=True)
+            missing.append(dict(precision=r['precision'],model=r['baseline'],condition=r['condition'],reason='Measured independent utilization outside accepted50±5pp; raw evidence retained'))
     target=RENTAL/'presentation';target.mkdir(parents=True,exist_ok=True)
     payload=dict(status='complete' if not missing else 'partial',groups={'native':native,'fp32':fp32},audited_new_points=audited,missing=missing,
         Qwen_B1_unchanged=True,pacing_waits_excluded=True,utilization_independent=True,all_completed_repeats_retained=True)

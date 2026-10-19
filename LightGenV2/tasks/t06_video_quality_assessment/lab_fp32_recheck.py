@@ -30,7 +30,8 @@ def runtime(args,guard,identity):
     weight=payload['state_dict']['weight'].float()
     head=torch.nn.Linear(weight.shape[1],5,bias=False).cuda().eval().requires_grad_(False)
     head.weight.copy_(weight.cuda());levels=payload['level_scores'].cuda().float()
-    rows=[r for r in core.read_manifest(args.manifest) if r['split']=='test']
+    rows=getattr(args,'remapped_test_rows',None)
+    if rows is None:rows=[r for r in core.read_manifest(args.manifest) if r['split']=='test']
     if frozen.sha256(args.manifest)!=frozen.MANIFEST_SHA or len(rows)!=558:raise RuntimeError('Fixed558')
     assets=costs.model_hashes(args.model_path)
     handles=[]

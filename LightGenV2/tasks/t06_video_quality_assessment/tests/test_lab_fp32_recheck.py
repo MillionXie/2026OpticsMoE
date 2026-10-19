@@ -16,3 +16,13 @@ def test_canonical_and_anchor_protection():
     assert "('qwen',3)" in source and "('qwen',1)" not in source
     assert 'no finalized B1 edits' in source
     assert 'test_override' in Path(m.shared.__file__).read_text()
+
+
+def test_optional_rental_qwen_preserves_anchor_and_boundary():
+    source=Path(m.__file__).with_name('rental_qwen_fp32.py').read_text()
+    tree=ast.parse(source)
+    assert 'args.batch=3' in source and 'original_best_checkpoint.pt' in source
+    assert 'args.remapped_test_rows' in source
+    assert 'shared.evaluate' in source and 'lab.runtime' in source
+    assert 'allow_tf32=False' in source and "set_float32_matmul_precision('highest')" in source
+    assert not any(isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute) and n.func.attr in ('half','bfloat16','autocast') for n in ast.walk(tree))

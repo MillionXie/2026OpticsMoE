@@ -38,6 +38,15 @@ for(const precision of ['native','fp32']){
   const r=7+i,repeat=x.repeats??x.util_repeats??[];
   const values={...x,repeat1:repeat[0],repeat2:repeat[1],repeat3:repeat[2],status:x.missing?'unavailable':x.target50_failed?'outside target':'measured'};
   inputs.getRange(`A${r}:Z${r}`).values=[keys.map(k=>values[k]??null)];
+  if(x.baseline!=='ours'&&!x.missing&&x.plotted!==false){
+   if(precision==='native'&&x.baseline==='clip'&&x.condition==='Near-saturation reference'){
+    inputs.getRange('G'+r).formulas=[['=AVERAGE(G27:G29)']];
+    inputs.getRange('H'+r).formulas=[['=AVERAGE(H27:H29)']];
+   }else if(Number.isFinite(x.cost_wall_sum_ms)&&x.cost_video_count>0&&Number.isFinite(x.board_w)){
+    inputs.getRange('G'+r).formulas=[[`=K${r}*16/L${r}`]];
+    inputs.getRange('H'+r).formulas=[[`=(I${r}+J${r})*G${r}/1000`]];
+   }
+  }
   const available=!x.missing&&x.plotted!==false;
   sheet.getRange(`A${r}:L${r}`).values=[[x.model,x.condition,x.batch??null,null,null,null,null,null,null,x.parameters_billion??null,x.platform??null,values.status]];
   if(available){
@@ -81,9 +90,10 @@ for(const precision of ['native','fp32']){
  };
  verify(book);
  const active=rows.findIndex(x=>x.baseline!=='ours'&&!x.missing&&x.plotted!==false);
- if(active>=0){const r=active+7,oldValue=inputs.getRange('G'+r).values[0][0];inputs.getRange('G'+r).values=[[oldValue*1.01]];book.recalculate();
+ if(active>=0){const r=active+7,oldValue=inputs.getRange('G'+r).values[0][0],oldFormula=inputs.getRange('G'+r).formulas[0][0];inputs.getRange('G'+r).values=[[oldValue*1.01]];book.recalculate();
   if(Math.abs(sheet.getRange('F'+r).values[0][0]-oldValue*1.01)>1e-8)throw Error('Formula recalculation failed');
-  inputs.getRange('G'+r).values=[[oldValue]];book.recalculate();verify(book);}
+  if(oldFormula)inputs.getRange('G'+r).formulas=[[oldFormula]];else inputs.getRange('G'+r).values=[[oldValue]];
+  book.recalculate();verify(book);}
  const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:15},maxChars:1000})).ndjson;
  if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
  for(const[sheetName,range]of [['Plot data','A1:G19'],['Measurements','A6:N12']]){
