@@ -13,7 +13,7 @@ def test_four_panel_layout_at_word_width(tmp_path,monkeypatch):
             high=next(x for x in old if x['baseline']==row['baseline'] and x['condition']=='Near-saturation reference')
             fixture.append(dict(high,condition='Approximately 50%',utilization_percent=50,plotted=True))
     original=m.OUT;out=tmp_path/'out';out.mkdir()
-    names=['README.md','LGVQ_busy50_near_saturation_plot_data.xlsx','busy50_near_saturation_pair.png']
+    names=['README.md','LGVQ_busy50_near_saturation_plot_data.xlsx','LGVQ_busy50_near_saturation_plot_data.csv','busy50_near_saturation_pair.png']
     names += [f'busy50_near_saturation_{kind}.{ext}' for kind in ('latency','energy') for ext in ('png','svg','pdf')]
     for name in names:shutil.copy2(original/name,out/name)
     run=tmp_path/'layout_only';(run/'presentation').mkdir(parents=True)

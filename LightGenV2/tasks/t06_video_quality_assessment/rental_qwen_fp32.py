@@ -30,6 +30,13 @@ def main():
     args.manifest=Path('/data/lgvq/original_manifest.csv');args.reproduction_receipt=None
     args.remapped_test_rows=[r for r in shared.old.rows() if r['split']=='test']
     if not shared.REPO.is_relative_to('/data') or args.output.exists():raise RuntimeError('New canonical data only')
+    receipt=json.loads((args.model_path/'asset_receipt.json').read_text())
+    if receipt['revision']!=original.REVISION or shared.old.sha(args.checkpoint)!=original.HEAD_SHA:
+        raise RuntimeError('Original official revision and frozen head required')
+    for name,digest in receipt['hashes'].items():
+        if shared.old.sha(args.model_path/name)!=digest:raise RuntimeError('Original official Qwen asset changed')
+    if shared.old.sha(args.model_path/'model.safetensors')!=original.WEIGHT_SHA:
+        raise RuntimeError('Original official Qwen weight SHA required')
     args.utilization_source=str(shared.ROOT/'qwen_fp32_util'/('paced' if args.stage=='paced-cost' else 'native')/'report.json')
     args.output.mkdir();guard=shared.Guard(args)
     identity=dict(model='qwen',batch=3,precision='fp32',gpu_uuid=args.gpu_uuid,

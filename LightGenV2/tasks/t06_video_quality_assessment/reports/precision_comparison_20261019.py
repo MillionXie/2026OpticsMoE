@@ -161,7 +161,7 @@ def render():
     manifest=archive/'manifest.json'
     if not manifest.exists():
         saved={}
-        names=['README.md','LGVQ_busy50_near_saturation_plot_data.xlsx','busy50_near_saturation_pair.png']
+        names=['README.md','LGVQ_busy50_near_saturation_plot_data.xlsx','LGVQ_busy50_near_saturation_plot_data.csv','busy50_near_saturation_pair.png']
         names += [f'busy50_near_saturation_{kind}.{ext}' for kind in ('latency','energy') for ext in ('png','svg','pdf')]
         for name in names:
             target=archive/name
@@ -175,6 +175,16 @@ def render():
     geometry=[]
     for precision,values in data['groups'].items():
         prefix='busy50_near_saturation' if precision=='native' else 'fp32_busy50_near_saturation'
+        fields=['model','condition','precision','batch','srcc','plcc','utilization_percent','time_ms','energy_j','board_w','host_proxy_w',
+                'cost_wall_sum_ms','cost_video_count','active_samples','excluded_wait_16_ms','platform','gpu_uuid',
+                'checkpoint_sha256','cost_source','utilization_source','source_commit','plotted','notes']
+        csvrows=list(values)
+        for missing in data['missing']:
+            if missing['precision']==precision and not any(v['baseline']==missing['model'] and v['condition']==missing['condition'] for v in csvrows):
+                csvrows.append(dict(model=missing['model'],condition=missing['condition'],precision=precision,plotted=False,
+                                    notes=missing.get('reason','No complete validated endpoint; see measurement status.')))
+        with (OUT/f'LGVQ_{prefix}_plot_data.csv').open('w',newline='',encoding='utf-8-sig') as stream:
+            writer=csv.DictWriter(stream,fieldnames=fields,extrasaction='ignore');writer.writeheader();writer.writerows(csvrows)
         values=[r for r in values if r.get('plotted',True)]
         for metric,field,label in [('latency','time_ms','Inference latency (ms / 16 videos)'),('energy','energy_j','Estimated inference energy (J / 16 videos)')]:
             fig,ax=plt.subplots(figsize=(78/25.4,88/25.4));fig.subplots_adjust(left=.19,right=.97,top=.92,bottom=.34)
