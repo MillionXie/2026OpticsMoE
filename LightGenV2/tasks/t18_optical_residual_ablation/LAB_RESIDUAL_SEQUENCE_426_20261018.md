@@ -18,8 +18,9 @@ Original accuracy-selected PTs remain authoritative: L2
 `823d81927be3874f23a0b1f4a97cdda7272c8239ea6bae6045650df05e920dfd`;
 L4 `huber_continuation_20261019/stage02/best.pt` SHA
 `3d9895aa06d32efe484523ab04307a76d072a30c5cd7216fe4bf64ccadc461dc`.
-New L2 pair PT only improves same-count NLL1.070204->1.069678; all retained
-per-sample class predictions are unchanged. L4 new selected parameters remain
+New L2 pair PT only improves same-count NLL1.070204->1.069678; one already
+wrong sample changes to another wrong class, with no correctness-mask gain.
+All L4 retained per-sample predictions are unchanged; its selected parameters remain
 E0. Preserve both new best/last evidence, do not replace the formal accuracy
 record with a worse last PT or imply a new robust result.
 
