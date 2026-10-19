@@ -139,6 +139,12 @@ def validate_stage_hardware(path,sequence):
     for key in ('camera_dll','camera_dll_SHA256','coordinates','coordinates_SHA256','sensor_shape','machine_config','amplitude_sdk','phase_sdk','phase_lut','phase_LUT_SHA256','gain','wait_ms','discard_frames','phase_transform','orientation','response_lut','response_lut_SHA256'):
         assert hardware[key]==original[key],('Per-layer exposure may not change other hardware/encoding',key)
     assert 0<hardware['exposure_us']<=80005 and hardware['gain']==1
+    if hardware.get('quality_mode')=='shared_fixed_record_only':
+        policy=validate_capture_policy(hardware['capture_policy'],hardware,sequence)
+        assert sha(hardware['capture_policy'])==hardware['capture_policy_SHA256']
+        assert hardware['shared_source_hardware_SHA256']==policy['source_hardware_SHA256']
+        assert hardware['probe_indices']==[] and hardware['network_background_subtraction'] is False
+        return hardware
     report=Path(hardware['stage_admission_report']);assert sha(report)==hardware['stage_admission_report_SHA256'];r=read(report)
     assert r['passed'] and r['SDK_released'] and not r['TEST_used'] and r['TRAIN']==40 and r['selected']['actual']['exposure_us']==hardware['exposure_us']
     assert r['PT_SHA256']==hardware['PT_SHA256'] and r['phase_SHA256']==hardware['phase_SHA256']
@@ -147,6 +153,42 @@ def validate_stage_hardware(path,sequence):
         b=hardware['quality_background'];assert b==r['selected']['background'] and sha(b['path'])==b['SHA256'] and b['phase_SHA256']==hardware['phase_SHA256']
         assert hardware['network_background_subtraction'] is False and hardware['capture_min_contrast_p99']==r['protocol']['capture_min_contrast_p99']==15
     return hardware
+
+
+def validate_capture_policy(path,hardware,sequence):
+    cfg=read(path)
+    assert cfg['policy']=='shared_fixed_exposure_record_only' and cfg['depths']==[4,6]
+    assert cfg['calibrate_each_stage'] is False and cfg['brightness_threshold_action']==cfg['saturation_threshold_action']=='record_only'
+    assert cfg['network_background_subtraction'] is False and cfg['base_admission_SHA256']==HARDWARE
+    source=Path(sequence)/cfg['source_hardware'];assert sha(source)==cfg['source_hardware_SHA256']
+    original=validate_stage_hardware(source,sequence)
+    assert original['quality_mode']=='same_phase_contrast' and original['exposure_us']==cfg['exposure_us']==hardware['exposure_us']==60006.
+    assert original['gain']==cfg['gain']==hardware['gain']==1.
+    return cfg
+
+
+def signal_flags(row,hardware):
+    flags=dict(raw_p99_below15=row['p99']<15,saturation_above15percent=row['saturation_fraction']>.15)
+    if 'contrast_p99' in row:flags['net_p99_below_limit']=row['contrast_p99']<hardware['capture_min_contrast_p99']
+    return flags
+
+
+@torch.no_grad()
+def prepare_fixed_hardware(a):
+    """Bind one admitted shared exposure to new PT/phase; no camera or new calibration."""
+    assert a.capture_policy and not a.out.exists() and sha(a.checkpoint)==a.digest
+    base=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(base)==HARDWARE
+    hardware=read(base);cfg=read(a.capture_policy);hardware['exposure_us']=cfg['exposure_us'];validate_capture_policy(a.capture_policy,hardware,a.sequence)
+    data,dm=data_for(a.sequence);session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(a.stage)
+    previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
+    model,_=model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');x,n,end=padded(data,'train',0);packet={}
+    def collect(stage,amplitude,phase,ids):
+        assert stage==a.stage;packet['phase']=phase.copy();return np.zeros((n,478,478),np.uint8)
+    layer_forward(model,x,data['train'][2][:end],a.stage,{k:np.asarray(v['train'][:end]).copy() for k,v in previous.items()},collect)
+    a.out.mkdir(parents=True);phase=a.out/'model_phase.bmp';Image.fromarray(phase_native(packet['phase'])).save(phase)
+    hardware.update(base_admission_SHA256=HARDWARE,quality_mode='shared_fixed_record_only',PT_SHA256=a.digest,stage=a.stage,data_SHA256=dm['sha256'],phase_SHA256=sha(phase),probe_indices=[],network_background_subtraction=False,capture_policy=str(a.capture_policy.resolve()),capture_policy_SHA256=sha(a.capture_policy),shared_source_hardware_SHA256=cfg['source_hardware_SHA256'])
+    save(a.out/'hardware.json',hardware);save(a.out/'report.json',dict(prepared=True,not_new_calibration=True,SDK_opened=False,source_git=git_head(),source_SHA256=sha(__file__),PT_SHA256=a.digest,phase_SHA256=sha(phase),hardware_SHA256=sha(a.out/'hardware.json'),prefix_SHA256=identities,shared_exposure_us=cfg['exposure_us'],signal_thresholds_record_only=True))
+    validate_stage_hardware(a.out/'hardware.json',a.sequence)
 
 
 @torch.no_grad()
@@ -319,7 +361,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
     out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else HARDWARE
     if out.exists() and getattr(a,'archive_empty_start',False):
-        assert a.depth==4 and stage=='2' and getattr(a,'recheck_before_capture',False) and not LOCK.exists()
+        assert a.depth==4 and stage=='2' and (getattr(a,'recheck_before_capture',False) or getattr(a,'capture_policy',None)) and not LOCK.exists()
         failure=read(out/'failure.json');prior_contract=read(out/'contract.json')
         assert failure['frames']==0 and 'DVP Start: -1001' in failure['error'] and not (out/'report.json').exists()
         assert prior_contract['PT_SHA256']==digest and prior_contract['hardware_SHA256']==hardware_digest
@@ -340,7 +382,10 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         # Exact verified empty failed attempt, preserved within the same run.
         out.rename(archived)
     assert not out.exists();out.mkdir(parents=True)
-    probe_directory=Path(hardware['probe_directory']) if hardware_digest!=HARDWARE else None
+    record_only=bool(getattr(a,'capture_policy',None))
+    if record_only:validate_capture_policy(a.capture_policy,hardware,a.sequence)
+    else:assert hardware.get('quality_mode')!='shared_fixed_record_only','Shared settings require the explicit published record-only policy'
+    probe_directory=Path(hardware['probe_directory']) if hardware_digest!=HARDWARE and hardware.get('probe_directory') else None
     quality_background=None
     if hardware.get('quality_mode')=='same_phase_contrast':
         b=hardware['quality_background'];assert sha(b['path'])==b['SHA256'] and hardware['network_background_subtraction'] is False
@@ -367,12 +412,13 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
             save(out/'persistence_failure.json',dict(error=repr(error),receipt_candidate=row,index=index,role=role,raw_path=str(base.with_name(base.name+'_raw.png')),captured_data_may_be_partial=True,automatic_retry=False));raise
         row.update(raw_SHA256=result['raw_SHA256'],complete_sample_ms=(time.perf_counter()-sample_start)*1000)
         record_frame(base,row,index,total,role)
-    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,parent_fit_ancestry=ancestry,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__),persistence_mode=persistence_mode,max_uncommitted_frames=1 if writer is not None else 0,same_connection_replug_recheck=getattr(a,'recheck_before_capture',False)))
+    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,parent_fit_ancestry=ancestry,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__),persistence_mode=persistence_mode,max_uncommitted_frames=1 if writer is not None else 0,same_connection_replug_recheck=getattr(a,'recheck_before_capture',False),signal_threshold_action='record_only' if record_only else 'stop',capture_policy_SHA256=sha(a.capture_policy) if record_only else None))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),stage=stage,session=str(session),camera='DVP',pilot=pilot)))
     try:
         with Bench(hardware,out) as bench:
             if resume_router:revalidate_replug(bench,out,hardware,warp)
             if getattr(a,'recheck_before_capture',False):
+                assert not record_only,'User shared policy skips additional optical recalibration; transport checks remain in Bench'
                 assert not pilot and not resume_router and hardware_digest!=HARDWARE and hardware.get('quality_mode')=='same_phase_contrast'
                 originalpath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(originalpath)==HARDWARE
                 replug_check=same_connection_replug_check(bench,out,hardware,read(originalpath),warp)
@@ -388,6 +434,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                         nonlocal phase_pixels,frames,pending_record
                         if phase_pixels is None:
                             phase_pixels=phase.copy();Image.fromarray(phase_native(phase)).save(phasepath);bench.stage(phasepath)
+                            if hardware.get('quality_mode')=='shared_fixed_record_only':assert sha(phasepath)==hardware['phase_SHA256']
                         assert current==stage and np.array_equal(phase_pixels,phase)
                         values=[]
                         for j in range(n):
@@ -427,6 +474,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                                 from lab_caltech20_dvp_stage_exposure_20261019 import contrast_statistics
                                 row.update(contrast_statistics(crop,quality_background,hardware['quality_background']['noise_sigma']))
                                 row['background_quality_only_no_network_subtraction']=True
+                            row.update(signal_threshold_action='record_only' if record_only else 'stop',signal_threshold_flags=signal_flags(row,hardware))
                             if writer is not None and row['new_physical_capture']:
                                 writer.submit(base,raw,crop);pending_record=(base,row,index,n_total,role,t)
                             ccd[index]=crop;ccd.flush()
@@ -435,9 +483,9 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                             values.append(crop)
                             # Transient BMP is redundant; canonical input, exact drive LUT and digest remain.
                             bmp.unlink()
-                            if row['p99']<15 or row['saturation_fraction']>.15:
+                            if not record_only and (row['p99']<15 or row['saturation_fraction']>.15):
                                 finish_pending();raise RuntimeError('DVP signal guard: retain all valid/bad frames; no automatic retry or exposure change')
-                            if quality_background is not None and row['contrast_p99']<hardware['capture_min_contrast_p99']:
+                            if not record_only and quality_background is not None and row['contrast_p99']<hardware['capture_min_contrast_p99']:
                                 finish_pending();raise RuntimeError('DVP net-signal quality guard: raw CCD preserved; no background subtraction or automatic retry')
                         if n<8:values.extend([np.zeros((478,478),np.uint8)]*(8-n))
                         return np.stack(values)
@@ -603,9 +651,10 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');p.add_argument('--recheck-before-capture',action='store_true');p.add_argument('--archive-empty-start',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','fixed-hardware','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');p.add_argument('--recheck-before-capture',action='store_true');p.add_argument('--archive-empty-start',action='store_true');p.add_argument('--capture-policy',type=Path);a=p.parse_args()
     try:
         if a.mode=='selftest':selftest()
+        elif a.mode=='fixed-hardware':prepare_fixed_hardware(a)
         elif a.mode=='prepare':prepare(a)
         elif a.mode=='admit-stage':admit_stage(a)
         elif a.mode=='refine':

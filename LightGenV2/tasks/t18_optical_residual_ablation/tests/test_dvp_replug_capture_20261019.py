@@ -21,6 +21,39 @@ class ReplugCaptureTests(unittest.TestCase):
         self.read=lambda p:json.loads(Path(p).read_text())
         self.tree=ast.parse((HERE/'lab_caltech20_dvp_layerwise_20261019.py').read_text())
 
+    def test_shared_policy_is_fixed_and_explicit_not_a_signal_claim(self):
+        cfg=self.read(HERE/'lab_caltech20_DVP_shared_capture_profile_20261019.json')
+        self.assertEqual(cfg['exposure_us'],60006.);self.assertEqual(cfg['gain'],1.)
+        self.assertFalse(cfg['calibrate_each_stage']);self.assertEqual(cfg['brightness_threshold_action'],'record_only')
+        self.assertEqual(cfg['saturation_threshold_action'],'record_only');self.assertFalse(cfg['network_background_subtraction'])
+
+    def test_signal_flags_record_even_fully_dark_or_saturated(self):
+        node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='signal_flags');scope={}
+        exec(compile(ast.Module(body=[node],type_ignores=[]),'signal_fixture','exec'),scope)
+        flags=scope['signal_flags'](dict(p99=0,saturation_fraction=1.,contrast_p99=0),dict(capture_min_contrast_p99=15))
+        self.assertEqual(flags,dict(raw_p99_below15=True,saturation_above15percent=True,net_p99_below_limit=True))
+
+    def test_optical_threshold_raises_require_strict_policy(self):
+        acquire=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='acquire')
+        guards=[n for n in ast.walk(acquire) if isinstance(n,ast.If) and any(isinstance(v,ast.Raise) and isinstance(v.exc,ast.Call) and v.exc.args and isinstance(v.exc.args[0],ast.Constant) and str(v.exc.args[0].value).startswith(('DVP signal guard:','DVP net-signal quality guard:')) for v in n.body)]
+        self.assertEqual(len(guards),2)
+        for guard in guards:self.assertIn('not record_only',ast.unparse(guard.test))
+
+    def test_shared_policy_validates_existing_calibration_without_camera(self):
+        cfg=self.read(HERE/'lab_caltech20_DVP_shared_capture_profile_20261019.json');source=self.root/cfg['source_hardware'];source.parent.mkdir(parents=True);source.write_bytes(b'verified admission');cfg['source_hardware_SHA256']=self.sha(source)
+        profile=self.root/'profile.json';self.save(profile,cfg)
+        scope=dict(read=self.read,Path=Path,sha=self.sha,HARDWARE=cfg['base_admission_SHA256'],validate_stage_hardware=lambda *args:dict(quality_mode='same_phase_contrast',exposure_us=60006.,gain=1.))
+        node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='validate_capture_policy');exec(compile(ast.Module(body=[node],type_ignores=[]),'policy_fixture','exec'),scope)
+        hardware=dict(exposure_us=60006.,gain=1.);self.assertEqual(scope['validate_capture_policy'](profile,hardware,self.root),cfg)
+        for key,value in [('calibrate_each_stage',True),('exposure_us',5000.5),('brightness_threshold_action','stop')]:
+            altered=dict(cfg);altered[key]=value;self.save(profile,altered)
+            with self.assertRaises(AssertionError):scope['validate_capture_policy'](profile,hardware,self.root)
+
+    def test_fixed_hardware_preparation_has_no_camera_or_calibration_calls(self):
+        node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='prepare_fixed_hardware');calls={ast.unparse(n.func) for n in ast.walk(node) if isinstance(n,ast.Call)}
+        self.assertFalse(calls&{'Bench','Camera','calibration','revalidate_replug'})
+        text=ast.unparse(node);self.assertIn('phase_SHA256=sha(phase)',text);self.assertIn('probe_indices=[]',text)
+
     def fixture(self,level=55,noise=0,failed_known=False,wrong_phase=False):
         phase=self.root/'model_phase.bmp';phase.write_bytes(b'exact frozen phase')
         lut=self.root/'lut.json';self.save(lut,dict(drive=list(range(256))))

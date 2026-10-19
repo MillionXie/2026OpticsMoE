@@ -65,7 +65,7 @@ class PersistenceTests(unittest.TestCase):
             with m.FrameWriter() as writer:writer.submit(self.root/'old',self.raw,self.crop);writer.finish()
         self.assertEqual(path.read_bytes(),b'protected')
 
-    def capture_fixture(self,name,overlap,bad_index=None,full=False):
+    def capture_fixture(self,name,overlap,bad_index=None,full=False,record_only=False,bad_value=2):
         root=self.root/name;root.mkdir();session=root/'L4';session.mkdir()
         lut=root/'lut.json';lut.write_text(json.dumps(dict(drive=list(range(256)))))
         digest=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -80,7 +80,9 @@ class PersistenceTests(unittest.TestCase):
             def capture(self,path):
                 index=len(calls);calls.append(index)
                 raw=np.asarray(Image.open(path)).copy()
-                if index==bad_index:raw.fill(2)
+                if index==bad_index:
+                    if bad_value=='transport':raise RuntimeError('injected SDK frame transport failure')
+                    raw.fill(bad_value)
                 return raw,dict(capture_total_ms=1,frame_id=index,exposure_us=5000.5,gain=1)
         scope['Bench']=Bench
         def padded(data,role,begin):
@@ -90,6 +92,8 @@ class PersistenceTests(unittest.TestCase):
             return physical(stage,amp,np.zeros((478,478),np.uint8),ids)
         scope.update(padded=padded,layer_forward=forward)
         tree=ast.parse((HERE/'lab_caltech20_dvp_layerwise_20261019.py').read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='acquire');node.decorator_list=[]
+        flags=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='signal_flags');exec(compile(ast.Module(body=[flags],type_ignores=[]),'flags_fixture','exec'),scope)
+        scope['validate_capture_policy']=lambda *args:dict(policy='validated_by_separate_policy_tests')
         if full:
             class SmallCounts(ast.NodeTransformer):
                 def visit_Constant(self,node):
@@ -100,6 +104,7 @@ class PersistenceTests(unittest.TestCase):
         data=dict(train=(np.zeros(24),np.zeros(24),np.array([str(i) for i in range(24)])))
         if full:data=dict(train=(np.zeros(16),np.zeros(16),np.array([str(i) for i in range(16)])),test=(np.zeros(9),np.zeros(9),np.array([str(i) for i in range(16,25)])))
         a=SimpleNamespace(sequence=root,depth=4,async_png=overlap)
+        if record_only:a.capture_policy=lut
         error=None
         try:scope['acquire'](a,'router',root/'unused.pt','pt',data,dict(sha256='data'),dict(response_lut=str(lut),coordinates='unused',orientation='identity'),pilot=not full)
         except BaseException as e:error=e.with_traceback(None)
@@ -121,6 +126,23 @@ class PersistenceTests(unittest.TestCase):
         self.assertIsInstance(error,RuntimeError);self.assertEqual(len(calls),7)
         row=json.loads((out/'train/000006.json').read_text());self.assertEqual(row['p99'],2)
         self.assertTrue((out/'train/000006_raw.png').exists());self.assertEqual(json.loads((out/'failure.json').read_text())['frames'],7)
+
+    def test_record_only_dark_frame_preserved_and_capture_continues(self):
+        out,calls,error=self.capture_fixture('record_dark',True,6,record_only=True)
+        self.assertIsNone(error);self.assertEqual(len(calls),24)
+        row=json.loads((out/'train/000006.json').read_text());self.assertEqual(row['p99'],2)
+        self.assertTrue(row['signal_threshold_flags']['raw_p99_below15']);self.assertEqual(row['signal_threshold_action'],'record_only')
+        self.assertTrue((out/'train/000006_raw.png').exists());self.assertTrue((out/'report.json').exists())
+
+    def test_record_only_saturated_frame_preserved_and_capture_continues(self):
+        out,calls,error=self.capture_fixture('record_clip',True,6,record_only=True,bad_value=255)
+        self.assertIsNone(error);self.assertEqual(len(calls),24)
+        row=json.loads((out/'train/000006.json').read_text());self.assertEqual(row['saturation_fraction'],1.)
+        self.assertTrue(row['signal_threshold_flags']['saturation_above15percent']);self.assertTrue((out/'train/000006_raw.png').exists())
+
+    def test_record_only_cannot_ignore_transport_failure(self):
+        out,calls,error=self.capture_fixture('record_transport',True,6,record_only=True,bad_value='transport')
+        self.assertIsInstance(error,RuntimeError);self.assertIn('SDK frame',str(error));self.assertFalse((out/'report.json').exists())
 
     def test_actual_TRAIN_TEST_role_boundary_and_padding(self):
         serial,_,se=self.capture_fixture('full_serial',False,full=True);overlap,calls,ae=self.capture_fixture('full_overlap',True,full=True)

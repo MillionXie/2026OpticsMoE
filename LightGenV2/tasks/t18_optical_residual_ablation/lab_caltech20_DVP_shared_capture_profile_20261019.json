@@ -1,0 +1,14 @@
+{
+  "policy": "shared_fixed_exposure_record_only",
+  "depths": [4, 6],
+  "exposure_us": 60006.0,
+  "gain": 1.0,
+  "source_hardware": "L4/exposure_admission/2_contrast_mid60_after_replug/admitted_hardware.json",
+  "source_hardware_SHA256": "4515dfd5819eb82a81a516feb84ae541d9fc36fd67c97945ed697a6bddbe6a87",
+  "base_admission_SHA256": "3b89d610d939141dec9c5d0955f23765454cd7e7bebfe1c92c5e64e5376713ae",
+  "calibrate_each_stage": false,
+  "brightness_threshold_action": "record_only",
+  "saturation_threshold_action": "record_only",
+  "network_background_subtraction": false,
+  "scope": "2026-10-19 user explicitly requested one calibration and shared settings, without brightness/saturation threshold stops. Use the last successfully measured60ms settings for remaining fresh L4/L6 captures, no further per-stage exposure searches. Preserve raw CCD and flag threshold violations; never silently discard, retake, normalize or claim good signal. Frame validity, monotonic IDs, settings, geometry, PT/input identity and transport failure checks remain enforced. Earlier5/20/40ms measured stages retain their original immutable identities; this policy does not relabel them. TEST-informed development, not independent generalization."
+}

@@ -2,6 +2,28 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Latest user: one shared calibration, brightness/saturation record only
+
+User explicitly superseded per-layer exposure search and threshold stops:
+one calibration then unified settings; ignore minimum brightness and maximum
+saturation as acquisition stopping conditions. Published profile
+`lab_caltech20_DVP_shared_capture_profile_20261019.json` therefore fixes the last
+successful60,006us/gain1 admission for remaining fresh L4/L6 stages. Original
+coordinates/orientation/SLM timing/LUT/physical amplitude remain unchanged.
+No new per-layer exposure search, background refit/subtraction, normalization or
+bad-sample rejection. Every raw/crop and brightness/saturation flag is preserved;
+unusable signal can harm final accuracy, and completion is not good-signal proof.
+Driver/shape/settings/frame-ID/identity/data-integrity failures still stop.
+
+Current stage2 may reuse its exact40 verified TRAIN under the same PT/phase and
+exposure; future changed PT/phase stages use `fixed-hardware` to bind the one
+shared calibration to their own manifest without camera/calibration calls or
+cross-mask CCD reuse. Each capture uses one Bench connection; no extra optical
+known-pattern recheck with this explicit policy. Earlier measured5/20/40ms stages
+retain their original identities, not retroactively relabelled as60ms. This
+does not repair the current BootLoader/SDK0 failure; a normal camera enumeration
+is still required before opening acquisition. No scheduled task or blind retry.
+
 ### User replug restored40-frame60ms admission; reopening capture failed again
 
 2026-10-19 user explicitly replugged camera. Fresh read-only Windows PID_D003
