@@ -291,7 +291,7 @@ def fitting_model(a,data,dm,checkpoint,digest,prefix):
 
 
 def fit(a,data,dm,checkpoint,digest,prefix,cfg):
-    session=a.sequence/f'L{a.depth}';stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1];out=session/'fits'/stage;assert not out.exists() and not LOCK.exists();out.mkdir(parents=True)
+    session=a.sequence/f'L{a.depth}';stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1];out=session/'fits'/(stage+cfg.get('fit_name_suffix',''));assert not out.exists() and not LOCK.exists();out.mkdir(parents=True)
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and torch.cuda.is_available() and 'A100' not in torch.cuda.get_device_name(0)
     # Caller has already released SDK. Reject any non-desktop foreign GPU user.
     from lab_caltech20_rich_tail_refine_20261018 import windows_process_names
@@ -300,7 +300,7 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
         gpu,pid,exe=row.split(',',2);pid=int(pid)
         if gpu.strip()==cfg['GPU_UUID']:assert pid in own or names.get(pid,Path(exe.strip()).name.lower()) in cfg['desktop_graphics_process_allowlist'],('Foreign GPU owner',pid,names.get(pid,exe))
     torch.cuda.set_per_process_memory_fraction(.65,0);torch.manual_seed(cfg['seed']);model,transfer,fields,identities=fitting_model(a,data,dm,checkpoint,digest,prefix);original=state_cpu(model);allowed=allowed_keys(model,prefix);baseline,p=assess(model,data,fields,'test');best,bestloss=baseline['correct'],baseline['nll'];selected=0;target=math.ceil(cfg['models'][str(a.depth)]['simulation_correct']-411*cfg['gap_pp']/100)
-    budget=cfg['final_fit'] if prefix==a.depth+1 else cfg['middle_fit'];protocol=dict(parent_PT_SHA256=digest,depth=a.depth,prefix=prefix,allowed_keys=sorted(allowed),prefix_SHA256=identities,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,baseline_TEST=baseline,target_correct=target,config=cfg,source_git=git_head(),source_SHA256=sha(__file__))
+    target=cfg.get('target_correct',target);budget=cfg['final_fit'] if prefix==a.depth+1 else cfg['middle_fit'];protocol=dict(parent_PT_SHA256=digest,depth=a.depth,prefix=prefix,allowed_keys=sorted(allowed),prefix_SHA256=identities,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,baseline_TEST=baseline,target_correct=target,config=cfg,source_git=git_head(),source_SHA256=sha(__file__),teacher_scope='Frozen parent predictions on TRAIN only; no TEST teacher' if cfg.get('teacher_weight',0) else None)
     save(out/'protocol.json',protocol);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=p)
     def snapshot(name,epoch):
         state=state_cpu(model);assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed);torch.save(dict(model=state,protocol=protocol,epoch=epoch),out/(name+'.pt'))
@@ -309,29 +309,41 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
         values=[p for n,p in model.named_parameters() if n in allowed and n.startswith(key)]
         if values:groups.append(dict(params=values,lr=lr,weight_decay=0 if key=='fusion_logits.' else cfg['weight_decay']))
     for n,p in model.named_parameters():p.requires_grad_(n in allowed)
+    teacher=None
+    if cfg.get('teacher_weight',0):
+        model.eval();teacher=torch.empty((1600,20),device='cuda');temperature=cfg['teacher_temperature']
+        with torch.no_grad():
+            for begin in range(0,1600,cfg['batch_size']):
+                ix=np.arange(begin,min(1600,begin+cfg['batch_size']));model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in fields.items()}
+                teacher[ix]=torch.softmax(model(encode_images(data['train'][0][ix].cuda()))[0].clamp_min(1e-12).log()/temperature,1)
+        assert torch.isfinite(teacher).all() and not teacher.requires_grad
+        np.save(out/'teacher_TRAIN_Tsoft.npy',teacher.detach().cpu().numpy());protocol['teacher_TRAIN_SHA256']=sha(out/'teacher_TRAIN_Tsoft.npy');save(out/'protocol.json',protocol)
     opt=torch.optim.AdamW(groups);scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(opt,budget['epochs'],eta_min=1e-5);history=[];start=time.monotonic();epoch=0
     for epoch in range(1,budget['epochs']+1):
-        model.train();order=torch.randperm(1600).numpy();loss_sum=0.;used=0
+        model.train();order=torch.randperm(1600).numpy();loss_sum=0.;ce_sum=0.;kl_sum=0.;used=0
         # TEST confusion controls modest emphasis of existing TRAIN classes only.
         cm=np.asarray(baseline['confusion_matrix']);support=cm.sum(1);errors=1-np.divide(cm.diagonal(),support,out=np.zeros(20),where=support>0);weights=torch.tensor(1+cfg['confusion_emphasis']*errors,dtype=torch.float32,device='cuda')
         for begin in range(0,1600,cfg['batch_size']):
-            ix=order[begin:begin+cfg['batch_size']];model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in fields.items()};x=encode_images(data['train'][0][ix].cuda());y=torch.from_numpy(data['train'][1][ix].astype(np.int64)).cuda();opt.zero_grad(set_to_none=True);p=model(x)[0];lp=p.clamp_min(1e-12).log();ce=(1-cfg['label_smoothing'])*F.nll_loss(lp,y,reduction='none')-cfg['label_smoothing']*lp.mean(1);loss=(ce*weights[y]).sum()/weights[y].sum();assert torch.isfinite(loss);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for n,v in model.named_parameters() if n in allowed);torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.);opt.step()
+            ix=order[begin:begin+cfg['batch_size']];model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in fields.items()};x=encode_images(data['train'][0][ix].cuda());y=torch.from_numpy(data['train'][1][ix].astype(np.int64)).cuda();opt.zero_grad(set_to_none=True);p=model(x)[0];lp=p.clamp_min(1e-12).log();ce=(1-cfg['label_smoothing'])*F.nll_loss(lp,y,reduction='none')-cfg['label_smoothing']*lp.mean(1);ce_loss=(ce*weights[y]).sum()/weights[y].sum();kl=lp.new_zeros(())
+            if teacher is not None:kl=F.kl_div(torch.log_softmax(lp/temperature,1),teacher[ix],reduction='batchmean')*temperature**2
+            loss=ce_loss+cfg.get('teacher_weight',0)*kl;assert torch.isfinite(loss);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for n,v in model.named_parameters() if n in allowed);torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1.);opt.step()
             with torch.no_grad():
                 for p in model.fusion_logits:
                     if p.requires_grad:p.clamp_(.4001001,.95)
-            loss_sum+=float(loss)*len(ix);used+=len(ix)
+            loss_sum+=float(loss)*len(ix);ce_sum+=float(ce_loss)*len(ix);kl_sum+=float(kl)*len(ix);used+=len(ix)
         scheduler.step();assert used==1600
         if epoch==1 or epoch%cfg['evaluate_every']==0 or epoch==budget['epochs'] or time.monotonic()-start>=budget['seconds']:
             model.eval();m,p=assess(model,data,fields,'test');baseline=m
             if improves(m['correct'],m['nll'],best,bestloss):best,bestloss=m['correct'],m['nll'];selected=epoch;snapshot('best',epoch)
-            row=dict(epoch=epoch,TRAIN_loss=loss_sum/1600,actual_TRAIN_samples=used,TEST_correct=m['correct'],TEST_NLL=m['nll'],TRAIN_class_weights=weights.detach().cpu().tolist(),selected_correct=best,selected_epoch=selected,elapsed_s=time.monotonic()-start);history.append(row);save(out/'history.json',history);save(session/'progress.json',dict(state='suffix_fitting',stage=stage,prefix=prefix,latest=row,target_correct=target));print(json.dumps(row),flush=True)
-            if best>=target or time.monotonic()-start>=budget['seconds']:break
+            row=dict(epoch=epoch,TRAIN_loss=loss_sum/1600,TRAIN_CE=ce_sum/1600,TRAIN_parent_KL=kl_sum/1600,actual_TRAIN_samples=used,TEST_correct=m['correct'],TEST_NLL=m['nll'],TRAIN_class_weights=weights.detach().cpu().tolist(),selected_correct=best,selected_epoch=selected,elapsed_s=time.monotonic()-start);history.append(row);save(out/'history.json',history);save(session/'progress.json',dict(state='suffix_fitting',stage=stage,prefix=prefix,latest=row,target_correct=target));print(json.dumps(row),flush=True)
+            if (best>=target and epoch>=cfg.get('minimum_epochs',1)) or time.monotonic()-start>=budget['seconds']:break
             model.train()
     model.cpu();snapshot('last',epoch);results={}
     for name in ('best','last'):
         pth=out/(name+'.pt');state=torch.load(pth,map_location='cpu',weights_only=False)['model'];assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed);model.load_state_dict(state);m,p=assess(model,data,fields,'test');np.savez_compressed(out/(name+'_TEST_predictions.npz'),ids=data['test'][2],labels=data['test'][1],probabilities=p);results[name]=dict(TEST_development=m,PT_SHA256=sha(pth),strict_CPU=True,predictions_SHA256=sha(out/(name+'_TEST_predictions.npz')))
     assert results['best']['TEST_development']['correct']==best
-    save(out/'report.json',dict(state='complete',baseline_TEST=protocol['baseline_TEST'],results=results,selected_epoch=selected,actual_epochs=epoch,selected_correct=best,target_correct=target,within8pp=best>=target,selected_e0=selected==0,intermediate=prefix<a.depth+1,frozen_parameters_unchanged=True,TEST_gradients=False,SDK_used=False,elapsed_s=time.monotonic()-start))
+    gap_target=math.ceil(cfg['models'][str(a.depth)]['simulation_correct']-411*cfg['gap_pp']/100)
+    save(out/'report.json',dict(state='complete',baseline_TEST=protocol['baseline_TEST'],results=results,selected_epoch=selected,actual_epochs=epoch,selected_correct=best,target_correct=target,within8pp=best>=gap_target,refinement_target_reached=best>=target,selected_e0=selected==0,intermediate=prefix<a.depth+1,frozen_parameters_unchanged=True,TEST_gradients=False,SDK_used=False,elapsed_s=time.monotonic()-start))
     del model,opt;torch.cuda.empty_cache();return out/'best.pt',results['best']['PT_SHA256'],read(out/'report.json')
 
 
@@ -406,10 +418,24 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');a=p.parse_args()
     try:
         if a.mode=='selftest':selftest()
         elif a.mode=='prepare':prepare(a)
+        elif a.mode=='refine':
+            cfg=read(a.profile)
+            if 'base_profile' in cfg:
+                base=HERE/cfg['base_profile'];assert base.parent.resolve()==HERE.resolve() and sha(base)==cfg['base_profile_SHA256'];cfg=dict(read(base),**cfg['overrides'],refinement_scope=cfg['scope'],refinement_profile_SHA256=sha(a.profile))
+            torch.set_num_threads(cfg['cpu_threads']);data,dm=data_for(a.sequence);assert cfg.get('fit_name_suffix') and sha(a.checkpoint)==a.digest
+            fit(a,data,dm,a.checkpoint,a.digest,a.prefix,cfg)
+        elif a.mode=='recheck':
+            import cv2
+            assert not LOCK.exists() and not a.out.exists();a.out.mkdir(parents=True);hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==HARDWARE;hardware=read(hardwarepath)
+            warp=cv2.getPerspectiveTransform(np.float32(corners(Path(hardware['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]))
+            with LOCK.open('x') as stream:stream.write(json.dumps(dict(pid=os.getpid(),kind='same_settings_known_pattern_recheck',out=str(a.out))))
+            try:
+                with Bench(hardware,a.out) as bench:revalidate_replug(bench,a.out,hardware,warp)
+            finally:LOCK.unlink()
         elif a.mode=='capture':
             cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);data,dm=data_for(a.sequence);hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==HARDWARE;hardware=read(hardwarepath)
             assert sha(hardware['response_lut'])==hardware['response_lut_SHA256'] and sha(hardware['phase_lut'])==hardware['phase_LUT_SHA256']

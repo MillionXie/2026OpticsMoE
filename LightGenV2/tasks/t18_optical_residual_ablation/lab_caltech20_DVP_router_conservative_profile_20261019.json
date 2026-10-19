@@ -1,0 +1,20 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_conservative_20261019",
+    "phase_lr": 0.0002,
+    "electronic_lr": 0.0002,
+    "alpha_lr": 0.0001,
+    "head_lr": 0.0002,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.25,
+    "teacher_weight": 0.3,
+    "teacher_temperature": 2.0,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 6, "seconds": 480},
+    "target_correct": 330
+  },
+  "scope": "One bounded router-prefix refinement, all1600 TRAIN per epoch. Frozen parent TRAIN-only soft predictions protect against the observed first-epoch accuracy regression. Original uncaptured suffix masks/electronics/alpha/head only; original inference unchanged. TEST-informed class emphasis and checkpoint development selection, no TEST gradient/VALID. Six complete epochs or480fit seconds, no automatic continuation or downstream capture. Preserve parent324/411. A new PT requires a new downstream capture lineage; stage0 low-signal issue still needs separate diagnosis/admission."
+}

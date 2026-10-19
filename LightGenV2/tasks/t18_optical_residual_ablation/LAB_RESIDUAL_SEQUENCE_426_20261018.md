@@ -2,6 +2,34 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Router complete; stage0 low signal; active refinement authorization
+
+L4 router1600TRAIN/411TEST fully captured/audited. Measured router+simulated
+suffix CPU324/411=78.83212%, versus fixed346/411=84.18491%, gap5.35280pp.
+Default fit stopped after1epoch due already passing8pp: epoch1 produced321,
+selectedE0 remains324 with ALL parameters equal to initial. This is NOT a
+trained improvement or full physical task accuracy. The next stage0 first
+TRAIN producedp99=8/mean2.609 and stopped at1frame; all2011router+badframe
+preserved, SDK/parent/child exited. L6 not started. No blind retry/guard bypass.
+
+Exact generated stage0 amplitude matches saved input(max97/255,p9961/255),
+original phase/PT lineage verified. Software diagnosis indicates low optical
+drive is a plausible contributor, not proof of camera/optical hardware failure.
+An independent same5000.5us known-pattern recheck is admitted; no new exposure
+or LUT. User decision requested for TRAIN/known-pattern-only per-layer exposure
+admission, separate hardware identities, never a TEST-score-driven search.
+
+User now explicitly requests active outcome review and additional optimization
+instead of unattended default tuning. One bounded conservative comparison:
+`lab_caltech20_DVP_router_conservative_profile_20261019.json`, source baseSHA
+pinned; phase/electronic/headLR2e-4,alpha1e-4,LS.01, class emphasis.25, TRAIN-only
+frozen-parentT2KLweight.3. At most6completeepochs/480fitsec, target330 stop after
+minimum2, no guarantee and no automatic extra candidate/next-stage capture.
+Original architecture and frozen measured upstream unchanged; best/last/full
+411TEST CPU/frozen audits required. Parent324 protected, independent named fit
+subdirectory; teacher1600TRAIN probabilities and SHA retained. TEST class error
+diagnosis/selection is development leakage, no TEST gradient/VALID/TEST teacher.
+
 ### User USB replug: recovered reads, finite explicit resume
 
 User physically replugged USB. Windows normal M3S2000M/SDK count1 restored;
