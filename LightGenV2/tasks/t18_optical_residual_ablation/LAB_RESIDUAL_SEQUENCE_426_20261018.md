@@ -2,6 +2,25 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Expert2 fixed exposure ladder failed; one reasoned60ms check, no relaxation
+
+L4stage2 original5/10/20/40/80ms TRAIN-only admission exited FAIL,228diagnostic
+frames preserved, SDK released, formal capture NOT started. At40ms minraw48/
+minnet22/backgroundp9936.5;80ms minraw95/minnet44.5/background72.5. Thus40ms
+fails net>=25 and80ms fails background<=64, despite low clipping. Failed remains
+failed. No device-replug request, exposure-score search, old-CCD reuse or lost data.
+
+Independent published `lab_caltech20_DVP_L4_stage2_mid60_profile_20261019.json`
+permits ONE60ms trial, same exact selected0c731ec0 parent/all original thresholds.
+Linear interpolation of those TRAIN measurements predicts usable45.3..70.6ms;
+60ms selected before new measurements/TEST, predicted net33.25/background54.5.
+Fresh original-setting known-pattern recheck, two same-phase zero-input repeats,
+gray64/96 linearity and40TRAIN/two-per-class all must pass. No background
+subtraction or input/LUT/ROI/phase changes. New named `2_contrast_mid60` evidence
+must not overwrite failed `2_contrast`; if it fails, stop for deeper diagnosis,
+not another automatic exposure extension. Formal capture only after independent
+identity/raw/contrast audit. This is a proposed bounded recovery, NOT a pass claim.
+
 ### Global1 prefix passes314/411; expert2 admission follows without waiting
 
 L4stage1(global1) complete1600TRAIN/411TEST,1971new+40exact-parent admission

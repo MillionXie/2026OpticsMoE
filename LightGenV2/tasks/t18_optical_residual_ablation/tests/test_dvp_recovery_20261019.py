@@ -113,6 +113,13 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(fit['overrides']['middle_fit'],dict(epochs=24,seconds=1000))
         self.assertEqual(fit['overrides']['final_fit'],dict(epochs=120,seconds=1200))
 
+    def test_stage2_mid_exposure_preserves_every_threshold(self):
+        original=read(HERE/'lab_caltech20_DVP_remaining_contrast_profile_20261019.json')
+        bounded=read(HERE/'lab_caltech20_DVP_L4_stage2_mid60_profile_20261019.json')
+        self.assertEqual(bounded['exposure_probe_us'],[60000])
+        for key in original:
+            if key not in ('scope','exposure_probe_us'):self.assertEqual(original[key],bounded[key])
+
     def hardware(self):
         base=self.root/'calibration/admission/admitted_hardware.json';base.parent.mkdir(parents=True)
         keys=('camera_dll','camera_dll_SHA256','coordinates','coordinates_SHA256','sensor_shape','machine_config','amplitude_sdk','phase_sdk','phase_lut','phase_LUT_SHA256','gain','wait_ms','discard_frames','phase_transform','orientation','response_lut','response_lut_SHA256')

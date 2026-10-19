@@ -1,0 +1,14 @@
+{
+  "quality_mode": "same_phase_contrast",
+  "TRAIN_probe_samples": 40,
+  "exposure_probe_us": [60000],
+  "probe_min_p99": 25,
+  "probe_max_saturation": 0.01,
+  "background_max_p99": 64,
+  "probe_min_contrast_p99": 25,
+  "probe_min_SNR": 5,
+  "capture_min_contrast_p99": 15,
+  "linearity_relative_tolerance": 0.15,
+  "linearity_absolute_gray": 2,
+  "scope": "One bounded independent L4stage2 TRAIN40 admission after the original5/10/20/40/80ms ladder FAILED and released SDK. Exact parent0c731ec0f07c9867f35aa2a224a11db7e1659f7a195145b634f1794a736eeb1f, original phase/ROI/LUT/gain1/wait240/6discard. At40ms min net22<25/background36.5; at80ms min net44.5/background72.5>64, no clipping problem. TRAIN-only linear interpolation predicts usable45.3..70.6ms window;60ms chosen BEFORE any new measurements/TEST, predicted net33.25/background54.5. All original thresholds remain identical, original known-pattern5ms recheck and unsaturated exposure-linearity checks required. No TEST-score exposure choice, background subtraction, normalization, new LUT/graph or repeated search. Preserve the failed228 diagnostic frames; not a relaxed pass or automatic retry. If this ONE new exposure fails, stop and diagnose, no further automatic ladder extension. Earlier valid captures unchanged."
+}
