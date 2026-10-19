@@ -2,6 +2,37 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Recovery completed286; next fixed-feature original-head local boundary repair
+
+Recovery24epochs complete, strictCPU bestE22=286/411=69.58637%, last285,
+NLL1.09234 vs firstfit261/NLL1.50144. BestSHAeda65107f57b006747ee91eecc8a56c62a26233624ed97f0209331734cebff11.
+Still not314/411 and not full physical L4 result (router+expert1 measured).
+TRAIN CE decreases to.242 while TEST stalls: additional global CE epochs are
+not the default response. At E11 alpha0 was.9466, NOT lower than parent.9383;
+combined-LR/no-KL gains cannot be attributed to optical bypass or one factor.
+No further optical stage admitted while this bounded review is pending.
+
+User-authorized chat "微调方法总结" was read; applicable next method is the
+original signed Huber/exact-curvature local row repair with difficult TRAIN
+positives/negatives and correct-TRAIN behavior protection, not blindly copying
+its fixed1200/3141-index sampler. Adapter `lab_caltech20_dvp_head_repair_20261019.py`
+uses current1600TRAIN/411TEST identities, exact current PT/measured-prefix native
+features, original float32 head parity<=3e-6, and freezes ALL nonhead state.
+Profile `lab_caltech20_DVP_head_local_profile_20261019.json`:64TRAIN examples
+16near+16random positives+16hard negatives+16all-class replay, at most3passes/
+180fitsec, first no-progress pass stop, original257-parameter row at a time.
+TEST informs target/neighbor/selection (development leakage), never gradients.
+No added inference layer/VALID/CCD/GPU/SDK. Saved best AND last require original
+full measured-prefix/simulated-suffix CPU replay, not only cached classification.
+This is a next experiment, not an achieved score claim.
+
+Before a downstream capture, exact SHA ancestry may now include several named
+refinements for the SAME measured prefix. `validate_fit_ancestry` follows actual
+PT parent hashes (max12), frozen/strictCPU reports and exact data/field SHA,
+rejects missing/ambiguous parents, cycles and changed arrays. It does not assume
+a nonexistent canonical `fits/0` after independently named exposure/recovery
+fits, select by timestamp, weaken masks/input identity or reuse new-upstream CCD.
+
 ### First expert fit completed; optional lossless IO overlap tested at boundary
 
 First stage0 fit completed20epochs/32000TRAIN presentations: strictCPU best

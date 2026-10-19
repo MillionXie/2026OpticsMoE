@@ -29,7 +29,7 @@ class RecoveryTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
         self.scope=dict(np=np,Path=Path,Image=Image,sha=sha,read=read,save=save,HARDWARE='hardware')
         functions(HERE/'lab_caltech20_dvp_20261019.py',('variants','orient','correlation'),self.scope)
-        functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('admitted_pilot','revalidate_replug','validate_stage_hardware'),self.scope)
+        functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('admitted_pilot','revalidate_replug','validate_stage_hardware','validate_fit_ancestry'),self.scope)
         functions(HERE/'lab_caltech20_dvp_stage_exposure_20261019.py',('exposure_passes','contrast_statistics','contrast_passes'),self.scope)
 
     def pilot(self):
@@ -125,6 +125,28 @@ class RecoveryTests(unittest.TestCase):
     def test_exposure_cannot_substitute_probe_identity(self):
         path,h=self.hardware();h['probe_directory']='other';save(path,h)
         with self.assertRaises(AssertionError):self.scope['validate_stage_hardware'](path,self.root)
+
+    def ancestry(self):
+        identities={'router/train':'array_r','0/train':'array_e'}
+        def node(name,payload,parent):
+            folder=self.root/'fits'/name;folder.mkdir(parents=True);(folder/'best.pt').write_bytes(payload);digest=sha(folder/'best.pt')
+            save(folder/'report.json',dict(state='complete',frozen_parameters_unchanged=True,results=dict(best=dict(PT_SHA256=digest,strict_CPU=True))))
+            save(folder/'protocol.json',dict(prefix=2,prefix_SHA256=identities,data_SHA256='data',parent_PT_SHA256=parent));return digest
+        first=node('0_exposure',b'first','capture_parent');last=node('0_recovery',b'second',first)
+        return identities,first,last
+
+    def test_multi_refinement_ancestry_has_no_canonical_alias_dependency(self):
+        identities,first,last=self.ancestry();chain=self.scope['validate_fit_ancestry'](self.root,'0_recovery',last,2,'capture_parent',identities,'data')
+        self.assertEqual([r['fit'] for r in chain],['0_recovery','0_exposure'])
+    def test_ancestry_rejects_changed_prefix_arrays(self):
+        identities,_,last=self.ancestry()
+        with self.assertRaises(AssertionError):self.scope['validate_fit_ancestry'](self.root,'0_recovery',last,2,'capture_parent',dict(identities,extra='bad'),'data')
+    def test_ancestry_rejects_changed_parent_PT(self):
+        identities,_,last=self.ancestry();(self.root/'fits/0_exposure/best.pt').write_bytes(b'changed')
+        with self.assertRaises(AssertionError):self.scope['validate_fit_ancestry'](self.root,'0_recovery',last,2,'capture_parent',identities,'data')
+    def test_ancestry_rejects_cycle(self):
+        identities,_,last=self.ancestry();p=self.root/'fits/0_exposure/protocol.json';r=read(p);r['parent_PT_SHA256']=last;save(p,r)
+        with self.assertRaises(AssertionError):self.scope['validate_fit_ancestry'](self.root,'0_recovery',last,2,'capture_parent',identities,'data')
 
 
 if __name__=='__main__':unittest.main()

@@ -247,21 +247,42 @@ def admitted_pilot(session,data,dm,digest):
     return pilot,array
 
 
+def validate_fit_ancestry(session,parent_name,digest,prefix,capture_digest,identities,data_digest):
+    """Follow exact SHA parents, never directory age or a fixed canonical alias.
+
+Several independent bounded refinements can follow one measured prefix. Every
+node must still freeze that prefix, use its exact data/arrays and have a strict
+CPU best. All paths stay in this session's fits directory. No PT substitution.
+"""
+    fits=Path(session)/'fits';current=fits/parent_name;chain=[];seen=set()
+    for _ in range(12):
+        assert current.resolve().is_relative_to(fits.resolve()) and digest not in seen
+        seen.add(digest);report=current/'report.json';protocol=current/'protocol.json';r=read(report);p=read(protocol)
+        assert r['state']=='complete' and r['frozen_parameters_unchanged'] and r['results']['best']['strict_CPU']
+        assert sha(current/'best.pt')==r['results']['best']['PT_SHA256']==digest
+        assert p['prefix']==prefix and p['prefix_SHA256']==identities and p['data_SHA256']==data_digest
+        ancestor=p['parent_PT_SHA256'];chain.append(dict(fit=current.name,best_PT_SHA256=digest,parent_PT_SHA256=ancestor,report_SHA256=sha(report),protocol_SHA256=sha(protocol)))
+        if ancestor==capture_digest:return chain
+        candidates=[]
+        for folder in fits.iterdir():
+            if folder.is_dir() and (folder/'report.json').exists() and (folder/'protocol.json').exists():
+                q=read(folder/'report.json')
+                if q.get('results',{}).get('best',{}).get('PT_SHA256')==ancestor:candidates.append(folder)
+        assert len(candidates)==1,('Missing/ambiguous exact parent; no timestamp fallback',ancestor)
+        current=candidates[0];digest=ancestor
+    raise AssertionError('Bounded ancestry depth exceeded; review exact lineage')
+
+
 @torch.no_grad()
 def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router=False):
     import cv2
     session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(stage)
+    previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
+    ancestry=[]
     if prefix:
         prior_stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1]
-        parent_name=getattr(a,'parent_fit',None) or prior_stage;parent=session/'fits'/parent_name;assert parent.resolve().is_relative_to((session/'fits').resolve())
-        fit_report=read(parent/'report.json');fit_protocol=read(parent/'protocol.json')
-        assert fit_report['frozen_parameters_unchanged'] and fit_report['results']['best']['PT_SHA256']==digest
-        if parent_name!=prior_stage and read(session/'capture'/prior_stage/'report.json')['PT_SHA256']!=fit_protocol['parent_PT_SHA256']:
-            canonical=session/'fits'/prior_stage
-            assert sha(canonical/'best.pt')==fit_protocol['parent_PT_SHA256'] and read(canonical/'protocol.json')['parent_PT_SHA256']==read(session/'capture'/prior_stage/'report.json')['PT_SHA256']
-        else:assert read(session/'capture'/prior_stage/'report.json')['PT_SHA256']==fit_protocol['parent_PT_SHA256']
-        assert fit_protocol['prefix']==prefix and fit_protocol['prefix_SHA256']==fields_for(session,prefix,data,dm,HARDWARE)[1]
-    previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
+        parent_name=getattr(a,'parent_fit',None) or prior_stage
+        ancestry=validate_fit_ancestry(session,parent_name,digest,prefix,read(session/'capture'/prior_stage/'report.json')['PT_SHA256'],identities,dm['sha256'])
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
     out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else HARDWARE
     if out.exists() and getattr(a,'archive_failed',False):
@@ -305,7 +326,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
             save(out/'persistence_failure.json',dict(error=repr(error),receipt_candidate=row,index=index,role=role,raw_path=str(base.with_name(base.name+'_raw.png')),captured_data_may_be_partial=True,automatic_retry=False));raise
         row.update(raw_SHA256=result['raw_SHA256'],complete_sample_ms=(time.perf_counter()-sample_start)*1000)
         record_frame(base,row,index,total,role)
-    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__),persistence_mode=persistence_mode,max_uncommitted_frames=1 if writer is not None else 0))
+    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,parent_fit_ancestry=ancestry,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__),persistence_mode=persistence_mode,max_uncommitted_frames=1 if writer is not None else 0))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),stage=stage,session=str(session),camera='DVP',pilot=pilot)))
     try:
         with Bench(hardware,out) as bench:

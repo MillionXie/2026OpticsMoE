@@ -1,0 +1,18 @@
+{
+  "seed": 173,
+  "targets": {"4": 314, "6": 322},
+  "maximum_passes": 3,
+  "maximum_classes_each_pass": 20,
+  "steps_each_class": 80,
+  "maximum_fit_seconds": 180,
+  "temperature": 1.0,
+  "huber_delta": 1.0,
+  "margin": 1.0,
+  "teacher_KL": 0.25,
+  "anchor": 0.05,
+  "LM_damping": 0.1,
+  "row_radius": 0.5,
+  "trust_step": 0.25,
+  "minimum_NLL_gain": 0.0001,
+  "scope": "One finite original-head boundary repair after full prefix/suffix fit stops. Exact producer PT/fields, full1600TRAIN and411TEST features and original float32 head parity; no source rotation/CCD augmentation. Each target class uses16 near TRAIN positives,16 random positives,16 hard TRAIN negatives,16 all-TRAIN replay. Signed Huber/exact curvature protects correct TRAIN behavior and anchors row, other19 rows fixed in each step. TEST error/feature/label-informed TRAIN neighbor plans and selection are development leakage, no TEST gradients/VALID. Stop at target,180 fit seconds or first pass with no correct-count/NLL improvement; no automatic additional candidate. All nonhead tensors unchanged; full saved best/last original-prefix CPU replay required."
+}
