@@ -4,6 +4,17 @@
 
 ### New user geometry20261020: camera normal, fresh coherent L4 -> L6 capture
 
+Intermediate8pp is NOT final1pp success. Final-only profiles
+`lab_caltech20_DVP_L4_final1pp_profile_20261020.json` and
+`lab_caltech20_DVP_L6_final1pp_profile_20261020.json` explicitly target342/411
+and350/411 versus fixed346/354. They retain original finite120epoch/1200fit-second
+budget, graph, alpha bounds and fully captured upstream freeze. Last stage is
+only original post-CCD electronics/alpha/5140head, no uncaptured masks remain.
+Inspect `refinement_target_reached` and counts, not intermediate `within8pp`.
+Targets are aims, not measured results; unmet targets require diagnosis, not
+claiming intermediate314/322 complete. This config-only publication leaves
+running source/masks/exposure/profile identities untouched.
+
 User confirmed camera recovered and replaced coordinates with20261020.txt.
 Read-only Windows PID_D003 normal/SDKcount1, no extra camera open. New file SHA
 b8edf11cd310b0120dce9547c877b1dad79e98b71bb770ce0ed95c0d97da094d,

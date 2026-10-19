@@ -1,0 +1,19 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_layerwise_adapt_20261019",
+    "phase_lr": 0.0006,
+    "electronic_lr": 0.0015,
+    "alpha_lr": 0.002,
+    "head_lr": 0.0015,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.5,
+    "teacher_weight": 0,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "target_correct": 342,
+    "final_fit": {"epochs": 120, "seconds": 1200}
+  },
+  "scope": "Only fresh geometry20261020 L4 FINAL prefix5 after all five physical stages and all TRAIN1600/TEST411 identities are audited. Original fixed simulation346/411; final aim>=342/411, gap4/411=.97324 percentage points, not a success claim. Intermediate8pp stop remains separate: report.within8pp is NOT final success; report.refinement_target_reached and explicit correct counts govern this final target. All optical/upstream parameters frozen; only original post-last-CCD electronic9 parameters, direct bounded alpha and original5140 head may adapt. No new layers, TEST gradients, VALID, CCD recapture, exposure/geometry changes, candidate scan or guaranteed score. Full TRAIN gradients, TEST-informed class emphasis/checkpoint development. Finite120epoch/1200fit-second original optimizer, then strict CPU best/last review and actual error diagnosis before any further method."
+}
