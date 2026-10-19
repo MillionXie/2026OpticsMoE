@@ -2,6 +2,25 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+**Actual known-pattern admission completed,37patterns; SDK released and worker
+exited.** Readback5000.5us/gain1, screen-to-canonical `flip_v`; asymmetric-marker
+PCC.92055 versus next.79833. Four toggles match new pattern(.8945..9211), not
+previous(.0596..0854), atwait240ms plus6discard/one retained frame. Pure device
+capture~.51..55s/frame excludes PNG/receipt/model overhead and is NOT a full
+acquisition ETA.1ms underexposes;10ms clips4.53%,20ms clips68.91% of white
+pattern pixels, so historical20ms is rejected, not reused. Session inverse
+held-out intensity RMSE.002605/maxerror.005369; hardware LUTs unchanged.
+This is calibration evidence, NOT a trained-mask pilot or accuracy result.
+Admission metadata+three crop previews(9files) downloaded andSHA-verified;
+all raw calibration frames remain on lab PC. Hardware manifestSHA
+3b89d610d939141dec9c5d0955f23765454cd7e7bebfe1c92c5e64e5376713ae.
+
+Original TRAIN3141 SHA38b719... was actually re-read on server: capped80 gives
+1508UNIQUE originals.10classes need92additional transformed TRAIN inputs to
+reach1600. User choice still pending; no model pilot/full collection or fitting
+has started, no scheduler/recurring task exists for this camera session. Never
+interpret these calibration frames as part of the forthcoming model dataset.
+
 L2 is frozen at329/411. User replaced the unavailable high-speed camera with
 the historical small DVP camera and explicitly requests fresh L4 then L6
 RESIDUAL layerwise capture, each layer's TRAIN+TEST consecutive, then fit the
