@@ -69,7 +69,8 @@ class ConditionedHeadContract(unittest.TestCase):
 
     def test_alpha_initialization_requires_TRAIN_evidence_and_true_parent_fallback(self):
         text=SOURCE.read_text()
-        for token in ("evidence['TEST_inference'] is False", "a.depth==4 and a.prefix==4 and not a.feature_run",
+        for token in ("evidence['TEST_inference'] is False", "a.depth==4 and a.prefix in (4,5) and not a.feature_run",
+                      "alpha_key==f'fusion_logits.{a.prefix-2}'",
                       "parent_fallback=alpha_init is not None and name=='best' and selected==0",
                       "reference=baseline if parent_fallback", "all_nonhead_frozen=alpha_init is None",
                       "core.assess(model,data,fields,'train')[0] if parent_fallback"):
@@ -78,6 +79,17 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(cfg['TRAIN_supported_alpha_initialization'],.4001001)
         self.assertEqual(len(cfg['TRAIN_capacity_evidence_SHA256']),64)
         self.assertEqual(cfg['temperature_steps'],25)
+
+    def test_final_alpha_is_one_TRAIN_supported_existing_coordinate(self):
+        cfg=json.loads((TASK/'lab_caltech20_DVP_final_alpha_TRAINcapacity_profile_20261020.json').read_text())
+        self.assertEqual(cfg['TRAIN_supported_alpha_key'],'fusion_logits.3')
+        self.assertEqual(cfg['TRAIN_supported_alpha_initialization'],.4001001)
+        self.assertEqual(cfg['temperature_steps'],25)
+        self.assertEqual(len(cfg['TRAIN_capacity_evidence_SHA256']),64)
+        self.assertEqual(cfg['final_targets']['4'],342)
+        text=SOURCE.read_text()
+        self.assertIn("assert key in ('fusion_logits.2','fusion_logits.3')",text)
+        self.assertIn("state[alpha_key].fill_(alpha_init)",text)
 
     def test_compound_admission_cannot_claim_new_training_or_rewrite_components(self):
         tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='admit_chain')

@@ -1756,3 +1756,19 @@ Do not delete current L4 CCD, old hardware release/LUT/selection identities,
 or no-residual CCD still used by another task. Old L2 evidence remains until
 replacement is verified and a recoverable, SHA-verified archive exists; cleanup
 must not delay acquisition. No deletion is implied by a newer PT filename.
+
+2026-10-20 DVP current-run final-L4 contrast: the head-frozen original10-parameter
+native-RMS fit completed its finite600fit-second budget and retained E0=277/411;
+do not claim new trained parameters improved the accepted fullphysical result.
+An independent TRAIN-only two-point diagnosis at the original final alpha3
+.5968848674741991 versus its allowed endpoint .4001001 gave shrinkage-readout
+TRAIN1143 vs1156/1600 and NLL1.091229 vs1.016610. No TEST inference occurred in
+that diagnosis; SHA e19ae0135ace662459421dbdc3ce44662d2d29f64adba89db685095c3b021624.
+One original-alpha/5140-head shrinkage contrast is now specified by
+lab_caltech20_DVP_final_alpha_TRAINcapacity_profile_20261020.json. It requires
+that exact evidence, new features, unchanged physical producers, full411 native
+CPU bestlast replay, and whole-parent fallback including alpha when E0. This is
+not an alpha/seed scan or a promise of improvement. Existing 277 is preserved;
+only original post-last-CCD alpha and head may change, no new layer/CCD/settings.
+Source is Git-published and numerically tested before use. L6 per-layer masks
+continue independently; no source patch to the running capture/model closure.

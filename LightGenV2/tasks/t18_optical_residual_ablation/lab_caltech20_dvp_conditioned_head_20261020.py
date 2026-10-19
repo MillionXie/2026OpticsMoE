@@ -90,9 +90,9 @@ def cpu_fit_admission(a):
     return proof
 
 
-def original_alpha_state(original, allowed, value):
-    """One declared original post-E2 coordinate, never an alpha/seed grid."""
-    key='fusion_logits.2'
+def original_alpha_state(original, allowed, value, key='fusion_logits.2'):
+    """One declared post-E2 or final-L4 coordinate, not an alpha/seed grid."""
+    assert key in ('fusion_logits.2','fusion_logits.3')
     assert key in allowed and value==.4001001
     assert original[key].dtype==torch.float64 and .4001<float(original[key])<=.95
     state={k:v.clone() for k,v in original.items()}
@@ -409,21 +409,24 @@ def shrink_fit(a):
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
     fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
     alpha_init=cfg.get('TRAIN_supported_alpha_initialization');allowed={'linear.weight','linear.bias'}
+    alpha_key=cfg.get('TRAIN_supported_alpha_key','fusion_logits.2')
     parent_metric=parent_probability=None
     if alpha_init is not None:
-        assert a.depth==4 and a.prefix==4 and not a.feature_run
+        assert a.depth==4 and a.prefix in (4,5) and not a.feature_run
+        assert alpha_key==f'fusion_logits.{a.prefix-2}'
+        evidence_coordinate='alpha'+str(a.prefix-2)
         evidence_path=session/cfg['TRAIN_capacity_evidence'];assert evidence_path.resolve().is_relative_to((session/'fits').resolve())
         assert core.sha(evidence_path)==cfg['TRAIN_capacity_evidence_SHA256']
         evidence=core.read(evidence_path);rows=evidence['rows']
         assert evidence['TRAIN']==1600 and evidence['TEST_inference'] is False and evidence['VALID']==0
-        assert len(rows)==2 and rows[1]['alpha2']==alpha_init and rows[1]['TRAIN_capacity_correct']>rows[0]['TRAIN_capacity_correct']
+        assert len(rows)==2 and rows[1][evidence_coordinate]==alpha_init and rows[1]['TRAIN_capacity_correct']>rows[0]['TRAIN_capacity_correct']
         assert rows[1]['TRAIN_fitted_readout_NLL']<rows[0]['TRAIN_fitted_readout_NLL']
         producer=evidence_path.parent/'best.pt';assert core.sha(producer)==evidence['source_PT_SHA256']
         producer_state=torch.load(producer,map_location='cpu',weights_only=False)['model']
-        assert nonhead_equal(producer_state,original) and abs(float(original['fusion_logits.2'])-rows[0]['alpha2'])<1e-12
+        assert nonhead_equal(producer_state,original) and abs(float(original[alpha_key])-rows[0][evidence_coordinate])<1e-12
         parent_metric,parent_probability=core.assess(model,data,fields,'test')
-        allowed.add('fusion_logits.2');assert allowed<=core.allowed_keys(model,a.prefix)
-        model.load_state_dict(original_alpha_state(original,allowed,alpha_init))
+        allowed.add(alpha_key);assert allowed<=core.allowed_keys(model,a.prefix)
+        model.load_state_dict(original_alpha_state(original,allowed,alpha_init,alpha_key))
     cached,cacheproof=checked_features(a,model,data,fields,dm,identities);tr,te=cached['train'],cached['test']
     counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float64);assert counts.shape==(20,) and int(counts.sum())==3141
     x=torch.tensor(tr['x'],dtype=torch.float64);y=torch.tensor(tr['y'],dtype=torch.long)
@@ -447,7 +450,8 @@ def shrink_fit(a):
                   update_unit='TRAIN_readout_estimation_then_temperature')
     if alpha_init is not None:
         protocol.update(TRAIN_supported_alpha_initialization=alpha_init,baseline_is_unmodified_parent=True,
-                        initialized_untrained_TEST=te['metric'],feature_producer_alpha2=alpha_init,
+                        initialized_untrained_TEST=te['metric'],feature_producer_alpha_key=alpha_key,
+                        feature_producer_alpha=alpha_init,
                         initial_alpha_not_a_performance_gain=True,all_other_nonhead_frozen=True)
     core.save(a.out/'protocol.json',protocol)
     np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)
@@ -472,7 +476,7 @@ def shrink_fit(a):
     for name,ww,bb in (('best',bestw,bestb),('last',w,b)):
         state={k:v.clone() for k,v in original.items()};state.update({'linear.weight':ww,'linear.bias':bb})
         parent_fallback=alpha_init is not None and name=='best' and selected==0
-        if alpha_init is not None and not parent_fallback:state['fusion_logits.2'].fill_(alpha_init)
+        if alpha_init is not None and not parent_fallback:state[alpha_key].fill_(alpha_init)
         assert all(v.dtype==state[k].dtype and torch.equal(v,state[k]) for k,v in original.items() if k not in allowed)
         path=a.out/(name+'.pt')
         torch.save(dict(model=state,protocol=protocol,epoch=selected if name=='best' else step+1,
@@ -732,6 +736,10 @@ def selftest():
     initialized=original_alpha_state(alpha_state,{'fusion_logits.2'},.4001001)
     assert float(alpha_state['fusion_logits.2'])==.91 and float(initialized['fusion_logits.2'])==.4001001
     assert torch.equal(initialized['frozen'],alpha_state['frozen'])
+    final_state={'fusion_logits.3':torch.tensor(.5968848674741991,dtype=torch.float64),'frozen':torch.ones(3)}
+    final_initialized=original_alpha_state(final_state,{'fusion_logits.3'},.4001001,'fusion_logits.3')
+    assert float(final_initialized['fusion_logits.3'])==.4001001 and float(final_state['fusion_logits.3'])==.5968848674741991
+    assert torch.equal(final_initialized['frozen'],final_state['frozen'])
     for forbidden in (.4,.5,.95):
         try:original_alpha_state(alpha_state,{'fusion_logits.2'},forbidden)
         except AssertionError:pass

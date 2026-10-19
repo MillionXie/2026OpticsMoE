@@ -1,0 +1,11 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "temperature_steps":25,"maximum_fit_seconds":180,
+  "targets":{"4":314,"6":322},"final_targets":{"4":342,"6":350},
+  "TRAIN_supported_alpha_initialization":0.4001001,
+  "TRAIN_supported_alpha_key":"fusion_logits.3",
+  "TRAIN_capacity_evidence":"fits/3_capturePT_pair_20261020/TRAIN1600_readout_capacity_alpha3.json",
+  "TRAIN_capacity_evidence_SHA256":"e19ae0135ace662459421dbdc3ce44662d2d29f64adba89db685095c3b021624",
+  "scope":"One finite TRAIN-supported original final-L4 alpha initialization and same5140-head shrinkage readout fit. Fullphysical277 incumbent preserved. Exact original1600TRAIN-only two-point diagnostic: current alpha3=.5968848674741991 produced TRAIN1143/1600 and fitted NLL1.091229; existing allowed endpoint.4001001 produced1156/1600 and NLL1.016610. The small TRAIN capacity increase supports this single contrast but is not a guarantee, a TEST grid, or a claimed optical cause. No TEST inference occurred in the diagnostic. Original full L4 optics and every measured incident producer remain frozen; only original post-last-CCD directF64alpha3 and existing Linear change. No new residual/layer/CCD/settings, no derivative from TEST/VALID. Build fresh features and fully replay411 native original bestlast. Baseline is unchanged277 parent; if no full original gain, keep entire original parent including alpha. At most25 TRAIN-only temperature updates/180fitseconds; no alpha/regularization/seed scan or automatic repetition. TEST-informed development only. CPU2, no SDK/GPU."
+}
