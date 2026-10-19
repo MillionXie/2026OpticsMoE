@@ -184,7 +184,7 @@ def pair_fit(a):
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists()
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts')
     original=core.state_cpu(model);fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
-    a.out.mkdir();cached=cache_features(model,data,fields,a.out);tr,te=cached['train'],cached['test']
+    a.out.mkdir();cached,cacheproof=checked_features(a,model,data,fields,dm,identities);tr,te=cached['train'],cached['test']
     w,b=original['linear.weight'].numpy().copy(),original['linear.bias'].numpy().copy()
     baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);initial=best;selected=0
     target=int(cfg['targets'][str(a.depth)]) if a.prefix<a.depth+1 else int(cfg['final_targets'][str(a.depth)])
@@ -193,6 +193,7 @@ def pair_fit(a):
                   source_SHA256=core.sha(__file__),direction_source_SHA256=core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py'),
                   config=cfg,profile_SHA256=core.sha(a.profile),target_correct=target,
                   feature_files={r:v['feature_SHA256'] for r,v in cached.items()},
+                  feature_graph_SHA256=cacheproof['feature_graph_SHA256'],feature_reuse=cacheproof,
                   feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
                   all_nonhead_frozen=True,two_original_rows_antisymmetric_other18_fixed=True,
                   TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,update_unit='pair_step')
@@ -276,7 +277,7 @@ def fit(a):
     fields, identities = core.fields_for(session, a.prefix, data, dm,
                                          core.session_hardware_digest(a.sequence))
     a.out.mkdir()
-    cached = cache_features(model, data, fields, a.out)
+    cached, cacheproof = checked_features(a, model, data, fields, dm, identities)
     tr, te = cached['train'], cached['test']
     x = torch.tensor(tr['x'], dtype=torch.float64)
     labels = torch.tensor(tr['y'], dtype=torch.long)
@@ -303,6 +304,7 @@ def fit(a):
                     geometry_source_SHA256=core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py'),
                     config=cfg, profile_SHA256=core.sha(a.profile), target_correct=target,
                     feature_files={r:v['feature_SHA256'] for r,v in cached.items()},
+                    feature_graph_SHA256=cacheproof['feature_graph_SHA256'],feature_reuse=cacheproof,
                     feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
                     feature_variance_floor=floor, modes_below_floor=int((eigenvalues < floor).sum()),
                     TRAIN_covariance_eigenvalues=eigenvalues.tolist(), TRAIN_prior_only=True,
@@ -410,7 +412,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'selftest'])
     for name in ('sequence', 'checkpoint', 'profile', 'out', 'feature-run'):
         parser.add_argument('--'+name, type=Path)
-    parser.add_argument('--depth', type=int)
+    parser.add_argument('--depth', type=int, choices=(4,6))
     parser.add_argument('--prefix', type=int)
     parser.add_argument('--digest')
     args = parser.parse_args()
