@@ -12,7 +12,9 @@ values. This release is still partial: all eight native-precision DeepSeek/Kimi
 conditions and four Kimi FP32 cost conditions are complete and locally SHA-verified.
 The Kimi FP32 full558 accuracy evaluation is also complete and independently
 recomputed locally; its development SRCC is 0.7519302260. The original 40GB A100
-is occupied by another user. The full DeepSeek FP32
+remained occupied by another user throughout this window. CPU-only admission expired
+without any GPU measurement; the other four models remain unavailable under the new
+matched-window protocol. The full DeepSeek FP32
 weights alone require 109,920,536,992 bytes, exceeding the single 80GB device. The
 author has decided not to add a two-GPU rental. Historical Qwen B1 is unchanged.
 

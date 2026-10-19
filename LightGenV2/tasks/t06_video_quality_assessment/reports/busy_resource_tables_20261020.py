@@ -128,7 +128,8 @@ def main():
               contract='Two controls × two precisions × time/energy; full same window includes internal waits, excludes terminal wait; first-B inputs reused, real inference every call; three full windows, all retained.',
               capacity_missing='DeepSeek-VL2 FP32 weights require 109,920,536,992 bytes (102.4 GiB), exceeding a single 80 GiB device. MPS does not reduce weight storage. No CPU offload.',
               B1_historical_anchor_unchanged=True,accuracy_reference_not_per_control=True,
-              rental_backup_audit=backup_audit())
+              rental_backup_audit=backup_audit(),
+              laboratory_status=audit.read(LAB/'suite_status.json')['status'] if (LAB/'suite_status.json').exists() else 'not_downloaded')
     (target/'eight_tables.json').write_text(json.dumps(data,indent=2)+'\n')
     columns=['model','method','precision','condition','batch','resource_cap','visible_sms','busy_percent','time16_ms','energy16_j','srcc_reference','platform','measured_at','status','source','source_sha256','accuracy_source','accuracy_note']
     with (target/'paired_measurements.csv').open('w',newline='',encoding='utf-8-sig') as stream:

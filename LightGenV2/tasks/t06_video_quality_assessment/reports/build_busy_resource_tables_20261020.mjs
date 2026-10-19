@@ -11,6 +11,7 @@ const out=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseli
 try{const existing=await fs.readFile(out);const receipt=JSON.parse(await fs.readFile(path.join(root,'workbook_receipt.json'),'utf8'));if(crypto.createHash('sha256').update(existing).digest('hex')!==receipt.sha256)throw Error('Workbook changed outside this build; preserve user edits');}catch(e){if(e.code!=='ENOENT')throw e;}
 const book=Workbook.create(),views=[],models=['deepseek','kimi','qwen','glm','clip','yolo'];
 const colors={deepseek:'#79502C',kimi:'#D14F64',qwen:'#0072B2',glm:'#9B567C',clip:'#008B70',yolo:'#B17D00'};
+const unavailable=data.laboratory_status==='waiting_expired'?'original A100 unavailable':'pending measurement';
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const metric of ['time','energy']){
  const name=`${method==='temporal'?'Duty':'MPS'}_${precision==='native'?'Native':'FP32'}_${metric==='time'?'Time':'Energy'}`;
  views.push({method,precision,metric,sheet:book.worksheets.add(name)});
@@ -49,7 +50,7 @@ raw.getRange('AC7:AD7').values=[[data.optical.time_ms,data.optical.energy_j]];ra
 let row=8;const entries=[];
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const model of models)for(const condition of method==='temporal'?['busy50','unrestricted']:['mps_cap50','mps_cap100']){
  const point=data.values.find(x=>x.method===method&&x.precision===precision&&x.model===model&&x.condition===condition);
- const missing=model==='deepseek'&&precision==='fp32'?'capacity exceeds80GB':'pending measurement';
+ const missing=model==='deepseek'&&precision==='fp32'?'capacity exceeds80GB':unavailable;
  const values=[data.models[model],method,precision,condition,point?.batch??(method==='mps'?1:null),point?.resource_cap??null,point?.visible_sms??null,point?.srcc_reference??null];
  for(let i=0;i<3;i++){const r=point?.repeats?.[i];values.push(r?.elapsed_s??null,r?.video_evaluations??null,r?.measurement.mean_board_power_w??null,r?.measurement.mean_gpu_utilization_percent??null,r?.measurement.samples??null);}
  values.push(338.2,null,null,null,null,null,null,point?.repeats?.length??null,point?.status??missing,point?.platform??'',point?.source??'',point?.source_sha256??'',point?.accuracy_note??(missing==='capacity exceeds80GB'?data.capacity_missing:'No completed new-protocol point. Do not substitute historical pure-inference cost.'));
@@ -86,7 +87,7 @@ for(const {method,precision,metric,sheet} of views){
  let r=8;
  for(const e of entries.filter(e=>e.method===method&&e.precision===precision)){
   const setting=method==='mps'?`${e.condition==='mps_cap50'?'50%':'100%'} resource cap`:e.condition==='busy50'?'~50% time busy':'Unrestricted duty';
-  sheet.getRange(`A${r}:M${r}`).values=[[data.models[e.model],setting,e.point?.batch??(method==='mps'?1:'n.a.'),method==='mps'?(e.condition==='mps_cap50'?.5:1):'n.a.',null,null,null,null,null,e.point?.status??(e.model==='deepseek'&&precision==='fp32'?'capacity exceeds80GB':'pending measurement'),null,precision==='fp32'?'FP32':`${['clip','yolo'].includes(e.model)?'FP16':'BF16'} compute + FP32 head`,e.point?.platform??'']];
+  sheet.getRange(`A${r}:M${r}`).values=[[data.models[e.model],setting,e.point?.batch??(method==='mps'?1:'n.a.'),method==='mps'?(e.condition==='mps_cap50'?.5:1):'n.a.',null,null,null,null,null,e.point?.status??(e.model==='deepseek'&&precision==='fp32'?'capacity exceeds80GB':unavailable),null,precision==='fp32'?'FP32':`${['clip','yolo'].includes(e.model)?'FP16':'BF16'} compute + FP32 head`,e.point?.platform??'']];
   const q=e.row;
   if(e.point){sheet.getRange(`E${r}:I${r}`).formulas=[[`=Measurements!AB${q}/100`,`=Measurements!${metric==='time'?'AC':'AD'}${q}`,`=F${r}/$F$7`,e.point.srcc_reference!==undefined?`=Measurements!H${q}`:'="n.a."',`=Measurements!AE${q}`]];sheet.getRange('K'+r).formulas=[[`=Measurements!Z${q}`]];}
   else sheet.getRange(`E${r}:I${r}`).values=[['n.a.','n.a.','n.a.','n.a.','n.a.']];
