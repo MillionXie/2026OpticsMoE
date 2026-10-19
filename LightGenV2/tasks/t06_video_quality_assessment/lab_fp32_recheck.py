@@ -158,7 +158,7 @@ def suite(args):
             state.update(stable=stable,foreign=records,time=time.time());save()
             if stable<3:time.sleep(10)
         try:
-            for model,batch in [('qwen',3),('clip',10),('yolo',3),('glm',2)]:
+            for model,batch in [('qwen',3),('clip',10),('yolo',3),('glm',1)]:
                 if model=='glm':
                     original=TASK/'runs/simulation'/resident.SPECIAL['glm'][0]
                     report=json.loads((original/'a100_batch01/report.json').read_text());command=report['identity']['command']

@@ -44,7 +44,7 @@ for(const precision of ['native','fp32']){
    sheet.getRange(`D${r}:I${r}`).formulas=[[`=Measurements!E${r}`,x.baseline==='ours'?'="n.a."':`=Measurements!F${r}/100`,
     `=Measurements!G${r}`,`=Measurements!H${r}`,`=F${r}/$F$7`,`=G${r}/$G$7`]];
   }else sheet.getRange(`D${r}:I${r}`).values=[['n.a.','n.a.','n.a.','n.a.','n.a.','n.a.']];
-  const color=colors[x.baseline];sheet.getRange(`A${r}:L${r}`).format.fill=i%2?'#F4F7F9':'#FFFFFF';
+  const color=colors[x.baseline];
   sheet.getRange(`A${r}`).format.font={name:'Arial',size:10,color,bold:true};
   if(!available)sheet.getRange(`L${r}`).format.font={name:'Arial',size:10,color:'#9C3D10'};
  }
