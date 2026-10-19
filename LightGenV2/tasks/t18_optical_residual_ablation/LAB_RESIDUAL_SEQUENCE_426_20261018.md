@@ -2,6 +2,32 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Latest verified outcome:331/411 hybrid, awaiting exposure decision
+
+Conservative comparison completed5epochs/8000TRAIN presentations, stopped on
+the predeclared330 target at331/411=80.53528%. Strict saved-best/last CPU and
+independent artifact checks passed: macro69.81796%,NLL.75129592 versus parent
+324/411=78.83212%,macro64.31118%,NLL.83808994. Net+7correct comprises16new
+correct and9lost; do not claim every old correct prediction was preserved.
+Fixed346 simulation gap now3.64964pp. SelectedE5 is real training, notE0.
+BestSHA1f78217fb1cf8d1d489a55ce437ee2d47aa15808360db3ee9f30b496849c14ce;
+lastSHA63744ba930ac916f61e99417b7eb442e45d03b048279f51fba4fe6f88cf2ea15.
+Teacher1600TRAIN-only probabilities/SHA, bestlast, histories, reports and all
+411ID/label/probability files retained in `L4/fits/router_conservative_20261019`.
+All measured-router parameters remain byte-identical; uncaptured suffix changed.
+Any next-stage CCD MUST use this exact selected suffix PT/newphase lineage,
+never the old1ed505 parent/bad stage0frame. Both parent and failed frame retained.
+
+This is measured ROUTER plus SIMULATED SUFFIX, NOT full L4 physical accuracy.
+TEST-informed development, not independent generalization. Camera5ms control
+recheck passed(whitep99152, flip_vPCC.92160, togglePCC.89687); notUSB loss.
+Known-white linear-gain estimate for failed stage0 input predictsp997.74 versus
+observed8, supporting low dynamic range rather than proving a hardware fault.
+No exposure change or signal-guard bypass has occurred. Requested user decision
+on TRAIN/known-pattern-only per-layer exposure admission; until answered,
+formal capture is stopped at the preserved first stage0frame and L6notstarted.
+Refinement worker exited andSDK released; no recurring/background supervision.
+
 ### Router complete; stage0 low signal; active refinement authorization
 
 L4 router1600TRAIN/411TEST fully captured/audited. Measured router+simulated
