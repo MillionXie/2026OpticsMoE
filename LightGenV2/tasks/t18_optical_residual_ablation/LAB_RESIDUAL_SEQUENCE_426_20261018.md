@@ -2,6 +2,15 @@
 
 ## New offline-only authorization, 2026-10-19
 
+Whitened BCE yielded another REAL fully CPU-verified gain271->276/411=
+67.15328%, best SHA `42ad3dcbe85c154c3190c8e29cbf9827c9f9882e11fb497beb86af6200e4a102`.
+All three passes improved:272/275/276, NLL1.89639/1.83387/1.82134;
+10944 TRAIN updates. Original optical/nonhead state identical, not a new capture.
+L4 alone gets max3 finite same-method segments under
+`lab_caltech20_L4_whitened_BCE_cont_profile_20261019.json`; replay all saved
+TRAIN batches and keep one RNG, stop first no-progress or305. No revival of
+stopped Huber or pair methods; L2 remains325, no hardware or new inference layer.
+
 Whitened two-row Huber completed2560 TRAIN updates and retained E0 271;
 last249 not adopted, fullCPU/frozen checks passed. One final loss comparison
 from271 uses existing analytic binary cross-entropy instead of signed Huber,
