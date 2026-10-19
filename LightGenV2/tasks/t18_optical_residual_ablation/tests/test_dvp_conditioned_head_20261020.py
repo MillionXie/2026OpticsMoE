@@ -23,6 +23,7 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertIn('core.assess(model, data, fields', source)
         self.assertNotIn('Camera.open', source)
         self.assertNotIn('.cuda(', source)
+        self.assertIn("dm['source_cache_SHA256']", source)
 
     def test_finite_budget_and_separate_targets(self):
         cfg = json.loads((TASK/'lab_caltech20_DVP_conditioned_head_profile_20261020.json').read_text())

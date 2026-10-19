@@ -45,7 +45,7 @@ def fit(a):
     cfg = core.read(a.profile)
     assert not a.out.exists() and core.sha(a.checkpoint) == a.digest
     data, dm = core.data_for(a.sequence)
-    assert dm['source_cache_sha256'] == cfg['original_TRAIN_cache_SHA256']
+    assert dm['source_cache_SHA256'] == cfg['original_TRAIN_cache_SHA256']
     session = a.sequence / f'L{a.depth}'
     model, _ = core.model_for(a.checkpoint, a.digest, a.depth, session/'source_reference.ts')
     original = core.state_cpu(model)
