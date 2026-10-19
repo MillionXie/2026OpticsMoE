@@ -218,7 +218,7 @@ def terminal10_fit(a):
         scheduler.step();assert used==1600;p,(n,nll)=evaluate('test')
         if improves(n,nll,best,bestloss):best,bestloss,selected=n,nll,epoch;snapshot('best',epoch)
         row=dict(epoch=epoch,TRAIN_loss=loss_sum/1600,actual_TRAIN_samples=used,actual_TRAIN_steps=steps,TEST_correct=n,TEST_NLL=nll,selected_correct=best,selected_epoch=selected,alpha=float(alpha.detach()),elapsed_s=time.monotonic()-start)
-        history.append(row);core.save(a.out/'history.json',history);core.save(a.out/'progress.json',dict(state='native_RMS_terminal10_CPU',**row));print(core.json.dumps(row),flush=True)
+        history.append(row);core.save(a.out/'history.json',history);core.save(a.out/'progress.json',dict(state='native_RMS_terminal5150_CPU' if joint else 'native_RMS_terminal10_CPU',**row));print(core.json.dumps(row),flush=True)
         if best>=342 or time.monotonic()-start>=cfg['fit_seconds']:break
     snapshot('last',epoch);results={}
     for name in ('best','last'):
