@@ -2,6 +2,34 @@
 
 ## New offline-only authorization, 2026-10-19
 
+### Latest scope: freeze L2 at329; L4 residual offline gap<=10pp
+
+User fixes L2 329/411 and authorizes L4-only offline optimization from279.
+Fixed L4 simulation346/411=84.18491%, <=10pp requires305/411=74.20925%.
+No camera/SDK/newCCD, no L2/L6/no-residual change, no recurring task. Preserve
+all previous PTs/data and formal direct-alpha bounds(.4001001,.95).
+
+Current native L4 data confirm TRAIN~58-60%, TEST279, last alpha at floor
+.4001001,9-conv all strongly negative and head norm107.97. Existing head-only
+Huber/BCE/protective/SAM/low-rank/jointNewton already stopped; do not revive
+these same plateau searches blindly. New TRAIN diagnostic measures terminal
+tanh saturation and compares original stopped-RMS surrogate versus exact RMS
+derivatives; no TEST objective. One new original5150-terminal comparison uses
+native478 fields, differentiable RMS in BACKWARD only and TRAIN covariance
+coordinates folded into the ORIGINAL head each forward. Inference original
+architecture/forward unchanged; synthetic forward byte equality at all3alpha
+values, derivative finite differences and5140-head folding tested. Never use
+the previously rejected approximate compact alpha cache.
+
+Entry `lab_caltech20_native_terminal_20261019.py`, profile
+`lab_caltech20_L4_native_terminal_profile_20261019.json`: CPU2/batch8, original
+last9conv/directalpha/original5140head only, max20epochs/600fitseconds, target
+305 stop. All optics and pre-final electronics frozen, native complete
+TRAIN1200/TEST411/noVALID. Correct-TRAIN T2KL2/terminalanchor.1, head coordinate
+anchor.01/radius sqrt20*.4, fixed TRAIN seed; save best/last, selected native
+features and strict original raw-CCD CPU checks for both states. TEST is
+diagnosis/selection development, never gradients; no guarantee of305.
+
 ### Latest explicit user request: L2 residual gap <=2pp, 2026-10-19
 
 **Completed:329/411=80.04866%, fixed337 simulation gap1.94647pp; new target achieved.**

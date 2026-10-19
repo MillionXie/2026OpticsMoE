@@ -1,0 +1,14 @@
+{
+  "scope":"New user-authorized L4 residual offline comparison from strict-CPU279; L2 fixed329 and all others untouched",
+  "epochs":20,"fit_seconds":600,"batch":8,"target_correct":305,
+  "conv_lr":0.002,"alpha_lr":0.0005,"head_coordinate_lr":0.002,
+  "weight_decay":0.001,"label_smoothing":0.02,
+  "temperature":2.0,"teacher_KL":2.0,"terminal_anchor":0.1,"head_coordinate_anchor":0.01,
+  "per_row_head_radius":0.4,
+  "optimizer_coordinates":"TRAIN1200 covariance geometry, eigfloor.02mean; fold delta into original Linear256to20 at every native forward",
+  "backward":"Differentiate original RMS normalization; native inference forward and5150 terminal parameter count unchanged",
+  "alpha_bounds":[0.4001001,0.95],
+  "stop":"305 correct, max20epochs or600fitseconds checked every TRAIN batch; save best/last and full original CCD replay",
+  "TRAIN":1200,"TEST":411,"VALID":0,"TEST_gradient":false,"SDK":false,"GPU":false,
+  "never":"change already captured optics/upstream, compact approximation, camera or new layer"
+}
