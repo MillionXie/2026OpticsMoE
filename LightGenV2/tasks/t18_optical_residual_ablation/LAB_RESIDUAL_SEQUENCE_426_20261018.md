@@ -2,6 +2,34 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Current actionable blocker09:08UTC: camera enumerates BootLoader, not camera
+
+The independent60ms check did NOT measure60ms or fail signal criteria: it exited
+at `DVP Start:-1001`, patterns0, BEFORE known-pattern recheck. Preserve this
+separately from the completed228-frame exposure-ladder failure. No formalstage2
+orL6 frames exist. Earlier full router/expert1/global1 arrays and314PT remain valid.
+
+Read-only fresh Windows present-only check: sole camera-vendor device is
+USB BootLoader Device VID04B4/PID00F3/serial0000000004BE. Normal PID_D003 camera
+is not present (older entries are disconnected Problem45). Both legacy/newer
+vendor SDK enumerations returned0cameras. All known admission/fit/controller
+workers exited with exact PID/create-time verification, SDK lock absent.
+This is not a claimed dark-frame/model-accuracy problem or residual process
+ownership. Why the device transitioned into bootloader is NOT established.
+
+Original-run `L4/exposure_admission/2_contrast_mid60/device_failure_snapshot.json`
+records current Windows identity, SDK count, exact exited workers and previous
+same-state bounded device-restart failure SHA. No hub reset, repeated restart,
+firmware upload, driver reinstall or scheduled monitor was attempted. Current
+hardware capture needs user camera-USB disconnect/reconnect without moving
+optics. After normal enumeration returns, revalidate original settings/known
+patterns and resume a NEW named60ms evidence directory, same exact0c731ec0
+PT and unchanged thresholds; do not overwrite either failed attempt or recapture
+earlier valid layers.60ms has not yet been optically tested, not a disproven
+exposure. No further exposure candidate is authorized by this failed SDK start.
+L2 remains frozen; nores owned elsewhere; L6 CPU original-model gate is prepared.
+No background timer or automatic retry is running while manual action is needed.
+
 ### Expert2 fixed exposure ladder failed; one reasoned60ms check, no relaxation
 
 L4stage2 original5/10/20/40/80ms TRAIN-only admission exited FAIL,228diagnostic
