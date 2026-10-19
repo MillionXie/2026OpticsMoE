@@ -94,6 +94,7 @@ class PersistenceTests(unittest.TestCase):
         tree=ast.parse((HERE/'lab_caltech20_dvp_layerwise_20261019.py').read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='acquire');node.decorator_list=[]
         flags=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='signal_flags');exec(compile(ast.Module(body=[flags],type_ignores=[]),'flags_fixture','exec'),scope)
         scope['validate_capture_policy']=lambda *args:dict(policy='validated_by_separate_policy_tests')
+        scope['session_hardware_digest']=lambda sequence:'hardware'
         if full:
             class SmallCounts(ast.NodeTransformer):
                 def visit_Constant(self,node):

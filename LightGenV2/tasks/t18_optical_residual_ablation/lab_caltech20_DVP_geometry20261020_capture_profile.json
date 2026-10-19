@@ -1,0 +1,17 @@
+{
+  "policy": "shared_fixed_exposure_record_only",
+  "depths": [4, 6],
+  "exposure_us": 60006.0,
+  "gain": 1.0,
+  "source_sequence": "E:/code/guest/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261019",
+  "source_hardware": "E:/code/guest/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261019/L4/exposure_admission/2_contrast_mid60_after_replug/admitted_hardware.json",
+  "source_hardware_SHA256": "4515dfd5819eb82a81a516feb84ae541d9fc36fd67c97945ed697a6bddbe6a87",
+  "base_admission_SHA256": "0c6b75372fb5d2fc51f0cc2ae14eee3b5babac2cb8b62fc8709e9ac3a8417982",
+  "coordinates_SHA256": "b8edf11cd310b0120dce9547c877b1dad79e98b71bb770ce0ed95c0d97da094d",
+  "geometry_check_once": true,
+  "calibrate_each_stage": false,
+  "brightness_threshold_action": "record_only",
+  "saturation_threshold_action": "record_only",
+  "network_background_subtraction": false,
+  "scope": "User20261020 updated the small-camera coordinates and authorized continuation. Fresh isolated hardware session from original frozen L4 then L6 simulation checkpoints, no previous geometry CCD or adapted prefixes reused. Carry forward the previously measured shared60006us/gain1 settings and immutable amplitude inverse/phase LUT; these curves are not claimed recalibrated for the new geometry. At first L4 router only, verify orientation/current-frame timing with two known low-gray asymmetric patterns in the SAME camera connection as full TRAIN1600 then TEST411. No repeated camera open, exposure search or per-layer calibration. Record brightness/saturation and retain all frames without threshold stops; transport/settings/shape/direction/identity failures still stop. Original graph, input physical amplitude and alpha bounds unchanged; per-layer suffix tuning, TEST-informed development/noTEST gradients/noVALID."
+}

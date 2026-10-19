@@ -48,7 +48,7 @@ def fit(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not core.LOCK.exists()
     torch.set_num_threads(2);torch.manual_seed(17);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
-    model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model);fields,identities=core.fields_for(session,a.prefix,data,dm,core.HARDWARE)
+    model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model);fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
     cached=cache_features(model,data,fields,a.out);tr,te=cached['train'],cached['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);initial=best
     target=int(cfg['targets'][str(a.depth)]);protocol=dict(parent_PT_SHA256=a.digest,depth=a.depth,prefix=a.prefix,allowed_keys=['linear.bias','linear.weight'],prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,baseline_TEST=te['metric'],target_correct=target,config=cfg,source_git=core.git_head(),source_SHA256=core.sha(__file__),feature_files={r:v['feature_SHA256'] for r,v in cached.items()},feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},TEST_informed_development=True,TEST_gradient=False,update_unit='head_step')
     core.save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)

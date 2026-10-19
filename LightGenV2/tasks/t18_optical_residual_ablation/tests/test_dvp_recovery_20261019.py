@@ -29,7 +29,7 @@ class RecoveryTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
         self.scope=dict(np=np,Path=Path,Image=Image,sha=sha,read=read,save=save,HARDWARE='hardware')
         functions(HERE/'lab_caltech20_dvp_20261019.py',('variants','orient','correlation'),self.scope)
-        functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('admitted_pilot','revalidate_replug','validate_stage_hardware','validate_fit_ancestry'),self.scope)
+        functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('session_hardware_digest','admitted_pilot','revalidate_replug','validate_stage_hardware','validate_fit_ancestry'),self.scope)
         functions(HERE/'lab_caltech20_dvp_stage_exposure_20261019.py',('exposure_passes','contrast_statistics','contrast_passes'),self.scope)
 
     def pilot(self):

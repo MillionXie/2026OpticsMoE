@@ -38,6 +38,23 @@ HARDWARE='3b89d610d939141dec9c5d0955f23765454cd7e7bebfe1c92c5e64e5376713ae'
 def read(path):return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
+def session_hardware_digest(sequence):
+    """A changed coordinate file is a fresh explicit session, never an old-prefix patch."""
+    sequence=Path(sequence);identity=sequence/'hardware_identity.json'
+    if not identity.exists():return HARDWARE
+    record=read(identity);assert record['schema']=='fresh_DVP_geometry_v1'
+    old=Path(record['source_admission']);assert sha(old)==HARDWARE==record['source_admission_SHA256']
+    base=sequence/'calibration/admission/admitted_hardware.json';assert sha(base)==record['hardware_SHA256']
+    previous,current=read(old),read(base);assert set(previous)==set(current)
+    changed={'coordinates','coordinates_SHA256','exposure_us'}
+    assert all(current[k]==previous[k] for k in current if k not in changed)
+    assert current['exposure_us']==60006. and current['gain']==1.
+    assert sha(current['coordinates'])==current['coordinates_SHA256']==record['coordinates_SHA256']
+    assert Path(current['coordinates']).resolve().is_relative_to(sequence.resolve())
+    assert record['reuse_previous_CCD'] is False and record['fresh_layerwise_capture'] is True
+    return record['hardware_SHA256']
+
+
 def git_head():
     exe=ROOT/'OpenMoji_Robust_Rank64_SHS_20261002/.git-tools/MinGit_2_56_0/cmd/git.exe'
     return subprocess.check_output([str(exe) if exe.exists() else 'git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
@@ -134,8 +151,8 @@ def fields_for(session,prefix,data,dm,hardware):
 
 
 def validate_stage_hardware(path,sequence):
-    base=Path(sequence)/'calibration/admission/admitted_hardware.json';assert sha(base)==HARDWARE
-    original=read(base);hardware=read(path);assert hardware['base_admission_SHA256']==HARDWARE
+    base_digest=session_hardware_digest(sequence);base=Path(sequence)/'calibration/admission/admitted_hardware.json';assert sha(base)==base_digest
+    original=read(base);hardware=read(path);assert hardware['base_admission_SHA256']==base_digest
     for key in ('camera_dll','camera_dll_SHA256','coordinates','coordinates_SHA256','sensor_shape','machine_config','amplitude_sdk','phase_sdk','phase_lut','phase_LUT_SHA256','gain','wait_ms','discard_frames','phase_transform','orientation','response_lut','response_lut_SHA256'):
         assert hardware[key]==original[key],('Per-layer exposure may not change other hardware/encoding',key)
     assert 0<hardware['exposure_us']<=80005 and hardware['gain']==1
@@ -159,9 +176,10 @@ def validate_capture_policy(path,hardware,sequence):
     cfg=read(path)
     assert cfg['policy']=='shared_fixed_exposure_record_only' and cfg['depths']==[4,6]
     assert cfg['calibrate_each_stage'] is False and cfg['brightness_threshold_action']==cfg['saturation_threshold_action']=='record_only'
-    assert cfg['network_background_subtraction'] is False and cfg['base_admission_SHA256']==HARDWARE
+    assert cfg['network_background_subtraction'] is False and cfg['base_admission_SHA256']==session_hardware_digest(sequence)
+    if 'coordinates_SHA256' in cfg:assert cfg['coordinates_SHA256']==hardware['coordinates_SHA256']
     source=Path(sequence)/cfg['source_hardware'];assert sha(source)==cfg['source_hardware_SHA256']
-    original=validate_stage_hardware(source,sequence)
+    original=validate_stage_hardware(source,cfg.get('source_sequence',sequence))
     assert original['quality_mode']=='same_phase_contrast' and original['exposure_us']==cfg['exposure_us']==hardware['exposure_us']==60006.
     assert original['gain']==cfg['gain']==hardware['gain']==1.
     return cfg
@@ -177,16 +195,16 @@ def signal_flags(row,hardware):
 def prepare_fixed_hardware(a):
     """Bind one admitted shared exposure to new PT/phase; no camera or new calibration."""
     assert a.capture_policy and not a.out.exists() and sha(a.checkpoint)==a.digest
-    base=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(base)==HARDWARE
+    base_digest=session_hardware_digest(a.sequence);base=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(base)==base_digest
     hardware=read(base);cfg=read(a.capture_policy);hardware['exposure_us']=cfg['exposure_us'];validate_capture_policy(a.capture_policy,hardware,a.sequence)
     data,dm=data_for(a.sequence);session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(a.stage)
-    previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
+    previous,identities=fields_for(session,prefix,data,dm,base_digest) if prefix else ({},{})
     model,_=model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');x,n,end=padded(data,'train',0);packet={}
     def collect(stage,amplitude,phase,ids):
         assert stage==a.stage;packet['phase']=phase.copy();return np.zeros((n,478,478),np.uint8)
     layer_forward(model,x,data['train'][2][:end],a.stage,{k:np.asarray(v['train'][:end]).copy() for k,v in previous.items()},collect)
     a.out.mkdir(parents=True);phase=a.out/'model_phase.bmp';Image.fromarray(phase_native(packet['phase'])).save(phase)
-    hardware.update(base_admission_SHA256=HARDWARE,quality_mode='shared_fixed_record_only',PT_SHA256=a.digest,stage=a.stage,data_SHA256=dm['sha256'],phase_SHA256=sha(phase),probe_indices=[],network_background_subtraction=False,capture_policy=str(a.capture_policy.resolve()),capture_policy_SHA256=sha(a.capture_policy),shared_source_hardware_SHA256=cfg['source_hardware_SHA256'])
+    hardware.update(base_admission_SHA256=base_digest,quality_mode='shared_fixed_record_only',PT_SHA256=a.digest,stage=a.stage,data_SHA256=dm['sha256'],phase_SHA256=sha(phase),probe_indices=[],network_background_subtraction=False,capture_policy=str(a.capture_policy.resolve()),capture_policy_SHA256=sha(a.capture_policy),shared_source_hardware_SHA256=cfg['source_hardware_SHA256'])
     save(a.out/'hardware.json',hardware);save(a.out/'report.json',dict(prepared=True,not_new_calibration=True,SDK_opened=False,source_git=git_head(),source_SHA256=sha(__file__),PT_SHA256=a.digest,phase_SHA256=sha(phase),hardware_SHA256=sha(a.out/'hardware.json'),prefix_SHA256=identities,shared_exposure_us=cfg['exposure_us'],signal_thresholds_record_only=True))
     validate_stage_hardware(a.out/'hardware.json',a.sequence)
 
@@ -348,18 +366,38 @@ def same_connection_replug_check(bench,out,hardware,original,warp):
     return q
 
 
+def shared_geometry_check(bench,folder,hardware,warp):
+    """Two known patterns once per geometry, same open camera as full router capture."""
+    import cv2
+    assert not folder.exists();folder.mkdir(parents=True)
+    phase=folder/'flat_phase.bmp';Image.fromarray(phase_native(np.zeros((478,478),np.uint8))).save(phase);bench.stage(phase)
+    marker=np.full((478,478),6,np.uint8);marker[35:215,35:215]=52;marker[35:215,263:443]=22;marker[263:443,35:215]=37;marker[290:390,290:390]=64
+    drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8);rows=[];images=[]
+    for name,gray in (('marker',marker),('toggle',np.fliplr(marker).copy())):
+        path=folder/(name+'.bmp');Image.fromarray(native(drive[gray],'amplitude')).save(path);raw,meta=bench.capture(path)
+        crop=cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0);images.append(crop)
+        rawpath=folder/(name+'_raw.png');croppath=folder/(name+'_crop.png');Image.fromarray(raw).save(rawpath,compress_level=1);Image.fromarray(crop).save(croppath,compress_level=1)
+        rows.append(dict(name=name,raw_SHA256=sha(rawpath),crop_SHA256=sha(croppath),meta=meta,p99=float(np.percentile(crop,99)),saturation_fraction=float((crop==255).mean())))
+    scores={k:correlation(v,marker.astype(float)**2) for k,v in variants(images[0]).items()};rank=sorted(scores,key=scores.get,reverse=True)
+    current=orient(images[1],hardware['orientation']);new=correlation(current,np.fliplr(marker).astype(float)**2);stale=correlation(current,marker.astype(float)**2)
+    passed=rank[0]==hardware['orientation'] and scores[rank[0]]>=.4 and scores[rank[0]]-scores[rank[1]]>=.05 and new>=.4 and new>stale+.1
+    q=dict(passed=passed,orientation=hardware['orientation'],orientation_scores=scores,toggle_current_PCC=new,toggle_previous_PCC=stale,rows=rows,coordinates_SHA256=hardware['coordinates_SHA256'],settings=bench.settings.copy(),same_camera_connection=True,camera_reopened=False,TRAIN_TEST_used=False,exposure_search=False,LUT_refitted=False,brightness_and_saturation_record_only=True)
+    save(folder/'report.json',q);assert passed,'New geometry direction/timing mismatch; preserve check frames, no automatic adjustment'
+    return q
+
+
 @torch.no_grad()
 def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router=False):
     import cv2
-    session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(stage)
-    previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
+    base_digest=session_hardware_digest(a.sequence);session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(stage)
+    previous,identities=fields_for(session,prefix,data,dm,base_digest) if prefix else ({},{})
     ancestry=[]
     if prefix:
         prior_stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1]
         parent_name=getattr(a,'parent_fit',None) or prior_stage
         ancestry=validate_fit_ancestry(session,parent_name,digest,prefix,read(session/'capture'/prior_stage/'report.json')['PT_SHA256'],identities,dm['sha256'])
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
-    out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else HARDWARE
+    out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else base_digest
     if out.exists() and getattr(a,'archive_empty_start',False):
         assert a.depth==4 and stage=='2' and (getattr(a,'recheck_before_capture',False) or getattr(a,'capture_policy',None)) and not LOCK.exists()
         failure=read(out/'failure.json');prior_contract=read(out/'contract.json')
@@ -383,14 +421,14 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         out.rename(archived)
     assert not out.exists();out.mkdir(parents=True)
     record_only=bool(getattr(a,'capture_policy',None))
-    if record_only:validate_capture_policy(a.capture_policy,hardware,a.sequence)
-    else:assert hardware.get('quality_mode')!='shared_fixed_record_only','Shared settings require the explicit published record-only policy'
-    probe_directory=Path(hardware['probe_directory']) if hardware_digest!=HARDWARE and hardware.get('probe_directory') else None
+    capture_policy=validate_capture_policy(a.capture_policy,hardware,a.sequence) if record_only else {}
+    if not record_only:assert hardware.get('quality_mode')!='shared_fixed_record_only','Shared settings require the explicit published record-only policy'
+    probe_directory=Path(hardware['probe_directory']) if hardware_digest!=base_digest and hardware.get('probe_directory') else None
     quality_background=None
     if hardware.get('quality_mode')=='same_phase_contrast':
         b=hardware['quality_background'];assert sha(b['path'])==b['SHA256'] and hardware['network_background_subtraction'] is False
         quality_background=np.load(b['path'],allow_pickle=False);assert quality_background.shape==(478,478) and quality_background.dtype==np.float32
-    if probe_directory is not None:
+    if hardware_digest!=base_digest:
         assert hardware['PT_SHA256']==digest and hardware['data_SHA256']==dm['sha256'] and hardware['stage']==stage and not pilot
         shutil.copy2(a.hardware_manifest,out/'hardware.json');assert sha(out/'hardware.json')==hardware_digest
     warp=cv2.getPerspectiveTransform(np.float32(corners(Path(hardware['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]));phasepath=out/'phase.bmp';phase_pixels=None;frames=0;start=time.perf_counter();arrays={};elapsed=[]
@@ -416,11 +454,18 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),stage=stage,session=str(session),camera='DVP',pilot=pilot)))
     try:
         with Bench(hardware,out) as bench:
+            if capture_policy.get('geometry_check_once'):
+                check=a.sequence/'calibration/geometry_once'
+                if (check/'report.json').exists():
+                    proof=read(check/'report.json');assert proof['passed'] and proof['coordinates_SHA256']==hardware['coordinates_SHA256']
+                else:
+                    assert a.depth==4 and stage=='router' and not pilot
+                    shared_geometry_check(bench,check,hardware,warp)
             if resume_router:revalidate_replug(bench,out,hardware,warp)
             if getattr(a,'recheck_before_capture',False):
                 assert not record_only,'User shared policy skips additional optical recalibration; transport checks remain in Bench'
-                assert not pilot and not resume_router and hardware_digest!=HARDWARE and hardware.get('quality_mode')=='same_phase_contrast'
-                originalpath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(originalpath)==HARDWARE
+                assert not pilot and not resume_router and hardware_digest!=base_digest and hardware.get('quality_mode')=='same_phase_contrast'
+                originalpath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(originalpath)==base_digest
                 replug_check=same_connection_replug_check(bench,out,hardware,read(originalpath),warp)
             for role in ('train',) if pilot else ('train','test'):
                 images,y,ids=data[role];n_total=24 if pilot else len(y);folder=out/role;folder.mkdir();ccd=np.lib.format.open_memmap(folder/'ccd.npy',mode='w+',dtype=np.uint8,shape=(n_total,478,478));last_end=0
@@ -517,7 +562,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
 
 
 def fitting_model(a,data,dm,checkpoint,digest,prefix):
-    session=a.sequence/f'L{a.depth}';model,transfer=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');fields,identities=fields_for(session,prefix,data,dm,HARDWARE);return model,transfer,fields,identities
+    session=a.sequence/f'L{a.depth}';model,transfer=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');fields,identities=fields_for(session,prefix,data,dm,session_hardware_digest(a.sequence));return model,transfer,fields,identities
 
 
 def fit(a,data,dm,checkpoint,digest,prefix,cfg):
@@ -530,7 +575,7 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
         gpu,pid,exe=row.split(',',2);pid=int(pid)
         if gpu.strip()==cfg['GPU_UUID']:assert pid in own or names.get(pid,Path(exe.strip()).name.lower()) in cfg['desktop_graphics_process_allowlist'],('Foreign GPU owner',pid,names.get(pid,exe))
     torch.cuda.set_per_process_memory_fraction(.65,0);torch.manual_seed(cfg['seed']);model,transfer,fields,identities=fitting_model(a,data,dm,checkpoint,digest,prefix);original=state_cpu(model);allowed=allowed_keys(model,prefix);baseline,p=assess(model,data,fields,'test');best,bestloss=baseline['correct'],baseline['nll'];selected=0;target=math.ceil(cfg['models'][str(a.depth)]['simulation_correct']-411*cfg['gap_pp']/100)
-    target=cfg.get('target_correct',target);budget=cfg['final_fit'] if prefix==a.depth+1 else cfg['middle_fit'];protocol=dict(parent_PT_SHA256=digest,depth=a.depth,prefix=prefix,allowed_keys=sorted(allowed),prefix_SHA256=identities,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,baseline_TEST=baseline,target_correct=target,config=cfg,source_git=git_head(),source_SHA256=sha(__file__),teacher_scope='Frozen parent predictions on TRAIN only; no TEST teacher' if cfg.get('teacher_weight',0) else None)
+    target=cfg.get('target_correct',target);budget=cfg['final_fit'] if prefix==a.depth+1 else cfg['middle_fit'];protocol=dict(parent_PT_SHA256=digest,depth=a.depth,prefix=prefix,allowed_keys=sorted(allowed),prefix_SHA256=identities,data_SHA256=dm['sha256'],hardware_SHA256=session_hardware_digest(a.sequence),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,baseline_TEST=baseline,target_correct=target,config=cfg,source_git=git_head(),source_SHA256=sha(__file__),teacher_scope='Frozen parent predictions on TRAIN only; no TEST teacher' if cfg.get('teacher_weight',0) else None)
     protocol['prefix_hardware_SHA256']={stage:read(session/'capture'/stage/'report.json')['hardware_SHA256'] for stage in fields}
     save(out/'protocol.json',protocol);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=p)
     def snapshot(name,epoch):
@@ -672,7 +717,7 @@ if __name__=='__main__':
                 with Bench(hardware,a.out) as bench:revalidate_replug(bench,a.out,hardware,warp)
             finally:LOCK.unlink()
         elif a.mode=='capture':
-            cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);data,dm=data_for(a.sequence);hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==HARDWARE;hardware=read(hardwarepath)
+            cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);data,dm=data_for(a.sequence);hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==session_hardware_digest(a.sequence);hardware=read(hardwarepath)
             if a.hardware_manifest:hardware=validate_stage_hardware(a.hardware_manifest,a.sequence)
             assert sha(hardware['response_lut'])==hardware['response_lut_SHA256'] and sha(hardware['phase_lut'])==hardware['phase_LUT_SHA256']
             assert sha(a.checkpoint)==a.digest;acquire(a,a.stage,a.checkpoint,a.digest,data,dm,hardware,pilot=a.pilot,resume_router=a.resume_router)

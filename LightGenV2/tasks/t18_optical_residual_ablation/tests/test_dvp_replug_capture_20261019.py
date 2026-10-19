@@ -42,7 +42,7 @@ class ReplugCaptureTests(unittest.TestCase):
     def test_shared_policy_validates_existing_calibration_without_camera(self):
         cfg=self.read(HERE/'lab_caltech20_DVP_shared_capture_profile_20261019.json');source=self.root/cfg['source_hardware'];source.parent.mkdir(parents=True);source.write_bytes(b'verified admission');cfg['source_hardware_SHA256']=self.sha(source)
         profile=self.root/'profile.json';self.save(profile,cfg)
-        scope=dict(read=self.read,Path=Path,sha=self.sha,HARDWARE=cfg['base_admission_SHA256'],validate_stage_hardware=lambda *args:dict(quality_mode='same_phase_contrast',exposure_us=60006.,gain=1.))
+        scope=dict(read=self.read,Path=Path,sha=self.sha,HARDWARE=cfg['base_admission_SHA256'],session_hardware_digest=lambda sequence:cfg['base_admission_SHA256'],validate_stage_hardware=lambda *args:dict(quality_mode='same_phase_contrast',exposure_us=60006.,gain=1.))
         node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='validate_capture_policy');exec(compile(ast.Module(body=[node],type_ignores=[]),'policy_fixture','exec'),scope)
         hardware=dict(exposure_us=60006.,gain=1.);self.assertEqual(scope['validate_capture_policy'](profile,hardware,self.root),cfg)
         for key,value in [('calibrate_each_stage',True),('exposure_us',5000.5),('brightness_threshold_action','stop')]:
@@ -53,6 +53,52 @@ class ReplugCaptureTests(unittest.TestCase):
         node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='prepare_fixed_hardware');calls={ast.unparse(n.func) for n in ast.walk(node) if isinstance(n,ast.Call)}
         self.assertFalse(calls&{'Bench','Camera','calibration','revalidate_replug'})
         text=ast.unparse(node);self.assertIn('phase_SHA256=sha(phase)',text);self.assertIn('probe_indices=[]',text)
+
+    def geometry_identity(self):
+        coordinate=self.root/'coordinates.txt';coordinate.write_bytes(b'new geometry')
+        previous=dict(coordinates='old.txt',coordinates_SHA256='old',exposure_us=5000.5,gain=1.,orientation='flip_v',response_lut='frozen LUT')
+        old=self.root/'original_admission.json';self.save(old,previous);base=self.root/'calibration/admission/admitted_hardware.json';base.parent.mkdir(parents=True)
+        current=dict(previous,coordinates=str(coordinate),coordinates_SHA256=self.sha(coordinate),exposure_us=60006.);self.save(base,current)
+        identity=self.root/'hardware_identity.json';record=dict(schema='fresh_DVP_geometry_v1',source_admission=str(old),source_admission_SHA256=self.sha(old),hardware_SHA256=self.sha(base),coordinates_SHA256=self.sha(coordinate),reuse_previous_CCD=False,fresh_layerwise_capture=True);self.save(identity,record)
+        scope=dict(Path=Path,read=self.read,sha=self.sha,HARDWARE=self.sha(old));node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='session_hardware_digest');exec(compile(ast.Module(body=[node],type_ignores=[]),'identity_fixture','exec'),scope)
+        return scope['session_hardware_digest'],base,coordinate,identity,record
+
+    def test_fresh_coordinate_identity_explicit_and_immutable(self):
+        fn,base,coordinate,identity,record=self.geometry_identity();self.assertEqual(fn(self.root),self.sha(base));coordinate.write_bytes(b'changed later')
+        with self.assertRaises(AssertionError):fn(self.root)
+
+    def test_new_geometry_cannot_adopt_old_CCD(self):
+        fn,base,coordinate,identity,record=self.geometry_identity();record['reuse_previous_CCD']=True;self.save(identity,record)
+        with self.assertRaises(AssertionError):fn(self.root)
+
+    def test_geometry_identity_cannot_change_orientation_or_LUT(self):
+        fn,base,coordinate,identity,record=self.geometry_identity();current=self.read(base);current['orientation']='identity';self.save(base,current);record['hardware_SHA256']=self.sha(base);self.save(identity,record)
+        with self.assertRaises(AssertionError):fn(self.root)
+
+    def test_geometry_identity_cannot_hide_exposure_search(self):
+        fn,base,coordinate,identity,record=self.geometry_identity();current=self.read(base);current['exposure_us']=80000.;self.save(base,current);record['hardware_SHA256']=self.sha(base);self.save(identity,record)
+        with self.assertRaises(AssertionError):fn(self.root)
+
+    def geometry_check_fixture(self,actual_orientation='flip_v'):
+        lut=self.root/'lut.json';self.save(lut,dict(drive=list(range(256))));calls=[]
+        class FakeBench:
+            settings=dict(exposure_us=60006.,gain=1.)
+            def stage(self,path):calls.append(('stage',str(path)))
+            def capture(self,path):
+                calls.append(('capture',str(path)));gray=np.asarray(Image.open(path));raw=np.flipud(gray).copy() if actual_orientation=='flip_v' else gray.copy()
+                return raw,dict(frame_id=len(calls),exposure_us=60006.,gain=1.)
+        scope=dict(np=np,Path=Path,Image=Image,sha=self.sha,read=self.read,save=self.save,native=lambda x,k:x,phase_native=lambda x:x)
+        nodes=[n for n in ast.parse((HERE/'lab_caltech20_dvp_20261019.py').read_text()).body if isinstance(n,ast.FunctionDef) and n.name in ('variants','orient','correlation')];exec(compile(ast.Module(body=nodes,type_ignores=[]),'direction_fixture','exec'),scope)
+        node=next(n for n in self.tree.body if isinstance(n,ast.FunctionDef) and n.name=='shared_geometry_check');exec(compile(ast.Module(body=[node],type_ignores=[]),'geometry_fixture','exec'),scope)
+        return scope['shared_geometry_check'],FakeBench(),dict(response_lut=str(lut),orientation='flip_v',coordinates_SHA256='new_coordinates'),calls
+
+    def test_two_geometry_patterns_same_connection_no_exposure_search(self):
+        fn,bench,hardware,calls=self.geometry_check_fixture();r=fn(bench,self.root/'geometry',hardware,np.eye(3,dtype=np.float32));self.assertTrue(r['passed']);self.assertFalse(r['camera_reopened']);self.assertFalse(r['exposure_search']);self.assertEqual(len([c for c in calls if c[0]=='capture']),2)
+
+    def test_wrong_geometry_direction_fails_with_raw_evidence(self):
+        fn,bench,hardware,calls=self.geometry_check_fixture(actual_orientation='identity')
+        with self.assertRaisesRegex(AssertionError,'direction/timing'):fn(bench,self.root/'geometry',hardware,np.eye(3,dtype=np.float32))
+        self.assertFalse(self.read(self.root/'geometry/report.json')['passed']);self.assertEqual(len(list((self.root/'geometry').glob('*_raw.png'))),2)
 
     def fixture(self,level=55,noise=0,failed_known=False,wrong_phase=False):
         phase=self.root/'model_phase.bmp';phase.write_bytes(b'exact frozen phase')

@@ -2,6 +2,32 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### New user geometry20261020: camera normal, fresh coherent L4 -> L6 capture
+
+User confirmed camera recovered and replaced coordinates with20261020.txt.
+Read-only Windows PID_D003 normal/SDKcount1, no extra camera open. New file SHA
+b8edf11cd310b0120dce9547c877b1dad79e98b71bb770ce0ed95c0d97da094d,
+TL[980,161]/TR[4316,174]/BL[959,3468]/BR[4319,3482], differs from20261019.
+Thus old measured router/E1/G1 cannot be combined with new-geometry suffix.
+All old data/selected314PT/failures remain unchanged. Fresh run
+`caltech20_residual_DVP_46_20261020` starts original frozen L4 then L6 checkpoints,
+same SHA-verified TRAIN1600(80/class fixed augmented)/TEST411/noVALID, no oldCCD.
+This is a new hardware run, NOT a new source project/worktree or branch.
+
+Immutable new-coordinate snapshot plus original settings/LUT provenance produce
+basehardwareSHA0c6b75372fb5d2fc51f0cc2ae14eee3b5babac2cb8b62fc8709e9ac3a8417982.
+Only coordinates/path and shared60006us differ from original base. Published
+`lab_caltech20_DVP_geometry20261020_capture_profile.json` freezes settings, records
+brightness/saturation without threshold stops, and requires one two-pattern
+direction/current-frame check inside the SAME first router camera connection.
+No exposure search, amplitude LUT refit or linear-phase calibration claim.
+An explicit geometry-session identity rejects changed orientation/LUT/settings
+or old-CCD reuse; models/masks/encoding remain original, not a runtime patch.
+Every layer collects TRAIN then TEST continuously and releases SDK before
+bounded original suffix-mask/electronic/head tuning and strict best/last review.
+TEST-informed error emphasis/selection is development, never TEST gradient.
+No schedule, automatic retry or nores/L2 operation.
+
 ### Latest user: one shared calibration, brightness/saturation record only
 
 User explicitly superseded per-layer exposure search and threshold stops:
