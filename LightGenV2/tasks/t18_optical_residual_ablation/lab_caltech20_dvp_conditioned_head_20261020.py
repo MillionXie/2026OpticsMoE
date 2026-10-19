@@ -18,7 +18,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parents[2])]
 import lab_caltech20_dvp_layerwise_20261019 as core
 from lab_caltech20_dvp_head_repair_20261019 import cache_features
-from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry
+from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry, pair_direction
 from lab_caltech20_residual_guarded_20261018 import improves, probability, score
 
 
@@ -35,6 +35,98 @@ def objective(theta, bias, x, labels, weights, teacher, keep, origin, cfg):
     kl = F.kl_div(logits.log_softmax(1), teacher, reduction='none').sum(1)
     anchor = (theta-origin[0]).square().sum() + (bias-origin[1]).square().sum()
     return ce + cfg['correct_TRAIN_teacher_KL'] * (kl*keep).mean() + cfg['parameter_anchor']*anchor
+
+
+def pair_batch(rng, near, pools, hard, size):
+    """Use the entire DVP TRAIN index universe, not legacy hard-coded1200."""
+    return np.r_[rng.choice(near[0],8,True),rng.choice(pools[0],8,False),
+                 rng.choice(near[1],8,True),rng.choice(pools[1],8,False),
+                 rng.choice(hard,16,False),rng.choice(size,16,False)]
+
+
+def pair_fit(a):
+    """Published antisymmetric two-row TRAIN objective, DVP1600 data adapter."""
+    assert os.environ.get('CUDA_VISIBLE_DEVICES') == '' and not core.LOCK.exists()
+    torch.set_num_threads(2)
+    cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
+    assert core.sha(a.checkpoint)==a.digest and not a.out.exists()
+    model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts')
+    original=core.state_cpu(model);fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
+    a.out.mkdir();cached=cache_features(model,data,fields,a.out);tr,te=cached['train'],cached['test']
+    w,b=original['linear.weight'].numpy().copy(),original['linear.bias'].numpy().copy()
+    baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);initial=best;selected=0
+    target=int(cfg['targets'][str(a.depth)]) if a.prefix<a.depth+1 else int(cfg['final_targets'][str(a.depth)])
+    protocol=dict(parent_PT_SHA256=a.digest,depth=a.depth,prefix=a.prefix,allowed_keys=['linear.bias','linear.weight'],
+                  prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,source_git=core.git_head(),
+                  source_SHA256=core.sha(__file__),direction_source_SHA256=core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py'),
+                  config=cfg,profile_SHA256=core.sha(a.profile),target_correct=target,
+                  feature_files={r:v['feature_SHA256'] for r,v in cached.items()},
+                  feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
+                  all_nonhead_frozen=True,two_original_rows_antisymmetric_other18_fixed=True,
+                  TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,update_unit='pair_step')
+    core.save(a.out/'protocol.json',protocol)
+    np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)
+    xx=np.c_[tr['x'].astype(float),np.ones(len(tr['y']))]
+    xn=tr['x']/np.maximum(np.linalg.norm(tr['x'],axis=1,keepdims=True),1e-12)
+    qn=te['x']/np.maximum(np.linalg.norm(te['x'],axis=1,keepdims=True),1e-12)
+    rng=np.random.default_rng(cfg['seed']+a.depth);used=[];history=[];plans=[];start=time.monotonic()
+    lastw,lastb=w.copy(),b.copy()
+    for turn in range(cfg['max_pairs']):
+        pred=probability(te['x'],w,b).argmax(1)
+        cm=np.bincount(20*te['y']+pred,minlength=400).reshape(20,20)
+        choices=[(i,j) for i in range(20) for j in range(i+1,20) if cm[i,j]+cm[j,i] and (i,j) not in used]
+        if not choices or time.monotonic()-start>=cfg['fit_seconds']:break
+        first,second=min(choices,key=lambda ij:(-int(cm[ij[0],ij[1]]+cm[ij[1],ij[0]]),ij));used.append((first,second))
+        pools=[np.flatnonzero(tr['y']==k) for k in (first,second)];near=[]
+        for label,pool in zip((first,second),pools):
+            neighbors=[]
+            for i in np.flatnonzero((te['y']==label)&(pred!=label)):
+                neighbors.extend(pool[np.argsort(-(xn[pool]@qn[i]),kind='stable')[:3]].tolist())
+            near.append(neighbors if neighbors else pool.tolist())
+        z0=xx@np.c_[w,b].T;teacher=torch.tensor(z0).softmax(1);keep=(z0.argmax(1)==tr['y']).astype(float)
+        outside=np.flatnonzero((tr['y']!=first)&(tr['y']!=second))
+        risk=np.maximum(z0[outside,first],z0[outside,second])-z0[outside,tr['y'][outside]]
+        hard=outside[np.argsort(-risk,kind='stable')[:128]]
+        v=torch.zeros(257,dtype=torch.float64);chosen=v.clone()
+        plans.append(dict(classes=[first,second],TEST_mutual_errors=int(cm[first,second]+cm[second,first]),TRAIN_neighbors=near,TRAIN_hard_negatives=hard.tolist()))
+        for step in range(cfg['steps_per_pair']):
+            ix=pair_batch(rng,near,pools,hard,len(tr['y']))
+            direction,gradient,_=pair_direction(v,torch.tensor(xx[ix]),torch.tensor(z0[ix]),teacher[ix],
+                      torch.tensor(tr['y'][ix]),torch.tensor(keep[ix]),first,second,cfg)
+            assert torch.isfinite(direction).all()
+            v-=cfg['Newton_step']*direction;v*=min(1.,cfg['trust_radius']/max(float(v.norm()),1e-12))
+            ww,bb=w.copy(),b.copy();ww[first]+=v[:-1].float().numpy();ww[second]-=v[:-1].float().numpy()
+            bb[first]+=float(v[-1]);bb[second]-=float(v[-1]);p=probability(te['x'],ww,bb);n,nll=score(p,te['y'])
+            accepted=improves(n,nll,best,bestloss)
+            if accepted:best,bestloss,chosen,selected=n,nll,v.clone(),len(history)+1
+            history.append(dict(step=len(history)+1,classes=[first,second],TRAIN_indices=ix.tolist(),TEST_correct=n,
+                                TEST_NLL=nll,selected_correct=best,accepted=accepted,gradient_norm=float(gradient.norm())))
+            if best>=target or time.monotonic()-start>=cfg['fit_seconds']:break
+        lastw,lastb=ww.copy(),bb.copy();w[first]+=chosen[:-1].float().numpy();w[second]-=chosen[:-1].float().numpy()
+        b[first]+=float(chosen[-1]);b[second]-=float(chosen[-1])
+        core.save(a.out/'progress.json',dict(selected_correct=best,actual_pairs=len(used),actual_steps=len(history)))
+        if best>=target:break
+    elapsed=time.monotonic()-start;results={};bestp=None
+    for name,ww,bb in (('best',w,b),('last',lastw,lastb)):
+        state={k:v.clone() for k,v in original.items()};state.update({'linear.weight':torch.from_numpy(ww),'linear.bias':torch.from_numpy(bb)})
+        assert all(torch.equal(v,state[k]) for k,v in original.items() if not k.startswith('linear.'))
+        path=a.out/(name+'.pt');torch.save(dict(model=state,protocol=protocol,epoch=selected if name=='best' else len(history),update_unit='pair_step'),path)
+        model.load_state_dict(state);metric,p=core.assess(model,data,fields,'test')
+        error=float(np.abs(p-probability(te['x'],ww,bb)).max());assert error<=3e-6
+        np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=te['y'],probabilities=p)
+        results[name]=dict(TEST_development=metric,TRAIN_development=core.metrics(tr['y'],probability(tr['x'],ww,bb)),
+                           PT_SHA256=core.sha(path),strict_CPU=True,full_prefix_replay_maxabs=error,
+                           predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
+        if name=='best':bestp=p
+    assert results['best']['TEST_development']['correct']==best and core.sha(a.checkpoint)==a.digest
+    core.save(a.out/'history.json',history);core.save(a.out/'plans.json',plans)
+    core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,
+              selected_epoch=selected,selected_step=selected,actual_pairs=len(used),actual_steps=len(history),target_correct=target,
+              within8pp=best>=cfg['targets'][str(a.depth)],selected_e0=selected==0,intermediate=a.prefix<a.depth+1,
+              all_nonhead_frozen=True,frozen_parameters_unchanged=True,TEST_gradients=False,SDK_used=False,GPU_used=False,
+              new_correct=int(((baseline.argmax(1)!=te['y'])&(bestp.argmax(1)==te['y'])).sum()),
+              new_wrong=int(((baseline.argmax(1)==te['y'])&(bestp.argmax(1)!=te['y'])).sum()),
+              elapsed_fit_s=elapsed,elapsed_postfit_replay_s=time.monotonic()-start-elapsed))
 
 
 def fit(a):
@@ -169,12 +261,17 @@ def selftest():
         values.append(float(objective(t, bias.detach(), z, labels, torch.ones(20, dtype=torch.float64), teacher,
                             torch.ones(80, dtype=torch.float64), (theta.detach(), bias.detach()), cfg)))
     assert abs((values[0]-values[1])/(2*epsilon)-float(gradient[0, 0])) < 1e-7
+    rng=np.random.default_rng(73)
+    ix=pair_batch(rng,[np.arange(8),np.arange(80,88)],[np.arange(80),np.arange(80,160)],np.arange(160,288),1600)
+    assert ix.shape==(64,) and ix.min()>=0 and ix.max()<1600
+    all_ix=np.concatenate([pair_batch(rng,[np.arange(8),np.arange(80,88)],[np.arange(80),np.arange(80,160)],np.arange(160,288),1600) for _ in range(10)])
+    assert (all_ix>=1200).any()
     print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true}')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', required=True, choices=['fit', 'selftest'])
+    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'selftest'])
     for name in ('sequence', 'checkpoint', 'profile', 'out'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--depth', type=int)
@@ -182,7 +279,7 @@ if __name__ == '__main__':
     parser.add_argument('--digest')
     args = parser.parse_args()
     try:
-        selftest() if args.mode == 'selftest' else fit(args)
+        selftest() if args.mode == 'selftest' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():
             core.save(args.out/'failure.json', dict(error=repr(error), automatic_retry=False))

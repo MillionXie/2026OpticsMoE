@@ -33,6 +33,16 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(cfg['targets'], {'4':314,'6':322})
         self.assertEqual(cfg['final_targets'], {'4':342,'6':350})
 
+    def test_pair_uses_full_TRAIN_and_existing_direction(self):
+        text=SOURCE.read_text()
+        self.assertIn('pair_batch(rng,near,pools,hard,len(tr[\'y\']))', text)
+        self.assertIn('TRAIN_spectrum_geometry, pair_direction', text)
+        self.assertIn('two_original_rows_antisymmetric_other18_fixed=True', text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_pair_head_profile_20261020.json').read_text())
+        self.assertEqual(cfg['objective'], 'huber_pair')
+        self.assertLessEqual(cfg['max_pairs'],20)
+        self.assertLessEqual(cfg['fit_seconds'],120)
+
 
 if __name__ == '__main__':
     unittest.main()

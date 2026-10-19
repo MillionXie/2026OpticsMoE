@@ -4,6 +4,19 @@
 
 ### G1 optimization diagnosis: bounded TRAIN-conditioned original-head fit
 
+The original head adapter also admits one bounded coupled-confusion comparison
+(`--mode pair-fit`, named DVP pair profile). Single-row passes plateaued; mutual
+class errors remain, so this separately tested method moves two existing rows
+antisymmetrically while holding the other18 fixed. It imports the published
+pair Huber direction/protection coefficients, not a new inference component.
+Unlike the legacy1200 sampler, the DVP adapter samples the full1600TRAIN universe.
+At most20 unique confused pairs/128steps each/120fit seconds, then stop; no
+automatic repeated segment, radius/seed scan or claim that it already improves.
+TEST confusion and features only select same-class TRAIN neighbors and PTs;
+all derivatives use TRAIN. Original full-prefix native best/last replay,
+nonhead tensor identity and old incumbent protection remain mandatory. This
+readout comparison does not affect the separate running suffix-mask trial.
+
 The conditioned-head comparison finished240steps; TRAIN accuracy approaches1
 but last TEST235/411, so selectedE0 remains302. This demonstrates capacity to
 fit TRAIN without development improvement; do not call it a successful update.
