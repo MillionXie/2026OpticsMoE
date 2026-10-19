@@ -1,0 +1,14 @@
+{
+  "quality_mode": "same_phase_contrast",
+  "TRAIN_probe_samples": 40,
+  "exposure_probe_us": [5000, 10000, 20000, 40000, 80000],
+  "probe_min_p99": 25,
+  "probe_max_saturation": 0.01,
+  "background_max_p99": 64,
+  "probe_min_contrast_p99": 25,
+  "probe_min_SNR": 5,
+  "capture_min_contrast_p99": 15,
+  "linearity_relative_tolerance": 0.15,
+  "linearity_absolute_gray": 2,
+  "scope": "Same admitted contrast/noise criteria for remaining NEW L4/L6 layers, including the initially brighter router: fixed 5/10/20/40/80ms ladder, first passing exposure only, TRAIN40 two/class. No TEST exposure search, raw-image correction, new LUT/geometry, automatic retry or relaxation. Existing completed stages are never reshot or relabelled."
+}

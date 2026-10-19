@@ -2,6 +2,29 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Active follow-through and time arrangement (latest explicit user request)
+
+User requests continuous active outcome review, no scheduled monitor, performance
+first but avoid unnecessary idle time before L6. Only this residual run is owned
+here; no-residual and frozen L2 remain untouched. Latest100 new L4stage0 captures
+median946ms:519ms camera/display/wait,427ms external encoding/PNG/hash overhead;
+not a stuck PID or repeated full reshoot. Preserve original240ms/6discard timing.
+Finite L6 original-model/full-data CPU gate runs below-normal priority/2threads
+concurrently, no SDK/GPU, to avoid postponing preparation until L4 completes.
+
+Remaining stages use named profiles `lab_caltech20_DVP_remaining_contrast_profile_20261019.json`
+and `lab_caltech20_DVP_remaining_adapt_profile_20261019.json`. Same admitted
+contrast/noise criteria, broader fixed5/10/20/40/80ms ladder includes initially
+brighter router; FIRST passing only, no TEST-score exposure selection. Each
+new layer follows exact selected parent/phase SHA, full1600TRAIN then411TEST,
+then bounded original suffix fit/strict CPU/frozen audit before next new CCD.
+TRAIN-only parent teacher and measured-upstream freeze remain. At least2epochs,
+stop on <=8pp intermediate target or bounded20epochs/900fitsec; final budget
+120epochs/1200fitsec. Inspect actual confusion/loss/results and intervene with
+evidence, not an unattended generic loop. Target not guaranteed. TEST-informed
+development remains explicitly non-independent. No new runtime inference graph,
+source patch, sampling reduction, new project/worktree or recurring job.
+
 ### Same-phase contrast admission PASSED; full stage0 capture actually running
 
 New contrast protocol completed at fixed second candidate40004us/gain1.

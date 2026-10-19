@@ -1,0 +1,21 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_layerwise_adapt_20261019",
+    "phase_lr": 0.0003,
+    "electronic_lr": 0.0005,
+    "alpha_lr": 0.0001,
+    "head_lr": 0.0003,
+    "label_smoothing": 0.02,
+    "confusion_emphasis": 0.25,
+    "teacher_weight": 0.15,
+    "teacher_temperature": 2.0,
+    "teacher_simulated_newest_layers": 1,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 20, "seconds": 900},
+    "final_fit": {"epochs": 120, "seconds": 1200}
+  },
+  "scope": "Remaining new-camera L4 then L6 residual stages, after each complete TRAIN1600 then TEST411 capture. Keep every measured optical upstream frozen; train only original post-newest electronics/direct alpha/uncaptured masks/head. TRAIN-only frozen parent teacher simulates newest layer and keeps earlier actual prefix; TEST informs class emphasis/selection, never gradients or teacher. At least two epochs then stop on gap<=8pp or finite epoch/time budget. Review actual losses, confusion, strict CPU saved best/last and frozen SHA before next layer; no scheduler or blind chaining. E0 must be disclosed, no guarantee."
+}

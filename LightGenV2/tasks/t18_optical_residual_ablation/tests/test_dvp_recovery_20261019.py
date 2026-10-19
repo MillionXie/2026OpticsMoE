@@ -98,6 +98,17 @@ class RecoveryTests(unittest.TestCase):
         result=self.scope['contrast_statistics'](crop,background,2)
         self.assertEqual(result,dict(contrast_p99=30,contrast_SNR=15));self.assertTrue((crop==50).all());self.assertTrue((background==20).all())
 
+    def test_remaining_profiles_preserve_admitted_criteria(self):
+        original=read(HERE/'lab_caltech20_DVP_stage_contrast_profile_20261019.json')
+        remaining=read(HERE/'lab_caltech20_DVP_remaining_contrast_profile_20261019.json')
+        for k in original:
+            if k not in ('scope','exposure_probe_us'):self.assertEqual(original[k],remaining[k])
+        self.assertEqual(remaining['exposure_probe_us'],[5000,10000,20000,40000,80000])
+        fit=read(HERE/'lab_caltech20_DVP_remaining_adapt_profile_20261019.json')
+        self.assertEqual(sha(HERE/fit['base_profile']),fit['base_profile_SHA256'])
+        self.assertEqual(fit['overrides']['teacher_simulated_newest_layers'],1)
+        self.assertEqual(fit['overrides']['middle_fit'],dict(epochs=20,seconds=900))
+
     def hardware(self):
         base=self.root/'calibration/admission/admitted_hardware.json';base.parent.mkdir(parents=True)
         keys=('camera_dll','camera_dll_SHA256','coordinates','coordinates_SHA256','sensor_shape','machine_config','amplitude_sdk','phase_sdk','phase_lut','phase_LUT_SHA256','gain','wait_ms','discard_frames','phase_transform','orientation','response_lut','response_lut_SHA256')
