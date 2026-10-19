@@ -2,6 +2,47 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### User approved fixed TRAIN augmentation; fresh80 workflow
+
+User explicitly approved1508 original unique TRAIN+92fixed augmented inputs
+to80/class. Entry `lab_caltech20_dvp_layerwise_20261019.py`, profile
+`lab_caltech20_dvp_layerwise_profile_20261019.json`. Original TRAIN3141 only;
+per-class source order fixed bySHA256 ofseed-tag+ID, cap80, missing slots use
+deterministic integer translations of<=2pixels in150x150 with reflection pad.
+Every source ID/index, dx/dy and resulting pixelSHA is retained. Round-robin
+class order gives20-class coverage at every20samples. Full411TEST is byte
+unchanged; no VALID export or supplementation. No claim of1600 independent
+original images. Data/weights remain runtime assets, never Git.
+
+New L4thenL6 begin at the unchanged FINAL SIMULATION PTs7b0d7f.../eb3d25...,
+not old-camera-adapted masks. Old original compiled references supply canonical
+propagator buffers and independent full TRAIN/TEST same-host bridge gate;
+fixed cached scores346/354 are recorded separately from native CPU counts.
+Last batch zero-padded to8; dummy samples never captured or scored. Each model
+has a separate24TRAIN-only router pilot, then full2011-frame stages, TRAIN1600
+immediately followed byTEST411. L4five=10055, L6seven=14077; full total24132,
+plus48pilot frames. Pilot frames not silently reused as the full dataset.
+
+After EACH layer, freeze captured upstream, optimize only original remaining
+phase masks/electronics/direct-f64-alpha/head. CPU2threads, existing lab4060
+only after rejecting foreign compute users/SDK release. Original architecture
+and bounded amplitude/phase encoding unchanged. Midmax30epochs/900sec,
+finalmax120epochs/1200sec, full epoch boundary; aim<=8pp, carry selected best
+after finite budget even if missed and disclose. All1600TRAIN traversed once
+per epoch. TEST class-error fraction yields fixed-per-epoch TRAIN CE weights
+1+.5*error, plus.03label smoothing; weights recorded. This is expressly
+TEST-informed development/selection, NOT independent generalization or TEST
+gradient. No VALID, new inference layer, exposure tuning from task score,
+periodic PTs, scheduler, automatic restart or new branch/worktree.
+
+Exact best/last strict CPU and frozen-state SHA audits are required before
+advancing. Next capture requires previous fit bestSHA and parent-capture PT
+lineage equality. New-camera per-frame raw/crop/input/phase/PT/data/hardware
+receipts and per-stage full2011ID/crop-array audits retained; darkp99<15 or
+saturation>.15 fails closed, all evidence preserved. Only redundant transient
+BMPs deleted after canonical/LUT/input SHA records. Raw PNG compression1 changes
+storage only, not pixels. Need>=600GiB free before queue. L2/nores untouched.
+
 **Actual known-pattern admission completed,37patterns; SDK released and worker
 exited.** Readback5000.5us/gain1, screen-to-canonical `flip_v`; asymmetric-marker
 PCC.92055 versus next.79833. Four toggles match new pattern(.8945..9211), not
@@ -17,8 +58,8 @@ all raw calibration frames remain on lab PC. Hardware manifestSHA
 
 Original TRAIN3141 SHA38b719... was actually re-read on server: capped80 gives
 1508UNIQUE originals.10classes need92additional transformed TRAIN inputs to
-reach1600. User choice still pending; no model pilot/full collection or fitting
-has started, no scheduler/recurring task exists for this camera session. Never
+reach1600. At admission completion, no model pilot/full collection or fitting
+had started. Augmentation is now explicitly approved above. Never
 interpret these calibration frames as part of the forthcoming model dataset.
 
 L2 is frozen at329/411. User replaced the unavailable high-speed camera with
@@ -49,8 +90,7 @@ and new dataset manifest must all be admitted first.
 User asks80TRAIN/class. Original TRAIN3141 contains classes with68..79 unique
 images. Do not fabricate80 independent original images, duplicate without
 disclosure or borrow TEST/VALID. Await explicit choice between original-TRAIN
-only fixed augmentation to80 inputs versus all available uniques capped80;
-continue independent camera admission meanwhile. New camera session root:
+only fixed augmentation to80 inputs is now approved above. New camera session root:
 `runs/hardware/caltech20_residual_DVP_46_20261019`. No new branch/worktree,
 lab only receives Git, old CCD/PT/evidence preserved, no recurring automation.
 
