@@ -1772,3 +1772,15 @@ not an alpha/seed scan or a promise of improvement. Existing 277 is preserved;
 only original post-last-CCD alpha and head may change, no new layer/CCD/settings.
 Source is Git-published and numerically tested before use. L6 per-layer masks
 continue independently; no source patch to the running capture/model closure.
+
+The final-alpha readout comparison also retained E0=277, so both negative
+comparisons preserve the entire accepted original parent. One finite original
+5150 warm-start contrast may follow, specified by
+lab_caltech20_DVP_L4_warm_terminal_profile_20261020.json: same published original
+fit implementation, start277 rather than cold16, headLR3e-4, full-measured
+TRAIN-parent KL.2/T2, at most40epochs/600fitseconds. Only original terminal
+parameters train, not any mask or measured incident producer. This is not a new
+inference architecture or promised gain. The known4060 must be free after L6
+router training; no GPU contention with L6 suffix fits. L6 hardware may run
+independently while this bounded L4 optimization finishes, before L6 needsGPU
+again. Full native411 bestlast/frozen/data audit and incumbent277 retained.

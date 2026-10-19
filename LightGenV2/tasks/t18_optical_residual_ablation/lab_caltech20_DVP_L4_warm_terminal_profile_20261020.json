@@ -1,0 +1,13 @@
+{
+  "base_profile":"lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256":"ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides":{
+    "fit_name_suffix":"_head_warm_terminal_20261020",
+    "phase_lr":0.0006,"electronic_lr":0.0015,"alpha_lr":0.002,
+    "head_lr":0.0003,"label_smoothing":0.01,"confusion_emphasis":0.5,
+    "teacher_weight":0.2,"teacher_temperature":2.0,"teacher_simulated_newest_layers":0,
+    "minimum_epochs":2,"evaluate_every":1,"target_correct":342,
+    "final_fit":{"epochs":40,"seconds":600}
+  },
+  "scope":"One finite original5150 joint terminal warm start from accepted fullphysical277 after cold original5150 training16->233, original-head recovery277, head-frozen10 E0 and TRAIN-supported final-alpha readout E0. Actual joint initialization is different from cold16: preserve recovered5140 classifier with lower headLR3e-4 and a frozen parent TRAIN-only full-measured teacher KL.2,T2, no simulated layer teacher. Only original final9 electronic kernel/direct alpha/original5140 head may train; all measured optical producers and all other parameters frozen. Original forward/RMS surrogate source unchanged, no inference-layer or objective code patch. At most40epochs/600fitseconds complete-epoch boundary, seed73 inherited; no coefficient/seed scan or automatic retry. Keep277 if no strict native411 improvement. TEST-informed development selection/class emphasis only, never TEST derivative or VALID. No SDK/new CCD/camera change. Use exclusively the known laboratory4060 after L6 router GPU exits; later L6 camera capture may proceed independently, but no other GPU fitting may overlap. Finite fit must finish and releaseGPU before next L6 suffix fit. Full bestlast original CPU/frozen audit and negative evidence retained."
+}
