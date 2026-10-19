@@ -28,6 +28,7 @@ def calibration(out,packet,hardware,base_digest,cfg,recheck):
     """Packet contains only fixed TRAIN0..39, exact stage inputs and immutable PT."""
     import cv2
     out=Path(out);assert not out.exists() and not LOCK.exists();out.mkdir(parents=True)
+    assert sha(hardware['response_lut'])==hardware['response_lut_SHA256'] and sha(hardware['phase_lut'])==hardware['phase_LUT_SHA256']
     assert len(packet['records'])==cfg['TRAIN_probe_samples']==40 and all(r['role']=='train' for r in packet['records'])
     assert len({r['label'] for r in packet['records']})==20
     warp=cv2.getPerspectiveTransform(np.float32(corners(Path(hardware['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]))
