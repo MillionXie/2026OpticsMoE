@@ -1,0 +1,12 @@
+{
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps": 240,
+  "maximum_fit_seconds": 120,
+  "label_smoothing": 0.02,
+  "correct_TRAIN_teacher_KL": 0.02,
+  "parameter_anchor": 0.0001,
+  "targets": {"4":314,"6":322},
+  "final_targets": {"4":342,"6":350},
+  "scope": "One bounded comparison after G1 TRAIN and TEST both plateau near73%; no coefficient/seed grid. Reuse the published TRAIN-spectrum conditioning rule and TRAIN-prior objective, fold optimizer coordinates into the original5140 head. Same DVP data1600/411 and graph, all nonhead tensors frozen, no camera/SDK/GPU/new layer. TEST-informed development selection, TRAIN derivatives only/noVALID. Retain parent if no improvement and require full original measured-prefix CPU replay. Intermediate8pp is not final1pp."
+}

@@ -1,0 +1,189 @@
+"""TRAIN-conditioned optimization of the original DVP measured-prefix head.
+
+No inference transform is added: optimizer coordinates fold back into the
+existing 20x256 Linear. TRAIN alone determines covariance and class priors.
+TEST is used for explicitly authorized development selection, never derivatives.
+"""
+import argparse
+import os
+from pathlib import Path
+import sys
+import time
+
+import numpy as np
+import torch
+from torch.nn import functional as F
+
+HERE = Path(__file__).resolve().parent
+sys.path[:0] = [str(HERE), str(HERE.parents[2])]
+import lab_caltech20_dvp_layerwise_20261019 as core
+from lab_caltech20_dvp_head_repair_20261019 import cache_features
+from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry
+from lab_caltech20_residual_guarded_20261018 import improves, probability, score
+
+
+def fold(theta, bias, mean, root):
+    weight = theta @ root.T
+    return weight.float(), (bias - mean @ weight.T).float()
+
+
+def objective(theta, bias, x, labels, weights, teacher, keep, origin, cfg):
+    """All tensors entering derivatives are TRAIN or parameter anchors."""
+    logits = x @ theta.T + bias
+    ce = F.cross_entropy(logits, labels, weight=weights,
+                         label_smoothing=cfg['label_smoothing'])
+    kl = F.kl_div(logits.log_softmax(1), teacher, reduction='none').sum(1)
+    anchor = (theta-origin[0]).square().sum() + (bias-origin[1]).square().sum()
+    return ce + cfg['correct_TRAIN_teacher_KL'] * (kl*keep).mean() + cfg['parameter_anchor']*anchor
+
+
+def fit(a):
+    assert os.environ.get('CUDA_VISIBLE_DEVICES') == '' and not core.LOCK.exists()
+    assert a.depth in (4, 6) and 1 <= a.prefix <= a.depth+1
+    torch.set_num_threads(2)
+    torch.manual_seed(73)
+    cfg = core.read(a.profile)
+    assert not a.out.exists() and core.sha(a.checkpoint) == a.digest
+    data, dm = core.data_for(a.sequence)
+    assert dm['source_cache_sha256'] == cfg['original_TRAIN_cache_SHA256']
+    session = a.sequence / f'L{a.depth}'
+    model, _ = core.model_for(a.checkpoint, a.digest, a.depth, session/'source_reference.ts')
+    original = core.state_cpu(model)
+    fields, identities = core.fields_for(session, a.prefix, data, dm,
+                                         core.session_hardware_digest(a.sequence))
+    a.out.mkdir()
+    cached = cache_features(model, data, fields, a.out)
+    tr, te = cached['train'], cached['test']
+    x = torch.tensor(tr['x'], dtype=torch.float64)
+    labels = torch.tensor(tr['y'], dtype=torch.long)
+    counts = torch.tensor(cfg['original_TRAIN_counts'], dtype=torch.float64)
+    assert counts.shape == (20,) and int(counts.sum()) == 3141 and bool((counts >= 60).all())
+    mean, root, inverse, eigenvalues, floor = TRAIN_spectrum_geometry(x)
+    z = (x-mean) @ root
+    w0, b0 = original['linear.weight'].double(), original['linear.bias'].double()
+    theta = torch.nn.Parameter(w0 @ inverse)
+    bias = torch.nn.Parameter(b0 + mean @ w0.T)
+    origin = (theta.detach().clone(), bias.detach().clone())
+    teacher = torch.tensor(tr['probabilities'], dtype=torch.float64)
+    keep = (teacher.argmax(1) == labels).double()
+    class_weights = counts/counts.mean()
+    initial, best_nll = score(te['probabilities'], te['y'])
+    best, selected, bestw, bestb = initial, 0, w0.float(), b0.float()
+    target = int(cfg['targets'][str(a.depth)]) if a.prefix < a.depth+1 else int(cfg['final_targets'][str(a.depth)])
+    folded_w, folded_b = fold(theta, bias, mean, root)
+    assert np.max(np.abs(probability(te['x'], folded_w.detach().numpy(), folded_b.detach().numpy())-te['probabilities'])) <= 3e-5
+    protocol = dict(parent_PT_SHA256=a.digest, depth=a.depth, prefix=a.prefix,
+                    allowed_keys=['linear.bias', 'linear.weight'], prefix_SHA256=identities,
+                    data_SHA256=dm['sha256'], TRAIN=1600, TEST=411, VALID=0,
+                    source_git=core.git_head(), source_SHA256=core.sha(__file__),
+                    geometry_source_SHA256=core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py'),
+                    config=cfg, profile_SHA256=core.sha(a.profile), target_correct=target,
+                    feature_files={r:v['feature_SHA256'] for r,v in cached.items()},
+                    feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
+                    feature_variance_floor=floor, modes_below_floor=int((eigenvalues < floor).sum()),
+                    TRAIN_covariance_eigenvalues=eigenvalues.tolist(), TRAIN_prior_only=True,
+                    TRAIN_covariance_only=True, trainable_parameters=5140, no_new_inference_layer=True,
+                    TEST_informed_development=True, TEST_gradient=False, SDK_used=False, GPU_used=False,
+                    update_unit='LBFGS_step')
+    core.save(a.out/'protocol.json', protocol)
+    np.savez_compressed(a.out/'baseline_TEST_predictions.npz', ids=te['ids'], labels=te['y'], probabilities=te['probabilities'])
+    optimizer = torch.optim.LBFGS([theta, bias], lr=1., max_iter=1, history_size=40, line_search_fn='strong_wolfe')
+    history, start = [], time.monotonic()
+    for step in range(1, cfg['maximum_steps']+1):
+        def closure():
+            optimizer.zero_grad(set_to_none=True)
+            loss = objective(theta, bias, z, labels, class_weights, teacher, keep, origin, cfg)
+            assert torch.isfinite(loss)
+            loss.backward()
+            return loss
+        loss = float(optimizer.step(closure))
+        with torch.no_grad():
+            ww, bb = fold(theta, bias, mean, root)
+            p = probability(te['x'], ww.numpy(), bb.numpy())
+            n, nll = score(p, te['y'])
+            if improves(n, nll, best, best_nll):
+                best, best_nll, selected = n, nll, step
+                bestw, bestb = ww.clone(), bb.clone()
+        history.append(dict(step=step, TRAIN_loss=loss, TEST_correct=n, TEST_NLL=nll,
+                            selected_correct=best, selected_step=selected, elapsed_fit_s=time.monotonic()-start))
+        if step == 1 or step % 10 == 0:
+            core.save(a.out/'progress.json', history[-1])
+            core.save(a.out/'history.json', history)
+        if best >= target or time.monotonic()-start >= cfg['maximum_fit_seconds']:
+            break
+    elapsed = time.monotonic()-start
+    results, best_p = {}, None
+    for name, w, b in (('best', bestw, bestb), ('last', ww, bb)):
+        state = {k:v.clone() for k,v in original.items()}
+        state.update({'linear.weight':w, 'linear.bias':b})
+        assert all(torch.equal(v, state[k]) for k,v in original.items() if not k.startswith('linear.'))
+        path = a.out/(name+'.pt')
+        torch.save(dict(model=state, protocol=protocol, epoch=selected if name == 'best' else step,
+                        update_unit='LBFGS_step'), path)
+        model.load_state_dict(state)
+        metric, p = core.assess(model, data, fields, 'test')
+        error = float(np.abs(p-probability(te['x'], w.numpy(), b.numpy())).max())
+        assert error <= 3e-6
+        np.savez_compressed(a.out/(name+'_TEST_predictions.npz'), ids=te['ids'], labels=te['y'], probabilities=p)
+        results[name] = dict(TEST_development=metric,
+                             TRAIN_development=core.metrics(tr['y'], probability(tr['x'], w.numpy(), b.numpy())),
+                             PT_SHA256=core.sha(path), strict_CPU=True, full_prefix_replay_maxabs=error,
+                             predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
+        if name == 'best':
+            best_p = p
+    assert results['best']['TEST_development']['correct'] == best and core.sha(a.checkpoint) == a.digest
+    core.save(a.out/'history.json', history)
+    core.save(a.out/'report.json', dict(state='complete', baseline_TEST=te['metric'], results=results,
+              selected_correct=best, selected_epoch=selected, selected_step=selected, actual_steps=step,
+              target_correct=target, within8pp=best>=cfg['targets'][str(a.depth)],
+              refinement_target_reached=best>=target, selected_e0=selected==0,
+              intermediate=a.prefix<a.depth+1, all_nonhead_frozen=True, frozen_parameters_unchanged=True,
+              TEST_gradients=False, SDK_used=False, GPU_used=False, update_unit='LBFGS_step',
+              new_correct=int(((te['probabilities'].argmax(1)!=te['y'])&(best_p.argmax(1)==te['y'])).sum()),
+              new_wrong=int(((te['probabilities'].argmax(1)==te['y'])&(best_p.argmax(1)!=te['y'])).sum()),
+              elapsed_fit_s=elapsed, elapsed_postfit_replay_s=time.monotonic()-start-elapsed))
+
+
+def selftest():
+    torch.set_num_threads(2)
+    torch.manual_seed(73)
+    x = torch.randn(80, 12, dtype=torch.float64) @ torch.diag(torch.logspace(0, -4, 12, dtype=torch.float64))
+    mean, root, inverse, _, _ = TRAIN_spectrum_geometry(x)
+    w, b = torch.randn(20, 12, dtype=torch.float64), torch.randn(20, dtype=torch.float64)
+    theta, bias = (w@inverse).requires_grad_(), (b+mean@w.T).requires_grad_()
+    z = (x-mean)@root
+    assert torch.allclose(z@theta.T+bias, x@w.T+b, atol=1e-8)
+    ww, bb = fold(theta, bias, mean, root)
+    assert torch.allclose(ww.double(), w, atol=1e-6) and torch.allclose(bb.double(), b, atol=1e-6)
+    labels = torch.arange(80)%20
+    teacher = (x@w.T+b).softmax(1).detach()
+    cfg = dict(label_smoothing=.02, correct_TRAIN_teacher_KL=.02, parameter_anchor=.0001)
+    loss = objective(theta, bias, z, labels, torch.ones(20, dtype=torch.float64),
+                     teacher, torch.ones(80, dtype=torch.float64), (theta.detach(), bias.detach()), cfg)
+    gradient = torch.autograd.grad(loss, theta)[0]
+    epsilon = 1e-5
+    t = theta.detach().clone()
+    values = []
+    for sign in (1., -1.):
+        t[0, 0] = theta.detach()[0, 0]+sign*epsilon
+        values.append(float(objective(t, bias.detach(), z, labels, torch.ones(20, dtype=torch.float64), teacher,
+                            torch.ones(80, dtype=torch.float64), (theta.detach(), bias.detach()), cfg)))
+    assert abs((values[0]-values[1])/(2*epsilon)-float(gradient[0, 0])) < 1e-7
+    print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true}')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', required=True, choices=['fit', 'selftest'])
+    for name in ('sequence', 'checkpoint', 'profile', 'out'):
+        parser.add_argument('--'+name, type=Path)
+    parser.add_argument('--depth', type=int)
+    parser.add_argument('--prefix', type=int)
+    parser.add_argument('--digest')
+    args = parser.parse_args()
+    try:
+        selftest() if args.mode == 'selftest' else fit(args)
+    except BaseException as error:
+        if args.out and args.out.exists():
+            core.save(args.out/'failure.json', dict(error=repr(error), automatic_retry=False))
+        raise

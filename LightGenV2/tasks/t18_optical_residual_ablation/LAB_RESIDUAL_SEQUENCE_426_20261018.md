@@ -2,6 +2,29 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### G1 optimization diagnosis: bounded TRAIN-conditioned original-head fit
+
+Fresh20261020 L4 G1 has complete1600TRAIN+411TEST, independently audited with
+all measured router/E1/G1 identities retained. Initial suffix fit36->262,
+original-head repair262->296->301, relaxed row constraint301->302. At301 the
+TRAIN score1175/1600=73.4375% also plateaus, close to TEST301/411=73.236%; this
+does not support calling the problem simply high-TRAIN overfitting. A short
+conservative suffix trial kept E0=301 and ended271; preserve this negative result.
+These are measured-prefix/simulated-suffix development metrics, not full L4.
+
+One bounded TRAIN-conditioned comparison uses
+`lab_caltech20_dvp_conditioned_head_20261020.py` and its named profile. It reuses
+the published TRAIN-spectrum geometry rule, optimizes the same original5140
+Linear in conditioned coordinates and folds back before evaluation. Covariance
+and class weights come from TRAIN only; weak correct-TRAIN KL and parameter
+anchor retain protection. No camera, SDK, GPU, new inference layer or measured
+upstream change. All1600/411 identities, original native CPU feature parity,
+best/last predictions and all nonhead bit-equality are audited. Maximum240
+LBFGS steps/120fit seconds; no restart or coefficient/seed grid. Keep E0 if no
+better result. TEST selection is authorized development, never independent
+generalization or TEST gradients. Intermediate aim314/322 and final342/350
+remain separate. This is a proposed comparison, not a claim of reaching target.
+
 ### New user geometry20261020: camera normal, fresh coherent L4 -> L6 capture
 
 Latest user clarification: a coordinate update alone does NOT establish that all
