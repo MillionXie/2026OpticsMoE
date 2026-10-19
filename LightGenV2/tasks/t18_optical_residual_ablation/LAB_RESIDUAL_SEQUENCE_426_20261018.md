@@ -2,6 +2,31 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### First expert captured; active domain diagnosis and bounded recovery plan
+
+L4stage0 full1600TRAIN/411TEST capture/audit complete,1971new+40verified probes,
+elapsed1975.97sec, SDK released. ArraySHA TRAIN5847f9bfb4759792773d181cbb37778c599eed9c2e10f1f769839a269f7e749f,
+TEST031ca03ab4a1b6facbc835cda704d63ef77f05e8e9f490757616692c4f23942f.
+After adding measured expert1, original remaining suffix falls to68/411,
+not the previous router-only331 hybrid. Early fit E13 restored256/411 but
+TRAIN CE still1.475, so do not call this passing8pp or continue optical capture.
+First40TRAIN diagnostic: raw spatial PCC median.185, after same-phase background
+removal DIAGNOSTIC ONLY.396, original nonlinear representation PCC.110; identity
+orientation exceeds all tested dihedral variants. No image/input/model change.
+Shape/domain mismatch, not simply scalar exposure, is a supported contributor;
+its full optical root cause is not proven. Per-layer calibrated signal admission
+alone never promised unchanged task performance.
+
+E15 parameter check found alpha0 .949949->.939297 only, with other alphas near.95;
+both measured router and expert masks remain unchanged. New independent profile
+`lab_caltech20_DVP_stage0_recovery_profile_20261019.json` is a PLAN after the first
+fit completes and strict best is audited: higher original post-stage/head/alpha/
+remaining-mask LR, less smoothing, remove simulated-parent KL; same original
+alpha bounds and graph, no manual alpha replacement. Full TRAIN only gradients,
+TEST development selection, no VALID/CCD. Max24epochs/1000fitsec; disclose new
+Adam moments instead of pretending optimizer resume. Do not launch if first fit
+already passes314/411, nor advance if still below target without outcome review.
+
 ### Offline preparation and IO overlap prototype, not yet production-enabled
 
 L6 full1600TRAIN/411TEST original-versus-bridge error0 passed. Native laboratory

@@ -1,0 +1,18 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_recovery_20261019",
+    "phase_lr": 0.0006,
+    "electronic_lr": 0.0015,
+    "alpha_lr": 0.002,
+    "head_lr": 0.0015,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.5,
+    "teacher_weight": 0,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 24, "seconds": 1000}
+  },
+  "scope": "One reasoned continuation from strict-CPU best of the first stage0 fit, no new CCD. TRAIN-domain diagnostic median raw/nonlinear spatial PCC .185/.110; scalar exposure cannot explain normalized feature mismatch. E15 fit remains underfit and measured-stage alpha moved only .94995 to .93930 under low LR. Increase allowed post-stage electronic/head/alpha and uncaptured-mask learning rates within SAME original direct-alpha bounds [.4001001,.95]. No manual alpha replacement, model change or measured-phase update. Remove parent KL because this domain needs adaptation rather than imitation of the earlier simulated-stage teacher. New AdamW from selected weights is explicit, not a claim of resumed optimizer moments. Full TRAIN1600 supplies gradients, TEST411 informs diagnosis/class emphasis/checkpoint selection (development, not independent generalization), no VALID. Fixed original gap8 target retained, max24 complete epochs/1000fit seconds; no blind new candidate or downstream capture if target still missed."
+}
