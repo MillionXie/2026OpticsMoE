@@ -3,6 +3,7 @@
   "TRAIN":1200,"TEST":411,"VALID":0,
   "target_correct":{"2":325,"4":305},
   "cache_parity_tolerance":0.000003,
+  "active_scope":"Original exact features only; alpha frozen after compact synthetic parity rejection",
   "fallback":"Freeze alpha and use exact parent features if compact alpha admission fails; never relax tolerance",
   "comparisons":[
     {"method":"low_rank","rank":4,"head_lr":0.001,"alpha_lr":0.002,"weight_decay":0.01,"epochs":100,"fit_seconds":180,"batch":64,"temperature":2.0,"teacher_KL":2.0,"anchor":1.0,"label_smoothing":0.02,"EMA_decay":0.98,"target_correct":{"2":325,"4":305}},

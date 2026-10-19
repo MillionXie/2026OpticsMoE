@@ -41,11 +41,13 @@ def folded(original,left,right,bias):
 def selftest(a=None):
     torch.set_num_threads(2);torch.manual_seed(73);flat_e=torch.rand(4,478,478);flat_o=torch.rand_like(flat_e);flat_alpha=torch.tensor(.73,dtype=torch.float64);flat_error=float((compact_features(compact(flat_e,flat_o),flat_alpha)-original_features(flat_e,flat_o,flat_alpha)).abs().max());assert flat_error>3e-6,'Known near-uniform float32 pooling counterexample must be rejected, not granted exact-cache status'
     ramp=torch.linspace(.1,1.9,478);e=ramp[None,None,:].expand(4,478,478).clone()+torch.rand(4,478,478)*.01;o=ramp[None,:,None].expand_as(e).clone()+torch.rand_like(e)*.01;bank=compact(e,o)
+    rejected=[]
     for value in (.4001001,.73,.95):
-        a=torch.tensor(value,dtype=torch.float64,requires_grad=True);f=compact_features(bank,a);full=original_features(e,o,a);error=float((f-full).abs().max());assert error<=3e-6,error
-        head=torch.randn(20,256)*.03;g1=torch.autograd.grad(F.cross_entropy(f@head.T,torch.arange(4)),a,retain_graph=True)[0];g2=torch.autograd.grad(F.cross_entropy(full@head.T,torch.arange(4)),a)[0];assert torch.allclose(g1,g2,atol=3e-6,rtol=2e-5),(g1,g2)
+        a=torch.tensor(value,dtype=torch.float64,requires_grad=True);f=compact_features(bank,a);full=original_features(e,o,a);error=float((f-full).abs().max());assert torch.isfinite(f).all() and torch.isfinite(full).all()
+        rejected.append(error)
     w=torch.randn(20,256);l=torch.randn(20,4)*.01;r=torch.randn(4,256)*.01;b=torch.randn(20);x=torch.randn(5,256);ww,bb=folded(w,l,r,b);assert torch.allclose(x@ww.T+bb,x@w.T+(x@r.T)@l.T+b,atol=1e-5)
-    print(json.dumps(dict(passed=True,compact_parity_and_gradient_on_admitted_structured_fields=True,inexact_nearuniform_pooling_rejected=True,rejected_maxabs=flat_error,low_rank_fold_original_5140_head=True,SDK=False,GPU=False)),flush=True)
+    left=torch.nn.Parameter(torch.zeros(20,4));right=torch.nn.Parameter(torch.randn(4,256)*.01);bias=torch.nn.Parameter(b.clone());ww,bb=folded(w,left,right,bias);assert torch.equal(ww,w) and torch.equal(bb,b);F.cross_entropy(x@ww.T+bb,torch.arange(5)).backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in (left,right,bias));assert sum(p.numel() for p in (left,right,bias))==1124
+    print(json.dumps(dict(passed=True,active_scope='EXACT native feature bank, alpha fixed',compact_alpha_optimization_DISABLED=True,inexact_nearuniform_pooling_rejected=True,rejected_maxabs=flat_error,structured_compact_errors=rejected,low_rank_fold_original_5140_head=True,SDK=False,GPU=False)),flush=True)
 
 
 def cache(a):
@@ -62,7 +64,7 @@ def cache(a):
                     parts['features'].append(expected.numpy().copy());parts['probabilities'].append(p.numpy().copy());save(a.out/'progress.json',dict(state='native_last_fusion_cache_admission',role=role,completed=min(begin+4,len(data[role][1])),total=len(data[role][1]),parent_feature_maxabs=max(errors),boundary_feature_maxabs=max(boundary)))
             passed=max(errors+boundary)<=3e-6;all_passed&=passed;proof[role]=dict(samples=len(data[role][1]),parent_feature_maxabs=max(errors),boundary_feature_maxabs=max(boundary),compact_admitted=passed);path=a.out/(role+'.npz');np.savez_compressed(path,**{k:np.concatenate(v) for k,v in parts.items()},labels=data[role][1],ids=data[role][2]);files[role]=dict(path=path.name,SHA256=sha(path));print(json.dumps(dict(role=role,proof=proof[role])),flush=True)
     finally:hook.remove()
-    save(a.out/'report.json',dict(state='complete',parent_PT_SHA256=a.checkpoint_sha,proof=proof,files=files,compact_alpha_admitted=all_passed,fallback_if_failed='freeze alpha; use exact original exported features only; never relax parity',original_full_model_evaluated=True,CCD_arrays_SHA256=identities,data_SHA256=dm['sha256'],SDK=False,GPU=False))
+    save(a.out/'report.json',dict(state='complete',parent_PT_SHA256=a.checkpoint_sha,proof=proof,files=files,compact_gate_passed_on_actual_fields=all_passed,compact_alpha_admitted=False,reason='Compact proposal failed synthetic3e-6 gate and is disabled for this round; always original exact features, alpha frozen',original_full_model_evaluated=True,CCD_arrays_SHA256=identities,data_SHA256=dm['sha256'],SDK=False,GPU=False))
 
 
 def fit(a):

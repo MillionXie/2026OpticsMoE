@@ -2,6 +2,15 @@
 
 ## New offline-only authorization, 2026-10-19
 
+Active-scope correction before ANY real-data fit: compact fusion proposal failed
+synthetic feature gates(max1.19448e-4 and6.31809e-6 >3e-6). Do NOT relax the
+bound or claim exact alpha optimization. Alpha is explicitly frozen for this
+round, even if selected real-data cache cases happen to pass. Only original
+exact native features are used by low-rank/SAM head training; original full-model
+CPU replay remains mandatory. Rejected compact errors are preserved in tests.
+Low-rank TRAIN variables1124 fold to original5140 parameters; SAM5140 variables.
+The following earlier alpha-cache plan is historical, overridden by this rule.
+
 User cannot access the optical path/camera now and explicitly requests further
 software optimization. No new capture/SDK, hardware/LUT change or changed
 already-captured upstream. Residual L2/L4 targets325/305 remain. Prior finite
