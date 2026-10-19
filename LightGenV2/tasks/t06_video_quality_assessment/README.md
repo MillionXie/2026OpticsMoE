@@ -1,5 +1,26 @@
 # T06 视频质量评价
 
+## 2026-10-19 新授权：原精度50%对照补齐与FP32租赁对照
+
+用户接受既有Qwen46.35/GLM53.24/CLIP49.77/YOLO49.62%的50±5独立利用率，
+不重测四点，不显示旧B1对照，不动QwenB1定稿。新授权租赁A10080两小时，
+先补完整版DeepSeek/Kimi同协议约50%与近满载，随后FP32对照；不含Tiny/Small。
+原精度与FP32各时延/能耗两图，总四图，原始证据与旧展示保护，不混不同精度。
+
+新入口rental_precision_recheck，canonical run为runs/simulation/lgvq_rental_precision_20261019。
+首轮按既有DS2/Kimi6固定batch独立resident native/paced三次全部窗口，60s完整组校准后
+冻结duty，5s预热/30s完整测量、queue8、50ms原遥测。随后freshprocess全558/首200
+成本，首原生视觉块输入到GPU MOS同步，额外限流等待另列不计成本，同轮active功率
+加338.2W代理；不拿resident功率代入。原PT/四帧/划分/官方资产与训练Git blob逐SHA核验。
+
+租赁GPU已读核空闲SXM4-80GB/400W，模型/环境/数据/head原存档可复用。
+总计算保守截止10月20日01:30+0800（Unix1792431000），另留10分钟备份，
+不续租、占位、驱逐他人、不自动重试。尚未完成前不得声称新点已有结果。
+FP32关闭autocast/TF32，所有浮点参数与输入FP32；需要官方eager attention则披露
+backend差异，不能声称仅dtype因果。原部署权重转FP32不恢复丢失的精度。
+DS实有27480134248参数，FP32权重约109.9GB，超过80GB，明确容量缺项，
+不以CPU卸载/量化冒充纯GPU FP32。Kimi16407656048参数，先仅B1可行性验证。
+
 ## 2026-10-18 统一纯推理成本补测完成与两表四图交付
 
 十个规定点已全部完成并离线重算通过：CLIP native B1/B10各三轮，Qwen3/GLM2/CLIP10/YOLO3
