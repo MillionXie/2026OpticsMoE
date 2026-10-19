@@ -1784,3 +1784,22 @@ inference architecture or promised gain. The known4060 must be free after L6
 router training; no GPU contention with L6 suffix fits. L6 hardware may run
 independently while this bounded L4 optimization finishes, before L6 needsGPU
 again. Full native411 bestlast/frozen/data audit and incumbent277 retained.
+
+The warm original-RMS-surrogate comparison completed40epochs and retained E0.
+Its numeric inherited seed was17, as explicitly present in saved resolved
+protocol config; the earlier profile scope prose incorrectly said73. Correct
+the prose only after worker exit; retain actual old profile identity
+87ad6b18d3613d8658b3b183fbd2e6809458a2eaea644b97b1bab6726be4064b
+and protocol/negative bestlast unchanged. No repeat with another seed.
+
+One final bounded adapter contrast reuses the already-published exact
+native-RMS joint5150 TRAINprior method and all its fixed optimization coefficients
+from lab_caltech20_L4_native_TRAINprior_profile_20261019.json. This is not the
+legacy1200 data loader: fresh parity-gated DVP1600 cache is mandatory. Its TRAIN
+conditioned head coordinates are folded into the original Linear, and only
+original terminal9conv/alpha/5140head train. Native RMS derivatives differ from
+the surrogate, inference is byte-identical before updates. At most12 complete
+epochs/360fitseconds, seed73 as in that published method, no grid/microstep
+replay. Full original411 bestlast replay and frozen audit mandatory; preserve277
+if no gain. Profile lab_caltech20_DVP_native5150_profile_20261020.json. This does
+not block L6 camera/GPU and does not promise a successful final score.

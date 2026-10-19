@@ -1,0 +1,12 @@
+{
+  "joint_original_head":true,
+  "epochs":12,"fit_seconds":360,"batch":8,
+  "conv_lr":0.002,"alpha_lr":0.0005,"head_coordinate_lr":0.002,
+  "weight_decay":0.001,"label_smoothing":0.02,
+  "temperature":2.0,"teacher_KL":2.0,"terminal_anchor":0.1,"head_coordinate_anchor":0.01,
+  "per_row_head_radius":0.4,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "native_tail_source_SHA256":"c6dfe2cdcf4598d9b7e488a06577c9c45b4c483e14ca4daf9084d28dacfbff5c",
+  "scope":"One adapter of the already-published native-RMS joint5150 TRAINprior optimizer and its fixed coefficients, not the legacy1200 dataset loader. Use actual DVP TRAIN1600/TEST411 and accepted fullphysical277 parent. Original detached-normalizer joint warm-start still retainsE0, whereas fixed-head true-RMS10 also retainedE0; test joint head/body true-RMS derivatives with TRAIN-only conditioned coordinates, analytically folded into the exact original Linear. Source pure native_features/folded/train_conditioned_geometry reused without patching. Coefficients/budget identical to published native_TRAINprior:12epochs/360fitsec, conv.002/alpha.0005/coordinate.002, KL2/T2, anchor.1/headanchor.01/radius.4, seed73; no seed/radius/alpha grid or replay-microstep selection. Every complete1600-sample epoch precedes stopping. Only original final9conv/direct alpha/5140head may change. No inference architecture change, new layer/CCD/SDK/GPU, or TEST/VALID gradient. Exact full original native TRAIN/TEST batch parity before updates and both original411 bestlast CPU/frozen replay after; no compact-field approximation. Original TRAIN3141 counts only. Keep277 if no verified gain. TEST-informed development, desired342 not guaranteed. Same-run other-depth L6 acquisition may proceed under existing complete-L4/exact-owner CPU admission."
+}

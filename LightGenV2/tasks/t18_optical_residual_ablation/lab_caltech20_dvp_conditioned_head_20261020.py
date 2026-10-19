@@ -109,18 +109,31 @@ def terminal10_objective(logits, labels, weights, teacher, keep, conv, alpha, or
     return ce+cfg['teacher_KL']*(kl*keep).mean()+cfg['anchor']*anchor
 
 
+def native_joint_objective(logits, labels, weights, teacher, keep, conv, alpha, delta, origin, cfg):
+    """Published joint native-RMS loss, on TRAIN and original parameters only."""
+    ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=cfg['label_smoothing'])
+    temperature=cfg['temperature']
+    kl=F.kl_div((logits/temperature).log_softmax(1),teacher,reduction='none').sum(1)
+    anchor=(conv-origin[0]).square().sum()+(alpha-origin[1]).square()
+    return ce+cfg['teacher_KL']*temperature**2*(kl*keep).mean()+cfg['terminal_anchor']*anchor+cfg['head_coordinate_anchor']*delta.square().sum()
+
+
 def terminal10_fit(a):
-    """DVP1600 adapter for the published exact native-RMS terminal method.
+    """DVP1600 adapter for published exact native-RMS terminal methods.
 
     Validate complete original forward against the cached original tail BEFORE
-    optimization. Only9 existing convolution coefficients and direct alpha train;
+    optimization. Original10 parameters or original5150 with a folded head train;
     true RMS derivatives change backward, never inference or measured upstream.
     """
     import psutil
-    from lab_caltech20_native_terminal_20261019 import native_features
+    from lab_caltech20_native_terminal_20261019 import native_features,folded
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
     cpu_fit_admission(a);torch.set_num_threads(2);torch.manual_seed(73)
     assert a.depth==4 and a.prefix==5 and not a.feature_run and not a.out.exists()
     cfg=core.read(a.profile);assert cfg['epochs']<=60 and cfg['fit_seconds']<=600 and cfg['batch']==8
+    joint=cfg.get('joint_original_head',False)
+    assert joint==(a.mode=='native5150-fit')
+    if joint:assert cfg['epochs']<=12 and cfg['fit_seconds']<=360 and not cfg.get('replay_first_batches_from')
     assert core.sha(HERE/'lab_caltech20_native_terminal_20261019.py')==cfg['native_tail_source_SHA256']
     data,dm=core.data_for(a.sequence);assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
     assert psutil.virtual_memory().available>sum(len(data[r][1]) for r in ('train','test'))*2*478*478*4+(2<<30)
@@ -141,29 +154,42 @@ def terminal10_fit(a):
         q=model.linear(f).softmax(1);ferr=float((f-model.readout['features']).abs().max());perr=float((q-output[0]).abs().max())
         cache_errors.append(max(ferr,perr));core.save(a.out/'progress.json',dict(state='native_terminal_cache_parity',role=role,completed=end,total=len(d['y']),feature_error=ferr,probability_error=perr))
         assert ferr<=3e-6 and perr<=3e-6,'Reject approximate terminal cache before any training'
-        d['x'][begin:end].copy_(x[:n]);d['o'][begin:end].copy_(o[:n]);d['p'][begin:end]=output[0][:n].numpy();counts[role]=end
+        d['x'][begin:end].copy_(x[:n]);d['o'][begin:end].copy_(o[:n]);d['p'][begin:end]=output[0][:n].numpy();d['features'][begin:end]=f[:n].numpy();counts[role]=end
     hook=model.register_forward_hook(collect)
     try:
         for role in ('train','test'):
-            n=len(data[role][1]);cache[role]=dict(x=torch.empty(n,478,478),o=torch.empty(n,478,478),y=torch.from_numpy(data[role][1].astype(np.int64)),p=np.empty((n,20),np.float32),ids=data[role][2]);counts[role]=0;active['role']=role
+            n=len(data[role][1]);cache[role]=dict(x=torch.empty(n,478,478),o=torch.empty(n,478,478),y=torch.from_numpy(data[role][1].astype(np.int64)),p=np.empty((n,20),np.float32),features=np.empty((n,256),np.float32),ids=data[role][2]);counts[role]=0;active['role']=role
             metric,p=core.assess(model,data,fields,role);assert counts[role]==n and np.array_equal(p,cache[role]['p']);cache[role]['metric']=metric
     finally:hook.remove();pre.remove()
     assert max(cache_errors)<=3e-6 and cache['test']['metric']['correct']==pr['selected_correct']
-    proof=dict(passed=True,TRAIN=1600,TEST=411,VALID=0,maxabs=max(cache_errors),original_forward_exact_before_training=True,original_head_frozen=True,cache_in_memory_only=True,no_new_CCD=True,native_tail_source_SHA256=cfg['native_tail_source_SHA256'])
+    proof=dict(passed=True,TRAIN=1600,TEST=411,VALID=0,maxabs=max(cache_errors),original_forward_exact_before_training=True,original_head_frozen=not joint,cache_in_memory_only=True,no_new_CCD=True,native_tail_source_SHA256=cfg['native_tail_source_SHA256'])
     core.save(a.out/'terminal_cache_parity.json',proof)
     electronic=copy.deepcopy(model.electronic[3]);electronic.requires_grad_(True);head=copy.deepcopy(model.linear);head.requires_grad_(False)
     alpha=torch.nn.Parameter(original['fusion_logits.3'].clone());params=[*electronic.parameters(),alpha];assert sum(v.numel() for v in params)==10
     counts_prior=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float32);assert counts_prior.shape==(20,) and int(counts_prior.sum())==3141
     weights=counts_prior/counts_prior.mean();tr,te=cache['train'],cache['test'];teacher=torch.from_numpy(tr['p']);keep=teacher.argmax(1)==tr['y']
+    delta=None
+    if joint:
+        trainable|={'linear.weight','linear.bias'};mean,root,_,ev,floor=train_conditioned_geometry(tr['features'])
+        delta=torch.nn.Parameter(torch.zeros(20,257,dtype=torch.float64));params.append(delta)
+        assert sum(v.numel() for v in params)==5150
+        teacher=teacher.clamp_min(1e-12).pow(1/cfg['temperature']);teacher/=teacher.sum(1,keepdim=True)
+        np.savez_compressed(a.out/'TRAIN_geometry.npz',mean=mean.numpy(),root=root.numpy(),eigenvalues=ev.numpy(),floor=floor)
+    def head_logits(features):
+        if not joint:return head(features)
+        w,b=folded(head.weight,head.bias,delta,mean,root);return F.linear(features,w,b)
     origin=(electronic.local.weight.detach().clone(),alpha.detach().clone());baseline=te['p'];best,bestloss=score(baseline,te['y'].numpy());selected=0
-    protocol=dict(parent_PT_SHA256=a.digest,depth=4,prefix=5,allowed_keys=sorted(trainable),head_frozen=True,gradient_parameters=10,native_RMS_backward_only=True,
+    protocol=dict(parent_PT_SHA256=a.digest,depth=4,prefix=5,allowed_keys=sorted(trainable),head_frozen=not joint,gradient_parameters=5150 if joint else 10,native_RMS_backward_only=True,
                   prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,config=cfg,profile_SHA256=core.sha(a.profile),
                   source_git=core.git_head(),source_SHA256=core.sha(__file__),native_tail_source_SHA256=cfg['native_tail_source_SHA256'],cache_parity=proof,
                   original_TRAIN_prior_only=True,correct_TRAIN_teacher_only=True,TEST_informed_development=True,TEST_gradient=False,target_correct=342,
                   CPU_threads=2,SDK_used=False,GPU_used=False,no_new_inference_layer=True)
+    if joint:protocol.update(TRAIN_geometry_SHA256=core.sha(a.out/'TRAIN_geometry.npz'),head_coordinates_folded_into_original_5140=True)
     core.save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'].numpy(),probabilities=baseline)
     def snapshot(name,epoch):
         state={k:v.clone() for k,v in original.items()};state['electronic.3.local.weight']=electronic.local.weight.detach().clone();state['fusion_logits.3']=alpha.detach().clone()
+        if joint:
+            w,b=folded(head.weight,head.bias,delta.detach(),mean,root);state['linear.weight']=w.detach().clone();state['linear.bias']=b.detach().clone()
         assert all(v.dtype==state[k].dtype and torch.equal(v,state[k]) for k,v in original.items() if k not in trainable)
         torch.save(dict(model=state,protocol=protocol,epoch=epoch),a.out/(name+'.pt'))
     def evaluate(role):
@@ -172,19 +198,22 @@ def terminal10_fit(a):
             for begin in range(0,len(d['y']),8):
                 x,o=d['x'][begin:begin+8],d['o'][begin:begin+8];n=len(x)
                 if n<8:x=torch.cat([x,torch.zeros(8-n,478,478)]);o=torch.cat([o,torch.zeros(8-n,478,478)])
-                parts.append(head(native_features(electronic,alpha,x,o)).softmax(1)[:n].numpy())
+                parts.append(head_logits(native_features(electronic,alpha,x,o)).softmax(1)[:n].numpy())
         p=np.concatenate(parts);return p,score(p,d['y'].numpy())
     p,metric=evaluate('test');assert np.abs(p-baseline).max()<=3e-6 and np.array_equal(p.argmax(1),baseline.argmax(1))
     snapshot('best',0);opt=torch.optim.AdamW([dict(params=electronic.parameters(),lr=cfg['conv_lr'],weight_decay=cfg['weight_decay']),dict(params=[alpha],lr=cfg['alpha_lr'],weight_decay=0)])
+    if joint:opt.add_param_group(dict(params=[delta],lr=cfg['head_coordinate_lr'],weight_decay=0))
     scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(opt,cfg['epochs'],eta_min=1e-5);history=[];start=time.monotonic();steps=0
     for epoch in range(1,cfg['epochs']+1):
         order=torch.randperm(1600);loss_sum=0.;used=0
         for begin in range(0,1600,8):
-            ix=order[begin:begin+8];opt.zero_grad(set_to_none=True);z=head(native_features(electronic,alpha,tr['x'][ix],tr['o'][ix]))
-            loss=terminal10_objective(z,tr['y'][ix],weights,teacher[ix],keep[ix],electronic.local.weight,alpha,origin,cfg)
+            ix=order[begin:begin+8];opt.zero_grad(set_to_none=True);z=head_logits(native_features(electronic,alpha,tr['x'][ix],tr['o'][ix]))
+            loss=native_joint_objective(z,tr['y'][ix],weights,teacher[ix],keep[ix],electronic.local.weight,alpha,delta,origin,cfg) if joint else terminal10_objective(z,tr['y'][ix],weights,teacher[ix],keep[ix],electronic.local.weight,alpha,origin,cfg)
             assert torch.isfinite(loss);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in params)
             torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
-            with torch.no_grad():alpha.clamp_(.4001001,.95)
+            with torch.no_grad():
+                alpha.clamp_(.4001001,.95)
+                if joint:delta.mul_(min(1.,np.sqrt(20)*cfg['per_row_head_radius']/max(float(delta.norm()),1e-12)))
             loss_sum+=float(loss.detach())*len(ix);used+=len(ix);steps+=1
         scheduler.step();assert used==1600;p,(n,nll)=evaluate('test')
         if improves(n,nll,best,bestloss):best,bestloss,selected=n,nll,epoch;snapshot('best',epoch)
@@ -194,6 +223,7 @@ def terminal10_fit(a):
     snapshot('last',epoch);results={}
     for name in ('best','last'):
         path=a.out/(name+'.pt');state=torch.load(path,map_location='cpu',weights_only=False)['model'];model.load_state_dict(state);electronic.load_state_dict(model.electronic[3].state_dict());alpha.data.copy_(state['fusion_logits.3'])
+        if joint:head.load_state_dict(model.linear.state_dict());delta.data.zero_()
         assert all(v.dtype==state[k].dtype and torch.equal(v,state[k]) for k,v in original.items() if k not in trainable)
         native,p=core.assess(model,data,fields,'test');expected,_=evaluate('test');error=float(np.abs(p-expected).max())
         assert error<=3e-6 and np.array_equal(p.argmax(1),expected.argmax(1)),'Reject terminal result if original inference parity fails'
@@ -201,7 +231,7 @@ def terminal10_fit(a):
         results[name]=dict(TEST_development=native,PT_SHA256=core.sha(path),strict_CPU=True,native_tail_probability_maxabs=error,predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
     assert results['best']['TEST_development']['correct']==best and core.sha(a.checkpoint)==a.digest
     core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,selected_epoch=selected,selected_e0=selected==0,actual_epochs=epoch,
-                  actual_TRAIN_steps=steps,target_correct=342,refinement_target_reached=best>=342,within8pp=best>=314,intermediate=False,head_frozen=True,gradient_parameters=10,
+                  actual_TRAIN_steps=steps,target_correct=342,refinement_target_reached=best>=342,within8pp=best>=314,intermediate=False,head_frozen=not joint,gradient_parameters=5150 if joint else 10,
                   native_RMS_backward_only=True,frozen_parameters_unchanged=True,all_nonhead_frozen=False,SDK_used=False,GPU_used=False,TEST_gradients=False,elapsed_fit_s=time.monotonic()-start))
 
 
@@ -753,12 +783,20 @@ def selftest():
     x=torch.rand(2,478,478);o=torch.rand_like(x);z=head(native_features(electronic,alpha,x,o));teacher=z.detach().softmax(1)
     cfg10=dict(label_smoothing=.02,teacher_KL=1.,anchor=.1);loss=terminal10_objective(z,torch.tensor([0,1]),torch.ones(20),teacher,torch.ones(2),electronic.local.weight,alpha,(electronic.local.weight.detach().clone(),alpha.detach().clone()),cfg10)
     loss.backward();assert torch.isfinite(alpha.grad) and torch.isfinite(electronic.local.weight.grad).all() and head.weight.grad is None
+    from lab_caltech20_native_terminal_20261019 import folded
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
+    mean,root,_,_,_=train_conditioned_geometry(torch.randn(32,256));delta=torch.nn.Parameter(torch.zeros(20,257,dtype=torch.float64))
+    w,b=folded(head.weight,head.bias,delta,mean,root);assert torch.equal(w,head.weight) and torch.equal(b,head.bias)
+    electronic.zero_grad();alpha.grad=None;z=F.linear(native_features(electronic,alpha,x,o),w,b)
+    cfg_joint=core.read(HERE/'lab_caltech20_DVP_native5150_profile_20261020.json')
+    joint_loss=native_joint_objective(z,torch.tensor([0,1]),torch.ones(20),teacher,torch.ones(2),electronic.local.weight,alpha,delta,(electronic.local.weight.detach().clone(),alpha.detach().clone()),cfg_joint)
+    joint_loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in (electronic.local.weight,alpha,delta)) and head.weight.grad is None
     print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true}')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'admit-chain', 'terminal10-fit', 'selftest'])
+    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'admit-chain', 'terminal10-fit', 'native5150-fit', 'selftest'])
     for name in ('sequence', 'checkpoint', 'profile', 'out', 'feature-run', 'parent-run'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--depth', type=int, choices=(4,6))
@@ -766,7 +804,7 @@ if __name__ == '__main__':
     parser.add_argument('--digest')
     args = parser.parse_args()
     try:
-        selftest() if args.mode == 'selftest' else terminal10_fit(args) if args.mode=='terminal10-fit' else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
+        selftest() if args.mode == 'selftest' else terminal10_fit(args) if args.mode in ('terminal10-fit','native5150-fit') else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():
             core.save(args.out/'failure.json', dict(error=repr(error), automatic_retry=False))

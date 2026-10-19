@@ -125,6 +125,19 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
         self.assertEqual((cfg['epochs'],cfg['fit_seconds'],cfg['batch']),(60,600,8))
 
+    def test_joint_native_adapter_reuses_fixed_published_coefficients_and_original_graph(self):
+        cfg=json.loads((TASK/'lab_caltech20_DVP_native5150_profile_20261020.json').read_text())
+        old=json.loads((TASK/'lab_caltech20_L4_native_TRAINprior_profile_20261019.json').read_text())
+        for key in ('epochs','fit_seconds','batch','conv_lr','alpha_lr','head_coordinate_lr','weight_decay','label_smoothing','temperature','teacher_KL','terminal_anchor','head_coordinate_anchor','per_row_head_radius','original_TRAIN_counts','original_TRAIN_cache_SHA256'):
+            self.assertEqual(cfg[key],old[key])
+        self.assertEqual((len(cfg['original_TRAIN_counts']),sum(cfg['original_TRAIN_counts'])),(20,3141))
+        tree=ast.parse(SOURCE.read_text());loss=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='native_joint_objective')
+        self.assertFalse(any('test' in n.id.lower() for n in ast.walk(loss) if isinstance(n,ast.Name)))
+        text=SOURCE.read_text();self.assertIn('from lab_caltech20_native_terminal_20261019 import native_features,folded',text)
+        self.assertIn('head_coordinates_folded_into_original_5140=True',text)
+        self.assertIn('sum(v.numel() for v in params)==5150',text)
+        self.assertIn("joint==(a.mode=='native5150-fit')",text)
+
 
 if __name__ == '__main__':
     unittest.main()
