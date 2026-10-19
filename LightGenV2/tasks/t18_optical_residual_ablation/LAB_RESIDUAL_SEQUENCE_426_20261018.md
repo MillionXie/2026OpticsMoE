@@ -4,6 +4,29 @@
 
 ### E2 capture audited; diagnose weak readout before further G2 capture
 
+E2 follow-up: TRAIN-estimated shrinkage head249, existing single-row repair263,
+coupled-row269 and another original-row segment278/411 (67.6399%) all passed
+independent native411 CPU and measured-upstream freeze audits. These are still
+measured router/E1/G1/E2 plus SIMULATED G2, not fullphysical L4. TRAIN at263 is
+1009/1600, so substantial class underfitting remains. A single runtime-config
+continuation allows at most12passes/180fitseconds with the same published row
+objective/sampler/seed173/trust coefficients, first no-progress stop mandatory;
+no seed/radius grid. Preserve278 if no improvement. This does not relax8pp or
+the final342 target and does not authorize G2 capture from an unreviewed state.
+
+The warmer-head suffix comparison ended44epochs/1005fitseconds: selectedE0
+remains241, trainedlast224. A separately labelled original-head repair from
+that exact trainedlast reached257, below incumbent278, so its changed future
+mask is NOT selected. It is an initialization contrast, not a new improvement
+relative to the retained incumbent. Original best/last/source/parent-role and
+full native audit remain evidence. No new inference algorithm or physical data.
+
+Full1600 TRAIN-only feature-scatter diagnosis at current alpha2=.9106249108
+versus the original allowed lower endpoint.4001001 gave between/within ratios
+.236758 versus.228410. This does not support forcing alpha lower as a cure;
+the original alpha bounds and all measured upstream remain unchanged. Feature
+effective ranks3.05 versus5.18 are diagnostic, not proof of a unique cause.
+
 Fresh E2 completed1600TRAIN+411TEST in1348.83s. All receipt IDs/input/data/PT/
 phase and full arrays/independent raw/crop checks passed; SDK released. Phase
 9ac06418388acd9c0e7f2e902cb3406757782efeed755cf6790524dfbd8925fa,
