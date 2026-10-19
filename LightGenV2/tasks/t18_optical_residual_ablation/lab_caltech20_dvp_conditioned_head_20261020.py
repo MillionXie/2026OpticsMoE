@@ -19,7 +19,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parents[2])]
 import lab_caltech20_dvp_layerwise_20261019 as core
 from lab_caltech20_dvp_head_repair_20261019 import cache_features, batch_indices, selftest as original_row_selftest
-from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry, pair_direction, huber_row_direction, shrunk_readout
+from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry, pair_direction, huber_row_direction, binary_row_direction, shrunk_readout
 from lab_caltech20_residual_guarded_20261018 import improves, probability, score
 
 
@@ -359,13 +359,16 @@ def checked_features(a,model,data,fields,dm,identities):
 
 
 def row_fit(a):
-    """Same published single-row Huber updates; optional verified cache reuse."""
+    """Published single-row Huber or binary-CE updates; verified cache reuse."""
     cpu_fit_admission(a)
     torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
     fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
     cached,cacheproof=checked_features(a,model,data,fields,dm,identities);tr,te=cached['train'],cached['test']
+    binary=cfg.get('objective','huber_margin')=='binary_row'
+    assert cfg.get('objective','huber_margin') in ('huber_margin','binary_row')
+    if binary:assert tr['metric']['accuracy']>=cfg['minimum_TRAIN_accuracy'],'Binary-CE contrast requires the declared high-TRAIN fitting evidence'
     w,b=original['linear.weight'].numpy().copy(),original['linear.bias'].numpy().copy()
     baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);selected=0;steps=0;passes=0
     target=int(cfg['targets' if a.prefix<a.depth+1 else 'final_targets'][str(a.depth)])
@@ -394,11 +397,17 @@ def row_fit(a):
             rival_true=z0.copy();rival_true[np.arange(len(z0)),tr['y']]=-np.inf
             keep=((parent.argmax(1)==tr['y'])&(z0[np.arange(len(z0)),tr['y']]-rival_true.max(1)>.5)).astype(float)
             u0=torch.tensor(np.r_[w[label],b[label]],dtype=torch.float64);u=u0.clone();fixedw,fixedb=w.copy(),b.copy()
+            if binary:
+                binary_teacher=1/(1+np.exp(-np.clip((z0[:,label]-lse)/cfg['temperature'],-60,60)))
+                binary_target=np.where(tr['y']==label,1-cfg['binary_label_smoothing']/2,cfg['binary_label_smoothing']/2)
             plans.append(dict(pass_index=passes,class_index=label,TRAIN_neighbors=near,TRAIN_positives=positive.tolist(),TRAIN_hard_negatives=hard.tolist()))
             for _ in range(cfg['steps_each_class']):
                 ix=batch_indices(rng,near,positive,hard,len(tr['y']))
-                direction,_,_=huber_row_direction(u,u0,torch.from_numpy(xx[ix]),torch.from_numpy(reference[ix]),torch.from_numpy(sign[ix]),
-                        torch.from_numpy(lse[ix]),torch.from_numpy(parent[ix,label].astype(float)),torch.from_numpy(keep[ix]),cfg)
+                if binary:
+                    direction,_,_=binary_row_direction(u,u0,torch.from_numpy(xx[ix]),torch.from_numpy(lse[ix]),torch.from_numpy(binary_target[ix]),torch.from_numpy(binary_teacher[ix]),torch.from_numpy(keep[ix]),cfg)
+                else:
+                    direction,_,_=huber_row_direction(u,u0,torch.from_numpy(xx[ix]),torch.from_numpy(reference[ix]),torch.from_numpy(sign[ix]),
+                            torch.from_numpy(lse[ix]),torch.from_numpy(parent[ix,label].astype(float)),torch.from_numpy(keep[ix]),cfg)
                 assert torch.isfinite(direction).all();direction*=min(1.,cfg['trust_step']/max(float(direction.norm()),1e-12));u-=direction
                 offset=u-u0;u=u0+offset*min(1.,cfg['row_radius']/max(float(offset.norm()),1e-12))
                 ww,bb=fixedw.copy(),fixedb.copy();ww[label]=u[:-1].numpy().astype(np.float32);bb[label]=float(u[-1])
@@ -791,6 +800,13 @@ def selftest():
     cfg_joint=core.read(HERE/'lab_caltech20_DVP_native5150_profile_20261020.json')
     joint_loss=native_joint_objective(z,torch.tensor([0,1]),torch.ones(20),teacher,torch.ones(2),electronic.local.weight,alpha,delta,(electronic.local.weight.detach().clone(),alpha.detach().clone()),cfg_joint)
     joint_loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in (electronic.local.weight,alpha,delta)) and head.weight.grad is None
+    bx=torch.randn(9,7,dtype=torch.float64);bv=torch.randn(7,dtype=torch.float64,requires_grad=True);b0=torch.zeros_like(bv);bl=torch.randn(9,dtype=torch.float64);bt=torch.rand(9,dtype=torch.float64);bq=torch.rand(9,dtype=torch.float64);bk=torch.arange(9).remainder(2).double()
+    bc=dict(temperature=2.,teacher_KL=.25,anchor=.05,LM_damping=.1)
+    def binary_loss(v):
+        z=(bx@v-bl)/bc['temperature'];return (F.binary_cross_entropy_with_logits(z,bt,reduction='none')+bc['teacher_KL']*bk*F.binary_cross_entropy_with_logits(z,bq,reduction='none')).mean()+bc['anchor']*(v-b0).square().sum()
+    bd,bg,_=binary_row_direction(bv.detach(),b0,bx,bl,bt,bq,bk,bc);bh=torch.autograd.functional.hessian(binary_loss,bv)
+    assert torch.allclose(bg,torch.autograd.grad(binary_loss(bv),bv)[0],atol=1e-10)
+    assert torch.allclose((bh+bc['LM_damping']*torch.eye(7,dtype=torch.float64))@bd,bg,atol=1e-10)
     print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true}')
 
 

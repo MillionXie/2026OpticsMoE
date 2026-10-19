@@ -138,6 +138,17 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertIn('sum(v.numel() for v in params)==5150',text)
         self.assertIn("joint==(a.mode=='native5150-fit')",text)
 
+    def test_binary_row_requires_TRAIN_evidence_and_temperature_correct_teacher(self):
+        cfg=json.loads((TASK/'lab_caltech20_DVP_binary_head_profile_20261020.json').read_text())
+        self.assertEqual(cfg['objective'],'binary_row')
+        self.assertEqual(cfg['minimum_TRAIN_accuracy'],.8)
+        self.assertEqual(cfg['temperature'],2.)
+        self.assertEqual((cfg['maximum_passes'],cfg['maximum_fit_seconds']),(3,120))
+        text=SOURCE.read_text()
+        self.assertIn("tr['metric']['accuracy']>=cfg['minimum_TRAIN_accuracy']",text)
+        self.assertIn("(z0[:,label]-lse)/cfg['temperature']",text)
+        self.assertIn('binary_row_direction(u,u0,torch.from_numpy(xx[ix])',text)
+
 
 if __name__ == '__main__':
     unittest.main()

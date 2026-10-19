@@ -1803,3 +1803,18 @@ epochs/360fitseconds, seed73 as in that published method, no grid/microstep
 replay. Full original411 bestlast replay and frozen audit mandatory; preserve277
 if no gain. Profile lab_caltech20_DVP_native5150_profile_20261020.json. This does
 not block L6 camera/GPU and does not promise a successful final score.
+
+After consulting the user-referenced chat 微调方法总结, add one explicitly
+TRAIN-gated one-vs-rest binary-CE row contrast for high-TRAIN-fitting prefixes.
+The already-published binary_row_direction supplies its exact full curvature;
+this adapter keeps DVP1600 sampling/ID/native cache guards, not legacy1200.
+TRAIN fitting accuracy must be >=80% before optimization. T2 binary teacher is
+sigmoid((parent row score-rest LSE)/2), targets .99/.01. Other19 rows and every
+nonhead parameter stay frozen, same local TRAIN/negative/global replay, fixed
+KL.25/anchor.05/damping.1/radius.5/trust.25/seed173. Three passes/120fitseconds,
+first no-progress stop, no repeat/seed/loss-temperature scan. This changes loss
+and temperature together, not an isolated-method benefit claim. Only TRAIN
+labels/features enter derivatives; TEST-guided neighbors/checkpoints are
+development, not independent generalization. Profile
+lab_caltech20_DVP_binary_head_profile_20261020.json. Numeric gradient/Hessian
+proof and Git-only publication precede its first use; no live source patch.
