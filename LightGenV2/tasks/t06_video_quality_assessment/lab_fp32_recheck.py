@@ -14,7 +14,6 @@ from . import rental_precision_recheck as shared
 from . import evaluate_temporal_baseline_batches as frozen
 from . import measure_frozen_batch_costs as costs
 from . import unified_resident_utilization as resident
-from . import quality_token_common as core
 
 TASK=Path(__file__).resolve().parent
 REPO=TASK.parents[2]
@@ -23,6 +22,7 @@ ROOT=TASK/'runs/simulation/lgvq_fp32_a100_20261019'
 
 def runtime(args,guard,identity):
     import torch
+    from . import quality_token_common as core
     assert args.precision=='fp32'
     payload=torch.load(args.checkpoint,map_location='cpu',weights_only=False)
     digest=frozen.sha256(args.checkpoint)
