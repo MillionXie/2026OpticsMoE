@@ -29,7 +29,7 @@ from lab_caltech20_rich_model_20261018 import load_checkpoint,encode_images,DIRE
 from lab_caltech20_rich_layerwise_20261018 import MeasuredPrefix,allowed_keys,state_cpu
 from lab_caltech20_rich_capture_20261018 import layer_forward,metrics
 from lab_caltech20_residual_guarded_20261018 import improves
-from lab_caltech20_dvp_20261019 import Bench,orient,LOCK
+from lab_caltech20_dvp_20261019 import Bench,orient,LOCK,correlation,variants
 
 SOURCE_CACHE='38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445'
 HARDWARE='3b89d610d939141dec9c5d0955f23765454cd7e7bebfe1c92c5e64e5376713ae'
@@ -165,8 +165,50 @@ def gate(a,data,dm,spec):
     save(out,dict(passed=True,depth=a.depth,PT_SHA256=spec['PT_SHA256'],data_SHA256=dm['sha256'],reference_SHA256=spec['reference_SHA256'],fixed_cached_simulation_correct=spec['simulation_correct'],native_laboratory_simulation_correct=checks['test']['correct'],batch=8,last_batch_zero_padding=True,checks=checks,SDK_opened=False,TEST_development=True,source_git=git_head(),source_SHA256=sha(__file__)))
 
 
+def revalidate_replug(bench,out,hardware,warp):
+    """Known patterns at the ORIGINAL settings; no score-based calibration/refit."""
+    import cv2
+    folder=out/'replug_validation';folder.mkdir();zero=np.zeros((478,478),np.uint8)
+    phase=folder/'flat_phase.bmp';Image.fromarray(phase_native(zero)).save(phase);bench.stage(phase)
+    marker=np.full_like(zero,24);marker[35:215,35:215]=210;marker[35:215,263:443]=90;marker[263:443,35:215]=150;marker[290:390,290:390]=255
+    rows=[];images=[]
+    for name,pixels in (('dark',zero),('white',zero+255),('marker',marker),('toggle',np.fliplr(marker).copy())):
+        path=folder/(name+'.bmp');Image.fromarray(native(pixels,'amplitude')).save(path)
+        raw,meta=bench.capture(path);crop=cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0)
+        Image.fromarray(raw).save(folder/(name+'_raw.png'),compress_level=1);Image.fromarray(crop).save(folder/(name+'_crop.png'))
+        v=orient(crop,hardware['orientation']);images.append(crop);rows.append(dict(name=name,mean=float(v.mean()),p99=float(np.percentile(v,99)),saturation=float((v==255).mean()),meta=meta))
+    # Fixed admission tolerances reject an altered scene rather than refit the LUT.
+    response=read(hardware['response_lut']);old=response['fit_means'];span=old[-1]-old[0]
+    assert abs(rows[0]['mean']-old[0])<=max(3.,span*.1)
+    assert abs(rows[1]['mean']-old[-1])<=span*.1 and rows[1]['saturation']<.001 and rows[1]['p99']>=40
+    scores={k:correlation(v,marker.astype(float)**2) for k,v in variants(images[2]).items()};rank=sorted(scores,key=scores.get,reverse=True)
+    # The ideal marker itself has only .0847 separation from rot270.
+    assert rank[0]==hardware['orientation'] and scores[rank[0]]>=.85 and scores[rank[0]]-scores[rank[1]]>=.05
+    current=orient(images[3],hardware['orientation']);new=correlation(current,np.fliplr(marker).astype(float)**2);stale=correlation(current,marker.astype(float)**2)
+    assert new>=.85 and new>stale+.1
+    save(folder/'report.json',dict(passed=True,settings=bench.settings,rows=rows,orientation_scores=scores,toggle_current_PCC=new,toggle_previous_PCC=stale,hardware_SHA256=HARDWARE,LUT_unchanged=True,TEST_used=False))
+
+
+def admitted_pilot(session,data,dm,digest):
+    pilot=session/'router_pilot24';r=read(pilot/'report.json')
+    assert r['state']=='complete' and r['pilot'] and r['physical_ccd']==24 and r['sdk_released']
+    assert r['PT_SHA256']==digest and r['hardware_SHA256']==HARDWARE and r['data_SHA256']==dm['sha256']
+    assert sha(pilot/'train/ccd.npy')==r['arrays']['train']['SHA256']
+    array=np.load(pilot/'train/ccd.npy',mmap_mode='r');assert array.shape==(24,478,478)
+    for i in range(24):
+        base=pilot/'train'/f'{i:06d}';row=read(base.with_suffix('.json'))
+        assert row['sample_id']==str(data['train'][2][i]) and row['index']==i and row['role']=='train' and row['stage']=='router'
+        assert row['PT_SHA256']==digest and row['hardware_SHA256']==HARDWARE and row['data_SHA256']==dm['sha256'] and row['phase_SHA256']==sha(pilot/'phase.bmp')
+        assert row['canonical_SHA256']==sha(base.with_name(base.name+'_input.png')) and row['raw_SHA256']==sha(base.with_name(base.name+'_raw.png'))
+        meta=row['frame_metadata'];assert abs(meta['exposure_us']-5000.5)<2 and meta['gain']==1 and meta['shape']==[3648,5480]
+        assert meta['format']==0 and meta['bits']==0 and not any(meta[k] for k in ('flip_h','flip_v','rotate','opposite'))
+        with Image.open(base.with_suffix('.png')) as im:assert np.array_equal(np.asarray(im),array[i])
+        assert row['p99']>=15 and row['saturation_fraction']<=.15
+    return pilot,array
+
+
 @torch.no_grad()
-def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False):
+def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router=False):
     import cv2
     session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(stage)
     if prefix:
@@ -176,12 +218,22 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False):
         assert read(session/'capture'/prior_stage/'report.json')['PT_SHA256']==fit_protocol['parent_PT_SHA256']
     previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
-    out=session/'router_pilot24' if pilot else session/'capture'/stage;assert not out.exists();out.mkdir(parents=True)
+    out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None
+    if resume_router:
+        assert a.depth==4 and stage=='router' and not pilot
+        source,reused=admitted_pilot(session,data,dm,digest)
+        assert out.is_dir() and read(out/'failure.json')['frames']==0 and not (out/'report.json').exists()
+        assert not list(out.rglob('ccd.npy')) and not list(out.rglob('*_raw.png'))
+        archived=out.with_name('router_failed_start_20261019');assert not archived.exists()
+        # Exact verified empty failed attempt, preserved within the same run.
+        out.rename(archived)
+    assert not out.exists();out.mkdir(parents=True)
     warp=cv2.getPerspectiveTransform(np.float32(corners(Path(hardware['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]));phasepath=out/'phase.bmp';phase_pixels=None;frames=0;start=time.perf_counter();arrays={};elapsed=[]
     save(out/'contract.json',dict(camera='DVP',hardware_SHA256=HARDWARE,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__)))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),stage=stage,session=str(session),camera='DVP',pilot=pilot)))
     try:
         with Bench(hardware,out) as bench:
+            if resume_router:revalidate_replug(bench,out,hardware,warp)
             for role in ('train',) if pilot else ('train','test'):
                 images,y,ids=data[role];n_total=24 if pilot else len(y);folder=out/role;folder.mkdir();ccd=np.lib.format.open_memmap(folder/'ccd.npy',mode='w+',dtype=np.uint8,shape=(n_total,478,478));last_end=0
                 for begin in range(0,n_total,8):
@@ -199,9 +251,19 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False):
                         for j in range(n):
                             index=begin+j;t=time.perf_counter();gray=np.rint(amplitude[j].clip(0,1)*255).astype(np.uint8);assert np.max(np.abs(gray/255-amplitude[j]))<=1e-7
                             base=folder/f'{index:06d}';canonical=base.with_name(base.name+'_input.png');Image.fromarray(gray).save(canonical,compress_level=1);bmp=base.with_name(base.name+'_transient.bmp');Image.fromarray(native(drive[gray],'amplitude')).save(bmp)
-                            raw,meta=bench.capture(bmp);crop=orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation'])
-                            rawfile=base.with_name(base.name+'_raw.png');Image.fromarray(raw).save(rawfile,compress_level=1);Image.fromarray(crop).save(base.with_suffix('.png'),compress_level=1);ccd[index]=crop;ccd.flush()
-                            row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=HARDWARE,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=sha(rawfile),frame_metadata=meta,p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),complete_sample_ms=(time.perf_counter()-t)*1000,captured_at_ns=time.time_ns())
+                            if reused is not None and role=='train' and index<24:
+                                old=source/'train'/f'{index:06d}';row=read(old.with_suffix('.json'))
+                                assert row['canonical_SHA256']==sha(canonical) and row['input_SHA256']==sha(bmp) and row['phase_SHA256']==sha(phasepath)
+                                crop=np.asarray(reused[index]).copy()
+                                for suffix in ('_raw.png','.png'):
+                                    src=old.with_name(old.name+suffix);dest=base.with_name(base.name+suffix)
+                                    os.link(src,dest)
+                                row=dict(row,reused_from=str(old.with_suffix('.json')),source_receipt_SHA256=sha(old.with_suffix('.json')),new_physical_capture=False)
+                            else:
+                                raw,meta=bench.capture(bmp);crop=orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation'])
+                                rawfile=base.with_name(base.name+'_raw.png');Image.fromarray(raw).save(rawfile,compress_level=1);Image.fromarray(crop).save(base.with_suffix('.png'),compress_level=1)
+                                row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=HARDWARE,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=sha(rawfile),frame_metadata=meta,p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),complete_sample_ms=(time.perf_counter()-t)*1000,captured_at_ns=time.time_ns(),new_physical_capture=True)
+                            ccd[index]=crop;ccd.flush()
                             save(base.with_suffix('.json'),row);frames+=1;elapsed.append(row['complete_sample_ms']);values.append(crop);save(session/'progress.json',dict(state='pilot' if pilot else 'capturing',depth=a.depth,stage=stage,role=role,completed=index+1,total=n_total,stage_frames=frames,elapsed_s=time.perf_counter()-start,latest=row))
                             # Transient BMP is redundant; canonical input, exact drive LUT and digest remain.
                             bmp.unlink()
@@ -219,7 +281,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False):
                 assert r['canonical_SHA256']==sha(base.with_name(base.name+'_input.png'))
                 with Image.open(base.with_suffix('.png')) as im:assert np.array_equal(np.asarray(im),stored[i])
             audit[role]=dict(receipts=count,crop_array_equality=True,IDs_PT_phase_canonical_SHA256=True)
-        save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
+        save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,new_physical_ccd=frames-(24 if resume_router else 0),reused_pilot_ccd=24 if resume_router else 0,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
     except BaseException as ex:save(out/'failure.json',dict(error=repr(ex),traceback=traceback.format_exc(),frames=frames,automatic_retry=False));raise
     finally:LOCK.unlink()
 
@@ -273,18 +335,50 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
     del model,opt;torch.cuda.empty_cache();return out/'best.pt',results['best']['PT_SHA256'],read(out/'report.json')
 
 
+def capture_worker(a,cfg,stage,checkpoint,digest,pilot=False,resume_router=False):
+    """One SDK lifetime per fresh desktop child; no automatic hardware retry."""
+    log=a.sequence/f'L{a.depth}'/(('router_pilot24' if pilot else 'capture_'+stage)+'_worker.log')
+    assert not log.exists() and not LOCK.exists()
+    command=[sys.executable,str(Path(__file__).resolve()),'--mode','capture','--sequence',str(a.sequence),'--profile',str(a.profile),'--depth',str(a.depth),'--stage',stage,'--checkpoint',str(checkpoint),'--digest',digest]
+    if pilot:command.append('--pilot')
+    if resume_router:command.append('--resume-router')
+    env=dict(os.environ,CUDA_VISIBLE_DEVICES='')
+    with log.open('x',encoding='utf-8',buffering=1) as stream:
+        worker=subprocess.Popen(command,cwd=ROOT,env=env,stdout=stream,stderr=subprocess.STDOUT,creationflags=0x08000000 if os.name=='nt' else 0)
+        save(log.with_suffix('.launch.json'),dict(pid=worker.pid,command=command,source_git=git_head(),source_SHA256=sha(__file__),fresh_SDK_process=True,automatic_retry=False))
+        rc=worker.wait()
+    save(log.with_suffix('.exit.json'),dict(pid=worker.pid,returncode=rc,SDK_lock=LOCK.exists()))
+    assert rc==0 and not LOCK.exists(),('Capture child failed; preserve all evidence, no retry',stage,rc,str(log))
+
+
 def run(a):
-    cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);assert not (a.sequence/'controller').exists() and not LOCK.exists();out=a.sequence/'controller';out.mkdir();data,dm=data_for(a.sequence)
+    cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);resuming=a.mode=='resume';out=a.sequence/('controller_resume_USB_20261019' if resuming else 'controller')
+    assert not out.exists() and not LOCK.exists()
+    if resuming:
+        import psutil
+        original=read(a.sequence/'controller/started.json');assert not psutil.pid_exists(original['pid'])
+        assert read(a.sequence/'controller/failure.json')['automatic_retry'] is False
+        probe=read(a.sequence/'calibration/user_replug_settings_20261019/report.json')
+        assert probe['state']=='original_admitted_settings_restored' and probe['SDK_released'] and probe['hardware_SHA256']==HARDWARE
+        assert abs(probe['selected']['exposure_us']-5000.5)<2 and probe['selected']['gain']==1
+    out.mkdir();data,dm=data_for(a.sequence)
     hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==HARDWARE;hardware=read(hardwarepath);assert sha(hardware['response_lut'])==hardware['response_lut_SHA256'] and sha(hardware['phase_lut'])==hardware['phase_LUT_SHA256']
     assert read(a.sequence/'calibration/admission/report.json')['passed'];assert shutil.disk_usage(a.sequence).free>cfg['minimum_free_GiB']*(1<<30)
-    save(out/'started.json',dict(pid=os.getpid(),source_git=git_head(),source_SHA256=sha(__file__),config_SHA256=sha(a.profile),data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,order=cfg['order'],recurring=False,planned_CCD=24132,TRAIN=1600,original_unique_TRAIN=1508,fixed_augmented_TRAIN=92,TEST=411,VALID=0));completed=[]
+    save(out/'started.json',dict(pid=os.getpid(),source_git=git_head(),source_SHA256=sha(__file__),config_SHA256=sha(a.profile),data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,order=cfg['order'],recurring=False,planned_CCD=24132,planned_reused_pilot_CCD=24 if resuming else 0,explicit_resume=resuming,TRAIN=1600,original_unique_TRAIN=1508,fixed_augmented_TRAIN=92,TEST=411,VALID=0));completed=[]
     for depth in cfg['order']:
-        a.depth=depth;session=a.sequence/f'L{depth}';session.mkdir(exist_ok=True);spec=cfg['models'][str(depth)];gate(a,data,dm,spec);checkpoint=session/'initial.pt';digest=spec['PT_SHA256']
-        # Separate24 TRAIN-only pilot is never silently counted as full data.
-        acquire(a,'router',checkpoint,digest,data,dm,hardware,pilot=True);assert read(session/'router_pilot24/report.json')['sdk_released'];records=[]
+        a.depth=depth;session=a.sequence/f'L{depth}';session.mkdir(exist_ok=True);spec=cfg['models'][str(depth)]
+        if resuming and depth==4:
+            previous_gate=read(session/'lab_gate.json');assert previous_gate['passed'] and previous_gate['PT_SHA256']==spec['PT_SHA256'] and previous_gate['reference_SHA256']==spec['reference_SHA256'] and previous_gate['data_SHA256']==dm['sha256']
+            assert sha(session/'initial.pt')==spec['PT_SHA256'] and sha(session/'source_reference.ts')==spec['reference_SHA256']
+            admitted_pilot(session,data,dm,spec['PT_SHA256'])
+        else:gate(a,data,dm,spec)
+        checkpoint=session/'initial.pt';digest=spec['PT_SHA256']
+        # Recovery explicitly validates and reuses the existing pilot; no re-shoot.
+        if not (resuming and depth==4):capture_worker(a,cfg,'router',checkpoint,digest,pilot=True)
+        assert read(session/'router_pilot24/report.json')['sdk_released'];records=[]
         for prefix,stage in enumerate(['router']+[str(k) for k in range(depth)],1):
-            acquire(a,stage,checkpoint,digest,data,dm,hardware);checkpoint,digest,report=fit(a,data,dm,checkpoint,digest,prefix,cfg);records.append(dict(stage=stage,selected_PT=str(checkpoint),PT_SHA256=digest,TEST_correct=report['selected_correct'],selected_epoch=report['selected_epoch'],within8pp=report['within8pp'],kind='full_measured' if prefix==depth+1 else 'measured_prefix_simulated_suffix'));save(session/'stage_history.json',records)
-        score=records[-1]['TEST_correct'];result=dict(state='complete',depth=depth,fully_measured=True,TEST_correct=score,TEST=411,accuracy=score/411,fixed_simulation_correct=spec['simulation_correct'],gap_pp=100*(spec['simulation_correct']-score)/411,PT=str(checkpoint),PT_SHA256=digest,SDK_released=not LOCK.exists(),physical_CCD=2011*(depth+1),pilot_CCD=24,TEST_development=True,records=records);save(session/'report.json',result);completed.append(result);save(out/'completed_models.json',completed);print(json.dumps(result),flush=True)
+            capture_worker(a,cfg,stage,checkpoint,digest,resume_router=resuming and depth==4 and prefix==1);checkpoint,digest,report=fit(a,data,dm,checkpoint,digest,prefix,cfg);records.append(dict(stage=stage,selected_PT=str(checkpoint),PT_SHA256=digest,TEST_correct=report['selected_correct'],selected_epoch=report['selected_epoch'],within8pp=report['within8pp'],kind='full_measured' if prefix==depth+1 else 'measured_prefix_simulated_suffix'));save(session/'stage_history.json',records)
+        score=records[-1]['TEST_correct'];reused_count=24 if resuming and depth==4 else 0;result=dict(state='complete',depth=depth,fully_measured=True,TEST_correct=score,TEST=411,accuracy=score/411,fixed_simulation_correct=spec['simulation_correct'],gap_pp=100*(spec['simulation_correct']-score)/411,PT=str(checkpoint),PT_SHA256=digest,SDK_released=not LOCK.exists(),physical_CCD=2011*(depth+1),new_physical_CCD=2011*(depth+1)-reused_count,pilot_CCD=24,reused_pilot_CCD=reused_count,TEST_development=True,records=records);save(session/'report.json',result);completed.append(result);save(out/'completed_models.json',completed);print(json.dumps(result),flush=True)
     save(out/'report.json',dict(state='complete',results=completed,SDK_released=not LOCK.exists(),recurring=False))
 
 
@@ -312,9 +406,16 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);a=p.parse_args()
-    try:selftest() if a.mode=='selftest' else prepare(a) if a.mode=='prepare' else run(a)
+    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');a=p.parse_args()
+    try:
+        if a.mode=='selftest':selftest()
+        elif a.mode=='prepare':prepare(a)
+        elif a.mode=='capture':
+            cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);data,dm=data_for(a.sequence);hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==HARDWARE;hardware=read(hardwarepath)
+            assert sha(hardware['response_lut'])==hardware['response_lut_SHA256'] and sha(hardware['phase_lut'])==hardware['phase_LUT_SHA256']
+            assert sha(a.checkpoint)==a.digest;acquire(a,a.stage,a.checkpoint,a.digest,data,dm,hardware,pilot=a.pilot,resume_router=a.resume_router)
+        else:run(a)
     except BaseException as ex:
-        folder=a.sequence/'controller' if a.mode=='run' else a.out
+        folder=a.sequence/('controller_resume_USB_20261019' if a.mode=='resume' else 'controller') if a.mode in ('run','resume') else a.out
         if folder and folder.exists():save(folder/'failure.json',dict(error=repr(ex),traceback=traceback.format_exc(),automatic_retry=False))
         raise

@@ -2,6 +2,35 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### User USB replug: recovered reads, finite explicit resume
+
+User physically replugged USB. Windows normal M3S2000M/SDK count1 restored;
+independent8frames passed. Camera power-cycle reset exposure to40004us. Before
+any new task CCD, original admitted5000.5us/gain1 were explicitly restored and
+14monotonic MONO5480x3648 frames/readback/hardware flags passed. These are
+diagnostic frames, not new task results; original hardware/LUT identity stays.
+
+Entry adds explicit `resume` (never automatic retry), with a separate recovery
+controller in the SAME run. Old failure/gate/pilot remain intact. The empty
+failed router attempt is verified0frames/noarrays then renamed in place to
+`capture/router_failed_start_20261019`, never deleted. Exact matching24pilot
+images may now be explicitly reused as first24TRAIN entries after per-ID/PT/
+data/phase/canonical/raw/array audits and fresh generated-input equality.
+Reports distinguish2011unique measured entries from1987new+24reused captures.
+This explicitly supersedes the earlier separate-pilot-only full-shot rule for
+L4 recovery; no old-camera or mismatched-checkpoint CCD is admitted.
+
+Every capture stage uses one fresh child process/SDK lifetime, no re-open loop
+in the controller; SDK must release/child exit before suffix fitting. Before
+the resumed router capture, SAME connection first verifies dark/white/asymmetric
+marker/toggle at ORIGINAL settings, original LUT unchanged. Predeclared drift
+tolerance10% of original white-dark span, dark<=max3gray or10%, white clip<.1%,
+orientation SAME flip_v/PCC>=.85/margin>=.05 (ideal marker margin.0847), toggle
+new>=.85 and new>previous+.1. Any failure stops, retains evidence, no refit/
+exposure search/model-score selection. L4thenL6, original model/suffix budget/
+TRAIN1600/TEST411/VALID0 remain unchanged. New-camera read recovery is NOT
+proof that full acquisition has resumed; actual progress receipts must confirm.
+
 ### Actual attempt stopped at USB device loss, 2026-10-19
 
 Source7662f6366 was published and synchronized to lab/server. Fixed data1600

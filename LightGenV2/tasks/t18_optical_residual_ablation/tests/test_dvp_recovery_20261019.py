@@ -1,0 +1,72 @@
+"""Recovery identity/known-pattern tests without importing Torch or opening SDKs."""
+import ast
+import hashlib
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+import numpy as np
+from PIL import Image
+
+
+HERE=Path(__file__).resolve().parents[1]
+
+
+def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def read(path):return json.loads(Path(path).read_text())
+def save(path,value):Path(path).write_text(json.dumps(value))
+
+
+def functions(path,names,scope):
+    nodes=[n for n in ast.parse(path.read_text(encoding='utf-8')).body if isinstance(n,ast.FunctionDef) and n.name in names]
+    assert {n.name for n in nodes}==set(names)
+    exec(compile(ast.Module(body=nodes,type_ignores=[]),str(path),'exec'),scope)
+
+
+class RecoveryTests(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
+        self.scope=dict(np=np,Path=Path,Image=Image,sha=sha,read=read,save=save,HARDWARE='hardware')
+        functions(HERE/'lab_caltech20_dvp_20261019.py',('variants','orient','correlation'),self.scope)
+        functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('admitted_pilot','revalidate_replug'),self.scope)
+
+    def pilot(self):
+        folder=self.root/'router_pilot24';(folder/'train').mkdir(parents=True)
+        Image.fromarray(np.zeros((478,478),np.uint8)).save(folder/'phase.bmp')
+        array=np.zeros((24,478,478),np.uint8);np.save(folder/'train/ccd.npy',array)
+        for i in range(24):
+            base=folder/'train'/f'{i:06d}'
+            for suffix in ('_input.png','_raw.png','.png'):Image.fromarray(array[i]).save(base.with_name(base.name+suffix))
+            meta=dict(exposure_us=5000.5,gain=1,shape=[3648,5480],format=0,bits=0,flip_h=False,flip_v=False,rotate=False,opposite=False)
+            save(base.with_suffix('.json'),dict(sample_id=str(i),index=i,role='train',stage='router',PT_SHA256='pt',hardware_SHA256='hardware',data_SHA256='data',phase_SHA256=sha(folder/'phase.bmp'),canonical_SHA256=sha(base.with_name(base.name+'_input.png')),raw_SHA256=sha(base.with_name(base.name+'_raw.png')),p99=30,saturation_fraction=0,frame_metadata=meta))
+        save(folder/'report.json',dict(state='complete',pilot=True,physical_ccd=24,sdk_released=True,PT_SHA256='pt',hardware_SHA256='hardware',data_SHA256='data',arrays=dict(train=dict(SHA256=sha(folder/'train/ccd.npy')))))
+        return dict(train=(None,None,np.array([str(i) for i in range(24)]))),dict(sha256='data')
+
+    def test_exact_pilot_and_changed_checkpoint(self):
+        data,dm=self.pilot();_,array=self.scope['admitted_pilot'](self.root,data,dm,'pt');self.assertEqual(array.shape,(24,478,478))
+        with self.assertRaises(AssertionError):self.scope['admitted_pilot'](self.root,data,dm,'other_pt')
+
+    def test_changed_raw_rejected(self):
+        data,dm=self.pilot();Image.fromarray(np.ones((478,478),np.uint8)).save(self.root/'router_pilot24/train/000003_raw.png')
+        with self.assertRaises(AssertionError):self.scope['admitted_pilot'](self.root,data,dm,'pt')
+
+    def validation(self,brightness=1,wrong_direction=False):
+        response=self.root/'response.json';save(response,dict(fit_means=[0,120]));hardware=dict(response_lut=str(response),orientation='flip_v')
+        self.scope.update(native=lambda x,kind:x,phase_native=lambda x:x)
+        class Bench:
+            settings=dict(exposure_us=5000.5,gain=1.)
+            def stage(self,path):pass
+            def capture(self,path):
+                pixels=np.asarray(Image.open(path));signal=np.rint(pixels.astype(float)**2/255**2*120*brightness).clip(0,255).astype(np.uint8)
+                return signal if wrong_direction else np.flipud(signal),dict(frame_id=1)
+        self.scope['revalidate_replug'](Bench(),self.root,hardware,np.eye(3))
+
+    def test_known_patterns_pass(self):self.validation();self.assertTrue(read(self.root/'replug_validation/report.json')['passed'])
+    def test_brightness_drift_rejected(self):
+        with self.assertRaises(AssertionError):self.validation(brightness=.7)
+    def test_wrong_direction_rejected(self):
+        with self.assertRaises(AssertionError):self.validation(wrong_direction=True)
+
+
+if __name__=='__main__':unittest.main()
