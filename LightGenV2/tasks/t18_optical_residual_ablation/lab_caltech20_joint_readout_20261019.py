@@ -28,19 +28,27 @@ def conjugate(g,hv,iterations):
     return result
 
 
+def TRAIN_class_basis(x,y):
+    means=torch.stack([x[y==k].mean(0) for k in range(20)]);means-=means.mean(0);_,s,vt=torch.linalg.svd(means,full_matrices=False);basis=vt[:19].T;assert torch.allclose(basis.T@basis,torch.eye(19,dtype=x.dtype),atol=1e-9);return basis,s
+
+
 def selftest():
     torch.set_num_threads(2);torch.manual_seed(73);x=torch.randn(11,7,dtype=torch.float64);base=torch.randn(11,20,dtype=torch.float64);y=torch.arange(11)%20;teacher=(base/2).softmax(1);keep=torch.arange(11)%2==0;d=(torch.randn(20,7,dtype=torch.float64)*.01).requires_grad_();c=dict(temperature=2.,teacher_KL=2.,anchor=.1,LM_damping=.1)
     def loss(v):
         z=base+x@v.T;return F.cross_entropy(z,y)+8*(F.kl_div((z/2).log_softmax(1),teacher,reduction='none').sum(1)*keep).mean()+.1*v.square().sum()
-    g,hv=derivatives(d.detach(),x,base,y,teacher,keep,c);assert torch.allclose(g,torch.autograd.grad(loss(d),d)[0],atol=1e-10);v=torch.randn_like(d);h=torch.autograd.functional.hvp(loss,d,v)[1];assert torch.allclose(hv(v),h+.1*v,atol=1e-10);step=conjugate(g,hv,80);assert (g*step).sum()>0;print('Joint original-head Newton-CG gradient/HVP positive damping selftest passed',flush=True)
+    g,hv=derivatives(d.detach(),x,base,y,teacher,keep,c);assert torch.allclose(g,torch.autograd.grad(loss(d),d)[0],atol=1e-10);v=torch.randn_like(d);h=torch.autograd.functional.hvp(loss,d,v)[1];assert torch.allclose(hv(v),h+.1*v,atol=1e-10);step=conjugate(g,hv,80);assert (g*step).sum()>0
+    tx=torch.randn(40,256,dtype=torch.float64);labels=torch.arange(40)%20;basis,_=TRAIN_class_basis(tx,labels);coef=torch.randn(20,19,dtype=torch.float64);assert torch.allclose((tx@basis)@coef.T,tx@(coef@basis.T).T,atol=1e-9);print('Joint original-head Newton-CG gradient/HVP and TRAIN-only19-direction folding selftest passed',flush=True)
 
 
 def run(a):
     torch.set_num_threads(2);assert not a.out.exists();a.out.mkdir();cfg,data,dm,model,original,_,_,ids=sealed_dataset_model(a);c=json.loads(a.fit_profile.read_text());assert c['steps']<=256 and c['fit_seconds']<=180;bank={r:np.load(a.feature_run/(r+'_features.npz')) for r in ('train','test')};tr,te=bank['train'],bank['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();mean,root,_,ev,floor=train_conditioned_geometry(tr['features']);x=torch.cat([((torch.from_numpy(tr['features']).double()-mean)@root),torch.ones(1200,1,dtype=torch.float64)],1);base=torch.from_numpy(tr['features'].astype(float)@w.astype(float).T+b.astype(float));y=torch.from_numpy(tr['labels'].astype(np.int64));teacher=(base/c['temperature']).softmax(1);keep=base.argmax(1)==y;delta=torch.zeros(20,257,dtype=torch.float64);selected=delta.clone();baseline=probability(te['features'],w,b);count=lambda p:int((p.argmax(1)==te['labels']).sum());nll=lambda p:float(-np.log(p[np.arange(411),te['labels']].clip(1e-12)).mean());best,bestloss=count(baseline),nll(baseline);initial=best;history=[];rng=np.random.default_rng(73+a.depth);start=time.monotonic();radius=np.sqrt(20)*c['per_row_trust_radius'];order=np.arange(1200);cursor=1200
-    protocol=dict(source_SHA256=sha(__file__),profile=c,parent_PT_SHA256=a.checkpoint_sha,sealed_evidence=cfg['sealed_evidence'],data_SHA256=dm['sha256'],captured_prefix_SHA256=ids,TRAIN=1200,TEST=411,VALID=0,gradient_parameters=5140,inference_parameters=5140,all_nonhead_frozen=True,TRAIN_only_covariance=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False)
+    basis=None
+    if c.get('TRAIN_class_mean_subspace',False):
+        basis,s=TRAIN_class_basis(x[:,:256],y);x=torch.cat([x[:,:256]@basis,x[:,256:]],1);delta=torch.zeros(20,20,dtype=torch.float64);selected=delta.clone();np.savez_compressed(a.out/'TRAIN_class_basis.npz',basis=basis.numpy(),singular_values=s.numpy(),TRAIN_counts=np.bincount(tr['labels'],minlength=20))
+    protocol=dict(source_SHA256=sha(__file__),profile=c,parent_PT_SHA256=a.checkpoint_sha,sealed_evidence=cfg['sealed_evidence'],data_SHA256=dm['sha256'],captured_prefix_SHA256=ids,TRAIN=1200,TEST=411,VALID=0,gradient_parameters=delta.numel(),inference_parameters=5140,TRAIN_class_basis_SHA256=sha(a.out/'TRAIN_class_basis.npz') if basis is not None else None,all_nonhead_frozen=True,TRAIN_only_covariance=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False)
     save(a.out/'protocol.json',protocol)
     def native(v):
-        dw=v[:,:256]@root;db=v[:,256]-dw@mean;return w+dw.float().numpy(),b+db.float().numpy()
+        coef=v[:,:-1] if basis is None else v[:,:-1]@basis.T;dw=coef@root;db=v[:,-1]-dw@mean;return w+dw.float().numpy(),b+db.float().numpy()
     assert np.array_equal(native(delta)[0],w) and np.array_equal(native(delta)[1],b)
     for step in range(1,c['steps']+1):
         if cursor+c['batch_size']>1200:order=rng.permutation(1200);cursor=0

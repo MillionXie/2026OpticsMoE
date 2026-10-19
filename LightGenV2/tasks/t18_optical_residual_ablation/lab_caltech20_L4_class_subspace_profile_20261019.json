@@ -1,0 +1,11 @@
+{
+  "scope":"One original-head comparison restricting updates to19 TRAIN class-mean directions after full5150 TRAIN-fit/TEST regression",
+  "TRAIN_class_mean_subspace":true,
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"per_row_trust_radius":0.4,"CG_iterations":12,
+  "steps":256,"batch_size":128,"fit_seconds":90,
+  "subspace":"TRAIN1200-only class means in TRAIN covariance coordinates; rank19,400 training coordinates folded into original5140 head",
+  "TRAIN_sampling":"one fixed continuous permutation; no TEST/VALID derivative or class prior",
+  "stop":"at most256 TRAIN batches or90fitseconds or305 correct; no scan/automatic continuation",
+  "TEST_gradient":false,"VALID":0,"SDK":false,"GPU":false
+}

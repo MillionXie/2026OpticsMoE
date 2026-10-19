@@ -41,6 +41,15 @@ weights change. Profile `lab_caltech20_L4_native_TRAINprior_profile_20261019.jso
 max12epochs/360fitseconds, no continuation or seed grid. Start only after first
 worker exits and its strict CPU best/last audit completes. L2 remains329.
 
+To restrict the observed joint-head overfit, one final ORIGINAL-head contrast
+uses only19 directions from class means of TRAIN1200, in the same TRAIN-only
+covariance geometry. Only400 optimizer coordinates, folded into original5140
+head; no new inference layer or TEST-derived basis. Same original Newton-CG
+coefficients as prior full-head trial; max256 TRAIN batches/90fitseconds, no
+scan/automatic continuation. Config `lab_caltech20_L4_class_subspace_profile_20261019.json`,
+original joint trainer adds a config-controlled TRAIN-only basis. Orthogonality,
+gradient/HVP and exact algebraic folding tested. Frozen native279 prefix only.
+
 ### Latest explicit user request: L2 residual gap <=2pp, 2026-10-19
 
 **Completed:329/411=80.04866%, fixed337 simulation gap1.94647pp; new target achieved.**
