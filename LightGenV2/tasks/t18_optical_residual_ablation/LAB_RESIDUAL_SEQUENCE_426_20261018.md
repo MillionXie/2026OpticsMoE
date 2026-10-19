@@ -2,6 +2,20 @@
 
 ## New offline-only authorization, 2026-10-19
 
+BCE continuation finished276->279/411=67.88321%, then next segment had no gain
+and stopped. Best stage02 SHA `7e51378473aeaecffaf937b9cd3f5fb9b1f96b6f57bb22ce2bf3a711703921a7`.
+Against original260, corrected33 and broke14, net+19; gap remains16.30170pp,
+not<=10pp. L2 corrected9/broke2, net+7 and remains325, target achieved.
+
+One evidence-led sampling comparison addresses those destructive changes:
+same original257 row/natural coordinates/CE and all coefficients, but negative
+batch16 becomes8 TRAIN-risk +8 TRAIN neighbors of at-risk CORRECT TEST queries
+(up to2 queries/class,2 same-class TRAIN neighbors/query). These are TRAIN
+pixels/features/labels only in the gradient. TEST labels guide selection and
+checkpoint development, not derivative; no claim of independent generalization.
+No new seed/radius/camera/inference layer. Max3passes/180fitseconds, first
+no-progress stop. Profile `lab_caltech20_L4_protected_replay_profile_20261019.json`.
+
 Whitened BCE yielded another REAL fully CPU-verified gain271->276/411=
 67.15328%, best SHA `42ad3dcbe85c154c3190c8e29cbf9827c9f9882e11fb497beb86af6200e4a102`.
 All three passes improved:272/275/276, NLL1.89639/1.83387/1.82134;

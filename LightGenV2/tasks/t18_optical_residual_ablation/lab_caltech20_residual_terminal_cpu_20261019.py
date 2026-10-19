@@ -139,7 +139,8 @@ def huber_row_direction(u,u0,x,reference,sign,lse,q,keep,c):
     n=len(x);temperature=c['temperature'];delta=c['huber_delta'];assert delta>0;score=x@u;required=torch.where(sign>0,c.get('positive_margin',c['margin']),c['margin']);h=(required-sign*(score-reference)).clamp_min(0);p=((score-lse)/temperature).sigmoid();supervision=-sign*h.clamp_max(delta)/delta;curvature=((h>0)&(h<delta)).double()/delta;g=x.T@((supervision+c['teacher_KL']*keep*(p-q)/temperature)/n)+2*c['anchor']*(u-u0);d=(curvature+c['teacher_KL']*keep*p*(1-p)/temperature**2)/n;a=x*d.sqrt()[:,None];damping=2*c['anchor']+c['LM_damping'];assert damping>0;step=(g-a.T@torch.linalg.solve(torch.eye(n,dtype=x.dtype)+a@a.T/damping,a@g/damping))/damping;return step,g,d
 
 
-def row_batch(rng,near,positive,hard):
+def row_batch(rng,near,positive,hard,protected=None):
+    if protected is not None:return np.r_[rng.choice(near,16,True),rng.choice(positive,16,False),rng.choice(hard,8,False),rng.choice(protected,8,len(protected)<8),rng.choice(1200,16,False)]
     return np.r_[rng.choice(near,16,True),rng.choice(positive,16,False),rng.choice(hard,16,False),rng.choice(1200,16,False)]
 
 
@@ -326,14 +327,14 @@ def reconstruct_TRAIN_rng(previous,labels,c,pair,depth):
         else:segments.append(path)
     visit(previous);rng=np.random.default_rng(c['seed']+depth);steps=0;proof=[]
     for path in segments:
-        old=json.loads((path/'protocol.json').read_text())['profile'];keys=('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed','objective','margin','huber_delta','adaptive_TRAIN_positive_margin','positive_margin_quantile','maximum_positive_margin','TRAIN_whitened_row_geometry');assert all(old.get(k)==c.get(k) for k in keys),'Continuation changed optimization method';ordered_plans=json.loads((path/'plans.json').read_text());plans={tuple(p['classes']) if pair else p['class_index']:p for p in ordered_plans};history=json.loads((path/'history.json').read_text());assert any(row['accepted'] for row in history);cursor=0;current_plan=None
+        old=json.loads((path/'protocol.json').read_text())['profile'];keys=('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed','objective','margin','huber_delta','adaptive_TRAIN_positive_margin','positive_margin_quantile','maximum_positive_margin','TRAIN_whitened_row_geometry','correct_TEST_selects_protective_TRAIN_negatives');assert all(old.get(k)==c.get(k) for k in keys),'Continuation changed optimization method';ordered_plans=json.loads((path/'plans.json').read_text());plans={tuple(p['classes']) if pair else p['class_index']:p for p in ordered_plans};history=json.loads((path/'history.json').read_text());assert any(row['accepted'] for row in history);cursor=0;current_plan=None
         for row in history:
             k=tuple(row['classes']) if pair else row['class_index'];p=plans[k]
             if c.get('TRAIN_whitened_row_geometry',False):
                 assert not pair
                 if row['step']==0:current_plan=ordered_plans[cursor];cursor+=1
                 assert current_plan['class_index']==k;p=current_plan
-            ix=pair_batch(rng,p['TRAIN_neighbors'],[np.flatnonzero(labels==j) for j in k],p['TRAIN_hard_negatives']) if pair else row_batch(rng,p['TRAIN_neighbors'],np.flatnonzero(labels==k),p['TRAIN_hard_negatives']);assert ix.tolist()==row['TRAIN_indices'];steps+=1
+            ix=pair_batch(rng,p['TRAIN_neighbors'],[np.flatnonzero(labels==j) for j in k],p['TRAIN_hard_negatives']) if pair else row_batch(rng,p['TRAIN_neighbors'],np.flatnonzero(labels==k),p['TRAIN_hard_negatives'],p.get('TRAIN_protected_negatives'));assert ix.tolist()==row['TRAIN_indices'];steps+=1
         if c.get('TRAIN_whitened_row_geometry',False):assert cursor==len(ordered_plans)
         proof.append(dict(path=str(path),history_SHA256=sha(path/'history.json'),plans_SHA256=sha(path/'plans.json')))
     return rng,len(segments),steps,proof
@@ -376,11 +377,21 @@ def row_repair(a,rng=None):
         z=xx@np.c_[w,b].T;rest=z.copy();rest[:,label]=-np.inf;maximum=rest.max(1);lse=maximum+np.log(np.exp(rest-maximum[:,None]).sum(1));q=1/(1+np.exp(-np.clip((z[:,label]-lse)/c['temperature'],-60,60)));target=np.where(tr['y']==label,.99,.01);keep=(z.argmax(1)==tr['y']).astype(float);risk=z[negative,label]-z[negative,tr['y'][negative]];hard=negative[np.argsort(-risk,kind='stable')[:128]];u0=torch.tensor(np.r_[w[label],b[label]],dtype=torch.float64);u=u0.clone();chosen=u.clone();plans.append(dict(class_index=label,TEST_errors=int(counts[label]),TRAIN_neighbors=near,TRAIN_neighbor_ids=tr['ids'][near].tolist(),TRAIN_hard_negatives=hard.tolist()))
         if conditioned:
             u0=torch.tensor(np.r_[w[label].astype(float)@inverse,b[label]+mean@w[label].astype(float)]);assert np.max(np.abs(fitxx@u0.numpy()-z[:,label]))<1e-7;u=u0.clone();chosen=u.clone();plans[-1]['pass_index']=pass_index
+        protected=None
+        if c.get('correct_TEST_selects_protective_TRAIN_negatives',False):
+            assert conditioned;protect=[];queries=[];correct=~bad
+            for other_class in range(20):
+                if other_class==label:continue
+                candidates=np.flatnonzero(correct&(te['y']==other_class));pool=np.flatnonzero(tr['y']==other_class)
+                if not len(candidates):continue
+                margins=np.log(p[candidates,other_class].clip(1e-12))-np.log(p[candidates,label].clip(1e-12));at_risk=candidates[np.argsort(margins,kind='stable')[:2]]
+                for i in at_risk:queries.append(int(i));protect.extend(pool[np.argsort(-(xn[pool]@zn[i]),kind='stable')[:2]].tolist())
+            protected=np.unique(protect) if protect else hard.copy();assert len(protected)>0 and (tr['y'][protected]!=label).all();plans[-1].update(TRAIN_protected_negatives=protected.tolist(),correct_TEST_query_indices=queries,negative_sampling='8 TRAIN-risk +8 same-class TRAIN neighbors of at-risk correct TEST; no TEST in gradient')
         reference=np.where(tr['y']==label,maximum,z[np.arange(1200),tr['y']]);sign=np.where(tr['y']==label,1.,-1.);stage_c=dict(c)
         if c.get('adaptive_TRAIN_positive_margin',False):
             stage_c['positive_margin']=float(np.clip(np.quantile(z[near,label]-maximum[near],c['positive_margin_quantile']),c['margin'],c['maximum_positive_margin']));plans[-1].update(TRAIN_derived_positive_margin=stage_c['positive_margin'],TRAIN_positive_margin_source='current same-class TRAIN neighbors only; negative margin unchanged')
         for step in range(c['steps_per_class']):
-            ix=row_batch(rng,near,positive,hard);x=torch.tensor(fitxx[ix],dtype=torch.float64)
+            ix=row_batch(rng,near,positive,hard,protected);x=torch.tensor(fitxx[ix],dtype=torch.float64)
             if c.get('objective')=='huber_margin':delta,g,d=huber_row_direction(u,u0,x,torch.tensor(reference[ix]),torch.tensor(sign[ix]),torch.tensor(lse[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),stage_c)
             else:delta,g,d=binary_row_direction(u,u0,x,torch.tensor(lse[ix]),torch.tensor(target[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c)
             assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy()
@@ -551,6 +562,7 @@ def selftest():
     delta,g,d=huber_row_direction(u.detach(),u0,rx,reference,sign,lse,q,keep,hc);assert torch.allclose(g,torch.autograd.grad(hl(u),u)[0],atol=1e-12);h=torch.autograd.functional.hessian(hl,u);assert torch.allclose(h,rx.T@(rx*d[:,None])+.2*torch.eye(7),atol=1e-9);assert torch.allclose((h+.1*torch.eye(7))@delta,g,atol=1e-10)
     r1=np.random.default_rng(75);r2=np.random.default_rng(75)
     for _ in range(3):assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r2,[0,1,2],np.arange(60),np.arange(60,188)))
+    protective=row_batch(np.random.default_rng(75),[0,1,2],np.arange(60),np.arange(60,188),np.arange(200,220));assert len(protective)==64 and np.isin(protective[40:48],np.arange(200,220)).all() and np.isin(protective[32:40],np.arange(60,188)).all() and protective.max()<1200
     r3=np.random.default_rng();r3.bit_generator.state=r1.bit_generator.state;assert np.array_equal(row_batch(r1,[0,1,2],np.arange(60),np.arange(60,188)),row_batch(r3,[0,1,2],np.arange(60),np.arange(60,188)))
     import tempfile
     with tempfile.TemporaryDirectory(prefix='t18_rng_lineage_') as tmp:
