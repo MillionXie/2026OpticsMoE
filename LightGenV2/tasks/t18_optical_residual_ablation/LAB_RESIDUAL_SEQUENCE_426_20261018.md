@@ -4,6 +4,19 @@
 
 ### Fresh G1 reviewed311/411; proceed to E2 without another G1 search
 
+To reduce repeated CPU feature computation, the same training adapter admits
+`--mode row-fit --feature-run <verified-bank>` with the cached-head profile.
+The row loss, sampler, seed and trust bounds are identical to the published DVP
+head repair; this is not a new accuracy method. A new physical prefix or any
+changed nonhead tensor requires full TRAIN/TEST feature extraction. Reuse is
+only admitted by complete nonhead bit-equality, exact prefix-array/data/ID/label
+and feature-file SHA, model/source/reference/version closure equality, both
+source-bank and current-parent independent audits, and agreement with the
+current parent's native411 predictions. Raw CCD, amplitudes and source graph
+are not transformed. Every output best/last still uses full original411 CPU
+replay (<=3e-6 error), frozen SHA checks and separate development targets.
+Reject incompatible banks, never silently fall back to mismatched features.
+
 The complete new G1 capture has1600TRAIN+411TEST, raw/input/receipt/array/phase
 identity audits passed. Original suffix masks were trained24epochs (bestE22),
 then original-head repair and one coupled-row comparison improved262->296->301

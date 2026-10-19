@@ -1,0 +1,7 @@
+{
+  "seed":173,"targets":{"4":314,"6":322},"final_targets":{"4":342,"6":350},
+  "maximum_passes":3,"maximum_classes_each_pass":20,"steps_each_class":80,"maximum_fit_seconds":180,
+  "temperature":1.0,"huber_delta":1.0,"margin":1.0,"teacher_KL":0.25,"anchor":0.05,"LM_damping":0.1,
+  "row_radius":0.5,"trust_step":0.25,"minimum_NLL_gain":0.0001,
+  "scope":"Same original-head signed Huber sampling and updates as the published DVP head repair. First fit computes full native TRAIN/TEST features; optional reuse requires unchanged complete nonhead tensors, model/source/reference closure, prefix arrays/data/IDs/labels, feature SHA and current parent independent native audit. Never reuse across changed downstream masks/electronics/alpha; every new physical stage rebuilds its feature bank. Final bestlast still replay full native411 CPU with <=3e-6 probability error. No new model layer/CCD/SDK/GPU or TEST derivative; TEST-informed development selection/noVALID. Separate intermediate8pp and final1pp targets, max3passes/180fit seconds and first no-progress stop. Reuse reduces duplicate feature computation, not physical acquisition or verification."
+}

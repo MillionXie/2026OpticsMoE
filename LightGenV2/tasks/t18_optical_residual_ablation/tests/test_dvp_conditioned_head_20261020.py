@@ -43,6 +43,17 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertLessEqual(cfg['max_pairs'],20)
         self.assertLessEqual(cfg['fit_seconds'],120)
 
+    def test_cache_reuse_has_source_state_data_and_native_proofs(self):
+        text=SOURCE.read_text()
+        for token in ("sp['feature_graph_SHA256']==graph",'nonhead_equal(old,current)',
+                      "sp['prefix_SHA256']==identities", "sp['data_SHA256']==dm['sha256']",
+                      "sa['report_SHA256']==core.sha(source/'report.json')", "error<=3e-6"):
+            self.assertIn(token,text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_cached_head_profile_20261020.json').read_text())
+        old=json.loads((TASK/'lab_caltech20_DVP_head_local_profile_20261019.json').read_text())
+        self.assertEqual({k:cfg[k] for k in old if k!='scope'}, {k:v for k,v in old.items() if k!='scope'})
+        self.assertEqual(cfg['final_targets'], {'4':342,'6':350})
+
 
 if __name__ == '__main__':
     unittest.main()
