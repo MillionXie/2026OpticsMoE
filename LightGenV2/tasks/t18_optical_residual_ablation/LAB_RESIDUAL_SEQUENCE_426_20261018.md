@@ -2,6 +2,29 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Same-phase contrast admission PASSED; full stage0 capture actually running
+
+New contrast protocol completed at fixed second candidate40004us/gain1.
+20ms failed (mincontrast13), 40ms passed all40 TRAIN: minrawp9950,
+mincontrastp9926.5, black-repeat RMSnoise.43394gray, maxclip.00009191.
+Model-phase backgroundp9936 leaves headroom. Independent all40 ID/labels/
+canonical/raw/crop statistics, both unclipped black repeats, background mean/
+noise recomputation and report/hardware/phase SHA checks passed. Original
+failed absolute-dark protocol remains FAILED and all evidence is retained.
+New per-stage hardwareSHA8ba8189a9e99cc053790177da779d8c7ea810c1cfde9c4c6b7b146fbe63e5f72;
+no new LUT/geometry/orientation/input scaling/network dark subtraction.
+
+Published source f5c52d7f197e3cf35169d399f2874acc3970a82c synced main/GitHub/
+lab/server,20 tests plus original layerwise selftest passed. Explicit one-stage
+controller `L4/stage0_capture_adapt_controller_20261019` actually launched;
+first readback173TRAIN receipts (40verified probes+133new), latestnetp9937,
+rawp9962/no clip, no failure. It completes1600TRAIN then411TEST, auto runs the
+bounded uncaptured-suffix adaptation, then stops for outcome review before
+another layer. No recurring/Windows scheduler. Old one-frame stage0 attempt
+archived within capture directory, not deleted/reused. Existing router2011
+remains unchanged at5ms. L6notstarted.331/411 remains ROUTER-only measured
+hybrid, not full physical L4 accuracy. Latest counts are in original run state.
+
 ### Absolute-dark exposure comparison FAILED; fresh same-phase contrast check
 
 The five predeclared exposures produced min TRAIN p99 7/13/25/50/99.17,
