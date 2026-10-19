@@ -1,0 +1,15 @@
+{
+  "base_profile":"lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256":"ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides":{
+    "fit_name_suffix":"_TRAINteacher_from_E1_20261020_L6",
+    "phase_lr":0.0006,"electronic_lr":0.0015,"alpha_lr":0.002,"head_lr":0.0006,
+    "label_smoothing":0.01,"confusion_emphasis":0.25,
+    "teacher_weight":0.5,"teacher_temperature":2.0,"teacher_simulated_newest_layers":1,
+    "minimum_epochs":2,"evaluate_every":1,"middle_fit":{"epochs":24,"seconds":600},
+    "target_correct":322
+  },
+  "TRAIN_teacher_evidence":"capture/1/TRAIN1600_parent_teacher_diagnosis.json",
+  "TRAIN_teacher_evidence_SHA256":"a2a070a3e3edc210ffa4c11981665a56d29a375ef2d594a6ca9deb120dbc70c7",
+  "scope":"One finite L6 G1-prefix adaptation contrast using the already-published original TRAIN-only simulate-newest-layer teacher recipe, not a new loss implementation/inference graph. Exact G1 capture-input PT4d678de23fa52d4347039eb9548a6e772943de1944370dc2b0470f9e26fcdcdc: native same1600TRAIN with newly measuredG1 gave118correct, while its independently audited prefix2 teacher gave1575; diagnosis did not infer TEST or modify model. Student uses measuredrouter/E1/G1, teacher uses measuredrouter/E1 and simulatedG1 plus still-unmeasured suffix, TRAIN only. Reuse existing G1 teacher coefficients .5/T2, headLR.0006, confusion.25, same phase/electronic/alpha/L S/seed17 as published recipe; only shorten budget24epochs/600fitseconds and setL6 intermediate target322. Do not switch the active primary optimizer or resume its state: wait for its complete GPU exit, preserve highest complete prefix3 incumbent and run one separate comparison from the exact immutable capture-input PT to retain this strong teacher. Raw34/411 baseline is not a claimed gain over the separately optimized prefix3 incumbent. All already-measured optical producers frozen; only original still-deployable E2/G2/E3/G3 masks/postG1 electronics/direct bounded alpha/original5140head may train. No SDK/newCCD/camera settings/TEST teacher or derivative/VALID/new inference layers, seed/coefficient scan or automatic retry. BootLoader recovery still requires normal camera and user USB action; offline fitting must not falsely imply next capture has resumed. Require launcher evidenceSHA, strict originalCPU bestlast/frozen/data audits and highest verified candidate before new E2 capture. Final target350 remains separate and not guaranteed."
+}

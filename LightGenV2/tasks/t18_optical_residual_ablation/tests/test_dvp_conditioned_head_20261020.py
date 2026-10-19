@@ -149,6 +149,15 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertIn("(z0[:,label]-lse)/cfg['temperature']",text)
         self.assertIn('binary_row_direction(u,u0,torch.from_numpy(xx[ix])',text)
 
+    def test_L6_G1_teacher_reuses_published_TRAIN_only_recipe_with_shorter_budget(self):
+        cfg=json.loads((TASK/'lab_caltech20_DVP_L6_G1_TRAINteacher_profile_20261020.json').read_text())
+        old=json.loads((TASK/'lab_caltech20_DVP_G1_TRAINteacher_profile_20261020.json').read_text())
+        for key in ('phase_lr','electronic_lr','alpha_lr','head_lr','label_smoothing','confusion_emphasis','teacher_weight','teacher_temperature','teacher_simulated_newest_layers','minimum_epochs','evaluate_every'):
+            self.assertEqual(cfg['overrides'][key],old['overrides'][key])
+        self.assertEqual(cfg['overrides']['target_correct'],322)
+        self.assertEqual(cfg['overrides']['middle_fit'],{'epochs':24,'seconds':600})
+        self.assertEqual(len(cfg['TRAIN_teacher_evidence_SHA256']),64)
+
 
 if __name__ == '__main__':
     unittest.main()

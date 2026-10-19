@@ -1818,3 +1818,19 @@ labels/features enter derivatives; TEST-guided neighbors/checkpoints are
 development, not independent generalization. Profile
 lab_caltech20_DVP_binary_head_profile_20261020.json. Numeric gradient/Hessian
 proof and Git-only publication precede its first use; no live source patch.
+
+L6 G1 is physically complete6033 cumulative frames. Camera later entered the
+already-known USB BootLoader state; preserve all complete data, request camera
+USB replug without moving optics, and do not blind-reset/flash/restart capture.
+Offline primary G1 suffix fitting continues. A TRAIN-only exact immutable
+capture-inputPT diagnosis gave actual prefix3 TRAIN118/1600 versus audited
+prefix2 teacher1575/1600 (SHA a2a070a3e3edc210ffa4c11981665a56d29a375ef2d594a6ca9deb120dbc70c7).
+After the primary GPU fit exits, one separate shortened comparison may reuse
+the published G1 teacher coefficients, same source and captured inputPT,
+24epochs/600fitseconds, L6 target322. No TEST teacher/derivative or new layer;
+original future masks/postG1 parameters only, measured incident producers
+frozen. Profile lab_caltech20_DVP_L6_G1_TRAINteacher_profile_20261020.json.
+Do not claim improvement over a separately preserved optimized incumbent just
+because this contrast starts from the low raw34 baseline. Strict CPU/frozen
+and exact highest-prefix selection before any E2. This does not restore a
+BootLoader camera or authorize driver/firmware/hub resets or a new calibration.
