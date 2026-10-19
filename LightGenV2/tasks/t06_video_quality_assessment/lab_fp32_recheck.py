@@ -52,10 +52,18 @@ def runtime(args,guard,identity):
     elif args.model=='glm':
         from transformers import AutoProcessor,Glm4vForConditionalGeneration
         from . import glm46v_flash_temporal_baseline as glm
+        original=TASK/'runs/simulation'/resident.SPECIAL['glm'][0]/'train/training_receipt.json'
+        receipt=json.loads(original.read_text())
+        if glm.shared.model_files(args.model_path,glm.config())!=receipt['identity']['model_sha256']:
+            raise RuntimeError('GLM official trained-backbone identity differs')
+        if glm.runtime_sources()!=receipt['identity']['runtime_sha256']:
+            raise RuntimeError('GLM official runtime differs from training')
         processor=AutoProcessor.from_pretrained(args.model_path,local_files_only=True);processor.tokenizer.padding_side='left'
         model=Glm4vForConditionalGeneration.from_pretrained(args.model_path,local_files_only=True,dtype=torch.float32,attn_implementation='sdpa').cuda().eval().requires_grad_(False)
         model._quality_processor=processor
         model._quality_prompt=processor.apply_chat_template([{'role':'user','content':[{'type':'video'},{'type':'text','text':glm.shared.PROMPT}]}],tokenize=False,add_generation_prompt=True,enable_thinking=False)
+        if '/nothink' not in model._quality_prompt or '<think></think>' not in model._quality_prompt:
+            raise RuntimeError('GLM original non-thinking prompt differs')
         first=model.model.visual.blocks[0]
         def prepare(selected):return glm.prepare_batch(selected,model)
         def features(inputs):
