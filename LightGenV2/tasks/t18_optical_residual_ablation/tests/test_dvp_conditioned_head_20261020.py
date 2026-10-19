@@ -90,6 +90,16 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertNotIn('optimizer', [n.attr for n in ast.walk(method) if isinstance(n,ast.Attribute)])
         self.assertIn("source_prediction_maxabs=error",text)
 
+    def test_parallel_CPU_admission_is_complete_L4_only_and_exact_L6_owner(self):
+        tree=ast.parse(SOURCE.read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='cpu_fit_admission')
+        text=ast.unparse(node)
+        for token in ("a.depth == 4 and a.prefix == 5", "a.sequence / 'L6'", "'independent_capture_audit.json'",
+                      "r['TRAIN'] == 1600", "r['TEST'] == 411", "'--sequence'", "'--depth'", "'capture'"):
+            self.assertIn(token,text)
+        self.assertNotIn('Camera.open',text)
+        self.assertNotIn('unlink',text)
+        source=SOURCE.read_text();self.assertIn("core.save(a.out/'CPU_capture_admission.json'",source)
+
 
 if __name__ == '__main__':
     unittest.main()

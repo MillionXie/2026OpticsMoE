@@ -60,6 +60,35 @@ def nonhead_equal(first, second):
     return set(first)==set(second) and all(torch.equal(value,second[key]) for key,value in first.items() if not key.startswith('linear.'))
 
 
+def cpu_fit_admission(a):
+    """A complete frozen L4 head may fit while this run captures L6.
+
+    No SDK import/open/close and no permission for same-depth incomplete fields.
+    Field SHA/receipt validation still occurs in fields_for before computation.
+    """
+    assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
+    proof=dict(SDK_used=False,GPU_used=False,parallel_capture=False)
+    if core.LOCK.exists():
+        import psutil
+        lock=core.read(core.LOCK)
+        assert a.depth==4 and a.prefix==5
+        assert lock.get('camera')=='DVP' and Path(lock['session']).resolve()==(a.sequence/'L6').resolve()
+        args=psutil.Process(lock['pid']).cmdline()
+        assert any(Path(v).name=='lab_caltech20_dvp_layerwise_20261019.py' for v in args)
+        assert args[args.index('--mode')+1]=='capture' and args[args.index('--depth')+1]=='6'
+        assert Path(args[args.index('--sequence')+1]).resolve()==a.sequence.resolve()
+        reports={}
+        for stage in ('router','0','1','2','3'):
+            p=a.sequence/'L4/capture'/stage/'report.json';r=core.read(p)
+            assert r['state']=='complete' and r['TRAIN']==1600 and r['TEST']==411 and r['sdk_released']
+            audit=p.with_name('independent_capture_audit.json');assert core.read(audit)['passed']
+            reports[stage]=dict(report_SHA256=core.sha(p),audit_SHA256=core.sha(audit),arrays=r['arrays'])
+        proof.update(parallel_capture=True,capture_lock_snapshot=lock,complete_L4_capture_proofs=reports,
+                     capture_process_create_time=psutil.Process(lock['pid']).create_time(),other_depth_only=True)
+    a.cpu_fit_admission_proof=proof
+    return proof
+
+
 def original_alpha_state(original, allowed, value):
     """One declared original post-E2 coordinate, never an alpha/seed grid."""
     key='fusion_logits.2'
@@ -152,6 +181,7 @@ def admit_chain(a):
 def checked_features(a,model,data,fields,dm,identities):
     """Reuse exact features only after graph/data/field/nonhead identity proof."""
     graph=feature_graph_sources(a.sequence/f'L{a.depth}')
+    if hasattr(a,'cpu_fit_admission_proof'):core.save(a.out/'CPU_capture_admission.json',a.cpu_fit_admission_proof)
     if not a.feature_run:
         return cache_features(model,data,fields,a.out),dict(reused=False,feature_graph_SHA256=graph)
     source=a.feature_run;sp=core.read(source/'protocol.json');sr=core.read(source/'report.json')
@@ -195,7 +225,7 @@ def checked_features(a,model,data,fields,dm,identities):
 
 def row_fit(a):
     """Same published single-row Huber updates; optional verified cache reuse."""
-    assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not core.LOCK.exists()
+    cpu_fit_admission(a)
     torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
@@ -267,7 +297,7 @@ def row_fit(a):
 
 def shrink_fit(a):
     """TRAIN-estimated shrinkage readout folded into the same original Linear."""
-    assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not core.LOCK.exists()
+    cpu_fit_admission(a)
     torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
     assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
@@ -367,7 +397,7 @@ def shrink_fit(a):
 
 def pair_fit(a):
     """Published antisymmetric two-row TRAIN objective, DVP1600 data adapter."""
-    assert os.environ.get('CUDA_VISIBLE_DEVICES') == '' and not core.LOCK.exists()
+    cpu_fit_admission(a)
     torch.set_num_threads(2)
     cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists()
@@ -452,7 +482,7 @@ def pair_fit(a):
 
 
 def fit(a):
-    assert os.environ.get('CUDA_VISIBLE_DEVICES') == '' and not core.LOCK.exists()
+    cpu_fit_admission(a)
     assert a.depth in (4, 6) and 1 <= a.prefix <= a.depth+1
     torch.set_num_threads(2)
     torch.manual_seed(73)

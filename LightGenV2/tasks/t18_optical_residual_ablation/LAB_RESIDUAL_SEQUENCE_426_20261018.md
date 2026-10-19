@@ -6,6 +6,20 @@
 
 #### Reviewed finite-budget progression, not an invented hard8pp stop
 
+Once L4 is fully captured/audited and its initial terminal fit is reviewed,
+L6 hardware need not wait for any additional L4 head-only CPU comparison.
+The conditioned-head adapter admits this ONE parallel workspace case: depth4
+prefix5, every L4 stage report1600TRAIN/411TEST complete/SDK-released plus its
+independent capture audit; the current SDK lock must identify this same run's
+L6 capture process/command/sequence/depth exactly. No same-depth or partial-L4
+permission, SDK operations, new model layers or changed capture/model code.
+Existing fields_for full arrays/data/IDs/SHA and final native frozen replay
+remain mandatory. Save CPU_capture_admission.json with lock/process and all
+completed L4 report/audit identities. CPU2 threads/no CUDA; every output remains
+inside its own depth's fits directory. This enables offline final-head work
+without blocking the requested L6 acquisition; it does not start either task
+automatically or change any numerical training recipe.
+
 The original admitted DVP profile (SHAea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532)
 already states: aim<=8pp, no guarantee; after a finite complete-epoch budget,
 carry the best forward and disclose misses. The latest user asks continuous
