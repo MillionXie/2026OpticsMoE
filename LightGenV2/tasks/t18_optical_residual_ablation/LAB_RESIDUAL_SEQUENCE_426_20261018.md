@@ -30,6 +30,17 @@ anchor.01/radius sqrt20*.4, fixed TRAIN seed; save best/last, selected native
 features and strict original raw-CCD CPU checks for both states. TEST is
 diagnosis/selection development, never gradients; no guarantee of305.
 
+Actual native-terminal TRAIN probe:41.47% conv preactivations |v|>3; RMS
+surrogate/native gradient cosine .9999528, so no evidence that backward
+detachment alone explains poor transfer. First10 epochs TRAIN~78-80% while
+TEST194-207/411, retaining E0 279; this is NOT performance improvement.
+One bounded population-prior comparison uses only the previously SHA-verified
+original TRAIN3141 counts (source38b719...), not TEST/VALID frequencies. Capture
+TRAIN stays1200/60each. Same native5150 method/coefficients; only CE class
+weights change. Profile `lab_caltech20_L4_native_TRAINprior_profile_20261019.json`,
+max12epochs/360fitseconds, no continuation or seed grid. Start only after first
+worker exits and its strict CPU best/last audit completes. L2 remains329.
+
 ### Latest explicit user request: L2 residual gap <=2pp, 2026-10-19
 
 **Completed:329/411=80.04866%, fixed337 simulation gap1.94647pp; new target achieved.**
