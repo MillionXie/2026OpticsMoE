@@ -68,6 +68,7 @@ def checked_features(a,model,data,fields,dm,identities):
     source=a.feature_run;sp=core.read(source/'protocol.json');sr=core.read(source/'report.json')
     sa=core.read(source/'independent_audit.json')
     assert sa['passed'] and sa['report_SHA256']==core.sha(source/'report.json')
+    assert sa['protocol_SHA256']==core.sha(source/'protocol.json')
     assert sr['state']=='complete' and sr['all_nonhead_frozen'] and sr['results']['best']['strict_CPU']
     assert sp['feature_graph_SHA256']==graph and sp['prefix']==a.prefix and sp['prefix_SHA256']==identities and sp['data_SHA256']==dm['sha256']
     source_pt=source/'best.pt';assert core.sha(source_pt)==sr['results']['best']['PT_SHA256']
@@ -75,6 +76,7 @@ def checked_features(a,model,data,fields,dm,identities):
     assert nonhead_equal(old,current),'Changed mask/electronics/alpha invalidates the feature bank'
     parent=a.checkpoint.parent;pr=core.read(parent/'report.json');pa=core.read(parent/'independent_audit.json')
     assert pa['passed'] and pa['report_SHA256']==core.sha(parent/'report.json') and pr['results']['best']['PT_SHA256']==a.digest
+    assert pa['protocol_SHA256']==core.sha(parent/'protocol.json')
     assert core.sha(parent/'best_TEST_predictions.npz')==pr['results']['best']['predictions_SHA256']
     cached={}
     for role in ('train','test'):

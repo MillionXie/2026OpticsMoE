@@ -49,6 +49,8 @@ class ConditionedHeadContract(unittest.TestCase):
                       "sp['prefix_SHA256']==identities", "sp['data_SHA256']==dm['sha256']",
                       "sa['report_SHA256']==core.sha(source/'report.json')", "error<=3e-6"):
             self.assertIn(token,text)
+        self.assertIn("sa['protocol_SHA256']==core.sha(source/'protocol.json')",text)
+        self.assertIn("pa['protocol_SHA256']==core.sha(parent/'protocol.json')",text)
         cfg=json.loads((TASK/'lab_caltech20_DVP_cached_head_profile_20261020.json').read_text())
         old=json.loads((TASK/'lab_caltech20_DVP_head_local_profile_20261019.json').read_text())
         self.assertEqual({k:cfg[k] for k in old if k!='scope'}, {k:v for k,v in old.items() if k!='scope'})
