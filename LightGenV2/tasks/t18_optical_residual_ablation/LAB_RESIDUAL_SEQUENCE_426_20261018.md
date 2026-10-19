@@ -2,6 +2,44 @@
 
 ## Renewed terminal refinement request, 2026-10-19 morning
 
+Outcome of this bounded round: targets remain UNMET. Six completed CPU fits
+(three methods per depth),7792 total TRAIN optimizer updates, all exact
+original-model full411 CPU replay/freeze checks passed. No new correct TEST
+samples beyond318/260. Do not label tied-count NLL change as accuracy gain.
+
+| Original-terminal method | L2 updates / best / last correct | L4 updates / best / last correct |
+|---|---|---|
+| Independent pair, signed Huber |3072 /318 /312|1536 /260 /206|
+| Independent pair, full20 CE |1536 /318 /300|1536 /260 /169|
+| Original20 biases, TRAIN-prior calibration |55 /318 /310|57 /260 /238|
+
+Original accuracy-selected PTs remain authoritative: L2
+`radius040_continuation_20261019/stage04/best.pt` SHA
+`823d81927be3874f23a0b1f4a97cdda7272c8239ea6bae6045650df05e920dfd`;
+L4 `huber_continuation_20261019/stage02/best.pt` SHA
+`3d9895aa06d32efe484523ab04307a76d072a30c5cd7216fe4bf64ccadc461dc`.
+New L2 pair PT only improves same-count NLL1.070204->1.069678; all retained
+per-sample class predictions are unchanged. L4 new selected parameters remain
+E0. Preserve both new best/last evidence, do not replace the formal accuracy
+record with a worse last PT or imply a new robust result.
+
+Error inspection: L2 chandelier1/12, starfish3/10; L4 butterfly0/10 and
+menorah1/10, each only5/60 correct on TRAIN at the selected parent. Among wrong
+TEST samples, nearest TRAIN feature has the correct class for14/93(L2) and
+11/151(L4). This suggests weak class separation/transfer in the current
+representation, not proof of hardware failure or a universal accuracy ceiling.
+Original3141TRAIN class counts were independently rechecked on the server by
+exact original-cache SHA; no TEST/VALID labels used to estimate the prior.
+
+New runs are `terminal_independentpair_gap3_gap10_20261019`,
+`terminal_independentCE_gap3_gap10_20261019`, and
+`terminal_biasprior_gap3_gap10_20261019`, under each ORIGINAL L2/L4 session.
+Their full411 TEST-selected scores are development metrics, not independent
+generalization. All six processes returned0; no SDK/GPU or recurring monitor.
+The finite comparisons are complete, not continuing silently in background.
+Detailed errors and verified artifacts are in the original private run/local
+`caltech20_residual_verified_20261019` evidence paths. No CCD/LUT was changed.
+
 User now asks residual L2 to drop at most3pp from fixed337/411 simulation
 (requires325/411), and residual L4 at most10pp from fixed346/411
 (requires305/411). Starting complete measured-pipeline results are318/260.
