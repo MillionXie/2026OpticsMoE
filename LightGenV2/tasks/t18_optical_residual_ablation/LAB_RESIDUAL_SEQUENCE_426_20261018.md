@@ -2,6 +2,31 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Fresh G1 reviewed311/411; proceed to E2 without another G1 search
+
+The complete new G1 capture has1600TRAIN+411TEST, raw/input/receipt/array/phase
+identity audits passed. Original suffix masks were trained24epochs (bestE22),
+then original-head repair and one coupled-row comparison improved262->296->301
+->302->304->307->311. Selected positive-update fit is
+`L4/fits/1_pair_head_continue_20261020`, PT SHA
+7bfaf2acb23cff85e3899a7e9f7786b47399007937f534ba03e5f5143726bf3c;
+independent native411CPU and frozen-upstream audit passed. The optional final
+one-pass continuation did not improve311 and is not adopted. TRAIN-conditioned
+whole-head fit retained E0=302 (last235); stronger TRAIN-teacher suffix trial
+ended32epochs with best275, below incumbent, so its updated future masks are
+not adopted. All negative best/last/protocol/predictions remain evidence.
+
+311/411=75.66910%, gap35/411=8.51582pp to fixed346/411. This is measured
+router/E1/G1 with SIMULATED E2/G2, not complete L4 physical accuracy, and does
+NOT meet the8pp aspiration. Under the user's earlier explicit middle-stage
+<=10pp carry-forward permission and latest wording '尽量8pp', stop the now
+plateaued G1 search and continue E2 with the best311 state. Require a specific
+G1 review receipt bound to this exact PT/report/CPU audit/capture audit before
+that exception; do not change `within8pp` or relax other stages globally.
+Final342/411 and complete physical verification remain the aims, not guarantees.
+No new calibration or reused downstream CCD. E2 then G2, L4 complete audit,
+then L6; L6 original/data gate has already passed. No timer or recurring job.
+
 ### G1 optimization diagnosis: bounded TRAIN-conditioned original-head fit
 
 The original head adapter also admits one bounded coupled-confusion comparison
