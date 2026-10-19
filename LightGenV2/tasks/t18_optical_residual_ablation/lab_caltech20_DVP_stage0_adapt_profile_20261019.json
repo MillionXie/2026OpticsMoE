@@ -1,0 +1,20 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_exposure_adapt_20261019",
+    "phase_lr": 0.0003,
+    "electronic_lr": 0.0005,
+    "alpha_lr": 0.0001,
+    "head_lr": 0.0003,
+    "label_smoothing": 0.02,
+    "confusion_emphasis": 0.25,
+    "teacher_weight": 0.15,
+    "teacher_temperature": 2.0,
+    "teacher_simulated_newest_layers": 1,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 20, "seconds": 900}
+  },
+  "scope": "One fully captured stage0 followed by original suffix fine-tuning. Student uses actual router+stage0; frozen parent teacher TRAIN-only uses actual router+simulated stage0/suffix. Protect earlier adaptation without teaching the new stage's physical errors as targets. Original masks already measured upstream frozen. TEST-informed class emphasis and checkpoint development selection, no TEST gradient/VALID or new inference layer. Aim fixed-simulation gap<=8pp, no guarantee. Stop after complete-epoch20/900sec budget or target after2epochs. Manual outcome review required before another optical layer."
+}

@@ -2,6 +2,44 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### Explicit per-layer exposure admission authorized; L4 stage0 next
+
+User replied "继续推进，标定...ok" to the explicit TRAIN/known-pattern-only
+per-layer exposure request. This supersedes the old fixed5ms stop for NEW
+layers only. Existing measured router2011CCD remains at5000.5us, untouched.
+Current selected uncaptured suffix PT is exact1f78217f.../331 hybrid; not old
+1ed505 parent. Calibration/next stage must use this new suffix and its phase.
+
+Entry `lab_caltech20_dvp_stage_exposure_20261019.py`, fixed config
+`lab_caltech20_DVP_stage_exposure_profile_20261019.json`: first40TRAIN,
+two/class20classes, no TEST selection or TEST capture in admission. Ladder
+5/10/20/40/80ms, gain1, samewait240/6discard/ROI/flip_v/phase/amplitude inverse.
+Choose FIRST candidate with all40p99>=25 and clip<=1%, darkp99<=8; unsaturated
+known gray64/96 controls must agree with exposure-linear transfer within
+max2gray/15%. At least one usable control, no relaxed guard or automatic retry.
+Stop escalating if a TRAIN sample clips>15%; fail if no ladder candidate passes.
+Original session recheck first; camera device LUTs unchanged, phaseLUT remains
+linear voltage only. No input gain, peak normalization or network dark subtraction.
+
+Each admitted layer gets immutable hardware JSON+SHA, exact PT/phase/data and
+calibration-report SHA. Prior measured layers verify their OWN hardware SHA,
+not incorrectly relabel all CCD as one exposure. Same selected40 probes may be
+reused only after ID/PT/input/phase/raw/crop/exposure audits; report explicit
+1971new+40reused=2011unique stage entries. All rejected candidates retained.
+Old stage0 failure(one low-signal frame under oldPT) is archived IN PLACE as
+`capture/0_failed_low_signal_20261019`, never deleted or used by new PT.
+
+One-stage admission->full TRAIN1600 thenTEST411->suffix adaptation, then manual
+outcome review before next layer. Stage0 adaptation profile
+`lab_caltech20_DVP_stage0_adapt_profile_20261019.json`: original remaining
+masks/post-stage electronics/directalpha/head only, all measured optics frozen.
+TRAIN teacher uses frozen parent and SIMULATES only the newly measured stage,
+preserving earlier331-prefix performance without treating new physical errors
+as teacher targets. T2KL.15, LS.02, limited class emphasis.25; at most20complete
+epochs/900fitsec, aim8pp/min2epochs, no target guarantee. No TEST gradients or
+VALID; TEST-informed diagnosis/selection remains development, not generalization.
+Fresh isolated SDK processes, no recurring task, no other group or L2 changes.
+
 ### Latest verified outcome:331/411 hybrid, awaiting exposure decision
 
 Conservative comparison completed5epochs/8000TRAIN presentations, stopped on

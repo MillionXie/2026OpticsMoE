@@ -123,11 +123,48 @@ def fields_for(session,prefix,data,dm,hardware):
     stages=['router']+[str(k) for k in range(prefix-1)];fields={};identities={}
     for stage in stages:
         out=session/'capture'/stage;r=read(out/'report.json')
-        assert r['state']=='complete' and r['sdk_released'] and r['physical_ccd']==2011 and r['hardware_SHA256']==hardware and r['data_SHA256']==dm['sha256']
+        assert r['state']=='complete' and r['sdk_released'] and r['physical_ccd']==2011 and r['data_SHA256']==dm['sha256']
+        if r['hardware_SHA256']!=hardware:
+            h=validate_stage_hardware(out/'hardware.json',session.parent)
+            assert sha(out/'hardware.json')==r['hardware_SHA256'] and h['stage']==stage and h['PT_SHA256']==r['PT_SHA256'] and h['data_SHA256']==dm['sha256'] and h['phase_SHA256']==r['phase_SHA256']
         fields[stage]={}
         for role in data:
             p=out/role/'ccd.npy';assert sha(p)==r['arrays'][role]['SHA256'];v=np.load(p,mmap_mode='r');assert v.shape==(len(data[role][1]),478,478);fields[stage][role]=v;identities[stage+'/'+role]=sha(p)
     return fields,identities
+
+
+def validate_stage_hardware(path,sequence):
+    base=Path(sequence)/'calibration/admission/admitted_hardware.json';assert sha(base)==HARDWARE
+    original=read(base);hardware=read(path);assert hardware['base_admission_SHA256']==HARDWARE
+    for key in ('camera_dll','camera_dll_SHA256','coordinates','coordinates_SHA256','sensor_shape','machine_config','amplitude_sdk','phase_sdk','phase_lut','phase_LUT_SHA256','gain','wait_ms','discard_frames','phase_transform','orientation','response_lut','response_lut_SHA256'):
+        assert hardware[key]==original[key],('Per-layer exposure may not change other hardware/encoding',key)
+    assert 0<hardware['exposure_us']<=80005 and hardware['gain']==1
+    report=Path(hardware['stage_admission_report']);assert sha(report)==hardware['stage_admission_report_SHA256'];r=read(report)
+    assert r['passed'] and r['SDK_released'] and not r['TEST_used'] and r['TRAIN']==40 and r['selected']['actual']['exposure_us']==hardware['exposure_us']
+    assert r['PT_SHA256']==hardware['PT_SHA256'] and r['phase_SHA256']==hardware['phase_SHA256']
+    assert r['data_SHA256']==hardware['data_SHA256'] and r['selected']['probe_directory']==hardware['probe_directory'] and hardware['probe_indices']==list(range(40))
+    return hardware
+
+
+@torch.no_grad()
+def admit_stage(a):
+    from lab_caltech20_dvp_stage_exposure_20261019 import calibration
+    cfg=read(a.profile);torch.set_num_threads(2);data,dm=data_for(a.sequence);session=a.sequence/f'L{a.depth}';stages=['router']+[str(k) for k in range(a.depth)];prefix=stages.index(a.stage)
+    assert sha(a.checkpoint)==a.digest;model,_=model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
+    packet=dict(stage=a.stage,PT_SHA256=a.digest,data_SHA256=dm['sha256'],prefix_SHA256=identities,records=[],inputs={});phase_pixels=None
+    for begin in range(0,cfg['TRAIN_probe_samples'],8):
+        x,n,end=padded(data,'train',begin);assert end<=cfg['TRAIN_probe_samples']
+        def collect(stage,amplitudes,phase,ids):
+            nonlocal phase_pixels
+            if phase_pixels is None:phase_pixels=phase.copy()
+            assert stage==a.stage and np.array_equal(phase_pixels,phase)
+            for j in range(n):
+                index=begin+j;gray=np.rint(amplitudes[j].clip(0,1)*255).astype(np.uint8);assert np.max(np.abs(gray/255-amplitudes[j]))<=1e-7
+                packet['inputs'][index]=gray;packet['records'].append(dict(index=index,role='train',sample_id=str(data['train'][2][index]),label=int(data['train'][1][index]),stage=stage,PT_SHA256=a.digest,data_SHA256=dm['sha256']))
+            return np.zeros((n,478,478),np.uint8)
+        layer_forward(model,x,data['train'][2][begin:end],a.stage,{k:np.asarray(v['train'][begin:end]).copy() for k,v in previous.items()},collect)
+    packet['phase']=phase_pixels;hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==HARDWARE
+    calibration(a.out,packet,read(hardwarepath),HARDWARE,cfg,revalidate_replug)
 
 
 @torch.no_grad()
@@ -213,12 +250,22 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
     session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(stage)
     if prefix:
         prior_stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1]
-        fit_report=read(session/'fits'/prior_stage/'report.json');fit_protocol=read(session/'fits'/prior_stage/'protocol.json')
+        parent_name=getattr(a,'parent_fit',None) or prior_stage;parent=session/'fits'/parent_name;assert parent.resolve().is_relative_to((session/'fits').resolve())
+        fit_report=read(parent/'report.json');fit_protocol=read(parent/'protocol.json')
         assert fit_report['frozen_parameters_unchanged'] and fit_report['results']['best']['PT_SHA256']==digest
-        assert read(session/'capture'/prior_stage/'report.json')['PT_SHA256']==fit_protocol['parent_PT_SHA256']
+        if parent_name!=prior_stage and read(session/'capture'/prior_stage/'report.json')['PT_SHA256']!=fit_protocol['parent_PT_SHA256']:
+            canonical=session/'fits'/prior_stage
+            assert sha(canonical/'best.pt')==fit_protocol['parent_PT_SHA256'] and read(canonical/'protocol.json')['parent_PT_SHA256']==read(session/'capture'/prior_stage/'report.json')['PT_SHA256']
+        else:assert read(session/'capture'/prior_stage/'report.json')['PT_SHA256']==fit_protocol['parent_PT_SHA256']
+        assert fit_protocol['prefix']==prefix and fit_protocol['prefix_SHA256']==fields_for(session,prefix,data,dm,HARDWARE)[1]
     previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
-    out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None
+    out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else HARDWARE
+    if out.exists() and getattr(a,'archive_failed',False):
+        assert a.depth==4 and stage=='0' and not pilot and not LOCK.exists() and not (out/'report.json').exists()
+        failure=read(out/'failure.json');assert failure['frames']==1 and len(list((out/'train').glob('[0-9]*.json')))==1 and not (out/'test').exists()
+        archive=out.with_name('0_failed_low_signal_20261019');assert out.resolve().parent==(session/'capture').resolve() and not archive.exists();out.rename(archive)
+        save(archive/'archive_receipt.json',dict(original_path=str(out),preserved_path=str(archive),reason='Old1frame failed signal guard under superseded PT/exposure; retained, never reused',original_frames=1,deletion=False))
     if resume_router:
         assert a.depth==4 and stage=='router' and not pilot
         source,reused=admitted_pilot(session,data,dm,digest)
@@ -228,8 +275,12 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         # Exact verified empty failed attempt, preserved within the same run.
         out.rename(archived)
     assert not out.exists();out.mkdir(parents=True)
+    probe_directory=Path(hardware['probe_directory']) if hardware_digest!=HARDWARE else None
+    if probe_directory is not None:
+        assert hardware['PT_SHA256']==digest and hardware['data_SHA256']==dm['sha256'] and hardware['stage']==stage and not pilot
+        shutil.copy2(a.hardware_manifest,out/'hardware.json');assert sha(out/'hardware.json')==hardware_digest
     warp=cv2.getPerspectiveTransform(np.float32(corners(Path(hardware['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]));phasepath=out/'phase.bmp';phase_pixels=None;frames=0;start=time.perf_counter();arrays={};elapsed=[]
-    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=HARDWARE,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__)))
+    save(out/'contract.json',dict(camera='DVP',hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],PT_SHA256=digest,stage=stage,pilot=pilot,prefix_array_SHA256=identities,scope='new camera only; no old CCD reuse',TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,source_git=git_head(),source_SHA256=sha(__file__)))
     with LOCK.open('x') as f:f.write(json.dumps(dict(pid=os.getpid(),stage=stage,session=str(session),camera='DVP',pilot=pilot)))
     try:
         with Bench(hardware,out) as bench:
@@ -259,10 +310,18 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                                     src=old.with_name(old.name+suffix);dest=base.with_name(base.name+suffix)
                                     os.link(src,dest)
                                 row=dict(row,reused_from=str(old.with_suffix('.json')),source_receipt_SHA256=sha(old.with_suffix('.json')),new_physical_capture=False)
+                            elif probe_directory is not None and role=='train' and index in hardware['probe_indices']:
+                                old=probe_directory/f'{index:06d}';r=read(old.with_suffix('.json'));record=r['record'];meta=r['frame_metadata']
+                                assert record['sample_id']==str(ids[index]) and record['index']==index and record['PT_SHA256']==digest and record['data_SHA256']==dm['sha256'] and record['stage']==stage
+                                assert r['canonical_SHA256']==sha(canonical) and r['input_SHA256']==sha(bmp) and sha(phasepath)==hardware['phase_SHA256'] and r['raw_SHA256']==sha(old.with_name(old.name+'_raw.png'))
+                                assert abs(meta['exposure_us']-hardware['exposure_us'])<2 and meta['gain']==1 and meta['shape']==hardware['sensor_shape'] and not any(meta[k] for k in ('flip_h','flip_v','rotate','opposite'))
+                                with Image.open(old.with_suffix('.png')) as image:crop=np.asarray(image).copy()
+                                for suffix in ('_raw.png','.png'):os.link(old.with_name(old.name+suffix),base.with_name(base.name+suffix))
+                                row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=r['raw_SHA256'],frame_metadata=meta,p99=r['p99'],mean=r['mean'],saturation_fraction=r['saturation_fraction'],complete_sample_ms=meta['capture_total_ms'],captured_at_ns=r['captured_at_ns'],new_physical_capture=False,reused_from=str(old.with_suffix('.json')),source_receipt_SHA256=sha(old.with_suffix('.json')))
                             else:
                                 raw,meta=bench.capture(bmp);crop=orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation'])
                                 rawfile=base.with_name(base.name+'_raw.png');Image.fromarray(raw).save(rawfile,compress_level=1);Image.fromarray(crop).save(base.with_suffix('.png'),compress_level=1)
-                                row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=HARDWARE,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=sha(rawfile),frame_metadata=meta,p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),complete_sample_ms=(time.perf_counter()-t)*1000,captured_at_ns=time.time_ns(),new_physical_capture=True)
+                                row=dict(stage=stage,role=role,index=index,sample_id=str(ids[index]),PT_SHA256=digest,hardware_SHA256=hardware_digest,data_SHA256=dm['sha256'],phase_SHA256=sha(phasepath),canonical_SHA256=sha(canonical),input_SHA256=sha(bmp),raw_SHA256=sha(rawfile),frame_metadata=meta,p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),complete_sample_ms=(time.perf_counter()-t)*1000,captured_at_ns=time.time_ns(),new_physical_capture=True)
                             ccd[index]=crop;ccd.flush()
                             save(base.with_suffix('.json'),row);frames+=1;elapsed.append(row['complete_sample_ms']);values.append(crop);save(session/'progress.json',dict(state='pilot' if pilot else 'capturing',depth=a.depth,stage=stage,role=role,completed=index+1,total=n_total,stage_frames=frames,elapsed_s=time.perf_counter()-start,latest=row))
                             # Transient BMP is redundant; canonical input, exact drive LUT and digest remain.
@@ -277,11 +336,12 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         for role,item in arrays.items():
             folder=out/role;stored=np.load(folder/'ccd.npy',mmap_mode='r');count=item['samples'];assert len(list(folder.glob('*_raw.png')))==count
             for i in range(count):
-                base=folder/f'{i:06d}';r=read(base.with_suffix('.json'));assert r['sample_id']==str(data[role][2][i]) and r['PT_SHA256']==digest and r['hardware_SHA256']==HARDWARE and r['phase_SHA256']==sha(phasepath)
+                base=folder/f'{i:06d}';r=read(base.with_suffix('.json'));assert r['sample_id']==str(data[role][2][i]) and r['PT_SHA256']==digest and r['hardware_SHA256']==hardware_digest and r['phase_SHA256']==sha(phasepath)
                 assert r['canonical_SHA256']==sha(base.with_name(base.name+'_input.png'))
                 with Image.open(base.with_suffix('.png')) as im:assert np.array_equal(np.asarray(im),stored[i])
             audit[role]=dict(receipts=count,crop_array_equality=True,IDs_PT_phase_canonical_SHA256=True)
-        save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,new_physical_ccd=frames-(24 if resume_router else 0),reused_pilot_ccd=24 if resume_router else 0,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
+        reused_calibration=len(hardware['probe_indices']) if probe_directory is not None else 0
+        save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,new_physical_ccd=frames-(24 if resume_router else 0)-reused_calibration,reused_pilot_ccd=24 if resume_router else 0,reused_calibration_ccd=reused_calibration,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=hardware_digest,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
     except BaseException as ex:save(out/'failure.json',dict(error=repr(ex),traceback=traceback.format_exc(),frames=frames,automatic_retry=False));raise
     finally:LOCK.unlink()
 
@@ -301,6 +361,7 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
         if gpu.strip()==cfg['GPU_UUID']:assert pid in own or names.get(pid,Path(exe.strip()).name.lower()) in cfg['desktop_graphics_process_allowlist'],('Foreign GPU owner',pid,names.get(pid,exe))
     torch.cuda.set_per_process_memory_fraction(.65,0);torch.manual_seed(cfg['seed']);model,transfer,fields,identities=fitting_model(a,data,dm,checkpoint,digest,prefix);original=state_cpu(model);allowed=allowed_keys(model,prefix);baseline,p=assess(model,data,fields,'test');best,bestloss=baseline['correct'],baseline['nll'];selected=0;target=math.ceil(cfg['models'][str(a.depth)]['simulation_correct']-411*cfg['gap_pp']/100)
     target=cfg.get('target_correct',target);budget=cfg['final_fit'] if prefix==a.depth+1 else cfg['middle_fit'];protocol=dict(parent_PT_SHA256=digest,depth=a.depth,prefix=prefix,allowed_keys=sorted(allowed),prefix_SHA256=identities,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,baseline_TEST=baseline,target_correct=target,config=cfg,source_git=git_head(),source_SHA256=sha(__file__),teacher_scope='Frozen parent predictions on TRAIN only; no TEST teacher' if cfg.get('teacher_weight',0) else None)
+    protocol['prefix_hardware_SHA256']={stage:read(session/'capture'/stage/'report.json')['hardware_SHA256'] for stage in fields}
     save(out/'protocol.json',protocol);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=p)
     def snapshot(name,epoch):
         state=state_cpu(model);assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed);torch.save(dict(model=state,protocol=protocol,epoch=epoch),out/(name+'.pt'))
@@ -312,9 +373,11 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
     teacher=None
     if cfg.get('teacher_weight',0):
         model.eval();teacher=torch.empty((1600,20),device='cuda');temperature=cfg['teacher_temperature']
+        offset=cfg.get('teacher_simulated_newest_layers',0);assert offset in (0,1) and offset<=len(fields)
+        teacher_fields={k:fields[k] for k in list(fields)[:len(fields)-offset]};protocol['teacher_measured_prefix_stages']=list(teacher_fields)
         with torch.no_grad():
             for begin in range(0,1600,cfg['batch_size']):
-                ix=np.arange(begin,min(1600,begin+cfg['batch_size']));model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in fields.items()}
+                ix=np.arange(begin,min(1600,begin+cfg['batch_size']));model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in teacher_fields.items()}
                 teacher[ix]=torch.softmax(model(encode_images(data['train'][0][ix].cuda()))[0].clamp_min(1e-12).log()/temperature,1)
         assert torch.isfinite(teacher).all() and not teacher.requires_grad
         np.save(out/'teacher_TRAIN_Tsoft.npy',teacher.detach().cpu().numpy());protocol['teacher_TRAIN_SHA256']=sha(out/'teacher_TRAIN_Tsoft.npy');save(out/'protocol.json',protocol)
@@ -418,10 +481,11 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');a=p.parse_args()
     try:
         if a.mode=='selftest':selftest()
         elif a.mode=='prepare':prepare(a)
+        elif a.mode=='admit-stage':admit_stage(a)
         elif a.mode=='refine':
             cfg=read(a.profile)
             if 'base_profile' in cfg:
@@ -438,6 +502,7 @@ if __name__=='__main__':
             finally:LOCK.unlink()
         elif a.mode=='capture':
             cfg=read(a.profile);torch.set_num_threads(cfg['cpu_threads']);data,dm=data_for(a.sequence);hardwarepath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(hardwarepath)==HARDWARE;hardware=read(hardwarepath)
+            if a.hardware_manifest:hardware=validate_stage_hardware(a.hardware_manifest,a.sequence)
             assert sha(hardware['response_lut'])==hardware['response_lut_SHA256'] and sha(hardware['phase_lut'])==hardware['phase_LUT_SHA256']
             assert sha(a.checkpoint)==a.digest;acquire(a,a.stage,a.checkpoint,a.digest,data,dm,hardware,pilot=a.pilot,resume_router=a.resume_router)
         else:run(a)

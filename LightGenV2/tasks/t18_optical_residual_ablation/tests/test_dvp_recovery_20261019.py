@@ -29,7 +29,8 @@ class RecoveryTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
         self.scope=dict(np=np,Path=Path,Image=Image,sha=sha,read=read,save=save,HARDWARE='hardware')
         functions(HERE/'lab_caltech20_dvp_20261019.py',('variants','orient','correlation'),self.scope)
-        functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('admitted_pilot','revalidate_replug'),self.scope)
+        functions(HERE/'lab_caltech20_dvp_layerwise_20261019.py',('admitted_pilot','revalidate_replug','validate_stage_hardware'),self.scope)
+        functions(HERE/'lab_caltech20_dvp_stage_exposure_20261019.py',('exposure_passes',),self.scope)
 
     def pilot(self):
         folder=self.root/'router_pilot24';(folder/'train').mkdir(parents=True)
@@ -67,6 +68,35 @@ class RecoveryTests(unittest.TestCase):
         with self.assertRaises(AssertionError):self.validation(brightness=.7)
     def test_wrong_direction_rejected(self):
         with self.assertRaises(AssertionError):self.validation(wrong_direction=True)
+
+    def exposure(self,p99=30,saturation=0,response_error=0,dark_p99=3):
+        cfg=dict(TRAIN_probe_samples=40,probe_min_p99=25,probe_max_saturation=.01,max_dark_p99=8,linearity_absolute_gray=2,linearity_relative_tolerance=.15)
+        models=[dict(p99=p99,saturation_fraction=saturation) for _ in range(40)]
+        controls=[dict(tag='dark',mean=2,p99=dark_p99,saturation_fraction=0),dict(tag='gray64',mean=10+response_error,saturation_fraction=0),dict(tag='gray96',mean=26+response_error,saturation_fraction=0)]
+        return self.scope['exposure_passes'](models,controls,dict(dark=2,gray64=4,gray96=8),4,cfg)
+
+    def test_exposure_admission_pass(self):self.assertTrue(self.exposure())
+    def test_exposure_low_signal_rejected(self):self.assertFalse(self.exposure(p99=14))
+    def test_exposure_clip_rejected(self):self.assertFalse(self.exposure(saturation=.02))
+    def test_exposure_nonlinear_response_rejected(self):self.assertFalse(self.exposure(response_error=20))
+    def test_exposure_noise_floor_rejected(self):self.assertFalse(self.exposure(dark_p99=25))
+
+    def hardware(self):
+        base=self.root/'calibration/admission/admitted_hardware.json';base.parent.mkdir(parents=True)
+        keys=('camera_dll','camera_dll_SHA256','coordinates','coordinates_SHA256','sensor_shape','machine_config','amplitude_sdk','phase_sdk','phase_lut','phase_LUT_SHA256','gain','wait_ms','discard_frames','phase_transform','orientation','response_lut','response_lut_SHA256')
+        original={k:k for k in keys};original.update(gain=1,exposure_us=5000.5);save(base,original);self.scope['HARDWARE']=sha(base)
+        report=self.root/'report.json';save(report,dict(passed=True,SDK_released=True,TEST_used=False,TRAIN=40,selected=dict(actual=dict(exposure_us=40000),probe_directory='probes'),PT_SHA256='pt',phase_SHA256='phase',data_SHA256='data'))
+        h=dict(original,base_admission_SHA256=sha(base),exposure_us=40000,stage_admission_report=str(report),stage_admission_report_SHA256=sha(report),PT_SHA256='pt',phase_SHA256='phase',data_SHA256='data',probe_directory='probes',probe_indices=list(range(40)))
+        path=self.root/'hardware.json';save(path,h);return path,h
+
+    def test_new_exposure_hardware_identity(self):
+        path,_=self.hardware();self.assertEqual(self.scope['validate_stage_hardware'](path,self.root)['exposure_us'],40000)
+    def test_exposure_cannot_change_coordinates(self):
+        path,h=self.hardware();h['coordinates']='other';save(path,h)
+        with self.assertRaises(AssertionError):self.scope['validate_stage_hardware'](path,self.root)
+    def test_exposure_cannot_substitute_probe_identity(self):
+        path,h=self.hardware();h['probe_directory']='other';save(path,h)
+        with self.assertRaises(AssertionError):self.scope['validate_stage_hardware'](path,self.root)
 
 
 if __name__=='__main__':unittest.main()

@@ -1,0 +1,10 @@
+{
+  "TRAIN_probe_samples": 40,
+  "exposure_probe_us": [5000,10000,20000,40000,80000],
+  "probe_min_p99": 25,
+  "probe_max_saturation": 0.01,
+  "max_dark_p99": 8,
+  "linearity_relative_tolerance": 0.15,
+  "linearity_absolute_gray": 2.0,
+  "scope": "User-authorized per-layer exposure admission. Fixed first40 TRAIN (two per class), no TEST/VALID or model scores. Lowest fixed exposure passing signal+clipping+known-gray linear transfer. Gain1, wait240 and6discard, same sensor/coordinates/orientation/amplitude inverse/phase LUT. New per-stage hardware identity; no input boosting or normalization, no signal-guard bypass, no automatic retry. Selected same-PT probes may be explicitly reused after identity and pixel audits."
+}
