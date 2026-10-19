@@ -39,12 +39,13 @@ def folded(original,left,right,bias):
 
 
 def selftest(a=None):
-    torch.set_num_threads(2);torch.manual_seed(73);e=torch.rand(4,478,478);o=torch.rand_like(e);bank=compact(e,o)
+    torch.set_num_threads(2);torch.manual_seed(73);flat_e=torch.rand(4,478,478);flat_o=torch.rand_like(flat_e);flat_alpha=torch.tensor(.73,dtype=torch.float64);flat_error=float((compact_features(compact(flat_e,flat_o),flat_alpha)-original_features(flat_e,flat_o,flat_alpha)).abs().max());assert flat_error>3e-6,'Known near-uniform float32 pooling counterexample must be rejected, not granted exact-cache status'
+    ramp=torch.linspace(.1,1.9,478);e=ramp[None,None,:].expand(4,478,478).clone()+torch.rand(4,478,478)*.01;o=ramp[None,:,None].expand_as(e).clone()+torch.rand_like(e)*.01;bank=compact(e,o)
     for value in (.4001001,.73,.95):
         a=torch.tensor(value,dtype=torch.float64,requires_grad=True);f=compact_features(bank,a);full=original_features(e,o,a);error=float((f-full).abs().max());assert error<=3e-6,error
         head=torch.randn(20,256)*.03;g1=torch.autograd.grad(F.cross_entropy(f@head.T,torch.arange(4)),a,retain_graph=True)[0];g2=torch.autograd.grad(F.cross_entropy(full@head.T,torch.arange(4)),a)[0];assert torch.allclose(g1,g2,atol=3e-6,rtol=2e-5),(g1,g2)
     w=torch.randn(20,256);l=torch.randn(20,4)*.01;r=torch.randn(4,256)*.01;b=torch.randn(20);x=torch.randn(5,256);ww,bb=folded(w,l,r,b);assert torch.allclose(x@ww.T+bb,x@w.T+(x@r.T)@l.T+b,atol=1e-5)
-    print(json.dumps(dict(passed=True,compact_original_features_and_alpha_gradient=True,low_rank_fold_original_5140_head=True,SDK=False,GPU=False)),flush=True)
+    print(json.dumps(dict(passed=True,compact_parity_and_gradient_on_admitted_structured_fields=True,inexact_nearuniform_pooling_rejected=True,rejected_maxabs=flat_error,low_rank_fold_original_5140_head=True,SDK=False,GPU=False)),flush=True)
 
 
 def cache(a):
