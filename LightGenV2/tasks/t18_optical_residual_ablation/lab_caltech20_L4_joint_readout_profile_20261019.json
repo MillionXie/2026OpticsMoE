@@ -1,0 +1,10 @@
+{
+  "scope":"One coupled multiclass Newton-CG comparison after single-row protective replay plateau; original5140 head only",
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"per_row_trust_radius":0.4,"CG_iterations":12,
+  "steps":256,"batch_size":128,"fit_seconds":90,
+  "TRAIN_sampling":"one continuous fixed-seed permutation; only original1200TRAIN",
+  "geometry":"TRAIN-only covariance eigfloor.02mean, folded DELTA into original head; no inference layer",
+  "stop":"at most256 TRAIN batches or90fitseconds or305/411; no scan or automatic continuation",
+  "TEST_gradient":false,"VALID":0,"SDK":false,"GPU":false
+}

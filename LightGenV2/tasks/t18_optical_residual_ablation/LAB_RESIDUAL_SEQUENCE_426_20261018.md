@@ -21,14 +21,24 @@ the fixed already-approved optimizer is recovery, not a new seed scan. L2
 target is already achieved on laboratory full replay; no further L2 search.
 Source synchronization to laboratory/server is pending restored SSH.
 
-The local fixed-config recovery reproduced269->271->276->279/411 with the
-same complete TRAIN-batch histories and last-stage E0 stop; L2 recovered325
+The local fixed-config recovery reproduced269->271->276->279/411 with a
+fully reconstructed local TRAIN-batch stream and last-stage E0 stop; L2 recovered325
 and stopped. Locally saved PTs are distinct serialized recovery artifacts,
 not claimed downloads of the original laboratory PTs. Protective replay
 completed10944 TRAIN updates:279 unchanged, NLL1.76428->1.75090; at most3
 same-method segments preserve one reconstructed TRAIN RNG and the existing
 09:00 internal cutoff, first-no-progress stop. Profile
 `lab_caltech20_L4_protected_cont_profile_20261019.json`. No camera/SDK.
+
+Protective continuation stopped at its first no-progress segment: still279.
+One distinct comparison addresses coupled class boundaries: all20 original
+head rows jointly optimized in the same TRAIN covariance coordinates with
+exact softmax CE/correct-TRAIN T2 KL/anchor curvature and12-step Newton-CG.
+Original5140 head only; finite256 batches128/90fitseconds, joint trust radius
+sqrt20*.4, Newton.25/KL2/anchor.1/damping.1 retained. One fixed TRAIN stream,
+no seed/coefficient scan or automatic continuation. Analytic gradient/HVP
+checked against autograd to1e-10. Entries `lab_caltech20_joint_readout_20261019.py`
+and `lab_caltech20_L4_joint_readout_profile_20261019.json`. No camera/SDK.
 
 BCE continuation finished276->279/411=67.88321%, then next segment had no gain
 and stopped. Best stage02 SHA `7e51378473aeaecffaf937b9cd3f5fb9b1f96b6f57bb22ce2bf3a711703921a7`.
