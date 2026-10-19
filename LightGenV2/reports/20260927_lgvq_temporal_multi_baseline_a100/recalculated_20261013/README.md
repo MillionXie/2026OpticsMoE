@@ -1,5 +1,46 @@
 # LGVQ temporal quality: selected-batch accuracy, latency and estimated energy
 
+## 20 October2026: interpretation hold on the50%-busy cost comparison
+
+The author has now confirmed that imposed throttling waits must be included in the
+cost of a restricted workload. The18October pure-inference costs below are preserved
+historical measurements, **not matched-window50%-busy service costs**. Do not use
+their near-equal paced/native times to claim that temporal throttling has no cost.
+The displayed busy percentages came from a separate GPU-resident repeating workload;
+the cost runs interleaved distinct-video CPU preparation and measured only each
+first-block-to-GPU-output interval, explicitly excluding the inserted waits.
+
+Offline raw-time reconciliation found, for Qwen at the same B3 setting,534.142060ms
+pure inference plus537.136698ms imposed waiting per16 normalized video evaluations,
+or1071.278759ms combined. The corresponding unrestricted pure reference is526.553994ms.
+The combined audit still excludes decode/preprocessing/H2D gaps and includes all
+recurrent cycle waits: it is not a new measured end-to-end service latency or energy.
+Waiting energy must not be obtained by multiplying pure active board power by this
+longer time. QwenB1 historical finalized data remain unchanged and are not part of
+the new50%-versus-unrestricted experiment.
+
+Full raw reconciliation is retained under the canonical
+`lgvq_rental_precision_20261019/presentation/busy50_boundary_audit.json` andCSV.
+Further pure-cost queue stages were held while the author selects temporal duty
+control versus MPS resource provisioning. The ongoing independent FP32 utilization
+stage is allowed to finish; no new resource-partitioning configuration has been enabled.
+The40GB laboratory GPU wait expired without measurements and will not be renewed.
+
+NVIDIA defines GPU utilization as the fraction of a sampling period with a kernel
+executing, not the fraction of physical compute units in use
+([nvidia-smi documentation](https://docs.nvidia.com/deploy/nvidia-smi/index.html)).
+Temporal duty control preserves the resources of each inference and inserts idle
+intervals; MPS active-thread provisioning instead limits execution resources
+available to a CUDA client and need not reduce the busy-time counter to50%
+([NVIDIA MPS provisioning](https://docs.nvidia.com/deploy/mps/when-to-use-mps.html)).
+Neither is automatically equivalent to50% optical spatial use. Within a model,
+batch size should remain fixed between the restricted and unrestricted conditions;
+changing both batch and resource control would confound their effects. Actual
+busy time must be reported rather than adjusted by batch scanning to force a label.
+
+Everything below this notice describes the18October historical pure-cost release,
+not the revised publication-ready50% comparison.
+
 ## Current compact figure sets — unified inference boundary, 18 October 2026
 
 The two compact plotting workbooks and four figures now use the same dataset-once inference-cost definition. The former resident-service costs, including the9.177-ms CLIP value, are not used in either current set. Ten prescribed cost points completed: six CLIP native repeats and four paced-setting points. Two interrupted partial runs are retained but excluded. All139 original remote files and launch controls were SHA-verified locally. No additional training, precision change, frame reduction, CUDA Graph or power-limit change was made. Finalized Qwen B1 remains63.133111480865225% utilization,1188.3861464262009ms and462.1134010767563J.
