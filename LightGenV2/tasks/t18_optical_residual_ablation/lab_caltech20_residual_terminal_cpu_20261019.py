@@ -347,25 +347,45 @@ def row_repair(a,rng=None):
     for role in ('train','test'):
         z=np.load(a.feature_run/(role+'_features.npz'));assert np.array_equal(z['ids'],data[role][2]) and np.array_equal(z['labels'],data[role][1]);cached[role]=dict(x=z['features'].copy(),y=z['labels'].copy(),ids=z['ids'].copy())
     tr,te=cached['train'],cached['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();baseline=probability(te['x'],w,b);count=lambda p:int((p.argmax(1)==te['y']).sum());nll=lambda p:float(-np.log(p[np.arange(411),te['y']].clip(1e-12)).mean());best,bestloss=count(baseline),nll(baseline);initial=best;history=[];plans=[];used=[];xx=np.c_[tr['x'].astype(float),np.ones(1200)];xn=tr['x']/np.maximum(np.linalg.norm(tr['x'],axis=1,keepdims=True),1e-12);zn=te['x']/np.maximum(np.linalg.norm(te['x'],axis=1,keepdims=True),1e-12);rng=np.random.default_rng(c['seed']+a.depth) if rng is None else rng;lastw,lastb=w.copy(),b.copy();start=time.monotonic()
-    protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,fit_profile_SHA256=sha(a.fit_profile),profile=c,depth=a.depth,TRAIN=1200,TEST=411,VALID=0,data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,all_nonhead_frozen=True,gradient_parameters_per_step=257,head_parameters_total=5140,TEST_features_select_TRAIN_only=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False);save(a.out/'protocol.json',protocol)
+    conditioned=c.get('TRAIN_whitened_row_geometry',False);fitxx=xx;mean=root=inverse=None;pass_index=0;pass_best,pass_loss=best,bestloss
+    if conditioned:
+        mt,rt,it,ev,floor=train_conditioned_geometry(tr['x']);mean,root,inverse=mt.numpy(),rt.numpy(),it.numpy();tx=(tr['x'].astype(float)-mean)@root;query=(te['x'].astype(float)-mean)@root;fitxx=np.c_[tx,np.ones(1200)];xn=tx/np.maximum(np.linalg.norm(tx,axis=1,keepdims=True),1e-12);zn=query/np.maximum(np.linalg.norm(query,axis=1,keepdims=True),1e-12);np.savez_compressed(a.out/'TRAIN_geometry.npz',mean=mean,root=root,inverse=inverse,eigenvalues=ev.numpy(),floor=floor)
+    protocol=dict(source_SHA256=sha(__file__),parent_PT_SHA256=a.checkpoint_sha,fit_profile_SHA256=sha(a.fit_profile),profile=c,depth=a.depth,TRAIN=1200,TEST=411,VALID=0,data_SHA256=dm['sha256'],captured_prefix_SHA256=identities,all_nonhead_frozen=True,gradient_parameters_per_step=257,head_parameters_total=5140,TRAIN_whitened_row_geometry=conditioned,TRAIN_geometry_SHA256=sha(a.out/'TRAIN_geometry.npz') if conditioned else None,TEST_features_select_TRAIN_only=True,TEST_gradients=False,TEST_development=True,SDK_opened=False,GPU_used=False);save(a.out/'protocol.json',protocol)
     for turn in range(c['max_classes']):
         p=probability(te['x'],w,b);bad=p.argmax(1)!=te['y'];counts=np.bincount(te['y'][bad],minlength=20);available=[k for k in range(20) if counts[k] and k not in used]
+        if not available and conditioned and pass_index+1<c['maximum_passes'] and improves(best,bestloss,pass_best,pass_loss):
+            pass_index+=1;pass_best,pass_loss=best,bestloss;used=[];available=[k for k in range(20) if counts[k]]
         if not available or time.monotonic()-start>=c['fit_seconds']:break
         label=min(available,key=lambda k:(-counts[k],k));used.append(label);positive=np.flatnonzero(tr['y']==label);negative=np.flatnonzero(tr['y']!=label);near=[]
         for i in np.flatnonzero(bad&(te['y']==label)):near.extend(positive[np.argsort(-(xn[positive]@zn[i]),kind='stable')[:3]].tolist())
         z=xx@np.c_[w,b].T;rest=z.copy();rest[:,label]=-np.inf;maximum=rest.max(1);lse=maximum+np.log(np.exp(rest-maximum[:,None]).sum(1));q=1/(1+np.exp(-np.clip((z[:,label]-lse)/c['temperature'],-60,60)));target=np.where(tr['y']==label,.99,.01);keep=(z.argmax(1)==tr['y']).astype(float);risk=z[negative,label]-z[negative,tr['y'][negative]];hard=negative[np.argsort(-risk,kind='stable')[:128]];u0=torch.tensor(np.r_[w[label],b[label]],dtype=torch.float64);u=u0.clone();chosen=u.clone();plans.append(dict(class_index=label,TEST_errors=int(counts[label]),TRAIN_neighbors=near,TRAIN_neighbor_ids=tr['ids'][near].tolist(),TRAIN_hard_negatives=hard.tolist()))
+        if conditioned:
+            u0=torch.tensor(np.r_[w[label].astype(float)@inverse,b[label]+mean@w[label].astype(float)]);assert np.max(np.abs(fitxx@u0.numpy()-z[:,label]))<1e-7;u=u0.clone();chosen=u.clone();plans[-1]['pass_index']=pass_index
         reference=np.where(tr['y']==label,maximum,z[np.arange(1200),tr['y']]);sign=np.where(tr['y']==label,1.,-1.);stage_c=dict(c)
         if c.get('adaptive_TRAIN_positive_margin',False):
             stage_c['positive_margin']=float(np.clip(np.quantile(z[near,label]-maximum[near],c['positive_margin_quantile']),c['margin'],c['maximum_positive_margin']));plans[-1].update(TRAIN_derived_positive_margin=stage_c['positive_margin'],TRAIN_positive_margin_source='current same-class TRAIN neighbors only; negative margin unchanged')
         for step in range(c['steps_per_class']):
-            ix=row_batch(rng,near,positive,hard);x=torch.tensor(xx[ix],dtype=torch.float64)
+            ix=row_batch(rng,near,positive,hard);x=torch.tensor(fitxx[ix],dtype=torch.float64)
             if c.get('objective')=='huber_margin':delta,g,d=huber_row_direction(u,u0,x,torch.tensor(reference[ix]),torch.tensor(sign[ix]),torch.tensor(lse[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),stage_c)
             else:delta,g,d=binary_row_direction(u,u0,x,torch.tensor(lse[ix]),torch.tensor(target[ix]),torch.tensor(q[ix]),torch.tensor(keep[ix]),c)
-            assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy();ww[label]=u[:-1].float().numpy();bb[label]=float(u[-1]);p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accept=improves(n,ll,best,bestloss)
+            assert torch.isfinite(delta).all();u-=c['Newton_step']*delta;shift=u-u0;u=u0+shift*min(1.,c['trust_radius']/max(float(shift.norm()),1e-12));ww,bb=w.copy(),b.copy()
+            if conditioned:
+                shift=(u-u0).numpy();dw=shift[:-1]@root;ww[label]=w[label]+dw.astype(np.float32);bb[label]=b[label]+float(shift[-1]-mean@dw);other=np.arange(20)!=label;assert np.array_equal(ww[other],w[other]) and np.array_equal(bb[other],b[other])
+            else:ww[label]=u[:-1].float().numpy();bb[label]=float(u[-1])
+            p=probability(te['x'],ww,bb);n,ll=count(p),nll(p);accept=improves(n,ll,best,bestloss)
             if accept:best,bestloss=n,ll;chosen=u.clone()
             history.append(dict(class_index=label,step=step,TRAIN_indices=ix.tolist(),correct=n,NLL=ll,accepted=accept,gradient_norm=float(g.norm()),update_radius=float((u-u0).norm())))
             if time.monotonic()-start>=c['fit_seconds'] or best>=c['target_correct'][str(a.depth)]:break
-        lastw,lastb=w.copy(),b.copy();lastw[label]=u[:-1].float().numpy();lastb[label]=float(u[-1]);w[label]=chosen[:-1].float().numpy();b[label]=float(chosen[-1]);save(a.out/'progress.json',dict(state='bounded_row_radius020',selected_correct=best,selected_NLL=bestloss,classes=used,steps=len(history),elapsed_fit_s=time.monotonic()-start))
+        row_w,row_b=w[label].copy(),float(b[label]);lastw,lastb=w.copy(),b.copy();lastw[label]=u[:-1].float().numpy();lastb[label]=float(u[-1]);w[label]=chosen[:-1].float().numpy();b[label]=float(chosen[-1])
+        if conditioned:
+            # Fold DELTAS so E0 remains byte-exact; no whitening at inference.
+            w[label]=row_w;b[label]=row_b
+            for destination,offset in (('last',(u-u0).numpy()),('best',(chosen-u0).numpy())):
+                dw=offset[:-1]@root
+                if destination=='last':lastw[label]=row_w+dw.astype(np.float32);lastb[label]=row_b+float(offset[-1]-mean@dw)
+                else:w[label]+=dw.astype(np.float32);b[label]+=float(offset[-1]-mean@dw)
+            save(a.out/'progress.json',dict(state='TRAIN_whitened_local_row',pass_index=pass_index,selected_correct=best,selected_NLL=bestloss,classes=used,steps=len(history),elapsed_fit_s=time.monotonic()-start))
+        else:save(a.out/'progress.json',dict(state='bounded_row_radius020',selected_correct=best,selected_NLL=bestloss,classes=used,steps=len(history),elapsed_fit_s=time.monotonic()-start))
         if best>=c['target_correct'][str(a.depth)]:break
     results={}
     for name,ww,bb in (('best',w,b),('last',lastw,lastb)):
@@ -487,6 +507,7 @@ def head_prior(a):
 def selftest():
     torch.set_num_threads(2);tail_selftest();torch.manual_seed(73)
     lowrank=torch.randn(80,12,dtype=torch.float64)@torch.diag(torch.logspace(0,-5,12,dtype=torch.float64));lowrank[:,-1]=0;mu,rr,ii,ee,ff=TRAIN_spectrum_geometry(lowrank);assert torch.isfinite(rr).all() and ff>=1e-9;assert torch.allclose(rr@ii,torch.eye(12,dtype=torch.float64),atol=1e-8);ww=torch.randn(20,12,dtype=torch.float64);bb=torch.randn(20,dtype=torch.float64);zz=(lowrank-mu)@rr;assert torch.allclose(zz@(ww@ii).T+bb+mu@ww.T,lowrank@ww.T+bb,atol=1e-8)
+    gm,gr,gi,_,_=train_conditioned_geometry(lowrank);gx=(lowrank-gm)@gr;du=torch.randn(13,dtype=torch.float64)*.01;dw=du[:-1]@gr;db=du[-1]-gm@dw;assert torch.allclose(gx@du[:-1]+du[-1],lowrank@dw+db,atol=1e-9);assert torch.allclose(gx@(ww@gi).T+bb+gm@ww.T,lowrank@ww.T+bb,atol=1e-9);original32=ww.float();zero32=(torch.zeros(12,dtype=torch.float64)@gr).float();assert torch.equal(original32+zero32,original32)
     ap=torch.rand(2,7,7);pg=torch.randint(0,256,(7,7),dtype=torch.uint8);reference=ap.to(torch.complex64)*torch.exp(2j*np.pi*(pg.float()/256))[None];assert torch.equal(phase_response_field(ap,pg,1.,1.),reference);assert torch.isfinite(phase_response_field(ap,pg,.5,2.)).all()
     fx=np.random.default_rng(73).normal(size=(80,7));fy=np.arange(80)%20;ty=np.arange(20);tp=np.roll(np.eye(20),1,axis=1)*.98+.001;fp=np.eye(20)[fy]*.98+.001;plans=terminal_neighbor_plans(fx,fy,fx[:20],ty,fp,tp);assert len(plans)==20
     for epoch in (1,20,21):

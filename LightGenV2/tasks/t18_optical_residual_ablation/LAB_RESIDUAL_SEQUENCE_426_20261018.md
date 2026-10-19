@@ -2,6 +2,24 @@
 
 ## New offline-only authorization, 2026-10-19
 
+Low-rank and SAM/EMA completed100epochs each for both depths, full original
+CPU best/last/TRAIN/TEST checks passed; selected E0 318/260, no accuracy gain.
+The actual compact proposals also failed1.0e-5 to3.1e-5 feature parity, remain
+disabled; no alpha was changed. Exact native features were used for training.
+
+New evidence-led step: original TRAIN covariance whitening improves nearest
+TRAIN same-class counts on wrong TEST from14/93 to20/93(L2),11/151 to34/151(L4),
+and TRAIN leave-one-out counts553->694 and244->642 of1200. This is a distance
+diagnostic, NOT a new classification score or independent validation. Use that
+TRAIN-only geometry for local row sample selection AND optimization coordinates.
+Optimize one257 row at a time, remaining19 rows byte-fixed per stage; signed
+Huber, correct-TRAIN KL/anchor, curvature solve. Radius.4 is in standardized
+TRAIN-logit geometry, not raw weights. Fold DELTAS into original Linear,
+preserve byte-exact E0, no whitening layer at inference. No change to alpha,
+conv or optical upstream. Max3passes/180fitseconds, target/first-no-progress
+pass stop, one continuous RNG, no seed or radius scan. Exact profile:
+`lab_caltech20_residual_whitened_local_profile_20261019.json`.
+
 Active-scope correction before ANY real-data fit: compact fusion proposal failed
 synthetic feature gates(max1.19448e-4 and6.31809e-6 >3e-6). Do NOT relax the
 bound or claim exact alpha optimization. Alpha is explicitly frozen for this
