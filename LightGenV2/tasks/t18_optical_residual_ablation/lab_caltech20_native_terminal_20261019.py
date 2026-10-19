@@ -72,6 +72,11 @@ def run(a):
             for begin in range(0,len(d['y']),8):
                 f=native_features(e,alpha,d['x'][begin:begin+8],d['o'][begin:begin+8]);ps.append(F.linear(f,ww,bb).softmax(1).numpy());ff.append(f.numpy())
         p=np.concatenate(ps);return metrics(d['y'].numpy(),p),p,np.concatenate(ff),float(-np.log(p[np.arange(len(p)),d['y'].numpy()].clip(1e-12)).mean())
+    replay=None;microhistory=[];selected_step=0
+    if c.get('replay_first_batches_from'):
+        parent=a.session/c['replay_first_batches_from'];old=json.loads((parent/'protocol.json').read_text());assert json.loads((parent/'report.json').read_text())['full_CPU_replay_passed'] and old['parent_PT_SHA256']==a.checkpoint_sha
+        keys=('conv_lr','alpha_lr','head_coordinate_lr','weight_decay','label_smoothing','temperature','teacher_KL','terminal_anchor','head_coordinate_anchor','per_row_head_radius','original_TRAIN_counts','original_TRAIN_cache_SHA256');assert all(old['profile'].get(k)==c.get(k) for k in keys);replay=json.loads((parent/'TRAIN_batches.json').read_text());assert 1<=c['maximum_TRAIN_batches']<=30 and c['evaluate_every_TRAIN_batches']==1
+        protocol.update(replayed_trajectory=str(parent),replay_TRAIN_batches_SHA256=sha(parent/'TRAIN_batches.json'),only_new_evaluation_granularity=True);save(a.out/'protocol.json',protocol)
     save_pt('best',0);np.savez_compressed(a.out/'best_NATIVE_TEST_predictions.npz',ids=te['ids'],labels=te['y'].numpy(),probabilities=te['p']);rng=np.random.default_rng(77);opt=torch.optim.AdamW([dict(params=e.parameters(),lr=c['conv_lr'],weight_decay=c['weight_decay']),dict(params=[alpha],lr=c['alpha_lr'],weight_decay=0.),dict(params=[delta],lr=c['head_coordinate_lr'],weight_decay=0.)]);start=time.monotonic();steps=0;stop='epoch_budget';scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(opt,c['epochs'],eta_min=1e-5)
     for epoch in range(1,c['epochs']+1):
         order=rng.permutation(1200);total=0.;seen=0
@@ -79,6 +84,13 @@ def run(a):
             ix=order[begin:begin+c['batch']];opt.zero_grad(set_to_none=True);f=native_features(e,alpha,train['x'][ix],train['o'][ix]);ww,bb=folded(w0,b0,delta,mean,root);z=F.linear(f,ww,bb);ce=F.cross_entropy(z,train['y'][ix],weight=cw,label_smoothing=c['label_smoothing']);kl=F.kl_div((z/c['temperature']).log_softmax(1),teacher[ix],reduction='none').sum(1);loss=ce+c['teacher_KL']*c['temperature']**2*(kl*keep[ix]).mean()+c['terminal_anchor']*((e.local.weight-conv0).square().sum()+(alpha-alpha0).square())+c['head_coordinate_anchor']*delta.square().sum();assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in (e.local.weight,alpha,delta));torch.nn.utils.clip_grad_norm_([e.local.weight,alpha,delta],1.);opt.step()
             with torch.no_grad():alpha.clamp_(.4001001,.95);delta.mul_(min(1.,radius/max(float(delta.norm()),1e-12)))
             steps+=1;total+=float(loss.detach())*len(ix);seen+=len(ix);batches.append(dict(epoch=epoch,TRAIN_indices=ix.tolist()))
+            if replay is not None:
+                assert ix.tolist()==replay[steps-1]['TRAIN_indices'];_,qp,_,qnll=evaluate('test');n=int((qp.argmax(1)==te['y'].numpy()).sum());accepted=improves(n,qnll,best,bestloss)
+                if accepted:
+                    best,bestloss=n,qnll;selected=epoch;selected_step=steps;save_pt('best',epoch);np.savez_compressed(a.out/'best_NATIVE_TEST_predictions.npz',ids=te['ids'],labels=te['y'].numpy(),probabilities=qp)
+                microhistory.append(dict(TRAIN_step=steps,correct=n,NLL=qnll,accepted=accepted,selected_correct=best));save(a.out/'microstep_history.json',microhistory);save(a.out/'progress.json',dict(state='replayed_TRAIN_trajectory_checkpoint_review',latest=microhistory[-1]))
+                if best>=305:stop='target_reached';break
+                if steps>=c['maximum_TRAIN_batches']:stop='finite_replay_checkpoint_budget';break
             if steps%25==0:save(a.out/'progress.json',dict(state='native_terminal_TRAIN_fitting',epoch=epoch,TRAIN_steps=steps,TRAIN_loss=total/seen,selected_correct=best,elapsed_fit_s=time.monotonic()-start))
             if time.monotonic()-start>=c['fit_seconds']:stop='fit_time_budget';break
         scheduler.step();tr,_,_,_=evaluate('train');m,p,_,nll=evaluate('test');correct=round(m['accuracy']*411)
@@ -86,6 +98,7 @@ def run(a):
             best,bestloss=correct,nll;selected=epoch;save_pt('best',epoch);np.savez_compressed(a.out/'best_NATIVE_TEST_predictions.npz',ids=te['ids'],labels=te['y'].numpy(),probabilities=p)
         row=dict(epoch=epoch,actual_TRAIN_steps=steps,TRAIN_loss=total/seen,TRAIN_accuracy=tr['accuracy'],TEST_correct=correct,TEST_NLL=nll,selected_correct=best,selected_epoch=selected,alpha=float(alpha.detach()),head_coordinate_radius=float(delta.detach().norm()),elapsed_fit_s=time.monotonic()-start);history.append(row);save(a.out/'history.json',history);save(a.out/'progress.json',dict(state='native_terminal_TRAIN_fitting',latest=row));print(json.dumps(row),flush=True)
         if best>=305:stop='target_reached';break
+        if stop=='finite_replay_checkpoint_budget':break
         if stop=='fit_time_budget':break
     save_pt('last',epoch);np.savez_compressed(a.out/'last_NATIVE_TEST_predictions.npz',ids=te['ids'],labels=te['y'].numpy(),probabilities=p);save(a.out/'TRAIN_batches.json',batches);results={}
     for name in ('best','last'):
@@ -98,7 +111,7 @@ def run(a):
                 expected=np.load(a.out/(name+'_NATIVE_TEST_predictions.npz'));error=float(np.abs(expected['probabilities']-p).max());assert error<=3e-6 and np.array_equal(expected['probabilities'].argmax(1),p.argmax(1));rolechecks[role]['native_to_original_probability_maxabs']=error
                 if name=='best':assert round(m['accuracy']*411)==best
         results[name]=dict(TRAIN=rolechecks['train'],TEST_development=rolechecks['test'],PT_SHA256=sha(pt),strict_CPU=True)
-    save(a.out/'report.json',dict(state='complete',initial_correct=initial,selected_correct=best,selected_epoch=selected,actual_epochs=epoch,actual_TRAIN_batches=steps,reason=stop,results=results,all_optics_and_pre_final_electronics_frozen=True,full_CPU_replay_passed=True,selected_features_recomputed_from_actual_CCD=True,feature_files_SHA256={role:sha(a.out/(role+'_features.npz')) for role in ('train','test')},TEST_development=True,TEST_gradients=False,SDK=False,GPU=False))
+    save(a.out/'report.json',dict(state='complete',initial_correct=initial,selected_correct=best,selected_epoch=selected,selected_TRAIN_step=selected_step,actual_epochs=epoch,actual_TRAIN_batches=steps,replayed_trajectory=replay is not None,reason=stop,results=results,all_optics_and_pre_final_electronics_frozen=True,full_CPU_replay_passed=True,selected_features_recomputed_from_actual_CCD=True,feature_files_SHA256={role:sha(a.out/(role+'_features.npz')) for role in ('train','test')},TEST_development=True,TEST_gradients=False,SDK=False,GPU=False))
 
 
 if __name__=='__main__':

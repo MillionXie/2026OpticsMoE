@@ -1,0 +1,13 @@
+{
+  "scope":"Exactly replay first30 already-trained TRAINprior minibatches, inspect intermediate checkpoints missed by epoch-only selection",
+  "replay_first_batches_from":"native_TRAINprior_20261019","maximum_TRAIN_batches":30,"evaluate_every_TRAIN_batches":1,
+  "epochs":1,"fit_seconds":180,"batch":8,"target_correct":305,
+  "conv_lr":0.002,"alpha_lr":0.0005,"head_coordinate_lr":0.002,
+  "weight_decay":0.001,"label_smoothing":0.02,
+  "temperature":2.0,"teacher_KL":2.0,"terminal_anchor":0.1,"head_coordinate_anchor":0.01,
+  "per_row_head_radius":0.4,
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "stop":"30 exact replayed TRAIN batches or305correct, no seed/parameter search; save only best/last",
+  "TEST_gradient":false,"VALID":0,"SDK":false,"GPU":false
+}

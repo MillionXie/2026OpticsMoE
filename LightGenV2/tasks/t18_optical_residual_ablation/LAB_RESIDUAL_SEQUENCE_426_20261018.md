@@ -58,6 +58,16 @@ fitting every confidence value. Analytic gradient/HVP checked to1e-10 against
 autograd. Config `lab_caltech20_L4_class_margin_profile_20261019.json`, max256
 TRAIN batches/90fitsec, no automatic continuation/parameter scan/new layer.
 
+The native5150 TRAINprior fit also retained E0 279 after12epochs/1800batches;
+subspace Huber completed256 and retained279. One finite checkpoint-granularity
+audit now EXACTLY replays the first30 recorded TRAINprior minibatches. First
+full epoch had already regressed to228, so previously unevaluated microsteps
+may have been missed. Same parent279/source coefficients/seed/sample stream;
+every TRAIN index batch asserted against the original saved history. Evaluate
+each TRAIN-derived checkpoint with TEST selection, no TEST derivative, no new
+seed/direction or unbounded continuation. Only best/last saved, profile
+`lab_caltech20_L4_early_checkpoint_profile_20261019.json`, max30updates/180fitsec.
+
 ### Latest explicit user request: L2 residual gap <=2pp, 2026-10-19
 
 **Completed:329/411=80.04866%, fixed337 simulation gap1.94647pp; new target achieved.**
