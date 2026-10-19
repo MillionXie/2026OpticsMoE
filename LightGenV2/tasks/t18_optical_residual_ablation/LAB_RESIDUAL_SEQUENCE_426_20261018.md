@@ -2,6 +2,23 @@
 
 ## New offline-only authorization, 2026-10-19
 
+### Latest explicit user request: L2 residual gap <=2pp, 2026-10-19
+
+User authorizes a new bounded L2-only attempt after325/411 achieved the old
+<=3pp target. Fixed simulation stays337/411=81.99513%; <=2pp requires at least
+329/411=80.04866%, gap8/411=1.94647pp. Preserve325 as fallback. No camera/new
+CCD/SDK, original optical/nonhead tensors frozen, TRAIN1200/TEST411/noVALID,
+TRAIN-only gradients and TEST-informed development diagnosis/selection.
+
+First continue the successful TRAIN-whitened Huber row method from325 with
+the EXACT prior TRAIN sampler stream reconstructed against all saved batches;
+no new seed or coefficient. Profile `lab_caltech20_L2_gap2_cont_profile_20261019.json`,
+max3 segments(each<=3passes/180fitseconds), first no-progress/329 stop, internal
+09:25 bound. This fresh user authorization supersedes the earlier L2 freeze
+only for this L2 attempt; does not revive stopped L4 searches or hardware work.
+Local sealed features remain explicitly distinct from a fresh laboratory
+raw-CCD full original-model CPU replay. Git/source and artifactSHA checks apply.
+
 ### Completed local round, 2026-10-19 09:00
 
 Full measured-graph CPU results verified before the connection interruption:
