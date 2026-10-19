@@ -2,6 +2,33 @@
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
+### E2 capture audited; diagnose weak readout before further G2 capture
+
+Fresh E2 completed1600TRAIN+411TEST in1348.83s. All receipt IDs/input/data/PT/
+phase and full arrays/independent raw/crop checks passed; SDK released. Phase
+9ac06418388acd9c0e7f2e902cb3406757782efeed755cf6790524dfbd8925fa,
+TRAINarray8e133cd871323b34560fa25d689772e033b094705f40241093ec185e74cdf376,
+TESTarray6bc26e88174690280aadbbd2d347a2f586d2ada0c432c20ab51e7a3f613b1565.
+Physical-prefix cold15/411;24epoch original suffix fit selectedE18=166,
+exact original-head repair239, conditioned first step241; native audits passed.
+At239 TRAIN652/1600, at241 TRAIN699/1600: rare classes remain underfit.
+Unrestricted conditioned last overfits and ends167 TEST, not selected.
+Three fixed TRAIN-only40sample alpha2 sensitivity checks showed simply forcing
+alpha lower worsens TRAIN NLL, so do not claim a uniquely proven alpha/optical
+cause or change the original bounds. All measured upstream stays frozen.
+
+One new original G2-mask suffix fit starts from241 with headLR3e-4 rather than
+1.5e-3 to limit immediate forgetting; existing phase/electronic/alpha rates and
+original model remain,48epochs or1000fit seconds at full-epoch boundary, no
+TEST gradients/new CCD. Runtime config and source recipe SHA live in this run.
+Independently, one bounded original-head TRAIN-estimated covariance shrinkage
+comparison reuses the published `shrunk_readout` rule and25 TRAIN-fitted
+temperature steps. Regularization strength is estimated from TRAIN covariance,
+not a TEST grid. Coefficients fold into the same5140 Linear, no new inference
+layer or nonhead change. Native411 best/last and frozen SHA are mandatory;
+E0 retained if no gain. Intermediate314 and final342 targets are not claimed.
+Do not capture G2 from the weak166/239/241 states without reviewed progress.
+
 ### Fresh G1 reviewed311/411; proceed to E2 without another G1 search
 
 To reduce repeated CPU feature computation, the same training adapter admits

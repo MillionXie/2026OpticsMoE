@@ -56,6 +56,17 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual({k:cfg[k] for k in old if k!='scope'}, {k:v for k,v in old.items() if k!='scope'})
         self.assertEqual(cfg['final_targets'], {'4':342,'6':350})
 
+    def test_shrinkage_uses_TRAIN_statistics_not_test_regularization_grid(self):
+        tree=ast.parse(SOURCE.read_text())
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='shrink_fit')
+        text=ast.unparse(method)
+        self.assertIn('shrunk_readout(x, y, counts)',text)
+        self.assertIn('F.cross_entropy(train_logits * scale.exp() + prior, y',text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_shrinkage_head_profile_20261020.json').read_text())
+        self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
+        self.assertEqual(cfg['temperature_steps'],25)
+        self.assertEqual(cfg['final_targets'],{'4':342,'6':350})
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -18,7 +18,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parents[2])]
 import lab_caltech20_dvp_layerwise_20261019 as core
 from lab_caltech20_dvp_head_repair_20261019 import cache_features, batch_indices, selftest as original_row_selftest
-from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry, pair_direction, huber_row_direction
+from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry, pair_direction, huber_row_direction, shrunk_readout
 from lab_caltech20_residual_guarded_20261018 import improves, probability, score
 
 
@@ -172,6 +172,77 @@ def row_fit(a):
               refinement_target_reached=best>=target,selected_e0=selected==0,intermediate=a.prefix<a.depth+1,
               all_nonhead_frozen=True,frozen_parameters_unchanged=True,TEST_gradients=False,SDK_used=False,GPU_used=False,
               feature_cache_reused=cacheproof['reused'],new_correct=int(((baseline.argmax(1)!=te['y'])&(bestp.argmax(1)==te['y'])).sum()),
+              new_wrong=int(((baseline.argmax(1)==te['y'])&(bestp.argmax(1)!=te['y'])).sum()),elapsed_fit_s=elapsed,
+              elapsed_postfit_replay_s=time.monotonic()-start-elapsed))
+
+
+def shrink_fit(a):
+    """TRAIN-estimated shrinkage readout folded into the same original Linear."""
+    assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not core.LOCK.exists()
+    torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
+    assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
+    assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
+    model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
+    fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
+    cached,cacheproof=checked_features(a,model,data,fields,dm,identities);tr,te=cached['train'],cached['test']
+    counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float64);assert counts.shape==(20,) and int(counts.sum())==3141
+    x=torch.tensor(tr['x'],dtype=torch.float64);y=torch.tensor(tr['y'],dtype=torch.long)
+    weight,bias,covariance=shrunk_readout(x,y,counts);prior=(counts/counts.sum()).log();geometry_bias=bias-prior
+    train_logits=x@weight.T+geometry_bias;scale=torch.nn.Parameter(torch.tensor(0.,dtype=torch.float64))
+    optimizer=torch.optim.LBFGS([scale],lr=.5,max_iter=1,line_search_fn='strong_wolfe');cw=counts/counts.mean()
+    baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);selected=0
+    bestw,bestb=original['linear.weight'].clone(),original['linear.bias'].clone()
+    target=int(cfg['targets' if a.prefix<a.depth+1 else 'final_targets'][str(a.depth)])
+    protocol=dict(parent_PT_SHA256=a.digest,depth=a.depth,prefix=a.prefix,allowed_keys=['linear.bias','linear.weight'],
+                  prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,source_git=core.git_head(),
+                  source_SHA256=core.sha(__file__),direction_source_SHA256=core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py'),
+                  config=cfg,profile_SHA256=core.sha(a.profile),target_correct=target,covariance=covariance,
+                  feature_files={r:v['feature_SHA256'] for r,v in cached.items()},feature_graph_SHA256=cacheproof['feature_graph_SHA256'],
+                  feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},feature_reuse=cacheproof,
+                  TRAIN_covariance_and_class_prior_only=True,closed_form_original_head_coefficients=5140,
+                  gradient_parameters=1,temperature_fitted_on_TRAIN_only=True,no_new_inference_layer=True,
+                  all_nonhead_frozen=True,TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,
+                  update_unit='TRAIN_readout_estimation_then_temperature')
+    core.save(a.out/'protocol.json',protocol)
+    np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)
+    history=[];start=time.monotonic()
+    for step in range(cfg['temperature_steps']+1):
+        if step:
+            def closure():
+                optimizer.zero_grad(set_to_none=True)
+                loss=F.cross_entropy(train_logits*scale.exp()+prior,y,weight=cw,label_smoothing=.02)
+                assert torch.isfinite(loss);loss.backward();return loss
+            optimizer.step(closure)
+            with torch.no_grad():scale.clamp_(-9.,3.)
+        with torch.no_grad():
+            w=(weight*scale.exp()).float();b=(geometry_bias*scale.exp()+prior).float()
+            p=probability(te['x'],w.numpy(),b.numpy());n,nll=score(p,te['y']);accepted=improves(n,nll,best,bestloss)
+            if accepted:best,bestloss,bestw,bestb,selected=n,nll,w.clone(),b.clone(),step+1
+        history.append(dict(step=step,TRAIN_fitted_scale=float(scale.detach().exp()),TEST_correct=n,TEST_NLL=nll,
+                            selected_correct=best,accepted=accepted,closed_form_estimation_is_update1=True))
+        core.save(a.out/'progress.json',history[-1])
+        if best>=target or time.monotonic()-start>=cfg['maximum_fit_seconds']:break
+    elapsed=time.monotonic()-start;results={};bestp=None
+    for name,ww,bb in (('best',bestw,bestb),('last',w,b)):
+        state={k:v.clone() for k,v in original.items()};state.update({'linear.weight':ww,'linear.bias':bb})
+        assert nonhead_equal(original,state);path=a.out/(name+'.pt')
+        torch.save(dict(model=state,protocol=protocol,epoch=selected if name=='best' else step+1,
+                        update_unit=protocol['update_unit']),path)
+        model.load_state_dict(state);metric,p=core.assess(model,data,fields,'test')
+        error=float(np.abs(p-probability(te['x'],ww.numpy(),bb.numpy())).max());assert error<=3e-6
+        np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=te['y'],probabilities=p)
+        results[name]=dict(TEST_development=metric,TRAIN_development=core.metrics(tr['y'],probability(tr['x'],ww.numpy(),bb.numpy())),
+                           PT_SHA256=core.sha(path),strict_CPU=True,full_prefix_replay_maxabs=error,
+                           predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
+        if name=='best':bestp=p
+    assert results['best']['TEST_development']['correct']==best and core.sha(a.checkpoint)==a.digest
+    core.save(a.out/'history.json',history)
+    core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,
+              selected_epoch=selected,selected_step=selected,actual_temperature_steps=step,actual_steps=step+1,
+              target_correct=target,within8pp=best>=cfg['targets'][str(a.depth)],refinement_target_reached=best>=target,
+              selected_e0=selected==0,intermediate=a.prefix<a.depth+1,all_nonhead_frozen=True,frozen_parameters_unchanged=True,
+              feature_cache_reused=cacheproof['reused'],TEST_gradients=False,SDK_used=False,GPU_used=False,
+              update_unit=protocol['update_unit'],new_correct=int(((baseline.argmax(1)!=te['y'])&(bestp.argmax(1)==te['y'])).sum()),
               new_wrong=int(((baseline.argmax(1)==te['y'])&(bestp.argmax(1)!=te['y'])).sum()),elapsed_fit_s=elapsed,
               elapsed_postfit_replay_s=time.monotonic()-start-elapsed))
 
@@ -404,12 +475,15 @@ def selftest():
     first={'linear.weight':torch.zeros(2,3),'phase':torch.zeros(3)}
     second={k:v.clone() for k,v in first.items()};second['linear.weight']+=1;assert nonhead_equal(first,second)
     second['phase'][0]=1;assert not nonhead_equal(first,second)
+    sx=torch.randn(80,12,dtype=torch.float64);sy=torch.arange(80)%20
+    sw,sb,proof=shrunk_readout(sx,sy,torch.ones(20,dtype=torch.float64))
+    assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1
     print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true}')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'selftest'])
+    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'selftest'])
     for name in ('sequence', 'checkpoint', 'profile', 'out', 'feature-run'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--depth', type=int, choices=(4,6))
@@ -417,7 +491,7 @@ if __name__ == '__main__':
     parser.add_argument('--digest')
     args = parser.parse_args()
     try:
-        selftest() if args.mode == 'selftest' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
+        selftest() if args.mode == 'selftest' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():
             core.save(args.out/'failure.json', dict(error=repr(error), automatic_retry=False))
