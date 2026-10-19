@@ -148,10 +148,17 @@ def suite(args):
     from . import run_temporal_telemetry_suite as catalog
     with (TASK/'runs/simulation/.temporal_telemetry_a100.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-        if ROOT.exists():raise RuntimeError('Preserve prior suite')
-        ROOT.mkdir();state=dict(status='waiting_for_idle',completed=[],deadline=args.deadline)
+        previous=None
+        if ROOT.exists():
+            if not args.resume_cpu_admission:raise RuntimeError('Preserve prior suite')
+            previous=json.loads((ROOT/'suite_status.json').read_text())
+            if previous['status'] not in ('waiting_for_idle','waiting_expired') or previous['completed']:
+                raise RuntimeError('Only a stopped CPU-only admission with no measurements may continue')
+            with (ROOT/'admission01_preserved.json').open('x') as stream:json.dump(previous,stream,indent=2)
+        else:ROOT.mkdir()
+        state=dict(status='waiting_for_idle',completed=[],deadline=args.deadline,pid=os.getpid(),previous_admission=previous)
         def save():shared.old.write(ROOT/'suite_status.json',state)
-        stable=0;waiting_until=min(args.deadline,time.time()+1800)
+        stable=0;waiting_until=min(args.deadline,args.admission_deadline or time.time()+1800)
         while stable<3:
             if time.time()>=waiting_until:state.update(status='waiting_expired');save();return
             records=shared.guard_records(args.gpu_uuid);stable=stable+1 if not records else 0
@@ -192,6 +199,7 @@ def suite(args):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--suite',action='store_true')
+    p.add_argument('--resume-cpu-admission',action='store_true');p.add_argument('--admission-deadline',type=float)
     p.add_argument('--model',choices=('qwen','clip','yolo','glm'));p.add_argument('--model-path')
     p.add_argument('--checkpoint');p.add_argument('--manifest',type=Path,required=True)
     p.add_argument('--batch',type=int);p.add_argument('--stage',choices=('util','paced-cost','native-cost'))
