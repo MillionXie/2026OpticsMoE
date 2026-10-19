@@ -4,6 +4,21 @@
 
 ### G1 optimization diagnosis: bounded TRAIN-conditioned original-head fit
 
+The conditioned-head comparison finished240steps; TRAIN accuracy approaches1
+but last TEST235/411, so selectedE0 remains302. This demonstrates capacity to
+fit TRAIN without development improvement; do not call it a successful update.
+TRAIN-only simulate-G1 teacher check with current302 state gives876/1600,
+weaker than actual measured-prefix TRAIN, so do not use that teacher. Instead
+one bounded comparison from exact E1-parent ec2ead5b (the G1 capture parent)
+uses the published simulate-newest-layer teacher mechanism: its measured
+router/E1+simulatedG1 TRAIN1411/1600 provides a stronger teacher. Student still
+uses measured router/E1/G1, and only original uncaptured suffix masks and
+postG1 electronics/alpha/head train. Named G1 TRAINteacher profile caps48epochs
+or1000fit seconds, with314 intermediate target. Retain incumbent302 and compare
+against it, not merely the cold36/411 baseline. No new physics, TEST gradients,
+graph layers, unbounded continuation or checkpoint seed grid. This is a planned
+comparison, not a new accuracy claim.
+
 Fresh20261020 L4 G1 has complete1600TRAIN+411TEST, independently audited with
 all measured router/E1/G1 identities retained. Initial suffix fit36->262,
 original-head repair262->296->301, relaxed row constraint301->302. At301 the

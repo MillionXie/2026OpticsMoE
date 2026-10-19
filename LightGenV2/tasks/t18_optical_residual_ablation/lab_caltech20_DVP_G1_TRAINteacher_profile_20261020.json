@@ -1,0 +1,21 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_TRAINteacher_from_E1_20261020",
+    "phase_lr": 0.0006,
+    "electronic_lr": 0.0015,
+    "alpha_lr": 0.002,
+    "head_lr": 0.0006,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.25,
+    "teacher_weight": 0.5,
+    "teacher_temperature": 2.0,
+    "teacher_simulated_newest_layers": 1,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 48, "seconds": 1000},
+    "target_correct": 314
+  },
+  "scope": "Single bounded G1-prefix comparison using the existing published TRAIN-only simulate-newest-layer teacher. Start from exact E1 accepted PT ec2ead5b4c0df87602be4cd5c113b1983cb76ca3436c86c98f118cf302540376 used for G1 capture, not from a mismatched or selected bad result. Its prefix2 TRAIN1411/1600=88.1875% provides a stronger teacher; simulate-G1 teacher with current302 head gave only876/1600 and is rejected. Student uses measured router/E1/G1; teacher uses measured router/E1 and simulated G1. Existing original future masks/postG1 electronics/direct alpha/head only, all measured upstream frozen. Preserve incumbent302/411; a rise from cold physical baseline36 is NOT necessarily a new improvement over incumbent. No new CCD/inference layer/TEST gradients/VALID/seed search. Maximum48epochs or1000fitsec at full epoch boundary, target314 intermediate not final342. Independently audit bestlast/native CPU/frozen lineage before continuation."
+}
