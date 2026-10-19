@@ -189,8 +189,15 @@ def daemon(start):
 
 
 def suite(args):
-    if ROOT.exists():raise RuntimeError('New immutable suite only')
-    ROOT.mkdir();state=dict(status='running',deadline=args.deadline,completed=[],unavailable=[dict(model='deepseek',precision='fp32',reason='109920536992 FP32 weight bytes exceed80GB; no offload')]);active=False
+    if args.resume:
+        previous=json.loads((ROOT/'suite_status.json').read_text())
+        if previous['status']!='held_for_authorized_extension':raise RuntimeError('Resume requires an audited idle handover')
+        state=dict(previous,status='running',deadline=args.deadline,completed=[])
+        active=False
+        if base.guard_records(GPU):raise RuntimeError('Resume requires released GPU')
+    else:
+        if ROOT.exists():raise RuntimeError('New immutable suite only')
+        ROOT.mkdir();state=dict(status='running',deadline=args.deadline,completed=[],unavailable=[dict(model='deepseek',precision='fp32',reason='109920536992 FP32 weight bytes exceed80GB; no offload')]);active=False
     def save():base.old.write(ROOT/'suite_status.json',state)
     # Complete native80GB work first, then the feasible FP32 model. No laboratory wait.
     plan=[('mps','deepseek','native',100),('mps','deepseek','native',50),('mps','kimi','native',100),('mps','kimi','native',50),
@@ -198,13 +205,17 @@ def suite(args):
           ('mps','kimi','fp32',100),('mps','kimi','fp32',50),('temporal','kimi','fp32',100)]
     try:
         for method,model,precision,cap in plan:
+            name=f'{method}_{model}_{precision}_{cap}';output=ROOT/name
+            if output.exists():
+                receipt=json.loads((output/'status.json').read_text())
+                if not args.resume or receipt['status']!='complete':raise RuntimeError('Preserve existing incomplete point; no automatic retry')
+                state['completed'].append(name);save();continue
             if args.deadline-time.time()<180:raise TimeoutError('Preserve transfer time; no new point')
             if active and method!='mps':daemon(False);active=False
             if not active and method=='mps':
                 if base.guard_records(GPU):raise RuntimeError('Foreign GPU process')
                 daemon(True);active=True
             batch=1 if method=='mps' or precision=='fp32' else {'deepseek':2,'kimi':6}[model]
-            name=f'{method}_{model}_{precision}_{cap}';output=ROOT/name
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=GPU,HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HOME='/data/cache',TMPDIR='/data/tmp',OMP_NUM_THREADS='8')
             if method=='mps':env.update(CUDA_MPS_PIPE_DIRECTORY=PIPE,CUDA_MPS_ACTIVE_THREAD_PERCENTAGE=str(cap))
             else:env.pop('CUDA_MPS_PIPE_DIRECTORY',None);env.pop('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE',None)
@@ -231,6 +242,7 @@ def suite(args):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--suite',action='store_true')
+    p.add_argument('--resume',action='store_true',help='Authorized idle handover only; skip complete immutable points')
     p.add_argument('--method',choices=('temporal','mps'));p.add_argument('--model',choices=('deepseek','kimi'))
     p.add_argument('--precision',choices=('native','fp32'));p.add_argument('--cap',type=int,choices=(50,100),default=100)
     p.add_argument('--batch',type=int);p.add_argument('--deadline',type=float,required=True);p.add_argument('--output',type=Path,default=ROOT)

@@ -8,6 +8,7 @@ const {Workbook,SpreadsheetFile,FileBlob}=await import(pathToFileURL(require.res
 const repo=process.cwd(),root=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_busy_resource_20261020/presentation');
 const data=JSON.parse(await fs.readFile(path.join(root,'eight_tables.json'),'utf8'));
 const out=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/LGVQ_busy_resource_precision_comparison.xlsx');
+try{const existing=await fs.readFile(out);const receipt=JSON.parse(await fs.readFile(path.join(root,'workbook_receipt.json'),'utf8'));if(crypto.createHash('sha256').update(existing).digest('hex')!==receipt.sha256)throw Error('Workbook changed outside this build; preserve user edits');}catch(e){if(e.code!=='ENOENT')throw e;}
 const book=Workbook.create(),views=[],models=['deepseek','kimi','qwen','glm','clip','yolo'];
 const colors={deepseek:'#79502C',kimi:'#D14F64',qwen:'#0072B2',glm:'#9B567C',clip:'#008B70',yolo:'#B17D00'};
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const metric of ['time','energy']){
@@ -84,8 +85,9 @@ verify(book);
 const first=entries.find(e=>e.point);if(first){const cell=raw.getRange('I'+first.row),v=cell.values[0][0];cell.values=[[v*1.01]];book.recalculate();if(book.worksheets.getItem('Measurements').getRange('AC'+first.row).values[0][0]===first.point.time16_ms)throw Error('Formula did not update');cell.values=[[v]];book.recalculate();verify(book);}
 const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:2000})).ndjson;
 if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
-for(const {sheet}of views){const pic=await book.render({sheetName:sheet.name,range:'A1:J19',scale:1.1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp','busy_resource_'+sheet.name+'.png'),new Uint8Array(await pic.arrayBuffer()));}
+for(const {sheet}of views){const pic=await book.render({sheetName:sheet.name,range:'A1:M31',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp','busy_resource_'+sheet.name+'.png'),new Uint8Array(await pic.arrayBuffer()));}
 const rawPic=await book.render({sheetName:'Measurements',range:'A6:N12',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp/busy_resource_raw.png'),new Uint8Array(await rawPic.arrayBuffer()));
 await(await SpreadsheetFile.exportXlsx(book)).save(out);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(out)));
 await fs.writeFile(path.join(root,'workbook_receipt.json'),JSON.stringify({file:out,sha256:crypto.createHash('sha256').update(await fs.readFile(out)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(path.join(root,'eight_tables.json'))).digest('hex'),views:8,raw_sheets:1,audited_points:data.values.length,recalculation:true,reimport:true,formula_errors:0},null,2));
+try{await fs.rename(out+'.inspect.ndjson',path.join(root,'workbook_inspect_'+Date.now()+'.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
 console.log(JSON.stringify({file:out,views:8,audited_points:data.values.length}));

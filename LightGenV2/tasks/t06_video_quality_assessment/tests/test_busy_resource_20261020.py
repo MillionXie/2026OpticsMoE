@@ -26,3 +26,13 @@ def test_no_global_power_or_mig_mutation():
     assert 'nvidia-smi -pl' not in source and 'nvidia-smi -mig' not in source
     assert 'Same prepared first-B inputs' in source
     assert 'cost_and_utilization_same_window=True' in source
+
+
+def test_resume_only_after_idle_handover_and_complete_receipt():
+    source=Path(r.__file__).read_text()
+    tree=ast.parse(source)
+    suite=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='suite')
+    text=ast.get_source_segment(source,suite)
+    assert "previous['status']!='held_for_authorized_extension'" in text
+    assert "receipt['status']!='complete'" in text
+    assert text.index('if output.exists():')<text.index("if active and method!='mps'")
