@@ -1,6 +1,48 @@
-# Latest residual experimental order: L4 -> new L2 -> new L6
+# Latest residual experimental order: fresh DVP L4 -> L6 (L2 frozen)
 
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
+
+### Global1 prefix passes314/411; expert2 admission follows without waiting
+
+L4stage1(global1) complete1600TRAIN/411TEST,1971new+40exact-parent admission
+probes. Independent all-receipt ID/PT/phase/hardware and array SHA audit passed,
+plus independent raw/input/crop spot checks. TRAIN minrawp9940/minnet28; TEST
+41/31.5; all saturation0. Hardware20,002us/gain1, phaseSHA3ceedb1456e0ba0d3d50ccf0aeb858b802c5a5a4c98d4531f829907372fce1bf,
+hardwareSHA74974b0b8f19f88c8ea88614568a76414f2dbbf148f77a58be94ac0d57dc6d86.
+Arrays TRAIN31f77efa762f59632b24b37f6d004e4c2fef6bf4fc75b34c1f9bce9559132c2f,
+TEST69a5bc8daf3f203d310f048146e7a6180264146c31304474092d68e9d296fdac.
+Elapsed1203.64sec=20.06min vs stage0 1975.97sec=32.93min; actual39.1% reduction
+with bounded PNG overlap, unchanged physical240ms/6discard. Per-frame latency
+includes overlapping work and is not the inter-frame throughput; full audit and
+final TRAIN/TEST receipt drains passed. SDK/controller exited, no timer used.
+
+Adding measured global1 initially49/411. Bounded24epoch original suffix fit
+bestE21=277/411=67.39659%, NLL1.28951, last270. BestSHAecd972d08b7de32f8f7b51ca293e5faf09992b85c236c3b001b660d9ff1c3c8b.
+Allowed downstream phase_sets.5..9 ALL changed; measured phases/upstream frozen.
+Effective alphas [.94004,.4001001,.95,.94998449]: NEWEST global1 reaches original
+allowed lower bound.4001001; not manually reduced or a changed graph/bound.
+Performance recovery therefore partly uses learned electronic compensation,
+not evidence that optical domain mismatch disappeared. TRAIN-only40phase-sign
+hypothesis diagnostic normalPCC.1621/opposite.1586/flat.1740: no compelling sign
+correction, no physical change; it does not establish a unique optical cause.
+
+Complete TEST errors inspected (airplanes19,Motorbikes13,chandelier12/12wrong).
+Exact-current-feature original-head Huber repair3passes/4517TRAIN-gradient
+steps yields strict FULL native replay314/411=76.39903%, NLL1.24449, macro.68571,
+TRAIN.85375.42newcorrect/5newwrong vs277; all nonhead tensors unchanged;
+cache-versus-full-network error0. BestSHA0c731ec0f07c9867f35aa2a224a11db7e1659f7a195145b634f1794a736eeb1f,
+reportSHAd2b21203a7d43394638bc621f78513891430412c4840a24e14c344ba703a3c1c.
+Independent native411/freeze/SHA audit passed. Both277 and314 bestlast/history/
+predictions/error analysis preserved and locally SHA-backed (latest transfer
+may be in progress, verify receipt before claiming complete).
+
+This314 is a DIFFERENT new checkpoint and three-stage measured prefix
+(router+expert1+global1), NOT reuse of previous314 or complete L4 physical
+accuracy. Same fixed346 simulation gap7.78589pp meets intermediate8pp, so
+proceed to stage2(expert2) admission, then complete same-stage TRAIN/TEST and
+adaptation, not extra tuning here. TEST informed local plans and checkpoint
+selection; no TEST gradients/VALID, NOT independent generalization. L6 already
+has full original/bridge/data gate; no new L6 camera frames yet. Nores/L2 untouched.
 
 ### First expert prefix passes314/411; next global-layer admission started
 
