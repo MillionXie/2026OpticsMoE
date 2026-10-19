@@ -1,5 +1,40 @@
 # Latest residual experimental order: L4 -> new L2 -> new L6
 
+## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
+
+L2 is frozen at329/411. User replaced the unavailable high-speed camera with
+the historical small DVP camera and explicitly requests fresh L4 then L6
+RESIDUAL layerwise capture, each layer's TRAIN+TEST consecutive, then fit the
+remaining uncaptured masks/electronics and select a TEST development PT before
+the next layer. Aim <=8 percentage-point gap per intermediate prefix, not a
+guarantee; no VALID or TEST gradients. Original alpha/model/encoding protected.
+Do not restart old SHS fits or mix any old-camera CCD into the new session.
+
+New coordinates `E:/code/guest/20261019.txt`, SHA5d97a75dc7a39e7761d53c38b8e6123ae052896689d877cd391fc3a1292d05bc,
+screen TL(981,152),TR(4327,177),BR(4343,3491),BL(971,3485).
+Actual existing DVP camera-only8frames: raw5480x3648 uint8 MONO, gain1,
+exposure1009.8333us, all hardware flip/rotate/opposite flags false, SDK released.
+Unknown held display was dim; this is not a calibrated optical-failure claim.
+Current lab SDK locks/processes absent. Historical DVP20ms/wait240/6discard
+is only an admission starting point, NOT reused as verified current settings.
+
+New entry `lab_caltech20_dvp_20261019.py` and calibration-only profile
+`lab_caltech20_dvp_calibration_profile_20261019.json`: predeclared exposure
+ladder1/5/10/20ms, known asymmetric pattern for orientation and alternating
+pattern freshness, session-only amplitude inverse with held-out radiometry.
+No model/TEST score used for calibration, hardware LUTs unchanged. Fail closed,
+keep raw frames and receipts, no blind retry. Model capture NOT started merely
+because the eight-frame device test passed; calibration, source release gates
+and new dataset manifest must all be admitted first.
+
+User asks80TRAIN/class. Original TRAIN3141 contains classes with68..79 unique
+images. Do not fabricate80 independent original images, duplicate without
+disclosure or borrow TEST/VALID. Await explicit choice between original-TRAIN
+only fixed augmentation to80 inputs versus all available uniques capped80;
+continue independent camera admission meanwhile. New camera session root:
+`runs/hardware/caltech20_residual_DVP_46_20261019`. No new branch/worktree,
+lab only receives Git, old CCD/PT/evidence preserved, no recurring automation.
+
 ## New offline-only authorization, 2026-10-19
 
 ### Latest scope: freeze L2 at329; L4 residual offline gap<=10pp

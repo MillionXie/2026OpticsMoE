@@ -1,0 +1,19 @@
+{
+  "scope": "calibration_only_no_TEST",
+  "camera_dll": "E:/code/guest/2026OpticsMoE/experiments/hardware_sdk/vendor_sdk/camera_dvp_legacy/lib/windows/python3.6/x64/DVPCamera64.dll",
+  "camera_dll_SHA256": "b2d200a02ef0b068e822c5fd3c96931bbdd078256cd1ed8bbfc240807c17cd0b",
+  "coordinates": "E:/code/guest/20261019.txt",
+  "coordinates_SHA256": "5d97a75dc7a39e7761d53c38b8e6123ae052896689d877cd391fc3a1292d05bc",
+  "sensor_shape": [3648,5480],
+  "machine_config": "E:/code/guest/2026OpticsMoE/LGVQ_Spatial_Lab_SHS_8um/LAB.local.json",
+  "amplitude_sdk": "E:/code/guest/2026OpticsMoE/ABO_Lab_SHS_8um/vendor/holoeye_python",
+  "phase_sdk": "C:/Program Files/Meadowlark Optics/Blink 1920 HDMI/SDK",
+  "phase_lut": "C:/Program Files/Meadowlark Optics/Blink 1920 HDMI/LUT Files/19x12_8bit_linearVoltage.lut",
+  "exposure_us": 1000,
+  "exposure_probe_us": [1000,5000,10000,20000],
+  "gain": 1.0,
+  "wait_ms": 240,
+  "discard_frames": 6,
+  "phase_transform": "hv_inverse",
+  "notes": "Known patterns only. Admit exposure/orientation/timing/radiometry before new model captures. No camera reset, TEST selection, hardware LUT overwrite, changed exposure to improve model accuracy or old SHS CCD reuse."
+}
