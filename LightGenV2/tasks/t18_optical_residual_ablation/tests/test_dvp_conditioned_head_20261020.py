@@ -159,5 +159,15 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(len(cfg['TRAIN_teacher_evidence_SHA256']),64)
 
 
+    def test_L4_renewed_anchor_is_one_config_change_not_new_graph(self):
+        old=json.loads((TASK/'lab_caltech20_DVP_conditioned_head_profile_20261020.json').read_text())
+        cfg=json.loads((TASK/'lab_caltech20_DVP_L4_head_anchor_profile_20261020.json').read_text())
+        self.assertEqual({k:v for k,v in cfg.items() if k not in ('parameter_anchor','scope')},
+                         {k:v for k,v in old.items() if k not in ('parameter_anchor','scope')})
+        self.assertEqual(cfg['parameter_anchor'],.02)
+        self.assertEqual(cfg['final_targets']['4'],342)
+        self.assertIn('no camera/SDK/GPU',cfg['scope'])
+
+
 if __name__ == '__main__':
     unittest.main()

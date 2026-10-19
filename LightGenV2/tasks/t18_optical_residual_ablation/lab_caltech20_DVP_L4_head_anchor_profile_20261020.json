@@ -1,0 +1,12 @@
+{
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps": 240,
+  "maximum_fit_seconds": 120,
+  "label_smoothing": 0.02,
+  "correct_TRAIN_teacher_KL": 0.02,
+  "parameter_anchor": 0.02,
+  "targets": {"4":314,"6":322},
+  "final_targets": {"4":342,"6":350},
+  "scope": "User renewed L4 offline optimization on20261020 while camera USB awaits user recovery. One evidence-driven contrast of the existing published TRAIN-conditioned original5140 head objective; only parameter_anchor changes from.0001 to.02, no training/inference source change, parameter/seed grid or automatic repeat. Actual prior3_TRAINconditioned_head last fitted TRAIN1600 at100% but native411TEST189, while accepted parent3_capturePT_pair native277/TRAIN70.875%. This is evidence of severe overfitting, not proof of an accuracy ceiling. Same parent13d40fa7b062e09ce9ffbdd8a75c7f86ca591857cc8dc0af6c629e7b1756a90f, same TRAIN-only covariance/prior, original data1600TRAIN/411TEST/noVALID, same LS.02/correctTRAIN KL.02/fixedseed73/LBFGS/240steps120fitseconds. Exact source/state/data/featureSHA and independent original CPU parent must match before reuse of the existing complete physical feature bank. Freeze all nonhead tensors; no camera/SDK/GPU, no new layer, no change of masks/alpha/capture ancestry. TEST errors/selection are development only, never TEST gradients. Strict original411CPU bestlast and frozen audit/localSHA backup required, retain277 if E0. Final342 remains desired, intermediate305 is only the previous10pp milestone, not a lowered final target. No accuracy guarantee. L6 selected289 and its6033valid frames stay untouched; no USB calls or hardware recovery until user reports it."
+}
