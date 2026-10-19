@@ -4,6 +4,29 @@
 
 ### Latest explicit user request: L2 residual gap <=2pp, 2026-10-19
 
+**Completed:329/411=80.04866%, fixed337 simulation gap1.94647pp; new target achieved.**
+One actual continuation segment,1370 TRAIN batches,325->329 (newcorrect7,
+lostcorrect3); target stop, no further training. Best PT SHA
+`6d3b796d188aa2aa7a3fed5bd4df42be61ddb9a46c8eb445c33644eee6480f18`.
+Local run `runs/hardware/caltech20_residual_L2_gap2_20261019/whitened_continuation/stage02`.
+
+Laboratory ORIGINAL full measured-graph CPU replay of this exact PT completed:
+TRAIN982/1200=81.83333%, TEST329/411, macroTEST68.68977%, NLL1.03209317.
+All three recorded CCD stages(router/0/1), all1200TRAIN/411TEST identities,
+dataSHA74a434... and unchanged original optical/nonhead state verified.
+Local sealed-head versus laboratory full-graph maximum probability error
+2.17557e-6 <=3e-6. Remote audit path in original sequence run:
+`L2_gap2_CPU_review_20261019/full_CPU_review.json` (SHA
+`7a8d80c2fb23d440b2a160ac37ff50b4492df54fb232ce6d1380b78930838ff0`).
+Its full TRAIN/TEST predictions and report downloaded and SHA-verified locally.
+Independent local audit verified25 files, best/last PTs/predictions, complete
+TRAIN sampler ancestry2268 prior+1370 new, and every nonhead tensor unchanged.
+Best/last parameters are byte-identical, so reuse the same full CPU result for
+last rather than pretend a separate replay. Both325 fallback and all old data
+remain protected. TEST-informed development, not independent generalization;
+no TEST derivatives/VALID/newCCD/SDK/GPU. Full review used original unchanged
+graph sourcead6ff7e; current profile source01f0938f published on main.
+
 User authorizes a new bounded L2-only attempt after325/411 achieved the old
 <=3pp target. Fixed simulation stays337/411=81.99513%; <=2pp requires at least
 329/411=80.04866%, gap8/411=1.94647pp. Preserve325 as fallback. No camera/new
