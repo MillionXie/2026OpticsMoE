@@ -2,6 +2,13 @@
 
 ## New offline-only authorization, 2026-10-19
 
+Whitened two-row Huber completed2560 TRAIN updates and retained E0 271;
+last249 not adopted, fullCPU/frozen checks passed. One final loss comparison
+from271 uses existing analytic binary cross-entropy instead of signed Huber,
+the same TRAIN-only whitened coordinates/sampler, original one row only.
+`lab_caltech20_L4_whitened_BCE_profile_20261019.json`: max3passes/180fitsec,
+first-no-progress pass/target stop; no seed/radius scan. L2 remains frozen325.
+
 L4 same-method continuation completed: stage02 269->271/411=65.93674%,
 stage03 retained271 with NO gain, reason first_no_accuracy_or_tied_NLL_progress.
 Do not restart this single-row chain. Selected stage02 SHA
