@@ -1,0 +1,10 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "temperature_steps":25,"maximum_fit_seconds":180,
+  "targets":{"4":314,"6":322},"final_targets":{"4":342,"6":350},
+  "TRAIN_supported_alpha_initialization":0.4001001,
+  "TRAIN_capacity_evidence":"fits/2_pair_row_20261020/TRAIN1600_readout_capacity_alpha2.json",
+  "TRAIN_capacity_evidence_SHA256":"6e7a1734c237d9336e248df1eb944e9adc9df6eb072056b70b622940f88e5e85",
+  "scope":"One TRAIN-supported E2 original-alpha initialization plus original5140-head refit, not a parameter grid. On identical1600TRAIN, fitting the published shrinkage readout at alpha2=.9106249108 gave997 correct and NLL1.33233; original allowed endpoint.4001001 gave1108 correct and NLL1.11745. TEST was not evaluated by that diagnostic. Global unwhitened scatter did not predict this gain, so do not claim a unique optical cause or generalization from TRAIN capacity. Start from retained281/411 parent; all measured upstream and other nonhead parameters frozen. Only original post-E2 alpha2 and original Linear change; no new residual/layer, no optical bound change, no CCD or camera setting change. Fresh features required because G2 incident field changes. Baseline is unmodified281 parent, initialized-untrained result separately disclosed; if no improvement save best as entire original parent including original alpha. New G2 capture may use the changed downstream input only after independent native411/frozen audit. Report all_nonhead_frozen=false, never reuse this bank through head-only bank admission. Maximum25TRAIN temperature steps/180fitseconds, no TEST gradients or VALID."
+}

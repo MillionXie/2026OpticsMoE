@@ -60,6 +60,17 @@ def nonhead_equal(first, second):
     return set(first)==set(second) and all(torch.equal(value,second[key]) for key,value in first.items() if not key.startswith('linear.'))
 
 
+def original_alpha_state(original, allowed, value):
+    """One declared original post-E2 coordinate, never an alpha/seed grid."""
+    key='fusion_logits.2'
+    assert key in allowed and value==.4001001
+    assert original[key].dtype==torch.float64 and .4001<float(original[key])<=.95
+    state={k:v.clone() for k,v in original.items()}
+    state[key].fill_(value)
+    assert all(v.dtype==state[k].dtype and torch.equal(v,state[k]) for k,v in original.items() if k!=key)
+    return state
+
+
 def checked_features(a,model,data,fields,dm,identities):
     """Reuse exact features only after graph/data/field/nonhead identity proof."""
     graph=feature_graph_sources(a.sequence/f'L{a.depth}')
@@ -184,16 +195,34 @@ def shrink_fit(a):
     assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
     fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
+    alpha_init=cfg.get('TRAIN_supported_alpha_initialization');allowed={'linear.weight','linear.bias'}
+    parent_metric=parent_probability=None
+    if alpha_init is not None:
+        assert a.depth==4 and a.prefix==4 and not a.feature_run
+        evidence_path=session/cfg['TRAIN_capacity_evidence'];assert evidence_path.resolve().is_relative_to((session/'fits').resolve())
+        assert core.sha(evidence_path)==cfg['TRAIN_capacity_evidence_SHA256']
+        evidence=core.read(evidence_path);rows=evidence['rows']
+        assert evidence['TRAIN']==1600 and evidence['TEST_inference'] is False and evidence['VALID']==0
+        assert len(rows)==2 and rows[1]['alpha2']==alpha_init and rows[1]['TRAIN_capacity_correct']>rows[0]['TRAIN_capacity_correct']
+        assert rows[1]['TRAIN_fitted_readout_NLL']<rows[0]['TRAIN_fitted_readout_NLL']
+        producer=evidence_path.parent/'best.pt';assert core.sha(producer)==evidence['source_PT_SHA256']
+        producer_state=torch.load(producer,map_location='cpu',weights_only=False)['model']
+        assert nonhead_equal(producer_state,original) and abs(float(original['fusion_logits.2'])-rows[0]['alpha2'])<1e-12
+        parent_metric,parent_probability=core.assess(model,data,fields,'test')
+        allowed.add('fusion_logits.2');assert allowed<=core.allowed_keys(model,a.prefix)
+        model.load_state_dict(original_alpha_state(original,allowed,alpha_init))
     cached,cacheproof=checked_features(a,model,data,fields,dm,identities);tr,te=cached['train'],cached['test']
     counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float64);assert counts.shape==(20,) and int(counts.sum())==3141
     x=torch.tensor(tr['x'],dtype=torch.float64);y=torch.tensor(tr['y'],dtype=torch.long)
     weight,bias,covariance=shrunk_readout(x,y,counts);prior=(counts/counts.sum()).log();geometry_bias=bias-prior
     train_logits=x@weight.T+geometry_bias;scale=torch.nn.Parameter(torch.tensor(0.,dtype=torch.float64))
     optimizer=torch.optim.LBFGS([scale],lr=.5,max_iter=1,line_search_fn='strong_wolfe');cw=counts/counts.mean()
-    baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);selected=0
+    baseline=te['probabilities'] if parent_probability is None else parent_probability
+    baseline_metric=te['metric'] if parent_metric is None else parent_metric
+    best,bestloss=score(baseline,te['y']);selected=0
     bestw,bestb=original['linear.weight'].clone(),original['linear.bias'].clone()
     target=int(cfg['targets' if a.prefix<a.depth+1 else 'final_targets'][str(a.depth)])
-    protocol=dict(parent_PT_SHA256=a.digest,depth=a.depth,prefix=a.prefix,allowed_keys=['linear.bias','linear.weight'],
+    protocol=dict(parent_PT_SHA256=a.digest,depth=a.depth,prefix=a.prefix,allowed_keys=sorted(allowed),
                   prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,source_git=core.git_head(),
                   source_SHA256=core.sha(__file__),direction_source_SHA256=core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py'),
                   config=cfg,profile_SHA256=core.sha(a.profile),target_correct=target,covariance=covariance,
@@ -201,8 +230,12 @@ def shrink_fit(a):
                   feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},feature_reuse=cacheproof,
                   TRAIN_covariance_and_class_prior_only=True,closed_form_original_head_coefficients=5140,
                   gradient_parameters=1,temperature_fitted_on_TRAIN_only=True,no_new_inference_layer=True,
-                  all_nonhead_frozen=True,TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,
+                  all_nonhead_frozen=alpha_init is None,TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,
                   update_unit='TRAIN_readout_estimation_then_temperature')
+    if alpha_init is not None:
+        protocol.update(TRAIN_supported_alpha_initialization=alpha_init,baseline_is_unmodified_parent=True,
+                        initialized_untrained_TEST=te['metric'],feature_producer_alpha2=alpha_init,
+                        initial_alpha_not_a_performance_gain=True,all_other_nonhead_frozen=True)
     core.save(a.out/'protocol.json',protocol)
     np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)
     history=[];start=time.monotonic()
@@ -225,22 +258,29 @@ def shrink_fit(a):
     elapsed=time.monotonic()-start;results={};bestp=None
     for name,ww,bb in (('best',bestw,bestb),('last',w,b)):
         state={k:v.clone() for k,v in original.items()};state.update({'linear.weight':ww,'linear.bias':bb})
-        assert nonhead_equal(original,state);path=a.out/(name+'.pt')
+        parent_fallback=alpha_init is not None and name=='best' and selected==0
+        if alpha_init is not None and not parent_fallback:state['fusion_logits.2'].fill_(alpha_init)
+        assert all(v.dtype==state[k].dtype and torch.equal(v,state[k]) for k,v in original.items() if k not in allowed)
+        path=a.out/(name+'.pt')
         torch.save(dict(model=state,protocol=protocol,epoch=selected if name=='best' else step+1,
                         update_unit=protocol['update_unit']),path)
         model.load_state_dict(state);metric,p=core.assess(model,data,fields,'test')
-        error=float(np.abs(p-probability(te['x'],ww.numpy(),bb.numpy())).max());assert error<=3e-6
+        reference=baseline if parent_fallback else probability(te['x'],ww.numpy(),bb.numpy())
+        error=float(np.abs(p-reference).max());assert error<=3e-6
         np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=te['y'],probabilities=p)
-        results[name]=dict(TEST_development=metric,TRAIN_development=core.metrics(tr['y'],probability(tr['x'],ww.numpy(),bb.numpy())),
+        train_metric=core.assess(model,data,fields,'train')[0] if parent_fallback else core.metrics(tr['y'],probability(tr['x'],ww.numpy(),bb.numpy()))
+        results[name]=dict(TEST_development=metric,TRAIN_development=train_metric,
                            PT_SHA256=core.sha(path),strict_CPU=True,full_prefix_replay_maxabs=error,
+                           replay_reference='unmodified_parent_native' if parent_fallback else 'new_feature_bank',
                            predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
         if name=='best':bestp=p
     assert results['best']['TEST_development']['correct']==best and core.sha(a.checkpoint)==a.digest
     core.save(a.out/'history.json',history)
-    core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,
+    core.save(a.out/'report.json',dict(state='complete',baseline_TEST=baseline_metric,results=results,selected_correct=best,
               selected_epoch=selected,selected_step=selected,actual_temperature_steps=step,actual_steps=step+1,
               target_correct=target,within8pp=best>=cfg['targets'][str(a.depth)],refinement_target_reached=best>=target,
-              selected_e0=selected==0,intermediate=a.prefix<a.depth+1,all_nonhead_frozen=True,frozen_parameters_unchanged=True,
+              selected_e0=selected==0,intermediate=a.prefix<a.depth+1,all_nonhead_frozen=alpha_init is None,frozen_parameters_unchanged=True,
+              feature_bank_matches_saved_best=not(alpha_init is not None and selected==0),
               feature_cache_reused=cacheproof['reused'],TEST_gradients=False,SDK_used=False,GPU_used=False,
               update_unit=protocol['update_unit'],new_correct=int(((baseline.argmax(1)!=te['y'])&(bestp.argmax(1)==te['y'])).sum()),
               new_wrong=int(((baseline.argmax(1)==te['y'])&(bestp.argmax(1)!=te['y'])).sum()),elapsed_fit_s=elapsed,
@@ -475,6 +515,14 @@ def selftest():
     first={'linear.weight':torch.zeros(2,3),'phase':torch.zeros(3)}
     second={k:v.clone() for k,v in first.items()};second['linear.weight']+=1;assert nonhead_equal(first,second)
     second['phase'][0]=1;assert not nonhead_equal(first,second)
+    alpha_state={'fusion_logits.2':torch.tensor(.91,dtype=torch.float64),'frozen':torch.ones(3)}
+    initialized=original_alpha_state(alpha_state,{'fusion_logits.2'},.4001001)
+    assert float(alpha_state['fusion_logits.2'])==.91 and float(initialized['fusion_logits.2'])==.4001001
+    assert torch.equal(initialized['frozen'],alpha_state['frozen'])
+    for forbidden in (.4,.5,.95):
+        try:original_alpha_state(alpha_state,{'fusion_logits.2'},forbidden)
+        except AssertionError:pass
+        else:raise AssertionError('Undeclared alpha initialization admitted')
     sx=torch.randn(80,12,dtype=torch.float64);sy=torch.arange(80)%20
     sw,sb,proof=shrunk_readout(sx,sy,torch.ones(20,dtype=torch.float64))
     assert sw.shape==(20,12) and sb.shape==(20,) and 0<=proof['TRAIN_estimated_shrinkage']<=1

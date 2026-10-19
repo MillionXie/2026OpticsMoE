@@ -4,6 +4,28 @@
 
 ### E2 capture audited; diagnose weak readout before further G2 capture
 
+The bounded12pass head continuation reached281/411=68.36983%, still15.8151pp
+below frozen346. Its exact native CPU/frozen audit passed, and it is retained.
+No G2 or L6 physical capture has started. One additional TRAIN-only capacity
+diagnosis refit the SAME original Linear estimator on two declared original
+alpha2 values, with every other tensor unchanged. At current.9106249108 it fit
+997/1600,NLL1.33233; at original allowed lower endpoint.4001001,1108/1600 and
+NLL1.11745. This indicates a testable joint-initialization/readout direction,
+not TEST improvement or generalized performance, and does not contradict the
+older observation that lowering alpha alone with an unchanged head is worse.
+
+Named `lab_caltech20_DVP_E2_alpha_TRAINcapacity_profile_20261020.json` admits ONE
+finite original-alpha2 plus original-head comparison. Evidence file SHA, TRAIN
+identity, unchanged producer nonhead state and absence of TEST diagnostic use
+must pass before initialization. Parent baseline is retained281, NOT the lower
+untrained initialized score. Only post-measured-E2 alpha2 and original5140head
+may change; other tensors and original(.4001,.95] bounds stay fixed. Recompute
+features, no prior-alpha bank reuse. Best E0 must restore entire original parent
+including alpha; last retains the actual comparison. Full native411CPU and all
+frozen tensor audits required. Never label this as all-nonhead-frozen, new
+inference component, successful update before evaluation, or fullphysical L4.
+Any changed G2 input is for future fresh G2 capture, not reuse of older CCD.
+
 E2 follow-up: TRAIN-estimated shrinkage head249, existing single-row repair263,
 coupled-row269 and another original-row segment278/411 (67.6399%) all passed
 independent native411 CPU and measured-upstream freeze audits. These are still

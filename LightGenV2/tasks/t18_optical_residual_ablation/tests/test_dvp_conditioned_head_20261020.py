@@ -67,6 +67,18 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(cfg['temperature_steps'],25)
         self.assertEqual(cfg['final_targets'],{'4':342,'6':350})
 
+    def test_alpha_initialization_requires_TRAIN_evidence_and_true_parent_fallback(self):
+        text=SOURCE.read_text()
+        for token in ("evidence['TEST_inference'] is False", "a.depth==4 and a.prefix==4 and not a.feature_run",
+                      "parent_fallback=alpha_init is not None and name=='best' and selected==0",
+                      "reference=baseline if parent_fallback", "all_nonhead_frozen=alpha_init is None",
+                      "core.assess(model,data,fields,'train')[0] if parent_fallback"):
+            self.assertIn(token,text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_E2_alpha_TRAINcapacity_profile_20261020.json').read_text())
+        self.assertEqual(cfg['TRAIN_supported_alpha_initialization'],.4001001)
+        self.assertEqual(len(cfg['TRAIN_capacity_evidence_SHA256']),64)
+        self.assertEqual(cfg['temperature_steps'],25)
+
 
 if __name__ == '__main__':
     unittest.main()
