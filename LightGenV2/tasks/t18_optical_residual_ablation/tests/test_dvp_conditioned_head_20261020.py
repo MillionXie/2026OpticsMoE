@@ -79,6 +79,17 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(len(cfg['TRAIN_capacity_evidence_SHA256']),64)
         self.assertEqual(cfg['temperature_steps'],25)
 
+    def test_compound_admission_cannot_claim_new_training_or_rewrite_components(self):
+        tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='admit_chain')
+        text=ast.unparse(method)
+        self.assertIn("for candidate_role in ('best', 'last')",text)
+        self.assertIn("sr['selected_correct'] > pr['selected_correct']",text)
+        self.assertIn("admission_training_updates=0",text)
+        self.assertIn("no_gain_over_source_claimed=True",text)
+        self.assertNotIn('backward',text)
+        self.assertNotIn('optimizer', [n.attr for n in ast.walk(method) if isinstance(n,ast.Attribute)])
+        self.assertIn("source_prediction_maxabs=error",text)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -71,6 +71,84 @@ def original_alpha_state(original, allowed, value):
     return state
 
 
+def admit_chain(a):
+    """Package an audited multi-step optimizer chain, without another update.
+
+    The workflow parent is the actual global incumbent. Component best/last
+    roles and every intermediate digest remain explicit, not rewritten.
+    """
+    assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not core.LOCK.exists()
+    assert a.depth==4 and a.prefix==4 and a.parent_run and not a.feature_run
+    torch.set_num_threads(2);session=a.sequence/'L4';fits=session/'fits'
+    source=a.checkpoint.parent;parent=a.parent_run
+    assert source.resolve().is_relative_to(fits.resolve()) and parent.resolve().is_relative_to(fits.resolve())
+    assert a.checkpoint.name=='best.pt' and core.sha(a.checkpoint)==a.digest and not a.out.exists()
+    pr=core.read(parent/'report.json');pa=core.read(parent/'independent_audit.json')
+    assert pr['state']=='complete' and pa['passed'] and pa['report_SHA256']==core.sha(parent/'report.json')
+    assert pa['protocol_SHA256']==core.sha(parent/'protocol.json')
+    parent_pt=parent/'best.pt';parent_digest=core.sha(parent_pt);assert parent_digest==pr['results']['best']['PT_SHA256']
+    data,dm=core.data_for(a.sequence);fields,identities=core.fields_for(session,4,data,dm,core.session_hardware_digest(a.sequence))
+    initial=torch.load(parent_pt,map_location='cpu',weights_only=False)['model']
+    allowed={'linear.weight','linear.bias','fusion_logits.2'};nodes=[];current=source;role='best';digest=a.digest;seen=set()
+    for _ in range(8):
+        assert digest not in seen;seen.add(digest)
+        r=core.read(current/'report.json');p=core.read(current/'protocol.json');audit=core.read(current/'independent_audit.json')
+        assert r['state']=='complete' and r['frozen_parameters_unchanged'] and r['results'][role]['strict_CPU'] and audit['passed']
+        assert audit['report_SHA256']==core.sha(current/'report.json') and audit['protocol_SHA256']==core.sha(current/'protocol.json')
+        assert core.sha(current/(role+'.pt'))==r['results'][role]['PT_SHA256']==digest
+        assert p['depth']==4 and p['prefix']==4 and p['prefix_SHA256']==identities and p['data_SHA256']==dm['sha256']
+        assert set(p['allowed_keys'])<=allowed
+        nodes.append(dict(fit=current.name,checkpoint_role=role,PT_SHA256=digest,parent_PT_SHA256=p['parent_PT_SHA256'],
+                          report_SHA256=core.sha(current/'report.json'),protocol_SHA256=core.sha(current/'protocol.json'),
+                          audit_SHA256=core.sha(current/'independent_audit.json')))
+        if p['parent_PT_SHA256']==parent_digest:break
+        matches=[]
+        for folder in fits.iterdir():
+            if folder.is_dir() and (folder/'report.json').exists():
+                q=core.read(folder/'report.json')
+                for candidate_role in ('best','last'):
+                    if q.get('results',{}).get(candidate_role,{}).get('PT_SHA256')==p['parent_PT_SHA256']:
+                        matches.append((folder,candidate_role))
+        assert len(matches)==1;current,role=matches[0];digest=p['parent_PT_SHA256']
+    else:raise AssertionError('Compound adaptation ancestry exceeds bounded8nodes')
+    sr=core.read(source/'report.json');sp=core.read(source/'protocol.json')
+    assert sr['selected_correct']>pr['selected_correct'] and not sr['selected_e0']
+    assert core.sha(parent/'best_TEST_predictions.npz')==pr['results']['best']['predictions_SHA256']
+    a.out.mkdir();protocol=dict(parent_PT_SHA256=parent_digest,parent_scope='initial state of the explicitly audited compound optimizer workflow',
+          depth=4,prefix=4,allowed_keys=sorted(allowed),prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,
+          source_git=core.git_head(),source_SHA256=core.sha(__file__),component_chain=nodes,source_selected_PT_SHA256=a.digest,
+          source_selected_correct=sr['selected_correct'],baseline_TEST=pr['results']['best']['TEST_development'],
+          admission_training_updates=0,no_new_training_or_score_claim=True,all_nonhead_frozen=False,all_other_nonhead_frozen=True,
+          TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,update_unit='existing source optimizer step; packaging performs0 updates')
+    core.save(a.out/'protocol.json',protocol)
+    with np.load(parent/'best_TEST_predictions.npz',allow_pickle=False) as z:
+        baseline=z['probabilities'].copy();assert np.array_equal(z['ids'],data['test'][2]) and np.array_equal(z['labels'],data['test'][1])
+    np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=baseline)
+    results={};bestp=None
+    for name in ('best','last'):
+        original_path=source/(name+'.pt');assert core.sha(original_path)==sr['results'][name]['PT_SHA256']
+        saved=torch.load(original_path,map_location='cpu',weights_only=False);state=saved['model']
+        assert set(state)==set(initial) and all(v.dtype==state[k].dtype and torch.equal(v,state[k]) for k,v in initial.items() if k not in allowed)
+        model,_=core.model_for(original_path,core.sha(original_path),4,session/'source_reference.ts');assert allowed<=core.allowed_keys(model,4)
+        path=a.out/(name+'.pt');torch.save(dict(model=state,protocol=protocol,epoch=saved['epoch'],update_unit=protocol['update_unit']),path)
+        reread=torch.load(path,map_location='cpu',weights_only=False)['model'];assert all(v.dtype==reread[k].dtype and torch.equal(v,reread[k]) for k,v in state.items())
+        metric,p=core.assess(model,data,fields,'test')
+        with np.load(source/(name+'_TEST_predictions.npz'),allow_pickle=False) as z:
+            assert np.array_equal(z['ids'],data['test'][2]) and np.array_equal(z['labels'],data['test'][1]);error=float(np.abs(p-z['probabilities']).max())
+        assert error<=3e-6 and metric['correct']==sr['results'][name]['TEST_development']['correct']
+        np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=data['test'][2],labels=data['test'][1],probabilities=p)
+        results[name]=dict(TEST_development=metric,PT_SHA256=core.sha(path),strict_CPU=True,source_PT_SHA256=core.sha(original_path),
+                           exact_source_weights=True,source_prediction_maxabs=error,predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
+        if name=='best':bestp=p
+    core.save(a.out/'history.json',dict(component_history_files=[str(fits/n['fit']/'history.json') for n in nodes],admission_training_updates=0))
+    core.save(a.out/'report.json',dict(state='complete',baseline_TEST=protocol['baseline_TEST'],results=results,selected_correct=sr['selected_correct'],
+          selected_epoch=sr['selected_epoch'],selected_e0=False,within8pp=sr['selected_correct']>=314,target_correct=314,intermediate=True,
+          frozen_parameters_unchanged=True,all_nonhead_frozen=False,admission_training_updates=0,no_gain_over_source_claimed=True,
+          TEST_gradients=False,SDK_used=False,GPU_used=False,component_chain=nodes,
+          new_correct=int(((baseline.argmax(1)!=data['test'][1])&(bestp.argmax(1)==data['test'][1])).sum()),
+          new_wrong=int(((baseline.argmax(1)==data['test'][1])&(bestp.argmax(1)!=data['test'][1])).sum())))
+
+
 def checked_features(a,model,data,fields,dm,identities):
     """Reuse exact features only after graph/data/field/nonhead identity proof."""
     graph=feature_graph_sources(a.sequence/f'L{a.depth}')
@@ -531,15 +609,15 @@ def selftest():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'selftest'])
-    for name in ('sequence', 'checkpoint', 'profile', 'out', 'feature-run'):
+    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'admit-chain', 'selftest'])
+    for name in ('sequence', 'checkpoint', 'profile', 'out', 'feature-run', 'parent-run'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--depth', type=int, choices=(4,6))
     parser.add_argument('--prefix', type=int)
     parser.add_argument('--digest')
     args = parser.parse_args()
     try:
-        selftest() if args.mode == 'selftest' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
+        selftest() if args.mode == 'selftest' else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():
             core.save(args.out/'failure.json', dict(error=repr(error), automatic_retry=False))

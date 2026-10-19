@@ -26,6 +26,28 @@ frozen tensor audits required. Never label this as all-nonhead-frozen, new
 inference component, successful update before evaluation, or fullphysical L4.
 Any changed G2 input is for future fresh G2 capture, not reuse of older CCD.
 
+The TRAIN-supported alpha/shrinkage comparison alone retained E0=281 (actual
+trainedlast258). Original-row repair on that explicitly identified last reached
+296/411=72.0195%; independent native CPU and frozen audit passed. Retained281
+is the true workflow baseline, not258. Alpha2 is the original post-E2 coordinate
+.4001001; no other body tensor changed in this branch. A bounded original
+coupled-row comparison follows, with exact same measured fields and new-alpha
+feature producer, not an old-alpha bank. This is not fullphysical L4.
+
+For a selected compound optimizer workflow that passes through a documented
+last checkpoint, `--mode admit-chain` may package its exact source best/last
+weights and native predictions. It performs ZERO training updates and claims
+NO gain over the source result. Its workflow parent is the retained281 initial
+state, not a falsely relabelled intermediate best. Every component's actual
+best/last role, PT/parent/report/protocol/independent-audit SHA and same data/
+prefix is followed explicitly (bounded8nodes), with original alpha2/head-only
+permission and frozen comparison to the workflow initial state. All component
+files stay unchanged. The packaged result must strictly beat281 and replay the
+same411 predictions; preserve original source PTs and reports. This is an audited
+multi-step optimization artifact, not another experiment or a new accuracy.
+Capture/core/model source closure remains unchanged. There is no general
+permission to substitute an arbitrary last PT or shorten unaudited lineage.
+
 E2 follow-up: TRAIN-estimated shrinkage head249, existing single-row repair263,
 coupled-row269 and another original-row segment278/411 (67.6399%) all passed
 independent native411 CPU and measured-upstream freeze audits. These are still
