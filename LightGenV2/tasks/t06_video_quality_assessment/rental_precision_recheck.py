@@ -201,13 +201,15 @@ def measure_util(args,compute,inputs,folder,guard,paced):
         old.write(folder/'controller_updates.json',updates);sampler.check()
 
 
-def evaluate(args,compute,prepare,transfer,first,folder,guard,duty,identity):
+def evaluate(args,compute,prepare,transfer,first,folder,guard,duty,identity,test_override=None):
     import numpy as np
     import torch
     from . import quality_token_common as core
     from LightGenV2.common.baseline_measurement import FirstBlockTimer
     from LightGenV2.common import baseline_measurement as bm
-    test=[r for r in old.rows() if r['split']=='test'];folder.mkdir()
+    test=test_override if test_override is not None else [r for r in old.rows() if r['split']=='test']
+    if len(test)!=558:raise ValueError('Exactly558 TEST required')
+    folder.mkdir()
     sampler=telemetry.TelemetrySampler(args.gpu_uuid,raw_path=folder/'telemetry_stdout.jsonl')
     clocks=prior.ClockSampler(args.gpu_uuid);timer=FirstBlockTimer(first)
     timings=[];predictions=[];waits=[]
@@ -238,7 +240,7 @@ def evaluate(args,compute,prepare,transfer,first,folder,guard,duty,identity):
                 old.write(folder/'status.json',dict(status='evaluating',videos=end,time=time.time()))
                 if index%20==0 or end==558:print(json.dumps(dict(stage=args.stage,model=args.model,precision=args.precision,videos=end)),flush=True)
         samples=sampler.stop();telemetry.save_samples(folder/'telemetry.csv',samples)
-        cost=[r for r in timings if r[2]];power=bm.power_report(samples,[r[3] for r in cost],power_limit_w=400)
+        cost=[r for r in timings if r[2]];power=bm.power_report(samples,[r[3] for r in cost],power_limit_w=getattr(args,'power_limit_w',400))
         report=dict(status='complete',identity=identity,test_videos=558,cost_videos=200,
             performance=core.metrics(np.array([r['temporal'] for r in test]),np.array(predictions)),
             cost=telemetry.workload_cost(cost,power['active_mean_w']),power=power,
