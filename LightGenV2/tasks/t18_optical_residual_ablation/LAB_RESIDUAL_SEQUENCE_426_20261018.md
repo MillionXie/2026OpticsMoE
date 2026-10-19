@@ -21,6 +21,15 @@ the fixed already-approved optimizer is recovery, not a new seed scan. L2
 target is already achieved on laboratory full replay; no further L2 search.
 Source synchronization to laboratory/server is pending restored SSH.
 
+The local fixed-config recovery reproduced269->271->276->279/411 with the
+same complete TRAIN-batch histories and last-stage E0 stop; L2 recovered325
+and stopped. Locally saved PTs are distinct serialized recovery artifacts,
+not claimed downloads of the original laboratory PTs. Protective replay
+completed10944 TRAIN updates:279 unchanged, NLL1.76428->1.75090; at most3
+same-method segments preserve one reconstructed TRAIN RNG and the existing
+09:00 internal cutoff, first-no-progress stop. Profile
+`lab_caltech20_L4_protected_cont_profile_20261019.json`. No camera/SDK.
+
 BCE continuation finished276->279/411=67.88321%, then next segment had no gain
 and stopped. Best stage02 SHA `7e51378473aeaecffaf937b9cd3f5fb9b1f96b6f57bb22ce2bf3a711703921a7`.
 Against original260, corrected33 and broke14, net+19; gap remains16.30170pp,

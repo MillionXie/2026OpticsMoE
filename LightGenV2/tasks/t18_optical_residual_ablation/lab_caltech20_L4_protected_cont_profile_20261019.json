@@ -1,0 +1,15 @@
+{
+  "scope":"L4 sealed local measured-feature continuation only after protective replay tied279 with NLL1.76428->1.75090; no L2 search",
+  "TRAIN_whitened_row_geometry":true,
+  "correct_TEST_selects_protective_TRAIN_negatives":true,
+  "objective":"binary_cross_entropy",
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"trust_radius":0.4,
+  "maximum_passes":3,"max_classes":60,"steps_per_class":192,"fit_seconds":180,"seed":73,
+  "target_correct":{"2":325,"4":305},
+  "maximum_new_segments":3,"maximum_total_segments":4,
+  "absolute_deadline_UTC":"2026-10-19T01:00:00+00:00",
+  "deadline_scope":"Existing internal finite safety bound, not a user deadline or recurring task",
+  "stop":"target, first whole segment without accuracy/tied-NLL gain, max3 new segments before existing deadline; continuous original TRAIN RNG",
+  "TEST_gradient":false,"VALID":0,"SDK":false,"GPU":false
+}
