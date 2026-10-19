@@ -2,6 +2,25 @@
 
 ## New offline-only authorization, 2026-10-19
 
+Laboratory SSH became unavailable after the verified325/279 results. No new
+protective-replay laboratory run was dispatched. Those latest PTs are still on
+laboratory E:; their local metric/audit summary is saved, but a local PT backup
+has NOT yet been completed. Do not claim three-end synchronization or backup.
+
+Local CPU Torch2.4.1/Python3.8 is available without installing anything. The
+previous SHA-sealed full measured-graph feature exports and original318/260
+PTs are local. An explicit --sealed-backup-root mode admits them only after
+manifest/handoff hashes, producer full-CPU report, complete1200/411 IDs,
+balanced TRAIN60/class, disjoint splits, all-nonhead byte identity, and
+producer-feature/output parity<=3e-6. L4 actual local maxabs1.90735e-6 passed.
+All local derived candidates preserve the original head and fixed prefix,
+report sealed_feature_composition_verified separately, and set
+full_CPU_replay_passed=False/fresh_full_raw_CCD_replay=False. They require no
+camera and must not be relabeled as a new full raw-CCD replay. Reproduction of
+the fixed already-approved optimizer is recovery, not a new seed scan. L2
+target is already achieved on laboratory full replay; no further L2 search.
+Source synchronization to laboratory/server is pending restored SSH.
+
 BCE continuation finished276->279/411=67.88321%, then next segment had no gain
 and stopped. Best stage02 SHA `7e51378473aeaecffaf937b9cd3f5fb9b1f96b6f57bb22ce2bf3a711703921a7`.
 Against original260, corrected33 and broke14, net+19; gap remains16.30170pp,
