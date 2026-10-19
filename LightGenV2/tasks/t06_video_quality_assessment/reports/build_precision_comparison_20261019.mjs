@@ -13,7 +13,7 @@ const original=await fs.readFile(template);
 const digest=b=>crypto.createHash('sha256').update(b).digest('hex');
 const archive=path.join(root,'prior_report_archive');await fs.mkdir(archive,{recursive:true});
 try{await fs.writeFile(path.join(archive,path.basename(template)),original,{flag:'wx'});}catch(e){if(e.code!=='EEXIST')throw e;}
-const colors={ours:'#7A3E9D',qwen:'#0072B2',glm:'#9B567C',clip:'#009E73',yolo:'#E69F00',full:'#D55E00',kimi:'#4A70A0'};
+const colors={ours:'#7A3E9D',qwen:'#0072B2',glm:'#9B567C',clip:'#008B70',yolo:'#B17D00',full:'#79502C',kimi:'#D14F64'};
 const names={ours:'LightGen-II',qwen:'Qwen3-VL-2B',glm:'GLM-4.6V-Flash',clip:'CLIP ViT-B/32',yolo:'YOLO11s',full:'DeepSeek-VL2',kimi:'Kimi-VL-A3B'};
 const receipts=[];
 for(const precision of ['native','fp32']){

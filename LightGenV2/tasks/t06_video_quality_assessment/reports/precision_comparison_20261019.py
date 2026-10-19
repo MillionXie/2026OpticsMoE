@@ -8,6 +8,7 @@ import math
 from pathlib import Path
 import statistics
 import subprocess
+import shutil
 
 REPO=Path(__file__).resolve().parents[4]
 TASK=REPO/'LightGenV2/tasks/t06_video_quality_assessment'
@@ -80,8 +81,14 @@ def audit_cost(folder):
     for path,digest in identity.get('sources',{}).items():
         blob=subprocess.check_output(['git','show',identity['git_commit']+':'+path.replace('\\','/')],cwd=REPO)
         assert hashlib.sha256(blob).hexdigest()==digest,path
+    owned=None
     for event in read(folder/'process_audit.json'):
-        assert len(event['processes'])==1,'Foreign/missing GPU process'
+        ids={str(r[0]).strip() for r in event['processes']}
+        if not ids and owned is None:continue  # CPU-only admission before CUDA.
+        if owned is None:
+            assert len(ids)==1,'Cannot bind sole CUDA process';owned=ids
+        assert ids==owned,'Foreign/missing/replaced GPU process'
+    assert owned is not None
     return dict(model_key=identity['model'],batch=identity['batch'],precision=identity['precision'],
         condition='Approximately 50%' if util['paced'] else 'Near-saturation reference',srcc=srcc,plcc=plcc,
         utilization_percent=util['mean_gpu_busy_percent'],util_repeats=repeats,time_ms=t16,energy_j=e16,
@@ -126,16 +133,31 @@ def build():
 
 
 def render():
+    import matplotlib
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.lines import Line2D
     import numpy as np
     from PIL import Image
     data=read(RENTAL/'presentation/precision_comparison.json')
-    colors={'ours':'#7A3E9D','qwen':'#0072B2','glm':'#9B567C','clip':'#009E73','yolo':'#E69F00','full':'#D55E00','kimi':'#4A70A0'}
-    markers={'ours':'*','qwen':'o','glm':'P','clip':'D','yolo':'^','full':'s','kimi':'v'}
+    archive=RENTAL/'presentation/prior_report_archive';archive.mkdir(parents=True,exist_ok=True)
+    manifest=archive/'manifest.json'
+    if not manifest.exists():
+        saved={}
+        names=['README.md','LGVQ_busy50_near_saturation_plot_data.xlsx','busy50_near_saturation_pair.png']
+        names += [f'busy50_near_saturation_{kind}.{ext}' for kind in ('latency','energy') for ext in ('png','svg','pdf')]
+        for name in names:
+            target=archive/name
+            if not target.exists():shutil.copy2(OUT/name,target)
+            saved[name]=sha(target)
+        manifest.write_text(json.dumps(saved,indent=2)+'\n')
+    for name,digest in read(manifest).items():assert sha(archive/name)==digest
+    from .plot_selected_execution import COMPACT_COLORS,COMPACT_MARKERS
+    colors=COMPACT_COLORS;markers=COMPACT_MARKERS
     plt.rcParams.update({'font.family':'Arial','font.size':7,'svg.fonttype':'none','pdf.fonttype':42,'axes.linewidth':.6})
     geometry=[]
     for precision,values in data['groups'].items():
+        prefix='busy50_near_saturation' if precision=='native' else 'fp32_busy50_near_saturation'
         values=[r for r in values if r.get('plotted',True)]
         for metric,field,label in [('latency','time_ms','Inference latency (ms / 16 videos)'),('energy','energy_j','Estimated inference energy (J / 16 videos)')]:
             fig,ax=plt.subplots(figsize=(78/25.4,88/25.4));fig.subplots_adjust(left=.19,right=.97,top=.92,bottom=.34)
@@ -188,10 +210,10 @@ def render():
             fig.text(.19,.008,note,fontsize=5,color='#53616B')
             from .plot_selected_execution import verify_label_geometry
             geometry.extend(verify_label_geometry(fig,[ax],check_lines=True))
-            for ext in ('png','svg','pdf'):fig.savefig(OUT/f'{precision}_busy50_near_saturation_{metric}.{ext}',dpi=600)
+            for ext in ('png','svg','pdf'):fig.savefig(OUT/f'{prefix}_{metric}.{ext}',dpi=600)
             plt.close(fig)
-        a=Image.open(OUT/f'{precision}_busy50_near_saturation_latency.png');b=Image.open(OUT/f'{precision}_busy50_near_saturation_energy.png')
-        joined=Image.new('RGB',(a.width+b.width,a.height),'white');joined.paste(a,(0,0));joined.paste(b,(a.width,0));joined.save(OUT/f'{precision}_busy50_near_saturation_pair.png',dpi=(600,600))
+        a=Image.open(OUT/f'{prefix}_latency.png');b=Image.open(OUT/f'{prefix}_energy.png')
+        joined=Image.new('RGB',(a.width+b.width,a.height),'white');joined.paste(a,(0,0));joined.paste(b,(a.width,0));joined.save(OUT/f'{prefix}_pair.png',dpi=(600,600))
     (RENTAL/'presentation/figure_geometry.json').write_text(json.dumps(dict(status='passed',panels=geometry),indent=2)+'\n')
 
 
