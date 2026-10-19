@@ -4,6 +4,34 @@
 
 ### E2 capture audited; diagnose weak readout before further G2 capture
 
+#### Reviewed finite-budget progression, not an invented hard8pp stop
+
+The original admitted DVP profile (SHAea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532)
+already states: aim<=8pp, no guarantee; after a finite complete-epoch budget,
+carry the best forward and disclose misses. The latest user asks continuous
+L4->L6 progress without another reminder. Thus the private control's earlier
+hard refusal of every non-G1 miss was overly restrictive, not a new scientific
+or safety requirement. Do not turn an accuracy aspiration into an unlimited
+middle-stage search or claim that the user specifically approved a larger gap.
+
+E2's best native297/411=72.26277%, gap49/411=11.92214pp, is NOT within8pp or10pp.
+The finite remaining G2-mask fit from the recovered297 state is in progress;
+complete it and keep the higher complete native result (E0 disclosed if retained).
+Then a specific manual carry review may bind the best PT/report/independent
+CPU audit, all current capture/data/phase identities, checked exact ancestry,
+original profile SHA and actual completed finite trials. Continue fresh G2
+without changing any within8pp/within10pp flags, no fabricated target pass or
+data-quality exception. This is normal authorized finite-budget progression,
+not a claim of successful adaptation or permission to skip per-layer fitting.
+The optional user trade-off question is not a prerequisite for this already
+authorized path; an explicit new user instruction would supersede it.
+
+The same reviewed finite-budget rule applies to L6 only after each complete
+TRAIN1600 then TEST411 stage and original suffix fitting/native frozen audit.
+Reject E0 as evidence of a newly trained mask, but retain the best parent when
+an update fails. Final targets342/350 remain separate desired outcomes, never
+replace complete physical results with measured-prefix/simulated-suffix scores.
+
 The bounded12pass head continuation reached281/411=68.36983%, still15.8151pp
 below frozen346. Its exact native CPU/frozen audit passed, and it is retained.
 No G2 or L6 physical capture has started. One additional TRAIN-only capacity
