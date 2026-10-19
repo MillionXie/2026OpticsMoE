@@ -4,6 +4,25 @@
 
 ### New user geometry20261020: camera normal, fresh coherent L4 -> L6 capture
 
+Latest user clarification: a coordinate update alone does NOT establish that all
+previous measured layers must be recaptured. Previously frozen upstream CCD may
+remain a usable measured prefix if its physical meaning, crop mapping, encoding
+and downstream input lineage are explicitly validated; adapt only the uncaptured
+suffix in that case. The blanket restart statement below was overly restrictive,
+not a demonstrated physical necessity. User accepted continuing the already
+started fresh20261020 run, without another restart. Future coordinate changes
+require a compatibility audit, not automatic all-layer reacquisition.
+
+User also authorized deleting abandoned material. Retired20261019 is not wholly
+disposable: the current run still references its original amplitude response LUT
+and source admission. Preserve those paths, selected best/last, reports, receipts,
+full cropped CCD arrays and representative raw/input images. Only explicitly
+inventoried retired numeric raw/input PNG copies may be pruned after no running
+owner check and metadata backup; record deletion paths/sizes and retained array
+SHA. New20261020 data, frozen L2 and other-chat nores assets are out of scope.
+Deleted raw image pixels are not recoverable from receipts; retained crops still
+support original model replay, not a claim of complete raw-image restoration.
+
 Intermediate8pp is NOT final1pp success. Final-only profiles
 `lab_caltech20_DVP_L4_final1pp_profile_20261020.json` and
 `lab_caltech20_DVP_L6_final1pp_profile_20261020.json` explicitly target342/411
@@ -19,8 +38,9 @@ User confirmed camera recovered and replaced coordinates with20261020.txt.
 Read-only Windows PID_D003 normal/SDKcount1, no extra camera open. New file SHA
 b8edf11cd310b0120dce9547c877b1dad79e98b71bb770ce0ed95c0d97da094d,
 TL[980,161]/TR[4316,174]/BL[959,3468]/BR[4319,3482], differs from20261019.
-Thus old measured router/E1/G1 cannot be combined with new-geometry suffix.
-All old data/selected314PT/failures remain unchanged. Fresh run
+The current chosen session contract rejects automatic oldCCD mixing; this is not
+proof that an independently audited old prefix is inherently unusable. Old
+selected314PT, replay arrays, calibration and failure metadata remain. Fresh run
 `caltech20_residual_DVP_46_20261020` starts original frozen L4 then L6 checkpoints,
 same SHA-verified TRAIN1600(80/class fixed augmented)/TEST411/noVALID, no oldCCD.
 This is a new hardware run, NOT a new source project/worktree or branch.
