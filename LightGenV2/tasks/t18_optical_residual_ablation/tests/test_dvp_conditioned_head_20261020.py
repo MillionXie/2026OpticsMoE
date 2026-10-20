@@ -25,6 +25,9 @@ class ConditionedHeadContract(unittest.TestCase):
         method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='pair_fit');text=ast.unparse(method)
         self.assertIn("tr['metric']['accuracy'] >= 0.8",text)
         self.assertLess(text.index("tr['metric']['accuracy'] >= 0.8"),text.index('independent_pair_direction(v,'))
+        fit=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='fit');fit_text=ast.unparse(fit)
+        self.assertIn("independent_pair_admitted(a, cfg) and tr['metric']['accuracy'] >= 0.8",fit_text)
+        self.assertLess(fit_text.index("independent_pair_admitted(a, cfg) and tr['metric']['accuracy'] >= 0.8"),fit_text.index('TRAIN_mixup_views('))
 
     def test_objective_cannot_take_test_inputs(self):
         tree = ast.parse(SOURCE.read_text())

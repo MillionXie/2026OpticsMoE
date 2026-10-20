@@ -775,7 +775,7 @@ def fit(a):
     if cfg.get('TRAIN_feature_dropout_repeats',0):
         assert a.depth==4 and a.prefix==5 and len(labels)==1600
     if cfg.get('TRAIN_feature_mixup_repeats',0):
-        assert a.prefix==a.depth+1 and len(labels)==1600 and not cfg.get('TRAIN_feature_dropout_repeats',0)
+        assert (a.prefix==a.depth+1 or (independent_pair_admitted(a,cfg) and tr['metric']['accuracy']>=.8)) and len(labels)==1600 and not cfg.get('TRAIN_feature_dropout_repeats',0)
         z,labels,teacher,keep,TRAIN_views=TRAIN_mixup_views(z,labels,teacher,cfg)
     else:
         z,labels,teacher,TRAIN_views=TRAIN_feature_views(z,labels,teacher,cfg)
