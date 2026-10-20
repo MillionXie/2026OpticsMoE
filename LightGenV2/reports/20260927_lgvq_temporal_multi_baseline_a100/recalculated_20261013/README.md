@@ -13,9 +13,9 @@ independent raw-data replay. Historical Qwen B1 is unchanged. The original labor
 measurements retain the two completed CLIP MPS conditions in `recovery_1102`.
 Its failed temporal-control condition remains excluded. The subsequent
 `calibration_1140` completed CLIP temporal control; `duration_1155` has completed
-YOLO's and Qwen's four deployed-precision conditions and is continuing the missing cases.
-At this partial update, twelve laboratory conditions have been independently
-audited. GLM and laboratory FP32 results remain unavailable until completed.
+all sixteen deployed-precision laboratory conditions and is continuing FP32.
+At this partial update, sixteen laboratory conditions have been independently
+audited. Laboratory FP32 results remain unavailable until completed and audited.
 
 The existing eight-view workbook now contains the newly audited interval costs.
 Its previous complete-wall version, SHA256
@@ -59,8 +59,8 @@ SRCC references at B1 and higher batches were independently evaluated, not newly
 trained or measured separately at each cap. FP32 does not improve either model's
 SRCC here; its backend and weight expansion are disclosed below.
 
-Machine-readable observations and all 84 currently qualified trial records
-(48 rental, 36 laboratory) are in the new run's `presentation/paired_measurements.csv`
+Machine-readable observations and all 96 currently qualified trial records
+(48 rental, 48 laboratory) are in the new run's `presentation/paired_measurements.csv`
 and `paired_repeats.csv`. Each row binds report, checkpoint, accuracy source, date
 and hashes. All 270 rental files (23,917,130 bytes) were imported from a SHA-bound
 final archive. Eight figure panels use `strict_tf_<method>_<precision>_*` in this
@@ -69,7 +69,7 @@ original report directory; missing conditions are not interpolated.
 ### Laboratory partial results: deployed precision
 
 All values below pool the three complete trials. MPS pairs use B1; temporal pairs
-use fixed B10 for CLIP and B3 for YOLO and Qwen. These batches are retained in the data,
+use fixed B10 for CLIP, B3 for YOLO and Qwen, and B2 for GLM. These batches are retained in the data,
 not substituted into figure labels. The same charged-interval definition and
 matched power integration are used for every row. The unrestricted CLIP point
 does not reach 98% busy time and is not labelled as near-100% saturation.
@@ -88,6 +88,10 @@ does not reach 98% busy time and is not labelled as near-100% saturation.
 | Qwen3-VL-2B | MPS | 50% resources | 85.413 | 855.036 | 464.361 | .766343 |
 | Qwen3-VL-2B | Temporal | Unrestricted | 96.354 | 415.542 | 243.490 | .768899 |
 | Qwen3-VL-2B | Temporal | Approximately 50% busy | 50.441 | 784.970 | 398.982 | .768899 |
+| GLM-4.6V-Flash | MPS | 100% resources | 97.480 | 1780.846 | 1039.894 | .809262 |
+| GLM-4.6V-Flash | MPS | 50% resources | 97.999 | 2571.622 | 1503.626 | .809262 |
+| GLM-4.6V-Flash | Temporal | Unrestricted | 98.084 | 1630.915 | 955.118 | .810310 |
+| GLM-4.6V-Flash | Temporal | Approximately 50% busy | 48.547 | 3358.155 | 1647.443 | .810310 |
 
 MPS resource provisioning and NVML busy time are different measured quantities.
 The values above are retained rather than adjusted to an expected trend. No

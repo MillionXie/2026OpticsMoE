@@ -33,6 +33,12 @@ def close(a,b):
     if not math.isclose(float(a),float(b),abs_tol=1e-7,rel_tol=1e-10):raise AssertionError((a,b))
 
 
+def completion_state(points):
+    if len(points)==48:
+        return 'all48_complete' if all(p.get('srcc_reference') is not None for p in points) else 'costs48_complete_accuracy_pending'
+    return 'rental16_complete' if sum(p['model'] in ('deepseek','kimi') for p in points)==16 else 'partial'
+
+
 def observed_energy(intervals,raw):
     """Independent replay from raw CSV, not reported energy/average power."""
     stamps=[float(v['host_monotonic_s']) for v in raw];total=0.
@@ -255,6 +261,7 @@ def main():
             if r.get('batch') and r.get('srcc') is not None:
                 refs[('deepseek' if r['baseline']=='full' else r['baseline'],r['batch'])]=r.get('accuracy_source') or r.get('cost_source')
     for p in points:
+        p['accuracy_note']='Independent same-batch/precision full558 reference unavailable; SRCC remains blank. Do not copy another dtype or batch.'
         if p['precision']=='native':path=[REPO/s.strip() for s in refs[(p['model'],p['batch'])].split(';')]
         elif p['model']=='kimi':path=TASK/'runs/simulation/lgvq_busy_resource_20261020/accuracy_kimi_fp32_batch1/evaluation/report.json'
         elif p['model']=='deepseek':path=next((root/'mps_deepseek_fp32_100/accuracy558/report.json' for root in (ROOT/'attempt02',ROOT) if (root/'mps_deepseek_fp32_100/accuracy558/report.json').exists()),None)
@@ -284,7 +291,7 @@ def main():
     rental_count=sum(p['model'] in ('deepseek','kimi') for p in points)
     active_lab=LAB_DURATION if LAB_DURATION.exists() else LAB_CONTINUATION if LAB_CONTINUATION.exists() else LAB_ROOT
     lab_state=read(active_lab/'suite_status.json') if (active_lab/'suite_status.json').exists() else {'status':'partial_local_backup'}
-    data=dict(timing_protocol=PROTOCOL,accounting_protocol=ACCOUNTING,status='all48_complete' if len(points)==48 else 'rental16_complete' if rental_count==16 else 'partial',values=points,optical=optical,models=NAMES,
+    data=dict(timing_protocol=PROTOCOL,accounting_protocol=ACCOUNTING,status=completion_state(points),values=points,optical=optical,models=NAMES,
         rental_count=rental_count,laboratory_count=len(points)-rental_count,
         laboratory_status=lab_state['status'],capacity_missing='DeepSeek FP32 uses TWO80GB GPUs; all other cases use one. No CPU/disk offload.',
         contract='Sum EACH first-block-to-GPU-output interval plus output-to-NEXT-model-input gaps. Pacing waits are INCLUDED in gaps, never added twice. Exclude EACH frontend. Sum used-GPU board interval energies; host338.2W once. Full-wall NVML busy is separately reported. Also retain output-to-next-TF and full-cycle-span audit.',
