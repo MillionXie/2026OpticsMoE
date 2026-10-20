@@ -116,7 +116,8 @@ class ConditionedHeadContract(unittest.TestCase):
         tree=ast.parse(SOURCE.read_text());loss=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal10_objective')
         self.assertFalse(any('test' in n.id.lower() for n in ast.walk(loss) if isinstance(n,ast.Name)))
         method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal10_fit');text=ast.unparse(method)
-        self.assertIn("trainable = {'electronic.3.local.weight', 'fusion_logits.3'}",text)
+        self.assertIn('terminal_coordinates(a.depth)',text)
+        self.assertIn('trainable = {conv_key, alpha_key}',text)
         self.assertIn('sum((v.numel() for v in params)) == 10',text)
         self.assertLess(text.index("max(cache_errors) <= 3e-06"),text.index('torch.optim.AdamW'))
         self.assertIn('np.array_equal(p.argmax(1), expected.argmax(1))',text)
@@ -223,6 +224,26 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual({k:v for k,v in cfg.items() if not k.startswith('TRAIN_feature_dropout_') and k!='scope'},
                          {k:v for k,v in old.items() if k!='scope'})
         self.assertEqual((cfg['TRAIN_feature_dropout_probability'],cfg['TRAIN_feature_dropout_repeats'],cfg['TRAIN_feature_dropout_seed']),(.1,3,73))
+
+
+    def test_final_native_adapter_uses_exact_depth_tail_and_complete_prefix(self):
+        tree=ast.parse(SOURCE.read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal_coordinates')
+        namespace={};exec(compile(ast.Module(body=[node],type_ignores=[]),'<terminal_coordinates>','exec'),namespace)
+        fn=namespace['terminal_coordinates']
+        self.assertEqual(fn(4),(3,'electronic.3.local.weight','fusion_logits.3'))
+        self.assertEqual(fn(6),(5,'electronic.5.local.weight','fusion_logits.5'))
+        for invalid in (2,3,5,7):
+            with self.assertRaises(AssertionError):fn(invalid)
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal10_fit');text=ast.unparse(method)
+        self.assertIn('a.prefix == a.depth + 1',text)
+        self.assertIn('model.electronic[last]',text)
+        self.assertIn("{'4': 342, '6': 350}",text)
+        self.assertIn('depth=a.depth, prefix=a.prefix',text)
+        old=json.loads((TASK/'lab_caltech20_DVP_native5150_profile_20261020.json').read_text())
+        cfg=json.loads((TASK/'lab_caltech20_DVP_L6_native5150_profile_20261020.json').read_text())
+        self.assertEqual({k:v for k,v in cfg.items() if k not in ('scope','targets','final_targets')},
+                         {k:v for k,v in old.items() if k!='scope'})
+        self.assertEqual(cfg['final_targets']['6'],350)
 
 
 if __name__ == '__main__':

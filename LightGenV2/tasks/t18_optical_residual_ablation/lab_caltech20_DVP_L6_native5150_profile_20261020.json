@@ -1,0 +1,14 @@
+{
+  "joint_original_head": true,
+  "epochs": 12, "fit_seconds": 360, "batch": 8,
+  "conv_lr": 0.002, "alpha_lr": 0.0005, "head_coordinate_lr": 0.002,
+  "weight_decay": 0.001, "label_smoothing": 0.02,
+  "temperature": 2.0, "teacher_KL": 2.0, "terminal_anchor": 0.1, "head_coordinate_anchor": 0.01,
+  "per_row_head_radius": 0.4,
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "native_tail_source_SHA256": "c6dfe2cdcf4598d9b7e488a06577c9c45b4c483e14ca4daf9084d28dacfbff5c",
+  "targets": {"4":314,"6":322},
+  "final_targets": {"4":342,"6":350},
+  "scope": "Preparation of the existing published native-RMS5150 method for L6 original final electronic.5.local.weight9/direct fusion_logits.5/5140Linear, not an added layer or new inference implementation. Coefficients, seed73 and12epochs/360fitseconds exactly match the L4 native5150 recipe. Do not run before all seven L6 physical stages each1600TRAIN+411TEST are complete, independently identity/SHA audited and SDK released; earlier-prefix scores cannot serve as baseline. Start from highest independently audited full-prefix7 native411 candidate and preserve it if no gain. Exact full native TRAIN/TEST terminal-cache parity and last-batch padding must pass before any derivative; all optical and incident-producing electronic tensors frozen bitwise. TRAIN only covariance/prior/loss/teacher, no TEST derivative/teacher or VALID; TEST-informed development selection only. CPU2threads/batch8/below normal/noGPU, no new CCD or camera change, complete1600sample epoch before bounded stopping. Final350 is relative to fixed354 reference and is not guaranteed; never claim complete physical accuracy from this prepared config or a simulated-tail parity test. One bounded original-tail comparison if needed, no grid or automatic launch."
+}
