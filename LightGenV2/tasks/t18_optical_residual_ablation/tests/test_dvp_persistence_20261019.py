@@ -65,8 +65,8 @@ class PersistenceTests(unittest.TestCase):
             with m.FrameWriter() as writer:writer.submit(self.root/'old',self.raw,self.crop);writer.finish()
         self.assertEqual(path.read_bytes(),b'protected')
 
-    def capture_fixture(self,name,overlap,bad_index=None,full=False,record_only=False,bad_value=2):
-        root=self.root/name;root.mkdir();session=root/'L4';session.mkdir()
+    def capture_fixture(self,name,overlap,bad_index=None,full=False,record_only=False,bad_value=2,strict=False,white_start=None):
+        root=self.root/name;root.mkdir();session=root/('L4_strict8pp_20261020' if strict else 'L4');session.mkdir()
         lut=root/'lut.json';lut.write_text(json.dumps(dict(drive=list(range(256)))))
         digest=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
         save=lambda p,v:Path(p).write_text(json.dumps(v))
@@ -83,6 +83,7 @@ class PersistenceTests(unittest.TestCase):
                 if index==bad_index:
                     if bad_value=='transport':raise RuntimeError('injected SDK frame transport failure')
                     raw.fill(bad_value)
+                if white_start is not None and index>=white_start:raw.fill(255)
                 return raw,dict(capture_total_ms=1,frame_id=index,exposure_us=5000.5,gain=1)
         scope['Bench']=Bench
         def padded(data,role,begin):
@@ -105,12 +106,22 @@ class PersistenceTests(unittest.TestCase):
         data=dict(train=(np.zeros(24),np.zeros(24),np.array([str(i) for i in range(24)])))
         if full:data=dict(train=(np.zeros(16),np.zeros(16),np.array([str(i) for i in range(16)])),test=(np.zeros(9),np.zeros(9),np.array([str(i) for i in range(16,25)])))
         a=SimpleNamespace(sequence=root,depth=4,async_png=overlap)
+        if strict:a.attempt='strict8pp_20261020'
         if record_only:a.capture_policy=lut
         error=None
         try:scope['acquire'](a,'router',root/'unused.pt','pt',data,dict(sha256='data'),dict(response_lut=str(lut),coordinates='unused',orientation='identity'),pilot=not full)
         except BaseException as e:error=e.with_traceback(None)
         self.assertFalse((root/'lock').exists())
         return session/('capture/router' if full else 'router_pilot24'),calls,error
+
+    def test_two_whole_white_frames_stop_strict_attempt_after_persisting(self):
+        out,calls,error=self.capture_fixture('wholewhite_strict',True,record_only=True,strict=True,white_start=5)
+        self.assertIsInstance(error,RuntimeError);self.assertIn('Whole-frame white event',str(error))
+        self.assertEqual(len(calls),7)
+        for i in (5,6):
+            self.assertTrue((out/'train'/f'{i:06d}.json').exists())
+            self.assertTrue((out/'train'/f'{i:06d}_raw.png').exists())
+        self.assertFalse((out/'report.json').exists())
 
     def test_actual_capture_control_flow_serial_vs_overlap(self):
         serial,scalls,se=self.capture_fixture('serial',False);overlap,acalls,ae=self.capture_fixture('overlap',True)

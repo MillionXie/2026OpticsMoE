@@ -410,6 +410,15 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
             assert check_score(read(parent/'report.json'),a.depth,prefix)==digest
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
     out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else base_digest
+    quality_source=getattr(a,'reuse_capture',None);quality_count=getattr(a,'reuse_train_prefix',0);quality_array=None
+    if quality_source:
+        assert getattr(a,'attempt',None)=='strict8pp_20261020' and not pilot and 0<quality_count<=1600
+        quality_source=Path(quality_source);assert quality_source.resolve().is_relative_to((session/'rejected_signal_20261020').resolve())
+        qr=read(quality_source/'report.json');assert qr['state']=='complete' and qr['sdk_released'] and qr['PT_SHA256']==digest and qr['data_SHA256']==dm['sha256'] and qr['hardware_SHA256']==hardware_digest and qr['prefix_SHA256']==identities
+        assert sha(quality_source/'train/ccd.npy')==qr['arrays']['train']['SHA256'];quality_array=np.load(quality_source/'train/ccd.npy',mmap_mode='r')
+        for i in range(quality_count):
+            row=read(quality_source/'train'/f'{i:06d}.json');assert row['index']==i and row['sample_id']==str(data['train'][2][i]) and row['saturation_fraction']<.15 and row['phase_SHA256']==qr['phase_SHA256']
+    else:assert quality_count==0
     if out.exists() and getattr(a,'archive_empty_start',False):
         assert a.depth==4 and stage=='2' and (getattr(a,'recheck_before_capture',False) or getattr(a,'capture_policy',None)) and not LOCK.exists()
         failure=read(out/'failure.json');prior_contract=read(out/'contract.json')
@@ -479,6 +488,8 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                 assert not pilot and not resume_router and hardware_digest!=base_digest and hardware.get('quality_mode')=='same_phase_contrast'
                 originalpath=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(originalpath)==base_digest
                 replug_check=same_connection_replug_check(bench,out,hardware,read(originalpath),warp)
+            if getattr(a,'attempt',None) and getattr(a,'quality_recheck',False):shared_geometry_check(bench,out/'same_connection_quality_check',hardware,warp)
+            white_run=0;compatibility_checked=False
             for role in ('train',) if pilot else ('train','test'):
                 images,y,ids=data[role];n_total=24 if pilot else len(y);folder=out/role;folder.mkdir();ccd=np.lib.format.open_memmap(folder/'ccd.npy',mode='w+',dtype=np.uint8,shape=(n_total,478,478));last_end=0
                 for begin in range(0,n_total,8):
@@ -488,16 +499,32 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                         if n<8:cache[k]=np.concatenate([cache[k],np.zeros((8-n,478,478),np.uint8)])
                     padded_ids=np.concatenate([ids[begin:end],np.array(['__padding__']*(8-n))]) if n<8 else ids[begin:end]
                     def physical(current,amplitude,phase,sample_ids):
-                        nonlocal phase_pixels,frames,pending_record
+                        nonlocal phase_pixels,frames,pending_record,white_run,compatibility_checked
                         if phase_pixels is None:
                             phase_pixels=phase.copy();Image.fromarray(phase_native(phase)).save(phasepath);bench.stage(phasepath)
                             if hardware.get('quality_mode')=='shared_fixed_record_only':assert sha(phasepath)==hardware['phase_SHA256']
                         assert current==stage and np.array_equal(phase_pixels,phase)
+                        if quality_source and not compatibility_checked:
+                            checks=[];assert sha(phasepath)==qr['phase_SHA256']
+                            for retained in sorted(set((0,min(640,quality_count-1),quality_count-1))):
+                                old=quality_source/'train'/f'{retained:06d}';source_row=read(old.with_suffix('.json'))
+                                with Image.open(old.with_name(old.name+'_input.png')) as im:gray0=np.asarray(im).copy()
+                                samplebmp=out/f'reuse_check_{retained:06d}.bmp';Image.fromarray(native(drive[gray0],'amplitude')).save(samplebmp);assert sha(samplebmp)==source_row['input_SHA256']
+                                raw0,meta0=bench.capture(samplebmp);v=orient(cv2.warpPerspective(raw0,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hardware['orientation']);oldv=np.asarray(quality_array[retained]).astype(float)
+                                pcc=correlation(cv2.resize(v.astype(float),(16,16),interpolation=cv2.INTER_AREA),cv2.resize(oldv,(16,16),interpolation=cv2.INTER_AREA));ratio=float(v.mean()/max(oldv.mean(),1e-12));passed=pcc>=.95 and .8<=ratio<=1.2 and float((v==255).mean())<.15
+                                Image.fromarray(raw0).save(out/f'reuse_check_{retained:06d}_raw.png',compress_level=1);Image.fromarray(v).save(out/f'reuse_check_{retained:06d}.png');checks.append(dict(index=retained,coarse16_PCC=pcc,mean_ratio=ratio,passed=passed,frame_metadata=meta0));save(out/'TRAIN_reuse_compatibility.json',dict(TRAIN_only=True,TEST_used=False,checks=checks,passed=all(c['passed'] for c in checks),thresholds=dict(coarse16_PCC=.95,mean_ratio=[.8,1.2])))
+                                assert passed,'Retained TRAIN response changed: do not mix regimes or refit exposure'
+                            compatibility_checked=True
                         values=[]
                         for j in range(n):
                             index=begin+j;t=time.perf_counter();gray=np.rint(amplitude[j].clip(0,1)*255).astype(np.uint8);assert np.max(np.abs(gray/255-amplitude[j]))<=1e-7
                             base=folder/f'{index:06d}';canonical=base.with_name(base.name+'_input.png');Image.fromarray(gray).save(canonical,compress_level=1);bmp=base.with_name(base.name+'_transient.bmp');Image.fromarray(native(drive[gray],'amplitude')).save(bmp)
-                            if reused is not None and role=='train' and index<24:
+                            if quality_source and role=='train' and index<quality_count:
+                                old=quality_source/'train'/f'{index:06d}';row=read(old.with_suffix('.json'));assert row['canonical_SHA256']==sha(canonical) and row['input_SHA256']==sha(bmp) and row['phase_SHA256']==sha(phasepath)
+                                crop=np.asarray(quality_array[index]).copy()
+                                for suffix in ('_raw.png','.png'):os.link(old.with_name(old.name+suffix),base.with_name(base.name+suffix))
+                                row=dict(row,reused_from=str(old.with_suffix('.json')),source_receipt_SHA256=sha(old.with_suffix('.json')),new_physical_capture=False)
+                            elif reused is not None and role=='train' and index<24:
                                 old=source/'train'/f'{index:06d}';row=read(old.with_suffix('.json'))
                                 assert row['canonical_SHA256']==sha(canonical) and row['input_SHA256']==sha(bmp) and row['phase_SHA256']==sha(phasepath)
                                 crop=np.asarray(reused[index]).copy()
@@ -540,6 +567,10 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
                             values.append(crop)
                             # Transient BMP is redundant; canonical input, exact drive LUT and digest remain.
                             bmp.unlink()
+                            if getattr(a,'attempt',None):
+                                white_run=white_run+1 if row['saturation_fraction']>.99 else 0
+                                if white_run>=2:
+                                    finish_pending();raise RuntimeError('Whole-frame white event: two consecutive >99% clipped crops; preserve frames and stop for diagnosis, never train or auto-retry')
                             if not record_only and (row['p99']<15 or row['saturation_fraction']>.15):
                                 finish_pending();raise RuntimeError('DVP signal guard: retain all valid/bad frames; no automatic retry or exposure change')
                             if not record_only and quality_background is not None and row['contrast_p99']<hardware['capture_min_contrast_p99']:
@@ -560,7 +591,7 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
         reused_calibration=len(hardware['probe_indices']) if probe_directory is not None else 0
         if replug_check is not None:
             save(out/'same_connection_release.json',dict(SDK_released=True,check_SHA256=sha(out/'same_connection_replug_check/report.json'),formal_capture_used_same_Bench=True,new_frame_IDs_after_recheck=True))
-        save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,new_physical_ccd=frames-(24 if resume_router else 0)-reused_calibration,reused_pilot_ccd=24 if resume_router else 0,reused_calibration_ccd=reused_calibration,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=hardware_digest,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
+        save(out/'report.json',dict(state='complete',pilot=pilot,stage=stage,physical_ccd=frames,new_physical_ccd=frames-(24 if resume_router else 0)-reused_calibration-quality_count,reused_pilot_ccd=24 if resume_router else 0,reused_calibration_ccd=reused_calibration,reused_verified_TRAIN_prefix=quality_count,TRAIN=24 if pilot else 1600,TEST=0 if pilot else 411,VALID=0,sdk_released=True,arrays=arrays,data_SHA256=dm['sha256'],hardware_SHA256=hardware_digest,PT_SHA256=digest,prefix_SHA256=identities,phase_SHA256=sha(phasepath),elapsed_s=time.perf_counter()-start,median_complete_sample_ms=float(np.median(elapsed)),mean_complete_sample_ms=float(np.mean(elapsed)),fullraw_preserved=True,audit=audit))
         save(out/'persistence_report.json',dict(mode=persistence_mode,ordered_receipts=frames,TRAIN_TEST_boundaries_drained=True,SDK_calls_in_writer=False,max_uncommitted_frames=1 if writer is not None else 0,physical_timing_changed=False,completed_sample_rate_per_s=frames/(time.perf_counter()-start)))
     except BaseException as ex:
         persistence_error=None
@@ -709,7 +740,8 @@ def selftest():
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','fixed-hardware','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');p.add_argument('--recheck-before-capture',action='store_true');p.add_argument('--archive-empty-start',action='store_true');p.add_argument('--capture-policy',type=Path)
-    p.add_argument('--attempt',choices=('strict8pp_20261020',));a=p.parse_args()
+    p.add_argument('--attempt',choices=('strict8pp_20261020',));p.add_argument('--reuse-capture',type=Path);p.add_argument('--reuse-train-prefix',type=int,default=0);p.add_argument('--quality-recheck',action='store_true');a=p.parse_args()
+    assert not (a.reuse_capture or a.reuse_train_prefix or a.quality_recheck) or (a.attempt and a.mode=='capture'), 'Quality recovery belongs only to explicit strict capture'
     assert not a.attempt or a.mode in ('capture','refine','fixed-hardware'), 'Explicit stages only; no legacy automatic chaining in a strict attempt'
     try:
         if a.mode=='selftest':selftest()

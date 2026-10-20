@@ -68,6 +68,23 @@ class StrictRetakeTests(unittest.TestCase):
         self.assertIn('check_score', ast.unparse(acquire))
         self.assertNotIn('carry_p', ast.unparse(acquire))
 
+    def test_whole_white_is_not_an_ordinary_signal_extremum(self):
+        text=(HERE / 'lab_caltech20_dvp_layerwise_20261019.py').read_text()
+        self.assertIn("if row['saturation_fraction']>.99 else 0", text)
+        self.assertIn('if white_run>=2:', text)
+        self.assertIn('finish_pending();raise RuntimeError(\'Whole-frame white event', text)
+        self.assertIn("if getattr(a,'attempt',None):", text)
+
+    def test_retained_prefix_is_sha_bound_and_train_only(self):
+        text=(HERE / 'lab_caltech20_dvp_layerwise_20261019.py').read_text()
+        self.assertIn("quality_source and role=='train' and index<quality_count", text)
+        self.assertIn("qr['prefix_SHA256']==identities", text)
+        self.assertIn("qr['hardware_SHA256']==hardware_digest", text)
+        self.assertIn("row['input_SHA256']==sha(bmp)", text)
+        self.assertIn('pcc>=.95 and .8<=ratio<=1.2', text)
+        self.assertIn('new_physical_capture=False', text)
+        self.assertIn('reused_verified_TRAIN_prefix=quality_count', text)
+
 
 if __name__ == '__main__':
     unittest.main()
