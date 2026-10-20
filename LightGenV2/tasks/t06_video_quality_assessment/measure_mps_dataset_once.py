@@ -38,16 +38,17 @@ def select_profile(name):
     """Published machine profile; never mutate the completed laboratory run."""
     global PROFILE,CONFIG,ROOT,PIPE
     PROFILE=name
-    if name=='rental':
-        CONFIG=TASK/'configs/baselines/mps_dataset_once_rental_20261021.json'
-        ROOT=TASK/'runs/simulation/lgvq_mps_dataset_once_rental_20261021'
-        PIPE='/data/tmp/t06_mps_dataset_once_20261021'
+    if name.startswith('rental'):
+        suffix='_replacement02' if name=='rentalb' else ''
+        CONFIG=TASK/f'configs/baselines/mps_dataset_once_rental_20261021{suffix}.json'
+        ROOT=TASK/f'runs/simulation/lgvq_mps_dataset_once_rental_20261021{suffix}'
+        PIPE='/data/tmp/t06_mps_dataset_once_20261021'+suffix
         frozen.A100_UUID=json.loads(CONFIG.read_text())['gpu_uuid']
 
 
 def config():
     c=json.loads(CONFIG.read_text())
-    assert c['models']==(['deepseek','kimi'] if PROFILE=='rental' else ['qwen','glm','clip','yolo']) and c['resource_caps']==[100,50]
+    assert c['models']==(['deepseek','kimi'] if PROFILE.startswith('rental') else ['qwen','glm','clip','yolo']) and c['resource_caps']==[100,50]
     assert (c['batch'],c['test_videos'],c['cost_videos'],c['repeats'],c['explicit_warmup_forwards'])==(1,558,200,3,0)
     return c
 
@@ -129,7 +130,7 @@ def runtime(args,guard,identity):
             for handle in handles:handle.remove()
             if costs.model_hashes(args.model_path)!=assets:raise RuntimeError('Assets changed')
     if len(rows)!=558 or len({r['sample_id'] for r in rows})!=558:raise RuntimeError('Original558 unique TEST required')
-    expected=identity['checkpoint_sha256'] if PROFILE=='rental' else costs.CHECKPOINTS[args.model]
+    expected=identity['checkpoint_sha256'] if PROFILE.startswith('rental') else costs.CHECKPOINTS[args.model]
     if frozen.sha256(args.checkpoint)!=expected:raise RuntimeError('Exact frozen head differs')
     if any(p.requires_grad for m in (model,head) for p in m.parameters()):raise RuntimeError('Weights must be frozen')
     identity.update(assets=assets,checkpoint_sha256=frozen.sha256(args.checkpoint),
@@ -242,7 +243,7 @@ def suite(args):
                 time.sleep(10)
             engine.daemon(True);active=True
             for model in config()['models']:
-                if PROFILE=='rental':
+                if PROFILE.startswith('rental'):
                     mp=Path('/data/models')/model
                     pt=engine.base.old.RUN/model/'train/best_checkpoint.pt'
                     python=f'/data/venvs/{model}/bin/python';receipt=None
@@ -278,7 +279,7 @@ def suite(args):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--phase',choices=('suite','worker'),required=True)
-    p.add_argument('--profile',choices=('lab','rental'),default='lab')
+    p.add_argument('--profile',choices=('lab','rental','rentalb'),default='lab')
     p.add_argument('--model',choices=('qwen','glm','clip','yolo','deepseek','kimi'));p.add_argument('--cap',type=int,choices=(100,50))
     p.add_argument('--repeat',type=int,choices=(1,2,3));p.add_argument('--model-path',type=Path)
     p.add_argument('--checkpoint',type=Path);p.add_argument('--reproduction-receipt',type=Path)

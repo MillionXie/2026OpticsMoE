@@ -1,5 +1,13 @@
 # T06 视频质量评价
 
+## 2026-10-21 01:54 替换租赁实例接续
+
+用户提供替换实例，实检A100-SXM4-80GB/400W、0MiB已用、81154MiB可用、无计算PID。
+仅机器身份改变，使用rentalb profile/config及独立run
+lgvq_mps_dataset_once_rental_20261021_replacement02，保护前次0预测OOM证据。
+原精度/B1/两MPS配额/三fresh process/558TEST前200/零预热/间隔计费完全不变。
+尚待确认新租期，暂按原02:20停止计算、02:30到期，不自动延长或续租。
+
 ## 2026-10-21 新租单80GB：补全不同视频MPS的DS/Kimi
 
 用户授权单A100-SXM4-80GB/400W原精度完整版DeepSeek-VL2及Kimi-VL-A3B，
