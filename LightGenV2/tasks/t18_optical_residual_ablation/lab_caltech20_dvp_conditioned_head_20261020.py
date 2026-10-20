@@ -835,7 +835,22 @@ def teacher_blend_objective(blend,x,labels,w0,b0,tw,tb,parent,keep,cfg):
     """One scalar TRAIN objective, folded into the original Linear W/b."""
     w=w0+blend*(tw-w0);b=b0+blend*(tb-b0);z=x@w.T+b
     kl=F.kl_div(z.log_softmax(1),parent,reduction='none').sum(1)
-    return F.cross_entropy(z,labels,label_smoothing=.02)+cfg['correct_TRAIN_parent_KL']*(kl*keep).mean()
+    weights=None
+    if cfg.get('original_TRAIN_counts') is not None:
+        counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=z.dtype,device=z.device)
+        assert counts.shape==(20,) and int(counts.sum())==3141
+        weights=counts/counts.mean()
+    return F.cross_entropy(z,labels,weight=weights,label_smoothing=.02)+cfg['correct_TRAIN_parent_KL']*(kl*keep).mean()
+
+
+def TRAIN_label_logits(labels,counts):
+    """Fixed smoothed TRAIN labels and original TRAIN prior; no TEST input."""
+    assert labels.ndim==1 and labels.dtype==torch.long and ((labels>=0)&(labels<20)).all()
+    counts=counts.double();assert counts.shape==(20,) and (counts>0).all() and int(counts.sum())==3141
+    target=F.one_hot(labels,20).double()*.98+.02/20
+    logits=centered_teacher_logits(target)
+    prior=(counts/counts.sum()*20).log()
+    return logits+prior-prior.mean()
 
 
 def teacher_readout_fit(a):
@@ -846,37 +861,54 @@ def teacher_readout_fit(a):
     to a per-sample common offset; no teacher TEST or fresh physical inference.
     """
     cpu_fit_admission(a);torch.set_num_threads(2)
-    assert a.depth==4 and a.prefix==5 and not a.out.exists()
+    label_target=a.mode=='label-ridge-fit'
+    assert not a.out.exists()
+    assert (label_target and a.depth in (4,6) and a.prefix==a.depth+1) or (not label_target and a.depth==4 and a.prefix==5)
     cfg=core.read(a.profile);assert cfg['blend_steps']==64 and cfg['blend_lr']==.025 and cfg['correct_TRAIN_parent_KL']==.5
     assert core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py')==cfg['ridge_source_SHA256']
-    session=a.sequence/'L4';gate=core.read(session/'lab_gate.json')
-    assert gate['passed'] and gate['PT_SHA256']==core.sha(session/'initial.pt')==cfg['teacher_PT_SHA256']
-    assert gate['reference_SHA256']==core.sha(session/'source_reference.ts')
-    data,dm=core.data_for(a.sequence);assert dm['sha256']==gate['data_SHA256']
-    reference=session/'train_reference.npz';assert core.sha(reference)==cfg['teacher_TRAIN_reference_SHA256']
-    with np.load(reference,allow_pickle=False) as z:
-        assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1])
-        teacher_p=z['probabilities'].copy()
-    assert teacher_p.shape==(1600,20) and int((teacher_p.argmax(1)==data['train'][1]).sum())==1529
-    assert gate['checks']['train']['correct']==1529 and gate['checks']['train']['original_reference_maxabs']==0
-    target_logits=centered_teacher_logits(teacher_p)
+    session=a.sequence/f'L{a.depth}';gate=core.read(session/'lab_gate.json')
+    data,dm=core.data_for(a.sequence);assert gate['passed'] and dm['sha256']==gate['data_SHA256']
+    if label_target:
+        assert cfg['target_source']=='TRAIN_smoothed_labels' and cfg['label_smoothing']==.02
+        assert len(data['train'][1])==1600 and len(data['test'][1])==411
+        counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float64)
+        assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
+        target_logits=TRAIN_label_logits(torch.from_numpy(data['train'][1].astype(np.int64)),counts)
+        provenance=dict(target_source='TRAIN_smoothed_labels',TRAIN_target_labels=1600,label_smoothing=.02,
+                        original_TRAIN_counts_only=True,no_simulation_teacher=True,teacher_TEST_used=False)
+    else:
+        assert cfg.get('target_source','simulation_TRAIN_logits')=='simulation_TRAIN_logits'
+        provenance=None
+    if not label_target:
+        assert gate['passed'] and gate['PT_SHA256']==core.sha(session/'initial.pt')==cfg['teacher_PT_SHA256']
+        assert gate['reference_SHA256']==core.sha(session/'source_reference.ts')
+        reference=session/'train_reference.npz';assert core.sha(reference)==cfg['teacher_TRAIN_reference_SHA256']
+        with np.load(reference,allow_pickle=False) as z:
+            assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1])
+            teacher_p=z['probabilities'].copy()
+        assert teacher_p.shape==(1600,20) and int((teacher_p.argmax(1)==data['train'][1]).sum())==1529
+        assert gate['checks']['train']['correct']==1529 and gate['checks']['train']['original_reference_maxabs']==0
+        target_logits=centered_teacher_logits(teacher_p)
+        provenance=dict(teacher_PT_SHA256=cfg['teacher_PT_SHA256'],teacher_TRAIN_reference_SHA256=core.sha(reference),
+                        teacher_gate_SHA256=core.sha(session/'lab_gate.json'),teacher_TRAIN_correct=1529,teacher_TEST_used=False)
     assert core.sha(a.checkpoint)==a.digest;a.out.mkdir()
-    model,_=core.model_for(a.checkpoint,a.digest,4,session/'source_reference.ts');original=core.state_cpu(model)
-    fields,identities=core.fields_for(session,5,data,dm,core.session_hardware_digest(a.sequence))
+    model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
+    fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
     cached,cacheproof=checked_features(a,model,data,fields,dm,identities);tr,te=cached['train'],cached['test']
     x=torch.tensor(tr['x'],dtype=torch.float64);labels=torch.tensor(tr['y'],dtype=torch.long)
     tw,tb,gcv=ridge_logit_readout(x,target_logits);core.save(a.out/'TRAIN_ridge_GCV.json',gcv)
     w0,b0=original['linear.weight'].double(),original['linear.bias'].double()
     parent=(x@w0.T+b0).softmax(1).detach();keep=(parent.argmax(1)==labels).double()
     baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);selected=0;bw,bb=w0.float(),b0.float()
-    protocol=dict(parent_PT_SHA256=a.digest,depth=4,prefix=5,allowed_keys=['linear.bias','linear.weight'],
+    target=cfg.get('final_targets',{'4':342,'6':350})[str(a.depth)]
+    middle_target=cfg.get('targets',{'4':314,'6':322})[str(a.depth)]
+    protocol=dict(parent_PT_SHA256=a.digest,depth=a.depth,prefix=a.prefix,allowed_keys=['linear.bias','linear.weight'],
         prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,
         source_git=core.git_head(),source_SHA256=core.sha(__file__),config=cfg,profile_SHA256=core.sha(a.profile),
         feature_files={r:v['feature_SHA256'] for r,v in cached.items()},feature_graph_SHA256=cacheproof['feature_graph_SHA256'],
         feature_reuse=cacheproof,feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
-        teacher_PT_SHA256=cfg['teacher_PT_SHA256'],teacher_TRAIN_reference_SHA256=core.sha(reference),teacher_gate_SHA256=core.sha(session/'lab_gate.json'),
-        teacher_TRAIN_correct=1529,teacher_TEST_used=False,TRAIN_only_GCV=True,TRAIN_ridge_GCV=gcv,
-        target_correct=342,all_nonhead_frozen=True,TEST_gradient=False,TEST_informed_development=True,
+        **provenance,TRAIN_only_GCV=True,TRAIN_ridge_GCV=gcv,
+        target_correct=target,all_nonhead_frozen=True,TEST_gradient=False,TEST_informed_development=True,
         SDK_used=False,GPU_used=False,no_new_inference_layer=True,trainable_head_parameters=5140,update_unit='TRAIN_blend_step')
     core.save(a.out/'protocol.json',protocol)
     np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)
@@ -893,7 +925,7 @@ def teacher_readout_fit(a):
             if accepted:best,bestloss,bw,bb,selected=n,nll,w.clone(),b.clone(),step+1
         history.append(dict(step=step,full_TRAIN_ridge_candidate=step==0,blend=None if step==0 else float(blend.detach()),TEST_correct=n,TEST_NLL=nll,accepted=accepted,selected_correct=best))
         core.save(a.out/'progress.json',history[-1])
-        if best>=342:break
+        if best>=target:break
     elapsed=time.monotonic()-start;results={};bestp=None
     for name,ww,bbb in (('best',bw,bb),('last',w,b)):
         state={k:v.clone() for k,v in original.items()};state.update({'linear.weight':ww,'linear.bias':bbb});assert nonhead_equal(original,state)
@@ -903,7 +935,7 @@ def teacher_readout_fit(a):
         results[name]=dict(TEST_development=metric,TRAIN_development=core.metrics(tr['y'],probability(tr['x'],ww.numpy(),bbb.numpy())),PT_SHA256=core.sha(path),strict_CPU=True,full_prefix_replay_maxabs=error,predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
         if name=='best':bestp=p
     assert results['best']['TEST_development']['correct']==best and core.sha(a.checkpoint)==a.digest
-    core.save(a.out/'history.json',history);core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,selected_epoch=selected,selected_step=selected,actual_steps=step+1,target_correct=342,within8pp=best>=314,refinement_target_reached=best>=342,selected_e0=selected==0,intermediate=False,all_nonhead_frozen=True,frozen_parameters_unchanged=True,TEST_gradients=False,SDK_used=False,GPU_used=False,teacher_TEST_used=False,feature_cache_reused=cacheproof['reused'],elapsed_fit_s=elapsed,elapsed_postfit_replay_s=time.monotonic()-start-elapsed,new_correct=int(((baseline.argmax(1)!=te['y'])&(bestp.argmax(1)==te['y'])).sum()),new_wrong=int(((baseline.argmax(1)==te['y'])&(bestp.argmax(1)!=te['y'])).sum())))
+    core.save(a.out/'history.json',history);core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,selected_epoch=selected,selected_step=selected,actual_steps=step+1,target_correct=target,within8pp=best>=middle_target,refinement_target_reached=best>=target,selected_e0=selected==0,intermediate=False,all_nonhead_frozen=True,frozen_parameters_unchanged=True,TEST_gradients=False,SDK_used=False,GPU_used=False,teacher_TEST_used=False,feature_cache_reused=cacheproof['reused'],elapsed_fit_s=elapsed,elapsed_postfit_replay_s=time.monotonic()-start-elapsed,new_correct=int(((baseline.argmax(1)!=te['y'])&(bestp.argmax(1)==te['y'])).sum()),new_wrong=int(((baseline.argmax(1)==te['y'])&(bestp.argmax(1)!=te['y'])).sum())))
 
 
 def selftest():
@@ -1016,12 +1048,27 @@ def selftest():
     for sign in (1,-1):
         d=dv.detach().clone();d[0]+=sign*1e-5;vals.append(bias_objective(d,zl,labels,torch.ones(20,dtype=torch.float64),parent,keep,cfg_bias))
     assert abs(float((vals[0]-vals[1])/2e-5-g[0]))<1e-7
+    label_cfg=core.read(HERE/'lab_caltech20_DVP_TRAINlabel_ridge_profile_20261020.json')
+    prior_counts=torch.tensor(label_cfg['original_TRAIN_counts'],dtype=torch.float64)
+    targets=TRAIN_label_logits(labels,prior_counts)
+    expected=F.one_hot(labels,20).double()*.98+.02/20
+    expected=expected*prior_counts[None];expected=expected/expected.sum(1,keepdim=True)
+    assert torch.allclose(targets.softmax(1),expected,atol=1e-12)
+    labelw,labelb,labelproof=ridge_logit_readout(tx,targets)
+    assert labelproof['TRAIN_samples']==40 and labelproof['TRAIN_only_regularization_selection']
+    beta=torch.tensor(.3,dtype=torch.float64,requires_grad=True)
+    label_loss=teacher_blend_objective(beta,tx,labels,originw,originb,labelw,labelb,parent,keep,label_cfg)
+    derivative=torch.autograd.grad(label_loss,beta)[0]
+    losses=[teacher_blend_objective(beta.detach()+sign*1e-5,tx,labels,originw,originb,labelw,labelb,parent,keep,label_cfg) for sign in (1,-1)]
+    assert abs(float((losses[0]-losses[1])/2e-5-derivative))<1e-7
+    assert all(torch.isfinite(v).all() for v in (labelw,labelb,targets))
     print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true,"teacher_logit_recovery_and_blend_gradient":true,"bias_only_gradient":true}')
+    print('{"passed":true,"TRAIN_label_prior_target_and_weighted_blend_gradient":true,"existing_GCV_recipe_reused":true,"no_TEST_derivatives":true}')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'admit-chain', 'terminal10-fit', 'native5150-fit', 'teacher-readout-fit', 'bias-fit', 'selftest'])
+    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'admit-chain', 'terminal10-fit', 'native5150-fit', 'teacher-readout-fit', 'label-ridge-fit', 'bias-fit', 'selftest'])
     for name in ('sequence', 'checkpoint', 'profile', 'out', 'feature-run', 'parent-run'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--depth', type=int, choices=(4,6))
@@ -1029,7 +1076,7 @@ if __name__ == '__main__':
     parser.add_argument('--digest')
     args = parser.parse_args()
     try:
-        selftest() if args.mode == 'selftest' else bias_fit(args) if args.mode=='bias-fit' else teacher_readout_fit(args) if args.mode=='teacher-readout-fit' else terminal10_fit(args) if args.mode in ('terminal10-fit','native5150-fit') else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
+        selftest() if args.mode == 'selftest' else bias_fit(args) if args.mode=='bias-fit' else teacher_readout_fit(args) if args.mode in ('teacher-readout-fit','label-ridge-fit') else terminal10_fit(args) if args.mode in ('terminal10-fit','native5150-fit') else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():
             core.save(args.out/'failure.json', dict(error=repr(error), automatic_retry=False))

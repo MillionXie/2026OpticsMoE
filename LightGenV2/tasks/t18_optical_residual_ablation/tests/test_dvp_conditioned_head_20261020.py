@@ -248,6 +248,23 @@ class ConditionedHeadContract(unittest.TestCase):
                          {k:v for k,v in old.items() if k!='scope'})
         self.assertEqual(cfg['final_targets']['6'],350)
 
+    def test_TRAIN_label_ridge_has_no_test_target_or_new_inference_layer(self):
+        tree=ast.parse(SOURCE.read_text())
+        target=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_label_logits')
+        self.assertEqual([arg.arg for arg in target.args.args],['labels','counts'])
+        self.assertFalse(any('test' in n.id.lower() for n in ast.walk(target) if isinstance(n,ast.Name)))
+        text=ast.unparse(next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='teacher_readout_fit'))
+        self.assertIn("a.mode == 'label-ridge-fit'",text)
+        self.assertIn('a.prefix == a.depth + 1',text)
+        self.assertIn('ridge_logit_readout(x, target_logits)',text)
+        self.assertIn('nonhead_equal(original, state)',text)
+        self.assertIn("dm['source_cache_SHA256']",text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_TRAINlabel_ridge_profile_20261020.json').read_text())
+        self.assertEqual(cfg['target_source'],'TRAIN_smoothed_labels')
+        self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
+        self.assertEqual((cfg['blend_steps'],cfg['blend_lr'],cfg['correct_TRAIN_parent_KL']),(64,.025,.5))
+        self.assertEqual(cfg['final_targets'],{'4':342,'6':350})
+
     def test_L6_alpha_initialization_only_after_complete_prefix7(self):
         tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='shrink_fit')
         gate=next(n for n in ast.walk(method) if isinstance(n,ast.Assert) and 'a.depth == 6' in ast.unparse(n.test))
