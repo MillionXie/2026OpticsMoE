@@ -1,0 +1,23 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_TRAINteacher_from_G1_20261020_L6",
+    "phase_lr": 0.0006,
+    "electronic_lr": 0.0015,
+    "alpha_lr": 0.002,
+    "head_lr": 0.0006,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.25,
+    "teacher_weight": 0.5,
+    "teacher_temperature": 2.0,
+    "teacher_simulated_newest_layers": 1,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 24, "seconds": 600},
+    "target_correct": 322
+  },
+  "TRAIN_teacher_evidence": "capture/2/TRAIN1600_parent_teacher_diagnosis.json",
+  "TRAIN_teacher_evidence_SHA256": "7b609c311ead3cca8cb21da656e9fa6485773a51b2af046617ce42690e8dc2da",
+  "scope": "One finite L6 E2-prefix contrast using the published original TRAIN-only simulate-newest-layer teacher, after primary suffix22epochs/1015fitseconds completed. Exact immutable E2 capture-input PTc2133368577024772fe92fdacd0e14a4898185e4dd1c1e92bec4228c61b5d74e: full1600TRAIN measuredprefix4 router/E1/G1/E2 gave111correct versus independently audited same-checkpoint prefix3 TRAINteacher1456. The diagnostic did not infer TEST or modify model. Student uses all four measured stages; teacher simulates only newest E2 while later G2/E3/G3 remain simulated in both. Use existing G1 recipe coefficients .5/T2, headLR.0006, confusion.25, seed17 and600fitseconds with complete-epoch boundary; no loss implementation, inference-graph, seed or coefficient scan. Only original uncaptured G2/E3/G3 masks and postE2 electronics/direct bounded alpha/original5140head can change. All measured optical producers and incident-producing electronics remain frozen. Separate optimizer from exact capture-input checkpoint, not restart of primary or an in-place replacement. Current same-prefix incumbent231 has independent nativeCPU and frozen/data audit; primary trained-body head candidate is separately preserved and must also finish. Final comparison requires strict originalCPU bestlast, same-prefix data/phase/frozen audit and highest complete native result. Lower baseline19 is not a claimed improvement over incumbent. TEST-informed development selection and class emphasis only, no TEST teacher or gradient, no VALID, SDK, GPU contention, new CCD, calibration or camera change. At most this one diagnostic-supported contrast, do not extend or repeat without new evidence; target322 intermediate and350 final are not guaranteed."
+}
