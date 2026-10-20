@@ -189,7 +189,7 @@ def main():
     global ROOT,PIPE
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--suite',action='store_true')
-    p.add_argument('--session',choices=('original','idle_1049'),default='original')
+    p.add_argument('--session',choices=('original','idle_1049','recovery_1102'),default='original')
     p.add_argument('--model',choices=('qwen','glm','clip','yolo'))
     p.add_argument('--method',choices=('temporal','mps'))
     p.add_argument('--precision',choices=('native','fp32'))
@@ -197,11 +197,17 @@ def main():
     p.add_argument('--batch',type=int);p.add_argument('--deadline',type=float,required=True)
     p.add_argument('--manifest',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT)
     args=p.parse_args()
-    if args.session=='idle_1049':
+    if args.session!='original':
         original=json.loads((ROOT/'suite_status.json').read_text())
         if original.get('completed') or list(ROOT.glob('*/identity.json')):
             raise RuntimeError('New admission only after zero-measurement expired predecessor')
-        ROOT=ROOT/'idle_1049';PIPE=PIPE+'_idle_1049'
+        if args.session=='recovery_1102':
+            failed=ROOT/'idle_1049'
+            state=json.loads((failed/'suite_status.json').read_text())
+            if state['status']!='stopped' or state['completed'] or list(failed.glob('*/*/report.json')):
+                raise RuntimeError('One authorized recovery only; preserve completed points')
+            if Path('/proc/'+str(state['pid'])).exists():raise RuntimeError('Prior suite still alive')
+        ROOT=ROOT/args.session;PIPE=PIPE+'_'+args.session
         if args.output==p.get_default('output'):args.output=ROOT
     args.output=args.output.resolve()
     if not args.output.is_relative_to(ROOT) or os.environ.get('CUDA_VISIBLE_DEVICES')!=frozen.A100_UUID or not 0<args.deadline-time.time()<=7200:raise ValueError('Original physical A100 and finite canonical run')

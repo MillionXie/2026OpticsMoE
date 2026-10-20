@@ -38,4 +38,5 @@ def test_new_idle_admission_preserves_zero_measurement_predecessor():
     text=Path(m.__file__).read_text()
     assert "command.extend(['--session',args.session])" in text
     assert "list(ROOT.glob('*/identity.json'))" in text
-    assert "ROOT=ROOT/'idle_1049'" in text
+    assert "ROOT=ROOT/args.session" in text
+    assert "list(failed.glob('*/*/report.json'))" in text
