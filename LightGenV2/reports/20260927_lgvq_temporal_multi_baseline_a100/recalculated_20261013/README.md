@@ -13,9 +13,9 @@ independent raw-data replay. Historical Qwen B1 is unchanged. The original labor
 measurements retain the two completed CLIP MPS conditions in `recovery_1102`.
 Its failed temporal-control condition remains excluded. The subsequent
 `calibration_1140` completed CLIP temporal control; `duration_1155` has completed
-YOLO's four deployed-precision conditions and is continuing the missing cases.
-At this partial update, eight laboratory conditions have been independently
-audited. Qwen, GLM and laboratory FP32 results remain unavailable until completed.
+YOLO's and Qwen's four deployed-precision conditions and is continuing the missing cases.
+At this partial update, twelve laboratory conditions have been independently
+audited. GLM and laboratory FP32 results remain unavailable until completed.
 
 The existing eight-view workbook now contains the newly audited interval costs.
 Its previous complete-wall version, SHA256
@@ -59,8 +59,8 @@ SRCC references at B1 and higher batches were independently evaluated, not newly
 trained or measured separately at each cap. FP32 does not improve either model's
 SRCC here; its backend and weight expansion are disclosed below.
 
-Machine-readable observations and all 72 currently qualified trial records
-(48 rental, 24 laboratory) are in the new run's `presentation/paired_measurements.csv`
+Machine-readable observations and all 84 currently qualified trial records
+(48 rental, 36 laboratory) are in the new run's `presentation/paired_measurements.csv`
 and `paired_repeats.csv`. Each row binds report, checkpoint, accuracy source, date
 and hashes. All 270 rental files (23,917,130 bytes) were imported from a SHA-bound
 final archive. Eight figure panels use `strict_tf_<method>_<precision>_*` in this
@@ -69,7 +69,7 @@ original report directory; missing conditions are not interpolated.
 ### Laboratory partial results: deployed precision
 
 All values below pool the three complete trials. MPS pairs use B1; temporal pairs
-use fixed B10 for CLIP and B3 for YOLO. These batches are retained in the data,
+use fixed B10 for CLIP and B3 for YOLO and Qwen. These batches are retained in the data,
 not substituted into figure labels. The same charged-interval definition and
 matched power integration are used for every row. The unrestricted CLIP point
 does not reach 98% busy time and is not labelled as near-100% saturation.
@@ -84,6 +84,10 @@ does not reach 98% busy time and is not labelled as near-100% saturation.
 | YOLO11s | MPS | 50% resources | 59.857 | 176.761 | 83.257 | .701597 |
 | YOLO11s | Temporal | Unrestricted | 95.652 | 58.594 | 34.327 | .701594 |
 | YOLO11s | Temporal | Approximately 50% busy | 51.281 | 106.908 | 54.965 | .701594 |
+| Qwen3-VL-2B | MPS | 100% resources | 66.411 | 762.344 | 413.741 | .766343 |
+| Qwen3-VL-2B | MPS | 50% resources | 85.413 | 855.036 | 464.361 | .766343 |
+| Qwen3-VL-2B | Temporal | Unrestricted | 96.354 | 415.542 | 243.490 | .768899 |
+| Qwen3-VL-2B | Temporal | Approximately 50% busy | 50.441 | 784.970 | 398.982 | .768899 |
 
 MPS resource provisioning and NVML busy time are different measured quantities.
 The values above are retained rather than adjusted to an expected trend. No
@@ -93,10 +97,13 @@ strict interval measurements, not the historical Qwen B1 finalized observation.
 ### Methods draft: timing boundary and inter-inference intervals
 
 For each forward pass i, we recorded the model-invocation time a_i, the first
-Transformer-block input time s_i and the synchronized GPU-output time e_i.
-The first-block hook is on the visual encoder's first Transformer block:
-`vision.blocks.0` for DeepSeek-VL2 and `vision_tower.encoder.blocks.0` for Kimi,
-not on the language decoder's first block. Inputs
+native computation-block input time s_i and the synchronized GPU-output time e_i.
+For Transformer models, the hook is on the visual encoder's first Transformer
+block: `vision.blocks.0` for DeepSeek-VL2, `vision_tower.encoder.blocks.0` for Kimi,
+`model.visual.blocks.0` for Qwen and GLM, and `visual.transformer.resblocks.0` for
+CLIP. It is not on the language decoder's first block. For YOLO, the analogous
+boundary is the first native convolutional block, `model.0`; it is not described
+as a Transformer. Inputs
 were prepared and transferred to the GPU before measurement and reused for frozen
 inference. Before recording s_i, all GPUs used by that model were synchronized to
 drain GPU work preceding the first Transformer block. The output timestamp e_i

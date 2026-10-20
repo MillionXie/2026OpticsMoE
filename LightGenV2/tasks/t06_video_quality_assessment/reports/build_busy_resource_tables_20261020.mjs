@@ -23,7 +23,7 @@ try{
 }catch(e){if(e.code!=='ENOENT')throw e;}
 const book=Workbook.create(),views=[],models=['deepseek','kimi','qwen','glm','clip','yolo'];
 const colors={deepseek:'#79502C',kimi:'#D14F64',qwen:'#0072B2',glm:'#9B567C',clip:'#008B70',yolo:'#B17D00'};
-const unavailable=strict?`laboratory ${data.laboratory_status}`:data.laboratory_status==='waiting_expired'?'original A100 unavailable':'pending measurement';
+const unavailable=strict?'No qualified laboratory measurement':data.laboratory_status==='waiting_expired'?'original A100 unavailable':'pending measurement';
 const missingFor=(model,precision)=>strict?(['deepseek','kimi'].includes(model)?'pending rental condition':unavailable):model==='deepseek'&&precision==='fp32'?'capacity exceeds80GB':unavailable;
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const metric of ['time','energy']){
  const name=`${method==='temporal'?'Duty':'MPS'}_${precision==='native'?'Native':'FP32'}_${metric==='time'?'Time':'Energy'}`;
@@ -33,7 +33,7 @@ const raw=book.worksheets.add('Measurements');
 raw.showGridLines=false;
 const windows=book.worksheets.add('Window repeats');windows.showGridLines=false;
 const windowHeaders=['Model','Method','Precision','Condition','Video batch','MPS cap (%)','Visible SMs','Repeat','Elapsed seconds','Video evaluations','Mean board power W','GPU busy (%)','Telemetry samples','First TF monotonic s','Final output monotonic s','Unique videos','Reported time /16 ms','Reported energy /16 J','Report source','Report SHA256','Point acquired ISO8601 (+08:00)','558TEST SRCC development reference','Accuracy reference source','Accuracy report SHA256'];
-if(strict){windowHeaders[8]='Charged TF + intercall seconds';windowHeaders[10]='Integrated used-GPU energy J';windowHeaders[11]='Fixed hot-card busy (%)';windowHeaders[16]='Recomputed time /16 ms';windowHeaders[17]='Recomputed energy /16 J';}
+if(strict){windowHeaders[8]='Charged block + intercall seconds';windowHeaders[10]='Integrated used-GPU energy J';windowHeaders[11]='Fixed hot-card busy (%)';windowHeaders[13]='First block monotonic s';windowHeaders[16]='Recomputed time /16 ms';windowHeaders[17]='Recomputed energy /16 J';}
 windows.getRange('A1:X1').values=[windowHeaders];windows.getRange('A1:X1').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:45,horizontalAlignment:'center'};
 windows.getRange('A:X').format.columnWidth=18;windows.getRange('A:D').format.columnWidth=25;windows.getRange('S:U').format.columnWidth=65;windows.getRange('W:X').format.columnWidth=65;
 windows.freezePanes.freezeRows(1);windows.freezePanes.freezeColumns(4);
@@ -94,7 +94,7 @@ for(const {method,precision,metric,sheet} of views){
  sheet.getRange('A1:M1').format={font:{name:'Arial',size:16,bold:true,color:'#214D68'},rowHeight:34};
  sheet.getRange('A2:M2').merge();sheet.getRange('A2').values=[[`${method==='mps'?'MPS execution-resource provisioning':'Temporal duty control'} / ${precision==='fp32'?'FP32':'original deployed precision'} / ${metric==='time'?'processing time':'estimated energy'}`]];
  sheet.getRange('A2:M2').format={font:{name:'Arial',size:12,color:'#53687A'},rowHeight:28};
- sheet.getRange('A4:M4').merge();sheet.getRange('A4').values=[[strict?'Each first TF → output + output → NEXT model input. Pacing waits are already inside the gaps, not added twice. Each frontend excluded; full-wall NVML busy separate. Three trials;16-video equivalents.':'First TF input → final GPU output; internal waits included, terminal wait excluded. Prepared inputs reused; three full windows.16-video equivalents are throughput-normalized, not a16-video batch.']];
+ sheet.getRange('A4:M4').merge();sheet.getRange('A4').values=[[strict?'First native block → output + output → NEXT model input. Pacing waits are already inside gaps, not added twice. Each frontend excluded; full-wall NVML busy separate. Three trials;16-video equivalents.':'First TF input → final GPU output; internal waits included, terminal wait excluded. Prepared inputs reused; three full windows.16-video equivalents are throughput-normalized, not a16-video batch.']];
  sheet.getRange('A4:M4').format={font:{name:'Arial',size:10,color:'#53687A'},rowHeight:36,wrapText:true};
  sheet.getRange('A5:M5').merge();sheet.getRange('A5').values=[[strict?`${data.rental_count??data.values.length}/16 rental and ${data.laboratory_count??0}/32 laboratory conditions measured. Full558 accuracy references are independent of control windows; missing FP32 accuracy remains unavailable.`:'PARTIAL DATA — measured values only. Independent558-video accuracy references are not fresh restricted-condition accuracy tests.']];
  sheet.getRange('A5:M5').format={font:{name:'Arial',size:10,bold:true,color:'#9C3D10'},rowHeight:28,wrapText:true};

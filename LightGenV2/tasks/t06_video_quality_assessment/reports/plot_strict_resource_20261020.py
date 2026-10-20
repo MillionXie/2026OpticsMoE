@@ -53,8 +53,8 @@ def main():
                              (' · FP32' if precision=='fp32' else ' · deployed precision'),fontsize=7.1)
                 legend=fig.legend(handles=handles,loc='lower center',bbox_to_anchor=(.53,.075),
                                   ncol=2,frameon=False,fontsize=6.1,handlelength=1.4,columnspacing=.8)
-                note=('TF→output + output→next input; frontend excluded.\n'
-                      'Costs normalized to 16 video evaluations.\n'+
+                note=('First block→output + output→next input.\n'
+                      'Frontend excluded; 16-video equivalents.\n'+
                       ('Open: time-limited; filled: unrestricted.' if method=='temporal' else
                        'Open: 50% resource cap; filled: 100% cap.')+
                       '\nLabels: full-wall busy (dual GPU: max card).')
