@@ -166,6 +166,7 @@ def suite(args):
                             '--cap',str(cap),'--batch',str(batch),'--deadline',str(args.deadline),'--manifest',str(args.manifest),'--output',str(output)]
                         # __name__ is __main__ in a CLI execution, so use the package-qualified entry.
                         command[3]=__package__+'.lab_busy_resource_20261020'
+                        command.extend(['--session',args.session])
                         shared.old.write(ROOT/(name+'.command.json'),command)
                         with (ROOT/(name+'.log')).open('x') as log:
                             child=subprocess.Popen(command,cwd=REPO,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -185,15 +186,24 @@ def suite(args):
 
 
 def main():
+    global ROOT,PIPE
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--suite',action='store_true')
+    p.add_argument('--session',choices=('original','idle_1049'),default='original')
     p.add_argument('--model',choices=('qwen','glm','clip','yolo'))
     p.add_argument('--method',choices=('temporal','mps'))
     p.add_argument('--precision',choices=('native','fp32'))
     p.add_argument('--cap',type=int,choices=(50,100),default=100)
     p.add_argument('--batch',type=int);p.add_argument('--deadline',type=float,required=True)
     p.add_argument('--manifest',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT)
-    args=p.parse_args();args.output=args.output.resolve()
+    args=p.parse_args()
+    if args.session=='idle_1049':
+        original=json.loads((ROOT/'suite_status.json').read_text())
+        if original.get('completed') or list(ROOT.glob('*/identity.json')):
+            raise RuntimeError('New admission only after zero-measurement expired predecessor')
+        ROOT=ROOT/'idle_1049';PIPE=PIPE+'_idle_1049'
+        if args.output==p.get_default('output'):args.output=ROOT
+    args.output=args.output.resolve()
     if not args.output.is_relative_to(ROOT) or os.environ.get('CUDA_VISIBLE_DEVICES')!=frozen.A100_UUID or not 0<args.deadline-time.time()<=7200:raise ValueError('Original physical A100 and finite canonical run')
     if args.suite:return suite(args)
     if args.method=='mps' and args.batch!=1:raise ValueError('MPS B1 fixed')

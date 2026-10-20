@@ -32,3 +32,10 @@ def test_exact_entry_and_fp32_policy():
     assert "torch.set_float32_matmul_precision('highest')" in text
     assert 'allow_tf32=False' in text
     assert "args.method=='temporal' and args.batch!=expected" in text
+
+
+def test_new_idle_admission_preserves_zero_measurement_predecessor():
+    text=Path(m.__file__).read_text()
+    assert "command.extend(['--session',args.session])" in text
+    assert "list(ROOT.glob('*/identity.json'))" in text
+    assert "ROOT=ROOT/'idle_1049'" in text
