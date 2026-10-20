@@ -34,11 +34,13 @@ class ResponseRetakeTests(unittest.TestCase):
 
     def test_compound_discloses_actual_last_not_fake_parent_best(self):
         text=(HERE/'lab_caltech20_dvp_response_retake_20261020.py').read_text()
-        self.assertIn("hp['parent_PT_SHA256']==m.sha(mask/'last.pt')",text)
+        self.assertIn("node_protocol['parent_PT_SHA256']==m.sha(mask/'last.pt')",text)
         self.assertIn("actual_initialization_role='mask_last'",text)
         self.assertIn("assembly_optimizer_steps=0",text)
         self.assertIn("hr['selected_correct']>=required_correct(a.depth,prefix)",text)
         self.assertIn("if not k.startswith('linear.')",text)
+        self.assertIn('head_continuation_chain=nodes',text)
+        self.assertIn("range(4)",text)
 
 
 if __name__=='__main__':unittest.main()

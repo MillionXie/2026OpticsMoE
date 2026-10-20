@@ -37,7 +37,7 @@ def TRAIN_capacity(a):
             TRAIN_capacity_correct=int((logits.argmax(1)==labels).sum()),TRAIN_capacity_NLL=float(torch.nn.functional.cross_entropy(logits,labels)),estimator=estimator)
         assert all(torch.equal(v,m.state_cpu(model)[k]) for k,v in state.items())
     old,new=rows['parent'],rows['mask_last']
-    improved=(new['TRAIN_capacity_correct']>old['TRAIN_capacity_correct'] and new['TRAIN_capacity_NLL']<old['TRAIN_capacity_NLL'])
+    improved=(new['TRAIN_capacity_correct']>=old['TRAIN_capacity_correct'] and new['TRAIN_capacity_NLL']<old['TRAIN_capacity_NLL']-1e-4)
     q=dict(passed=True,capacity_improved=improved,rows=rows,TRAIN=1600,TEST_inference=False,VALID=0,new_PT_written=False,
         source_checkpoint_role='last',source_PT_SHA256=m.sha(mask/'last.pt'),parent_PT_SHA256=m.sha(parent/'best.pt'),
         source_report_SHA256=m.sha(mask/'report.json'),source_audit_SHA256=m.sha(mask/'independent_audit.json'),
@@ -59,17 +59,37 @@ def assemble_head_continuation(a):
     torch.set_num_threads(2);old=a.sequence/f'L{a.depth}_strict8pp_20261020';prefix={4:3,6:1}[a.depth]
     rootname='1' if a.depth==4 else 'router'
     mask=old/'fits'/(rootname+'_spatial_response_retrain_20261020')
-    head=old/'fits'/(rootname+'_spatial_last_readout_20261020')
+    endings={'readout':'_spatial_last_readout_20261020','binary':'_spatial_last_binary_20261020','binary_continue':'_spatial_last_binary_continue_20261020'}
+    head=old/'fits'/(rootname+endings[a.head_mode])
     parent=old/'fits'/({4:'1_binary_repaired_20261020',6:'router_binary_repaired_20261020'}[a.depth])
     mr,mp,ma=[m.read(mask/n) for n in ('report.json','protocol.json','independent_audit.json')]
     hr,hp,ha=[m.read(head/n) for n in ('report.json','protocol.json','independent_audit.json')]
     assert ma['passed'] and ha['passed'] and mr['state']==hr['state']=='complete'
     assert ma['report_SHA256']==m.sha(mask/'report.json') and ha['report_SHA256']==m.sha(head/'report.json')
-    assert mp['original_readout_frozen'] and hp['parent_PT_SHA256']==m.sha(mask/'last.pt')==mr['results']['last']['PT_SHA256']
+    assert mp['original_readout_frozen'] and m.sha(mask/'last.pt')==mr['results']['last']['PT_SHA256']
+    nodes=[];current=head
+    for _ in range(4):
+        nr,node_protocol,na=[m.read(current/n) for n in ('report.json','protocol.json','independent_audit.json')]
+        assert nr['state']=='complete' and nr['all_nonhead_frozen'] and na['passed']
+        assert na['report_SHA256']==m.sha(current/'report.json') and na['protocol_SHA256']==m.sha(current/'protocol.json')
+        assert node_protocol['depth']==a.depth and node_protocol['prefix']==prefix and set(node_protocol['allowed_keys'])=={'linear.weight','linear.bias'}
+        assert node_protocol['prefix_SHA256']==mp['prefix_SHA256'] and node_protocol['data_SHA256']==mp['data_SHA256']
+        nodes.append(dict(path=str(current),selected_best_PT_SHA256=m.sha(current/'best.pt'),actual_parent_PT_SHA256=node_protocol['parent_PT_SHA256'],
+            report_SHA256=m.sha(current/'report.json'),audit_SHA256=m.sha(current/'independent_audit.json')))
+        if node_protocol['parent_PT_SHA256']==m.sha(mask/'last.pt'):
+            initial_head_protocol=node_protocol
+            break
+        matches=[]
+        for directory in (old/'fits').iterdir():
+            if (directory/'report.json').exists():
+                info=m.read(directory/'report.json')
+                if info.get('results',{}).get('best',{}).get('PT_SHA256')==node_protocol['parent_PT_SHA256']:matches.append(directory)
+        assert len(matches)==1;current=matches[0]
+    else:raise AssertionError('Bounded head continuation ancestry exceeded')
     evidence=m.read(mask/'TRAIN_capacity.json')
     assert evidence['passed'] and evidence['capacity_improved'] and not evidence['TEST_inference']
-    assert evidence['source_checkpoint_role']=='last' and evidence['source_PT_SHA256']==hp['parent_PT_SHA256']
-    assert hp['config']['TRAIN_capacity_evidence_SHA256']==m.sha(mask/'TRAIN_capacity.json')
+    assert evidence['source_checkpoint_role']=='last' and evidence['source_PT_SHA256']==initial_head_protocol['parent_PT_SHA256']
+    assert initial_head_protocol['config']['TRAIN_capacity_evidence_SHA256']==m.sha(mask/'TRAIN_capacity.json')
     assert mp['parent_PT_SHA256']==m.sha(parent/'best.pt') and hp['prefix']==mp['prefix']==prefix
     assert hr['selected_correct']>=required_correct(a.depth,prefix) and not hr['selected_e0']
     data,dm=m.data_for(a.sequence);fields,identities=m.fields_for(old,prefix,data,dm,m.session_hardware_digest(a.sequence))
@@ -81,6 +101,7 @@ def assemble_head_continuation(a):
     assert set(mp['allowed_keys'])==allowed-{'linear.weight','linear.bias'}
     assert set(hp['allowed_keys'])=={'linear.weight','linear.bias'}
     for state in states.values():
+        assert set(state)==set(origin) and all(state[k].dtype==v.dtype for k,v in origin.items())
         assert all(torch.equal(v,state[k]) for k,v in intermediate.items() if not k.startswith('linear.'))
         assert all(torch.equal(v,state[k]) for k,v in origin.items() if k not in allowed)
     out=old/'fits'/(rootname+'_spatial_response_compound_20261020');assert not out.exists();out.mkdir()
@@ -89,8 +110,9 @@ def assemble_head_continuation(a):
         source_git=m.git_head(),source_SHA256=m.sha(__file__),compound_sequential_workflow=True,assembly_optimizer_steps=0,
         mask_fit=dict(path=str(mask),initial_PT_SHA256=mp['parent_PT_SHA256'],actual_output_role='last',actual_output_PT_SHA256=m.sha(mask/'last.pt'),
                       report_SHA256=m.sha(mask/'report.json'),audit_SHA256=m.sha(mask/'independent_audit.json')),
-        head_fit=dict(path=str(head),actual_initialization_role='mask_last',actual_initialization_PT_SHA256=hp['parent_PT_SHA256'],
+        head_fit=dict(path=str(head),actual_initialization_role='mask_last',actual_initialization_PT_SHA256=initial_head_protocol['parent_PT_SHA256'],
                       selected_role='best',report_SHA256=m.sha(head/'report.json'),audit_SHA256=m.sha(head/'independent_audit.json')),
+        head_continuation_chain=nodes,
         no_new_inference_layer=True,measured_upstream_frozen=True,old_failed_downstream_CCD_used=False)
     m.save(out/'protocol.json',p);results={}
     for role,state in states.items():
@@ -161,6 +183,7 @@ if __name__=='__main__':
     p.add_argument('--depth',type=int,choices=(4,6),required=True)
     p.add_argument('--parent-mode',choices=('trained_best','compound'),default='trained_best')
     p.add_argument('--assemble-head',action='store_true')
+    p.add_argument('--head-mode',choices=('readout','binary','binary_continue'),default='readout')
     p.add_argument('--check-TRAIN-capacity',action='store_true')
     a=p.parse_args();a.attempt=ATTEMPT
     TRAIN_capacity(a) if a.check_TRAIN_capacity else assemble_head_continuation(a) if a.assemble_head else prepare(a)
