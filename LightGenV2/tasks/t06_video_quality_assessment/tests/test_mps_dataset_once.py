@@ -65,5 +65,12 @@ class DatasetOnce(unittest.TestCase):
         self.assertEqual(c['power_limit_w'],400)
         self.assertNotEqual(c['gpu_uuid'],original['gpu_uuid'])
 
+    def test_no_visible_pid_is_not_sufficient_idle_evidence(self):
+        from unittest.mock import patch
+        with patch.object(m.subprocess,'check_output',return_value='43399\n'):
+            with self.assertRaisesRegex(RuntimeError,'remains allocated'):m.validate_idle_memory('gpu')
+        with patch.object(m.subprocess,'check_output',return_value='14\n'):
+            self.assertEqual(m.validate_idle_memory('gpu'),14)
+
 
 if __name__=='__main__':unittest.main()

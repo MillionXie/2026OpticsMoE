@@ -1,6 +1,7 @@
 """Render only the independently replayed cold, distinct-video MPS measurements."""
 from __future__ import annotations
 import csv
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -12,9 +13,9 @@ from matplotlib.lines import Line2D
 REPO=Path(__file__).resolve().parents[4]
 ROOT=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_a100_20261020/presentation'
 OUT=REPO/'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013'
-NAMES=dict(qwen='Qwen3-VL-2B',glm='GLM-4.6V-Flash',clip='CLIP ViT-B/32',yolo='YOLO11s')
-COLORS=dict(qwen='#0072B2',glm='#92527F',clip='#007F63',yolo='#9B7000')
-MARKERS=dict(qwen='o',glm='P',clip='D',yolo='^')
+NAMES=dict(qwen='Qwen3-VL-2B',glm='GLM-4.6V-Flash',clip='CLIP ViT-B/32',yolo='YOLO11s',deepseek='DeepSeek-VL2',kimi='Kimi-VL-A3B')
+COLORS=dict(qwen='#0072B2',glm='#92527F',clip='#007F63',yolo='#9B7000',deepseek='#79502C',kimi='#D14F64')
+MARKERS=dict(qwen='o',glm='P',clip='D',yolo='^',deepseek='s',kimi='v')
 OPTICAL=dict(time16_ms=10.245569591370225,energy16_j=1.1776895097085185,srcc=.7977138739)
 
 
@@ -45,21 +46,25 @@ def panel(ax,points,metric):
     ax.tick_params(direction='out',length=2.5)
     assert all(ax.get_xlim()[0]<x<ax.get_xlim()[1] for x in xs)
     assert all(ymin<y<ymax for y in ys)
-    return dict(plotted_points=len(xs),models=4,connected_pairs=4,x_limits=list(ax.get_xlim()),y_limits=list(ax.get_ylim()))
+    return dict(plotted_points=len(xs),models=len(NAMES),connected_pairs=len(NAMES),x_limits=list(ax.get_xlim()),y_limits=list(ax.get_ylim()))
 
 
 def legends(fig):
     models=[Line2D([],[],marker='*',ls='none',color='#7828A8',label='LightGen-II',markersize=7)]
     models.extend(Line2D([],[],marker=MARKERS[m],ls='-',color=COLORS[m],label=NAMES[m],markersize=4,lw=.8)for m in NAMES)
-    fig.legend(handles=models,loc='lower center',bbox_to_anchor=(.5,.005),ncol=2,frameon=False,columnspacing=1.1,handlelength=1.2)
+    fig.legend(handles=models,loc='lower center',bbox_to_anchor=(.5,.005),ncol=2 if len(NAMES)==4 else 3,frameon=False,columnspacing=.9,handlelength=1.2)
     caps=[Line2D([],[],marker='o',ls='none',color='#58646B',markerfacecolor=fc,label=label,markersize=size)
           for fc,label,size in [('#58646B','100% MPS allocation',4.2),('white','50% MPS allocation',5.6)]]
     fig.legend(handles=caps,loc='upper center',bbox_to_anchor=(.5,1.0),ncol=1,frameon=False,handlelength=1.0,labelspacing=.2)
 
 
 def main():
-    source=ROOT/'dataset_once_audited.json';data=json.loads(source.read_text())
-    assert data['status']=='complete' and len(data['points'])==8 and len(data['repeats'])==24
+    global ROOT,NAMES
+    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');args=p.parse_args()
+    if args.combined:ROOT=ROOT.parent.with_name('lgvq_mps_dataset_once_rental_20261021')/'presentation'
+    else:NAMES={k:v for k,v in NAMES.items() if k not in ('deepseek','kimi')}
+    source=ROOT/('dataset_once_combined.json' if args.combined else 'dataset_once_audited.json');data=json.loads(source.read_text())
+    assert data['status']=='complete' and len(data['points'])==len(NAMES)*2 and len(data['repeats'])==len(NAMES)*6
     optical_source=ROOT.parents[1]/'lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json'
     prior=json.loads(optical_source.read_text())['optical']
     assert (prior['time_ms'],prior['energy_j'],prior['srcc'])==(OPTICAL['time16_ms'],OPTICAL['energy16_j'],OPTICAL['srcc'])
@@ -68,7 +73,16 @@ def main():
                  optical_reference_sha256=digest(optical_source),protocol='dataset_once_legacy_block_plus_nonpreprocessing_gaps_v1',files={},panels=[])
     for metric,kind in [('time16_ms','latency'),('energy16_j','energy')]:
         fig,ax=plt.subplots(figsize=(78/25.4,88/25.4));fig.subplots_adjust(left=.20,right=.97,bottom=.32,top=.84)
-        receipt['panels'].append(panel(ax,points,metric));legends(fig)
+        receipt['panels'].append(panel(ax,points,metric))
+        if args.combined:
+            # Six model names fit legibly in two columns at the existing width.
+            handles=[Line2D([],[],marker='*',ls='none',color='#7828A8',label='LightGen-II',markersize=7)]
+            handles.extend(Line2D([],[],marker=MARKERS[m],ls='-',color=COLORS[m],label=NAMES[m],markersize=4,lw=.8)for m in NAMES)
+            fig.legend(handles=handles,loc='lower center',bbox_to_anchor=(.5,.005),ncol=2,frameon=False,columnspacing=.9,handlelength=1.2)
+            caps=[Line2D([],[],marker='o',ls='none',color='#58646B',markerfacecolor=fc,label=label,markersize=4.2)
+                  for fc,label in [('#58646B','100% MPS allocation'),('white','50% MPS allocation')]]
+            fig.legend(handles=caps,loc='upper center',bbox_to_anchor=(.5,1),frameon=False,labelspacing=.2)
+        else:legends(fig)
         for ext in ('png','svg','pdf'):
             target=OUT/f'mps_dataset_once_comparison_{kind}.{ext}';fig.savefig(target,dpi=600);receipt['files'][target.name]=digest(target)
         plt.close(fig)

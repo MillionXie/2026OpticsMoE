@@ -78,6 +78,14 @@ def write_csv(path,records):
             writer=csv.DictWriter(stream,fieldnames=list(records[0]));writer.writeheader();writer.writerows(records)
 
 
+def validate_idle_memory(gpu):
+    """Invisible host allocations can exist despite an empty container PID list."""
+    raw=subprocess.check_output(['nvidia-smi','--id='+gpu,'--query-gpu=memory.used','--format=csv,noheader,nounits'],text=True)
+    used=float(raw.strip())
+    if used>1024:raise RuntimeError(f'Idle admission failed: {used:g} MiB remains allocated; require provider diagnosis, no reset/kill')
+    return used
+
+
 def runtime(args,guard,identity):
     """Reuse native arithmetic AND original timer, not the resident timing hook."""
     import torch
@@ -229,6 +237,7 @@ def suite(args):
             # Bounded consecutive idle checks, never occupy or stop other users.
             for _ in range(3):
                 if lab.shared.guard_records(frozen.A100_UUID):raise RuntimeError('A100 is no longer idle')
+                validate_idle_memory(frozen.A100_UUID)
                 if time.time()>=args.deadline:raise TimeoutError('Suite deadline')
                 time.sleep(10)
             engine.daemon(True);active=True

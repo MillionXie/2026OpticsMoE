@@ -34,6 +34,7 @@ def audit_point(folder):
     assert identity['first_test_batch_included'] and identity['timer_start_placement'].startswith('legacy first-block host entry')
     assert len(calls)==len(predictions)==558
     manifest=ROOT.parent/'lgvq_strict_tf_rental_dual_20261020/transfer/lgvq_train2250_test558.csv'
+    if not manifest.exists():manifest=Path('/data/lgvq/original_manifest.csv')
     assert sha(manifest)==identity['manifest_sha256']=='607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc'
     expected=[r for r in rows(manifest) if r['split']=='test']
     assert [r['sample_id'] for r in calls]==[r['sample_id'] for r in predictions]==[r['sample_id'] for r in expected]
@@ -88,14 +89,19 @@ def audit_point(folder):
                 checkpoint_sha256=identity['checkpoint_sha256'],parameter_dtypes=identity['floating_parameter_dtypes'],
                 readout_dtypes=identity['quality_readout_dtypes'],source=(folder/'report.json').relative_to(REPO).as_posix(),
                 completed_at_beijing=datetime.fromtimestamp(status['time'],timezone(timedelta(hours=8))).isoformat(),
+                gpu_uuid=identity['gpu_uuid'],gpu_name=identity.get('gpu_name','NVIDIA A100-PCIE-40GB'),
+                power_limit_w=identity.get('power_limit_w',250),
                 source_commit=identity['git_commit'],
                 source_sha256=sha(folder/'report.json'),identity_sha256=sha(folder/'identity.json'))
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--partial',action='store_true');a=p.parse_args()
+    global ROOT
+    p=argparse.ArgumentParser();p.add_argument('--partial',action='store_true');p.add_argument('--rental',action='store_true');a=p.parse_args()
+    models=('deepseek','kimi') if a.rental else ('qwen','glm','clip','yolo')
+    if a.rental:ROOT=ROOT.with_name('lgvq_mps_dataset_once_rental_20261021')
     values=[]
-    for model in ('qwen','glm','clip','yolo'):
+    for model in models:
         for cap in (100,50):
             for repeat in (1,2,3):
                 folder=ROOT/f'{model}_cap{cap}_repeat{repeat:02d}'
@@ -104,7 +110,7 @@ def main():
                     raise RuntimeError('Missing '+str(folder))
                 values.append(audit_point(folder));print('REPLAY_PASS',folder.name,flush=True)
     points=[]
-    for model in ('qwen','glm','clip','yolo'):
+    for model in models:
         for cap in (100,50):
             rr=[r for r in values if (r['model'],r['resource_cap'])==(model,cap)]
             if len(rr)!=3:continue
@@ -117,10 +123,20 @@ def main():
                                srcc=statistics.mean(r['srcc'] for r in rr),
                                srcc_repeats=[r['srcc'] for r in rr],repeats=rr))
     folder=ROOT/'presentation';folder.mkdir(exist_ok=True)
+    complete=len(points)==len(models)*2
     (folder/'dataset_once_audited.json').write_text(json.dumps(dict(
-        status='complete' if len(points)==8 else 'partial',points=points,repeats=values,
+        status='complete' if complete else 'partial',points=points,repeats=values,
         historical_Qwen_B1_unchanged=True,method='three fresh processes; ordered558; first200 cost; no warmup'),indent=2)+'\n')
-    print(json.dumps(dict(points=len(points),repeats=len(values),status='complete' if len(points)==8 else 'partial')))
+    print(json.dumps(dict(points=len(points),repeats=len(values),status='complete' if complete else 'partial')))
+    if a.rental and complete:
+        prior=ROOT.parent/'lgvq_mps_dataset_once_a100_20261020/presentation/dataset_once_audited.json'
+        lab=read(prior);assert lab['status']=='complete' and len(lab['points'])==8 and len(lab['repeats'])==24
+        combined=dict(status='complete',points=lab['points']+points,repeats=lab['repeats']+values,
+                      historical_Qwen_B1_unchanged=True,
+                      sources=[dict(path=prior.relative_to(REPO).as_posix(),sha256=sha(prior)),
+                               dict(path=(folder/'dataset_once_audited.json').relative_to(REPO).as_posix(),sha256=sha(folder/'dataset_once_audited.json'))],
+                      method='Same cold distinct-video boundary; lab40GB250W and rental80GB400W explicitly distinguished')
+        (folder/'dataset_once_combined.json').write_text(json.dumps(combined,indent=2)+'\n')
 
 
 if __name__=='__main__':main()
