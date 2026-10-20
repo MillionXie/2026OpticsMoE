@@ -1,5 +1,19 @@
 # T06 视频质量评价
 
+## 2026-10-21 新租单80GB：补全不同视频MPS的DS/Kimi
+
+用户授权单A100-SXM4-80GB/400W原精度完整版DeepSeek-VL2及Kimi-VL-A3B，
+固定B1、MPS100/50各三fresh process，原序558 TEST/前200成本、零推理预热。
+复用measure_mps_dataset_once的原计时/区间积分，仅新增rental profile及原生runtime
+适配；不重训、不改模型、不混旧驻留重复结果。canonical run为
+runs/simulation/lgvq_mps_dataset_once_rental_20261021；原实验室四模型24轮保持不变。
+GPU UUID以发布config为准，现已只读确认空闲且资产存在；正式启动须两端CPU测试。
+北京时间02:20停止计算、02:30租期到期，预留备份释放、不自动续租。
+包含首原生计算块至GPU输出及输出至下次外部预处理开始，扣除每次外部准备和
+model-call前端；199段内部间隔、338.2W代理一次、50ms原始功率/250ms支持阈值不变。
+新数据逐SHA备份及独立重算后，才扩充原目录Excel/图；40GB/250W与80GB/400W
+平台身份明确分列，不冒称所有模型同一张卡。旧QwenB1定稿保护。
+
 ## 2026-10-21 闭环：不同视频、零预热MPS四模型补测完成
 
 本轮只测实验室40GB/250W A100的Qwen/GLM/CLIP/YOLO，固定B1和原部署精度，

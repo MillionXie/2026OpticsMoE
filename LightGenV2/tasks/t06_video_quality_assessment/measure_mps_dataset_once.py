@@ -31,11 +31,23 @@ REPO=TASK.parents[2]
 CONFIG=TASK/'configs/baselines/mps_dataset_once_20261020.json'
 ROOT=TASK/'runs/simulation/lgvq_mps_dataset_once_a100_20261020'
 PIPE='/DATA/DATA1/guest3/.cache/t06_mps_dataset_once_20261020'
+PROFILE='lab'
+
+
+def select_profile(name):
+    """Published machine profile; never mutate the completed laboratory run."""
+    global PROFILE,CONFIG,ROOT,PIPE
+    PROFILE=name
+    if name=='rental':
+        CONFIG=TASK/'configs/baselines/mps_dataset_once_rental_20261021.json'
+        ROOT=TASK/'runs/simulation/lgvq_mps_dataset_once_rental_20261021'
+        PIPE='/data/tmp/t06_mps_dataset_once_20261021'
+        frozen.A100_UUID=json.loads(CONFIG.read_text())['gpu_uuid']
 
 
 def config():
     c=json.loads(CONFIG.read_text())
-    assert c['models']==['qwen','glm','clip','yolo'] and c['resource_caps']==[100,50]
+    assert c['models']==(['deepseek','kimi'] if PROFILE=='rental' else ['qwen','glm','clip','yolo']) and c['resource_caps']==[100,50]
     assert (c['batch'],c['test_videos'],c['cost_videos'],c['repeats'],c['explicit_warmup_forwards'])==(1,558,200,3,0)
     return c
 
@@ -72,7 +84,25 @@ def runtime(args,guard,identity):
     from . import quality_token_common as core
     from LightGenV2.common.baseline_measurement import FirstBlockTimer
     a=SimpleNamespace(**vars(args));a.baseline=args.model;a.model=args.model_path
-    if args.model=='glm':
+    if args.model in ('deepseek','kimi'):
+        import inspect
+        # Reuse the receipt-bound native arithmetic, without any smoke/warmup.
+        a.model=args.model;a.precision='native';a.dual_fp32=False;a.gpu_uuid=frozen.A100_UUID
+        defer=SimpleNamespace(bind=lambda:None)
+        model,processor,prompt,first,transfer,compute=engine.base.runtime(a,defer,identity)
+        head=inspect.getclosurevars(compute).nonlocals['head']
+        rows=[r for r in engine.base.old.rows() if r['split']=='test']
+        prepare=lambda selected:engine.base.prior.prepare_batch(args.model,selected,processor,prompt)
+        timer=FirstBlockTimer(first)
+        def forward(inputs):
+            timer.reset();output,native=compute(inputs);timing=timer.finish()
+            return output.detach().cpu().tolist(),timing['host_ms'],timing['cuda_ms']
+        def start():return timer._state['host_started']
+        assets=identity['assets']
+        def finish_all():
+            timer.close()
+            if engine.base.old.verify_assets(Path('/data/models')/args.model)!=assets:raise RuntimeError('Assets changed')
+    elif args.model=='glm':
         model,head,prepare,transfer,compute,_,finish=uniform.special_runtime(a)
         rows=[r for r in core.read_manifest(args.manifest) if r['split']=='test']
         timer=FirstBlockTimer(model.model.visual.blocks[0])
@@ -91,7 +121,8 @@ def runtime(args,guard,identity):
             for handle in handles:handle.remove()
             if costs.model_hashes(args.model_path)!=assets:raise RuntimeError('Assets changed')
     if len(rows)!=558 or len({r['sample_id'] for r in rows})!=558:raise RuntimeError('Original558 unique TEST required')
-    if frozen.sha256(args.checkpoint)!=costs.CHECKPOINTS[args.model]:raise RuntimeError('Exact frozen head differs')
+    expected=identity['checkpoint_sha256'] if PROFILE=='rental' else costs.CHECKPOINTS[args.model]
+    if frozen.sha256(args.checkpoint)!=expected:raise RuntimeError('Exact frozen head differs')
     if any(p.requires_grad for m in (model,head) for p in m.parameters()):raise RuntimeError('Weights must be frozen')
     identity.update(assets=assets,checkpoint_sha256=frozen.sha256(args.checkpoint),
                     floating_parameter_dtypes=sorted({str(p.dtype) for p in model.parameters() if p.is_floating_point()}),
@@ -106,7 +137,7 @@ def worker(args):
     from . import quality_token_common as core
     c=config();engine.GPU=frozen.A100_UUID;engine.PIPE=PIPE;engine.ROOT=ROOT
     if args.output.exists():raise RuntimeError('Preserve prior worker evidence')
-    if args.model!='glm':
+    if args.model not in ('glm','deepseek','kimi'):
         pre=SimpleNamespace(**vars(args));pre.baseline=args.model;pre.model=args.model_path
         frozen.preflight_files(pre)
     if os.environ.get('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE')!=str(args.cap):raise RuntimeError('Set MPS cap before CUDA')
@@ -128,13 +159,14 @@ def worker(args):
         if abs(identity['clock_offset_s'])>1e-4:raise RuntimeError('Legacy perf and observer monotonic clocks differ')
         if identity['manifest_sha256']!=frozen.MANIFEST_SHA:raise RuntimeError('Original split SHA required')
         limit=float(subprocess.check_output(['nvidia-smi','--id='+frozen.A100_UUID,'--query-gpu=power.limit','--format=csv,noheader,nounits'],text=True))
-        if abs(limit-250)>.1:raise RuntimeError('Do not change250W power cap')
+        if abs(limit-c['power_limit_w'])>.1:raise RuntimeError('Do not change original platform power cap')
         status('loading')
         with torch.inference_mode():
             rows,prepare,transfer,forward,start,finish=runtime(args,guard,identity)
             visible=torch.cuda.get_device_properties(0).multi_processor_count
             if visible!=(108 if args.cap==100 else 54):raise RuntimeError('MPS allocation not effective')
-            identity.update(visible_multiprocessors=visible,head_and_backbone_frozen=True)
+            identity.update(visible_multiprocessors=visible,head_and_backbone_frozen=True,
+                            gpu_name=torch.cuda.get_device_name(0),power_limit_w=limit,execution_profile=PROFILE)
             frozen.write_json(args.output/'identity.json',identity)
             sampler=ProcessTelemetrySampler(frozen.A100_UUID,args.output/'telemetry_stdout.jsonl')
             sampler.start();sampler.set_phase('dataset_once_no_warmup')
@@ -201,16 +233,22 @@ def suite(args):
                 time.sleep(10)
             engine.daemon(True);active=True
             for model in config()['models']:
-                mp,pt,python,receipt=lab.locations(model)
+                if PROFILE=='rental':
+                    mp=Path('/data/models')/model
+                    pt=engine.base.old.RUN/model/'train/best_checkpoint.pt'
+                    python=f'/data/venvs/{model}/bin/python';receipt=None
+                else:mp,pt,python,receipt=lab.locations(model)
                 for cap in (100,50):
                     for repeat in (1,2,3):
                         if time.time()>=args.deadline-120:raise TimeoutError('No time for another worker')
                         name=f'{model}_cap{cap}_repeat{repeat:02d}';output=ROOT/name
                         env=dict(os.environ,CUDA_VISIBLE_DEVICES=frozen.A100_UUID,CUDA_MPS_PIPE_DIRECTORY=PIPE,
-                                 CUDA_MPS_ACTIVE_THREAD_PERCENTAGE=str(cap),OMP_NUM_THREADS='8')
+                                 CUDA_MPS_ACTIVE_THREAD_PERCENTAGE=str(cap),OMP_NUM_THREADS='8',
+                                 HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HOME='/data/cache')
                         command=[python,'-u','-m',__package__+'.measure_mps_dataset_once','--phase','worker',
                                  '--model',model,'--cap',str(cap),'--repeat',str(repeat),'--model-path',str(mp),
-                                 '--checkpoint',str(pt),'--manifest',str(args.manifest),'--output',str(output),'--deadline',str(args.deadline)]
+                                 '--checkpoint',str(pt),'--manifest',str(args.manifest),'--output',str(output),'--deadline',str(args.deadline),
+                                 '--profile',PROFILE]
                         if receipt:command.extend(['--reproduction-receipt',str(receipt)])
                         with (ROOT/(name+'.log')).open('x') as log:
                             child=subprocess.Popen(command,cwd=REPO,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
@@ -231,11 +269,12 @@ def suite(args):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--phase',choices=('suite','worker'),required=True)
-    p.add_argument('--model',choices=('qwen','glm','clip','yolo'));p.add_argument('--cap',type=int,choices=(100,50))
+    p.add_argument('--profile',choices=('lab','rental'),default='lab')
+    p.add_argument('--model',choices=('qwen','glm','clip','yolo','deepseek','kimi'));p.add_argument('--cap',type=int,choices=(100,50))
     p.add_argument('--repeat',type=int,choices=(1,2,3));p.add_argument('--model-path',type=Path)
     p.add_argument('--checkpoint',type=Path);p.add_argument('--reproduction-receipt',type=Path)
     p.add_argument('--manifest',type=Path,required=True);p.add_argument('--output',type=Path)
-    p.add_argument('--deadline',type=float,required=True);a=p.parse_args()
+    p.add_argument('--deadline',type=float,required=True);a=p.parse_args();select_profile(a.profile)
     if a.phase=='suite':suite(a)
     else:worker(a)
 

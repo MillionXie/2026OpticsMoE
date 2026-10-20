@@ -54,5 +54,16 @@ class DatasetOnce(unittest.TestCase):
         self.assertFalse(any(isinstance(n,ast.Call) and isinstance(n.func,ast.Name)
                              and n.func.id in ('warm','warmup') for n in ast.walk(worker)))
 
+    def test_rental_profile_has_same_boundary_but_separate_run(self):
+        import json
+        c=json.loads((m.TASK/'configs/baselines/mps_dataset_once_rental_20261021.json').read_text())
+        original=m.config()
+        for field in ('batch','test_videos','cost_videos','repeats','timing_protocol',
+                      'included','excluded','explicit_warmup_forwards','host_proxy_w'):
+            self.assertEqual(c[field],original[field])
+        self.assertEqual(c['models'],['deepseek','kimi'])
+        self.assertEqual(c['power_limit_w'],400)
+        self.assertNotEqual(c['gpu_uuid'],original['gpu_uuid'])
+
 
 if __name__=='__main__':unittest.main()
