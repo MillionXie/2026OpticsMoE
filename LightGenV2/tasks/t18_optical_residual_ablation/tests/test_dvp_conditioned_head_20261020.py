@@ -294,6 +294,18 @@ class ConditionedHeadContract(unittest.TestCase):
                          {k:v for k,v in old.items() if k!='scope'})
         self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
 
+    def test_optical_diagnosis_never_trains_or_changes_hardware(self):
+        source=(TASK/'lab_caltech20_dvp_TRAIN_optical_diagnosis_20261020.py').read_text()
+        for token in ('Camera.open','.backward(','.cuda(',"'test',begin",'model.load_state_dict','torch.save'):
+            self.assertNotIn(token,source)
+        for token in ('phase_response_field','field_agreement','canonical_input_exact=True','phase_BMP_exact=True',
+                      'TEST_inference=False','new_CCD=0','original_PT_unchanged=True'):
+            self.assertIn(token,source)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_TRAIN_optical_probe_profile_20261020.json').read_text())
+        self.assertEqual((cfg['TRAIN_records'],cfg['TRAIN_each_class'],cfg['batch']),(40,2,8))
+        self.assertEqual([(r['scale'],r['gamma']) for r in cfg['counterfactuals']],[(1.,1.),(.8,1.),(1.2,1.),(1.,.8),(1.,1.2)])
+        self.assertEqual(len(cfg['core_source_SHA256']),64)
+
     def test_L6_alpha_initialization_only_after_complete_prefix7(self):
         tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='shrink_fit')
         gate=next(n for n in ast.walk(method) if isinstance(n,ast.Assert) and 'a.depth == 6' in ast.unparse(n.test))
