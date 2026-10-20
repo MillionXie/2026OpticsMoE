@@ -48,5 +48,20 @@ class ResponseRetakeTests(unittest.TestCase):
         self.assertIn('digest=check_score(r,a.depth,prefix)',text)
         self.assertIn("assert not r['selected_e0']",text)
 
+    def test_same_parent_revalidation_requires_large_paired_TRAIN_drift(self):
+        source=(HERE/'lab_caltech20_dvp_response_retake_20261020.py').read_text();tree=ast.parse(source)
+        node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='response_drift_admitted');scope={}
+        exec(compile(ast.Module(body=[node],type_ignores=[]),'<drift>','exec'),scope);admit=scope['response_drift_admitted']
+        self.assertTrue(admit(dict(correct=15,nll=1.14),dict(correct=2,nll=5.46),dict(correct=2,nll=4.96)))
+        self.assertFalse(admit(dict(correct=20,nll=.011),dict(correct=14,nll=.952),dict(correct=15,nll=.780)))
+        self.assertFalse(admit(dict(correct=15,nll=1.14),dict(correct=2,nll=5.46),dict(correct=14,nll=1.15)))
+        drift=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='check_TRAIN_drift')
+        text=ast.unparse(drift)
+        self.assertNotIn("['test']",text)
+        self.assertIn("['train']",text)
+        self.assertIn('assert a.depth == 4',text)
+        self.assertIn("receipt['canonical_SHA256'] == old_receipt['canonical_SHA256']",text)
+        self.assertIn("receipt['phase_SHA256']",text)
+
 
 if __name__=='__main__':unittest.main()

@@ -9,6 +9,66 @@ from pathlib import Path
 ATTEMPT='response_20261020'
 
 
+def response_drift_admitted(old,new_before,new_after):
+    """Paired TRAIN diagnostic, not a new TEST score or a relaxed layer gate."""
+    return (old['correct']-max(new_before['correct'],new_after['correct'])>=5
+            and min(new_before['nll'],new_after['nll'])>old['nll']+1.)
+
+
+def check_TRAIN_drift(a):
+    """Independently replay unchanged old/new nominal TRAIN observations."""
+    import torch
+    import numpy as np
+    from PIL import Image
+    import lab_caltech20_dvp_layerwise_20261019 as m
+    assert a.depth==4,'Only the physically evidenced L4 drift is admitted here'
+    torch.set_num_threads(2);session=a.sequence/'L4_strict8pp_20261020'
+    probes=a.sequence/'TRAIN_response_verification_desktop_20261020'
+    target=probes/'TRAIN_response_revalidation_admission.json';assert not target.exists()
+    report,proof=[m.read(probes/n) for n in ('report.json','independent_audit.json')]
+    assert report['state']=='complete' and proof['passed'] and proof['report_SHA256']==m.sha(probes/'report.json')
+    assert not report['TEST_used'] and report['SDK_released'] and report['hardware_unchanged']
+    assert all(m.sha(path)==digest for path,digest in report['protected'].items())
+    stability=m.read(a.sequence/'TRAIN_response_fit_20261020/stability.json')
+    assert stability['passed'] and next(row for row in stability['depths'] if row['depth']==4)['within_connection_repeat_passed']
+    data,dm=m.data_for(a.sequence);labels=data['train'][1][:20];assert labels.tolist()==list(range(20))
+    fields,identities=m.fields_for(session,4,data,dm,m.session_hardware_digest(a.sequence))
+    incumbent=session/'fits/2_Huber_continue_repaired_20261020';ir,ia=[m.read(incumbent/n) for n in ('report.json','independent_audit.json')]
+    assert ia['passed'] and ia['report_SHA256']==m.sha(incumbent/'report.json')
+    model,_=m.model_for(incumbent/'best.pt',ir['results']['best']['PT_SHA256'],4,session/'source_reference.ts')
+    original=m.state_cpu(model);capture=session/'capture/2';cr=m.read(capture/'report.json');scores={};crop_proof=[]
+    for role in ('old','nominal_before','nominal_after'):
+        crops=[]
+        for i in range(20):
+            old_receipt=m.read(capture/'train'/f'{i:06d}.json')
+            assert old_receipt['sample_id']==str(data['train'][2][i])
+            if role=='old':crop=np.asarray(fields['2']['train'][i]).copy()
+            else:
+                receipt=m.read(probes/'L4'/f'{role}_{i:02d}.json');path=probes/'L4'/f'{role}_{i:02d}.png'
+                assert receipt['sample_id']==old_receipt['sample_id'] and receipt['canonical_SHA256']==old_receipt['canonical_SHA256']
+                assert receipt['source_capture_phase_SHA256']==cr['phase_SHA256']==receipt['phase_SHA256']
+                assert receipt['crop_SHA256']==m.sha(path)
+                crop=np.asarray(Image.open(path)).copy();crop_proof.append(dict(condition=role,index=i,crop_SHA256=m.sha(path),receipt_SHA256=m.sha(probes/'L4'/f'{role}_{i:02d}.json')))
+            crops.append(crop)
+        crops=np.stack(crops);parts=[]
+        with torch.no_grad():
+            for begin in range(0,20,4):
+                ix=np.arange(begin,begin+4);model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()) for k,v in fields.items()}
+                model.measured['2']=torch.from_numpy(crops[ix].copy())
+                parts.append(model(m.encode_images(data['train'][0][ix]))[0].numpy())
+        p=np.concatenate(parts);scores[role]=dict(correct=int((p.argmax(1)==labels).sum()),nll=float(-np.log(p[np.arange(20),labels].clip(1e-12)).mean()))
+    assert all(torch.equal(value,m.state_cpu(model)[key]) for key,value in original.items())
+    admitted=response_drift_admitted(scores['old'],scores['nominal_before'],scores['nominal_after'])
+    q=dict(passed=True,depth=4,failed_stage='2',TRAIN=20,TEST_inference=False,VALID=0,SDK_used=False,new_PT_written=False,
+        response_revalidation_admitted=admitted,scores=scores,identical_canonical_inputs_and_nominal_phase=True,
+        current_connection_repeat_passed=True,all_hardware_and_LUT_SHA_unchanged=True,crop_proof=crop_proof,
+        data_SHA256=dm['sha256'],prefix_SHA256=identities,incumbent_PT_SHA256=m.sha(incumbent/'best.pt'),
+        source_capture_report_SHA256=m.sha(capture/'report.json'),probe_report_SHA256=m.sha(probes/'report.json'),
+        probe_audit_SHA256=m.sha(probes/'independent_audit.json'),source_git=m.git_head(),source_SHA256=m.sha(__file__),
+        scope='Evidence-based one fresh L4 failed-stage capture under current stable response, using the unchanged already-native-passed input parent. Not a new trained-mask claim, blind same-PT retry, hardware correction, or next-layer gate bypass. All old data preserved.')
+    m.save(target,q);print(m.json.dumps({k:v for k,v in q.items() if k not in ('prefix_SHA256','crop_proof')}))
+
+
 def TRAIN_capacity(a):
     """One fixed published readout estimator, TRAIN only, no new checkpoint."""
     import torch
@@ -147,8 +207,16 @@ def prepare(a):
     assert not m.LOCK.exists()
     old=a.sequence/f'L{a.depth}_strict8pp_20261020'
     prefix={4:3,6:1}[a.depth];stage={4:'2',6:'0'}[a.depth]
-    ending={'compound':'_spatial_response_compound_20261020','trained_best':'_spatial_response_retrain_20261020','native_anchor':'_spatial_native_anchor_20261021'}[a.parent_mode]
-    name=('1' if a.depth==4 else 'router')+ending
+    ending={'compound':'_spatial_response_compound_20261020','trained_best':'_spatial_response_retrain_20261020','native_anchor':'_spatial_native_anchor_20261021'}
+    if a.parent_mode=='response_revalidation':
+        assert a.depth==4
+        driftpath=a.sequence/'TRAIN_response_verification_desktop_20261020/TRAIN_response_revalidation_admission.json';drift=m.read(driftpath)
+        assert drift['passed'] and drift['response_revalidation_admitted'] and not drift['TEST_inference']
+        assert drift['source_SHA256']==m.sha(__file__) and drift['depth']==4 and drift['failed_stage']=='2'
+        assert drift['source_capture_report_SHA256']==m.sha(old/'capture/2/report.json')
+        assert drift['probe_report_SHA256']==m.sha(driftpath.parent/'report.json') and drift['probe_audit_SHA256']==m.sha(driftpath.parent/'independent_audit.json')
+        name='1_binary_repaired_20261020'
+    else:name=('1' if a.depth==4 else 'router')+ending[a.parent_mode]
     prior=old/'fits'/name;r=m.read(prior/'report.json');p=m.read(prior/'protocol.json')
     audit=m.read(prior/'independent_audit.json')
     digest=check_score(r,a.depth,prefix)
@@ -157,6 +225,8 @@ def prepare(a):
     assert audit['protocol_SHA256']==m.sha(prior/'protocol.json') and audit['selected_correct']==r['selected_correct']
     data,dm=m.data_for(a.sequence);hardware=m.session_hardware_digest(a.sequence)
     fields,identities=m.fields_for(old,prefix,data,dm,hardware)
+    if a.parent_mode=='response_revalidation':
+        assert drift['data_SHA256']==dm['sha256'] and all(drift['prefix_SHA256'][k]==v for k,v in identities.items())
     assert p['prefix']==prefix and p['prefix_SHA256']==identities and p['data_SHA256']==dm['sha256']
     previous=(['router']+[str(i) for i in range(a.depth)])[prefix-1]
     chain=m.validate_fit_ancestry(old,name,digest,prefix,m.read(old/'capture'/previous/'report.json')['PT_SHA256'],identities,dm['sha256'])
@@ -179,6 +249,8 @@ def prepare(a):
         preserved_old_failed_stage=str(old/'capture'/stage),failed_stage_CCD_reused=False,
         data_SHA256=dm['sha256'],hardware_SHA256=hardware,prefix_SHA256=identities,
         parent_fit=prior.name,parent_PT_SHA256=digest,parent_audit_SHA256=m.sha(prior/'independent_audit.json'),
+        response_revalidation=a.parent_mode=='response_revalidation',
+        TRAIN_response_revalidation_admission_SHA256=m.sha(driftpath) if a.parent_mode=='response_revalidation' else None,
         source_git=m.git_head(),source_SHA256=m.sha(__file__),engineering_copy=False,immutable_artifact_links=True))
     m.save(session/'prepared.json',dict(passed=True,reuse_manifest_SHA256=m.sha(session/'reuse_manifest.json'),
         first_retake=stage,source_git=m.git_head(),no_automatic_next_layer=True))
@@ -189,9 +261,10 @@ def prepare(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path,required=True)
     p.add_argument('--depth',type=int,choices=(4,6),required=True)
-    p.add_argument('--parent-mode',choices=('trained_best','compound','native_anchor'),default='trained_best')
+    p.add_argument('--parent-mode',choices=('trained_best','compound','native_anchor','response_revalidation'),default='trained_best')
     p.add_argument('--assemble-head',action='store_true')
     p.add_argument('--head-mode',choices=('readout','binary','binary_continue'),default='readout')
     p.add_argument('--check-TRAIN-capacity',action='store_true')
+    p.add_argument('--check-TRAIN-drift',action='store_true')
     a=p.parse_args();a.attempt=ATTEMPT
-    TRAIN_capacity(a) if a.check_TRAIN_capacity else assemble_head_continuation(a) if a.assemble_head else prepare(a)
+    check_TRAIN_drift(a) if a.check_TRAIN_drift else TRAIN_capacity(a) if a.check_TRAIN_capacity else assemble_head_continuation(a) if a.assemble_head else prepare(a)
