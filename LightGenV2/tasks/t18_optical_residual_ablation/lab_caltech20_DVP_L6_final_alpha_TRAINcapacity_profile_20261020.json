@@ -1,0 +1,11 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "temperature_steps":25,"maximum_fit_seconds":180,
+  "targets":{"4":314,"6":322},"final_targets":{"4":342,"6":350},
+  "TRAIN_supported_alpha_initialization":0.4001001,
+  "TRAIN_supported_alpha_key":"fusion_logits.5",
+  "TRAIN_capacity_evidence":"fits/5_capturePT_shrinkage_20261020/TRAIN1600_readout_capacity_alpha5.json",
+  "TRAIN_capacity_evidence_SHA256":"1f4ab0b4035f7171c833ed8244dcce61bf094dc19abc14e08387acd186f1fdc5",
+  "scope":"One finite original final-L6 alpha5 initialization and same5140 Linear shrinkage readout contrast supported by complete actual-prefix7 TRAIN1600 only. All seven physical stages1600TRAIN+411TEST independently audited, SDK released. Immutable source57992e5c32276eb22c884948635da7dd2cdeff73fd1e6cb5c328c5fc17667b76: current alpha5=.95 gives TRAIN547/1600 and fitted NLL2.32555585; the existing original allowed endpoint.4001001 gives730/1600 and NLL1.96918079. Both TRAIN criteria improve; no TEST forward or gradient was used to choose this initialization. This is TRAIN fitting capacity, not generalization, a physical diagnosis, or an accuracy guarantee. Original directF64 alpha bounds(.4001,.95] unchanged; no sigmoid conversion, new layer, upstream update, CCD, SDK or GPU. All measured incident producers and optical tensors frozen bitwise. Fresh native actual-prefix7 features required; never reuse the old alpha feature bank. At most25 TRAIN-only temperature steps/180fitseconds, exact full411 original-native bestlast/frozen audit, original full parent fallback if no development gain. Separate global best201/411 from original-head continuation is retained and must be beaten for adoption; lower164 parent is not the global comparison. No seed/coefficient/alpha grid or automatic repeat. TEST-informed development only, noVALID. CPU2 threads."
+}
