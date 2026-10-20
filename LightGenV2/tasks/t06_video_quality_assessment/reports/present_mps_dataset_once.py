@@ -4,6 +4,7 @@ import csv
 import argparse
 import hashlib
 import json
+import shutil
 from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')
@@ -60,11 +61,21 @@ def legends(fig):
 
 def main():
     global ROOT,NAMES
-    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');args=p.parse_args()
-    if args.combined:ROOT=ROOT.parent.with_name('lgvq_mps_dataset_once_rental_20261021')/'presentation'
+    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');args=p.parse_args()
+    if args.combined:ROOT=ROOT.parent.with_name('lgvq_mps_dataset_once_rental_20261021'+('_replacement02' if args.replacement02 else ''))/'presentation'
     else:NAMES={k:v for k,v in NAMES.items() if k not in ('deepseek','kimi')}
     source=ROOT/('dataset_once_combined.json' if args.combined else 'dataset_once_audited.json');data=json.loads(source.read_text())
     assert data['status']=='complete' and len(data['points'])==len(NAMES)*2 and len(data['repeats'])==len(NAMES)*6
+    if args.combined:
+        previous_receipt=ROOT.parents[1]/'lgvq_mps_dataset_once_a100_20261020/presentation/figure_receipt.json'
+        previous=json.loads(previous_receipt.read_text())
+        for name,expected in previous['files'].items():
+            target=OUT/name
+            if not target.exists():continue
+            actual=digest(target)
+            if actual!=expected:raise RuntimeError('Existing export changed externally; preserve '+name)
+            archive=ROOT/(target.stem+'_prior_'+actual[:12]+target.suffix)
+            if not archive.exists():shutil.copy2(target,archive)
     optical_source=ROOT.parents[1]/'lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json'
     prior=json.loads(optical_source.read_text())['optical']
     assert (prior['time_ms'],prior['energy_j'],prior['srcc'])==(OPTICAL['time16_ms'],OPTICAL['energy16_j'],OPTICAL['srcc'])

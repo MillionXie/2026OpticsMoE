@@ -97,9 +97,11 @@ def audit_point(folder):
 
 def main():
     global ROOT
-    p=argparse.ArgumentParser();p.add_argument('--partial',action='store_true');p.add_argument('--rental',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--partial',action='store_true');p.add_argument('--rental',action='store_true')
+    p.add_argument('--replacement02',action='store_true');a=p.parse_args()
+    if a.replacement02:a.rental=True
     models=('deepseek','kimi') if a.rental else ('qwen','glm','clip','yolo')
-    if a.rental:ROOT=ROOT.with_name('lgvq_mps_dataset_once_rental_20261021')
+    if a.rental:ROOT=ROOT.with_name('lgvq_mps_dataset_once_rental_20261021'+('_replacement02' if a.replacement02 else ''))
     values=[]
     for model in models:
         for cap in (100,50):

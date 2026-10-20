@@ -36,20 +36,26 @@ for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])
 
 async function buildDatasetOnce(){
  const repo=process.cwd();
- const root=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_a100_20261020/presentation');
- const source=path.join(root,'dataset_once_audited.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
- if(data.status!=='complete'||data.points.length!==8||data.repeats.length!==24)throw Error('All24 audited distinct-video repeats are required');
+ const combined=process.argv.includes('--combined');
+ const labRoot=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_a100_20261020/presentation');
+ const root=combined?path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_rental_20261021_replacement02/presentation'):labRoot;
+ const source=path.join(root,combined?'dataset_once_combined.json':'dataset_once_audited.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
+ const points=combined?12:8,trials=points*3,last=8+points,lastTrial=1+trials,opticalRow=lastTrial+4,notesRow=last+4;
+ if(data.status!=='complete'||data.points.length!==points||data.repeats.length!==trials)throw Error('All audited distinct-video repeats are required');
  const outdir=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
  const output=path.join(outdir,'LGVQ_MPS_dataset_once_comparison.xlsx');
  const opticalSource=path.join(root,'../../lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json');
  const optical=JSON.parse(await fs.readFile(opticalSource,'utf8')).optical;
  if(optical.time_ms!==10.245569591370225||optical.energy_j!==1.1776895097085185||optical.srcc!==.7977138739)throw Error('Prior optical reference changed');
  const receiptPath=path.join(root,'dataset_once_workbook_receipt.json');
- try{const prior=await fs.readFile(output),receipt=JSON.parse(await fs.readFile(receiptPath,'utf8'));if(crypto.createHash('sha256').update(prior).digest('hex')!==receipt.sha256)throw Error('Workbook changed externally; preserve edits');}
+ try{const prior=await fs.readFile(output);let receipt;try{receipt=JSON.parse(await fs.readFile(receiptPath,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;receipt=JSON.parse(await fs.readFile(path.join(labRoot,'dataset_once_workbook_receipt.json'),'utf8'));}const digest=crypto.createHash('sha256').update(prior).digest('hex');if(digest!==receipt.sha256)throw Error('Workbook changed externally; preserve edits');try{await fs.copyFile(output,path.join(root,'prior_workbook_'+digest+'.xlsx'),1);}catch(e){if(e.code!=='EEXIST')throw e;}}
  catch(e){if(e.code!=='ENOENT')throw e;try{await fs.access(output);throw Error('Unidentified existing workbook');}catch(x){if(x.code!=='ENOENT')throw x;}}
- const book=Workbook.create(),s=book.worksheets.add('Plot data'),t=book.worksheets.add('Trial data');
- const names={qwen:'Qwen3-VL-2B',glm:'GLM-4.6V-Flash',clip:'CLIP ViT-B/32',yolo:'YOLO11s'};
- const colors={qwen:'#0072B2',glm:'#92527F',clip:'#007F63',yolo:'#9B7000'};
+ let book,imported=true;try{book=await SpreadsheetFile.importXlsx(await FileBlob.load(output));}catch(e){if(e.code!=='ENOENT')throw e;book=Workbook.create();imported=false;}
+ const s=imported?book.worksheets.getItem('Plot data'):book.worksheets.add('Plot data'),t=imported?book.worksheets.getItem('Trial data'):book.worksheets.add('Trial data');
+ for(const sh of [s,t])sh.getUsedRange().clear({applyTo:'contents'});
+ if(combined){t.getRange('A28:D29').clear({applyTo:'formats'});t.getRange('P28:Q29').clear({applyTo:'formats'});}
+ const names={qwen:'Qwen3-VL-2B',glm:'GLM-4.6V-Flash',clip:'CLIP ViT-B/32',yolo:'YOLO11s',deepseek:'DeepSeek-VL2',kimi:'Kimi-VL-A3B'};
+ const colors={qwen:'#0072B2',glm:'#92527F',clip:'#007F63',yolo:'#9B7000',deepseek:'#79502C',kimi:'#D14F64'};
  for(const sh of [s,t]){sh.showGridLines=false;sh.getRange('A1:R40').format.font={name:'Arial',size:10,color:'#263747'};sh.getRange('A1:R40').format.verticalAlignment='center';}
  s.tabColor='#214D68';s.getRange('A2').values=[['LGVQ temporal quality: cold, distinct-video MPS comparison']];s.getRange('A2').format.font={name:'Arial',size:14,bold:true,color:'#214D68'};
  s.getRange('A4').values=[['B=1. Three fresh processes. No inference warmup. First 200 distinct videos for costs; 558 for SRCC.']];
@@ -71,7 +77,7 @@ async function buildDatasetOnce(){
    t.getRange(`A${tr}:U${tr}`).format.rowHeight=25;t.getRange(`A${tr}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};indices.push(tr++);
   }
   const r=9+i,cols=c=>indices.map(n=>`'Trial data'!${c}${n}`).join(',');
-  s.getRange(`A${r}:K${r}`).values=[[names[p.model],p.resource_cap/100,null,null,null,null,null,null,null,3,['qwen','glm'].includes(p.model)?'BF16; FP32 readout':p.model==='clip'?'FP16 autocast; FP32 readout (mixed parameters)':'FP16 autocast; FP32 parameters/readout']];
+  s.getRange(`A${r}:K${r}`).values=[[names[p.model],p.resource_cap/100,null,null,null,null,null,null,null,3,['qwen','glm','deepseek','kimi'].includes(p.model)?'BF16; FP32 readout':p.model==='clip'?'FP16 autocast; FP32 readout (mixed parameters)':'FP16 autocast; FP32 parameters/readout']];
   s.getRange(`C${r}:I${r}`).formulas=[[`=AVERAGE(${cols('J')})`,`=(SUM(${cols('E')})+SUM(${cols('F')}))*16000/SUM(${cols('I')})`,`=SUMPRODUCT('Trial data'!M${indices[0]}:M${indices[2]},'Trial data'!I${indices[0]}:I${indices[2]})/SUM(${cols('I')})`,`=D${r}/$D$8`,`=E${r}/$E$8`,`=SUM(${cols('E')})*16000/SUM(${cols('I')})`,`=SUM(${cols('F')})*16000/SUM(${cols('I')})`]];
   s.getRange(`A${r}:K${r}`).format={fill:Math.floor(i/2)%2===0?'#F1F5F8':'#FFFFFF',rowHeight:34};s.getRange(`A${r}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};bindings.push({p,r});
  }
@@ -81,36 +87,36 @@ async function buildDatasetOnce(){
   'All 200 cold videos and 199 internal gaps are retained. Terminal post-output handling is excluded.',
   'Energy integrates raw board power over the same charged intervals. The 338.2 W host proxy is added once.',
   'Legacy first-block hook is unchanged; pending asynchronous frontend work is not newly drained.',
-  'DS/Kimi resident-repeat observations are excluded from this new distinct-video comparison.',
+  combined?'DS/Kimi: rented A100-SXM4-80GB /400W. Other models: laboratory A100-PCIE-40GB /250W.':'DS/Kimi resident-repeat observations are excluded from this new distinct-video comparison.',
   'Optical values retain the prior component-cost reference; they are not a new matched wall-clock run.',
   'Historical Qwen B1: 1188.386146 ms, 462.113401 J, SRCC 0.7663428037. Preserved; not plotted as this run.',
   'Raw wall-window busy includes excluded preprocessing. Board energy uses driver-averaged NVML samples.',
   'The first native block is a Transformer block for Qwen/GLM/CLIP; YOLO starts at its first convolution.',
   'Frozen preselected heads. TEST development metrics, no validation split, no new checkpoint selection.'
  ];
- notes.forEach((text,i)=>{s.getRange('A'+(20+i)).values=[[text]];s.getRange(`A${20+i}:K${20+i}`).format.rowHeight=23;});
+ notes.forEach((text,i)=>{s.getRange('A'+(notesRow+i)).values=[[text]];s.getRange(`A${notesRow+i}:K${notesRow+i}`).format.rowHeight=23;});
  s.getRange('A:A').format.columnWidth=26;s.getRange('B:J').format.columnWidth=18;s.getRange('K:K').format.columnWidth=43;
- s.getRange('K9:K16').format.wrapText=true;
- s.getRange('J9:J16').format.horizontalAlignment='center';
- s.getRange('B9:B16').setNumberFormat('0%');s.getRange('C8:C16').setNumberFormat('0.000000');s.getRange('D8:E16').setNumberFormat('#,##0.000');s.getRange('F8:G16').setNumberFormat('0.00"×"');s.getRange('H9:I16').setNumberFormat('0.000');s.getRange('J9:J16').setNumberFormat('0');
- t.getRange('A:A').format.columnWidth=25;t.getRange('B:O').format.columnWidth=20;t.getRange('P:W').format.columnWidth=78;t.getRange('P2:W25').format.wrapText=true;t.getRange('P2:W25').format.rowHeight=54;
- t.getRange('S2:W29').format.font={name:'Arial',size:10,color:'#263747'};
- t.getRange('A1:W29').format.verticalAlignment='center';t.getRange('V2:V25').setNumberFormat('yyyy-mm-dd hh:mm:ss');
- t.getRange('E2:M25').setNumberFormat('0.000000');for(const c of ['C','D','I','N'])t.getRange(`${c}2:${c}25`).setNumberFormat('0');for(const c of ['B','O'])t.getRange(`${c}2:${c}25`).setNumberFormat('0.00%');t.freezePanes.freezeRows(1);t.freezePanes.freezeColumns(2);
- t.getRange('A28:D29').values=[['Reference','Time /16 (ms)','Energy /16 (J)','SRCC'],['LightGen-II',optical.time_ms,optical.energy_j,optical.srcc]];
- t.getRange('P28:Q29').values=[['Optical reference source','Optical reference SHA256'],[path.relative(repo,opticalSource).replaceAll('\\','/'),crypto.createHash('sha256').update(await fs.readFile(opticalSource)).digest('hex')]];
- for(const range of ['A28:D28','P28:Q28'])t.getRange(range).format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:32,wrapText:true};
- t.getRange('P29:Q29').format={wrapText:true,rowHeight:54};t.getRange('B29:D29').setNumberFormat('0.000000');
- s.getRange('C8:E8').formulas=[["='Trial data'!D29","='Trial data'!B29","='Trial data'!C29"]];
+ s.getRange(`K9:K${last}`).format.wrapText=true;
+ s.getRange(`J9:J${last}`).format.horizontalAlignment='center';
+ s.getRange(`B9:B${last}`).setNumberFormat('0%');s.getRange(`C8:C${last}`).setNumberFormat('0.000000');s.getRange(`D8:E${last}`).setNumberFormat('#,##0.000');s.getRange(`F8:G${last}`).setNumberFormat('0.00"×"');s.getRange(`H9:I${last}`).setNumberFormat('0.000');s.getRange(`J9:J${last}`).setNumberFormat('0');
+ t.getRange('A:A').format.columnWidth=25;t.getRange('B:O').format.columnWidth=20;t.getRange('P:W').format.columnWidth=78;t.getRange(`P2:W${lastTrial}`).format.wrapText=true;t.getRange(`P2:W${lastTrial}`).format.rowHeight=54;
+ t.getRange(`S2:W${opticalRow}`).format.font={name:'Arial',size:10,color:'#263747'};
+ t.getRange(`A1:W${opticalRow}`).format.verticalAlignment='center';t.getRange(`V2:V${lastTrial}`).setNumberFormat('yyyy-mm-dd hh:mm:ss');
+ t.getRange(`E2:M${lastTrial}`).setNumberFormat('0.000000');for(const c of ['C','D','I','N'])t.getRange(`${c}2:${c}${lastTrial}`).setNumberFormat('0');for(const c of ['B','O'])t.getRange(`${c}2:${c}${lastTrial}`).setNumberFormat('0.00%');t.freezePanes.freezeRows(1);t.freezePanes.freezeColumns(2);
+ t.getRange(`A${opticalRow-1}:D${opticalRow}`).values=[['Reference','Time /16 (ms)','Energy /16 (J)','SRCC'],['LightGen-II',optical.time_ms,optical.energy_j,optical.srcc]];
+ t.getRange(`P${opticalRow-1}:Q${opticalRow}`).values=[['Optical reference source','Optical reference SHA256'],[path.relative(repo,opticalSource).replaceAll('\\','/'),crypto.createHash('sha256').update(await fs.readFile(opticalSource)).digest('hex')]];
+ for(const range of [`A${opticalRow-1}:D${opticalRow-1}`,`P${opticalRow-1}:Q${opticalRow-1}`])t.getRange(range).format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:32,wrapText:true};
+ t.getRange(`P${opticalRow}:Q${opticalRow}`).format={wrapText:true,rowHeight:54};t.getRange(`B${opticalRow}:D${opticalRow}`).setNumberFormat('0.000000');
+ s.getRange('C8:E8').formulas=[[`='Trial data'!D${opticalRow}`,`='Trial data'!B${opticalRow}`,`='Trial data'!C${opticalRow}`]];
  function verify(w){const ss=w.worksheets.getItem('Plot data');for(const {p,r}of bindings)for(const [c,k]of [['C','srcc'],['D','time16_ms'],['E','energy16_j']])if(Math.abs(ss.getRange(c+r).values[0][0]-p[k])>1e-7)throw Error('Mismatch '+c+r);}
  book.recalculate();verify(book);const before=t.getRange('E2').values[0][0];t.getRange('E2').values=[[before*1.01]];book.recalculate();if(s.getRange('D9').values[0][0]===data.points[0].time16_ms)throw Error('Recalculation failed');t.getRange('E2').values=[[before]];book.recalculate();verify(book);
  const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1200})).ndjson;if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
  console.log((await book.inspect({kind:'table',range:'Plot data!A7:K10',include:'values,formulas',tableMaxRows:4,tableMaxCols:11,maxChars:2300})).ndjson);
- for(const [sheetName,range,name]of [['Plot data','A1:K31','dataset_once_summary'],['Trial data','A1:O8','dataset_once_trials'],['Trial data','P1:Q4','dataset_once_sources'],['Trial data','R1:U4','dataset_once_identities'],['Trial data','V1:W4','dataset_once_dates'],['Trial data','A28:D29','dataset_once_optical'],['Trial data','P28:Q29','dataset_once_optical_source']]){if(process.argv.includes('--format-fix')&&!['dataset_once_summary','dataset_once_identities','dataset_once_dates'].includes(name))continue;const blob=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await blob.arrayBuffer()));}
+ for(const [sheetName,range,name]of [['Plot data',`A1:K${notesRow+10}`,'dataset_once_summary'],['Trial data','A1:O8','dataset_once_trials'],['Trial data','P1:Q4','dataset_once_sources'],['Trial data','R1:U4','dataset_once_identities'],['Trial data','V1:W4','dataset_once_dates'],['Trial data',`A${opticalRow-1}:D${opticalRow}`,'dataset_once_optical'],['Trial data',`P${opticalRow-1}:Q${opticalRow}`,'dataset_once_optical_source'],...(combined?[['Trial data','A26:O37','dataset_once_rental_trials'],['Trial data','P26:W28','dataset_once_rental_sources']]:[])]){if(process.argv.includes('--format-fix')&&!['dataset_once_summary','dataset_once_identities','dataset_once_dates'].includes(name))continue;const blob=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await blob.arrayBuffer()));}
  await(await SpreadsheetFile.exportXlsx(book)).save(output);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(output)));
- await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),conditions:8,repeats:24,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
+ await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),conditions:points,repeats:trials,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
  try{await fs.rename(output+'.inspect.ndjson',path.join(root,'dataset_once_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
- console.log(JSON.stringify({file:output,conditions:8,repeats:24}));
+ console.log(JSON.stringify({file:output,conditions:points,repeats:trials}));
 }
 const raw=book.worksheets.add('Measurements');
 raw.showGridLines=false;
