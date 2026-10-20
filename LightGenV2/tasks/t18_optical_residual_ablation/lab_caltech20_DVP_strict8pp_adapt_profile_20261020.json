@@ -1,0 +1,19 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_name_suffix": "_strict8pp_20261020",
+    "phase_lr": 0.0006,
+    "electronic_lr": 0.0015,
+    "alpha_lr": 0.002,
+    "head_lr": 0.0015,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.5,
+    "teacher_weight": 0,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 60, "seconds": 1800},
+    "final_fit": {"epochs": 120, "seconds": 2400}
+  },
+  "scope": "20261020 new explicit user instruction supersedes ALL finite-budget carry exceptions: every intermediate stage requires native411 TEST>=314/322 for L4/L6 before next hardware stage; final>=342/350. Finite fit exhaustion is STOP_AND_DIAGNOSE, never permission to continue. Fresh G1 onward L4, fresh router onward L6; verified passed L4 router/E1 kept immutable. Original masks/electronics/direct alpha/head only; no model expansion, TEST gradient, VALID, scheduler, automatic retry or old suffix CCD reuse. Budget increase gives original suffix training up to60 full epochs/1800fit seconds with exact frozen prefix, not an accuracy guarantee. Stage-specific final1pp config required at the last stage."
+}

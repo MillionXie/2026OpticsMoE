@@ -1,5 +1,42 @@
 # Latest residual experimental order: fresh DVP L4 -> L6 (L2 frozen)
 
+## 2026-10-20 explicit superseding instruction: HARD per-stage accuracy gate
+
+User now requires every stage to pass before the next physical stage; accuracy
+has priority over speed. This supersedes ALL older finite-budget-carry exceptions
+below, including legacy carry_p reviews and the G1 mid10 exception. Intermediate
+full411 native TEST development minima are L4>=314 and L6>=322 (fixed346/354
+reference minus8pp, rounded upward). Final minima remain342/350 (minus1pp).
+Failure to meet a target is STOP_AND_DIAGNOSE, not permission for the next layer.
+Goals are hard admission conditions, not a promise that optimization will succeed.
+
+New attempt namespaces are `L4_strict8pp_20261020` / `L6_strict8pp_20261020`
+inside the SAME existing20261020 hardware run. No engineering copy, branch,
+worktree, removal, changed coordinates/settings/LUTs or alternate physical graph.
+L4 preserves independently audited passed router/E1 arrays and their exact314
+parent lineage through immutable hard links and a reuse manifest. Fresh acquisition
+starts G1. L6 starts a fresh router; its previous318 did not pass322. Older complete
+suffix CCD, PTs, predictions and negative results remain unchanged in old namespaces.
+
+`lab_caltech20_dvp_strict_retake_20261020.py` prepares one explicit namespace and
+one explicit physical stage at a time. Its gate AND the core strict-attempt capture
+gate require actual native411 counts, frozen proof, parent ancestry and independent
+audit. They cannot be waived by legacy Boolean flags, completion, or exhausted fit
+budget. No automatic next layer, recurrent monitor or blind retry. At each stage,
+TRAIN1600 (1508 originals+92 fixed augmentations) then TEST411 continuously, noVALID.
+One SDK only. Schedule L4G1 capture, then start original suffix fitting; while that
+fit is running, L6router may acquire on CPU with the same SDK released by L4. Start
+GPU fits only while SDK is free; do not change already measured upstream, or use
+the wrong mask's CCD. If resources or native audits disagree, stop and diagnose.
+
+The first original suffix fit uses `lab_caltech20_DVP_strict8pp_adapt_profile_20261020.json`:
+same existing loss/LRs/schema, middle maximum60full epochs/1800fit seconds, native
+assessment every epoch, best/last and all sample predictions saved. A failed finite
+segment prompts targeted diagnosis/another explicitly reviewed method, NEVER a
+lowered threshold or endless repetition. Final profile retains separate1pp target.
+TEST diagnostic/selection is development leakage; noTEST gradients and noVALID.
+No claim that rephotographing unchanged masks alone fixes the earlier discrepancy.
+
 ## New small-camera authorization, 2026-10-19 (supersedes offline-only scope)
 
 ### E2 capture audited; diagnose weak readout before further G2 capture

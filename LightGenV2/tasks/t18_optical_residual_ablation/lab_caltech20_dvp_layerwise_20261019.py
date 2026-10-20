@@ -38,6 +38,13 @@ HARDWARE='3b89d610d939141dec9c5d0955f23765454cd7e7bebfe1c92c5e64e5376713ae'
 def read(path):return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
+def session_for(a):
+    """Optional run namespace; never change the depth or physical model."""
+    attempt=getattr(a,'attempt',None)
+    assert attempt is None or attempt=='strict8pp_20261020','Unreviewed attempt namespace'
+    return a.sequence/(f'L{a.depth}'+('_'+attempt if attempt else ''))
+
+
 def session_hardware_digest(sequence):
     """A changed coordinate file is a fresh explicit session, never an old-prefix patch."""
     sequence=Path(sequence);identity=sequence/'hardware_identity.json'
@@ -197,7 +204,7 @@ def prepare_fixed_hardware(a):
     assert a.capture_policy and not a.out.exists() and sha(a.checkpoint)==a.digest
     base_digest=session_hardware_digest(a.sequence);base=a.sequence/'calibration/admission/admitted_hardware.json';assert sha(base)==base_digest
     hardware=read(base);cfg=read(a.capture_policy);hardware['exposure_us']=cfg['exposure_us'];validate_capture_policy(a.capture_policy,hardware,a.sequence)
-    data,dm=data_for(a.sequence);session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(a.stage)
+    data,dm=data_for(a.sequence);session=session_for(a);prefix=(['router']+[str(k) for k in range(a.depth)]).index(a.stage)
     previous,identities=fields_for(session,prefix,data,dm,base_digest) if prefix else ({},{})
     model,_=model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');x,n,end=padded(data,'train',0);packet={}
     def collect(stage,amplitude,phase,ids):
@@ -212,7 +219,7 @@ def prepare_fixed_hardware(a):
 @torch.no_grad()
 def admit_stage(a):
     from lab_caltech20_dvp_stage_exposure_20261019 import calibration
-    cfg=read(a.profile);torch.set_num_threads(2);data,dm=data_for(a.sequence);session=a.sequence/f'L{a.depth}';stages=['router']+[str(k) for k in range(a.depth)];prefix=stages.index(a.stage)
+    cfg=read(a.profile);torch.set_num_threads(2);data,dm=data_for(a.sequence);session=session_for(a);stages=['router']+[str(k) for k in range(a.depth)];prefix=stages.index(a.stage)
     assert sha(a.checkpoint)==a.digest;model,_=model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');previous,identities=fields_for(session,prefix,data,dm,HARDWARE) if prefix else ({},{})
     packet=dict(stage=a.stage,PT_SHA256=a.digest,data_SHA256=dm['sha256'],prefix_SHA256=identities,source_git=git_head(),layerwise_source_SHA256=sha(__file__),records=[],inputs={});phase_pixels=None
     for begin in range(0,cfg['TRAIN_probe_samples'],8):
@@ -249,7 +256,7 @@ def assess(model,data,fields,role):
 
 
 def gate(a,data,dm,spec):
-    session=a.sequence/f'L{a.depth}';out=session/'lab_gate.json';assert not out.exists();session.mkdir(exist_ok=True)
+    session=session_for(a);out=session/'lab_gate.json';assert not out.exists();session.mkdir(exist_ok=True)
     checkpoint=Path(spec['initial']);assert sha(checkpoint)==spec['PT_SHA256'];reference=Path(spec['reference']);assert sha(reference)==spec['reference_SHA256']
     # Exact immutable finalized simulation artifacts only; never an adapted old-camera PT.
     shutil.copy2(checkpoint,session/'initial.pt');shutil.copy2(reference,session/'source_reference.ts')
@@ -389,13 +396,18 @@ def shared_geometry_check(bench,folder,hardware,warp):
 @torch.no_grad()
 def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router=False):
     import cv2
-    base_digest=session_hardware_digest(a.sequence);session=a.sequence/f'L{a.depth}';prefix=(['router']+[str(k) for k in range(a.depth)]).index(stage)
+    base_digest=session_hardware_digest(a.sequence);session=session_for(a);prefix=(['router']+[str(k) for k in range(a.depth)]).index(stage)
     previous,identities=fields_for(session,prefix,data,dm,base_digest) if prefix else ({},{})
     ancestry=[]
     if prefix:
         prior_stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1]
         parent_name=getattr(a,'parent_fit',None) or prior_stage
         ancestry=validate_fit_ancestry(session,parent_name,digest,prefix,read(session/'capture'/prior_stage/'report.json')['PT_SHA256'],identities,dm['sha256'])
+        if getattr(a,'attempt',None):
+            from lab_caltech20_dvp_strict_retake_20261020 import check_score
+            parent=session/'fits'/parent_name
+            assert read(parent/'independent_audit.json')['passed']
+            assert check_score(read(parent/'report.json'),a.depth,prefix)==digest
     model,_=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');drive=np.asarray(read(hardware['response_lut'])['drive'],np.uint8)
     out=session/'router_pilot24' if pilot else session/'capture'/stage;reused=None;hardware_digest=sha(a.hardware_manifest) if getattr(a,'hardware_manifest',None) else base_digest
     if out.exists() and getattr(a,'archive_empty_start',False):
@@ -562,11 +574,11 @@ def acquire(a,stage,checkpoint,digest,data,dm,hardware,pilot=False,resume_router
 
 
 def fitting_model(a,data,dm,checkpoint,digest,prefix):
-    session=a.sequence/f'L{a.depth}';model,transfer=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');fields,identities=fields_for(session,prefix,data,dm,session_hardware_digest(a.sequence));return model,transfer,fields,identities
+    session=session_for(a);model,transfer=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');fields,identities=fields_for(session,prefix,data,dm,session_hardware_digest(a.sequence));return model,transfer,fields,identities
 
 
 def fit(a,data,dm,checkpoint,digest,prefix,cfg):
-    session=a.sequence/f'L{a.depth}';stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1];out=session/'fits'/(stage+cfg.get('fit_name_suffix',''));assert not out.exists() and not LOCK.exists();out.mkdir(parents=True)
+    session=session_for(a);stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1];out=session/'fits'/(stage+cfg.get('fit_name_suffix',''));assert not out.exists() and not LOCK.exists();out.mkdir(parents=True)
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and torch.cuda.is_available() and 'A100' not in torch.cuda.get_device_name(0)
     # Caller has already released SDK. Reject any non-desktop foreign GPU user.
     from lab_caltech20_rich_tail_refine_20261018 import windows_process_names
@@ -627,7 +639,7 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
 
 def capture_worker(a,cfg,stage,checkpoint,digest,pilot=False,resume_router=False):
     """One SDK lifetime per fresh desktop child; no automatic hardware retry."""
-    log=a.sequence/f'L{a.depth}'/(('router_pilot24' if pilot else 'capture_'+stage)+'_worker.log')
+    log=session_for(a)/(('router_pilot24' if pilot else 'capture_'+stage)+'_worker.log')
     assert not log.exists() and not LOCK.exists()
     command=[sys.executable,str(Path(__file__).resolve()),'--mode','capture','--sequence',str(a.sequence),'--profile',str(a.profile),'--depth',str(a.depth),'--stage',stage,'--checkpoint',str(checkpoint),'--digest',digest]
     if pilot:command.append('--pilot')
@@ -696,7 +708,9 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','fixed-hardware','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');p.add_argument('--recheck-before-capture',action='store_true');p.add_argument('--archive-empty-start',action='store_true');p.add_argument('--capture-policy',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','fixed-hardware','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');p.add_argument('--recheck-before-capture',action='store_true');p.add_argument('--archive-empty-start',action='store_true');p.add_argument('--capture-policy',type=Path)
+    p.add_argument('--attempt',choices=('strict8pp_20261020',));a=p.parse_args()
+    assert not a.attempt or a.mode in ('capture','refine','fixed-hardware'), 'Explicit stages only; no legacy automatic chaining in a strict attempt'
     try:
         if a.mode=='selftest':selftest()
         elif a.mode=='fixed-hardware':prepare_fixed_hardware(a)
