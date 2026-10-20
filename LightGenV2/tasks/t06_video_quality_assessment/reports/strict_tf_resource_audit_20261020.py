@@ -13,6 +13,7 @@ from . import precision_comparison_20261019 as common
 
 REPO=common.REPO;TASK=common.TASK
 ROOT=TASK/'runs/simulation/lgvq_strict_tf_rental_dual_20261020'
+LAB_ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/'per_forward_first_block_plus_internal_wait_v1'/'recovery_1102'
 PROTOCOL='per_forward_first_block_plus_internal_wait_v1'
 ACCOUNTING='per_forward_tf_plus_output_to_next_input_v2'
 NAMES={'deepseek':'DeepSeek-VL2','kimi':'Kimi-VL-A3B','qwen':'Qwen3-VL-2B','glm':'GLM-4.6V-Flash','clip':'CLIP ViT-B/32','yolo':'YOLO11s'}
@@ -21,6 +22,11 @@ NAMES={'deepseek':'DeepSeek-VL2','kimi':'Kimi-VL-A3B','qwen':'Qwen3-VL-2B','glm'
 def read(p):return json.loads(p.read_text())
 def rows(p):return list(csv.DictReader(p.open(newline='',encoding='utf-8-sig')))
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+def frame_positions(record):
+    raw=record.get('frame_positions',record.get('selected_frame_positions'))
+    assert raw is not None
+    frames=json.loads(raw)
+    return frames[0] if len(frames)==1 and isinstance(frames[0],list) else frames
 def close(a,b):
     if not math.isclose(float(a),float(b),abs_tol=1e-7,rel_tol=1e-10):raise AssertionError((a,b))
 
@@ -59,15 +65,30 @@ def check(point,condition):
     assert report['every_preblock_interval_excluded'] and report['internal_wait_included'] and report['terminal_wait_excluded']
     assert report['individually_synchronized_forwards'] and report['cost_intervals_are_not_contiguous_wall_window']
     assert len(report['repeats'])==3 and identity['timing_protocol']==PROTOCOL
-    assert read(point/'boundary_smoke.json')['status']=='passed'
+    laboratory='gpu_uuids' not in identity
+    if not laboratory:assert read(point/'boundary_smoke.json')['status']=='passed'
     for name,digest in identity['sources'].items():
         blob=subprocess.check_output(['git','show',identity['git_commit']+':'+name.replace('\\','/')],cwd=REPO)
         assert hashlib.sha256(blob).hexdigest()==digest
-    if identity['precision']=='fp32':assert identity['parameter_dtypes']==['torch.float32']
-    devices=identity['gpu_uuids'];sms=identity['visible_multiprocessors']
-    if identity['method']=='mps':assert sms==[108 if identity['cap']==100 else 54]*len(devices)
-    assert identity['parameter_devices']==['cuda:0','cuda:1'] if len(devices)==2 else identity['parameter_devices']==['cuda:0']
+    if identity['precision']=='fp32':assert identity.get('parameter_dtypes',identity.get('floating_parameter_dtypes'))==['torch.float32']
+    devices=[identity['gpu_uuid']] if laboratory else identity['gpu_uuids']
+    sms=[identity['visible_multiprocessors']] if laboratory else identity['visible_multiprocessors']
+    if identity['method']=='mps':
+        expected=(108 if identity['cap']==100 else 54) if not laboratory else (108 if identity['cap']==100 else 54)
+        assert sms==[expected]*len(devices)
+    if not laboratory:
+        assert identity['parameter_devices']==['cuda:0','cuda:1'] if len(devices)==2 else identity['parameter_devices']==['cuda:0']
     if len(devices)==2:assert identity['model']=='deepseek' and identity['precision']=='fp32'
+    process_events=read(point/'process_audit.json');assert process_events
+    own=str(identity['pid']);seen_own=False
+    for event in process_events:
+        allowed_pids={own}|{str(v) for v in event.get('servers',[])}
+        assert {str(v) for v in event.get('clients',[])}<={own}
+        for row in event['processes']:
+            assert str(row[0]).strip() in allowed_pids
+            assert str(row[1]).strip() in devices
+            seen_own|=str(row[0]).strip()==own
+    assert seen_own
     calls=rows(folder/'calls.csv');waits=rows(folder/'waits.csv')
     streams=[]
     for i,gpu in enumerate(devices):
@@ -75,7 +96,7 @@ def check(point,condition):
         raw=rows(folder/f'telemetry{suffix}.csv');events=[json.loads(s) for s in (folder/f'telemetry{suffix}_stdout.jsonl').read_text().splitlines()]
         assert raw and len(raw)==len(events) and all(e['valid_numeric_row'] for e in events)
         assert all(math.isfinite(float(v['watts'])) and float(v['watts'])>0 and 0<=float(v['utilization_percent'])<=100 for v in raw)
-        clocks=rows(folder/f'clock_telemetry{suffix}.csv');assert clocks and all(float(v['power_limit_w'])==400 for v in clocks)
+        clocks=rows(folder/f'clock_telemetry{suffix}.csv');assert clocks and all(float(v['power_limit_w'])==(250 if laboratory else 400) for v in clocks)
         streams.append(raw)
     repeats=[]
     for r in report['repeats']:
@@ -140,11 +161,15 @@ def check(point,condition):
         batch=identity['batch'],resource_cap=identity['cap'] if identity['method']=='mps' else None,visible_sms=' + '.join(map(str,sms)),
         gpu_count=len(devices),gpu_uuids=devices,hot_gpu_index=hot,per_gpu_busy_percent=per_gpu,busy_percent=max(per_gpu),
         allocation_average_busy_percent=statistics.mean(per_gpu),repeats=repeats,time16_ms=elapsed*16000/videos,energy16_j=energy*16/videos,
+        frozen_duty=report['frozen_duty'],
+        interval_mean_board_power_w=sum(r['gpu_energy_j'] for r in repeats)/elapsed,
+        per_gpu_interval_mean_board_power_w=[sum(r['per_gpu_board_energy_j'][i] for r in repeats)/elapsed for i in range(len(devices))],
         accounting_protocol=ACCOUNTING,
         measured_at=datetime.fromtimestamp(float(acquired),timezone(timedelta(hours=8))).isoformat(),
         checkpoint_sha256=identity['checkpoint_sha256'],assets=identity['assets'],
-        model_parameters=identity['original_parameters'],
-        platform=f'{len(devices)} × A100-SXM4-80GB /400W per used GPU',source=(folder/'report.json').relative_to(REPO).as_posix(),
+        model_parameters=identity.get('original_parameters'),
+        first_block_module={'deepseek':'vision.blocks.0','kimi':'vision_tower.encoder.blocks.0','qwen':'model.visual.blocks.0','glm':'model.visual.blocks.0','clip':'visual.transformer.resblocks.0','yolo':'model.0'}[identity['model']],
+        platform='A100-PCIE-40GB /250W' if laboratory else f'{len(devices)} × A100-SXM4-80GB /400W per used GPU',source=(folder/'report.json').relative_to(REPO).as_posix(),
         source_sha256=sha(folder/'report.json'),status='measured' if report['target50_reached'] is not False else 'outside50±5pp',
         accuracy_note='No fresh accuracy in resident cost window; reference is separately identified.')
 
@@ -162,8 +187,7 @@ def verify_accuracy(path,head_sha):
     for record,expected in zip(raw,original):
         assert record['sample_id']==expected['sample_id']
         close(record['target_mos'],expected['temporal'])
-        frames=json.loads(record['frame_positions'])
-        if len(frames)==1 and isinstance(frames[0],list):frames=frames[0]
+        frames=frame_positions(record)
         assert len(frames)==4 and frames==sorted(frames)
     y=np.array([float(r['target_mos']) for r in raw]);p=np.array([float(r['prediction']) for r in raw])
     assert np.isfinite(y).all() and np.isfinite(p).all()
@@ -179,7 +203,7 @@ def verify_accuracy(path,head_sha):
 
 def main():
     points=[]
-    for root in (ROOT,ROOT/'attempt02'):
+    for root in (ROOT,ROOT/'attempt02',ROOT/'native_tail01',ROOT/'native_tail02',LAB_ROOT):
         if not root.exists():continue
         for folder in root.iterdir():
             if not folder.is_dir() or not (folder/'identity.json').exists() or not (folder/'status.json').exists():continue
@@ -204,17 +228,38 @@ def main():
             if r.get('batch') and r.get('srcc') is not None:
                 refs[('deepseek' if r['baseline']=='full' else r['baseline'],r['batch'])]=r.get('accuracy_source') or r.get('cost_source')
     for p in points:
-        if p['precision']=='native':path=REPO/refs[(p['model'],p['batch'])]
+        if p['precision']=='native':path=[REPO/s.strip() for s in refs[(p['model'],p['batch'])].split(';')]
         elif p['model']=='kimi':path=TASK/'runs/simulation/lgvq_busy_resource_20261020/accuracy_kimi_fp32_batch1/evaluation/report.json'
-        else:path=next((root/'mps_deepseek_fp32_100/accuracy558/report.json' for root in (ROOT/'attempt02',ROOT) if (root/'mps_deepseek_fp32_100/accuracy558/report.json').exists()),None)
-        if path is not None and path.exists():p.update(verify_accuracy(path,p['checkpoint_sha256']))
+        elif p['model']=='deepseek':path=next((root/'mps_deepseek_fp32_100/accuracy558/report.json' for root in (ROOT/'attempt02',ROOT) if (root/'mps_deepseek_fp32_100/accuracy558/report.json').exists()),None)
+        else:path=None
+        paths=path if isinstance(path,list) else ([path] if path is not None else [])
+        if paths:
+            if p['precision']=='native':assert all(v.exists() for v in paths),paths
+            if not all(v.exists() for v in paths):continue
+            verified=[verify_accuracy(v,p['checkpoint_sha256']) for v in paths]
+            p.update(verified[0]);p['srcc_reference']=statistics.mean(v['srcc_reference'] for v in verified)
+            p['accuracy_reference_count']=len(verified)
+            for field in ('accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256'):
+                p[field]='; '.join(v[field] for v in verified)
+            if len(verified)>1:p['accuracy_note']='Mean of ALL matching-batch full558 frozen development evaluations; all references and predictions independently audited. Not restricted-cap accuracy.'
+            identity=read((REPO/p['source']).parent.parent/'identity.json')
+            deltas=[]
+            for reference_path in paths:
+                reference=rows(reference_path.with_name('predictions.csv'))[:p['batch']]
+                assert identity['sample_ids']==[r['sample_id'] for r in reference]
+                assert identity['frame_positions']==[frame_positions(r) for r in reference]
+                deltas.extend(abs(float(v)-float(r['prediction'])) for repeat in p['repeats'] for v,r in zip(repeat['output'],reference))
+            p['resident_reference_max_abs_mos_delta']=max(deltas)
     target=ROOT/'presentation';target.mkdir(parents=True,exist_ok=True)
-    data=dict(timing_protocol=PROTOCOL,accounting_protocol=ACCOUNTING,status='rental16_complete' if len(points)==16 else 'partial',values=points,optical=optical,models=NAMES,
-        laboratory_status='paused_by_user',capacity_missing='DeepSeek FP32 uses TWO80GB GPUs; all other cases use one. No CPU/disk offload.',
+    rental_count=sum(p['model'] in ('deepseek','kimi') for p in points)
+    lab_state=read(LAB_ROOT/'suite_status.json') if (LAB_ROOT/'suite_status.json').exists() else {'status':'waiting_for_idle'}
+    data=dict(timing_protocol=PROTOCOL,accounting_protocol=ACCOUNTING,status='all48_complete' if len(points)==48 else 'rental16_complete' if rental_count==16 else 'partial',values=points,optical=optical,models=NAMES,
+        rental_count=rental_count,laboratory_count=len(points)-rental_count,
+        laboratory_status=lab_state['status'],capacity_missing='DeepSeek FP32 uses TWO80GB GPUs; all other cases use one. No CPU/disk offload.',
         contract='Sum EACH first-block-to-GPU-output interval plus output-to-NEXT-model-input gaps. Pacing waits are INCLUDED in gaps, never added twice. Exclude EACH frontend. Sum used-GPU board interval energies; host338.2W once. Full-wall NVML busy is separately reported. Also retain output-to-next-TF and full-cycle-span audit.',
         B1_historical_anchor_unchanged=True,accuracy_reference_not_per_control=True)
     (target/'eight_tables.json').write_text(json.dumps(data,indent=2)+'\n')
-    columns=['model','model_parameters','precision','method','condition','batch','gpu_count','visible_sms','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','time16_ms','energy16_j','accounting_protocol','srcc_reference','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
+    columns=['model','model_parameters','precision','method','condition','batch','gpu_count','visible_sms','frozen_duty','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','time16_ms','energy16_j','interval_mean_board_power_w','per_gpu_interval_mean_board_power_w','accounting_protocol','first_block_module','srcc_reference','resident_reference_max_abs_mos_delta','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
     with (target/'paired_measurements.csv').open('w',newline='',encoding='utf-8-sig') as stream:
         writer=csv.DictWriter(stream,fieldnames=columns,extrasaction='ignore');writer.writeheader();writer.writerows(points)
     fields=['model','precision','method','condition','repeat','batch','gpu_count','elapsed_s','compute_s','output_to_next_model_input_s','internal_wait_s','other_intercall_gap_s','output_to_next_tf_s','in_cycle_preblock_s','excluded_preblock_s','full_cycle_span_s','wall_elapsed_s','video_evaluations','gpu_energy_j','energy_j','time16_ms','energy16_j','recorded_time16_ms','recorded_energy16_j','source','source_sha256']

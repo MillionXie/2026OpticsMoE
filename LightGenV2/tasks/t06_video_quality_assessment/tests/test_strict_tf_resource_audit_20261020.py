@@ -1,9 +1,14 @@
 """CPU contracts for offline accounting; no mutation of live GPU sources."""
 import unittest
-from LightGenV2.tasks.t06_video_quality_assessment.reports.strict_tf_resource_audit_20261020 import charged_intervals,observed_energy
+from LightGenV2.tasks.t06_video_quality_assessment.reports.strict_tf_resource_audit_20261020 import charged_intervals,observed_energy,frame_positions
 
 
 class Accounting(unittest.TestCase):
+    def test_original_and_repeated_evaluation_frame_schemas(self):
+        self.assertEqual(frame_positions({'selected_frame_positions':'[10,35,60,86]'}),[10,35,60,86])
+        self.assertEqual(frame_positions({'frame_positions':'[[10,35,60,86]]'}),[10,35,60,86])
+        with self.assertRaises(AssertionError):frame_positions({})
+
     def test_frontend_and_terminal_exclusion(self):
         calls=[dict(call_start=0,first_block_start=1,gpu_output=2),
                dict(call_start=4,first_block_start=5,gpu_output=7)]

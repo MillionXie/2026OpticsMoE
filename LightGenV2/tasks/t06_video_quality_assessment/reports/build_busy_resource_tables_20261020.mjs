@@ -23,7 +23,7 @@ try{
 }catch(e){if(e.code!=='ENOENT')throw e;}
 const book=Workbook.create(),views=[],models=['deepseek','kimi','qwen','glm','clip','yolo'];
 const colors={deepseek:'#79502C',kimi:'#D14F64',qwen:'#0072B2',glm:'#9B567C',clip:'#008B70',yolo:'#B17D00'};
-const unavailable=strict?'laboratory measurement paused':data.laboratory_status==='waiting_expired'?'original A100 unavailable':'pending measurement';
+const unavailable=strict?`laboratory ${data.laboratory_status}`:data.laboratory_status==='waiting_expired'?'original A100 unavailable':'pending measurement';
 const missingFor=(model,precision)=>strict?(['deepseek','kimi'].includes(model)?'pending rental condition':unavailable):model==='deepseek'&&precision==='fp32'?'capacity exceeds80GB':unavailable;
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const metric of ['time','energy']){
  const name=`${method==='temporal'?'Duty':'MPS'}_${precision==='native'?'Native':'FP32'}_${metric==='time'?'Time':'Energy'}`;
@@ -44,10 +44,10 @@ for(const point of data.values){
  const rr=[];for(const r of point.repeats){
   windows.getRange(`A${wr}:X${wr}`).values=[[point.model_name,point.method,point.precision,point.condition,point.batch,point.resource_cap,point.visible_sms,r.repeat,r.elapsed_s,r.video_evaluations,strict?r.gpu_energy_j:r.measurement.mean_board_power_w,r.measurement.mean_gpu_utilization_percent,r.measurement.samples,r.first_tf_start,r.final_gpu_output,r.unique_videos,r.time16_ms,r.energy16_j,point.source,point.source_sha256,point.measured_at,point.srcc_reference??null,point.accuracy_source??'',point.accuracy_source_sha256??'']];
   if(strict){windows.getRange(`Y${wr}:AK${wr}`).values=[[r.gpu_infos[0].mean_gpu_utilization_percent/100,r.gpu_infos[1]?r.gpu_infos[1].mean_gpu_utilization_percent/100:null,r.wall_elapsed_s,r.excluded_preblock_s,r.internal_wait_s,r.compute_s,point.hot_gpu_index,r.recorded_time16_ms,r.recorded_energy16_j,r.output_to_next_model_input_s,r.output_to_next_tf_s,r.in_cycle_preblock_s,r.full_cycle_span_s]];windows.getRange(`Y${wr}:Z${wr}`).setNumberFormat('0.00%');}
-  windows.getRange(`A${wr}:X${wr}`).format={font:{name:'Arial',size:10,color:'#243447'},rowHeight:52,verticalAlignment:'center'};windows.getRange(`S${wr}:X${wr}`).format.wrapText=true;rr.push(wr++);
+  windows.getRange(`A${wr}:X${wr}`).format={font:{name:'Arial',size:10,color:'#243447'},rowHeight:point.accuracy_reference_count>1?120:52,verticalAlignment:'center'};windows.getRange(`S${wr}:X${wr}`).format.wrapText=true;rr.push(wr++);
  }windowRows.set(key(point),rr);
 }
-if(wr>2){windows.getRange(`I2:R${wr-1}`).setNumberFormat('0.000000');for(const col of ['E','F','G','H','J','M','P'])windows.getRange(`${col}2:${col}${wr-1}`).setNumberFormat('#,##0');}
+if(wr>2){windows.getRange(`I2:R${wr-1}`).setNumberFormat('0.000000');for(const col of ['E','F','G','H','J','M','P'])windows.getRange(`${col}2:${col}${wr-1}`).setNumberFormat('#,##0');windows.getRange(`E2:H${wr-1}`).format.horizontalAlignment='center';}
 raw.getRange('A1:AJ1').merge();raw.getRange('A1').values=[['POOLED COST CALCULATIONS — repeat observations are linked from Window repeats']];
 raw.getRange('A1:AJ1').format={font:{name:'Arial',size:13,bold:true,color:'#214D68'},rowHeight:30};
 const headers=['Model','Method','Precision','Condition','Video batch','MPS cap (%)','Visible SMs','558TEST SRCC development reference',
@@ -59,9 +59,11 @@ if(strict){headers[8]='Repeat1 charged seconds';headers[10]='Repeat1 GPU energy 
 raw.getRange('A6:AJ6').values=[headers];raw.getRange('A6:AJ6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:48};
 raw.getRange('A7:AJ55').format={font:{name:'Arial',size:10,color:'#243447'},rowHeight:26};
 raw.getRange('A:AJ').format.columnWidth=18;raw.getRange('A:A').format.columnWidth=26;raw.getRange('AH:AJ').format.columnWidth=65;
+raw.getRange('AF:AG').format.columnWidth=30;raw.getRange('AF7:AJ55').format.wrapText=true;raw.getRange('A7:AJ55').format.rowHeight=52;
 raw.getRange('H7:AD55').setNumberFormat('0.000000');raw.freezePanes.freezeRows(6);raw.freezePanes.freezeColumns(4);
 for(const column of ['E','F','G','J','M','O','R','T','W','Z','AE'])raw.getRange(`${column}7:${column}55`).setNumberFormat('#,##0');
 raw.getRange('A6:AJ6').format.horizontalAlignment='center';
+if(strict){raw.getRange('AK6:AM6').values=[['Frozen duty','Original model parameters','First compute module']];raw.getRange('AK6:AM6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:48,horizontalAlignment:'center'};raw.getRange('AK:AL').format.columnWidth=22;raw.getRange('AL7:AL55').format.horizontalAlignment='center';raw.getRange('AM:AM').format.columnWidth=45;}
 raw.getRange('A7:H7').values=[['LightGen-II','optical reference','not applicable','~50% spatial use',null,null,null,data.optical.srcc]];
 raw.getRange('AC7:AD7').values=[[data.optical.time_ms,data.optical.energy_j]];raw.getRange('AF7:AJ7').values=[['unchanged optical reference','Optical platform',data.optical.cost_source,'','Spatial usage is not GPU busy time or a MPS resource cap. No FP32 designation.']];
 let row=8;const entries=[];
@@ -72,6 +74,7 @@ for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])
  for(let i=0;i<3;i++){const r=point?.repeats?.[i];values.push(r?.elapsed_s??null,r?.video_evaluations??null,(strict?r?.gpu_energy_j:r?.measurement.mean_board_power_w)??null,r?.measurement.mean_gpu_utilization_percent??null,r?.measurement.samples??null);}
  values.push(338.2,null,null,null,null,null,null,point?.repeats?.length??null,point?.status??missing,point?.platform??'',point?.source??'',point?.source_sha256??'',point?.accuracy_note??(missing==='capacity exceeds80GB'?data.capacity_missing:'No completed new-protocol point. Do not substitute historical pure-inference cost.'));
  raw.getRange(`A${row}:AJ${row}`).values=[values];
+ if(strict&&point){raw.getRange(`AK${row}:AM${row}`).values=[[point.frozen_duty,point.model_parameters,point.first_block_module]];raw.getRange(`AK${row}`).setNumberFormat('0.00%');raw.getRange(`AL${row}`).setNumberFormat('#,##0');}
  if(point){
   const rr=windowRows.get(key(point));
   if(point.srcc_reference!==undefined)raw.getRange('H'+row).formulas=[[`='Window repeats'!V${rr[0]}`]];
@@ -93,7 +96,7 @@ for(const {method,precision,metric,sheet} of views){
  sheet.getRange('A2:M2').format={font:{name:'Arial',size:12,color:'#53687A'},rowHeight:28};
  sheet.getRange('A4:M4').merge();sheet.getRange('A4').values=[[strict?'Each first TF → output + output → NEXT model input. Pacing waits are already inside the gaps, not added twice. Each frontend excluded; full-wall NVML busy separate. Three trials;16-video equivalents.':'First TF input → final GPU output; internal waits included, terminal wait excluded. Prepared inputs reused; three full windows.16-video equivalents are throughput-normalized, not a16-video batch.']];
  sheet.getRange('A4:M4').format={font:{name:'Arial',size:10,color:'#53687A'},rowHeight:36,wrapText:true};
- sheet.getRange('A5:M5').merge();sheet.getRange('A5').values=[[strict?`${data.values.length}/16 rental conditions measured; original laboratory models paused. Full558 accuracy is an independent development reference, not a fresh per-cap evaluation.`:'PARTIAL DATA — measured values only. Independent558-video accuracy references are not fresh restricted-condition accuracy tests.']];
+ sheet.getRange('A5:M5').merge();sheet.getRange('A5').values=[[strict?`${data.rental_count??data.values.length}/16 rental and ${data.laboratory_count??0}/32 laboratory conditions measured. Full558 accuracy references are independent of control windows; missing FP32 accuracy remains unavailable.`:'PARTIAL DATA — measured values only. Independent558-video accuracy references are not fresh restricted-condition accuracy tests.']];
  sheet.getRange('A5:M5').format={font:{name:'Arial',size:10,bold:true,color:'#9C3D10'},rowHeight:28,wrapText:true};
  sheet.getRange('A6:M6').values=[['Model','Setting','Video batch','Resource cap',strict?'GPU busy (max card)':'Actual GPU busy',metric==='time'?'Time /16 (ms)':'Energy /16 (J)','Baseline / optical','SRCC (development)','Repeats','Status','Video evaluations','Precision','Platform']];
  sheet.getRange('A6:M6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:38,wrapText:true};
@@ -130,6 +133,7 @@ if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
 for(const {sheet}of views){const pic=await book.render({sheetName:sheet.name,range:'A1:M31',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp','busy_resource_'+sheet.name+'.png'),new Uint8Array(await pic.arrayBuffer()));}
 const rawPic=await book.render({sheetName:'Measurements',range:'A6:N12',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp/busy_resource_raw.png'),new Uint8Array(await rawPic.arrayBuffer()));
 const windowsPic=await book.render({sheetName:'Window repeats',range:'A1:M10',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp/busy_resource_windows.png'),new Uint8Array(await windowsPic.arrayBuffer()));
+if(strict){for(const [sheetName,range,file] of [['Measurements','AF6:AM12','busy_resource_metadata.png'],['Window repeats','Y1:AK7','busy_resource_interval_audit.png']]){const pic=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',file),new Uint8Array(await pic.arrayBuffer()));}}
 await(await SpreadsheetFile.exportXlsx(book)).save(out);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(out)));
 await fs.writeFile(path.join(root,receiptName),JSON.stringify({file:out,sha256:crypto.createHash('sha256').update(await fs.readFile(out)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(path.join(root,'eight_tables.json'))).digest('hex'),views:8,raw_sheets:1,calculation_sheets:1,audited_points:data.values.length,recalculation:true,reimport:true,formula_errors:0},null,2));
 try{await fs.rename(out+'.inspect.ndjson',path.join(root,'workbook_inspect_'+Date.now()+'.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}

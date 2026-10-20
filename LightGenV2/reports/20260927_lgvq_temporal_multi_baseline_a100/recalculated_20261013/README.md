@@ -8,14 +8,68 @@ sections below. New raw measurements are under
 preserved separately and produced no formal cost observations. Only full
 DeepSeek-VL2 FP32 uses two A100-SXM4-80GB GPUs. Kimi in either precision and
 DeepSeek-VL2 in its original precision use one GPU. No model is trained in this run.
-The original laboratory measurements are paused, and historical Qwen B1 is unchanged.
-Until the new run is completely audited, the existing workbook remains the older,
-explicitly identified complete-wall dataset rather than a silently updated result.
+The rental measurements are complete: 16 conditions and all 48 trials passed
+independent raw-data replay. Historical Qwen B1 is unchanged. The original laboratory
+measurements restarted in `recovery_1102`; two CLIP MPS conditions are complete.
+Its temporal-control condition missed the predeclared busy target and is not
+included as a qualified 50% point. Other laboratory points remain unavailable.
+
+The existing eight-view workbook now contains the newly audited interval costs.
+Its previous complete-wall version, SHA256
+`0fb5b3efe68afb45672ebd0161c471be3a798c6879675fdc6e502a839b35912b`,
+is preserved as `prior_workbook_<SHA256>.xlsx` in the new run's `presentation`
+directory. Do not mix its older complete-wall observations with the new interval
+observations. Both rental GPUs were verified at zero allocated memory, zero
+busy time and no compute processes after completion. This is GPU release, not a
+claim that the virtual machine was powered off or billing was stopped.
+
+### Completed rental data
+
+The table reports all three trials pooled. Time and energy are normalized to 16
+video evaluations. Busy percentages are full-wall NVML observations; dual-GPU
+values are the maximum pooled card value, not the allocation average. Both cards
+are retained in the raw repeat table. Unrestricted execution does not guarantee
+98–100% busy time. MPS 50/100 denotes resources, not a prescribed NVML percentage.
+
+| Model | Precision | Control | Setting | Busy (%) | T16 (ms) | Estimated E16 (J) | SRCC reference |
+|---|---|---|---|---:|---:|---:|---:|
+| DeepSeek-VL2 | FP32, two GPUs | MPS | 100% resources | 58.399 | 29198.089 | 21286.742 | .707578 |
+| DeepSeek-VL2 | FP32, two GPUs | MPS | 50% resources | 58.697 | 53905.052 | 33473.702 | .707578 |
+| DeepSeek-VL2 | FP32, two GPUs | Temporal | Approximately 50% busy | 49.920 | 34130.786 | 23447.365 | .707578 |
+| DeepSeek-VL2 | FP32, two GPUs | Temporal | Unrestricted | 57.953 | 29156.146 | 21260.820 | .707578 |
+| DeepSeek-VL2 | Deployed BF16 | MPS | 100% resources | 86.618 | 8270.773 | 4868.513 | .716735 |
+| DeepSeek-VL2 | Deployed BF16 | MPS | 50% resources | 96.202 | 12014.841 | 6497.005 | .716735 |
+| DeepSeek-VL2 | Deployed BF16 | Temporal | Approximately 50% busy | 47.966 | 14175.597 | 7269.084 | .716584 |
+| DeepSeek-VL2 | Deployed BF16 | Temporal | Unrestricted | 96.618 | 7104.585 | 4458.756 | .716584 |
+| Kimi-VL-A3B | FP32 | MPS | 100% resources | 99.370 | 20168.059 | 11822.791 | .751930 |
+| Kimi-VL-A3B | FP32 | MPS | 50% resources | 99.394 | 29073.473 | 15768.805 | .751930 |
+| Kimi-VL-A3B | FP32 | Temporal | Approximately 50% busy | 49.363 | 40337.936 | 19896.130 | .751930 |
+| Kimi-VL-A3B | FP32 | Temporal | Unrestricted | 99.338 | 19830.525 | 11702.072 | .751930 |
+| Kimi-VL-A3B | Deployed BF16 | MPS | 100% resources | 73.498 | 3641.567 | 1850.738 | .805465 |
+| Kimi-VL-A3B | Deployed BF16 | MPS | 50% resources | 81.701 | 4202.430 | 2102.708 | .805465 |
+| Kimi-VL-A3B | Deployed BF16 | Temporal | Approximately 50% busy | 50.073 | 3519.439 | 1711.998 | .809021 |
+| Kimi-VL-A3B | Deployed BF16 | Temporal | Unrestricted | 98.650 | 1340.097 | 822.472 | .809021 |
+
+MPS pairs use B1. Temporal pairs use DeepSeek BF16 B2, Kimi BF16 B6, and B1
+for both FP32 profiles. Each pair shares batch, weights, dtype and placement.
+SRCC references at B1 and higher batches were independently evaluated, not newly
+trained or measured separately at each cap. FP32 does not improve either model's
+SRCC here; its backend and weight expansion are disclosed below.
+
+Machine-readable observations and all 54 currently qualified trial records
+(48 rental, six laboratory) are in the new run's `presentation/paired_measurements.csv`
+and `paired_repeats.csv`. Each row binds report, checkpoint, accuracy source, date
+and hashes. All 270 rental files (23,917,130 bytes) were imported from a SHA-bound
+final archive. Eight figure panels use `strict_tf_<method>_<precision>_*` in this
+original report directory; missing conditions are not interpolated.
 
 ### Methods draft: timing boundary and inter-inference intervals
 
 For each forward pass i, we recorded the model-invocation time a_i, the first
-Transformer-block input time s_i and the synchronized GPU-output time e_i. Inputs
+Transformer-block input time s_i and the synchronized GPU-output time e_i.
+The first-block hook is on the visual encoder's first Transformer block:
+`vision.blocks.0` for DeepSeek-VL2 and `vision_tower.encoder.blocks.0` for Kimi,
+not on the language decoder's first block. Inputs
 were prepared and transferred to the GPU before measurement and reused for frozen
 inference. Before recording s_i, all GPUs used by that model were synchronized to
 drain GPU work preceding the first Transformer block. The output timestamp e_i
@@ -94,7 +148,11 @@ identical attention-kernel experiment.
 单列，限流等待已包含在间隔内，不重复相加。独立三轮之间的时间不计入。
 GPU busy（GPU忙碌率）指完整墙钟NVML实测；MPS resource cap（MPS资源上限）指执行
 资源配置；charged time（计入时间）指上述区间之和，三者不得混为同一统计量。
-当前数据仍在测量及审计，结果以最终SHA验证后的逐条件表为准，不用旧数补缺项。
+租赁16条件均已完成并重算，只有完整版DS FP32双卡；其他租赁条件单卡。
+实验室目前只有CLIP两项MPS条件合格。时间限流三轮48.05/43.73/42.35%，
+合并44.5867%，未到45%下限，失败原始记录保留，不进入合格50%图表。
+此前399ms功率采样缺口另属一次失败，250ms是既定数据质量阈值，非硬件或期刊标准。
+实验室FP32尚无新的完整558视频结果，不从原精度或租赁平台借用数值。
 
 ## Historical timing audit hold: 20 October 2026, 08:00
 
@@ -102,7 +160,7 @@ The author clarified that image-to-first-block work must be excluded on **every*
 forward, while internal pacing waits must be included. Code inspection found that
 the complete-window measurements below exclude the frontend only at the first
 forward of the trial; frontend work on subsequent forwards is inside that window.
-The 12 conditions in `LGVQ_busy_resource_precision_comparison.xlsx` remain valid
+The 12 conditions in the archived complete-wall workbook remain valid
 records of that older complete-wall protocol, **not results of the newly clarified
 per-forward timing boundary**. Do not cite them as such or silently subtract an
 unmeasured frontend estimate. All raw data and historical Qwen B1 remain protected.
@@ -121,11 +179,10 @@ not change model weights or numerical precision. No new GPU result has yet been
 produced under this profile: the laboratory A100 was externally occupied at 07:57
 (92% busy, 11,419 MiB). The following Methods and numbers describe the prior protocol.
 
-## 20 October 2026: complete-window resource-control comparison
+## Historical 20 October 2026 complete-window resource-control comparison
 
 The revised experiment separates temporal duty control from GPU execution-resource
-provisioning. The eight requested views are in
-`LGVQ_busy_resource_precision_comparison.xlsx`: the two controls, original deployed
+provisioning. The archived complete-wall workbook contains eight views: the two controls, original deployed
 precision or FP32, and processing time or estimated energy. Raw repeat inputs and
 recalculating normalization formulas are retained in the same workbook. Missing
 measurements remain unavailable rather than being filled with historical pure-cost
@@ -308,7 +365,7 @@ busy time must be reported rather than adjusted by batch scanning to force a lab
 Everything below this notice describes the18October historical pure-cost release,
 not the revised publication-ready50% comparison.
 
-## Current compact figure sets — unified inference boundary, 18 October 2026
+## Historical compact figure sets — inference boundary of 18 October 2026
 
 The two compact plotting workbooks and four figures now use the same dataset-once inference-cost definition. The former resident-service costs, including the9.177-ms CLIP value, are not used in either current set. Ten prescribed cost points completed: six CLIP native repeats and four paced-setting points. Two interrupted partial runs are retained but excluded. All139 original remote files and launch controls were SHA-verified locally. No additional training, precision change, frame reduction, CUDA Graph or power-limit change was made. Finalized Qwen B1 remains63.133111480865225% utilization,1188.3861464262009ms and462.1134010767563J.
 
