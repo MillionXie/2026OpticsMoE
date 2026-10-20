@@ -14,6 +14,7 @@ from . import precision_comparison_20261019 as common
 REPO=common.REPO;TASK=common.TASK
 ROOT=TASK/'runs/simulation/lgvq_strict_tf_rental_dual_20261020'
 LAB_ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/'per_forward_first_block_plus_internal_wait_v1'/'recovery_1102'
+LAB_CONTINUATION=LAB_ROOT.parent/'calibration_1140'
 PROTOCOL='per_forward_first_block_plus_internal_wait_v1'
 ACCOUNTING='per_forward_tf_plus_output_to_next_input_v2'
 NAMES={'deepseek':'DeepSeek-VL2','kimi':'Kimi-VL-A3B','qwen':'Qwen3-VL-2B','glm':'GLM-4.6V-Flash','clip':'CLIP ViT-B/32','yolo':'YOLO11s'}
@@ -90,6 +91,20 @@ def check(point,condition):
             seen_own|=str(row[0]).strip()==own
     assert seen_own
     calls=rows(folder/'calls.csv');waits=rows(folder/'waits.csv')
+    calibration=report.get('pacing_calibration','short_feedback60s_v1')
+    if calibration=='full_window_validation_v1':
+        assert identity['pacing_calibration']==calibration and condition=='busy50'
+        validations=[u for u in read(folder/'controller_updates.json') if u.get('stage')==calibration]
+        assert 1<=len(validations)<=3 and validations[-1]['passed']
+        assert abs(validations[-1]['observed']-50)<=2
+        close(validations[-1]['old_duty'],report['frozen_duty'])
+        assert (folder/'calibration_calls.csv').exists() and (folder/'calibration_waits.csv').exists()
+        for update in validations:
+            raw_validation=read(folder/f"calibration_validation{update['attempt']:02d}.json")
+            assert raw_validation['not_formal_measurement']
+            assert raw_validation['wall_end']<report['repeats'][0]['wall_start']
+            close(raw_validation['observed'],update['observed'])
+            close(raw_validation['duty'],update['old_duty'])
     streams=[]
     for i,gpu in enumerate(devices):
         suffix='' if i==0 else f'_gpu{i:02d}'
@@ -161,7 +176,7 @@ def check(point,condition):
         batch=identity['batch'],resource_cap=identity['cap'] if identity['method']=='mps' else None,visible_sms=' + '.join(map(str,sms)),
         gpu_count=len(devices),gpu_uuids=devices,hot_gpu_index=hot,per_gpu_busy_percent=per_gpu,busy_percent=max(per_gpu),
         allocation_average_busy_percent=statistics.mean(per_gpu),repeats=repeats,time16_ms=elapsed*16000/videos,energy16_j=energy*16/videos,
-        frozen_duty=report['frozen_duty'],
+        frozen_duty=report['frozen_duty'],pacing_calibration=calibration,
         interval_mean_board_power_w=sum(r['gpu_energy_j'] for r in repeats)/elapsed,
         per_gpu_interval_mean_board_power_w=[sum(r['per_gpu_board_energy_j'][i] for r in repeats)/elapsed for i in range(len(devices))],
         accounting_protocol=ACCOUNTING,
@@ -203,7 +218,7 @@ def verify_accuracy(path,head_sha):
 
 def main():
     points=[]
-    for root in (ROOT,ROOT/'attempt02',ROOT/'native_tail01',ROOT/'native_tail02',LAB_ROOT):
+    for root in (ROOT,ROOT/'attempt02',ROOT/'native_tail01',ROOT/'native_tail02',LAB_ROOT,LAB_CONTINUATION):
         if not root.exists():continue
         for folder in root.iterdir():
             if not folder.is_dir() or not (folder/'identity.json').exists() or not (folder/'status.json').exists():continue
@@ -211,7 +226,7 @@ def main():
             for condition in ('mps_cap100','mps_cap50','unrestricted','busy50'):
                 if (folder/condition/'report.json').exists():points.append(check(folder,condition))
     keys=[(p['model'],p['precision'],p['method'],p['condition']) for p in points];assert len(keys)==len(set(keys))
-    for model in ('deepseek','kimi'):
+    for model in NAMES:
         same=[p for p in points if p['model']==model]
         assert len({p['checkpoint_sha256'] for p in same})<=1
         assert len({json.dumps(p['assets'],sort_keys=True) for p in same})<=1
@@ -231,7 +246,10 @@ def main():
         if p['precision']=='native':path=[REPO/s.strip() for s in refs[(p['model'],p['batch'])].split(';')]
         elif p['model']=='kimi':path=TASK/'runs/simulation/lgvq_busy_resource_20261020/accuracy_kimi_fp32_batch1/evaluation/report.json'
         elif p['model']=='deepseek':path=next((root/'mps_deepseek_fp32_100/accuracy558/report.json' for root in (ROOT/'attempt02',ROOT) if (root/'mps_deepseek_fp32_100/accuracy558/report.json').exists()),None)
-        else:path=None
+        else:
+            path=next((root/f'accuracy_fp32/{p["model"]}_batch{p["batch"]:02d}/report.json'
+                       for root in (LAB_CONTINUATION,LAB_ROOT)
+                       if (root/f'accuracy_fp32/{p["model"]}_batch{p["batch"]:02d}/report.json').exists()),None)
         paths=path if isinstance(path,list) else ([path] if path is not None else [])
         if paths:
             if p['precision']=='native':assert all(v.exists() for v in paths),paths
@@ -252,14 +270,15 @@ def main():
             p['resident_reference_max_abs_mos_delta']=max(deltas)
     target=ROOT/'presentation';target.mkdir(parents=True,exist_ok=True)
     rental_count=sum(p['model'] in ('deepseek','kimi') for p in points)
-    lab_state=read(LAB_ROOT/'suite_status.json') if (LAB_ROOT/'suite_status.json').exists() else {'status':'waiting_for_idle'}
+    active_lab=LAB_CONTINUATION if LAB_CONTINUATION.exists() else LAB_ROOT
+    lab_state=read(active_lab/'suite_status.json') if (active_lab/'suite_status.json').exists() else {'status':'partial_local_backup'}
     data=dict(timing_protocol=PROTOCOL,accounting_protocol=ACCOUNTING,status='all48_complete' if len(points)==48 else 'rental16_complete' if rental_count==16 else 'partial',values=points,optical=optical,models=NAMES,
         rental_count=rental_count,laboratory_count=len(points)-rental_count,
         laboratory_status=lab_state['status'],capacity_missing='DeepSeek FP32 uses TWO80GB GPUs; all other cases use one. No CPU/disk offload.',
         contract='Sum EACH first-block-to-GPU-output interval plus output-to-NEXT-model-input gaps. Pacing waits are INCLUDED in gaps, never added twice. Exclude EACH frontend. Sum used-GPU board interval energies; host338.2W once. Full-wall NVML busy is separately reported. Also retain output-to-next-TF and full-cycle-span audit.',
         B1_historical_anchor_unchanged=True,accuracy_reference_not_per_control=True)
     (target/'eight_tables.json').write_text(json.dumps(data,indent=2)+'\n')
-    columns=['model','model_parameters','precision','method','condition','batch','gpu_count','visible_sms','frozen_duty','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','time16_ms','energy16_j','interval_mean_board_power_w','per_gpu_interval_mean_board_power_w','accounting_protocol','first_block_module','srcc_reference','resident_reference_max_abs_mos_delta','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
+    columns=['model','model_parameters','precision','method','condition','batch','gpu_count','visible_sms','frozen_duty','pacing_calibration','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','time16_ms','energy16_j','interval_mean_board_power_w','per_gpu_interval_mean_board_power_w','accounting_protocol','first_block_module','srcc_reference','resident_reference_max_abs_mos_delta','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
     with (target/'paired_measurements.csv').open('w',newline='',encoding='utf-8-sig') as stream:
         writer=csv.DictWriter(stream,fieldnames=columns,extrasaction='ignore');writer.writeheader();writer.writerows(points)
     fields=['model','precision','method','condition','repeat','batch','gpu_count','elapsed_s','compute_s','output_to_next_model_input_s','internal_wait_s','other_intercall_gap_s','output_to_next_tf_s','in_cycle_preblock_s','excluded_preblock_s','full_cycle_span_s','wall_elapsed_s','video_evaluations','gpu_energy_j','energy_j','time16_ms','energy16_j','recorded_time16_ms','recorded_energy16_j','source','source_sha256']
