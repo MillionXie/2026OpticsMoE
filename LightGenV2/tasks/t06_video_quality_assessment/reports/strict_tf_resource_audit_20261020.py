@@ -131,6 +131,7 @@ def check(point,condition):
             close(max(observed),window['observed'])
     repeats=[]
     for r in report['repeats']:
+        assert len(r['output'])==identity['batch'], 'One MOS output per video is required'
         rc=[v for v in calls if int(v['repeat'])==r['repeat']];rw=[v for v in waits if int(v['repeat'])==r['repeat']]
         assert len(rc)==r['forward_calls']==r['groups']*8
         assert r['video_evaluations']==len(rc)*identity['batch']
