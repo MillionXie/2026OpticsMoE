@@ -40,3 +40,12 @@ def test_new_idle_admission_preserves_zero_measurement_predecessor():
     assert "list(ROOT.glob('*/identity.json'))" in text
     assert "ROOT=ROOT/args.session" in text
     assert "list(failed.glob('*/*/report.json'))" in text
+
+
+def test_calibration_continuation_reuses_only_two_completed_points():
+    text=Path(m.__file__).read_text()
+    assert "args.validate_pacing=args.session==CONTINUATION" in text
+    assert "state.setdefault('reused',{})" in text
+    assert "identity_sha256=frozen.sha256(prior/'identity.json')" in text
+    assert "state['completed']!=['mps_clip_native_100','mps_clip_native_50']" in text
+    assert "'miss50+/-5' not in failed.get('error','')" in text

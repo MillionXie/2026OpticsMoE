@@ -17,6 +17,25 @@ from . import rental_precision_recheck as base
 PROTOCOL='per_forward_first_block_plus_internal_wait_v1'
 
 
+def validated_duty(duty,observe,record):
+    """Bounded PRE-measurement rehearsal; never retry/select formal trials.
+
+    observe must retain its full raw window independently. Aim for +/-2 during
+    calibration, while the unchanged formal acceptance remains +/-5.
+    """
+    for attempt in range(1,4):
+        observed=observe(duty,attempt)
+        if not math.isfinite(observed) or not 0<observed<=100:
+            raise RuntimeError('Invalid calibration-validation busy rate')
+        passed=abs(observed-50)<=2
+        new=duty if passed else min(.999,max(.05,duty*min(1.15,max(.85,50/observed))))
+        record(dict(stage='full_window_validation_v1',attempt=attempt,observed=observed,
+                    old_duty=duty,new_duty=new,passed=passed))
+        if passed:return duty
+        duty=new
+    raise RuntimeError('Three calibration rehearsals miss50+/-2; no formal paced trials started')
+
+
 def interval_energy(intervals, samples, host_w=338.2):
     """Integrate held board-power readings over exactly the charged intervals.
 
@@ -59,7 +78,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
     folder.mkdir();gpus=tuple(getattr(args,'gpu_uuids',(args.gpu_uuid,)))
     samplers=[base.telemetry.TelemetrySampler(gpu,raw_path=folder/('telemetry_stdout.jsonl' if i==0 else f'telemetry_gpu{i:02d}_stdout.jsonl')) for i,gpu in enumerate(gpus)]
     clock_samplers=[base.prior.ClockSampler(gpu) for gpu in gpus]
-    armed={};calls=[];waits=[];repeats=[];updates=[]
+    armed={};calls=[];waits=[];repeats=[];updates=[];calibration_calls=[];calibration_waits=[]
     def check():
         guard.fast()
         for sampler in samplers:sampler.check()
@@ -74,7 +93,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
             # Drain GPU frontend kernels BEFORE starting the charged TF interval.
             synchronize();armed['start']=time.monotonic()
     hook=first.register_forward_pre_hook(first_input)
-    def group(rep=None):
+    def group(rep=None,audit=None):
         check();start=time.monotonic();duration=0.
         for index in range(8):
             armed.update(enabled=True,start=None);before=time.monotonic()
@@ -82,7 +101,8 @@ def measure(args,compute,inputs,first,folder,guard,duty):
             tf=armed['start']
             if tf is None or not before<=tf<end:raise RuntimeError('Missing or invalid first-block boundary')
             duration+=end-tf
-            if rep is not None:calls.append(dict(repeat=rep,call_index=len(calls),call_start=before,
+            records=calls if rep is not None else audit
+            if records is not None:records.append(dict(repeat=rep,call_index=len(records),call_start=before,
                 first_block_start=tf,gpu_output=end,excluded_preblock_s=tf-before,compute_s=end-tf))
         return out,start,time.monotonic(),duration
     def idle(seconds):
@@ -113,6 +133,32 @@ def measure(args,compute,inputs,first,folder,guard,duty):
                     observed=max(per_gpu);new=min(1,max(.05,duty*min(1.25,max(.8,50/max(observed,1)))))
                     updates.append(dict(start=last,end=now,observed=observed,per_gpu_busy=per_gpu,old_duty=duty,new_duty=new))
                     duty=new;last=now
+            if getattr(args,'validate_pacing',False):
+                def observe(candidate,attempt):
+                    phase('calibration_validation_warmup'+str(attempt));warm(5,candidate)
+                    phase('calibration_validation'+str(attempt))
+                    count=max(2,math.ceil(35*candidate/statistics.mean(times)))
+                    if count>100000:raise RuntimeError('Bounded rehearsal count exceeded')
+                    wall_start=time.monotonic();begin=len(calibration_calls)
+                    for i in range(count):
+                        _,a,b,_=group(audit=calibration_calls)
+                        if i+1<count:
+                            request=(b-a)*(1/candidate-1)*count/(count-1)
+                            wa,wb=idle(request)
+                            calibration_waits.append(dict(attempt=attempt,group=i,start=wa,end=wb,requested_s=request))
+                    wall_end=time.monotonic()
+                    selected=calibration_calls[begin:]
+                    phase('outside_calibration_validation')
+                    streams=[[s.utilization_percent for s in sampler.samples if wall_start<=s.host_monotonic_s<wall_end] for sampler in samplers]
+                    if any(len(values)<100 for values in streams):raise RuntimeError('Insufficient full rehearsal telemetry')
+                    observed=max(statistics.mean(values) for values in streams)
+                    base.old.write(folder/f'calibration_validation{attempt:02d}.json',dict(
+                        wall_start=wall_start,wall_end=wall_end,observed=observed,duty=candidate,
+                        groups=count,forward_calls=len(selected),not_formal_measurement=True))
+                    return observed
+                def record(update):
+                    updates.append(update);base.old.write(folder/'controller_updates.json',updates)
+                duty=validated_duty(duty,observe,record)
         count=max(2,math.ceil(35*duty/statistics.mean(times)))
         if count>100000:raise RuntimeError('Bounded complete-trial count exceeded')
         for rep in (1,2,3):
@@ -152,6 +198,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
         report=dict(status='complete',timing_protocol=PROTOCOL,model=args.model,precision=args.precision,
             method=args.method,batch=args.batch,nominal_resource_cap=args.cap if args.method=='mps' else None,
             frozen_duty=duty,repeats=repeats,time16_ms=sum(r['elapsed_s'] for r in repeats)*16000/videos,
+            pacing_calibration='full_window_validation_v1' if duty<1 and getattr(args,'validate_pacing',False) else 'short_feedback60s_v1',
             energy16_j=sum(r['energy_j'] for r in repeats)*16/videos,mean_gpu_busy_percent=busy,
             per_gpu_busy_percent=per_gpu_busy,allocation_average_busy_percent=statistics.mean(per_gpu_busy.values()),
             busy_control_basis='single GPU' if len(gpus)==1 else 'maximum of per-GPU pooled busy rates; NOT allocation average',
@@ -174,7 +221,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
         for i,clocks in enumerate(active_clocks):
             try:clocks.stop(folder/('clock_telemetry.csv' if i==0 else f'clock_telemetry_gpu{i:02d}.csv'))
             except BaseException as error:errors.append(repr(error))
-        for name,records in (('calls.csv',calls),('waits.csv',waits)):
+        for name,records in (('calls.csv',calls),('waits.csv',waits),('calibration_calls.csv',calibration_calls),('calibration_waits.csv',calibration_waits)):
             with (folder/name).open('x',newline='') as stream:
                 if records:
                     writer=csv.DictWriter(stream,fieldnames=list(records[0]));writer.writeheader();writer.writerows(records)

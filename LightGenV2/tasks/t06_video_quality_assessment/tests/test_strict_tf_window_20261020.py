@@ -9,6 +9,19 @@ def samples():
     return [SimpleNamespace(host_monotonic_s=i/10,watts=100 if i<5 else 200) for i in range(11)]
 
 
+def test_validation_is_bounded_and_keeps_all_calibration_windows():
+    rates=iter([44.,49.5]);history=[];duties=[]
+    def observe(duty,attempt):duties.append(duty);return next(rates)
+    result=m.validated_duty(.6,observe,history.append)
+    assert result==pytest.approx(.6*50/44)
+    assert len(history)==2 and history[-1]['passed']
+    assert duties[1]>duties[0]
+    failed=[]
+    with pytest.raises(RuntimeError,match='no formal paced trials'):
+        m.validated_duty(.5,lambda *_:40.,failed.append)
+    assert len(failed)==3 and not any(r['passed'] for r in failed)
+
+
 def test_cost_excludes_all_preblock_intervals_but_charges_actual_wait():
     # Forward1 [.2,.3], internal WAIT [.3,.5], forward2 [.7,.9].
     # [.0,.2] and [.5,.7] represent excluded CPU/GPU frontend work.
@@ -52,7 +65,8 @@ def test_dual_gpu_energy_counts_both_boards_and_host_once():
 
 @pytest.mark.parametrize('duty',[1,.5])
 @pytest.mark.parametrize('devices',[1,2])
-def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(monkeypatch,tmp_path,duty,devices):
+@pytest.mark.parametrize('validation',[False,True])
+def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(monkeypatch,tmp_path,duty,devices,validation):
     """CPU-only instrumentation test; these synthetic values are NOT run data."""
     import sys
     import json
@@ -87,7 +101,7 @@ def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(mo
     def compute(_):
         clock.now+=.004;first.hook();clock.now+=.020
         return out,None
-    args=SimpleNamespace(gpu_uuid='synthetic',gpu_uuids=tuple('synthetic'+str(i) for i in range(devices)),model='synthetic',precision='native',method='temporal',batch=2,cap=100)
+    args=SimpleNamespace(gpu_uuid='synthetic',gpu_uuids=tuple('synthetic'+str(i) for i in range(devices)),model='synthetic',precision='native',method='temporal',batch=2,cap=100,validate_pacing=validation)
     result=m.measure(args,compute,None,first,tmp_path/'synthetic_cpu_fixture',SimpleNamespace(fast=lambda:None),duty)
     assert len(result['repeats'])==3
     for rep in result['repeats']:
@@ -100,3 +114,8 @@ def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(mo
     assert first.hook is None
     if devices==2:assert (0,) in synchronized and (1,) in synchronized
     assert json.loads((tmp_path/'synthetic_cpu_fixture/report.json').read_text())['timing_protocol']==m.PROTOCOL
+    calibration=tmp_path/'synthetic_cpu_fixture/calibration_validation01.json'
+    assert calibration.exists()==(validation and duty<1)
+    if calibration.exists():
+        assert json.loads(calibration.read_text())['not_formal_measurement']
+        assert result['pacing_calibration']=='full_window_validation_v1'

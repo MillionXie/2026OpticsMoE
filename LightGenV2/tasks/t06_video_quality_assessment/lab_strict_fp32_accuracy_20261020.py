@@ -105,7 +105,8 @@ def suite(args):
                 if time.time()>=args.deadline-180:raise TimeoutError('Bounded accuracy budget')
                 name=f'{model}_batch{batch:02d}';_,_,python,_=lab.locations(model)
                 cmd=[str(python),'-u','-m',__package__+'.lab_strict_fp32_accuracy_20261020',
-                     '--model',model,'--batch',str(batch),'--deadline',str(args.deadline),'--manifest',str(args.manifest)]
+                     '--model',model,'--batch',str(batch),'--deadline',str(args.deadline),'--manifest',str(args.manifest),
+                     '--cost-session',args.cost_session]
                 lab.shared.old.write(ROOT/(name+'.command.json'),cmd)
                 with (ROOT/(name+'.log')).open('x') as log:
                     env=dict(os.environ,CUDA_VISIBLE_DEVICES=lab.frozen.A100_UUID,OMP_NUM_THREADS='8')
@@ -124,10 +125,13 @@ def suite(args):
 
 
 def main():
+    global COST,ROOT
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--suite',action='store_true')
     parser.add_argument('--model',choices=('clip','yolo','qwen','glm'));parser.add_argument('--batch',type=int)
     parser.add_argument('--manifest',type=Path,required=True);parser.add_argument('--deadline',type=float,required=True)
+    parser.add_argument('--cost-session',choices=('recovery_1102',lab.CONTINUATION),default='recovery_1102')
     args=parser.parse_args()
+    COST=lab.ROOT/args.cost_session;ROOT=COST/'accuracy_fp32'
     if not 0<args.deadline-time.time()<=14400:raise ValueError('Finite four-hour admission only')
     if args.suite:return suite(args)
     if (args.model,args.batch) not in PLAN or os.environ.get('CUDA_VISIBLE_DEVICES')!=lab.frozen.A100_UUID:raise ValueError('Fixed original-platform accuracy reference only')
