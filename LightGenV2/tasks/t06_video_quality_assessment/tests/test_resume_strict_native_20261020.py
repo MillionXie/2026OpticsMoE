@@ -9,6 +9,15 @@ def test_fixed_native_plan():
 def test_deadline_only_explicit_authorization():
     with patch.object(entry.time,'time',return_value=entry.DEADLINE-600):
         entry.validate(entry.DEADLINE)
+        entry.validate(entry.EXTENDED_DEADLINE)
         with pytest.raises(ValueError):entry.validate(entry.DEADLINE+1)
     with patch.object(entry.time,'time',return_value=entry.DEADLINE):
         with pytest.raises(ValueError):entry.validate(entry.DEADLINE)
+
+def test_extended_admission_only_preserves_measurement_engine():
+    from pathlib import Path
+    text=Path(entry.__file__).read_text()
+    assert "'--continuation',str(args.continuation)" in text
+    assert 'old.worker(args)' in text
+    assert "state.setdefault('preserved_complete',[])" in text
+    assert entry.EXTENDED_LEASE_END-entry.EXTENDED_DEADLINE==420
