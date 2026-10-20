@@ -281,6 +281,19 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(cfg['objective'],'independent_full20_CE')
         self.assertEqual(cfg['label_smoothing'],.02)
 
+    def test_mixup_uses_only_TRAIN_and_keeps_original_inference(self):
+        tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_mixup_views')
+        self.assertEqual([arg.arg for arg in method.args.args],['z','labels','teacher','cfg'])
+        self.assertFalse(any('test' in n.id.lower() for n in ast.walk(method) if isinstance(n,ast.Name)))
+        text=ast.unparse(method)
+        for token in ('new_independent_samples=0','inference_mixup=False','new_physical_measurements=0','keep * keep[ix]'):
+            self.assertIn(token,text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_TRAINfeature_mixup_profile_20261020.json').read_text())
+        old=json.loads((TASK/'lab_caltech20_DVP_L4_head_anchor_profile_20261020.json').read_text())
+        self.assertEqual({k:v for k,v in cfg.items() if not k.startswith('TRAIN_feature_mixup_') and k!='scope'},
+                         {k:v for k,v in old.items() if k!='scope'})
+        self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
+
     def test_L6_alpha_initialization_only_after_complete_prefix7(self):
         tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='shrink_fit')
         gate=next(n for n in ast.walk(method) if isinstance(n,ast.Assert) and 'a.depth == 6' in ast.unparse(n.test))

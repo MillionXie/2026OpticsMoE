@@ -58,6 +58,28 @@ def TRAIN_feature_views(z, labels, teacher, cfg):
     return torch.cat(views),labels.repeat(repeats+1),teacher.repeat(repeats+1,1),proof
 
 
+def TRAIN_mixup_views(z,labels,teacher,cfg):
+    """Fixed TRAIN-only optimizer interpolation; never a physical CCD claim."""
+    assert labels.ndim==1 and labels.dtype==torch.long and len(z)==len(labels)==len(teacher)
+    assert not z.requires_grad and not teacher.requires_grad
+    assert (cfg['TRAIN_feature_mixup_alpha'],cfg['TRAIN_feature_mixup_repeats'],cfg['TRAIN_feature_mixup_seed'])==(.4,3,73)
+    targets=F.one_hot(labels,20).to(z.dtype);keep=(teacher.argmax(1)==labels).to(z.dtype)
+    xs,ys,ts,ks=[z],[targets],[teacher],[keep]
+    rng=np.random.default_rng(cfg['TRAIN_feature_mixup_seed'])
+    for _ in range(cfg['TRAIN_feature_mixup_repeats']):
+        ix=torch.from_numpy(rng.permutation(len(z))).long()
+        lam=torch.from_numpy(rng.beta(.4,.4,size=(len(z),1))).to(z.dtype)
+        xs.append(lam*z+(1-lam)*z[ix]);ys.append(lam*targets+(1-lam)*targets[ix])
+        ts.append(lam*teacher+(1-lam)*teacher[ix]);ks.append(keep*keep[ix])
+    x,y,t,k=map(torch.cat,(xs,ys,ts,ks))
+    assert torch.allclose(y.sum(1),torch.ones(len(y),dtype=y.dtype)) and torch.allclose(t.sum(1),torch.ones(len(t),dtype=t.dtype))
+    return x,y,t,k,dict(enabled=True,method='fixed_TRAIN_feature_MixUp',base_TRAIN_records=len(z),
+        derivative_views=len(x),clean_view_included=True,alpha=.4,repeats=3,seed=73,
+        mixed_parent_KL_requires_both_original_TRAIN_correct=True,
+        new_physical_measurements=0,new_independent_samples=0,inference_mixup=False,
+        statistical_independence_not_asserted=True)
+
+
 def pair_batch(rng, near, pools, hard, size):
     """Use the entire DVP TRAIN index universe, not legacy hard-coded1200."""
     return np.r_[rng.choice(near[0],8,True),rng.choice(pools[0],8,False),
@@ -707,8 +729,12 @@ def fit(a):
     teacher = torch.tensor(tr['probabilities'], dtype=torch.float64)
     if cfg.get('TRAIN_feature_dropout_repeats',0):
         assert a.depth==4 and a.prefix==5 and len(labels)==1600
-    z,labels,teacher,TRAIN_views=TRAIN_feature_views(z,labels,teacher,cfg)
-    keep = (teacher.argmax(1) == labels).double()
+    if cfg.get('TRAIN_feature_mixup_repeats',0):
+        assert a.prefix==a.depth+1 and len(labels)==1600 and not cfg.get('TRAIN_feature_dropout_repeats',0)
+        z,labels,teacher,keep,TRAIN_views=TRAIN_mixup_views(z,labels,teacher,cfg)
+    else:
+        z,labels,teacher,TRAIN_views=TRAIN_feature_views(z,labels,teacher,cfg)
+        keep = (teacher.argmax(1) == labels).double()
     class_weights = counts/counts.mean()
     initial, best_nll = score(te['probabilities'], te['y'])
     best, selected, bestw, bestb = initial, 0, w0.float(), b0.float()
@@ -1093,9 +1119,24 @@ def selftest():
     assert torch.allclose(gradient,numeric_gradient,atol=1e-9)
     assert torch.allclose(hessian,aa.T@aa+.2*torch.eye(14),atol=1e-9)
     assert torch.allclose((hessian+.1*torch.eye(14))@direction.flatten(),gradient.flatten(),atol=1e-10)
+    mc=dict(TRAIN_feature_mixup_alpha=.4,TRAIN_feature_mixup_repeats=3,TRAIN_feature_mixup_seed=73)
+    my=torch.arange(40)%20;mp=(tx@originw.T+originb).softmax(1).detach()
+    mx,mt,mteacher,mkeep,mproof=TRAIN_mixup_views(tx.detach(),my,mp,mc)
+    again=TRAIN_mixup_views(tx.detach(),my,mp,mc)
+    assert all(torch.equal(a,b) for a,b in zip((mx,mt,mteacher,mkeep),again[:4]))
+    assert len(mx)==160 and torch.equal(mx[:40],tx) and mproof['new_independent_samples']==0
+    mw=originw.clone().requires_grad_();mb=originb.clone().requires_grad_();mweights=prior_counts/prior_counts.mean()
+    mixcfg=dict(label_smoothing=.02,correct_TRAIN_teacher_KL=.02,parameter_anchor=.02)
+    mloss=objective(mw,mb,mx,mt,mweights,mteacher,mkeep,(originw,originb),mixcfg)
+    mg=torch.autograd.grad(mloss,mw)[0];losses=[]
+    for sign in (1,-1):
+        perturbed=originw.clone();perturbed[0,0]+=sign*1e-5
+        losses.append(objective(perturbed,originb,mx,mt,mweights,mteacher,mkeep,(originw,originb),mixcfg))
+    assert abs(float((losses[0]-losses[1])/2e-5-mg[0,0]))<1e-7
     print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true,"teacher_logit_recovery_and_blend_gradient":true,"bias_only_gradient":true}')
     print('{"passed":true,"TRAIN_label_prior_target_and_weighted_blend_gradient":true,"existing_GCV_recipe_reused":true,"no_TEST_derivatives":true}')
     print('{"passed":true,"independent_pair_full20_TRAIN_CE_gradient_and_Hessian":true,"published_direction_reused":true}')
+    print('{"passed":true,"fixed_TRAIN_MixUp_soft_target_gradient":true,"deterministic_no_new_samples_or_inference_layer":true}')
 
 
 if __name__ == '__main__':

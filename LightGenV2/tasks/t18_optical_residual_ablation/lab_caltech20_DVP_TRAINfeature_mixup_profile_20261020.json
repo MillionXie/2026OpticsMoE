@@ -1,0 +1,9 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps":240,"maximum_fit_seconds":120,
+  "label_smoothing":0.02,"correct_TRAIN_teacher_KL":0.02,"parameter_anchor":0.02,
+  "TRAIN_feature_mixup_alpha":0.4,"TRAIN_feature_mixup_repeats":3,"TRAIN_feature_mixup_seed":73,
+  "targets":{"4":314,"6":322},"final_targets":{"4":342,"6":350},
+  "scope":"One bounded final-prefix4/6 residual original-head contrast after renewed user request for both offline tracks. Actual all-head fits overfit L4/L6 while current parent remains283/203. Match the earlier L4 strong-anchor recipe exactly except TRAIN-only fixed feature MixUp: original1600clean feature records plus3 deterministic interpolated TRAIN/soft-label/parent-probability views, Beta(.4,.4),seed73. Mixed correctTRAIN teacher protection only where both source TRAIN labels were correctly classified. No TEST/VALID indices in interpolation or derivatives. Covariance/preconditioning uses clean TRAIN only. Derivative6400views do not constitute6400independent samples or new CCD; baseTRAIN1600 itself contains1508original+92fixed physical-input augmentations. At evaluation there is no MixUp or new layer; fold coordinates into the original5140Linear, freeze all other tensors. Full411TEST native bestlast/frozen/dataSHA proof, accuracy-first/tiedNLL development selection and global parent fallback mandatory. CPU2/noSDK/GPU/hardware change, original240LBFGSsteps/120fitseconds maximum, no new seed/alpha/regularization grid or automatic repeats. Source sync only after existing two native5150 workers exit; no hot patch. Final342/350 and L4 milestone305 not guaranteed; previous negative routes retained."
+}
