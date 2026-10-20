@@ -113,6 +113,15 @@ def check(point,condition):
         assert all(math.isfinite(float(v['watts'])) and float(v['watts'])>0 and 0<=float(v['utilization_percent'])<=100 for v in raw)
         clocks=rows(folder/f'clock_telemetry{suffix}.csv');assert clocks and all(float(v['power_limit_w'])==(250 if laboratory else 400) for v in clocks)
         streams.append(raw)
+    if calibration=='full_window_validation_v1':
+        for update in validations:
+            window=read(folder/f"calibration_validation{update['attempt']:02d}.json")
+            observed=[]
+            for raw in streams:
+                values=[float(v['utilization_percent']) for v in raw
+                        if window['wall_start']<=float(v['host_monotonic_s'])<window['wall_end']]
+                assert len(values)>=100;observed.append(statistics.mean(values))
+            close(max(observed),window['observed'])
     repeats=[]
     for r in report['repeats']:
         rc=[v for v in calls if int(v['repeat'])==r['repeat']];rw=[v for v in waits if int(v['repeat'])==r['repeat']]
