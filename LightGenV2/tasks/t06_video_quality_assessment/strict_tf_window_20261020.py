@@ -139,13 +139,18 @@ def measure(args,compute,inputs,first,folder,guard,duty):
                     phase('calibration_validation'+str(attempt))
                     count=max(2,math.ceil(35*candidate/statistics.mean(times)))
                     if count>100000:raise RuntimeError('Bounded rehearsal count exceeded')
-                    wall_start=time.monotonic();begin=len(calibration_calls)
-                    for i in range(count):
-                        _,a,b,_=group(audit=calibration_calls)
-                        if i+1<count:
+                    wall_start=time.monotonic();begin=len(calibration_calls);charged=0.;groups=0
+                    minimum=getattr(args,'minimum_charged_s',0.)
+                    for i in range(100000 if minimum else count):
+                        _,a,b,c=group(audit=calibration_calls);charged+=c;groups=i+1
+                        if groups>=count and charged>=minimum:break
+                        if candidate<1:
                             request=(b-a)*(1/candidate-1)*count/(count-1)
                             wa,wb=idle(request)
+                            charged+=wb-wa
                             calibration_waits.append(dict(attempt=attempt,group=i,start=wa,end=wb,requested_s=request))
+                    else:
+                        if minimum:raise RuntimeError('Bounded rehearsal duration not reached')
                     wall_end=time.monotonic()
                     selected=calibration_calls[begin:]
                     phase('outside_calibration_validation')
@@ -154,7 +159,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
                     observed=max(statistics.mean(values) for values in streams)
                     base.old.write(folder/f'calibration_validation{attempt:02d}.json',dict(
                         wall_start=wall_start,wall_end=wall_end,observed=observed,duty=candidate,
-                        groups=count,forward_calls=len(selected),not_formal_measurement=True))
+                        groups=groups,forward_calls=len(selected),charged_s=charged,not_formal_measurement=True))
                     return observed
                 def record(update):
                     updates.append(update);base.old.write(folder/'controller_updates.json',updates)
@@ -164,12 +169,17 @@ def measure(args,compute,inputs,first,folder,guard,duty):
         for rep in (1,2,3):
             phase('warmup'+str(rep));warm(5,duty)
             phase('measured'+str(rep));first_call=len(calls);first_wait=len(waits)
-            wall_start=time.monotonic()
-            for i in range(count):
-                out,a,b,_=group(rep)
-                if i+1<count and duty<1:
+            wall_start=time.monotonic();charged=0.;groups=0
+            minimum=getattr(args,'minimum_charged_s',0.)
+            for i in range(100000 if minimum else count):
+                out,a,b,c=group(rep);charged+=c;groups=i+1
+                if groups>=count and charged>=minimum:break
+                if duty<1:
                     request=(b-a)*(1/duty-1)*count/(count-1);wa,wb=idle(request)
+                    charged+=wb-wa
                     waits.append(dict(repeat=rep,group=i,start=wa,end=wb,requested_s=request))
+            else:
+                if minimum:raise RuntimeError('Bounded formal duration not reached')
             wall_end=time.monotonic();phase('outside_window')
             selected_calls=calls[first_call:];selected_waits=waits[first_wait:]
             # Only actual first-TF->output and actual INTERNAL control waits count.
@@ -178,13 +188,13 @@ def measure(args,compute,inputs,first,folder,guard,duty):
             energy=multi_gpu_energy(intervals,[list(sampler.samples) for sampler in samplers])
             if energy['elapsed_s']<30:raise RuntimeError('Charged complete trial shorter than30s')
             infos=[base.telemetry.telemetry_report([s for s in sampler.samples if wall_start<=s.host_monotonic_s<wall_end],prefix='') for sampler in samplers]
-            info=infos[0];videos=count*8*args.batch
+            info=infos[0];videos=groups*8*args.batch
             output=out.detach().cpu().tolist()
             if not output or not all(math.isfinite(float(v)) for v in output):raise RuntimeError('Nonfinite GPU MOS output')
             if repeats and any(abs(float(a)-float(b))>2e-4 for a,b in zip(output,repeats[0]['output'])):
                 raise RuntimeError('Repeated frozen-input outputs changed')
             result=dict(repeat=rep,timing_protocol=PROTOCOL,wall_start=wall_start,wall_end=wall_end,
-                wall_elapsed_s=wall_end-wall_start,groups=count,forward_calls=count*8,video_evaluations=videos,
+                wall_elapsed_s=wall_end-wall_start,groups=groups,forward_calls=groups*8,video_evaluations=videos,
                 unique_videos=args.batch,compute_s=sum(c['compute_s'] for c in selected_calls),
                 internal_wait_s=sum(w['end']-w['start'] for w in selected_waits),
                 excluded_preblock_s=sum(c['excluded_preblock_s'] for c in selected_calls),
@@ -199,6 +209,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
             method=args.method,batch=args.batch,nominal_resource_cap=args.cap if args.method=='mps' else None,
             frozen_duty=duty,repeats=repeats,time16_ms=sum(r['elapsed_s'] for r in repeats)*16000/videos,
             pacing_calibration='full_window_validation_v1' if duty<1 and getattr(args,'validate_pacing',False) else 'short_feedback60s_v1',
+            minimum_charged_s=getattr(args,'minimum_charged_s',0.),
             energy16_j=sum(r['energy_j'] for r in repeats)*16/videos,mean_gpu_busy_percent=busy,
             per_gpu_busy_percent=per_gpu_busy,allocation_average_busy_percent=statistics.mean(per_gpu_busy.values()),
             busy_control_basis='single GPU' if len(gpus)==1 else 'maximum of per-GPU pooled busy rates; NOT allocation average',

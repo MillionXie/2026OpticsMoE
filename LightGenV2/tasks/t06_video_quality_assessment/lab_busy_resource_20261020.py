@@ -26,15 +26,17 @@ from . import strict_tf_window_20261020 as strict
 TASK=shared.TASK;REPO=shared.REPO
 ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/strict.PROTOCOL
 PIPE='/DATA/DATA1/guest3/.cache/t06_mps_strict_tf_20261020'
-CONTINUATION='calibration_1140'
+PREVIOUS_CONTINUATION='calibration_1140'
+CONTINUATION='duration_1155'
 
 
 def completed_reference(name):
-    """Only the two completed predecessor points may be reused, in place."""
+    """Only the three completed predecessor points may be reused, in place."""
     current=ROOT/name
     if (current/'status.json').exists():return current
-    if ROOT.name==CONTINUATION and name in ('mps_clip_native_100','mps_clip_native_50'):
-        prior=ROOT.parent/'recovery_1102'/name
+    if ROOT.name==CONTINUATION and name in ('mps_clip_native_100','mps_clip_native_50','temporal_clip_native_100'):
+        session=PREVIOUS_CONTINUATION if name=='temporal_clip_native_100' else 'recovery_1102'
+        prior=ROOT.parent/session/name
         if json.loads((prior/'status.json').read_text())['status']!='complete':
             raise RuntimeError('Completed predecessor changed')
         return prior
@@ -135,8 +137,10 @@ def worker(args):
             # execution. Old queue8 duties do not describe the new protocol.
             conditions=[('unrestricted',1),('busy50',.5)]
         identity['timing_protocol']=strict.PROTOCOL
-        args.validate_pacing=args.session==CONTINUATION
+        args.validate_pacing=args.session in (PREVIOUS_CONTINUATION,CONTINUATION)
+        args.minimum_charged_s=35. if args.session==CONTINUATION else 0.
         identity['pacing_calibration']='full_window_validation_v1' if args.validate_pacing else 'short_feedback60s_v1'
+        identity['minimum_charged_s']=args.minimum_charged_s
         for label,duty in conditions:
             report=strict.measure(args,compute,inputs,first,args.output/label,guard,duty)
             if report['target50_reached'] is False:
@@ -173,16 +177,18 @@ def suite(args):
                             engine.daemon(True);active=True
                         batch=1 if method=='mps' else {'qwen':3,'glm':2 if precision=='native' else 1,'clip':10,'yolo':3}[model]
                         name=f'{method}_{model}_{precision}_{cap}';output=ROOT/name
-                        if args.session==CONTINUATION and name in ('mps_clip_native_100','mps_clip_native_50'):
+                        if args.session==CONTINUATION and name in ('mps_clip_native_100','mps_clip_native_50','temporal_clip_native_100'):
                             prior=completed_reference(name)
-                            report=json.loads((prior/('mps_cap'+str(cap))/'report.json').read_text())
+                            condition='mps_cap'+str(cap) if method=='mps' else 'busy50'
+                            report=json.loads((prior/condition/'report.json').read_text())
                             identity=json.loads((prior/'identity.json').read_text())
-                            if report['status']!='complete' or report['batch']!=1 or len(report['repeats'])!=3:
+                            if report['status']!='complete' or report['batch']!=(1 if method=='mps' else 10) or len(report['repeats'])!=3:
                                 raise RuntimeError('Invalid completed predecessor')
+                            if method=='temporal' and report['target50_reached'] is not True:raise RuntimeError('Prior control must qualify')
                             if frozen.sha256(locations(model)[1])!=identity['checkpoint_sha256'] or previous.costs.model_hashes(locations(model)[0])!=identity['assets']:
                                 raise RuntimeError('Reused frozen assets changed')
                             state.setdefault('reused',{})[name]=dict(path=str(prior.relative_to(REPO)),
-                                report_sha256=frozen.sha256(prior/('mps_cap'+str(cap))/'report.json'),
+                                report_sha256=frozen.sha256(prior/condition/'report.json'),
                                 identity_sha256=frozen.sha256(prior/'identity.json'))
                             save();continue
                         _,_,python,_=locations(model)
@@ -216,7 +222,7 @@ def main():
     global ROOT,PIPE
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--suite',action='store_true')
-    p.add_argument('--session',choices=('original','idle_1049','recovery_1102',CONTINUATION),default='original')
+    p.add_argument('--session',choices=('original','idle_1049','recovery_1102',PREVIOUS_CONTINUATION,CONTINUATION),default='original')
     p.add_argument('--model',choices=('qwen','glm','clip','yolo'))
     p.add_argument('--method',choices=('temporal','mps'))
     p.add_argument('--precision',choices=('native','fp32'))
@@ -234,13 +240,20 @@ def main():
             if state['status']!='stopped' or state['completed'] or list(failed.glob('*/*/report.json')):
                 raise RuntimeError('One authorized recovery only; preserve completed points')
             if Path('/proc/'+str(state['pid'])).exists():raise RuntimeError('Prior suite still alive')
-        if args.session==CONTINUATION:
+        if args.session in (PREVIOUS_CONTINUATION,CONTINUATION):
             prior=ROOT/'recovery_1102';state=json.loads((prior/'suite_status.json').read_text())
             if state['status']!='stopped' or state['completed']!=['mps_clip_native_100','mps_clip_native_50']:
                 raise RuntimeError('Exact preserved predecessor required')
             if Path('/proc/'+str(state['pid'])).exists():raise RuntimeError('Prior suite alive')
             failed=json.loads((prior/'temporal_clip_native_100/status.json').read_text())
             if 'miss50+/-5' not in failed.get('error',''):raise RuntimeError('Expected controller-target failure only')
+        if args.session==CONTINUATION:
+            prior=ROOT/PREVIOUS_CONTINUATION;state=json.loads((prior/'suite_status.json').read_text())
+            if state['status']!='stopped' or state['completed']!=['temporal_clip_native_100']:
+                raise RuntimeError('Exact completed calibration predecessor required')
+            if Path('/proc/'+str(state['pid'])).exists():raise RuntimeError('Prior suite alive')
+            failed=json.loads((prior/'mps_yolo_native_100/status.json').read_text())
+            if 'shorter than30s' not in failed.get('error',''):raise RuntimeError('Expected zero-complete-trial duration failure only')
         ROOT=ROOT/args.session;PIPE=PIPE+'_'+args.session
         if args.output==p.get_default('output'):args.output=ROOT
     args.output=args.output.resolve()

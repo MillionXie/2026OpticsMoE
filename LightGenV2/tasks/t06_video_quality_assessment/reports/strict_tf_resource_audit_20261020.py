@@ -15,6 +15,7 @@ REPO=common.REPO;TASK=common.TASK
 ROOT=TASK/'runs/simulation/lgvq_strict_tf_rental_dual_20261020'
 LAB_ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/'per_forward_first_block_plus_internal_wait_v1'/'recovery_1102'
 LAB_CONTINUATION=LAB_ROOT.parent/'calibration_1140'
+LAB_DURATION=LAB_ROOT.parent/'duration_1155'
 PROTOCOL='per_forward_first_block_plus_internal_wait_v1'
 ACCOUNTING='per_forward_tf_plus_output_to_next_input_v2'
 NAMES={'deepseek':'DeepSeek-VL2','kimi':'Kimi-VL-A3B','qwen':'Qwen3-VL-2B','glm':'GLM-4.6V-Flash','clip':'CLIP ViT-B/32','yolo':'YOLO11s'}
@@ -143,6 +144,7 @@ def check(point,condition):
                          [(float(w['start']),float(w['end'])) for w in rw])
         assert all(a[1]<=b[0] for a,b in zip(intervals,intervals[1:]))
         close(compute,r['compute_s']);close(waiting,r['internal_wait_s']);close(compute+waiting,r['elapsed_s']);assert r['elapsed_s']>=30
+        assert r['elapsed_s']>=report.get('minimum_charged_s',0.)-1e-8
         assert r['wall_start']<=intervals[0][0] and intervals[-1][1]<=r['wall_end']
         board=[observed_energy(intervals,raw) for raw in streams]
         energy=338.2*(compute+waiting)+sum(board);close(energy,r['energy_j'])
@@ -227,7 +229,7 @@ def verify_accuracy(path,head_sha):
 
 def main():
     points=[]
-    for root in (ROOT,ROOT/'attempt02',ROOT/'native_tail01',ROOT/'native_tail02',LAB_ROOT,LAB_CONTINUATION):
+    for root in (ROOT,ROOT/'attempt02',ROOT/'native_tail01',ROOT/'native_tail02',LAB_ROOT,LAB_CONTINUATION,LAB_DURATION):
         if not root.exists():continue
         for folder in root.iterdir():
             if not folder.is_dir() or not (folder/'identity.json').exists() or not (folder/'status.json').exists():continue
@@ -257,7 +259,7 @@ def main():
         elif p['model']=='deepseek':path=next((root/'mps_deepseek_fp32_100/accuracy558/report.json' for root in (ROOT/'attempt02',ROOT) if (root/'mps_deepseek_fp32_100/accuracy558/report.json').exists()),None)
         else:
             path=next((root/f'accuracy_fp32/{p["model"]}_batch{p["batch"]:02d}/report.json'
-                       for root in (LAB_CONTINUATION,LAB_ROOT)
+                       for root in (LAB_DURATION,LAB_CONTINUATION,LAB_ROOT)
                        if (root/f'accuracy_fp32/{p["model"]}_batch{p["batch"]:02d}/report.json').exists()),None)
         paths=path if isinstance(path,list) else ([path] if path is not None else [])
         if paths:
@@ -279,7 +281,7 @@ def main():
             p['resident_reference_max_abs_mos_delta']=max(deltas)
     target=ROOT/'presentation';target.mkdir(parents=True,exist_ok=True)
     rental_count=sum(p['model'] in ('deepseek','kimi') for p in points)
-    active_lab=LAB_CONTINUATION if LAB_CONTINUATION.exists() else LAB_ROOT
+    active_lab=LAB_DURATION if LAB_DURATION.exists() else LAB_CONTINUATION if LAB_CONTINUATION.exists() else LAB_ROOT
     lab_state=read(active_lab/'suite_status.json') if (active_lab/'suite_status.json').exists() else {'status':'partial_local_backup'}
     data=dict(timing_protocol=PROTOCOL,accounting_protocol=ACCOUNTING,status='all48_complete' if len(points)==48 else 'rental16_complete' if rental_count==16 else 'partial',values=points,optical=optical,models=NAMES,
         rental_count=rental_count,laboratory_count=len(points)-rental_count,

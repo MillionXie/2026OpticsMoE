@@ -48,7 +48,7 @@ def test_each_forward_has_its_own_synchronized_boundary_and_raw_record():
     assert "synchronize();armed['start']=time.monotonic()" in source
     assert 'out,_=compute(inputs);synchronize()' in source
     assert 'for device in range(len(gpus)):torch.cuda.synchronize(device)' in source
-    assert "if i+1<count and duty<1:" in source
+    assert "if groups>=count and charged>=minimum:break" in source
     assert "every_preblock_interval_excluded=True" in source
     assert "cost_intervals_are_not_contiguous_wall_window=True" in source
     assert "if wall_start<=s.host_monotonic_s<wall_end]" in source
@@ -99,9 +99,12 @@ def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(mo
     monkeypatch.setattr(m.base.prior,'ClockSampler',lambda *a:SimpleNamespace(start=lambda:None,stop=lambda *a:None))
     out=SimpleNamespace(detach=lambda:SimpleNamespace(cpu=lambda:SimpleNamespace(tolist=lambda:[1.])))
     def compute(_):
-        clock.now+=.004;first.hook();clock.now+=.020
+        # Cold initial warmup is slower; the measured loop must NOT terminate
+        # too early when the runtime subsequently becomes faster.
+        duration=.040 if validation and clock.now<5 else .020
+        clock.now+=.004;first.hook();clock.now+=duration
         return out,None
-    args=SimpleNamespace(gpu_uuid='synthetic',gpu_uuids=tuple('synthetic'+str(i) for i in range(devices)),model='synthetic',precision='native',method='temporal',batch=2,cap=100,validate_pacing=validation)
+    args=SimpleNamespace(gpu_uuid='synthetic',gpu_uuids=tuple('synthetic'+str(i) for i in range(devices)),model='synthetic',precision='native',method='temporal',batch=2,cap=100,validate_pacing=validation,minimum_charged_s=35. if validation else 0.)
     result=m.measure(args,compute,None,first,tmp_path/'synthetic_cpu_fixture',SimpleNamespace(fast=lambda:None),duty)
     assert len(result['repeats'])==3
     for rep in result['repeats']:
@@ -110,6 +113,7 @@ def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(mo
         assert rep['excluded_preblock_s']>0
         assert rep['wall_elapsed_s']>rep['elapsed_s']
         assert rep['video_evaluations']==rep['forward_calls']*2
+        if validation:assert rep['elapsed_s']>=35.
         assert rep['internal_wait_s']>0 if duty<1 else rep['internal_wait_s']==0
     assert first.hook is None
     if devices==2:assert (0,) in synchronized and (1,) in synchronized
