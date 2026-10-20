@@ -2,13 +2,13 @@
 
 ## Current comparison: cold, distinct-video MPS measurements, 20–21 October 2026
 
-The four laboratory baselines were remeasured at a fixed video batch size of one
-under 100% and 50% MPS resource allocations. All eight conditions and 24 independent
+Six frozen baselines were measured at a fixed video batch size of one
+under 100% and 50% MPS resource allocations. All twelve conditions and 36 independent
 process runs are complete. The [editable plotting workbook](LGVQ_MPS_dataset_once_comparison.xlsx)
-contains the summary, all 24 trial observations, calculation formulas and source
+contains the summary, all 36 trial observations, calculation formulas and source
 identities. The [unrounded plotting data](mps_dataset_once_plot_data.csv) include
-all nine plotted points, separating the retained optical reference from the eight
-new electronic conditions. The new [time panel](mps_dataset_once_comparison_latency.png),
+all thirteen plotted points, separating the retained optical reference from the twelve
+electronic conditions. The new [time panel](mps_dataset_once_comparison_latency.png),
 [energy panel](mps_dataset_once_comparison_energy.png) and
 [paired display](mps_dataset_once_comparison_pair.png) use only this dataset.
 The earlier resident-repeat workbooks and figures below are preserved as
@@ -18,7 +18,11 @@ different-protocol historical evidence, not additional points in the new figure.
 
 Qwen3-VL-2B, GLM-4.6V-Flash, CLIP ViT-B/32 and YOLO11s were evaluated on the same
 laboratory NVIDIA A100-PCIE-40GB at its unchanged 250-W power limit
-(UUID GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55). The original split comprised 2,250
+(UUID GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55). Full DeepSeek-VL2 and Kimi-VL-A3B
+were measured on one rented A100-SXM4-80GB at its unchanged 400-W power limit
+(UUID GPU-d06c95d0-7066-9768-0f6e-fc1ee877f9f9). Hardware and power limits are
+identified in the source data; this is not a same-device comparison across all six
+models. The original split comprised 2,250
 training and 558 TEST videos, with no validation split; the manifest SHA256 was
 607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc.
 Each condition used three fresh processes. In each process, all 558 TEST videos
@@ -32,6 +36,7 @@ and native forward arithmetic were retained. Qwen and GLM used BF16 backbones
 with FP32 quality readout. CLIP retained its mixed FP16/FP32 parameter profile and
 FP16 autocast, and YOLO retained FP32 parameters with FP16 autocast; both readouts
 were FP32. Their original FP16 feature-storage round-trip was also retained.
+DeepSeek-VL2 and Kimi used their original BF16 backbones and FP32 quality readouts.
 No weights were trained, no checkpoint was selected in this measurement, and no
 CUDA Graph was introduced. SRCC was recalculated from all 558 predictions at each
 allocation and repeat, rather than copied between conditions. These are frozen,
@@ -60,7 +65,8 @@ T16 = C * 16000 / 200, in milliseconds
 E16 = [338.2 * C + integral_over_charged_intervals(P_GPU(t) dt)] * 16 / 200, in joules
 ```
 
-The first block was the original visual Transformer block for Qwen, GLM and CLIP,
+The first block was the original visual Transformer block for Qwen, GLM, CLIP,
+DeepSeek-VL2 and Kimi,
 and the first convolution for YOLO. The legacy host-hook placement was preserved:
 no new synchronization was inserted inside that hook to drain pending frontend
 GPU work. Accordingly, this is the original block-entry wall-time convention,
@@ -80,7 +86,7 @@ Three-trial costs were pooled by actual charged time, integrated energy and
 completed evaluations; all three trials had 200 cost evaluations. Mean SRCC was
 computed across the three full 558 evaluations. No fastest, highest-utilization
 or best-accuracy repeat was selected. The quantities below are 16-video
-equivalents normalized from200 videos, not the latency of a GPU batch of 16 and
+equivalents normalized from 200 videos, not the latency of a GPU batch of 16 and
 not full input-video-to-output response time.
 
 ### Complete numerical report
@@ -96,12 +102,16 @@ not full input-video-to-output response time.
 | CLIP ViT-B/32 | 50% | 0.725170 | 178.146 | 67.243 |
 | YOLO11s | 100% | 0.701597 | 380.349 | 143.973 |
 | YOLO11s | 50% | 0.701597 | 389.371 | 147.359 |
+| DeepSeek-VL2 | 100% | 0.716735 | 8276.352 | 4657.903 |
+| DeepSeek-VL2 | 50% | 0.708753 | 12153.304 | 6454.379 |
+| Kimi-VL-A3B | 100% | 0.805465 | 3649.292 | 1760.164 |
+| Kimi-VL-A3B | 50% | 0.801242 | 4104.270 | 1978.952 |
 
 ### Figure descriptions
 
 **Time panel.** Temporal quality, measured by Spearman's rank correlation
 coefficient (SRCC), is plotted against 16-video-equivalent processing time for the
-four frozen baselines at 100% and 50% MPS allocation. Each electronic point
+six frozen baselines at 100% and 50% MPS allocation. Each electronic point
 summarizes three fresh-process evaluations without inference warmup. The timing
 includes the original first-block-to-GPU-output interval and nonpreprocessing
 inter-video gaps, while excluding each video's input preparation. Filled and
@@ -124,7 +134,7 @@ available beside these files.
 
 ### Provenance and interpretation boundary
 
-The canonical run is
+The laboratory canonical run is
 `LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_a100_20261020`.
 All 24 prediction files, timestamped call records, raw telemetry, model/PT/split
 identities and process audits passed the independent
@@ -135,11 +145,25 @@ after release. The measurement entry was published as 54a0aa9a before execution;
 later unrelated main commits were checked by per-file SHA rather than treated as
 algorithm changes.
 
+The two larger baselines are recorded in
+`LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_rental_20261021_replacement02`.
+All twelve additional runs completed 558 predictions, with the first 200 used for
+costs. Their 133 raw and control files (27,702,038 bytes) were backed up with
+per-file SHA256 checks. A separate replay of all 36 laboratory and rented runs
+reproduced their time, energy, SRCC and PLCC from the original timestamps,
+power samples and predictions. The original laboratory summary was retained
+byte-for-byte. Source revisions 5ffa091f6, ccc89c766 and e2f992453 record the
+authorized rental-deadline handovers; runtime, worker and charged-interval
+arithmetic were unchanged. The imported-runtime receipt confirms Torch
+2.6.0+cu124 for both rental environments, with the original model-specific
+dependencies. At completion, the suite reported private-MPS release; a separate
+read-only query confirmed no compute processes, 0% GPU busy and 0 MiB used memory.
+
 The historical Qwen B1 anchor remains 1188.3861464262009 ms,
 462.1134010767563 J and SRCC 0.7663428036522781. It is not overwritten or relabelled
-as this new measurement. DeepSeek-VL2 and Kimi were excluded from this revision:
-their prior resident-repeat points cannot be mixed into a supposedly uniform
-cold distinct-video comparison. The retained optical values also keep their
+as this new measurement. DeepSeek-VL2 and Kimi now have new cold distinct-video
+measurements; their prior resident-repeat points remain historical and are not
+mixed into this comparison. The retained optical values also keep their
 earlier component-cost boundary. Relative costs in the workbook are therefore
 conditional on these declared boundaries, not a new matched full-pipeline claim.
 

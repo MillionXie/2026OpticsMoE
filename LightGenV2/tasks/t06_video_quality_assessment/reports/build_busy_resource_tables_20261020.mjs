@@ -52,7 +52,7 @@ async function buildDatasetOnce(){
  catch(e){if(e.code!=='ENOENT')throw e;try{await fs.access(output);throw Error('Unidentified existing workbook');}catch(x){if(x.code!=='ENOENT')throw x;}}
  let book,imported=true;try{book=await SpreadsheetFile.importXlsx(await FileBlob.load(output));}catch(e){if(e.code!=='ENOENT')throw e;book=Workbook.create();imported=false;}
  const s=imported?book.worksheets.getItem('Plot data'):book.worksheets.add('Plot data'),t=imported?book.worksheets.getItem('Trial data'):book.worksheets.add('Trial data');
- for(const sh of [s,t])sh.getUsedRange().clear({applyTo:'contents'});
+ if(imported)for(const sh of [s,t])sh.getUsedRange().clear({applyTo:'contents'});
  if(combined){t.getRange('A28:D29').clear({applyTo:'formats'});t.getRange('P28:Q29').clear({applyTo:'formats'});}
  const names={qwen:'Qwen3-VL-2B',glm:'GLM-4.6V-Flash',clip:'CLIP ViT-B/32',yolo:'YOLO11s',deepseek:'DeepSeek-VL2',kimi:'Kimi-VL-A3B'};
  const colors={qwen:'#0072B2',glm:'#92527F',clip:'#007F63',yolo:'#9B7000',deepseek:'#79502C',kimi:'#D14F64'};
@@ -91,7 +91,7 @@ async function buildDatasetOnce(){
   'Optical values retain the prior component-cost reference; they are not a new matched wall-clock run.',
   'Historical Qwen B1: 1188.386146 ms, 462.113401 J, SRCC 0.7663428037. Preserved; not plotted as this run.',
   'Raw wall-window busy includes excluded preprocessing. Board energy uses driver-averaged NVML samples.',
-  'The first native block is a Transformer block for Qwen/GLM/CLIP; YOLO starts at its first convolution.',
+  'The timer starts at the first native visual Transformer block, except YOLO (first convolution).',
   'Frozen preselected heads. TEST development metrics, no validation split, no new checkpoint selection.'
  ];
  notes.forEach((text,i)=>{s.getRange('A'+(notesRow+i)).values=[[text]];s.getRange(`A${notesRow+i}:K${notesRow+i}`).format.rowHeight=23;});

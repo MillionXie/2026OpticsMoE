@@ -1,5 +1,33 @@
 # T06 视频质量评价
 
+## 2026-10-21 03:34 闭环：DS/Kimi十二轮补齐，六模型图表更新
+
+replacement02的完整版DeepSeek-VL2/Kimi-VL-A3B已完成MPS100/50各三fresh process，
+共12轮，每轮558原序TEST/前200不同视频成本、零预热、B1、原BF16骨干/FP32头。
+固定原首视觉Transformer块到GPU输出，加199段输出至下一预处理开始的内部间隔；
+每次外部准备及model-call前端扣除，功率对同一区间积分加338.2W代理一次，口径未改。
+独立重放新增12轮及合并全部36轮的时间、能耗、SRCC/PLCC均通过；原实验室24轮
+summary逐SHA保持不变，旧QwenB1定稿也未修改。MPS配额不是GPU时间忙碌率。
+
+| 模型 | MPS配额 | SRCC | T16/ms | E16/J |
+|---|---:|---:|---:|---:|
+| DeepSeek-VL2 | 100% | .716735 | 8276.352 | 4657.903 |
+| DeepSeek-VL2 | 50% | .708753 | 12153.304 | 6454.379 |
+| Kimi-VL-A3B | 100% | .805465 | 3649.292 | 1760.164 |
+| Kimi-VL-A3B | 50% | .801242 | 4104.270 | 1978.952 |
+
+原始及控制133文件/27,702,038字节已逐SHA备份本地同名canonical run；
+suite complete/mps_released，独立只读核查父30104/末worker41806及MPS已退出，
+GPU为0%/0MiB/无compute PID，记录release_verification.json。不自动续租或关闭实例。
+用户最终授权04:00到期，实测已提前完成；无定时监督任务。
+
+原目录LGVQ_MPS_dataset_once_comparison.xlsx已扩充12条件/36原始轮次，保留两sheet，
+公式重算/扰动恢复/重导入/零公式错误及显示核查通过；同目录CSV和时间/能耗/配对图
+已补齐六模型，仅原部署精度、不含Tiny/Small，图上不写batch/N16/GPU利用率/spatial。
+方法、13点数值及两图论文说明见原报告README最新段落。DS/Kimi为80GB/400W，
+其余四模型40GB/250W，来源明确分列；光学点仍是旧组件成本参考，非新匹配墙钟实验。
+nature-writing用于方法及来源边界的局部更新，未扩展实验结论。
+
 ## 2026-10-21 01:54 替换租赁实例接续
 
 用户提供替换实例，实检A100-SXM4-80GB/400W、0MiB已用、81154MiB可用、无计算PID。

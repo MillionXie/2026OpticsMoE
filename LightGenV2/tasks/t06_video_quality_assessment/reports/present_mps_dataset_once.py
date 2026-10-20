@@ -67,7 +67,8 @@ def main():
     source=ROOT/('dataset_once_combined.json' if args.combined else 'dataset_once_audited.json');data=json.loads(source.read_text())
     assert data['status']=='complete' and len(data['points'])==len(NAMES)*2 and len(data['repeats'])==len(NAMES)*6
     if args.combined:
-        previous_receipt=ROOT.parents[1]/'lgvq_mps_dataset_once_a100_20261020/presentation/figure_receipt.json'
+        previous_receipt=ROOT/'figure_receipt.json'
+        if not previous_receipt.exists():previous_receipt=ROOT.parents[1]/'lgvq_mps_dataset_once_a100_20261020/presentation/figure_receipt.json'
         previous=json.loads(previous_receipt.read_text())
         for name,expected in previous['files'].items():
             target=OUT/name
@@ -76,6 +77,12 @@ def main():
             if actual!=expected:raise RuntimeError('Existing export changed externally; preserve '+name)
             archive=ROOT/(target.stem+'_prior_'+actual[:12]+target.suffix)
             if not archive.exists():shutil.copy2(target,archive)
+    elif (ROOT/'figure_receipt.json').exists():
+        previous=json.loads((ROOT/'figure_receipt.json').read_text())
+        for name,expected in previous['files'].items():
+            target=OUT/name
+            if target.exists() and digest(target)!=expected:
+                raise RuntimeError('Refuse older four-model export over a newer or externally changed presentation: '+name)
     optical_source=ROOT.parents[1]/'lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json'
     prior=json.loads(optical_source.read_text())['optical']
     assert (prior['time_ms'],prior['energy_j'],prior['srcc'])==(OPTICAL['time16_ms'],OPTICAL['energy16_j'],OPTICAL['srcc'])
@@ -103,7 +110,7 @@ def main():
     legends(fig);target=OUT/'mps_dataset_once_comparison_pair.png';fig.savefig(target,dpi=600);receipt['files'][target.name]=digest(target);plt.close(fig)
     target=OUT/'mps_dataset_once_plot_data.csv'
     base_fields=['model','resource_cap','batch','time16_ms','energy16_j','srcc']
-    fields=['model','model_name',*base_fields[1:],'srcc_repeats','time_ratio_to_optical','energy_ratio_to_optical','unique_cost_videos_per_repeat','full_test_videos_per_repeat','repeats','evidence_type','source_json','source_sha256']
+    fields=['model','model_name',*base_fields[1:],'srcc_repeats','time_ratio_to_optical','energy_ratio_to_optical','unique_cost_videos_per_repeat','full_test_videos_per_repeat','repeats','evidence_type','source_json','source_sha256','gpu_platform','power_limit_w','parameter_dtypes','readout_dtypes']
     with target.open('w',newline='',encoding='utf-8-sig') as f:
         w=csv.DictWriter(f,fieldnames=fields);w.writeheader()
         w.writerow(dict(model='ours',model_name='LightGen-II',**OPTICAL,time_ratio_to_optical=1,energy_ratio_to_optical=1,
@@ -113,7 +120,11 @@ def main():
                         'time_ratio_to_optical':p['time16_ms']/OPTICAL['time16_ms'],
                         'energy_ratio_to_optical':p['energy16_j']/OPTICAL['energy16_j'],
                         'unique_cost_videos_per_repeat':200,'full_test_videos_per_repeat':558,'repeats':3,'evidence_type':'New cold distinct-video measurement',
-                        'source_json':source.relative_to(REPO).as_posix(),'source_sha256':digest(source)})
+                        'source_json':source.relative_to(REPO).as_posix(),'source_sha256':digest(source),
+                        'gpu_platform':'A100-SXM4-80GB' if p['model'] in ('deepseek','kimi') else 'A100-PCIE-40GB',
+                        'power_limit_w':400 if p['model'] in ('deepseek','kimi') else 250,
+                        'parameter_dtypes':', '.join(p['repeats'][0]['parameter_dtypes']),
+                        'readout_dtypes':', '.join(p['repeats'][0]['readout_dtypes'])})
     receipt['files'][target.name]=digest(target)
     (ROOT/'figure_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print(json.dumps(receipt,indent=2))

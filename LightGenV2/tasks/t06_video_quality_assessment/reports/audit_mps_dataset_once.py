@@ -113,6 +113,11 @@ def main():
                 values.append(audit_point(folder));print('REPLAY_PASS',folder.name,flush=True)
     points=[]
     for model in models:
+        all_model_repeats=[r for r in values if r['model']==model]
+        if all_model_repeats:
+            assert len({r['checkpoint_sha256'] for r in all_model_repeats})==1,'Weights differ between allocations'
+            assert len({tuple(r['parameter_dtypes']) for r in all_model_repeats})==1,'Parameter precision differs between allocations'
+            assert len({tuple(r['readout_dtypes']) for r in all_model_repeats})==1,'Readout precision differs between allocations'
         for cap in (100,50):
             rr=[r for r in values if (r['model'],r['resource_cap'])==(model,cap)]
             if len(rr)!=3:continue
@@ -133,6 +138,8 @@ def main():
     if a.rental and complete:
         prior=ROOT.parent/'lgvq_mps_dataset_once_a100_20261020/presentation/dataset_once_audited.json'
         lab=read(prior);assert lab['status']=='complete' and len(lab['points'])==8 and len(lab['repeats'])==24
+        delivered=read(prior.parent/'dataset_once_workbook_receipt.json')
+        assert sha(prior)==delivered['source_sha256'],'Preserve the delivered laboratory dataset without silent edits'
         combined=dict(status='complete',points=lab['points']+points,repeats=lab['repeats']+values,
                       historical_Qwen_B1_unchanged=True,
                       sources=[dict(path=prior.relative_to(REPO).as_posix(),sha256=sha(prior)),
