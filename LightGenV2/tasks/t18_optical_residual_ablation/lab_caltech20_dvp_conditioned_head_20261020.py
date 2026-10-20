@@ -103,6 +103,35 @@ def nonhead_equal(first, second):
     return set(first)==set(second) and all(torch.equal(value,second[key]) for key,value in first.items() if not key.startswith('linear.'))
 
 
+def strict_parallel_capture_proof(a, lock, owner):
+    """Read-only completed-prefix CPU work may overlap the OTHER strict depth."""
+    assert a.attempt=='strict8pp_20261020' and a.depth in (4,6) and 1<=a.prefix<=a.depth+1
+    assert a.mode in ('fit','row-fit','pair-fit','shrink-fit','teacher-readout-fit','label-ridge-fit')
+    other_depth=6 if a.depth==4 else 4
+    session=core.session_for(a);other=a.sequence/f'L{other_depth}_strict8pp_20261020'
+    assert session.resolve()!=other.resolve() and lock.get('camera')=='DVP' and lock.get('pilot') is False
+    assert Path(lock['session']).resolve()==other.resolve() and owner.pid==lock['pid']
+    args=owner.cmdline()
+    def option(flag):
+        assert flag in args and args.index(flag)+1<len(args)
+        return args[args.index(flag)+1]
+    assert any(Path(v).resolve()==Path(core.__file__).resolve() for v in args)
+    assert option('--mode')=='capture' and int(option('--depth'))==other_depth
+    assert option('--attempt')==a.attempt and Path(option('--sequence')).resolve()==a.sequence.resolve()
+    assert option('--stage')==lock['stage'] and lock['stage'] in ['router']+[str(i) for i in range(other_depth)]
+    data_digest=core.read(a.sequence/'assets/data_manifest.json')['sha256'];reports={}
+    for stage in ['router']+[str(i) for i in range(a.prefix-1)]:
+        p=session/'capture'/stage/'report.json';r=core.read(p);audit=p.with_name('independent_capture_audit.json');v=core.read(audit)
+        assert r['state']=='complete' and r['TRAIN']==1600 and r['TEST']==411 and r['physical_ccd']==2011 and r['sdk_released']
+        assert r['data_SHA256']==data_digest and v['passed'] and v['SDK_released'] and v['all_receipts_and_array_SHA_verified']
+        assert v['report_SHA256']==core.sha(p) and v['contract_SHA256']==core.sha(p.with_name('contract.json'))
+        assert v['PT_SHA256']==r['PT_SHA256'] and v['phase_SHA256']==r['phase_SHA256'] and v['arrays']==r['arrays']
+        reports[stage]=dict(report_SHA256=core.sha(p),audit_SHA256=core.sha(audit),arrays=r['arrays'])
+    return dict(SDK_used=False,GPU_used=False,parallel_capture=True,strict_attempt=True,
+                capture_lock_snapshot=lock,capture_process_create_time=owner.create_time(),
+                complete_measured_prefix_proofs=reports,other_depth_only=True,data_SHA256=data_digest)
+
+
 def cpu_fit_admission(a):
     """A complete frozen L4 head may fit while this run captures L6.
 
@@ -114,6 +143,10 @@ def cpu_fit_admission(a):
     if core.LOCK.exists():
         import psutil
         lock=core.read(core.LOCK)
+        if getattr(a,'attempt',None)=='strict8pp_20261020':
+            proof=strict_parallel_capture_proof(a,lock,psutil.Process(lock['pid']))
+            a.cpu_fit_admission_proof=proof
+            return proof
         assert a.depth==4 and a.prefix==5
         assert lock.get('camera')=='DVP' and Path(lock['session']).resolve()==(a.sequence/'L6').resolve()
         args=psutil.Process(lock['pid']).cmdline()
