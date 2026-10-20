@@ -1,5 +1,50 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
+## Current figure selection: MPS with original deployment precision
+
+The current selected comparison is [editable plot data](LGVQ_MPS_deployed_comparison.xlsx),
+with [processing time](mps_deployed_comparison_latency.png),
+[estimated energy](mps_deployed_comparison_energy.png), and a
+[side-by-side pair](mps_deployed_comparison_pair.png). The unrounded export is
+[selected plot data](mps_deployed_plot_data.csv). These select the twelve existing
+native-precision MPS conditions and all 36 qualified trials, without new GPU runs.
+The earlier eight-view workbook and all precision/control comparisons below remain
+historical evidence, not additional points in this selected figure.
+
+Both MPS allocations use B=1 for every model; 50% and 100% denote the configured
+execution-resource limit, not measured GPU busy time. Filled markers denote 100%
+allocation and open markers 50%. Each model keeps the same marker and connecting
+line. The selected figures contain no GPU-utilization or optical-spatial-use labels.
+Actual busy traces, batch, source identities and deployment precision remain in the
+data records. No Tiny/Small or rental Qwen audit point is included.
+
+| Model | Original deployment compute | Quality readout |
+|---|---|---|
+| Qwen3-VL-2B | BF16 | FP32 |
+| GLM-4.6V-Flash | BF16 | FP32 |
+| CLIP ViT-B/32 | FP16 autocast; mixed FP16/FP32 parameters | FP32 |
+| YOLO11s | FP16 autocast; FP32 parameters | FP32 |
+| DeepSeek-VL2, full | BF16, one A100-SXM4-80GB | FP32 |
+| Kimi-VL-A3B | BF16, one A100-SXM4-80GB | FP32 |
+
+These are the previously measured deployment profiles, not an assertion that all
+non-Qwen models default to FP32. Equal batch does not remove numerical precision
+differences; rather, each model's precision is held fixed across its two resource
+conditions. No integer quantization or new precision conversion is introduced.
+SRCC uses the separately identified matching-B1 full558 TEST development reference,
+not a fresh full558 run at each cap. Original checkpoints and historical Qwen B1
+remain unchanged. The selected Qwen MPS measurements are distinct from that anchor.
+
+The timing and energy accounting below is unchanged: sum each first-block-to-GPU-MOS
+interval and output-to-next-model-call gap, exclude every preblock frontend, and
+normalize by completed evaluations to sixteen-video equivalents. MPS introduces
+no deliberate sleep. Integrate power over the same charged intervals, adding the
+338.2-W host proxy once. The optical point remains the earlier component-cost
+reference, not a newly matched continuous-wall measurement. The figures therefore
+show equivalent processing costs under the declared boundaries, not new-video
+end-to-end pipeline latency. Mixed A100 platforms and nominal parameter-count bases
+remain documented in the workbook and original identities.
+
 ## Current measurement definition: 20 October 2026, strict interval costs
 
 Current editable data: [eight-view comparison workbook](LGVQ_busy_resource_precision_comparison.xlsx).

@@ -1,5 +1,20 @@
 # T06 视频质量评价
 
+## 2026-10-20 展示收敛为MPS原部署精度，两张成本图
+
+用户最新要求不再分FP32/BF16两套展示，选择已有native部署profile的MPS100/50配额，
+六模型全部固定B1，共12条件/36完整重复；不重训、不重测、不按结果挑精度。
+实际骨干Qwen/GLM/完整版DS/Kimi为BF16，CLIP为FP16/FP32混合，YOLO参数FP32但
+计算FP16autocast；质量读出均FP32。不能把“同batch”写成消除了精度误差，也不将
+其他模型统一误标FP32。各模型两配额内precision/PT/输入合同不变，旧QwenB1定稿不动。
+
+原报告目录新增聚焦交付LGVQ_MPS_deployed_comparison.xlsx及mps_deployed_comparison
+时间/能耗/左右配对PNG、SVG、PDF，图上去掉GPU利用率和spatial标签，保留填充/空心
+标识100/50资源配额及同模型连线。旧八视图表、FP32和时间限流图全部保留。
+原始busy、精度、batch、逐轮时间能量、精确来源/SHA继续留底；精度仍引用独立同B1
+full558开发指标，不冒称两cap各自重测。计时/能耗及旧光学组件参考边界均不改变。
+复现入口plot_strict_resource_20261020 --mps-deployed和原表builder --mps-deployed。
+
 ## 2026-10-20 严格口径48条件完成，最终八视图/八图已交付
 
 六模型（Qwen/GLM/CLIP/YOLO/完整版DS/Kimi）、两精度、两控制方案各两设置，共48条件，

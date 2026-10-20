@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 const require=createRequire(path.join(process.cwd(),'.codex_tmp/artifact-runtime.cjs'));
 const {Workbook,SpreadsheetFile,FileBlob}=await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
+if(process.argv.includes('--mps-deployed')){await buildMpsDeployed();process.exit(0);}
 const repo=process.cwd(),originalRoot=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_busy_resource_20261020/presentation');
 const root=process.env.LGVQ_STRICT_REPORT_ROOT?path.resolve(process.env.LGVQ_STRICT_REPORT_ROOT):originalRoot;
 const data=JSON.parse(await fs.readFile(path.join(root,'eight_tables.json'),'utf8'));
@@ -145,3 +146,94 @@ await(await SpreadsheetFile.exportXlsx(book)).save(out);verify(await Spreadsheet
 await fs.writeFile(path.join(root,receiptName),JSON.stringify({file:out,sha256:crypto.createHash('sha256').update(await fs.readFile(out)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(path.join(root,'eight_tables.json'))).digest('hex'),views:8,raw_sheets:1,calculation_sheets:1,audited_points:data.values.length,recalculation:true,reimport:true,formula_errors:0},null,2));
 try{await fs.rename(out+'.inspect.ndjson',path.join(root,'workbook_inspect_'+Date.now()+'.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
 console.log(JSON.stringify({file:out,views:8,audited_points:data.values.length}));
+
+async function buildMpsDeployed(){
+ const repo=process.cwd();
+ const root=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation');
+ const source=path.join(root,'mps_deployed.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
+ const folder=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
+ const output=path.join(folder,'LGVQ_MPS_deployed_comparison.xlsx');
+ if(data.values.length!==12||data.values.some(p=>p.batch!==1||p.precision!=='native'||p.method!=='mps'))throw Error('Only12 native MPS B1 conditions');
+ try{
+  const previous=await fs.readFile(output),digest=crypto.createHash('sha256').update(previous).digest('hex');
+  const receipt=JSON.parse(await fs.readFile(path.join(root,'mps_deployed_workbook_receipt.json'),'utf8'));
+  if(digest!==receipt.sha256)throw Error('Existing selected workbook has external edits');
+  try{await fs.copyFile(output,path.join(root,`prior_mps_deployed_${digest}.xlsx`),1);}catch(e){if(e.code!=='EEXIST')throw e;}
+ }catch(e){if(e.code!=='ENOENT')throw e;}
+ const book=Workbook.create(),summary=book.worksheets.add('Plot data'),trials=book.worksheets.add('Trial data');
+ for(const s of [summary,trials]){s.showGridLines=false;s.getRange('A1:U45').format.font={name:'Arial',size:10,color:'#243447'};}
+ const colors={qwen:'#0072B2',glm:'#9B567C',clip:'#008B70',yolo:'#B17D00',deepseek:'#79502C',kimi:'#D14F64'};
+ const head={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:42,horizontalAlignment:'center',verticalAlignment:'center'};
+ summary.tabColor='#214D68';summary.getRange('A2').values=[['LGVQ temporal quality: MPS resource comparison']];
+ summary.getRange('A2:K2').format={font:{name:'Arial',size:14,bold:true,color:'#214D68'},rowHeight:29};
+ summary.getRange('A3').values=[['Original deployment precision; both MPS allocations use one video per inference.']];
+ summary.getRange('A4').values=[['Time and energy are 16-video equivalents, not a simultaneous batch of 16.']];
+ summary.getRange('A3:K4').format={font:{name:'Arial',size:10,color:'#53687A'},rowHeight:21};
+ summary.getRange('A6:K6').values=[['Model','MPS allocation','SRCC','Equivalent time (ms)','Estimated energy (J)','Time / optical','Energy / optical','Inference precision','Parameters (B)','Video batch','Platform']];
+ summary.getRange('A6:K6').format=head;
+ summary.getRange('A7:K7').values=[['LightGen-II',null,data.optical.srcc,data.optical.time_ms,data.optical.energy_j,1,1,'Retained reference',null,null,'Optical system']];
+ summary.getRange('A7:K7').format={fill:'#F4EDF8',font:{name:'Arial',size:10,color:'#7A3E9D'},rowHeight:30,verticalAlignment:'center'};
+ trials.getRange('A1:U1').values=[['Model','MPS allocation','Video batch','Repeat','Charged seconds','First-block compute s','Output to next input s','Explicit pacing wait s','Video evaluations','Used-GPU energy J','Host proxy W','Estimated energy J','Actual GPU busy','Inference precision','Readout precision','Parameter dtypes','Report source','Report SHA256','Accuracy source','Accuracy SHA256','Identity SHA256']];
+ trials.getRange('A1:U1').format=head;trials.freezePanes.freezeRows(1);trials.freezePanes.freezeColumns(2);
+ const bound=[];let tr=2,sr=8;
+ for(const p of data.values){
+  const indices=[];
+  for(const r of p.repeats){
+   if(r.internal_wait_s!==0)throw Error('No pacing in MPS');
+   const values=[p.model_name,p.resource_cap/100,p.batch,r.repeat,r.elapsed_s,r.compute_s,r.output_to_next_model_input_s,r.internal_wait_s,r.video_evaluations,r.gpu_energy_j,338.2,null,r.measurement.mean_gpu_utilization_percent/100,p.precision_detail,p.quality_readout_precision,p.backbone_parameter_dtypes.join(', '),p.source,p.source_sha256,p.accuracy_source,p.accuracy_source_sha256,p.identity_sha256];
+   trials.getRange(`A${tr}:U${tr}`).values=[values];trials.getRange(`L${tr}`).formulas=[[`=E${tr}*K${tr}+J${tr}`]];
+   trials.getRange(`A${tr}:U${tr}`).format.rowHeight=27;
+   trials.getRange(`A${tr}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};
+   indices.push(tr++);
+  }
+  const platform=['deepseek','kimi'].includes(p.model)?'A100 SXM4 80GB / 400W':'A100 PCIe 40GB / 250W';
+  summary.getRange(`A${sr}:K${sr}`).values=[[p.model_name,p.resource_cap/100,p.srcc_reference,null,null,null,null,p.deployment_precision,p.model_parameters/1e9,p.batch,platform]];
+  const sum=c=>indices.map(i=>`'Trial data'!${c}${i}`).join(',');
+  summary.getRange(`D${sr}:G${sr}`).formulas=[[
+   `=SUM(${sum('E')})*16000/SUM(${sum('I')})`,
+   `=SUM(${sum('L')})*16/SUM(${sum('I')})`,
+   `=D${sr}/$D$7`,`=E${sr}/$E$7`]];
+  summary.getRange(`A${sr}:K${sr}`).format={fill:Math.floor((sr-8)/2)%2===0?'#F2F5F7':'#FFFFFF',rowHeight:30,verticalAlignment:'center'};
+  summary.getRange(`A${sr}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};
+  bound.push({point:p,row:sr,trials:indices});sr++;
+ }
+ summary.getRange('A:A').format.columnWidth=25;summary.getRange('B:G').format.columnWidth=17;
+ summary.getRange('H:H').format.columnWidth=22;summary.getRange('I:J').format.columnWidth=17;summary.getRange('K:K').format.columnWidth=32;
+ summary.getRange('B7:B19').setNumberFormat('0%');summary.getRange('C7:C19').setNumberFormat('0.000000');
+ summary.getRange('D7:E19').setNumberFormat('#,##0.000');summary.getRange('F7:G19').setNumberFormat('0.00"×"');
+ summary.getRange('I7:I19').setNumberFormat('0.000');summary.getRange('J7:J19').setNumberFormat('0');
+ summary.getRange('B7:K19').format.horizontalAlignment='right';summary.getRange('K7:K19').format.horizontalAlignment='left';
+ const notes=[
+  'MPS percentages are execution-resource limits, not measured GPU utilization.',
+  'First block to GPU MOS plus output to next model-call entry; every preblock frontend is excluded.',
+  'Energy integrates the same intervals. The retained 338.2 W host proxy is added once.',
+  'BF16 and FP16 refer to compute profiles, not integer quantization. Quality readout remains FP32.',
+  'SRCC is a separate matching-batch full558 TEST development reference, reused for both MPS caps.',
+  'The optical point retains the earlier component-cost reference, not a newly matched wall-clock run.',
+  'Parameter counts retain their recorded basis. Qwen/GLM are nominal; CLIP includes its unused text branch.',
+  'Same batch isolates resource-allocation changes; it does not remove numerical precision differences.'
+ ];
+ notes.forEach((v,i)=>{summary.getRange(`A${22+i}`).values=[[v]];summary.getRange(`A${22+i}:K${22+i}`).format={font:{name:'Arial',size:10,color:'#53687A'},rowHeight:22};});
+ trials.getRange('A:D').format.columnWidth=22;trials.getRange('E:M').format.columnWidth=21;
+ trials.getRange('N:P').format.columnWidth=52;trials.getRange('Q:U').format.columnWidth=78;
+ trials.getRange('B2:B37').setNumberFormat('0%');trials.getRange('M2:M37').setNumberFormat('0.00%');
+ trials.getRange('E2:L37').setNumberFormat('0.000000');trials.getRange('I2:I37').setNumberFormat('#,##0');
+ trials.getRange('C2:D37').setNumberFormat('0');trials.getRange('Q2:U37').format.wrapText=true;trials.getRange('Q2:U37').format.rowHeight=58;
+ function verify(w){const s=w.worksheets.getItem('Plot data');for(const {point:p,row:r}of bound){
+  for(const [c,k]of [['D','time16_ms'],['E','energy16_j'],['C','srcc_reference']])if(Math.abs(s.getRange(c+r).values[0][0]-p[k])>1e-8)throw Error('Selected value mismatch '+c+r);
+ }}
+ book.recalculate();verify(book);
+ const first=bound[0],cell=trials.getRange('E'+first.trials[0]),before=cell.values[0][0];cell.values=[[before*1.01]];book.recalculate();
+ if(summary.getRange('D'+first.row).values[0][0]===first.point.time16_ms)throw Error('Summary failed to recalculate');
+ cell.values=[[before]];book.recalculate();verify(book);
+ const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1500})).ndjson;
+ if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
+ console.log((await book.inspect({kind:'table',range:'Plot data!A6:K10',include:'values,formulas',tableMaxRows:5,tableMaxCols:11,maxChars:2200})).ndjson);
+ for(const [sheetName,range,name]of [['Plot data','A1:K30','mps_deployed_summary'],['Trial data','A1:M10','mps_deployed_trials'],['Trial data','N1:U4','mps_deployed_sources']]){
+  const pic=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await pic.arrayBuffer()));
+ }
+ await(await SpreadsheetFile.exportXlsx(book)).save(output);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(output)));
+ await fs.writeFile(path.join(root,'mps_deployed_workbook_receipt.json'),JSON.stringify({file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),conditions:12,trials:36,batch:1,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
+ try{await fs.rename(output+'.inspect.ndjson',path.join(root,'mps_deployed_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
+ console.log(JSON.stringify({file:output,conditions:12,trials:36}));
+}
