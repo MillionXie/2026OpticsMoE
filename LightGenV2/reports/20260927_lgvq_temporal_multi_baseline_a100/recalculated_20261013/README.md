@@ -1,6 +1,102 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## Timing audit hold: 20 October 2026, 08:00
+## Current measurement definition: 20 October 2026, new two-GPU rental
+
+The latest author instruction supersedes the timing boundary of the historical
+sections below. New raw measurements are under
+`lgvq_strict_tf_rental_dual_20261020/attempt02`; the initial deployment failure is
+preserved separately and produced no formal cost observations. Only full
+DeepSeek-VL2 FP32 uses two A100-SXM4-80GB GPUs. Kimi in either precision and
+DeepSeek-VL2 in its original precision use one GPU. No model is trained in this run.
+The original laboratory measurements are paused, and historical Qwen B1 is unchanged.
+Until the new run is completely audited, the existing workbook remains the older,
+explicitly identified complete-wall dataset rather than a silently updated result.
+
+### Methods draft: timing boundary and inter-inference intervals
+
+For each forward pass i, we recorded the model-invocation time a_i, the first
+Transformer-block input time s_i and the synchronized GPU-output time e_i. Inputs
+were prepared and transferred to the GPU before measurement and reused for frozen
+inference. Before recording s_i, all GPUs used by that model were synchronized to
+drain GPU work preceding the first Transformer block. The output timestamp e_i
+was recorded after the final GPU quality score had completed on all used GPUs.
+The charged duration of a trial was
+
+`t = sum_i(e_i - s_i) + sum_{i=1}^{m-1}(a_{i+1} - e_i)`.
+
+Thus, each invocation-to-first-block interval was excluded, whereas the gap from
+each output to the next model invocation was included. Temporal pacing waits
+were already contained in these gaps and were not added a second time. Warm-up,
+intervals between independent trials and any idle tail after the last output
+were excluded. We additionally retained output-to-next-first-block gaps and the
+continuous first-block-to-last-output span as audit quantities, not as interchangeable
+cost definitions. Here “next input” means entry into the model with prepared
+GPU-resident inputs; this protocol does not measure new-video decoding or host-to-device
+transfer. Eight consecutive forwards each had their own input/output synchronization;
+they were not an eightfold larger concurrent video batch.
+
+Three complete trials were retained for each condition. Temporal-control pairs
+used the same batch size within each model/precision profile, with calibrated
+idle intervals enabled only for the restricted condition. Calibration was frozen
+before the three trials. MPS pairs used batch size one with nominal active-thread
+limits of 100% or 50%, set before CUDA-context creation. The exposed multiprocessor
+counts were audited separately from measured GPU busy time. MPS provisioning is
+not a target of 50% NVIDIA Management Library (NVML) busy time.
+
+### Methods draft: energy, normalization and device allocation
+
+For each trial, sampled board power was integrated over the same union of
+first-block-to-output intervals and output-to-next-invocation gaps used for time.
+The integral used zero-order-held raw NVML power readings; a support gap exceeding
+250 ms invalidated the measurement. The energy estimate was
+`E = 338.2*t + sum_g integral_charged_intervals P_g(u) du`, with time in seconds,
+power in watts and energy in joules. The sum includes every GPU used by the model;
+the retained 338.2-W host proxy is added once, not once per GPU. This is an
+interval-matched estimated system energy, not newly measured host wall power or
+a high-bandwidth per-kernel power measurement. All three trials contributed to
+`T16 = 16000*sum(t)/sum(n)` and `E16 = 16*sum(E)/sum(n)`, where n counts completed
+video evaluations rather than distinct videos. These are 16-video throughput
+equivalents, not a claim that sixteen distinct videos were submitted together.
+
+The dual-GPU DeepSeek-VL2 FP32 configuration uses module-level model placement:
+decoder blocks 0–14 are on GPU0 and blocks 15–29 on GPU1, with complete blocks
+preserved. There is no CPU/disk offload or quantization. Both GPUs' board energies
+are included. This capacity-oriented layer placement is not tensor parallelism,
+and unrestricted execution does not establish simultaneous near-100% busy time
+on both GPUs. Both per-card busy rates and their allocation average are retained;
+the dual-GPU temporal controller uses the maximum pooled per-card busy rate.
+
+### Methods draft: utilization and accuracy provenance
+
+GPU busy time was calculated from all NVML observations within each full trial
+wall-clock window, without removing frontend intervals, selecting favorable
+subwindows or selecting the highest repeat. It is distinct from the non-contiguous
+charged-time intervals used for cost. A 50-ms polling interval does not turn the
+driver's averaged busy measurement into instantaneous SM occupancy. Three-trial
+pooled utilization is sample-count weighted. Resource limits, actual busy rates,
+precision, GPU count, timestamps and source hashes are retained together.
+
+Accuracy references comprise 558 distinct videos from the original fixed TEST
+partition, with the original four frames, central 65% crop, head weights and
+model assets. Full DeepSeek-VL2 FP32 receives a new 558-video evaluation; the other
+profiles reference individually identified frozen evaluations at the matching
+batch and precision. These are not newly measured accuracy values at each
+resource cap. Original head selection used highest TEST SRCC without a validation
+partition, so the reported correlations are development estimates. Casting
+deployment weights to FP32 does not recover information lost in their original
+lower-precision representation. The FP32 profile uses its separately disclosed
+official eager-attention runtime, rather than being described as an otherwise
+identical attention-kernel experiment.
+
+### 中文留底及术语
+
+本次主时间为逐次首TF→输出，加输出→下一模型调用入口；每次调用入口→首TF排除并
+单列，限流等待已包含在间隔内，不重复相加。独立三轮之间的时间不计入。
+GPU busy（GPU忙碌率）指完整墙钟NVML实测；MPS resource cap（MPS资源上限）指执行
+资源配置；charged time（计入时间）指上述区间之和，三者不得混为同一统计量。
+当前数据仍在测量及审计，结果以最终SHA验证后的逐条件表为准，不用旧数补缺项。
+
+## Historical timing audit hold: 20 October 2026, 08:00
 
 The author clarified that image-to-first-block work must be excluded on **every**
 forward, while internal pacing waits must be included. Code inspection found that
