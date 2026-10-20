@@ -25,5 +25,12 @@ class ResponseRetakeTests(unittest.TestCase):
         a.attempt='../../other'
         with self.assertRaises(AssertionError):scope['session_for'](a)
 
+    def test_head_namespace_does_not_expand_native_or_pair_scope(self):
+        tree=ast.parse((HERE/'lab_caltech20_dvp_conditioned_head_20261020.py').read_text())
+        for name in ('native_terminal_admitted','independent_pair_admitted'):
+            node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name)
+            self.assertNotIn('response_20261020',ast.unparse(node))
+        self.assertIn("choices=('strict8pp_20261020','response_20261020')",(HERE/'lab_caltech20_dvp_conditioned_head_20261020.py').read_text())
+
 
 if __name__=='__main__':unittest.main()

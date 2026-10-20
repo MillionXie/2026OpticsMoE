@@ -1202,7 +1202,7 @@ if __name__ == '__main__':
     parser.add_argument('--depth', type=int, choices=(4,6))
     parser.add_argument('--prefix', type=int)
     parser.add_argument('--digest')
-    parser.add_argument('--attempt', choices=('strict8pp_20261020',))
+    parser.add_argument('--attempt', choices=('strict8pp_20261020','response_20261020'))
     args = parser.parse_args()
     try:
         if args.attempt:
