@@ -46,7 +46,7 @@ def cache_features(model,data,fields,out):
 
 def fit(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not core.LOCK.exists()
-    torch.set_num_threads(2);torch.manual_seed(17);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
+    torch.set_num_threads(2);torch.manual_seed(17);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=core.session_for(a)
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model);fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
     cached=cache_features(model,data,fields,a.out);tr,te=cached['train'],cached['test'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);initial=best
@@ -94,7 +94,7 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('fit','selftest'),required=True);p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int);p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--mode',choices=('fit','selftest'),required=True);p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int);p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--attempt',choices=('strict8pp_20261020',));a=p.parse_args()
     try:selftest() if a.mode=='selftest' else fit(a)
     except BaseException as error:
         if a.out and a.out.exists():core.save(a.out/'failure.json',dict(error=repr(error),automatic_retry=False))

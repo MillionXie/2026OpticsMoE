@@ -2,6 +2,30 @@
 
 ## 2026-10-20 explicit superseding instruction: HARD per-stage accuracy gate
 
+### Whole-sensor white event is not an ordinary min/max signal warning
+
+The first strict retake suffered an abrupt whole-sensor255 event; original
+raw/receipts and failed suffix best/last remain under each attempt's
+`rejected_signal_20261020`. Current same60006us/gain1 zero+marker/toggle check
+passed with no LUT or exposure modification. This is not proof of a unique cause.
+Only strict attempts now stop after TWO consecutive>99% saturated crops, saving
+both raw frames/receipts before raising; ordinary min/max record-only remains.
+Never use completion alone as a signal-health certificate or keep training on
+catastrophic white records to force an accuracy gate.
+
+Explicit `--reuse-capture --reuse-train-prefix` recovery is TRAIN-prefix only,
+inside the quarantined session, exact PT/data/hardware/prefix/phase/canonical/BMP
+SHA-bound. Before formal reuse, three known TRAIN inputs must have coarse16 PCC
+>=.95 and mean ratio in[.8,1.2] at unchanged settings in the SAME connection.
+1355 initial count failed at the pre-white transition frame1354; that attempt
+produced ZERO formal frames and is preserved separately. TRAIN physical evidence
+shows a transition beginning1352. Corrected1352 count passed the same thresholds
+at0/640/1351; no threshold relaxation or TEST-based exclusion. Keep all original
+and transition/white evidence. Exactly248TRAIN+411TEST are newly captured for L4;
+L6router starts all2011 fresh. Refine from the original capture-parent314/original
+PTs, not models learned from the contaminated arrays. Full original411 native
+and frozen independent review still precedes any next physical layer.
+
 User now requires every stage to pass before the next physical stage; accuracy
 has priority over speed. This supersedes ALL older finite-budget-carry exceptions
 below, including legacy carry_p reviews and the G1 mid10 exception. Intermediate

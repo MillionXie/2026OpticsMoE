@@ -85,6 +85,12 @@ class StrictRetakeTests(unittest.TestCase):
         self.assertIn('new_physical_capture=False', text)
         self.assertIn('reused_verified_TRAIN_prefix=quality_count', text)
 
+    def test_existing_head_repair_can_use_the_same_strict_namespace(self):
+        text=(HERE / 'lab_caltech20_dvp_head_repair_20261019.py').read_text()
+        self.assertIn('session=core.session_for(a)', text)
+        self.assertIn("p.add_argument('--attempt',choices=('strict8pp_20261020',))", text)
+        self.assertIn("not core.LOCK.exists()", text)
+
 
 if __name__ == '__main__':
     unittest.main()
