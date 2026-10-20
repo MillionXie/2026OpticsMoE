@@ -132,6 +132,34 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertNotIn('unlink',text)
         source=SOURCE.read_text();self.assertIn("core.save(a.out/'CPU_capture_admission.json'",source)
 
+    def test_response_CPU_parallel_requires_exact_other_owner_and_complete_data(self):
+        tree=ast.parse(SOURCE.read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='strict_parallel_capture_proof')
+        sequence=Path('virtual_sequence');code=Path('virtual_core.py');flags={'complete':True}
+        def sha(path):return 'SHA:'+str(Path(path).resolve())
+        def read(path):
+            path=Path(path)
+            if path.name=='data_manifest.json':return dict(sha256='DATA')
+            report=path.with_name('report.json')
+            if path.name=='independent_capture_audit.json':
+                return dict(passed=flags['complete'],SDK_released=True,all_receipts_and_array_SHA_verified=True,report_SHA256=sha(report),contract_SHA256=sha(path.with_name('contract.json')),PT_SHA256='PT',phase_SHA256='PHASE',arrays={'train':1600,'test':411})
+            return dict(state='complete',TRAIN=1600,TEST=411,physical_ccd=2011,sdk_released=True,data_SHA256='DATA',PT_SHA256='PT',phase_SHA256='PHASE',arrays={'train':1600,'test':411})
+        core=SimpleNamespace(__file__=str(code),session_for=lambda a:a.sequence/f'L{a.depth}_{a.attempt}',sha=sha,read=read)
+        env={'core':core,'Path':Path};exec(compile(ast.Module(body=[node],type_ignores=[]),'<parallel-proof>','exec'),env);fn=env['strict_parallel_capture_proof']
+        for attempt in ('strict8pp_20261020','response_20261020'):
+            a=SimpleNamespace(attempt=attempt,depth=4,prefix=4,mode='shrink-fit',sequence=sequence)
+            args=[str(code),'--mode','capture','--depth','6','--attempt',attempt,'--sequence',str(sequence),'--stage','0']
+            owner=SimpleNamespace(pid=123,cmdline=lambda:args,create_time=lambda:1.)
+            lock=dict(pid=123,session=str(sequence/f'L6_{attempt}'),camera='DVP',pilot=False,stage='0')
+            result=fn(a,lock,owner);self.assertTrue(result['other_depth_only']);self.assertEqual(result['explicit_attempt'],attempt)
+            self.assertFalse(result['SDK_used']);self.assertFalse(result['GPU_used'])
+            with self.assertRaises(AssertionError):fn(a,dict(lock,session=str(sequence/f'L4_{attempt}')),owner)
+            with self.assertRaises(AssertionError):fn(a,dict(lock,pid=124),owner)
+            flags['complete']=False
+            with self.assertRaises(AssertionError):fn(a,lock,owner)
+            flags['complete']=True
+        a.attempt='unapproved'
+        with self.assertRaises(AssertionError):fn(a,lock,owner)
+
     def test_terminal10_exact_forward_gate_and_TRAIN_only_loss(self):
         tree=ast.parse(SOURCE.read_text());loss=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal10_objective')
         self.assertFalse(any('test' in n.id.lower() for n in ast.walk(loss) if isinstance(n,ast.Name)))

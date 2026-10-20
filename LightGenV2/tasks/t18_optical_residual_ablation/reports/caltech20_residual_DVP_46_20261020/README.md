@@ -1,5 +1,29 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 新响应E2已采/审计并实际适配；六层新E1并行采集（2026-10-21）
+
+四层`L4_response_20261020/capture/2`全新2011帧于1434.33秒完成，TRAIN1600/TEST411
+连续、无旧失败CCD复用。全ID/相位/输入/数组SHA与独立raw/crop抽查通过、无极值标记，
+源报告SHA349aeeafd5、独立审计SHAf6e8b5ea34。头适配17->171/411，原结构复核通过，
+这是新实测E2前缀+仿真G2的开发指标，**不是四层完整实拍**；原G2尚未采。
+原后续G2 mask/postE2/G2电子/direct-alpha/原头已按有界60完整epoch/1800秒联合训练，
+原TRAIN3141先验、适度TEST错误类别导向的TRAIN权重/noTEST梯度，尚无达标新候选。
+同时六层`L6_response_20261020/capture/0`按独立TRAIN响应准入新采E1，非新训练mask
+或代理成绩；原router通过父322不变。每组新实测阶段仍须314/322，最终342/350。
+
+四层TRAIN-only额外诊断：同一原5140 warm头和G2原mask，比较原可学alpha2=.95与
+原允许下限.4001001，暂存模型改后精确恢复、不保存PT、不推理TEST。1600TRAIN固定
+shrunken读出容量815/NLL1.75460->1079/1.18664，支持**一次**原alpha2初始化及原5140
+重估的有限比较；不扫描alpha/seed、不改边界、不增加推理层，不复用旧响应证据。
+baseline必须是未改的当前171，不把初始化低分或温度结果偷换成新成果，保留更高全审计版。
+
+为不空等另一组采集，CPU原头方法的已审计“另一depth”并行准入显式接入response产物
+namespace；与原strict相同地核SDK锁真实owner/进程capture参数、同sequence与attempt、
+另一depth、全部2011帧/ID/PT/相位/数组和独立报告SHA，CPU方法绝不SDK/GPU。相同depth、
+半成品或别的namespace仍拒绝，native5150/independent-pair中间层算法范围不扩大。
+只改准入路径，无数值/模型/采集核心修改；在六层固定capture源码SHA受保护时仅发布闲置
+CPU头模块/测试/记录，避免因隔离而新建工程或分支。所有模型PT/data仍manifest+SHA。
+
 ## 同输入同相位的新旧TRAIN响应不兼容：四层有据重验，不盲重拍（2026-10-21）
 
 只读原结构重放当前核验图，另用原失败层完整CCD中的**同20张TRAIN**作对照：
