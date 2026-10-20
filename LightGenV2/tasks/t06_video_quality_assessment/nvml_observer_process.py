@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 import select
+import signal
 import subprocess
 import sys
 import threading
@@ -22,6 +23,8 @@ VERSION='independent_process_receipt_clock_v1'
 
 def serve(gpu,raw_path):
     sampler=TelemetrySampler(gpu,raw_path);index=0;stopped=False
+    def terminate(signum,_):raise SystemExit(128+signum)
+    signal.signal(signal.SIGTERM,terminate)
     def emit(value):print(json.dumps(value),flush=True)
     def flush():
         nonlocal index
@@ -31,7 +34,7 @@ def serve(gpu,raw_path):
         sampler.start()
         identity=dict(version=VERSION,pid=__import__('os').getpid(),gpu_uuid=gpu,
                       start_unix=time.time(),timestamp_origin='observer host receipt',
-                      cuda_context_created=False,query=sampler.process.args,
+                      cuda_context_created=False,query=sampler.process.args,query_pid=sampler.process.pid,
                       observer_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
         (raw_path.parent/'telemetry_observer_identity.json').open('x').write(json.dumps(identity,indent=2))
         emit(dict(ready=identity))

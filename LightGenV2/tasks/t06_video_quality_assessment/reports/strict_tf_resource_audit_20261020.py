@@ -17,6 +17,7 @@ LAB_ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/'per_forward_fir
 LAB_CONTINUATION=LAB_ROOT.parent/'calibration_1140'
 LAB_DURATION=LAB_ROOT.parent/'duration_1155'
 LAB_GLM_RECOVERY=LAB_ROOT.parent/'glm_sampling_recovery01'
+LAB_OBSERVER=LAB_ROOT.parent/'glm_obs01'
 PROTOCOL='per_forward_first_block_plus_internal_wait_v1'
 ACCOUNTING='per_forward_tf_plus_output_to_next_input_v2'
 NAMES={'deepseek':'DeepSeek-VL2','kimi':'Kimi-VL-A3B','qwen':'Qwen3-VL-2B','glm':'GLM-4.6V-Flash','clip':'CLIP ViT-B/32','yolo':'YOLO11s'}
@@ -42,7 +43,12 @@ def verify_lab_fp32_runtime(cost,accuracy):
         assert cost[key]==accuracy[key],key
     assert accuracy['floating_parameter_dtypes']==['torch.float32']
     assert accuracy['tf32'] is False and accuracy['autocast'] is False
-    assert all(accuracy['sources'].get(path)==digest for path,digest in cost['sources'].items())
+    # Evaluation does not call the cost receiver, timing hook or admission plan.
+    # Those are independently Git-bound in the cost audit; the native model,
+    # preprocessing, head and all other execution sources must match exactly.
+    timing_only=('lab_busy_resource_20261020.py','strict_tf_window_20261020.py','nvml_observer_process.py')
+    assert all(accuracy['sources'].get(path)==digest for path,digest in cost['sources'].items()
+               if Path(path).name not in timing_only)
 def frame_positions(record):
     raw=record.get('frame_positions',record.get('selected_frame_positions'))
     assert raw is not None
@@ -131,6 +137,15 @@ def check(point,condition):
             assert raw_validation['wall_end']<report['repeats'][0]['wall_start']
             close(raw_validation['observed'],update['observed'])
             close(raw_validation['duty'],update['old_duty'])
+    receiver=report.get('telemetry_receiver','model_process_thread_receipt_v1')
+    if receiver=='independent_process_receipt_clock_v1':
+        assert identity['telemetry_receiver']==receiver
+        observer=read(folder/'telemetry_observer_identity.json')
+        assert observer['version']==receiver and observer['cuda_context_created'] is False
+        assert len(devices)==1 and observer['gpu_uuid']==devices[0]
+        assert '--loop-ms=50' in observer['query'] and '--query-gpu=power.draw,utilization.gpu,memory.used' in observer['query']
+        observer_path='LightGenV2/tasks/t06_video_quality_assessment/nvml_observer_process.py'
+        assert observer['observer_source_sha256']==identity['sources'][observer_path]
     streams=[]
     for i,gpu in enumerate(devices):
         suffix='' if i==0 else f'_gpu{i:02d}'
@@ -217,7 +232,7 @@ def check(point,condition):
         gpu_count=len(devices),gpu_uuids=devices,hot_gpu_index=hot,per_gpu_busy_percent=per_gpu,busy_percent=max(per_gpu),
         allocation_average_busy_percent=statistics.mean(per_gpu),repeats=repeats,time16_ms=elapsed*16000/videos,energy16_j=energy*16/videos,
         per_gpu_peak_board_memory_mib=[max(r['gpu_infos'][i]['peak_memory_used_mib'] for r in repeats) for i in range(len(devices))],
-        frozen_duty=report['frozen_duty'],pacing_calibration=calibration if condition=='busy50' else 'not_applicable',
+        telemetry_receiver=receiver,frozen_duty=report['frozen_duty'],pacing_calibration=calibration if condition=='busy50' else 'not_applicable',
         required_charged_seconds=report.get('minimum_charged_s') or 30.,
         interval_mean_board_power_w=sum(r['gpu_energy_j'] for r in repeats)/elapsed,
         per_gpu_interval_mean_board_power_w=[sum(r['per_gpu_board_energy_j'][i] for r in repeats)/elapsed for i in range(len(devices))],
@@ -260,7 +275,7 @@ def verify_accuracy(path,head_sha):
 
 def main():
     points=[]
-    for root in (ROOT,ROOT/'attempt02',ROOT/'native_tail01',ROOT/'native_tail02',LAB_ROOT,LAB_CONTINUATION,LAB_DURATION,LAB_GLM_RECOVERY):
+    for root in (ROOT,ROOT/'attempt02',ROOT/'native_tail01',ROOT/'native_tail02',LAB_ROOT,LAB_CONTINUATION,LAB_DURATION,LAB_GLM_RECOVERY,LAB_OBSERVER):
         if not root.exists():continue
         for folder in root.iterdir():
             if not folder.is_dir() or not (folder/'identity.json').exists() or not (folder/'status.json').exists():continue
@@ -279,6 +294,20 @@ def main():
                 assert len({p['batch'] for p in same})<=1
                 assert len({tuple(p['gpu_uuids']) for p in same})<=1
     old=read(common.OLD);verify_historical_anchor(old);optical=old['groups']['busy50_near_saturation'][0]
+    parameter_rows=rows(common.OUT/'plot_data.csv')
+    for p in points:
+        prior_key='full' if p['model']=='deepseek' else p['model']
+        documented=[r for r in parameter_rows if r['baseline']==prior_key]
+        assert documented
+        assert len({r['model_total_parameters_billion'] for r in documented})==1
+        if p['model_parameters'] is not None:
+            p['parameter_basis']='Loaded original model count in this cost identity; auxiliary quality head excluded.'
+            p['parameter_source']=(REPO/p['source']).parent.parent.joinpath('identity.json').relative_to(REPO).as_posix()
+        else:
+            p['model_parameters']=round(float(documented[0]['model_total_parameters_billion'])*1e9)
+            p['parameter_basis']=documented[0]['parameter_basis']+'; historical metadata, not recounted in this cost trial.'
+            p['parameter_source']=documented[0]['parameter_source']
+        p['parameter_count_is_nominal']='nominal' in p['parameter_basis'].lower()
     refs={}
     for group in ('batch1_near_saturation','busy50_near_saturation'):
         for r in old['groups'][group]:
@@ -320,7 +349,7 @@ def main():
             p['resident_reference_max_abs_mos_delta']=max(deltas)
     target=ROOT/'presentation';target.mkdir(parents=True,exist_ok=True)
     rental_count=sum(p['model'] in ('deepseek','kimi') for p in points)
-    active_lab=LAB_GLM_RECOVERY if LAB_GLM_RECOVERY.exists() else LAB_DURATION if LAB_DURATION.exists() else LAB_CONTINUATION if LAB_CONTINUATION.exists() else LAB_ROOT
+    active_lab=LAB_OBSERVER if LAB_OBSERVER.exists() else LAB_GLM_RECOVERY if LAB_GLM_RECOVERY.exists() else LAB_DURATION if LAB_DURATION.exists() else LAB_CONTINUATION if LAB_CONTINUATION.exists() else LAB_ROOT
     lab_state=read(active_lab/'suite_status.json') if (active_lab/'suite_status.json').exists() else {'status':'partial_local_backup'}
     data=dict(timing_protocol=PROTOCOL,accounting_protocol=ACCOUNTING,status=completion_state(points),values=points,optical=optical,models=NAMES,
         rental_count=rental_count,laboratory_count=len(points)-rental_count,
@@ -328,7 +357,7 @@ def main():
         contract='Sum EACH first-block-to-GPU-output interval plus output-to-NEXT-model-input gaps. Pacing waits are INCLUDED in gaps, never added twice. Exclude EACH frontend. Sum used-GPU board interval energies; host338.2W once. Full-wall NVML busy is separately reported. Also retain output-to-next-TF and full-cycle-span audit.',
         B1_historical_anchor_unchanged=True,accuracy_reference_not_per_control=True)
     (target/'eight_tables.json').write_text(json.dumps(data,indent=2)+'\n')
-    columns=['model','model_parameters','precision','method','condition','batch','gpu_count','visible_sms','frozen_duty','pacing_calibration','required_charged_seconds','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','per_gpu_peak_board_memory_mib','time16_ms','energy16_j','interval_mean_board_power_w','per_gpu_interval_mean_board_power_w','accounting_protocol','first_block_module','srcc_reference','resident_reference_max_abs_mos_delta','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
+    columns=['model','model_parameters','parameter_basis','parameter_source','parameter_count_is_nominal','precision','method','condition','batch','gpu_count','visible_sms','telemetry_receiver','frozen_duty','pacing_calibration','required_charged_seconds','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','per_gpu_peak_board_memory_mib','time16_ms','energy16_j','interval_mean_board_power_w','per_gpu_interval_mean_board_power_w','accounting_protocol','first_block_module','srcc_reference','resident_reference_max_abs_mos_delta','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
     with (target/'paired_measurements.csv').open('w',newline='',encoding='utf-8-sig') as stream:
         writer=csv.DictWriter(stream,fieldnames=columns,extrasaction='ignore');writer.writeheader();writer.writerows(points)
     fields=['model','precision','method','condition','repeat','batch','gpu_count','elapsed_s','compute_s','output_to_next_model_input_s','internal_wait_s','other_intercall_gap_s','output_to_next_tf_s','in_cycle_preblock_s','excluded_preblock_s','full_cycle_span_s','wall_elapsed_s','video_evaluations','gpu_energy_j','energy_j','time16_ms','energy16_j','recorded_time16_ms','recorded_energy16_j','source','source_sha256']

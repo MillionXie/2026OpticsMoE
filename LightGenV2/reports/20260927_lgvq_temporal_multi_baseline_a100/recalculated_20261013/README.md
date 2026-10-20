@@ -210,6 +210,16 @@ the later laboratory calibration/stopping implementation.
 
 ### Methods draft: energy, normalization and device allocation
 
+The laboratory Qwen, GLM, CLIP and YOLO profiles run on one A100-PCIE-40GB with
+the existing 250-W power limit. The rental DeepSeek/Kimi profiles run on
+A100-SXM4-80GB devices with 400-W limits. Energy uses observed board power, not
+these nominal limits. Device type, memory capacity and deployment differ between
+the two cohorts; cross-cohort results are not a same-hardware architecture-only
+comparison. LightGen-II retains its approved physical reference: temporal SRCC
+0.7977138739, processing time 10.245569591370225 ms and estimated energy
+1.1776895097085185 J for the optical-field workload. That component-cost estimate
+was not newly measured using the GPU-resident protocol.
+
 For each trial, sampled board power was integrated over the same union of
 first-block-to-output intervals and output-to-next-invocation gaps used for time.
 The integral used zero-order-held raw NVML power readings; a support gap exceeding

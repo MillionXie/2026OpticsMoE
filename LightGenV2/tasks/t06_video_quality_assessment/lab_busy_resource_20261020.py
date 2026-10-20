@@ -22,6 +22,7 @@ from . import evaluate_temporal_baseline_batches as frozen
 from . import unified_resident_utilization as uniform
 from . import run_temporal_telemetry_suite as catalog
 from . import strict_tf_window_20261020 as strict
+from . import nvml_observer_process as observer
 
 TASK=shared.TASK;REPO=shared.REPO
 ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/strict.PROTOCOL
@@ -29,10 +30,12 @@ PIPE='/DATA/DATA1/guest3/.cache/t06_mps_strict_tf_20261020'
 PREVIOUS_CONTINUATION='calibration_1140'
 CONTINUATION='duration_1155'
 GLM_RECOVERY='glm_sampling_recovery01'
+OBSERVER_RECOVERY='glm_obs01'
 
 
 def point_plan(session):
     """A finite admission plan, not a change to the GPU measurement loop."""
+    if session==OBSERVER_RECOVERY:return [('fp32','glm','temporal',100)]
     if session==GLM_RECOVERY:
         return [('fp32','glm','mps',100),('fp32','glm','mps',50),('fp32','glm','temporal',100)]
     return [(precision,model,method,cap) for precision in ('native','fp32')
@@ -55,7 +58,7 @@ def completed_reference(name):
 
 def sources():
     return {**engine.sources(),**selected.sources(),**uniform.sources(),
-        **{str(p.relative_to(REPO)):frozen.sha256(p) for p in (Path(__file__),Path(fp32.__file__),Path(previous.__file__),Path(strict.__file__))}}
+        **{str(p.relative_to(REPO)):frozen.sha256(p) for p in (Path(__file__),Path(fp32.__file__),Path(previous.__file__),Path(strict.__file__),Path(observer.__file__))}}
 
 
 def locations(model):
@@ -147,8 +150,10 @@ def worker(args):
             # execution. Old queue8 duties do not describe the new protocol.
             conditions=[('unrestricted',1),('busy50',.5)]
         identity['timing_protocol']=strict.PROTOCOL
-        args.validate_pacing=args.session in (PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY)
-        args.minimum_charged_s=35. if args.session in (CONTINUATION,GLM_RECOVERY) else 0.
+        args.validate_pacing=args.session in (PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY,OBSERVER_RECOVERY)
+        args.minimum_charged_s=35. if args.session in (CONTINUATION,GLM_RECOVERY,OBSERVER_RECOVERY) else 0.
+        args.isolated_telemetry=args.session==OBSERVER_RECOVERY
+        identity['telemetry_receiver']=observer.VERSION if args.isolated_telemetry else 'model_process_thread_receipt_v1'
         identity['pacing_calibration']='full_window_validation_v1' if args.validate_pacing else 'short_feedback60s_v1'
         identity['minimum_charged_s']=args.minimum_charged_s
         for label,duty in conditions:
@@ -233,7 +238,7 @@ def main():
     global ROOT,PIPE
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--suite',action='store_true')
-    p.add_argument('--session',choices=('original','idle_1049','recovery_1102',PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY),default='original')
+    p.add_argument('--session',choices=('original','idle_1049','recovery_1102',PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY,OBSERVER_RECOVERY),default='original')
     p.add_argument('--model',choices=('qwen','glm','clip','yolo'))
     p.add_argument('--method',choices=('temporal','mps'))
     p.add_argument('--precision',choices=('native','fp32'))
@@ -275,6 +280,19 @@ def main():
                 raise RuntimeError('Sampling failure or prior accuracy still active')
             expected=['clip_batch01','clip_batch10','yolo_batch01','yolo_batch03','qwen_batch01','qwen_batch03']
             if accuracy['completed']!=expected:raise RuntimeError('Preserve all six completed accuracy references')
+        if args.session==OBSERVER_RECOVERY:
+            prior=ROOT/GLM_RECOVERY;state=json.loads((prior/'suite_status.json').read_text())
+            accuracy=json.loads((prior/'accuracy_fp32/suite_status.json').read_text())
+            failed=json.loads((prior/'temporal_glm_fp32_100/status.json').read_text())
+            diagnostic=json.loads((prior/'observer_diagnostic01/report.json').read_text())
+            if (state['status']!='stopped' or state['completed']!=['mps_glm_fp32_100','mps_glm_fp32_50']
+                    or 'Power observation older than250ms' not in failed.get('error','')
+                    or accuracy['status']!='complete' or accuracy['completed']!=['glm_batch01']
+                    or any(Path('/proc/'+str(s['pid'])).exists() for s in (state,accuracy))):
+                raise RuntimeError('Preserve complete MPS/accuracy; no active predecessor')
+            if not (diagnostic['qualified'] and diagnostic['samples']>=1500 and diagnostic['max_gap_s']<=.25
+                    and diagnostic['formal_cost'] is False and diagnostic['gpu_execution'] is False):
+                raise RuntimeError('Independent observer diagnostic must pass first')
         ROOT=ROOT/args.session;PIPE=PIPE+'_'+args.session
         if args.output==p.get_default('output'):args.output=ROOT
     args.output=args.output.resolve()

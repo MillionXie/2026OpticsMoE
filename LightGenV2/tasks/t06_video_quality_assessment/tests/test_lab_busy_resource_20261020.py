@@ -44,7 +44,7 @@ def test_new_idle_admission_preserves_zero_measurement_predecessor():
 
 def test_calibration_continuation_reuses_only_completed_points():
     text=Path(m.__file__).read_text()
-    assert "args.validate_pacing=args.session in (PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY)" in text
+    assert "args.validate_pacing=args.session in (PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY,OBSERVER_RECOVERY)" in text
     assert "args.minimum_charged_s=35." in text
     assert "state.setdefault('reused',{})" in text
     assert "identity_sha256=frozen.sha256(prior/'identity.json')" in text

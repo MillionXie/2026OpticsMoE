@@ -76,7 +76,12 @@ def measure(args,compute,inputs,first,folder,guard,duty):
     """Three complete trials; pace calibration only, never select a best trial."""
     import torch
     folder.mkdir();gpus=tuple(getattr(args,'gpu_uuids',(args.gpu_uuid,)))
-    samplers=[base.telemetry.TelemetrySampler(gpu,raw_path=folder/('telemetry_stdout.jsonl' if i==0 else f'telemetry_gpu{i:02d}_stdout.jsonl')) for i,gpu in enumerate(gpus)]
+    sampler_type=base.telemetry.TelemetrySampler;receiver='model_process_thread_receipt_v1'
+    if getattr(args,'isolated_telemetry',False):
+        if len(gpus)!=1:raise ValueError('Isolated observer profile currently audited for one GPU only')
+        from .nvml_observer_process import ProcessTelemetrySampler,VERSION
+        sampler_type=ProcessTelemetrySampler;receiver=VERSION
+    samplers=[sampler_type(gpu,raw_path=folder/('telemetry_stdout.jsonl' if i==0 else f'telemetry_gpu{i:02d}_stdout.jsonl')) for i,gpu in enumerate(gpus)]
     clock_samplers=[base.prior.ClockSampler(gpu) for gpu in gpus]
     armed={};calls=[];waits=[];repeats=[];updates=[];calibration_calls=[];calibration_waits=[]
     def check():
@@ -205,7 +210,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
         videos=sum(r['video_evaluations'] for r in repeats)
         per_gpu_busy={gpu:sum(r['per_gpu_full_wall_telemetry'][gpu]['samples']*r['per_gpu_full_wall_telemetry'][gpu]['mean_gpu_utilization_percent'] for r in repeats)/sum(r['per_gpu_full_wall_telemetry'][gpu]['samples'] for r in repeats) for gpu in gpus}
         busy=max(per_gpu_busy.values())
-        report=dict(status='complete',timing_protocol=PROTOCOL,model=args.model,precision=args.precision,
+        report=dict(status='complete',timing_protocol=PROTOCOL,telemetry_receiver=receiver,model=args.model,precision=args.precision,
             method=args.method,batch=args.batch,nominal_resource_cap=args.cap if args.method=='mps' else None,
             frozen_duty=duty,repeats=repeats,time16_ms=sum(r['elapsed_s'] for r in repeats)*16000/videos,
             pacing_calibration='full_window_validation_v1' if duty<1 and getattr(args,'validate_pacing',False) else 'short_feedback60s_v1',

@@ -23,6 +23,7 @@ try{
 }catch(e){if(e.code!=='ENOENT')throw e;}
 const book=Workbook.create(),views=[],models=['deepseek','kimi','qwen','glm','clip','yolo'];
 const colors={deepseek:'#79502C',kimi:'#D14F64',qwen:'#0072B2',glm:'#9B567C',clip:'#008B70',yolo:'#B17D00'};
+const parameterLabel=p=>!p?.model_parameters?'':`${p.parameter_count_is_nominal?'nominal ':''}${p.model_parameters>=1e9?(p.model_parameters/1e9).toFixed(2)+'B':(p.model_parameters/1e6).toFixed(2)+'M'} parameters`;
 const unavailable=strict?'No qualified laboratory measurement':data.laboratory_status==='waiting_expired'?'original A100 unavailable':'pending measurement';
 const missingFor=(model,precision)=>strict?(['deepseek','kimi'].includes(model)?'pending rental condition':unavailable):model==='deepseek'&&precision==='fp32'?'capacity exceeds80GB':unavailable;
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const metric of ['time','energy']){
@@ -65,7 +66,8 @@ raw.getRange('AF:AG').format.columnWidth=30;raw.getRange('AF7:AJ55').format.wrap
 raw.getRange('H7:AD55').setNumberFormat('0.000000');raw.freezePanes.freezeRows(6);raw.freezePanes.freezeColumns(4);
 for(const column of ['E','F','G','J','M','O','R','T','W','Z','AE'])raw.getRange(`${column}7:${column}55`).setNumberFormat('#,##0');
 raw.getRange('A6:AJ6').format.horizontalAlignment='center';
-if(strict){raw.getRange('AK6:AO6').values=[['Frozen duty','Original model parameters','First compute module','Pacing calibration','Required charged seconds']];raw.getRange('AK6:AO6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:48,horizontalAlignment:'center'};raw.getRange('AK:AL').format.columnWidth=22;raw.getRange('AL7:AL55').format.horizontalAlignment='center';raw.getRange('AM:AM').format.columnWidth=45;raw.getRange('AN:AN').format.columnWidth=38;raw.getRange('AO:AO').format.columnWidth=24;}
+if(strict){raw.getRange('AK6:AO6').values=[['Frozen duty','Model parameters (basis in notes)','First compute module','Pacing calibration','Required charged seconds']];raw.getRange('AK6:AO6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:48,horizontalAlignment:'center'};raw.getRange('AK:AL').format.columnWidth=22;raw.getRange('AL7:AL55').format.horizontalAlignment='center';raw.getRange('AM:AM').format.columnWidth=45;raw.getRange('AN:AN').format.columnWidth=38;raw.getRange('AO:AO').format.columnWidth=24;}
+if(strict){raw.getRange('AP6:AR6').values=[['Power telemetry receiver','Parameter count basis','Parameter count source']];raw.getRange('AP6:AR6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},wrapText:true,rowHeight:48,horizontalAlignment:'center'};raw.getRange('AP:AP').format.columnWidth=35;raw.getRange('AQ:AQ').format.columnWidth=70;raw.getRange('AR:AR').format.columnWidth=80;raw.getRange('AP7:AR55').format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true,verticalAlignment:'center'};}
 raw.getRange('A7:H7').values=[['LightGen-II','optical reference','not applicable','~50% spatial use',null,null,null,data.optical.srcc]];
 raw.getRange('AC7:AD7').values=[[data.optical.time_ms,data.optical.energy_j]];raw.getRange('AF7:AJ7').values=[['unchanged optical reference','Optical platform',data.optical.cost_source,'','Spatial usage is not GPU busy time or a MPS resource cap. No FP32 designation.']];
 let row=8;const entries=[];
@@ -76,6 +78,7 @@ for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])
  for(let i=0;i<3;i++){const r=point?.repeats?.[i];values.push(r?.elapsed_s??null,r?.video_evaluations??null,(strict?r?.gpu_energy_j:r?.measurement.mean_board_power_w)??null,r?.measurement.mean_gpu_utilization_percent??null,r?.measurement.samples??null);}
  values.push(338.2,null,null,null,null,null,null,point?.repeats?.length??null,point?.status??missing,point?.platform??'',point?.source??'',point?.source_sha256??'',point?.accuracy_note??(missing==='capacity exceeds80GB'?data.capacity_missing:'No completed new-protocol point. Do not substitute historical pure-inference cost.'));
  raw.getRange(`A${row}:AJ${row}`).values=[values];
+ if(strict&&point)raw.getRange(`AP${row}:AR${row}`).values=[[point.telemetry_receiver??'model_process_thread_receipt_v1',point.parameter_basis??'',point.parameter_source??'']];
  if(strict&&point){raw.getRange(`AK${row}:AO${row}`).values=[[point.frozen_duty,point.model_parameters,point.first_block_module,point.pacing_calibration,point.required_charged_seconds]];raw.getRange(`AK${row}`).setNumberFormat('0.00%');raw.getRange(`AL${row}`).setNumberFormat('#,##0');raw.getRange(`AN${row}:AO${row}`).format={font:{name:'Arial',size:10,color:'#243447'},wrapText:true,verticalAlignment:'center',horizontalAlignment:'center'};raw.getRange(`AO${row}`).setNumberFormat('0');}
  if(point){
   const rr=windowRows.get(key(point));
@@ -111,6 +114,7 @@ for(const {method,precision,metric,sheet} of views){
   const setting=method==='mps'?`${e.condition==='mps_cap50'?'50%':'100%'} resource cap`:e.condition==='busy50'?(e.point?.gpu_count===2?'~50% max-card busy':'~50% time busy'):'Unrestricted duty';
   sheet.getRange(`A${r}:M${r}`).values=[[data.models[e.model],setting,e.point?.batch??(method==='mps'?1:'n.a.'),method==='mps'?(e.condition==='mps_cap50'?.5:1):'n.a.',null,null,null,null,null,e.point?.status??missingFor(e.model,precision),null,precision==='fp32'?'FP32':`${['clip','yolo'].includes(e.model)?'FP16':'BF16'} compute + FP32 head`,e.point?.platform??'']];
   const q=e.row;
+  if(strict&&e.point)sheet.getRange('A'+r).values=[[data.models[e.model]+'\n'+parameterLabel(e.point)]];
   if(e.point){sheet.getRange(`E${r}:I${r}`).formulas=[[`=Measurements!AB${q}/100`,`=Measurements!${metric==='time'?'AC':'AD'}${q}`,`=F${r}/$F$7`,e.point.srcc_reference!==undefined?`=Measurements!H${q}`:'="n.a."',`=Measurements!AE${q}`]];sheet.getRange('K'+r).formulas=[[`=Measurements!Z${q}`]];}
   else sheet.getRange(`E${r}:I${r}`).values=[['n.a.','n.a.','n.a.','n.a.','n.a.']];
   sheet.getRange(`A${r}:M${r}`).format.fill=r%2===0?'#F2F5F7':'#FFFFFF';
@@ -135,7 +139,7 @@ if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
 for(const {sheet}of views){const pic=await book.render({sheetName:sheet.name,range:'A1:M31',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp','busy_resource_'+sheet.name+'.png'),new Uint8Array(await pic.arrayBuffer()));}
 const rawPic=await book.render({sheetName:'Measurements',range:'A6:N12',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp/busy_resource_raw.png'),new Uint8Array(await rawPic.arrayBuffer()));
 const windowsPic=await book.render({sheetName:'Window repeats',range:'A1:M10',scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp/busy_resource_windows.png'),new Uint8Array(await windowsPic.arrayBuffer()));
-if(strict){for(const [sheetName,range,file] of [['Measurements','AF6:AO12','busy_resource_metadata.png'],['Measurements','AK14:AO19','busy_resource_calibration_metadata.png'],['Window repeats','Y1:AK7','busy_resource_interval_audit.png'],['Window repeats','AL1:AO10','busy_resource_memory.png']]){const pic=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',file),new Uint8Array(await pic.arrayBuffer()));}}
+if(strict){for(const [sheetName,range,file] of [['Measurements','AF6:AO12','busy_resource_metadata.png'],['Measurements','AK14:AO19','busy_resource_calibration_metadata.png'],['Window repeats','Y1:AK7','busy_resource_interval_audit.png'],['Window repeats','AL1:AO10','busy_resource_memory.png'],['Measurements','AP6:AR12','busy_resource_receiver.png']]){const pic=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',file),new Uint8Array(await pic.arrayBuffer()));}}
 await(await SpreadsheetFile.exportXlsx(book)).save(out);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(out)));
 await fs.writeFile(path.join(root,receiptName),JSON.stringify({file:out,sha256:crypto.createHash('sha256').update(await fs.readFile(out)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(path.join(root,'eight_tables.json'))).digest('hex'),views:8,raw_sheets:1,calculation_sheets:1,audited_points:data.values.length,recalculation:true,reimport:true,formula_errors:0},null,2));
 try{await fs.rename(out+'.inspect.ndjson',path.join(root,'workbook_inspect_'+Date.now()+'.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
