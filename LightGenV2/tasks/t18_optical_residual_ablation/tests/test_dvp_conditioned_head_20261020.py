@@ -88,7 +88,7 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(len(cfg['TRAIN_capacity_evidence_SHA256']),64)
         self.assertEqual(cfg['final_targets']['4'],342)
         text=SOURCE.read_text()
-        self.assertIn("assert key in ('fusion_logits.2','fusion_logits.3')",text)
+        self.assertIn("assert key in ('fusion_logits.2','fusion_logits.3','fusion_logits.5')",text)
         self.assertIn("state[alpha_key].fill_(alpha_init)",text)
 
     def test_compound_admission_cannot_claim_new_training_or_rewrite_components(self):
@@ -247,6 +247,17 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual({k:v for k,v in cfg.items() if k not in ('scope','targets','final_targets')},
                          {k:v for k,v in old.items() if k!='scope'})
         self.assertEqual(cfg['final_targets']['6'],350)
+
+    def test_L6_alpha_initialization_only_after_complete_prefix7(self):
+        tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='shrink_fit')
+        gate=next(n for n in ast.walk(method) if isinstance(n,ast.Assert) and 'a.depth == 6' in ast.unparse(n.test))
+        expression=compile(ast.Expression(gate.test),'<alpha_admission>','eval')
+        from types import SimpleNamespace
+        for depth,prefix,feature,allowed in ((4,4,None,True),(4,5,None,True),(6,7,None,True),(6,6,None,False),(6,5,None,False),(6,7,'old_bank',False)):
+            self.assertEqual(eval(expression,{'a':SimpleNamespace(depth=depth,prefix=prefix,feature_run=feature)}),allowed)
+        text=ast.unparse(method)
+        for token in ("evidence['TEST_inference'] is False","evidence['TRAIN'] == 1600",'parent_fallback'):
+            self.assertIn(token,text)
 
 
 if __name__ == '__main__':

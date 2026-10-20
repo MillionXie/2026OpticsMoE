@@ -112,7 +112,7 @@ def cpu_fit_admission(a):
 
 def original_alpha_state(original, allowed, value, key='fusion_logits.2'):
     """One declared post-E2 or final-L4 coordinate, not an alpha/seed grid."""
-    assert key in ('fusion_logits.2','fusion_logits.3')
+    assert key in ('fusion_logits.2','fusion_logits.3','fusion_logits.5')
     assert key in allowed and value==.4001001
     assert original[key].dtype==torch.float64 and .4001<float(original[key])<=.95
     state={k:v.clone() for k,v in original.items()}
@@ -481,7 +481,7 @@ def shrink_fit(a):
     alpha_key=cfg.get('TRAIN_supported_alpha_key','fusion_logits.2')
     parent_metric=parent_probability=None
     if alpha_init is not None:
-        assert a.depth==4 and a.prefix in (4,5) and not a.feature_run
+        assert (a.depth==4 and a.prefix in (4,5) and not a.feature_run) or (a.depth==6 and a.prefix==7 and not a.feature_run)
         assert alpha_key==f'fusion_logits.{a.prefix-2}'
         evidence_coordinate='alpha'+str(a.prefix-2)
         evidence_path=session/cfg['TRAIN_capacity_evidence'];assert evidence_path.resolve().is_relative_to((session/'fits').resolve())
@@ -964,6 +964,14 @@ def selftest():
     final_initialized=original_alpha_state(final_state,{'fusion_logits.3'},.4001001,'fusion_logits.3')
     assert float(final_initialized['fusion_logits.3'])==.4001001 and float(final_state['fusion_logits.3'])==.5968848674741991
     assert torch.equal(final_initialized['frozen'],final_state['frozen'])
+    six_state={'fusion_logits.5':torch.tensor(.95,dtype=torch.float64),'frozen':torch.ones(3)}
+    six_initialized=original_alpha_state(six_state,{'fusion_logits.5'},.4001001,'fusion_logits.5')
+    assert float(six_initialized['fusion_logits.5'])==.4001001 and float(six_state['fusion_logits.5'])==.95
+    assert torch.equal(six_initialized['frozen'],six_state['frozen'])
+    for invalid in ('fusion_logits.0','fusion_logits.1','fusion_logits.4'):
+        try:original_alpha_state({invalid:torch.tensor(.95,dtype=torch.float64)},{invalid},.4001001,invalid)
+        except AssertionError:pass
+        else:raise AssertionError('Undeclared alpha coordinate admitted')
     for forbidden in (.4,.5,.95):
         try:original_alpha_state(alpha_state,{'fusion_logits.2'},forbidden)
         except AssertionError:pass
