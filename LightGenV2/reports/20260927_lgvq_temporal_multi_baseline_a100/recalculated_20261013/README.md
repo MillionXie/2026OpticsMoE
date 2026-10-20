@@ -1,5 +1,24 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
+## Measurement revision in progress: cold, distinct-video MPS runs
+
+The newly requested comparison uses different TEST videos in order, zero inference
+warmup, retained first samples, and B1 at both MPS allocations. Only Qwen, GLM,
+CLIP and YOLO are being remeasured. The twelve-condition selected workbook and
+figures immediately below remain the earlier **resident-repeat protocol**; they
+must not be represented as matching the historical dataset-once Qwen B1 anchor.
+They are preserved rather than silently replaced with partially completed results.
+
+The new canonical run is `lgvq_mps_dataset_once_a100_20261020`. It retains three
+fresh-process full558 evaluations per setting and uses the first200 distinct
+videos for costs. Charged intervals are each legacy first-block-entry to GPU MOS
+plus output to the next external-preprocessing start. Each next decode, crop,
+processor, H2D and model-call preblock interval is excluded. Only199 internal gaps
+enter the first200 cost statistic. Pure block cost remains separate for comparison
+with the protected Qwen anchor. Power is integrated over the same charged intervals.
+No DS/Kimi run or new rental is authorized in this revision; their previous resident
+points cannot be mixed into a supposedly uniform new dataset-once figure.
+
 ## Current figure selection: MPS with original deployment precision
 
 The current selected comparison is [editable plot data](LGVQ_MPS_deployed_comparison.xlsx),
