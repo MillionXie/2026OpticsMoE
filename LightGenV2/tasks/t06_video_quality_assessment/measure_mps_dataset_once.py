@@ -230,8 +230,24 @@ def suite(args):
     import fcntl
     with (TASK/'runs/simulation/.temporal_telemetry_a100.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-        if ROOT.exists():raise RuntimeError('Do not overwrite suite')
-        ROOT.mkdir();state=dict(status='admission',pid=os.getpid(),completed=[],deadline=args.deadline,protocol=config())
+        verified=set()
+        if args.resume_verified:
+            receipt=ROOT/'authorized_extension_receipt.json'
+            handover=json.loads(receipt.read_text())
+            if handover['status']!='authorized_idle_handover' or not handover['private_mps_released']:
+                raise RuntimeError('Verified idle handover required')
+            verified=set(handover['completed'])
+            for name in verified:
+                report=json.loads((ROOT/name/'report.json').read_text())
+                if report['status']!='complete' or (report['batch'],report['test_videos'],report['cost_videos'])!=(1,558,200):
+                    raise RuntimeError('Cannot skip unqualified evidence')
+                if report['gpu_uuid']!=config()['gpu_uuid'] or report['protocol']['timing_protocol']!=config()['timing_protocol']:
+                    raise RuntimeError('Continuation machine or scientific protocol differs')
+        else:
+            if ROOT.exists():raise RuntimeError('Do not overwrite suite')
+            ROOT.mkdir()
+        state=dict(status='admission',pid=os.getpid(),completed=[],deadline=args.deadline,protocol=config(),
+                   verified_predecessor=sorted(verified))
         def save():frozen.write_json(ROOT/'suite_status.json',state)
         save();engine.GPU=frozen.A100_UUID;engine.PIPE=PIPE;engine.ROOT=ROOT;active=False
         try:
@@ -252,6 +268,9 @@ def suite(args):
                     for repeat in (1,2,3):
                         if time.time()>=args.deadline-120:raise TimeoutError('No time for another worker')
                         name=f'{model}_cap{cap}_repeat{repeat:02d}';output=ROOT/name
+                        if name in verified:
+                            state['completed'].append(name);save();continue
+                        if output.exists():raise RuntimeError('Preserve incomplete point; no blind resume')
                         env=dict(os.environ,CUDA_VISIBLE_DEVICES=frozen.A100_UUID,CUDA_MPS_PIPE_DIRECTORY=PIPE,
                                  CUDA_MPS_ACTIVE_THREAD_PERCENTAGE=str(cap),OMP_NUM_THREADS='8',
                                  HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',HF_HOME='/data/cache')
@@ -280,6 +299,7 @@ def suite(args):
 def main():
     p=argparse.ArgumentParser();p.add_argument('--phase',choices=('suite','worker'),required=True)
     p.add_argument('--profile',choices=('lab','rental','rentalb'),default='lab')
+    p.add_argument('--resume-verified',action='store_true',help='Explicit authorized idle handover only; skip completed evidence')
     p.add_argument('--model',choices=('qwen','glm','clip','yolo','deepseek','kimi'));p.add_argument('--cap',type=int,choices=(100,50))
     p.add_argument('--repeat',type=int,choices=(1,2,3));p.add_argument('--model-path',type=Path)
     p.add_argument('--checkpoint',type=Path);p.add_argument('--reproduction-receipt',type=Path)
