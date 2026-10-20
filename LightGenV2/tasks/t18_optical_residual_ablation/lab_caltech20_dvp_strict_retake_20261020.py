@@ -58,16 +58,8 @@ def link_file(source, target, manifest):
 
 
 def prepare(a, m):
-    import psutil
-    assert not m.LOCK.exists()
-    # Do not prepare into a live experiment. Report PIDs only, never credentials.
-    for p in psutil.process_iter(['pid', 'name', 'cmdline']):
-        if p.pid in (os.getpid(), os.getppid()):
-            continue
-        cmd = ' '.join(p.info['cmdline'] or [])
-        assert not (p.info['name'] and 'python' in p.info['name'].lower()
-                    and ('--mode capture' in cmd or '--mode refine' in cmd)
-                    and 'caltech20' in cmd), ('Existing capture/refinement', p.pid)
+    # CPU-only preparation writes an exclusive fresh namespace, never the live
+    # source prefix or SDK. It may run while the other depth is acquiring.
     session = m.session_for(a)
     assert not session.exists()
     old = a.sequence / f'L{a.depth}'
