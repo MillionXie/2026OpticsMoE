@@ -200,6 +200,15 @@ def terminal_coordinates(depth):
     return last,f'electronic.{last}.local.weight',f'fusion_logits.{last}'
 
 
+def native_terminal_admitted(a,cfg):
+    """Legacy final tail, or one explicit strict L4 E2 simulated-tail fit."""
+    attempt=getattr(a,'attempt',None)
+    if attempt is None:return a.depth in (4,6) and a.prefix==a.depth+1
+    return (attempt=='strict8pp_20261020' and a.mode=='native5150-fit' and a.depth==4 and a.prefix==4
+            and cfg.get('strict_intermediate_terminal')=={'depth':4,'prefix':4,'target_correct':314}
+            and cfg.get('joint_original_head') is True and cfg['targets']['4']==314 and cfg['final_targets']['4']==342)
+
+
 def terminal10_fit(a):
     """DVP1600 adapter for published exact native-RMS terminal methods.
 
@@ -211,16 +220,17 @@ def terminal10_fit(a):
     from lab_caltech20_native_terminal_20261019 import native_features,folded
     from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
     cpu_fit_admission(a);torch.set_num_threads(2);torch.manual_seed(73)
-    assert a.depth in (4,6) and a.prefix==a.depth+1 and not a.feature_run and not a.out.exists()
+    cfg=core.read(a.profile)
+    assert a.depth in (4,6) and native_terminal_admitted(a,cfg) and not a.feature_run and not a.out.exists()
     last,conv_key,alpha_key=terminal_coordinates(a.depth)
-    cfg=core.read(a.profile);assert cfg['epochs']<=60 and cfg['fit_seconds']<=600 and cfg['batch']==8
+    assert cfg['epochs']<=60 and cfg['fit_seconds']<=600 and cfg['batch']==8
     joint=cfg.get('joint_original_head',False)
     assert joint==(a.mode=='native5150-fit')
     if joint:assert cfg['epochs']<=12 and cfg['fit_seconds']<=360 and not cfg.get('replay_first_batches_from')
     assert core.sha(HERE/'lab_caltech20_native_terminal_20261019.py')==cfg['native_tail_source_SHA256']
     data,dm=core.data_for(a.sequence);assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
     assert psutil.virtual_memory().available>sum(len(data[r][1]) for r in ('train','test'))*2*478*478*4+(2<<30)
-    session=a.sequence/f'L{a.depth}';assert core.sha(a.checkpoint)==a.digest
+    session=core.session_for(a);assert core.sha(a.checkpoint)==a.digest
     pr=core.read(a.checkpoint.parent/'report.json');pa=core.read(a.checkpoint.parent/'independent_audit.json')
     assert pa['passed'] and pa['report_SHA256']==core.sha(a.checkpoint.parent/'report.json') and pr['results']['best']['PT_SHA256']==a.digest
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
@@ -245,7 +255,7 @@ def terminal10_fit(a):
             metric,p=core.assess(model,data,fields,role);assert counts[role]==n and np.array_equal(p,cache[role]['p']);cache[role]['metric']=metric
     finally:hook.remove();pre.remove()
     assert max(cache_errors)<=3e-6 and cache['test']['metric']['correct']==pr['selected_correct']
-    proof=dict(passed=True,TRAIN=1600,TEST=411,VALID=0,maxabs=max(cache_errors),original_forward_exact_before_training=True,original_head_frozen=not joint,cache_in_memory_only=True,no_new_CCD=True,native_tail_source_SHA256=cfg['native_tail_source_SHA256'])
+    proof=dict(passed=True,TRAIN=1600,TEST=411,VALID=0,maxabs=max(cache_errors),original_forward_exact_before_training=True,original_head_frozen=not joint,cache_in_memory_only=True,no_new_CCD=True,native_tail_source_SHA256=cfg['native_tail_source_SHA256'],measured_prefix_stages=list(fields),last_optical_stage_measured=str(last) in fields)
     core.save(a.out/'terminal_cache_parity.json',proof)
     electronic=copy.deepcopy(model.electronic[last]);electronic.requires_grad_(True);head=copy.deepcopy(model.linear);head.requires_grad_(False)
     alpha=torch.nn.Parameter(original[alpha_key].clone());params=[*electronic.parameters(),alpha];assert sum(v.numel() for v in params)==10
@@ -262,13 +272,13 @@ def terminal10_fit(a):
         if not joint:return head(features)
         w,b=folded(head.weight,head.bias,delta,mean,root);return F.linear(features,w,b)
     origin=(electronic.local.weight.detach().clone(),alpha.detach().clone());baseline=te['p'];best,bestloss=score(baseline,te['y'].numpy());selected=0
-    target=int(cfg.get('final_targets',{'4':342,'6':350})[str(a.depth)])
+    target=int(cfg.get('final_targets',{'4':342,'6':350})[str(a.depth)]) if a.prefix==a.depth+1 else int(cfg['targets'][str(a.depth)])
     middle_target=int(cfg.get('targets',{'4':314,'6':322})[str(a.depth)])
     protocol=dict(parent_PT_SHA256=a.digest,depth=a.depth,prefix=a.prefix,allowed_keys=sorted(trainable),head_frozen=not joint,gradient_parameters=5150 if joint else 10,native_RMS_backward_only=True,
                   prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,config=cfg,profile_SHA256=core.sha(a.profile),
                   source_git=core.git_head(),source_SHA256=core.sha(__file__),native_tail_source_SHA256=cfg['native_tail_source_SHA256'],cache_parity=proof,
                   original_TRAIN_prior_only=True,correct_TRAIN_teacher_only=True,TEST_informed_development=True,TEST_gradient=False,target_correct=target,
-                  CPU_threads=2,SDK_used=False,GPU_used=False,no_new_inference_layer=True)
+                  CPU_threads=2,SDK_used=False,GPU_used=False,no_new_inference_layer=True,last_optical_stage_measured=str(last) in fields,intermediate=a.prefix<a.depth+1)
     if joint:protocol.update(TRAIN_geometry_SHA256=core.sha(a.out/'TRAIN_geometry.npz'),head_coordinates_folded_into_original_5140=True)
     core.save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'].numpy(),probabilities=baseline)
     def snapshot(name,epoch):
@@ -316,7 +326,7 @@ def terminal10_fit(a):
         results[name]=dict(TEST_development=native,PT_SHA256=core.sha(path),strict_CPU=True,native_tail_probability_maxabs=error,predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
     assert results['best']['TEST_development']['correct']==best and core.sha(a.checkpoint)==a.digest
     core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,selected_epoch=selected,selected_e0=selected==0,actual_epochs=epoch,
-                  actual_TRAIN_steps=steps,target_correct=target,refinement_target_reached=best>=target,within8pp=best>=middle_target,intermediate=False,head_frozen=not joint,gradient_parameters=5150 if joint else 10,
+                  actual_TRAIN_steps=steps,target_correct=target,refinement_target_reached=best>=target,within8pp=best>=middle_target,intermediate=a.prefix<a.depth+1,head_frozen=not joint,gradient_parameters=5150 if joint else 10,
                   native_RMS_backward_only=True,frozen_parameters_unchanged=True,all_nonhead_frozen=False,SDK_used=False,GPU_used=False,TEST_gradients=False,elapsed_fit_s=time.monotonic()-start))
 
 
@@ -773,7 +783,7 @@ def fit(a):
     origin = (theta.detach().clone(), bias.detach().clone())
     teacher = torch.tensor(tr['probabilities'], dtype=torch.float64)
     if cfg.get('TRAIN_feature_dropout_repeats',0):
-        assert a.depth==4 and a.prefix==5 and len(labels)==1600
+        assert ((a.depth==4 and a.prefix==5) or (getattr(a,'attempt',None)=='strict8pp_20261020' and a.prefix<a.depth+1 and independent_pair_admitted(a,cfg) and tr['metric']['accuracy']>=.8)) and len(labels)==1600
     if cfg.get('TRAIN_feature_mixup_repeats',0):
         assert (a.prefix==a.depth+1 or (independent_pair_admitted(a,cfg) and tr['metric']['accuracy']>=.8)) and len(labels)==1600 and not cfg.get('TRAIN_feature_dropout_repeats',0)
         z,labels,teacher,keep,TRAIN_views=TRAIN_mixup_views(z,labels,teacher,cfg)
@@ -1196,7 +1206,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     try:
         if args.attempt:
-            assert args.mode in ('fit', 'row-fit', 'pair-fit', 'shrink-fit', 'teacher-readout-fit', 'label-ridge-fit', 'selftest'), 'Strict attempt only admits the original generic head-only optimizers'
+            assert args.mode in ('fit', 'row-fit', 'pair-fit', 'shrink-fit', 'teacher-readout-fit', 'label-ridge-fit', 'native5150-fit', 'selftest'), 'Strict attempt requires a generic head optimizer or separately guarded native5150 scope'
         selftest() if args.mode == 'selftest' else bias_fit(args) if args.mode=='bias-fit' else teacher_readout_fit(args) if args.mode in ('teacher-readout-fit','label-ridge-fit') else terminal10_fit(args) if args.mode in ('terminal10-fit','native5150-fit') else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():

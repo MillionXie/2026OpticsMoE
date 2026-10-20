@@ -146,6 +146,25 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
         self.assertEqual((cfg['epochs'],cfg['fit_seconds'],cfg['batch']),(60,600,8))
 
+    def test_native_terminal_mid_scope_requires_explicit_same_L4_prefix(self):
+        tree=ast.parse(SOURCE.read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='native_terminal_admitted')
+        env={};exec(compile(ast.Module(body=[node],type_ignores=[]),'<terminal-scope>','exec'),env);admit=env['native_terminal_admitted']
+        cfg=dict(strict_intermediate_terminal=dict(depth=4,prefix=4,target_correct=314),joint_original_head=True,targets={'4':314},final_targets={'4':342})
+        def args(depth,prefix,mode='native5150-fit',attempt='strict8pp_20261020'):return SimpleNamespace(depth=depth,prefix=prefix,mode=mode,attempt=attempt)
+        self.assertTrue(admit(args(4,4),cfg))
+        self.assertTrue(admit(args(4,5,attempt=None),{}))
+        self.assertTrue(admit(args(6,7,attempt=None),{}))
+        self.assertFalse(admit(args(4,4),{}))
+        self.assertFalse(admit(args(6,2),cfg))
+        self.assertFalse(admit(args(4,5),cfg))
+        self.assertFalse(admit(args(4,4,mode='terminal10-fit'),cfg))
+        self.assertFalse(admit(args(4,4),dict(cfg,targets={'4':305})))
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='terminal10_fit');text=ast.unparse(method)
+        self.assertIn('session = core.session_for(a)',text)
+        self.assertIn('last_optical_stage_measured=str(last) in fields',text)
+        self.assertIn('intermediate=a.prefix < a.depth + 1',text)
+        self.assertNotIn('intermediate=False',text)
+
     def test_joint_native_adapter_reuses_fixed_published_coefficients_and_original_graph(self):
         cfg=json.loads((TASK/'lab_caltech20_DVP_native5150_profile_20261020.json').read_text())
         old=json.loads((TASK/'lab_caltech20_L4_native_TRAINprior_profile_20261019.json').read_text())
@@ -240,8 +259,12 @@ class ConditionedHeadContract(unittest.TestCase):
         gate=next(n for n in ast.walk(fit) if isinstance(n,ast.If) and 'TRAIN_feature_dropout_repeats' in ast.unparse(n.test))
         predicate=compile(ast.Expression(next(n for n in gate.body if isinstance(n,ast.Assert)).test),'<dropout_guard>','eval')
         from types import SimpleNamespace
-        for depth,prefix,size,allowed in ((4,5,1600,True),(4,4,1600,False),(6,5,1600,False),(4,5,1200,False)):
-            self.assertEqual(eval(predicate,{'a':SimpleNamespace(depth=depth,prefix=prefix),'labels':[0]*size}),allowed)
+        policy=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='independent_pair_admitted');env={};exec(compile(ast.Module(body=[policy],type_ignores=[]),'<scope>','exec'),env)
+        for depth,prefix,size,allowed in ((4,5,1600,True),(4,4,1600,False),(6,5,1600,False),(6,7,1600,False),(4,5,1200,False)):
+            self.assertEqual(eval(predicate,dict(env,a=SimpleNamespace(depth=depth,prefix=prefix),labels=[0]*size,cfg={},tr={'metric':{'accuracy':1.}})),allowed)
+        cfg=dict(strict_intermediate_scope=dict(depth=6,prefix=2,minimum_TRAIN_accuracy=.8),targets={'6':322},final_targets={'6':350})
+        for accuracy,allowed in ((.8,True),(.79,False)):
+            self.assertEqual(eval(predicate,dict(env,a=SimpleNamespace(depth=6,prefix=2,attempt='strict8pp_20261020'),labels=[0]*1600,cfg=cfg,tr={'metric':{'accuracy':accuracy}})),allowed)
         old=json.loads((TASK/'lab_caltech20_DVP_conditioned_head_profile_20261020.json').read_text())
         cfg=json.loads((TASK/'lab_caltech20_DVP_L4_TRAINfeature_dropout_profile_20261020.json').read_text())
         self.assertEqual({k:v for k,v in cfg.items() if not k.startswith('TRAIN_feature_dropout_') and k!='scope'},

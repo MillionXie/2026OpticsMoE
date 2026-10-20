@@ -1,5 +1,38 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 原分类头路线平台后，接原末端5150小范围联合对照（2026-10-20 21:15）
+
+四层强锚head仍E0父278、last238；六层TRAIN MixUp仍E0父306、last292；
+随后两组原TRAIN自动协方差shrinkage/25TRAIN温度步仍各E0父278/306，last252/281。
+以上完整原图CPU/非头冻结独立审核均通过，负结果保留，不宣称新的精度或降低阶段门槛。
+当前仍四层E2=278/411、六层E1=306/411，下一G2/G1均未采；旧完整实拍283/203保持。
+
+新的有限四层对照只复用已发布的`native_features/folded/native_joint_objective`：
+冻结全部光学mask及上游电子，仅原G2后的9conv/direct-alpha/5140Linear，共原5150参数。
+将原final-only适配器增加显式strict L4 prefix4准入，必须配置
+`strict_intermediate_terminal={depth:4,prefix:4,target_correct:314}`、joint_original_head=true，
+且只能native5150模式。其它strict前缀/深度/terminal10仍拒绝，legacy final范围保持。
+完整实测前缀+仿真G2先缓存**原末端输入和原G2仿真光学输出**；每个原TRAIN1600和TEST411
+batch特征/概率与完整原图误差<=3e-6后才允许梯度，保存明确last_optical_stage_measured=false。
+只改变训练反向的RMS导数，不改变任何推理/编码/数据/硬件图，不增加电子或光学层。
+原配方12完整epoch/360fit秒、CPU2/batch8、KL2/T2和原TRAIN先验不变；原5150坐标折回
+原Linear，原图best/last及冻结审核仍强制。中间目标314而非旧final342，报告intermediate=true，
+不能把仿真G2当作完整实拍；RAM与SDK空闲准入失败须保护数据/父278并诊断，不盲重启。
+
+六层另一个有限对照复用已发布TRAIN特征dropout配方（p.1/三重复/seed73、原头锚.0001），
+作为MixUp未提升后的另一种TRAIN噪声鲁棒化；不组合两者或扫概率/种子。仍只显式strict E1
+范围且原图TRAIN>=80%后才允许，默认旧dropout只适用于L4 final的限制保留，未向legacy
+L6或其他前缀放开。6400 derivative views不是新独立图像/CCD，推理无dropout/新层，
+max240LBFGS步/120fit秒、原TRAIN协方差/先验与完整411原图评价保持；父306不回退。
+上述只改适配器namespace/范围/报告口径，数值训练函数保持原已发布版本；新增pure范围
+测试通过后还须三端Git冷同步及现有数值自测，方可真正派发，本段**不是已达到目标**。
+
+仅TRAIN40的只读固定blur灵敏度也已结束：原/模拟仅blur2/blur8的raw PCC中位，
+四层E2为.18305/.24351/.25785，六层E1为.20550/.24779/.25775。
+这不能证明唯一PSF/相机/phase原因，也没有拟合、应用任何blur、改变坐标/LUT或用TEST。
+即使模拟模糊也只解释部分图样差异；原phase LUT仍linear voltage而非已验证linear phase。
+后续若需改变观察模型或现场响应标定，必须另立批准协议，不能私改物理合同凑分。
+
 ## 继续处理四层欠拟合/六层过拟合，不沿用较差last（2026-10-20 20:55）
 
 六层E1独立双行full20CE段已完整结束，仍306/411、TRAIN100%，有NLL变化但不称准确率改善。
