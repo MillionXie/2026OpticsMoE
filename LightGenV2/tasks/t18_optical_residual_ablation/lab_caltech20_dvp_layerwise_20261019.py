@@ -608,7 +608,32 @@ def fitting_model(a,data,dm,checkpoint,digest,prefix):
     session=session_for(a);model,transfer=model_for(checkpoint,digest,a.depth,session/'source_reference.ts');fields,identities=fields_for(session,prefix,data,dm,session_hardware_digest(a.sequence));return model,transfer,fields,identities
 
 
+def fitting_keys(model,prefix,cfg):
+    """Optional stricter freeze; never expand the original suffix scope."""
+    keys=allowed_keys(model,prefix)
+    assert isinstance(cfg.get('freeze_readout',False),bool)
+    if cfg.get('freeze_readout',False):keys=keys-{'linear.weight','linear.bias'}
+    assert keys and keys<=allowed_keys(model,prefix)
+    return keys
+
+
+def fitting_TRAIN_prior(cfg,dm):
+    """Reuse a SHA-bound published TRAIN-only prior, never TEST frequencies."""
+    name=cfg.get('TRAIN_prior_profile')
+    if name is None:
+        assert cfg.get('TRAIN_prior_profile_SHA256') is None
+        return None
+    path=HERE/name
+    assert path.parent.resolve()==HERE.resolve() and sha(path)==cfg['TRAIN_prior_profile_SHA256']
+    prior=read(path)
+    assert prior['original_TRAIN_cache_SHA256']==dm['source_cache_SHA256']==SOURCE_CACHE
+    counts=np.asarray(prior['original_TRAIN_counts'],dtype=np.float64)
+    assert counts.shape==(20,) and np.isfinite(counts).all() and (counts>=60).all() and (counts==np.rint(counts)).all() and counts.sum()==3141
+    return counts/counts.mean()
+
+
 def fit(a,data,dm,checkpoint,digest,prefix,cfg):
+    assert cfg.get('fit_depth',a.depth)==a.depth and cfg.get('fit_prefix',prefix)==prefix,'Profile is scoped to another depth/prefix'
     session=session_for(a);stage=(['router']+[str(k) for k in range(a.depth)])[prefix-1];out=session/'fits'/(stage+cfg.get('fit_name_suffix',''));assert not out.exists() and not LOCK.exists();out.mkdir(parents=True)
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and torch.cuda.is_available() and 'A100' not in torch.cuda.get_device_name(0)
     # Caller has already released SDK. Reject any non-desktop foreign GPU user.
@@ -617,9 +642,11 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
     for row in subprocess.check_output(['nvidia-smi','--query-compute-apps=gpu_uuid,pid,process_name','--format=csv,noheader'],text=True).splitlines():
         gpu,pid,exe=row.split(',',2);pid=int(pid)
         if gpu.strip()==cfg['GPU_UUID']:assert pid in own or names.get(pid,Path(exe.strip()).name.lower()) in cfg['desktop_graphics_process_allowlist'],('Foreign GPU owner',pid,names.get(pid,exe))
-    torch.cuda.set_per_process_memory_fraction(.65,0);torch.manual_seed(cfg['seed']);model,transfer,fields,identities=fitting_model(a,data,dm,checkpoint,digest,prefix);original=state_cpu(model);allowed=allowed_keys(model,prefix);baseline,p=assess(model,data,fields,'test');best,bestloss=baseline['correct'],baseline['nll'];selected=0;target=math.ceil(cfg['models'][str(a.depth)]['simulation_correct']-411*cfg['gap_pp']/100)
+    torch.cuda.set_per_process_memory_fraction(.65,0);torch.manual_seed(cfg['seed']);model,transfer,fields,identities=fitting_model(a,data,dm,checkpoint,digest,prefix);original=state_cpu(model);allowed=fitting_keys(model,prefix,cfg);prior=fitting_TRAIN_prior(cfg,dm);baseline,p=assess(model,data,fields,'test');best,bestloss=baseline['correct'],baseline['nll'];selected=0;target=math.ceil(cfg['models'][str(a.depth)]['simulation_correct']-411*cfg['gap_pp']/100)
     target=cfg.get('target_correct',target);budget=cfg['final_fit'] if prefix==a.depth+1 else cfg['middle_fit'];protocol=dict(parent_PT_SHA256=digest,depth=a.depth,prefix=prefix,allowed_keys=sorted(allowed),prefix_SHA256=identities,data_SHA256=dm['sha256'],hardware_SHA256=session_hardware_digest(a.sequence),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,baseline_TEST=baseline,target_correct=target,config=cfg,source_git=git_head(),source_SHA256=sha(__file__),teacher_scope='Frozen parent predictions on TRAIN only; no TEST teacher' if cfg.get('teacher_weight',0) else None)
     protocol['prefix_hardware_SHA256']={stage:read(session/'capture'/stage/'report.json')['hardware_SHA256'] for stage in fields}
+    protocol['readout_frozen_by_config']=cfg.get('freeze_readout',False)
+    protocol['original_TRAIN_prior_weights']=None if prior is None else prior.tolist()
     save(out/'protocol.json',protocol);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=p)
     def snapshot(name,epoch):
         state=state_cpu(model);assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed);torch.save(dict(model=state,protocol=protocol,epoch=epoch),out/(name+'.pt'))
@@ -644,6 +671,7 @@ def fit(a,data,dm,checkpoint,digest,prefix,cfg):
         model.train();order=torch.randperm(1600).numpy();loss_sum=0.;ce_sum=0.;kl_sum=0.;used=0
         # TEST confusion controls modest emphasis of existing TRAIN classes only.
         cm=np.asarray(baseline['confusion_matrix']);support=cm.sum(1);errors=1-np.divide(cm.diagonal(),support,out=np.zeros(20),where=support>0);weights=torch.tensor(1+cfg['confusion_emphasis']*errors,dtype=torch.float32,device='cuda')
+        if prior is not None:weights=weights*torch.tensor(prior,dtype=torch.float32,device='cuda')
         for begin in range(0,1600,cfg['batch_size']):
             ix=order[begin:begin+cfg['batch_size']];model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in fields.items()};x=encode_images(data['train'][0][ix].cuda());y=torch.from_numpy(data['train'][1][ix].astype(np.int64)).cuda();opt.zero_grad(set_to_none=True);p=model(x)[0];lp=p.clamp_min(1e-12).log();ce=(1-cfg['label_smoothing'])*F.nll_loss(lp,y,reduction='none')-cfg['label_smoothing']*lp.mean(1);ce_loss=(ce*weights[y]).sum()/weights[y].sum();kl=lp.new_zeros(())
             if teacher is not None:kl=F.kl_div(torch.log_softmax(lp/temperature,1),teacher[ix],reduction='batchmean')*temperature**2
@@ -735,7 +763,18 @@ def selftest():
             actual=replay(x)[0];assert torch.equal(actual,expected);(-actual[:,0].log().mean()).backward()
             assert all(v.grad is None for k,v in replay.named_parameters() if k not in allowed)
             assert all(v.grad is not None and torch.isfinite(v.grad).all() for k,v in replay.named_parameters() if k in allowed)
-    print(json.dumps(dict(passed=True,TRAIN1600_original1508_aug92=True,no_VALID_TEST_sources=True,depth4_6_prefix1_2_penultimate_final_forward_and_gradient_freeze=True,SDK_opened=False,GPU_used=False)))
+            if prefix in (2,depth):
+                frozen=MeasuredPrefix(depth).eval();frozen.load_state_dict(state_cpu(m));frozen.measured=replay.measured
+                narrow=fitting_keys(frozen,prefix,dict(freeze_readout=True));before=state_cpu(frozen)
+                assert narrow==allowed-{'linear.weight','linear.bias'}
+                for key,value in frozen.named_parameters():value.requires_grad_(key in narrow)
+                observed=frozen(x)[0];assert torch.equal(observed,expected)
+                optimizer=torch.optim.AdamW([value for value in frozen.parameters() if value.requires_grad],lr=.0002)
+                (-observed[:,0].log().mean()).backward();optimizer.step();after=state_cpu(frozen)
+                assert all(value.grad is None for key,value in frozen.named_parameters() if key not in narrow)
+                assert all(value.grad is not None and torch.isfinite(value.grad).all() for key,value in frozen.named_parameters() if key in narrow)
+                assert all(torch.equal(value,after[key]) for key,value in before.items() if key not in narrow)
+    print(json.dumps(dict(passed=True,TRAIN1600_original1508_aug92=True,no_VALID_TEST_sources=True,depth4_6_prefix1_2_penultimate_final_forward_and_gradient_freeze=True,optional_frozen_readout_native_forward_identical_and_AdamW_freeze=True,SDK_opened=False,GPU_used=False)))
 
 
 if __name__=='__main__':

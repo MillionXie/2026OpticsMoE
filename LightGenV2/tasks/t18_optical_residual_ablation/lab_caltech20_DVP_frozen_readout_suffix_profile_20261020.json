@@ -1,0 +1,25 @@
+{
+  "base_profile": "lab_caltech20_dvp_layerwise_profile_20261019.json",
+  "base_profile_SHA256": "ea703db2e7032af973baa66f98497e1f555da9ef0129fd5554670c5de44e4532",
+  "overrides": {
+    "fit_depth": 4,
+    "fit_prefix": 4,
+    "fit_name_suffix": "_frozen_readout_prior_strict8pp_20261020",
+    "freeze_readout": true,
+    "TRAIN_prior_profile": "lab_caltech20_DVP_conditioned_head_profile_20261020.json",
+    "TRAIN_prior_profile_SHA256": "7010516057030ab0b05d55349a68778a6a70c7c326ed14a177dcc4236d892b19",
+    "phase_lr": 0.0002,
+    "electronic_lr": 0.0002,
+    "alpha_lr": 0.0001,
+    "head_lr": 0.0002,
+    "label_smoothing": 0.01,
+    "confusion_emphasis": 0.25,
+    "teacher_weight": 0.3,
+    "teacher_temperature": 2.0,
+    "minimum_epochs": 2,
+    "evaluate_every": 1,
+    "middle_fit": {"epochs": 6, "seconds": 480},
+    "target_correct": 314
+  },
+  "scope": "One reviewed L4 E2-prefix refinement from independently audited best278 after unfrozen-head conservative six-epoch adaptation selected E0 and last243. Freeze original Linear weight/bias bit-identically; optimize only original allowed uncaptured-G2 mask and postE2/G2 electronic/direct-alpha suffix. Original forward graph and encoding unchanged. Preserve same conservative rates/TRAIN-only same-complete-prefix teacher, with the published original3141TRAIN prior correcting artificial80/class balancing. Prior is SHA-bound to the original TRAIN cache, never TEST frequency. Head freeze and TRAIN-prior correction change together: not an isolated causal ablation or guaranteed improvement. All1600TRAIN per complete epoch, six epochs/480fit seconds, new AdamW, no automatic continuation/hardware/SDK/TEST gradient/VALID/inference expansion. Native best/last and frozen-head/upstream audit required before adoption. Intermediate314 and final342 remain separate hard gates; preserve parent278 if no improvement. Legacy callers without these options retain their original trainable set and objective."
+}
