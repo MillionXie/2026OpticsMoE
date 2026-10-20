@@ -1,6 +1,6 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## Current measurement definition: 20 October 2026, new two-GPU rental
+## Current measurement definition: 20 October 2026, strict interval costs
 
 The latest author instruction supersedes the timing boundary of the historical
 sections below. New raw measurements are under
@@ -13,9 +13,15 @@ independent raw-data replay. Historical Qwen B1 is unchanged. The original labor
 measurements retain the two completed CLIP MPS conditions in `recovery_1102`.
 Its failed temporal-control condition remains excluded. The subsequent
 `calibration_1140` completed CLIP temporal control; `duration_1155` has completed
-all sixteen deployed-precision laboratory conditions and is continuing FP32.
-At this partial update, sixteen laboratory conditions have been independently
-audited. Laboratory FP32 results remain unavailable until completed and audited.
+all sixteen deployed-precision laboratory conditions and twelve FP32 conditions
+for CLIP, YOLO and Qwen. Together with the rental results, 44 conditions and
+132 complete trial windows have passed independent raw-data replay. The six
+matching-batch FP32 full558 accuracy evaluations for these three laboratory
+models have also completed. GLM FP32 remains incomplete: a 411.885-ms power
+sampling gap invalidated its third MPS100 trial. All failed records are retained.
+Only its four missing control conditions are admitted to `glm_sampling_recovery01`,
+after a separate 45-s sampling check and three idle checks. The timing loop,
+250-ms power-support limit, precision, weights and fixed batch are unchanged.
 
 The existing eight-view workbook now contains the newly audited interval costs.
 Its previous complete-wall version, SHA256
@@ -59,8 +65,8 @@ SRCC references at B1 and higher batches were independently evaluated, not newly
 trained or measured separately at each cap. FP32 does not improve either model's
 SRCC here; its backend and weight expansion are disclosed below.
 
-Machine-readable observations and all 96 currently qualified trial records
-(48 rental, 48 laboratory) are in the new run's `presentation/paired_measurements.csv`
+Machine-readable observations and all 132 currently qualified trial records
+(48 rental, 84 laboratory) are in the new run's `presentation/paired_measurements.csv`
 and `paired_repeats.csv`. Each row binds report, checkpoint, accuracy source, date
 and hashes. All 270 rental files (23,917,130 bytes) were imported from a SHA-bound
 final archive. Eight figure panels use `strict_tf_<method>_<precision>_*` in this
@@ -97,6 +103,42 @@ MPS resource provisioning and NVML busy time are different measured quantities.
 The values above are retained rather than adjusted to an expected trend. No
 causal speedup is inferred from the small YOLO MPS latency difference. These are new
 strict interval measurements, not the historical Qwen B1 finalized observation.
+
+### Laboratory FP32 results completed before the GLM recovery
+
+Each row pools all three qualified cost trials. Every floating model parameter
+was FP32, autocast and TF32 were disabled, and the original frozen task heads were
+retained. Full558 accuracy was independently evaluated at each listed batch with
+the same runtime and checkpoint; it was not re-evaluated separately at each cap.
+Temporal pairs retain B10 for CLIP and B3 for YOLO and Qwen. All MPS pairs use B1.
+The two Qwen accuracy references therefore remain distinct; neither replaces the
+historical finalized Qwen B1 measurement.
+
+| Model | Control | Setting | Busy (%) | T16 (ms) | Estimated E16 (J) | SRCC reference |
+|---|---|---|---:|---:|---:|---:|
+| CLIP ViT-B/32 | MPS | 100% resources | 93.003 | 78.774 | 44.550 | .725177 |
+| CLIP ViT-B/32 | MPS | 50% resources | 97.074 | 117.071 | 61.134 | .725177 |
+| CLIP ViT-B/32 | Temporal | Unrestricted | 99.000 | 44.585 | 26.161 | .725177 |
+| CLIP ViT-B/32 | Temporal | Approximately 50% busy | 51.399 | 85.742 | 43.902 | .725177 |
+| YOLO11s | MPS | 100% resources | 97.962 | 167.881 | 98.423 | .701533 |
+| YOLO11s | MPS | 50% resources | 98.875 | 249.432 | 136.605 | .701533 |
+| YOLO11s | Temporal | Unrestricted | 98.929 | 165.599 | 97.182 | .701533 |
+| YOLO11s | Temporal | Approximately 50% busy | 51.687 | 307.703 | 157.178 | .701533 |
+| Qwen3-VL-2B | MPS | 100% resources | 96.914 | 3291.043 | 1917.527 | .769477 |
+| Qwen3-VL-2B | MPS | 50% resources | 98.082 | 5320.726 | 2995.285 | .769477 |
+| Qwen3-VL-2B | Temporal | Unrestricted | 98.156 | 2838.960 | 1650.149 | .769486 |
+| Qwen3-VL-2B | Temporal | Approximately 50% busy | 47.936 | 6058.467 | 2895.593 | .769486 |
+
+Qwen's pooled FP32 paced busy rate meets the accepted 50 ± 5 criterion but lies
+just outside the preferred 50 ± 2 band. No additional formal trial was selected to
+move this value toward 50%. Arithmetic precision is not an isolated intervention
+across all profiles: backend/execution differences are retained and identified,
+so this table is not evidence that FP32 alone improves accuracy or latency.
+In particular, the deployed CLIP temporal unrestricted equivalent is shorter than
+the optical reference under this declared block-based boundary. This is retained
+as an observed comparison, not forced to favour the optical system; it does not
+establish a faster new-video end-to-end pipeline because decoding and frontend
+work are excluded.
 
 ### Methods draft: timing boundary and inter-inference intervals
 
