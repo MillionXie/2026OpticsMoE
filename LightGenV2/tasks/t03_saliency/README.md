@@ -1,5 +1,8 @@
 # T03 显著性分析（SALICON）
 
+2026-10-20：[指定0.8748 Qwen baseline的5000图逐图指标导出](reports/reproduction/QWEN8748_PER_IMAGE_20261020.md)。
+沿用50轮第45轮best，补齐各图六指标；含与Ours .8625的同图CC配对及六张插图数据，不重新训练。
+
 ## 整理后的当前入口（2026-10-03）
 
 后续运行源码按服务器 `b75a56203b47818810e0a45dceecf9cea4c6aa9f` 纳入 main；
