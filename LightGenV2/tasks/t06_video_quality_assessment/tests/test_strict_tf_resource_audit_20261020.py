@@ -1,9 +1,27 @@
 """CPU contracts for offline accounting; no mutation of live GPU sources."""
 import unittest
-from LightGenV2.tasks.t06_video_quality_assessment.reports.strict_tf_resource_audit_20261020 import charged_intervals,observed_energy,frame_positions,completion_state
+from LightGenV2.tasks.t06_video_quality_assessment.reports.strict_tf_resource_audit_20261020 import charged_intervals,observed_energy,frame_positions,completion_state,verify_historical_anchor,verify_lab_fp32_runtime
 
 
 class Accounting(unittest.TestCase):
+    def test_fp32_accuracy_is_bound_to_the_cost_runtime_not_just_a_folder_name(self):
+        cost=dict(checkpoint_sha256='head',assets={'backbone':'sha'},floating_parameter_dtypes=['torch.float32'],sources={'runtime.py':'bound'})
+        accuracy=dict(**cost,tf32=False,autocast=False)
+        verify_lab_fp32_runtime(cost,accuracy)
+        accuracy['floating_parameter_dtypes']=['torch.bfloat16']
+        with self.assertRaises(AssertionError):verify_lab_fp32_runtime(cost,accuracy)
+        accuracy['floating_parameter_dtypes']=['torch.float32'];accuracy['sources']={'runtime.py':'changed'}
+        with self.assertRaises(AssertionError):verify_lab_fp32_runtime(cost,accuracy)
+
+    def test_finalized_qwen_anchor_is_not_replaced_by_a_new_control(self):
+        row=dict(baseline='qwen',batch=1,srcc=.7663428036522781,utilization_percent=63.133111480865225,
+                 time_ms=1188.3861464262009,energy_j=462.1134010767563,
+                 checkpoint_sha256='e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2')
+        old=dict(groups=dict(batch1_near_saturation=[row]))
+        verify_historical_anchor(old)
+        row['utilization_percent']=66.4
+        with self.assertRaises(AssertionError):verify_historical_anchor(old)
+
     def test_complete_costs_do_not_imply_complete_accuracy(self):
         values=[dict(model='qwen') for _ in range(48)]
         self.assertEqual(completion_state(values),'costs48_complete_accuracy_pending')

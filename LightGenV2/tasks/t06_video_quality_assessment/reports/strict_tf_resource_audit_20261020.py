@@ -25,6 +25,24 @@ NAMES={'deepseek':'DeepSeek-VL2','kimi':'Kimi-VL-A3B','qwen':'Qwen3-VL-2B','glm'
 def read(p):return json.loads(p.read_text())
 def rows(p):return list(csv.DictReader(p.open(newline='',encoding='utf-8-sig')))
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def verify_historical_anchor(old):
+    refs=[r for r in old['groups']['batch1_near_saturation'] if r.get('baseline')=='qwen' and r.get('batch')==1]
+    assert len(refs)==1
+    anchor=refs[0]
+    for key,value in dict(srcc=.7663428036522781,utilization_percent=63.133111480865225,
+                          time_ms=1188.3861464262009,energy_j=462.1134010767563).items():
+        close(anchor[key],value)
+    assert anchor['checkpoint_sha256']=='e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2'
+
+
+def verify_lab_fp32_runtime(cost,accuracy):
+    for key in ('checkpoint_sha256','assets','floating_parameter_dtypes'):
+        assert cost[key]==accuracy[key],key
+    assert accuracy['floating_parameter_dtypes']==['torch.float32']
+    assert accuracy['tf32'] is False and accuracy['autocast'] is False
+    assert all(accuracy['sources'].get(path)==digest for path,digest in cost['sources'].items())
 def frame_positions(record):
     raw=record.get('frame_positions',record.get('selected_frame_positions'))
     assert raw is not None
@@ -260,7 +278,7 @@ def main():
                 same=[p for p in points if (p['model'],p['precision'],p['method'])==(model,precision,method)]
                 assert len({p['batch'] for p in same})<=1
                 assert len({tuple(p['gpu_uuids']) for p in same})<=1
-    old=read(common.OLD);optical=old['groups']['busy50_near_saturation'][0]
+    old=read(common.OLD);verify_historical_anchor(old);optical=old['groups']['busy50_near_saturation'][0]
     refs={}
     for group in ('batch1_near_saturation','busy50_near_saturation'):
         for r in old['groups'][group]:
@@ -279,6 +297,13 @@ def main():
         if paths:
             if p['precision']=='native':assert all(v.exists() for v in paths),paths
             if not all(v.exists() for v in paths):continue
+            if p['precision']=='fp32' and p['model'] in ('clip','yolo','qwen','glm'):
+                cost_identity=read((REPO/p['source']).parent.parent/'identity.json')
+                for reference_path in paths:
+                    accuracy_identity=read(reference_path.with_name('identity.json'))
+                    verify_lab_fp32_runtime(cost_identity,accuracy_identity)
+                    bound_reference=REPO/accuracy_identity['cost_identity_source']
+                    assert sha(bound_reference)==accuracy_identity['cost_identity_sha256']
             verified=[verify_accuracy(v,p['checkpoint_sha256']) for v in paths]
             p.update(verified[0]);p['srcc_reference']=statistics.mean(v['srcc_reference'] for v in verified)
             p['accuracy_reference_count']=len(verified)

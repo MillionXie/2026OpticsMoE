@@ -2,6 +2,16 @@
 
 ## Current measurement definition: 20 October 2026, strict interval costs
 
+Current editable data: [eight-view comparison workbook](LGVQ_busy_resource_precision_comparison.xlsx).
+Figure pairs: [temporal, deployed precision](strict_tf_temporal_native_pair.png),
+[temporal, FP32](strict_tf_temporal_fp32_pair.png),
+[MPS, deployed precision](strict_tf_mps_native_pair.png),
+[MPS, FP32](strict_tf_mps_fp32_pair.png).
+Unrounded source data: [paired conditions](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation/paired_measurements.csv)
+and [all trial windows](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation/paired_repeats.csv).
+Missing conditions and incomplete accuracy references remain explicit. The dated
+historical sections below are not the source of the current interval plots.
+
 The latest author instruction supersedes the timing boundary of the historical
 sections below. New raw measurements are under
 `lgvq_strict_tf_rental_dual_20261020/attempt02`; the initial deployment failure is
@@ -233,15 +243,20 @@ precision, GPU count, timestamps and source hashes are retained together.
 
 Accuracy references comprise 558 distinct videos from the original fixed TEST
 partition, with the original four frames, central 65% crop, head weights and
-model assets. Full DeepSeek-VL2 FP32 receives a new 558-video evaluation; the other
-profiles reference individually identified frozen evaluations at the matching
-batch and precision. These are not newly measured accuracy values at each
+model assets. Full DeepSeek-VL2 FP32 and the six CLIP/YOLO/Qwen FP32 batch
+profiles receive new 558-video evaluations; the other completed profiles reference
+individually identified frozen evaluations at the matching batch and precision.
+GLM FP32 accuracy remains missing until its new cost identity is complete and
+the queued evaluation passes. These are not newly measured accuracy values at each
 resource cap. Original head selection used highest TEST SRCC without a validation
 partition, so the reported correlations are development estimates. Casting
 deployment weights to FP32 does not recover information lost in their original
-lower-precision representation. The FP32 profile uses its separately disclosed
-official eager-attention runtime, rather than being described as an otherwise
-identical attention-kernel experiment.
+lower-precision representation. The rental DeepSeek/Kimi FP32 profiles use their
+official eager-attention runtime. Laboratory Qwen/GLM FP32 use native SDPA;
+CLIP/YOLO FP32 keep their native forward implementation with FP32 parameters and
+features, without the deployed profile's FP16 feature-storage round trip. These
+precision-specific execution details are disclosed rather than described as an
+otherwise identical attention-kernel experiment.
 
 ### 中文留底及术语
 
@@ -250,10 +265,12 @@ identical attention-kernel experiment.
 GPU busy（GPU忙碌率）指完整墙钟NVML实测；MPS resource cap（MPS资源上限）指执行
 资源配置；charged time（计入时间）指上述区间之和，三者不得混为同一统计量。
 租赁16条件均已完成并重算，只有完整版DS FP32双卡；其他租赁条件单卡。
-实验室目前只有CLIP两项MPS条件合格。时间限流三轮48.05/43.73/42.35%，
-合并44.5867%，未到45%下限，失败原始记录保留，不进入合格50%图表。
-此前399ms功率采样缺口另属一次失败，250ms是既定数据质量阈值，非硬件或期刊标准。
-实验室FP32尚无新的完整558视频结果，不从原精度或租赁平台借用数值。
+实验室原精度16条件及CLIP/YOLO/Qwen FP32的12条件均已合格，连同租赁16条件共44条件、
+132完整重复；六组匹配batch的实验室FP32完整558视频评估已完成，不从原精度借数值。
+GLM FP32旧第三轮411.885ms采样缺口已拒绝并保留，新会话仅接续其四个缺项。
+此前CLIP时间控制44.5867%、399ms采样缺口及其他失败原始记录继续保留，不混入正式结果。
+250ms是既定数据质量阈值，非硬件或期刊标准。时间限流以50±5为接受范围，目标尽量±2；
+Qwen FP32合并47.936%符合±5但略超±2，不挑选重测。MPS50不是NVML busy50。
 
 ## Historical timing audit hold: 20 October 2026, 08:00
 
