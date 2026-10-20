@@ -28,6 +28,16 @@ ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/strict.PROTOCOL
 PIPE='/DATA/DATA1/guest3/.cache/t06_mps_strict_tf_20261020'
 PREVIOUS_CONTINUATION='calibration_1140'
 CONTINUATION='duration_1155'
+GLM_RECOVERY='glm_sampling_recovery01'
+
+
+def point_plan(session):
+    """A finite admission plan, not a change to the GPU measurement loop."""
+    if session==GLM_RECOVERY:
+        return [('fp32','glm','mps',100),('fp32','glm','mps',50),('fp32','glm','temporal',100)]
+    return [(precision,model,method,cap) for precision in ('native','fp32')
+            for model in ('clip','yolo','qwen','glm')
+            for method,cap in (('mps',100),('mps',50),('temporal',100))]
 
 
 def completed_reference(name):
@@ -137,8 +147,8 @@ def worker(args):
             # execution. Old queue8 duties do not describe the new protocol.
             conditions=[('unrestricted',1),('busy50',.5)]
         identity['timing_protocol']=strict.PROTOCOL
-        args.validate_pacing=args.session in (PREVIOUS_CONTINUATION,CONTINUATION)
-        args.minimum_charged_s=35. if args.session==CONTINUATION else 0.
+        args.validate_pacing=args.session in (PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY)
+        args.minimum_charged_s=35. if args.session in (CONTINUATION,GLM_RECOVERY) else 0.
         identity['pacing_calibration']='full_window_validation_v1' if args.validate_pacing else 'short_feedback60s_v1'
         identity['minimum_charged_s']=args.minimum_charged_s
         for label,duty in conditions:
@@ -170,6 +180,7 @@ def suite(args):
             for precision in ('native','fp32'):
                 for model in ('clip','yolo','qwen','glm'):
                     for method,cap in (('mps',100),('mps',50),('temporal',100)):
+                        if (precision,model,method,cap) not in point_plan(args.session):continue
                         if args.deadline-time.time()<180:raise TimeoutError('Finite current window, no new point')
                         if active and method!='mps':engine.daemon(False);active=False
                         if not active and method=='mps':
@@ -222,7 +233,7 @@ def main():
     global ROOT,PIPE
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--suite',action='store_true')
-    p.add_argument('--session',choices=('original','idle_1049','recovery_1102',PREVIOUS_CONTINUATION,CONTINUATION),default='original')
+    p.add_argument('--session',choices=('original','idle_1049','recovery_1102',PREVIOUS_CONTINUATION,CONTINUATION,GLM_RECOVERY),default='original')
     p.add_argument('--model',choices=('qwen','glm','clip','yolo'))
     p.add_argument('--method',choices=('temporal','mps'))
     p.add_argument('--precision',choices=('native','fp32'))
@@ -254,6 +265,16 @@ def main():
             if Path('/proc/'+str(state['pid'])).exists():raise RuntimeError('Prior suite alive')
             failed=json.loads((prior/'mps_yolo_native_100/status.json').read_text())
             if 'shorter than30s' not in failed.get('error',''):raise RuntimeError('Expected zero-complete-trial duration failure only')
+        if args.session==GLM_RECOVERY:
+            prior=ROOT/CONTINUATION;state=json.loads((prior/'suite_status.json').read_text())
+            accuracy=json.loads((prior/'accuracy_fp32/suite_status.json').read_text())
+            failed=json.loads((prior/'mps_glm_fp32_100/status.json').read_text())
+            if (state['status']!='stopped' or accuracy['status']!='complete'
+                    or 'Power observation older than250ms' not in failed.get('error','')
+                    or any(Path('/proc/'+str(s['pid'])).exists() for s in (state,accuracy))):
+                raise RuntimeError('Sampling failure or prior accuracy still active')
+            expected=['clip_batch01','clip_batch10','yolo_batch01','yolo_batch03','qwen_batch01','qwen_batch03']
+            if accuracy['completed']!=expected:raise RuntimeError('Preserve all six completed accuracy references')
         ROOT=ROOT/args.session;PIPE=PIPE+'_'+args.session
         if args.output==p.get_default('output'):args.output=ROOT
     args.output=args.output.resolve()

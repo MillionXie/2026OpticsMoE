@@ -129,7 +129,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--suite',action='store_true')
     parser.add_argument('--model',choices=('clip','yolo','qwen','glm'));parser.add_argument('--batch',type=int)
     parser.add_argument('--manifest',type=Path,required=True);parser.add_argument('--deadline',type=float,required=True)
-    parser.add_argument('--cost-session',choices=('recovery_1102',lab.CONTINUATION),default='recovery_1102')
+    parser.add_argument('--cost-session',choices=('recovery_1102',lab.CONTINUATION,lab.GLM_RECOVERY),default='recovery_1102')
     args=parser.parse_args()
     COST=lab.ROOT/args.cost_session;ROOT=COST/'accuracy_fp32'
     if not 0<args.deadline-time.time()<=14400:raise ValueError('Finite four-hour admission only')
