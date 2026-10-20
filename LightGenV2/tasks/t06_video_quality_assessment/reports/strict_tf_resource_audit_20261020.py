@@ -118,6 +118,7 @@ def check(point,condition):
         raw=rows(folder/f'telemetry{suffix}.csv');events=[json.loads(s) for s in (folder/f'telemetry{suffix}_stdout.jsonl').read_text().splitlines()]
         assert raw and len(raw)==len(events) and all(e['valid_numeric_row'] for e in events)
         assert all(math.isfinite(float(v['watts'])) and float(v['watts'])>0 and 0<=float(v['utilization_percent'])<=100 for v in raw)
+        assert all(math.isfinite(float(v['memory_used_mib'])) and float(v['memory_used_mib'])>=0 for v in raw)
         clocks=rows(folder/f'clock_telemetry{suffix}.csv');assert clocks and all(float(v['power_limit_w'])==(250 if laboratory else 400) for v in clocks)
         streams.append(raw)
     if calibration=='full_window_validation_v1':
@@ -161,6 +162,8 @@ def check(point,condition):
             info=r['per_gpu_full_wall_telemetry'][gpu];assert len(selected)==info['samples']
             close(statistics.mean(float(v['utilization_percent']) for v in selected),info['mean_gpu_utilization_percent'])
             close(statistics.mean(float(v['watts']) for v in selected),info['mean_board_power_w'])
+            close(statistics.mean(float(v['memory_used_mib']) for v in selected),info['mean_memory_used_mib'])
+            close(max(float(v['memory_used_mib']) for v in selected),info['peak_memory_used_mib'])
             infos.append(info)
         close((compute+waiting)*16000/r['video_evaluations'],r['time16_ms']);close(energy*16/r['video_evaluations'],r['energy16_j'])
         # Latest author request: also charge output->NEXT model-input entry.
@@ -194,6 +197,7 @@ def check(point,condition):
         batch=identity['batch'],resource_cap=identity['cap'] if identity['method']=='mps' else None,visible_sms=' + '.join(map(str,sms)),
         gpu_count=len(devices),gpu_uuids=devices,hot_gpu_index=hot,per_gpu_busy_percent=per_gpu,busy_percent=max(per_gpu),
         allocation_average_busy_percent=statistics.mean(per_gpu),repeats=repeats,time16_ms=elapsed*16000/videos,energy16_j=energy*16/videos,
+        per_gpu_peak_board_memory_mib=[max(r['gpu_infos'][i]['peak_memory_used_mib'] for r in repeats) for i in range(len(devices))],
         frozen_duty=report['frozen_duty'],pacing_calibration=calibration if condition=='busy50' else 'not_applicable',
         required_charged_seconds=report.get('minimum_charged_s') or 30.,
         interval_mean_board_power_w=sum(r['gpu_energy_j'] for r in repeats)/elapsed,
@@ -298,7 +302,7 @@ def main():
         contract='Sum EACH first-block-to-GPU-output interval plus output-to-NEXT-model-input gaps. Pacing waits are INCLUDED in gaps, never added twice. Exclude EACH frontend. Sum used-GPU board interval energies; host338.2W once. Full-wall NVML busy is separately reported. Also retain output-to-next-TF and full-cycle-span audit.',
         B1_historical_anchor_unchanged=True,accuracy_reference_not_per_control=True)
     (target/'eight_tables.json').write_text(json.dumps(data,indent=2)+'\n')
-    columns=['model','model_parameters','precision','method','condition','batch','gpu_count','visible_sms','frozen_duty','pacing_calibration','required_charged_seconds','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','time16_ms','energy16_j','interval_mean_board_power_w','per_gpu_interval_mean_board_power_w','accounting_protocol','first_block_module','srcc_reference','resident_reference_max_abs_mos_delta','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
+    columns=['model','model_parameters','precision','method','condition','batch','gpu_count','visible_sms','frozen_duty','pacing_calibration','required_charged_seconds','busy_percent','per_gpu_busy_percent','allocation_average_busy_percent','per_gpu_peak_board_memory_mib','time16_ms','energy16_j','interval_mean_board_power_w','per_gpu_interval_mean_board_power_w','accounting_protocol','first_block_module','srcc_reference','resident_reference_max_abs_mos_delta','platform','measured_at','source','source_sha256','accuracy_source','accuracy_source_sha256','accuracy_predictions_sha256','accuracy_manifest_sha256','accuracy_note']
     with (target/'paired_measurements.csv').open('w',newline='',encoding='utf-8-sig') as stream:
         writer=csv.DictWriter(stream,fieldnames=columns,extrasaction='ignore');writer.writeheader();writer.writerows(points)
     fields=['model','precision','method','condition','repeat','batch','gpu_count','elapsed_s','compute_s','output_to_next_model_input_s','internal_wait_s','other_intercall_gap_s','output_to_next_tf_s','in_cycle_preblock_s','excluded_preblock_s','full_cycle_span_s','wall_elapsed_s','video_evaluations','gpu_energy_j','energy_j','time16_ms','energy16_j','recorded_time16_ms','recorded_energy16_j','source','source_sha256']
