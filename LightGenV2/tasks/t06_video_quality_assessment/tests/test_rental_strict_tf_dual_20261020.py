@@ -19,6 +19,8 @@ def test_dual_runtime_is_explicit_whole_blocks_gpu_only_not_auto_offload():
     text=Path(runtime.__file__).read_text();ast.parse(text)
     assert "torch.cuda.device_count()!=2" in text
     assert "'language.model.norm':1,'language.lm_head':1" in text
+    assert "placement['device_map']={'vision':0" in text
+    assert "placement['device_map']={'':0" not in text
     assert "0 if i<15 else 1 for i in range(30)" in text
     assert "{p.device.type for p in model.parameters()}!={'cuda'}" in text
     assert "value.to(head.weight.device)" in text
@@ -38,6 +40,8 @@ def test_actual_smoke_precedes_formal_cost_and_new_full558_is_bound():
     assert "checkpoint_sha256=identity['checkpoint_sha256']" in source
     assert "with (ROOT/(name+'.log')).open('x')" in source
     assert 'no automatic retry' in source
+    assert "prior['status']!='stopped' or prior['completed']" in source
+    assert "ROOT=ROOT/'attempt02'" in source
 
 
 def test_never_changes_power_precision_or_formal_b1():

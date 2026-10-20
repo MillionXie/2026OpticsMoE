@@ -223,7 +223,7 @@ def suite(args):
             else:env.pop('CUDA_MPS_PIPE_DIRECTORY',None);env.pop('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE',None)
             cmd=[f'/data/venvs/{model}/bin/python','-u','-m',__package__+'.rental_strict_tf_dual_20261020',
                 '--model',model,'--precision',precision,'--method',method,'--cap',str(cap),'--batch',str(batch),
-                '--deadline',str(args.deadline),'--output',str(output)]
+                '--deadline',str(args.deadline),'--output',str(output),'--attempt',str(args.attempt)]
             if model=='deepseek' and precision=='fp32' and method=='mps' and cap==100:cmd.append('--accuracy')
             base.old.write(ROOT/(name+'.command.json'),cmd)
             with (ROOT/(name+'.log')).open('x') as log:
@@ -244,12 +244,20 @@ def suite(args):
 
 
 def main():
+    global ROOT,PIPE
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--suite',action='store_true')
     p.add_argument('--model',choices=('deepseek','kimi'));p.add_argument('--precision',choices=('native','fp32'))
     p.add_argument('--method',choices=('mps','temporal'));p.add_argument('--cap',type=int,choices=(50,100),default=100)
     p.add_argument('--batch',type=int);p.add_argument('--accuracy',action='store_true');p.add_argument('--deadline',type=float,required=True)
-    p.add_argument('--output',type=Path,default=ROOT)
-    args=p.parse_args();args.output=args.output.resolve()
+    p.add_argument('--attempt',type=int,choices=(1,2),default=1)
+    p.add_argument('--output',type=Path)
+    args=p.parse_args()
+    if args.attempt==2:
+        prior=json.loads((ROOT/'suite_status.json').read_text())
+        if prior['status']!='stopped' or prior['completed'] or list(ROOT.glob('*/mps_cap*/report.json')):
+            raise RuntimeError('Attempt2 only preserves a CUDA-loading preflight failure without formal data')
+        ROOT=ROOT/'attempt02';PIPE=PIPE+'_attempt02'
+    args.output=(args.output or ROOT).resolve()
     if not 0<args.deadline-time.time()<=7200 or args.deadline>config()['compute_deadline']:raise ValueError('Authorized finite rental window only')
     if not REPO.is_relative_to('/data') or not args.output.is_relative_to(ROOT):raise ValueError('Canonical rental source/run only')
     if args.suite:return suite(args)

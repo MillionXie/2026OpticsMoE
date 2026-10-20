@@ -124,7 +124,10 @@ def runtime(args,guard,identity):
         if dual:
             # Whole, contiguous decoder blocks: no expert/weight sharding inside
             # a block, no CPU/disk offload, no quantization or forward patch.
-            placement['device_map']={'':0,'language.model.norm':1,'language.lm_head':1,
+            # Do not map the root ('') alongside children: Accelerate would
+            # recursively relocate every child parameter during root hook init.
+            placement['device_map']={'vision':0,'projector':0,'image_newline':0,'view_seperator':0,
+                'language.model.embed_tokens':0,'language.model.norm':1,'language.lm_head':1,
                 **{f'language.model.layers.{i}':0 if i<15 else 1 for i in range(30)}}
         model=AutoModelForCausalLM.from_pretrained('/data/models/'+args.model,config=cfg,
             local_files_only=True,trust_remote_code=True,torch_dtype=torch.float32,
