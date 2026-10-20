@@ -45,16 +45,16 @@ def TRAIN_feature_views(z, labels, teacher, cfg):
     assert (probability,repeats) in ((0.,0),(.1,3))
     assert len(z)==len(labels)==len(teacher) and not z.requires_grad and not teacher.requires_grad
     if repeats==0:
-        return z,labels,teacher,dict(enabled=False,independent_TRAIN=len(z),derivative_views=len(z))
+        return z,labels,teacher,dict(enabled=False,base_TRAIN_records=len(z),derivative_views=len(z),statistical_independence_not_asserted=True)
     generator=torch.Generator(device='cpu').manual_seed(int(cfg['TRAIN_feature_dropout_seed']))
     views=[z];dropped=0
     for _ in range(repeats):
         mask=torch.rand(z.shape,dtype=z.dtype,generator=generator)>=probability
         dropped+=int((~mask).sum());views.append(z*mask/(1-probability))
-    proof=dict(enabled=True,independent_TRAIN=len(z),derivative_views=len(z)*(repeats+1),
+    proof=dict(enabled=True,base_TRAIN_records=len(z),derivative_views=len(z)*(repeats+1),
                probability=probability,masked_repeats=repeats,seed=int(cfg['TRAIN_feature_dropout_seed']),
                dropped_coordinates=dropped,clean_view_included=True,TRAIN_only=True,
-               inference_dropout=False,new_independent_samples=0)
+               inference_dropout=False,new_independent_samples=0,statistical_independence_not_asserted=True)
     return torch.cat(views),labels.repeat(repeats+1),teacher.repeat(repeats+1,1),proof
 
 
@@ -938,7 +938,7 @@ def selftest():
     assert views.shape==(320,12) and torch.equal(views[:80],z.detach())
     assert torch.equal(views,again[0]) and torch.equal(yy[:80],labels) and torch.equal(tt[:80],teacher)
     assert torch.equal(yy,labels.repeat(4)) and torch.equal(tt,teacher.repeat(4,1))
-    assert viewproof['independent_TRAIN']==80 and viewproof['derivative_views']==320 and not viewproof['inference_dropout']
+    assert viewproof['base_TRAIN_records']==80 and viewproof['derivative_views']==320 and not viewproof['inference_dropout'] and viewproof['statistical_independence_not_asserted']
     unmodified=TRAIN_feature_views(z.detach(),labels,teacher,{})
     assert unmodified[0] is not None and torch.equal(unmodified[0],z.detach()) and not unmodified[3]['enabled']
     v=theta.detach().clone().requires_grad_();k=(tt.argmax(1)==yy).double()

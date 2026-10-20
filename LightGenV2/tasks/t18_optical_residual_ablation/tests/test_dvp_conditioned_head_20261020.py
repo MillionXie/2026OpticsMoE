@@ -213,6 +213,9 @@ class ConditionedHeadContract(unittest.TestCase):
         for token in ('labels.repeat(repeats + 1)','teacher.repeat(repeats + 1, 1)',
                       'inference_dropout=False','new_independent_samples=0','torch.Generator'):
             self.assertIn(token,text)
+        self.assertIn('base_TRAIN_records=len(z)',text)
+        self.assertIn('statistical_independence_not_asserted=True',text)
+        self.assertNotIn('independent_TRAIN',text)
         fit=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='fit')
         gate=next(n for n in ast.walk(fit) if isinstance(n,ast.If) and 'TRAIN_feature_dropout_repeats' in ast.unparse(n.test))
         predicate=compile(ast.Expression(next(n for n in gate.body if isinstance(n,ast.Assert)).test),'<dropout_guard>','eval')
