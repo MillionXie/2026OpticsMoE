@@ -3,9 +3,13 @@ from pathlib import Path
 from LightGenV2.tasks.t06_video_quality_assessment import lab_busy_resource_20261020 as m
 
 
-def test_same_complete_window_engine_and_fixed_mps_batch():
+def test_strict_tf_engine_and_fixed_mps_batch():
     text=Path(m.__file__).read_text();ast.parse(text)
-    assert 'engine.complete_window(args,compute,inputs,first' in text
+    assert 'strict.measure(args,compute,inputs,first' in text
+    assert "/strict.PROTOCOL" in text
+    assert "Path(strict.__file__)" in text
+    assert "conditions=[('unrestricted',1),('busy50',.5)]" in text
+    assert "previous.CONTROL[args.model]" not in text
     assert "args.method=='mps' and args.batch!=1" in text
     assert "('mps',100),('mps',50),('temporal',100)" in text
     assert 'frozen.preflight_files(pre)' in text

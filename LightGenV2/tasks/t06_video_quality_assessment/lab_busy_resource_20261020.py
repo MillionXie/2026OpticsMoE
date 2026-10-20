@@ -1,6 +1,6 @@
-"""Original A10040 profile for the same complete-window/MPS measurement engine.
+"""Original A10040 profile with strict per-forward TF boundaries and waits.
 
-Only configuration and frozen-runtime routing differ from the 80GB profile.
+Frozen-runtime routing is unchanged; timing is an explicitly new profile.
 No global compute-mode/power change, training, Graph or protected B1 overwrite.
 """
 from __future__ import annotations
@@ -21,15 +21,16 @@ from . import measure_unified_inference_recheck as previous
 from . import evaluate_temporal_baseline_batches as frozen
 from . import unified_resident_utilization as uniform
 from . import run_temporal_telemetry_suite as catalog
+from . import strict_tf_window_20261020 as strict
 
 TASK=shared.TASK;REPO=shared.REPO
-ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'
-PIPE='/DATA/DATA1/guest3/.cache/t06_mps_20261020'
+ROOT=TASK/'runs/simulation/lgvq_busy_resource_lab_20261020'/strict.PROTOCOL
+PIPE='/DATA/DATA1/guest3/.cache/t06_mps_strict_tf_20261020'
 
 
 def sources():
     return {**engine.sources(),**selected.sources(),**uniform.sources(),
-        **{str(p.relative_to(REPO)):frozen.sha256(p) for p in (Path(__file__),Path(fp32.__file__),Path(previous.__file__))}}
+        **{str(p.relative_to(REPO)):frozen.sha256(p) for p in (Path(__file__),Path(fp32.__file__),Path(previous.__file__),Path(strict.__file__))}}
 
 
 def locations(model):
@@ -117,14 +118,14 @@ def worker(args):
         shared.old.write(args.output/'identity.json',identity)
         if args.method=='mps':conditions=[('mps_cap'+str(args.cap),1)]
         else:
-            if args.precision=='native':
-                prior=previous.CONTROL[args.model]/'report.json';duty=json.loads(prior.read_text())['frozen_duty']
-                identity['duty_source']=dict(path=str(prior),sha256=frozen.sha256(prior))
-            else:
-                calibration=shared.measure_util(args,compute,inputs,args.output/'calibration',guard,True)
-                duty=calibration['frozen_duty']
-            conditions=[('unrestricted',1),('busy50',duty)]
-        for label,duty in conditions:engine.complete_window(args,compute,inputs,first,args.output/label,guard,duty)
+            # Each paced condition calibrates its OWN individually synchronized
+            # execution. Old queue8 duties do not describe the new protocol.
+            conditions=[('unrestricted',1),('busy50',.5)]
+        identity['timing_protocol']=strict.PROTOCOL
+        for label,duty in conditions:
+            report=strict.measure(args,compute,inputs,first,args.output/label,guard,duty)
+            if report['target50_reached'] is False:
+                raise RuntimeError('Three complete trials miss50+/-5; preserve all, no automatic retry')
         if previous.costs.model_hashes(args.model_path)!=identity['assets']:raise RuntimeError('Assets changed')
         finish();guard.check();shared.old.write(args.output/'status.json',dict(status='complete',time=time.time()))
     except BaseException as error:

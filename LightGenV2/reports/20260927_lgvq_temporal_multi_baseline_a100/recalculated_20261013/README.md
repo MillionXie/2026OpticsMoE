@@ -1,5 +1,30 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
+## Timing audit hold: 20 October 2026, 08:00
+
+The author clarified that image-to-first-block work must be excluded on **every**
+forward, while internal pacing waits must be included. Code inspection found that
+the complete-window measurements below exclude the frontend only at the first
+forward of the trial; frontend work on subsequent forwards is inside that window.
+The 12 conditions in `LGVQ_busy_resource_precision_comparison.xlsx` remain valid
+records of that older complete-wall protocol, **not results of the newly clarified
+per-forward timing boundary**. Do not cite them as such or silently subtract an
+unmeasured frontend estimate. All raw data and historical Qwen B1 remain protected.
+
+The laboratory entry now uses the separately identified
+`per_forward_first_block_plus_internal_wait_v1` profile under its existing run.
+Every forward drains frontend GPU work before its first-block timestamp, then
+synchronizes its final GPU MOS output. Actual internal pacing waits are added;
+pre-block work, warm-up and an idle tail after the final output are excluded.
+Board energy is estimated by integrating the original power readings over exactly
+those charged intervals, with the same 338.2-W host proxy. The full-wall NVML busy
+rate is retained separately, without masking frontend samples to inflate it.
+Individual synchronization changes execution scheduling relative to queue8;
+previous busy rates and calibration duties therefore cannot be copied. This does
+not change model weights or numerical precision. No new GPU result has yet been
+produced under this profile: the laboratory A100 was externally occupied at 07:57
+(92% busy, 11,419 MiB). The following Methods and numbers describe the prior protocol.
+
 ## 20 October 2026: complete-window resource-control comparison
 
 The revised experiment separates temporal duty control from GPU execution-resource
