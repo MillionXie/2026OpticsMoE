@@ -42,5 +42,11 @@ class ResponseRetakeTests(unittest.TestCase):
         self.assertIn('head_continuation_chain=nodes',text)
         self.assertIn("range(4)",text)
 
+    def test_anchor_uses_same_strict_admission_not_proxy(self):
+        text=(HERE/'lab_caltech20_dvp_response_retake_20261020.py').read_text()
+        self.assertIn("'native_anchor':'_spatial_native_anchor_20261021'",text)
+        self.assertIn('digest=check_score(r,a.depth,prefix)',text)
+        self.assertIn("assert not r['selected_e0']",text)
+
 
 if __name__=='__main__':unittest.main()

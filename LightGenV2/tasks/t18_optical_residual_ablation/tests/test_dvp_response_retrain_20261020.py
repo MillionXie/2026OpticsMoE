@@ -40,5 +40,24 @@ class RetrainTests(unittest.TestCase):
         self.assertIn("allowed=allowed-{'linear.weight','linear.bias'}",source)
         self.assertIn("dm['source_cache_SHA256']==m.SOURCE_CACHE",source)
 
+    def test_native_anchor_teacher_is_TRAIN_only_and_detached(self):
+        tree=ast.parse(SOURCE.read_text())
+        teacher=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_teacher')
+        text=ast.unparse(teacher)
+        self.assertNotIn("['test']",text)
+        self.assertIn("['train']",text)
+        self.assertIn('torch.no_grad()',text)
+        self.assertIn('not teacher.requires_grad',text)
+        self.assertIn("teacher_TRAIN_SHA256",SOURCE.read_text())
+        self.assertIn("assert not a.native_anchor or a.spatial_response is not None",SOURCE.read_text())
+
+    def test_anchor_recipe_has_distinct_artifact_identity(self):
+        tree=ast.parse(SOURCE.read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='recipe_name');scope={}
+        exec(compile(ast.Module(body=[node],type_ignores=[]),'<recipe>','exec'),scope)
+        name=scope['recipe_name']
+        self.assertEqual(name(4,True,True),'1_spatial_native_anchor_20261021')
+        self.assertEqual(name(6,True,False),'router_spatial_response_retrain_20261020')
+        with self.assertRaises(AssertionError):name(4,None,True)
+
 
 if __name__=='__main__':unittest.main()

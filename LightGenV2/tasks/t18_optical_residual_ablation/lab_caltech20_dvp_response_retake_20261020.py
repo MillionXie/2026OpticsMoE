@@ -147,7 +147,8 @@ def prepare(a):
     assert not m.LOCK.exists()
     old=a.sequence/f'L{a.depth}_strict8pp_20261020'
     prefix={4:3,6:1}[a.depth];stage={4:'2',6:'0'}[a.depth]
-    name=('1' if a.depth==4 else 'router')+('_spatial_response_compound_20261020' if a.parent_mode=='compound' else '_spatial_response_retrain_20261020')
+    ending={'compound':'_spatial_response_compound_20261020','trained_best':'_spatial_response_retrain_20261020','native_anchor':'_spatial_native_anchor_20261021'}[a.parent_mode]
+    name=('1' if a.depth==4 else 'router')+ending
     prior=old/'fits'/name;r=m.read(prior/'report.json');p=m.read(prior/'protocol.json')
     audit=m.read(prior/'independent_audit.json')
     digest=check_score(r,a.depth,prefix)
@@ -188,7 +189,7 @@ def prepare(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path,required=True)
     p.add_argument('--depth',type=int,choices=(4,6),required=True)
-    p.add_argument('--parent-mode',choices=('trained_best','compound'),default='trained_best')
+    p.add_argument('--parent-mode',choices=('trained_best','compound','native_anchor'),default='trained_best')
     p.add_argument('--assemble-head',action='store_true')
     p.add_argument('--head-mode',choices=('readout','binary','binary_continue'),default='readout')
     p.add_argument('--check-TRAIN-capacity',action='store_true')

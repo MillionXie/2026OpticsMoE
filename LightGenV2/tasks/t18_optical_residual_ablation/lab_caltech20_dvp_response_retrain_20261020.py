@@ -78,8 +78,20 @@ def selftest():
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for name,p in current.named_parameters() if name in keys)
     torch.optim.AdamW([p for p in current.parameters() if p.requires_grad],lr=1e-5).step()
     assert all(torch.equal(v,m.state_cpu(current)[k]) for k,v in before.items() if k not in keys)
+    anchored=response_model(base,[1.,1.,0.,0.],spatial,'2').eval();before=m.state_cpu(anchored)
+    keys=m.allowed_keys(anchored,3)
+    for name,value in anchored.named_parameters():value.requires_grad_(name in keys)
+    with torch.no_grad():teacher=anchored(x)[0].detach()
+    native=anchored(x)[0];lp=native.clamp_min(1e-12).log()
+    kl=torch.nn.functional.kl_div(lp,teacher,reduction='batchmean')
+    anchored.response_enabled=True;response=anchored(x)[0]
+    loss=-.75*lp[:,0].mean()-.25*response[:,0].clamp_min(1e-12).log().mean()+kl;loss.backward()
+    assert torch.isfinite(kl) and abs(float(kl))<1e-6
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for name,p in anchored.named_parameters() if name in keys)
+    torch.optim.AdamW([p for p in anchored.parameters() if p.requires_grad],lr=1e-5).step()
+    assert all(torch.equal(v,m.state_cpu(anchored)[k]) for k,v in before.items() if k not in keys)
     print(dict(passed=True,original_inference_byte_identical=True,export_original_structure=True,
-               finite_mask_gradients=True,all_unallowed_frozen=True,spatial_single_stage=True,spatial_original_head_frozen=True,SDK_used=False))
+               finite_mask_gradients=True,all_unallowed_frozen=True,spatial_single_stage=True,spatial_original_head_frozen=True,native_TRAIN_anchor_gradients=True,SDK_used=False))
 
 
 def response_assess(model,data,fields,values,spatial=None,only_stage=None):
@@ -94,6 +106,28 @@ def response_assess(model,data,fields,values,spatial=None,only_stage=None):
     else:current=model
     current.response_enabled=True
     return m.assess(current,data,fields,'test')
+
+
+def recipe_name(depth,spatial,anchor):
+    assert not anchor or spatial is not None
+    return ('1' if depth==4 else 'router')+('_spatial_native_anchor_20261021' if anchor else '_spatial_response_retrain_20261020' if spatial is not None else '_response_retrain_20261020')
+
+
+def TRAIN_teacher(model,data,fields,out):
+    """Cache the unchanged passed parent's native TRAIN probabilities only."""
+    import torch
+    import numpy as np
+    import lab_caltech20_dvp_layerwise_20261019 as m
+    teacher=torch.empty((1600,20),device='cuda');model.eval();model.response_enabled=False
+    with torch.no_grad():
+        for begin in range(0,1600,8):
+            ix=np.arange(begin,min(1600,begin+8))
+            model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in fields.items()}
+            teacher[ix]=model(m.encode_images(data['train'][0][ix].cuda()))[0]
+    assert torch.isfinite(teacher).all() and not teacher.requires_grad
+    assert torch.allclose(teacher.sum(1),torch.ones(1600,device='cuda'),atol=1e-5)
+    np.save(out/'native_teacher_TRAIN.npy',teacher.cpu().numpy())
+    return teacher
 
 
 def run(a):
@@ -133,24 +167,27 @@ def run(a):
     data,dm=m.data_for(a.sequence);base,_,fields,identities=m.fitting_model(a,data,dm,parent/'best.pt',digest,prefix)
     assert identities==pp['prefix_SHA256'] and m.sha(parent/'best.pt')==digest
     model=response_model(base,values,spatial,only_stage).eval();original=m.state_cpu(model);allowed=m.allowed_keys(model,prefix)
-    if spatial is not None:allowed=allowed-{'linear.weight','linear.bias'}
-    name=('1' if a.depth==4 else 'router')+('_spatial_response_retrain_20261020' if spatial is not None else '_response_retrain_20261020');out=session/'fits'/name
+    if spatial is not None and not a.native_anchor:allowed=allowed-{'linear.weight','linear.bias'}
+    name=recipe_name(a.depth,spatial,a.native_anchor);out=session/'fits'/name
     assert not out.exists();out.mkdir()
     model.response_enabled=False;baseline,native_predictions=m.assess(model,data,fields,'test')
     proxy,_=response_assess(model,data,fields,values,spatial,only_stage)
-    phase_lr=.0006 if spatial is not None else .0002
+    phase_lr=.0002 if a.native_anchor else .0006 if spatial is not None else .0002
+    electronic_lr=.0002 if a.native_anchor else .0006
+    head_lr=.0001 if a.native_anchor else 0 if spatial is not None else .0006
     protocol=dict(depth=a.depth,prefix=prefix,parent_PT_SHA256=digest,prefix_SHA256=identities,data_SHA256=dm['sha256'],
         hardware_SHA256=m.session_hardware_digest(a.sequence),allowed_keys=sorted(allowed),TRAIN=1600,TEST=411,VALID=0,
         TEST_gradient=False,TEST_informed_development=True,response_parameters=values,response_report_SHA256=m.sha(a.response/'report.json'),
         response_source_SHA256=response['source_SHA256'],source_git=m.git_head(),source_SHA256=m.sha(__file__),
-        epochs=12,fit_seconds=1200,batch=8,seed=73,phase_lr=phase_lr,electronic_lr=.0006,alpha_lr=.0006,head_lr=0 if spatial is not None else .0006,
-        TRAIN_loss='0.5 original-native TRAIN CE + 0.5 frozen-response TRAIN CE; label smoothing .01, no TEST gradients',
+        epochs=12,fit_seconds=1200,batch=8,seed=73,phase_lr=phase_lr,electronic_lr=electronic_lr,alpha_lr=electronic_lr,head_lr=head_lr,
+        TRAIN_loss=('0.75 native TRAIN CE + 0.25 response TRAIN CE + 1.0 KL(native passed-parent TRAIN teacher || current native TRAIN); label smoothing .01' if a.native_anchor else '0.5 original-native TRAIN CE + 0.5 frozen-response TRAIN CE; label smoothing .01, no TEST gradients'),
         deployment_structure_unchanged=True,response_branch_deployment=False,baseline_TEST=baseline,baseline_response_proxy=proxy,
         selection='highest response-proxy correct then NLL among candidates that still pass original-native passed-prefix gate; E0 retained otherwise',
         prerequisite_native_correct=required_correct(a.depth,prefix),next_measured_stage_target=required_correct(a.depth,prefix+1),
         no_next_capture_without_independent_review=True,old_failed_downstream_CCD_used=False)
     protocol.update(spatial_response_report_SHA256=None if spatial is None else m.sha(a.spatial_response/'report.json'),
-        response_only_physical_stage=only_stage,original_readout_frozen=spatial is not None,
+        response_only_physical_stage=only_stage,original_readout_frozen=spatial is not None and not a.native_anchor,
+        native_anchor=a.native_anchor,teacher_TEST_used=False,teacher_weight=1. if a.native_anchor else 0.,
         unverified_future_response_not_applied=spatial is not None)
     counts=[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191]
     assert sum(counts)==3141 and dm['source_cache_SHA256']==m.SOURCE_CACHE
@@ -161,28 +198,36 @@ def run(a):
         state=m.state_cpu(model);assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in allowed)
         torch.save(dict(model=state,protocol=protocol,epoch=epoch),out/(name+'.pt'))
     snapshot('best',0);selected=0;best_proxy=proxy.copy();model.cuda();groups=[]
-    for key,lr in (('phase_sets.',phase_lr),('electronic.',.0006),('fusion_logits.',.0006),('linear.',.0006)):
+    teacher=TRAIN_teacher(model,data,fields,out) if a.native_anchor else None
+    if teacher is not None:
+        protocol['teacher_TRAIN_SHA256']=m.sha(out/'native_teacher_TRAIN.npy');m.save(out/'protocol.json',protocol)
+    for key,lr in (('phase_sets.',phase_lr),('electronic.',electronic_lr),('fusion_logits.',electronic_lr),('linear.',head_lr)):
         params=[p for n,p in model.named_parameters() if n in allowed and n.startswith(key)]
         if params:groups.append(dict(params=params,lr=lr,weight_decay=0 if key=='fusion_logits.' else .0001))
     for key,param in model.named_parameters():param.requires_grad_(key in allowed)
     opt=torch.optim.AdamW(groups);history=[];started=time.monotonic()
     for epoch in range(1,13):
-        model.train();order=torch.randperm(1600).numpy();loss_sum=0.;native_ce=0.;response_ce=0.
+        model.train();order=torch.randperm(1600).numpy();loss_sum=0.;native_ce=0.;response_ce=0.;kl_sum=0.
         for begin in range(0,1600,8):
             ix=order[begin:begin+8];model.measured={k:torch.from_numpy(np.asarray(v['train'][ix]).copy()).cuda() for k,v in fields.items()}
             x=m.encode_images(data['train'][0][ix].cuda());y=torch.from_numpy(data['train'][1][ix].astype(np.int64)).cuda();opt.zero_grad(set_to_none=True)
-            losses=[]
+            losses=[];kl_value=0.
             for enabled in (False,True):
                 model.response_enabled=enabled;p=model(x)[0];lp=p.clamp_min(1e-12).log()
                 per=.99*F.nll_loss(lp,y,reduction='none')-.01*lp.mean(1)
                 loss=(per*weights[y]).sum()/weights[y].sum() if spatial is not None else per.mean()
-                (.5*loss).backward();losses.append(float(loss.detach()))
+                weight=(.25 if enabled else .75) if a.native_anchor else .5
+                term=weight*loss
+                if teacher is not None and not enabled:
+                    kl=F.kl_div(lp,teacher[ix],reduction='batchmean');term=term+kl;kl_value=float(kl.detach())
+                term.backward();losses.append(float(loss.detach()))
             assert all(v.grad is not None and torch.isfinite(v.grad).all() for key,v in model.named_parameters() if key in allowed)
             torch.nn.utils.clip_grad_norm_([v for v in model.parameters() if v.requires_grad],1.);opt.step()
             with torch.no_grad():
                 for key,param in model.named_parameters():
                     if key in allowed and key.startswith('fusion_logits.'):param.clamp_(.4001001,.95)
-            native_ce+=losses[0]*len(ix);response_ce+=losses[1]*len(ix);loss_sum+=sum(losses)*.5*len(ix)
+            native_ce+=losses[0]*len(ix);response_ce+=losses[1]*len(ix);kl_sum+=kl_value*len(ix)
+            loss_sum+=((.75*losses[0]+.25*losses[1]+kl_value) if a.native_anchor else sum(losses)*.5)*len(ix)
         model.eval();model.response_enabled=False;native,_=m.assess(model,data,fields,'test')
         proxy,_=response_assess(model,data,fields,values,spatial,only_stage)
         eligible=native['correct']>=required_correct(a.depth,prefix)
@@ -190,7 +235,7 @@ def run(a):
             best_proxy=proxy.copy();selected=epoch;snapshot('best',epoch)
         row=dict(epoch=epoch,TRAIN_samples=1600,TRAIN_loss=loss_sum/1600,native_TRAIN_CE=native_ce/1600,response_TRAIN_CE=response_ce/1600,
             native_TEST=native,response_TEST_proxy=proxy,native_gate_eligible=eligible,selected_epoch=selected,selected_proxy=best_proxy,
-            elapsed_s=time.monotonic()-started)
+            native_TRAIN_parent_KL=kl_sum/1600,elapsed_s=time.monotonic()-started)
         history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row)
         print(m.json.dumps({k:v for k,v in row.items() if k not in ('native_TEST','response_TEST_proxy','selected_proxy')}),flush=True)
         if time.monotonic()-started>=1200:break
@@ -218,10 +263,12 @@ def audit(a):
     import lab_caltech20_dvp_layerwise_20261019 as m
     from lab_caltech20_dvp_strict_retake_20261020 import required_correct
     torch.set_num_threads(2);session=m.session_for(a);prefix={4:3,6:1}[a.depth]
-    out=session/'fits'/(('1' if a.depth==4 else 'router')+'_spatial_response_retrain_20261020')
+    out=session/'fits'/recipe_name(a.depth,True,a.native_anchor)
     target=out/'independent_audit.json';assert not target.exists()
     p,r=m.read(out/'protocol.json'),m.read(out/'report.json')
-    assert r['state']=='complete' and p['original_readout_frozen'] and p['response_only_physical_stage']=={4:'2',6:'0'}[a.depth]
+    assert r['state']=='complete' and p['original_readout_frozen']==(not a.native_anchor) and p['response_only_physical_stage']=={4:'2',6:'0'}[a.depth]
+    assert p.get('native_anchor',False)==a.native_anchor
+    if a.native_anchor:assert p['teacher_TRAIN_SHA256']==m.sha(out/'native_teacher_TRAIN.npy') and not p['teacher_TEST_used']
     assert p['spatial_response_report_SHA256']==m.sha(a.spatial_response/'report.json')
     data,dm=m.data_for(a.sequence);fields,identities=m.fields_for(session,prefix,data,dm,m.session_hardware_digest(a.sequence))
     assert identities==p['prefix_SHA256'] and dm['sha256']==p['data_SHA256']
@@ -230,7 +277,8 @@ def audit(a):
     origin=torch.load(parent/'best.pt',map_location='cpu',weights_only=False)['model'];results={}
     for role in ('best','last'):
         path=out/(role+'.pt');model,_=m.model_for(path,r['results'][role]['PT_SHA256'],a.depth,session/'source_reference.ts')
-        state=m.state_cpu(model);allowed=m.allowed_keys(model,prefix)-{'linear.weight','linear.bias'}
+        state=m.state_cpu(model);allowed=m.allowed_keys(model,prefix)
+        if not a.native_anchor:allowed=allowed-{'linear.weight','linear.bias'}
         assert set(p['allowed_keys'])==allowed and set(state)==set(origin)
         assert all(torch.equal(v,state[k]) and v.dtype==state[k].dtype for k,v in origin.items() if k not in allowed)
         score,probabilities=m.assess(model,data,fields,'test');saved=r['results'][role]['TEST_development']
@@ -244,7 +292,7 @@ def audit(a):
     q=dict(passed=True,depth=a.depth,prefix=prefix,selected_correct=results['best']['correct'],selected_e0=r['selected_e0'],
         within8pp=results['best']['correct']>=required_correct(a.depth,prefix),TRAIN=1600,TEST=411,VALID=0,
         report_SHA256=m.sha(out/'report.json'),protocol_SHA256=m.sha(out/'protocol.json'),parent_PT_SHA256=p['parent_PT_SHA256'],
-        original_readout_and_measured_upstream_frozen=True,results=results,SDK_used=False,GPU_used=False,
+        original_readout_frozen=not a.native_anchor,all_unallowed_and_measured_upstream_frozen=True,results=results,SDK_used=False,GPU_used=False,
         source_git=m.git_head(),source_SHA256=m.sha(__file__),proxy_not_used_for_native_replay=True)
     m.save(target,q);print(m.json.dumps(q),flush=True)
 
@@ -252,10 +300,12 @@ def audit(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true')
     p.add_argument('--audit',action='store_true')
+    p.add_argument('--native-anchor',action='store_true')
     p.add_argument('--sequence',type=Path);p.add_argument('--response',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--spatial-response',type=Path)
     a=p.parse_args();a.attempt='strict8pp_20261020'
     if a.selftest:selftest()
     else:
         assert a.sequence and a.response and a.depth
+        assert not a.native_anchor or a.spatial_response is not None
         if a.audit:audit(a)
         else:run(a)
