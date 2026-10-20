@@ -87,6 +87,28 @@ def validate_idle_memory(gpu):
     return used
 
 
+def validated_predecessors(root,c):
+    """Pure CPU continuation validation; no CUDA initialization or selection."""
+    handover=json.loads((root/'authorized_extension_receipt.json').read_text())
+    if handover['status']!='authorized_idle_handover' or not handover['private_mps_released']:
+        raise RuntimeError('Verified idle handover required')
+    verified=set(handover['completed'])
+    allowed={f'{m}_cap{cap}_repeat{r:02d}' for m in c['models'] for cap in (100,50) for r in (1,2,3)}
+    if len(verified)!=len(handover['completed']) or not verified<=allowed:raise RuntimeError('Invalid predecessor scope')
+    for name in verified:
+        path=root/name/'report.json'
+        if 'report_sha256' in handover and frozen.sha256(path)!=handover['report_sha256'][name]:
+            raise RuntimeError('Completed predecessor report changed after handover')
+        report=json.loads(path.read_text())
+        if report['status']!='complete' or (report['batch'],report['test_videos'],report['cost_videos'])!=(1,558,200):
+            raise RuntimeError('Cannot skip unqualified evidence')
+        if report['gpu_uuid']!=c['gpu_uuid'] or report['protocol']['timing_protocol']!=c['timing_protocol']:
+            raise RuntimeError('Continuation machine or scientific protocol differs')
+        if name!=f"{report['model']}_cap{report['cap']}_repeat{report['repeat']:02d}":
+            raise RuntimeError('Predecessor identity differs from its path')
+    return verified
+
+
 def runtime(args,guard,identity):
     """Reuse native arithmetic AND original timer, not the resident timing hook."""
     import torch
@@ -232,17 +254,7 @@ def suite(args):
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         verified=set()
         if args.resume_verified:
-            receipt=ROOT/'authorized_extension_receipt.json'
-            handover=json.loads(receipt.read_text())
-            if handover['status']!='authorized_idle_handover' or not handover['private_mps_released']:
-                raise RuntimeError('Verified idle handover required')
-            verified=set(handover['completed'])
-            for name in verified:
-                report=json.loads((ROOT/name/'report.json').read_text())
-                if report['status']!='complete' or (report['batch'],report['test_videos'],report['cost_videos'])!=(1,558,200):
-                    raise RuntimeError('Cannot skip unqualified evidence')
-                if report['gpu_uuid']!=config()['gpu_uuid'] or report['protocol']['timing_protocol']!=config()['timing_protocol']:
-                    raise RuntimeError('Continuation machine or scientific protocol differs')
+            verified=validated_predecessors(ROOT,config())
         else:
             if ROOT.exists():raise RuntimeError('Do not overwrite suite')
             ROOT.mkdir()

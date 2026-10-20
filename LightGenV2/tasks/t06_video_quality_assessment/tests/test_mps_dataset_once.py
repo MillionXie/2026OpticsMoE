@@ -72,5 +72,21 @@ class DatasetOnce(unittest.TestCase):
         with patch.object(m.subprocess,'check_output',return_value='14\n'):
             self.assertEqual(m.validate_idle_memory('gpu'),14)
 
+    def test_continuation_only_accepts_complete_pinned_same_contract(self):
+        import json,tempfile,hashlib
+        from pathlib import Path
+        c=m.config();name='qwen_cap100_repeat01'
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=root/name/'report.json';p.parent.mkdir()
+            report=dict(status='complete',batch=1,test_videos=558,cost_videos=200,gpu_uuid=c['gpu_uuid'],
+                        protocol=c,model='qwen',cap=100,repeat=1)
+            p.write_text(json.dumps(report))
+            receipt=dict(status='authorized_idle_handover',private_mps_released=True,completed=[name],
+                         report_sha256={name:hashlib.sha256(p.read_bytes()).hexdigest()})
+            (root/'authorized_extension_receipt.json').write_text(json.dumps(receipt))
+            self.assertEqual(m.validated_predecessors(root,c),{name})
+            report['cost_videos']=199;p.write_text(json.dumps(report))
+            with self.assertRaisesRegex(RuntimeError,'changed after handover'):m.validated_predecessors(root,c)
+
 
 if __name__=='__main__':unittest.main()

@@ -21,6 +21,6 @@
   "no_resident_input_repetition": true,
   "no_graph_training_precision_or_power_change": true,
   "historical_Qwen_B1_unchanged": true,
-  "compute_deadline_beijing": "2026-10-21T02:50:00+08:00",
-  "rental_expiry_beijing": "2026-10-21T03:00:00+08:00"
+  "compute_deadline_beijing": "2026-10-21T03:50:00+08:00",
+  "rental_expiry_beijing": "2026-10-21T04:00:00+08:00"
 }
