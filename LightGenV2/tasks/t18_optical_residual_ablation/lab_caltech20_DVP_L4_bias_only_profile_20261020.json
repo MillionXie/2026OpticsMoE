@@ -1,0 +1,6 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps":120,"maximum_fit_seconds":30,"correct_TRAIN_parent_KL":0.5,"bias_anchor":0.02,
+  "scope":"One finite L4 complete-physical bias-only calibration from audited282, not another full5140-head fit or a threshold/seed grid. Actual unconstrained head overfit TRAIN100/TEST189 and stronger anchored full head still retained277; test a much lower-dimensional20bias TRAIN-only objective with original3141TRAIN class weights, fixed originalW and all nonbias tensors. CorrectTRAIN parentKL.5, biasanchor.02 and fixed LS.02; LBFGS120steps/30fitseconds, original411TEST development selection, no TEST derivative/VALID/camera/SDK/GPU/new layer/CCD. Reuse only exactly proved same-body feature bank, verify W bit-identical and native full graph both bestlast, independent frozen audit and localSHA backups. Retain282 if E0; final342/milestone305 not guaranteed. User will notify camera recovery separately; do not query USB."
+}

@@ -189,5 +189,20 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(len(cfg['teacher_TRAIN_reference_SHA256']),64)
 
 
+    def test_bias_only_freezes_original_weight_and_has_no_TEST_gradient(self):
+        tree=ast.parse(SOURCE.read_text())
+        objective=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='bias_objective')
+        self.assertFalse(any('test' in n.id.lower() for n in ast.walk(objective) if isinstance(n,ast.Name)))
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='bias_fit')
+        text=ast.unparse(method)
+        self.assertIn("allowed_keys=['linear.bias']",text)
+        self.assertIn("if k != 'linear.bias'",text)
+        self.assertIn('original_head_weight_frozen=True',text)
+        self.assertIn('gradient_parameters=20',text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_L4_bias_only_profile_20261020.json').read_text())
+        self.assertEqual((cfg['maximum_steps'],cfg['maximum_fit_seconds']),(120,30))
+        self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
+
+
 if __name__ == '__main__':
     unittest.main()

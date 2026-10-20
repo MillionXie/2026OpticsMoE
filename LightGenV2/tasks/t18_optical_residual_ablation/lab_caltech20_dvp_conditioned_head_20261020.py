@@ -737,6 +737,57 @@ def fit(a):
               elapsed_fit_s=elapsed, elapsed_postfit_replay_s=time.monotonic()-start-elapsed))
 
 
+def bias_objective(delta,logits,labels,weights,parent,keep,cfg):
+    """TRAIN-only calibration of the existing20 class biases, no W changes."""
+    z=logits+delta
+    ce=F.cross_entropy(z,labels,weight=weights,label_smoothing=.02)
+    kl=F.kl_div(z.log_softmax(1),parent,reduction='none').sum(1)
+    return ce+cfg['correct_TRAIN_parent_KL']*(kl*keep).mean()+cfg['bias_anchor']*delta.square().sum()
+
+
+def bias_fit(a):
+    cpu_fit_admission(a);torch.set_num_threads(2)
+    assert a.depth==4 and a.prefix==5 and not a.out.exists()
+    cfg=core.read(a.profile);assert cfg['maximum_steps']==120 and cfg['maximum_fit_seconds']==30
+    data,dm=core.data_for(a.sequence);assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
+    session=a.sequence/'L4';assert core.sha(a.checkpoint)==a.digest
+    model,_=core.model_for(a.checkpoint,a.digest,4,session/'source_reference.ts');original=core.state_cpu(model)
+    fields,identities=core.fields_for(session,5,data,dm,core.session_hardware_digest(a.sequence))
+    a.out.mkdir();cached,cacheproof=checked_features(a,model,data,fields,dm,identities);tr,te=cached['train'],cached['test']
+    w0,b0=original['linear.weight'].clone(),original['linear.bias'].clone()
+    logits=torch.tensor(tr['x'],dtype=torch.float64)@w0.double().T+b0.double();labels=torch.tensor(tr['y'],dtype=torch.long)
+    parent=logits.softmax(1).detach();keep=(parent.argmax(1)==labels).double()
+    counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float64);assert counts.shape==(20,) and int(counts.sum())==3141
+    weights=counts/counts.mean();delta=torch.nn.Parameter(torch.zeros(20,dtype=torch.float64))
+    baseline=te['probabilities'];best,bestloss=score(baseline,te['y']);bb=b0.clone();selected=0
+    protocol=dict(parent_PT_SHA256=a.digest,depth=4,prefix=5,allowed_keys=['linear.bias'],bias_only=True,gradient_parameters=20,
+        prefix_SHA256=identities,data_SHA256=dm['sha256'],TRAIN=1600,TEST=411,VALID=0,source_git=core.git_head(),source_SHA256=core.sha(__file__),config=cfg,profile_SHA256=core.sha(a.profile),
+        feature_files={r:v['feature_SHA256'] for r,v in cached.items()},feature_graph_SHA256=cacheproof['feature_graph_SHA256'],feature_reuse=cacheproof,feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
+        all_nonhead_frozen=True,original_head_weight_frozen=True,no_new_inference_layer=True,TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,target_correct=342,update_unit='TRAIN_bias_step')
+    core.save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)
+    opt=torch.optim.LBFGS([delta],lr=1.,max_iter=1,history_size=20,line_search_fn='strong_wolfe');history=[];start=time.monotonic()
+    for step in range(1,cfg['maximum_steps']+1):
+        def closure():
+            opt.zero_grad(set_to_none=True);loss=bias_objective(delta,logits,labels,weights,parent,keep,cfg);assert torch.isfinite(loss);loss.backward();return loss
+        loss=float(opt.step(closure))
+        with torch.no_grad():
+            b=(b0.double()+delta).float();p=probability(te['x'],w0.numpy(),b.numpy());n,nll=score(p,te['y']);accepted=improves(n,nll,best,bestloss)
+            if accepted:best,bestloss,bb,selected=n,nll,b.clone(),step
+        history.append(dict(step=step,TRAIN_loss=loss,TEST_correct=n,TEST_NLL=nll,accepted=accepted,selected_correct=best));core.save(a.out/'progress.json',history[-1])
+        if best>=342 or time.monotonic()-start>=cfg['maximum_fit_seconds']:break
+    elapsed=time.monotonic()-start;results={};bestp=None
+    for name,bbb in (('best',bb),('last',b)):
+        state={k:v.clone() for k,v in original.items()};state['linear.bias']=bbb
+        assert all(torch.equal(v,state[k]) for k,v in original.items() if k!='linear.bias')
+        path=a.out/(name+'.pt');torch.save(dict(model=state,protocol=protocol,epoch=selected if name=='best' else step,update_unit='TRAIN_bias_step'),path)
+        model.load_state_dict(state);metric,p=core.assess(model,data,fields,'test');error=float(np.abs(p-probability(te['x'],w0.numpy(),bbb.numpy())).max());assert error<=3e-6
+        np.savez_compressed(a.out/(name+'_TEST_predictions.npz'),ids=te['ids'],labels=te['y'],probabilities=p)
+        results[name]=dict(TEST_development=metric,TRAIN_development=core.metrics(tr['y'],probability(tr['x'],w0.numpy(),bbb.numpy())),PT_SHA256=core.sha(path),strict_CPU=True,head_weight_bit_identical=torch.equal(state['linear.weight'],original['linear.weight']),full_prefix_replay_maxabs=error,predictions_SHA256=core.sha(a.out/(name+'_TEST_predictions.npz')))
+        if name=='best':bestp=p
+    assert results['best']['TEST_development']['correct']==best and core.sha(a.checkpoint)==a.digest
+    core.save(a.out/'history.json',history);core.save(a.out/'report.json',dict(state='complete',baseline_TEST=te['metric'],results=results,selected_correct=best,selected_epoch=selected,selected_step=selected,actual_steps=step,target_correct=342,within8pp=best>=314,refinement_target_reached=best>=342,selected_e0=selected==0,intermediate=False,bias_only=True,gradient_parameters=20,all_nonhead_frozen=True,frozen_parameters_unchanged=True,original_head_weight_frozen=True,TEST_gradients=False,SDK_used=False,GPU_used=False,feature_cache_reused=cacheproof['reused'],elapsed_fit_s=elapsed,elapsed_postfit_replay_s=time.monotonic()-start-elapsed,new_correct=int(((baseline.argmax(1)!=te['y'])&(bestp.argmax(1)==te['y'])).sum()),new_wrong=int(((baseline.argmax(1)==te['y'])&(bestp.argmax(1)!=te['y'])).sum())))
+
+
 def centered_teacher_logits(probabilities):
     """Softmax-invariant TRAIN logit targets from positive saved probabilities."""
     p=torch.as_tensor(probabilities,dtype=torch.float64)
@@ -901,12 +952,18 @@ def selftest():
     vals=[teacher_blend_objective(beta.detach()+sign*1e-5,tx,labels,originw,originb,rw,rb,parent,keep,tc) for sign in (1,-1)]
     assert abs(float((vals[0]-vals[1])/2e-5-g))<1e-7
     assert sum(p.numel() for p in (rw,rb))==260
-    print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true,"teacher_logit_recovery_and_blend_gradient":true}')
+    dv=torch.zeros(20,dtype=torch.float64,requires_grad=True);cfg_bias={'correct_TRAIN_parent_KL':.5,'bias_anchor':.02};zl=(tx@originw.T+originb).detach()
+    loss=bias_objective(dv,zl,labels,torch.ones(20,dtype=torch.float64),parent,keep,cfg_bias);g=torch.autograd.grad(loss,dv)[0]
+    vals=[]
+    for sign in (1,-1):
+        d=dv.detach().clone();d[0]+=sign*1e-5;vals.append(bias_objective(d,zl,labels,torch.ones(20,dtype=torch.float64),parent,keep,cfg_bias))
+    assert abs(float((vals[0]-vals[1])/2e-5-g[0]))<1e-7
+    print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true,"teacher_logit_recovery_and_blend_gradient":true,"bias_only_gradient":true}')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'admit-chain', 'terminal10-fit', 'native5150-fit', 'teacher-readout-fit', 'selftest'])
+    parser.add_argument('--mode', required=True, choices=['fit', 'pair-fit', 'row-fit', 'shrink-fit', 'admit-chain', 'terminal10-fit', 'native5150-fit', 'teacher-readout-fit', 'bias-fit', 'selftest'])
     for name in ('sequence', 'checkpoint', 'profile', 'out', 'feature-run', 'parent-run'):
         parser.add_argument('--'+name, type=Path)
     parser.add_argument('--depth', type=int, choices=(4,6))
@@ -914,7 +971,7 @@ if __name__ == '__main__':
     parser.add_argument('--digest')
     args = parser.parse_args()
     try:
-        selftest() if args.mode == 'selftest' else teacher_readout_fit(args) if args.mode=='teacher-readout-fit' else terminal10_fit(args) if args.mode in ('terminal10-fit','native5150-fit') else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
+        selftest() if args.mode == 'selftest' else bias_fit(args) if args.mode=='bias-fit' else teacher_readout_fit(args) if args.mode=='teacher-readout-fit' else terminal10_fit(args) if args.mode in ('terminal10-fit','native5150-fit') else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():
             core.save(args.out/'failure.json', dict(error=repr(error), automatic_retry=False))

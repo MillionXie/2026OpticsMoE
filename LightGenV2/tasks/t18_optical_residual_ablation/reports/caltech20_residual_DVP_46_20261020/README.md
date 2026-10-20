@@ -57,6 +57,13 @@ teacher PT及TRAIN_reference SHA逐项对应；概率全正且最小9.92e-8，
 范围/缓存/冻结测试通过后Git发布再运行；完成完整411CPU验证才报告新精度。
 配置`lab_caltech20_DVP_L4_TRAINteacher_readout_profile_20261020.json`，不承诺提升。
 
+教师迁移已完成65状态（一次TRAIN-GCV估计+64TRAIN混合步），E0=282，
+完整迁移253/411；TRAIN拟合的混合系数回到0，没有超过全局282，未采用新参数。
+据之前释放全头会过拟合，另做一项原20类别bias-only校准；全部原W和非偏置张量
+逐位冻结，只由TRAIN计算20偏置更新，固定原TRAIN3141权重/KL.5/anchor.02，
+120步/30fit秒，未新增层或改变光学上游。原282参与选模，两个bestlast原411
+重放及完整冻结审计后再报告新成绩；配置`lab_caltech20_DVP_L4_bias_only_profile_20261020.json`。
+
 router→E1→G1→E2→G2 共5阶段，每阶段1600TRAIN+411TEST，合计10055帧；
 逐阶段收据、ID、输入/PT/phase/数组SHA和独立审计通过。没有混入旧相机CCD。
 G2于北京时间2026-10-20约04:02完成，2011帧，端到端约23.7分钟；SDK已释放。
