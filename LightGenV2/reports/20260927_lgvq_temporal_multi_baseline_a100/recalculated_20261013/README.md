@@ -10,9 +10,12 @@ DeepSeek-VL2 FP32 uses two A100-SXM4-80GB GPUs. Kimi in either precision and
 DeepSeek-VL2 in its original precision use one GPU. No model is trained in this run.
 The rental measurements are complete: 16 conditions and all 48 trials passed
 independent raw-data replay. Historical Qwen B1 is unchanged. The original laboratory
-measurements restarted in `recovery_1102`; two CLIP MPS conditions are complete.
-Its temporal-control condition missed the predeclared busy target and is not
-included as a qualified 50% point. Other laboratory points remain unavailable.
+measurements retain the two completed CLIP MPS conditions in `recovery_1102`.
+Its failed temporal-control condition remains excluded. The subsequent
+`calibration_1140` completed CLIP temporal control; `duration_1155` has completed
+YOLO's four deployed-precision conditions and is continuing the missing cases.
+At this partial update, eight laboratory conditions have been independently
+audited. Qwen, GLM and laboratory FP32 results remain unavailable until completed.
 
 The existing eight-view workbook now contains the newly audited interval costs.
 Its previous complete-wall version, SHA256
@@ -56,12 +59,36 @@ SRCC references at B1 and higher batches were independently evaluated, not newly
 trained or measured separately at each cap. FP32 does not improve either model's
 SRCC here; its backend and weight expansion are disclosed below.
 
-Machine-readable observations and all 54 currently qualified trial records
-(48 rental, six laboratory) are in the new run's `presentation/paired_measurements.csv`
+Machine-readable observations and all 72 currently qualified trial records
+(48 rental, 24 laboratory) are in the new run's `presentation/paired_measurements.csv`
 and `paired_repeats.csv`. Each row binds report, checkpoint, accuracy source, date
 and hashes. All 270 rental files (23,917,130 bytes) were imported from a SHA-bound
 final archive. Eight figure panels use `strict_tf_<method>_<precision>_*` in this
 original report directory; missing conditions are not interpolated.
+
+### Laboratory partial results: deployed precision
+
+All values below pool the three complete trials. MPS pairs use B1; temporal pairs
+use fixed B10 for CLIP and B3 for YOLO. These batches are retained in the data,
+not substituted into figure labels. The same charged-interval definition and
+matched power integration are used for every row. The unrestricted CLIP point
+does not reach 98% busy time and is not labelled as near-100% saturation.
+
+| Model | Control | Setting | Busy (%) | T16 (ms) | Estimated E16 (J) | SRCC reference |
+|---|---|---|---:|---:|---:|---:|
+| CLIP ViT-B/32 | MPS | 100% resources | 38.961 | 93.601 | 37.730 | .725256 |
+| CLIP ViT-B/32 | MPS | 50% resources | 38.443 | 97.621 | 39.773 | .725256 |
+| CLIP ViT-B/32 | Temporal | Unrestricted | 81.456 | 9.112 | 5.326 | .725239 |
+| CLIP ViT-B/32 | Temporal | Approximately 50% busy | 49.697 | 15.702 | 8.198 | .725239 |
+| YOLO11s | MPS | 100% resources | 43.875 | 180.055 | 83.726 | .701597 |
+| YOLO11s | MPS | 50% resources | 59.857 | 176.761 | 83.257 | .701597 |
+| YOLO11s | Temporal | Unrestricted | 95.652 | 58.594 | 34.327 | .701594 |
+| YOLO11s | Temporal | Approximately 50% busy | 51.281 | 106.908 | 54.965 | .701594 |
+
+MPS resource provisioning and NVML busy time are different measured quantities.
+The values above are retained rather than adjusted to an expected trend. No
+causal speedup is inferred from the small YOLO MPS latency difference. These are new
+strict interval measurements, not the historical Qwen B1 finalized observation.
 
 ### Methods draft: timing boundary and inter-inference intervals
 
@@ -96,6 +123,27 @@ before the three trials. MPS pairs used batch size one with nominal active-threa
 limits of 100% or 50%, set before CUDA-context creation. The exposed multiprocessor
 counts were audited separately from measured GPU busy time. MPS provisioning is
 not a target of 50% NVIDIA Management Library (NVML) busy time.
+
+The laboratory continuation adds a bounded pre-measurement validation of the
+pacing calibration. After the original 60-s short-feedback calibration, up to
+three complete instrumented rehearsal windows target 50 ± 2 percentage points.
+The duty is then frozen for all three formal trials, whose acceptance criterion
+remains 50 ± 5 percentage points. Rehearsal calls, waits and raw telemetry are
+retained separately and do not enter formal costs. No formal trial is selected
+or automatically repeated. A failed calibration or trial remains in its original
+run. The first laboratory attempt's power-support failure and the subsequent
+out-of-band temporal trial are not silently replaced or promoted.
+
+Every retained trial has at least 30 charged seconds. In `duration_1155`, the loop
+additionally requires at least 35 actual charged seconds, rather than relying
+only on a loop count extrapolated from cold warm-up. The bound is tested against
+actual first-block intervals and internal waits, with a hard limit of 100,000
+groups. This stopping-rule correction does not add frontend time or an idle tail
+to a trial. The preceding short YOLO trial remains excluded, while completed
+CLIP trials are reused in place with their original report and identity hashes.
+Calibration version and required duration are retained in the workbook and raw
+processed-data records. The older rental execution is not relabelled as using
+the later laboratory calibration/stopping implementation.
 
 ### Methods draft: energy, normalization and device allocation
 
