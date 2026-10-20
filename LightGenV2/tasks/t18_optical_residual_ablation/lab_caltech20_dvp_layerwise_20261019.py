@@ -41,7 +41,7 @@ def read(path):return json.loads(Path(path).read_text(encoding='utf-8'))
 def session_for(a):
     """Optional run namespace; never change the depth or physical model."""
     attempt=getattr(a,'attempt',None)
-    assert attempt is None or attempt=='strict8pp_20261020','Unreviewed attempt namespace'
+    assert attempt is None or attempt in ('strict8pp_20261020','response_20261020'),'Unreviewed attempt namespace'
     return a.sequence/(f'L{a.depth}'+('_'+attempt if attempt else ''))
 
 
@@ -779,7 +779,7 @@ def selftest():
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mode',required=True,choices=('prepare','run','resume','capture','refine','recheck','admit-stage','fixed-hardware','selftest'));p.add_argument('--cache',type=Path);p.add_argument('--out',type=Path);p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--stage');p.add_argument('--prefix',type=int);p.add_argument('--checkpoint',type=Path);p.add_argument('--digest');p.add_argument('--hardware-manifest',type=Path);p.add_argument('--parent-fit');p.add_argument('--archive-failed',action='store_true');p.add_argument('--pilot',action='store_true');p.add_argument('--resume-router',action='store_true');p.add_argument('--async-png',action='store_true');p.add_argument('--recheck-before-capture',action='store_true');p.add_argument('--archive-empty-start',action='store_true');p.add_argument('--capture-policy',type=Path)
-    p.add_argument('--attempt',choices=('strict8pp_20261020',));p.add_argument('--reuse-capture',type=Path);p.add_argument('--reuse-train-prefix',type=int,default=0);p.add_argument('--quality-recheck',action='store_true');a=p.parse_args()
+    p.add_argument('--attempt',choices=('strict8pp_20261020','response_20261020'));p.add_argument('--reuse-capture',type=Path);p.add_argument('--reuse-train-prefix',type=int,default=0);p.add_argument('--quality-recheck',action='store_true');a=p.parse_args()
     assert not (a.reuse_capture or a.reuse_train_prefix or a.quality_recheck) or (a.attempt and a.mode=='capture'), 'Quality recovery belongs only to explicit strict capture'
     assert not a.attempt or a.mode in ('capture','refine','fixed-hardware'), 'Explicit stages only; no legacy automatic chaining in a strict attempt'
     try:

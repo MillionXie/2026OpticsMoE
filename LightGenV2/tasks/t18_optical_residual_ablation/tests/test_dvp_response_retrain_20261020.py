@@ -29,9 +29,16 @@ class RetrainTests(unittest.TestCase):
 
     def test_proxy_has_explicit_CPU_response_clone(self):
         source=SOURCE.read_text()
-        self.assertIn('current=response_model(base,values)',source)
+        self.assertIn('current=response_model(base,values,spatial,only_stage)',source)
         self.assertIn('current.response_enabled=True',source)
         self.assertIn('return m.assess(current,data,fields,\'test\')',source)
+
+    def test_spatial_response_stays_at_verified_stage_and_freezes_head(self):
+        source=SOURCE.read_text()
+        self.assertIn("only_stage={4:'2',6:'0'}[a.depth]",source)
+        self.assertIn('stage!=self.only_response_stage',source)
+        self.assertIn("allowed=allowed-{'linear.weight','linear.bias'}",source)
+        self.assertIn("dm['source_cache_SHA256']==m.SOURCE_CACHE",source)
 
 
 if __name__=='__main__':unittest.main()
