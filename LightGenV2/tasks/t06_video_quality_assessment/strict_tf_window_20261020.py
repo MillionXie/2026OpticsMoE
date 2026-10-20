@@ -45,21 +45,40 @@ def interval_energy(intervals, samples, host_w=338.2):
                 power_integration='zero-order hold on charged intervals; raw50ms NVML observations')
 
 
+def multi_gpu_energy(intervals, streams):
+    records=[interval_energy(intervals,rows,338.2 if index==0 else 0.) for index,rows in enumerate(streams)]
+    if not records:raise ValueError('At least one observed GPU required')
+    return dict(elapsed_s=records[0]['elapsed_s'],energy_j=sum(r['energy_j'] for r in records),
+                host_proxy_w=338.2,per_gpu_energy=records,
+                power_integration='sum observed used-GPU interval energies; host proxy counted ONCE')
+
+
 def measure(args,compute,inputs,first,folder,guard,duty):
     """Three complete trials; pace calibration only, never select a best trial."""
     import torch
-    folder.mkdir();sampler=base.telemetry.TelemetrySampler(args.gpu_uuid,raw_path=folder/'telemetry_stdout.jsonl')
-    clocks=base.prior.ClockSampler(args.gpu_uuid);armed={};calls=[];waits=[];repeats=[];updates=[]
+    folder.mkdir();gpus=tuple(getattr(args,'gpu_uuids',(args.gpu_uuid,)))
+    samplers=[base.telemetry.TelemetrySampler(gpu,raw_path=folder/('telemetry_stdout.jsonl' if i==0 else f'telemetry_gpu{i:02d}_stdout.jsonl')) for i,gpu in enumerate(gpus)]
+    clock_samplers=[base.prior.ClockSampler(gpu) for gpu in gpus]
+    armed={};calls=[];waits=[];repeats=[];updates=[]
+    def check():
+        guard.fast()
+        for sampler in samplers:sampler.check()
+    def phase(value):
+        for sampler in samplers:sampler.set_phase(value)
+    def synchronize():
+        if len(gpus)==1:torch.cuda.synchronize()
+        else:
+            for device in range(len(gpus)):torch.cuda.synchronize(device)
     def first_input(*_):
         if armed.get('enabled') and armed.get('start') is None:
             # Drain GPU frontend kernels BEFORE starting the charged TF interval.
-            torch.cuda.synchronize();armed['start']=time.monotonic()
+            synchronize();armed['start']=time.monotonic()
     hook=first.register_forward_pre_hook(first_input)
     def group(rep=None):
-        guard.fast();sampler.check();start=time.monotonic();duration=0.
+        check();start=time.monotonic();duration=0.
         for index in range(8):
             armed.update(enabled=True,start=None);before=time.monotonic()
-            out,_=compute(inputs);torch.cuda.synchronize();end=time.monotonic();armed['enabled']=False
+            out,_=compute(inputs);synchronize();end=time.monotonic();armed['enabled']=False
             tf=armed['start']
             if tf is None or not before<=tf<end:raise RuntimeError('Missing or invalid first-block boundary')
             duration+=end-tf
@@ -69,7 +88,7 @@ def measure(args,compute,inputs,first,folder,guard,duty):
     def idle(seconds):
         start=time.monotonic();until=start+seconds
         while time.monotonic()<until:
-            guard.fast();sampler.check();time.sleep(min(.05,max(0,until-time.monotonic())))
+            check();time.sleep(min(.05,max(0,until-time.monotonic())))
         return start,time.monotonic()
     def warm(seconds,d):
         start=time.monotonic();durations=[]
@@ -77,40 +96,43 @@ def measure(args,compute,inputs,first,folder,guard,duty):
             _,a,b,c=group();durations.append(c)
             if d<1:idle((b-a)*(1/d-1))
         return durations
-    sampler.start();clocks.start()
+    active_samplers=[];active_clocks=[]
     try:
+        for sampler in samplers:sampler.start();active_samplers.append(sampler)
+        for clocks in clock_samplers:clocks.start();active_clocks.append(clocks)
         times=warm(5,1)
         # Synchronization has changed, so old queue8 duties are NOT reused.
         if duty<1:
-            sampler.set_phase('calibration');start=last=time.monotonic();duty=.5
+            phase('calibration');start=last=time.monotonic();duty=.5
             while time.monotonic()-start<60:
                 _,a,b,_=group();idle((b-a)*(1/duty-1));now=time.monotonic()
                 if now-last>=5:
-                    values=[s.utilization_percent for s in sampler.samples if last<=s.host_monotonic_s<now]
-                    if len(values)<10:raise RuntimeError('Insufficient calibration telemetry')
-                    observed=statistics.mean(values);new=min(1,max(.05,duty*min(1.25,max(.8,50/max(observed,1)))))
-                    updates.append(dict(start=last,end=now,observed=observed,old_duty=duty,new_duty=new))
+                    streams=[[s.utilization_percent for s in sampler.samples if last<=s.host_monotonic_s<now] for sampler in samplers]
+                    if any(len(values)<10 for values in streams):raise RuntimeError('Insufficient calibration telemetry')
+                    per_gpu=[statistics.mean(values) for values in streams]
+                    observed=max(per_gpu);new=min(1,max(.05,duty*min(1.25,max(.8,50/max(observed,1)))))
+                    updates.append(dict(start=last,end=now,observed=observed,per_gpu_busy=per_gpu,old_duty=duty,new_duty=new))
                     duty=new;last=now
         count=max(2,math.ceil(35*duty/statistics.mean(times)))
         if count>100000:raise RuntimeError('Bounded complete-trial count exceeded')
         for rep in (1,2,3):
-            sampler.set_phase('warmup'+str(rep));warm(5,duty)
-            sampler.set_phase('measured'+str(rep));first_call=len(calls);first_wait=len(waits)
+            phase('warmup'+str(rep));warm(5,duty)
+            phase('measured'+str(rep));first_call=len(calls);first_wait=len(waits)
             wall_start=time.monotonic()
             for i in range(count):
                 out,a,b,_=group(rep)
                 if i+1<count and duty<1:
                     request=(b-a)*(1/duty-1)*count/(count-1);wa,wb=idle(request)
                     waits.append(dict(repeat=rep,group=i,start=wa,end=wb,requested_s=request))
-            wall_end=time.monotonic();sampler.set_phase('outside_window')
+            wall_end=time.monotonic();phase('outside_window')
             selected_calls=calls[first_call:];selected_waits=waits[first_wait:]
             # Only actual first-TF->output and actual INTERNAL control waits count.
             intervals=sorted([(c['first_block_start'],c['gpu_output']) for c in selected_calls]+
                              [(w['start'],w['end']) for w in selected_waits])
-            energy=interval_energy(intervals,list(sampler.samples))
+            energy=multi_gpu_energy(intervals,[list(sampler.samples) for sampler in samplers])
             if energy['elapsed_s']<30:raise RuntimeError('Charged complete trial shorter than30s')
-            rows=[s for s in sampler.samples if wall_start<=s.host_monotonic_s<wall_end]
-            info=base.telemetry.telemetry_report(rows,prefix='');videos=count*8*args.batch
+            infos=[base.telemetry.telemetry_report([s for s in sampler.samples if wall_start<=s.host_monotonic_s<wall_end],prefix='') for sampler in samplers]
+            info=infos[0];videos=count*8*args.batch
             output=out.detach().cpu().tolist()
             if not output or not all(math.isfinite(float(v)) for v in output):raise RuntimeError('Nonfinite GPU MOS output')
             if repeats and any(abs(float(a)-float(b))>2e-4 for a,b in zip(output,repeats[0]['output'])):
@@ -121,15 +143,18 @@ def measure(args,compute,inputs,first,folder,guard,duty):
                 internal_wait_s=sum(w['end']-w['start'] for w in selected_waits),
                 excluded_preblock_s=sum(c['excluded_preblock_s'] for c in selected_calls),
                 **energy,time16_ms=energy['elapsed_s']*16000/videos,energy16_j=energy['energy_j']*16/videos,
-                full_wall_telemetry=info,output=output)
+                full_wall_telemetry=info,per_gpu_full_wall_telemetry=dict(zip(gpus,infos)),output=output)
             repeats.append(result);base.old.write(folder/f'repeat{rep:02d}.json',result)
             print(f'{args.model} {args.precision} {args.method} repeat{rep}: busy={info["mean_gpu_utilization_percent"]:.3f}% T16={result["time16_ms"]:.6f}ms',flush=True)
         videos=sum(r['video_evaluations'] for r in repeats)
-        busy=sum(r['full_wall_telemetry']['samples']*r['full_wall_telemetry']['mean_gpu_utilization_percent'] for r in repeats)/sum(r['full_wall_telemetry']['samples'] for r in repeats)
+        per_gpu_busy={gpu:sum(r['per_gpu_full_wall_telemetry'][gpu]['samples']*r['per_gpu_full_wall_telemetry'][gpu]['mean_gpu_utilization_percent'] for r in repeats)/sum(r['per_gpu_full_wall_telemetry'][gpu]['samples'] for r in repeats) for gpu in gpus}
+        busy=max(per_gpu_busy.values())
         report=dict(status='complete',timing_protocol=PROTOCOL,model=args.model,precision=args.precision,
             method=args.method,batch=args.batch,nominal_resource_cap=args.cap if args.method=='mps' else None,
             frozen_duty=duty,repeats=repeats,time16_ms=sum(r['elapsed_s'] for r in repeats)*16000/videos,
             energy16_j=sum(r['energy_j'] for r in repeats)*16/videos,mean_gpu_busy_percent=busy,
+            per_gpu_busy_percent=per_gpu_busy,allocation_average_busy_percent=statistics.mean(per_gpu_busy.values()),
+            busy_control_basis='single GPU' if len(gpus)==1 else 'maximum of per-GPU pooled busy rates; NOT allocation average',
             target50_reached=abs(busy-50)<=5 if args.method=='temporal' and duty<1 else None,
             unrestricted_target98_reached=busy>=98 if duty==1 else None,
             every_preblock_interval_excluded=True,internal_wait_included=True,terminal_wait_excluded=True,
@@ -139,10 +164,19 @@ def measure(args,compute,inputs,first,folder,guard,duty):
             host_proxy_w=338.2,no_window_selection=True)
         base.old.write(folder/'report.json',report);return report
     finally:
-        hook.remove();samples=sampler.stop(raise_on_error=False);base.telemetry.save_samples(folder/'telemetry.csv',samples)
-        clocks.stop(folder/'clock_telemetry.csv')
+        hook.remove();errors=[]
+        for i,sampler in enumerate(active_samplers):
+            try:
+                samples=sampler.stop(raise_on_error=False)
+                base.telemetry.save_samples(folder/('telemetry.csv' if i==0 else f'telemetry_gpu{i:02d}.csv'),samples)
+                sampler.check()
+            except BaseException as error:errors.append(repr(error))
+        for i,clocks in enumerate(active_clocks):
+            try:clocks.stop(folder/('clock_telemetry.csv' if i==0 else f'clock_telemetry_gpu{i:02d}.csv'))
+            except BaseException as error:errors.append(repr(error))
         for name,records in (('calls.csv',calls),('waits.csv',waits)):
             with (folder/name).open('x',newline='') as stream:
                 if records:
                     writer=csv.DictWriter(stream,fieldnames=list(records[0]));writer.writeheader();writer.writerows(records)
-        base.old.write(folder/'controller_updates.json',updates);sampler.check()
+        base.old.write(folder/'controller_updates.json',updates)
+        if errors:raise RuntimeError('Telemetry cleanup/audit failed: '+repr(errors))

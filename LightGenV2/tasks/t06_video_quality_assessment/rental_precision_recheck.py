@@ -103,8 +103,12 @@ def runtime(args,guard,identity):
     identity.update(original_training_commit=original['git_commit'],assets=assets,
         checkpoint_sha256=old.sha(ptpath),training_receipt_sha256=old.sha(train/'training_receipt.json'),
         original_parameters=parameters,fp32_weight_bytes=fp32_weight_bytes(parameters))
+    dual=bool(getattr(args,'dual_fp32',False))
+    if dual and (args.model!='deepseek' or args.precision!='fp32' or torch.cuda.device_count()!=2):
+        raise ValueError('Dual placement is only the authorized full DeepSeek FP32 profile')
     free,total=torch.cuda.mem_get_info()
-    if args.precision=='fp32' and fp32_weight_bytes(parameters)>free:
+    available=sum(torch.cuda.mem_get_info(i)[0] for i in range(2)) if dual else free
+    if args.precision=='fp32' and fp32_weight_bytes(parameters)>available:
         raise MemoryError('FP32 weights alone exceed free VRAM; no CUDA model allocation or offload')
     processor,prompt,ids=old.processor(args.model,Path('/data/models')/args.model)
     if args.precision=='native':
@@ -116,9 +120,19 @@ def runtime(args,guard,identity):
         cfg=AutoConfig.from_pretrained('/data/models/'+args.model,trust_remote_code=True,local_files_only=True)
         if args.model=='kimi':
             cfg.vision_config._attn_implementation='eager';cfg.text_config._attn_implementation='eager'
+        placement={}
+        if dual:
+            # Whole, contiguous decoder blocks: no expert/weight sharding inside
+            # a block, no CPU/disk offload, no quantization or forward patch.
+            placement['device_map']={'':0,'language.model.norm':1,'language.lm_head':1,
+                **{f'language.model.layers.{i}':0 if i<15 else 1 for i in range(30)}}
         model=AutoModelForCausalLM.from_pretrained('/data/models/'+args.model,config=cfg,
             local_files_only=True,trust_remote_code=True,torch_dtype=torch.float32,
-            attn_implementation='eager',low_cpu_mem_usage=True).eval().requires_grad_(False).cuda()
+            attn_implementation='eager',low_cpu_mem_usage=True,**placement).eval().requires_grad_(False)
+        if not dual:model=model.cuda()
+        elif len(model.language.model.layers)!=30 or {p.device.type for p in model.parameters()}!={'cuda'}:
+            raise RuntimeError('Expected30 GPU-only whole decoder blocks')
+        identity['hf_device_map']=getattr(model,'hf_device_map',None)
         language=model.language if args.model=='deepseek' else model.language_model
         first=model.vision.blocks[0] if args.model=='deepseek' else model.vision_tower.encoder.blocks[0]
         actual=old.runtime_identity(model)
@@ -127,8 +141,9 @@ def runtime(args,guard,identity):
     guard.bind()
     pt=torch.load(ptpath,map_location='cpu',weights_only=False)
     if pt['quality_token_ids']!=ids:raise RuntimeError('Original five quality words')
-    head=old.five_rows(pt['state_dict']['weight']).cuda().eval().requires_grad_(False)
-    levels=pt['level_scores'].cuda().float()
+    head_device='cuda:1' if dual else 'cuda:0'
+    head=old.five_rows(pt['state_dict']['weight']).to(head_device).eval().requires_grad_(False)
+    levels=pt['level_scores'].to(head_device).float()
     dtype=torch.bfloat16 if args.precision=='native' else torch.float32
     def transfer(cpu):return {k:v.to('cuda',dtype=dtype if v.is_floating_point() else v.dtype) for k,v in cpu.items()}
     def compute(inputs):
@@ -144,8 +159,8 @@ def runtime(args,guard,identity):
                     visual=model._extract_image_features(inputs['pixel_values'],inputs['image_grid_hws'])
                     embeds=model._merge_with_image_features(embeds,inputs['input_ids'],visual)
                 value=language.model(inputs_embeds=embeds,attention_mask=inputs['attention_mask'],use_cache=False,return_dict=True).last_hidden_state[:,-1].float()
-                native=language.lm_head(value).float()
-            mos=head(value).softmax(-1)@levels
+                native=language.lm_head(value.to(language.lm_head.weight.device)).float()
+            mos=head(value.to(head.weight.device)).softmax(-1)@levels
         return mos,native
     identity.update(runtime=actual,precision=args.precision,
         fp32_caveat='Existing deployment weights cast to FP32, not recovery of quantized values' if args.precision=='fp32' else None,

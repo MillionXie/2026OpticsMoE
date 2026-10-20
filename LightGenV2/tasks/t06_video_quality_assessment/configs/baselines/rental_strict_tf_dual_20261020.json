@@ -1,0 +1,17 @@
+{
+  "profile": "strict_tf_rental_20261020",
+  "gpu_uuids": ["GPU-3e3ff911-ade6-4602-3d2f-378d2254dc79", "GPU-eb1d2167-0eb8-8c8d-253b-75a7cbe91718"],
+  "power_limit_w": 400,
+  "compute_deadline": 1792465800,
+  "backup_release_deadline": 1792466400,
+  "temporal_batches": {"deepseek_native": 2, "kimi_native": 6, "deepseek_fp32": 1, "kimi_fp32": 1},
+  "mps_batch": 1,
+  "mps_caps": [100, 50],
+  "repeats": 3,
+  "minimum_charged_trial_seconds": 30,
+  "temporal_calibration_seconds": 60,
+  "host_proxy_w_counted_once": 338.2,
+  "dual_fp32_placement": "DeepSeek30 whole decoder blocks:0..14 GPU0,15..29 GPU1;vision/input GPU0;norm/readout GPU1",
+  "dual_busy_control": "maximum of per-card pooled NVML rates; also publish both cards and allocation average",
+  "accuracy": "Full558 new DeepSeekFP32; prior matched full558 references for other three frozen runtimes; no training"
+}

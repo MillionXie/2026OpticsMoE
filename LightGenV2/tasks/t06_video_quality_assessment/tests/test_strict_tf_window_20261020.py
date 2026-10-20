@@ -32,18 +32,27 @@ def test_missing_stale_or_overlapping_power_support_is_rejected(intervals):
 def test_each_forward_has_its_own_synchronized_boundary_and_raw_record():
     source=Path(m.__file__).read_text();ast.parse(source)
     assert "armed.update(enabled=True,start=None)" in source
-    assert "torch.cuda.synchronize();armed['start']=time.monotonic()" in source
-    assert 'out,_=compute(inputs);torch.cuda.synchronize()' in source
+    assert "synchronize();armed['start']=time.monotonic()" in source
+    assert 'out,_=compute(inputs);synchronize()' in source
+    assert 'for device in range(len(gpus)):torch.cuda.synchronize(device)' in source
     assert "if i+1<count and duty<1:" in source
     assert "every_preblock_interval_excluded=True" in source
     assert "cost_intervals_are_not_contiguous_wall_window=True" in source
-    assert "rows=[s for s in sampler.samples if wall_start<=s.host_monotonic_s<wall_end]" in source
+    assert "if wall_start<=s.host_monotonic_s<wall_end]" in source
     assert "('calls.csv',calls),('waits.csv',waits)" in source
     assert 'no_window_selection=True' in source
 
 
+def test_dual_gpu_energy_counts_both_boards_and_host_once():
+    streams=[samples(),[SimpleNamespace(host_monotonic_s=r.host_monotonic_s,watts=2*r.watts) for r in samples()]]
+    result=m.multi_gpu_energy([(.2,.3),(.3,.5),(.7,.9)],streams)
+    assert result['elapsed_s']==pytest.approx(.5)
+    assert result['energy_j']==pytest.approx(338.2*.5+300*.3+600*.2)
+
+
 @pytest.mark.parametrize('duty',[1,.5])
-def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(monkeypatch,tmp_path,duty):
+@pytest.mark.parametrize('devices',[1,2])
+def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(monkeypatch,tmp_path,duty,devices):
     """CPU-only instrumentation test; these synthetic values are NOT run data."""
     import sys
     import json
@@ -58,7 +67,8 @@ def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(mo
             self.hook=hook
             return SimpleNamespace(remove=lambda:setattr(self,'hook',None))
     first=First()
-    def sync():clock.now+=.001
+    synchronized=[]
+    def sync(*device):clock.now+=.001;synchronized.append(device)
     monkeypatch.setitem(sys.modules,'torch',SimpleNamespace(cuda=SimpleNamespace(synchronize=sync)))
     class Sampler:
         def __init__(self,*a,**k):pass
@@ -77,15 +87,16 @@ def test_complete_fake_execution_preserves_each_boundary_and_all_three_trials(mo
     def compute(_):
         clock.now+=.004;first.hook();clock.now+=.020
         return out,None
-    args=SimpleNamespace(gpu_uuid='synthetic',model='synthetic',precision='native',method='temporal',batch=2,cap=100)
+    args=SimpleNamespace(gpu_uuid='synthetic',gpu_uuids=tuple('synthetic'+str(i) for i in range(devices)),model='synthetic',precision='native',method='temporal',batch=2,cap=100)
     result=m.measure(args,compute,None,first,tmp_path/'synthetic_cpu_fixture',SimpleNamespace(fast=lambda:None),duty)
     assert len(result['repeats'])==3
     for rep in result['repeats']:
         assert rep['elapsed_s']==pytest.approx(rep['compute_s']+rep['internal_wait_s'])
-        assert rep['energy_j']==pytest.approx((338.2+100)*rep['elapsed_s'])
+        assert rep['energy_j']==pytest.approx((338.2+100*devices)*rep['elapsed_s'])
         assert rep['excluded_preblock_s']>0
         assert rep['wall_elapsed_s']>rep['elapsed_s']
         assert rep['video_evaluations']==rep['forward_calls']*2
         assert rep['internal_wait_s']>0 if duty<1 else rep['internal_wait_s']==0
     assert first.hook is None
+    if devices==2:assert (0,) in synchronized and (1,) in synchronized
     assert json.loads((tmp_path/'synthetic_cpu_fixture/report.json').read_text())['timing_protocol']==m.PROTOCOL
