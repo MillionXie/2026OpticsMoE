@@ -3,12 +3,29 @@ import ast
 import json
 from pathlib import Path
 import unittest
+from types import SimpleNamespace
 
 TASK = Path(__file__).resolve().parents[1]
 SOURCE = TASK/'lab_caltech20_dvp_conditioned_head_20261020.py'
 
 
 class ConditionedHeadContract(unittest.TestCase):
+    def test_independent_mid_scope_is_exact_and_opt_in(self):
+        tree=ast.parse(SOURCE.read_text());node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='independent_pair_admitted')
+        env={};exec(compile(ast.Module(body=[node],type_ignores=[]),'<pair-scope>','exec'),env);admit=env['independent_pair_admitted']
+        cfg=dict(strict_intermediate_scope=dict(depth=6,prefix=2,minimum_TRAIN_accuracy=.8),targets={'6':322},final_targets={'6':350})
+        self.assertTrue(admit(SimpleNamespace(depth=6,prefix=2,attempt='strict8pp_20261020'),cfg))
+        self.assertTrue(admit(SimpleNamespace(depth=6,prefix=7),{}))
+        self.assertTrue(admit(SimpleNamespace(depth=4,prefix=5),{}))
+        self.assertFalse(admit(SimpleNamespace(depth=6,prefix=2),cfg))
+        self.assertFalse(admit(SimpleNamespace(depth=6,prefix=2,attempt='strict8pp_20261020'),dict(cfg,strict_intermediate_scope=None)))
+        self.assertFalse(admit(SimpleNamespace(depth=4,prefix=4,attempt='strict8pp_20261020'),cfg))
+        self.assertFalse(admit(SimpleNamespace(depth=6,prefix=3,attempt='strict8pp_20261020'),cfg))
+        self.assertFalse(admit(SimpleNamespace(depth=6,prefix=2,attempt='strict8pp_20261020'),dict(cfg,targets={'6':314})))
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='pair_fit');text=ast.unparse(method)
+        self.assertIn("tr['metric']['accuracy'] >= 0.8",text)
+        self.assertLess(text.index("tr['metric']['accuracy'] >= 0.8"),text.index('independent_pair_direction(v,'))
+
     def test_objective_cannot_take_test_inputs(self):
         tree = ast.parse(SOURCE.read_text())
         objective = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'objective')

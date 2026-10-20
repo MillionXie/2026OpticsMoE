@@ -1,5 +1,30 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 六层E1达306仍差16；四层冻结读出后缀已真实开训（2026-10-20 20:42）
+
+六层一次有限binary接续结束7pass，pass最高为304/305/305/305/306/306/306，
+最终306/411=74.45255%、TRAIN100%，本段新增正确6/丢失2。完整CPU/冻结/精确父链
+独立审核通过，report SHA `5d2aee928974c30dcb0be03f4c3eea5f7d86753afee23a8f046238ab4f9adc74`。
+本方法出现平台后不再无限重启；仍差16至322，未采G1。混淆仍包括Motorbikes->airplanes、
+chandelier及Faces等，不能用router-only322覆盖本E1前缀306。
+
+下一段只复用已发布并已验证数值梯度的`independent_pair_direction`：每块独立调原头
+两行514坐标/其余18行固定，完整20类TRAIN CE/LS.02、正确TRAIN parent KL2/T2，
+原TRAIN近邻/正例/困难负例/全TRAIN回放；max20唯一混淆对/128步/120fit秒，不扫参数/种子。
+原适配器只在final开放此算法，现新增显式strict L6 prefix2范围准入：必须配置
+`strict_intermediate_scope={depth:6,prefix:2,minimum_TRAIN_accuracy:0.8}`，且322/350目标保持。
+原入口默认仍final-only，其他中间层/深度不得通行；实际新特征还须再次证明TRAIN>=80%
+后才有任何梯度。梯度算法/推理/数据/硬件均不改，只增这个原头训练范围守卫与协议标记。
+因core训练约束代码已Git更新，旧bank整文件graph身份不再匹配，新段**重新提取**对应
+同PT/同前缀的固定特征，不绕过原SHA检查。该段须Git冷同步/数值自测后启动，此处尚不报新分。
+
+四层冻结读出/原TRAIN先验方案已由三端同一发布Git `2bf4cbaa97c0fee52329f7acd8c368c80fd46af4`
+真实启动，namespace `fits/2_frozen_readout_prior_strict8pp_20261020`，父278，目标314。
+本地7+16+24纯测试、服务器和实验室相同测试以及原完整图逐位一致/一次AdamW冻结
+数值自测均真实通过，capture/data/model函数AST和源SHA均未改；新改动只约束训练。
+协议已落盘且首epoch实际TRAIN loss1.040634、TEST248，保留父278，不把暂时下降算提升。
+本段max6完整epoch/480fit秒，若未达标仍不得采最后G2。SDK无占用，无定时任务。
+
 ## 六层E1微调至302；四层保护分类头后再适配原后缀（2026-10-20 20:31）
 
 六层E1原后缀30完整epoch/1815.86fit秒后选e30，完整原CPU为280/411。

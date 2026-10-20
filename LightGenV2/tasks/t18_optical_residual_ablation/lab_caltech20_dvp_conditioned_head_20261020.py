@@ -628,6 +628,14 @@ def shrink_fit(a):
               elapsed_postfit_replay_s=time.monotonic()-start-elapsed))
 
 
+def independent_pair_admitted(a,cfg):
+    """Retain legacy final-only scope; one explicit strict E1 exception."""
+    return a.prefix==a.depth+1 or (
+        getattr(a,'attempt',None)=='strict8pp_20261020' and a.depth==6 and a.prefix==2
+        and cfg.get('strict_intermediate_scope')=={'depth':6,'prefix':2,'minimum_TRAIN_accuracy':.8}
+        and cfg['targets']['6']==322 and cfg['final_targets']['6']==350)
+
+
 def pair_fit(a):
     """Published antisymmetric or independent two-row TRAIN directions."""
     cpu_fit_admission(a)
@@ -635,6 +643,7 @@ def pair_fit(a):
     cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=core.session_for(a)
     independent=cfg['objective']=='independent_full20_CE'
     assert cfg['objective'] in ('huber_pair','independent_full20_CE')
+    if independent:assert independent_pair_admitted(a,cfg),'Independent pair objective is not admitted for this prefix'
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists()
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts')
     original=core.state_cpu(model);fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
@@ -652,7 +661,10 @@ def pair_fit(a):
                   all_nonhead_frozen=True,two_original_rows_antisymmetric_other18_fixed=True,
                   TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,update_unit='pair_step')
     if independent:
-        assert a.prefix==a.depth+1 and cfg['label_smoothing']==.02 and cfg['positive_margins']==[1.,1.]
+        assert cfg['label_smoothing']==.02 and cfg['positive_margins']==[1.,1.]
+        if a.prefix<a.depth+1:
+            assert tr['metric']['accuracy']>=.8,'Strict E1 independent pairs require exact high-TRAIN evidence before derivatives'
+            protocol.update(strict_intermediate_original_head_only=True,exact_parent_TRAIN_accuracy=tr['metric']['accuracy'])
         protocol.update(two_original_rows_antisymmetric_other18_fixed=False,
                         two_independent_original_rows_other18_fixed=True,
                         per_block_parameter_count=514,full20_TRAIN_CE=True)
