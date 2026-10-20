@@ -1,0 +1,8 @@
+{
+  "objective":"independent_full20_CE","label_smoothing":0.02,
+  "margin":1.0,"positive_margins":[1.0,1.0],"huber_delta":1.0,
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"trust_radius":0.20,"max_pairs":20,"steps_per_pair":128,
+  "fit_seconds":120,"seed":73,"targets":{"4":314,"6":322},"final_targets":{"4":342,"6":350},
+  "scope":"One renewed bounded actual-prefix5/7 residual-head contrast per L4/L6 from current independently audited global283/203, following renewed human request to continue both. Original antisymmetric Huber blocks plateaued and can only move scores a+=d,b-=d. Reuse the already-published independently tested independent_pair_direction with full20-class TRAIN CE/LS.02 and correctTRAIN parent KL2/T2; two original rows have514 coordinates, other18 rows fixed for each block. Same seed73+depth, original1600TRAIN neighbor/positive/hard-negative/global64 sample universe, original LM.1/anchor.1/Newton.25/Frobenius radius.20, max20unique confused pairs/128steps/120fitseconds. Only within-block head coupling and supervised objective change, not an isolated-method causal claim. TEST confusion/same-class TRAIN neighbors and accuracy-first PT selection are authorized development feedback, never TEST gradients/teacher or VALID. Freeze all masks, prior electronic/alpha, original encoding/hardware and measured data. Exact nonhead/graph/ID/array SHA bank parity required; native411 bestlast replay <=3e-6, independent freeze audit and localSHA backups. Preserve entire parent on E0, no repeated seed/coefficient scan or automatic restart. CPU2/noSDK/GPU/CCD/new inference layer; final342/350 and L4 milestone305 not guaranteed."
+}

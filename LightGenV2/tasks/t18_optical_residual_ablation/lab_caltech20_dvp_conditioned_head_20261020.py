@@ -19,7 +19,7 @@ HERE = Path(__file__).resolve().parent
 sys.path[:0] = [str(HERE), str(HERE.parents[2])]
 import lab_caltech20_dvp_layerwise_20261019 as core
 from lab_caltech20_dvp_head_repair_20261019 import cache_features, batch_indices, selftest as original_row_selftest
-from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry, pair_direction, huber_row_direction, binary_row_direction, shrunk_readout, ridge_logit_readout
+from lab_caltech20_residual_terminal_cpu_20261019 import TRAIN_spectrum_geometry, pair_direction, independent_pair_direction, huber_row_direction, binary_row_direction, shrunk_readout, ridge_logit_readout
 from lab_caltech20_residual_guarded_20261018 import improves, probability, score
 
 
@@ -574,10 +574,12 @@ def shrink_fit(a):
 
 
 def pair_fit(a):
-    """Published antisymmetric two-row TRAIN objective, DVP1600 data adapter."""
+    """Published antisymmetric or independent two-row TRAIN directions."""
     cpu_fit_admission(a)
     torch.set_num_threads(2)
     cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
+    independent=cfg['objective']=='independent_full20_CE'
+    assert cfg['objective'] in ('huber_pair','independent_full20_CE')
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists()
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts')
     original=core.state_cpu(model);fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
@@ -594,6 +596,11 @@ def pair_fit(a):
                   feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
                   all_nonhead_frozen=True,two_original_rows_antisymmetric_other18_fixed=True,
                   TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,update_unit='pair_step')
+    if independent:
+        assert a.prefix==a.depth+1 and cfg['label_smoothing']==.02 and cfg['positive_margins']==[1.,1.]
+        protocol.update(two_original_rows_antisymmetric_other18_fixed=False,
+                        two_independent_original_rows_other18_fixed=True,
+                        per_block_parameter_count=514,full20_TRAIN_CE=True)
     core.save(a.out/'protocol.json',protocol)
     np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=te['ids'],labels=te['y'],probabilities=baseline)
     xx=np.c_[tr['x'].astype(float),np.ones(len(tr['y']))]
@@ -617,23 +624,34 @@ def pair_fit(a):
         outside=np.flatnonzero((tr['y']!=first)&(tr['y']!=second))
         risk=np.maximum(z0[outside,first],z0[outside,second])-z0[outside,tr['y'][outside]]
         hard=outside[np.argsort(-risk,kind='stable')[:128]]
-        v=torch.zeros(257,dtype=torch.float64);chosen=v.clone()
+        v=torch.zeros((2,257) if independent else (257,),dtype=torch.float64);chosen=v.clone()
         plans.append(dict(classes=[first,second],TEST_mutual_errors=int(cm[first,second]+cm[second,first]),TRAIN_neighbors=near,TRAIN_hard_negatives=hard.tolist()))
         for step in range(cfg['steps_per_pair']):
             ix=pair_batch(rng,near,pools,hard,len(tr['y']))
-            direction,gradient,_=pair_direction(v,torch.tensor(xx[ix]),torch.tensor(z0[ix]),teacher[ix],
+            if independent:
+                direction,gradient,_=independent_pair_direction(v,torch.tensor(xx[ix]),torch.tensor(z0[ix]),
+                      torch.tensor(tr['y'][ix]).long(),torch.tensor(keep[ix]),(first,second),cfg)
+            else:
+                direction,gradient,_=pair_direction(v,torch.tensor(xx[ix]),torch.tensor(z0[ix]),teacher[ix],
                       torch.tensor(tr['y'][ix]),torch.tensor(keep[ix]),first,second,cfg)
             assert torch.isfinite(direction).all()
             v-=cfg['Newton_step']*direction;v*=min(1.,cfg['trust_radius']/max(float(v.norm()),1e-12))
-            ww,bb=w.copy(),b.copy();ww[first]+=v[:-1].float().numpy();ww[second]-=v[:-1].float().numpy()
-            bb[first]+=float(v[-1]);bb[second]-=float(v[-1]);p=probability(te['x'],ww,bb);n,nll=score(p,te['y'])
+            ww,bb=w.copy(),b.copy()
+            offsets=(v[0],v[1]) if independent else (v,-v)
+            for label,offset in zip((first,second),offsets):
+                ww[label]+=offset[:-1].float().numpy();bb[label]+=float(offset[-1])
+            outside_rows=[label for label in range(20) if label not in (first,second)]
+            assert np.array_equal(ww[outside_rows],w[outside_rows]) and np.array_equal(bb[outside_rows],b[outside_rows])
+            p=probability(te['x'],ww,bb);n,nll=score(p,te['y'])
             accepted=improves(n,nll,best,bestloss)
             if accepted:best,bestloss,chosen,selected=n,nll,v.clone(),len(history)+1
             history.append(dict(step=len(history)+1,classes=[first,second],TRAIN_indices=ix.tolist(),TEST_correct=n,
                                 TEST_NLL=nll,selected_correct=best,accepted=accepted,gradient_norm=float(gradient.norm())))
             if best>=target or time.monotonic()-start>=cfg['fit_seconds']:break
-        lastw,lastb=ww.copy(),bb.copy();w[first]+=chosen[:-1].float().numpy();w[second]-=chosen[:-1].float().numpy()
-        b[first]+=float(chosen[-1]);b[second]-=float(chosen[-1])
+        lastw,lastb=ww.copy(),bb.copy()
+        offsets=(chosen[0],chosen[1]) if independent else (chosen,-chosen)
+        for label,offset in zip((first,second),offsets):
+            w[label]+=offset[:-1].float().numpy();b[label]+=float(offset[-1])
         core.save(a.out/'progress.json',dict(selected_correct=best,actual_pairs=len(used),actual_steps=len(history)))
         if best>=target:break
     elapsed=time.monotonic()-start;results={};bestp=None
@@ -1062,8 +1080,22 @@ def selftest():
     losses=[teacher_blend_objective(beta.detach()+sign*1e-5,tx,labels,originw,originb,labelw,labelb,parent,keep,label_cfg) for sign in (1,-1)]
     assert abs(float((losses[0]-losses[1])/2e-5-derivative))<1e-7
     assert all(torch.isfinite(v).all() for v in (labelw,labelb,targets))
+    ix=torch.randn(32,7,dtype=torch.float64);iz=torch.randn(32,20,dtype=torch.float64);iy=torch.arange(32)%20
+    iv=torch.randn(2,7,dtype=torch.float64)*.01;iv.requires_grad_();ik=torch.arange(32).remainder(2).double()
+    ic=dict(objective='independent_full20_CE',label_smoothing=.02,temperature=2.,teacher_KL=2.,anchor=.1,LM_damping=.1,positive_margins=[1.,1.],margin=1.,huber_delta=1.)
+    def ce_pair(flat):
+        logits=iz.clone();logits[:,:2]+=ix@flat.reshape(2,7).T
+        kl=F.kl_div((logits/2).log_softmax(1),(iz/2).softmax(1),reduction='none').sum(1)
+        return F.cross_entropy(logits,iy,label_smoothing=.02)+2*(kl*ik).mean()+.1*flat.square().sum()
+    direction,gradient,aa=independent_pair_direction(iv.detach(),ix,iz,iy,ik,(0,1),ic)
+    numeric_gradient=torch.autograd.grad(ce_pair(iv.flatten()),iv)[0]
+    hessian=torch.autograd.functional.hessian(ce_pair,iv.detach().flatten())
+    assert torch.allclose(gradient,numeric_gradient,atol=1e-9)
+    assert torch.allclose(hessian,aa.T@aa+.2*torch.eye(14),atol=1e-9)
+    assert torch.allclose((hessian+.1*torch.eye(14))@direction.flatten(),gradient.flatten(),atol=1e-10)
     print('{"passed":true,"TRAIN_only_gradient_checked":true,"fold_preserves_original_head":true,"teacher_logit_recovery_and_blend_gradient":true,"bias_only_gradient":true}')
     print('{"passed":true,"TRAIN_label_prior_target_and_weighted_blend_gradient":true,"existing_GCV_recipe_reused":true,"no_TEST_derivatives":true}')
+    print('{"passed":true,"independent_pair_full20_TRAIN_CE_gradient_and_Hessian":true,"published_direction_reused":true}')
 
 
 if __name__ == '__main__':

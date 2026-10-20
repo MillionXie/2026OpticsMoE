@@ -265,6 +265,22 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual((cfg['blend_steps'],cfg['blend_lr'],cfg['correct_TRAIN_parent_KL']),(64,.025,.5))
         self.assertEqual(cfg['final_targets'],{'4':342,'6':350})
 
+    def test_independent_pair_uses_published_full20_TRAIN_direction(self):
+        tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='pair_fit')
+        text=ast.unparse(method)
+        self.assertIn('independent_pair_direction(v,',text)
+        self.assertIn('two_independent_original_rows_other18_fixed=True',text)
+        self.assertIn('per_block_parameter_count=514',text)
+        self.assertIn('pair_batch(rng, near, pools, hard, len(tr[\'y\']))',text)
+        self.assertIn('np.array_equal(ww[outside_rows], w[outside_rows])',text)
+        self.assertIn('cfg[\'trust_radius\'] / max(float(v.norm()), 1e-12)',text)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_independent_CE_pair_profile_20261020.json').read_text())
+        old=json.loads((TASK/'lab_caltech20_DVP_pair_head_profile_20261020.json').read_text())
+        for key in ('temperature','teacher_KL','anchor','LM_damping','Newton_step','trust_radius','seed','max_pairs','steps_per_pair','fit_seconds'):
+            self.assertEqual(cfg[key],old[key])
+        self.assertEqual(cfg['objective'],'independent_full20_CE')
+        self.assertEqual(cfg['label_smoothing'],.02)
+
     def test_L6_alpha_initialization_only_after_complete_prefix7(self):
         tree=ast.parse(SOURCE.read_text());method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='shrink_fit')
         gate=next(n for n in ast.walk(method) if isinstance(n,ast.Assert) and 'a.depth == 6' in ast.unparse(n.test))
