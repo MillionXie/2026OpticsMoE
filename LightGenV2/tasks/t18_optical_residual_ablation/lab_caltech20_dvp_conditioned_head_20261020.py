@@ -38,6 +38,26 @@ def objective(theta, bias, x, labels, weights, teacher, keep, origin, cfg):
     return ce + cfg['correct_TRAIN_teacher_KL'] * (kl*keep).mean() + cfg['parameter_anchor']*anchor
 
 
+def TRAIN_feature_views(z, labels, teacher, cfg):
+    """Fixed TRAIN-only optimizer views; no transform enters inference."""
+    probability=float(cfg.get('TRAIN_feature_dropout_probability',0.))
+    repeats=int(cfg.get('TRAIN_feature_dropout_repeats',0))
+    assert (probability,repeats) in ((0.,0),(.1,3))
+    assert len(z)==len(labels)==len(teacher) and not z.requires_grad and not teacher.requires_grad
+    if repeats==0:
+        return z,labels,teacher,dict(enabled=False,independent_TRAIN=len(z),derivative_views=len(z))
+    generator=torch.Generator(device='cpu').manual_seed(int(cfg['TRAIN_feature_dropout_seed']))
+    views=[z];dropped=0
+    for _ in range(repeats):
+        mask=torch.rand(z.shape,dtype=z.dtype,generator=generator)>=probability
+        dropped+=int((~mask).sum());views.append(z*mask/(1-probability))
+    proof=dict(enabled=True,independent_TRAIN=len(z),derivative_views=len(z)*(repeats+1),
+               probability=probability,masked_repeats=repeats,seed=int(cfg['TRAIN_feature_dropout_seed']),
+               dropped_coordinates=dropped,clean_view_included=True,TRAIN_only=True,
+               inference_dropout=False,new_independent_samples=0)
+    return torch.cat(views),labels.repeat(repeats+1),teacher.repeat(repeats+1,1),proof
+
+
 def pair_batch(rng, near, pools, hard, size):
     """Use the entire DVP TRAIN index universe, not legacy hard-coded1200."""
     return np.r_[rng.choice(near[0],8,True),rng.choice(pools[0],8,False),
@@ -657,6 +677,9 @@ def fit(a):
     bias = torch.nn.Parameter(b0 + mean @ w0.T)
     origin = (theta.detach().clone(), bias.detach().clone())
     teacher = torch.tensor(tr['probabilities'], dtype=torch.float64)
+    if cfg.get('TRAIN_feature_dropout_repeats',0):
+        assert a.depth==4 and a.prefix==5 and len(labels)==1600
+    z,labels,teacher,TRAIN_views=TRAIN_feature_views(z,labels,teacher,cfg)
     keep = (teacher.argmax(1) == labels).double()
     class_weights = counts/counts.mean()
     initial, best_nll = score(te['probabilities'], te['y'])
@@ -675,6 +698,7 @@ def fit(a):
                     feature_cache_original_head_maxabs={r:v['original_head_maxabs'] for r,v in cached.items()},
                     feature_variance_floor=floor, modes_below_floor=int((eigenvalues < floor).sum()),
                     TRAIN_covariance_eigenvalues=eigenvalues.tolist(), TRAIN_prior_only=True,
+                    TRAIN_feature_views=TRAIN_views,
                     TRAIN_covariance_only=True, trainable_parameters=5140, no_new_inference_layer=True,
                     TEST_informed_development=True, TEST_gradient=False, SDK_used=False, GPU_used=False,
                     update_unit='LBFGS_step')
@@ -898,6 +922,22 @@ def selftest():
         values.append(float(objective(t, bias.detach(), z, labels, torch.ones(20, dtype=torch.float64), teacher,
                             torch.ones(80, dtype=torch.float64), (theta.detach(), bias.detach()), cfg)))
     assert abs((values[0]-values[1])/(2*epsilon)-float(gradient[0, 0])) < 1e-7
+    dropout_cfg=dict(TRAIN_feature_dropout_probability=.1,TRAIN_feature_dropout_repeats=3,TRAIN_feature_dropout_seed=73)
+    views,yy,tt,viewproof=TRAIN_feature_views(z.detach(),labels,teacher,dropout_cfg)
+    again=TRAIN_feature_views(z.detach(),labels,teacher,dropout_cfg)
+    assert views.shape==(320,12) and torch.equal(views[:80],z.detach())
+    assert torch.equal(views,again[0]) and torch.equal(yy[:80],labels) and torch.equal(tt[:80],teacher)
+    assert torch.equal(yy,labels.repeat(4)) and torch.equal(tt,teacher.repeat(4,1))
+    assert viewproof['independent_TRAIN']==80 and viewproof['derivative_views']==320 and not viewproof['inference_dropout']
+    unmodified=TRAIN_feature_views(z.detach(),labels,teacher,{})
+    assert unmodified[0] is not None and torch.equal(unmodified[0],z.detach()) and not unmodified[3]['enabled']
+    v=theta.detach().clone().requires_grad_();k=(tt.argmax(1)==yy).double()
+    dl=objective(v,bias.detach(),views,yy,torch.ones(20,dtype=torch.float64),tt,k,(theta.detach(),bias.detach()),cfg)
+    dg=torch.autograd.grad(dl,v)[0];dv=[]
+    for sign in (1.,-1.):
+        trial=v.detach().clone();trial[0,0]+=sign*epsilon
+        dv.append(float(objective(trial,bias.detach(),views,yy,torch.ones(20,dtype=torch.float64),tt,k,(theta.detach(),bias.detach()),cfg)))
+    assert abs((dv[0]-dv[1])/(2*epsilon)-float(dg[0,0]))<1e-7
     rng=np.random.default_rng(73)
     ix=pair_batch(rng,[np.arange(8),np.arange(80,88)],[np.arange(80),np.arange(80,160)],np.arange(160,288),1600)
     assert ix.shape==(64,) and ix.min()>=0 and ix.max()<1600

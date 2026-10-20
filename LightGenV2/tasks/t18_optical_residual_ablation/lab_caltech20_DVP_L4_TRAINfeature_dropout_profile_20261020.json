@@ -1,0 +1,15 @@
+{
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256": "38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps": 240,
+  "maximum_fit_seconds": 120,
+  "label_smoothing": 0.02,
+  "correct_TRAIN_teacher_KL": 0.02,
+  "parameter_anchor": 0.0001,
+  "targets": {"4":314,"6":322},
+  "final_targets": {"4":342,"6":350},
+  "TRAIN_feature_dropout_probability": 0.1,
+  "TRAIN_feature_dropout_repeats": 3,
+  "TRAIN_feature_dropout_seed": 73,
+  "scope": "One finite full-physical L4 readout contrast from audited283/411: unaugmented full-head conditioning on this measured representation previously overfit TRAIN100percent while TEST189, and a stronger parameter anchor did not improve the incumbent. Add only fixed TRAIN-spectrum-coordinate dropout to the same original5140-head objective: one clean plus three deterministic masked views per1600TRAIN, p.1/inverted scale/seed73. These6400 derivative views are not6400 independent images or new CCD. Covariance, masks, labels, teacher probabilities and priors use TRAIN only; TEST411 only selects development incumbent, no TEST derivative or VALID. Mean-centered TRAIN coordinates are optimizer-only, folded into original20x256 Linear; no dropout, transform, calibration or new layer at inference. All nonhead tensors frozen bitwise. CPU2threads below normal, max240LBFGSsteps/120fitseconds, no probability/seed/regularization sweep or repeated restart. Full native originalCPU bestlast/frozen/data and cached-feature parity required; preserve283 if no improvement. May run only on complete L4 prefix5 while independently validated L6 owns the capture SDK; never use SDK/GPU or touch capture source/settings. Targets305 intermediate10pp and342 final1pp are not guaranteed."
+}

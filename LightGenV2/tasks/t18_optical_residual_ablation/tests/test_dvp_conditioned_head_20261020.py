@@ -204,5 +204,26 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertEqual(sum(cfg['original_TRAIN_counts']),3141)
 
 
+    def test_dropout_views_are_TRAIN_only_and_never_enter_inference(self):
+        tree=ast.parse(SOURCE.read_text())
+        method=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_feature_views')
+        self.assertFalse(any('test' in n.id.lower() for n in ast.walk(method) if isinstance(n,ast.Name)))
+        text=ast.unparse(method)
+        for token in ('labels.repeat(repeats + 1)','teacher.repeat(repeats + 1, 1)',
+                      'inference_dropout=False','new_independent_samples=0','torch.Generator'):
+            self.assertIn(token,text)
+        fit=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='fit')
+        gate=next(n for n in ast.walk(fit) if isinstance(n,ast.If) and 'TRAIN_feature_dropout_repeats' in ast.unparse(n.test))
+        predicate=compile(ast.Expression(next(n for n in gate.body if isinstance(n,ast.Assert)).test),'<dropout_guard>','eval')
+        from types import SimpleNamespace
+        for depth,prefix,size,allowed in ((4,5,1600,True),(4,4,1600,False),(6,5,1600,False),(4,5,1200,False)):
+            self.assertEqual(eval(predicate,{'a':SimpleNamespace(depth=depth,prefix=prefix),'labels':[0]*size}),allowed)
+        old=json.loads((TASK/'lab_caltech20_DVP_conditioned_head_profile_20261020.json').read_text())
+        cfg=json.loads((TASK/'lab_caltech20_DVP_L4_TRAINfeature_dropout_profile_20261020.json').read_text())
+        self.assertEqual({k:v for k,v in cfg.items() if not k.startswith('TRAIN_feature_dropout_') and k!='scope'},
+                         {k:v for k,v in old.items() if k!='scope'})
+        self.assertEqual((cfg['TRAIN_feature_dropout_probability'],cfg['TRAIN_feature_dropout_repeats'],cfg['TRAIN_feature_dropout_seed']),(.1,3,73))
+
+
 if __name__ == '__main__':
     unittest.main()
