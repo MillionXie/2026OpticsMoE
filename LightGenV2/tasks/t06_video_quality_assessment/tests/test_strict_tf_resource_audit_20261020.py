@@ -27,6 +27,8 @@ class Accounting(unittest.TestCase):
         self.assertEqual(completion_state(values),'costs48_complete_accuracy_pending')
         for v in values:v['srcc_reference']=0.
         self.assertEqual(completion_state(values),'all48_complete')
+        values[0]['target50_reached']=False
+        self.assertNotEqual(completion_state(values),'all48_complete')
 
     def test_original_and_repeated_evaluation_frame_schemas(self):
         self.assertEqual(frame_positions({'selected_frame_positions':'[10,35,60,86]'}),[10,35,60,86])

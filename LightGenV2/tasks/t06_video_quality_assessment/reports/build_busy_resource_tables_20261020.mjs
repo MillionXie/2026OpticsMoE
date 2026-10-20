@@ -9,6 +9,7 @@ const repo=process.cwd(),originalRoot=path.join(repo,'LightGenV2/tasks/t06_video
 const root=process.env.LGVQ_STRICT_REPORT_ROOT?path.resolve(process.env.LGVQ_STRICT_REPORT_ROOT):originalRoot;
 const data=JSON.parse(await fs.readFile(path.join(root,'eight_tables.json'),'utf8'));
 const strict=data.timing_protocol==='per_forward_first_block_plus_internal_wait_v1';
+const complete=strict&&data.status==='all48_complete';
 if(strict&&data.accounting_protocol!=='per_forward_tf_plus_output_to_next_input_v2')throw Error('Latest intercall-gap accounting was not audited');
 const preview=process.env.LGVQ_RESOURCE_PREVIEW==='1';
 const out=preview?path.join(repo,'.codex_tmp/strict_resource_preview.xlsx'):path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/LGVQ_busy_resource_precision_comparison.xlsx');
@@ -101,9 +102,9 @@ for(const {method,precision,metric,sheet} of views){
  sheet.getRange('A2:M2').format={font:{name:'Arial',size:12,color:'#53687A'},rowHeight:28};
  sheet.getRange('A4:M4').merge();sheet.getRange('A4').values=[[strict?'First native block → output + output → NEXT model input. Pacing waits are already inside gaps, not added twice. Each frontend excluded; full-wall NVML busy separate. Three trials;16-video equivalents.':'First TF input → final GPU output; internal waits included, terminal wait excluded. Prepared inputs reused; three full windows.16-video equivalents are throughput-normalized, not a16-video batch.']];
  sheet.getRange('A4:M4').format={font:{name:'Arial',size:10,color:'#53687A'},rowHeight:36,wrapText:true};
- sheet.getRange('A5:M5').merge();sheet.getRange('A5').values=[[strict?`${data.rental_count??data.values.length}/16 rental and ${data.laboratory_count??0}/32 laboratory conditions measured. Full558 accuracy references are independent of control windows; missing FP32 accuracy remains unavailable.`:'PARTIAL DATA — measured values only. Independent558-video accuracy references are not fresh restricted-condition accuracy tests.']];
- sheet.getRange('A5:M5').format={font:{name:'Arial',size:10,bold:true,color:'#9C3D10'},rowHeight:28,wrapText:true};
- sheet.getRange('A6:M6').values=[['Model','Setting','Video batch','Resource cap',strict?'GPU busy (max card)':'Actual GPU busy',metric==='time'?'Time /16 (ms)':'Energy /16 (J)','Baseline / optical','SRCC (development)','Repeats','Status','Video evaluations','Precision','Platform']];
+ sheet.getRange('A5:M5').merge();sheet.getRange('A5').values=[[complete?'48 prescribed conditions / 144 retained trial windows. Matching-batch full558 accuracy references verified; accuracy is not re-evaluated separately at each cap.':strict?`${data.rental_count??data.values.length}/16 rental and ${data.laboratory_count??0}/32 laboratory conditions measured. Full558 accuracy references are independent of control windows; missing cases remain unavailable.`:'PARTIAL DATA — measured values only. Independent558-video accuracy references are not fresh restricted-condition accuracy tests.']];
+ sheet.getRange('A5:M5').format={font:{name:'Arial',size:10,bold:!complete,color:complete?'#53687A':'#9C3D10'},rowHeight:28,wrapText:true};
+ sheet.getRange('A6:M6').values=[['Model','Setting','Video batch','Resource cap',strict?'GPU busy (max card)':'Actual GPU busy',metric==='time'?'Equivalent time (ms)':'Estimated energy (J)','Baseline / optical','SRCC (development)','Repeats','Status','Video evaluations','Precision','Platform']];
  sheet.getRange('A6:M6').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:38,wrapText:true};
  sheet.getRange('A7:M19').format={font:{name:'Arial',size:10,color:'#243447'},rowHeight:42,wrapText:true,verticalAlignment:'center'};
  sheet.getRange('A7:M7').values=[['LightGen-II','Optical reference','n.a.','n.a.','~50% spatial',null,null,null,'n.a.','unchanged reference','n.a.','n.a.','Optical platform']];
@@ -127,7 +128,7 @@ for(const {method,precision,metric,sheet} of views){
  const notes=[['Control',method==='mps'?'Resource cap is the nominal MPS thread limit; actual visible SM count is audited. GPU busy can still be high under50% MPS.':strict?'Batch is fixed between paced/unrestricted conditions. Full-wall busy retains ALL samples; for2 GPUs, show max pooled card busy. Both cards are in Window repeats.':'The predeclared near-saturation batch is fixed. Idle intervals occur only between actual inference groups. Actual busy is measured in the cost window.'],
  ['Energy',strict?'Integrate all used-GPU board power over TF + output-to-next-input intervals; add338.2W × charged seconds ONCE. Pacing waits included, not added twice. DS FP32 includes both cards.':'(338.2W retained host proxy + same-window sampled board power) × complete window duration, normalized by actual processed video evaluations.'],
  ['Accuracy','SRCC is a separate frozen full558 TEST development estimate: the original head was selected on TEST, with no VAL. No other precision is copied into FP32 cells.'],
- [strict?'Devices':'Capacity',data.capacity_missing],['Scope','80GB rental models prioritized. Missing original-platform measurements and unfinished precision cases remain blank. Historical QwenB1 not changed.']];
+ [strict?'Devices':'Capacity',data.capacity_missing],['Scope',complete?'Costs share the interval definition. Receiver versions and parameter-count sources are in Measurements. Historical QwenB1 is unchanged.':'80GB rental models prioritized. Missing original-platform measurements and unfinished precision cases remain blank. Historical QwenB1 not changed.']];
  for(const[i,[label,text]]of notes.entries()){const rr=22+i*2;sheet.getRange('A'+rr).values=[[label]];sheet.getRange(`B${rr}:M${rr}`).merge();sheet.getRange('B'+rr).values=[[text]];sheet.getRange(`A${rr}:M${rr}`).format={font:{name:'Arial',size:10,color:'#53687A'},wrapText:true,rowHeight:34};}
 }
 book.recalculate();

@@ -9,8 +9,8 @@ Figure pairs: [temporal, deployed precision](strict_tf_temporal_native_pair.png)
 [MPS, FP32](strict_tf_mps_fp32_pair.png).
 Unrounded source data: [paired conditions](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation/paired_measurements.csv)
 and [all trial windows](../../../tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation/paired_repeats.csv).
-Missing conditions and incomplete accuracy references remain explicit. The dated
-historical sections below are not the source of the current interval plots.
+Only qualified prescribed conditions enter these plots. The dated historical
+sections below are not the source of the current interval plots.
 
 The latest author instruction supersedes the timing boundary of the historical
 sections below. New raw measurements are under
@@ -18,20 +18,25 @@ sections below. New raw measurements are under
 preserved separately and produced no formal cost observations. Only full
 DeepSeek-VL2 FP32 uses two A100-SXM4-80GB GPUs. Kimi in either precision and
 DeepSeek-VL2 in its original precision use one GPU. No model is trained in this run.
-The rental measurements are complete: 16 conditions and all 48 trials passed
-independent raw-data replay. Historical Qwen B1 is unchanged. The original laboratory
+All prescribed measurements are complete: 48 conditions and 144 retained trials
+passed independent raw-data replay, with matching-batch full558 accuracy references.
+The rental cohort contributes 16 conditions and the laboratory cohort 32.
+Historical Qwen B1 is unchanged. The original laboratory
 measurements retain the two completed CLIP MPS conditions in `recovery_1102`.
 Its failed temporal-control condition remains excluded. The subsequent
 `calibration_1140` completed CLIP temporal control; `duration_1155` has completed
 all sixteen deployed-precision laboratory conditions and twelve FP32 conditions
-for CLIP, YOLO and Qwen. Together with the rental results, 44 conditions and
-132 complete trial windows have passed independent raw-data replay. The six
-matching-batch FP32 full558 accuracy evaluations for these three laboratory
-models have also completed. GLM FP32 remains incomplete: a 411.885-ms power
-sampling gap invalidated its third MPS100 trial. All failed records are retained.
-Only its four missing control conditions are admitted to `glm_sampling_recovery01`,
-after a separate 45-s sampling check and three idle checks. The timing loop,
-250-ms power-support limit, precision, weights and fixed batch are unchanged.
+for CLIP, YOLO and Qwen. GLM FP32 completes the remaining four conditions: its MPS
+pair is under `glm_sampling_recovery01`, and its temporal pair under `glm_obs01`.
+All seven laboratory FP32 full558 accuracy evaluations have completed. Two prior
+GLM trials with 411.885-ms and 281.587-ms power-receipt gaps remain excluded and
+preserved. The final temporal pair uses an independently versioned CPU receiver,
+described below; no incomplete three-trial condition was pooled into the results.
+The model forward, timing boundary, 250-ms power-support limit, precision, weights
+and fixed batches are unchanged. Laboratory model, observer and query processes
+were verified exited after completion; the A100 then had no compute process,
+14 MiB allocated and 0% busy time. All final data and launch controls were SHA-bound
+and imported locally; no rental renewal or optical-bench operation was performed.
 
 The existing eight-view workbook now contains the newly audited interval costs.
 Its previous complete-wall version, SHA256
@@ -75,14 +80,14 @@ SRCC references at B1 and higher batches were independently evaluated, not newly
 trained or measured separately at each cap. FP32 does not improve either model's
 SRCC here; its backend and weight expansion are disclosed below.
 
-Machine-readable observations and all 132 currently qualified trial records
-(48 rental, 84 laboratory) are in the new run's `presentation/paired_measurements.csv`
+Machine-readable observations and all 144 qualified trial records
+(48 rental, 96 laboratory) are in the new run's `presentation/paired_measurements.csv`
 and `paired_repeats.csv`. Each row binds report, checkpoint, accuracy source, date
 and hashes. All 270 rental files (23,917,130 bytes) were imported from a SHA-bound
 final archive. Eight figure panels use `strict_tf_<method>_<precision>_*` in this
 original report directory; missing conditions are not interpolated.
 
-### Laboratory partial results: deployed precision
+### Completed laboratory results: deployed precision
 
 All values below pool the three complete trials. MPS pairs use B1; temporal pairs
 use fixed B10 for CLIP, B3 for YOLO and Qwen, and B2 for GLM. These batches are retained in the data,
@@ -114,13 +119,15 @@ The values above are retained rather than adjusted to an expected trend. No
 causal speedup is inferred from the small YOLO MPS latency difference. These are new
 strict interval measurements, not the historical Qwen B1 finalized observation.
 
-### Laboratory FP32 results completed before the GLM recovery
+### Completed laboratory FP32 results
 
 Each row pools all three qualified cost trials. Every floating model parameter
 was FP32, autocast and TF32 were disabled, and the original frozen task heads were
 retained. Full558 accuracy was independently evaluated at each listed batch with
 the same runtime and checkpoint; it was not re-evaluated separately at each cap.
-Temporal pairs retain B10 for CLIP and B3 for YOLO and Qwen. All MPS pairs use B1.
+Temporal pairs retain B10 for CLIP, B3 for YOLO and Qwen, and the capacity-declared
+B1 profile for GLM. All MPS pairs use B1. GLM's FP32 and deployed-precision temporal
+profiles therefore do not hold batch fixed across precision.
 The two Qwen accuracy references therefore remain distinct; neither replaces the
 historical finalized Qwen B1 measurement.
 
@@ -138,6 +145,10 @@ historical finalized Qwen B1 measurement.
 | Qwen3-VL-2B | MPS | 50% resources | 98.082 | 5320.726 | 2995.285 | .769477 |
 | Qwen3-VL-2B | Temporal | Unrestricted | 98.156 | 2838.960 | 1650.149 | .769486 |
 | Qwen3-VL-2B | Temporal | Approximately 50% busy | 47.936 | 6058.467 | 2895.593 | .769486 |
+| GLM-4.6V-Flash | MPS | 100% resources | 99.472 | 13573.267 | 7961.885 | .813180 |
+| GLM-4.6V-Flash | MPS | 50% resources | 99.731 | 24175.673 | 13641.405 | .813180 |
+| GLM-4.6V-Flash | Temporal | Unrestricted | 99.544 | 13519.575 | 7934.835 | .813180 |
+| GLM-4.6V-Flash | Temporal | Approximately 50% busy | 49.289 | 27321.206 | 13196.074 | .813180 |
 
 Qwen's pooled FP32 paced busy rate meets the accepted 50 ± 5 criterion but lies
 just outside the preferred 50 ± 2 band. No additional formal trial was selected to
@@ -149,6 +160,15 @@ the optical reference under this declared block-based boundary. This is retained
 as an observed comparison, not forced to favour the optical system; it does not
 establish a faster new-video end-to-end pipeline because decoding and frontend
 work are excluded.
+
+All twelve temporal-control means fall within 50 ± 5 percentage points (range
+47.9356–51.6871%). Ten are also within the preferred ±2 band. Native DeepSeek's
+47.9661% and FP32 Qwen's 47.9356% are slightly outside that preferred band and are
+not replaced with selected repeats. An unrestricted setting is not necessarily
+saturated: native CLIP reaches 81.4557%, and dual-GPU DeepSeek FP32 has a maximum
+pooled card busy rate of 57.9531%. Native Qwen, YOLO and DeepSeek unrestricted
+references also remain below 98%. All percentages are displayed as measured;
+none of these points is relabelled as achieving 98–100% saturation.
 
 ### Methods draft: timing boundary and inter-inference intervals
 
@@ -197,7 +217,8 @@ or automatically repeated. A failed calibration or trial remains in its original
 run. The first laboratory attempt's power-support failure and the subsequent
 out-of-band temporal trial are not silently replaced or promoted.
 
-Every retained trial has at least 30 charged seconds. In `duration_1155`, the loop
+Every retained trial has at least 30 charged seconds. In `duration_1155` and the
+subsequent GLM continuations, the loop
 additionally requires at least 35 actual charged seconds, rather than relying
 only on a loop count extrapolated from cold warm-up. The bound is tested against
 actual first-block intervals and internal waits, with a hard limit of 100,000
@@ -207,6 +228,22 @@ CLIP trials are reused in place with their original report and identity hashes.
 Calibration version and required duration are retained in the workbook and raw
 processed-data records. The older rental execution is not relabelled as using
 the later laboratory calibration/stopping implementation.
+
+The final two GLM FP32 temporal conditions use a CPU-only observer process for
+power receipt (`independent_process_receipt_clock_v1`). Earlier qualified conditions
+retain the original receiver thread in the model process. Both use the same NVML
+query, 50-ms polling and numeric validation. The independent observer stamps each
+record with its own host monotonic receipt time; delivery to the model process
+does not retimestamp buffered records. Phase-transition IPC barriers drain already
+observed samples before interval integration. No model kernel, forward hook,
+per-call output synchronization or power-integration function was changed; CPU
+tests compare those function ASTs with the original strict source. A 90-s diagnostic
+under the GLM evaluation and a separate 45-s preflight preceded this version.
+The accepted unrestricted and paced traces had maximum receipt gaps of 98.523
+and 118.791 ms, respectively. No unsupported gap was interpolated or excused by
+raising the 250-ms limit. The earlier failed traces remain separate. Receiver
+versions and source hashes are retained rather than claiming identical receiver
+implementations across all points.
 
 ### Methods draft: energy, normalization and device allocation
 
@@ -256,8 +293,8 @@ partition, with the original four frames, central 65% crop, head weights and
 model assets. Full DeepSeek-VL2 FP32 and the six CLIP/YOLO/Qwen FP32 batch
 profiles receive new 558-video evaluations; the other completed profiles reference
 individually identified frozen evaluations at the matching batch and precision.
-GLM FP32 accuracy remains missing until its new cost identity is complete and
-the queued evaluation passes. These are not newly measured accuracy values at each
+The GLM FP32 B1 evaluation contains all 558 predictions and has SRCC
+0.8131803051635943. These are not newly measured accuracy values at each
 resource cap. Original head selection used highest TEST SRCC without a validation
 partition, so the reported correlations are development estimates. Casting
 deployment weights to FP32 does not recover information lost in their original
@@ -268,6 +305,50 @@ features, without the deployed profile's FP16 feature-storage round trip. These
 precision-specific execution details are disclosed rather than described as an
 otherwise identical attention-kernel experiment.
 
+### Figure descriptions for manuscript preparation
+
+**Temporal duty control, deployed precision.** The left panel plots temporal
+SRCC against processing time and the right panel against estimated energy.
+Costs are normalized to 16 video evaluations; they are not the latency of a
+single submitted 16-video batch. Filled symbols denote unrestricted execution
+and open symbols the calibrated temporal-control condition. Labels show measured
+full-wall NVML busy time, not batch size. Within each model, batch, weights and
+precision are held fixed. The same independent, matching-batch full558 score is
+attached to both conditions; the horizontal connectors therefore describe paired
+cost profiles, not a separate empirical test of accuracy at every control setting.
+Native CLIP's unrestricted 81.46% is retained and is not described as saturation.
+
+**Temporal duty control, FP32.** The two panels use the same axes and charged-time
+definition for the FP32 profiles. GLM's observed busy rate changes from 99.54% to
+49.29%; its equivalent time changes from 13519.575 to 27321.206 ms and estimated
+energy from 7934.835 to 13196.074 J. The increase in energy is smaller than that in
+time because sampled board power falls during real control waits. Only full
+DeepSeek-VL2 uses two GPUs; its label is the maximum pooled per-card busy rate,
+and both board energies are included. Its unrestricted 57.95% does not establish
+dual-GPU saturation. FP32 and deployed-precision results are separate execution
+profiles, not an isolated dtype-only causal comparison.
+
+**MPS resource provisioning, deployed precision.** Processing-time and
+estimated-energy panels compare nominal 100% and 50% MPS resource limits at
+batch one. The visible multiprocessor counts are 108 and 54, respectively.
+Filled and open symbols identify those limits, while numeric labels retain the
+actual busy rate. A resource limit is not a time-busy target: busy time can
+increase when fewer execution resources take longer to finish each call. These
+points must not be relabelled as a 50%-versus-100% NVML experiment. Connectors
+join only the same model/precision/batch pair; device-cohort differences remain
+visible in the source table rather than attributed solely to model architecture.
+
+**MPS resource provisioning, FP32.** The two panels retain the same resource
+limits, batch-one workload and independent full558 accuracy references for the
+FP32 models. For example, GLM time increases from 13573.267 to 24175.673 ms and
+estimated energy from 7961.885 to 13641.405 J, although observed busy rates remain
+99.47% and 99.73%. Full DeepSeek-VL2 FP32 is a capacity-oriented two-GPU deployment,
+not tensor parallelism; the other models use one GPU. LightGen-II is the unchanged
+physical reference in every panel and is not assigned an electronic precision.
+Its spatial-use annotation is not asserted equivalent to either MPS resources or
+NVML time busy. Complete unrounded values, all three trials and source identities
+are retained in the linked workbook and CSV files above.
+
 ### 中文留底及术语
 
 本次主时间为逐次首TF→输出，加输出→下一模型调用入口；每次调用入口→首TF排除并
@@ -275,12 +356,15 @@ otherwise identical attention-kernel experiment.
 GPU busy（GPU忙碌率）指完整墙钟NVML实测；MPS resource cap（MPS资源上限）指执行
 资源配置；charged time（计入时间）指上述区间之和，三者不得混为同一统计量。
 租赁16条件均已完成并重算，只有完整版DS FP32双卡；其他租赁条件单卡。
-实验室原精度16条件及CLIP/YOLO/Qwen FP32的12条件均已合格，连同租赁16条件共44条件、
-132完整重复；六组匹配batch的实验室FP32完整558视频评估已完成，不从原精度借数值。
-GLM FP32旧第三轮411.885ms采样缺口已拒绝并保留，新会话仅接续其四个缺项。
+实验室原精度16条件及FP32的16条件均已合格，连同租赁16条件共48条件、144完整重复；
+七组匹配batch的实验室FP32完整558视频评估已完成，不从原精度借数值。
+GLM FP32旧411.885/281.587ms采样缺口均拒绝并保留，最终时间对照采用独立CPU接收器，
+不在主模型进程中重新打接收时间；两个后端版本在表格明确保留，计时/积分口径不变。
 此前CLIP时间控制44.5867%、399ms采样缺口及其他失败原始记录继续保留，不混入正式结果。
 250ms是既定数据质量阈值，非硬件或期刊标准。时间限流以50±5为接受范围，目标尽量±2；
-Qwen FP32合并47.936%符合±5但略超±2，不挑选重测。MPS50不是NVML busy50。
+Qwen FP32合并47.936%、DS原精度47.966%符合±5但略超±2，不挑选重测。MPS50不是NVML busy50。
+最终GLM FP32时间限流49.289%，三轮49.323/49.394/49.148%；不限流99.544%。自有GPU及
+采样进程均已退出并留存释放回执，原目录工作簿八视图及八个图面以同一48条件数据生成。
 
 ## Historical timing audit hold: 20 October 2026, 08:00
 
