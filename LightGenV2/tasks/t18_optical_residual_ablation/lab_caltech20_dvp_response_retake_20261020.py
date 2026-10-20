@@ -18,7 +18,7 @@ def TRAIN_capacity(a):
     torch.set_num_threads(2);session=a.sequence/f'L{a.depth}_strict8pp_20261020';prefix={4:3,6:1}[a.depth]
     mask=session/'fits'/(('1' if a.depth==4 else 'router')+'_spatial_response_retrain_20261020')
     parent=session/'fits'/({4:'1_binary_repaired_20261020',6:'router_binary_repaired_20261020'}[a.depth])
-    target=mask/'TRAIN_capacity.json';assert not target.exists()
+    target=mask/'TRAIN_capacity.json';progress=mask/'TRAIN_capacity_progress.json';assert not target.exists() and not progress.exists()
     r,p,proof=[m.read(mask/n) for n in ('report.json','protocol.json','independent_audit.json')]
     assert r['state']=='complete' and proof['passed'] and proof['report_SHA256']==m.sha(mask/'report.json')
     data,dm=m.data_for(a.sequence);fields,identities=m.fields_for(session,prefix,data,dm,m.session_hardware_digest(a.sequence))
@@ -28,7 +28,14 @@ def TRAIN_capacity(a):
     assert int(counts.sum())==3141;labels=torch.from_numpy(data['train'][1].astype(np.int64));rows={}
     for role,path in (('parent',parent/'best.pt'),('mask_last',mask/'last.pt')):
         model,_=m.model_for(path,m.sha(path),a.depth,session/'source_reference.ts');state=m.state_cpu(model);parts=[]
-        hook=model.linear.register_forward_pre_hook(lambda module,args:parts.append(args[0].detach().numpy().copy()))
+        m.save(progress,dict(body=role,state='TRAIN_features',completed=0,total=1600,TEST_inference=False))
+        print(m.json.dumps(dict(body=role,state='TRAIN_features',completed=0,total=1600)),flush=True)
+        def collect(module,args):
+            parts.append(args[0].detach().numpy().copy());completed=sum(len(v) for v in parts)
+            if completed%128==0 or completed==1600:
+                row=dict(body=role,state='TRAIN_features',completed=completed,total=1600,TEST_inference=False)
+                m.save(progress,row);print(m.json.dumps(row),flush=True)
+        hook=model.linear.register_forward_pre_hook(collect)
         try:actual,_=m.assess(model,data,fields,'train')
         finally:hook.remove()
         features=torch.tensor(np.concatenate(parts),dtype=torch.float64);assert features.shape==(1600,256)
