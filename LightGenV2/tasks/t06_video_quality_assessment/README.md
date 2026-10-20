@@ -1,5 +1,28 @@
 # T06 视频质量评价
 
+## 2026-10-20 23时新授权：不同视频、零预热、MPS两配额补测
+
+用户确认不同视频依次推理、无预热首批保留，同时计入输出到下一批次的非预处理间隔。
+仅原实验室40GB/250W A100上的Qwen/GLM/CLIP/YOLO，原部署精度、B1、MPS100/50；
+每条件3个fresh process，每轮完整558 TEST且前200不同视频做成本，共8条件/24轮。
+不测DS/Kimi、不租赁、不训练、不动旧QwenB1。此前驻留重复MPS图只能保留为不同协议
+对照，不能将其762.344ms冒称旧Qwen1188.386ms的同口径复测；新结果完成前不替换。
+
+新协议dataset_once_legacy_block_plus_nonpreprocessing_gaps_v1复用原native forward及
+旧视觉首块入口host/event计时器，不另加块内同步排空前端。每次记录外部预处理开始p、
+model-call入口a、原首块起点s、GPU MOS完成e。计入全部[s,e]和[e_i,p_(i+1)]，
+排除[p,a]的decode/crop/processor/H2D及[a,s]的调用前端；不能将整个[e_i,a_(i+1)]
+直接计入而漏扣外部预处理。起点为原host hook语义，不声称消除了异步前端队列尾部。
+前200仅199段内部间隔，末输出后不计等待；纯TF成本与完整跨度同时单列留底。
+T16=计入秒数*16000/200，E16=同区间原始板卡功率积分及338.2W主机代理一次*16/200。
+独立CPU接收器50ms原始行不丢弃、250ms功率支持阈值不放宽，实际busy另列不放图。
+
+入口measure_mps_dataset_once，配置configs/baselines/mps_dataset_once_20261020.json，
+唯一canonical run runs/simulation/lgvq_mps_dataset_once_a100_20261020；三次10秒空闲检查
+和原任务共享锁，私有MPS路径独立。正式前只CPU测试，不用GPU smoke预热；每轮资产
+及split/SHA校验，遇并发/错误保留停止，无自动重试或抢卡。套件有8小时执行上限、
+单worker1小时上限，不是承诺到点完成或自动延长。源码先Git发布两端验证后才启动。
+
 ## 2026-10-20 展示收敛为MPS原部署精度，两张成本图
 
 用户最新要求不再分FP32/BF16两套展示，选择已有native部署profile的MPS100/50配额，
