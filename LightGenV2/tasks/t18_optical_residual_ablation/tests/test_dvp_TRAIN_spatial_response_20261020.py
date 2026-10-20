@@ -18,7 +18,17 @@ class SpatialResponseTests(unittest.TestCase):
         source=SOURCE.read_text()
         self.assertIn("final['held_TRAIN']['mean_coarse16_PCC']>=baseline['held_TRAIN']['mean_coarse16_PCC']+.03",source)
         self.assertIn("v['index']%2==0",source);self.assertIn("v['index']%2==1",source)
-        self.assertIn('len(train[0])==len(held[0])==88',source)
+        self.assertIn('len(train[0])==len(held[0])==(98 if mask_review else 88)',source)
+
+    def test_new_mask_response_is_audited_TRAIN_only_and_not_a_new_model(self):
+        tree=ast.parse(SOURCE.read_text());loader=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='mask_review_rows')
+        text=ast.unparse(loader)
+        for token in ("report['response_frames'] == 60","not report['TEST_inference']","not report['stage_admission']","audit['passed']","range(20)","r['PT_SHA256'] == digest"):
+            self.assertIn(token,text)
+        for call in ('m.assess(','.backward(','.step(','.Bench('):self.assertNotIn(call,text)
+        source=SOURCE.read_text()
+        for token in ('bool(mask_review)==bool(spatial_prior)','torch.randperm(88)[:2]','88+torch.randperm(10)[:2]',"oldf['spatial_loss']<=1.05*oldb['spatial_loss']","newf['spatial_loss']<=.95*newb['spatial_loss']","newf['mean_coarse16_PCC']>=newb['mean_coarse16_PCC']+.03"):
+            self.assertIn(token,source)
 
     def test_model_has_fixed_bounded_complexity(self):
         source=SOURCE.read_text()
