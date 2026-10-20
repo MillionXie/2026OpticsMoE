@@ -367,7 +367,7 @@ def admit_chain(a):
 
 def checked_features(a,model,data,fields,dm,identities):
     """Reuse exact features only after graph/data/field/nonhead identity proof."""
-    graph=feature_graph_sources(a.sequence/f'L{a.depth}')
+    graph=feature_graph_sources(core.session_for(a))
     if hasattr(a,'cpu_fit_admission_proof'):core.save(a.out/'CPU_capture_admission.json',a.cpu_fit_admission_proof)
     if not a.feature_run:
         return cache_features(model,data,fields,a.out),dict(reused=False,feature_graph_SHA256=graph)
@@ -413,7 +413,7 @@ def checked_features(a,model,data,fields,dm,identities):
 def row_fit(a):
     """Published single-row Huber or binary-CE updates; verified cache reuse."""
     cpu_fit_admission(a)
-    torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
+    torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=core.session_for(a)
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
     fields,identities=core.fields_for(session,a.prefix,data,dm,core.session_hardware_digest(a.sequence))
@@ -494,7 +494,7 @@ def row_fit(a):
 def shrink_fit(a):
     """TRAIN-estimated shrinkage readout folded into the same original Linear."""
     cpu_fit_admission(a)
-    torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
+    torch.set_num_threads(2);cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=core.session_for(a)
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists();a.out.mkdir()
     assert dm['source_cache_SHA256']==cfg['original_TRAIN_cache_SHA256']
     model,_=core.model_for(a.checkpoint,a.digest,a.depth,session/'source_reference.ts');original=core.state_cpu(model)
@@ -599,7 +599,7 @@ def pair_fit(a):
     """Published antisymmetric or independent two-row TRAIN directions."""
     cpu_fit_admission(a)
     torch.set_num_threads(2)
-    cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=a.sequence/f'L{a.depth}'
+    cfg=core.read(a.profile);data,dm=core.data_for(a.sequence);session=core.session_for(a)
     independent=cfg['objective']=='independent_full20_CE'
     assert cfg['objective'] in ('huber_pair','independent_full20_CE')
     assert core.sha(a.checkpoint)==a.digest and not a.out.exists()
@@ -708,7 +708,7 @@ def fit(a):
     assert not a.out.exists() and core.sha(a.checkpoint) == a.digest
     data, dm = core.data_for(a.sequence)
     assert dm['source_cache_SHA256'] == cfg['original_TRAIN_cache_SHA256']
-    session = a.sequence / f'L{a.depth}'
+    session = core.session_for(a)
     model, _ = core.model_for(a.checkpoint, a.digest, a.depth, session/'source_reference.ts')
     original = core.state_cpu(model)
     fields, identities = core.fields_for(session, a.prefix, data, dm,
@@ -910,7 +910,7 @@ def teacher_readout_fit(a):
     assert (label_target and a.depth in (4,6) and a.prefix==a.depth+1) or (not label_target and a.depth==4 and a.prefix==5)
     cfg=core.read(a.profile);assert cfg['blend_steps']==64 and cfg['blend_lr']==.025 and cfg['correct_TRAIN_parent_KL']==.5
     assert core.sha(HERE/'lab_caltech20_residual_terminal_cpu_20261019.py')==cfg['ridge_source_SHA256']
-    session=a.sequence/f'L{a.depth}';gate=core.read(session/'lab_gate.json')
+    session=core.session_for(a);gate=core.read(session/'lab_gate.json')
     data,dm=core.data_for(a.sequence);assert gate['passed'] and dm['sha256']==gate['data_SHA256']
     if label_target:
         assert cfg['target_source']=='TRAIN_smoothed_labels' and cfg['label_smoothing']==.02
@@ -1147,8 +1147,11 @@ if __name__ == '__main__':
     parser.add_argument('--depth', type=int, choices=(4,6))
     parser.add_argument('--prefix', type=int)
     parser.add_argument('--digest')
+    parser.add_argument('--attempt', choices=('strict8pp_20261020',))
     args = parser.parse_args()
     try:
+        if args.attempt:
+            assert args.mode in ('fit', 'row-fit', 'pair-fit', 'shrink-fit', 'teacher-readout-fit', 'label-ridge-fit', 'selftest'), 'Strict attempt only admits the original generic head-only optimizers'
         selftest() if args.mode == 'selftest' else bias_fit(args) if args.mode=='bias-fit' else teacher_readout_fit(args) if args.mode in ('teacher-readout-fit','label-ridge-fit') else terminal10_fit(args) if args.mode in ('terminal10-fit','native5150-fit') else admit_chain(args) if args.mode=='admit-chain' else shrink_fit(args) if args.mode=='shrink-fit' else row_fit(args) if args.mode == 'row-fit' else pair_fit(args) if args.mode == 'pair-fit' else fit(args)
     except BaseException as error:
         if args.out and args.out.exists():

@@ -91,6 +91,18 @@ class StrictRetakeTests(unittest.TestCase):
         self.assertIn("p.add_argument('--attempt',choices=('strict8pp_20261020',))", text)
         self.assertIn("not core.LOCK.exists()", text)
 
+    def test_conditioned_head_uses_the_explicit_attempt_for_fields_and_cache(self):
+        text=(HERE / 'lab_caltech20_dvp_conditioned_head_20261020.py').read_text()
+        tree=ast.parse(text)
+        for name in ('checked_features','row_fit','pair_fit','shrink_fit','fit','teacher_readout_fit'):
+            node=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name)
+            self.assertIn('core.session_for(a)',ast.unparse(node))
+        self.assertIn("parser.add_argument('--attempt', choices=('strict8pp_20261020',))", text)
+        self.assertIn('Strict attempt only admits the original generic head-only optimizers', text)
+        # Do not broaden the unrelated legacy parallel-SDK admission.
+        admission=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='cpu_fit_admission')
+        self.assertIn('a.prefix == 5',ast.unparse(admission))
+
 
 if __name__ == '__main__':
     unittest.main()
