@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 import csv
+from datetime import datetime,timezone,timedelta
 import hashlib
 import json
 import math
@@ -25,6 +26,7 @@ def close(a,b):assert math.isclose(float(a),float(b),abs_tol=1e-7,rel_tol=1e-10)
 def audit_point(folder):
     from scipy.stats import spearmanr,pearsonr
     report=read(folder/'report.json');identity=read(folder/'identity.json');calls=rows(folder/'calls.csv')
+    status=read(folder/'status.json');assert status['status']=='complete' and status['samples']==558
     predictions=rows(folder/'predictions.csv');raw=rows(folder/'telemetry.csv')
     assert report['status']=='complete' and identity['batch']==1
     assert identity['protocol']['timing_protocol']=='dataset_once_legacy_block_plus_nonpreprocessing_gaps_v1'
@@ -85,6 +87,8 @@ def audit_point(folder):
                 actual_busy_percent=report['full_wall_telemetry']['mean_gpu_utilization_percent'],
                 checkpoint_sha256=identity['checkpoint_sha256'],parameter_dtypes=identity['floating_parameter_dtypes'],
                 readout_dtypes=identity['quality_readout_dtypes'],source=(folder/'report.json').relative_to(REPO).as_posix(),
+                completed_at_beijing=datetime.fromtimestamp(status['time'],timezone(timedelta(hours=8))).isoformat(),
+                source_commit=identity['git_commit'],
                 source_sha256=sha(folder/'report.json'),identity_sha256=sha(folder/'identity.json'))
 
 

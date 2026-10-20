@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 const require=createRequire(path.join(process.cwd(),'.codex_tmp/artifact-runtime.cjs'));
 const {Workbook,SpreadsheetFile,FileBlob}=await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
+if(process.argv.includes('--dataset-once')){await buildDatasetOnce();process.exit(0);}
 if(process.argv.includes('--mps-deployed')){await buildMpsDeployed();process.exit(0);}
 const repo=process.cwd(),originalRoot=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_busy_resource_20261020/presentation');
 const root=process.env.LGVQ_STRICT_REPORT_ROOT?path.resolve(process.env.LGVQ_STRICT_REPORT_ROOT):originalRoot;
@@ -31,6 +32,85 @@ const missingFor=(model,precision)=>strict?(['deepseek','kimi'].includes(model)?
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const metric of ['time','energy']){
  const name=`${method==='temporal'?'Duty':'MPS'}_${precision==='native'?'Native':'FP32'}_${metric==='time'?'Time':'Energy'}`;
  views.push({method,precision,metric,sheet:book.worksheets.add(name)});
+}
+
+async function buildDatasetOnce(){
+ const repo=process.cwd();
+ const root=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_a100_20261020/presentation');
+ const source=path.join(root,'dataset_once_audited.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
+ if(data.status!=='complete'||data.points.length!==8||data.repeats.length!==24)throw Error('All24 audited distinct-video repeats are required');
+ const outdir=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
+ const output=path.join(outdir,'LGVQ_MPS_dataset_once_comparison.xlsx');
+ const opticalSource=path.join(root,'../../lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json');
+ const optical=JSON.parse(await fs.readFile(opticalSource,'utf8')).optical;
+ if(optical.time_ms!==10.245569591370225||optical.energy_j!==1.1776895097085185||optical.srcc!==.7977138739)throw Error('Prior optical reference changed');
+ const receiptPath=path.join(root,'dataset_once_workbook_receipt.json');
+ try{const prior=await fs.readFile(output),receipt=JSON.parse(await fs.readFile(receiptPath,'utf8'));if(crypto.createHash('sha256').update(prior).digest('hex')!==receipt.sha256)throw Error('Workbook changed externally; preserve edits');}
+ catch(e){if(e.code!=='ENOENT')throw e;try{await fs.access(output);throw Error('Unidentified existing workbook');}catch(x){if(x.code!=='ENOENT')throw x;}}
+ const book=Workbook.create(),s=book.worksheets.add('Plot data'),t=book.worksheets.add('Trial data');
+ const names={qwen:'Qwen3-VL-2B',glm:'GLM-4.6V-Flash',clip:'CLIP ViT-B/32',yolo:'YOLO11s'};
+ const colors={qwen:'#0072B2',glm:'#92527F',clip:'#007F63',yolo:'#9B7000'};
+ for(const sh of [s,t]){sh.showGridLines=false;sh.getRange('A1:R40').format.font={name:'Arial',size:10,color:'#263747'};sh.getRange('A1:R40').format.verticalAlignment='center';}
+ s.tabColor='#214D68';s.getRange('A2').values=[['LGVQ temporal quality: cold, distinct-video MPS comparison']];s.getRange('A2').format.font={name:'Arial',size:14,bold:true,color:'#214D68'};
+ s.getRange('A4').values=[['B=1. Three fresh processes. No inference warmup. First 200 distinct videos for costs; 558 for SRCC.']];
+ s.getRange('A5').values=[['First native block→GPU MOS plus output→next preprocessing start. Each preprocessing interval excluded.']];
+ s.getRange('A7:K7').values=[['Model','MPS allocation','Mean TEST SRCC','Time /16 (ms)','Energy /16 (J)','Time ratio vs optical','Energy ratio vs optical','Block only /16 (ms)','Internal gap /16 (ms)','Repeats','Deployment precision']];
+ s.getRange('A7:K7').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:42,wrapText:true,horizontalAlignment:'center'};
+ s.getRange('A8:K8').values=[['LightGen-II',null,.7977138739,10.245569591370225,1.1776895097085185,1,1,null,null,null,'Prior optical component reference']];
+ s.getRange('A8:K8').format.fill='#EEE6F4';s.getRange('A8').format.font={name:'Arial',size:10,bold:true,color:'#7828A8'};
+ const headers=['Model','MPS allocation','Repeat','Video batch','Native-block seconds','Nonpreprocessing gap seconds','Integrated GPU energy (J)','Host proxy (W)','Cost videos','558TEST SRCC','558TEST PLCC','Time /16 (ms)','Energy /16 (J)','Visible SMs','Wall-window busy (%)','Report source','Report SHA256','Identity SHA256','Parameter dtypes','Readout dtypes','Checkpoint SHA256','Completed (+08:00)','Source commit'];
+ t.getRange('A1:W1').values=[headers];t.getRange('A1:W1').format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:42,wrapText:true,horizontalAlignment:'center'};
+ let tr=2;const bindings=[];
+ for(const [i,p]of data.points.entries()){
+  const indices=[];
+  for(const r of p.repeats){
+   // Excel dates have no timezone. Preserve the Beijing wall-clock tuple.
+   const completedBeijing=new Date(r.completed_at_beijing.replace('+08:00','Z'));
+   t.getRange(`A${tr}:W${tr}`).values=[[names[p.model],p.resource_cap/100,r.repeat,1,r.compute_only_time16_ms/80,r.nonpreprocessing_gap16_ms/80,r.gpu_energy_j,338.2,200,r.srcc,r.plcc,null,null,r.visible_sms,r.actual_busy_percent/100,r.source,r.source_sha256,r.identity_sha256,r.parameter_dtypes.join(', '),r.readout_dtypes.join(', '),r.checkpoint_sha256,completedBeijing,r.source_commit]];
+   t.getRange(`L${tr}:M${tr}`).formulas=[[`=(E${tr}+F${tr})*16000/I${tr}`,`=(H${tr}*(E${tr}+F${tr})+G${tr})*16/I${tr}`]];
+   t.getRange(`A${tr}:U${tr}`).format.rowHeight=25;t.getRange(`A${tr}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};indices.push(tr++);
+  }
+  const r=9+i,cols=c=>indices.map(n=>`'Trial data'!${c}${n}`).join(',');
+  s.getRange(`A${r}:K${r}`).values=[[names[p.model],p.resource_cap/100,null,null,null,null,null,null,null,3,['qwen','glm'].includes(p.model)?'BF16; FP32 readout':p.model==='clip'?'FP16 autocast; FP32 readout (mixed parameters)':'FP16 autocast; FP32 parameters/readout']];
+  s.getRange(`C${r}:I${r}`).formulas=[[`=AVERAGE(${cols('J')})`,`=(SUM(${cols('E')})+SUM(${cols('F')}))*16000/SUM(${cols('I')})`,`=SUMPRODUCT('Trial data'!M${indices[0]}:M${indices[2]},'Trial data'!I${indices[0]}:I${indices[2]})/SUM(${cols('I')})`,`=D${r}/$D$8`,`=E${r}/$E$8`,`=SUM(${cols('E')})*16000/SUM(${cols('I')})`,`=SUM(${cols('F')})*16000/SUM(${cols('I')})`]];
+  s.getRange(`A${r}:K${r}`).format={fill:Math.floor(i/2)%2===0?'#F1F5F8':'#FFFFFF',rowHeight:34};s.getRange(`A${r}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};bindings.push({p,r});
+ }
+ const notes=[
+  'MPS 50/100% are configured resource allocations, not measured 50/100% GPU busy time.',
+  'Each cap has three full 558-video evaluations. No copied accuracy score or highest-repeat selection.',
+  'All 200 cold videos and 199 internal gaps are retained. Terminal post-output handling is excluded.',
+  'Energy integrates raw board power over the same charged intervals. The 338.2 W host proxy is added once.',
+  'Legacy first-block hook is unchanged; pending asynchronous frontend work is not newly drained.',
+  'DS/Kimi resident-repeat observations are excluded from this new distinct-video comparison.',
+  'Optical values retain the prior component-cost reference; they are not a new matched wall-clock run.',
+  'Historical Qwen B1: 1188.386146 ms, 462.113401 J, SRCC 0.7663428037. Preserved; not plotted as this run.',
+  'Raw wall-window busy includes excluded preprocessing. Board energy uses driver-averaged NVML samples.',
+  'The first native block is a Transformer block for Qwen/GLM/CLIP; YOLO starts at its first convolution.',
+  'Frozen preselected heads. TEST development metrics, no validation split, no new checkpoint selection.'
+ ];
+ notes.forEach((text,i)=>{s.getRange('A'+(20+i)).values=[[text]];s.getRange(`A${20+i}:K${20+i}`).format.rowHeight=23;});
+ s.getRange('A:A').format.columnWidth=26;s.getRange('B:J').format.columnWidth=18;s.getRange('K:K').format.columnWidth=43;
+ s.getRange('K9:K16').format.wrapText=true;
+ s.getRange('J9:J16').format.horizontalAlignment='center';
+ s.getRange('B9:B16').setNumberFormat('0%');s.getRange('C8:C16').setNumberFormat('0.000000');s.getRange('D8:E16').setNumberFormat('#,##0.000');s.getRange('F8:G16').setNumberFormat('0.00"×"');s.getRange('H9:I16').setNumberFormat('0.000');s.getRange('J9:J16').setNumberFormat('0');
+ t.getRange('A:A').format.columnWidth=25;t.getRange('B:O').format.columnWidth=20;t.getRange('P:W').format.columnWidth=78;t.getRange('P2:W25').format.wrapText=true;t.getRange('P2:W25').format.rowHeight=54;
+ t.getRange('S2:W29').format.font={name:'Arial',size:10,color:'#263747'};
+ t.getRange('A1:W29').format.verticalAlignment='center';t.getRange('V2:V25').setNumberFormat('yyyy-mm-dd hh:mm:ss');
+ t.getRange('E2:M25').setNumberFormat('0.000000');for(const c of ['C','D','I','N'])t.getRange(`${c}2:${c}25`).setNumberFormat('0');for(const c of ['B','O'])t.getRange(`${c}2:${c}25`).setNumberFormat('0.00%');t.freezePanes.freezeRows(1);t.freezePanes.freezeColumns(2);
+ t.getRange('A28:D29').values=[['Reference','Time /16 (ms)','Energy /16 (J)','SRCC'],['LightGen-II',optical.time_ms,optical.energy_j,optical.srcc]];
+ t.getRange('P28:Q29').values=[['Optical reference source','Optical reference SHA256'],[path.relative(repo,opticalSource).replaceAll('\\','/'),crypto.createHash('sha256').update(await fs.readFile(opticalSource)).digest('hex')]];
+ for(const range of ['A28:D28','P28:Q28'])t.getRange(range).format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:32,wrapText:true};
+ t.getRange('P29:Q29').format={wrapText:true,rowHeight:54};t.getRange('B29:D29').setNumberFormat('0.000000');
+ s.getRange('C8:E8').formulas=[["='Trial data'!D29","='Trial data'!B29","='Trial data'!C29"]];
+ function verify(w){const ss=w.worksheets.getItem('Plot data');for(const {p,r}of bindings)for(const [c,k]of [['C','srcc'],['D','time16_ms'],['E','energy16_j']])if(Math.abs(ss.getRange(c+r).values[0][0]-p[k])>1e-7)throw Error('Mismatch '+c+r);}
+ book.recalculate();verify(book);const before=t.getRange('E2').values[0][0];t.getRange('E2').values=[[before*1.01]];book.recalculate();if(s.getRange('D9').values[0][0]===data.points[0].time16_ms)throw Error('Recalculation failed');t.getRange('E2').values=[[before]];book.recalculate();verify(book);
+ const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1200})).ndjson;if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
+ console.log((await book.inspect({kind:'table',range:'Plot data!A7:K10',include:'values,formulas',tableMaxRows:4,tableMaxCols:11,maxChars:2300})).ndjson);
+ for(const [sheetName,range,name]of [['Plot data','A1:K31','dataset_once_summary'],['Trial data','A1:O8','dataset_once_trials'],['Trial data','P1:Q4','dataset_once_sources'],['Trial data','R1:U4','dataset_once_identities'],['Trial data','V1:W4','dataset_once_dates'],['Trial data','A28:D29','dataset_once_optical'],['Trial data','P28:Q29','dataset_once_optical_source']]){if(process.argv.includes('--format-fix')&&!['dataset_once_summary','dataset_once_identities','dataset_once_dates'].includes(name))continue;const blob=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await blob.arrayBuffer()));}
+ await(await SpreadsheetFile.exportXlsx(book)).save(output);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(output)));
+ await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),conditions:8,repeats:24,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
+ try{await fs.rename(output+'.inspect.ndjson',path.join(root,'dataset_once_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
+ console.log(JSON.stringify({file:output,conditions:8,repeats:24}));
 }
 const raw=book.worksheets.add('Measurements');
 raw.showGridLines=false;

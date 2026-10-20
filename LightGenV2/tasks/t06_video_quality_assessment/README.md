@@ -1,5 +1,30 @@
 # T06 视频质量评价
 
+## 2026-10-21 闭环：不同视频、零预热MPS四模型补测完成
+
+本轮只测实验室40GB/250W A100的Qwen/GLM/CLIP/YOLO，固定B1和原部署精度，
+MPS100/50各三轮，共8条件/24完整fresh-process测量。每轮原序558 TEST独立SRCC，
+前200不同视频做成本；没有推理预热，首冷样本保留。24轮逐样本、时间区间、原始功率、
+原PT/官方资产/划分及源码身份已独立重算通过，无训练、Graph或新精度转换。
+
+canonical run为runs/simulation/lgvq_mps_dataset_once_a100_20261020；原始243文件
+26,501,910字节及2份启动控制已逐SHA备份本地。suite complete且private MPS释放，
+00:51北京时间只读核查父3938325/MPS3939744/末worker104528均已退出，A100为
+0%/14MiB，无compute PID；释放核验保留release_verification.json。没有定时监督任务。
+
+本轮计入旧首计算块入口到GPU评分输出及输出到下一预处理开始的内部间隔，每次外部
+decode/crop/processor/H2D和model-call preblock扣除；前200共199段间隔，末输出后不计。
+原host hook未新增排空GPU前端队列的同步，不冒称严格分离每个异步GPU前端尾部。
+T16与E16由同一计入区间计算，能耗为板卡功率积分加338.2W主机代理的估算。
+三轮全部留存、功率250ms支持阈值不变；MPS配额不是GPU忙碌率，图上不标GPU利用率。
+
+原报告目录交付LGVQ_MPS_dataset_once_comparison.xlsx（8条件、24轮及公式/来源）、
+mps_dataset_once_plot_data.csv及mps_dataset_once_comparison时间/能耗/配对图，
+两sheet重算、扰动恢复、重导入和显示核查通过。方法、完整数值和两图说明见
+[原报告最新段落](../../reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/README.md)。
+旧Qwen1188.386146ms/462.113401J及此前resident/八视图表原样保留；DS/Kimi不重测，
+也不把其旧驻留重复点混入这版不同视频图。光学点继续明确标为旧组件成本参考。
+
 ## 2026-10-20 23时新授权：不同视频、零预热、MPS两配额补测
 
 用户确认不同视频依次推理、无预热首批保留，同时计入输出到下一批次的非预处理间隔。

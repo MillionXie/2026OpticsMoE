@@ -1,25 +1,168 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## Measurement revision in progress: cold, distinct-video MPS runs
+## Current comparison: cold, distinct-video MPS measurements, 20–21 October 2026
 
-The newly requested comparison uses different TEST videos in order, zero inference
-warmup, retained first samples, and B1 at both MPS allocations. Only Qwen, GLM,
-CLIP and YOLO are being remeasured. The twelve-condition selected workbook and
-figures immediately below remain the earlier **resident-repeat protocol**; they
-must not be represented as matching the historical dataset-once Qwen B1 anchor.
-They are preserved rather than silently replaced with partially completed results.
+The four laboratory baselines were remeasured at a fixed video batch size of one
+under 100% and 50% MPS resource allocations. All eight conditions and 24 independent
+process runs are complete. The [editable plotting workbook](LGVQ_MPS_dataset_once_comparison.xlsx)
+contains the summary, all 24 trial observations, calculation formulas and source
+identities. The [unrounded plotting data](mps_dataset_once_plot_data.csv) include
+all nine plotted points, separating the retained optical reference from the eight
+new electronic conditions. The new [time panel](mps_dataset_once_comparison_latency.png),
+[energy panel](mps_dataset_once_comparison_energy.png) and
+[paired display](mps_dataset_once_comparison_pair.png) use only this dataset.
+The earlier resident-repeat workbooks and figures below are preserved as
+different-protocol historical evidence, not additional points in the new figure.
 
-The new canonical run is `lgvq_mps_dataset_once_a100_20261020`. It retains three
-fresh-process full558 evaluations per setting and uses the first200 distinct
-videos for costs. Charged intervals are each legacy first-block-entry to GPU MOS
-plus output to the next external-preprocessing start. Each next decode, crop,
-processor, H2D and model-call preblock interval is excluded. Only199 internal gaps
-enter the first200 cost statistic. Pure block cost remains separate for comparison
-with the protected Qwen anchor. Power is integrated over the same charged intervals.
-No DS/Kimi run or new rental is authorized in this revision; their previous resident
-points cannot be mixed into a supposedly uniform new dataset-once figure.
+### Measurement method
 
-## Current figure selection: MPS with original deployment precision
+Qwen3-VL-2B, GLM-4.6V-Flash, CLIP ViT-B/32 and YOLO11s were evaluated on the same
+laboratory NVIDIA A100-PCIE-40GB at its unchanged 250-W power limit
+(UUID GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55). The original split comprised 2,250
+training and 558 TEST videos, with no validation split; the manifest SHA256 was
+607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc.
+Each condition used three fresh processes. In each process, all 558 TEST videos
+were evaluated in the original order, and the first 200 different videos supplied
+the cost statistic. The same 200-video subset was replayed once per process,
+not replaced by repeated inference on one resident video. No inference warmup or
+dummy forward preceded sample zero, and the first cold sample was retained.
+
+Original four-frame decoding, cropping, input resolution, prompts, frozen heads
+and native forward arithmetic were retained. Qwen and GLM used BF16 backbones
+with FP32 quality readout. CLIP retained its mixed FP16/FP32 parameter profile and
+FP16 autocast, and YOLO retained FP32 parameters with FP16 autocast; both readouts
+were FP32. Their original FP16 feature-storage round-trip was also retained.
+No weights were trained, no checkpoint was selected in this measurement, and no
+CUDA Graph was introduced. SRCC was recalculated from all 558 predictions at each
+allocation and repeat, rather than copied between conditions. These are frozen,
+previously selected-head TEST development metrics, not a new independent
+validation-set claim.
+
+MPS resource caps were set before each client's CUDA initialization. The
+client-reported SM counts were 108 and 54 for the 100% and 50% settings, respectively.
+These percentages denote resource caps, not a measured GPU time-busy fraction.
+There was no deliberate inter-inference sleep in this MPS experiment. Each video
+was decoded, prepared and transferred separately before its native model call.
+
+For video i, p_i denotes the start of external preprocessing, a_i the model-call
+entry after preprocessing and H2D synchronization, s_i the original first-block
+host-timer entry, and e_i the synchronized final GPU quality-score output.
+The charged interval union included every [s_i,e_i] and the 199 internal gaps
+[e_i,p_(i+1)] among the first 200 videos. Every [p_i,a_i] decode/crop/processor/H2D
+interval and [a_i,s_i] model-call preblock interval was excluded. Thus, output
+handling and nonpreprocessing dispatch gaps were counted, but the next video's
+preprocessing was not accidentally charged. Handling after the 200th output was
+excluded because there was no next video inside the cost subset.
+
+```text
+C = sum_i=1..200(e_i - s_i) + sum_i=1..199(p_(i+1) - e_i), in seconds
+T16 = C * 16000 / 200, in milliseconds
+E16 = [338.2 * C + integral_over_charged_intervals(P_GPU(t) dt)] * 16 / 200, in joules
+```
+
+The first block was the original visual Transformer block for Qwen, GLM and CLIP,
+and the first convolution for YOLO. The legacy host-hook placement was preserved:
+no new synchronization was inserted inside that hook to drain pending frontend
+GPU work. Accordingly, this is the original block-entry wall-time convention,
+not a new isolated-kernel measurement that claims to remove every queued GPU
+frontend tail. Pure block cost, nonpreprocessing gaps, excluded preprocessing and
+the complete wall span are retained separately.
+
+An independent CPU observer retained every raw NVML row at a nominal 50-ms polling
+interval. Board power was integrated over the same charged interval union, with
+the retained 338.2-W host-power proxy added once. The 250-ms maximum power-support
+age check was not relaxed. NVML power is driver-averaged rather than a calibrated
+instantaneous per-call meter, so the energy values are estimates. Wall-window
+GPU busy includes excluded preprocessing; it is an audit field, not a substitute
+for the MPS allocation and not a utilization value attached to these cost points.
+
+Three-trial costs were pooled by actual charged time, integrated energy and
+completed evaluations; all three trials had 200 cost evaluations. Mean SRCC was
+computed across the three full 558 evaluations. No fastest, highest-utilization
+or best-accuracy repeat was selected. The quantities below are 16-video
+equivalents normalized from200 videos, not the latency of a GPU batch of 16 and
+not full input-video-to-output response time.
+
+### Complete numerical report
+
+| Model | MPS allocation | Mean TEST SRCC | Time per 16-video equivalent (ms) | Estimated energy per 16-video equivalent (J) |
+|---|---:|---:|---:|---:|
+| LightGen-II, retained reference | Not applicable | 0.797714 | 10.246 | 1.178 |
+| Qwen3-VL-2B | 100% | 0.766343 | 1254.223 | 485.175 |
+| Qwen3-VL-2B | 50% | 0.765281 | 1348.265 | 528.863 |
+| GLM-4.6V-Flash | 100% | 0.809262 | 1863.815 | 823.607 |
+| GLM-4.6V-Flash | 50% | 0.809024 | 2648.488 | 1206.537 |
+| CLIP ViT-B/32 | 100% | 0.725256 | 174.976 | 66.086 |
+| CLIP ViT-B/32 | 50% | 0.725170 | 178.146 | 67.243 |
+| YOLO11s | 100% | 0.701597 | 380.349 | 143.973 |
+| YOLO11s | 50% | 0.701597 | 389.371 | 147.359 |
+
+### Figure descriptions
+
+**Time panel.** Temporal quality, measured by Spearman's rank correlation
+coefficient (SRCC), is plotted against 16-video-equivalent processing time for the
+four frozen baselines at 100% and 50% MPS allocation. Each electronic point
+summarizes three fresh-process evaluations without inference warmup. The timing
+includes the original first-block-to-GPU-output interval and nonpreprocessing
+inter-video gaps, while excluding each video's input preparation. Filled and
+open markers indicate 100% and 50% allocations, respectively. Each model retains
+one marker geometry and its two conditions are connected. Overlapping marks are
+drawn at their true coordinates, without jitter. The LightGen-II star retains the
+previous 10.245570-ms component-cost reference at SRCC 0.797714; it is not a newly
+matched wall-clock measurement.
+
+**Energy panel.** The same quality measurements are plotted against estimated
+16-video-equivalent energy. Each estimate combines same-interval A100 board-power
+integration with the 338.2-W host proxy, and includes the measured nonpreprocessing
+gaps once. Marker identities and allocation encoding match the time panel.
+The LightGen-II star retains the prior 1.177690-J component-cost reference.
+The smaller separation between CLIP's two conditions is retained rather than
+forced into a proportional slowdown. Neither panel labels MPS allocation as GPU
+utilization or asserts a new whole-system end-to-end energy measurement.
+Each individual panel is 78 mm wide; PNG 600 dpi and editable SVG/PDF exports are
+available beside these files.
+
+### Provenance and interpretation boundary
+
+The canonical run is
+`LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_a100_20261020`.
+All 24 prediction files, timestamped call records, raw telemetry, model/PT/split
+identities and process audits passed the independent
+`reports/audit_mps_dataset_once.py` replay. A 243-file, 26,501,910-byte SHA-verified
+backup and two launch-control files are retained locally. The parent, private
+MPS server and last worker were confirmed absent; the A100 showed 0% busy and 14 MiB
+after release. The measurement entry was published as 54a0aa9a before execution;
+later unrelated main commits were checked by per-file SHA rather than treated as
+algorithm changes.
+
+The historical Qwen B1 anchor remains 1188.3861464262009 ms,
+462.1134010767563 J and SRCC 0.7663428036522781. It is not overwritten or relabelled
+as this new measurement. DeepSeek-VL2 and Kimi were excluded from this revision:
+their prior resident-repeat points cannot be mixed into a supposedly uniform
+cold distinct-video comparison. The retained optical values also keep their
+earlier component-cost boundary. Relative costs in the workbook are therefore
+conditional on these declared boundaries, not a new matched full-pipeline claim.
+
+中文核对：本版是四模型、固定B=1、原部署精度、MPS资源配额两档。每轮不同视频顺序推理，
+无推理预热，首样本保留；计入首计算块到GPU评分输出及非预处理间隔，逐次扣除输入准备。
+完整数据在表内，逐轮证据在canonical run内。三个重复全部保留，能耗为同区间功率积分加
+主机代理的估算；旧Qwen定稿、DS/Kimi历史与光学参考不冒充本轮新测结果。
+
+### Evidence check for authors
+
+| Statement | Evidence | Boundary |
+|---|---|---|
+| Both MPS allocations were applied at fixed B=1 | Per-client 108/54 SM identities and 24 retained full 558 runs | Allocation is not measured GPU busy |
+| Input preparation was excluded and nonpreprocessing gaps included | Per-video p/a/s/e records and independent 24-trial interval replay | Legacy host-hook semantics, not isolated GPU kernels |
+| The displayed costs are reproducible from retained measurements | Raw board-power rows, 338.2-W proxy, call CSVs and workbook formulas | Energy estimate, not direct whole-system wall-power metering |
+| The optical star and historical Qwen anchor were retained | Original source/SHA references and separate new output files | Neither is relabelled as a fresh matched measurement |
+
+The full numerical report belongs in Source Data. The two figure paragraphs
+provide reading definitions, and the timing/power details above belong in Methods
+or supplementary methods. No mechanism for the model-specific scaling or
+statistical significance is claimed from these three descriptive repeats.
+
+## Historical resident-repeat selection: MPS with original deployment precision
 
 The current selected comparison is [editable plot data](LGVQ_MPS_deployed_comparison.xlsx),
 with [processing time](mps_deployed_comparison_latency.png),
