@@ -26,8 +26,28 @@ class ConditionedHeadContract(unittest.TestCase):
         self.assertIn("tr['metric']['accuracy'] >= 0.8",text)
         self.assertLess(text.index("tr['metric']['accuracy'] >= 0.8"),text.index('independent_pair_direction(v,'))
         fit=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='fit');fit_text=ast.unparse(fit)
-        self.assertIn("independent_pair_admitted(a, cfg) and tr['metric']['accuracy'] >= 0.8",fit_text)
-        self.assertLess(fit_text.index("independent_pair_admitted(a, cfg) and tr['metric']['accuracy'] >= 0.8"),fit_text.index('TRAIN_mixup_views('))
+        self.assertIn("TRAIN_mixup_admitted(a, cfg) and tr['metric']['accuracy'] >= 0.8",fit_text)
+        self.assertLess(fit_text.index("TRAIN_mixup_admitted(a, cfg) and tr['metric']['accuracy'] >= 0.8"),fit_text.index('TRAIN_mixup_views('))
+
+    def test_response_mixup_scope_does_not_open_independent_pair_or_dropout(self):
+        tree=ast.parse(SOURCE.read_text());nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('independent_pair_admitted','TRAIN_mixup_admitted')]
+        env={};exec(compile(ast.Module(body=nodes,type_ignores=[]),'<mixup-scope>','exec'),env)
+        cfg=json.loads((TASK/'lab_caltech20_DVP_L6_response_TRAINmixup_profile_20261021.json').read_text())
+        args=SimpleNamespace(depth=6,prefix=2,attempt='response_20261020')
+        self.assertTrue(env['TRAIN_mixup_admitted'](args,cfg))
+        self.assertFalse(env['independent_pair_admitted'](args,cfg))
+        for depth,prefix in ((4,4),(6,1),(6,3)):
+            self.assertFalse(env['TRAIN_mixup_admitted'](SimpleNamespace(depth=depth,prefix=prefix,attempt='response_20261020'),cfg))
+        self.assertFalse(env['TRAIN_mixup_admitted'](args,dict(cfg,response_TRAIN_mixup_scope=None)))
+        self.assertFalse(env['TRAIN_mixup_admitted'](args,dict(cfg,targets={'6':314})))
+        fit=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='fit')
+        gate=next(n for n in ast.walk(fit) if isinstance(n,ast.If) and 'TRAIN_feature_mixup_repeats' in ast.unparse(n.test))
+        predicate=compile(ast.Expression(next(n for n in gate.body if isinstance(n,ast.Assert)).test),'<response-mixup-guard>','eval')
+        for accuracy,size,dropout,allowed in ((.8,1600,0,True),(.79,1600,0,False),(.99,1200,0,False),(.99,1600,1,False)):
+            scope=dict(cfg,TRAIN_feature_dropout_repeats=dropout)
+            self.assertEqual(eval(predicate,dict(env,a=args,labels=[0]*size,cfg=scope,tr={'metric':{'accuracy':accuracy}})),allowed)
+        base=json.loads((TASK/'lab_caltech20_DVP_TRAINfeature_mixup_profile_20261020.json').read_text())
+        self.assertEqual({k:v for k,v in cfg.items() if k not in ('scope','response_TRAIN_mixup_scope')},{k:v for k,v in base.items() if k!='scope'})
 
     def test_objective_cannot_take_test_inputs(self):
         tree = ast.parse(SOURCE.read_text())

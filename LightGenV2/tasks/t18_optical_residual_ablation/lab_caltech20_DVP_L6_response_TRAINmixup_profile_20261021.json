@@ -1,0 +1,10 @@
+{
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "maximum_steps":240,"maximum_fit_seconds":120,
+  "label_smoothing":0.02,"correct_TRAIN_teacher_KL":0.02,"parameter_anchor":0.02,
+  "TRAIN_feature_mixup_alpha":0.4,"TRAIN_feature_mixup_repeats":3,"TRAIN_feature_mixup_seed":73,
+  "targets":{"4":314,"6":322},"final_targets":{"4":342,"6":350},
+  "response_TRAIN_mixup_scope":{"depth":6,"prefix":2,"minimum_TRAIN_accuracy":0.8},
+  "scope":"One bounded original-head TRAIN-only feature MixUp comparison on fresh measured L6 router/E1 prefix2, based on independently audited TRAIN1539/1600 versus TEST291/411 after original suffix training/readout/binary refinement. Preserve the higher same-prefix audited incumbent; no claimed gain from a lower initialization. Reuse published final-prefix MixUp numeric recipe exactly: clean1600 records plus3 deterministic Beta(.4,.4) TRAIN feature/soft-label/parent-probability views, seed73, anchor.02, originalTRAIN3141 prior,240LBFGSsteps/120fitseconds. No new independent examples or CCD; evaluation original5140 head with all nonhead frozen and no inference MixUp. Explicit response-prefix admission only for this TRAIN augmentation after >=80% native TRAIN fit; independent-pair/dropout/native5150 admission stays unchanged. No TEST derivatives/teacher/augmentation/VALID, seed or coefficient grid, camera/settings/LUT/coordinates/structure changes, or automatic repeat. Require exact current parent/full411/data/frozen and feature-body proof. G1 blocked below322; final350 separate. Publish/tests/Git sync before run, no active head worker hotpatch."
+}

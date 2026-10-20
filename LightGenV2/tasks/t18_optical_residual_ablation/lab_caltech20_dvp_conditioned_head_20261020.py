@@ -646,6 +646,14 @@ def independent_pair_admitted(a,cfg):
         and cfg['targets']['6']==322 and cfg['final_targets']['6']==350)
 
 
+def TRAIN_mixup_admitted(a,cfg):
+    """Separate opt-in for TRAIN-only augmentation, not independent pair scope."""
+    return independent_pair_admitted(a,cfg) or (
+        getattr(a,'attempt',None)=='response_20261020' and a.depth==6 and a.prefix==2
+        and cfg.get('response_TRAIN_mixup_scope')=={'depth':6,'prefix':2,'minimum_TRAIN_accuracy':.8}
+        and cfg['targets']['6']==322 and cfg['final_targets']['6']==350)
+
+
 def pair_fit(a):
     """Published antisymmetric or independent two-row TRAIN directions."""
     cpu_fit_admission(a)
@@ -785,7 +793,7 @@ def fit(a):
     if cfg.get('TRAIN_feature_dropout_repeats',0):
         assert ((a.depth==4 and a.prefix==5) or (getattr(a,'attempt',None)=='strict8pp_20261020' and a.prefix<a.depth+1 and independent_pair_admitted(a,cfg) and tr['metric']['accuracy']>=.8)) and len(labels)==1600
     if cfg.get('TRAIN_feature_mixup_repeats',0):
-        assert (a.prefix==a.depth+1 or (independent_pair_admitted(a,cfg) and tr['metric']['accuracy']>=.8)) and len(labels)==1600 and not cfg.get('TRAIN_feature_dropout_repeats',0)
+        assert (a.prefix==a.depth+1 or (TRAIN_mixup_admitted(a,cfg) and tr['metric']['accuracy']>=.8)) and len(labels)==1600 and not cfg.get('TRAIN_feature_dropout_repeats',0)
         z,labels,teacher,keep,TRAIN_views=TRAIN_mixup_views(z,labels,teacher,cfg)
     else:
         z,labels,teacher,TRAIN_views=TRAIN_feature_views(z,labels,teacher,cfg)
