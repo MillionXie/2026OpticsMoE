@@ -60,9 +60,9 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     for name,p in model.named_parameters():p.requires_grad_(name in allowed)
     params=[p for p in model.parameters() if p.requires_grad];assert sum(p.numel() for p in params)==5150
     opt=torch.optim.AdamW([dict(params=list(model.linear.parameters()),lr=fit['head_lr']),dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)],weight_decay=fit['weight_decay'])
-    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,SAM_updates=0,eval_augmented_batches=0)
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,SAM_updates=0,eval_augmented_batches=0)
     def dropout(module,inputs):
-        if active['TRAIN']:
+        if active['TRAIN'] and fit['feature_dropout_p']>0:
             counts['TRAIN_dropout_calls']+=1;return (F.dropout(inputs[0],p=fit['feature_dropout_p'],training=True),)
     hook=model.linear.register_forward_pre_hook(dropout);rng=np.random.default_rng(73);start=time.monotonic()
     try:
@@ -72,6 +72,8 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                 ix=order[begin:begin+8];v=torch.from_numpy(np.asarray(cached['train'][ix]).copy()).cuda();ccd=torch.from_numpy(np.asarray(fields['3']['train'][ix]).copy()).cuda().float()
                 # Fixed noise per update; the probe uses the identical view and RNG.
                 gain=1+fit['CCD_gain_sigma']*torch.randn((len(ix),1,1),device='cuda');noisy=(ccd*gain+fit['CCD_additive_sigma_DN']*torch.randn_like(ccd)).clamp(0,255)
+                if fit.get('CCD_pixel_dropout_p',0)>0:
+                    noisy=F.dropout(noisy,p=fit['CCD_pixel_dropout_p'],training=True).clamp(0,255);counts['TRAIN_CCD_pixel_dropout_batches']+=1
                 optical=model.nonlinear(noisy,'global');labels=train_y[ix].cuda();teach=teacher[ix].cuda();sample_weight=torch.tensor(importance[ix],dtype=torch.float32,device='cuda');active['TRAIN']=True
                 def objective():
                     z=tail(model.electronic[3],model.linear,model.effective_alpha(3),v,optical)

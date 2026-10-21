@@ -25,4 +25,5 @@ class OfflineSuffix(unittest.TestCase):
         for forbidden in ('Bench(','Camera(','acquire(','Start('):self.assertNotIn(forbidden,s)
         self.assertIn("==5150",s);self.assertIn('torch.equal(p.detach(),v)',s);self.assertIn('torch.cuda.set_rng_state(gpu_rng)',s)
         c=json.loads((HERE/'lab_caltech20_L4_postCCD_SAM_profile_20261021.json').read_text());self.assertEqual(c['parent_correct'],284);self.assertLessEqual(c['tail']['fit_seconds'],600)
+        c=json.loads((HERE/'lab_caltech20_L4_postCCD_pixel_SAM_profile_20261021.json').read_text());self.assertEqual(c['tail']['feature_dropout_p'],0);self.assertEqual(c['tail']['CCD_pixel_dropout_p'],.002)
 if __name__=='__main__':unittest.main()
