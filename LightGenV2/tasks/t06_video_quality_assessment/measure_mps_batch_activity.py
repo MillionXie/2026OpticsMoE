@@ -34,11 +34,11 @@ def configuration():
     for model,batches in c['candidate_batches'].items():
         assert batches == sorted(set(batches)) and batches[-1] <= 16
         if model in c.get('run_models',[]) and c.get('fixed_comparison_batch'):
-            assert batches == [c['fixed_comparison_batch']] == [10]
+            assert batches == [c['fixed_comparison_batch']] and c['fixed_comparison_batch'] in (6,10)
         else:
             assert batches[0] == 1
     if 'run_models' in c:
-        assert c['run_models']==['clip','yolo'] and c['fixed_comparison_batch']==10
+        assert c['run_models']==['clip','yolo'] and c['fixed_comparison_batch'] in (6,10)
     return c
 
 
@@ -437,7 +437,7 @@ def suite(args):
             engine.daemon(True)
             active = True
             for model in c.get('run_models',c['models']):
-                if args.selection_profile in ('resident','batch10'):
+                if args.selection_profile in ('resident','batch10','batch6'):
                     resident = run(model,1,100,'resident',1)
                     chosen = c.get('fixed_comparison_batch') or resident['selected_batch']
                     if chosen is None:
@@ -499,7 +499,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phase',choices=('suite','worker'),required=True)
     p.add_argument('--mode',choices=('pilot','cost','resident'))
-    p.add_argument('--selection-profile',choices=('cold','resident','batch10'),default='cold')
+    p.add_argument('--selection-profile',choices=('cold','resident','batch10','batch6'),default='cold')
     p.add_argument('--model',choices=('clip','yolo','qwen','glm'))
     p.add_argument('--batch',type=int)
     p.add_argument('--cap',type=int,choices=(100,50))
@@ -519,6 +519,10 @@ def main():
         ROOT = ROOT/'batch10_01'
         PIPE += '_batch10_01'
         CONFIG = TASK/'configs/baselines/mps_batch10_comparison_20261021.json'
+    elif a.selection_profile == 'batch6':
+        ROOT = ROOT/'batch6_01'
+        PIPE += '_batch6_01'
+        CONFIG = TASK/'configs/baselines/mps_batch6_comparison_20261021.json'
     if not 0 < a.deadline-time.time() <= configuration()['maximum_suite_s']:
         raise ValueError('Finite two-hour maximum required')
     suite(a) if a.phase == 'suite' else worker(a)

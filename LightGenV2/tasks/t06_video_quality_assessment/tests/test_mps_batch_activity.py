@@ -56,3 +56,15 @@ def test_batch10_comparison_is_fixed_only_clip_yolo_without_other_models(monkeyp
     assert c['candidate_batches']['clip']==c['candidate_batches']['yolo']==[10]
     assert c['explicit_warmup_forwards']==0 and c['paired_caps']==[100,50]
     assert (c['warmup_s'],c['measurement_s'],c['queue_depth'])==(5,30,8)
+
+
+def test_batch6_comparison_preserves_boundaries_and_scope(monkeypatch):
+    monkeypatch.setattr(module,'CONFIG',module.TASK/'configs/baselines/mps_batch6_comparison_20261021.json')
+    c=module.configuration()
+    assert c['run_models']==['clip','yolo'] and c['fixed_comparison_batch']==6
+    assert c['candidate_batches']['clip']==c['candidate_batches']['yolo']==[6]
+    assert c['paired_caps']==[100,50] and c['explicit_warmup_forwards']==0
+    assert (c['warmup_s'],c['measurement_s'],c['queue_depth'])==(5,30,8)
+    costs=[(a,b) for a,b in module.batches(6) if b<=200]
+    assert len(costs)==34 and costs[-1]==(198,200)
+    assert module.batches(6)[-1]==(554,558)
