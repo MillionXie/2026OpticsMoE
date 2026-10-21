@@ -38,5 +38,7 @@ class StatisticalReadout(unittest.TestCase):
             self.assertEqual(c['parents'][str(depth)]['correct'],284 if depth==4 else 287)
             self.assertEqual(c['targets'],{'4':288,'6':322})
             self.assertLessEqual(c['fit_seconds'],120)
+    def test_centered_vector_identity_contract(self):
+        c=json.loads((HERE/'lab_caltech20_DVP_parent_vector_centered_profile_20261021.json').read_text());self.assertTrue(c['center_common_logit']);self.assertEqual(c['steps'],120);self.assertEqual(c['parents']['4']['correct'],285)
 
 if __name__=='__main__':unittest.main()

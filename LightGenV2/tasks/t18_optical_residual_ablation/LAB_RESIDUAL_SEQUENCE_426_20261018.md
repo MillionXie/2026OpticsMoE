@@ -39,6 +39,14 @@ TRAIN-only original3141 prior/correctTRAIN KL, no TEST prior or gradient;
 max120LBFGS calls/120fit seconds, no grid. Profile
 `lab_caltech20_DVP_parent_vector_profile_20261021.json`; audited285/287 parents
 protected. This is not the rejected generative-statistical-head blending.
+TRAIN-only gauge diagnosis found L4 common-logit median4220.91 vs classSD2.48
+(L6 1.30 vs3.19). Raw per-class scaling is gauge-sensitive; corrected scalar
+training scales ONLY class-centered logits, delta-folded back into ORIGINAL
+Linear before each TEST selection. Identity is exactly original weights; no
+new inference centering module. One corrected same-coefficient120-call path,
+`lab_caltech20_DVP_parent_vector_centered_profile_20261021.json`; not a claim
+that common mode explains all optical/classification errors. Old negatives
+and original285/287 retained. Source-fold algebra tested with large common mode.
 
 User explicitly renews targeted L4/L6 improvement, L4>=288/411 first, L6
 overfitting reduction, all exposure/coordinates/LUT/model structure fixed. L2

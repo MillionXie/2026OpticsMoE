@@ -131,18 +131,21 @@ def joint_huber(torch,F,x,y,pw,pb,cfg,observe):
 def calibrate_parent_vector(torch,F,x,y,pw,pb,cfg,observe):
     """40 TRAIN-only scalars folded into existing20 Linear rows, no new layer."""
     z0=F.linear(x,pw,pb);target=(z0/cfg['temperature']).softmax(1).detach();keep=(z0.argmax(1)==y).double();prior=torch.tensor(cfg['original_TRAIN_counts'],dtype=x.dtype);prior/=prior.mean()
+    centered=cfg.get('center_common_logit',False);cw=pw-pw.mean(0);cb=pb-pb.mean();zc=z0-z0.mean(1,keepdim=True)
     logscale=torch.nn.Parameter(torch.zeros(20,dtype=x.dtype));bias=torch.nn.Parameter(torch.zeros(20,dtype=x.dtype));opt=torch.optim.LBFGS([logscale,bias],lr=.5,max_iter=1,line_search_fn='strong_wolfe');start=time.monotonic()
     def loss():
-        z=z0*logscale.exp()+bias-bias.mean();ce=F.cross_entropy(z,y,weight=prior);kl=F.kl_div((z/cfg['temperature']).log_softmax(1),target,reduction='none').sum(1)
+        z=(z0+(logscale.exp()-1)*zc if centered else z0*logscale.exp())+bias-bias.mean();ce=F.cross_entropy(z,y,weight=prior);kl=F.kl_div((z/cfg['temperature']).log_softmax(1),target,reduction='none').sum(1)
         return ce+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*(logscale.square().sum()+bias.square().sum())
     for step in range(cfg['steps']):
         def closure():opt.zero_grad();value=loss();value.backward();return value
         opt.step(closure)
         with torch.no_grad():
-            logscale.clamp_(-1.,1.);bias.clamp_(-2.,2.);ww=pw*logscale.exp()[:,None];bb=pb*logscale.exp()+bias-bias.mean()
+            logscale.clamp_(-1.,1.);bias.clamp_(-2.,2.)
+            ww=pw+(logscale.exp()-1)[:,None]*cw if centered else pw*logscale.exp()[:,None]
+            bb=(pb+(logscale.exp()-1)*cb if centered else pb*logscale.exp())+bias-bias.mean()
         stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_parent_vector_calibration',step=step,TRAIN_all1600=True,TRAIN_loss=float(loss().detach()),TRAIN_scalar_parameters=40,scale=logscale.exp().detach().tolist(),bias=bias.detach().tolist()))
         if stop or time.monotonic()-start>=cfg['fit_seconds']:break
-    return ww.detach(),bb.detach(),dict(TRAIN_prior_only=True,TRAIN_scalar_parameters=40,original_row_folding=True,no_covariance_from_TEST=True)
+    return ww.detach(),bb.detach(),dict(TRAIN_prior_only=True,TRAIN_scalar_parameters=40,original_row_folding=True,no_covariance_from_TEST=True,common_mode_centered_in_optimization=centered,identity_fold_bitwise=True,TRAIN_median_abs_common_logit=float(z0.mean(1).abs().median()))
 
 def protected_direction(torch,u,u0,x,reference,sign,lse,q,keep,weight,cfg):
     """All arguments are TRAIN statistics/tensors; no TEST derivative."""
@@ -261,7 +264,10 @@ def selftest():
     rows=[];ww,bb,samproof=regularized_sam(torch,F,x,y,parent_w,parent_b,dict(mixcfg,SAM_radius=.05),observe);assert len(rows)==2 and ww.shape==parent_w.shape
     rows=[];ww,bb,jointproof=joint_huber(torch,F,x,y,parent_w,parent_b,dict(mixcfg,margin=1.,huber_delta=1.,original_TRAIN_counts=counts.tolist()),observe);assert len(rows)==2 and ww.shape==parent_w.shape
     rows=[];ww,bb,vectorproof=calibrate_parent_vector(torch,F,x,y,parent_w,parent_b,dict(mixcfg,original_TRAIN_counts=counts.tolist()),observe);assert len(rows)==2 and ww.shape==parent_w.shape
-    print(json.dumps(dict(passed=True,TRAIN_only_scalar_fit=True,no_TEST_input_to_calibrate=True,original_Linear_shape=True,analytic_covariance=proof,protected_Huber_gradient_maxabs=error,coupled_Huber_gradient_maxabs=coupled_error,TRAIN_mixup=mixproof,TRAIN_SAM=samproof,TRAIN_joint_Huber=jointproof,TRAIN_parent_vector=vectorproof)),flush=True)
+    common=torch.randn(1,12,dtype=x.dtype)*1000;wp=parent_w+common;bp=parent_b+4000;sc=torch.linspace(.9,1.1,20,dtype=x.dtype);beta=torch.linspace(-.1,.1,20,dtype=x.dtype);dw=(sc-1)[:,None]*(wp-wp.mean(0));db=(sc-1)*(bp-bp.mean())+beta
+    direct=F.linear(x,wp,bp);fold=F.linear(x,wp+dw,bp+db);wanted=direct+(sc-1)*(direct-direct.mean(1,keepdim=True))+beta;fold_error=float((fold-wanted).abs().max());assert fold_error<1e-9
+    rows=[];ww,bb,centerproof=calibrate_parent_vector(torch,F,x,y,wp,bp,dict(mixcfg,original_TRAIN_counts=counts.tolist(),center_common_logit=True),observe);assert len(rows)==2
+    print(json.dumps(dict(passed=True,TRAIN_only_scalar_fit=True,no_TEST_input_to_calibrate=True,original_Linear_shape=True,analytic_covariance=proof,protected_Huber_gradient_maxabs=error,coupled_Huber_gradient_maxabs=coupled_error,TRAIN_mixup=mixproof,TRAIN_SAM=samproof,TRAIN_joint_Huber=jointproof,TRAIN_parent_vector=vectorproof,centered_vector_fold_error=fold_error,TRAIN_centered_vector=centerproof)),flush=True)
 
 def run(a):
     import numpy as np,torch
@@ -307,7 +313,7 @@ def run(a):
     bestw,bestb=pw.float().clone(),pb.float().clone();selected=0;history=[]
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=cfg,profile_SHA256=m.sha(a.profile),parent_PT_SHA256=chosen['SHA256'],parent_report_SHA256=m.sha(parent.parent/'report.json'),
         TRAIN=1600,TEST=411,VALID=0,data_SHA256=dm['sha256'],prefix_SHA256=cp['prefix_SHA256'],feature_files_SHA256=cp['feature_files_SHA256'],
-        covariance=proof,fit_method=method,pass_index=pass_index,maximum_total_passes=cfg.get('maximum_total_passes',1),TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,parameters_per_update=2 if method=='statistical_scalars' else 40 if method=='TRAIN_parent_vector' else 5140 if method in ('TRAIN_sameclass_mixup','TRAIN_SAM','TRAIN_joint_Huber') else 257,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
+        covariance=proof,fit_method=method,pass_index=pass_index,maximum_total_passes=cfg.get('maximum_total_passes',1),TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,parameters_per_update=2 if method=='statistical_scalars' else 40 if method in ('TRAIN_parent_vector','TRAIN_parent_vector_centered') else 5140 if method in ('TRAIN_sameclass_mixup','TRAIN_SAM','TRAIN_joint_Huber') else 257,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
     m.save(a.out/'protocol.json',protocol);start=time.monotonic()
     def observe(ww,bb,row):
         nonlocal best,bnll,bestw,bestb,selected
@@ -321,7 +327,7 @@ def run(a):
         elif method=='TRAIN_coupled_Huber':lastw,lastb,row_proof=coupled_huber_rows(torch,np,tr,te,pw,pb,dict(cfg,target=cfg['targets'][str(a.depth)]),observe)
         elif method=='TRAIN_SAM':lastw,lastb,row_proof=regularized_sam(torch,F,x,y,pw,pb,cfg,observe)
         elif method=='TRAIN_joint_Huber':lastw,lastb,row_proof=joint_huber(torch,F,x,y,pw,pb,cfg,observe)
-        elif method=='TRAIN_parent_vector':lastw,lastb,row_proof=calibrate_parent_vector(torch,F,x,y,pw,pb,cfg,observe)
+        elif method in ('TRAIN_parent_vector','TRAIN_parent_vector_centered'):lastw,lastb,row_proof=calibrate_parent_vector(torch,F,x,y,pw,pb,cfg,observe)
         else:
             assert method=='TRAIN_sameclass_mixup'
             lastw,lastb,row_proof=regularized_mixup(torch,F,x,y,pw,pb,cfg,observe)
