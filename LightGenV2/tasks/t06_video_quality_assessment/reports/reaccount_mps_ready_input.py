@@ -190,9 +190,72 @@ def build(include_batch8):
     return output,data,revised
 
 
+def replace_clip_only(prior,groups,resident):
+    """User-selected existing B10 display, with every non-CLIP point intact."""
+    data=deepcopy(prior)
+    for point in data['points']:
+        if point['model']!='clip':continue
+        cap=point['resource_cap'];group=groups[cap]
+        assert len(group)==3 and [r['repeat'] for r in group]==[1,2,3]
+        assert all(r['model']=='clip' and r['batch']==10 and r['resource_cap']==cap for r in group)
+        assert all(r['checkpoint_sha256']==point['repeats'][0]['checkpoint_sha256'] and
+            r['parameter_dtypes']==point['repeats'][0]['parameter_dtypes'] and
+            r['readout_dtypes']==point['repeats'][0]['readout_dtypes'] for r in group)
+        point.update(batch=10,repeats=group,time16_ms=statistics.mean(r['time16_ms'] for r in group),
+            energy16_j=statistics.mean(r['energy16_j'] for r in group),
+            srcc_repeats=[r['srcc'] for r in group],measured_srcc=statistics.mean(r['srcc'] for r in group),
+            resident_utilization_reference_percent=resident[cap],cost_boundary=PROTOCOL,
+            measurement_reuse='Existing21October CLIP B10 cold trials; prepared-input time and power replay reverified22October; no new GPU run')
+    reference=next(p for p in data['points'] if p['model']=='clip' and p['resource_cap']==100)
+    for point in data['points']:
+        if point['model']=='clip':
+            point.update(srcc=statistics.mean(reference['srcc_repeats']),accuracy_reference_repeats=reference['srcc_repeats'],
+                accuracy_reference_reports=[dict(source=r['source'],sha256=r['source_sha256']) for r in reference['repeats']])
+        else:
+            assert point==next(p for p in prior['points'] if (p['model'],p['resource_cap'])==(point['model'],point['resource_cap']))
+    data['repeats']=[r for p in data['points'] for r in p['repeats']]
+    data['selection_batches']={p['model']:p['batch'] for p in data['points']}
+    return data
+
+
+def select_clip_batch10():
+    source=BASE/'batch8_01/ready_input_paper.json'
+    assert sha(source)==read(source.parent/'figure_receipt.json')['source_sha256']
+    prior=read(source);assert prior['accounting']==PROTOCOL
+    comparison_source=source.parent/'ready_input_comparison.json'
+    comparison=read(comparison_source)
+    target=BASE/'batch10_01';saved=read(target/'final_saved_audit.json')
+    assert saved['status']=='passed' and saved['suite_status']=='complete' and saved['mps_released'] and saved['audited_points']==24
+    groups={};resident={}
+    for cap in (100,50):
+        previous=next(p for p in comparison if (p['model'],p['batch'],p['resource_cap'])==('clip',10,cap))
+        group=[replay(target/f'clip_b10_cap{cap}_cost_r{r:02d}') for r in (1,2,3)]
+        for now,old in zip(group,previous['repeats']):
+            for k in ('source_sha256','identity_sha256','calls_sha256','telemetry_sha256','checkpoint_sha256'):
+                assert now[k]==old[k],k
+            close(now['time16_ms'],old['time16_ms']);close(now['energy16_j'],old['energy16_j'])
+            assert now['cost_calls']==20 and now['internal_gaps']==19 and now['last_test_batch']==8
+        groups[cap]=group
+        resident[cap]=saved['selections']['clip']['caps'][str(cap)]['resident_nvml_mean_percent']
+    data=replace_clip_only(prior,groups,resident)
+    data.update(prior_paper_source=dict(path=source.relative_to(REPO).as_posix(),sha256=sha(source)),
+        clip_batch10_audit=dict(path=(target/'final_saved_audit.json').relative_to(REPO).as_posix(),sha256=sha(target/'final_saved_audit.json')),
+        presentation_selection='User22October selected existing CLIP B10; all other points unchanged; no GPU remeasurement',
+        reaccount_source_sha256=sha(Path(__file__)))
+    output=target/'ready_input_selected_paper.json'
+    with output.open('x') as f:json.dump(data,f,indent=2);f.write('\n')
+    with (target/'ready_input_comparison.json').open('x') as f:json.dump(comparison,f,indent=2);f.write('\n')
+    with (target/'clip10_ready_input_reverification.json').open('x') as f:
+        json.dump(dict(status='passed',accounting=PROTOCOL,points=groups,
+            previous_recalculation_matched=True,non_clip_points_unchanged=True,
+            no_new_GPU_execution=True,source_sha256=sha(Path(__file__))),f,indent=2)
+    return output,data,[r for g in groups.values() for r in g]
+
+
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--include-batch8',action='store_true');args=p.parse_args()
-    output,data,revised=build(args.include_batch8)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--include-batch8',action='store_true');p.add_argument('--select-clip-batch10',action='store_true');args=p.parse_args()
+    if args.include_batch8 and args.select_clip_batch10:p.error('Select one presentation')
+    output,data,revised=select_clip_batch10() if args.select_clip_batch10 else build(args.include_batch8)
     print(json.dumps(dict(status='passed',independently_reaccounted=len(revised),output=str(output),
         points=[{k:r[k] for k in ('model','resource_cap','batch','time16_ms','energy16_j')} for r in data['points']]),indent=2))
 

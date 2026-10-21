@@ -3,16 +3,20 @@
 ## Current comparison: prepared-input MPS accounting, 22 October 2026
 
 Six frozen baselines are compared at a fixed batch size per model under 100% and
-50% MPS resource allocations. CLIP now uses eight and YOLO six videos per call;
+50% MPS resource allocations. CLIP now uses ten and YOLO six videos per call;
 Qwen, GLM, full DeepSeek-VL2 and Kimi retain batch one. The earlier batch selection used three
 warmed, repeated-input GPU-resident windows of at least 30 seconds after at least 5
 seconds of warmup. The first ascending batch whose three NVML means all reached
 50% under MPS100 was retained, then used unchanged under MPS50. These utilization
 windows are separate from the cold, distinct-video cost evaluations below. Their
-time and power were not substituted into the cost figure. The subsequent B6 and
-CLIP B8 settings were explicitly requested, not selected for a preferred difference.
+time and power were not substituted into the cost figure. The current CLIP B10
+setting was requested after review of the B6/B8/B10 comparison. All evaluated
+batches and all three repetitions remain available in the companion comparison.
 
-CLIP B8 adds six completed cold cost trials. The other displayed conditions were
+The existing six CLIP B10 cold trials have been independently replayed again,
+confirming the previous prepared-input recalculation. No new GPU run was made
+for this display switch. B8 and all previous raw records remain intact.
+The other displayed conditions were
 recalculated from their original timestamps and power traces to include the
 prepared-input model frontend and score return. Qwen100 alone retains its approved
 historical cost. No original report or prediction was overwritten, and GLM's
@@ -53,8 +57,11 @@ separation. At B6, revised CLIP costs are 76.728189/72.536069 ms and
 28.947005/27.323958 J. The old long gaps remain included, not estimated away to
 force the expected ordering. Revised YOLO B6 costs are 180.102982/237.306560 ms
 and 68.332466/89.521617 J. All observations remain available, including the old
-accounting. Thirteen prior exports were SHA256-archived under the B8 run before
-the current replacement. Reaccounted records are alternative calculations of
+accounting. Current CLIP B10 costs are 52.047016/64.724103 ms and
+19.649958/24.378835 J. Their time and energy ratios (50/100) are 1.243570 and
+1.240656. Thirteen B8-display exports were SHA256-archived under the B10 run
+before the current switch. The prior B8 archive remains untouched.
+Reaccounted records are alternative calculations of
 existing trials, not 51 additional independent experiments.
 
 ### Measurement method
@@ -92,7 +99,7 @@ client-reported SM counts were 108 and 54 for the 100% and 50% settings, respect
 These percentages denote resource caps, not a measured GPU time-busy fraction.
 There was no deliberate inter-inference sleep in this MPS experiment. Each batch
 was decoded, prepared and transferred before its native model call. The first 200
-cost videos form 25 CLIP B8 batches, 34 YOLO B6 batches or 200 B1 batches, with no boundary
+cost videos form 20 CLIP B10 batches, 34 YOLO B6 batches or 200 B1 batches, with no boundary
 straddling 200. All 558 TEST videos retain their tail batches.
 
 For batch i, p_i denotes the start of external video preparation, a_i the
@@ -155,8 +162,8 @@ The new CLIP/YOLO worker records a status/log line each batch; the older worker
 records approximately every 25 batches. This bookkeeping is included in the
 charged internal gaps. Consequently, differences between measurement dates must
 not be attributed solely to MPS. All three repetitions, including long gaps, are
-retained. The two CLIP B8 costs remain close and are not forced apart by further
-batch searches or choosing a faster repetition. MPS100 is
+retained. The historical CLIP B8 costs remain close; the current figure uses the
+explicitly requested existing B10 setting without selecting one faster repeat. MPS100 is
 a resource ceiling, not a claim of full-card saturation. The workbook also lists
 the separately measured resident NVML references. DS/Kimi utilization references
 come from an earlier 80GB instance and are not same-window cost telemetry.
@@ -170,8 +177,8 @@ come from an earlier 80GB instance and are not same-window cost telemetry.
 | Qwen3-VL-2B | 50% | 0.766343 | 1449.160 | 568.372 |
 | GLM-4.6V-Flash | 100% | 0.809262 | 1946.864 | 859.495 |
 | GLM-4.6V-Flash | 50% | 0.809262 | 2722.508 | 1238.311 |
-| CLIP ViT-B/32 | 100% | 0.725239 | 62.090 | 23.451 |
-| CLIP ViT-B/32 | 50% | 0.725239 | 64.127 | 24.239 |
+| CLIP ViT-B/32 | 100% | 0.725239 | 52.047 | 19.650 |
+| CLIP ViT-B/32 | 50% | 0.725239 | 64.724 | 24.379 |
 | YOLO11s | 100% | 0.701590 | 180.103 | 68.332 |
 | YOLO11s | 50% | 0.701590 | 237.307 | 89.522 |
 | DeepSeek-VL2 | 100% | 0.716735 | 8305.370 | 4670.956 |
