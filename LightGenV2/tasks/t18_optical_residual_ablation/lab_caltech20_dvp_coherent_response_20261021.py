@@ -99,13 +99,21 @@ def selftest():
     torch.set_num_threads(2);torch.manual_seed(73);amp=torch.rand(2,478,478);phase=torch.rand_like(amp);freq=torch.fft.fftfreq(518);transfer=torch.exp(3j*(freq[:,None].square()+freq[None,:].square()))
     expected=torch.fft.ifft2(torch.fft.fft2(F.pad(amp*torch.exp(2j*torch.pi*phase),(20,20,20,20)))*transfer).abs().square()[:,20:498,20:498]
     raw=initial('cpu',True);actual=response(amp,phase,transfer,raw);assert torch.allclose(actual,expected,atol=5e-6,rtol=5e-6)
-    raw=initial('cpu');loss=normalized_loss(response(amp,phase,transfer,raw),expected);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in raw.values())
+    # A stronger, double-precision propagation check avoids accepting a tiny
+    # derivative hidden by cancellation in a nearly identity float32 field.
+    amp64,phase64=amp.double(),phase.double();freq64=torch.fft.fftfreq(518,dtype=torch.float64)
+    h64=torch.exp(60j*(freq64[:,None].square()+freq64[None,:].square()))
+    expected64=torch.fft.ifft2(torch.fft.fft2(F.pad(amp64*torch.exp(2j*torch.pi*phase64),(20,20,20,20)))*h64).abs().square()[:,20:498,20:498]
+    raw=initial('cpu').double()
+    with torch.no_grad():
+        raw['sigma'].copy_(torch.logit(torch.tensor(.2/12,dtype=torch.float64)));raw['background'].copy_(torch.logit(torch.tensor(.05/3,dtype=torch.float64)))
+    loss=normalized_loss(response(amp64,phase64,h64,raw),expected64);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in raw.values())
     gradient=float(raw['span'].grad);h=.001;center=raw['span'].detach().clone()
     with torch.no_grad():
-        raw['span'].copy_(center+h);plus=normalized_loss(response(amp,phase,transfer,raw),expected)
-        raw['span'].copy_(center-h);minus=normalized_loss(response(amp,phase,transfer,raw),expected);raw['span'].copy_(center)
-    finite=float((plus-minus)/(2*h));assert abs(finite-gradient)<=max(1e-4,.05*abs(gradient))
-    print(dict(passed=True,nominal_maxabs=float((actual-expected).abs().max()),parameters=sum(v.numel() for v in raw.values()),span_derivative=gradient,span_finite_difference=finite,SDK_used=False,inference_changed=False),flush=True)
+        raw['span'].copy_(center+h);plus=normalized_loss(response(amp64,phase64,h64,raw),expected64)
+        raw['span'].copy_(center-h);minus=normalized_loss(response(amp64,phase64,h64,raw),expected64);raw['span'].copy_(center)
+    finite=float((plus-minus)/(2*h));assert abs(gradient)>1e-6 and abs(finite-gradient)<=max(1e-7,.005*abs(gradient))
+    print(dict(passed=True,nominal_maxabs=float((actual-expected).detach().abs().max()),parameters=sum(v.numel() for v in raw.values()),span_derivative=gradient,span_finite_difference=finite,SDK_used=False,inference_changed=False),flush=True)
 
 
 def fit(a):
