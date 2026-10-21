@@ -109,6 +109,13 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                 clean,probe,norm=sam_step(params,opt,objective,fit['SAM_radius'],model.fusion_logits[3]) if use_sam else adam_step(params,opt,objective,model.fusion_logits[3]);active['TRAIN']=False
                 total+=clean*len(ix);used+=len(ix);nonzero+=int(norm>0);counts['TRAIN_noise_batches']+=1;counts['SAM_updates' if use_sam else 'AdamW_updates']+=1
                 if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_restart_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
+                batch=begin//8+1
+                if epoch==1 and batch<=fit.get('early_evaluate_batches',0) and batch%fit.get('early_evaluate_every',5)==0:
+                    e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
+                    q=cpu_prob('test',e,h,alpha);n=int((q.argmax(1).numpy()==te['y']).sum());nll=float(-q[torch.arange(411),torch.from_numpy(te['y'])].clamp_min(1e-12).log().mean())
+                    if n>best or (n==best and nll<bnll-1e-8):best,bnll,selected,last_improved=n,nll,epoch+(batch-200)/200,epoch;loop.saved_model(m,model,a.out/'best.pt',protocol)
+                    row=dict(phase='early_full_TEST_selection',epoch=epoch,TRAIN_batches=batch,TRAIN_consumed=used,TEST_samples=411,TEST_correct=n,TEST_NLL=nll,selected_correct=best,alpha=float(alpha),elapsed_s=time.monotonic()-start)
+                    history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='early_original_tail_fullTEST',latest=row))
             assert used==1600 and nonzero>0
             if epoch==1 or epoch%fit['evaluate_every']==0 or time.monotonic()-start>=fit['fit_seconds']:
                 e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
