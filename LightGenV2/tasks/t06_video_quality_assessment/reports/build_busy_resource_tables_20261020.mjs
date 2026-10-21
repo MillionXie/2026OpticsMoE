@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 const require=createRequire(path.join(process.cwd(),'.codex_tmp/artifact-runtime.cjs'));
 const {Workbook,SpreadsheetFile,FileBlob}=await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
+if(process.argv.includes('--temporal-fp32-reference')){await buildTemporalFp32Reference();process.exit(0);}
 if(process.argv.includes('--dataset-once')){await buildDatasetOnce();process.exit(0);}
 if(process.argv.includes('--mps-deployed')){await buildMpsDeployed();process.exit(0);}
 const repo=process.cwd(),originalRoot=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_busy_resource_20261020/presentation');
@@ -341,5 +342,58 @@ async function buildMpsDeployed(){
  await(await SpreadsheetFile.exportXlsx(book)).save(output);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(output)));
  await fs.writeFile(path.join(root,'mps_deployed_workbook_receipt.json'),JSON.stringify({file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),conditions:12,trials:36,batch:1,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
  try{await fs.rename(output+'.inspect.ndjson',path.join(root,'mps_deployed_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
+ console.log(JSON.stringify({file:output,conditions:12,trials:36}));
+}
+
+async function buildTemporalFp32Reference(){
+ const repo=process.cwd(),root=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation');
+ const source=path.join(root,'temporal_fp32_reference.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
+ const digest=async p=>crypto.createHash('sha256').update(await fs.readFile(p)).digest('hex');
+ const proof=JSON.parse(await fs.readFile(path.join(root,'temporal_fp32_reference_audit.json'),'utf8'));
+ if(proof.status!=='passed'||proof.reference_sha256!==await digest(source)||data.values.length!==12)throw Error('Verified FP32 selection required');
+ const output=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/LGVQ_FP32_temporal_control_reference.xlsx');
+ const receiptPath=path.join(root,'temporal_fp32_reference_workbook_receipt.json');
+ try{const old=await fs.readFile(output),sha=crypto.createHash('sha256').update(old).digest('hex');
+  if(JSON.parse(await fs.readFile(receiptPath,'utf8')).sha256!==sha)throw Error('Workbook edited externally');
+  try{await fs.copyFile(output,path.join(root,'prior_fp32_temporal_'+sha+'.xlsx'),1);}catch(e){if(e.code!=='EEXIST')throw e;}
+ }catch(e){if(e.code!=='ENOENT')throw e;try{await fs.access(output);throw Error('Unidentified existing workbook');}catch(x){if(x.code!=='ENOENT')throw x;}}
+ const book=Workbook.create(),s=book.worksheets.add('Plot data'),t=book.worksheets.add('Trial data');
+ const colors={qwen:'#0072B2',glm:'#92527F',clip:'#007F63',yolo:'#9B7000',deepseek:'#79502C',kimi:'#D14F64'};
+ const heading={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:52,wrapText:true,horizontalAlignment:'center',verticalAlignment:'center'};
+ for(const sh of [s,t]){sh.showGridLines=false;sh.getRange(sh===s?'A1:M34':'A1:Z41').format={font:{name:'Arial',size:10,color:'#263747'},verticalAlignment:'center',rowHeight:25};}
+ s.tabColor='#214D68';s.getRange('A2').values=[['LGVQ temporal quality: FP32 time-control reference']];s.getRange('A2').format.font={name:'Arial',size:14,bold:true,color:'#214D68'};
+ s.getRange('A4').values=[['Prepared inputs reused after warmup/calibration. Separate reference, not cold distinct-video MPS measurement.']];
+ s.getRange('A5').values=[['Each model uses its matching-batch unrestricted FP32 full558 quality reference for both cost settings.']];
+ s.getRange('A7:M7').values=[['Model','Execution','FP32 reference SRCC','Time /16 (ms)','Energy /16 (J)','Time ratio vs optical','Energy ratio vs optical','Actual hot-GPU busy','Video batch','Parameters (B)','Used GPUs','Platform','Qualification']];s.getRange('A7:M7').format=heading;
+ const op=data.optical;s.getRange('A8:M8').values=[['LightGen-II','Prior reference',op.srcc,op.time_ms,op.energy_j,1,1,null,null,null,null,'Optical component-cost reference','Not remeasured in this FP32 control study']];s.getRange('A8:M8').format.fill='#EEE6F4';s.getRange('A8').format.font={name:'Arial',size:10,bold:true,color:'#7828A8'};
+ t.getRange('A1:Z1').values=[['Model','Execution','Video batch','Repeat','Compute (s)','Intercall gap (s)','Pacing wait inside gap (s)','Integrated used-GPU energy (J)','Host proxy (W)','Video evaluations','Time /16 (ms)','Energy /16 (J)','Hot-GPU busy','Busy sample count','GPU0 busy','GPU1 busy','FP32 full558 reference SRCC','Cost source','Cost SHA256','Accuracy source','Accuracy SHA256','Checkpoint SHA256','Precision','Used GPUs','Interval board power (W)','Platform']];t.getRange('A1:Z1').format=heading;
+ let tr=2;const bindings=[];
+ for(const [i,p]of data.values.entries()){
+  const indices=[],label=p.condition==='unrestricted'?'Unrestricted':'Time-paced';
+  for(const r of p.repeats){
+   const info=r.gpu_infos[p.hot_gpu_index];
+   t.getRange(`A${tr}:Z${tr}`).values=[[p.model_name,label,p.batch,r.repeat,r.compute_s,r.output_to_next_model_input_s,r.internal_wait_s,r.gpu_energy_j,338.2,r.video_evaluations,null,null,info.mean_gpu_utilization_percent/100,info.samples,r.gpu_infos[0].mean_gpu_utilization_percent/100,r.gpu_infos[1]?r.gpu_infos[1].mean_gpu_utilization_percent/100:null,p.srcc_reference,p.source,p.source_sha256,p.accuracy_source,p.accuracy_source_sha256,p.checkpoint_sha256,'FP32',p.gpu_count,null,p.platform]];
+   t.getRange(`K${tr}:L${tr}`).formulas=[[`=(E${tr}+F${tr})*16000/J${tr}`,`=(I${tr}*(E${tr}+F${tr})+H${tr})*16/J${tr}`]];t.getRange(`Y${tr}`).formulas=[[`=H${tr}/(E${tr}+F${tr})`]];
+   t.getRange(`A${tr}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};indices.push(tr++);
+  }
+  const row=9+i,sum=c=>indices.map(r=>`'Trial data'!${c}${r}`).join(','),a=indices[0],b=indices[2];
+  s.getRange(`A${row}:M${row}`).values=[[p.model_name,label,null,null,null,null,null,null,p.batch,p.model_parameters/1e9,p.gpu_count,p.platform,p.condition==='unrestricted'&&p.busy_percent<98?'Unrestricted; measured below98% busy':p.condition==='busy50'?'Within50±5 percentage points':'Measured near98% or above']];
+  s.getRange(`C${row}:H${row}`).formulas=[[`='Trial data'!Q${a}`,`=(SUM(${sum('E')})+SUM(${sum('F')}))*16000/SUM(${sum('J')})`,`=SUMPRODUCT('Trial data'!L${a}:L${b},'Trial data'!J${a}:J${b})/SUM(${sum('J')})`,`=D${row}/$D$8`,`=E${row}/$E$8`,`=SUMPRODUCT('Trial data'!M${a}:M${b},'Trial data'!N${a}:N${b})/SUM(${sum('N')})`]];
+  s.getRange(`A${row}:M${row}`).format={fill:Math.floor(i/2)%2===0?'#F1F5F8':'#FFFFFF',rowHeight:36,verticalAlignment:'center'};s.getRange(`A${row}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};bindings.push({row,p});
+ }
+ s.getRange('A:A').format.columnWidth=26;s.getRange('B:B').format.columnWidth=22;s.getRange('C:H').format.columnWidth=19;s.getRange('I:K').format.columnWidth=15;s.getRange('L:L').format.columnWidth=48;s.getRange('M:M').format.columnWidth=45;
+ s.getRange('C8:C20').setNumberFormat('0.000000');s.getRange('D8:E20').setNumberFormat('#,##0.000');s.getRange('F8:G20').setNumberFormat('0.00"×"');s.getRange('H9:H20').setNumberFormat('0.00%');s.getRange('J9:J20').setNumberFormat('0.000');s.getRange('I9:I20').setNumberFormat('0');s.getRange('K9:K20').setNumberFormat('0');
+ const notes=['Historical resident-input reference only. Do not merge its cost points with the cold distinct-video MPS version.','Unrestricted means no imposed pacing, not guaranteed100% utilization. DS FP32 reaches57.95% on its hotter card.','Time includes each first-block-to-GPU-output interval and output-to-next-call gaps. Every model-call frontend is excluded.','Explicit pacing waits are already inside intercall gaps. Do not add the pacing-wait column again.','Energy integrates every used GPU over the same charged intervals plus the338.2W host proxy once.','Full558 FP32 quality is a separate unrestricted reference, shared with the time-paced point; not fresh paced accuracy.','DeepSeek FP32 uses two80GB GPUs; Kimi uses one80GB. Qwen/GLM/CLIP/YOLO use one40GB GPU.','All model floating parameters are FP32. Existing deployed weights were cast; lost BF16 information is not recovered.','Video counts denote completed evaluations of resident batches, not that many distinct videos. Three trials are all retained.','Historical BF16 Qwen B1 cost is not substituted into these FP32 measurements. Current MPS figures and workbook are unchanged.'];
+ notes.forEach((v,i)=>s.getRange('A'+(24+i)).values=[[v]]);
+ t.getRange('A:A').format.columnWidth=26;t.getRange('B:B').format.columnWidth=22;t.getRange('C:D').format.columnWidth=14;t.getRange('E:Q').format.columnWidth=22;t.getRange('R:V').format.columnWidth=78;t.getRange('W:X').format.columnWidth=15;t.getRange('Y:Y').format.columnWidth=24;t.getRange('Z:Z').format.columnWidth=48;
+ t.getRange('A2:Z37').format.rowHeight=54;t.getRange('R2:Z37').format.wrapText=true;t.getRange('E2:L37').setNumberFormat('0.000000');for(const col of ['C','D','J','N','X'])t.getRange(`${col}2:${col}37`).setNumberFormat('0');for(const col of ['M','O','P'])t.getRange(`${col}2:${col}37`).setNumberFormat('0.00%');t.getRange('Q2:Q37').setNumberFormat('0.000000');t.getRange('Y2:Y37').setNumberFormat('0.000');t.freezePanes.freezeRows(1);t.freezePanes.freezeColumns(2);
+ t.getRange('R40:S41').values=[['Audited source selection','SHA256'],[path.relative(repo,source).replaceAll('\\','/'),await digest(source)]];t.getRange('R40:S40').format=heading;t.getRange('R41:S41').format={wrapText:true,rowHeight:54};
+ function verify(w){const sh=w.worksheets.getItem('Plot data');for(const {row,p}of bindings)for(const [col,key]of [['C','srcc_reference'],['D','time16_ms'],['E','energy16_j']])if(Math.abs(sh.getRange(col+row).values[0][0]-p[key])>1e-7)throw Error('FP32 formula mismatch '+col+row);}
+ book.recalculate();verify(book);const cell=t.getRange('E2'),before=cell.values[0][0],oldTime=s.getRange('D9').values[0][0];cell.values=[[before*1.01]];book.recalculate();if(s.getRange('D9').values[0][0]===oldTime)throw Error('Recalculation did not propagate');cell.values=[[before]];book.recalculate();verify(book);
+ const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1200})).ndjson;if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
+ for(const [sheetName,range,name]of [['Plot data','A1:K33','fp32_temporal_summary'],['Plot data','L7:M20','fp32_temporal_hardware'],['Trial data','A1:Q7','fp32_temporal_trials'],['Trial data','R1:Z3','fp32_temporal_sources']]){const blob=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await blob.arrayBuffer()));}
+ await(await SpreadsheetFile.exportXlsx(book)).save(output);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(output)));
+ await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:await digest(output),source_sha256:await digest(source),conditions:12,trials:36,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
+ try{await fs.rename(output+'.inspect.ndjson',path.join(root,'fp32_temporal_reference_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
  console.log(JSON.stringify({file:output,conditions:12,trials:36}));
 }

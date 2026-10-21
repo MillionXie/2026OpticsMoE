@@ -210,17 +210,17 @@ operator-level explanation or evidence that the differences are harmless.
 The run's `presentation/accuracy_cap_comparison.json` retains this offline audit.
 No new GPU run, training, rental renewal or modification of measured accuracy was performed.
 
-中文核对：本版是四模型、固定B=1、原部署精度、MPS资源配额两档。每轮不同视频顺序推理，
+中文核对：主用MPS版本是六模型、固定B=1、原部署精度、MPS资源配额两档。每轮不同视频顺序推理，
 无推理预热，首样本保留；计入首计算块到GPU评分输出及非预处理间隔，逐次扣除输入准备。
 完整数据在表内，逐轮证据在canonical run内。三个重复全部保留，能耗为同区间功率积分加
-主机代理的估算；旧Qwen定稿、DS/Kimi历史与光学参考不冒充本轮新测结果。
+主机代理的估算；Qwen定稿成本在展示中单独标†，旧驻留结果与光学参考不冒充本轮新测结果。
 
 ### Evidence check for authors
 
 | Statement | Evidence | Boundary |
 |---|---|---|
-| Both MPS allocations were applied at fixed B=1 | Per-client 108/54 SM identities and 24 retained full 558 runs | Allocation is not measured GPU busy |
-| Input preparation was excluded and nonpreprocessing gaps included | Per-video p/a/s/e records and independent 24-trial interval replay | Legacy host-hook semantics, not isolated GPU kernels |
+| Both MPS allocations were applied at fixed B=1 | Per-client 108/54 SM identities and 36 retained full 558 runs | Allocation is not measured GPU busy |
+| Input preparation was excluded and nonpreprocessing gaps included | Per-video p/a/s/e records and independent 36-trial interval replay | Legacy host-hook semantics, not isolated GPU kernels |
 | The displayed costs are reproducible from retained measurements | Raw board-power rows, 338.2-W proxy, call CSVs and workbook formulas | Energy estimate, not direct whole-system wall-power metering |
 | The optical star and historical Qwen anchor were retained | Original source/SHA references and separate new output files | Neither is relabelled as a fresh matched measurement |
 
@@ -228,6 +228,91 @@ The full numerical report belongs in Source Data. The two figure paragraphs
 provide reading definitions, and the timing/power details above belong in Methods
 or supplementary methods. No mechanism for the model-specific scaling or
 statistical significance is claimed from these three descriptive repeats.
+
+## Additional reference: FP32 temporal duty control, prepared-input protocol
+
+The [FP32 reference workbook](LGVQ_FP32_temporal_control_reference.xlsx),
+[unrounded plot data](fp32_temporal_reference_plot_data.csv),
+[time panel](fp32_temporal_reference_latency.png),
+[energy panel](fp32_temporal_reference_energy.png) and
+[paired display](fp32_temporal_reference_pair.png) provide a separate reference
+for the teacher's review. This selection contains six models, twelve conditions
+and all 36 retained cost trials from 20 October. No GPU measurement or training
+was repeated for this export. The current native-precision MPS workbook and
+figures remain unchanged.
+
+### Protocol and accuracy reference
+
+A prepared batch remained resident on the GPU and was repeatedly evaluated after
+warmup and, for paced execution, duty calibration. Each group contained eight
+individually synchronized model calls. Between groups, an idle interval reduced
+the observed wall-window GPU busy fraction towards50%. Batch size was fixed
+between unrestricted and paced settings within each model: Qwen3, GLM1, CLIP10,
+YOLO3, full DeepSeek1 and Kimi1. These are video counts per call, not group sizes.
+They are retained as experimental metadata in the workbook rather than figure labels.
+
+Charged time is the sum of each first-native-block-to-GPU-score interval and
+each output-to-next-model-call gap. Every model-call frontend is excluded.
+Explicit pacing waits are already inside these gaps and are not added again.
+For each condition, T16 equals total charged seconds across the three trials
+times16000 divided by the actual number of completed video evaluations. E16
+equals the sum of all used-GPU raw board-power integrals plus338.2 W times the
+same charged duration, normalized by16 divided by completed evaluations. The
+host proxy is added once, including for dual-GPU DeepSeek. Both cards' power
+and busy records are preserved. Energy remains an estimate from NVML samples.
+
+All floating model parameters used FP32 in this reference. Existing deployed
+weights were cast to FP32, not retrained from higher-precision original weights.
+For each model, the same independent, matching-batch unrestricted FP32 full558
+TEST SRCC reference is used for both cost settings. This is not an independent
+accuracy test of the paced condition. No BF16/native MPS score or finalized
+BF16 Qwen cost is substituted into these FP32 cells.
+
+Qwen, GLM, CLIP and YOLO used the laboratory A100-PCIE-40GB at250 W. Kimi used
+one A100-SXM4-80GB at400 W. Full DeepSeek FP32 used two80GB A100s, each at400 W.
+Unrestricted busy was98.16%,99.54%,99.00%,98.93%,57.95% and99.34% for Qwen,
+GLM, CLIP, YOLO, DeepSeek and Kimi, respectively. DeepSeek therefore remains an
+unrestricted reference, not a demonstrated near-saturation case. Paced busy
+was47.94%,49.29%,51.40%,51.69%,49.92% and49.36%, all within50±5 percentage points.
+
+### FP32 reference data
+
+| Model | FP32 reference SRCC | Unrestricted time (ms) | Time-paced time (ms) | Unrestricted energy (J) | Time-paced energy (J) |
+|---|---:|---:|---:|---:|---:|
+| Qwen3-VL-2B | .769486 | 2838.960 | 6058.467 | 1650.149 | 2895.593 |
+| GLM-4.6V-Flash | .813180 | 13519.575 | 27321.206 | 7934.835 | 13196.074 |
+| CLIP ViT-B/32 | .725177 | 44.585 | 85.742 | 26.161 | 43.902 |
+| YOLO11s | .701533 | 165.599 | 307.703 | 97.182 | 157.178 |
+| DeepSeek-VL2 | .707578 | 29156.146 | 34130.786 | 21260.820 | 23447.365 |
+| Kimi-VL-A3B | .751930 | 19830.525 | 40337.936 | 11702.072 | 19896.130 |
+
+All costs are16-video equivalents, not the latency or energy of sixteen distinct
+videos in these cost windows. The separate full558 evaluation supplies quality.
+The LightGen-II star retains SRCC .797714,10.245570 ms and1.177690 J under the
+previous optical component-cost definition.
+
+### Reading the two reference panels
+
+**Time panel.** Reference temporal quality is plotted against16-video-equivalent
+processing time under unrestricted and time-paced FP32 execution. Filled and
+open markers identify unrestricted and paced conditions, respectively, using one
+shape per model. Lines connect the two costs at the same unrestricted quality
+reference. Their horizontal appearance does not demonstrate identical predictions
+under time control. Pacing delays are included in the charged time.
+
+**Energy panel.** The same quality references are plotted against estimated
+energy for the same charged intervals. The estimate includes both GPU board-power
+integrals for full DeepSeek and one retained host-power proxy. Neither panel
+relabels DeepSeek's57.95% unrestricted busy as100% busy. Both panels use logarithmic
+cost axes and the same78-mm single-panel width as the current MPS figures.
+
+These warmed resident-input cost measurements are not the same workload as the
+cold, distinct-video native MPS measurements above. They should remain a separate
+reference, not a merged MPS-versus-time-control experiment. The source is the
+protected `lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json`.
+The new `temporal_fp32_reference_audit.json` receipt records replay of raw calls,
+waits, per-GPU telemetry and six full558 prediction files. The original source
+and the current MPS outputs were not overwritten.
 
 ## Historical resident-repeat selection: MPS with original deployment precision
 
