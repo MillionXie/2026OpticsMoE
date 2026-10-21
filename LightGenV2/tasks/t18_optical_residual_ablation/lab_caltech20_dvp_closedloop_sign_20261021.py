@@ -61,6 +61,8 @@ def run(a):
         incumbent=next(v for v in old_report['rows'] if v['depth']==depth);global_correct=incumbent['correct']
         extra=source/'fullTRAIN_row_curvature/report.json'
         if extra.exists():global_correct=max(global_correct,m.read(extra)['selected_correct'])
+        lda=source/'fullTRAIN_OAS_head/report.json'
+        if lda.exists():global_correct=max(global_correct,m.read(lda)['selected_correct'])
         eligible=(global_correct<s['target'] and new_train['nll']>=parent_train['nll']+spec_profile['minimum_TRAIN_NLL_worsening'] and parent_train['correct']-new_train['correct']>=spec_profile['minimum_TRAIN_correct_loss'])
         if not eligible:
             row=dict(depth=depth,state='not_admitted',reason='No full-TRAIN deterioration evidence or actual stage already passed',global_correct=global_correct,new_physical_frames=0);history.append(row);m.save(a.out/'history.json',history);continue
