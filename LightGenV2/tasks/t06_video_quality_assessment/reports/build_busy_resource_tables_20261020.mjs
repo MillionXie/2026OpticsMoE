@@ -37,9 +37,10 @@ for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])
 async function buildDatasetOnce(){
  const repo=process.cwd();
  const combined=process.argv.includes('--combined');
+ const paper=process.argv.includes('--finalized-qwen');if(paper&&!combined)throw Error('Use combined data with finalized Qwen');
  const labRoot=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_a100_20261020/presentation');
  const root=combined?path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_rental_20261021_replacement02/presentation'):labRoot;
- const source=path.join(root,combined?'dataset_once_combined.json':'dataset_once_audited.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
+ const source=path.join(root,paper?'dataset_once_paper.json':combined?'dataset_once_combined.json':'dataset_once_audited.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
  const points=combined?12:8,trials=points*3,last=8+points,lastTrial=1+trials,opticalRow=lastTrial+4,notesRow=last+4;
  if(data.status!=='complete'||data.points.length!==points||data.repeats.length!==trials)throw Error('All audited distinct-video repeats are required');
  const outdir=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013');
@@ -48,6 +49,7 @@ async function buildDatasetOnce(){
  const optical=JSON.parse(await fs.readFile(opticalSource,'utf8')).optical;
  if(optical.time_ms!==10.245569591370225||optical.energy_j!==1.1776895097085185||optical.srcc!==.7977138739)throw Error('Prior optical reference changed');
  const receiptPath=path.join(root,'dataset_once_workbook_receipt.json');
+ if(!paper){try{if(JSON.parse(await fs.readFile(receiptPath,'utf8')).finalized_qwen_cost)throw Error('Do not undo the finalized Qwen presentation');}catch(e){if(e.code!=='ENOENT')throw e;}}
  try{const prior=await fs.readFile(output);let receipt;try{receipt=JSON.parse(await fs.readFile(receiptPath,'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;receipt=JSON.parse(await fs.readFile(path.join(labRoot,'dataset_once_workbook_receipt.json'),'utf8'));}const digest=crypto.createHash('sha256').update(prior).digest('hex');if(digest!==receipt.sha256)throw Error('Workbook changed externally; preserve edits');try{await fs.copyFile(output,path.join(root,'prior_workbook_'+digest+'.xlsx'),1);}catch(e){if(e.code!=='EEXIST')throw e;}}
  catch(e){if(e.code!=='ENOENT')throw e;try{await fs.access(output);throw Error('Unidentified existing workbook');}catch(x){if(x.code!=='ENOENT')throw x;}}
  let book,imported=true;try{book=await SpreadsheetFile.importXlsx(await FileBlob.load(output));}catch(e){if(e.code!=='ENOENT')throw e;book=Workbook.create();imported=false;}
@@ -79,17 +81,21 @@ async function buildDatasetOnce(){
   const r=9+i,cols=c=>indices.map(n=>`'Trial data'!${c}${n}`).join(',');
   s.getRange(`A${r}:K${r}`).values=[[names[p.model],p.resource_cap/100,null,null,null,null,null,null,null,3,['qwen','glm','deepseek','kimi'].includes(p.model)?'BF16; FP32 readout':p.model==='clip'?'FP16 autocast; FP32 readout (mixed parameters)':'FP16 autocast; FP32 parameters/readout']];
   s.getRange(`C${r}:I${r}`).formulas=[[`=AVERAGE(${cols('J')})`,`=(SUM(${cols('E')})+SUM(${cols('F')}))*16000/SUM(${cols('I')})`,`=SUMPRODUCT('Trial data'!M${indices[0]}:M${indices[2]},'Trial data'!I${indices[0]}:I${indices[2]})/SUM(${cols('I')})`,`=D${r}/$D$8`,`=E${r}/$E$8`,`=SUM(${cols('E')})*16000/SUM(${cols('I')})`,`=SUM(${cols('F')})*16000/SUM(${cols('I')})`]];
-  s.getRange(`A${r}:K${r}`).format={fill:Math.floor(i/2)%2===0?'#F1F5F8':'#FFFFFF',rowHeight:34};s.getRange(`A${r}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};bindings.push({p,r});
+  s.getRange(`A${r}:K${r}`).format={fill:Math.floor(i/2)%2===0?'#F1F5F8':'#FFFFFF',rowHeight:34};s.getRange(`A${r}`).format.font={name:'Arial',size:10,bold:true,color:colors[p.model]};bindings.push({p,r,indices});
+ }
+ if(data.accuracy_reference_policy){
+  s.getRange('C7').values=[['Reference SRCC (MPS100)']];
+  for(const b of bindings){const ref=bindings.find(x=>x.p.model===b.p.model&&x.p.resource_cap===100);s.getRange('C'+b.r).formulas=[['=AVERAGE('+ref.indices.map(i=>`'Trial data'!J${i}`).join(',')+')']];}
  }
  const notes=[
   'MPS 50/100% are configured resource allocations, not measured 50/100% GPU busy time.',
-  'Each cap has three full 558-video evaluations. No copied accuracy score or highest-repeat selection.',
+  paper?'Displayed SRCC uses each model MPS100 full558 reference for both settings. Trial data retains measured50 scores.':'Each cap has three full 558-video evaluations. No copied accuracy score or highest-repeat selection.',
   'All 200 cold videos and 199 internal gaps are retained. Terminal post-output handling is excluded.',
   'Energy integrates raw board power over the same charged intervals. The 338.2 W host proxy is added once.',
   'Legacy first-block hook is unchanged; pending asynchronous frontend work is not newly drained.',
   combined?'DS/Kimi: rented A100-SXM4-80GB /400W. Other models: laboratory A100-PCIE-40GB /250W.':'DS/Kimi resident-repeat observations are excluded from this new distinct-video comparison.',
   'Optical values retain the prior component-cost reference; they are not a new matched wall-clock run.',
-  'Historical Qwen B1: 1188.386146 ms, 462.113401 J, SRCC 0.7663428037. Preserved; not plotted as this run.',
+  paper?'† Qwen100 uses finalized historical cost. New three-trial costs remain in Trial data; no same-run claim.':'Historical Qwen B1: 1188.386146 ms, 462.113401 J, SRCC 0.7663428037. Preserved; not plotted as this run.',
   'Raw wall-window busy includes excluded preprocessing. Board energy uses driver-averaged NVML samples.',
   'The timer starts at the first native visual Transformer block, except YOLO (first convolution).',
   'Frozen preselected heads. TEST development metrics, no validation split, no new checkpoint selection.'
@@ -108,13 +114,27 @@ async function buildDatasetOnce(){
  for(const range of [`A${opticalRow-1}:D${opticalRow-1}`,`P${opticalRow-1}:Q${opticalRow-1}`])t.getRange(range).format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:32,wrapText:true};
  t.getRange(`P${opticalRow}:Q${opticalRow}`).format={wrapText:true,rowHeight:54};t.getRange(`B${opticalRow}:D${opticalRow}`).setNumberFormat('0.000000');
  s.getRange('C8:E8').formulas=[[`='Trial data'!D${opticalRow}`,`='Trial data'!B${opticalRow}`,`='Trial data'!C${opticalRow}`]];
+ if(paper){
+  const p=data.points.find(p=>p.model==='qwen'&&p.resource_cap===100),ar=opticalRow+4;
+  if(!data.presentation_override||p.time16_ms!==1188.3861464262009||p.energy16_j!==462.1134010767563)throw Error('Historical Qwen cost is not pinned');
+  if(crypto.createHash('sha256').update(await fs.readFile(path.join(repo,p.cost_source))).digest('hex')!==p.cost_source_sha256)throw Error('Qwen historical source changed');
+  t.getRange(`A${ar-1}:D${ar}`).values=[['Historical cost reference','Time /16 (ms)','Energy /16 (J)','SRCC reference'],['Qwen3-VL-2B finalized',p.time16_ms,p.energy16_j,.7663428036522781]];
+  t.getRange(`P${ar-1}:R${ar}`).values=[['Historical source','Historical source SHA256','Source selector'],[p.cost_source,p.cost_source_sha256,p.cost_source_selector]];
+  for(const rg of [`A${ar-1}:D${ar-1}`,`P${ar-1}:R${ar-1}`])t.getRange(rg).format={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:42,wrapText:true};
+  t.getRange(`P${ar}:R${ar}`).format={wrapText:true,rowHeight:58};t.getRange(`B${ar}:D${ar}`).setNumberFormat('0.000000');
+  for(const rg of [`A${ar}:D${ar}`,`P${ar}:R${ar}`])t.getRange(rg).format.font={name:'Arial',size:10,color:'#263747'};
+  s.getRange('A9').values=[['Qwen3-VL-2B †']];s.getRange('J7').values=[['Accuracy repeats']];
+  s.getRange('D9:E9').formulas=[[`='Trial data'!B${ar}`,`='Trial data'!C${ar}`]];
+  s.getRange('H9:I9').values=[[null,null]];
+ }
  function verify(w){const ss=w.worksheets.getItem('Plot data');for(const {p,r}of bindings)for(const [c,k]of [['C','srcc'],['D','time16_ms'],['E','energy16_j']])if(Math.abs(ss.getRange(c+r).values[0][0]-p[k])>1e-7)throw Error('Mismatch '+c+r);}
- book.recalculate();verify(book);const before=t.getRange('E2').values[0][0];t.getRange('E2').values=[[before*1.01]];book.recalculate();if(s.getRange('D9').values[0][0]===data.points[0].time16_ms)throw Error('Recalculation failed');t.getRange('E2').values=[[before]];book.recalculate();verify(book);
+ book.recalculate();verify(book);const probe=t.getRange(paper?'E5':'E2'),probeRow=paper?'D10':'D9',baseline=s.getRange(probeRow).values[0][0],before=probe.values[0][0];probe.values=[[before*1.01]];book.recalculate();if(s.getRange(probeRow).values[0][0]===baseline)throw Error('Recalculation failed');probe.values=[[before]];book.recalculate();verify(book);
  const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1200})).ndjson;if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
  console.log((await book.inspect({kind:'table',range:'Plot data!A7:K10',include:'values,formulas',tableMaxRows:4,tableMaxCols:11,maxChars:2300})).ndjson);
  for(const [sheetName,range,name]of [['Plot data',`A1:K${notesRow+10}`,'dataset_once_summary'],['Trial data','A1:O8','dataset_once_trials'],['Trial data','P1:Q4','dataset_once_sources'],['Trial data','R1:U4','dataset_once_identities'],['Trial data','V1:W4','dataset_once_dates'],['Trial data',`A${opticalRow-1}:D${opticalRow}`,'dataset_once_optical'],['Trial data',`P${opticalRow-1}:Q${opticalRow}`,'dataset_once_optical_source'],...(combined?[['Trial data','A26:O37','dataset_once_rental_trials'],['Trial data','P26:W28','dataset_once_rental_sources']]:[])]){if(process.argv.includes('--format-fix')&&!['dataset_once_summary','dataset_once_identities','dataset_once_dates'].includes(name))continue;const blob=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await blob.arrayBuffer()));}
+ if(paper){for(const [range,name]of [[`A${opticalRow+3}:D${opticalRow+4}`,'dataset_once_qwen_anchor'],[`P${opticalRow+3}:R${opticalRow+4}`,'dataset_once_qwen_anchor_source']]){const blob=await book.render({sheetName:'Trial data',range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await blob.arrayBuffer()));}}
  await(await SpreadsheetFile.exportXlsx(book)).save(output);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(output)));
- await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),conditions:points,repeats:trials,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
+ await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),conditions:points,repeats:trials,finalized_qwen_cost:paper,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
  try{await fs.rename(output+'.inspect.ndjson',path.join(root,'dataset_once_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
  console.log(JSON.stringify({file:output,conditions:points,repeats:trials}));
 }

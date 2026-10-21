@@ -1,5 +1,28 @@
 # T06 视频质量评价
 
+## 2026-10-21 08时：Qwen论文成本恢复，跨MPS精度离线核查
+
+用户要求Qwen100%展示成本恢复既有定稿1188.3861464262009ms/462.1134010767563J。
+原目录Excel、CSV和时间/能耗图已采用此历史成本引用并标†；Qwen连线用虚线，
+说明历史纯首块至输出边界不含新增内部间隔，不能冒称同轮纯MPS效应。
+原实测1254.2229400078456ms/485.1750602872153J及全部36轮原始数据不覆盖。
+用户随后要求展示精度统一采用各模型MPS100三轮full558的参考值；两配额共用该值，
+Excel列名为Reference SRCC (MPS100)，CSV区分measured/reference分数及重复。
+Trial data保留实际MPS50精度，不把引用参考值冒称50%实测一致，水平连线也不证明预测等价。
+源JSON dataset_once_combined不改，单独派生presentation/dataset_once_paper.json；
+reports/mps_paper_view应用成本及精度参考展示策略，核验批准config、历史recalculation及原PT SHA。
+重建使用present_mps_dataset_once --combined --replacement02 --finalized-qwen及
+build_busy_resource_tables_20261020.mjs --dataset-once --combined --finalized-qwen。
+
+跨配额逐视频核查并非仅DS/Kimi改变：Qwen/GLM/CLIP分别558/558/557条预测不同，
+YOLO0条；SRCC为.766343→.765281、.809262→.809024、.725256→.725170、.701597不变。
+DS/Kimi各558条不同，各自同配额三轮预测逐位一致，100%与历史B1全558完全一致。
+旧MPS图中两配额共用一个既有精度reference，并不是分别测出相同值。
+原PT/官方资产/精度、样本/标签/抽帧位置匹配；输入tensor SHA和逐层输出未留，
+故具体首次分歧算子仍未定位，不把“可能数值路径不同”写成已证明结论。
+离线证据为replacement02/presentation/accuracy_cap_comparison.json。
+本轮仅本地分析/展示更新；原80GB租期已过，不擅自连接、重启或续租。
+
 ## 2026-10-21 03:34 闭环：DS/Kimi十二轮补齐，六模型图表更新
 
 replacement02的完整版DeepSeek-VL2/Kimi-VL-A3B已完成MPS100/50各三fresh process，

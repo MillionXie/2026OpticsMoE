@@ -8,9 +8,20 @@ process runs are complete. The [editable plotting workbook](LGVQ_MPS_dataset_onc
 contains the summary, all 36 trial observations, calculation formulas and source
 identities. The [unrounded plotting data](mps_dataset_once_plot_data.csv) include
 all thirteen plotted points, separating the retained optical reference from the twelve
-electronic conditions. The new [time panel](mps_dataset_once_comparison_latency.png),
+electronic settings. At the user's request on 21 October, the Qwen 100% display
+uses the finalized historical B1 cost (1188.3861464262009 ms and
+462.1134010767563 J), marked †. Its newly measured three-trial cost remains
+1254.2229400078456 ms and 485.1750602872153 J in the original trial records.
+The historical cost excludes inter-video gaps, unlike the new measurements.
+It is a presentation reference, not a new MPS100 cost or a controlled MPS-only
+comparison with Qwen50. All full558 accuracy measurements remain unchanged.
+Following the user's subsequent instruction, displayed SRCC is the three-trial
+MPS100 reference for each model, reused for its two cost settings. It is not
+presented as the measured MPS50 accuracy. The separate measured50 scores remain
+in Trial data and the CSV's measured-SRCC columns.
+The new [time panel](mps_dataset_once_comparison_latency.png),
 [energy panel](mps_dataset_once_comparison_energy.png) and
-[paired display](mps_dataset_once_comparison_pair.png) use only this dataset.
+[paired display](mps_dataset_once_comparison_pair.png) use these declared sources.
 The earlier resident-repeat workbooks and figures below are preserved as
 different-protocol historical evidence, not additional points in the new figure.
 
@@ -41,7 +52,8 @@ No weights were trained, no checkpoint was selected in this measurement, and no
 CUDA Graph was introduced. SRCC was recalculated from all 558 predictions at each
 allocation and repeat, rather than copied between conditions. These are frozen,
 previously selected-head TEST development metrics, not a new independent
-validation-set claim.
+validation-set claim. The paper view subsequently uses each model's MPS100 SRCC
+as a shared quality reference, without altering these independently measured scores.
 
 MPS resource caps were set before each client's CUDA initialization. The
 client-reported SM counts were 108 and 54 for the 100% and 50% settings, respectively.
@@ -91,32 +103,38 @@ not full input-video-to-output response time.
 
 ### Complete numerical report
 
-| Model | MPS allocation | Mean TEST SRCC | Time per 16-video equivalent (ms) | Estimated energy per 16-video equivalent (J) |
+| Model | MPS allocation | Reference TEST SRCC (MPS100) | Time per 16-video equivalent (ms) | Estimated energy per 16-video equivalent (J) |
 |---|---:|---:|---:|---:|
 | LightGen-II, retained reference | Not applicable | 0.797714 | 10.246 | 1.178 |
-| Qwen3-VL-2B | 100% | 0.766343 | 1254.223 | 485.175 |
-| Qwen3-VL-2B | 50% | 0.765281 | 1348.265 | 528.863 |
+| Qwen3-VL-2B † | 100% reference | 0.766343 | 1188.386 | 462.113 |
+| Qwen3-VL-2B | 50% | 0.766343 | 1348.265 | 528.863 |
 | GLM-4.6V-Flash | 100% | 0.809262 | 1863.815 | 823.607 |
-| GLM-4.6V-Flash | 50% | 0.809024 | 2648.488 | 1206.537 |
+| GLM-4.6V-Flash | 50% | 0.809262 | 2648.488 | 1206.537 |
 | CLIP ViT-B/32 | 100% | 0.725256 | 174.976 | 66.086 |
-| CLIP ViT-B/32 | 50% | 0.725170 | 178.146 | 67.243 |
+| CLIP ViT-B/32 | 50% | 0.725256 | 178.146 | 67.243 |
 | YOLO11s | 100% | 0.701597 | 380.349 | 143.973 |
 | YOLO11s | 50% | 0.701597 | 389.371 | 147.359 |
 | DeepSeek-VL2 | 100% | 0.716735 | 8276.352 | 4657.903 |
-| DeepSeek-VL2 | 50% | 0.708753 | 12153.304 | 6454.379 |
+| DeepSeek-VL2 | 50% | 0.716735 | 12153.304 | 6454.379 |
 | Kimi-VL-A3B | 100% | 0.805465 | 3649.292 | 1760.164 |
-| Kimi-VL-A3B | 50% | 0.801242 | 4104.270 | 1978.952 |
+| Kimi-VL-A3B | 50% | 0.805465 | 4104.270 | 1978.952 |
 
 ### Figure descriptions
 
 **Time panel.** Temporal quality, measured by Spearman's rank correlation
 coefficient (SRCC), is plotted against 16-video-equivalent processing time for the
-six frozen baselines at 100% and 50% MPS allocation. Each electronic point
-summarizes three fresh-process evaluations without inference warmup. The timing
+six frozen baselines at 100% and 50% MPS allocation. Apart from Qwen's † historical
+cost reference, each electronic cost point summarizes three fresh-process
+evaluations without inference warmup. Both cost settings use the model's mean
+MPS100 SRCC as their common vertical-axis reference. The horizontal connections
+do not demonstrate equality of predictions under the two resource allocations.
+The timing
 includes the original first-block-to-GPU-output interval and nonpreprocessing
 inter-video gaps, while excluding each video's input preparation. Filled and
 open markers indicate 100% and 50% allocations, respectively. Each model retains
-one marker geometry and its two conditions are connected. Overlapping marks are
+one marker geometry and its two conditions are connected. Qwen's dashed link
+joins the finalized historical cost reference and the new50% result, and must
+not be interpreted as a same-run, MPS-only performance effect. Overlapping marks are
 drawn at their true coordinates, without jitter. The LightGen-II star retains the
 previous 10.245570-ms component-cost reference at SRCC 0.797714; it is not a newly
 matched wall-clock measurement.
@@ -161,11 +179,36 @@ read-only query confirmed no compute processes, 0% GPU busy and 0 MiB used memor
 
 The historical Qwen B1 anchor remains 1188.3861464262009 ms,
 462.1134010767563 J and SRCC 0.7663428036522781. It is not overwritten or relabelled
-as this new measurement. DeepSeek-VL2 and Kimi now have new cold distinct-video
+as a new measurement. It now supplies the †100% reference cost in the paper view,
+with its source and the unchanged new observations both retained. DeepSeek-VL2 and Kimi now have new cold distinct-video
 measurements; their prior resident-repeat points remain historical and are not
 mixed into this comparison. The retained optical values also keep their
 earlier component-cost boundary. Relative costs in the workbook are therefore
 conditional on these declared boundaries, not a new matched full-pipeline claim.
+
+### Accuracy consistency check, 21 October
+
+The earlier MPS plots reused one full558 accuracy reference per model for both
+allocations. Equal values in those plots therefore did not demonstrate output
+equivalence between MPS50 and MPS100. This revision independently evaluated each
+allocation. Offline comparison of all six models found the following numbers
+of changed predictions out of558: Qwen558, GLM558, CLIP557, YOLO0, DeepSeek558
+and Kimi558. Mean absolute MOS changes were0.5733,0.8336,0.0032,0,1.0891
+and0.9455, respectively. The independently measured SRCC100/SRCC50 pairs are:
+Qwen0.766343/0.765281, GLM0.809262/0.809024, CLIP0.725256/0.725170,
+YOLO0.701597/0.701597, DeepSeek0.716735/0.708753 and Kimi0.805465/0.801242.
+The paper table above instead uses the explicitly shared MPS100 reference.
+
+For DS/Kimi, all three repeats within a given allocation were bitwise identical
+at the saved prediction level. Their MPS100 predictions also matched the
+historical full558 B1 predictions exactly. Head and official weight-file hashes,
+deployment dtypes, sample IDs, targets and decoded frame positions matched
+between allocations. The current records do not retain input-tensor hashes or
+per-layer activations, so they do not locate the first numerical divergence.
+A resource-dependent numerical-path change is a hypothesis, not a demonstrated
+operator-level explanation or evidence that the differences are harmless.
+The run's `presentation/accuracy_cap_comparison.json` retains this offline audit.
+No new GPU run, training, rental renewal or modification of measured accuracy was performed.
 
 中文核对：本版是四模型、固定B=1、原部署精度、MPS资源配额两档。每轮不同视频顺序推理，
 无推理预热，首样本保留；计入首计算块到GPU评分输出及非预处理间隔，逐次扣除输入准备。

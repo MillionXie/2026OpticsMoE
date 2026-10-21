@@ -30,7 +30,8 @@ def panel(ax,points,metric):
     for model in NAMES:
         rr=sorted([p for p in points if p['model']==model],key=lambda r:-r['resource_cap'])
         assert len(rr)==2
-        ax.plot([r[metric] for r in rr],[r['srcc'] for r in rr],color=COLORS[model],lw=.9,zorder=2)
+        ax.plot([r[metric] for r in rr],[r['srcc'] for r in rr],color=COLORS[model],lw=.9,zorder=2,
+                linestyle='--' if any('cost_evidence' in r for r in rr) else '-')
         # Draw the larger open mark first so coincident conditions remain visible.
         # Coordinates and model-specific marker geometry are never displaced.
         for r in reversed(rr):
@@ -40,7 +41,7 @@ def panel(ax,points,metric):
     ax.set_xscale('log');ax.set_xlim(min(xs)*.7,max(xs)*1.55)
     ymin=min(.65,min(ys)-.025);ymax=max(.85,max(ys)+.025)
     ax.set_ylim(ymin,ymax)
-    ax.set_ylabel('Temporal quality (SRCC)')
+    ax.set_ylabel('Reference temporal quality (SRCC)' if any('accuracy_reference_cap' in p for p in points) else 'Temporal quality (SRCC)')
     ax.set_xlabel('Equivalent processing time (ms)' if metric=='time16_ms' else 'Estimated equivalent energy (J)')
     ax.spines['top'].set_visible(False);ax.spines['right'].set_visible(False)
     ax.grid(which='major',color='#D8DDE2',lw=.45);ax.grid(which='minor',axis='x',color='#ECEFF1',lw=.3)
@@ -61,7 +62,8 @@ def legends(fig):
 
 def main():
     global ROOT,NAMES
-    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');p.add_argument('--finalized-qwen',action='store_true');args=p.parse_args()
+    if args.finalized_qwen and not args.combined:raise ValueError('Finalized Qwen presentation requires combined data')
     if args.combined:ROOT=ROOT.parent.with_name('lgvq_mps_dataset_once_rental_20261021'+('_replacement02' if args.replacement02 else ''))/'presentation'
     else:NAMES={k:v for k,v in NAMES.items() if k not in ('deepseek','kimi')}
     source=ROOT/('dataset_once_combined.json' if args.combined else 'dataset_once_audited.json');data=json.loads(source.read_text())
@@ -70,6 +72,7 @@ def main():
         previous_receipt=ROOT/'figure_receipt.json'
         if not previous_receipt.exists():previous_receipt=ROOT.parents[1]/'lgvq_mps_dataset_once_a100_20261020/presentation/figure_receipt.json'
         previous=json.loads(previous_receipt.read_text())
+        if previous.get('finalized_qwen_cost') and not args.finalized_qwen:raise RuntimeError('Do not silently undo the finalized Qwen presentation')
         for name,expected in previous['files'].items():
             target=OUT/name
             if not target.exists():continue
@@ -83,12 +86,20 @@ def main():
             target=OUT/name
             if target.exists() and digest(target)!=expected:
                 raise RuntimeError('Refuse older four-model export over a newer or externally changed presentation: '+name)
+    if args.finalized_qwen:
+        from .mps_paper_view import finalized_qwen_view,full_resource_accuracy_view
+        original_source=source
+        data=full_resource_accuracy_view(finalized_qwen_view(data,REPO))
+        data['measurement_source']={'path':original_source.relative_to(REPO).as_posix(),'sha256':digest(original_source)}
+        source=ROOT/'dataset_once_paper.json'
+        source.write_text(json.dumps(data,indent=2)+'\n')
+        NAMES={**NAMES,'qwen':'Qwen3-VL-2B†'}
     optical_source=ROOT.parents[1]/'lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json'
     prior=json.loads(optical_source.read_text())['optical']
     assert (prior['time_ms'],prior['energy_j'],prior['srcc'])==(OPTICAL['time16_ms'],OPTICAL['energy16_j'],OPTICAL['srcc'])
     points=data['points'];plt.rcParams.update({'font.family':'Arial','font.size':7,'axes.labelsize':7.5,'svg.fonttype':'none','pdf.fonttype':42})
     receipt=dict(source_sha256=digest(source),marker_rendering='Larger open50 mark behind smaller filled100 mark, exact coordinates and same model geometry',optical_reference_source=optical_source.relative_to(REPO).as_posix(),
-                 optical_reference_sha256=digest(optical_source),protocol='dataset_once_legacy_block_plus_nonpreprocessing_gaps_v1',files={},panels=[])
+                 optical_reference_sha256=digest(optical_source),protocol='dataset_once_legacy_block_plus_nonpreprocessing_gaps_v1',finalized_qwen_cost=args.finalized_qwen,files={},panels=[])
     for metric,kind in [('time16_ms','latency'),('energy16_j','energy')]:
         fig,ax=plt.subplots(figsize=(78/25.4,88/25.4));fig.subplots_adjust(left=.20,right=.97,bottom=.32,top=.84)
         receipt['panels'].append(panel(ax,points,metric))
@@ -110,21 +121,26 @@ def main():
     legends(fig);target=OUT/'mps_dataset_once_comparison_pair.png';fig.savefig(target,dpi=600);receipt['files'][target.name]=digest(target);plt.close(fig)
     target=OUT/'mps_dataset_once_plot_data.csv'
     base_fields=['model','resource_cap','batch','time16_ms','energy16_j','srcc']
-    fields=['model','model_name',*base_fields[1:],'srcc_repeats','time_ratio_to_optical','energy_ratio_to_optical','unique_cost_videos_per_repeat','full_test_videos_per_repeat','repeats','evidence_type','source_json','source_sha256','gpu_platform','power_limit_w','parameter_dtypes','readout_dtypes']
+    fields=['model','model_name',*base_fields[1:],'measured_srcc_repeats','reference_srcc_repeats','measured_srcc','accuracy_basis','time_ratio_to_optical','energy_ratio_to_optical','unique_cost_videos_per_repeat','full_test_videos_per_repeat','repeats','evidence_type','source_json','source_sha256','gpu_platform','power_limit_w','parameter_dtypes','readout_dtypes','cost_source','cost_source_sha256','cost_source_selector','measured_time16_ms','measured_energy16_j','cost_boundary']
     with target.open('w',newline='',encoding='utf-8-sig') as f:
         w=csv.DictWriter(f,fieldnames=fields);w.writeheader()
         w.writerow(dict(model='ours',model_name='LightGen-II',**OPTICAL,time_ratio_to_optical=1,energy_ratio_to_optical=1,
                         evidence_type='Prior optical component-cost reference',source_json=optical_source.relative_to(REPO).as_posix(),source_sha256=digest(optical_source)))
         for p in points:
-            w.writerow({**{k:p[k] for k in base_fields},'model_name':NAMES[p['model']],'srcc_repeats':json.dumps(p['srcc_repeats']),
+            w.writerow({**{k:p[k] for k in base_fields},'model_name':NAMES[p['model']],
+                        'measured_srcc_repeats':json.dumps(p['srcc_repeats']),
+                        'reference_srcc_repeats':json.dumps(p.get('accuracy_reference_repeats',p['srcc_repeats'])),
+                        'measured_srcc':p.get('measured_srcc',p['srcc']),
+                        'accuracy_basis':'Shared MPS100 full558 reference, not MPS50 measured accuracy' if args.finalized_qwen else 'Measured per allocation',
                         'time_ratio_to_optical':p['time16_ms']/OPTICAL['time16_ms'],
                         'energy_ratio_to_optical':p['energy16_j']/OPTICAL['energy16_j'],
-                        'unique_cost_videos_per_repeat':200,'full_test_videos_per_repeat':558,'repeats':3,'evidence_type':'New cold distinct-video measurement',
+                        'unique_cost_videos_per_repeat':200,'full_test_videos_per_repeat':558,'repeats':3,'evidence_type':p.get('cost_evidence','New cold distinct-video cost; shared MPS100 accuracy reference' if args.finalized_qwen else 'New cold distinct-video measurement'),
                         'source_json':source.relative_to(REPO).as_posix(),'source_sha256':digest(source),
                         'gpu_platform':'A100-SXM4-80GB' if p['model'] in ('deepseek','kimi') else 'A100-PCIE-40GB',
                         'power_limit_w':400 if p['model'] in ('deepseek','kimi') else 250,
                         'parameter_dtypes':', '.join(p['repeats'][0]['parameter_dtypes']),
-                        'readout_dtypes':', '.join(p['repeats'][0]['readout_dtypes'])})
+                        'readout_dtypes':', '.join(p['repeats'][0]['readout_dtypes']),
+                        **{k:p.get(k,'') for k in ['cost_source','cost_source_sha256','cost_source_selector','measured_time16_ms','measured_energy16_j','cost_boundary']}})
     receipt['files'][target.name]=digest(target)
     (ROOT/'figure_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
     print(json.dumps(receipt,indent=2))
