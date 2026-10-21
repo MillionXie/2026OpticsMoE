@@ -15,6 +15,12 @@ TRAIN-only confidence-filtered KL/feature alignment plus CCD synthetic noise/
 1% pixel dropout, disabled for evaluation. Native original bestlast fullCPU
 TRAIN/TEST and frozen/source/dataSHA backup required, parent285/287 protected.
 No new CCD/SDK/next optical layer or timers; not a promise to achieve targets.
+One final distinct readout diagnostic is all-row multiclass Huber with original
+TRAIN3141 prior, capped outlier gradient/correctTRAIN parent KL and one global
+conditioned trust bound, max1200 updates/120fit seconds, no coefficient grid.
+This is not the failed joint-CE fit or repeating the pair trajectory. Parent
+285/287 remains protected; `lab_caltech20_DVP_joint_Huber_profile_20261021.json`.
+All1600TRAIN per step, native bestlast review required; noTEST derivative/VALID.
 
 User explicitly renews targeted L4/L6 improvement, L4>=288/411 first, L6
 overfitting reduction, all exposure/coordinates/LUT/model structure fixed. L2

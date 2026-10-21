@@ -1,0 +1,15 @@
+{
+  "schema":"TRAIN_shrunk_covariance_original_readout_v1",
+  "fit_method":"TRAIN_joint_Huber",
+  "parents":{
+    "4":{"relative":"TRAIN_coupled_Huber_20261021/best.pt","SHA256":"7f7b0bec726e01fd8f292949136e1e42cedee9a96f9cea6f4fb1b00a3440f02b","correct":285},
+    "6":{"relative":"TRAIN_protected_Huber_pass02_20261021/best.pt","SHA256":"801d5c995fda910b824425e298f16ca0c05a2f93ba50fb3a38900fc964660401","correct":287}
+  },
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.05,"margin":1.0,"huber_delta":1.0,
+  "learning_rate":0.001,"gradient_clip":1.0,"trust_radius":0.6,"steps":1200,"fit_seconds":120,
+  "targets":{"4":288,"6":322},
+  "scope":"Distinct all-row multiclass robust Huber contrast from audited285/287, after separate rows and pair plateau. Original3141TRAIN class frequencies (neverTEST prior), capped outlier influence, correctTRAIN parent KL and conditioned trust bound. Full1600TRAIN every step, original5140 Linear, all nonhead frozen. One1200-step/120fit-second path per group, no grid or same-parent repetition. Detached TEST checkpoint selection only; noVALID/TEST derivatives/newCCD/SDK/GPU/inference modules/hardware change. Native bestlast original CPU replay and SHA/freeze audit before adoption; no optical advance below288/322."
+}
