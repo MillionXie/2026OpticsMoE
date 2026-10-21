@@ -2,6 +2,11 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_last_fusion_restart_scope(self):
+        s=(HERE/'lab_caltech20_dvp_L4_fusion_restart_20261022.py').read_text();ast.parse(s)
+        self.assertIn("allowed={'fusion_logits.3','linear.weight','linear.bias'}",s);self.assertIn('alpha=(.4001+.95)/2',s)
+        for forbidden in ('Camera(','Bench(','advance.acquire','cuda()'):self.assertNotIn(forbidden,s)
+        c=json.loads((HERE/'lab_caltech20_L4_fusion_midpoint_profile_20261022.json').read_text());self.assertEqual(c['target_correct'],340)
     def test_error_guided_TRAIN_signature(self):
         s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s);fn=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=='focal_correction')
         self.assertNotIn('te',[x.arg for x in fn.args.args]);self.assertIn('importance',[x.arg for x in fn.args.args]);self.assertIn('sample>0',s)
