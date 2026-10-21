@@ -46,13 +46,16 @@ def focal_correction(torch,F,x,y,pw,pb,counts,importance,cfg,observe,teacher_log
             loss=loss+cfg['teacher_distillation']*(guidance*repair).sum()/repair.sum().clamp_min(1)
         opt.zero_grad();loss.backward();assert delta.grad is not None and torch.isfinite(delta.grad).all();torch.nn.utils.clip_grad_norm_([delta],1.);opt.step()
         with torch.no_grad():
-            delta.sub_(delta.mean(0,keepdim=True));delta.mul_(min(1.,cfg['trust_radius']/max(float(delta.norm()),1e-12)))
+            delta.sub_(delta.mean(0,keepdim=True))
+            if cfg.get('trust_scope','whole_head')=='per_class_row':
+                delta.mul_((cfg['trust_radius']/delta.norm(dim=1,keepdim=True).clamp_min(1e-12)).clamp_max(1.));assert bool((delta.norm(dim=1)<=cfg['trust_radius']+1e-10).all())
+            else:delta.mul_(min(1.,cfg['trust_radius']/max(float(delta.norm()),1e-12)))
             dw=delta[:,:-1]@root;ww=w0+dw;bb=b0+delta[:,-1]-dw@mean
         if step%cfg['evaluate_every']==0 or step==cfg['steps']:
-            stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_selective_teacher_focal' if external is not None else 'TRAIN_error_guided_focal',step=step,TRAIN_all1600=True,TRAIN_loss=float(loss.detach()),TRAIN_focal_loss=float((sample*focal).sum().detach()),TRAIN_ce=float((sample*ce).sum().detach()),gradient_samples=len(y),trusted_teacher_repair_samples=int(repair.sum())))
+            stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_selective_teacher_focal' if external is not None else 'TRAIN_error_guided_focal',step=step,TRAIN_all1600=True,TRAIN_loss=float(loss.detach()),TRAIN_focal_loss=float((sample*focal).sum().detach()),TRAIN_ce=float((sample*ce).sum().detach()),gradient_samples=len(y),trusted_teacher_repair_samples=int(repair.sum()),delta_global_norm=float(delta.detach().norm()),delta_max_row_norm=float(delta.detach().norm(dim=1).max())))
             if stop:break
         if time.monotonic()-start>=cfg['fit_seconds']:break
-    return ww.detach(),bb.detach(),dict(TRAIN_only=True,positive_TRAIN_weights=True,variance_floor=floor,gradient_updates=step,fit_seconds=time.monotonic()-start,original_Linear_fold=True,TEST_gradient=False,trusted_teacher_repair_samples=int(repair.sum()),parent_correct_protected_samples=int(keep.sum()))
+    return ww.detach(),bb.detach(),dict(TRAIN_only=True,positive_TRAIN_weights=True,variance_floor=floor,gradient_updates=step,fit_seconds=time.monotonic()-start,original_Linear_fold=True,TEST_gradient=False,trusted_teacher_repair_samples=int(repair.sum()),parent_correct_protected_samples=int(keep.sum()),trust_scope=cfg.get('trust_scope','whole_head'),delta_global_norm=float(delta.detach().norm()),delta_max_row_norm=float(delta.detach().norm(dim=1).max()))
 
 
 def selftest():
@@ -65,6 +68,8 @@ def selftest():
     assert len(rows)==2 and torch.isfinite(ww).all() and torch.isfinite(bb).all() and not torch.equal(ww,w)
     target=F.one_hot(y,20).double()*5;cfg['teacher_distillation']=1.;ww,bb,proof=focal_correction(torch,F,x,y,w,b,torch.ones(20,dtype=x.dtype),torch.ones(40,dtype=x.dtype),cfg,lambda a,b,r:False,target)
     assert proof['trusted_teacher_repair_samples']>0 and torch.isfinite(ww).all()
+    cfg.update(trust_scope='per_class_row',trust_radius=.01);ww,bb,proof=focal_correction(torch,F,x,y,w,b,torch.ones(20,dtype=x.dtype),torch.ones(40,dtype=x.dtype),cfg,lambda a,b,r:False,target)
+    assert proof['delta_max_row_norm']<=.01+1e-10 and proof['delta_global_norm']<=20**.5*.01+1e-10
     tr=dict(x=x.numpy(),y=y.numpy(),ids=np.asarray(['root/class'+str(int(k))+'/a.jpg' for k in y]));p=F.linear(x,w,b).softmax(1).numpy();report=error_diagnosis(np,tr,tr,p,p)
     assert len(report['classes'])==20 and all(abs(z['centroid_shift_to_TRAIN_radius'])<1e-10 for z in report['classes'])
     print(dict(passed=True,TRAIN_only_signature=True,finite_nonzero_update=True,diagnostic_identity=True,no_new_inference_layer=True))
