@@ -57,7 +57,8 @@ def run(a):
     torch.set_num_threads(2);torch.manual_seed(73)
     cfg=m.read(a.profile);assert cfg['schema']=='DVP_completed_original_readout_stableCE_v1'
     run=a.sequence/a.run_name;stage=run/f'L{a.depth}'/('stage_'+str(a.depth-1))
-    out=stage/cfg['case'];assert not out.exists();out.mkdir(parents=True)
+    # Do not precreate a future stage directory owned by the capture controller.
+    out=run/cfg['case']/f'L{a.depth}';assert not out.exists();out.mkdir(parents=True)
     start=time.monotonic()
     try:
         while not (stage/'endpoint_report.json').exists():

@@ -13,6 +13,7 @@ class CompletedReadoutTests(unittest.TestCase):
         self.assertIn('loss=ce+',s);self.assertIn('F.cross_entropy(z,y',s)
         self.assertIn("endpoint['full_physical']",s)
         self.assertIn('loop.validate_state(',s)
+        self.assertIn("out=run/cfg['case']/f'L{a.depth}'",s)
         self.assertNotIn('m.Bench(',s);self.assertNotIn('.cuda(',s)
 
 if __name__=='__main__':unittest.main()
