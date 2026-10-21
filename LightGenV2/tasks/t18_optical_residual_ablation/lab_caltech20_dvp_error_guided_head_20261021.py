@@ -24,12 +24,16 @@ def error_diagnosis(np,tr,te,train_probability,test_probability):
         interpretation='Centroid/nearest-neighbour diagnostics are descriptive, not proof of optical drift or an added classifier. TRAIN and TEST weakness are separated; no TEST gradient.',TEST_informed_development=True,new_CCD=0)
 
 
-def focal_correction(torch,F,x,y,pw,pb,counts,importance,cfg,observe):
+def focal_correction(torch,F,x,y,pw,pb,counts,importance,cfg,observe,teacher_logits=None):
     """All1600TRAIN, positive bounded weights; no TEST tensor enters loss."""
     from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
     mean,root,_,_,floor=train_conditioned_geometry(x.numpy());xx=torch.cat(((x-mean)@root,torch.ones(len(x),1,dtype=x.dtype)),1)
     w0=pw.double()-pw.double().mean(0,keepdim=True);b0=pb.double()-pb.double().mean();base=F.linear(x,w0,b0)
     teacher=(base/cfg['temperature']).softmax(1).detach();keep=(base.argmax(1)==y).double()
+    external=None;repair=torch.zeros_like(keep)
+    if teacher_logits is not None:
+        assert teacher_logits.shape==base.shape and not teacher_logits.requires_grad
+        external=(teacher_logits/cfg['temperature']).softmax(1).detach();repair=((external.argmax(1)==y)&(base.argmax(1)!=y)).double();assert float(repair.sum())>0
     sample=importance.double()*(counts[y]/counts.mean()).sqrt();sample/=sample.sum();assert bool((sample>0).all())
     delta=torch.nn.Parameter(torch.zeros(len(pb),xx.shape[1],dtype=x.dtype));opt=torch.optim.Adam([delta],lr=cfg['learning_rate'])
     start=time.monotonic();ww,bb=pw,pb
@@ -37,15 +41,18 @@ def focal_correction(torch,F,x,y,pw,pb,counts,importance,cfg,observe):
         z=base+xx@delta.T;logp=z.log_softmax(1);ce=-logp[torch.arange(len(y)),y];pt=logp[torch.arange(len(y)),y].exp()
         focal=(1-pt).pow(cfg['gamma'])*ce;kl=F.kl_div((z/cfg['temperature']).log_softmax(1),teacher,reduction='none').sum(1)*cfg['temperature']**2
         loss=(sample*((1-cfg['CE_replay'])*focal+cfg['CE_replay']*ce)).sum()+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*delta.square().sum()
+        if external is not None:
+            guidance=F.kl_div((z/cfg['temperature']).log_softmax(1),external,reduction='none').sum(1)*cfg['temperature']**2
+            loss=loss+cfg['teacher_distillation']*(guidance*repair).sum()/repair.sum().clamp_min(1)
         opt.zero_grad();loss.backward();assert delta.grad is not None and torch.isfinite(delta.grad).all();torch.nn.utils.clip_grad_norm_([delta],1.);opt.step()
         with torch.no_grad():
             delta.sub_(delta.mean(0,keepdim=True));delta.mul_(min(1.,cfg['trust_radius']/max(float(delta.norm()),1e-12)))
             dw=delta[:,:-1]@root;ww=w0+dw;bb=b0+delta[:,-1]-dw@mean
         if step%cfg['evaluate_every']==0 or step==cfg['steps']:
-            stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_error_guided_focal',step=step,TRAIN_all1600=True,TRAIN_loss=float(loss.detach()),TRAIN_focal_loss=float((sample*focal).sum().detach()),TRAIN_ce=float((sample*ce).sum().detach()),gradient_samples=len(y)))
+            stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_selective_teacher_focal' if external is not None else 'TRAIN_error_guided_focal',step=step,TRAIN_all1600=True,TRAIN_loss=float(loss.detach()),TRAIN_focal_loss=float((sample*focal).sum().detach()),TRAIN_ce=float((sample*ce).sum().detach()),gradient_samples=len(y),trusted_teacher_repair_samples=int(repair.sum())))
             if stop:break
         if time.monotonic()-start>=cfg['fit_seconds']:break
-    return ww.detach(),bb.detach(),dict(TRAIN_only=True,positive_TRAIN_weights=True,variance_floor=floor,gradient_updates=step,fit_seconds=time.monotonic()-start,original_Linear_fold=True,TEST_gradient=False)
+    return ww.detach(),bb.detach(),dict(TRAIN_only=True,positive_TRAIN_weights=True,variance_floor=floor,gradient_updates=step,fit_seconds=time.monotonic()-start,original_Linear_fold=True,TEST_gradient=False,trusted_teacher_repair_samples=int(repair.sum()),parent_correct_protected_samples=int(keep.sum()))
 
 
 def selftest():
@@ -56,6 +63,8 @@ def selftest():
     cfg=dict(temperature=2.,learning_rate=.003,steps=2,gamma=2.,CE_replay=.25,teacher_KL=.5,anchor=.01,trust_radius=1.,fit_seconds=30,evaluate_every=1)
     ww,bb,proof=focal_correction(torch,F,x,y,w,b,torch.ones(20,dtype=x.dtype),torch.ones(40,dtype=x.dtype),cfg,lambda a,b,r:rows.append(r))
     assert len(rows)==2 and torch.isfinite(ww).all() and torch.isfinite(bb).all() and not torch.equal(ww,w)
+    target=F.one_hot(y,20).double()*5;cfg['teacher_distillation']=1.;ww,bb,proof=focal_correction(torch,F,x,y,w,b,torch.ones(20,dtype=x.dtype),torch.ones(40,dtype=x.dtype),cfg,lambda a,b,r:False,target)
+    assert proof['trusted_teacher_repair_samples']>0 and torch.isfinite(ww).all()
     tr=dict(x=x.numpy(),y=y.numpy(),ids=np.asarray(['root/class'+str(int(k))+'/a.jpg' for k in y]));p=F.linear(x,w,b).softmax(1).numpy();report=error_diagnosis(np,tr,tr,p,p)
     assert len(report['classes'])==20 and all(abs(z['centroid_shift_to_TRAIN_radius'])<1e-10 for z in report['classes'])
     print(dict(passed=True,TRAIN_only_signature=True,finite_nonzero_update=True,diagnostic_identity=True,no_new_inference_layer=True))

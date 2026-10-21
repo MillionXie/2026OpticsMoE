@@ -71,7 +71,7 @@ def run(a):
     assert not a.out.exists();a.out.mkdir(parents=True)
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
-    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup';head_only=teacher_mode or continuation or sam or coupled or centered or focal
+    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -154,11 +154,19 @@ def run(a):
         m.save(a.out/'error_diagnosis.json',error_diagnosis(np,tr,te,tp,qp))
         importance,hits,plans=neighbor_importance(tr['x'],tr['y'],te['x'],te['y'],qp.argmax(1)!=te['y'],3,.5)
         m.save(a.out/'TRAIN_neighbour_plan.json',dict(indices=plans,weights=importance.tolist(),weight_bounds=[1,1.5],TEST_gradient=False))
-        lastw,lastb,proof=focal_correction(torch,F,x,y,pw,pb,counts,torch.tensor(importance,dtype=x.dtype),cfg['focal'],observe)
-        if best<340:
+        teacher_logits=None
+        if selective:
+            teacher_path=Path(cfg['teacher_cache']);assert m.sha(teacher_path)==cfg['teacher_cache_SHA256']
+            teacher_protocol=m.read(teacher_path.parent/'protocol.json');assert teacher_protocol['config']['teacher_SHA256']==cfg['teacher_SHA256'] and teacher_protocol['data_SHA256']==dm['sha256']
+            with np.load(teacher_path) as z:
+                assert np.array_equal(z['ids'],tr['ids']) and np.array_equal(z['labels'],tr['y']);teacher_logits=torch.tensor(z['logits'],dtype=x.dtype)
+            parent_good=tp.argmax(1)==tr['y'];trusted=teacher_logits.argmax(1).numpy()==tr['y']
+            m.save(a.out/'TRAIN_teacher_repair_plan.json',dict(cache_SHA256=cfg['teacher_cache_SHA256'],original_teacher_PT_SHA256=cfg['teacher_SHA256'],TRAIN_teacher_correct=int(trusted.sum()),repair_indices=np.flatnonzero(trusted&~parent_good).tolist(),protected_parent_indices=np.flatnonzero(parent_good).tolist(),TRAIN_only=True,TEST_teacher_used=False))
+        lastw,lastb,proof=focal_correction(torch,F,x,y,pw,pb,counts,torch.tensor(importance,dtype=x.dtype),cfg['focal'],observe,teacher_logits)
+        if best<340 and not selective:
             mw=bw.double()-bw.double().mean(0,keepdim=True);mb=bb.double()-bb.double().mean()
             lastw,lastb,mixproof=regularized_mixup(torch,F,x,y,mw,mb,cfg['mixup'],observe);proof['sameclass_mixup']=mixproof
-        reason='bounded_diagnosis_focal_then_sameclass_mixup_complete'
+        reason='bounded_selective_TRAIN_teacher_guidance_complete' if selective else 'bounded_diagnosis_focal_then_sameclass_mixup_complete'
     elif centered:
         from lab_caltech20_dvp_statistical_readout_20261021 import calibrate_parent_vector
         # Softmax is invariant to a class-common row. Remove only this exact
