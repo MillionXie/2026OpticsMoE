@@ -35,5 +35,14 @@ class AdvanceTests(unittest.TestCase):
         self.assertIn("assert m.sha(parent)==c['SHA256']",s)
         self.assertNotIn('propose(',s)
 
+    def test_partial_recovery_keeps_guard_and_old_data(self):
+        s=SOURCE.read_text()
+        self.assertIn('n==384',s)
+        self.assertIn("meta['frame_id']>self.last_id",s)
+        self.assertIn('for attempt in range(4)',s)
+        self.assertIn('accepted=False',s)
+        self.assertIn('completed_L4_not_repeated=True',s)
+        self.assertIn("mode='r+' if preserved",s)
+
 
 if __name__=='__main__':unittest.main()

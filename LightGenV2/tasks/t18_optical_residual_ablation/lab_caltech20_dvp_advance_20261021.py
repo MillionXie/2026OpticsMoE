@@ -69,7 +69,54 @@ def admission(a):
     return m,loop,cfg,data,dm,hw,roots,proof
 
 
-def acquire(m,loop,a,data,dm,hw,row,depth,stage,out):
+def preserve_prefix(m,data,dm,hw,row,stage,source,out):
+    """Only confirmed matching receipts are reused; never the uncommitted tail."""
+    import hashlib,io,shutil
+    import numpy as np
+    from PIL import Image
+    rows=sorted((source/'train').glob('[0-9]*.json'));n=len(rows)
+    assert n==384 and [p.stem for p in rows]==[f'{i:06d}' for i in range(n)]
+    old=m.read(source/'protocol.json');digest=m.sha(row['parent'])
+    assert old['PT_SHA256']==digest and old['data_SHA256']==dm['sha256'] and old['hardware_SHA256']==HARDWARE
+    assert old['prefix_SHA256']==row['identities'] and old['stage']==stage
+    assert 'Nonmonotonic camera frame ID' in m.read(source/'failure.json')['error']
+    array=np.load(source/'train/ccd.npy',mmap_mode='r');assert array.shape==(1600,478,478)
+    phase=np.asarray(Image.open(source/'phase.bmp'));phase_sha=m.sha(source/'phase.bmp')
+    drive=np.asarray(m.read(hw['response_lut'])['drive'],np.uint8);checked=[]
+    model=row['model'];model.measured={}
+    for begin in range(0,n,8):
+        images,unused,end=m.padded(data,'train',begin)
+        cache={k:np.asarray(v['train'][begin:end]).copy() for k,v in row['fields'].items()}
+        def verify(current,amplitudes,pixels,ids):
+            assert current==stage and np.array_equal(m.phase_native(pixels),phase)
+            for j in range(8):
+                i=begin+j;stem=source/'train'/f'{i:06d}';r=m.read(stem.with_suffix('.json'))
+                assert r['index']==i and r['role']=='train' and r['sample_id']==str(data['train'][2][i])
+                assert r['PT_SHA256']==digest and r['data_SHA256']==dm['sha256'] and r['phase_SHA256']==phase_sha
+                gray=np.rint(amplitudes[j].clip(0,1)*255).astype(np.uint8)
+                assert np.array_equal(gray,np.asarray(Image.open(stem.with_name(stem.name+'_input.png'))))
+                buf=io.BytesIO();Image.fromarray(m.native(drive[gray],'amplitude')).save(buf,format='BMP')
+                assert hashlib.sha256(buf.getvalue()).hexdigest()==r['BMP_SHA256']
+                assert np.array_equal(array[i],np.asarray(Image.open(stem.with_suffix('.png'))))
+                assert m.sha(stem.with_name(stem.name+'_raw.png'))==r['raw_SHA256']
+                checked.append(i)
+            return np.zeros((8,478,478),np.uint8)
+        m.layer_forward(model,images,data['train'][2][begin:end],stage,cache,verify)
+    assert checked==list(range(n));folder=out/'train';folder.mkdir()
+    values=np.lib.format.open_memmap(folder/'ccd.npy',mode='w+',dtype=np.uint8,shape=array.shape);values[:n]=array[:n];values.flush()
+    for i,p in enumerate(rows):
+        stem=p.with_suffix('');target=folder/p.stem
+        for suffix in ('.png','_input.png','_raw.png'):
+            # Immutable PNG hardlinks avoid copying gigabytes; no linked file is rewritten.
+            os.link(stem.with_name(stem.name+suffix),target.with_name(target.name+suffix))
+        r=m.read(p);r.update(new_physical_capture=False,reused_from=str(p),source_receipt_SHA256=m.sha(p))
+        m.save(target.with_suffix('.json'),r)
+    shutil.copy2(source/'phase.bmp',out/'phase.bmp')  # Not a hardlink: exporter may rewrite this path.
+    m.save(out/'preserved_prefix_audit.json',dict(passed=True,TRAIN_preserved=n,source=str(source),source_protocol_SHA256=m.sha(source/'protocol.json'),source_array_SHA256=m.sha(source/'train/ccd.npy'),all_ID_raw_crop_canonical_BMP_phase_PT_verified=True,previous_attempt_unmodified=True))
+    return n
+
+
+def acquire(m,loop,a,data,dm,hw,row,depth,stage,out,resume=None):
     """New descendant capture with explicit immutable measured-prefix lineage."""
     import cv2
     import numpy as np
@@ -85,11 +132,14 @@ def acquire(m,loop,a,data,dm,hw,row,depth,stage,out):
     # On release leave the newly displayed, audited nominal stage phase in place.
     phasepath=out/'phase.bmp';model.cpu().eval();model.measured={}
     phase_pixels=None;count=0;white=0;last_frame=-1;arrays={};pending=None;start=time.monotonic()
+    preserved=preserve_prefix(m,data,dm,hw,row,stage,resume,out) if resume else 0
+    count=preserved
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),PT_SHA256=digest,
         parent_PT=str(row['parent']),stage=stage,depth=depth,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,
         protected=protected,prefix_SHA256=row['identities'],prefix_reports={k:dict(path=str(v),report_SHA256=m.sha(v/'report.json')) for k,v in row['paths'].items()},
         TRAIN=1600,TEST=411,VALID=0,automatic_retry=False,original_layer_forward=True,
-        no_old_failed_stage_CCD=True,phase_LUT_scope='linear voltage; NOT verified linear phase',user_stage_carry=True)
+        no_unverified_failed_stage_CCD=True,preserved_confirmed_TRAIN=preserved,resume_source=str(resume) if resume else None,
+        phase_LUT_scope='linear voltage; NOT verified linear phase',user_stage_carry=True,new_connection_frame_ID_epoch=True)
     m.save(out/'protocol.json',protocol)
     with m.LOCK.open('x') as f:json.dump(dict(pid=os.getpid(),camera='DVP',kind='user_carry_layerwise',out=str(out),stage=stage),f)
     writer=FrameWriter()
@@ -100,11 +150,27 @@ def acquire(m,loop,a,data,dm,hw,row,depth,stage,out):
         m.save(stem.with_suffix('.json'),record);count+=1;pending=None
         m.save(out/'progress.json',dict(state='capturing',depth=depth,stage=stage,frames=count,expected=2011,latest=record,elapsed_s=time.monotonic()-start))
     try:
-        with m.Bench(hw,out) as bench:
+        # Keep the strict monotonic acceptance rule. At most three out-of-order
+        # frames may be rejected and saved, never counted as dataset samples.
+        from lab_caltech20_dvp_20261019 import validate_frame
+        class FreshBench(m.Bench):
+            def read(self,check_settings=True):
+                for attempt in range(4):
+                    raw,meta=self.camera.capture();validate_frame(raw,meta,self.cfg)
+                    if meta['frame_id']>self.last_id:
+                        self.last_id=meta['frame_id']
+                        if check_settings:assert abs(meta['exposure_us']-self.settings['exposure_us'])<max(2,self.settings['exposure_us']*.01)
+                        assert abs(meta['gain']-1)<1e-6
+                        return raw,meta
+                    rejected=self.out/'rejected_frames';rejected.mkdir(exist_ok=True)
+                    stamp=str(time.time_ns());Image.fromarray(raw).save(rejected/(stamp+'.png'))
+                    m.save(rejected/(stamp+'.json'),dict(frame=meta,previous_accepted_id=self.last_id,attempt=attempt,accepted=False,raw_SHA256=m.sha(rejected/(stamp+'.png'))))
+                raise RuntimeError('Repeated nonmonotonic frames after three bounded stale-frame exclusions; raw evidence preserved')
+        with FreshBench(hw,out) as bench:
             for role in ('train','test'):
-                folder=out/role;folder.mkdir()
-                values=np.lib.format.open_memmap(folder/'ccd.npy',mode='w+',dtype=np.uint8,shape=(len(data[role][1]),478,478))
-                for begin in range(0,len(data[role][1]),8):
+                folder=out/role;folder.mkdir(exist_ok=bool(preserved and role=='train'))
+                values=np.lib.format.open_memmap(folder/'ccd.npy',mode='r+' if preserved and role=='train' else 'w+',dtype=np.uint8,shape=(len(data[role][1]),478,478))
+                for begin in range(preserved if role=='train' else 0,len(data[role][1]),8):
                     images,n,end=m.padded(data,role,begin)
                     cache={k:np.asarray(v[role][begin:end]).copy() for k,v in previous.items()}
                     if n<8:cache={k:np.concatenate([v,np.zeros((8-n,478,478),np.uint8)]) for k,v in cache.items()}
@@ -128,7 +194,7 @@ def acquire(m,loop,a,data,dm,hw,row,depth,stage,out):
                             crop=m.orient(cv2.warpPerspective(raw,warp,(478,478),flags=cv2.INTER_AREA,borderMode=cv2.BORDER_CONSTANT,borderValue=0),hw['orientation'])
                             record=dict(role=role,index=index,sample_id=str(sample_ids[j]),PT_SHA256=digest,data_SHA256=dm['sha256'],hardware_SHA256=HARDWARE,
                                 phase_SHA256=m.sha(phasepath),canonical_SHA256=m.sha(canonical),BMP_SHA256=m.sha(bmp),frame_metadata=meta,
-                                p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),captured_at_ns=time.time_ns())
+                                p99=float(np.percentile(crop,99)),mean=float(crop.mean()),saturation_fraction=float((crop==255).mean()),captured_at_ns=time.time_ns(),new_physical_capture=True)
                             try:finish()
                             except BaseException:
                                 m.save(out/'following_frame_rescue.json',dict(record=record,preserved=write_images(stem,raw,crop)));raise
@@ -140,7 +206,7 @@ def acquire(m,loop,a,data,dm,hw,row,depth,stage,out):
                     m.layer_forward(model,images,ids,stage,cache,physical)
                 finish();arrays[role]=dict(samples=len(values),SHA256=m.sha(folder/'ccd.npy'))
         assert count==2011 and protected=={p:m.sha(p) for p in protected}
-        m.save(out/'report.json',dict(state='complete',PT_SHA256=digest,phase_SHA256=m.sha(phasepath),physical_ccd=count,TRAIN=1600,TEST=411,VALID=0,
+        m.save(out/'report.json',dict(state='complete',PT_SHA256=digest,phase_SHA256=m.sha(phasepath),physical_ccd=count,new_physical_ccd=count-preserved,preserved_TRAIN=preserved,TRAIN=1600,TEST=411,VALID=0,
             arrays=arrays,SDK_released=True,hardware_SHA256=HARDWARE,data_SHA256=dm['sha256'],protocol_SHA256=m.sha(out/'protocol.json'),elapsed_s=time.monotonic()-start))
     except BaseException as error:
         m.save(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),completed_receipts=count,automatic_retry=False));raise
@@ -165,13 +231,18 @@ def run(a):
         carry_is_not_threshold_pass=True,unmet_intermediate_gate_does_not_repeat=True))
     history=[]
     try:
-        for depth in (4,6):
+        if a.resume_from:
+            old=m.read(a.resume_from/'failure.json');assert 'Nonmonotonic camera frame ID' in old['error']
+            assert m.read(a.resume_from/'L4_full_physical_report.json')['full_physical']
+            m.save(a.out/'resume_handoff.json',dict(source=str(a.resume_from),failure_SHA256=m.sha(a.resume_from/'failure.json'),completed_L4_not_repeated=True,TRAIN_prefix_to_preserve=384,original_parent_PT_sha=cfg['parents']['6']['SHA256']))
+        for depth in ((6,) if a.resume_from else (4,6)):
             row=roots[depth]
             for stage in schedule(depth):
                 folder=a.out/f'L{depth}'/('stage_'+stage);folder.mkdir(parents=True)
                 final=int(stage)==depth-1;prefix=int(stage)+2
                 m.save(a.out/'progress.json',dict(state='capturing',depth=depth,stage=stage,full_stage_frames=2011,completed=history))
-                row['fields']=acquire(m,loop,a,data,dm,hw,row,depth,stage,folder/'capture')
+                resume=a.resume_from/'L6/stage_1/capture' if a.resume_from and depth==6 and stage=='1' else None
+                row['fields']=acquire(m,loop,a,data,dm,hw,row,depth,stage,folder/'capture',resume=resume)
                 row['paths'][stage]=folder/'capture'
                 for role in ('train','test'):row['identities'][stage+'/'+role]=m.sha(folder/'capture'/role/'ccd.npy')
                 m.save(a.out/'progress.json',dict(state='bounded_suffix_fit',depth=depth,stage=stage,completed=history))
@@ -191,7 +262,7 @@ def run(a):
                 endpoint=dict(depth=depth,stage=stage,measured_stages=list(row['fields']),full_physical=final,
                     TEST_development=score,PT=str(row['parent']),PT_SHA256=m.sha(row['parent']),prefix_SHA256=row['identities'],
                     selected_E0=report['selected_e0'],target_correct=target,target_met=correct>=target,
-                    user_carry_to_next_stage=not final,finite_fit_complete=True,new_physical_frames=2011,SDK_released=not m.LOCK.exists(),
+                    user_carry_to_next_stage=not final,finite_fit_complete=True,new_physical_frames=m.read(folder/'capture/report.json')['new_physical_ccd'],preserved_TRAIN=m.read(folder/'capture/report.json')['preserved_TRAIN'],SDK_released=not m.LOCK.exists(),
                     capture_report_SHA256=m.sha(folder/'capture/report.json'),capture_audit_SHA256=m.sha(folder/'capture/independent_audit.json'),
                     suffix_report_SHA256=m.sha(folder/'suffix/report.json'),suffix_audit_SHA256=m.sha(folder/'suffix/independent_audit.json'))
                 m.save(folder/'endpoint_report.json',endpoint);history.append(endpoint);m.save(a.out/'history.json',history)
@@ -205,7 +276,7 @@ def run(a):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('--mode',choices=('plan','run'),required=True)
-    p.add_argument('--sequence',type=Path,required=True);p.add_argument('--profile',type=Path,required=True);p.add_argument('--out',type=Path)
+    p.add_argument('--sequence',type=Path,required=True);p.add_argument('--profile',type=Path,required=True);p.add_argument('--out',type=Path);p.add_argument('--resume-from',type=Path)
     a=p.parse_args()
     if a.mode=='plan':
         m,loop,cfg,data,dm,hw,roots,proof=admission(a)
