@@ -2,6 +2,20 @@
 
 ## 2026-10-21 explicit user authorization, supersedes L2 frozen status
 
+### L2 new1.5pp target actually achieved and independently verified
+
+Original full measured graph CPU TRAIN985/1200=82.08333%, TEST331/411=80.53528%,
+gap to fixed337/411 simulation=1.459854pp. The1433 actual TRAIN mini-batch row
+updates gained4 TEST images and lost2 relative to329; net+2, not a claim of no
+regressions. Full native raw-CCD replay and independent feature parity passed,
+all nonhead/phase/upstream tensors bit-identical, best/last parameter-identical.
+Selected PT SHA256 `bf36bdcf2df13eec7fcae5a36232fe71d578bc71ad4583179fa7b38cd606e541`.
+Evidence: `runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap15_20261021/`;
+independent audit plus17 best/last/protocol/history/plans/prediction/return files
+locally backed up by SHA manifest92501529750d8fd54878caa5c2da293e1c1fcbf308669e890dc213dd9445300d.
+New CCD/SDK/GPU=0; noVALID/TEST gradient. TEST-informed development, not an
+independent generalization estimate. Target achieved, no further L2 fitting.
+
 User confirms server disk installation and asks to optimize residual2/4/6.
 L2 accepted329/411=80.04866% was independently verified by full raw-CCD CPU
 replay, fixed simulation337/411=81.99513%. New <=1.5pp gap requires331/411,
@@ -22,6 +36,10 @@ development, not independent generalization. Targets L4E2>=288 (human70% gate)
 and L6E1>=322; final342/350 unchanged. No next optical stage before native pass.
 At most20pairs/128updates each/120fit seconds per group, no automatic repeats.
 Full native best/last CPU replay, frozen SHA and local evidence backup required.
+If a complete native-validated pass truly increases correct counts, allow at
+most two further same-method passes (three total), linked to immutable parent
+report/PT and same data. Stop at first no-accuracy-gain pass or target; no
+seed/coefficient grid and no optical advance on an unmet threshold.
 No scheduled supervision, new branch/worktree/engineering copy or hardware/LUT
 change. Server restored mount must be checked rather than recreated/overwritten.
 

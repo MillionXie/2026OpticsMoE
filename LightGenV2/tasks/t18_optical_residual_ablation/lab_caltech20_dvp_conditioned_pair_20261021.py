@@ -35,6 +35,15 @@ def run(a):
     assert not a.out.exists();a.out.mkdir()
     folder=a.sequence/'TRAIN_restored_same_mask_pair_20261021'/f'L{a.depth}'
     parent=folder/'fullTRAIN_coupled_confusion/best.pt';digest,expected=PARENTS[a.depth]
+    pass_index=1
+    if a.parent_run:
+        previous=a.parent_run.resolve();assert previous.is_relative_to(folder.resolve())
+        previous_report=m.read(previous/'report.json');previous_protocol=m.read(previous/'protocol.json')
+        assert previous_report['state']=='complete' and previous_report['strict_original_CPU'] and not previous_report['passed']
+        assert previous_report['selected_correct']>previous_report['baseline_correct'],'No repeat after a no-accuracy-gain pass'
+        assert m.read(previous.with_suffix('.return.json'))['returncode']==0
+        pass_index=previous_protocol.get('pass_index',1)+1;assert 2<=pass_index<=3
+        expected=previous_report['selected_correct'];parent=previous/'best.pt';digest=previous_report['results']['best']['PT_SHA256']
     assert m.sha(parent)==digest
     rp=m.read(parent.parent/'report.json');cp=m.read(parent.parent/'protocol.json')
     assert rp['state']=='complete' and rp['selected_correct']==expected and rp['protocol_SHA256']==m.sha(parent.parent/'protocol.json')
@@ -68,7 +77,8 @@ def run(a):
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=cfg,parent_PT_SHA256=digest,
         TRAIN=1600,TEST=411,VALID=0,gradient_batch=1600,TEST_gradients=False,TEST_informed_development=True,
         data_SHA256=dm['sha256'],prefix_SHA256=identities,all_nonhead_frozen=True,new_inference_layers=0,
-        covariance_TRAIN_only=True,variance_floor=floor,feature_files_SHA256=cp['feature_files_SHA256'],SDK_used=False,GPU_used=False,new_CCD=0)
+        covariance_TRAIN_only=True,variance_floor=floor,feature_files_SHA256=cp['feature_files_SHA256'],SDK_used=False,GPU_used=False,new_CCD=0,
+        pass_index=pass_index,maximum_total_passes=3,parent_report_SHA256=m.sha(parent.parent/'report.json'))
     m.save(a.out/'protocol.json',protocol);np.savez_compressed(a.out/'TRAIN_geometry.npz',mean=mean.numpy(),root=root.numpy(),eigenvalues=ev.numpy())
     xn=tr['x']/np.linalg.norm(tr['x'],axis=1,keepdims=True).clip(1e-12);qn=te['x']/np.linalg.norm(te['x'],axis=1,keepdims=True).clip(1e-12)
     used=[];history=[];plans=[];selected=0;lastw,lastb=w.copy(),b.copy();start=time.monotonic()
@@ -114,7 +124,7 @@ def run(a):
         full_physical=False,strict_original_CPU=True,next_layer_started=False,protocol_SHA256=m.sha(a.out/'protocol.json')))
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--parent-run',type=Path);a=p.parse_args()
     try:selftest() if a.selftest else run(a)
     except BaseException as e:
         if a.out.exists():(a.out/'failure.json').write_text(json.dumps(dict(error=repr(e),traceback=traceback.format_exc()),indent=2))
