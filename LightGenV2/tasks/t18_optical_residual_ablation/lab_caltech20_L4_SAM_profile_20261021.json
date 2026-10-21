@@ -1,0 +1,11 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_delta_SAM","gap_pp":1.5,"target":340,"parent_correct":284,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/protected_budget180_20261021/L4/best.pt",
+  "parent_SHA256":"d376a6dd10b669553d068ecfa00f11eb190729ffec8c70fa5a8ae0c1af9b2deb",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "SAM":{"learning_rate":0.003,"steps":600,"evaluate_every":10,"fit_seconds":120,"SAM_radius":0.03,"teacher_KL":0.1,"anchor":0.01,"trust_radius":1.0,"label_smoothing":0.03},
+  "scope":"Distinct regularized TRAIN-only sharpness-aware objective after protected-row plateau284. Square-root ORIGINAL TRAIN prior moderates rare/common trade-off; no TEST gradient, seed or hyperparameter scan. Original Linear5140 delta folding only, all nonhead state frozen; no camera/SDK/GPU, parent284 retained unless strict native better."
+}

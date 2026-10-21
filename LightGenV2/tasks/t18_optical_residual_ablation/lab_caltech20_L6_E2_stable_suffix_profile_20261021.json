@@ -1,0 +1,13 @@
+{
+  "schema":"L6_measured_prefix4_stable_rawCE_v1",
+  "source_run":"advance_after_user_waiver_20261021_USB_resume01_G1_resume384",
+  "parent_SHA256":"0ea0523d4c594cdfa45497303c30ec490c366773f623ffb04ed927b6d3ea53e2",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","startmenuexperiencehost.exe","todesk.exe","searchapp.exe","textinputhost.exe","phoneexperiencehost.exe","msedgewebview2.exe","shellexperiencehost.exe","systemsettings.exe","msedge.exe"],
+  "epochs":12,"fit_seconds":900,"evaluate_every":2,"target_correct":322,
+  "phase_lr":0.00005,"electronic_lr":0.0001,"alpha_lr":0.0001,"head_lr":0.0005,"weight_decay":0.001,"label_smoothing":0.03,
+  "CCD_gain_sigma":0.005,"CCD_additive_sigma_DN":0.1,"dropout_location":"head_features","feature_dropout_p":0.02,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "scope":"2026-10-21 user defers USB recovery and authorizes offline optimization. Baseline147/411 uses4 actual stages plus3 simulated suffix stages, not full hardware. One bounded stable raw-logit CE suffix fit, milder TRAIN noise/dropout, larger head/smaller phase LR, all1600TRAIN per epoch. No camera/SDK/TEST gradient/VALID/new layers. Existing captured prefix frozen. Only AFTER explicit human recovery may selected new G2 mask get fresh downstream CCD."
+}

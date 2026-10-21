@@ -13,6 +13,47 @@ def target_count(simulation,samples,gap_pp):
     return math.ceil(simulation-samples*gap_pp/100-1e-10)
 
 
+def delta_sam(torch,x,y,pw,pb,counts,cfg,observe):
+    """TRAIN-only SAM in delta coordinates; zero delta is byte-exact parent."""
+    from torch.nn import functional as F
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
+    from lab_caltech20_dvp_completed_readout_20261021 import fold_delta
+    mean,root,_,_,floor=train_conditioned_geometry(x.numpy());xx=torch.cat(((x-mean)@root,torch.ones(len(x),1,dtype=x.dtype)),1)
+    base=F.linear(x,pw.double(),pb.double());teacher=(base/2).softmax(1).detach();keep=(base.argmax(1)==y).double()
+    weights=(counts/counts.mean()).sqrt();delta=torch.nn.Parameter(torch.zeros(20,257,dtype=x.dtype));opt=torch.optim.Adam([delta],lr=cfg['learning_rate'])
+    def objective():
+        z=base+xx@delta.T;ce=F.cross_entropy(z,y,weight=weights,label_smoothing=cfg['label_smoothing'])
+        kl=F.kl_div((z/2).log_softmax(1),teacher,reduction='none').sum(1)*4
+        return ce+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*delta.square().sum()
+    start=time.monotonic();lastw,lastb=pw,pb
+    for step in range(1,cfg['steps']+1):
+        opt.zero_grad();clean=objective();clean.backward();gradient=delta.grad.detach().clone();saved=delta.detach().clone()
+        with torch.no_grad():delta.add_(cfg['SAM_radius']*gradient/gradient.norm().clamp_min(1e-12))
+        try:opt.zero_grad();probe=objective();probe.backward()
+        finally:
+            with torch.no_grad():delta.copy_(saved)
+        assert torch.equal(delta.detach(),saved) and torch.isfinite(delta.grad).all();torch.nn.utils.clip_grad_norm_([delta],1.);opt.step()
+        with torch.no_grad():delta.mul_(min(1.,cfg['trust_radius']/max(float(delta.norm()),1e-12)))
+        if step%cfg['evaluate_every']==0 or step==cfg['steps']:
+            with torch.no_grad():lastw,lastb=fold_delta(torch,pw,pb,delta,mean,root)
+            stop=observe(lastw,lastb,dict(phase='TRAIN_delta_SAM',step=step,TRAIN_all1600=True,TRAIN_loss=float(clean.detach()),TRAIN_probe_loss=float(probe.detach()),probe_restored_exactly=True))
+            if stop or time.monotonic()-start>=cfg['fit_seconds']:break
+    return lastw,lastb,dict(method='TRAIN_delta_SAM',variance_floor=floor,actual_TRAIN_updates=step,TRAIN_prior_power=.5,zero_delta_original_identity=True,fit_seconds=time.monotonic()-start)
+
+
+def selftest():
+    import torch
+    torch.set_num_threads(2);torch.manual_seed(73)
+    x=torch.randn(40,256,dtype=torch.float64);y=torch.arange(40)%20
+    w=torch.randn(20,256)*.01;b=torch.zeros(20);rows=[]
+    cfg=dict(learning_rate=.003,label_smoothing=.03,teacher_KL=.1,anchor=.01,SAM_radius=.03,trust_radius=1.,steps=2,evaluate_every=1,fit_seconds=30)
+    ww,bb,proof=delta_sam(torch,x,y,w,b,torch.ones(20,dtype=torch.float64),cfg,lambda w,b,r:rows.append(r))
+    assert torch.isfinite(ww).all() and torch.isfinite(bb).all() and not torch.equal(ww,w)
+    assert len(rows)==2 and all(r['probe_restored_exactly'] for r in rows)
+    assert proof['actual_TRAIN_updates']==2
+    print(json.dumps(dict(passed=True,SAM_probe_restored_exactly=True,finite_TRAIN_gradient=True,original_linear_shape=list(ww.shape),TEST_used=False,SDK_used=False)))
+
+
 def run(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     import numpy as np,torch
@@ -29,7 +70,7 @@ def run(a):
     assert not a.out.exists();a.out.mkdir(parents=True)
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
-    continuation=cfg.get('method')=='TRAIN_protected_continuation';head_only=teacher_mode or continuation
+    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';head_only=teacher_mode or continuation or sam
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -99,11 +140,13 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation:w,b,proof=None,None,dict(method='finite_same_objective_TRAIN_protected_continuation',parent_preserved=True)
+    elif continuation or sam:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if best<340:
+    if sam:
+        lastw,lastb,proof=delta_sam(torch,x,y,pw,pb,counts,cfg['SAM'],observe);reason='finite_distinct_SAM_objective_complete'
+    elif best<340:
         maximum=cfg.get('maximum_protected_passes',1);assert 1<=maximum<=12
         protected_start=time.monotonic();total_budget=cfg.get('total_protected_fit_seconds',maximum*120);assert 0<total_budget<=1440
         for pass_index in range(1,maximum+1):
@@ -215,7 +258,8 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--selftest',action='store_true');a=p.parse_args()
+    if a.selftest:selftest();raise SystemExit(0)
     try:run(a)
     except BaseException as e:
         if a.out.exists():(a.out/'failure.json').write_text(json.dumps(dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False),indent=2))
