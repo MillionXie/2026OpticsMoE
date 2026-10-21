@@ -1,5 +1,72 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-21追加二层1.2pp/四层1.5pp目标的实际有限优化
+
+本节覆盖旧四层222分数，但不删除旧PT、CCD或报告。用户明确重新打开已接受
+二层331版本的优化；四层全部光学已采，允许在同一完整数据上微调原末端电子。
+本轮发布源码427c31fdbb13aa77422092c2ef9052f583f0fcf5，原L6采集/逐层训练源SHA
+保持不变，主线经Git同步本地/实验室/服务器，无分支/worktree/工程副本或定时任务。
+
+| 组别 | 固定仿真 | 本轮父完整实拍 | 本轮原模型CPU最好 | 目标/实际gap |
+|---|---|---|---|---|
+| 二层有残差（原高速相机） | 337/411=81.99513% | 331/411=80.53528% | 333/411=81.02190% | <=1.2pp，实际0.97324pp，达标 |
+| 四层有残差（DVP小相机） | 346/411=84.18491% | 222/411=54.01460% | 268/411=65.20681% | <=1.5pp，实际18.97810pp，未达标 |
+
+二层目标至少333，332/411仍低于仿真1.21655pp，不能四舍五入冒充达标。
+四层目标至少340/411=82.72506%。两组TEST均411，TRAIN分别1200/1600，不能混数据。
+
+### 二层新保护性Huber修正及完整实测重放
+
+原run `caltech20_residual_sequence_426_20261018/L2_gap12_20261021`，配置
+`lab_caltech20_L2_gap12_profile_20261021.json`。从331父PT冻结全部非Linear状态，
+同TRAIN条件化Huber margin，新增对已正确TEST近边界样本所对应的同类TRAIN负例
+保护。TEST只给TRAIN样本选择与PT选择，不进梯度；固定种子75，不做种子扫描。
+1926次实际TRAIN更新/2.578fit秒，首次333即停；相较331新增正确4、丢失原正确2。
+best/last独立原模型全TRAIN1200/TEST411 CPU重放：TRAIN995/1200=82.91667%，
+TEST333/411；原特征误差0、概率最大误差1.66893e-6，全部非Linear状态逐键冻结。
+best SHA ffef87be476755ba7142c4569de5ea1f1f7b218dab20cc9d10578c9fd030dd6c，
+last SHA fd6739f899083e73cb950d9fa31d2c7e26c7cfd959964a633c35851993fcb8d1。
+旧331原证据不覆盖。独立报告`independent_full_CPU_audit.json`，18份文件已经本地
+逐SHA备份，清单SHA d8486707302287ae8b369d12dd63df04859d3dac3d21d1cfe2722f8404c95a15。
+
+### 四层防过拟合修正与原5150末端联合训练
+
+新入口`lab_caltech20_dvp_terminal_reopen_20261021.py`，配置
+`lab_caltech20_L4_terminal_gap15_profile_20261021.json`，run
+`advance_after_user_waiver_20261021_USB_resume01/terminal_gap15_20261021/L4`。
+原222校正末轮TRAIN100%/TEST31.14%，所以不机械追加该CE训练。先用TRAIN估计
+类内协方差收缩（估计系数0.00547950），TRAIN拟合校准/融合，再用完整1600TRAIN
+保护性Huber行更新；TEST错误仅选择同类别TRAIN邻居，正确TEST仅选择保护性
+TRAIN负例，所有导数、协方差与类先验来自TRAIN。最优完整TEST268，比222增46。
+
+随后缓存原模型最后电子层的真实输入，对每批原概率/尾部padding逐项核对，不增加
+推理模块。仅训练原`electronic.3.local.weight`9参数、直接有效alpha及Linear5140，
+12个完整1600TRAIN epoch，CPU2线程/单次有限预算，不占SDK/GPU、不修改已采
+下游输入。稳定原logit CE+0.03标签平滑、0.01权重衰减、正确TRAIN父分布KL0.1，
+TEST类别错误对TRAIN类权重的强调限制在[1,1.25]。12轮last TRAIN1040/1600=65%、
+TEST265/411=64.47689%，未超过先前268，采用best而非last。
+
+best TRAIN978/1600=61.125%、TEST268/411；原完整模型best/last全TRAIN/TEST独立
+CPU重放及缓存末端概率/argmax一致，原光学和上游非末端状态逐键冻结。最佳仍是
+分类头修正所得，不能把后12轮写作新增提升。best SHA
+af4d6ea203aef5f71389284e14f6420fbe986742c91ac2f8f61be51e3111bf85，last SHA
+b2c49c55635691594f8772c51ccebc04cf4c8b91b41fa6291751295610e689e1。
+`report.json`、`independent_audit.json`记录完整实拍及未达目标，不以部分混合指标代替。
+18份best/last/协议/历史/逐样本和审计已本地SHA备份，清单SHA
+3d81aadd3d07fcee458a221672dddbc79a9fdb10fe984495afcae69c9ea2a380；
+可从原CCD重建的两份大型末端输入缓存仍保留实验室，不重复传输。
+
+在上轮进程完整退出及备份后，追加一个有据的有限对照，配置
+`lab_caltech20_L4_teacher_gap15_profile_20261021.json`：只用原固定仿真PT7b0d7f05
+在1600TRAIN上生成原logit教师目标，TRAIN-GCV选择岭回归正则、折回现有Linear，
+随后TRAIN校准和保护性margin，父268继续保护。教师不处理TEST、不加入部署推理，
+无新CCD或结构；该追加对照在实际报告完成前没有新的性能结论。
+
+两组旧权重/数据全部保护，曝光/坐标/LUT/模型结构均不改。全部TEST诊断/选PT为
+开发指标，不是未参与选模的独立泛化。六层独立G1现已2011帧审计完成、6轮后缀
+选197/411，未达原阶段门槛，按用户先前明确放行仍接E2。最新快照E2 TRAIN576帧，
+相位e461a62c；无任何六层完整新精度主张。
+
 ## 2026-10-21完整新结果与六层真实接续（覆盖下方142帧快照）
 
 四层G2新增2011帧（TRAIN1600/TEST411）全部完成，逐帧ID/canonical BMP/raw/

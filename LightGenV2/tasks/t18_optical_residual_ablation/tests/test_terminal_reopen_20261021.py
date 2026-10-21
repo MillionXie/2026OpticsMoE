@@ -16,4 +16,8 @@ class TerminalReopen(unittest.TestCase):
         self.assertEqual(c2['target_correct']['2'],333);self.assertFalse(c2['TEST_gradient'])
         source=(HERE/'lab_caltech20_dvp_terminal_reopen_20261021.py').read_text();ast.parse(source)
         self.assertNotIn('cuda()',source);self.assertNotIn('Bench(',source)
+    def test_teacher_scope(self):
+        c=json.loads((HERE/'lab_caltech20_L4_teacher_gap15_profile_20261021.json').read_text())
+        self.assertEqual(c['method'],'TRAIN_teacher_ridge');self.assertEqual(c['parent_correct'],268)
+        self.assertEqual(c['target'],340);self.assertNotIn('tail',c)
 if __name__=='__main__':unittest.main()
