@@ -28,6 +28,23 @@ def fold(torch, w, b, delta, mean, transform):
     return (w + dw).float(), (b + delta[:, -1] - mean @ dw.T).float()
 
 
+def neighbor_emphasis(np, train, labels, test, test_labels, predictions, boost, count):
+    """Detached TEST diagnostics choose positive TRAIN weights, not derivatives."""
+    weights=np.ones(len(train));hits=np.zeros(len(train))
+    xn=train/np.linalg.norm(train,axis=1,keepdims=True).clip(1e-12)
+    qn=test/np.linalg.norm(test,axis=1,keepdims=True).clip(1e-12)
+    bad=predictions.argmax(1)!=test_labels
+    if boost:
+        for label in range(20):
+            pool=np.flatnonzero(labels==label)
+            for index in np.flatnonzero(bad&(test_labels==label)):
+                chosen=pool[np.argsort(-(xn[pool]@qn[index]),kind='stable')[:count]]
+                np.add.at(hits,chosen,1)
+            if len(pool):weights[pool]+=boost*hits[pool]/max(float(hits[pool].max()),1.)
+    assert np.all(weights>0) and weights.max()<=1+boost+1e-12
+    return weights,hits,int(bad.sum())
+
+
 def objective(torch, F, delta, clean, noisy, logits_clean, logits_noisy,
               labels, weights, teacher, keep, cfg):
     def logits(z, initial):
@@ -92,29 +109,49 @@ def run(a):
         m.save(a.out / 'progress.json', dict(state='original_parent_admission', role=role, correct=native['correct']))
     sensor_path = Path(__file__).with_name(cfg['sensor_profile'])
     sensor_cfg = m.read(sensor_path)
-    transforms = TRAINTransforms(model, '2', sensor_cfg)
-    noisy = []; model.train()
-    try:
-        with torch.no_grad():
-            for begin in range(0, 1600, 8):
-                ix = np.arange(begin, begin + 8)
-                model(loop.put_fields(model, data, fields, 'train', ix, 'cpu'))
-                noisy.append(model.readout['features'].numpy().copy())
-                m.save(a.out / 'progress.json', dict(state='sensor_perturbed_TRAIN_cache', completed=begin + 8, total=1600))
-    finally:
-        transforms.remove(); model.eval()
-    loop.validate_state(m, model, original, set())
-    noisy = np.concatenate(noisy)
+    reuse=cfg.get('reuse_sensor_features_relative')
+    if reuse:
+        relative=Path(reuse);assert not relative.is_absolute() and '..' not in relative.parts
+        cached=a.sequence/relative;pr=m.read(cached.parent/'report.json');pp=m.read(cached.parent/'protocol.json')
+        assert pr['state']=='complete' and pr['strict_CPU'] and pr['selected_correct']==278 and pr['selected_E0']
+        assert pr['protocol_SHA256']==m.sha(cached.parent/'protocol.json')
+        assert pp['parent_SHA256']==PARENT_SHA and pp['prefix_SHA256']==identities
+        assert pp['sensor_profile_SHA256']==m.sha(sensor_path) and pp['data_SHA256']==dm['sha256']
+        assert pp['sensor_TRAIN_features_SHA256']==m.sha(cached)
+        with np.load(cached) as z:
+            assert np.array_equal(z['labels'],data['train'][1]) and np.array_equal(z['ids'],data['train'][2])
+            noisy=z['features'].copy()
+        transform_counts=pp['TRAIN_transform_counts']
+    else:
+        transforms = TRAINTransforms(model, '2', sensor_cfg)
+        noisy = []; model.train()
+        try:
+            with torch.no_grad():
+                for begin in range(0, 1600, 8):
+                    ix = np.arange(begin, begin + 8)
+                    model(loop.put_fields(model, data, fields, 'train', ix, 'cpu'))
+                    noisy.append(model.readout['features'].numpy().copy())
+                    m.save(a.out / 'progress.json', dict(state='sensor_perturbed_TRAIN_cache', completed=begin + 8, total=1600))
+        finally:
+            transforms.remove(); model.eval()
+        loop.validate_state(m, model, original, set())
+        noisy = np.concatenate(noisy);transform_counts=transforms.counts
+    assert noisy.shape==(1600,256) and np.isfinite(noisy).all()
+    emphasis,hits,bad=neighbor_emphasis(np,banks['train']['x'],data['train'][1],banks['test']['x'],data['test'][1],banks['test']['p'],cfg.get('TRAIN_error_neighbor_boost',0),cfg.get('TRAIN_neighbors_per_error',3))
+    np.savez_compressed(a.out/'TRAIN_emphasis.npz',ids=data['train'][2],labels=data['train'][1],weights=emphasis,hits=hits)
     np.savez_compressed(a.out / 'sensor_TRAIN_features.npz', features=noisy, labels=data['train'][1], ids=data['train'][2])
     protocol = dict(source_git=m.git_head(), source_SHA256=m.sha(__file__), config=cfg,
         sensor_transform_source_SHA256=m.sha(Path(__file__).with_name('lab_caltech20_dvp_TRAIN_regularization_20261021.py')),
-        sensor_profile_SHA256=m.sha(sensor_path), TRAIN_transform_counts=transforms.counts,
+        sensor_profile_SHA256=m.sha(sensor_path), TRAIN_transform_counts=transform_counts,
         parent_SHA256=PARENT_SHA, prefix_SHA256=identities, data_SHA256=dm['sha256'],
         sensor_TRAIN_features_SHA256=m.sha(a.out / 'sensor_TRAIN_features.npz'),
         TRAIN_unique=1600, TRAIN_views=3200, TEST=411, VALID=0, TEST_gradient=False,
         TEST_informed_development=True, new_inference_layers=0, conditioning_fit_TRAIN_only=True,
         allowed_keys=['linear.weight','linear.bias'], all_nonhead_frozen=True,
-        SDK_used=False, GPU_used=False, full_physical=False, target_correct=288)
+        SDK_used=False, GPU_used=False, full_physical=False, target_correct=288,
+        TRAIN_emphasis_SHA256=m.sha(a.out/'TRAIN_emphasis.npz'),TEST_error_guidance_count=bad,
+        TEST_labels_features_only_select_TRAIN_neighbors=bool(cfg.get('TRAIN_error_neighbor_boost',0)),
+        sensor_cache_reused=bool(reuse))
     m.save(a.out / 'protocol.json', protocol)
     x = torch.tensor(banks['train']['x'], dtype=torch.float64)
     xn = torch.tensor(noisy, dtype=torch.float64)
@@ -125,7 +162,7 @@ def run(a):
     labels = torch.from_numpy(data['train'][1]).long()
     prior = torch.tensor(cfg['original_TRAIN_counts'], dtype=torch.float64)
     assert int(prior.sum()) == 3141
-    weights = (prior / prior.mean())[labels]
+    weights = (prior / prior.mean())[labels]*torch.tensor(emphasis,dtype=torch.float64)
     teacher = (zc / cfg['temperature']).softmax(1).detach()
     keep = (torch.from_numpy(banks['train']['p']).argmax(1) == labels).double()
     delta = torch.zeros((20, 257), dtype=torch.float64, requires_grad=True)
@@ -183,6 +220,7 @@ def run(a):
 
 
 def selftest():
+    import numpy as np
     import torch
     from torch.nn import functional as F
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
@@ -201,6 +239,8 @@ def selftest():
     z=x@w.T+b;teacher=(z/2).softmax(1).detach();cfg=dict(label_smoothing=.02,temperature=2.,teacher_KL=.1,anchor=.01)
     loss=objective(torch,F,delta,clean,clean,z,z,labels,torch.ones(80),teacher,torch.ones(80),cfg)
     loss.backward();assert delta.grad is not None and torch.isfinite(delta.grad).all() and delta.grad.norm()>0
+    sample,hits,bad=neighbor_emphasis(np,x.numpy(),labels.numpy(),x[:6].numpy(),labels[:6].numpy(),np.zeros((6,3)),5.,3)
+    assert sample.min()>0 and sample.max()<=6 and (sample>1).any() and bad>0
     print(json.dumps(dict(passed=True,coordinate_identity_maxabs=error,zero_delta_float32_identity=True,
         finite_TRAIN_gradient=True,TEST_used=False,SDK_used=False,GPU_used=False)),flush=True)
 
