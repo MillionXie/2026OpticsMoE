@@ -2,6 +2,30 @@
 
 ## 最新人工修改L4 E2门槛：70%与TRAIN噪声/dropout（2026-10-21）
 
+L4 sensor段已真实4轮完整TRAIN更新，TRAIN loss1.04275→.97228，各轮完整新TEST
+258/264/259/269，未超过父278；正做原完整bestlast CPU重放，不能采用较低末轮作新改善。
+下一项仅一次有限当前观测目标对照，配置`lab_caltech20_DVP_TRAIN_currentview_profile_20261021.json`：
+从原278出发、CCD噪声/1%像素dropout及学习率不变，old-view CE和old-TRAIN教师KL权重设0，
+new-view CE设1；有效梯度仅当前1600TRAIN。复用引擎仍计算旧view用于诊断，但不得把它
+说成另1600独立训练样本或有效旧view监督。检验旧观测目标干扰的可能性，不宣称已证明因果。
+旧同mask初训E7选中，当前sensor段至E4仍在恢复，故无改善等待4→8轮，但总上限仍12轮/
+900fit秒；不无限加预算、不动原结构/硬件。先完成父段审核及CPU数值检查，再以实际启动
+收据和更新记录确认此接续，最终仍用clean完整411TEST选模，保留旧278。
+
+**最新实际接续：**CCD像素dropout新配置已发布于Git`2fdcc76930`并三端SHA同步；
+实际CPU数值核验eval精确恒等、仅原后缀梯度、无新state键均passed。TRAIN20仅用于
+强度敏感度：clean16/20 NLL.54131、噪声16/20 .55310、CCD像素dropout16/20 .53272、
+二者合用16/20 .57635；这不是完整性能改善。独立核验文件是
+`TRAIN20_sensor_dropout_isolated_sensitivity.json`，不用早先未正确隔离的同名近似核验
+`TRAIN20_sensor_dropout_sensitivity.json`声称单因素效应。已实际启动
+`L4/TRAIN_sensor_dropout_gate70_20261021`（shim23752），从原278接续、无新CCD/SDK；
+必须以完整实际epoch/history和最终CPU报告判断，不以PID或小样本16/20宣称70%已达。
+
+L6有限双行纠错已20pairs/2560更新、15.453fit秒并rc0：279→285/411=69.34307%，
+完整原生CPU TRAIN1502/1600=93.875%、TEST285、预测误差0、全部非head冻结。
+best SHA6967060c81056cf79ef84b57dfadaafb364e6a6ebe6836efe94c5fa21591e98d；
+last282保留。仍低于本层322及旧观测历史291，不作“全六层完整实拍”结果。
+
 **首个对照已真实结束，不是改善结果：**完整4轮/123.22fit秒，TRAIN共3200个双view
 batch真实触发噪声及head dropout（12800响应样本）；新TEST各轮254/252/245/249，
 未胜E0父278。完整原生CPU bestlast/冻结审计rc0：仍选父278、TRAIN1136/1600，

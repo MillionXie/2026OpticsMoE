@@ -8,6 +8,15 @@ TASK = Path(__file__).resolve().parents[1]
 
 
 class RegularizationContract(unittest.TestCase):
+    def test_current_view_only_supervision(self):
+        cfg = json.loads((TASK / 'lab_caltech20_DVP_TRAIN_currentview_profile_20261021.json').read_text())
+        self.assertEqual(cfg['old_view_CE_weight'], 0)
+        self.assertEqual(cfg['new_view_CE_weight'], 1)
+        self.assertEqual(cfg['correct_old_TRAIN_teacher_KL_weight'], 0)
+        self.assertEqual(cfg['maximum_epochs'], 12)
+        self.assertEqual(cfg['no_improvement_epochs'], 8)
+        self.assertFalse(cfg['TEST_gradient'])
+
     def test_sensor_dropout_profile(self):
         cfg = json.loads((TASK / 'lab_caltech20_DVP_TRAIN_sensor_dropout_profile_20261021.json').read_text())
         self.assertEqual(cfg['dropout_location'], 'CCD_pixels')
