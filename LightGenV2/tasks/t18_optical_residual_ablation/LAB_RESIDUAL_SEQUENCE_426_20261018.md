@@ -2,6 +2,20 @@
 
 ## 2026-10-21 latest renewal: L4 coupled Huber; L6 TRAIN regularization
 
+After the readout contrasts plateau, one distinct ORIGINAL-reference TRAIN
+teacher suffix contrast is specified by `lab_caltech20_DVP_reference_suffix_profile_20261021.json`.
+Read-only TRAIN8 admission proved original reference Script->original native
+model probability parity0 for both depths. It is a fixed simulation TRAIN
+teacher, NOT an old-observation teacher or TEST teacher. Only original permitted
+uncaptured suffix masks/postCCD electronics/head may adapt; every measured mask
+and upstream remains bitwise frozen. No model graph/hardware/LUT changes.
+One idle lab4060, sequential L4 thenL6, original GPU admission and65% memory cap;
+TRAIN1600/epoch, max3epochs/600s per depth (complete epoch boundary), stop2stale.
+TRAIN-only confidence-filtered KL/feature alignment plus CCD synthetic noise/
+1% pixel dropout, disabled for evaluation. Native original bestlast fullCPU
+TRAIN/TEST and frozen/source/dataSHA backup required, parent285/287 protected.
+No new CCD/SDK/next optical layer or timers; not a promise to achieve targets.
+
 User explicitly renews targeted L4/L6 improvement, L4>=288/411 first, L6
 overfitting reduction, all exposure/coordinates/LUT/model structure fixed. L2
 331 and nores are untouched. New immutable parents are audited284/287 below.

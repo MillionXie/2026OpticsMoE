@@ -1,0 +1,17 @@
+{
+  "schema":"DVP_original_reference_TRAIN_suffix_v1",
+  "parents":{
+    "4":{"relative":"TRAIN_coupled_Huber_20261021/best.pt","SHA256":"7f7b0bec726e01fd8f292949136e1e42cedee9a96f9cea6f4fb1b00a3440f02b","correct":285},
+    "6":{"relative":"TRAIN_protected_Huber_pass02_20261021/best.pt","SHA256":"801d5c995fda910b824425e298f16ca0c05a2f93ba50fb3a38900fc964660401","correct":287}
+  },
+  "teacher_SHA256":{"4":"b508321c0d3d14cf66b6c58fc0b8d61b6788806f0fa00283491c935ba65c88ea","6":"617ab0d783014a71410fb992e7a6b1ac981de506601626ee6ea255ade77355a7"},
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","startmenuexperiencehost.exe","textinputhost.exe","phoneexperiencehost.exe","msedgewebview2.exe","msedge.exe","shellexperiencehost.exe","systemsettings.exe","lockapp.exe","weixin.exe","wechatappex.exe"],
+  "batch":4,"maximum_epochs":3,"maximum_fit_seconds":600,"no_improvement_epochs":2,
+  "lr_phase":0.00002,"lr_electronic":0.00002,"lr_alpha":0.00002,"lr_head":0.00001,
+  "label_smoothing":0.03,"temperature":2.0,"teacher_KL":0.5,"feature_alignment":0.1,
+  "CCD_additive_sigma_DN":0.5,"CCD_gain_sigma":0.005,"dropout_location":"CCD_pixels","CCD_pixel_dropout_p":0.01,"feature_dropout_p":0.0,
+  "targets":{"4":288,"6":322},
+  "scope":"Renewed L4/L6 optimization beyond plateauing readout: frozen ORIGINAL simulation model supplies TRAIN-only probability/feature targets; adapt original allowed unmeasured suffix masks/postCCD electronics/head, freeze every already measured mask and upstream. Existing graph/state only, no surrogate phase response or changed hardware. Full1600TRAIN each epoch, synthetic currentCCD TRAIN noise/dropout only, eval disabled. One fixed conservative contrast, no grid; max3 epochs or600seconds at complete epoch boundary, stop two stale epochs or gate. Explicit TEST-informed checkpoint selection; noTEST derivatives/teacher/VALID/newCCD/SDK, no next optical stage below actual gate. Native bestlast CPU TRAIN1600/TEST411 and SHA/freeze audit before adoption. GPU one idle lab4060 only, no shared server GPU/A100."
+}
