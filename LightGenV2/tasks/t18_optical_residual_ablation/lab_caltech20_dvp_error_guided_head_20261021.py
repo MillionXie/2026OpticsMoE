@@ -284,3 +284,69 @@ def paired_response_selftest():
     ww,bb,proof=paired_response_head(torch,F,x,y,x.clone(),w,b,torch.ones(20,dtype=x.dtype),cfg,lambda a,b,r:rows.append(r))
     assert len(rows)==3 and proof['actual_updates']==3 and torch.isfinite(ww).all() and all(abs(r['TRAIN_response_consistency'])<1e-10 for r in rows)
     print(dict(passed=True,TRAIN_only_paired_views=True,identical_views_zero_consistency=True,original_head_only=True,finite_nonzero_gradient=True))
+
+
+def stable_basis(torch,x,kind,cfg):
+    """TRAIN-only optimizer basis; never added to the inference graph."""
+    mean=x.mean(0);xc=x-mean;d=x.shape[1];assert d==256
+    cov=xc.T@xc/len(x);floor=max(float(cov.trace())/d*.02,1e-6)
+    if kind=='TRAIN_PCA99':
+        eigen,vectors=torch.linalg.eigh(cov);order=torch.arange(d-1,-1,-1);eigen=eigen[order].clamp_min(0);vectors=vectors[:,order]
+        cumulative=eigen.cumsum(0)/eigen.sum().clamp_min(1e-20)
+        rank=int(torch.searchsorted(cumulative,torch.tensor(cfg['variance_fraction'],dtype=x.dtype)))+1
+        basis=vectors[:,:rank]/eigen[:rank].clamp_min(floor).sqrt()[None,:]
+        proof=dict(kind=kind,rank=rank,TRAIN_variance_fraction=float(cumulative[rank-1]),TRAIN_spectrum=eigen.tolist(),variance_floor=floor)
+    else:
+        assert kind=='spatial_DCT8' and cfg['DCT_width']==8
+        import math
+        coordinate=torch.arange(16,dtype=x.dtype);columns=[]
+        for p in range(8):
+            for q in range(8):
+                if p==q==0:continue  # layer-norm features have no useful DC component
+                a=torch.cos(math.pi*(2*coordinate+1)*p/32)*(1/4 if p==0 else (1/8)**.5)
+                b=torch.cos(math.pi*(2*coordinate+1)*q/32)*(1/4 if q==0 else (1/8)**.5)
+                columns.append((a[:,None]*b[None,:]).flatten())
+        spatial=torch.stack(columns,1);assert torch.allclose(spatial.T@spatial,torch.eye(63,dtype=x.dtype),atol=1e-10)
+        projected=xc@spatial;ev,vec=torch.linalg.eigh(projected.T@projected/len(x));basis=spatial@vec@torch.diag(ev.clamp_min(floor).rsqrt())
+        proof=dict(kind=kind,rank=63,DCT_width=8,DC_excluded=True,variance_floor=floor,TRAIN_projected_spectrum=ev.tolist())
+    return mean,basis,proof
+
+
+def stable_subspace_head(torch,F,x,y,pw,pb,counts,kind,cfg,observe):
+    """Full TRAIN CE in a stable/shared spatial delta subspace, original head."""
+    mean,basis,proof=stable_basis(torch,x,kind,cfg);xx=torch.cat(((x-mean)@basis,torch.ones(len(x),1,dtype=x.dtype)),1)
+    w0=pw.double()-pw.double().mean(0,keepdim=True);b0=pb.double()-pb.double().mean();base=F.linear(x,w0,b0)
+    T=cfg['temperature'];teacher=(base/T).softmax(1).detach();keep=(base.argmax(1)==y).double()
+    sample=counts[y]/counts.mean();sample/=sample.sum();assert bool((sample>0).all())
+    delta=torch.nn.Parameter(torch.zeros(20,xx.shape[1],dtype=x.dtype));opt=torch.optim.Adam([delta],lr=cfg['learning_rate']);start=time.monotonic();stop=False
+    for step in range(1,cfg['steps']+1):
+        z=base+xx@delta.T;ce=(sample*F.cross_entropy(z,y,reduction='none',label_smoothing=cfg['label_smoothing'])).sum()
+        kl=F.kl_div((z/T).log_softmax(1),teacher,reduction='none').sum(1)*T*T
+        loss=ce+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*delta.square().sum()
+        opt.zero_grad();loss.backward();assert torch.isfinite(loss) and delta.grad is not None and torch.isfinite(delta.grad).all();torch.nn.utils.clip_grad_norm_([delta],1.);opt.step()
+        with torch.no_grad():
+            delta.sub_(delta.mean(0,keepdim=True));delta.mul_((cfg['row_trust_radius']/delta.norm(dim=1,keepdim=True).clamp_min(1e-12)).clamp_max(1.))
+            dw=delta[:,:-1]@basis.T;ww=w0+dw;bb=b0+delta[:,-1]-dw@mean
+        if step%cfg['evaluate_every']==0 or step==cfg['steps']:
+            stop=observe(ww.detach(),bb.detach(),dict(phase=kind,step=step,TRAIN_all1600=True,TRAIN_loss=float(loss.detach()),TRAIN_CE=float(ce.detach()),TRAIN_correct=int((z.argmax(1)==y).sum()),optimizer_parameters=delta.numel(),delta_max_row_norm=float(delta.detach().norm(dim=1).max())))
+            if stop or time.monotonic()-start>=cfg['fit_seconds']:break
+    proof.update(TRAIN_only=True,actual_updates=step,optimizer_parameters=delta.numel(),fit_seconds=time.monotonic()-start,original_Linear_only=True,new_inference_layers=0,TEST_gradient=False)
+    return ww.detach(),bb.detach(),proof
+
+
+def subspace_selftest():
+    import torch
+    from torch.nn import functional as F
+    torch.set_num_threads(2);torch.manual_seed(73)
+    latent=torch.randn(60,3,dtype=torch.float64);mix=torch.randn(3,256,dtype=torch.float64);x=latent@mix+1e-6*torch.randn(60,256,dtype=torch.float64);y=torch.arange(60)%20
+    w=torch.randn(20,256)*.01;b=torch.zeros(20);cfg=dict(variance_fraction=.99,DCT_width=8,temperature=2.,teacher_KL=.5,anchor=.01,row_trust_radius=.4,learning_rate=.003,label_smoothing=.02,steps=3,evaluate_every=1,fit_seconds=30)
+    for kind in ('TRAIN_PCA99','spatial_DCT8'):
+        rows=[];mean,basis,p=stable_basis(torch,x,kind,cfg)
+        if kind=='TRAIN_PCA99':assert p['rank']<=3
+        ww,bb,proof=stable_subspace_head(torch,F,x,y,w,b,torch.ones(20,dtype=x.dtype),kind,cfg,lambda a,b,r:rows.append(r))
+        assert len(rows)==3 and torch.isfinite(ww).all() and torch.isfinite(bb).all() and proof['actual_updates']==3
+        coordinate=torch.randn(20,basis.shape[1]+1,dtype=x.dtype)*.01;dw=coordinate[:,:-1]@basis.T
+        expected=F.linear(x,w.double(),b.double())+torch.cat(((x-mean)@basis,torch.ones(len(x),1,dtype=x.dtype)),1)@coordinate.T
+        actual=F.linear(x,w.double()+dw,b.double()+coordinate[:,-1]-dw@mean)
+        assert float((expected-actual).abs().max())<1e-9
+    print(dict(passed=True,TRAIN_only_basis=True,PCA_rank_selection=True,DCT_orthonormal=True,fold_original_linear_exact=True,finite_TRAIN_gradient=True,new_inference_layers=0))
