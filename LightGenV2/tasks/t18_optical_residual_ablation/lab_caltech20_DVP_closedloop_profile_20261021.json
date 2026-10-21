@@ -9,5 +9,5 @@
   "suffix_epochs": 12,
   "suffix_fit_seconds": 600,
   "GPU_UUID": "GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
-  "desktop_graphics_process_allowlist": ["dwm.exe", "explorer.exe", "textinputhost.exe", "searchhost.exe", "shellexperiencehost.exe", "applicationframehost.exe", "startmenuexperiencehost.exe", "system", "lockapp.exe", "msedgewebview2.exe"]
+  "desktop_graphics_process_allowlist": ["dwm.exe", "explorer.exe", "todesk.exe", "searchapp.exe", "startmenuexperiencehost.exe", "textinputhost.exe", "phoneexperiencehost.exe", "msedgewebview2.exe", "msedge.exe", "shellexperiencehost.exe", "systemsettings.exe", "lockapp.exe", "weixin.exe", "wechatappex.exe"]
 }
