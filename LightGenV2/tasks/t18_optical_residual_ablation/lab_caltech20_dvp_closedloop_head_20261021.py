@@ -60,17 +60,52 @@ def run(a):
     from lab_caltech20_dvp_closedloop_20261021 import SPECS,HARDWARE,put_fields,validate_state,original_replay,saved_model
     from lab_caltech20_residual_guarded_20261018 import probability,score,improves
     torch.set_num_threads(2);torch.manual_seed(73)
-    spec=SPECS[a.depth];campaign='TRAIN_fullbatch_closedloop_20261021' if a.campaign=='forward' else 'TRAIN_fullbatch_adjoint_sign_20261021';root=a.sequence/campaign;folder=root/f'L{a.depth}_round{a.round}'
-    assert not a.out.exists();audit=m.read(folder/'independent_round_audit.json');report=m.read(folder/'suffix/report.json')
-    assert audit['passed'] and audit['source_fit_report_SHA256']==m.sha(folder/'suffix/report.json')
-    assert audit['source_capture_report_SHA256']==m.sha(folder/'capture/report.json') and not report['passed']
+    spec=SPECS[a.depth];campaign='TRAIN_restored_same_mask_pair_20261021' if a.campaign=='restored' else 'TRAIN_fullbatch_closedloop_20261021' if a.campaign=='forward' else 'TRAIN_fullbatch_adjoint_sign_20261021';root=a.sequence/campaign;folder=root/(f'L{a.depth}' if a.campaign=='restored' else f'L{a.depth}_round{a.round}')
+    assert not a.out.exists()
+    report=m.read(folder/'suffix/report.json')
+    audit_path=folder/'independent_round_audit.json'
+    if a.campaign=='restored':audit_path=folder/'head_parent_original_CPU_audit.json'
+    if a.campaign=='restored':
+        if m.LOCK.exists():
+            owner=m.read(m.LOCK)
+            assert a.depth==4 and Path(owner['out']).resolve()==(root/'L6/capture').resolve() and owner['stage']=='0'
+        source_protocol=m.read(folder/'suffix/protocol.json');capture_audit=m.read(folder/'capture/independent_audit.json')
+        assert report['state']=='complete' and report['strict_CPU'] and report['frozen_verified'] and not report['passed']
+        assert report['protocol_SHA256']==m.sha(folder/'suffix/protocol.json')
+        assert source_protocol['source_SHA256']==m.sha(m.HERE/'lab_caltech20_dvp_restored_pair_20261021.py')
+        assert capture_audit['passed'] and capture_audit['report_SHA256']==m.sha(folder/'capture/report.json')
+        stimulus=m.read(folder/'capture/same_stimulus_audit.json');assert stimulus['passed'] and stimulus['matched_samples']==2011
+        audit=dict(data_SHA256=source_protocol['data_SHA256'])
+    else:
+        audit=m.read(audit_path)
+        assert audit['passed'] and audit['source_fit_report_SHA256']==m.sha(folder/'suffix/report.json')
+        assert audit['source_capture_report_SHA256']==m.sha(folder/'capture/report.json') and not report['passed']
     data,dm=m.data_for(a.sequence);assert dm['sha256']==audit['data_SHA256'] and m.session_hardware_digest(a.sequence)==HARDWARE
     session=a.sequence/f'L{a.depth}_response_20261020';fields,identities=m.fields_for(session,spec['prefix']-1,data,dm,HARDWARE)
     cap=folder/'capture';cr=m.read(cap/'report.json');fields[spec['stage']]={}
     for role in ('train','test'):
         p=cap/role/'ccd.npy';assert m.sha(p)==cr['arrays'][role]['SHA256'];fields[spec['stage']][role]=np.load(p,mmap_mode='r');identities[spec['stage']+'/'+role]=m.sha(p)
-    parent=folder/'suffix/best.pt';digest=m.sha(parent);assert digest==audit['results']['best']['PT_SHA256']
+    parent=folder/'suffix/best.pt';digest=m.sha(parent);assert digest==(report['results']['best']['PT_SHA256'] if a.campaign=='restored' else audit['results']['best']['PT_SHA256'])
     model,_=m.model_for(parent,digest,a.depth,session/'source_reference.ts');original=m.state_cpu(model)
+    if a.campaign=='restored':
+        # Independent separate-process admission BEFORE any head update. The
+        # camera workflow source stays byte-identical while its L6 fit runs.
+        original_parent=session/'fits'/spec['fit']/'best.pt';assert m.sha(original_parent)==spec['PT']
+        baseline_model,_=m.model_for(original_parent,spec['PT'],a.depth,session/'source_reference.ts')
+        validate_state(m,model,m.state_cpu(baseline_model),m.allowed_keys(model,spec['prefix']))
+        actual_test,pred=original_replay(model,data,fields,'test');actual_train,_=original_replay(model,data,fields,'train')
+        expected=report['results']['best']['metrics']['new']
+        assert actual_test['correct']==expected['test']['correct']==report['selected_correct']
+        assert actual_train['correct']==expected['train']['correct']
+        assert abs(actual_test['nll']-expected['test']['nll'])<=3e-6 and abs(actual_train['nll']-expected['train']['nll'])<=3e-6
+        with np.load(folder/'suffix/best_new_TEST_predictions.npz') as z:
+            assert np.array_equal(z['ids'],data['test'][2]) and np.array_equal(z['labels'],data['test'][1])
+            error=float(np.max(np.abs(z['probabilities']-pred)));assert error<=3e-6 and np.array_equal(z['probabilities'].argmax(1),pred.argmax(1))
+        assert not audit_path.exists()
+        audit=dict(passed=True,source_fit_report_SHA256=m.sha(folder/'suffix/report.json'),source_capture_report_SHA256=m.sha(folder/'capture/report.json'),
+            data_SHA256=dm['sha256'],parent_PT_SHA256=digest,current_mask_and_upstream_frozen=True,
+            full_original_CPU_TRAIN=actual_train,full_original_CPU_TEST=actual_test,prediction_maxabs=error,SDK_used=False,GPU_used=False)
+        m.save(audit_path,audit)
     banks={};a.out.mkdir()
     with torch.no_grad():
         for role,size in (('train',1600),('test',411)):
@@ -85,11 +120,20 @@ def run(a):
             assert np.array_equal(head.argmax(1),p.argmax(1));banks[role]=dict(x=z,y=data[role][1],ids=data[role][2],p=p,parity=error)
             np.savez_compressed(a.out/(role+'_features.npz'),features=z,labels=data[role][1],ids=data[role][2],probabilities=p)
     tr,te=banks['train'],banks['test'];train_accuracy=float((tr['p'].argmax(1)==tr['y']).mean());binary=train_accuracy>=.8
+    bad=te['p'].argmax(1)!=te['y'];cm=np.zeros((20,20),dtype=int);np.add.at(cm,(te['y'],te['p'].argmax(1)),1)
+    per_class=[]
+    for label in range(20):
+        support=int((te['y']==label).sum());training=tr['y']==label
+        per_class.append(dict(class_index=label,TEST_support=support,TEST_errors=int((bad&(te['y']==label)).sum()),
+            TRAIN_correct=int((tr['p'][training].argmax(1)==label).sum()),TRAIN_support=int(training.sum()),
+            predicted_TEST=int((te['p'].argmax(1)==label).sum())))
+    m.save(a.out/'error_diagnosis.json',dict(TEST_informed_development=True,per_class=per_class,confusion_matrix=cm.tolist(),
+        TRAIN_derivatives_only=True,TEST_selects_TRAIN_neighbor_emphasis=True,new_CCD=0,new_inference_layers=0))
     base=m.HERE/('lab_caltech20_DVP_binary_head_profile_20261020.json' if binary else 'lab_caltech20_DVP_head_local_profile_20261019.json');c=m.read(base)
     profile_path=m.HERE/'lab_caltech20_DVP_closedloop_head_profile_20261021.json';profile=m.read(profile_path)
     assert profile['schema']=='audited_closedloop_fullTRAIN_row_v1';c.update(profile['overrides'])
     target=spec['target'];w=original['linear.weight'].numpy().copy();b=original['linear.bias'].numpy().copy();best,bnll=score(te['p'],te['y']);selected=0;history=[];plans=[];steps=0;passes=0
-    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT_SHA256=digest,source_round_audit_SHA256=m.sha(folder/'independent_round_audit.json'),
+    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT_SHA256=digest,source_round_audit_SHA256=m.sha(audit_path),
         data_SHA256=dm['sha256'],prefix_SHA256=identities,allowed_keys=['linear.weight','linear.bias'],TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,
         full_TRAIN_each_update=True,gradient_batch=1600,solver='primal257 equivalent published row curvature; positive TRAIN-neighbor emphasis and full replay',
         original_TRAIN_accuracy=train_accuracy,objective='binary_row' if binary else 'huber_margin',published_profile_SHA256=m.sha(base),config=c,new_profile_SHA256=m.sha(profile_path),new_profile=profile,
@@ -132,4 +176,4 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--round',type=int,choices=(1,2));p.add_argument('--out',type=Path);p.add_argument('--campaign',choices=('forward','reverse'),default='forward');a=p.parse_args();selftest() if a.selftest else run(a)
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--round',type=int,choices=(1,2));p.add_argument('--out',type=Path);p.add_argument('--campaign',choices=('forward','reverse','restored'),default='forward');a=p.parse_args();selftest() if a.selftest else run(a)
