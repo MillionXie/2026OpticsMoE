@@ -8,6 +8,14 @@ TASK = Path(__file__).resolve().parents[1]
 
 
 class RegularizationContract(unittest.TestCase):
+    def test_sensor_dropout_profile(self):
+        cfg = json.loads((TASK / 'lab_caltech20_DVP_TRAIN_sensor_dropout_profile_20261021.json').read_text())
+        self.assertEqual(cfg['dropout_location'], 'CCD_pixels')
+        self.assertEqual(cfg['feature_dropout_p'], 0)
+        self.assertEqual(cfg['CCD_pixel_dropout_p'], .01)
+        self.assertFalse(cfg['eval_transforms'])
+        self.assertEqual(cfg['stage_gate_correct'], 288)
+
     def test_profile_and_source(self):
         source = (TASK / 'lab_caltech20_dvp_TRAIN_regularization_20261021.py').read_text()
         ast.parse(source)

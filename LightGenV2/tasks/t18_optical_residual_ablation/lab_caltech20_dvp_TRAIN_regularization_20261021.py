@@ -32,12 +32,16 @@ class TRAINTransforms:
             gain = 1 + cfg['CCD_gain_sigma'] * torch.randn(
                 (len(value), 1, 1), device=value.device, dtype=value.dtype)
             changed = value * gain + cfg['CCD_additive_sigma_DN'] * torch.randn_like(value)
+            if cfg.get('dropout_location', 'head_features') == 'CCD_pixels':
+                assert cfg['feature_dropout_p'] == 0
+                changed = F.dropout(changed, p=cfg['CCD_pixel_dropout_p'], training=True)
+                self.counts['dropout_TRAIN_batches'] += 1
             module.measured = {**module.measured, stage: changed.clamp(0, 255)}
             self.counts['noise_TRAIN_batches'] += 1
             self.counts['noise_TRAIN_samples'] += len(value)
 
         def dropout(module, inputs):
-            if not module.training:
+            if not module.training or cfg.get('dropout_location', 'head_features') == 'CCD_pixels':
                 return
             self.counts['dropout_TRAIN_batches'] += 1
             return (F.dropout(inputs[0], p=cfg['feature_dropout_p'], training=True),)
