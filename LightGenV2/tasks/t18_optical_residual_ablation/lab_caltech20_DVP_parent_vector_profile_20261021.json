@@ -1,0 +1,14 @@
+{
+  "schema":"TRAIN_shrunk_covariance_original_readout_v1",
+  "fit_method":"TRAIN_parent_vector",
+  "parents":{
+    "4":{"relative":"TRAIN_coupled_Huber_20261021/best.pt","SHA256":"7f7b0bec726e01fd8f292949136e1e42cedee9a96f9cea6f4fb1b00a3440f02b","correct":285},
+    "6":{"relative":"TRAIN_protected_Huber_pass02_20261021/best.pt","SHA256":"801d5c995fda910b824425e298f16ca0c05a2f93ba50fb3a38900fc964660401","correct":287}
+  },
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.05,"steps":120,"fit_seconds":120,
+  "targets":{"4":288,"6":322},
+  "scope":"Low-dimensional overconfidence/label-shift contrast after full-head overfit persists: 20positive row scales plus20 biases, original3141TRAIN class prior and correctTRAIN KL, original-head row folding BEFORE detached TEST selection. No TEST frequencies or derivatives, TRAIN1600 fullbatch, original5140 Linear and all nonhead unchanged. One120LBFGS-call/120fit-second trajectory per group, no grid; initial285/287 protected, no camera/SDK/GPU/new inference modules/VALID. Native bestlast CPU verification and SHA backup required."
+}

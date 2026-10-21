@@ -21,6 +21,12 @@ conditioned trust bound, max1200 updates/120fit seconds, no coefficient grid.
 This is not the failed joint-CE fit or repeating the pair trajectory. Parent
 285/287 remains protected; `lab_caltech20_DVP_joint_Huber_profile_20261021.json`.
 All1600TRAIN per step, native bestlast review required; noTEST derivative/VALID.
+One low-dimensional overconfidence contrast uses only20 positive row scales
+and20 biases, folded into the original Linear before detached TEST selection.
+TRAIN-only original3141 prior/correctTRAIN KL, no TEST prior or gradient;
+max120LBFGS calls/120fit seconds, no grid. Profile
+`lab_caltech20_DVP_parent_vector_profile_20261021.json`; audited285/287 parents
+protected. This is not the rejected generative-statistical-head blending.
 
 User explicitly renews targeted L4/L6 improvement, L4>=288/411 first, L6
 overfitting reduction, all exposure/coordinates/LUT/model structure fixed. L2
