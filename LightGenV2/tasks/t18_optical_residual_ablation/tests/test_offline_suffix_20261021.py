@@ -6,6 +6,9 @@ class OfflineSuffix(unittest.TestCase):
         c=json.loads((HERE/'lab_caltech20_L4_terminal_centered_profile_20261021.json').read_text());self.assertEqual(c['parent_correct'],285);self.assertLessEqual(c['vector']['fit_seconds'],120)
         s=(HERE/'lab_caltech20_dvp_terminal_reopen_20261021.py').read_text();ast.parse(s)
         self.assertIn('TRAIN_analytic_softmax_gauge',s);self.assertIn('gradient_updates=0',s);self.assertIn('assert error<1e-10',s)
+    def test_geometry_only_terminal_scope(self):
+        c=json.loads((HERE/'lab_caltech20_L4_geometry_only_profile_20261021.json').read_text());self.assertTrue(c['tail']['freeze_head']);self.assertEqual(c['tail']['feature_dropout_p'],0);self.assertEqual(c['parent_correct'],285)
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();self.assertIn("train_keys=allowed-{'linear.weight','linear.bias'}",s);self.assertIn('expected_trainable=10 if freeze_head else 5150',s)
     def test_no_camera_start(self):
         s=(HERE/'lab_caltech20_dvp_suffix_stable_20261021.py').read_text();ast.parse(s)
         for forbidden in ('Bench(','Camera(','acquire(','Start('):self.assertNotIn(forbidden,s)
