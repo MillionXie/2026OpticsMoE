@@ -1,6 +1,6 @@
 {
   "schema":"TRAIN_coherent_response_fit_v1",
-  "GPU_UUID":"GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "GPU_UUID":"GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
   "learning_rate":0.02,
   "maximum_full_updates":30,
   "maximum_fit_seconds":240,
