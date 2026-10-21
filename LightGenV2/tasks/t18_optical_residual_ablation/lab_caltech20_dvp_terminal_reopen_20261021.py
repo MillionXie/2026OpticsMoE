@@ -71,7 +71,7 @@ def run(a):
     assert not a.out.exists();a.out.mkdir(parents=True)
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
-    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';head_only=teacher_mode or continuation or sam or coupled
+    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';head_only=teacher_mode or continuation or sam or coupled or centered
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -141,11 +141,23 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or coupled:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or coupled or centered:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not coupled:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not coupled and not centered:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if sam:
+    if centered:
+        from lab_caltech20_dvp_statistical_readout_20261021 import calibrate_parent_vector
+        # Softmax is invariant to a class-common row. Remove only this exact
+        # gauge; no inference module and no projection of nonzero feature means.
+        gw=pw.double()-pw.double().mean(0,keepdim=True);gb=pb.double()-pb.double().mean()
+        with torch.no_grad():
+            reference=F.linear(x,pw.double(),pb.double()).softmax(1)
+            analytic=F.linear(x,gw,gb).softmax(1)
+            error=float((reference-analytic).abs().max());assert error<1e-10
+        observe(gw,gb,dict(phase='TRAIN_analytic_softmax_gauge',step=0,TRAIN_all1600=True,TRAIN_float64_probability_error=error,gradient_updates=0))
+        lastw,lastb,proof=calibrate_parent_vector(torch,F,x,y,gw,gb,dict(cfg['vector'],original_TRAIN_counts=cfg['original_TRAIN_counts'],center_common_logit=True),observe)
+        reason='finite_TRAIN_conditioned40scalar_fit_complete'
+    elif sam:
         lastw,lastb,proof=delta_sam(torch,x,y,pw,pb,counts,cfg['SAM'],observe);reason='finite_distinct_SAM_objective_complete'
     elif coupled:
         from lab_caltech20_dvp_statistical_readout_20261021 import coupled_huber_rows
@@ -182,6 +194,8 @@ def run(a):
                 np.savez_compressed(a.out/(name+'_'+role+'_predictions.npz'),ids=banks[role]['ids'],labels=banks[role]['y'],probabilities=prob);results[name][role]=metric
         assert results['best']['test']['correct']==best
         m.save(a.out/'report.json',dict(state='complete',baseline_correct=expected,selected_correct=best,selected=selected,selected_E0=selected=='parent',results=results,target=340,target_met=best>=340,actual_tail_epochs=0,TRAIN_teacher_only=teacher_mode,teacher_SHA256=cfg.get('teacher_SHA256'),TRAIN_GCV_only=teacher_mode,actual_protected_passes=actual_passes,reason=reason,strict_original_CPU=True,full_physical=True,all_optical_upstream_frozen=True,all_nonhead_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=False))
+        if centered:
+            report=m.read(a.out/'report.json');report.update(selected_E0=selected in ('parent','TRAIN_analytic_softmax_gauge'),selected_analytic_gauge=selected=='TRAIN_analytic_softmax_gauge',selected_gradient_trained=selected=='TRAIN_parent_vector_calibration');m.save(a.out/'report.json',report)
         m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,prefix_SHA256=identities,nonhead_state_bitwise_frozen=True,native_cached_probability_parity=True))
         return
     # Cache ONLY the original last electronic input, not a learned surrogate.
