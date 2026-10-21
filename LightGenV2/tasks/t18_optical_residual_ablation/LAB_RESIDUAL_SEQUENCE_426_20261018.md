@@ -2,6 +2,23 @@
 
 ## 2026-10-21 human instruction supersedes current intermediate stop gates
 
+Latest endpoint/carry: L4 complete measured five stages, raw15/411; ordinary
+suffix139/411; one TRAIN-conditioned stable raw-logit original-head correction
+222/411=54.01460%, TRAIN1072/1600. All optics/electronics/alpha frozen; full
+originalCPU bestlast/ID/probability checks passed and backup verified. Native
+best SHA5c479918e8822927789dd35e0855b225515acd1cb604e45d7713da56273aeb31.
+Target342 NOT met; this remains TEST-informed DEVELOPMENT, not success.
+L6 G1 actually started but stopped at384TRAIN on nonmonotonic frame ID.
+Normal camera enumeration1. New e60047f9b resume preserves ALL384 verified
+same-PT/input/phase/CCD receipts; remaining samples continue in new connection
+epoch, strict accepted-ID rule remains, at most3 stale rejections with raw
+evidence then stop. Current419 logical frames=384retained+35new; no reset.
+Active subpath `advance_after_user_waiver_20261021_USB_resume01_G1_resume384`,
+L6-only; completedL4 is not recaptured/refit by this controller. Each remaining
+L6 layer still gets its finite suffix fit before next optics. CPU final-head
+correction waits for complete last layer separately/no SDK/no GPU/no timer.
+Below USB_resume01 snapshots and first-attempt failures are historical.
+
 Latest recovery: user confirmed cameraUSB reconnect; normal enumeration1 and
 full original-CPU parent gates285/287 passed again. Explicit resume01 now has
 actual NEW L4 G2 TRAIN frames (first audited snapshot142/1600, TEST0/411),

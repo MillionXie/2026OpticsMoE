@@ -1,5 +1,49 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-21完整新结果与六层真实接续（覆盖下方142帧快照）
+
+四层G2新增2011帧（TRAIN1600/TEST411）全部完成，逐帧ID/canonical BMP/raw/
+CCD数组/相位/PT审计通过，全部5个光学阶段均使用实际CCD。完整原模型CPU重放：
+初始15/411=3.64964%，TRAIN124/1600；常规60轮最佳e37为139/411=33.81995%，
+TRAIN243/1600，last130/411。其best SHA0b7437c31742b642024a311f20a6988847466b9be623814688ad697f49e8b147。
+独立三模型TRAIN/TEST重放与逐样本概率误差0；不是先前G2仍仿真的285/411阶段分数。
+
+TRAIN-only80例诊断：当时最佳中间PT的clean正确19/80，增强两次2/80和5/80；
+真类概率<=1e-12分别0、30、36例，增强下clamped NLL约19–20而raw CE24–27。
+这证明该小批次增强强烈扰动且截断区明显，不证明所有光学失配均由损失造成。
+新入口`lab_caltech20_dvp_completed_readout_20261021.py`为单次CPU、TRAIN全1600
+条件化的稳定raw-logit CE校正，关闭该校正的随机增强，仅原Linear5140；优化坐标
+折回原Linear，无新推理层，所有光学/电子/alpha逐键冻结。1200步3.844fit秒，选step60，
+原模型best/last全TRAIN/TEST与cached-native概率/argmax复核通过。
+best TRAIN1072/1600=67%、TEST222/411=54.01460%；last TRAIN1600/1600、TEST128，
+明确晚期过拟合，采用best而非last。best SHA
+5c479918e8822927789dd35e0855b225515acd1cb604e45d7713da56273aeb31；
+report SHA3d046f264a18d7f0827c75918ff2add8a9cdd7504dc07a6d10795ed97875341f，
+audit SHAd0b8c0024fc2309b1f2e26e5b31c7de6403f238b67701f39e5cdbd801995573b。
+原run `advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4`，
+`accepted_L4_full_physical_20261021.json`绑定当前最佳；原15/139/130均留证。
+全部为TEST选模开发指标/noTEST梯度/noVALID；较固定仿真346/411仍降30.17032pp，
+目标342/411未达，不能称定版成功。bestlast/协议/历史/逐样本/feature/审计已本地SHA备份，
+完整原始CCD保留实验室，不因低分清除。
+
+六层已真实在四层结束后采G1，384张TRAIN后因Nonmonotonic camera frame ID停止，
+未失去已有有效帧。正常相机仍枚举1，末三有效帧4386/4397/4408、时间递增；异常帧
+原guard在返回前抛出，具体异常值未留存，不能臆称必为计数重置。失败刺激384.bmp和
+canonical保留；旧控制器及CPU终点依赖任务均已退出。新发布e60047f9b85b001186aa5bf1211e4986f0fcd135：
+只对非递增帧最多排除3次，保存每张被拒原图/元数据，接纳仍要求严格递增，否则停止。
+不改曝光/坐标/LUT/模型，不删除旧数据、不复拍全部。
+
+恢复run `advance_after_user_waiver_20261021_USB_resume01_G1_resume384`，控制器PID17212/
+实际子进程28644。384张逐项核验相同PT801d5c99、硬件/data/prefix、全ID/输入BMP/
+相位/原图/CCD；只对不可变PNG硬链接，CCD新数组只写剩余部分，旧目录不改。
+新连接独立frame-ID epoch有记录；合并逻辑样本2011中，最终将明确384保留、1627新采。
+已实际续至419张（384保留+35新采），相位SHA
+56aff10076f666014793653d9fb2861c6ac9f56a21728600507b9de6a02e25ca；
+首新帧核验SHA50bc77db465b00593424d67447324aba973049e545c49d360e6864d7fee85932。
+实际只继续六层，不重复四层；之后G1→微调后面→E2→微调→G2→微调→E3→微调→G3。
+新最终CPU分类头依赖任务PID6024已启动，等完整G3才运行，不预创建/占用采集stage目录，
+不占SDK/GPU；旧因采集失败而退出的依赖不冒称仍健康。全程无定时任务/新工程副本。
+
 ## 2026-10-21用户重插USB后的实际恢复：四层G2正在采集
 
 本段覆盖下方“等待USB”的旧故障状态。用户明确回复已重新插拔；正常DVP相机枚举1，
