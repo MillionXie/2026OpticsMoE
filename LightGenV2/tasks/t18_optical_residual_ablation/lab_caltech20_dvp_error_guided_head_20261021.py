@@ -73,3 +73,39 @@ def selftest():
     tr=dict(x=x.numpy(),y=y.numpy(),ids=np.asarray(['root/class'+str(int(k))+'/a.jpg' for k in y]));p=F.linear(x,w,b).softmax(1).numpy();report=error_diagnosis(np,tr,tr,p,p)
     assert len(report['classes'])==20 and all(abs(z['centroid_shift_to_TRAIN_radius'])<1e-10 for z in report['classes'])
     print(dict(passed=True,TRAIN_only_signature=True,finite_nonzero_update=True,diagnostic_identity=True,no_new_inference_layer=True))
+
+
+def multiclass_maxmargin(torch,F,x,y,counts,cfg,observe):
+    """TRAIN-conditioned multiclass squared hinge, C=1, original Linear only.
+
+    A fresh convex readout fit, not the previous small parent-delta constraint.
+    TRAIN sample count fixes regularization; no TEST tensor or C/seed sweep.
+    """
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
+    mean,root,_,_,floor=train_conditioned_geometry(x.numpy());xx=(x-mean)@root
+    w=torch.nn.Parameter(torch.zeros(20,x.shape[1],dtype=x.dtype));b=torch.nn.Parameter(torch.zeros(20,dtype=x.dtype))
+    sample=counts[y]/counts.mean();sample/=sample.sum();regularizer=1/len(y)
+    opt=torch.optim.LBFGS([w,b],lr=1.,max_iter=1,line_search_fn='strong_wolfe');start=time.monotonic();ww,bb=w.detach(),b.detach()
+    def objective():
+        z=F.linear(xx,w,b);wrong=z.masked_fill(F.one_hot(y,20).bool(),-torch.inf).max(1).values
+        hinge=(1-z[torch.arange(len(y)),y]+wrong).clamp_min(0)
+        return .5*(sample*hinge.square()).sum()+.5*regularizer*(w.square().sum()+b.square().sum())
+    for step in range(1,cfg['steps']+1):
+        def closure():
+            opt.zero_grad();loss=objective();loss.backward();assert torch.isfinite(loss) and all(p.grad is not None and torch.isfinite(p.grad).all() for p in (w,b));return loss
+        opt.step(closure)
+        with torch.no_grad():ww=w@root;bb=b-ww@mean
+        if step%cfg['evaluate_every']==0 or step==cfg['steps']:
+            stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_multiclass_maxmargin',step=step,TRAIN_all1600=True,TRAIN_loss=float(objective().detach()),TRAIN_regularizer=regularizer))
+            if stop:break
+        if time.monotonic()-start>=cfg['fit_seconds']:break
+    return ww.detach(),bb.detach(),dict(TRAIN_only=True,margin=1.,C=1.,regularizer=regularizer,variance_floor=floor,steps=step,no_parent_delta_cap=True,TEST_gradient=False)
+
+
+def maxmargin_selftest():
+    import torch
+    from torch.nn import functional as F
+    torch.set_num_threads(2);torch.manual_seed(73);x=torch.randn(40,256,dtype=torch.float64);y=torch.arange(40)%20;rows=[]
+    w,b,proof=multiclass_maxmargin(torch,F,x,y,torch.ones(20,dtype=x.dtype),dict(steps=3,evaluate_every=1,fit_seconds=30),lambda a,b,r:rows.append(r))
+    assert len(rows)==3 and w.norm()>0 and torch.isfinite(w).all() and torch.isfinite(b).all()
+    print(dict(passed=True,maxmargin_TRAIN_only=True,original_Linear=True,finite_gradient=True,regularizer=proof['regularizer']))

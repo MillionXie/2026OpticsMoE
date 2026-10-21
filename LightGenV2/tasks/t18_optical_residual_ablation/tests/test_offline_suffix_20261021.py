@@ -13,6 +13,7 @@ class OfflineSuffix(unittest.TestCase):
         c=json.loads((HERE/'lab_caltech20_L4_focal_mixup_profile_20261021.json').read_text());self.assertEqual(c['parent_correct'],285);self.assertLessEqual(c['focal']['fit_seconds']+c['mixup']['fit_seconds'],240)
         c=json.loads((HERE/'lab_caltech20_L4_selective_teacher_profile_20261021.json').read_text());self.assertEqual(len(c['teacher_cache_SHA256']),64);self.assertIn("external.argmax(1)==y",s)
         c=json.loads((HERE/'lab_caltech20_L4_teacher_rowtrust_profile_20261021.json').read_text());self.assertEqual(c['focal']['trust_scope'],'per_class_row');self.assertEqual(c['focal']['trust_radius'],1.)
+        c=json.loads((HERE/'lab_caltech20_L4_maxmargin_profile_20261022.json').read_text());self.assertEqual(c['method'],'TRAIN_multiclass_maxmargin');self.assertLessEqual(c['maxmargin']['fit_seconds'],120)
     def test_camera_paused_L6_continuation(self):
         s=(HERE/'lab_caltech20_dvp_L6_offline_continue_20261021.py').read_text();ast.parse(s)
         for forbidden in ('advance.acquire','Camera(','Bench(','engine.run('):self.assertNotIn(forbidden,s)
