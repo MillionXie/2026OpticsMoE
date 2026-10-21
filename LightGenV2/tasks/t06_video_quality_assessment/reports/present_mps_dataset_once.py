@@ -26,16 +26,21 @@ OPTICAL=dict(time16_ms=10.245569591370225,energy16_j=1.1776895097085185,srcc=.79
 def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def selected_batch_view(root):
+def selected_batch_view(root,fixed_batch=None):
     """Replace only changed-batch costs; preserve approved B1 and raw history."""
-    old_source=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_rental_20261021_replacement02/presentation/dataset_once_paper.json'
+    prior_root=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_batch_activity_a100_20261021/resident01'
+    old_source=(prior_root/'selected_batch_paper.json' if fixed_batch else
+        REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_rental_20261021_replacement02/presentation/dataset_once_paper.json')
     data=deepcopy(json.loads(old_source.read_text()))
     audit_path=root/'final_saved_audit.json'
     audit=json.loads(audit_path.read_text())
-    historical_path=root/'historical_80gb_published_audit.json'
+    historical_path=(prior_root if fixed_batch else root)/'historical_80gb_published_audit.json'
     historical=json.loads(historical_path.read_text())
     assert historical['status']=='passed'
-    assert audit['status']=='passed' and audit['audited_points']==54
+    assert audit['status']=='passed' and audit['audited_points']==(24 if fixed_batch else 54)
+    if fixed_batch:
+        assert fixed_batch==6 and audit['suite_status']=='complete' and audit['mps_released']
+        assert all(audit['selections'][m]['batch']==fixed_batch for m in ('clip','yolo'))
     data['prior_paper_source']=dict(path=old_source.relative_to(REPO).as_posix(),sha256=digest(old_source))
     data['batch_selection_audit']=dict(path=audit_path.relative_to(REPO).as_posix(),sha256=digest(audit_path))
     data['archived_previous_repeats']=deepcopy(data['repeats'])
@@ -88,7 +93,7 @@ def selected_batch_view(root):
         if point['model'] in audit['selections']:
             condition=audit['selections'][point['model']]['caps'][str(point['resource_cap'])]
             point['resident_utilization_reference_percent']=condition['resident_nvml_mean_percent']
-        else:
+        elif point['model'] in ('deepseek','kimi'):
             condition=next(v for v in historical['values'] if v['model']==point['model'] and v['cap']==point['resource_cap'])
             assert condition['batch']==point['batch'] and condition['checkpoint_sha256']==point['repeats'][0]['checkpoint_sha256']
             point['resident_utilization_reference_percent']=condition['resident_mean_busy_percent']
@@ -97,9 +102,17 @@ def selected_batch_view(root):
     data['repeats']=[r for p in data['points'] for r in p['repeats']]
     data['selected_batch_view']=True
     data['selection_batches']={p['model']:p['batch'] for p in data['points']}
-    assert data['selection_batches']==dict(qwen=1,glm=1,clip=4,yolo=2,deepseek=1,kimi=1)
+    assert data['selection_batches']==dict(qwen=1,glm=1,clip=fixed_batch or 4,yolo=fixed_batch or 2,deepseek=1,kimi=1)
     assert next(p for p in data['points'] if p['model']=='qwen' and p['resource_cap']==100)['time16_ms']==1188.3861464262009
-    source=root/'selected_batch_paper.json'
+    if fixed_batch:
+        # Every unchanged model remains byte-for-byte identical in numerical data.
+        before=json.loads(old_source.read_text())
+        for point in data['points']:
+            if point['model'] in ('clip','yolo'):continue
+            prior=next(p for p in before['points'] if p['model']==point['model'] and p['resource_cap']==point['resource_cap'])
+            for key in ('time16_ms','energy16_j','srcc','repeats'):
+                assert point[key]==prior[key],(point['model'],key)
+    source=root/('batch6_paper.json' if fixed_batch else 'selected_batch_paper.json')
     source.write_text(json.dumps(data,indent=2)+'\n')
     return source,data
 
@@ -141,20 +154,72 @@ def legends(fig):
     fig.legend(handles=caps,loc='upper center',bbox_to_anchor=(.5,1.0),ncol=1,frameon=False,handlelength=1.0,labelspacing=.2)
 
 
+def fixed_batch_comparison(root):
+    """Show all three cold repeats at B6 and B10 without reselecting a result."""
+    rows=[]
+    for batch in (6,10):
+        source=root.parent/f'batch{batch}_01/independent_cost_check.json'
+        data=json.loads(source.read_text())
+        assert data['status']=='passed' and data['independent_time_and_overlap_energy_replay']
+        for model in ('clip','yolo'):
+            for cap in (100,50):
+                group=data['models'][model]['caps'][str(cap)]
+                assert group['batch']==batch and len(group['time_repeats_ms'])==len(group['energy_repeats_j'])==3
+                rows.append(dict(model=model,batch=batch,resource_cap=cap,
+                    time16_ms=group['time16_ms'],energy16_j=group['energy16_j'],
+                    time_repeats_ms=group['time_repeats_ms'],energy_repeats_j=group['energy_repeats_j'],
+                    source=source.relative_to(REPO).as_posix(),source_sha256=digest(source)))
+    fig,axes=plt.subplots(1,2,figsize=(156/25.4,83/25.4))
+    fig.subplots_adjust(left=.09,right=.985,bottom=.25,top=.85,wspace=.32)
+    for ax,metric,raw,label in zip(axes,['time16_ms','energy16_j'],['time_repeats_ms','energy_repeats_j'],['a','b']):
+        for index,(model,batch) in enumerate([('clip',6),('clip',10),('yolo',6),('yolo',10)]):
+            for cap,offset in ((100,-.13),(50,.13)):
+                row=next(r for r in rows if (r['model'],r['batch'],r['resource_cap'])==(model,batch,cap))
+                x=index+offset;values=row[raw];color=COLORS[model]
+                ax.scatter([x]*3,values,s=8,color=color,alpha=.35,zorder=2)
+                ax.errorbar(x,row[metric],yerr=statistics.stdev(values),fmt='o',ms=4,
+                    mfc=color if cap==100 else 'white',mec=color,color=color,capsize=2,lw=.8,zorder=3)
+        ax.set_xticks(range(4),['CLIP\nBatch 6','CLIP\nBatch 10','YOLO\nBatch 6','YOLO\nBatch 10'])
+        ax.set_ylim(bottom=0)
+        ax.set_ylabel('Equivalent processing time (ms)' if metric=='time16_ms' else 'Estimated equivalent energy (J)')
+        ax.spines['top'].set_visible(False);ax.spines['right'].set_visible(False)
+        ax.grid(axis='y',color='#D8DDE2',lw=.4);ax.set_axisbelow(True)
+        ax.text(-.17,1.05,label,transform=ax.transAxes,fontweight='bold',fontsize=9)
+    handles=[Line2D([],[],marker='o',ls='none',color='#58646B',mfc=fc,label=label,ms=4)
+        for fc,label in [('#58646B','100% MPS allocation'),('white','50% MPS allocation')]]
+    fig.legend(handles=handles,loc='upper center',ncol=2,frameon=False)
+    fig.text(.5,.04,'Three repeats; mean and sample standard deviation. Cold, distinct-video costs.',ha='center',fontsize=6.5)
+    files={}
+    for ext in ('png','svg','pdf'):
+        target=OUT/f'mps_clip_yolo_batch6_batch10.{ext}'
+        fig.savefig(target,dpi=600);files[target.name]=digest(target)
+    plt.close(fig)
+    target=OUT/'mps_clip_yolo_batch6_batch10.csv'
+    with target.open('w',newline='',encoding='utf-8-sig') as stream:
+        writer=csv.DictWriter(stream,fieldnames=list(rows[0]));writer.writeheader()
+        for row in rows:writer.writerow({k:json.dumps(v) if isinstance(v,list) else v for k,v in row.items()})
+    files[target.name]=digest(target)
+    (root/'batch6_batch10_figure_receipt.json').write_text(json.dumps(dict(files=files,rows=rows),indent=2)+'\n')
+
+
 def main():
     global ROOT,NAMES
-    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');p.add_argument('--finalized-qwen',action='store_true');p.add_argument('--selected-batches',action='store_true');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');p.add_argument('--finalized-qwen',action='store_true');p.add_argument('--selected-batches',action='store_true');p.add_argument('--fixed-batch6',action='store_true');args=p.parse_args()
     if args.finalized_qwen and not args.combined:raise ValueError('Finalized Qwen presentation requires combined data')
     if args.combined:ROOT=ROOT.parent.with_name('lgvq_mps_dataset_once_rental_20261021'+('_replacement02' if args.replacement02 else ''))/'presentation'
     else:NAMES={k:v for k,v in NAMES.items() if k not in ('deepseek','kimi')}
-    if args.selected_batches:
+    if args.fixed_batch6:
+        assert args.combined and args.finalized_qwen and not args.selected_batches
+        ROOT=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_batch_activity_a100_20261021/batch6_01'
+        source,data=selected_batch_view(ROOT,fixed_batch=6)
+    elif args.selected_batches:
         assert args.combined and args.finalized_qwen
         ROOT=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_batch_activity_a100_20261021/resident01'
         source,data=selected_batch_view(ROOT)
     else:
         source=ROOT/('dataset_once_combined.json' if args.combined else 'dataset_once_audited.json');data=json.loads(source.read_text())
     assert data['status']=='complete' and len(data['points'])==len(NAMES)*2 and len(data['repeats'])==len(NAMES)*6
-    if args.combined and not args.selected_batches:
+    if args.combined and not (args.selected_batches or args.fixed_batch6):
         previous_receipt=ROOT/'figure_receipt.json'
         if not previous_receipt.exists():previous_receipt=ROOT.parents[1]/'lgvq_mps_dataset_once_a100_20261020/presentation/figure_receipt.json'
         previous=json.loads(previous_receipt.read_text())
@@ -166,13 +231,13 @@ def main():
             if actual!=expected:raise RuntimeError('Existing export changed externally; preserve '+name)
             archive=ROOT/(target.stem+'_prior_'+actual[:12]+target.suffix)
             if not archive.exists():shutil.copy2(target,archive)
-    elif not args.selected_batches and (ROOT/'figure_receipt.json').exists():
+    elif not (args.selected_batches or args.fixed_batch6) and (ROOT/'figure_receipt.json').exists():
         previous=json.loads((ROOT/'figure_receipt.json').read_text())
         for name,expected in previous['files'].items():
             target=OUT/name
             if target.exists() and digest(target)!=expected:
                 raise RuntimeError('Refuse older four-model export over a newer or externally changed presentation: '+name)
-    if args.finalized_qwen and not args.selected_batches:
+    if args.finalized_qwen and not (args.selected_batches or args.fixed_batch6):
         from .mps_paper_view import finalized_qwen_view,full_resource_accuracy_view
         original_source=source
         data=full_resource_accuracy_view(finalized_qwen_view(data,REPO))
@@ -180,14 +245,14 @@ def main():
         source=ROOT/'dataset_once_paper.json'
         source.write_text(json.dumps(data,indent=2)+'\n')
         NAMES={**NAMES,'qwen':'Qwen3-VL-2B†'}
-    if args.selected_batches:NAMES={**NAMES,'qwen':'Qwen3-VL-2B†'}
+    if args.selected_batches or args.fixed_batch6:NAMES={**NAMES,'qwen':'Qwen3-VL-2B†'}
     optical_source=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json'
     prior=json.loads(optical_source.read_text())['optical']
     assert (prior['time_ms'],prior['energy_j'],prior['srcc'])==(OPTICAL['time16_ms'],OPTICAL['energy16_j'],OPTICAL['srcc'])
     points=data['points'];plt.rcParams.update({'font.family':'Arial','font.size':7,'axes.labelsize':7.5,'svg.fonttype':'none','pdf.fonttype':42})
     receipt=dict(source_sha256=digest(source),marker_rendering='Larger open50 mark behind smaller filled100 mark, exact coordinates and same model geometry',optical_reference_source=optical_source.relative_to(REPO).as_posix(),
                  renderer_source_sha256=digest(Path(__file__)),
-                 optical_reference_sha256=digest(optical_source),protocol='dataset_once_legacy_block_plus_nonpreprocessing_gaps_v1',finalized_qwen_cost=args.finalized_qwen,selected_batch_view=args.selected_batches,files={},panels=[])
+                 optical_reference_sha256=digest(optical_source),protocol='dataset_once_legacy_block_plus_nonpreprocessing_gaps_v1',finalized_qwen_cost=args.finalized_qwen,selected_batch_view=args.selected_batches or args.fixed_batch6,fixed_clip_yolo_batch=6 if args.fixed_batch6 else None,files={},panels=[])
     for metric,kind in [('time16_ms','latency'),('energy16_j','energy')]:
         fig,ax=plt.subplots(figsize=(78/25.4,88/25.4));fig.subplots_adjust(left=.20,right=.97,bottom=.32,top=.84)
         receipt['panels'].append(panel(ax,points,metric))
@@ -231,6 +296,7 @@ def main():
                         **{k:p.get(k,'') for k in ['cost_source','cost_source_sha256','cost_source_selector','measured_time16_ms','measured_energy16_j','cost_boundary','measurement_reuse','resident_utilization_reference_percent','cost_instrumentation_note']}})
     receipt['files'][target.name]=digest(target)
     (ROOT/'figure_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+    if args.fixed_batch6:fixed_batch_comparison(ROOT)
     print(json.dumps(receipt,indent=2))
 
 
