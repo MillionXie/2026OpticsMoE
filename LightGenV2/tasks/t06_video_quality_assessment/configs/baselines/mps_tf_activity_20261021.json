@@ -1,0 +1,14 @@
+{
+  "models": ["clip", "qwen", "yolo", "glm"],
+  "caps": [100, 50, 25, 10],
+  "batch": 1,
+  "videos": 12,
+  "maximum_suite_s": 2700,
+  "no_formal_cost_overwrite": true,
+  "no_explicit_warmup": true,
+  "no_pacing_or_synthetic_load": true,
+  "precision": "original_deployment",
+  "scope": "first12 fixed distinct TEST videos; profiler-instrumented compute-kernel union clipped to original first-block/GPU-score boundaries",
+  "targets_percent": [[45, 55], [95, 100]],
+  "no_new_rental_or_ds_kimi_measurement": true
+}
