@@ -1,22 +1,23 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## Current comparison: selected-batch MPS measurements, 20–21 October 2026
+## Current comparison: fixed-batch MPS measurements, 20–21 October 2026
 
 Six frozen baselines are compared at a fixed batch size per model under 100% and
-50% MPS resource allocations. CLIP uses four videos per call and YOLO uses two;
-Qwen, GLM, full DeepSeek-VL2 and Kimi retain batch one. Batch selection used three
+50% MPS resource allocations. CLIP and YOLO now both use six videos per call;
+Qwen, GLM, full DeepSeek-VL2 and Kimi retain batch one. The earlier batch selection used three
 warmed, repeated-input GPU-resident windows of at least 30 seconds after at least 5
 seconds of warmup. The first ascending batch whose three NVML means all reached
 50% under MPS100 was retained, then used unchanged under MPS50. These utilization
 windows are separate from the cold, distinct-video cost evaluations below. Their
-time and power were not substituted into the cost figure.
+time and power were not substituted into the cost figure. The subsequent B6 setting
+was explicitly requested, not selected for a preferred performance difference.
 
 Only the changed-batch CLIP/YOLO cost points were replaced in this update.
 The four unchanged B1 models reuse their previously audited cost archives;
 GLM's unfinished later run is not used. The plotted twelve conditions each have
 three completed cost evaluations, except that Qwen100 retains its declared
 historical cost override. The [editable plotting workbook](LGVQ_MPS_dataset_once_comparison.xlsx)
-contains the summary, all 36 original trial observations plus 12 appended new trials, calculation formulas and source
+contains the summary, all 36 original trial observations plus 36 appended CLIP/YOLO trials (earlier selected batches, B6 and B10), calculation formulas and source
 identities. The [unrounded plotting data](mps_dataset_once_plot_data.csv) include
 all thirteen plotted points, separating the retained optical reference from the twelve
 electronic settings. At the user's request on 21 October, the Qwen 100% display
@@ -35,6 +36,20 @@ The new [time panel](mps_dataset_once_comparison_latency.png),
 [paired display](mps_dataset_once_comparison_pair.png) use these declared sources.
 The earlier resident-repeat workbooks and figures below are preserved as
 different-protocol historical evidence, not additional points in the new figure.
+
+The additional [B6/B10 comparison](mps_clip_yolo_batch6_batch10.png) shows all three
+cold-cost repeats with their means and sample standard deviations; its
+[unrounded data](mps_clip_yolo_batch6_batch10.csv) and the eight-condition Excel
+comparison retain both batches. These were sequential sessions, not randomized
+interleaved measurements. At B6, CLIP100/50 yielded 60.416524/56.440819 ms and
+22.788992/21.262604 J, while YOLO yielded 179.227432/236.347209 ms and
+68.001994/89.160508 J. CLIP's -3.975704-ms total difference included -3.336063 ms
+of internal-gap difference (83.9%); its first-cold contribution also decreased.
+Excluding the first cold batch, native computation increased from 27.916505 to
+29.029517 ms under MPS50. The overlapping three-repeat ranges do not establish a
+general speed advantage from a lower resource cap. All observations remain in the
+workbook and no slower run was removed. Before replacement, the nine prior exports
+were archived with SHA256 under the B6 run.
 
 ### Measurement method
 
@@ -71,14 +86,14 @@ client-reported SM counts were 108 and 54 for the 100% and 50% settings, respect
 These percentages denote resource caps, not a measured GPU time-busy fraction.
 There was no deliberate inter-inference sleep in this MPS experiment. Each batch
 was decoded, prepared and transferred before its native model call. The first 200
-cost videos form 50 CLIP batches, 100 YOLO batches or 200 B1 batches, with no boundary
+cost videos form 34 CLIP/YOLO batches or 200 B1 batches, with no boundary
 straddling 200. All 558 TEST videos retain their tail batches.
 
 For batch i, p_i denotes the start of external preprocessing, a_i the model-call
 entry after preprocessing and H2D synchronization, s_i the original first-block
 host-timer entry, and e_i the synchronized final GPU quality-score output.
 The charged interval union included every [s_i,e_i] and the K-1 internal gaps
-[e_i,p_(i+1)] among the first 200 videos, where K is 50, 100 or 200 batches. Every [p_i,a_i] decode/crop/processor/H2D
+[e_i,p_(i+1)] among the first 200 videos, where K is 34 or 200 batches. Every [p_i,a_i] decode/crop/processor/H2D
 interval and [a_i,s_i] model-call preblock interval was excluded. Thus, output
 handling and nonpreprocessing dispatch gaps were counted, but the next video's
 preprocessing was not accidentally charged. Handling after the 200th output was
