@@ -20,4 +20,8 @@ class TerminalReopen(unittest.TestCase):
         c=json.loads((HERE/'lab_caltech20_L4_teacher_gap15_profile_20261021.json').read_text())
         self.assertEqual(c['method'],'TRAIN_teacher_ridge');self.assertEqual(c['parent_correct'],268)
         self.assertEqual(c['target'],340);self.assertNotIn('tail',c)
+    def test_finite_continuation(self):
+        c=json.loads((HERE/'lab_caltech20_L4_protected_gap15_profile_20261021.json').read_text())
+        self.assertEqual(c['maximum_protected_passes'],3);self.assertEqual(c['parent_correct'],275)
+        self.assertEqual(c['method'],'TRAIN_protected_continuation')
 if __name__=='__main__':unittest.main()

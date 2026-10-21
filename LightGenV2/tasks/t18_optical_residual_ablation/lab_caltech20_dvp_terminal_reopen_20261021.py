@@ -29,6 +29,7 @@ def run(a):
     assert not a.out.exists();a.out.mkdir(parents=True)
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
+    continuation=cfg.get('method')=='TRAIN_protected_continuation';head_only=teacher_mode or continuation
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -38,7 +39,7 @@ def run(a):
     assert m.session_hardware_digest(a.sequence)==loop.HARDWARE
     session=a.sequence/'L4_response_20261020'
     model,_=m.model_for(parent,cfg['parent_SHA256'],4,session/'source_reference.ts');original=m.state_cpu(model)
-    if teacher_mode:
+    if head_only:
         feature_state=torch.load(producer/'best.pt',map_location='cpu',weights_only=False)['model']
         assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'))
     banks={}
@@ -60,11 +61,11 @@ def run(a):
             fields[key][role]=np.load(p,mmap_mode='r');assert fields[key][role].shape==(n,478,478)
             identities[key+'/'+role]=s
     assert identities==cp['prefix_SHA256'] and list(fields)==['router','0','1','2','3']
-    allowed={'linear.weight','linear.bias'} if teacher_mode else {'linear.weight','linear.bias','electronic.3.local.weight','fusion_logits.3'}
+    allowed={'linear.weight','linear.bias'} if head_only else {'linear.weight','linear.bias','electronic.3.local.weight','fusion_logits.3'}
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=cfg,profile_SHA256=m.sha(a.profile),
         parent_PT_SHA256=cfg['parent_SHA256'],data_SHA256=dm['sha256'],hardware_SHA256=loop.HARDWARE,prefix_SHA256=identities,
         cache_producer_report_SHA256=m.sha(producer/'report.json'),allowed_keys=sorted(allowed),TRAIN=1600,TEST=411,VALID=0,
-        full_physical=True,original_terminal_parameters=5140 if teacher_mode else 5150,new_inference_layers=0,all_optical_upstream_frozen=True,
+        full_physical=True,original_terminal_parameters=5140 if head_only else 5150,new_inference_layers=0,all_optical_upstream_frozen=True,
         TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,recurring=False)
     m.save(a.out/'protocol.json',protocol)
     tr,te=banks['train'],banks['test'];x=torch.tensor(tr['x'],dtype=torch.float64);y=torch.tensor(tr['y'])
@@ -98,15 +99,25 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
+    elif continuation:w,b,proof=None,None,dict(method='finite_same_objective_TRAIN_protected_continuation',parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    actual_passes=0;reason='target_reached'
     if best<340:
-        lastw,lastb,rows=protected_rows(torch,np,tr,te,bw.double(),bb.double(),dict(cfg['protected'],target=340),observe)
-        m.save(a.out/'TRAIN_protected_plan.json',rows)
+        maximum=cfg.get('maximum_protected_passes',1);assert 1<=maximum<=3
+        for pass_index in range(1,maximum+1):
+            before=best
+            def observe_pass(w,b,row):return observe(w,b,dict(row,pass_index=pass_index))
+            lastw,lastb,rows=protected_rows(torch,np,tr,te,bw.double(),bb.double(),dict(cfg['protected'],target=340),observe_pass)
+            actual_passes=pass_index;m.save(a.out/f'TRAIN_protected_plan_pass{pass_index:02d}.json',rows)
+            m.save(a.out/'pass_progress.json',dict(pass_index=pass_index,before_correct=before,selected_correct=best,accuracy_improved=best>before))
+            if best>=340:reason='target_reached';break
+            if best<=before:reason='first_no_accuracy_progress_pass';break
+            reason='finite_pass_budget_exhausted'
     else:lastw,lastb=bw.clone(),bb.clone()
     with torch.no_grad():model.linear.weight.copy_(bw);model.linear.bias.copy_(bb)
     loop.saved_model(m,model,a.out/'best.pt',protocol);m.save(a.out/'head_phase.json',dict(correct=best,selected=selected,covariance=proof))
-    if teacher_mode:
+    if head_only:
         with torch.no_grad():model.linear.weight.copy_(lastw.float());model.linear.bias.copy_(lastb.float())
         loop.saved_model(m,model,a.out/'last.pt',protocol);results={}
         for name in ('best','last'):
@@ -118,7 +129,7 @@ def run(a):
                 assert float(np.abs(q-prob).max())<=3e-6 and np.array_equal(q.argmax(1),prob.argmax(1))
                 np.savez_compressed(a.out/(name+'_'+role+'_predictions.npz'),ids=banks[role]['ids'],labels=banks[role]['y'],probabilities=prob);results[name][role]=metric
         assert results['best']['test']['correct']==best
-        m.save(a.out/'report.json',dict(state='complete',baseline_correct=expected,selected_correct=best,selected=selected,selected_E0=selected=='parent',results=results,target=340,target_met=best>=340,actual_tail_epochs=0,TRAIN_teacher_only=True,teacher_SHA256=cfg['teacher_SHA256'],TRAIN_GCV_only=True,strict_original_CPU=True,full_physical=True,all_optical_upstream_frozen=True,all_nonhead_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=False))
+        m.save(a.out/'report.json',dict(state='complete',baseline_correct=expected,selected_correct=best,selected=selected,selected_E0=selected=='parent',results=results,target=340,target_met=best>=340,actual_tail_epochs=0,TRAIN_teacher_only=teacher_mode,teacher_SHA256=cfg.get('teacher_SHA256'),TRAIN_GCV_only=teacher_mode,actual_protected_passes=actual_passes,reason=reason,strict_original_CPU=True,full_physical=True,all_optical_upstream_frozen=True,all_nonhead_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=False))
         m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,prefix_SHA256=identities,nonhead_state_bitwise_frozen=True,native_cached_probability_parity=True))
         return
     # Cache ONLY the original last electronic input, not a learned surrogate.

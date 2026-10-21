@@ -1,0 +1,12 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_protected_continuation","gap_pp":1.5,"target":340,"parent_correct":275,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/teacher_ridge_gap15_20261021/L4/best.pt",
+  "parent_SHA256":"30a4d00f54105f090ea3b6e9579d783f978b895eb7b77f345d510f3c2dbab94a",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "maximum_protected_passes":3,
+  "protected":{"temperature":2.0,"teacher_KL":2.0,"huber_delta":1.0,"margin":1.0,"anchor":0.1,"LM_damping":0.1,"Newton_step":0.25,"trust_radius":0.4,"positive_mass":0.5,"neighbor_boost":2.0,"protect_boost":2.0,"max_classes":20,"steps_each_class":24,"fit_seconds":120},
+  "scope":"Teacher-ridge/native protected first pass improved268 to275. At most3 further passes of that SAME TRAIN objective; stop immediately at first whole pass with no accuracy improvement or target340. No seed/hyperparameter/candidate scan, no new teacher pass, no TEST gradient or VAL, preserve parent275 and native replay best/last."
+}
