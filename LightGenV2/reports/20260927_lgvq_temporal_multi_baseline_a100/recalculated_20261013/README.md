@@ -1,11 +1,22 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## Current comparison: cold, distinct-video MPS measurements, 20–21 October 2026
+## Current comparison: selected-batch MPS measurements, 20–21 October 2026
 
-Six frozen baselines were measured at a fixed video batch size of one
-under 100% and 50% MPS resource allocations. All twelve conditions and 36 independent
-process runs are complete. The [editable plotting workbook](LGVQ_MPS_dataset_once_comparison.xlsx)
-contains the summary, all 36 trial observations, calculation formulas and source
+Six frozen baselines are compared at a fixed batch size per model under 100% and
+50% MPS resource allocations. CLIP uses four videos per call and YOLO uses two;
+Qwen, GLM, full DeepSeek-VL2 and Kimi retain batch one. Batch selection used three
+warmed, repeated-input GPU-resident windows of at least 30 seconds after at least 5
+seconds of warmup. The first ascending batch whose three NVML means all reached
+50% under MPS100 was retained, then used unchanged under MPS50. These utilization
+windows are separate from the cold, distinct-video cost evaluations below. Their
+time and power were not substituted into the cost figure.
+
+Only the changed-batch CLIP/YOLO cost points were replaced in this update.
+The four unchanged B1 models reuse their previously audited cost archives;
+GLM's unfinished later run is not used. The plotted twelve conditions each have
+three completed cost evaluations, except that Qwen100 retains its declared
+historical cost override. The [editable plotting workbook](LGVQ_MPS_dataset_once_comparison.xlsx)
+contains the summary, all 36 original trial observations plus 12 appended new trials, calculation formulas and source
 identities. The [unrounded plotting data](mps_dataset_once_plot_data.csv) include
 all thirteen plotted points, separating the retained optical reference from the twelve
 electronic settings. At the user's request on 21 October, the Qwen 100% display
@@ -36,7 +47,7 @@ identified in the source data; this is not a same-device comparison across all s
 models. The original split comprised 2,250
 training and 558 TEST videos, with no validation split; the manifest SHA256 was
 607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc.
-Each condition used three fresh processes. In each process, all 558 TEST videos
+Each underlying cost condition used three fresh processes. In each process, all 558 TEST videos
 were evaluated in the original order, and the first 200 different videos supplied
 the cost statistic. The same 200-video subset was replayed once per process,
 not replaced by repeated inference on one resident video. No inference warmup or
@@ -58,21 +69,23 @@ as a shared quality reference, without altering these independently measured sco
 MPS resource caps were set before each client's CUDA initialization. The
 client-reported SM counts were 108 and 54 for the 100% and 50% settings, respectively.
 These percentages denote resource caps, not a measured GPU time-busy fraction.
-There was no deliberate inter-inference sleep in this MPS experiment. Each video
-was decoded, prepared and transferred separately before its native model call.
+There was no deliberate inter-inference sleep in this MPS experiment. Each batch
+was decoded, prepared and transferred before its native model call. The first 200
+cost videos form 50 CLIP batches, 100 YOLO batches or 200 B1 batches, with no boundary
+straddling 200. All 558 TEST videos retain their tail batches.
 
-For video i, p_i denotes the start of external preprocessing, a_i the model-call
+For batch i, p_i denotes the start of external preprocessing, a_i the model-call
 entry after preprocessing and H2D synchronization, s_i the original first-block
 host-timer entry, and e_i the synchronized final GPU quality-score output.
-The charged interval union included every [s_i,e_i] and the 199 internal gaps
-[e_i,p_(i+1)] among the first 200 videos. Every [p_i,a_i] decode/crop/processor/H2D
+The charged interval union included every [s_i,e_i] and the K-1 internal gaps
+[e_i,p_(i+1)] among the first 200 videos, where K is 50, 100 or 200 batches. Every [p_i,a_i] decode/crop/processor/H2D
 interval and [a_i,s_i] model-call preblock interval was excluded. Thus, output
 handling and nonpreprocessing dispatch gaps were counted, but the next video's
 preprocessing was not accidentally charged. Handling after the 200th output was
 excluded because there was no next video inside the cost subset.
 
 ```text
-C = sum_i=1..200(e_i - s_i) + sum_i=1..199(p_(i+1) - e_i), in seconds
+C = sum_i=1..K(e_i - s_i) + sum_i=1..K-1(p_(i+1) - e_i), in seconds
 T16 = C * 16000 / 200, in milliseconds
 E16 = [338.2 * C + integral_over_charged_intervals(P_GPU(t) dt)] * 16 / 200, in joules
 ```
@@ -101,6 +114,16 @@ or best-accuracy repeat was selected. The quantities below are 16-video
 equivalents normalized from 200 videos, not the latency of a GPU batch of 16 and
 not full input-video-to-output response time.
 
+The new CLIP/YOLO worker records a status/log line each batch; the older worker
+records approximately every 25 batches. This bookkeeping is included in the
+charged internal gaps. Consequently, differences between measurement dates must
+not be attributed solely to MPS. All three repetitions, including long gaps, are
+retained. The two CLIP costs and two YOLO costs remain close; they are not forced
+apart by changing the selected batch or choosing a faster repetition. MPS100 is
+a resource ceiling, not a claim of full-card saturation. The workbook also lists
+the separately measured resident NVML references. DS/Kimi utilization references
+come from an earlier 80GB instance and are not same-window cost telemetry.
+
 ### Complete numerical report
 
 | Model | MPS allocation | Reference TEST SRCC (MPS100) | Time per 16-video equivalent (ms) | Estimated energy per 16-video equivalent (J) |
@@ -110,10 +133,10 @@ not full input-video-to-output response time.
 | Qwen3-VL-2B | 50% | 0.766343 | 1348.265 | 528.863 |
 | GLM-4.6V-Flash | 100% | 0.809262 | 1863.815 | 823.607 |
 | GLM-4.6V-Flash | 50% | 0.809262 | 2648.488 | 1206.537 |
-| CLIP ViT-B/32 | 100% | 0.725256 | 174.976 | 66.086 |
-| CLIP ViT-B/32 | 50% | 0.725256 | 178.146 | 67.243 |
-| YOLO11s | 100% | 0.701597 | 380.349 | 143.973 |
-| YOLO11s | 50% | 0.701597 | 389.371 | 147.359 |
+| CLIP ViT-B/32 | 100% | 0.725239 | 69.976 | 26.507 |
+| CLIP ViT-B/32 | 50% | 0.725239 | 67.450 | 25.490 |
+| YOLO11s | 100% | 0.701594 | 249.758 | 94.788 |
+| YOLO11s | 50% | 0.701594 | 251.449 | 95.105 |
 | DeepSeek-VL2 | 100% | 0.716735 | 8276.352 | 4657.903 |
 | DeepSeek-VL2 | 50% | 0.716735 | 12153.304 | 6454.379 |
 | Kimi-VL-A3B | 100% | 0.805465 | 3649.292 | 1760.164 |

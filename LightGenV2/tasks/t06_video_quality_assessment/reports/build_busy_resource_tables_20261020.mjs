@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 const require=createRequire(path.join(process.cwd(),'.codex_tmp/artifact-runtime.cjs'));
 const {Workbook,SpreadsheetFile,FileBlob}=await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
+if(process.argv.includes('--selected-batches')){await editSelectedBatchView();process.exit(0);}
 if(process.argv.includes('--temporal-fp32-shared-accuracy')){await editTemporalFp32SharedAccuracy();process.exit(0);}
 if(process.argv.includes('--temporal-fp32-reference')){await buildTemporalFp32Reference();process.exit(0);}
 if(process.argv.includes('--dataset-once')){await buildDatasetOnce();process.exit(0);}
@@ -34,6 +35,85 @@ const missingFor=(model,precision)=>strict?(['deepseek','kimi'].includes(model)?
 for(const method of ['temporal','mps'])for(const precision of ['native','fp32'])for(const metric of ['time','energy']){
  const name=`${method==='temporal'?'Duty':'MPS'}_${precision==='native'?'Native':'FP32'}_${metric==='time'?'Time':'Energy'}`;
  views.push({method,precision,metric,sheet:book.worksheets.add(name)});
+}
+
+async function editSelectedBatchView(){
+ const repo=process.cwd(),root=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_batch_activity_a100_20261021/resident01');
+ const source=path.join(root,'selected_batch_paper.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
+ if(!data.selected_batch_view||data.points.length!==12)throw Error('Selected-batch paper source required');
+ const output=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/LGVQ_MPS_dataset_once_comparison.xlsx');
+ const archive=JSON.parse(await fs.readFile(path.join(root,'paper_exports_before_selected_batch.json'),'utf8'));
+ const original=await fs.readFile(output),sha=crypto.createHash('sha256').update(original).digest('hex');
+ let lastEdit;try{lastEdit=JSON.parse(await fs.readFile(path.join(root,'selected_batch_workbook_receipt.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+ if(sha!==archive[path.basename(output)].sha256&&sha!==lastEdit?.sha256)throw Error('Existing workbook changed; do not overwrite unrelated edits');
+ const book=await SpreadsheetFile.importXlsx(await FileBlob.load(output));
+ const s=book.worksheets.getItem('Plot data'),t=book.worksheets.getItem('Trial data');
+ const rawBefore={values:JSON.stringify(t.getRange('A1:W45').values),formulas:JSON.stringify(t.getRange('A1:W45').formulas)};
+ const oldSummary=s.getRange('A8:K20').values;
+ const raw=t.getRange('A1:W45').values;
+ if(raw.slice(1,37).filter(r=>typeof r[2]==='number').length!==36)throw Error('Original36 trials required');
+ const names={clip:'CLIP ViT-B/32',yolo:'YOLO11s'};
+ t.getRange('A48:W48').copyFrom(t.getRange('A1:W1'),'all');
+ let row=49;const bindings=[];
+ for(const p of data.points.filter(p=>p.model==='clip'||p.model==='yolo')){
+  const indices=[];
+  for(const r of p.repeats){
+   t.getRange(`A${row}:W${row}`).copyFrom(t.getRange('A14:W14'),'all');
+   t.getRange(`A${row}:W${row}`).values=[[names[p.model],p.resource_cap/100,r.repeat,r.batch,r.compute_only_time16_ms/80,r.nonpreprocessing_gap16_ms/80,r.gpu_energy_j,338.2,200,r.srcc,r.plcc,null,null,r.visible_sms,r.actual_busy_percent/100,r.source,r.source_sha256,r.identity_sha256,r.parameter_dtypes.join(', '),r.readout_dtypes.join(', '),r.checkpoint_sha256,new Date(r.completed_at_beijing.replace('+08:00','Z')),r.source_commit]];
+   t.getRange(`L${row}:M${row}`).formulas=[[`=(E${row}+F${row})*16000/I${row}`,`=(H${row}*(E${row}+F${row})+G${row})*16/I${row}`]];
+   t.getRange(`E${row}:M${row}`).setNumberFormat('0.000000');
+   for(const col of ['C','D','I','N'])t.getRange(col+row).setNumberFormat('0');
+   for(const col of ['B','O'])t.getRange(col+row).setNumberFormat('0.00%');
+   t.getRange('V'+row).setNumberFormat('yyyy-mm-dd hh:mm:ss');
+   t.getRange(`A${row}:W${row}`).format.rowHeight=25;
+   t.getRange('A'+row).format.font={name:'Arial',size:10,bold:true,color:p.model==='clip'?'#007F63':'#9B7000'};
+   indices.push(row++);
+  }
+  const sr=9+data.points.indexOf(p),cols=c=>indices.map(r=>`'Trial data'!${c}${r}`).join(',');
+  s.getRange(`D${sr}:E${sr}`).formulas=[[`=AVERAGE(${cols('L')})`,`=AVERAGE(${cols('M')})`]];
+  s.getRange(`H${sr}:I${sr}`).formulas=[[`=AVERAGE(${cols('E')})*80`,`=AVERAGE(${cols('F')})*80`]];
+  bindings.push({p,sr,indices});
+ }
+ for(const {p,sr} of bindings){const ref=bindings.find(b=>b.p.model===p.model&&b.p.resource_cap===100);s.getRange('C'+sr).formulas=[['=AVERAGE('+ref.indices.map(r=>`'Trial data'!J${r}`).join(',')+')']];}
+ s.getRange('A4').values=[['CLIP batch 4; YOLO batch 2; others batch 1. Costs use 200 distinct videos without inference warmup.']];
+ s.getRange('A26').values=[['All 200 cold videos retained. 49 internal gaps for CLIP, 99 for YOLO, 199 for B1. No terminal gap.']];
+ s.getRange('A35').values=[['CLIP/YOLO use 21 October changed-batch costs. Other B1 costs are retained qualified archives.']];
+ s.getRange('A36').values=[['New workers log each batch; old workers about every 25. Charged bookkeeping gaps remain included.']];
+ s.getRange('A37').values=[['Resident NVML uses warmed repeated inputs, not the cost window. DS/Kimi rates are from an earlier 80GB instance.']];
+ s.getRange('A35:K37').format.font={name:'Arial',size:10,color:'#53687A'};
+ s.getRange('A35:K37').format.rowHeight=24;
+ s.getRange('M7:O7').copyFrom(s.getRange('A7:C7'),'all');
+ s.getRange('M7:O7').values=[['Selected batch','Resident NVML reference','Cost source']];
+ s.getRange('M7:N20').format.columnWidth=22;s.getRange('O7:O20').format.columnWidth=35;
+ for(let i=0;i<data.points.length;i++){
+  const p=data.points[i],r=9+i;
+  s.getRange(`M${r}:O${r}`).values=[[p.batch,p.resident_utilization_reference_percent===undefined?null:p.resident_utilization_reference_percent/100,p.model==='qwen'&&p.resource_cap===100?'Historical finalized reference †':p.model==='clip'||p.model==='yolo'?'New 21 October changed-batch cost':'Retained qualified B1 archive']];
+  s.getRange(`M${r}:O${r}`).format.font={name:'Arial',size:10,color:'#263747'};
+ }
+ s.getRange('M9:M20').setNumberFormat('0');s.getRange('N9:N20').setNumberFormat('0.00%');
+ const verify=w=>{
+  const ss=w.worksheets.getItem('Plot data');
+  for(let i=0;i<data.points.length;i++)for(const [c,k]of [['C','srcc'],['D','time16_ms'],['E','energy16_j']])if(Math.abs(ss.getRange(c+(9+i)).values[0][0]-data.points[i][k])>1e-7)throw Error('Source mismatch '+c+(9+i));
+  for(let i=0;i<13;i++)if(![5,6,7,8].includes(i))for(let j=0;j<11;j++){
+   const a=oldSummary[i][j],b=ss.getRange('A8:K20').values[i][j];
+   if(typeof a==='number'&&typeof b==='number'?Math.abs(a-b)>1e-10:a!==b)throw Error('Unrelated summary changed '+i+','+j);
+  }
+  const tt=w.worksheets.getItem('Trial data');
+  for(const property of ['values','formulas'])if(JSON.stringify(tt.getRange('A1:W45')[property])!==rawBefore[property])throw Error('Original raw data changed '+property);
+ };
+ book.recalculate();verify(book);
+ const probe=t.getRange('E49'),before=probe.values[0][0],value=s.getRange('D13').values[0][0];
+ probe.values=[[before+.01]];book.recalculate();if(s.getRange('D13').values[0][0]===value)throw Error('Formula did not recalculate');
+ probe.values=[[before]];book.recalculate();verify(book);
+ const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1200})).ndjson;
+ if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
+ for(const [sheetName,range,label] of [['Plot data','A1:K20','selected_summary'],['Plot data','M7:O20','selected_source_flags'],['Plot data','A24:K37','selected_notes'],['Trial data','A48:O60','selected_trials'],['Trial data','P48:W51','selected_identities']]){
+  const blob=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',label+'.png'),new Uint8Array(await blob.arrayBuffer()));
+ }
+ await(await SpreadsheetFile.exportXlsx(book)).save(output);verify(await SpreadsheetFile.importXlsx(await FileBlob.load(output)));
+ try{await fs.rename(output+'.inspect.ndjson',path.join(root,'selected_batch_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
+ const receipt={status:'passed',file:output,sha256:crypto.createHash('sha256').update(await fs.readFile(output)).digest('hex'),source_sha256:crypto.createHash('sha256').update(await fs.readFile(source)).digest('hex'),builder_source_sha256:crypto.createHash('sha256').update(await fs.readFile(new URL(import.meta.url))).digest('hex'),original36trials_and_anchors_unchanged:true,new_trials_appended:12,unchanged_B1_costs:true,historical_qwen_anchor_unchanged:true,formula_errors:0,recalculation:true,reimport:true};
+ await fs.writeFile(path.join(root,'selected_batch_workbook_receipt.json'),JSON.stringify(receipt,null,2)+'\n');console.log(JSON.stringify(receipt));
 }
 
 async function buildDatasetOnce(){

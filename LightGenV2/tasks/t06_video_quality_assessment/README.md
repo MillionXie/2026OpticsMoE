@@ -1,5 +1,24 @@
 # T06 视频质量评价
 
+## 2026-10-21 人工确认复用B1成本，更新原MPS图表
+
+用户确认batch1无需重复测量，并要求更新图片。Qwen、GLM、完整版DeepSeek-VL2、
+Kimi沿用核对通过的B1成本；Qwen100仍用1188.3861464262009ms/462.1134010767563J
+历史定稿锚点。CLIP改用本轮B4、YOLO改用B2，两配额各三轮冷不同视频成本。
+所有纵坐标沿用各模型所选batch的MPS100三轮全558参考SRCC；MPS50真实分数另留。
+GLM后来未完成的新成本不用，不再为了出图重复读取几十GB权重或重启GPU。
+
+原recalculated_20261013的MPS两张单图（PNG/SVG/PDF）、拼图、CSV及同一Excel
+就地更新；图中无batch、N=16、GPU利用率或spatial标签。同模型保持相同符号形状、
+50空心/100实心及准确坐标连线；接近点不人为平移。Excel保留原36轮和锚点区域，
+追加12轮新CLIP/YOLO明细；利用率是另列的驻留参考，不冒充成本窗口遥测。
+此前九项表图按SHA备份至resident01，paper_exports_before_selected_batch.json索引。
+
+绘图原始汇编为resident01/selected_batch_paper.json，含完整引用与原重复记录；
+figure_receipt.json和selected_batch_workbook_receipt.json分别记录图/CSV及工作簿SHA。
+主图和成本说明均明确MPS为资源上限；保留记录频率差异、内部间隔、历史Qwen
+非同轮成本及DS/Kimi跨80GB实例驻留引用的限制，不声称50配额必然耗时加倍。
+
 ## 2026-10-21 19:34收尾：四模型驻留完成、三模型新成本完成
 
 本段为本轮实际进展，不把历史记录冒称新测量。canonical目录仍为
