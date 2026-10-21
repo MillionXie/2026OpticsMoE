@@ -1,4 +1,30 @@
-# Latest residual scope: reopen L2 offline gap1.5pp; continue DVP L4/L6
+# Residual hardware adaptation: current L4/L6 optimization and protected L2
+
+## Latest actual result:13 targeted contrasts completed, L4=285/L6=287
+
+User renewal was actually executed through13 bounded contrasts/continuations,
+12200 outer optimizer calls, not stopped after one fit. All rc0/full original
+CPU bestlast TRAIN1600/TEST411 and independent frozen/probability checks passed.
+Only L4 coupled multiclass-Huber first pass raised284->285, newcorrect1/lost0;
+same-method pass2 retained E0, no pass3. L4 TRAIN1190/1600=74.375%, TEST285/411=
+69.34307%, still3 below288. L6 remains original287/411=69.82968%, TRAIN94.75%,
+still35 below322; overfitting unresolved. No optical advance, final342/350 not
+relaxed. These are measured-prefix/simulated-suffix stage DEVELOPMENT metrics,
+not full L4/L6 physical endpoints. L2 accepted331 remains unchanged.
+L4 current selected `TRAIN_restored_same_mask_pair_20261021/L4/TRAIN_coupled_Huber_20261021/best.pt`
+SHA7f7b0bec726e01fd8f292949136e1e42cedee9a96f9cea6f4fb1b00a3440f02b;
+L6 original `L6/TRAIN_protected_Huber_pass02_20261021/best.pt`
+SHA801d5c995fda910b824425e298f16ca0c05a2f93ba50fb3a38900fc964660401.
+All subsequent mixup/headSAM/jointHuber/vector/centered-vector/reference-teacher
+suffix/frozen-head-phaseSAM contrasts retained E0. No same-parameter metadata
+PT alias is an improvement. All negative bestlast/protocol/history/predictions/
+teacher/probe/audit evidence has local filewiseSHA backup in original20261020
+run; rawCCD unchanged. Completion ledger SHA
+d71d8dd872dd78151c8f0a7868cd9c962fe605d38ef7491ad1a0f4a7c467846b.
+All fitting/audit workers exited, lab4060 released, SDK/newCCD0, no timer.
+Latest full table/diagnosis is in the existing residual DVP report README.
+Below are historical per-method plans, NOT current active jobs or permission
+to repeat exhausted paths. No claim that unmet optimization goals succeeded.
 
 ## 2026-10-21 latest renewal: L4 coupled Huber; L6 TRAIN regularization
 
