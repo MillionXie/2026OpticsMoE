@@ -72,7 +72,7 @@ def run(a):
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
     continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
-    maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';covaugment=cfg.get('method')=='TRAIN_covariance_augmentation';head_only=head_only or maxmargin or hardridge or covaugment
+    maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';covaugment=cfg.get('method')=='TRAIN_covariance_augmentation';priorcal=cfg.get('method')=='TRAIN_prior_temperature';head_only=head_only or maxmargin or hardridge or covaugment or priorcal
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -142,11 +142,20 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or coupled or centered or focal or maxmargin or hardridge or covaugment:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if covaugment:
+    if priorcal:
+        from lab_caltech20_dvp_error_guided_head_20261021 import prior_temperature_head
+        from lab_caltech20_dvp_statistical_readout_20261021 import coupled_huber_rows
+        lastw,lastb,proof=prior_temperature_head(torch,F,x,y,pw,pb,counts,cfg['prior_temperature'],observe)
+        m.save(a.out/'TRAIN_prior_temperature.json',proof)
+        if best>expected and best<340:
+            lastw,lastb,repair=coupled_huber_rows(torch,np,tr,te,bw.double(),bb.double(),dict(cfg['coupled'],target=340),observe)
+            m.save(a.out/'TRAIN_prior_followup_repair.json',repair)
+        reason='finite_TRAIN_prior_temperature_and_improving_parent_repair_complete'
+    elif covaugment:
         from lab_caltech20_dvp_error_guided_head_20261021 import covariance_augmented_head
         lastw,lastb,proof=covariance_augmented_head(torch,F,x,y,pw,pb,counts,cfg['covariance_augmentation'],observe)
         m.save(a.out/'TRAIN_covariance_augmentation.json',proof);reason='finite_TRAIN_covariance_augmentation_and_same_head_average_complete'

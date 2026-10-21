@@ -197,3 +197,45 @@ def covariance_selftest():
     assert torch.isfinite(ww).all() and torch.isfinite(bb).all() and not torch.equal(ww,w)
     assert len(rows)==4 and proof['actual_steps']==3 and proof['averaged_snapshots']==2
     print(dict(passed=True,quadratic_variance_exact=True,zero_strength_identity=True,TRAIN_covariance_PSD=True,TRAIN_only_derivatives=True,averaged_original_head=True))
+
+
+def prior_temperature_head(torch,F,x,y,pw,pb,counts,cfg,observe):
+    """Two TRAIN-fitted scalars; fold scale and original TRAIN prior into Linear.
+
+    The parent was already TRAIN-prior weighted, so exact Bayes correction is
+    NOT assumed. Retain it as a diagnostic anchor, then fit signed residual
+    prior strength and confidence only on weighted TRAIN. No TEST prior.
+    """
+    cw=pw.double()-pw.double().mean(0,keepdim=True);cb=pb.double()-pb.double().mean()
+    z0=F.linear(x,cw,cb);logprior=(counts/counts.sum()).log();logprior-=logprior.mean()
+    weights=counts/counts.mean();T=cfg['temperature'];teacher=(z0/T).softmax(1).detach();keep=(z0.argmax(1)==y).double()
+    observe(cw,cb+logprior,dict(phase='TRAIN_prior_analytic_anchor',TRAIN_all1600=True,scale=1.,prior_strength=1.,gradient_updates=0))
+    theta=torch.nn.Parameter(torch.tensor([1.,0.],dtype=x.dtype))
+    opt=torch.optim.LBFGS([theta],lr=.5,max_iter=1,line_search_fn='strong_wolfe');start=time.monotonic()
+    def criterion():
+        z=theta[0]*z0+theta[1]*logprior
+        ce=F.cross_entropy(z,y,weight=weights)
+        kl=F.kl_div((z/T).log_softmax(1),teacher,reduction='none').sum(1)*T*T
+        return ce+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*((theta[0]-1).square()+theta[1].square())
+    for step in range(1,cfg['steps']+1):
+        def closure():
+            opt.zero_grad();loss=criterion();loss.backward();assert torch.isfinite(loss) and torch.isfinite(theta.grad).all();return loss
+        opt.step(closure)
+        with torch.no_grad():theta[0].clamp_(.25,4.);theta[1].clamp_(-2.,2.)
+        ww=cw*theta[0].detach();bb=cb*theta[0].detach()+logprior*theta[1].detach()
+        stop=observe(ww,bb,dict(phase='TRAIN_prior_temperature',step=step,TRAIN_all1600=True,TRAIN_loss=float(criterion().detach()),scale=float(theta[0].detach()),prior_strength=float(theta[1].detach()),scalar_parameters=2))
+        if stop or time.monotonic()-start>=cfg['fit_seconds']:break
+    return ww,bb,dict(method='TRAIN_two_scalar_prior_confidence',TRAIN_only=True,original_TRAIN_prior=counts.tolist(),TRAIN_gradient_updates=step,scale=float(theta[0].detach()),prior_strength=float(theta[1].detach()),signed_prior_residual_not_assumed_unbiased=True,TEST_gradient=False)
+
+
+def prior_selftest():
+    import torch
+    from torch.nn import functional as F
+    torch.set_num_threads(2);torch.manual_seed(73);x=torch.randn(60,8,dtype=torch.float64);y=torch.arange(60)%20
+    w=torch.randn(20,8,dtype=x.dtype)*.1;b=torch.randn(20,dtype=x.dtype)*.1;counts=torch.arange(1,21,dtype=x.dtype);rows=[]
+    ww,bb,proof=prior_temperature_head(torch,F,x,y,w,b,counts,dict(temperature=2.,teacher_KL=.1,anchor=.005,steps=3,fit_seconds=30),lambda a,b,r:rows.append(r))
+    assert len(rows)==4 and torch.isfinite(ww).all() and torch.isfinite(bb).all() and proof['TRAIN_gradient_updates']==3
+    s=proof['scale'];q=proof['prior_strength'];p=(counts/counts.sum()).log();p-=p.mean()
+    expected=s*(F.linear(x,w,b)-F.linear(x,w,b).mean(1,keepdim=True))+q*p
+    assert float((expected-F.linear(x,ww,bb)).abs().max())<1e-10
+    print(dict(passed=True,original_head_fold_exact=True,TRAIN_prior_only=True,finite_TRAIN_gradients=True,scalar_parameters=2,no_new_inference_layer=True))
