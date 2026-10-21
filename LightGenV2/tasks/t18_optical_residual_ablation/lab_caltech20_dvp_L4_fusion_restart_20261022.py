@@ -11,7 +11,7 @@ from pathlib import Path
 def fusion_statistics(torch,F,e,o):
     from caltech20_alt246_biasfree_model import rms
     re,ro=rms(e),rms(o);u,v=e/re,o/ro
-    return dict(u=F.adaptive_avg_pool2d(u[:,None],(16,16)).flatten(1).double(),v=F.adaptive_avg_pool2d(v[:,None],(16,16)).flatten(1).double(),
+    return dict(u=F.adaptive_avg_pool2d(u.double()[:,None],(16,16)).flatten(1),v=F.adaptive_avg_pool2d(v.double()[:,None],(16,16)).flatten(1),
         re=re.flatten().double(),uu=u.double().square().mean((-2,-1)),vv=v.double().square().mean((-2,-1)),uv=(u.double()*v.double()).mean((-2,-1)))
 
 
@@ -37,6 +37,9 @@ def TRAIN_choose_alpha(a,cfg,torch,np,F,m,loop,model,data,fields,alpha0):
                 q=TRAIN_stat_features(torch,F,s,alpha0);max_error=max(max_error,float((q-model.readout['features'].double()).abs().max()))
                 if begin%160==0:m.save(a.out/'progress.json',dict(state='TRAIN_only_fusion_statistics',samples=begin+8,total=1600,TEST_used=False))
     finally:hook.remove()
+    # This is a TRAIN optimizer approximation, NOT the stricter native score
+    # parity test. Reject a material mismatch before any scalar optimization.
+    assert max_error<1e-3,('TRAIN pooling surrogate mismatch',max_error)
     stats={k:torch.cat([p[k] for p in parts]) for k in parts[0]};np.savez_compressed(a.out/'TRAIN_fusion_statistics.npz',**{k:v.numpy() for k,v in stats.items()},ids=data['train'][2],labels=data['train'][1])
     target=F.one_hot(torch.from_numpy(data['train'][1]),20).double();history=[];chosen=None
     def evaluate(alpha):
@@ -74,10 +77,13 @@ def selftest():
     from lab_caltech20_rich_tail_refine_20261018 import tail
     e=torch.rand(2,478,478);o=torch.rand_like(e);s=fusion_statistics(torch,F,e,o)
     from caltech20_alt246_biasfree_model import rms,features
+    native_errors=[]
     for alpha in (.4001,.67505,.95):
-        mix=(1-alpha)*e/rms(e)+alpha*o/rms(o);native=features(rms(e)*mix/rms(mix));approx=TRAIN_stat_features(torch,F,s,alpha)
-        assert float((native.double()-approx).abs().max())<3e-5
-    print(dict(passed=True,TRAIN_statistic_surrogate_precision=True,exact_native_inference_still_required=True))
+        re,ro=rms(e),rms(o);u,v=e/re,o/ro;mix=(1-alpha)*u+alpha*v;native=features(re*mix/rms(mix));approx=TRAIN_stat_features(torch,F,s,alpha)
+        md=(1-alpha)*u.double()+alpha*v.double();ad=re.double()*md/md.square().mean((-2,-1),keepdim=True).sqrt();reference=F.layer_norm(F.adaptive_avg_pool2d(ad[:,None],(16,16)).flatten(1),(256,),eps=1e-5)
+        assert float((reference-approx).abs().max())<1e-9
+        err=float((native.double()-approx).abs().max());native_errors.append(err);assert err<3e-4
+    print(dict(passed=True,TRAIN_statistic_float64_algebra_exact=True,float32_native_feature_errors=native_errors,TRAIN_surrogate_only=True,exact_native_inference_still_required=True,native_TEST_probability_tolerance=3e-6))
 
 
 def run(a):
