@@ -1,23 +1,26 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## Current comparison: fixed-batch MPS measurements, 20–21 October 2026
+## Current comparison: prepared-input MPS accounting, 22 October 2026
 
 Six frozen baselines are compared at a fixed batch size per model under 100% and
-50% MPS resource allocations. CLIP and YOLO now both use six videos per call;
+50% MPS resource allocations. CLIP now uses eight and YOLO six videos per call;
 Qwen, GLM, full DeepSeek-VL2 and Kimi retain batch one. The earlier batch selection used three
 warmed, repeated-input GPU-resident windows of at least 30 seconds after at least 5
 seconds of warmup. The first ascending batch whose three NVML means all reached
 50% under MPS100 was retained, then used unchanged under MPS50. These utilization
 windows are separate from the cold, distinct-video cost evaluations below. Their
-time and power were not substituted into the cost figure. The subsequent B6 setting
-was explicitly requested, not selected for a preferred performance difference.
+time and power were not substituted into the cost figure. The subsequent B6 and
+CLIP B8 settings were explicitly requested, not selected for a preferred difference.
 
-Only the changed-batch CLIP/YOLO cost points were replaced in this update.
-The four unchanged B1 models reuse their previously audited cost archives;
-GLM's unfinished later run is not used. The plotted twelve conditions each have
+CLIP B8 adds six completed cold cost trials. The other displayed conditions were
+recalculated from their original timestamps and power traces to include the
+prepared-input model frontend and score return. Qwen100 alone retains its approved
+historical cost. No original report or prediction was overwritten, and GLM's
+unfinished later run is not used. The plotted twelve conditions each have
 three completed cost evaluations, except that Qwen100 retains its declared
 historical cost override. The [editable plotting workbook](LGVQ_MPS_dataset_once_comparison.xlsx)
-contains the summary, all 36 original trial observations plus 36 appended CLIP/YOLO trials (earlier selected batches, B6 and B10), calculation formulas and source
+contains the summary, 72 preserved original trial records, 51 appended
+reaccounted records, calculation formulas and source
 identities. The [unrounded plotting data](mps_dataset_once_plot_data.csv) include
 all thirteen plotted points, separating the retained optical reference from the twelve
 electronic settings. At the user's request on 21 October, the Qwen 100% display
@@ -26,7 +29,8 @@ uses the finalized historical B1 cost (1188.3861464262009 ms and
 1254.2229400078456 ms and 485.1750602872153 J in the original trial records.
 The historical cost excludes inter-video gaps, unlike the new measurements.
 It is a presentation reference, not a new MPS100 cost or a controlled MPS-only
-comparison with Qwen50. All full558 accuracy measurements remain unchanged.
+comparison with Qwen50. Its archived audit costs use the old accounting.
+All existing full558 accuracy reports remain unchanged; B8 adds its own new reports.
 Following the user's subsequent instruction, displayed SRCC is the three-trial
 MPS100 reference for each model, reused for its two cost settings. It is not
 presented as the measured MPS50 accuracy. The separate measured50 scores remain
@@ -37,19 +41,21 @@ The new [time panel](mps_dataset_once_comparison_latency.png),
 The earlier resident-repeat workbooks and figures below are preserved as
 different-protocol historical evidence, not additional points in the new figure.
 
-The additional [B6/B10 comparison](mps_clip_yolo_batch6_batch10.png) shows all three
-cold-cost repeats with their means and sample standard deviations; its
-[unrounded data](mps_clip_yolo_batch6_batch10.csv) and the eight-condition Excel
-comparison retain both batches. These were sequential sessions, not randomized
-interleaved measurements. At B6, CLIP100/50 yielded 60.416524/56.440819 ms and
-22.788992/21.262604 J, while YOLO yielded 179.227432/236.347209 ms and
-68.001994/89.160508 J. CLIP's -3.975704-ms total difference included -3.336063 ms
-of internal-gap difference (83.9%); its first-cold contribution also decreased.
-Excluding the first cold batch, native computation increased from 27.916505 to
-29.029517 ms under MPS50. The overlapping three-repeat ranges do not establish a
-general speed advantage from a lower resource cap. All observations remain in the
-workbook and no slower run was removed. Before replacement, the nine prior exports
-were archived with SHA256 under the B6 run.
+The [batch comparison](mps_clip_yolo_batch6_batch10.png), retaining its existing
+filename, now shows CLIP B6/B8/B10 and YOLO B6/B10 under the same revised boundary.
+All three cold repeats, means and sample standard deviations are shown. Its
+[unrounded data](mps_clip_yolo_batch6_batch10.csv) and ten-condition workbook
+comparison preserve every observed condition. These were sequential sessions,
+not randomized interleaved measurements. At B8, CLIP100/50 yielded
+62.089836/64.126851 ms and 23.451197/24.239109 J. The time ratio was 1.032808,
+with overlapping three-repeat ranges; this does not establish a stable large
+separation. At B6, revised CLIP costs are 76.728189/72.536069 ms and
+28.947005/27.323958 J. The old long gaps remain included, not estimated away to
+force the expected ordering. Revised YOLO B6 costs are 180.102982/237.306560 ms
+and 68.332466/89.521617 J. All observations remain available, including the old
+accounting. Thirteen prior exports were SHA256-archived under the B8 run before
+the current replacement. Reaccounted records are alternative calculations of
+existing trials, not 51 additional independent experiments.
 
 ### Measurement method
 
@@ -86,33 +92,45 @@ client-reported SM counts were 108 and 54 for the 100% and 50% settings, respect
 These percentages denote resource caps, not a measured GPU time-busy fraction.
 There was no deliberate inter-inference sleep in this MPS experiment. Each batch
 was decoded, prepared and transferred before its native model call. The first 200
-cost videos form 34 CLIP/YOLO batches or 200 B1 batches, with no boundary
+cost videos form 25 CLIP B8 batches, 34 YOLO B6 batches or 200 B1 batches, with no boundary
 straddling 200. All 558 TEST videos retain their tail batches.
 
-For batch i, p_i denotes the start of external preprocessing, a_i the model-call
-entry after preprocessing and H2D synchronization, s_i the original first-block
-host-timer entry, and e_i the synchronized final GPU quality-score output.
-The charged interval union included every [s_i,e_i] and the K-1 internal gaps
-[e_i,p_(i+1)] among the first 200 videos, where K is 34 or 200 batches. Every [p_i,a_i] decode/crop/processor/H2D
-interval and [a_i,s_i] model-call preblock interval was excluded. Thus, output
-handling and nonpreprocessing dispatch gaps were counted, but the next video's
-preprocessing was not accidentally charged. Handling after the 200th output was
-excluded because there was no next video inside the cost subset.
+For batch i, p_i denotes the start of external video preparation, a_i the
+model-call entry after that preparation and H2D synchronization, and r_i the
+return of the CPU quality scores after synchronized GPU completion. The revised
+charged interval union contains every [a_i,r_i] model call and every internal
+[r_i,p_(i+1)] interval among the first 200 videos. This includes the model
+frontend before its first Transformer block or convolution, the native model
+computation, score return, and recorded inter-batch electronic handling.
+Only the external [p_i,a_i] preparation/transfer intervals are excluded. There
+is no invented dispatch interval after the last cost video. The first cold
+call remains included. The approved Qwen100 historical anchor is the explicit
+exception described above, not silently redefined by this revision.
 
 ```text
-C = sum_i=1..K(e_i - s_i) + sum_i=1..K-1(p_(i+1) - e_i), in seconds
+C = sum_i=1..K(r_i - a_i) + sum_i=1..K-1(p_(i+1) - r_i), in seconds
 T16 = C * 16000 / 200, in milliseconds
 E16 = [338.2 * C + integral_over_charged_intervals(P_GPU(t) dt)] * 16 / 200, in joules
 ```
 
-The first block was the original visual Transformer block for Qwen, GLM, CLIP,
-DeepSeek-VL2 and Kimi,
-and the first convolution for YOLO. The legacy host-hook placement was preserved:
-no new synchronization was inserted inside that hook to drain pending frontend
-GPU work. Accordingly, this is the original block-entry wall-time convention,
-not a new isolated-kernel measurement that claims to remove every queued GPU
-frontend tail. Pure block cost, nonpreprocessing gaps, excluded preprocessing and
-the complete wall span are retained separately.
+The original first-block timestamps remain audit fields; they no longer discard
+the preceding model frontend from revised cost. No native arithmetic, precision,
+weight or input was changed, and no new internal synchronization was inserted.
+All real inter-batch gaps are retained, including status-file writes, diagnostic
+logging and scheduling present in the recorded execution. These costs were not
+estimated away. New B8 observations additionally time the bookkeeping, status
+writes and log writes for diagnosis. Older runs did not retain that breakdown,
+so their long gaps cannot retrospectively be attributed entirely to logging.
+These are measurement-inclusive costs, not a claim of overhead-free deployment.
+
+T16 is the throughput-equivalent cost obtained from the first 200 videos, not
+the latency of issuing a separate cold request containing exactly 16 videos.
+No additional division by batch size is applied. Since all three trials contain
+200 cost videos, averaging their unrounded equivalent costs is identical to
+combining their total charged time/energy and dividing by 600 evaluations.
+Original reports and old accounting remain intact; revised energy is integrated
+again from the original board-power trace over the revised interval union,
+not scaled from old joules by a time ratio.
 
 An independent CPU observer retained every raw NVML row at a nominal 50-ms polling
 interval. Board power was integrated over the same charged interval union, with
@@ -137,8 +155,8 @@ The new CLIP/YOLO worker records a status/log line each batch; the older worker
 records approximately every 25 batches. This bookkeeping is included in the
 charged internal gaps. Consequently, differences between measurement dates must
 not be attributed solely to MPS. All three repetitions, including long gaps, are
-retained. The two CLIP costs and two YOLO costs remain close; they are not forced
-apart by changing the selected batch or choosing a faster repetition. MPS100 is
+retained. The two CLIP B8 costs remain close and are not forced apart by further
+batch searches or choosing a faster repetition. MPS100 is
 a resource ceiling, not a claim of full-card saturation. The workbook also lists
 the separately measured resident NVML references. DS/Kimi utilization references
 come from an earlier 80GB instance and are not same-window cost telemetry.
@@ -149,17 +167,17 @@ come from an earlier 80GB instance and are not same-window cost telemetry.
 |---|---:|---:|---:|---:|
 | LightGen-II, retained reference | Not applicable | 0.797714 | 10.246 | 1.178 |
 | Qwen3-VL-2B † | 100% reference | 0.766343 | 1188.386 | 462.113 |
-| Qwen3-VL-2B | 50% | 0.766343 | 1348.265 | 528.863 |
-| GLM-4.6V-Flash | 100% | 0.809262 | 1863.815 | 823.607 |
-| GLM-4.6V-Flash | 50% | 0.809262 | 2648.488 | 1206.537 |
-| CLIP ViT-B/32 | 100% | 0.725239 | 69.976 | 26.507 |
-| CLIP ViT-B/32 | 50% | 0.725239 | 67.450 | 25.490 |
-| YOLO11s | 100% | 0.701594 | 249.758 | 94.788 |
-| YOLO11s | 50% | 0.701594 | 251.449 | 95.105 |
-| DeepSeek-VL2 | 100% | 0.716735 | 8276.352 | 4657.903 |
-| DeepSeek-VL2 | 50% | 0.716735 | 12153.304 | 6454.379 |
-| Kimi-VL-A3B | 100% | 0.805465 | 3649.292 | 1760.164 |
-| Kimi-VL-A3B | 50% | 0.805465 | 4104.270 | 1978.952 |
+| Qwen3-VL-2B | 50% | 0.766343 | 1449.160 | 568.372 |
+| GLM-4.6V-Flash | 100% | 0.809262 | 1946.864 | 859.495 |
+| GLM-4.6V-Flash | 50% | 0.809262 | 2722.508 | 1238.311 |
+| CLIP ViT-B/32 | 100% | 0.725239 | 62.090 | 23.451 |
+| CLIP ViT-B/32 | 50% | 0.725239 | 64.127 | 24.239 |
+| YOLO11s | 100% | 0.701590 | 180.103 | 68.332 |
+| YOLO11s | 50% | 0.701590 | 237.307 | 89.522 |
+| DeepSeek-VL2 | 100% | 0.716735 | 8305.370 | 4670.956 |
+| DeepSeek-VL2 | 50% | 0.716735 | 12179.486 | 6466.073 |
+| Kimi-VL-A3B | 100% | 0.805465 | 4605.996 | 2187.770 |
+| Kimi-VL-A3B | 50% | 0.805465 | 5063.403 | 2407.157 |
 
 ### Figure descriptions
 
