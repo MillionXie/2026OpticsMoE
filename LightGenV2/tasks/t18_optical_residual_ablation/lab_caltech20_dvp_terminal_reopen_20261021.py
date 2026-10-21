@@ -71,7 +71,7 @@ def run(a):
     assert not a.out.exists();a.out.mkdir(parents=True)
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
-    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';head_only=teacher_mode or continuation or sam
+    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';head_only=teacher_mode or continuation or sam or coupled
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -141,12 +141,15 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or coupled:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not coupled:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
     if sam:
         lastw,lastb,proof=delta_sam(torch,x,y,pw,pb,counts,cfg['SAM'],observe);reason='finite_distinct_SAM_objective_complete'
+    elif coupled:
+        from lab_caltech20_dvp_statistical_readout_20261021 import coupled_huber_rows
+        lastw,lastb,proof=coupled_huber_rows(torch,np,tr,te,pw.double(),pb.double(),dict(cfg['coupled'],target=340),observe);reason='finite_coupled_TRAIN_pair_correction_complete'
     elif post_sam:lastw,lastb=bw.clone(),bb.clone();reason='original_postCCD_SAM'
     elif best<340:
         maximum=cfg.get('maximum_protected_passes',1);assert 1<=maximum<=12
