@@ -183,8 +183,12 @@ def run(a):
         import subprocess
         import sys
         env=dict(os.environ,CUDA_VISIBLE_DEVICES='')
-        subprocess.run([sys.executable,str(Path(__file__).resolve()),'--mode','audit',
-            '--sequence',str(a.sequence),'--out',str(a.out),'--profile',str(a.profile)],env=env,check=True)
+        args=[str(Path(__file__).resolve()),'--mode','audit','--sequence',str(a.sequence),
+            '--out',str(a.out),'--profile',str(a.profile)]
+        # Windows may omit an empty environment value when creating a child.
+        # Set the CPU-only contract inside that fresh process before imports.
+        runner="import os,sys,runpy;os.environ['CUDA_VISIBLE_DEVICES']='';sys.path.insert(0,"+repr(str(Path(__file__).resolve().parent))+");sys.argv="+repr(args)+";runpy.run_path(sys.argv[0],run_name='__main__')"
+        subprocess.run([sys.executable,'-c',runner],env=env,check=True)
     except BaseException as error:
         m.save(a.out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),automatic_retry=False,valid_data_preserved=True));raise
 
