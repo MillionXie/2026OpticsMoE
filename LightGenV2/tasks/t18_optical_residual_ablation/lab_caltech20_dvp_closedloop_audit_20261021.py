@@ -8,6 +8,54 @@ from pathlib import Path
 import os
 
 
+def audit_USB_recovery(m,sequence,campaign,capture,fit_report):
+    """Bind the restored-USB observation epoch without reopening any device."""
+    import numpy as np
+    from PIL import Image
+    recovery=campaign/'L6_USB_recovery_20261021'
+    protocol=m.read(recovery/'protocol.json');report=m.read(recovery/'report.json')
+    returned=m.read(recovery.with_suffix('.return.json'));launch=m.read(recovery.with_suffix('.launch.json'))
+    original_return=campaign.with_suffix('.return.json')
+    assert returned['returncode']==0 and m.read(original_return)['returncode']==1
+    assert protocol['original_failure_return_SHA256']==m.sha(original_return)
+    assert report['recovery_protocol_SHA256']==m.sha(recovery/'protocol.json')
+    assert protocol['proposal_PT_SHA256']==m.read(capture/'report.json')['PT_SHA256']
+    assert report['fit_report_SHA256']==m.sha(fit_report) and report['SDK_released']
+    assert report['new_physical_frames']==2011 and report['diagnostic_frames']==23
+    assert not protocol['automatic_retry'] and not protocol['recurring'] and not protocol['L4_recaptured']
+    assert protocol['source_SHA256']==launch['source_SHA256']==m.sha(m.HERE/'lab_caltech20_dvp_closedloop_resume_20261021.py')
+    old=Path(protocol['preserved_failure']['old_failure_preserved'])
+    assert old.resolve()==(capture.parent/'capture_failed_start_20261021').resolve()
+    assert m.read(old/'failure.json')['completed_receipts']==0
+    assert protocol['preserved_failure']['files_SHA256']=={p.name:m.sha(p) for p in old.iterdir()}
+    folder=recovery/'TRAIN_light_preflight';p=m.read(folder/'protocol.json');r=m.read(folder/'report.json')
+    assert p['source_SHA256']==protocol['source_SHA256'] and p['same_connection_as_formal_capture']
+    assert r['passed'] and r['same_connection'] and not r['TEST_used'] and r['VALID']==0
+    assert not r['background_subtracted'] and r['exposure_coordinates_LUT_unchanged']
+    rows=r['records'];assert len(rows)==23 and [v['TRAIN_index'] for v in rows]==[None,None]+list(range(20))+[0]
+    last=-1;data,dm=m.data_for(sequence)
+    for row in rows:
+        stem=folder/row['tag'];meta=row['frame_metadata']
+        assert m.sha(stem.with_name(stem.name+'_raw.png'))==row['raw_SHA256']
+        assert m.sha(stem.with_suffix('.png'))==row['crop_SHA256']
+        assert m.sha(stem.with_suffix('.bmp'))==row['BMP_SHA256']
+        assert meta['frame_id']>last and abs(meta['exposure_us']-60006)<2 and meta['gain']==1
+        assert not any(meta[k] for k in ('flip_h','flip_v','rotate','opposite'))
+        assert row['phase_SHA256']==m.sha(sequence/'L6_response_20261020/capture/0/phase.bmp')
+        last=meta['frame_id'];index=row['TRAIN_index']
+        if index is not None:assert row['sample_id']==str(data['train'][2][index])
+    from lab_caltech20_dvp_closedloop_resume_20261021 import repeat_admission
+    first=np.asarray(Image.open(folder/'TRAIN_00.png'));repeat=np.asarray(Image.open(folder/'TRAIN_repeat_00.png'))
+    repeated=repeat_admission(np,m.correlation,first,repeat)
+    assert repeated['passed'] and abs(repeated['repeat_coarse_PCC']-r['repeat_coarse_PCC'])<1e-12
+    assert m.read(capture/'train/000000.json')['frame_metadata']['frame_id']>last
+    return dict(passed=True,recovery_protocol_SHA256=m.sha(recovery/'protocol.json'),
+        recovery_report_SHA256=m.sha(recovery/'report.json'),preflight_report_SHA256=m.sha(folder/'report.json'),
+        diagnostic_raw_crop_BMP_frame_ids_verified=23,actual_FORMAL_TRAIN_TEST_remain_2011=True,
+        unchanged_exposure_coordinates_LUT=True,ambient_condition_reported=True,
+        measured_repeat=repeated,original_failure_preserved=True,SDK_opened=False)
+
+
 def audit(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     import numpy as np
@@ -96,7 +144,11 @@ def audit(a):
     # The post-mask pre-fine-tuning TRAIN result isolates the local adjoint
     # proposal from later suffix/head fitting; this is not an accuracy claim.
     raw_train,_=original_replay(model,data,fields,'train')
+    recovery_proof=None
+    if a.campaign=='reverse' and a.depth==6 and (out/'L6_USB_recovery_20261021/protocol.json').exists():
+        recovery_proof=audit_USB_recovery(m,a.sequence,out,cap,fit/'report.json')
     result=dict(passed=True,source_git=m.git_head(),source_SHA256=m.sha(__file__),training_source_git=root_protocol['source_git'],
+        USB_recovery_evidence=recovery_proof,
         depth=a.depth,round=a.round,campaign=a.campaign,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,
         original_full_CPU_replay=True,all_upstream_and_current_capture_input_frozen=True,
         exact_candidate_capture_PT=digest,source_capture_report_SHA256=m.sha(cap/'report.json'),
