@@ -1,0 +1,28 @@
+{
+  "models": ["clip", "yolo", "qwen", "glm"],
+  "candidate_batches": {
+    "clip": [1, 2, 3, 4, 6, 8, 10, 12, 16],
+    "yolo": [1, 2, 3, 4, 6, 8],
+    "qwen": [1, 2, 3, 4],
+    "glm": [1, 2]
+  },
+  "selection_cap": 100,
+  "paired_caps": [100, 50],
+  "minimum_profiled_busy_percent": 50,
+  "pilot_videos": 32,
+  "pilot_repeats_at_qualifying_batch": 3,
+  "test_videos": 558,
+  "cost_videos": 200,
+  "repeats": 3,
+  "explicit_warmup_forwards": 0,
+  "host_proxy_w": 338.2,
+  "power_limit_w": 250,
+  "maximum_suite_s": 7200,
+  "maximum_trace_bytes": 536870912,
+  "precision": "original_deployment",
+  "selection_metric": "instrumented CUDA kernel time union / native first-block-to-output interval union; NOT SM activity or uninstrumented NVML",
+  "cost_protocol": "same native TF boundary plus output-to-next-preprocessing gaps; different videos, no warmup, 200/558 boundaries retain tails",
+  "selection_rule": "first candidate with all three fresh-process empirical lower bounds >=50; no sorting by speed, accuracy, or MPS gap",
+  "no_rental_or_ds_kimi": true,
+  "no_formal_paper_overwrite": true
+}
