@@ -104,14 +104,18 @@ def run(a):
     if not continuation:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
     if best<340:
-        maximum=cfg.get('maximum_protected_passes',1);assert 1<=maximum<=3
+        maximum=cfg.get('maximum_protected_passes',1);assert 1<=maximum<=12
+        protected_start=time.monotonic();total_budget=cfg.get('total_protected_fit_seconds',maximum*120);assert 0<total_budget<=1440
         for pass_index in range(1,maximum+1):
+            remaining=total_budget-(time.monotonic()-protected_start)
+            if remaining<=0:reason='finite_total_fit_budget_exhausted';break
             before=best
             def observe_pass(w,b,row):return observe(w,b,dict(row,pass_index=pass_index))
-            lastw,lastb,rows=protected_rows(torch,np,tr,te,bw.double(),bb.double(),dict(cfg['protected'],target=340),observe_pass)
+            lastw,lastb,rows=protected_rows(torch,np,tr,te,bw.double(),bb.double(),dict(cfg['protected'],target=340,fit_seconds=min(cfg['protected']['fit_seconds'],remaining)),observe_pass)
             actual_passes=pass_index;m.save(a.out/f'TRAIN_protected_plan_pass{pass_index:02d}.json',rows)
             m.save(a.out/'pass_progress.json',dict(pass_index=pass_index,before_correct=before,selected_correct=best,accuracy_improved=best>before))
             if best>=340:reason='target_reached';break
+            if time.monotonic()-protected_start>=total_budget:reason='finite_total_fit_budget_exhausted';break
             if best<=before:reason='first_no_accuracy_progress_pass';break
             reason='finite_pass_budget_exhausted'
     else:lastw,lastb=bw.clone(),bb.clone()

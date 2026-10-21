@@ -24,4 +24,7 @@ class TerminalReopen(unittest.TestCase):
         c=json.loads((HERE/'lab_caltech20_L4_protected_gap15_profile_20261021.json').read_text())
         self.assertEqual(c['maximum_protected_passes'],3);self.assertEqual(c['parent_correct'],275)
         self.assertEqual(c['method'],'TRAIN_protected_continuation')
+        b=json.loads((HERE/'lab_caltech20_L4_protected_budget180_profile_20261021.json').read_text())
+        self.assertEqual(b['total_protected_fit_seconds'],180);self.assertLessEqual(b['maximum_protected_passes'],12)
+        self.assertEqual(b['parent_correct'],283)
 if __name__=='__main__':unittest.main()
