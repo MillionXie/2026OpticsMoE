@@ -1,0 +1,7 @@
+{
+  "schema": "audited_closedloop_fullTRAIN_row_v1",
+  "overrides": {"maximum_passes": 3, "steps_each_class": 20, "maximum_fit_seconds": 180},
+  "TRAIN_neighbor_boost": 0.5,
+  "positive_mass": 0.5,
+  "scope": "Conditional original5140 head refinement only after a separate full original CPU audit of a completed closed-loop round. Full1600 TRAIN in EVERY derivative, other19 rows fixed, all nonhead frozen. TEST confusion and features select TRAIN emphasis only; TEST never enters derivative. Primal257 solve equals existing Woodbury curvature at uniform weights, with declared positive full-TRAIN weights. Original Huber settings, or existing binary/T2 only when TRAIN>=80%, otherwise unchanged. Finite3passes/20steps per class/180seconds, stop first no-gain pass; no SDK/GPU/CCD/new inference layer. Old global incumbent retained unless actual full411 improvement. Development metrics, not independent generalization. No automatic next optical stage."
+}
