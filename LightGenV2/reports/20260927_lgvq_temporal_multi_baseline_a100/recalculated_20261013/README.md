@@ -102,8 +102,12 @@ the complete wall span are retained separately.
 An independent CPU observer retained every raw NVML row at a nominal 50-ms polling
 interval. Board power was integrated over the same charged interval union, with
 the retained 338.2-W host-power proxy added once. The 250-ms maximum power-support
-age check was not relaxed. NVML power is driver-averaged rather than a calibrated
-instantaneous per-call meter, so the energy values are estimates. Wall-window
+age check was not relaxed. These are discrete board-power readings, not a
+calibrated per-call energy meter. Short GPU pulses may be under-resolved by the
+nominal 50-ms queries, so the energy values remain estimates. NVIDIA's NVML
+documentation distinguishes GA100/A100 power-query semantics from those of
+other Ampere GPUs; a one-second power average must not be assumed universally.
+Wall-window
 GPU busy includes excluded preprocessing; it is an audit field, not a substitute
 for the MPS allocation and not a utilization value attached to these cost points.
 
