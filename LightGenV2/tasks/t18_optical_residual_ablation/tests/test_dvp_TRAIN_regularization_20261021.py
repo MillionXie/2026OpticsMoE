@@ -8,6 +8,13 @@ TASK = Path(__file__).resolve().parents[1]
 
 
 class RegularizationContract(unittest.TestCase):
+    def test_head_precision_profile(self):
+        cfg = json.loads((TASK / 'lab_caltech20_DVP_TRAIN_headscale_profile_20261021.json').read_text())
+        self.assertEqual([cfg[k] for k in ('lr_phase','lr_electronic','lr_alpha')], [0, 0, 0])
+        self.assertGreater(cfg['lr_head'], .00048828125)
+        self.assertEqual(cfg['stage_gate_correct'], 288)
+        self.assertEqual(cfg['CCD_pixel_dropout_p'], .01)
+
     def test_current_view_only_supervision(self):
         cfg = json.loads((TASK / 'lab_caltech20_DVP_TRAIN_currentview_profile_20261021.json').read_text())
         self.assertEqual(cfg['old_view_CE_weight'], 0)

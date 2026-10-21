@@ -2,6 +2,22 @@
 
 ## 最新人工修改L4 E2门槛：70%与TRAIN噪声/dropout（2026-10-21）
 
+当前view-only对照已实际8轮/256.36fit秒：完整新TEST258/262/256/260/258/262/262/260，
+未超过278，按8轮无改善停止拟合、尚在完整bestlast CPU重放。去旧view目标这项没有显示
+新准确率收益；不继续加轮数宣称将成功。此前sensor4轮严格CPU已rc0：best仍E0父278/
+TRAIN1136，last269/411、TRAIN1216/1600=76%，bestlast/历史/逐样本13件本地SHA已核。
+
+发现独立数值尺度问题：父Linear权重RMS141.43、bias约[-4390.27,-4342.34]，float32
+bias ULP=.00048828125，大于此前head LR=.00005；sensor实际1600次AdamW更新后bias
+逐位完全不变，而未来G2 phase_sets.9 RMS变化.003632、电子/alpha/权重确有更新，所有
+已采上游不变。此事实说明部分小步更新被量化舍去，不证明它是全部TEST差异的原因。
+仅一次有限`lab_caltech20_DVP_TRAIN_headscale_profile_20261021.json`对照，头LR=.001，
+其他学习率0；从父278出发，原未来mask保持，仍用当前TRAIN/.5DN噪声/.5%gain/1%像素
+dropout。原模型/5140头/直接alpha及硬件保持，不添加容量；必须原CPU全量评估并检查
+所有非head张量完全不变，真实通过288才放行。原总12epoch/900fit秒/8无进展不扩大。
+该对照先数值测试后实际启动，不以此计划提前声称改善；GitHub/实验室已到6846134685，
+服务器此配置同步暂因SSH通道超时待补，不影响实验室已发布Git源码的独立运行。
+
 L4 sensor段已真实4轮完整TRAIN更新，TRAIN loss1.04275→.97228，各轮完整新TEST
 258/264/259/269，未超过父278；正做原完整bestlast CPU重放，不能采用较低末轮作新改善。
 下一项仅一次有限当前观测目标对照，配置`lab_caltech20_DVP_TRAIN_currentview_profile_20261021.json`：
