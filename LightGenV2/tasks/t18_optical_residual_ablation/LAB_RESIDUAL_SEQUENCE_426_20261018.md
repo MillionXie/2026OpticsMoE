@@ -2,6 +2,13 @@
 
 ## 2026-10-21 human instruction supersedes current intermediate stop gates
 
+Actual launch was attempted after full original-CPU parent admission285/287.
+The camera enumerated1 before launch but DVP Start returned-1001; afterward
+Windows shows USB BootLoader VID04B4/PID00F3 and DVP count0. New frames0,
+controller/worker exited and SDK released. All old data/failure evidence retained;
+user-only cameraUSB reconnect requested, no blind relaunch/hardware changes.
+The continuation order below remains approved, but is NOT currently acquiring.
+
 User explicitly requested L4 and L6 continue, without repeated current-stage
 optimization. L4 E2 measured-prefix285/411 and L6 E1 measured-prefix287/411
 are accepted for CARRY, not relabelled as passing288/322. Next L4 G2 (final),
