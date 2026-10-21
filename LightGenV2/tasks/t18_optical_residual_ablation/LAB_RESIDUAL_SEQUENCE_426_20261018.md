@@ -2,6 +2,29 @@
 
 ## 2026-10-21 renewed user request: L4/L6 statistical readout contrast
 
+### This round completed: current accepted L4=284, L6=287; gates still unmet
+
+Seven new runs actually completed with rc0 and full native original-model CPU
+TRAIN1600/TEST411 bestlast verification, plus independent head probability
+parity0 and nonhead bitwise freeze. L4 protected Huber280->283->284->284(E0),
+L6 285->287->287 (last pass NLL improvement only, no third pass). Statistical
+shrinkage comparisons both retained E0. No further same-method fitting/next
+optical layer/recurring task is running. L4 TRAIN1184/1600=74%, TEST284/411=
+69.09976%, still4 below288; L6 TRAIN1516/1600=94.75%, TEST287/411=69.82968%,
+still35 below322. These remain measured prefixes with simulated suffixes,
+NOT full L4/L6 physical endpoints. L2 accepted331 is unchanged.
+Current best PTs in original20261020 run `TRAIN_restored_same_mask_pair_20261021/`:
+L4 `L4/TRAIN_protected_Huber_pass02_20261021/best.pt` SHA
+970e7daaa0d6c705a4ff88c4b5a821deb5fb09dacfe7079eeb6aa04158b82e80;
+L6 `L6/TRAIN_protected_Huber_pass02_20261021/best.pt` SHA
+801d5c995fda910b824425e298f16ca0c05a2f93ba50fb3a38900fc964660401.
+All originals/negative results retained and filewise SHA backed up locally.
+See report `reports/caltech20_residual_DVP_46_20261020/README.md` and original
+run completion ledger `TRAIN_readout_optimization_completion_20261021.json`
+SHAe07a031bc2e61c1815d59b56daed6a8e8a8c63ec85af3fe361b877953f0276f0.
+Recorded profiles still pin their historical initial280/285 parents: do not
+rerun old output paths or present them as a new current-parent optimization.
+
 L2 remains accepted331 and is NOT refit. Only residual L4/L6 continue from
 same-measurement selected280/285. A completed conditioned-pair pass without
 accuracy gain is not restarted. One distinct TRAIN-estimated pooled within-class

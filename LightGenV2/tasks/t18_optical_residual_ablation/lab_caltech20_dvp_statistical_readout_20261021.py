@@ -167,7 +167,7 @@ def run(a):
         nonlocal best,bnll,bestw,bestb,selected
         pp=probability(te['x'],ww.float().numpy(),bb.float().numpy());n,ll=score(pp,te['y']);accepted=improves(n,ll,best,bnll)
         if accepted:best,bnll,bestw,bestb,selected=n,ll,ww.float().clone(),bb.float().clone(),len(history)+1
-        row.update(TEST_correct=n,TEST_NLL=ll,selected_correct=best,accepted=accepted);history.append(dict(row));m.save(a.out/'progress.json',dict(state='TRAIN_statistical_scalar_fit',latest=row))
+        row.update(TEST_correct=n,TEST_NLL=ll,selected_correct=best,accepted=accepted);history.append(dict(row));m.save(a.out/'progress.json',dict(state='TRAIN_statistical_scalar_fit' if method=='statistical_scalars' else 'TRAIN_conditioned_protected_Huber_fit',latest=row))
         return best>=cfg['targets'][str(a.depth)]
     if method=='statistical_scalars':_,lastw,lastb=calibrate(torch,F,x,y,pw,pb,w,b,(counts/counts.sum()).log(),cfg,observe)
     else:
