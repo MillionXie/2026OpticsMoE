@@ -2,11 +2,43 @@
 from __future__ import annotations
 import csv
 import json
+from copy import deepcopy
 from . import strict_tf_resource_audit_20261020 as audit
 
 MODELS=('qwen','glm','clip','yolo','deepseek','kimi')
 ROOT=audit.ROOT/'presentation'
 TARGET=ROOT/'temporal_fp32_reference.json'
+PAPER=ROOT/'temporal_fp32_paper.json'
+NATIVE=audit.REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_dataset_once_rental_20261021_replacement02/presentation/dataset_once_combined.json'
+
+
+def shared_native_accuracy(data,native):
+    """Presentation reference only; preserve all measured FP32 quality and costs."""
+    result=deepcopy(data)
+    references={p['model']:p for p in native['points'] if p['resource_cap']==100}
+    assert set(references)==set(MODELS) and len(result['values'])==12
+    for point in result['values']:
+        ref=references[point['model']]
+        assert len(ref['repeats'])==3 and ref['batch']==1
+        assert all(r['checkpoint_sha256']==point['checkpoint_sha256'] for r in ref['repeats'])
+        assert all(abs(r['srcc']-ref['srcc'])<1e-12 for r in ref['repeats'])
+        point['display_reference_srcc']=ref['srcc']
+        point['display_reference_batch']=ref['batch']
+        point['display_reference_reports']=[dict(source=r['source'],sha256=r['source_sha256']) for r in ref['repeats']]
+    result['display_accuracy_policy']='Shared native-precision MPS100 full558 SRCC, batch1, by author request. A cross-precision presentation reference, not measured FP32 accuracy or a joint FP32 quality-cost result. Actual FP32 SRCC remains in srcc_reference.'
+    return result
+
+
+def paper():
+    proof=audit.read(ROOT/'temporal_fp32_reference_audit.json')
+    assert proof['status']=='passed' and proof['reference_sha256']==audit.sha(TARGET)
+    result=shared_native_accuracy(audit.read(TARGET),audit.read(NATIVE))
+    result['fp32_selection_source']=TARGET.relative_to(audit.REPO).as_posix()
+    result['fp32_selection_sha256']=audit.sha(TARGET)
+    result['display_accuracy_source']=NATIVE.relative_to(audit.REPO).as_posix()
+    result['display_accuracy_source_sha256']=audit.sha(NATIVE)
+    PAPER.write_text(json.dumps(result,indent=2)+'\n')
+    print(json.dumps({p['model']:p['display_reference_srcc'] for p in result['values']}))
 
 
 def select(data):
@@ -78,4 +110,6 @@ def main():
     print(json.dumps(dict(status='passed',conditions=12,repeats=36,accuracy_references=len(accuracy_cache))))
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    import sys
+    paper() if '--paper' in sys.argv else main()

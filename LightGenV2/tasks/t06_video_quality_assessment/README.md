@@ -2,7 +2,11 @@
 
 ## 2026-10-21 FP32时间限流独立参考交付
 
-用户要求保留主用MPS，另给老师FP32时间限流参考，性能共用对应不限流FP32 full558。
+用户要求保留主用MPS，另给老师FP32时间限流参考。随后明确要求展示SRCC统一引用
+当前原精度MPS100 full558，与主图一致；这是跨精度展示参考，不是FP32实测精度。
+原FP32 full558分数保留在Trial data的Q列、参考对照区及CSV的fp32_reference_srcc，
+所有36轮成本与实际FP32预测不改。单独派生temporal_fp32_paper.json绑定两源SHA，
+Excel展示列标Reference SRCC (MPS100)，不将引用值冒称FP32联合精度成本结果。
 仅从既有lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json抽取六模型
 12条件/36成本轮。reports/temporal_fp32_reference逐一重放calls/waits/多卡功率积分及
 六份558预测通过，保留原来源SHA，不执行旧整表main覆盖历史、不重测或续租。
@@ -11,7 +15,7 @@
 拼成同口径实验。计时首计算块到GPU输出，加输出到下次model-call入口，逐次排除
 调用前端；显式限流等待已在间隔内不重复加。GPU功率积分及338.2W代理用同一区间，
 双卡DS计两张板卡且主机一次。batch为Qwen3/GLM1/CLIP10/YOLO3/DS1/Kimi1，
-两时间控制条件内不改batch；性能为对应FP32不限流full558参考，不混MPS原精度。
+两时间控制条件内不改batch；成本仍为FP32实测，展示精度按上述MPS100参考政策。
 DS FP32双80GB，其余单卡；DS不限流热点卡仅57.95%，不称已满载，其他五模型98–99.54%。
 六模型限流均在50±5范围。本轮无GPU推理、训练、改权重、改精度或测法。
 
@@ -20,8 +24,10 @@ fp32_temporal_reference的CSV/时间/能耗/配对图；不改当前MPS文件。
 Excel两sheet包含12点/36轮输入、公式、GPU实际busy、双卡身份、参数量及源SHA。
 使用Spreadsheets/artifact重算、扰动恢复、重导入、零公式错误和显示核查；
 方法说明按nature-writing既有方法写作边界更新原报告README。
-重建：reports.temporal_fp32_reference→reports.plot_temporal_fp32_reference→
-build_busy_resource_tables_20261020.mjs --temporal-fp32-reference。
+重建：reports.temporal_fp32_reference审计实际FP32证据，随后--paper派生共用精度视图，
+reports.plot_temporal_fp32_reference更新图/CSV。已有Excel用
+build_busy_resource_tables_20261020.mjs --temporal-fp32-shared-accuracy导入后局部更新，
+不重建原始输入或成本。首次创建才用--temporal-fp32-reference，之后同样应用共用参考。
 
 ## 2026-10-21 08时：Qwen论文成本恢复，跨MPS精度离线核查
 

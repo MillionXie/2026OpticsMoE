@@ -21,11 +21,11 @@ def panel(ax,data,key):
     ax.scatter(optical[opkey],optical['srcc'],marker='*',s=52,color='#7828A8',zorder=4)
     for model in source.MODELS:
         pair=sorted([p for p in data['values'] if p['model']==model],key=lambda p:p['condition']!='unrestricted')
-        assert len(pair)==2 and pair[0]['srcc_reference']==pair[1]['srcc_reference']
-        ax.plot([p[key] for p in pair],[p['srcc_reference'] for p in pair],lw=.9,color=COLORS[model],zorder=2)
+        assert len(pair)==2 and pair[0]['display_reference_srcc']==pair[1]['display_reference_srcc']
+        ax.plot([p[key] for p in pair],[p['display_reference_srcc'] for p in pair],lw=.9,color=COLORS[model],zorder=2)
         for p in reversed(pair):
             full=p['condition']=='unrestricted'
-            ax.scatter(p[key],p['srcc_reference'],s=18 if full else 32,marker=MARKERS[model],
+            ax.scatter(p[key],p['display_reference_srcc'],s=18 if full else 32,marker=MARKERS[model],
                        facecolor=COLORS[model] if full else 'white',edgecolor=COLORS[model],lw=.9,zorder=3)
     ax.set_xscale('log');ax.set_xlim(min(xs)*.7,max(xs)*1.55);ax.set_ylim(.65,.85)
     ax.set_ylabel('Reference temporal quality (SRCC)')
@@ -34,7 +34,7 @@ def panel(ax,data,key):
     ax.grid(which='major',color='#D8DDE2',lw=.45);ax.grid(which='minor',axis='x',color='#ECEFF1',lw=.3)
     ax.tick_params(direction='out',length=2.5)
     assert all(ax.get_xlim()[0]<x<ax.get_xlim()[1] for x in xs)
-    assert all(.65<p['srcc_reference']<.85 for p in data['values'])
+    assert all(.65<p['display_reference_srcc']<.85 for p in data['values'])
     return dict(points=13,connected_pairs=6,xlim=list(ax.get_xlim()),ylim=list(ax.get_ylim()))
 
 
@@ -49,8 +49,10 @@ def legends(fig,paired):
 
 
 def main():
-    data=source.audit.read(source.TARGET);proof=source.audit.read(ROOT/'temporal_fp32_reference_audit.json')
+    data=source.audit.read(source.PAPER);proof=source.audit.read(ROOT/'temporal_fp32_reference_audit.json')
     assert proof['status']=='passed' and proof['reference_sha256']==source.audit.sha(source.TARGET)
+    assert data['fp32_selection_sha256']==source.audit.sha(source.TARGET)
+    assert data['display_accuracy_source_sha256']==source.audit.sha(source.NATIVE)
     receiptpath=ROOT/'temporal_fp32_reference_figure_receipt.json'
     expected={f'{PREFIX}_{kind}.{ext}' for kind in ('latency','energy') for ext in ('png','svg','pdf')}
     expected|={PREFIX+'_pair.png',PREFIX+'_plot_data.csv'}
@@ -75,14 +77,14 @@ def main():
         panel(ax,data,key);ax.text(-.18,1.04,label,transform=ax.transAxes,fontweight='bold',fontsize=9)
     legends(fig,True);target=OUT/(PREFIX+'_pair.png');fig.savefig(target,dpi=600);files[target.name]=source.audit.sha(target);plt.close(fig)
     target=OUT/(PREFIX+'_plot_data.csv')
-    fields=['model','condition','fp32_reference_srcc','time16_ms','energy16_j','time_ratio_to_optical','energy_ratio_to_optical','batch','gpu_count','actual_busy_percent','parameters_billion','platform','cost_source','cost_sha256','accuracy_source','accuracy_sha256','precision','input_protocol','cost_repeat_count']
+    fields=['model','condition','display_reference_srcc','fp32_reference_srcc','time16_ms','energy16_j','time_ratio_to_optical','energy_ratio_to_optical','batch','gpu_count','actual_busy_percent','parameters_billion','platform','cost_source','cost_sha256','accuracy_source','accuracy_sha256','precision','input_protocol','cost_repeat_count','display_accuracy_policy','display_accuracy_source','display_accuracy_source_sha256']
     with target.open('w',encoding='utf-8-sig',newline='') as stream:
         writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader()
-        optical=data['optical'];writer.writerow(dict(model='LightGen-II',condition='Prior optical component reference',fp32_reference_srcc=optical['srcc'],time16_ms=optical['time_ms'],energy16_j=optical['energy_j'],time_ratio_to_optical=1,energy_ratio_to_optical=1,precision='Not applicable'))
+        optical=data['optical'];writer.writerow(dict(model='LightGen-II',condition='Prior optical component reference',display_reference_srcc=optical['srcc'],time16_ms=optical['time_ms'],energy16_j=optical['energy_j'],time_ratio_to_optical=1,energy_ratio_to_optical=1,precision='Not applicable'))
         for p in data['values']:
-            writer.writerow(dict(model=p['model_name'],condition=p['condition'],fp32_reference_srcc=p['srcc_reference'],time16_ms=p['time16_ms'],energy16_j=p['energy16_j'],time_ratio_to_optical=p['time16_ms']/optical['time_ms'],energy_ratio_to_optical=p['energy16_j']/optical['energy_j'],batch=p['batch'],gpu_count=p['gpu_count'],actual_busy_percent=p['busy_percent'],parameters_billion=p['model_parameters']/1e9,platform=p['platform'],cost_source=p['source'],cost_sha256=p['source_sha256'],accuracy_source=p['accuracy_source'],accuracy_sha256=p['accuracy_source_sha256'],precision='FP32',input_protocol=data['input_protocol'],cost_repeat_count=3))
+            writer.writerow(dict(model=p['model_name'],condition=p['condition'],display_reference_srcc=p['display_reference_srcc'],fp32_reference_srcc=p['srcc_reference'],time16_ms=p['time16_ms'],energy16_j=p['energy16_j'],time_ratio_to_optical=p['time16_ms']/optical['time_ms'],energy_ratio_to_optical=p['energy16_j']/optical['energy_j'],batch=p['batch'],gpu_count=p['gpu_count'],actual_busy_percent=p['busy_percent'],parameters_billion=p['model_parameters']/1e9,platform=p['platform'],cost_source=p['source'],cost_sha256=p['source_sha256'],accuracy_source=p['accuracy_source'],accuracy_sha256=p['accuracy_source_sha256'],precision='FP32',input_protocol=data['input_protocol'],cost_repeat_count=3,display_accuracy_policy=data['display_accuracy_policy'],display_accuracy_source=data['display_accuracy_source'],display_accuracy_source_sha256=data['display_accuracy_source_sha256']))
     files[target.name]=source.audit.sha(target)
-    receipt=dict(source_sha256=source.audit.sha(source.TARGET),files=files,panels=geometry,current_mps_unchanged=True)
+    receipt=dict(source_sha256=source.audit.sha(source.PAPER),fp32_selection_sha256=source.audit.sha(source.TARGET),display_accuracy_source_sha256=data['display_accuracy_source_sha256'],display_accuracy_policy=data['display_accuracy_policy'],files=files,panels=geometry,current_mps_unchanged=True)
     receiptpath.write_text(json.dumps(receipt,indent=2)+'\n');print(json.dumps(dict(files=len(files),panels=geometry)))
 
 

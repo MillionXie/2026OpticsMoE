@@ -263,10 +263,15 @@ and busy records are preserved. Energy remains an estimate from NVML samples.
 
 All floating model parameters used FP32 in this reference. Existing deployed
 weights were cast to FP32, not retrained from higher-precision original weights.
-For each model, the same independent, matching-batch unrestricted FP32 full558
-TEST SRCC reference is used for both cost settings. This is not an independent
-accuracy test of the paced condition. No BF16/native MPS score or finalized
-BF16 Qwen cost is substituted into these FP32 cells.
+At the authors' request, the displayed SRCC for both cost settings is now the
+native-precision MPS100 full558 TEST reference used in the main MPS figures.
+This is a shared cross-precision presentation reference at batch1, not the
+measured FP32 accuracy or a jointly measured FP32 quality–cost result. Actual
+matching-batch FP32 full558 SRCC is retained separately in Trial data, columnQ,
+the source-reference comparison, and the CSV field `fp32_reference_srcc`.
+The plotted value is explicitly named `display_reference_srcc`. No measured
+FP32 prediction, time or energy is changed, and the finalized BF16 Qwen cost
+is not substituted into this FP32 reference.
 
 Qwen, GLM, CLIP and YOLO used the laboratory A100-PCIE-40GB at250 W. Kimi used
 one A100-SXM4-80GB at400 W. Full DeepSeek FP32 used two80GB A100s, each at400 W.
@@ -277,17 +282,18 @@ was47.94%,49.29%,51.40%,51.69%,49.92% and49.36%, all within50±5 percentage poin
 
 ### FP32 reference data
 
-| Model | FP32 reference SRCC | Unrestricted time (ms) | Time-paced time (ms) | Unrestricted energy (J) | Time-paced energy (J) |
+| Model | Shared MPS100 reference SRCC | Unrestricted time (ms) | Time-paced time (ms) | Unrestricted energy (J) | Time-paced energy (J) |
 |---|---:|---:|---:|---:|---:|
-| Qwen3-VL-2B | .769486 | 2838.960 | 6058.467 | 1650.149 | 2895.593 |
-| GLM-4.6V-Flash | .813180 | 13519.575 | 27321.206 | 7934.835 | 13196.074 |
-| CLIP ViT-B/32 | .725177 | 44.585 | 85.742 | 26.161 | 43.902 |
-| YOLO11s | .701533 | 165.599 | 307.703 | 97.182 | 157.178 |
-| DeepSeek-VL2 | .707578 | 29156.146 | 34130.786 | 21260.820 | 23447.365 |
-| Kimi-VL-A3B | .751930 | 19830.525 | 40337.936 | 11702.072 | 19896.130 |
+| Qwen3-VL-2B | .766343 | 2838.960 | 6058.467 | 1650.149 | 2895.593 |
+| GLM-4.6V-Flash | .809262 | 13519.575 | 27321.206 | 7934.835 | 13196.074 |
+| CLIP ViT-B/32 | .725256 | 44.585 | 85.742 | 26.161 | 43.902 |
+| YOLO11s | .701597 | 165.599 | 307.703 | 97.182 | 157.178 |
+| DeepSeek-VL2 | .716735 | 29156.146 | 34130.786 | 21260.820 | 23447.365 |
+| Kimi-VL-A3B | .805465 | 19830.525 | 40337.936 | 11702.072 | 19896.130 |
 
 All costs are16-video equivalents, not the latency or energy of sixteen distinct
-videos in these cost windows. The separate full558 evaluation supplies quality.
+videos in these cost windows. Displayed quality comes from native MPS100, while
+costs remain FP32. The independently measured FP32 quality is retained for audit.
 The LightGen-II star retains SRCC .797714,10.245570 ms and1.177690 J under the
 previous optical component-cost definition.
 
@@ -296,9 +302,10 @@ previous optical component-cost definition.
 **Time panel.** Reference temporal quality is plotted against16-video-equivalent
 processing time under unrestricted and time-paced FP32 execution. Filled and
 open markers identify unrestricted and paced conditions, respectively, using one
-shape per model. Lines connect the two costs at the same unrestricted quality
-reference. Their horizontal appearance does not demonstrate identical predictions
-under time control. Pacing delays are included in the charged time.
+shape per model. Lines connect the two FP32 costs at the same native MPS100
+quality reference. These cross-precision reference coordinates do not demonstrate
+FP32 accuracy at the plotted SRCC or identical predictions under time control.
+Pacing delays are included in the charged time.
 
 **Energy panel.** The same quality references are plotted against estimated
 energy for the same charged intervals. The estimate includes both GPU board-power
@@ -312,7 +319,10 @@ reference, not a merged MPS-versus-time-control experiment. The source is the
 protected `lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json`.
 The new `temporal_fp32_reference_audit.json` receipt records replay of raw calls,
 waits, per-GPU telemetry and six full558 prediction files. The original source
-and the current MPS outputs were not overwritten.
+and the current MPS outputs were not overwritten. The derived
+`temporal_fp32_paper.json` records the shared native MPS100 reference source and
+both source hashes, while `temporal_fp32_reference.json` retains the actual FP32
+quality and cost observations.
 
 ## Historical resident-repeat selection: MPS with original deployment precision
 

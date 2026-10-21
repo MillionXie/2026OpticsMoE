@@ -1,6 +1,6 @@
 from copy import deepcopy
 import pytest
-from LightGenV2.tasks.t06_video_quality_assessment.reports.temporal_fp32_reference import select,MODELS,audit
+from LightGenV2.tasks.t06_video_quality_assessment.reports.temporal_fp32_reference import select,shared_native_accuracy,MODELS,audit
 
 
 def fixture():
@@ -32,3 +32,17 @@ def test_no_silent_capacity_or_control_failure():
     with pytest.raises(AssertionError):select(data)
     data=fixture();next(p for p in data['values'] if p['model']=='deepseek')['gpu_count']=1
     with pytest.raises(AssertionError):select(data)
+
+
+def test_shared_native_reference_never_overwrites_fp32_observations():
+    data=dict(values=select(fixture()))
+    native=dict(points=[dict(model=m,resource_cap=100,batch=1,srcc=.8,
+        repeats=[dict(checkpoint_sha256=m,srcc=.8,source=m,source_sha256=m)]*3) for m in MODELS])
+    before=deepcopy(data);native_before=deepcopy(native)
+    result=shared_native_accuracy(data,native)
+    assert data==before and native==native_before
+    for old,new in zip(data['values'],result['values']):
+        assert new['display_reference_srcc']==.8 and new['srcc_reference']==.75
+        assert all(new[k]==v for k,v in old.items())
+    native['points'][0]['repeats'][0]['checkpoint_sha256']='wrong'
+    with pytest.raises(AssertionError):shared_native_accuracy(data,native)

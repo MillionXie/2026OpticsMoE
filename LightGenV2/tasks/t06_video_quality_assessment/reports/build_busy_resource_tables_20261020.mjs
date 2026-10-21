@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {pathToFileURL} from 'node:url';
 const require=createRequire(path.join(process.cwd(),'.codex_tmp/artifact-runtime.cjs'));
 const {Workbook,SpreadsheetFile,FileBlob}=await import(pathToFileURL(require.resolve('@oai/artifact-tool')).href);
+if(process.argv.includes('--temporal-fp32-shared-accuracy')){await editTemporalFp32SharedAccuracy();process.exit(0);}
 if(process.argv.includes('--temporal-fp32-reference')){await buildTemporalFp32Reference();process.exit(0);}
 if(process.argv.includes('--dataset-once')){await buildDatasetOnce();process.exit(0);}
 if(process.argv.includes('--mps-deployed')){await buildMpsDeployed();process.exit(0);}
@@ -396,4 +397,48 @@ async function buildTemporalFp32Reference(){
  await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:await digest(output),source_sha256:await digest(source),conditions:12,trials:36,recalculation:true,reimport:true,formula_errors:0},null,2)+'\n');
  try{await fs.rename(output+'.inspect.ndjson',path.join(root,'fp32_temporal_reference_inspect.ndjson'));}catch(e){if(e.code!=='ENOENT')throw e;}
  console.log(JSON.stringify({file:output,conditions:12,trials:36}));
+}
+
+async function editTemporalFp32SharedAccuracy(){
+ const repo=process.cwd(),root=path.join(repo,'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation');
+ const source=path.join(root,'temporal_fp32_paper.json'),data=JSON.parse(await fs.readFile(source,'utf8'));
+ const digest=async p=>crypto.createHash('sha256').update(await fs.readFile(p)).digest('hex');
+ if(data.fp32_selection_sha256!==await digest(path.join(repo,data.fp32_selection_source))||data.display_accuracy_source_sha256!==await digest(path.join(repo,data.display_accuracy_source)))throw Error('Presentation source changed');
+ const output=path.join(repo,'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/LGVQ_FP32_temporal_control_reference.xlsx');
+ const receiptPath=path.join(root,'temporal_fp32_reference_workbook_receipt.json');
+ const beforeSha=await digest(output),prior=JSON.parse(await fs.readFile(receiptPath,'utf8'));
+ if(prior.sha256!==beforeSha)throw Error('Preserve externally edited workbook');
+ const archive=path.join(root,'prior_fp32_temporal_'+beforeSha+'.xlsx');
+ try{await fs.copyFile(output,archive,1);}catch(e){if(e.code!=='EEXIST')throw e;}
+ const book=await SpreadsheetFile.importXlsx(await FileBlob.load(output));book.recalculate();
+ const s=book.worksheets.getItem('Plot data'),t=book.worksheets.getItem('Trial data');
+ console.log((await book.inspect({kind:'table',range:'Plot data!A7:E10',include:'values,formulas',tableMaxRows:4,tableMaxCols:5,maxChars:1800})).ndjson);
+ const snapshot=()=>JSON.stringify({raw:t.getRange('A1:Z41').values,rawFormulas:t.getRange('A1:Z41').formulas,cost:s.getRange('D8:M20').values,costFormulas:s.getRange('D8:M20').formulas});
+ const unchanged=snapshot(),models=['qwen','glm','clip','yolo','deepseek','kimi'];
+ s.getRange('C7').values=[['Reference SRCC (MPS100)']];
+ s.getRange('A5').values=[['Displayed SRCC uses native MPS100. FP32 costs are measured; actual FP32 quality remains in Trial data.']];
+ s.getRange('A29').values=[['Shared native MPS100 quality is a cross-precision presentation reference, not measured FP32 performance.']];
+ const heading={fill:'#214D68',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},rowHeight:52,wrapText:true,horizontalAlignment:'center',verticalAlignment:'center'};
+ t.getRange('A44:H44').values=[['Model','Shared SRCC (native MPS100)','Reference video batch','Actual FP32 full558 SRCC','Checkpoint SHA256','Native MPS100 reports','Native MPS100 report SHA256','Reference policy']];t.getRange('A44:H44').format=heading;
+ for(const [i,model]of models.entries()){
+  const p=data.values.find(p=>p.model===model),row=45+i;
+  t.getRange(`A${row}:H${row}`).values=[[p.model_name,p.display_reference_srcc,p.display_reference_batch,p.srcc_reference,p.checkpoint_sha256,p.display_reference_reports.map(r=>r.source).join('\n'),p.display_reference_reports.map(r=>r.sha256).join('\n'),'Native-precision MPS100 display reference; not FP32 measured SRCC']];
+  for(const [j,v]of data.values.entries())if(v.model===model)s.getRange('C'+(9+j)).formulas=[[`='Trial data'!B${row}`]];
+ }
+ t.getRange('A45:H50').format={font:{name:'Arial',size:10,color:'#263747'},rowHeight:72,wrapText:true,verticalAlignment:'center'};
+ t.getRange('B45:B50').setNumberFormat('0.000000');t.getRange('D45:D50').setNumberFormat('0.000000');t.getRange('C45:C50').setNumberFormat('0');
+ t.getRange('R44:S46').values=[['Shared display reference source','SHA256'],[data.display_accuracy_source,data.display_accuracy_source_sha256],[path.relative(repo,source).replaceAll('\\','/'),await digest(source)]];t.getRange('R44:S44').format=heading;t.getRange('R45:S46').format={wrapText:true,rowHeight:58};
+ function verify(w){const sh=w.worksheets.getItem('Plot data');for(const [i,p]of data.values.entries())for(const [col,key]of [['C','display_reference_srcc'],['D','time16_ms'],['E','energy16_j']])if(Math.abs(sh.getRange(col+(9+i)).values[0][0]-p[key])>1e-7)throw Error('Shared reference mismatch '+p.model+col);}
+ book.recalculate();verify(book);
+ const cell=t.getRange('B45'),value=cell.values[0][0];cell.values=[[value-.01]];book.recalculate();
+ if(Math.abs(s.getRange('C9').values[0][0]-(value-.01))>1e-12)throw Error('Display reference did not recalculate');
+ cell.values=[[value]];book.recalculate();verify(book);
+ if(snapshot()!==unchanged)throw Error('Original FP32 trial observations or costs changed');
+ const errors=(await book.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:1200})).ndjson;if(!errors.includes('Cell search matched 0 entries.'))throw Error(errors);
+ for(const [sheetName,range,name]of [['Plot data','A1:K33','fp32_temporal_summary'],['Trial data','A44:D50','fp32_temporal_accuracy_references']]){const blob=await book.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(repo,'.codex_tmp',name+'.png'),new Uint8Array(await blob.arrayBuffer()));}
+ await(await SpreadsheetFile.exportXlsx(book)).save(output);const reopened=await SpreadsheetFile.importXlsx(await FileBlob.load(output));verify(reopened);
+ if(JSON.stringify(reopened.worksheets.getItem('Trial data').getRange('A1:Z41').values)!==JSON.stringify(t.getRange('A1:Z41').values))throw Error('Raw inputs changed after export');
+ await fs.writeFile(receiptPath,JSON.stringify({file:output,sha256:await digest(output),source_sha256:await digest(source),fp32_selection_sha256:data.fp32_selection_sha256,display_accuracy_source_sha256:data.display_accuracy_source_sha256,display_accuracy_policy:data.display_accuracy_policy,conditions:12,trials:36,recalculation:true,reimport:true,formula_errors:0,raw_fp32_and_costs_unchanged:true,prior_workbook_sha256:beforeSha},null,2)+'\n');
+ try{await fs.rename(output+'.inspect.ndjson',path.join(root,'fp32_temporal_reference_inspect.ndjson'));}catch(e){if(e.code!=='EEXIST'&&e.code!=='ENOENT')throw e;}
+ console.log(JSON.stringify({file:output,conditions:12,raw_fp32_and_costs_unchanged:true}));
 }
