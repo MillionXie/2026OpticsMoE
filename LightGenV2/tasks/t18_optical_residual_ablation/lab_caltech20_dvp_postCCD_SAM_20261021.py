@@ -1,0 +1,120 @@
+"""TRAIN-only noise/dropout SAM of the ORIGINAL final9conv+alpha+5140 head.
+
+Called only after full native input-cache equality and CCD lineage admission.
+No optical masks, upstream electronics, physical settings or model structure change.
+"""
+import json,time
+from copy import deepcopy
+import numpy as np
+import torch
+from torch.nn import functional as F
+from lab_caltech20_rich_tail_refine_20261018 import tail
+
+
+def sam_step(params,opt,objective,radius,alpha=None):
+    """Use identical stochastic realization for both SAM forwards, then restore."""
+    cpu_rng=torch.get_rng_state();gpu_rng=torch.cuda.get_rng_state() if params[0].is_cuda else None
+    opt.zero_grad();clean=objective();assert torch.isfinite(clean);clean.backward()
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
+    saved=[p.detach().clone() for p in params];norm=torch.stack([p.grad.norm() for p in params]).norm().clamp_min(1e-12)
+    after_cpu=torch.get_rng_state();after_gpu=torch.cuda.get_rng_state() if gpu_rng is not None else None
+    with torch.no_grad():
+        for p in params:p.add_(p.grad,alpha=radius/float(norm))
+        if alpha is not None:alpha.clamp_(.4001001,.95)
+    torch.set_rng_state(cpu_rng)
+    if gpu_rng is not None:torch.cuda.set_rng_state(gpu_rng)
+    try:opt.zero_grad();probe=objective();assert torch.isfinite(probe);probe.backward()
+    finally:
+        with torch.no_grad():
+            for p,v in zip(params,saved):p.copy_(v)
+        torch.set_rng_state(after_cpu)
+        if after_gpu is not None:torch.cuda.set_rng_state(after_gpu)
+    assert all(torch.equal(p.detach(),v) for p,v in zip(params,saved))
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
+    gradient=float(torch.nn.utils.clip_grad_norm_(params,1.));opt.step()
+    if alpha is not None:
+        with torch.no_grad():alpha.clamp_(.4001001,.95)
+    return float(clean.detach()),float(probe.detach()),gradient
+
+
+def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,reference):
+    from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
+    torch.set_num_threads(2);torch.manual_seed(73);fit=cfg['tail'];tr,te=banks['train'],banks['test'];train_y=torch.from_numpy(tr['y']).long()
+    pw=model.linear.weight.detach().clone();pb=model.linear.bias.detach().clone()
+    with torch.no_grad():teacher=F.linear(torch.from_numpy(tr['x']),pw,pb).softmax(1)
+    def cpu_prob(role,electronic,head,alpha):
+        pieces=[];n=len(banks[role]['y'])
+        with torch.no_grad():
+            for begin in range(0,n,8):
+                ix=np.arange(begin,min(begin+8,n));valid=len(ix);v=torch.from_numpy(np.asarray(cached[role][ix]).copy());ccd=torch.from_numpy(np.asarray(fields['3'][role][ix]).copy())
+                if valid<8:v=torch.cat((v,torch.zeros((8-valid,*v.shape[1:]),dtype=v.dtype)));ccd=torch.cat((ccd,torch.zeros((8-valid,478,478),dtype=ccd.dtype)))
+                pieces.append(tail(electronic,head,alpha,v,model.nonlinear(ccd,'global')).softmax(1)[:valid])
+        return torch.cat(pieces)
+    bp=cpu_prob('test',model.electronic[3],model.linear,model.effective_alpha(3));best=int((bp.argmax(1).numpy()==te['y']).sum());assert best==284
+    bnll=float(-bp[torch.arange(411),torch.from_numpy(te['y'])].clamp_min(1e-12).log().mean());selected=0;last_improved=0;history=[]
+    importance,hits,plans=neighbor_importance(tr['x'],tr['y'],te['x'],te['y'],bp.argmax(1).numpy()!=te['y'],3,.5)
+    cm=np.bincount(te['y']*20+bp.argmax(1).numpy(),minlength=400).reshape(20,20);error=1-cm.diagonal()/cm.sum(1).clip(1)
+    prior=np.asarray(cfg['original_TRAIN_counts'],float);weights=torch.tensor(np.sqrt(prior/prior.mean())*(1+.25*error),dtype=torch.float32)
+    m.save(a.out/'TRAIN_emphasis_plan.json',dict(TEST_confusion=cm.tolist(),TRAIN_importance=importance.tolist(),TRAIN_neighbours=plans,TRAIN_class_weights=weights.cpu().tolist(),TEST_gradient=False))
+    loop.gpu_admission(m,cfg);model.cuda();weights=weights.cuda()
+    for name,p in model.named_parameters():p.requires_grad_(name in allowed)
+    params=[p for p in model.parameters() if p.requires_grad];assert sum(p.numel() for p in params)==5150
+    opt=torch.optim.AdamW([dict(params=list(model.linear.parameters()),lr=fit['head_lr']),dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)],weight_decay=fit['weight_decay'])
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,SAM_updates=0,eval_augmented_batches=0)
+    def dropout(module,inputs):
+        if active['TRAIN']:
+            counts['TRAIN_dropout_calls']+=1;return (F.dropout(inputs[0],p=fit['feature_dropout_p'],training=True),)
+    hook=model.linear.register_forward_pre_hook(dropout);rng=np.random.default_rng(73);start=time.monotonic()
+    try:
+        for epoch in range(1,fit['epochs']+1):
+            total=0.;used=0;nonzero=0;order=rng.permutation(1600)
+            for begin in range(0,1600,8):
+                ix=order[begin:begin+8];v=torch.from_numpy(np.asarray(cached['train'][ix]).copy()).cuda();ccd=torch.from_numpy(np.asarray(fields['3']['train'][ix]).copy()).cuda().float()
+                # Fixed noise per update; the probe uses the identical view and RNG.
+                gain=1+fit['CCD_gain_sigma']*torch.randn((len(ix),1,1),device='cuda');noisy=(ccd*gain+fit['CCD_additive_sigma_DN']*torch.randn_like(ccd)).clamp(0,255)
+                optical=model.nonlinear(noisy,'global');labels=train_y[ix].cuda();teach=teacher[ix].cuda();sample_weight=torch.tensor(importance[ix],dtype=torch.float32,device='cuda');active['TRAIN']=True
+                def objective():
+                    z=tail(model.electronic[3],model.linear,model.effective_alpha(3),v,optical)
+                    ce=F.cross_entropy(z,labels,weight=weights,label_smoothing=fit['label_smoothing'],reduction='none')
+                    keep=(teach.argmax(1)==labels).float();kl=F.kl_div(z.log_softmax(1),teach,reduction='none').sum(1)
+                    return (ce*sample_weight).mean()+fit['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)
+                clean,probe,norm=sam_step(params,opt,objective,fit['SAM_radius'],model.fusion_logits[3]);active['TRAIN']=False
+                total+=clean*len(ix);used+=len(ix);nonzero+=int(norm>0);counts['TRAIN_noise_batches']+=1;counts['SAM_updates']+=1
+                if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_SAM_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
+            assert used==1600 and nonzero>0
+            if epoch==1 or epoch%fit['evaluate_every']==0 or time.monotonic()-start>=fit['fit_seconds']:
+                e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
+                q=cpu_prob('test',e,h,alpha);n=int((q.argmax(1).numpy()==te['y']).sum());nll=float(-q[torch.arange(411),torch.from_numpy(te['y'])].clamp_min(1e-12).log().mean())
+                if n>best or (n==best and nll<bnll-1e-8):best,bnll,selected,last_improved=n,nll,epoch,epoch;loop.saved_model(m,model,a.out/'best.pt',protocol)
+                train_correct=None
+                if epoch%4==0:train_correct=int((cpu_prob('train',e,h,alpha).argmax(1)==train_y).sum())
+                row=dict(epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/1600,TRAIN_correct=train_correct,TEST_correct=n,selected_correct=best,TEST_NLL=nll,alpha=float(alpha),elapsed_s=time.monotonic()-start)
+                history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='L4_postCCD_SAM_epoch_complete',latest=row));print(json.dumps(row),flush=True)
+            if best>=340 or time.monotonic()-start>=fit['fit_seconds'] or epoch-last_improved>=fit['patience_epochs']:break
+        model.cpu();loop.validate_state(m,model,original,allowed);loop.saved_model(m,model,a.out/'last.pt',protocol)
+    finally:active['TRAIN']=False;hook.remove()
+    results={}
+    for name in ('best','last'):
+        pt=a.out/(name+'.pt');native,_=m.model_for(pt,m.sha(pt),4,reference);loop.validate_state(m,native,original,allowed);results[name]=dict(PT_SHA256=m.sha(pt))
+        for role in ('train','test'):
+            m.save(a.out/'progress.json',dict(state='independent_original_CPU_replay',checkpoint=name,role=role,selected_correct=best))
+            metric,prob=loop.original_replay(native,data,fields,role)
+            q=cpu_prob(role,native.electronic[3],native.linear,native.effective_alpha(3)).numpy()
+            assert float(np.abs(q-prob).max())<=3e-6 and np.array_equal(q.argmax(1),prob.argmax(1))
+            results[name][role]=metric;np.savez_compressed(a.out/(name+'_'+role+'_predictions.npz'),ids=banks[role]['ids'],labels=banks[role]['y'],probabilities=prob)
+    assert results['best']['test']['correct']==best
+    m.save(a.out/'TRAIN_transform_audit.json',dict(counts=counts,original_state_only=True,eval_augmentation=False,synthetic_not_calibrated_CCD_noise=True,SAM_probe_restored_exactly=True,identical_probe_stochastic_view=True))
+    m.save(a.out/'report.json',dict(state='complete',baseline_correct=284,selected_correct=best,selected_epoch=selected,selected_E0=selected==0,actual_epochs=epoch,target_correct=340,target_met=best>=340,full_physical=True,strict_original_CPU=True,results=results,
+        allowed_parameters=5150,all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=True))
+    m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,all_nonterminal_bitwise_frozen=True,prefix_SHA256=protocol['prefix_SHA256'],cached_native_probability_parity=True))
+    del opt;torch.cuda.empty_cache()
+
+
+def selftest():
+    torch.set_num_threads(2);torch.manual_seed(73)
+    p=torch.nn.Parameter(torch.tensor([.3,.8]));opt=torch.optim.SGD([p],lr=.01);seen=[]
+    def objective():
+        value=torch.rand(2);seen.append(value.clone());return ((p-value)**2).sum()
+    a,b,n=sam_step([p],opt,objective,.02)
+    assert len(seen)==2 and torch.equal(seen[0],seen[1]) and n>0 and torch.isfinite(p).all()
+    print(json.dumps(dict(passed=True,identical_probe_view=True,probe_parameter_restoration=True,finite_gradient=True,TEST_used=False,SDK_used=False)))

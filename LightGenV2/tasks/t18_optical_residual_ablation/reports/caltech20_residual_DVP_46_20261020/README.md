@@ -1,5 +1,53 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-21相机暂缓恢复：离线四层SAM与六层稳定后缀
+
+用户明确暂时不能重启/插拔小相机，要求先微调其他部分，恢复后人工告知。因此本轮
+不重开SDK、不重试相机、不改变曝光/坐标/LUT/模型结构。六层G1和E2各2011帧
+已有完整身份与数组SHA审计，下一G2 Start:-1001零有效帧；原采集及依赖末端任务
+均已退出，不再写成“仍健康运行”。以下新任务均只消费旧有效CCD，禁止自动恢复光测。
+
+四层原Linear5140新增TRAIN-only SAM对照：TRAIN协方差条件化增量、正确TRAIN
+父教师保护、原TRAIN类先验平方根权重，600步/6.406fit秒；每步先临时扰动、
+计算梯度后精确恢复再更新。原生测试证明扰动恢复/有限梯度/无新状态。完整原模型
+best/last的TRAIN1600/TEST411复核及缓存概率一致性通过：best仍父284/411，
+TRAIN1010/1600；last271/411，TRAIN1081/1600。属于TRAIN改善而TEST退步，
+不能把E0父PT说成新的训练提升；正式选定仍是历史d376a6dd的69.09976%，不替换。
+SAM run `advance_after_user_waiver_20261021_USB_resume01/terminal_SAM_20261021/L4`，
+16份产物已逐SHA本地备份，清单SHA
+0cd8e4372e055dc345f533adf711be4939657026fdafba418cf49993861d3994。
+额外逐类诊断保存在该本地run的`offline_class_diagnosis.json`；父版本TRAIN宏召回
+63.125%，TEST宏召回54.04019%，类别不均衡，单凭该分析不能断言光学根因。
+
+六层新稳定后缀来源Git ad442a85474036c76d00681995d57420fba0d66a，原已采
+router/E1/G1/E2 mask逐键冻结，仅优化未采G2/E3/G3 mask、允许的后缀电子/alpha
+与原5140头。完整1600TRAIN每轮，12轮/329.797秒；raw-logit CE而不是裁剪概率
+NLL，0.03标签平滑/AdamW，较小phase LR5e-5与head LR5e-4，合成TRAIN gain
+sigma .005、加性sigma .1DN及原头输入dropout .02。2400个TRAIN批次/19200份
+实际TRAIN使用，均有有限非零梯度；扰动不是拟合的相机噪声，eval恒等通过。
+原模型best/last全TRAIN1600/TEST411 CPU重放及冻结审计通过：
+
+| 六层混合指标（不是完整实拍） | TRAIN | TEST开发 | TEST NLL |
+|---|---:|---:|---:|
+| 原E2后父版本 | 293/1600 | 147/411=35.76642% | 3.21654 |
+| 本轮稳定后缀best/last | 392/1600 | 170/411=41.36253% | 2.37044 |
+
+run `advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/E2_stable_rawCE_20261021`。
+best SHA 53bb3388e3209fc4f6e9d98d76c1d5a5423f06138eae785b31da4dae53ab1f5b，
+last SHA 7356a5496d4eee58bf429a952e40a0c813cbd322088499e1c08f45a051fb09d2；
+report SHA 486089cf8bf1dcabdf5d7242190add62c891a3fa256c813edc3096269d96308f。
+17份产物已逐SHA本地备份，清单SHA
+ff6d452bfcf1ba133f99737684bbc0893242083d5baee197afee2bf1797ac68c。
+单次GPU工作已结束，无后续SDK依赖，不占相机等待。
+
+随后Git af3ae28e32ce50b68cdc5303c21cd6057ec88b52发布六层原头校正入口，
+同run内`L6/E2_readout_20261021`已实际开始原模型CPU缓存；固定本轮170父版本的
+所有非Linear状态，仅一次TRAIN协方差收缩/TRAIN标量校准与有界保护性TRAIN邻居
+行更新。TEST仅诊断/邻居选择及选模，不进梯度，无VALID/新层/新CCD。新结果需
+等待原模型全量best/last复核，不以PID或缓存当作提升。所用算子原生自测通过。
+全部六层指标始终是实测router/E1/G1/E2＋仿真G2/E3/G3，人工恢复相机后还必须
+根据最终选定PT逐层新采下游；此前实际G1/E2不重拍。二层333/411已接受，不改动。
+
 ## 2026-10-21追加二层1.2pp/四层1.5pp目标的实际有限优化
 
 本节覆盖旧四层222分数，但不删除旧PT、CCD或报告。用户明确重新打开已接受

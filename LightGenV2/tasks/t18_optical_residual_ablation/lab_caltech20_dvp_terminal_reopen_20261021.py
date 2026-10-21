@@ -55,7 +55,8 @@ def selftest():
 
 
 def run(a):
-    assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
+    preview=json.loads(a.profile.read_text());post_sam=preview.get('method')=='TRAIN_postCCD_SAM'
+    assert os.environ.get('CUDA_VISIBLE_DEVICES')==(preview['GPU_UUID'] if post_sam else '')
     import numpy as np,torch
     from torch.nn import functional as F
     import lab_caltech20_dvp_layerwise_20261019 as m
@@ -80,7 +81,7 @@ def run(a):
     assert m.session_hardware_digest(a.sequence)==loop.HARDWARE
     session=a.sequence/'L4_response_20261020'
     model,_=m.model_for(parent,cfg['parent_SHA256'],4,session/'source_reference.ts');original=m.state_cpu(model)
-    if head_only:
+    if head_only or post_sam:
         feature_state=torch.load(producer/'best.pt',map_location='cpu',weights_only=False)['model']
         assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'))
     banks={}
@@ -107,7 +108,7 @@ def run(a):
         parent_PT_SHA256=cfg['parent_SHA256'],data_SHA256=dm['sha256'],hardware_SHA256=loop.HARDWARE,prefix_SHA256=identities,
         cache_producer_report_SHA256=m.sha(producer/'report.json'),allowed_keys=sorted(allowed),TRAIN=1600,TEST=411,VALID=0,
         full_physical=True,original_terminal_parameters=5140 if head_only else 5150,new_inference_layers=0,all_optical_upstream_frozen=True,
-        TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=False,recurring=False)
+        TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=post_sam,recurring=False)
     m.save(a.out/'protocol.json',protocol)
     tr,te=banks['train'],banks['test'];x=torch.tensor(tr['x'],dtype=torch.float64);y=torch.tensor(tr['y'])
     tx=torch.from_numpy(te['x']);ty=torch.from_numpy(te['y']);pw=model.linear.weight.detach().clone();pb=model.linear.bias.detach().clone()
@@ -140,12 +141,13 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
     if sam:
         lastw,lastb,proof=delta_sam(torch,x,y,pw,pb,counts,cfg['SAM'],observe);reason='finite_distinct_SAM_objective_complete'
+    elif post_sam:lastw,lastb=bw.clone(),bb.clone();reason='original_postCCD_SAM'
     elif best<340:
         maximum=cfg.get('maximum_protected_passes',1);assert 1<=maximum<=12
         protected_start=time.monotonic();total_budget=cfg.get('total_protected_fit_seconds',maximum*120);assert 0<total_budget<=1440
@@ -185,7 +187,8 @@ def run(a):
     try:
         with torch.no_grad():
             for role,n in (('train',1600),('test',411)):
-                dest=None;pp=[]
+                reuse=Path(cfg['terminal_input_producer'])/(role+'_last_input.npy') if post_sam else None
+                dest=np.load(reuse,mmap_mode='r') if reuse else None;pp=[]
                 for begin in range(0,n,8):
                     images,valid,end=m.padded(data,role,begin);measured={}
                     for key,v in fields.items():
@@ -195,13 +198,19 @@ def run(a):
                     model.measured=measured;p=model(m.encode_images(images))[0]
                     inp=held['x'].numpy()
                     if dest is None:dest=np.lib.format.open_memmap(a.out/(role+'_last_input.npy'),mode='w+',dtype=np.float32,shape=(n,*inp.shape[1:]))
-                    dest[begin:end]=inp[:valid]
+                    if reuse:assert np.array_equal(dest[begin:end],inp[:valid])
+                    else:dest[begin:end]=inp[:valid]
                     q=tail(model.electronic[3],model.linear,model.effective_alpha(3),held['x'],model.nonlinear(model.measured['3'],'global')).softmax(1)
                     assert float((p-q).abs().max())<=3e-6 and torch.equal(p.argmax(1),q.argmax(1))
                     pp.append(p[:valid]);m.save(a.out/'progress.json',dict(state='caching_native_terminal_input',role=role,samples=end,total=n,selected_correct=best))
-                dest.flush();cached[role]=dest
+                if not reuse:dest.flush()
+                else:m.save(a.out/(role+'_input_cache_identity.json'),dict(path=str(reuse),SHA256=m.sha(reuse),samples=n,native_all_inputs_exact=True))
+                cached[role]=dest
                 if role=='test':assert int((torch.cat(pp).argmax(1)==ty).sum())==best
     finally:hook.remove()
+    if post_sam:
+        from lab_caltech20_dvp_postCCD_SAM_20261021 import fit_and_audit
+        return fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,session/'source_reference.ts')
     def logits(role,indices):
         v=torch.from_numpy(np.asarray(cached[role][indices]).copy());ccd=torch.from_numpy(np.asarray(fields['3'][role][indices]).copy())
         valid=len(v)
