@@ -36,3 +36,14 @@ def test_batch_cost_uses_original_nonpreprocessing_gaps():
              dict(preprocess_start=6,model_call_start=8,first_block_start=9,gpu_output=12)]
     intervals,compute,gap = module.original.charged_intervals(calls)
     assert intervals == [(3,5),(5,6),(9,12)] and compute == 5 and gap == 1
+
+
+def test_authorized_resident_selection_has_three_warmed_repeats_not_cold_profile(monkeypatch):
+    monkeypatch.setattr(module,'CONFIG',module.TASK/'configs/baselines/mps_resident_batch_20261021.json')
+    c = module.configuration()
+    assert (c['warmup_s'],c['measurement_s'],c['queue_depth']) == (5,30,8)
+    assert c['cost_uses_no_warmup_and_distinct_videos'] and c['utilization_uses_warmup_and_same_inputs']
+    def repeat(x):
+        return dict(measurement=dict(mean_gpu_utilization_percent=x))
+    assert module.resident_qualifies([repeat(51),repeat(52),repeat(50)])
+    assert not module.resident_qualifies([repeat(99),repeat(49),repeat(99)])

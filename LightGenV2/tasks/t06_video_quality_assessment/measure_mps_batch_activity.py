@@ -36,6 +36,178 @@ def configuration():
     return c
 
 
+def resident_qualifies(repeats):
+    return len(repeats) == 3 and all(r['measurement']['mean_gpu_utilization_percent'] >= 50 for r in repeats)
+
+
+def resident_repeat(args,compute,inputs,folder,guard,c):
+    """Published queue8 native loop; MPS-aware guard and isolated raw observer.
+
+    It is a complete warmed resident NVML window, not a per-forward counter.
+    No profiler, cached output, synthetic work, Graph, or final-cost reuse.
+    """
+    import torch
+    folder.mkdir()
+    uniform = original.uniform
+    sampler = original.ProcessTelemetrySampler(original.frozen.A100_UUID,folder/'telemetry_stdout.jsonl')
+    clocks = uniform.ClockSampler()
+    groups = []
+    def phase(name,seconds):
+        sampler.set_phase(name)
+        start = time.monotonic()
+        while time.monotonic()-start < seconds:
+            guard.fast()
+            sampler.check()
+            tick = time.monotonic()
+            for _ in range(c['queue_depth']):
+                output = compute(inputs)
+            torch.cuda.synchronize()
+            groups.append(dict(phase=name,start_monotonic_s=tick,end_monotonic_s=time.monotonic(),forwards=c['queue_depth']))
+        return start,time.monotonic(),output
+    try:
+        sampler.start()
+        clocks.start()
+        warm_start,warm_end,_ = phase('warmup',c['warmup_s'])
+        start,end,output = phase('measured',c['measurement_s'])
+        sampler.request('barrier')
+        samples = sampler.stop()
+        from .measure_resident_utilization import summarize
+        result = dict(warmup=summarize(samples,warm_start,warm_end),
+            measurement=summarize(samples,start,end),output=output.detach().cpu().tolist(),
+            measured_start_monotonic_s=start,measured_end_monotonic_s=end,
+            measured_forward_invocations=sum(g['forwards'] for g in groups if g['phase']=='measured'),
+            not_formal_cost=True,not_exact_per_forward_utilization=True)
+        original.frozen.write_json(folder/'report.json',result)
+        return result
+    finally:
+        samples = sampler.stop(raise_on_error=False)
+        original.telemetry.save_samples(folder/'telemetry.csv',samples)
+        clocks.stop(folder/'clock_telemetry.csv')
+        original.frozen.write_json(folder/'forward_groups.json',groups)
+
+
+def resident_worker(args):
+    import torch
+    from types import SimpleNamespace
+    from . import quality_token_common as core
+    c = configuration()
+    engine,frozen = original.engine,original.frozen
+    engine.GPU,engine.PIPE,engine.ROOT = frozen.A100_UUID,PIPE,ROOT
+    if args.output.exists():
+        raise RuntimeError('Preserve all completed and interrupted evidence')
+    if os.environ.get('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE') != str(args.cap):
+        raise RuntimeError('Set MPS cap before CUDA')
+    args.output.mkdir()
+    bound,points = sources(),[]
+    finish = None
+    class Guard(engine.MPSGuard):
+        def check(self):
+            if sources() != bound:
+                raise RuntimeError('Bound resident sources changed')
+            super().check()
+    guard = Guard(args)
+    identity = dict(mode='resident',model=args.model,cap=args.cap,pid=os.getpid(),command=sys.argv,
+        protocol=c,sources=bound,checkpoint_sha256=frozen.sha256(args.checkpoint),
+        manifest_sha256=frozen.sha256(args.manifest),gpu_uuid=frozen.A100_UUID,
+        git_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
+        warmup_and_repeated_inputs_only_for_utilization=True,no_formal_cost=True)
+    def status(value,**extra):
+        frozen.write_json(args.output/'status.json',dict(status=value,unix=time.time(),**extra))
+    try:
+        guard.check()
+        torch.set_num_threads(8)
+        if identity['manifest_sha256'] != frozen.MANIFEST_SHA:
+            raise RuntimeError('Original split SHA required')
+        limit = float(subprocess.check_output(['nvidia-smi','--id='+frozen.A100_UUID,
+            '--query-gpu=power.limit','--format=csv,noheader,nounits'],text=True))
+        if abs(limit-250) > .1:
+            raise RuntimeError('Unchanged250W required')
+        a = SimpleNamespace(**vars(args))
+        a.baseline,args_model = args.model,args.model_path
+        a.model = args_model
+        status('loading')
+        with torch.inference_mode():
+            if args.model == 'glm':
+                model,head,prepare,transfer,compute,reference,finish = original.uniform.special_runtime(a)
+                rows = [r for r in core.read_manifest(args.manifest) if r['split']=='test']
+            else:
+                model,head,rows,prepare,transfer,native,timer,handles = frozen.load_runtime(a)
+                compute = original.uniform.execution.make_gpu_forward(a,model,head,native)
+                native_checked = False
+                def reference(inputs):
+                    nonlocal native_checked
+                    if not native_checked:
+                        values = torch.tensor(native(inputs)[0],device='cuda')
+                        timer.close()
+                        native_checked = True
+                        return values
+                    return compute(inputs)
+                assets = original.costs.model_hashes(args.model_path)
+                def finish():
+                    timer.close()
+                    for h in handles:
+                        h.remove()
+                    if original.costs.model_hashes(args.model_path) != assets:
+                        raise RuntimeError('Frozen assets changed')
+            if frozen.sha256(args.checkpoint) != original.costs.CHECKPOINTS[args.model]:
+                raise RuntimeError('Original frozen head required')
+            if any(p.requires_grad for m in (model,head) for p in m.parameters()):
+                raise RuntimeError('Frozen weights required')
+            visible = torch.cuda.get_device_properties(0).multi_processor_count
+            if visible != (108 if args.cap == 100 else 54):
+                raise RuntimeError('MPS cap not effective')
+            identity.update(visible_multiprocessors=visible,power_limit_w=limit,
+                floating_parameter_dtypes=sorted({str(p.dtype) for p in model.parameters() if p.is_floating_point()}))
+            frozen.write_json(args.output/'identity.json',identity)
+            guard.bind()
+            plan = c['candidate_batches'][args.model] if args.cap == 100 else [args.batch]
+            for batch in plan:
+                args.batch = batch
+                guard.check()
+                folder = args.output/f'batch{batch:02d}'
+                folder.mkdir()
+                cpu,positions = prepare(rows[:batch])
+                inputs = transfer(cpu)
+                torch.cuda.synchronize()
+                ref = reference(inputs).detach().cpu()
+                check = compute(inputs).detach().cpu()
+                if not torch.isfinite(check).all() or not torch.allclose(check,ref,rtol=0,atol=.0002):
+                    raise RuntimeError('GPU-resident output parity failed')
+                frozen.write_json(folder/'inputs.json',dict(sample_ids=[r['sample_id'] for r in rows[:batch]],
+                    frame_positions=positions,reference_mos=ref.tolist()))
+                repeats = []
+                for repeat in (1,2,3):
+                    status('measuring',batch=batch,repeat=repeat)
+                    result = resident_repeat(args,compute,inputs,folder/f'repeat{repeat:02d}',guard,c)
+                    if max(abs(x-y) for x,y in zip(result['output'],ref.tolist())) > .0002:
+                        raise RuntimeError('Resident output changed')
+                    repeats.append(result)
+                    print(json.dumps(dict(model=args.model,cap=args.cap,batch=batch,repeat=repeat,
+                        utilization=result['measurement']['mean_gpu_utilization_percent'])),flush=True)
+                report = dict(status='complete',model=args.model,cap=args.cap,batch=batch,repeats=repeats,
+                    mean_utilization_percent=original.uniform.pooled_mean(repeats),
+                    repeat_means_percent=[r['measurement']['mean_gpu_utilization_percent'] for r in repeats],
+                    minimum50_reached=resident_qualifies(repeats),not_formal_cost=True)
+                frozen.write_json(folder/'report.json',report)
+                points.append(report)
+                del inputs,cpu,ref,check
+                if resident_qualifies(repeats):
+                    break
+            finish()
+            finish = None
+            guard.check()
+            selected = next((r['batch'] for r in points if r['minimum50_reached']),None)
+            frozen.write_json(args.output/'report.json',dict(status='complete',**identity,points=points,selected_batch=selected))
+            status('complete',selected_batch=selected)
+    except BaseException as error:
+        status('failed',error=repr(error))
+        raise
+    finally:
+        if finish is not None:
+            finish()
+        guard.close(args.output/'process_audit.json')
+
+
 def sources():
     return {**original.sources(), **{str(p.relative_to(REPO)): original.frozen.sha256(p)
         for p in (Path(__file__), CONFIG, Path(activity.__file__), Path(clock.__file__))}}
@@ -61,6 +233,8 @@ def selected_batch(attempts, candidates):
 
 
 def worker(args):
+    if args.mode == 'resident':
+        return resident_worker(args)
     import torch
     import numpy as np
     from . import quality_token_common as core
@@ -215,12 +389,14 @@ def suite(args):
         def save():
             original.frozen.write_json(ROOT/'suite_status.json',state)
         def run(model,batch,cap,mode,repeat):
-            name = f'{model}_b{batch:02d}_cap{cap}_{mode}_r{repeat:02d}'
+            name = (f'{model}_resident_cap{cap}' if mode == 'resident'
+                    else f'{model}_b{batch:02d}_cap{cap}_{mode}_r{repeat:02d}')
             mp,pt,python,receipt = original.lab.locations(model)
             command = [python,'-u','-m',__package__+'.measure_mps_batch_activity','--phase','worker',
                 '--mode',mode,'--model',model,'--batch',str(batch),'--cap',str(cap),'--repeat',str(repeat),
                 '--model-path',str(mp),'--checkpoint',str(pt),'--manifest',str(args.manifest),
                 '--output',str(ROOT/name),'--deadline',str(args.deadline)]
+            command += ['--selection-profile',args.selection_profile]
             if receipt:
                 command += ['--reproduction-receipt',str(receipt)]
             if args.deadline-time.time() < 120:
@@ -255,6 +431,25 @@ def suite(args):
             engine.daemon(True)
             active = True
             for model in c['models']:
+                if args.selection_profile == 'resident':
+                    resident = run(model,1,100,'resident',1)
+                    chosen = resident['selected_batch']
+                    if chosen is None:
+                        state['selections'][model] = dict(status='no_qualified_resident_batch_within_finite_plan')
+                        save()
+                        continue
+                    state['selections'][model] = dict(batch=chosen,status='resident_selected_before_cost',
+                        selection_cap=100,selection_metric=c['selection_metric'])
+                    save()
+                    other = run(model,chosen,50,'resident',1)
+                    state['selections'][model]['paired_cap50_minimum50_reached'] = other['selected_batch'] == chosen
+                    save()
+                    for cap in (100,50):
+                        for repeat in (1,2,3):
+                            run(model,chosen,cap,'cost',repeat)
+                    state['selections'][model]['status'] = 'paired_cost_complete'
+                    save()
+                    continue
                 attempts = {}
                 for batch in c['candidate_batches'][model]:
                     reports = [run(model,batch,100,'pilot',1)]
@@ -294,9 +489,11 @@ def suite(args):
 
 
 def main():
+    global ROOT,PIPE,CONFIG
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phase',choices=('suite','worker'),required=True)
-    p.add_argument('--mode',choices=('pilot','cost'))
+    p.add_argument('--mode',choices=('pilot','cost','resident'))
+    p.add_argument('--selection-profile',choices=('cold','resident'),default='cold')
     p.add_argument('--model',choices=('clip','yolo','qwen','glm'))
     p.add_argument('--batch',type=int)
     p.add_argument('--cap',type=int,choices=(100,50))
@@ -308,6 +505,10 @@ def main():
     p.add_argument('--output',type=Path)
     p.add_argument('--deadline',type=float,required=True)
     a = p.parse_args()
+    if a.selection_profile == 'resident':
+        ROOT = ROOT/'resident01'
+        PIPE += '_resident01'
+        CONFIG = TASK/'configs/baselines/mps_resident_batch_20261021.json'
     if not 0 < a.deadline-time.time() <= configuration()['maximum_suite_s']:
         raise ValueError('Finite two-hour maximum required')
     suite(a) if a.phase == 'suite' else worker(a)
