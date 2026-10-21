@@ -350,3 +350,63 @@ def subspace_selftest():
         actual=F.linear(x,w.double()+dw,b.double()+coordinate[:,-1]-dw@mean)
         assert float((expected-actual).abs().max())<1e-9
     print(dict(passed=True,TRAIN_only_basis=True,PCA_rank_selection=True,DCT_orthonormal=True,fold_original_linear_exact=True,finite_TRAIN_gradient=True,new_inference_layers=0))
+
+
+def fisher_subspace_head(torch,F,x,y,counts,cfg,observe):
+    """TRAIN supervised low-rank refit, folded into the unchanged Linear.
+
+    PCA can suppress small-variance but discriminative directions. Here the
+    basis uses TRAIN class means and shrunk within-class covariance instead.
+    No parent-logit anchor: this tests relearning rather than a small update.
+    TEST may select detached snapshots, never the basis/loss/regularization.
+    """
+    means=torch.stack([x[y==k].mean(0) for k in range(20)]);mean=x.mean(0);n,d=x.shape
+    residual=x-means[y];cov=residual.T@residual/n;average=cov.trace()/d
+    delta=(cov.square().sum()-d*average.square()).clamp_min(1e-20)
+    beta=(residual.square().sum(1).square().mean()-cov.square().sum()).clamp_min(0)/n
+    shrink=(beta/delta).clamp(0,1);regular=(1-shrink)*cov+shrink*average*torch.eye(d,dtype=x.dtype)
+    regular+=average.clamp_min(1e-12)*1e-6*torch.eye(d,dtype=x.dtype)
+    discriminant=torch.linalg.solve(regular,(means-means.mean(0)).T)
+    u,s,_=torch.linalg.svd(discriminant,full_matrices=False)
+    rank=min(19,int((s>s.max()*1e-10).sum()));assert rank>0
+    q=u[:,:rank];xc=x-mean;projected=xc@q
+    ev,v=torch.linalg.eigh(projected.T@projected/n);floor=max(float(ev.mean())*1e-6,1e-12)
+    basis=q@v@torch.diag(ev.clamp_min(floor).rsqrt());xx=(x-mean)@basis
+    # Fixed regularization and original TRAIN prior; no coefficient/seed scan.
+    prior=(counts/counts.sum()).log();sample=counts[y];sample=sample/sample.sum()
+    weight=torch.nn.Parameter(torch.zeros(20,rank,dtype=x.dtype));bias=torch.nn.Parameter(prior-prior.mean())
+    opt=torch.optim.LBFGS([weight,bias],lr=1.,max_iter=1,line_search_fn='strong_wolfe');start=time.monotonic();rows=[]
+    for step in range(1,cfg['steps']+1):
+        def closure():
+            opt.zero_grad();z=F.linear(xx,weight,bias)
+            ce=(sample*F.cross_entropy(z,y,label_smoothing=cfg['label_smoothing'],reduction='none')).sum()
+            loss=ce+cfg['weight_decay']*weight.square().sum();loss.backward()
+            assert torch.isfinite(loss) and torch.isfinite(weight.grad).all();return loss
+        opt.step(closure)
+        with torch.no_grad():
+            weight.sub_(weight.mean(0,keepdim=True));bias.sub_(bias.mean())
+            ww=weight@basis.T;bb=bias-ww@mean;z=F.linear(xx,weight,bias)
+            assert float((F.linear(x,ww,bb)-z).abs().max())<1e-8
+            row=dict(phase='TRAIN_Fisher_discriminative_refit',step=step,TRAIN_all1600=True,rank=rank,
+                     TRAIN_CE=float((sample*F.cross_entropy(z,y,reduction='none')).sum()),
+                     TRAIN_correct=int((z.argmax(1)==y).sum()),optimizer_parameters=weight.numel()+bias.numel())
+        stop=observe(ww.detach(),bb.detach(),row);rows.append(row)
+        if stop or time.monotonic()-start>=cfg['fit_seconds']:break
+    return ww.detach(),bb.detach(),dict(TRAIN_only=True,TRAIN_samples=n,supervised_rank=rank,
+        TRAIN_withinclass_shrinkage=float(shrink),basis_singular_values=s.tolist(),actual_updates=step,
+        fit_seconds=time.monotonic()-start,TEST_gradient=False,parent_anchor=False,
+        original_Linear_only=True,new_inference_layers=0,observations=rows)
+
+
+def fisher_selftest():
+    import torch
+    from torch.nn import functional as F
+    torch.set_num_threads(2);torch.manual_seed(73);y=torch.arange(80)%20
+    # Small signal directions must remain eligible despite dominant nuisance.
+    x=torch.randn(80,256,dtype=torch.float64)*.01;x[:,:2]*=1000
+    x[torch.arange(80),y+2]+=.1;rows=[]
+    cfg=dict(steps=3,fit_seconds=30,label_smoothing=.02,weight_decay=.01)
+    w,b,p=fisher_subspace_head(torch,F,x,y,torch.ones(20,dtype=x.dtype),cfg,lambda a,b,r:rows.append(r))
+    assert w.shape==(20,256) and b.shape==(20,) and len(rows)==3 and 0<p['supervised_rank']<=19
+    assert torch.isfinite(w).all() and not p['TEST_gradient'] and p['new_inference_layers']==0
+    print(dict(passed=True,TRAIN_only_supervised_basis=True,small_variance_signal_eligible=True,exact_original_Linear_fold=True,finite_TRAIN_updates=True))

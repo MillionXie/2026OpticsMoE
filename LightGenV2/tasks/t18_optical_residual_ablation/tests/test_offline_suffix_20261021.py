@@ -2,6 +2,12 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_fisher_TRAIN_only_original_readout(self):
+        tree=ast.parse((HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text())
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='fisher_subspace_head')
+        self.assertEqual([a.arg for a in f.args.args],['torch','F','x','y','counts','cfg','observe'])
+        c=json.loads((HERE/'lab_caltech20_L4_Fisher_refit_profile_20261022.json').read_text())
+        self.assertEqual(c['parent_correct'],285);self.assertEqual(c['target'],340);self.assertLessEqual(c['fisher']['steps'],120);self.assertLessEqual(c['fisher']['fit_seconds'],120)
     def test_TRAIN_subspace_optimizer_only(self):
         s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s)
         for name in ('stable_basis','stable_subspace_head'):

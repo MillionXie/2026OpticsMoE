@@ -74,7 +74,7 @@ def run(a):
     continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
     maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';covaugment=cfg.get('method')=='TRAIN_covariance_augmentation';priorcal=cfg.get('method')=='TRAIN_prior_temperature';head_only=head_only or maxmargin or hardridge or covaugment or priorcal
     pairedresponse=cfg.get('method')=='TRAIN_last_response_pair';head_only=head_only or pairedresponse
-    subspace=cfg.get('method')=='TRAIN_stable_subspace_curriculum';head_only=head_only or subspace
+    subspace=cfg.get('method') in ('TRAIN_stable_subspace_curriculum','TRAIN_Fisher_subspace_refit');head_only=head_only or subspace
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -149,13 +149,17 @@ def run(a):
     if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
     if subspace:
-        from lab_caltech20_dvp_error_guided_head_20261021 import stable_subspace_head
-        proof=dict(stages=[])
-        for kind in ('TRAIN_PCA99','spatial_DCT8'):
-            if best>=340:break
-            lastw,lastb,stageproof=stable_subspace_head(torch,F,x,y,bw,bb,counts,kind,cfg['subspace'],observe)
-            proof['stages'].append(stageproof);m.save(a.out/'TRAIN_subspace_fit.json',proof)
-        reason='finite_TRAIN_stable_and_spatial_subspace_curriculum_complete'
+        from lab_caltech20_dvp_error_guided_head_20261021 import stable_subspace_head,fisher_subspace_head
+        if cfg['method']=='TRAIN_Fisher_subspace_refit':
+            lastw,lastb,proof=fisher_subspace_head(torch,F,x,y,counts,cfg['fisher'],observe)
+            m.save(a.out/'TRAIN_Fisher_fit.json',proof);reason='finite_TRAIN_supervised_subspace_refit_complete'
+        else:
+            proof=dict(stages=[])
+            for kind in ('TRAIN_PCA99','spatial_DCT8'):
+                if best>=340:break
+                lastw,lastb,stageproof=stable_subspace_head(torch,F,x,y,bw,bb,counts,kind,cfg['subspace'],observe)
+                proof['stages'].append(stageproof);m.save(a.out/'TRAIN_subspace_fit.json',proof)
+            reason='finite_TRAIN_stable_and_spatial_subspace_curriculum_complete'
     elif pairedresponse:
         from lab_caltech20_dvp_error_guided_head_20261021 import paired_response_head
         held={};parts=[];calls=[]
