@@ -22,6 +22,79 @@ def metrics(target,prediction):
         rmse=float(np.sqrt(np.mean(np.square(difference)))),mae=float(np.mean(np.abs(difference))))
 
 
+def independent_cost_replay(folder):
+    """Replay overlap integrals without calling the producer's interval helpers."""
+    folder=Path(folder)
+    report=json.loads((folder/'report.json').read_text())
+    assert report['status']=='complete' and report['mode']=='cost'
+    assert report['explicit_warmup_forwards']==0 and report['no_profiling_during_cost']
+    assert report['visible_multiprocessors']==(108 if report['cap']==100 else 54)
+    assert report['power_limit_w']==250 and report['cost_videos']==200 and report['test_videos']==558
+    calls=json.loads((folder/'calls.json').read_text())
+    charged=[c for c in calls if c['in_cost_subset']]
+    assert sum(c['videos'] for c in charged)==200
+    assert sum(c['videos'] for c in calls)==558
+    intervals=[]
+    gap_s=0.
+    for i,c in enumerate(charged):
+        intervals.append((c['first_block_start'],c['gpu_output']))
+        if i:
+            a,b=charged[i-1]['gpu_output'],c['preprocess_start']
+            assert a<=b
+            gap_s+=b-a
+            if a<b:intervals.append((a,b))
+    seconds=sum(float(c['legacy_host_ms']) for c in charged)/1000+gap_s
+    raw=list(csv.DictReader((folder/'telemetry.csv').open(newline='')))
+    left=np.array([float(r['host_monotonic_s']) for r in raw])
+    watts=np.array([float(r['watts']) for r in raw])
+    assert np.all(np.diff(left)>0) and np.all(watts>0)
+    assert left[0]<=min(a for a,b in intervals)
+    right=np.r_[left[1:],max(left[-1],max(b for a,b in intervals))]
+    gpu_j=sum(float(np.dot(np.maximum(0,np.minimum(right,b)-np.maximum(left,a)),watts)) for a,b in intervals)
+    time16=seconds*1000*16/200
+    energy16=(gpu_j+338.2*seconds)*16/200
+    assert math.isclose(time16,report['cost']['time16_ms'],abs_tol=1e-6)
+    assert math.isclose(energy16,report['cost']['energy16_j'],abs_tol=1e-6)
+    return dict(model=report['model'],batch=report['batch'],cap=report['cap'],repeat=report['repeat'],
+        visible_sms=report['visible_multiprocessors'],time16_ms=time16,energy16_j=energy16,
+        compute16_ms=(seconds-gap_s)*80,gap16_ms=gap_s*80,
+        first_cold_contribution16_ms=charged[0]['legacy_host_ms']*16/200,
+        first_cold_batch_ms=charged[0]['legacy_host_ms'],
+        cost_calls=len(charged),last_test_batch=calls[-1]['videos'],
+        gpu_energy_j=gpu_j,host_energy_j=338.2*seconds,charged_s=seconds,
+        report=str((folder/'report.json').relative_to(experiment.REPO)),
+        report_sha256=experiment.original.frozen.sha256(folder/'report.json'))
+
+
+def compare_clip_yolo(root):
+    root=Path(root).resolve()
+    points=[independent_cost_replay(p.parent) for p in sorted(root.glob('*/report.json'))
+        if json.loads(p.read_text()).get('mode')=='cost'
+        and json.loads(p.read_text())['model'] in ('clip','yolo')]
+    assert len(points)==12
+    models={}
+    for model in ('clip','yolo'):
+        caps={}
+        for cap in (100,50):
+            group=[p for p in points if p['model']==model and p['cap']==cap]
+            assert len(group)==3 and {p['repeat'] for p in group}=={1,2,3}
+            caps[str(cap)]={k:statistics.mean(p[k] for p in group) for k in
+                ('time16_ms','energy16_j','compute16_ms','gap16_ms','first_cold_contribution16_ms')}
+            caps[str(cap)].update(batch=group[0]['batch'],visible_sms=group[0]['visible_sms'],
+                time_repeats_ms=[p['time16_ms'] for p in group],
+                time_sample_sd_ms=statistics.stdev(p['time16_ms'] for p in group),
+                energy_repeats_j=[p['energy16_j'] for p in group])
+        delta=caps['50']['time16_ms']-caps['100']['time16_ms']
+        models[model]=dict(caps=caps,delta50minus100_ms=delta,
+            time50_over100=caps['50']['time16_ms']/caps['100']['time16_ms'],
+            energy50_over100=caps['50']['energy16_j']/caps['100']['energy16_j'],
+            first_cold_delta50minus100_ms=caps['50']['first_cold_contribution16_ms']-caps['100']['first_cold_contribution16_ms'])
+    return dict(status='passed',models=models,points=points,
+        independent_time_and_overlap_energy_replay=True,
+        no_warmup_or_test_reselection=True,no_paper_export_updates=True,
+        audit_source_sha256=experiment.original.frozen.sha256(Path(__file__)))
+
+
 def historical_large_models():
     """Do not confuse earlier 80GB resident rates with new laboratory runs.
 
@@ -278,12 +351,14 @@ def main():
     parser.add_argument('--root',type=Path,default=experiment.ROOT)
     parser.add_argument('--historical80',action='store_true')
     parser.add_argument('--historical-glm',action='store_true')
+    parser.add_argument('--clip-yolo-check',action='store_true')
     parser.add_argument('--output',type=Path,required=True)
     args = parser.parse_args()
-    if args.historical80 and args.historical_glm:
+    if sum((args.historical80,args.historical_glm,args.clip_yolo_check))>1:
         parser.error('Select only one historical archive')
     result = (historical_large_models() if args.historical80 else
-              historical_glm_costs() if args.historical_glm else audit(args.root))
+              historical_glm_costs() if args.historical_glm else
+              compare_clip_yolo(args.root) if args.clip_yolo_check else audit(args.root))
     with args.output.open('x') as stream:
         json.dump(result,stream,indent=2)
     print(json.dumps({k:v for k,v in result.items() if k != 'points'},indent=2))
