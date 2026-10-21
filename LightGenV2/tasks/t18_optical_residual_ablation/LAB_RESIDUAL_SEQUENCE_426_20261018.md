@@ -2,12 +2,22 @@
 
 ## 2026-10-21 human instruction supersedes current intermediate stop gates
 
+Latest recovery: user confirmed cameraUSB reconnect; normal enumeration1 and
+full original-CPU parent gates285/287 passed again. Explicit resume01 now has
+actual NEW L4 G2 TRAIN frames (first audited snapshot142/1600, TEST0/411),
+frameID/time/sample/raw/input/phase/PT/settings checks passed. SDK remains
+with the single capture controller; old zero-frame failure is preserved.
+Run subpath `advance_after_user_waiver_20261021_USB_resume01`, runtime source
+c82677c466384ab706d0c23570bf33650ccdf332; no live source replacement or timer.
+After full G2 capture/audit, one finite final fit, then L6 G1 onward as below.
+This is ACTIVE acquisition, NOT a complete physical score or old gate success.
+
 Actual launch was attempted after full original-CPU parent admission285/287.
 The camera enumerated1 before launch but DVP Start returned-1001; afterward
 Windows shows USB BootLoader VID04B4/PID00F3 and DVP count0. New frames0,
 controller/worker exited and SDK released. All old data/failure evidence retained;
 user-only cameraUSB reconnect requested, no blind relaunch/hardware changes.
-The continuation order below remains approved, but is NOT currently acquiring.
+That prior attempt stopped; it is not the current USB_resume01 acquisition.
 
 User explicitly requested L4 and L6 continue, without repeated current-stage
 optimization. L4 E2 measured-prefix285/411 and L6 E1 measured-prefix287/411
