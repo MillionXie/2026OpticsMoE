@@ -14,4 +14,10 @@ class OfflineSuffix(unittest.TestCase):
         self.assertGreater(c['feature_dropout_p'],0);self.assertLess(c['feature_dropout_p'],.1)
         s=json.loads((HERE/'lab_caltech20_L4_SAM_profile_20261021.json').read_text());self.assertEqual(s['parent_correct'],284)
         self.assertLessEqual(s['SAM']['fit_seconds'],120)
+    def test_readout_scope(self):
+        s=(HERE/'lab_caltech20_dvp_suffix_readout_20261021.py').read_text();ast.parse(s)
+        for forbidden in ('Bench(','Camera(','acquire(','Start('):self.assertNotIn(forbidden,s)
+        self.assertIn("allowed={'linear.weight','linear.bias'}",s)
+        self.assertIn('full_physical=False',s)
+        c=json.loads((HERE/'lab_caltech20_L6_E2_readout_profile_20261021.json').read_text());self.assertLessEqual(c['protected']['fit_seconds'],60)
 if __name__=='__main__':unittest.main()

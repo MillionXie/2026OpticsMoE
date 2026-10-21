@@ -1,0 +1,9 @@
+{
+  "schema":"L6_prefix4_original_readout_v1",
+  "prefix_profile":"lab_caltech20_L6_E2_stable_suffix_profile_20261021.json",
+  "parent_relative":"advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/E2_stable_rawCE_20261021",
+  "target_correct":322,
+  "statistical":{"temperature":2.0,"correct_TRAIN_parent_KL":0.1,"temperature_steps":40,"blend_steps":40,"fit_seconds":30},
+  "protected":{"max_classes":8,"steps_each_class":80,"fit_seconds":60,"temperature":2.0,"huber_delta":1.0,"margin":1.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,"Newton_step":0.25,"trust_radius":1.0,"neighbor_boost":3.0,"protect_boost":3.0,"positive_mass":0.3},
+  "scope":"ONE bounded original5140 readout correction after completed audited L6 suffix fit, not a seed/config scan. TRAIN-only covariance/prior/scalar gradients and protected TRAIN neighbours selected by TEST diagnostics. TEST-informed development only. All nonhead including future masks frozen to selected suffix parent. CPU/no SDK/no new CCD. Full native TRAIN1600/TEST411 bestlast audit. Mixed prefix metric, not complete hardware. Camera must await human restoration."
+}
