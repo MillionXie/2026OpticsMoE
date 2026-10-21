@@ -1,0 +1,19 @@
+{
+  "schema": "original_Linear_TRAIN_covariance_coordinates_v1",
+  "data_SHA256": "e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "sensor_profile": "lab_caltech20_DVP_TRAIN_sensor_dropout_profile_20261021.json",
+  "covariance_floor_fraction": 0.001,
+  "label_smoothing": 0.02,
+  "temperature": 2.0,
+  "teacher_KL": 0.1,
+  "anchor": 0.01,
+  "maximum_steps": 160,
+  "maximum_fit_seconds": 120,
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "target_correct": 288,
+  "new_inference_layers": 0,
+  "TEST_gradient": false,
+  "VALID": 0,
+  "recurring": false,
+  "reason": "TRAIN features are strongly correlated and original head parameters have large absolute magnitudes. Optimize one joint original Linear in TRAIN-conditioned coordinates, folding every selected candidate back into its original float32 tensors; do not deploy a whitening layer."
+}
