@@ -62,6 +62,12 @@ historical_glm_available_audit.json、historical_80gb_published_audit.json，均
 完整逐样本SRCC/PLCC、功率原读数、三轮原值和SHA在报告/审计JSON中，不用统一引用
 分数覆盖真实测量。旧定稿Qwen B1 1188.3861464262009ms/462.1134010767563J不动。
 
+收尾复核：749个服务器原文件共264,455,102字节逐SHA备份本地，包含旧冷诊断、
+本轮全部54个完整点、GLM未完成加载证据及MPS释放状态；收据位于canonical根的
+backup_receipt_batch_activity_final.json。最终独立CPU复算final_saved_audit.json通过，
+明确GLM新成本0/6而非全部完成；两端26项CPU测试通过。九项原论文导出SHA全部
+未变；本轮源码/说明已Git main发布同步，其他窗口三项暂存改动原样保留。
+
 ## 2026-10-21 人工纠正：利用率选batch用预热驻留版，成本仍冷启动不同视频
 
 用户明确：利用率应使用先前高负载版本（有预热、固定时间、同一组视频重复），
