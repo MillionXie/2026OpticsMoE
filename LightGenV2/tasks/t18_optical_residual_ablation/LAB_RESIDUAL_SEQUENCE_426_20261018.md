@@ -1,5 +1,29 @@
 # Latest residual scope: reopen L2 offline gap1.5pp; continue DVP L4/L6
 
+## 2026-10-21 renewed user request: L4/L6 statistical readout contrast
+
+L2 remains accepted331 and is NOT refit. Only residual L4/L6 continue from
+same-measurement selected280/285. A completed conditioned-pair pass without
+accuracy gain is not restarted. One distinct TRAIN-estimated pooled within-class
+covariance-shrinkage readout is specified in
+`lab_caltech20_DVP_statistical_readout_profile_20261021.json`.
+Analytic shrinkage, class means, original3141TRAIN prior and scalar fitting use
+TRAIN alone. Temperature then parent-blending use at most40 steps each/120fit
+seconds total, no grid/seed search. Every checkpoint is the original float32
+Linear256to20; all optical/electronic upstream and hardware are unchanged.
+TEST selects checkpoints only, explicitly test-informed development; noVALID or
+TEST derivatives. All1600TRAIN used, parent protected, raw-CCD original-model
+best/last CPU replay required. L4E2>=288 and L6E1>=322 gates remain; final342/350
+remain. No SDK/GPU/newCCD/automatic next layer/recurring task.
+
+Interpretation must distinguish: L2 high-speed camera vs current DVP L4/L6;
+L4 TRAIN72.5%/TEST68.13% vs L6 TRAIN94.06%/TEST69.34%; and different simulation
+targets/alpha constraints. Optical rho.3 is coherent complex modulation
+`.7*exp(i*phase)+.3`, encoded by BOTH amplitude and phase, not merely adding an
+electronic skip. Nores rho0 has unit modulation magnitude. This is a plausible
+extra physical sensitivity, not proof of the unique cause or a controlled
+causal conclusion that residual architectures are inherently harder to adapt.
+
 ## 2026-10-21 explicit user authorization, supersedes L2 frozen status
 
 ### L2 new1.5pp target actually achieved and independently verified

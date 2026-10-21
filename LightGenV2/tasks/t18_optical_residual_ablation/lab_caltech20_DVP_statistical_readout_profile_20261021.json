@@ -1,0 +1,14 @@
+{
+  "schema":"TRAIN_shrunk_covariance_original_readout_v1",
+  "parents":{
+    "4":{"relative":"TRAIN_conditioned_pair_pass02_20261021/best.pt","SHA256":"f0f8ed39e0ebac5de2706a60204a5de5825dbb6b35114b79b4a58f393909a77a","correct":280},
+    "6":{"relative":"fullTRAIN_coupled_confusion/best.pt","SHA256":"6967060c81056cf79ef84b57dfadaafb364e6a6ebe6836efe94c5fa21591e98d","correct":285}
+  },
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_cache_SHA256":"38b719b8ad935a0170d059d0e4fffa22f6f22640f979603f7f2543fc2d3f2445",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "temperature":2.0,"correct_TRAIN_parent_KL":0.1,
+  "temperature_steps":40,"blend_steps":40,"fit_seconds":120,
+  "targets":{"4":288,"6":322},
+  "scope":"2026-10-21 renewed user residual L4/L6 optimization. One TRAIN-estimated within-class covariance shrinkage statistical head plus TRAIN-only scalar temperature/parent blending. Analytic shrinkage estimated without TEST or parameter grid. Existing Linear only; all1600TRAIN used, original3141TRAIN prior, TEST checkpoint selection is development. NoVALID/TEST gradients/newCCD/SDK/GPU/extra inference modules; parent protected; full native bestlast replay before adoption. No restart of failed conditioned-pair passes; no automatic next layer or recurring task."
+}
