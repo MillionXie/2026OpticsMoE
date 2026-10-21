@@ -37,3 +37,12 @@ def test_pinned_finite_budget_and_no_rental_or_protocol_replacement():
     c=configuration()
     assert c['caps']==[100,50,25,10] and c['videos']==12 and c['batch']==1
     assert c['no_new_rental_or_ds_kimi_measurement'] and c['no_pacing_or_synthetic_load']
+
+
+def test_cuda_only_clock_without_inventing_cpu_trace_events():
+    trace,calls,_=evidence();trace['baseTimeNanoseconds']=1_000_000_000
+    trace['traceEvents']=trace['traceEvents'][1:]
+    anchors=[dict(before_us=0,after_us=2,wall_ns=1_000_101_000)]
+    r=summarize_trace(trace,calls,anchors,0)
+    assert r['conditional_kernel_busy_percent']==50 and r['trace_mode']=='cuda_only'
+    assert r['clock_bound_is_empirical']

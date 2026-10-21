@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 from . import measure_mps_dataset_once as original
+from . import tf_activity_clock as clock
 
 TASK=original.TASK
 REPO=original.REPO
@@ -36,7 +37,7 @@ def configuration():
 
 def sources():
     return {**original.sources(),**{str(p.relative_to(REPO)):original.frozen.sha256(p)
-        for p in (Path(__file__),CONFIG)}}
+        for p in (Path(__file__),CONFIG,Path(clock.__file__))}}
 
 
 def union(intervals):
@@ -56,17 +57,20 @@ def clipped_duration(kernels,start,end):
     return duration((max(start,a),min(end,b)) for a,b in kernels if max(start,a)<min(end,b))
 
 
-def summarize_trace(trace,calls,anchors):
+def summarize_trace(trace,calls,anchors,epoch_allowance_us=None):
     events=trace['traceEvents']
     kernels=union((float(e['ts']),float(e['ts'])+float(e['dur'])) for e in events
         if e.get('ph')=='X' and e.get('cat')=='kernel' and e.get('dur',0)>0)
     if not kernels:raise RuntimeError('No CUPTI CUDA kernels: cannot report conditional utilization')
     low,high=-math.inf,math.inf
-    for anchor in anchors:
-        matches=[e for e in events if e.get('ph')=='X' and e.get('name')==anchor['name']]
-        if len(matches)!=1:raise RuntimeError('Missing or duplicate clock anchor')
-        event=matches[0];ts=float(event['ts']);end=ts+float(event['dur'])
-        low=max(low,end-anchor['after_us']);high=min(high,ts-anchor['before_us'])
+    if epoch_allowance_us is not None:
+        low,high=clock.epoch_bounds(trace,anchors,epoch_allowance_us)
+    else:
+        for anchor in anchors:
+            matches=[e for e in events if e.get('ph')=='X' and e.get('name')==anchor['name']]
+            if len(matches)!=1:raise RuntimeError('Missing or duplicate clock anchor')
+            event=matches[0];ts=float(event['ts']);end=ts+float(event['dur'])
+            low=max(low,end-anchor['after_us']);high=min(high,ts-anchor['before_us'])
     if not low<=high or not math.isfinite(low+high):raise RuntimeError('Clock correlation has no consistent bound')
     offset=(low+high)/2;error=(high-low)/2
     per_video=[]
@@ -86,6 +90,8 @@ def summarize_trace(trace,calls,anchors):
         kernel_union_us=busy,tf_to_output_us=elapsed,clock_offset_us=offset,clock_error_bound_us=error,
         target50_reached=45<=lower and upper<=55,target100_reached=95<=lower and upper<=100,
         per_video=per_video,nvml_utilization_equivalent=False,sm_occupancy_equivalent=False,
+        trace_mode='cuda_only' if epoch_allowance_us is not None else 'cpu_and_cuda',
+        clock_bound_is_empirical=epoch_allowance_us is not None,
         profiled_diagnostic_not_formal_cost=True,all_cold_and_later_samples_retained=True)
 
 
@@ -106,6 +112,8 @@ def worker(args):
         gpu_uuid=frozen.A100_UUID,protocol=c,git_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip())
     def status(value,**extra):frozen.write_json(args.output/'status.json',dict(status=value,time=time.time(),**extra))
     def anchor():
+        if args.cuda_only:
+            anchors.append(clock.snapshot());return
         name='T06_clock_'+str(len(anchors));before=time.perf_counter()*1e6
         with torch.profiler.record_function(name):pass
         anchors.append(dict(name=name,before_us=before,after_us=time.perf_counter()*1e6))
@@ -124,7 +132,11 @@ def worker(args):
             frozen.write_json(args.output/'identity.json',identity)
             sampler=original.ProcessTelemetrySampler(frozen.A100_UUID,args.output/'telemetry_stdout.jsonl')
             sampler.start();sampler.set_phase('profiled_tf_activity')
-            with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU,torch.profiler.ProfilerActivity.CUDA]) as prof:
+            calibration=[]
+            if args.cuda_only:calibration.append(clock.empty_cpu_calibration(args.output,'clock_before'))
+            activities=[torch.profiler.ProfilerActivity.CUDA]
+            if not args.cuda_only:activities.insert(0,torch.profiler.ProfilerActivity.CPU)
+            with torch.profiler.profile(activities=activities) as prof:
                 for i,row in enumerate(rows[:c['videos']]):
                     guard.fast();sampler.check()
                     cpu,positions=prepare([row]);inputs=transfer(cpu);torch.cuda.synchronize();anchor()
@@ -138,7 +150,13 @@ def worker(args):
                     print(f'{args.model} cap{args.cap} {i+1}/{c["videos"]} profiled_wall={wall:.3f}ms',flush=True)
             target=args.output/'cuda_trace.json';prof.export_chrome_trace(str(target))
             if target.stat().st_size>256*1024**2:raise RuntimeError('Trace exceeds finite storage budget')
-            result=summarize_trace(json.loads(target.read_text()),calls,anchors)
+            trace=json.loads(target.read_text());allowance=None
+            if args.cuda_only:
+                calibration.append(clock.empty_cpu_calibration(args.output,'clock_after'))
+                allowance=max(calibration)+10
+                if any(e.get('cat')=='cpu_op' for e in trace['traceEvents']):raise RuntimeError('CPU op collection unexpectedly active')
+            result=summarize_trace(trace,calls,anchors,allowance)
+            result.update(empty_cpu_clock_calibration_errors_us=calibration,epoch_allowance_us=allowance)
             samples=sampler.stop();sampler=None;original.telemetry.save_samples(args.output/'telemetry.csv',samples)
             finish();finish=None;guard.check()
             report=dict(status='complete',identity=identity,measurement=result,unfiltered_nvml_audit=original.telemetry.telemetry_report(samples,prefix=''))
@@ -158,7 +176,10 @@ def suite(args):
     with (TASK/'runs/simulation/.temporal_telemetry_a100.lock').open('a') as lock:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         if ROOT.exists():raise RuntimeError('Do not overwrite any diagnostic')
-        ROOT.mkdir();state=dict(status='admission',pid=os.getpid(),completed=[],protocol=c,deadline=args.deadline);active=False
+        cap_plan=args.caps or c['caps']
+        if cap_plan!=c['caps'][:len(cap_plan)]:raise ValueError('Only the declared cap-plan prefix is allowed')
+        ROOT.mkdir();state=dict(status='admission',pid=os.getpid(),completed=[],protocol=c,deadline=args.deadline,
+            caps_requested=cap_plan,trace_mode='cuda_only' if args.cuda_only else 'cpu_and_cuda');active=False
         def save():original.frozen.write_json(ROOT/'suite_status.json',state)
         save()
         try:
@@ -170,7 +191,7 @@ def suite(args):
             engine.daemon(True);active=True
             for model in c['models']:
                 mp,pt,python,receipt=original.lab.locations(model);found50=found100=False
-                for cap in c['caps']:
+                for cap in cap_plan:
                     if cap not in (100,50) and found50 and found100:break
                     if args.deadline-time.time()<120:raise TimeoutError('No time for another diagnostic worker')
                     name=f'{model}_cap{cap}';output=ROOT/name
@@ -180,6 +201,7 @@ def suite(args):
                         '--cap',str(cap),'--model-path',str(mp),'--checkpoint',str(pt),'--manifest',str(args.manifest),
                         '--output',str(output),'--deadline',str(args.deadline)]
                     if receipt:cmd+=['--reproduction-receipt',str(receipt)]
+                    if args.cuda_only:cmd+=['--cuda-only']
                     with (ROOT/(name+'.log')).open('x') as log:
                         child=subprocess.Popen(cmd,cwd=REPO,env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
                         state.update(status='running',phase=name,child_pid=child.pid);save()
@@ -198,11 +220,15 @@ def suite(args):
 
 
 def main():
+    global ROOT,PIPE
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=('suite','worker'),required=True)
     p.add_argument('--model',choices=('clip','qwen','yolo','glm'));p.add_argument('--cap',type=int,choices=(100,50,25,10))
     p.add_argument('--model-path',type=Path);p.add_argument('--checkpoint',type=Path);p.add_argument('--reproduction-receipt',type=Path)
     p.add_argument('--manifest',type=Path,required=True);p.add_argument('--output',type=Path);p.add_argument('--deadline',type=float,required=True)
+    p.add_argument('--cuda-only',action='store_true',help='Separate lower-overhead pilot; keep original CPU+CUDA trace evidence')
+    p.add_argument('--caps',nargs='+',type=int,choices=(100,50,25,10))
     a=p.parse_args()
+    if a.cuda_only:ROOT=ROOT/'cuda_only01';PIPE+='_cuda_only01'
     if not 0<a.deadline-time.time()<=configuration()['maximum_suite_s']:raise ValueError('Finite2700s budget required')
     if a.phase=='suite':suite(a)
     else:worker(a)
