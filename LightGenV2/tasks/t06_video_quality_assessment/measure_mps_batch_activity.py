@@ -31,8 +31,14 @@ def configuration():
     assert (c['selection_cap'], c['paired_caps'], c['pilot_videos']) == (100, [100, 50], 32)
     assert (c['test_videos'], c['cost_videos'], c['repeats'], c['explicit_warmup_forwards']) == (558, 200, 3, 0)
     assert c['maximum_suite_s'] == 7200 and c['minimum_profiled_busy_percent'] == 50
-    for batches in c['candidate_batches'].values():
-        assert batches == sorted(set(batches)) and batches[0] == 1 and batches[-1] <= 16
+    for model,batches in c['candidate_batches'].items():
+        assert batches == sorted(set(batches)) and batches[-1] <= 16
+        if model in c.get('run_models',[]) and c.get('fixed_comparison_batch'):
+            assert batches == [c['fixed_comparison_batch']] == [10]
+        else:
+            assert batches[0] == 1
+    if 'run_models' in c:
+        assert c['run_models']==['clip','yolo'] and c['fixed_comparison_batch']==10
     return c
 
 
@@ -430,10 +436,10 @@ def suite(args):
                 time.sleep(10)
             engine.daemon(True)
             active = True
-            for model in c['models']:
-                if args.selection_profile == 'resident':
+            for model in c.get('run_models',c['models']):
+                if args.selection_profile in ('resident','batch10'):
                     resident = run(model,1,100,'resident',1)
-                    chosen = resident['selected_batch']
+                    chosen = c.get('fixed_comparison_batch') or resident['selected_batch']
                     if chosen is None:
                         state['selections'][model] = dict(status='no_qualified_resident_batch_within_finite_plan')
                         save()
@@ -493,7 +499,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phase',choices=('suite','worker'),required=True)
     p.add_argument('--mode',choices=('pilot','cost','resident'))
-    p.add_argument('--selection-profile',choices=('cold','resident'),default='cold')
+    p.add_argument('--selection-profile',choices=('cold','resident','batch10'),default='cold')
     p.add_argument('--model',choices=('clip','yolo','qwen','glm'))
     p.add_argument('--batch',type=int)
     p.add_argument('--cap',type=int,choices=(100,50))
@@ -509,6 +515,10 @@ def main():
         ROOT = ROOT/'resident01'
         PIPE += '_resident01'
         CONFIG = TASK/'configs/baselines/mps_resident_batch_20261021.json'
+    elif a.selection_profile == 'batch10':
+        ROOT = ROOT/'batch10_01'
+        PIPE += '_batch10_01'
+        CONFIG = TASK/'configs/baselines/mps_batch10_comparison_20261021.json'
     if not 0 < a.deadline-time.time() <= configuration()['maximum_suite_s']:
         raise ValueError('Finite two-hour maximum required')
     suite(a) if a.phase == 'suite' else worker(a)

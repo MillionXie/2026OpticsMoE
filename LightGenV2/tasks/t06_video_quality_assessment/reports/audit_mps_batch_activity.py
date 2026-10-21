@@ -240,7 +240,7 @@ def audit(root):
         attempts = {b:[r for r in reports.values() if r['model'] == model and r.get('batch') == b
             and r['cap'] == 100 and r['mode'] == 'pilot'] for b in c['candidate_batches'][model]}
         resident = [r for r in reports.values() if r['model'] == model and r['mode']=='resident' and r['cap']==100]
-        chosen = resident[0]['selected_batch'] if resident else experiment.selected_batch(attempts,c['candidate_batches'][model])
+        chosen = (c.get('fixed_comparison_batch') or resident[0]['selected_batch']) if resident else experiment.selected_batch(attempts,c['candidate_batches'][model])
         if 'batch' not in selection:
             assert chosen is None
             selections[model] = selection

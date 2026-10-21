@@ -1,5 +1,25 @@
 # T06 视频质量评价
 
+## 2026-10-21 新授权：核实MPS与成本，并固定CLIP/YOLO batch10对照
+
+仅本聊天T06路径。用户要求复核CLIP50略快、YOLO成本接近，并明确尝试两者B10；
+Qwen定稿和当前主图先保护，不重测Qwen/GLM/DS/Kimi、不扩batch或训练。
+新profile mps_batch10_comparison_20261021.json，经原measure_mps_batch_activity的
+--selection-profile batch10执行，canonical原run下batch10_01；不覆盖resident01。
+只运行CLIP/YOLO，固定B10非扫描，不因利用率/性能不合预期挑其他batch或轮次。
+
+两配额各三次预热5秒+连续30秒驻留queue8原生前向，仅作独立利用率参考；
+之后各三fresh process原精度全558不同TEST、前200成本，零额外模型预热。
+仍保留首冷批/200边界及最后8条尾批；原首native block到GPU输出加非预处理内部
+间隔、同区间NVML板功率积分+338.2W主机代理一次，归一16视频。两配额需要
+CUDA可见SM108/54实际生效，无Graph/改权重/精度/曝光/假负载/功率设置。
+逐批日志的内部开销如实包含，与resident01相同，不把驻留吞吐代入成本。
+
+仅实验室A100 UUID3f60d773、250W；三次间隔10秒无foreign且显存低于1GiB才启动，
+private MPS和共享锁保护，不抢卡/杀他人或盲重启。有限最多两小时，本轮异常保存
+并报告，不延长扫描。现有成本先独立CPU复算并拆首冷批/后续/内部间隔，不能只因
+50%未减半性能就宣称限制没生效；也不能称50%更快具有普遍性。
+
 ## 2026-10-21 人工确认复用B1成本，更新原MPS图表
 
 用户确认batch1无需重复测量，并要求更新图片。Qwen、GLM、完整版DeepSeek-VL2、

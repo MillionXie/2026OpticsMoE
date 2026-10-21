@@ -47,3 +47,12 @@ def test_authorized_resident_selection_has_three_warmed_repeats_not_cold_profile
         return dict(measurement=dict(mean_gpu_utilization_percent=x))
     assert module.resident_qualifies([repeat(51),repeat(52),repeat(50)])
     assert not module.resident_qualifies([repeat(99),repeat(49),repeat(99)])
+
+
+def test_batch10_comparison_is_fixed_only_clip_yolo_without_other_models(monkeypatch):
+    monkeypatch.setattr(module,'CONFIG',module.TASK/'configs/baselines/mps_batch10_comparison_20261021.json')
+    c=module.configuration()
+    assert c['run_models']==['clip','yolo'] and c['fixed_comparison_batch']==10
+    assert c['candidate_batches']['clip']==c['candidate_batches']['yolo']==[10]
+    assert c['explicit_warmup_forwards']==0 and c['paired_caps']==[100,50]
+    assert (c['warmup_s'],c['measurement_s'],c['queue_depth'])==(5,30,8)
