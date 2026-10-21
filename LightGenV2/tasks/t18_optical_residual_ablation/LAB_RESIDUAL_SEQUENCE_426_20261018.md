@@ -1,5 +1,27 @@
 # Residual hardware adaptation: current L4/L6 optimization and protected L2
 
+## 2026-10-21 human instruction supersedes current intermediate stop gates
+
+User explicitly requested L4 and L6 continue, without repeated current-stage
+optimization. L4 E2 measured-prefix285/411 and L6 E1 measured-prefix287/411
+are accepted for CARRY, not relabelled as passing288/322. Next L4 G2 (final),
+then L6 G1/E2/G2/E3/G3, with TRAIN1600 then TEST411 consecutive at each stage.
+Router is additional: current L6 is2/7 measured stages, not a completed G1.
+One finite original suffix fit after each new stage, no automatic recapture or
+candidate repeats. Intermediate budget6epochs/600fit seconds; final60epochs/
+900fit seconds, full epoch boundaries. This carry policy prioritizes completing
+the optical chain; unachieved intermediate/final targets remain disclosed.
+TRAIN-only synthetic CCD gain sigma.015, additive.5DN and original-head feature
+dropout.10 are eval-disabled. No new inference layer/geometry/LUT/exposure or
+TRAIN/TEST identity change; no TEST derivative/noVALID. Best selected on TEST
+is a development score. All measured-prefix/current mask parameters freeze;
+only still-uncaptured masks and original postCCD suffix may train. Newly changed
+downstream stimuli require NEW2011 frames, never old descendant CCD reuse.
+Published entry `lab_caltech20_dvp_advance_20261021.py`, profile
+`lab_caltech20_DVP_advance_profile_20261021.json`; original20261020 run subpath
+`advance_after_user_waiver_20261021`. No scheduled task, new branch/worktree or
+engineering copy. L2 and other-window nores evidence are untouched.
+
 ## Latest actual result:13 targeted contrasts completed, L4=285/L6=287
 
 User renewal was actually executed through13 bounded contrasts/continuations,

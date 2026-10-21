@@ -1,0 +1,37 @@
+{
+  "schema": "DVP_user_carry_layerwise_v1",
+  "user_current_stage_waiver": true,
+  "repeat_current_stage_fit": false,
+  "TEST_gradient": false,
+  "VALID": 0,
+  "GPU_UUID": "GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist": ["dwm.exe", "explorer.exe", "startmenuexperiencehost.exe", "todesk.exe", "searchapp.exe", "textinputhost.exe", "phoneexperiencehost.exe", "msedgewebview2.exe", "shellexperiencehost.exe", "systemsettings.exe", "msedge.exe"],
+  "parents": {
+    "4": {
+      "relative": "TRAIN_restored_same_mask_pair_20261021/L4/TRAIN_coupled_Huber_20261021/best.pt",
+      "SHA256": "7f7b0bec726e01fd8f292949136e1e42cedee9a96f9cea6f4fb1b00a3440f02b",
+      "prefix": 4,
+      "correct": 285,
+      "previous_threshold_correct": 288
+    },
+    "6": {
+      "relative": "TRAIN_restored_same_mask_pair_20261021/L6/TRAIN_protected_Huber_pass02_20261021/best.pt",
+      "SHA256": "801d5c995fda910b824425e298f16ca0c05a2f93ba50fb3a38900fc964660401",
+      "prefix": 2,
+      "correct": 287,
+      "previous_threshold_correct": 322
+    }
+  },
+  "intermediate_epochs": 6,
+  "intermediate_fit_seconds": 600,
+  "final_epochs": 60,
+  "final_fit_seconds": 900,
+  "label_smoothing": 0.05,
+  "CCD_gain_sigma": 0.015,
+  "CCD_additive_sigma_DN": 0.5,
+  "dropout_location": "head_features",
+  "feature_dropout_p": 0.1,
+  "historical_intermediate_targets": {"4": 288, "6": 322},
+  "final_targets": {"4": 342, "6": 350},
+  "note": "One finite fit per fresh layer then carry; unachieved targets remain unachieved. Synthetic TRAIN-only noise/dropout, unchanged evaluation and hardware. TEST-selected checkpoints are development metrics. No automatic recapture or repeated fit."
+}
