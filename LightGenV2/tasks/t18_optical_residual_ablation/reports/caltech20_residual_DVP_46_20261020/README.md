@@ -4,6 +4,30 @@
 
 ### USB人工恢复与环境光说明；只续接六层，不重复四层
 
+#### 2026-10-21人工确认照明恢复：新同mask采集与紧接双观测TRAIN后缀适配
+
+用户已确认恢复此前照明，并明确跨时刻不能保证光路完全相同，要求尽快连贯采集和优化。
+不要求两个时刻成绩相等才推进；仍保持当前层314/322实际放行门槛及最终342/350目标。
+新入口`lab_caltech20_dvp_restored_pair_20261021.py`、profile
+`lab_caltech20_DVP_restored_pair_profile_20261021.json`，原run下
+`TRAIN_restored_same_mask_pair_20261021`。固定历史275/291原PT的当前E2/E1mask，
+各新采连续1600TRAIN→411TEST；不再生成已被两向实测否决的native近似伴随新mask。
+每对原/新实测的全部2011个ID/native输入BMP/phase/曝光/gain/方向读回须相同才可训练。
+旧/新响应明确分为两个观测view，不拿旧CCD替代新观测评估、不混不同mask或输入。
+
+每轮用全部1600个独立TRAIN、3200响应view；原后缀训练损失为.5旧view CE+.5新view CE
+加.5仅原view预测正确TRAIN的冻结父模型温度2 KL到新view；类别权重仅原TRAIN3141统计。
+无TEST梯度或TEST教师、无VALID、无新推理层，部署仍原单模型单前向。只训练原allowed
+未采后缀及原电子/alpha/head，当前mask和所有上游冻结，未来变动mask必须新下游CCD。
+原学习率和alpha界限保持；最多12完整epoch或900fit秒，4无进展epoch停止；完整新411
+TEST最高选PT（同正确数按新NLL），旧/新TRAIN/TEST分别严格CPU复核、保留bestlast。
+旧TEST只报告不用于本段选模；成绩仍为TEST知情开发的实测前缀+仿真后缀，非完整实拍。
+
+四层采完立即开始后缀拟合，释放SDK后与六层同mask采集并行；单SDK/单CUDA拟合线程，
+不新定时任务，不盲重试，不改曝光/坐标/LUT。结束后另起无SDK/noGPU CPU进程复核两组
+bestlast所有1600TRAIN/411TEST、逐样本输出、冻结SHA与完整输入身份。目标不保证，
+未达到本层实际门槛不得进入下一物理层。历史最高与全部旧有效CCD/负结果均保留。
+
 独立全量时间对照审核已完成（`L6_temporal_pixel_CPU_audit.return.json` rc0）：
 全部2011对原/新输入的解码像素、实际native BMP、phase、样本身份及设备读回严格一致，
 全部模型参数冻结。原/新完整TRAIN分别1539/1600与1284/1600，完整TEST分别291/411与
