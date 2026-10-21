@@ -9,10 +9,12 @@ import os
 from pathlib import Path
 
 
-def same_stimulus(old,new):
-    for key in ('sample_id','role','index','data_SHA256','phase_SHA256','canonical_SHA256'):
+def same_stimulus(old,new,old_pixel_bytes,new_pixel_bytes):
+    for key in ('sample_id','role','index','data_SHA256','phase_SHA256'):
         assert old[key]==new[key],('Optical stimulus changed',key)
     assert old.get('input_SHA256',old.get('BMP_SHA256'))==new['BMP_SHA256']
+    assert len(old_pixel_bytes)==len(new_pixel_bytes)==478*478
+    assert old_pixel_bytes==new_pixel_bytes,'Decoded canonical pixels changed'
     for key in ('exposure_us','gain','format','bits','shape','flip_h','flip_v','rotate','opposite','wait_ms'):
         assert old['frame_metadata'][key]==new['frame_metadata'][key],('Device readback changed',key)
 
@@ -21,6 +23,7 @@ def run(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     import numpy as np
     import torch
+    from PIL import Image
     import lab_caltech20_dvp_layerwise_20261019 as m
     import lab_caltech20_dvp_closedloop_20261021 as loop
     torch.set_num_threads(2)
@@ -41,7 +44,7 @@ def run(a):
     assert r['capture_report_SHA256']==m.sha(cap/'report.json') and r['capture_audit_SHA256']==m.sha(cap/'independent_audit.json')
     assert cr['physical_ccd']==2011 and cr['TRAIN']==1600 and cr['TEST']==411 and cr['VALID']==0
     assert m.sha(cap/'phase.bmp')==m.sha(oldcap/'phase.bmp')==r['exact_original_phase_SHA256']
-    current=dict(fields);current['0']={};checked=0
+    current=dict(fields);current['0']={};checked=0;different_PNG_encodings=0
     for role,size in (('train',1600),('test',411)):
         path=cap/role/'ccd.npy';assert m.sha(path)==cr['arrays'][role]['SHA256']
         array=np.load(path,mmap_mode='r');assert array.shape==(size,478,478)
@@ -49,7 +52,12 @@ def run(a):
         for i in range(size):
             old=m.read(oldcap/role/f'{i:06d}.json');new=m.read(cap/role/f'{i:06d}.json')
             assert new['sample_id']==str(data[role][2][i]) and new['PT_SHA256']==loop.SPECS[6]['PT']
-            same_stimulus(old,new);checked+=1
+            old_png=oldcap/role/f'{i:06d}_input.png';new_png=cap/role/f'{i:06d}_input.png'
+            assert m.sha(old_png)==old['canonical_SHA256'] and m.sha(new_png)==new['canonical_SHA256']
+            old_pixels=np.asarray(Image.open(old_png));new_pixels=np.asarray(Image.open(new_png))
+            assert old_pixels.shape==new_pixels.shape==(478,478) and old_pixels.dtype==new_pixels.dtype==np.uint8
+            same_stimulus(old,new,old_pixels.tobytes(),new_pixels.tobytes());checked+=1
+            different_PNG_encodings+=int(old['canonical_SHA256']!=new['canonical_SHA256'])
         m.save(out/'temporal_audit_progress.json',dict(state='matching_exact_stimuli',role=role,checked=checked,expected=2011))
     assert checked==2011
     pt=session/'fits'/loop.SPECS[6]['fit']/'best.pt';digest=m.sha(pt)
@@ -76,6 +84,8 @@ def run(a):
     m.save(proof,dict(passed=True,source_git=m.git_head(),source_SHA256=m.sha(__file__),
         original_PT_SHA256=digest,source_control_report_SHA256=m.sha(out/'report.json'),
         all2011_canonical_input_BMP_phase_ID_and_device_readbacks_identical=True,
+        canonical_identity='Decoded uint8 pixels exact; BOTH PNGs retain their own original file SHA. Compression bytes are not physical optical stimuli.',
+        canonical_PNG_encoding_differs_but_pixels_exact=different_PNG_encodings,
         source_capture_audit_SHA256=m.sha(cap/'independent_audit.json'),
         old_prefix_SHA256=identities,current_array_SHA256=cr['arrays'],results=results,
         current_TEST_prediction_maxabs=error,all_model_state_frozen=True,matched_frame_mean_ratio_median=mean_ratios,
