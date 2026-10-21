@@ -20,4 +20,12 @@ class StatisticalReadout(unittest.TestCase):
         self.assertNotIn('te',names)
         self.assertNotIn('SDK',names)
 
+    def test_protected_gradient_has_no_test_argument(self):
+        t=ast.parse((HERE/'lab_caltech20_dvp_statistical_readout_20261021.py').read_text())
+        f=next(n for n in t.body if isinstance(n,ast.FunctionDef) and n.name=='protected_direction')
+        self.assertFalse(any('test' in a.arg.lower() or 'query' in a.arg.lower() for a in f.args.args))
+        c=json.loads((HERE/'lab_caltech20_DVP_protected_Huber_profile_20261021.json').read_text())
+        self.assertEqual(c['max_classes']*c['steps_each_class'],2560)
+        self.assertLessEqual(c['fit_seconds'],120)
+
 if __name__=='__main__':unittest.main()

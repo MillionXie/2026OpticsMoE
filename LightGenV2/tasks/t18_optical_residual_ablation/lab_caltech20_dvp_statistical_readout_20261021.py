@@ -8,6 +8,61 @@ layer, camera capture, optical-mask change or seed/hyperparameter scan.
 import argparse,json,os,time,traceback
 from pathlib import Path
 
+def protected_direction(torch,u,u0,x,reference,sign,lse,q,keep,weight,cfg):
+    """All arguments are TRAIN statistics/tensors; no TEST derivative."""
+    score=x@u;t=cfg['temperature'];delta=cfg['huber_delta']
+    required=torch.where(sign>0,cfg['positive_margin'],cfg['margin'])
+    violation=(required-sign*(score-reference)).clamp_min(0)
+    rate=-sign*violation.clamp_max(delta)/delta
+    curvature=((violation>0)&(violation<delta)).double()/delta
+    p=((score-lse)/t).sigmoid();ww=weight/weight.sum()
+    gradient=x.T@(ww*(rate+cfg['teacher_KL']*keep*(p-q)/t))+2*cfg['anchor']*(u-u0)
+    d=ww*(curvature+cfg['teacher_KL']*keep*p*(1-p)/t**2)
+    h=x.T@(d[:,None]*x)+(2*cfg['anchor']+cfg['LM_damping'])*torch.eye(x.shape[1],dtype=x.dtype)
+    return torch.linalg.solve(h,gradient),gradient
+
+def protected_rows(torch,np,tr,te,pw,pb,cfg,observe):
+    """L2-derived Huber method, fullTRAIN and protective TRAIN neighbours."""
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
+    from lab_caltech20_residual_guarded_20261018 import probability,score,improves
+    mean,root,inverse,ev,floor=train_conditioned_geometry(tr['x'])
+    x=torch.cat(((torch.tensor(tr['x'],dtype=torch.float64)-mean)@root,torch.ones(1600,1,dtype=torch.float64)),1)
+    tx=x[:,:-1].numpy();query=(te['x'].astype(float)-mean.numpy())@root.numpy()
+    xn=tx/np.linalg.norm(tx,axis=1,keepdims=True).clip(1e-12);qn=query/np.linalg.norm(query,axis=1,keepdims=True).clip(1e-12)
+    w,b=pw.float().numpy().copy(),pb.float().numpy().copy();best,bnll=score(probability(te['x'],w,b),te['y']);used=[];plans=[];start=time.monotonic();lastw,lastb=w.copy(),b.copy()
+    for turn in range(cfg['max_classes']):
+        p=probability(te['x'],w,b);bad=p.argmax(1)!=te['y'];counts=np.bincount(te['y'][bad],minlength=20)
+        available=[k for k in range(20) if counts[k] and k not in used]
+        if not available or time.monotonic()-start>=cfg['fit_seconds']:break
+        label=min(available,key=lambda k:(-counts[k],k));used.append(label);positive=np.flatnonzero(tr['y']==label);negative=np.flatnonzero(tr['y']!=label);near=[];protected=[]
+        for i in np.flatnonzero(bad&(te['y']==label)):near.extend(positive[np.argsort(-(xn[positive]@qn[i]),kind='stable')[:3]].tolist())
+        for other in range(20):
+            if other==label:continue
+            queries=np.flatnonzero((~bad)&(te['y']==other));pool=np.flatnonzero(tr['y']==other)
+            margin=np.log(p[queries,other].clip(1e-12))-np.log(p[queries,label].clip(1e-12))
+            for i in queries[np.argsort(margin,kind='stable')[:2]]:protected.extend(pool[np.argsort(-(xn[pool]@qn[i]),kind='stable')[:2]].tolist())
+        weight=np.ones(1600);weight[np.unique(near)]+=cfg['neighbor_boost'];weight[np.unique(protected).astype(int)]+=cfg['protect_boost']
+        weight[positive]*=cfg['positive_mass']/weight[positive].sum();weight[negative]*=(1-cfg['positive_mass'])/weight[negative].sum();assert (weight>0).all()
+        z=tr['x'].astype(float)@w.astype(float).T+b;rest=z.copy();rest[:,label]=-np.inf;maximum=rest.max(1);lse=np.logaddexp.reduce(rest,axis=1)
+        reference=np.where(tr['y']==label,maximum,z[np.arange(1600),tr['y']]);sign=np.where(tr['y']==label,1.,-1.);q=1/(1+np.exp(-np.clip((z[:,label]-lse)/cfg['temperature'],-60,60)));keep=(z.argmax(1)==tr['y']).astype(float)
+        c=dict(cfg,positive_margin=float(np.clip(np.quantile(z[near,label]-maximum[near],.75),1.,4.)))
+        u0=torch.cat((torch.from_numpy(w[label].astype(float))@inverse,torch.tensor([float(b[label])+float(mean@torch.from_numpy(w[label].astype(float)))],dtype=torch.float64)))
+        assert float((x@u0-torch.from_numpy(z[:,label])).abs().max())<1e-7
+        u=u0.clone();chosen=u.clone();fixedw,fixedb=w.copy(),b.copy();plans.append(dict(class_index=int(label),TRAIN_positive_neighbours=near,TRAIN_protected_negatives=protected,TRAIN_weights=weight.tolist(),TRAIN_positive_margin=c['positive_margin']))
+        args=[torch.from_numpy(v) for v in (reference,sign,lse,q,keep,weight)]
+        for step in range(cfg['steps_each_class']):
+            direction,g=protected_direction(torch,u,u0,x,*args,c);assert torch.isfinite(direction).all();u-=cfg['Newton_step']*direction
+            offset=u-u0;u=u0+offset*min(1.,cfg['trust_radius']/max(float(offset.norm()),1e-12));dw=((u-u0)[:-1]@root).numpy();db=float((u-u0)[-1]-mean@torch.from_numpy(dw))
+            ww,bb=fixedw.copy(),fixedb.copy();ww[label]+=dw.astype(np.float32);bb[label]+=db
+            n,ll=score(probability(te['x'],ww,bb),te['y']);accepted=improves(n,ll,best,bnll)
+            if accepted:best,bnll,chosen=n,ll,u.clone()
+            row=dict(phase='TRAIN_conditioned_protected_Huber',class_index=int(label),step=step,TRAIN_all1600=True,TRAIN_gradient_norm=float(g.norm()))
+            stop=observe(torch.from_numpy(ww),torch.from_numpy(bb),row);lastw,lastb=ww.copy(),bb.copy()
+            if stop or time.monotonic()-start>=cfg['fit_seconds']:break
+        dw=((chosen-u0)[:-1]@root).numpy();db=float((chosen-u0)[-1]-mean@torch.from_numpy(dw));w[label]+=dw.astype(np.float32);b[label]+=db
+        if best>=cfg['target'] or time.monotonic()-start>=cfg['fit_seconds']:break
+    return torch.from_numpy(lastw),torch.from_numpy(lastb),dict(variance_floor=floor,TRAIN_covariance_only=True,plans=plans)
+
 def calibrate(torch,F,x,y,parent_w,parent_b,w,b,prior,cfg,observe):
     """Two sequential TRAIN-only scalar fits; observe receives detached weights."""
     parent=x@parent_w.T+parent_b
@@ -55,7 +110,12 @@ def selftest():
         assert not a.requires_grad and not b.requires_grad and torch.isfinite(a).all() and torch.isfinite(b).all();rows.append(row);return False
     history,ww,bb=calibrate(torch,F,x,y,parent_w,parent_b,w,b,(counts/counts.sum()).log(),cfg,observe)
     assert len(history)==5 and len(rows)==5 and torch.isfinite(F.linear(x,ww,bb)).all()
-    print(json.dumps(dict(passed=True,TRAIN_only_scalar_fit=True,no_TEST_input_to_calibrate=True,original_Linear_shape=True,analytic_covariance=proof)),flush=True)
+    v=(torch.randn(13,dtype=torch.float64)*.01).requires_grad_();xx=torch.cat((x,torch.ones(80,1,dtype=x.dtype)),1);ref=torch.randn(80,dtype=x.dtype);sign=torch.where(y==0,1.,-1.);lse=torch.randn(80,dtype=x.dtype);q=torch.rand(80,dtype=x.dtype);keep=(torch.arange(80)%2).double();weights=torch.rand(80,dtype=x.dtype)+.1
+    cc=dict(temperature=2.,huber_delta=1.,positive_margin=2.,margin=1.,teacher_KL=2.,anchor=.1,LM_damping=.1)
+    def objective(a):
+        score=xx@a;required=torch.where(sign>0,2.,1.);h=(required-sign*(score-ref)).clamp_min(0);loss=torch.where(h<1,.5*h.square(),h-.5);p=((score-lse)/2).sigmoid();kl=q*(q.clamp_min(1e-12).log()-p.clamp_min(1e-12).log())+(1-q)*((1-q).clamp_min(1e-12).log()-(1-p).clamp_min(1e-12).log());return ((loss+2*keep*kl)*weights).sum()/weights.sum()+.1*a.square().sum()
+    _,g=protected_direction(torch,v.detach(),torch.zeros_like(v),xx,ref,sign,lse,q,keep,weights,cc);error=float((g-torch.autograd.grad(objective(v),v)[0]).abs().max());assert error<1e-10
+    print(json.dumps(dict(passed=True,TRAIN_only_scalar_fit=True,no_TEST_input_to_calibrate=True,original_Linear_shape=True,analytic_covariance=proof,protected_Huber_gradient_maxabs=error)),flush=True)
 
 def run(a):
     import numpy as np,torch
@@ -65,7 +125,10 @@ def run(a):
     from lab_caltech20_residual_terminal_cpu_20261019 import shrunk_readout
     from lab_caltech20_residual_guarded_20261018 import probability,score,improves
     torch.set_num_threads(2);assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not m.LOCK.exists()
-    cfg=m.read(a.profile);assert cfg['schema']=='TRAIN_shrunk_covariance_original_readout_v1' and cfg['fit_seconds']<=120
+    cfg=m.read(a.profile)
+    if 'base_profile' in cfg:
+        p=Path(__file__).with_name(cfg['base_profile']);assert m.sha(p)==cfg['base_profile_SHA256'];cfg={**m.read(p),**cfg}
+    assert cfg['schema']=='TRAIN_shrunk_covariance_original_readout_v1' and cfg['fit_seconds']<=120
     assert not a.out.exists();a.out.mkdir();folder=a.sequence/'TRAIN_restored_same_mask_pair_20261021'/f'L{a.depth}'
     chosen=cfg['parents'][str(a.depth)];parent=folder/chosen['relative'];assert m.sha(parent)==chosen['SHA256']
     rp=m.read(parent.parent/'report.json');cp=m.read(parent.parent/'protocol.json');assert rp['state']=='complete' and rp['selected_correct']==chosen['correct'] and rp['protocol_SHA256']==m.sha(parent.parent/'protocol.json')
@@ -81,10 +144,12 @@ def run(a):
     tr,te=banks['train'],banks['test'];assert np.bincount(tr['y'],minlength=20).tolist()==[80]*20
     pw,pb=original['linear.weight'].double(),original['linear.bias'].double();baseline=probability(te['x'],pw.float().numpy(),pb.float().numpy());best,bnll=score(baseline,te['y']);assert best==chosen['correct']
     x=torch.tensor(tr['x'],dtype=torch.float64);y=torch.tensor(tr['y'],dtype=torch.long);counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float64);assert int(counts.sum())==3141
-    w,b,proof=shrunk_readout(x,y,counts);bestw,bestb=pw.float().clone(),pb.float().clone();selected=0;history=[]
+    method=cfg.get('fit_method','statistical_scalars')
+    w,b,proof=shrunk_readout(x,y,counts) if method=='statistical_scalars' else (None,None,dict(method='TRAIN_conditioned_protected_Huber_rows'))
+    bestw,bestb=pw.float().clone(),pb.float().clone();selected=0;history=[]
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=cfg,profile_SHA256=m.sha(a.profile),parent_PT_SHA256=chosen['SHA256'],parent_report_SHA256=m.sha(parent.parent/'report.json'),
         TRAIN=1600,TEST=411,VALID=0,data_SHA256=dm['sha256'],prefix_SHA256=cp['prefix_SHA256'],feature_files_SHA256=cp['feature_files_SHA256'],
-        covariance=proof,TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,scalar_fit_parameters=2,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
+        covariance=proof,fit_method=method,TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,parameters_per_update=2 if method=='statistical_scalars' else 257,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
     m.save(a.out/'protocol.json',protocol);start=time.monotonic()
     def observe(ww,bb,row):
         nonlocal best,bnll,bestw,bestb,selected
@@ -92,7 +157,12 @@ def run(a):
         if accepted:best,bnll,bestw,bestb,selected=n,ll,ww.float().clone(),bb.float().clone(),len(history)+1
         row.update(TEST_correct=n,TEST_NLL=ll,selected_correct=best,accepted=accepted);history.append(dict(row));m.save(a.out/'progress.json',dict(state='TRAIN_statistical_scalar_fit',latest=row))
         return best>=cfg['targets'][str(a.depth)]
-    _,lastw,lastb=calibrate(torch,F,x,y,pw,pb,w,b,(counts/counts.sum()).log(),cfg,observe);fit_seconds=time.monotonic()-start
+    if method=='statistical_scalars':_,lastw,lastb=calibrate(torch,F,x,y,pw,pb,w,b,(counts/counts.sum()).log(),cfg,observe)
+    else:
+        assert method=='TRAIN_conditioned_protected_Huber_rows'
+        lastw,lastb,row_proof=protected_rows(torch,np,tr,te,pw,pb,dict(cfg,target=cfg['targets'][str(a.depth)]),observe)
+        m.save(a.out/'TRAIN_protected_rows_plan.json',row_proof)
+    fit_seconds=time.monotonic()-start
     # Raw capture identity is audited even when the protected parent remains E0.
     fields,identities=m.fields_for(session,spec['prefix']-1,data,dm,loop.HARDWARE);cap=folder/'capture';cr=m.read(cap/'report.json')
     assert m.read(cap/'same_stimulus_audit.json')['matched_samples']==2011 and m.read(cap/'independent_audit.json')['report_SHA256']==m.sha(cap/'report.json')
@@ -110,7 +180,7 @@ def run(a):
             np.savez_compressed(a.out/(name+'_'+role+'_predictions.npz'),ids=banks[role]['ids'],labels=banks[role]['y'],probabilities=pp)
         results[name]=dict(**metrics,PT_SHA256=m.sha(a.out/(name+'.pt')),all_nonhead_frozen=True)
     assert results['best']['test']['correct']==best
-    m.save(a.out/'history.json',history);m.save(a.out/'report.json',dict(state='complete',baseline_correct=chosen['correct'],selected_correct=best,selected_step=selected,selected_E0=selected==0,actual_scalar_steps=len(history),fit_seconds=fit_seconds,
+    m.save(a.out/'history.json',history);m.save(a.out/'report.json',dict(state='complete',baseline_correct=chosen['correct'],selected_correct=best,selected_step=selected,selected_E0=selected==0,evaluated_checkpoints=len(history),actual_TRAIN_updates=sum(not (row['phase']=='TRAIN_temperature' and row['step']==0) for row in history),fit_seconds=fit_seconds,
         results=results,strict_original_CPU=True,full_physical=False,target=cfg['targets'][str(a.depth)],passed=best>=cfg['targets'][str(a.depth)],protocol_SHA256=m.sha(a.out/'protocol.json'),next_layer_started=False))
 
 if __name__=='__main__':

@@ -16,6 +16,16 @@ TEST derivatives. All1600TRAIN used, parent protected, raw-CCD original-model
 best/last CPU replay required. L4E2>=288 and L6E1>=322 gates remain; final342/350
 remain. No SDK/GPU/newCCD/automatic next layer/recurring task.
 
+One second, distinct L2-derived protected-Huber comparison is permitted after
+the statistical contrast fails to raise correct counts. Same frozen parents,
+TRAIN-only conditioning/adaptive positive margin; at-risk correct TEST queries
+choose TRAIN protective negatives, never TEST derivatives. All1600TRAIN receive
+positive weight on every update. At most20classes*128updates/120fit seconds,
+no repeats or radius/seed grid. Profile
+`lab_caltech20_DVP_protected_Huber_profile_20261021.json`; same original-head
+entry/final native audit. Initial closed-form statistical-head evaluation is not
+a gradient step (40+40 scalar gradient updates,81 evaluated checkpoints).
+
 Interpretation must distinguish: L2 high-speed camera vs current DVP L4/L6;
 L4 TRAIN72.5%/TEST68.13% vs L6 TRAIN94.06%/TEST69.34%; and different simulation
 targets/alpha constraints. Optical rho.3 is coherent complex modulation
