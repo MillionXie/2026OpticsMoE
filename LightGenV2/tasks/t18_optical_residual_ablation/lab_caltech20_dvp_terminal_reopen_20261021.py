@@ -73,6 +73,7 @@ def run(a):
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
     continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
     maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';covaugment=cfg.get('method')=='TRAIN_covariance_augmentation';priorcal=cfg.get('method')=='TRAIN_prior_temperature';head_only=head_only or maxmargin or hardridge or covaugment or priorcal
+    pairedresponse=cfg.get('method')=='TRAIN_last_response_pair';head_only=head_only or pairedresponse
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -142,11 +143,30 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if priorcal:
+    if pairedresponse:
+        from lab_caltech20_dvp_error_guided_head_20261021 import paired_response_head
+        held={};parts=[];calls=[]
+        hook=model.linear.register_forward_pre_hook(lambda module,args:held.update(x=args[0].detach().clone()))
+        phook=model.propagator.register_forward_hook(lambda module,args,out:calls.append(len(args[0])))
+        try:
+            with torch.no_grad():
+                for begin in range(0,1600,8):
+                    ix=np.arange(begin,begin+8);prefix={k:v for k,v in fields.items() if k!='3'}
+                    assert list(prefix)==['router','0','1','2']
+                    model(loop.put_fields(model,data,prefix,'train',ix,'cpu'));parts.append(held['x'])
+                    m.save(a.out/'progress.json',dict(state='TRAIN_only_nominal_last_response',TRAIN_samples=begin+8,total=1600,TEST_views=False,selected_correct=best))
+        finally:hook.remove();phook.remove()
+        assert len(calls)==200 and sum(calls)==1600,'Only the final TRAIN global stage may be simulated'
+        nominal=torch.cat(parts);assert nominal.shape==(1600,256) and torch.isfinite(nominal).all()
+        np.savez_compressed(a.out/'TRAIN_nominal_last_features.npz',x=nominal.numpy(),ids=tr['ids'],labels=tr['y'])
+        m.save(a.out/'TRAIN_response_view_identity.json',dict(parent_PT_SHA256=cfg['parent_SHA256'],data_SHA256=dm['sha256'],prefix_SHA256={k:v for k,v in identities.items() if not k.startswith('3/')},TRAIN=1600,simulated_stage='3',synthetic_not_measured=True,TEST_view_used=False,features_SHA256=m.sha(a.out/'TRAIN_nominal_last_features.npz'),all_parameters_frozen_during_views=True))
+        lastw,lastb,proof=paired_response_head(torch,F,x,y,nominal,pw,pb,counts,cfg['paired_response'],observe)
+        m.save(a.out/'TRAIN_paired_response_fit.json',proof);reason='finite_TRAIN_last_response_pair_complete'
+    elif priorcal:
         from lab_caltech20_dvp_error_guided_head_20261021 import prior_temperature_head
         from lab_caltech20_dvp_statistical_readout_20261021 import coupled_huber_rows
         lastw,lastb,proof=prior_temperature_head(torch,F,x,y,pw,pb,counts,cfg['prior_temperature'],observe)

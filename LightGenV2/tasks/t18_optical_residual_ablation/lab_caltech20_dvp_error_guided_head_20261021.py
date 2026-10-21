@@ -239,3 +239,48 @@ def prior_selftest():
     expected=s*(F.linear(x,w,b)-F.linear(x,w,b).mean(1,keepdim=True))+q*p
     assert float((expected-F.linear(x,ww,bb)).abs().max())<1e-10
     print(dict(passed=True,original_head_fold_exact=True,TRAIN_prior_only=True,finite_TRAIN_gradients=True,scalar_parameters=2,no_new_inference_layer=True))
+
+
+def paired_response_head(torch,F,x,y,nominal,pw,pb,counts,cfg,observe):
+    """TRAIN paired measured/nominal final-response robust Linear optimization.
+
+    Both views keep the measured first four stages and unchanged masks. The
+    nominal last stage is ONLY synthetic TRAIN augmentation, not measured CCD.
+    """
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
+    mean,root,_,_,floor=train_conditioned_geometry(x.numpy());xx=(x-mean)@root;nn=(nominal.double()-mean)@root
+    cw=pw.double()-pw.double().mean(0,keepdim=True);cb=pb.double()-pb.double().mean()
+    base=F.linear(x,cw,cb);other=F.linear(nominal.double(),cw,cb)
+    T=cfg['temperature'];teacher=(base/T).softmax(1).detach();keep=(base.argmax(1)==y).double()
+    actual_correct=int(keep.sum());nominal_correct=int((other.argmax(1)==y).sum())
+    proof=dict(TRAIN_only=True,TRAIN_samples=len(y),measured_TRAIN_correct=actual_correct,nominal_TRAIN_correct=nominal_correct,nominal_is_synthetic_not_CCD=True,TEST_used_for_views_or_derivatives=False,variance_floor=floor)
+    if nominal_correct<actual_correct-cfg['maximum_TRAIN_view_gap']:
+        proof.update(fit_skipped=True,reason='nominal_TRAIN_view_not_reliable_enough',actual_updates=0);return pw,pb,proof
+    delta=torch.nn.Parameter(torch.zeros(len(pb),x.shape[1]+1,dtype=x.dtype));opt=torch.optim.Adam([delta],lr=cfg['learning_rate'])
+    sample=(counts[y]/counts.mean()).sqrt();sample/=sample.sum();start=time.monotonic()
+    for step in range(1,cfg['steps']+1):
+        d=delta[:,:-1];b=delta[:,-1];zr=base+xx@d.T+b;zn=other+nn@d.T+b
+        real_ce=(sample*F.cross_entropy(zr,y,reduction='none')).sum();nominal_ce=(sample*F.cross_entropy(zn,y,reduction='none')).sum()
+        difference=zr-zn;difference=difference-difference.mean(1,keepdim=True)
+        consistency=(sample*difference.square().mean(1)).sum()
+        kl=F.kl_div((zr/T).log_softmax(1),teacher,reduction='none').sum(1)*T*T
+        loss=(1-cfg['nominal_weight'])*real_ce+cfg['nominal_weight']*nominal_ce+cfg['response_consistency']*consistency+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*delta.square().sum()
+        opt.zero_grad();loss.backward();assert torch.isfinite(loss) and delta.grad is not None and torch.isfinite(delta.grad).all();torch.nn.utils.clip_grad_norm_([delta],1.);opt.step()
+        with torch.no_grad():
+            delta.sub_(delta.mean(0,keepdim=True));delta.mul_((cfg['row_trust_radius']/delta.norm(dim=1,keepdim=True).clamp_min(1e-12)).clamp_max(1.))
+            dw=delta[:,:-1]@root;ww=cw+dw;bb=cb+delta[:,-1]-dw@mean
+        if step%cfg['evaluate_every']==0 or step==cfg['steps']:
+            stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_paired_final_response',step=step,TRAIN_all1600=True,TRAIN_loss=float(loss.detach()),TRAIN_real_CE=float(real_ce.detach()),TRAIN_nominal_CE=float(nominal_ce.detach()),TRAIN_response_consistency=float(consistency.detach()),delta_max_row_norm=float(delta.detach().norm(dim=1).max())))
+            if stop or time.monotonic()-start>=cfg['fit_seconds']:break
+    proof.update(fit_skipped=False,actual_updates=step,fit_seconds=time.monotonic()-start,original_Linear_only=True)
+    return ww.detach(),bb.detach(),proof
+
+
+def paired_response_selftest():
+    import torch
+    from torch.nn import functional as F
+    torch.set_num_threads(2);torch.manual_seed(73);x=torch.randn(60,8,dtype=torch.float64);y=torch.arange(60)%20;w=torch.randn(20,8)*.01;b=torch.zeros(20);rows=[]
+    cfg=dict(temperature=2.,maximum_TRAIN_view_gap=160,learning_rate=.003,steps=3,evaluate_every=1,nominal_weight=.25,response_consistency=.01,teacher_KL=.5,anchor=.01,row_trust_radius=1.,fit_seconds=30)
+    ww,bb,proof=paired_response_head(torch,F,x,y,x.clone(),w,b,torch.ones(20,dtype=x.dtype),cfg,lambda a,b,r:rows.append(r))
+    assert len(rows)==3 and proof['actual_updates']==3 and torch.isfinite(ww).all() and all(abs(r['TRAIN_response_consistency'])<1e-10 for r in rows)
+    print(dict(passed=True,TRAIN_only_paired_views=True,identical_views_zero_consistency=True,original_head_only=True,finite_nonzero_gradient=True))

@@ -1,0 +1,11 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_last_response_pair","gap_pp":1.5,"target":340,"parent_correct":285,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_coupled_20261021/L4/best.pt",
+  "parent_SHA256":"c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "paired_response":{"temperature":2.0,"maximum_TRAIN_view_gap":160,"learning_rate":0.003,"steps":400,"evaluate_every":10,"nominal_weight":0.25,"response_consistency":0.01,"teacher_KL":0.5,"anchor":0.01,"row_trust_radius":1.0,"fit_seconds":120},
+  "scope":"TRAIN actual and nominal final-response pairing: keep measured router/E1/G1/E2 and same original PT/canonical transfer, simulate ONLY final global for the same1600TRAIN. No TEST nominal view, no modified upstream using old downstream CCD. Nominal features explicitly synthetic augmentation, not real CCD; skip fitting if parent head TRAIN nominal quality >10pp worse than actual. Original5140 robust real.75/nominal.25 CE, paired centered-logit consistency and correctTRAIN parent protection. One finite fit, no new layer/SDK/GPU/CCD/VALID/TEST gradient; final bestlast always full real original CPU with all5 measured stages, parent285 protected."
+}
