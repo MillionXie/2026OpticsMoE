@@ -1,5 +1,90 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-22离线优化完整交付（覆盖以下历史状态）
+
+相机按用户要求暂停，本轮未枚举/取流/重试，不更改硬件、原模型结构或既有数据。
+TRAIN1600＝每类80份（1508独有原TRAIN＋92固定TRAIN增强），TEST411、无VALID。
+TEST用于错分诊断、TRAIN样本强调及PT选择，故以下均为开发指标，不是独立测试
+泛化结论；梯度和所有拟合统计仅TRAIN。所有表中分数均通过全量原模型CPU重放，
+并核对非允许参数逐键冻结、数据/CCD/相位身份及缓存概率误差<=3e-6。所有任务
+已经成功退出，不以PID或缓存阶段冒称已交付；未新采CCD。
+
+### 四层：父285保留，本轮七类对照没有提高准确率
+
+固定仿真346/411＝84.18491%；目标至少340/411＝82.72506%（下降<=1.5pp）。
+接受285/411＝69.34307%，差14.84185pp；还差55个正确预测才达到目标。
+父版本TRAIN1009/1600＝63.0625%，原PT SHA
+`c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2`。
+父run `advance_after_user_waiver_20261021_USB_resume01/terminal_coupled_20261021/L4`。
+以下路径均在同一`advance_after_user_waiver_20261021_USB_resume01/`内，完整
+best均选原E0父285，表列last是诊断证据，不采用更差权重。
+
+| 有限对照（run/L4） | last TRAIN/1600 | last TEST/411 | 主要变化 |
+|---|---:|---:|---|
+| terminal_focal_mixup_20261021 | 1073 | 272 | 焦点损失、正确TRAIN父保护、同类TRAIN混合 |
+| terminal_selective_teacher_20261021 | 1061 | 273 | 仅531个教师对/父错TRAIN加仿真教师KL |
+| terminal_teacher_rowtrust_20261021 | 1208 | 254 | 同配置将整个头半径1改为每类行半径1 |
+| terminal_fusion_midpoint_20261022 | 1050 | 258 | 原末端alpha固定重启至原允许范围中点.67505 |
+| terminal_maxmargin_20261022 | 1582 | 194 | TRAIN条件化、平方多类hinge、C1/正则1/N |
+| terminal_hardlabel_GCV_20261022 | 1016 | 279 | TRAIN硬标签one-hot的解析GCV正则选择 |
+| terminal_fusion_TRAIN_GCV_20261022 | 1137 | 245 | TRAIN-only有界连续优化原末端alpha，重建原头 |
+
+最后一项TRAIN选alpha.4031125080688648，17次有限目标求值，新alpha候选最好246，
+仍低于父285；不是用TEST扫描alpha。TRAIN池化统计是优化近似，与原TRAIN特征
+最大误差7.19227e-6，不能称为精确推理替身；最终TRAIN/TEST缓存和完整CPU审计
+仍调用精确原图，原生概率3e-6标准没有放宽。alpha为归一化特征融合系数，不是
+光功率占比。仅最后原alpha和原Linear可能改变，所有已采输入的上游状态冻结。
+
+错分不是单一“多训练不够”或“全是过拟合”：
+
+- 原父ewer TRAIN32/80、TEST0/9；butterfly25/80、2/10；buddha25/80、3/9。
+  这些类连TRAIN也弱，需要与分布转移型错误区分。
+- menorah TRAIN58/80而TEST2/10，有明显TRAIN/TEST差别；TEST中5个被判成chandelier。
+- airplanes→helicopter6例、Motorbikes→airplanes4例也是已保存的主要混淆。
+- 最大间隔头已到TRAIN98.875%，但TEST47.20195%；扩大每类更新也只到TRAIN75.5%、
+  TEST61.80049%。这说明该训练目标下更强的拟合不迁移，不能承诺加轮数必然改善。
+- 同批原仿真教师TRAIN1529/1600，父实拍1009；教师只指导正确的TRAIN样本也未提升。
+  上述证据不能单独证明是相机、相位、光学信息丢失或某个唯一故障，不能作理论上限。
+
+七组best/last、协议、history、逐样本预测和原CPU审计均有本地逐SHA备份，清单SHA：
+
+| run简称 | 本地verified_manifest SHA256 |
+|---|---|
+| focal_mixup | 0eb54a5fa79e2eab908047164965a5e23889ccfa0cc226f537c3f66815727c64 |
+| selective_teacher | c9a9b72db084987995430921dd441a7be80dedcc47f7a4b5d52f7090e36a427e |
+| teacher_rowtrust | dd4872a902981395a16fa9b627551e9b9c37ac0ba5db5898ed0db8ef0b78c470 |
+| fusion_midpoint | 3a791658d5239c17c03530ab7566344eaa33ebc2a58d98f622c51dca39d6722b |
+| maxmargin | 44fafe563e78c6bee8a5996277f7345cb943b43bb05636538f7b80fe28b9b3d3 |
+| hardlabel_GCV | ef831b7c26fa915f96e4dfc262c11dda92475d1a0eb9a58a213cb7e85161f260 |
+| fusion_TRAIN_GCV | 9e69adbc922e5d7ae9ab53e492fb0633c8fa08a42cb54000f78ba4b4764a9454 |
+
+### 六层：205→207→219，均为混合光学指标
+
+run路径均在`advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/`。
+实测router/E1/G1/E2，G2/E3/G3仍仿真；不能与四层完整实拍口径混淆。
+
+| 本轮阶段 | best TRAIN/1600 | best TEST/411 | last TEST/411 |
+|---|---:|---:|---:|
+| 开始前原父 | 703 | 205＝49.87835% | — |
+| E2_offline_extended_20261021（48轮） | 753 | 207＝50.36496% | 198 |
+| E2_extended_readout_20261022（原5140头） | 770 | 219＝53.28467% | 212 |
+| E2_extended_coupled_20261022（20类别对） | 770 | 219＝53.28467%（E0父） | 214 |
+
+相对本次父205新增14正确/3.40633pp，尚未达到用户理想范围。48轮仅优化未采
+后缀mask及允许后缀参数，轻合成TRAIN CCD噪声gain sigma.005/add.1DN与像素
+dropout.002（非拟合相机噪声）；去掉此前破坏较大的头输入dropout，eval不增强。
+原头重估和类别对修正仅原Linear，冻结全部非头。类别对修正2560步/73.781fit秒，
+last TRAIN797但TEST214，未超过父219，不声称新提升。
+
+接受原`E2_extended_readout_20261022/best.pt`，SHA
+`ad715260037a136f0b676d21b582ac7157850c3800a68c561885949a123db7e0`；
+其本地19文件清单SHA `9874f22e2c2c833e605a13e254d83a51f60a3f08639a23f4ccbe60639b5c9845`。
+48轮18文件清单`bc2f6d593d724e869d5f84b55c9a07b6969e227feb59a6f23789c14083a3d1d9`；
+类别对17文件清单`11e16eabfc57cd8519f05f1399d1932b42719296cec5178ccc0a29e8117bb118`。
+未来若人工恢复采集，必须使用选定上游身份逐层新采未测G2/E3/G3；本轮不启动。
+
+### 以下为历史执行记录
+
 ## 2026-10-21最新完整结果与相机故障
 
 最新两种完整CPU对照均无提升，不替换285父PT：
