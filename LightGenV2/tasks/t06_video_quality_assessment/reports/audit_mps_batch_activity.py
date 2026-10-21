@@ -34,10 +34,17 @@ def historical_large_models():
     utilization = base/'lgvq_busy_resource_20261020'
     cost_root = base/'lgvq_mps_dataset_once_rental_20261021_replacement02'
     values = []
+    source_cache = {}
     for model in ('deepseek','kimi'):
         for cap in (100,50):
             folder = utilization/f'mps_{model}_native_{cap}'
             identity = json.loads((folder/'identity.json').read_text())
+            for name,digest in identity['sources'].items():
+                key = (identity['git_commit'],name)
+                if key not in source_cache:
+                    source_cache[key] = hashlib.sha256(subprocess.check_output(
+                        ['git','show',key[0]+':'+name],cwd=experiment.REPO)).hexdigest()
+                assert source_cache[key] == digest
             source = folder/f'mps_cap{cap}'
             report = json.loads((source/'report.json').read_text())
             raw = list(csv.DictReader((source/'telemetry.csv').open(newline='')))
@@ -83,6 +90,23 @@ def historical_large_models():
         historical_utilization_reference_not_current_same_device_certification=True,
         audit_source_sha256=experiment.original.frozen.sha256(Path(__file__)),
         no_new_GPU_execution=True,no_paper_export_updates=True)
+
+
+def historical_glm_costs():
+    """Audit available old costs, without adopting them as fresh measurements."""
+    from .audit_mps_dataset_once import audit_point
+    root = experiment.TASK/'runs/simulation/lgvq_mps_dataset_once_a100_20261020'
+    values = []
+    for cap in (100,50):
+        group = [audit_point((root/f'glm_cap{cap}_repeat{r:02d}').resolve()) for r in (1,2,3)]
+        assert all(p['gpu_uuid']==experiment.original.frozen.A100_UUID for p in group)
+        values.append(dict(model='glm',batch=1,cap=cap,costs=group,
+            time16_ms=statistics.mean(p['time16_ms'] for p in group),
+            energy16_j=statistics.mean(p['energy16_j'] for p in group),
+            provenance='available_historical_cost_not_fresh_or_automatically_adopted'))
+    return dict(status='passed',values=values,no_new_GPU_execution=True,
+        audit_source_sha256=experiment.original.frozen.sha256(Path(__file__)),
+        no_paper_export_updates=True)
 
 
 def audit(root):
@@ -253,9 +277,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root',type=Path,default=experiment.ROOT)
     parser.add_argument('--historical80',action='store_true')
+    parser.add_argument('--historical-glm',action='store_true')
     parser.add_argument('--output',type=Path,required=True)
     args = parser.parse_args()
-    result = historical_large_models() if args.historical80 else audit(args.root)
+    if args.historical80 and args.historical_glm:
+        parser.error('Select only one historical archive')
+    result = (historical_large_models() if args.historical80 else
+              historical_glm_costs() if args.historical_glm else audit(args.root))
     with args.output.open('x') as stream:
         json.dump(result,stream,indent=2)
     print(json.dumps({k:v for k,v in result.items() if k != 'points'},indent=2))
