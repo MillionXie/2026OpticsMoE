@@ -1,0 +1,15 @@
+{
+  "schema":"L6_camera_paused_extended_suffix_v1","camera_paused":true,
+  "prefix_profile":"lab_caltech20_L6_E2_stable_suffix_profile_20261021.json",
+  "parent_relative":"advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/E2_readout_20261021/best.pt",
+  "parent_SHA256":"d31d90ef4271795d1ff9b92d3cb28e3d074aef397c2c7bcd893104de16e2406b",
+  "suffix_engine_SHA256":"c5e2c1b9cd50d18fb5b4d686fffedfa81e65914941b144cc96e024048f681c82",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","startmenuexperiencehost.exe","todesk.exe","searchapp.exe","textinputhost.exe","phoneexperiencehost.exe","msedgewebview2.exe","shellexperiencehost.exe","systemsettings.exe","msedge.exe"],
+  "intermediate_epochs":48,"intermediate_fit_seconds":1800,"final_epochs":48,"final_fit_seconds":1800,"intermediate_target":322,"final_target":350,
+  "phase_lr":0.00002,"electronic_lr":0.0001,"alpha_lr":0.00005,"head_lr":0.0001,"weight_decay":0.001,"label_smoothing":0.03,
+  "CCD_gain_sigma":0.005,"CCD_additive_sigma_DN":0.1,"dropout_location":"CCD_pixels","feature_dropout_p":0.0,"CCD_pixel_dropout_p":0.002,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "scope":"User prioritizes L4 and additionally authorizes offline optimization after measured L6 E2, camera remains paused. Start selected205 rather than147. One finite lower-phase/head-LR extended full1600TRAIN suffix fit; replace known destructive latent-feature dropout by sparse CCD pixel dropout. Original measured prefix frozen, only unmeasured G2/E3/G3 masks and postE2 electronics/alpha/head may change. Native CPU clone selection preserves optimizer state; all bestlast audited. No SDK/newCCD/camera start/TEST gradient/VALID/inference layer. Mixed prefix target322 not guaranteed and cannot be called full hardware."
+}

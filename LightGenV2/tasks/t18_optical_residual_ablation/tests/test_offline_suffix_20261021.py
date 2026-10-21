@@ -2,6 +2,15 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_error_guided_TRAIN_signature(self):
+        s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s);fn=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=='focal_correction')
+        self.assertNotIn('te',[x.arg for x in fn.args.args]);self.assertIn('importance',[x.arg for x in fn.args.args]);self.assertIn('sample>0',s)
+        c=json.loads((HERE/'lab_caltech20_L4_focal_mixup_profile_20261021.json').read_text());self.assertEqual(c['parent_correct'],285);self.assertLessEqual(c['focal']['fit_seconds']+c['mixup']['fit_seconds'],240)
+    def test_camera_paused_L6_continuation(self):
+        s=(HERE/'lab_caltech20_dvp_L6_offline_continue_20261021.py').read_text();ast.parse(s)
+        for forbidden in ('advance.acquire','Camera(','Bench(','engine.run('):self.assertNotIn(forbidden,s)
+        self.assertIn('engine.suffix(',s);self.assertIn('not report[\'full_physical\']',s)
+        c=json.loads((HERE/'lab_caltech20_L6_offline_extended_profile_20261021.json').read_text());self.assertTrue(c['camera_paused']);self.assertEqual(c['feature_dropout_p'],0);self.assertLessEqual(c['intermediate_fit_seconds'],1800)
     def test_centered_terminal_scope(self):
         c=json.loads((HERE/'lab_caltech20_L4_terminal_centered_profile_20261021.json').read_text());self.assertEqual(c['parent_correct'],285);self.assertLessEqual(c['vector']['fit_seconds'],120)
         s=(HERE/'lab_caltech20_dvp_terminal_reopen_20261021.py').read_text();ast.parse(s)

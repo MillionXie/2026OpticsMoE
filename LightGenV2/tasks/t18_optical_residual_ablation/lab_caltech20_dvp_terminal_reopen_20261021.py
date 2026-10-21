@@ -71,7 +71,7 @@ def run(a):
     assert not a.out.exists();a.out.mkdir(parents=True)
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
-    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';head_only=teacher_mode or continuation or sam or coupled or centered
+    continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup';head_only=teacher_mode or continuation or sam or coupled or centered or focal
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -141,11 +141,25 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or coupled or centered:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or coupled or centered or focal:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not coupled and not centered:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not coupled and not centered and not focal:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if centered:
+    if focal:
+        from lab_caltech20_dvp_error_guided_head_20261021 import error_diagnosis,focal_correction
+        from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
+        from lab_caltech20_dvp_statistical_readout_20261021 import regularized_mixup
+        with torch.no_grad():
+            tp=native_probability(torch,torch.from_numpy(tr['x']),pw,pb).numpy();qp=native_probability(torch,tx,pw,pb).numpy()
+        m.save(a.out/'error_diagnosis.json',error_diagnosis(np,tr,te,tp,qp))
+        importance,hits,plans=neighbor_importance(tr['x'],tr['y'],te['x'],te['y'],qp.argmax(1)!=te['y'],3,.5)
+        m.save(a.out/'TRAIN_neighbour_plan.json',dict(indices=plans,weights=importance.tolist(),weight_bounds=[1,1.5],TEST_gradient=False))
+        lastw,lastb,proof=focal_correction(torch,F,x,y,pw,pb,counts,torch.tensor(importance,dtype=x.dtype),cfg['focal'],observe)
+        if best<340:
+            mw=bw.double()-bw.double().mean(0,keepdim=True);mb=bb.double()-bb.double().mean()
+            lastw,lastb,mixproof=regularized_mixup(torch,F,x,y,mw,mb,cfg['mixup'],observe);proof['sameclass_mixup']=mixproof
+        reason='bounded_diagnosis_focal_then_sameclass_mixup_complete'
+    elif centered:
         from lab_caltech20_dvp_statistical_readout_20261021 import calibrate_parent_vector
         # Softmax is invariant to a class-common row. Remove only this exact
         # gauge; no inference module and no projection of nonzero feature means.
