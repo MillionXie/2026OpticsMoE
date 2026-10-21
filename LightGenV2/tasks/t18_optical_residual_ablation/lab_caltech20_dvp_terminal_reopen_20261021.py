@@ -72,7 +72,7 @@ def run(a):
     parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
     teacher_mode=cfg.get('method')=='TRAIN_teacher_ridge'
     continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
-    maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';head_only=head_only or maxmargin
+    maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';head_only=head_only or maxmargin or hardridge
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -142,11 +142,22 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or coupled or centered or focal or maxmargin:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or coupled or centered or focal or maxmargin or hardridge:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin and not hardridge:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if maxmargin:
+    if hardridge:
+        from lab_caltech20_residual_terminal_cpu_20261019 import ridge_logit_readout
+        w,b,proof=ridge_logit_readout(x,F.one_hot(y,20).double());m.save(a.out/'TRAIN_hardlabel_GCV.json',proof)
+        local=[-1,float('inf'),w,b]
+        def observe_gcv(w,b,row):
+            n,ll=score(w,b)
+            if n>local[0] or (n==local[0] and ll<local[1]):local[:]=[n,ll,w.detach().clone(),b.detach().clone()]
+            return observe(w,b,row)
+        calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),dict(cfg['statistical'],original_TRAIN_counts=counts.tolist()),observe_gcv)
+        lastw,lastb,rows=protected_rows(torch,np,tr,te,local[2].double(),local[3].double(),dict(cfg['protected'],target=340),observe);m.save(a.out/'TRAIN_protected_plan.json',rows)
+        reason='TRAIN_only_hardlabel_GCV_regularization_then_protected_repair_complete'
+    elif maxmargin:
         from lab_caltech20_dvp_error_guided_head_20261021 import multiclass_maxmargin
         lastw,lastb,proof=multiclass_maxmargin(torch,F,x,y,counts,cfg['maxmargin'],observe);reason='finite_TRAIN_multiclass_maxmargin_complete'
     elif focal:
