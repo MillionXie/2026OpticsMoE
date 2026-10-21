@@ -7,6 +7,7 @@ class OfflineSuffix(unittest.TestCase):
         self.assertIn("allowed={'fusion_logits.3','linear.weight','linear.bias'}",s);self.assertIn('alpha=(.4001+.95)/2',s)
         for forbidden in ('Camera(','Bench(','advance.acquire','cuda()'):self.assertNotIn(forbidden,s)
         c=json.loads((HERE/'lab_caltech20_L4_fusion_midpoint_profile_20261022.json').read_text());self.assertEqual(c['target_correct'],340)
+        c=json.loads((HERE/'lab_caltech20_L4_fusion_TRAIN_GCV_profile_20261022.json').read_text());self.assertEqual(c['alpha_rule'],'TRAIN_GCV_bounded');self.assertLessEqual(c['TRAIN_alpha_iterations'],18)
     def test_error_guided_TRAIN_signature(self):
         s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s);fn=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=='focal_correction')
         self.assertNotIn('te',[x.arg for x in fn.args.args]);self.assertIn('importance',[x.arg for x in fn.args.args]);self.assertIn('sample>0',s)

@@ -8,6 +8,54 @@ import argparse,json,os,time,traceback
 from pathlib import Path
 
 
+def fusion_statistics(torch,F,e,o):
+    from caltech20_alt246_biasfree_model import rms
+    re,ro=rms(e),rms(o);u,v=e/re,o/ro
+    return dict(u=F.adaptive_avg_pool2d(u[:,None],(16,16)).flatten(1).double(),v=F.adaptive_avg_pool2d(v[:,None],(16,16)).flatten(1).double(),
+        re=re.flatten().double(),uu=u.double().square().mean((-2,-1)),vv=v.double().square().mean((-2,-1)),uv=(u.double()*v.double()).mean((-2,-1)))
+
+
+def TRAIN_stat_features(torch,F,s,alpha):
+    norm=((1-alpha)**2*s['uu']+alpha**2*s['vv']+2*alpha*(1-alpha)*s['uv']).clamp_min(1e-12).sqrt()
+    pooled=((1-alpha)*s['u']+alpha*s['v'])*(s['re']/norm)[:,None]
+    return F.layer_norm(pooled,(256,),eps=1e-5)
+
+
+def TRAIN_choose_alpha(a,cfg,torch,np,F,m,loop,model,data,fields,alpha0):
+    """One bounded continuous TRAIN-GCV optimization; no TEST data access.
+
+    Pooled statistics are only a TRAIN optimization surrogate. After selecting
+    one alpha we always recache exact native features and audit native inference.
+    """
+    from lab_caltech20_residual_terminal_cpu_20261019 import ridge_logit_readout
+    held={};parts=[];max_error=0.;hook=model.electronic[3].register_forward_hook(lambda mod,args,out:held.update(e=out.detach()))
+    try:
+        with torch.no_grad():
+            for begin in range(0,1600,8):
+                ix=np.arange(begin,begin+8);model(loop.put_fields(model,data,fields,'train',ix,'cpu'))
+                s=fusion_statistics(torch,F,held['e'],model.nonlinear(model.measured['3'],'global'));parts.append(s)
+                q=TRAIN_stat_features(torch,F,s,alpha0);max_error=max(max_error,float((q-model.readout['features'].double()).abs().max()))
+                if begin%160==0:m.save(a.out/'progress.json',dict(state='TRAIN_only_fusion_statistics',samples=begin+8,total=1600,TEST_used=False))
+    finally:hook.remove()
+    stats={k:torch.cat([p[k] for p in parts]) for k in parts[0]};np.savez_compressed(a.out/'TRAIN_fusion_statistics.npz',**{k:v.numpy() for k,v in stats.items()},ids=data['train'][2],labels=data['train'][1])
+    target=F.one_hot(torch.from_numpy(data['train'][1]),20).double();history=[];chosen=None
+    def evaluate(alpha):
+        nonlocal chosen
+        x=TRAIN_stat_features(torch,F,stats,float(alpha));_,_,proof=ridge_logit_readout(x,target);row=dict(alpha=float(alpha),TRAIN_GCV=proof['selected']['TRAIN_GCV'],ridge_regularization=proof['selected']['regularization'])
+        history.append(row)
+        if chosen is None or row['TRAIN_GCV']<chosen['TRAIN_GCV']:chosen=row
+        m.save(a.out/'TRAIN_alpha_search.json',dict(observations=history,selected=chosen,TEST_used=False));return row['TRAIN_GCV']
+    evaluate(alpha0);lo,hi=.4001001,.95;g=(5**.5-1)/2;left,right=hi-g*(hi-lo),lo+g*(hi-lo);fl,fr=evaluate(left),evaluate(right)
+    for _ in range(cfg['TRAIN_alpha_iterations']):
+        if hi-lo<=.001:break
+        if fl<=fr:hi,right,fr=right,left,fl;left=hi-g*(hi-lo);fl=evaluate(left)
+        else:lo,left,fl=left,right,fr;right=lo+g*(hi-lo);fr=evaluate(right)
+    m.save(a.out/'TRAIN_alpha_selection.json',dict(method='bounded continuous golden-section on TRAIN-only analytic ridge GCV',selected=chosen,evaluations=len(history),
+        statistics_SHA256=m.sha(a.out/'TRAIN_fusion_statistics.npz'),approximate_TRAIN_feature_maxabs_at_parent=max_error,TRAIN_samples=1600,TEST_used=False,VALID=0,
+        exact_native_feature_recache_required=True,not_inference_surrogate=True,not_TEST_alpha_grid=True))
+    return chosen['alpha']
+
+
 def selftest():
     import torch
     import lab_caltech20_dvp_layerwise_20261019 as m
@@ -22,6 +70,14 @@ def selftest():
         assert float((p-q).abs().max())<=3e-6 and torch.equal(p.argmax(1),q.argmax(1))
         loop.validate_state(m,model,original,{'fusion_logits.3','linear.weight','linear.bias'})
     print(dict(passed=True,earlier_and_final_optical_intensities_bitwise_unchanged=True,original_head_cache_parity=True,alpha_schema_unchanged=True,SDK_used=False))
+    from torch.nn import functional as F
+    from lab_caltech20_rich_tail_refine_20261018 import tail
+    e=torch.rand(2,478,478);o=torch.rand_like(e);s=fusion_statistics(torch,F,e,o)
+    from caltech20_alt246_biasfree_model import rms,features
+    for alpha in (.4001,.67505,.95):
+        mix=(1-alpha)*e/rms(e)+alpha*o/rms(o);native=features(rms(e)*mix/rms(mix));approx=TRAIN_stat_features(torch,F,s,alpha)
+        assert float((native.double()-approx).abs().max())<3e-5
+    print(dict(passed=True,TRAIN_statistic_surrogate_precision=True,exact_native_inference_still_required=True))
 
 
 def run(a):
@@ -48,8 +104,10 @@ def run(a):
             p=cap/role/'ccd.npy';assert m.sha(p)==r['arrays'][role]['SHA256'];fields[key][role]=np.load(p,mmap_mode='r');identities[key+'/'+role]=m.sha(p);assert fields[key][role].shape==(n,478,478)
     assert identities==pa['prefix_SHA256'] and list(fields)==['router','0','1','2','3']
     allowed={'fusion_logits.3','linear.weight','linear.bias'};alpha0=float(model.effective_alpha(3));alpha=(.4001+.95)/2
+    optimized=cfg.get('alpha_rule')=='TRAIN_GCV_bounded'
+    if optimized:alpha=TRAIN_choose_alpha(a,cfg,torch,np,F,m,loop,model,data,fields,alpha0)
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),config=cfg,parent_PT_SHA256=cfg['parent_SHA256'],
-        original_alpha=alpha0,restart_alpha=alpha,restart_rule='fixed midpoint of original(.4001,.95) bounds, not TEST fitted',allowed_keys=sorted(allowed),prefix_SHA256=identities,
+        original_alpha=alpha0,restart_alpha=alpha,restart_rule='TRAIN-only bounded GCV, no TEST alpha fit' if optimized else 'fixed midpoint of original(.4001,.95) bounds, not TEST fitted',allowed_keys=sorted(allowed),prefix_SHA256=identities,
         data_SHA256=dm['sha256'],hardware_SHA256=loop.HARDWARE,TRAIN=1600,TEST=411,VALID=0,full_physical=True,new_inference_layers=0,SDK_used=False,GPU_used=False,
         TEST_informed_development=True,TEST_gradient=False,all_optical_upstream_frozen=True,all_electronic_convolutions_frozen=True,alpha_gradient_optimized=False)
     m.save(a.out/'protocol.json',protocol);loop.saved_model(m,model,a.out/'best.pt',protocol)
@@ -85,7 +143,7 @@ def run(a):
         row=dict(row,TEST_correct=n,TEST_NLL=ll,selected_correct=global_best,midpoint_best_correct=local_best,accepted=adopt,elapsed_s=time.monotonic()-start)
         history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='TRAIN_midpoint_readout_fit',latest=row))
         return global_best>=cfg['target_correct']
-    observe(pw,pb,dict(phase='unadapted_midpoint',gradient_updates=0))
+    unadapted='unadapted_TRAIN_GCV_fusion' if optimized else 'unadapted_midpoint';observe(pw,pb,dict(phase=unadapted,gradient_updates=0))
     counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=x.dtype);assert counts.sum()==3141
     w,b,proof=shrunk_readout(x,y,counts);m.save(a.out/'TRAIN_covariance.json',proof)
     calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),dict(cfg['statistical'],original_TRAIN_counts=counts.tolist()),observe)
@@ -103,7 +161,7 @@ def run(a):
                 with torch.no_grad():q=native_probability(torch,torch.from_numpy(banks[role]['x']),native.linear.weight,native.linear.bias).numpy()
                 assert float(np.abs(p-q).max())<=3e-6 and np.array_equal(p.argmax(1),q.argmax(1))
     assert results['best']['test']['correct']==global_best
-    m.save(a.out/'report.json',dict(state='complete',baseline_correct=285,selected_correct=global_best,selected=selected,selected_E0=selected in ('parent','unadapted_midpoint'),selected_analytic_only=selected=='unadapted_midpoint',results=results,target_correct=cfg['target_correct'],target_met=global_best>=cfg['target_correct'],
+    m.save(a.out/'report.json',dict(state='complete',baseline_correct=285,selected_correct=global_best,selected=selected,selected_E0=selected in ('parent',unadapted),selected_analytic_only=selected==unadapted,results=results,target_correct=cfg['target_correct'],target_met=global_best>=cfg['target_correct'],
         restart_alpha=alpha,original_alpha=alpha0,midpoint_best_correct=local_best,strict_original_CPU=True,full_physical=True,TEST_gradient=False,TEST_informed_development=True,SDK_used=False,GPU_used=False,protocol_SHA256=m.sha(a.out/'protocol.json')))
     m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),original_bestlast_TRAIN1600_TEST411=True,prefix_SHA256=identities,all_optical_upstream_and_convolutions_bitwise_frozen=True))
 
