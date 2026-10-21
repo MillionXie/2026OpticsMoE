@@ -1,4 +1,29 @@
-# Latest residual experimental order: fresh DVP L4 -> L6 (L2 frozen)
+# Latest residual scope: reopen L2 offline gap1.5pp; continue DVP L4/L6
+
+## 2026-10-21 explicit user authorization, supersedes L2 frozen status
+
+User confirms server disk installation and asks to optimize residual2/4/6.
+L2 accepted329/411=80.04866% was independently verified by full raw-CCD CPU
+replay, fixed simulation337/411=81.99513%. New <=1.5pp gap requires331/411,
+not330. Preserve PT6d3b796d188aa2aa7a3fed5bd4df42be61ddb9a46c8eb445c33644eee6480f18.
+One180fit-second existing TRAIN-conditioned Huber row attempt is authorized by
+`lab_caltech20_L2_gap15_profile_20261021.json`; restart deterministic TRAIN
+sampler73+depth is explicit, not falsely called continuous old RNG. No camera,
+new layers, upstream changes, TEST gradients or VALID. TRAIN1200/TEST411 retain
+the original high-speed-camera session; do not mix in the DVP L4/L6 observations.
+
+For L4/L6, latest matching DVP parents278/285 remain protected. One TRAIN-only
+covariance-conditioned antisymmetric two-row contrast follows the six failed
+L4 noise/joint-head contrasts. Conditioning is an optimizer coordinate system
+folded into the ORIGINAL float32 Linear before every TEST selection, not a new
+inference layer. All1600TRAIN have positive derivative weights. TEST confusion
+and nearest same-class TRAIN selection are explicitly test-informed/transductive
+development, not independent generalization. Targets L4E2>=288 (human70% gate)
+and L6E1>=322; final342/350 unchanged. No next optical stage before native pass.
+At most20pairs/128updates each/120fit seconds per group, no automatic repeats.
+Full native best/last CPU replay, frozen SHA and local evidence backup required.
+No scheduled supervision, new branch/worktree/engineering copy or hardware/LUT
+change. Server restored mount must be checked rather than recreated/overwritten.
 
 ## 2026-10-20 explicit superseding instruction: HARD per-stage accuracy gate
 
