@@ -1,0 +1,14 @@
+{
+  "schema":"DVP_L6_human_recovered_prefix4_v1","explicit_human_camera_restored":true,"user_stage_carry":true,
+  "prefix_profile":"lab_caltech20_L6_E2_stable_suffix_profile_20261021.json",
+  "parent_relative":"advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/E2_readout_20261021/best.pt",
+  "parent_SHA256":"d31d90ef4271795d1ff9b92d3cb28e3d074aef397c2c7bcd893104de16e2406b",
+  "capture_engine_SHA256":"972ef8d8360e27af1f0934a7edad93f138abe0049b76bc6d4a49060219426a17",
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","startmenuexperiencehost.exe","todesk.exe","searchapp.exe","textinputhost.exe","phoneexperiencehost.exe","msedgewebview2.exe","shellexperiencehost.exe","systemsettings.exe","msedge.exe"],
+  "intermediate_epochs":12,"intermediate_fit_seconds":600,"final_epochs":60,"final_fit_seconds":900,
+  "intermediate_target":322,"final_target":350,"phase_lr":0.00005,"electronic_lr":0.0001,"alpha_lr":0.0001,"head_lr":0.0005,"weight_decay":0.001,"label_smoothing":0.03,
+  "CCD_gain_sigma":0.005,"CCD_additive_sigma_DN":0.1,"dropout_location":"CCD_pixels","feature_dropout_p":0.0,"CCD_pixel_dropout_p":0.002,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "scope":"User explicitly restored camera and requests immediate capture while L4 optimization continues. Preserve measured router/E1/G1/E2; new selectedPT d31d90ef and new run for G2/E3/G3 only. Each full TRAIN1600 then TEST411, then original mask/electronic suffix rawCE with frozen measured prefix and strict CPU before next fresh stage. SDK single; no camera reset/settings/coordinates/LUT/model change. No TEST gradient/VALID/new layer. Targets not guaranteed, existing user carry permission remains. No timer."
+}
