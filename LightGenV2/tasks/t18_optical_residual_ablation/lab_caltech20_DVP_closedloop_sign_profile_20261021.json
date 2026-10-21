@@ -1,0 +1,9 @@
+{
+  "schema": "full_TRAIN_reverse_direction_v1",
+  "maximum_trials_each_depth": 1,
+  "minimum_TRAIN_NLL_worsening": 0.02,
+  "minimum_TRAIN_correct_loss": 10,
+  "suffix_epochs": 12,
+  "suffix_fit_seconds": 600,
+  "scope": "One finite opposite point along the SAME full1600-TRAIN mask-gradient direction ONLY after an independently verified full-TRAIN deterioration. Not another gradient pass or a phase/loss/seed grid. Explicit exact original parent is the two-sided control, not a falsely lowered global incumbent. Frozen exposure/coordinates/LUT/architecture; new candidate needs all1600TRAIN then411TEST. TRAIN feedback admits direction trial, TEST only diagnoses/selects PT. Actual314/322 per-stage and342/350 final goals unchanged. Never auto-retry, repeat a rejected direction, reuse an incompatible CCD or replace a higher retained model with a lower candidate. Comparisons across capture times do not isolate mask causality. No recurrence."
+}

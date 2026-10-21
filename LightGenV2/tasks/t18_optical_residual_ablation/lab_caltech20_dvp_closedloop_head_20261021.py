@@ -60,7 +60,7 @@ def run(a):
     from lab_caltech20_dvp_closedloop_20261021 import SPECS,HARDWARE,put_fields,validate_state,original_replay,saved_model
     from lab_caltech20_residual_guarded_20261018 import probability,score,improves
     torch.set_num_threads(2);torch.manual_seed(73)
-    spec=SPECS[a.depth];root=a.sequence/'TRAIN_fullbatch_closedloop_20261021';folder=root/f'L{a.depth}_round{a.round}'
+    spec=SPECS[a.depth];campaign='TRAIN_fullbatch_closedloop_20261021' if a.campaign=='forward' else 'TRAIN_fullbatch_adjoint_sign_20261021';root=a.sequence/campaign;folder=root/f'L{a.depth}_round{a.round}'
     assert not a.out.exists();audit=m.read(folder/'independent_round_audit.json');report=m.read(folder/'suffix/report.json')
     assert audit['passed'] and audit['source_fit_report_SHA256']==m.sha(folder/'suffix/report.json')
     assert audit['source_capture_report_SHA256']==m.sha(folder/'capture/report.json') and not report['passed']
@@ -132,4 +132,4 @@ def run(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--round',type=int,choices=(1,2));p.add_argument('--out',type=Path);a=p.parse_args();selftest() if a.selftest else run(a)
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--round',type=int,choices=(1,2));p.add_argument('--out',type=Path);p.add_argument('--campaign',choices=('forward','reverse'),default='forward');a=p.parse_args();selftest() if a.selftest else run(a)

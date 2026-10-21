@@ -16,7 +16,8 @@ def audit(a):
     from lab_caltech20_dvp_closedloop_20261021 import SPECS,HARDWARE,validate_state,original_replay,audit_capture
     torch.set_num_threads(2);torch.manual_seed(73)
     assert a.depth in SPECS and a.round in (1,2)
-    out=a.sequence/'TRAIN_fullbatch_closedloop_20261021';folder=out/f'L{a.depth}_round{a.round}';proof=folder/'independent_round_audit.json'
+    campaign='TRAIN_fullbatch_closedloop_20261021' if a.campaign=='forward' else 'TRAIN_fullbatch_adjoint_sign_20261021'
+    out=a.sequence/campaign;folder=out/f'L{a.depth}_round{a.round}';proof=folder/'independent_round_audit.json'
     assert not proof.exists()
     root_protocol=m.read(out/'protocol.json');spec=SPECS[a.depth]
     assert m.session_hardware_digest(a.sequence)==HARDWARE==root_protocol['hardware_SHA256']
@@ -34,9 +35,17 @@ def audit(a):
     assert cp['protected']=={p:m.sha(p) for p in cp['protected']}
     proposal=folder/'proposal';pr=m.read(proposal/'report.json');pp=m.read(proposal/'protocol.json');candidate=proposal/'candidate.pt'
     digest=m.sha(candidate);assert digest==pr['candidate_PT_SHA256']==cr['PT_SHA256']==cp['PT_SHA256']
-    assert pr['TRAIN_consumed']==1600 and pr['mask_updates']==1 and pp['effective_gradient_batch']==1600 and pp['TEST_gradient'] is False
-    assert pp['forward_replay_max_error']<=3e-6
-    assert all(v['max_phase_delta']<=.040001 for v in pp['phase_steps'])
+    if a.campaign=='forward':
+        assert pr['TRAIN_consumed']==1600 and pr['mask_updates']==1 and pp['effective_gradient_batch']==1600 and pp['TEST_gradient'] is False
+        assert pp['forward_replay_max_error']<=3e-6
+        assert all(v['max_phase_delta']<=.040001 for v in pp['phase_steps'])
+    else:
+        assert a.round==1 and root_protocol['method']=='physical_full_TRAIN_reverse_direction_v1'
+        assert pr['TRAIN_basis_records']==1600 and pr['new_TRAIN_gradient_records']==0 and pp['new_TRAIN_gradient_records']==0
+        assert pp['method']=='mirror_of_audited_full_TRAIN_step' and pp['TEST_gradient'] is False
+        original_source=a.sequence/'TRAIN_fullbatch_closedloop_20261021'/f'L{a.depth}_round1'
+        assert pp['source_first_direction_audit_SHA256']==m.sha(original_source/'independent_round_audit.json')
+        assert pp['source_full_TRAIN_gradient_report_SHA256']==m.sha(original_source/'proposal/report.json')
     fields=dict(previous);fields[spec['stage']]={};identities=dict(previous_sha)
     for role,size in (('train',1600),('test',411)):
         p=cap/role/'ccd.npy';assert m.sha(p)==cr['arrays'][role]['SHA256'] and cr['arrays'][role]['samples']==size
@@ -52,7 +61,13 @@ def audit(a):
     lo,hi=parent.stage_slices[int(spec['stage'])];phase_keys={f'phase_sets.{k}' for k in range(lo,hi)}
     validate_state(m,model,parent_state,phase_keys)
     phase_delta={k:float((2*np.pi*(before[k].sigmoid()-parent_state[k].sigmoid())).abs().max()) for k in phase_keys}
-    assert all(0<v<=.040001 for v in phase_delta.values())
+    assert all(0<v<=(.040001 if a.campaign=='forward' else .040003) for v in phase_delta.values())
+    if a.campaign=='reverse':
+        positive=original_source/'proposal/candidate.pt';assert m.sha(positive)==pp['positive_PT_SHA256'] and m.sha(proposal_parent)==pp['original_parent_PT_SHA256']
+        positive_state=torch.load(positive,map_location='cpu',weights_only=False)['model']
+        from lab_caltech20_dvp_closedloop_sign_20261021 import mirrored_state
+        expected,_=mirrored_state(parent_state,positive_state,phase_keys)
+        assert all(torch.equal(v,before[k]) for k,v in expected.items()),'Not the declared opposite original-mask point'
     old_report=m.read(old_capture/'report.json');old_array=old_capture/'train/ccd.npy';assert m.sha(old_array)==old_report['arrays']['train']['SHA256']
     old_fields=dict(previous);old_fields[spec['stage']]={'train':np.load(old_array,mmap_mode='r')}
     parent_train,_=original_replay(parent,{'train':data['train']},old_fields,'train')
@@ -82,7 +97,7 @@ def audit(a):
     # proposal from later suffix/head fitting; this is not an accuracy claim.
     raw_train,_=original_replay(model,data,fields,'train')
     result=dict(passed=True,source_git=m.git_head(),source_SHA256=m.sha(__file__),training_source_git=root_protocol['source_git'],
-        depth=a.depth,round=a.round,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,
+        depth=a.depth,round=a.round,campaign=a.campaign,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,
         original_full_CPU_replay=True,all_upstream_and_current_capture_input_frozen=True,
         exact_candidate_capture_PT=digest,source_capture_report_SHA256=m.sha(cap/'report.json'),
         source_capture_audit_SHA256=m.sha(cap/'independent_audit.json'),
@@ -98,4 +113,4 @@ def audit(a):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path,required=True);p.add_argument('--depth',type=int,choices=(4,6),required=True);p.add_argument('--round',type=int,choices=(1,2),required=True);audit(p.parse_args())
+    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path,required=True);p.add_argument('--depth',type=int,choices=(4,6),required=True);p.add_argument('--round',type=int,choices=(1,2),required=True);p.add_argument('--campaign',choices=('forward','reverse'),default='forward');audit(p.parse_args())
