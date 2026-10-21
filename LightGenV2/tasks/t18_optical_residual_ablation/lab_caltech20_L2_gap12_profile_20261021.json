@@ -1,0 +1,12 @@
+{
+  "scope":"User reopens accepted331/411 L2 to <=1.2pp below fixed337/411 simulation. Fresh finite TRAIN-only Huber row segment; additionally protect TRAIN neighbours of at-risk correct TEST examples. Not TEST gradients or seed search.",
+  "TRAIN_whitened_row_geometry":true,
+  "objective":"huber_margin","huber_delta":1.0,"margin":1.0,
+  "temperature":2.0,"teacher_KL":2.0,"anchor":0.1,"LM_damping":0.1,
+  "Newton_step":0.25,"trust_radius":0.4,
+  "adaptive_TRAIN_positive_margin":true,"positive_margin_quantile":0.75,"maximum_positive_margin":4.0,
+  "correct_TEST_selects_protective_TRAIN_negatives":true,
+  "maximum_passes":3,"max_classes":60,"steps_per_class":192,"fit_seconds":180,"seed":73,
+  "target_correct":{"2":333},"TRAIN":1200,"TEST":411,"VALID":0,"TEST_gradient":false,"SDK":false,"GPU":false,
+  "stop":"333 correct,180 fit seconds,60 class visits,or first no-progress whole pass; parent331 protected; native full graph replay required"
+}
