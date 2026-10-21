@@ -1,5 +1,26 @@
 # Latest residual scope: reopen L2 offline gap1.5pp; continue DVP L4/L6
 
+## 2026-10-21 latest renewal: L4 coupled Huber; L6 TRAIN regularization
+
+User explicitly renews targeted L4/L6 improvement, L4>=288/411 first, L6
+overfitting reduction, all exposure/coordinates/LUT/model structure fixed. L2
+331 and nores are untouched. New immutable parents are audited284/287 below.
+One L4 antisymmetric two-row multiclass-Huber contrast addresses coupled class
+boundaries (earlier two-row method used CE, earlier Huber only one row).
+One L6 fullTRAIN same-class feature-mixup/label-smoothing/correctTRAIN-parent
+KL contrast addresses94.75% vs69.83% overfit. These are losses/training views,
+not inference modules. All1600TRAIN get positive weights; derivatives and
+optimizer geometry onlyTRAIN. DetachedTEST diagnoses/chooses PT, noVALID;
+explicit test-informed development, not independent generalization.
+Profiles `lab_caltech20_DVP_L4_coupled_Huber_profile_20261021.json` and
+`lab_caltech20_DVP_L6_mixup_profile_20261021.json`; existing statistical entry,
+CPU2 threads/noGPU/noSDK/newCCD0. L4 max20pairs*128 updates, L6 max1200 full
+TRAIN updates, each<=120fit seconds, fixed coefficients/seed, no grid or
+same-parent reruns. Native original-model bestlast full TRAIN1600/TEST411,
+nonhead/phase bitwise freeze and localSHA backup required before adoption.
+No automatic optical advance while L4<288 or L6<322. Fitting completion is not
+gate success. Actual start/return/status in original20261020 run, no timers.
+
 ## 2026-10-21 renewed user request: L4/L6 statistical readout contrast
 
 ### This round completed: current accepted L4=284, L6=287; gates still unmet

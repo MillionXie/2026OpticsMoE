@@ -28,4 +28,15 @@ class StatisticalReadout(unittest.TestCase):
         self.assertEqual(c['max_classes']*c['steps_each_class'],2560)
         self.assertLessEqual(c['fit_seconds'],120)
 
+    def test_targeted_methods_gradient_boundaries(self):
+        t=ast.parse((HERE/'lab_caltech20_dvp_statistical_readout_20261021.py').read_text())
+        for name in ('coupled_huber_direction','regularized_mixup'):
+            f=next(n for n in t.body if isinstance(n,ast.FunctionDef) and n.name==name)
+            self.assertFalse(any('test' in a.arg.lower() or 'query' in a.arg.lower() for a in f.args.args))
+        for depth,name in ((4,'coupled_Huber'),(6,'mixup')):
+            c=json.loads((HERE/f'lab_caltech20_DVP_L{depth}_{name}_profile_20261021.json').read_text())
+            self.assertEqual(c['parents'][str(depth)]['correct'],284 if depth==4 else 287)
+            self.assertEqual(c['targets'],{'4':288,'6':322})
+            self.assertLessEqual(c['fit_seconds'],120)
+
 if __name__=='__main__':unittest.main()
