@@ -1,0 +1,13 @@
+{
+  "schema": "DVP_fullTRAIN_physical_adjoint_v1",
+  "scope": "User-authorized full TRAIN physical-forward closed-loop adaptation of current L4 E2 and L6 E1. Actual measured gates unchanged; no ideal-output prefilter. Approximate digital adjoint is not a measured physical derivative.",
+  "rounds_per_depth": 2,
+  "gradient_microbatch": 4,
+  "phase_step_rms_radians": 0.015,
+  "phase_step_max_radians": 0.04,
+  "label_smoothing": 0.01,
+  "suffix_epochs": 12,
+  "suffix_fit_seconds": 600,
+  "GPU_UUID": "GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist": ["dwm.exe", "explorer.exe", "textinputhost.exe", "searchhost.exe", "shellexperiencehost.exe", "applicationframehost.exe", "startmenuexperiencehost.exe", "system", "lockapp.exe", "msedgewebview2.exe"]
+}
