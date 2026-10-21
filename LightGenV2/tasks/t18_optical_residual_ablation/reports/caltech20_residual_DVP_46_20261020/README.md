@@ -1,5 +1,65 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-22继续四层离线优化：本批完成，仍保留285
+
+所有run在`caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/`。
+本批全部原模型CPU best/last重放完成、成功退出；全量TRAIN1600/TEST411、冻结
+状态、原生概率缓存<=3e-6与数据身份审计通过。全部best仍选原父285/411=69.34307%，
+未超过原接受PT SHA c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2。
+目标340仍差55正确；以下last仅为诊断，不替换原接受权重。
+
+| run/L4 | 拟合/核验 | last TRAIN | last TEST | 说明 |
+|---|---|---:|---:|---|
+| terminal_covariance_augmentation_20261022 | 600步/7.047fit秒 | 1166/1600 | 258/411 | TRAIN类协方差增强与20快照权重平均，无新层 |
+| terminal_prior_temperature_20261022 | 40步/1.281fit秒 | 1009/1600 | 285/411 | 原TRAIN3141先验；两标量，不从TEST估先验 |
+| postCCD_conv_restart_Adam_20261022 | 24轮/161.110fit秒 | 1101/1600 | 256/411 | TRAIN缩回原9conv，原5150联合AdamW |
+| postCCD_warm_Adam_20261022 | 24轮/176.859fit秒 | 1108/1600 | 252/411 | 不重置卷积；第一轮额外6次完整411TEST观察 |
+| terminal_paired_response_20261022 | TRAIN视图核验、0训练步 | 1009/1600 | 285/411 | 名义视图低于TRAIN质量门槛，跳过拟合 |
+
+类协方差方法为[ISDA](https://arxiv.org/abs/1909.12220)思路的本任务固定特征改写，
+不是原论文结果复现：每类80份、256维，协方差按d/(d+n_class)向TRAIN池化收缩；
+增强强度.1/100步warmup，正确TRAIN父KL.5/anchor.01，Adam.003，单次600步。
+协方差、条件化、权重平均均TRAIN-only，折回原5140；不是TEST协方差或推理集成。
+逐样本对比：TRAIN新增161正确、损失4，TEST新增1、损失28。说明即使保留99.6%
+旧正确TRAIN，该改进仍未迁移；没有再运行不起约束作用的99%保留投影。不能据此
+证明所有数据不可分或单一硬件根因。
+
+先验对照另包含一个解析原TRAIN logprior偏置锚点，没有TEST参数网格。TRAIN拟合
+scale1.0673523、prior_strength.0057867，TEST准确率相同但NLL1.40674比父1.39178差。
+因此保留原父，不执行以准确率提升为条件的后续类别对修正。
+
+100份TRAIN（每16取1，覆盖20类）原9conv诊断SHA
+`1b81e6d82a145d7feb0e0fa9cdfba9fd65acc7e1bcff9d779af535924e59b4e3`：
+权重范数2.07565；|卷积响应|p50/p90/p99=2.42603/5.16950/13.12243（像素stride16
+估计分位数），全像素40.82285%处于|响应|>3，梯度非零。缩回比例由唯一TRAIN
+1/p90确定，不用TEST扫描；随后联合原9conv/alpha/5140头、AdamW、轻合成CCD
+gain sigma.005/add.1DN/dropout.002，无latent特征dropout、eval增强或结构变化。
+与不重置对照均未改善，不能宣称诊断发现了唯一原因。第一轮5/10/15/20/25/30批
+完整TEST分别281/280/281/282/279/278，也未漏掉超过285的短暂更新；每轮TRAIN
+仍完整1600份，不保存周期PT。
+
+最后响应配对只对TRAIN：保留真实router/E1/G1/E2，原PT/规范传播算子模拟最后G2，
+验证恰200次传播、1600份输入，明确不是CCD；未生成TEST名义视图。当前原头对
+实际TRAIN1009/1600，对名义TRAIN80/1600，低于预设“不得比实际差160份”的门槛，
+actual_updates=0。未强迫分类器学习失真的视图。该数不是完整实拍精度，也不单独
+证明名义物理仿真、适配后分类头、相机或光路中哪一项是原因。
+
+已验证本地备份清单SHA：
+
+| run简称 | 文件数 | local_verified_backup_manifest SHA256 |
+|---|---:|---|
+| covariance_augmentation | 17 | 502e3e7188e6dc54acc97485cc400cd91b8aead04a2d841deaa2ab2058e74e45 |
+| prior_temperature | 17 | adf206ff8707ebcc0940aa9c0058367672752da47f4859de4d3ffb63621ceee9 |
+| conv_restart_Adam | 22 | 33abeb065a3f8acdd59ebee81fe3e3ada49c12b6d8f4a4d82179630f7a027fd3 |
+| warm_Adam | 21 | d65500c9aefcca85351ee4bdf9a93cb36f7c0b1f4a0232eaae6d4a451f536e1a |
+| paired_response | 18 | 206a1faf349a20710752b930e1588f500ccb442db87ac57afeb142c7625b2a7f |
+
+本批交接收据`L4_offline_followup_handoff_20261022.json`已验证全5run报告/协议/PT及
+进程退出、SDK锁释放，SHA `1f75d3c885d0132395c90f379290bc3bb9896af2bc94a2159f6237480e5f5121`。
+原始CCD、所有父/低分PT、协议、逐样本预测均保留。全程无SDK/新CCD/相机尝试，
+无VALID或TEST梯度，TEST参与诊断及PT选择，故仅开发指标，不是独立泛化证据。
+六层此前219/411仍为混合指标，本批未冒称新增六层完整实拍结果。
+
 ## 2026-10-22离线优化完整交付（覆盖以下历史状态）
 
 相机按用户要求暂停，本轮未枚举/取流/重试，不更改硬件、原模型结构或既有数据。
