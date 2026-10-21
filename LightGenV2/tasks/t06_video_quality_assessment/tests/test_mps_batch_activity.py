@@ -68,3 +68,26 @@ def test_batch6_comparison_preserves_boundaries_and_scope(monkeypatch):
     costs=[(a,b) for a,b in module.batches(6) if b<=200]
     assert len(costs)==34 and costs[-1]==(198,200)
     assert module.batches(6)[-1]==(554,558)
+
+
+def test_batch8_clip_only_no_training_or_warm_cost(monkeypatch):
+    monkeypatch.setattr(module,'CONFIG',module.TASK/'configs/baselines/mps_clip_batch8_20261022.json')
+    c=module.configuration()
+    assert c['run_models']==['clip'] and c['candidate_batches']['clip']==[8]
+    assert c['explicit_warmup_forwards']==0
+    assert len([x for x in module.batches(8) if x[1]<=200])==25
+    assert module.batches(8)[-1]==(552,558)
+
+
+def test_ready_input_boundary_counts_front_return_and_all_real_gaps():
+    calls=[dict(preprocess_start=0,model_call_start=2,first_block_start=3,gpu_output=5,call_return=5.5),
+           dict(preprocess_start=6,model_call_start=8,first_block_start=9,gpu_output=12,call_return=13)]
+    intervals,model,gap=module.ready_input_intervals(calls)
+    assert intervals==[(2,5.5),(5.5,6),(8,13)]
+    assert model==8.5 and gap==.5
+    assert sum(b-a for a,b in intervals)==9
+    assert module.ready_input_intervals([])==([],0.,0.)
+    with pytest.raises(ValueError):
+        module.ready_input_intervals([dict(calls[0],call_return=4)])
+    with pytest.raises(ValueError):
+        module.ready_input_intervals([calls[0],dict(calls[1],preprocess_start=4)])

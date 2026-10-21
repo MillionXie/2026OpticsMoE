@@ -34,16 +34,43 @@ def configuration():
     for model,batches in c['candidate_batches'].items():
         assert batches == sorted(set(batches)) and batches[-1] <= 16
         if model in c.get('run_models',[]) and c.get('fixed_comparison_batch'):
-            assert batches == [c['fixed_comparison_batch']] and c['fixed_comparison_batch'] in (6,10)
+            assert batches == [c['fixed_comparison_batch']] and c['fixed_comparison_batch'] in (6,8,10)
         else:
             assert batches[0] == 1
     if 'run_models' in c:
-        assert c['run_models']==['clip','yolo'] and c['fixed_comparison_batch'] in (6,10)
+        assert (c['run_models'],c['fixed_comparison_batch']) in ((['clip','yolo'],6),(['clip','yolo'],10),(['clip'],8))
     return c
 
 
 def resident_qualifies(repeats):
     return len(repeats) == 3 and all(r['measurement']['mean_gpu_utilization_percent'] >= 50 for r in repeats)
+
+
+def ready_input_intervals(calls):
+    """Prepared-input model call through CPU score return, plus real internal gaps.
+
+    Excludes only each external prepare/H2D span. Includes model pre-block work,
+    necessary output handling, and all recorded scheduling/logging in the gaps.
+    No guessed overhead subtraction, terminal dispatch, or extra batch divisor.
+    """
+    intervals, model_s, gap_s = [], 0., 0.
+    for i, call in enumerate(calls):
+        p,a,s,e,r = (float(call[k]) for k in ('preprocess_start','model_call_start',
+                                               'first_block_start','gpu_output','call_return'))
+        if not p <= a <= s < e <= r+1e-5:
+            raise ValueError('Invalid recorded model boundaries')
+        # Native event/host precision can differ at the last few microseconds.
+        if r < e:
+            raise ValueError('CPU return precedes GPU completion')
+        if i:
+            previous = float(calls[i-1]['call_return'])
+            if p < previous:
+                raise ValueError('Overlapping batches')
+            intervals.append((previous,p))
+            gap_s += p-previous
+        intervals.append((a,r))
+        model_s += r-a
+    return intervals, model_s, gap_s
 
 
 def resident_repeat(args,compute,inputs,folder,guard,c):
@@ -272,6 +299,8 @@ def worker(args):
         frozen.write_json(args.output/'status.json', dict(status=value, unix=time.time(), **extra))
     def evaluate(rows, prepare, transfer, forward, start):
         for index, (begin, end) in enumerate(batches(args.batch, args.mode == 'pilot')):
+            diagnostics = args.selection_profile == 'batch8'
+            loop_start = time.perf_counter() if diagnostics else None
             guard.fast()
             sampler.check()
             p = time.perf_counter()
@@ -298,9 +327,17 @@ def worker(args):
                 frame_positions=positions, in_cost_subset=end <= 200))
             predictions.extend(float(x) for x in values)
             del inputs, cpu
+            bookkeeping_end = time.perf_counter() if diagnostics else None
             status('profiling' if args.mode == 'pilot' else 'evaluating', samples=end,
                    total=32 if args.mode == 'pilot' else 558)
+            status_end = time.perf_counter() if diagnostics else None
             print(f'{args.model} B{args.batch} cap{args.cap} {args.mode} {end} native_ms={wall:.3f}', flush=True)
+            if diagnostics:
+                calls[-1]['observer_diagnostics'] = dict(
+                    loop_guard_s=p-loop_start,bookkeeping_s=bookkeeping_end-returned,
+                    status_write_s=status_end-bookkeeping_end,
+                    log_write_s=time.perf_counter()-status_end,
+                    diagnostic_only_no_subtraction=True)
     try:
         guard.check()
         torch.set_num_threads(8)
@@ -359,6 +396,13 @@ def worker(args):
                     cost=dict(time16_ms=result['elapsed_s']*80,energy16_j=result['energy_j']*.08,
                         compute_s=compute,nonpreprocessing_gap_s=gap,power_integration=result),
                     no_profiling_during_cost=True, throughput_normalized_to16=True)
+                if args.selection_profile == 'batch8':
+                    revised,model_s,gap_s = ready_input_intervals(charged)
+                    integrated = original.energy.interval_energy(revised,samples,c['host_proxy_w'])
+                    payload['ready_input_cost'] = dict(
+                        time16_ms=integrated['elapsed_s']*80,energy16_j=integrated['energy_j']*.08,
+                        model_call_s=model_s,internal_gap_s=gap_s,power_integration=integrated,
+                        external_video_preparation_excluded=True,logging_not_subtracted=True)
             finish()
             finish = None
             guard.check()
@@ -437,7 +481,7 @@ def suite(args):
             engine.daemon(True)
             active = True
             for model in c.get('run_models',c['models']):
-                if args.selection_profile in ('resident','batch10','batch6'):
+                if args.selection_profile in ('resident','batch10','batch6','batch8'):
                     resident = run(model,1,100,'resident',1)
                     chosen = c.get('fixed_comparison_batch') or resident['selected_batch']
                     if chosen is None:
@@ -499,7 +543,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--phase',choices=('suite','worker'),required=True)
     p.add_argument('--mode',choices=('pilot','cost','resident'))
-    p.add_argument('--selection-profile',choices=('cold','resident','batch10','batch6'),default='cold')
+    p.add_argument('--selection-profile',choices=('cold','resident','batch10','batch6','batch8'),default='cold')
     p.add_argument('--model',choices=('clip','yolo','qwen','glm'))
     p.add_argument('--batch',type=int)
     p.add_argument('--cap',type=int,choices=(100,50))
@@ -523,6 +567,10 @@ def main():
         ROOT = ROOT/'batch6_01'
         PIPE += '_batch6_01'
         CONFIG = TASK/'configs/baselines/mps_batch6_comparison_20261021.json'
+    elif a.selection_profile == 'batch8':
+        ROOT = ROOT/'batch8_01'
+        PIPE += '_batch8_01'
+        CONFIG = TASK/'configs/baselines/mps_clip_batch8_20261022.json'
     if not 0 < a.deadline-time.time() <= configuration()['maximum_suite_s']:
         raise ValueError('Finite two-hour maximum required')
     suite(a) if a.phase == 'suite' else worker(a)
