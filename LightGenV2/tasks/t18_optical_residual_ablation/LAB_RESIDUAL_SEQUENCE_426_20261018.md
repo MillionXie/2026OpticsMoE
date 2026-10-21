@@ -2,6 +2,18 @@
 
 ## 2026-10-21 latest renewal: L4 coupled Huber; L6 TRAIN regularization
 
+L6 additional nonlinear-feature overfit contrast: original readout5140 is
+frozen, teacher is the clean SAME measured-parent TRAIN view (not the rejected
+simulation feature teacher). Only original allowed unmeasured suffix changes.
+TRAIN phase-only SAM RMS.015/max.04 is a TEMPORARY optimization probe, restored
+bitwise before Adam/eval, never a camera setting/LUT/physical mask command.
+Both TRAIN forwards share identical CCD augmentation RNG; current measured E1
+mask/upstream stay frozen. Full1600TRAIN, max3epochs/600seconds/two stale stops,
+one conservative contrast from287, no grid. Profile
+`lab_caltech20_DVP_L6_frozen_readout_phase_SAM_profile_20261021.json`.
+Native bestlastCPU fullTRAIN/TEST plus independent frozen/phase/dataSHA audit
+and backup required; no SDK/newCCD/next physical layer or inference graph change.
+
 After the readout contrasts plateau, one distinct ORIGINAL-reference TRAIN
 teacher suffix contrast is specified by `lab_caltech20_DVP_reference_suffix_profile_20261021.json`.
 Read-only TRAIN8 admission proved original reference Script->original native

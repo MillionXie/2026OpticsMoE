@@ -1,0 +1,15 @@
+{
+  "schema":"DVP_original_reference_TRAIN_suffix_v1",
+  "run_name":"TRAIN_frozen_readout_phase_SAM_20261021","teacher_mode":"current_measured_parent","freeze_readout":true,
+  "parents":{"6":{"relative":"TRAIN_protected_Huber_pass02_20261021/best.pt","SHA256":"801d5c995fda910b824425e298f16ca0c05a2f93ba50fb3a38900fc964660401","correct":287}},
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","todesk.exe","searchapp.exe","startmenuexperiencehost.exe","textinputhost.exe","phoneexperiencehost.exe","msedgewebview2.exe","msedge.exe","shellexperiencehost.exe","systemsettings.exe","lockapp.exe","weixin.exe","wechatappex.exe"],
+  "batch":4,"maximum_epochs":3,"maximum_fit_seconds":600,"no_improvement_epochs":2,
+  "lr_phase":0.00002,"lr_electronic":0.00002,"lr_alpha":0.00002,"lr_head":0.0,
+  "label_smoothing":0.03,"temperature":2.0,"teacher_KL":0.5,"feature_alignment":0.0,
+  "phase_SAM_rms":0.015,"phase_SAM_max":0.04,
+  "CCD_additive_sigma_DN":0.5,"CCD_gain_sigma":0.005,"dropout_location":"CCD_pixels","CCD_pixel_dropout_p":0.01,"feature_dropout_p":0.0,
+  "targets":{"6":322},
+  "scope":"L6 overfit now addressed in the ORIGINAL unmeasured nonlinear feature extractor, not by refitting the head: entire existing5140 head frozen, already-measured router/E1 masks/upstream frozen, only allowed uncaptured suffix/postCCD electronics. Clean current measured-parent TRAIN teacher, NO simulation feature target. Two TRAIN forwards per SAM update use identical CCD augmentation RNG, temporary unmeasured phase-only RMS.015/max.04 perturbations restored bitwise BEFORE Adam and evaluation. Synthetic training assumption, NOT calibrated camera phase or new physical setting; no exposure/geometry/LUT/graph change/CCD/SDK. One max3epoch/600s contrast/full1600TRAIN per epoch, stop2stale, original287 protected, strict native bestlastCPU TRAIN/TEST and SHA/freeze audit required; explicit TEST-informed development/noTESTgradient/VALID."
+}
