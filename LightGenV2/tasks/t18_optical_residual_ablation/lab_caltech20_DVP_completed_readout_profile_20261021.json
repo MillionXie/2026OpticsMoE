@@ -1,0 +1,16 @@
+{
+  "schema": "DVP_completed_original_readout_stableCE_v1",
+  "case": "completed_readout_stableCE_20261021",
+  "data_SHA256": "e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "dependency_wait_seconds": 14400,
+  "steps": 1200,
+  "fit_seconds": 180,
+  "evaluate_every": 10,
+  "learning_rate": 0.01,
+  "label_smoothing": 0.02,
+  "delta_penalty": 0.001,
+  "gradient_clip": 1.0,
+  "original_TRAIN_counts": [348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "targets": {"4":342,"6":350},
+  "note": "One CPU TRAIN-conditioned stable raw-logit correction of original Linear5140 only, after a verified fully captured endpoint. No CCD/SDK/GPU/inference layer changes or target guarantee. No repeated candidate scan. TEST selection is development."
+}
