@@ -55,7 +55,7 @@ def selftest():
 
 
 def run(a):
-    preview=json.loads(a.profile.read_text());post_sam=preview.get('method') in ('TRAIN_postCCD_SAM','TRAIN_postCCD_geometry_SAM')
+    preview=json.loads(a.profile.read_text());post_sam=preview.get('method') in ('TRAIN_postCCD_SAM','TRAIN_postCCD_geometry_SAM','TRAIN_postCCD_Adam_restart')
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==(preview['GPU_UUID'] if post_sam else '')
     import numpy as np,torch
     from torch.nn import functional as F
