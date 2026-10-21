@@ -87,6 +87,30 @@ def regularized_mixup(torch,F,x,y,pw,pb,cfg,observe):
         if stop or time.monotonic()-start>=cfg['fit_seconds']:break
     return ww.detach(),bb.detach(),dict(TRAIN_covariance_only=True,variance_floor=floor,TRAIN_seed=cfg['TRAIN_seed'],mixup='same_class_TRAIN_only',label_smoothing=cfg['label_smoothing'])
 
+def regularized_sam(torch,F,x,y,pw,pb,cfg,observe):
+    """FullTRAIN sharpness-aware head update; temporary probe never saved."""
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
+    mean,root,inverse,ev,floor=train_conditioned_geometry(x.numpy());xx=torch.cat(((x-mean)@root,torch.ones(len(x),1,dtype=x.dtype)),1)
+    u0=torch.cat((pw@inverse,(pb+pw@mean)[:,None]),1);u=torch.nn.Parameter(u0.clone());teacher=(F.linear(x,pw,pb)/cfg['temperature']).softmax(1).detach();keep=(teacher.argmax(1)==y).double()
+    opt=torch.optim.Adam([u],lr=cfg['learning_rate']);start=time.monotonic();restore_maxabs=0.
+    def objective():
+        z=xx@u.T;ce=F.cross_entropy(z,y,label_smoothing=cfg['label_smoothing']);kl=F.kl_div((z/cfg['temperature']).log_softmax(1),teacher,reduction='none').sum(1)*cfg['temperature']**2
+        return ce+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*(u-u0).square().sum()
+    for step in range(cfg['steps']):
+        opt.zero_grad();loss=objective();loss.backward();gradient=u.grad.detach().clone();base=u.detach().clone()
+        with torch.no_grad():u.add_(cfg['SAM_radius']*gradient/gradient.norm().clamp_min(1e-12))
+        try:opt.zero_grad();robust=objective();robust.backward()
+        finally:
+            with torch.no_grad():u.copy_(base)
+            restore_maxabs=max(restore_maxabs,float((u.detach()-base).abs().max()))
+        torch.nn.utils.clip_grad_norm_([u],cfg['gradient_clip']);opt.step()
+        with torch.no_grad():
+            offset=u-u0;offset*=min(1.,cfg['trust_radius']/max(float(offset.norm()),1e-12));u.copy_(u0+offset);ww=u[:,:-1]@root;bb=u[:,-1]-ww@mean
+        stop=observe(ww.detach(),bb.detach(),dict(phase='TRAIN_SAM',step=step,TRAIN_all1600=True,TRAIN_loss=float(loss.detach()),TRAIN_perturbed_loss=float(robust.detach()),temporary_probe_restored_exactly=True))
+        if stop or time.monotonic()-start>=cfg['fit_seconds']:break
+    assert restore_maxabs==0.
+    return ww.detach(),bb.detach(),dict(TRAIN_covariance_only=True,variance_floor=floor,SAM_radius=cfg['SAM_radius'],temporary_probe_restore_maxabs=restore_maxabs,TRAIN_forwards_per_update=2)
+
 def protected_direction(torch,u,u0,x,reference,sign,lse,q,keep,weight,cfg):
     """All arguments are TRAIN statistics/tensors; no TEST derivative."""
     score=x@u;t=cfg['temperature'];delta=cfg['huber_delta']
@@ -201,7 +225,8 @@ def selftest():
     _,gg=coupled_huber_direction(torch,vv.detach(),xx,z0,y,teach,keep,(0,1),weights,cc);coupled_error=float((gg-torch.autograd.grad(obj,vv)[0]).abs().max());assert coupled_error<1e-10
     rows=[];mixcfg=dict(temperature=2.,learning_rate=.001,TRAIN_seed=79,mixup_min=.5,label_smoothing=.05,teacher_KL=2.,anchor=.05,gradient_clip=1.,trust_radius=1.,steps=2,fit_seconds=120)
     ww,bb,mixproof=regularized_mixup(torch,F,x,y,parent_w,parent_b,mixcfg,observe);assert len(rows)==2 and ww.shape==parent_w.shape
-    print(json.dumps(dict(passed=True,TRAIN_only_scalar_fit=True,no_TEST_input_to_calibrate=True,original_Linear_shape=True,analytic_covariance=proof,protected_Huber_gradient_maxabs=error,coupled_Huber_gradient_maxabs=coupled_error,TRAIN_mixup=mixproof)),flush=True)
+    rows=[];ww,bb,samproof=regularized_sam(torch,F,x,y,parent_w,parent_b,dict(mixcfg,SAM_radius=.05),observe);assert len(rows)==2 and ww.shape==parent_w.shape
+    print(json.dumps(dict(passed=True,TRAIN_only_scalar_fit=True,no_TEST_input_to_calibrate=True,original_Linear_shape=True,analytic_covariance=proof,protected_Huber_gradient_maxabs=error,coupled_Huber_gradient_maxabs=coupled_error,TRAIN_mixup=mixproof,TRAIN_SAM=samproof)),flush=True)
 
 def run(a):
     import numpy as np,torch
@@ -222,8 +247,8 @@ def run(a):
         r=m.read(previous/'report.json');p=m.read(previous/'protocol.json')
         assert r['state']=='complete' and r['strict_original_CPU'] and r['selected_correct']>r['baseline_correct'] and not r['passed']
         assert m.read(previous.with_suffix('.return.json'))['returncode']==0
-        assert cfg.get('fit_method')==p['fit_method']=='TRAIN_conditioned_protected_Huber_rows'
-        keys=('temperature','teacher_KL','huber_delta','margin','anchor','LM_damping','Newton_step','trust_radius','positive_mass','neighbor_boost','protect_boost','max_classes','steps_each_class')
+        assert cfg.get('fit_method')==p['fit_method'] and cfg['fit_method'] in ('TRAIN_conditioned_protected_Huber_rows','TRAIN_coupled_Huber')
+        keys=('temperature','teacher_KL','huber_delta','margin','anchor','LM_damping','Newton_step','trust_radius','positive_mass','neighbor_boost','protect_boost','max_classes','steps_each_class') if cfg['fit_method']=='TRAIN_conditioned_protected_Huber_rows' else ('temperature','teacher_KL','huber_delta','margin','anchor','LM_damping','Newton_step','trust_radius','neighbor_boost','max_pairs','steps_per_pair')
         assert all(cfg[k]==p['config'][k] for k in keys)
         pass_index=p.get('pass_index',1)+1;assert 2<=pass_index<=cfg['maximum_total_passes']<=3
         chosen=dict(relative=str((previous/'best.pt').relative_to(folder.resolve())),SHA256=r['results']['best']['PT_SHA256'],correct=r['selected_correct'])
@@ -247,7 +272,7 @@ def run(a):
     bestw,bestb=pw.float().clone(),pb.float().clone();selected=0;history=[]
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=cfg,profile_SHA256=m.sha(a.profile),parent_PT_SHA256=chosen['SHA256'],parent_report_SHA256=m.sha(parent.parent/'report.json'),
         TRAIN=1600,TEST=411,VALID=0,data_SHA256=dm['sha256'],prefix_SHA256=cp['prefix_SHA256'],feature_files_SHA256=cp['feature_files_SHA256'],
-        covariance=proof,fit_method=method,pass_index=pass_index,maximum_total_passes=cfg.get('maximum_total_passes',1),TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,parameters_per_update=2 if method=='statistical_scalars' else 5140 if method=='TRAIN_sameclass_mixup' else 257,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
+        covariance=proof,fit_method=method,pass_index=pass_index,maximum_total_passes=cfg.get('maximum_total_passes',1),TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,parameters_per_update=2 if method=='statistical_scalars' else 5140 if method in ('TRAIN_sameclass_mixup','TRAIN_SAM') else 257,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
     m.save(a.out/'protocol.json',protocol);start=time.monotonic()
     def observe(ww,bb,row):
         nonlocal best,bnll,bestw,bestb,selected
@@ -259,6 +284,7 @@ def run(a):
     else:
         if method=='TRAIN_conditioned_protected_Huber_rows':lastw,lastb,row_proof=protected_rows(torch,np,tr,te,pw,pb,dict(cfg,target=cfg['targets'][str(a.depth)]),observe)
         elif method=='TRAIN_coupled_Huber':lastw,lastb,row_proof=coupled_huber_rows(torch,np,tr,te,pw,pb,dict(cfg,target=cfg['targets'][str(a.depth)]),observe)
+        elif method=='TRAIN_SAM':lastw,lastb,row_proof=regularized_sam(torch,F,x,y,pw,pb,cfg,observe)
         else:
             assert method=='TRAIN_sameclass_mixup'
             lastw,lastb,row_proof=regularized_mixup(torch,F,x,y,pw,pb,cfg,observe)

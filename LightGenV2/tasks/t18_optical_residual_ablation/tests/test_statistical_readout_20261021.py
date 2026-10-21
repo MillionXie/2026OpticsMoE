@@ -30,7 +30,7 @@ class StatisticalReadout(unittest.TestCase):
 
     def test_targeted_methods_gradient_boundaries(self):
         t=ast.parse((HERE/'lab_caltech20_dvp_statistical_readout_20261021.py').read_text())
-        for name in ('coupled_huber_direction','regularized_mixup'):
+        for name in ('coupled_huber_direction','regularized_mixup','regularized_sam'):
             f=next(n for n in t.body if isinstance(n,ast.FunctionDef) and n.name==name)
             self.assertFalse(any('test' in a.arg.lower() or 'query' in a.arg.lower() for a in f.args.args))
         for depth,name in ((4,'coupled_Huber'),(6,'mixup')):

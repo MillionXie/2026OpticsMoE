@@ -20,6 +20,15 @@ same-parent reruns. Native original-model bestlast full TRAIN1600/TEST411,
 nonhead/phase bitwise freeze and localSHA backup required before adoption.
 No automatic optical advance while L4<288 or L6<322. Fitting completion is not
 gate success. Actual start/return/status in original20261020 run, no timers.
+L4 coupled-Huber first pass actually improved284->285 with nativeCPU full411
+and TRAIN1190/1600. After native gain, same-coefficient immutable-parent
+continuation permits at most3 total passes; target or first no-count-gain pass
+stops, never rerun same parent. L6 mixup candidate gives no count gain; after
+its full native audit finishes, one distinct TRAIN-only SAM contrast is allowed,
+fixed radius.05,600 updates/120fit seconds, two TRAIN forwards per optimizer
+step, exact temporary-probe restoration. No coefficient or seed grid. Profile
+`lab_caltech20_DVP_L6_SAM_profile_20261021.json`; current accepted287 remains
+protected and full native bestlast verification still required. No new optics.
 
 ## 2026-10-21 renewed user request: L4/L6 statistical readout contrast
 
