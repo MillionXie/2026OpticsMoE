@@ -25,6 +25,10 @@ no repeats or radius/seed grid. Profile
 `lab_caltech20_DVP_protected_Huber_profile_20261021.json`; same original-head
 entry/final native audit. Initial closed-form statistical-head evaluation is not
 a gradient step (40+40 scalar gradient updates,81 evaluated checkpoints).
+If this new method actually improves native correct counts, at most two further
+same-method passes may start from its audited selected best (three total), with
+identical coefficients and parent report/PT/data SHA. Target or first pass with
+no correct-count gain stops; no same-parent repetition/seed/coefficient search.
 
 Interpretation must distinguish: L2 high-speed camera vs current DVP L4/L6;
 L4 TRAIN72.5%/TEST68.13% vs L6 TRAIN94.06%/TEST69.34%; and different simulation

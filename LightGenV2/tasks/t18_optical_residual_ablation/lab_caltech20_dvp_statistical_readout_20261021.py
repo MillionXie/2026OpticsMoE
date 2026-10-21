@@ -130,7 +130,19 @@ def run(a):
         p=Path(__file__).with_name(cfg['base_profile']);assert m.sha(p)==cfg['base_profile_SHA256'];cfg={**m.read(p),**cfg}
     assert cfg['schema']=='TRAIN_shrunk_covariance_original_readout_v1' and cfg['fit_seconds']<=120
     assert not a.out.exists();a.out.mkdir();folder=a.sequence/'TRAIN_restored_same_mask_pair_20261021'/f'L{a.depth}'
-    chosen=cfg['parents'][str(a.depth)];parent=folder/chosen['relative'];assert m.sha(parent)==chosen['SHA256']
+    chosen=cfg['parents'][str(a.depth)];pass_index=1
+    if a.parent_run:
+        previous=a.parent_run.resolve();assert previous.is_relative_to(folder.resolve())
+        r=m.read(previous/'report.json');p=m.read(previous/'protocol.json')
+        assert r['state']=='complete' and r['strict_original_CPU'] and r['selected_correct']>r['baseline_correct'] and not r['passed']
+        assert m.read(previous.with_suffix('.return.json'))['returncode']==0
+        assert cfg.get('fit_method')==p['fit_method']=='TRAIN_conditioned_protected_Huber_rows'
+        keys=('temperature','teacher_KL','huber_delta','margin','anchor','LM_damping','Newton_step','trust_radius','positive_mass','neighbor_boost','protect_boost','max_classes','steps_each_class')
+        assert all(cfg[k]==p['config'][k] for k in keys)
+        pass_index=p.get('pass_index',1)+1;assert 2<=pass_index<=cfg['maximum_total_passes']<=3
+        chosen=dict(relative=str((previous/'best.pt').relative_to(folder.resolve())),SHA256=r['results']['best']['PT_SHA256'],correct=r['selected_correct'])
+        cfg={**cfg,'parents':{**cfg['parents'],str(a.depth):chosen}}
+    parent=folder/chosen['relative'];assert m.sha(parent)==chosen['SHA256']
     rp=m.read(parent.parent/'report.json');cp=m.read(parent.parent/'protocol.json');assert rp['state']=='complete' and rp['selected_correct']==chosen['correct'] and rp['protocol_SHA256']==m.sha(parent.parent/'protocol.json')
     assert m.read(parent.parent.with_suffix('.return.json'))['returncode']==0
     data,dm=m.data_for(a.sequence);assert dm['sha256']==cfg['data_SHA256'] and m.session_hardware_digest(a.sequence)==loop.HARDWARE
@@ -149,7 +161,7 @@ def run(a):
     bestw,bestb=pw.float().clone(),pb.float().clone();selected=0;history=[]
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=cfg,profile_SHA256=m.sha(a.profile),parent_PT_SHA256=chosen['SHA256'],parent_report_SHA256=m.sha(parent.parent/'report.json'),
         TRAIN=1600,TEST=411,VALID=0,data_SHA256=dm['sha256'],prefix_SHA256=cp['prefix_SHA256'],feature_files_SHA256=cp['feature_files_SHA256'],
-        covariance=proof,fit_method=method,TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,parameters_per_update=2 if method=='statistical_scalars' else 257,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
+        covariance=proof,fit_method=method,pass_index=pass_index,maximum_total_passes=cfg.get('maximum_total_passes',1),TRAIN_only_covariance_and_prior_and_derivatives=True,TEST_informed_development=True,TEST_gradient=False,all_nonhead_frozen=True,inference_parameters=5140,parameters_per_update=2 if method=='statistical_scalars' else 257,new_inference_layers=0,SDK=False,GPU=False,new_CCD=0)
     m.save(a.out/'protocol.json',protocol);start=time.monotonic()
     def observe(ww,bb,row):
         nonlocal best,bnll,bestw,bestb,selected
@@ -184,7 +196,7 @@ def run(a):
         results=results,strict_original_CPU=True,full_physical=False,target=cfg['targets'][str(a.depth)],passed=best>=cfg['targets'][str(a.depth)],protocol_SHA256=m.sha(a.out/'protocol.json'),next_layer_started=False))
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--selftest',action='store_true');p.add_argument('--sequence',type=Path);p.add_argument('--depth',type=int,choices=(4,6));p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--parent-run',type=Path);a=p.parse_args()
     try:selftest() if a.selftest else run(a)
     except BaseException as e:
         if a.out and a.out.exists():(a.out/'failure.json').write_text(json.dumps(dict(error=repr(e),traceback=traceback.format_exc()),indent=2))
