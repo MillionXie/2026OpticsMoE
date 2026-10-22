@@ -2,6 +2,11 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_TRAIN_spatial_column_proximal_delta(self):
+        s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='spatial_group_delta')
+        self.assertEqual([a.arg for a in f.args.args],['torch','F','x','y','pw','pb','counts','cfg','observe'])
+        self.assertIn('TRAIN-only initial group gradient',s);self.assertIn('original_Linear_fold=True',s)
     def test_RMS_TRAIN_adjoint_audit_no_inference_change(self):
         s=(HERE/'lab_caltech20_dvp_terminal_gradient_20261022.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_gradient_audit')

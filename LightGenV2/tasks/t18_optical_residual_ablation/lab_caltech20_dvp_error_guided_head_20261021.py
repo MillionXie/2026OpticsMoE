@@ -7,6 +7,53 @@ the differentiable fitting function accepts no TEST features or TEST labels.
 import time
 
 
+def spatial_group_delta(torch,F,x,y,pw,pb,counts,cfg,observe):
+    """TRAIN-selected sparse spatial COLUMN updates, folded into original Linear."""
+    x=x.double();w=pw.double();b=pb.double();w=w-w.mean(0,keepdim=True);b=b-b.mean()
+    xx=torch.cat((x,torch.ones(len(x),1,dtype=x.dtype)),1);base=F.linear(x,w,b).detach()
+    prior=(counts/counts.mean()).sqrt();weights=prior[y];weights=weights/weights.sum()
+    temperature=2.;teacher=(base/temperature).softmax(1);keep=(base.argmax(1)==y).double();kept=keep.sum().clamp_min(1)
+    def smooth(u):
+        logits=base+xx@u.T
+        ce=F.cross_entropy(logits,y,reduction='none',label_smoothing=cfg['label_smoothing'])
+        kl=F.kl_div((logits/temperature).log_softmax(1),teacher,reduction='none').sum(1)*temperature**2
+        return (weights*ce).sum()+cfg['teacher_KL']*(kl*keep).sum()/kept+cfg['anchor']*u.square().sum()
+    zero=torch.zeros(20,xx.shape[1],dtype=x.dtype,requires_grad=True);grad=torch.autograd.grad(smooth(zero),zero)[0]
+    penalty=max(1e-9,cfg['penalty_fraction']*float(grad[:,:-1].norm(dim=0).max()))
+    spectral=float(torch.linalg.matrix_norm(xx,ord=2))**2
+    lipschitz=.5*(float(weights.max())+cfg['teacher_KL']/float(kept))*spectral+2*cfg['anchor'];step=1/max(lipschitz,1e-9)
+    u=zero.detach();z=u.clone();momentum=1.;started=time.monotonic();restarts=0
+    def objective(v):return smooth(v)+penalty*v[:,:-1].norm(dim=0).sum()
+    previous=float(objective(u));history=[];ww,bb=pw,pb
+    for iteration in range(1,cfg['steps']+1):
+        def propose(point):
+            point=point.detach().requires_grad_(True);g=torch.autograd.grad(smooth(point),point)[0]
+            assert torch.isfinite(g).all();next_u=(point-step*g).detach()
+            next_u[:,:-1]*=(1-step*penalty/next_u[:,:-1].norm(dim=0,keepdim=True).clamp_min(1e-12)).clamp_min(0)
+            next_u-=next_u.mean(0,keepdim=True);return next_u
+        v=propose(z);value=float(objective(v))
+        if value>previous+1e-10:z=u;momentum=1.;v=propose(z);value=float(objective(v));restarts+=1
+        assert value<=previous+1e-7 and torch.isfinite(v).all()
+        next_momentum=(1+(1+4*momentum**2)**.5)/2;z=v+(momentum-1)/next_momentum*(v-u);u=v;momentum=next_momentum;previous=value
+        if iteration==1 or iteration%cfg['evaluate_every']==0 or iteration==cfg['steps']:
+            ww=w+u[:,:-1];bb=b+u[:,-1]
+            row=dict(phase='TRAIN_spatial_group_delta',step=iteration,TRAIN_samples=len(x),TRAIN_objective=value,active_spatial_columns=int((u[:,:-1].norm(dim=0)>1e-10).sum()),TRAIN_correct=int(((base+xx@u.T).argmax(1)==y).sum()))
+            history.append(row);stop=observe(ww,bb,row)
+            if stop or time.monotonic()-started>=cfg['fit_seconds']:break
+    return ww,bb,dict(TRAIN_only=True,TRAIN_samples=len(x),actual_steps=iteration,penalty=penalty,penalty_rule='fixed fraction of maximum TRAIN-only initial group gradient',lipschitz_upper_bound=lipschitz,step_size=step,monotone_restarts=restarts,active_spatial_columns=history[-1]['active_spatial_columns'],history=history,fit_seconds=time.monotonic()-started,original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0)
+
+
+def spatial_group_selftest():
+    import torch
+    from torch.nn import functional as F
+    torch.set_num_threads(2);torch.manual_seed(73);x=torch.randn(80,16,dtype=torch.float64);y=torch.arange(80)%20;w=torch.randn(20,16)*.01;b=torch.zeros(20);rows=[]
+    ww,bb,proof=spatial_group_delta(torch,F,x,y,w,b,torch.ones(20,dtype=x.dtype),dict(penalty_fraction=.1,label_smoothing=.02,teacher_KL=.1,anchor=.01,steps=4,evaluate_every=1,fit_seconds=30),lambda a,b,r:rows.append(r))
+    assert len(rows)==4 and ww.shape==w.shape and torch.isfinite(ww).all()
+    assert all(rows[j]['TRAIN_objective']<=rows[j-1]['TRAIN_objective']+1e-7 for j in range(1,4))
+    assert not proof['TEST_gradient'] and proof['original_Linear_fold'] and proof['new_inference_layers']==0
+    print(dict(passed=True,TRAIN_spatial_group_only=True,original_Linear_shape=list(ww.shape),new_layer=False))
+
+
 def error_diagnosis(np,tr,te,train_probability,test_probability):
     rows={};classes=[]
     for k in range(20):classes.append(str(tr['ids'][np.flatnonzero(tr['y']==k)[0]]).replace('\\','/').split('/')[-2])
