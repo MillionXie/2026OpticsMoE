@@ -1,5 +1,29 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-22不重采末端优化：完整复核仍保留285/411
+
+不能解冻改变G2输入的pre-G2电子后继续复用旧G2 CCD；本轮只调整合法原末端
+参数。全TRAIN梯度累积动量24pass实际完成，last TRAIN1087/1600、TEST260/411；
+第二项原Linear空间列组稀疏增量600步，TRAIN选34/256列，last TRAIN1087、TEST265。
+候选TEST最高分别282、284，均未超过285，best为E0父，接受PT c172de22不变。
+两项原模型CPU best/last、全部冻结/相位/数据/原生概率及逐样本审计通过、rc0退出。
+原完整实拍285/411=69.34307%，固定仿真346/411=84.18491%，低14.84185pp，
+340目标未达。新增TRAIN拟合未迁移到TEST，不用更多轮数或改旧CCD口径冒充改善。
+
+原run均在`advance_after_user_waiver_20261021_USB_resume01/`，分别
+`postCCD_full_TRAIN_SGD_20261022/L4`、`terminal_spatial_group_20261022/L4`。
+本地18/14文件SHA备份manifest为89b63e2825c3f411cd73b5e04268e0af7bf604df08823c977c4f0e2c782f308b、
+3c2eb510597c20565c3c856360bafd3d28e34ece1111a41778b54f2a906d3f24。
+完整交接SHA cd410dfa9f8931699dbec7f540bd86bb34a35ae7b7bb93395edce82f21e931a7，
+见任务run下`L4_no_recapture_electronics_handoff_20261022.json`。TRAIN-only RMS
+前向恒等、两梯度方向余弦.999997688，未支持其为主要原因，未启动替代梯度训练。
+全1600TRAIN/411TEST、无VALID，TEST重复诊断/选模仅开发指标，没有TEST梯度。
+
+六层G2新增2011帧完整审计SHA351b98e21f6b580b2531eda6edd12b1b69c6002bc22a32c2daa8d60cfc046f38；
+切E3 DVP Start -1001，零新帧且正常枚举0/USB BootLoader。用户明确暂不能操作
+相机，故暂停，所有有效帧保留，E3/G3未采。无自动重启或定时任务，两个L4训练
+进程已退出，G2数据备份传输仍可继续，不将未完成备份或六层混合指标称完整交付。
+
 ## 2026-10-22用户拒绝新增层后的三项原电子优化：全部完成，仍285/411
 
 用户明确拒绝新增非线性读出，要求继续现有电子模块。本批只训练原最后9conv、
