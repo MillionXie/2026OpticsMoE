@@ -114,9 +114,11 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
         diagnosis=m.read(p);assert diagnosis['TRAIN_only'] and not diagnosis['TEST_used'] and diagnosis['parent_SHA256']==cfg['parent_SHA256'] and diagnosis['samples']==100
         kernel=model.electronic[3].local.weight
         assert torch.equal(kernel.detach().cpu().flatten(),torch.tensor(diagnosis['final_local_kernel'],dtype=kernel.dtype))
-        scale=min(1.,1/max(diagnosis['abs_conv_p50_p90_p99'][1],1e-12))
-        with torch.no_grad():kernel.mul_(scale)
-        m.save(a.out/'TRAIN_kernel_restart.json',dict(diagnosis_SHA256=m.sha(p),TRAIN_samples=100,original_kernel_norm=diagnosis['kernel_norm'],TRAIN_abs_response_p90=diagnosis['abs_conv_p50_p90_p99'][1],scale=scale,scaled_kernel_norm=float(kernel.norm()),TRAIN_saturated_fraction_before=diagnosis['tanh_saturated_fraction'],not_proven_root_cause=True,new_layer=False,TEST_used=False))
+        zero_init=fit.get('TRAIN_kernel_zero_init',False);scale=0. if zero_init else min(1.,1/max(diagnosis['abs_conv_p50_p90_p99'][1],1e-12))
+        with torch.no_grad():
+            if zero_init:kernel.zero_();assert int(torch.count_nonzero(kernel))==0
+            else:kernel.mul_(scale)
+        m.save(a.out/'TRAIN_kernel_restart.json',dict(diagnosis_SHA256=m.sha(p),TRAIN_samples=100,original_kernel_norm=diagnosis['kernel_norm'],TRAIN_abs_response_p90=diagnosis['abs_conv_p50_p90_p99'][1],scale=scale,canonical_zero_initialization=zero_init,scaled_kernel_norm=float(kernel.norm()),TRAIN_saturated_fraction_before=diagnosis['tanh_saturated_fraction'],not_proven_root_cause=True,new_layer=False,TEST_used=False))
     for name,p in model.named_parameters():p.requires_grad_(name in train_keys)
     params=[p for p in model.parameters() if p.requires_grad];expected_trainable=10 if freeze_head or alternating else 5150
     assert expected_trainable==10 or expected_trainable==5150

@@ -10,6 +10,9 @@ class OfflineSuffix(unittest.TestCase):
         s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='mixed_TRAIN_loss')
         self.assertNotIn('test',[a.arg for a in f.args.args]);self.assertIn('assert set(mean)==allowed',s);self.assertIn("assert restored",s)
+        z=json.loads((HERE/'lab_caltech20_L4_zero9_featuremix_SWA_profile_20261022.json').read_text())
+        self.assertTrue(z['tail']['TRAIN_kernel_zero_init']);self.assertTrue(z['tail']['TRAIN_kernel_restart']);self.assertEqual(z['parent_SHA256'],c['parent_SHA256'])
+        self.assertEqual({k:v for k,v in z['tail'].items() if k not in ('TRAIN_kernel_zero_init','TRAIN_kernel_restart')},{k:v for k,v in c['tail'].items() if k!='TRAIN_kernel_restart'})
     def test_original_electronic_alternating_blocks(self):
         s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='conditioned_readout_block')
