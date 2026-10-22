@@ -147,6 +147,48 @@ def TRAIN_loss_balance(sequence,fit,out,samples=40):
     m.save(out,result);return result
 
 
+def TRAIN_nominal_geometry(sequence,out):
+    """Compare local expected/observed geometry, SAME200 actual-prefix inputs.
+
+    An input/output NN drop alone is not evidence of a defective optical layer:
+    intended optical transforms also redistribute pixels. This matched local
+    comparison supplies the missing expected-response control, without treating
+    synthetic responses followed by old downstream CCD as physical inference.
+    """
+    import lab_caltech20_dvp_layerwise_20261019 as m
+    assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not out.exists();torch.set_num_threads(2)
+    proof=m.read(out.parent/'protocol.json');parent_cfg=m.read(Path(__file__).with_name(proof['profile']['parent_profile']))
+    parent=Path(parent_cfg['parent_PT']);assert m.sha(parent)==proof['parent_PT_SHA256'];data,dm=m.data_for(sequence);assert dm['sha256']==proof['data_SHA256']
+    reference=sequence/'L4_response_20261020/source_reference.ts';base,_=m.model_for(parent,m.sha(parent),4,reference);state=m.state_cpu(base)
+    model=ResponseObserver(4).eval();model.load_state_dict(state);model.propagator.transfer.copy_(base.propagator.transfer);model.requires_grad_(False)
+    fields={}
+    for key,v in proof['audits'].items():
+        folder=Path(v['path']).parent;p=folder/'train/ccd.npy';assert m.sha(p)==proof['prefix_SHA256'][key+'/train'];fields[key]=np.load(p,mmap_mode='r')
+    observed={};nominal={};parts={};calls=[]
+    def observer(key,amplitude,weights,field,canonical,phase,actual):
+        n=model.propagator(field).abs().square()[:,20:498,20:498]
+        target='expert' if key=='router' else model.stages[int(key)+1] if int(key)<3 else 'global'
+        for kind,bank in (('rawCCD',(n,actual)),('OEO',(model.nonlinear(n,target),model.nonlinear(actual,target)))):
+            label=NAMES[key]+'_'+kind;nominal.setdefault(label,[]).append(features(bank[0]).numpy());observed.setdefault(label,[]).append(features(bank[1]).numpy())
+        calls.append(key)
+    model.observe=observer
+    with np.load(parent.parent/'best_train_predictions.npz') as z:expected=z['probabilities'][:200].copy();assert np.array_equal(z['ids'][:200],data['train'][2][:200])
+    with torch.inference_mode():
+        for begin in range(0,200,8):
+            model.measured={key:torch.from_numpy(np.asarray(v[begin:begin+8]).copy()) for key,v in fields.items()}
+            p=model(m.encode_images(data['train'][0][begin:begin+8]))[0].numpy()
+            assert np.max(np.abs(p-expected[begin:begin+8]))<=3e-6 and np.array_equal(p.argmax(1),expected[begin:begin+8].argmax(1))
+    assert calls==list(fields)*25 and all(torch.equal(v,m.state_cpu(model)[k]) for k,v in state.items())
+    labels=data['train'][1][:200];ids=data['train'][2][:200];assert np.bincount(labels,minlength=20).tolist()==[10]*20
+    results={}
+    for key in nominal:
+        n=np.concatenate(nominal[key]);o=np.concatenate(observed[key]);parts['nominal_'+key]=n;parts['observed_'+key]=o
+        results[key]=dict(nominal=relation_summary(n,n,labels,ids),observed=relation_summary(o,o,labels,ids),interpretation='Same location and identities. NN differences are descriptive, not deployed accuracy or a causal hardware fault proof.')
+    dest=out.with_suffix('.npz');assert not dest.exists();np.savez_compressed(dest,labels=labels,ids=ids,**parts)
+    result=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),TRAIN_only=True,TRAIN=200,TRAIN_each_class=10,TEST_used=False,parent_SHA256=m.sha(parent),data_SHA256=dm['sha256'],prefix_SHA256=proof['prefix_SHA256'],all_native_predictions_match=True,all_parameters_frozen=True,local_nominal_only=True,features_SHA256=m.sha(dest),results=results,SDK_used=False,GPU_used=False,not_a_deployment_or_causal_claim=True)
+    m.save(out,result);return result
+
+
 def run(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     import lab_caltech20_dvp_layerwise_20261019 as m
@@ -245,8 +287,9 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--fit',type=Path);p.add_argument('--balance',action='store_true');p.add_argument('--balance-samples',type=int,default=40);p.add_argument('--selftest',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--fit',type=Path);p.add_argument('--balance',action='store_true');p.add_argument('--balance-samples',type=int,default=40);p.add_argument('--nominal-geometry',action='store_true');p.add_argument('--selftest',action='store_true');a=p.parse_args()
     if a.selftest:selftest();raise SystemExit(0)
+    if a.nominal_geometry:print(json.dumps(TRAIN_nominal_geometry(a.sequence,a.out)));raise SystemExit(0)
     if a.fit:print(json.dumps(TRAIN_loss_balance(a.sequence,a.fit,a.out,a.balance_samples) if a.balance else followup(a.sequence,a.fit,a.out)));raise SystemExit(0)
     try:run(a)
     except BaseException as e:

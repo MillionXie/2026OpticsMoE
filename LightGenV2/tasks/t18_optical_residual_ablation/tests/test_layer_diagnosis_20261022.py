@@ -42,6 +42,9 @@ class StageDiagnosis(unittest.TestCase):
         balance=ast.get_source_segment(SOURCE.read_text(),next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_loss_balance'))
         self.assertIn('torch.autograd.grad',balance);self.assertNotIn('test_features',balance);self.assertNotIn('.step(',balance)
         self.assertIn('parameter_updates=0',balance)
+        nominal=ast.get_source_segment(SOURCE.read_text(),next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_nominal_geometry'))
+        self.assertIn('best_train_predictions.npz',nominal);self.assertNotIn('best_test_predictions.npz',nominal)
+        self.assertIn("model.measured={key:torch.from_numpy",nominal);self.assertIn('local_nominal_only=True',nominal)
 
 
 if __name__=='__main__':unittest.main()
