@@ -2,6 +2,13 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_resume_E3_preserves_complete_G2_and_no_interstage_fit(self):
+        cfg=json.loads((HERE/'lab_caltech20_L6_resume_E3_profile_20261022.json').read_text())
+        self.assertTrue(cfg['resume_after_complete_G2']);self.assertFalse(cfg['interstage_fit']);self.assertEqual(cfg['parent_correct'],219)
+        s=(HERE/'lab_caltech20_dvp_L6_resume_G2_20261021.py').read_text();ast.parse(s)
+        self.assertIn("stages=('4','5') if resumed else ('3','4','5')",s)
+        self.assertIn("assert protocol['prefix_SHA256']==row['identities']",s)
+        self.assertIn("assert r['frame_metadata']['frame_id']>last_id",s)
     def test_feature_separability_has_no_TEST_or_fitting(self):
         source=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(source)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_feature_separability');body=ast.get_source_segment(source,f)
@@ -187,5 +194,5 @@ class OfflineSuffix(unittest.TestCase):
     def test_explicit_human_camera_recovery(self):
         c=json.loads((HERE/'lab_caltech20_L6_resume_G2_profile_20261021.json').read_text());self.assertTrue(c['explicit_human_camera_restored']);self.assertEqual(c['dropout_location'],'CCD_pixels')
         s=(HERE/'lab_caltech20_dvp_L6_resume_G2_20261021.py').read_text();ast.parse(s)
-        self.assertIn("for stage in ('3','4','5')",s);self.assertIn('advance.acquire(',s);self.assertIn('F.cross_entropy(held[',s);self.assertNotIn('driver_reset',s)
+        self.assertIn("else ('3','4','5')",s);self.assertIn('for stage in stages:',s);self.assertIn('advance.acquire(',s);self.assertIn('F.cross_entropy(held[',s);self.assertNotIn('driver_reset',s)
 if __name__=='__main__':unittest.main()

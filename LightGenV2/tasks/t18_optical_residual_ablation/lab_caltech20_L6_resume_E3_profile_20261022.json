@@ -1,0 +1,18 @@
+{
+  "schema":"DVP_L6_capture_remaining_then_terminal_v1","explicit_human_camera_restored":true,"user_stage_carry":true,
+  "resume_after_complete_G2":true,"preserved_G2_run":"L6_capture_remaining_nointerfit_20261022",
+  "preserved_G2_report_SHA256":"27089738f4bf05570cd4354e2b4822f14f293d55c2d1969cbcf5de0a2934fdb8",
+  "preserved_G2_audit_SHA256":"351b98e21f6b580b2531eda6edd12b1b69c6002bc22a32c2daa8d60cfc046f38",
+  "interstage_fit":false,"TEST_gradient":false,"VALID":0,"parent_correct":219,
+  "prefix_profile":"lab_caltech20_L6_E2_stable_suffix_profile_20261021.json",
+  "parent_relative":"advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/E2_extended_readout_20261022/best.pt",
+  "parent_SHA256":"ad715260037a136f0b676d21b582ac7157850c3800a68c561885949a123db7e0",
+  "capture_engine_SHA256":"972ef8d8360e27af1f0934a7edad93f138abe0049b76bc6d4a49060219426a17",
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","startmenuexperiencehost.exe","todesk.exe","searchapp.exe","textinputhost.exe","msedgewebview2.exe","shellexperiencehost.exe","systemsettings.exe","msedge.exe"],
+  "intermediate_epochs":0,"intermediate_fit_seconds":0,"final_epochs":60,"final_fit_seconds":1200,
+  "intermediate_target":322,"final_target":350,"phase_lr":0.00005,"electronic_lr":0.0001,"alpha_lr":0.0001,"head_lr":0.0005,"weight_decay":0.001,"label_smoothing":0.03,
+  "CCD_gain_sigma":0.005,"CCD_additive_sigma_DN":0.1,"dropout_location":"CCD_pixels","feature_dropout_p":0.0,"CCD_pixel_dropout_p":0.002,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "scope":"20261022 user explicitly asks to continue L6 capture after camera pause. Read-only inventory normalcamera1 and no SDK owner. Preserve already complete router/E1/G1/E2/G2; verify exact acceptedad715260PT, G2 full2011 receipts/IDs/phase/array/report/audit and zero-frame failedE3 boundary. NewE3 thenG3, each TRAIN1600 followed by TEST411, total4022, no interstage parameter updates. After all measured, bounded original final electronic/head fit with strictCPU bestlast. No changed exposure60006us/gain1/wait240/discard6/flip_v/20261020coords/sessionLUT/model/newlayer/VALID/TESTgradient or unbounded hardware retry. No scheduler; failed attempts and all validdata preserved."
+}

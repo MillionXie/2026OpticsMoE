@@ -7,6 +7,35 @@ import argparse,json,os,time,traceback
 from pathlib import Path
 
 
+def reuse_complete_g2(m,np,a,data,dm,cfg,row):
+    """Reuse audited immutable G2 only; never reopen its completed acquisition."""
+    old=a.sequence/cfg['preserved_G2_run'];cap=old/'L6/stage_3/capture'
+    report=m.read(cap/'report.json');audit=m.read(cap/'independent_audit.json');protocol=m.read(cap/'protocol.json')
+    assert m.sha(cap/'report.json')==cfg['preserved_G2_report_SHA256']==audit['report_SHA256']
+    assert m.sha(cap/'independent_audit.json')==cfg['preserved_G2_audit_SHA256'] and audit['passed']
+    assert audit['protocol_SHA256']==m.sha(cap/'protocol.json')
+    assert report['state']=='complete' and report['physical_ccd']==2011 and report['SDK_released']
+    assert report['PT_SHA256']==protocol['PT_SHA256']==cfg['parent_SHA256']
+    assert report['data_SHA256']==dm['sha256'] and report['hardware_SHA256']==m.session_hardware_digest(a.sequence)
+    assert protocol['prefix_SHA256']==row['identities'] and protocol['stage']=='3'
+    assert m.sha(cap/'phase.bmp')==report['phase_SHA256']
+    assert m.read(old.with_suffix('.return.json'))['returncode']==1
+    failed=old/'L6/stage_4/capture';assert m.read(failed/'failure.json')['completed_receipts']==0
+    assert not list(failed.glob('train/[0-9]*.json')) and not list(failed.glob('test/[0-9]*.json'))
+    row['fields']['3']={};last_id=-1
+    for role,n in (('train',1600),('test',411)):
+        array=cap/role/'ccd.npy';digest=m.sha(array);assert digest==report['arrays'][role]['SHA256']
+        values=np.load(array,mmap_mode='r');assert values.shape==(n,478,478) and values.dtype==np.uint8
+        receipts=sorted((cap/role).glob('[0-9]*.json'));assert len(receipts)==n
+        for index,p in enumerate(receipts):
+            r=m.read(p);assert p.stem==f'{index:06d}' and r['index']==index and r['role']==role and r['sample_id']==str(data[role][2][index])
+            assert r['PT_SHA256']==cfg['parent_SHA256'] and r['data_SHA256']==dm['sha256'] and r['phase_SHA256']==report['phase_SHA256'] and r['hardware_SHA256']==report['hardware_SHA256']
+            assert r['frame_metadata']['frame_id']>last_id;last_id=r['frame_metadata']['frame_id']
+        row['fields']['3'][role]=values;row['identities']['3/'+role]=digest
+    row['paths']['3']=cap
+    return dict(preserved_complete_stage='G2',frames=2011,TRAIN=1600,TEST=411,PT_SHA256=cfg['parent_SHA256'],report_SHA256=m.sha(cap/'report.json'),audit_SHA256=m.sha(cap/'independent_audit.json'),source=str(cap),new_physical_frames=0)
+
+
 def suffix(m,loop,data,dm,fields,model,cfg,stage,out,reference):
     import numpy as np,torch
     from torch.nn import functional as F
@@ -86,9 +115,14 @@ def run(a):
     case=a.sequence/base['source_run'];session=a.sequence/'L6_response_20261020'
     paths={'router':session/'capture/router','0':a.sequence/'TRAIN_restored_same_mask_pair_20261021/L6/capture','1':case/'L6/stage_1/capture','2':case/'L6/stage_2/capture'}
     row=dict(model=model,fields=fields,identities=identities,paths=paths,parent=parent,reference=reference);history=[]
+    resumed=cfg.get('resume_after_complete_G2',False)
+    assert not resumed or (capture_only and cfg['interstage_fit'] is False)
+    preserved=reuse_complete_g2(m,np,a,data,dm,cfg,row) if resumed else None
+    if preserved:m.save(a.out/'preserved_G2_receipt.json',preserved)
+    stages=('4','5') if resumed else ('3','4','5')
     m.save(a.out/'protocol.json',dict(config=cfg,source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),parent_PT_SHA256=m.sha(parent),prefix_SHA256=identities,baseline_mixed_correct=expected,interstage_fit=not capture_only,
-        stage_order=['3','4','5'],planned_frames=6033,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,SDK_serial=True,recurring=False,old_G1_E2_preserved=True,old_failed_G2_frames=0,explicit_human_recovery=True))
-    for stage in ('3','4','5'):
+        stage_order=list(stages),planned_frames=2011*len(stages),preserved_G2=preserved,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,SDK_serial=True,recurring=False,old_G1_E2_preserved=True,old_failed_G2_frames=0,explicit_human_recovery=True))
+    for stage in stages:
         folder=a.out/'L6'/('stage_'+stage);folder.mkdir(parents=True)
         m.save(a.out/'progress.json',dict(state='capturing',stage=stage,stage_name={'3':'G2','4':'E3','5':'G3'}[stage],completed=history))
         row['fields']=advance.acquire(m,loop,a,data,dm,hw,row,6,stage,folder/'capture');row['paths'][stage]=folder/'capture'
