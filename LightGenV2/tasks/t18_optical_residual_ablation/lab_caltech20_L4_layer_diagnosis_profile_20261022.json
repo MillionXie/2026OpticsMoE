@@ -1,0 +1,8 @@
+{
+  "schema":"L4_readonly_stage_response_v1",
+  "parent_profile":"lab_caltech20_L4_margin_replay_profile_20261022.json",
+  "TRAIN_nominal_samples":200,
+  "probe_penalty_fraction":0.1,
+  "maximum_seconds":1200,
+  "scope":"Latest user asks to locate layer-specific feature degradation with existing data before targeted L4 optimization. Frozen accepted285 original model and all five measured CCD stages. Check exact phase and every2011canonical input per layer; full1600TRAIN/411TEST stage feature extraction with native all-role probability parity. Nominal local response uses same actual input/mask only first200TRAIN,10/class, no TEST nominal targets. Fixed TRAIN-only diagnostic ridge and exact leave-source-group-out statistics, no inference module replacement. TEST is descriptive development evaluation only, never fitted geometry/targets. CPU2/noGPU/noSDK/no new CCD/no hardware or model changes, no recurring work or automated candidate scanning. Save all diagnostic evidence; do not infer causal hardware fault or classifier upper bound from separability/correlation alone."
+}
