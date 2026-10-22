@@ -1,5 +1,30 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-23补充：两条有限末端轨迹未提高四层，修正anchor坐标后再验证
+
+原c172de22/285完整实拍开发结果不变，全部旧输入/相位/CCD保护，不新增模型层。
+TRAIN组风险轨迹24pass/604.219fit秒，last TRAIN1106/1600、TEST251/411，候选
+峰值282；原5150联合L-BFGS首轮24pass/579.187fit秒，last TRAIN1073、TEST247，
+候选峰值276。两者best均E0父285，并非采用新训练参数或新性能。
+完整原生CPU bestlast/冻结/概率/身份审计通过、rc0退出。两条本地SHA备份分别
+00dfc64d2d0154a25ec4d9205dc957af04588996e411bc09d96401cfbeb6375d、
+1b7b176ab580891b15ac6bbd7dfa9feaba5c84f38d6f690b1e5ce8e90c6948b1。
+交接分别`L4_group_DRO_handoff_20261022.json` SHA
+83f627712db6d80b009b4569a034d1467d0d17130e56761ac96ee8f6c8d0d497、
+`L4_joint_LBFGS_handoff_20261023.json` SHA
+57bde648f81beee5cdf80d8dadb76eec73198eca64b07fd5fb805be06ac0c205。
+
+首轮L-BFGS初始参数惩罚1138.2582源于解析去公共行与anchor不一致，不是分类CE。
+后续来源2d51baced单独新run `postCCD_joint_LBFGS_gauge_20261023/L4`，修正anchor
+到同概率起点且初始惩罚严格0，其余有限预算/数据/原5150边界不变，已真实进入训练。
+修正无关坐标项不能当成准确率收益，仍需完成全量复核；所有TEST选择是开发指标。
+首轮transform将方法误标SGD，实际配置及LBFGS24/SGD0计数可追溯，新源码已修正。
+
+TUCam替换相机的空间和同相位40TRAIN曝光准入及六层新E3/G3运行事实统一见任务
+README顶部。新入口首张失败帧的stale replay缓存已查明/修正、保留不复用；旧DVP
+G2有效2011帧受保护，新TUCam首24帧独立原CPU输入/相位/原生裁剪审计已通过。
+不能将不同相机拼进同一层CCD或把旧混合指标当作最终完整实拍。
+
 ## 2026-10-22最新结果：针对冻结特征的关系保持未提高完整实拍
 
 全阶段定位后，针对G2电子支路较融合特征保留更多TRAIN类关系的现象，实做两轮

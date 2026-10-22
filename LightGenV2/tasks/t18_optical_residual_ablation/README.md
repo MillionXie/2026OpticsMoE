@@ -1,3 +1,47 @@
+## 2026-10-23当前实际运行：TUCam空间/同相位TRAIN曝光通过，续六层E3/G3
+
+本轮仅本任务相机准入/六层续采及四层原5150末端优化；没有新分支/工程副本、
+自动监督、新推理层、TEST梯度或VALID。原20261022坐标/所有旧证据保留。
+用户已明确批准重测相机四角并查看图像，校准亮斑拟合后另五个位置独立核验：
+最大误差.8104601162逻辑pixel，identity，重复点误差.1042pixel。
+新坐标TL(400.260742,407.757477)、TR(1631.986694,418.440613)、
+BR(1617.700439,1642.418335)、BL(385.974457,1631.735229)，文件SHA
+82978f02c6330d6df290d9ef9e557ce04fadb5542f9f356557628e13bf9bc70e。
+真实原生图对比见新run内`calibration/geometry_spots_20261023/aperture_comparison.png`；
+原827x822框截场，新四角不改变原SLM1016有效区或模型logical478。
+
+初次TUCam E3仅取得1张TRAIN暗帧(p99=6)即停止。随后独立输入导出查出新入口在
+parent TEST复核后未清空`model.measured`，会绕过前缀callback；该1帧不合格、保留
+但不复用。修正capture/audit前清空，既有旧DVP完整G2不受此新入口尝试影响。
+第一条曝光准备在SHA门禁即退出、未开SDK；修正后用新鲜模型和确切TRAIN前缀
+导出2/类共40份。原phase/canonical/BMP依赖与新输入身份分别记录，不能假称和
+上述错误1帧同输入。3个固定TRAIN曝光锚点的2/5/10/20ms阶梯，20ms读回19998us，
+原生背景校正均值/曝光比相对2ms为1.0811/1.0749/1.0582，仅作曝光线性核验，
+网络不减背景。全部40TRAIN在20ms下min p99=58，最大饱和.0000131300。
+gain0、wait240/discard6、identity、新四角、原器件LUT/field inverse不变。
+`calibration/E3_TRAIN_exposure_prefixclear_20261023/report.json` rc0且SDK释放；
+新hardware manifest SHA dae24f0d9d0d6cab21cd5451c91cbe587e79a0d13a448b74adfe9d29e341b128。
+ucDepth原值2与uiIndex保留字段均不解释成ADC位数/硬件递增序号。
+
+已真实启动`caltech20_residual_TUCam_20261022/L6_remaining_TRAINexposure_20261023`，
+来源2d51bacede0c24ab0fb94d917788aa976aa1f855：旧完整G2仅复用，E3→G3各
+TRAIN1600后TEST411，共4022新帧，不中间适配、采完原5140电子头CPU微调。
+首24实际TRAIN已另用新鲜CPU模型全量重放canonical/BMP/phase/PT/ID、原生图到
+裁剪图和SHA核验通过；首次增量检查212帧、无TEST，非PID健康声明。全部层完成
+后还须2011/层全身份审计和最终完整实拍精度，不能把旧219混合分当完整结果。
+新阶段与旧DVP阶段分硬件身份声明，不同相机不混入同一层CCD数组。
+
+四层原c172de22/285(69.34307%)仍保护。联合L-BFGS原坐标首轮24pass完成但候选
+峰值276、last247，未采用；18文件本地备份manifest
+1b7b176ab580891b15ac6bbd7dfa9feaba5c84f38d6f690b1e5ce8e90c6948b1。
+检查发现Linear解析去公共行后anchor仍指未去公共行父参数，初始无关惩罚1138.2582。
+来源2d51baced已显式修正为概率等价起点anchor，初始惩罚严格0，预先动态合同测试
+通过；新`postCCD_joint_LBFGS_gauge_20261023/L4`已实际进入全1600TRAIN训练。
+仍24pass或600fit秒/CPU2/仅原5150参数/不改已采上游，是否提升必须等原模型CPU
+bestlast全TRAIN/TEST复核。旧首轮transform的optimizer_method误标SGD，原配置及
+24 LBFGS/0 SGD调用计数证明实际方法；证据不改写，新源码已修正元数据。
+所有反复TEST分析/选模均为开发指标，不能声称独立泛化。
+
 ## 2026-10-22最新人工追加：四层固定数据继续优化，新TUCam相机准入后续六层
 
 20261023补充：原生连通/曝光/方向/换图/灰阶各项已实测。初始四象限模板方向歧义
