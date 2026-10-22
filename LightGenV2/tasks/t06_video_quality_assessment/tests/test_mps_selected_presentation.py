@@ -5,6 +5,12 @@ import json
 from LightGenV2.tasks.t06_video_quality_assessment.reports import present_mps_dataset_once as report
 
 
+def test_plain_model_labels_do_not_mutate_source_names_or_measurements():
+    names=dict(qwen='Qwen3-VL-2B†',clip='CLIP ViT-B/32')
+    assert report.plain_model_names(names)==dict(qwen='Qwen3-VL-2B',clip='CLIP ViT-B/32')
+    assert names['qwen']=='Qwen3-VL-2B†'
+
+
 @pytest.mark.parametrize('metric',['time16_ms','energy16_j'])
 def test_all_six_model_pairs_are_connected_inside_axes_without_jitter(metric):
     points=[]

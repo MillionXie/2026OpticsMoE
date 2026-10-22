@@ -26,6 +26,11 @@ OPTICAL=dict(time16_ms=10.245569591370225,energy16_j=1.1776895097085185,srcc=.79
 def digest(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def plain_model_names(names):
+    """Remove display footnote glyphs without changing measurements or caveats."""
+    return {key:value.replace('†','').strip() for key,value in names.items()}
+
+
 def selected_batch_view(root,fixed_batch=None):
     """Replace only changed-batch costs; preserve approved B1 and raw history."""
     prior_root=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_batch_activity_a100_20261021/resident01'
@@ -249,7 +254,7 @@ def ready_input_batch_comparison(root):
 
 def main():
     global ROOT,NAMES
-    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');p.add_argument('--finalized-qwen',action='store_true');p.add_argument('--selected-batches',action='store_true');p.add_argument('--fixed-batch6',action='store_true');p.add_argument('--ready-input',type=Path);args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');p.add_argument('--finalized-qwen',action='store_true');p.add_argument('--selected-batches',action='store_true');p.add_argument('--fixed-batch6',action='store_true');p.add_argument('--ready-input',type=Path);p.add_argument('--plain-model-labels',action='store_true');args=p.parse_args()
     if args.finalized_qwen and not args.combined:raise ValueError('Finalized Qwen presentation requires combined data')
     if args.combined:ROOT=ROOT.parent.with_name('lgvq_mps_dataset_once_rental_20261021'+('_replacement02' if args.replacement02 else ''))/'presentation'
     else:NAMES={k:v for k,v in NAMES.items() if k not in ('deepseek','kimi')}
@@ -298,6 +303,7 @@ def main():
         source.write_text(json.dumps(data,indent=2)+'\n')
         NAMES={**NAMES,'qwen':'Qwen3-VL-2B†'}
     if args.selected_batches or args.fixed_batch6 or args.ready_input:NAMES={**NAMES,'qwen':'Qwen3-VL-2B†'}
+    if args.plain_model_labels:NAMES=plain_model_names(NAMES)
     optical_source=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_strict_tf_rental_dual_20261020/presentation/eight_tables.json'
     prior=json.loads(optical_source.read_text())['optical']
     assert (prior['time_ms'],prior['energy_j'],prior['srcc'])==(OPTICAL['time16_ms'],OPTICAL['energy16_j'],OPTICAL['srcc'])
@@ -308,6 +314,7 @@ def main():
     if args.ready_input:
         receipt.update(protocol=data['accounting'],accounting_exception=data['accounting_exception'],
             selected_batches={p['model']:p['batch'] for p in data['points']})
+    receipt['plain_model_labels']=args.plain_model_labels
     for metric,kind in [('time16_ms','latency'),('energy16_j','energy')]:
         fig,ax=plt.subplots(figsize=(78/25.4,88/25.4));fig.subplots_adjust(left=.20,right=.97,bottom=.32,top=.84)
         receipt['panels'].append(panel(ax,points,metric))

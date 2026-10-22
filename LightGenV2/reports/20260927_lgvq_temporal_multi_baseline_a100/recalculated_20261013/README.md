@@ -2,6 +2,16 @@
 
 ## Current comparison: prepared-input MPS accounting, 22 October 2026
 
+The current model names have no footnote glyph in the figures or plotting table.
+On 22 October, all eighteen original MPS50 cost trials (six models, three repeats
+each) were independently replayed from their call timestamps and raw board-power
+traces. All six displayed MPS50 means already matched the unified prepared-input
+accounting below; no numerical correction or new GPU run was required. Qwen,
+GLM, full DeepSeek-VL2 and Kimi each use batch one, CLIP batch ten and YOLO batch
+six under both allocations. All existing MPS100 costs were preserved. Removal
+of Qwen's display symbol does not remove its historical-cost exception, which
+remains explicitly described below and in the workbook.
+
 Six frozen baselines are compared at a fixed batch size per model under 100% and
 50% MPS resource allocations. CLIP now uses ten and YOLO six videos per call;
 Qwen, GLM, full DeepSeek-VL2 and Kimi retain batch one. The earlier batch selection used three
@@ -29,7 +39,7 @@ identities. The [unrounded plotting data](mps_dataset_once_plot_data.csv) includ
 all thirteen plotted points, separating the retained optical reference from the twelve
 electronic settings. At the user's request on 21 October, the Qwen 100% display
 uses the finalized historical B1 cost (1188.3861464262009 ms and
-462.1134010767563 J), marked †. Its newly measured three-trial cost remains
+462.1134010767563 J). Its newly measured three-trial cost remains
 1254.2229400078456 ms and 485.1750602872153 J in the original trial records.
 The historical cost excludes inter-video gaps, unlike the new measurements.
 It is a presentation reference, not a new MPS100 cost or a controlled MPS-only
@@ -173,7 +183,7 @@ come from an earlier 80GB instance and are not same-window cost telemetry.
 | Model | MPS allocation | Reference TEST SRCC (MPS100) | Time per 16-video equivalent (ms) | Estimated energy per 16-video equivalent (J) |
 |---|---:|---:|---:|---:|
 | LightGen-II, retained reference | Not applicable | 0.797714 | 10.246 | 1.178 |
-| Qwen3-VL-2B † | 100% reference | 0.766343 | 1188.386 | 462.113 |
+| Qwen3-VL-2B | 100% reference | 0.766343 | 1188.386 | 462.113 |
 | Qwen3-VL-2B | 50% | 0.766343 | 1449.160 | 568.372 |
 | GLM-4.6V-Flash | 100% | 0.809262 | 1946.864 | 859.495 |
 | GLM-4.6V-Flash | 50% | 0.809262 | 2722.508 | 1238.311 |
@@ -190,7 +200,7 @@ come from an earlier 80GB instance and are not same-window cost telemetry.
 
 **Time panel.** Temporal quality, measured by Spearman's rank correlation
 coefficient (SRCC), is plotted against 16-video-equivalent processing time for the
-six frozen baselines at 100% and 50% MPS allocation. Apart from Qwen's † historical
+six frozen baselines at 100% and 50% MPS allocation. Apart from Qwen's historical
 cost reference, each electronic cost point summarizes three fresh-process
 evaluations without inference warmup. Both cost settings use the model's mean
 MPS100 SRCC as their common vertical-axis reference. The horizontal connections

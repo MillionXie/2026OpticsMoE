@@ -1,5 +1,22 @@
 # T06 视频质量评价
 
+## 2026-10-22 主图名称去符号，六模型MPS50统一口径复核
+
+本次仅负责T06绘图源码/测试、本文档和原recalculated_20261013图表，保留其他窗口改动。
+当前CLIP B10、YOLO B6，其余Qwen/GLM/完整版DeepSeek/Kimi均B1，两档batch相同。
+六模型MPS50各三轮共18份不可变原始calls/功率/预测再次独立CPU复算，时间、
+能耗及SHA均与当前ready_input_selected_paper.json一致：它们已经包含准备完输入
+后的模型前端至CPU评分返回，以及真实内部批间电子时间；外部视频prepare/H2D
+排除，日志不擅扣，首冷批保留且无推理预热。没有新增GPU测试或改变数值。
+所有现有MPS100成本数值/汇总公式保持，尤其Qwen100历史定稿不动。
+
+用户要求删除Qwen名称后十字符号，原目录时延/能耗主图、拼图、CSV、同一Excel
+改为无符号名称；Qwen100历史口径例外仍在正文和Excel说明，不以去符号掩盖。
+原13份导出和两份绘图收据先SHA备份至既有batch10_01，再原位更新。全部138行
+trial值与公式不变，汇总数值/公式全不变，只改A9/A29/A35文字；Qwen50公式
+输入扰动/恢复并验证不影响Qwen100。新证据为mps50_uniform_accounting_reverification、
+uniform_accounting_plain_labels_workbook_receipt及plain_labels_delivery_receipt。
+
 ## 2026-10-22 01:25 展示切换CLIP B10，原功率/时间新口径再次核验
 
 用户在B8结果后明确选择CLIP B10。只切换该模型主图及Excel汇总，YOLO B6、
