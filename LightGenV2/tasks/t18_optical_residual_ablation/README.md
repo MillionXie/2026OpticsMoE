@@ -1,3 +1,24 @@
+## 2026-10-22继续推进：两项完整复核无改善，准备稳健TRAIN损失对照
+
+类别聚合24pass已完整结束、原模型CPU复核last TRAIN1087/1600、TEST260/411；
+原20bias准确率效用8pass亦已完整结束，last TRAIN1100/1600、TEST265/411。
+两者best都仍父285，均rc0退出/冻结和原生概率审计通过，没有新性能提升。
+bias的14文件本地备份manifest41eea6ea8db4d49741c1ddf985de0f6fb0f7b7fb1a6d4ebf96cf66db87a1c25e。
+新逐样本诊断`L4_offline_transfer_diagnosis_20261022.json` SHA
+09f49654fe7df3771fb98c3641febc673e2bb8e7f2dd34f2bdeff312f790aa21：
+prototype末轮TRAIN新增104/损失26，但TEST新增0/损失25；bias末轮TRAIN新增95/
+损失4，TEST新增1/损失21。父TRAIN591错误，201个对应标签概率<.05；这些只是
+拟合/迁移诊断，不证明标签错误、光路漂移或理论精度上限。
+
+准备一个不同损失方向：`lab_caltech20_L4_GCE_SGD_profile_20261022.json`，仍从
+精确c172de22的原5150接续，除损失外与原fullTRAIN-SGD配置/24pass/600fit秒
+一致。使用Zhang/Sabuncu2018 GCE q=.7，.75GCE+.25普通CE保留全TRAIN正权，
+原正确TRAIN父KL仍在；降低极低标签概率项的牵引，而非再次强化这些难例。
+只训练原末端，不增加推理层、不改标签、光学/已采输入上游/CCD/曝光坐标LUT。
+CPU2/无SDK GPU/VALID；TEST仍仅分离开发诊断/选模，无TEST梯度或拟合统计。
+完整原模型bestlast审计备份后报告，不把新配置当作已启动、改善或达成340。
+参考https://papers.neurips.cc/paper_files/paper/2018/file/f2925f97bc13ad2852a7a551802feea0-Paper.pdf。
+
 ## 2026-10-22继续推进：类别聚合24轮无改善，原20偏置准确率目标对照
 
 原`postCCD_prototype_SGD_20261022/L4`从精确c172de22/285接续，完整24pass/

@@ -2,6 +2,14 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_GCE_original_parameters_TRAIN_only_loss(self):
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='robust_TRAIN_classification')
+        self.assertEqual([a.arg for a in f.args.args],['logits','labels','weights','smoothing','q','ce_replay'])
+        c=json.loads((HERE/'lab_caltech20_L4_GCE_SGD_profile_20261022.json').read_text());b=json.loads((HERE/'lab_caltech20_L4_fullbatch_SGD_profile_20261022.json').read_text())
+        self.assertEqual(c['parent_SHA256'],b['parent_SHA256']);self.assertEqual(c['tail']['TRAIN_GCE_q'],.7)
+        self.assertEqual(c['tail']['TRAIN_GCE_CE_replay'],.25)
+        self.assertEqual({k:v for k,v in c['tail'].items() if not k.startswith('TRAIN_GCE_')},b['tail'])
     def test_bias_coordinate_TRAIN_accuracy_not_TEST_fit(self):
         s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='bias_accuracy_coordinate')

@@ -110,6 +110,19 @@ def prototype_TRAIN_loss(features,labels,centers,temperature):
     return F.cross_entropy(logits,labels)
 
 
+def robust_TRAIN_classification(logits,labels,weights,smoothing,q,ce_replay):
+    """TRAIN GCE with fixed CE replay; downweight uncertain fitting directions.
+
+    Zhang/Sabuncu2018 Lq=(1-p_y**q)/q. This is a loss-only contrast, not a
+    claim that the captured dataset has incorrect labels. No labels are changed.
+    """
+    assert 0<q<=1 and 0<ce_replay<=1
+    logp=logits.log_softmax(1);correct=logp.gather(1,labels[:,None])[:,0]
+    gce=-torch.expm1(q*correct)/q
+    ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=smoothing,reduction='none')
+    return ce_replay*ce+(1-ce_replay)*weights[labels]*gce
+
+
 def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,reference):
     from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
     torch.set_num_threads(2);torch.manual_seed(73);fit=cfg['tail'];tr,te=banks['train'],banks['test'];train_y=torch.from_numpy(tr['y']).long()
@@ -164,7 +177,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     groups=[dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)]
     if not freeze_head and not alternating:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
     opt=torch.optim.SGD(groups,momentum=.9,weight_decay=fit['weight_decay']) if fullbatch else torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
-    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
     swa_sum={};swa_snapshots=0;swa_history=[]
     def dropout(module,inputs):
         if active['TRAIN']:
@@ -190,6 +203,9 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     z=tail(model.electronic[3],model.linear,model.effective_alpha(3),v,optical)
                     if fit.get('TRAIN_feature_mixup',False):return mixed_TRAIN_loss(z,labels,teach,sample_weight,weights,active['mix_perm'],fit['label_smoothing'],fit['teacher_KL'])
                     ce=F.cross_entropy(z,labels,weight=weights,label_smoothing=fit['label_smoothing'],reduction='none')
+                    if fit.get('TRAIN_GCE_q',0)>0:
+                        ce=robust_TRAIN_classification(z,labels,weights,fit['label_smoothing'],fit['TRAIN_GCE_q'],fit['TRAIN_GCE_CE_replay'])
+                        counts['TRAIN_GCE_batches']+=1
                     keep=(teach.argmax(1)==labels).float();kl=F.kl_div(z.log_softmax(1),teach,reduction='none').sum(1)
                     denominator=(teacher.argmax(1)==train_y).sum().clamp_min(1)*len(ix)/1600 if fullbatch else keep.sum().clamp_min(1)
                     loss=(ce*sample_weight).mean()+fit['teacher_KL']*(kl*keep).sum()/denominator.to(device)
@@ -333,4 +349,9 @@ def selftest():
     feat=torch.randn(40,256,requires_grad=True);label=torch.arange(40)%20;centers,support=class_prototypes_TRAIN(feat,label)
     pl=prototype_TRAIN_loss(feat,label,centers,.1);pl.backward()
     assert torch.isfinite(feat.grad).all() and float(feat.grad.norm())>0 and not centers.requires_grad and support.tolist()==[2]*20
+    zz=torch.randn(8,20,dtype=torch.float64,requires_grad=True);yy=torch.arange(8);cw=torch.ones(20,dtype=torch.float64)
+    robust=robust_TRAIN_classification(zz,yy,cw,0.,.7,.25)
+    lp=zz.log_softmax(1)[torch.arange(8),yy]
+    assert torch.allclose(robust,.25*(-lp)+.75*(1-torch.exp(.7*lp))/.7,atol=1e-12)
+    robust.mean().backward();assert torch.isfinite(zz.grad).all() and float(zz.grad.norm())>0
     print(json.dumps(dict(passed=True,identical_probe_view=True,probe_parameter_restoration=True,finite_gradient=True,geometry_only_gradient_parameters=10,frozen_head_no_gradient=True,TEST_used=False,SDK_used=False)))
