@@ -123,6 +123,29 @@ def robust_TRAIN_classification(logits,labels,weights,smoothing,q,ce_replay):
     return ce_replay*ce+(1-ce_replay)*weights[labels]*gce
 
 
+def margin_replay_TRAIN_loss(logits,labels,teacher,weights,margin,beta,ce_replay,protect):
+    """Original logits only: robust TRAIN ranking plus correct-parent retention.
+
+    No TEST tensor or fitted target is accepted. Parent probabilities encode
+    exact logit differences, so the protected margin needs no new model/cache.
+    Smooth L1 caps each violated-margin derivative, not the class labels/loss.
+    """
+    assert 0<margin and 0<beta and 0<ce_replay<1 and protect>=0
+    assert not teacher.requires_grad and teacher.shape==logits.shape
+    mask=F.one_hot(labels,logits.shape[1]).bool()
+    true=logits.gather(1,labels[:,None])[:,0]
+    rival=logits.masked_fill(mask,float('-inf')).max(1).values
+    gap=true-rival;shortfall=(margin-gap).clamp_min(0)
+    ranking=F.smooth_l1_loss(shortfall,torch.zeros_like(shortfall),beta=beta,reduction='none')
+    logparent=teacher.clamp_min(1e-12).log()
+    parent_gap=logparent.gather(1,labels[:,None])[:,0]-logparent.masked_fill(mask,float('-inf')).max(1).values
+    parent_good=teacher.argmax(1)==labels
+    preserve=(parent_gap.clamp(0,margin)-gap).clamp_min(0)
+    retention=F.smooth_l1_loss(preserve,torch.zeros_like(preserve),beta=beta,reduction='none')*parent_good
+    ce=F.cross_entropy(logits,labels,reduction='none')
+    return weights[labels]*(ce_replay*ce+(1-ce_replay)*ranking+protect*retention)
+
+
 def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,reference):
     from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
     torch.set_num_threads(2);torch.manual_seed(73);fit=cfg['tail'];tr,te=banks['train'],banks['test'];train_y=torch.from_numpy(tr['y']).long()
@@ -177,7 +200,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     groups=[dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)]
     if not freeze_head and not alternating:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
     opt=torch.optim.SGD(groups,momentum=.9,weight_decay=fit['weight_decay']) if fullbatch else torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
-    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,TRAIN_margin_replay_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
     swa_sum={};swa_snapshots=0;swa_history=[]
     def dropout(module,inputs):
         if active['TRAIN']:
@@ -206,6 +229,9 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     if fit.get('TRAIN_GCE_q',0)>0:
                         ce=robust_TRAIN_classification(z,labels,weights,fit['label_smoothing'],fit['TRAIN_GCE_q'],fit['TRAIN_GCE_CE_replay'])
                         counts['TRAIN_GCE_batches']+=1
+                    if fit.get('TRAIN_margin_replay',False):
+                        ce=margin_replay_TRAIN_loss(z,labels,teach,weights,fit['TRAIN_margin'],fit['TRAIN_margin_beta'],fit['TRAIN_margin_CE_replay'],fit['TRAIN_margin_protect'])
+                        counts['TRAIN_margin_replay_batches']+=1
                     keep=(teach.argmax(1)==labels).float();kl=F.kl_div(z.log_softmax(1),teach,reduction='none').sum(1)
                     denominator=(teacher.argmax(1)==train_y).sum().clamp_min(1)*len(ix)/1600 if fullbatch else keep.sum().clamp_min(1)
                     loss=(ce*sample_weight).mean()+fit['teacher_KL']*(kl*keep).sum()/denominator.to(device)
@@ -315,6 +341,14 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
 
 def selftest():
     torch.set_num_threads(2);torch.manual_seed(73)
+    z=torch.tensor([[2.,0.,-1.],[0.,2.,-1.],[0.,0.,2.]],requires_grad=True);labels=torch.tensor([0,1,1]);teacher=z.detach().softmax(1)
+    loss=margin_replay_TRAIN_loss(z,labels,teacher,torch.ones(3),1.,1.,.25,1.)
+    assert loss.shape==(3,) and torch.isfinite(loss).all()
+    loss.mean().backward();assert torch.isfinite(z.grad).all() and float(z.grad.norm())>0
+    # Increasing a true-vs-rival TRAIN margin must not increase this objective.
+    with torch.no_grad():
+        raised=z.detach().clone();raised[torch.arange(3),labels]+=.1
+        assert bool((margin_replay_TRAIN_loss(raised,labels,teacher,torch.ones(3),1.,1.,.25,1.)<=loss.detach()+1e-7).all())
     p=torch.nn.Parameter(torch.tensor([.3,.8]));opt=torch.optim.SGD([p],lr=.01);seen=[]
     def objective():
         value=torch.rand(2);seen.append(value.clone());return ((p-value)**2).sum()

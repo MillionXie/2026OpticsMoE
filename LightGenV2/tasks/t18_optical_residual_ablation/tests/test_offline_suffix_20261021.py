@@ -34,6 +34,14 @@ class OfflineSuffix(unittest.TestCase):
         self.assertIn("data['train']",body);self.assertNotIn("data['test']",body)
         self.assertNotIn('backward(',body);self.assertNotIn('Bench(',body)
         self.assertIn('simulated_not_measured=True',body);self.assertIn('TRAIN_fitting_started=False',body)
+    def test_margin_replay_original_TRAIN_loss_scope(self):
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='margin_replay_TRAIN_loss')
+        self.assertEqual([a.arg for a in f.args.args],['logits','labels','teacher','weights','margin','beta','ce_replay','protect'])
+        c=json.loads((HERE/'lab_caltech20_L4_margin_replay_profile_20261022.json').read_text());b=json.loads((HERE/'lab_caltech20_L4_fullbatch_SGD_profile_20261022.json').read_text())
+        self.assertEqual(c['parent_SHA256'],b['parent_SHA256']);self.assertEqual(c['parent_correct'],285)
+        self.assertTrue(c['tail']['TRAIN_margin_replay']);self.assertEqual(c['tail']['TRAIN_margin_CE_replay'],.25)
+        self.assertEqual({k:v for k,v in c['tail'].items() if not k.startswith('TRAIN_margin')},b['tail'])
     def test_GCE_original_parameters_TRAIN_only_loss(self):
         s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='robust_TRAIN_classification')
