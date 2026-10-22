@@ -7,6 +7,63 @@ the differentiable fitting function accepts no TEST features or TEST labels.
 import time
 
 
+def teacher_feature_pls(torch,F,x,labels,teacher_features,teacher_w,teacher_b,pw,pb,counts,cfg,observe):
+    """TRAIN paired multivariate PLS, folded into the ORIGINAL affine readout.
+
+    Covariance directions use the full teacher FEATURES, unlike prior teacher
+    logit ridge or unsupervised PCA. A TRAIN-only one-dimensional convex blend
+    protects the parent; no TEST tensor participates in either fit.
+    """
+    x=x.double();target=teacher_features.double();assert x.shape==target.shape and len(x)==len(labels)
+    support=torch.bincount(labels,minlength=20).double();assert bool((support>0).all())
+    weights=counts.double()[labels]/support[labels];weights/=weights.sum()
+    xm=(weights[:,None]*x).sum(0);ym=(weights[:,None]*target).sum(0)
+    xr=(x-xm)*weights.sqrt()[:,None];yr=(target-ym)*weights.sqrt()[:,None]
+    base=F.linear(x,pw.double(),pb.double()).detach();T=2.;parent=(base/T).softmax(1);keep=(base.argmax(1)==labels).double();denom=(weights*keep).sum().clamp_min(1e-12)
+    W=[];P=[];Q=[];rows=[];started=time.monotonic();ww,bb=pw,pb
+    for component in range(1,cfg['components']+1):
+        u,s,_=torch.linalg.svd(xr.T@yr,full_matrices=False)
+        if float(s[0])<1e-12:break
+        direction=u[:,0];score=xr@direction;norm=score.square().sum().clamp_min(1e-20)
+        loading=xr.T@score/norm;response=yr.T@score/norm
+        xr=xr-score[:,None]*loading;yr=yr-score[:,None]*response
+        W.append(direction);P.append(loading);Q.append(response)
+        wt=torch.stack(W,1);pt=torch.stack(P,1);qt=torch.stack(Q,1)
+        rotation=wt@torch.linalg.pinv(pt.T@wt);mapping=rotation@qt.T
+        candidate_w=teacher_w.double()@mapping.T;candidate_b=teacher_b.double()+teacher_w.double()@ym-candidate_w@xm
+        direct=F.linear((x-xm)@mapping+ym,teacher_w.double(),teacher_b.double())
+        logits=F.linear(x,candidate_w,candidate_b);error=float((direct-logits).abs().max());assert error<1e-6
+        change=(logits-base).detach()
+        def objective(eta):
+            z=base+eta*change
+            ce=F.cross_entropy(z,labels,label_smoothing=cfg['label_smoothing'],reduction='none')
+            kl=F.kl_div((z/T).log_softmax(1),parent,reduction='none').sum(1)*T*T
+            return float((weights*ce).sum()+cfg['teacher_KL']*(weights*keep*kl).sum()/denom+cfg['blend_anchor']*eta*eta)
+        # Fixed TRAIN-only golden-section search of a convex scalar objective.
+        low,high=0.,1.;ratio=(5**.5-1)/2
+        left=high-ratio*(high-low);right=low+ratio*(high-low);fl,fr=objective(left),objective(right)
+        for _ in range(32):
+            if fl<fr:high,right,fr=right,left,fl;left=high-ratio*(high-low);fl=objective(left)
+            else:low,left,fl=left,right,fr;right=low+ratio*(high-low);fr=objective(right)
+        candidates=(0.,1.,(low+high)/2);eta=min(candidates,key=lambda a:(objective(a),a))
+        ww=pw.double()+eta*(candidate_w-pw.double());bb=pb.double()+eta*(candidate_b-pb.double())
+        row=dict(phase='TRAIN_teacher_feature_PLS',component=component,TRAIN_samples=len(x),TRAIN_teacher_correct=int((F.linear(target,teacher_w.double(),teacher_b.double()).argmax(1)==labels).sum()),TRAIN_correct=int((F.linear(x,ww,bb).argmax(1)==labels).sum()),TRAIN_objective=objective(eta),TRAIN_blend=eta,original_Linear_fold_maxabs=error)
+        rows.append(row);stop=observe(ww,bb,row)
+        if stop or time.monotonic()-started>=cfg['fit_seconds']:break
+    assert rows
+    return ww,bb,dict(TRAIN_only=True,TRAIN_samples=len(x),actual_components=len(rows),fixed_component_budget=cfg['components'],history=rows,fit_seconds=time.monotonic()-started,original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0)
+
+
+def teacher_feature_pls_selftest():
+    import torch
+    from torch.nn import functional as F
+    torch.set_num_threads(2);torch.manual_seed(73);x=torch.randn(80,8,dtype=torch.float64);target=x@torch.randn(8,8,dtype=x.dtype);y=torch.arange(80)%20;w=torch.randn(20,8,dtype=x.dtype)*.02;b=torch.zeros(20,dtype=x.dtype);rows=[]
+    ww,bb,proof=teacher_feature_pls(torch,F,x,y,target,w,b,w,b,torch.ones(20,dtype=x.dtype),dict(components=3,fit_seconds=30,label_smoothing=.02,teacher_KL=.5,blend_anchor=.01),lambda w,b,r:rows.append(r))
+    assert len(rows)==3 and ww.shape==w.shape and torch.isfinite(ww).all() and torch.isfinite(bb).all()
+    assert all(0<=r['TRAIN_blend']<=1 and r['original_Linear_fold_maxabs']<1e-6 for r in rows)
+    print(dict(passed=True,TRAIN_only=True,original_Linear_fold=True,new_inference_layers=0,finite_PLScovariance=True))
+
+
 def simulation_replay_TRAIN_admission(sequence,parent,parent_digest,out,original_teacher=False):
     """Forty fixed TRAIN identities, frozen ORIGINAL simulation, no camera/fit.
 

@@ -2,6 +2,13 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_teacher_PLS_only_TRAIN_and_original_Linear(self):
+        source=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(source)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='teacher_feature_pls')
+        self.assertEqual([a.arg for a in f.args.args],['torch','F','x','labels','teacher_features','teacher_w','teacher_b','pw','pb','counts','cfg','observe'])
+        cfg=json.loads((HERE/'lab_caltech20_L4_teacher_PLS_profile_20261022.json').read_text())
+        self.assertEqual(cfg['parent_correct'],285);self.assertEqual(cfg['teacher_PLS']['components'],8)
+        self.assertLessEqual(cfg['teacher_PLS']['fit_seconds'],120);self.assertEqual(cfg['teacher_SHA256'][:8],'7b0d7f05')
     def test_simulation_replay_admission_TRAIN_only_no_fit(self):
         source=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(source)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='simulation_replay_TRAIN_admission')

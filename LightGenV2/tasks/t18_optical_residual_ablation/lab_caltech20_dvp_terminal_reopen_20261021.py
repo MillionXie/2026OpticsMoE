@@ -75,7 +75,7 @@ def run(a):
     continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
     maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';covaugment=cfg.get('method')=='TRAIN_covariance_augmentation';priorcal=cfg.get('method')=='TRAIN_prior_temperature';head_only=head_only or maxmargin or hardridge or covaugment or priorcal
     pairedresponse=cfg.get('method')=='TRAIN_last_response_pair';head_only=head_only or pairedresponse
-    subspace=cfg.get('method') in ('TRAIN_stable_subspace_curriculum','TRAIN_Fisher_subspace_refit');spatial=cfg.get('method')=='TRAIN_spatial_group_delta';biascoord=cfg.get('method')=='TRAIN_bias_accuracy_coordinate';head_only=head_only or subspace or spatial or biascoord
+    subspace=cfg.get('method') in ('TRAIN_stable_subspace_curriculum','TRAIN_Fisher_subspace_refit');spatial=cfg.get('method')=='TRAIN_spatial_group_delta';biascoord=cfg.get('method')=='TRAIN_bias_accuracy_coordinate';teacher_pls=cfg.get('method')=='TRAIN_teacher_feature_PLS';head_only=head_only or subspace or spatial or biascoord or teacher_pls
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -146,11 +146,29 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or cpu_joint or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse or subspace or spatial or biascoord:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or cpu_joint or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse or subspace or spatial or biascoord or teacher_pls:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not cpu_joint and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace and not spatial and not biascoord:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not cpu_joint and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace and not spatial and not biascoord and not teacher_pls:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if biascoord:
+    if teacher_pls:
+        from lab_caltech20_dvp_error_guided_head_20261021 import teacher_feature_pls
+        gate=Path(cfg['teacher_admission']);assert m.sha(gate)==cfg['teacher_admission_SHA256']
+        admission=m.read(gate);assert admission['original_teacher'] and admission['TRAIN_only'] and not admission['TEST_used'] and admission['simulation_model_correct']>admission['physical_parent_correct']
+        teacher_path=session/'initial.pt';assert m.sha(teacher_path)==cfg['teacher_SHA256']==admission['simulation_model_PT_SHA256']
+        teacher,_=m.model_for(teacher_path,cfg['teacher_SHA256'],4,session/'source_reference.ts');held={};parts=[];frozen=m.state_cpu(teacher)
+        hook=teacher.linear.register_forward_pre_hook(lambda module,args:held.update(x=args[0].detach().clone()))
+        try:
+            with torch.no_grad():
+                for begin in range(0,1600,8):
+                    teacher(m.encode_images(data['train'][0][begin:begin+8]));parts.append(held['x'])
+                    m.save(a.out/'progress.json',dict(state='original_teacher_TRAIN_feature_cache',TRAIN_consumed=begin+8,TRAIN_expected=1600,selected_correct=best,TEST_teacher_used=False))
+        finally:hook.remove()
+        assert all(torch.equal(v,m.state_cpu(teacher)[k]) for k,v in frozen.items())
+        teacher_features=torch.cat(parts).double();np.savez_compressed(a.out/'TRAIN_teacher_features.npz',x=teacher_features.numpy(),ids=tr['ids'],labels=tr['y'])
+        m.save(a.out/'TRAIN_teacher_identity.json',dict(TRAIN_only=True,TRAIN_samples=1600,teacher_PT_SHA256=cfg['teacher_SHA256'],features_SHA256=m.sha(a.out/'TRAIN_teacher_features.npz'),all_teacher_parameters_bitwise_frozen=True,TEST_teacher_used=False,synthetic_not_measured=True))
+        lastw,lastb,proof=teacher_feature_pls(torch,F,x,y,teacher_features,teacher.linear.weight.detach(),teacher.linear.bias.detach(),pw,pb,counts,cfg['teacher_PLS'],observe)
+        m.save(a.out/'TRAIN_teacher_PLS_fit.json',proof);reason='finite_TRAIN_teacher_feature_PLS_original_Linear_complete'
+    elif biascoord:
         from lab_caltech20_dvp_error_guided_head_20261021 import bias_accuracy_coordinate
         with torch.no_grad():base=F.linear(x,pw.double(),pb.double()).numpy()
         def observe_bias(delta,row):return observe(pw,pb.double()+torch.from_numpy(delta),row)
