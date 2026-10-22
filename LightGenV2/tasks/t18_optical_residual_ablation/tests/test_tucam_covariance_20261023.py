@@ -12,7 +12,12 @@ def test_followup_is_one_finite_original_parameter_trajectory():
     assert "geometry['electronic']['ratio']>geometry['fused']['ratio']" in code
     assert 'TEST_used_to_fit=False' in code and 'new_inference_layers=0' in code
     assert 'camera.' not in code and 'torch.nn.Linear' in code.split('def selftest():')[1]
-    assert "parent=dependency/'best.pt'" in code and 'time.monotonic()-start<7200' in code
+    assert "parent=dependency/'best.pt'" in code and "time.monotonic()-start<follow[f'L{depth}_dependency_seconds']" in code
+    assert cfg['L6_dependency_seconds']==7200 and cfg['L4_dependency_seconds']==14400
+    assert "choices=(4,6)" in code and "complete['interstage_updates']==0" in code
+    assert "cfg['fisher_recipe']" not in code and "follow['fisher_recipe']" in code
+    assert cfg['fisher_recipe']['steps']==200 and cfg['fisher_recipe']['fit_seconds']==120
+    assert 'fisher_subspace_head(torch,F' in code
 
 
 def test_full_data_and_prefix_identity_precede_fit():
