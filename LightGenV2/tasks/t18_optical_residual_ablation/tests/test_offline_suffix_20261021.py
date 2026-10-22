@@ -7,6 +7,9 @@ class OfflineSuffix(unittest.TestCase):
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='spatial_group_delta')
         self.assertEqual([a.arg for a in f.args.args],['torch','F','x','y','pw','pb','counts','cfg','observe'])
         self.assertIn('TRAIN-only initial group gradient',s);self.assertIn('original_Linear_fold=True',s)
+        c=json.loads((HERE/'lab_caltech20_L4_spatial_group_profile_20261022.json').read_text())
+        self.assertEqual(len(c['original_TRAIN_counts']),20);self.assertEqual(sum(c['original_TRAIN_counts']),3141)
+        self.assertEqual(c['parent_correct'],285);self.assertEqual(c['spatial_group']['penalty_fraction'],.1)
     def test_RMS_TRAIN_adjoint_audit_no_inference_change(self):
         s=(HERE/'lab_caltech20_dvp_terminal_gradient_20261022.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_gradient_audit')

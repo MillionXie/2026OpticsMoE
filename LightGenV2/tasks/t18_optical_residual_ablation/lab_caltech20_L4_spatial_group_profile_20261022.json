@@ -1,0 +1,11 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_spatial_group_delta","gap_pp":1.5,"target":340,"parent_correct":285,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_coupled_20261021/L4/best.pt",
+  "parent_SHA256":"c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "spatial_group":{"steps":600,"fit_seconds":120,"evaluate_every":20,"penalty_fraction":0.1,"label_smoothing":0.02,"teacher_KL":0.1,"anchor":0.01},
+  "scope":"Finite no-camera continuation after joint fullTRAIN-SGD audit completes. Prior dense and variance/PCA constrained head updates did not transfer; TRAIN selects sparse SPATIAL COLUMN deltas in existing original20x256 Linear via group-L2 proximal accelerated descent, rather than discarding low-variance directions or adding features. Penalty fixed0.1 of maximum TRAIN-only initial column gradient, Lipschitz step TRAIN only, monotone restart, all1600TRAIN positive sqrt-original-prior weights and correctTRAIN parent KL. Single600step/120fitsecond trajectory, no coefficient/seed sweep. No TEST fitting tensors, gradient or covariance/noVALID; detached411TEST development observation/selection only. Original9conv/alpha/all optical and upstream frozen; originalhead size/state keys unchanged and delta folded into originalLinear. Protect285, full originalCPU bestlast TRAIN1600/TEST411 and freeze/phase/data/cachedprobability SHA audit. CPU2/noGPU/noSDK/newCCD/no new inference layer. ActiveL6 capture untouched."
+}
