@@ -2,6 +2,16 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_relational_geometry_TRAIN_target_from_audited_actual_prefix(self):
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='relational_TRAIN_geometry')
+        self.assertEqual([a.arg for a in f.args.args],['current','reference'])
+        c=json.loads((HERE/'lab_caltech20_L4_relational_geometry_profile_20261022.json').read_text());b=json.loads((HERE/'lab_caltech20_L4_fullbatch_SGD_profile_20261022.json').read_text())
+        self.assertEqual(c['parent_SHA256'],b['parent_SHA256']);self.assertEqual(c['TRAIN_geometry_feature_key'],'G2_electronic')
+        self.assertEqual(len(c['TRAIN_geometry_features_SHA256']),64);self.assertEqual(c['tail']['TRAIN_relational_geometry_weight'],10.)
+        self.assertEqual({k:v for k,v in c['tail'].items() if k!='TRAIN_relational_geometry_weight'},b['tail'])
+        self.assertIn("assert np.array_equal(z['ids'],tr['ids'])",s)
+        self.assertIn("diagnosis['features_SHA256']['train']",s)
     def test_resume_E3_preserves_complete_G2_and_no_interstage_fit(self):
         cfg=json.loads((HERE/'lab_caltech20_L6_resume_E3_profile_20261022.json').read_text())
         self.assertTrue(cfg['resume_after_complete_G2']);self.assertFalse(cfg['interstage_fit']);self.assertEqual(cfg['parent_correct'],219)

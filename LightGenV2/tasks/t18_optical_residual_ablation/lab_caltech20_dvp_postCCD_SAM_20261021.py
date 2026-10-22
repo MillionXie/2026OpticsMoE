@@ -146,11 +146,39 @@ def margin_replay_TRAIN_loss(logits,labels,teacher,weights,margin,beta,ce_replay
     return weights[labels]*(ce_replay*ce+(1-ce_replay)*ranking+protect*retention)
 
 
+def relational_TRAIN_geometry(current,reference):
+    """TRAIN-only pair geometry; no coordinate alignment or inference teacher.
+
+    The frozen measured electronic branch is a target only during TRAIN. Pair
+    cosines are invariant to a joint orthogonal change of feature coordinates.
+    """
+    assert current.shape==reference.shape and current.ndim==2 and len(current)>1
+    assert not reference.requires_grad
+    x=F.normalize(current,dim=1);target=F.normalize(reference,dim=1)
+    offdiag=~torch.eye(len(x),dtype=torch.bool,device=x.device)
+    return ((x@x.T-target@target.T)[offdiag]).square().mean()
+
+
 def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,reference):
     from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
     torch.set_num_threads(2);torch.manual_seed(73);fit=cfg['tail'];tr,te=banks['train'],banks['test'];train_y=torch.from_numpy(tr['y']).long()
     pw=model.linear.weight.detach().clone();pb=model.linear.bias.detach().clone()
     with torch.no_grad():teacher=F.linear(torch.from_numpy(tr['x']),pw,pb).softmax(1)
+    geometry_target=None
+    if fit.get('TRAIN_relational_geometry_weight',0)>0:
+        assert fit['optimizer_method']=='full_TRAIN_SGD' and not fit.get('TRAIN_feature_mixup',False)
+        p=Path(cfg['TRAIN_geometry_features']);report=p.parent/'report.json';audit=m.read(p.parent/'independent_audit.json')
+        assert m.sha(report)==cfg['TRAIN_geometry_report_SHA256']==audit['report_SHA256'] and audit['passed']
+        diagnosis=m.read(report);assert diagnosis['original_native_probability_parity'] and diagnosis['all_parameters_bitwise_frozen']
+        assert diagnosis['features_SHA256']['train']==m.sha(p)==cfg['TRAIN_geometry_features_SHA256']
+        identity=m.read(p.parent/'protocol.json');assert identity['parent_PT_SHA256']==cfg['parent_SHA256'] and identity['prefix_SHA256']==protocol['prefix_SHA256'] and identity['data_SHA256']==protocol['data_SHA256']
+        source=cfg['TRAIN_geometry_feature_key'];metrics=diagnosis['frozen_feature_diagnostics']
+        assert metrics[source]['TRAIN_nearest_same_class_correct']>metrics['G2_fused']['TRAIN_nearest_same_class_correct']
+        assert metrics[source]['TRAIN_leave_source_out_probe_correct']>metrics['G2_fused']['TRAIN_leave_source_out_probe_correct']
+        with np.load(p) as z:
+            assert np.array_equal(z['ids'],tr['ids']) and np.array_equal(z['labels'],tr['y']);geometry_target=torch.from_numpy(z[source].copy()).float()
+        assert geometry_target.shape==(1600,256) and not geometry_target.requires_grad
+        m.save(a.out/'TRAIN_geometry_target_audit.json',dict(TRAIN_only=True,TRAIN_samples=1600,source_feature=source,source_SHA256=m.sha(p),diagnosis_report_SHA256=m.sha(report),parent_PT_SHA256=cfg['parent_SHA256'],data_SHA256=protocol['data_SHA256'],frozen_prefix_SHA256=protocol['prefix_SHA256'],geometry_target_detached=True,TEST_targets_used=False,new_inference_layers=0,TRAIN_source_metrics={k:metrics[source][k] for k in ('TRAIN_nearest_same_class_correct','TRAIN_leave_source_out_probe_correct')},TRAIN_final_metrics={k:metrics['G2_fused'][k] for k in ('TRAIN_nearest_same_class_correct','TRAIN_leave_source_out_probe_correct')}))
     prototypes=None
     if fit.get('TRAIN_prototype_weight',0)>0:
         prototypes,support=class_prototypes_TRAIN(torch.from_numpy(tr['x']),train_y)
@@ -200,7 +228,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     groups=[dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)]
     if not freeze_head and not alternating:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
     opt=torch.optim.SGD(groups,momentum=.9,weight_decay=fit['weight_decay']) if fullbatch else torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
-    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,TRAIN_margin_replay_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,TRAIN_margin_replay_batches=0,TRAIN_relational_geometry_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
     swa_sum={};swa_snapshots=0;swa_history=[]
     def dropout(module,inputs):
         if active['TRAIN']:
@@ -208,6 +236,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
             if fit['feature_dropout_p']>0:counts['TRAIN_dropout_calls']+=1;x=F.dropout(x,p=fit['feature_dropout_p'],training=True)
             if fit.get('TRAIN_feature_mixup',False):x=.5*(x+x[active['mix_perm']])
             if prototypes is not None:active['prototype_features']=x
+            if geometry_target is not None:active['geometry_features']=x
             return (x,)
     hook=model.linear.register_forward_pre_hook(dropout);rng=np.random.default_rng(73);start=time.monotonic()
     try:
@@ -238,6 +267,9 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     if prototypes is not None:
                         loss=loss+fit['TRAIN_prototype_weight']*prototype_TRAIN_loss(active['prototype_features'],labels,prototypes.to(device),fit['TRAIN_prototype_temperature'])
                         counts['TRAIN_prototype_batches']+=1
+                    if geometry_target is not None:
+                        loss=loss+fit['TRAIN_relational_geometry_weight']*relational_TRAIN_geometry(active['geometry_features'],geometry_target[ix].to(device))
+                        counts['TRAIN_relational_geometry_batches']+=1
                     return loss
                 if fullbatch:
                     clean,probe,norm=accumulate_TRAIN_batch(objective(),params,opt,model.fusion_logits[3],len(ix),1600,begin+len(ix)==1600)
@@ -245,7 +277,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                 else:
                     clean,probe,norm=sam_step(params,opt,objective,fit['SAM_radius'],model.fusion_logits[3]) if use_sam else adam_step(params,opt,objective,model.fusion_logits[3])
                     counts['SAM_updates' if use_sam else 'AdamW_updates']+=1
-                active['TRAIN']=False;active.pop('prototype_features',None)
+                active['TRAIN']=False;active.pop('prototype_features',None);active.pop('geometry_features',None)
                 total+=clean*len(ix);used+=len(ix);nonzero+=int(norm>0);counts['TRAIN_noise_batches']+=int(not fullbatch)
                 if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_full_TRAIN_SGD' if fullbatch else 'L4_postCCD_featuremix_TRAIN' if fit.get('TRAIN_feature_mixup',False) else 'L4_postCCD_alternating_TRAIN' if alternating else 'L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
                 batch=begin//8+1
@@ -341,6 +373,13 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
 
 def selftest():
     torch.set_num_threads(2);torch.manual_seed(73)
+    reference=torch.randn(8,16);current=reference.clone().requires_grad_(True)
+    assert float(relational_TRAIN_geometry(current,reference))==0
+    rotation=torch.linalg.qr(torch.randn(16,16))[0]
+    assert float(relational_TRAIN_geometry(current@rotation,reference))<1e-12
+    shifted=(reference+torch.randn_like(reference)*.1).requires_grad_(True)
+    relation=relational_TRAIN_geometry(shifted,reference);relation.backward()
+    assert relation>0 and torch.isfinite(shifted.grad).all() and float(shifted.grad.norm())>0 and reference.grad is None
     z=torch.tensor([[2.,0.,-1.],[0.,2.,-1.],[0.,0.,2.]],requires_grad=True);labels=torch.tensor([0,1,1]);teacher=z.detach().softmax(1)
     loss=margin_replay_TRAIN_loss(z,labels,teacher,torch.ones(3),1.,1.,.25,1.)
     assert loss.shape==(3,) and torch.isfinite(loss).all()
