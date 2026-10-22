@@ -1,104 +1,57 @@
-## 2026-10-22教师增量复核仍285；固定早停路径检查
+## 2026-10-22最新完整交付：离线对照均未超过285/411，原最佳保护
 
-教师残差PLS8分量完成、rc0且完整原模型CPU best/last/冻结/相位/数据/概率审计
-通过；last TRAIN1015/1600、TEST273/411，NLL1.3831267小于父1.3917828，但
-准确率更低，best仍父285。这只是概率损失改善，不是准确率恢复。
-新增`lab_caltech20_L4_teacher_path_profile_20261022.json`：除固定观察TRAIN最优
-更新的.25/.5/.75/1四个早停状态外，其余与该残差对照相同，最多8×4=32个
-TEST分离开发观察，不从TEST事件边界反算参数或扩无界搜索。精确复用教师缓存，
-不重新提取/采集、不改推理结构/上游；120fit秒，原模型完整复核后报告结果。
+本轮连续实际核查、拟合及完整原模型CPU best/last复核；全部从同一接受PT
+c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2
+接续，不从较差last重启。TRAIN1600（80/类）、TEST411、VALID0；TEST反复诊断/
+选模仅开发指标，不是独立泛化，无TEST梯度、教师TEST或TEST协方差拟合。
+只改原末端5150或其原Linear子集，全部光学/已采输入上游冻结；无新推理层、
+相机操作/SDK/GPU/新CCD/自动监督。阶段完成均正常退出，当前没有活跃拟合作业。
 
-## 2026-10-22教师PLS完整复核未提升；保留原头的教师增量对照
+全部run位于`runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/`：
 
-原教师全1600 TRAIN判对1529，但直接PLS头8分量的TRAIN最优混合均为0，原
-模型CPU完整best/last仍TRAIN1009/TEST285，参数没有采用新训练变更，不能作
-性能提升。rc0、冻结/数据/相位/概率审计和16文件本地SHA备份通过，manifest
-6954cb836d021deedb5ad002751276d62dcfadf930fd3d97ce3b87a13bb6ac8f。
-下一项固定差异配置`lab_caltech20_L4_teacher_residual_PLS_profile_20261022.json`：
-保留完整父头，只在同8个TRAIN教师协方差方向中拟合教师logit残差，原头其余
-方向代数恒等保留；不是替换头或又丢弃低方差方向。残差回归仅用教师判对TRAIN，
-所有1600 TRAIN仍正权参与凸混合系数拟合；TEST仅分离观察/开发选模，不入梯度/
-统计/教师提取。精确SHA复用已审核教师缓存，最多120fit秒/8分量，CPU2无SDK/
-GPU/新CCD/新推理模块，完整原模型bestlast审计再报。当前仅方案，不声称已改善。
+| run/L4 | 实际TRAIN拟合/观察 | last TRAIN/1600 | last TEST/411 | best |
+|---|---:|---:|---:|---:|
+| postCCD_prototype_SGD_20261022 | 24完整pass/4800类别聚合批次 | 1087 | 260 | E0父285 |
+| terminal_bias_coordinate_20261022 | 8次原20bias坐标pass | 1100 | 265 | E0父285 |
+| postCCD_GCE_SGD_20261022 | 24完整pass/4800稳健损失批次 | 1081 | 265 | E0父285 |
+| terminal_teacher_PLS_20261022 | 8个TRAIN教师协方差方向，全部混合0 | 1009 | 285 | E0父285 |
+| terminal_teacher_residual_PLS_20261022 | 8个保留父方向的教师增量状态 | 1015 | 273 | E0父285 |
+| terminal_teacher_path_20261022 | 同TRAIN方向固定四进度，共32状态 | 1015 | 273 | E0父285 |
 
-## 2026-10-22教师特征迁移对照：先核验，再有限TRAIN拟合原Linear
+**无准确率改善，正式接受仍285/411=69.34307%。**固定原始仿真346/411=
+84.18491%，当前低14.84185pp，目标340/411=82.72506%仍差55正确。不把E0容器
+新SHA或较低概率NLL冒充训练提升。各best/last原生全TRAIN/TEST、冻结/相位/
+数据/缓存概率<=3e-6及逐样本审计通过，20/14/18/16/15/15文件本地SHA备份完成。
+正式配置分别为本任务`lab_caltech20_L4_{prototype_SGD,bias_coordinate,GCE_SGD,teacher_PLS,teacher_residual_PLS,teacher_path}_profile_20261022.json`。
+GCE为[原论文](https://papers.neurips.cc/paper_files/paper/2018/file/f2925f97bc13ad2852a7a551802feea0-Paper.pdf)
+启发的q=.7、.75GCE+.25CE有界对照，不证明标签错误或保证本任务收益。
 
-同40 TRAIN的原始教师7b0d7f05纯仿真39/40，而当前实测父31/40；原始教师与
-实测特征余弦均值.2597586，不能直接替换特征或冒充物理响应。其原40样本报告
-SHA65eb8a5d7dd4f3b1bb50e1e9c6d8a8ea1d87808a71cc3a06b0993568d29e2a23。
-新配置`lab_caltech20_L4_teacher_PLS_profile_20261022.json`：固定原教师提取全部
-1600 TRAIN的256维特征，仅TRAIN成对监督协方差最多8个PLS方向，折回原
-Linear20x256；区别于先前20logit岭回归、PCA或新增推理层。各分量的父头保护
-混合系数用TRAIN凸目标32次固定黄金分割拟合，原TRAIN先验/正确父KL保留；
-TEST只分离观察至多8个训练状态，开发选模，绝不教师TEST或TEST梯度/统计拟合。
-从c172de22接续，全部非头/光学/上游逐位冻结，CPU2/无SDK GPU/新CCD/VALID。
-教师缓存后最多120fit秒，无候选/种子无界扫描；完整原模型CPU bestlast/概率/
-冻结/相位/数据和本地SHA审计后报告结果。目前只是经测试的配置，不等于已提升。
+两个完整交接（均在上述run的sequence根目录，本地和实验室一致）：
 
-## 2026-10-22回放可行性：当前适配权重纯仿真不能直接作为保护教师
+- `L4_confidence_loss_handoff_20261022.json` SHA e5d428e674dd1522fcc13886608f8fcc8ccdc7bed562da2d2d1a81c5a77759cf。
+- `L4_teacher_transfer_handoff_20261022.json` SHA 7cc99c5db64b3887d66cc9c1f45085a8289052d530e2bb6244f47704244ebc0f。
 
-固定40 TRAIN（每类2）核验完成：当前c172de22在同身份实测特征31/40，原图纯
-仿真仅4/40，成对特征余弦均值.3871702、最小-.4359300；模型全部参数逐位冻结。
-证据`TRAIN40_simulation_replay_admission_20261022/report.json`和有SHA的仿真
-特征均已本地备份。它不是完整TEST精度或已标定的物理响应模型，不能直接把
-这些当前仿真预测作为可靠教师，因此未启动该回放拟合。下一步仅核查原始仿真
-教师7b0d7f05在同40 TRAIN上的特征/分类信息，不读取TEST或把旧CCD混入。
+新增诊断均仅TRAIN或分离描述性TEST，不作物理根因/性能上限证明：
 
-## 2026-10-22本轮完整结果：三项均保留285；先核验仿真TRAIN回放可行性
+1. `L4_offline_transfer_diagnosis_20261022.json` SHA09f49654fe7df3771fb98c3641febc673e2bb8e7f2dd34f2bdeff312f790aa21：
+   prototype末轮TRAIN新增104/损失26，TEST新增0/损失25；bias末轮TRAIN新增95/
+   损失4，TEST新增1/损失21。父TRAIN591错误中201个对应标签概率<.05；
+   GCE最后也未修复TEST错误、损失20个父正确，不能把TRAIN改善当作恢复。
+2. 固定40 TRAIN（每类2）纯仿真可行性核验：当前适配模型c172de22仅4/40，
+   同身份实测父31/40；原始仿真教师7b0d7f05为39/40。因此未用当前失配的纯仿真
+   输出作保护教师。原教师完整1600 TRAIN为1529正确，但直接PLS迁移的TRAIN
+   最优混合均0；保留父头的残差迁移及早停也未超过285。原教师缓存SHA
+   59e8fbe0260e558c8df04f470d8956ebd7bfb56a690649d2b62f8f2435a952fb，精确复用不复制。
+3. `TRAIN_layer_separability_20261022.json`：排除原图及其增强副本的同源最近邻，
+   原教师810/1600、最后global前473/1600、最后融合后343/1600。
+   类间/类内scatter比为.23714/.23039/.23307。仅描述特征几何，不是部署准确率、
+   线性可分性上限或光路漂移证明；不足将差距归因于单一末层或断言离线已不可能。
+   目前证据不支持无限重复末端拟合，下一步应针对实测层的响应/可分性核查，
+   确认具体失配后再决定上游调整及其必要的新下游CCD，不能混用旧CCD报告。
 
-类别聚合24pass、原20bias准确率8pass、稳健GCE24pass均完成，原模型CPU best/
-last全TRAIN1600/TEST411、冻结/相位/数据/概率审计通过、rc0退出。GCE last
-TRAIN1081/1600、TEST265/411，候选最高284；相对父TRAIN新增99/损失27，TEST
-新增0/损失20。三项best全为E0父285，**没有新性能提升**，原接受c172de22不变。
-GCE18文件本地SHA备份manifest6b9787ac70cb4a7499b73f0928b8f985c5ccbe41a4b2bd3f0a440e256f50d1c3。
-新交接`L4_confidence_loss_handoff_20261022.json` SHA
-e5d428e674dd1522fcc13886608f8fcc8ccdc7bed562da2d2d1a81c5a77759cf，记录三项
-实际更新、best/last、逐样本变化、源码/报告/备份身份。已结束的进程不声称活跃。
-
-下一步先核验而非直接再拟合：原模型固定40个TRAIN身份（每类2份）纯仿真回放，
-比较其与同身份实测特征及父分类能力，核所有参数逐位冻结/原生读出一致性。
-不读TEST或VALID、不拟合参数、不启动相机；不将仿真特征冒作CCD。该小样本
-诊断不是完整精度、物理替代模型、性能上限或回放训练有效的证明。其后是否值得
-投入全TRAIN仿真回放保护训练，依据该证据另行决定；不无界重复已失败的损失。
-
-## 2026-10-22继续推进：两项完整复核无改善，准备稳健TRAIN损失对照
-
-类别聚合24pass已完整结束、原模型CPU复核last TRAIN1087/1600、TEST260/411；
-原20bias准确率效用8pass亦已完整结束，last TRAIN1100/1600、TEST265/411。
-两者best都仍父285，均rc0退出/冻结和原生概率审计通过，没有新性能提升。
-bias的14文件本地备份manifest41eea6ea8db4d49741c1ddf985de0f6fb0f7b7fb1a6d4ebf96cf66db87a1c25e。
-新逐样本诊断`L4_offline_transfer_diagnosis_20261022.json` SHA
-09f49654fe7df3771fb98c3641febc673e2bb8e7f2dd34f2bdeff312f790aa21：
-prototype末轮TRAIN新增104/损失26，但TEST新增0/损失25；bias末轮TRAIN新增95/
-损失4，TEST新增1/损失21。父TRAIN591错误，201个对应标签概率<.05；这些只是
-拟合/迁移诊断，不证明标签错误、光路漂移或理论精度上限。
-
-准备一个不同损失方向：`lab_caltech20_L4_GCE_SGD_profile_20261022.json`，仍从
-精确c172de22的原5150接续，除损失外与原fullTRAIN-SGD配置/24pass/600fit秒
-一致。使用Zhang/Sabuncu2018 GCE q=.7，.75GCE+.25普通CE保留全TRAIN正权，
-原正确TRAIN父KL仍在；降低极低标签概率项的牵引，而非再次强化这些难例。
-只训练原末端，不增加推理层、不改标签、光学/已采输入上游/CCD/曝光坐标LUT。
-CPU2/无SDK GPU/VALID；TEST仍仅分离开发诊断/选模，无TEST梯度或拟合统计。
-完整原模型bestlast审计备份后报告，不把新配置当作已启动、改善或达成340。
-参考https://papers.neurips.cc/paper_files/paper/2018/file/f2925f97bc13ad2852a7a551802feea0-Paper.pdf。
-
-## 2026-10-22继续推进：类别聚合24轮无改善，原20偏置准确率目标对照
-
-原`postCCD_prototype_SGD_20261022/L4`从精确c172de22/285接续，完整24pass/
-4800 TRAIN类别聚合批次已结束、rc0退出；原模型CPU best/last、冻结/数据/相位/
-概率审计通过。last TRAIN1087/1600、TEST260/411=63.26034%，best仍E0父285，
-没有训练改善；20文件本地SHA备份manifest9081561035eaf4591838f5274264f0a4d9428a66b4602c1d79ccbf9b06554105。
-完整实拍接受版本仍69.34307%，固定仿真84.18491%，目标340仍差55正确。
-
-用户要求继续找方法，本轮仅写T18离线末端训练函数/入口、profile、测试和记录，
-不改其他窗口或相机。新增`lab_caltech20_L4_bias_coordinate_profile_20261022.json`：
-固定原Linear.weight/9conv/alpha/全部光学和输入上游，仅在原20个bias上优化TRAIN
-分类准确率效用，不是再做一轮CE/学习率更换。每个坐标枚举TRAIN判别区间，原
-TRAIN3141类先验校正80/类抽样，保留原TRAIN正确额外权重1；半径固定为原TRAIN
-正margin中位数的.5，不由TEST拟合；最多8完整pass/60fit秒，CPU2，无GPU/SDK。
-TEST411仅每pass分离观察/开发选模，无TEST梯度、阈值拟合、VALID、新推理层或
-新CCD。完整原模型CPU bestlast/冻结/概率及SHA审计后报告，不以计划声称改善。
-六层G2本地12文件SHA备份已完成；相机仍按人工暂停，不枚举/启动/重试E3。
+二层原已达标版本不改。六层G2新增2011帧已全审计，12文件本地SHA备份完成；
+E3启动-1001且零新帧，E3/G3共4022帧未采。用户明确暂不能操作相机，故不枚举、
+启动或盲重试；已有所有有效CCD/PT/报告保护，不能把混合指标称六层完整实拍。
 
 ## 2026-10-22再次要求训练：仍从69.34%原PT接续，增加TRAIN类别聚合损失
 
