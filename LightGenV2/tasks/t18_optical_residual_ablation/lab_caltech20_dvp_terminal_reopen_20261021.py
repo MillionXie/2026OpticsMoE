@@ -56,6 +56,7 @@ def selftest():
 
 def run(a):
     preview=json.loads(a.profile.read_text());post_sam=preview.get('method') in ('TRAIN_postCCD_SAM','TRAIN_postCCD_geometry_SAM','TRAIN_postCCD_Adam_restart','TRAIN_postCCD_Adam_warm','TRAIN_postCCD_alternating_blocks','TRAIN_postCCD_featuremix_SWA')
+    cpu_joint=preview.get('method')=='TRAIN_postCCD_fullbatch_SGD'
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==(preview['GPU_UUID'] if post_sam else '')
     import numpy as np,torch
     from torch.nn import functional as F
@@ -84,7 +85,7 @@ def run(a):
     assert m.session_hardware_digest(a.sequence)==loop.HARDWARE
     session=a.sequence/'L4_response_20261020'
     model,_=m.model_for(parent,cfg['parent_SHA256'],4,session/'source_reference.ts');original=m.state_cpu(model)
-    if head_only or post_sam:
+    if head_only or post_sam or cpu_joint:
         feature_state=torch.load(producer/'best.pt',map_location='cpu',weights_only=False)['model']
         assert all(torch.equal(v,feature_state[k]) for k,v in original.items() if not k.startswith('linear.'))
     banks={}
@@ -144,9 +145,9 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse or subspace:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or cpu_joint or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse or subspace:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not cpu_joint and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
     if subspace:
         from lab_caltech20_dvp_error_guided_head_20261021 import stable_subspace_head,fisher_subspace_head
@@ -245,7 +246,7 @@ def run(a):
     elif coupled:
         from lab_caltech20_dvp_statistical_readout_20261021 import coupled_huber_rows
         lastw,lastb,proof=coupled_huber_rows(torch,np,tr,te,pw.double(),pb.double(),dict(cfg['coupled'],target=340),observe);reason='finite_coupled_TRAIN_pair_correction_complete'
-    elif post_sam:lastw,lastb=bw.clone(),bb.clone();reason='original_postCCD_SAM'
+    elif post_sam or cpu_joint:lastw,lastb=bw.clone(),bb.clone();reason='original_postCCD_joint'
     elif best<340:
         maximum=cfg.get('maximum_protected_passes',1);assert 1<=maximum<=12
         protected_start=time.monotonic();total_budget=cfg.get('total_protected_fit_seconds',maximum*120);assert 0<total_budget<=1440
@@ -287,7 +288,7 @@ def run(a):
     try:
         with torch.no_grad():
             for role,n in (('train',1600),('test',411)):
-                reuse=Path(cfg['terminal_input_producer'])/(role+'_last_input.npy') if post_sam else None
+                reuse=Path(cfg['terminal_input_producer'])/(role+'_last_input.npy') if post_sam or cpu_joint else None
                 dest=np.load(reuse,mmap_mode='r') if reuse else None;pp=[]
                 for begin in range(0,n,8):
                     images,valid,end=m.padded(data,role,begin);measured={}
@@ -308,7 +309,7 @@ def run(a):
                 cached[role]=dest
                 if role=='test':assert int((torch.cat(pp).argmax(1)==ty).sum())==best
     finally:hook.remove()
-    if post_sam:
+    if post_sam or cpu_joint:
         from lab_caltech20_dvp_postCCD_SAM_20261021 import fit_and_audit
         return fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,session/'source_reference.ts')
     def logits(role,indices):

@@ -46,6 +46,18 @@ def adam_step(params,opt,objective,alpha):
     return float(loss.detach()),float(loss.detach()),gradient
 
 
+def accumulate_TRAIN_batch(loss,params,opt,alpha,samples,total_samples,finish):
+    """One optimizer step only after a complete effective TRAIN batch."""
+    assert 0<samples<=total_samples and torch.isfinite(loss)
+    (loss*samples/total_samples).backward()
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
+    norm=float(torch.stack([p.grad.detach().norm() for p in params]).norm())
+    if finish:
+        torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
+        with torch.no_grad():alpha.clamp_(.4001001,.95)
+    return float(loss.detach()),float(loss.detach()),norm
+
+
 def conditioned_readout_block(x,y,pw,pb,sample_weights,cfg,observe):
     """TRAIN-only conditional head fit; optimizer coordinates are folded away."""
     from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
@@ -102,7 +114,12 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     cm=np.bincount(te['y']*20+bp.argmax(1).numpy(),minlength=400).reshape(20,20);error=1-cm.diagonal()/cm.sum(1).clip(1)
     prior=np.asarray(cfg['original_TRAIN_counts'],float);weights=torch.tensor(np.sqrt(prior/prior.mean())*(1+.25*error),dtype=torch.float32)
     m.save(a.out/'TRAIN_emphasis_plan.json',dict(TEST_confusion=cm.tolist(),TRAIN_importance=importance.tolist(),TRAIN_neighbours=plans,TRAIN_class_weights=weights.cpu().tolist(),TEST_gradient=False))
-    loop.gpu_admission(m,cfg);model.cuda();weights=weights.cuda();use_sam=fit.get('optimizer_method','SAM')=='SAM'
+    fullbatch=fit.get('optimizer_method')=='full_TRAIN_SGD';device='cpu' if fullbatch else 'cuda'
+    if fullbatch:
+        assert fit['feature_dropout_p']==fit['CCD_pixel_dropout_p']==fit['CCD_gain_sigma']==fit['CCD_additive_sigma_DN']==0
+        assert not fit.get('TRAIN_feature_mixup',False) and not fit.get('freeze_head',False)
+    else:loop.gpu_admission(m,cfg)
+    model.to(device);weights=weights.to(device);use_sam=fit.get('optimizer_method','SAM')=='SAM'
     alternating=fit.get('alternating_readout',False);blocks=[]
     freeze_head=fit.get('freeze_head',False);train_keys=allowed-{'linear.weight','linear.bias'} if freeze_head or alternating else allowed
     if fit.get('center_class_common',False):
@@ -125,8 +142,8 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     assert sum(p.numel() for p in params)==expected_trainable
     groups=[dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)]
     if not freeze_head and not alternating:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
-    opt=torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
-    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,eval_augmented_batches=0)
+    opt=torch.optim.SGD(groups,momentum=.9,weight_decay=fit['weight_decay']) if fullbatch else torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
     swa_sum={};swa_snapshots=0;swa_history=[]
     def dropout(module,inputs):
         if active['TRAIN']:
@@ -138,23 +155,31 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     try:
         for epoch in range(1,fit['epochs']+1):
             total=0.;used=0;nonzero=0;order=rng.permutation(1600)
+            if fullbatch:opt.zero_grad(set_to_none=True)
             for begin in range(0,1600,8):
-                ix=order[begin:begin+8];v=torch.from_numpy(np.asarray(cached['train'][ix]).copy()).cuda();ccd=torch.from_numpy(np.asarray(fields['3']['train'][ix]).copy()).cuda().float()
+                ix=order[begin:begin+8];v=torch.from_numpy(np.asarray(cached['train'][ix]).copy()).to(device);ccd=torch.from_numpy(np.asarray(fields['3']['train'][ix]).copy()).to(device).float()
                 # Fixed noise per update; the probe uses the identical view and RNG.
-                gain=1+fit['CCD_gain_sigma']*torch.randn((len(ix),1,1),device='cuda');noisy=(ccd*gain+fit['CCD_additive_sigma_DN']*torch.randn_like(ccd)).clamp(0,255)
+                gain=1+fit['CCD_gain_sigma']*torch.randn((len(ix),1,1),device=device);noisy=(ccd*gain+fit['CCD_additive_sigma_DN']*torch.randn_like(ccd)).clamp(0,255)
                 if fit.get('CCD_pixel_dropout_p',0)>0:
                     noisy=F.dropout(noisy,p=fit['CCD_pixel_dropout_p'],training=True).clamp(0,255);counts['TRAIN_CCD_pixel_dropout_batches']+=1
-                optical=model.nonlinear(noisy,'global');labels=train_y[ix].cuda();teach=teacher[ix].cuda();sample_weight=torch.tensor(importance[ix],dtype=torch.float32,device='cuda');active['TRAIN']=True
-                if fit.get('TRAIN_feature_mixup',False):active['mix_perm']=torch.arange(len(ix),device='cuda').roll(1);counts['TRAIN_feature_mixup_batches']+=1
+                optical=model.nonlinear(noisy,'global');labels=train_y[ix].to(device);teach=teacher[ix].to(device);sample_weight=torch.tensor(importance[ix],dtype=torch.float32,device=device);active['TRAIN']=True
+                if fit.get('TRAIN_feature_mixup',False):active['mix_perm']=torch.arange(len(ix),device=device).roll(1);counts['TRAIN_feature_mixup_batches']+=1
                 def objective():
                     z=tail(model.electronic[3],model.linear,model.effective_alpha(3),v,optical)
                     if fit.get('TRAIN_feature_mixup',False):return mixed_TRAIN_loss(z,labels,teach,sample_weight,weights,active['mix_perm'],fit['label_smoothing'],fit['teacher_KL'])
                     ce=F.cross_entropy(z,labels,weight=weights,label_smoothing=fit['label_smoothing'],reduction='none')
                     keep=(teach.argmax(1)==labels).float();kl=F.kl_div(z.log_softmax(1),teach,reduction='none').sum(1)
-                    return (ce*sample_weight).mean()+fit['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)
-                clean,probe,norm=sam_step(params,opt,objective,fit['SAM_radius'],model.fusion_logits[3]) if use_sam else adam_step(params,opt,objective,model.fusion_logits[3]);active['TRAIN']=False
-                total+=clean*len(ix);used+=len(ix);nonzero+=int(norm>0);counts['TRAIN_noise_batches']+=1;counts['SAM_updates' if use_sam else 'AdamW_updates']+=1
-                if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_featuremix_TRAIN' if fit.get('TRAIN_feature_mixup',False) else 'L4_postCCD_alternating_TRAIN' if alternating else 'L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
+                    denominator=(teacher.argmax(1)==train_y).sum().clamp_min(1)*len(ix)/1600 if fullbatch else keep.sum().clamp_min(1)
+                    return (ce*sample_weight).mean()+fit['teacher_KL']*(kl*keep).sum()/denominator.to(device)
+                if fullbatch:
+                    clean,probe,norm=accumulate_TRAIN_batch(objective(),params,opt,model.fusion_logits[3],len(ix),1600,begin+len(ix)==1600)
+                    counts['full_TRAIN_SGD_updates']+=int(begin+len(ix)==1600)
+                else:
+                    clean,probe,norm=sam_step(params,opt,objective,fit['SAM_radius'],model.fusion_logits[3]) if use_sam else adam_step(params,opt,objective,model.fusion_logits[3])
+                    counts['SAM_updates' if use_sam else 'AdamW_updates']+=1
+                active['TRAIN']=False
+                total+=clean*len(ix);used+=len(ix);nonzero+=int(norm>0);counts['TRAIN_noise_batches']+=int(not fullbatch)
+                if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_full_TRAIN_SGD' if fullbatch else 'L4_postCCD_featuremix_TRAIN' if fit.get('TRAIN_feature_mixup',False) else 'L4_postCCD_alternating_TRAIN' if alternating else 'L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
                 batch=begin//8+1
                 if epoch==1 and batch<=fit.get('early_evaluate_batches',0) and batch%fit.get('early_evaluate_every',5)==0:
                     e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
@@ -239,9 +264,9 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
             assert float(np.abs(q-prob).max())<=3e-6 and np.array_equal(q.argmax(1),prob.argmax(1))
             results[name][role]=metric;np.savez_compressed(a.out/(name+'_'+role+'_predictions.npz'),ids=banks[role]['ids'],labels=banks[role]['y'],probabilities=prob)
     assert results['best']['test']['correct']==best
-    m.save(a.out/'TRAIN_transform_audit.json',dict(counts=counts,original_state_only=True,eval_augmentation=False,synthetic_not_calibrated_CCD_noise=True,SAM_probe_restored_exactly=use_sam,identical_probe_stochastic_view=use_sam,optimizer_method='SAM' if use_sam else 'AdamW',TRAIN_kernel_restart=fit.get('TRAIN_kernel_restart',False)))
+    m.save(a.out/'TRAIN_transform_audit.json',dict(counts=counts,original_state_only=True,eval_augmentation=False,synthetic_not_calibrated_CCD_noise=not fullbatch,SAM_probe_restored_exactly=use_sam,identical_probe_stochastic_view=use_sam,optimizer_method='full_TRAIN_SGD' if fullbatch else 'SAM' if use_sam else 'AdamW',effective_gradient_batch=1600 if fullbatch else 8,TRAIN_kernel_restart=fit.get('TRAIN_kernel_restart',False)))
     m.save(a.out/'report.json',dict(state='complete',baseline_correct=cfg['parent_correct'],selected_correct=best,selected_epoch=selected,selected_E0=selected==0,actual_epochs=epoch,target_correct=340,target_met=best>=340,full_physical=True,strict_original_CPU=True,results=results,
-        allowed_parameters=5150,gradient_parameters=5150 if alternating else expected_trainable,trainable_keys=sorted(allowed if alternating else train_keys),head_gradient_frozen=freeze_head,alternating_readout=alternating,geometry_block_gradient_parameters=expected_trainable,readout_blocks=len(blocks),all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=True))
+        allowed_parameters=5150,gradient_parameters=5150 if alternating else expected_trainable,trainable_keys=sorted(allowed if alternating else train_keys),head_gradient_frozen=freeze_head,alternating_readout=alternating,geometry_block_gradient_parameters=expected_trainable,readout_blocks=len(blocks),all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=not fullbatch))
     m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,all_nonterminal_bitwise_frozen=True,prefix_SHA256=protocol['prefix_SHA256'],cached_native_probability_parity=True))
     del opt;torch.cuda.empty_cache()
 
@@ -270,4 +295,13 @@ def selftest():
     mixloss=mixed_TRAIN_loss(zz,labels,teacher,torch.ones(8),torch.ones(20),perm,0.,0.)
     expected=.5*(F.cross_entropy(zz,labels)+F.cross_entropy(zz,labels[perm]));assert torch.allclose(mixloss,expected)
     mixloss.backward();assert zz.grad is not None and torch.isfinite(zz.grad).all()
+    q=torch.nn.Parameter(torch.tensor([.3,.6]));alpha=torch.nn.Parameter(torch.tensor(.7,dtype=torch.float64));opt=torch.optim.SGD([q,alpha],lr=.01)
+    old=q.detach().clone();opt.zero_grad();items=torch.arange(8).float()/8
+    for begin in range(0,8,2):
+        loss=((q[0]*items[begin:begin+2]+q[1]+alpha.float())**2).mean()
+        accumulate_TRAIN_batch(loss,[q,alpha],opt,alpha,2,8,begin==6)
+        if begin<6:assert torch.equal(q,old)
+    ref=torch.nn.Parameter(old.clone());refalpha=torch.nn.Parameter(torch.tensor(.7,dtype=torch.float64));ropt=torch.optim.SGD([ref,refalpha],lr=.01)
+    ((ref[0]*items+ref[1]+refalpha.float())**2).mean().backward();torch.nn.utils.clip_grad_norm_([ref,refalpha],1.);ropt.step()
+    assert torch.allclose(q,ref,atol=1e-7) and not torch.equal(q,old)
     print(json.dumps(dict(passed=True,identical_probe_view=True,probe_parameter_restoration=True,finite_gradient=True,geometry_only_gradient_parameters=10,frozen_head_no_gradient=True,TEST_used=False,SDK_used=False)))
