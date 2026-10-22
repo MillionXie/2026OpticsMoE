@@ -50,15 +50,16 @@ def spot_direction(images,background):
     return best,dict(scores=scores,selected=best,centroids=points[best],repeat_error=float(np.linalg.norm(cc[3]-cc[0])),coordinates_changed=False,method='independent isolated X/Y source positions and repeat; no global quadrant brightness fit')
 
 
-def known_spots(bench,out,warp,full_scale):
+def known_spots(bench,out,warp,full_scale,spot_level=255):
+    assert 1<=spot_level<=255
     out=Path(out);out.mkdir(exist_ok=True);images=[];positions=((150,150),(330,150),(150,330),(150,150))
     def capture(tag,gray):
         path=out/(tag+'.bmp');Image.fromarray(native(gray,'amplitude')).save(path);raw,meta=bench.capture(path);crop=logical(raw,warp,full_scale)
         Image.fromarray(raw).save(out/(tag+'_raw.png'),compress_level=1);Image.fromarray(crop).save(out/(tag+'_crop.png'));return crop,dict(metadata=meta,raw_SHA256=sha(out/(tag+'_raw.png')))
     background,bg=capture('spot_background',np.zeros((478,478),np.uint8));rows=[]
     for k,(x,y) in enumerate(positions):
-        gray=np.zeros((478,478),np.uint8);gray[y-22:y+22,x-22:x+22]=255;image,row=capture('spot_'+str(k),gray);images.append(image);rows.append(row)
-    direction,proof=spot_direction(images,background);save(out/'report.json',dict(passed=True,**proof,rows=rows,background=bg,TEST_used=False,network_background_subtraction=False))
+        gray=np.zeros((478,478),np.uint8);gray[y-22:y+22,x-22:x+22]=spot_level;image,row=capture('spot_'+str(k),gray);images.append(image);rows.append(row)
+    direction,proof=spot_direction(images,background);save(out/'report.json',dict(passed=True,**proof,rows=rows,background=bg,spot_level=int(spot_level),TEST_used=False,network_background_subtraction=False))
     return direction,rows
 
 

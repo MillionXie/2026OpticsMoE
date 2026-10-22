@@ -19,7 +19,10 @@ from lab_caltech20_dvp_persistence_20261019 import write_images
 
 def check_connection(bench,hw,warp,out):
     folder=out/'connection_check';folder.mkdir();flat=folder/'flat_phase.bmp';Image.fromarray(m.phase_native(np.zeros((478,478),np.uint8))).save(flat);bench.stage(flat)
-    direction,rows=known_spots(bench,folder/'spots',warp,hw['sensor_full_scale']);assert direction==hw['orientation']
+    reference=hw.get('connection_spot_reference_exposure_us',hw['exposure_us'])
+    desired=int(np.clip(round(255*np.sqrt(reference/hw['exposure_us'])),16,255))
+    level=int(m.read(hw['response_lut'])['drive'][desired]) if desired<255 else 255
+    direction,rows=known_spots(bench,folder/'spots',warp,hw['sensor_full_scale'],spot_level=level);assert direction==hw['orientation']
     m.save(folder/'report.json',dict(passed=True,rows=rows,orientation=direction,TRAIN_TEST_used=False,same_camera_connection=True))
 
 
@@ -161,7 +164,15 @@ def run(a):
     torch.set_num_threads(2);torch.manual_seed(73);assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     assert not a.out.exists() and not m.LOCK.exists();a.out.mkdir(parents=True)
     hw=m.read(a.hardware);admission=m.read(a.hardware.parent/'report.json');assert admission['passed'] and admission['SDK_released'] and admission['hardware_SHA256']==m.sha(a.hardware)
-    assert hw['spatial_geometry_verified'] and m.read(a.hardware.parent/'independent_geometry/report.json')['passed']
+    assert hw['spatial_geometry_verified']
+    if hw.get('same_phase_TRAIN_exposure_calibrated'):
+        proof=m.read(a.hardware.parent/'spatial_parent_proof.json');parent_hw=Path(proof['parent_hardware'])
+        assert proof['passed'] and m.sha(parent_hw)==proof['SHA256']==hw['same_phase_TRAIN_exposure_parent_SHA256']
+        geometry=parent_hw.parent/'independent_geometry/report.json'
+        assert m.sha(geometry)==proof['independent_geometry_report_SHA256'] and m.read(geometry)['passed']
+        base=m.read(parent_hw)
+        assert all(hw[k]==base[k] for k in ('coordinates_SHA256','response_lut_SHA256','phase_LUT_SHA256','orientation','sensor_full_scale'))
+    else:assert m.read(a.hardware.parent/'independent_geometry/report.json')['passed']
     cfg=m.read(Path(__file__).with_name('lab_caltech20_L6_resume_E3_profile_20261022.json'));base=m.read(Path(__file__).with_name(cfg['prefix_profile']))
     data,dm,fields,identities,old,reference,_=load_prefix(a,m,np,base);parent=a.sequence/cfg['parent_relative'];assert m.sha(parent)==cfg['parent_SHA256'];model,_=m.model_for(parent,cfg['parent_SHA256'],6,reference)
     loop.validate_state(m,model,m.state_cpu(old),m.allowed_keys(old,4));parent_score,_=loop.original_replay(model,data,fields,'test');assert parent_score['correct']==219

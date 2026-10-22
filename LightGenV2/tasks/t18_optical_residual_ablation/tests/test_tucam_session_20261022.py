@@ -22,3 +22,15 @@ def test_continuation_identity_and_bounded_original_head():
     assert 'hardware_manifest=str(a.hardware)' in code and 'heterogeneous_cameras_explicit=True' in code
     assert "{'linear.weight','linear.bias'}" in code and 'planned_frames=4022' in code
     assert 'camera.reset' not in code and '.cuda(' not in code and 'sensor_full_scale' in code
+
+
+def test_same_phase_TRAIN_exposure_does_not_refit_geometry_or_use_TEST():
+    code=(TASK/'lab_caltech20_tucam_exposure_20261023.py').read_text();ast.parse(code)
+    assert 'TRAIN_each_class=2,TEST_used=False' in code and 'range(40)' in code
+    assert "rows[0]['canonical_SHA256']==receipt['canonical_SHA256']" in code
+    assert "m.sha(a.out/'phase.bmp')==receipt['phase_SHA256']" in code
+    assert 'native_background_corrected_exposure_ratios' in code
+    assert 'field_inverse_unchanged=True,optical_LUTs_unchanged=True' in code
+    assert '.backward(' not in code and 'automatic_retry=False' in code
+    resume=(TASK/'lab_caltech20_tucam_L6_20261022.py').read_text()
+    assert "proof['SHA256']==hw['same_phase_TRAIN_exposure_parent_SHA256']" in resume
