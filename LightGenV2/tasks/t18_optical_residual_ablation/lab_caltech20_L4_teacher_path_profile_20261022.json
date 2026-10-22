@@ -1,0 +1,16 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_teacher_feature_PLS","gap_pp":1.5,"target":340,"parent_correct":285,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_coupled_20261021/L4/best.pt",
+  "parent_SHA256":"c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "teacher_SHA256":"7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5",
+  "teacher_admission":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/TRAIN40_original_teacher_feature_admission_20261022/report.json",
+  "teacher_admission_SHA256":"65eb8a5d7dd4f3b1bb50e1e9c6d8a8ea1d87808a71cc3a06b0993568d29e2a23",
+  "teacher_feature_cache":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_teacher_PLS_20261022/L4/TRAIN_teacher_features.npz",
+  "teacher_feature_cache_SHA256":"59e8fbe0260e558c8df04f470d8956ebd7bfb56a690649d2b62f8f2435a952fb",
+  "teacher_PLS":{"components":8,"fit_seconds":120,"label_smoothing":0.02,"teacher_KL":0.5,"blend_anchor":0.01,"residual_transfer":true,"path_checkpoints":[0.25,0.5,0.75,1.0]},
+  "scope":"Finite early-checkpoint development selection on the already TRAIN-directed teacher residual path, not TEST fitted thresholds or derivatives. Prior residual PLS final TRAIN1015/TEST273 with lowerTESTNLL1.38313 than parent1.39178 but lower accuracy: check whether fixed earlier fractions of the TRAIN-optimal update avoid boundary damage. Same accepted285 parent, teacher bank and complete original inference graph; same8TRAINcovariance components and TRAIN-only residual/convex scalar fit, ONLY add declared25/50/75/100percent path checkpoints (at most32 detached full411TEST states). Explicitly TEST-selected development, not independent generalization. No TEST event-boundary search, extra regression/labels/teacher extraction/covariance/gradient/VALID/SDK/GPU/CCD/camera or upstream change/new inference layer.120fitsecond finite budget; bestlast originalCPU/frozen/phase/data/probability/SHA audit required. Do not discard285 on no gain or claim any target guarantee."
+}

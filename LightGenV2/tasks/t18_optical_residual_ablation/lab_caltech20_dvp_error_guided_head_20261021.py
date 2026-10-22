@@ -55,12 +55,17 @@ def teacher_feature_pls(torch,F,x,labels,teacher_features,teacher_w,teacher_b,pw
             if fl<fr:high,right,fr=right,left,fl;left=high-ratio*(high-low);fl=objective(left)
             else:low,left,fl=left,right,fr;right=low+ratio*(high-low);fr=objective(right)
         candidates=(0.,1.,(low+high)/2);eta=min(candidates,key=lambda a:(objective(a),a))
-        ww=pw.double()+eta*(candidate_w-pw.double());bb=pb.double()+eta*(candidate_b-pb.double())
-        row=dict(phase='TRAIN_teacher_residual_PLS' if cfg.get('residual_transfer',False) else 'TRAIN_teacher_feature_PLS',component=component,TRAIN_samples=len(x),TRAIN_teacher_correct=int((F.linear(target,teacher_w.double(),teacher_b.double()).argmax(1)==labels).sum()),TRAIN_correct=int((F.linear(x,ww,bb).argmax(1)==labels).sum()),TRAIN_raw_candidate_correct=int((logits.argmax(1)==labels).sum()),TRAIN_objective=objective(eta),TRAIN_blend=eta,original_Linear_fold_maxabs=error)
-        rows.append(row);stop=observe(ww,bb,row)
+        fractions=cfg.get('path_checkpoints',[1.]);assert 1<=len(fractions)<=4 and fractions==sorted(set(fractions)) and fractions[-1]==1. and fractions[0]>0
+        stop=False
+        for fraction in fractions:
+            current_eta=eta*fraction
+            ww=pw.double()+current_eta*(candidate_w-pw.double());bb=pb.double()+current_eta*(candidate_b-pb.double())
+            row=dict(phase='TRAIN_teacher_residual_PLS' if cfg.get('residual_transfer',False) else 'TRAIN_teacher_feature_PLS',component=component,TRAIN_samples=len(x),TRAIN_teacher_correct=int((F.linear(target,teacher_w.double(),teacher_b.double()).argmax(1)==labels).sum()),TRAIN_correct=int((F.linear(x,ww,bb).argmax(1)==labels).sum()),TRAIN_raw_candidate_correct=int((logits.argmax(1)==labels).sum()),TRAIN_objective=objective(current_eta),TRAIN_blend=current_eta,TRAIN_optimal_blend=eta,checkpoint_fraction=fraction,original_Linear_fold_maxabs=error)
+            rows.append(row);stop=observe(ww,bb,row)
+            if stop:break
         if stop or time.monotonic()-started>=cfg['fit_seconds']:break
     assert rows
-    return ww,bb,dict(TRAIN_only=True,TRAIN_samples=len(x),actual_components=len(rows),fixed_component_budget=cfg['components'],history=rows,fit_seconds=time.monotonic()-started,original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0,residual_transfer=cfg.get('residual_transfer',False))
+    return ww,bb,dict(TRAIN_only=True,TRAIN_samples=len(x),actual_components=max(r['component'] for r in rows),observations=len(rows),path_checkpoints=cfg.get('path_checkpoints',[1.]),fixed_component_budget=cfg['components'],history=rows,fit_seconds=time.monotonic()-started,original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0,residual_transfer=cfg.get('residual_transfer',False))
 
 
 def teacher_feature_pls_selftest():
@@ -72,6 +77,8 @@ def teacher_feature_pls_selftest():
     assert all(0<=r['TRAIN_blend']<=1 and r['original_Linear_fold_maxabs']<1e-6 for r in rows)
     _,_,residual=teacher_feature_pls(torch,F,x,y,target,w,b,w,b,torch.ones(20,dtype=x.dtype),dict(components=2,fit_seconds=30,label_smoothing=.02,teacher_KL=.5,blend_anchor=.01,residual_transfer=True),lambda w,b,r:False)
     assert residual['residual_transfer'] and residual['actual_components']==2
+    _,_,path=teacher_feature_pls(torch,F,x,y,target,w,b,w,b,torch.ones(20,dtype=x.dtype),dict(components=1,fit_seconds=30,label_smoothing=.02,teacher_KL=.5,blend_anchor=.01,residual_transfer=True,path_checkpoints=[.25,.5,.75,1.]),lambda w,b,r:False)
+    assert path['observations']==4 and path['actual_components']==1
     print(dict(passed=True,TRAIN_only=True,original_Linear_fold=True,new_inference_layers=0,finite_PLScovariance=True))
 
 
