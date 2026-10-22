@@ -2,6 +2,12 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_RMS_TRAIN_adjoint_audit_no_inference_change(self):
+        s=(HERE/'lab_caltech20_dvp_terminal_gradient_20261022.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_gradient_audit')
+        self.assertEqual([a.arg for a in f.args.args],['electronic','head','alpha','x','optical','labels'])
+        self.assertIn('assert torch.equal(old,new)',s);self.assertIn('parameters_restored=True',s)
+        for forbidden in ('Camera(','Bench(','advance.acquire'):self.assertNotIn(forbidden,s)
     def test_full_TRAIN_joint_momentum_scope(self):
         c=json.loads((HERE/'lab_caltech20_L4_fullbatch_SGD_profile_20261022.json').read_text())
         self.assertEqual(c['parent_correct'],285);self.assertEqual(c['tail']['optimizer_method'],'full_TRAIN_SGD')
