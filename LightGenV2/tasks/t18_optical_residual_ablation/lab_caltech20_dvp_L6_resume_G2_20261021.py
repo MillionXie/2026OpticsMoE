@@ -70,33 +70,41 @@ def run(a):
     import lab_caltech20_dvp_advance_20261021 as advance
     from lab_caltech20_dvp_suffix_stable_20261021 import load_prefix
     torch.set_num_threads(2);torch.manual_seed(73);cfg=m.read(a.profile)
-    assert cfg['schema']=='DVP_L6_human_recovered_prefix4_v1' and cfg['explicit_human_camera_restored'] and cfg['user_stage_carry']
+    assert cfg['schema'] in ('DVP_L6_human_recovered_prefix4_v1','DVP_L6_capture_remaining_then_terminal_v1') and cfg['explicit_human_camera_restored'] and cfg['user_stage_carry']
+    capture_only=cfg['schema']=='DVP_L6_capture_remaining_then_terminal_v1'
+    if capture_only:assert cfg['interstage_fit'] is False and cfg['parent_correct']==219 and cfg['TEST_gradient'] is False and cfg['VALID']==0
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==cfg['GPU_UUID'] and m.sha(advance.__file__)==cfg['capture_engine_SHA256']
     assert not a.out.exists();a.out.mkdir(parents=True);m.save(a.out/'progress.json',dict(state='prefix_and_selected_PT_admission',SDK_opened=False))
     base=m.read(Path(__file__).with_name(cfg['prefix_profile']));data,dm,fields,identities,old,reference,_=load_prefix(a,m,np,base)
     parent=a.sequence/cfg['parent_relative'];r=m.read(parent.parent/'report.json');audit=m.read(parent.parent/'independent_audit.json')
-    assert m.sha(parent)==cfg['parent_SHA256']==r['results']['best']['PT_SHA256'] and r['selected_correct']==205 and audit['passed'] and audit['report_SHA256']==m.sha(parent.parent/'report.json')
+    expected=cfg.get('parent_correct',205)
+    assert m.sha(parent)==cfg['parent_SHA256']==r['results']['best']['PT_SHA256'] and r['selected_correct']==expected and audit['passed'] and audit['report_SHA256']==m.sha(parent.parent/'report.json')
     assert audit['prefix_SHA256']==identities and m.read(parent.parent.with_suffix('.return.json'))['returncode']==0
     model,_=m.model_for(parent,cfg['parent_SHA256'],6,reference);loop.validate_state(m,model,m.state_cpu(old),m.allowed_keys(old,4))
-    score,_=loop.original_replay(model,data,fields,'test');assert score['correct']==205
+    score,_=loop.original_replay(model,data,fields,'test');assert score['correct']==expected
     hw=m.read(a.sequence/'calibration/admission/admitted_hardware.json');assert m.session_hardware_digest(a.sequence)==advance.HARDWARE
     case=a.sequence/base['source_run'];session=a.sequence/'L6_response_20261020'
     paths={'router':session/'capture/router','0':a.sequence/'TRAIN_restored_same_mask_pair_20261021/L6/capture','1':case/'L6/stage_1/capture','2':case/'L6/stage_2/capture'}
     row=dict(model=model,fields=fields,identities=identities,paths=paths,parent=parent,reference=reference);history=[]
-    m.save(a.out/'protocol.json',dict(config=cfg,source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),parent_PT_SHA256=m.sha(parent),prefix_SHA256=identities,baseline_mixed_correct=205,
+    m.save(a.out/'protocol.json',dict(config=cfg,source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),parent_PT_SHA256=m.sha(parent),prefix_SHA256=identities,baseline_mixed_correct=expected,interstage_fit=not capture_only,
         stage_order=['3','4','5'],planned_frames=6033,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,SDK_serial=True,recurring=False,old_G1_E2_preserved=True,old_failed_G2_frames=0,explicit_human_recovery=True))
     for stage in ('3','4','5'):
         folder=a.out/'L6'/('stage_'+stage);folder.mkdir(parents=True)
         m.save(a.out/'progress.json',dict(state='capturing',stage=stage,stage_name={'3':'G2','4':'E3','5':'G3'}[stage],completed=history))
         row['fields']=advance.acquire(m,loop,a,data,dm,hw,row,6,stage,folder/'capture');row['paths'][stage]=folder/'capture'
         for role in ('train','test'):row['identities'][stage+'/'+role]=m.sha(folder/'capture'/role/'ccd.npy')
+        if capture_only and stage!='5':
+            assert m.sha(row['parent'])==cfg['parent_SHA256']
+            endpoint=dict(stage=stage,depth=6,full_physical=False,PT=str(row['parent']),PT_SHA256=m.sha(row['parent']),prefix_SHA256=dict(row['identities']),capture_audit_SHA256=m.sha(folder/'capture/independent_audit.json'),interstage_fit=False,SDK_released=not m.LOCK.exists())
+            m.save(folder/'endpoint_report.json',endpoint);history.append(endpoint);m.save(a.out/'history.json',history)
+            continue
         m.save(a.out/'progress.json',dict(state='suffix_fit_after_complete_capture',stage=stage,completed=history))
         fitcfg={**cfg,'_paths':{k:str(v) for k,v in row['paths'].items()}}
         chosen,best=suffix(m,loop,data,dm,row['fields'],row['model'],fitcfg,stage,folder/'suffix',reference)
         torch.cuda.empty_cache()
         row['model']=chosen;row['parent']=folder/'suffix/best.pt';endpoint=dict(stage=stage,depth=6,full_physical=stage=='5',selected_correct=best,PT=str(row['parent']),PT_SHA256=m.sha(row['parent']),prefix_SHA256=row['identities'],capture_audit_SHA256=m.sha(folder/'capture/independent_audit.json'),suffix_audit_SHA256=m.sha(folder/'suffix/independent_audit.json'),SDK_released=not m.LOCK.exists())
         m.save(folder/'endpoint_report.json',endpoint);history.append(endpoint);m.save(a.out/'history.json',history)
-    m.save(a.out/'report.json',dict(state='complete',history=history,SDK_released=not m.LOCK.exists(),full_physical=True,TEST_gradient=False,TEST_informed_development=True,recurring=False))
+    m.save(a.out/'report.json',dict(state='complete',history=history,SDK_released=not m.LOCK.exists(),full_physical=True,interstage_fit=not capture_only,TEST_gradient=False,TEST_informed_development=True,recurring=False))
 
 
 if __name__=='__main__':

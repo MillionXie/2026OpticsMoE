@@ -1,0 +1,15 @@
+{
+  "schema":"DVP_L6_capture_remaining_then_terminal_v1","explicit_human_camera_restored":true,"user_stage_carry":true,
+  "interstage_fit":false,"TEST_gradient":false,"VALID":0,"parent_correct":219,
+  "prefix_profile":"lab_caltech20_L6_E2_stable_suffix_profile_20261021.json",
+  "parent_relative":"advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/E2_extended_readout_20261022/best.pt",
+  "parent_SHA256":"ad715260037a136f0b676d21b582ac7157850c3800a68c561885949a123db7e0",
+  "capture_engine_SHA256":"972ef8d8360e27af1f0934a7edad93f138abe0049b76bc6d4a49060219426a17",
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","startmenuexperiencehost.exe","todesk.exe","searchapp.exe","textinputhost.exe","phoneexperiencehost.exe","msedgewebview2.exe","shellexperiencehost.exe","systemsettings.exe","msedge.exe"],
+  "intermediate_epochs":0,"intermediate_fit_seconds":0,"final_epochs":60,"final_fit_seconds":1200,
+  "intermediate_target":322,"final_target":350,"phase_lr":0.00005,"electronic_lr":0.0001,"alpha_lr":0.0001,"head_lr":0.0005,"weight_decay":0.001,"label_smoothing":0.03,
+  "CCD_gain_sigma":0.005,"CCD_additive_sigma_DN":0.1,"dropout_location":"CCD_pixels","feature_dropout_p":0.0,"CCD_pixel_dropout_p":0.002,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "scope":"20261022 explicit camera recovery and new order. Preserve complete measured router/E1/G1/E2. Fixed accepted219 original model: G2 then E3 then G3, each TRAIN1600 then TEST411, no interstage fit or mask/alpha/electronic changes. Only after all6033 fresh frames and audits, tune original final electronic suffix/head, native CPU bestlast; no new layer/no TEST gradient/no VALID. Single SDK, exposure60006us/gain1/wait240/discard6/softflip_v/coordinates20261020/session LUT unchanged. Record brightness/saturation, stop on corrupted/stale/wholewhite data; no blind retry/reset. No scheduler."
+}

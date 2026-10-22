@@ -2,6 +2,13 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_recovered_L6_capture_without_interstage_fit(self):
+        c=json.loads((HERE/'lab_caltech20_L6_capture_remaining_profile_20261022.json').read_text())
+        self.assertFalse(c['interstage_fit']);self.assertEqual(c['parent_correct'],219)
+        self.assertEqual(c['intermediate_epochs'],0);self.assertFalse(c['TEST_gradient']);self.assertEqual(c['VALID'],0)
+        s=(HERE/'lab_caltech20_dvp_L6_resume_G2_20261021.py').read_text();ast.parse(s)
+        self.assertIn("if capture_only and stage!='5':",s)
+        self.assertIn("assert m.sha(row['parent'])==cfg['parent_SHA256']",s)
     def test_featuremix_SWA_original_capacity(self):
         c=json.loads((HERE/'lab_caltech20_L4_featuremix_SWA_profile_20261022.json').read_text())
         self.assertTrue(c['tail']['TRAIN_feature_mixup']);self.assertEqual(c['tail']['SWA_start_epoch'],20)
