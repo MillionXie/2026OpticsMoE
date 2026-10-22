@@ -1,0 +1,29 @@
+{
+  "schema":"TUCam_fixed_simulation_L4_after_L6_v1",
+  "sequence":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020",
+  "hardware":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/calibration/E3_TRAIN_exposure_prefixclear_20261023/admitted_hardware.json",
+  "hardware_SHA256":"dae24f0d9d0d6cab21cd5451c91cbe587e79a0d13a448b74adfe9d29e341b128",
+  "L6_run":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/L6_remaining_TRAINexposure_20261023",
+  "L6_capture_parent_relative":"advance_after_user_waiver_20261021_USB_resume01_G1_resume384/L6/E2_extended_readout_20261022/best.pt",
+  "L6_capture_parent_SHA256":"ad715260037a136f0b676d21b582ac7157850c3800a68c561885949a123db7e0",
+  "L4_initial":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_rich20_L4_residual_final_20261018/residual_L4.pt",
+  "L4_initial_SHA256":"7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5",
+  "L4_reference":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_rich20_L4_residual_final_20261018/source_reference.ts",
+  "L4_reference_SHA256":"b508321c0d3d14cf66b6c58fc0b8d61b6788806f0fa00283491c935ba65c88ea",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "TRAIN":1600,"TEST":411,"VALID":0,"TRAIN_each_class":80,
+  "L4_simulation_correct":346,"L4_target":340,"L6_simulation_correct":354,"L6_target":350,
+  "interstage_fit":false,"L4_stages":["router","0","1","2","3"],"formal_L4_frames":10055,
+  "calibration_TRAIN_each_stage":40,"calibration_TEST_used":false,
+  "exposure_probe_us":[500,1000,2000,5000,10000,20000,40000,80000],
+  "TRAIN_exposure_anchors":[0,13,27],"minimum_storage_GiB":120,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "recipes":[
+    {"name":"regularized_joint5150","epochs":24,"seconds":600,"conv_lr":0.0001,"alpha_lr":0.0001,"head_lr":0.0003,"gain_sigma":0.005,"noise_DN":0.1,"feature_dropout":0.03,"smoothing":0.03,"KL":0.1,"anchor":0.001,"TEST_class_emphasis":0.25},
+    {"name":"underfit_joint5150","epochs":30,"seconds":900,"conv_lr":0.0003,"alpha_lr":0.0001,"head_lr":0.001,"gain_sigma":0.003,"noise_DN":0.05,"feature_dropout":0.01,"smoothing":0.02,"KL":0.05,"anchor":0.001,"TEST_class_emphasis":0.25}
+  ],
+  "anti_overfit_recipe":{"name":"anti_overfit_joint5150","epochs":24,"seconds":600,"conv_lr":0.00005,"alpha_lr":0.00002,"head_lr":0.0001,"gain_sigma":0.005,"noise_DN":0.2,"feature_dropout":0.08,"smoothing":0.08,"KL":0.3,"anchor":0.01,"TEST_class_emphasis":0.25},
+  "overfit_gap_threshold":0.10,
+  "second_method_policy":"last TRAIN minus TEST accuracy >0.10 selects anti_overfit, otherwise the registered underfit recipe; then one finite conditioned original Linear polish if still below target. Never start from rejected last.",
+  "scope":"20261023 user orders: finish existing L6; capture L4 afresh from ORIGINAL simulation7b0d7f05 with all parameters frozen throughout router/E1/G1/E2/G2. No interstage adaptation. Same fixed TRAIN80/class+TEST411/noVALID. Keep original69.34% and old CCD untouched. Bounded same-phase TRAIN-only exposure admission per new layer, geometry/device LUT unchanged; freeze admitted exposure for whole layer, never tune using accuracy/TEST. L4 acquisition overlaps independent SDK-free CPU L6 original terminal5150 optimization; L4 final electronics takes priority after capture. At most two registered joint methods selected by real error/overfit evidence, then one conditioned ORIGINAL head, with native bestlast/frozen/data/phase audits. TEST analysis/modest TRAIN class emphasis and model selection are development use, no TEST derivatives or new inference layers. No scheduler, restart loop, random candidate scan, exposure changes mid-layer or guaranteed target. New camera is a confound: not a controlled causal proof against prior layerwise adaptation."
+}
