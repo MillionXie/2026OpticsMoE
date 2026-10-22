@@ -79,6 +79,74 @@ class ResponseObserver(MeasuredPrefix):
         return observed
 
 
+def relation_summary(values,target,labels,ids):
+    """TRAIN-only global check of the relation hypothesis, excluding source mates."""
+    a=np.asarray(values,np.float64);b=np.asarray(target,np.float64)
+    a=a/np.linalg.norm(a,axis=1,keepdims=True).clip(1e-12);b=b/np.linalg.norm(b,axis=1,keepdims=True).clip(1e-12)
+    source=np.asarray([str(v).split('::TRAIN_shift')[0] for v in ids]);valid=source[:,None]!=source[None,:]
+    ga=a@a.T;gb=b@b.T;same=np.asarray(labels)[:,None]==np.asarray(labels)[None,:]
+    near=ga.copy();near[~valid]=-np.inf
+    return dict(TRAIN_pair_relation_MSE=float(np.square(ga[valid]-gb[valid]).mean()),TRAIN_nearest_same_class_correct=int((labels[near.argmax(1)]==labels).sum()),TRAIN_sameclass_cosine=float(ga[valid&same].mean()),TRAIN_otherclass_cosine=float(ga[valid&~same].mean()),same_source_excluded=True)
+
+
+def followup(sequence,fit,out):
+    """After fit returns: did the TRAIN relation objective change actual features?"""
+    import lab_caltech20_dvp_layerwise_20261019 as m
+    from lab_caltech20_rich_tail_refine_20261018 import tail
+    assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not out.exists();torch.set_num_threads(2)
+    protocol=m.read(fit/'protocol.json');cfg=protocol['config'];report=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json')
+    assert report['state']=='complete' and audit['passed'] and audit['report_SHA256']==m.sha(fit/'report.json')
+    assert cfg['TRAIN_geometry_feature_key']=='G2_electronic' and report['strict_original_CPU'] and report['full_physical']
+    source=Path(cfg['TRAIN_geometry_features']);assert m.sha(source)==cfg['TRAIN_geometry_features_SHA256']
+    with np.load(source) as z:target=z['G2_electronic'].copy();old=z['G2_fused'].copy();labels=z['labels'].copy();ids=z['ids'].copy()
+    pt=fit/'last.pt';assert m.sha(pt)==report['results']['last']['PT_SHA256'];model,_=m.model_for(pt,m.sha(pt),4,sequence/'L4_response_20261020/source_reference.ts')
+    original=torch.load(cfg['parent_PT'],map_location='cpu',weights_only=False)['model'];state=m.state_cpu(model)
+    assert all(torch.equal(v,state[k]) for k,v in original.items() if k not in protocol['allowed_keys'])
+    inputs=Path(cfg['terminal_input_producer'])/'train_last_input.npy';ccd=Path(cfg['final_capture'])/'train/ccd.npy'
+    assert m.sha(ccd)==protocol['prefix_SHA256']['3/train'];xx=np.load(inputs,mmap_mode='r');oo=np.load(ccd,mmap_mode='r')
+    with np.load(fit/'last_train_predictions.npz') as z:assert np.array_equal(z['ids'],ids) and np.array_equal(z['labels'],labels);expected=z['probabilities'].copy()
+    parts=[];hook=model.linear.register_forward_pre_hook(lambda module,args:parts.append(args[0].detach().cpu().numpy().copy()))
+    try:
+        with torch.inference_mode():
+            for begin in range(0,1600,8):
+                x=torch.from_numpy(np.asarray(xx[begin:begin+8]).copy());o=model.nonlinear(torch.from_numpy(np.asarray(oo[begin:begin+8]).copy()),'global')
+                p=tail(model.electronic[3],model.linear,model.effective_alpha(3),x,o).softmax(1).numpy()
+                assert np.max(np.abs(p-expected[begin:begin+8]))<=3e-6 and np.array_equal(p.argmax(1),expected[begin:begin+8].argmax(1))
+    finally:hook.remove()
+    new=np.concatenate(parts);result=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),TRAIN_only=True,TEST_used=False,TRAIN=1600,feature_target_SHA256=m.sha(source),train_last_input_SHA256=m.sha(inputs),TRAIN_CCD_SHA256=m.sha(ccd),fit_report_SHA256=m.sha(fit/'report.json'),last_PT_SHA256=m.sha(pt),last_probability_matches_full_native_audit=True,nonterminal_parameters_frozen=True,parent=relation_summary(old,target,labels,ids),last=relation_summary(new,target,labels,ids),frozen_electronic_target=relation_summary(target,target,labels,ids),not_a_performance_or_causal_claim=True,SDK_used=False,GPU_used=False)
+    m.save(out,result);return result
+
+
+def TRAIN_loss_balance(sequence,fit,out):
+    """Fixed40 TRAIN gradient diagnostic, no update/TEST/example selection."""
+    import lab_caltech20_dvp_layerwise_20261019 as m
+    from lab_caltech20_rich_tail_refine_20261018 import tail
+    from lab_caltech20_dvp_postCCD_SAM_20261021 import relational_TRAIN_geometry
+    assert os.environ.get('CUDA_VISIBLE_DEVICES')=='' and not out.exists();torch.set_num_threads(2)
+    cfg=m.read(fit/'protocol.json')['config'];parent=Path(cfg['parent_PT']);assert m.sha(parent)==cfg['parent_SHA256']
+    model,_=m.model_for(parent,cfg['parent_SHA256'],4,sequence/'L4_response_20261020/source_reference.ts');original=m.state_cpu(model)
+    model.electronic[3].local.weight.requires_grad_(True);model.fusion_logits[3].requires_grad_(True);params=[model.electronic[3].local.weight,model.fusion_logits[3]]
+    source=Path(cfg['TRAIN_geometry_features']);assert m.sha(source)==cfg['TRAIN_geometry_features_SHA256']
+    with np.load(source) as z:target=torch.from_numpy(z[cfg['TRAIN_geometry_feature_key']][:40].copy());labels=torch.from_numpy(z['labels'][:40].copy());ids=z['ids'][:40].copy()
+    assert torch.bincount(labels,minlength=20).tolist()==[2]*20
+    x=np.load(Path(cfg['terminal_input_producer'])/'train_last_input.npy',mmap_mode='r');ccd=np.load(Path(cfg['final_capture'])/'train/ccd.npy',mmap_mode='r')
+    cw=torch.tensor(m.read(fit/'TRAIN_emphasis_plan.json')['TRAIN_class_weights']);gradients={'CE':torch.zeros(10,dtype=torch.float64),'relation':torch.zeros(10,dtype=torch.float64)};losses={'CE':0.,'relation':0.};held={}
+    hook=model.linear.register_forward_pre_hook(lambda module,args:held.update(features=args[0]))
+    try:
+        for begin in range(0,40,8):
+            v=torch.from_numpy(np.asarray(x[begin:begin+8]).copy());o=model.nonlinear(torch.from_numpy(np.asarray(ccd[begin:begin+8]).copy()),'global')
+            logits=tail(model.electronic[3],model.linear,model.effective_alpha(3),v,o)
+            ce=F.cross_entropy(logits,labels[begin:begin+8],weight=cw,label_smoothing=cfg['tail']['label_smoothing']);relation=relational_TRAIN_geometry(held['features'],target[begin:begin+8])
+            for name,value in (('CE',ce),('relation',relation)):
+                g=torch.autograd.grad(value,params,retain_graph=True);gradients[name]+=torch.cat([z.detach().double().flatten() for z in g])/5;losses[name]+=float(value.detach())/5
+    finally:hook.remove()
+    assert all(torch.equal(v,m.state_cpu(model)[k]) for k,v in original.items())
+    lr=torch.tensor([cfg['tail']['conv_lr']]*9+[cfg['tail']['alpha_lr']],dtype=torch.float64);a=gradients['CE']*lr;b=gradients['relation']*lr
+    assert float(b.norm())>1e-12
+    result=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),TRAIN_only=True,TRAIN_samples=40,TRAIN_each_class=2,TRAIN_ids=ids.tolist(),TEST_used=False,parameter_updates=0,all_parameters_unchanged=True,parent_SHA256=cfg['parent_SHA256'],target_SHA256=m.sha(source),TRAIN_losses=losses,gradients={k:v.tolist() for k,v in gradients.items()},CE_lr_scaled_norm=float(a.norm()),relation_lr_scaled_norm=float(b.norm()),coefficient_equalizing_lr_scaled_norm=float(a.norm()/b.norm()),gradient_cosine=float((a@b)/(a.norm()*b.norm()).clamp_min(1e-20)),current_geometry_coefficient=cfg['tail']['TRAIN_relational_geometry_weight'],SDK_used=False,GPU_used=False)
+    m.save(out,result);return result
+
+
 def run(a):
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     import lab_caltech20_dvp_layerwise_20261019 as m
@@ -177,8 +245,9 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--selftest',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--sequence',type=Path);p.add_argument('--profile',type=Path);p.add_argument('--out',type=Path);p.add_argument('--fit',type=Path);p.add_argument('--balance',action='store_true');p.add_argument('--selftest',action='store_true');a=p.parse_args()
     if a.selftest:selftest();raise SystemExit(0)
+    if a.fit:print(json.dumps((TRAIN_loss_balance if a.balance else followup)(a.sequence,a.fit,a.out)));raise SystemExit(0)
     try:run(a)
     except BaseException as e:
         if a.out.exists():(a.out/'failure.json').write_text(json.dumps(dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False),indent=2))

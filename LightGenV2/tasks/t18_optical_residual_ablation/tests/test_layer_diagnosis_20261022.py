@@ -31,6 +31,17 @@ class StageDiagnosis(unittest.TestCase):
         cfg=json.loads((HERE/'lab_caltech20_L4_layer_diagnosis_profile_20261022.json').read_text())
         self.assertEqual(cfg['TRAIN_nominal_samples'],200);self.assertEqual(cfg['probe_penalty_fraction'],.1)
         self.assertLessEqual(cfg['maximum_seconds'],1200)
+    def test_relation_check_TRAIN_only(self):
+        tree=ast.parse(SOURCE.read_text());function=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='relation_summary')
+        scope={'np':np};exec(compile(ast.Module(body=[function],type_ignores=[]),'relation_math','exec'),scope)
+        x=np.eye(20)[np.arange(80)%20]+np.random.default_rng(73).normal(0,.01,(80,20));labels=np.arange(80)%20;ids=np.array([str(i) for i in range(80)])
+        result=scope['relation_summary'](x,x,labels,ids)
+        self.assertEqual(result['TRAIN_pair_relation_MSE'],0);self.assertEqual(result['TRAIN_nearest_same_class_correct'],80)
+        source=ast.get_source_segment(SOURCE.read_text(),next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='followup'))
+        self.assertNotIn('test_predictions.npz',source);self.assertIn('last_train_predictions.npz',source)
+        balance=ast.get_source_segment(SOURCE.read_text(),next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_loss_balance'))
+        self.assertIn('torch.autograd.grad',balance);self.assertNotIn('test_features',balance);self.assertNotIn('.step(',balance)
+        self.assertIn('parameter_updates=0',balance)
 
 
 if __name__=='__main__':unittest.main()
