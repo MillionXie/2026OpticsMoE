@@ -17,6 +17,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--source',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--prediction-prefix',choices=['ours','qwen'],default='ours')
+    p.add_argument('--label',default='Ours')
     a=p.parse_args();src=a.source.resolve();out=a.output.resolve()
     if out.exists() or out.with_suffix('.zip').exists():raise FileExistsError(out)
     report=json.loads((src/'metrics_all.json').read_text(encoding='utf-8'))
@@ -26,11 +28,12 @@ def main():
     for i,row in enumerate(report['rows']):
         folder=out/row['directory'];folder.mkdir()
         source=src/row['directory']
-        for name in ('original.jpg','ours_density_224.npy'):
+        prefix=a.prediction_prefix
+        for name in ('original.jpg',prefix+'_density_224.npy'):
             shutil.copy2(source/name,folder/name)
             assert sha(source/name)==sha(folder/name)
         original=Image.open(folder/'original.jpg').convert('RGB')
-        density=np.load(folder/'ours_density_224.npy',allow_pickle=False)
+        density=np.load(folder/(prefix+'_density_224.npy'),allow_pickle=False)
         # DISPLAY ONLY: per-prediction peak scale, inferno, saliency-dependent
         # opacity over a dimmed original. No GT consulted, no inference changes.
         value=np.asarray(Image.fromarray(density).resize(original.size,Image.Resampling.BILINEAR))
@@ -39,18 +42,18 @@ def main():
         alpha=(.82*value**.8)[...,None]
         base=np.asarray(original,dtype=np.float32)/255*.65
         mixed=np.rint(np.clip(base*(1-alpha)+heat*alpha,0,1)*255).astype(np.uint8)
-        overlay=Image.fromarray(mixed);overlay.save(folder/'ours_overlay.png')
-        Image.fromarray(np.rint(heat*255).astype(np.uint8)).save(folder/'ours_heatmap.png')
+        overlay=Image.fromarray(mixed);overlay.save(folder/(prefix+'_overlay.png'))
+        Image.fromarray(np.rint(heat*255).astype(np.uint8)).save(folder/(prefix+'_heatmap.png'))
         row.pop('gt_sha256',None);row.pop('fixation_sha256',None)
         (folder/'metrics.json').write_text(json.dumps(row,ensure_ascii=False,indent=2),encoding='utf-8')
         preview=Image.new('RGB',(1304,530),'white');draw=ImageDraw.Draw(preview)
         preview.paste(original.resize((640,480)),(8,42));preview.paste(overlay.resize((640,480)),(656,42))
         draw.text((8,10),f"Original | COCO {row['image_id']} | {row['split']}",fill='black',font=font)
-        draw.text((656,10),f"Ours | CC={row['metrics']['cc_float64']:.4f}",fill='black',font=font)
+        draw.text((656,10),f"{a.label} | CC={row['metrics']['cc_float64']:.4f}",fill='black',font=font)
         preview.save(folder/'preview.png');sheet.paste(preview,(0,i*530))
     sheet.save(out/'00_preview_all.png')
     report['visualization']=dict(colormap='inferno',original_brightness=.65,opacity='.82 * (prediction / prediction.max()) ** .8',
-        display_only=True,metrics_unchanged=True,gt_assets_included=False)
+        display_only=True,metrics_unchanged=True,gt_assets_included=False,label=a.label,prediction_prefix=a.prediction_prefix)
     (out/'metrics_all.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     shutil.copy2(src/'ATTRIBUTION_AND_REVIEW.md',out/'ATTRIBUTION_AND_REVIEW.md')
     (out/'01_README.md').write_text('# 预测叠加展示包（不含GT）\n\n'
