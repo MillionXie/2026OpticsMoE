@@ -161,8 +161,10 @@ def run(a):
     torch.set_num_threads(2);torch.manual_seed(73);assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     assert not a.out.exists() and not m.LOCK.exists();a.out.mkdir(parents=True)
     hw=m.read(a.hardware);admission=m.read(a.hardware.parent/'report.json');assert admission['passed'] and admission['SDK_released'] and admission['hardware_SHA256']==m.sha(a.hardware)
+    assert hw['spatial_geometry_verified'] and m.read(a.hardware.parent/'independent_geometry/report.json')['passed']
     cfg=m.read(Path(__file__).with_name('lab_caltech20_L6_resume_E3_profile_20261022.json'));base=m.read(Path(__file__).with_name(cfg['prefix_profile']))
     data,dm,fields,identities,old,reference,_=load_prefix(a,m,np,base);parent=a.sequence/cfg['parent_relative'];assert m.sha(parent)==cfg['parent_SHA256'];model,_=m.model_for(parent,cfg['parent_SHA256'],6,reference)
+    loop.validate_state(m,model,m.state_cpu(old),m.allowed_keys(old,4));parent_score,_=loop.original_replay(model,data,fields,'test');assert parent_score['correct']==219
     source=a.sequence/base['source_run'];session=a.sequence/'L6_response_20261020';paths={'router':session/'capture/router','0':a.sequence/'TRAIN_restored_same_mask_pair_20261021/L6/capture','1':source/'L6/stage_1/capture','2':source/'L6/stage_2/capture'}
     row=dict(fields=fields,identities=identities,paths=paths);preserved=reuse_complete_g2(m,np,a,data,dm,cfg,row)
     import shutil

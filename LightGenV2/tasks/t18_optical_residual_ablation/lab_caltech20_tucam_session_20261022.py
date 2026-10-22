@@ -62,6 +62,19 @@ def known_spots(bench,out,warp,full_scale):
     return direction,rows
 
 
+def independent_geometry(bench,out,warp,full_scale,direction):
+    """Five positions NOT used for fitting the source-to-sensor aperture."""
+    out=Path(out);out.mkdir();zero=np.zeros((478,478),np.uint8);p=out/'background.bmp';Image.fromarray(native(zero,'amplitude')).save(p);raw,meta=bench.capture(p);background=logical(raw,warp,full_scale,direction)
+    Image.fromarray(raw).save(out/'background_raw.png',compress_level=1);rows=[]
+    for k,(x,y) in enumerate(((100,100),(370,100),(100,370),(370,370),(240,240))):
+        gray=zero.copy();gray[y-22:y+22,x-22:x+22]=255;p=out/f'{k}.bmp';Image.fromarray(native(gray,'amplitude')).save(p);raw,meta=bench.capture(p);v=logical(raw,warp,full_scale,direction)
+        Image.fromarray(raw).save(out/f'{k}_raw.png',compress_level=1);Image.fromarray(v).save(out/f'{k}_crop.png');point=spot_centroid(v,background);expected=np.array([x-.5,y-.5]);error=float(np.linalg.norm(point-expected))
+        rows.append(dict(expected=expected.tolist(),observed=point.tolist(),error_px=error,metadata=meta,raw_SHA256=sha(out/f'{k}_raw.png')))
+    passed=max(v['error_px'] for v in rows)<=8
+    save(out/'report.json',dict(passed=passed,rows=rows,max_error_px=max(v['error_px'] for v in rows),fit_points_reused=False,TRAIN_TEST_used=False,model_changed=False))
+    assert passed,'Independent camera spatial mapping failed; no acquisition'
+
+
 class Bench:
     def __init__(self,cfg,out):self.cfg=cfg;self.out=Path(out);self.last=-1
     def __enter__(self):
@@ -160,6 +173,7 @@ def calibrate(cfg,out):
             flat=out/'flat_phase.bmp';Image.fromarray(phase_native(np.zeros((478,478),np.uint8))).save(flat);bench.stage(flat)
             direction,timing=known_spots(bench,out/'direction_spots',warp,full_scale)
             save(out/'orientation.json',json.loads((out/'direction_spots/report.json').read_text()))
+            if cfg.get('require_spatial_contract'):independent_geometry(bench,out/'independent_geometry',warp,full_scale,direction)
             grays=list(range(0,256,16))+[255];means=[]
             for g in grays:
                 _,r=snap(bench,f'response_{g:03d}',np.full((478,478),g,np.uint8),direction);assert r['saturation_fraction']<.001;means.append(r['mean'])
@@ -169,7 +183,7 @@ def calibrate(cfg,out):
             errors=np.array([v['error'] for v in checks]);assert abs(errors).max()<=.08 and np.sqrt(np.mean(errors**2))<=.04,'Heldout amplitude response failed'
             save(out/'response_lut.json',dict(drive=drive,fit_grays=grays,fit_means=means,response=response,heldout=checks,passed=True,device_LUT_unchanged=True,network_background_subtraction=False))
             assert sha(cfg['phase_lut'])==cfg['phase_LUT_SHA256']
-            accepted={**current,'sensor_shape':[2048,2048],'sensor_full_scale':full_scale,'orientation':direction,'response_lut':str((out/'response_lut.json').resolve()),'response_lut_SHA256':sha(out/'response_lut.json'),'camera_device_info':bench.settings}
+            accepted={**current,'sensor_shape':[2048,2048],'sensor_full_scale':full_scale,'orientation':direction,'response_lut':str((out/'response_lut.json').resolve()),'response_lut_SHA256':sha(out/'response_lut.json'),'camera_device_info':bench.settings,'spatial_geometry_verified':bool(cfg.get('require_spatial_contract'))}
         save(out/'admitted_hardware.json',accepted);save(out/'report.json',dict(passed=True,state='complete',SDK_released=True,patterns=len(rows),timing=timing,hardware_SHA256=sha(out/'admitted_hardware.json'),TEST_used=False))
     except BaseException as e:
         save(out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),patterns=len(rows),automatic_retry=False));raise

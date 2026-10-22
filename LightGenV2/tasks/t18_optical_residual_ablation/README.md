@@ -1,5 +1,27 @@
 ## 2026-10-22最新人工追加：四层固定数据继续优化，新TUCam相机准入后续六层
 
+20261023补充：原生连通/曝光/方向/换图/灰阶各项已实测。初始四象限模板方向歧义
+（最高.3743、次高.3644），保留原失败；改用独立X/Y孤立亮斑明确identity，分数
+1.99991、次高.01887，重复点误差.1314逻辑pixel；2000us请求读回1999.8us、gain0、
+wait240/discard6，灰阶留出通过。**但未能直接放行六层**：给定827x822相机pixel框
+内亮斑间距约为预期1.49倍，提示仅截到原模型1016原生SLM有效区的一部分。此前
+admission_spots/report的passed仅涵盖当时方向/时序/灰阶，不能冒充空间尺度通过。
+用户已明确同意基于独立校准亮斑重测相机四角、另存会话并要检查图像。新增
+`lab_caltech20_tucam_geometry_20261023.py`，不覆盖原20261022文件或动曝光/器件LUT；
+拟合三点外再用五个不同位置亮斑核验，最大误差<=8逻辑pixel才允许新会话用于六层。
+六层入口新增强制空间准入，不得将原仅方向合格会话直接放行。
+
+四层TRAIN组风险对照已24pass/604.219fit秒、原CPU bestlast全量与冻结/SHA审计通过
+rc0退出：last TRAIN1106、TEST251，训练候选峰值282，仍E0父285；不采用较差last。
+20文件备份manifest00dfc64d2d0154a25ec4d9205dc957af04588996e411bc09d96401cfbeb6375d，
+交接`L4_group_DRO_handoff_20261022.json` SHA83f627712db6d80b009b4569a034d1467d0d17130e56761ac96ee8f6c8d0d497。
+接续预注册一条原5150联合全TRAIN L-BFGS轨迹，不是先前仅5140头L-BFGS：每个
+1600TRAIN完整梯度对应max_iter1/no-line-search一次调用，history10/lr.2，24pass或
+600fit秒；CPU2、原模型/forward与原alpha边界、全部已采输入上游不变。预累计梯度
+callback与真正完整closure的三步二次函数数值轨迹必须动态一致，调用次数不冒充
+额外前向或epoch；TEST只开发强调/选模，无TEST梯度/VALID。新profile
+`lab_caltech20_L4_joint_LBFGS_profile_20261023.json`，实际启动与结果仍以run为准。
+
 原生probe已成功三帧：Dhyana400BSIV3/2048x2048/uint16，曝光5000请求读回5002.8us，
 手动曝光、gain读回0；raw三帧SHA不同。SDK ucDepth实测为2，不冒称2bit；uiIndex
 在厂商手册是保留字段且实际0，不作硬件递增帧号。固定uint16存储全量程65535用于

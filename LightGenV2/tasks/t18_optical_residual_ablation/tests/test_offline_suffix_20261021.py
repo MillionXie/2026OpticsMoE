@@ -165,6 +165,11 @@ class OfflineSuffix(unittest.TestCase):
         self.assertIn('risk=(loss_sums/support).detach()',s);self.assertIn("importance=np.ones(1600",s)
         c=json.loads((HERE/'lab_caltech20_L4_group_DRO_profile_20261022.json').read_text());self.assertTrue(c['tail']['TRAIN_group_DRO']);self.assertEqual(c['parent_correct'],285)
         self.assertLessEqual(c['tail']['fit_seconds'],600);self.assertEqual(c['tail']['optimizer_method'],'full_TRAIN_SGD')
+    def test_joint_LBFGS_full_gradient_scope(self):
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();ast.parse(s)
+        self.assertIn("assert opt.param_groups[0]['max_iter']==1",s);self.assertIn("opt.step(closure);assert len(calls)==1",s)
+        c=json.loads((HERE/'lab_caltech20_L4_joint_LBFGS_profile_20261023.json').read_text());self.assertEqual(c['method'],'TRAIN_postCCD_joint_LBFGS')
+        self.assertEqual(c['tail']['optimizer_method'],'full_TRAIN_LBFGS');self.assertLessEqual(c['tail']['fit_seconds'],600)
     def test_last_fusion_restart_scope(self):
         s=(HERE/'lab_caltech20_dvp_L4_fusion_restart_20261022.py').read_text();ast.parse(s)
         self.assertIn("allowed={'fusion_logits.3','linear.weight','linear.bias'}",s);self.assertIn('alpha=(.4001+.95)/2',s)

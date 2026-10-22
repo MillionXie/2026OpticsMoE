@@ -65,8 +65,19 @@ def accumulate_TRAIN_batch(loss,params,opt,alpha,samples,total_samples,finish):
     (loss*samples/total_samples).backward()
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in params)
     norm=float(torch.stack([p.grad.detach().norm() for p in params]).norm())
+    lbfgs=isinstance(opt,torch.optim.LBFGS)
+    if lbfgs:opt._TRAIN_full_objective=getattr(opt,'_TRAIN_full_objective',0.)+float(loss.detach())*samples/total_samples
     if finish:
-        torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
+        if lbfgs:
+            # Exactly max_iter1/no line-search: PyTorch calls this closure once
+            # BEFORE updating. The full deterministic TRAIN gradient has already
+            # been accumulated at the identical parameter state. No fake extra
+            # forward/pass or repeated microbatch gradient is counted.
+            assert opt.param_groups[0]['max_iter']==1 and opt.param_groups[0]['line_search_fn'] is None
+            value=opt._TRAIN_full_objective;calls=[]
+            def closure():calls.append(1);return torch.tensor(value,dtype=params[0].dtype,device=params[0].device)
+            opt.step(closure);assert len(calls)==1;opt._TRAIN_full_objective=0.
+        else:torch.nn.utils.clip_grad_norm_(params,1.);opt.step()
         with torch.no_grad():alpha.clamp_(.4001001,.95)
     return float(loss.detach()),float(loss.detach()),norm
 
@@ -227,7 +238,8 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
             risk='class mean unweighted TRAIN CE',eta=fit['TRAIN_group_eta'],base_weights=weights.tolist(),TRAIN_each_class=80,
             new_inference_layers=0,original_parent_retained=True))
     m.save(a.out/'TRAIN_emphasis_plan.json',dict(TEST_confusion=cm.tolist(),TRAIN_importance=importance.tolist(),TRAIN_neighbours=plans,TRAIN_class_weights=weights.cpu().tolist(),TEST_gradient=False))
-    fullbatch=fit.get('optimizer_method')=='full_TRAIN_SGD';device='cpu' if fullbatch else 'cuda'
+    quasi=fit.get('optimizer_method')=='full_TRAIN_LBFGS'
+    fullbatch=fit.get('optimizer_method') in ('full_TRAIN_SGD','full_TRAIN_LBFGS');device='cpu' if fullbatch else 'cuda'
     if fullbatch:
         assert fit['feature_dropout_p']==fit['CCD_pixel_dropout_p']==fit['CCD_gain_sigma']==fit['CCD_additive_sigma_DN']==0
         assert not fit.get('TRAIN_feature_mixup',False) and not fit.get('freeze_head',False)
@@ -255,8 +267,8 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     assert sum(p.numel() for p in params)==expected_trainable
     groups=[dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)]
     if not freeze_head and not alternating:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
-    opt=torch.optim.SGD(groups,momentum=.9,weight_decay=fit['weight_decay']) if fullbatch else torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
-    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,TRAIN_margin_replay_batches=0,TRAIN_relational_geometry_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
+    opt=torch.optim.LBFGS(params,lr=fit['LBFGS_lr'],max_iter=1,max_eval=1,history_size=10,line_search_fn=None) if quasi else torch.optim.SGD(groups,momentum=.9,weight_decay=fit['weight_decay']) if fullbatch else torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,TRAIN_margin_replay_batches=0,TRAIN_relational_geometry_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,full_TRAIN_LBFGS_updates=0,eval_augmented_batches=0)
     swa_sum={};swa_snapshots=0;swa_history=[]
     group_relative=torch.ones(20,device=device);group_history=[]
     def dropout(module,inputs):
@@ -302,10 +314,12 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     if geometry_target is not None:
                         loss=loss+fit['TRAIN_relational_geometry_weight']*relational_TRAIN_geometry(active['geometry_features'],geometry_target[ix].to(device))
                         counts['TRAIN_relational_geometry_batches']+=1
+                    if quasi:
+                        loss=loss+fit['weight_decay']*sum((p-original[n].to(device)).square().sum() for n,p in model.named_parameters() if n in allowed)/5150
                     return loss
                 if fullbatch:
                     clean,probe,norm=accumulate_TRAIN_batch(objective(),params,opt,model.fusion_logits[3],len(ix),1600,begin+len(ix)==1600)
-                    counts['full_TRAIN_SGD_updates']+=int(begin+len(ix)==1600)
+                    counts['full_TRAIN_LBFGS_updates' if quasi else 'full_TRAIN_SGD_updates']+=int(begin+len(ix)==1600)
                 else:
                     clean,probe,norm=sam_step(params,opt,objective,fit['SAM_radius'],model.fusion_logits[3]) if use_sam else adam_step(params,opt,objective,model.fusion_logits[3])
                     counts['SAM_updates' if use_sam else 'AdamW_updates']+=1
@@ -456,6 +470,16 @@ def selftest():
     ref=torch.nn.Parameter(old.clone());refalpha=torch.nn.Parameter(torch.tensor(.7,dtype=torch.float64));ropt=torch.optim.SGD([ref,refalpha],lr=.01)
     ((ref[0]*items+ref[1]+refalpha.float())**2).mean().backward();torch.nn.utils.clip_grad_norm_([ref,refalpha],1.);ropt.step()
     assert torch.allclose(q,ref,atol=1e-7) and not torch.equal(q,old)
+    p=torch.nn.Parameter(torch.tensor([.3,.5],dtype=torch.float64));r=torch.nn.Parameter(p.detach().clone());oa=torch.nn.Parameter(torch.tensor(.7,dtype=torch.float64));ra=torch.nn.Parameter(oa.detach().clone())
+    op=torch.optim.LBFGS([p,oa],lr=.2,max_iter=1,max_eval=1,history_size=10);rp=torch.optim.LBFGS([r,ra],lr=.2,max_iter=1,max_eval=1,history_size=10)
+    for _ in range(3):
+        op.zero_grad();items=torch.arange(8,dtype=torch.float64)/8
+        for begin in range(0,8,2):accumulate_TRAIN_batch(((p[0]*items[begin:begin+2]+p[1]+oa)**2).mean(),[p,oa],op,oa,2,8,begin==6)
+        def closure():
+            rp.zero_grad();loss=((r[0]*items+r[1]+ra)**2).mean();loss.backward();return loss
+        rp.step(closure)
+        with torch.no_grad():ra.clamp_(.4001001,.95)
+        assert torch.allclose(p,r,atol=1e-10) and torch.allclose(oa,ra,atol=1e-10)
     feat=torch.randn(40,256,requires_grad=True);label=torch.arange(40)%20;centers,support=class_prototypes_TRAIN(feat,label)
     pl=prototype_TRAIN_loss(feat,label,centers,.1);pl.backward()
     assert torch.isfinite(feat.grad).all() and float(feat.grad.norm())>0 and not centers.requires_grad and support.tolist()==[2]*20
