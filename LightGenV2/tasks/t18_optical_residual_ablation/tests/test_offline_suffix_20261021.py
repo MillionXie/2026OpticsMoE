@@ -2,6 +2,14 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_bias_coordinate_TRAIN_accuracy_not_TEST_fit(self):
+        s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='bias_accuracy_coordinate')
+        self.assertEqual([a.arg for a in f.args.args],['np','train_logits','labels','counts','cfg','observe'])
+        c=json.loads((HERE/'lab_caltech20_L4_bias_coordinate_profile_20261022.json').read_text())
+        self.assertEqual(c['parent_correct'],285);self.assertEqual(c['bias_coordinate']['passes'],8)
+        self.assertLessEqual(c['bias_coordinate']['fit_seconds'],60)
+        self.assertIn("if biascoord:allowed={'linear.bias'}",(HERE/'lab_caltech20_dvp_terminal_reopen_20261021.py').read_text())
     def test_prototype_continuation_starts_at_accepted_285(self):
         c=json.loads((HERE/'lab_caltech20_L4_prototype_SGD_profile_20261022.json').read_text());b=json.loads((HERE/'lab_caltech20_L4_fullbatch_SGD_profile_20261022.json').read_text())
         self.assertEqual(c['parent_SHA256'],b['parent_SHA256']);self.assertEqual(c['parent_correct'],285)

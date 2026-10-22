@@ -75,7 +75,7 @@ def run(a):
     continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
     maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';covaugment=cfg.get('method')=='TRAIN_covariance_augmentation';priorcal=cfg.get('method')=='TRAIN_prior_temperature';head_only=head_only or maxmargin or hardridge or covaugment or priorcal
     pairedresponse=cfg.get('method')=='TRAIN_last_response_pair';head_only=head_only or pairedresponse
-    subspace=cfg.get('method') in ('TRAIN_stable_subspace_curriculum','TRAIN_Fisher_subspace_refit');spatial=cfg.get('method')=='TRAIN_spatial_group_delta';head_only=head_only or subspace or spatial
+    subspace=cfg.get('method') in ('TRAIN_stable_subspace_curriculum','TRAIN_Fisher_subspace_refit');spatial=cfg.get('method')=='TRAIN_spatial_group_delta';biascoord=cfg.get('method')=='TRAIN_bias_accuracy_coordinate';head_only=head_only or subspace or spatial or biascoord
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
     assert pr['strict_original_CPU'] and pr['full_physical'] and pr['selected_correct']==expected
@@ -108,10 +108,11 @@ def run(a):
             identities[key+'/'+role]=s
     assert identities==cp['prefix_SHA256'] and list(fields)==['router','0','1','2','3']
     allowed={'linear.weight','linear.bias'} if head_only else {'linear.weight','linear.bias','electronic.3.local.weight','fusion_logits.3'}
+    if biascoord:allowed={'linear.bias'}
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=cfg,profile_SHA256=m.sha(a.profile),
         parent_PT_SHA256=cfg['parent_SHA256'],data_SHA256=dm['sha256'],hardware_SHA256=loop.HARDWARE,prefix_SHA256=identities,
         cache_producer_report_SHA256=m.sha(producer/'report.json'),allowed_keys=sorted(allowed),TRAIN=1600,TEST=411,VALID=0,
-        full_physical=True,original_terminal_parameters=5140 if head_only else 5150,new_inference_layers=0,all_optical_upstream_frozen=True,
+        full_physical=True,original_terminal_parameters=20 if biascoord else 5140 if head_only else 5150,new_inference_layers=0,all_optical_upstream_frozen=True,
         TEST_informed_development=True,TEST_gradient=False,SDK_used=False,GPU_used=post_sam,recurring=False)
     m.save(a.out/'protocol.json',protocol)
     tr,te=banks['train'],banks['test'];x=torch.tensor(tr['x'],dtype=torch.float64);y=torch.tensor(tr['y'])
@@ -145,11 +146,18 @@ def run(a):
         np.savez_compressed(a.out/'TRAIN_teacher_logits.npz',ids=tr['ids'],labels=tr['y'],logits=targets.numpy())
         w,b,proof=ridge_logit_readout(x,targets);m.save(a.out/'TRAIN_ridge_GCV.json',proof)
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
-    elif continuation or sam or post_sam or cpu_joint or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse or subspace or spatial:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
+    elif continuation or sam or post_sam or cpu_joint or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse or subspace or spatial or biascoord:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not cpu_joint and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace and not spatial:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not continuation and not sam and not post_sam and not cpu_joint and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace and not spatial and not biascoord:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if spatial:
+    if biascoord:
+        from lab_caltech20_dvp_error_guided_head_20261021 import bias_accuracy_coordinate
+        with torch.no_grad():base=F.linear(x,pw.double(),pb.double()).numpy()
+        def observe_bias(delta,row):return observe(pw,pb.double()+torch.from_numpy(delta),row)
+        delta,proof=bias_accuracy_coordinate(np,base,y.numpy(),counts.numpy(),cfg['bias_coordinate'],observe_bias)
+        lastw,lastb=pw.clone(),pb.double()+torch.from_numpy(delta)
+        m.save(a.out/'TRAIN_bias_coordinate_fit.json',proof);reason='finite_TRAIN_accuracy_original_twenty_biases_complete'
+    elif spatial:
         from lab_caltech20_dvp_error_guided_head_20261021 import spatial_group_delta
         lastw,lastb,proof=spatial_group_delta(torch,F,x,y,pw,pb,counts,cfg['spatial_group'],observe)
         m.save(a.out/'TRAIN_spatial_group_fit.json',proof);reason='finite_TRAIN_spatial_group_delta_complete'

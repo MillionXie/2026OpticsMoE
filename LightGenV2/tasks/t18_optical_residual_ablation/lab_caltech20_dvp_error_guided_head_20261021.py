@@ -7,6 +7,59 @@ the differentiable fitting function accepts no TEST features or TEST labels.
 import time
 
 
+def bias_accuracy_coordinate(np,train_logits,labels,counts,cfg,observe):
+    """Original twenty biases, TRAIN 0-1 utility rather than another CE fit.
+
+    Each one-dimensional update examines all TRAIN decision intervals. Class
+    priors come from original TRAIN only. Keeping a parent-correct TRAIN item
+    has an extra fixed utility; TEST is absent from this fitting signature.
+    """
+    base=np.asarray(train_logits,dtype=np.float64);y=np.asarray(labels,dtype=np.int64)
+    assert base.shape==(len(y),20) and np.isfinite(base).all()
+    support=np.bincount(y,minlength=20);assert (support>0).all()
+    counts=np.asarray(counts,dtype=float);assert counts.shape==(20,) and (counts>0).all()
+    weight=counts[y]/support[y];weight/=weight.sum()
+    parent=base.argmax(1)==y;other=base.copy();other[np.arange(len(y)),y]=-np.inf
+    margin=base[np.arange(len(y)),y]-other.max(1)
+    radius=max(1e-6,float(np.median(margin[parent]))*cfg['radius_fraction'])
+    utility=weight*(1+cfg['parent_correct_protection']*parent)
+    delta=np.zeros(20);history=[];started=time.monotonic();updates=0
+    def objective(d):return float(utility[(base+d).argmax(1)==y].sum())
+    initial=objective(delta);previous=initial
+    for sweep in range(1,cfg['passes']+1):
+        changed=0
+        for k in range(20):
+            z=base+delta;z[:,k]=-np.inf;competitor=z.argmax(1);maximum=z[np.arange(len(y)),competitor]
+            thresholds=maximum-base[:,k]
+            edges=np.unique(np.r_[-radius,thresholds[(thresholds>-radius)&(thresholds<radius)],radius])
+            candidates=np.unique(np.r_[edges[[0,-1]],(edges[:-1]+edges[1:])/2,delta[k],0.])
+            wins=(base[:,k,None]+candidates[None,:]>maximum[:,None])
+            wins|=(base[:,k,None]+candidates[None,:]==maximum[:,None])&(k<competitor[:,None])
+            correct=np.where(wins,y[:,None]==k,competitor[:,None]==y[:,None])
+            values=np.sum(correct*utility[:,None],axis=0)
+            chosen=np.flatnonzero(values>=values.max()-1e-12)
+            # Among equal TRAIN utilities, prefer the smallest parent change.
+            index=chosen[np.lexsort((np.abs(candidates[chosen]-delta[k]),np.abs(candidates[chosen])))[0]]
+            new=float(candidates[index]);before=delta[k];delta[k]=new
+            current=objective(delta);assert current>=previous-1e-10 and abs(new)<=radius+1e-12
+            previous=current;changed+=int(new!=before);updates+=int(new!=before)
+        pred=(base+delta).argmax(1);row=dict(phase='TRAIN_original_bias_accuracy',pass_index=sweep,TRAIN_samples=len(y),TRAIN_correct=int((pred==y).sum()),TRAIN_parent_correct_lost=int((parent&(pred!=y)).sum()),TRAIN_weighted_utility=previous,updated_coordinates=changed,bias_max_delta=float(np.abs(delta).max()))
+        history.append(row);stop=observe(delta.copy(),row)
+        if stop or not changed or time.monotonic()-started>=cfg['fit_seconds']:break
+    return delta,dict(TRAIN_only=True,TRAIN_samples=len(y),TRAIN_support=support.tolist(),original_TRAIN_counts=counts.tolist(),parent_correct_protection=cfg['parent_correct_protection'],initial_TRAIN_utility=initial,final_TRAIN_utility=previous,radius=radius,radius_rule='fixed fraction of median positive parent TRAIN margin',actual_passes=sweep,coordinate_updates=updates,fit_seconds=time.monotonic()-started,history=history,optimized_parameters=20,original_weight_frozen=True,TEST_gradient=False,new_inference_layers=0)
+
+
+def bias_coordinate_selftest():
+    import numpy as np
+    rng=np.random.default_rng(73);y=np.arange(160)%20;logits=rng.normal(0,.2,(160,20));logits[np.arange(160),y]+=1
+    logits[:,0]+=.6;rows=[]
+    delta,proof=bias_accuracy_coordinate(np,logits,y,np.ones(20),dict(radius_fraction=.5,parent_correct_protection=1.,passes=3,fit_seconds=30),lambda d,r:rows.append(r))
+    assert delta.shape==(20,) and np.isfinite(delta).all() and proof['original_weight_frozen']
+    assert proof['final_TRAIN_utility']>=proof['initial_TRAIN_utility']-1e-10
+    assert all(rows[i]['TRAIN_weighted_utility']>=rows[i-1]['TRAIN_weighted_utility']-1e-10 for i in range(1,len(rows)))
+    print(dict(passed=True,TRAIN_only=True,optimized_original_biases=20,new_inference_layers=0,TRAIN_utility_monotone=True))
+
+
 def spatial_group_delta(torch,F,x,y,pw,pb,counts,cfg,observe):
     """TRAIN-selected sparse spatial COLUMN updates, folded into original Linear."""
     x=x.double();w=pw.double();b=pb.double();w=w-w.mean(0,keepdim=True);b=b-b.mean()
