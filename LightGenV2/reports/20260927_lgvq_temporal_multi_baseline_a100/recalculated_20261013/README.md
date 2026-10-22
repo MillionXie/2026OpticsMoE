@@ -1,6 +1,64 @@
 # LGVQ temporal quality: frozen-model accuracy, processing time and estimated energy
 
-## Current comparison: prepared-input MPS accounting, 22 October 2026
+## Current comparison: restored all-batch-one MPS figure, 22 October 2026
+
+The user selected the archived all-batch-one figure again. All six electronic
+models now use one video per call under both MPS100 and MPS50. The source is the
+unchanged `lgvq_mps_dataset_once_rental_20261021_replacement02/presentation/dataset_once_paper.json`.
+Its 36 completed original trials were independently replayed from predictions,
+timestamps, raw board-power samples and source identities. No new GPU run,
+training, precision change or rental was required. This restores the OLD cost
+boundary as well as batch one; it is not a mixture with the later prepared-input
+costs. The former B10/B6 exports were SHA256-archived before replacement.
+
+### Included and excluded time in the restored figure
+
+| Interval or operation | Treatment in the restored all-B1 figure |
+|---|---|
+| First native backbone computation to synchronized GPU quality-score output | Included. YOLO starts at its first convolution; CLIP and the vision-language models at their recorded first backbone block. |
+| Previous GPU output to the next video preparation start | Included for the 199 internal gaps among the first 200 videos. Contains the previous score's CPU return, recording, status checks and dispatch. None of these real gaps are guessed away. |
+| Video decoding, frame sampling, crop/resize, processor/tokenizer and H2D synchronization | Excluded for each video. |
+| Prepared-input model-call entry to the recorded first computation block | Excluded in this OLD figure. The later prepared-input revision includes it. |
+| CPU return after the final charged GPU output and any terminal dispatch | Excluded. There is no following charged video. Intermediate score-return time is included in the internal gaps above. |
+| Weight loading and explicit inference warmup | Loading is outside the timer. No explicit inference warmup was run, and the first cold inference is retained. |
+| Historical Qwen100 cost | Retained exception: 1188.3861464262009 ms / 462.1134010767563 J, without inter-video gaps. Not a same-boundary MPS-only causal comparison. |
+
+Let s_i and e_i denote the first-block entry and synchronized GPU output for cost
+video i, and p_i its external input-preparation start. The charged interval union
+is [s_i, e_i] for i=1..200 plus [e_i, p_(i+1)] for i=1..199.
+Let C be its duration in seconds and J_GPU the discrete board-energy integral
+over exactly that union. The normalization is T16 = C × 16000 / 200 ms and
+E16 = (J_GPU + 338.2 × C) × 16 / 200 J. All three repeats contribute equally.
+This is a 16-video equivalent from 200 distinct videos, not one measured cold
+16-video request. MPS allocation is a resource cap, not a measured busy fraction.
+All558 TEST videos were scored in each trial. Displayed SRCC remains the common
+MPS100 reference per model; independently observed MPS50 SRCC remains in the raw
+records and measured-SRCC CSV columns.
+
+| Model | Batch at both caps | T16 MPS100 (ms) | T16 MPS50 (ms) | E16 MPS100 (J) | E16 MPS50 (J) |
+|---|---:|---:|---:|---:|---:|
+| Qwen3-VL-2B | 1 | 1188.386146 | 1348.264998 | 462.113401 | 528.862621 |
+| GLM-4.6V-Flash | 1 | 1863.814973 | 2648.487800 | 823.607193 | 1206.537033 |
+| CLIP ViT-B/32 | 1 | 174.975627 | 178.145759 | 66.086322 | 67.243500 |
+| YOLO11s | 1 | 380.349343 | 389.370853 | 143.972612 | 147.358592 |
+| DeepSeek-VL2 | 1 | 8276.351622 | 12153.304227 | 4657.902820 | 6454.379009 |
+| Kimi-VL-A3B | 1 | 3649.291741 | 4104.269994 | 1760.164040 | 1978.951627 |
+
+The original [plotting workbook](LGVQ_MPS_dataset_once_comparison.xlsx),
+[unrounded CSV](mps_dataset_once_plot_data.csv), [time panel](mps_dataset_once_comparison_latency.png),
+[energy panel](mps_dataset_once_comparison_energy.png) and [paired display](mps_dataset_once_comparison_pair.png)
+now all use this archived data. The main workbook formulas again reference the
+original B1 trial costs. All138 raw/history rows and their formulas remain
+unchanged. Higher-batch comparisons below the main table remain historical and
+are not inputs to the restored figure. Qwen's name remains free of the dagger.
+Receipts are `all_batch1_restore_audit.json`, `all_batch1_restored_workbook_receipt.json`,
+`all_batch1_restored_figure_receipt.json` and `all_batch1_restored_delivery_receipt.json`
+in the original rental run's presentation directory.
+
+## Superseded prepared-input display: B10/B6, 22 October 2026
+
+The section below records the preceding display and is retained as history.
+It no longer defines the main plotting workbook or main figure.
 
 The current model names have no footnote glyph in the figures or plotting table.
 On 22 October, all eighteen original MPS50 cost trials (six models, three repeats

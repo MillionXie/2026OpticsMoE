@@ -31,6 +31,18 @@ def plain_model_names(names):
     return {key:value.replace('†','').strip() for key,value in names.items()}
 
 
+def archived_batch1_view(source):
+    """Restore the saved B1 presentation, not a new prepared-input reaccounting."""
+    data=json.loads(source.read_text())
+    assert data['status']=='complete' and len(data['points'])==12 and len(data['repeats'])==36
+    assert all(p['batch']==1 and len(p['repeats'])==3 for p in data['points'])
+    assert {(p['model'],p['resource_cap']) for p in data['points']}=={
+        (m,c) for m in ('qwen','glm','clip','yolo','deepseek','kimi') for c in (100,50)}
+    anchor=next(p for p in data['points'] if p['model']=='qwen' and p['resource_cap']==100)
+    assert (anchor['time16_ms'],anchor['energy16_j'])==(1188.3861464262009,462.1134010767563)
+    return data
+
+
 def selected_batch_view(root,fixed_batch=None):
     """Replace only changed-batch costs; preserve approved B1 and raw history."""
     prior_root=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_batch_activity_a100_20261021/resident01'
@@ -254,11 +266,16 @@ def ready_input_batch_comparison(root):
 
 def main():
     global ROOT,NAMES
-    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');p.add_argument('--finalized-qwen',action='store_true');p.add_argument('--selected-batches',action='store_true');p.add_argument('--fixed-batch6',action='store_true');p.add_argument('--ready-input',type=Path);p.add_argument('--plain-model-labels',action='store_true');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--combined',action='store_true');p.add_argument('--replacement02',action='store_true');p.add_argument('--finalized-qwen',action='store_true');p.add_argument('--selected-batches',action='store_true');p.add_argument('--fixed-batch6',action='store_true');p.add_argument('--ready-input',type=Path);p.add_argument('--plain-model-labels',action='store_true');p.add_argument('--archived-all-batch1',type=Path);args=p.parse_args()
     if args.finalized_qwen and not args.combined:raise ValueError('Finalized Qwen presentation requires combined data')
     if args.combined:ROOT=ROOT.parent.with_name('lgvq_mps_dataset_once_rental_20261021'+('_replacement02' if args.replacement02 else ''))/'presentation'
     else:NAMES={k:v for k,v in NAMES.items() if k not in ('deepseek','kimi')}
-    if args.ready_input:
+    if args.archived_all_batch1:
+        assert args.combined and args.finalized_qwen and not (args.ready_input or args.fixed_batch6 or args.selected_batches)
+        source=args.archived_all_batch1.resolve();data=archived_batch1_view(source);ROOT=source.parent
+        audit=json.loads((ROOT/'all_batch1_restore_audit.json').read_text())
+        assert audit['status']=='passed' and audit['trials']==36 and audit['source_sha256']==digest(source)
+    elif args.ready_input:
         assert args.combined and args.finalized_qwen and not (args.fixed_batch6 or args.selected_batches)
         source=args.ready_input.resolve();data=json.loads(source.read_text());ROOT=source.parent
         assert data['accounting']=='prepared_input_model_call_through_cpu_return_plus_internal_gaps_v2'
@@ -276,7 +293,7 @@ def main():
     else:
         source=ROOT/('dataset_once_combined.json' if args.combined else 'dataset_once_audited.json');data=json.loads(source.read_text())
     assert data['status']=='complete' and len(data['points'])==len(NAMES)*2 and len(data['repeats'])==len(NAMES)*6
-    if args.combined and not (args.selected_batches or args.fixed_batch6 or args.ready_input):
+    if args.combined and not (args.selected_batches or args.fixed_batch6 or args.ready_input or args.archived_all_batch1):
         previous_receipt=ROOT/'figure_receipt.json'
         if not previous_receipt.exists():previous_receipt=ROOT.parents[1]/'lgvq_mps_dataset_once_a100_20261020/presentation/figure_receipt.json'
         previous=json.loads(previous_receipt.read_text())
@@ -288,13 +305,13 @@ def main():
             if actual!=expected:raise RuntimeError('Existing export changed externally; preserve '+name)
             archive=ROOT/(target.stem+'_prior_'+actual[:12]+target.suffix)
             if not archive.exists():shutil.copy2(target,archive)
-    elif not (args.selected_batches or args.fixed_batch6 or args.ready_input) and (ROOT/'figure_receipt.json').exists():
+    elif not (args.selected_batches or args.fixed_batch6 or args.ready_input or args.archived_all_batch1) and (ROOT/'figure_receipt.json').exists():
         previous=json.loads((ROOT/'figure_receipt.json').read_text())
         for name,expected in previous['files'].items():
             target=OUT/name
             if target.exists() and digest(target)!=expected:
                 raise RuntimeError('Refuse older four-model export over a newer or externally changed presentation: '+name)
-    if args.finalized_qwen and not (args.selected_batches or args.fixed_batch6 or args.ready_input):
+    if args.finalized_qwen and not (args.selected_batches or args.fixed_batch6 or args.ready_input or args.archived_all_batch1):
         from .mps_paper_view import finalized_qwen_view,full_resource_accuracy_view
         original_source=source
         data=full_resource_accuracy_view(finalized_qwen_view(data,REPO))
@@ -315,6 +332,10 @@ def main():
         receipt.update(protocol=data['accounting'],accounting_exception=data['accounting_exception'],
             selected_batches={p['model']:p['batch'] for p in data['points']})
     receipt['plain_model_labels']=args.plain_model_labels
+    if args.archived_all_batch1:
+        receipt.update(restored_archived_all_batch1=True,selected_batches={m:1 for m in NAMES},
+            accounting_exception='Qwen100 approved historical compute-only anchor; all other costs use old first-block plus nonpreprocessing gaps',
+            no_new_gpu_measurement=True)
     for metric,kind in [('time16_ms','latency'),('energy16_j','energy')]:
         fig,ax=plt.subplots(figsize=(78/25.4,88/25.4));fig.subplots_adjust(left=.20,right=.97,bottom=.32,top=.84)
         receipt['panels'].append(panel(ax,points,metric))
@@ -355,9 +376,10 @@ def main():
                         'power_limit_w':400 if p['model'] in ('deepseek','kimi') else 250,
                         'parameter_dtypes':', '.join(p['repeats'][0]['parameter_dtypes']),
                         'readout_dtypes':', '.join(p['repeats'][0]['readout_dtypes']),
-                        **{k:p.get(k,'') for k in ['cost_source','cost_source_sha256','cost_source_selector','measured_time16_ms','measured_energy16_j','cost_boundary','measurement_reuse','resident_utilization_reference_percent','cost_instrumentation_note']}})
+                        **{k:p.get(k,'') for k in ['cost_source','cost_source_sha256','cost_source_selector','measured_time16_ms','measured_energy16_j','cost_boundary','measurement_reuse','resident_utilization_reference_percent','cost_instrumentation_note']},
+                        **({'cost_boundary':p.get('cost_boundary') or 'Archived B1: first native block to GPU output plus output-to-next-preparation gaps; model preblock and external input preparation excluded'} if args.archived_all_batch1 else {})})
     receipt['files'][target.name]=digest(target)
-    (ROOT/'figure_receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+    (ROOT/('all_batch1_restored_figure_receipt.json' if args.archived_all_batch1 else 'figure_receipt.json')).write_text(json.dumps(receipt,indent=2)+'\n')
     if args.fixed_batch6:fixed_batch_comparison(ROOT)
     if args.ready_input:ready_input_batch_comparison(ROOT)
     print(json.dumps(receipt,indent=2))

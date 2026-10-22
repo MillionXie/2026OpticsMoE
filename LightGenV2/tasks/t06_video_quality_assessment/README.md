@@ -1,5 +1,27 @@
 # T06 视频质量评价
 
+## 2026-10-22 用户恢复全B1旧图及旧口径
+
+本轮仅负责T06绘图源码/测试、本文档与原recalculated_20261013交付，不碰其他窗口。
+用户决定全部batch1并询问此前发送图的计时范围。找回canonical既有
+lgvq_mps_dataset_once_rental_20261021_replacement02/presentation/dataset_once_paper.json：
+六模型两档均B1，完整36轮原始558预测/首200成本、calls、功率、源Git身份独立审计通过。
+没有启动GPU、重训、改精度或新增租赁。Qwen100原定稿整行数值/公式仍不动。
+
+恢复旧边界：首native计算块至同步GPU评分输出，加上一GPU输出至下一视频prepare
+开始的199段内部间隔；模型调用至首块前端排除，外部decode/processor/tokenizer/H2D
+排除，最终CPUreturn排除（中间CPUreturn计入间隔）。日志/状态/调度真实耗时保留。
+零额外推理warmup，首冷批保留，三轮完整；338.2W一次加同计时区间板卡积分。
+这是恢复旧口径，不把新prepared-input前端重算值混进旧图。Qwen100另不含间隔，
+继续作为用户批准的历史例外。显示精度沿各模型MPS100参考，实际50预测仍单独保留。
+
+原13份B10/B6交付先逐SHA归档至上述既有presentation，旧历史数据不覆盖。
+原同一Excel/CSV、时延与能耗PNG/SVG/PDF和拼图恢复全B1，Qwen名称无十字。
+汇总公式指回原B1成本L/M列，不删除138行原始/重算历史；底部高batch对照仍标历史。
+公式扰动还原、错误扫描、保存重读与视检通过。all_batch1_restore_audit与三份
+all_batch1_restored_{workbook,figure,delivery}_receipt记录来源、36轮和交付SHA。
+旧图确实漏计模型前端，不能称所有电子流程均已计入；报告README明确列出计入/排除。
+
 ## 2026-10-22 主图名称去符号，六模型MPS50统一口径复核
 
 本次仅负责T06绘图源码/测试、本文档和原recalculated_20261013图表，保留其他窗口改动。

@@ -11,6 +11,19 @@ def test_plain_model_labels_do_not_mutate_source_names_or_measurements():
     assert names['qwen']=='Qwen3-VL-2B†'
 
 
+def test_archived_all_batch1_refuses_mixed_batch_without_editing_source(tmp_path):
+    source=tmp_path/'paper.json'
+    points=[dict(model=m,resource_cap=c,batch=1,repeats=[{}]*3,time16_ms=1188.3861464262009,
+        energy16_j=462.1134010767563) for m in ('qwen','glm','clip','yolo','deepseek','kimi') for c in (100,50)]
+    source.write_text(json.dumps(dict(status='complete',points=points,repeats=[{}]*36)))
+    before=source.read_bytes()
+    assert report.archived_batch1_view(source)['points']==points
+    assert source.read_bytes()==before
+    points[4]['batch']=10
+    source.write_text(json.dumps(dict(status='complete',points=points,repeats=[{}]*36)))
+    with pytest.raises(AssertionError):report.archived_batch1_view(source)
+
+
 @pytest.mark.parametrize('metric',['time16_ms','energy16_j'])
 def test_all_six_model_pairs_are_connected_inside_axes_without_jitter(metric):
     points=[]
