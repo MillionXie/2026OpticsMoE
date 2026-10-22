@@ -2,6 +2,11 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_feature_separability_has_no_TEST_or_fitting(self):
+        source=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(source)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_feature_separability');body=ast.get_source_segment(source,f)
+        self.assertNotIn('test_features.npz',body);self.assertNotIn('backward(',body)
+        self.assertIn("baseids[:,None]==baseids[None,:]",body);self.assertIn('no_parameter_fit=True',body)
     def test_teacher_PLS_only_TRAIN_and_original_Linear(self):
         source=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(source)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='teacher_feature_pls')

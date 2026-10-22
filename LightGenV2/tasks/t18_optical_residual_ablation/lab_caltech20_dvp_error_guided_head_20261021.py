@@ -7,6 +7,39 @@ the differentiable fitting function accepts no TEST features or TEST labels.
 import time
 
 
+def TRAIN_feature_separability(sequence,out):
+    """Descriptive TRAIN-only stage comparison; no classifier/model is fitted."""
+    from pathlib import Path
+    import numpy as np,torch
+    from caltech20_alt246_biasfree_model import features
+    import lab_caltech20_dvp_layerwise_20261019 as m
+    torch.set_num_threads(2);sequence=Path(sequence);out=Path(out);assert not out.exists()
+    case=sequence/'advance_after_user_waiver_20261021_USB_resume01'
+    producer=case/'completed_readout_stableCE_20261021/L4';bank=producer/'train_features.npz';protocol=m.read(producer/'protocol.json')
+    assert m.sha(bank)==protocol['cache_native_parity']['train']['SHA256']
+    with np.load(bank) as z:physical=z['x'].copy();labels=z['y'].copy();ids=z['ids'].copy()
+    teacher_path=case/'terminal_teacher_PLS_20261022/L4/TRAIN_teacher_features.npz';identity=m.read(teacher_path.parent/'TRAIN_teacher_identity.json')
+    assert identity['TRAIN_only'] and not identity['TEST_teacher_used'] and m.sha(teacher_path)==identity['features_SHA256']
+    with np.load(teacher_path) as z:
+        assert np.array_equal(z['labels'],labels) and np.array_equal(z['ids'],ids);teacher=z['x'].copy()
+    input_path=case/'terminal_gap15_20261021/L4/train_last_input.npy'
+    assert m.sha(input_path)=='29a3854fce7ad53973ba50d5542820a81ac02c071c598cc0f13bbb1cf7162919'
+    inputs=np.load(input_path,mmap_mode='r');parts=[]
+    with torch.no_grad():
+        for begin in range(0,1600,8):parts.append(features(torch.from_numpy(np.asarray(inputs[begin:begin+8]).copy())).numpy())
+    before=np.concatenate(parts);assert before.shape==physical.shape==teacher.shape==(1600,256)
+    baseids=np.array([str(v).split('::TRAIN_shift')[0] for v in ids]);exclude=baseids[:,None]==baseids[None,:]
+    rows={}
+    for name,values in (('original_simulation_teacher',teacher),('measured_pre_last_global',before),('measured_final_fused',physical)):
+        x=values.astype(np.float64);unit=x/np.linalg.norm(x,axis=1,keepdims=True).clip(1e-12)
+        similarity=unit@unit.T;similarity[exclude]=-np.inf;near=similarity.argmax(1)
+        centers=np.stack([x[labels==k].mean(0) for k in range(20)])
+        within=float(np.square(x-centers[labels]).sum(1).mean());between=float(np.square(centers[labels]-x.mean(0)).sum(1).mean())
+        rows[name]=dict(TRAIN_samples=1600,leave_same_source_out_nearest_correct=int((labels[near]==labels).sum()),within_class_scatter=within,between_class_scatter=between,between_to_within_ratio=between/max(within,1e-12))
+    report=dict(TRAIN_only=True,TEST_used=False,VALID_used=False,no_parameter_fit=True,no_new_inference_layer=True,SDK_used=False,GPU_used=False,parent_PT_SHA256='c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2',feature_producer_SHA256=m.sha(bank),teacher_bank_SHA256=m.sha(teacher_path),native_pre_last_input_SHA256=m.sha(input_path),original_and_augmented_same_source_excluded=True,results=rows,interpretation='Descriptive TRAIN geometry under the accepted lineage. Different feature positions are not interchangeable classifiers; nearest-neighbour is not deployment accuracy or an upper bound, and scatter does not prove optical causation or drift.')
+    m.save(out,report);return report
+
+
 def teacher_feature_pls(torch,F,x,labels,teacher_features,teacher_w,teacher_b,pw,pb,counts,cfg,observe):
     """TRAIN paired multivariate PLS, folded into the ORIGINAL affine readout.
 
