@@ -2,6 +2,15 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_original_electronic_alternating_blocks(self):
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='conditioned_readout_block')
+        self.assertEqual([a.arg for a in f.args.args],['x','y','pw','pb','sample_weights','cfg','observe'])
+        c=json.loads((HERE/'lab_caltech20_L4_alternating_blocks_profile_20261022.json').read_text())
+        self.assertTrue(c['tail']['alternating_readout']);self.assertEqual(c['parent_correct'],285)
+        self.assertEqual(c['tail']['epochs'],6);self.assertEqual(c['tail']['geometry_epochs_per_block'],2)
+        self.assertLessEqual(c['tail']['fit_seconds'],900);self.assertLessEqual(c['tail']['readout_block']['steps'],60)
+        self.assertIn("current_native_feature_parity=parity",s)
     def test_fisher_TRAIN_only_original_readout(self):
         tree=ast.parse((HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text())
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='fisher_subspace_head')
@@ -53,7 +62,7 @@ class OfflineSuffix(unittest.TestCase):
         self.assertIn('TRAIN_analytic_softmax_gauge',s);self.assertIn('gradient_updates=0',s);self.assertIn('assert error<1e-10',s)
     def test_geometry_only_terminal_scope(self):
         c=json.loads((HERE/'lab_caltech20_L4_geometry_only_profile_20261021.json').read_text());self.assertTrue(c['tail']['freeze_head']);self.assertEqual(c['tail']['feature_dropout_p'],0);self.assertEqual(c['parent_correct'],285)
-        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();self.assertIn("train_keys=allowed-{'linear.weight','linear.bias'}",s);self.assertIn('expected_trainable=10 if freeze_head else 5150',s)
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();self.assertIn("train_keys=allowed-{'linear.weight','linear.bias'}",s);self.assertIn('expected_trainable=10 if freeze_head or alternating else 5150',s)
     def test_no_camera_start(self):
         s=(HERE/'lab_caltech20_dvp_suffix_stable_20261021.py').read_text();ast.parse(s)
         for forbidden in ('Bench(','Camera(','acquire(','Start('):self.assertNotIn(forbidden,s)

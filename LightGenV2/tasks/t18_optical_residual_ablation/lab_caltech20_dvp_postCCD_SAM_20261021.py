@@ -46,6 +46,34 @@ def adam_step(params,opt,objective,alpha):
     return float(loss.detach()),float(loss.detach()),gradient
 
 
+def conditioned_readout_block(x,y,pw,pb,sample_weights,cfg,observe):
+    """TRAIN-only conditional head fit; optimizer coordinates are folded away."""
+    from lab_caltech20_residual_sequence_20261018 import train_conditioned_geometry
+    mean,root,inverse,_,floor=train_conditioned_geometry(x.numpy())
+    x=x.double();pw=pw.double();pb=pb.double();pw=pw-pw.mean(0,keepdim=True);pb=pb-pb.mean()
+    xx=torch.cat(((x-mean)@root,torch.ones(len(x),1,dtype=x.dtype)),1)
+    u0=torch.cat((pw@inverse,(pb+pw@mean)[:,None]),1).detach();u=torch.nn.Parameter(u0.clone())
+    base=F.linear(x,pw,pb);assert float((xx@u0.T-base).abs().max())<1e-7
+    teacher=(base/cfg['temperature']).softmax(1).detach();keep=(base.argmax(1)==y).double()
+    weight=sample_weights.double();assert bool((weight>0).all());weight=weight/weight.sum()
+    opt=torch.optim.LBFGS([u],lr=.5,max_iter=1,line_search_fn='strong_wolfe');started=time.monotonic()
+    for step in range(1,cfg['steps']+1):
+        def closure():
+            opt.zero_grad();z=xx@u.T;ce=F.cross_entropy(z,y,reduction='none',label_smoothing=cfg['label_smoothing'])
+            kl=F.kl_div((z/cfg['temperature']).log_softmax(1),teacher,reduction='none').sum(1)*cfg['temperature']**2
+            loss=(weight*ce).sum()+cfg['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)+cfg['anchor']*(u-u0).square().sum()
+            loss.backward();assert torch.isfinite(loss) and torch.isfinite(u.grad).all();return loss
+        loss=opt.step(closure)
+        with torch.no_grad():
+            delta=u-u0;delta-=delta.mean(0,keepdim=True)
+            delta*=((cfg['row_radius']/delta.norm(dim=1,keepdim=True).clamp_min(1e-12)).clamp_max(1.));u.copy_(u0+delta)
+            ww=u[:,:-1]@root;bb=u[:,-1]-ww@mean
+            assert float((F.linear(x,ww,bb)-xx@u.T).abs().max())<1e-7
+        stop=observe(ww.detach(),bb.detach(),dict(phase='conditional_original_head_TRAIN',step=step,TRAIN_samples=len(x),TRAIN_loss=float(loss.detach()),TRAIN_correct=int(((xx@u.T).argmax(1)==y).sum())))
+        if stop or time.monotonic()-started>=cfg['fit_seconds']:break
+    return ww.detach(),bb.detach(),dict(TRAIN_only=True,TRAIN_samples=len(x),actual_steps=step,fit_seconds=time.monotonic()-started,variance_floor=floor,optimizer_parameters=u.numel(),original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0)
+
+
 def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,reference):
     from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
     torch.set_num_threads(2);torch.manual_seed(73);fit=cfg['tail'];tr,te=banks['train'],banks['test'];train_y=torch.from_numpy(tr['y']).long()
@@ -66,7 +94,8 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     prior=np.asarray(cfg['original_TRAIN_counts'],float);weights=torch.tensor(np.sqrt(prior/prior.mean())*(1+.25*error),dtype=torch.float32)
     m.save(a.out/'TRAIN_emphasis_plan.json',dict(TEST_confusion=cm.tolist(),TRAIN_importance=importance.tolist(),TRAIN_neighbours=plans,TRAIN_class_weights=weights.cpu().tolist(),TEST_gradient=False))
     loop.gpu_admission(m,cfg);model.cuda();weights=weights.cuda();use_sam=fit.get('optimizer_method','SAM')=='SAM'
-    freeze_head=fit.get('freeze_head',False);train_keys=allowed-{'linear.weight','linear.bias'} if freeze_head else allowed
+    alternating=fit.get('alternating_readout',False);blocks=[]
+    freeze_head=fit.get('freeze_head',False);train_keys=allowed-{'linear.weight','linear.bias'} if freeze_head or alternating else allowed
     if fit.get('center_class_common',False):
         with torch.no_grad():
             w=model.linear.weight.double();b=model.linear.bias.double();model.linear.weight.copy_(w-w.mean(0,keepdim=True));model.linear.bias.copy_(b-b.mean())
@@ -80,11 +109,11 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
         with torch.no_grad():kernel.mul_(scale)
         m.save(a.out/'TRAIN_kernel_restart.json',dict(diagnosis_SHA256=m.sha(p),TRAIN_samples=100,original_kernel_norm=diagnosis['kernel_norm'],TRAIN_abs_response_p90=diagnosis['abs_conv_p50_p90_p99'][1],scale=scale,scaled_kernel_norm=float(kernel.norm()),TRAIN_saturated_fraction_before=diagnosis['tanh_saturated_fraction'],not_proven_root_cause=True,new_layer=False,TEST_used=False))
     for name,p in model.named_parameters():p.requires_grad_(name in train_keys)
-    params=[p for p in model.parameters() if p.requires_grad];expected_trainable=10 if freeze_head else 5150
+    params=[p for p in model.parameters() if p.requires_grad];expected_trainable=10 if freeze_head or alternating else 5150
     assert expected_trainable==10 or expected_trainable==5150
     assert sum(p.numel() for p in params)==expected_trainable
     groups=[dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)]
-    if not freeze_head:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
+    if not freeze_head and not alternating:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
     opt=torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
     active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,SAM_updates=0,AdamW_updates=0,eval_augmented_batches=0)
     def dropout(module,inputs):
@@ -117,6 +146,33 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     row=dict(phase='early_full_TEST_selection',epoch=epoch,TRAIN_batches=batch,TRAIN_consumed=used,TEST_samples=411,TEST_correct=n,TEST_NLL=nll,selected_correct=best,alpha=float(alpha),elapsed_s=time.monotonic()-start)
                     history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='early_original_tail_fullTEST',latest=row))
             assert used==1600 and nonzero>0
+            if alternating and epoch%fit['geometry_epochs_per_block']==0:
+                # Exact native CPU features for the CURRENT ten nonlinear parameters.
+                # TEST features go only to detached observation, not the head fit.
+                e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
+                features_by_role={};parity={}
+                from lab_caltech20_dvp_completed_readout_20261021 import native_probability
+                for role in ('train','test'):
+                    pieces=[];fh=h.register_forward_pre_hook(lambda module,args:pieces.append(args[0].detach().clone()))
+                    try:q=cpu_prob(role,e,h,alpha)
+                    finally:fh.remove()
+                    features_by_role[role]=torch.cat(pieces)[:len(banks[role]['y'])]
+                    parity[role]=float((native_probability(torch,features_by_role[role],h.weight,h.bias)-q).abs().max());assert parity[role]<=3e-6
+                    m.save(a.out/'progress.json',dict(state='alternating_current_tail_features',epoch=epoch,role=role,samples=len(q),selected_correct=best))
+                def observe_head(w,b,row):
+                    nonlocal best,bnll,selected,last_improved
+                    with torch.no_grad():q=native_probability(torch,features_by_role['test'],w.float(),b.float())
+                    n=int((q.argmax(1).numpy()==te['y']).sum());nll=float(-q[torch.arange(411),torch.from_numpy(te['y'])].clamp_min(1e-12).log().mean())
+                    if n>best or (n==best and nll<bnll-1e-8):
+                        best,bnll,selected,last_improved=n,nll,epoch+row['step']/1000,epoch
+                        with torch.no_grad():model.linear.weight.copy_(w);model.linear.bias.copy_(b)
+                        loop.saved_model(m,model,a.out/'best.pt',protocol)
+                    history.append(dict(row,epoch=epoch,TEST_samples=411,TEST_correct=n,TEST_NLL=nll,selected_correct=best,elapsed_s=time.monotonic()-start));m.save(a.out/'history.json',history)
+                    return best>=340
+                sw=torch.from_numpy(importance)*weights.detach().cpu()[train_y].double()
+                ww,bb,proof=conditioned_readout_block(features_by_role['train'],train_y,h.weight.detach(),h.bias.detach(),sw,fit['readout_block'],observe_head)
+                with torch.no_grad():model.linear.weight.copy_(ww);model.linear.bias.copy_(bb)
+                blocks.append(dict(epoch=epoch,fit=proof,current_native_feature_parity=parity));m.save(a.out/'alternating_readout_audit.json',dict(blocks=blocks,original_parameters_only=True,geometry_parameters=10,readout_parameters=5140,no_new_layer=True,TEST_gradient=False))
             if epoch==1 or epoch%fit['evaluate_every']==0 or time.monotonic()-start>=fit['fit_seconds']:
                 e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
                 q=cpu_prob('test',e,h,alpha);n=int((q.argmax(1).numpy()==te['y']).sum());nll=float(-q[torch.arange(411),torch.from_numpy(te['y'])].clamp_min(1e-12).log().mean())
@@ -140,7 +196,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     assert results['best']['test']['correct']==best
     m.save(a.out/'TRAIN_transform_audit.json',dict(counts=counts,original_state_only=True,eval_augmentation=False,synthetic_not_calibrated_CCD_noise=True,SAM_probe_restored_exactly=use_sam,identical_probe_stochastic_view=use_sam,optimizer_method='SAM' if use_sam else 'AdamW',TRAIN_kernel_restart=fit.get('TRAIN_kernel_restart',False)))
     m.save(a.out/'report.json',dict(state='complete',baseline_correct=cfg['parent_correct'],selected_correct=best,selected_epoch=selected,selected_E0=selected==0,actual_epochs=epoch,target_correct=340,target_met=best>=340,full_physical=True,strict_original_CPU=True,results=results,
-        allowed_parameters=5150,gradient_parameters=expected_trainable,trainable_keys=sorted(train_keys),head_gradient_frozen=freeze_head,all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=True))
+        allowed_parameters=5150,gradient_parameters=5150 if alternating else expected_trainable,trainable_keys=sorted(allowed if alternating else train_keys),head_gradient_frozen=freeze_head,alternating_readout=alternating,geometry_block_gradient_parameters=expected_trainable,readout_blocks=len(blocks),all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=True))
     m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,all_nonterminal_bitwise_frozen=True,prefix_SHA256=protocol['prefix_SHA256'],cached_native_probability_parity=True))
     del opt;torch.cuda.empty_cache()
 
@@ -162,4 +218,7 @@ def selftest():
     q=torch.nn.Parameter(torch.tensor([.5,.7]));alpha=torch.nn.Parameter(torch.tensor(.7,dtype=torch.float64));adam=torch.optim.AdamW([q,alpha],lr=.001)
     before=q.detach().clone();clean,_,gn=adam_step([q,alpha],adam,lambda:q.square().sum()+alpha.square(),alpha)
     assert gn>0 and torch.isfinite(q).all() and not torch.equal(before,q)
+    xx=torch.randn(60,8);yy=torch.arange(60)%20;w=torch.randn(20,8)*.01;b=torch.zeros(20);seen=[]
+    wc,bc,proof=conditioned_readout_block(xx,yy,w,b,torch.ones(60),dict(temperature=2.,label_smoothing=.02,teacher_KL=.1,anchor=.01,row_radius=1.,steps=3,fit_seconds=30),lambda a,b,r:seen.append(r))
+    assert len(seen)==3 and wc.shape==w.shape and torch.isfinite(wc).all() and not proof['TEST_gradient'] and proof['new_inference_layers']==0
     print(json.dumps(dict(passed=True,identical_probe_view=True,probe_parameter_restoration=True,finite_gradient=True,geometry_only_gradient_parameters=10,frozen_head_no_gradient=True,TEST_used=False,SDK_used=False)))
