@@ -27,6 +27,7 @@ def check_connection(bench,hw,warp,out):
 
 
 def audit_capture(a,model,data,fields,dm,hw,stage,out):
+    model.measured={}  # Do not let evaluation-only replay bypass physical callbacks.
     report=m.read(out/'report.json');protocol=m.read(out/'protocol.json');assert report['protocol_SHA256']==m.sha(out/'protocol.json')
     phase=np.asarray(Image.open(out/'phase.bmp'));drive=np.asarray(m.read(hw['response_lut'])['drive'],np.uint8);checked=0
     for role in ('train','test'):
@@ -62,6 +63,7 @@ def acquire(a,model,data,dm,fields,identities,paths,hw,stage,out,parent):
     import cv2
     assert not out.exists() and not m.LOCK.exists();out.mkdir(parents=True)
     assert list(fields)==['router']+[str(k) for k in range(int(stage))]
+    model.measured={};model.cpu().eval()
     digest=m.sha(parent);hardware_SHA=m.sha(a.hardware);drive=np.asarray(m.read(hw['response_lut'])['drive'],np.uint8)
     assert m.sha(hw['coordinates'])==hw['coordinates_SHA256'] and m.sha(hw['response_lut'])==hw['response_lut_SHA256']
     warp=cv2.getPerspectiveTransform(np.float32(m.corners(Path(hw['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]))

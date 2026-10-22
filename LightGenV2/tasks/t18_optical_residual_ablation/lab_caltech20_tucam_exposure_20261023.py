@@ -1,7 +1,8 @@
 """Bounded same-phase E3 TRAIN exposure calibration; no TEST or optical refit.
 
-The initial flat-field 2ms admission was geometrically valid but the first E3
-TRAIN frame was too dim. Preserve it, calibrate exposure using three fixed
+The initial E3 attempt retained stale evaluation prefix fields and stopped at
+its first dim frame. That frame is invalid, preserved and never reused. Export
+correct TRAIN inputs from a fresh model with explicit callbacks; use three fixed
 TRAIN anchors, then validate all40 TRAIN(2/class). Keep the field inverse and
 optical LUTs unchanged, verify native sensor exposure linearity separately.
 """
@@ -44,8 +45,9 @@ def run(a):
             return np.zeros((8,478,478),np.uint8)
         m.layer_forward(model,images,data['train'][2][begin:end],'4',cache,export)
     assert len(rows)==40 and np.bincount(data['train'][1][:40],minlength=20).tolist()==[2]*20
-    assert m.sha(a.out/'phase.bmp')==receipt['phase_SHA256'] and rows[0]['canonical_SHA256']==receipt['canonical_SHA256'] and rows[0]['BMP_SHA256']==receipt['BMP_SHA256']
-    m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT_SHA256=m.sha(parent),data_SHA256=dm['sha256'],base_hardware_SHA256=m.sha(a.hardware),phase_SHA256=m.sha(a.out/'phase.bmp'),TRAIN=40,TEST=0,VALID=0,anchors=[0,13,27],exposure_probe_us=[1999.8,5000,10000,20000,40000,80000],field_inverse_unchanged=True,optical_LUTs_unchanged=True,rows=rows))
+    assert m.sha(a.out/'phase.bmp')==receipt['phase_SHA256'] and not model.measured
+    assert rows[0]['canonical_SHA256']!=receipt['canonical_SHA256'],'Unexpected identity: recheck stale-prefix diagnosis before hardware'
+    m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT_SHA256=m.sha(parent),data_SHA256=dm['sha256'],base_hardware_SHA256=m.sha(a.hardware),phase_SHA256=m.sha(a.out/'phase.bmp'),TRAIN=40,TEST=0,VALID=0,anchors=[0,13,27],exposure_probe_us=[1999.8,5000,10000,20000,40000,80000],field_inverse_unchanged=True,optical_LUTs_unchanged=True,rows=rows,original_one_frame_invalid_stale_evaluation_prefix=True,invalid_frame_preserved=str(failed),fresh_model_measured_empty=True,prefix_reports=proof['prefix_reports'],prefix_SHA256=proof['prefix_SHA256']))
     pts=np.float32(m.corners(Path(hw['coordinates'])));warp=cv2.getPerspectiveTransform(pts,np.float32([[0,0],[477,0],[477,477],[0,477]]));ladder=[];baseline=None;selected=None;full_scale=hw['sensor_full_scale']
     m.save(m.LOCK,dict(pid=os.getpid(),camera='tucam',kind='same_phase_TRAIN_exposure',out=str(a.out)))
     def capture(bench,path,folder,name):
