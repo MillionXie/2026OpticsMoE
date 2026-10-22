@@ -159,6 +159,12 @@ class OfflineSuffix(unittest.TestCase):
         self.assertLessEqual(c['prior_temperature']['fit_seconds']+c['coupled']['fit_seconds'],150)
         fn=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=='paired_response_head');self.assertNotIn('te',[a.arg for a in fn.args.args])
         c=json.loads((HERE/'lab_caltech20_L4_paired_response_profile_20261022.json').read_text());self.assertEqual(c['parent_correct'],285);self.assertLessEqual(c['paired_response']['fit_seconds'],120)
+    def test_group_DRO_TRAIN_only_signature(self):
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s);fn=next(x for x in tree.body if isinstance(x,ast.FunctionDef) and x.name=='TRAIN_group_update')
+        self.assertEqual([v.arg for v in fn.args.args],['relative','loss_sums','support','eta'])
+        self.assertIn('risk=(loss_sums/support).detach()',s);self.assertIn("importance=np.ones(1600",s)
+        c=json.loads((HERE/'lab_caltech20_L4_group_DRO_profile_20261022.json').read_text());self.assertTrue(c['tail']['TRAIN_group_DRO']);self.assertEqual(c['parent_correct'],285)
+        self.assertLessEqual(c['tail']['fit_seconds'],600);self.assertEqual(c['tail']['optimizer_method'],'full_TRAIN_SGD')
     def test_last_fusion_restart_scope(self):
         s=(HERE/'lab_caltech20_dvp_L4_fusion_restart_20261022.py').read_text();ast.parse(s)
         self.assertIn("allowed={'fusion_logits.3','linear.weight','linear.bias'}",s);self.assertIn('alpha=(.4001+.95)/2',s)

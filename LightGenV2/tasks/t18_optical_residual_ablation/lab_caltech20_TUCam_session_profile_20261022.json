@@ -5,10 +5,10 @@
   "sdk":"E:/code/guest/2026OpticsMoE/experiments/hardware_sdk/vendor_sdk/camera_tucam_mosaic",
   "binding_SHA256":"0d31cd68cf9db5fe5fd1d97c94927f3e93b5d69c00be9c724529d8dca62da3bd",
   "DLL_SHA256":"24980ba95631c43d500470721acf58c5823a73159c727cb8425171f99c4bab0f",
-  "sensor_expected_shape":[2048,2048],"logical_shape":[478,478],
+  "sensor_expected_shape":[2048,2048],"logical_shape":[478,478],"sensor_full_scale":65535,
   "exposure_us":5000,"exposure_probe_us":[500,1000,2000,5000,10000,20000,40000,80000],
   "wait_ms":240,"discard_frames":6,
-  "sensor_conversion":"Fixed 0..(2^reported_native_depth-1) to 0..255, after perspective sampling; original uint16 raw preserved. No per-image rescaling or clipping tuning by TEST.",
+  "sensor_conversion":"Fixed uint16 storage range 0..65535 to 0..255 after perspective sampling; original uint16 raw preserved. SDK ucDepth currently code2 is retained, not interpreted as2bits; reserved uiIndex0 is not used as hardware monotonic counter. This contract is not a claim of calibrated ADC effective bit depth. No per-image rescaling or TEST calibration.",
   "camera_ROI":false,"camera_auto_exposure":false,"phase_LUT_changed":false,
   "calibration_TEST_used":false,"automatic_retry":false,"recurring":false
 }

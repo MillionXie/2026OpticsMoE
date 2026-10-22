@@ -49,14 +49,20 @@ class Bench:
     def stage(self,path):self.phase.show(path)
     def read(self):
         scratch=self.out/'native_frame_scratch.npy';self.camera.capture(scratch);raw=np.load(scratch);info=self.camera.device_info();meta=info['last_capture']
-        bits=meta['sensor_bit_depth'];assert 8<=bits<=16 and raw.shape==(2048,2048) and raw.dtype==np.uint16
-        index=meta['camera_frame_index'];assert index>self.last,'Nonmonotonic TUCam frame; preserve evidence, no restart';self.last=index
+        assert raw.shape==(2048,2048) and raw.dtype==np.uint16
+        # The vendor manual labels uiIndex RESERVED, and current runtime returns
+        # 0. Never pretend a software counter is a hardware frame index. ucDepth
+        # currently returns code2, not a usable numeric bit count. Preserve it;
+        # declared full-scale is the uint16 storage contract, not fitted pixels.
+        reserved_index=meta.pop('camera_frame_index');depth_code=meta.pop('sensor_bit_depth');self.last+=1
         exposure=self.camera._get_property(self.camera._module.TUCAM_IDPROP.TUIDP_EXPOSURETM)*1000
         assert abs(exposure-self.cfg['exposure_us'])<max(2,self.cfg['exposure_us']*.01)
-        assert raw.max()<=(2**bits-1)
-        return raw,dict(meta,frame_id=index,exposure_us=exposure,shape=list(raw.shape),sensor_full_scale=2**bits-1,
+        gain=self.camera._get_property(self.camera._module.TUCAM_IDPROP.TUIDP_GLOBALGAIN)
+        assert gain==self.settings['analog_gain'] and self.camera._get_capability(self.camera._module.TUCAM_IDCAPA.TUIDC_ATEXPOSURE)==0
+        assert self.cfg['sensor_full_scale']==65535
+        return raw,dict(meta,frame_id=self.last,frame_id_source='host_successful_capture_counter_NOT_hardware',SDK_reserved_uiIndex=reserved_index,SDK_ucDepth_raw=depth_code,exposure_us=exposure,shape=list(raw.shape),sensor_full_scale=self.cfg['sensor_full_scale'],
                         camera_model=info['camera_model'],driver='tucam',auto_exposure=False,
-                        gain=info['analog_gain'],SDK_flips_applied=False)
+                        gain=gain,SDK_flips_applied=False)
     def capture(self,path,wait_ms=None):
         start=time.monotonic();self.slm.preload_files([Path(path)]);self.slm.display_file(Path(path));visible=time.monotonic()
         wait=self.cfg['wait_ms'] if wait_ms is None else wait_ms;time.sleep(wait/1000)

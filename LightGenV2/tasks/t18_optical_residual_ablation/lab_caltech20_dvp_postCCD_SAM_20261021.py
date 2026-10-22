@@ -12,6 +12,19 @@ from torch.nn import functional as F
 from lab_caltech20_rich_tail_refine_20261018 import tail
 
 
+def TRAIN_group_update(relative,loss_sums,support,eta=.1):
+    """TRAIN-only bounded exponentiated group-risk weights; no TEST argument."""
+    assert relative.shape==loss_sums.shape==support.shape==(20,) and bool((support>0).all())
+    risk=(loss_sums/support).detach();risk=risk-risk.mean()
+    q=(relative.detach()*torch.exp(eta*risk.clamp(-5,5))).clamp(.5,2.)
+    # Unit mean preserves CE magnitude; a second convex mixture keeps strict
+    # boundedness after normalization without tuning on held-out performance.
+    q=q/q.mean();q=.5+.5*q
+    assert torch.isfinite(q).all() and abs(float(q.mean())-1)<1e-5
+    assert float(q.min())>=.5 and float(q.max())<=2.5
+    return q.detach()
+
+
 def sam_step(params,opt,objective,radius,alpha=None):
     """Use identical stochastic realization for both SAM forwards, then restore."""
     cpu_rng=torch.get_rng_state();gpu_rng=torch.cuda.get_rng_state() if params[0].is_cuda else None
@@ -206,6 +219,13 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     importance,hits,plans=neighbor_importance(tr['x'],tr['y'],te['x'],te['y'],bp.argmax(1).numpy()!=te['y'],3,.5)
     cm=np.bincount(te['y']*20+bp.argmax(1).numpy(),minlength=400).reshape(20,20);error=1-cm.diagonal()/cm.sum(1).clip(1)
     prior=np.asarray(cfg['original_TRAIN_counts'],float);weights=torch.tensor(np.sqrt(prior/prior.mean())*(1+.25*error),dtype=torch.float32)
+    group_dro=fit.get('TRAIN_group_DRO',False)
+    if group_dro:
+        assert fit.get('optimizer_method')=='full_TRAIN_SGD' and not fit.get('TRAIN_relational_geometry_weight',0)
+        importance=np.ones(1600,dtype=float);plans=[];weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=torch.float32)
+        m.save(a.out/'TRAIN_group_policy.json',dict(TRAIN_only=True,TEST_confusion_used_in_training=False,TEST_neighbors_used=False,
+            risk='class mean unweighted TRAIN CE',eta=fit['TRAIN_group_eta'],base_weights=weights.tolist(),TRAIN_each_class=80,
+            new_inference_layers=0,original_parent_retained=True))
     m.save(a.out/'TRAIN_emphasis_plan.json',dict(TEST_confusion=cm.tolist(),TRAIN_importance=importance.tolist(),TRAIN_neighbours=plans,TRAIN_class_weights=weights.cpu().tolist(),TEST_gradient=False))
     fullbatch=fit.get('optimizer_method')=='full_TRAIN_SGD';device='cpu' if fullbatch else 'cuda'
     if fullbatch:
@@ -238,6 +258,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     opt=torch.optim.SGD(groups,momentum=.9,weight_decay=fit['weight_decay']) if fullbatch else torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
     active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,TRAIN_prototype_batches=0,TRAIN_GCE_batches=0,TRAIN_margin_replay_batches=0,TRAIN_relational_geometry_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,full_TRAIN_SGD_updates=0,eval_augmented_batches=0)
     swa_sum={};swa_snapshots=0;swa_history=[]
+    group_relative=torch.ones(20,device=device);group_history=[]
     def dropout(module,inputs):
         if active['TRAIN']:
             x=inputs[0]
@@ -250,6 +271,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     try:
         for epoch in range(1,fit['epochs']+1):
             total=0.;used=0;nonzero=0;order=rng.permutation(1600)
+            group_sums=torch.zeros(20,device=device);group_support=torch.zeros(20,device=device)
             if fullbatch:opt.zero_grad(set_to_none=True)
             for begin in range(0,1600,8):
                 ix=order[begin:begin+8];v=torch.from_numpy(np.asarray(cached['train'][ix]).copy()).to(device);ccd=torch.from_numpy(np.asarray(fields['3']['train'][ix]).copy()).to(device).float()
@@ -262,7 +284,9 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                 def objective():
                     z=tail(model.electronic[3],model.linear,model.effective_alpha(3),v,optical)
                     if fit.get('TRAIN_feature_mixup',False):return mixed_TRAIN_loss(z,labels,teach,sample_weight,weights,active['mix_perm'],fit['label_smoothing'],fit['teacher_KL'])
-                    ce=F.cross_entropy(z,labels,weight=weights,label_smoothing=fit['label_smoothing'],reduction='none')
+                    if group_dro:
+                        risk=F.cross_entropy(z.detach(),labels,reduction='none');group_sums.scatter_add_(0,labels,risk);group_support.scatter_add_(0,labels,torch.ones_like(risk))
+                    ce=F.cross_entropy(z,labels,weight=weights*group_relative if group_dro else weights,label_smoothing=fit['label_smoothing'],reduction='none')
                     if fit.get('TRAIN_GCE_q',0)>0:
                         ce=robust_TRAIN_classification(z,labels,weights,fit['label_smoothing'],fit['TRAIN_GCE_q'],fit['TRAIN_GCE_CE_replay'])
                         counts['TRAIN_GCE_batches']+=1
@@ -296,6 +320,11 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     row=dict(phase='early_full_TEST_selection',epoch=epoch,TRAIN_batches=batch,TRAIN_consumed=used,TEST_samples=411,TEST_correct=n,TEST_NLL=nll,selected_correct=best,alpha=float(alpha),elapsed_s=time.monotonic()-start)
                     history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='early_original_tail_fullTEST',latest=row))
             assert used==1600 and nonzero>0
+            if group_dro:
+                assert group_support.tolist()==[80]*20
+                group_relative=TRAIN_group_update(group_relative,group_sums,group_support,fit['TRAIN_group_eta'])
+                group_history.append(dict(epoch=epoch,TRAIN_class_CE=(group_sums/group_support).tolist(),next_TRAIN_relative=group_relative.tolist()))
+                m.save(a.out/'TRAIN_group_history.json',dict(TRAIN_only=True,TEST_gradient=False,history=group_history))
             if fit.get('SWA_start_epoch') and epoch>=fit['SWA_start_epoch']:
                 for name,p in model.named_parameters():
                     if name in allowed:
@@ -435,4 +464,7 @@ def selftest():
     lp=zz.log_softmax(1)[torch.arange(8),yy]
     assert torch.allclose(robust,.25*(-lp)+.75*(1-torch.exp(.7*lp))/.7,atol=1e-12)
     robust.mean().backward();assert torch.isfinite(zz.grad).all() and float(zz.grad.norm())>0
-    print(json.dumps(dict(passed=True,identical_probe_view=True,probe_parameter_restoration=True,finite_gradient=True,geometry_only_gradient_parameters=10,frozen_head_no_gradient=True,TEST_used=False,SDK_used=False)))
+    support=torch.full((20,),80.);sums=torch.ones(20)*80;sums[3]=240;q=TRAIN_group_update(torch.ones(20),sums,support)
+    assert q[3]>q[0] and not q.requires_grad and abs(float(q.mean())-1)<1e-6
+    assert torch.allclose(TRAIN_group_update(torch.ones(20),torch.ones(20)*80,support),torch.ones(20))
+    print(json.dumps(dict(passed=True,identical_probe_view=True,probe_parameter_restoration=True,finite_gradient=True,geometry_only_gradient_parameters=10,frozen_head_no_gradient=True,TRAIN_group_risk_detached=True,TEST_used=False,SDK_used=False)))
