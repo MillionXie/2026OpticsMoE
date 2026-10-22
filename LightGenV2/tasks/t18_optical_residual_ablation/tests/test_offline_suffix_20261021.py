@@ -2,6 +2,14 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_featuremix_SWA_original_capacity(self):
+        c=json.loads((HERE/'lab_caltech20_L4_featuremix_SWA_profile_20261022.json').read_text())
+        self.assertTrue(c['tail']['TRAIN_feature_mixup']);self.assertEqual(c['tail']['SWA_start_epoch'],20)
+        self.assertEqual(c['tail']['epochs'],60);self.assertLessEqual(c['tail']['fit_seconds'],1200)
+        self.assertEqual(c['parent_correct'],285);self.assertFalse(c['tail']['freeze_head'])
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='mixed_TRAIN_loss')
+        self.assertNotIn('test',[a.arg for a in f.args.args]);self.assertIn('assert set(mean)==allowed',s);self.assertIn("assert restored",s)
     def test_original_electronic_alternating_blocks(self):
         s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='conditioned_readout_block')

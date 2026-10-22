@@ -74,6 +74,15 @@ def conditioned_readout_block(x,y,pw,pb,sample_weights,cfg,observe):
     return ww.detach(),bb.detach(),dict(TRAIN_only=True,TRAIN_samples=len(x),actual_steps=step,fit_seconds=time.monotonic()-started,variance_floor=floor,optimizer_parameters=u.numel(),original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0)
 
 
+def mixed_TRAIN_loss(z,labels,teacher,importance,class_weights,perm,smoothing,teacher_KL):
+    """Fixed half/half TRAIN feature MixUp, matching weighted soft targets."""
+    ce1=F.cross_entropy(z,labels,weight=class_weights,reduction='none',label_smoothing=smoothing)
+    ce2=F.cross_entropy(z,labels[perm],weight=class_weights,reduction='none',label_smoothing=smoothing)
+    target=.5*(teacher+teacher[perm]);good=teacher.argmax(1)==labels;keep=(good&good[perm]).float()
+    kl=F.kl_div(z.log_softmax(1),target,reduction='none').sum(1)
+    return .5*(ce1*importance+ce2*importance[perm]).mean()+teacher_KL*(kl*keep).sum()/keep.sum().clamp_min(1)
+
+
 def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,reference):
     from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
     torch.set_num_threads(2);torch.manual_seed(73);fit=cfg['tail'];tr,te=banks['train'],banks['test'];train_y=torch.from_numpy(tr['y']).long()
@@ -115,10 +124,14 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
     groups=[dict(params=list(model.electronic[3].parameters()),lr=fit['conv_lr']),dict(params=[model.fusion_logits[3]],lr=fit['alpha_lr'],weight_decay=0)]
     if not freeze_head and not alternating:groups.append(dict(params=list(model.linear.parameters()),lr=fit['head_lr']))
     opt=torch.optim.AdamW(groups,weight_decay=fit['weight_decay'])
-    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,SAM_updates=0,AdamW_updates=0,eval_augmented_batches=0)
+    active={'TRAIN':False};counts=dict(TRAIN_noise_batches=0,TRAIN_dropout_calls=0,TRAIN_CCD_pixel_dropout_batches=0,TRAIN_feature_mixup_batches=0,SWA_snapshots=0,SWA_evaluations=0,SAM_updates=0,AdamW_updates=0,eval_augmented_batches=0)
+    swa_sum={};swa_snapshots=0;swa_history=[]
     def dropout(module,inputs):
-        if active['TRAIN'] and fit['feature_dropout_p']>0:
-            counts['TRAIN_dropout_calls']+=1;return (F.dropout(inputs[0],p=fit['feature_dropout_p'],training=True),)
+        if active['TRAIN']:
+            x=inputs[0]
+            if fit['feature_dropout_p']>0:counts['TRAIN_dropout_calls']+=1;x=F.dropout(x,p=fit['feature_dropout_p'],training=True)
+            if fit.get('TRAIN_feature_mixup',False):x=.5*(x+x[active['mix_perm']])
+            return (x,)
     hook=model.linear.register_forward_pre_hook(dropout);rng=np.random.default_rng(73);start=time.monotonic()
     try:
         for epoch in range(1,fit['epochs']+1):
@@ -130,14 +143,16 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                 if fit.get('CCD_pixel_dropout_p',0)>0:
                     noisy=F.dropout(noisy,p=fit['CCD_pixel_dropout_p'],training=True).clamp(0,255);counts['TRAIN_CCD_pixel_dropout_batches']+=1
                 optical=model.nonlinear(noisy,'global');labels=train_y[ix].cuda();teach=teacher[ix].cuda();sample_weight=torch.tensor(importance[ix],dtype=torch.float32,device='cuda');active['TRAIN']=True
+                if fit.get('TRAIN_feature_mixup',False):active['mix_perm']=torch.arange(len(ix),device='cuda').roll(1);counts['TRAIN_feature_mixup_batches']+=1
                 def objective():
                     z=tail(model.electronic[3],model.linear,model.effective_alpha(3),v,optical)
+                    if fit.get('TRAIN_feature_mixup',False):return mixed_TRAIN_loss(z,labels,teach,sample_weight,weights,active['mix_perm'],fit['label_smoothing'],fit['teacher_KL'])
                     ce=F.cross_entropy(z,labels,weight=weights,label_smoothing=fit['label_smoothing'],reduction='none')
                     keep=(teach.argmax(1)==labels).float();kl=F.kl_div(z.log_softmax(1),teach,reduction='none').sum(1)
                     return (ce*sample_weight).mean()+fit['teacher_KL']*(kl*keep).sum()/keep.sum().clamp_min(1)
                 clean,probe,norm=sam_step(params,opt,objective,fit['SAM_radius'],model.fusion_logits[3]) if use_sam else adam_step(params,opt,objective,model.fusion_logits[3]);active['TRAIN']=False
                 total+=clean*len(ix);used+=len(ix);nonzero+=int(norm>0);counts['TRAIN_noise_batches']+=1;counts['SAM_updates' if use_sam else 'AdamW_updates']+=1
-                if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_restart_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
+                if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_featuremix_TRAIN' if fit.get('TRAIN_feature_mixup',False) else 'L4_postCCD_alternating_TRAIN' if alternating else 'L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
                 batch=begin//8+1
                 if epoch==1 and batch<=fit.get('early_evaluate_batches',0) and batch%fit.get('early_evaluate_every',5)==0:
                     e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
@@ -146,6 +161,13 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     row=dict(phase='early_full_TEST_selection',epoch=epoch,TRAIN_batches=batch,TRAIN_consumed=used,TEST_samples=411,TEST_correct=n,TEST_NLL=nll,selected_correct=best,alpha=float(alpha),elapsed_s=time.monotonic()-start)
                     history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='early_original_tail_fullTEST',latest=row))
             assert used==1600 and nonzero>0
+            if fit.get('SWA_start_epoch') and epoch>=fit['SWA_start_epoch']:
+                for name,p in model.named_parameters():
+                    if name in allowed:
+                        value=p.detach().cpu().double()
+                        if name not in swa_sum:swa_sum[name]=value.clone()
+                        else:swa_sum[name].add_(value)
+                swa_snapshots+=1;counts['SWA_snapshots']=swa_snapshots
             if alternating and epoch%fit['geometry_epochs_per_block']==0:
                 # Exact native CPU features for the CURRENT ten nonlinear parameters.
                 # TEST features go only to detached observation, not the head fit.
@@ -181,6 +203,27 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                 if epoch%4==0:train_correct=int((cpu_prob('train',e,h,alpha).argmax(1)==train_y).sum())
                 row=dict(epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/1600,TRAIN_correct=train_correct,TEST_correct=n,selected_correct=best,TEST_NLL=nll,alpha=float(alpha),elapsed_s=time.monotonic()-start)
                 history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='L4_postCCD_SAM_epoch_complete',latest=row));print(json.dumps(row),flush=True)
+                if swa_snapshots:
+                    mean={name:(value/swa_snapshots).to(original[name].dtype) for name,value in swa_sum.items()};assert set(mean)==allowed
+                    ae=deepcopy(model.electronic[3]).cpu().eval();ah=deepcopy(model.linear).cpu().eval();ah._forward_pre_hooks.clear()
+                    ae.load_state_dict({'local.weight':mean['electronic.3.local.weight']})
+                    with torch.no_grad():ah.weight.copy_(mean['linear.weight']);ah.bias.copy_(mean['linear.bias'])
+                    q=cpu_prob('test',ae,ah,mean['fusion_logits.3']);an=int((q.argmax(1).numpy()==te['y']).sum());alloss=float(-q[torch.arange(411),torch.from_numpy(te['y'])].clamp_min(1e-12).log().mean())
+                    restored=True
+                    if an>best or (an==best and alloss<bnll-1e-8):
+                        params_by_name=dict(model.named_parameters());saved={name:params_by_name[name].detach().clone() for name in allowed}
+                        try:
+                            with torch.no_grad():
+                                for name,value in mean.items():params_by_name[name].copy_(value)
+                            loop.saved_model(m,model,a.out/'best.pt',protocol)
+                        finally:
+                            with torch.no_grad():
+                                for name,value in saved.items():params_by_name[name].copy_(value)
+                        restored=all(torch.equal(params_by_name[name].detach(),value) for name,value in saved.items());assert restored
+                        best,bnll,selected,last_improved=an,alloss,'SWA_epoch'+str(epoch),epoch
+                    counts['SWA_evaluations']+=1
+                    ar=dict(phase='TRAIN_original_parameter_SWA',epoch=epoch,TRAIN_snapshots=swa_snapshots,TEST_samples=411,TEST_correct=an,TEST_NLL=alloss,selected_correct=best,original_terminal_only=True,no_inference_ensemble=True,training_parameters_restored=restored,elapsed_s=time.monotonic()-start)
+                    history.append(ar);swa_history.append(ar);m.save(a.out/'history.json',history);m.save(a.out/'SWA_audit.json',dict(snapshots=swa_snapshots,allowed_keys=sorted(allowed),evaluations=swa_history,TRAIN_snapshot_schedule=True,new_inference_layers=0,TEST_gradient=False));m.save(a.out/'progress.json',dict(state='original_parameter_SWA_evaluation',latest=ar))
             if best>=340 or time.monotonic()-start>=fit['fit_seconds'] or epoch-last_improved>=fit['patience_epochs']:break
         model.cpu();loop.validate_state(m,model,original,allowed);loop.saved_model(m,model,a.out/'last.pt',protocol)
     finally:active['TRAIN']=False;hook.remove()
@@ -221,4 +264,8 @@ def selftest():
     xx=torch.randn(60,8);yy=torch.arange(60)%20;w=torch.randn(20,8)*.01;b=torch.zeros(20);seen=[]
     wc,bc,proof=conditioned_readout_block(xx,yy,w,b,torch.ones(60),dict(temperature=2.,label_smoothing=.02,teacher_KL=.1,anchor=.01,row_radius=1.,steps=3,fit_seconds=30),lambda a,b,r:seen.append(r))
     assert len(seen)==3 and wc.shape==w.shape and torch.isfinite(wc).all() and not proof['TEST_gradient'] and proof['new_inference_layers']==0
+    zz=torch.randn(8,20,requires_grad=True);labels=torch.arange(8);teacher=F.one_hot(labels,20).float();perm=torch.arange(8).roll(1)
+    mixloss=mixed_TRAIN_loss(zz,labels,teacher,torch.ones(8),torch.ones(20),perm,0.,0.)
+    expected=.5*(F.cross_entropy(zz,labels)+F.cross_entropy(zz,labels[perm]));assert torch.allclose(mixloss,expected)
+    mixloss.backward();assert zz.grad is not None and torch.isfinite(zz.grad).all()
     print(json.dumps(dict(passed=True,identical_probe_view=True,probe_parameter_restoration=True,finite_gradient=True,geometry_only_gradient_parameters=10,frozen_head_no_gradient=True,TEST_used=False,SDK_used=False)))
