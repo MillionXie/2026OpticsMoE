@@ -1,5 +1,27 @@
 # Caltech rich20：DVP 有残差逐层适配（原轮未达标，新轮严格逐层门槛）
 
+## 2026-10-22原接受285继续训练：三项完整原模型复核未提升
+
+全部从同一c172de22开始，不用较差last接续，不增加推理层或改变上游/CCD。
+TRAIN1600、TEST411、VALID0；TEST重复分析/选模是开发指标，不是独立泛化。
+
+| 原run下对照 | 已完成TRAIN优化 | last TRAIN | last TEST | 采用best |
+|---|---:|---:|---:|---:|
+| postCCD_prototype_SGD_20261022/L4 | 24完整pass | 1087/1600 | 260/411 | E0父285 |
+| terminal_bias_coordinate_20261022/L4 | 8原bias坐标pass | 1100/1600 | 265/411 | E0父285 |
+| postCCD_GCE_SGD_20261022/L4 | 24完整pass | 1081/1600 | 265/411 | E0父285 |
+
+三项原模型完整CPU best/last、冻结/数据/相位/缓存概率和逐样本审计通过，rc0
+退出；20/14/18文件本地SHA备份均已验证。完整交接为任务run下
+`L4_confidence_loss_handoff_20261022.json`，SHA
+e5d428e674dd1522fcc13886608f8fcc8ccdc7bed562da2d2d1a81c5a77759cf。
+类别聚合和GCE的last均未修复任何TEST错误，却分别丢失25/20个父正确样本；
+bias仅修复1、丢失21。不能把TRAIN改善当TEST改善，也不能证明标签错或光路漂移。
+GCE是[原论文](https://papers.neurips.cc/paper_files/paper/2018/file/f2925f97bc13ad2852a7a551802feea0-Paper.pdf)
+启发的固定q=.7损失对照，非该任务性能保证。原完整实拍仍285/411=69.34307%，
+仿真346/411=84.18491%，低14.84185pp，340目标仍差55正确。
+六层G2本地12文件备份已完成；E3/G3仍未采，相机按人工要求暂停，不枚举或重试。
+
 ## 2026-10-22不重采末端优化：完整复核仍保留285/411
 
 不能解冻改变G2输入的pre-G2电子后继续复用旧G2 CCD；本轮只调整合法原末端

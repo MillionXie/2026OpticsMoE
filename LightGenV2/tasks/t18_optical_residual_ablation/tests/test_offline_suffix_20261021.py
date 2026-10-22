@@ -2,6 +2,13 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_simulation_replay_admission_TRAIN_only_no_fit(self):
+        source=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(source)
+        f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='simulation_replay_TRAIN_admission')
+        body=ast.get_source_segment(source,f)
+        self.assertIn("data['train']",body);self.assertNotIn("data['test']",body)
+        self.assertNotIn('backward(',body);self.assertNotIn('Bench(',body)
+        self.assertIn('simulated_not_measured=True',body);self.assertIn('TRAIN_fitting_started=False',body)
     def test_GCE_original_parameters_TRAIN_only_loss(self):
         s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='robust_TRAIN_classification')

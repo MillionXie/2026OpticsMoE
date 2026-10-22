@@ -7,6 +7,49 @@ the differentiable fitting function accepts no TEST features or TEST labels.
 import time
 
 
+def simulation_replay_TRAIN_admission(sequence,parent,parent_digest,out):
+    """Forty fixed TRAIN identities, frozen ORIGINAL simulation, no camera/fit.
+
+    This checks the proposed replay domain before allocating another fit. It
+    cannot establish a TEST gain, calibrated optical surrogate or final limit.
+    """
+    import hashlib
+    from pathlib import Path
+    import numpy as np,torch
+    from torch.nn import functional as F
+    import lab_caltech20_dvp_layerwise_20261019 as m
+    torch.set_num_threads(2);sequence=Path(sequence);parent=Path(parent);out=Path(out)
+    assert not out.exists() and m.sha(parent)==parent_digest
+    data,dm=m.data_for(sequence);session=sequence/'L4_response_20261020'
+    model,_=m.model_for(parent,parent_digest,4,session/'source_reference.ts');model.measured={}
+    original=m.state_cpu(model);held={};pieces=[];probabilities=[];started=time.monotonic()
+    hook=model.linear.register_forward_pre_hook(lambda module,args:held.update(x=args[0].detach().clone()))
+    try:
+        with torch.no_grad():
+            for begin in range(0,40,8):
+                p=model(m.encode_images(data['train'][0][begin:begin+8]))[0]
+                assert model.trace==['router','expert','global','expert','global']
+                q=F.linear(held['x'],model.linear.weight,model.linear.bias).softmax(1)
+                assert float((p-q).abs().max())<=3e-6
+                pieces.append(held['x'].cpu());probabilities.append(p.cpu())
+    finally:hook.remove()
+    assert all(torch.equal(v,m.state_cpu(model)[k]) for k,v in original.items())
+    x=torch.cat(pieces);p=torch.cat(probabilities);labels=data['train'][1][:40];ids=data['train'][2][:40]
+    assert np.bincount(labels,minlength=20).tolist()==[2]*20
+    producer=sequence/'advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4'
+    protocol=m.read(producer/'protocol.json');bank=producer/'train_features.npz'
+    assert m.sha(bank)==protocol['cache_native_parity']['train']['SHA256']
+    with np.load(bank) as z:
+        assert np.array_equal(z['ids'][:40],ids) and np.array_equal(z['y'][:40],labels)
+        real=torch.from_numpy(z['x'][:40].copy())
+    with torch.no_grad():realp=F.linear(real,model.linear.weight,model.linear.bias).softmax(1)
+    similarity=F.cosine_similarity(x,real,dim=1)
+    result=dict(TRAIN_only=True,TRAIN_samples=40,TRAIN_each_class=2,TEST_used=False,VALID_used=False,parent_PT_SHA256=parent_digest,data_SHA256=dm['sha256'],source_git=m.git_head(),source_SHA256=m.sha(__file__),simulation_parent_correct=int((p.argmax(1).numpy()==labels).sum()),physical_parent_correct=int((realp.argmax(1).numpy()==labels).sum()),paired_feature_cosine_min=float(similarity.min()),paired_feature_cosine_mean=float(similarity.mean()),simulated_not_measured=True,all_original_parameters_bitwise_frozen=True,TRAIN_fitting_started=False,SDK_used=False,GPU_used=False,new_inference_layers=0,elapsed_seconds=time.monotonic()-started,interpretation='Small TRAIN-only feasibility check, not a performance conclusion, calibrated physical surrogate or proof that a replay fit will help.')
+    out.mkdir(parents=True);np.savez_compressed(out/'TRAIN40_simulation_features.npz',x=x.numpy(),probabilities=p.numpy(),labels=labels,ids=ids)
+    result['features_SHA256']=m.sha(out/'TRAIN40_simulation_features.npz');m.save(out/'report.json',result)
+    return result
+
+
 def bias_accuracy_coordinate(np,train_logits,labels,counts,cfg,observe):
     """Original twenty biases, TRAIN 0-1 utility rather than another CE fit.
 
