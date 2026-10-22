@@ -32,6 +32,15 @@ def teacher_feature_pls(torch,F,x,labels,teacher_features,teacher_w,teacher_b,pw
         rotation=wt@torch.linalg.pinv(pt.T@wt);mapping=rotation@qt.T
         candidate_w=teacher_w.double()@mapping.T;candidate_b=teacher_b.double()+teacher_w.double()@ym-candidate_w@xm
         direct=F.linear((x-xm)@mapping+ym,teacher_w.double(),teacher_b.double())
+        if cfg.get('residual_transfer',False):
+            teacher_logits=F.linear(target,teacher_w.double(),teacher_b.double())
+            trusted=(teacher_logits.argmax(1)==labels).double();assert float(trusted.sum())>0
+            sample=(weights*trusted).sqrt();design=torch.cat(((x-xm)@rotation,torch.ones(len(x),1,dtype=x.dtype)),1)
+            correction=torch.linalg.pinv(design*sample[:,None],rtol=1e-4)@((teacher_logits-base)*sample[:,None])
+            dw=correction[:-1].T@rotation.T;db=correction[-1]-dw@xm
+            candidate_w=pw.double()+dw;candidate_b=pb.double()+db;direct=base+design@correction
+            projector=rotation@torch.linalg.pinv(rotation)
+            assert float((dw-dw@projector).abs().max())<1e-6,'Keep all parent directions outside the TRAIN transfer span'
         logits=F.linear(x,candidate_w,candidate_b);error=float((direct-logits).abs().max());assert error<1e-6
         change=(logits-base).detach()
         def objective(eta):
@@ -47,11 +56,11 @@ def teacher_feature_pls(torch,F,x,labels,teacher_features,teacher_w,teacher_b,pw
             else:low,left,fl=left,right,fr;right=low+ratio*(high-low);fr=objective(right)
         candidates=(0.,1.,(low+high)/2);eta=min(candidates,key=lambda a:(objective(a),a))
         ww=pw.double()+eta*(candidate_w-pw.double());bb=pb.double()+eta*(candidate_b-pb.double())
-        row=dict(phase='TRAIN_teacher_feature_PLS',component=component,TRAIN_samples=len(x),TRAIN_teacher_correct=int((F.linear(target,teacher_w.double(),teacher_b.double()).argmax(1)==labels).sum()),TRAIN_correct=int((F.linear(x,ww,bb).argmax(1)==labels).sum()),TRAIN_objective=objective(eta),TRAIN_blend=eta,original_Linear_fold_maxabs=error)
+        row=dict(phase='TRAIN_teacher_residual_PLS' if cfg.get('residual_transfer',False) else 'TRAIN_teacher_feature_PLS',component=component,TRAIN_samples=len(x),TRAIN_teacher_correct=int((F.linear(target,teacher_w.double(),teacher_b.double()).argmax(1)==labels).sum()),TRAIN_correct=int((F.linear(x,ww,bb).argmax(1)==labels).sum()),TRAIN_raw_candidate_correct=int((logits.argmax(1)==labels).sum()),TRAIN_objective=objective(eta),TRAIN_blend=eta,original_Linear_fold_maxabs=error)
         rows.append(row);stop=observe(ww,bb,row)
         if stop or time.monotonic()-started>=cfg['fit_seconds']:break
     assert rows
-    return ww,bb,dict(TRAIN_only=True,TRAIN_samples=len(x),actual_components=len(rows),fixed_component_budget=cfg['components'],history=rows,fit_seconds=time.monotonic()-started,original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0)
+    return ww,bb,dict(TRAIN_only=True,TRAIN_samples=len(x),actual_components=len(rows),fixed_component_budget=cfg['components'],history=rows,fit_seconds=time.monotonic()-started,original_Linear_fold=True,TEST_gradient=False,new_inference_layers=0,residual_transfer=cfg.get('residual_transfer',False))
 
 
 def teacher_feature_pls_selftest():
@@ -61,6 +70,8 @@ def teacher_feature_pls_selftest():
     ww,bb,proof=teacher_feature_pls(torch,F,x,y,target,w,b,w,b,torch.ones(20,dtype=x.dtype),dict(components=3,fit_seconds=30,label_smoothing=.02,teacher_KL=.5,blend_anchor=.01),lambda w,b,r:rows.append(r))
     assert len(rows)==3 and ww.shape==w.shape and torch.isfinite(ww).all() and torch.isfinite(bb).all()
     assert all(0<=r['TRAIN_blend']<=1 and r['original_Linear_fold_maxabs']<1e-6 for r in rows)
+    _,_,residual=teacher_feature_pls(torch,F,x,y,target,w,b,w,b,torch.ones(20,dtype=x.dtype),dict(components=2,fit_seconds=30,label_smoothing=.02,teacher_KL=.5,blend_anchor=.01,residual_transfer=True),lambda w,b,r:False)
+    assert residual['residual_transfer'] and residual['actual_components']==2
     print(dict(passed=True,TRAIN_only=True,original_Linear_fold=True,new_inference_layers=0,finite_PLScovariance=True))
 
 

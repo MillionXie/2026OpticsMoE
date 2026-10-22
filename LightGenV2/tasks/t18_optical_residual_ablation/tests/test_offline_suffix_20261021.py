@@ -9,6 +9,9 @@ class OfflineSuffix(unittest.TestCase):
         cfg=json.loads((HERE/'lab_caltech20_L4_teacher_PLS_profile_20261022.json').read_text())
         self.assertEqual(cfg['parent_correct'],285);self.assertEqual(cfg['teacher_PLS']['components'],8)
         self.assertLessEqual(cfg['teacher_PLS']['fit_seconds'],120);self.assertEqual(cfg['teacher_SHA256'][:8],'7b0d7f05')
+        residual=json.loads((HERE/'lab_caltech20_L4_teacher_residual_PLS_profile_20261022.json').read_text())
+        self.assertTrue(residual['teacher_PLS']['residual_transfer']);self.assertEqual(residual['parent_SHA256'],cfg['parent_SHA256'])
+        self.assertIn('Keep all parent directions outside the TRAIN transfer span',source)
     def test_simulation_replay_admission_TRAIN_only_no_fit(self):
         source=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(source)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='simulation_replay_TRAIN_admission')

@@ -156,16 +156,25 @@ def run(a):
         admission=m.read(gate);assert admission['original_teacher'] and admission['TRAIN_only'] and not admission['TEST_used'] and admission['simulation_model_correct']>admission['physical_parent_correct']
         teacher_path=session/'initial.pt';assert m.sha(teacher_path)==cfg['teacher_SHA256']==admission['simulation_model_PT_SHA256']
         teacher,_=m.model_for(teacher_path,cfg['teacher_SHA256'],4,session/'source_reference.ts');held={};parts=[];frozen=m.state_cpu(teacher)
-        hook=teacher.linear.register_forward_pre_hook(lambda module,args:held.update(x=args[0].detach().clone()))
-        try:
-            with torch.no_grad():
-                for begin in range(0,1600,8):
-                    teacher(m.encode_images(data['train'][0][begin:begin+8]));parts.append(held['x'])
-                    m.save(a.out/'progress.json',dict(state='original_teacher_TRAIN_feature_cache',TRAIN_consumed=begin+8,TRAIN_expected=1600,selected_correct=best,TEST_teacher_used=False))
-        finally:hook.remove()
-        assert all(torch.equal(v,m.state_cpu(teacher)[k]) for k,v in frozen.items())
-        teacher_features=torch.cat(parts).double();np.savez_compressed(a.out/'TRAIN_teacher_features.npz',x=teacher_features.numpy(),ids=tr['ids'],labels=tr['y'])
-        m.save(a.out/'TRAIN_teacher_identity.json',dict(TRAIN_only=True,TRAIN_samples=1600,teacher_PT_SHA256=cfg['teacher_SHA256'],features_SHA256=m.sha(a.out/'TRAIN_teacher_features.npz'),all_teacher_parameters_bitwise_frozen=True,TEST_teacher_used=False,synthetic_not_measured=True))
+        if cfg.get('teacher_feature_cache'):
+            cache=Path(cfg['teacher_feature_cache']);identity=m.read(cache.parent/'TRAIN_teacher_identity.json')
+            assert identity['teacher_PT_SHA256']==cfg['teacher_SHA256'] and identity['TRAIN_only'] and not identity['TEST_teacher_used'] and identity['features_SHA256']==m.sha(cache)==cfg['teacher_feature_cache_SHA256']
+            assert m.read(cache.parent/'independent_audit.json')['passed'] and m.read(cache.parent/'report.json')['state']=='complete'
+            with np.load(cache) as z:
+                assert np.array_equal(z['ids'],tr['ids']) and np.array_equal(z['labels'],tr['y']) and z['x'].shape==(1600,256)
+                teacher_features=torch.from_numpy(z['x'].copy()).double()
+            m.save(a.out/'TRAIN_teacher_identity.json',dict(identity,reused_path=str(cache)))
+        else:
+            hook=teacher.linear.register_forward_pre_hook(lambda module,args:held.update(x=args[0].detach().clone()))
+            try:
+                with torch.no_grad():
+                    for begin in range(0,1600,8):
+                        teacher(m.encode_images(data['train'][0][begin:begin+8]));parts.append(held['x'])
+                        m.save(a.out/'progress.json',dict(state='original_teacher_TRAIN_feature_cache',TRAIN_consumed=begin+8,TRAIN_expected=1600,selected_correct=best,TEST_teacher_used=False))
+            finally:hook.remove()
+            assert all(torch.equal(v,m.state_cpu(teacher)[k]) for k,v in frozen.items())
+            teacher_features=torch.cat(parts).double();np.savez_compressed(a.out/'TRAIN_teacher_features.npz',x=teacher_features.numpy(),ids=tr['ids'],labels=tr['y'])
+            m.save(a.out/'TRAIN_teacher_identity.json',dict(TRAIN_only=True,TRAIN_samples=1600,teacher_PT_SHA256=cfg['teacher_SHA256'],features_SHA256=m.sha(a.out/'TRAIN_teacher_features.npz'),all_teacher_parameters_bitwise_frozen=True,TEST_teacher_used=False,synthetic_not_measured=True))
         lastw,lastb,proof=teacher_feature_pls(torch,F,x,y,teacher_features,teacher.linear.weight.detach(),teacher.linear.bias.detach(),pw,pb,counts,cfg['teacher_PLS'],observe)
         m.save(a.out/'TRAIN_teacher_PLS_fit.json',proof);reason='finite_TRAIN_teacher_feature_PLS_original_Linear_complete'
     elif biascoord:
