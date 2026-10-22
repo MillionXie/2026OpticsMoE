@@ -16,8 +16,14 @@ TRAIN组风险轨迹24pass/604.219fit秒，last TRAIN1106/1600、TEST251/411，�
 
 首轮L-BFGS初始参数惩罚1138.2582源于解析去公共行与anchor不一致，不是分类CE。
 后续来源2d51baced单独新run `postCCD_joint_LBFGS_gauge_20261023/L4`，修正anchor
-到同概率起点且初始惩罚严格0，其余有限预算/数据/原5150边界不变，已真实进入训练。
-修正无关坐标项不能当成准确率收益，仍需完成全量复核；所有TEST选择是开发指标。
+到同概率起点且初始惩罚严格0，其余有限预算/数据/原5150边界不变；实际22完整pass/
+608.109fit秒，在完整epoch边界到预算停止。原CPU bestlast/冻结/身份审计通过且rc0
+退出，last TRAIN1104/1600、TEST260/411，候选峰值276，best仍E0父285。
+相对父TRAIN新增129/损失34，TEST新增0/损失25；并非新收益。19文件本地SHA
+备份manifest f3fb9c83bf862ec32d8c22b5d3dc506213a9ee9242451946248158a8967756e3，
+`L4_joint_LBFGS_gauge_handoff_20261023.json` SHA
+2abd90e7908c780c7055f3a689f9de6b31327c994117fd4bd3040dc2ba4414e9。
+修正无关坐标项不能当成准确率收益；所有反复TEST选择是开发指标。
 首轮transform将方法误标SGD，实际配置及LBFGS24/SGD0计数可追溯，新源码已修正。
 
 TUCam替换相机的空间和同相位40TRAIN曝光准入及六层新E3/G3运行事实统一见任务

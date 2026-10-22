@@ -36,11 +36,30 @@ TRAIN1600后TEST411，共4022新帧，不中间适配、采完原5140电子头CP
 1b7b176ab580891b15ac6bbd7dfa9feaba5c84f38d6f690b1e5ce8e90c6948b1。
 检查发现Linear解析去公共行后anchor仍指未去公共行父参数，初始无关惩罚1138.2582。
 来源2d51baced已显式修正为概率等价起点anchor，初始惩罚严格0，预先动态合同测试
-通过；新`postCCD_joint_LBFGS_gauge_20261023/L4`已实际进入全1600TRAIN训练。
-仍24pass或600fit秒/CPU2/仅原5150参数/不改已采上游，是否提升必须等原模型CPU
-bestlast全TRAIN/TEST复核。旧首轮transform的optimizer_method误标SGD，原配置及
+通过；新`postCCD_joint_LBFGS_gauge_20261023/L4`已完成22完整pass/608.109fit秒，
+600秒预算在完整epoch边界停止。原CPU bestlast全TRAIN1600/TEST411及冻结/SHA
+审计通过，rc0退出。last TRAIN1104/1600=69.00%、TEST260/411=63.26034%，
+候选峰值276，仍选E0父285，不采用新参数。相对父TRAIN新增129/损失34，TEST
+新增0/损失25，修正惩罚未转化为测试收益。19文件本地备份manifest
+f3fb9c83bf862ec32d8c22b5d3dc506213a9ee9242451946248158a8967756e3，交接SHA
+2abd90e7908c780c7055f3a689f9de6b31327c994117fd4bd3040dc2ba4414e9。
+原5150参数边界/已采上游不变。旧首轮transform的optimizer_method误标SGD，原配置及
 24 LBFGS/0 SGD调用计数证明实际方法；证据不改写，新源码已修正元数据。
 所有反复TEST分析/选模均为开发指标，不能声称独立泛化。
+
+随后六层E3完整TRAIN1600+TEST411=2011已实际采完，1233.047秒，全层p99范围
+57–76、最大饱和.0000175067，原图SHA全部不同；逐样本原CPU输入/相位/原生图
+SHA审计2011/2011通过，report SHA bd49ed43fc380368fcd08c1560e030e707d5a222c7950dc15cefb34cd2e11978。
+已实际接入G3，新phase SHA d0b1405de1af29bcf5ddc7e7e80436f2bcd28aeeaae26d449a5fbc68333e2e3e，
+首批信号正常(p99约80)，完整指标尚待G3采完/审计及原电子读出CPU适配。
+E3报告/协议/审计/相位6文件本地备份收据SHA
+7d8c874a7973e1f24135852697fc3e6da66ee718ff59097ac8de38bb4aac6e5f；
+原生CCD保留实验室，逐帧SHA已审计，不冒称16GB原图全部本地备份。
+校准680文件总1.424GB的manifest SHA cb3952e91de552cc097a306b32828b649a305998434e713c2b1a5a7a7561961c，
+本地原生副本仍分块传输中，先前网络中断后只补SHA不匹配文件，不重采；完成前不称全备份。
+上述错误1帧另存INVALID_STALE_PREFIX_20261023.json：
+通过重放原TEST复核残留router/E1/G1/E2、保持当前G2，逐像素精确再现错误输入，
+maxdiff0；纯离线故障诊断，不训练或开SDK，显式禁止该1帧用于训练/评分。
 
 ## 2026-10-22最新人工追加：四层固定数据继续优化，新TUCam相机准入后续六层
 
