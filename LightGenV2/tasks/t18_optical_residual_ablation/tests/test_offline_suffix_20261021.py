@@ -2,6 +2,16 @@ import ast,json,unittest
 from pathlib import Path
 HERE=Path(__file__).resolve().parents[1]
 class OfflineSuffix(unittest.TestCase):
+    def test_prototype_continuation_starts_at_accepted_285(self):
+        c=json.loads((HERE/'lab_caltech20_L4_prototype_SGD_profile_20261022.json').read_text());b=json.loads((HERE/'lab_caltech20_L4_fullbatch_SGD_profile_20261022.json').read_text())
+        self.assertEqual(c['parent_SHA256'],b['parent_SHA256']);self.assertEqual(c['parent_correct'],285)
+        self.assertFalse(c['tail']['TRAIN_kernel_restart']);self.assertFalse(c['tail']['freeze_head'])
+        self.assertEqual({k:v for k,v in c['tail'].items() if not k.startswith('TRAIN_prototype_')},b['tail'])
+        s=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();tree=ast.parse(s)
+        for name in ('class_prototypes_TRAIN','prototype_TRAIN_loss'):
+            f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name==name)
+            self.assertNotIn('test',[a.arg for a in f.args.args])
+        self.assertIn('assert support.tolist()==[80]*20',s)
     def test_TRAIN_spatial_column_proximal_delta(self):
         s=(HERE/'lab_caltech20_dvp_error_guided_head_20261021.py').read_text();tree=ast.parse(s)
         f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='spatial_group_delta')
