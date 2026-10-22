@@ -56,14 +56,16 @@ def main():
         display_only=True,metrics_unchanged=True,gt_assets_included=False,label=a.label,prediction_prefix=a.prediction_prefix)
     (out/'metrics_all.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     shutil.copy2(src/'ATTRIBUTION_AND_REVIEW.md',out/'ATTRIBUTION_AND_REVIEW.md')
-    (out/'01_README.md').write_text('# 预测叠加展示包（不含GT）\n\n'
+    (out/'01_README.md').write_text(f'# {a.label}：预测叠加展示包（不含GT）\n\n'
         '先看00_preview_all.png；每图目录包含原始JPG、预测叠加PNG、纯预测热图、原始预测NPY、指标和双栏预览。\n'
         '本包无GT图、GT数组、fixation文件或含GT的旧预览，也未嵌套旧结果包。\n\n'
         '叠加采用inferno色系、65%亮度原图和随预测显著程度变化的透明度；所有图统一公式。'
         '按预测峰值缩放仅用于显示，没有修改模型输出或重新计算指标。\n\n'
-        'CC/PCC、SIM、NSS、KLD、AUC、MAE为此前使用GT计算的原始指标，不代表无GT评估。'
+        'CC/PCC、SIM、NSS、KLD、AUC、MAE使用GT在原始224×224概率图上计算，叠加效果不参与指标。'
         '只有715属于public-test，其余五张是训练样例，论文中请区分。\n'
-        '署名来源见ATTRIBUTION_AND_REVIEW.md；使用叠加图请注明saliency overlay added。\n',encoding='utf-8')
+        '署名来源见ATTRIBUTION_AND_REVIEW.md；使用叠加图请注明saliency overlay added。\n'
+        + ('Qwen版本使用核验原始JPG实际推理；部分SALICON训练图副本与核验JPG有像素差异，逐图差异已记录。'
+           '0.8748指固定权重在原完整5000张public-test的平均CC，不是六图的平均值。\n' if prefix=='qwen' else ''),encoding='utf-8')
     shutil.copy2(Path(__file__),out/'repackage_source.py')
     manifest={f.relative_to(out).as_posix():sha(f) for f in out.rglob('*') if f.is_file()}
     assert not any(Path(n).name.startswith(('gt_','fixation_')) for n in manifest)
