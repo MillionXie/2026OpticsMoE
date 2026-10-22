@@ -15,3 +15,10 @@ def test_admission_contract_is_explicit():
     assert p['automatic_retry'] is False and p['phase_LUT_changed'] is False
     assert p['sensor_expected_shape']==[2048,2048] and p['logical_shape']==[478,478]
     assert p['exposure_probe_us']==sorted(set(p['exposure_probe_us'])) and max(p['exposure_probe_us'])==80000
+
+def test_continuation_identity_and_bounded_original_head():
+    code=(TASK/'lab_caltech20_tucam_L6_20261022.py').read_text();ast.parse(code)
+    assert 'reuse_complete_g2(' in code and "for stage in ('4','5')" in code
+    assert 'hardware_manifest=str(a.hardware)' in code and 'heterogeneous_cameras_explicit=True' in code
+    assert "{'linear.weight','linear.bias'}" in code and 'planned_frames=4022' in code
+    assert 'camera.reset' not in code and '.cuda(' not in code and 'sensor_full_scale' in code

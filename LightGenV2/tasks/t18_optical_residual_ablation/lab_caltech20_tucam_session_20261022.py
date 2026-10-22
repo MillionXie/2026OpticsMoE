@@ -29,6 +29,39 @@ def camera_for(cfg):
                        warmup_frames=3,discard_frames_after_display=cfg['discard_frames'])
 
 
+def spot_centroid(value,background):
+    w=(value.astype(float)-background.astype(float)).clip(0);peak=np.percentile(w,99.7)
+    assert peak>=5,'No reliable calibration spot response'
+    w=np.where(w>=.25*peak,w,0);yy,xx=np.indices(w.shape);s=w.sum();assert s>0
+    return np.array([(w*xx).sum()/s,(w*yy).sum()/s])
+
+
+def spot_direction(images,background):
+    """Independent X/Y isolated positions, robust to quadrant illumination."""
+    scores={};points={}
+    for name in variants(background):
+        cc=np.stack([spot_centroid(variants(v)[name],variants(background)[name]) for v in images]);dx=cc[1]-cc[0];dy=cc[2]-cc[0]
+        assert np.linalg.norm(dx)>60 and np.linalg.norm(dy)>60
+        scores[name]=float(dx[0]/np.linalg.norm(dx)+dy[1]/np.linalg.norm(dy));points[name]=cc.tolist()
+    order=sorted(scores,key=scores.get,reverse=True);best=order[0]
+    assert scores[best]>=1.8 and scores[best]-scores[order[1]]>=.5,'Ambiguous independent X/Y spot axes'
+    cc=np.array(points[best]);assert np.linalg.norm(cc[3]-cc[0])<8,'Spot repeat differs; no timing admission'
+    assert np.linalg.norm(cc[3]-cc[2])>60,'Latest spot stale from previous pattern'
+    return best,dict(scores=scores,selected=best,centroids=points[best],repeat_error=float(np.linalg.norm(cc[3]-cc[0])),coordinates_changed=False,method='independent isolated X/Y source positions and repeat; no global quadrant brightness fit')
+
+
+def known_spots(bench,out,warp,full_scale):
+    out=Path(out);out.mkdir(exist_ok=True);images=[];positions=((150,150),(330,150),(150,330),(150,150))
+    def capture(tag,gray):
+        path=out/(tag+'.bmp');Image.fromarray(native(gray,'amplitude')).save(path);raw,meta=bench.capture(path);crop=logical(raw,warp,full_scale)
+        Image.fromarray(raw).save(out/(tag+'_raw.png'),compress_level=1);Image.fromarray(crop).save(out/(tag+'_crop.png'));return crop,dict(metadata=meta,raw_SHA256=sha(out/(tag+'_raw.png')))
+    background,bg=capture('spot_background',np.zeros((478,478),np.uint8));rows=[]
+    for k,(x,y) in enumerate(positions):
+        gray=np.zeros((478,478),np.uint8);gray[y-22:y+22,x-22:x+22]=255;image,row=capture('spot_'+str(k),gray);images.append(image);rows.append(row)
+    direction,proof=spot_direction(images,background);save(out/'report.json',dict(passed=True,**proof,rows=rows,background=bg,TEST_used=False,network_background_subtraction=False))
+    return direction,rows
+
+
 class Bench:
     def __init__(self,cfg,out):self.cfg=cfg;self.out=Path(out);self.last=-1
     def __enter__(self):
@@ -108,7 +141,9 @@ def calibrate(cfg,out):
         ladder=[]
         # A bounded sequence of camera connections is deliberate exposure
         # calibration, not automatic recovery or repeated acquisition retries.
-        for exposure in cfg['exposure_probe_us']:
+        if cfg.get('reuse_exposure_ladder'):
+            assert sha(cfg['reuse_exposure_ladder'])==cfg['reuse_exposure_ladder_SHA256'];ladder=json.loads(Path(cfg['reuse_exposure_ladder']).read_text());full_scale=65535
+        for exposure in (() if ladder else cfg['exposure_probe_us']):
             case=out/f'exposure_{exposure}';case.mkdir();current={**cfg,'exposure_us':exposure}
             with Bench(current,case) as bench:
                 flat=out/'flat_phase.bmp';Image.fromarray(phase_native(np.zeros((478,478),np.uint8))).save(flat);bench.stage(flat)
@@ -122,15 +157,9 @@ def calibrate(cfg,out):
         assert usable,'No usable exposure in bounded calibration; no automatic retry'
         selected=usable[-1];current={**cfg,'exposure_us':selected['exposure_us']};case=out/'selected';case.mkdir()
         with Bench(current,case) as bench:
-            bench.stage(out/'flat_phase.bmp');marker=np.full((478,478),24,np.uint8);marker[35:215,35:215]=210;marker[35:215,263:443]=90;marker[263:443,35:215]=150;marker[290:390,290:390]=255
-            image,_=snap(bench,'orientation',marker);scores={k:correlation(v,marker.astype(float)**2) for k,v in variants(image).items()};ranking=sorted(scores,key=scores.get,reverse=True);direction=ranking[0]
-            save(out/'orientation.json',dict(scores=scores,selected=direction))
-            assert scores[direction]>=.4 and scores[direction]-scores[ranking[1]]>=.1,'Ambiguous camera orientation'
-            timing=[]
-            for k,gray in enumerate((marker,np.fliplr(marker).copy(),marker,np.fliplr(marker).copy())):
-                v,r=snap(bench,f'timing_{k}',gray,direction);same=correlation(v,gray.astype(float)**2);stale=correlation(v,np.fliplr(gray).astype(float)**2)
-                timing.append(dict(same_PCC=same,previous_PCC=stale,frame_id=r['metadata']['frame_id'],capture_ms=r['metadata']['capture_total_ms']))
-                assert same>=.4 and same>stale+.1,'Stale/inverted frame; no automatic retry'
+            flat=out/'flat_phase.bmp';Image.fromarray(phase_native(np.zeros((478,478),np.uint8))).save(flat);bench.stage(flat)
+            direction,timing=known_spots(bench,out/'direction_spots',warp,full_scale)
+            save(out/'orientation.json',json.loads((out/'direction_spots/report.json').read_text()))
             grays=list(range(0,256,16))+[255];means=[]
             for g in grays:
                 _,r=snap(bench,f'response_{g:03d}',np.full((478,478),g,np.uint8),direction);assert r['saturation_fraction']<.001;means.append(r['mean'])
@@ -154,6 +183,11 @@ def selftest():
     result=logical(v,warp,65535);assert np.array_equal(result,np.rint(v.astype(np.float32)*255/65535).astype(np.uint8))
     assert np.array_equal(logical(v,warp,65535,'flip_v'),np.flipud(result))
     assert logical(np.zeros((478,478),np.uint16),warp,65535).max()==0
+    bg=np.zeros((478,478),np.uint8);images=[]
+    for x,y in ((150,150),(330,150),(150,330),(150,150)):
+        a=bg.copy();a[y-22:y+22,x-22:x+22]=200;images.append(a)
+    assert spot_direction(images,bg)[0]=='identity'
+    assert spot_direction([np.flipud(v) for v in images],bg)[0]=='flip_v'
     print(json.dumps(dict(passed=True,SDK_opened=False,original_16bit_preserved=True,fixed_full_scale=True)))
 
 
