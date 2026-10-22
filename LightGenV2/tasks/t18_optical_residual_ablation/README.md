@@ -66,6 +66,23 @@ f8db4b6bd49e0044438ea2622ddc2d0f2d25859575ac39517ef3951a33e6416c。
 已审计158父PT作此独立有限读出接续；四层采完仍优先，不增加中间适配、TEST
 梯度/VALID、新CCD或定时任务。执行/结果以各run和return为准，不承诺达到门槛。
 
+来源ffe89e38c的六层独立TRAIN-Fisher原Linear重拟合也已实际结束并native全量
+bestlast复核：162/411=39.41606%，优于158但仍远未达350。最终保留PT SHA
+53bc45cea505d2b619272fcef7d2738d9e1f201277dcd5a41453a00f1bfeecbc，
+全state与原CPU已审计的child best逐位相等；完整native报告SHA
+304337feaf855f477b6591ed506c289d21be4fd5f12dd234a6169465c3c5de4b。
+run内`L6_accepted_checkpoint_20261023.json`记录精确PT及分阶段DVP/TUCam硬件范围，
+不覆盖历史root147报告或旧219混合指标。105份完成态权重/报告/逐样本本地备份
+manifest36f9be56c99da41dbda205f2acefffad5d788abc157c0d065780e62b1d54694f。
+校准680文件/1,423,712,127bytes也已全部本地SHA核对通过，原manifest cb3952e9…
+保留，未重采。新四层router/E1/G1三阶段各2011均已全身份/全参数冻结审计，
+E2实际采集中；35份阶段证据本地manifest
+0a3989250ba8ae722ef210f1021aae60dd07f5801db71ef7605774288532aa28。
+新四层独立CPU后续进程PID6208已启动，只等待其全五阶段及既有末端训练完成才
+加载数据/训练，不占SDK/GPU、不插入中间适配；来源ffe89e38c，动态covariance/
+Fisher折叠原Linear合同和15项测试通过。后续以实际完整报告为准，当前没有新
+四层完整精度，也不能声称六层已达标。
+
 ## 2026-10-23当前实际运行：TUCam空间/同相位TRAIN曝光通过，续六层E3/G3
 
 本轮仅本任务相机准入/六层续采及四层原5150末端优化；没有新分支/工程副本、
