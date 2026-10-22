@@ -251,6 +251,14 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
         with torch.no_grad():
             w=model.linear.weight.double();b=model.linear.bias.double();model.linear.weight.copy_(w-w.mean(0,keepdim=True));model.linear.bias.copy_(b-b.mean())
         m.save(a.out/'analytic_head_gauge.json',dict(original_Linear_only=True,gradient_trained=False,head_frozen=freeze_head,no_new_inference_layer=True))
+    quasi_anchor=original
+    if fit.get('anchor_after_softmax_gauge',False):
+        assert quasi and fit.get('center_class_common') and not fit.get('TRAIN_kernel_restart',False)
+        quasi_anchor={n:p.detach().clone() for n,p in model.named_parameters() if n in allowed}
+        before=float((fit['weight_decay']*sum((p-original[n].to(device)).square().sum() for n,p in model.named_parameters() if n in allowed)/5150).detach())
+        after=float(sum((p-quasi_anchor[n]).square().sum() for n,p in model.named_parameters() if n in allowed).detach())
+        assert after==0
+        m.save(a.out/'TRAIN_anchor_gauge_audit.json',dict(parent_unchanged=True,anchor_at_softmax_equivalent_parent=True,old_initial_anchor_penalty=before,new_initial_anchor_penalty=after,TEST_used=False,new_inference_layers=0))
     if fit.get('TRAIN_kernel_restart',False):
         p=Path(cfg['TRAIN_restart_diagnosis']);assert m.sha(p)==cfg['TRAIN_restart_diagnosis_SHA256']
         diagnosis=m.read(p);assert diagnosis['TRAIN_only'] and not diagnosis['TEST_used'] and diagnosis['parent_SHA256']==cfg['parent_SHA256'] and diagnosis['samples']==100
@@ -315,7 +323,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                         loss=loss+fit['TRAIN_relational_geometry_weight']*relational_TRAIN_geometry(active['geometry_features'],geometry_target[ix].to(device))
                         counts['TRAIN_relational_geometry_batches']+=1
                     if quasi:
-                        loss=loss+fit['weight_decay']*sum((p-original[n].to(device)).square().sum() for n,p in model.named_parameters() if n in allowed)/5150
+                        loss=loss+fit['weight_decay']*sum((p-quasi_anchor[n].to(device)).square().sum() for n,p in model.named_parameters() if n in allowed)/5150
                     return loss
                 if fullbatch:
                     clean,probe,norm=accumulate_TRAIN_batch(objective(),params,opt,model.fusion_logits[3],len(ix),1600,begin+len(ix)==1600)
@@ -325,7 +333,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
                     counts['SAM_updates' if use_sam else 'AdamW_updates']+=1
                 active['TRAIN']=False;active.pop('prototype_features',None);active.pop('geometry_features',None)
                 total+=clean*len(ix);used+=len(ix);nonzero+=int(norm>0);counts['TRAIN_noise_batches']+=int(not fullbatch)
-                if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_full_TRAIN_SGD' if fullbatch else 'L4_postCCD_featuremix_TRAIN' if fit.get('TRAIN_feature_mixup',False) else 'L4_postCCD_alternating_TRAIN' if alternating else 'L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
+                if begin%160==0:m.save(a.out/'progress.json',dict(state='L4_postCCD_'+fit['optimizer_method'] if fullbatch else 'L4_postCCD_featuremix_TRAIN' if fit.get('TRAIN_feature_mixup',False) else 'L4_postCCD_alternating_TRAIN' if alternating else 'L4_postCCD_SAM_TRAIN' if use_sam else 'L4_postCCD_Adam_TRAIN',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,nonzero_gradient_batches=nonzero,selected_correct=best,elapsed_s=time.monotonic()-start))
                 batch=begin//8+1
                 if epoch==1 and batch<=fit.get('early_evaluate_batches',0) and batch%fit.get('early_evaluate_every',5)==0:
                     e=deepcopy(model.electronic[3]).cpu().eval();h=deepcopy(model.linear).cpu().eval();h._forward_pre_hooks.clear();alpha=model.effective_alpha(3).detach().cpu().clone()
@@ -415,7 +423,7 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
             assert float(np.abs(q-prob).max())<=3e-6 and np.array_equal(q.argmax(1),prob.argmax(1))
             results[name][role]=metric;np.savez_compressed(a.out/(name+'_'+role+'_predictions.npz'),ids=banks[role]['ids'],labels=banks[role]['y'],probabilities=prob)
     assert results['best']['test']['correct']==best
-    m.save(a.out/'TRAIN_transform_audit.json',dict(counts=counts,original_state_only=True,eval_augmentation=False,synthetic_not_calibrated_CCD_noise=not fullbatch,SAM_probe_restored_exactly=use_sam,identical_probe_stochastic_view=use_sam,optimizer_method='full_TRAIN_SGD' if fullbatch else 'SAM' if use_sam else 'AdamW',effective_gradient_batch=1600 if fullbatch else 8,TRAIN_kernel_restart=fit.get('TRAIN_kernel_restart',False)))
+    m.save(a.out/'TRAIN_transform_audit.json',dict(counts=counts,original_state_only=True,eval_augmentation=False,synthetic_not_calibrated_CCD_noise=not fullbatch,SAM_probe_restored_exactly=use_sam,identical_probe_stochastic_view=use_sam,optimizer_method=fit['optimizer_method'] if fullbatch else 'SAM' if use_sam else 'AdamW',effective_gradient_batch=1600 if fullbatch else 8,TRAIN_kernel_restart=fit.get('TRAIN_kernel_restart',False)))
     m.save(a.out/'report.json',dict(state='complete',baseline_correct=cfg['parent_correct'],selected_correct=best,selected_epoch=selected,selected_E0=selected==0,actual_epochs=epoch,target_correct=340,target_met=best>=340,full_physical=True,strict_original_CPU=True,results=results,
         allowed_parameters=5150,gradient_parameters=5150 if alternating else expected_trainable,trainable_keys=sorted(allowed if alternating else train_keys),head_gradient_frozen=freeze_head,alternating_readout=alternating,geometry_block_gradient_parameters=expected_trainable,readout_blocks=len(blocks),all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),SDK_used=False,GPU_used=not fullbatch))
     m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,all_nonterminal_bitwise_frozen=True,prefix_SHA256=protocol['prefix_SHA256'],cached_native_probability_parity=True))
@@ -424,6 +432,13 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
 
 def selftest():
     torch.set_num_threads(2);torch.manual_seed(73)
+    head=torch.nn.Linear(8,3).double();xx=torch.randn(5,8,dtype=torch.float64);before=head(xx).softmax(1).detach()
+    with torch.no_grad():head.weight.sub_(head.weight.mean(0,keepdim=True));head.bias.sub_(head.bias.mean())
+    assert torch.allclose(before,head(xx).softmax(1),atol=1e-12)
+    anchor={n:p.detach().clone() for n,p in head.named_parameters()}
+    assert float(sum((p-anchor[n]).square().sum() for n,p in head.named_parameters()))==0
+    with torch.no_grad():head.weight[0,0]+=.01
+    assert float(sum((p-anchor[n]).square().sum() for n,p in head.named_parameters()))>0
     reference=torch.randn(8,16);current=reference.clone().requires_grad_(True)
     assert float(relational_TRAIN_geometry(current,reference))==0
     rotation=torch.linalg.qr(torch.randn(16,16))[0]

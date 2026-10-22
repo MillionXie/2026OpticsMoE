@@ -27,4 +27,10 @@ class TerminalReopen(unittest.TestCase):
         b=json.loads((HERE/'lab_caltech20_L4_protected_budget180_profile_20261021.json').read_text())
         self.assertEqual(b['total_protected_fit_seconds'],180);self.assertLessEqual(b['maximum_protected_passes'],12)
         self.assertEqual(b['parent_correct'],283)
+    def test_joint_LBFGS_gauge_anchor(self):
+        p=json.loads((HERE/'lab_caltech20_L4_joint_LBFGS_gauge_profile_20261023.json').read_text())
+        self.assertEqual(p['parent_correct'],285);self.assertEqual(p['tail']['epochs'],24)
+        self.assertTrue(p['tail']['anchor_after_softmax_gauge']);self.assertTrue(p['tail']['center_class_common'])
+        source=(HERE/'lab_caltech20_dvp_postCCD_SAM_20261021.py').read_text();ast.parse(source)
+        self.assertIn('assert after==0',source);self.assertIn('p-quasi_anchor[n].to(device)',source)
 if __name__=='__main__':unittest.main()
