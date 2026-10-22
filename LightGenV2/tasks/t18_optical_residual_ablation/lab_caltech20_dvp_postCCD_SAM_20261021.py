@@ -179,6 +179,14 @@ def fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,ban
             assert np.array_equal(z['ids'],tr['ids']) and np.array_equal(z['labels'],tr['y']);geometry_target=torch.from_numpy(z[source].copy()).float()
         assert geometry_target.shape==(1600,256) and not geometry_target.requires_grad
         m.save(a.out/'TRAIN_geometry_target_audit.json',dict(TRAIN_only=True,TRAIN_samples=1600,source_feature=source,source_SHA256=m.sha(p),diagnosis_report_SHA256=m.sha(report),parent_PT_SHA256=cfg['parent_SHA256'],data_SHA256=protocol['data_SHA256'],frozen_prefix_SHA256=protocol['prefix_SHA256'],geometry_target_detached=True,TEST_targets_used=False,new_inference_layers=0,TRAIN_source_metrics={k:metrics[source][k] for k in ('TRAIN_nearest_same_class_correct','TRAIN_leave_source_out_probe_correct')},TRAIN_final_metrics={k:metrics['G2_fused'][k] for k in ('TRAIN_nearest_same_class_correct','TRAIN_leave_source_out_probe_correct')}))
+        if cfg.get('TRAIN_geometry_balance_report'):
+            balance_path=Path(cfg['TRAIN_geometry_balance_report']);assert m.sha(balance_path)==cfg['TRAIN_geometry_balance_SHA256']
+            balance=m.read(balance_path);assert balance['TRAIN_only'] and balance['TRAIN_samples']==1600 and balance['TRAIN_each_class']==80 and not balance['TEST_used']
+            assert balance['parameter_updates']==0 and balance['all_parameters_unchanged'] and balance['parent_SHA256']==cfg['parent_SHA256'] and balance['target_SHA256']==m.sha(p)
+            assert balance['learning_rates']=={k:fit[k] for k in ('conv_lr','alpha_lr')}
+            coefficient=min(1000.,max(10.,2*balance['coefficient_equalizing_lr_scaled_norm']))
+            assert abs(fit['TRAIN_relational_geometry_weight']-coefficient)<1e-10
+            m.save(a.out/'TRAIN_gradient_balance_audit.json',dict(TRAIN_only=True,TRAIN_samples=1600,balance_SHA256=m.sha(balance_path),fixed_coefficient=coefficient,rule='clip(2*TRAIN_lr_scaled_gradient_norm_ratio,10,1000)',TEST_selection_of_coefficient=False,heuristic_not_exact_whole_objective_decomposition=True))
     prototypes=None
     if fit.get('TRAIN_prototype_weight',0)>0:
         prototypes,support=class_prototypes_TRAIN(torch.from_numpy(tr['x']),train_y)

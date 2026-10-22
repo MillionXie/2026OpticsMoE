@@ -12,6 +12,11 @@ class OfflineSuffix(unittest.TestCase):
         self.assertEqual({k:v for k,v in c['tail'].items() if k!='TRAIN_relational_geometry_weight'},b['tail'])
         self.assertIn("assert np.array_equal(z['ids'],tr['ids'])",s)
         self.assertIn("diagnosis['features_SHA256']['train']",s)
+        balanced=json.loads((HERE/'lab_caltech20_L4_relational_balanced_profile_20261022.json').read_text())
+        self.assertAlmostEqual(balanced['tail']['TRAIN_relational_geometry_weight'],2*124.83297079473458)
+        self.assertEqual({k:v for k,v in balanced['tail'].items() if k!='TRAIN_relational_geometry_weight'},{k:v for k,v in c['tail'].items() if k!='TRAIN_relational_geometry_weight'})
+        self.assertEqual(len(balanced['TRAIN_geometry_balance_SHA256']),64)
+        self.assertIn("balance['TRAIN_samples']==1600",s)
     def test_resume_E3_preserves_complete_G2_and_no_interstage_fit(self):
         cfg=json.loads((HERE/'lab_caltech20_L6_resume_E3_profile_20261022.json').read_text())
         self.assertTrue(cfg['resume_after_complete_G2']);self.assertFalse(cfg['interstage_fit']);self.assertEqual(cfg['parent_correct'],219)

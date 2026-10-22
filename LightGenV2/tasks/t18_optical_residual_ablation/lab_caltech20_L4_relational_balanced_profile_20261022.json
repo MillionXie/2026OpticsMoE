@@ -1,0 +1,18 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_postCCD_fullbatch_SGD","gap_pp":1.5,"target":340,"parent_correct":285,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_coupled_20261021/L4/best.pt",
+  "parent_SHA256":"c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "terminal_input_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_gap15_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "TRAIN_geometry_features":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/L4_stage_response_diagnosis_20261022/train_frozen_stage_features.npz",
+  "TRAIN_geometry_features_SHA256":"8533477fa29410fa8124bde90f728da50dddb84c7916fb69a6d00498f81368b1",
+  "TRAIN_geometry_report_SHA256":"3efd65c9bc3b0d95e682e944ef45c8370700dc89ee86a7ba2c9d08fb8637e26a",
+  "TRAIN_geometry_feature_key":"G2_electronic",
+  "TRAIN_geometry_balance_report":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/postCCD_relational_geometry_20261022/L4/TRAIN_loss_balance_full_20261022.json",
+  "TRAIN_geometry_balance_SHA256":"d73d15889746529cacba94bfeeb928b6690ed1d65d35b949887f58fc08a07c10",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "tail":{"optimizer_method":"full_TRAIN_SGD","freeze_head":false,"TRAIN_kernel_restart":false,"center_class_common":true,"early_evaluate_batches":0,"epochs":24,"fit_seconds":600,"patience_epochs":24,"evaluate_every":2,"head_lr":0.01,"conv_lr":0.01,"alpha_lr":0.001,"weight_decay":0.01,"label_smoothing":0.02,"teacher_KL":0.1,"feature_dropout_p":0.0,"CCD_pixel_dropout_p":0.0,"CCD_gain_sigma":0.0,"CCD_additive_sigma_DN":0.0,"TRAIN_relational_geometry_weight":249.66594158946916},
+  "scope":"A single evidence-driven calibration after the weak coefficient10 relational contrast. Frozen original parent285, same1600TRAIN and all other optimizer/objective settings. Full1600TRAIN raw class-weighted CE probe vs relation last10 gradient magnitudes, with actual per-group learning-rate scaling, gives ratio124.83297079473458; choose min(1000,max(10,2*ratio)) once before this fit. This is a TRAIN-only heuristic calibration, not an exact decomposition of the whole KL/sample-emphasis objective, not a TEST hyperparameter sweep. No TEST geometry/derivative, no VALID/SDK/GPU/newCCD/newmodule or upstream mutation. After previous fit has exited, run one24pass/600fitseconds trajectory then native bestlast audit; original285 protected and no target guarantee or automatic candidate scan."
+}
