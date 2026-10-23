@@ -97,6 +97,11 @@ def main():
                         'retry_reason':plan.get('retry_reason','explicit control plan retry')})
                     for j in report['jobs']:
                         if j['task']==task and j['phase']=='formal' and j['status']=='blocked_by_failed_smoke':j['status']='queued'
+                retry_formal=int(plan.get('retry_formals',{}).get(task,0))
+                if retry_formal and not any(j['task']==task and j['phase']=='formal' and j.get('attempt',0)==retry_formal for j in report['jobs']):
+                    report['jobs'].append({'task':task,'phase':'formal','status':'queued','attempt':retry_formal,
+                        'name':f'{task}_formal_s42_{args.suite_id}_attempt{retry_formal}',
+                        'retry_reason':plan.get('retry_formal_reason','explicit control plan retry')})
             for pid,(proc,job,log) in list(running.items()):
                 code=proc.poll()
                 if code is None:continue
@@ -147,7 +152,9 @@ def main():
                 running[proc.pid]=(proc,job,log);children.append(proc)
             save()
             if plan.get('sealed') and not running and not any(j['status']=='queued' for j in report['jobs']):
-                report['status']='complete' if all(j['status']=='complete' for j in report['jobs'] if j['phase']=='formal') else 'complete_with_failures'
+                latest=[max((j for j in report['jobs'] if j['task']==task and j['phase']=='formal'),
+                            key=lambda j:j.get('attempt',0)) for task in plan['tasks']]
+                report['status']='complete' if all(j['status']=='complete' for j in latest) else 'complete_with_failures'
                 break
             time.sleep(5)
     except BaseException as exc:

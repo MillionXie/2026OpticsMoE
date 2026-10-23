@@ -48,8 +48,9 @@ def require_published_source():
         raise RuntimeError('Training requires the existing main branch')
     if git('status', '--porcelain', '--', relative):
         raise RuntimeError('Task source has uncommitted changes')
-    if git('rev-parse', 'HEAD') != git('rev-parse', 'origin/main'):
-        raise RuntimeError('HEAD must match fetched published origin/main')
+    head=git('rev-parse','HEAD')
+    if git('merge-base',head,'origin/main')!=head:
+        raise RuntimeError('HEAD must be a published commit in origin/main history')
 
 
 def validate_gpu_processes(uuid, apps, allowed_pids):

@@ -45,6 +45,10 @@ OpenMoji按原Qwen规则以source_grid组合保留格与预测编辑格；先逐
 原失败日志保留，通过显式control-plan attempt1重排，不冒称首次成功，不自动无限重试。
 新worker完成CPU核验后如设备变忙，会在无CUDA上下文状态重新等候最多600秒。
 调度器支持核验PID/进程组/任务命令身份后接管已有worker；替换调度器不重启训练。
+LSP首次formal在CUDA前遇到另一窗口fetch更新origin/main后HEAD不再等于远端最新值，
+旧守卫因此拒绝。现改为验证HEAD确实位于已发布origin/main历史且T19源码干净，
+不会因远端新增其他任务提交误判旧已发布commit；未发布的本地HEAD仍拒绝。
+该次没有训练权重，保留原日志并在control-plan显式登记formal attempt1，不混作续训。
 
 ## 当前生效协议：2026-10-23 用户修订
 
