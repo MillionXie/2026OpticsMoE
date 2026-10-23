@@ -50,6 +50,16 @@ def safe_distillation_loss(logits,labels,teacher,weights):
     return ce+effective*kd,ce,kd,effective,gate.sum()
 
 
+def normalized_teacher_MSE(logits,labels,teacher):
+    """Correct TRAIN teacher margins only; no raw logit-scale dependence."""
+    import torch
+    def normal(v):
+        v=v-v.mean(1,keepdim=True);return v/v.square().mean(1,keepdim=True).sqrt().clamp_min(.5)
+    t=teacher.detach();gate=t.argmax(1)==labels
+    per=(normal(logits)-normal(t)).square().mean(1)
+    return (per*gate).sum()/gate.sum().clamp_min(1),gate.sum()
+
+
 def selftest():
     import torch
     from torch.nn import functional as F
@@ -61,6 +71,8 @@ def selftest():
     wrong=torch.nn.functional.one_hot((y+1)%3,3).float()*8;total,only_ce,_,_,count=safe_distillation_loss(student.detach(),y,wrong,torch.ones(3));assert count==0 and torch.allclose(total,only_ce)
     z=torch.tensor([-6.,-3.,-1.,0.,1.,3.,6.],requires_grad=True);penalty=((z.abs()-2).relu()/2).square().mean();penalty.backward()
     assert torch.isfinite(z.grad).all() and z.grad[0]<0 and z.grad[-1]>0 and torch.equal(z.grad[2:5],torch.zeros(3))
+    v=torch.randn(12,3,requires_grad=True);teacher=(torch.nn.functional.one_hot(y,3).float()*8).requires_grad_();mse,n=normalized_teacher_MSE(v,y,teacher);mse.backward();assert n==12 and teacher.grad is None and torch.isfinite(v.grad).all()
+    identity,_=normalized_teacher_MSE(teacher.detach(),y,teacher);assert float(identity)==0
     raw=torch.randn(62,62);projected=bandlimit(raw,4);assert float((bandlimit(projected,4)-projected).abs().max())<1e-6 and projected.square().sum()<=raw.square().sum()
     print(json.dumps(dict(passed=True,frozen_readout_TRAIN_contrast_probability_maxabs=error,gradient_maxabs=grad,readout_parameters_changed=False,correct_teacher_gate=True,teacher_gradient=False,KD_value_fraction_of_CE_at_most=.25,saturation_penalty_gradient_toward_sensitive_region=True,mask_delta_projection_idempotent=True,SDK_used=False,GPU_used=False,TEST_used=False)))
 
@@ -70,8 +82,8 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     from torch.nn import functional as F
     from lab_caltech20_dvp_TRAIN_regularization_20261021 import TRAINTransforms
     assert list(fields)==['router','0','1','2'] and not out.exists() and not m.LOCK.exists();out.mkdir();original=m.state_cpu(model)
-    safe=c.get('TRAIN_safe_teacher',False);metric=c.get('TRAIN_supervised_metric',False);desaturate=c.get('TRAIN_desaturation',False);band=c.get('TRAIN_bandlimited_mask',False)
-    assert all(isinstance(v,bool)for v in (safe,metric,desaturate,band)) and sum((safe,metric,desaturate,band))<=1;joint=safe or metric or desaturate or band
+    safe=c.get('TRAIN_safe_teacher',False);metric=c.get('TRAIN_supervised_metric',False);desaturate=c.get('TRAIN_desaturation',False);band=c.get('TRAIN_bandlimited_mask',False);logit_mse=c.get('TRAIN_teacher_margin_MSE',False)
+    assert all(isinstance(v,bool)for v in (safe,metric,desaturate,band,logit_mse)) and sum((safe,metric,desaturate,band,logit_mse))<=1;joint=safe or metric or desaturate or band or logit_mse
     keys=m.allowed_keys(model,4)
     if not joint:keys=keys-{'linear.weight','linear.bias'}
     assert keys and (joint or all(not k.startswith('linear.') for k in keys))
@@ -79,6 +91,14 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),data_SHA256=dm['sha256'],prefix_SHA256=lineage,config=c,recipe=recipe,allowed_keys=sorted(keys),
         TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,full_physical=False,SDK_used=False,new_inference_layers=0,original_5140_readout_bitwise_frozen=not joint,TRAIN_contrast_logits_mathematically_equivalent=True)
     teacher=None
+    if logit_mse:
+        folder=base.ROOT/c['TRAIN_teacher_cache'];cache=folder/'teacher_TRAIN_features.npz';r=m.read(folder/'report.json')
+        assert m.sha(cache)=='a81f4a1c52e69482cde60427c11fd653095c40854513969af6b13a9d76c4e2d2' and m.sha(folder/'report.json')=='407fb1ef2fd97df717b75b228fbb7a71a3a05f90ded38a3408190c3e2af80bc4'
+        assert r['role']=='train' and not r['TEST_used'] and not r['VALID_used'] and r['source_PT_SHA256']==c['initial_SHA256'] and r['data_SHA256']==dm['sha256']
+        with np.load(cache,allow_pickle=False)as z:
+            assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1]);teacher=torch.from_numpy(z['logits'].copy())
+        assert teacher.shape==(1600,20) and torch.isfinite(teacher).all()
+        protocol.update(TRAIN_teacher_margin_MSE=True,teacher_cache_SHA256=m.sha(cache),teacher_source_PT_SHA256=r['source_PT_SHA256'],teacher_gate='TRAIN-correct',teacher_eligible_TRAIN=1529,teacher_coefficient_max=5.,teacher_feature_gradient_fraction_of_CE_max=.5,inference_teacher=False)
     if safe:
         folder=base.ROOT/c['TRAIN_teacher_cache'];manifest=m.read(folder/'teacher_manifest.json');cache=folder/'teacher_TRAIN_logits.npz'
         assert m.sha(folder/'teacher_manifest.json')=='761611b3cf1986254e77efdc0fc0a0c5044fdb46f3fd89fbfe9cfa837b220a98'
@@ -123,6 +143,11 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                 logits=contrast_logits(held['features'],model.linear.weight,model.linear.bias)
                 if safe:
                     loss,ce,kd,coefficient,n=safe_distillation_loss(logits,labels,teacher[ix],weights);ce_total+=float(ce.detach())*len(ix);kd_total+=float((coefficient*kd).detach())*len(ix);coefficient_total+=float(coefficient)*len(ix);eligible+=int(n)
+                elif logit_mse:
+                    ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=.05);kd,n=normalized_teacher_MSE(logits,labels,teacher[ix])
+                    gc=torch.autograd.grad(ce,held['features'],retain_graph=True)[0].detach().norm();gk=torch.autograd.grad(kd,held['features'],retain_graph=True)[0].detach().norm()
+                    coefficient=torch.minimum(ce.new_tensor(5.),.5*gc/gk.clamp_min(1e-8));assert not coefficient.requires_grad and float(coefficient*gk/gc.clamp_min(1e-8))<=.500001
+                    loss=ce+coefficient*kd;ce_total+=float(ce.detach())*len(ix);kd_total+=float((coefficient*kd).detach())*len(ix);coefficient_total+=float(coefficient)*len(ix);eligible+=int(n)
                 elif metric:
                     ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=.05);pair_loss=metric_loss(held['features'],labels)
                     gc=torch.autograd.grad(ce,held['features'],retain_graph=True)[0].detach().norm();gm=torch.autograd.grad(pair_loss,held['features'],retain_graph=True)[0].detach().norm()
@@ -152,6 +177,7 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                 if test['correct']>best or (test['correct']==best and test['nll']<bnll-1e-4):best,bnll,selected=test['correct'],test['nll'],epoch;loop.saved_model(m,model,out/'best.pt',protocol)
                 row=dict(epoch=epoch,TRAIN_consumed=1600,TRAIN_loss=total/1600,TEST_correct=test['correct'],TEST_NLL=test['nll'],selected_correct=best,selected_epoch=selected,elapsed_s=time.monotonic()-start)
                 if safe:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_KD=kd_total/1600,KD_mean_coefficient=coefficient_total/1600,teacher_eligible_TRAIN=eligible)
+                if logit_mse:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_teacher_MSE=kd_total/1600,teacher_MSE_mean_coefficient=coefficient_total/1600,teacher_eligible_TRAIN=eligible,TRAIN_teacher_gradient_fraction_max=.5)
                 if metric:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_metric=kd_total/1600,metric_mean_coefficient=coefficient_total/1600,TRAIN_metric_gradient_fraction=eligible/1600,TRAIN_independent_family_pairs=800)
                 if desaturate:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_saturation_penalty=kd_total/1600,penalty_mean_coefficient=coefficient_total/1600,TRAIN_original_tanh_statistics={str(k):{n:v/1600 for n,v in row.items()}for k,row in saturation_stats.items()})
                 if band:
@@ -173,6 +199,6 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     assert results['best']['test']['correct']==best and base.identities(m,paths)==lineage
     report=dict(state='complete',baseline_correct=m.read(out/'baseline.json')['correct'],selected_correct=best,selected_epoch=selected,selected_E0=selected==0,actual_epochs=epoch,optimizer_updates=updates,results=results,
         strict_original_CPU=True,target=target,target_met=best>=target,captured_upstream_bitwise_frozen=True,original_5140_readout_bitwise_frozen=not joint,TRAIN_safe_teacher=safe,TRAIN_supervised_metric=metric,TRAIN_desaturation=desaturate,TRAIN_bandlimited_mask=band,TEST_gradient=False,TEST_development=True,full_physical=False,new_inference_layers=0,SDK_used=False,
-        TRAIN_transform_counts=transforms.counts,synthetic_CCD_noise_not_calibrated=True,protocol_SHA256=m.sha(out/'protocol.json'))
+        TRAIN_teacher_margin_MSE=logit_mse,TRAIN_transform_counts=transforms.counts,synthetic_CCD_noise_not_calibrated=True,protocol_SHA256=m.sha(out/'protocol.json'))
     m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_non_suffix_parameters_bitwise_frozen=True,original_readout_frozen=not joint))
     chosen,_=m.model_for(out/'best.pt',m.sha(out/'best.pt'),4,reference);del model,opt,teacher;torch.cuda.empty_cache();return chosen,out/'best.pt',report

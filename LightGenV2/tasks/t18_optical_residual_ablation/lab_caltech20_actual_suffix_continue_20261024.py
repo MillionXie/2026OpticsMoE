@@ -92,6 +92,8 @@ def run(a):
         import lab_caltech20_TRAIN_frozen_readout_20261024 as engine
         config={**c,**p['learning_rates']}
         if p['method']=='safe_teacher_CE':config.update(TRAIN_safe_teacher=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])
+        if p.get('TRAIN_teacher_margin_MSE',False):
+            assert p['method']=='frozen_readout_CE';config.update(TRAIN_teacher_margin_MSE=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])
         if p['method']=='supervised_metric_CE':config.update(TRAIN_supervised_metric=True)
         if p['method']=='desaturation_CE':config.update(TRAIN_desaturation=True)
         if p['method']=='bandlimited_CE':config.update(TRAIN_bandlimited_mask=True)

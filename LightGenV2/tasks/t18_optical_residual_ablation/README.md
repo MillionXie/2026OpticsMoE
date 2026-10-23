@@ -1,3 +1,16 @@
+## 2026-10-24 06:55 教师原头候选276未改善；接285合法原后缀教师margin联合训练
+
+LOGIT285已完整原模型CPU：best仍E0父285，候选276/411、NLL1.237493，TRAIN1045；
+报告SHA17b137ae262ef9361156c3b94a4cfd989dfc1c4084388997f95fd28a0b99c6c5。
+TRAIN支持改善未直接转为TEST正确数，明确不替换285。没有G2采集，SDK释放。
+接MSE285单次32完整TRAIN轮/900fit秒，仍同285/376cc相位旧物理family，原G2mask9、
+electronic2..3/directalpha2..3/5140头共同调，不修改已采输入上游。不同于先前仅1247
+高置信教师的弱KL，这次1529个TRAIN正确教师的归一相对logit平方差，detach梯度范数
+比例最多原特征CE梯度50%、系数最多5；原TRAIN噪声/dropout不变。TRAIN只读诊断
+logit梯度与CE余弦均值.4261、教师正确而学生错219项，支持有限探索，非效果承诺。
+TEST仅开发错误分析和PT选择，不进入教师或梯度；原285回退、完整CPU/冻结SHA、
+实际300才G2与08:00边界保持。若上个完整结果更好，准入会拒绝从低分父继续。
+
 ## 2026-10-24 06:50 原最佳285保护；TRAIN教师相对分数支持单次原头拟合
 
 原285之后metric48轮/9600updates、bandlimited64轮/12800updates与原头parent-proximal

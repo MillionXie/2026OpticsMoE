@@ -1,0 +1,22 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"frozen_readout_CE",
+  "TRAIN_teacher_margin_MSE":true,
+  "TRAIN_teacher_cache":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/teacher_features_session1",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_REMAIN/fit",
+  "source_PT_SHA256":"5f7c007d6cc9f9658ad40fa5a8d2f33fafcf9361ec8c2576e4517ccf1346663d",
+  "source_report_SHA256":"ff007c0c177831960bf4030ceede2e9b4c6b03331dd464e92c35f9c0115510da",
+  "expected_parent_correct":285,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_LOGIT285.return.json",
+  "parent_minimum_previous_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_LOGIT285/fit",
+  "learning_rates":{"phase_lr":0.0005,"electronic_lr":0.0003,"alpha_lr":0.0001,"head_lr":0.00003},
+  "recipe":{"name":"actual300_original_suffix_gradient_balanced_TRAIN_teacher_margin_MSE","epochs":32,"seconds":900,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_TRAIN_frozen_readout_20261024.py":"b17c8b138b6a1028594d96834c4c5df6cd8d2fde993e28df15faa5472519cc0a",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"One finite original G2phase9/postE2 electronic2..3/directalpha2..3/original5140head joint continuation from strongest285 after normalizedteacher ridge. Despite historical dispatcher method name, teacherMSE explicitly enables joint ORIGINAL head; no added inference modules. Full1600TRAIN everyepoch,32epochs/900fitseconds, current noise/dropout unchanged. TRAINcorrect1529 teacher only, centeredRMS logitMSE compared to prior weak confidence-gated KL1247: TRAIN diagnostic MSE.8842,CE/logitMSE gradientcosine.426,219correctteacher disagreements. Detached perbatch original-feature gradientnorm scale caps teacher contribution at.5CE gradient/coefficient<=5, no TEST teacher/gradients/targets, no externalVALID. Original ancestors bitwise frozen, no new CCD/hardwarechange, parent285 fallback/fullnativeCPU bestlast1600/411, actual300 beforeG2/final340/08:00deadline retained. If prior complete fit has better-than285, admission rejects stale source."
+}
