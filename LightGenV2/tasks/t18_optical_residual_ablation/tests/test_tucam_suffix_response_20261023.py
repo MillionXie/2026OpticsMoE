@@ -150,6 +150,18 @@ def test_E2_local_boundary_uses_retained274_and_fresh_native_features(monkeypatc
     with pytest.raises(AssertionError):policy_validator()({**p,'fresh_native_TRAIN_features':False})
 
 
+def test_new_E2_underfit_capacity_requires_new_data_and_completed_retake():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_retake_capacity_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['fresh_E2_after_retake'] and p['minimum_parent_correct']==p['expected_parent_correct']==254 and p['maximum_parent_TRAIN_accuracy']==.95
+    assert p['completed_controller'].endswith('/e2h') and p['captures']['2'].endswith('/e2h/s_2/capture')
+    assert len(p['E2_arrays_SHA256'])==2 and p['TRAIN_fusion_capacity']['proposed_alpha']==.4001001
+    s=ENTRY.read_text();assert "expected_state='E2_mask_retake_stage_gate_unmet'" in s and "q['arrays'][role]['SHA256']==p['E2_arrays_SHA256'][role]" in s
+    for key,value in [('expected_parent_SHA256','0'*64),('expected_parent_correct',228),('capture_parent_SHA256','8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'),('captures',{**p['captures'],'2':p['captures']['2'].replace('/e2h/','/g1s/')}),('intermediate_target',304)]:
+        with pytest.raises(AssertionError):policy_validator()({**p,key:value})
+    for key,name in [('capacity_engine_SHA256','lab_caltech20_TRAIN_fusion_capacity_20261023.py'),('linear_engine_SHA256','lab_caltech20_tucam_TRAIN_linear_20261023.py')]:
+        assert hashlib.sha256((HERE/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p[key]
+
+
 def test_E2_SAM_joint_parameters_TRAIN_only_same_noise_and_restore():
     p=json.loads((HERE/'lab_caltech20_tucam_E2_SAM_profile_20261023.json').read_text());policy_validator()(p)
     assert p['expected_parent_correct']==282 and p['learning_rates']['phase_lr']>0 and p['learning_rates']['electronic_lr']>0

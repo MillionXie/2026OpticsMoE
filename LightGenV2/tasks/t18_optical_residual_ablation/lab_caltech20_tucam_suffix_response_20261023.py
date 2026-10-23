@@ -10,6 +10,8 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
+    fresh=p.get('fresh_E2_after_retake',False);assert isinstance(fresh,bool)
+    assert not fresh or p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1'
     assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1','TUCam_L4_E2_feature_response_v1')
     e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1','TUCam_L4_E2_feature_response_v1')
     assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
@@ -41,8 +43,15 @@ def validate_policy(p):
         assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01 and len(p['teacher_engine_SHA256'])==64
         assert p['recipe']==dict(name='E2_TRAIN_only_fixed_teacher_cosine',epochs=36,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
     elif p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':
-        assert p['minimum_parent_correct']==p['expected_parent_correct']==274 and p['maximum_parent_TRAIN_accuracy']==1.
-        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['completed_controller'].endswith('/e2k')
+        if fresh:
+            assert p['minimum_parent_correct']==p['expected_parent_correct']==254 and p['maximum_parent_TRAIN_accuracy']==.95 and 'minimum_parent_TRAIN_TEST_gap' not in p
+            assert p['expected_parent_SHA256']=='585c65782a04d8abb8fa66976924da3a52f225239934d1293c6059102a6cf160'
+            assert p['completed_controller'].endswith('/e2h') and p['captures']['2'].endswith('/e2h/s_2/capture')
+            assert p['capture_parent_SHA256']=='4dc922d782d6a7842b9f01c287b791d88a2485a40c602813e562d3c0fa8cd0ba'
+            assert p['E2_arrays_SHA256']==dict(train='3c42ab4f2095629bbfd6b42daa5f46775f63f3727f9101e0d993c074f481cf7e',test='48e826672b8c9978f38230ec0fa23984f32b684340f88b1da4e425bf5d03b745')
+        else:
+            assert p['minimum_parent_correct']==p['expected_parent_correct']==274 and p['maximum_parent_TRAIN_accuracy']==1.
+            assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['completed_controller'].endswith('/e2k')
         assert p['TRAIN_fusion_capacity']==dict(stage=2,samples=1600,proposed_alpha=.4001001,estimators_per_setting=1)
         assert len(p['capacity_engine_SHA256'])==len(p['linear_engine_SHA256'])==len(p['teacher_engine_SHA256'])==64
         assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
@@ -141,6 +150,7 @@ def admit(p,c,out):
     if p['schema']=='TUCam_L4_E2_SAM_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_feature_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
+    if p.get('fresh_E2_after_retake',False):expected_state='E2_mask_retake_stage_gate_unmet'
     if p['schema']=='TUCam_L4_E2_local_boundary_response_v1':
         expected_state='E2_capacity_no_TRAIN_support'
         capacity=m.read(old/'s_2/capacity/report.json')
@@ -165,10 +175,12 @@ def admit(p,c,out):
         fields[stage]={}
         for role,n in (('train',1600),('test',411)):
             array=cap/role/'ccd.npy';assert m.sha(array)==q['arrays'][role]['SHA256']
+            if stage=='2' and p.get('fresh_E2_after_retake',False):assert q['arrays'][role]['SHA256']==p['E2_arrays_SHA256'][role]
             values=np.load(array,mmap_mode='r');assert values.shape==(n,478,478) and values.dtype==np.uint8
             fields[stage][role]=values
         paths[stage]=cap
     e=endpoints[-1];parent=Path(e['PT']);assert m.sha(parent)==e['PT_SHA256']
+    if p.get('fresh_E2_after_retake',False):assert e['selected_correct']==p['expected_parent_correct'] and e['PT_SHA256']==p['expected_parent_SHA256']
     assert base.identities(m,paths)==e['prefix_SHA256']
     fit=m.read(parent.parent/'report.json');audit=m.read(parent.parent/'independent_audit.json')
     assert fit['state']=='complete' and fit['strict_original_CPU'] and audit['passed']
