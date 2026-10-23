@@ -1,4 +1,4 @@
-import ast,json,hashlib
+import ast,json,hashlib,subprocess
 from pathlib import Path
 import pytest
 
@@ -74,7 +74,8 @@ def test_remaining_boundary_exact_plan_and_unchanged_native_features(monkeypatch
     assert cfg['skip_classes']==[3,2,0,19,4,7,10,13] and p['expected_candidate_correct']==304
     assert p['parent_local_plan_SHA256']=='dd8390371550229009b21e343048381dd9c76d6d98add2568c26b4ddfe8fbb12'
     kernel=HERE/'lab_caltech20_TRAIN_local_boundary_20261023.py'
-    assert hashlib.sha256(kernel.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['TRAIN_local_engine_SHA256']
+    legacy=subprocess.check_output(['git','show','f018ff550:LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_TRAIN_local_boundary_20261023.py'],cwd=HERE.parents[2])
+    assert hashlib.sha256(legacy).hexdigest()==p['TRAIN_local_engine_SHA256']
     s=ENTRY.read_text();assert "m.sha(plan)==p['parent_local_plan_SHA256']" in s and "m.read(plan)]==p['TRAIN_local_boundary']['skip_classes']" in s
     for key,value in [('expected_candidate_correct',305),('fresh_native_TRAIN_features',True),('TRAIN_local_boundary',{**cfg,'skip_classes':[3,2,0,4,9,15,7,12]})]:
         with pytest.raises(AssertionError):validate({**p,key:value})

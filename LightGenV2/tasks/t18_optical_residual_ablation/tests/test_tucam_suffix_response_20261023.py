@@ -189,6 +189,20 @@ def test_fresh_E2_CE_refinement_requires_TRAIN_loss_evidence_and_exact_best():
         with pytest.raises(AssertionError):policy_validator()({**p,key:value})
 
 
+def test_fresh_E2_local_is_single_finite_pass_and_retained_exact_model(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_retake_local_profile_20261024.json').read_text());policy_validator()(p)
+    assert p['expected_parent_correct']==270 and p['completed_controller'].endswith('/e2w') and p['fresh_native_TRAIN_features']
+    assert p['native_feature_source'].endswith('/e2v/s_2/fit') and p['TRAIN_local_boundary']['maximum_classes']==20
+    assert p['TRAIN_local_boundary']['maximum_classes']*p['TRAIN_local_boundary']['steps_per_class']==1280
+    assert 'skip_classes' not in p['TRAIN_local_boundary'] and p['recipe']['epochs']==0
+    engine=HERE/'lab_caltech20_TRAIN_local_boundary_20261023.py'
+    assert hashlib.sha256(engine.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['TRAIN_local_engine_SHA256']
+    s=ENTRY.read_text();assert "loop.validate_state(m,model,m.state_cpu(same),set())" in s and "assert fit['selected_E0']" in s
+    for key,value in [('fresh_native_TRAIN_features',False),('expected_parent_correct',269),('TRAIN_local_boundary',{**p['TRAIN_local_boundary'],'maximum_classes':19})]:
+        with pytest.raises(AssertionError):policy_validator()({**p,key:value})
+
+
 def test_E2_feature_regularization_reuses_only_same_nonhead_native_cache():
     p=json.loads((HERE/'lab_caltech20_tucam_E2_feature_cooldown_profile_20261023.json').read_text());policy_validator()(p)
     assert p['parent_stage']=='2' and p['expected_parent_correct']==282 and p['completed_controller'].endswith('/e2m')

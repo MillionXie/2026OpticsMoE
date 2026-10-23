@@ -1,0 +1,29 @@
+{
+  "schema":"TUCam_L4_E2_local_boundary_response_v1",
+  "fresh_E2_after_retake":true,
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+  "TRAIN_local_engine_SHA256":"dc78197b79f89054f408d8b65f7d7424b5ee5730dcafbed7ae2631ade6cbc70d",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2w",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2h/mask_fit/best.pt",
+  "capture_parent_SHA256":"4dc922d782d6a7842b9f01c287b791d88a2485a40c602813e562d3c0fa8cd0ba",
+  "E2_arrays_SHA256":{"train":"3c42ab4f2095629bbfd6b42daa5f46775f63f3727f9101e0d993c074f481cf7e","test":"48e826672b8c9978f38230ec0fa23984f32b684340f88b1da4e425bf5d03b745"},
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2h/s_2/capture"
+  },
+  "parent_stage":"2","minimum_parent_correct":270,"expected_parent_correct":270,"expected_parent_SHA256":"28b4f4bfb4c747daf603fd34596f24f2dc1b22d2be6ffb8eabf7a6f6b4e141b5","maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":0.95,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{},"TRAIN_readout":"cached_TRAIN_local_boundary",
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2v/s_2/fit",
+  "native_feature_source_SHA256":"9c98ae2fe38f9fc710f9edeac811571adf72ff2d5da2ecc3c4ed2b9edfd9ecba",
+  "fresh_native_TRAIN_features":true,
+  "TRAIN_local_boundary":{"maximum_classes":20,"steps_per_class":64,"temperature":2,"label_smoothing":0.02,"neighbor_weight":2,"KL":2,"anchor":0.2,"trust_step":0.25,"row_radius":0.08,"seed":73},
+  "recipe":{"name":"E2_TRAIN_local_binary_rest_full_curvature","epochs":0,"seconds":300,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"ONE finite conservative existing-affine readout coordinate pass after fused actualE2 representation improved but full-joint CE training overfits: e2w complete36epochs, lastTRAIN1452/1600 butTEST266, parent270 retained selectedE0. Exact current controller PT28b4 is metadata-different but ALL model state must bitwise equal genuine best270/PT9c98 from e2v; reject otherwise. Never continue worse last or mix oldE2. Eight exact new physical prefix arrays/capturePT4dc9 and frozen-input ancestors audited. Freeze ALL non-readout masks/electronics/alphas. Fresh full1600 native TRAIN feature cache at exact retained source, fullTRAIN/TEST probability<=3e-6 guards, no stale alpha/head/G2 cache. Same published numerical binary-rest/full-curvature257-row method, only validate registers maximum_classes20; all numerical function ASTs must equal original849c502dc, historical closed76fc/9e04 profiles keep original Git pins. At most20 classes ONCE/64TRAIN updates each/1280 total or300fitseconds, stop305; no repeated classes, radii or seeds scan. TEST errors inform class order and neighboring TRAIN examples, and TEST chooses best, explicitly transductive/development not independent generalization; gradients/curvature use TRAIN only, no TEST or augmentedTEST training. Each update changes only one257-param native affine row, other19 rows fixed, original5140 readout shape unchanged. TRAIN neighbors/hard negatives/all-class replay/KL/anchor/.08 trust radius preserve previous classes. Native CPU bestlast/all non-readout+8dataSHA audit before305 permits freshG2, final340 unchanged. No camera/SDK during fit, no E2/front rephotography, no architecture/alpha-schema/bounds/exposure/coordinates/LUT/encoding changes, no scheduler/retry/newbranch/worktree/project/publicupload; all evidence preserved. Fully exited e2w and published/synced source required."
+}
