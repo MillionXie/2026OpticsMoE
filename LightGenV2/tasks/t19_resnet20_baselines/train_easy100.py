@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
 from pathlib import Path
 import platform
 import random
+import signal
 import subprocess
 import sys
 import time
@@ -22,6 +22,8 @@ from .retrieval import cross_modal_loss, exact_sku_ranking
 
 TASK = Path(__file__).resolve().parent
 ROOT = TASK.parents[2]
+PROFILE_PATH = TASK / 'configs/execution_single_seed30_20261023.json'
+PROFILE = json.loads(PROFILE_PATH.read_text(encoding='utf-8'))
 
 
 def git(*args):
@@ -50,18 +52,50 @@ def require_published_source():
         raise RuntimeError('HEAD must match fetched published origin/main')
 
 
-def admit_gpu(uuid):
+def validate_gpu_processes(uuid, apps, allowed_pids):
+    active = {int(line.split(',')[1].strip()) for line in apps.splitlines()
+              if line.split(',')[0].strip() == uuid}
+    if active - set(allowed_pids):
+        raise RuntimeError('Requested GPU has a process outside this T19 queue')
+    if len(active) >= PROFILE['max_jobs_per_gpu']:
+        raise RuntimeError('Requested GPU already has two tasks')
+    for pid in active:
+        command = Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode()
+        if ('LightGenV2.tasks.t19_resnet20_baselines.train_easy100' not in command
+                or uuid not in command or str(TASK / 'runs') not in command):
+            raise RuntimeError('Shared process is not a verified T19 worker on this GPU')
+    return active
+
+
+def admit_gpu(uuid, allowed_pids=()):
     if not uuid.startswith('GPU-') or os.environ.get('CUDA_VISIBLE_DEVICES') != uuid:
         raise RuntimeError('Set CUDA_VISIBLE_DEVICES to the single requested GPU UUID')
     apps = subprocess.check_output(['nvidia-smi', '--query-compute-apps=gpu_uuid,pid',
                                     '--format=csv,noheader,nounits'], text=True)
-    if any(line.split(',')[0].strip() == uuid for line in apps.splitlines()):
-        raise RuntimeError('Requested GPU already has a compute process')
+    active = validate_gpu_processes(uuid, apps, allowed_pids)
     state = subprocess.check_output(['nvidia-smi', '-i', uuid,
-        '--query-gpu=memory.used,utilization.gpu', '--format=csv,noheader,nounits'], text=True)
-    memory, utilization = (int(x.strip()) for x in state.strip().split(','))
-    if memory > 100 or utilization > 5:
-        raise RuntimeError('Requested GPU is not idle')
+        '--query-gpu=memory.used,memory.total,utilization.gpu', '--format=csv,noheader,nounits'], text=True)
+    memory, total, utilization = (int(x.strip()) for x in state.strip().split(','))
+    if not active and memory > 100:
+        raise RuntimeError('Unattributed GPU allocation')
+    if total - memory < PROFILE['minimum_free_memory_before_second_job_mib'] or utilization > 95:
+        raise RuntimeError('Insufficient GPU memory or compute headroom')
+
+
+def sharing_pids(args):
+    if args.queue_status_path is None:
+        return args.shared_owner_pids
+    path = args.queue_status_path.resolve()
+    if not path.is_relative_to((TASK / 'runs').resolve()) or path.name != 'queue_status.json':
+        raise ValueError('Shared-worker registry must be in this task runs')
+    state = json.loads(path.read_text(encoding='utf-8'))
+    jobs = [job for job in state['jobs'] if job['status'] == 'running' and job['gpu_uuid'] == args.gpu_uuid]
+    if (len(jobs) > PROFILE['max_jobs_per_gpu']
+            or not any(job['pid'] == os.getpid() and job['name'] == args.run_dir.name for job in jobs)):
+        raise RuntimeError('This worker is not registered in the shared-GPU queue')
+    # Read after data verification so either worker may finish CPU preflight
+    # first; a launch-time PID snapshot alone races concurrent CUDA admission.
+    return [job['pid'] for job in jobs if job['pid'] != os.getpid()]
 
 
 @torch.inference_mode()
@@ -85,9 +119,7 @@ def evaluate(model, loader, tokens, title_skus, direction, device):
 
 
 def learning_rate(epoch, epochs, base=1e-3):
-    if epoch <= 5:
-        return base * epoch / 5
-    return base * .5 * (1 + math.cos(math.pi * (epoch - 5) / max(epochs - 5, 1)))
+    return base
 
 
 def run(args):
@@ -95,15 +127,19 @@ def run(args):
     authorization = json.loads((TASK / 'configs/execution_authorization_20261023.json').read_text())
     if not authorization['training_authorized_after_required_preflight']:
         raise RuntimeError('Training authorization missing')
-    if args.epochs < 1 or args.batch_size < 2:
+    if (args.epochs < 1 or args.batch_size < 2 or args.smoke_batches < 0
+            or not np.isfinite(args.learning_rate) or args.learning_rate <= 0):
         raise ValueError('Invalid budget')
+    if args.seed not in PROFILE['seeds'] or (not args.smoke_batches and args.epochs != PROFILE['epochs']):
+        raise ValueError('Formal training requires the authorized single seed and 30-epoch budget')
     run_dir = args.run_dir.resolve()
     category = 'smoke' if args.smoke_batches else 'simulation'
     if not run_dir.is_relative_to((TASK / 'runs' / category).resolve()):
         raise ValueError('Run must use the task runs/smoke or runs/simulation directory')
     # Verify every original image and CSV before taking a GPU.
     dataset = Easy100(args.data_root)
-    admit_gpu(args.gpu_uuid)
+    shared_pids = sharing_pids(args)
+    admit_gpu(args.gpu_uuid, shared_pids)
     run_dir.mkdir(parents=True, exist_ok=False)
     random.seed(args.seed)
     np.random.seed(args.seed)
@@ -118,7 +154,7 @@ def run(args):
     loader_options = dict(batch_size=args.batch_size, num_workers=args.workers,
                           pin_memory=True)
     if args.workers:
-        loader_options.update(multiprocessing_context='spawn', persistent_workers=False)
+        loader_options.update(multiprocessing_context='spawn', persistent_workers=True)
     train_images = dataset.images('train')
     if args.smoke_batches:
         train_images = Subset(train_images, range(min(len(train_images), args.smoke_batches * args.batch_size)))
@@ -135,20 +171,28 @@ def run(args):
         'gpu_uuid': args.gpu_uuid, 'gpu': torch.cuda.get_device_name(),
         'pid': os.getpid(), 'torch': torch.__version__, 'python': platform.python_version(),
         'selection': 'TEST Hit@1, development metric; epoch1/every5/final',
-        'optimizer': 'AdamW_lr0.001_wd0.0001_warmup5_cosine_clip1',
+        'metric_name': 'Hit@1', 'schedule': 'constant', 'warmup_epochs': 0,
+        'learning_rate': args.learning_rate, 'execution_profile': PROFILE,
+        'optimizer': 'AdamW_constant_lr_wd0.0001_clip1',
         'initialization': 'random_all_parameters_no_teacher',
         'direction_independent_weights': True, 'smoke_batches': args.smoke_batches,
+        'shared_owner_pids_at_launch': shared_pids,
+        'queue_status_path': str(args.queue_status_path) if args.queue_status_path else None,
+        'max_jobs_per_gpu': PROFILE['max_jobs_per_gpu'],
         'started_unix': time.time(),
     }
     write_json(run_dir / 'run_manifest.json', manifest)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=PROFILE['weight_decay'])
     tokens = dataset.title_tokens.to(device)
     history, best, selected_epoch = [], -float('inf'), None
     began = time.monotonic()
+    def interrupt(signum, frame):
+        raise KeyboardInterrupt(f'Signal {signum}')
+    signal.signal(signal.SIGTERM, interrupt)
     try:
         for epoch in range(1, args.epochs + 1):
             model.train()
-            lr = learning_rate(epoch, args.epochs)
+            lr = learning_rate(epoch, args.epochs, args.learning_rate)
             for group in optimizer.param_groups:
                 group['lr'] = lr
             total, count = 0., 0
@@ -193,13 +237,17 @@ def run(args):
             'elapsed_seconds': time.monotonic()-began})
         manifest['status'] = 'complete'
     except BaseException as exc:
-        manifest.update(status='failed', error=repr(exc))
+        manifest.update(status='interrupted' if isinstance(exc, KeyboardInterrupt) else 'failed', error=repr(exc))
         raise
     finally:
         manifest['finished_unix'] = time.time()
         write_json(run_dir / 'run_manifest.json', manifest)
         # Spawn workers exit at the end of each iterator; never kill unrelated PIDs.
         del model, optimizer, tokens
+        for loader in (train, test):
+            iterator = getattr(loader, '_iterator', None)
+            if iterator is not None:
+                iterator._shutdown_workers()
         torch.cuda.empty_cache()
 
 
@@ -209,11 +257,14 @@ def main():
     parser.add_argument('--data-root', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--gpu-uuid', required=True)
-    parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--seed', type=int, default=PROFILE['seeds'][0])
+    parser.add_argument('--epochs', type=int, default=PROFILE['epochs'])
+    parser.add_argument('--learning-rate', type=float, default=PROFILE['learning_rate'])
+    parser.add_argument('--batch-size', type=int, default=PROFILE['batch_size'])
     parser.add_argument('--workers', type=int, default=2)
     parser.add_argument('--smoke-batches', type=int, default=0)
+    parser.add_argument('--shared-owner-pids', type=int, nargs='*', default=[])
+    parser.add_argument('--queue-status-path', type=Path)
     run(parser.parse_args())
 
 

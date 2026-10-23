@@ -24,7 +24,9 @@ def test_evaluation_preserves_real_query_and_gallery_denominators():
     assert forward['hit_at_1'] == reverse['hit_at_1'] == 1.
 
 
-def test_warmup_and_cosine_endpoints():
-    assert learning_rate(1, 100) == .0002
-    assert learning_rate(5, 100) == .001
-    assert learning_rate(100, 100) == 0.
+def test_authorized_budget_has_no_warmup_or_decay():
+    from LightGenV2.tasks.t19_resnet20_baselines.train_easy100 import PROFILE
+    assert PROFILE['seeds'] == [42]
+    assert PROFILE['epochs'] == 30
+    assert PROFILE['warmup_epochs'] == 0
+    assert {learning_rate(epoch, 30, PROFILE['learning_rate']) for epoch in range(1, 31)} == {.001}

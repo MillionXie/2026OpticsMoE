@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "authorization": "User: single seed, 30 epochs, no warmup/cosine, use H consistently, allow two tasks on one GPU",
+  "supersedes_training_budget_in": "suite_proposal.json",
+  "seeds": [42],
+  "epochs": 30,
+  "optimizer": "AdamW",
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "schedule": "constant",
+  "warmup_epochs": 0,
+  "batch_size": 32,
+  "gradient_clip_norm": 1.0,
+  "precision": "FP32_TF32_disabled",
+  "retrieval_metric": "Hit@1",
+  "retrieval_metric_overrides": {
+    "abo_image_to_text": "Hit@1_exact_SKU",
+    "abo_image_to_image": "Hit@1_exact_SKU",
+    "abo_text_to_image": "Hit@1_exact_SKU"
+  },
+  "max_physical_gpus": 3,
+  "max_jobs_per_gpu": 2,
+  "minimum_free_memory_before_second_job_mib": 6144,
+  "note": "Start fresh; never truncate, resume or relabel the old 100-epoch scheduled runs as this protocol. Qwen ABO remains a frozen reference with no task training."
+}

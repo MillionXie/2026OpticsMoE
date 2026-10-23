@@ -93,6 +93,7 @@ def inspect(server_inventory: bool = False) -> dict:
         "formal_training_started": False, "GPU_smoke_started": False,
         "GPU_scheduler_implemented": False,
         "execution_authorization": authorization,
+        "effective_execution_profile": json.loads((TASK_DIR / 'configs/execution_single_seed30_20261023.json').read_text(encoding='utf-8')),
         "authorization_sha256": sha256(authorization_path) if authorization else None,
         "pending_gates": pending_gates,
     }

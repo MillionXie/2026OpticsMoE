@@ -1,5 +1,38 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 当前生效协议：2026-10-23 用户修订
+
+本轮只负责 `LightGenV2/tasks/t19_resnet20_baselines/`，未修改其他任务或历史测量。
+按用户最新要求，以 `configs/execution_single_seed30_20261023.json` 覆盖下方旧训练预算：
+
+| 项目 | 当前设置 |
+|---|---|
+| seed | 只用42；取消43/44队列 |
+| epochs | 30，从随机初始化开始 |
+| 学习率 | 固定0.001，取消warmup和cosine |
+| 优化器 | AdamW，weight decay 0.0001，clip1 |
+| batch / precision | 32 / FP32，TF32关闭 |
+| 检索指标 | 三方向统一Hit@1（H@1），仍按精确SKU命中；历史R@1不改写原报告 |
+| GPU | 最多三张物理卡，每卡最多两个本任务worker；每worker只见一张卡 |
+
+三个seed是此前额外提出的预算，并非原baseline要求，现已撤销。此前两个100轮计划
+在各完成52轮后由用户要求停止，best/last及历史全部原位保留，另有
+`easy100_20261023_local_continue/user_protocol_change_receipt.json` 记录停止、SHA及释放。
+旧队列的43/44未启动，coordinator已退出；新run不续用52轮权重，不把旧成绩冒称30轮成绩。
+
+GPU共享仅放行同一coordinator登记且PID命令身份再次核验的T19训练进程，拒绝与不明
+进程混占；启动第二个worker前须至少剩余6144MiB且即时利用率不高于95%。队列全局
+文件锁同时覆盖smoke/formal，最多每卡两个任务，不额外启用系统级MPS服务。
+DataLoader改为持久spawn worker，减少每轮重建进程的开销，退出时关闭自己的worker。
+同卡先做两方向并发GPU smoke，确认保存、固定权重复评及显存释放后再启动正式30轮。
+
+本轮ABO结构仍为ResNet-20+byte-GRU、304496个全可训练参数，损失、划分、候选库与
+epoch1/每5轮/末轮选最佳Hit@1的口径保持原定义，测试选模指标标为开发指标。
+ABO的Qwen参照是完全冻结、无任务内训练的原生2048维模型；本轮30轮小模型并不宣称
+与Qwen具有相同预训练知识或任务内训练预算。剩余七项仍未启动，不能从本轮ABO推断成绩。
+
+以下各节是此前准备和100轮计划的历史记录；与本节冲突时，以本节及新执行profile为准。
+
 ## 2026-10-23 本地执行会话接手：连接恢复，分任务闭合执行条件
 
 本会话已通过 SSH 实测连接训练服务器，`git fetch origin` 成功；初始两端均为

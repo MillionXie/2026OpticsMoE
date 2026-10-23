@@ -1,4 +1,4 @@
-"""Serialize each GPU's three seeds; one suite lock, at most three idle GPUs."""
+"""Single-seed, 30-epoch queue; up to two tasks on each of three GPUs."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 
-from .train_easy100 import TASK, ROOT, admit_gpu, git, require_published_source, write_json
+from .train_easy100 import TASK, ROOT, PROFILE, admit_gpu, git, require_published_source, write_json
 
 
 def main():
@@ -18,6 +18,8 @@ def main():
     parser.add_argument('--gpu-uuids', nargs='+', required=True)
     parser.add_argument('--data-root', type=Path, required=True)
     parser.add_argument('--suite-id', required=True)
+    parser.add_argument('--smoke-batches', type=int, default=0)
+    parser.add_argument('--smoke-suite-id', default='easy100_shared30_smoke_20261023')
     args = parser.parse_args()
     if not 1 <= len(args.gpu_uuids) <= 3 or len(set(args.gpu_uuids)) != len(args.gpu_uuids):
         raise ValueError('One to three distinct GPU UUIDs required')
@@ -25,9 +27,11 @@ def main():
         raise ValueError('suite-id must be a single directory name')
     import fcntl  # Linux-only coordinator, no CUDA initialization.
     require_published_source()
-    base = TASK / 'runs/simulation'
+    base = TASK / ('runs/smoke' if args.smoke_batches else 'runs/simulation')
     base.mkdir(parents=True, exist_ok=True)
-    lock = (base / '.t19_gpu_suite.lock').open('a')
+    # One lock across smoke/formal queues, so combined allocations cannot exceed
+    # the three-physical-GPU / two-workers-per-GPU contract.
+    lock = (TASK / 'runs/.t19_gpu_suite.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     suite = base / args.suite_id
     suite.mkdir(exist_ok=False)
@@ -35,20 +39,26 @@ def main():
     source_tree = git('rev-parse', 'HEAD:' + TASK.relative_to(ROOT).as_posix())
     # Confirm BOTH real-GPU contract checks succeeded, never use smoke metrics
     # as formal quality results. They exercise train/eval/save/reload lifecycle.
-    for short in ('i2t', 't2i'):
-        smoke = TASK / f'runs/smoke/easy100_{short}_s42_20261023_v2/result.json'
-        evidence = json.loads(smoke.read_text())
-        if evidence.get('status') != 'complete':
-            raise RuntimeError(f'{short} GPU smoke has not completed')
+    if not args.smoke_batches:
+        smoke_suite = TASK / 'runs/smoke' / args.smoke_suite_id
+        smoke_state = json.loads((smoke_suite / 'queue_status.json').read_text())
+        if (smoke_state.get('status') != 'complete' or not smoke_state.get('owned_gpu_processes_released')
+                or smoke_state.get('execution_profile') != PROFILE):
+            raise RuntimeError('Current-profile shared-GPU smoke has not completed cleanly')
+        for job in smoke_state['jobs']:
+            evidence = json.loads((smoke_suite.parent / job['name'] / 'result.json').read_text())
+            if evidence.get('status') != 'complete':
+                raise RuntimeError('A direction failed GPU smoke')
     jobs = []
-    for seed in (42, 43, 44):
+    for seed in PROFILE['seeds']:
         for direction in ('image_to_text', 'text_to_image'):
             name = f'easy100_{direction}_s{seed}_{args.suite_id}'
             jobs.append({'name': name, 'direction': direction, 'seed': seed, 'status': 'queued'})
     running, children = {}, []
     report = {'status': 'running', 'source_commit': source_commit, 'source_tree': source_tree, 'pid': os.getpid(),
-              'gpu_uuids': args.gpu_uuids, 'max_gpus': 3, 'jobs': jobs,
-              'started_unix': time.time(), 'scope': 'two_of_nine_tasks_three_seeds_each'}
+              'gpu_uuids': args.gpu_uuids, 'max_gpus': 3, 'max_jobs_per_gpu': PROFILE['max_jobs_per_gpu'],
+              'execution_profile': PROFILE, 'jobs': jobs,
+              'started_unix': time.time(), 'scope': 'two_of_nine_tasks_single_seed30_constant_lr'}
 
     def save():
         write_json(suite / 'queue_status.json', report)
@@ -60,20 +70,21 @@ def main():
     signal.signal(signal.SIGINT, interrupt)
     try:
         while any(job['status'] == 'queued' for job in jobs) or running:
-            for uuid, (process, job, log) in list(running.items()):
+            for pid, (uuid, process, job, log) in list(running.items()):
                 code = process.poll()
                 if code is None:
                     continue
                 log.close()
                 job.update(status='complete' if code == 0 else 'failed', exit_code=code,
                            finished_unix=time.time())
-                del running[uuid]
+                del running[pid]
                 if code:
                     raise RuntimeError(f'Worker {job["name"]} failed: {code}')
             if git('rev-parse', 'HEAD:' + TASK.relative_to(ROOT).as_posix()) != source_tree:
                 raise RuntimeError('T19 source tree changed during suite; refusing mixed-source queue')
-            for uuid in args.gpu_uuids:
-                if uuid in running:
+            for uuid in [u for u in args.gpu_uuids for _ in range(PROFILE['max_jobs_per_gpu'])]:
+                own_pids = [pid for pid, value in running.items() if value[0] == uuid]
+                if len(own_pids) >= PROFILE['max_jobs_per_gpu']:
                     continue
                 job = next((j for j in jobs if j['status'] == 'queued'), None)
                 if job is None:
@@ -81,7 +92,7 @@ def main():
                 old = os.environ.get('CUDA_VISIBLE_DEVICES')
                 os.environ['CUDA_VISIBLE_DEVICES'] = uuid
                 try:
-                    admit_gpu(uuid)
+                    admit_gpu(uuid, own_pids)
                 except RuntimeError as exc:
                     report.setdefault('waiting_for_idle', {})[uuid] = str(exc)
                     continue
@@ -94,14 +105,18 @@ def main():
                 command = [sys.executable, '-m', 'LightGenV2.tasks.t19_resnet20_baselines.train_easy100',
                     '--direction', job['direction'], '--seed', str(job['seed']),
                     '--data-root', str(args.data_root.resolve()), '--run-dir', str(base / job['name']),
-                    '--gpu-uuid', uuid]
+                    '--gpu-uuid', uuid, '--epochs', str(1 if args.smoke_batches else PROFILE['epochs']),
+                    '--learning-rate', str(PROFILE['learning_rate']),
+                    '--smoke-batches', str(args.smoke_batches),
+                    '--queue-status-path', str(suite / 'queue_status.json'),
+                    '--shared-owner-pids', *map(str, own_pids)]
                 env = dict(os.environ, CUDA_VISIBLE_DEVICES=uuid, OMP_NUM_THREADS='4', OPENBLAS_NUM_THREADS='1')
                 log = (suite / (job['name'] + '.log')).open('x')
                 process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=log,
                     stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)
                 job.update(status='running', pid=process.pid, gpu_uuid=uuid,
                            command=command, started_unix=time.time())
-                running[uuid] = (process, job, log)
+                running[process.pid] = (uuid, process, job, log)
                 children.append(process)
             save()
             if running or any(j['status'] == 'queued' for j in jobs):
@@ -109,12 +124,12 @@ def main():
         report['status'] = 'complete'
     except BaseException as exc:
         report.update(status='failed', error=repr(exc))
-        for process, job, log in running.values():
+        for uuid, process, job, log in running.values():
             # Only process groups created by this coordinator are signalled.
             if process.poll() is None:
                 os.killpg(process.pid, signal.SIGTERM)
             job['status'] = 'interrupted'
-        for process, job, log in running.values():
+        for uuid, process, job, log in running.values():
             try:
                 process.wait(timeout=20)
             except subprocess.TimeoutExpired:
