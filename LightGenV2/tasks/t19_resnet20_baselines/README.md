@@ -1,5 +1,32 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-23 新授权：工程缓存、LSP曲线审查与LGVQ累计50轮
+
+用户要求加速慢任务、检查LSP是否未收敛/过拟合，并将当前冻结预训练RN18的LGVQ时间、空间
+从各自第30轮继续20轮。原九项第30轮协议和封存结果保留；新增LGVQ独立续训run固定报告
+累计第50轮last，不按任何指标选轮。`continue_lgvq50.py`恢复原model及AdamW的step/moments，
+实际回放原seed42、batch8、2个persistent worker的30轮DataLoader采样，再连续训练31–50；
+固定lr.001/有效batch32/FP32/冻结含BN保持。四帧512维冻结特征只计算一次，缓存FP32并对
+全部2250 TRAIN+558 TEST样本与原forward做等价检查，缓存与原30轮权重SHA绑定。
+
+编辑工程优化使用`performance_cache.py`：确定性reference/target以uint8去重缓存，恢复时
+严格重现原浮点运算顺序；每条image/target/tokens/sample_id/mode全部exact校验后才准入。
+缓存只在runs下，不进Git。新tag`byte_gru15m_cached`从旧run最后一个完整epoch恢复model+AdamW，
+回放原shuffle序列，仍累计30轮；原run与停机前last原样保留。缓存完整收据、工程smoke通过
+及手工核验的交接收据全部具备后才允许新正式worker；smoke不追加TEST模型评估。未交接前
+原编辑worker继续运行。训练中断的半轮不计作完整epoch，交接记录必须披露重算范围。
+LSP/SALICON含在线随机增强，不能缓存某一次增强后的输入或特征。模型、损失、数据、有效
+batch、精度与学习率保持；资源上限仍为当前四卡2/4/5/6，不扩容，不中断其他任务。
+协调计划`configs/frozen_cache_lgvq50_20261023.json`保留原在训任务并增加两个50轮续训。
+
+LSP初查：冻结RN18正式e1/e2 loss为0.03556738/0.03434947，头部AdamW实际更新且冻结SHA通过。
+只有e1周期TEST PCK=0.0535，尚不能认定30轮不足或过拟合。固定12条TRAIN、168关节CPU
+只读诊断（0优化步、0新增TEST）：e2 hard PCK=13.69%，GT热图hard=100%而当前softargmax=2.98%；
+模型总loss仅比零图好0.537%，坐标项占88.62%，热图softmax熵0.999993。说明继承的目标幅度/
+坐标解码不匹配仍存在，不能只归因epoch少；本轮不暗改loss。后续看完整末段训练loss与已有
+周期PCK：持续同时改善支持未收敛，TRAIN改善而评估恶化提示过拟合，双低位平台则优先检查
+目标/优化瓶颈。不据TEST选轮，不擅自给LSP延长预算。
+
 ## 2026-10-23 最新修订：完整模型小于1500万，固定当前四GPU
 
 本节覆盖下一节“所有编码器冻结”和三卡上限中的文字/资源部分。用户认为MiniLM文字模型过大，
@@ -36,7 +63,7 @@ MiniLM旧分支与所有证据保留，新分支显式`--text-encoder byte_gru`�
 全部仅报第30轮last完整复评，编辑完整2304 TEST；不根据任何指标选轮。LSP原损失问题仍披露。
 
 两个保留的LGVQ正式run现已完成，独立CPU核验epoch30、last文件SHA、各558条唯一预测及
-全部30次视觉参数/BN buffers冻结SHA均通过，不追加训练：
+全部30次视觉参数/BN buffers冻结SHA均通过。此处是封存30轮成绩；新增50轮续训遵循上节授权：
 
 | LGVQ指标 | 冻结预训练RN18第30轮 | RN20全参第30轮 | RN32全参第30轮 | Ours Sim旧图 | Qwen旧图 |
 |---|---:|---:|---:|---:|---:|

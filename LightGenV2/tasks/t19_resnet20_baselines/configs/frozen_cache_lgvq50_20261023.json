@@ -1,0 +1,88 @@
+{
+  "backbone": "resnet18_imagenet_frozen",
+  "visual_weights": "torchvision.ResNet18_Weights.IMAGENET1K_V1",
+  "visual_encoder_frozen": true,
+  "visual_batchnorm_frozen": true,
+  "full_model_parameters_strict_upper_bound": 15000000,
+  "text_encoder": "trainable_UTF8_byte_embedding259x32_GRU32x64",
+  "text_parameters": 27104,
+  "text_initialization": "random_seed42",
+  "training_scope_multimodal": "frozen_visual_trainable_text_and_decoder",
+  "text_encoders": {
+    "abo_image_to_text": "byte_gru",
+    "abo_text_to_image": "byte_gru",
+    "openmoji": "byte_gru",
+    "abo_conditional_edit": "byte_gru"
+  },
+  "job_tags": {
+    "abo_image_to_text": "byte_gru15m",
+    "abo_text_to_image": "byte_gru15m",
+    "openmoji": "byte_gru15m",
+    "abo_conditional_edit": "byte_gru15m_cached",
+    "abo_image_to_image": "gpu_expand6",
+    "lsp": "gpu_expand6"
+  },
+  "tasks": [
+    "lgvq_temporal",
+    "lgvq_spatial",
+    "abo_image_to_text",
+    "abo_image_to_image",
+    "abo_text_to_image",
+    "lsp",
+    "salicon",
+    "openmoji",
+    "abo_conditional_edit",
+    "lgvq_temporal_continue50",
+    "lgvq_spatial_continue50"
+  ],
+  "preserve_running_jobs": [
+    "abo_image_to_text",
+    "abo_image_to_image",
+    "abo_text_to_image",
+    "lsp",
+    "salicon",
+    "openmoji",
+    "abo_conditional_edit_until_cache_verified_smoke_passed"
+  ],
+  "gpu_indices_requested_first": [
+    2,
+    4,
+    5,
+    6
+  ],
+  "gpu_indices_additional_candidates": [],
+  "selection": "fixed_last_epoch",
+  "seed": 42,
+  "epochs": 30,
+  "learning_rate": 0.001,
+  "schedule": "constant",
+  "warmup_epochs": 0,
+  "optimizer": "AdamW_wd0.0001_clip1",
+  "effective_batch": 32,
+  "precision": "FP32_TF32_disabled",
+  "max_physical_gpus": 4,
+  "max_jobs_per_gpu": 3,
+  "third_job_admission": "At least6144MiB free and <=50percent utilization; both registered peers must already hold CUDA contexts so existing two-job workers are unaffected",
+  "sealed": true,
+  "authorization": "2026-10-23 user approves engineering optimization of slow tasks, later LSP convergence/overfit diagnosis, and LGVQ temporal/spatial continuing20 epochs from30 through50. Keep four physical GPUs2/4/5/6, all active workers until verified handoff. Preserve original LGVQ30 weights/results. No scientific changes; deterministic editor uint8 reconstruction requires all-row exact verification, parent model+AdamW and original sampler order restored. Engineering smoke waits for complete-cache receipt; formal waits for audited handoff receipt, so old/new editor formal cannot train simultaneously.",
+  "continuation_sources": {
+    "lgvq_temporal_continue50": "runs/simulation/lgvq_temporal_formal_s42_resnet18_imagenet_frozen_single30_20261023",
+    "lgvq_spatial_continue50": "runs/simulation/lgvq_spatial_formal_s42_resnet18_imagenet_frozen_single30_20261023"
+  },
+  "engineering_resumes": {
+    "abo_conditional_edit": {
+      "resume_from": "runs/simulation/abo_conditional_edit_formal_s42_resnet18_imagenet_frozen_single30_20261023_byte_gru15m/last_checkpoint.pt",
+      "editor_cache_root": "runs/cache/editor_exact_uint8_20261023",
+      "ready_receipt": "runs/control/editor_cache_ready_20261023.json",
+      "formal_gate_receipt": "runs/control/cached_editor_handoff_20261023.json"
+    }
+  },
+  "epoch_budgets": {
+    "original_nine": 30,
+    "lgvq_continuations": {
+      "resume_completed_epoch": 30,
+      "additional_epochs": 20,
+      "fixed_last_cumulative_epoch": 50
+    }
+  }
+}

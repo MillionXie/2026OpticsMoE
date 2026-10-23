@@ -73,7 +73,8 @@ def validate_gpu_processes(uuid, apps, allowed_pids, max_jobs_per_gpu=2):
         command = Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode()
         if (not any(module in command for module in (
                 'LightGenV2.tasks.t19_resnet20_baselines.train_easy100',
-                'LightGenV2.tasks.t19_resnet20_baselines.train_tasks'))
+                'LightGenV2.tasks.t19_resnet20_baselines.train_tasks',
+                'LightGenV2.tasks.t19_resnet20_baselines.continue_lgvq50'))
                 or uuid not in command or str(TASK / 'runs') not in command):
             raise RuntimeError('Shared process is not a verified T19 worker on this GPU')
     return active

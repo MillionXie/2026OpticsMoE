@@ -12,7 +12,20 @@ import time
 from .train_easy100 import TASK,ROOT,PROFILE,admit_gpu,require_published_source,write_json,git
 
 ALLOWED = ('lgvq_temporal','lgvq_spatial','abo_image_to_image','lsp','salicon','openmoji','abo_conditional_edit',
-           'lgvq_temporal_resnet18','abo_image_to_text','abo_text_to_image')
+           'lgvq_temporal_resnet18','abo_image_to_text','abo_text_to_image',
+           'lgvq_temporal_continue50','lgvq_spatial_continue50')
+CONTINUATIONS = {'lgvq_temporal_continue50':'temporal','lgvq_spatial_continue50':'spatial'}
+
+
+def engineering_formal_ready(job, jobs):
+    settings=job.get('engineering_resume')
+    if not settings:
+        return True
+    if not (TASK/settings['formal_gate_receipt']).is_file():
+        return False
+    # A receipt alone must never permit two formal versions of one editor.
+    return not any(other is not job and other['task']==job['task']
+                   and other['phase']=='formal' and other['status']=='running' for other in jobs)
 
 
 class AttachedWorker:
@@ -22,7 +35,8 @@ class AttachedWorker:
         path=Path(f'/proc/{self.pid}/cmdline')
         if self.poll() is None:
             command=path.read_bytes().replace(b'\0',b' ').decode()
-            if (not any(module in command for module in ('t19_resnet20_baselines.train_tasks','t19_resnet20_baselines.train_easy100')) or job['name'] not in command
+            if (not any(module in command for module in ('t19_resnet20_baselines.train_tasks','t19_resnet20_baselines.train_easy100',
+                                                        't19_resnet20_baselines.continue_lgvq50')) or job['name'] not in command
                     or job['gpu_uuid'] not in command or os.getpgid(self.pid)!=self.pid):
                 raise RuntimeError('Refuse to attach an unverified training process')
     def poll(self):
@@ -51,11 +65,33 @@ def read_plan(path):
     for task,encoder in plan.get('text_encoders',{}).items():
         if task not in {'abo_image_to_text','abo_text_to_image','openmoji','abo_conditional_edit'} or encoder not in {'minilm','byte_gru'}:
             raise ValueError('Invalid text encoder override')
+    for task,source in plan.get('continuation_sources',{}).items():
+        if task not in CONTINUATIONS or not str(source).startswith('runs/simulation/'):
+            raise ValueError('Invalid LGVQ continuation parent')
+    for task,settings in plan.get('engineering_resumes',{}).items():
+        if task != 'abo_conditional_edit' or task not in tasks:
+            raise ValueError('Engineering resume is restricted to the deterministic editor')
+        for key in ('resume_from','editor_cache_root','formal_gate_receipt','ready_receipt'):
+            path=(TASK/settings[key]).resolve()
+            if not path.is_relative_to((TASK/'runs').resolve()):
+                raise ValueError('Engineering resume paths must remain in task runs')
     return plan
 
 
 def worker_command(job, suite, uuid, backbone):
     base=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')
+    if job['task'] in CONTINUATIONS:
+        if backbone != 'resnet18_imagenet_frozen':
+            raise ValueError('LGVQ extension requires the approved frozen pretrained profile')
+        command = [sys.executable,'-m','LightGenV2.tasks.t19_resnet20_baselines.continue_lgvq50',
+                   '--source-run',str(TASK/job['continuation_source']),
+                   '--target',CONTINUATIONS[job['task']],
+                   '--run-dir',str(base/job['name']),'--gpu-uuid',uuid,
+                   '--queue-status-path',str(suite/'queue_status.json'),
+                   '--smoke-batches','2' if job['phase']=='smoke' else '0',
+                   '--max-physical-gpus',str(job.get('max_physical_gpus',4)),
+                   '--max-jobs-per-gpu',str(job.get('max_jobs_per_gpu',3))]
+        return command
     if job['task'] in {'abo_image_to_text','abo_text_to_image'}:
         specific=['LightGenV2.tasks.t19_resnet20_baselines.train_easy100',
             '--direction',job['task'].removeprefix('abo_'),
@@ -73,6 +109,10 @@ def worker_command(job, suite, uuid, backbone):
         command+=['--max-physical-gpus',str(job['max_physical_gpus'])]
     if job.get('max_jobs_per_gpu',2)!=2:
         command+=['--max-jobs-per-gpu',str(job['max_jobs_per_gpu'])]
+    if job.get('engineering_resume'):
+        settings=job['engineering_resume']
+        command+=['--resume-from',str(TASK/settings['resume_from']),
+                  '--editor-cache-root',str(TASK/settings['editor_cache_root'])]
     return command
 
 
@@ -125,7 +165,7 @@ def main():
                 raise ValueError('Plan and queue backbone differ')
             if args.backbone == 'resnet18_imagenet_frozen':
                 from .models import TASK_IDS
-                if any(task not in TASK_IDS for task in plan['tasks']):
+                if any(task not in TASK_IDS and task not in CONTINUATIONS for task in plan['tasks']):
                     raise ValueError('Frozen suite supports the nine approved task adapters only')
             if args.backbone!='resnet20' and 'lgvq_temporal_resnet18' in plan['tasks']:
                 raise ValueError('CIFAR suite cannot include ImageNet ResNet18 override')
@@ -139,6 +179,10 @@ def main():
                             'name':f'{task}_{phase}_s42_{args.suite_id}'+('_'+tag if tag else ''),'attempt':0,
                             'profile_tag':tag,'text_encoder':plan.get('text_encoders',{}).get(task,'minilm'),
                             'max_physical_gpus':args.max_physical_gpus})
+                        if task in CONTINUATIONS:
+                            report['jobs'][-1]['continuation_source']=plan['continuation_sources'][task]
+                        if task in plan.get('engineering_resumes',{}):
+                            report['jobs'][-1]['engineering_resume']=plan['engineering_resumes'][task]
                 retry=int(plan.get('retry_smokes',{}).get(task,0))
                 if retry and not any(j['task']==task and j['phase']=='smoke' and j.get('attempt',0)==retry for j in report['jobs']):
                     report['jobs'].append({'task':task,'phase':'smoke','status':'queued','attempt':retry,
@@ -167,7 +211,12 @@ def main():
                 eligible=[]
                 for j in report['jobs']:
                     if j['status']!='queued':continue
+                    settings=j.get('engineering_resume')
+                    if settings and not (TASK/settings['ready_receipt']).exists():
+                        continue
                     if j['phase']=='formal':
+                        if not engineering_formal_ready(j,report['jobs']):
+                            continue
                         smoke=max((x for x in report['jobs'] if x['task']==j['task'] and x['phase']=='smoke'
                                    and x.get('profile_tag','')==j.get('profile_tag','')),key=lambda x:x.get('attempt',0))
                         if smoke['status']=='failed':
