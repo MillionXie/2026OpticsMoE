@@ -110,7 +110,19 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
         from lab_caltech20_TRAIN_group_ridge_20261024 import fit as ridge_fit
         path=base.ROOT/c['sequence']/'assets/TRAIN_lineage.json';assert m.sha(path)==dm['lineage_SHA256'];records=m.read(path)['records'];assert [v['sample_id'] for v in records]==data['train'][2].tolist()
         teacher_targets=c.get('TRAIN_teacher_targets',False);assert isinstance(teacher_targets,bool)
-        if teacher_targets:
+        teacher_kind=c.get('TRAIN_teacher_target_kind','probabilities');assert teacher_kind in ('probabilities','normalized_logits')
+        if teacher_targets and teacher_kind=='normalized_logits':
+            from lab_caltech20_TRAIN_teacher_logits_20261024 import fit as teacher_logit_fit
+            folder=base.ROOT/c['TRAIN_teacher_cache'];teacher_cache=folder/'teacher_TRAIN_features.npz';teacher_report=m.read(folder/'report.json')
+            assert m.sha(teacher_cache)=='a81f4a1c52e69482cde60427c11fd653095c40854513969af6b13a9d76c4e2d2' and m.sha(folder/'report.json')=='407fb1ef2fd97df717b75b228fbb7a71a3a05f90ded38a3408190c3e2af80bc4'
+            assert teacher_report['state']=='complete'
+            assert teacher_report['role']=='train' and teacher_report['TRAIN']==1600 and not teacher_report['TEST_used'] and not teacher_report['VALID_used']
+            assert teacher_report['source_PT_SHA256']=='7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5' and teacher_report['data_SHA256']==dm['sha256']
+            with np.load(teacher_cache,allow_pickle=False) as z:
+                assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1]);teacher_logits=z['logits'].copy()
+            weight,bias,ridge_statistics=teacher_logit_fit(train.numpy(),data['train'][1],c['original_TRAIN_counts'],[v['source_id']for v in records],teacher_logits)
+            protocol.update(TRAIN_teacher_targets=True,TRAIN_teacher_target_kind=teacher_kind,teacher_cache_SHA256=m.sha(teacher_cache),teacher_source_report_SHA256=m.sha(folder/'report.json'),inference_teacher=False)
+        elif teacher_targets:
             from lab_caltech20_TRAIN_teacher_ridge_20261024 import fit as teacher_fit
             folder=base.ROOT/c['TRAIN_teacher_cache'];manifest=m.read(folder/'teacher_manifest.json');teacher_cache=folder/'teacher_TRAIN_logits.npz'
             assert m.sha(folder/'teacher_manifest.json')=='761611b3cf1986254e77efdc0fc0a0c5044fdb46f3fd89fbfe9cfa837b220a98'

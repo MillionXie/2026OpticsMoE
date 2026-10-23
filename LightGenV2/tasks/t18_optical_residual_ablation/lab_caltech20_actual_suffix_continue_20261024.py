@@ -103,7 +103,7 @@ def run(a):
         if p['method']=='parent_proximal':config.update(TRAIN_parent_proximal=True,native_feature_source=p['native_feature_source'],fresh_native_TRAIN_features=p.get('fresh_native_TRAIN_features',False))
         if p['method']=='TRAIN_group_ridge':
             config.update(TRAIN_group_ridge=True,native_feature_source=p['native_feature_source'])
-            if p.get('TRAIN_teacher_targets',False):config.update(TRAIN_teacher_targets=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])
+            if p.get('TRAIN_teacher_targets',False):config.update(TRAIN_teacher_targets=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'],TRAIN_teacher_target_kind=p.get('TRAIN_teacher_target_kind','probabilities'))
     else:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as engine
         config={**c}

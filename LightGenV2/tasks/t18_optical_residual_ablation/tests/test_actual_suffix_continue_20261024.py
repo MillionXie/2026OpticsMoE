@@ -14,7 +14,7 @@ def test_initial_OAS_profile_and_source_identities():
 def test_old282_keeps_its_own_camera_arrays_and_exact_parent():
     tree=ast.parse(ENTRY.read_text());nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('validate_policy','load_policy')]
     ns=dict(json=json,hashlib=hashlib,Path=Path,base=SimpleNamespace(HERE=ENTRY.parent));exec(compile(ast.Module(body=nodes,type_ignores=[]),str(ENTRY),'exec'),ns)
-    for profile in ('lab_caltech20_actual300_FROZEN_profile_20261024.json','lab_caltech20_actual300_RIDGEOLD_profile_20261024.json','lab_caltech20_actual300_SAFE_profile_20261024.json','lab_caltech20_actual300_SOFTOLD_profile_20261024.json','lab_caltech20_actual300_NOISE_profile_20261024.json','lab_caltech20_actual300_METRIC_profile_20261024.json','lab_caltech20_actual300_DESAT_profile_20261024.json','lab_caltech20_actual300_REMAIN_profile_20261024.json','lab_caltech20_actual300_METRIC285_profile_20261024.json','lab_caltech20_actual300_BAND285_profile_20261024.json','lab_caltech20_actual300_PROX285_profile_20261024.json'):
+    for profile in ('lab_caltech20_actual300_FROZEN_profile_20261024.json','lab_caltech20_actual300_RIDGEOLD_profile_20261024.json','lab_caltech20_actual300_SAFE_profile_20261024.json','lab_caltech20_actual300_SOFTOLD_profile_20261024.json','lab_caltech20_actual300_NOISE_profile_20261024.json','lab_caltech20_actual300_METRIC_profile_20261024.json','lab_caltech20_actual300_DESAT_profile_20261024.json','lab_caltech20_actual300_REMAIN_profile_20261024.json','lab_caltech20_actual300_METRIC285_profile_20261024.json','lab_caltech20_actual300_BAND285_profile_20261024.json','lab_caltech20_actual300_PROX285_profile_20261024.json','lab_caltech20_actual300_LOGIT285_profile_20261024.json'):
         p=ns['load_policy'](ENTRY.parent/profile);ns['validate_policy'](p)
         assert p['expected_parent_correct']==(285 if '285' in profile else 282) and p['captures']['2'].endswith('/g1s/s_2/capture')
         for name,digest in p['source_SHA256'].items():
@@ -25,6 +25,7 @@ def test_old282_keeps_its_own_camera_arrays_and_exact_parent():
             if digest=='264ff020ca21c1301201df24b16e61f9fa5448aa3601b6c614659d11cc4927a4':value=subprocess.check_output(['git','show','004053655:LightGenV2/tasks/t18_optical_residual_ablation/'+name])
             if digest=='2051709d1fd0bff0dfef5369c2e98eafc4daa82316b0fba02e1b62a4eb7918da':value=subprocess.check_output(['git','show','deb39dc1a:LightGenV2/tasks/t18_optical_residual_ablation/'+name])
             if digest=='f77ada65022f9af260f959ac2d592a79ac6371e23fe3a68dcc897947841d03ff':value=subprocess.check_output(['git','show','fb868484a:LightGenV2/tasks/t18_optical_residual_ablation/'+name])
+            if digest=='07fff8e589129306841eaff0aa4515becfb27a24bc421a4a53d2e55f3443eb4a':value=subprocess.check_output(['git','show','6b6ac6c2c:LightGenV2/tasks/t18_optical_residual_ablation/'+name])
             assert hashlib.sha256(value).hexdigest()==digest
 
 

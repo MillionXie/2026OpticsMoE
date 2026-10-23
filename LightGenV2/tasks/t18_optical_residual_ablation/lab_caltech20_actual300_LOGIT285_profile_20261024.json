@@ -1,0 +1,26 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"TRAIN_group_ridge",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_REMAIN/fit",
+  "source_PT_SHA256":"5f7c007d6cc9f9658ad40fa5a8d2f33fafcf9361ec8c2576e4517ccf1346663d",
+  "source_report_SHA256":"ff007c0c177831960bf4030ceede2e9b4c6b03331dd464e92c35f9c0115510da",
+  "expected_parent_correct":285,
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2r/s_2/fit",
+  "TRAIN_teacher_targets":true,
+  "TRAIN_teacher_target_kind":"normalized_logits",
+  "TRAIN_teacher_cache":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/teacher_features_session1",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_PROX.return.json",
+  "parent_minimum_previous_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_PROX/fit",
+  "recipe":{"name":"actual300_original5140_TRAIN_normalized_teacher_logit_ridge","epochs":1,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_actual_readout_20261024.py":"98a79ac5bfb67b86005aec56d55c1a790489ffdd2b786efb6b7b6f6b2eded1a1",
+    "lab_caltech20_TRAIN_teacher_logits_20261024.py":"0456e0d1def935d142d1f3c109ed39046a66046a7835551aa9a30f5ffa13b5ae",
+    "lab_caltech20_TRAIN_group_ridge_20261024.py":"0c8d419c1f7dd347853192580ef83449144bac4e058aed1c9032a28c114c4c15",
+    "lab_caltech20_tucam_TRAIN_linear_20261023.py":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"One TRAIN-only normalized teacher-logit estimator with all1508 original families and92 augmented siblings deleted together analytically. Predeclared TRAIN support>=873 and NLL<1.51968 passed locally:921/1600,NLL1.307515 versus hardtarget841/NLL1.51968. Teacher source7b nativeCPU cachea81,TRAINcorrect1529; wrongorlowRMS teacher rows replaced with normalized true TRAINonehot. No TEST teachers/gradient/targets/regularization. One continuous TRAIN family-deleted MSE lambda and trueTRAIN NLL logit scale; no TEST hyperparameter grid. Exact original5140 W/b only, same285 parent fallback and allnonheadbitwise frozen; fullnativeCPU bestlast1600/411/ancestorSHA. No inference teacher/layer/ensemble, no new CCD/hardwarechange. Actual300 gate beforeG2/final340/08:00deadline unchanged."
+}
