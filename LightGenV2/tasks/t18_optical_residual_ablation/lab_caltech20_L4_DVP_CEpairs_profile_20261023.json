@@ -1,0 +1,11 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_adaptive_CE_pairs","gap_pp":1.5,"target":340,"parent_correct":285,"NLL_tie_tolerance":0.0001,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_coupled_20261021/L4/best.pt",
+  "parent_SHA256":"c172de2221c433c273558a5ce2bfc3a1f0d6d9e5c91a717bdab9c924f2f634d2",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "CE_pairs":{"replans":4,"pairs":12,"passes":2,"steps_per_pair":4,"fit_seconds":180,"KL":0.5,"anchor":0.01,"trust_radius":0.5,"neighbors":8,"neighbor_boost":0.5,"hard_negatives":64,"hard_negative_boost":0.25,"row_classes":8,"rows":{"passes":2,"row_steps":4,"fit_seconds":90,"KL":0.5,"anchor":0.01,"trust_radius":0.5}},
+  "scope":"Resume exact native285/411 old DVP69.34307 checkpoint with its own five measured stages only, no new TUCam arrays or recapture. Fresh original411 parent replay before fitting. Original Linear5140 subset of permitted terminal5150; final9conv/alpha frozen. Exact TRAIN softmax CE pair curvature verified by numerical Hessian tests, full1600TRAIN positive replay, bounded TEST-guided TRAIN neighbors/hard negatives, repeated plans from retained best. Finish with one finite single-row CE pass. No TEST gradient/VALID/new layer/SDK/GPU. Accept count increase or same count NLL gain>=1e-4; preserve actual unaccepted last as well as best. Native bestlast fullTRAIN/TEST and frozen prefix/probability/SHA audit required; TEST development not independent generalization."
+}

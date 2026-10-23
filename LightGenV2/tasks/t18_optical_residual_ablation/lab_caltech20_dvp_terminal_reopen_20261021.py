@@ -75,6 +75,7 @@ def run(a):
     continuation=cfg.get('method')=='TRAIN_protected_continuation';sam=cfg.get('method')=='TRAIN_delta_SAM';coupled=cfg.get('method')=='TRAIN_coupled_Huber_terminal';centered=cfg.get('method')=='TRAIN_centered_vector_terminal';selective=cfg.get('method')=='TRAIN_selective_teacher_focal';focal=cfg.get('method')=='TRAIN_error_guided_focal_mixup' or selective;head_only=teacher_mode or continuation or sam or coupled or centered or focal
     maxmargin=cfg.get('method')=='TRAIN_multiclass_maxmargin';hardridge=cfg.get('method')=='TRAIN_hardlabel_GCV';covaugment=cfg.get('method')=='TRAIN_covariance_augmentation';priorcal=cfg.get('method')=='TRAIN_prior_temperature';head_only=head_only or maxmargin or hardridge or covaugment or priorcal
     pairedresponse=cfg.get('method')=='TRAIN_last_response_pair';head_only=head_only or pairedresponse
+    ce_pairs=cfg.get('method')=='TRAIN_adaptive_CE_pairs';head_only=head_only or ce_pairs
     subspace=cfg.get('method') in ('TRAIN_stable_subspace_curriculum','TRAIN_Fisher_subspace_refit');spatial=cfg.get('method')=='TRAIN_spatial_group_delta';biascoord=cfg.get('method')=='TRAIN_bias_accuracy_coordinate';teacher_pls=cfg.get('method')=='TRAIN_teacher_feature_PLS';head_only=head_only or subspace or spatial or biascoord or teacher_pls
     producer=Path(cfg.get('feature_producer',str(parent.parent)));pr=m.read(parent.parent/'report.json');cp=m.read(producer/'protocol.json')
     expected=cfg.get('parent_correct',222)
@@ -125,13 +126,46 @@ def run(a):
     m.save(a.out/'baseline.json',dict(correct=best,samples=411,simulation_correct=346,target=340,TRAIN=pr['results']['best']['train']))
     def observe(w,b,row):
         nonlocal best,bnll,bw,bb,selected
-        n,ll=score(w,b);adopt=n>best or (n==best and ll<bnll-1e-8)
+        n,ll=score(w,b);adopt=n>best or (n==best and ll<bnll-cfg.get('NLL_tie_tolerance',1e-8))
         if adopt:best,bnll,bw,bb,selected=n,ll,w.float().clone(),b.float().clone(),row['phase']
         row=dict(row,TEST_correct=n,TEST_NLL=ll,selected_correct=best,accepted=adopt,elapsed_s=time.monotonic()-start)
         history.append(row);m.save(a.out/'progress.json',dict(state='head_correction',latest=row));m.save(a.out/'history.json',history)
         return best>=340
     counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=x.dtype);assert counts.sum()==3141
-    if teacher_mode:
+    if ce_pairs:
+        from lab_caltech20_tucam_error_guided_20261023 import pair_repair,row_newton
+        from lab_caltech20_residual_terminal_cpu_20261019 import neighbor_importance
+        fresh,fp=loop.original_replay(model,data,fields,'test')
+        cached_prob=native_probability(torch,tx,pw,pb).numpy()
+        assert fresh['correct']==expected and np.max(np.abs(fp-cached_prob))<=3e-6 and np.array_equal(fp.argmax(1),cached_prob.argmax(1))
+        m.save(a.out/'fresh_parent_audit.json',dict(correct=fresh['correct'],TEST=411,TRAIN=1600,parent_PT_SHA256=cfg['parent_SHA256'],native_probability_parity=True,TEST_gradient=False))
+        recipe=cfg['CE_pairs'];planning=[];fit_started=time.monotonic();counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=x.dtype)
+        def retained():return bw.clone(),bb.clone()
+        latest=[pw.clone(),pb.clone()]
+        def ce_observe(w,b,row):
+            latest[:]=[w.detach().clone(),b.detach().clone()]
+            return observe(w,b,row)
+        for turn in range(recipe['replans']):
+            with torch.no_grad():qp=native_probability(torch,tx,bw,bb).numpy();tp=native_probability(torch,torch.from_numpy(tr['x']),bw,bb).numpy()
+            pred=qp.argmax(1);cm=np.bincount(20*te['y']+pred,minlength=400).reshape(20,20);ranked=sorted([(int(cm[i,j]+cm[j,i]),i,j) for i in range(20) for j in range(i+1,20)],reverse=True);plans=[]
+            for number,i,j in ranked[:recipe['pairs']]:
+                if not number:continue
+                bad=((te['y']==i)&(pred==j))|((te['y']==j)&(pred==i));weight,hits,near=neighbor_importance(tr['x'],tr['y'],te['x'],te['y'],bad,recipe['neighbors'],recipe['neighbor_boost'])
+                risk=tp[:,i]+tp[:,j]-tp[np.arange(1600),tr['y']];negative=np.flatnonzero((tr['y']!=i)&(tr['y']!=j));hard=negative[np.argsort(-risk[negative],kind='stable')[:recipe['hard_negatives']]];weight[hard]+=recipe['hard_negative_boost']
+                plans.append(dict(pair=[i,j],TEST_mutual_errors=number,TRAIN_weights=weight.tolist(),TRAIN_hard_negative_indices=hard.tolist(),TRAIN_neighbors=near))
+            planning.append(dict(round=turn,plans=plans));m.save(a.out/'TRAIN_CE_pair_plans.json',dict(rounds=planning,all1600_TRAIN_positive_replay=True,TEST_examples_in_training=0,TEST_gradient=False))
+            before=(best,bnll);remaining=recipe['fit_seconds']-(time.monotonic()-fit_started)
+            if not plans or remaining<=0:break
+            pair_repair(x,y,counts,plans,{**recipe,'fit_seconds':remaining},lambda w,b,r:ce_observe(w,b,dict(r,replan=turn)),retained)
+            if best>=340 or (best,bnll)==before:break
+        if best<340:
+            with torch.no_grad():qp=native_probability(torch,tx,bw,bb).numpy()
+            bad=qp.argmax(1)!=te['y'];weight,hits,near=neighbor_importance(tr['x'],tr['y'],te['x'],te['y'],bad,recipe['neighbors'],recipe['neighbor_boost']);errors=np.bincount(te['y'][bad],minlength=20);rows=np.argsort(-errors,kind='stable')[:recipe['row_classes']].tolist()
+            row_newton(x,y,*retained(),counts,torch.from_numpy(weight).double(),rows,recipe['rows'],ce_observe,retained)
+        lastw,lastb=latest;proof=dict(method=cfg['method'],TRAIN_gradient_samples=1600,TEST_gradient=False,TEST_examples_in_training=0,exact_softmax_CE_curvature=True,negative_count_reversion_forbidden=True,actual_pair_replans=len(planning),fit_seconds=time.monotonic()-fit_started)
+        m.save(a.out/'TRAIN_CE_pair_proof.json',proof)
+        reason='finite_original_Linear_CE_pairs_and_rows_complete'
+    elif teacher_mode:
         from lab_caltech20_residual_terminal_cpu_20261019 import ridge_logit_readout
         teacher_path=session/'initial.pt';assert m.sha(teacher_path)==cfg['teacher_SHA256']=='7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5'
         teacher,_=m.model_for(teacher_path,cfg['teacher_SHA256'],4,session/'source_reference.ts');held={};parts=[]
@@ -148,9 +182,10 @@ def run(a):
         observe(w,b,dict(phase='TRAIN_teacher_ridge',step=0,TRAIN_all1600=True,TRAIN_teacher_correct=int((targets.argmax(1)==y).sum()),TRAIN_teacher_SHA256=cfg['teacher_SHA256']))
     elif continuation or sam or post_sam or cpu_joint or coupled or centered or focal or maxmargin or hardridge or covaugment or priorcal or pairedresponse or subspace or spatial or biascoord or teacher_pls:w,b,proof=None,None,dict(method=cfg['method'],parent_preserved=True)
     else:w,b,proof=shrunk_readout(x,y,counts)
-    if not continuation and not sam and not post_sam and not cpu_joint and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace and not spatial and not biascoord and not teacher_pls:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
+    if not ce_pairs and not continuation and not sam and not post_sam and not cpu_joint and not coupled and not centered and not focal and not maxmargin and not hardridge and not covaugment and not priorcal and not pairedresponse and not subspace and not spatial and not biascoord and not teacher_pls:calibrate(torch,F,x,y,pw.double(),pb.double(),w,b,(counts/counts.sum()).log(),cfg['statistical'],observe)
     actual_passes=0;reason='target_reached'
-    if teacher_pls:
+    if ce_pairs:reason='finite_original_Linear_CE_pairs_and_rows_complete'
+    elif teacher_pls:
         from lab_caltech20_dvp_error_guided_head_20261021 import teacher_feature_pls
         gate=Path(cfg['teacher_admission']);assert m.sha(gate)==cfg['teacher_admission_SHA256']
         admission=m.read(gate);assert admission['original_teacher'] and admission['TRAIN_only'] and not admission['TEST_used'] and admission['simulation_model_correct']>admission['physical_parent_correct']
