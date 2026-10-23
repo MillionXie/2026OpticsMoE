@@ -1,0 +1,99 @@
+{
+  "role": "development_followup_after_observed_test",
+  "uncertainty": "sample_sd_ddof1_null_if_n_lt2",
+  "scope": "Only Kather2016 and OrganCMNIST k4, 120 total epochs; no 60-epoch table.",
+  "updated_k4": [
+    {
+      "dataset": "kather2016",
+      "top_k": 4,
+      "expected_seeds": [
+        17,
+        27,
+        37
+      ],
+      "n_seeds": 3,
+      "per_seed": [
+        {
+          "seed": 17,
+          "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_k4_margin_20261023",
+          "checkpoint_sha256": "5536337e715cd5dc3b72675200ecdc3999ccd5e1abde4a5cbc8e136c1874ed9b",
+          "train_accuracy": 0.7914759516716003,
+          "val_accuracy": 0.7393617033958435,
+          "test_accuracy": 0.727393627166748,
+          "best_epoch": 106
+        },
+        {
+          "seed": 27,
+          "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/k4_three_seed_20261023/kather2016_s27/margin30",
+          "checkpoint_sha256": "ff8de195f03f8e39c440562fd935f13a63da59cd9f1d21f9b4b40b907ddbac16",
+          "train_accuracy": 0.785469114780426,
+          "val_accuracy": 0.7420212626457214,
+          "test_accuracy": 0.708776593208313,
+          "best_epoch": 107
+        },
+        {
+          "seed": 37,
+          "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/k4_three_seed_20261023/kather2016_s37/margin30",
+          "checkpoint_sha256": "8c39b0ffb781890459ea68b90dcb08ba5a9276e88b5e17c71bd5030cfc8aed2f",
+          "train_accuracy": 0.7920480370521545,
+          "val_accuracy": 0.7433510422706604,
+          "test_accuracy": 0.7207446694374084,
+          "best_epoch": 115
+        }
+      ],
+      "total_training_epochs": 120,
+      "train_mean": 0.7896643678347269,
+      "train_sample_sd": 0.0036444384427339435,
+      "val_mean": 0.7415780027707418,
+      "val_sample_sd": 0.002031271929630931,
+      "test_mean": 0.7189716299374899,
+      "test_sample_sd": 0.009434311853738183
+    },
+    {
+      "dataset": "organcmnist",
+      "top_k": 4,
+      "expected_seeds": [
+        17,
+        27,
+        37
+      ],
+      "n_seeds": 3,
+      "per_seed": [
+        {
+          "seed": 17,
+          "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/k4_three_seed_20261023/organcmnist_s17/margin30",
+          "checkpoint_sha256": "8dbabad6039d300fd7aa311f3b6a92c6fa049fc0ff6f966212a64a66a05937fe",
+          "train_accuracy": 0.7966859340667725,
+          "val_accuracy": 0.7809364795684814,
+          "test_accuracy": 0.6343719363212585,
+          "best_epoch": 106
+        },
+        {
+          "seed": 27,
+          "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/k4_three_seed_20261023/organcmnist_s27/margin30",
+          "checkpoint_sha256": "df5f384ed59197a86bd8d7d6b838e052caaabf1789f40028825b156b21e47758",
+          "train_accuracy": 0.7919074892997742,
+          "val_accuracy": 0.7796822786331177,
+          "test_accuracy": 0.6254868507385254,
+          "best_epoch": 107
+        },
+        {
+          "seed": 37,
+          "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/k4_three_seed_20261023/organcmnist_s37/margin30",
+          "checkpoint_sha256": "af6d988224425dbba12b7391a48fefa4216fd28bbed2f1288a8a564539a57faa",
+          "train_accuracy": 0.7973795533180237,
+          "val_accuracy": 0.7709029912948608,
+          "test_accuracy": 0.6363193988800049,
+          "best_epoch": 113
+        }
+      ],
+      "total_training_epochs": 120,
+      "train_mean": 0.7953243255615234,
+      "train_sample_sd": 0.0029793211384693172,
+      "val_mean": 0.77717391649882,
+      "val_sample_sd": 0.005466866760933944,
+      "test_mean": 0.6320593953132629,
+      "test_sample_sd": 0.005774678280615613
+    }
+  ]
+}
