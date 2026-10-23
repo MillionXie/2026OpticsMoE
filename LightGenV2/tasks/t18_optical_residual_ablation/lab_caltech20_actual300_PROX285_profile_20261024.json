@@ -1,0 +1,23 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"parent_proximal",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_REMAIN/fit",
+  "source_PT_SHA256":"5f7c007d6cc9f9658ad40fa5a8d2f33fafcf9361ec8c2576e4517ccf1346663d",
+  "source_report_SHA256":"ff007c0c177831960bf4030ceede2e9b4c6b03331dd464e92c35f9c0115510da",
+  "expected_parent_correct":285,
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_REMAIN/fit",
+  "fresh_native_TRAIN_features":true,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/suffix_bandlimited_old285.return.json",
+  "parent_minimum_previous_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/suffix_bandlimited_old285/fit",
+  "recipe":{"name":"actual300_original5140_coupled_parent_TRUST_correction","epochs":1,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_actual_readout_20261024.py":"07fff8e589129306841eaff0aa4515becfb27a24bc421a4a53d2e55f3443eb4a",
+    "lab_caltech20_TRAIN_parent_proximal_20261024.py":"dac3168ad22e9342fbe70acbeedec3df4e5de2f8d99c8d5a580acd87d858a3bd",
+    "lab_caltech20_tucam_TRAIN_linear_20261023.py":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Prepare one finite final original5140head correction after original-model mask capacity fit; latest-best guard rejects any source lower than latest verified score. Exact285/PT5f7c and physicalE2 family, allnonheadbitwise frozen. Unlike previous L2-to-zero unconstrained LBFGS, use coupled multiclass parent-anchored objective: full1600TRAIN CE smoothing.03/TRAINprior-only weights +.5*T2 KL to detached TRAIN-correct originalparent +.2 squared parameter delta. Original class-common head components restored when folding, zero-delta nativeidentity exact. Project all20rows simultaneously to workingL2radius.075 includingbias, reserve forfloat32fold, assert native rowdifference<=.08. At most800fullTRAINupdates/600fitseconds with cosineAdam1e-3; not a new dataset epoch count. Fresh nativeTRAINfeatures must reproduce saved parentTRAINprobabilities and TEST cache originalmodel to3e-6; TEST solely developmentPT selection, never gradients/teacher/weights, noVALID. Original W/b only, no inferencedelta module/ensemble/CCD/hardwarechange. FullnativeCPU bestlast411/train1600/ancestorSHA, parentfallback preserved, actual300 beforeG2/final340/deadline08:00 unchanged; no timer/retry."
+}

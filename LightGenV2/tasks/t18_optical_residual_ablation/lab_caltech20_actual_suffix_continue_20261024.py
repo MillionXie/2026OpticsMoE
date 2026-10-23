@@ -22,7 +22,7 @@ def validate_policy(p):
     assert p['actual_E2_target']==300 and p['final_target']==340
     assert p['TRAIN']==1600 and p['TEST']==411 and p['VALID']==0
     assert not p['TEST_gradient'] and not p['scheduler'] and not p['automatic_retry']
-    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE','local_remaining','bandlimited_CE')
+    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE','local_remaining','bandlimited_CE','parent_proximal')
     assert 0<=p['expected_parent_correct']<300
     family=p.get('capture_family','new_E2');assert family in ('new_E2','old282')
     if family=='new_E2':
@@ -97,9 +97,10 @@ def run(a):
         if p['method']=='bandlimited_CE':config.update(TRAIN_bandlimited_mask=True)
     elif p['method']=='native_CE':
         config={**c,**p['learning_rates']};engine=base
-    elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge'):
+    elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge','parent_proximal'):
         import lab_caltech20_actual_readout_20261024 as engine
         config={**c}
+        if p['method']=='parent_proximal':config.update(TRAIN_parent_proximal=True,native_feature_source=p['native_feature_source'],fresh_native_TRAIN_features=p.get('fresh_native_TRAIN_features',False))
         if p['method']=='TRAIN_group_ridge':
             config.update(TRAIN_group_ridge=True,native_feature_source=p['native_feature_source'])
             if p.get('TRAIN_teacher_targets',False):config.update(TRAIN_teacher_targets=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])

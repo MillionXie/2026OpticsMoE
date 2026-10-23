@@ -66,10 +66,19 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     original=m.state_cpu(model);lineage=base.identities(m,paths);source=parent.parent;r=m.read(source/'report.json');p=m.read(source/'protocol.json')
     assert r['strict_original_CPU'] and r['results']['best']['PT_SHA256']==m.sha(parent) and p['prefix_SHA256']==lineage and p['data_SHA256']==dm['sha256']
     cache_source=base.ROOT/c['native_feature_source'] if c.get('native_feature_source') else source
-    if cache_source!=source:
+    fresh=c.get('fresh_native_TRAIN_features',False);assert isinstance(fresh,bool)
+    if cache_source!=source and not fresh:
         cache_report=m.read(cache_source/'report.json');cache_model,_=m.model_for(cache_source/'best.pt',cache_report['results']['best']['PT_SHA256'],4,reference)
         loop.validate_state(m,model,m.state_cpu(cache_model),{'linear.weight','linear.bias'});assert m.read(cache_source/'protocol.json')['prefix_SHA256']==lineage
-    cache=cache_source/'native_TRAIN_features.npz';stats=m.read(cache_source/'TRAIN_statistics.json');assert m.sha(cache)==stats['feature_cache_SHA256']
+    if fresh:
+        parts=[]
+        with torch.inference_mode():
+            for begin in range(0,1600,8):
+                ix=np.arange(begin,begin+8);model(loop.put_fields(model,data,fields,'train',ix,'cpu'));parts.append(model.readout['features'].numpy().copy())
+                if begin%160==0:m.save(out/'progress.json',dict(state='fresh_native_TRAIN_features',TRAIN_consumed=begin+8,TEST_used_for_fit=False))
+        cache=out/'native_TRAIN_features.npz';np.savez_compressed(cache,ids=data['train'][2],labels=data['train'][1],features=np.concatenate(parts))
+        m.save(out/'TRAIN_statistics.json',dict(feature_cache_SHA256=m.sha(cache),TRAIN=1600,TEST_used=False,source_PT_SHA256=m.sha(parent),prefix_SHA256=lineage))
+    else:cache=cache_source/'native_TRAIN_features.npz';stats=m.read(cache_source/'TRAIN_statistics.json');assert m.sha(cache)==stats['feature_cache_SHA256']
     with np.load(cache,allow_pickle=False) as z:
         assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1]);train=torch.from_numpy(z['features'].copy())
     assert train.shape==(1600,256) and torch.isfinite(train).all()
@@ -83,14 +92,20 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     with torch.no_grad():head.weight.sub_(head.weight.mean(0,keepdim=True));head.bias.sub_(head.bias.mean())
     regularization=2*.1*r['results']['best']['train']['nll']/float(head.weight.detach().square().sum())
     labels=torch.from_numpy(data['train'][1].astype(np.int64));test_labels=torch.from_numpy(data['test'][1].astype(np.int64));train64=train.double();prior=np.asarray(c['original_TRAIN_counts'],float);weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=torch.float64)
-    ridge=c.get('TRAIN_group_ridge',False);assert isinstance(ridge,bool)
+    ridge=c.get('TRAIN_group_ridge',False);proximal=c.get('TRAIN_parent_proximal',False);assert isinstance(ridge,bool) and isinstance(proximal,bool) and not(ridge and proximal)
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),config=c,recipe=recipe,
         data_SHA256=dm['sha256'],prefix_SHA256=lineage,allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,
-        trainable_parameters=5140,new_inference_layers=0,full_physical=False,SDK_used=False,GPU_used=False,class_contrast_regularization=not ridge,TRAIN_only_L2=None if ridge else regularization,
+        trainable_parameters=5140,new_inference_layers=0,full_physical=False,SDK_used=False,GPU_used=False,class_contrast_regularization=not(ridge or proximal),TRAIN_only_L2=None if ridge or proximal else regularization,
         cached_TRAIN_feature_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),raw_parent_fallback_preserved=True)
     m.save(out/'protocol.json',protocol);m.save(out/'baseline.json',baseline);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob)
     best,bnll,selected=baseline['correct'],baseline['nll'],0;best_head=raw_parent;history=[];calls=0;start=time.monotonic()
     opt=torch.optim.LBFGS(head.parameters(),lr=1,max_iter=5,max_eval=8,history_size=20,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-10)
+    if proximal:
+        from lab_caltech20_TRAIN_parent_proximal_20261024 import fit as proximal_fit
+        protocol.update(TRAIN_parent_proximal=True,TRAIN_only_class_weights='original TRAIN prior square-root, no TEST weighting',TRAIN_CE_smoothing=.03,TRAIN_parent_correct_only_KL_coefficient=.5,TRAIN_parent_temperature=2,TRAIN_parameter_anchor=.2,working_row_radius=.075,native_row_radius_max=.08,maximum_full_TRAIN_updates=800,new_inference_delta_module=False);m.save(out/'protocol.json',protocol)
+        def emit(row,rows):m.save(out/'history.json',rows);m.save(out/'progress.json',row);print(json.dumps(row),flush=True)
+        correction=proximal_fit(head,train64,labels,weights,raw_parent,test,test_labels,baseline,target,recipe['seconds'],emit)
+        best,bnll,selected,step,history=correction['correct'],correction['nll'],correction['selected_update'],correction['updates'],correction['history'];best_head=correction['best_head'];calls=step
     if ridge:
         from lab_caltech20_TRAIN_group_ridge_20261024 import fit as ridge_fit
         path=base.ROOT/c['sequence']/'assets/TRAIN_lineage.json';assert m.sha(path)==dm['lineage_SHA256'];records=m.read(path)['records'];assert [v['sample_id'] for v in records]==data['train'][2].tolist()
@@ -113,7 +128,7 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
             logits=F.linear(test,head.weight.float(),head.bias.float());correct=int((logits.argmax(1)==test_labels).sum());nll=float(F.cross_entropy(logits,test_labels));tl=F.linear(train,head.weight.float(),head.bias.float());train_correct=int((tl.argmax(1)==labels).sum())
         if correct>best or (correct==best and nll<bnll-1e-4):best,bnll,selected=correct,nll,1;best_head={k:v.detach().clone() for k,v in head.state_dict().items()}
         row=dict(analytical_fit=1,TRAIN_consumed=1600,TRAIN_correct=train_correct,TEST_correct=correct,TEST_NLL=nll,selected_correct=best,selected_parent=selected==0,TEST_used_for_regularization=False);history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row);step=1
-    for step in range(1,1 if ridge else 81):
+    for step in range(1,1 if ridge or proximal else 81):
         def closure():
             nonlocal calls
             opt.zero_grad(set_to_none=True);loss,_,_=TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights,.03,regularization);assert torch.isfinite(loss);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in head.parameters());calls+=1;return loss
@@ -124,14 +139,14 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
             if correct>best or (correct==best and nll<bnll-1e-4):best,bnll,selected=correct,nll,step;best_head={k:v.detach().clone() for k,v in head.state_dict().items()}
             row=dict(outer_step=step,TRAIN_consumed=1600,TRAIN_correct=train_correct,TEST_correct=correct,TEST_NLL=nll,selected_correct=best,selected_outer_step=selected,full_TRAIN_gradient_evaluations=calls,elapsed_s=time.monotonic()-start);history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row);print(json.dumps(row),flush=True)
         if best>=target or time.monotonic()-start>=recipe['seconds']:break
-    model.linear.load_state_dict(head.float().state_dict());loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/'last.pt',protocol)
+    model.linear.load_state_dict(correction['last_head']if proximal else head.float().state_dict());loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/'last.pt',protocol)
     model.linear.load_state_dict({k:v.float() for k,v in best_head.items()});loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/'best.pt',protocol);results={}
     for label in ('best','last'):
         pt=out/(label+'.pt');native,_=m.model_for(pt,m.sha(pt),4,reference);loop.validate_state(m,native,original,keys);results[label]=dict(PT_SHA256=m.sha(pt))
         for role in ('train','test'):
             m.save(out/'progress.json',dict(state='strict_native_CPU',checkpoint=label,role=role));metric,v=base.evaluate(native,data,fields,role);results[label][role]=metric;np.savez_compressed(out/(label+'_'+role+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=v)
     assert results['best']['test']['correct']==best and base.identities(m,paths)==lineage
-    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_E0=selected==0,selected_outer_step=None if ridge else selected,outer_steps=0 if ridge else step,actual_epochs=0,optimizer_updates=0 if ridge else step,analytical_fits=1 if ridge else 0,full_TRAIN_gradient_evaluations=calls,
+    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_E0=selected==0,selected_outer_step=None if ridge or proximal else selected,selected_full_TRAIN_update=selected if proximal else None,outer_steps=0 if ridge or proximal else step,actual_epochs=0,optimizer_updates=0 if ridge else step,analytical_fits=1 if ridge else 0,TRAIN_parent_proximal=proximal,full_TRAIN_gradient_evaluations=calls,
         results=results,strict_original_CPU=True,target=target,target_met=best>=target,captured_upstream_bitwise_frozen=True,all_non_readout_frozen=True,TEST_gradient=False,TEST_development=True,full_physical=False,new_inference_layers=0,SDK_used=False,GPU_used=False,protocol_SHA256=m.sha(out/'protocol.json'))
     m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_non_suffix_parameters_bitwise_frozen=True,all_non_readout_frozen=True))
     chosen,_=m.model_for(out/'best.pt',m.sha(out/'best.pt'),4,reference);return chosen,out/'best.pt',report
