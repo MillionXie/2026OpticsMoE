@@ -70,3 +70,23 @@ def test_fixed_simulation_teacher_is_TRAIN_only_and_keeps_existing_head():
     assert "loop.original_replay(teacher,data,{},'train')" in text
     assert "cfg['L4_initial_SHA256']" in text and "gradient_samples_from_TEST=0" in text
     assert "teacher_frozen=True" in text and "not recipe.get('only_focal')" in text
+
+
+def test_targeted_pair_and_teacher_feature_transfer_are_finite_original_head():
+    cfg=json.loads((HERE/'lab_caltech20_tucam_covariance_profile_20261023.json').read_text())['targeted_followup'];text=SOURCE.read_text()
+    assert cfg['skip_focal'] and cfg['only_focal']
+    pair=cfg['targeted_pairs'];assert pair['pairs']==12 and pair['passes']==2 and pair['steps_per_pair']==4 and pair['fit_seconds']==120
+    assert pair['trust_radius']==.5 and pair['hard_negative_boost']==.25
+    assert cfg['teacher_PLS']['components']==12 and cfg['teacher_PLS']['residual_transfer'] and cfg['teacher_PLS']['fit_seconds']==120
+    assert "ww[a]+=dw;ww[b]-=dw;bb[a]+=db;bb[b]-=db" in text
+    assert "loop.original_replay(teacher,data,{},'train')" in text and 'TEST_teacher_used=False' in text
+    assert 'errors.teacher_feature_pls(torch,F' in text and 'pair_curvature_verified=True' in text
+    tree=ast.parse(text);pair_fit=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='pair_repair')
+    assert not any('test' in a.arg.lower() or 'query' in a.arg.lower() for a in pair_fit.args.args)
+
+
+def test_earlier_electronics_feed_next_optical_input_not_a_free_terminal_suffix():
+    text=(HERE/'lab_caltech20_rich_model_20261018.py').read_text();tree=ast.parse(text);cls=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='DirectAlphaHybridMoE');forward=next(n for n in cls.body if isinstance(n,ast.FunctionDef) and n.name=='forward');code=ast.get_source_segment(text,forward)
+    assert "self.capture(amplitude,str(k),weights,callback,ids)" in code
+    assert 'electronic=self.electronic[k](amplitude,size)' in code and 'amplitude=re*mixed/rms(mixed).detach()' in code
+    assert code.index('self.capture(amplitude,str(k)')<code.index('electronic=self.electronic[k]')<code.index('amplitude=re*mixed')
