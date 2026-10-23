@@ -1,0 +1,30 @@
+{
+  "schema":"TUCam_L4_actual300_suffix_continuation_v1","method":"OAS",
+  "actual_E2_target":300,"final_target":340,"TRAIN":1600,"TEST":411,"VALID":0,
+  "TEST_gradient":false,"scheduler":false,"automatic_retry":false,"new_inference_layers":0,
+  "deadline":"2026-10-24T08:00:00+08:00",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "capture_run":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024",
+  "capture_PT_SHA256":"99c5538aeea0436f96df9c3ae4263b9693ab39b0c75d57d85630365a3d386e41",
+  "E2_phase_SHA256":"2e469eb91c507b777348d157346b14cdb657c2d09138385bedae2a6985458151",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/s_2/fit",
+  "source_PT_SHA256":"2df39dff833cf979fe8381b8165020d789d1bfea0c46207cefc53a865000a2f5",
+  "source_report_SHA256":"ae59d2ab7ce26153118bb60484474d73c2aeb9370f1ce4b50e990563a42d5150",
+  "expected_parent_correct":265,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024.return.json",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/s_2/capture"
+  },
+  "recipe":{"name":"actual300_single_TRAIN_OAS_readout","epochs":1,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_tucam_TRAIN_linear_20261023.py":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"New E2 real2011 capture completed/independent exact audit passed. Actual native CPU baseline118->best265(e26), full36epochs7200updates, last255. Below actual300, noG2. All old273/282 remain separate. One TRAIN-only pooled OAS fit of original5140readout on freshly recomputed actual-prefix TRAIN features, originalTRAIN3141priors, no hyperparameter grid. Freeze all masks/electronics/alpha; baseline/bestlast actualCPU411 and1600 with predictions/bitwise/SHA reviews. Not a new model, inference ensemble, response-map deployment or newCCD. Actual>=300 alone permits G2, otherwise preserve and diagnose next method. TEST selection is development only, noTEST or VALID fitting/gradients. Hardware/structure unchanged, no scheduler/retry/publicupload."
+}
