@@ -1,0 +1,22 @@
+{
+  "schema":"TUCam_L4_E2_linear_response_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2u",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_1/fit/best.pt",
+  "capture_parent_SHA256":"8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_2/capture"
+  },
+  "parent_stage":"2","minimum_parent_correct":222,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":0.95,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{},"TRAIN_readout":"one_OAS_pooled_linear",
+  "recipe":{"name":"E2_one_TRAIN_OAS_linear_fit","epochs":1,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Conditional one-statistical-solve check of original5140 readout only after the current finite joint mask/electronic/alpha underfit response completes native CPU and returns0 below305, its actual best TRAIN below95%, and every recorded capture/input ancestor passes exact audits. Original E2 f0/f1/diagnostic TRAIN41.25/41.875/43.125%, TEST205/215/222, plus failed fixed TRAIN-prior-only counterfactual and rejected TRAIN alpha.70 probe, support checking whether current native feature correlations limit the affine solver rather than launching another unbounded LR scan. Fresh native TRAIN1600 feature cache at the actual best joint PT, TRAIN-only OAS pooled covariance and registered originalTRAIN3141 class counts, exactly one estimator; fold weights/bias into existing native Linear, no preprocessing/inference layer. Freeze ALL non-readout parameters including new G2 mask from joint training. Complete hook-free originalCPU bestlast TRAIN1600/TEST411, cache identities and frozen/dataSHA; worse candidate remains last, best stays original parent(E0) transparently. TEST only development selection, no TEST gradients or TEST/augmentedTEST fitting/VALID. No new CCD before305, no exposure/coordinates/LUT/architecture change, scheduler or new project/branch/worktree. This does not replace the prior joint-training phase or imply optical robustness; G2 fresh capture uses exact selected upstream only after gate; final340 unchanged."
+}

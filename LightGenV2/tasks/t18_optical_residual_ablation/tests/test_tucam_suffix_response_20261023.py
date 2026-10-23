@@ -96,3 +96,14 @@ def test_alpha_probe_uses_fixed_balanced_TRAIN_and_preserves_parent():
     assert 'if not keep:parent=preserved_parent;fit=preserved_fit' in s
     p=json.loads((HERE/'lab_caltech20_tucam_E2_underfit_profile_20261023.json').read_text())
     assert p['TRAIN_alpha_release']['lower_initial_alpha']==.7 and p['TRAIN_alpha_release']['samples']==80
+
+
+def test_E2_linear_is_one_TRAIN_estimator_after_joint_fit():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_linear_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['parent_stage']=='2' and p['TRAIN_readout']=='one_OAS_pooled_linear'
+    assert p['completed_controller'].endswith('/e2u') and p['learning_rates']=={}
+    assert p['minimum_parent_correct']==222 and p['maximum_parent_TRAIN_accuracy']==.95
+    engine=HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py'
+    assert hashlib.sha256(engine.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
+    for key,value in [('parent_stage','1'),('maximum_parent_TRAIN_accuracy',1.)]:
+        with pytest.raises(AssertionError):policy_validator()({**p,key:value})
