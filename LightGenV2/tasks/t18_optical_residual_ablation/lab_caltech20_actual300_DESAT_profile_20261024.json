@@ -1,0 +1,15 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"desaturation_CE",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_NOISE.return.json",
+  "recipe":{"name":"actual300_old282_TRAIN_original_residual_desaturation","epochs":64,"seconds":1500,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "learning_rates":{"phase_lr":0.00005,"electronic_lr":0.0005,"alpha_lr":0.0002,"head_lr":0.0002},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_TRAIN_frozen_readout_20261024.py":"b4d89807a8f67c99b31b25488642fd60bf9869cccead2c01a2db3206bf860ce6",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Exact strongest old282/PT1f447 and matching376cc/9de875/d6056c physical family. TRAIN80 read-only audit49a272 shows original postE2 electronic2 pre-tanh abs>3 .865488/abs>6 .722928/mean derivative .044769, electronic3 .406545/.092233/.167852. Current syntheticCCDnoise/dropout changes mean67/80->67.25/80, not wholesale accuracy collapse. No claim saturation is unique cause. One finite TRAIN-only original-parameter regularizer directly penalizes mean square max(abs(original conv output)-2,0)/2, averaged overpostE2electronic2,3, giving gradient BEFORE saturated tanh. Maxcoefficient.01 and weightedpenalty<=CE10% eachbatch. No reset/newlayer/inferenceactivationchange. Joint originalG2phase9/postE2electronic2..3/directalpha2..3/5140head,64fullTRAINepochs/1500fitseconds, cosine, CE smoothing.05/currentnoise/dropout; log CE/weightedpenalty/coefficient/saturation/derivative acrossall1600TRAIN. NativeCPU bestlast411/train1600/ancestorbitwiseSHA, original282 fallback. No TESTgrad/VALID/teacher/metricloss/newCCD/hardwaresettingchange. Actual300 beforeG2/final340 unchanged; no timer/retry."
+}

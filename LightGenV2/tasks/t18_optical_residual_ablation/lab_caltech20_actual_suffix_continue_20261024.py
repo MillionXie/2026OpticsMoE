@@ -22,7 +22,7 @@ def validate_policy(p):
     assert p['actual_E2_target']==300 and p['final_target']==340
     assert p['TRAIN']==1600 and p['TEST']==411 and p['VALID']==0
     assert not p['TEST_gradient'] and not p['scheduler'] and not p['automatic_retry']
-    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE')
+    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE')
     assert 0<=p['expected_parent_correct']<300
     family=p.get('capture_family','new_E2');assert family in ('new_E2','old282')
     if family=='new_E2':
@@ -83,10 +83,12 @@ def run(a):
         import lab_caltech20_actual_readout_20261024 as engine
         result=engine.TRAIN_perturbation_audit(model,data,dm,fields,paths,pt,c,a.out/'fit')
         m.save(a.out/'report.json',dict(state='TRAIN_diagnostic_complete',TEST_used_in_diagnostic=False,optimizer_updates=0,SDK_released=not m.LOCK.exists(),G2_not_started=True,full_physical=False,report=result));return
-    if p['method'] in ('frozen_readout_CE','safe_teacher_CE'):
+    if p['method'] in ('frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE'):
         import lab_caltech20_TRAIN_frozen_readout_20261024 as engine
         config={**c,**p['learning_rates']}
         if p['method']=='safe_teacher_CE':config.update(TRAIN_safe_teacher=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])
+        if p['method']=='supervised_metric_CE':config.update(TRAIN_supervised_metric=True)
+        if p['method']=='desaturation_CE':config.update(TRAIN_desaturation=True)
     elif p['method']=='native_CE':
         config={**c,**p['learning_rates']};engine=base
     elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge'):

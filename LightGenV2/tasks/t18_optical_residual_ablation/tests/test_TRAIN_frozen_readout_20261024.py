@@ -5,12 +5,12 @@ P=Path(__file__).resolve().parents[1]/'lab_caltech20_TRAIN_frozen_readout_202610
 
 def test_real_suffix_training_with_original_head_frozen():
     s=P.read_text();ast.parse(s)
-    assert "if not safe:keys=keys-{'linear.weight','linear.bias'}" in s
+    assert "if not joint:keys=keys-{'linear.weight','linear.bias'}" in s
     assert "('phase_sets.',c['phase_lr'])" in s and "('electronic.',c['electronic_lr'])" in s and "('fusion_logits.',c['alpha_lr'])" in s
     body=s.split('for begin in range(0,1600,8):',1)[1].split('assert used==1600',1)[0]
     assert "data['train'][1][ix]" in body and "data['test']" not in body
     assert "contrast_logits(held['features'],model.linear.weight,model.linear.bias)" in body
-    assert 'original_5140_readout_bitwise_frozen=not safe' in s and 'loop.validate_state(m,native,original,keys)' in s
+    assert 'original_5140_readout_bitwise_frozen=not joint' in s and 'loop.validate_state(m,native,original,keys)' in s
 
 
 def test_equivalent_gradient_selftest_and_native_CPU_reports():
@@ -26,3 +26,11 @@ def test_teacher_normalized_correct_TRAIN_only_and_loss_capped():
     assert 'normalized(logits)/2' in body and 'normalized(t)/2' in body
     assert "manifest['role']=='train'" in s and "np.array_equal(z['ids'],data['train'][2])" in s
     assert 'teacher_gradient=False' in s and 'KD_value_fraction_of_CE_at_most=.25' in s
+
+
+def test_original_conv_penalty_no_activation_or_structure_change():
+    s=P.read_text()
+    assert "model.electronic[k].local.register_forward_hook" in s and "held[f'pre_tanh_{k}'].abs()-2" in s
+    assert '.1*ce.detach()/penalty.detach()' in s and 'ce.new_tensor(.01)' in s and 'TRAIN_original_tanh_statistics' in s
+    assert 'parameter_reset=False' in s and 'for handle in saturation_hooks:handle.remove()' in s
+    assert 'saturation_penalty_gradient_toward_sensitive_region=True' in s
