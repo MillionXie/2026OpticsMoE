@@ -36,6 +36,31 @@ LGVQ时间追加训练的首个smoke在跨batch形状singleton FP32核查处出�
 不声称GPU FP32跨batch位级一致。清理保留原始异常，正常清理失败仍须失败。只修工程检查，
 训练模型/微batch/精度/采样/父权重不变，修复后以具名attempt1重新smoke，不默默覆盖重试。
 
+工程上线证据：`runs/control/editor_cache_ram_ready_20261023.json`对全部25,344条构建时exact校验、
+持久文件SHA及192条磁盘复验通过。96条同进程CPU batch8基准，原数据5.98781秒、RAM批恢复
+0.09069秒，约66.03倍，仅为数据准备。`cached_editor_ram_handoff_20261023.json`记录原编辑
+从最后完整第4轮model+AdamW转交，原last SHA为
+`5518fb33b6c9ffaabe3cb61cb0f77980d0b032c5b87d6034d496dab45a46d909`，原GPU4保留，
+其他在训worker保持原PID。原半轮重算明示，累计仍到30轮。
+`editor_ram_first_speed_20261023.json`记录正式训练跨e5/e6的317个微batch耗时15.499秒，
+含该区间周期验证约0.04889秒/微batch；原e3→e4完整轮1003.47秒，约0.38714秒/微batch。
+同GPU4、不同时段观察约7.92倍提速，**不是受控硬件负载基准或全部九任务统一倍数**；
+比较证据`editor_ram_observed_speed_comparison_20261023.json`，父last SHA仍一致。
+
+LGVQ空间续训已完成且独立CPU审计21项通过：
+
+| 固定末轮 | 空间SRCC | TRAIN CE |
+|---|---:|---:|
+| 原30轮 | 0.5938761940 | 0.5683587421 |
+| 追加20轮后累计50轮 | 0.5765843891 | 0.2865821179 |
+
+追加训练未改善末轮SRCC，下降0.0172918048；仍报告约定50轮，不从中挑分数。
+run `lgvq_spatial_continue50_formal_s42_resnet18_imagenet_frozen_single30_20261023`，审计
+`runs/control/frozen_lgvq_spatial_last50_audit_20261023.json`；父30 SHA未变、AdamW2130→3550步、
+20轮冻结含BN及原序列回放、558唯一预测/MOS绑定和saved-pred五指标重算均通过，正式GPU已释放。
+launch与manifest Git commit分别ac8b36a/0c9d60f，但五份记录源码SHA均同时匹配两提交，
+训练数学相同；未改原manifest。时间50轮以其独立正式run/审计为准，不使用partial smoke分数。
+
 ## 2026-10-23 最新修订：完整模型小于1500万，固定当前四GPU
 
 本节覆盖下一节“所有编码器冻结”和三卡上限中的文字/资源部分。用户认为MiniLM文字模型过大，
