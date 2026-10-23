@@ -1,5 +1,38 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-23 version reconciliation
+
+The user-selected nine-row performance table has been reconciled separately in
+`version_audit_20261023/`. Its workbook is
+`九任务版本核对与时间能耗_20261023.xlsx`; the Chinese methods note is
+`九任务时间与能耗计算说明_20261023.docx`. These generated, private research assets
+are not published in Git. The audit JSON and CSV in that directory preserve
+performance sources, checkpoint identities, component means and calculation inputs.
+
+The adopted text-to-image retrieval simulation is .8600, the exact historical LSP
+simulation is .7347857143, and the .8880 OpenMoji full-head report exists. The
+laboratory image-to-image result .81125 is verified against the sealed rank72
+800-query report. The screenshot's .8150 external result remains a user-provided
+display value until its exact original physical report is located.
+
+The numerical timing/energy values below remain **historical component-cost
+references**, not new measurements of those performance checkpoints. In particular,
+the adopted .86 retrieval PT differs from the old .88 timing PT; the rank72 image
+retrieval model adds a late RGB branch; and the .8880 semantic-editing PT differs
+from the previously cited application checkpoint. Historical Ours measurements
+repeat each fixed-shape GPU component 200 times, not 200 distinct test examples
+through the full model. No new A100 run was performed in this reconciliation
+because foreign compute jobs were active. The raw records below remain unchanged.
+
+The Chinese note follows the stage-wise accounting in ACCEL Supplementary Notes
+4 and 9, with editable equations and an explicit separation of parameter-derived
+optical time, CUDA-event component measurements, and estimated energy. It retains
+the agreed 80.358-W optical-device sum, 41.388-W controller, 62.842-W Ours A100,
+338.2-W baseline chassis base and task-specific baseline board power, without
+idle-power subtraction. Its cost scope is not an all-devices-on wall-plug integral.
+
+## Historical workbook and measurement protocol
+
 This directory is the single current location for the nine-row comparison table. The current workbook is `A100_nine_task_energy_efficiency_COMPLETE_20260928.xlsx`; the older same-date workbook without `COMPLETE` was open/locked during regeneration and must not be used. Earlier workbooks remain archived under `20260927_demo_energy_efficiency_a100/archive_superseded_20260927/`.
 
 ## Uniform timing scope
