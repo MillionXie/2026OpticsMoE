@@ -128,7 +128,7 @@ def capture(p,out):
         assert m.read(m.LOCK)['pid']==os.getpid();m.LOCK.unlink()
 
 
-def fit(p,probes,out,contrast=None,spatial_policy=None):
+def fit(p,probes,out,contrast=None,spatial_policy=None,polish=None):
     """Fixed 160-step nuisance fit, with TRAIN-only spatial holdout admission."""
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     cv2,np,torch,Image,m,_=modules()
@@ -168,7 +168,7 @@ def fit(p,probes,out,contrast=None,spatial_policy=None):
     def tensors(rows):return tuple(torch.from_numpy(np.stack([v[k] for v in rows])) for k in ('amplitude','turns','observed'))
     tr=tensors(train);ht=tensors(held);nominal=torch.tensor([1.,1.,0.,0.]);initial=torch.tensor([1.,1.,2.,.1]);lo=torch.tensor([.25,.4,0.,0.]);hi=torch.tensor([2.,2.5,12.,3.])
     if spatial_policy is not None:
-        return fit_spatial(p,spatial_policy,probes,out,model,tr,ht,train,held,protected,start)
+        return fit_spatial(p,spatial_policy,probes,out,model,tr,ht,train,held,protected,start,polish=polish)
     objective=normalized_loss;prior=None
     if contrast is not None:
         import lab_caltech20_dvp_TRAIN_spatial_response_20261020 as spatial
@@ -236,7 +236,15 @@ def validate_spatial(c):
     assert c['image_warp'] is False and c['new_inference_layers']==0
 
 
-def fit_spatial(p,c,probes,out,model,tr,held,train_rows,held_rows,protected,start):
+def validate_polish(c):
+    assert c['schema']=='TUCam_E2_TRAIN_response_fullbatch_polish_v1'
+    assert c['prior_fit'].endswith('/e2_response_20261024/spatial_fit/report.json')
+    assert c['prior_fit_SHA256']=='a9ebe0129680bde1366888b9d79879b94c0843d9c02eb705e3dd9e1d2ec0a234'
+    assert c['max_iter']==12 and c['max_eval']==24 and c['new_CCD']==0 and c['TEST_used'] is False
+    assert c['gate_unchanged'] is True and c['shared_parameters']==27
+
+
+def fit_spatial(p,c,probes,out,model,tr,held,train_rows,held_rows,protected,start,polish=None):
     """Monotonic phase/pupil nuisance response; never a deployed network layer."""
     cv2,np,torch,Image,m,_=modules()
     import lab_caltech20_dvp_TRAIN_spatial_response_20261020 as spatial
@@ -251,6 +259,17 @@ def fit_spatial(p,c,probes,out,model,tr,held,train_rows,held_rows,protected,star
     knots=torch.nn.Parameter(torch.log(torch.expm1(steps)));scale=torch.nn.Parameter(torch.logit(torch.tensor((pars['phase_scale']-.25)/1.75)))
     sigma=torch.nn.Parameter(torch.logit(torch.tensor(pars['sigma_pixels']/12)));background=torch.nn.Parameter(torch.logit(torch.tensor(pars['relative_background']/3)))
     coefficients=torch.nn.Parameter(torch.zeros(8));parameters=[knots,scale,sigma,background,coefficients]
+    if polish is not None:
+        priorpath=ROOT/polish['prior_fit'];assert m.sha(priorpath)==polish['prior_fit_SHA256']
+        prev=m.read(priorpath);assert prev['state']=='complete' and not prev['spatial_response_admitted'] and not prev['TEST_used']
+        assert prev['probe_report_SHA256']==m.sha(probes/'report.json') and prev['prior_fit_SHA256']==c['prior_fit_SHA256']
+        curve=torch.tensor(prev['phase_curve_radians']);ratio=(curve[-1]/(2*torch.pi)-.25)/1.75
+        with torch.no_grad():
+            knots.copy_(torch.log(torch.expm1(curve[1:]-curve[:-1])))
+            scale.copy_(torch.logit(ratio.clamp(1e-6,1-1e-6)))
+            sigma.copy_(torch.logit(torch.tensor(prev['sigma_pixels']/12).clamp(1e-6,1-1e-6)))
+            background.copy_(torch.logit(torch.tensor(prev['relative_background']/3).clamp(1e-6,1-1e-6)))
+            coefficients.copy_(torch.atanh((torch.tensor(prev['pupil_coefficients_radians'])/(12*torch.pi)).clamp(-1+1e-6,1-1e-6)))
     assert sum(v.numel() for v in parameters)==27
     def physical():return spatial.monotonic_curve(knots,scale),12*sigma.sigmoid(),3*background.sigmoid(),12*torch.pi*coefficients.tanh()
     def evaluate(values,rows,baseline=False):
@@ -264,32 +283,54 @@ def fit_spatial(p,c,probes,out,model,tr,held,train_rows,held_rows,protected,star
                     cc=m.correlation(cv2.resize(xx,(16,16),interpolation=cv2.INTER_AREA),cv2.resize(yy,(16,16),interpolation=cv2.INTER_AREA))
                     pcc.setdefault(rows[i+j]['condition'],[]).append(cc)
         return dict(loss=total/len(values[0]),coarse_PCC=float(np.mean([x for vs in pcc.values() for x in vs])),PCC_by_condition={k:float(np.mean(v)) for k,v in pcc.items()})
-    baseline=dict(TRAIN=evaluate(tr,train_rows,True),held_TRAIN=evaluate(held,held_rows,True))
+    baseline=dict(TRAIN=evaluate(tr,train_rows,True),held_TRAIN=evaluate(held,held_rows,True));initial=dict(TRAIN=evaluate(tr,train_rows),held_TRAIN=evaluate(held,held_rows))
     m.save(out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),policy=c,response_policy=p,probe_report_SHA256=m.sha(probes/'report.json'),prior_fit_SHA256=m.sha(priorpath),
         TRAIN_fit_pairs=84,held_TRAIN_pairs=84,TRAIN_unique=40,labels_used=False,TEST_used=False,VALID=0,steps=400,batch=4,Adam_lr=.02,shared_parameters=27,phase_knots=17,pupil_modes=8,
-        image_warp=False,coordinates_changed=False,LUT_written=False,model_checkpoint_written=False,training_forward_only=True,nominal_held_PCC_must_not_regress=True))
-    opt=torch.optim.Adam(parameters,lr=.02);history=[]
-    for step in range(1,401):
-        ix=torch.randperm(84)[:4];aa,pp,oo=(v[ix] for v in tr);opt.zero_grad(set_to_none=True)
-        pred=spatial.spatial_intensity(aa,pp,model.propagator,*physical());loss=spatial.spatial_loss(pred,oo)+.0001*coefficients.square().sum()
-        assert torch.isfinite(loss);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in parameters);opt.step()
-        if step%50==0:
-            row=dict(step=step,TRAIN_batch_spatial_loss=float(loss.detach()),elapsed_s=time.monotonic()-start)
+        image_warp=False,coordinates_changed=False,LUT_written=False,model_checkpoint_written=False,training_forward_only=True,nominal_held_PCC_must_not_regress=True,polish_policy=polish,
+        actual_optimizer='full84TRAIN_LBFGS12iter24eval' if polish else 'Adam400batch4'))
+    history=[];closure_evaluations=0
+    if polish is not None:
+        opt=torch.optim.LBFGS(parameters,lr=1,max_iter=12,max_eval=24,history_size=12,line_search_fn='strong_wolfe')
+        def closure():
+            nonlocal closure_evaluations
+            opt.zero_grad(set_to_none=True);total=0.
+            for i in range(0,84,4):
+                aa,pp,oo=(v[i:i+4] for v in tr);pred=spatial.spatial_intensity(aa,pp,model.propagator,*physical())
+                loss=spatial.spatial_loss(pred,oo)*len(aa)/84
+                assert torch.isfinite(loss);loss.backward();total+=float(loss.detach())
+            penalty=.0001*coefficients.square().sum();penalty.backward();total+=float(penalty.detach())
+            assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in parameters)
+            closure_evaluations+=1;row=dict(closure=closure_evaluations,TRAIN_response_loss=total,TRAIN_response_pairs=84,TRAIN_gradient_norm=float(torch.cat([v.grad.flatten() for v in parameters]).norm()),elapsed_s=time.monotonic()-start)
             history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row)
+            return parameters[0].new_tensor(total)
+        opt.step(closure);step=int(opt.state[parameters[0]]['n_iter'])
+    else:
+        opt=torch.optim.Adam(parameters,lr=.02)
+        for step in range(1,401):
+            ix=torch.randperm(84)[:4];aa,pp,oo=(v[ix] for v in tr);opt.zero_grad(set_to_none=True)
+            pred=spatial.spatial_intensity(aa,pp,model.propagator,*physical());loss=spatial.spatial_loss(pred,oo)+.0001*coefficients.square().sum()
+            assert torch.isfinite(loss);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in parameters);opt.step()
+            if step%50==0:
+                row=dict(step=step,TRAIN_batch_spatial_loss=float(loss.detach()),elapsed_s=time.monotonic()-start)
+                history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row)
     final=dict(TRAIN=evaluate(tr,train_rows),held_TRAIN=evaluate(held,held_rows));curve,psf,bg,coeff=physical()
     b,f=baseline['held_TRAIN'],final['held_TRAIN']
     admitted=final['TRAIN']['loss']<baseline['TRAIN']['loss'] and f['loss']<=b['loss']*.95 and f['coarse_PCC']>=b['coarse_PCC']+.03 and f['PCC_by_condition']['nominal_before']>=b['PCC_by_condition']['nominal_before']
+    if polish is not None:admitted=admitted and final['TRAIN']['loss']<initial['TRAIN']['loss']
     assert protected=={q:m.sha(q) for q in protected}
     m.save(out/'report.json',dict(state='complete',spatial_response_admitted=admitted,baseline=baseline,fitted=final,phase_curve_radians=curve.detach().tolist(),sigma_pixels=float(psf.detach()),relative_background=float(bg.detach()),pupil_coefficients_radians=coeff.detach().tolist(),
-        shared_parameters=27,steps=400,TRAIN_unique=40,TRAIN_fit_pairs=84,held_TRAIN_pairs=84,labels_used=False,TEST_used=False,VALID=0,training_forward_only=True,image_warp=False,hardware_unchanged=True,LUT_written=False,model_checkpoint_written=False,new_inference_layers=0,
+        shared_parameters=27,steps=step,closure_evaluations=closure_evaluations,initial=initial,polish_policy=polish,TRAIN_unique=40,TRAIN_fit_pairs=84,held_TRAIN_pairs=84,labels_used=False,TEST_used=False,VALID=0,training_forward_only=True,image_warp=False,hardware_unchanged=True,LUT_written=False,model_checkpoint_written=False,new_inference_layers=0,
         protocol_SHA256=m.sha(out/'protocol.json'),probe_report_SHA256=m.sha(probes/'report.json'),prior_fit_SHA256=m.sha(priorpath),history_SHA256=m.sha(out/'history.json'),SDK_used=False,SDK_released=not m.LOCK.exists(),unique_physical_cause_identified=False,elapsed_s=time.monotonic()-start))
 
 
 if __name__=='__main__':
-    q=argparse.ArgumentParser();q.add_argument('--mode',choices=('selftest','capture_fit','contrast_fit','spatial_fit'),required=True);q.add_argument('--profile',type=Path);q.add_argument('--out',type=Path);a=q.parse_args()
+    q=argparse.ArgumentParser();q.add_argument('--mode',choices=('selftest','capture_fit','contrast_fit','spatial_fit','spatial_polish'),required=True);q.add_argument('--profile',type=Path);q.add_argument('--out',type=Path);a=q.parse_args()
     if a.mode=='selftest':selftest()
     else:
-        if a.mode in ('contrast_fit','spatial_fit'):
+        if a.mode=='spatial_polish':
+            v=json.loads(a.profile.read_text());validate_polish(v);assert not a.out.exists();c=json.loads((HERE/v['spatial_profile']).read_text());validate_spatial(c)
+            p=json.loads((HERE/c['response_profile']).read_text());validate_policy(p);fit(p,ROOT/c['probes'],a.out,spatial_policy=c,polish=v)
+        elif a.mode in ('contrast_fit','spatial_fit'):
             c=json.loads(a.profile.read_text());(validate_contrast if a.mode=='contrast_fit' else validate_spatial)(c);assert not a.out.exists()
             p=json.loads((HERE/c['response_profile']).read_text());validate_policy(p)
             fit(p,ROOT/c['probes'],a.out,**({'contrast':c} if a.mode=='contrast_fit' else {'spatial_policy':c}))

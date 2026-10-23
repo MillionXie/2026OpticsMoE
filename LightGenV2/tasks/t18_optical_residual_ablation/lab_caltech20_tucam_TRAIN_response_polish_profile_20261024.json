@@ -1,0 +1,8 @@
+{
+  "schema":"TUCam_E2_TRAIN_response_fullbatch_polish_v1",
+  "spatial_profile":"lab_caltech20_tucam_TRAIN_response_spatial_profile_20261024.json",
+  "prior_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_response_20261024/spatial_fit/report.json",
+  "prior_fit_SHA256":"a9ebe0129680bde1366888b9d79879b94c0843d9c02eb705e3dd9e1d2ec0a234",
+  "max_iter":12,"max_eval":24,"shared_parameters":27,"new_CCD":0,"TEST_used":false,"gate_unchanged":true,
+  "scope":"A single full84TRAIN response convergence finish of the SAME27nuisance state, not a new model/grid or relaxed criterion. Fixed400step Adam ended TRAINspatialloss.54942 and held.54713 vs baseline.60074; heldPCC .68968 to.71638 (+.02670), nominal held.62589 to.68108. Still explicitly unadmitted vs fixed+.03. Batch4 endpoint loss.59285 exceeds fullTRAIN.54942; test stochastic convergence with deterministic full84TRAIN gradient, original spatialloss+same1e-4 raw-pupil penalty, LBFGS12iter24eval strongWolfe once. Reconstruct prior curve/blur/background/pupil exactly from pinned report and record initial fullTRAIN/held metrics. All derivatives exclusively responsefit TRAIN anchors, never heldTRAIN or labels/TEST. No hyperparameter candidates or best-by-held selection; evaluate fixed endpoint once. Acceptance stays original meanPCC+.03, heldloss>=5% improvement and nominal held not worse, plus TRAIN must improve from continuationinitial. If unmet, preserve report and do not insert rejected fit into mask training. New hardware capture/TEST/inference/PT changes zero; original actual-E2 gate305/final340 unchanged."
+}

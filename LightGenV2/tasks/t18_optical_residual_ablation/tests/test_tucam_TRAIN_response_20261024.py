@@ -8,7 +8,7 @@ ENTRY=HERE/'lab_caltech20_tucam_TRAIN_response_20261024.py'
 
 def functions():
     tree=ast.parse(ENTRY.read_text())
-    picked=[v for v in tree.body if isinstance(v,ast.FunctionDef) and v.name in ('validate_policy','validate_contrast','validate_spatial','anchors')]
+    picked=[v for v in tree.body if isinstance(v,ast.FunctionDef) and v.name in ('validate_policy','validate_contrast','validate_spatial','validate_polish','anchors')]
     ns={};exec(compile(ast.Module(body=picked,type_ignores=[]),str(ENTRY),'exec'),ns);return ns
 
 
@@ -85,3 +85,14 @@ def test_spatial_response_uses_shared_TRAIN_nuisance_not_deployed_layer_and_norm
     assert 'raise SystemExit(0)' not in ENTRY.read_text()
     for key,value in [('new_inference_layers',1),('image_warp',True),('held_PCC_gain',0),('nominal_held_PCC_not_lower',False)]:
         with pytest.raises(AssertionError):functions()['validate_spatial']({**p,key:value})
+
+
+def test_fullbatch_finish_keeps_spatial_gate_and_gradients_only_fit_TRAIN():
+    p=json.loads((HERE/'lab_caltech20_tucam_TRAIN_response_polish_profile_20261024.json').read_text());functions()['validate_polish'](p)
+    s=ENTRY.read_text();closure=s.split('def closure():',1)[1].split('opt.step(closure)',1)[0]
+    assert 'range(0,84,4)' in closure and 'for v in tr' in closure
+    assert 'held' not in closure and 'labels' not in closure and "'test'" not in closure
+    assert 'max_iter=12,max_eval=24' in s and "prev['state']=='complete' and not prev['spatial_response_admitted']" in s
+    assert "final['TRAIN']['loss']<initial['TRAIN']['loss']" in s
+    for k,v in [('gate_unchanged',False),('max_iter',100),('shared_parameters',28)]:
+        with pytest.raises(AssertionError):functions()['validate_polish']({**p,k:v})
