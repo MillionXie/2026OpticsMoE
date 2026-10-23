@@ -1,4 +1,8 @@
-"""Trainable task decoders with both pretrained encoders strictly frozen."""
+"""Task decoders with frozen vision and an explicit text-encoder profile.
+
+The original default keeps pretrained MiniLM frozen. The separately selected
+``byte_gru`` profile trains a 27,104-parameter text encoder from scratch.
+"""
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -8,23 +12,32 @@ from .frozen_text import FrozenTextEncoder
 from .frozen_visual_models import FrozenImageRetrieval
 
 
+def _build_text_encoder(profile):
+    if profile == 'minilm':
+        return FrozenTextEncoder(), 384
+    if profile == 'byte_gru':
+        from .models import ByteTextEncoder
+        return ByteTextEncoder(), 64
+    raise ValueError(f'Unknown text encoder profile: {profile}')
+
+
 class FrozenCrossModalRetrieval(FrozenImageRetrieval):
-    def __init__(self):
+    def __init__(self, text_encoder='minilm'):
         super().__init__()
-        self.text_encoder = FrozenTextEncoder()
-        self.text_projection = nn.Linear(384, 64)
+        self.text_encoder, text_dim = _build_text_encoder(text_encoder)
+        self.text_projection = nn.Linear(text_dim, 64)
 
     def encode_text(self, tokens):
         return F.normalize(self.text_projection(self.text_encoder(tokens)), dim=-1)
 
 
 class FrozenOpenMoji(nn.Module):
-    def __init__(self):
+    def __init__(self, text_encoder='minilm'):
         super().__init__()
         self.encoder = FrozenResNet18()
-        self.text_encoder = FrozenTextEncoder()
+        self.text_encoder, text_dim = _build_text_encoder(text_encoder)
         self.image_projection = nn.Conv2d(512, 64, 1)
-        self.text_projection = nn.Linear(384, 64)
+        self.text_projection = nn.Linear(text_dim, 64)
         self.film = nn.Linear(64, 128)
         self.coordinates = nn.Conv2d(2, 64, 1)
         self.spatial = nn.Sequential(nn.Conv2d(64, 64, 3, padding=1), nn.ReLU())
@@ -46,13 +59,13 @@ class FrozenOpenMoji(nn.Module):
 
 class FrozenConditionalEditor(nn.Module):
     """Reference+instruction decoder with four frozen visual skip levels."""
-    def __init__(self):
+    def __init__(self, text_encoder='minilm'):
         super().__init__()
         self.encoder = FrozenResNet18()
-        self.text_encoder = FrozenTextEncoder()
+        self.text_encoder, text_dim = _build_text_encoder(text_encoder)
         self.lateral = nn.ModuleList(nn.Conv2d(channels, 64, 1)
                                      for channels in (64, 128, 256, 512))
-        self.text_projection = nn.Linear(384, 64)
+        self.text_projection = nn.Linear(text_dim, 64)
         self.film = nn.Linear(64, 128)
         self.decode = nn.ModuleList(nn.Sequential(nn.Conv2d(128, 64, 3, padding=1), nn.ReLU(),
                                                    nn.Conv2d(64, 64, 3, padding=1), nn.ReLU())
@@ -71,11 +84,11 @@ class FrozenConditionalEditor(nn.Module):
         return self.rgb(x).sigmoid()
 
 
-def build_frozen_multimodal_model(task):
+def build_frozen_multimodal_model(task, text_encoder='minilm'):
     if task in {'abo_image_to_text', 'abo_text_to_image'}:
-        return FrozenCrossModalRetrieval()
+        return FrozenCrossModalRetrieval(text_encoder=text_encoder)
     if task == 'openmoji':
-        return FrozenOpenMoji()
+        return FrozenOpenMoji(text_encoder=text_encoder)
     if task == 'abo_conditional_edit':
-        return FrozenConditionalEditor()
+        return FrozenConditionalEditor(text_encoder=text_encoder)
     raise ValueError(f'Unknown frozen pretrained task: {task}')

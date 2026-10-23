@@ -1,0 +1,37 @@
+{
+  "backbone": "resnet18_imagenet_frozen",
+  "visual_weights": "torchvision.ResNet18_Weights.IMAGENET1K_V1",
+  "visual_encoder_frozen": true,
+  "visual_batchnorm_frozen": true,
+  "full_model_parameters_strict_upper_bound": 15000000,
+  "text_encoder": "trainable_UTF8_byte_embedding259x32_GRU32x64",
+  "text_parameters": 27104,
+  "text_initialization": "random_seed42",
+  "training_scope_multimodal": "frozen_visual_trainable_text_and_decoder",
+  "text_encoders": {
+    "abo_image_to_text": "byte_gru", "abo_text_to_image": "byte_gru",
+    "openmoji": "byte_gru", "abo_conditional_edit": "byte_gru"
+  },
+  "job_tags": {
+    "abo_image_to_text": "byte_gru15m", "abo_text_to_image": "byte_gru15m",
+    "openmoji": "byte_gru15m", "abo_conditional_edit": "byte_gru15m",
+    "abo_image_to_image": "gpu_expand6", "lsp": "gpu_expand6"
+  },
+  "tasks": ["lgvq_temporal", "lgvq_spatial", "abo_image_to_text", "abo_image_to_image", "abo_text_to_image", "lsp", "salicon", "openmoji", "abo_conditional_edit"],
+  "preserve_running_jobs": ["lgvq_temporal", "lgvq_spatial"],
+  "gpu_indices_requested_first": [1, 2, 6],
+  "gpu_indices_additional_candidates": [3, 4, 5],
+  "selection": "fixed_last_epoch",
+  "seed": 42,
+  "epochs": 30,
+  "learning_rate": 0.001,
+  "schedule": "constant",
+  "warmup_epochs": 0,
+  "optimizer": "AdamW_wd0.0001_clip1",
+  "effective_batch": 32,
+  "precision": "FP32_TF32_disabled",
+  "max_physical_gpus": 6,
+  "max_jobs_per_gpu": 2,
+  "sealed": true,
+  "authorization": "2026-10-23 user permits training smaller text from scratch, complete model below15M; latest clarification permits up to6 physical GPUs including1/2/6 and same-card parallelism, expands capacity rather than migrating active tasks. Existing LGVQ preserved. Two partial visual jobs stopped before this clarification have preserved checkpoints and fresh same-protocol retries. Four changed text tasks have fresh smoke/30-epoch IDs."
+}

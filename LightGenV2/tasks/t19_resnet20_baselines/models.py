@@ -270,7 +270,11 @@ TASK_IDS = ("lgvq_temporal", "lgvq_spatial", "abo_image_to_text", "abo_image_to_
             "abo_text_to_image", "lsp", "salicon", "openmoji", "abo_conditional_edit")
 
 
-def build_model(task: str, backbone: str = "resnet20") -> nn.Module:
+def build_model(task: str, backbone: str = "resnet20", text_encoder: str = "minilm") -> nn.Module:
+    if text_encoder not in {'minilm','byte_gru'}:
+        raise ValueError(text_encoder)
+    if text_encoder != 'minilm' and backbone != 'resnet18_imagenet_frozen':
+        raise ValueError('Small text override requires the frozen pretrained visual backbone')
     if backbone == 'resnet18_imagenet_frozen':
         if task in {'lgvq_temporal', 'lgvq_spatial'}:
             return QualityModel(task.removeprefix('lgvq_'), backbone)
@@ -278,7 +282,7 @@ def build_model(task: str, backbone: str = "resnet20") -> nn.Module:
             from .frozen_visual_models import build_frozen_visual_model
             return build_frozen_visual_model(task)
         from .frozen_multimodal_models import build_frozen_multimodal_model
-        return build_frozen_multimodal_model(task)
+        return build_frozen_multimodal_model(task,text_encoder=text_encoder)
     if backbone not in {"resnet20", "resnet32"}:
         raise ValueError(backbone)
     if task == "lgvq_temporal_resnet18":

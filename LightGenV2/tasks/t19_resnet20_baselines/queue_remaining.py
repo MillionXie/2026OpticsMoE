@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -44,6 +45,12 @@ def read_plan(path):
     tasks=plan['tasks']
     if len(set(tasks))!=len(tasks) or any(t not in ALLOWED for t in tasks):
         raise ValueError('Invalid/duplicate task in remaining-seven plan')
+    for task,tag in plan.get('job_tags',{}).items():
+        if task not in tasks or not re.fullmatch('[a-z][a-z0-9_]{0,63}',tag):
+            raise ValueError('Invalid task profile tag')
+    for task,encoder in plan.get('text_encoders',{}).items():
+        if task not in {'abo_image_to_text','abo_text_to_image','openmoji','abo_conditional_edit'} or encoder not in {'minilm','byte_gru'}:
+            raise ValueError('Invalid text encoder override')
     return plan
 
 
@@ -55,11 +62,16 @@ def worker_command(job, suite, uuid, backbone):
             '--data-root',str(ROOT/'data/abo_easy100_dataset_20260906')]
     else:
         specific=['LightGenV2.tasks.t19_resnet20_baselines.train_tasks','--task',job['task']]
-    return [sys.executable,'-m',*specific,'--backbone',backbone,
+    command = [sys.executable,'-m',*specific,'--backbone',backbone,
         '--run-dir',str(base/job['name']),'--gpu-uuid',uuid,
         '--epochs','1' if job['phase']=='smoke' else '30',
         '--smoke-batches','2' if job['phase']=='smoke' else '0',
         '--queue-status-path',str(suite/'queue_status.json')]
+    if job.get('text_encoder','minilm')!='minilm':
+        command+=['--text-encoder',job['text_encoder']]
+    if job.get('max_physical_gpus',3)!=3:
+        command+=['--max-physical-gpus',str(job['max_physical_gpus'])]
+    return command
 
 
 def main():
@@ -69,10 +81,11 @@ def main():
     p.add_argument('--suite-id',required=True)
     p.add_argument('--task-plan',type=Path,required=True)
     p.add_argument('--resume',action='store_true')
+    p.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
     p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
     args=p.parse_args()
-    if not 1<=len(set(args.gpu_uuids))==len(args.gpu_uuids)<=3:
-        raise ValueError('One to three unique physical GPUs required')
+    if not 1<=len(set(args.gpu_uuids))==len(args.gpu_uuids)<=args.max_physical_gpus:
+        raise ValueError('Physical GPU count exceeds the explicitly requested resource cap')
     if Path(args.suite_id).name!=args.suite_id: raise ValueError('Invalid suite-id')
     require_published_source()
     lock=(TASK/'runs/.t19_gpu_suite.lock').open('a')
@@ -80,7 +93,7 @@ def main():
     suite=TASK/'runs/simulation'/args.suite_id
     if not args.resume:suite.mkdir(exist_ok=False)
     report={'status':'running','pid':os.getpid(),'gpu_uuids':args.gpu_uuids,'jobs':[],'backbone':args.backbone,
-            'max_physical_gpus':3,'max_jobs_per_gpu':2,'execution_profile':PROFILE,
+            'max_physical_gpus':args.max_physical_gpus,'max_jobs_per_gpu':2,'execution_profile':PROFILE,
             'started_unix':time.time(),'initial_commit':git('rev-parse','HEAD')}
     running,children={},[]
     if args.resume:
@@ -91,6 +104,7 @@ def main():
         if not active_uuids<=set(args.gpu_uuids):raise ValueError('Resume must retain active GPUs')
         report.setdefault('supervisor_history',[]).append({'pid':report['pid'],'replaced_unix':time.time()})
         report.update(pid=os.getpid(),status='running',gpu_uuids=args.gpu_uuids)
+        report['max_physical_gpus']=args.max_physical_gpus
         for job in report['jobs']:
             if job['status']!='running':continue
             root=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')/job['name']
@@ -112,10 +126,15 @@ def main():
             if args.backbone!='resnet20' and 'lgvq_temporal_resnet18' in plan['tasks']:
                 raise ValueError('CIFAR suite cannot include ImageNet ResNet18 override')
             for task in plan['tasks']:
+                tag=plan.get('job_tags',{}).get(task,'')
+                def matches(job,phase=None):
+                    return job['task']==task and job.get('profile_tag','')==tag and (phase is None or job['phase']==phase)
                 for phase in ('smoke','formal'):
-                    if not any(j['task']==task and j['phase']==phase for j in report['jobs']):
+                    if not any(matches(j,phase) for j in report['jobs']):
                         report['jobs'].append({'task':task,'phase':phase,'status':'queued',
-                            'name':f'{task}_{phase}_s42_{args.suite_id}','attempt':0})
+                            'name':f'{task}_{phase}_s42_{args.suite_id}'+('_'+tag if tag else ''),'attempt':0,
+                            'profile_tag':tag,'text_encoder':plan.get('text_encoders',{}).get(task,'minilm'),
+                            'max_physical_gpus':args.max_physical_gpus})
                 retry=int(plan.get('retry_smokes',{}).get(task,0))
                 if retry and not any(j['task']==task and j['phase']=='smoke' and j.get('attempt',0)==retry for j in report['jobs']):
                     report['jobs'].append({'task':task,'phase':'smoke','status':'queued','attempt':retry,
@@ -145,7 +164,8 @@ def main():
                 for j in report['jobs']:
                     if j['status']!='queued':continue
                     if j['phase']=='formal':
-                        smoke=max((x for x in report['jobs'] if x['task']==j['task'] and x['phase']=='smoke'),key=lambda x:x.get('attempt',0))
+                        smoke=max((x for x in report['jobs'] if x['task']==j['task'] and x['phase']=='smoke'
+                                   and x.get('profile_tag','')==j.get('profile_tag','')),key=lambda x:x.get('attempt',0))
                         if smoke['status']=='failed':
                             j['status']='blocked_by_failed_smoke'
                             continue
@@ -173,7 +193,8 @@ def main():
                 running[proc.pid]=(proc,job,log);children.append(proc)
             save()
             if plan.get('sealed') and not running and not any(j['status']=='queued' for j in report['jobs']):
-                latest=[max((j for j in report['jobs'] if j['task']==task and j['phase']=='formal'),
+                latest=[max((j for j in report['jobs'] if j['task']==task and j['phase']=='formal'
+                             and j.get('profile_tag','')==plan.get('job_tags',{}).get(task,'')),
                             key=lambda j:j.get('attempt',0)) for task in plan['tasks']]
                 report['status']='complete' if all(j['status']=='complete' for j in latest) else 'complete_with_failures'
                 break

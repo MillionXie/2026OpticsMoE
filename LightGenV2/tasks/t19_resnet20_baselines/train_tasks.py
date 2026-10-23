@@ -50,7 +50,14 @@ def run(args):
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     torch.backends.cudnn.benchmark = False
-    model = build_model(args.task, backbone=args.backbone).to(device)
+    small_text = getattr(args,'text_encoder','minilm') == 'byte_gru'
+    if small_text and args.backbone != 'resnet18_imagenet_frozen':
+        raise ValueError('Small text profile requires frozen pretrained ResNet18')
+    model_options = {'backbone':args.backbone}
+    if small_text:model_options['text_encoder']='byte_gru'
+    model = build_model(args.task, **model_options).to(device)
+    if small_text and parameter_counts(model)['total'] >= 15000000:
+        raise ValueError('Complete model must have fewer than15000000 parameters')
     problem.configure_model(model, device)
     train_data = problem.train
     if args.smoke_batches and problem.batch_sampler is None:
@@ -76,7 +83,7 @@ def run(args):
         encoder_ids = {id(p) for p in model.encoder.parameters()}
         if any(id(p) in encoder_ids for p in trainable):
             raise RuntimeError('Frozen encoder entered the optimizer')
-        if hasattr(model,'text_encoder'):
+        if hasattr(model,'text_encoder') and not small_text:
             text_frozen_hash=encoder_state_sha256(model.text_encoder)
             assert_encoder_unchanged(model.text_encoder,text_frozen_hash)
             text_ids={id(p) for p in model.text_encoder.parameters()}
@@ -93,15 +100,23 @@ def run(args):
         'source_sha256': {name: hashlib.sha256((TASK/name).read_bytes()).hexdigest()
                           for name in ('train_tasks.py','task_problems.py','models.py','lgvq_data.py','other_data.py','editor_dataset.py','train_easy100.py')},
         'smoke_batches': args.smoke_batches, 'metric': problem.metric}
+    manifest['max_physical_gpus']=getattr(args,'max_physical_gpus',3)
     manifest.update(initialization='official_ImageNet1K_V1' if frozen else 'random_no_pretraining',
                     training_scope='decoder_only' if frozen else 'full_network',
                     optimizer_parameters=sum(p.numel() for p in trainable))
+    if small_text:
+        manifest.update(text_encoder='byte_gru',text_initialization='random_seed42',
+                        training_scope='frozen_visual_trainable_text_and_decoder',
+                        full_model_parameter_limit=15000000,
+                        text_state_sha256_before=encoder_state_sha256(model.text_encoder))
     if frozen:
         manifest.update(pretrained_provenance=model.encoder.pretrained_provenance,
                         encoder_state_sha256_before=frozen_hash, frozen_encoder_audits=[],
                         source_sha256={**manifest['source_sha256'], **{
                             name:hashlib.sha256((TASK/name).read_bytes()).hexdigest()
                             for name in ('frozen_resnet18.py', 'frozen_visual_models.py')}})
+        if small_text:
+            manifest['source_sha256']['frozen_multimodal_models.py']=hashlib.sha256((TASK/'frozen_multimodal_models.py').read_bytes()).hexdigest()
         if text_frozen_hash:
             manifest['initialization']='official_pretrained_visual_and_text'
             manifest.update(text_pretrained_provenance=model.text_encoder.pretrained_provenance,
@@ -171,6 +186,9 @@ def run(args):
             manifest['frozen_encoder_final_audit']=assert_encoder_unchanged(model.encoder,frozen_hash)
             if text_frozen_hash:
                 manifest['frozen_text_encoder_final_audit']=assert_encoder_unchanged(model.text_encoder,text_frozen_hash)
+            if small_text:
+                manifest['text_state_sha256_after']=encoder_state_sha256(model.text_encoder)
+                manifest['trainable_text_changed']=manifest['text_state_sha256_after']!=manifest['text_state_sha256_before']
         write_json(run_dir/'fixed_weight_predictions.json',records)
         write_json(run_dir/'result.json',{'status':'complete','selected_epoch':selected_epoch,'metrics':metrics,
             'selection_metrics':selection_metrics,'selection_uses_test':False,
@@ -199,6 +217,8 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--task',required=True)
     p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
+    p.add_argument('--text-encoder',choices=['minilm','byte_gru'],default='minilm')
+    p.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
     p.add_argument('--run-dir',type=Path,required=True)
     p.add_argument('--gpu-uuid',required=True)
     p.add_argument('--seed',type=int,default=42)
