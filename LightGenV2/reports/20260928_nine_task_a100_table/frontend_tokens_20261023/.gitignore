@@ -1,0 +1,4 @@
+# Private measurements and generated workbook stay local/server with SHA manifest.
+*
+!.gitignore
+!build_workbook.mjs
