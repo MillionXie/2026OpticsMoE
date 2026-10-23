@@ -22,6 +22,19 @@ TEST仅分析/选择TRAIN类别及开发选模，无TEST梯度或增强训练，
 实际启动、帧数与结果以新run`caltech20_residual_TUCam_20261022/layerwise_L4_20261023`
 为准；本段登记不能当作已开始采集或已改善。相机信号异常仍有界停诊，数据不删。
 
+实际执行补充：来源d868ab914的9项静态合同及实验室CPU五种前缀的未来phase梯度/
+已采mask冻结/增强eval恒等测试通过，Git已发布并同步。首启`layerwise_L4_20261023`
+在原411仿真346正确、reference概率核验通过后，Phase SDK未找到显示/USB控制器，
+0新CCD退出且锁释放；Windows只读可见MEADOWLARK与TUCam，不能据此声称驱动
+已可用。用户随后明确刚关机现已开设备，才新启`layerwise_L4_on_20261023`，保留
+首启全部错误证据，不是自动重试。新控制器PID31240/实际Python31196，原PT/配置
+不变，完整基线再过后已实际采到router TRAIN73、TEST0，首24信号检查通过；快照
+p99=108、饱和比例.0000787801、原phase SHA431aaffb…，收据mtime1792729166.518。
+不是仅PID健康或已全层完成；当前没有新完整实拍精度。后续仍完整2011身份审计、
+后缀TRAIN拟合、原CPU bestlast复核后达门槛才采下一层，noTEST梯度/noVALID。
+源entry SHA8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07，
+profile SHAc077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909。
+
 ## 2026-10-23用户要求回到原DVP69.34%继续，不混新相机数据
 
 本条为最新范围：用户认为新批次较差，要求从旧69%多版本继续优化。原69.34307%
