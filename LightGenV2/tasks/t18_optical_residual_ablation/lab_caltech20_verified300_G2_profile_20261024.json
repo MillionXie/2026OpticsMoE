@@ -1,0 +1,23 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "schema":"TUCam_verified_actual300_G2_time_budget_v1",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_LOCALMSE/fit",
+  "source_PT_SHA256":"60f6883ac597fbe3a2f72000edac661998dd6fb52696ba80cb6b8bcce53f115e",
+  "source_report_SHA256":"e66e6e8549bd599d64d6d80a9fe37792dc3c37ade96200104649eabf5c6b9862",
+  "expected_parent_correct":300,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_LOCALMSE.return.json",
+  "parent_minimum_previous_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_LOCALMSE/fit",
+  "minimum_remaining_seconds":2300,
+  "final_fit_seconds":300,
+  "final_fit_epochs":60,
+  "budget_basis":{"measured_2011_capture_seconds":1164,"audit_allowance_seconds":300,"fit_seconds":300,"native_replay_allowance_seconds":180,"safety_seconds":356},
+  "source_SHA256":{
+    "lab_caltech20_verified300_G2_20261024.py":"07101d690cc89287ca9e7fb41d3c8d4033b7d7e4402916ef2f869fe9f3bf4d15",
+    "lab_caltech20_actual_suffix_continue_20261024.py":"ddeb71315c298a9608c3f201b495c6ed85b92f2081a4a0d1803b41d71d0b83b5",
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Actual originalCPU E2 prefix300/411 has passed at07:15:15, bestlast1471TRAIN/300TEST and nativecache identity/ancestorSHA audited, exactPT60f688/reporte66 pinned. Prior45minute dispatcher ended safely without anyG2 directory/capture; this is an explicitly new finite G2 handoff, not optical retry. Changed only wall-time allocation: empirical2011E2capture1163.219s rounds1164, audit300/finalfirstfit300/nativeCPU180/safety356=2300seconds, checked before and afteradmission. Complete1600TRAIN->411TEST singleSDK original G2 capture and independentall2011audit mandatory; no early datasetcutoff. First original5150final fit60epochs or300fitsec at completeepochboundary; target340 unchanged, no newlayers/TESTgradient/VALID. Hardware exposure9999us/Gain0/wait240/coordinates/ROI/orientation/LUT/BMP unchanged. Stop on signal guard, preserve all originaldata and selected300/295/285, no retry or deadline extension."
+}
