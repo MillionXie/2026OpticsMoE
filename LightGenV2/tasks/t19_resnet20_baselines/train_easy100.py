@@ -50,7 +50,12 @@ def require_published_source():
         raise RuntimeError('Task source has uncommitted changes')
     head=git('rev-parse','HEAD')
     if git('merge-base',head,'origin/main')!=head:
-        raise RuntimeError('HEAD must be a published commit in origin/main history')
+        # Another window can publish directly from the server without updating
+        # this checkout's origin/main. Read-only remote proof avoids a fetch
+        # transaction inside a training worker.
+        remote=git('ls-remote','origin','refs/heads/main').split()
+        if not remote or remote[0]!=head:
+            raise RuntimeError('HEAD must be a published commit in origin/main history')
 
 
 def validate_gpu_processes(uuid, apps, allowed_pids):

@@ -21,7 +21,15 @@ from .train_easy100 import TASK, ROOT, PROFILE, admit_gpu, git, require_publishe
 
 
 def run(args):
-    require_published_source()
+    publication_began=time.monotonic()
+    while True:
+        try:
+            require_published_source()
+            break
+        except RuntimeError as exc:
+            if time.monotonic()-publication_began>600:raise
+            print('Waiting for clean, published source before data/CUDA:',str(exc),flush=True)
+            time.sleep(5)
     if args.seed != 42 or args.epochs != (1 if args.smoke_batches else 30):
         raise ValueError('Requires seed42 and30epochs (one epoch for smoke)')
     run_dir = args.run_dir.resolve()

@@ -49,6 +49,9 @@ LSP首次formal在CUDA前遇到另一窗口fetch更新origin/main后HEAD不再�
 旧守卫因此拒绝。现改为验证HEAD确实位于已发布origin/main历史且T19源码干净，
 不会因远端新增其他任务提交误判旧已发布commit；未发布的本地HEAD仍拒绝。
 该次没有训练权重，保留原日志并在control-plan显式登记formal attempt1，不混作续训。
+随后证实服务器另一窗口已直接发布新HEAD、但本机origin/main引用仍旧。守卫补充只读
+`ls-remote`精确HEAD证据，不在worker中fetch或修改Git；同步中尚不能证明已发布时在CUDA前等候。
+LSP这两次源校验均在训练前退出，明确登记attempt2重新启动，原失败日志不覆盖。
 
 ## 当前生效协议：2026-10-23 用户修订
 
