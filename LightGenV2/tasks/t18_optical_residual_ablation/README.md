@@ -39,6 +39,15 @@ native报告SHA177f3800882f484a04cbf4af782632162bb55237bf6e070be2124f96a43086b6�
 换超参/seed或再重复已无提升的PLS。执行以新run`L4_adaptive_pairs_20261023`为准，
 仍需原生bestlast复核，不预称新精度，不重拍、不设定时任务。
 
+来源abf7ade4d的4轮自适应轨迹已原生复核到257/411=62.53041%、TRAIN1067/1600；
+104次观察接受8次，PT SHA ccb8ae1b683c2496dd090fa272a2be0f8965599f31d5c237dcea867d5d2d2121，
+native报告SHA5873d0f201f992db407a3d29fab84cb9dc752c6cf5549f867ae1eedc7cf65f8f，
+原生bestlast/冻结/缓存概率全通过、内外return0退出，SDK空闲；目标340仍差83。
+据其仍有保留改善，本轮仅增加一次同优化器接续预算：`L4_adaptive_pairs_continue_20261023`
+从原生257最佳开始，最多12次重规划、总120fit秒，仍整轮无正确数/足量NLL改善即停。
+没有换学习率、trust、loss或seed，不换算法/结构/硬件；只增有限规划轮数，原4轮
+run的实际profile和SHA已保存在其protocol，不追改旧结果。本次未完成前不报新分数。
+
 ## 2026-10-23四层全采完成及新有限错分接续
 
 本轮五阶段各TRAIN1600/TEST411共10055帧已完整审计。原末端联合训练及Linear

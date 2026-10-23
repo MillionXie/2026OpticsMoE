@@ -94,7 +94,7 @@ def test_earlier_electronics_feed_next_optical_input_not_a_free_terminal_suffix(
 
 def test_adaptive_pair_planning_is_bounded_and_stops_at_no_retained_change():
     cfg=json.loads((HERE/'lab_caltech20_tucam_covariance_profile_20261023.json').read_text())['adaptive_pair_followup'];text=SOURCE.read_text()
-    assert cfg['pair_plan_updates']==4 and cfg['pair_total_fit_seconds']==120 and cfg['teacher_PLS'] is False
+    assert cfg['pair_plan_updates']==12 and cfg['pair_total_fit_seconds']==120 and cfg['teacher_PLS'] is False
     assert "range(recipe.get('pair_plan_updates',1))" in text
     assert '(best,best_nll)==before:break' in text and 'if not plans or remaining<=0:break' in text
     assert "current_pred=current_test.argmax(1)" in text and "current_train[:,a]+current_train[:,b]" in text
