@@ -1,0 +1,15 @@
+{
+  "schema":"TUCam_L4_photometric_frozen_mask_readout_v1",
+  "mask_policy":"lab_caltech20_TRAIN_photometric_mask_profile_20261024.json",
+  "mask_policy_SHA256":"d754a5514a11501a1f17ad368266ce5c282ea0365667ad9a85c93a76a52a0cc6",
+  "mask_engine_SHA256":"dfb6ab85b3344301fd88f83fe3fbd4e774c969b5ac8115172e9bffbe69ae3607",
+  "linear_engine_SHA256":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+  "mask_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_photometric_20261024/mask_fit",
+  "mask_report_SHA256":"beda3b62ab53073b89c061e96ddb8840712d04d3fd4fe14abbd522577a751ccc",
+  "mask_PT_SHA256":"ffb3c5e2323d78131207e1fdae7815d19e4d10eb630594202848cba9b7c065c0",
+  "mask_correct":258,"mask_TRAIN_correct":1178,
+  "recipe":{"analytical_fits":1,"outer_steps":20,"seconds":900,"LBFGS_max_iter":5,"LBFGS_max_eval":8,"label_smoothing":0.03,"L2_parent_TRAIN_NLL_fraction":0.1},
+  "TRAIN":1600,"TEST":411,"VALID":0,"TEST_gradient":false,"new_inference_layers":0,"SDK_used":false,"GPU_used":false,
+  "intermediate_target":305,"final_target":340,"scheduler":false,
+  "scope":"Frozen NEW joint-trained E2/G2 masks, original electronics and direct alpha. Completed admitted-response16epoch original-state CPU predictive258/411,TRAIN1178/1600 NLL1.02666; this is not the actual physical273 result and cannot replace it. Diagnose readout underfit vs fixed representation capacity with one TRAIN-only OAS covariance estimator and one finite20outer LBFGS full1600TRAIN fit of original5140linear head, no new inference transform or extra parameters. Fresh calibrated features must exactly reproduce saved parent probabilities<=3e-6 on fullTRAIN/TEST; source PT/report/three captured-prefix SHA and all non-readout state frozen. OAS initialization vs parent chosen by same weighted TRAIN objective only; parent TRAIN NLL sets fixed L2 penalty fraction.1, smoothing.03, original3141TRAIN class priors only, no teacher or TEST gradient/samples/augmentation in fit. TEST development selects predictive best with parent fallback, explicitly not independent generalization or physical score. CPU2threads no SDK/GPU/newCCD; preserve all oldPT/data and backup bestlast/history/protocol/full native-state CPU calibrated replay/predictions/SHAs. No scheduler/retry/candidate grid. Prediction>=305 alone does not authorize G2: any new E2 mask must be freshly captured under fixed hardware then pass actual native CPU411>=305 before newG2; final340 unchanged. Exposure/coordinate/LUT/orientation/native model and ancestor data unchanged. Source Git-only publication and sync before execution."
+}
