@@ -61,7 +61,9 @@ def validate_gpu_processes(uuid, apps, allowed_pids):
         raise RuntimeError('Requested GPU already has two tasks')
     for pid in active:
         command = Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode()
-        if ('LightGenV2.tasks.t19_resnet20_baselines.train_easy100' not in command
+        if (not any(module in command for module in (
+                'LightGenV2.tasks.t19_resnet20_baselines.train_easy100',
+                'LightGenV2.tasks.t19_resnet20_baselines.train_tasks'))
                 or uuid not in command or str(TASK / 'runs') not in command):
             raise RuntimeError('Shared process is not a verified T19 worker on this GPU')
     return active

@@ -1,0 +1,143 @@
+"""Fixed-LR, single-seed30 training of task-specific ResNet-20 baselines."""
+import argparse
+import hashlib
+import math
+import os
+from pathlib import Path
+import platform
+import random
+import signal
+import sys
+import time
+
+import numpy as np
+import torch
+from torch.utils.data import DataLoader, Subset
+
+from .models import build_model, parameter_counts
+from .task_problems import Problem
+from .train_easy100 import TASK, ROOT, PROFILE, admit_gpu, git, require_published_source, sharing_pids, write_json, save_checkpoint
+
+
+def run(args):
+    require_published_source()
+    if args.seed != 42 or args.epochs != (1 if args.smoke_batches else 30):
+        raise ValueError('Requires seed42 and30epochs (one epoch for smoke)')
+    run_dir = args.run_dir.resolve()
+    category = 'smoke' if args.smoke_batches else 'simulation'
+    if not run_dir.is_relative_to((TASK / 'runs' / category).resolve()):
+        raise ValueError('Run path outside task')
+    torch.set_num_threads(4)
+    random.seed(42); np.random.seed(42); torch.manual_seed(42)
+    problem = Problem(args.task)
+    if args.preflight:
+        print({'task': args.task, 'identity': problem.identity, 'train': len(problem.train), 'test': len(problem.test)})
+        return
+    allowed = sharing_pids(args)
+    admit_gpu(args.gpu_uuid, allowed)
+    run_dir.mkdir(parents=True, exist_ok=False)
+    device = torch.device('cuda:0')
+    torch.backends.cuda.matmul.allow_tf32 = False
+    torch.backends.cudnn.allow_tf32 = False
+    torch.backends.cudnn.benchmark = False
+    model = build_model(args.task).to(device)
+    problem.configure_model(model, device)
+    train_data = problem.train
+    if args.smoke_batches:
+        train_data = Subset(train_data, range(min(len(train_data), args.smoke_batches*problem.batch_size)))
+    options = dict(batch_size=problem.batch_size, num_workers=2, pin_memory=True,
+                   multiprocessing_context='spawn', persistent_workers=True)
+    train = DataLoader(train_data, shuffle=True, generator=torch.Generator().manual_seed(42), **options)
+    test = DataLoader(problem.test, shuffle=False, **options)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=.001, weight_decay=.0001)
+    manifest = {'task': args.task, 'status': 'running', 'seed': 42, 'epochs': args.epochs,
+        'learning_rate': .001, 'schedule': 'constant', 'warmup_epochs': 0, 'effective_batch': 32,
+        'microbatch': problem.batch_size, 'precision': 'FP32_TF32_disabled', 'optimizer': 'AdamW_wd0.0001_clip1',
+        'git_commit': git('rev-parse','HEAD'), 'data_identity': problem.identity,
+        'selection': problem.selection, 'parameter_counts': parameter_counts(model),
+        'pid': os.getpid(), 'gpu_uuid': args.gpu_uuid, 'gpu': torch.cuda.get_device_name(),
+        'command': [sys.executable,'-m',__spec__.name,*sys.argv[1:]],
+        'python': platform.python_version(), 'torch': torch.__version__, 'started_unix': time.time(),
+        'source_sha256': {name: hashlib.sha256((TASK/name).read_bytes()).hexdigest()
+                          for name in ('train_tasks.py','task_problems.py','models.py','lgvq_data.py')},
+        'smoke_batches': args.smoke_batches, 'metric': problem.metric}
+    write_json(run_dir/'run_manifest.json', manifest)
+    history, best, selected_epoch = [], -math.inf, None
+    began=time.monotonic()
+    def interrupt(signum, frame):
+        raise KeyboardInterrupt(f'Signal {signum}')
+    signal.signal(signal.SIGTERM, interrupt)
+    try:
+        for epoch in range(1,args.epochs+1):
+            model.train()
+            if hasattr(train.batch_sampler, 'set_epoch'):
+                train.batch_sampler.set_epoch(epoch)
+            optimizer.zero_grad(set_to_none=True)
+            total, count = 0., 0
+            accumulation = max(1,32//problem.batch_size)
+            for step,batch in enumerate(train):
+                n = len(batch['sample_id'])
+                group_start = (step//accumulation)*accumulation*problem.batch_size
+                group_samples = min(32,len(train_data)-group_start)
+                loss=problem.loss(model,batch,device)
+                if not torch.isfinite(loss):
+                    raise ValueError('Nonfinite training loss')
+                (loss*n/group_samples).backward()
+                if (step+1)%accumulation==0 or step+1==len(train):
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),1.)
+                    optimizer.step(); optimizer.zero_grad(set_to_none=True)
+                total+=loss.item()*n; count+=n
+                if (step+1)%25==0:
+                    write_json(run_dir/'progress.json',{'status':'training','epoch':epoch,'step':step+1,
+                        'train_loss':total/count,'elapsed_seconds':time.monotonic()-began})
+            evaluated = epoch==1 or epoch%5==0 or epoch==args.epochs
+            metrics, records = problem.evaluate(model,test,device) if evaluated else ({},None)
+            entry={'epoch':epoch,'train_loss':total/count,'learning_rate':.001,
+                   'elapsed_seconds':time.monotonic()-began,**metrics}
+            payload={'model':model.state_dict(),'optimizer':optimizer.state_dict(),'epoch':epoch,'manifest':manifest,'metrics':entry}
+            save_checkpoint(run_dir/'last_checkpoint.pt',payload)
+            score=metrics.get(problem.metric)
+            if evaluated and (selected_epoch is None or (score is not None and score>best)):
+                best=score if score is not None else -math.inf
+                selected_epoch=epoch
+                save_checkpoint(run_dir/'best_checkpoint.pt',payload)
+                write_json(run_dir/'best_predictions.json',records)
+            history.append(entry)
+            write_json(run_dir/'history.json',history)
+            write_json(run_dir/'progress.json',{'status':'training',**entry,'selected_epoch':selected_epoch})
+            print(entry,flush=True)
+        selected=torch.load(run_dir/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        model.load_state_dict(selected['model'])
+        metrics,records=problem.evaluate(model,test,device)
+        write_json(run_dir/'fixed_weight_predictions.json',records)
+        write_json(run_dir/'result.json',{'status':'complete','selected_epoch':selected_epoch,'metrics':metrics,
+            'development_metric':problem.selection.startswith('TEST'),'elapsed_seconds':time.monotonic()-began})
+        manifest['status']='complete'
+    except BaseException as exc:
+        manifest.update(status='interrupted' if isinstance(exc,KeyboardInterrupt) else 'failed',error=repr(exc))
+        raise
+    finally:
+        manifest['finished_unix']=time.time()
+        write_json(run_dir/'run_manifest.json',manifest)
+        for loader in (train,test):
+            iterator=getattr(loader,'_iterator',None)
+            if iterator is not None: iterator._shutdown_workers()
+        del model,optimizer
+        torch.cuda.empty_cache()
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--task',required=True)
+    p.add_argument('--run-dir',type=Path,required=True)
+    p.add_argument('--gpu-uuid',required=True)
+    p.add_argument('--seed',type=int,default=42)
+    p.add_argument('--epochs',type=int,default=30)
+    p.add_argument('--smoke-batches',type=int,default=0)
+    p.add_argument('--preflight',action='store_true')
+    p.add_argument('--queue-status-path',type=Path)
+    p.add_argument('--shared-owner-pids',type=int,nargs='*',default=[])
+    run(p.parse_args())
+
+
+if __name__=='__main__': main()
