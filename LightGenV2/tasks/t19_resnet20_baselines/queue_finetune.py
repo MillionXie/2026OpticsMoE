@@ -39,6 +39,7 @@ def main():
                         help='Replace only a stopped supervisor whose six jobs never started')
     parser.add_argument('--retry-lsp-cleanup1', action='store_true',
                         help='One named LSP smoke retry after its documented early DataLoader cleanup failure')
+    parser.add_argument('--prefer-idle-gpu-uuid', help='Reorder, never expand, this queue GPU candidate set')
     args = parser.parse_args()
     require_published_source()
     plan_path = args.plan.resolve(strict=True)
@@ -78,6 +79,11 @@ def main():
         # the same four cards may admit this still-queued stage. Global T19
         # classification prevents sharing alongside another T19+other context.
         candidates = [uuids[index] for index in (5, 6, 4, 2)]
+    if args.prefer_idle_gpu_uuid:
+        if args.prefer_idle_gpu_uuid not in candidates:
+            raise ValueError('Preferred GPU is outside the original physical whitelist')
+        candidates.remove(args.prefer_idle_gpu_uuid)
+        candidates.insert(0, args.prefer_idle_gpu_uuid)
     jobs = []
     old = json.loads((suite / 'queue_status.json').read_text()) if args.resume_queued_only else None
     if old:
