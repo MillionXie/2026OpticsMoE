@@ -128,7 +128,7 @@ def capture(p,out):
         assert m.read(m.LOCK)['pid']==os.getpid();m.LOCK.unlink()
 
 
-def fit(p,probes,out,contrast=None):
+def fit(p,probes,out,contrast=None,spatial_policy=None):
     """Fixed 160-step nuisance fit, with TRAIN-only spatial holdout admission."""
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     cv2,np,torch,Image,m,_=modules()
@@ -167,6 +167,8 @@ def fit(p,probes,out,contrast=None):
     train=[v for v in pack if v['split']=='fit'];held=[v for v in pack if v['split']=='held_TRAIN'];assert len(train)==len(held)==84
     def tensors(rows):return tuple(torch.from_numpy(np.stack([v[k] for v in rows])) for k in ('amplitude','turns','observed'))
     tr=tensors(train);ht=tensors(held);nominal=torch.tensor([1.,1.,0.,0.]);initial=torch.tensor([1.,1.,2.,.1]);lo=torch.tensor([.25,.4,0.,0.]);hi=torch.tensor([2.,2.5,12.,3.])
+    if spatial_policy is not None:
+        return fit_spatial(p,spatial_policy,probes,out,model,tr,ht,train,held,protected,start)
     objective=normalized_loss;prior=None
     if contrast is not None:
         import lab_caltech20_dvp_TRAIN_spatial_response_20261020 as spatial
@@ -224,17 +226,77 @@ def validate_contrast(c):
     assert c['fit_steps']==160 and c['shared_parameters']==4 and c['new_CCD']==0 and c['TEST_used'] is False
 
 
+def validate_spatial(c):
+    assert c['schema']=='TUCam_E2_TRAIN_response_spatial_v1'
+    assert c['prior_fit'].endswith('/e2_response_20261024/contrast_fit/report.json')
+    assert c['prior_fit_SHA256']=='8a83995b14d568f56b1cb8596c6ffc4c1ce36614e9d5837fe761d2dda6594d66'
+    assert c['probes'].endswith('/e2_response_20261024/probes')
+    assert c['fit_steps']==400 and c['shared_parameters']==27 and c['new_CCD']==0 and c['TEST_used'] is False
+    assert c['held_PCC_gain']==.03 and c['held_loss_ratio']==.95 and c['nominal_held_PCC_not_lower'] is True
+    assert c['image_warp'] is False and c['new_inference_layers']==0
+
+
+def fit_spatial(p,c,probes,out,model,tr,held,train_rows,held_rows,protected,start):
+    """Monotonic phase/pupil nuisance response; never a deployed network layer."""
+    cv2,np,torch,Image,m,_=modules()
+    import lab_caltech20_dvp_TRAIN_spatial_response_20261020 as spatial
+    from lab_caltech20_dvp_TRAIN_response_fit_20261020 import response_intensity
+    assert m.sha(spatial.__file__)==c['spatial_engine_SHA256']
+    priorpath=ROOT/c['prior_fit'];assert m.sha(priorpath)==c['prior_fit_SHA256']
+    prior=m.read(priorpath);assert prior['state']=='complete' and not prior['response_fit_admitted']
+    assert prior['probe_report_SHA256']==m.sha(probes/'report.json') and not prior['TEST_used']
+    assert prior['fitted']['held_TRAIN']['coarse_PCC']<prior['baseline']['held_TRAIN']['coarse_PCC']+.02
+    pars=prior['parameters'];old=torch.tensor([pars[k] for k in ('phase_scale','phase_gamma','sigma_pixels','relative_background')])
+    x=torch.linspace(0,1,17);steps=(x[1:].pow(pars['phase_gamma'])-x[:-1].pow(pars['phase_gamma']))*16
+    knots=torch.nn.Parameter(torch.log(torch.expm1(steps)));scale=torch.nn.Parameter(torch.logit(torch.tensor((pars['phase_scale']-.25)/1.75)))
+    sigma=torch.nn.Parameter(torch.logit(torch.tensor(pars['sigma_pixels']/12)));background=torch.nn.Parameter(torch.logit(torch.tensor(pars['relative_background']/3)))
+    coefficients=torch.nn.Parameter(torch.zeros(8));parameters=[knots,scale,sigma,background,coefficients]
+    assert sum(v.numel() for v in parameters)==27
+    def physical():return spatial.monotonic_curve(knots,scale),12*sigma.sigmoid(),3*background.sigmoid(),12*torch.pi*coefficients.tanh()
+    def evaluate(values,rows,baseline=False):
+        total=0.;pcc={}
+        with torch.no_grad():
+            for i in range(0,len(values[0]),4):
+                aa,pp,oo=(v[i:i+4] for v in values)
+                pred=response_intensity(aa,pp,model.propagator,old) if baseline else spatial.spatial_intensity(aa,pp,model.propagator,*physical())
+                total+=float(spatial.spatial_loss(pred,oo))*len(aa)
+                for j,(xx,yy) in enumerate(zip(pred.numpy(),oo.numpy())):
+                    cc=m.correlation(cv2.resize(xx,(16,16),interpolation=cv2.INTER_AREA),cv2.resize(yy,(16,16),interpolation=cv2.INTER_AREA))
+                    pcc.setdefault(rows[i+j]['condition'],[]).append(cc)
+        return dict(loss=total/len(values[0]),coarse_PCC=float(np.mean([x for vs in pcc.values() for x in vs])),PCC_by_condition={k:float(np.mean(v)) for k,v in pcc.items()})
+    baseline=dict(TRAIN=evaluate(tr,train_rows,True),held_TRAIN=evaluate(held,held_rows,True))
+    m.save(out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),policy=c,response_policy=p,probe_report_SHA256=m.sha(probes/'report.json'),prior_fit_SHA256=m.sha(priorpath),
+        TRAIN_fit_pairs=84,held_TRAIN_pairs=84,TRAIN_unique=40,labels_used=False,TEST_used=False,VALID=0,steps=400,batch=4,Adam_lr=.02,shared_parameters=27,phase_knots=17,pupil_modes=8,
+        image_warp=False,coordinates_changed=False,LUT_written=False,model_checkpoint_written=False,training_forward_only=True,nominal_held_PCC_must_not_regress=True))
+    opt=torch.optim.Adam(parameters,lr=.02);history=[]
+    for step in range(1,401):
+        ix=torch.randperm(84)[:4];aa,pp,oo=(v[ix] for v in tr);opt.zero_grad(set_to_none=True)
+        pred=spatial.spatial_intensity(aa,pp,model.propagator,*physical());loss=spatial.spatial_loss(pred,oo)+.0001*coefficients.square().sum()
+        assert torch.isfinite(loss);loss.backward();assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in parameters);opt.step()
+        if step%50==0:
+            row=dict(step=step,TRAIN_batch_spatial_loss=float(loss.detach()),elapsed_s=time.monotonic()-start)
+            history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row)
+    final=dict(TRAIN=evaluate(tr,train_rows),held_TRAIN=evaluate(held,held_rows));curve,psf,bg,coeff=physical()
+    b,f=baseline['held_TRAIN'],final['held_TRAIN']
+    admitted=final['TRAIN']['loss']<baseline['TRAIN']['loss'] and f['loss']<=b['loss']*.95 and f['coarse_PCC']>=b['coarse_PCC']+.03 and f['PCC_by_condition']['nominal_before']>=b['PCC_by_condition']['nominal_before']
+    assert protected=={q:m.sha(q) for q in protected}
+    m.save(out/'report.json',dict(state='complete',spatial_response_admitted=admitted,baseline=baseline,fitted=final,phase_curve_radians=curve.detach().tolist(),sigma_pixels=float(psf.detach()),relative_background=float(bg.detach()),pupil_coefficients_radians=coeff.detach().tolist(),
+        shared_parameters=27,steps=400,TRAIN_unique=40,TRAIN_fit_pairs=84,held_TRAIN_pairs=84,labels_used=False,TEST_used=False,VALID=0,training_forward_only=True,image_warp=False,hardware_unchanged=True,LUT_written=False,model_checkpoint_written=False,new_inference_layers=0,
+        protocol_SHA256=m.sha(out/'protocol.json'),probe_report_SHA256=m.sha(probes/'report.json'),prior_fit_SHA256=m.sha(priorpath),history_SHA256=m.sha(out/'history.json'),SDK_used=False,SDK_released=not m.LOCK.exists(),unique_physical_cause_identified=False,elapsed_s=time.monotonic()-start))
+
+
 if __name__=='__main__':
-    q=argparse.ArgumentParser();q.add_argument('--mode',choices=('selftest','capture_fit','contrast_fit'),required=True);q.add_argument('--profile',type=Path);q.add_argument('--out',type=Path);a=q.parse_args()
+    q=argparse.ArgumentParser();q.add_argument('--mode',choices=('selftest','capture_fit','contrast_fit','spatial_fit'),required=True);q.add_argument('--profile',type=Path);q.add_argument('--out',type=Path);a=q.parse_args()
     if a.mode=='selftest':selftest()
     else:
-        if a.mode=='contrast_fit':
-            c=json.loads(a.profile.read_text());validate_contrast(c);assert not a.out.exists()
-            p=json.loads((HERE/c['response_profile']).read_text());validate_policy(p);fit(p,ROOT/c['probes'],a.out,contrast=c)
-            raise SystemExit(0)
-        p=json.loads(a.profile.read_text());validate_policy(p);assert not a.out.exists();a.out.mkdir(parents=True)
-        try:
-            capture(p,a.out/'probes');fit(p,a.out/'probes',a.out/'fit')
-            _,_,_,_,m,_=modules();r=m.read(a.out/'fit/report.json');m.save(a.out/'report.json',dict(state='complete',response_fit_admitted=r['response_fit_admitted'],probe_frames=208,fit_report_SHA256=m.sha(a.out/'fit/report.json'),TEST_used=False,new_inference_layers=0,SDK_released=not m.LOCK.exists(),G2_not_started=True))
-        except BaseException as e:
-            (a.out/'failure.json').write_text(json.dumps(dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False),indent=2));raise
+        if a.mode in ('contrast_fit','spatial_fit'):
+            c=json.loads(a.profile.read_text());(validate_contrast if a.mode=='contrast_fit' else validate_spatial)(c);assert not a.out.exists()
+            p=json.loads((HERE/c['response_profile']).read_text());validate_policy(p)
+            fit(p,ROOT/c['probes'],a.out,**({'contrast':c} if a.mode=='contrast_fit' else {'spatial_policy':c}))
+        else:
+            p=json.loads(a.profile.read_text());validate_policy(p);assert not a.out.exists();a.out.mkdir(parents=True)
+            try:
+                capture(p,a.out/'probes');fit(p,a.out/'probes',a.out/'fit')
+                _,_,_,_,m,_=modules();r=m.read(a.out/'fit/report.json');m.save(a.out/'report.json',dict(state='complete',response_fit_admitted=r['response_fit_admitted'],probe_frames=208,fit_report_SHA256=m.sha(a.out/'fit/report.json'),TEST_used=False,new_inference_layers=0,SDK_released=not m.LOCK.exists(),G2_not_started=True))
+            except BaseException as e:
+                (a.out/'failure.json').write_text(json.dumps(dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False),indent=2));raise

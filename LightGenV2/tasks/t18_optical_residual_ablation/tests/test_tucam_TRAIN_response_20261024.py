@@ -8,7 +8,7 @@ ENTRY=HERE/'lab_caltech20_tucam_TRAIN_response_20261024.py'
 
 def functions():
     tree=ast.parse(ENTRY.read_text())
-    picked=[v for v in tree.body if isinstance(v,ast.FunctionDef) and v.name in ('validate_policy','validate_contrast','anchors')]
+    picked=[v for v in tree.body if isinstance(v,ast.FunctionDef) and v.name in ('validate_policy','validate_contrast','validate_spatial','anchors')]
     ns={};exec(compile(ast.Module(body=picked,type_ignores=[]),str(ENTRY),'exec'),ns);return ns
 
 
@@ -67,6 +67,21 @@ def test_rejected_brightness_fit_only_allows_fixed_four_parameter_contrast_compa
     s=ENTRY.read_text();assert "objective=spatial.spatial_loss" in s
     assert "not prior['response_fit_admitted']" in s and "prior['probe_report_SHA256']==m.sha(probes/'report.json')" in s
     assert "final['held_TRAIN']['coarse_PCC']>=start_metrics['held_TRAIN']['coarse_PCC']+.02" in s
-    assert 'wavefront_basis(' not in s and 'monotonic_curve(' not in s
+    four=s.split('def fit(',1)[1].split('def selftest(',1)[0]
+    assert 'wavefront_basis(' not in four and 'monotonic_curve(' not in four
+    assert 'if spatial_policy is not None:' in four
     for key,value in [('shared_parameters',27),('new_CCD',208),('TEST_used',True),('fit_steps',400)]:
         with pytest.raises(AssertionError):functions()['validate_contrast']({**p,key:value})
+
+
+def test_spatial_response_uses_shared_TRAIN_nuisance_not_deployed_layer_and_normal_exit():
+    p=json.loads((HERE/'lab_caltech20_tucam_TRAIN_response_spatial_profile_20261024.json').read_text());functions()['validate_spatial'](p)
+    s=ENTRY.read_text().split('def fit_spatial(',1)[1].split("if __name__",1)[0]
+    assert 'spatial.monotonic_curve' in s and 'spatial.spatial_intensity' in s
+    assert 'sum(v.numel() for v in parameters)==27' in s and 'range(1,401)' in s
+    assert "f['PCC_by_condition']['nominal_before']>=b['PCC_by_condition']['nominal_before']" in s
+    assert 'labels_used=False' in s and 'model_checkpoint_written=False' in s
+    assert 'torch.save(' not in s and 'saved_model(' not in s and 'Bench(' not in s
+    assert 'raise SystemExit(0)' not in ENTRY.read_text()
+    for key,value in [('new_inference_layers',1),('image_warp',True),('held_PCC_gain',0),('nominal_held_PCC_not_lower',False)]:
+        with pytest.raises(AssertionError):functions()['validate_spatial']({**p,key:value})
