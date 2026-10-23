@@ -6,6 +6,7 @@ Native inference always reloads MeasuredPrefix via the original model_for.
 import torch
 from lab_caltech20_rich_layerwise_20261018 import MeasuredPrefix
 from lab_caltech20_dvp_TRAIN_spatial_response_20261020 import spatial_intensity
+from lab_caltech20_TRAIN_flat_response_20261024 import apply_map
 
 
 def validate_response(r):
@@ -41,6 +42,47 @@ class TRAINResponsePrefix(MeasuredPrefix):
         assert intensity.shape==(len(amplitude),478,478) and torch.isfinite(intensity).all()
         self.last[stage]=dict(amplitude=amp.detach(),phase_gray=(exact.detach()*256).to(torch.uint8),intensity=intensity.detach())
         return intensity
+
+
+class TRAINPhotometricPrefix(MeasuredPrefix):
+    """Training-phase E2 prediction only; never a deployed image correction."""
+    def __init__(self,state,gain,background):
+        super().__init__(4);self.load_state_dict(state,strict=True)
+        assert tuple(gain.shape)==tuple(background.shape)==(8,8)
+        assert bool(torch.isfinite(gain).all()) and bool(torch.isfinite(background).all())
+        assert float(gain.min())>=.05 and float(gain.max())<=4 and float(background.min())>=0 and float(background.max())<=4
+        self._gain=gain.tolist();self._background=background.tolist()
+        assert set(self.state_dict())==set(state) and all(torch.equal(v,self.state_dict()[k]) for k,v in state.items())
+
+    def capture(self,amplitude,stage,weights=None,callback=None,ids=None):
+        if stage!='2' or stage in self.measured or callback is not None:
+            return super().capture(amplitude,stage,weights,callback,ids)
+        field,amp,phase=self.physical_fields(amplitude,stage,weights)
+        nominal=self.propagator(field).abs().square()[:,20:498,20:498]
+        intensity=apply_map(nominal,nominal.new_tensor(self._gain),nominal.new_tensor(self._background))
+        self.last[stage]=dict(amplitude=amp.detach(),phase_gray=(phase.detach()*256).to(torch.uint8),intensity=intensity.detach())
+        return intensity
+
+
+def photometric_selftest():
+    torch.set_num_threads(2);torch.manual_seed(73)
+    native=MeasuredPrefix(4).eval();state={k:v.detach().clone() for k,v in native.state_dict().items()}
+    candidate=TRAINPhotometricPrefix(state,torch.ones(8,8),torch.zeros(8,8)).eval()
+    x=torch.rand(2,224,224)*.25
+    shared={k:torch.randint(0,255,(2,478,478),dtype=torch.uint8) for k in ('router','0','1')}
+    native.measured=shared;candidate.measured=shared
+    with torch.no_grad():expected=native(x)[0];actual=candidate(x)[0]
+    assert torch.allclose(actual,expected,atol=3e-6,rtol=3e-6),float((actual-expected).abs().max())
+    candidate.train();weights=torch.full((2,4),.5);amplitude=torch.rand(2,224,224,requires_grad=True)
+    value=candidate.capture(amplitude,'2',weights);weight=torch.linspace(0,1,478)[None,None,:]
+    (value*weight).mean().backward();norms=[float(candidate.phase_sets[i].grad.norm()) for i in range(5,9)]
+    assert all(v>0 for v in norms) and amplitude.grad is not None and torch.isfinite(amplitude.grad).all()
+    assert all(torch.equal(v,candidate.state_dict()[k]) for k,v in state.items())
+    native.load_state_dict(candidate.state_dict(),strict=True)
+    real=torch.randint(0,255,(2,478,478),dtype=torch.uint8);candidate.measured={'2':real}
+    assert torch.equal(candidate.capture(amplitude,'2',weights),real.float())
+    print(dict(passed=True,nominal_original_probability_maxabs=float((actual-expected).abs().max()),same_state_keys=True,native_reload_exact=True,phase_gradient_norms=norms,
+        input_gradient_finite=True,real_CCD_bypass_exact=True,SDK_used=False,GPU_used=False,new_inference_layers=0))
 
 
 def selftest():

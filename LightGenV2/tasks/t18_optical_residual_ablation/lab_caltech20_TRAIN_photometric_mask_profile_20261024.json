@@ -1,0 +1,26 @@
+{
+  "schema":"TUCam_L4_admitted_photometric_E2_mask_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "capture_engine_SHA256":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685",
+  "operator_SHA256":"1de308e8c5741944d1d22540a3cae51beb30b7f48d1687e3e4e8d56ae4bcd899",
+  "flat_engine_SHA256":"6bb0fc65bc1073e482e042f4a29ddb4377b8755d2fc5f1c6652cc8d157c17ed6",
+  "phase_probe_engine_SHA256":"2129ade759001a58583758820c925e17aac09a97643b76dac78605b637231520",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2z/s_2/fit",
+  "source_correct":273,"source_PT_SHA256":"c511fc50b2c6a8763620c47cdc6e20556f8cc15a07e3fdcb549468943f3f2efd",
+  "response_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_response_20261024/flat_photometric",
+  "response_report_SHA256":"6cf09552fc620262fa2eecaab695a64a1c36aeb859c03e327cccbd8634fcbdbf",
+  "response_map_SHA256":"6735e4f409548677d38d080918bb24a03a0c31cdc4c9ce3cc8e6eef84425eaab",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2h/s_2/capture"
+  },
+  "mask_recipe":{"epochs":16,"seconds":1200,"phase_lr":0.0002,"electronic_lr":0.0002,"alpha_lr":0.0002,"head_lr":0.0005,"weight_decay":0.01,"label_smoothing":0.03},
+  "observed_recipe":{"name":"new_response_E2_actual_suffix_CE","epochs":36,"seconds":1200,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "final_recipe":{"name":"new_response_full_physical_original5150","epochs":120,"seconds":1200,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"scheduler":false,"new_G2_if_gate_unmet":false,
+  "scope":"Human authorizes continued optimization and TRAIN-response forward calibration. New analytic flat-only20TRAIN response PASSED independent20TRAIN and unseen phases, unlike earlier rejected phase-only fits: shared residualPCC.98962, heldflat.7524->.9636, heldunseenphase.6663->.9075, nominalmask.6236->.8700. These are imaging agreements NOT classification accuracy or unique physical causes. Begin from actual highest273/PTc511, original nativeCPU and eightarrays/captured-input ancestors audited. Keep verified6033 Router/E1/G1 frames, preserve both priorE2datasets/old282. New training graph uses admitted8x8 gain/background ONLY to predict unmeasuredE2 during TRAIN optimization and training-phase diagnostic TEST selection; no LUT or deployed correction. Native PT state remains identical schema, no new layers/parameters/buffers in saved inference. Joint original E2phase5..8/G2phase9, lawful postG1electronics1..3/directf64alpha1..3/original5140head; all measured ancestors frozen. Full1600TRAIN80/class,411TEST,VALID0; originalTRAIN-only priors/noise gain.02/.5DN/pixel dropout.002 on measuredG1. Finite16epoch1200seconds cosineAdamW budget, no teacher or TEST gradients, TEST chooses calibrated-hybrid predictive PT only and is explicitly development/not physical. Bestlast original state CPU and all prefixSHA reviewed; nominal-unmeasured counterfactual also reported separately. Proposal must be trained, calibrated predictive>=305, TRAINNLL improved, realE2phasekeys and nativeBMPchanged before one freshE2 capture. Predictive305 is NOT physical gate. FreshE2 uses native original model/mask encoding/current hardware only, TRAIN1600 immediatelyTEST411/2011frames, pilot24 reused, original guarded signal/audit/SHAs/SDK. Then original lawful E2suffix CE36epoch1200sec, strict originalCPU actual411>=305 alone permits freshG2. Never replay oldE2 under changedmask. IfactualE2gatefails preserve/diagnose, noG2; ifpasses immediately freshG2same1600/411 then optimize only original5150lastCCD electronics/alpha/head120epochs1200sec aiming340. Full-chain physical metrics reported only after all five stages measured. Originalexposure/coords/LUT/orientation/directalpha bounds and physical optical graph unchanged. No automatedtimer/retry/newbranch/worktree/project/publicupload or candidate scan; only normal dependency controller, all bestlast/predictions/protocol/history/phase/dataSHA preserved and backed up. EstimatedE2~20min, full conditional E2+G2 path45-65min, not promised target attainment."
+}
