@@ -1,0 +1,14 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"native_CE",
+  "TRAIN_diagnostic_only":true,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_SOFTOLD.return.json",
+  "recipe":{"name":"readonly_TRAIN_noise_components_not_training","epochs":1,"seconds":300,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_actual_readout_20261024.py":"f77ada65022f9af260f959ac2d592a79ac6371e23fe3a68dcc897947841d03ff",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07"
+  },
+  "scope":"Read-only diagnostic, NOT a training/accuracy candidate. Admit exact old282 original/PT1f447 with all8 matching captured arrays first. Only first80 fixedroundrobin TRAIN (4/class), no TEST in perturbation diagnostic/no gradients/optimizer/GPU/SDK. Clean twice bitwise identity then four repeated seeded perturbations under current syntheticCCDgain.005/additive.1DN/dropout.002, gain+additive only, dropout only; component isolation not a hyperparameter search. Report correct/NLL/flipfraction/nativefeaturecosine, assert originalstate and allCCDunchanged and evalreturns exactclean. No exposure/coordinate/LUT/structure change, no G2, no timer/retry."
+}

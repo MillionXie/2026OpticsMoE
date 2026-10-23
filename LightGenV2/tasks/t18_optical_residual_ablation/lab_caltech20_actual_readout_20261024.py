@@ -8,6 +8,56 @@ def selftest():
     contrast_test()
 
 
+def TRAIN_perturbation_audit(model,data,dm,fields,paths,parent,c,out):
+    """Read-only original TRAIN perturbation sensitivity, no optimizer/TEST."""
+    np,torch,m,loop=base.numerical_modules()
+    from lab_caltech20_dvp_TRAIN_regularization_20261021 import TRAINTransforms
+    assert not out.exists() and not m.LOCK.exists();out.mkdir();model.cpu().eval().requires_grad_(False)
+    original=m.state_cpu(model);lineage=base.identities(m,paths);ix=np.arange(80);labels=data['train'][1][ix]
+    assert np.bincount(labels,minlength=20).tolist()==[4]*20
+    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT_SHA256=m.sha(parent),data_SHA256=dm['sha256'],prefix_SHA256=lineage,
+        TRAIN=80,TEST_used=False,VALID=0,optimizer_updates=0,SDK_used=False,GPU_used=False,new_inference_layers=0,noise_is_synthetic_not_calibrated=True)
+    m.save(out/'protocol.json',protocol)
+    def forward():
+        probabilities=[];features=[]
+        with torch.inference_mode():
+            for begin in range(0,80,8):
+                batch=ix[begin:begin+8];probabilities.append(model(loop.put_fields(model,data,fields,'train',batch,'cpu'))[0].numpy().copy());features.append(model.readout['features'].numpy().copy())
+        return np.concatenate(probabilities),np.concatenate(features)
+    saturation={k:dict(count=0,abs_gt3=0,abs_gt6=0,tanh_derivative_sum=0.) for k in (2,3)}
+    def collect(k):
+        def hook(module,args,value):
+            v=value.detach();row=saturation[k];row['count']+=v.numel();row['abs_gt3']+=int((v.abs()>3).sum());row['abs_gt6']+=int((v.abs()>6).sum());row['tanh_derivative_sum']+=float((1-v.tanh().square()).double().sum())
+        return hook
+    handles=[model.electronic[k].local.register_forward_hook(collect(k)) for k in (2,3)]
+    try:clean,feature=forward()
+    finally:
+        for handle in handles:handle.remove()
+    clean_again,_=forward();assert np.array_equal(clean,clean_again)
+    rows={}
+    cases=dict(current={**c},gain_additive_only={**c,'CCD_pixel_dropout_p':0.},pixel_dropout_only={**c,'CCD_gain_sigma':0.,'CCD_additive_sigma_DN':0.})
+    for case,config in cases.items():
+        torch.manual_seed(73);transforms=TRAINTransforms(model,'2',config);values=[];cosines=[]
+        try:
+            model.train()
+            for repetition in range(4):
+                probability,value=forward();values.append(probability);cosines.append((feature*value).sum(1)/(np.linalg.norm(feature,axis=1)*np.linalg.norm(value,axis=1)).clip(1e-12))
+                m.save(out/'progress.json',dict(state='TRAIN_readonly_noise_audit',case=case,repetition=repetition+1,TRAIN=80,TEST_used=False))
+        finally:transforms.remove();model.eval()
+        v=np.stack(values);native=v.argmax(2);clean_prediction=clean.argmax(1);correct=clean_prediction==labels
+        rows[case]=dict(TRAIN_trials=320,mean_correct_per80=float((native==labels[None]).sum(1).mean()),
+            NLL=float(-np.log(v[np.arange(4)[:,None],np.arange(80)[None],labels[None]].clip(1e-12)).mean()),
+            flip_fraction_from_clean=float((native!=clean_prediction[None]).mean()),clean_correct_to_wrong_fraction=float(((native!=labels[None])&correct[None]).sum()/max(1,4*correct.sum())),
+            feature_cosine_mean=float(np.mean(cosines)),TRAIN_transform_counts=transforms.counts)
+    after,_=forward();assert np.array_equal(clean,after) and all(torch.equal(v,model.state_dict()[k]) for k,v in original.items()) and base.identities(m,paths)==lineage
+    report=dict(state='complete',TRAIN=80,TEST_used=False,VALID=0,clean_correct=int((clean.argmax(1)==labels).sum()),
+        clean_NLL=float(-np.log(clean[np.arange(80),labels].clip(1e-12)).mean()),cases=rows,
+        TRAIN_postE2_original_tanh_statistics={str(k):dict(abs_gt3_fraction=v['abs_gt3']/v['count'],abs_gt6_fraction=v['abs_gt6']/v['count'],mean_tanh_derivative=v['tanh_derivative_sum']/v['count'])for k,v in saturation.items()},original_state_bitwise_unchanged=True,
+        original_eval_identity_exact=True,optimizer_updates=0,SDK_used=False,GPU_used=False,protocol_SHA256=m.sha(out/'protocol.json'))
+    m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_parameters_bitwise_frozen=True))
+    return report
+
+
 def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     np,torch,m,loop=base.numerical_modules()
     from torch.nn import functional as F
@@ -44,7 +94,19 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     if ridge:
         from lab_caltech20_TRAIN_group_ridge_20261024 import fit as ridge_fit
         path=base.ROOT/c['sequence']/'assets/TRAIN_lineage.json';assert m.sha(path)==dm['lineage_SHA256'];records=m.read(path)['records'];assert [v['sample_id'] for v in records]==data['train'][2].tolist()
-        weight,bias,ridge_statistics=ridge_fit(train.numpy(),data['train'][1],c['original_TRAIN_counts'],[v['source_id'] for v in records])
+        teacher_targets=c.get('TRAIN_teacher_targets',False);assert isinstance(teacher_targets,bool)
+        if teacher_targets:
+            from lab_caltech20_TRAIN_teacher_ridge_20261024 import fit as teacher_fit
+            folder=base.ROOT/c['TRAIN_teacher_cache'];manifest=m.read(folder/'teacher_manifest.json');teacher_cache=folder/'teacher_TRAIN_logits.npz'
+            assert m.sha(folder/'teacher_manifest.json')=='761611b3cf1986254e77efdc0fc0a0c5044fdb46f3fd89fbfe9cfa837b220a98'
+            assert manifest['role']=='train' and manifest['samples']==1600 and not manifest['TEST_used'] and not manifest['VALID_used']
+            assert manifest['source_PT_SHA256']=='7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5'
+            assert m.sha(teacher_cache)==manifest['cache_SHA256']=='c73a318e3887b00200c51814790c7874754d64df9190edb044557347e25d6069'
+            with np.load(teacher_cache,allow_pickle=False) as z:
+                assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1]);teacher_logits=z['logits'].copy()
+            weight,bias,ridge_statistics=teacher_fit(train.numpy(),data['train'][1],c['original_TRAIN_counts'],[v['source_id'] for v in records],teacher_logits)
+            m.save(out/'teacher_manifest.json',manifest);protocol.update(TRAIN_teacher_targets=True,teacher_cache_SHA256=m.sha(teacher_cache),inference_teacher=False)
+        else:weight,bias,ridge_statistics=ridge_fit(train.numpy(),data['train'][1],c['original_TRAIN_counts'],[v['source_id'] for v in records])
         head.load_state_dict(dict(weight=torch.from_numpy(weight),bias=torch.from_numpy(bias)));m.save(out/'TRAIN_statistics.json',ridge_statistics)
         protocol.update(TRAIN_group_ridge=True,TRAIN_ridge_regularization=ridge_statistics['regularization'],TRAIN_family_lineage_SHA256=m.sha(path),TRAIN_statistics_SHA256=m.sha(out/'TRAIN_statistics.json'));m.save(out/'protocol.json',protocol)
         with torch.inference_mode():

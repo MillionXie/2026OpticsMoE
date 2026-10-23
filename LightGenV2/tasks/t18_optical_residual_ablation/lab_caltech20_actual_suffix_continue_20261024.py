@@ -79,6 +79,10 @@ def run(a):
     assert admission.seconds_left(p)>1800 and not a.out.exists() and not m.LOCK.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(73)
     m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),policy=p,TEST_development=True,TEST_gradient=False,new_inference_layers=0,scheduler=False))
     model,data,dm,fields,paths,pt,reference=admit(p,c,a.out)
+    if p.get('TRAIN_diagnostic_only',False):
+        import lab_caltech20_actual_readout_20261024 as engine
+        result=engine.TRAIN_perturbation_audit(model,data,dm,fields,paths,pt,c,a.out/'fit')
+        m.save(a.out/'report.json',dict(state='TRAIN_diagnostic_complete',TEST_used_in_diagnostic=False,optimizer_updates=0,SDK_released=not m.LOCK.exists(),G2_not_started=True,full_physical=False,report=result));return
     if p['method'] in ('frozen_readout_CE','safe_teacher_CE'):
         import lab_caltech20_TRAIN_frozen_readout_20261024 as engine
         config={**c,**p['learning_rates']}
@@ -88,7 +92,9 @@ def run(a):
     elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge'):
         import lab_caltech20_actual_readout_20261024 as engine
         config={**c}
-        if p['method']=='TRAIN_group_ridge':config.update(TRAIN_group_ridge=True,native_feature_source=p['native_feature_source'])
+        if p['method']=='TRAIN_group_ridge':
+            config.update(TRAIN_group_ridge=True,native_feature_source=p['native_feature_source'])
+            if p.get('TRAIN_teacher_targets',False):config.update(TRAIN_teacher_targets=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])
     else:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as engine
         config={**c}

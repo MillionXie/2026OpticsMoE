@@ -1,0 +1,17 @@
+{
+  "inherits":"lab_caltech20_actual300_RIDGEOLD_profile_20261024.json",
+  "inherits_SHA256":"734f361c227fea9428d3debcfaab066b9f00e3c472f8a1d4759d8a436c42a7d8",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/suffix_safe_teacher_old282.return.json",
+  "TRAIN_teacher_targets":true,
+  "TRAIN_teacher_cache":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2k/s_2/fit",
+  "recipe":{"name":"actual300_old282_TRAIN_soft_target_family_ridge","epochs":1,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_actual_readout_20261024.py":"f77ada65022f9af260f959ac2d592a79ac6371e23fe3a68dcc897947841d03ff",
+    "lab_caltech20_TRAIN_group_ridge_20261024.py":"0c8d419c1f7dd347853192580ef83449144bac4e058aed1c9032a28c114c4c15",
+    "lab_caltech20_TRAIN_teacher_ridge_20261024.py":"1284dd18f6d43c8106dfedf02f292fe14f7f4b8065e0c818364fe9c06e0c89d2",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Single finite original5140 readout on exact old282/PT1f447 and matching oldE2 arrays/phase, source fallback preserved. TRAIN-only diagnostic of soft simulation knowledge raises analytic family-deleted correct841->851 and NLL1.51968->1.48322, not a TEST improvement claim. Same1600TRAIN/1508sourcefamilies/92augmentedsiblings, all siblings deleted together in analytic residual, all1600 used for final fit. Original simulation7b0d fixedSHA logits; only correct rawconfidence>=.5 teacher1247 rows mixed .5 hard labels+.5 teacher T2 probability, others hard labels unchanged. No TESTteacher/TESTfitting/VALID, no inference teacher/newlayer/ensemble; originalW/b only. Lambda from continuous TRAIN family-deleted MSE, scale from deleted TRAIN true-label NLL; no TEST hyperparameter grid. Native all411CPU bestlast andtrain1600/ancestorSHA required; no calibration/capture changes. Actual300 beforeG2 and final340 unchanged; no scheduler/retry."
+}
