@@ -14,9 +14,10 @@ def test_initial_OAS_profile_and_source_identities():
 def test_old282_keeps_its_own_camera_arrays_and_exact_parent():
     tree=ast.parse(ENTRY.read_text());nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('validate_policy','load_policy')]
     ns=dict(json=json,hashlib=hashlib,Path=Path,base=SimpleNamespace(HERE=ENTRY.parent));exec(compile(ast.Module(body=nodes,type_ignores=[]),str(ENTRY),'exec'),ns)
-    p=ns['load_policy'](ENTRY.parent/'lab_caltech20_actual300_FROZEN_profile_20261024.json');ns['validate_policy'](p)
-    assert p['expected_parent_correct']==282 and p['captures']['2'].endswith('/g1s/s_2/capture')
-    for name,digest in p['source_SHA256'].items():assert hashlib.sha256((ENTRY.parent/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==digest
+    for profile in ('lab_caltech20_actual300_FROZEN_profile_20261024.json','lab_caltech20_actual300_RIDGEOLD_profile_20261024.json'):
+        p=ns['load_policy'](ENTRY.parent/profile);ns['validate_policy'](p)
+        assert p['expected_parent_correct']==282 and p['captures']['2'].endswith('/g1s/s_2/capture')
+        for name,digest in p['source_SHA256'].items():assert hashlib.sha256((ENTRY.parent/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==digest
 
 
 def test_fresh_E2_only_and_immutable_measured_upstream():

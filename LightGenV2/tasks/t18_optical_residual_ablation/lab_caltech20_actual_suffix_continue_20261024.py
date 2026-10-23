@@ -10,10 +10,10 @@ import lab_caltech20_E2_actual300_20261024 as admission
 base=admission.base
 
 
-def load_policy(path):
-    p=json.loads(Path(path).read_text())
+def load_policy(path,visited=()):
+    path=Path(path);assert path.resolve() not in visited and len(visited)<4;p=json.loads(path.read_text())
     if 'inherits' in p:
-        inherited=base.HERE/p['inherits'];assert hashlib.sha256(inherited.read_bytes()).hexdigest()==p['inherits_SHA256'];parent_policy=json.loads(inherited.read_text());assert 'inherits' not in parent_policy;p={**parent_policy,**p}
+        inherited=base.HERE/p['inherits'];assert inherited.parent.resolve()==base.HERE.resolve() and hashlib.sha256(inherited.read_bytes()).hexdigest()==p['inherits_SHA256'];parent_policy=load_policy(inherited,(*visited,path.resolve()));p={**parent_policy,**p}
     return p
 
 
