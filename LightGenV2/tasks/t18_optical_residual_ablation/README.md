@@ -1,3 +1,34 @@
+## 2026-10-23 E2全2011帧审计通过，联合微调确认欠拟合
+
+`layerwise_L4_on_20261023/g1s/s_2/capture`完整TRAIN1600接TEST411，实际1163.453秒，
+独立核验2011份原始帧/裁图/原生输入/BMP/相位/PT/样本ID/SHA及重新裁图全部通过。
+采集报告SHAe0c93c005e988c4cb849581650329101021e488f33304f424d08fdb47e2ec1c0，
+独立审计SHA4d7b704754f48da7db27d837f12a4e04c623df580b636b5550cd1c6f6e295bfa。
+TRAIN数组SHA9de8757e02c22a5a7cbff9389166136afb88005071b1ea7d2a70939c2e824b2a，
+TEST数组SHAd6056c943fd3e52150a567f1ecc9d5f68707a8163d9a84295ed2ad99dda1ceee。
+TRAIN最低p99=79、最大饱和.00191261；TEST最低p99=84、最大饱和.00165001，
+未触暗/饱和守卫，所有帧身份固定；SDK释放，不重拍或改硬件。
+
+首个联合微调`g1s/s_2/f0`24完整TRAIN epoch/4800更新，原模型CPU bestlast全
+TRAIN1600/TEST411及所有非后缀/8份CCD数组SHA审计通过：从baseline45/411到
+best205/411=49.87835%，TRAIN660/1600=41.25%，最佳e18，last201。
+PT SHAdd3b0cfa6adc815b63616afe009af6e36fdbf7e4df6316c22a08715d67e6e460；
+本地12份证据manifest SHA66e7f5407a7ab3badc1780321e5b703e67d229537f4dcedb08ada23007b9007a。
+这还是四个实测阶段加仿真G2的TEST开发指标，不是完整实拍。已检查原生逐样本
+错分：多类TRAIN仍很低，整体TRAIN低于TEST，明确当前欠拟合，不能误称过拟合
+或只在末端补分。实际优化范围为G2相位phase_sets.9、电残差electronic.2/3、
+直接alpha fusion_logits.2/3及原5140读出；E2 mask与全部已采输入祖先固定。
+
+旧g1s原定f1及有限诊断仍先按原闭包完成，不修改/重启在跑源码。已准备E2欠拟合
+接续profile，只有旧controller正常返回0并停在E2未达标边界、所有采集/原生审计
+通过、其真正最佳TRAIN仍<80%且TEST在205..304时才准入；不挑较差父PT。保持同
+数据与全部已采上游冻结，原未采G2和合法后电模块/alpha/读出共同训练，phaseLR
+2e-4/electronicLR1e-3/alphaLR1e-3/headLR2e-3，最多48完整epoch或1500fit秒。
+沿用原TRAIN合成轻噪声/dropout及更高TRAIN类别强调，不是相机标定或TEST训练。
+通过测试、Git发布且旧任务退出后才同步启动，>=305严格复核后才新采G2，最终
+340不变。不新层、硬件/坐标/LUT/朝向变更、TEST梯度/增强TEST/VALID、无界候选扫描、
+重拍、定时任务或新分支/工作树/工程副本。全部旧数据和好坏结果保留。
+
 ## 2026-10-23 G1完整305通过，E2已真实采集
 
 用户最新允许当前G1放行；此时有限剩余类别更新恰已达到305，不需降低原数值门槛。

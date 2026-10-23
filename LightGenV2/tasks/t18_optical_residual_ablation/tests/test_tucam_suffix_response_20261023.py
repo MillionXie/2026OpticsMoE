@@ -73,3 +73,15 @@ def test_CCD_robustness_is_TRAIN_configuration_not_hardware_change():
     assert set(p['TRAIN_noise'])=={'CCD_gain_sigma','CCD_additive_sigma_DN','CCD_pixel_dropout_p'}
     assert p['expected_parent_correct']==299 and p['TRAIN_teacher']=={'temperature':2,'mixture':.3}
     assert "if 'TRAIN_noise' in p:tuned.update(p['TRAIN_noise'])" in ENTRY.read_text()
+
+
+def test_E2_underfit_uses_four_exact_measured_stages_and_joint_suffix():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_underfit_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['parent_stage']=='2' and list(p['captures'])==['router','0','1','2']
+    assert p['maximum_parent_TRAIN_accuracy']==.8 and p['minimum_parent_correct']==205
+    assert p['recipe']['epochs']==48 and p['recipe']['seconds']==1500
+    assert p['learning_rates']['phase_lr']>0 and p['learning_rates']['electronic_lr']>0 and p['learning_rates']['alpha_lr']>0
+    assert "paths[p['parent_stage']]" in ENTRY.read_text()
+    for key,value in [('parent_stage','1'),('maximum_parent_TRAIN_accuracy',1.),('intermediate_target',304)]:
+        with pytest.raises(AssertionError):policy_validator()({**p,key:value})
+    assert p['new_CCD_before_gate']==0 and p['scheduler'] is False

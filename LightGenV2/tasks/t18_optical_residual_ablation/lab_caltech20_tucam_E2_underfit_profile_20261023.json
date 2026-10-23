@@ -1,0 +1,21 @@
+{
+  "schema":"TUCam_L4_E2_underfit_response_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_1/fit/best.pt",
+  "capture_parent_SHA256":"8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_2/capture"
+  },
+  "parent_stage":"2","minimum_parent_correct":205,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":0.80,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{"phase_lr":0.0002,"electronic_lr":0.001,"alpha_lr":0.001,"head_lr":0.002},
+  "recipe":{"name":"E2_observed_underfit_original_suffix","epochs":48,"seconds":1500,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Finite response to complete original CPU E2 f0: TRAIN660/1600=41.25%, TEST205/411, after24 full epochs and verified2011 freshE2 frames. This is observed underfit, not justification to train TEST or just patch the readout. Do not start until the existing g1s controller completes its registered f1/diagnostic steps, returns0 at an unmet E2 boundary, SDK is released, all4 measured-stage audits/data/phase/PT identities pass, and its exact selected parent remains below80% TRAIN and below305 TEST. No timestamp or worse-parent selection. Reuse all verified CCD, freeze every measured mask/input ancestor, update ONLY existing unmeasured G2 phase plus E2/postG2 electronics/direct alpha/original5140 readout, using higher finite rates and TRAIN class emphasis. Original mild synthetic TRAIN CCD noise/dropout retained; eval closed. Max48 full TRAIN1600 epochs or1500fit seconds, complete-epoch boundary. TEST informs strategy/selection, no TEST gradients/augmented TEST examples/VALID; native CPU bestlast and frozen/dataSHA audit before305 and freshG2. Final340 unchanged. No hardware/coordinates/LUT/structure changes, process patch, blind recapture/retry, extra depth, branch/worktree/project copy, scheduler or candidate grid."
+}

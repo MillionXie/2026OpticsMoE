@@ -10,11 +10,18 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1')
-    assert p['parent_stage']=='1' and list(p['captures'])==['router','0','1']
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1')
+    e2=p['schema']=='TUCam_L4_E2_underfit_response_v1'
+    assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
-    if p['schema']=='TUCam_L4_G1_underfit_response_v1':
+    if e2:
+        assert p['minimum_parent_correct']==205 and p['maximum_parent_TRAIN_accuracy']==.80
+        assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
+        assert p['recipe']==dict(name='E2_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
+        assert p['capture_parent_SHA256']=='8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'
+        assert p['completed_controller'].endswith('/g1s')
+    elif p['schema']=='TUCam_L4_G1_underfit_response_v1':
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
         assert p['recipe']==dict(name='G1_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
@@ -114,8 +121,8 @@ def admit(p,c,out):
     else:assert fit['results']['best']['train']['accuracy']<p['maximum_parent_TRAIN_accuracy']
     reference=base.ROOT/c['reference'];assert m.sha(reference)==c['reference_SHA256']
     model,_=m.model_for(parent,e['PT_SHA256'],4,reference)
-    # Compare to the EXACT PT that produced G1, not a timestamp-selected model.
-    cap_protocol=m.read(paths['1']/'protocol.json');captured_parent=base.ROOT/p['capture_parent_PT']
+    # Compare to the EXACT PT that produced the last measured stage.
+    cap_protocol=m.read(paths[p['parent_stage']]/'protocol.json');captured_parent=base.ROOT/p['capture_parent_PT']
     assert m.sha(captured_parent)==cap_protocol['PT_SHA256']==p['capture_parent_SHA256']
     origin,_=m.model_for(captured_parent,cap_protocol['PT_SHA256'],4,reference)
     loop.validate_state(m,model,m.state_cpu(origin),m.allowed_keys(model,len(fields)))
@@ -167,6 +174,7 @@ def run(a):
     e=endpoint(m,stage,parent,fit,paths);endpoints[-1]=e;m.save(folder/'endpoint_report.json',e)
     if not e['target_met']:
         state='G1_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'G1_underfit_budget_complete_gate_unmet'
+        if stage=='2':state='E2_underfit_budget_complete_gate_unmet'
         m.save(a.out/'report.json',dict(state=state,endpoints=endpoints,next_layer_not_started=True,SDK_released=not m.LOCK.exists()));return
     from lab_caltech20_tucam_capture_20261023 import acquire
     for stage in base.STAGES[len(fields):]:
