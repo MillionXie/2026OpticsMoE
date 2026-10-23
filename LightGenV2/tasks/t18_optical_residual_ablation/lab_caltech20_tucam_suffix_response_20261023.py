@@ -10,8 +10,8 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1')
-    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1')
+    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1')
     assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -34,6 +34,12 @@ def validate_policy(p):
         assert len(p['linear_engine_SHA256'])==64 and p['native_feature_source'].endswith('/e2l/s_2/fit') and p['completed_controller'].endswith('/e2l')
         assert p['TRAIN_affine_optimizer']==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
         assert p['recipe']==dict(name='E2_conditioned_TRAIN_affine_LBFGS',epochs=80,seconds=60,lr_scale=1,TRAIN_class_emphasis=.75)
+    elif p['schema']=='TUCam_L4_E2_teacher_response_v1':
+        assert p['minimum_parent_correct']==p['expected_parent_correct']==267 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['completed_controller'].endswith('/e2b')
+        assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
+        assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01 and len(p['teacher_engine_SHA256'])==64
+        assert p['recipe']==dict(name='E2_TRAIN_only_fixed_teacher_cosine',epochs=36,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
     elif p['schema']=='TUCam_L4_G1_underfit_response_v1':
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
@@ -99,6 +105,7 @@ def admit(p,c,out):
     expected_state='G1_native_linear_gate_unmet' if p['schema'] in ('TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1') or ('skip_classes' in p.get('TRAIN_local_boundary',{})) else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_readout' in p else 'G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
     if p['schema']=='TUCam_L4_E2_linear_response_v1':expected_state='E2_underfit_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fullbatch_response_v1':expected_state='E2_native_linear_gate_unmet'
+    if p['schema']=='TUCam_L4_E2_teacher_response_v1':expected_state='E2_native_linear_gate_unmet'
     assert r['state']==expected_state
     assert r['next_layer_not_started'] and r['SDK_released']
     endpoints=r['endpoints'];assert [e['stage'] for e in endpoints]==list(p['captures'])
@@ -222,7 +229,7 @@ def run(a):
     e=endpoint(m,stage,parent,fit,paths);endpoints[-1]=e;m.save(folder/'endpoint_report.json',e)
     if not e['target_met']:
         state='G1_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'G1_underfit_budget_complete_gate_unmet'
-        if stage=='2':state='E2_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'E2_underfit_budget_complete_gate_unmet'
+        if stage=='2':state='E2_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'E2_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'E2_underfit_budget_complete_gate_unmet'
         m.save(a.out/'report.json',dict(state=state,endpoints=endpoints,next_layer_not_started=True,SDK_released=not m.LOCK.exists()));return
     from lab_caltech20_tucam_capture_20261023 import acquire
     for stage in base.STAGES[len(fields):]:

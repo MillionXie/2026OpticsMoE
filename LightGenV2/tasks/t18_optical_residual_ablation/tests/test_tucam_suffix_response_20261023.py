@@ -114,3 +114,12 @@ def test_E2_fullbatch_reuses_exact_native_cache_and_TRAIN_only_L2():
     assert p['expected_parent_correct']==257 and p['minimum_parent_TRAIN_TEST_gap']==.03
     assert p['native_feature_source'].endswith('/e2l/s_2/fit') and p['recipe']['epochs']==80 and p['recipe']['seconds']==60
     assert p['TRAIN_affine_optimizer']['l2_parent_TRAIN_NLL_fraction']==.1 and p['learning_rates']=={}
+
+
+def test_E2_teacher_requires_native_gap_and_joint_original_parameters():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_distill_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['expected_parent_correct']==267 and p['minimum_parent_TRAIN_TEST_gap']==.1
+    assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['recipe']['epochs']==36
+    assert p['learning_rates']['phase_lr']>0 and p['learning_rates']['electronic_lr']>0 and p['learning_rates']['alpha_lr']>0
+    engine=HERE/'lab_caltech20_tucam_TRAIN_distill_20261023.py'
+    assert hashlib.sha256(engine.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['teacher_engine_SHA256']
