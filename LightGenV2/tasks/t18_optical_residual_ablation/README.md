@@ -1,3 +1,38 @@
+## 2026-10-23 新E2完整重采2011帧审计通过，已接合法后缀联合微调
+
+`layerwise_L4_on_20261023/e2h/s_2/capture`TRAIN1600紧接TEST411、无VALID，实际
+2011新CCD全部完成，用时1156.046秒；24 pilot直接复用在TRAIN内，不重拍。完整
+逐帧raw/crop/canonical/BMP/phase/PT/ID/SHA和原生裁剪重算审计通过，SDK释放，
+report SHA b6b99cbc6cde4a4ec24c672dd745920efe50e9150d3bf60103bd8d9c3152615f；
+TRAIN数组3c42ab4f2095629bbfd6b42daa5f46775f63f3727f9101e0d993c074f481cf7e，
+TEST数组48e826672b8c9978f38230ec0fa23984f32b684340f88b1da4e425bf5d03b745。
+25份采集/控制协议、相位、审计等本地快照manifest SHA
+d553415d9f9f1d9160a03fc02f0b912346066ce882b7e3061a6cd4c6214f0309，原CCD保留实验室。
+
+已经实际进入`s_2/f0`，不是停在采集后：仅phase9、electrical2/3、direct alpha2/3、
+原5140读出合法后缀联合TRAIN，不是只微调末端；Router/E1/G1与E2已采输入祖先
+严格冻结。重采E2后未经适配完整411基线20/411，G2仍仿真，不是全链实拍最终。
+仅新实测E2前缀完整原模型CPU bestlast>=305才接新G2；未达标接profile预定一次
+TRAIN蒸馏正则预算，不复用旧E2数据，不降低门槛，最终340不变。
+
+## 2026-10-23 新E2 mask完整305门槛通过，已只重采E2
+
+`layerwise_L4_on_20261023/e2h/mask_fit`沿原有限类别坐标pass继续，实际只处理此前
+未处理的[15,17]、共66次TRAIN更新就达到目标。best/last均完整原模型CPU305/411
+=74.20925%，TRAIN1554/1600、NLL.312431097，selected_E0=false。12份本地bestlast/
+协议/历史/逐样本/审计SHA备份全部一致，manifest
+74ce2e3d10cc8ea852071639f959265fe1d998073aab453397fec4c6ce31dfc5；最佳PT SHA
+4dc922d782d6a7842b9f01c287b791d88a2485a40c602813e562d3c0fa8cd0ba。此前真正重训的
+E2四组phase5..8和新BMP e7e8ec2b…均保留，与旧E2不同；本66次只修原读出，不
+虚称再次改善入射光场。已采祖先/六份数据SHA/非读出冻结及新相位部署审计通过。
+
+三端源码Git f018ff550、63项检查/CPU自测通过；Router/E1/G1原6033帧不重拍，
+旧E2及其282结果保留。E2新采集已真实启动，24张TRAIN pilot信号检查通过且直接
+复用在完整TRAIN1600内，不另重拍；后紧接TEST411、无VALID。所有曝光/坐标/
+LUT/编码等硬件身份保持，逐帧保护不变。305只是三实测前缀+仿真新E2/G2的开发
+复核，不能称新E2实拍或最终全链成绩。新E2采完后仅合法后缀微调，完整>=305
+才可全新G2；最终340不变。没有定时任务、无TEST/增强TEST梯度或新结构。
+
 ## 2026-10-23 新E2 mask边界修复完整304，维持305接剩余类别
 
 `layerwise_L4_on_20261023/e2g/mask_fit`原模型CPU bestlast全TRAIN1600/TEST411、
