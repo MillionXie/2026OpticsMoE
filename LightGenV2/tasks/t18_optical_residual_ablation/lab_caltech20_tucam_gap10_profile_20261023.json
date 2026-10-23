@@ -1,0 +1,10 @@
+{
+  "schema":"TUCam_L4_human_gap10_boundary_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "predecessor":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023",
+  "maximum_parent_wait_s":28800,
+  "intermediate_target":305,
+  "final_target":340,
+  "scope":"Human20261023 requests persistent layerwise capture and downstream-mask optimization, each intermediate measured-prefix native CPU result must be no more than10 percentage points below fixed simulation346/411, hence>=305/411. Final<=1.5pp goal remains340. Do not interrupt or alter the active earlier8pp workflow. One-shot finite dependency continuation waits for its true return; failure never triggers hardware restart. Reuse its full audited same-PT capture prefix, native best and identity proofs. If earlier8pp gate fails but revised10pp passes, continue at next unmeasured stage without recapturing valid data; record explicit revised-gate admission. If below10pp, one extra finite fullTRAIN suffix fit chosen from actual last TRAIN/TEST gap, then native bestlast review. New stages capture full1600TRAIN->411TEST then original finite recipes and one evidence-selected fallback if needed. TEST confusion only guides TRAIN class weights and development PT selection, never TEST derivatives/augmentation. No new inference capacity, geometry, LUT, exposure, branch/worktree, periodic task or blind retry. If still unmet after evidence-based fallback, preserve state and diagnose, never silently advance. This is not a target guarantee or independent generalization result."
+}
