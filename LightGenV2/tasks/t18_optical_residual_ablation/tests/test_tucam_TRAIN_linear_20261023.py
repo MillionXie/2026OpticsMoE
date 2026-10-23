@@ -48,3 +48,13 @@ def test_best304_cooldown_and_head_independent_cache_reuse():
     s=ENTRY.read_text();assert '1-strength*(1-rng.beta' in s and "old.linear(train)" in s
     assert "sr['results']['best']['PT_SHA256']==m.sha(source/'best.pt')" in s
     assert 'loop.validate_state(m,old,original,keys)' in s and "cfg['dropout']*strength" in s
+
+
+def test_fullbatch_objective_and_L2_are_TRAIN_only_and_native_folded():
+    s=ENTRY.read_text();tree=ast.parse(s);f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_affine_objective')
+    assert 'test' not in {v.id for v in ast.walk(f) if isinstance(v,ast.Name)}
+    assert "parent_report['results']['best']['train']['nll']" in s
+    assert 'regularization=2*cfg[\'l2_parent_TRAIN_NLL_fraction\']*train_nll/norm' in s
+    assert 'TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights' in s
+    assert 'F.linear(test,head.weight.float(),head.bias.float())' in s
+    assert 'full_TRAIN_gradient_evaluations=closure_calls' in s

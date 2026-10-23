@@ -9,6 +9,13 @@ import json
 import lab_caltech20_tucam_layerwise_20261023 as base
 
 
+def TRAIN_affine_objective(weight,bias,features,labels,weights,smoothing,regularization):
+    from torch.nn import functional as F
+    ce=F.cross_entropy(F.linear(features,weight,bias),labels,weight=weights,label_smoothing=smoothing)
+    penalty=.5*regularization*weight.square().sum()
+    return ce+penalty,ce,penalty
+
+
 def TRAIN_mixup(features,labels,rng,dropout=.1,beta=.4,strength=1.):
     import torch
     from torch.nn import functional as F
@@ -22,8 +29,10 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     np,torch,m,loop=base.numerical_modules()
     from torch.nn import functional as F
     assert not out.exists() and not m.LOCK.exists();out.mkdir();model.cpu().eval().requires_grad_(False)
-    cfg=c['TRAIN_feature_aug'];cooldown=cfg.get('cooldown',False)
-    assert cfg==(dict(dropout=.1,beta=.4,lr=.0002,weight_decay=.01,label_smoothing=.03,cooldown=True) if cooldown else dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03))
+    lbfgs='TRAIN_affine_optimizer' in c
+    cfg=c['TRAIN_affine_optimizer'] if lbfgs else c['TRAIN_feature_aug'];cooldown=cfg.get('cooldown',False)
+    if lbfgs:assert cfg==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
+    else:assert cfg==(dict(dropout=.1,beta=.4,lr=.0002,weight_decay=.01,label_smoothing=.03,cooldown=True) if cooldown else dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03))
     original=m.state_cpu(model);keys={'linear.weight','linear.bias'};lineage=base.identities(m,paths)
     source=base.ROOT/c['native_feature_source'];sp=m.read(source/'protocol.json');sr=m.read(source/'report.json');sa=m.read(source/'independent_audit.json');stats=m.read(source/'TRAIN_statistics.json')
     assert sr['state']=='complete' and sr['strict_original_CPU'] and sa['passed'] and sa['report_SHA256']==m.sha(source/'report.json')
@@ -47,27 +56,47 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=c,recipe=recipe,parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),
         data_SHA256=dm['sha256'],prefix_SHA256=lineage,allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,
         original_model_structure=True,new_inference_layers=0,full_physical=False,SDK_used=False,GPU_used=False,trainable_parameters=5140,
-        method='cached_TRAIN_mixup_dropout_original_linear',TRAIN_feature_source_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),
+        method='fullbatch_TRAIN_LBFGS_L2_original_linear' if lbfgs else 'cached_TRAIN_mixup_dropout_original_linear',TRAIN_feature_source_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),
         augmentation_is_synthetic_not_new_physical_data=True)
     m.save(out/'protocol.json',protocol);m.save(out/'baseline.json',baseline);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob)
-    head=torch.nn.Linear(256,20);head.load_state_dict(model.linear.state_dict());opt=torch.optim.AdamW(head.parameters(),lr=cfg['lr'],weight_decay=cfg['weight_decay'])
-    prior=np.asarray(c['original_TRAIN_counts'],float);weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=torch.float32)
+    head=torch.nn.Linear(256,20);head.load_state_dict(model.linear.state_dict())
+    if lbfgs:
+        head.double();parent_report=m.read(parent.parent/'report.json');assert parent_report['strict_original_CPU'] and parent_report['results']['best']['PT_SHA256']==m.sha(parent)
+        train_nll=parent_report['results']['best']['train']['nll'];norm=float(head.weight.detach().square().sum())
+        assert train_nll>0 and norm>0
+        regularization=2*cfg['l2_parent_TRAIN_NLL_fraction']*train_nll/norm
+        train64=train.double();opt=torch.optim.LBFGS(head.parameters(),lr=1,max_iter=5,history_size=20,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-10)
+        protocol.update(TRAIN_only_L2=regularization,L2_initial_penalty_fraction=cfg['l2_parent_TRAIN_NLL_fraction'],optimizer='LBFGS',optimization_dtype='float64',native_selection_dtype='float32',epoch_semantics='outer optimizer step, NOT dataset epoch',new_augmentation=False)
+        m.save(out/'protocol.json',protocol)
+    else:opt=torch.optim.AdamW(head.parameters(),lr=cfg['lr'],weight_decay=cfg['weight_decay'])
+    prior=np.asarray(c['original_TRAIN_counts'],float);weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=head.weight.dtype)
     rng=np.random.default_rng(c['seed']);torch.manual_seed(c['seed']);best=baseline['correct'];bnll=baseline['nll'];selected=0;history=[];updates=0
-    best_head={k:v.detach().clone() for k,v in head.state_dict().items()};started=__import__('time').monotonic()
+    best_head={k:v.detach().clone() for k,v in head.state_dict().items()};started=__import__('time').monotonic();closure_calls=0
     for epoch in range(1,recipe['epochs']+1):
         head.train();order=rng.permutation(1600);total=used=0
-        strength=.5*(1+__import__('math').cos(__import__('math').pi*(epoch-1)/max(1,recipe['epochs']-1))) if cooldown else 1.
-        for group in opt.param_groups:group['lr']=cfg['lr']*(.1+.9*strength) if cooldown else cfg['lr']
-        for begin in range(0,1600,64):
-            ix=order[begin:begin+64];x,y1,y2,lam=TRAIN_mixup(train[ix],labels[ix],rng,cfg['dropout']*strength,cfg['beta'],strength);opt.zero_grad(set_to_none=True);logits=head(x)
-            l1=F.cross_entropy(logits,y1,weight=weights,label_smoothing=cfg['label_smoothing'],reduction='none');l2=F.cross_entropy(logits,y2,weight=weights,label_smoothing=cfg['label_smoothing'],reduction='none')
-            loss=(lam*l1+(1-lam)*l2).mean();assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());opt.step();updates+=1;used+=len(ix);total+=float(loss.detach())*len(ix)
+        strength=0. if lbfgs else .5*(1+__import__('math').cos(__import__('math').pi*(epoch-1)/max(1,recipe['epochs']-1))) if cooldown else 1.
+        if lbfgs:
+            def closure():
+                nonlocal closure_calls
+                opt.zero_grad(set_to_none=True);loss,_,_=TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights,cfg['label_smoothing'],regularization)
+                assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());closure_calls+=1
+                return loss
+            opt.step(closure);updates+=1;used=1600
+            with torch.no_grad():loss,_,_=TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights,cfg['label_smoothing'],regularization);total=float(loss)*used
+        else:
+            for group in opt.param_groups:group['lr']=cfg['lr']*(.1+.9*strength) if cooldown else cfg['lr']
+            for begin in range(0,1600,64):
+                ix=order[begin:begin+64];x,y1,y2,lam=TRAIN_mixup(train[ix],labels[ix],rng,cfg['dropout']*strength,cfg['beta'],strength);opt.zero_grad(set_to_none=True);logits=head(x)
+                l1=F.cross_entropy(logits,y1,weight=weights,label_smoothing=cfg['label_smoothing'],reduction='none');l2=F.cross_entropy(logits,y2,weight=weights,label_smoothing=cfg['label_smoothing'],reduction='none')
+                loss=(lam*l1+(1-lam)*l2).mean();assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());opt.step();updates+=1;used+=len(ix);total+=float(loss.detach())*len(ix)
         assert used==1600;head.eval()
-        if epoch==1 or epoch%2==0 or epoch==recipe['epochs']:
+        if epoch==1 or epoch%(5 if lbfgs else 2)==0 or epoch==recipe['epochs']:
             with torch.inference_mode():
-                logits=head(test);correct=int((logits.argmax(1)==test_labels).sum());nll=float(F.cross_entropy(logits,test_labels))
+                logits=F.linear(test,head.weight.float(),head.bias.float()) if lbfgs else head(test);correct=int((logits.argmax(1)==test_labels).sum());nll=float(F.cross_entropy(logits,test_labels))
             if correct>best or (correct==best and nll<bnll-1e-4):best,bnll,selected=correct,nll,epoch;best_head={k:v.detach().clone() for k,v in head.state_dict().items()}
-            row=dict(epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,TEST_correct=correct,selected_correct=best,selected_epoch=selected,optimizer_updates=updates,augmentation_strength=strength,head_lr=opt.param_groups[0]['lr'])
+            row=dict(TRAIN_consumed=used,TRAIN_loss=total/used,TEST_correct=correct,selected_correct=best,optimizer_updates=updates,augmentation_strength=strength,head_lr=opt.param_groups[0]['lr'])
+            row['outer_step' if lbfgs else 'epoch']=epoch;row['selected_outer_step' if lbfgs else 'selected_epoch']=selected
+            if lbfgs:row['full_TRAIN_gradient_evaluations']=closure_calls
             history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',dict(state='TRAIN_feature_augmentation',latest=row));print(json.dumps(row),flush=True)
         if best>=target or __import__('time').monotonic()-started>=recipe['seconds']:break
     model.linear.load_state_dict(head.state_dict());loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/'last.pt',protocol)
@@ -78,9 +107,10 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
             m.save(out/'progress.json',dict(state='strict_native_CPU',checkpoint=label,role=role));metric,p=base.evaluate(native,data,fields,role);results[label][role]=metric
             np.savez_compressed(out/(label+'_'+role+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=p)
     assert results['best']['test']['correct']==best and base.identities(m,paths)==lineage
-    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_epoch=selected,selected_E0=selected==0,actual_epochs=epoch,optimizer_updates=updates,results=results,
+    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_epoch=None if lbfgs else selected,selected_E0=selected==0,actual_epochs=0 if lbfgs else epoch,optimizer_updates=updates,results=results,
         strict_original_CPU=True,target=target,target_met=best>=target,all_non_readout_frozen=True,captured_upstream_bitwise_frozen=True,TEST_gradient=False,TEST_development=True,full_physical=False,
         native_cache_probability_max_error=max(error,train_error),new_inference_layers=0,SDK_used=False,GPU_used=False,protocol_SHA256=m.sha(out/'protocol.json'))
+    if lbfgs:report.update(outer_steps=epoch,selected_outer_step=selected,full_TRAIN_gradient_evaluations=closure_calls,TRAIN_only_L2=regularization)
     m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_non_suffix_parameters_bitwise_frozen=True,all_non_readout_frozen=True))
     chosen,_=m.model_for(out/'best.pt',m.sha(out/'best.pt'),4,reference);return chosen,out/'best.pt',report
 
@@ -100,7 +130,7 @@ def TRAIN_linear_fit(features,labels,prior_counts):
 
 
 def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
-    if c.get('TRAIN_readout')=='cached_TRAIN_mixup_dropout':return fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,target)
+    if c.get('TRAIN_readout') in ('cached_TRAIN_mixup_dropout','cached_TRAIN_affine_LBFGS'):return fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,target)
     np,torch,m,loop=base.numerical_modules()
     assert 2<=len(fields)<=4 and list(fields)==list(base.STAGES[:len(fields)])
     assert not out.exists() and not m.LOCK.exists();out.mkdir()
@@ -169,4 +199,16 @@ def selftest_aug():
     print(json.dumps(dict(passed=True,TRAIN_only_mixup_dropout=True,original_features_unchanged=True,TEST_used=False,SDK_used=False,GPU_used=False)))
 
 
-if __name__=='__main__':selftest();selftest_aug()
+def selftest_affine():
+    import torch
+    torch.set_num_threads(2);torch.manual_seed(73)
+    x=torch.randn(6,3,dtype=torch.float64);y=torch.arange(6)%2;w=torch.randn(2,3,dtype=torch.float64,requires_grad=True);b=torch.zeros(2,dtype=torch.float64,requires_grad=True);weights=torch.ones(2,dtype=torch.float64)
+    f=lambda a,c:TRAIN_affine_objective(a,c,x,y,weights,.03,.01)[0]
+    assert torch.autograd.gradcheck(f,(w,b),eps=1e-6,atol=1e-4)
+    opt=torch.optim.LBFGS([w,b],max_iter=5,line_search_fn='strong_wolfe');before=float(f(w,b).detach())
+    def closure():opt.zero_grad();loss=f(w,b);loss.backward();return loss
+    opt.step(closure);assert float(f(w,b).detach())<before
+    print(json.dumps(dict(passed=True,TRAIN_affine_gradcheck=True,fullbatch_objective_decreased=True,TEST_used=False,SDK_used=False,GPU_used=False)))
+
+
+if __name__=='__main__':selftest();selftest_aug();selftest_affine()

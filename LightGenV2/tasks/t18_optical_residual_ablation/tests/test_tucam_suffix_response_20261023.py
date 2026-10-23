@@ -60,3 +60,9 @@ def test_exact_native_best_cooldown_not_last_or_new_features():
     p=json.loads((HERE/'lab_caltech20_tucam_G1_feature_cooldown_profile_20261023.json').read_text());policy_validator()(p)
     assert p['expected_parent_correct']==298 and p['TRAIN_feature_aug']['cooldown'] is True
     assert p['native_feature_source'].endswith('/g1l/s_1/fit')
+
+
+def test_registered_conditioning_response_has_no_TEST_L2_choice():
+    p=json.loads((HERE/'lab_caltech20_tucam_G1_fullbatch_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['expected_parent_correct']==299 and p['TRAIN_affine_optimizer']['l2_parent_TRAIN_NLL_fraction']==.1
+    assert p['recipe']['epochs']==80 and p['recipe']['seconds']==60
