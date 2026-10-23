@@ -16,22 +16,26 @@ def validate_policy(p):
     assert p['schema'] in ('TUCam_L4_human_E2_mask_retake_v1','TUCam_L4_human_E2_mask_joint_recovery_v1','TUCam_L4_human_E2_mask_boundary_recovery_v1') and p['human_choice']=='keep305_retrain_E2_only'
     joint=p['schema']=='TUCam_L4_human_E2_mask_joint_recovery_v1'
     boundary=p['schema']=='TUCam_L4_human_E2_mask_boundary_recovery_v1';recovery=joint or boundary
-    assert p['completed_controller'].endswith('/e2q' if boundary else '/e2p' if joint else '/e2a') and p['passed_G1_fit'].endswith('/g1s/s_1/fit')
+    remaining=p.get('remaining_coordinate_pass',False);assert isinstance(remaining,bool) and (not remaining or boundary)
+    assert p['completed_controller'].endswith('/e2g' if remaining else '/e2q' if boundary else '/e2p' if joint else '/e2a') and p['passed_G1_fit'].endswith('/g1s/s_1/fit')
     assert p['passed_G1_SHA256']=='8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'
     assert list(p['reuse_captures'])==['router','0','1'] and p['old_E2_capture'].endswith('/g1s/s_2/capture')
     assert p['intermediate_target']==305 and p['final_target']==340 and p['mask_training_stop_target']==(305 if recovery else 411)
     assert p['learning_rates']==({} if boundary else dict(phase_lr=.00005,electronic_lr=.0001,alpha_lr=.0001,head_lr=.0005) if joint else dict(phase_lr=.0002,electronic_lr=.0002,alpha_lr=.0002,head_lr=0.))
     assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
     assert p['TRAIN_noise']==dict(CCD_gain_sigma=.02,CCD_additive_sigma_DN=.5,CCD_pixel_dropout_p=.002)
-    assert p['mask_recipe']==dict(name='E2_new_mask_local_TRAIN_boundary_recovery' if boundary else 'E2_TRAIN_supported_mask_joint_CE_recovery' if joint else 'E2_original_mask_focused_fixed_head',epochs=0 if boundary else 24,seconds=300 if boundary else 900 if joint else 1200,lr_scale=1,TRAIN_class_emphasis=.75)
+    assert p['mask_recipe']==dict(name='E2_new_mask_remaining_TRAIN_boundary_recovery' if remaining else 'E2_new_mask_local_TRAIN_boundary_recovery' if boundary else 'E2_TRAIN_supported_mask_joint_CE_recovery' if joint else 'E2_original_mask_focused_fixed_head',epochs=0 if boundary else 24,seconds=300 if boundary else 900 if joint else 1200,lr_scale=1,TRAIN_class_emphasis=.75)
     if recovery:
-        assert p['candidate_mask_fit'].endswith('/e2q/mask_fit' if boundary else '/e2p/mask_fit') and p['candidate_checkpoint']==('best' if boundary else 'last')
+        assert p['candidate_mask_fit'].endswith('/e2g/mask_fit' if remaining else '/e2q/mask_fit' if boundary else '/e2p/mask_fit') and p['candidate_checkpoint']==('best' if boundary else 'last')
         assert p['candidate_TRAIN_support']==dict(correct_not_lower=True,NLL_improvement=.0001)
     if boundary:
         import lab_caltech20_TRAIN_local_boundary_20261023 as local
-        local.validate(p['TRAIN_local_boundary']);assert 'skip_classes' not in p['TRAIN_local_boundary']
-        assert len(p['linear_engine_SHA256'])==len(p['TRAIN_local_engine_SHA256'])==64 and p['fresh_native_TRAIN_features'] is True
+        local.validate(p['TRAIN_local_boundary']);assert ('skip_classes' in p['TRAIN_local_boundary']) is remaining
+        assert len(p['linear_engine_SHA256'])==len(p['TRAIN_local_engine_SHA256'])==64 and p['fresh_native_TRAIN_features'] is (not remaining)
         assert p['native_feature_source']==p['candidate_mask_fit']
+        if remaining:
+            assert p['expected_candidate_correct']==304 and len(p['parent_local_plan_SHA256'])==64
+            assert p['TRAIN_local_boundary']['skip_classes']==[3,2,0,19,4,7,10,13] and p['TRAIN_local_boundary']['maximum_classes']==12
     assert p['observed_recipe']==dict(name='new_E2_observed_joint_adaptation',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
     assert p['observed_learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0 and p['scheduler'] is False
@@ -89,7 +93,13 @@ def TRAIN_candidate(p,model,dm,paths,reference,out):
     """Admit a declared optimization checkpoint by TRAIN, never as a deployed score."""
     _,torch,m,loop=base.numerical_modules();source=base.ROOT/p['candidate_mask_fit'];r=m.read(source/'report.json');a=m.read(source/'independent_audit.json');proto=m.read(source/'protocol.json')
     assert r['state']=='complete' and r['strict_original_CPU'] and a['passed'] and a['report_SHA256']==m.sha(source/'report.json')
-    assert proto['data_SHA256']==dm['sha256'] and proto['prefix_SHA256']==base.identities(m,paths) and r['actual_epochs']==24
+    remaining=p.get('remaining_coordinate_pass',False)
+    assert proto['data_SHA256']==dm['sha256'] and proto['prefix_SHA256']==base.identities(m,paths) and r['actual_epochs']==(0 if remaining else 24)
+    if remaining:
+        plan=source/'local_boundary_plan.json'
+        assert r['selected_correct']==p['expected_candidate_correct']==304
+        assert r['local_plan_SHA256']==m.sha(plan)==p['parent_local_plan_SHA256']
+        assert [v['label'] for v in m.read(plan)]==p['TRAIN_local_boundary']['skip_classes']
     boundary=p['schema']=='TUCam_L4_human_E2_mask_boundary_recovery_v1';checkpoint=p['candidate_checkpoint']
     pt=source/(checkpoint+'.pt');assert m.sha(pt)==r['results'][checkpoint]['PT_SHA256'];candidate,_=m.model_for(pt,m.sha(pt),4,reference)
     original=m.state_cpu(model);loop.validate_state(m,candidate,original,m.allowed_keys(candidate,3) if boundary else m.allowed_keys(candidate,3)-{'linear.weight','linear.bias'})
@@ -118,12 +128,12 @@ def run(a):
         if not supported:
             m.save(a.out/'report.json',dict(state='E2_mask_candidate_no_TRAIN_support',endpoints=endpoints,next_layer_not_started=True,new_physical_CCD=0,SDK_released=not m.LOCK.exists(),old_E2_preserved=True));return
     tuned={**c,**p['learning_rates'],**p['TRAIN_noise'],'TRAIN_teacher':p['TRAIN_teacher'],'weight_decay':p['weight_decay']}
-    m.save(a.out/'progress.json',dict(state='E2_mask_joint_boundary_recovery' if joint else 'retraining_E2_masks_fixed_readout',completed_stages=3,physical_capture_not_started=True))
+    m.save(a.out/'progress.json',dict(state='E2_new_mask_TRAIN_boundary_recovery' if boundary else 'E2_mask_joint_boundary_recovery' if joint else 'retraining_E2_masks_fixed_readout',completed_stages=3,physical_capture_not_started=True))
     fitter=base.fit_suffix if joint else teacher.fit_suffix
     if boundary:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as linear
         assert m.sha(linear.__file__)==p['linear_engine_SHA256']
-        tuned.update(TRAIN_readout='cached_TRAIN_local_boundary',TRAIN_local_boundary=p['TRAIN_local_boundary'],TRAIN_local_engine_SHA256=p['TRAIN_local_engine_SHA256'],native_feature_source=p['native_feature_source'],fresh_native_TRAIN_features=True)
+        tuned.update(TRAIN_readout='cached_TRAIN_local_boundary',TRAIN_local_boundary=p['TRAIN_local_boundary'],TRAIN_local_engine_SHA256=p['TRAIN_local_engine_SHA256'],native_feature_source=p['native_feature_source'],fresh_native_TRAIN_features=p['fresh_native_TRAIN_features'])
         fitter=linear.fit_suffix
     model,parent,fit=fitter(model,data,dm,fields,paths,parent,reference,tuned,p['mask_recipe'],a.out/'mask_fit',p['mask_training_stop_target'])
     frozen_head=all(torch.equal(model.state_dict()[k],original[k]) for k in ('linear.weight','linear.bias'))

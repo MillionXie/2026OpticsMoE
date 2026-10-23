@@ -64,3 +64,17 @@ def test_boundary_recovery_fresh_current_mask_and_no_TEST_gradient(monkeypatch):
     assert p['learning_rates']=={} and p['mask_recipe']['epochs']==0 and p['TRAIN_local_boundary']['maximum_classes']==8
     s=ENTRY.read_text();assert 'source_checkpoint_selected_on_TEST_development=boundary' in s and 'fitter=linear.fit_suffix' in s
     with pytest.raises(AssertionError):validate({**p,'fresh_native_TRAIN_features':False})
+
+
+def test_remaining_boundary_exact_plan_and_unchanged_native_features(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_mask_remaining_profile_20261023.json').read_text());validate(p)
+    assert p['completed_controller'].endswith('/e2g') and p['candidate_mask_fit'].endswith('/e2g/mask_fit')
+    cfg=p['TRAIN_local_boundary'];assert cfg['maximum_classes']+len(cfg['skip_classes'])==20
+    assert cfg['skip_classes']==[3,2,0,19,4,7,10,13] and p['expected_candidate_correct']==304
+    assert p['parent_local_plan_SHA256']=='dd8390371550229009b21e343048381dd9c76d6d98add2568c26b4ddfe8fbb12'
+    kernel=HERE/'lab_caltech20_TRAIN_local_boundary_20261023.py'
+    assert hashlib.sha256(kernel.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['TRAIN_local_engine_SHA256']
+    s=ENTRY.read_text();assert "m.sha(plan)==p['parent_local_plan_SHA256']" in s and "m.read(plan)]==p['TRAIN_local_boundary']['skip_classes']" in s
+    for key,value in [('expected_candidate_correct',305),('fresh_native_TRAIN_features',True),('TRAIN_local_boundary',{**cfg,'skip_classes':[3,2,0,4,9,15,7,12]})]:
+        with pytest.raises(AssertionError):validate({**p,key:value})

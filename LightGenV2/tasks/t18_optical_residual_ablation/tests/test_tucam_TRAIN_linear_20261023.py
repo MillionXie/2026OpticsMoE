@@ -1,4 +1,4 @@
-import ast,hashlib,json
+import ast,hashlib,json,subprocess
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parents[1]
@@ -84,7 +84,13 @@ def test_local_profile_native_fresh_cache_and_fixed_gate(monkeypatch):
     p=json.loads((HERE/'lab_caltech20_tucam_G1_local_boundary_profile_20261023.json').read_text())
     assert hashlib.sha256(ENTRY.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
     kernel=HERE/'lab_caltech20_TRAIN_local_boundary_20261023.py'
-    assert hashlib.sha256(kernel.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['TRAIN_local_engine_SHA256']
+    # This closed profile pins its ORIGINAL released source. The current kernel
+    # only adds another audited finite class plan; all numerical bodies are exact.
+    legacy=subprocess.check_output(['git','show','849c502dc:LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_TRAIN_local_boundary_20261023.py'],cwd=HERE.parents[2])
+    assert hashlib.sha256(legacy).hexdigest()==p['TRAIN_local_engine_SHA256']
+    old={f.name:ast.dump(f,include_attributes=False) for f in ast.parse(legacy.decode()).body if isinstance(f,ast.FunctionDef) and f.name!='validate'}
+    current={f.name:ast.dump(f,include_attributes=False) for f in ast.parse(kernel.read_text()).body if isinstance(f,ast.FunctionDef) and f.name!='validate'}
+    assert old==current
     driver=HERE/'lab_caltech20_tucam_suffix_response_20261023.py';tree=ast.parse(driver.read_text());f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='validate_policy');ns={}
     exec(compile(ast.Module(body=[f],type_ignores=[]),str(driver),'exec'),ns);ns['validate_policy'](p)
     assert p['fresh_native_TRAIN_features'] is True and p['expected_parent_correct']==301 and p['intermediate_target']==305
