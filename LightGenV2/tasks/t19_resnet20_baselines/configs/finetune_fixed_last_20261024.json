@@ -9,7 +9,7 @@
   "precision": "FP32_TF32_disabled",
   "max_physical_gpus": 4,
   "candidate_gpu_indices": [2, 4, 5, 6],
-  "foreign_gpu_process_policy": "wait_without_CUDA_do_not_interrupt_or_share_without_explicit_permission",
+  "foreign_gpu_process_policy": "user authorized low-utilization same-card parallelism: only stable CUDA allocations >=10s, utilization<=50%, free>=16384MiB, at most one T19 stage alongside existing other contexts; do not signal, reprioritize or modify them; otherwise wait without CUDA",
   "tasks": {
     "lsp": {
       "parent_checkpoint": "runs/simulation/lsp_formal_s42_resnet18_imagenet_frozen_single30_20261023_gpu_expand6/last_checkpoint.pt",

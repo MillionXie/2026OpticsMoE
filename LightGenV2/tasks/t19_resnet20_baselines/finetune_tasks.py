@@ -41,7 +41,7 @@ LOSS_PROFILES = {'lsp': 'gaussian_heatmap_mse_only', 'openmoji': 'unchanged_edit
 SOURCE_FILES = ('finetune_tasks.py', 'task_problems.py', 'train_tasks.py', 'train_easy100.py',
                 'models.py', 'frozen_resnet18.py', 'frozen_visual_models.py',
                 'frozen_multimodal_models.py', 'performance_cache.py', 'continue_lgvq50.py',
-                'other_data.py', 'editor_dataset.py')
+                'other_data.py', 'editor_dataset.py', 'shared_idle_gpu.py')
 
 
 class FineTuneProblem(Problem):
@@ -205,7 +205,11 @@ def run(args):
         write_json(run_dir / 'run_manifest.json', manifest)
         device = torch.device(args.device)
         if args.device == 'cuda':
-            wait_for_gpu(args)
+            if getattr(args, 'share_idle_existing_contexts', False):
+                from .shared_idle_gpu import wait
+                manifest['gpu_admission'] = wait(args)
+            else:
+                wait_for_gpu(args)
         model.to(device)
         # Move restored AdamW moments with the parameters without changing their values.
         for state in optimizer.state.values():
@@ -341,6 +345,7 @@ def main():
     parser.add_argument('--smoke-batches', type=int, default=0)
     parser.add_argument('--smoke-result', type=Path)
     parser.add_argument('--device', choices=('cpu', 'cuda'), default='cuda')
+    parser.add_argument('--share-idle-existing-contexts', action='store_true')
     parser.add_argument('--gpu-uuid', required=True)
     parser.add_argument('--max-physical-gpus', type=int, choices=(4,), default=4)
     parser.add_argument('--max-jobs-per-gpu', type=int, choices=(2, 3), default=2)

@@ -12,6 +12,7 @@ import sys
 import time
 
 from .finetune_tasks import FINAL_EPOCHS
+from .shared_idle_gpu import snapshot, validate
 from .frozen_resnet18 import file_sha256
 from .train_easy100 import TASK, ROOT, admit_gpu, git, require_published_source, write_json
 
@@ -21,7 +22,7 @@ def stage_command(job, suite, plan, uuid):
     command = [sys.executable, '-u', '-m', 'LightGenV2.tasks.t19_resnet20_baselines.finetune_tasks',
                '--task', job['task'], '--plan', str(plan), '--run-dir', str(base / job['name']),
                '--gpu-uuid', uuid, '--queue-status-path', str(suite / 'queue_status.json'),
-               '--max-physical-gpus', '4', '--max-jobs-per-gpu', '2']
+               '--max-physical-gpus', '4', '--max-jobs-per-gpu', '2', '--share-idle-existing-contexts']
     if job['phase'] == 'smoke':
         command += ['--smoke-batches', '4']
     else:
@@ -34,6 +35,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--suite', type=Path, required=True)
+    parser.add_argument('--resume-queued-only', action='store_true',
+                        help='Replace only a stopped supervisor whose six jobs never started')
     args = parser.parse_args()
     require_published_source()
     plan_path = args.plan.resolve(strict=True)
@@ -46,30 +49,39 @@ def main():
         raise ValueError('Cannot expand the latest four-card limit')
     lock = (TASK / 'runs/.t19_finetune_suite.lock').open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    suite.mkdir(parents=True, exist_ok=False)
+    if not args.resume_queued_only:
+        suite.mkdir(parents=True, exist_ok=False)
     inventory = subprocess.check_output(['nvidia-smi', '--query-gpu=index,uuid',
                                          '--format=csv,noheader,nounits'], text=True)
     uuids = {int(row.split(',')[0].strip()): row.split(',')[1].strip()
              for row in inventory.splitlines() if row.strip()}
     candidates = [uuids[index] for index in (6, 4, 5, 2)]
     jobs = []
-    for task, stop in FINAL_EPOCHS.items():
-        smoke_name = f'{task}_finetune{stop}_smoke_s42_20261024'
-        for phase in ('smoke', 'formal'):
-            name = smoke_name if phase == 'smoke' else f'{task}_finetune{stop}_formal_s42_20261024'
-            base = TASK / 'runs' / ('smoke' if phase == 'smoke' else 'simulation')
-            if (base / name).exists():
-                raise RuntimeError('Existing stage evidence found: inspect rather than restart or overwrite')
-            jobs.append(dict(task=task, phase=phase, name=name, smoke_name=smoke_name, status='queued'))
+    old = json.loads((suite / 'queue_status.json').read_text()) if args.resume_queued_only else None
+    if old:
+        if any(job['status'] != 'queued' or job.get('pid') for job in old['jobs']):
+            raise ValueError('Queued-only takeover refuses all existing or started workers')
+        jobs = old['jobs']
+    else:
+        for task, stop in FINAL_EPOCHS.items():
+            smoke_name = f'{task}_finetune{stop}_smoke_s42_20261024'
+            for phase in ('smoke', 'formal'):
+                name = smoke_name if phase == 'smoke' else f'{task}_finetune{stop}_formal_s42_20261024'
+                base = TASK / 'runs' / ('smoke' if phase == 'smoke' else 'simulation')
+                if (base / name).exists():
+                    raise RuntimeError('Existing stage evidence found: inspect rather than restart or overwrite')
+                jobs.append(dict(task=task, phase=phase, name=name, smoke_name=smoke_name, status='queued'))
     report = dict(status='running', pid=os.getpid(), jobs=jobs, gpu_uuids=candidates,
                   max_physical_gpus=4, max_jobs_per_gpu=2, git_commit=git('rev-parse', 'HEAD'),
                   profile_sha256=file_sha256(plan_path), started_unix=time.time(),
+                  gpu_policy='shared_idle_stable10s_free16GiB_util50_oneT19_with_existing_contexts',
                   command=[sys.executable, '-m', __spec__.name, *sys.argv[1:]],
                   original_supervisor_and_workers_preserved=True)
     def save():
         write_json(suite / 'queue_status.json', report)
     save()
     running = {}
+    observations = {}
     try:
         while any(job['status'] in {'queued', 'running'} for job in jobs):
             for pid, (process, job, log) in list(running.items()):
@@ -102,9 +114,14 @@ def main():
                 if not ready:
                     continue
                 try:
-                    admit_gpu(uuid, owned, max_jobs_per_gpu=2)
+                    state = snapshot(uuid)
+                    validate(state, owned, observations.get(uuid))
                 except (RuntimeError, FileNotFoundError):
                     # Foreign work and busy cards wait; never signal it or take a CUDA context.
+                    if 'state' in locals() and state['gpu_uuid'] == uuid:
+                        previous = observations.get(uuid)
+                        if previous is None or state['observed_monotonic'] - previous['observed_monotonic'] >= 15:
+                            observations[uuid] = state
                     continue
                 job = ready[0]
                 command = stage_command(job, suite, plan_path, uuid)
