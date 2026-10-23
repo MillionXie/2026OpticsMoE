@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader, Subset
 
 from .models import build_model, parameter_counts
 from .task_problems import Problem
-from .train_easy100 import TASK, ROOT, PROFILE, admit_gpu, git, require_published_source, sharing_pids, write_json, save_checkpoint
+from .train_easy100 import TASK, ROOT, PROFILE, wait_for_gpu, git, require_published_source, write_json, save_checkpoint
 
 
 def run(args):
@@ -44,16 +44,7 @@ def run(args):
         return
     # Original data checks can outlast a GPU idle snapshot. Wait without a
     # CUDA context when another user arrives before actual admission.
-    admission_began=time.monotonic()
-    while True:
-        allowed=sharing_pids(args)
-        try:
-            admit_gpu(args.gpu_uuid,allowed)
-            break
-        except (RuntimeError,FileNotFoundError) as exc:
-            if time.monotonic()-admission_began>600:raise
-            print('Waiting before CUDA admission:',str(exc),flush=True)
-            time.sleep(5)
+    wait_for_gpu(args)
     run_dir.mkdir(parents=True, exist_ok=False)
     device = torch.device('cuda:0')
     torch.backends.cuda.matmul.allow_tf32 = False

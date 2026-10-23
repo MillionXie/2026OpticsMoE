@@ -106,6 +106,26 @@ def sharing_pids(args):
     return [job['pid'] for job in jobs if job['pid'] != os.getpid()]
 
 
+def wait_for_gpu(args):
+    """Wait without CUDA if another job arrives during CPU data verification."""
+    resource_errors = {'Requested GPU has a process outside this T19 queue',
+        'Requested GPU already has two tasks', 'Unattributed GPU allocation',
+        'Insufficient GPU memory or compute headroom'}
+    while True:
+        allowed = sharing_pids(args)
+        try:
+            admit_gpu(args.gpu_uuid, allowed)
+            return allowed
+        except RuntimeError as exc:
+            if str(exc) not in resource_errors:
+                raise
+            print('Waiting without CUDA before admission:', str(exc), flush=True)
+        except FileNotFoundError:
+            # A registered peer can finish between its PID and cmdline reads.
+            pass
+        time.sleep(5)
+
+
 @torch.inference_mode()
 def evaluate(model, loader, tokens, title_skus, direction, device):
     model.eval()
@@ -146,8 +166,7 @@ def run(args):
         raise ValueError('Run must use the task runs/smoke or runs/simulation directory')
     # Verify every original image and CSV before taking a GPU.
     dataset = Easy100(args.data_root)
-    shared_pids = sharing_pids(args)
-    admit_gpu(args.gpu_uuid, shared_pids)
+    shared_pids = wait_for_gpu(args)
     run_dir.mkdir(parents=True, exist_ok=False)
     random.seed(args.seed)
     np.random.seed(args.seed)

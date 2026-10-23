@@ -32,3 +32,25 @@ def test_sharing_requires_memory_and_compute_headroom(monkeypatch, state, allowe
     else:
         with pytest.raises(RuntimeError, match='headroom'):
             training.admit_gpu('GPU-a', [101])
+
+
+def test_cpu_preflight_race_waits_for_foreign_job_without_starting_cuda(monkeypatch):
+    from types import SimpleNamespace
+    calls=[]
+    monkeypatch.setattr(training,'sharing_pids',lambda args:[101])
+    def admit(*args):
+        calls.append(args)
+        if len(calls)==1:raise RuntimeError('Requested GPU has a process outside this T19 queue')
+    monkeypatch.setattr(training,'admit_gpu',admit)
+    monkeypatch.setattr(training.time,'sleep',lambda seconds:None)
+    assert training.wait_for_gpu(SimpleNamespace(gpu_uuid='GPU-a'))==[101]
+    assert len(calls)==2
+
+
+def test_admission_does_not_hide_invalid_configuration(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(training,'sharing_pids',lambda args:[])
+    def invalid(*args):raise RuntimeError('Set CUDA_VISIBLE_DEVICES to the single requested GPU UUID')
+    monkeypatch.setattr(training,'admit_gpu',invalid)
+    with pytest.raises(RuntimeError,match='CUDA_VISIBLE_DEVICES'):
+        training.wait_for_gpu(SimpleNamespace(gpu_uuid='GPU-a'))
