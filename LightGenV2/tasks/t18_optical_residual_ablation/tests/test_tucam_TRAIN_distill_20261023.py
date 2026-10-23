@@ -1,4 +1,4 @@
-import ast,json
+import ast,hashlib,json
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parents[1]
@@ -30,3 +30,13 @@ def test_registered_finite_teacher_profile():
     assert p['recipe']['epochs']==36 and p['recipe']['seconds']==1200
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0
+    assert hashlib.sha256(ENTRY.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['teacher_engine_SHA256']
+    driver=HERE/'lab_caltech20_tucam_E1_underfit_20261023.py';tree=ast.parse(driver.read_text());f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='validate_policy');ns={}
+    exec(compile(ast.Module(body=[f],type_ignores=[]),str(driver),'exec'),ns);ns['validate_policy'](p)
+
+
+def test_teacher_requires_completed_overfit_parent_and_native_gate():
+    s=(HERE/'lab_caltech20_tucam_E1_underfit_20261023.py').read_text()
+    assert "b['train']['accuracy']-b['test']['accuracy']>=policy['minimum_parent_TRAIN_TEST_gap']" in s
+    assert "m.sha(teacher.__file__)==p['teacher_engine_SHA256']" in s
+    assert s.index('teacher.fit_suffix(')<s.index("if not e['target_met']:")<s.index('fields=acquire(')

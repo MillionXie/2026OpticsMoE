@@ -1,3 +1,24 @@
+## 2026-10-23 E1后完整复核升至70.56%，继续针对过拟合处理
+
+`layerwise_L4_on_20261023/u1/s_0/fit`48完整epoch/9600更新已结束，1149.172fit秒，
+best为第48轮。原模型CPU bestlast各完整1600TRAIN/411TEST及冻结/数组身份审计
+通过：父261/411到290/411=70.55961%，TRAIN1568/1600=98%，TEST NLL1.14758、
+宏召回.59541723。PT SHA
+f01bc89d6b8339bc85e65c6695e0b101d4797418f65c6a23dad7a87b2bb24afb。
+相对固定仿真346/411低13.62530pp，距305门槛差15张；G1仍未开始，SDK已释放，
+控制器正常返回0。上述是实测router+E1、仿真G1/E2/G2的阶段混合开发指标。
+
+当前已从欠拟合转为TRAIN/TEST差27.44pp；如butterfly TRAIN79/80而TEST3/10、
+chandelier75/80而4/12，不应继续仅以更大LR硬拟合。下一有限方法为固定原仿真模型
+仅指导同一1600TRAIN的温度2软分类目标，loss=.7原CE+.3 KL，降低各参数LR并
+cosine降至.1倍、WD.01，最多36完整epoch/1200fit秒。教师只缓存TRAIN logits、
+不读取TEST、推理前丢弃，原模型/参数结构不变，无TEST梯度/增强TEST训练或VALID。
+`lab_caltech20_tucam_TRAIN_distill_20261023.py`为该训练目标，复用原后缀准入/采集，
+driver仅在已退出的u1完整原生父模型重新核同、且真实TRAIN/TEST差>=10pp时接续。
+只有本任务该训练目标/profile/既有driver/测试与README归本窗口；曝光/坐标/LUT/
+已采mask和输入祖先不动，其他任务保护。方法需Git发布同步后执行，实际启动/成绩
+以新run的launch/admission/history/report为准，不能用本计划冒称已启动或达标。
+
 ## 2026-10-23 E1已完整采齐，后缀复核63.50%，未放行G1
 
 `layerwise_L4_on_20261023/s_0/capture`新E1完整1600TRAIN+411TEST=2011帧，
