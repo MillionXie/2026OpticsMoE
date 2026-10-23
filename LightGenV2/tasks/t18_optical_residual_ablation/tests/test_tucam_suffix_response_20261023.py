@@ -139,3 +139,12 @@ def test_fusion_capacity_is_TRAIN_only_fresh_two_settings_and_parent_fallback(mo
     assert 'TEST_used_for_capacity=False' in s and 'capacity_not_generalization=True' in s
     assert "model.load_state_dict(original)" in s and "loop.validate_state(m,model,original,allowed)" in s
     driver=ENTRY.read_text();assert 'E2_capacity_no_TRAIN_support' in driver and 'if not keep:parent=retained_parent;fit=retained_fit' in driver
+
+
+def test_E2_local_boundary_uses_retained274_and_fresh_native_features(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_local_boundary_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['parent_stage']=='2' and p['expected_parent_correct']==274 and len(p['captures'])==4
+    assert p['native_feature_source'].endswith('/e2k/s_2/fit') and p['fresh_native_TRAIN_features']
+    assert p['TRAIN_local_boundary']['maximum_classes']==8 and p['recipe']['epochs']==0
+    with pytest.raises(AssertionError):policy_validator()({**p,'fresh_native_TRAIN_features':False})

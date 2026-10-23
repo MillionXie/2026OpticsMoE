@@ -10,8 +10,8 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1')
-    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1')
+    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1')
     assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -48,6 +48,15 @@ def validate_policy(p):
         assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
         assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
         assert p['recipe']==dict(name='E2_TRAIN_supported_fusion_joint_teacher',epochs=24,seconds=900,lr_scale=1,TRAIN_class_emphasis=.75)
+    elif p['schema']=='TUCam_L4_E2_local_boundary_response_v1':
+        import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
+        assert p['minimum_parent_correct']==p['expected_parent_correct']==274 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['completed_controller'].endswith('/e2c')
+        assert p['learning_rates']=={} and p['TRAIN_readout']=='cached_TRAIN_local_boundary'
+        assert p['native_feature_source'].endswith('/e2k/s_2/fit') and p['fresh_native_TRAIN_features'] is True
+        boundary.validate(p['TRAIN_local_boundary']);assert 'skip_classes' not in p['TRAIN_local_boundary']
+        assert len(p['linear_engine_SHA256'])==len(p['TRAIN_local_engine_SHA256'])==64
+        assert p['recipe']==dict(name='E2_TRAIN_local_binary_rest_full_curvature',epochs=0,seconds=300,lr_scale=1,TRAIN_class_emphasis=.75)
     elif p['schema']=='TUCam_L4_G1_underfit_response_v1':
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
@@ -115,6 +124,11 @@ def admit(p,c,out):
     if p['schema']=='TUCam_L4_E2_fullbatch_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_teacher_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
+    if p['schema']=='TUCam_L4_E2_local_boundary_response_v1':
+        expected_state='E2_capacity_no_TRAIN_support'
+        capacity=m.read(old/'s_2/capacity/report.json')
+        assert capacity['passed'] and not capacity['accepted'] and capacity['decision_data']=='TRAIN_only'
+        assert capacity['parent_PT_SHA256']==r['endpoints'][-1]['PT_SHA256'] and capacity['all_nonhead_frozen']
     assert r['state']==expected_state
     assert r['next_layer_not_started'] and r['SDK_released']
     endpoints=r['endpoints'];assert [e['stage'] for e in endpoints]==list(p['captures'])
