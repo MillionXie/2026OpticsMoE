@@ -1,3 +1,25 @@
+## 2026-10-23 E2原读出统计求解完整257，继续有界全TRAIN优化
+
+`layerwise_L4_on_20261023/e2l/s_2/fit`完成一次原TRAIN-only OAS统计求解，实际
+训练epoch=0、统计拟合=1，不冒称训练1轮。hook-free原模型CPU bestlast全
+TRAIN1600/TEST411、全部非读出参数与8份CCD数组SHA冻结审计通过：bestlast
+257/411=62.53041%，TRAIN1081/1600=67.5625%，比父241提高16张，仍差48张到305。
+PT SHA2bbafd9f4d2d6afc4214ae234528ef027acfe43f6ac535c800103f5fc4d362bd；
+14份本地证据（含原生TRAIN特征/统计）manifest SHAe76b28b459d2b82cfda6571f511eb871373c01d8692f985d124a8002c38d3255。
+e2l返回0、SDK释放、G2未采。原G2 mask/电残差/alpha承袭e2u的联合微调结果，
+本步只进一步求解原5140读出，不能声称中间光场因读出求解变得更稳健。
+
+TRAIN特征中心化后非零秩255（LN固有零方向另计）、非零条件数2918.963，
+OAS收缩.002810422；e2u原头权重平方范数1835.785。这支持一次有界全批量仿射
+优化检查，而非随机LR扫描。仅同一257严格父、完整缓存身份/概率<=3e-6与冻结
+审计通过后，固定全部非读出参数，全1600TRAIN float64 LBFGS、label smoothing
+.03，L2一次按父TRAIN NLL/权重范数定为初始TRAIN NLL惩罚10%，不按TEST挑强度。
+最多80外优化步/60fit秒，实际全TRAIN梯度闭包数单列，不冒称80完整数据epoch。
+原float32 native TEST每5步开发选模，parent/E0保底；完整原模型CPU bestlast/
+冻结与数据SHA通过305才新采G2。方法44项测试通过，需Git发布同步后才启动。
+不是新增层、预处理、TEST训练/梯度、VALID、硬件改动、重拍、定时任务或候选网格。
+最终340及全部原始证据继续保留。
+
 ## 2026-10-23 E2高学习率联合微调完整241，接原读出统计求解
 
 `layerwise_L4_on_20261023/e2u/s_2/fit`已完成48完整TRAIN epoch/9600更新、621.094fit秒，

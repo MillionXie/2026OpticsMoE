@@ -107,3 +107,10 @@ def test_E2_linear_is_one_TRAIN_estimator_after_joint_fit():
     assert hashlib.sha256(engine.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
     for key,value in [('parent_stage','1'),('maximum_parent_TRAIN_accuracy',1.)]:
         with pytest.raises(AssertionError):policy_validator()({**p,key:value})
+
+
+def test_E2_fullbatch_reuses_exact_native_cache_and_TRAIN_only_L2():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_fullbatch_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['expected_parent_correct']==257 and p['minimum_parent_TRAIN_TEST_gap']==.03
+    assert p['native_feature_source'].endswith('/e2l/s_2/fit') and p['recipe']['epochs']==80 and p['recipe']['seconds']==60
+    assert p['TRAIN_affine_optimizer']['l2_parent_TRAIN_NLL_fraction']==.1 and p['learning_rates']=={}
