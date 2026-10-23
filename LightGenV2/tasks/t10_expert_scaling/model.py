@@ -56,6 +56,7 @@ class ScalingOptics(nn.Module):
         self.g=self.geo['active_side_px'];self.c=self.geo['canvas_side_px'];self.margin=(self.c-self.g)//2
         self.e=cfg['geometry']['expert_side_px'];self.pitch=self.e+cfg['geometry']['gap_px']
         self.checkpointing=checkpointing
+        self.phase_noise_std=float(cfg.get('training_proposal',{}).get('phase_noise_std',0.))
         self.prop=ASM(self.c,pitch=cfg['geometry']['pixel_pitch_um']*1e-6,padding=padding)
         self.is_moe=arch=='moe_oeo'
         if self.is_moe:
@@ -121,6 +122,8 @@ class ScalingOptics(nn.Module):
         else:
             pad=(self.c-phase.shape[-1])//2
             full=F.pad(phase,(pad,)*4)
+        if self.training and self.phase_noise_std:
+            full=full+torch.randn_like(full)*self.phase_noise_std
         return self.oeo(self.prop(field*torch.exp(1j*full)))
 
     def forward(self,rgb,dense=False):

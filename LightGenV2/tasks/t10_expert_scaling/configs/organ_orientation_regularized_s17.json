@@ -1,0 +1,40 @@
+{
+  "profile": "organ_orientation_regularized_s17_v1",
+  "seed": 17,
+  "top_k": [4, 3, 2, 1],
+  "experts": 4,
+  "layers": 4,
+  "epochs": 80,
+  "effective_batch_size": 16,
+  "microbatch": 16,
+  "learning_rate": 0.002,
+  "class_weight_power": 0.5,
+  "selection_metric": "accuracy",
+  "early_stop_patience": 15,
+  "early_stop_min_epochs": 40,
+  "training_proposal": {
+    "label_smoothing": 0.05,
+    "capture_loss_weight": 0.005,
+    "phase_tv_weight": 0.03,
+    "router_balance_weight": 0.01,
+    "ema_decay": 0.95,
+    "phase_noise_std": 0.02,
+    "dense_warmup_epochs_included_in_total": 5
+  },
+  "augmentation": {
+    "mode": "orientation_preserving_grayscale",
+    "rotation_degrees": 8,
+    "translation_fraction": 0.04,
+    "scale_min": 0.9,
+    "scale_max": 1.1,
+    "contrast_delta": 0.15,
+    "brightness_delta": 0.04,
+    "gamma_min": 0.85,
+    "gamma_max": 1.15,
+    "horizontal_flip": false,
+    "vertical_flip": false,
+    "rot90": false
+  },
+  "test_policy": "one_test_after_validation_selection_development_followup",
+  "development_target_k4_test_accuracy": 0.72
+}

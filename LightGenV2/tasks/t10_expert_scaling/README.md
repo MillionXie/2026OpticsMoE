@@ -1,5 +1,34 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## OrganCMNIST单seed方向保留重训（2026-10-23）
+
+用户目标：只做seed17，统一重训k1/2/3/4，k4 TEST以72%为开发目标，
+不更换数据划分、不按TEST调参或选模型。旧结果继续保留；72%不是已达成结果。
+原120轮均值TRAIN79.53%、VAL77.72%、TEST63.21%，不能只凭该落差断言
+经典训练过拟合已被证实；同时存在方向增强不合适及跨split泛化问题。
+
+统一profile：`configs/organ_orientation_regularized_s17.json`。
+四组均从随机初始化训练，保持原224专家/478有效面、17um计算网格、8um设备映射、
+四特征层、逐层OEO、灰度重复三通道后沿用原编码及完整11类，原train/val/test身份不变。
+禁用水平/垂直翻转和90度旋转；使用±8度旋转、±4%平移、0.9–1.1缩放、
+灰度对比度/亮度/gamma扰动。标签含左右股骨/肾脏/肺，方向破坏有风险；
+本轮不声称仅凭代码阅读就已证明这是TEST落差唯一原因。
+
+标签平滑0.05、capture权重0.005、相位TV0.03、soft均衡0.01、训练期相位噪声
+标准差0.02rad、EMA0.95；相位噪声在eval严格关闭，不改变checkpoint参数形状。
+类别权重采用训练频数逆平方根并归一化，使训练样本平均权重为1。
+microbatch=effective batch=16，soft均衡因此在16样本上计算，四个k完全一致。
+学习率0.002余弦衰减，最多80轮，至少40轮后允许15轮无验证改善早停。
+按验证accuracy选best，验证NLL打破平局；每5轮记录完整训练指标。
+这里只改变训练及增强设置，没有增加可训练电子旁路或CNN。
+
+入口`organ_retrain_schedule.py`，新run为
+`runs/simulation/organ_orientation_regularized_s17_20261023`。
+最多三张空闲卡、每卡最多两项，跳过GPU6；先完成四项并锁定全部checkpoint，再评TEST。
+保存原始命令/profile SHA/数据SHA/Git身份、best/last、逐样本预测、
+专家hard负载和soft概率及释放收据。最终仅报告一个seed，无重复实验标准差。
+这是已观察TEST后的开发重训，不冒称新的独立确认性验证。
+
 ## k4累计120轮三seed最终结果（2026-10-23）
 
 Kather2016与OrganCMNIST各seed17/27/37全部完成；实际末轮均为120，

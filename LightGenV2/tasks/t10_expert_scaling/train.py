@@ -48,9 +48,33 @@ def data(path):
     return splits,manifest
 
 
-def images(x,indices,epoch,seed,augment=False):
+def orientation_augmentation(batch, indices, epoch, seed, cfg):
+    """Stateless, paired across k; no reflections or quarter-turns."""
+    parameters=[]
+    for index in indices.tolist():
+        rng=random.Random((seed*1000003+epoch*1000033+index)*1000037)
+        angle=math.radians(rng.uniform(-cfg['rotation_degrees'],cfg['rotation_degrees']))
+        scale=rng.uniform(cfg['scale_min'],cfg['scale_max'])
+        parameters.append([math.cos(angle)/scale,-math.sin(angle)/scale,
+                           2*rng.uniform(-cfg['translation_fraction'],cfg['translation_fraction']),
+                           math.sin(angle)/scale,math.cos(angle)/scale,
+                           2*rng.uniform(-cfg['translation_fraction'],cfg['translation_fraction']),
+                           1+rng.uniform(-cfg['contrast_delta'],cfg['contrast_delta']),
+                           rng.uniform(-cfg['brightness_delta'],cfg['brightness_delta']),
+                           rng.uniform(cfg['gamma_min'],cfg['gamma_max'])])
+    p=batch.new_tensor(parameters)
+    grid=F.affine_grid(p[:,:6].reshape(-1,2,3),batch.shape,align_corners=False)
+    transformed=F.grid_sample(batch,grid,mode='bilinear',padding_mode='border',align_corners=False)
+    mean=transformed.mean((-2,-1),keepdim=True)
+    transformed=(transformed-mean)*p[:,6,None,None,None]+mean+p[:,7,None,None,None]
+    return transformed.clamp(0,1).pow(p[:,8,None,None,None])
+
+
+def images(x,indices,epoch,seed,augment=False,augmentation=None):
     batch=x[indices].float().cuda()/255
     if augment:
+        if augmentation:
+            return orientation_augmentation(batch,indices,epoch,seed,augmentation)
         # Per-image/epoch keyed augmentation independent of architecture RNG.
         for j,index in enumerate(indices.tolist()):
             rng=random.Random((seed*1000003+epoch*1000033+index)*1000037)
@@ -106,6 +130,7 @@ def main():
     ap.add_argument('--microbatch',type=int,default=2);ap.add_argument('--padding',type=int,default=2)
     ap.add_argument('--smoke-limit',type=int,default=0)
     ap.add_argument('--resume',action='store_true',help='Resume from last_checkpoint.pt in an existing output directory')
+    ap.add_argument('--profile',type=Path,help='Optional task-specific training/augmentation profile')
     a=ap.parse_args();a.out.mkdir(parents=True,exist_ok=a.resume)
     try:run(a)
     except BaseException:
@@ -118,6 +143,10 @@ def main():
 def run(a):
     torch.set_num_threads(4);torch.manual_seed(a.seed);np.random.seed(a.seed);random.seed(a.seed)
     cfg=load_protocol();tc=cfg['training_proposal'];tc['learning_rate']=a.lr;tc['epochs']=a.epochs
+    profile=json.loads(a.profile.read_text()) if a.profile else {}
+    if profile and a.resume:
+        raise ValueError('Profile runs start fresh; exact profile resume is not yet supported')
+    tc.update(profile.get('training_proposal',{}))
     splits,manifest=data(a.data);classes=len(manifest['classes'])
     if a.smoke_limit:
         for key,(x,y,ids) in splits.items():
@@ -127,7 +156,9 @@ def run(a):
     ema=copy.deepcopy(model).eval();ema.requires_grad_(False)
     optimizer=torch.optim.AdamW(model.parameters(),lr=a.lr,weight_decay=0)
     x,y,ids=splits['train'];counts=torch.bincount(y,minlength=classes).float().cuda()
-    weights=len(y)/(classes*counts)
+    weights=(len(y)/(classes*counts)).pow(profile.get('class_weight_power',1.))
+    if profile:
+        weights=weights/(weights*counts).sum()*counts.sum()
     commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
     metadata=dict(command=sys.argv,arguments={k:str(v) if isinstance(v,Path) else v for k,v in vars(a).items()},
                   protocol=cfg,geometry=model.geo,git_commit=commit,data_sha256=sha(a.data),
@@ -135,6 +166,9 @@ def run(a):
                   device=torch.cuda.get_device_name(),torch_version=torch.__version__,pid=os.getpid(),
                   cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),parameter_count=sum(p.numel() for p in model.parameters()),
                   dataset_limitations={k:manifest.get(k) for k in ['patient_independence_verified','mirror_repackaged','original_zip_pixel_equivalence_verified']})
+    if profile:
+        metadata.update(training_profile=profile,profile_sha256=sha(a.profile),
+                        evaluation_role='development_followup_after_observed_test')
     save(a.out/'metadata.json',metadata)
     initial={n:p.detach().cpu().clone() for n,p in model.named_parameters()}
     best=math.inf;best_epoch=0;history=[];start_epoch=0;started=time.time()
@@ -150,6 +184,8 @@ def run(a):
             best=history[best_epoch-1]['val']['macro_nll']
             started=time.time()-float(history[-1].get('elapsed_seconds',0))
         print(json.dumps(dict(resumed_from_epoch=start_epoch)),flush=True)
+    selection_metric=profile.get('selection_metric','macro_nll')
+    best_accuracy=-1.;stale=0
     for epoch in range(start_epoch+1,a.epochs+1):
         model.train();order=torch.randperm(len(y),generator=torch.Generator().manual_seed(a.seed+epoch*100003))
         lr=a.lr*(.01+.99*(1+math.cos(math.pi*(epoch-1)/a.epochs))/2)
@@ -159,7 +195,7 @@ def run(a):
             effective=order[start:start+16];optimizer.zero_grad(set_to_none=True)
             for offset in range(0,len(effective),a.microbatch):
                 ix=effective[offset:offset+a.microbatch];yb=y[ix].cuda()
-                out=model(images(x,ix,epoch,a.seed,True),dense=epoch<=tc['dense_warmup_epochs_included_in_total'])
+                out=model(images(x,ix,epoch,a.seed,True,profile.get('augmentation')),dense=epoch<=tc['dense_warmup_epochs_included_in_total'])
                 loss=objective(model,out,yb,weights,tc)*len(ix)/len(effective)
                 if not torch.isfinite(loss):raise RuntimeError('Nonfinite training loss')
                 loss.backward();total+=float(loss.detach())
@@ -171,16 +207,26 @@ def run(a):
         vm,vp=evaluate(ema,splits['val'],a.microbatch)
         entry=dict(epoch=epoch,train_objective=total/steps,val=vm,lr=lr,elapsed_seconds=time.time()-started,
                    peak_memory_bytes=torch.cuda.max_memory_allocated(),last_gradient_norm=float(norm))
+        if profile and (epoch%5==0 or epoch==1):
+            entry['train'],_=evaluate(ema,splits['train'],a.microbatch)
         history.append(entry);save(a.out/'history.json',history)
         payload=dict(model=ema.state_dict(),live_model=model.state_dict(),optimizer=optimizer.state_dict(),
                      epoch=epoch,metadata=metadata,val=vm)
         torch.save(payload,a.out/'last_checkpoint.pt')
-        if vm['macro_nll']<best:
+        improved=(vm['macro_nll']<best) if selection_metric=='macro_nll' else (
+            vm['accuracy']>best_accuracy or (vm['accuracy']==best_accuracy and vm['macro_nll']<best))
+        if improved:
             best=vm['macro_nll'];best_epoch=epoch;torch.save(payload,a.out/'best_checkpoint.pt')
+            best_accuracy=vm['accuracy'];stale=0
             np.savez_compressed(a.out/'val_predictions.npz',ids=splits['val'][2],labels=splits['val'][1].numpy(),scores=vp.numpy())
+        else:
+            stale+=1
         save(a.out/'status.json',dict(state='training',epoch=epoch,total_epochs=a.epochs,best_epoch=best_epoch,
                                      best_val_macro_nll=best,pid=os.getpid(),elapsed_seconds=time.time()-started))
         print(json.dumps(entry),flush=True)
+        if (profile.get('early_stop_patience') and epoch>=profile.get('early_stop_min_epochs',0)
+                and stale>=profile['early_stop_patience']):
+            break
     ck=torch.load(a.out/'best_checkpoint.pt',map_location='cpu',weights_only=False);ema.load_state_dict(ck['model'])
     train_metrics,_=evaluate(ema,splits['train'],a.microbatch)
     del ck
