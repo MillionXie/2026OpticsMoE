@@ -6,6 +6,13 @@ ABO双向各30轮已完成，两个方向均选第25轮固定复评：H@1分别9
 第30轮分别62.7083%和80.0000%。两者独立列明，均为TEST选模的开发指标，不隐藏末轮波动。
 来源：`easy100_single30_shared_20261023`及其两个formal run；自有GPU进程释放检查通过。
 
+LGVQ两项正式30轮亦完成，均选第30轮固定权重复评：Temporal SRCC
+**0.8317808078544658**、Spatial SRCC **0.5479703204800555**。
+来源`lgvq_temporal_formal_s42_remaining7_20261023`及
+`lgvq_spatial_formal_s42_remaining7_20261023`的result/history/fixed_weight_predictions。
+两项均是TEST选模开发指标；与初始表Qwen .7663/.6908和Ours仿真 .8044/.6710
+仅作明确版本的系统比较，空间输入448/224差异仍须披露。
+
 用户明确继续剩余七项，优先LGVQ时间/空间两项。全部沿用下节单seed42、30轮、固定lr0.001，
 不使用warmup/cosine。`queue_remaining.py`使用同一全局T19锁，最多三张物理卡，每卡最多
 两个本任务worker；先自动完成各任务的两batch smoke/完整评估/保存复评，再正式30轮。
