@@ -9,6 +9,7 @@ def test_small_text_plan_dispatches_four_explicit_trainable_text_jobs(tmp_path):
     assert plan['full_model_parameters_strict_upper_bound']==15000000
     assert plan['gpu_indices_requested_first']==[1,2,6]
     assert plan['max_physical_gpus']==6
+    assert plan['max_jobs_per_gpu']==3
     assert plan['preserve_running_jobs']==['lgvq_temporal','lgvq_spatial']
     for task in plan['tasks']:
         encoder=plan['text_encoders'].get(task,'minilm')
@@ -29,3 +30,10 @@ def test_small_text_plan_dispatches_four_explicit_trainable_text_jobs(tmp_path):
 def test_rejects_invalid_or_misapplied_profile_overrides(tmp_path,overrides):
     path=tmp_path/'plan.json';path.write_text(json.dumps(dict(tasks=['lsp','openmoji'],**overrides)))
     with pytest.raises(ValueError):read_plan(path)
+
+
+def test_expanded_resource_flags_reach_worker(tmp_path):
+    command=worker_command(dict(task='abo_conditional_edit',phase='formal',name='example',
+        text_encoder='byte_gru',max_physical_gpus=6,max_jobs_per_gpu=3),tmp_path,'GPU-test','resnet18_imagenet_frozen')
+    assert command[command.index('--max-physical-gpus')+1]=='6'
+    assert command[command.index('--max-jobs-per-gpu')+1]=='3'

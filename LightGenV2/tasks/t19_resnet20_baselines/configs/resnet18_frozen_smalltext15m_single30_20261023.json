@@ -31,7 +31,8 @@
   "effective_batch": 32,
   "precision": "FP32_TF32_disabled",
   "max_physical_gpus": 6,
-  "max_jobs_per_gpu": 2,
+  "max_jobs_per_gpu": 3,
+  "third_job_admission": "At least6144MiB free and <=50percent utilization; both registered peers must already hold CUDA contexts so existing two-job workers are unaffected",
   "sealed": true,
   "authorization": "2026-10-23 user permits training smaller text from scratch, complete model below15M; latest clarification permits up to6 physical GPUs including1/2/6 and same-card parallelism, expands capacity rather than migrating active tasks. Existing LGVQ preserved. Two partial visual jobs stopped before this clarification have preserved checkpoints and fresh same-protocol retries. Four changed text tasks have fresh smoke/30-epoch IDs."
 }

@@ -29,7 +29,8 @@ MiniLM旧分支与所有证据保留，新分支显式`--text-encoder byte_gru`�
 
 用户最新明确为**最多六张GPU扩容，不是换卡**，允许低利用率卡多个任务并行。协调器显式
 `--max-physical-gpus 6`，优先候选物理GPU1/2/6，再3/4/5，现场映射UUID并排除外来进程；
-每卡先最多两个登记T19 worker，按显存/利用率准入，忙卡等待，不干预其他任务。此资源授权
+每卡最多三个登记T19 worker；第三个仅在已有两项均进入CUDA、空余显存≥6144MiB且利用率≤50%
+时加入，保护原先按两任务准入的在训worker。忙卡等待，不干预其他任务。此资源授权
 覆盖旧execution profile三卡限制；原在训worker的历史manifest不改写。仍为单seed42、30轮、
 固定lr.001、AdamW wd.0001 clip1、有效batch32、FP32 TF32关、无warmup/cosine，三个检索H@1。
 全部仅报第30轮last完整复评，编辑完整2304 TEST；不根据任何指标选轮。LSP原损失问题仍披露。

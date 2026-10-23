@@ -101,6 +101,7 @@ def run(args):
                           for name in ('train_tasks.py','task_problems.py','models.py','lgvq_data.py','other_data.py','editor_dataset.py','train_easy100.py')},
         'smoke_batches': args.smoke_batches, 'metric': problem.metric}
     manifest['max_physical_gpus']=getattr(args,'max_physical_gpus',3)
+    manifest['max_jobs_per_gpu']=getattr(args,'max_jobs_per_gpu',2)
     manifest.update(initialization='official_ImageNet1K_V1' if frozen else 'random_no_pretraining',
                     training_scope='decoder_only' if frozen else 'full_network',
                     optimizer_parameters=sum(p.numel() for p in trainable))
@@ -219,6 +220,7 @@ def main():
     p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
     p.add_argument('--text-encoder',choices=['minilm','byte_gru'],default='minilm')
     p.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
+    p.add_argument('--max-jobs-per-gpu',type=int,choices=[2,3],default=2)
     p.add_argument('--run-dir',type=Path,required=True)
     p.add_argument('--gpu-uuid',required=True)
     p.add_argument('--seed',type=int,default=42)

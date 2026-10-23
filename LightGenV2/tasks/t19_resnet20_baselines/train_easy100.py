@@ -59,13 +59,16 @@ def require_published_source():
             raise RuntimeError('HEAD must be a published commit in origin/main history')
 
 
-def validate_gpu_processes(uuid, apps, allowed_pids):
+def validate_gpu_processes(uuid, apps, allowed_pids, max_jobs_per_gpu=2):
+    if max_jobs_per_gpu not in (2, 3):
+        raise ValueError('GPU capacity must be two or three tasks')
     active = {int(line.split(',')[1].strip()) for line in apps.splitlines()
               if line.split(',')[0].strip() == uuid}
     if active - set(allowed_pids):
         raise RuntimeError('Requested GPU has a process outside this T19 queue')
-    if len(active) >= PROFILE['max_jobs_per_gpu']:
-        raise RuntimeError('Requested GPU already has two tasks')
+    if len(active) >= max_jobs_per_gpu:
+        capacity = 'two' if max_jobs_per_gpu == 2 else 'three'
+        raise RuntimeError(f'Requested GPU already has {capacity} tasks')
     for pid in active:
         command = Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode()
         if (not any(module in command for module in (
@@ -76,19 +79,24 @@ def validate_gpu_processes(uuid, apps, allowed_pids):
     return active
 
 
-def admit_gpu(uuid, allowed_pids=()):
+def admit_gpu(uuid, allowed_pids=(), max_jobs_per_gpu=2):
     if not uuid.startswith('GPU-') or os.environ.get('CUDA_VISIBLE_DEVICES') != uuid:
         raise RuntimeError('Set CUDA_VISIBLE_DEVICES to the single requested GPU UUID')
     apps = subprocess.check_output(['nvidia-smi', '--query-compute-apps=gpu_uuid,pid',
                                     '--format=csv,noheader,nounits'], text=True)
-    active = validate_gpu_processes(uuid, apps, allowed_pids)
+    active = validate_gpu_processes(uuid, apps, allowed_pids, max_jobs_per_gpu)
     state = subprocess.check_output(['nvidia-smi', '-i', uuid,
         '--query-gpu=memory.used,memory.total,utilization.gpu', '--format=csv,noheader,nounits'], text=True)
     memory, total, utilization = (int(x.strip()) for x in state.strip().split(','))
     if not active and memory > 100:
         raise RuntimeError('Unattributed GPU allocation')
-    if total - memory < PROFILE['minimum_free_memory_before_second_job_mib'] or utilization > 95:
+    utilization_limit = 50 if len(active) >= 2 else 95
+    minimum_free = PROFILE['minimum_free_memory_before_second_job_mib']
+    if len(active) >= 2:
+        minimum_free = max(6144, minimum_free)
+    if total - memory < minimum_free or utilization > utilization_limit:
         raise RuntimeError('Insufficient GPU memory or compute headroom')
+    return active
 
 
 def sharing_pids(args):
@@ -99,7 +107,7 @@ def sharing_pids(args):
         raise ValueError('Shared-worker registry must be in this task runs')
     state = json.loads(path.read_text(encoding='utf-8'))
     jobs = [job for job in state['jobs'] if job['status'] == 'running' and job['gpu_uuid'] == args.gpu_uuid]
-    if (len(jobs) > PROFILE['max_jobs_per_gpu']
+    if (len(jobs) > getattr(args, 'max_jobs_per_gpu', 2)
             or not any(job['pid'] == os.getpid() and job['name'] == args.run_dir.name for job in jobs)):
         raise RuntimeError('This worker is not registered in the shared-GPU queue')
     # Read after data verification so either worker may finish CPU preflight
@@ -110,12 +118,16 @@ def sharing_pids(args):
 def wait_for_gpu(args):
     """Wait without CUDA if another job arrives during CPU data verification."""
     resource_errors = {'Requested GPU has a process outside this T19 queue',
-        'Requested GPU already has two tasks', 'Unattributed GPU allocation',
+        'Requested GPU already has two tasks', 'Requested GPU already has three tasks', 'Unattributed GPU allocation',
         'Insufficient GPU memory or compute headroom'}
     while True:
         allowed = sharing_pids(args)
         try:
-            admit_gpu(args.gpu_uuid, allowed)
+            cap = getattr(args, 'max_jobs_per_gpu', 2)
+            if cap > 2:
+                admit_gpu(args.gpu_uuid, allowed, cap)
+            else:
+                admit_gpu(args.gpu_uuid, allowed)
             return allowed
         except RuntimeError as exc:
             if str(exc) not in resource_errors:
@@ -250,7 +262,9 @@ def run(args):
         'pid': os.getpid(), 'torch': torch.__version__, 'python': platform.python_version(),
         'selection': 'fixed last epoch; no metric-based selection',
         'metric_name': 'Hit@1', 'schedule': 'constant', 'warmup_epochs': 0,
-        'learning_rate': args.learning_rate, 'execution_profile': dict(PROFILE,max_physical_gpus=getattr(args,'max_physical_gpus',3)),
+        'learning_rate': args.learning_rate, 'execution_profile': dict(PROFILE,
+            max_physical_gpus=getattr(args,'max_physical_gpus',3),
+            max_jobs_per_gpu=getattr(args,'max_jobs_per_gpu',2)),
         'optimizer': 'AdamW_constant_lr_wd0.0001_clip1',
         'initialization': ('official_pretrained_visual_random_byte_gru' if small_text else
                            'official_pretrained_visual_and_text' if frozen
@@ -262,7 +276,7 @@ def run(args):
         'direction_independent_weights': True, 'smoke_batches': args.smoke_batches,
         'shared_owner_pids_at_launch': shared_pids,
         'queue_status_path': str(args.queue_status_path) if args.queue_status_path else None,
-        'max_jobs_per_gpu': PROFILE['max_jobs_per_gpu'],
+        'max_jobs_per_gpu': getattr(args,'max_jobs_per_gpu',2),
         'started_unix': time.time(),
     }
     if frozen:
@@ -369,6 +383,7 @@ def main():
     parser.add_argument('--backbone', choices=['resnet20','resnet32','resnet18_imagenet_frozen'], default='resnet20')
     parser.add_argument('--text-encoder', choices=['minilm','byte_gru'], default='minilm')
     parser.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
+    parser.add_argument('--max-jobs-per-gpu',type=int,choices=[2,3],default=2)
     parser.add_argument('--data-root', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--gpu-uuid', required=True)

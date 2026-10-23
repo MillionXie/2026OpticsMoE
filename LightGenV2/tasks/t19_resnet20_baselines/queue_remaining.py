@@ -71,6 +71,8 @@ def worker_command(job, suite, uuid, backbone):
         command+=['--text-encoder',job['text_encoder']]
     if job.get('max_physical_gpus',3)!=3:
         command+=['--max-physical-gpus',str(job['max_physical_gpus'])]
+    if job.get('max_jobs_per_gpu',2)!=2:
+        command+=['--max-jobs-per-gpu',str(job['max_jobs_per_gpu'])]
     return command
 
 
@@ -82,6 +84,7 @@ def main():
     p.add_argument('--task-plan',type=Path,required=True)
     p.add_argument('--resume',action='store_true')
     p.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
+    p.add_argument('--max-jobs-per-gpu',type=int,choices=[2,3],default=2)
     p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
     args=p.parse_args()
     if not 1<=len(set(args.gpu_uuids))==len(args.gpu_uuids)<=args.max_physical_gpus:
@@ -93,7 +96,7 @@ def main():
     suite=TASK/'runs/simulation'/args.suite_id
     if not args.resume:suite.mkdir(exist_ok=False)
     report={'status':'running','pid':os.getpid(),'gpu_uuids':args.gpu_uuids,'jobs':[],'backbone':args.backbone,
-            'max_physical_gpus':args.max_physical_gpus,'max_jobs_per_gpu':2,'execution_profile':PROFILE,
+            'max_physical_gpus':args.max_physical_gpus,'max_jobs_per_gpu':args.max_jobs_per_gpu,'execution_profile':PROFILE,
             'started_unix':time.time(),'initial_commit':git('rev-parse','HEAD')}
     running,children={},[]
     if args.resume:
@@ -105,6 +108,7 @@ def main():
         report.setdefault('supervisor_history',[]).append({'pid':report['pid'],'replaced_unix':time.time()})
         report.update(pid=os.getpid(),status='running',gpu_uuids=args.gpu_uuids)
         report['max_physical_gpus']=args.max_physical_gpus
+        report['max_jobs_per_gpu']=args.max_jobs_per_gpu
         for job in report['jobs']:
             if job['status']!='running':continue
             root=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')/job['name']
@@ -157,9 +161,9 @@ def main():
                            exit_code=code,finished_unix=time.time(),result=result)
                 # A failed task does not kill independent tasks, but its formal
                 # training is blocked. Never retry failures silently.
-            for uuid in [u for u in args.gpu_uuids for _ in range(2)]:
+            for uuid in [u for u in args.gpu_uuids for _ in range(args.max_jobs_per_gpu)]:
                 owned=[pid for pid,(_,j,_) in running.items() if j['gpu_uuid']==uuid]
-                if len(owned)>=2:continue
+                if len(owned)>=args.max_jobs_per_gpu:continue
                 eligible=[]
                 for j in report['jobs']:
                     if j['status']!='queued':continue
@@ -175,7 +179,12 @@ def main():
                 job=eligible[0]
                 old=os.environ.get('CUDA_VISIBLE_DEVICES')
                 os.environ['CUDA_VISIBLE_DEVICES']=uuid
-                try:admit_gpu(uuid,owned)
+                try:
+                    if args.max_jobs_per_gpu>2:
+                        active=admit_gpu(uuid,owned,args.max_jobs_per_gpu)
+                        if len(owned)>=2 and not set(owned)<=active:
+                            raise RuntimeError('Wait for registered peers to finish CPU admission before adding a third job')
+                    else:admit_gpu(uuid,owned)
                 except (RuntimeError,FileNotFoundError) as exc:
                     report.setdefault('waiting_for_headroom',{})[uuid]=str(exc)
                     continue
@@ -183,6 +192,7 @@ def main():
                     if old is None:os.environ.pop('CUDA_VISIBLE_DEVICES',None)
                     else:os.environ['CUDA_VISIBLE_DEVICES']=old
                 report.setdefault('waiting_for_headroom',{}).pop(uuid,None)
+                job['max_jobs_per_gpu']=args.max_jobs_per_gpu
                 command=worker_command(job,suite,uuid,args.backbone)
                 log=(suite/(job['name']+'.log')).open('x')
                 proc=subprocess.Popen(command,cwd=ROOT,env=dict(os.environ,CUDA_VISIBLE_DEVICES=uuid,
