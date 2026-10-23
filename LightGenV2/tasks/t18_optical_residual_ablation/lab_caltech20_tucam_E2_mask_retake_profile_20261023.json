@@ -1,0 +1,27 @@
+{
+  "schema":"TUCam_L4_human_E2_mask_retake_v1",
+  "human_choice":"keep305_retrain_E2_only",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "teacher_engine_SHA256":"1cc2340e0347762bfaaa5afcce4395c27ffeb3dff553ea4fddbc8e9b7dab3819",
+  "capture_engine_SHA256":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2a",
+  "passed_G1_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_1/fit",
+  "passed_G1_SHA256":"8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b",
+  "old_E2_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_2/capture",
+  "reuse_captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture"
+  },
+  "intermediate_target":305,"final_target":340,"mask_training_stop_target":411,
+  "learning_rates":{"phase_lr":0.0002,"electronic_lr":0.0002,"alpha_lr":0.0002,"head_lr":0.0},
+  "TRAIN_teacher":{"temperature":2,"mixture":0.3},"weight_decay":0.01,
+  "TRAIN_noise":{"CCD_gain_sigma":0.02,"CCD_additive_sigma_DN":0.5,"CCD_pixel_dropout_p":0.002},
+  "mask_recipe":{"name":"E2_original_mask_focused_fixed_head","epochs":24,"seconds":1200,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "observed_learning_rates":{"phase_lr":0.0002,"electronic_lr":0.001,"alpha_lr":0.001,"head_lr":0.002},
+  "observed_recipe":{"name":"new_E2_observed_joint_adaptation","epochs":48,"seconds":1500,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "TEST_gradient":false,"new_inference_layers":0,"scheduler":false,
+  "scope":"Explicit user chooses to KEEP305 gate and retrain E2 masks then recapture ONLY E2, retaining all validated Router/E1/G1. Stop old completed e2a closure; old E2 arrays, receipts/PTs and282 evidence are preserved and NEVER used as fields/gradient in the new mask fit. Reload exact passed G1 PT8fa/fullCPU305, all3 captures2011/audits/6arraySHA, phase-probe oldE2 encoding via TRAIN first8 without SDK. Published teacher suffix optimizer, original E2 phases5..8/G2phase9 and lawful postG1 electrical1/2/3/directalpha1/2/3; head LR EXACT0 and head bitwise freeze is checked, preventing a readout-only numerical gate fix. Fixed TRAIN-only teacher and mild synthetic CCD noise/dropout, no surrogate camera/new inference graph. Up to24fullTRAIN epochs/1200fit seconds, optimization early stop target411 simply allows full finite mask budget; physical gate remains305 not411. Require selected trained epoch, actual E2 phase parameter changes, changed full encoded phaseBMP SHA, complete hook-free CPU>=305, head/input-ancestor freeze before any new capture. No deployable change => STOP with all data intact rather than repeat same mask. On admission, fresh TRAIN1600 then TEST411 E2 with original admitted stage hardware; audit all2011 raw/crop/input/BMP/phase/PT/IDs and SDK release. Then original new-E2 legal suffix joint adaptation max48epochs/1500s; if needed one fixed original TRAIN teacher response36epochs/1200s, CPU gate305 before NEW G2. FinalG2 uses original5150 electronics/head only and final340 gate. OldE2 is never mixed into new upper ancestry; no Router/E1/G1 reshoot. Original exposure/gain/wait/ROI/direction/amplitude/phaseLUT/geometry/model structure remain unchanged. TRAIN80/class1600(original1508+fixed92),TEST411,VALID0. TEST diagnosis/selection development only,no TEST/augmentedTEST fit/gradient/teacher. SingleSDK/ownGPU4060/noGPU0others/noA100/no automaticretry/timer/newbranch/worktree/project/publicupload. Fresh capture disk margin>=120GiB, dark/sat stop bounded diagnose; all original data preserved."
+}
