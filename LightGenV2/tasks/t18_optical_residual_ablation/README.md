@@ -1,3 +1,20 @@
+## 2026-10-24 07:08 MSE联合原后缀完整295/411，接新特征一次定向原头修正
+
+`readout_MSE285`32完整TRAIN轮/6400updates结束，严格原模型CPU best1474/1600TRAIN、
+295/411TEST=71.77616%，比父285多10张；best e28/NLL1.383925，last293/411。
+bestPT SHAd1522b21c5186e57de36f2e1765a286fc6372b9562c25e8c66f2d8e3645684aa，
+report SHA6df1149fac03d96f34d0cdf53a2e5a65bc5a50fe4940a73273f7cc077edf3ced。
+祖先/全部8份CCD逐bit冻结审计通过，控制器return0/GPU退出/SDK释放；不是全链实拍，
+G2仍仿真且尚未采，实际300还差5张。TRAIN92.125%高于TEST71.776%，仍有泛化差距，
+不以TRAIN变好宣称达标。更低的固定读出中点只读counterfactual290未生成新PT。
+
+接`LOCALMSE`：只从严格复核295开始，重新生成其原模型1600TRAIN特征，不能复用
+285的旧G2mask/电子/alpha特征；必须重现父TRAIN与TEST原概率误差<=3e-6。原5140头
+一次全类别局部曲率修正，每类最多64TRAIN更新/总最多1280、每行含bias半径.08、
+KL2/anchor.2/300fit秒，其他参数逐bit冻结；TEST授权错分类别/近邻TRAIN分析及PT选择，
+不TRAIN TEST/增强TEST、不无限循环类别或扫半径。CPU拟合，只有实际300且截止剩余
+时间允许才可新G2单SDK/原5150后续拟合；原295保护/最终340/08:00边界保持。
+
 ## 2026-10-24 06:55 教师原头候选276未改善；接285合法原后缀教师margin联合训练
 
 LOGIT285已完整原模型CPU：best仍E0父285，候选276/411、NLL1.237493，TRAIN1045；

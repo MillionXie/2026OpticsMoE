@@ -1,0 +1,23 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"local_remaining",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_MSE285/fit",
+  "source_PT_SHA256":"d1522b21c5186e57de36f2e1765a286fc6372b9562c25e8c66f2d8e3645684aa",
+  "source_report_SHA256":"6df1149fac03d96f34d0cdf53a2e5a65bc5a50fe4940a73273f7cc077edf3ced",
+  "expected_parent_correct":295,
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_MSE285/fit",
+  "fresh_native_TRAIN_features":true,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_MSE285.return.json",
+  "parent_minimum_previous_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_MSE285/fit",
+  "TRAIN_local_boundary":{"maximum_classes":20,"steps_per_class":64,"temperature":2.0,"label_smoothing":0.02,"neighbor_weight":2.0,"KL":2.0,"anchor":0.2,"trust_step":0.25,"row_radius":0.08,"seed":73},
+  "recipe":{"name":"actual300_MSE_suffix_fresh_features_single_TRAIN_local_boundary_pass","epochs":1,"seconds":300,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_tucam_TRAIN_linear_20261023.py":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+    "lab_caltech20_TRAIN_local_boundary_20261023.py":"5aeb3a7433c5d094af22c68fab93e291dc5896997cdb0ac910dec8bff094bff6",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Single bounded existing row-curvature TRAIN repair on the newly teacher-adapted suffix, not repeat cycling on old285features. Rebuild all1600 original nativeCPU TRAINfeatures and require original savedTRAIN andTEST probability error<=3e-6; parent is latest complete originalCPU MSE result and exactPT/reportSHA must be pinned before launch. New G2mask/electronic/alpha learned, so old native featurecache is forbidden. Only original5140head, nonheadbitwise frozen, all20classes at mostonce/64TRAIN-onlyupdates perclass/rowradius.08/KL2/anchor.2/300fitsec. TEST explicitly errorclass/nearestTRAIN planning and PTselection development, never TEST gradient or augmentedTEST. No independentgeneralization claim/newlayer/ensemble/CCD or hardwarechange. Existing295 parentfallback, actual>=300 beforefreshG2/final340/08:00deadline and guarded singleSDK maintained. CPU localfit; own4060 visibility reserved only for original G2postcapture fit if gate passes in time."
+}
