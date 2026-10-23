@@ -32,7 +32,7 @@ def validate_policy(p):
         assert p['maximum_parent_TRAIN_accuracy']==1. and p['minimum_parent_correct']==301
         assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['TRAIN_readout']=='cached_TRAIN_mixup_dropout'
         assert p['learning_rates']=={} and len(p['linear_engine_SHA256'])==64
-        assert p['TRAIN_feature_aug']==dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03)
+        assert p['TRAIN_feature_aug'] in (dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03),dict(dropout=.1,beta=.4,lr=.0002,weight_decay=.01,label_smoothing=.03,cooldown=True))
         assert p['recipe']['epochs']==48 and p['recipe']['seconds']==60
     assert p['maximum_parent_correct']==304
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0
@@ -63,6 +63,7 @@ def admit(policy,c,out):
     assert audit['report_SHA256']==m.sha(parent.parent/'report.json')
     assert fit['results']['best']['PT_SHA256']==e['PT_SHA256']
     assert policy['minimum_parent_correct']<=e['selected_correct']<=policy['maximum_parent_correct']
+    if 'expected_parent_correct' in policy:assert e['selected_correct']==policy['expected_parent_correct']
     assert fit['results']['best']['train']['accuracy']<policy['maximum_parent_TRAIN_accuracy']
     if 'minimum_parent_TRAIN_TEST_gap' in policy:
         b=fit['results']['best'];assert b['train']['accuracy']-b['test']['accuracy']>=policy['minimum_parent_TRAIN_TEST_gap']

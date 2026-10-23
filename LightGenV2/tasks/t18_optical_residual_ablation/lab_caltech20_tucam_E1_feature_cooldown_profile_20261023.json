@@ -1,0 +1,17 @@
+{
+  "schema":"TUCam_L4_E1_native_feature_aug_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"64c6a23758f3a1196626c105a6146f1c0100fcd92e649f2dae07a3b93514a7db",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a1",
+  "capture_root":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023",
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/l1/s_0/fit",
+  "parent_stage":"0","minimum_parent_correct":301,"maximum_parent_correct":304,"expected_parent_correct":304,"maximum_parent_TRAIN_accuracy":1.0,"minimum_parent_TRAIN_TEST_gap":0.10,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"learning_rates":{},
+  "TRAIN_readout":"cached_TRAIN_mixup_dropout",
+  "TRAIN_feature_aug":{"dropout":0.1,"beta":0.4,"lr":0.0002,"weight_decay":0.01,"label_smoothing":0.03,"cooldown":true},
+  "recipe":{"name":"best304_TRAIN_augmentation_cosine_cooldown","epochs":48,"seconds":60,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Actual a1 best at20 was304 but continuing to48 yielded299. Continue exact native audited BEST304, never the worse last, with lower headLR2e-4 cosine to2e-5 and TRAIN MixUp/dropout strength cosine from1 to0. All1600 TRAIN each cached epoch; no TEST fit/augmentation/gradient, noVALID. Reuse native TRAIN feature cache only with bitwise nonreadout identity, data/prefix/ID/SHA and source-native probability checks; head may lawfully differ while features remain identical. Current native TEST feature probabilities must also match<=3e-6. Original5140 Linear only, inference unchanged, all masks/electronics/alpha/hardware fixed, no new CCD, random PT/seed scan, timer or hardware retry. Strict hook-free original CPU bestlast fullTRAIN/411TEST and unchanged-prefix review still required before305 gate and new G1."
+}

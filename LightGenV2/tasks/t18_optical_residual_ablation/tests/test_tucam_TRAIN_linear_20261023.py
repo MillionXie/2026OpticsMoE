@@ -38,3 +38,12 @@ def test_cached_TRAIN_augmentation_policy_and_identity():
     assert 'TRAIN_mixup(train[ix],labels[ix]' in s and 'TRAIN_mixup(test' not in s
     assert 'head(test)' in s and 'with torch.inference_mode():' in s
     assert "loop.validate_state(m,native,original,keys)" in s and "results['best']['test']['correct']==best" in s
+
+
+def test_best304_cooldown_and_head_independent_cache_reuse():
+    p=json.loads((HERE/'lab_caltech20_tucam_E1_feature_cooldown_profile_20261023.json').read_text())
+    assert hashlib.sha256(ENTRY.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
+    assert p['expected_parent_correct']==304 and p['TRAIN_feature_aug']['cooldown'] is True
+    s=ENTRY.read_text();assert '1-strength*(1-rng.beta' in s and "old.linear(train)" in s
+    assert "sr['results']['best']['PT_SHA256']==m.sha(source/'best.pt')" in s
+    assert 'loop.validate_state(m,old,original,keys)' in s and "cfg['dropout']*strength" in s
