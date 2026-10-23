@@ -1,6 +1,7 @@
 """Fixed-LR, single-seed30 training of task-specific ResNet-20 baselines."""
 import argparse
 import hashlib
+import itertools
 import math
 import os
 from pathlib import Path
@@ -43,11 +44,16 @@ def run(args):
     model = build_model(args.task).to(device)
     problem.configure_model(model, device)
     train_data = problem.train
-    if args.smoke_batches:
+    if args.smoke_batches and problem.batch_sampler is None:
         train_data = Subset(train_data, range(min(len(train_data), args.smoke_batches*problem.batch_size)))
     options = dict(batch_size=problem.batch_size, num_workers=2, pin_memory=True,
                    multiprocessing_context='spawn', persistent_workers=True)
-    train = DataLoader(train_data, shuffle=True, generator=torch.Generator().manual_seed(42), **options)
+    if problem.batch_sampler is None:
+        train = DataLoader(train_data, shuffle=True, generator=torch.Generator().manual_seed(42), **options)
+    else:
+        sampler = (list(itertools.islice(iter(problem.batch_sampler), args.smoke_batches))
+                   if args.smoke_batches else problem.batch_sampler)
+        train = DataLoader(train_data,batch_sampler=sampler,**{k:v for k,v in options.items() if k!='batch_size'})
     test = DataLoader(problem.test, shuffle=False, **options)
     optimizer = torch.optim.AdamW(model.parameters(), lr=.001, weight_decay=.0001)
     manifest = {'task': args.task, 'status': 'running', 'seed': 42, 'epochs': args.epochs,
@@ -59,7 +65,7 @@ def run(args):
         'command': [sys.executable,'-m',__spec__.name,*sys.argv[1:]],
         'python': platform.python_version(), 'torch': torch.__version__, 'started_unix': time.time(),
         'source_sha256': {name: hashlib.sha256((TASK/name).read_bytes()).hexdigest()
-                          for name in ('train_tasks.py','task_problems.py','models.py','lgvq_data.py')},
+                          for name in ('train_tasks.py','task_problems.py','models.py','lgvq_data.py','other_data.py','editor_dataset.py','train_easy100.py')},
         'smoke_batches': args.smoke_batches, 'metric': problem.metric}
     write_json(run_dir/'run_manifest.json', manifest)
     history, best, selected_epoch = [], -math.inf, None
@@ -78,7 +84,7 @@ def run(args):
             for step,batch in enumerate(train):
                 n = len(batch['sample_id'])
                 group_start = (step//accumulation)*accumulation*problem.batch_size
-                group_samples = min(32,len(train_data)-group_start)
+                group_samples = n if accumulation==1 else min(32,len(train_data)-group_start)
                 loss=problem.loss(model,batch,device)
                 if not torch.isfinite(loss):
                     raise ValueError('Nonfinite training loss')
@@ -96,12 +102,14 @@ def run(args):
                    'elapsed_seconds':time.monotonic()-began,**metrics}
             payload={'model':model.state_dict(),'optimizer':optimizer.state_dict(),'epoch':epoch,'manifest':manifest,'metrics':entry}
             save_checkpoint(run_dir/'last_checkpoint.pt',payload)
-            score=metrics.get(problem.metric)
-            if evaluated and (selected_epoch is None or (score is not None and score>best)):
+            score=entry.get(problem.metric)
+            if score is not None and problem.minimize:score=-score
+            if (evaluated or problem.metric=='train_loss') and (selected_epoch is None or (score is not None and score>best)):
                 best=score if score is not None else -math.inf
                 selected_epoch=epoch
                 save_checkpoint(run_dir/'best_checkpoint.pt',payload)
-                write_json(run_dir/'best_predictions.json',records)
+                write_json(run_dir/'best_predictions.json',records if records is not None else
+                           {'status':'selected_by_TRAIN_loss_not_evaluated_this_epoch','selected_epoch':epoch})
             history.append(entry)
             write_json(run_dir/'history.json',history)
             write_json(run_dir/'progress.json',{'status':'training',**entry,'selected_epoch':selected_epoch})
@@ -109,9 +117,15 @@ def run(args):
         selected=torch.load(run_dir/'best_checkpoint.pt',map_location='cpu',weights_only=False)
         model.load_state_dict(selected['model'])
         metrics,records=problem.evaluate(model,test,device)
+        selection_metrics=metrics
+        final_loader=None
+        if problem.final_test is not None:
+            final_loader=DataLoader(problem.final_test,shuffle=False,**options)
+            metrics,records=problem.evaluate(model,final_loader,device)
         write_json(run_dir/'fixed_weight_predictions.json',records)
         write_json(run_dir/'result.json',{'status':'complete','selected_epoch':selected_epoch,'metrics':metrics,
-            'development_metric':problem.selection.startswith('TEST'),'elapsed_seconds':time.monotonic()-began})
+            'selection_metrics':selection_metrics,'selection_uses_test':problem.selection.startswith('TEST'),
+            'development_metric':problem.task!='abo_conditional_edit','elapsed_seconds':time.monotonic()-began})
         manifest['status']='complete'
     except BaseException as exc:
         manifest.update(status='interrupted' if isinstance(exc,KeyboardInterrupt) else 'failed',error=repr(exc))
@@ -119,7 +133,8 @@ def run(args):
     finally:
         manifest['finished_unix']=time.time()
         write_json(run_dir/'run_manifest.json',manifest)
-        for loader in (train,test):
+        for loader in (train,test,locals().get('final_loader')):
+            if loader is None:continue
             iterator=getattr(loader,'_iterator',None)
             if iterator is not None: iterator._shutdown_workers()
         del model,optimizer

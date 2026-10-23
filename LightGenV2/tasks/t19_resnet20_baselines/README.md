@@ -23,6 +23,22 @@ TRAIN MOS min/max生成五档和分值，CE训练，softmax加权评分，TEST S
 任务专属训练入口`train_tasks.py`记录源码commit/逐文件SHA、原始命令、环境及数据身份。
 追加其他任务源码不会中断已加载旧commit代码的任务，每个新worker记录自己的已发布commit。
 
+其余五项训练合同已实现于`other_data.py`/`task_problems.py`，CPU梯度检查覆盖全部五项：
+
+| 任务 | 数据及监督 | 选模 / 指标 |
+|---|---|---|
+| ABO图搜图 | 原1600 TRAIN/图库、800 QUERY；协议与每张图SHA核验；每批配对同SKU多视角，不把正例作负例 | TEST开发H@1，原完整图库排名 |
+| LSP | 原10428/1000；注释MAT的历史SHA、原人体裁剪/增强/关节顺序、热图MSE+0.1坐标损失 | 按原Qwen教师最低TRAIN loss选权重；原torso PCK@0.2 |
+| SALICON | 原10000/5000，原fixation JSON SHA、sigma19和224密度缓存；禁止下载/重建缓存；原KL/CC/SIM/NSS损失 | public TEST CC开发指标，原指标实现 |
+| OpenMoji | 原layered_anchor6_svg_v3的5000/1000、数据seed73保持；训练seed42；原标签损失12/3及1/1.25/.15/.1 | 逐场景changed-cell accuracy再平均，不按编辑格总数加权 |
+| ABO图文编辑 | 原20736/2304/2304与三份manifest SHA；调用原渲染器/TRAIN设计目录，不读取任何教师特征；模型仅看参考RGB及byte指令 | VAL逐图PSNR选模，再一次固定TEST；原Gaussian SSIM |
+
+图文编辑原数据类返回的mask、target及空的兼容text字段均不会进入模型forward；
+`editor_dataset.py`重用确定性配对/渲染规则，但不加载Qwen或指令特征缓存。
+编辑损失沿此前批准方案为RGB MSE+0.05梯度L1，与原Qwen latent损失不同；它不是
+同loss/预训练预算的消融。LSP/CNN和SALICON/CNN同样使用ImageNet通道归一化，非Qwen processor。
+每项只有CPU真实数据前检成功后才加入运行plan；加入后依次进行真实GPU smoke与正式30轮。
+
 ## 当前生效协议：2026-10-23 用户修订
 
 本轮只负责 `LightGenV2/tasks/t19_resnet20_baselines/`，未修改其他任务或历史测量。
