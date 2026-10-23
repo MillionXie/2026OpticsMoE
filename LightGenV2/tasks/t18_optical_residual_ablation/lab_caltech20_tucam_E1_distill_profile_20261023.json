@@ -1,0 +1,15 @@
+{
+  "schema":"TUCam_L4_E1_teacher_finite_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/u1",
+  "capture_root":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023",
+  "parent_stage":"0","minimum_parent_correct":261,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":1.0,"minimum_parent_TRAIN_TEST_gap":0.10,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,
+  "learning_rates":{"phase_lr":0.00005,"electronic_lr":0.0002,"alpha_lr":0.0002,"head_lr":0.0005},
+  "TRAIN_teacher":{"temperature":2,"mixture":0.3},"weight_decay":0.01,
+  "recipe":{"name":"E1_TRAIN_only_fixed_simulation_teacher_cosine","epochs":36,"seconds":1200,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"One finite response ONLY if the completed u1 native best demonstrates a TRAIN minus TEST accuracy gap >=10pp. Start from its exact strict native best, retain all ancestors of recorded router/E1, and tune only original unmeasured masks/postmeasurement electronics/alpha/head. Cache the fixed initial simulation teacher logits on the same1600 TRAIN images only; 0.7 original supervised CE plus0.3 temperature2 KL, with lower cosine-decayed LR and WD.01. Teacher discarded before inference; no new inference layers, no TEST derivative/data augmentation, no VALID, no camera/encoding/exposure/coordinate/LUT change. Complete native bestlast plus prefix/freeze/SHA audit before305 gate and new G1. Later stages retain the original registered no-teacher recipes. No random candidate sweep, scheduled task or automatic hardware retry."
+}
