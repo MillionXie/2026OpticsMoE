@@ -34,6 +34,23 @@ MiniLM旧分支与所有证据保留，新分支显式`--text-encoder byte_gru`�
 固定lr.001、AdamW wd.0001 clip1、有效batch32、FP32 TF32关、无warmup/cosine，三个检索H@1。
 全部仅报第30轮last完整复评，编辑完整2304 TEST；不根据任何指标选轮。LSP原损失问题仍披露。
 
+两个保留的LGVQ正式run现已完成，独立CPU核验epoch30、last文件SHA、各558条唯一预测及
+全部30次视觉参数/BN buffers冻结SHA均通过，不追加训练：
+
+| LGVQ指标 | 冻结预训练RN18第30轮 | RN20全参第30轮 | RN32全参第30轮 | Ours Sim旧图 | Qwen旧图 |
+|---|---:|---:|---:|---:|---:|
+| 时间SRCC | 0.6209123222 | 0.8317808079 | 0.8024708890 | 0.8044 | 0.7663 |
+| 空间SRCC | 0.5938761940 | 0.5479703205 | 0.6362456795 | 0.6710 | 0.6908 |
+
+两个run ID分别`lgvq_temporal_formal_s42_resnet18_imagenet_frozen_single30_20261023`、
+`lgvq_spatial_formal_s42_resnet18_imagenet_frozen_single30_20261023`；审计证据
+`runs/control/frozen_lgvq_last30_independent_audit_20261023.json`。时间last SHA
+`258744c5a06ffff377c0af6baaf0e3befc0b4cb5fc2d5e1a0cfdfb3c650fbd35`，空间last SHA
+`10b93e8b6022e23e2010638053b91d0ba9fbfd6ff2f171b07495cbbec7fcecca`。
+冻结视觉11,176,512参数，时间/空间可训练头分别229,765/33,157。
+初始化和优化范围与旧CNN不同，不作为只改变网络深度的消融；Ours/Qwen为原图具名历史版本，
+未宣称均为相同30轮末轮，空间448/224分辨率差异保留。TEST周期被观察，末轮固定选取；不是新盲测。
+
 ## 2026-10-23 最新协议更正：预训练冻结骨干，仅训练decoder
 
 用户明确不希望baseline全网络重新训练，要求核实并重新尝试。实际核查：**旧ResNet-20、
