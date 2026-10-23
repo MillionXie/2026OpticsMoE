@@ -22,7 +22,7 @@ def validate_policy(p):
     assert p['actual_E2_target']==300 and p['final_target']==340
     assert p['TRAIN']==1600 and p['TEST']==411 and p['VALID']==0
     assert not p['TEST_gradient'] and not p['scheduler'] and not p['automatic_retry']
-    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE')
+    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE')
     assert 0<=p['expected_parent_correct']<300
     family=p.get('capture_family','new_E2');assert family in ('new_E2','old282')
     if family=='new_E2':
@@ -79,9 +79,10 @@ def run(a):
     assert admission.seconds_left(p)>1800 and not a.out.exists() and not m.LOCK.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(73)
     m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),policy=p,TEST_development=True,TEST_gradient=False,new_inference_layers=0,scheduler=False))
     model,data,dm,fields,paths,pt,reference=admit(p,c,a.out)
-    if p['method']=='frozen_readout_CE':
+    if p['method'] in ('frozen_readout_CE','safe_teacher_CE'):
         import lab_caltech20_TRAIN_frozen_readout_20261024 as engine
         config={**c,**p['learning_rates']}
+        if p['method']=='safe_teacher_CE':config.update(TRAIN_safe_teacher=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])
     elif p['method']=='native_CE':
         config={**c,**p['learning_rates']};engine=base
     elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge'):

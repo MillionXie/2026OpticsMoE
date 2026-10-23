@@ -1,0 +1,16 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"safe_teacher_CE",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_RIDGEOLD.return.json",
+  "TRAIN_teacher_cache":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2k/s_2/fit",
+  "recipe":{"name":"actual300_old282_correct_teacher_normalized_bounded_KD","epochs":48,"seconds":1500,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "learning_rates":{"phase_lr":0.00005,"electronic_lr":0.0002,"alpha_lr":0.0002,"head_lr":0.0002},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_TRAIN_frozen_readout_20261024.py":"f82d21638e4dcaefacac2fc4592a3b1b49858595beb4fe50381c999c1439d366",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Remain on original strongest old282/PT1f447 and matching phase376cc/CCD9de875,d6056c; no newE2 or lower-parent selection. Earlier large unnormalized teacher KL conflicted with CE; current frozen-head fit raisedTRAIN1331->1393 butTEST268, selectedE0. Use a different bounded TRAIN regularizer, not more identical epochs: fixed ORIGINAL simulation7b0d teacher logits already SHA-bound on the exact1600TRAIN,1529correct/1247correct rawconfidence>=.5. Only those correct confident TRAIN targets contribute; teacher errors ignored. Both teacher/student logits class-centered and standardized, T2, maxKDcoefficient.1 and weightedKD value <=.25 of CE EACH batch; actual CE/weightedKD/eligible counts recorded. No teacher gradients/TESTteacher/VALID. Joint lawful original G2phase9/electronic2..3/directalpha2..3/original5140head, cosine lowLR48fullTRAINepochs/1500fitseconds, label smoothing.05/originalTRAINpriors/currentCCDnoise/dropout, one physical model forward per batch, teacher only cached electronic logits. Saved inference remains original, hookfree, no ensemble/newlayers. Native fullCPU bestlast/train1600/test411/ancestorSHA. Actual>=300 beforeG2 and final340 unchanged, hardware fixed, no timer/retry."
+}
