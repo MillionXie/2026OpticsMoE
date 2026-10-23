@@ -123,3 +123,19 @@ def test_E2_teacher_requires_native_gap_and_joint_original_parameters():
     assert p['learning_rates']['phase_lr']>0 and p['learning_rates']['electronic_lr']>0 and p['learning_rates']['alpha_lr']>0
     engine=HERE/'lab_caltech20_tucam_TRAIN_distill_20261023.py'
     assert hashlib.sha256(engine.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['teacher_engine_SHA256']
+
+
+def test_fusion_capacity_is_TRAIN_only_fresh_two_settings_and_parent_fallback(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    import lab_caltech20_TRAIN_fusion_capacity_20261023 as cap
+    a=dict(TRAIN_capacity_correct=1000,TRAIN_capacity_NLL=1.2)
+    assert cap.capacity_better(a,dict(TRAIN_capacity_correct=1100,TRAIN_capacity_NLL=1.1))
+    assert not cap.capacity_better(a,dict(TRAIN_capacity_correct=999,TRAIN_capacity_NLL=1.))
+    assert not cap.capacity_better(a,dict(TRAIN_capacity_correct=1100,TRAIN_capacity_NLL=1.3))
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_capacity_profile_20261023.json').read_text());policy_validator()(p)
+    engine=HERE/'lab_caltech20_TRAIN_fusion_capacity_20261023.py'
+    assert hashlib.sha256(engine.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['capacity_engine_SHA256']
+    s=engine.read_text();assert "data['train']" in s and "data['test']" not in s
+    assert 'TEST_used_for_capacity=False' in s and 'capacity_not_generalization=True' in s
+    assert "model.load_state_dict(original)" in s and "loop.validate_state(m,model,original,allowed)" in s
+    driver=ENTRY.read_text();assert 'E2_capacity_no_TRAIN_support' in driver and 'if not keep:parent=retained_parent;fit=retained_fit' in driver

@@ -10,8 +10,8 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1')
-    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1')
+    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1')
     assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -40,6 +40,14 @@ def validate_policy(p):
         assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
         assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01 and len(p['teacher_engine_SHA256'])==64
         assert p['recipe']==dict(name='E2_TRAIN_only_fixed_teacher_cosine',epochs=36,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
+    elif p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':
+        assert p['minimum_parent_correct']==p['expected_parent_correct']==274 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['completed_controller'].endswith('/e2k')
+        assert p['TRAIN_fusion_capacity']==dict(stage=2,samples=1600,proposed_alpha=.4001001,estimators_per_setting=1)
+        assert len(p['capacity_engine_SHA256'])==len(p['linear_engine_SHA256'])==len(p['teacher_engine_SHA256'])==64
+        assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
+        assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
+        assert p['recipe']==dict(name='E2_TRAIN_supported_fusion_joint_teacher',epochs=24,seconds=900,lr_scale=1,TRAIN_class_emphasis=.75)
     elif p['schema']=='TUCam_L4_G1_underfit_response_v1':
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
@@ -106,6 +114,7 @@ def admit(p,c,out):
     if p['schema']=='TUCam_L4_E2_linear_response_v1':expected_state='E2_underfit_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fullbatch_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_teacher_response_v1':expected_state='E2_native_linear_gate_unmet'
+    if p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
     assert r['state']==expected_state
     assert r['next_layer_not_started'] and r['SDK_released']
     endpoints=r['endpoints'];assert [e['stage'] for e in endpoints]==list(p['captures'])
@@ -201,6 +210,15 @@ def run(a):
     m.save(a.out/'progress.json',dict(state='native_readout_fit' if 'TRAIN_readout' in p else 'TRAIN_teacher_suffix_fit' if 'TRAIN_teacher' in p else 'observed_underfit_suffix_fit',stage=stage,parent_PT_SHA256=m.sha(parent)))
     tuned={**c,**p['learning_rates']}
     if 'TRAIN_noise' in p:tuned.update(p['TRAIN_noise'])
+    if 'TRAIN_fusion_capacity' in p:
+        import lab_caltech20_TRAIN_fusion_capacity_20261023 as capacity
+        import lab_caltech20_tucam_TRAIN_linear_20261023 as linear
+        assert m.sha(capacity.__file__)==p['capacity_engine_SHA256'] and m.sha(linear.__file__)==p['linear_engine_SHA256']
+        retained_parent=parent;retained_state=m.state_cpu(model);retained_fit=m.read(parent.parent/'report.json');retained_metric=retained_fit['results']['best']['test']
+        capacity_report=capacity.probe(model,data,dm,fields,paths,parent,p['TRAIN_fusion_capacity'],c['original_TRAIN_counts'],folder/'capacity')
+        tuned['TRAIN_fusion_capacity_result']=capacity_report;tuned['initialization_is_not_unmodified_parent']=capacity_report['accepted']
+        if not capacity_report['accepted']:
+            m.save(folder/'endpoint_report.json',endpoints[-1]);m.save(a.out/'report.json',dict(state='E2_capacity_no_TRAIN_support',endpoints=endpoints,next_layer_not_started=True,SDK_released=not m.LOCK.exists(),original_parent_retained=True,TEST_used_for_capacity=False));return
     if 'TRAIN_readout' in p:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as linear
         assert m.sha(linear.__file__)==p['linear_engine_SHA256']
@@ -226,10 +244,16 @@ def run(a):
             candidate=fit['results']['best']['test'];keep=candidate['correct']>preserved_metric['correct'] or (candidate['correct']==preserved_metric['correct'] and candidate['nll']<preserved_metric['nll']-1e-4)
             m.save(folder/'fit_promotion.json',dict(candidate_PT=str(parent),candidate_SHA256=m.sha(parent),candidate_correct=candidate['correct'],parent_PT=str(preserved_parent),parent_SHA256=m.sha(preserved_parent),parent_correct=preserved_metric['correct'],promoted=keep,TEST_development=True,TEST_gradient=False,all_evidence_preserved=True))
             if not keep:parent=preserved_parent;fit=preserved_fit;model,_=m.model_for(parent,m.sha(parent),4,reference)
+    if 'TRAIN_fusion_capacity' in p:
+        candidate=fit['results']['best']['test'];keep=candidate['correct']>retained_metric['correct'] or (candidate['correct']==retained_metric['correct'] and candidate['nll']<retained_metric['nll']-1e-4)
+        m.save(folder/'fit_promotion.json',dict(candidate_PT=str(parent),candidate_SHA256=m.sha(parent),candidate_correct=candidate['correct'],parent_PT=str(retained_parent),parent_SHA256=m.sha(retained_parent),parent_correct=retained_metric['correct'],promoted=keep,TEST_development=True,TEST_gradient=False,all_evidence_preserved=True))
+        if not keep:parent=retained_parent;fit=retained_fit;model,_=m.model_for(parent,m.sha(parent),4,reference)
+        _,_,_,loop=base.numerical_modules();loop.validate_state(m,model,retained_state,m.allowed_keys(model,len(fields)))
     e=endpoint(m,stage,parent,fit,paths);endpoints[-1]=e;m.save(folder/'endpoint_report.json',e)
     if not e['target_met']:
         state='G1_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'G1_underfit_budget_complete_gate_unmet'
         if stage=='2':state='E2_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'E2_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'E2_underfit_budget_complete_gate_unmet'
+        if 'TRAIN_fusion_capacity' in p:state='E2_capacity_joint_gate_unmet'
         m.save(a.out/'report.json',dict(state=state,endpoints=endpoints,next_layer_not_started=True,SDK_released=not m.LOCK.exists()));return
     from lab_caltech20_tucam_capture_20261023 import acquire
     for stage in base.STAGES[len(fields):]:
