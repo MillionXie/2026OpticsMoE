@@ -54,3 +54,13 @@ def test_joint_recovery_needs_TRAIN_supported_actual_mask_not_old_E2():
     assert "r['results']['last']['train']" in s and "r['results']['last']['test']" not in s
     assert 'TEST_used_for_candidate_admission=False' in s and "m.allowed_keys(candidate,3)-{'linear.weight','linear.bias'}" in s
     with pytest.raises(AssertionError):validate({**p,'candidate_checkpoint':'best'})
+
+
+def test_boundary_recovery_fresh_current_mask_and_no_TEST_gradient(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_mask_boundary_recovery_profile_20261023.json').read_text());validate(p)
+    assert p['candidate_checkpoint']=='best' and p['completed_controller'].endswith('/e2q')
+    assert p['fresh_native_TRAIN_features'] and p['native_feature_source']==p['candidate_mask_fit']
+    assert p['learning_rates']=={} and p['mask_recipe']['epochs']==0 and p['TRAIN_local_boundary']['maximum_classes']==8
+    s=ENTRY.read_text();assert 'source_checkpoint_selected_on_TEST_development=boundary' in s and 'fitter=linear.fit_suffix' in s
+    with pytest.raises(AssertionError):validate({**p,'fresh_native_TRAIN_features':False})

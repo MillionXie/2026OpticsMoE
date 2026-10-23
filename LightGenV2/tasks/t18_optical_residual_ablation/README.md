@@ -1,3 +1,30 @@
+## 2026-10-23 新E2 mask联合恢复完整301，保留新mask接有限边界修复
+
+`layerwise_L4_on_20261023/e2q/mask_fit`实际24完整TRAIN epoch/4800更新、487.453fit秒，
+原模型CPU bestlast全TRAIN1600/TEST411、已采祖先/六份数据SHA冻结通过：best301/
+411=73.23601%、TRAIN1548/1600、TRAIN NLL.318122715，最佳e18；last TRAIN1556/
+1600、TEST296。PT SHA f73d64bd7b6d37796ee7d43428650dcb951c28831afe78f333ab06d9eff22e20；
+12份本地证据manifest SHA89830292e5c519008ae6951049f44517ddbb451388117873f580cda308d97f9d。
+E2 phase_sets.5/.6/.7/.8均真实改变，原相位BMP SHA376cc3ee…已变为
+e7e8ec2b6f5e352af0415684b391ef55f880c992e51331191121bd1293cc4a8e。联合阶段读出也有
+变化，不称head冻结。仍差4张到305；控制器返回0、SDK释放、无新CCD，禁止把
+三实测阶段+仿真新E2/G2的301当已重拍E2/全链实拍或冒称通过门槛。
+
+下一只对这版真实新mask做一次有限原读出局部边界修复，不再重做mask训练。
+严格已完成joint最佳PT/六份数据SHA、TRAIN仍优于原G1的1532/.425975829方可准入；
+候选来自TEST开发选出的联合best，另行声明，不能说源PT完全未用TEST。额外
+准入本身只核TRAIN，无TEST梯度。必须重新缓存当前真实mask的原生TRAIN1600
+特征并核全TRAIN/TEST原生概率<=3e-6，不复用旧mask特征。沿用发布的原257参数
+单行二元-其余类/全曲率方法，其他19行及全部非读出固定；最多8错分类、每类
+64更新/总512或300fit秒，TRAIN邻近正例/困难负例/全类回放，KL/锚/.08半径。
+不是512完整数据epoch，也不能把读出修复说成再改善了光学入射场。
+
+62项方法检查通过后须Git发布同步再启动；新PT原模型CPU bestlast全TRAIN/TEST、
+非读出/六份数据SHA冻结、trained>=305且E2相位参数/BMP相对原旧E2真实改变，
+才只重采E2 TRAIN1600紧接TEST411。其后仍须物理E2完整复核>=305才能G2，最终
+340不变。所有旧305/282与新301/phase/帧证据保留。TEST只策略/开发选PT，
+无TEST/增强TEST训练或梯度/VALID/新结构/硬件改动/定时任务/无界扫描或工程副本。
+
 ## 2026-10-23 E2固定读出mask阶段结束，TRAIN支持一次联合恢复
 
 `layerwise_L4_on_20261023/e2p/mask_fit`24完整TRAIN epoch/4800更新、488.813fit秒，
