@@ -1,0 +1,28 @@
+{
+  "schema":"TUCam_L4_single_E2_actual300_v1",
+  "actual_E2_target":300,"final_target":340,"predictive_accuracy_prerequisite":false,
+  "TRAIN":1600,"TEST":411,"VALID":0,"TEST_gradient":false,"new_inference_layers":0,"scheduler":false,"automatic_retry":false,
+  "deadline":"2026-10-24T08:00:00+08:00",
+  "source_admission_policy":"lab_caltech20_TRAIN_photometric_mask_profile_20261024.json",
+  "source_admission_policy_SHA256":"d754a5514a11501a1f17ad368266ce5c282ea0365667ad9a85c93a76a52a0cc6",
+  "candidate_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_contrast_readout_20261024/readout_fit",
+  "candidate_PT_SHA256":"99c5538aeea0436f96df9c3ae4263b9693ab39b0c75d57d85630365a3d386e41",
+  "candidate_report_SHA256":"b2fab6ce90d76922f8f76a80b819789280cc02315c275f687c68d8eb810feaba",
+  "native_mask_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_native_mask_20261024/mask_fit",
+  "native_mask_PT_SHA256":"0cf1e41fc11b9d4c24e95ec9079aee5a118373e9af5279ce0b33116267d72da2",
+  "native_mask_report_SHA256":"4e97eb9440886e363152f2b78afaa120112b7129d7dcbbeeb1b6d642c09fd4a6",
+  "native_response_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_response_20261024/native_feature_fit",
+  "native_response_report_SHA256":"d883bd75f4cbfb822aeb2375b71bad4e266b3ee370935ddd18563e1b3a02afc6",
+  "native_response_map_SHA256":"2e8a1aa53f0acc4df02f4ef82609462fa2fba06e14709cce1168d9abb3c47e96",
+  "observed_recipe":{"name":"actual300_E2_native_suffix_CE","epochs":36,"seconds":1200,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "final_recipe":{"name":"actual300_full_physical_original5150","epochs":120,"seconds":1200,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_TRAIN_photometric_mask_20261024.py":"dfb6ab85b3344301fd88f83fe3fbd4e774c969b5ac8115172e9bffbe69ae3607",
+    "lab_caltech20_TRAIN_native_mask_20261024.py":"a356882c6ba5ce1757c7665712f7e8ed2a7aa7db870f7a27cdf7c861033e9302",
+    "lab_caltech20_TRAIN_native_response_fit_20261024.py":"e79673be1ccc079768880877e7f42a05c28f295f5caebdb36e010f9e199fa8c8",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685",
+    "lab_caltech20_tucam_E2_mask_retake_20261023.py":"2129ade759001a58583758820c925e17aac09a97643b76dac78605b637231520"
+  },
+  "scope":"Human explicitly authorizes overnight optimization until08:00 and actualE2>=300 beforeG2. Removes the previous extra predictive>=305 prefilter only; no simulator prediction is a physical result. One existing trained native-response E2mask plus class-contrast OASreadout selected as one family, not a cross-response candidate sweep. Preserve source273 and older282; verified6033 Router/E1/G1frames reused, old E2 arrays removed from activefields before changedmask deployment. Native original model only captures2011newE2frames, TRAIN1600 immediatelyTEST411/pilot24included/noVALID, exact fixedhardware/hashes/signalguards. Native original postE2suffix trains G2phase/electronics2..3/directalpha2..3/head, strictCPU actual411>=300 alone permits freshG2 and original5150finalfit toward340. Below300 preserves data and returns for targeted diagnosis/continued finite optimization, noG2. Exposure/coords/LUT/orientation/structure unchanged. TESTdevelopment analysis and selection authorized, noTESTgradients. No timer, automaticretry, newbranch/worktree/project, externalupload or oldCCDmixing. Complete safe stage boundaries and report truthful outcome at deadline."
+}
