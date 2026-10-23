@@ -106,7 +106,7 @@ def shutdown_loader(loader, *, cleanup_errors=None):
                 original_error.add_note(f'DataLoader cleanup also failed: {cleanup_error!r}')
 
 
-def replay_index_loader(length, batch_size, completed_epochs, seed=42, num_workers=2):
+def replay_index_loader(length, batch_size, completed_epochs, seed=42, num_workers=2, pin_memory=True):
     """Use PyTorch itself to reproduce every original generator consumption.
 
     In particular, persistent-worker base_seed is drawn only on first iterator
@@ -118,7 +118,7 @@ def replay_index_loader(length, batch_size, completed_epochs, seed=42, num_worke
         raise ValueError('Invalid index-loader replay budget')
     generator = torch.Generator().manual_seed(seed)
     options = dict(batch_size=batch_size, shuffle=True, generator=generator,
-                   num_workers=num_workers, pin_memory=True)
+                   num_workers=num_workers, pin_memory=pin_memory)
     if num_workers:
         options.update(multiprocessing_context='spawn', persistent_workers=True)
     loader = DataLoader(IndexDataset(length), **options)

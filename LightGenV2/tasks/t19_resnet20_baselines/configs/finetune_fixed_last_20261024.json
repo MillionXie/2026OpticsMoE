@@ -1,0 +1,47 @@
+{
+  "authorization": "2026-10-24 user chooses LGVQ last50, raw frozen I2I no training, authorizes LSP loss repair with unchanged backbone/head and fine tuning to cumulative60, OpenMoji beyond50 (fixed cumulative60), and editor cumulative50. All original30 runs remain immutable. Desired score windows are descriptive, not a stopping or selection rule.",
+  "seed": 42,
+  "learning_rate": 0.001,
+  "schedule": "constant",
+  "warmup_epochs": 0,
+  "optimizer": "AdamW_wd0.0001_clip1",
+  "effective_batch": 32,
+  "precision": "FP32_TF32_disabled",
+  "max_physical_gpus": 4,
+  "candidate_gpu_indices": [2, 4, 5, 6],
+  "foreign_gpu_process_policy": "wait_without_CUDA_do_not_interrupt_or_share_without_explicit_permission",
+  "tasks": {
+    "lsp": {
+      "parent_checkpoint": "runs/simulation/lsp_formal_s42_resnet18_imagenet_frozen_single30_20261023_gpu_expand6/last_checkpoint.pt",
+      "parent_epoch": 30,
+      "final_epoch": 60,
+      "loss_profile": "gaussian_heatmap_mse_only",
+      "coordinate_loss_weight": 0,
+      "architecture_changed": false,
+      "augmentation": "original_random_crop_and_flip; new_stage_seed42_workers; not uninterrupted worker RNG"
+    },
+    "openmoji": {
+      "parent_checkpoint": "runs/simulation/openmoji_formal_s42_resnet18_imagenet_frozen_single30_20261023_byte_gru15m/last_checkpoint.pt",
+      "parent_epoch": 30,
+      "final_epoch": 60,
+      "loss_profile": "unchanged_editing_objective",
+      "architecture_changed": false
+    },
+    "abo_conditional_edit": {
+      "parent_checkpoint": "runs/simulation/abo_conditional_edit_formal_s42_resnet18_imagenet_frozen_single30_20261023_byte_gru15m_cached_ram/last_checkpoint.pt",
+      "editor_cache_root": "runs/cache/editor_exact_uint8_20261023",
+      "parent_epoch": 30,
+      "final_epoch": 50,
+      "loss_profile": "unchanged_rgb_mse_gradient_l1",
+      "architecture_changed": false,
+      "final_test_samples": 2304
+    }
+  },
+  "reporting_choices": {
+    "lgvq_temporal": "existing_fixed_last50",
+    "lgvq_spatial": "existing_fixed_last50",
+    "abo_image_to_image": "existing_raw_official_GAP512_L2_no_training",
+    "abo_cross_modal": "retain all fixed0/1/5/30 results; do not adjust learning rate merely to stretch one effective training epoch",
+    "salicon": "finish original30 and investigate metric/center_prior; no weakening or score-target selection"
+  }
+}
