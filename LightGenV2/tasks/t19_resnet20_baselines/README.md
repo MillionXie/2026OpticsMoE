@@ -1,5 +1,55 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-23 最终交付：全部固定第30轮last权重复评
+
+本节为当前报告口径，覆盖下方所有历史最佳轮次成绩。ResNet-20九项及ResNet-18时间质量对照
+共十组均完成30轮，并在CPU FP32严格加载原始last权重完整复评。seed42、lr0.001恒定、
+AdamW wd0.0001、无warmup/cosine。未追加训练，不按TEST/VAL/TRAIN-loss挑epoch。
+
+| 任务 | 指标 | ResNet-20第30轮 | 完整参数量 | Ours Sim.旧图 | Qwen旧图 |
+|---|---|---:|---:|---:|---:|
+| LGVQ时间 | srcc | 0.8318 | 298,133 | 0.8044 | 0.7663 |
+| LGVQ空间 | srcc | 0.5480 | 273,557 | 0.6710 | 0.6908 |
+| ABO图搜文 | hit_at_1 | 0.6271 | 304,496 | 0.8058 | 0.7358 |
+| ABO图搜图 | hit_at_1 | 0.8600 | 273,232 | 0.8225 | 0.8513 |
+| ABO文搜图 | hit_at_1 | 0.8000 | 304,496 | 0.8600 | 0.8200 |
+| LSP | pck_at_0.2_torso | 0.1972 | 287,998 | 0.7348 | 0.7226 |
+| SALICON | cc | 0.8244 | 287,569 | 0.8625 | 0.8748 |
+| OpenMoji | changed_cell_accuracy | 0.7645 | 343,046 | 0.8880 | 0.8120 |
+| ABO参考图+指令编辑 | psnr_db | 26.11 | 350,723 | 34.28 | 27.26 |
+
+ResNet-20视觉骨干269,072参数；各任务头/必要的byte-GRU均计入完整参数量。
+ResNet-18时间质量完整11,406,277参数，第30轮SRCC **0.7181948871342798**；
+原第10轮0.7793529367887383仅保留历史观察，不作为当前成绩。
+图文编辑第30轮完整TEST2304样本PSNR **26.10548284318712 dB**、SSIM **0.8406315955540372**，非VAL。
+
+历史Ours/Qwen值逐项来自用户本聊天最初截图，仅供注明版本的系统比较。历史检索R/H标签
+不重写旧文件，本次三个检索方向均精确SKU H@1。不能宣称同初始化/预训练预算的消融：
+小模型从零训练，原Qwen参考有预训练；空间输入Qwen448/CNN224。图文编辑实际输入包含
+参考图与指令，RGB MSE+梯度L1与原Qwen latent损失不同，不能凭截图“文生图”名称视为纯文本生成。
+旧训练按旧规则保存best、周期观察过TEST，用户在观察后改为末轮报告；这些记录保留，
+不将本结果描述为从未观察过TEST的盲测，也不改写原run的训练commit和旧result。
+
+证据：`runs/control/last_epoch_review_20261023.json`与`last_epoch_final_audit_20261023.json`；
+每个run下`last_epoch_review_20261023/result.json`及`fixed_weight_predictions.json`。
+十组末轮checkpoint SHA、epoch30、seed/优化协议、完整预测数量均独立核验，原训练PID已释放GPU。
+全部训练队列complete，CPU复评进程正常退出；历史失败smoke及CUDA前退出证据保留。
+
+| 任务 | 正式run ID | 完整评估样本数 |
+|---|---|---:|
+| abo_image_to_text | `easy100_image_to_text_s42_easy100_single30_shared_20261023` | 2400 |
+| abo_text_to_image | `easy100_text_to_image_s42_easy100_single30_shared_20261023` | 100 |
+| lgvq_temporal | `lgvq_temporal_formal_s42_remaining7_20261023` | 558 |
+| lgvq_spatial | `lgvq_spatial_formal_s42_remaining7_20261023` | 558 |
+| abo_image_to_image | `abo_image_to_image_formal_s42_remaining7_20261023` | 800 |
+| openmoji | `openmoji_formal_s42_remaining7_20261023` | 1000 |
+| lgvq_temporal_resnet18 | `lgvq_temporal_resnet18_formal_s42_remaining7_20261023` | 558 |
+| lsp | `lsp_formal_s42_remaining7_20261023_attempt2` | 1000 |
+| salicon | `salicon_formal_s42_remaining7_20261023` | 5000 |
+| abo_conditional_edit | `abo_conditional_edit_formal_s42_remaining7_20261023` | 2304 |
+
+原始逐样本文件、PT及私有审计JSON不进入Git；本节只发布聚合指标和run身份。
+
 ## 2026-10-23 接续七项，LGVQ优先
 
 ABO双向各30轮已完成，两个方向均选第25轮固定复评：H@1分别96.6667%和95.0000%；
