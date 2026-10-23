@@ -14,7 +14,7 @@ import time
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from .easy100_data import Easy100
 from .models import build_model, parameter_counts
@@ -119,7 +119,10 @@ def run(args):
                           pin_memory=True)
     if args.workers:
         loader_options.update(multiprocessing_context='spawn', persistent_workers=False)
-    train = DataLoader(dataset.images('train'), shuffle=True,
+    train_images = dataset.images('train')
+    if args.smoke_batches:
+        train_images = Subset(train_images, range(min(len(train_images), args.smoke_batches * args.batch_size)))
+    train = DataLoader(train_images, shuffle=True,
                        generator=torch.Generator().manual_seed(args.seed), **loader_options)
     test = DataLoader(dataset.images('test'), shuffle=False, **loader_options)
     manifest = {
@@ -163,8 +166,6 @@ def run(args):
                 if step % 25 == 0:
                     write_json(run_dir / 'progress.json', {'status': 'training', 'epoch': epoch,
                         'step': step, 'loss': total / count, 'elapsed_seconds': time.monotonic()-began})
-                if args.smoke_batches and step >= args.smoke_batches:
-                    break
             result = evaluate(model, test, tokens, dataset.title_skus, args.direction, device) if (
                 epoch == 1 or epoch % 5 == 0 or epoch == args.epochs) else None
             entry = {'epoch': epoch, 'train_loss': total/count, 'learning_rate': lr,

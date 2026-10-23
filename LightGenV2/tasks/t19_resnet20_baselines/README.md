@@ -18,6 +18,18 @@ FP32禁用TF32，AdamW、100epochs、batch32、warmup5+cosine，clip1；仅保�
 smoke与simulation分目录，smoke不作为正式成绩。运行配置、命令、数据身份、环境和PID
 在每个run的 `run_manifest.json`，失败状态也保留。其他窗口暂存文件不纳入本任务提交。
 
+服务器原始easy100：4800/2400图、100标题、7200图片共389222242字节，内容manifest
+SHA256为 `1bc9dde3407a3a288973d760cc3c62326d502f5d73728a9cca0754bf42b2739e`，
+已逐文件通过历史收据。服务器41项CPU测试通过。首次两方向2-batch GPU短测完整完成、
+固定权重复评和保存成功、退出后5/6卡恢复10/14MiB；提前break引发DataLoader退出警告，
+现改为smoke专用Subset自然耗尽迭代器并重新短测，不忽略该警告进入正式队列。
+
+新增 `queue_easy100.py`：Linux文件锁防止同任务重复队列，最多三个单卡worker，
+两个方向×seed42/43/44共六次拟合；每个worker前重新准入，繁忙等待，不占位。
+必须先有v2两方向成功smoke收据；队列运行中HEAD变化会停止并标错，不混用源码。
+每run完成后进程退出释放显存；队列结束检查自有进程组是否仍占GPU。终止只针对
+自己创建的进程组，保留原始日志、checkpoint和失败状态。剩余七项适配与训练尚未完成。
+
 ```bash
 CUDA_VISIBLE_DEVICES=<idle-GPU-UUID> python -m LightGenV2.tasks.t19_resnet20_baselines.train_easy100 \
   --direction image_to_text --data-root data/abo_easy100_dataset_20260906 \
