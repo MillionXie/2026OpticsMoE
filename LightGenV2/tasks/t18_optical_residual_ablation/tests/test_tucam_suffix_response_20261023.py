@@ -45,3 +45,12 @@ def test_teacher_requires_observed_gap_and_exact_native_parent():
     assert "assert e['selected_correct']==p['expected_parent_correct']" in s
     assert "m.sha(teacher.__file__)==p['teacher_engine_SHA256']" in s
     assert s.index('teacher.fit_suffix(')<s.index("if not e['target_met']:")<s.index('fields=acquire(')
+
+
+def test_finite_native_linear_and_TRAIN_only_cached_refinement():
+    p=json.loads((HERE/'lab_caltech20_tucam_G1_linear_profile_20261023.json').read_text());policy_validator()(p)
+    assert hashlib.sha256((HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py').read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
+    assert p['expected_parent_correct']==298 and p['post_linear_feature_aug']['recipe']['epochs']==48
+    s=ENTRY.read_text();assert "if fit['selected_correct']<305:" in s
+    assert "native_feature_source=(folder/'fit').relative_to(base.ROOT).as_posix()" in s
+    assert s.index('linear.fit_suffix(')<s.index("if not e['target_met']:")<s.index('fields=acquire(')

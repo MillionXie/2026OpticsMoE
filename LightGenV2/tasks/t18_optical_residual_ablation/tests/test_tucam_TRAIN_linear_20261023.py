@@ -18,6 +18,7 @@ def test_no_inference_layer_or_TEST_estimation():
     assert 'loop.validate_state(m,native,original,keys)' in s and 'new_inference_layers=0' in s
     assert 'selected_epoch=None' in s and 'analytical_fits=1' in s
     assert 'hyperparameter_grid=False' in s and 'GPU_used=False' in s
+    assert '2<=len(fields)<=4 and list(fields)==list(base.STAGES[:len(fields)])' in s
 
 
 def test_exact_engine_and_linear_only_policy():

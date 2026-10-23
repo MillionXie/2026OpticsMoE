@@ -101,7 +101,9 @@ def TRAIN_linear_fit(features,labels,prior_counts):
 
 def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     if c.get('TRAIN_readout')=='cached_TRAIN_mixup_dropout':return fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,target)
-    np,torch,m,loop=base.numerical_modules();assert list(fields)==['router','0'] and not out.exists() and not m.LOCK.exists();out.mkdir()
+    np,torch,m,loop=base.numerical_modules()
+    assert 2<=len(fields)<=4 and list(fields)==list(base.STAGES[:len(fields)])
+    assert not out.exists() and not m.LOCK.exists();out.mkdir()
     original=m.state_cpu(model);keys={'linear.weight','linear.bias'};lineage=base.identities(m,paths)
     baseline,prob=base.evaluate(model,data,fields,'test');assert model.linear.weight.shape==(20,256)
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=c,recipe=recipe,parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),

@@ -10,7 +10,7 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1')
     assert p['parent_stage']=='1' and list(p['captures'])==['router','0','1']
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -18,13 +18,22 @@ def validate_policy(p):
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
         assert p['recipe']==dict(name='G1_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
-    else:
+    elif p['schema']=='TUCam_L4_G1_teacher_response_v1':
         assert p['minimum_parent_correct']==263 and p['maximum_parent_TRAIN_accuracy']==1.
         assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==281
         assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
         assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
         assert len(p['teacher_engine_SHA256'])==64
         assert p['recipe']==dict(name='G1_TRAIN_only_fixed_teacher_cosine',epochs=36,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
+    else:
+        assert p['minimum_parent_correct']==281 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==298
+        assert p['learning_rates']=={} and p['TRAIN_readout']=='one_OAS_pooled_linear'
+        assert len(p['linear_engine_SHA256'])==64
+        assert p['recipe']==dict(name='G1_one_TRAIN_OAS_linear_fit',epochs=1,seconds=600,lr_scale=1,TRAIN_class_emphasis=.75)
+        post=p['post_linear_feature_aug']
+        assert post['config']==dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03)
+        assert post['recipe']==dict(name='G1_native_TRAIN_feature_mixup_linear',epochs=48,seconds=60,lr_scale=1,TRAIN_class_emphasis=.75)
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0
     assert p['new_CCD_before_gate']==0 and p['scheduler'] is False
     for key in ('base_profile_SHA256','suffix_engine_SHA256','continuation_engine_SHA256'):
@@ -35,7 +44,7 @@ def admit(p,c,out):
     np,_,m,loop=base.numerical_modules();old=base.ROOT/p['completed_controller']
     assert m.read(old.with_suffix('.return.json'))['returncode']==0 and not m.LOCK.exists()
     r=m.read(old/'report.json')
-    expected_state='G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
+    expected_state='G1_teacher_budget_complete_gate_unmet' if 'TRAIN_readout' in p else 'G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
     assert r['state']==expected_state
     assert r['next_layer_not_started'] and r['SDK_released']
     endpoints=r['endpoints'];assert [e['stage'] for e in endpoints]==list(p['captures'])
@@ -65,7 +74,7 @@ def admit(p,c,out):
     assert audit['report_SHA256']==m.sha(parent.parent/'report.json')
     assert fit['results']['best']['PT_SHA256']==e['PT_SHA256']
     assert p['minimum_parent_correct']<=e['selected_correct']<=p['maximum_parent_correct']
-    if 'TRAIN_teacher' in p:
+    if 'minimum_parent_TRAIN_TEST_gap' in p:
         b=fit['results']['best']
         assert b['train']['accuracy']<=p['maximum_parent_TRAIN_accuracy']
         assert b['train']['accuracy']-b['test']['accuracy']>=p['minimum_parent_TRAIN_TEST_gap']
@@ -102,9 +111,18 @@ def run(a):
         scheduler=False,automatic_retry=False,original_model=True,new_inference_layers=0,TEST_gradient=False))
     model,data,dm,fields,paths,parent,reference,endpoints=admit(p,c,a.out)
     stage=p['parent_stage'];folder=a.out/('s_'+stage);folder.mkdir()
-    m.save(a.out/'progress.json',dict(state='observed_underfit_suffix_fit',stage=stage,parent_PT_SHA256=m.sha(parent)))
+    m.save(a.out/'progress.json',dict(state='native_readout_fit' if 'TRAIN_readout' in p else 'TRAIN_teacher_suffix_fit' if 'TRAIN_teacher' in p else 'observed_underfit_suffix_fit',stage=stage,parent_PT_SHA256=m.sha(parent)))
     tuned={**c,**p['learning_rates']}
-    if 'TRAIN_teacher' in p:
+    if 'TRAIN_readout' in p:
+        import lab_caltech20_tucam_TRAIN_linear_20261023 as linear
+        assert m.sha(linear.__file__)==p['linear_engine_SHA256']
+        tuned.update(TRAIN_readout=p['TRAIN_readout'])
+        model,parent,fit=linear.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
+        if fit['selected_correct']<305:
+            post=p['post_linear_feature_aug']
+            tuned.update(TRAIN_readout='cached_TRAIN_mixup_dropout',TRAIN_feature_aug=post['config'],native_feature_source=(folder/'fit').relative_to(base.ROOT).as_posix())
+            model,parent,fit=linear.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,post['recipe'],folder/'aug',305)
+    elif 'TRAIN_teacher' in p:
         import lab_caltech20_tucam_TRAIN_distill_20261023 as teacher
         assert m.sha(teacher.__file__)==p['teacher_engine_SHA256']
         tuned.update(TRAIN_teacher=p['TRAIN_teacher'],weight_decay=p['weight_decay'])
@@ -112,7 +130,7 @@ def run(a):
     else:model,parent,fit=base.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
     e=endpoint(m,stage,parent,fit,paths);endpoints[-1]=e;m.save(folder/'endpoint_report.json',e)
     if not e['target_met']:
-        state='G1_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'G1_underfit_budget_complete_gate_unmet'
+        state='G1_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'G1_underfit_budget_complete_gate_unmet'
         m.save(a.out/'report.json',dict(state=state,endpoints=endpoints,next_layer_not_started=True,SDK_released=not m.LOCK.exists()));return
     from lab_caltech20_tucam_capture_20261023 import acquire
     for stage in base.STAGES[len(fields):]:
