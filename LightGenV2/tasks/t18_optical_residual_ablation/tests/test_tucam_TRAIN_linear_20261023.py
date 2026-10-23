@@ -58,3 +58,34 @@ def test_fullbatch_objective_and_L2_are_TRAIN_only_and_native_folded():
     assert 'TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights' in s
     assert 'F.linear(test,head.weight.float(),head.bias.float())' in s
     assert 'full_TRAIN_gradient_evaluations=closure_calls' in s
+
+
+def test_fresh_TRAIN_cache_stays_in_new_run_and_preserves_parent():
+    s=ENTRY.read_text();assert "if c.get('fresh_native_TRAIN_features',False):" in s
+    assert "cache=out/'native_TRAIN_features.npz'" in s
+    assert "method='fresh_native_parent_TRAIN_cache_only'" in s
+    assert "source_PT_SHA256=sr['results']['best']['PT_SHA256']" in s
+    assert 'loop.validate_state(m,old,original,keys)' in s and 'max(error,train_error)<=3e-6' in s
+
+
+def test_local_boundary_numerics_and_TRAIN_only_gradient(monkeypatch):
+    import importlib.util
+    p=HERE/'lab_caltech20_TRAIN_local_boundary_20261023.py'
+    spec=importlib.util.spec_from_file_location('local_boundary_check',p);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);module.selftest()
+    tree=ast.parse(p.read_text());f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_direction')
+    names={n.id.lower() for n in ast.walk(f) if isinstance(n,ast.Name)}
+    assert not names.intersection({'test','development','development_labels','dy','z'})
+    s=p.read_text();assert 'np.array_equal(ww[fixed],parentw[fixed])' in s and "gradient_data='TRAIN_only'" in s
+    assert 'exec(' not in s and 'FunctionType' not in s
+
+
+def test_local_profile_native_fresh_cache_and_fixed_gate(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    p=json.loads((HERE/'lab_caltech20_tucam_G1_local_boundary_profile_20261023.json').read_text())
+    assert hashlib.sha256(ENTRY.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
+    kernel=HERE/'lab_caltech20_TRAIN_local_boundary_20261023.py'
+    assert hashlib.sha256(kernel.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['TRAIN_local_engine_SHA256']
+    driver=HERE/'lab_caltech20_tucam_suffix_response_20261023.py';tree=ast.parse(driver.read_text());f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='validate_policy');ns={}
+    exec(compile(ast.Module(body=[f],type_ignores=[]),str(driver),'exec'),ns);ns['validate_policy'](p)
+    assert p['fresh_native_TRAIN_features'] is True and p['expected_parent_correct']==301 and p['intermediate_target']==305
+    assert "per_update_parameters=257" in ENTRY.read_text() and "all_non_readout_frozen=True" in ENTRY.read_text()

@@ -29,16 +29,30 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     np,torch,m,loop=base.numerical_modules()
     from torch.nn import functional as F
     assert not out.exists() and not m.LOCK.exists();out.mkdir();model.cpu().eval().requires_grad_(False)
-    lbfgs='TRAIN_affine_optimizer' in c
-    cfg=c['TRAIN_affine_optimizer'] if lbfgs else c['TRAIN_feature_aug'];cooldown=cfg.get('cooldown',False)
-    if lbfgs:assert cfg==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
+    local='TRAIN_local_boundary' in c;lbfgs='TRAIN_affine_optimizer' in c
+    cfg=c['TRAIN_local_boundary'] if local else c['TRAIN_affine_optimizer'] if lbfgs else c['TRAIN_feature_aug'];cooldown=cfg.get('cooldown',False)
+    if local:
+        import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
+        assert m.sha(boundary.__file__)==c['TRAIN_local_engine_SHA256'];boundary.validate(cfg)
+    elif lbfgs:assert cfg==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
     else:assert cfg==(dict(dropout=.1,beta=.4,lr=.0002,weight_decay=.01,label_smoothing=.03,cooldown=True) if cooldown else dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03))
     original=m.state_cpu(model);keys={'linear.weight','linear.bias'};lineage=base.identities(m,paths)
-    source=base.ROOT/c['native_feature_source'];sp=m.read(source/'protocol.json');sr=m.read(source/'report.json');sa=m.read(source/'independent_audit.json');stats=m.read(source/'TRAIN_statistics.json')
+    source=base.ROOT/c['native_feature_source'];sp=m.read(source/'protocol.json');sr=m.read(source/'report.json');sa=m.read(source/'independent_audit.json')
     assert sr['state']=='complete' and sr['strict_original_CPU'] and sa['passed'] and sa['report_SHA256']==m.sha(source/'report.json')
     assert sp['data_SHA256']==dm['sha256'] and sp['prefix_SHA256']==lineage and sr['results']['best']['PT_SHA256']==m.sha(source/'best.pt')
     old,_=m.model_for(source/'best.pt',sr['results']['best']['PT_SHA256'],4,reference);loop.validate_state(m,old,original,keys)
-    cache=source/'native_TRAIN_features.npz';assert m.sha(cache)==stats['feature_cache_SHA256']
+    if c.get('fresh_native_TRAIN_features',False):
+        assert c['fresh_native_TRAIN_features'] is True
+        values=[]
+        with torch.inference_mode():
+            for begin in range(0,1600,8):
+                ix=np.arange(begin,min(begin+8,1600));model(loop.put_fields(model,data,fields,'train',ix,'cpu'));values.append(model.readout['features'].numpy().copy())
+                if begin%160==0:m.save(out/'progress.json',dict(state='fresh_native_TRAIN_feature_cache',TRAIN_consumed=begin+len(ix),TEST_used_for_fit=False))
+        values=np.concatenate(values);assert values.shape==(1600,256) and np.isfinite(values).all()
+        cache=out/'native_TRAIN_features.npz';np.savez_compressed(cache,ids=data['train'][2],labels=data['train'][1],features=values)
+        m.save(out/'TRAIN_statistics.json',dict(feature_cache_SHA256=m.sha(cache),TRAIN_samples=1600,TEST_used=False,VALID_used=False,method='fresh_native_parent_TRAIN_cache_only',source_PT_SHA256=sr['results']['best']['PT_SHA256'],data_SHA256=dm['sha256'],prefix_SHA256=lineage))
+    else:
+        stats=m.read(source/'TRAIN_statistics.json');cache=source/'native_TRAIN_features.npz';assert m.sha(cache)==stats['feature_cache_SHA256']
     with np.load(cache,allow_pickle=False) as z:
         assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1]);train=np.asarray(z['features']).copy()
     assert train.shape==(1600,256) and np.isfinite(train).all()
@@ -56,11 +70,13 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=c,recipe=recipe,parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),
         data_SHA256=dm['sha256'],prefix_SHA256=lineage,allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,
         original_model_structure=True,new_inference_layers=0,full_physical=False,SDK_used=False,GPU_used=False,trainable_parameters=5140,
-        method='fullbatch_TRAIN_LBFGS_L2_original_linear' if lbfgs else 'cached_TRAIN_mixup_dropout_original_linear',TRAIN_feature_source_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),
+        method='TRAIN_local_binary_rest_full_curvature' if local else 'fullbatch_TRAIN_LBFGS_L2_original_linear' if lbfgs else 'cached_TRAIN_mixup_dropout_original_linear',TRAIN_feature_source_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),
         augmentation_is_synthetic_not_new_physical_data=True)
+    if local:protocol.update(TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',per_update_parameters=257,all_other_rows_fixed_per_update=True,epoch_semantics='local row update, NOT dataset epoch',new_augmentation=False)
     m.save(out/'protocol.json',protocol);m.save(out/'baseline.json',baseline);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob)
     head=torch.nn.Linear(256,20);head.load_state_dict(model.linear.state_dict())
-    if lbfgs:
+    if local:opt=None
+    elif lbfgs:
         head.double();parent_report=m.read(parent.parent/'report.json');assert parent_report['strict_original_CPU'] and parent_report['results']['best']['PT_SHA256']==m.sha(parent)
         train_nll=parent_report['results']['best']['train']['nll'];norm=float(head.weight.detach().square().sum())
         assert train_nll>0 and norm>0
@@ -71,8 +87,15 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     else:opt=torch.optim.AdamW(head.parameters(),lr=cfg['lr'],weight_decay=cfg['weight_decay'])
     prior=np.asarray(c['original_TRAIN_counts'],float);weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=head.weight.dtype)
     rng=np.random.default_rng(c['seed']);torch.manual_seed(c['seed']);best=baseline['correct'];bnll=baseline['nll'];selected=0;history=[];updates=0
-    best_head={k:v.detach().clone() for k,v in head.state_dict().items()};started=__import__('time').monotonic();closure_calls=0
-    for epoch in range(1,recipe['epochs']+1):
+    best_head={k:v.detach().clone() for k,v in head.state_dict().items()};started=__import__('time').monotonic();closure_calls=0;epoch=0
+    if local:
+        def emit(row):m.save(out/'progress.json',dict(state='TRAIN_local_boundary',latest=row));print(json.dumps(row),flush=True)
+        repaired=boundary.fit(train.numpy(),labels.numpy(),test.numpy(),test_labels.numpy(),head.weight.detach().numpy(),head.bias.detach().numpy(),cfg,target,recipe['seconds'],emit)
+        head.load_state_dict(dict(weight=torch.from_numpy(repaired['last_weight']),bias=torch.from_numpy(repaired['last_bias'])))
+        best_head=dict(weight=torch.from_numpy(repaired['best_weight']),bias=torch.from_numpy(repaired['best_bias']))
+        best,bnll,selected,updates,history=(repaired[k] for k in ('best','nll','selected','updates','history'))
+        m.save(out/'history.json',history);m.save(out/'local_boundary_plan.json',repaired['plans'])
+    for epoch in range(1,1 if local else recipe['epochs']+1):
         head.train();order=rng.permutation(1600);total=used=0
         strength=0. if lbfgs else .5*(1+__import__('math').cos(__import__('math').pi*(epoch-1)/max(1,recipe['epochs']-1))) if cooldown else 1.
         if lbfgs:
@@ -107,10 +130,11 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
             m.save(out/'progress.json',dict(state='strict_native_CPU',checkpoint=label,role=role));metric,p=base.evaluate(native,data,fields,role);results[label][role]=metric
             np.savez_compressed(out/(label+'_'+role+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=p)
     assert results['best']['test']['correct']==best and base.identities(m,paths)==lineage
-    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_epoch=None if lbfgs else selected,selected_E0=selected==0,actual_epochs=0 if lbfgs else epoch,optimizer_updates=updates,results=results,
+    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_epoch=None if lbfgs or local else selected,selected_E0=selected==0,actual_epochs=0 if lbfgs or local else epoch,optimizer_updates=updates,results=results,
         strict_original_CPU=True,target=target,target_met=best>=target,all_non_readout_frozen=True,captured_upstream_bitwise_frozen=True,TEST_gradient=False,TEST_development=True,full_physical=False,
         native_cache_probability_max_error=max(error,train_error),new_inference_layers=0,SDK_used=False,GPU_used=False,protocol_SHA256=m.sha(out/'protocol.json'))
     if lbfgs:report.update(outer_steps=epoch,selected_outer_step=selected,full_TRAIN_gradient_evaluations=closure_calls,TRAIN_only_L2=regularization)
+    if local:report.update(selected_local_update=selected,local_updates=updates,local_classes=repaired['classes'],fit_elapsed_s=repaired['elapsed_s'],TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',per_update_parameters=257,local_plan_SHA256=m.sha(out/'local_boundary_plan.json'))
     m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_non_suffix_parameters_bitwise_frozen=True,all_non_readout_frozen=True))
     chosen,_=m.model_for(out/'best.pt',m.sha(out/'best.pt'),4,reference);return chosen,out/'best.pt',report
 
@@ -130,7 +154,7 @@ def TRAIN_linear_fit(features,labels,prior_counts):
 
 
 def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
-    if c.get('TRAIN_readout') in ('cached_TRAIN_mixup_dropout','cached_TRAIN_affine_LBFGS'):return fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,target)
+    if c.get('TRAIN_readout') in ('cached_TRAIN_mixup_dropout','cached_TRAIN_affine_LBFGS','cached_TRAIN_local_boundary'):return fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,target)
     np,torch,m,loop=base.numerical_modules()
     assert 2<=len(fields)<=4 and list(fields)==list(base.STAGES[:len(fields)])
     assert not out.exists() and not m.LOCK.exists();out.mkdir()

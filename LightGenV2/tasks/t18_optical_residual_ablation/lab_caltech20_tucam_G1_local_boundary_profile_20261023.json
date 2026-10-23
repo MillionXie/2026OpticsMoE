@@ -1,0 +1,25 @@
+{
+  "schema":"TUCam_L4_G1_local_boundary_response_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"907d80ac07397f04890ba615f711f50eb58ff891161eb9ac35a7ecdf4cfd2ed4",
+  "TRAIN_local_engine_SHA256":"dbad4af7f6d839541bba7987362d1cf2bb6e24676fca78e9853245a2c78ee9b2",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1n",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_0/fit/best.pt",
+  "capture_parent_SHA256":"f573aaa351f0b20384797fbc658f77e815f01be48bfb67cba46ec652655f81b0",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture"
+  },
+  "parent_stage":"1","minimum_parent_correct":301,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":1.0,"minimum_parent_TRAIN_TEST_gap":0.10,"expected_parent_correct":301,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{},"TRAIN_readout":"cached_TRAIN_local_boundary",
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1n/s_1/fit",
+  "fresh_native_TRAIN_features":true,
+  "TRAIN_local_boundary":{"maximum_classes":8,"steps_per_class":64,"temperature":2.0,"label_smoothing":0.02,"neighbor_weight":2.0,"KL":2.0,"anchor":0.2,"trust_step":0.25,"row_radius":0.08,"seed":73},
+  "recipe":{"name":"G1_TRAIN_local_binary_rest_full_curvature","epochs":0,"seconds":300,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Finite local decision-boundary response learned from the user-authorized fine-tuning summary. Parent301 follows TRAIN95.625% and a negative whole-head LBFGS result. Fresh native TRAIN1600 features must be cached for the new g1n future masks; no older-mask cache reuse. TEST errors guide at most8 class choices and nearest TRAIN-positive emphasis, and TEST chooses checkpoints: this is explicitly TEST-informed development, not independent generalization. All gradients and full curvature use TRAIN positives, hard TRAIN negatives and full-class TRAIN replay only. Existing257-parameter row per update, other19 rows fixed, parent probability KL/parameter anchor/trust radius, correct-count then NLL selection, at most512 updates/300fit seconds. No TEST or augmented TEST training, VALID, new model layer, upstream/optical changes, CCD recapture, exposure/coordinates/LUT change, scheduler or hyperparameter scan. Original hook-free CPU bestlast TRAIN1600/TEST411 and all non-readout/prefix SHA audit precede the305 gate and any new E2 capture. Final340 unchanged."
+}

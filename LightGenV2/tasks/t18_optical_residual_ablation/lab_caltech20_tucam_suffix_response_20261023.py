@@ -10,7 +10,7 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1')
     assert p['parent_stage']=='1' and list(p['captures'])==['router','0','1']
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -48,6 +48,15 @@ def validate_policy(p):
         assert len(p['linear_engine_SHA256'])==64 and p['native_feature_source'].endswith('/g1l/s_1/fit')
         assert p['TRAIN_affine_optimizer']==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
         assert p['recipe']==dict(name='G1_illconditioned_TRAIN_fullbatch_affine_LBFGS',epochs=80,seconds=60,lr_scale=1,TRAIN_class_emphasis=.75)
+    elif p['schema']=='TUCam_L4_G1_local_boundary_response_v1':
+        import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
+        assert p['minimum_parent_correct']==301 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==301
+        assert p['learning_rates']=={} and p['TRAIN_readout']=='cached_TRAIN_local_boundary'
+        assert len(p['linear_engine_SHA256'])==len(p['TRAIN_local_engine_SHA256'])==64
+        assert p['native_feature_source'].endswith('/g1n/s_1/fit') and p['fresh_native_TRAIN_features'] is True
+        boundary.validate(p['TRAIN_local_boundary'])
+        assert p['recipe']==dict(name='G1_TRAIN_local_binary_rest_full_curvature',epochs=0,seconds=300,lr_scale=1,TRAIN_class_emphasis=.75)
     else:
         assert p['minimum_parent_correct']==299 and p['maximum_parent_TRAIN_accuracy']==1.
         assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==299
@@ -142,6 +151,7 @@ def run(a):
         tuned.update(TRAIN_readout=p['TRAIN_readout'])
         if 'TRAIN_feature_aug' in p:tuned.update(TRAIN_feature_aug=p['TRAIN_feature_aug'],native_feature_source=p['native_feature_source'])
         if 'TRAIN_affine_optimizer' in p:tuned.update(TRAIN_affine_optimizer=p['TRAIN_affine_optimizer'],native_feature_source=p['native_feature_source'])
+        if 'TRAIN_local_boundary' in p:tuned.update(TRAIN_local_boundary=p['TRAIN_local_boundary'],TRAIN_local_engine_SHA256=p['TRAIN_local_engine_SHA256'],native_feature_source=p['native_feature_source'],fresh_native_TRAIN_features=p['fresh_native_TRAIN_features'])
         model,parent,fit=linear.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
         if fit['selected_correct']<305 and 'post_linear_feature_aug' in p:
             post=p['post_linear_feature_aug']
