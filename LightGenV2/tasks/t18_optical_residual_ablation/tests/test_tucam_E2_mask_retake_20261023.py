@@ -44,3 +44,13 @@ def test_CPU_readout_freeze_and_gradient_selftest_is_required():
     assert "proof['source_SHA256']==m.sha(__file__)" in s and "a.out.with_suffix('.mask_selftest.json')" in s
     assert 'head_zero_LR_bitwise_frozen=True' in s and 'gradient_through_frozen_head_to_features=True' in s
     assert "numpy().view(np.uint8)" in s and 'lr=0.,weight_decay=.01' in s
+
+
+def test_joint_recovery_needs_TRAIN_supported_actual_mask_not_old_E2():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_mask_joint_recovery_profile_20261023.json').read_text());validate(p)
+    assert p['candidate_checkpoint']=='last' and p['candidate_TRAIN_support']['NLL_improvement']==.0001
+    assert p['learning_rates']['head_lr']>0 and p['mask_training_stop_target']==305
+    s=ENTRY.read_text().split('def TRAIN_candidate(',1)[1].split('\ndef run(',1)[0]
+    assert "r['results']['last']['train']" in s and "r['results']['last']['test']" not in s
+    assert 'TEST_used_for_candidate_admission=False' in s and "m.allowed_keys(candidate,3)-{'linear.weight','linear.bias'}" in s
+    with pytest.raises(AssertionError):validate({**p,'candidate_checkpoint':'best'})

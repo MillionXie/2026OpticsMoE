@@ -1,0 +1,67 @@
+{
+  "schema": "TUCam_L4_human_E2_mask_joint_recovery_v1",
+  "human_choice": "keep305_retrain_E2_only",
+  "base_profile": "lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256": "c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256": "8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "teacher_engine_SHA256": "1cc2340e0347762bfaaa5afcce4395c27ffeb3dff553ea4fddbc8e9b7dab3819",
+  "capture_engine_SHA256": "4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685",
+  "completed_controller": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2p",
+  "passed_G1_fit": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_1/fit",
+  "passed_G1_SHA256": "8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b",
+  "old_E2_capture": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_2/capture",
+  "reuse_captures": {
+    "router": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture"
+  },
+  "intermediate_target": 305,
+  "final_target": 340,
+  "mask_training_stop_target": 305,
+  "learning_rates": {
+    "phase_lr": 0.00005,
+    "electronic_lr": 0.0001,
+    "alpha_lr": 0.0001,
+    "head_lr": 0.0005
+  },
+  "TRAIN_teacher": {
+    "temperature": 2,
+    "mixture": 0.3
+  },
+  "weight_decay": 0.01,
+  "TRAIN_noise": {
+    "CCD_gain_sigma": 0.02,
+    "CCD_additive_sigma_DN": 0.5,
+    "CCD_pixel_dropout_p": 0.002
+  },
+  "mask_recipe": {
+    "name": "E2_TRAIN_supported_mask_joint_CE_recovery",
+    "epochs": 24,
+    "seconds": 900,
+    "lr_scale": 1,
+    "TRAIN_class_emphasis": 0.75
+  },
+  "observed_learning_rates": {
+    "phase_lr": 0.0002,
+    "electronic_lr": 0.001,
+    "alpha_lr": 0.001,
+    "head_lr": 0.002
+  },
+  "observed_recipe": {
+    "name": "new_E2_observed_joint_adaptation",
+    "epochs": 48,
+    "seconds": 1500,
+    "lr_scale": 1,
+    "TRAIN_class_emphasis": 0.75
+  },
+  "TEST_gradient": false,
+  "new_inference_layers": 0,
+  "scheduler": false,
+  "scope": "Human keeps305 and asks retrain E2 then ONLY retake E2. Conditional one-stage recovery AFTER e2p fixed-head24epoch mask fit fully exits without deployable change. Reuse the exact3 validated Router/E1/G1 captures6033, exact original305 G1 checkpoint; old unsuccessful E2 is never a training field. The predetermined LAST fixed-head optimization state is NOT reported as a best or deployed score: admit it only if full strict original CPU TRAIN correct>=original1532 and TRAIN NLL improves>1e-4, same6arraySHA and originalhead/measured-ancestor bitwise freeze; admission uses NO TEST metrics. This uses actual E2 mask learning instead of repeating a mask fit from E0. Original282 and305 parents/evidence retained. If TRAIN unsupported, STOP no newCCD. If supported, restore ordinary joint original E2phase5..8/G2phase9/lawful postG1 electrical1/2/3/directalpha1/2/3/head TRAIN CE fitting, published base engine, low original learning rates, original mild synthetic CCD noise/dropout, max24fullTRAINepochs/900fitseconds. Purpose: realign existing classification boundary after fixed-readout mask training; head is now allowed, NOT falsely claimed frozen. No new layer/model/teacher-at-inference or surrogate camera. Deploy only a trained native CPU>=305 candidate with actual changed E2 phase parameter AND full encoded phaseBMP SHA; all recorded inputs/masks/6arraySHA frozen. Then freshE2 TRAIN1600+TEST411 same admitted hardware/exposure/geometry/LUT; audit2011 and tune legal remaining suffix under305; NEW G2 only after its full native gate, final340 unchanged. OldE2 separate and all data retained. TRAIN80/class1600(original1508+92fixedaug),TEST411,VALID0; TEST diagnosis/selection development only,no TEST/augmentedTEST gradients/training. All other E2-retake hardware/singleSDK/own4060/disk>=120GiB/signal-stop/no automaticretry/publicupload/timer/newbranch/worktree/project constraints unchanged.",
+  "candidate_mask_fit": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2p/mask_fit",
+  "candidate_checkpoint": "last",
+  "candidate_TRAIN_support": {
+    "correct_not_lower": true,
+    "NLL_improvement": 0.0001
+  }
+}

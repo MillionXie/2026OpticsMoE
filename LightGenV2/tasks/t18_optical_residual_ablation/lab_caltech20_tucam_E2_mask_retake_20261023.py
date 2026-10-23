@@ -13,15 +13,19 @@ import lab_caltech20_tucam_suffix_response_20261023 as response
 
 
 def validate_policy(p):
-    assert p['schema']=='TUCam_L4_human_E2_mask_retake_v1' and p['human_choice']=='keep305_retrain_E2_only'
-    assert p['completed_controller'].endswith('/e2a') and p['passed_G1_fit'].endswith('/g1s/s_1/fit')
+    assert p['schema'] in ('TUCam_L4_human_E2_mask_retake_v1','TUCam_L4_human_E2_mask_joint_recovery_v1') and p['human_choice']=='keep305_retrain_E2_only'
+    joint=p['schema']=='TUCam_L4_human_E2_mask_joint_recovery_v1'
+    assert p['completed_controller'].endswith('/e2p' if joint else '/e2a') and p['passed_G1_fit'].endswith('/g1s/s_1/fit')
     assert p['passed_G1_SHA256']=='8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'
     assert list(p['reuse_captures'])==['router','0','1'] and p['old_E2_capture'].endswith('/g1s/s_2/capture')
-    assert p['intermediate_target']==305 and p['final_target']==340 and p['mask_training_stop_target']==411
-    assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.0002,alpha_lr=.0002,head_lr=0.)
+    assert p['intermediate_target']==305 and p['final_target']==340 and p['mask_training_stop_target']==(305 if joint else 411)
+    assert p['learning_rates']==(dict(phase_lr=.00005,electronic_lr=.0001,alpha_lr=.0001,head_lr=.0005) if joint else dict(phase_lr=.0002,electronic_lr=.0002,alpha_lr=.0002,head_lr=0.))
     assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
     assert p['TRAIN_noise']==dict(CCD_gain_sigma=.02,CCD_additive_sigma_DN=.5,CCD_pixel_dropout_p=.002)
-    assert p['mask_recipe']==dict(name='E2_original_mask_focused_fixed_head',epochs=24,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
+    assert p['mask_recipe']==dict(name='E2_TRAIN_supported_mask_joint_CE_recovery' if joint else 'E2_original_mask_focused_fixed_head',epochs=24,seconds=900 if joint else 1200,lr_scale=1,TRAIN_class_emphasis=.75)
+    if joint:
+        assert p['candidate_mask_fit'].endswith('/e2p/mask_fit') and p['candidate_checkpoint']=='last'
+        assert p['candidate_TRAIN_support']==dict(correct_not_lower=True,NLL_improvement=.0001)
     assert p['observed_recipe']==dict(name='new_E2_observed_joint_adaptation',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
     assert p['observed_learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0 and p['scheduler'] is False
@@ -46,8 +50,9 @@ def phase_probe(model,data,fields,stage,dest):
 def admit(p,c,out):
     np,_,m,loop=base.numerical_modules();old=base.ROOT/p['completed_controller']
     assert m.read(old.with_suffix('.return.json'))['returncode']==0 and not m.LOCK.exists()
-    r=m.read(old/'report.json');assert r['state']=='E2_native_linear_gate_unmet' and r['next_layer_not_started'] and r['SDK_released']
-    assert [e['stage'] for e in r['endpoints']]==['router','0','1','2'] and r['endpoints'][-1]['selected_correct']==282
+    r=m.read(old/'report.json');joint=p['schema']=='TUCam_L4_human_E2_mask_joint_recovery_v1'
+    assert r['state']==('E2_mask_no_deployable_update' if joint else 'E2_native_linear_gate_unmet') and r['next_layer_not_started'] and r['SDK_released']
+    assert [e['stage'] for e in r['endpoints']]==(['router','0','1'] if joint else ['router','0','1','2']) and r['endpoints'][-1]['selected_correct']==(305 if joint else 282)
     data,dm=m.data_for(base.ROOT/c['sequence']);assert dm['sha256']==c['data_SHA256'];fields={};paths={}
     for stage,name in p['reuse_captures'].items():
         cap=base.ROOT/name;q=m.read(cap/'report.json');a=m.read(cap/'independent_audit.json');proto=m.read(cap/'protocol.json')
@@ -74,6 +79,20 @@ def admit(p,c,out):
     return model,data,dm,fields,paths,parent,reference,r['endpoints'][:3],old_phase
 
 
+def TRAIN_candidate(p,model,dm,paths,reference,out):
+    """A predetermined LAST optimization state, admitted by TRAIN only, not a deployed score."""
+    _,torch,m,loop=base.numerical_modules();source=base.ROOT/p['candidate_mask_fit'];r=m.read(source/'report.json');a=m.read(source/'independent_audit.json');proto=m.read(source/'protocol.json')
+    assert r['state']=='complete' and r['strict_original_CPU'] and a['passed'] and a['report_SHA256']==m.sha(source/'report.json')
+    assert proto['data_SHA256']==dm['sha256'] and proto['prefix_SHA256']==base.identities(m,paths) and r['actual_epochs']==24
+    pt=source/'last.pt';assert m.sha(pt)==r['results']['last']['PT_SHA256'];candidate,_=m.model_for(pt,m.sha(pt),4,reference)
+    original=m.state_cpu(model);loop.validate_state(m,candidate,original,m.allowed_keys(candidate,3)-{'linear.weight','linear.bias'})
+    baseline=m.read(base.ROOT/p['passed_G1_fit']/'report.json')['results']['best']['train'];last=r['results']['last']['train']
+    supported=last['correct']>=baseline['correct'] and last['nll']<baseline['nll']-p['candidate_TRAIN_support']['NLL_improvement']
+    m.save(out/'candidate_TRAIN_admission.json',dict(passed=supported,source_fit=str(source),source_PT_SHA256=m.sha(pt),choice='predetermined_last_TRAIN_optimization_state_NOT_deployed_best',
+        parent_TRAIN=baseline['correct'],candidate_TRAIN=last['correct'],parent_TRAIN_NLL=baseline['nll'],candidate_TRAIN_NLL=last['nll'],TEST_used_for_candidate_admission=False,original_head_and_measured_ancestors_frozen=True,old_E2_used=False,new_CCD=0))
+    return candidate,pt,supported
+
+
 def run(a):
     _,torch,m,loop=base.numerical_modules();p=m.read(a.profile);validate_policy(p)
     from lab_caltech20_tucam_capture_20261023 import acquire
@@ -86,17 +105,24 @@ def run(a):
     assert not a.out.exists() and not m.LOCK.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(c['seed'])
     m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),policy=p,config=c,scheduler=False,automatic_retry=False,TEST_gradient=False))
     model,data,dm,fields,paths,parent,reference,endpoints,old_phase=admit(p,c,a.out);original=m.state_cpu(model)
+    joint=p['schema']=='TUCam_L4_human_E2_mask_joint_recovery_v1'
+    if joint:
+        model,parent,supported=TRAIN_candidate(p,model,dm,paths,reference,a.out)
+        if not supported:
+            m.save(a.out/'report.json',dict(state='E2_mask_candidate_no_TRAIN_support',endpoints=endpoints,next_layer_not_started=True,new_physical_CCD=0,SDK_released=not m.LOCK.exists(),old_E2_preserved=True));return
     tuned={**c,**p['learning_rates'],**p['TRAIN_noise'],'TRAIN_teacher':p['TRAIN_teacher'],'weight_decay':p['weight_decay']}
-    m.save(a.out/'progress.json',dict(state='retraining_E2_masks_fixed_readout',completed_stages=3,physical_capture_not_started=True))
-    model,parent,fit=teacher.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['mask_recipe'],a.out/'mask_fit',p['mask_training_stop_target'])
-    frozen_head=all(torch.equal(model.state_dict()[k],original[k]) for k in ('linear.weight','linear.bias'));assert frozen_head
+    m.save(a.out/'progress.json',dict(state='E2_mask_joint_boundary_recovery' if joint else 'retraining_E2_masks_fixed_readout',completed_stages=3,physical_capture_not_started=True))
+    fitter=base.fit_suffix if joint else teacher.fit_suffix
+    model,parent,fit=fitter(model,data,dm,fields,paths,parent,reference,tuned,p['mask_recipe'],a.out/'mask_fit',p['mask_training_stop_target'])
+    frozen_head=all(torch.equal(model.state_dict()[k],original[k]) for k in ('linear.weight','linear.bias'))
+    if not joint:assert frozen_head
     for label in ('best','last'):
         pt=a.out/'mask_fit'/(label+'.pt');verified,_=m.model_for(pt,m.sha(pt),4,reference)
-        loop.validate_state(m,verified,original,m.allowed_keys(verified,3)-{'linear.weight','linear.bias'})
-        assert all(torch.equal(verified.state_dict()[k],original[k]) for k in ('linear.weight','linear.bias'))
+        loop.validate_state(m,verified,original,m.allowed_keys(verified,3) if joint else m.allowed_keys(verified,3)-{'linear.weight','linear.bias'})
+        if not joint:assert all(torch.equal(verified.state_dict()[k],original[k]) for k in ('linear.weight','linear.bias'))
     changed=[k for k in ('phase_sets.5','phase_sets.6','phase_sets.7','phase_sets.8') if not torch.equal(model.state_dict()[k],original[k])]
     new_phase=phase_probe(model,data,fields,'2',a.out/'candidate_E2_phase.bmp')
-    loop.validate_state(m,model,original,m.allowed_keys(model,3)-{'linear.weight','linear.bias'})
+    loop.validate_state(m,model,original,m.allowed_keys(model,3) if joint else m.allowed_keys(model,3)-{'linear.weight','linear.bias'})
     deployable=fit['selected_correct']>=305 and not fit['selected_E0'] and bool(changed) and new_phase!=old_phase
     m.save(a.out/'mask_deployment_audit.json',dict(passed=deployable,head_bitwise_frozen=frozen_head,changed_E2_phase_keys=changed,selected_correct=fit['selected_correct'],selected_E0=fit['selected_E0'],
         original_E2_phase_SHA256=old_phase,candidate_E2_phase_SHA256=new_phase,strict_original_CPU=fit['strict_original_CPU'],upstream_and_input_ancestors_frozen=True,new_CCD=0))
