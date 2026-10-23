@@ -15,7 +15,8 @@ def test_read_only_TRAIN_response_no_classification_or_camera_updates():
 
 def test_real_canonical_and_old_recent_comparison():
     s=ENTRY.read_text()
-    assert "np.array_equal(encoded,np.asarray(Image.open(canonical)))" in s
+    assert "np.array_equal(encoded,expected)" in s and "begin=row['index']//8*8;ix=np.arange(begin,begin+8)" in s
+    assert "input_identity_failure.json" in s
     assert "m.sha(recent_path)==row['crop_SHA256']" in s and "m.sha(canonical)==row['canonical_SHA256']" in s
     assert "same_input_old_vs_recent=metric(recorded,recent)" in s
     assert "model.nonlinear(predicted[None],'global')" in s and 'final256_photometric_vs_old_PCC' in s

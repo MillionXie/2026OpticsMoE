@@ -36,15 +36,20 @@ def run(a):
     results=[]
     with torch.inference_mode():
         for row in rows:
-            ix=np.array([row['index']]);assert row['sample_id']==data['train'][2][ix[0]] and row['split'] in ('fit','held_TRAIN')
+            # Keep the actual capture batch layout at quantization boundaries.
+            begin=row['index']//8*8;ix=np.arange(begin,begin+8);j=row['index']-begin
+            assert row['sample_id']==data['train'][2][row['index']] and row['split'] in ('fit','held_TRAIN')
             assert row['phase_SHA256']==physical['phase_SHA256'] and m.sha(row['phase'])==physical['phase_SHA256']
-            recent_path=Path(row['crop']);assert m.sha(recent_path)==row['crop_SHA256'];recent=torch.from_numpy(np.asarray(Image.open(recent_path)).astype(np.float32));recorded=torch.from_numpy(np.asarray(old[ix[0]]).astype(np.float32))
-            nominal(loop.put_fields(nominal,data,fields,'train',ix,'cpu'));ni=nominal.last['2']['intensity'][0];nf=nominal.readout['features'][0].numpy().copy()
-            predictor(loop.put_fields(predictor,data,fields,'train',ix,'cpu'));pi=predictor.last['2']['intensity'][0];pf=predictor.readout['features'][0].numpy().copy()
+            recent_path=Path(row['crop']);assert m.sha(recent_path)==row['crop_SHA256'];recent=torch.from_numpy(np.asarray(Image.open(recent_path)).astype(np.float32));recorded=torch.from_numpy(np.asarray(old[row['index']]).astype(np.float32))
+            nominal(loop.put_fields(nominal,data,fields,'train',ix,'cpu'));ni=nominal.last['2']['intensity'][j];nf=nominal.readout['features'][j].numpy().copy()
+            predictor(loop.put_fields(predictor,data,fields,'train',ix,'cpu'));pi=predictor.last['2']['intensity'][j];pf=predictor.readout['features'][j].numpy().copy()
             canonical=Path(row['canonical']);assert m.sha(canonical)==row['canonical_SHA256']
-            encoded=np.rint(predictor.last['2']['amplitude'][0].numpy().clip(0,1)*255).astype(np.uint8)
-            assert np.array_equal(encoded,np.asarray(Image.open(canonical)))
-            model(loop.put_fields(model,data,all_fields,'train',ix,'cpu'));actual_feature=model.readout['features'][0].numpy().copy()
+            encoded=np.rint(predictor.last['2']['amplitude'][j].numpy().clip(0,1)*255).astype(np.uint8);expected=np.asarray(Image.open(canonical))
+            difference=encoded.astype(np.int16)-expected.astype(np.int16)
+            proof=dict(index=row['index'],native_batch_begin=begin,position=j,different_pixels=int((difference!=0).sum()),max_abs_gray=int(np.abs(difference).max()))
+            if not np.array_equal(encoded,expected):m.save(a.out/'input_identity_failure.json',proof)
+            assert np.array_equal(encoded,expected)
+            model(loop.put_fields(model,data,all_fields,'train',ix,'cpu'));actual_feature=model.readout['features'][j].numpy().copy()
             item=dict(index=row['index'],sample_id=row['sample_id'],split=row['split'],canonical_exact=True,
                 nominal_vs_old=metric(ni,recorded),photometric_vs_old=metric(pi,recorded),nominal_vs_recent=metric(ni,recent),photometric_vs_recent=metric(pi,recent),
                 same_input_old_vs_recent=metric(recorded,recent),old_recent_mean_ratio=float(recent.mean()/recorded.mean().clamp_min(1e-8)),
