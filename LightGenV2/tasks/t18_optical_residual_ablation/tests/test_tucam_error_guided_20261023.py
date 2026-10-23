@@ -62,3 +62,11 @@ def test_conditioned_dropout_is_TRAIN_derived_and_disabled_at_eval():
     assert "branch_bank(model,inputs,fields,data,'train')" in text and 'conditioning_TRAIN_only=True,inference_transform_added=False' in text
     assert 'if active else None' in text and 'hook.remove()' in text
     assert "not audit['TEST_used']" in text and "restored_dropout(v,mean,root,inverse,0.)" in text
+
+
+def test_fixed_simulation_teacher_is_TRAIN_only_and_keeps_existing_head():
+    cfg=json.loads((HERE/'lab_caltech20_tucam_covariance_profile_20261023.json').read_text())['teacher_followup'];text=SOURCE.read_text()
+    assert cfg['simulation_teacher'] and cfg['only_focal'] and cfg['focal_override']['teacher_distillation']==.5
+    assert "loop.original_replay(teacher,data,{},'train')" in text
+    assert "cfg['L4_initial_SHA256']" in text and "gradient_samples_from_TEST=0" in text
+    assert "teacher_frozen=True" in text and "not recipe.get('only_focal')" in text

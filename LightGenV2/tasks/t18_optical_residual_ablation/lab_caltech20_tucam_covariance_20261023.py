@@ -88,9 +88,10 @@ def run(a,cfg,follow):
     m.save(a.out/'protocol.json',protocol)
     if baseline['correct']>=target:
         loop.saved_model(m,model,a.out/'best.pt',protocol);m.save(a.out/'report.json',dict(state='complete',selected_correct=baseline['correct'],selected_E0=True,target_met=True,no_update_needed=True,strict_original_CPU=True,full_physical=True,dependency_native_audit_reused=True));return
-    if a.method in ('errors','margin_joint','conditioned_margin'):
+    if a.method in ('errors','teacher','margin_joint','conditioned_margin'):
         from lab_caltech20_tucam_error_guided_20261023 import refine,joint_margin
-        fit,recipe,folder=(refine,follow['error_guided'],'original_Linear_refinement') if a.method=='errors' else (joint_margin,follow['joint_margin_conditioned' if a.method=='conditioned_margin' else 'joint_margin'],'original5150_margin')
+        fit,recipe,folder=(refine,follow['error_guided'],'original_Linear_refinement') if a.method in ('errors','teacher') else (joint_margin,follow['joint_margin_conditioned' if a.method=='conditioned_margin' else 'joint_margin'],'original5150_margin')
+        if a.method=='teacher':recipe={**recipe,**follow['teacher_followup'],'focal':{**recipe['focal'],**follow['teacher_followup']['focal_override']}}
         chosen,result=fit(model,inputs,fields,data,{**cfg,'target':target},recipe,a.out/folder,reference,identities)
         best=result['best']['test']['correct'];loop.saved_model(m,chosen,a.out/'best.pt',protocol)
         m.save(a.out/'report.json',dict(state='complete',depth=depth,method=a.method,baseline_correct=baseline['correct'],selected_correct=best,selected_E0=all(torch.equal(v,m.state_cpu(chosen)[n]) for n,v in original.items()),target=target,target_met=best>=target,strict_original_CPU=True,full_physical=True,TEST_development=True,TEST_gradient=False,new_inference_layers=0,SDK_used=False,GPU_used=False))
@@ -135,7 +136,7 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--context',type=Path);p.add_argument('--out',type=Path);p.add_argument('--depth',type=int,choices=(4,6),default=6);p.add_argument('--method',choices=('covariance','fisher','errors','margin_joint','conditioned_margin'),default='covariance');p.add_argument('--parent-run',type=Path);p.add_argument('--selftest',action='store_true');p.add_argument('--profile',type=Path,default=Path(__file__).with_name('lab_caltech20_tucam_fixed_L4_profile_20261023.json'));p.add_argument('--followup-profile',type=Path,default=Path(__file__).with_name('lab_caltech20_tucam_covariance_profile_20261023.json'));a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--context',type=Path);p.add_argument('--out',type=Path);p.add_argument('--depth',type=int,choices=(4,6),default=6);p.add_argument('--method',choices=('covariance','fisher','errors','teacher','margin_joint','conditioned_margin'),default='covariance');p.add_argument('--parent-run',type=Path);p.add_argument('--selftest',action='store_true');p.add_argument('--profile',type=Path,default=Path(__file__).with_name('lab_caltech20_tucam_fixed_L4_profile_20261023.json'));p.add_argument('--followup-profile',type=Path,default=Path(__file__).with_name('lab_caltech20_tucam_covariance_profile_20261023.json'));a=p.parse_args()
     if a.selftest:selftest();raise SystemExit(0)
     assert a.context is not None and a.out is not None
     try:run(a,m.read(a.profile),m.read(a.followup_profile));m.save(a.out/'return.json',dict(returncode=0))

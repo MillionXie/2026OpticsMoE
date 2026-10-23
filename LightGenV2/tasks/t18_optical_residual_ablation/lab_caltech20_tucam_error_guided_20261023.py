@@ -92,10 +92,20 @@ def refine(model,inputs,fields,data,cfg,recipe,out,reference,identities):
     x=bank['train'].double();y=torch.from_numpy(data['train'][1]).long();counts=torch.tensor(cfg['original_TRAIN_counts'],dtype=torch.float64)
     importance,hits,plan=neighbor_importance(x.numpy(),y.numpy(),bank['test'].numpy(),yt,prob['test'].argmax(1)!=yt,recipe['neighbors'],recipe['neighbor_boost']);importance=torch.from_numpy(importance).double()
     m.save(out/'TRAIN_selection_plan.json',dict(plan=plan,TRAIN_hits=hits.tolist(),TRAIN_weights=importance.tolist(),TEST_gradient=False,TEST_examples_in_gradient_batch=0,all_TRAIN_replay=True))
-    w,b=retained();ww,bb,proof=errors.focal_correction(torch,F,x,y,w,b,counts,importance,recipe['focal'],observe);m.save(out/'focal_proof.json',proof)
-    if best<cfg['target']:
+    external=None;teacher_repair=None
+    if recipe.get('simulation_teacher'):
+        assert model.depth==4;m.save(out/'progress.json',dict(state='frozen_simulation_teacher_TRAIN_only'))
+        teacher,_=m.model_for(m.ROOT/cfg['L4_initial'],cfg['L4_initial_SHA256'],4,reference)
+        score,tp=loop.original_replay(teacher,data,{},'train');assert len(tp)==1600
+        teacher_repair=int(((tp.argmax(1)==data['train'][1])&(prob['train'].argmax(1)!=data['train'][1])).sum());external=torch.from_numpy(np.log(tp.clip(1e-12))).double().detach()
+        np.savez_compressed(out/'simulation_teacher_TRAIN_predictions.npz',ids=data['train'][2],labels=data['train'][1],probabilities=tp)
+        m.save(out/'simulation_teacher_audit.json',dict(teacher_PT_SHA256=cfg['L4_initial_SHA256'],TRAIN_correct=score['correct'],TRAIN=1600,TEST_used=False,teacher_frozen=True,teacher_repair_samples=teacher_repair,gradient_samples_from_TEST=0,predictions_SHA256=m.sha(out/'simulation_teacher_TRAIN_predictions.npz')))
+    w,b=retained();ww,bb=w,b
+    if teacher_repair is None or teacher_repair>0:
+        ww,bb,proof=errors.focal_correction(torch,F,x,y,w,b,counts,importance,recipe['focal'],observe,external);m.save(out/'focal_proof.json',proof)
+    if best<cfg['target'] and not recipe.get('only_focal'):
         ww,bb,proof=errors.multiclass_maxmargin(torch,F,x,y,counts,recipe['margin'],observe);m.save(out/'margin_proof.json',proof)
-    if best<cfg['target']:
+    if best<cfg['target'] and not recipe.get('only_focal'):
         cm=np.asarray(diagnosis['metrics']['test']['confusion']);priority=np.argsort(-(cm.sum(1)-cm.diagonal()))[:recipe['newton']['classes']].tolist()
         ww,bb=row_newton(x,y,*retained(),counts,importance,priority,recipe['newton'],observe,retained)
     with torch.no_grad():model.linear.weight.copy_(ww.float());model.linear.bias.copy_(bb.float())
