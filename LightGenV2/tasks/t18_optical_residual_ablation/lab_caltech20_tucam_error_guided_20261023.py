@@ -126,14 +126,21 @@ def refine(model,inputs,fields,data,cfg,recipe,out,reference,identities):
     importance,hits,plan=neighbor_importance(x.numpy(),y.numpy(),bank['test'].numpy(),yt,prob['test'].argmax(1)!=yt,recipe['neighbors'],recipe['neighbor_boost']);importance=torch.from_numpy(importance).double()
     m.save(out/'TRAIN_selection_plan.json',dict(plan=plan,TRAIN_hits=hits.tolist(),TRAIN_weights=importance.tolist(),TEST_gradient=False,TEST_examples_in_gradient_batch=0,all_TRAIN_replay=True))
     if recipe.get('targeted_pairs'):
-        cm=np.asarray(diagnosis['metrics']['test']['confusion']);ranked=sorted([(int(cm[a,b]+cm[b,a]),a,b) for a in range(20) for b in range(a+1,20)],reverse=True);plans=[]
-        for number,a,b in ranked[:recipe['targeted_pairs']['pairs']]:
-            if number==0:continue
-            pairbad=((yt==a)&(parent_prediction==b))|((yt==b)&(parent_prediction==a));weight,hits,neighbors=neighbor_importance(x.numpy(),y.numpy(),bank['test'].numpy(),yt,pairbad,recipe['neighbors'],recipe['neighbor_boost'])
-            risk=prob['train'][:,a]+prob['train'][:,b]-prob['train'][np.arange(len(y)),y.numpy()];negative=np.flatnonzero((y.numpy()!=a)&(y.numpy()!=b));hard=negative[np.argsort(-risk[negative],kind='stable')[:recipe['targeted_pairs']['hard_negatives']]];weight[hard]+=recipe['targeted_pairs']['hard_negative_boost']
-            plans.append(dict(pair=[a,b],TEST_mutual_errors=number,TRAIN_weights=weight.tolist(),TRAIN_hard_negative_indices=hard.tolist(),nearest_TRAIN_plan=neighbors))
-        m.save(out/'targeted_pair_plan.json',dict(plans=plans,all_TRAIN_replayed=True,TEST_gradient=False,TEST_examples_in_training=0))
-        pair_repair(x,y,counts,plans,recipe['targeted_pairs'],observe,retained)
+        planning=[];pair_started=time.monotonic()
+        for plan_round in range(recipe.get('pair_plan_updates',1)):
+            w,b=retained()
+            with torch.no_grad():current_test=native_probability(torch,bank['test'],w,b).numpy();current_train=native_probability(torch,bank['train'],w,b).numpy()
+            current_pred=current_test.argmax(1);cm=np.bincount(20*yt+current_pred,minlength=400).reshape(20,20);ranked=sorted([(int(cm[a,b]+cm[b,a]),a,b) for a in range(20) for b in range(a+1,20)],reverse=True);plans=[]
+            for number,a,b in ranked[:recipe['targeted_pairs']['pairs']]:
+                if number==0:continue
+                pairbad=((yt==a)&(current_pred==b))|((yt==b)&(current_pred==a));weight,hits,neighbors=neighbor_importance(x.numpy(),y.numpy(),bank['test'].numpy(),yt,pairbad,recipe['neighbors'],recipe['neighbor_boost'])
+                risk=current_train[:,a]+current_train[:,b]-current_train[np.arange(len(y)),y.numpy()];negative=np.flatnonzero((y.numpy()!=a)&(y.numpy()!=b));hard=negative[np.argsort(-risk[negative],kind='stable')[:recipe['targeted_pairs']['hard_negatives']]];weight[hard]+=recipe['targeted_pairs']['hard_negative_boost']
+                plans.append(dict(pair=[a,b],TEST_mutual_errors=number,TRAIN_weights=weight.tolist(),TRAIN_hard_negative_indices=hard.tolist(),nearest_TRAIN_plan=neighbors))
+            planning.append(dict(round=plan_round,plans=plans));m.save(out/'targeted_pair_plan.json',dict(rounds=planning,all_TRAIN_replayed=True,TEST_gradient=False,TEST_examples_in_training=0))
+            before=(best,best_nll);remaining=recipe.get('pair_total_fit_seconds',recipe['targeted_pairs']['fit_seconds'])-(time.monotonic()-pair_started)
+            if not plans or remaining<=0:break
+            pair_repair(x,y,counts,plans,{**recipe['targeted_pairs'],'fit_seconds':min(remaining,recipe['targeted_pairs']['fit_seconds'])},observe,retained)
+            if best>=cfg['target'] or (best,best_nll)==before:break
     external=None;teacher_repair=None
     if recipe.get('simulation_teacher'):
         assert model.depth==4;m.save(out/'progress.json',dict(state='frozen_simulation_teacher_TRAIN_only'))
