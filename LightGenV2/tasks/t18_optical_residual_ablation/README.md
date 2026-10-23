@@ -1,3 +1,31 @@
+## 2026-10-23 E1已完整采齐，后缀复核63.50%，未放行G1
+
+`layerwise_L4_on_20261023/s_0/capture`新E1完整1600TRAIN+411TEST=2011帧，
+1115.718秒。全2011收据ID/CCD数组/canonical输入/BMP/phase/PT/原生裁剪审计通过，
+report SHAd8074f64076b180eaf66db5d5099ab32ebe44d0162b6ccc977351d53e25e970f；
+parent为本批router后315正确PT1dba1380，phase1075a6b1，保持该阶段原19998us、
+gain0、wait240、discard6及既定TUCam几何/方向/LUT。没有触发信号守卫或重拍。
+
+E1实测前缀替换后的完整原模型CPU基线98/411=23.84428%；原后缀f0实际24轮到
+250/411，f1实际12轮到255/411。单次g10诊断接续实际24轮，best选第22轮，
+原模型CPU fullTRAIN/TEST bestlast及冻结/CCD SHA审计通过，best261/411=63.50365%，
+TRAIN1032/1600=64.5%、NLL1.36224，TEST NLL1.46148。PT SHA
+55357636e8a730ce927082e93814ffe6c2ffc7f208e2c50f0249bd88235ea94c。
+g10已正常返回0、SDK释放；相对仿真346仍低20.68127pp，距中间305门槛差44张，
+G1明确未开始。该数是实测router+E1、仿真G1/E2/G2的阶段混合开发指标，非全链实拍。
+TRAIN同样较低，不能把当前瓶颈误称为典型TRAIN高/TEST低的过拟合；chandelier在
+TRAIN43/80、TEST1/12，butterfly34/80与2/10，后续需改善训练拟合而非反复低LR。
+
+本轮仅本任务E1有限接续入口/profile/测试及本README归本窗口，其他窗口和源码
+完全保护。新增`lab_caltech20_tucam_E1_underfit_20261023.py`仍调用未修改的原
+`fit_suffix`，对已完整退出的g10再次核验原模型261/411、TRAIN<75%及全部前缀。
+profile仅将本E1后缀phase/electronic/alpha/head LR分别设2e-4/1e-3/1e-3/2e-3，
+最多48完整epoch/1500fit秒；既定温和TRAIN CCD扰动、类别权重和loss不动，不随机
+扫PT，不改已采mask/输入祖先或模型，不重拍、不改曝光坐标LUT。best不超过父则
+保留父并披露E0。该配置需测试、Git发布并同步后才启动，不能把计划当启动证据。
+原CPU bestlast/冻结与数组身份全部复核且达到305，才在同批新PT下自动新采G1；
+以后每层仍采完调原后缀再过门槛，最终340目标不变。没有定时任务或自动硬件重启。
+
 ## 2026-10-23最新完成阶段：Router后76.64%，新E1已实际接采
 
 `layerwise_L4_on_20261023/s_router/f0`首段原后缀训练实际6完整epoch/1200更新，

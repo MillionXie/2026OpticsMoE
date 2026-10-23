@@ -1,0 +1,14 @@
+{
+  "schema":"TUCam_L4_E1_underfit_finite_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g10",
+  "capture_root":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023",
+  "parent_stage":"0","minimum_parent_correct":255,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":0.75,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,
+  "learning_rates":{"phase_lr":0.0002,"electronic_lr":0.001,"alpha_lr":0.001,"head_lr":0.002},
+  "recipe":{"name":"E1_observed_underfit_larger_original_suffix_updates","epochs":48,"seconds":1500,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"One finite response to E1's actually low TRAIN59.1% and TEST62.0%, not a random candidate scan. Existing captured router/E1 and all input ancestors remain bitwise frozen. Increase only original unmeasured phase, legal electronics/alpha/head learning rates; retain the same mild TRAIN CCD perturbations, class weighting and label smoothing. No TEST derivatives, augmented TEST training, VALID, new inference layer, camera reset, exposure/coordinate/LUT change, scheduler, repeated E1 capture or other depth. Reuse strict best of the completed g10 budget. Admit G1 only after original native full411TEST >=305 and all frozen/data audits; otherwise preserve the finite failure for diagnosis. Later stages use original registered recipes, not the increased E1 rates. Final goal340 remains unchanged."
+}
