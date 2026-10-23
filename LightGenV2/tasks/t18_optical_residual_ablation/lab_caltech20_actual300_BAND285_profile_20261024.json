@@ -1,0 +1,20 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"bandlimited_CE",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_REMAIN/fit",
+  "source_PT_SHA256":"5f7c007d6cc9f9658ad40fa5a8d2f33fafcf9361ec8c2576e4517ccf1346663d",
+  "source_report_SHA256":"ff007c0c177831960bf4030ceede2e9b4c6b03331dd464e92c35f9c0115510da",
+  "expected_parent_correct":285,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/suffix_metric_old285.return.json",
+  "parent_minimum_previous_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/suffix_metric_old285/fit",
+  "recipe":{"name":"actual300_original_G2_bandlimited_delta_capacity_control","epochs":64,"seconds":1500,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "learning_rates":{"phase_lr":0.0002,"electronic_lr":0.0002,"alpha_lr":0.0002,"head_lr":0.0002},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_TRAIN_frozen_readout_20261024.py":"4e2406bbafbeab9c366604c0175815b10d5c383c0b2b46401df98a7131d45efa",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Prepare exactly one distinct capacity-control fit only if preceding metric fit fails to improve285; guard rejects a stale lower parent if previous best is higher. Best source5f7c originalCPU285 and exact old physicalE2 family retained. Earlier unrestricted G2mask228484parameters plus suffix repeatedly fit TRAIN>1400/1600 butTEST<285. Keep FULL pretrained native G2rawphase9 fine pattern, constrain ONLY delta to fixed orthogonal Fourier rectangle |kx|,|ky|<=16 (1089 real degrees), project its gradient and post-Adam delta, zero phaseweightdecay. No smoothing/alteration of parent mask, newmodelparameter/inference layer, bandwidth grid or physicalcalibration claim. Original postE2electronic2..3/directalpha2..3/5140head joint, CE smoothing.05/currentCCDnoise/dropout,64fullTRAINepochs/1500fitseconds. Log delta size/projection residual and fullCPU bestlast/ancestorbitwise. No TESTgrad/VALID/newE2/hardwaresettingchange; actual300 beforefreshG2/final340/deadline08:00 unchanged, no timer/retry."
+}

@@ -22,7 +22,7 @@ def validate_policy(p):
     assert p['actual_E2_target']==300 and p['final_target']==340
     assert p['TRAIN']==1600 and p['TEST']==411 and p['VALID']==0
     assert not p['TEST_gradient'] and not p['scheduler'] and not p['automatic_retry']
-    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE','local_remaining')
+    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE','local_remaining','bandlimited_CE')
     assert 0<=p['expected_parent_correct']<300
     family=p.get('capture_family','new_E2');assert family in ('new_E2','old282')
     if family=='new_E2':
@@ -48,6 +48,8 @@ def admit(p,c,out):
     assert m.sha(source/'report.json')==sa['report_SHA256']==p['source_report_SHA256'] and sa['passed'] and sr['strict_original_CPU']
     assert m.sha(pt)==sr['results']['best']['PT_SHA256']==p['source_PT_SHA256'] and sr['selected_correct']==p['expected_parent_correct']
     assert m.read(base.ROOT/p['completed_controller'])['returncode']==0
+    if p.get('parent_minimum_previous_fit'):
+        previous=m.read(base.ROOT/p['parent_minimum_previous_fit']/'report.json');assert previous['strict_original_CPU'] and previous['selected_correct']<=p['expected_parent_correct'],'Do not replace a better latest parent with a lower checkpoint'
     data,dm=m.data_for(base.ROOT/c['sequence']);assert dm['sha256']==c['data_SHA256'];fields={};paths={}
     for stage,relative in p['captures'].items():
         assert stage==base.STAGES[len(fields)];cap=base.ROOT/relative;r=m.read(cap/'report.json');audit=m.read(cap/'independent_audit.json');cp=m.read(cap/'protocol.json')
@@ -86,12 +88,13 @@ def run(a):
         import lab_caltech20_actual_readout_20261024 as engine
         result=engine.TRAIN_perturbation_audit(model,data,dm,fields,paths,pt,c,a.out/'fit')
         m.save(a.out/'report.json',dict(state='TRAIN_diagnostic_complete',TEST_used_in_diagnostic=False,optimizer_updates=0,SDK_released=not m.LOCK.exists(),G2_not_started=True,full_physical=False,report=result));return
-    if p['method'] in ('frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE'):
+    if p['method'] in ('frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE','bandlimited_CE'):
         import lab_caltech20_TRAIN_frozen_readout_20261024 as engine
         config={**c,**p['learning_rates']}
         if p['method']=='safe_teacher_CE':config.update(TRAIN_safe_teacher=True,TRAIN_teacher_cache=p['TRAIN_teacher_cache'])
         if p['method']=='supervised_metric_CE':config.update(TRAIN_supervised_metric=True)
         if p['method']=='desaturation_CE':config.update(TRAIN_desaturation=True)
+        if p['method']=='bandlimited_CE':config.update(TRAIN_bandlimited_mask=True)
     elif p['method']=='native_CE':
         config={**c,**p['learning_rates']};engine=base
     elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge'):

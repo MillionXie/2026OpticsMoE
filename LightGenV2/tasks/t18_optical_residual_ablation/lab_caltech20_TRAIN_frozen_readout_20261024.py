@@ -8,6 +8,15 @@ def contrast_logits(features,weight,bias):
     return F.linear(features,weight-weight.mean(0,keepdim=True),bias-bias.mean())
 
 
+def bandlimit(value,cutoff=16):
+    """Orthogonal fixed Fourier-subspace update; parent mask is not smoothed."""
+    import torch
+    assert value.ndim==2 and 0<cutoff<min(value.shape)//2
+    h,w=value.shape;iy=torch.arange(h,device=value.device);ix=torch.arange(w,device=value.device)
+    keep=(torch.minimum(iy,h-iy)[:,None]<=cutoff)&(torch.minimum(ix,w-ix)[None]<=cutoff)
+    return torch.fft.ifft2(torch.fft.fft2(value.float())*keep).real.to(value.dtype)
+
+
 def TRAIN_backend_audit(model,data,fields,parent,c,out):
     """Read-only native CPU/CUDA plus contrast-coordinate TRAIN parity."""
     np,torch,m,loop=base.numerical_modules();assert not out.exists() and not m.LOCK.exists();out.mkdir()
@@ -52,7 +61,8 @@ def selftest():
     wrong=torch.nn.functional.one_hot((y+1)%3,3).float()*8;total,only_ce,_,_,count=safe_distillation_loss(student.detach(),y,wrong,torch.ones(3));assert count==0 and torch.allclose(total,only_ce)
     z=torch.tensor([-6.,-3.,-1.,0.,1.,3.,6.],requires_grad=True);penalty=((z.abs()-2).relu()/2).square().mean();penalty.backward()
     assert torch.isfinite(z.grad).all() and z.grad[0]<0 and z.grad[-1]>0 and torch.equal(z.grad[2:5],torch.zeros(3))
-    print(json.dumps(dict(passed=True,frozen_readout_TRAIN_contrast_probability_maxabs=error,gradient_maxabs=grad,readout_parameters_changed=False,correct_teacher_gate=True,teacher_gradient=False,KD_value_fraction_of_CE_at_most=.25,saturation_penalty_gradient_toward_sensitive_region=True,SDK_used=False,GPU_used=False,TEST_used=False)))
+    raw=torch.randn(62,62);projected=bandlimit(raw,4);assert float((bandlimit(projected,4)-projected).abs().max())<1e-6 and projected.square().sum()<=raw.square().sum()
+    print(json.dumps(dict(passed=True,frozen_readout_TRAIN_contrast_probability_maxabs=error,gradient_maxabs=grad,readout_parameters_changed=False,correct_teacher_gate=True,teacher_gradient=False,KD_value_fraction_of_CE_at_most=.25,saturation_penalty_gradient_toward_sensitive_region=True,mask_delta_projection_idempotent=True,SDK_used=False,GPU_used=False,TEST_used=False)))
 
 
 def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
@@ -60,8 +70,8 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     from torch.nn import functional as F
     from lab_caltech20_dvp_TRAIN_regularization_20261021 import TRAINTransforms
     assert list(fields)==['router','0','1','2'] and not out.exists() and not m.LOCK.exists();out.mkdir();original=m.state_cpu(model)
-    safe=c.get('TRAIN_safe_teacher',False);metric=c.get('TRAIN_supervised_metric',False);desaturate=c.get('TRAIN_desaturation',False)
-    assert all(isinstance(v,bool)for v in (safe,metric,desaturate)) and sum((safe,metric,desaturate))<=1;joint=safe or metric or desaturate
+    safe=c.get('TRAIN_safe_teacher',False);metric=c.get('TRAIN_supervised_metric',False);desaturate=c.get('TRAIN_desaturation',False);band=c.get('TRAIN_bandlimited_mask',False)
+    assert all(isinstance(v,bool)for v in (safe,metric,desaturate,band)) and sum((safe,metric,desaturate,band))<=1;joint=safe or metric or desaturate or band
     keys=m.allowed_keys(model,4)
     if not joint:keys=keys-{'linear.weight','linear.bias'}
     assert keys and (joint or all(not k.startswith('linear.') for k in keys))
@@ -85,6 +95,9 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
         family_path=base.ROOT/c['sequence']/'assets/TRAIN_lineage.json';assert m.sha(family_path)==dm['lineage_SHA256'];records=m.read(family_path)['records'];assert [v['sample_id']for v in records]==data['train'][2].tolist();families=np.asarray([v['source_id']for v in records])
         protocol.update(TRAIN_supervised_metric=True,TRAIN_family_lineage_SHA256=m.sha(family_path),TRAIN_pairs='four classes, two independent source families per class, every1600 exactly once',metric_temperature=.2,metric_coefficient_max=10.,metric_feature_gradient_fraction_of_CE_max=.1,metric_coefficient_from_TRAIN_feature_gradient_norm=True,metric_loss_value_not_CE_capped=True,inference_metric=False)
     if desaturate:protocol.update(TRAIN_desaturation=True,TRAIN_penalty='mean square relu(abs(original postE2 conv pre-tanh)-2)/2; stages2,3 averaged',penalty_coefficient_max=.01,penalty_value_fraction_of_CE_max=.1,inference_penalty=False,parameter_reset=False)
+    if band:
+        assert {k for k in keys if k.startswith('phase_sets.')}=={'phase_sets.9'}
+        protocol.update(TRAIN_bandlimited_mask=True,mask='original G2 phase_sets.9',raw_delta_fourier_cutoff=16,raw_delta_degrees_of_freedom=1089,raw_parent_fine_pattern_preserved=True,phase_weight_decay=0.,new_inference_parameters=0,subspace_is_not_a_measured_physical_calibration=True)
     m.save(out/'protocol.json',protocol);m.save(out/'baseline.json',test);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob);loop.saved_model(m,model,out/'best.pt',protocol)
     loop.gpu_admission(m,c);model.cuda()
     if teacher is not None:teacher=teacher.cuda()
@@ -92,9 +105,10 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     groups=[]
     for prefix,lr in (('phase_sets.',c['phase_lr']),('electronic.',c['electronic_lr']),('fusion_logits.',c['alpha_lr'])):
         ps=[v for name,v in model.named_parameters() if name in keys and name.startswith(prefix)]
-        if ps:groups.append(dict(params=ps,lr=lr,base_lr=lr,weight_decay=0 if prefix=='fusion_logits.' else .01))
+        if ps:groups.append(dict(params=ps,lr=lr,base_lr=lr,weight_decay=0 if prefix=='fusion_logits.' or(band and prefix=='phase_sets.')else .01))
     if joint:groups.append(dict(params=list(model.linear.parameters()),lr=c['head_lr'],base_lr=c['head_lr'],weight_decay=.01))
     opt=torch.optim.AdamW(groups);held={};hook=model.linear.register_forward_pre_hook(lambda module,args:held.update(features=args[0]));transforms=TRAINTransforms(model,'2',c)
+    phase_reference=original['phase_sets.9'].cuda() if band else None
     saturation_hooks=[]
     if desaturate:
         for k in (2,3):saturation_hooks.append(model.electronic[k].local.register_forward_hook(lambda module,args,value,k=k:held.update({f'pre_tanh_{k}':value})))
@@ -122,8 +136,12 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                         z=held[f'pre_tanh_{k}'].detach();saturation_stats[k]['abs_gt3']+=float((z.abs()>3).float().mean())*len(ix);saturation_stats[k]['derivative']+=float((1-z.tanh().square()).mean())*len(ix)
                 else:loss=F.cross_entropy(logits,labels,weight=weights,label_smoothing=.05)
                 assert torch.isfinite(loss);loss.backward()
-                ps=[v for v in model.parameters() if v.requires_grad];assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in ps);torch.nn.utils.clip_grad_norm_(ps,1.);opt.step();updates+=1
+                ps=[v for v in model.parameters() if v.requires_grad];assert all(v.grad is not None and torch.isfinite(v.grad).all() for v in ps)
+                if band:
+                    with torch.no_grad():model.phase_sets[9].grad.copy_(bandlimit(model.phase_sets[9].grad))
+                torch.nn.utils.clip_grad_norm_(ps,1.);opt.step();updates+=1
                 with torch.no_grad():
+                    if band:model.phase_sets[9].copy_(phase_reference+bandlimit(model.phase_sets[9]-phase_reference))
                     for v in model.fusion_logits:
                         if v.requires_grad:v.clamp_(.4001001,.95)
                 used+=len(ix);total+=float(loss.detach())*len(ix)
@@ -136,6 +154,9 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                 if safe:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_KD=kd_total/1600,KD_mean_coefficient=coefficient_total/1600,teacher_eligible_TRAIN=eligible)
                 if metric:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_metric=kd_total/1600,metric_mean_coefficient=coefficient_total/1600,TRAIN_metric_gradient_fraction=eligible/1600,TRAIN_independent_family_pairs=800)
                 if desaturate:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_saturation_penalty=kd_total/1600,penalty_mean_coefficient=coefficient_total/1600,TRAIN_original_tanh_statistics={str(k):{n:v/1600 for n,v in row.items()}for k,row in saturation_stats.items()})
+                if band:
+                    delta=model.phase_sets[9].detach().cpu()-original['phase_sets.9'];residual=float((bandlimit(delta)-delta).abs().max());assert residual<1e-6
+                    row.update(TRAIN_bandlimited_mask=True,G2_raw_delta_maxabs=float(delta.abs().max()),G2_raw_delta_projection_residual_maxabs=residual)
                 history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row);print(json.dumps(row),flush=True)
             if best>=target or time.monotonic()-start>=recipe['seconds']:break
         model.cpu();loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/'last.pt',protocol)
@@ -145,11 +166,13 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     results={}
     for label in ('best','last'):
         pt=out/(label+'.pt');native,_=m.model_for(pt,m.sha(pt),4,reference);loop.validate_state(m,native,original,keys);results[label]=dict(PT_SHA256=m.sha(pt))
+        if band:
+            delta=native.phase_sets[9].detach()-original['phase_sets.9'];assert float((bandlimit(delta)-delta).abs().max())<1e-6
         for role in ('train','test'):
             m.save(out/'progress.json',dict(state='strict_native_CPU',checkpoint=label,role=role));metric,v=base.evaluate(native,data,fields,role);results[label][role]=metric;np.savez_compressed(out/(label+'_'+role+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=v)
     assert results['best']['test']['correct']==best and base.identities(m,paths)==lineage
     report=dict(state='complete',baseline_correct=m.read(out/'baseline.json')['correct'],selected_correct=best,selected_epoch=selected,selected_E0=selected==0,actual_epochs=epoch,optimizer_updates=updates,results=results,
-        strict_original_CPU=True,target=target,target_met=best>=target,captured_upstream_bitwise_frozen=True,original_5140_readout_bitwise_frozen=not joint,TRAIN_safe_teacher=safe,TRAIN_supervised_metric=metric,TRAIN_desaturation=desaturate,TEST_gradient=False,TEST_development=True,full_physical=False,new_inference_layers=0,SDK_used=False,
+        strict_original_CPU=True,target=target,target_met=best>=target,captured_upstream_bitwise_frozen=True,original_5140_readout_bitwise_frozen=not joint,TRAIN_safe_teacher=safe,TRAIN_supervised_metric=metric,TRAIN_desaturation=desaturate,TRAIN_bandlimited_mask=band,TEST_gradient=False,TEST_development=True,full_physical=False,new_inference_layers=0,SDK_used=False,
         TRAIN_transform_counts=transforms.counts,synthetic_CCD_noise_not_calibrated=True,protocol_SHA256=m.sha(out/'protocol.json'))
     m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_non_suffix_parameters_bitwise_frozen=True,original_readout_frozen=not joint))
     chosen,_=m.model_for(out/'best.pt',m.sha(out/'best.pt'),4,reference);del model,opt,teacher;torch.cuda.empty_cache();return chosen,out/'best.pt',report

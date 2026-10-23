@@ -41,3 +41,11 @@ def test_readonly_TRAIN_backend_audit_no_optimization():
     assert "data['test']" not in body and '.backward(' not in body and 'torch.optim' not in body
     assert 'G2_canonical_changed_pixel_fraction' in body and "collect('cpu')" in body and "collect('cuda')" in body
     assert 'original_state_bitwise_unchanged=True' in body
+
+
+def test_original_mask_delta_only_in_fixed_subspace():
+    s=P.read_text()
+    assert 'phase_reference+bandlimit(model.phase_sets[9]-phase_reference)' in s
+    assert 'model.phase_sets[9].grad.copy_(bandlimit(model.phase_sets[9].grad))' in s
+    assert 'raw_parent_fine_pattern_preserved=True' in s and 'raw_delta_degrees_of_freedom=1089' in s
+    assert 'G2_raw_delta_projection_residual_maxabs=residual' in s and 'mask_delta_projection_idempotent=True' in s
