@@ -22,7 +22,7 @@ def validate_policy(p):
     assert p['actual_E2_target']==300 and p['final_target']==340
     assert p['TRAIN']==1600 and p['TEST']==411 and p['VALID']==0
     assert not p['TEST_gradient'] and not p['scheduler'] and not p['automatic_retry']
-    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','native_CE')
+    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE')
     assert 0<=p['expected_parent_correct']<300
     assert p['source_fit'].startswith(p['capture_run']+'/')
     assert p['capture_run'].endswith('/e2_actual300_20261024')
@@ -69,14 +69,15 @@ def run(a):
     validate_policy(p)
     for name,digest in p['source_SHA256'].items():assert m.sha(base.HERE/name)==digest
     bp=base.HERE/p['base_profile'];assert m.sha(bp)==p['base_profile_SHA256'];c=m.read(bp);base.validate_config(c);c['intermediate_target']=300
-    assert admission.seconds_left(p)>1800 and not a.out.exists() and not m.LOCK.exists();a.out.mkdir();torch.set_num_threads(2)
+    assert admission.seconds_left(p)>1800 and not a.out.exists() and not m.LOCK.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(73)
     m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),policy=p,TEST_development=True,TEST_gradient=False,new_inference_layers=0,scheduler=False))
     model,data,dm,fields,paths,pt,reference=admit(p,c,a.out)
     if p['method']=='native_CE':
         config={**c,**p['learning_rates']};engine=base
-    elif p['method']=='contrast_LBFGS':
+    elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge'):
         import lab_caltech20_actual_readout_20261024 as engine
         config={**c}
+        if p['method']=='TRAIN_group_ridge':config.update(TRAIN_group_ridge=True,native_feature_source=p['native_feature_source'])
     else:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as engine
         config={**c}

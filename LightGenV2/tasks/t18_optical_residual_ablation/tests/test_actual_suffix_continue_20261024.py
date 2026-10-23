@@ -19,7 +19,7 @@ def test_fresh_E2_only_and_immutable_measured_upstream():
 
 
 def test_existing_finite_optimizers_only_and_true_gate_before_G2():
-    s=ENTRY.read_text();assert "('OAS','affine_LBFGS','contrast_LBFGS','native_CE')" in s
+    s=ENTRY.read_text();assert "('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE')" in s
     assert 'engine.fit_suffix(' in s and 'TRAIN_affine_optimizer=dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)' in s
     assert s.index('assert admission.can_start_G2(result,300)')<s.index('fields=capture.acquire(')
     assert "if not admission.can_start_G2(result,300):" in s and 'G2_not_started=True' in s
