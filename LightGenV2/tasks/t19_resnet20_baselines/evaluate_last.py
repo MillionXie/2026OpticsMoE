@@ -33,7 +33,8 @@ def evaluate_one(run_dir):
         return json.loads((output/'result.json').read_text())
     output.mkdir(exist_ok=True)
     write_json(output/'status.json', {'status':'evaluating', 'pid':os.getpid(), 'epoch':30})
-    model = build_model(manifest['task']).eval()
+    model = (build_model(manifest['task'], backbone=manifest['backbone'])
+             if 'backbone' in manifest else build_model(manifest['task'])).eval()
     model.load_state_dict(checkpoint['model'], strict=True)
     task = manifest['task']
     if task in {'abo_image_to_text','abo_text_to_image'}:

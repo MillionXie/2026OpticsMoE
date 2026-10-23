@@ -1,5 +1,37 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-23 新增：CIFAR ResNet-32九项对照
+
+用户要求使用更大的CIFAR ResNet重跑所有任务。采用同一6n+2/option-A实现，
+三个stage由[3,3,3]加深为[5,5,5]，通道保持[16,32,64]，3x3 stride1 stem、无maxpool、
+输出64维及全部任务头/byte-GRU保持原结构，随机初始化无预训练。
+视觉骨干463,504参数，为ResNet-20的1.723倍。
+
+| 任务 | ResNet-32完整参数量 |
+|---|---:|
+| lgvq_temporal | 492,565 |
+| lgvq_spatial | 467,989 |
+| abo_image_to_text | 498,928 |
+| abo_image_to_image | 467,664 |
+| abo_text_to_image | 498,928 |
+| lsp | 482,430 |
+| salicon | 482,001 |
+| openmoji | 537,478 |
+| abo_conditional_edit | 545,155 |
+
+执行profile兼队列计划：`configs/resnet32_single30_20261023.json`。所有九项单seed42、
+30轮、固定lr0.001、AdamW wd0.0001 clip1、无warmup/cosine、有效batch32、FP32 TF32关闭。
+训练数据/划分/预处理/增强/任务损失/指标沿用ResNet-20；三个检索方向统一H@1；
+固定第30轮last_checkpoint.pt复评，图文编辑最终评估完整TEST，不用TEST/VAL/TRAIN loss选轮。
+保留原ResNet-20/18所有结果，不继承其权重，不改变Qwen/Ours。
+
+统一队列`queue_remaining.py --backbone resnet32`现覆盖九项，LGVQ优先；两个跨模态方向
+调用原`train_easy100.py`，其余调用`train_tasks.py`。每项两batch smoke及完整评估、
+权重保存/加载复评通过后才正式30轮。使用同一T19全局锁，最多三张物理GPU、每卡最多
+两个已核验T19 worker；空闲前不占显存，不与其他任务抢卡，队列自动等待可用卡。
+正式suite为`resnet32_single30_20261023`，每run保存backbone、参数量、数据身份、commit和
+原始命令；阶段以服务器queue_status及run_manifest/result为准，不能把排队说成已训练。
+
 ## 2026-10-23 最终交付：全部固定第30轮last权重复评
 
 本节为当前报告口径，覆盖下方所有历史最佳轮次成绩。ResNet-20九项及ResNet-18时间质量对照

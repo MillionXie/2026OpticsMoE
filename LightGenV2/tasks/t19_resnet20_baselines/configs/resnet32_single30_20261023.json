@@ -1,0 +1,26 @@
+{
+  "backbone": "resnet32",
+  "architecture": "CIFAR_6n+2_optionA",
+  "blocks_per_stage": [5, 5, 5],
+  "channels": [16, 32, 64],
+  "visual_encoder_parameters": 463504,
+  "initialization": "random_no_pretraining",
+  "selection": "fixed_last_epoch",
+  "seeds": [42],
+  "epochs": 30,
+  "learning_rate": 0.001,
+  "schedule": "constant",
+  "warmup_epochs": 0,
+  "optimizer": "AdamW_wd0.0001_clip1",
+  "effective_batch": 32,
+  "precision": "FP32_TF32_disabled",
+  "max_physical_gpus": 3,
+  "max_jobs_per_gpu": 2,
+  "sealed": true,
+  "tasks": [
+    "lgvq_temporal", "lgvq_spatial", "abo_image_to_text",
+    "abo_image_to_image", "abo_text_to_image", "lsp", "salicon",
+    "openmoji", "abo_conditional_edit"
+  ],
+  "authorization": "2026-10-23 user requested all tasks with a larger CIFAR ResNet; retain latest last-epoch single-seed30 protocol."
+}

@@ -11,7 +11,7 @@ import time
 from .train_easy100 import TASK,ROOT,PROFILE,admit_gpu,require_published_source,write_json,git
 
 ALLOWED = ('lgvq_temporal','lgvq_spatial','abo_image_to_image','lsp','salicon','openmoji','abo_conditional_edit',
-           'lgvq_temporal_resnet18')
+           'lgvq_temporal_resnet18','abo_image_to_text','abo_text_to_image')
 
 
 class AttachedWorker:
@@ -21,7 +21,7 @@ class AttachedWorker:
         path=Path(f'/proc/{self.pid}/cmdline')
         if self.poll() is None:
             command=path.read_bytes().replace(b'\0',b' ').decode()
-            if ('t19_resnet20_baselines.train_tasks' not in command or job['name'] not in command
+            if (not any(module in command for module in ('t19_resnet20_baselines.train_tasks','t19_resnet20_baselines.train_easy100')) or job['name'] not in command
                     or job['gpu_uuid'] not in command or os.getpgid(self.pid)!=self.pid):
                 raise RuntimeError('Refuse to attach an unverified training process')
     def poll(self):
@@ -47,6 +47,21 @@ def read_plan(path):
     return plan
 
 
+def worker_command(job, suite, uuid, backbone):
+    base=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')
+    if job['task'] in {'abo_image_to_text','abo_text_to_image'}:
+        specific=['LightGenV2.tasks.t19_resnet20_baselines.train_easy100',
+            '--direction',job['task'].removeprefix('abo_'),
+            '--data-root',str(ROOT/'data/abo_easy100_dataset_20260906')]
+    else:
+        specific=['LightGenV2.tasks.t19_resnet20_baselines.train_tasks','--task',job['task']]
+    return [sys.executable,'-m',*specific,'--backbone',backbone,
+        '--run-dir',str(base/job['name']),'--gpu-uuid',uuid,
+        '--epochs','1' if job['phase']=='smoke' else '30',
+        '--smoke-batches','2' if job['phase']=='smoke' else '0',
+        '--queue-status-path',str(suite/'queue_status.json')]
+
+
 def main():
     import fcntl
     p=argparse.ArgumentParser(description=__doc__)
@@ -54,6 +69,7 @@ def main():
     p.add_argument('--suite-id',required=True)
     p.add_argument('--task-plan',type=Path,required=True)
     p.add_argument('--resume',action='store_true')
+    p.add_argument('--backbone',choices=['resnet20','resnet32'],default='resnet20')
     args=p.parse_args()
     if not 1<=len(set(args.gpu_uuids))==len(args.gpu_uuids)<=3:
         raise ValueError('One to three unique physical GPUs required')
@@ -63,13 +79,14 @@ def main():
     fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     suite=TASK/'runs/simulation'/args.suite_id
     if not args.resume:suite.mkdir(exist_ok=False)
-    report={'status':'running','pid':os.getpid(),'gpu_uuids':args.gpu_uuids,'jobs':[],
+    report={'status':'running','pid':os.getpid(),'gpu_uuids':args.gpu_uuids,'jobs':[],'backbone':args.backbone,
             'max_physical_gpus':3,'max_jobs_per_gpu':2,'execution_profile':PROFILE,
             'started_unix':time.time(),'initial_commit':git('rev-parse','HEAD')}
     running,children={},[]
     if args.resume:
         report=json.loads((suite/'queue_status.json').read_text())
         if report['execution_profile']!=PROFILE:raise ValueError('Cannot resume a different protocol')
+        if report.get('backbone','resnet20')!=args.backbone:raise ValueError('Cannot change backbone on resume')
         active_uuids={j['gpu_uuid'] for j in report['jobs'] if j['status']=='running'}
         if not active_uuids<=set(args.gpu_uuids):raise ValueError('Resume must retain active GPUs')
         report.setdefault('supervisor_history',[]).append({'pid':report['pid'],'replaced_unix':time.time()})
@@ -86,6 +103,10 @@ def main():
     try:
         while True:
             plan=read_plan(args.task_plan)
+            if plan.get('backbone',args.backbone)!=args.backbone:
+                raise ValueError('Plan and queue backbone differ')
+            if args.backbone!='resnet20' and 'lgvq_temporal_resnet18' in plan['tasks']:
+                raise ValueError('CIFAR suite cannot include ImageNet ResNet18 override')
             for task in plan['tasks']:
                 for phase in ('smoke','formal'):
                     if not any(j['task']==task and j['phase']==phase for j in report['jobs']):
@@ -138,12 +159,7 @@ def main():
                     if old is None:os.environ.pop('CUDA_VISIBLE_DEVICES',None)
                     else:os.environ['CUDA_VISIBLE_DEVICES']=old
                 report.setdefault('waiting_for_headroom',{}).pop(uuid,None)
-                base=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')
-                command=[sys.executable,'-m','LightGenV2.tasks.t19_resnet20_baselines.train_tasks',
-                    '--task',job['task'],'--run-dir',str(base/job['name']),'--gpu-uuid',uuid,
-                    '--epochs','1' if job['phase']=='smoke' else '30',
-                    '--smoke-batches','2' if job['phase']=='smoke' else '0',
-                    '--queue-status-path',str(suite/'queue_status.json')]
+                command=worker_command(job,suite,uuid,args.backbone)
                 log=(suite/(job['name']+'.log')).open('x')
                 proc=subprocess.Popen(command,cwd=ROOT,env=dict(os.environ,CUDA_VISIBLE_DEVICES=uuid,
                     OMP_NUM_THREADS='4',OPENBLAS_NUM_THREADS='1'),stdin=subprocess.DEVNULL,

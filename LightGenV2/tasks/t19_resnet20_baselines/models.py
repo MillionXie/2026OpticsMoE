@@ -1,7 +1,7 @@
-"""CPU-reviewable task models, pending architecture approval.
+"""Task models with explicit CIFAR ResNet-20/32 backbone selection.
 
 The visual encoder is CIFAR ResNet-20, not a narrow ImageNet ResNet-18:
-3x3 stem; [3,3,3] basic blocks; [16,32,64] channels; option-A shortcuts.
+3x3 stem; [3,3,3] or [5,5,5] blocks; [16,32,64] channels; option-A shortcuts.
 Task heads and the byte-GRU are explicit additions, counted in full.
 No pretrained model, Qwen feature cache, download, or device selection occurs.
 """
@@ -41,23 +41,26 @@ class BasicBlock(nn.Module):
         return F.relu(self.bn2(self.conv2(y)) + self.shortcut(x))
 
 
-class ResNet20Encoder(nn.Module):
-    def __init__(self):
+class CifarResNetEncoder(nn.Module):
+    def __init__(self, depth: int = 20):
         super().__init__()
+        if depth not in {20, 32}:
+            raise ValueError('Supported CIFAR depths: 20, 32')
+        self.depth = depth
+        blocks = (depth - 2) // 6
         self.stem = nn.Sequential(nn.Conv2d(3, 16, 3, padding=1, bias=False),
                                   nn.BatchNorm2d(16), nn.ReLU())
-        self.stage1 = self._stage(16, 16, 1)
-        self.stage2 = self._stage(16, 32, 2)
-        self.stage3 = self._stage(32, 64, 2)
+        self.stage1 = self._stage(16, 16, 1, blocks)
+        self.stage2 = self._stage(16, 32, 2, blocks)
+        self.stage3 = self._stage(32, 64, 2, blocks)
         for module in self.modules():
             if isinstance(module, nn.Conv2d):
                 nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
 
     @staticmethod
-    def _stage(in_channels: int, out_channels: int, stride: int):
+    def _stage(in_channels: int, out_channels: int, stride: int, blocks: int):
         return nn.Sequential(BasicBlock(in_channels, out_channels, stride),
-                             BasicBlock(out_channels, out_channels),
-                             BasicBlock(out_channels, out_channels))
+                             *(BasicBlock(out_channels, out_channels) for _ in range(blocks-1)))
 
     def features(self, images: torch.Tensor) -> tuple[torch.Tensor, ...]:
         if images.ndim != 4 or images.shape[1] != 3:
@@ -68,6 +71,17 @@ class ResNet20Encoder(nn.Module):
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
         return self.features(images)[-1].mean(dim=(-2, -1))
+
+
+class ResNet20Encoder(CifarResNetEncoder):
+    def __init__(self):
+        super().__init__(20)
+
+
+def cifar_encoder(backbone: str) -> CifarResNetEncoder:
+    if backbone not in {'resnet20', 'resnet32'}:
+        raise ValueError(backbone)
+    return ResNet20Encoder() if backbone == 'resnet20' else CifarResNetEncoder(32)
 
 
 def tokenize_text(texts: list[str], max_bytes: int = 512) -> torch.Tensor:
@@ -119,8 +133,8 @@ class QualityModel(nn.Module):
         if target not in {"spatial", "temporal"}:
             raise ValueError(target)
         self.target = target
-        if backbone == "resnet20":
-            self.encoder = ResNet20Encoder()
+        if backbone in {"resnet20", "resnet32"}:
+            self.encoder = cifar_encoder(backbone)
             self.feature_dim = 64
         elif backbone == "resnet18":
             from torchvision.models import resnet18
@@ -162,9 +176,9 @@ class QualityModel(nn.Module):
 
 
 class ImageRetrievalModel(nn.Module):
-    def __init__(self):
+    def __init__(self, backbone: str = "resnet20"):
         super().__init__()
-        self.encoder = ResNet20Encoder()
+        self.encoder = cifar_encoder(backbone)
         self.projection = nn.Linear(64, 64)
 
     def forward(self, images: torch.Tensor) -> torch.Tensor:
@@ -172,8 +186,8 @@ class ImageRetrievalModel(nn.Module):
 
 
 class CrossModalRetrievalModel(ImageRetrievalModel):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, backbone: str = "resnet20"):
+        super().__init__(backbone)
         self.text_encoder = ByteTextEncoder()
         self.text_projection = nn.Linear(64, 64)
 
@@ -182,9 +196,9 @@ class CrossModalRetrievalModel(ImageRetrievalModel):
 
 
 class DenseModel(nn.Module):
-    def __init__(self, outputs: int, output_size: int):
+    def __init__(self, outputs: int, output_size: int, backbone: str = "resnet20"):
         super().__init__()
-        self.encoder = ResNet20Encoder()
+        self.encoder = cifar_encoder(backbone)
         self.head = nn.Sequential(nn.Conv2d(64, 32, 3, padding=1), nn.ReLU(),
                                   nn.Conv2d(32, outputs, 1))
         self.output_size = output_size
@@ -196,9 +210,9 @@ class DenseModel(nn.Module):
 
 
 class OpenMojiModel(nn.Module):
-    def __init__(self):
+    def __init__(self, backbone: str = "resnet20"):
         super().__init__()
-        self.encoder = ResNet20Encoder()
+        self.encoder = cifar_encoder(backbone)
         self.text_encoder = ByteTextEncoder()
         self.film = nn.Linear(64, 128)
         self.coordinates = nn.Conv2d(2, 64, 1)
@@ -226,9 +240,9 @@ class ConditionalEditor(nn.Module):
     never inputs. Two bilinear upsampling steps invert the encoder's /4 scale.
     """
 
-    def __init__(self):
+    def __init__(self, backbone: str = "resnet20"):
         super().__init__()
-        self.encoder = ResNet20Encoder()
+        self.encoder = cifar_encoder(backbone)
         self.text_encoder = ByteTextEncoder()
         self.film = nn.Linear(64, 128)
         self.decode2 = nn.Sequential(nn.Conv2d(64 + 32, 32, 3, padding=1), nn.ReLU(),
@@ -251,23 +265,27 @@ TASK_IDS = ("lgvq_temporal", "lgvq_spatial", "abo_image_to_text", "abo_image_to_
             "abo_text_to_image", "lsp", "salicon", "openmoji", "abo_conditional_edit")
 
 
-def build_model(task: str) -> nn.Module:
+def build_model(task: str, backbone: str = "resnet20") -> nn.Module:
+    if backbone not in {"resnet20", "resnet32"}:
+        raise ValueError(backbone)
     if task == "lgvq_temporal_resnet18":
+        if backbone != "resnet20":
+            raise ValueError('ImageNet ResNet18 task cannot request a CIFAR backbone override')
         return QualityModel("temporal", backbone="resnet18")
     if task.startswith("lgvq_"):
-        return QualityModel(task.removeprefix("lgvq_"))
+        return QualityModel(task.removeprefix("lgvq_"), backbone)
     if task in {"abo_image_to_text", "abo_text_to_image"}:
-        return CrossModalRetrievalModel()
+        return CrossModalRetrievalModel(backbone)
     if task == "abo_image_to_image":
-        return ImageRetrievalModel()
+        return ImageRetrievalModel(backbone)
     if task == "lsp":
-        return DenseModel(14, 56)
+        return DenseModel(14, 56, backbone)
     if task == "salicon":
-        return DenseModel(1, 224)
+        return DenseModel(1, 224, backbone)
     if task == "openmoji":
-        return OpenMojiModel()
+        return OpenMojiModel(backbone)
     if task == "abo_conditional_edit":
-        return ConditionalEditor()
+        return ConditionalEditor(backbone)
     raise ValueError(f"Unknown task: {task}")
 
 

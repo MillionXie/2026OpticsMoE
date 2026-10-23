@@ -59,7 +59,7 @@ def run(args):
     torch.backends.cuda.matmul.allow_tf32 = False
     torch.backends.cudnn.allow_tf32 = False
     torch.backends.cudnn.benchmark = False
-    model = build_model(args.task).to(device)
+    model = build_model(args.task, backbone=args.backbone).to(device)
     problem.configure_model(model, device)
     train_data = problem.train
     if args.smoke_batches and problem.batch_sampler is None:
@@ -74,7 +74,7 @@ def run(args):
         train = DataLoader(train_data,batch_sampler=sampler,**{k:v for k,v in options.items() if k!='batch_size'})
     test = DataLoader(problem.test, shuffle=False, **options)
     optimizer = torch.optim.AdamW(model.parameters(), lr=.001, weight_decay=.0001)
-    manifest = {'task': args.task, 'status': 'running', 'seed': 42, 'epochs': args.epochs,
+    manifest = {'task': args.task, 'backbone': args.backbone, 'status': 'running', 'seed': 42, 'epochs': args.epochs,
         'learning_rate': .001, 'schedule': 'constant', 'warmup_epochs': 0, 'effective_batch': 32,
         'microbatch': problem.batch_size, 'precision': 'FP32_TF32_disabled', 'optimizer': 'AdamW_wd0.0001_clip1',
         'git_commit': git('rev-parse','HEAD'), 'data_identity': problem.identity,
@@ -160,6 +160,7 @@ def run(args):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--task',required=True)
+    p.add_argument('--backbone',choices=['resnet20','resnet32'],default='resnet20')
     p.add_argument('--run-dir',type=Path,required=True)
     p.add_argument('--gpu-uuid',required=True)
     p.add_argument('--seed',type=int,default=42)

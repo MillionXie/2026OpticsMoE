@@ -158,7 +158,7 @@ def run(args):
     torch.backends.cudnn.allow_tf32 = False
     torch.backends.cudnn.benchmark = False
     task_id = 'abo_' + args.direction
-    model = build_model(task_id).to(device)
+    model = build_model(task_id, backbone=args.backbone).to(device)
     loader_options = dict(batch_size=args.batch_size, num_workers=args.workers,
                           pin_memory=True)
     if args.workers:
@@ -170,7 +170,7 @@ def run(args):
                        generator=torch.Generator().manual_seed(args.seed), **loader_options)
     test = DataLoader(dataset.images('test'), shuffle=False, **loader_options)
     manifest = {
-        'status': 'running', 'task': task_id, 'seed': args.seed, 'epochs': args.epochs,
+        'status': 'running', 'task': task_id, 'backbone': args.backbone, 'seed': args.seed, 'epochs': args.epochs,
         'batch_size': args.batch_size, 'precision': 'FP32_TF32_disabled',
         'git_commit': git('rev-parse', 'HEAD'), 'command': [sys.executable, '-m', __spec__.name, *sys.argv[1:]],
         'parameters': parameter_counts(model), 'data_identity': dataset.identity,
@@ -263,6 +263,7 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--direction', choices=['image_to_text', 'text_to_image'], required=True)
+    parser.add_argument('--backbone', choices=['resnet20','resnet32'], default='resnet20')
     parser.add_argument('--data-root', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--gpu-uuid', required=True)
