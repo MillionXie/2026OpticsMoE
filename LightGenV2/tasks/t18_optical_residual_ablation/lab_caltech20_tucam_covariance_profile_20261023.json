@@ -7,5 +7,11 @@
   "continuation_epochs":24,
   "continuation_seconds":600,
   "fisher_recipe":{"steps":200,"fit_seconds":120,"label_smoothing":0.03,"weight_decay":0.01},
+  "error_guided": {
+    "NLL_tie_tolerance":0.0001,"neighbors":8,"neighbor_boost":0.5,
+    "focal":{"temperature":2.0,"learning_rate":0.003,"steps":400,"gamma":2.0,"CE_replay":0.25,"teacher_KL":0.5,"anchor":0.01,"trust_radius":2.0,"trust_scope":"per_class_row","fit_seconds":120,"evaluate_every":10},
+    "margin":{"steps":300,"fit_seconds":120,"evaluate_every":10},
+    "newton":{"classes":8,"passes":2,"row_steps":4,"fit_seconds":120,"KL":0.5,"anchor":0.01,"trust_radius":1.0}
+  },
   "scope":"One evidence-led exploratory development continuation after the registered terminal methods. Supports L6 or the fresh fully frozen L4 only after all its five stages and terminal native audits. TRAIN-only class covariance reinitializes the existing Linear5140, not a new inference classifier. Change the existing post-final-CCD direct alpha to its original allowed lower bound only if TRAIN electronic between/within scatter exceeds fused scatter; no TEST alpha search. Native full1600TRAIN/411TEST/frozen prefix/phase/dataSHA/cached parity review before reporting. Then at most one bounded original5150 continuation from retained best and one200step/120fit-second TRAIN-Fisher discriminative refit folded into the same Linear5140 (not a new inference projection); alternatively fisher-only from an explicitly retained native-audited parent. No SDK/GPU/TEST gradient/VALID/architecture change. Keep all prior best and last, never adopt a worse result. Not an independent generalization estimate."
 }
