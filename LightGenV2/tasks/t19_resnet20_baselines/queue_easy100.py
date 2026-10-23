@@ -32,6 +32,7 @@ def main():
     suite = base / args.suite_id
     suite.mkdir(exist_ok=False)
     source_commit = git('rev-parse', 'HEAD')
+    source_tree = git('rev-parse', 'HEAD:' + TASK.relative_to(ROOT).as_posix())
     # Confirm BOTH real-GPU contract checks succeeded, never use smoke metrics
     # as formal quality results. They exercise train/eval/save/reload lifecycle.
     for short in ('i2t', 't2i'):
@@ -45,7 +46,7 @@ def main():
             name = f'easy100_{direction}_s{seed}_{args.suite_id}'
             jobs.append({'name': name, 'direction': direction, 'seed': seed, 'status': 'queued'})
     running, children = {}, []
-    report = {'status': 'running', 'source_commit': source_commit, 'pid': os.getpid(),
+    report = {'status': 'running', 'source_commit': source_commit, 'source_tree': source_tree, 'pid': os.getpid(),
               'gpu_uuids': args.gpu_uuids, 'max_gpus': 3, 'jobs': jobs,
               'started_unix': time.time(), 'scope': 'two_of_nine_tasks_three_seeds_each'}
 
@@ -69,8 +70,8 @@ def main():
                 del running[uuid]
                 if code:
                     raise RuntimeError(f'Worker {job["name"]} failed: {code}')
-            if git('rev-parse', 'HEAD') != source_commit:
-                raise RuntimeError('Source commit changed during suite; refusing mixed-source queue')
+            if git('rev-parse', 'HEAD:' + TASK.relative_to(ROOT).as_posix()) != source_tree:
+                raise RuntimeError('T19 source tree changed during suite; refusing mixed-source queue')
             for uuid in args.gpu_uuids:
                 if uuid in running:
                     continue
