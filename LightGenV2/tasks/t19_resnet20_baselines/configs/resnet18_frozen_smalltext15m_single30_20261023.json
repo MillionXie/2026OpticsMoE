@@ -19,8 +19,8 @@
   },
   "tasks": ["lgvq_temporal", "lgvq_spatial", "abo_image_to_text", "abo_image_to_image", "abo_text_to_image", "lsp", "salicon", "openmoji", "abo_conditional_edit"],
   "preserve_running_jobs": ["lgvq_temporal", "lgvq_spatial"],
-  "gpu_indices_requested_first": [1, 2, 6],
-  "gpu_indices_additional_candidates": [3, 4, 5],
+  "gpu_indices_requested_first": [2, 4, 5, 6],
+  "gpu_indices_additional_candidates": [],
   "selection": "fixed_last_epoch",
   "seed": 42,
   "epochs": 30,
@@ -30,9 +30,9 @@
   "optimizer": "AdamW_wd0.0001_clip1",
   "effective_batch": 32,
   "precision": "FP32_TF32_disabled",
-  "max_physical_gpus": 6,
+  "max_physical_gpus": 4,
   "max_jobs_per_gpu": 3,
   "third_job_admission": "At least6144MiB free and <=50percent utilization; both registered peers must already hold CUDA contexts so existing two-job workers are unaffected",
   "sealed": true,
-  "authorization": "2026-10-23 user permits training smaller text from scratch, complete model below15M; latest clarification permits up to6 physical GPUs including1/2/6 and same-card parallelism, expands capacity rather than migrating active tasks. Existing LGVQ preserved. Two partial visual jobs stopped before this clarification have preserved checkpoints and fresh same-protocol retries. Four changed text tasks have fresh smoke/30-epoch IDs."
+  "authorization": "2026-10-23 latest user reduces resource limit to the four currently used GPUs2/4/5/6 to leave capacity for others; preserve all running worker PIDs without migration. Low-utilization same-card parallelism remains permitted. Complete model below15M; random compact text and pretrained frozen visual unchanged. Historical six-GPU expansion and two partial visual restarts remain documented."
 }

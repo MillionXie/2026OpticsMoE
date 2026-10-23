@@ -83,7 +83,7 @@ def main():
     p.add_argument('--suite-id',required=True)
     p.add_argument('--task-plan',type=Path,required=True)
     p.add_argument('--resume',action='store_true')
-    p.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
+    p.add_argument('--max-physical-gpus',type=int,choices=[3,4,6],default=3)
     p.add_argument('--max-jobs-per-gpu',type=int,choices=[2,3],default=2)
     p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
     args=p.parse_args()

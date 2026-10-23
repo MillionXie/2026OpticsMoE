@@ -219,7 +219,7 @@ def main():
     p.add_argument('--task',required=True)
     p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
     p.add_argument('--text-encoder',choices=['minilm','byte_gru'],default='minilm')
-    p.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
+    p.add_argument('--max-physical-gpus',type=int,choices=[3,4,6],default=3)
     p.add_argument('--max-jobs-per-gpu',type=int,choices=[2,3],default=2)
     p.add_argument('--run-dir',type=Path,required=True)
     p.add_argument('--gpu-uuid',required=True)

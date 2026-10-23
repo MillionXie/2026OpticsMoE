@@ -382,7 +382,7 @@ def main():
     parser.add_argument('--direction', choices=['image_to_text', 'text_to_image'], required=True)
     parser.add_argument('--backbone', choices=['resnet20','resnet32','resnet18_imagenet_frozen'], default='resnet20')
     parser.add_argument('--text-encoder', choices=['minilm','byte_gru'], default='minilm')
-    parser.add_argument('--max-physical-gpus',type=int,choices=[3,6],default=3)
+    parser.add_argument('--max-physical-gpus',type=int,choices=[3,4,6],default=3)
     parser.add_argument('--max-jobs-per-gpu',type=int,choices=[2,3],default=2)
     parser.add_argument('--data-root', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
