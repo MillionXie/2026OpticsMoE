@@ -1,0 +1,23 @@
+{
+  "schema":"TUCam_E2_TRAIN_response_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "response_engine_SHA256":"ddd10b9b5bb058c22f3560747014840e5e8a6a6412fcbd0d2999aebeae8ba1cd",
+  "patterns_engine_SHA256":"eb31c18490c3a11c9a6d5126e2270b5d29c2be4e05b231605137013b766bbfae",
+  "capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2h/s_2/capture",
+  "parent":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2h/mask_fit/best.pt",
+  "parent_SHA256":"4dc922d782d6a7842b9f01c287b791d88a2485a40c602813e562d3c0fa8cd0ba",
+  "capture_TRAIN_SHA256":"3c42ab4f2095629bbfd6b42daa5f46775f63f3727f9101e0d993c074f481cf7e",
+  "hardware_SHA256":"32291e10c2aaf179bc51ab001bf8ad503b8cc759241fed37b4ba0944f91f32e7",
+  "phase_SHA256":"e7e8ec2b6f5e352af0415684b391ef55f880c992e51331191121bd1293cc4a8e",
+  "original_TRAIN_per_class":2,
+  "conditions":["nominal_before","flat","half_code","global_offset128","nominal_after"],
+  "checker_levels":[0,64,128,192],
+  "expected_frames":208,
+  "fit":{"steps":160,"batch":4,"lr":0.04,"seed":73,"CPU_threads":2},
+  "admission":{"repeat_PCC":0.95,"repeat_mean_ratio":[0.8,1.2],"held_loss_ratio":0.95,"held_coarse_PCC_gain":0.02},
+  "intermediate_target":305,"final_target":340,
+  "TEST_used":false,"TEST_gradient":false,"VALID":0,"new_inference_layers":0,"LUT_modified":false,"scheduler":false,
+  "scope":"2026-10-24 human explicitly authorizes TRAIN E2 phase/imaging response identification and training-forward calibration. Use current E2 TUCam hardware only, fixed19998us gain0 wait240 discard6 identity geometry, unchanged original native encoding/amplitude inverse/device phaseLUT. Forty original TRAIN anchors, first two per class; within each class rank0 fit and rank1 held response, no dataset VALID. Nominal/flat/half-code/offset128 each40 plus nominal repeat40, four checker16codes each two anchors =208 diagnosticframes, not full E2 dataset recapture. Preserve rawuint16/canonical/native BMP/phase/ID/SHA and current dark15/saturation15% guards; no retries. Restore original E2 nominal phase before SDK release even failure. Reuse ONLY pure published four-parameter numerical surrogate functions, not old DVP hardware/run/probe data or conclusions. Fixed160 Adam steps4shared nuisance parameters without labels or TEST. Admit only stable repeats, fitTRAINloss improvement, heldTRAINloss<=95% nominal AND held16x16 contrast-sensitive PCC improves>=.02, preventing brightness flattening from claiming spatial agreement. No physical LUT, exposure, coordinates, orientation, alpha bounds, checkpoint, inference graph or fixedsimreference modification. Fitting identifies an empirical response, not unique physical cause or classification performance. Response admission required before any later training-forward use; new mask still needs newE2 CCD and actual-E2 nativeCPU>=305 before G2, final340 unchanged. All prior273/newcapture and old282 evidence retained. No scheduler, newbranch/worktree/project, TEST gradients/augmentedTEST training, public upload, or automatic G2."
+}
