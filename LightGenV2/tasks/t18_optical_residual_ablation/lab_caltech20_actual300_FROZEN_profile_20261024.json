@@ -1,0 +1,29 @@
+{
+  "inherits":"lab_caltech20_actual300_OAS_profile_20261024.json",
+  "inherits_SHA256":"2e532a9ff628af2a421c0d25be8bed7826ec7e1f4e9d1a4f37a6b0b96cab0aa7",
+  "method":"frozen_readout_CE","capture_family":"old282",
+  "capture_run":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s",
+  "capture_PT_SHA256":"8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_1/fit/best.pt",
+  "E2_phase_SHA256":"376cc3ee847f2a6502784301817958fd5ec86fde099fd6c5a860c8444f5a0bf7",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2r/s_2/fit",
+  "source_PT_SHA256":"1f4475369a3b1968406f41f97f5fa95dee51d803c17a4505e18541f3f8825577",
+  "source_report_SHA256":"bc68519eaa508e090adab5433288f0f415d2ca89f8801a2830f1681daff3e040",
+  "expected_parent_correct":282,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s.return.json",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_2/capture"
+  },
+  "recipe":{"name":"actual300_old282_frozen_readout_G2_suffix","epochs":32,"seconds":1200,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "learning_rates":{"phase_lr":0.00005,"electronic_lr":0.0002,"alpha_lr":0.0002,"head_lr":0},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_TRAIN_frozen_readout_20261024.py":"a65f32b5a750450feddc0d86bfef84cc7660a7583c0bdbd6bcba523fa0608140",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"NewE2 family actual275 still below old independently measured282. Do not replace old best with lower-score PT or mix data. Return to exact old282 PT1f447 and its own complete E2 phase376cc/arrays9de875,d6056c with the same verified6033 Router/E1/G1. Recheck all8arrays/receipts/sourceCPU282/frozen captured-input ancestors against exact captureparent8fa. No new E2 or hardware use. The recent CE head95.4%TRAIN->258TEST versus regularized head275 motivates freezing the original5140head, forcing original still-unmeasuredG2phase9 and lawful postE2electronic2..3/directalpha2..3 to adapt features.32fullTRAINepochs/1200fitseconds cosine LR5e-5phase/2e-4electronics andalpha, smoothing.05, existingCCDgain.02/additive.5DN/dropout.002, originalTRAINpriors and bounded TEST-informed class emphasis. TRAIN contrast-centered logits are mathematically equivalent and stabilize gradients without changing frozen readout state; nativeCPU always original graph/head. No teacher/newlayers/TESTgrad/VALID/oldCCDmix. Bestlast fullCPU and bitwise head/ancestor audit. Only actual>=300/411 permits freshG2, final340. Ordinary finite dependency controller, no timer/retry."
+}

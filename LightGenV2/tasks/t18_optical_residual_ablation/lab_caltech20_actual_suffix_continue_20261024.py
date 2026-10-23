@@ -22,12 +22,18 @@ def validate_policy(p):
     assert p['actual_E2_target']==300 and p['final_target']==340
     assert p['TRAIN']==1600 and p['TEST']==411 and p['VALID']==0
     assert not p['TEST_gradient'] and not p['scheduler'] and not p['automatic_retry']
-    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE')
+    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE')
     assert 0<=p['expected_parent_correct']<300
-    assert p['source_fit'].startswith(p['capture_run']+'/')
-    assert p['capture_run'].endswith('/e2_actual300_20261024')
-    assert p['capture_PT_SHA256']=='99c5538aeea0436f96df9c3ae4263b9693ab39b0c75d57d85630365a3d386e41'
-    assert p['E2_phase_SHA256']=='2e469eb91c507b777348d157346b14cdb657c2d09138385bedae2a6985458151'
+    family=p.get('capture_family','new_E2');assert family in ('new_E2','old282')
+    if family=='new_E2':
+        assert p['source_fit'].startswith(p['capture_run']+'/') and p['capture_run'].endswith('/e2_actual300_20261024')
+        assert p['capture_PT_SHA256']=='99c5538aeea0436f96df9c3ae4263b9693ab39b0c75d57d85630365a3d386e41'
+        assert p['E2_phase_SHA256']=='2e469eb91c507b777348d157346b14cdb657c2d09138385bedae2a6985458151'
+    else:
+        assert p['capture_run'].endswith('/g1s') and p['source_fit'].startswith(p['capture_run'].rsplit('/',1)[0]+'/')
+        assert p['capture_PT_SHA256']=='8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'
+        assert p['E2_phase_SHA256']=='376cc3ee847f2a6502784301817958fd5ec86fde099fd6c5a860c8444f5a0bf7'
+        assert p['capture_parent_PT'].endswith('/g1s/s_1/fit/best.pt')
     assert len(p['source_PT_SHA256'])==len(p['source_report_SHA256'])==64
     assert p['deadline']=='2026-10-24T08:00:00+08:00'
     assert 1<=p['recipe']['epochs']<=80 and 0<p['recipe']['seconds']<=1800
@@ -35,8 +41,9 @@ def validate_policy(p):
 
 def admit(p,c,out):
     np,torch,m,loop=base.numerical_modules()
-    run=base.ROOT/p['capture_run'];original_policy=m.read(run/'protocol.json')['policy']
-    admission.validate_policy(original_policy);assert m.read(run/'candidate_admission.json')['passed']
+    run=base.ROOT/p['capture_run'];old_family=p.get('capture_family')=='old282'
+    if not old_family:
+        original_policy=m.read(run/'protocol.json')['policy'];admission.validate_policy(original_policy);assert m.read(run/'candidate_admission.json')['passed']
     source=base.ROOT/p['source_fit'];sr=m.read(source/'report.json');sa=m.read(source/'independent_audit.json');pt=source/'best.pt'
     assert m.sha(source/'report.json')==sa['report_SHA256']==p['source_report_SHA256'] and sa['passed'] and sr['strict_original_CPU']
     assert m.sha(pt)==sr['results']['best']['PT_SHA256']==p['source_PT_SHA256'] and sr['selected_correct']==p['expected_parent_correct']
@@ -56,7 +63,7 @@ def admit(p,c,out):
         paths[stage]=cap
     assert list(fields)==['router','0','1','2'] and m.read(source/'protocol.json')['prefix_SHA256']==base.identities(m,paths)
     reference=base.ROOT/c['reference'];assert m.sha(reference)==c['reference_SHA256'];model,_=m.model_for(pt,p['source_PT_SHA256'],4,reference)
-    initial=base.ROOT/original_policy['candidate_fit']/'best.pt';capture_model,_=m.model_for(initial,p['capture_PT_SHA256'],4,reference)
+    initial=base.ROOT/p['capture_parent_PT'] if old_family else base.ROOT/original_policy['candidate_fit']/'best.pt';capture_model,_=m.model_for(initial,p['capture_PT_SHA256'],4,reference)
     loop.validate_state(m,model,m.state_cpu(capture_model),m.allowed_keys(model,4))
     metric,_=base.evaluate(model,data,fields,'test');assert metric['correct']==p['expected_parent_correct']
     m.save(out/'admission.json',dict(passed=True,source_correct=metric['correct'],prefix_SHA256=base.identities(m,paths),all_captured_input_ancestors_bitwise_frozen=True,
@@ -72,7 +79,10 @@ def run(a):
     assert admission.seconds_left(p)>1800 and not a.out.exists() and not m.LOCK.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(73)
     m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),policy=p,TEST_development=True,TEST_gradient=False,new_inference_layers=0,scheduler=False))
     model,data,dm,fields,paths,pt,reference=admit(p,c,a.out)
-    if p['method']=='native_CE':
+    if p['method']=='frozen_readout_CE':
+        import lab_caltech20_TRAIN_frozen_readout_20261024 as engine
+        config={**c,**p['learning_rates']}
+    elif p['method']=='native_CE':
         config={**c,**p['learning_rates']};engine=base
     elif p['method'] in ('contrast_LBFGS','TRAIN_group_ridge'):
         import lab_caltech20_actual_readout_20261024 as engine

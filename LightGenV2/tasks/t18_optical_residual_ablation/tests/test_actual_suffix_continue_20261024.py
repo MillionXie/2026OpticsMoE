@@ -1,5 +1,6 @@
 import ast,hashlib,json
 from pathlib import Path
+from types import SimpleNamespace
 ENTRY=Path(__file__).resolve().parents[1]/'lab_caltech20_actual_suffix_continue_20261024.py'
 
 
@@ -7,6 +8,14 @@ def test_initial_OAS_profile_and_source_identities():
     node=next(n for n in ast.parse(ENTRY.read_text()).body if isinstance(n,ast.FunctionDef) and n.name=='validate_policy');ns={};exec(compile(ast.Module(body=[node],type_ignores=[]),str(ENTRY),'exec'),ns)
     p=json.loads((ENTRY.parent/'lab_caltech20_actual300_OAS_profile_20261024.json').read_text());ns['validate_policy'](p)
     assert p['method']=='OAS' and p['recipe']['epochs']==1
+    for name,digest in p['source_SHA256'].items():assert hashlib.sha256((ENTRY.parent/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==digest
+
+
+def test_old282_keeps_its_own_camera_arrays_and_exact_parent():
+    tree=ast.parse(ENTRY.read_text());nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('validate_policy','load_policy')]
+    ns=dict(json=json,hashlib=hashlib,Path=Path,base=SimpleNamespace(HERE=ENTRY.parent));exec(compile(ast.Module(body=nodes,type_ignores=[]),str(ENTRY),'exec'),ns)
+    p=ns['load_policy'](ENTRY.parent/'lab_caltech20_actual300_FROZEN_profile_20261024.json');ns['validate_policy'](p)
+    assert p['expected_parent_correct']==282 and p['captures']['2'].endswith('/g1s/s_2/capture')
     for name,digest in p['source_SHA256'].items():assert hashlib.sha256((ENTRY.parent/name).read_bytes().replace(b'\r\n',b'\n')).hexdigest()==digest
 
 
@@ -19,7 +28,7 @@ def test_fresh_E2_only_and_immutable_measured_upstream():
 
 
 def test_existing_finite_optimizers_only_and_true_gate_before_G2():
-    s=ENTRY.read_text();assert "('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE')" in s
+    s=ENTRY.read_text();assert "('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE')" in s
     assert 'engine.fit_suffix(' in s and 'TRAIN_affine_optimizer=dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)' in s
     assert s.index('assert admission.can_start_G2(result,300)')<s.index('fields=capture.acquire(')
     assert "if not admission.can_start_G2(result,300):" in s and 'G2_not_started=True' in s
