@@ -55,10 +55,15 @@ def inspect(server_inventory: bool = False) -> dict:
         prefix = Path("LightGenV2/tasks") / task["task_dir"]
         source_paths.add((prefix / "README.md").as_posix())
         source_paths.update((prefix / s).as_posix() for s in task["baseline_sources"])
-    sources = []
+    sources, missing_evidence = [], []
     for relative in sorted(source_paths):
         path = ROOT / relative
         if not path.is_file():
+            # Historical measured tables/reports are retained external artifacts,
+            # not source dependencies installed by Git on every host.
+            if '/reports/' in relative:
+                missing_evidence.append(relative)
+                continue
             raise FileNotFoundError(f"Baseline reference missing: {relative}")
         sources.append({"path": relative, "bytes": path.stat().st_size, "sha256": sha256(path)})
     with torch.random.fork_rng(devices=[]):
@@ -77,6 +82,7 @@ def inspect(server_inventory: bool = False) -> dict:
         "proposal_sha256": sha256(config_path),
         "model_source_sha256": sha256(TASK_DIR / "models.py"),
         "models": models, "baseline_source_files": sources,
+        "historical_evidence_not_installed": missing_evidence,
         "remote_source_verified": False, "remote_data_verified": False,
         "local_Git_GitHub_server_synchronized": False,
         "real_dataset_adapters_implemented": False,
