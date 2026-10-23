@@ -10,7 +10,7 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1')
     assert p['parent_stage']=='1' and list(p['captures'])==['router','0','1']
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -41,13 +41,21 @@ def validate_policy(p):
         assert len(p['linear_engine_SHA256'])==64 and p['native_feature_source'].endswith('/g1l/s_1/fit')
         assert p['TRAIN_feature_aug']==dict(dropout=.1,beta=.4,lr=.0002,weight_decay=.01,label_smoothing=.03,cooldown=True)
         assert p['recipe']==dict(name='G1_best298_lowerLR_augmentation_cooldown',epochs=48,seconds=60,lr_scale=1,TRAIN_class_emphasis=.75)
-    else:
+    elif p['schema']=='TUCam_L4_G1_fullbatch_response_v1':
         assert p['minimum_parent_correct']==299 and p['maximum_parent_TRAIN_accuracy']==1.
         assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==299
         assert p['learning_rates']=={} and p['TRAIN_readout']=='cached_TRAIN_affine_LBFGS'
         assert len(p['linear_engine_SHA256'])==64 and p['native_feature_source'].endswith('/g1l/s_1/fit')
         assert p['TRAIN_affine_optimizer']==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
         assert p['recipe']==dict(name='G1_illconditioned_TRAIN_fullbatch_affine_LBFGS',epochs=80,seconds=60,lr_scale=1,TRAIN_class_emphasis=.75)
+    else:
+        assert p['minimum_parent_correct']==299 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==299
+        assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
+        assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
+        assert len(p['teacher_engine_SHA256'])==64
+        assert p['TRAIN_noise']==dict(CCD_gain_sigma=.02,CCD_additive_sigma_DN=.5,CCD_pixel_dropout_p=.002)
+        assert p['recipe']==dict(name='G1_TRAIN_CCD_robust_original_suffix',epochs=36,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0
     assert p['new_CCD_before_gate']==0 and p['scheduler'] is False
     for key in ('base_profile_SHA256','suffix_engine_SHA256','continuation_engine_SHA256'):
@@ -58,7 +66,7 @@ def admit(p,c,out):
     np,_,m,loop=base.numerical_modules();old=base.ROOT/p['completed_controller']
     assert m.read(old.with_suffix('.return.json'))['returncode']==0 and not m.LOCK.exists()
     r=m.read(old/'report.json')
-    expected_state='G1_native_linear_gate_unmet' if p['schema'] in ('TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1') else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_readout' in p else 'G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
+    expected_state='G1_native_linear_gate_unmet' if p['schema'] in ('TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1') else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_readout' in p else 'G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
     assert r['state']==expected_state
     assert r['next_layer_not_started'] and r['SDK_released']
     endpoints=r['endpoints'];assert [e['stage'] for e in endpoints]==list(p['captures'])
@@ -127,6 +135,7 @@ def run(a):
     stage=p['parent_stage'];folder=a.out/('s_'+stage);folder.mkdir()
     m.save(a.out/'progress.json',dict(state='native_readout_fit' if 'TRAIN_readout' in p else 'TRAIN_teacher_suffix_fit' if 'TRAIN_teacher' in p else 'observed_underfit_suffix_fit',stage=stage,parent_PT_SHA256=m.sha(parent)))
     tuned={**c,**p['learning_rates']}
+    if 'TRAIN_noise' in p:tuned.update(p['TRAIN_noise'])
     if 'TRAIN_readout' in p:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as linear
         assert m.sha(linear.__file__)==p['linear_engine_SHA256']

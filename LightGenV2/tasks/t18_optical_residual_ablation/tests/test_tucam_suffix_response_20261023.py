@@ -66,3 +66,10 @@ def test_registered_conditioning_response_has_no_TEST_L2_choice():
     p=json.loads((HERE/'lab_caltech20_tucam_G1_fullbatch_profile_20261023.json').read_text());policy_validator()(p)
     assert p['expected_parent_correct']==299 and p['TRAIN_affine_optimizer']['l2_parent_TRAIN_NLL_fraction']==.1
     assert p['recipe']['epochs']==80 and p['recipe']['seconds']==60
+
+
+def test_CCD_robustness_is_TRAIN_configuration_not_hardware_change():
+    p=json.loads((HERE/'lab_caltech20_tucam_G1_CCDnoise_profile_20261023.json').read_text());policy_validator()(p)
+    assert set(p['TRAIN_noise'])=={'CCD_gain_sigma','CCD_additive_sigma_DN','CCD_pixel_dropout_p'}
+    assert p['expected_parent_correct']==299 and p['TRAIN_teacher']=={'temperature':2,'mixture':.3}
+    assert "if 'TRAIN_noise' in p:tuned.update(p['TRAIN_noise'])" in ENTRY.read_text()
