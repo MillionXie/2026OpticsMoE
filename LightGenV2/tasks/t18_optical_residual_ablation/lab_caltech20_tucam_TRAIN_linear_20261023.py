@@ -41,6 +41,9 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     assert sr['state']=='complete' and sr['strict_original_CPU'] and sa['passed'] and sa['report_SHA256']==m.sha(source/'report.json')
     assert sp['data_SHA256']==dm['sha256'] and sp['prefix_SHA256']==lineage and sr['results']['best']['PT_SHA256']==m.sha(source/'best.pt')
     old,_=m.model_for(source/'best.pt',sr['results']['best']['PT_SHA256'],4,reference);loop.validate_state(m,old,original,keys)
+    if local and 'skip_classes' in cfg:
+        plan=source/'local_boundary_plan.json';assert sr['local_plan_SHA256']==m.sha(plan)
+        assert [v['label'] for v in m.read(plan)]==cfg['skip_classes']
     if c.get('fresh_native_TRAIN_features',False):
         assert c['fresh_native_TRAIN_features'] is True
         values=[]

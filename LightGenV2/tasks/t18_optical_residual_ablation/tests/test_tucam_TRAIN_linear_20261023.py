@@ -89,3 +89,13 @@ def test_local_profile_native_fresh_cache_and_fixed_gate(monkeypatch):
     exec(compile(ast.Module(body=[f],type_ignores=[]),str(driver),'exec'),ns);ns['validate_policy'](p)
     assert p['fresh_native_TRAIN_features'] is True and p['expected_parent_correct']==301 and p['intermediate_target']==305
     assert "per_update_parameters=257" in ENTRY.read_text() and "all_non_readout_frozen=True" in ENTRY.read_text()
+
+
+def test_remaining_boundary_is_one_finite_coordinate_pass(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    p=json.loads((HERE/'lab_caltech20_tucam_G1_remaining_boundary_profile_20261023.json').read_text())
+    driver=HERE/'lab_caltech20_tucam_suffix_response_20261023.py';tree=ast.parse(driver.read_text());f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='validate_policy');ns={}
+    exec(compile(ast.Module(body=[f],type_ignores=[]),str(driver),'exec'),ns);ns['validate_policy'](p)
+    assert p['TRAIN_local_boundary']['maximum_classes']+len(p['TRAIN_local_boundary']['skip_classes'])==20
+    assert p['expected_parent_correct']==304 and p['fresh_native_TRAIN_features'] is False
+    s=ENTRY.read_text();assert "sr['local_plan_SHA256']==m.sha(plan)" in s and "m.read(plan)]==cfg['skip_classes']" in s

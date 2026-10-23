@@ -50,13 +50,14 @@ def validate_policy(p):
         assert p['recipe']==dict(name='G1_illconditioned_TRAIN_fullbatch_affine_LBFGS',epochs=80,seconds=60,lr_scale=1,TRAIN_class_emphasis=.75)
     elif p['schema']=='TUCam_L4_G1_local_boundary_response_v1':
         import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
-        assert p['minimum_parent_correct']==301 and p['maximum_parent_TRAIN_accuracy']==1.
-        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==301
+        continuation='skip_classes' in p['TRAIN_local_boundary'];parent=304 if continuation else 301
+        assert p['minimum_parent_correct']==parent and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==parent
         assert p['learning_rates']=={} and p['TRAIN_readout']=='cached_TRAIN_local_boundary'
         assert len(p['linear_engine_SHA256'])==len(p['TRAIN_local_engine_SHA256'])==64
-        assert p['native_feature_source'].endswith('/g1n/s_1/fit') and p['fresh_native_TRAIN_features'] is True
+        assert p['native_feature_source'].endswith('/g1r/s_1/fit' if continuation else '/g1n/s_1/fit') and p['fresh_native_TRAIN_features'] is (not continuation)
         boundary.validate(p['TRAIN_local_boundary'])
-        assert p['recipe']==dict(name='G1_TRAIN_local_binary_rest_full_curvature',epochs=0,seconds=300,lr_scale=1,TRAIN_class_emphasis=.75)
+        assert p['recipe']==dict(name='G1_TRAIN_remaining_local_binary_rest_full_curvature' if continuation else 'G1_TRAIN_local_binary_rest_full_curvature',epochs=0,seconds=300,lr_scale=1,TRAIN_class_emphasis=.75)
     else:
         assert p['minimum_parent_correct']==299 and p['maximum_parent_TRAIN_accuracy']==1.
         assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==299
@@ -75,7 +76,7 @@ def admit(p,c,out):
     np,_,m,loop=base.numerical_modules();old=base.ROOT/p['completed_controller']
     assert m.read(old.with_suffix('.return.json'))['returncode']==0 and not m.LOCK.exists()
     r=m.read(old/'report.json')
-    expected_state='G1_native_linear_gate_unmet' if p['schema'] in ('TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1') else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_readout' in p else 'G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
+    expected_state='G1_native_linear_gate_unmet' if p['schema'] in ('TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1') or ('skip_classes' in p.get('TRAIN_local_boundary',{})) else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_readout' in p else 'G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
     assert r['state']==expected_state
     assert r['next_layer_not_started'] and r['SDK_released']
     endpoints=r['endpoints'];assert [e['stage'] for e in endpoints]==list(p['captures'])

@@ -8,7 +8,9 @@ import time,numpy as np
 
 
 def validate(c):
-    assert c==dict(maximum_classes=8,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.08,seed=73)
+    origin=dict(maximum_classes=8,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.08,seed=73)
+    continued={**origin,'maximum_classes':12,'skip_classes':[3,2,0,4,9,15,7,12]}
+    assert c in (origin,continued)
 
 
 def selection(features,labels,w,b):
@@ -43,7 +45,7 @@ def fit(train,labels,development,development_labels,w,b,c,target,seconds,emit):
     validate(c);x=np.asarray(train,dtype=np.float64);z=np.asarray(development,dtype=np.float64);y=np.asarray(labels);dy=np.asarray(development_labels)
     assert x.shape==(1600,256) and z.shape==(411,256) and np.bincount(y,minlength=20).tolist()==[80]*20
     w=np.asarray(w,dtype=np.float32).astype(float);b=np.asarray(b,dtype=np.float32).astype(float)
-    initial,initial_nll,initial_pred=selection(z,dy,w,b);best,bnll=initial,initial_nll;selected=updates=0;history=[];plans=[];used=[];started=time.monotonic();lastw,lastb=w.copy(),b.copy()
+    initial,initial_nll,initial_pred=selection(z,dy,w,b);best,bnll=initial,initial_nll;selected=updates=0;history=[];plans=[];used=list(c.get('skip_classes',[]));started=time.monotonic();lastw,lastb=w.copy(),b.copy()
     xn=x/np.linalg.norm(x,axis=1,keepdims=True).clip(1e-12);zn=z/np.linalg.norm(z,axis=1,keepdims=True).clip(1e-12)
     for stage in range(1,c['maximum_classes']+1):
         _,_,pred=selection(z,dy,w,b);wrong=pred!=dy;counts=np.bincount(dy[wrong],minlength=20)
