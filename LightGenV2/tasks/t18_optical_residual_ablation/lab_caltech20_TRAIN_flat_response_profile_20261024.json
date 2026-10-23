@@ -1,0 +1,16 @@
+{
+  "schema":"TUCam_E2_TRAIN_flat_photometric_v1",
+  "response_profile":"lab_caltech20_tucam_TRAIN_response_profile_20261024.json",
+  "response_entry_SHA256":"421a18ea3c8aecae7c07306146efb6a56a78d05baadfac3a51c6108bea718448",
+  "nominal_engine_SHA256":"ddd10b9b5bb058c22f3560747014840e5e8a6a6412fcbd0d2999aebeae8ba1cd",
+  "spatial_engine_SHA256":"b23b0137714f7615df52daac5239ee9936cc86cd288ca3dd698ffd2ea35051b7",
+  "probes":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_response_20261024/probes",
+  "probe_report_SHA256":"ed5f98770ce72fc4297d92f7125db0c41508af7bac22405b5dac0012e8973639",
+  "response_audit_SHA256":"ebcf12bb715bef84b428dcac0c71b2932b0cfc60cb3073f8376b052e96f01851",
+  "fit_condition":"flat","TRAIN_fit_anchors":20,"TRAIN_held_anchors":20,
+  "grid":8,"ridge":0.05,"gain_bounds":[0.05,4.0],"background_bounds":[0.0,4.0],
+  "held_PCC_gain":0.03,"held_loss_ratio":0.95,"shared_residual_PCC":0.8,
+  "TEST_used":false,"VALID":0,"new_CCD":0,"new_inference_layers":0,"hardware_changed":false,
+  "intermediate_target":305,"final_target":340,
+  "scope":"User authorizes continued causal diagnosis and optimization without changing hardware/inference structure. Existing response results show even flat-phase heldPCC around.75 while same-connection repeats>.9999, so test sample-shared photometric residual BEFORE adding further phase complexity. Reuse the audited208TUCam diagnosticframes; no new capture. Use nominal original propagation only, NOT any of the rejected4/27parameter fits. Twenty original TRAIN anchors, flat-phase condition ONLY, fit bounded8x8 shared gain/background via exact box-ridge QP, fixedridge.05 anchoredg1/b0;128shared nuisance values, no classifier labels/TEST/VALID or gradient optimization. Normalize each predicted and observed intensity by own mean because original model's optical nonlinearity uses relative intensity; do NOT normalize or alter hardware CCD data or inference. Fixed bilinear interpolation for maps, no imagewarp/coordinates/LUT changes. Verify shared flat residual spatialPCC>=.8 across disjoint20fit/20held TRAIN anchors. Admission further requires fitflat loss improves, heldflat and held60unseenphase (nominal/half/offset) loss<=95% original and PCC+.03, nominal-mask held itself also loss<=95% andPCC+.03, and each half/offset PCC must not regress. Checkerheld is reported independently, never fitted. One predetermined model/solve, no grid or follow-on knob scanning. If admitted it may be used only in TRAIN forward for originalmask optimization; it is not a new inference correction/module, physical cause proof, phaseLUT or classification gain. If rejected, preserve evidence and do not train through it. Original273PT and all8arrays protected, old282 separate, actual-E2 native305 beforeG2/final340 unchanged. No SDK/GPU/scheduler/newbranch/worktree/project/publicupload."
+}
