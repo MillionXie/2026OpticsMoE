@@ -23,6 +23,13 @@ profile仅将本E1后缀phase/electronic/alpha/head LR分别设2e-4/1e-3/1e-3/2e
 最多48完整epoch/1500fit秒；既定温和TRAIN CCD扰动、类别权重和loss不动，不随机
 扫PT，不改已采mask/输入祖先或模型，不重拍、不改曝光坐标LUT。best不超过父则
 保留父并披露E0。该配置需测试、Git发布并同步后才启动，不能把计划当启动证据。
+实际执行补充：17项静态合同检查通过，Git84bd4c190已发布并三端同步，原SDK
+runtime XML SHA96eeb535完整保护。新单次`u1`接续PID5932已启动，entry SHA
+4b6490b649827502391d7b8efbdf739b107b6239b89ec0d4124325c58201cd4a，profile SHA
+ab12a76973aa826c1e139e0f42316df578696a9d6627c690dfee5a09e2c9777a；完整准入重新
+确认父261/411与TRAIN1032/1600、四份已采CCD SHA不变。实际首轮1448/1600、181次
+非零优化更新/loss1.609687，未以PID代替健康证据。f0/f1/extra共36个bestlast/协议/
+history/逐样本/完整报告文件均已本地和实验室SHA核同备份，原始CCD留原run保护。
 原CPU bestlast/冻结与数组身份全部复核且达到305，才在同批新PT下自动新采G1；
 以后每层仍采完调原后缀再过门槛，最终340目标不变。没有定时任务或自动硬件重启。
 
