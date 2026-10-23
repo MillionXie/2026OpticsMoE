@@ -3,7 +3,8 @@
 The visual encoder is CIFAR ResNet-20, not a narrow ImageNet ResNet-18:
 3x3 stem; [3,3,3] or [5,5,5] blocks; [16,32,64] channels; option-A shortcuts.
 Task heads and the byte-GRU are explicit additions, counted in full.
-No pretrained model, Qwen feature cache, download, or device selection occurs.
+Legacy CIFAR and the legacy ResNet-18 task remain randomly initialized.
+The explicit resnet18_imagenet_frozen profile loads official pretrained weights.
 """
 from __future__ import annotations
 
@@ -141,6 +142,10 @@ class QualityModel(nn.Module):
             self.encoder = resnet18(weights=None)
             self.encoder.fc = nn.Identity()
             self.feature_dim = 512
+        elif backbone == "resnet18_imagenet_frozen":
+            from .frozen_resnet18 import FrozenResNet18
+            self.encoder = FrozenResNet18()
+            self.feature_dim = 512
         else:
             raise ValueError(backbone)
         self.head = nn.Sequential(nn.Linear(self.feature_dim * (1 if target == "spatial" else 7), 64),
@@ -266,6 +271,11 @@ TASK_IDS = ("lgvq_temporal", "lgvq_spatial", "abo_image_to_text", "abo_image_to_
 
 
 def build_model(task: str, backbone: str = "resnet20") -> nn.Module:
+    if backbone == 'resnet18_imagenet_frozen':
+        if task in {'lgvq_temporal', 'lgvq_spatial'}:
+            return QualityModel(task.removeprefix('lgvq_'), backbone)
+        from .frozen_visual_models import build_frozen_visual_model
+        return build_frozen_visual_model(task)
     if backbone not in {"resnet20", "resnet32"}:
         raise ValueError(backbone)
     if task == "lgvq_temporal_resnet18":

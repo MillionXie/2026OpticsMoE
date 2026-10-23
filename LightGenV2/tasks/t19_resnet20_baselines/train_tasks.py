@@ -1,4 +1,4 @@
-"""Fixed-LR, single-seed30 training of task-specific ResNet-20 baselines."""
+"""Fixed-last, single-seed30 training with explicit backbone/freeze profiles."""
 import argparse
 import hashlib
 import itertools
@@ -64,7 +64,17 @@ def run(args):
                    if args.smoke_batches else problem.batch_sampler)
         train = DataLoader(train_data,batch_sampler=sampler,**{k:v for k,v in options.items() if k!='batch_size'})
     test = DataLoader(problem.test, shuffle=False, **options)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=.001, weight_decay=.0001)
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(trainable, lr=.001, weight_decay=.0001)
+    frozen = args.backbone == 'resnet18_imagenet_frozen'
+    frozen_hash = None
+    if frozen:
+        from .frozen_resnet18 import encoder_state_sha256, assert_encoder_unchanged
+        frozen_hash = encoder_state_sha256(model.encoder)
+        assert_encoder_unchanged(model.encoder, frozen_hash)
+        encoder_ids = {id(p) for p in model.encoder.parameters()}
+        if any(id(p) in encoder_ids for p in trainable):
+            raise RuntimeError('Frozen encoder entered the optimizer')
     manifest = {'task': args.task, 'backbone': args.backbone, 'status': 'running', 'seed': 42, 'epochs': args.epochs,
         'learning_rate': .001, 'schedule': 'constant', 'warmup_epochs': 0, 'effective_batch': 32,
         'microbatch': problem.batch_size, 'precision': 'FP32_TF32_disabled', 'optimizer': 'AdamW_wd0.0001_clip1',
@@ -76,6 +86,15 @@ def run(args):
         'source_sha256': {name: hashlib.sha256((TASK/name).read_bytes()).hexdigest()
                           for name in ('train_tasks.py','task_problems.py','models.py','lgvq_data.py','other_data.py','editor_dataset.py','train_easy100.py')},
         'smoke_batches': args.smoke_batches, 'metric': problem.metric}
+    manifest.update(initialization='official_ImageNet1K_V1' if frozen else 'random_no_pretraining',
+                    training_scope='decoder_only' if frozen else 'full_network',
+                    optimizer_parameters=sum(p.numel() for p in trainable))
+    if frozen:
+        manifest.update(pretrained_provenance=model.encoder.pretrained_provenance,
+                        encoder_state_sha256_before=frozen_hash, frozen_encoder_audits=[],
+                        source_sha256={**manifest['source_sha256'], **{
+                            name:hashlib.sha256((TASK/name).read_bytes()).hexdigest()
+                            for name in ('frozen_resnet18.py', 'frozen_visual_models.py')}})
     write_json(run_dir/'run_manifest.json', manifest)
     history, selected_epoch = [], None
     began=time.monotonic()
@@ -99,7 +118,7 @@ def run(args):
                     raise ValueError('Nonfinite training loss')
                 (loss*n/group_samples).backward()
                 if (step+1)%accumulation==0 or step+1==len(train):
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),1.)
+                    torch.nn.utils.clip_grad_norm_(trainable,1.)
                     optimizer.step(); optimizer.zero_grad(set_to_none=True)
                 total+=loss.item()*n; count+=n
                 if (step+1)%25==0:
@@ -109,6 +128,10 @@ def run(args):
             metrics, records = problem.evaluate(model,test,device) if evaluated else ({},None)
             entry={'epoch':epoch,'train_loss':total/count,'learning_rate':.001,
                    'elapsed_seconds':time.monotonic()-began,**metrics}
+            if frozen:
+                audit=assert_encoder_unchanged(model.encoder,frozen_hash)
+                manifest['frozen_encoder_audits'].append({'epoch':epoch,**audit})
+                write_json(run_dir/'run_manifest.json',manifest)
             payload={'model':model.state_dict(),'optimizer':optimizer.state_dict(),'epoch':epoch,'manifest':manifest,'metrics':entry}
             save_checkpoint(run_dir/'last_checkpoint.pt',payload)
             if epoch == args.epochs:
@@ -122,6 +145,8 @@ def run(args):
             print(entry,flush=True)
         selected=torch.load(run_dir/'last_checkpoint.pt',map_location='cpu',weights_only=False)
         model.load_state_dict(selected['model'])
+        if frozen:
+            manifest['frozen_encoder_final_audit']=assert_encoder_unchanged(model.encoder,frozen_hash)
         metrics,records=problem.evaluate(model,test,device)
         selection_metrics=metrics
         final_loader=None
@@ -132,6 +157,9 @@ def run(args):
         write_json(run_dir/'result.json',{'status':'complete','selected_epoch':selected_epoch,'metrics':metrics,
             'selection_metrics':selection_metrics,'selection_uses_test':False,
             'selection':'fixed_last_epoch','checkpoint':'last_checkpoint.pt',
+            'checkpoint_sha256':hashlib.sha256((run_dir/'last_checkpoint.pt').read_bytes()).hexdigest(),
+            'training_scope':manifest['training_scope'],
+            'frozen_encoder_audit':manifest.get('frozen_encoder_final_audit'),
             'development_metric':problem.task!='abo_conditional_edit','elapsed_seconds':time.monotonic()-began})
         manifest['status']='complete'
     except BaseException as exc:
@@ -151,7 +179,7 @@ def run(args):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--task',required=True)
-    p.add_argument('--backbone',choices=['resnet20','resnet32'],default='resnet20')
+    p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
     p.add_argument('--run-dir',type=Path,required=True)
     p.add_argument('--gpu-uuid',required=True)
     p.add_argument('--seed',type=int,default=42)

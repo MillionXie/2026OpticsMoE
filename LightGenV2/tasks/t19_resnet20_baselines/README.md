@@ -1,5 +1,59 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-23 最新协议更正：预训练冻结骨干，仅训练decoder
+
+用户明确不希望baseline全网络重新训练，要求核实并重新尝试。实际核查：**旧ResNet-20、
+CIFAR ResNet-32均随机初始化、全参数训练；旧`lgvq_temporal_resnet18`也明确使用
+`torchvision.resnet18(weights=None)`且AdamW包含全部参数**。不能把旧成绩称为冻结预训练
+特征的decoder基线。以下旧结果全部保留，旧RN18任务名/构造器/权重加载语义不变。
+
+原RN32 suite已按这次用户协议更正停止，未删除权重。六项正式第30轮last结果：
+
+| 任务 | 原RN32全参末轮成绩 |
+|---|---:|
+| LGVQ时间 SRCC | 0.8024708890 |
+| LGVQ空间 SRCC | 0.6362456795 |
+| ABO图搜文 H@1 | 0.9612500072 |
+| ABO图搜图 H@1 | 0.8387500048 |
+| ABO文搜图 H@1 | 1.0000000000 |
+| OpenMoji changed-cell accuracy | 0.8850000000 |
+
+LSP/SALICON/编辑停止时分别保留第25/12/14轮last，不当成正式30轮结果。
+服务器停机收据：`runs/control/random_full_training_stopped_for_frozen_pretrained_20261023.json`，
+记录进程命令身份、全部原queue、保留权重SHA及GPU释放情况，不恢复该旧suite。
+
+新profile/队列计划为`configs/resnet18_imagenet_frozen_single30_20261023.json`，
+新suite `resnet18_imagenet_frozen_single30_20261023`。使用标准ImageNet ResNet-18，官方
+`ResNet18_Weights.IMAGENET1K_V1`，移除ImageNet分类器。官方checkpoint
+`resnet18-f37072fd.pth`完整SHA256：
+`f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec`。
+只训练decoder；视觉骨干11,176,512参数全部冻结，BN统计固定eval，encoder前向no_grad，
+优化器/裁剪仅含可训练任务头。逐轮记录含所有参数及BN buffers的state SHA并断言前后相同，
+记录真实官方缓存文件SHA、逐张量匹配、optimizer参数数和无encoder梯度证据。
+官方旧PT未保存的20个BN计数器由torchvision严格补零并具名记录，不能放宽其他张量核验。
+
+| 首批纯视觉任务 | decoder可训练参数量 | 含冻结骨干完整参数量 |
+|---|---:|---:|
+| LGVQ时间 | 229,765 | 11,406,277 |
+| LGVQ空间 | 33,157 | 11,209,669 |
+| ABO图搜图 | 32,832 | 11,209,344 |
+| LSP | 40,558 | 11,217,070 |
+| SALICON | 40,129 | 11,216,641 |
+
+LGVQ沿用旧RN18的512维特征及质量头（时间3584→64→5；空间512→64→5）。
+图搜图采用512→64投影与原精确SKU检索。LSP/SALICON使用四级冻结空间特征的轻量融合decoder，
+每级1×1投影32通道、插值到stride4求和、3×3卷积及输出层，避免最深7×7图直接放大造成
+定位瓶颈；这是新适配头，不宣称纯初始化消融。输入仍使用既有ImageNet归一化/各任务几何，
+不额外调用官方resize/crop改变坐标。LSP仍保留原MSE+坐标辅助loss，本轮不混入未批准的损失修正；
+前述已知目标不匹配仍是限制，冻结预训练不保证自动修复。
+
+首批先跑LGVQ时间/空间、图搜图、LSP、SALICON；每项smoke通过再正式30轮，所有正式结果
+固定第30轮last完整复评。seed42、固定lr0.001、AdamW wd0.0001 clip1、有效batch32、FP32
+TF32关、无warmup/cosine和最多三卡/每卡两任务保持。含文字四项的现有GRU也是随机训练，
+等待用户明确文字编码器冻结范围后再推进，不能将训练GRU默称为仅训练decoder。
+新suite与所有旧run分离，真实启动/进度以专属queue_status和run_manifest为准；
+发布后启动收据为`runs/control/resnet18_frozen_launch_20261023.json`。
+
 ## 2026-10-23 新增：CIFAR ResNet-32九项对照
 
 用户要求使用更大的CIFAR ResNet重跑所有任务。采用同一6n+2/option-A实现，

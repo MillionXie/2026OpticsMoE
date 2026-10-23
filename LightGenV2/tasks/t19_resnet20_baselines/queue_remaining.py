@@ -48,6 +48,10 @@ def read_plan(path):
 
 
 def worker_command(job, suite, uuid, backbone):
+    if backbone == 'resnet18_imagenet_frozen':
+        from .frozen_visual_models import FROZEN_VISUAL_TASKS
+        if job['task'] not in FROZEN_VISUAL_TASKS:
+            raise ValueError('Text encoder protocol is not approved for this frozen suite')
     base=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')
     if job['task'] in {'abo_image_to_text','abo_text_to_image'}:
         specific=['LightGenV2.tasks.t19_resnet20_baselines.train_easy100',
@@ -69,7 +73,7 @@ def main():
     p.add_argument('--suite-id',required=True)
     p.add_argument('--task-plan',type=Path,required=True)
     p.add_argument('--resume',action='store_true')
-    p.add_argument('--backbone',choices=['resnet20','resnet32'],default='resnet20')
+    p.add_argument('--backbone',choices=['resnet20','resnet32','resnet18_imagenet_frozen'],default='resnet20')
     args=p.parse_args()
     if not 1<=len(set(args.gpu_uuids))==len(args.gpu_uuids)<=3:
         raise ValueError('One to three unique physical GPUs required')
@@ -105,6 +109,10 @@ def main():
             plan=read_plan(args.task_plan)
             if plan.get('backbone',args.backbone)!=args.backbone:
                 raise ValueError('Plan and queue backbone differ')
+            if args.backbone == 'resnet18_imagenet_frozen':
+                from .frozen_visual_models import FROZEN_VISUAL_TASKS
+                if any(task not in FROZEN_VISUAL_TASKS for task in plan['tasks']):
+                    raise ValueError('Frozen suite cannot silently train a random text encoder')
             if args.backbone!='resnet20' and 'lgvq_temporal_resnet18' in plan['tasks']:
                 raise ValueError('CIFAR suite cannot include ImageNet ResNet18 override')
             for task in plan['tasks']:
