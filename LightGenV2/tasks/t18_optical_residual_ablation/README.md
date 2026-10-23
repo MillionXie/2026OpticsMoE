@@ -17,6 +17,18 @@ TEST分析只规划已有TRAIN类别权重/开发选PT，无TEST梯度、TEST增
 模型、曝光、几何、LUT不动；仅本任务新控制入口/profile/测试/记录归本窗口，
 其他窗口保护。是否已接管/精度以run实际报告为准，不以本段计划替代运行证据。
 
+实际补充：来源f56038395/entry SHAf278563f…的单次g10依赖流程PID1380已启动，
+已执行公开policy哈希/305与340门槛核验，实际progress为等待旧控制器完整边界，
+不是占SDK或GPU拟合；原活跃入口8d36bf08和c077c326 profile未被修改。Router现已
+完整1600TRAIN+411TEST=2011帧，1087.969秒，逐像素canonical/BMP/phase/PT/ID/
+原生裁剪及数组SHA全2011审计通过，report SHAc16eee1032e6f2af1ae77a5de67264cd99ef52a63a3881a969a3f682c6e2f536。
+其完整CPU411基线307=74.69586%，比固定346低9.48905pp，已达新中间10pp门槛；
+这是实测router+仿真后四层的混合阶段指标，非四层完整实拍。原后缀实际GPU训练
+已出现非零更新与loss增量(第三epoch1448/1600、581次更新)，仍在有限拟合；
+完整bestlast原模型CPU及冻结审计未结束前不把中途best当交付结果。原错分包括
+Motorbikes→airplanes5、car_side→airplanes5，chandelier错9/12，TRAIN类强调按
+当前完整TEST混淆有界规划；TEST不送入梯度，完整结果以各阶段报告为准。
+
 ## 2026-10-23最新人工授权：四层重新逐层采集、逐层适配
 
 用户已明确同意重采，覆盖下方“不重拍”的旧范围；此次只负责四层有残差，不启动
