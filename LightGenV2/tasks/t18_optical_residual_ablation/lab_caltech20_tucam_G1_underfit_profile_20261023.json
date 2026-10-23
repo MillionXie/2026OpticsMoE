@@ -1,0 +1,20 @@
+{
+  "schema":"TUCam_L4_G1_underfit_response_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_0/fit/best.pt",
+  "capture_parent_SHA256":"f573aaa351f0b20384797fbc658f77e815f01be48bfb67cba46ec652655f81b0",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture"
+  },
+  "parent_stage":"1","minimum_parent_correct":250,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":0.80,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{"phase_lr":0.0002,"electronic_lr":0.001,"alpha_lr":0.001,"head_lr":0.002},
+  "recipe":{"name":"G1_observed_underfit_original_suffix","epochs":48,"seconds":1500,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Finite response ONLY after a2 has returned normally with audited G1 below305 and actual TRAIN below80%. Reuse all three exact complete2011-frame captures, verify G1 capture PT and all recorded input ancestors bitwise. Update original E2/G2 optical suffix and legal G1-postCCD/downstream electronics, direct alpha and original5140 head. No measured masks or input ancestors change. Same mild TRAIN-only synthetic CCD noise/dropout and original loss; TEST-informed development selection, never TEST gradients, augmented TEST training or VALID. No model structure, camera, exposure, geometry, LUT, scheduling, repeat G1 capture, other depths, or unbounded candidate scan. Strict native CPU bestlast and frozen/data audits >=305 precede any fresh E2 capture; final340 unchanged. Later stages use original registered recipes, not elevated G1 rates."
+}

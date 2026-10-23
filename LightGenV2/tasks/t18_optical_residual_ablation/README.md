@@ -1,3 +1,29 @@
+## 2026-10-23 G1完整2011帧通过审计，后缀微调已实际接续
+
+`layerwise_L4_on_20261023/a2/s_1/capture`已连续完成1600TRAIN和411TEST，
+1156.047秒；全2011收据ID/raw/crop/canonical/BMP/phase/PT/SHA及原生裁剪重算
+独立审计通过，SDK释放。report SHA606c8421b196cef821bd3bfb941033bb9536b627b7814acd747f4eacbed49052，
+TRAIN CCD SHA8f47df0d7abea1a37c448d8376b946864539800f9910e52c6710d3667cba6918，
+TEST CCD SHA2638d1379841d539993789502e777a64e770d34faf1ffab953089ea3c9d9878d。
+父PT仍f573aaa3、phase27828145，沿用该阶段9999us/gain0/wait240/discard6、原
+TUCam几何/方向/LUT；末帧p99=92、饱和4.37667e-6，无守卫触发、无重复采集。
+
+同一流程已经自动训练原未采E2/G2 mask及合法G1后电模块/alpha/原5140头。
+第一段`f0`实际24轮，原模型CPU bestlast全TRAIN/TEST和冻结审计通过：G1替换后
+基线108/411，best255/411=62.04380%，TRAIN1003/1600=62.6875%，last253；
+best PT SHA9b70bfa0e538543370bbfb8e6985d4d3866053b1cccfc76ee95404e378759956。
+这仍是实测router/E1/G1、仿真E2/G2的混合开发指标，不是全链实拍。f1和后续有限
+诊断按原协议继续，未到305不得接E2；不能以根progress旧的capturing字样误判停训。
+
+本窗口仅新增本任务`lab_caltech20_tucam_suffix_response_20261023.py`及G1欠拟合
+profile/测试，不改正在运行a2的原入口或fitter。该有限响应只在a2正常结束、当前
+G1完整审计且实际TRAIN<80%/TEST<305时准入，从其严格最佳PT继续原后缀，LR
+分别phase2e-4/electronic1e-3/alpha1e-3/head2e-3，最多48完整epoch或1500fit秒。
+三处原始采集按精确路径/SHA重载，并与产生G1的原f573 PT逐位检查所有已采mask
+和输入祖先；不重拍、不改模型/曝光/坐标/LUT、无TEST梯度或TEST增强训练/VALID。
+源码需测试发布同步后才可执行；本段是准入方案，不能冒称已启动或达标。
+仅原生CPU bestlast/全部冻结及CCD身份审计达到305才新采E2，最终340不变。
+
 ## 2026-10-23 E1后完整复核74.21%已过10pp门槛，G1已实际接采
 
 `layerwise_L4_on_20261023/a2/s_0/fit`从严格父best304接续，仅实际1完整缓存
