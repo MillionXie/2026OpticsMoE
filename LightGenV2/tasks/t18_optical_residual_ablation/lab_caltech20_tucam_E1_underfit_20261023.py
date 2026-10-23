@@ -10,7 +10,7 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_E1_underfit_finite_v1','TUCam_L4_E1_teacher_finite_v1','TUCam_L4_E1_native_linear_finite_v1')
+    assert p['schema'] in ('TUCam_L4_E1_underfit_finite_v1','TUCam_L4_E1_teacher_finite_v1','TUCam_L4_E1_native_linear_finite_v1','TUCam_L4_E1_native_feature_aug_v1')
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['parent_stage']=='0'
     assert 1<=p['recipe']['epochs']<=48 and 0<p['recipe']['seconds']<=1500
@@ -23,11 +23,17 @@ def validate_policy(p):
         assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['TRAIN_teacher']==dict(temperature=2,mixture=.3)
         assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
         assert p['weight_decay']==.01 and len(p['teacher_engine_SHA256'])==64
-    else:
+    elif p['schema']=='TUCam_L4_E1_native_linear_finite_v1':
         assert p['maximum_parent_TRAIN_accuracy']==1. and p['minimum_parent_correct']==290
         assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['TRAIN_readout']=='one_OAS_pooled_linear'
         assert p['learning_rates']=={} and len(p['linear_engine_SHA256'])==64
         assert p['recipe']['epochs']==1 and p['recipe']['seconds']==600
+    else:
+        assert p['maximum_parent_TRAIN_accuracy']==1. and p['minimum_parent_correct']==301
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['TRAIN_readout']=='cached_TRAIN_mixup_dropout'
+        assert p['learning_rates']=={} and len(p['linear_engine_SHA256'])==64
+        assert p['TRAIN_feature_aug']==dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03)
+        assert p['recipe']['epochs']==48 and p['recipe']['seconds']==60
     assert p['maximum_parent_correct']==304
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0
 
@@ -36,7 +42,7 @@ def admit(policy,c,out):
     np,torch,m,loop=base.numerical_modules()
     old=base.ROOT/policy['completed_controller'];captures=base.ROOT/policy['capture_root']
     assert m.read(old.with_suffix('.return.json'))['returncode']==0 and not m.LOCK.exists()
-    r=m.read(old/'report.json');assert r['state'] in ('stage_target_not_met_after_diagnostic_fit','E1_underfit_budget_complete_gate_unmet','E1_TRAIN_teacher_budget_complete_gate_unmet')
+    r=m.read(old/'report.json');assert r['state'] in ('stage_target_not_met_after_diagnostic_fit','E1_underfit_budget_complete_gate_unmet','E1_TRAIN_teacher_budget_complete_gate_unmet','E1_TRAIN_linear_gate_unmet')
     assert r['next_layer_not_started'] and r['SDK_released']
     assert [e['stage'] for e in r['endpoints']]==['router','0']
     data,dm=m.data_for(base.ROOT/c['sequence']);assert dm['sha256']==c['data_SHA256']
@@ -83,6 +89,8 @@ def run(a):
     if 'TRAIN_readout' in p:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as linear
         assert m.sha(linear.__file__)==p['linear_engine_SHA256']
+        tuned['TRAIN_readout']=p['TRAIN_readout']
+        if 'TRAIN_feature_aug' in p:tuned.update(TRAIN_feature_aug=p['TRAIN_feature_aug'],native_feature_source=p['native_feature_source'])
         model,parent,fit=linear.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
     elif 'TRAIN_teacher' in p:
         import lab_caltech20_tucam_TRAIN_distill_20261023 as teacher

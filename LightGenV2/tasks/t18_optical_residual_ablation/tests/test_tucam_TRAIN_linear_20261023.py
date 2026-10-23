@@ -27,3 +27,14 @@ def test_exact_engine_and_linear_only_policy():
     exec(compile(ast.Module(body=[f],type_ignores=[]),str(driver),'exec'),ns);ns['validate_policy'](p)
     assert p['minimum_parent_TRAIN_TEST_gap']==.1 and p['learning_rates']=={}
     s=driver.read_text();assert s.index('linear.fit_suffix(')<s.index("if not e['target_met']:")<s.index('fields=acquire(')
+
+
+def test_cached_TRAIN_augmentation_policy_and_identity():
+    p=json.loads((HERE/'lab_caltech20_tucam_E1_feature_aug_profile_20261023.json').read_text())
+    assert hashlib.sha256(ENTRY.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
+    driver=HERE/'lab_caltech20_tucam_E1_underfit_20261023.py';tree=ast.parse(driver.read_text());f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='validate_policy');ns={}
+    exec(compile(ast.Module(body=[f],type_ignores=[]),str(driver),'exec'),ns);ns['validate_policy'](p)
+    s=ENTRY.read_text();assert 'max(error,train_error)<=3e-6' in s and "sp['prefix_SHA256']==lineage" in s
+    assert 'TRAIN_mixup(train[ix],labels[ix]' in s and 'TRAIN_mixup(test' not in s
+    assert 'head(test)' in s and 'with torch.inference_mode():' in s
+    assert "loop.validate_state(m,native,original,keys)" in s and "results['best']['test']['correct']==best" in s

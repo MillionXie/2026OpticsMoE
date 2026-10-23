@@ -1,0 +1,17 @@
+{
+  "schema":"TUCam_L4_E1_native_feature_aug_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"9870542b64eed3d97cf09aa92150cd73ce8b163e375b2eafb84a73e7cab22e5f",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/l1",
+  "capture_root":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023",
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/l1/s_0/fit",
+  "parent_stage":"0","minimum_parent_correct":301,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":1.0,"minimum_parent_TRAIN_TEST_gap":0.10,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"learning_rates":{},
+  "TRAIN_readout":"cached_TRAIN_mixup_dropout",
+  "TRAIN_feature_aug":{"dropout":0.1,"beta":0.4,"lr":0.001,"weight_decay":0.05,"label_smoothing":0.03},
+  "recipe":{"name":"cached_TRAIN_only_mixup_dropout_native5140","epochs":48,"seconds":60,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Continue the actual301-correct parent after the completed native OAS comparison failed, explicitly retain E0 rather than use290. Reuse SHA-verified1600TRAIN native features only after all non-readout parameters and exact CCD prefix match; verify TRAIN and fresh411TEST feature-to-native probability maxerror<=3e-6. Optimize only original5140 affine parameters on CPU with TRAIN-only feature MixUp beta.4/dropout.1, originalTRAIN-count weights, AdamW .001/WD.05/smoothing.03, at most48 complete cached epochs/60fit seconds. TEST only in inference-mode checkpoint selection, never augmented/fitted or backpropagated. No inference dropout/mixup/new layers, no optical/electronic/alpha change, no new CCD or hardware change. Native hook-free bestlast fullTRAIN/TEST and nonreadout freeze/prefix SHA review before305 gate and fresh G1; no timer/retry/other depths. Cached augmentations are synthetic regularization, not additional physical samples."
+}
