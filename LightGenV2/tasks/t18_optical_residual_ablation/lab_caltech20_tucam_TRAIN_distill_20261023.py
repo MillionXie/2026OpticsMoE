@@ -7,6 +7,12 @@ import math,time
 import lab_caltech20_tucam_layerwise_20261023 as base
 
 
+def measured_stage(fields):
+    assert 2<=len(fields)<=4
+    assert list(fields)==list(base.STAGES[:len(fields)])
+    return list(fields)[-1]
+
+
 def distillation_loss(logits,labels,teacher_logits,weights,temperature,mix,smoothing):
     from torch.nn import functional as F
     ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=smoothing)
@@ -38,7 +44,8 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     np,torch,m,loop=base.numerical_modules()
     from lab_caltech20_dvp_TRAIN_regularization_20261021 import TRAINTransforms
     cfg=c['TRAIN_teacher'];assert cfg['temperature']==2 and cfg['mixture']==.3
-    assert list(fields)==['router','0'] and not out.exists() and not m.LOCK.exists();out.mkdir()
+    stage=measured_stage(fields)
+    assert not out.exists() and not m.LOCK.exists();out.mkdir()
     original=m.state_cpu(model);keys=m.allowed_keys(model,len(fields));lineage=base.identities(m,paths)
     test,prob=base.evaluate(model,data,fields,'test');best,bnll,selected=test['correct'],test['nll'],0
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=c,recipe=recipe,parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),
@@ -56,7 +63,7 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     for prefix,lr in [('phase_sets.',c['phase_lr']),('electronic.',c['electronic_lr']),('fusion_logits.',c['alpha_lr']),('linear.',c['head_lr'])]:
         ps=[p for n,p in model.named_parameters() if n in keys and n.startswith(prefix)]
         if ps:groups.append(dict(params=ps,lr=lr,base_lr=lr,weight_decay=0 if prefix=='fusion_logits.' else c['weight_decay']))
-    opt=torch.optim.AdamW(groups);transforms=TRAINTransforms(model,'0',c);held={}
+    opt=torch.optim.AdamW(groups);transforms=TRAINTransforms(model,stage,c);held={}
     hook=model.linear.register_forward_hook(lambda module,args,value:held.update(logits=value))
     rng=np.random.default_rng(c['seed']);cm=np.asarray(test['confusion_matrix']);errors=1-cm.diagonal()/cm.sum(1).clip(1)
     prior=np.asarray(c['original_TRAIN_counts'],float);w=(.5+.5*np.sqrt(prior/prior.mean()))*(1+recipe['TRAIN_class_emphasis']*errors)

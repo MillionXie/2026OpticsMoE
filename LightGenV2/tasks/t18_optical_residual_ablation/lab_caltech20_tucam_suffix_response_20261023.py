@@ -1,4 +1,4 @@
-"""Finite, audited response to underfitting after an existing measured prefix.
+"""Finite, audited diagnosis response after an existing measured prefix.
 
 Reuses the published original suffix fitter. No inference algorithm is added,
 no active controller is patched, and no captured-input ancestor is unfrozen.
@@ -10,13 +10,21 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema']=='TUCam_L4_G1_underfit_response_v1'
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1')
     assert p['parent_stage']=='1' and list(p['captures'])==['router','0','1']
     assert p['intermediate_target']==305 and p['final_target']==340
-    assert p['minimum_parent_correct']==250 and p['maximum_parent_correct']==304
-    assert p['maximum_parent_TRAIN_accuracy']==.80
-    assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
-    assert p['recipe']==dict(name='G1_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
+    assert p['maximum_parent_correct']==304
+    if p['schema']=='TUCam_L4_G1_underfit_response_v1':
+        assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
+        assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
+        assert p['recipe']==dict(name='G1_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
+    else:
+        assert p['minimum_parent_correct']==263 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['expected_parent_correct']==281
+        assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
+        assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
+        assert len(p['teacher_engine_SHA256'])==64
+        assert p['recipe']==dict(name='G1_TRAIN_only_fixed_teacher_cosine',epochs=36,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
     assert p['TEST_gradient'] is False and p['new_inference_layers']==0
     assert p['new_CCD_before_gate']==0 and p['scheduler'] is False
     for key in ('base_profile_SHA256','suffix_engine_SHA256','continuation_engine_SHA256'):
@@ -27,7 +35,8 @@ def admit(p,c,out):
     np,_,m,loop=base.numerical_modules();old=base.ROOT/p['completed_controller']
     assert m.read(old.with_suffix('.return.json'))['returncode']==0 and not m.LOCK.exists()
     r=m.read(old/'report.json')
-    assert r['state']=='stage_target_not_met_after_diagnostic_fit'
+    expected_state='G1_underfit_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'stage_target_not_met_after_diagnostic_fit'
+    assert r['state']==expected_state
     assert r['next_layer_not_started'] and r['SDK_released']
     endpoints=r['endpoints'];assert [e['stage'] for e in endpoints]==list(p['captures'])
     assert all(e['target_met'] for e in endpoints[:-1]) and not endpoints[-1]['target_met']
@@ -37,7 +46,10 @@ def admit(p,c,out):
         cap=base.ROOT/name;audit=m.read(cap/'independent_audit.json');q=m.read(cap/'report.json');protocol=m.read(cap/'protocol.json')
         assert audit['passed'] and audit['matched_samples']==2011
         assert audit['report_SHA256']==m.sha(cap/'report.json')
+        assert audit['protocol_SHA256']==m.sha(cap/'protocol.json')==q['protocol_SHA256']
         assert q['physical_ccd']==2011 and q['data_SHA256']==dm['sha256']
+        assert q['hardware_SHA256']==c['hardware_by_stage'][stage]['SHA256']
+        assert q['phase_SHA256']==m.sha(cap/'phase.bmp')
         assert q['PT_SHA256']==protocol['PT_SHA256']
         if 'prefix_SHA256' in protocol:assert protocol['prefix_SHA256']==base.identities(m,paths)
         fields[stage]={}
@@ -53,7 +65,12 @@ def admit(p,c,out):
     assert audit['report_SHA256']==m.sha(parent.parent/'report.json')
     assert fit['results']['best']['PT_SHA256']==e['PT_SHA256']
     assert p['minimum_parent_correct']<=e['selected_correct']<=p['maximum_parent_correct']
-    assert fit['results']['best']['train']['accuracy']<p['maximum_parent_TRAIN_accuracy']
+    if 'TRAIN_teacher' in p:
+        b=fit['results']['best']
+        assert b['train']['accuracy']<=p['maximum_parent_TRAIN_accuracy']
+        assert b['train']['accuracy']-b['test']['accuracy']>=p['minimum_parent_TRAIN_TEST_gap']
+        assert e['selected_correct']==p['expected_parent_correct']
+    else:assert fit['results']['best']['train']['accuracy']<p['maximum_parent_TRAIN_accuracy']
     reference=base.ROOT/c['reference'];assert m.sha(reference)==c['reference_SHA256']
     model,_=m.model_for(parent,e['PT_SHA256'],4,reference)
     # Compare to the EXACT PT that produced G1, not a timestamp-selected model.
@@ -86,14 +103,22 @@ def run(a):
     model,data,dm,fields,paths,parent,reference,endpoints=admit(p,c,a.out)
     stage=p['parent_stage'];folder=a.out/('s_'+stage);folder.mkdir()
     m.save(a.out/'progress.json',dict(state='observed_underfit_suffix_fit',stage=stage,parent_PT_SHA256=m.sha(parent)))
-    model,parent,fit=base.fit_suffix(model,data,dm,fields,paths,parent,reference,{**c,**p['learning_rates']},p['recipe'],folder/'fit',305)
+    tuned={**c,**p['learning_rates']}
+    if 'TRAIN_teacher' in p:
+        import lab_caltech20_tucam_TRAIN_distill_20261023 as teacher
+        assert m.sha(teacher.__file__)==p['teacher_engine_SHA256']
+        tuned.update(TRAIN_teacher=p['TRAIN_teacher'],weight_decay=p['weight_decay'])
+        model,parent,fit=teacher.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
+    else:model,parent,fit=base.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
     e=endpoint(m,stage,parent,fit,paths);endpoints[-1]=e;m.save(folder/'endpoint_report.json',e)
     if not e['target_met']:
-        m.save(a.out/'report.json',dict(state='G1_underfit_budget_complete_gate_unmet',endpoints=endpoints,next_layer_not_started=True,SDK_released=not m.LOCK.exists()));return
+        state='G1_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'G1_underfit_budget_complete_gate_unmet'
+        m.save(a.out/'report.json',dict(state=state,endpoints=endpoints,next_layer_not_started=True,SDK_released=not m.LOCK.exists()));return
     from lab_caltech20_tucam_capture_20261023 import acquire
     for stage in base.STAGES[len(fields):]:
         folder=a.out/('s_'+stage);folder.mkdir();target=340 if stage=='3' else 305
         m.save(a.out/'progress.json',dict(state='capturing',stage=stage,parent_PT_SHA256=m.sha(parent),completed_stages=len(fields)))
+        assert m.sha(base.ROOT/c['hardware_by_stage'][stage]['path'])==c['hardware_by_stage'][stage]['SHA256']
         fields=acquire(model,data,dm,fields,paths,base.ROOT/c['hardware_by_stage'][stage]['path'],stage,folder/'capture',parent,interstage_fit=True);paths[stage]=folder/'capture'
         for i,recipe in enumerate(c['recipes']):
             model,parent,fit=base.fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,folder/('f'+str(i)),target)

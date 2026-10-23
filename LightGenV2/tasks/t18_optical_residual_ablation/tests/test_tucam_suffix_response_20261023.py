@@ -22,7 +22,7 @@ def test_registered_policy_and_immutable_active_source():
 
 def test_mixed_capture_roots_require_all_audits_and_exact_parent():
     s=ENTRY.read_text()
-    for text in ("m.read(old.with_suffix('.return.json'))['returncode']==0", "audit['matched_samples']==2011", "audit['report_SHA256']==m.sha(cap/'report.json')", "base.identities(m,paths)==e['prefix_SHA256']", "m.allowed_keys(model,len(fields))", "assert score['correct']==e['selected_correct']==fit['selected_correct']", "assert fit['results']['best']['train']['accuracy']<p['maximum_parent_TRAIN_accuracy']"):
+    for text in ("m.read(old.with_suffix('.return.json'))['returncode']==0", "audit['matched_samples']==2011", "audit['report_SHA256']==m.sha(cap/'report.json')", "base.identities(m,paths)==e['prefix_SHA256']", "m.allowed_keys(model,len(fields))", "assert score['correct']==e['selected_correct']==fit['selected_correct']", "assert fit['results']['best']['train']['accuracy']<p['maximum_parent_TRAIN_accuracy']", "q['phase_SHA256']==m.sha(cap/'phase.bmp')"):
         assert text in s
     assert 'loop.validate_state(m,model,m.state_cpu(origin)' in s
 
@@ -34,3 +34,14 @@ def test_gate_and_original_fitter_precede_new_capture():
     assert 'base.STAGES[len(fields):]' in s and 'scheduler=False' in s
     assert 'set_exposure(' not in s and 'PhysicalAdjoint(' not in s
     assert 'parent,reference,c,recipe,' in s
+
+
+def test_teacher_requires_observed_gap_and_exact_native_parent():
+    p=json.loads((HERE/'lab_caltech20_tucam_G1_distill_profile_20261023.json').read_text());policy_validator()(p)
+    teacher=HERE/'lab_caltech20_tucam_TRAIN_distill_20261023.py'
+    assert hashlib.sha256(teacher.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['teacher_engine_SHA256']
+    s=ENTRY.read_text()
+    assert "b['train']['accuracy']-b['test']['accuracy']>=p['minimum_parent_TRAIN_TEST_gap']" in s
+    assert "assert e['selected_correct']==p['expected_parent_correct']" in s
+    assert "m.sha(teacher.__file__)==p['teacher_engine_SHA256']" in s
+    assert s.index('teacher.fit_suffix(')<s.index("if not e['target_met']:")<s.index('fields=acquire(')

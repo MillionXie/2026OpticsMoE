@@ -1,5 +1,6 @@
 import ast,hashlib,json
 from pathlib import Path
+import pytest
 
 HERE=Path(__file__).resolve().parents[1]
 ENTRY=HERE/'lab_caltech20_tucam_TRAIN_distill_20261023.py'
@@ -16,11 +17,23 @@ def test_teacher_cache_uses_only_TRAIN_original_teacher():
 def test_native_review_and_no_measured_mask_gradient():
     s=ENTRY.read_text()
     assert 'keys=m.allowed_keys(model,len(fields))' in s
-    assert "list(fields)==['router','0']" in s and 'PhysicalAdjoint(' not in s
+    assert 'stage=measured_stage(fields)' in s and 'PhysicalAdjoint(' not in s
+    assert 'TRAINTransforms(model,stage,c)' in s
     assert 'loop.validate_state(m,native,original,keys)' in s
     assert "for role in ('train','test'):" in s and 'base.identities(m,paths)==lineage' in s
     assert 'SDK_used=False' in s and 'new_inference_layers=0' in s
     assert 'model_for(out/\'best.pt\'' in s and 'transforms.remove();hook.remove()' in s
+
+
+def test_contiguous_measured_prefix_selects_actual_last_CCD():
+    tree=ast.parse(ENTRY.read_text());f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='measured_stage')
+    from types import SimpleNamespace
+    ns={'base':SimpleNamespace(STAGES=('router','0','1','2','3'))}
+    exec(compile(ast.Module(body=[f],type_ignores=[]),str(ENTRY),'exec'),ns)
+    for stages,last in ((['router','0'],'0'),(['router','0','1'],'1'),(['router','0','1','2'],'2')):
+        assert ns['measured_stage'](dict.fromkeys(stages))==last
+    for stages in (['router'],['router','1'],['router','0','2'],['router','0','1','2','3']):
+        with pytest.raises(AssertionError):ns['measured_stage'](dict.fromkeys(stages))
 
 
 def test_registered_finite_teacher_profile():
