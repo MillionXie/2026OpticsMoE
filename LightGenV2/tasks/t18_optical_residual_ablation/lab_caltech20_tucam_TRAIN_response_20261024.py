@@ -128,7 +128,7 @@ def capture(p,out):
         assert m.read(m.LOCK)['pid']==os.getpid();m.LOCK.unlink()
 
 
-def fit(p,probes,out):
+def fit(p,probes,out,contrast=None):
     """Fixed 160-step nuisance fit, with TRAIN-only spatial holdout admission."""
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==''
     cv2,np,torch,Image,m,_=modules()
@@ -141,7 +141,7 @@ def fit(p,probes,out):
     assert r['state']=='complete' and r['response_frames']==208 and r['SDK_released'] and not r['TEST_used']
     assert r['protocol_SHA256']==m.sha(probes/'protocol.json') and r['protected']==protected and r['nominal_phase_restored_before_close']
     assert m.read(probes/'protocol.json')['policy']==p and r['hardware_SHA256']==p['hardware_SHA256']
-    out.mkdir();start=time.monotonic();bykey={(v['condition'],v['index']):v for v in r['records']};pack=[];repeat=[]
+    out.mkdir();start=time.monotonic();bykey={(v['condition'],v['index']):v for v in r['records']};pack=[];repeat=[];effects=[]
     def image(row):
         assert m.sha(row['crop'])==row['crop_SHA256'] and m.sha(row['raw'])==row['raw_SHA256'] and m.sha(row['phase'])==row['phase_SHA256']
         raw=np.asarray(Image.open(row['raw']));assert raw.dtype==np.uint16 and raw.shape==(2048,2048)
@@ -160,36 +160,50 @@ def fit(p,probes,out):
             row=bykey[tag,i];assert row['sample_id']==v['sample_id'] and row['canonical_SHA256']==v['canonical_SHA256'] and row['split']==v['split']
             assert np.array_equal(np.asarray(Image.open(row['phase'])),m.phase_native(patterns[tag]))
             pack.append(dict(split=v['split'],amplitude=amp,turns=patterns[tag].astype(np.float32)/256,observed=image(row),index=i,condition=tag))
+        effects.append(dict(index=i,split=v['split'],phase_effect_coarse_PCC={tag:m.correlation(coarse(before),coarse(image(bykey[tag,i]))) for tag in ('flat','half_code','global_offset128')}))
     stable=all(v['coarse_PCC']>=.95 and .8<=v['mean_ratio']<=1.2 for v in repeat)
     m.save(out/'stability.json',dict(passed=stable,repeats=repeat,TEST_used=False))
     assert stable,'Within-connection TRAIN repeats unstable: no response fitting/admission'
     train=[v for v in pack if v['split']=='fit'];held=[v for v in pack if v['split']=='held_TRAIN'];assert len(train)==len(held)==84
     def tensors(rows):return tuple(torch.from_numpy(np.stack([v[k] for v in rows])) for k in ('amplitude','turns','observed'))
     tr=tensors(train);ht=tensors(held);nominal=torch.tensor([1.,1.,0.,0.]);initial=torch.tensor([1.,1.,2.,.1]);lo=torch.tensor([.25,.4,0.,0.]);hi=torch.tensor([2.,2.5,12.,3.])
+    objective=normalized_loss;prior=None
+    if contrast is not None:
+        import lab_caltech20_dvp_TRAIN_spatial_response_20261020 as spatial
+        assert m.sha(spatial.__file__)==contrast['spatial_engine_SHA256']
+        priorpath=ROOT/contrast['prior_fit'];assert m.sha(priorpath)==contrast['prior_fit_SHA256']
+        prior=m.read(priorpath);assert prior['state']=='complete' and not prior['response_fit_admitted']
+        assert prior['probe_report_SHA256']==m.sha(probes/'report.json') and prior['stability_SHA256']==m.sha(out/'stability.json')
+        assert prior['fitted']['held_TRAIN']['loss']<prior['baseline']['held_TRAIN']['loss']*.95 and prior['fitted']['held_TRAIN']['coarse_PCC']<=prior['baseline']['held_TRAIN']['coarse_PCC']
+        initial=torch.tensor([prior['parameters'][k] for k in ('phase_scale','phase_gamma','sigma_pixels','relative_background')]);objective=spatial.spatial_loss
     raw=torch.nn.Parameter(torch.logit((initial-lo)/(hi-lo)));opt=torch.optim.Adam([raw],lr=.04);history=[]
     m.save(out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),response_engine_SHA256=m.sha(kernel.__file__),policy=p,probe_report_SHA256=m.sha(probes/'report.json'),
-        TRAIN_fit_pairs=84,held_TRAIN_pairs=84,TEST_used=False,TEST_labels_used=False,VALID=0,training_forward_only=True,new_inference_layers=0,SDK_used=False))
+        TRAIN_fit_pairs=84,held_TRAIN_pairs=84,TEST_used=False,TEST_labels_used=False,VALID=0,training_forward_only=True,new_inference_layers=0,SDK_used=False,
+        contrast_policy=contrast,objective='multiscale_contrast' if contrast else 'normalized_field',parameter_count=4))
     def evaluate(values,params):
         total=0.;pcc=[]
         with torch.no_grad():
             for i in range(0,len(values[0]),4):
                 aa,pp,oo=(v[i:i+4] for v in values);pred=response_intensity(aa,pp,model.propagator,params)
-                total+=float(normalized_loss(pred,oo))*len(aa)
+                total+=float(objective(pred,oo))*len(aa)
                 for x,y in zip(pred.numpy(),oo.numpy()):pcc.append(m.correlation(coarse(x),coarse(y)))
         return dict(loss=total/len(values[0]),coarse_PCC=float(np.mean(pcc)))
-    baseline=dict(TRAIN=evaluate(tr,nominal),held_TRAIN=evaluate(ht,nominal))
+    baseline=dict(TRAIN=evaluate(tr,nominal),held_TRAIN=evaluate(ht,nominal));start_metrics=dict(TRAIN=evaluate(tr,initial),held_TRAIN=evaluate(ht,initial))
     for step in range(1,161):
         ix=torch.randperm(84)[:4];aa,pp,oo=(v[ix] for v in tr);opt.zero_grad(set_to_none=True)
-        loss=normalized_loss(response_intensity(aa,pp,model.propagator,response_parameters(raw)),oo);assert torch.isfinite(loss)
+        loss=objective(response_intensity(aa,pp,model.propagator,response_parameters(raw)),oo);assert torch.isfinite(loss)
         loss.backward();assert torch.isfinite(raw.grad).all();opt.step()
         if step%20==0:
             row=dict(step=step,TRAIN_batch_loss=float(loss.detach()),parameters=response_parameters(raw).detach().tolist(),elapsed_s=time.monotonic()-start)
             history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row)
     params=response_parameters(raw).detach();final=dict(TRAIN=evaluate(tr,params),held_TRAIN=evaluate(ht,params))
     admitted=final['TRAIN']['loss']<baseline['TRAIN']['loss'] and final['held_TRAIN']['loss']<=baseline['held_TRAIN']['loss']*.95 and final['held_TRAIN']['coarse_PCC']>=baseline['held_TRAIN']['coarse_PCC']+.02
+    if contrast is not None:admitted=admitted and final['held_TRAIN']['coarse_PCC']>=start_metrics['held_TRAIN']['coarse_PCC']+.02
     assert protected=={q:m.sha(q) for q in protected}
+    m.save(out/'phase_effects.json',dict(TRAIN_only=True,records=effects,phase_effect_coarse_PCC_median={tag:float(np.median([v['phase_effect_coarse_PCC'][tag] for v in effects])) for tag in ('flat','half_code','global_offset128')},unique_physical_cause_identified=False))
     m.save(out/'report.json',dict(state='complete',response_fit_admitted=admitted,baseline=baseline,fitted=final,parameters=dict(zip(('phase_scale','phase_gamma','sigma_pixels','relative_background'),params.tolist())),
         TRAIN_unique=40,TRAIN_fit_pairs=84,held_TRAIN_pairs=84,TEST_used=False,TEST_labels_used=False,VALID=0,training_forward_only=True,new_inference_layers=0,
+        objective='multiscale_contrast' if contrast else 'normalized_field',parameter_count=4,initial=start_metrics,contrast_policy=contrast,phase_effects_SHA256=m.sha(out/'phase_effects.json'),
         deployed_architecture_unchanged=True,physical_LUT_calibrated=False,LUT_modified=False,hardware_unchanged=True,SDK_used=False,SDK_released=not m.LOCK.exists(),
         protocol_SHA256=m.sha(out/'protocol.json'),probe_report_SHA256=m.sha(probes/'report.json'),stability_SHA256=m.sha(out/'stability.json'),history_SHA256=m.sha(out/'history.json'),elapsed_s=time.monotonic()-start,
         interpretation='Empirical nuisance fit, not unique physical identification or classification improvement; unadmitted fits must not enter training forward.'))
@@ -202,10 +216,22 @@ def selftest():
     selected=anchors(rows);assert len(selected)==40 and sum(v['split']=='fit' for v in selected)==20
 
 
+def validate_contrast(c):
+    assert c['schema']=='TUCam_E2_TRAIN_response_contrast_v1'
+    assert c['prior_fit'].endswith('/e2_response_20261024/fit/report.json')
+    assert c['prior_fit_SHA256']=='a2a18b63d6064d01cc3af91fd39c908bc7dd7435f134624a49883a91c4940587'
+    assert c['probes'].endswith('/e2_response_20261024/probes')
+    assert c['fit_steps']==160 and c['shared_parameters']==4 and c['new_CCD']==0 and c['TEST_used'] is False
+
+
 if __name__=='__main__':
-    q=argparse.ArgumentParser();q.add_argument('--mode',choices=('selftest','capture_fit'),required=True);q.add_argument('--profile',type=Path);q.add_argument('--out',type=Path);a=q.parse_args()
+    q=argparse.ArgumentParser();q.add_argument('--mode',choices=('selftest','capture_fit','contrast_fit'),required=True);q.add_argument('--profile',type=Path);q.add_argument('--out',type=Path);a=q.parse_args()
     if a.mode=='selftest':selftest()
     else:
+        if a.mode=='contrast_fit':
+            c=json.loads(a.profile.read_text());validate_contrast(c);assert not a.out.exists()
+            p=json.loads((HERE/c['response_profile']).read_text());validate_policy(p);fit(p,ROOT/c['probes'],a.out,contrast=c)
+            raise SystemExit(0)
         p=json.loads(a.profile.read_text());validate_policy(p);assert not a.out.exists();a.out.mkdir(parents=True)
         try:
             capture(p,a.out/'probes');fit(p,a.out/'probes',a.out/'fit')

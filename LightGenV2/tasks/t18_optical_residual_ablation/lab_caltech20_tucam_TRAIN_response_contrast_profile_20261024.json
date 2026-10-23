@@ -1,0 +1,10 @@
+{
+  "schema":"TUCam_E2_TRAIN_response_contrast_v1",
+  "response_profile":"lab_caltech20_tucam_TRAIN_response_profile_20261024.json",
+  "prior_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_response_20261024/fit/report.json",
+  "prior_fit_SHA256":"a2a18b63d6064d01cc3af91fd39c908bc7dd7435f134624a49883a91c4940587",
+  "probes":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_response_20261024/probes",
+  "spatial_engine_SHA256":"b23b0137714f7615df52daac5239ee9936cc86cd288ca3dd698ffd2ea35051b7",
+  "fit_steps":160,"shared_parameters":4,"new_CCD":0,"TEST_used":false,
+  "scope":"The first fixed four-parameter fit reduced heldTRAIN normalized loss from.62359 to.16188 but spatialPCC decreased.68916 to.68539, hence correctly rejected. Reuse the SAME208 validated diagnosticframes; no capture, no hardware or PT change. One bounded160step/4parameter contrast-objective comparison, initialized at that predetermined completedfit, not a grid or extra27parameter pupil model. Import only published spatial_loss at SHA above, still original4phase_scale/gamma/blur/background nuisance parameters. No labels/TEST/VALID, fit20TRAINanchors/held20TRAINanchors,84responsepairs each. Holdout loss<=95% nominal and PCC>=nominal+.02 AND >=initial+.02; fitloss must improve. Never use rejected prior as training forward. Current hardware and nominal phase restoration proven by oldreport, unchanged305physicalE2/340final gates, no G2 or inference model changes."
+}

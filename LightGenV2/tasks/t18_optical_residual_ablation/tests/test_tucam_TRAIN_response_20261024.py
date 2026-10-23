@@ -8,7 +8,7 @@ ENTRY=HERE/'lab_caltech20_tucam_TRAIN_response_20261024.py'
 
 def functions():
     tree=ast.parse(ENTRY.read_text())
-    picked=[v for v in tree.body if isinstance(v,ast.FunctionDef) and v.name in ('validate_policy','anchors')]
+    picked=[v for v in tree.body if isinstance(v,ast.FunctionDef) and v.name in ('validate_policy','validate_contrast','anchors')]
     ns={};exec(compile(ast.Module(body=picked,type_ignores=[]),str(ENTRY),'exec'),ns);return ns
 
 
@@ -59,3 +59,14 @@ def test_response_holdout_nonflat_admission_not_classification_or_deployed_model
     assert "raw=torch.nn.Parameter" in s and 'cross_entropy' not in s and 'saved_model(' not in s
     assert 'physical_LUT_calibrated=False' in s and 'new_inference_layers=0' in s
     assert 'logical(raw,warp,65535' in s and "m.sha(row['raw'])==row['raw_SHA256']" in s
+
+
+def test_rejected_brightness_fit_only_allows_fixed_four_parameter_contrast_comparison():
+    p=json.loads((HERE/'lab_caltech20_tucam_TRAIN_response_contrast_profile_20261024.json').read_text());functions()['validate_contrast'](p)
+    assert hashlib.sha256((HERE/'lab_caltech20_dvp_TRAIN_spatial_response_20261020.py').read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['spatial_engine_SHA256']
+    s=ENTRY.read_text();assert "objective=spatial.spatial_loss" in s
+    assert "not prior['response_fit_admitted']" in s and "prior['probe_report_SHA256']==m.sha(probes/'report.json')" in s
+    assert "final['held_TRAIN']['coarse_PCC']>=start_metrics['held_TRAIN']['coarse_PCC']+.02" in s
+    assert 'wavefront_basis(' not in s and 'monotonic_curve(' not in s
+    for key,value in [('shared_parameters',27),('new_CCD',208),('TEST_used',True),('fit_steps',400)]:
+        with pytest.raises(AssertionError):functions()['validate_contrast']({**p,key:value})
