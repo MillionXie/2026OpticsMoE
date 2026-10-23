@@ -64,12 +64,23 @@ SALICON高分原因核查采用`salicon_fixed_readouts.py`，CPU、0梯度更新
 
 SALICON两项新参考已完成完整5000 TEST（0梯度更新，704.11秒CPU）：冻结ResNet固定特征能量图
 CC=0.5919949489179533，TRAIN均值空间先验CC=0.6805452564321458。
-结果在`runs/simulation/salicon_fixed_readouts_cpu_20261024/result.json`，待保存图/GT独立审计。
+结果在`runs/simulation/salicon_fixed_readouts_cpu_20261024/result.json`，保存图/GT独立审计已20项通过，
+证据`runs/control/salicon_fixed_readouts_audit_20261024.json`。全部10000 TRAIN密度重新聚合与保存
+先验完全一致，全部5000条保存能量图恢复密度后对原GT复算CC；独立均值分别为
+0.5919949482582976/0.6805452584803104，最大逐图FP32批次舍入差2.98023224e-7。
+本次未重新执行神经网络前向，原能量特征提取身份由官方权重、源码和保存图SHA绑定。
 全部5000条7×7能量图及先验图的PT SHA为
 `90b7146eef9fed7ac03f37ba8538f670aea6ccc65b451a87e15f513fcf13c6cf`。
 两项均在描述区间0.5–0.7625，但类型不同：统计先验不是ResNet，无任务训练能量图也不是原
 监督decoder模型。无图像先验自身已有较高CC，支持空间先验贡献明显；不能据此认定原模型的
 全部高分均由中心偏置解释。新参考与原监督结果并列，不能将新0训练成绩标为原30轮模型。
+
+原监督SALICON last30也已完成，CC=0.8674810548782349，专属独立审计22项通过，状态
+`passed_with_evidence_limits`，证据`runs/control/frozen_salicon_last30_audit_20261024.json`。
+5000唯一ID、完整参数11,216,641/可训40,129、AdamW9390步、30次官方视觉/BN冻结、源码身份
+和进程退出/GPU释放均核验。逐图CC均值独立重算为0.8674810545682907；原训练只保存CC标量，
+未保存像素密度预测，不能声称独立重算像素指标或其他仅聚合保存的KLD/SIM/NSS/AUC/MAE。
+至此原九项last30和LGVQ两项last50均完成封存；追加60/50轮采用各自独立run。
 
 追加阶段实测：OpenMoji与编辑已各自通过本profile短测，正式续训分别在原候选GPU6/4继续；
 原LSP短测64条TRAIN的MSE、梯度更新和冻结检查通过，但早停数据线程退出时SIGABRT，进程
