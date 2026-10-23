@@ -6,6 +6,13 @@
   "frozen_batchnorm_buffers": true,
   "encoder_forward": "no_grad",
   "encoder_sha_before_equals_after": true,
+  "text_encoder": "sentence-transformers/all-MiniLM-L6-v2",
+  "text_encoder_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "text_encoder_frozen": true,
+  "text_representation": "attention-masked mean pooling and L2 normalization, 384 dimensions",
+  "text_truncation": false,
+  "text_max_wordpieces_including_special_tokens": 256,
+  "text_input": "Losslessly decode existing UTF8 byte tokens; original full text, no target/class/SKU ID injection",
   "selection": "fixed_last_epoch",
   "seeds": [42],
   "epochs": 30,
@@ -23,8 +30,6 @@
   "max_physical_gpus": 3,
   "max_jobs_per_gpu": 2,
   "sealed": true,
-  "tasks": ["lgvq_temporal", "lgvq_spatial", "abo_image_to_image", "lsp", "salicon"],
-  "pending_text_tasks": ["abo_image_to_text", "abo_text_to_image", "openmoji", "abo_conditional_edit"],
-  "pending_reason": "User must clarify whether all text encoders must also be pretrained and frozen or existing trainable text adapter is permitted",
-  "authorization": "2026-10-23 user explicitly rejects full-network random initialization baseline and requests a suitable pretrained model with only decoder training. Old runs preserved and superseded."
+  "tasks": ["lgvq_temporal", "lgvq_spatial", "abo_image_to_text", "abo_image_to_image", "abo_text_to_image", "lsp", "salicon", "openmoji", "abo_conditional_edit"],
+  "authorization": "2026-10-23 user explicitly rejects full-network random initialization baseline and requests pretrained models with only decoder training; user clarification: ALL encoders must be pretrained and frozen. Old runs preserved and superseded."
 }

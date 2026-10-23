@@ -32,13 +32,17 @@ LSP/SALICON/编辑停止时分别保留第25/12/14轮last，不当成正式30轮
 记录真实官方缓存文件SHA、逐张量匹配、optimizer参数数和无encoder梯度证据。
 官方旧PT未保存的20个BN计数器由torchvision严格补零并具名记录，不能放宽其他张量核验。
 
-| 首批纯视觉任务 | decoder可训练参数量 | 含冻结骨干完整参数量 |
+| 任务 | decoder可训练参数量 | 含全部冻结编码器完整参数量 |
 |---|---:|---:|
 | LGVQ时间 | 229,765 | 11,406,277 |
 | LGVQ空间 | 33,157 | 11,209,669 |
 | ABO图搜图 | 32,832 | 11,209,344 |
 | LSP | 40,558 | 11,217,070 |
 | SALICON | 40,129 | 11,216,641 |
+| ABO图搜文 | 57,472 | 33,799,360 |
+| ABO文搜图 | 57,472 | 33,799,360 |
+| OpenMoji | 104,342 | 33,846,230 |
+| ABO参考图+指令编辑 | 445,379 | 34,187,267 |
 
 LGVQ沿用旧RN18的512维特征及质量头（时间3584→64→5；空间512→64→5）。
 图搜图采用512→64投影与原精确SKU检索。LSP/SALICON使用四级冻结空间特征的轻量融合decoder，
@@ -47,10 +51,26 @@ LGVQ沿用旧RN18的512维特征及质量头（时间3584→64→5；空间512�
 不额外调用官方resize/crop改变坐标。LSP仍保留原MSE+坐标辅助loss，本轮不混入未批准的损失修正；
 前述已知目标不匹配仍是限制，冻结预训练不保证自动修复。
 
-首批先跑LGVQ时间/空间、图搜图、LSP、SALICON；每项smoke通过再正式30轮，所有正式结果
+用户已进一步确认：**所有编码器均用预训练并冻结，只训任务头**。四项含文字任务使用
+`sentence-transformers/all-MiniLM-L6-v2`，固定官方commit
+`1110a243fdf4706b3f48f1d95db1a4f5529b4d41`；`model.safetensors` SHA256
+`53aa51172d142c89d9012cce15ae4d6cc0ca6895895114379cacb4fab128d9db`。
+去除未使用的BERT pooler，22,565,376个文字参数全部来自预训练、全部冻结；加载时missing/
+mismatched/error均须为空，仅允许明确去掉的pooler两张量。严格按attention mask均值池化并L2
+归一化到384维，再训练任务投影/FiLM/decoder。Byte token严格逆解回原始全文，256 wordpiece
+超限直接拒绝，绝不截断。原100标题、6000 OpenMoji指令及636编辑指令CPU全量检查，最大
+长度分别66/16/36；均为英文，部分标题含Unicode标点。记录
+`runs/control/minilm_real_input_probe_20261023.json`，无缺失权重/新增随机编码器层。
+服务器无法解析HF时通过本机官方HTTPS下载，仅传输模型资产并逐文件SHA验收，凭据和模型不进Git；
+收据`runs/control/minilm_pretrained_cache_verified_20261023.json`。不传输覆盖源码。
+
+OpenMoji仅增加512→64视觉投影和384→64文字投影，保持6×6网格任务头；编辑使用四级冻结
+视觉skip各投影64、三个双卷积融合块及RGB输出，输出原256×256，仍为参考图+指令输入。
+两者是新的适配decoder；原有损失、数据身份、完整TEST评估协议保持。
+
+全部九项按LGVQ优先进入同一新suite；每项smoke通过再正式30轮，所有正式结果
 固定第30轮last完整复评。seed42、固定lr0.001、AdamW wd0.0001 clip1、有效batch32、FP32
-TF32关、无warmup/cosine和最多三卡/每卡两任务保持。含文字四项的现有GRU也是随机训练，
-等待用户明确文字编码器冻结范围后再推进，不能将训练GRU默称为仅训练decoder。
+TF32关、无warmup/cosine和最多三卡/每卡两任务保持。新profile不使用旧随机GRU。
 新suite与所有旧run分离，真实启动/进度以专属queue_status和run_manifest为准；
 发布后启动收据为`runs/control/resnet18_frozen_launch_20261023.json`。
 

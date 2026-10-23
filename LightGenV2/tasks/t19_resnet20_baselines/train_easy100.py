@@ -1,7 +1,8 @@
-"""From-scratch, direction-specific easy100 training; no teacher/cache inputs."""
+"""Direction-specific easy100 training with explicit initialization/freeze profiles."""
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -150,6 +151,20 @@ def learning_rate(epoch, epochs, base=1e-3):
     return base
 
 
+def frozen_encoder_hashes(model):
+    """Bind both visual and text encoders, including all persistent buffers."""
+    from .frozen_resnet18 import encoder_state_sha256
+    return {name: encoder_state_sha256(encoder) for name, encoder in (
+        ('visual', model.encoder), ('text', model.text_encoder))}
+
+
+def audit_frozen_encoders(model, expected_hashes):
+    """Reject parameter, gradient, running-statistic or training-mode drift."""
+    from .frozen_resnet18 import assert_encoder_unchanged
+    return {name: assert_encoder_unchanged(encoder, expected_hashes[name])
+            for name, encoder in (('visual', model.encoder), ('text', model.text_encoder))}
+
+
 def run(args):
     require_published_source()
     authorization = json.loads((TASK / 'configs/execution_authorization_20261023.json').read_text())
@@ -160,6 +175,9 @@ def run(args):
         raise ValueError('Invalid budget')
     if args.seed not in PROFILE['seeds'] or (not args.smoke_batches and args.epochs != PROFILE['epochs']):
         raise ValueError('Formal training requires the authorized single seed and 30-epoch budget')
+    frozen = args.backbone == 'resnet18_imagenet_frozen'
+    if frozen and (args.learning_rate != PROFILE['learning_rate'] or args.batch_size != PROFILE['batch_size']):
+        raise ValueError('Frozen encoder profile requires fixed lr0.001 and effective batch32')
     run_dir = args.run_dir.resolve()
     category = 'smoke' if args.smoke_batches else 'simulation'
     if not run_dir.is_relative_to((TASK / 'runs' / category).resolve()):
@@ -188,6 +206,15 @@ def run(args):
     train = DataLoader(train_images, shuffle=True,
                        generator=torch.Generator().manual_seed(args.seed), **loader_options)
     test = DataLoader(dataset.images('test'), shuffle=False, **loader_options)
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    frozen_hashes = None
+    if frozen:
+        frozen_hashes = frozen_encoder_hashes(model)
+        audit_frozen_encoders(model, frozen_hashes)
+        encoder_ids = {id(p) for encoder in (model.encoder, model.text_encoder)
+                       for p in encoder.parameters()}
+        if any(id(p) in encoder_ids for p in trainable):
+            raise RuntimeError('A frozen visual or text encoder entered the optimizer')
     manifest = {
         'status': 'running', 'task': task_id, 'backbone': args.backbone, 'seed': args.seed, 'epochs': args.epochs,
         'batch_size': args.batch_size, 'precision': 'FP32_TF32_disabled',
@@ -201,15 +228,25 @@ def run(args):
         'metric_name': 'Hit@1', 'schedule': 'constant', 'warmup_epochs': 0,
         'learning_rate': args.learning_rate, 'execution_profile': PROFILE,
         'optimizer': 'AdamW_constant_lr_wd0.0001_clip1',
-        'initialization': 'random_all_parameters_no_teacher',
+        'initialization': ('official_pretrained_visual_and_text' if frozen
+                           else 'random_all_parameters_no_teacher'),
+        'training_scope': 'decoder_only' if frozen else 'full_network',
+        'optimizer_parameters': sum(p.numel() for p in trainable),
         'direction_independent_weights': True, 'smoke_batches': args.smoke_batches,
         'shared_owner_pids_at_launch': shared_pids,
         'queue_status_path': str(args.queue_status_path) if args.queue_status_path else None,
         'max_jobs_per_gpu': PROFILE['max_jobs_per_gpu'],
         'started_unix': time.time(),
     }
+    if frozen:
+        manifest.update(pretrained_provenance={
+            'visual': model.encoder.pretrained_provenance,
+            'text': model.text_encoder.pretrained_provenance},
+            encoder_state_sha256_before=frozen_hashes,
+            frozen_encoder_audits=[],
+            source_sha256={'train_easy100.py': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     write_json(run_dir / 'run_manifest.json', manifest)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=PROFILE['weight_decay'])
+    optimizer = torch.optim.AdamW(trainable, lr=args.learning_rate, weight_decay=PROFILE['weight_decay'])
     tokens = dataset.title_tokens.to(device)
     history, selected_epoch = [], None
     began = time.monotonic()
@@ -230,7 +267,7 @@ def run(args):
                 if not torch.isfinite(loss):
                     raise ValueError('Nonfinite TRAIN loss')
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.)
+                torch.nn.utils.clip_grad_norm_(trainable, 1.)
                 optimizer.step()
                 total += loss.item() * len(batch['sku'])
                 count += len(batch['sku'])
@@ -243,6 +280,10 @@ def run(args):
                      'elapsed_seconds': time.monotonic()-began}
             if result:
                 entry.update({k: v for k, v in result.items() if isinstance(v, (float, int))})
+            if frozen:
+                manifest['frozen_encoder_audits'].append({
+                    'epoch': epoch, **audit_frozen_encoders(model, frozen_hashes)})
+                write_json(run_dir / 'run_manifest.json', manifest)
             payload = {'model': model.state_dict(), 'optimizer': optimizer.state_dict(),
                        'epoch': epoch, 'manifest': manifest, 'metrics': entry}
             save_checkpoint(run_dir / 'last_checkpoint.pt', payload)
@@ -258,9 +299,15 @@ def run(args):
         selected = torch.load(run_dir / 'last_checkpoint.pt', map_location='cpu', weights_only=False)
         model.load_state_dict(selected['model'])
         result = evaluate(model, test, tokens, dataset.title_skus, args.direction, device)
+        if frozen:
+            manifest['frozen_encoder_final_audit'] = audit_frozen_encoders(model, frozen_hashes)
+            manifest['encoder_state_sha256_after'] = frozen_encoder_hashes(model)
         write_json(run_dir / 'fixed_weight_predictions.json', result)
         write_json(run_dir / 'result.json', {'status': 'complete', 'selected_epoch': selected_epoch,
             'selection': 'fixed_last_epoch', 'selection_uses_test': False, 'checkpoint': 'last_checkpoint.pt',
+            'checkpoint_sha256': hashlib.sha256((run_dir / 'last_checkpoint.pt').read_bytes()).hexdigest(),
+            'training_scope': manifest['training_scope'],
+            'frozen_encoder_audit': manifest.get('frozen_encoder_final_audit'),
             'development_metric': True, 'metrics': {k:v for k,v in result.items() if isinstance(v,(float,int))},
             'elapsed_seconds': time.monotonic()-began})
         manifest['status'] = 'complete'
@@ -282,7 +329,7 @@ def run(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--direction', choices=['image_to_text', 'text_to_image'], required=True)
-    parser.add_argument('--backbone', choices=['resnet20','resnet32'], default='resnet20')
+    parser.add_argument('--backbone', choices=['resnet20','resnet32','resnet18_imagenet_frozen'], default='resnet20')
     parser.add_argument('--data-root', type=Path, required=True)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--gpu-uuid', required=True)

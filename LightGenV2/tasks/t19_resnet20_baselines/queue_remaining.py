@@ -48,10 +48,6 @@ def read_plan(path):
 
 
 def worker_command(job, suite, uuid, backbone):
-    if backbone == 'resnet18_imagenet_frozen':
-        from .frozen_visual_models import FROZEN_VISUAL_TASKS
-        if job['task'] not in FROZEN_VISUAL_TASKS:
-            raise ValueError('Text encoder protocol is not approved for this frozen suite')
     base=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')
     if job['task'] in {'abo_image_to_text','abo_text_to_image'}:
         specific=['LightGenV2.tasks.t19_resnet20_baselines.train_easy100',
@@ -110,9 +106,9 @@ def main():
             if plan.get('backbone',args.backbone)!=args.backbone:
                 raise ValueError('Plan and queue backbone differ')
             if args.backbone == 'resnet18_imagenet_frozen':
-                from .frozen_visual_models import FROZEN_VISUAL_TASKS
-                if any(task not in FROZEN_VISUAL_TASKS for task in plan['tasks']):
-                    raise ValueError('Frozen suite cannot silently train a random text encoder')
+                from .models import TASK_IDS
+                if any(task not in TASK_IDS for task in plan['tasks']):
+                    raise ValueError('Frozen suite supports the nine approved task adapters only')
             if args.backbone!='resnet20' and 'lgvq_temporal_resnet18' in plan['tasks']:
                 raise ValueError('CIFAR suite cannot include ImageNet ResNet18 override')
             for task in plan['tasks']:

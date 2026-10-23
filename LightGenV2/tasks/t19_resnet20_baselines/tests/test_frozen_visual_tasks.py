@@ -53,10 +53,56 @@ def test_five_decoders_train_without_changing_any_encoder_state(offline_pretrain
     assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in trainable)
 
 
-def test_frozen_queue_cannot_silently_train_random_text_encoder(tmp_path):
+def test_frozen_queue_dispatches_text_tasks_with_explicit_frozen_profile(tmp_path):
     for task in ['abo_image_to_text', 'abo_text_to_image', 'openmoji', 'abo_conditional_edit']:
-        with pytest.raises(ValueError, match='Text encoder protocol'):
-            worker_command({'task': task, 'phase': 'formal', 'name': 'example'},
-                           tmp_path, 'GPU-example', 'resnet18_imagenet_frozen')
-        with pytest.raises(ValueError, match='text encoder protocol'):
-            build_model(task, backbone='resnet18_imagenet_frozen')
+        command = worker_command({'task': task, 'phase': 'formal', 'name': 'example'},
+                                 tmp_path, 'GPU-example', 'resnet18_imagenet_frozen')
+        assert command[command.index('--backbone')+1] == 'resnet18_imagenet_frozen'
+        assert command[2].endswith('train_easy100' if task.startswith('abo_') and task.endswith(('to_text','text_to_image')) else 'train_tasks')
+
+
+@pytest.mark.parametrize('task', ['abo_image_to_text', 'abo_text_to_image', 'openmoji', 'abo_conditional_edit'])
+def test_multimodal_decoders_update_with_both_encoders_frozen(offline_pretrained, monkeypatch, task):
+    from LightGenV2.tasks.t19_resnet20_baselines import frozen_multimodal_models as multimodal
+    from LightGenV2.tasks.t19_resnet20_baselines.models import tokenize_text
+    class OfflineText(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.embedding = nn.Embedding(259, 384)
+            self.requires_grad_(False)
+            self.train(False)
+        def train(self, mode=True):
+            super().train(False)
+            return self
+        @torch.no_grad()
+        def forward(self, tokens):
+            return self.embedding(tokens).mean(1)
+    monkeypatch.setattr(multimodal, 'FrozenTextEncoder', OfflineText)
+    model = build_model(task, backbone='resnet18_imagenet_frozen')
+    digests = [frozen.encoder_state_sha256(m) for m in (model.encoder, model.text_encoder)]
+    trainable = [p for p in model.parameters() if p.requires_grad]
+    before = [p.detach().clone() for p in trainable]
+    optimizer = torch.optim.AdamW(trainable, lr=.001)
+    model.train()
+    images = torch.randn(2, 3, 32, 32)
+    tokens = tokenize_text(['Move the red object left.', 'Change the object to blue.'])
+    if task in {'abo_image_to_text', 'abo_text_to_image'}:
+        output = model(images)
+        text = model.encode_text(tokens)
+        loss = (output - text).square().mean()
+        assert output.shape == text.shape == (2,64)
+    elif task == 'openmoji':
+        output = model(images,tokens)
+        assert output['category_logits'].shape == (2,17,6,6)
+        assert output['edit_logits'].shape == (2,6,6)
+        assert output['task_logits'].shape == (2,4)
+        loss = sum((value-torch.randn_like(value)).square().mean() for value in output.values())
+    else:
+        output = model(images,tokens)
+        assert output.shape == images.shape and output.min() >= 0 and output.max() <= 1
+        loss = (output-torch.rand_like(output)).square().mean()
+    loss.backward(); optimizer.step()
+    for encoder,digest in zip((model.encoder, model.text_encoder),digests):
+        assert frozen.assert_encoder_unchanged(encoder,digest)['encoder_unchanged']
+    assert any(not torch.equal(p,initial) for p,initial in zip(trainable,before))
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in trainable)

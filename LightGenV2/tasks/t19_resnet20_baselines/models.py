@@ -274,8 +274,11 @@ def build_model(task: str, backbone: str = "resnet20") -> nn.Module:
     if backbone == 'resnet18_imagenet_frozen':
         if task in {'lgvq_temporal', 'lgvq_spatial'}:
             return QualityModel(task.removeprefix('lgvq_'), backbone)
-        from .frozen_visual_models import build_frozen_visual_model
-        return build_frozen_visual_model(task)
+        if task in {'abo_image_to_image', 'lsp', 'salicon'}:
+            from .frozen_visual_models import build_frozen_visual_model
+            return build_frozen_visual_model(task)
+        from .frozen_multimodal_models import build_frozen_multimodal_model
+        return build_frozen_multimodal_model(task)
     if backbone not in {"resnet20", "resnet32"}:
         raise ValueError(backbone)
     if task == "lgvq_temporal_resnet18":

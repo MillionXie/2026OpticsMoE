@@ -68,6 +68,7 @@ def run(args):
     optimizer = torch.optim.AdamW(trainable, lr=.001, weight_decay=.0001)
     frozen = args.backbone == 'resnet18_imagenet_frozen'
     frozen_hash = None
+    text_frozen_hash = None
     if frozen:
         from .frozen_resnet18 import encoder_state_sha256, assert_encoder_unchanged
         frozen_hash = encoder_state_sha256(model.encoder)
@@ -75,6 +76,12 @@ def run(args):
         encoder_ids = {id(p) for p in model.encoder.parameters()}
         if any(id(p) in encoder_ids for p in trainable):
             raise RuntimeError('Frozen encoder entered the optimizer')
+        if hasattr(model,'text_encoder'):
+            text_frozen_hash=encoder_state_sha256(model.text_encoder)
+            assert_encoder_unchanged(model.text_encoder,text_frozen_hash)
+            text_ids={id(p) for p in model.text_encoder.parameters()}
+            if any(id(p) in text_ids for p in trainable):
+                raise RuntimeError('Frozen text encoder entered the optimizer')
     manifest = {'task': args.task, 'backbone': args.backbone, 'status': 'running', 'seed': 42, 'epochs': args.epochs,
         'learning_rate': .001, 'schedule': 'constant', 'warmup_epochs': 0, 'effective_batch': 32,
         'microbatch': problem.batch_size, 'precision': 'FP32_TF32_disabled', 'optimizer': 'AdamW_wd0.0001_clip1',
@@ -95,6 +102,12 @@ def run(args):
                         source_sha256={**manifest['source_sha256'], **{
                             name:hashlib.sha256((TASK/name).read_bytes()).hexdigest()
                             for name in ('frozen_resnet18.py', 'frozen_visual_models.py')}})
+        if text_frozen_hash:
+            manifest['initialization']='official_pretrained_visual_and_text'
+            manifest.update(text_pretrained_provenance=model.text_encoder.pretrained_provenance,
+                            text_encoder_state_sha256_before=text_frozen_hash, frozen_text_encoder_audits=[])
+            manifest['source_sha256'].update({name:hashlib.sha256((TASK/name).read_bytes()).hexdigest()
+                for name in ('frozen_text.py','frozen_multimodal_models.py')})
     write_json(run_dir/'run_manifest.json', manifest)
     history, selected_epoch = [], None
     began=time.monotonic()
@@ -131,6 +144,9 @@ def run(args):
             if frozen:
                 audit=assert_encoder_unchanged(model.encoder,frozen_hash)
                 manifest['frozen_encoder_audits'].append({'epoch':epoch,**audit})
+                if text_frozen_hash:
+                    text_audit=assert_encoder_unchanged(model.text_encoder,text_frozen_hash)
+                    manifest['frozen_text_encoder_audits'].append({'epoch':epoch,**text_audit})
                 write_json(run_dir/'run_manifest.json',manifest)
             payload={'model':model.state_dict(),'optimizer':optimizer.state_dict(),'epoch':epoch,'manifest':manifest,'metrics':entry}
             save_checkpoint(run_dir/'last_checkpoint.pt',payload)
@@ -145,14 +161,16 @@ def run(args):
             print(entry,flush=True)
         selected=torch.load(run_dir/'last_checkpoint.pt',map_location='cpu',weights_only=False)
         model.load_state_dict(selected['model'])
-        if frozen:
-            manifest['frozen_encoder_final_audit']=assert_encoder_unchanged(model.encoder,frozen_hash)
         metrics,records=problem.evaluate(model,test,device)
         selection_metrics=metrics
         final_loader=None
         if problem.final_test is not None:
             final_loader=DataLoader(problem.final_test,shuffle=False,**options)
             metrics,records=problem.evaluate(model,final_loader,device)
+        if frozen:
+            manifest['frozen_encoder_final_audit']=assert_encoder_unchanged(model.encoder,frozen_hash)
+            if text_frozen_hash:
+                manifest['frozen_text_encoder_final_audit']=assert_encoder_unchanged(model.text_encoder,text_frozen_hash)
         write_json(run_dir/'fixed_weight_predictions.json',records)
         write_json(run_dir/'result.json',{'status':'complete','selected_epoch':selected_epoch,'metrics':metrics,
             'selection_metrics':selection_metrics,'selection_uses_test':False,
@@ -160,6 +178,7 @@ def run(args):
             'checkpoint_sha256':hashlib.sha256((run_dir/'last_checkpoint.pt').read_bytes()).hexdigest(),
             'training_scope':manifest['training_scope'],
             'frozen_encoder_audit':manifest.get('frozen_encoder_final_audit'),
+            'frozen_text_encoder_audit':manifest.get('frozen_text_encoder_final_audit'),
             'development_metric':problem.task!='abo_conditional_edit','elapsed_seconds':time.monotonic()-began})
         manifest['status']='complete'
     except BaseException as exc:
