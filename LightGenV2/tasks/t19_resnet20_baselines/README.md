@@ -38,6 +38,13 @@ TRAIN MOS min/max生成五档和分值，CE训练，softmax加权评分，TEST S
 编辑损失沿此前批准方案为RGB MSE+0.05梯度L1，与原Qwen latent损失不同；它不是
 同loss/预训练预算的消融。LSP/CNN和SALICON/CNN同样使用ImageNet通道归一化，非Qwen processor。
 每项只有CPU真实数据前检成功后才加入运行plan；加入后依次进行真实GPU smoke与正式30轮。
+OpenMoji按原Qwen规则以source_grid组合保留格与预测编辑格；先逐场景算changed-cell准确率，
+再对1000场景平均，不用GT target选择输出。source_grid只用于原定义的输出组合及指标。
+
+本轮图搜图第一次smoke在CPU数据核验后遇到其他用户进程进入GPU，准入在CUDA前拒绝。
+原失败日志保留，通过显式control-plan attempt1重排，不冒称首次成功，不自动无限重试。
+新worker完成CPU核验后如设备变忙，会在无CUDA上下文状态重新等候最多600秒。
+调度器支持核验PID/进程组/任务命令身份后接管已有worker；替换调度器不重启训练。
 
 ## 当前生效协议：2026-10-23 用户修订
 

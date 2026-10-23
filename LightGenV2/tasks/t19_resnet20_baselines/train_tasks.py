@@ -34,8 +34,18 @@ def run(args):
     if args.preflight:
         print({'task': args.task, 'identity': problem.identity, 'train': len(problem.train), 'test': len(problem.test)})
         return
-    allowed = sharing_pids(args)
-    admit_gpu(args.gpu_uuid, allowed)
+    # Original data checks can outlast a GPU idle snapshot. Wait without a
+    # CUDA context when another user arrives before actual admission.
+    admission_began=time.monotonic()
+    while True:
+        allowed=sharing_pids(args)
+        try:
+            admit_gpu(args.gpu_uuid,allowed)
+            break
+        except (RuntimeError,FileNotFoundError) as exc:
+            if time.monotonic()-admission_began>600:raise
+            print('Waiting before CUDA admission:',str(exc),flush=True)
+            time.sleep(5)
     run_dir.mkdir(parents=True, exist_ok=False)
     device = torch.device('cuda:0')
     torch.backends.cuda.matmul.allow_tf32 = False

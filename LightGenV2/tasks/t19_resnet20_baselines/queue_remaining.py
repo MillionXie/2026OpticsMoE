@@ -13,6 +13,31 @@ from .train_easy100 import TASK,ROOT,PROFILE,admit_gpu,require_published_source,
 ALLOWED = ('lgvq_temporal','lgvq_spatial','abo_image_to_image','lsp','salicon','openmoji','abo_conditional_edit')
 
 
+class AttachedWorker:
+    """Track a verified existing process after replacing only its supervisor."""
+    def __init__(self,job,result_path):
+        self.pid=job['pid'];self.result_path=result_path
+        path=Path(f'/proc/{self.pid}/cmdline')
+        if self.poll() is None:
+            command=path.read_bytes().replace(b'\0',b' ').decode()
+            if ('t19_resnet20_baselines.train_tasks' not in command or job['name'] not in command
+                    or job['gpu_uuid'] not in command or os.getpgid(self.pid)!=self.pid):
+                raise RuntimeError('Refuse to attach an unverified training process')
+    def poll(self):
+        try:
+            state=Path(f'/proc/{self.pid}/stat').read_text().rsplit(') ',1)[1].split()[0]
+            if state!='Z':return None
+        except FileNotFoundError:pass
+        result=json.loads(self.result_path.read_text()) if self.result_path.exists() else {}
+        return 0 if result.get('status')=='complete' else 1
+    def wait(self,timeout):
+        began=time.monotonic()
+        while self.poll() is None:
+            if time.monotonic()-began>timeout:raise subprocess.TimeoutExpired(str(self.pid),timeout)
+            time.sleep(.2)
+        return self.poll()
+
+
 def read_plan(path):
     plan=json.loads(path.read_text())
     tasks=plan['tasks']
@@ -27,6 +52,7 @@ def main():
     p.add_argument('--gpu-uuids',nargs='+',required=True)
     p.add_argument('--suite-id',required=True)
     p.add_argument('--task-plan',type=Path,required=True)
+    p.add_argument('--resume',action='store_true')
     args=p.parse_args()
     if not 1<=len(set(args.gpu_uuids))==len(args.gpu_uuids)<=3:
         raise ValueError('One to three unique physical GPUs required')
@@ -35,11 +61,22 @@ def main():
     lock=(TASK/'runs/.t19_gpu_suite.lock').open('a')
     fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     suite=TASK/'runs/simulation'/args.suite_id
-    suite.mkdir(exist_ok=False)
+    if not args.resume:suite.mkdir(exist_ok=False)
     report={'status':'running','pid':os.getpid(),'gpu_uuids':args.gpu_uuids,'jobs':[],
             'max_physical_gpus':3,'max_jobs_per_gpu':2,'execution_profile':PROFILE,
             'started_unix':time.time(),'initial_commit':git('rev-parse','HEAD')}
     running,children={},[]
+    if args.resume:
+        report=json.loads((suite/'queue_status.json').read_text())
+        if report['execution_profile']!=PROFILE:raise ValueError('Cannot resume a different protocol')
+        report.setdefault('supervisor_history',[]).append({'pid':report['pid'],'replaced_unix':time.time()})
+        report.update(pid=os.getpid(),status='running')
+        for job in report['jobs']:
+            if job['status']!='running':continue
+            root=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')/job['name']
+            proc=AttachedWorker(job,root/'result.json')
+            running[proc.pid]=(proc,job,(suite/(job['name']+'.log')).open('a'))
+            children.append(proc)
     def save(): write_json(suite/'queue_status.json',report)
     def interrupt(signum,frame): raise KeyboardInterrupt(f'Signal {signum}')
     signal.signal(signal.SIGTERM,interrupt);signal.signal(signal.SIGINT,interrupt)
@@ -50,7 +87,14 @@ def main():
                 for phase in ('smoke','formal'):
                     if not any(j['task']==task and j['phase']==phase for j in report['jobs']):
                         report['jobs'].append({'task':task,'phase':phase,'status':'queued',
-                            'name':f'{task}_{phase}_s42_{args.suite_id}'})
+                            'name':f'{task}_{phase}_s42_{args.suite_id}','attempt':0})
+                retry=int(plan.get('retry_smokes',{}).get(task,0))
+                if retry and not any(j['task']==task and j['phase']=='smoke' and j.get('attempt',0)==retry for j in report['jobs']):
+                    report['jobs'].append({'task':task,'phase':'smoke','status':'queued','attempt':retry,
+                        'name':f'{task}_smoke_s42_{args.suite_id}_attempt{retry}',
+                        'retry_reason':plan.get('retry_reason','explicit control plan retry')})
+                    for j in report['jobs']:
+                        if j['task']==task and j['phase']=='formal' and j['status']=='blocked_by_failed_smoke':j['status']='queued'
             for pid,(proc,job,log) in list(running.items()):
                 code=proc.poll()
                 if code is None:continue
@@ -68,7 +112,7 @@ def main():
                 for j in report['jobs']:
                     if j['status']!='queued':continue
                     if j['phase']=='formal':
-                        smoke=next(x for x in report['jobs'] if x['task']==j['task'] and x['phase']=='smoke')
+                        smoke=max((x for x in report['jobs'] if x['task']==j['task'] and x['phase']=='smoke'),key=lambda x:x.get('attempt',0))
                         if smoke['status']=='failed':
                             j['status']='blocked_by_failed_smoke'
                             continue
@@ -101,7 +145,7 @@ def main():
                 running[proc.pid]=(proc,job,log);children.append(proc)
             save()
             if plan.get('sealed') and not running and not any(j['status']=='queued' for j in report['jobs']):
-                report['status']='complete' if all(j['status']=='complete' for j in report['jobs']) else 'complete_with_failures'
+                report['status']='complete' if all(j['status']=='complete' for j in report['jobs'] if j['phase']=='formal') else 'complete_with_failures'
                 break
             time.sleep(5)
     except BaseException as exc:
