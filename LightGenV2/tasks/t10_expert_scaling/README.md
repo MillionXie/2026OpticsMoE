@@ -1,5 +1,24 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 2026-10-23：两任务k4三seed微调重复
+
+Kather seed17累计120轮已完成，验证accuracy选定epoch106：
+TRAIN79.15%、VAL73.94%、TEST72.74%，同seed固定k3为77.20/74.34/71.28%。
+这只是一seed开发结果，不能替换旧表三seed的69.73±0.28%。
+
+用户要求第一/第三行k4重复三seed，统一seed17/27/37、累计120轮：
+原60轮→原目标extra30（lr2e-4→2e-5，验证NLL选模）→margin30
+（lr5e-4→5e-5，margin0.2、权重0.2，capture权重0.005，验证accuracy选模）。
+复用Kather17的两阶段及Organ17的第一阶段，剩余9个30轮阶段需要训练。
+按最新授权三张GPU分别固定seed17/27/37，同卡两个数据集并行运行
+`k4_repeat_schedule.py`；每任务只补剩余60轮，内部30+30阶段按源结果依赖调度，
+已有同身份结果复用。run为
+`runs/simulation/k4_three_seed_20261023`，每阶段退出后释放，整个队列完成/异常有释放收据。
+结果自动汇总到run下`table_summary.json`，不足2seed时标准差记null，不能填0。
+最新统计只包含两任务k4累计120轮的逐seed、训练/验证/TEST均值和标准差，不再输出60轮表。
+这是基于已查看TEST的开发微调重复，不构成统一预算的严格top-k因果消融；
+不以TEST选择权重、seed或训练停止点。
+
 ## 2026-10-23：k4分类准确率微调（单次有界开发试验）
 
 Kather N4k4 seed17从extra30的last90出发，额外30轮、lr5e-4降至5e-5，

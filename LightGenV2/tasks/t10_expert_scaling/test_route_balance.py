@@ -1,12 +1,38 @@
 """CPU checks of load-aware routing gradients and batch semantics."""
 import unittest
+from pathlib import Path
+import tempfile
 
 import torch
 
 from .diagnose_topk import load_balance_loss, classification_margin_loss, selection_key
+from .k4_repeat_schedule import ready_job, aggregate_metrics
 
 
 class RouteBalanceTests(unittest.TestCase):
+    def test_repeat_summary_never_reports_single_seed_sd_as_zero(self):
+        row = dict(train_accuracy=.8, val_accuracy=.7, test_accuracy=.6)
+        self.assertIsNone(aggregate_metrics([row])['test_sample_sd'])
+        self.assertIsNone(aggregate_metrics([])['test_mean'])
+        self.assertAlmostEqual(aggregate_metrics([row, dict(row, test_accuracy=.8)])['test_sample_sd'],
+                               .2/(2**.5))
+
+    def test_repeat_dependency_and_seed_gpu_isolation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)/'source'
+            source.mkdir()
+            (source/'result.json').write_text('{}')
+            base = dict(source=str(source), stage=1)
+            organ17 = dict(base, dataset='organcmnist', seed=17, out='organ17')
+            organ27 = dict(base, dataset='organcmnist', seed=27, out='organ27')
+            kather27 = dict(base, dataset='kather2016', seed=27, out='kather27')
+            jobs = [organ17, organ27, kather27]
+            self.assertEqual(ready_job(jobs, {}, 27), organ27)
+            running = {(1, 'organcmnist'): (None, None, organ27)}
+            self.assertEqual(ready_job(jobs, running, 27), kather27)
+            blocked = dict(organ27, source='organ27', stage=2, out='organ27_stage2')
+            self.assertIsNone(ready_job([blocked], running, 27))
+
     def test_accuracy_selection_uses_nll_only_as_tiebreaker(self):
         good_accuracy = dict(accuracy=.75, macro_nll=.9)
         good_nll = dict(accuracy=.72, macro_nll=.8)
