@@ -45,6 +45,23 @@ def folded(w,b,delta,mean,root):
     return (w.double()+dw).float(),(b.double()+delta[:,-1]-dw@mean).float()
 
 
+def sam_perturb(groups,radii):
+    """Temporary optimizer perturbation only; restore before updating/saving."""
+    saved=[]
+    with torch.no_grad():
+        for group,radius in zip(groups,radii):
+            norm=torch.stack([p.grad.double().square().sum() for p in group]).sum().sqrt()
+            for p in group:
+                assert p.grad is not None and torch.isfinite(p.grad).all()
+                saved.append((p,p.detach().clone()));p.add_(p.grad*(radius/max(float(norm),1e-12)))
+    return saved
+
+
+def sam_restore(saved):
+    with torch.no_grad():
+        for p,value in saved:p.copy_(value)
+
+
 def fit(model,inputs,fields,data,cfg,recipe,out,reference,identities):
     out.mkdir();k=model.depth-1;original=m.state_cpu(model);keys=allowed(model)
     baseline={};prob={};bank={}
@@ -83,13 +100,22 @@ def fit(model,inputs,fields,data,cfg,recipe,out,reference,identities):
                     ix=order[begin:begin+8];y=torch.from_numpy(labels[ix]).long();assert torch.equal(y[::2],y[1::2])
                     x=torch.from_numpy(np.asarray(inputs['train'][ix]).copy());c=torch.from_numpy(np.asarray(fields[str(k)]['train'][ix]).copy()).float()
                     c=(c*(1+settings['gain_sigma']*torch.randn((8,1,1)))+settings['noise_DN']*torch.randn_like(c)).clamp(0,255)
-                    opt.zero_grad();active=True
-                    z=tail(model.electronic[k],model.linear,model.effective_alpha(k),x,model.nonlinear(c,'global'));active=False
-                    ce=F.cross_entropy(z,y,reduction='none',label_smoothing=settings['smoothing']);sample=weights[ix]
-                    keep=(teacher[ix].argmax(1)==y).double();kl=F.kl_div(z.log_softmax(1),teacher[ix],reduction='none').sum(1)
-                    loss=(sample*ce).sum()/sample.sum()+settings['KL']*(keep*kl).sum()/keep.sum().clamp_min(1)+settings['head_anchor']*delta.square().sum()/20
-                    loss=loss+settings['conv_anchor']*(model.electronic[k].local.weight-phase_origin[f'electronic.{k}.local.weight']).square().sum()+settings['alpha_anchor']*(model.fusion_logits[k]-phase_origin[f'fusion_logits.{k}']).square().sum()
-                    assert torch.isfinite(loss);loss.backward()
+                    def objective():
+                        nonlocal active
+                        active=True
+                        try:z=tail(model.electronic[k],model.linear,model.effective_alpha(k),x,model.nonlinear(c,'global'))
+                        finally:active=False
+                        ce=F.cross_entropy(z,y,reduction='none',label_smoothing=settings['smoothing']);sample=weights[ix]
+                        keep=(teacher[ix].argmax(1)==y).double();kl=F.kl_div(z.log_softmax(1),teacher[ix],reduction='none').sum(1)
+                        loss=(sample*ce).sum()/sample.sum()+settings['KL']*(keep*kl).sum()/keep.sum().clamp_min(1)+settings['head_anchor']*delta.square().sum()/20
+                        loss=loss+settings['conv_anchor']*(model.electronic[k].local.weight-phase_origin[f'electronic.{k}.local.weight']).square().sum()+settings['alpha_anchor']*(model.fusion_logits[k]-phase_origin[f'fusion_logits.{k}']).square().sum()
+                        assert torch.isfinite(loss)
+                        return loss
+                    opt.zero_grad();view_rng=torch.get_rng_state();loss=objective();loss.backward()
+                    if settings.get('SAM_radii'):
+                        saved=sam_perturb(groups,settings['SAM_radii']);opt.zero_grad();torch.set_rng_state(view_rng)
+                        try:loss=objective();loss.backward()
+                        finally:sam_restore(saved)
                     for i,g in enumerate(groups):
                         assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in g)
                         gradnorm[i]+=float(torch.nn.utils.clip_grad_norm_(g,1.))
@@ -124,7 +150,8 @@ def selftest():
     z.square().mean().backward();assert torch.isfinite(x.grad).all() and x.grad.abs().sum()>0 and torch.isfinite(delta.grad).all()
     labels=np.repeat(np.arange(20),80);order=paired_order(labels,np.random.default_rng(73));assert np.array_equal(np.sort(order),np.arange(1600)) and np.array_equal(labels[order][::2],labels[order][1::2])
     assert torch.isfinite(conditioned_logits(x,w,b,delta,mean,root,.15,.01)).all()
-    print(dict(passed=True,folded_original_head_parity=True,representation_and_head_gradient=True,all_TRAIN_identity_once=True,same_class_pairing=True,TEST_gradient=False,SDK_used=False,GPU_used=False))
+    p=torch.nn.Parameter(torch.tensor([1.,2.]));q=torch.nn.Parameter(torch.tensor([3.],dtype=torch.float64));base=[p.detach().clone(),q.detach().clone()];(p.square().sum()+q.square().sum()).backward();saved=sam_perturb([[p],[q]],[.01,.001]);assert abs(float((p-base[0]).norm())-.01)<1e-6 and abs(float((q-base[1]).norm())-.001)<1e-9;sam_restore(saved);assert torch.equal(p,base[0]) and torch.equal(q,base[1])
+    print(dict(passed=True,folded_original_head_parity=True,representation_and_head_gradient=True,all_TRAIN_identity_once=True,same_class_pairing=True,SAM_group_radius_and_exact_restoration=True,TEST_gradient=False,SDK_used=False,GPU_used=False))
 
 
 if __name__=='__main__':selftest()
