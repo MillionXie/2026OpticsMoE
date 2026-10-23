@@ -159,3 +159,11 @@ def test_E2_SAM_joint_parameters_TRAIN_only_same_noise_and_restore():
         assert text in s
     assert "loop.put_fields(model,data,fields,'test'" not in s and 'new_inference_layers=0' in s
     with pytest.raises(AssertionError):policy_validator()({**p,'TRAIN_SAM':dict(radius=.1,same_noise_both_passes=True)})
+
+
+def test_E2_feature_regularization_reuses_only_same_nonhead_native_cache():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_feature_cooldown_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['parent_stage']=='2' and p['expected_parent_correct']==282 and p['completed_controller'].endswith('/e2m')
+    assert p['native_feature_source'].endswith('/e2r/s_2/fit') and p['TRAIN_feature_aug']['cooldown']
+    assert p['learning_rates']=={} and p['TRAIN_readout']=='cached_TRAIN_mixup_dropout'
+    with pytest.raises(AssertionError):policy_validator()({**p,'TRAIN_feature_aug':{**p['TRAIN_feature_aug'],'dropout':.2}})

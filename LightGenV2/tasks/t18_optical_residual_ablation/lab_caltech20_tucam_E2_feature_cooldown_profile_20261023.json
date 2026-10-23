@@ -1,0 +1,24 @@
+{
+  "schema":"TUCam_L4_E2_feature_response_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2m",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_1/fit/best.pt",
+  "capture_parent_SHA256":"8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1s/s_2/capture"
+  },
+  "parent_stage":"2","minimum_parent_correct":282,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":1.0,"minimum_parent_TRAIN_TEST_gap":0.10,"expected_parent_correct":282,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{},"TRAIN_readout":"cached_TRAIN_mixup_dropout",
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2r/s_2/fit",
+  "TRAIN_feature_aug":{"dropout":0.1,"beta":0.4,"lr":0.0002,"weight_decay":0.01,"label_smoothing":0.03,"cooldown":true},
+  "recipe":{"name":"E2_best282_TRAIN_mixup_dropout_cooldown","epochs":48,"seconds":60,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"A distinct bounded head regularization response after original-joint SAM24 epochs/4800updates/9600TRAINgradientpasses failed to beat282 and retained E0. Reuse exact published TRAIN MixUp/dropout cooldown kernel, not a new model or optimizer implementation. Original5140 head only; all masks/electrical/alpha and every captured-input ancestor frozen. Native e2r TRAIN feature cache may be reused ONLY after exact non-head bitwise identity and TRAIN/TEST probability<=3e-6 to the actual parent. No earlier-mask feature reuse. Fixed beta.4/dropout.1/lr2e-4/WD.01/label smoothing.03 with cosine augmentation decay, at most48 fullTRAIN1600 epochs/60fit seconds; no TEST hyperparameter grid. All mixes/labels and gradients only TRAIN. TEST development selection, no TEST/augmentedTEST fit/gradient/VALID. Parent282/E0 retained if no improvement. Complete hook-free CPU bestlast TRAIN1600/TEST411/nonhead/8arraySHA before305/newG2. No extra inference augmentation/layer, original architecture and hardware/exposure/coordinates/LUT/encoding unchanged, no recapture/scheduler/newbranch/worktree/project. Final340 not relaxed and all evidence retained."
+}

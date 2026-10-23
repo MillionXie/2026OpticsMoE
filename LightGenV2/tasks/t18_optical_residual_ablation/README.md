@@ -1,3 +1,25 @@
+## 2026-10-23 E2 SAM未改善，原282保留并接TRAIN特征增强读出
+
+`layerwise_L4_on_20261023/e2m/s_2/fit`实际24完整TRAIN epoch/4800更新/9600TRAIN梯度
+前向、494.094fit秒；原模型CPU bestlast全TRAIN1600/TEST411、冻结及8份CCD数组
+SHA审计通过。best282/411=68.61314%、TRAIN1331/1600，明确selected_E0=true，
+即原父参数，不是SAM新改善；last TRAIN1369/1600=85.5625%、TEST266/411。
+保存best PT SHAd4bbaa380ccb2ea849cd2bf74c519e4ba6427a1f2e32d2e8846fa955bae712b3
+与父参数相同但包含本轮协议身份。14份本地证据manifest SHA
+d192ae6c958af31ed387c3f7a773a3084f3ee94523697f1f5202f708a29310ae。
+控制器返回0、SDK释放、G2未采；未通过305，不降低门槛。当前精确282的固定原
+TRAIN先验一次只读反事实也降为276（TRAIN1331→1187），未采用或改PT。
+
+下一有限方法复用既有原5140读出TRAIN特征MixUp/dropout退火实现，不新增算法
+或推理结构。SAM保留E0故可复用e2r同非读出特征，但必须先核对原生非读出逐bit
+相同、缓存SHA和全TRAIN/TEST概率<=3e-6；不复用不同mask特征。固定beta.4、
+dropout.1、lr2e-4、WD.01、label smoothing.03，增强/cosine退火至0，至多48个
+完整TRAIN1600 epoch/60fit秒；所有混合样本、标签和梯度仅TRAIN，eval不增强。
+原282/E0保底，全部mask/电残差/alpha/已采输入祖先冻结。56项检查通过后经Git
+发布同步才启动；完整hook-free原模型CPU bestlast/数据SHA和非读出冻结复核305
+才采新G2。无TEST梯度/TEST或增强TEST训练/VALID/曝光坐标LUT或结构改动/重拍/
+定时任务/无界候选扫描。仍为混合TEST开发指标，最终340和全部证据继续保护。
+
 ## 2026-10-23 E2局部修复完整282，转原后缀SAM联合稳健优化
 
 `layerwise_L4_on_20261023/e2r/s_2/fit`实际8类/512次TRAIN局部单行更新，非512完整

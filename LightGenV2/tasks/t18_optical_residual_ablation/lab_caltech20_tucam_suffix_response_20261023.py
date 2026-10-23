@@ -10,8 +10,8 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1')
-    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1','TUCam_L4_E2_feature_response_v1')
+    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1','TUCam_L4_E2_feature_response_v1')
     assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -65,6 +65,13 @@ def validate_policy(p):
         assert len(p['SAM_engine_SHA256'])==len(p['teacher_engine_SHA256'])==64
         assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
         assert p['recipe']==dict(name='E2_TRAIN_SAM_original_joint_suffix',epochs=24,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
+    elif p['schema']=='TUCam_L4_E2_feature_response_v1':
+        assert p['minimum_parent_correct']==p['expected_parent_correct']==282 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['completed_controller'].endswith('/e2m')
+        assert p['learning_rates']=={} and p['TRAIN_readout']=='cached_TRAIN_mixup_dropout'
+        assert p['native_feature_source'].endswith('/e2r/s_2/fit') and len(p['linear_engine_SHA256'])==64
+        assert p['TRAIN_feature_aug']==dict(dropout=.1,beta=.4,lr=.0002,weight_decay=.01,label_smoothing=.03,cooldown=True)
+        assert p['recipe']==dict(name='E2_best282_TRAIN_mixup_dropout_cooldown',epochs=48,seconds=60,lr_scale=1,TRAIN_class_emphasis=.75)
     elif p['schema']=='TUCam_L4_G1_underfit_response_v1':
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
@@ -132,6 +139,7 @@ def admit(p,c,out):
     if p['schema']=='TUCam_L4_E2_fullbatch_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_teacher_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_SAM_response_v1':expected_state='E2_native_linear_gate_unmet'
+    if p['schema']=='TUCam_L4_E2_feature_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_local_boundary_response_v1':
         expected_state='E2_capacity_no_TRAIN_support'
