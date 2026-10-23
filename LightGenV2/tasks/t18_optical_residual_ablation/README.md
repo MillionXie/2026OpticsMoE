@@ -1,3 +1,27 @@
+## 2026-10-23 E2局部修复完整282，转原后缀SAM联合稳健优化
+
+`layerwise_L4_on_20261023/e2r/s_2/fit`实际8类/512次TRAIN局部单行更新，非512完整
+epoch。原模型hook-free CPU bestlast全TRAIN1600/TEST411、原生缓存概率、全部非
+读出/8份CCD数组SHA冻结审计通过：best282/411=68.61314%，TRAIN1331/1600；last281。
+PT SHA1f4475369a3b1968406f41f97f5fa95dee51d803c17a4505e18541f3f8825577；14份本地证据
+manifest SHAc57d3d83e804a825bf8ca0b71f95934586e93edd12b1f8e7cfa73c4b1f072f6f，局部计划
+SHAfc706f603104d78228d57deca6bd7ee17a99cd18e1900b277950937d71e6d32a。控制器返回0、
+SDK释放、G2未采，仍差23张到305，仍是四阶段实测+仿真G2的TEST-informed开发指标。
+
+下一有界方法不是反复加原头拟合，而是SAM（Foret et al., arxiv2010.01412）
+原后缀共同训练：未采G2 phase9、电残差.2/.3、原直接alpha.2/.3和原5140读出；
+已采mask和所有已采输入祖先固定。每批同一TRAIN样本做原点/邻域两次梯度，固定
+rho.05；保存并恢复同一CPU/GPU RNG以保持两次相同合成CCD噪声/dropout，临时alpha
+扰动限于原边界，AdamW更新前必须以clone逐bit恢复全部合法参数（异常路径亦恢复）。
+无新推理结构/层/集成，hook-free评估和部署仍为原模型。原TRAIN固定仿真教师
+CE.7+T2 KL.3保留，原较低组LR/cosine/WD.01，最多24完整TRAIN epoch/1200fit秒；
+实际更新数与双倍TRAIN梯度前向数单列。原282/E0保底，TEST只开发策略/选PT，
+无TEST或增强TEST训练/TEST梯度/教师/VALID。55项方法测试通过，Git发布同步后
+还必须在实验室CPU通过扰动半径/混合精度精确恢复/冻结及教师无梯度数值测试，
+匹配源码SHA的收据通过才允许正式启动。完整原模型CPU bestlast/冻结/数据SHA
+>=305才采全新G2，最终340不变。无重拍、硬件曝光坐标LUT/模型结构变更、定时
+任务或无界扫描；全部原始证据保留，SAM并不保证能过门槛。
+
 ## 2026-10-23 E2融合容量不支持重置，保留274接有限局部修复
 
 `layerwise_L4_on_20261023/e2c/s_2/capacity`完整两份新原生TRAIN1600特征通过父概率

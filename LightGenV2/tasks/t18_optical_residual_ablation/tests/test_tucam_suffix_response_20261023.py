@@ -148,3 +148,14 @@ def test_E2_local_boundary_uses_retained274_and_fresh_native_features(monkeypatc
     assert p['native_feature_source'].endswith('/e2k/s_2/fit') and p['fresh_native_TRAIN_features']
     assert p['TRAIN_local_boundary']['maximum_classes']==8 and p['recipe']['epochs']==0
     with pytest.raises(AssertionError):policy_validator()({**p,'fresh_native_TRAIN_features':False})
+
+
+def test_E2_SAM_joint_parameters_TRAIN_only_same_noise_and_restore():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_SAM_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['expected_parent_correct']==282 and p['learning_rates']['phase_lr']>0 and p['learning_rates']['electronic_lr']>0
+    engine=HERE/'lab_caltech20_TRAIN_SAM_20261023.py';s=engine.read_text()
+    assert hashlib.sha256(engine.read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['SAM_engine_SHA256']
+    for text in ("loop.put_fields(model,data,fields,'train',ix,'cuda')",'torch.set_rng_state(before_cpu)','torch.cuda.set_rng_state(before_gpu)',"finally:\n                    restore(parameters,originals)",'passes==updates*2','original=m.state_cpu(model)','loop.validate_state(m,native,original,keys)'):
+        assert text in s
+    assert "loop.put_fields(model,data,fields,'test'" not in s and 'new_inference_layers=0' in s
+    with pytest.raises(AssertionError):policy_validator()({**p,'TRAIN_SAM':dict(radius=.1,same_noise_both_passes=True)})

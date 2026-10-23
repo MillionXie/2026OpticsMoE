@@ -10,8 +10,8 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 
 def validate_policy(p):
-    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1')
-    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1')
+    assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1')
+    e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1')
     assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
@@ -57,6 +57,14 @@ def validate_policy(p):
         boundary.validate(p['TRAIN_local_boundary']);assert 'skip_classes' not in p['TRAIN_local_boundary']
         assert len(p['linear_engine_SHA256'])==len(p['TRAIN_local_engine_SHA256'])==64
         assert p['recipe']==dict(name='E2_TRAIN_local_binary_rest_full_curvature',epochs=0,seconds=300,lr_scale=1,TRAIN_class_emphasis=.75)
+    elif p['schema']=='TUCam_L4_E2_SAM_response_v1':
+        assert p['minimum_parent_correct']==p['expected_parent_correct']==282 and p['maximum_parent_TRAIN_accuracy']==1.
+        assert p['minimum_parent_TRAIN_TEST_gap']==.10 and p['completed_controller'].endswith('/e2r')
+        assert p['TRAIN_SAM']==dict(radius=.05,same_noise_both_passes=True)
+        assert p['TRAIN_teacher']==dict(temperature=2,mixture=.3) and p['weight_decay']==.01
+        assert len(p['SAM_engine_SHA256'])==len(p['teacher_engine_SHA256'])==64
+        assert p['learning_rates']==dict(phase_lr=.00005,electronic_lr=.0002,alpha_lr=.0002,head_lr=.0005)
+        assert p['recipe']==dict(name='E2_TRAIN_SAM_original_joint_suffix',epochs=24,seconds=1200,lr_scale=1,TRAIN_class_emphasis=.75)
     elif p['schema']=='TUCam_L4_G1_underfit_response_v1':
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
@@ -123,6 +131,7 @@ def admit(p,c,out):
     if p['schema']=='TUCam_L4_E2_linear_response_v1':expected_state='E2_underfit_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fullbatch_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_teacher_response_v1':expected_state='E2_native_linear_gate_unmet'
+    if p['schema']=='TUCam_L4_E2_SAM_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_local_boundary_response_v1':
         expected_state='E2_capacity_no_TRAIN_support'
@@ -245,6 +254,14 @@ def run(a):
             post=p['post_linear_feature_aug']
             tuned.update(TRAIN_readout='cached_TRAIN_mixup_dropout',TRAIN_feature_aug=post['config'],native_feature_source=(folder/'fit').relative_to(base.ROOT).as_posix())
             model,parent,fit=linear.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,post['recipe'],folder/'aug',305)
+    elif 'TRAIN_SAM' in p:
+        import lab_caltech20_TRAIN_SAM_20261023 as sam
+        import lab_caltech20_tucam_TRAIN_distill_20261023 as teacher
+        assert m.sha(sam.__file__)==p['SAM_engine_SHA256'] and m.sha(teacher.__file__)==p['teacher_engine_SHA256']
+        selftest=m.read(a.out.with_suffix('.SAM_selftest.json'))
+        assert selftest['passed'] and selftest['engine_SHA256']==p['SAM_engine_SHA256'] and not selftest['SDK_used'] and not selftest['GPU_used']
+        tuned.update(TRAIN_SAM=p['TRAIN_SAM'],TRAIN_teacher=p['TRAIN_teacher'],weight_decay=p['weight_decay'])
+        model,parent,fit=sam.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
     elif 'TRAIN_teacher' in p:
         import lab_caltech20_tucam_TRAIN_distill_20261023 as teacher
         assert m.sha(teacher.__file__)==p['teacher_engine_SHA256']
