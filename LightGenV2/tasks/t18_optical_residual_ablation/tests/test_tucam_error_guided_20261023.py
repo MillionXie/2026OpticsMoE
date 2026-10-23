@@ -53,3 +53,12 @@ def test_original5150_margin_is_finite_and_no_upstream_unfreeze():
     assert 'p.requires_grad_(n in keys)' in text and 'c=(c*(1+' in text
     assert 'loop.validate_state(m,model,original,keys)' in text
     assert "recipe['NLL_tie_tolerance']" in text and "gradients/200" in text
+
+
+def test_conditioned_dropout_is_TRAIN_derived_and_disabled_at_eval():
+    cfg=json.loads((HERE/'lab_caltech20_tucam_covariance_profile_20261023.json').read_text());old=cfg['joint_margin'];new=cfg['joint_margin_conditioned'];text=SOURCE.read_text()
+    assert {k:v for k,v in new.items() if k!='feature_dropout_space'}==old
+    assert new['feature_dropout_space']=='TRAIN_conditioned_restored'
+    assert "branch_bank(model,inputs,fields,data,'train')" in text and 'conditioning_TRAIN_only=True,inference_transform_added=False' in text
+    assert 'if active else None' in text and 'hook.remove()' in text
+    assert "not audit['TEST_used']" in text and "restored_dropout(v,mean,root,inverse,0.)" in text

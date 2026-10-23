@@ -113,6 +113,11 @@ def margin_objective(z,labels,teacher,weights,recipe):
     return (sample*((1-recipe['CE_replay'])*hinge+recipe['CE_replay']*ce)).sum()+recipe['KL']*(kl*keep).sum()/keep.sum().clamp_min(1)
 
 
+def restored_dropout(x,mean,root,inverse,p):
+    """Differentiable TRAIN augmentation, not part of the evaluation graph."""
+    return (F.dropout((x.double()-mean)@root,p=p,training=True)@inverse+mean).to(x.dtype)
+
+
 def joint_margin(model,inputs,fields,data,cfg,recipe,out,reference,identities):
     """Only original post-final-CCD5150; recompute representation every batch."""
     from lab_caltech20_tucam_terminal_20261023 import assess_tail,finish,allowed
@@ -122,12 +127,22 @@ def joint_margin(model,inputs,fields,data,cfg,recipe,out,reference,identities):
     error=1-np.diag(np.asarray(baseline['test']['confusion_matrix']))/np.asarray(baseline['test']['support']).clip(1)
     prior=np.asarray(cfg['original_TRAIN_counts'],float);weights=torch.tensor((.5+.5*np.sqrt(prior/prior.mean()))*(1+recipe['TEST_class_emphasis']*error),dtype=torch.float32)
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),recipe=recipe,prefix_SHA256=identities,baseline=baseline,TRAIN_class_weights=weights.tolist(),allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,new_inference_layers=0,SDK_used=False,GPU_used=False,synthetic_noise_not_calibrated=True)
+    conditioned=recipe.get('feature_dropout_space')=='TRAIN_conditioned_restored'
+    if conditioned:
+        from lab_caltech20_tucam_covariance_20261023 import branch_bank
+        diagnostic=out.parent.parent/'L4_TRAIN_augmentation_audit_20261023.json';audit=m.read(diagnostic);views=audit['TRAIN_view_probe']
+        assert audit['passed'] and audit['TRAIN']==1600 and not audit['TEST_used'] and not audit['PT_written']
+        assert views['independent_raw_feature_dropout']['TRAIN_CE']>3*views['clean']['TRAIN_CE'] and views['TRAIN_conditioned_dropout_restored_to_original_features']['TRAIN_CE']<.5*views['independent_raw_feature_dropout']['TRAIN_CE']
+        bank=branch_bank(model,inputs,fields,data,'train')['fused'];mean,root,inverse,_,floor=train_conditioned_geometry(bank.numpy())
+        assert float(((bank.double()-mean)@root@inverse+mean-bank.double()).abs().max())<1e-8
+        np.savez_compressed(out/'TRAIN_augmentation_geometry.npz',mean=mean.numpy(),root=root.numpy(),inverse=inverse.numpy())
+        protocol.update(TRAIN_augmentation_geometry_SHA256=m.sha(out/'TRAIN_augmentation_geometry.npz'),TRAIN_variance_floor=floor,augmentation_diagnostic_SHA256=m.sha(diagnostic),conditioning_TRAIN_only=True,inference_transform_added=False)
     m.save(out/'protocol.json',protocol);loop.saved_model(m,model,out/'best.pt',protocol);best=baseline['test']['correct'];best_nll=baseline['test']['nll'];selected=0;teacher=torch.from_numpy(predictions['train']);history=[];rng=np.random.default_rng(73);start=time.monotonic();active=False
     for n,p in model.named_parameters():p.requires_grad_(n in keys)
     groups=[list(model.electronic[k].parameters()),[model.fusion_logits[k]],list(model.linear.parameters())]
     assert sum(p.numel() for group in groups for p in group)==5150
     opt=torch.optim.Adam([dict(params=group,lr=recipe[name]) for group,name in zip(groups,('conv_lr','alpha_lr','head_lr'))])
-    hook=model.linear.register_forward_pre_hook(lambda module,args:(F.dropout(args[0],p=recipe['feature_dropout'],training=True),) if active else None)
+    hook=model.linear.register_forward_pre_hook(lambda module,args:((restored_dropout(args[0],mean,root,inverse,recipe['feature_dropout']) if conditioned else F.dropout(args[0],p=recipe['feature_dropout'],training=True)),) if active else None)
     try:
         for epoch in range(1,recipe['epochs']+1):
             for p in groups[2]:p.requires_grad_(epoch>recipe['representation_warmup_epochs'])
@@ -170,6 +185,8 @@ def selftest():
     frozen=[i for i in range(20) if i!=3]
     assert records and torch.equal(nw[frozen],w[frozen]) and torch.equal(nb[frozen],b[frozen]) and torch.isfinite(nw).all()
     z=torch.randn(40,20,requires_grad=True);labels=torch.arange(40)%20;teacher=z.detach().softmax(1);loss=margin_objective(z,labels,teacher,torch.ones(20),dict(margin=1.,CE_replay=.25,KL=.2));loss.backward();assert torch.isfinite(loss) and torch.isfinite(z.grad).all() and z.grad.abs().sum()>0
+    v=torch.randn(40,256,requires_grad=True);mean,root,inverse,_,_=train_conditioned_geometry(v.detach().numpy());restored=restored_dropout(v,mean,root,inverse,0.);assert float((restored-v).abs().max())<1e-6;restored.sum().backward();assert float((v.grad-1).abs().max())<1e-6
+    assert torch.isfinite(restored_dropout(v,mean,root,inverse,.03)).all()
     errors.selftest();errors.maxmargin_selftest();print(dict(passed=True,full_row_curvature_verified=True,margin_gradient_verified=True,acceptance_regression=True,SDK_used=False,GPU_used=False))
 
 
