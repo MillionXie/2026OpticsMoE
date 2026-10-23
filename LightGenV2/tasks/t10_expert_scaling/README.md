@@ -1,5 +1,17 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 2026-10-23：k4分类准确率微调（单次有界开发试验）
+
+Kather N4k4 seed17从extra30的last90出发，额外30轮、lr5e-4降至5e-5，
+原CE/soft均衡/TV保持，capture权重0.02降到0.005，追加0.2倍分类margin项：
+`max(0, 0.2 + max_wrong(log p) - log p_true)`。目标是检验偏重正确类别排序能否
+改善accuracy，同时保留capture指标观察光学功率代价。光学结构、参数量不变。
+使用验证accuracy选best，以验证NLL打破平局，候选包含原best。
+不承诺k4必胜；只做这一次30轮试验，不在TEST上反复搜索或以TEST触发停止。
+运行GPU0，产物为`runs/simulation/kather_k4_margin_20261023`。
+比较对象为同seed17无新增负载均衡的k3（TEST71.28%、VAL74.34%），不把三seed均值混入。
+涉及已观察TEST后的开发诊断，不能冒称新的独立确认性结果。
+
 ## 2026-10-23：Kather k3入口路由负载约束诊断
 
 旧soft均衡权重0.01仍保留：原项约束microbatch2的soft概率均值，不能保证

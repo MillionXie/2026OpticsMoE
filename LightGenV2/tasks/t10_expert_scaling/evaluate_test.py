@@ -29,6 +29,8 @@ def main():
                          'Training-cache identity is still verified with --data.')
     ap.add_argument('--selection-lock', type=Path, required=True)
     ap.add_argument('--batch', type=int, default=2)
+    ap.add_argument('--checkpoint', choices=['best_checkpoint.pt', 'last_checkpoint.pt'],
+                    default='best_checkpoint.pt')
     args = ap.parse_args()
 
     lock = json.loads(args.selection_lock.read_text())
@@ -37,9 +39,13 @@ def main():
         raise ValueError(f'Run is absent from selection lock: {args.run}')
     result = json.loads((args.run / 'result.json').read_text())
     metadata = json.loads((args.run / 'metadata.json').read_text())
-    checkpoint = args.run / 'best_checkpoint.pt'
-    if sha(checkpoint) != result['checkpoint_sha256'] or result['checkpoint_sha256'] != locked['checkpoint_sha256']:
+    checkpoint = args.run / args.checkpoint
+    checkpoint_sha = sha(checkpoint)
+    if (checkpoint_sha != locked['checkpoint_sha256'] or
+            (args.checkpoint == 'best_checkpoint.pt' and checkpoint_sha != result['checkpoint_sha256'])):
         raise ValueError('Checkpoint hash differs from locked selection')
+    if args.checkpoint == 'last_checkpoint.pt' and locked.get('checkpoint_file') != args.checkpoint:
+        raise ValueError('Last-checkpoint diagnostics require an explicit checkpoint-file lock')
     if sha(args.data) != metadata['data_sha256']:
         raise ValueError('Dataset hash differs from training metadata')
 
@@ -75,18 +81,21 @@ def main():
     started = time.time()
     metrics, probabilities = evaluate(model, split, args.batch)
     predictions = probabilities.argmax(1).numpy()
-    np.savez_compressed(args.run / 'test_predictions.npz', ids=ids, labels=labels,
+    stem = 'test' if args.checkpoint == 'best_checkpoint.pt' else 'last_test'
+    np.savez_compressed(args.run / f'{stem}_predictions.npz', ids=ids, labels=labels,
                         scores=probabilities.numpy(), predictions=predictions)
     payload = dict(
         state='complete', selection_lock_sha256=sha(args.selection_lock),
-        checkpoint_sha256=result['checkpoint_sha256'], data_sha256=sha(args.data),
+        checkpoint_sha256=checkpoint_sha, checkpoint_file=args.checkpoint,
+        evaluation_role=('locked_selection' if stem == 'test' else 'development_last_checkpoint_diagnostic'),
+        data_sha256=sha(args.data),
         data_manifest_sha256=sha(manifest_path), test_source_sha256=sha(test_archive),
         test_ids_sha256=hashlib.sha256(
             '\n'.join(ids.tolist()).encode()).hexdigest(), test_samples=len(ids),
         test=metrics, elapsed_seconds=time.time()-started,
         cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
         device=torch.cuda.get_device_name(), source_commit=metadata['git_commit'])
-    save(args.run / 'test_result.json', payload)
+    save(args.run / f'{stem}_result.json', payload)
     print(json.dumps({'run': args.run.name, 'test_accuracy': metrics['accuracy'],
                       'test_macro_f1': metrics['macro_f1'], 'elapsed_seconds': payload['elapsed_seconds']}), flush=True)
 

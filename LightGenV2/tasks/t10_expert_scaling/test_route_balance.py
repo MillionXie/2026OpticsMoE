@@ -3,10 +3,24 @@ import unittest
 
 import torch
 
-from .diagnose_topk import load_balance_loss
+from .diagnose_topk import load_balance_loss, classification_margin_loss, selection_key
 
 
 class RouteBalanceTests(unittest.TestCase):
+    def test_accuracy_selection_uses_nll_only_as_tiebreaker(self):
+        good_accuracy = dict(accuracy=.75, macro_nll=.9)
+        good_nll = dict(accuracy=.72, macro_nll=.8)
+        self.assertLess(selection_key(good_accuracy, 'accuracy'), selection_key(good_nll, 'accuracy'))
+        self.assertLess(selection_key(good_nll, 'macro_nll'), selection_key(good_accuracy, 'macro_nll'))
+
+    def test_margin_pushes_up_true_class_on_mistake(self):
+        logits = torch.tensor([[0., 1., -.5]], requires_grad=True)
+        loss = classification_margin_loss(logits.softmax(1), torch.tensor([0]))
+        loss.backward()
+        self.assertLess(float(logits.grad[0, 0]), 0.)
+        self.assertGreater(float(logits.grad[0, 1]), 0.)
+        self.assertTrue(torch.isfinite(logits.grad).all())
+
     def test_balanced_load_has_unit_baseline_and_no_preferred_logit(self):
         logits = torch.zeros(4, 4, requires_grad=True)
         probability = logits.softmax(1)

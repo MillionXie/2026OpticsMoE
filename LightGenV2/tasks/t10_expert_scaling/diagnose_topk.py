@@ -23,6 +23,19 @@ from .model import ScalingOptics, encode_rgb
 from .train import data, evaluate, images, objective, save, sha
 
 
+def selection_key(metrics, metric):
+    if metric == 'accuracy':
+        return (-metrics['accuracy'], metrics['macro_nll'])
+    return (metrics['macro_nll'],)
+
+
+def classification_margin_loss(probabilities, labels, margin=.2):
+    logp = probabilities.clamp_min(1e-12).log()
+    correct = logp.gather(1, labels[:, None]).squeeze(1)
+    wrong = logp.scatter(1, labels[:, None], float('-inf')).max(1).values
+    return (margin+wrong-correct).clamp_min(0).mean()
+
+
 def load_balance_loss(probabilities, mask, k):
     """Load-aware auxiliary: N/k * sum_e(f_e * p_e), uniform baseline=1.
 
@@ -65,10 +78,14 @@ def main():
     ap.add_argument('--batch', type=int, default=2)
     ap.add_argument('--hard-balance-weight', type=float, default=0.,
                     help='Additional load-aware routing auxiliary over effective batch16')
+    ap.add_argument('--margin-weight', type=float, default=0.)
+    ap.add_argument('--capture-weight', type=float)
+    ap.add_argument('--selection-metric', choices=['macro_nll', 'accuracy'], default='macro_nll')
     a = ap.parse_args()
     if a.out.resolve() == a.source.resolve():
         raise ValueError('Source runs are immutable')
-    if a.epochs < 1 or a.lr <= 0 or a.hard_balance_weight < 0:
+    if (a.epochs < 1 or a.lr <= 0 or a.hard_balance_weight < 0 or a.margin_weight < 0
+            or (a.capture_weight is not None and a.capture_weight < 0)):
         raise ValueError('Invalid continuation budget')
     a.out.mkdir(parents=True, exist_ok=False)
     try:
@@ -97,6 +114,8 @@ def run(a):
     splits, manifest = data(cache)
     cfg = copy.deepcopy(original['protocol'])
     tc = cfg['training_proposal']
+    if a.capture_weight is not None:
+        tc['capture_loss_weight'] = a.capture_weight
     model = ScalingOptics(cfg, int(args['experts']), int(args['top_k']), args['arch'],
                           len(manifest['classes']), int(args['layers']), int(args['padding'])).cuda()
     ema = copy.deepcopy(model).eval()
@@ -110,7 +129,7 @@ def run(a):
     del state
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
     metadata = copy.deepcopy(original)
-    metadata.update(git_commit=commit, pid=os.getpid(), device=torch.cuda.get_device_name(),
+    metadata.update(git_commit=commit, protocol=cfg, pid=os.getpid(), device=torch.cuda.get_device_name(),
                     cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
                     source_run=str(a.source.resolve()), source_last_sha256=sha(a.source/'last_checkpoint.pt'),
                     source_best_sha256=result['checkpoint_sha256'],
@@ -120,10 +139,12 @@ def run(a):
                                    hard_balance_formula='N/k sum(detached_selection_frequency * mean_probability)',
                                    hard_balance_batch=16, original_soft_balance_preserved=True),
                     command=sys.argv)
+    metadata['diagnosis'].update(margin_weight=a.margin_weight, log_probability_margin=.2,
+                                selection_metric=a.selection_metric, capture_weight=tc['capture_loss_weight'])
     metadata['arguments'].update(out=str(a.out), epochs=origin_epoch+a.epochs)
     save(a.out/'metadata.json', metadata)
     shutil.copy2(a.source/'best_checkpoint.pt', a.out/'best_checkpoint.pt')
-    best = result['val']['macro_nll']
+    best = selection_key(result['val'], a.selection_metric)
     best_epoch = result['best_epoch']
     x, y, _ = splits['train']
     counts = torch.bincount(y, minlength=len(manifest['classes'])).float().cuda()
@@ -153,7 +174,11 @@ def run(a):
             for offset in range(0, len(effective), a.batch):
                 ix = effective[offset:offset+a.batch]
                 out = model(images(x, ix, epoch, seed, True), dense=False)
-                loss = objective(model, out, y[ix].cuda(), weights, tc)*len(ix)/len(effective)
+                labels = y[ix].cuda()
+                loss = objective(model, out, labels, weights, tc)
+                if a.margin_weight:
+                    loss = loss+a.margin_weight*classification_margin_loss(out['probabilities'], labels)
+                loss = loss*len(ix)/len(effective)
                 if not torch.isfinite(loss):
                     raise RuntimeError('Nonfinite loss')
                 loss.backward()
@@ -191,8 +216,8 @@ def run(a):
         payload = dict(model=ema.state_dict(), live_model=model.state_dict(),
                        optimizer=optimizer.state_dict(), epoch=epoch, metadata=metadata, val=vm)
         torch.save(payload, a.out/'last_checkpoint.pt')
-        if vm['macro_nll'] < best:
-            best, best_epoch = vm['macro_nll'], epoch
+        if selection_key(vm, a.selection_metric) < best:
+            best, best_epoch = selection_key(vm, a.selection_metric), epoch
             torch.save(payload, a.out/'best_checkpoint.pt')
         save(a.out/'status.json', dict(state='training', epoch=epoch, total_epochs=origin_epoch+a.epochs,
                                        best_epoch=best_epoch, pid=os.getpid()))
@@ -211,7 +236,7 @@ def run(a):
                     elapsed_seconds=time.time()-started, test_read=False)
     save(a.out/'result.json', selected)
     lock = a.out/'test_selection_lock.json'
-    save(lock, dict(selection='minimum_validation_macro_nll_including_original_best',
+    save(lock, dict(selection=f'validation_{a.selection_metric}_including_original_best',
                     runs=[dict(run_dir=str(a.out.resolve()), checkpoint_sha256=selected['checkpoint_sha256'])]))
     cmd = [sys.executable, '-m', 'LightGenV2.tasks.t10_expert_scaling.evaluate_test',
            '--run', str(a.out), '--data', str(cache), '--selection-lock', str(lock), '--batch', str(a.batch)]
