@@ -178,7 +178,7 @@ def run(args):
         'test_images': len(dataset.test), 'title_candidates': len(dataset.titles),
         'gpu_uuid': args.gpu_uuid, 'gpu': torch.cuda.get_device_name(),
         'pid': os.getpid(), 'torch': torch.__version__, 'python': platform.python_version(),
-        'selection': 'TEST Hit@1, development metric; epoch1/every5/final',
+        'selection': 'fixed last epoch; no metric-based selection',
         'metric_name': 'Hit@1', 'schedule': 'constant', 'warmup_epochs': 0,
         'learning_rate': args.learning_rate, 'execution_profile': PROFILE,
         'optimizer': 'AdamW_constant_lr_wd0.0001_clip1',
@@ -192,7 +192,7 @@ def run(args):
     write_json(run_dir / 'run_manifest.json', manifest)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=PROFILE['weight_decay'])
     tokens = dataset.title_tokens.to(device)
-    history, best, selected_epoch = [], -float('inf'), None
+    history, selected_epoch = [], None
     began = time.monotonic()
     def interrupt(signum, frame):
         raise KeyboardInterrupt(f'Signal {signum}')
@@ -227,20 +227,21 @@ def run(args):
             payload = {'model': model.state_dict(), 'optimizer': optimizer.state_dict(),
                        'epoch': epoch, 'manifest': manifest, 'metrics': entry}
             save_checkpoint(run_dir / 'last_checkpoint.pt', payload)
-            if result and result['hit_at_1'] > best:
-                best, selected_epoch = result['hit_at_1'], epoch
+            if epoch == args.epochs:
+                selected_epoch = epoch
                 save_checkpoint(run_dir / 'best_checkpoint.pt', payload)
                 write_json(run_dir / 'best_predictions.json', result)
             history.append(entry)
             write_json(run_dir / 'history.json', history)
             write_json(run_dir / 'progress.json', {'status': 'training', **entry,
-                                                  'best_hit_at_1': best, 'selected_epoch': selected_epoch})
+                                                  'selection': 'fixed_last_epoch', 'selected_epoch': selected_epoch})
             print(json.dumps(entry), flush=True)
-        selected = torch.load(run_dir / 'best_checkpoint.pt', map_location='cpu', weights_only=False)
+        selected = torch.load(run_dir / 'last_checkpoint.pt', map_location='cpu', weights_only=False)
         model.load_state_dict(selected['model'])
         result = evaluate(model, test, tokens, dataset.title_skus, args.direction, device)
         write_json(run_dir / 'fixed_weight_predictions.json', result)
         write_json(run_dir / 'result.json', {'status': 'complete', 'selected_epoch': selected_epoch,
+            'selection': 'fixed_last_epoch', 'selection_uses_test': False, 'checkpoint': 'last_checkpoint.pt',
             'development_metric': True, 'metrics': {k:v for k,v in result.items() if isinstance(v,(float,int))},
             'elapsed_seconds': time.monotonic()-began})
         manifest['status'] = 'complete'

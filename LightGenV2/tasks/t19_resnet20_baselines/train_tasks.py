@@ -78,7 +78,7 @@ def run(args):
         'learning_rate': .001, 'schedule': 'constant', 'warmup_epochs': 0, 'effective_batch': 32,
         'microbatch': problem.batch_size, 'precision': 'FP32_TF32_disabled', 'optimizer': 'AdamW_wd0.0001_clip1',
         'git_commit': git('rev-parse','HEAD'), 'data_identity': problem.identity,
-        'selection': problem.selection, 'parameter_counts': parameter_counts(model),
+        'selection': 'fixed last epoch; no metric-based selection', 'parameter_counts': parameter_counts(model),
         'pid': os.getpid(), 'gpu_uuid': args.gpu_uuid, 'gpu': torch.cuda.get_device_name(),
         'command': [sys.executable,'-m',__spec__.name,*sys.argv[1:]],
         'python': platform.python_version(), 'torch': torch.__version__, 'started_unix': time.time(),
@@ -86,7 +86,7 @@ def run(args):
                           for name in ('train_tasks.py','task_problems.py','models.py','lgvq_data.py','other_data.py','editor_dataset.py','train_easy100.py')},
         'smoke_batches': args.smoke_batches, 'metric': problem.metric}
     write_json(run_dir/'run_manifest.json', manifest)
-    history, best, selected_epoch = [], -math.inf, None
+    history, selected_epoch = [], None
     began=time.monotonic()
     def interrupt(signum, frame):
         raise KeyboardInterrupt(f'Signal {signum}')
@@ -120,10 +120,7 @@ def run(args):
                    'elapsed_seconds':time.monotonic()-began,**metrics}
             payload={'model':model.state_dict(),'optimizer':optimizer.state_dict(),'epoch':epoch,'manifest':manifest,'metrics':entry}
             save_checkpoint(run_dir/'last_checkpoint.pt',payload)
-            score=entry.get(problem.metric)
-            if score is not None and problem.minimize:score=-score
-            if (evaluated or problem.metric=='train_loss') and (selected_epoch is None or (score is not None and score>best)):
-                best=score if score is not None else -math.inf
+            if epoch == args.epochs:
                 selected_epoch=epoch
                 save_checkpoint(run_dir/'best_checkpoint.pt',payload)
                 write_json(run_dir/'best_predictions.json',records if records is not None else
@@ -132,7 +129,7 @@ def run(args):
             write_json(run_dir/'history.json',history)
             write_json(run_dir/'progress.json',{'status':'training',**entry,'selected_epoch':selected_epoch})
             print(entry,flush=True)
-        selected=torch.load(run_dir/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        selected=torch.load(run_dir/'last_checkpoint.pt',map_location='cpu',weights_only=False)
         model.load_state_dict(selected['model'])
         metrics,records=problem.evaluate(model,test,device)
         selection_metrics=metrics
@@ -142,7 +139,8 @@ def run(args):
             metrics,records=problem.evaluate(model,final_loader,device)
         write_json(run_dir/'fixed_weight_predictions.json',records)
         write_json(run_dir/'result.json',{'status':'complete','selected_epoch':selected_epoch,'metrics':metrics,
-            'selection_metrics':selection_metrics,'selection_uses_test':problem.selection.startswith('TEST'),
+            'selection_metrics':selection_metrics,'selection_uses_test':False,
+            'selection':'fixed_last_epoch','checkpoint':'last_checkpoint.pt',
             'development_metric':problem.task!='abo_conditional_edit','elapsed_seconds':time.monotonic()-began})
         manifest['status']='complete'
     except BaseException as exc:

@@ -337,3 +337,15 @@ weights=None 随机初始化，删除分类器；视觉骨干11,176,512参数，
 沿用原2250/558划分、四帧224输入、五分类CE、seed42、30轮、AdamW 0.001固定学习率、
 无warmup/cosine、有效batch32（microbatch8）、FP32且关闭TF32。TEST按原周期选模，
 属于开发指标。由同一队列管理，所有T19任务合计最多三张GPU，每卡最多两个任务。
+
+## 2026-10-23 用户修订：固定最后一轮，不按TEST选模
+
+此节覆盖以上所有best/TEST/VAL/TRAIN-loss选轮规则。正式结果统一使用第30轮的
+`last_checkpoint.pt`，不根据任何评估指标挑轮次；epoch1/每5轮的评估仅作曲线观察。
+新训练入口已固定加载last，兼容best文件仅在末轮保存同一权重。
+既有训练不中断、不改写运行中状态，不声称它们热加载了新源码；由
+`evaluate_last.py --watch`在各任务完成后CPU加载第30轮原始last权重重新评估，
+不额外占GPU。历史best/result保留，不能再作为当前正式报告的成绩。
+末轮结果及逐样本预测写入各run的`last_epoch_review_20261023/`；汇总写入
+`runs/control/last_epoch_review_20261023.json`。图文编辑也固定第30轮，直接完整TEST复评。
+选模协议是在已观察历史TEST曲线后由用户修订，不把已有TEST观察记录抹去，也不宣称全新盲测。
