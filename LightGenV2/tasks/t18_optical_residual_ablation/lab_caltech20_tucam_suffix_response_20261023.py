@@ -11,19 +11,29 @@ import lab_caltech20_tucam_gap10_20261023 as gap
 
 def validate_policy(p):
     fresh=p.get('fresh_E2_after_retake',False);assert isinstance(fresh,bool)
-    assert not fresh or p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1'
+    assert not fresh or p['schema'] in ('TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_underfit_response_v1')
     assert p['schema'] in ('TUCam_L4_G1_underfit_response_v1','TUCam_L4_G1_teacher_response_v1','TUCam_L4_G1_linear_response_v1','TUCam_L4_G1_feature_response_v1','TUCam_L4_G1_fullbatch_response_v1','TUCam_L4_G1_CCDnoise_response_v1','TUCam_L4_G1_local_boundary_response_v1','TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1','TUCam_L4_E2_feature_response_v1')
     e2=p['schema'] in ('TUCam_L4_E2_underfit_response_v1','TUCam_L4_E2_linear_response_v1','TUCam_L4_E2_fullbatch_response_v1','TUCam_L4_E2_teacher_response_v1','TUCam_L4_E2_fusion_capacity_response_v1','TUCam_L4_E2_local_boundary_response_v1','TUCam_L4_E2_SAM_response_v1','TUCam_L4_E2_feature_response_v1')
     assert p['parent_stage']==('2' if e2 else '1') and list(p['captures'])==(['router','0','1','2'] if e2 else ['router','0','1'])
     assert p['intermediate_target']==305 and p['final_target']==340
     assert p['maximum_parent_correct']==304
     if p['schema']=='TUCam_L4_E2_underfit_response_v1':
-        assert p['minimum_parent_correct']==205 and p['maximum_parent_TRAIN_accuracy']==.80
-        assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
-        assert p['recipe']==dict(name='E2_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
-        assert p['capture_parent_SHA256']=='8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'
-        assert p['completed_controller'].endswith('/g1s')
-        assert p['TRAIN_alpha_release']==dict(stage=2,samples=80,per_class=4,lower_initial_alpha=.70,minimum_TRAIN_NLL_improvement=.01)
+        if fresh:
+            assert p['minimum_parent_correct']==p['expected_parent_correct']==270 and p['maximum_parent_TRAIN_accuracy']==.95
+            assert p['completed_controller'].endswith('/e2v') and 'TRAIN_alpha_release' not in p and 'TRAIN_teacher' not in p
+            assert p['TRAIN_teacher_conflict']==dict(temperature=2,mixture=.3,minimum_weighted_KL_over_CE=1.)
+            assert len(p['expected_parent_SHA256'])==len(p['parent_TRAIN_history_SHA256'])==64
+            assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.0005)
+            assert p['recipe']==dict(name='E2_fusion_conditioned_actual_TRAIN_CE_only',epochs=36,seconds=900,lr_scale=1,TRAIN_class_emphasis=.75)
+            assert p['captures']['2'].endswith('/e2h/s_2/capture') and p['capture_parent_SHA256']=='4dc922d782d6a7842b9f01c287b791d88a2485a40c602813e562d3c0fa8cd0ba'
+            assert p['E2_arrays_SHA256']==dict(train='3c42ab4f2095629bbfd6b42daa5f46775f63f3727f9101e0d993c074f481cf7e',test='48e826672b8c9978f38230ec0fa23984f32b684340f88b1da4e425bf5d03b745')
+        else:
+            assert p['minimum_parent_correct']==205 and p['maximum_parent_TRAIN_accuracy']==.80
+            assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
+            assert p['recipe']==dict(name='E2_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
+            assert p['capture_parent_SHA256']=='8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'
+            assert p['completed_controller'].endswith('/g1s')
+            assert p['TRAIN_alpha_release']==dict(stage=2,samples=80,per_class=4,lower_initial_alpha=.70,minimum_TRAIN_NLL_improvement=.01)
     elif p['schema']=='TUCam_L4_E2_linear_response_v1':
         assert p['minimum_parent_correct']==222 and p['maximum_parent_TRAIN_accuracy']==.95
         assert p['learning_rates']=={} and p['TRAIN_readout']=='one_OAS_pooled_linear'
@@ -139,6 +149,13 @@ def validate_policy(p):
         assert len(p[key])==64
 
 
+def TRAIN_loss_components(row,cfg):
+    assert cfg==dict(temperature=2,mixture=.3,minimum_weighted_KL_over_CE=1.)
+    ce=(1-cfg['mixture'])*row['TRAIN_CE'];kl=cfg['mixture']*row['TRAIN_KL']
+    assert 0<ce<float('inf') and 0<=kl<float('inf') and kl/ce>=cfg['minimum_weighted_KL_over_CE'],'No TRAIN support for teacher-conflict hypothesis'
+    return dict(weighted_TRAIN_CE=ce,weighted_TRAIN_KL=kl,ratio=kl/ce,decision_data='TRAIN_only',TEST_used_for_loss_diagnosis=False,remove_teacher_for_one_finite_joint_CE_fit=True)
+
+
 def admit(p,c,out):
     np,_,m,loop=base.numerical_modules();old=base.ROOT/p['completed_controller']
     assert m.read(old.with_suffix('.return.json'))['returncode']==0 and not m.LOCK.exists()
@@ -150,7 +167,7 @@ def admit(p,c,out):
     if p['schema']=='TUCam_L4_E2_SAM_response_v1':expected_state='E2_native_linear_gate_unmet'
     if p['schema']=='TUCam_L4_E2_feature_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
     if p['schema']=='TUCam_L4_E2_fusion_capacity_response_v1':expected_state='E2_teacher_budget_complete_gate_unmet'
-    if p.get('fresh_E2_after_retake',False):expected_state='E2_mask_retake_stage_gate_unmet'
+    if p.get('fresh_E2_after_retake',False):expected_state='E2_capacity_joint_gate_unmet' if 'TRAIN_teacher_conflict' in p else 'E2_mask_retake_stage_gate_unmet'
     if p['schema']=='TUCam_L4_E2_local_boundary_response_v1':
         expected_state='E2_capacity_no_TRAIN_support'
         capacity=m.read(old/'s_2/capacity/report.json')
@@ -193,6 +210,10 @@ def admit(p,c,out):
         assert b['train']['accuracy']-b['test']['accuracy']>=p['minimum_parent_TRAIN_TEST_gap']
         assert e['selected_correct']==p['expected_parent_correct']
     else:assert fit['results']['best']['train']['accuracy']<p['maximum_parent_TRAIN_accuracy']
+    if 'TRAIN_teacher_conflict' in p:
+        history=parent.parent/'history.json';assert m.sha(history)==p['parent_TRAIN_history_SHA256']
+        diagnosis=TRAIN_loss_components(m.read(history)[-1],p['TRAIN_teacher_conflict'])
+        m.save(out/'TRAIN_loss_diagnosis.json',dict(TRAIN_history_SHA256=m.sha(history),**diagnosis))
     reference=base.ROOT/c['reference'];assert m.sha(reference)==c['reference_SHA256']
     model,_=m.model_for(parent,e['PT_SHA256'],4,reference)
     # Compare to the EXACT PT that produced the last measured stage.

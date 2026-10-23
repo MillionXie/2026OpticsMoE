@@ -155,7 +155,7 @@ def test_new_E2_underfit_capacity_requires_new_data_and_completed_retake():
     assert p['fresh_E2_after_retake'] and p['minimum_parent_correct']==p['expected_parent_correct']==254 and p['maximum_parent_TRAIN_accuracy']==.95
     assert p['completed_controller'].endswith('/e2h') and p['captures']['2'].endswith('/e2h/s_2/capture')
     assert len(p['E2_arrays_SHA256'])==2 and p['TRAIN_fusion_capacity']['proposed_alpha']==.4001001
-    s=ENTRY.read_text();assert "expected_state='E2_mask_retake_stage_gate_unmet'" in s and "q['arrays'][role]['SHA256']==p['E2_arrays_SHA256'][role]" in s
+    s=ENTRY.read_text();assert "if 'TRAIN_teacher_conflict' in p else 'E2_mask_retake_stage_gate_unmet'" in s and "q['arrays'][role]['SHA256']==p['E2_arrays_SHA256'][role]" in s
     for key,value in [('expected_parent_SHA256','0'*64),('expected_parent_correct',228),('capture_parent_SHA256','8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'),('captures',{**p['captures'],'2':p['captures']['2'].replace('/e2h/','/g1s/')}),('intermediate_target',304)]:
         with pytest.raises(AssertionError):policy_validator()({**p,key:value})
     for key,name in [('capacity_engine_SHA256','lab_caltech20_TRAIN_fusion_capacity_20261023.py'),('linear_engine_SHA256','lab_caltech20_tucam_TRAIN_linear_20261023.py')]:
@@ -171,6 +171,22 @@ def test_E2_SAM_joint_parameters_TRAIN_only_same_noise_and_restore():
         assert text in s
     assert "loop.put_fields(model,data,fields,'test'" not in s and 'new_inference_layers=0' in s
     with pytest.raises(AssertionError):policy_validator()({**p,'TRAIN_SAM':dict(radius=.1,same_noise_both_passes=True)})
+
+
+def test_fresh_E2_CE_refinement_requires_TRAIN_loss_evidence_and_exact_best():
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_retake_CE_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['expected_parent_correct']==270 and p['completed_controller'].endswith('/e2v') and 'TRAIN_teacher' not in p
+    assert p['recipe']['epochs']==36 and p['recipe']['seconds']==900 and p['learning_rates']['head_lr']==.0005
+    tree=ast.parse(ENTRY.read_text());f=next(v for v in tree.body if isinstance(v,ast.FunctionDef) and v.name=='TRAIN_loss_components');ns={}
+    exec(compile(ast.Module(body=[f],type_ignores=[]),str(ENTRY),'exec'),ns)
+    result=ns['TRAIN_loss_components'](dict(TRAIN_CE=1.0648694178462028,TRAIN_KL=2.9407007628679276),p['TRAIN_teacher_conflict'])
+    assert result['ratio']>1 and result['decision_data']=='TRAIN_only' and not result['TEST_used_for_loss_diagnosis']
+    with pytest.raises(AssertionError):ns['TRAIN_loss_components'](dict(TRAIN_CE=2.,TRAIN_KL=.1),p['TRAIN_teacher_conflict'])
+    accesses=[v.slice.value for v in ast.walk(f) if isinstance(v,ast.Subscript) and isinstance(v.value,ast.Name) and v.value.id=='row' and isinstance(v.slice,ast.Constant)]
+    assert set(accesses)=={'TRAIN_CE','TRAIN_KL'}
+    s=ENTRY.read_text();assert "m.sha(history)==p['parent_TRAIN_history_SHA256']" in s and "e['PT_SHA256']==p['expected_parent_SHA256']" in s
+    for key,value in [('TRAIN_teacher',dict(temperature=2,mixture=.3)),('expected_parent_correct',269),('intermediate_target',304)]:
+        with pytest.raises(AssertionError):policy_validator()({**p,key:value})
 
 
 def test_E2_feature_regularization_reuses_only_same_nonhead_native_cache():

@@ -1,0 +1,25 @@
+{
+  "schema":"TUCam_L4_E2_underfit_response_v1",
+  "fresh_E2_after_retake":true,
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2v",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2h/mask_fit/best.pt",
+  "capture_parent_SHA256":"4dc922d782d6a7842b9f01c287b791d88a2485a40c602813e562d3c0fa8cd0ba",
+  "E2_arrays_SHA256":{"train":"3c42ab4f2095629bbfd6b42daa5f46775f63f3727f9101e0d993c074f481cf7e","test":"48e826672b8c9978f38230ec0fa23984f32b684340f88b1da4e425bf5d03b745"},
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture",
+    "2":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2h/s_2/capture"
+  },
+  "parent_stage":"2","minimum_parent_correct":270,"expected_parent_correct":270,"expected_parent_SHA256":"9c98ae2fe38f9fc710f9edeac811571adf72ff2d5da2ecc3c4ed2b9edfd9ecba","maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":0.95,
+  "parent_TRAIN_history_SHA256":"e9d21498a608016ebfaad5d6fb8e4a9ce5986486ef38426f6c505d98b03ddfa2",
+  "TRAIN_teacher_conflict":{"temperature":2,"mixture":0.3,"minimum_weighted_KL_over_CE":1.0},
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{"phase_lr":0.0002,"electronic_lr":0.001,"alpha_lr":0.001,"head_lr":0.0005},
+  "recipe":{"name":"E2_fusion_conditioned_actual_TRAIN_CE_only","epochs":36,"seconds":900,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"ONE bounded actual-TRAIN classification-only joint refinement from EXACT highest fully audited270/411/PT9c98 after TRAIN-supported E2 fusion initialization. Not original preconditioning-poor f0 or arbitrary worse last. Parent actualTRAIN1167/1600, prior48-stage818; watchTRAIN2->52/80, TEST0->16/25 after changed fusion, supporting retained representation improvement. Parent final24 history fixedSHA: TRAIN_CE1.0648694, KL2.9407008, weightedKL.8822 exceeds weightedCE.7454; mandatory TRAIN-only ratio>=1 and parentTRAIN<.95 support the HYPOTHESIS of nominal-teacher conflict, not a proved causal claim. Disable teacher loss for this ONE comparison using UNCHANGED base8d36 original CE fitter, same label smoothing/registered TRAIN-only synthetic CCD noise/dropout and WD. Original legal G2mask/electrical2/3/directalpha2/3/head only, phaseLR.0002/elec.001/alpha.001 with head.0005 to retain conditioning, max36 complete1600TRAIN epochs/900fitseconds. No new inference layers/teacher/transform/loss implementation; not just more epochs or repeating earlierf0 with different starting lineage. TEST informs strategy/class emphasis/development best selection, never TRAIN samples, teacher targets or TEST/augmentedTEST gradients; no VALID, explicitly NOT independent generalization. Exact newE2 cap parent4dc9 and arrays3c42/48e8, all8prefix SHA/phase/ID/input-ancestor and nativebestlast audits, unchanged already-measured E2 masks; no oldE2/CCD mixing or recapture. Keep true270 parent when no improvement, never demote. FreshG2 only after complete original CPU>=305; final340 unchanged. No structure/alpha-schema/bounds/exposure/coordinates/LUT/calibration/encoding changes, no grid/retry/daemon/scheduler/newbranch/worktree/project/publicupload. Fully exited e2v and published/synced Git required before launch; all evidence retained."
+}
