@@ -37,6 +37,8 @@ def main():
     parser.add_argument('--suite', type=Path, required=True)
     parser.add_argument('--resume-queued-only', action='store_true',
                         help='Replace only a stopped supervisor whose six jobs never started')
+    parser.add_argument('--retry-lsp-cleanup1', action='store_true',
+                        help='One named LSP smoke retry after its documented early DataLoader cleanup failure')
     args = parser.parse_args()
     require_published_source()
     plan_path = args.plan.resolve(strict=True)
@@ -47,7 +49,22 @@ def main():
     plan = json.loads(plan_path.read_text())
     if plan['max_physical_gpus'] != 4 or set(plan['candidate_gpu_indices']) != {2, 4, 5, 6}:
         raise ValueError('Cannot expand the latest four-card limit')
-    lock = (TASK / 'runs/.t19_finetune_suite.lock').open('a')
+    if args.retry_lsp_cleanup1:
+        if args.resume_queued_only or suite.name != 'lsp_finetune60_cleanup_retry1_20261024':
+            raise ValueError('The single cleanup retry needs its own new named suite')
+        original_suite = TASK / 'runs/simulation/frozen_finetune_fixed_last_20261024'
+        original = json.loads((original_suite / 'queue_status.json').read_text())
+        old_smoke = next(j for j in original['jobs'] if j['task'] == 'lsp' and j['phase'] == 'smoke')
+        old_formal = next(j for j in original['jobs'] if j['task'] == 'lsp' and j['phase'] == 'formal')
+        old_result = json.loads((TASK / 'runs/smoke' / old_smoke['name'] / 'result.json').read_text())
+        old_log = (original_suite / (old_smoke['name'] + '.log')).read_text()
+        if (old_smoke['status'] != 'failed' or old_formal['status'] != 'blocked_by_failed_smoke'
+                or old_formal.get('pid') or old_result.get('test_evaluations') != 0
+                or old_result.get('status') != 'complete'
+                or 'DataLoader worker' not in old_log or '_shutdown_workers' not in old_log):
+            raise ValueError('No matching completed-computation/failed-cleanup LSP attempt to retry')
+    lock_name = '.t19_finetune_lsp_cleanup_retry1.lock' if args.retry_lsp_cleanup1 else '.t19_finetune_suite.lock'
+    lock = (TASK / 'runs' / lock_name).open('a')
     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     if not args.resume_queued_only:
         suite.mkdir(parents=True, exist_ok=False)
@@ -56,6 +73,8 @@ def main():
     uuids = {int(row.split(',')[0].strip()): row.split(',')[1].strip()
              for row in inventory.splitlines() if row.strip()}
     candidates = [uuids[index] for index in (6, 4, 5, 2)]
+    if args.retry_lsp_cleanup1:
+        candidates = [uuids[5]]  # Preserve the healthy OpenMoji/GPU6 and editor/GPU4 workers.
     jobs = []
     old = json.loads((suite / 'queue_status.json').read_text()) if args.resume_queued_only else None
     if old:
@@ -64,9 +83,15 @@ def main():
         jobs = old['jobs']
     else:
         for task, stop in FINAL_EPOCHS.items():
+            if args.retry_lsp_cleanup1 and task != 'lsp':
+                continue
             smoke_name = f'{task}_finetune{stop}_smoke_s42_20261024'
+            if args.retry_lsp_cleanup1:
+                smoke_name += '_cleanup1'
             for phase in ('smoke', 'formal'):
                 name = smoke_name if phase == 'smoke' else f'{task}_finetune{stop}_formal_s42_20261024'
+                if args.retry_lsp_cleanup1 and phase == 'formal':
+                    name += '_cleanup1'
                 base = TASK / 'runs' / ('smoke' if phase == 'smoke' else 'simulation')
                 if (base / name).exists():
                     raise RuntimeError('Existing stage evidence found: inspect rather than restart or overwrite')
@@ -77,6 +102,10 @@ def main():
                   gpu_policy='shared_idle_stable10s_free16GiB_util50_oneT19_with_existing_contexts',
                   command=[sys.executable, '-m', __spec__.name, *sys.argv[1:]],
                   original_supervisor_and_workers_preserved=True)
+    if args.retry_lsp_cleanup1:
+        report['named_cleanup_retry'] = dict(attempt=1, original_smoke=old_smoke['name'],
+            original_smoke_log_sha256=file_sha256(original_suite / (old_smoke['name'] + '.log')),
+            training_model_loss_and_formal_worker_count_unchanged=True, additional_TEST_observations=0)
     def save():
         write_json(suite / 'queue_status.json', report)
     save()

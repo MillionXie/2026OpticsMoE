@@ -221,6 +221,13 @@ def run(args):
         before_trainable = structured_sha256({n: p for n, p in model.named_parameters() if p.requires_grad})
         options = dict(batch_size=problem.batch_size, num_workers=2, pin_memory=args.device == 'cuda',
                        multiprocessing_context='spawn', persistent_workers=True)
+        if smoke and args.task == 'lsp':
+            # The four-batch TRAIN smoke deliberately stops early. Linux CUDA
+            # pin-memory/prefetch workers aborted during that early shutdown.
+            # A synchronous smoke avoids unfinished worker queues; formal
+            # augmented epochs keep the original two persistent workers.
+            options = dict(batch_size=problem.batch_size, num_workers=0, pin_memory=False)
+        manifest['data_loader_workers'] = options['num_workers']
         if args.task == 'lsp':
             train = DataLoader(problem.train, shuffle=True, generator=torch.Generator().manual_seed(42), **options)
             loaders.append(train)
@@ -248,7 +255,8 @@ def run(args):
             accumulation = max(1, 32 // problem.batch_size)
             steps = min(len(train), args.smoke_batches) if smoke else len(train)
             sample_limit = min(len(problem.train), steps * problem.batch_size) if smoke else len(problem.train)
-            for step, batch in enumerate(itertools.islice(iter(train), steps)):
+            batches = itertools.islice(iter(train), steps) if smoke else iter(train)
+            for step, batch in enumerate(batches):
                 n = len(batch['sample_id'])
                 group_start = (step // accumulation) * accumulation * problem.batch_size
                 group_samples = min(32, sample_limit - group_start)

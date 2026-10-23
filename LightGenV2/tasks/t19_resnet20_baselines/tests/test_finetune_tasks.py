@@ -123,6 +123,9 @@ def test_own_smoke_then_formal_preserves_parent_and_matches_reference_sampler_op
         smoke = json.loads((smoke_args.run_dir / 'result.json').read_text())
         assert smoke['mode'] == 'smoke' and smoke['test_evaluations'] == 0
         assert smoke['selected_epoch'] == 31 and smoke['trainable_state_changed']
+        smoke_manifest = json.loads((smoke_args.run_dir / 'run_manifest.json').read_text())
+        if task == 'lsp':
+            assert smoke_manifest['data_loader_workers'] == 0
         formal_args = args(root, plan, False, task)
         stage.run(formal_args)
         result = json.loads((formal_args.run_dir / 'result.json').read_text())
@@ -140,6 +143,7 @@ def test_own_smoke_then_formal_preserves_parent_and_matches_reference_sampler_op
             4 if task == 'abo_conditional_edit' else 5)
         if task == 'lsp':
             assert 'fresh_seed42' in manifest['sampler_policy']
+            assert manifest['data_loader_workers'] == 2
         else:
             assert manifest['sampler_replay']['completed_epochs_replayed'] == 30
     finally:

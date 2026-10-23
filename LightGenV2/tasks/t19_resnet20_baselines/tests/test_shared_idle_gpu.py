@@ -55,3 +55,13 @@ def test_empty_card_still_rejects_unattributed_memory_and_no_headroom():
     now['used_mib'] = 40000
     with pytest.raises(RuntimeError, match='room'):
         policy.validate(now, [])
+
+
+def test_t19_on_another_registry_counts_toward_shared_card_limit():
+    first = state()
+    now = copy.deepcopy(first)
+    now['observed_monotonic'] += 10
+    now['active'][1234] = 800
+    now['t19_pids'] = [1234]
+    with pytest.raises(RuntimeError, match='one T19'):
+        policy.validate(now, [], first)
