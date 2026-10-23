@@ -85,3 +85,14 @@ def test_E2_underfit_uses_four_exact_measured_stages_and_joint_suffix():
     for key,value in [('parent_stage','1'),('maximum_parent_TRAIN_accuracy',1.),('intermediate_target',304)]:
         with pytest.raises(AssertionError):policy_validator()({**p,key:value})
     assert p['new_CCD_before_gate']==0 and p['scheduler'] is False
+
+
+def test_alpha_probe_uses_fixed_balanced_TRAIN_and_preserves_parent():
+    s=ENTRY.read_text();tree=ast.parse(s);f=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='TRAIN_alpha_probe')
+    names={n.id.lower() for n in ast.walk(f) if isinstance(n,ast.Name)}
+    assert not names.intersection({'test','test_labels','development'})
+    assert "np.flatnonzero(labels==k)[:cfg['per_class']]" in s and "parameter.copy_(original)" in s
+    assert 'TEST_used_for_probe=False' in s and "decision_data='TRAIN_only'" in s
+    assert 'if not keep:parent=preserved_parent;fit=preserved_fit' in s
+    p=json.loads((HERE/'lab_caltech20_tucam_E2_underfit_profile_20261023.json').read_text())
+    assert p['TRAIN_alpha_release']['lower_initial_alpha']==.7 and p['TRAIN_alpha_release']['samples']==80

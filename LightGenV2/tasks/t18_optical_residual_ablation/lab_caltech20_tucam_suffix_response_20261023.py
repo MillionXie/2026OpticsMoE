@@ -21,6 +21,7 @@ def validate_policy(p):
         assert p['recipe']==dict(name='E2_observed_underfit_original_suffix',epochs=48,seconds=1500,lr_scale=1,TRAIN_class_emphasis=.75)
         assert p['capture_parent_SHA256']=='8fa8544f54069e91e85dc6478519edc1b449bfbd9d17c47d0c48b32abe958e2b'
         assert p['completed_controller'].endswith('/g1s')
+        assert p['TRAIN_alpha_release']==dict(stage=2,samples=80,per_class=4,lower_initial_alpha=.70,minimum_TRAIN_NLL_improvement=.01)
     elif p['schema']=='TUCam_L4_G1_underfit_response_v1':
         assert p['minimum_parent_correct']==250 and p['maximum_parent_TRAIN_accuracy']==.80
         assert p['learning_rates']==dict(phase_lr=.0002,electronic_lr=.001,alpha_lr=.001,head_lr=.002)
@@ -140,6 +141,32 @@ def endpoint(m,stage,parent,fit,paths):
         target_met=fit['selected_correct']>=target,prefix_SHA256=base.identities(m,paths),strict_original_CPU=True,full_physical=stage=='3',TEST_development=True)
 
 
+def TRAIN_alpha_probe(model,data,fields,cfg,out):
+    """One fixed TRAIN-only response check of a bounded existing alpha."""
+    np,torch,m,loop=base.numerical_modules()
+    from torch.nn import functional as F
+    assert list(fields)==list(base.STAGES[:4]) and cfg==dict(stage=2,samples=80,per_class=4,lower_initial_alpha=.70,minimum_TRAIN_NLL_improvement=.01)
+    labels=data['train'][1];ix=np.concatenate([np.flatnonzero(labels==k)[:cfg['per_class']] for k in range(20)])
+    assert len(ix)==cfg['samples'] and len(np.unique(ix))==80 and np.bincount(labels[ix],minlength=20).tolist()==[4]*20
+    model.cpu().eval();parameter=model.fusion_logits[cfg['stage']];original=parameter.detach().clone();losses=[]
+    try:
+        for value in (float(original),cfg['lower_initial_alpha']):
+            with torch.inference_mode():
+                parameter.fill_(value);total=0.
+                for begin in range(0,len(ix),8):
+                    batch=ix[begin:begin+8];probability,_=model(loop.put_fields(model,data,fields,'train',batch,'cpu'))
+                    y=torch.from_numpy(labels[batch].astype(np.int64));loss=F.nll_loss(probability.clamp_min(1e-30).log(),y,reduction='sum');assert torch.isfinite(loss);total+=float(loss)
+                losses.append(total/len(ix))
+    finally:
+        with torch.no_grad():parameter.copy_(original)
+    accepted=losses[1]<losses[0]-cfg['minimum_TRAIN_NLL_improvement']
+    if accepted:
+        with torch.no_grad():parameter.fill_(cfg['lower_initial_alpha'])
+    result=dict(TRAIN_indices=ix.tolist(),TRAIN_ids=data['train'][2][ix].tolist(),TRAIN_samples=80,TRAIN_per_class=4,original_alpha=float(original),proposed_alpha=cfg['lower_initial_alpha'],TRAIN_NLL_parent=losses[0],TRAIN_NLL_proposed=losses[1],accepted=accepted,
+        decision_data='TRAIN_only',TEST_used_for_probe=False,VALID_used=False,physical_calibration=False,new_inference_layers=0,measured_masks_and_input_ancestors_unchanged=True)
+    m.save(out,result);return result
+
+
 def run(a):
     _,torch,m,_=base.numerical_modules();p=m.read(a.profile);validate_policy(p)
     assert m.sha(base.HERE/p['base_profile'])==p['base_profile_SHA256']
@@ -170,7 +197,14 @@ def run(a):
         assert m.sha(teacher.__file__)==p['teacher_engine_SHA256']
         tuned.update(TRAIN_teacher=p['TRAIN_teacher'],weight_decay=p['weight_decay'])
         model,parent,fit=teacher.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
-    else:model,parent,fit=base.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
+    else:
+        preserved_parent=parent;preserved_fit=m.read(parent.parent/'report.json');preserved_metric=preserved_fit['results']['best']['test']
+        if 'TRAIN_alpha_release' in p:tuned['TRAIN_alpha_release_result']=TRAIN_alpha_probe(model,data,fields,p['TRAIN_alpha_release'],folder/'alpha_release_probe.json')
+        model,parent,fit=base.fit_suffix(model,data,dm,fields,paths,parent,reference,tuned,p['recipe'],folder/'fit',305)
+        if 'TRAIN_alpha_release' in p:
+            candidate=fit['results']['best']['test'];keep=candidate['correct']>preserved_metric['correct'] or (candidate['correct']==preserved_metric['correct'] and candidate['nll']<preserved_metric['nll']-1e-4)
+            m.save(folder/'fit_promotion.json',dict(candidate_PT=str(parent),candidate_SHA256=m.sha(parent),candidate_correct=candidate['correct'],parent_PT=str(preserved_parent),parent_SHA256=m.sha(preserved_parent),parent_correct=preserved_metric['correct'],promoted=keep,TEST_development=True,TEST_gradient=False,all_evidence_preserved=True))
+            if not keep:parent=preserved_parent;fit=preserved_fit;model,_=m.model_for(parent,m.sha(parent),4,reference)
     e=endpoint(m,stage,parent,fit,paths);endpoints[-1]=e;m.save(folder/'endpoint_report.json',e)
     if not e['target_met']:
         state='G1_native_linear_gate_unmet' if 'TRAIN_readout' in p else 'G1_teacher_budget_complete_gate_unmet' if 'TRAIN_teacher' in p else 'G1_underfit_budget_complete_gate_unmet'
