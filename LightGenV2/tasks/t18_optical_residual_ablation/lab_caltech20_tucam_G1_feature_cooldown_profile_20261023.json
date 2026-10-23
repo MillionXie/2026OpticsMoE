@@ -1,0 +1,23 @@
+{
+  "schema":"TUCam_L4_G1_feature_response_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"8bb19345e398537bc19baf8cbe373d86d6de91c1612ad99fd22d4d8723a8695b",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1l",
+  "capture_parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_0/fit/best.pt",
+  "capture_parent_SHA256":"f573aaa351f0b20384797fbc658f77e815f01be48bfb67cba46ec652655f81b0",
+  "captures":{
+    "router":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_router/capture",
+    "0":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/s_0/capture",
+    "1":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/a2/s_1/capture"
+  },
+  "parent_stage":"1","minimum_parent_correct":298,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":1.0,"minimum_parent_TRAIN_TEST_gap":0.10,"expected_parent_correct":298,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,"new_CCD_before_gate":0,"scheduler":false,
+  "learning_rates":{},"TRAIN_readout":"cached_TRAIN_mixup_dropout",
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/g1l/s_1/fit",
+  "TRAIN_feature_aug":{"dropout":0.1,"beta":0.4,"lr":0.0002,"weight_decay":0.01,"label_smoothing":0.03,"cooldown":true},
+  "recipe":{"name":"G1_best298_lowerLR_augmentation_cooldown","epochs":48,"seconds":60,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Finite response to completed g1l augmentation: native best298 at12 versus last291 at48, unchanged masks and decreased TRAIN accuracy. Start exact strict native best, not last; only existing5140 head on same verifiedTRAIN features, head LR2e-4 cosine to2e-5, MixUp/dropout strength1 cosine to0, WD.01. Reuse g1l native cache only after source report/PT/ID/labels/prefix/all-non-readout bitwise identity and native probability <=3e-6 checks. At most48 full cachedTRAIN epochs or60fit seconds. Complete native CPU bestlast and frozen/data/SHA audits precede305 gate and any fresh E2. No TEST gradients, augmented TEST training, VALID, new layer, SDK/GPU before gate, camera/exposure/geometry/LUT change, scheduling, other depth or candidate sweep. Original final340 unchanged."
+}

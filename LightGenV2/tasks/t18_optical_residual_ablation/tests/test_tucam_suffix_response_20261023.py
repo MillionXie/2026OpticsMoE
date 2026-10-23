@@ -51,6 +51,12 @@ def test_finite_native_linear_and_TRAIN_only_cached_refinement():
     p=json.loads((HERE/'lab_caltech20_tucam_G1_linear_profile_20261023.json').read_text());policy_validator()(p)
     assert hashlib.sha256((HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py').read_bytes().replace(b'\r\n',b'\n')).hexdigest()==p['linear_engine_SHA256']
     assert p['expected_parent_correct']==298 and p['post_linear_feature_aug']['recipe']['epochs']==48
-    s=ENTRY.read_text();assert "if fit['selected_correct']<305:" in s
+    s=ENTRY.read_text();assert "if fit['selected_correct']<305 and 'post_linear_feature_aug' in p:" in s
     assert "native_feature_source=(folder/'fit').relative_to(base.ROOT).as_posix()" in s
     assert s.index('linear.fit_suffix(')<s.index("if not e['target_met']:")<s.index('fields=acquire(')
+
+
+def test_exact_native_best_cooldown_not_last_or_new_features():
+    p=json.loads((HERE/'lab_caltech20_tucam_G1_feature_cooldown_profile_20261023.json').read_text());policy_validator()(p)
+    assert p['expected_parent_correct']==298 and p['TRAIN_feature_aug']['cooldown'] is True
+    assert p['native_feature_source'].endswith('/g1l/s_1/fit')
