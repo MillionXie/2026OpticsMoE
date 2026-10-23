@@ -18,3 +18,9 @@ def test_native_initialization_and_no_hardware_or_classifier_writes():
     assert 'model_checkpoint_written=False' in s and 'LUT_changed=False' in s and 'classification_accuracy_updated=False' in s
     assert 'protected=={q:m.sha(q) for q in protected}' in s
     for forbidden in ('torch.save(', 'Bench(', 'capture.acquire(', 'data[\'test\']', 'model.cuda('):assert forbidden not in s
+
+
+def test_phase_sign_counterfactual_is_read_only_not_a_LUT_change():
+    s=ENTRY.read_text();body=s.split("if getattr(a,'mode','fit')=='handedness':",1)[1].split("m.save(a.out/'protocol.json',dict(source_git",2)[0]
+    assert 'sign=-1.' in body and 'opposite={k:assess(v)' in body and 'opt.step' not in body
+    assert 'unique_phase_LUT_direction_identified=False' in s and 'actual_phase_encoding_unchanged=True' in s

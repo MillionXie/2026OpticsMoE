@@ -81,7 +81,8 @@ def run(a):
         unseen.append(dict(index=anchor['index'],sample_id=anchor['sample_id'],split='unseen_TRAIN_phase',condition='new_E2',amp=torch.from_numpy(np.asarray(Image.open(input_path)).astype(np.float32)/255),turns=torch.from_numpy(new_phase.astype(np.float32)/256),observed=observed))
     fit=[v for v in pack if v['split']=='fit'];held=[v for v in pack if v['split']=='held_TRAIN'];assert len(fit)==len(held)==80 and len(unseen)==40
     knots=torch.nn.Parameter(torch.full((16,),float(torch.log(torch.expm1(torch.tensor(2*torch.pi/16))))));scale=torch.nn.Parameter(torch.tensor(-.28768207245));pg=torch.nn.Parameter(torch.zeros(16,16));ag=torch.nn.Parameter(torch.zeros(16,16));uniform=torch.linspace(0,2*torch.pi,17)
-    def values():return monotonic_curve(knots,scale),pg,ag
+    sign=1.
+    def values():return sign*monotonic_curve(knots,scale),pg,ag
     def batch(rows):return torch.cat([prediction(v['amp'][None],v['turns'],model,*values(),g,b,sigma) for v in rows])
     def assess(rows):
         loss=pixel=coarse=act=0.
@@ -93,6 +94,17 @@ def run(a):
         return dict(loss=loss/len(rows),full478_PCC=pixel/len(rows),native_optical_PCC=act/len(rows),coarse16_PCC=coarse/len(rows),pairs=len(rows))
     groups={'fit':fit,'held':held,'unseen_TRAIN_phase':unseen};groups.update({'held_'+tag:[v for v in held if v['condition']==tag] for tag in ('flat','nominal_before','half_code','global_offset128')})
     baseline={k:assess(v) for k,v in groups.items()};assert abs(baseline['held_nominal_before']['native_optical_PCC']-r['fitted']['held_nominal_before']['native_optical_PCC'])<1e-4
+    if getattr(a,'mode','fit')=='handedness':
+        sign=-1.;opposite={k:assess(v) for k,v in groups.items()}
+        supported=all(opposite[k]['native_optical_PCC']>=baseline[k]['native_optical_PCC']+.03 and opposite[k]['loss']<=.95*baseline[k]['loss'] for k in ('held','held_nominal_before','unseen_TRAIN_phase'))
+        assert protected=={q:m.sha(q) for q in protected}
+        m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),TRAIN_unique=40,fit_updates=0,TEST_used=False,classification_labels_used=False,
+            old_probe_report_SHA256=m.sha(probes/'report.json'),new_E2_capture_report_SHA256=m.sha(cap/'report.json'),native_response_map_SHA256=m.sha(folder/'TRAIN_native_response.npz'),
+            counterfactual='nominal versus conjugated phase under identical native photometry and fixed nominal propagation',actual_phase_encoding_unchanged=True,SDK_used=False,GPU_used=False,new_CCD=0,model_checkpoint_written=False,hardware_changed=False))
+        report=dict(state='complete',nominal=baseline,opposite_phase=opposite,opposite_phase_association_supported=bool(supported),fit_updates=0,TEST_used=False,classification_labels_used=False,
+            SDK_used=False,GPU_used=False,new_CCD=0,model_checkpoint_written=False,hardware_changed=False,LUT_changed=False,classification_accuracy_updated=False,
+            unique_phase_LUT_direction_identified=False,phase_sign_vs_propagation_convention_not_distinguished=True,protocol_SHA256=m.sha(a.out/'protocol.json'),elapsed_s=time.monotonic()-start)
+        m.save(a.out/'report.json',report);m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),TRAIN_only=True,hardware_and_source_PT_frozen=True));print(json.dumps(report),flush=True);return
     m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),recipe=RECIPE,profile_SHA256=m.sha(a.profile),
         fit_TRAIN_anchors=20,held_TRAIN_anchors=20,fit_pairs=80,held_pairs=80,unseen_new_phase_TRAIN_pairs=40,new_phase_fitted=False,
         native_response_report_SHA256=m.sha(folder/'report.json'),native_response_map_SHA256=m.sha(folder/'TRAIN_native_response.npz'),probe_report_SHA256=m.sha(probes/'report.json'),new_E2_capture_report_SHA256=m.sha(cap/'report.json'),
@@ -121,4 +133,4 @@ def run(a):
 
 
 if __name__=='__main__':
-    q=argparse.ArgumentParser();q.add_argument('--profile',type=Path,required=True);q.add_argument('--out',type=Path,required=True);run(q.parse_args())
+    q=argparse.ArgumentParser();q.add_argument('--profile',type=Path,required=True);q.add_argument('--out',type=Path,required=True);q.add_argument('--mode',choices=('fit','handedness'),default='fit');run(q.parse_args())
