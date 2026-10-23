@@ -17,6 +17,21 @@ best重规划，至多4轮/180fit秒，整轮无正确数或NLL足量保留改�
 全1600TRAIN/411TEST、非末端冻结/缓存概率/身份及本地SHA审计后才报新分数。
 这只是新轨迹登记，不表示已启动或能达标；不重复旧Huber/SAM/LBFGS失败配方。
 
+CE双类/单行实际41次观察已原模型全TRAIN/TEST bestlast复核、冻结审计及rc0退出。
+仍285/411，TRAIN1015/1600；一次单行更新在同正确数下改善NLL，接受native PT
+5cdf3742f3169afcd34a63e9e8879c1ac0d22d4b2e969ead246a8b3b8f0c4aec，
+TEST NLL1.391097784，不是准确率提升；原c172de22仍保护。16份本地SHA备份manifest
+8b69fb002d6accdbd23ed8e32ffd6153ea45fa8fe6d76476dd1400edd65cf578。
+
+据此接一条有限`postCCD_conditioned_joint_20261023/L4`，从该实际保留285/NLL改善
+候选而非坏last出发；旧五阶段和全部2011末端入射缓存逐样本原模型重新核等。
+原9conv+direct alpha+5140共5150联合更新，头以TRAIN条件化增量优化并折回原
+Linear，不增加层。此前原批多条联合训练alpha大幅漂移而损伤TEST，本条将alpha
+相对父位移限.003，末9conv范数位移限.03，给条件化头补偿而不放任表示漂移。
+只完整TRAIN拟合/权重与可靠父保护，至多8epoch/360fit秒、完整epoch边界停止；
+本条不加CCD/图像/特征随机增强，作为受控稳定性训练，不将一切尝试都归为增强。
+TEST只诊断/开发选择，参数、硬件与无重拍边界不变；完成原生bestlast审计再报结果。
+
 ## 2026-10-23继续原末端5150：TRAIN难例增强，不训练TEST
 
 用户明确前电残差继续冻结；从本批已原生复核257/411的保留best接续，不用较差last，

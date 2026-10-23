@@ -20,3 +20,15 @@ def test_reuses_tested_CE_curvature_but_no_test_gradient():
     assert "fresh['correct']==expected" in text and 'np.max(np.abs(fp-cached_prob))<=3e-6' in text
     assert 'lastw,lastb=latest' in text and 'lastw,lastb=retained()' not in text
     assert 'if best>=340 or (best,bnll)==before:break' in text
+
+
+def test_conditioned_joint_stays_in_same_DVP_lineage_and_limits_representation_drift():
+    p=json.loads((HERE/'lab_caltech20_L4_DVP_conditioned_joint_profile_20261023.json').read_text())
+    assert p['parent_correct']==285 and p['parent_SHA256']=='5cdf3742f3169afcd34a63e9e8879c1ac0d22d4b2e969ead246a8b3b8f0c4aec'
+    assert 'TUCam' not in p['parent_PT'] and 'TUCam' not in p['terminal_input_producer']
+    r=p['conditioned_recipe']['phases'][0]
+    assert r['epochs']==8 and r['fit_seconds']==360 and r['alpha_trust']==.003 and r['conv_trust']==.03
+    assert r['mix']==r['noise_DN']==r['gain_sigma']==r['dropout']==0
+    text=(HERE/'lab_caltech20_dvp_terminal_reopen_20261021.py').read_text()
+    assert 'if conditioned_joint:' in text and "a.out/'original5150_conditioned'" in text
+    assert "if reuse:assert np.array_equal(dest[begin:end],inp[:valid])" in text

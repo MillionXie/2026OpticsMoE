@@ -56,7 +56,8 @@ def selftest():
 
 def run(a):
     preview=json.loads(a.profile.read_text());post_sam=preview.get('method') in ('TRAIN_postCCD_SAM','TRAIN_postCCD_geometry_SAM','TRAIN_postCCD_Adam_restart','TRAIN_postCCD_Adam_warm','TRAIN_postCCD_alternating_blocks','TRAIN_postCCD_featuremix_SWA')
-    cpu_joint=preview.get('method') in ('TRAIN_postCCD_fullbatch_SGD','TRAIN_postCCD_joint_LBFGS','TRAIN_postCCD_prototype_SGD','TRAIN_postCCD_GCE_SGD')
+    conditioned_joint=preview.get('method')=='TRAIN_postCCD_conditioned_joint'
+    cpu_joint=preview.get('method') in ('TRAIN_postCCD_fullbatch_SGD','TRAIN_postCCD_joint_LBFGS','TRAIN_postCCD_prototype_SGD','TRAIN_postCCD_GCE_SGD') or conditioned_joint
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==(preview['GPU_UUID'] if post_sam else '')
     import numpy as np,torch
     from torch.nn import functional as F
@@ -383,6 +384,17 @@ def run(a):
                 cached[role]=dest
                 if role=='test':assert int((torch.cat(pp).argmax(1)==ty).sum())==best
     finally:hook.remove()
+    if conditioned_joint:
+        from lab_caltech20_tucam_trainaug_20261023 import fit
+        chosen,results=fit(model,cached,fields,data,cfg,cfg['conditioned_recipe'],a.out/'original5150_conditioned',session/'source_reference.ts',identities)
+        loop.validate_state(m,chosen,original,allowed);loop.saved_model(m,chosen,a.out/'best.pt',protocol)
+        last,_=m.model_for(a.out/'original5150_conditioned/last.pt',m.sha(a.out/'original5150_conditioned/last.pt'),4,session/'source_reference.ts');loop.validate_state(m,last,original,allowed);loop.saved_model(m,last,a.out/'last.pt',protocol)
+        # Re-serialization changes container SHA, not the audited model state.
+        results={key:{**v,'PT_SHA256':m.sha(a.out/(key+'.pt'))} for key,v in results.items()}
+        native=m.read(a.out/'original5150_conditioned/report.json');audit=m.read(a.out/'original5150_conditioned/independent_audit.json');assert audit['passed'] and audit['report_SHA256']==m.sha(a.out/'original5150_conditioned/report.json')
+        m.save(a.out/'report.json',dict(state='complete',baseline_correct=expected,selected_correct=native['selected_correct'],selected_E0=all(torch.equal(v,m.state_cpu(chosen)[n]) for n,v in original.items()),results=results,target=340,target_met=native['selected_correct']>=340,strict_original_CPU=True,full_physical=True,all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),native_report_SHA256=m.sha(a.out/'original5150_conditioned/report.json'),SDK_used=False,GPU_used=False))
+        m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,prefix_SHA256=identities,nonterminal_state_bitwise_frozen=True,native_cached_probability_parity=True,source_native_report_SHA256=m.sha(a.out/'original5150_conditioned/report.json')))
+        return
     if post_sam or cpu_joint:
         from lab_caltech20_dvp_postCCD_SAM_20261021 import fit_and_audit
         return fit_and_audit(a,cfg,m,loop,model,original,allowed,protocol,cached,fields,banks,data,session/'source_reference.ts')
