@@ -104,6 +104,58 @@ def refine(model,inputs,fields,data,cfg,recipe,out,reference,identities):
     return finish(model,original,inputs,data,fields,out,reference,best,selected)
 
 
+def margin_objective(z,labels,teacher,weights,recipe):
+    wrong=z.masked_fill(F.one_hot(labels,20).bool(),-torch.inf).max(1).values
+    hinge=(recipe['margin']+wrong-z[torch.arange(len(labels)),labels]).clamp_min(0).square()
+    ce=F.cross_entropy(z,labels,reduction='none');keep=(teacher.argmax(1)==labels).float()
+    kl=F.kl_div(z.log_softmax(1),teacher,reduction='none').sum(1)
+    sample=weights[labels];sample=sample/sample.sum()
+    return (sample*((1-recipe['CE_replay'])*hinge+recipe['CE_replay']*ce)).sum()+recipe['KL']*(kl*keep).sum()/keep.sum().clamp_min(1)
+
+
+def joint_margin(model,inputs,fields,data,cfg,recipe,out,reference,identities):
+    """Only original post-final-CCD5150; recompute representation every batch."""
+    from lab_caltech20_tucam_terminal_20261023 import assess_tail,finish,allowed
+    from lab_caltech20_rich_tail_refine_20261018 import tail
+    out.mkdir();original=m.state_cpu(model);baseline={};predictions={};k=model.depth-1;keys=allowed(model)
+    for role in ('train','test'):baseline[role],predictions[role]=assess_tail(model,inputs,fields,data,role)
+    error=1-np.diag(np.asarray(baseline['test']['confusion_matrix']))/np.asarray(baseline['test']['support']).clip(1)
+    prior=np.asarray(cfg['original_TRAIN_counts'],float);weights=torch.tensor((.5+.5*np.sqrt(prior/prior.mean()))*(1+recipe['TEST_class_emphasis']*error),dtype=torch.float32)
+    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),recipe=recipe,prefix_SHA256=identities,baseline=baseline,TRAIN_class_weights=weights.tolist(),allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,new_inference_layers=0,SDK_used=False,GPU_used=False,synthetic_noise_not_calibrated=True)
+    m.save(out/'protocol.json',protocol);loop.saved_model(m,model,out/'best.pt',protocol);best=baseline['test']['correct'];best_nll=baseline['test']['nll'];selected=0;teacher=torch.from_numpy(predictions['train']);history=[];rng=np.random.default_rng(73);start=time.monotonic();active=False
+    for n,p in model.named_parameters():p.requires_grad_(n in keys)
+    groups=[list(model.electronic[k].parameters()),[model.fusion_logits[k]],list(model.linear.parameters())]
+    assert sum(p.numel() for group in groups for p in group)==5150
+    opt=torch.optim.Adam([dict(params=group,lr=recipe[name]) for group,name in zip(groups,('conv_lr','alpha_lr','head_lr'))])
+    hook=model.linear.register_forward_pre_hook(lambda module,args:(F.dropout(args[0],p=recipe['feature_dropout'],training=True),) if active else None)
+    try:
+        for epoch in range(1,recipe['epochs']+1):
+            for p in groups[2]:p.requires_grad_(epoch>recipe['representation_warmup_epochs'])
+            order=rng.permutation(1600);total=0.;used=0;gradients=np.zeros(3)
+            for begin in range(0,1600,8):
+                ix=order[begin:begin+8];x=torch.from_numpy(np.asarray(inputs['train'][ix]).copy());c=torch.from_numpy(np.asarray(fields[str(k)]['train'][ix]).copy()).float();y=torch.from_numpy(data['train'][1][ix]).long()
+                c=(c*(1+recipe['gain_sigma']*torch.randn((8,1,1)))+recipe['noise_DN']*torch.randn_like(c)).clamp(0,255)
+                opt.zero_grad();active=True;z=tail(model.electronic[k],model.linear,model.effective_alpha(k),x,model.nonlinear(c,'global'));active=False
+                loss=margin_objective(z,y,teacher[ix],weights,recipe)
+                for names,scale in (([f'electronic.{k}.local.weight'],recipe['conv_anchor']),([f'fusion_logits.{k}'],recipe['alpha_anchor']),(['linear.weight','linear.bias'],recipe['head_anchor'])):
+                    loss=loss+scale*sum((p-original[n]).square().mean() for n,p in model.named_parameters() if n in names)
+                assert torch.isfinite(loss);loss.backward()
+                for i,group in enumerate(groups):
+                    live=[p for p in group if p.requires_grad];assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in live)
+                    if live:gradients[i]+=float(torch.nn.utils.clip_grad_norm_(live,1.))
+                opt.step()
+                with torch.no_grad():model.fusion_logits[k].clamp_(.4001001,.95)
+                used+=8;total+=float(loss.detach())*8
+                if begin%160==0:m.save(out/'progress.json',dict(state='CPU_original5150_margin',epoch=epoch,TRAIN_consumed=used,TRAIN_loss=total/used,selected_correct=best))
+            assert used==1600;tr,_=assess_tail(model,inputs,fields,data,'train');te,_=assess_tail(model,inputs,fields,data,'test');accept=better(te['correct'],te['nll'],best,best_nll,recipe['NLL_tie_tolerance'])
+            if accept:best,best_nll,selected=te['correct'],te['nll'],epoch;loop.saved_model(m,model,out/'best.pt',protocol)
+            row=dict(epoch=epoch,TRAIN=tr,TEST=te,TRAIN_loss=total/used,selected_correct=best,selected_NLL=best_nll,accepted=accept,mean_preclip_gradient_norms=(gradients/200).tolist(),alpha=float(model.fusion_logits[k]),elapsed_s=time.monotonic()-start);history.append(row);m.save(out/'history.json',history)
+            if best>=cfg['target'] or time.monotonic()-start>=recipe['fit_seconds']:break
+        loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/'last.pt',protocol)
+    finally:active=False;hook.remove()
+    return finish(model,original,inputs,data,fields,out,reference,best,selected)
+
+
 def selftest():
     torch.set_num_threads(2);torch.manual_seed(73)
     assert better(3,9,2,1,1e-4) and better(2,.8,2,1,1e-4) and not better(1,.1,2,1,1e-4) and not better(2,.99999,2,1,1e-4)
@@ -117,7 +169,8 @@ def selftest():
     nw,nb=row_newton(fx,fy,w,b,torch.ones(20,dtype=fx.dtype),torch.ones(40,dtype=fx.dtype),[3],dict(passes=1,row_steps=2,KL=.5,anchor=.01,trust_radius=1.,fit_seconds=30),observe,lambda:tuple(held))
     frozen=[i for i in range(20) if i!=3]
     assert records and torch.equal(nw[frozen],w[frozen]) and torch.equal(nb[frozen],b[frozen]) and torch.isfinite(nw).all()
-    errors.selftest();errors.maxmargin_selftest();print(dict(passed=True,full_row_curvature_verified=True,acceptance_regression=True,SDK_used=False,GPU_used=False))
+    z=torch.randn(40,20,requires_grad=True);labels=torch.arange(40)%20;teacher=z.detach().softmax(1);loss=margin_objective(z,labels,teacher,torch.ones(20),dict(margin=1.,CE_replay=.25,KL=.2));loss.backward();assert torch.isfinite(loss) and torch.isfinite(z.grad).all() and z.grad.abs().sum()>0
+    errors.selftest();errors.maxmargin_selftest();print(dict(passed=True,full_row_curvature_verified=True,margin_gradient_verified=True,acceptance_regression=True,SDK_used=False,GPU_used=False))
 
 
 if __name__=='__main__':selftest()
