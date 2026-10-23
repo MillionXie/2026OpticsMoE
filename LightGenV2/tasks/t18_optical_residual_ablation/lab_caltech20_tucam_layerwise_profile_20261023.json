@@ -1,0 +1,29 @@
+{
+  "schema":"TUCam_L4_layerwise_original_suffix_v1",
+  "sequence":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020",
+  "initial_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_rich20_L4_residual_final_20261018/residual_L4.pt",
+  "initial_SHA256":"7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5",
+  "reference":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_rich20_L4_residual_final_20261018/source_reference.ts",
+  "reference_SHA256":"b508321c0d3d14cf66b6c58fc0b8d61b6788806f0fa00283491c935ba65c88ea",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "TRAIN":1600,"TEST":411,"VALID":0,"TRAIN_each_class":80,
+  "simulation_correct":346,"intermediate_target":314,"final_target":340,
+  "interstage_fit":true,"minimum_free_GiB":120,"seed":73,
+  "GPU_UUID":"GPU-fb43b3de-2747-6835-a21f-77fc2c3532c9",
+  "desktop_graphics_process_allowlist":["dwm.exe","explorer.exe","startmenuexperiencehost.exe","todesk.exe","searchapp.exe","textinputhost.exe","phoneexperiencehost.exe","msedgewebview2.exe","shellexperiencehost.exe","systemsettings.exe","msedge.exe","lockapp.exe"],
+  "phase_lr":0.00005,"electronic_lr":0.0001,"alpha_lr":0.0001,"head_lr":0.0005,"weight_decay":0.001,"label_smoothing":0.03,"evaluate_every":2,
+  "CCD_gain_sigma":0.005,"CCD_additive_sigma_DN":0.1,"dropout_location":"CCD_pixels","CCD_pixel_dropout_p":0.002,"feature_dropout_p":0,
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "recipes":[
+    {"name":"rawCE_suffix","epochs":24,"seconds":900,"lr_scale":1,"TRAIN_class_emphasis":0.25},
+    {"name":"lowerLR_focused_suffix","epochs":12,"seconds":600,"lr_scale":0.25,"TRAIN_class_emphasis":0.5}
+  ],
+  "hardware_by_stage":{
+    "router":{"path":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L4/stage_router/TRAIN_calibration/admitted_hardware.json","SHA256":"038042c2ef573d2d06b661eb4dc7bead2de135c5faf819dbd0abcd39c387fc0a"},
+    "0":{"path":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L4/stage_0/TRAIN_calibration/admitted_hardware.json","SHA256":"ab06043f2c5ab1efd410887f37f0018c6f7f11271f32088b9180be4ff300fa43"},
+    "1":{"path":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L4/stage_1/TRAIN_calibration/admitted_hardware.json","SHA256":"1e89e61020e84e3bbb9f9e06786f324b46fc87571cdd1542f970ef394e5df61b"},
+    "2":{"path":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L4/stage_2/TRAIN_calibration/admitted_hardware.json","SHA256":"32291e10c2aaf179bc51ab001bf8ad503b8cc759241fed37b4ba0944f91f32e7"},
+    "3":{"path":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L4/stage_3/TRAIN_calibration/admitted_hardware.json","SHA256":"18eba26bc381bc8e1eda8c2d0f79818bdb07ae3b73f2a293bb80e277d18ee76d"}
+  },
+  "scope":"20261023 human authorizes fresh L4 layer-major capture then downstream-mask tuning after EACH measured layer. All five stages fresh, old69.34 and new62.53 retained separately. Reuse admitted TUCam geometry/orientation/device LUT and previously admitted exposure per named stage, no exposure search or device reset. Full1600TRAIN (80/class,1508 original plus92 fixed augmentation),411TEST,noVALID. Freeze every measured input ancestor and measured mask; update only original unmeasured phase masks and lawful post-measurement electronics/alpha/head. TRAIN-only synthetic mild CCD noise/dropout, no latent feature deletion. TEST diagnosis plans modest TRAIN class emphasis and selects native PT only; no TEST derivatives or augmented TEST training. Intermediate8pp goal314 and final1.5pp goal340 are goals, not promises; if both finite recipes fail, preserve all frames and record unmet gate without silently advancing or blindly rephotographing. No new inference layers, branches, worktrees, scheduler or automatic restart. All original CPU bestlast, full predictions, frozen-state and data/phase/SHA audits required. Every changed downstream optical mask needs its own NEW downstream CCD. L2/L6/control groups are not started by this workflow."
+}

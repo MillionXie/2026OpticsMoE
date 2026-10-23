@@ -68,7 +68,7 @@ def audit(model,data,fields,dm,hw,stage,out):
     m.save(out/'independent_audit.json',dict(passed=True,matched_samples=checked,report_SHA256=m.sha(out/'report.json'),protocol_SHA256=m.sha(out/'protocol.json'),all_raw_crop_canonical_BMP_phase_PT_ID_SHA_verified=True,native_crop_recomputed=True,TEST_gradient=False))
 
 
-def acquire(model,data,dm,fields,paths,hardware,stage,out,parent):
+def acquire(model,data,dm,fields,paths,hardware,stage,out,parent,interstage_fit=False):
     hardware=Path(hardware);hw=validate_hardware(hardware);out=Path(out)
     assert not out.exists() and not m.LOCK.exists();out.mkdir(parents=True)
     preceding=[] if stage=='router' else ['router']+[str(k) for k in range(int(stage))]
@@ -77,7 +77,8 @@ def acquire(model,data,dm,fields,paths,hardware,stage,out,parent):
     warp=cv2.getPerspectiveTransform(np.float32(m.corners(Path(hw['coordinates']))),np.float32([[0,0],[477,0],[477,477],[0,477]]))
     provenance={k:dict(path=str(v),report_SHA256=m.sha(v/'report.json'),hardware_SHA256=m.read(v/'report.json')['hardware_SHA256']) for k,v in paths.items()}
     identities={k+'/'+r:m.sha(paths[k]/r/'ccd.npy') for k in fields for r in ('train','test')}
-    m.save(out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),stage=stage,stage_name=name(stage),depth=model.depth,PT_SHA256=digest,data_SHA256=dm['sha256'],hardware_SHA256=hardware_SHA,hardware_manifest=str(hardware),prefix_SHA256=identities,prefix_reports=provenance,TRAIN=1600,TEST=411,VALID=0,automatic_retry=False,interstage_fit=False,original_layer_forward=True,phase_LUT_scope='linear voltage, not verified linear phase'))
+    assert isinstance(interstage_fit,bool)
+    m.save(out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),stage=stage,stage_name=name(stage),depth=model.depth,PT_SHA256=digest,data_SHA256=dm['sha256'],hardware_SHA256=hardware_SHA,hardware_manifest=str(hardware),prefix_SHA256=identities,prefix_reports=provenance,TRAIN=1600,TEST=411,VALID=0,automatic_retry=False,interstage_fit=interstage_fit,original_layer_forward=True,phase_LUT_scope='linear voltage, not verified linear phase'))
     m.save(m.LOCK,dict(pid=os.getpid(),camera='tucam',out=str(out),stage=stage));pool=ThreadPoolExecutor(max_workers=1);pending=None;count=0;phase=None;arrays={};start=time.monotonic()
     def finish():
         nonlocal pending,count
