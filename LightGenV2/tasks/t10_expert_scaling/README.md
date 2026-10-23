@@ -1,5 +1,27 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 2026-10-23：Kather k3入口路由负载约束诊断
+
+旧soft均衡权重0.01仍保留：原项约束microbatch2的soft概率均值，不能保证
+hard top-k实际使用均衡。无额外约束续训后的Kather k3在验证集始终选择同一组三专家，
+平均soft概率约[0.202,0.138,0.271,0.389]，故不能宣称已学会动态专家分工。
+
+新增可选`--hard-balance-weight`：定义`f_e=mean_batch(mask_e)`、
+`p_e=mean_batch(probability_e)`，附加`lambda*N/k*sum(stopgrad(f_e)*p_e)`。
+这是使用实际选择频率的可导代理，不是对离散mask直接求导；均匀使用时基线为1。
+每次optimizer step单独重算同一增强图像的router，以完整effective batch16统计，
+不会把16样本全光学图保留在显存。原分类/捕获/TV/soft均衡项保持。
+
+预先固定两个权重0.1/1.0，仅Kather N4k3 seed17，从原last60继续30轮，
+与既有extra30相同数据顺序、增强、学习率和优化器/EMA状态配对。
+不根据TEST选择权重；报告路由是否恢复变化及验证性能权衡，不预设均衡提高准确率。
+保留每轮hard负载/soft概率/选择集合数、辅助项及分类router梯度范数，
+末轮与验证选定best均保存逐样本路由记录和类别分配。
+若原best仍胜出，明确报告选定模型仍可能坍塌，不能以last路由替代best的性能。
+新run为`runs/simulation/kather_k3_load_balance_20261023`，
+由`diagnose_topk_schedule --balance-sweep`在最多两张空闲GPU运行，跳过GPU6。
+这些属于已查看TEST后的开发诊断。
+
 ## 2026-10-23：固定4专家 Top-k 收敛诊断
 
 针对已有固定478三任务表，重新核对36份训练/history/TEST报告。均为60轮；

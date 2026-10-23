@@ -16,9 +16,13 @@ def main():
     ap.add_argument('--out', type=Path, required=True)
     ap.add_argument('--sources', type=Path, default=Path('/DATA/DATA1/guest3/t10_fixed478_3datasets_20260921_runs'))
     ap.add_argument('--gpu-candidates', type=int, nargs='+', default=[1, 0, 2, 3, 4, 5])
+    ap.add_argument('--balance-sweep', action='store_true',
+                    help='Only Kather k3 seed17, added load-aware weights 0.1 and 1.0')
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=False)
     jobs = [dict(dataset=ds, k=k) for ds in ('kather2016', 'organcmnist') for k in (3, 4)]
+    if a.balance_sweep:
+        jobs = [dict(dataset='kather2016', k=3, balance_weight=w) for w in (.1, 1.)]
     running, complete, failed = {}, [], []
     children = []
     interrupted = False
@@ -30,7 +34,8 @@ def main():
     signal.signal(signal.SIGINT, stop)
     save(a.out/'identity.json', dict(pid=os.getpid(), command=sys.argv,
          commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-         protocol='single_seed17_paired_k3_k4_extra30_lr2e-4_to2e-5', max_gpus=2))
+         protocol=('load_balance_sweep_extra30' if a.balance_sweep else
+                   'single_seed17_paired_k3_k4_extra30_lr2e-4_to2e-5'), max_gpus=2))
     try:
         while jobs or running:
             for gpu in a.gpu_candidates:
@@ -42,6 +47,8 @@ def main():
                     continue
                 job = jobs.pop(0)
                 name = f"{job['dataset']}_k{job['k']}_s17_extra30"
+                if 'balance_weight' in job:
+                    name += f"_loadbal{job['balance_weight']:g}"
                 source = a.sources/f"{job['dataset']}__moe_oeo_N4_k{job['k']}_L4_lr0.002_s17"
                 uuid = subprocess.check_output(['nvidia-smi', '-i', str(gpu),
                     '--query-gpu=uuid', '--format=csv,noheader'], text=True).strip()
@@ -49,6 +56,8 @@ def main():
                 env.update(CUDA_VISIBLE_DEVICES=uuid, CUDA_DEVICE_ORDER='PCI_BUS_ID')
                 cmd = [sys.executable, '-u', '-m', 'LightGenV2.tasks.t10_expert_scaling.diagnose_topk',
                        '--source', str(source), '--out', str(a.out/name)]
+                if 'balance_weight' in job:
+                    cmd += ['--hard-balance-weight', str(job['balance_weight'])]
                 if job['dataset'] == 'organcmnist':
                     cmd += ['--test-source', '/DATA/DATA1/guest3/demo_reproduction_data/organcmnist/organcmnist.npz']
                 log = (a.out/f'{name}.log').open('w')

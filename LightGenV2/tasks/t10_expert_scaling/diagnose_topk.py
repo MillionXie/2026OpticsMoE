@@ -19,8 +19,40 @@ import time
 import numpy as np
 import torch
 
-from .model import ScalingOptics
+from .model import ScalingOptics, encode_rgb
 from .train import data, evaluate, images, objective, save, sha
+
+
+def load_balance_loss(probabilities, mask, k):
+    """Load-aware auxiliary: N/k * sum_e(f_e * p_e), uniform baseline=1.
+
+    f is the observed top-k inclusion fraction (detached); p is the differentiable
+    probability averaged over the entire effective batch. This is a surrogate,
+    not a claim that hard-mask variance itself has a derivative.
+    """
+    frequency = mask.detach().mean(0)
+    return probabilities.shape[1]/k * (frequency*probabilities.mean(0)).sum()
+
+
+@torch.no_grad()
+def save_route_audit(model, split, path):
+    """Per-sample router records, without augmentations or full-field propagation."""
+    model.eval()
+    x, y, ids = split
+    probabilities, selections = [], []
+    for start in range(0, len(y), 16):
+        ix = torch.arange(start, min(start+16, len(y)))
+        source = encode_rgb(images(x, ix, 0, 0), model.router_side)
+        _, probability, mask = model.route(source, ste=False)
+        probabilities.append(probability.cpu())
+        selections.append(mask.cpu())
+    p, m = torch.cat(probabilities).numpy(), torch.cat(selections).numpy()
+    np.savez_compressed(path, ids=ids, labels=y.numpy(), route_probabilities=p, route_mask=m)
+    _, frequencies = np.unique(m, axis=0, return_counts=True)
+    save(path.with_suffix('.json'), dict(
+        samples=len(y), selection_load=m.mean(0).tolist(), mean_probability=p.mean(0).tolist(),
+        distinct_selected_sets=len(frequencies), most_common_set_fraction=float(frequencies.max()/len(y)),
+        selection_by_class=[m[y.numpy()==i].mean(0).tolist() for i in range(model.classes)]))
 
 
 def main():
@@ -31,10 +63,12 @@ def main():
     ap.add_argument('--epochs', type=int, default=30)
     ap.add_argument('--lr', type=float, default=2e-4)
     ap.add_argument('--batch', type=int, default=2)
+    ap.add_argument('--hard-balance-weight', type=float, default=0.,
+                    help='Additional load-aware routing auxiliary over effective batch16')
     a = ap.parse_args()
     if a.out.resolve() == a.source.resolve():
         raise ValueError('Source runs are immutable')
-    if a.epochs < 1 or a.lr <= 0:
+    if a.epochs < 1 or a.lr <= 0 or a.hard_balance_weight < 0:
         raise ValueError('Invalid continuation budget')
     a.out.mkdir(parents=True, exist_ok=False)
     try:
@@ -81,7 +115,10 @@ def run(a):
                     source_run=str(a.source.resolve()), source_last_sha256=sha(a.source/'last_checkpoint.pt'),
                     source_best_sha256=result['checkpoint_sha256'],
                     diagnosis=dict(extra_epochs=a.epochs, lr_start=a.lr, lr_end=a.lr*.1,
-                                   optimizer_moments_preserved=True, test_role='development_followup'),
+                                   optimizer_moments_preserved=True, test_role='development_followup',
+                                   hard_balance_weight=a.hard_balance_weight,
+                                   hard_balance_formula='N/k sum(detached_selection_frequency * mean_probability)',
+                                   hard_balance_batch=16, original_soft_balance_preserved=True),
                     command=sys.argv)
     metadata['arguments'].update(out=str(a.out), epochs=origin_epoch+a.epochs)
     save(a.out/'metadata.json', metadata)
@@ -107,6 +144,9 @@ def run(a):
             group['lr'] = lr
         total = 0.
         steps = 0
+        auxiliary_total = 0.
+        auxiliary_gradient_total = 0.
+        classification_router_gradient_total = 0.
         for start in range(0, len(order), 16):
             effective = order[start:start+16]
             optimizer.zero_grad(set_to_none=True)
@@ -118,6 +158,18 @@ def run(a):
                     raise RuntimeError('Nonfinite loss')
                 loss.backward()
                 total += float(loss.detach())
+            if a.hard_balance_weight:
+                # Recompute only the small router for the same augmented images.
+                # All microbatches feed one batch16 load statistic; no full optical
+                # graph needs to be retained across microbatch backward calls.
+                classification_router_gradient_total += float(model.router_phase.grad.norm())
+                source = encode_rgb(images(x, effective, epoch, seed, True), model.router_side)
+                _, rp, mask = model.route(source, dense=False)
+                auxiliary = a.hard_balance_weight*load_balance_loss(rp, mask, model.k)
+                auxiliary_grad = torch.autograd.grad(auxiliary, model.router_phase, retain_graph=True)[0]
+                auxiliary_gradient_total += float(auxiliary_grad.detach().norm())
+                auxiliary.backward()
+                auxiliary_total += float(auxiliary.detach())
             norm = torch.nn.utils.clip_grad_norm_(model.parameters(), 1., error_if_nonfinite=True)
             optimizer.step()
             with torch.no_grad():
@@ -127,6 +179,11 @@ def run(a):
         vm, _ = evaluate(ema, splits['val'], a.batch)
         entry = dict(epoch=epoch, train_objective=total/steps, val=vm, lr=lr,
                      gradient_norm=float(norm), elapsed_seconds=time.time()-started)
+        if a.hard_balance_weight:
+            entry.update(load_auxiliary_mean=auxiliary_total/steps,
+                         total_objective_mean=(total+auxiliary_total)/steps,
+                         load_auxiliary_router_gradient_mean=auxiliary_gradient_total/steps,
+                         classification_router_gradient_mean=classification_router_gradient_total/steps)
         if step % 5 == 0 or step == 1:
             entry['train'], _ = evaluate(ema, splits['train'], a.batch)
         history.append(entry)
@@ -140,10 +197,15 @@ def run(a):
         save(a.out/'status.json', dict(state='training', epoch=epoch, total_epochs=origin_epoch+a.epochs,
                                        best_epoch=best_epoch, pid=os.getpid()))
         print(json.dumps(entry), flush=True)
+    if a.hard_balance_weight:
+        save_route_audit(ema, splits['val'], a.out/'last_val_routes.npz')
     chosen = torch.load(a.out/'best_checkpoint.pt', map_location='cpu', weights_only=False)
     ema.load_state_dict(chosen['model'])
     train_metrics, _ = evaluate(ema, splits['train'], a.batch)
     val_metrics, _ = evaluate(ema, splits['val'], a.batch)
+    if a.hard_balance_weight:
+        for split in ('train', 'val'):
+            save_route_audit(ema, splits[split], a.out/f'selected_{split}_routes.npz')
     selected = dict(best_epoch=best_epoch, train=train_metrics, val=val_metrics,
                     checkpoint_sha256=sha(a.out/'best_checkpoint.pt'), git_commit=commit,
                     elapsed_seconds=time.time()-started, test_read=False)
