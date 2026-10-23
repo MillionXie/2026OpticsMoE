@@ -1,3 +1,24 @@
+## 2026-10-23 E1后教师约束完整复核73.24%，距305门槛4张
+
+`layerwise_L4_on_20261023/k1/s_0/fit`完成36epoch/7200更新/857.094fit秒，
+best第22轮。原模型CPU bestlast全1600TRAIN/411TEST、前缀及所有非后缀冻结SHA
+审计通过：父290到301/411=73.23601%，TRAIN1592/1600=99.5%，TEST NLL1.05363、
+宏召回.61495496；last300/411。原PT SHA
+3c907de0feb870d7e1ee4f6b9beefe9320cb82426ed24086bb46f648348b4489。
+教师仅缓存原1600TRAIN，TRAIN1529正确，未读TEST/VALID。实际以Gitc42de179e的
+既有driver运行，源码及profile身份详见run launch/protocol；正常返回0、SDK释放，
+未放行G1。仍是实测router+E1、仿真后缀的阶段混合开发指标，相对346低10.94891pp。
+
+TRAIN仍明显高于TEST，故进一步只拟合原5140线性读出：`TRAIN_linear`单次从原生
+1600TRAIN的256维特征，计算类中心及类内共享协方差，按TRAIN自适应OAS收缩，
+使用已登记原TRAIN3141类别数量作为先验，将判别权重/偏置直接写入原Linear。
+不存在新增非线性头、协方差推理层、输入处理或结构变化；不做TEST统计或参数网格。
+其估计公式参考[scikit-learn原实现](https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/covariance/_shrunk_covariance.py)。
+所有mask/电子/alpha保持当前301版不变；这是一次闭式TRAIN拟合，不冒称新训练epoch。
+只在k1退出并严格核同301父、TRAIN/TEST差>=10pp、CCD与输入祖先不变后接入。
+新候选不增益则明确保留父E0；原生bestlast完整复核通过305才新采G1。方法须测试和
+Git发布同步后执行，不以计划代替实际launch/结果，原有效CCD及全部历史证据保留。
+
 ## 2026-10-23 E1后完整复核升至70.56%，继续针对过拟合处理
 
 `layerwise_L4_on_20261023/u1/s_0/fit`48完整epoch/9600更新已结束，1149.172fit秒，

@@ -1,0 +1,15 @@
+{
+  "schema":"TUCam_L4_E1_native_linear_finite_v1",
+  "base_profile":"lab_caltech20_tucam_layerwise_profile_20261023.json",
+  "base_profile_SHA256":"c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909",
+  "suffix_engine_SHA256":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+  "continuation_engine_SHA256":"f278563f2573bcb87a882575fcceb74fc8c90f5cd5ea0e61db190f16e689c1e0",
+  "linear_engine_SHA256":"46b405bb75d2253779448b0daf0ba4731202667fe9e1f18978eac22b2403d4cc",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/k1",
+  "capture_root":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023",
+  "parent_stage":"0","minimum_parent_correct":290,"maximum_parent_correct":304,"maximum_parent_TRAIN_accuracy":1.0,"minimum_parent_TRAIN_TEST_gap":0.10,
+  "intermediate_target":305,"final_target":340,"TEST_gradient":false,"new_inference_layers":0,
+  "learning_rates":{},"TRAIN_readout":"one_OAS_pooled_linear",
+  "recipe":{"name":"one_TRAIN_statistics_native_affine_readout","epochs":1,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "scope":"Only after k1 fully exits with unmet E1 gate and native audited best. Freeze all optical masks/electronics/alpha and fit the SAME5140 original Linear parameters once from1600 native TRAIN features, pooled within-class covariance with TRAIN-only OAS shrinkage, and registered originalTRAIN3141 class counts. No TEST covariance/means/prior estimation or hyperparameter scan. No nonlinear head, normalization or extra inference layer; Gaussian discriminant weights/bias are folded into the original Linear. This is one closed-form TRAIN estimator, not an epoch/gradient update; preserve parent as E0 if no gain. Original hook-free native bestlast fullTRAIN/TEST plus frozen-prefix/CCD SHA review before305 gate and fresh G1. Exposure/coordinates/LUT/captured ancestors unchanged, no new CCD/TRAIN acquisition/VALID/scheduler/device retry."
+}
