@@ -79,6 +79,9 @@ def run(a):
     assert admission.seconds_left(p)>1800 and not a.out.exists() and not m.LOCK.exists();a.out.mkdir();torch.set_num_threads(2);torch.manual_seed(73)
     m.save(a.out/'protocol.json',dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),policy=p,TEST_development=True,TEST_gradient=False,new_inference_layers=0,scheduler=False))
     model,data,dm,fields,paths,pt,reference=admit(p,c,a.out)
+    if getattr(a,'backend_audit_only',False):
+        import lab_caltech20_TRAIN_frozen_readout_20261024 as engine
+        result=engine.TRAIN_backend_audit(model,data,fields,pt,c,a.out/'fit');m.save(a.out/'report.json',dict(state='TRAIN_backend_audit_complete',report=result,SDK_released=not m.LOCK.exists(),G2_not_started=True,full_physical=False));return
     if p.get('TRAIN_diagnostic_only',False):
         import lab_caltech20_actual_readout_20261024 as engine
         result=engine.TRAIN_perturbation_audit(model,data,dm,fields,paths,pt,c,a.out/'fit')
@@ -121,7 +124,7 @@ def run(a):
 
 
 if __name__=='__main__':
-    q=argparse.ArgumentParser();q.add_argument('--profile',type=Path,required=True);q.add_argument('--out',type=Path,required=True);a=q.parse_args()
+    q=argparse.ArgumentParser();q.add_argument('--profile',type=Path,required=True);q.add_argument('--out',type=Path,required=True);q.add_argument('--backend-audit-only',action='store_true');a=q.parse_args()
     try:run(a)
     except BaseException as e:
         if a.out.exists():

@@ -8,6 +8,27 @@ def contrast_logits(features,weight,bias):
     return F.linear(features,weight-weight.mean(0,keepdim=True),bias-bias.mean())
 
 
+def TRAIN_backend_audit(model,data,fields,parent,c,out):
+    """Read-only native CPU/CUDA plus contrast-coordinate TRAIN parity."""
+    np,torch,m,loop=base.numerical_modules();assert not out.exists() and not m.LOCK.exists();out.mkdir()
+    original=m.state_cpu(model);labels=data['train'][1][:80];assert np.bincount(labels,minlength=20).tolist()==[4]*20
+    def collect(device):
+        model.to(device).eval().requires_grad_(False);values=[];features=[];canonical=[];contrast=[]
+        with torch.inference_mode():
+            for begin in range(0,80,8):
+                ix=np.arange(begin,begin+8);prob=model(loop.put_fields(model,data,fields,'train',ix,device))[0];f=model.readout['features']
+                values.append(prob.cpu().numpy().copy());features.append(f.cpu().numpy().copy());canonical.append(torch.round(model.last['3']['amplitude']*255).to(torch.uint8).cpu().numpy().copy());contrast.append(contrast_logits(f,model.linear.weight,model.linear.bias).softmax(1).cpu().numpy().copy())
+                m.save(out/'progress.json',dict(state='TRAIN_backend_parity',device=device,TRAIN_consumed=begin+8,TEST_used=False))
+        return tuple(np.concatenate(v)for v in (values,features,canonical,contrast))
+    cpu=collect('cpu');loop.gpu_admission(m,c);cuda=collect('cuda');model.cpu();assert all(torch.equal(v,model.state_dict()[k])for k,v in original.items())
+    report=dict(state='complete',source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT_SHA256=m.sha(parent),TRAIN=80,TEST_used=False,VALID=0,optimizer_updates=0,
+        CPU_correct=int((cpu[0].argmax(1)==labels).sum()),CUDA_correct=int((cuda[0].argmax(1)==labels).sum()),CPU_CUDA_prediction_disagreements=int((cpu[0].argmax(1)!=cuda[0].argmax(1)).sum()),
+        CPU_CUDA_probability_maxabs=float(np.max(np.abs(cpu[0]-cuda[0]))),CPU_CUDA_feature_maxabs=float(np.max(np.abs(cpu[1]-cuda[1]))),G2_canonical_changed_pixel_fraction=float(np.mean(cpu[2]!=cuda[2])),
+        CPU_original_vs_TRAIN_contrast_probability_maxabs=float(np.max(np.abs(cpu[0]-cpu[3]))),CUDA_original_vs_TRAIN_contrast_probability_maxabs=float(np.max(np.abs(cuda[0]-cuda[3]))),
+        CPU_contrast_correct=int((cpu[3].argmax(1)==labels).sum()),CUDA_contrast_correct=int((cuda[3].argmax(1)==labels).sum()),original_state_bitwise_unchanged=True,SDK_used=False,GPU_used=True)
+    m.save(out/'report.json',report);torch.cuda.empty_cache();return report
+
+
 def safe_distillation_loss(logits,labels,teacher,weights):
     import torch
     from torch.nn import functional as F

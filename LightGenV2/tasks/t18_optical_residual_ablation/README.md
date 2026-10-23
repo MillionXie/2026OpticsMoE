@@ -1,3 +1,30 @@
+## 2026-10-24 05:37 TRAIN定位到后电残差饱和；接原参数反饱和正则
+
+正确TRAIN教师联合48完整epoch/9600updates已结束，best仍原E0的282，last TRAIN
+1404/1600、TEST268；报告SHA b544080e01476115024dcb8c68bddb160570e25b641c61ca11030bae2a511110。
+接一次TRAIN-only软目标family-ridge也未改善：候选270，原282回退，报告SHA
+6c84c817a2760970d793709db3af68bef106cd215cc25928b98c2d9bd6d9af12。
+不是新改善，完整原模型CPU/已采祖先冻结及本地bestlast/逐样本SHA备份通过。
+传输启动收据曾因读取继承配置method报错，控制器已经启动；按唯一实际进程父链
+恢复收据，明确receipt_recovered_without_restart，未重复开任务或改写实验结果。
+
+`readout_NOISE`只读80TRAIN（固定roundrobin每类4）、三种分量各4重复/320项，
+原参数/输入CCD逐bit及eval原样恢复；TEST不参与诊断，无梯度/SDK/GPU。报告SHA
+49a272e92e0acb6680d73078df67e007468540e8d04a4810c1eb1d14fa48453d。
+干净67/80，现有gain.005/additive.1DN/dropout.002均值67.25，gain+additive67.75、
+仅dropout67.0；不是整体崩溃。E2后原electronic2的pre-tanh绝对值>3比例.865488、
+>6比例.722928，平均tanh导数.044769；electronic3分别.406545/.092233/.167852。
+提示饱和可能限制微调梯度，不声称唯一根因或80样本代表全部时间/TEST。
+
+已发布98a1d5696并Git同步实验室，`suffix_desaturation_old282`真实启动。保持原282
+及精确376cc相位/9de875,d6056c E2数组；联合原G2phase9/postE2electronic2..3/
+directalpha2..3/5140头。唯一新正则是原conv输出进入tanh之前的超阈值平方惩罚，
+在TRAIN上直接给饱和滤波器梯度；系数<=.01且每batch加权penalty<=CE10%。
+原模型/激活/编码/硬件均不变、不reset参数；64完整TRAIN轮/1500fit秒、cosine低LR，
+记录CE/penalty/饱和比例/平均导数，bestlast仍原生CPU完整411/1600及祖先逐bit审计。
+另有原256特征TRAIN同类独立family配对的metric损失配置，仅准备，当前未启动。
+实际>=300才新G2，最终340、截止08:00/无定时任务/无TEST梯度/noVALID规则不变。
+
 ## 2026-10-24 05:15 实际最佳仍282；有限正确TRAIN教师约束联合优化已启动
 
 最新实际E2前缀最佳仍为旧`e2r/s_2/fit`282/411（实测Router/E1/G1/E2，G2仍仿真），

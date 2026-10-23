@@ -34,3 +34,10 @@ def test_original_conv_penalty_no_activation_or_structure_change():
     assert '.1*ce.detach()/penalty.detach()' in s and 'ce.new_tensor(.01)' in s and 'TRAIN_original_tanh_statistics' in s
     assert 'parameter_reset=False' in s and 'for handle in saturation_hooks:handle.remove()' in s
     assert 'saturation_penalty_gradient_toward_sensitive_region=True' in s
+
+
+def test_readonly_TRAIN_backend_audit_no_optimization():
+    tree=ast.parse(P.read_text());n=next(n for n in tree.body if isinstance(n,ast.FunctionDef)and n.name=='TRAIN_backend_audit');body=ast.get_source_segment(P.read_text(),n)
+    assert "data['test']" not in body and '.backward(' not in body and 'torch.optim' not in body
+    assert 'G2_canonical_changed_pixel_fraction' in body and "collect('cpu')" in body and "collect('cuda')" in body
+    assert 'original_state_bitwise_unchanged=True' in body
