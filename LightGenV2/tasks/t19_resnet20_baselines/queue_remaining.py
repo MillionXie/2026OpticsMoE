@@ -212,6 +212,8 @@ def main():
                 for j in report['jobs']:
                     if j['status']!='queued':continue
                     settings=j.get('engineering_resume')
+                    if settings and settings.get('gpu_uuid',uuid)!=uuid:
+                        continue
                     if settings and not (TASK/settings['ready_receipt']).exists():
                         continue
                     if j['phase']=='formal':

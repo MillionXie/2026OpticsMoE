@@ -74,7 +74,8 @@
       "resume_from": "runs/simulation/abo_conditional_edit_formal_s42_resnet18_imagenet_frozen_single30_20261023_byte_gru15m/last_checkpoint.pt",
       "editor_cache_root": "runs/cache/editor_exact_uint8_20261023",
       "ready_receipt": "runs/control/editor_cache_ready_20261023.json",
-      "formal_gate_receipt": "runs/control/cached_editor_handoff_20261023.json"
+      "formal_gate_receipt": "runs/control/cached_editor_handoff_20261023.json",
+      "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
     }
   },
   "epoch_budgets": {

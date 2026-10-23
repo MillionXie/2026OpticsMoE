@@ -24,6 +24,7 @@ def test_new_plan_keeps_four_cards_and_separates_last50_extensions(tmp_path):
         assert command[command.index('--target')+1]==target
         assert '--epochs' not in command and command[command.index('--smoke-batches')+1]=='0'
     settings=plan['engineering_resumes']['abo_conditional_edit']
+    assert settings['gpu_uuid']=='GPU-1b963983-7909-af6e-0528-f0f0661ab549'
     assert settings['formal_gate_receipt'] != settings['ready_receipt']
     command=worker_command(dict(task='abo_conditional_edit',phase='formal',name='cached_editor',
         engineering_resume=settings,text_encoder='byte_gru',max_physical_gpus=4,max_jobs_per_gpu=3),
