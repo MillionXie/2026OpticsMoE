@@ -83,7 +83,7 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
     if metric:
         from lab_caltech20_TRAIN_metric_20261024 import family_paired_order,loss as metric_loss
         family_path=base.ROOT/c['sequence']/'assets/TRAIN_lineage.json';assert m.sha(family_path)==dm['lineage_SHA256'];records=m.read(family_path)['records'];assert [v['sample_id']for v in records]==data['train'][2].tolist();families=np.asarray([v['source_id']for v in records])
-        protocol.update(TRAIN_supervised_metric=True,TRAIN_family_lineage_SHA256=m.sha(family_path),TRAIN_pairs='four classes, two independent source families per class, every1600 exactly once',metric_temperature=.2,metric_coefficient_max=.05,metric_value_fraction_of_CE_max=.25,inference_metric=False)
+        protocol.update(TRAIN_supervised_metric=True,TRAIN_family_lineage_SHA256=m.sha(family_path),TRAIN_pairs='four classes, two independent source families per class, every1600 exactly once',metric_temperature=.2,metric_coefficient_max=10.,metric_feature_gradient_fraction_of_CE_max=.1,metric_coefficient_from_TRAIN_feature_gradient_norm=True,metric_loss_value_not_CE_capped=True,inference_metric=False)
     if desaturate:protocol.update(TRAIN_desaturation=True,TRAIN_penalty='mean square relu(abs(original postE2 conv pre-tanh)-2)/2; stages2,3 averaged',penalty_coefficient_max=.01,penalty_value_fraction_of_CE_max=.1,inference_penalty=False,parameter_reset=False)
     m.save(out/'protocol.json',protocol);m.save(out/'baseline.json',test);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob);loop.saved_model(m,model,out/'best.pt',protocol)
     loop.gpu_admission(m,c);model.cuda()
@@ -110,8 +110,10 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                 if safe:
                     loss,ce,kd,coefficient,n=safe_distillation_loss(logits,labels,teacher[ix],weights);ce_total+=float(ce.detach())*len(ix);kd_total+=float((coefficient*kd).detach())*len(ix);coefficient_total+=float(coefficient)*len(ix);eligible+=int(n)
                 elif metric:
-                    ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=.05);pair_loss=metric_loss(held['features'],labels);coefficient=torch.minimum(ce.new_tensor(.05),.25*ce.detach()/pair_loss.detach().clamp_min(1e-8));loss=ce+coefficient*pair_loss
-                    ce_total+=float(ce.detach())*len(ix);kd_total+=float((coefficient*pair_loss).detach())*len(ix);coefficient_total+=float(coefficient)*len(ix)
+                    ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=.05);pair_loss=metric_loss(held['features'],labels)
+                    gc=torch.autograd.grad(ce,held['features'],retain_graph=True)[0].detach().norm();gm=torch.autograd.grad(pair_loss,held['features'],retain_graph=True)[0].detach().norm()
+                    coefficient=torch.minimum(ce.new_tensor(10.),.1*gc/gm.clamp_min(1e-8));fraction=coefficient*gm/gc.clamp_min(1e-8);assert torch.isfinite(coefficient) and not coefficient.requires_grad and float(fraction)<=.100001;loss=ce+coefficient*pair_loss
+                    ce_total+=float(ce.detach())*len(ix);kd_total+=float((coefficient*pair_loss).detach())*len(ix);coefficient_total+=float(coefficient)*len(ix);eligible+=float(fraction)*len(ix)
                 elif desaturate:
                     ce=F.cross_entropy(logits,labels,weight=weights,label_smoothing=.05);penalty=sum(((held[f'pre_tanh_{k}'].abs()-2).relu()/2).square().mean()for k in (2,3))/2
                     coefficient=torch.minimum(ce.new_tensor(.01),.1*ce.detach()/penalty.detach().clamp_min(1e-8));loss=ce+coefficient*penalty
@@ -132,7 +134,7 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                 if test['correct']>best or (test['correct']==best and test['nll']<bnll-1e-4):best,bnll,selected=test['correct'],test['nll'],epoch;loop.saved_model(m,model,out/'best.pt',protocol)
                 row=dict(epoch=epoch,TRAIN_consumed=1600,TRAIN_loss=total/1600,TEST_correct=test['correct'],TEST_NLL=test['nll'],selected_correct=best,selected_epoch=selected,elapsed_s=time.monotonic()-start)
                 if safe:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_KD=kd_total/1600,KD_mean_coefficient=coefficient_total/1600,teacher_eligible_TRAIN=eligible)
-                if metric:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_metric=kd_total/1600,metric_mean_coefficient=coefficient_total/1600,TRAIN_independent_family_pairs=800)
+                if metric:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_metric=kd_total/1600,metric_mean_coefficient=coefficient_total/1600,TRAIN_metric_gradient_fraction=eligible/1600,TRAIN_independent_family_pairs=800)
                 if desaturate:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_saturation_penalty=kd_total/1600,penalty_mean_coefficient=coefficient_total/1600,TRAIN_original_tanh_statistics={str(k):{n:v/1600 for n,v in row.items()}for k,row in saturation_stats.items()})
                 history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row);print(json.dumps(row),flush=True)
             if best>=target or time.monotonic()-start>=recipe['seconds']:break

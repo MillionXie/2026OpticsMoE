@@ -19,4 +19,5 @@ def test_training_metric_not_an_inference_layer():
     s=(HERE/'lab_caltech20_TRAIN_metric_20261024.py').read_text()
     assert 'nn.Module' not in s and 'nn.Parameter' not in s and 'logsumexp' in s and 'TEST_used=False' in s
     f=(HERE/'lab_caltech20_TRAIN_frozen_readout_20261024.py').read_text()
-    assert 'TRAIN_weighted_metric' in f and 'TRAIN_independent_family_pairs=800' in f and '.25*ce.detach()/pair_loss.detach()' in f
+    assert 'TRAIN_weighted_metric' in f and 'TRAIN_independent_family_pairs=800' in f and '.1*gc/gm.clamp_min(1e-8)' in f
+    assert 'metric_loss_value_not_CE_capped=True' in f and 'not coefficient.requires_grad' in f and 'TRAIN_metric_gradient_fraction' in f
