@@ -1,0 +1,324 @@
+{
+  "status": "local_architecture_preparation_only_not_ready_to_train",
+  "git_head": {
+    "returncode": 0,
+    "stdout": "ef9c83a653568fecd09dda395b69b087cb0374d9",
+    "stderr": ""
+  },
+  "git_branch": {
+    "returncode": 0,
+    "stdout": "main",
+    "stderr": ""
+  },
+  "git_tracked_status": {
+    "returncode": 0,
+    "stdout": "M  LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/.gitignore\nA  LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/B100_QWEN_LLMCOMPASS_CN_20261017.md\nA  LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/estimate_b100_llmcompass_20261017.py",
+    "stderr": ""
+  },
+  "platform": "Windows-10-10.0.26300-SP0",
+  "python": "3.11.9",
+  "torch": "2.11.0+cu128",
+  "cuda_initialized": false,
+  "proposal_sha256": "6d5cc3bb68f816623e2f6cf830fd4a6d77fcff5f60db58033f248c57e1fca7b5",
+  "model_source_sha256": "11b96cdbdd0580f4e27d7b8ac77108556fae55e2b5be781ed332caa6bf398eb0",
+  "models": [
+    {
+      "row": "01a",
+      "id": "lgvq_temporal",
+      "parameters": {
+        "total": 298133,
+        "trainable": 298133,
+        "visual_encoder": 269072,
+        "text_encoder": 0,
+        "task_heads": 29061
+      }
+    },
+    {
+      "row": "01b",
+      "id": "lgvq_spatial",
+      "parameters": {
+        "total": 273557,
+        "trainable": 273557,
+        "visual_encoder": 269072,
+        "text_encoder": 0,
+        "task_heads": 4485
+      }
+    },
+    {
+      "row": "02",
+      "id": "abo_image_to_text",
+      "parameters": {
+        "total": 304496,
+        "trainable": 304496,
+        "visual_encoder": 269072,
+        "text_encoder": 27104,
+        "task_heads": 8320
+      }
+    },
+    {
+      "row": "03",
+      "id": "abo_image_to_image",
+      "parameters": {
+        "total": 273232,
+        "trainable": 273232,
+        "visual_encoder": 269072,
+        "text_encoder": 0,
+        "task_heads": 4160
+      }
+    },
+    {
+      "row": "04",
+      "id": "abo_text_to_image",
+      "parameters": {
+        "total": 304496,
+        "trainable": 304496,
+        "visual_encoder": 269072,
+        "text_encoder": 27104,
+        "task_heads": 8320
+      }
+    },
+    {
+      "row": "05",
+      "id": "lsp",
+      "parameters": {
+        "total": 287998,
+        "trainable": 287998,
+        "visual_encoder": 269072,
+        "text_encoder": 0,
+        "task_heads": 18926
+      }
+    },
+    {
+      "row": "06",
+      "id": "salicon",
+      "parameters": {
+        "total": 287569,
+        "trainable": 287569,
+        "visual_encoder": 269072,
+        "text_encoder": 0,
+        "task_heads": 18497
+      }
+    },
+    {
+      "row": "07",
+      "id": "openmoji",
+      "parameters": {
+        "total": 343046,
+        "trainable": 343046,
+        "visual_encoder": 269072,
+        "text_encoder": 27104,
+        "task_heads": 46870
+      }
+    },
+    {
+      "row": "08",
+      "id": "abo_conditional_edit",
+      "parameters": {
+        "total": 350723,
+        "trainable": 350723,
+        "visual_encoder": 269072,
+        "text_encoder": 27104,
+        "task_heads": 54547
+      }
+    }
+  ],
+  "baseline_source_files": [
+    {
+      "path": "LightGenV2/reports/20260928_nine_task_a100_table/latest_nine_task_summary.csv",
+      "bytes": 2231,
+      "sha256": "fe3c46f7eae7f37bcc3c9b6990b6cc8b6cefbbb3f6648b2eecfbd596e0e71f50"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/README.md",
+      "bytes": 23135,
+      "sha256": "68cd7cec8dcc419808626d2951582999b089e6c8dc521f2937eccea648b8183e"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/baseline_5090d.py",
+      "bytes": 8392,
+      "sha256": "441839d011a6d09f2bb6e2987537b07ad1b14b3ce6437d1136f012f52005d466"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/BASELINE_METHODS.md",
+      "bytes": 3555,
+      "sha256": "86e50fcfcdb04f5dccba91e307062c51148ccfc58b8cd8b08ba10c7c09869ea1"
+    },
+    {
+      "path": "LightGenV2/tasks/t02_keypoint_detection/reports/reproduction/README.md",
+      "bytes": 1870,
+      "sha256": "0727ec0408dac5a788565cb716a8afdce0a9106758cb554d44e83c2a2c3136f9"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/README.md",
+      "bytes": 30353,
+      "sha256": "5c8c3d272cde2297b539b02839ae91dc0392d5278905bc0c838080e439b4b547"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/aligned_baseline.py",
+      "bytes": 8578,
+      "sha256": "d2d8fe3d5ceab15290dcaff7aa0a4ee60fca17e03da219eb64971d056c0519ed"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/configs/qwen_aligned_head_50.yaml",
+      "bytes": 613,
+      "sha256": "32f2be85c0e8e30cbb7c95727b97daa808c11af4a416c06132f84e8f958679d7"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/reports/reproduction/BASELINE50_20260912.md",
+      "bytes": 6081,
+      "sha256": "53f0281081da3dbb145c973415ecb2d3e73908c5d68d6103b0f52058b82bddaa"
+    },
+    {
+      "path": "LightGenV2/tasks/t03_saliency/reproduce_baseline.py",
+      "bytes": 7100,
+      "sha256": "cdddce3377a4b786c34213316e090b44e004f757452f81b82bfafea360a8d75b"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/README.md",
+      "bytes": 14903,
+      "sha256": "973bb07ac37b35b229b637d4c32370abc811153bcf8ea5971ccbb708fb719ed3"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/baseline_shared_readout.py",
+      "bytes": 3823,
+      "sha256": "d97c0922fca3416b5f0e68445764bbf662d5a4443a514943991d45d762b59517"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/baseline_structured_5090d.py",
+      "bytes": 33493,
+      "sha256": "810e9e83482495fa24f26d00fde67d0c205107803c76dbac0e73d0f282a276d6"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/configs/baseline_layered_scene_frozen_backbones.yaml",
+      "bytes": 2519,
+      "sha256": "802dbd847af1b537441c345df18f92948272ecf99254a92d67e23d63c3717895"
+    },
+    {
+      "path": "LightGenV2/tasks/t04_semantic_interaction/reports/lab_qwen_quantitative_20261015/README.md",
+      "bytes": 10265,
+      "sha256": "92e4a8b7ea8c90b0747978bda6f1dc1d8dae1f2bae94bec8c0a4667369dc74a8"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/README.md",
+      "bytes": 254665,
+      "sha256": "7c3b8bad614446073cad5cf45b6156efb6955aaacfb1dfa6da12b0dd7d5c9245"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/clip_vit_b32_lgvq_4f_r224.yaml",
+      "bytes": 1175,
+      "sha256": "43b246eadb4cebab1af21e7449f50e7ff276dd035c7a797ec42fd8c63a768a46"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml",
+      "bytes": 1789,
+      "sha256": "eb112a65c80a199195092fea3cfc56d470f74ed453c9046c5acd8e9aa95fa49c"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_common.py",
+      "bytes": 10875,
+      "sha256": "04117b5aee7ca0987ff863654eb8e90ef4a95b993b048c8e9d58198173aba1d6"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_resolution.py",
+      "bytes": 12428,
+      "sha256": "0cbe704b490de07f1a765f44fdb51aa00fdaa225001b8671bcafe94610f55c21"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/quality_token_train.py",
+      "bytes": 16668,
+      "sha256": "24a617b38839fa789a40fe47f4747798403d2ebe1a28df10dcac40893b181fc5"
+    },
+    {
+      "path": "LightGenV2/tasks/t06_video_quality_assessment/reproduce_temporal_baseline.py",
+      "bytes": 18231,
+      "sha256": "a46abaf907d460260b1d3b04b6d852f7c02a9236c146f5a1e1bbaab8ae919e54"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/README.md",
+      "bytes": 8904,
+      "sha256": "dfe8f71d38e6505c4803f5278e9d7edd5cc5cdba2bf79f8b2375fdad0a64657b"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/reports/physical_qwen_statistics_20261014/build_statistics.py",
+      "bytes": 11476,
+      "sha256": "5a3236b71a1e4e3d4d4640017778a7069488690798bffa4661151db35049c6d5"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/data.py",
+      "bytes": 10409,
+      "sha256": "985bb7efc3fba06a9ba22e566d0c196b67e3378ab091206050b59820f5d83b03"
+    },
+    {
+      "path": "LightGenV2/tasks/t07_abo_image_retrieval/standalone/enrolled_abo.py",
+      "bytes": 3230,
+      "sha256": "0344436032f2e492f6af602ad95fe6afff1d85ce74d740896bacfc4185137f4e"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/README.md",
+      "bytes": 20790,
+      "sha256": "25235475d7417a5cd22c2ccf0c95866e308717b19104745fe9f9ff3614039757"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/abo_backbone_baselines.py",
+      "bytes": 37205,
+      "sha256": "e3b98c42ec9fbe0575c31a12631b7767794041c7637a14578c82e8c92a457961"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/baseline_5090d.py",
+      "bytes": 20229,
+      "sha256": "812a9da0571727ebcf9a59b87ad638d800fd2191db984575e560a60a5a7c4568"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/reports/reproduction/ABO_BACKBONE_PROTOCOL_20260923.md",
+      "bytes": 1316,
+      "sha256": "e9f4c592d294132bdacef27600016ac5fdb86967b9b1143285cd12227200d994"
+    },
+    {
+      "path": "LightGenV2/tasks/t08_abo_image_text_retrieval/text_to_image.py",
+      "bytes": 6448,
+      "sha256": "26c776d119ce4e92611ac3a0692c5ab5354f0731478601b237add9a62b15d60f"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/README.md",
+      "bytes": 20412,
+      "sha256": "181ef9dbe86c771d8d958143cf783da6e8e3c7466ed8d15978e83e5aa88e9fa7"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/export_matched_summary.py",
+      "bytes": 11471,
+      "sha256": "c2767775708bf12e938e328f9d62154f7dad1b5a59ff35f5fc58234bac6efee3"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/product_unified_edit_data_v2.py",
+      "bytes": 10280,
+      "sha256": "1b37d3ea0fe65403848ebaedc13da691a332608f1759e63b61ee314dd6b7e8de"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/reports/reproduction/README.md",
+      "bytes": 31261,
+      "sha256": "2edbf2f0a2cb533f734bd0b9c6de4598aa2588f012f9a33602cea9d5c4c8eceb"
+    },
+    {
+      "path": "LightGenV2/tasks/t12_text_to_image/train_matched_qwen_baseline.py",
+      "bytes": 12437,
+      "sha256": "4be1df1520c33cad01b01824a06a67503871c958a86fac0f36dcd00dd1839d1d"
+    }
+  ],
+  "remote_source_verified": false,
+  "remote_data_verified": false,
+  "local_Git_GitHub_server_synchronized": false,
+  "real_dataset_adapters_implemented": false,
+  "formal_training_started": false,
+  "GPU_smoke_started": false,
+  "GPU_scheduler_implemented": false,
+  "pending_gates": [
+    "user_accepts_architecture_and_scope",
+    "local_Git_writable_and_only_owned_paths_can_be_committed",
+    "published_main_synchronized_with_server_without_overwriting_dirty_files",
+    "SSH_live_server_source_overlay_and_environment_audit",
+    "all_nine_original_data_manifests_verified_by_SHA_and_counts",
+    "real_data_adapters_losses_and_metrics_bound_and_CPU_validated",
+    "live_idle_GPU_UUID_admission_and_max_three_GPU_process_lifecycle_guard",
+    "explicit_user_authorization_before_any_GPU_training_or_GPU_smoke"
+  ]
+}

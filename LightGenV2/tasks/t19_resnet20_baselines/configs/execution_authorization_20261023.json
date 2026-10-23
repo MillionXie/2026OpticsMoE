@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-23",
+  "base_proposal": "suite_proposal.json",
+  "architecture_approved_for_attempt": true,
+  "training_authorized_after_required_preflight": true,
+  "authorization_basis": "User follow-up: 你尝试一下吧; original nine-task server experiment request and maximum three GPUs remain in effect.",
+  "max_gpus": 3,
+  "retrieval_architecture": "identical_CrossModalRetrievalModel_both_directions",
+  "retrieval_weight_policy": "separate_direction_specific_training_as_proposed",
+  "extra_user_reconfirmation_required_for_same_scope": false,
+  "gates_still_required": [
+    "working_SSH_and_Git_network_access",
+    "writable_local_git_metadata_and_serialized_owned_path_commit",
+    "published_source_commit_synchronized_with_actual_server_main",
+    "original_server_sources_and_manifest_SHA_audit",
+    "real_dataset_adapters_and_training_runner_implemented_and_validated",
+    "live_GPU_UUID_and_foreign_process_admission_max_three"
+  ],
+  "current_execution_status": "blocked_by_environment_network_and_git_metadata_restrictions_no_GPU_started"
+}

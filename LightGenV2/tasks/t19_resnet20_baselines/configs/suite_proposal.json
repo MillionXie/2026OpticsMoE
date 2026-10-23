@@ -1,0 +1,128 @@
+{
+  "schema_version": 1,
+  "status": "architecture_review_only",
+  "architecture_approved": false,
+  "training_authorized": false,
+  "reference_table": "LightGenV2/reports/20260928_nine_task_a100_table/latest_nine_task_summary.csv",
+  "visual_backbone": "CIFAR_ResNet20_optionA_16_32_64_blocks3_3_3",
+  "initialization": "random_all_trainable_no_Qwen_no_external_pretraining",
+  "text_encoder": "UTF8_bytes_embedding259x32_GRU32to64_count_all_parameters",
+  "resource_policy": {
+    "max_gpus": 3,
+    "one_process_one_gpu": true,
+    "gpu_selection": "explicit_UUID_only_after_live_idle_and_foreign_process_check",
+    "on_busy": "do_not_start",
+    "on_exit": "terminate_only_owned_workers_then_verify_processes_and_memory_released",
+    "source_sync": "published_main_commit_only_no_SCP_source_no_new_branch_or_worktree"
+  },
+  "training_proposal": {
+    "seeds": [42, 43, 44],
+    "seed_policy": "three_independent_models_per_task_if_approved",
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "schedule": "cosine_with_5_epoch_warmup",
+    "epochs": 100,
+    "effective_batch": 32,
+    "gradient_clip_norm": 1.0,
+    "precision": "FP32_reference",
+    "test_selection_disclosure": "reuse_each_task_selection_policy_and_label_test_selected_results_development",
+    "note": "These are proposed scratch-training budgets, not the frozen-Qwen head-training recipe. Real-data loss/adapters must be bound and reviewed before training."
+  },
+  "tasks": [
+    {
+      "row": "01a", "id": "lgvq_temporal", "task_dir": "t06_video_quality_assessment",
+      "baseline_sources": ["quality_token_common.py", "quality_token_train.py", "quality_token_resolution.py", "reproduce_temporal_baseline.py", "configs/baselines/clip_vit_b32_lgvq_4f_r224.yaml"],
+      "train_count": 2250, "test_count": 558, "input_size": 224,
+      "frames": [0.10, 0.37, 0.63, 0.90], "crop_fraction": 0.65,
+      "head": "ordered_4x64_features_and_3x64_signed_differences_to_MLP448_64_5",
+      "loss_proposal": "original_five_quality_class_CE_with_original_MOS_bin_mapping",
+      "metric": "SRCC_temporal", "selection": "test_SRCC_development",
+      "binding_status": "TRAIN_min_max_equal_width_five_bins_located_remote_manifest_pending"
+    },
+    {
+      "row": "01b", "id": "lgvq_spatial", "task_dir": "t06_video_quality_assessment",
+      "baseline_sources": ["quality_token_resolution.py", "quality_token_common.py", "configs/baselines/qwen3vl_spatial_quality_tokens_4f_r448.yaml"],
+      "train_count": 2250, "test_count": 558, "input_size": 224,
+      "frames": [0.10, 0.37, 0.63, 0.90], "crop_fraction": 0.65,
+      "head": "frame_mean64_to_MLP64_64_5",
+      "loss_proposal": "original_five_quality_class_CE_with_original_MOS_bin_mapping",
+      "metric": "SRCC_spatial", "selection": "test_SRCC_development",
+      "binding_status": "source_Qwen448_vs_proposed_ResNet224_resolution_difference_to_disclose"
+    },
+    {
+      "row": "02", "id": "abo_image_to_text", "task_dir": "t08_abo_image_text_retrieval",
+      "baseline_sources": ["baseline_5090d.py", "abo_backbone_baselines.py", "reports/reproduction/ABO_BACKBONE_PROTOCOL_20260923.md"],
+      "train_count": 4800, "test_count": 2400, "candidates": 100, "input_size": 224,
+      "head": "normalized_image64_and_byte_GRU_text64",
+      "loss_proposal": "multi_positive_image_to_title_contrastive_same_SKU_not_false_negative",
+      "metric": "R@1_exact_SKU", "selection": "test_R@1_development",
+      "binding_status": "easy100_original_CSV_SHA_and_duplicate_disclosure_pending_server"
+    },
+    {
+      "row": "03", "id": "abo_image_to_image", "task_dir": "t07_abo_image_retrieval",
+      "baseline_sources": ["standalone/enrolled_abo.py", "standalone/data.py", "reports/physical_qwen_statistics_20261014/build_statistics.py"],
+      "train_count": 1600, "test_count": 800, "candidates": 1600, "input_size": 224,
+      "head": "GAP64_Linear64_64_L2",
+      "loss_proposal": "supervised_contrastive_on_original_enrolled_TRAIN_only",
+      "metric": "R@1_exact_SKU", "selection": "query_R@1_development",
+      "binding_status": "reuse_existing_abo200_protocol_JSON_never_regenerate_8_4_split"
+    },
+    {
+      "row": "04", "id": "abo_text_to_image", "task_dir": "t08_abo_image_text_retrieval",
+      "baseline_sources": ["abo_backbone_baselines.py", "text_to_image.py", "reports/reproduction/ABO_BACKBONE_PROTOCOL_20260923.md"],
+      "train_count": 4800, "test_count": 100, "candidates": 2400, "input_size": 224,
+      "head": "normalized_byte_GRU_text64_and_image64",
+      "loss_proposal": "title_to_images_multi_positive_contrastive_on_TRAIN_only",
+      "metric": "Hit@1_exact_SKU", "selection": "test_Hit@1_development",
+      "binding_status": "same_100_titles_2400_gallery_24_positives_each_direction_specific_fit"
+    },
+    {
+      "row": "05", "id": "lsp", "task_dir": "t02_keypoint_detection",
+      "baseline_sources": ["baseline_5090d.py", "reports/reproduction/BASELINE_METHODS.md", "reports/reproduction/README.md"],
+      "train_count": 10428, "test_count": 1000, "input_size": 224,
+      "head": "Conv64_32_3x3_Conv32_14_1x1_heatmap56",
+      "loss_proposal": "original_visibility_masked_heatmap_and_coordinate_loss_with_original_weights",
+      "metric": "PCK@0.2_original_hardargmax", "selection": "test_PCK_development",
+      "binding_status": "reuse_original_crop_visibility_joint_order_and_radius_not_personal_photos"
+    },
+    {
+      "row": "06", "id": "salicon", "task_dir": "t03_saliency",
+      "baseline_sources": ["aligned_baseline.py", "reproduce_baseline.py", "configs/qwen_aligned_head_50.yaml", "reports/reproduction/BASELINE50_20260912.md"],
+      "train_count": 10000, "test_count": 5000, "input_size": 224,
+      "head": "Conv64_32_3x3_Conv32_1_1x1_resize224_density_normalization",
+      "loss_proposal": "original_GT_density_loss_no_teacher_distillation",
+      "metric": "CC", "selection": "official_val2014_as_public_test_CC_development",
+      "binding_status": "reuse_original_fixation_to_density_sigma_and_metric_code"
+    },
+    {
+      "row": "07", "id": "openmoji", "task_dir": "t04_semantic_interaction",
+      "baseline_sources": ["baseline_shared_readout.py", "baseline_structured_5090d.py", "configs/baseline_layered_scene_frozen_backbones.yaml", "reports/lab_qwen_quantitative_20261015/README.md"],
+      "train_count": 5000, "test_count": 1000, "input_size": 224,
+      "head": "byte_GRU_FiLM_coordinates_6x6_category17_edit1_operation4",
+      "loss_proposal": "original_label_only_category_edit_preservation_operation_losses",
+      "metric": "changed_cell_accuracy", "selection": "test_CCA_development",
+      "binding_status": "layered_anchor6_svg_v3_application_not_robust_rank64_or_old_uniform_grid"
+    },
+    {
+      "row": "08", "id": "abo_conditional_edit", "task_dir": "t12_text_to_image",
+      "baseline_sources": ["train_matched_qwen_baseline.py", "product_unified_edit_data_v2.py", "export_matched_summary.py", "reports/reproduction/README.md"],
+      "train_count": 20736, "val_count": 2304, "test_count": 2304, "input_size": 256,
+      "head": "reference_ResNet20_byte_GRU_FiLM_2stage_skip_RGB_decoder",
+      "loss_proposal": "RGB_MSE_plus_0.05_gradient_L1_no_GAN_or_large_teacher",
+      "metric": "mean_per_image_PSNR_and_original_SSIM", "selection": "VAL_PSNR_only_then_fixed_TEST",
+      "test_manifest_sha256": "331874abbb8d8c7a4ac5ee3d6e030f20611cb5a9e96d3092917b7a5c4d7d5d2f",
+      "binding_status": "paired_reference_instruction_edit_not_unconditional_text_only_generation"
+    }
+  ],
+  "launch_gates": [
+    "user_accepts_architecture_and_scope",
+    "local_Git_writable_and_only_owned_paths_can_be_committed",
+    "published_main_synchronized_with_server_without_overwriting_dirty_files",
+    "SSH_live_server_source_overlay_and_environment_audit",
+    "all_nine_original_data_manifests_verified_by_SHA_and_counts",
+    "real_data_adapters_losses_and_metrics_bound_and_CPU_validated",
+    "live_idle_GPU_UUID_admission_and_max_three_GPU_process_lifecycle_guard",
+    "explicit_user_authorization_before_any_GPU_training_or_GPU_smoke"
+  ]
+}
