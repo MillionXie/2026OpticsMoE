@@ -76,7 +76,8 @@ CC=0.5919949489179533，TRAIN均值空间先验CC=0.6805452564321458。
 非零退出，因此原队列正确阻断正式阶段。旧smoke/result/PT/log全部保留，不将其算作正式31轮。
 最小工程修复仅使LSP四批次smoke使用0 worker、正式保持2个persistent增强worker；正式循环
 完整耗尽DataLoader，避免留下未结束迭代。独立命名`cleanup1`只重试一次，从父30重新加载，
-绑定GPU5，保留在训OpenMoji、编辑、原SALICON PID不动。新suite为
+优先GPU5，保留在训OpenMoji、编辑、原SALICON PID不动；若GPU5持续繁忙，未启动的LSP阶段也可
+等待同一2/4/5/6候选池中其他任务自然释放后的卡，不扩大物理卡范围、不迁移任何在训任务。新suite为
 `runs/simulation/lsp_finetune60_cleanup_retry1_20261024`，新LSP run名在原名后追加`_cleanup1`。
 修改未改变正式损失、结构、数据、预算、学习率或TEST次数。资源快照另识别所有当前T19 CUDA
 进程，跨登记表同样计入共享卡最多一个T19的名额。相关11项离线回归通过，完整耗尽迭代修复后

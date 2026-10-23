@@ -50,7 +50,7 @@ def main():
     if plan['max_physical_gpus'] != 4 or set(plan['candidate_gpu_indices']) != {2, 4, 5, 6}:
         raise ValueError('Cannot expand the latest four-card limit')
     if args.retry_lsp_cleanup1:
-        if args.resume_queued_only or suite.name != 'lsp_finetune60_cleanup_retry1_20261024':
+        if suite.name != 'lsp_finetune60_cleanup_retry1_20261024':
             raise ValueError('The single cleanup retry needs its own new named suite')
         original_suite = TASK / 'runs/simulation/frozen_finetune_fixed_last_20261024'
         original = json.loads((original_suite / 'queue_status.json').read_text())
@@ -74,7 +74,10 @@ def main():
              for row in inventory.splitlines() if row.strip()}
     candidates = [uuids[index] for index in (6, 4, 5, 2)]
     if args.retry_lsp_cleanup1:
-        candidates = [uuids[5]]  # Preserve the healthy OpenMoji/GPU6 and editor/GPU4 workers.
+        # Prefer the unused original GPU5; after another task finishes, any of
+        # the same four cards may admit this still-queued stage. Global T19
+        # classification prevents sharing alongside another T19+other context.
+        candidates = [uuids[index] for index in (5, 6, 4, 2)]
     jobs = []
     old = json.loads((suite / 'queue_status.json').read_text()) if args.resume_queued_only else None
     if old:
