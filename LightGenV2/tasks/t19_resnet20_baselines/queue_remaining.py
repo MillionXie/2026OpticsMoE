@@ -10,7 +10,8 @@ import time
 
 from .train_easy100 import TASK,ROOT,PROFILE,admit_gpu,require_published_source,write_json,git
 
-ALLOWED = ('lgvq_temporal','lgvq_spatial','abo_image_to_image','lsp','salicon','openmoji','abo_conditional_edit')
+ALLOWED = ('lgvq_temporal','lgvq_spatial','abo_image_to_image','lsp','salicon','openmoji','abo_conditional_edit',
+           'lgvq_temporal_resnet18')
 
 
 class AttachedWorker:

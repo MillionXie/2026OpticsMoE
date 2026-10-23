@@ -114,13 +114,22 @@ class ByteTextEncoder(nn.Module):
 
 
 class QualityModel(nn.Module):
-    def __init__(self, target: str):
+    def __init__(self, target: str, backbone: str = "resnet20"):
         super().__init__()
         if target not in {"spatial", "temporal"}:
             raise ValueError(target)
         self.target = target
-        self.encoder = ResNet20Encoder()
-        self.head = nn.Sequential(nn.Linear(64 if target == "spatial" else 448, 64),
+        if backbone == "resnet20":
+            self.encoder = ResNet20Encoder()
+            self.feature_dim = 64
+        elif backbone == "resnet18":
+            from torchvision.models import resnet18
+            self.encoder = resnet18(weights=None)
+            self.encoder.fc = nn.Identity()
+            self.feature_dim = 512
+        else:
+            raise ValueError(backbone)
+        self.head = nn.Sequential(nn.Linear(self.feature_dim * (1 if target == "spatial" else 7), 64),
                                   nn.ReLU(), nn.Linear(64, 5))
         self.register_buffer("quality_levels", torch.arange(1., 6.))
 
@@ -144,7 +153,7 @@ class QualityModel(nn.Module):
         if frames.ndim != 5 or frames.shape[1:3] != (4, 3):
             raise ValueError("Exactly four RGB frames per video are required")
         batch, count, channels, height, width = frames.shape
-        z = self.encoder(frames.reshape(batch * count, channels, height, width)).reshape(batch, count, 64)
+        z = self.encoder(frames.reshape(batch * count, channels, height, width)).reshape(batch, count, self.feature_dim)
         features = (z.mean(1) if self.target == "spatial" else
                     torch.cat((z.flatten(1), (z[:, 1:] - z[:, :-1]).flatten(1)), 1))
         logits = self.head(features)
@@ -243,6 +252,8 @@ TASK_IDS = ("lgvq_temporal", "lgvq_spatial", "abo_image_to_text", "abo_image_to_
 
 
 def build_model(task: str) -> nn.Module:
+    if task == "lgvq_temporal_resnet18":
+        return QualityModel("temporal", backbone="resnet18")
     if task.startswith("lgvq_"):
         return QualityModel(task.removeprefix("lgvq_"))
     if task in {"abo_image_to_text", "abo_text_to_image"}:

@@ -22,7 +22,7 @@ class Problem:
             self._other_task(task)
             return
         self.data = LGVQ(LGVQ_ROOT)
-        target = task.removeprefix('lgvq_')
+        target = 'temporal' if task == 'lgvq_temporal_resnet18' else task.removeprefix('lgvq_')
         self.train = self.data.dataset('train', target)
         self.test = self.data.dataset('test', target)
         self.train_mos = torch.tensor([float(r[target]) for r in self.data.rows if r['split']=='train'])

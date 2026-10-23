@@ -327,3 +327,13 @@ CUDA_VISIBLE_DEVICES='' python -m LightGenV2.tasks.t19_resnet20_baselines.inspec
 这个命令只查询GPU，不选择/保留设备，不证明数据已齐全。
 用户确认架构后仍须闭合全部launch gates、真实数据适配和新发布commit，才能正式启动。
 本次确认要求来自用户“我觉得ok以后正式开始跑”，不是额外引入审批步骤。
+
+## 2026-10-23：新增 ResNet-18 时间质量对照
+
+用户要求尝试比 CIFAR ResNet-20 更大的 ResNet。新增独立任务
+`lgvq_temporal_resnet18`，不覆盖原九项结果。使用 torchvision 标准 ResNet-18，
+weights=None 随机初始化，删除分类器；视觉骨干11,176,512参数，完整模型11,406,277参数。
+四帧512维特征及三组相邻有符号差拼接为3584维，仍使用64→5质量头和原TRAIN MOS分箱。
+沿用原2250/558划分、四帧224输入、五分类CE、seed42、30轮、AdamW 0.001固定学习率、
+无warmup/cosine、有效batch32（microbatch8）、FP32且关闭TF32。TEST按原周期选模，
+属于开发指标。由同一队列管理，所有T19任务合计最多三张GPU，每卡最多两个任务。
