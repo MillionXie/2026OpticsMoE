@@ -41,3 +41,15 @@ def test_windows_output_length_checked_before_any_fit():
     assert len(str(root/tail))<259
     source=(HERE/'lab_caltech20_tucam_trainaug_20261023.py').read_text()
     assert "Use a shorter run/output path before TRAIN fitting" in source
+
+
+def test_one_finite_training_direction_shrinkage_not_test_fit_or_ensemble():
+    p=json.loads((HERE/'lab_caltech20_L4_DVP_shrinkage_profile_20261023.json').read_text())
+    assert p['parent_correct']==285 and p['method']=='TRAIN_postCCD_shrinkage_path'
+    assert len(p['original_TRAIN_counts'])==20 and sum(p['original_TRAIN_counts'])==3141
+    assert p['path_recipe']['steps']==[.0625,.125,.25,.5]
+    assert 'TUCam' not in p['path_recipe']['direction_PT']
+    source=(HERE/'lab_caltech20_tucam_trainaug_20261023.py').read_text()
+    assert 'TRAIN_gradient_updates=0' in source and "direction_report_SHA256" in source
+    assert 'loop.validate_state(m,candidate,original,keys)' in source
+    assert "tr['nll']<=baseline['train']['nll']" in source

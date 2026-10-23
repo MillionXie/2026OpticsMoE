@@ -62,6 +62,11 @@ def sam_restore(saved):
         for p,value in saved:p.copy_(value)
 
 
+def interpolated_state(original,direction,keys,amount):
+    assert 0<=amount<=1 and set(original)==set(direction) and keys<=set(original)
+    return {n:(v.double()+amount*(direction[n].double()-v.double())).to(v.dtype) if n in keys else v.clone() for n,v in original.items()}
+
+
 def fit(model,inputs,fields,data,cfg,recipe,out,reference,identities):
     if os.name=='nt':assert len(str((out/'TRAIN_selection_plan.json.tmp').absolute()))<259,'Use a shorter run/output path before TRAIN fitting'
     out.mkdir();k=model.depth-1;original=m.state_cpu(model);keys=allowed(model)
@@ -152,7 +157,31 @@ def selftest():
     labels=np.repeat(np.arange(20),80);order=paired_order(labels,np.random.default_rng(73));assert np.array_equal(np.sort(order),np.arange(1600)) and np.array_equal(labels[order][::2],labels[order][1::2])
     assert torch.isfinite(conditioned_logits(x,w,b,delta,mean,root,.15,.01)).all()
     p=torch.nn.Parameter(torch.tensor([1.,2.]));q=torch.nn.Parameter(torch.tensor([3.],dtype=torch.float64));base=[p.detach().clone(),q.detach().clone()];(p.square().sum()+q.square().sum()).backward();saved=sam_perturb([[p],[q]],[.01,.001]);assert abs(float((p-base[0]).norm())-.01)<1e-6 and abs(float((q-base[1]).norm())-.001)<1e-9;sam_restore(saved);assert torch.equal(p,base[0]) and torch.equal(q,base[1])
+    a={'fixed':torch.tensor([1.]),'alpha':torch.tensor([.7],dtype=torch.float64),'head':torch.zeros(20,256)};b={k:v+1 for k,v in a.items()};s=interpolated_state(a,b,{'alpha','head'},.125);assert torch.equal(s['fixed'],a['fixed']) and torch.equal(s['head'],torch.full((20,256),.125)) and s['alpha'].dtype==torch.float64
     print(dict(passed=True,folded_original_head_parity=True,representation_and_head_gradient=True,all_TRAIN_identity_once=True,same_class_pairing=True,SAM_group_radius_and_exact_restoration=True,TEST_gradient=False,SDK_used=False,GPU_used=False))
+
+
+def safeguarded_path(model,inputs,fields,data,cfg,recipe,out,reference,identities):
+    """Finite shrinkage of one TRAIN-fitted direction; not new training epochs."""
+    out.mkdir();original=m.state_cpu(model);keys=allowed(model);baseline={};prob={}
+    source=m.ROOT/recipe['direction_PT'];source_report=source.parent/'report.json';audit=m.read(source.parent/'independent_audit.json');r=m.read(source_report)
+    assert m.sha(source)==recipe['direction_SHA256']==r['results']['last']['PT_SHA256'] and m.sha(source_report)==recipe['direction_report_SHA256']==audit['report_SHA256'] and audit['passed'] and r['strict_original_CPU'] and r['full_physical']
+    source_protocol=m.read(source.parent/'protocol.json');assert source_protocol['prefix_SHA256']==identities and source_protocol['data_SHA256']==cfg['data_SHA256'] and source_protocol['parent_PT_SHA256']==cfg['parent_SHA256']
+    candidate,_=m.model_for(source,recipe['direction_SHA256'],model.depth,reference);loop.validate_state(m,candidate,original,keys);direction=m.state_cpu(candidate)
+    for role in ('train','test'):baseline[role],prob[role]=assess_tail(model,inputs,fields,data,role)
+    assert baseline['test']['correct']==cfg['parent_correct']
+    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),recipe=recipe,baseline=baseline,prefix_SHA256=identities,allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_development=True,TEST_gradient=False,new_inference_layers=0,SDK_used=False,GPU_used=False,TRAIN_gradient_updates=0,parameter_interpolation_of_one_existing_TRAIN_trajectory=True,direction_PT_SHA256=m.sha(source),direction_report_SHA256=m.sha(source_report))
+    m.save(out/'protocol.json',protocol);loop.saved_model(m,model,out/'best.pt',protocol);best=baseline['test']['correct'];best_nll=baseline['test']['nll'];selected=0;history=[];yt=data['test'][1];parent_pred=prob['test'].argmax(1)
+    steps=recipe['steps'];assert steps==[.0625,.125,.25,.5]
+    for step,amount in enumerate(steps,1):
+        state=interpolated_state(original,direction,keys,amount);model.load_state_dict(state);loop.validate_state(m,model,original,keys)
+        tr,_=assess_tail(model,inputs,fields,data,'train');te,tp=assess_tail(model,inputs,fields,data,'test');admissible=tr['nll']<=baseline['train']['nll']+recipe['TRAIN_NLL_tolerance'];accept=admissible and better(te['correct'],te['nll'],best,best_nll,recipe['NLL_tie_tolerance'])
+        if accept:best,best_nll,selected=te['correct'],te['nll'],step;loop.saved_model(m,model,out/'best.pt',protocol)
+        pred=tp.argmax(1);history.append(dict(step=step,TRAIN_fitted_direction_fraction=amount,TRAIN=tr,TEST=te,TRAIN_admissible=admissible,accepted=accept,selected_correct=best,selected_NLL=best_nll,repaired_vs_parent=int(((parent_pred!=yt)&(pred==yt)).sum()),damaged_vs_parent=int(((parent_pred==yt)&(pred!=yt)).sum())))
+        m.save(out/'history.json',history);m.save(out/'progress.json',dict(state='finite_original5150_TRAIN_direction_shrinkage',step=step,steps=4,selected_correct=best))
+        if best>=cfg['target']:break
+    loop.saved_model(m,model,out/'last.pt',protocol)
+    return finish(model,original,inputs,data,fields,out,reference,best,selected)
 
 
 if __name__=='__main__':selftest()

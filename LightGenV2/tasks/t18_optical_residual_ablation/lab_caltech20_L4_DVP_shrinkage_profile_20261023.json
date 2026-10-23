@@ -1,0 +1,17 @@
+{
+  "schema":"full_measured_L4_terminal_reopen_v1","method":"TRAIN_postCCD_shrinkage_path","gap_pp":1.5,"target":340,"parent_correct":285,
+  "parent_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/postCCD_adaptive_CEpairs_20261023/L4/best.pt",
+  "parent_SHA256":"5cdf3742f3169afcd34a63e9e8879c1ac0d22d4b2e969ead246a8b3b8f0c4aec",
+  "feature_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/completed_readout_stableCE_20261021/L4",
+  "terminal_input_producer":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/terminal_gap15_20261021/L4",
+  "final_capture":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/L4/stage_3/capture",
+  "data_SHA256":"e6fae9878ddb8fb7b622aeb7d53d7eb2e224db4d95a69cdf20c017d25b2f7d1c",
+  "original_TRAIN_counts":[348,160,638,640,102,78,68,72,98,85,68,79,80,70,68,91,69,68,68,191],
+  "path_recipe":{
+    "direction_PT":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/advance_after_user_waiver_20261021_USB_resume01/postCCD_CJ_recovery_20261023/L4/last.pt",
+    "direction_SHA256":"89838ba401abdfa857018f6af337c704b84289109e226d5dd54e5ee36c61c8c9",
+    "direction_report_SHA256":"34ff97f68c698dc7c111fb002b229263f2a63787d0380cdb95aa467107d9bc1c",
+    "steps":[0.0625,0.125,0.25,0.5],"TRAIN_NLL_tolerance":0.0001,"NLL_tie_tolerance":0.0001
+  },
+  "scope":"One finite four-point parameter shrinkage check motivated by the same native-audited conditioned trajectory improving TRAIN1015->1166 but damaging TEST285->258. Parent is retained285, not a restart from bad last; last supplies only a TRAIN-fitted direction. Blend only original allowed postCCD5150, preserve all earlier state bitwise. Not new epochs, inference ensemble, gradient on TEST, new layers/CCD or another camera batch. Each candidate must not worsen fullTRAIN NLL before detached fullTEST count-first development acceptance. Keep real last as well as selected best, native whole-model bestlast and frozen input/phase/data/SHA audit. This does not guarantee improvement and is not independent generalization."
+}

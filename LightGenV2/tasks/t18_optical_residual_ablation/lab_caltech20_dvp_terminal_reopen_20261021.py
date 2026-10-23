@@ -56,7 +56,7 @@ def selftest():
 
 def run(a):
     preview=json.loads(a.profile.read_text());post_sam=preview.get('method') in ('TRAIN_postCCD_SAM','TRAIN_postCCD_geometry_SAM','TRAIN_postCCD_Adam_restart','TRAIN_postCCD_Adam_warm','TRAIN_postCCD_alternating_blocks','TRAIN_postCCD_featuremix_SWA')
-    conditioned_joint=preview.get('method')=='TRAIN_postCCD_conditioned_joint'
+    conditioned_joint=preview.get('method') in ('TRAIN_postCCD_conditioned_joint','TRAIN_postCCD_shrinkage_path')
     cpu_joint=preview.get('method') in ('TRAIN_postCCD_fullbatch_SGD','TRAIN_postCCD_joint_LBFGS','TRAIN_postCCD_prototype_SGD','TRAIN_postCCD_GCE_SGD') or conditioned_joint
     assert os.environ.get('CUDA_VISIBLE_DEVICES')==(preview['GPU_UUID'] if post_sam else '')
     import numpy as np,torch
@@ -386,7 +386,9 @@ def run(a):
     finally:hook.remove()
     if conditioned_joint:
         from lab_caltech20_tucam_trainaug_20261023 import fit
-        chosen,results=fit(model,cached,fields,data,cfg,cfg['conditioned_recipe'],a.out/'fit',session/'source_reference.ts',identities)
+        if cfg['method']=='TRAIN_postCCD_shrinkage_path':
+            from lab_caltech20_tucam_trainaug_20261023 import safeguarded_path as fit
+        chosen,results=fit(model,cached,fields,data,cfg,cfg.get('path_recipe',cfg.get('conditioned_recipe')),a.out/'fit',session/'source_reference.ts',identities)
         loop.validate_state(m,chosen,original,allowed);loop.saved_model(m,chosen,a.out/'best.pt',protocol)
         last,_=m.model_for(a.out/'fit/last.pt',m.sha(a.out/'fit/last.pt'),4,session/'source_reference.ts');loop.validate_state(m,last,original,allowed);loop.saved_model(m,last,a.out/'last.pt',protocol)
         # Re-serialization changes container SHA, not the audited model state.
