@@ -69,8 +69,10 @@ def main():
     if args.resume:
         report=json.loads((suite/'queue_status.json').read_text())
         if report['execution_profile']!=PROFILE:raise ValueError('Cannot resume a different protocol')
+        active_uuids={j['gpu_uuid'] for j in report['jobs'] if j['status']=='running'}
+        if not active_uuids<=set(args.gpu_uuids):raise ValueError('Resume must retain active GPUs')
         report.setdefault('supervisor_history',[]).append({'pid':report['pid'],'replaced_unix':time.time()})
-        report.update(pid=os.getpid(),status='running')
+        report.update(pid=os.getpid(),status='running',gpu_uuids=args.gpu_uuids)
         for job in report['jobs']:
             if job['status']!='running':continue
             root=TASK/('runs/smoke' if job['phase']=='smoke' else 'runs/simulation')/job['name']
