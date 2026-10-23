@@ -1,0 +1,17 @@
+{
+  "inherits":"lab_caltech20_actual300_FROZEN_profile_20261024.json",
+  "inherits_SHA256":"4d5d6021cf9d3f43a1c8b395b93b3567090f43fe535c4361ef495ac76db2d0a7",
+  "method":"local_remaining",
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_BACKEND.return.json",
+  "native_feature_source":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2r/s_2/fit",
+  "TRAIN_local_boundary":{"maximum_classes":12,"steps_per_class":64,"temperature":2.0,"label_smoothing":0.02,"neighbor_weight":2.0,"KL":2.0,"anchor":0.2,"trust_step":0.25,"row_radius":0.08,"seed":73,"skip_classes":[3,0,2,19,1,4,9,6]},
+  "recipe":{"name":"actual300_old282_finish_single_class_coordinate_pass","epochs":1,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_tucam_TRAIN_linear_20261023.py":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+    "lab_caltech20_TRAIN_local_boundary_20261023.py":"5aeb3a7433c5d094af22c68fab93e291dc5896997cdb0ac910dec8bff094bff6",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Actual old282/PT1f447's original one-pass local repair processed only8classes [3,0,2,19,1,4,9,6] for512TRAIN-only row updates; not all20. Finish ONLY the remaining12classes, once, same published exact binary-rest curvature/64updates perclass/KL2/anchor.2/rowradius.08/truststep.25. Original nonhead bitwise frozen, exact e2r nativeTRAINcache and its localplanSHA must match, sourcefallback282. TEST explicitly used for error-class planning and nearest TRAIN mining and PT selection, never TEST in gradient; development only, not independent generalization. Positive/negative/full-class replay updates use onlyTRAIN indices. No broader radius, repeated class cycling, newlayer/CCD/TESTgrad/VALID. Full nativeCPU411 andtrain1600/bestlast/ancestorSHA; actual300 beforefreshG2/final340 unchanged, no timer/retry."
+}

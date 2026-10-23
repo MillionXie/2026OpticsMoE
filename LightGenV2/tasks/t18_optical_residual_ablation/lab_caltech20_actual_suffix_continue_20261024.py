@@ -22,7 +22,7 @@ def validate_policy(p):
     assert p['actual_E2_target']==300 and p['final_target']==340
     assert p['TRAIN']==1600 and p['TEST']==411 and p['VALID']==0
     assert not p['TEST_gradient'] and not p['scheduler'] and not p['automatic_retry']
-    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE')
+    assert p['new_inference_layers']==0 and p['method'] in ('OAS','affine_LBFGS','contrast_LBFGS','TRAIN_group_ridge','native_CE','frozen_readout_CE','safe_teacher_CE','supervised_metric_CE','desaturation_CE','local_remaining')
     assert 0<=p['expected_parent_correct']<300
     family=p.get('capture_family','new_E2');assert family in ('new_E2','old282')
     if family=='new_E2':
@@ -103,6 +103,7 @@ def run(a):
     else:
         import lab_caltech20_tucam_TRAIN_linear_20261023 as engine
         config={**c}
+        if p['method']=='local_remaining':config.update(TRAIN_readout='cached_TRAIN_local_boundary',native_feature_source=p['native_feature_source'],TRAIN_local_boundary=p['TRAIN_local_boundary'],TRAIN_local_engine_SHA256=p['source_SHA256']['lab_caltech20_TRAIN_local_boundary_20261023.py'])
         if p['method']=='affine_LBFGS':
             config.update(TRAIN_readout='cached_TRAIN_affine_LBFGS',native_feature_source=p['source_fit'],fresh_native_TRAIN_features=True,
                 TRAIN_affine_optimizer=dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80))

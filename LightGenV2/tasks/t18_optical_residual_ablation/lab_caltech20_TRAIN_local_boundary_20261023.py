@@ -11,8 +11,9 @@ def validate(c):
     origin=dict(maximum_classes=8,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.08,seed=73)
     continued={**origin,'maximum_classes':12,'skip_classes':[3,2,0,4,9,15,7,12]}
     continued_E2={**origin,'maximum_classes':12,'skip_classes':[3,2,0,19,4,7,10,13]}
+    continued_old282={**origin,'maximum_classes':12,'skip_classes':[3,0,2,19,1,4,9,6]}
     full_E2={**origin,'maximum_classes':20}
-    assert c in (origin,continued,continued_E2,full_E2)
+    assert c in (origin,continued,continued_E2,continued_old282,full_E2)
 
 
 def selection(features,labels,w,b):
