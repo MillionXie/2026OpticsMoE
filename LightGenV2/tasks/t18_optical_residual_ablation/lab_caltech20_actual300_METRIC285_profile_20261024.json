@@ -1,0 +1,11 @@
+{
+  "inherits":"lab_caltech20_actual300_METRIC_profile_20261024.json",
+  "inherits_SHA256":"d8a232813eae13dbed5033b5a5b397e2cb22b50b12f3ee381fa8125549f6378b",
+  "method":"supervised_metric_CE",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_REMAIN/fit",
+  "source_PT_SHA256":"5f7c007d6cc9f9658ad40fa5a8d2f33fafcf9361ec8c2576e4517ccf1346663d",
+  "source_report_SHA256":"ff007c0c177831960bf4030ceede2e9b4c6b03331dd464e92c35f9c0115510da",
+  "expected_parent_correct":285,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_REMAIN.return.json",
+  "scope":"Use newly FULL originalCPU-verified285/411 source5f7c, not a lower checkpoint. Exact original old282 physical E2 family/phase376cc/arrays9de875,d6056c preserved; remaining12class single bounded pass gained3TEST and8TRAIN, all nonheadbitwise frozen and current source reportSHA pinned. Original METRIC configuration was only used for a read-only80TRAIN CPU/CUDA audit (both67correct, zero predictiondisagreements,maxprobabilitydiff.000630); no metric training has run. Now execute its fixed finite gradient-balanced same-class independent-source-family supervised feature loss plusCE, lawfulG2phase9/electronic2..3/directalpha2..3/5140head,48fullTRAINepochs/1500fitseconds/currentnoise/dropout. TRAIN-only gradientscale not TEST tuning; TEST developer PT selection only/noTESTgradient/noVALID/no newlayers/CCD/hardwaresettingchanges. Parent285fallback, actual300 beforeG2/final340/deadline08:00 unchanged, no timer/retry."
+}

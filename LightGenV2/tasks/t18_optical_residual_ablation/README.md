@@ -1,3 +1,28 @@
+## 2026-10-24 06:02 原E2物理family新完整285；余15张，接285原后缀特征优化
+
+`readout_REMAIN`对原282局部计划未处理的12类只完成一次64步/类有界TRAIN行更新，
+共768updates，原非读出逐bit不变。完整原模型CPU：best TRAIN1339/1600、
+TEST285/411=69.34307%，较父282恢复3张且未丢原正确样本；last也是285。
+bestPT SHA5f7c007d6cc9f9658ad40fa5a8d2f33fafcf9361ec8c2576e4517ccf1346663d，
+报告SHAff007c0c177831960bf4030ceede2e9b4c6b03331dd464e92c35f9c0115510da。
+TEST明确用于类别/近邻TRAIN策略及开发PT选择，无TEST梯度，不能作独立泛化结果。
+仍是实测Router/E1/G1/E2、仿真G2，不是全链实拍；300门槛差15，G2未启动。
+
+反饱和64轮完整12800updates并未改善：bestE0仍282，last TRAIN1408/1600、TEST266，
+报告99cc273d6b205088035786f0eeb31dda3479ebff90111cb09ac2968ac9b05d2c。
+虽TRAIN导数从.0448到.260/饱和.865到.124，也不能当分类改善，排除“只要导数恢复就够”。
+80TRAIN原模型CPU/CUDA核验均67正确/预测无分歧，max概率差.000630、原TRAIN
+contrast坐标差.000468，不能称逐bit一致，也不支持主要归因后端。均已退出/备份。
+
+下一配置`METRIC285`只从已完整复核的更好285及同8份CCD开始，原282/旧全部证据
+保留；不改写此前仅被只读BACKEND使用的METRIC profile。48完整TRAIN轮/1500fit秒，
+原G2mask、postE2电残差/alpha及5140头联合；同类两个不同原始family作正例，每轮
+1600恰好一次，无增强兄弟互为唯一正例。TRAIN实测梯度表明原拟定.05权重仅CE特征
+梯度.000917，未执行该弱配置；改为detach的TRAIN梯度范数平衡，metric梯度最多为CE
+的10%，系数上限10。损失数值不按CE封顶，分开记录数值、系数、梯度比例；不增加
+projection head/推理模块。实际300/最终340、08:00截止、无定时任务/无TEST梯度/noVALID
+与硬件合同不变；仅在发布、Git同步、数值检查后启动，不承诺达到300。
+
 ## 2026-10-24 05:37 TRAIN定位到后电残差饱和；接原参数反饱和正则
 
 正确TRAIN教师联合48完整epoch/9600updates已结束，best仍原E0的282，last TRAIN

@@ -14,9 +14,9 @@ def test_initial_OAS_profile_and_source_identities():
 def test_old282_keeps_its_own_camera_arrays_and_exact_parent():
     tree=ast.parse(ENTRY.read_text());nodes=[n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name in ('validate_policy','load_policy')]
     ns=dict(json=json,hashlib=hashlib,Path=Path,base=SimpleNamespace(HERE=ENTRY.parent));exec(compile(ast.Module(body=nodes,type_ignores=[]),str(ENTRY),'exec'),ns)
-    for profile in ('lab_caltech20_actual300_FROZEN_profile_20261024.json','lab_caltech20_actual300_RIDGEOLD_profile_20261024.json','lab_caltech20_actual300_SAFE_profile_20261024.json','lab_caltech20_actual300_SOFTOLD_profile_20261024.json','lab_caltech20_actual300_NOISE_profile_20261024.json','lab_caltech20_actual300_METRIC_profile_20261024.json','lab_caltech20_actual300_DESAT_profile_20261024.json','lab_caltech20_actual300_REMAIN_profile_20261024.json'):
+    for profile in ('lab_caltech20_actual300_FROZEN_profile_20261024.json','lab_caltech20_actual300_RIDGEOLD_profile_20261024.json','lab_caltech20_actual300_SAFE_profile_20261024.json','lab_caltech20_actual300_SOFTOLD_profile_20261024.json','lab_caltech20_actual300_NOISE_profile_20261024.json','lab_caltech20_actual300_METRIC_profile_20261024.json','lab_caltech20_actual300_DESAT_profile_20261024.json','lab_caltech20_actual300_REMAIN_profile_20261024.json','lab_caltech20_actual300_METRIC285_profile_20261024.json'):
         p=ns['load_policy'](ENTRY.parent/profile);ns['validate_policy'](p)
-        assert p['expected_parent_correct']==282 and p['captures']['2'].endswith('/g1s/s_2/capture')
+        assert p['expected_parent_correct']==(285 if 'METRIC285' in profile else 282) and p['captures']['2'].endswith('/g1s/s_2/capture')
         for name,digest in p['source_SHA256'].items():
             value=(ENTRY.parent/name).read_bytes().replace(b'\r\n',b'\n')
             if digest=='a65f32b5a750450feddc0d86bfef84cc7660a7583c0bdbd6bcba523fa0608140':value=subprocess.check_output(['git','show','71fef4354:LightGenV2/tasks/t18_optical_residual_ablation/'+name])
