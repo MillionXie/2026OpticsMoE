@@ -3,7 +3,7 @@
 Conditioning is an optimizer coordinate change, folded into the original Linear.
 Synthetic feature mixup is not a new optical observation. TEST never enters loss.
 """
-import time
+import os,time
 import numpy as np
 import torch
 from torch.nn import functional as F
@@ -63,6 +63,7 @@ def sam_restore(saved):
 
 
 def fit(model,inputs,fields,data,cfg,recipe,out,reference,identities):
+    if os.name=='nt':assert len(str((out/'TRAIN_selection_plan.json.tmp').absolute()))<259,'Use a shorter run/output path before TRAIN fitting'
     out.mkdir();k=model.depth-1;original=m.state_cpu(model);keys=allowed(model)
     baseline={};prob={};bank={}
     for role in ('train','test'):

@@ -386,14 +386,14 @@ def run(a):
     finally:hook.remove()
     if conditioned_joint:
         from lab_caltech20_tucam_trainaug_20261023 import fit
-        chosen,results=fit(model,cached,fields,data,cfg,cfg['conditioned_recipe'],a.out/'original5150_conditioned',session/'source_reference.ts',identities)
+        chosen,results=fit(model,cached,fields,data,cfg,cfg['conditioned_recipe'],a.out/'fit',session/'source_reference.ts',identities)
         loop.validate_state(m,chosen,original,allowed);loop.saved_model(m,chosen,a.out/'best.pt',protocol)
-        last,_=m.model_for(a.out/'original5150_conditioned/last.pt',m.sha(a.out/'original5150_conditioned/last.pt'),4,session/'source_reference.ts');loop.validate_state(m,last,original,allowed);loop.saved_model(m,last,a.out/'last.pt',protocol)
+        last,_=m.model_for(a.out/'fit/last.pt',m.sha(a.out/'fit/last.pt'),4,session/'source_reference.ts');loop.validate_state(m,last,original,allowed);loop.saved_model(m,last,a.out/'last.pt',protocol)
         # Re-serialization changes container SHA, not the audited model state.
         results={key:{**v,'PT_SHA256':m.sha(a.out/(key+'.pt'))} for key,v in results.items()}
-        native=m.read(a.out/'original5150_conditioned/report.json');audit=m.read(a.out/'original5150_conditioned/independent_audit.json');assert audit['passed'] and audit['report_SHA256']==m.sha(a.out/'original5150_conditioned/report.json')
-        m.save(a.out/'report.json',dict(state='complete',baseline_correct=expected,selected_correct=native['selected_correct'],selected_E0=all(torch.equal(v,m.state_cpu(chosen)[n]) for n,v in original.items()),results=results,target=340,target_met=native['selected_correct']>=340,strict_original_CPU=True,full_physical=True,all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),native_report_SHA256=m.sha(a.out/'original5150_conditioned/report.json'),SDK_used=False,GPU_used=False))
-        m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,prefix_SHA256=identities,nonterminal_state_bitwise_frozen=True,native_cached_probability_parity=True,source_native_report_SHA256=m.sha(a.out/'original5150_conditioned/report.json')))
+        native=m.read(a.out/'fit/report.json');audit=m.read(a.out/'fit/independent_audit.json');assert audit['passed'] and audit['report_SHA256']==m.sha(a.out/'fit/report.json')
+        m.save(a.out/'report.json',dict(state='complete',baseline_correct=expected,selected_correct=native['selected_correct'],selected_E0=all(torch.equal(v,m.state_cpu(chosen)[n]) for n,v in original.items()),results=results,target=340,target_met=native['selected_correct']>=340,strict_original_CPU=True,full_physical=True,all_optical_upstream_frozen=True,TEST_gradient=False,TEST_informed_development=True,protocol_SHA256=m.sha(a.out/'protocol.json'),native_report_SHA256=m.sha(a.out/'fit/report.json'),SDK_used=False,GPU_used=False))
+        m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),native_bestlast_TRAIN1600_TEST411=True,prefix_SHA256=identities,nonterminal_state_bitwise_frozen=True,native_cached_probability_parity=True,source_native_report_SHA256=m.sha(a.out/'fit/report.json')))
         return
     if post_sam or cpu_joint:
         from lab_caltech20_dvp_postCCD_SAM_20261021 import fit_and_audit
