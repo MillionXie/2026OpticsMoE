@@ -39,7 +39,7 @@ def test_TRAIN_only_objective_and_single_initialization_fit():
 
 def test_no_camera_or_physical_accuracy_claim_and_full_CPU_replay():
     s=ENTRY.read_text()
-    assert 'mask.predictive_score(native,gain,bg,data,fields,role)' in s and 'selection_not_physical_accuracy=True' in s
+    assert 'scorer(native,gain,bg,data,fields,role)' in s and 'selection_not_physical_accuracy=True' in s
     assert 'actual_source_correct_still273=True,new_CCD=0,G2_not_started=True' in s
     assert 'next_requires_original_physical_E2_gate305=True' in s
     for bad in ('capture.acquire(','Bench(','torch.nn.Sequential','torch.cuda','TEST_mixup','scheduler.run'):assert bad not in s

@@ -21,13 +21,14 @@ def validate_policy(p):
     assert p['intermediate_target']==305 and p['final_target']==340 and p['scheduler'] is False
 
 
-def fit(model,data,dm,fields,paths,parent,reference,gain,bg,c,p,out):
+def fit(model,data,dm,fields,paths,parent,reference,gain,bg,c,p,out,*,model_factory=None,score_function=None,gauge_regularization=False):
     np,torch,m,loop=base.numerical_modules()
     from torch.nn import functional as F
     from lab_caltech20_tucam_TRAIN_linear_20261023 import TRAIN_linear_fit,TRAIN_affine_objective
     assert list(fields)==['router','0','1'] and not out.exists() and not m.LOCK.exists();out.mkdir()
     original=m.state_cpu(model);keys={'linear.weight','linear.bias'};lineage=base.identities(m,paths)
-    source=base.ROOT/p['mask_fit'];source_report=m.read(source/'report.json');cpu=mask.make_predictor(model,gain,bg).eval()
+    factory=model_factory or mask.make_predictor;scorer=score_function or mask.predictive_score
+    source=base.ROOT/p['mask_fit'];source_report=m.read(source/'report.json');cpu=factory(model,gain,bg).eval()
     features={};errors={}
     with torch.inference_mode():
         for role,n in (('train',1600),('test',411)):
@@ -43,11 +44,14 @@ def fit(model,data,dm,fields,paths,parent,reference,gain,bg,c,p,out):
             assert errors[role]<=3e-6
     cfg=p['recipe'];head=torch.nn.Linear(256,20).double();head.load_state_dict(model.linear.state_dict());labels=torch.from_numpy(data['train'][1].astype(np.int64));train=features['train'].double()
     prior=np.asarray(c['original_TRAIN_counts'],float);weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=torch.float64)
-    regularization=2*cfg['L2_parent_TRAIN_NLL_fraction']*source_report['results']['best']['calibrated_train']['nll']/float(head.weight.detach().square().sum())
+    raw_norm=float(head.weight.detach().square().sum());contrast_norm=float((head.weight.detach()-head.weight.detach().mean(0,keepdim=True)).square().sum())
+    norm=contrast_norm if gauge_regularization else raw_norm;assert norm>0
+    regularization=2*cfg['L2_parent_TRAIN_NLL_fraction']*source_report['results']['best']['calibrated_train']['nll']/norm
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),policy=p,parent_PT_SHA256=m.sha(parent),data_SHA256=dm['sha256'],prefix_SHA256=lineage,
         allowed_keys=sorted(keys),trainable_parameters=5140,new_inference_layers=0,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,
         all_masks_electronics_alpha_frozen=True,SDK_used=False,GPU_used=False,selection_not_physical_accuracy=True,response_map_not_deployed=True,
-        feature_probability_max_errors=errors,feature_cache_SHA256={r:m.sha(out/(r+'_features.npz')) for r in features},TRAIN_only_L2=regularization)
+        feature_probability_max_errors=errors,feature_cache_SHA256={r:m.sha(out/(r+'_features.npz')) for r in features},TRAIN_only_L2=regularization,
+        class_contrast_regularization=gauge_regularization,parent_weight_squared_norm=raw_norm,parent_class_contrast_squared_norm=contrast_norm)
     m.save(out/'protocol.json',protocol)
     baseline=source_report['results']['best']['calibrated_test'];best=baseline['correct'];bnll=baseline['nll'];selected='parent_joint_mask';best_head={k:v.detach().clone() for k,v in head.state_dict().items()};history=[];calls=0;started=time.monotonic()
     def cached_metrics(role):
@@ -62,13 +66,18 @@ def fit(model,data,dm,fields,paths,parent,reference,gain,bg,c,p,out):
             best,bnll,selected=v['correct'],v['nll'],method;best_head={k:x.detach().clone() for k,x in head.state_dict().items()}
         row.update(selected_predictive_correct=best,selected_method=selected);history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',row);print(json.dumps(row),flush=True)
     review('parent_joint_mask')
+    if gauge_regularization:
+        with torch.no_grad():head.weight.sub_(head.weight.mean(0,keepdim=True));head.bias.sub_(head.bias.mean())
     initial_objective=float(TRAIN_affine_objective(head.weight,head.bias,train,labels,weights,.03,regularization)[0].detach())
     w,b,stats=TRAIN_linear_fit(train.numpy(),labels.numpy(),prior)
+    if gauge_regularization:w=w-w.mean(0,keepdims=True);b=b-b.mean()
     with torch.no_grad():head.weight.copy_(torch.from_numpy(w));head.bias.copy_(torch.from_numpy(b))
     review('TRAIN_OAS_single_fit')
     analytical_objective=float(TRAIN_affine_objective(head.weight,head.bias,train,labels,weights,.03,regularization)[0].detach())
     use_analytical=analytical_objective<initial_objective
     if not use_analytical:head.load_state_dict({k:v.double() for k,v in model.linear.state_dict().items()})
+    if gauge_regularization:
+        with torch.no_grad():head.weight.sub_(head.weight.mean(0,keepdim=True));head.bias.sub_(head.bias.mean())
     m.save(out/'TRAIN_statistics.json',dict(OAS=stats,parent_TRAIN_objective=initial_objective,OAS_TRAIN_objective=analytical_objective,LBFGS_start_from_OAS=use_analytical,initialization_chosen_by_TRAIN_only=True))
     opt=torch.optim.LBFGS(head.parameters(),lr=1,max_iter=5,max_eval=8,history_size=20,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-10)
     outer=0
@@ -86,13 +95,13 @@ def fit(model,data,dm,fields,paths,parent,reference,gain,bg,c,p,out):
         pt=out/(label+'.pt');native,_=m.model_for(pt,m.sha(pt),4,reference);loop.validate_state(m,native,original,keys);results[label]=dict(PT_SHA256=m.sha(pt),original_native_state_load=True)
         for role in ('train','test'):
             m.save(out/'progress.json',dict(state='strict_original_state_calibrated_CPU',checkpoint=label,role=role,not_physical_accuracy=True))
-            metric,prob=mask.predictive_score(native,gain,bg,data,fields,role);results[label]['calibrated_'+role]=metric
+            metric,prob=scorer(native,gain,bg,data,fields,role);results[label]['calibrated_'+role]=metric
             np.savez_compressed(out/(label+'_'+role+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=prob)
     assert results['best']['calibrated_test']['correct']==best and base.identities(m,paths)==lineage
     report=dict(state='complete',selected_predictive_correct=best,selected_method=selected,selected_parent=selected=='parent_joint_mask',results=results,
         strict_original_state_and_CPU=True,selection_not_physical_accuracy=True,full_physical=False,TEST_development=True,TEST_gradient=False,new_inference_layers=0,
         all_non_readout_bitwise_frozen=True,SDK_used=False,GPU_used=False,analytical_fits=1,outer_steps=outer,full_TRAIN_gradient_evaluations=calls,
-        feature_probability_max_errors=errors,protocol_SHA256=m.sha(out/'protocol.json'),mask_report_SHA256=p['mask_report_SHA256'])
+        feature_probability_max_errors=errors,protocol_SHA256=m.sha(out/'protocol.json'),mask_report_SHA256=p['mask_report_SHA256'],class_contrast_regularization=gauge_regularization,TRAIN_only_L2=regularization)
     m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_non_readout_bitwise_frozen=True))
     files=[v for v in out.iterdir() if v.is_file()];m.save(out/'completed_files_SHA.json',dict(files=[dict(name=v.name,SHA256=m.sha(v),bytes=v.stat().st_size) for v in sorted(files)],not_physical_accuracy=True))
     return report
