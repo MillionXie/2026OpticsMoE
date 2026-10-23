@@ -1,0 +1,19 @@
+{
+  "inherits":"lab_caltech20_actual300_OAS_profile_20261024.json",
+  "inherits_SHA256":"2e532a9ff628af2a421c0d25be8bed7826ec7e1f4e9d1a4f37a6b0b96cab0aa7",
+  "method":"contrast_LBFGS",
+  "source_fit":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_OAS/fit",
+  "source_PT_SHA256":"c7d8f2db9070db9177098c60027ff216eb90a86594e8f00b876bfaf8212b38b1",
+  "source_report_SHA256":"14bdbf8689eaa23edb18ab853c8f3b38b3a943f55ce47973cd8f403acec599ad",
+  "expected_parent_correct":275,
+  "completed_controller":"LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_OAS.return.json",
+  "recipe":{"name":"actual300_TRAIN_class_contrast_affine_LBFGS","epochs":80,"seconds":600,"lr_scale":1,"TRAIN_class_emphasis":0.75},
+  "source_SHA256":{
+    "lab_caltech20_E2_actual300_20261024.py":"3a647624fdd83000f16969b6832e259c0be829c2b87265294d847525091dd81d",
+    "lab_caltech20_tucam_TRAIN_linear_20261023.py":"2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0",
+    "lab_caltech20_actual_readout_20261024.py":"9e432bd4b217c3ee5840e8f81b62e2e99211e9971bed1972c9ba4dfa5b0b1de3",
+    "lab_caltech20_tucam_layerwise_20261023.py":"8d36bf08463a1eaa79a8e3b8a6f9350dd9cfe72930b536c7a0ec832bbfca4a07",
+    "lab_caltech20_tucam_capture_20261023.py":"4ab9e3564e73f0a15e65509a638dc909f13df56039b4e621d79249a23fad1685"
+  },
+  "scope":"Actual newE2 oneOAS improved265->275 withTRAIN1192/1600, NLL.9301/TEST2.0408. Preserve bestnativeOAS and all earlierweights. Fit only original5140head with fullTRAIN LBFGS and class-contrast-centered L2 to avoid shared-softmax-gauge norm diluting regularization; fixed penalty .1 parentTRAINNLL, smoothing.03, originalTRAINpriors. 80outersteps/max5iterations/max8evaluations/600fitseconds, no hyperparameter sweep. Reuse identity-verified nativeTRAINfeatures and freshly verifyTESTcache againstsourceCPU; never TESTgradient. Rawparent fallback unchanged unless realupdate improves developmentalTEST. Final bestlast nativeCPU TRAIN1600/TEST411/bitwise/SHA, originalactual300 gate beforeG2, no hardware/structure change/newE2 capture."
+}
