@@ -226,3 +226,77 @@ def test_optimizer_restore_rejects_new_or_incomplete_state(monkeypatch):
     optimizer = torch.optim.AdamW(model.head.parameters(), lr=.001, weight_decay=.0001)
     with pytest.raises(ValueError, match='missing trained head'):
         continuation.restore_optimizer(model, optimizer.state_dict())
+
+
+class ShapeSensitiveQuality(TinyQuality):
+    def __init__(self, offset):
+        super().__init__('temporal')
+        self.offset = offset
+
+    def forward(self, frames):
+        result = super().forward(frames)
+        if len(frames) == 1:
+            result['quality_logits'] = result['quality_logits'].clone()
+            result['quality_logits'][0, 0] += self.offset
+            result['quality_score'] = result['quality_logits'].softmax(-1) @ self.quality_levels
+        return result
+
+
+def test_singleton_cross_shape_fp32_rounding_has_explicit_distinct_tolerance():
+    torch.manual_seed(42)
+    model = ShapeSensitiveQuality(5e-5)
+    _, audit = continuation.cache_dataset(model, ToyVideos(8, 'test'), 'cpu', 'test', workers=0)
+    assert audit['max_abs_logits_error'] == audit['max_abs_score_error'] == 0.
+    assert 4e-5 < audit['singleton_max_abs_logits_error'] < 6e-5
+    assert audit['equivalence_policy']['same_batch'] == {'rtol': 1e-5, 'atol': 1e-5}
+    singleton = audit['equivalence_policy']['cross_batch_singleton']
+    assert singleton['rtol'] == singleton['atol'] == 1e-4
+    assert 'not a bitwise guarantee' in singleton['reason']
+    assert 'singleton_max_abs_score_error' in audit
+    with pytest.raises(AssertionError):
+        continuation.cache_dataset(ShapeSensitiveQuality(.01), ToyVideos(8, 'test'), 'cpu', 'test', workers=0)
+
+
+def test_same_batch_equivalence_remains_strict_at_one_e_minus_five(monkeypatch):
+    original = continuation.cached_forward
+
+    def damaged(model, features):
+        output = original(model, features)
+        output['quality_logits'] = output['quality_logits'] + 5e-5
+        return output
+
+    monkeypatch.setattr(continuation, 'cached_forward', damaged)
+    with pytest.raises(AssertionError):
+        continuation.cache_dataset(TinyQuality('spatial'), ToyVideos(8, 'test'), 'cpu', 'test', workers=0)
+
+
+class BrokenShutdown:
+    def _shutdown_workers(self):
+        raise RuntimeError('simulated worker aborted during cleanup')
+
+
+def test_shutdown_keeps_primary_exception_and_records_cleanup_errors():
+    recorded = []
+    loader = SimpleNamespace(_iterator=BrokenShutdown())
+    with pytest.raises(AssertionError, match='primary forward mismatch') as error:
+        try:
+            raise AssertionError('primary forward mismatch')
+        finally:
+            continuation.shutdown_loader(loader, cleanup_errors=recorded)
+    assert len(recorded) == 1
+    assert 'simulated worker aborted' in recorded[0]['error']
+    assert 'primary forward mismatch' in recorded[0]['original_error']
+    assert error.value.cleanup_errors == recorded
+    with pytest.raises(RuntimeError, match='simulated worker aborted') as cleanup:
+        continuation.shutdown_loader(loader)
+    assert cleanup.value.cleanup_errors[0]['original_error'] is None
+
+
+def test_cache_early_assertion_is_not_masked_by_worker_shutdown(monkeypatch):
+    loader = DataLoader(ToyVideos(8, 'test'), batch_size=8, num_workers=0)
+    loader._iterator = BrokenShutdown()
+    monkeypatch.setattr(continuation, 'DataLoader', lambda *args, **kwargs: loader)
+    with pytest.raises(AssertionError) as error:
+        continuation.cache_dataset(ShapeSensitiveQuality(.01), ToyVideos(8, 'test'), 'cpu', 'test', workers=0)
+    assert len(error.value.cleanup_errors) == 1
+    assert 'simulated worker aborted' in error.value.cleanup_errors[0]['error']

@@ -11,7 +11,10 @@
 
 编辑工程优化使用`performance_cache.py`：确定性reference/target以uint8去重缓存，恢复时
 严格重现原浮点运算顺序；每条image/target/tokens/sample_id/mode全部exact校验后才准入。
-缓存只在runs下，不进Git。新tag`byte_gru15m_cached`从旧run最后一个完整epoch恢复model+AdamW，
+缓存只在runs下，不进Git。首版逐条mmap恢复的96条CPU基准仅1.1515倍，未据此宣称训练加速；
+优化reader将同一已校验uint8 stores顺序读入CPU RAM（约5.3GB），按整批向量化恢复，模型输入仍
+逐元素完全相同。明确兼容原487beceba builder SHA，不改原缓存manifest/字节，RAM中的字节再核SHA。
+新tag`byte_gru15m_cached_ram`从旧run最后一个完整epoch恢复model+AdamW，
 回放原shuffle序列，仍累计30轮；原run与停机前last原样保留。缓存完整收据、工程smoke通过
 及手工核验的交接收据全部具备后才允许新正式worker；smoke不追加TEST模型评估。未交接前
 原编辑worker继续运行。训练中断的半轮不计作完整epoch，交接记录必须披露重算范围。
@@ -26,6 +29,12 @@ LSP初查：冻结RN18正式e1/e2 loss为0.03556738/0.03434947，头部AdamW实�
 坐标解码不匹配仍存在，不能只归因epoch少；本轮不暗改loss。后续看完整末段训练loss与已有
 周期PCK：持续同时改善支持未收敛，TRAIN改善而评估恶化提示过拟合，双低位平台则优先检查
 目标/优化瓶颈。不据TEST选轮，不擅自给LSP延长预算。
+
+LGVQ时间追加训练的首个smoke在跨batch形状singleton FP32核查处出现4.53e-5 logits差异，
+随后DataLoader清理异常掩盖首错；不是新增优化步或显存不足。失败run与原30轮SHA保留。
+同batch全样本等价门槛仍rtol/atol1e-5；不同batch形状singleton单独rtol/atol1e-4并记录误差与原因，
+不声称GPU FP32跨batch位级一致。清理保留原始异常，正常清理失败仍须失败。只修工程检查，
+训练模型/微batch/精度/采样/父权重不变，修复后以具名attempt1重新smoke，不默默覆盖重试。
 
 ## 2026-10-23 最新修订：完整模型小于1500万，固定当前四GPU
 

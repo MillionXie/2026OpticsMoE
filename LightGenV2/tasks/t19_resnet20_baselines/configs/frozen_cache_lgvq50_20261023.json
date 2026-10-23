@@ -18,7 +18,7 @@
     "abo_image_to_text": "byte_gru15m",
     "abo_text_to_image": "byte_gru15m",
     "openmoji": "byte_gru15m",
-    "abo_conditional_edit": "byte_gru15m_cached",
+    "abo_conditional_edit": "byte_gru15m_cached_ram",
     "abo_image_to_image": "gpu_expand6",
     "lsp": "gpu_expand6"
   },
@@ -64,7 +64,7 @@
   "max_jobs_per_gpu": 3,
   "third_job_admission": "At least6144MiB free and <=50percent utilization; both registered peers must already hold CUDA contexts so existing two-job workers are unaffected",
   "sealed": true,
-  "authorization": "2026-10-23 user approves engineering optimization of slow tasks, later LSP convergence/overfit diagnosis, and LGVQ temporal/spatial continuing20 epochs from30 through50. Keep four physical GPUs2/4/5/6, all active workers until verified handoff. Preserve original LGVQ30 weights/results. No scientific changes; deterministic editor uint8 reconstruction requires all-row exact verification, parent model+AdamW and original sampler order restored. Engineering smoke waits for complete-cache receipt; formal waits for audited handoff receipt, so old/new editor formal cannot train simultaneously.",
+  "authorization": "2026-10-23 user approves engineering optimization of slow tasks, later LSP convergence/overfit diagnosis, and LGVQ temporal/spatial continuing20 epochs from30 through50. Keep four physical GPUs2/4/5/6, all active workers until verified handoff. Preserve original LGVQ30 weights/results. No scientific changes; deterministic editor uint8 reconstruction requires all-row exact verification, parent model+AdamW and original sampler order restored. Engineering smoke waits for complete-cache receipt; formal waits for audited handoff receipt, so old/new editor formal cannot train simultaneously. CPU scalar mmap-only cache measured1.15x data speedup, insufficient; same verified uint8 blobs are preloaded to CPU RAM with exact vectorized batch reconstruction. This reader-only engineering revision gets a separate smoke/tag and receipts; keep old cache manifests/blobs/evidence unchanged.",
   "continuation_sources": {
     "lgvq_temporal_continue50": "runs/simulation/lgvq_temporal_formal_s42_resnet18_imagenet_frozen_single30_20261023",
     "lgvq_spatial_continue50": "runs/simulation/lgvq_spatial_formal_s42_resnet18_imagenet_frozen_single30_20261023"
@@ -73,8 +73,8 @@
     "abo_conditional_edit": {
       "resume_from": "runs/simulation/abo_conditional_edit_formal_s42_resnet18_imagenet_frozen_single30_20261023_byte_gru15m/last_checkpoint.pt",
       "editor_cache_root": "runs/cache/editor_exact_uint8_20261023",
-      "ready_receipt": "runs/control/editor_cache_ready_20261023.json",
-      "formal_gate_receipt": "runs/control/cached_editor_handoff_20261023.json",
+      "ready_receipt": "runs/control/editor_cache_ram_ready_20261023.json",
+      "formal_gate_receipt": "runs/control/cached_editor_ram_handoff_20261023.json",
       "gpu_uuid": "GPU-1b963983-7909-af6e-0528-f0f0661ab549"
     }
   },

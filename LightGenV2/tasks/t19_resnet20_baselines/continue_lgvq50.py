@@ -35,6 +35,11 @@ MICROBATCH = 8
 EFFECTIVE_BATCH = 32
 PARENT_EPOCH = 30
 FINAL_EPOCH = 50
+EQUIVALENCE_POLICY = {
+    'same_batch': {'rtol': 1e-5, 'atol': 1e-5},
+    'cross_batch_singleton': {'rtol': 1e-4, 'atol': 1e-4,
+        'reason': 'FP32 encoder/head kernels can round differently when batch shape changes; not a bitwise guarantee'},
+}
 
 
 def structured_sha256(value):
@@ -76,10 +81,29 @@ class IndexDataset(Dataset):
         return index
 
 
-def shutdown_loader(loader):
+def shutdown_loader(loader, *, cleanup_errors=None):
+    # Capture the in-flight error before entering an except for cleanup itself.
+    # The first scientific/runtime failure must not be replaced by a prefetch
+    # worker abort during early shutdown. A standalone cleanup failure still fails.
+    original_error = sys.exc_info()[1]
     iterator = getattr(loader, '_iterator', None)
     if iterator is not None:
-        iterator._shutdown_workers()
+        try:
+            iterator._shutdown_workers()
+        except BaseException as cleanup_error:
+            record = {'operation': 'DataLoader._shutdown_workers',
+                      'error': repr(cleanup_error),
+                      'original_error': repr(original_error) if original_error is not None else None}
+            owner = original_error if original_error is not None else cleanup_error
+            attached = list(getattr(owner, 'cleanup_errors', []))
+            attached.append(record)
+            owner.cleanup_errors = attached
+            if cleanup_errors is not None:
+                cleanup_errors.append(record)
+            if original_error is None:
+                raise
+            if hasattr(original_error, 'add_note'):
+                original_error.add_note(f'DataLoader cleanup also failed: {cleanup_error!r}')
 
 
 def replay_index_loader(length, batch_size, completed_epochs, seed=42, num_workers=2):
@@ -157,14 +181,15 @@ def cache_dataset(model, dataset, device, split, *, workers=2):
                 direct = model(frames)
                 cached = cached_forward(model, z)
                 for key in ('quality_logits', 'quality_score'):
-                    torch.testing.assert_close(cached[key], direct[key], rtol=1e-5, atol=1e-5)
+                    torch.testing.assert_close(cached[key], direct[key], **EQUIVALENCE_POLICY['same_batch'])
                 max_logits = max(max_logits, float((direct['quality_logits'] - cached['quality_logits']).abs().max()))
                 max_score = max(max_score, float((direct['quality_score'] - cached['quality_score']).abs().max()))
                 if batch_number == 0:
                     single = model(frames[:1])
                     one_cached = cached_forward(model, z[:1])
                     for key in ('quality_logits', 'quality_score'):
-                        torch.testing.assert_close(one_cached[key], single[key], rtol=1e-5, atol=1e-5)
+                        torch.testing.assert_close(one_cached[key], single[key],
+                            **{name:EQUIVALENCE_POLICY['cross_batch_singleton'][name] for name in ('rtol','atol')})
                     singleton_logits = float((single['quality_logits'] - one_cached['quality_logits']).abs().max())
                     singleton_score = float((single['quality_score'] - one_cached['quality_score']).abs().max())
                 batch_ids = list(batch['sample_id'])
@@ -188,6 +213,7 @@ def cache_dataset(model, dataset, device, split, *, workers=2):
         'max_abs_score_error': max_score, 'singleton_samples_checked': 1,
         'singleton_max_abs_logits_error': singleton_logits,
         'singleton_max_abs_score_error': singleton_score,
+        'equivalence_policy': EQUIVALENCE_POLICY,
         'output_binding_sha256': structured_sha256(bindings),
     }
 
@@ -295,6 +321,7 @@ def run(args):
         'precision': 'FP32_TF32_disabled', 'optimizer': 'continued_AdamW_wd0.0001_clip1',
         'selection': 'fixed_last_epoch', 'parent_run': str(source), 'parent_checkpoint': 'last_checkpoint.pt',
         'continuation_numerics': 'same_FP32_graph; checked_direct_forward_tolerance; not_a_bitwise_cross_batch_kernel_guarantee',
+        'cache_equivalence_policy': EQUIVALENCE_POLICY, 'cleanup_errors': [],
         'parent_checkpoint_sha256_before': parent_sha, 'parent_git_commit': parent.get('git_commit'),
         'parent_source_sha256': parent.get('source_sha256'), 'data_identity': problem.identity,
         'gpu_uuid': args.gpu_uuid, 'pid': os.getpid(), 'gpu': torch.cuda.get_device_name(),
@@ -414,10 +441,18 @@ def run(args):
             'development_metric': True, 'elapsed_seconds': time.monotonic() - began})
         manifest['status'] = 'complete'
     except BaseException as exc:
-        manifest.update(status='interrupted' if isinstance(exc, KeyboardInterrupt) else 'failed', error=repr(exc))
+        manifest.update(status='interrupted' if isinstance(exc, KeyboardInterrupt) else 'failed', error=repr(exc),
+                        cleanup_errors=list(getattr(exc, 'cleanup_errors', [])))
         raise
     finally:
-        shutdown_loader(loader)
+        cleanup_failure = None
+        try:
+            shutdown_loader(loader, cleanup_errors=manifest.setdefault('cleanup_errors', []))
+        except BaseException as exc:
+            # No earlier exception was active: a normal worker-shutdown failure
+            # must mark this run failed and remain visible to the coordinator.
+            manifest.update(status='failed', error=repr(exc))
+            cleanup_failure = exc
         manifest['parent_checkpoint_sha256_after'] = file_sha256(source / 'last_checkpoint.pt')
         manifest['parent_checkpoint_unchanged'] = manifest['parent_checkpoint_sha256_after'] == parent_sha
         if not manifest['parent_checkpoint_unchanged']:
@@ -427,6 +462,8 @@ def run(args):
         torch.cuda.empty_cache()
         if not manifest['parent_checkpoint_unchanged']:
             raise RuntimeError('Protected source checkpoint changed during continuation')
+        if cleanup_failure is not None:
+            raise cleanup_failure
 
 
 def main():

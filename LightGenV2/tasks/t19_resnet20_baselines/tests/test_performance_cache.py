@@ -108,6 +108,82 @@ def test_parallel_cpu_build_and_full_equal_validation(tmp_path):
     assert result['checked_samples'] == 2 and len(set(result['indices'])) == 2
 
 
+def test_ram_vectorized_batches_exact_all_bytes_random_partial_and_repeated_indices(tmp_path, monkeypatch):
+    from torch.utils.data import default_collate
+    source = DeterministicEditor(17)
+    build(source, tmp_path)
+    manifest_before = (tmp_path / 'manifest.json').read_bytes()
+    cached = cache.CachedEditorPairs(tmp_path)
+    with pytest.raises(RuntimeError, match='preload'):
+        cached.get_batch([0])
+    assert cached.preload() is cached
+    assert all(value.device.type == 'cpu' for value in cached._ram.values())
+    assert cached._ram['reference'].dtype == cached._ram['target'].dtype == torch.uint8
+    assert cached._ram['tokens'].dtype == torch.int64
+    assert cached.reader_provenance['ram_preloaded']
+    assert cached.reader_provenance['reader_code_sha256'] == cache._file_sha(cache.__file__)
+    assert (tmp_path / 'manifest.json').read_bytes() == manifest_before
+    # References contain all 256 byte values. Repeated IDs deliberately address
+    # the same deduplicated store, while output metadata keeps requested order.
+    orders = [[0], [16, 2, 2], [0, 1, 0, 1, 16, 5, 6, 6],
+              torch.randperm(17, generator=torch.Generator().manual_seed(42))[:8],
+              list(range(17))]
+    expected = [default_collate([source[int(index)] for index in order]) for order in orders]
+    monkeypatch.setattr(cache, '_file_sha', lambda path: pytest.fail('RAM batch must not hash files'))
+    monkeypatch.setattr(cache, '_tensor_sha', lambda value: pytest.fail('RAM batch must not hash tensors'))
+    monkeypatch.setattr('builtins.open', lambda *args, **kwargs: pytest.fail('RAM batch must not open files'))
+    monkeypatch.setattr(cache.Path, 'open', lambda *args, **kwargs: pytest.fail('RAM batch must not open files'))
+    for order, wanted in zip(orders, expected):
+        actual = cached.get_batch(order)
+        for name in ('image', 'target', 'tokens'):
+            assert torch.equal(actual[name], wanted[name])
+        assert actual['sample_id'] == wanted['sample_id'] and actual['mode'] == wanted['mode']
+        for index in order:
+            cache._assert_equal_rows(source[int(index)], cached[int(index)], int(index))
+    assert cached.preload() is cached  # Idempotent and also file-free.
+    with pytest.raises(IndexError):
+        cached.get_batch([17])
+    with pytest.raises(ValueError, match='integers'):
+        cached.get_batch([0.5])
+
+
+def test_named_old_builder_reader_compatibility_is_narrow_and_does_not_rewrite_cache(tmp_path):
+    source = DeterministicEditor()
+    cache.build_editor_cache(source, tmp_path, {'split': 'train'},
+        source_files=[cache.__file__, __file__], workers=0)
+    path = tmp_path / 'manifest.json'
+    manifest = json.loads(path.read_text())
+    reader_path = str(cache.Path(cache.__file__).resolve())
+    old_sha = '5521db609a053889eb7bd27b35dc9a85333bf23c91435cb4c8b12190cac7cae5'
+    assert cache.COMPATIBLE_BUILDERS[old_sha] == '487beceba'
+    manifest['source_code_sha256'][reader_path] = old_sha
+    path.write_text(json.dumps(manifest))
+    before = path.read_bytes()
+    cached = cache.CachedEditorPairs(tmp_path).preload()
+    assert cached.reader_provenance['accepted_builder_sha256'] == old_sha
+    assert cached.reader_provenance['compatible_builder_commit'] == '487beceba'
+    assert path.read_bytes() == before
+    # No compatibility exception applies to any other renderer/data file.
+    manifest['source_code_sha256'][str(cache.Path(__file__).resolve())] = old_sha
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match='renderer/source code'):
+        cache.CachedEditorPairs(tmp_path)
+    manifest['source_code_sha256'][str(cache.Path(__file__).resolve())] = cache._file_sha(__file__)
+    manifest['source_code_sha256'][reader_path] = 'f' * 64
+    path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match='renderer/source code'):
+        cache.CachedEditorPairs(tmp_path)
+
+
+def test_preload_verifies_loaded_bytes_even_without_constructor_file_hashes(tmp_path):
+    build(DeterministicEditor(), tmp_path)
+    cached = cache.CachedEditorPairs(tmp_path, verify_integrity=False)
+    with (tmp_path / 'target.bin').open('r+b') as stream:
+        stream.write(b'corruption after constructing reader')
+    with pytest.raises(ValueError, match='blob identity'):
+        cached.preload()
+
+
 class TinyFrozenEditorEncoder(torch.nn.Module):
     def __init__(self):
         super().__init__()

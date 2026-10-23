@@ -40,7 +40,10 @@ class CachedIndexBatches:
         if self.limit:
             batches = itertools.islice(batches, self.limit)
         for indices in batches:
-            yield default_collate([self.dataset[int(index)] for index in indices])
+            if hasattr(self.dataset,'get_batch'):
+                yield self.dataset.get_batch(indices)
+            else:
+                yield default_collate([self.dataset[int(index)] for index in indices])
 
 
 def load_editor_parent(path, problem, model, optimizer):
@@ -130,13 +133,14 @@ def run(args):
         cache_root = cache_root.resolve(strict=True)
         if not cache_root.is_relative_to((TASK/'runs').resolve()):
             raise ValueError('Editor cache must remain inside task runs')
-        datasets = {split:CachedEditorPairs(cache_root/split, source_identity=problem.identity,verify_integrity=True)
+        datasets = {split:CachedEditorPairs(cache_root/split, source_identity=problem.identity,verify_integrity=False)
                     for split in ('train','val','test')}
         if any(len(ds)!=EDITOR_COUNTS[split] or ds.manifest.get('dataset_split')!=split
                for split,ds in datasets.items()):
             raise RuntimeError('Editor cache split/count binding differs')
         if any(not ds.manifest.get('all_rows_exactly_verified') for ds in datasets.values()):
             raise RuntimeError('Editor cache has not passed full exact input/target verification')
+        for dataset in datasets.values():dataset.preload()
         problem.train,problem.test,problem.final_test = (datasets[key] for key in ('train','val','test'))
         train_data = problem.train
     if args.smoke_batches and problem.batch_sampler is None and not resume_path:
@@ -153,9 +157,12 @@ def run(args):
         train = DataLoader(train_data,batch_sampler=sampler,**{k:v for k,v in options.items() if k!='batch_size'})
     test_data = problem.test
     if resume_path and args.smoke_batches:
-        test_data = Subset(test_data,range(min(16,len(test_data))))
         problem.final_test = None  # Engineering smoke does not observe TEST predictions.
-    test = DataLoader(test_data, shuffle=False, **options)
+    if resume_path:
+        test_count=min(16,len(test_data)) if args.smoke_batches else len(test_data)
+        test=CachedIndexBatches(test_data,DataLoader(range(test_count),batch_size=8,shuffle=False,num_workers=0))
+    else:
+        test = DataLoader(test_data, shuffle=False, **options)
     trainable = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.AdamW(trainable, lr=.001, weight_decay=.0001)
     parent, continuation, index_loader = None, None, None
@@ -226,6 +233,8 @@ def run(args):
                         first_epoch=start_epoch,editor_cache_root=str(cache_root),
                         cache_manifests={split:hashlib.sha256((cache_root/split/'manifest.json').read_bytes()).hexdigest()
                                          for split in ('train','val','test')},
+                        cache_reader_provenance={split:ds.reader_provenance for split,ds in datasets.items()},
+                        cache_runtime='CPU_RAM_uint8_stores_and_vectorized_exact_batch_reconstruction',
                         source_sha256={**manifest['source_sha256'],**{
                             name:hashlib.sha256((TASK/name).read_bytes()).hexdigest()
                             for name in ('performance_cache.py','continue_lgvq50.py')}})
@@ -296,7 +305,11 @@ def run(args):
         selection_metrics=metrics
         final_loader=None
         if problem.final_test is not None:
-            final_loader=DataLoader(problem.final_test,shuffle=False,**options)
+            if resume_path:
+                final_loader=CachedIndexBatches(problem.final_test,
+                    DataLoader(range(len(problem.final_test)),batch_size=8,shuffle=False,num_workers=0))
+            else:
+                final_loader=DataLoader(problem.final_test,shuffle=False,**options)
             metrics,records=problem.evaluate(model,final_loader,device)
         if frozen:
             manifest['frozen_encoder_final_audit']=assert_encoder_unchanged(model.encoder,frozen_hash)

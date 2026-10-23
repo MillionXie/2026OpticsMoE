@@ -31,6 +31,12 @@ ROOT = TASK.parents[2]
 FORMAT = 't19_rgb_editor_uint8_pairs_v1'
 ROW_KEYS = {'image', 'target', 'tokens', 'sample_id', 'mode'}
 STORE_NAMES = ('reference', 'target', 'tokens')
+# The v1 builder at this published commit wrote the same uint8/tokens format
+# and float32 reconstruction contract. Only this module may differ when the
+# compatible RAM/vectorized reader is used; renderer/data identities stay exact.
+COMPATIBLE_BUILDERS = {
+    '5521db609a053889eb7bd27b35dc9a85333bf23c91435cb4c8b12190cac7cae5': '487beceba',
+}
 DEFAULT_SOURCE_FILES = [TASK / name for name in ('performance_cache.py', 'other_data.py',
     'editor_dataset.py', 'models.py')] + [ROOT / 'LightGenV2/tasks/t12_text_to_image' / name for name in (
     'product_unified_edit_data_v2.py', 'product_unified_edit_data.py',
@@ -340,7 +346,12 @@ def verify_cache_integrity(cache_dir):
 
 
 class CachedEditorPairs(Dataset):
-    """Drop-in CPU Dataset; read-only mmap is opened lazily in each worker."""
+    """Drop-in Dataset, with optional verified CPU RAM preload/batched reads.
+
+    ``preload()`` sequentially reads and hashes the actual immutable store
+    bytes once. ``get_batch(indices)`` then performs no file access or hashing.
+    The source manifest and cache blobs are never edited by this reader.
+    """
 
     def __init__(self, cache_dir, source_identity=None, verify_integrity=False):
         self.cache_dir = Path(cache_dir)
@@ -351,12 +362,26 @@ class CachedEditorPairs(Dataset):
             raise ValueError('Only a complete, exactly verified editor cache can be read')
         if source_identity is not None and _canonical(source_identity) != _canonical(manifest['source_identity']):
             raise ValueError('Editor cache source data identity differs')
+        reader_path = Path(__file__).resolve()
+        reader_sha = _file_sha(reader_path)
+        accepted_builder = None
+        compatibility_commit = None
         for path, expected in manifest['source_code_sha256'].items():
-            if _file_sha(path) != expected:
+            actual = reader_sha if Path(path).resolve() == reader_path else _file_sha(path)
+            if actual == expected:
+                if Path(path).resolve() == reader_path:
+                    accepted_builder = expected
+                continue
+            if Path(path).resolve() == reader_path and expected in COMPATIBLE_BUILDERS:
+                accepted_builder = expected
+                compatibility_commit = COMPATIBLE_BUILDERS[expected]
+            else:
                 raise ValueError('Editor cache renderer/source code identity differs')
         if verify_integrity:
             verify_cache_integrity(self.cache_dir)
-        self.records = [json.loads(line) for line in (self.cache_dir / 'index.jsonl').read_text(encoding='utf-8').splitlines()]
+        index_bytes = (self.cache_dir / 'index.jsonl').read_bytes()
+        self._index_sha256_at_load = hashlib.sha256(index_bytes).hexdigest()
+        self.records = [json.loads(line) for line in index_bytes.decode('utf-8').splitlines()]
         if len(self.records) != manifest['dataset_length'] or any(row['index'] != i for i, row in enumerate(self.records)):
             raise ValueError('Editor cache sample index identity differs')
         for name in STORE_NAMES:
@@ -365,6 +390,19 @@ class CachedEditorPairs(Dataset):
             if spec['bytes'] != expected_bytes or (self.cache_dir / (name + '.bin')).stat().st_size != expected_bytes:
                 raise ValueError('Editor cache blob shape/size differs')
         self._maps = None
+        self._ram = None
+        self._row_lookup = torch.tensor([[record['stores'][name] for name in STORE_NAMES]
+                                        for record in self.records], dtype=torch.int64)
+        self.reader_provenance = {
+            'reader_code_sha256': reader_sha,
+            'accepted_builder_sha256': accepted_builder,
+            'compatible_builder_commit': compatibility_commit,
+            'cache_format': FORMAT,
+            'cache_manifest_sha256': _file_sha(self.cache_dir / 'manifest.json'),
+            'cache_index_sha256': manifest['index_sha256'],
+            'cache_identity_preserved': True,
+            'ram_preloaded': False,
+        }
 
     def __len__(self):
         return len(self.records)
@@ -372,10 +410,15 @@ class CachedEditorPairs(Dataset):
     def __getstate__(self):
         state = dict(self.__dict__)
         state['_maps'] = None
+        state['_ram'] = None
+        state['reader_provenance'] = dict(self.reader_provenance, ram_preloaded=False)
         return state
 
     def __getitem__(self, index):
         record = self.records[index]
+        if self._ram is not None:
+            values = {name: self._ram[name][record['stores'][name]].clone() for name in STORE_NAMES}
+            return _restore_row(values['reference'], values['target'], values['tokens'], record)
         if self._maps is None:
             self._maps = {name: np.memmap(self.cache_dir / (name + '.bin'), mode='r',
                 dtype=spec['dtype'], shape=(spec['count'], *spec['shape']))
@@ -383,6 +426,61 @@ class CachedEditorPairs(Dataset):
         values = {name: torch.from_numpy(self._maps[name][record['stores'][name]].copy())
                   for name in STORE_NAMES}
         return _restore_row(values['reference'], values['target'], values['tokens'], record)
+
+    def preload(self):
+        """Read immutable uint8/token stores sequentially into verified CPU RAM.
+
+        Hash the loaded arrays themselves, so this is sufficient integrity
+        verification even when the constructor used verify_integrity=False.
+        No GPU is used and no cache file or manifest is changed.
+        """
+        if self._ram is not None:
+            return self
+        if self._index_sha256_at_load != self.manifest['index_sha256']:
+            raise ValueError('Cache sample index SHA differs')
+        arrays = {}
+        for name in STORE_NAMES:
+            spec = self.manifest['stores'][name]
+            path = self.cache_dir / (name + '.bin')
+            if path.stat().st_size != spec['bytes']:
+                raise ValueError(f'Cache blob identity differs: {name}')
+            count = int(np.prod(spec['shape'])) * spec['count']
+            values = np.fromfile(path, dtype=spec['dtype'], count=count)
+            if values.size != count:
+                raise ValueError(f'Cache blob read was incomplete: {name}')
+            if hashlib.sha256(memoryview(values).cast('B')).hexdigest() != spec['sha256']:
+                raise ValueError(f'Cache blob identity differs: {name}')
+            arrays[name] = torch.from_numpy(values.reshape(spec['count'], *spec['shape']))
+        self._ram = arrays
+        self._maps = None
+        self.reader_provenance.update(ram_preloaded=True,
+            ram_store_bytes=sum(spec['bytes'] for spec in self.manifest['stores'].values()),
+            ram_store_sha256_verified={name: self.manifest['stores'][name]['sha256'] for name in STORE_NAMES},
+            batched_reconstruction='original_float32_operation_order; exact_equal_to_per_row_collation')
+        return self
+
+    def get_batch(self, indices):
+        """Gather one full/partial/repeated-index batch from RAM without I/O."""
+        if self._ram is None:
+            raise RuntimeError('Call preload() before get_batch()')
+        indices = torch.as_tensor(indices)
+        if indices.device.type != 'cpu' or indices.ndim != 1 or indices.numel() == 0:
+            raise ValueError('Batch indices must be a nonempty one-dimensional CPU integer array')
+        if indices.dtype not in (torch.int32, torch.int64):
+            raise ValueError('Batch indices must be integers')
+        indices = indices.to(torch.int64)
+        if int(indices.min()) < 0 or int(indices.max()) >= len(self):
+            raise IndexError('Cached editor batch index is out of range')
+        lookup = self._row_lookup.index_select(0, indices)
+        values = {name: self._ram[name].index_select(0, lookup[:, column])
+                  for column, name in enumerate(STORE_NAMES)}
+        image = _restore_rgb(values['reference'])
+        mean = torch.tensor([.485, .456, .406])[None, :, None, None]
+        std = torch.tensor([.229, .224, .225])[None, :, None, None]
+        records = [self.records[index] for index in indices.tolist()]
+        return {'image': (image - mean) / std, 'target': _restore_rgb(values['target']),
+                'tokens': values['tokens'], 'sample_id': [row['sample_id'] for row in records],
+                'mode': [row['mode'] for row in records]}
 
 
 def verify_editor_cache(cache_dir, dataset, mode='full', sample_count=64, workers=4, seed=42):
