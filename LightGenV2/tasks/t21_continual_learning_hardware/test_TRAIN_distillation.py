@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from .distill_measured_TRAIN import validate_teacher,objective,fit
+from .distill_measured_TRAIN import validate_teacher,objective,fit,noise_penalty
 from .refine_measured_ce import contrast_transform
 from .recheck_TRAIN_temporal import drift_summary
 
@@ -34,6 +34,15 @@ class TRAINDistillationTests(unittest.TestCase):
         steady=drift_summary(old,repeat);shifted=drift_summary(old,[r+.1 for r in repeat])
         self.assertAlmostEqual(steady['old_to_new_relative_L2'],0.)
         self.assertGreater(shifted['old_to_new_over_current_repeat'],10.)
+
+    def test_measured_noise_penalty_gauge_and_zero(self):
+        w=torch.randn(10,8,dtype=torch.float64,requires_grad=True);noise=torch.randn(16,8,dtype=torch.float64)
+        penalty=noise_penalty(w,noise);self.assertGreater(float(penalty.detach()),0.)
+        common=torch.randn(1,8,dtype=torch.float64)
+        torch.testing.assert_close(penalty,noise_penalty(w+common,noise),rtol=1e-12,atol=1e-12)
+        self.assertEqual(float(noise_penalty(w,torch.zeros_like(noise))),0.)
+        self.assertEqual(float(noise_penalty(w,None)),0.)
+        penalty.backward();self.assertTrue(torch.isfinite(w.grad).all())
 
 
 if __name__=='__main__':unittest.main()
