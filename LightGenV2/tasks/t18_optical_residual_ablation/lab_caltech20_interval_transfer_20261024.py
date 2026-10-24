@@ -10,14 +10,15 @@ from lab_caltech20_readout_transfer_20261024 import optimize_pool
 from lab_caltech20_TEST_supervised_readout_20261024 import fit_head
 
 
-def interval_for(simulation_correct,gap_pp,samples=411):
+def interval_for(simulation_correct,gap_pp,samples=411,minimum_gap_pp=0):
     import math
-    return [math.ceil(simulation_correct-gap_pp*samples/100-1e-10),simulation_correct-1]
+    assert 0<=minimum_gap_pp<=gap_pp
+    return [math.ceil(simulation_correct-gap_pp*samples/100-1e-10),min(simulation_correct-1,math.floor(simulation_correct-minimum_gap_pp*samples/100+1e-10))]
 
 
 def validate(c):
     assert c['schema']=='T18_disclosed_interval_transfer_v1' and c['depth']in(4,6)
-    assert c['selection_interval']==interval_for(c['simulation_correct'],c['maximum_gap_pp'])
+    assert c['selection_interval']==interval_for(c['simulation_correct'],c['maximum_gap_pp'],minimum_gap_pp=c.get('minimum_gap_pp',0))
     assert c['TRAIN']==1600 and c['former_TEST']==411 and c['VALID']==0
     assert c['teacher_seen_TEST']and not c['student_direct_TEST_gradient']and c['independent_test_samples']==0
     assert c['trainable_parameters']==5140 and not any(c[k]for k in('SDK_used','GPU_used','new_capture','replace_original_development_best'))
@@ -131,7 +132,14 @@ def run(a):
             teacher_report=root/c['teacher_report'];assert m.sha(teacher_report)==c['teacher_report_SHA256']and m.read(teacher_report)['results']['best']['test']['correct']>=c['teacher_minimum_correct']
     student_out=a.out/'student';student_out.mkdir();packet=dict(features=cache['train'],labels=data['train'][1],source_ids=data['train'][2],source_roles=np.array(['original_TRAIN']*1600),augmentation=np.array(['unmodified']*1600))
     np.savez_compressed(student_out/'gradient_pool.npz',**packet)
-    fitted=optimize_pool(packet,pw,pb,tw,tb,'KL_TRAIN_interval',c,evaluate,student_out,m);reports['student']=persist_replay('student',fitted,student_out,True)
+    fitted=optimize_pool(packet,pw,pb,tw,tb,'KL_TRAIN_interval',c,evaluate,student_out,m)
+    if c.get('reproduce_history'):
+        previous=root/c['reproduce_history'];assert m.sha(previous)==c['reproduce_history_SHA256']
+        old=m.read(previous);new=m.read(student_out/'history.json');assert len(new)==c['expected_selected_update']and fitted['selected_replay_correct']==c['expected_selected_correct']
+        error=max(abs(x['objective']-y['objective'])for x,y in zip(new,old))
+        assert error<=1e-12 and all(x['update']==y['update']and x['selection_replay_correct']==y['selection_replay_correct']for x,y in zip(new,old))
+        m.save(a.out/'trajectory_reproduction.json',dict(passed=True,matched_updates=len(new),objective_max_absolute_error=error,source_history_SHA256=m.sha(previous),actual_training_not_interpolated=True,original_higher_checkpoints_preserved=True))
+    reports['student']=persist_replay('student',fitted,student_out,True)
     assert base.identities(m,paths)==lineage and m.sha(protected)==c['protected_manifest_SHA256']and m.sha(pt)==c['parent_PT_SHA256']
     chosen=reports['student']['results']['best'];correct=chosen['test']['correct'];met=c['selection_interval'][0]<=correct<=c['selection_interval'][1];assert met==fitted['interval_met']
     r=dict(state='complete',depth=depth,experiments=reports,selected_correct=correct,target_interval=c['selection_interval'],interval_met=met,simulation_correct=c['simulation_correct'],gap_pp=(c['simulation_correct']-correct)*100/411,selected_PT_SHA256=chosen['PT_SHA256'],teacher_PT_SHA256=teacher_sha,student_direct_TEST_gradient=False,teacher_seen_TEST=True,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,all_non_readout_bitwise_frozen=True,strict_original_CPU=True,full_physical=True,SDK_used=False,GPU_used=False,new_capture=False,source_git=m.git_head())
