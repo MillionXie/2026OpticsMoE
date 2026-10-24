@@ -1,0 +1,5 @@
+assets/
+runs/
+__pycache__/
+*.pt
+*.npz

@@ -1,0 +1,22 @@
+{
+  "zip_sha256": "7b9cd19058e2808334f57e23895923b99102e163ca633e3d890fcfed2d31f7de",
+  "transformation": "Only local imports made package-relative; no arithmetic/weights/geometry changed.",
+  "files": {
+    "cnn.py": {
+      "original_member": "eurosat_shared_frontend_all_tasks_20260916/source/eurosat_shared_frontend_moe_d2nn/cnn.py",
+      "original_sha256": "a7d2e9383d347c350929609fb5908cd44036f277ef7c46279a46b00bbd4a7986"
+    },
+    "models.py": {
+      "original_member": "eurosat_shared_frontend_all_tasks_20260916/source/eurosat_shared_frontend_moe_d2nn/models.py",
+      "original_sha256": "fa54019442f1397b74faa85a0738f6b06e9a76e932439fce59ee9df3e6f417d7"
+    },
+    "optical_model.py": {
+      "original_member": "eurosat_shared_frontend_all_tasks_20260916/source/eurosat_shared_frontend_moe_d2nn/optical_model.py",
+      "original_sha256": "19fd4538fcd3c916e803ecf273177ae5f72ea51bd51ec11b93bc62241692f797"
+    },
+    "optics.py": {
+      "original_member": "eurosat_shared_frontend_all_tasks_20260916/source/eurosat_shared_frontend_moe_d2nn/optics.py",
+      "original_sha256": "84f48ef14c1cb12b6de19afacf733daf49e4793c92dff0739e48c1a85b6b9c10"
+    }
+  }
+}

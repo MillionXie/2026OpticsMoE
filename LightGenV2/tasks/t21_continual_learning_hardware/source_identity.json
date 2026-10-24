@@ -1,0 +1,286 @@
+{
+  "source_server_root": "/DATA/DATA1/guest3/t12_cross_modal_20260920",
+  "models": [
+    {
+      "run": "euro_moe_sharedvision_s17_b015",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/euro_moe_sharedvision_s17_b015/best_checkpoint.pt",
+      "sha256": "1ecbebe9cb8d9f7d9ee692bf34753905934ebfdaf741d6f6dba6b5ebbf19c6fd",
+      "last_sha256": "fa486126293715880845d560f225e4e1101c9f01b51315f7fcbbb6e4a4b26aa8",
+      "config_sha256": "d3ee5aae3cc95ffb65078b5fb853cdc94931d39b6a4f9dd7b6295095f0e582a0",
+      "selected_test_sha256": "7a97e3fd0900d9b05f53d778c8c048cc24ee42c1122e517a68d0962eae48e6a5",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.7889114017314423,
+          "balanced_accuracy": 0.7785064194145654,
+          "n": 5429
+        }
+      },
+      "config": {
+        "architecture": "moe",
+        "source_protocol": "/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_features/eurosat_full_s17_v1/protocol.json",
+        "source_sha256": {
+          "trainval": "9334dae944b316a521e9ad4e627fe70096696d6fb6c9e89de52e6dec317453ef",
+          "holdout": "7d6f611c0a48675e4c17644acb34ce18584bec749d4aebc05b98b6e679bc4568"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11"
+      }
+    },
+    {
+      "run": "stage2_moe_replay_old4_head01_sharedvision_s17_d9d5",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage2_moe_replay_old4_head01_sharedvision_s17_d9d5/best_checkpoint.pt",
+      "sha256": "4cbecc762349f311f3876c904902fbae9f9e0d6988c95e2b5a8a1e9e51ce281c",
+      "last_sha256": "71826e59a745ba04ddbcaff05bca9d97847da30bd69d774421297a25198d2252",
+      "config_sha256": "15d98ba8057c26059e1cece55990515de2c370bc95410deca510c7f267cb18bd",
+      "selected_test_sha256": "1fb63c559dac14eb28e51581f7c52a3737d14dd96a1f3295cf3dff24378acd33",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.7524405967949899,
+          "balanced_accuracy": 0.7364816675497956,
+          "n": 5429
+        },
+        "clevr": {
+          "accuracy": 0.7976666666666666,
+          "balanced_accuracy": 0.7976666666666666,
+          "n": 15000
+        }
+      },
+      "config": {
+        "stage": 2,
+        "architecture": "moe",
+        "protocol_sha256": {
+          "eurosat": "8ffff7cf42719bc454ccca3f568c18dba1f056eeb7ada7f51520e749e21ffb48",
+          "clevr": "5ace5c945743278c8b0df232d7d5e421c54a9e01475282c42a20a2d58800a6f4"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11",
+        "previous_checkpoint": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/euro_moe_sharedvision_s17_b015/best_checkpoint.pt"
+      }
+    },
+    {
+      "run": "stage3_moe_balanced_sharedvision_s17_e696",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage3_moe_balanced_sharedvision_s17_e696/best_checkpoint.pt",
+      "sha256": "c793501ea10591e6c36a57fc51e60ef78a6cee8a3a8ccb9837019ef8f45edb49",
+      "last_sha256": "2b59531000fa01a9dd642f0f24ca9b6edb85209f7e3028b6784bc732e16b416e",
+      "config_sha256": "997eb3ec83d30a96a9120c3eb001d3484222556a36222db9e0da114edf796785",
+      "selected_test_sha256": "c666deb79e384bf586cb816e4c1c38811ad6679b29cc5be8adfe8f91335665fc",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.785043286056364,
+          "balanced_accuracy": 0.7671952085511895,
+          "n": 5429
+        },
+        "clevr": {
+          "accuracy": 0.8034,
+          "balanced_accuracy": 0.8034,
+          "n": 15000
+        },
+        "speech_binary": {
+          "accuracy": 0.7883506343713956,
+          "balanced_accuracy": 0.7883506343713956,
+          "n": 1734
+        }
+      },
+      "config": {
+        "stage": 3,
+        "architecture": "moe",
+        "protocol_sha256": {
+          "eurosat": "8ffff7cf42719bc454ccca3f568c18dba1f056eeb7ada7f51520e749e21ffb48",
+          "clevr": "5ace5c945743278c8b0df232d7d5e421c54a9e01475282c42a20a2d58800a6f4",
+          "speech_binary": "f97cb20c365729e9424c65686e3db927d65246b645de8053557eac2a222f3489"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11",
+        "previous_checkpoint": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage2_moe_replay_old4_head01_sharedvision_s17_d9d5/best_checkpoint.pt"
+      }
+    },
+    {
+      "run": "stage4_moe_physical_pairwise2_sharedvision_s17_e19a",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage4_moe_physical_pairwise2_sharedvision_s17_e19a/best_checkpoint.pt",
+      "sha256": "e18ba63e5de152918256b9b0302938569fe601905d1416b44b3bd8faa977d528",
+      "last_sha256": "2d2c636ea3068197b631c0b057d89cfec4f861c9a0b167c0981857e3359687ac",
+      "config_sha256": "cb809a1fe164731de3a8dad0711dbd67b40d71460cb4ca73d3ff04b4f37e8265",
+      "selected_test_sha256": "88755abbb3d7fb77b91d91e42501a30c09f27ee9448584acabd4651c63303b3e",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.790200773623135,
+          "balanced_accuracy": 0.7734725723434848,
+          "n": 5429
+        },
+        "clevr": {
+          "accuracy": 0.8112,
+          "balanced_accuracy": 0.8112,
+          "n": 15000
+        },
+        "speech_binary": {
+          "accuracy": 0.8114186851211073,
+          "balanced_accuracy": 0.8114186851211073,
+          "n": 1734
+        },
+        "physical_binary_raw": {
+          "accuracy": 0.7488292748193738,
+          "balanced_accuracy": 0.7488292748193739,
+          "n": 29896
+        }
+      },
+      "config": {
+        "stage": 4,
+        "architecture": "moe",
+        "protocol_sha256": {
+          "eurosat": "8ffff7cf42719bc454ccca3f568c18dba1f056eeb7ada7f51520e749e21ffb48",
+          "clevr": "5ace5c945743278c8b0df232d7d5e421c54a9e01475282c42a20a2d58800a6f4",
+          "speech_binary": "f97cb20c365729e9424c65686e3db927d65246b645de8053557eac2a222f3489",
+          "physical_binary_raw": "23cd429bf143b2f7bb87ddd16fce15bbf3e59d6cd9793074827647e06d94079d"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11",
+        "previous_checkpoint": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage3_moe_balanced_sharedvision_s17_e696/best_checkpoint.pt"
+      }
+    },
+    {
+      "run": "euro_d2nn_sharedvision_s17_b015",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/euro_d2nn_sharedvision_s17_b015/best_checkpoint.pt",
+      "sha256": "c90b795d7a63b6e308fac36c1331c7eb02290e8605877642f2e542c4615b1c50",
+      "last_sha256": "f46a2f60c37ed433c759bc4f45e365e239d8fe898dacca40d4fe28741e867a6c",
+      "config_sha256": "69d885575a15ae9849a01f3636eae833d75d126581a17fcb10d9475c734e1ee8",
+      "selected_test_sha256": "3a133f3b0a60dc1e7155b456db572f7ce2704412747c17d75beb35aa917e101a",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.7334684103886535,
+          "balanced_accuracy": 0.7176567048858241,
+          "n": 5429
+        }
+      },
+      "config": {
+        "architecture": "d2nn",
+        "source_protocol": "/DATA/DATA1/guest3/demo_reproduction_data/t13_four_modal_features/eurosat_full_s17_v1/protocol.json",
+        "source_sha256": {
+          "trainval": "9334dae944b316a521e9ad4e627fe70096696d6fb6c9e89de52e6dec317453ef",
+          "holdout": "7d6f611c0a48675e4c17644acb34ce18584bec749d4aebc05b98b6e679bc4568"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11"
+      }
+    },
+    {
+      "run": "stage2_d2nn_memory300x50_sharedvision_s17_bd04",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage2_d2nn_memory300x50_sharedvision_s17_bd04/best_checkpoint.pt",
+      "sha256": "c534f1844de0c771c912a8011e4a4d75e14db42b44e4c8befb3e2f30bd095be9",
+      "last_sha256": "93f2b9830d73c44af266336d10a716b143dab66941bedfeea2fd530e3b45d2ee",
+      "config_sha256": "74ad00086fba84e78e787cc4cf06026ff96580f17f29d4ef090d180bf8d7cbc0",
+      "selected_test_sha256": "6e4b2827507f0f007d26d5eb9649d541b5b20f9fe72b8116defa66015eacb384",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.5465094860932032,
+          "balanced_accuracy": 0.5342644127978378,
+          "n": 5429
+        },
+        "clevr": {
+          "accuracy": 0.7617333333333334,
+          "balanced_accuracy": 0.7617333333333334,
+          "n": 15000
+        }
+      },
+      "config": {
+        "stage": 2,
+        "architecture": "d2nn",
+        "protocol_sha256": {
+          "eurosat": "8ffff7cf42719bc454ccca3f568c18dba1f056eeb7ada7f51520e749e21ffb48",
+          "clevr": "5ace5c945743278c8b0df232d7d5e421c54a9e01475282c42a20a2d58800a6f4"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11",
+        "previous_checkpoint": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/euro_d2nn_sharedvision_s17_b015/best_checkpoint.pt"
+      }
+    },
+    {
+      "run": "stage3_d2nn_memory300x50_sharedvision_s17_bd04",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage3_d2nn_memory300x50_sharedvision_s17_bd04/best_checkpoint.pt",
+      "sha256": "c7f1596e9dcac1675379b150d107e728749a851b0e2f2507b9abc10ea17687c5",
+      "last_sha256": "99271115b86c18fdea5e0489eee1806b686de08b5c286b08847b416d7bb9716a",
+      "config_sha256": "1e0646ba10a1c2d9088e3207b49cb0cea7e8f964fadef70a305f71aab0c85695",
+      "selected_test_sha256": "f01b4fb895d889ad391a8390b76805b3a328f0adbb559e723e69687d5075965c",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.5807699392153252,
+          "balanced_accuracy": 0.5647391524415047,
+          "n": 5429
+        },
+        "clevr": {
+          "accuracy": 0.6732,
+          "balanced_accuracy": 0.6732,
+          "n": 15000
+        },
+        "speech_binary": {
+          "accuracy": 0.5,
+          "balanced_accuracy": 0.5,
+          "n": 1734
+        }
+      },
+      "config": {
+        "stage": 3,
+        "architecture": "d2nn",
+        "protocol_sha256": {
+          "eurosat": "8ffff7cf42719bc454ccca3f568c18dba1f056eeb7ada7f51520e749e21ffb48",
+          "clevr": "5ace5c945743278c8b0df232d7d5e421c54a9e01475282c42a20a2d58800a6f4",
+          "speech_binary": "f97cb20c365729e9424c65686e3db927d65246b645de8053557eac2a222f3489"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11",
+        "previous_checkpoint": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage2_d2nn_memory300x50_sharedvision_s17_bd04/best_checkpoint.pt"
+      }
+    },
+    {
+      "run": "stage4_d2nn_memory300x50_sharedvision_s17_bd04",
+      "checkpoint": "/DATA/DATA1/guest3/t12_cross_modal_20260920/LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage4_d2nn_memory300x50_sharedvision_s17_bd04/best_checkpoint.pt",
+      "sha256": "688f3d7c19fd9901b8fea354acc55d141825ea75a13ce1465fbff95ccebfafed",
+      "last_sha256": "655ede9eebd998ac9d1febb44a2610e4efd7261457c9bb92e45c397f979fbced",
+      "config_sha256": "30d1a1125c198d07dd5bf0af0281c62a95b75698bf5ba152c408e81bf8099b91",
+      "selected_test_sha256": "5998275fef73641f28093c8f1ff78e1a05c66a133230d89f92f1b76b9050d2d4",
+      "metrics": {
+        "eurosat": {
+          "accuracy": 0.582427703076073,
+          "balanced_accuracy": 0.5614468191730254,
+          "n": 5429
+        },
+        "clevr": {
+          "accuracy": 0.6192,
+          "balanced_accuracy": 0.6192,
+          "n": 15000
+        },
+        "speech_binary": {
+          "accuracy": 0.5536332179930796,
+          "balanced_accuracy": 0.5536332179930796,
+          "n": 1734
+        },
+        "physical_binary_raw": {
+          "accuracy": 0.7467219694942467,
+          "balanced_accuracy": 0.7467219694942467,
+          "n": 29896
+        }
+      },
+      "config": {
+        "stage": 4,
+        "architecture": "d2nn",
+        "protocol_sha256": {
+          "eurosat": "8ffff7cf42719bc454ccca3f568c18dba1f056eeb7ada7f51520e749e21ffb48",
+          "clevr": "5ace5c945743278c8b0df232d7d5e421c54a9e01475282c42a20a2d58800a6f4",
+          "speech_binary": "f97cb20c365729e9424c65686e3db927d65246b645de8053557eac2a222f3489",
+          "physical_binary_raw": "23cd429bf143b2f7bb87ddd16fce15bbf3e59d6cd9793074827647e06d94079d"
+        },
+        "vision_checkpoint_sha256": "d20273e1828fec4e5a7a5545fd892a722f3909f7205a791e0e682b437526aa11",
+        "previous_checkpoint": "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/runs/simulation/stage3_d2nn_memory300x50_sharedvision_s17_bd04/best_checkpoint.pt"
+      }
+    }
+  ],
+  "local_T16_source_match": {
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/__init__.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/pretrain_clevr_vision.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_lifelong_d2nn.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/frozen_vision.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_lifelong_moe.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/eval_d2nn_fixed_4x4.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/test_selected_lifelong.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/model.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_other_tasks.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/data.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/train_eurosat.py": true,
+    "LightGenV2/tasks/t16_zero_phase_ccd_lifelong/audit_phase_dependence.py": true
+  },
+  "state": "original_reference_only_not_native_adaptation_weights",
+  "metric": "full_TEST_balanced_accuracy",
+  "registered_subset": "stratified1000_seed20261024_pending_export"
+}
