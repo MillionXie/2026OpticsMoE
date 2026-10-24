@@ -28,6 +28,14 @@ OpenMoji保留各项逐场景指标；编辑保留2304 TEST逐图PSNR/SSIM。
 最终选择与导出代码使用Git标签`t19-rn18-final-selected9-20261024`固定；
 各run对应的8个原训练commit保留，不能把最后一个导出commit当成九项共同训练源码。
 
+用户后续按姿态图指定LSP主表展示顺序为Overall（14关节）、Shoulder、Elbow、Wrist、Hip、Knee、Ankle。
+`merge_lsp_joint_summary.mjs`在用户已保存的工作簿上定向修改主表，不重建其余文件；
+左右按有效关节数加权，颈部/头顶只计入14关节Overall，不单列柱状图数据。
+相应PCK为0.5299285714/0.589/0.452/0.3885/0.4935/0.491/0.49。
+其他整体指标在同一主表下方保留；逐样本页36,036单元格及冻结窗格/列宽核对不变。
+旧工作簿字节备份和只读审核在导出目录`verification/lsp_before_joint_merge.bin`与
+`lsp_joint_merge_audit.json`；原训练PT、结果、科学代码标签不变。
+
 ## 2026-10-24 最新完成：指定原生60轮续训至80，修改格72.55%，GPU6禁用
 
 用户指定的新原生损失60轮权重已固定追加20轮至累计80，正式结果如下；

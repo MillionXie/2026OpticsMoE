@@ -45,8 +45,19 @@ def main():
                     if isinstance(value,(int,float)):assert actual is not None and math.isclose(actual,value,abs_tol=1e-12,rel_tol=1e-13),(spec['task'],r,c,actual,value)
                     else:assert actual==value,(spec['task'],r,c,actual,value)
             assert max(int(''.join(c for c in a if c.isdigit())) for a in samples)==len(expected)
-            for i,(_,key,value) in enumerate(spec['overall_rows'],6):
-                assert overall['B'+str(i)]==key and math.isclose(overall['C'+str(i)],value,abs_tol=1e-12,rel_tol=1e-13)
+            if spec['task']=='lsp' and overall.get('A5')=='部位':
+                metrics=spec['metrics'];counts=metrics['per_joint_counts'];pck=metrics['per_joint_pck_at_0.2_torso']
+                grouped=[('Overall (14 joints)',metrics['pck_at_0.2_torso'],sum(counts.values()))]
+                for joint in ['shoulder','elbow','wrist','hip','knee','ankle']:
+                    keys=['left_'+joint,'right_'+joint];n=sum(counts[k] for k in keys)
+                    grouped.append((joint.title(),sum(pck[k]*counts[k] for k in keys)/n,n))
+                for i,(name,value,n) in enumerate(grouped,6):
+                    assert overall['A'+str(i)]==name and math.isclose(overall['B'+str(i)],value,abs_tol=1e-12) and overall['C'+str(i)]==n
+                for i,(_,key,value) in enumerate(spec['overall_rows'][1:7],17):
+                    assert overall['A'+str(i)]==key and math.isclose(overall['B'+str(i)],value,abs_tol=1e-12,rel_tol=1e-13)
+            else:
+                for i,(_,key,value) in enumerate(spec['overall_rows'],6):
+                    assert overall['B'+str(i)]==key and math.isclose(overall['C'+str(i)],value,abs_tol=1e-12,rel_tol=1e-13)
         records.append(dict(task=spec['task'],file=spec['filename'],rows=len(expected)-1,columns=len(expected[0]),
             sha256=hashlib.sha256(path.read_bytes()).hexdigest(),all_saved_cells_match=True))
     report=dict(status='passed',workbooks=len(records),worksheets=18,total_test_records=sum(r['rows'] for r in records),records=records)
