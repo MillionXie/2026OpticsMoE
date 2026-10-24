@@ -1,6 +1,29 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-25 01:18，北京时间）
+## 新旧版入口与完成清单（2026-10-25 01:32，北京时间）
+
+OpenMoji Qwen原生网络CPU入口正在独立核验，唯一当前CPU控制器1597350位于
+T04 `runs/simulation/a100_qwen_live_frontend_contract_20261025_04`，冻结源码`06134eb87`，
+有限deadline1792868467.4165387。共享锁及连续12次真实独占检查后才执行TEST200/999的原/观察版
+完整神经前向逐位比较，全程隐藏CUDA、不启动MPS；尚未形成通过合同或正式200×3，
+不能据此升级13/18，后续先读实际PID/父子status，不重复启动。
+实际baseline主体epoch30/PT0be775…3907085字节已fresh全SHA核准，原完整1000指标`.8120`，
+原resolved配置SHA52093084…、性能报告SHAdd22cbdc…与新布局/原Instruct快照一致。
+入口保留原`qwen_shared.extract_native_one`的PNG/chat processor、全部vision/language层、
+pre-merger capture、BF16 CPU feature return，再执行原head的float32/H2D及原网格后处理；
+没有将缓存训练占位Identity当真实前端，也不静默改为省略原CPU返回的另一快路径。
+此次CPU合同核验和后续正式同输入Qwen调用完成前，OpenMoji共同Tokens/s仍待补。
+旧CPU `_01`仅原训练legacy路径迁移差异被拦截，发生在模型加载前；已按原metadata恢复
+该未被Qwen分支使用的训练路径，未换权重或模型，4文件3658字节和721字节外置日志保留。
+旧CPU `_02`在真实第200索引核验阶段被外部占卡守卫终止，4文件1925字节与704字节日志已
+SHA备份；没有合格合同，不据status推断具体前向次数。新`_03`也在加载期被短占用终止，
+追加原证据记录PID1591226/618MiB/1792862864.7003164，5文件2075字节及569字节日志已SHA取回。
+后续快照compute又空，不编造该短暂进程的用户/命令，不把空快照当未来独占。
+因此新`_04`将入场观察由3次加强为连续12次十秒检查（至少两分钟），有外部即清零等待，
+不是反复加载模型盲试，也不放宽任何计时/250ms功率门槛。新静态检查补齐原三参compose
+调用和外占快照/进程明细的留存，11项纯CPU测试双方通过；旧`_01/02/03`均停止，不重启旧PID。
+
+以下OpenMoji LightGen结果与partial08已正式独立核验；Qwen CPU准备不改变其12/18完成度：
 
 新布局实验室`.8655`所对应epoch45/PT03cb861c的LightGen真实输入正式三轮已完成：
 T04 `runs/simulation/a100_e45_input_inclusive_20261025_01/ours_repeat01,02,03`，
