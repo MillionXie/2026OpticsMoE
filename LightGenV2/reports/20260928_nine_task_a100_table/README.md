@@ -1,5 +1,63 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 04:38补记：实验室缺项续队，文搜图NN算量直接从原记录推导
+
+旧T08 `_20261025_02` controller1728678在有限等待到期后停止，completed为空、无bank/worker；
+T12 CPU `_03` controller1737924随后按原前驱规则退出，未加载模型。两个status原件分别
+13793/1407B已SHA备份；外置894/1408B日志SHA分别
+`d9066d3453019b2f0f49a01a97f5976f481ef33b9235c65141361a9c22300b3a`、
+`6acf4a7feef105fb6b314b855f71618f1a9e49b53adf2b273c5f276de46ff3ee`已原样取回。
+这不是模型推理失败或新增合格点，不再等待/重启旧PID。已核旧PID退出、私有MPS无daemon，
+原CPU合同及全部78冻结源SHA不变，直接为真正缺失的bank和三轮创建有界不可变续队：
+T08 `a100_image_student_input_inclusive_20261025_03` controller1898302，deadline1792879452.8986697；
+T12 Ours CPU `a100_live_frontend_contract_20261025_04` controller1898337，deadline1792879742.8986697，
+明确绑定上述T08。原12次连续十秒idle守卫/同锁/全部科学边界不变，没有合格工作重跑。
+
+补充T12 baseline CPU后继 `a100_qwen_live_frontend_contract_20261025_01` controller1939547，
+deadline1792881183.6550996，仅在前述Ours真实CPU合同passed/源及SHA核准、同锁和12次idle后
+才隐藏CUDA加载原完整28LanguageTF/UNet/adapter/frozenVAE；**不是正式200×3队列**。
+`f5031a6ef`新增五项原VAE/UNet构造/scheduler完整文件SHA守卫，依据原登记的固定依赖；
+保留原登记不证明历史benchmark实际open的限制。未改原网络/权重/精度/噪声/完整TEST指标。
+7项入口/后继静态测试本地通过；server合计24项相关索引/入口静态测试通过。
+最后只读Unix1792874203.1549976：三个controller均活着，分别waiting_foreign_process、
+waiting_previous_queue、waiting_previous_CPU_contract，均无新worker。
+同一hmh1708990/606MiB、1710971/19536MiB仍在，未杀/混测、不重复通知；
+原观察4189B已SHA取回 `admission_observation_20261025_0435.json`，SHA
+`9aafdcc3b1c66ec13558a8e0ef4a2ae7975cc6cd888e94a25f668f4009c1c8f9`。
+
+采用`.86`的文搜图Ours，新增GPU/模型前向为0，直接用原cc977 PT metadata、原数学源码、
+全部600实际token长度/形状及原stage次数推导NN dense-MAC；8纯CPU测试双端通过。
+原两次output adapter、两次光幅度adapter、专家/全局CCD adapter、两条实际电子残差、
+384→64读出、2400×64 CPU检索和原native RoPE位置矩阵均明确计数。
+实际NN执行每查询`0.00014411586048 TOP`；投影选定串行NN为`0.0001297932288 TOP`；
+并行残差和未在所选计时段内的原native位置构造另列，不把224最大光孔径当有效token长度。
+配原已合格11.7767602413ms/1.28238861555J得实际NN口径
+`0.012237309542487286 TOPS`/`0.00011238080152367717 TOPS/W`；
+这是NN MAC小计，不冒称物理光学总OP、完整scalarOP或装置E2E，FFT/非MAC显式分列。
+`abo_title_student_saved_shape_MAC_02.json` SHA
+`6a75d4a25614858f016f80283987f544a65900ec7ebdf3f53d5b0ceb99dd7eb2`；
+server原件SHA`b8e766df119dda9fa323d9746fa429172f4a04e5a3b339b22e0da7f496328a5a`已取回，
+两端解析对象完全同，源`c125e9bd2`已发布。旧本地01也保留。原PT metadata的19835B收据
+位于T08 `a100_title_saved_shape_metadata_20261025_01`，SHA
+`4354b0a5c49683700546fa9b321b73e00bb4a3098fa51c4fc1c07d85a2da2da2`。
+首个服务器纯算术聚合45秒预算不足；只读诊断73.176秒完成、栈停在原Git/CSV/文件读取，
+未加载模型或执行GPU。保留本地原结果，经有界135秒预算重新写新server收据后核准，
+不是重跑合格模型测量/改变原数学。
+
+builder `50a3ff690`已发布，本地完整独立重放产生`measured_index_partial_12.json`，SHA
+`e334e4dc21362f568c2e366683ca99e667886cee4df09f1510a747e4b0f077f0`；生成时HEAD为
+peer T21 `b082c8854`，builder字节仍为50a3版本。仅04 Ours新增NN算量，其他八行、共享Qwen
+和04双方所有原成本/准确度解析对象不变，旧11保留，server未生成私有12。
+本地聚合需显式`--lsp-data-root`指原有
+`T02/runs/smoke/lsp_bounded_asset_transfer_20261008/extracted/2026OpticsMoE/data/lsp_pose/lsp_dataset`，
+`--abo-data-root`指T08 `a100_title_input_inclusive_20261024_02/audit_original/data`，
+图像审计继续`--abo-image-python`原bundled Python/Pillow12.3，不改审计器/包或放宽RGB。
+初始默认DATA路径不存在的两次聚合均在输出前停止，没有模型失败或重测。
+
+九行成本仍13/18，多baseline36/36及租机额外对照3/3；两新正式Excel仍无。
+实验室已从peer自行同步的b082仅干净ff本任务四源到f5031a6ef，78个活动冻结源SHA前后不变；
+当前所有活动源冻结，不热改。新租机已完成/原raw本地安全，不再连接或等待租机旧PID。
+
 ## 2026-10-25 04:04补记：新租机全部完成并取回，勿再等待旧租机队列
 
 DeepSeek完整版/Kimi各100/50MPS、各三fresh200，12/12全部完成并逐点server/local独立审计通过；
