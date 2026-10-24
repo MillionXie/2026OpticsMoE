@@ -32,3 +32,10 @@ def test_no_prompt_condition_reuse_or_gt_input_in_online_forward():
     assert 'conditions[' not in text and 'target' not in text
     assert 'runtime.qwen(**tokens' in text
     assert 'latent_dist.mode()' in text and '1042' in text
+
+
+def test_original_full_VAE_and_scheduler_asset_pins_not_current_path_guess():
+    records=m.dependency_records();by_name={r['relative_path']:r for r in records}
+    assert len(records)==5
+    assert by_name['models/sd-turbo-fp16/vae/diffusion_pytorch_model.fp16.safetensors']['sha256']=='3e4c08995484ee61270175e9e7a072b66a6e4eeb5f0c266667fe1f45b90daf9a'
+    assert by_name['models/sd-turbo-fp16/scheduler/scheduler_config.json']['sha256']=='5599066c725fc2747a201fa3165ad7c8c3de3be629ce325451752e8f94c0d1ae'

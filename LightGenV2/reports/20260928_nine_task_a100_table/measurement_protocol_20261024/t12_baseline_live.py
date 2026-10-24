@@ -20,6 +20,33 @@ from t12_live_frontend import TASK,ASSETS,MODEL,BASELINE,BASELINE_SHA,WEIGHT_SHA
 EXPORT='LightGenV2/tasks/t12_text_to_image/export_matched_summary.py'
 EXPORT_COMMIT='c657f959d877635549d68cfbb8bba4c668273adf'
 EXPORT_SHA='558e2a81c5735406fdefcea074a3b4063b5e70eb6f21ebe94fca7992b379f3e6'
+DEPENDENCY_RECORD='maintenance/storage/T12_HISTORICAL_SEVEN_MODEL_IDENTITY_20261004.json'
+DEPENDENCY_RECORD_SHA='4a567a4a956cf5815514d14a43edc6c9dbc42002f508e60633b85e22b158ea7b'
+
+
+def dependency_records():
+    raw=subprocess.check_output(['git','show','HEAD:'+DEPENDENCY_RECORD],cwd=REPO)
+    if hashlib.sha256(raw).hexdigest()!=DEPENDENCY_RECORD_SHA:raise ValueError('Original registered dependency record changed')
+    value=json.loads(raw);records=value['frozen_dependencies']['files']
+    wanted=['bk-sdm-v2-tiny/unet/config.json','bk-sdm-v2-tiny/unet/diffusion_pytorch_model.fp16.safetensors',
+        'sd-turbo-fp16/vae/config.json','sd-turbo-fp16/vae/diffusion_pytorch_model.fp16.safetensors',
+        'sd-turbo-fp16/scheduler/scheduler_config.json']
+    result=[]
+    for name in wanted:
+        matches=[r for r in records if r['path']==(ASSETS/'models'/name).as_posix()]
+        if len(matches)!=1:raise ValueError('Missing/ambiguous original dependency identity')
+        result.append(dict(relative_path='models/'+name,bytes=matches[0]['bytes'],sha256=matches[0]['sha256']))
+    return result
+
+
+def bind_dependencies():
+    records=dependency_records()
+    for item in records:
+        path=ASSETS/item['relative_path']
+        if path.stat().st_size!=item['bytes'] or sha(path)!=item['sha256']:
+            raise ValueError('Original frozen VAE/UNet construction/scheduler asset differs: '+str(path))
+    return dict(registered_identity_record=DEPENDENCY_RECORD,registered_identity_record_sha256=DEPENDENCY_RECORD_SHA,
+        fresh_assets=records,scope='Original formal-loader paths bound to registered complete-file hashes; old benchmark argv/open-history not proved')
 
 
 def original_statements():
@@ -48,6 +75,7 @@ def load_runtime(device):
     from LightGenV2.tasks.t12_text_to_image.half_qwen import load_half_qwen_text_encoder
     from LightGenV2.tasks.t12_text_to_image.electronic_turbo_infer import _load_adapter
     from LightGenV2.tasks.t12_text_to_image.product_repair_model import expand_reference_conditioning
+    dependencies=bind_dependencies()
     if sha(BASELINE)!=BASELINE_SHA or sha(MODEL/'model.safetensors')!=WEIGHT_SHA:
         raise ValueError('Adopted matched head/native language weights differ')
     payload=torch.load(BASELINE,map_location='cpu',weights_only=False,mmap=True)
@@ -66,7 +94,7 @@ def load_runtime(device):
     if report['language_layers_retained']!=28 or report['vision_tower_used'] or report['language_model_head_used']:
         raise ValueError('Original full text-only 28-layer architecture required')
     return SimpleNamespace(qwen=qwen,processor=processor,adapter=adapter,unet=unet,vae=vae,
-        scheduler=scheduler,payload=payload,device=device,qwen_report=report)
+        scheduler=scheduler,payload=payload,device=device,qwen_report=report,frozen_dependency_binding=dependencies)
 
 
 def inputs(runtime,prompt):
@@ -153,7 +181,8 @@ def main():
         write(args.output/'contract.json',dict(status='passed',no_gpu=True,checks=checks,
             baseline_sha256=BASELINE_SHA,formal_full2304_reference_psnr=27.26045327136914,
             original_export_source_commit=EXPORT_COMMIT,original_export_source_sha256=EXPORT_SHA,
-            qwen_report=runtime.qwen_report,actual_NN_shapes=shapes,sources=frozen,
+            qwen_report=runtime.qwen_report,frozen_dependency_binding=runtime.frozen_dependency_binding,
+            actual_NN_shapes=shapes,sources=frozen,
             source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
             CPU_platform='original CPU FP32 language weights; original FP16 VAE; identical CPU FP16 autocast for oracle and adapter',
             cached_conditions_used_as_online_input=False,not_formal_timing_or_full_test_evaluation=True))
