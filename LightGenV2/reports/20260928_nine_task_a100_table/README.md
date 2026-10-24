@@ -1,5 +1,80 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 06:32补记：图搜文LightGen三轮双端审计完成，14/18；T12修复后原CPU合同通过
+
+本节覆盖下方旧13/18、T08加载及旧CPU/成本PID描述。九行成本现在14/18，剩四项为
+LGVQ Ours temporal/spatial和T12双方。多baseline36/36、额外80GB同机Qwen3/3不变。
+准确度正式采用已确认原完整TEST，first200只测时间/能量并核输出；两份新正式Excel尚无。
+租机全部结束、raw已本地安全归档，不再连接任何租机端点。
+
+T08唯一合格图搜文Ours固定为`a100_image_student_input_inclusive_20261025_04/ours_repeat01,02,03`，
+三fresh200原图、100title FP32独立候选库、原epoch25EMA/a2aa主体和既有CPU合同不变。
+controller2098596、bank worker2103623及三query worker2107445/2110895/2116613均complete退出，
+私有MPS释放；不得重做库/CPU合同/三轮。候选库NPZ SHA
+`ccdc30c80b3061bff9d229f21dd812b710830d44f87cf42644d01d6eaea16ee7`。
+75原文件30,885,458B经`backup_receipt_complete01.json`逐SHA取回，外置controller.log原0B也取回。
+server/local原raw独立审计全部passed、解析对象一致，三轮全向量/分数/完整排序逐位同。
+本地独立audit SHA分别bank
+`f14b3137885d878ec2c25593e87b518e133355e860f84b42bb6679687aea3e08`，r1
+`cceee89ec46d34594e009bf03952662c56e45d5b23d4e4472d75dc1c3485329e`，r2
+`58443ded16e8d3b82e52eb62aea193595474f6f7d6f5081f963f041c29858585`，r3
+`e3198c9e503bb0a627cdcdc057381ca55581b400cfe5fdccc4856cb69e60863e`。
+600调用混合参数投影38.92296906080342ms/输入、4.16673485640754J/输入，每次6光pass、
+实际merger/原CPU FP32 cosine及非stable排名保留；不是装置实测E2E或软件全程通电能量。
+正式full2400仍.8058333333333333，三轮first200 .67仅输出诊断，历史同PTA100 .8045833分列。
+与固定Qwen逐ID配对共41184有效token，Ours1763.483147772571 tokens/s，时间/吞吐倍率
+2.2016501432508413；不是生成吞吐。没有重评fullTEST。
+
+builder`9645c3c0d`与15项索引相关CPU测试通过，本地全量原raw重放
+`measured_index_partial_14.json` SHA
+`c1ba98f5b5c8409d89b50dfd82fa6d3a63bbf0463e6483cf4128cc7d2ba1af9d`。
+只新增02Ours成本/共同token配对及状态，02Qwen、其他八行、原成本/精度/共享锚与13解析对象全同。
+server未生成私有14，旧13及以前保留，不能将PARTIAL称最终交付。
+
+T12旧Ours CPU `_05` worker2121744完成真实200/2303前向检查后，在最终源码清单一致性门失败，
+没有passed contract，不升级成合格CPU证据。无模型/无GPU导入诊断精确复现新增的唯一路径
+`measure_salicon.py`：观察辅助模块此前在freeze之后才延迟导入，原已有文件SHA无变化。
+诊断`late_import_identity_diagnosis01.json` 8199B SHA
+`64c5a204ef6468f40d729c80e745c8f60c19eb621439f2307b68f79d746ec7df`，
+诊断自身CUDA未初始化；不倒称旧失败worker的组合错误已单独记录CUDA值。
+修复`bbc84123a`仅将该观察导入提前，显式固定importlib加载的measure_ours/measure_salicon SHA，
+仍严格比较前后源码清单与CUDA状态，不改原模型数学/输入/量化/6pass。14项CPU单测双方通过。
+旧五控制器2098662/2098675/2098702/2098703/2098706已退出，五根原文件
+5/1/1/1/3个共10,805/2,414/3,261/4,544/36,744B以
+`backup_receipt_CPU_late_import_stop01.json`全SHA保留，五外置日志也已取回。
+
+peer已自行将server同步到`e0601ea2b`（含上述修复），本窗口仅核对现存源字节、14测试及
+无模型导入清单稳定后，启动只补缺失的新链，未盲同步peer源：T12 Ours CPU `_06`/2143347，
+Qwen CPU `_03`/2143363，LGVQ CPU `_03`/2143364，T12成本 `_03`/2143366，
+LGVQ成本 `_03`/2143391；deadline分别1792887841.707至1792887842.624。
+新LGVQ成本根`admission01.json`15892B SHA
+`ba3367e6f192fe48fed7aa77d52f4256b40a46e7818d82313f7a9359a9f16087`已精确取回。
+T12 Ours CPU `_06`实际200/2303原reference/embedding/完整原前向逐位、原6pass/224条NN形状已passed，
+contract SHA `a37514afe55c0774d411e672a0dd66641c30bbd6ad49fbf8cf2728ab47ccd1c0`，
+5原文件140094B经`backup_receipt_CPU_contract_complete01.json`取回，外置0B日志已取回；
+controller2143347/worker2144132已退出。此合格CPU合同不再重做。
+Unix1792881078.0217583 Qwen CPU2143363/worker2149243正在loading，CUDA隐藏，无MPS；
+其余LGVQ CPU和两成本后继仍等待真实proof，成本completed均空，NVMLcompute空。
+这不是T12 GPU成本或LGVQ CPU已经通过。五新队列必须按实际状态继续，不等旧失败PID。
+
+DS/Kimi原网络/已有2400条输入形状离线算量工具`0874eda12`，零模型/GPU/新计时/租机连接。
+公开原源只取字节解析AST、不执行，逐SHA严格匹配原运行：DS实际30层由原constructor默认值补齐，
+eager absorbed compressed MLA计Q吸收、compressed QK/AV和output吸收，不虚构未执行的expanded KV_B。
+Kimi原FA2将V128补零至QK192，dense实际形状小计计入并单列padding和逻辑无padding替代量；
+4个32×32 grid值是原prepare_batch断言结合封存4096patch/[4,2]shape推导，非旧观察器保存的grid值。
+两者均计实际Vision/原projector、active routed+shared专家、一次最后pooled完整词表投影/五行质量头。
+不把全部专家容量当执行量，不称完整scalarOP或硬件指令计数，非MAC明确另列。
+`rental_original_network_shape_MAC_01.json`4002804B SHA
+`8ff0a8fdebbbae236cf6f73016bffa8eb9ed7f5931ee67f5dd91983b942f0402`。
+DS100/50同24.960100768778 TOP/video，匹配原成本34.376582310752504/25.7364208215063 TOPS、
+.06180818409221233/.04898134665504826 TOPS/W；Kimi100/50同9.33288431617 TOP/video，
+18.686260576154385/17.628431963290932 TOPS、.03910712878124481/.03699371137875749 TOPS/W。
+这些是本地原图推导，未冒称server独立公式回放；原server/local成本审计资格保持。
+receipt绑定`e2d351c16`与11项CPU测试通过，原36点raw全量重放
+`temporal_matrix_partial_07.json` SHA
+`3b439f3cb1b6f9b61a0349147304247259d3514e767265b6ea5a368ff34c2b1b`，只新增DS/Kimi四组NN算量，
+其原成本/精度、lab24点/共享锚/额外80GB锚及其他对象与06解析对象全同。仍PARTIAL，server无私有07。
+
 ## 2026-10-25 06:03补记：原视频Qwen离线算量接入，两套缺项成本后继已接全
 
 九行成本仍13/18、余5项；多baseline36/36和额外80GB同机Qwen3/3不变。
