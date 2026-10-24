@@ -15,6 +15,13 @@
 计时边界/200×3/能耗/MPS/共同Tokens/s及其他任务身份不改；仍不是第07行的新时间结果。
 新索引将分别列仿真`.8765`、实验室`.8655`、Qwen`.8120`，后续只用这个epoch45主体补测。
 原“待人工版本选择”已解除，不再重复提问，也不再使用旧网格`.8880`测速。
+本地已真实重放生成`measurement_protocol_20261024/measured_index_partial_06.json`，SHA
+`2ea517da347732aa80cab1bddbdc13c7ea1a6201a1cea9e691a62edeb90654ba`，
+其余八行及共享Qwen anchor与partial05解析对象完全相同；旧05及以前不覆盖。
+新版索引仍为PARTIAL、10/18项时间能量合格，第07行新计时/OP待做，不冒称正式两Excel已生成。
+服务器未生成这个私有index。本次源修订双端29项CPU测试通过，原报告审计及4项既有量化检查
+也通过；实际主体PT本机/服务器均26562234字节、同完整SHA。私有独立确认收据为
+`measurement_protocol_20261024/openmoji_e45_user_confirmation_01.json`。
 
 以下23:27及以前状态作为历史；未完成的正式测量仍以实际队列和原始审计为准：
 
