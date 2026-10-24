@@ -291,11 +291,14 @@ def main():
         common_input_tokens_total=spatial_tokens,common_tokens_per_s=spatial_tokens/seconds_sp,
         full558_reference=spatial[0]['full558_reference'],measured200_subset=[r['measured200'] for r in spatial],
         raw_references=spatial,scope='file to CPU spatial score, continuous window, all199 gaps, zero dedicated inference warmup')
+    from remaining_shape_receipt import attach as attach_remaining_shape_MAC
+    attach_remaining_shape_MAC(rows['01b'],'spatial_qwen')
     t07=REPO/'LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation'
     enrolled=t07/'abo200_enrolled_protocol_20260913/protocol.json'
     ours=audit(t07/'a100_input_inclusive_20261024_01',enrolled)
     qwen=audit_qwen(t07/'a100_input_inclusive_20261024_qwen01',enrolled)
     rows['03'].update(ours=ours,qwen=qwen,status='matched_three_round_timing_energy_independently_audited; OP pending')
+    attach_remaining_shape_MAC(rows['03'],'t07_qwen')
     our_s=sum(r['total_ms']*200/1000 for r in ours['repeats']);qwen_s=sum(r['seconds'] for r in qwen['repeats'])
     common=qwen['aggregate']['common_input_tokens_total']
     rows['03']['common_tokens']=dict(total=common,ours_per_s=common/our_s,qwen_per_s=common/qwen_s,
@@ -388,7 +391,8 @@ def main():
     rows['02']['common_tokens']=dict(total=image_tokens,ours_per_s=image_tokens/image_ours_seconds,
         qwen_per_s=image_tokens/image_seconds,rate_ratio=image_seconds/image_ours_seconds,
         time_ratio=image_seconds/image_ours_seconds,basis='same original first200 image identities and actual Qwen valid native input IDs/masks')
-    rows['02']['status']='matched_three_round_timing_energy_independently_audited; Qwen dense-MAC verified, Ours original-shape derivation pending'
+    attach_remaining_shape_MAC(rows['02'],'image_student')
+    rows['02']['status']='matched_three_round_timing_energy_independently_audited; both NN dense-MAC subtotals verified; physical optical/non-MAC separate'
     openmoji_root=REPO/'LightGenV2/tasks/t04_semantic_interaction/runs/simulation'
     rows['07']['ours']=openmoji_e45_result(openmoji_root)
     rows['07']['qwen'],rows['07']['common_tokens']=openmoji_pair(openmoji_root,rows['07']['ours'])
@@ -416,7 +420,7 @@ def main():
                           complete_timing_energy_rows=['02','03','04','05','06','07'],
                           qualified_model_task_items=sum(r[m] is not None for r in rows.values() for m in ('ours','qwen')),
                           pending_rows=['01a ours','01b ours','08 both'],
-                          operation_counts='01a/02/04/05/06 Qwen,04 Ours and07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; remaining original-network/existing-shape derivations pending, no compulsory GPU replay')))
+                          operation_counts='01a/01b/03/05/06 Qwen,02/04/07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; remaining original-network/existing-shape derivations pending, no compulsory GPU replay')))
 
 
 if __name__=='__main__':main()
