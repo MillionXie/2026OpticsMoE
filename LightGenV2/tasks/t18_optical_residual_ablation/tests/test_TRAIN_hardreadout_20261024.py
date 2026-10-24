@@ -24,3 +24,12 @@ def test_parent_and_lineage_admission_preserved():
     assert '105a0f517cd8dda1a4e5bb7f991505476ead763784e828a663921995f7cbf1a6' in src
     assert 'ca[\'matched_samples\']==2011' in src and "loop.validate_state" in src
     ast.parse(src)
+
+
+def test_joint_followup_uses_completed_new_best_not_last():
+    src=(HERE/'lab_caltech20_fullG2_postOAS_20261024.py').read_text()
+    assert "if a.hard_best:source=prefix/'fullG2_sameclass_augment_20261024'" in src
+    assert "sr['selected_correct']>=248" in src and "pt=source/'best.pt'" in src
+    assert 'epochs=60,seconds=480' in src and 'TRAIN_teacher_margin_MSE=True' in src
+    assert 'm.allowed_keys(model,5)' in src and '==5150' in src
+    ast.parse(src)
