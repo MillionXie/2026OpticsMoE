@@ -91,6 +91,42 @@ def guard(row,noise=None,router=False):
         raise RuntimeError('Pilot/capture dynamic-range stop; preserve evidence, no automatic exposure/retry: '+repr(row))
 
 
+def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardware_sha):
+    """Fixed dark/A/A/B/A TRAIN/control test before any EVAL in this layer.
+
+    Repeat fluctuations include shot/display noise, not just camera read noise;
+    they therefore must be measured with this stage's phase and intensity.
+    This does not subtract a background from network frames or fit any labels.
+    """
+    folder.mkdir();values={};rows={}
+    patterns={'dark':np.zeros((1016,1016),np.uint8),'A1':amplitudes[0],
+              'A2':amplitudes[0],'B':amplitudes[1],'A3':amplitudes[0]}
+    if mask is None:mask=np.ones((1016,1016),bool)
+    for name,gray in patterns.items():
+        f=folder/(name+'.bmp');Image.fromarray(native_image(drive[gray])).save(f)
+        raw,metadata=bench.capture(f);np.save(folder/(name+'_raw.npy'),raw)
+        value=crop_native(raw,warp);np.save(folder/(name+'_ccd.npy'),value);values[name]=value*65535
+        rows[name]=dict(signal=signal(value,mask),metadata=metadata,raw_sha256=sha(folder/(name+'_raw.npy')))
+    dark=values['dark'];A1=values['A1'];A2=values['A2'];A3=values['A3'];B=values['B']
+    noise=max(1.,float(np.std((A1-A2)[mask])/np.sqrt(2)))
+    delta99=float(np.percentile((A1-dark)[mask],99));snr=delta99/noise
+    correlation=float(np.corrcoef((A1-dark)[mask],(A3-dark)[mask])[0,1])
+    repeat_drift=float(np.linalg.norm((A1-A3)[mask])/max(1.,np.linalg.norm(A1[mask])))
+    changed=float(np.sqrt(np.mean((B-A1)[mask]**2)))
+    passed=snr>=10 and delta99>=64 and correlation>=.95 and repeat_drift<=.05 and changed>=3*noise
+    passed=passed and max(r['signal']['saturation_fraction'] for r in rows.values())<=.15
+    receipt=dict(passed=bool(passed),stage=stage,hardware_payload_sha256=hardware_sha,
+        read_noise_upper_counts=noise,noise_scope='repeat shot/display/camera fluctuations at this stage, NOT pure read noise',
+        dark_global_p99_counts=float(np.percentile(dark,99)),dark_router_ROI_p99_counts=float(np.percentile(dark[mask],99)),
+        SNR=snr,signal_ROI_delta_p99_counts=delta99,repeat_correlation=correlation,
+        repeat_relative_L2=repeat_drift,changed_input_RMS_counts=changed,rows=rows,
+        TEST_used=False,labels_used=False,exposure_changed=False,network_background_subtraction=False,
+        patterns=['dark','first_TRAIN','first_TRAIN','last_TRAIN','first_TRAIN'])
+    put(folder/'report.json',receipt)
+    if not passed:raise RuntimeError('Stage-specific TRAIN/control SNR admission failed; no EVAL or automatic retry')
+    return receipt
+
+
 def native_admission(cfg,out):
     Bench,LOCK,centroid,drive,warp=hardware(cfg)
     if LOCK.exists():raise RuntimeError('SDK owned by another session')
@@ -183,6 +219,23 @@ def capture(package,cfg,out,pilot=False):
                     for index in model.active_indices[:int(model.active_count)].tolist():
                         y,x=model.router_centers[index];y-=model.border;x-=model.border;h=model.router_side//2
                         mask[y-h:y+h,x-h:x+h]=True
+                stage_noise=noise
+                if package.get('TRAIN_stage_signal_calibration',False):
+                    train_indices=[i for i,e in enumerate(entries) if e['split']=='train']
+                    if len(train_indices)<2:raise ValueError('TRAIN-only stage calibration needs two source inputs')
+                    examples=[]
+                    for index in (train_indices[0],train_indices[-1]):
+                        key=f'{index:05d}'
+                        prefix={s:torch.from_numpy(np.load(out/s/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
+                        amplitude,phase,_=model.payload(torch.from_numpy(entries[index]['amplitude'])[None],stage,prefix)
+                        examples.append(np.rint(amplitude[0].numpy()*255).astype(np.uint8))
+                        candidate=native_image(np.rint(phase.numpy()*256).clip(0,255).astype(np.uint8),True)
+                        digest=hashlib.sha256(candidate.tobytes()).hexdigest()
+                        if phase_sha is None:
+                            Image.fromarray(candidate).save(phase_file);bench.stage(phase_file);phase_sha=digest
+                        elif digest!=phase_sha:raise ValueError('Calibration phase changed across inputs')
+                    stage_noise=stage_signal_admission(bench,layer/'TRAIN_signal_admission',examples,drive,warp,mask,
+                        stage,hardware_identity(cfg))
                 for i,entry in enumerate(entries):
                     key=f'{i:05d}';folder=layer/key;folder.mkdir()
                     prefix={s:torch.from_numpy(np.load(out/s/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
@@ -208,7 +261,7 @@ def capture(package,cfg,out,pilot=False):
                     put(folder/'receipt.json',row);rows.append(row)
                     put(out/'progress.json',dict(stage=stage,stage_frames=i+1,stage_total=len(entries),
                         total_frames=len(rows),expected_frames=len(entries)*len(order),latest=row,updated=time.time()))
-                    guard(quality,noise,router=stage=='router')
+                    guard(quality,stage_noise,router=stage=='router')
             features=[]
             for i in range(len(entries)):
                 value=torch.from_numpy(np.load(out/'final'/f'{i:05d}'/'ccd.npy'))[None]
