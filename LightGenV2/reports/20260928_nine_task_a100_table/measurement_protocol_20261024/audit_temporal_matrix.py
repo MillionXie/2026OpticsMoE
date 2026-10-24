@@ -107,9 +107,12 @@ def build(manifest):
             rows.append(row)
     anchor=next(r for r in rows if r['model']=='qwen' and r['cap']==100)
     from lgvq_qwen_shape_receipt import attach as attach_video_qwen_MAC
+    from rental_shape_receipt import attach as attach_original_rental_MAC
     for row in rows:
         if row['model']=='qwen' and row['aggregate'] is not None:
             attach_video_qwen_MAC(row['aggregate'],f"laboratory40GB_cap{row['cap']}")
+        elif row['model'] in ('deepseek','kimi') and row['aggregate'] is not None:
+            attach_original_rental_MAC(row['aggregate'],row['model'],row['cap'])
     if anchor['status']!='complete':raise ValueError('Shared Qwen100 anchor must remain qualified')
     common=anchor['aggregate']['common_input_tokens_total']
     if common!=89200*3:raise ValueError('Original shared Qwen first200 token work differs')
