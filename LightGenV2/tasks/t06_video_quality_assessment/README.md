@@ -2,6 +2,14 @@
 
 ## 2026-10-24 已批准六baseline文件输入至CPU评分E2E，先共享Qwen100
 
+人工已改为一个窗口统一两表：后续源码、独占GPU排程、九任务与多baseline的全部
+汇总由“测量模型推理时间”负责，原“保住光路性能-图五GPU利用率”窗口不再启动或改写。
+共享Qwen100采用`qwen100_repaired01`合格r1及`qwen100_remaining01`补齐r2/r3，
+三轮已全部完成、无外部GPU进程、功率完整性及双端CPU审计通过；失败轮只作审计保留。
+两表必须引用同一三轮，而不是分别取一组快慢值。余下21个40GB实验室点由统一控制器
+`reports/20260928_nine_task_a100_table/measurement_protocol_20261024/run_temporal_remainder.py`
+按Qwen50、GLM/CLIP/YOLO两档顺序运行；80GB DS/Kimi仍待人工租机。
+
 首次`qwen100_shared/qwen_cap100_repeat01`实际200预测完成，但全窗功率出现
 538.682ms接收间隔（随后2ms集中到达10行），超过250ms支持年龄，父队列停止且
 自有MPS释放；该轮没有合格能耗，不是共享正式锚，原始13文件及控制日志已SHA备份。

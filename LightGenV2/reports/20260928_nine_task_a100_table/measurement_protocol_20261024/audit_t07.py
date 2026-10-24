@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
+from bisect import bisect_right
 import csv
 import hashlib
 import json
@@ -114,10 +115,75 @@ def audit(root,manifest):
                 no_op_or_tokens_rate_until_matching_counts=True)
 
 
+def audit_qwen(root,manifest):
+    state=read(root/"suite_status.json")
+    if state["status"]!="complete" or not state["mps_released"] or state["completed"]!=[f"qwen_repeat{i:02d}" for i in (1,2,3)]:
+        raise ValueError("Three complete frozen Qwen processes required")
+    expected=[r for r in read(manifest)["rows"] if r["split"]=="query"][:200]
+    results=[];predictions=None;common_tokens=None
+    for repeat in (1,2,3):
+        directory=root/f"qwen_repeat{repeat:02d}";report=read(directory/"report.json")
+        rows=csv_rows(directory/"calls.csv");power=csv_rows(directory/"telemetry.csv")
+        for record in read(directory/"files_manifest.json"):
+            if sha(directory/record["file"])!=record["sha256"]:raise ValueError("Raw Qwen file SHA differs")
+        if len(rows)!=200 or [r["sample_id"] for r in rows]!=[r["sample_id"] for r in expected]:raise ValueError("Wrong query order")
+        if report["manifest_sha256"]!=sha(manifest) or report["explicit_warmup_forwards"]!=0 or report["mps_percent"]!=100:
+            raise ValueError("Wrong scope or MPS")
+        signature=[];tokens=0
+        for row,expect in zip(rows,expected):
+            if row["image_sha256"]!=expect["image_sha256"]:raise ValueError("Wrong query content")
+            ids,mask=json.loads(row["input_ids"]),json.loads(row["attention_mask"])
+            if len(ids)!=1 or len(ids[0])!=len(mask[0]):raise ValueError("Bad input/token mask shape")
+            count=sum(mask[0])
+            if count!=int(row["valid_input_tokens"]):raise ValueError("Wrong effective tokens")
+            tokens+=count;signature.append((row["sample_id"],row["predicted_product_id"]))
+            ranking=json.loads(row["ranking"])
+            if len(ranking)!=1600 or set(ranking)!=set(range(1600)):raise ValueError("Bad ranking")
+            if int(row["hit1"])!=int(row["expected_product_id"]==row["predicted_product_id"]):raise ValueError("Wrong accuracy")
+        if predictions is not None and predictions!=signature:raise ValueError("Different repeated predictions")
+        if common_tokens is not None and common_tokens!=tokens:raise ValueError("Different input-token work")
+        predictions=signature;common_tokens=tokens
+        for name,digest in report["sources"].items():
+            blob=subprocess.check_output(["git","show",report["git_commit"]+":"+name.replace("\\","/")],cwd=REPO)
+            if hashlib.sha256(blob).hexdigest()!=digest:raise ValueError("Source not bound to Git")
+        client=None
+        for event in read(directory/"process_audit.json"):
+            if len(event["clients"])!=1:raise ValueError("Expected one own client")
+            if client is None:client=event["clients"][0]
+            if event["clients"]!=[client]:raise ValueError("Client changed")
+            for process in event["processes"]:
+                if int(process[0]) not in {client,*event["servers"]} or process[1].strip()!=report["gpu_uuid"]:
+                    raise ValueError("Foreign GPU process")
+        start,end=float(rows[0]["input_start"]),float(rows[-1]["cpu_result_return"])
+        stamps=[float(r["host_monotonic_s"]) for r in power]
+        if any(b<=a for a,b in zip(stamps,stamps[1:])):raise ValueError("Power clock order")
+        if stamps[0]>start or stamps[-1]<end:raise ValueError("Full power bracketing missing")
+        index=bisect_right(stamps,start)-1;tick=start;board=0.;max_age=0.
+        while tick<end:
+            boundary=min(end,stamps[index+1] if index+1<len(stamps) else end)
+            age=boundary-stamps[index]
+            if age>.25:raise ValueError("Power support age exceeds original250ms")
+            board+=float(power[index]["watts"])*(boundary-tick)
+            max_age=max(max_age,age);tick=boundary;index+=1
+        seconds=end-start;energy=board+338.2*seconds
+        close(seconds,report["continuous_wall_s"]);close(energy,report["total_system_energy_j"])
+        close(board/seconds,report["mean_board_power_w"])
+        close(tokens,report["common_reference_tokens"])
+        results.append(dict(repeat=repeat,seconds=seconds,energy_j_total=energy,mean_board_w=board/seconds,
+                            sample_ms=seconds*5,sample_j=energy/200,common_input_tokens=tokens,max_power_support_age_s=max_age,
+                            subset_hit1=sum(int(r["hit1"]) for r in rows)/200,report_sha256=sha(directory/"report.json")))
+    seconds=sum(r["seconds"] for r in results);energy=sum(r["energy_j_total"] for r in results)
+    return dict(status="passed",system="Qwen .85125 native-aspect64-prefix",calls=600,unique_test_queries=200,repeats=results,
+                aggregate=dict(sample_ms=seconds*1000/600,sample_j=energy/600,
+                               mean_board_w=energy/seconds-338.2,common_input_tokens_total=3*common_tokens,
+                               tokens_per_s=3*common_tokens/seconds,subset_hit1=results[0]["subset_hit1"]),
+                full800_historical_reference_hit1=.85125,energy_basis="338.2W host proxy plus observed whole-window board integral")
+
+
 def main():
     p=argparse.ArgumentParser();p.add_argument("--root",type=Path,required=True);p.add_argument("--manifest",type=Path,required=True)
-    p.add_argument("--output",type=Path,required=True);a=p.parse_args()
-    value=audit(a.root,a.manifest)
+    p.add_argument("--output",type=Path,required=True);p.add_argument("--system",choices=("ours","qwen"),default="ours");a=p.parse_args()
+    value=(audit if a.system=="ours" else audit_qwen)(a.root,a.manifest)
     with a.output.open("x",encoding="utf8") as f:f.write(json.dumps(value,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps({k:value[k] for k in ("status","calls","unique_test_queries","aggregate")}))
 
