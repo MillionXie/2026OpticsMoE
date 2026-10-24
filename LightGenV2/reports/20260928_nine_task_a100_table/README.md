@@ -1,5 +1,35 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 05:00补记：LGVQ原视频入口接好，仍不是新增合格成本
+
+新增`lgvq_live_frontend.py`及CPU后继控制器，源`7616e7442`已local/GitHub/lab发布，
+7项无模型静态测试双端通过；安全ff前后既有三个活动队列的87项源SHA完全相同。
+这不是神经数值合同已通过，也不是LGVQ正式GPU成本已经排队。九行仍13/18，
+余LGVQ Ours时/空、T08图搜文Ours及T12双方5项；多baseline36/36及额外80GBQwen3/3不变。
+
+LGVQ入口直接调用原`cache_qwen_front._extract_vision_rows`，从真实视频重建原65% crop448
+四帧、native BF16 patch/原位置插值/原mean pooling及FP16缓存量化边界，再走原prompt
+tokenizer/embedding；不加载任何未执行的Vision/Language Transformer，不把缓存当在线输入。
+Spatial还按原另一套`.10/.37/.63/.90`/crop1.0独立解码224图，加载原`d357fe51...`的
+339312参数FrameStem192，不拿quality14替代原电子质量残差，不删除custom Conv。
+原`.8044`/`.6710`主体严格加载，拟以时间原TEST field13/14及空间TEST200/557比较
+原producer/观察入口输入、完整原前向输出、六次传播、真实frame_merger及NN形状。
+CPU平台的这个合同不宣称与历史GPU缓存逐位相同，不产生新的完整TEST准确度。
+
+唯一新CPU后继T06 `a100_lgvq_live_frontend_contract_20261025_01` controller1980244，
+deadline1792886259.4319685；显式绑定T12 baseline CPU `_20261025_01`，只有它的真实
+原28层CPU proof passed且SHA/身份核准，再同锁/12次连续idle后才隐藏CUDA运行CPUworker。
+当前仅`waiting_previous_CPU_contract`，没有worker；该controller与14项原源冻结，不热改。
+其`admission01.json`只记加载前stat/原binding/命令，SHA
+`1accd1b16b1d7bcc0ea3394cc39520fae9253a661f06b9f947f242e84aa9a760`，不冒称fresh权重或神经核验。
+
+最新只读Unix1792875535.1148386：原T08 controller1898302仍waiting_foreign_process、
+无bank/完成轮；T12 1898337/1939547及新LGVQ1980244均只等前驱、无child。
+同一hmh1708990/606MiB和1710971/23062MiB仍占原A100，未混测/杀人，不重复通知。
+原观察`T08/_03/admission_observation_20261025_0500.json`（文件名不是实际时钟，Unix为准）
+3606B/SHA `ee6fe42dccb6c3859616001d2973acb9182976d5ee3ce68fbe1ab8d76d6d9ac8`。
+新租机已完成/raw本地安全，不再连接；新正式Excel仍未生成，索引仍partial12/temporal05。
+
 ## 2026-10-25 04:38补记：实验室缺项续队，文搜图NN算量直接从原记录推导
 
 旧T08 `_20261025_02` controller1728678在有限等待到期后停止，completed为空、无bank/worker；
