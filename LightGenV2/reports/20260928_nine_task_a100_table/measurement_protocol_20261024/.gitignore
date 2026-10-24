@@ -15,3 +15,4 @@
 !audit_salicon.py
 !measure_lsp.py
 !run_lsp.py
+!build_measured_index.py
