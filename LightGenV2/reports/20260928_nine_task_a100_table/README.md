@@ -1,6 +1,17 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 23:37，北京时间）
+## 新旧版入口与完成清单（2026-10-25 00:02，北京时间）
+
+A100外部占用已变化：原`hmh/encode_data.py`退场后，`hmh/fit_quality.py`新进程1440470
+（父1423904、23:54:58启动、12214MiB）进入；不把中间只有一次idle检查当作已独占。
+T08标题续测1411319仍`waiting_foreign_process`、无新GPUworker或合格轮，私有MPS未启动。
+T04真实前端CPU控制器1443601仍`waiting_previous_queue`，不会在当前占用期间加载CPU骨干。
+追加只读原始证据`T08/runs/simulation/a100_title_student_input_inclusive_20261024_02/`
+`foreign_admission_observation_20261025_0001.json`已原SHA取回，SHA
+`331e5a29268fd141589f9ee35e5487b7b7f66bf71fb85b279b95b034a3d39133`。
+未中止对方、未重建图库或重复合格测量；仍10/18项时间能量合格，无新正式Excel。
+
+以下身份结论和旧进度保留；运行状态以上面及实际队列为准：
 
 人工已确认OpenMoji使用新布局，并指定实验室`.8655`所对应的版本；旧`.8880`是未更新表项。
 本次重新读取并SHA核验已封存的实验室原始complete报告、全部比较证据及实际主体PT，
