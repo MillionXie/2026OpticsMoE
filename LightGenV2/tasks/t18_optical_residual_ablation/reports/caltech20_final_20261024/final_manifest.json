@@ -1,0 +1,510 @@
+{
+  "schema": "Caltech20_final_archive_20261024_v1",
+  "status": "user_selected_final_versions_archived",
+  "dataset": "Caltech101 richest20; common original411 TEST identities",
+  "user_requested_rounded_table": {
+    "2": {
+      "nores_sim": "72.75",
+      "nores_exp": "68.13",
+      "rho03_sim": "82.00",
+      "rho03_exp": "81.02"
+    },
+    "4": {
+      "nores_sim": "73.97",
+      "nores_exp": "68.61",
+      "rho03_sim": "84.18",
+      "rho03_exp": "82.97"
+    },
+    "6": {
+      "nores_sim": "74.94",
+      "nores_exp": "69.10",
+      "rho03_sim": "86.13",
+      "rho03_exp": "84.67"
+    }
+  },
+  "rows": [
+    {
+      "depth": 2,
+      "rho": 0,
+      "simulation": {
+        "correct": 299,
+        "samples": 411,
+        "percent": 72.74939,
+        "display_percent": "72.75",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L2_rho0/best.pt",
+        "selected_PT_SHA256": "5c8ee3164d1f557090ca50a5904688ba6ec44d828e5c15b0498f600ca6aa9ee6",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L2_rho0/last.pt",
+        "last_PT_SHA256": "6feb167a1d337c6f5558772712f919788ecdad53f0617a498dd1fc40cd0e25e9",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/once_tests/L2_rho0/predictions.npz",
+        "predictions_SHA256": "86ad729b293c3f502d1677879ca289c1b1740dfc4d0e45fd51981d12d564c3d0",
+        "source_git": "51fbc9225ffd2ca19f67d40d15972d52b50c9ff3",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_rich_pair50_alpha_model.py",
+        "source_SHA256": "a49a7ae38ad7a34ad9b2a1feb392d172eec5f033364970120d09903dbddd2fae",
+        "source_metadata": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L2_rho0/metadata.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L2_rho0/metadata.json",
+            "SHA256": "2a1bd5c1e3b97e9aaa66ae201e2c4cf465636f214d06f6f4e1f133ae656fd7a6"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L2_rho0/fit_result.json",
+            "SHA256": "ed1db70f9333634d9b6dbc056c86a550a3913680bde5a30da82b20169a056d62"
+          }
+        ],
+        "scope": "fixed_original_producer_simulation_development_reference",
+        "independent_generalization_claim": false
+      },
+      "experiment": {
+        "correct": 280,
+        "samples": 411,
+        "percent": 68.12652,
+        "display_percent": "68.13",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L2/head_target_20261019/best.pt",
+        "selected_PT_SHA256": "c782b57766b9ab669b7247dda9d7868b5fe2181097df97e05eb03935243d78fd",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L2/head_target_20261019/last.pt",
+        "last_PT_SHA256": "fe7cb79ddbbe540a4206fe450980cb34a3fae0def6e9984f49111e80b55e7881",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L2/head_target_20261019/best_TEST_predictions.npz",
+        "predictions_SHA256": "b64c98148d58c9672456a22223e023de12076a018b7fad4030f9e5e40e29b674",
+        "source_git": "d68156dbff8319751af00f6127594cad37b2a093",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_control_localrow_20261018.py",
+        "source_SHA256": "3f53e16239e130f288b588ef02a5f5819da190edfbd0e94d3d9c3fd0b1557e7b",
+        "protocol": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L2/head_target_20261019/protocol.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L2/head_target_20261019/audit_fullgraph.json",
+            "SHA256": "ea0c33bf0b230c083207c83c7c4769c1840db07e9c245bf901b710b500ebcdad"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L2/head_target_20261019/protocol.json",
+            "SHA256": "4cf24c02af99e9fbb8f5df4a176ca85156e1d0b7207bc5924c824d02add4918e"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L2/head_target_20261019/report.json",
+            "SHA256": "79a24e8802132af1051eabfc035f634e7a8e0a18c781bec0fdca4e3a3e3b2170"
+          }
+        ],
+        "TRAIN": 1000,
+        "VALID": 0,
+        "TEST_informed_development": true,
+        "student_direct_TEST_gradient": false,
+        "teacher_seen_TEST": false,
+        "official_TEST_accuracy": null,
+        "valid_for_formal_test_table": false,
+        "scope": "TEST_informed_diagnosis_and_selection_development_NOT_independent_TEST",
+        "source_archive_manifest": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/server_nores_audit.json"
+      }
+    },
+    {
+      "depth": 2,
+      "rho": 0.3,
+      "simulation": {
+        "correct": 337,
+        "samples": 411,
+        "percent": 81.99513,
+        "display_percent": "82.00",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L2_first8151_head_target818_TRAIN_20261018/case01/best.pt",
+        "selected_PT_SHA256": "b08923b3b43731e2832fc0251a54af9c52535226176070b92b4954f636614c69",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L2_first8151_head_target818_TRAIN_20261018/case01/last.pt",
+        "last_PT_SHA256": "758dc63c3857bca7d0c0b4cd9344d11347cc453af6f43cda6f8298e526d5786a",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L2_first8151_head_target818_TRAIN_20261018/case01/selected_test.npz",
+        "predictions_SHA256": "5a93b67d6ce56a31ec3efa5956b65d3a0910613e859693004a54c45c47365fe5",
+        "source_git": "544e0d7cfeabed7ddbea9a2dfb0cab443f9f9fae",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_rich_prototype_consistency.py",
+        "source_SHA256": "bab69d89df8f272fdfb0aea7472960ccedb461c322536986607e4ed0c86037ca",
+        "source_metadata": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L2_first8151_head_target818_TRAIN_20261018/case01/metadata.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L2_first8151_head_target818_TRAIN_20261018/case01/metadata.json",
+            "SHA256": "5160b961ed0af15c39e987fccce0e3c296034da2174920ed1c484ed69fc99400"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L2_first8151_head_target818_TRAIN_20261018/case01/fit_result.json",
+            "SHA256": "0c1861ef598dba59c9cf0e74500c31efd6bf365d34d7daf9d1166f5d91f9f5e0"
+          }
+        ],
+        "scope": "fixed_original_producer_simulation_development_reference",
+        "independent_generalization_claim": false
+      },
+      "experiment": {
+        "correct": 333,
+        "samples": 411,
+        "percent": 81.0219,
+        "display_percent": "81.02",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap12_20261021/best.pt",
+        "selected_PT_SHA256": "ffef87be476755ba7142c4569de5ea1f1f7b218dab20cc9d10578c9fd030dd6c",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap12_20261021/last.pt",
+        "last_PT_SHA256": "fd6739f899083e73cb950d9fa31d2c7e26c7cfd959964a633c35851993fcb8d1",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap12_20261021/best_full_test_predictions.npz",
+        "predictions_SHA256": "cb9ff4f2e0d630488c0130930efd64fc32145d0c30f67cda6783c15afcc380c1",
+        "source_git": "427c31fdbb13aa77422092c2ef9052f583f0fcf5",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_residual_terminal_cpu_20261019.py",
+        "source_SHA256": "682362a501823daf45dee5f3eb2c09e6684880c0729cd84c21cd643fb98893b4",
+        "protocol": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap12_20261021/protocol.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap12_20261021/independent_full_CPU_audit.json",
+            "SHA256": "56d26cbf180fc07e0f4487854255b52def185ba3801476503b0678caa08ef58f"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap12_20261021/protocol.json",
+            "SHA256": "1d8d6a417e9debb5cc77204a209b20be4b3d90f8db35862377d57a6d8fe80620"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_sequence_426_20261018/L2_gap12_20261021/report.json",
+            "SHA256": "d38f3ae3437f7aa0dfd668d4a5ba16359af3c183b452896be17b4518cc10129e"
+          }
+        ],
+        "TRAIN": 1200,
+        "VALID": 0,
+        "TEST_informed_development": true,
+        "student_direct_TEST_gradient": false,
+        "teacher_seen_TEST": false,
+        "official_TEST_accuracy": null,
+        "valid_for_formal_test_table": false,
+        "scope": "TEST_informed_diagnosis_and_selection_development_NOT_independent_TEST",
+        "source_archive_manifest": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/lab_residual_audit.json"
+      }
+    },
+    {
+      "depth": 4,
+      "rho": 0,
+      "simulation": {
+        "correct": 304,
+        "samples": 411,
+        "percent": 73.96594,
+        "display_percent": "73.97",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L4_rho0/best.pt",
+        "selected_PT_SHA256": "e1fc190440e92d8dc20b7cb7e7445c0dc433ec2849ca72716bff89ec073b6c1b",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L4_rho0/last.pt",
+        "last_PT_SHA256": "947d64bb8077072d8ce5e61eb4e0e5bcae0c79c2b7dc33eb23e3b6ca8f6133a7",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/once_tests/L4_rho0/predictions.npz",
+        "predictions_SHA256": "f26bcd1e4bcd9bd137d562016cf48f2105d58b30dbbe0cd7f14270f7fb204c0d",
+        "source_git": "cd75fef5f3b845273e655fe2f3a045dfdf588626",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_rich_pair50_alpha_model.py",
+        "source_SHA256": "a49a7ae38ad7a34ad9b2a1feb392d172eec5f033364970120d09903dbddd2fae",
+        "source_metadata": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L4_rho0/metadata.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L4_rho0/metadata.json",
+            "SHA256": "8c4fab0c468f2a94d8ef66bc5b8b7db04807fe3fce6ea4ae6cf1489aecc048dc"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L4_rho0/fit_result.json",
+            "SHA256": "cd07a43862d7579963c9c603cd9e95f5c774a69333ed715bf6fc9536c833ff7a"
+          }
+        ],
+        "scope": "fixed_original_producer_simulation_development_reference",
+        "independent_generalization_claim": false
+      },
+      "experiment": {
+        "correct": 282,
+        "samples": 411,
+        "percent": 68.61314,
+        "display_percent": "68.61",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L4/head_target_20261019/best.pt",
+        "selected_PT_SHA256": "e7c876939d7639d879a8607b5087795a6fcaebf8785364a87e7ca8701a88f0de",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L4/head_target_20261019/last.pt",
+        "last_PT_SHA256": "fdb1738765efb1c36d1a5d6387f296ffc48b1d69412cc5ae203738b2e616442b",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L4/head_target_20261019/best_TEST_predictions.npz",
+        "predictions_SHA256": "1c3c9d1ef2e4aa27a2cd20e9bc55695f2a37ff6e944b10b569bbc46ca7dce998",
+        "source_git": "d68156dbff8319751af00f6127594cad37b2a093",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_control_localrow_20261018.py",
+        "source_SHA256": "3f53e16239e130f288b588ef02a5f5819da190edfbd0e94d3d9c3fd0b1557e7b",
+        "protocol": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L4/head_target_20261019/protocol.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L4/head_target_20261019/audit_fullgraph.json",
+            "SHA256": "44c4a6153b774d52ef03f4ac2756212902e0e899a42f6c5d830da64f044d389c"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L4/head_target_20261019/protocol.json",
+            "SHA256": "181ef0e0c59b09d6724b6783029353da0598101ade75e2b752584b779a87b0a3"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L4/head_target_20261019/report.json",
+            "SHA256": "dae56f9022a7c434d40c4e4058d627ca1ce75174e5b31cf83774f866fa9b890c"
+          }
+        ],
+        "TRAIN": 1000,
+        "VALID": 0,
+        "TEST_informed_development": true,
+        "student_direct_TEST_gradient": false,
+        "teacher_seen_TEST": false,
+        "official_TEST_accuracy": null,
+        "valid_for_formal_test_table": false,
+        "scope": "TEST_informed_diagnosis_and_selection_development_NOT_independent_TEST",
+        "source_archive_manifest": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/server_nores_audit.json"
+      }
+    },
+    {
+      "depth": 4,
+      "rho": 0.3,
+      "simulation": {
+        "correct": 346,
+        "samples": 411,
+        "percent": 84.18491,
+        "display_percent": "84.18",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/L4/best.pt",
+        "selected_PT_SHA256": "7b0d7f055a16f7f6bbf9858c9ecaea572ecd0b0d6e96c618630f4a4e077c09a5",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/L4/last.pt",
+        "last_PT_SHA256": "621147a3a8d41c0459d69eeb64b5ae85865aa072287dfe5b39e432e44686f53e",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/L4/selected_test.npz",
+        "predictions_SHA256": "d758ec11fb9b36a3d23859fe8699051240dc2743fc98358572336d553aab18d2",
+        "source_git": "905bad80733d63c468d25c625aea43b954998457",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_rich_prototype_consistency.py",
+        "source_SHA256": "bab69d89df8f272fdfb0aea7472960ccedb461c322536986607e4ed0c86037ca",
+        "source_metadata": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/metadata.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/metadata.json",
+            "SHA256": "1a4f31f274e075961d7c368e1f5e63974b526d30b651e5126291374577007dcc"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L4_8394_L6_8248_gain_conditioned_pair_TRAIN_20261018/round01/L4/fit_result.json",
+            "SHA256": "d6c1488092b1f42fdd850f3e8b2c21684a1e6ca277f35705821374f480d4073a"
+          }
+        ],
+        "scope": "fixed_original_producer_simulation_development_reference",
+        "independent_generalization_claim": false
+      },
+      "experiment": {
+        "correct": 341,
+        "samples": 411,
+        "percent": 82.96837,
+        "display_percent": "82.97",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/student/best.pt",
+        "selected_PT_SHA256": "c2ccc2be4a610da9ce50d7713ab38d4165b559deb0a001d3d26e7f2c183945ab",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/student/last.pt",
+        "last_PT_SHA256": "2edc282b0d31971c46467abb0a6891403bc9b81e1eee10819a7a9ce36a413ea0",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/student/best_test.npz",
+        "predictions_SHA256": "299b59db59502d2efc9a24d7893c7e383021448652d246b0febe9cd2755d1c41",
+        "source_git": "2c51572cd27c0c65329c68a1f65bbd88c486e311",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_interval_transfer_20261024.py",
+        "source_SHA256": "6eef9986b1ce3244d364aa2b5e8a38c530d75ee83a01357b8be290003728c6c6",
+        "protocol": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/protocol.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/delivery_audit.json",
+            "SHA256": "d1526f4311ac4c21d6c61cba90ce8e2dc7330b0269dc61396a516e7c813ad629"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/protocol.json",
+            "SHA256": "6787867a086264820a1c914282536475b2050b888bafb83f8e27d9b2c763dd33"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/report.json",
+            "SHA256": "a3f29809a5aeb6b4e1e33c0bdf14e209f96c1f34ffd8fbe21d453512aec9c35e"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/trajectory_reproduction.json",
+            "SHA256": "6a0c8e63bda5af15ed76a9cb15a0fee6e6d950b0ab80e52244d0c7038fdce952"
+          }
+        ],
+        "TRAIN": 1600,
+        "VALID": 0,
+        "TEST_informed_development": true,
+        "student_direct_TEST_gradient": false,
+        "teacher_seen_TEST": true,
+        "official_TEST_accuracy": null,
+        "valid_for_formal_test_table": false,
+        "scope": "teacher_TEST_adaptation_development_replay_NOT_independent_TEST",
+        "source_archive_manifest": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/lab_residual_audit.json"
+      }
+    },
+    {
+      "depth": 6,
+      "rho": 0,
+      "simulation": {
+        "correct": 308,
+        "samples": 411,
+        "percent": 74.93917,
+        "display_percent": "74.94",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L6_rho0/best.pt",
+        "selected_PT_SHA256": "5ee9baffa64ec9ff2157fe6abd4c5f18d38ce30e485c9a64a85930c6df660f0a",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L6_rho0/last.pt",
+        "last_PT_SHA256": "4f9e72fcbd2f500224b73ff102e7354eb648b63a77eda00df6be7a8fd74770d5",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/once_tests/L6_rho0/predictions.npz",
+        "predictions_SHA256": "53e6e80854756edac4490f797b0e575e0a7d3fa1e7b5d47ce9059ebf4a5bf529",
+        "source_git": "cd75fef5f3b845273e655fe2f3a045dfdf588626",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_rich_pair50_alpha_model.py",
+        "source_SHA256": "a49a7ae38ad7a34ad9b2a1feb392d172eec5f033364970120d09903dbddd2fae",
+        "source_metadata": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L6_rho0/metadata.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L6_rho0/metadata.json",
+            "SHA256": "6a8776ed7eb6d275e5f79b7902d298b65bf7673867948927dbdf84564fcb7535"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_current246_s17_pair50_asymmetricAlpha_20261017/L6_rho0/fit_result.json",
+            "SHA256": "5e00284223f33d8150ab0ea7a7d3b67ca03091660a4fd18bd0be55af677687b6"
+          }
+        ],
+        "scope": "fixed_original_producer_simulation_development_reference",
+        "independent_generalization_claim": false
+      },
+      "experiment": {
+        "correct": 284,
+        "samples": 411,
+        "percent": 69.09976,
+        "display_percent": "69.10",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L6/head_huber_0700_20261019/best.pt",
+        "selected_PT_SHA256": "4faea40e5d2aae4a43e01acdc298507c575c8c297cd5c481da56f1569f8359ff",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L6/head_huber_0700_20261019/last.pt",
+        "last_PT_SHA256": "22a765a166f1d5414f61b3fa4b2b17b2ac4759fb44e715191536799ac64463cf",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L6/head_huber_0700_20261019/best_TEST_predictions.npz",
+        "predictions_SHA256": "e58b4eade36cf0d4dc9ed550a7359d57b950aed30ad4a2c21fccfc695f5ffe02",
+        "source_git": "ea6d6078575b04b341952e5fe22f0ee0cdeb7d30",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_control_localrow_20261018.py",
+        "source_SHA256": "b03897794d05ef8d67f94c50ce6b7067d8b9bbdac0485c0ebd6ee58fd2f2ed5b",
+        "protocol": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L6/head_huber_0700_20261019/protocol.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L6/head_huber_0700_20261019/audit_fullgraph.json",
+            "SHA256": "f1bf3271efaeabe09581694d4c5b00b44f14cedf1938ecf3cc1b47e17a390294"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L6/head_huber_0700_20261019/protocol.json",
+            "SHA256": "9c1b43275114d239948b1511f06c192b3401ac0cd6f025406f17cc9f9bf8b00c"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_nores246_server_20261019/L6/head_huber_0700_20261019/report.json",
+            "SHA256": "72488f9412be1f9579917fb16f0c6b9801874cecaeb54b3224bcd25c1b552c1b"
+          }
+        ],
+        "TRAIN": 1000,
+        "VALID": 0,
+        "TEST_informed_development": true,
+        "student_direct_TEST_gradient": false,
+        "teacher_seen_TEST": false,
+        "official_TEST_accuracy": null,
+        "valid_for_formal_test_table": false,
+        "scope": "TEST_informed_diagnosis_and_selection_development_NOT_independent_TEST",
+        "source_archive_manifest": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/server_nores_audit.json"
+      }
+    },
+    {
+      "depth": 6,
+      "rho": 0.3,
+      "simulation": {
+        "correct": 354,
+        "samples": 411,
+        "percent": 86.13139,
+        "display_percent": "86.13",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L6_first8564_head_target860_TRAIN_20261018/case02/best.pt",
+        "selected_PT_SHA256": "eb3d25718b36f3355a242c83b6e972a11eb2fb0bcd751ef89e86cc2d0298c85d",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L6_first8564_head_target860_TRAIN_20261018/case02/last.pt",
+        "last_PT_SHA256": "9469e9b6616fe4b48bd406099a31630e27ba06335dac823a3287a4c2daff3526",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L6_first8564_head_target860_TRAIN_20261018/case02/selected_test.npz",
+        "predictions_SHA256": "8b3bc875fece0c779d7469b77b301210312210ba8ba3f53a2b35b0725c9899f7",
+        "source_git": "544e0d7cfeabed7ddbea9a2dfb0cab443f9f9fae",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_rich_prototype_consistency.py",
+        "source_SHA256": "bab69d89df8f272fdfb0aea7472960ccedb461c322536986607e4ed0c86037ca",
+        "source_metadata": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L6_first8564_head_target860_TRAIN_20261018/case02/metadata.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L6_first8564_head_target860_TRAIN_20261018/case02/metadata.json",
+            "SHA256": "4518a9e038c8ac2987a86abef22d2cb8ad9ce7e5472638f780a37e53f59c9373"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/simulation/caltech20_rich20_L6_first8564_head_target860_TRAIN_20261018/case02/fit_result.json",
+            "SHA256": "86cf13fa7e91f31bebe2986c182513f6bd8b80875d0b9c73eaec68904e87804b"
+          }
+        ],
+        "scope": "fixed_original_producer_simulation_development_reference",
+        "independent_generalization_claim": false
+      },
+      "experiment": {
+        "correct": 348,
+        "samples": 411,
+        "percent": 84.67153,
+        "display_percent": "84.67",
+        "selected_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/student/best.pt",
+        "selected_PT_SHA256": "1c46abcf03d88be50729bb2a0d9f7d8d93f9212524b30e3b5fb9284740dc25fb",
+        "last_PT": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/student/last.pt",
+        "last_PT_SHA256": "d5fb8aef5d9952ef6d0dc229d59ddf52d4c575815b022a302cf7ab78aebb2f9d",
+        "predictions": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/student/best_test.npz",
+        "predictions_SHA256": "30271724985bcd35c7c9fae9ccff1e2698cd92d5b4956eb0c7c312b081d16ba4",
+        "source_git": "cdb825d770ec6225ba8f0e8735ccea948544fa72",
+        "source": "LightGenV2/tasks/t18_optical_residual_ablation/lab_caltech20_interval_transfer_20261024.py",
+        "source_SHA256": "7fdf45b96926c34e07b8824ccfc8752050272987ab60780de6ad2da6153174c2",
+        "protocol": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/protocol.json",
+        "proofs": [
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/delivery_audit.json",
+            "SHA256": "d11086cac836c155ea5377b268bd3ded999bcd7c08a18df7c8f795997d2da888"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/protocol.json",
+            "SHA256": "8856f2a37536c56f7fd63d266dcaf28c44b21eea394b4a7efa577dfe9a959616"
+          },
+          {
+            "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/report.json",
+            "SHA256": "6c36df84cd64be32b089137337ee87f0c60bf3d0323a92d80eea30d7fcef4e16"
+          }
+        ],
+        "TRAIN": 1600,
+        "VALID": 0,
+        "TEST_informed_development": true,
+        "student_direct_TEST_gradient": false,
+        "teacher_seen_TEST": true,
+        "official_TEST_accuracy": null,
+        "valid_for_formal_test_table": false,
+        "scope": "teacher_TEST_adaptation_development_replay_NOT_independent_TEST",
+        "source_archive_manifest": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/lab_residual_audit.json"
+      }
+    }
+  ],
+  "all_experiments_TEST_informed_development": true,
+  "independent_generalization_claim": false,
+  "selected_lower_L4_interval_disclosed": true,
+  "higher_342_and_366_checkpoints_preserved": true,
+  "backup_receipts": [
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/local_server_backup.json",
+      "SHA256": "c860235933495ace4098d0c0937803f839fad7bab7e03f09df9a200a8a69eefa"
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_final_archive_20261024/local_lab_backup.json",
+      "SHA256": "944c3a86cab0d3d6ae68f39e94be307038ff27b5cff6eec0e4edb8552615ab10"
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_interval341_20261024/local_SHA_backup.json",
+      "SHA256": "2a68b58243d1201337febf3ddd90c799296ee620e47a03650293db9be2b782d6"
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_follow_interval_20261024/local_SHA_backup.json",
+      "SHA256": "879ed5fcc6a7993fd6cb225dff6af2dbc06627c68e2f167c16c3bd4dd02f133f"
+    }
+  ],
+  "supporting_lineage": [
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_TESTsupervised_20261024/best.pt",
+      "SHA256": "fe3b5fc6de7d2ffdb1baf39fa55fac5a62e1379ad196859c89a27cb1f4ba8a53",
+      "role": "L4_teacher_trained_with_all411_TEST"
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_TESTsupervised_20261024/report.json",
+      "SHA256": "ae902dd918f7928d72d39cd2f30ad7c7dc541af3c39e19a166a90388e724c5a9",
+      "role": "L4_teacher_supervision_disclosure"
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_interval_20261024/teacher/best.pt",
+      "SHA256": "0d697d118d5ba0a6408b1de705408aa7624b2b6a841da2615f181f7b8009fc5c",
+      "role": "L6_teacher_trained_with_all411_TEST"
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/fixed_simulation_terminal_20261023/L6_interval_20261024/teacher/report.json",
+      "SHA256": "92c6fd167161301bd1c772c02347ecb16c96603e7ce96304ceb38137ef9791d0",
+      "role": "L6_teacher_supervision_disclosure"
+    }
+  ],
+  "source_policy": "Code retained as Git commits+exact source SHA and original metadata; do not use current HEAD as historical run identity. No source copies outside Git.",
+  "preservation_policy": "Keep original best/last, immutable splits, CCD/receipts, full native CPU audit proofs, predictions, configs, histories, rejected trials and higher checkpoints. No deletion or new training after closure.",
+  "limitations": [
+    "All laboratory results are TEST-informed development results, not independent generalization. L4/L6 residual teachers used all411 TEST labels; students inherit that information despite TRAIN-only gradients.",
+    "Simulation nores originalTRAIN3141/VAL383; hardware noresTRAIN1000, residualL2TRAIN1200, residualL4/L6TRAIN1600 incl fixed augmentation; optimization budgets and alpha constraints differ. Not a strictly matched-budget pure-rho causal comparison.",
+    "rho0.3 denotes unmodulated complex-amplitude mixing coefficient, not a30% optical power fraction.",
+    "L6 simulation reference is original producer354/411; a separately retained padded native laboratory replay yielded353/411. Do not silently replace one with the other.",
+    "L6 residual capture uses DVP router/E1/G1/E2/G2 plus TUCam E3/G3, preserved by stage; not a homogeneous-camera controlled comparison."
+  ]
+}

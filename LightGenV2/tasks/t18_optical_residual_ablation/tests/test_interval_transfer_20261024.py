@@ -17,6 +17,8 @@ def test_exact_integer_intervals_not_rounded_percentages():
     for depth in(4,6):functions()['validate'](json.loads((HERE/('lab_caltech20_L'+str(depth)+'_interval_profile_20261024.json')).read_text()))
     c=json.loads((HERE/'lab_caltech20_L6_follow_interval_profile_20261024.json').read_text());functions()['validate'](c)
     assert c['reuse_verified_teacher']and c['parent_correct']==342 and c['gradient_balance_multipliers']=={'KL_TRAIN_interval':4}
+    c=json.loads((HERE/'lab_caltech20_L4_interval341_profile_20261024.json').read_text());functions()['validate'](c)
+    assert c['selection_interval']==[341,341]and c['expected_selected_update']==46 and c['reproduce_history_SHA256']
 
 
 def test_first_real_checkpoint_and_peak_disclosed_without_prediction_manipulation():
