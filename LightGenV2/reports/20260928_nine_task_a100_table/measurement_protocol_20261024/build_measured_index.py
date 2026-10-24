@@ -17,6 +17,7 @@ from audit_lsp import audit as audit_lsp
 from audit_lgvq_spatial_qwen import audit as audit_spatial_qwen
 from audit_abo_text_qwen import audit as audit_abo_text_qwen
 from audit_abo_text_ops import audit as audit_abo_text_ops
+from audit_abo_image_qwen import audit as audit_abo_image_qwen
 
 
 def main():
@@ -108,6 +109,24 @@ def main():
         TOPS_MAC_convention=3*text_ops['MAC_OP200']/1e12/text_seconds,
         TOPS_per_W_MAC_convention=3*text_ops['MAC_OP200']/1e12/text_energy)
     rows['04']['ops_status']='Qwen actual200-input dense-MAC subtotal validated, explicit non-MAC/unsupported; Ours pending; not full scalar OP'
+    # Immutable enrollment: two qualified original rounds, and only the missing
+    # third from the continuation. Never enroll the externally rejected old r3.
+    image_root=REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation'
+    image_paths=[image_root/'a100_image_input_inclusive_20261024_02'/f'qwen_repeat{i:02d}' for i in (1,2)]
+    image_paths.append(image_root/'a100_image_input_inclusive_20261024_03/qwen_repeat03')
+    images=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**audit_abo_image_qwen(p,args.abo_data_root)) for p in image_paths]
+    if [r['repeat'] for r in images]!=[1,2,3] or [r['common_input_tokens200'] for r in images]!=[13728]*3:
+        raise ValueError('Original image-query200x3 enrollment changed')
+    image_seconds=sum(r['continuous_wall_s'] for r in images);image_energy=sum(r['system_energy_j'] for r in images)
+    image_tokens=sum(r['common_input_tokens200'] for r in images)
+    rows['02']['qwen']=dict(status='independently_audited_600_calls',calls=600,unique_images=200,
+        sample_ms=image_seconds/.6,equivalent_frame_ms=image_seconds/.6,sample_j=image_energy/600,
+        equivalent_frame_j=image_energy/600,time_weighted_board_w=sum(r['board_energy_j'] for r in images)/image_seconds,
+        common_input_tokens_total=image_tokens,common_tokens_per_s=image_tokens/image_seconds,
+        full2400_reference_hit1=.7358333333333333,measured_first200_hit1=[r['measured_first200_hit1'] for r in images],
+        raw_references=images,scope='native image file to CPU100 full ranking, continuous199 gaps, zero dedicated inference warmup')
+    rows['07']['status']='input_identity_conflict_pending_human_version_choice; no new inference'
+    rows['07']['identity_note']='Selected .8880 PT579b19 uses old openmoji_grid_v2; .8120 Qwen PT0be775 uses layered scene TEST. Same numbered IDs are different input/target grids. Do not silently replace selected model or compare different datasets.'
     value=dict(protocol_id=protocol['protocol_id'],status='PARTIAL_NOT_FINAL_PAPER_TABLE',
         shared_qwen_temporal100=anchor,nine_metric_rows=list(rows.values()),
         reference_for_both_tables='shared_qwen_temporal100 in this exact index; never select another date or trial',
@@ -118,7 +137,8 @@ def main():
         raw_data_in_original_task_runs=True,power_no_idle_subtraction=True)
     with args.output.open('x',encoding='utf8') as stream:json.dump(value,stream,ensure_ascii=False,indent=2)
     print(json.dumps(dict(status=value['status'],shared_qwen100={k:anchor[k] for k in ('calls','sample_ms','sample_j','time_weighted_board_w')},
-                          complete_timing_energy_rows=['03','05','06'],pending_rows=['01a ours','01b ours','02','04 ours','07','08'],
+                          complete_timing_energy_rows=['03','05','06'],qualified_model_task_items=10,
+                          pending_rows=['01a ours','01b ours','02 ours','04 ours','07 both: version choice','08 both'],
                           operation_counts='04 Qwen dense-MAC subtotal validated; other matching-input replays pending')))
 
 
