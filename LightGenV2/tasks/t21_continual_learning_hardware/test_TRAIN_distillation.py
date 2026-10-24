@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from .distill_measured_TRAIN import validate_teacher,objective,fit,noise_penalty
+from .distill_measured_TRAIN import validate_teacher,objective,fit,noise_penalty,teacher_order
 from .refine_measured_ce import contrast_transform
 from .recheck_TRAIN_temporal import drift_summary
 
@@ -21,6 +21,13 @@ class TRAINDistillationTests(unittest.TestCase):
         for bad in (dict(m,TEST_used=True),dict(m,TEST_augmented=True),dict(m,checkpoint_SHA256='other')):
             with self.assertRaises(ValueError):validate_teacher(bad,'abc',ids,y,ids,y)
         with self.assertRaises(ValueError):validate_teacher(m,'abc',ids,y,ids[::-1],y)
+
+    def test_teacher_ID_join_is_order_only(self):
+        ids=np.arange(1000);reversed_ids=ids[::-1]
+        order=teacher_order(reversed_ids,ids)
+        np.testing.assert_array_equal(ids[order],reversed_ids)
+        with self.assertRaises(ValueError):teacher_order(np.zeros(1000,dtype=int),ids)
+        with self.assertRaises(ValueError):teacher_order(ids+1,ids)
 
     def test_fixed_family_fold_and_finite_fit(self):
         x=torch.rand(60,8,dtype=torch.float64)+.2;x/=x.mean(1,keepdim=True)

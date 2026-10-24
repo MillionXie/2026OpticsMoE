@@ -32,6 +32,15 @@ def validate_teacher(metadata,source_checkpoint,ids,labels,teacher_ids,teacher_l
         raise ValueError('Teacher and physical TRAIN record order differs')
 
 
+def teacher_order(physical_ids,teacher_ids):
+    physical_ids=np.asarray(physical_ids);teacher_ids=np.asarray(teacher_ids)
+    if (len(np.unique(physical_ids))!=len(physical_ids) or len(np.unique(teacher_ids))!=len(teacher_ids) or
+        len(physical_ids)!=len(teacher_ids) or set(physical_ids.tolist())!=set(teacher_ids.tolist())):
+        raise ValueError('TRAIN source IDs are not the same unique set')
+    lookup={int(value):i for i,value in enumerate(teacher_ids)}
+    return np.array([lookup[int(value)] for value in physical_ids],dtype=np.int64)
+
+
 def objective(logits,labels,teacher):
     ce=F.cross_entropy(logits,labels,label_smoothing=.02)
     kd=F.kl_div(F.log_softmax(logits/2.,1),F.softmax(teacher.detach()/2.,1),reduction='batchmean')*4.
@@ -86,8 +95,9 @@ def main():
     if len(train)!=1000 or len(test)!=1000 or set(tasks)!={'eurosat'} or x.shape!=(2000,784):
         raise ValueError('Fixed A TRAIN1000 / TEST1000 only')
     with np.load(a.teacher,allow_pickle=False) as data:
-        validate_teacher(metadata,report['checkpoint_sha256'],ids[train],y[train].numpy(),data['source_indices'],data['labels'])
-        target=torch.tensor(data['logits'],dtype=torch.float64)
+        order=teacher_order(ids[train],data['source_indices'])
+        validate_teacher(metadata,report['checkpoint_sha256'],ids[train],y[train].numpy(),data['source_indices'][order],data['labels'][order])
+        target=torch.tensor(data['logits'][order],dtype=torch.float64)
     if target.shape!=(1000,10) or not torch.isfinite(target).all():raise ValueError('Invalid TRAIN teacher logits')
     noise=None;noise_metadata=None
     if a.noise:
@@ -103,7 +113,7 @@ def main():
         if noise.shape!=(16,784) or not torch.isfinite(noise).all() or float(noise.mean(1).abs().max())>1e-5:
             raise ValueError('Fixed four TRAIN payloads times four repeats, original mean-one coordinates required')
     if float((x.mean(1)-1).abs().max())>1e-5:raise ValueError('Original mean-one features required')
-    source=json.loads((a.capture/report['stages'][0]/'00000/receipt.json').read_text())
+    source=json.loads((a.capture/report['stages'][0]/f'{int(train[0]):05d}'/'receipt.json').read_text())
     if source['manifest_sha256']!=metadata['input_manifest_identity']:raise ValueError('TRAIN manifest identity differs')
     a.out.mkdir(parents=True,exist_ok=False);started=time.time();f,h=internal_indices(y[train])
     transform=contrast_transform(x[train][f]);z=x[train]@transform.T;rows=[]

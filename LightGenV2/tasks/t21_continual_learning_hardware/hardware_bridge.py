@@ -195,6 +195,30 @@ def read_source(path,expected_sha,split,indices):
                     source_indices=a['source_indices'][indices].copy(),manifest=manifest)
 
 
+def acquisition_order(entries,order):
+    """Optional fixed full permutation, never changes IDs, labels or split."""
+    if order is None:return entries
+    if (not isinstance(order,list) or any(type(i) is not int for i in order) or
+        len(order)!=len(entries) or sorted(order)!=list(range(len(entries)))):
+        raise ValueError('Acquisition order must be an exact full permutation')
+    return [entries[i] for i in order]
+
+
+def TRAIN_control_indices(entries,references=None):
+    indices=[i for i,e in enumerate(entries) if e['split']=='train']
+    if len(indices)<2:raise ValueError('Two TRAIN-only stage controls required')
+    if references is None:return [indices[0],indices[-1]]
+    if len(references)!=2:raise ValueError('Exactly two fixed TRAIN control references required')
+    selected=[]
+    for ref in references:
+        if ref.get('split','train')!='train':raise ValueError('TEST control forbidden')
+        matches=[i for i in indices if entries[i]['task']==ref['task'] and entries[i]['local_index']==ref['local_index']]
+        if len(matches)!=1:raise ValueError('Ambiguous or missing TRAIN control identity')
+        selected.append(matches[0])
+    if selected[0]==selected[1]:raise ValueError('Distinct TRAIN control identities required')
+    return selected
+
+
 @torch.no_grad()
 def capture(package,cfg,out,pilot=False):
     Bench,LOCK,_,drive,warp=hardware(cfg)
@@ -223,6 +247,7 @@ def capture(package,cfg,out,pilot=False):
             entries.append(dict(task=spec['task'],split=spec['split'],local_index=int(ix[k]),
                 source_index=int(data['source_indices'][k]),label=int(data['y'][k]),amplitude=data['x'][k],
                 manifest_sha256=data['manifest']['identity_sha256']))
+    if not pilot:entries=acquisition_order(entries,package.get('entry_order'))
     order=model.STAGES if model.architecture=='moe' else model.STAGES[1:]
     reused=package.get('premeasured_stages',{})
     if set(reused)-set(order):raise ValueError('Unknown premeasured boundary')
@@ -268,10 +293,9 @@ def capture(package,cfg,out,pilot=False):
                         same_PT=True,same_hardware=True,all_source_ids_and_raw_CCD_BMP_SHA_verified=True))
                     continue
                 if package.get('TRAIN_stage_signal_calibration',False):
-                    train_indices=[i for i,e in enumerate(entries) if e['split']=='train']
-                    if len(train_indices)<2:raise ValueError('TRAIN-only stage calibration needs two source inputs')
+                    train_indices=TRAIN_control_indices(entries,package.get('signal_control_TRAIN_records'))
                     examples=[]
-                    for index in (train_indices[0],train_indices[-1]):
+                    for index in train_indices:
                         key=f'{index:05d}'
                         prefix={s:torch.from_numpy(np.load(stage_paths[s]/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
                         amplitude,phase,_=model.payload(torch.from_numpy(entries[index]['amplitude'])[None],stage,prefix)

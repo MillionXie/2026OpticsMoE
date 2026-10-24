@@ -1,9 +1,19 @@
 import unittest
 import numpy as np
-from .hardware_bridge import native_image,crop_native,guard,signal
+from .hardware_bridge import native_image,crop_native,guard,signal,acquisition_order,TRAIN_control_indices
 
 
 class TestHardware(unittest.TestCase):
+    def test_fixed_order_preserves_record_identity(self):
+        rows=[dict(split='train' if i<2 else 'test',task='eurosat',local_index=i%2,label=i%2) for i in range(4)]
+        ordered=acquisition_order(rows,[3,0,2,1])
+        self.assertEqual(ordered,[rows[3],rows[0],rows[2],rows[1]])
+        self.assertEqual(TRAIN_control_indices(ordered,[dict(task='eurosat',local_index=0),dict(task='eurosat',local_index=1)]),[1,3])
+        self.assertIs(acquisition_order(rows,None),rows)
+        for bad in ([0,0,2,3],[0,1,2],[-1,0,1,2],[False,1,2,3]):
+            with self.assertRaises(ValueError):acquisition_order(rows,bad)
+        with self.assertRaises(ValueError):TRAIN_control_indices(ordered,[dict(task='eurosat',local_index=0,split='test'),dict(task='eurosat',local_index=1)])
+
     def test_native_panels(self):
         x=np.zeros((1016,1016),np.uint8);x[17,29]=87
         amplitude=native_image(x);phase=native_image(x,True)
