@@ -92,7 +92,7 @@ def fit_head(head, x, y, val_x, val_y, cfg, record):
                 raise RuntimeError('Nonfinite full-batch readout loss')
             loss.backward()
             return loss
-        loss = float(optimizer.step(closure()).detach())
+        loss = float(optimizer.step(closure).detach())
         record('lbfgs', step, loss)
     return head
 
