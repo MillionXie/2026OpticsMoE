@@ -19,6 +19,8 @@ from torch.nn import functional as F
 
 from .model import build_model
 from .subset import memory_indices
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_lifelong_moe import load_dataset
+from LightGenV2.tasks.t16_zero_phase_ccd_lifelong.train_other_tasks import clevr_pairwise_loss
 
 TASKS=('eurosat','clevr','speech_binary','physical_binary_raw')
 
@@ -109,6 +111,7 @@ def main():
     p.add_argument('--val',type=Path,required=True)
     p.add_argument('--test',type=Path,required=True)
     p.add_argument('--gpu-uuid',required=True)
+    p.add_argument('--source-protocols',type=Path,help='Full original TRAIN for server adaptation only; hardware TRAIN remains fixed1000')
     p.add_argument('--out',type=Path,required=True)
     a=p.parse_args();c=json.loads(a.config.read_text())
     a.out.mkdir(parents=True,exist_ok=False)
@@ -119,6 +122,8 @@ def main():
         gpu=gpu_gate(c,a.gpu_uuid);device=torch.device('cuda:0')
         put(a.out/'status.json',dict(state='loading_TRAIN_VAL',gpu=gpu,started=began))
         train=load_data(a.train,'train');val=load_data(a.val,'val')
+        source_paths=({k:Path(v) for k,v in json.loads(a.source_protocols.read_text()).items()}
+                      if a.source_protocols else None)
         # TEST is deliberately not loaded until the phase checkpoint is selected.
         memories={n:memory_indices(train[n]['manifest'],c['memory_records_per_old_task']) for n in TASKS}
         put(a.out/'memory_manifest.json',{n:dict(indices=ix.tolist(),
@@ -138,8 +143,8 @@ def main():
                        for q in Path(__file__).parent.glob('*.py')}
         put(a.out/'protocol.json',dict(config=c,config_sha256=sha(a.config),source_sha256=source_hashes,
             architecture=a.architecture,gpu=gpu,original_A_sha256=source['sha256'],
-            memory_scope='same fixed stratified 300 original TRAIN records per old task; one cycle',
-            current_scope='new fixed stratified TRAIN1000, not original full-current dataset',
+            memory_scope=f"same fixed stratified 300 original TRAIN records per old task; {c['memory_cycles_per_epoch']} cycles per epoch",
+            current_scope='original full TRAIN, original frozen front, encoded on demand' if source_paths else 'initial small-budget TRAIN1000 pilot',
             distillation='previous native parent on old TRAIN only' if a.architecture=='moe' else 'none',
             evaluation_scope='fixed stratified1000, VAL selection; TEST evaluated after selection only',
             hardware_admitted=False,phase_response='ideal quantized phase, linearVoltage LUT is not a measured phase calibration'))
@@ -149,7 +154,16 @@ def main():
             names=TASKS[:phase];teacher=copy.deepcopy(model).eval() if phase>1 and a.architecture=='moe' else None
             model.configure_stage(phase)
             immutable=frozen(model);gain_sha=tensor_sha(model.display_gains)
-            selection={n:(np.arange(1000) if n==names[-1] else memories[n]) for n in names}
+            current=None
+            if source_paths:
+                put(a.out/'status.json',dict(state='loading_full_current_TRAIN',phase=name,updated=time.time(),gpu=gpu))
+                expected=identity['models'][3]['config']['protocol_sha256'][names[-1]]
+                if sha(source_paths[names[-1]])!=expected or sha(source_paths['vision'])!=train[names[-1]]['manifest']['vision_checkpoint_sha256']:
+                    raise ValueError('Full TRAIN protocol or frozen front changed')
+                current=load_dataset(source_paths,names[-1],'train',vision_checkpoint=source_paths['vision'],device=device)
+                expected_count=(15998,140000,12526,140800)[phase-1]
+                if len(current)!=expected_count:raise ValueError('Full original TRAIN count changed')
+            selection={n:(np.arange(len(current) if current is not None else 1000) if n==names[-1] else memories[n]) for n in names}
             cached_teacher={}
             if teacher is not None:
                 for n in names[:-1]:
@@ -175,20 +189,37 @@ def main():
                 epoch_start=time.time();model.train();rng=np.random.default_rng(c['seed']+phase*1000+epoch)
                 batches=[]
                 for n in names:
-                    perm=rng.permutation(len(selection[n]))
-                    batches.extend((n,perm[s:s+c['batch_size']]) for s in range(0,len(perm),c['batch_size']))
+                    cycles=1 if n==names[-1] else c['memory_cycles_per_epoch']
+                    for _ in range(cycles):
+                        if n!='eurosat':
+                            groups=rng.permutation(len(selection[n])//2)
+                            perm=(groups[:,None]*2+np.arange(2)).reshape(-1)
+                        else:perm=rng.permutation(len(selection[n]))
+                        batches.extend((n,perm[s:s+c['batch_size']]) for s in range(0,len(perm),c['batch_size']))
                 rng.shuffle(batches);loss_sum=0.;correct=0;seen=0
                 for n,relative in batches:
-                    ix=selection[n][relative];x=train[n]['x'][ix].to(device);y=train[n]['y'][ix].to(device)
+                    ix=selection[n][relative]
+                    if n==names[-1] and current is not None:
+                        x=current.get_batch(ix,device);y=torch.as_tensor(np.asarray(current.labels)[ix],device=device,dtype=torch.long)
+                    else:x=train[n]['x'][ix].to(device);y=train[n]['y'][ix].to(device)
                     optimizer.zero_grad(set_to_none=True);logits=model(x)['logits']
                     loss=F.cross_entropy(logits,y,label_smoothing=c['label_smoothing'])
+                    if n=='clevr' and c.get('clevr_pairwise_weight',0):
+                        loss=loss+c['clevr_pairwise_weight']*clevr_pairwise_loss(logits,y)
+                    if n=='physical_binary_raw' and c.get('physical_pairwise_weight',0):
+                        loss=loss+c['physical_pairwise_weight']*clevr_pairwise_loss(logits,y)
                     if n in cached_teacher:
                         temp=c['distillation_temperature'];old=cached_teacher[n][relative].to(device)
                         kd=F.kl_div(F.log_softmax(logits/temp,1),F.softmax(old/temp,1),reduction='batchmean')*temp*temp
                         loss=loss+c['distillation_weight']*kd
+                    if a.architecture=='moe' and n!=names[-1]:loss=loss*c.get('moe_old_task_loss_weight',1.)
                     if not torch.isfinite(loss):raise RuntimeError('Nonfinite TRAIN loss')
                     loss.backward();torch.nn.utils.clip_grad_norm_(params,1.);optimizer.step()
                     loss_sum+=float(loss.detach())*len(y);seen+=len(y);correct+=int((logits.argmax(1)==y).sum())
+                    if seen%c.get('progress_every_records',4000)<len(y):
+                        put(a.out/'status.json',dict(state='training',phase=name,epoch=epoch,
+                            TRAIN_seen=seen,TRAIN_total=sum(len(selection[z])*(1 if z==names[-1] else c['memory_cycles_per_epoch']) for z in names),
+                            running_loss=loss_sum/seen,updated=time.time(),gpu=gpu))
                 validation=evaluate(model,val,names,device,c['batch_size']);value=score(validation)
                 if frozen(model)!=immutable or tensor_sha(model.display_gains)!=gain_sha:
                     raise RuntimeError('Old expert or fixed display gain changed')
