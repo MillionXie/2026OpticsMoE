@@ -1,5 +1,72 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 06:03补记：原视频Qwen离线算量接入，两套缺项成本后继已接全
+
+九行成本仍13/18、余5项；多baseline36/36和额外80GB同机Qwen3/3不变。
+正式准确度仍用已确认完整TEST，200只测时间/能量及核输出；两份新正式Excel尚无。
+租机全部完成且raw已安全取回，不再连接任何租机端点。
+
+LGVQ正式入口`measure_lgvq_cost.py`/`audit_lgvq_cost.py`/`run_lgvq_cost.py`及测试
+`52596ee7b`已三端发布，15项无模型测试双方通过。原视频完整前端wall只计一次，
+保留原CPU feature return/量化及H2D，原完整NN/真实frame_merger仍实际执行；
+Temporal200计13个16×4完整相干场，末场8 padding全收费，预测分母200，每场6pass，
+等效帧成本除4；Spatial仍独立原raw224采帧和FrameStem192。NN形状随成本保存，
+没有新增算量神经回放。该入口必须先核真实原四field CPU proof，再同锁等待T12成本退出、
+12次连续idle及私有MPS100才GPU；不是CPU合同已通过或新增合格成本。
+
+原Qwen视频图算量源`936d7713a`只读原native config和已有600条processor形状/IDs/masks，
+24Vision/28Language/GQA QKAV、按时间片独立视觉attention及main+3 deepstack merger均计。
+原`forward_batch`实际还做一次最后pooled向量的完整词表投影，再做五行质量头及分值dot，
+不是每个语言token都投整个词表，也不能漏掉该实际投影。全部组为2.455071419658 TOP/video；
+40GB100/50为6.440034408163435/6.380051434301322 TOPS，
+0.01655203650647274/0.016271295203744734 TOPS/W；额外80GB100为
+9.456948789217039 TOPS/0.022447296196140953 TOPS/W，仍分平台而非替换共享40GB锚。
+这是dense-NN MAC约定小计，非MAC明确另列，不宣称完整scalarOP。零新GPU/模型前向。
+local `lgvq_qwen_network_shape_MAC_02.json` SHA
+`ed2210999f160a621ecad96b373b3f71270d68d7129acbf5215a9a6030c20a69`；
+server只重算其已有40GB两组（租机raw不上传），原件server_02 SHA
+`06c4b8047d2c485fdfce543368dce78c37e333888de838d7e62d37119a221238`已取回，
+这两组解析对象完全相同；9项公式测试双方通过。
+
+builder/receipt `7bb4d9519`强制原reportSHA/OP分子/时间焦耳分母匹配，17项本地索引相关测试通过。
+本地全量原raw重放`measured_index_partial_13.json` SHA
+`c8d43cfa2d092a187f22e77152d772f6b3e912098802d1778cdad105a958522b`，只为01aQwen及
+共享锚增加此NN算量；其他八行、全部原成本/正式精度与partial12解析对象全同。
+`temporal_matrix_partial_06.json` SHA
+`a7b29b6050277b703e2abc01478597e63d1bcc3773b3ec05a6312001bbc72ffc`，只增加Qwen两档及
+80GB额外锚NN算量，其余原24/12成本、性能及路径全同05；旧索引保留，server没有生成私有新索引。
+首次本地聚合误把整个Anaconda site-packages放入子进程PYTHONPATH导致ABI不兼容，输出前停止；
+已去掉该环境覆盖，使用原builder已有的纯yaml append和bundled JPEG环境完整成功，没有改包/审计。
+
+T08旧`_03`在短暂空档后实际入场加载bank worker2084989，MPS server2085751；
+约05:55:45父加载观察查询报`Cannot send command to MPS control daemon process`，停止自己后链退出。
+此前原日志有并发控制查询，`Cmd:quit`发生在随后清理阶段，不据此编造daemon先崩溃/外人杀进程根因。
+bank状态`encoding_original100_titles`但未生成bank_receipt/NPZ、completed空，不能据samples0断言0神经调用。
+controller1898302、worker2084989/server2085751已退出，private control无daemon；
+`post_MPS_query_failure_release_check01.json` SHA
+`f0fb007d453cfa1fb704ef522540c84421ded3a9bab8940076fcd1d43053f7d8`。
+后续实际外部2081465/hmh于05:52:25启动`verify_endtoend.py`，14912MiB，单独记录而不倒推此前空卡时也占。
+旧bank缺少私有guard绑定后交接标记，父观察因此持续重复查询；修订`36e9fc0fa`仅在bank原编码前
+保存绑定标记、将加载观察交给已绑定的独立worker guard，编码后先`guard.fast()`确保历史错误仍致拒绝。
+不改原编码数学/模型/前端/250ms。15相关无模型测试双方通过；这是缓解重复查询并补强错误保留，
+精确上游IPC故障原因仍未证实。原CPU合同直接复用，不重做。
+
+旧6队列1898302/1898337/1939547/1980244/2030868/2075336均stopped退出，无合格bank/轮或CPUproof。
+六根分别12/1/1/2/2/1原文件92551/1407/2414/7417/7208/4773B，
+全经`backup_receipt_MPS_predecessor_stop01.json`逐SHA取回，六外置日志也原SHA取回，不再等待/重启旧PID。
+只补缺失的新不可变有界链，deadline约1792886381至1792886383（约08:00北京时间）：
+T08 `a100_image_student_input_inclusive_20261025_04` controller2098596；
+T12 Ours CPU `a100_live_frontend_contract_20261025_05` 2098662；
+T12 Qwen CPU `a100_qwen_live_frontend_contract_20261025_02` 2098675；
+LGVQ CPU `a100_lgvq_live_frontend_contract_20261025_02` 2098702；
+T12成本 `a100_input_inclusive_20261025_02` 2098703；
+LGVQ成本 `a100_lgvq_input_inclusive_20261025_02` 2098706。
+后继全部显式重绑新根，原CPU输入、图库和已合格测量不重推；前驱失败不无限等待。
+新LGVQ成本根`admission01.json` 29634B，SHA
+`22d9345eaa4c4ff1d5323f87e1df9ee3e459e5e14136ee4d7b6a919a6ab86bcb`已原SHA取回，
+记录六命令/源/启动PID；这只是排队收据，不是CPU/GPU测量通过。
+server已精确ff到36e9fc0fa；B100三暂存未动，后续每次重核实际HEAD，不盲同步peer源。
+
 ## 2026-10-25 05:30补记：T12相同文件输入已核准，正式成本后继已挂起而非已开跑
 
 九行成本仍13/18，余5项；多baseline36/36和额外80GB同机Qwen3/3不变。
