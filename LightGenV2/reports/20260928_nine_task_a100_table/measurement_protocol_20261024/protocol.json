@@ -1,6 +1,6 @@
 {
   "protocol_id": "lightgen_qwen_input_inclusive_200x3_20261024_v1",
-  "status": "user_approved_measurements_pending",
+  "status": "user_approved_measurements_in_progress",
   "official_measurements_authorized": true,
   "date": "2026-10-24",
   "tables": {
@@ -37,7 +37,7 @@
       "hardware_projection": "replace only optical numerical propagation by confirmed hardware pass time; retain all required frontend, neural and serial handling stages; mark any unmeasured interval missing, not zero"
     },
     "gpu_neural_stages": ["text_embedding", "vision_patch_embedding_and_position", "input_adapter", "learned_amplitude_encoding", "router_neural_arithmetic", "CCD_nonlinearity_and_learned_readout", "bridge_merger", "output_adapter", "actual_decoder_or_task_head"],
-    "parallel_residual": "record separately; no repeated serial sum if covered by optical path; if not covered, charge its exposed critical-path wait; its operations are separately labeled",
+    "parallel_residual": "APPROVED accounting: record separately, exclude its time/energy from charged optical projection; retain executed operations separately. This is not a claim that all residuals have physically demonstrated complete overlap.",
     "fusion_layout": "GPU NN-only subtotal excludes pure layout/fusion by request; actual required elapsed time is still retained separately in E2E or explicitly missing in projection",
     "temporal_parallel_capacity": 16,
     "temporal_frames_per_video": 4,
@@ -103,7 +103,7 @@
     "peer_title":"保住光路性能-图五GPU利用率",
     "peer_thread_id":"01a13d93-9edb-78e1-808b-373c959a5315",
     "request_sent":true,
-    "acknowledgement":"peer directly verified human authorization; both coordination-only, no official runs; agree file-input p0-to-r199 continuous wall, CUDA diagnostic, same canonical Qwen temporal MPS100 runs",
+    "acknowledgement":"User-approved measurements began; on2026-10-24 human further required ONE chat to own both tables. Thread01a061e2-6f88-7913-87f5-b632000e4c83 now owns all measurement/source/aggregation; peer handed over existing immutable Qwen runs and stopped launching/editing. Both tables reference the same canonical Qwen temporal MPS100 triple.",
     "receipt":"LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/MEASUREMENT_COORDINATION_20261024.md",
     "source_commit":"22c6389c5",
     "old_trials_with_complete_timestamps_and_power":36,
