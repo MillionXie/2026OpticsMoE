@@ -82,7 +82,11 @@ def derive():
             # not to an assumed currently edited class. No imports execute it.
             for name in GRAPH_SOURCES:
                 blob=subprocess.check_output(['git','show',identity['source_commit']+':'+name],cwd=REPO)
-                if hashlib.sha256(blob).hexdigest()!=sha(REPO/name):raise ValueError('Read original recorded graph before changing formulas')
+                current=subprocess.check_output(['git','show','HEAD:'+name],cwd=REPO)
+                # Windows checkout may have CRLF. The runtime binding remains
+                # the exact original Linux Git bytes, never a normalized SHA.
+                if blob!=current or blob!=(REPO/name).read_bytes().replace(b'\r\n',b'\n'):
+                    raise ValueError('Read original recorded graph before changing formulas')
                 source_bindings[name]=hashlib.sha256(blob).hexdigest()
             with (folder/'samples.csv').open(encoding='utf-8-sig',newline='') as f:rows=list(csv.DictReader(f))
             if len(rows)!=200:raise ValueError('All original200 shapes required')
