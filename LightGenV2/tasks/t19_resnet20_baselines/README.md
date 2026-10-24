@@ -5,7 +5,7 @@
 用户再次要求继续OpenMoji/LSP优化并处理ABO高分。科学目标仍如实核查，不承诺TEST必进区间。
 本轮只写T19，不改其他任务。当前LSP的61..90训练不中断、不重复启动，等待该固定末轮结果。
 OpenMoji61..90的TRAIN loss从0.38836降到0.13623，81..90仍下降约14.45%；据TRAIN持续改善
-固定另加30轮至120，保留last90和完整历史TEST观察，不到0.5就停、不循环搜轮数。
+固定另加30轮至120，保留last90和完整历史TEST观察，不以达到0.5作为提前停止条件，不循环搜轮数。
 
 新配置`configs/openmoji_continue120_20261024.json`，入口`continue_openmoji120.py`：严格加载
 last90 SHA`68665ec4ca2697dbb656b9d00ebe1b7c2f31fb99ecb5590792048fa09b9172a1`及原AdamW，
@@ -23,6 +23,19 @@ ABO的PCA64独立16项审核通过，TRAIN协方差特征分解的前64维投影
 查询的同SKU/异SKU余弦margin、商品/标题重叠及正例数；0新神经前向、0训练、无查询筛选、
 不改数据划分或任一原成绩。高余弦仅表示特征相似，不等于字节重复/泄漏证据。
 若主要是已见SKU闭集容易，合理的更难评测需所有Ours/Qwen/基线同协议重评，不能只难化基线。
+
+本次恢复/门槛/采样连续性及协议诊断检查共9项新增测试通过；连同资源/原损失相关回归已通过。
+新OpenMoji恢复短测已实际在GPU4通过：64条TRAIN、AdamW4710→4712、0TEST，正式已重新
+加载父90并在GPU4进入91..120（历史正式启动PID202542，只作身份线索，实时须核命令）。
+监管器启动PID201817、CPU ABO诊断201818，收据`runs/control/openmoji120_abo_diagnosis_launch_20261024.json`。
+原LSP启动PID167270/GPU6完全保留；此处PID不替代实际进程/进度核查。资源未超过原四卡。
+
+SALICON小头基础55项独立检查通过，进一步全5000个保存7×7头logits对原GT全部native指标
+复算也通过：CC0.6880028387，逐图CC最大误差3.58e-7，无新encoder/head前向或优化。
+证据`salicon_optimization_cacheclone1_last_audit_20261024.json`及
+`salicon_optimization_cacheclone1_maps_audit_20261024.json`，后者SHA
+`cfc1e4e770304f6cdfef19280503db81f050079a87c1dc9fe60db6e6f19f5fad`。
+这证明保存输出与原GT指标一致；没有重复神经提取，不能把它声称成第二次全量encoder验证。
 
 ## 2026-10-24 用户追加：同卡并行与SALICON及时评估
 
