@@ -19,6 +19,9 @@
 原双架构队列已启动，当前未中断LightGen；D2NN的运行包已完整保留并撤出队列所引用的路径，另存`d2nn_A_package.awaiting_user_approval.json`。因此旧队列完成LightGen后会在D2NN读取包之前安全停止，不会打开其SDK；这是人工范围收缩，不是光路数值故障。完整范围收据在原run的`stageA_user_scope.json`，不通过修改活跃源码实现暂停。
 硬件接口pilot72帧仅为旧诊断A模型的TRAIN24，证明接口可用，不是正式A的精度或可复用CCD；正式新PT重新执行控制及全量采集。新2ms会话实际曝光1999.8 µs，坐标、方向和器件LUT身份固定；实拍结果出炉前不将软件验证等同于光路性能。
 
+用户追加要求提高LightGen适配性能，不把76.70%作为最终上限。先用独立入口`refine_native_readout.py`和`config_A_readout_refine_20261024.json`对正式A作有界末端优化：全部光学状态、增益和冻结前端不变，缓存原完整TRAIN15998及固定VAL1000的784维特征，仅优化原共享Linear的7840参数；120轮余弦降学习率AdamW后30步确定性全批量LBFGS，TRAIN特征噪声/dropout仅用于训练。VAL包含E0保底选模，固定TEST仅在最终选定后完整严格CPU复核，不使用TEST教师或TEST梯度。
+这只是A阶段候选，不把独立改好的各阶段拼成新的终身学习链；后续链仍须从确认的A父版本顺序训练。当前A实拍不中断、源码和PT不热替换；候选若仅读出改变，冻结光学身份须逐项SHA验证后才能评价现有CCD，不能仅因全PT SHA不同或相近就默认混用。若需要更新光学相位，则旧CCD仅保留作旧版本证据，受影响的后继必须另采。无新完整结果前不承诺精度提升。
+
 下表为**完整TEST宏平均召回率**，不是普通accuracy。
 
 | 学习阶段 | MoE EuroSAT/CLEVR/Speech/Physical | D2NN EuroSAT/CLEVR/Speech/Physical |

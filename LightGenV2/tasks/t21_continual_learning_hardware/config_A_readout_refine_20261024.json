@@ -1,0 +1,22 @@
+{
+  "schema": "T21_A_native8_frozen_optics_readout_refinement_v1",
+  "seed": 20261024,
+  "epochs": 120,
+  "batch_size": 128,
+  "cache_batch_size": 8,
+  "learning_rate": 0.001,
+  "minimum_learning_rate": 0.00005,
+  "weight_decay": 0.001,
+  "label_smoothing": 0.02,
+  "TRAIN_feature_noise_std": 0.01,
+  "TRAIN_feature_dropout": 0.02,
+  "LBFGS_steps": 30,
+  "LBFGS_anchor_strength": 0.001,
+  "selection": "fixed VAL1000 only; baseline E0 included",
+  "TEST_gradients": false,
+  "TEST_selection": false,
+  "frozen": "all state except original shared_head.weight (7840 parameters)",
+  "hardware_reuse": "same optical state, display gains and source identity required; no new optical propagation parameters",
+  "allowed_GPU_UUIDs": ["GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"],
+  "per_process_GPU_memory_fraction": 0.4
+}
