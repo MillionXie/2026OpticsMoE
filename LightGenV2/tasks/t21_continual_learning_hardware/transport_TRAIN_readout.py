@@ -35,7 +35,9 @@ def normalized_transport(source, mapping):
 def cache(a):
     model, cp = load_checkpoint(a.checkpoint, a.checkpoint_sha256)
     if cp['stage'] != 1: raise ValueError('Only frozen corresponding A S1')
-    gpu = gpu_gate(dict(per_process_GPU_memory_fraction=.4), a.gpu_uuid)
+    gpu = gpu_gate(dict(per_process_GPU_memory_fraction=.4,
+        allowed_GPU_UUIDs=['GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd',
+                          'GPU-1b963983-7909-af6e-0528-f0f0661ab549']), a.gpu_uuid)
     paths = json.loads(a.source_protocols.read_text())
     fixed = json.loads((a.train / 'manifest.json').read_text())
     if fixed['split'] != 'train' or sha(paths['eurosat']) != fixed['source_protocol_sha256']:
