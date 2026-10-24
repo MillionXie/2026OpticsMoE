@@ -284,6 +284,7 @@ def capture(package,cfg,out,pilot=False):
                     stage_noise=stage_signal_admission(bench,layer/'TRAIN_signal_admission',examples,drive,warp,mask,
                         stage,hardware_identity(cfg),model)
                 for i,entry in enumerate(entries):
+                    frame_start=time.monotonic()
                     key=f'{i:05d}';folder=layer/key;folder.mkdir()
                     prefix={s:torch.from_numpy(np.load(stage_paths[s]/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
                     x=torch.from_numpy(entry['amplitude'])[None]
@@ -305,6 +306,7 @@ def capture(package,cfg,out,pilot=False):
                         prefix_CCD_sha256={s:sha(stage_paths[s]/key/'ccd.npy') for s in prefix},
                         raw_sha256=sha(folder/'raw.npy'),ccd_sha256=sha(folder/'ccd.npy'),
                         signal=quality,metadata=metadata,hardware_sha256=package['hardware_sha256'])
+                    row['workflow_frame_ms']=(time.monotonic()-frame_start)*1000
                     put(folder/'receipt.json',row);rows.append(row)
                     put(out/'progress.json',dict(stage=stage,stage_frames=i+1,stage_total=len(entries),
                         total_frames=len(rows),expected_frames=len(entries)*len(order),latest=row,updated=time.time()))
@@ -316,11 +318,14 @@ def capture(package,cfg,out,pilot=False):
             np.savez_compressed(out/'features.npz',features=np.stack(features),labels=[r['label'] for r in entries],
                 tasks=[r['task'] for r in entries],splits=[r['split'] for r in entries],source_indices=[r['source_index'] for r in entries])
         if {k:tensor_sha(v) for k,v in model.state_dict().items()}!=frozen:raise RuntimeError('Frozen deployed PT changed')
+        new_frames=sum('reused_from' not in r for r in rows);elapsed=time.time()-started
         put(out/'report.json',dict(passed=True,pilot=pilot,records=len(entries),frames=len(rows),
             stages=list(order),features_sha256=sha(out/'features.npz'),checkpoint_sha256=package['checkpoint_sha256'],
             new_network_frames=sum('reused_from' not in r for r in rows),reused_network_frames=sum('reused_from' in r for r in rows),
             extra_TRAIN_control_frames=7*(len(order)-len(reused)) if package.get('TRAIN_stage_signal_calibration',False) else 0,
-            seconds=time.time()-started,seconds_per_frame=(time.time()-started)/len(rows),
+            seconds=elapsed,seconds_per_frame=elapsed/new_frames if new_frames else None,
+            timing_scope='current segment per NEW network frame, including calibration/IO; prior prefix acquisition time excluded',
+            steady_workflow_frame_ms=[r['workflow_frame_ms'] for r in rows if 'reused_from' not in r],
             TRAIN_records=sum(r['split']=='train' for r in entries),EVAL_records=sum(r['split']=='test' for r in entries),
             SDK_released=True,interlayer_training=False,full_physical_prefix=True))
     except BaseException:
