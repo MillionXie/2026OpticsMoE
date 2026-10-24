@@ -1,0 +1,119 @@
+{
+  "protocol_id": "lightgen_qwen_input_inclusive_200x3_20261024_v1",
+  "status": "user_approved_measurements_pending",
+  "official_measurements_authorized": true,
+  "date": "2026-10-24",
+  "tables": {
+    "nine_metric_rows": {"mps_percent": [100], "electronic_batch": 1},
+    "lgvq_temporal_multi_baseline": {"mps_percent": [50, 100], "electronic_batch": 1},
+    "shared_measurement_key": ["protocol_id", "task", "model_source_sha256", "checkpoint_sha256", "input_manifest_sha256", "gpu_uuid", "mps_percent", "precision", "repeat_id"],
+    "qwen_temporal_mps100": "one canonical set of raw runs referenced by both tables, no historical override"
+  },
+  "sampling": {
+    "target_calls_per_repeat": 200,
+    "repeats": 3,
+    "repeat_process": "fresh process with loaded model, no dummy inference or explicit inference warmup",
+    "selection": "fixed first 200 TEST sample IDs in sealed order; same IDs across models and repeats where defined",
+    "short_test_exception": "APPROVED: ABO text-query TEST has 100 distinct queries, two complete passes per repeat for200 timed calls, quality denominator100 unique queries",
+    "performance": "preserve full-TEST reference metric separately; recompute measured-subset metric from predictions and label its denominator",
+    "first_sample": "retained; later calls naturally warm; not 200 independent cold starts",
+    "no_optimization_changes": "retain original frame selection, processor, dtype, precision, graph, checkpoint, heads, search and output semantics"
+  },
+  "e2e": {
+    "proposed_input_boundary": "before reading the sample image/video file or receiving its UTF-8 text; decode, sampling, processor, CPU tokenizer, H2D, embeddings and output conversion included",
+    "output_boundary": "task result is ready to the caller: CPU score, retrieval result, keypoints, saliency map, edited output or generated image as defined for that task",
+    "total_seconds": "return_last_monotonic - input_start_first_monotonic",
+    "include": ["file_read", "decode", "frame_sampling", "resize_crop", "processor_tokenizer", "H2D", "text_and_patch_embedding", "position_preparation", "all_required_backbone_and_neural_heads", "bridge_merger", "search_or_output_postprocessing", "synchronized_completion", "CPU_result_return", "all_internal_inter_sample_gaps"],
+    "exclude": ["model_and_weight_loading", "dataset_download", "one_time_offline_gallery_index_build", "writing_final_reports"],
+    "gallery": "same online-query boundary for both; fixed gallery preparation separately recorded, never hidden per-query recomputation",
+    "cache": "record actual OS cache and loader state; no selective flush, forced cache warming or differing caches chosen to improve a ratio",
+    "diagnostics": "APPROVED: synchronized wall is primary for baseline and LightGen included neural stages; paired CUDA Events retained for the difference, no selection of minimum or faster statistic after seeing results",
+    "logging": "buffer timestamps and predictions, export after window; existing genuine request gaps retained; do not add sleeps or flush Excel in each request"
+  },
+  "lightgen": {
+    "scope_separation": {
+      "software_e2e": "actual full simulation wall includes FFT simulation; diagnostic only, not physical optical inference time",
+      "physical_e2e": "requires actual device input/control/readout timestamps; do not claim measured E2E without them",
+      "hardware_projection": "replace only optical numerical propagation by confirmed hardware pass time; retain all required frontend, neural and serial handling stages; mark any unmeasured interval missing, not zero"
+    },
+    "gpu_neural_stages": ["text_embedding", "vision_patch_embedding_and_position", "input_adapter", "learned_amplitude_encoding", "router_neural_arithmetic", "CCD_nonlinearity_and_learned_readout", "bridge_merger", "output_adapter", "actual_decoder_or_task_head"],
+    "parallel_residual": "record separately; no repeated serial sum if covered by optical path; if not covered, charge its exposed critical-path wait; its operations are separately labeled",
+    "fusion_layout": "GPU NN-only subtotal excludes pure layout/fusion by request; actual required elapsed time is still retained separately in E2E or explicitly missing in projection",
+    "temporal_parallel_capacity": 16,
+    "temporal_frames_per_video": 4,
+    "200_video_tail": "13 physical fields, last field 8 valid videos plus 8 padding; full field cost charged, padding excluded from predictions and sample denominator",
+    "batch_one_choice_pending": "APPROVED: retain original sixteen-video full coherent physical field; batch1 refers to one field for LightGen and one video for electronic baselines; final per-frame is explicitly amortized equivalent",
+    "optical": {"slm_ms": 0.714, "exposure_ms": 0.300, "additional_ccd_ms": 0.0307, "per_pass_ms": 1.0447, "roi": [812, 812], "basis": "user and device technician confirmed timing parameters, not a new wall-clock device measurement; exact manual page not yet bound"},
+    "online_query_pass_exception": "ABO .8600 text-to-image retrieval title query uses three language passes; gallery image uses six passes offline"
+  },
+  "units": {
+    "video_seconds": "sum(repeat_total_seconds)/(3*valid_video_count_per_repeat)",
+    "video_joules": "sum(repeat_total_joules)/(3*valid_video_count_per_repeat)",
+    "equivalent_frame": "video cost divided by actual sampled frame count, four for LGVQ; an amortized equivalent, not independent frame-task latency",
+    "image": "one image query or output is one sample/frame-equivalent with scope labeled",
+    "text_only_query": "one query as the native unit; any one-image-equivalent convention explicitly labeled, not a physical input frame",
+    "headline": "no sixteen-video multiplication; retain original workload fields and single-video results in source data"
+  },
+  "energy": {
+    "optical_devices_w": 80.358,
+    "ours_controller_w": 41.388,
+    "ours_gpu_fixed_w": 62.842,
+    "baseline_chassis_proxy_w": 338.2,
+    "baseline": "338.2*T_e2e + integral(P_board(t), whole identical e2e window)",
+    "board_mean": "integral(P_board(t), window)/T_window, not unweighted mean of per-call means",
+    "historical_lightgen_phase": "121.746*t_optical + 104.230*t_gpu_serial, seconds; component estimate only",
+    "proposed_extended_phase_model": "NOT ADOPTED; user reaffirmed optical/electronic phase-only model, no full-window always-on energy",
+    "full_window_all_on_sensitivity": "(80.358+41.388+62.842)*T_projected_e2e = 184.588*T_projected_e2e; optional estimate, not an actual whole-system power trace",
+    "pending": "APPROVED primary LightGen energy =121.746*t_optical +104.230*t_charged_electronic, seconds; label phase-accounted system-energy estimate, not a full-window wall-plug integral; exclude parallel-residual and layout intervals from charged subtotal as directed",
+    "idle_subtraction": false,
+    "chassis_assumption": "338.2 W excludes the separately added GPU contribution; verify meter coverage to avoid double counting"
+  },
+  "operations_and_tokens": {
+    "mac": "1 real MAC = 2 OP; Linear MAC = batch*tokens*in_features*out_features; Conv MAC = batch*out_h*out_w*out_channels*(in_channels/groups)*kernel_h*kernel_w",
+    "count_scope": "actual per-sample shapes, actual executed branches, frontends and task head in same cost boundary; op profile in a separate untimed replay",
+    "non_mac": "explicit rule and unsupported-op list for activations, norms, softmax, embeddings and indexing; no parameter-count shortcut or invented zero-cost timing",
+    "parallel_residual_ops": "retain total executed NN OP and charged-serial OP as separate fields; do not silently remove real executed work from the total",
+    "optical_equivalent": "report equivalent dense propagation OP separately from actual GPU numerical-simulation FFT OP; do not count both as physical work",
+    "tops": "sum(OP)/(1e12*sum(matched_seconds))",
+    "tops_per_w": "sum(OP)/(1e12*sum(matched_joules))",
+    "task_per_j": "valid_tasks/sum(matched_joules)",
+    "common_tokens": "same sample-level Qwen reference input count for LightGen and Qwen, valid nonpadding full input sequence when available; actual masks/shapes stored for all200",
+    "tokens_per_s": "sum(common_reference_tokens)/sum(matched_seconds)",
+    "ratio_check": "LightGen/Qwen common Tokens/s ratio equals Qwen/LightGen duration ratio for same sample workload",
+    "missing_counts": "missing, never substitute max sequence or one sample's length; no comparison of native internal token rates as a time speedup"
+  },
+  "raw_archive": ["run_manifest.json", "input_manifest.csv", "samples.csv", "stages.csv", "power.csv", "predictions.csv", "gpu_processes.csv", "operation_counts.csv", "unsupported_ops.json", "environment.json", "SHA256SUMS.txt"],
+  "quality_gates": ["user approved protocol choices on2026-10-24", "exact full checkpoint and runtime source SHA verified", "test manifest and all dimensions locked", "GPU UUID and cap independently verified", "no foreign compute during charged window", "200-call or approved short-test exception satisfied", "three complete retained repeats", "interval union and energy integral agree", "one canonical Qwen temporal MPS100 record in both tables", "no claimed 100x until measured"],
+  "approved_scope_label": "Input-inclusive hybrid hardware projection: measured input/frontend and selected NN stages plus parameter-derived optical cycles; intermediate layout and parallel residual excluded, not fully measured device operational E2E. Baseline is file-to-CPU-result continuous measured wall.",
+  "task_stage_ledger_required": "For every task retain included module/method names, source SHA and lines, stage family, calls, tensor dimensions, excluded layout/residual/FFT and observed versus expected bridge occurrences.",
+  "baseline_large_gpu": {"models": ["DeepSeek-VL2 full", "Kimi-VL-A3B"], "status": "A100 80GB rental pending user action after other preparations", "hardware_comparability": "log PCIe/SXM, power cap, software and actual UUID; run a Qwen anchor on rental if direct across-GPU model comparisons are required"},
+  "rows": [
+    {"id":"01a","task":"LGVQ temporal","metric":"SRCC","ours_target":0.8044,"qwen_target":0.7663,"ours_pt_sha256":"5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c"},
+    {"id":"01b","task":"LGVQ spatial","metric":"SRCC","ours_target":0.6710,"qwen_target":0.6908,"ours_pt_sha256":"95e12397ccf8c960fa30ba9dfb400b69d2c2ebd02288ac6a4879870ab592828b"},
+    {"id":"02","task":"ABO image to text","metric":"Hit@1","ours_target":0.8058,"qwen_target":0.7358,"ours_pt_sha256":"a2aa9a93028410dfb780df7d320a9be65d07b6e7ec87ede08b53c4bddcbaf7af"},
+    {"id":"03","task":"ABO image to image","metric":"Hit@1","ours_target":0.8225,"qwen_target":0.8513,"ours_pt_sha256":"0b1ff5b682b833f8c4fd25e6330147e993e974272d7d2812fa679082ef0e87bc"},
+    {"id":"04","task":"ABO text to image retrieval","metric":"Hit@1","ours_target":0.8600,"qwen_target":0.8200,"ours_pt_sha256":"cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae"},
+    {"id":"05","task":"LSP","metric":"PCK@0.2","ours_target":0.7348,"qwen_target":0.7226,"ours_pt_sha256":"495b9c2c4e3df15d3715f1ce8f2faea7cb9156275b31103ec684f4e96a328518"},
+    {"id":"06","task":"SALICON","metric":"CC","ours_target":0.8625,"qwen_target":0.8748,"ours_pt_sha256":"036bc8caedcde4d6dabce276b1a2e4af15d960d88620098b19e1c198849b8bfe"},
+    {"id":"07","task":"OpenMoji newlayout","metric":"Accuracy","ours_target":0.8880,"qwen_target":0.8120,"ours_pt_sha256":"579b19e78befe93cd258ce02308235f1a9176316f37bc42fc2e1b6ff06d38e9f"},
+    {"id":"08","task":"ABO clean generation","metric":"PSNR dB","ours_target":34.27775097739636,"qwen_target":27.260453,"ours_pt_sha256":"5b4f9a37f19ce95cf23e4b874badc8e88955559553d47929fb80cd3cbf527cac"}
+  ],
+  "baseline_identity_gate": "Every baseline full checkpoint/source SHA must be bound before measurements; displayed performance values alone are not identity proof.",
+  "coordination": {
+    "peer_title":"保住光路性能-图五GPU利用率",
+    "peer_thread_id":"01a13d93-9edb-78e1-808b-373c959a5315",
+    "request_sent":true,
+    "acknowledgement":"peer directly verified human authorization; both coordination-only, no official runs; agree file-input p0-to-r199 continuous wall, CUDA diagnostic, same canonical Qwen temporal MPS100 runs",
+    "receipt":"LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/MEASUREMENT_COORDINATION_20261024.md",
+    "source_commit":"22c6389c5",
+    "old_trials_with_complete_timestamps_and_power":36,
+    "first200_ordered_ids_sha256":"b66dcba71d923c3d7a38aeacc168146df8523b181716304e0e6e731ac2a131b4",
+    "full_test_manifest_sha256":"607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+    "maximum_power_sample_support_age_seconds":0.13505764305591583,
+    "historical_replay_option":"all36 old runs can support a separate historical full-window energy reconstruction; user approval required to substitute this for new runs; not a newly measured common-hardware result"
+  },
+  "references": [
+    {"title":"ACCEL Supplementary Notes 4 and 9","doi":"10.1038/s41586-023-06558-8","local_pdf_sha256":"4f1c5e89c45304e72eb9ac650d9207f36ab3656bd1e4fbde7768bede1795e087","pages":[6,8,9],"use":"stage-wise time and component-energy organization, not borrowing ACCEL hardware numbers or claiming identical boundaries"},
+    {"title":"NVIDIA MPS Dynamic Execution Resource Provisioning","url":"https://docs.nvidia.com/deploy/mps/when-to-use-mps.html#dynamic-execution-resource-provisioning","use":"cap available execution resources; not a requested utilization target"}
+  ]
+}

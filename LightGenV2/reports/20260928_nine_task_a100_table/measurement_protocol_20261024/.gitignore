@@ -1,0 +1,8 @@
+# Protocol source is separate from private generated research deliverables.
+*
+!.gitignore
+!protocol.json
+!build_protocol.py
+!stage_meter.py
+!measure_ours.py
+!test_stage_meter.py
