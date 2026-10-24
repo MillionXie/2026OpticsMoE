@@ -46,3 +46,13 @@ def test_fitting_has_no_original_TEST_input_or_trainable_teacher():
     assert "keys={'linear.weight','linear.bias'}" in s and 'loop.validate_state(m,native,original,keys)' in s
     assert 'base.identities(m,paths)==lineage' in s and "m.sha(protected)==c['protected_manifest_SHA256']" in s
     assert "m.save(protected" not in s and 'new_capture=False' in s
+
+
+def test_recovery_preserves_actual_best_and_never_fakes_missing_last():
+    s=ENTRY.read_text();assert 'recovery_no_refit=recover' in s and "tags=('best',)" in s
+    assert 'last_available=not recover' in s and 'not reconstructed or substituted' in s
+    assert 'old_failure_SHA256=' in s and "not(a.out/'recovery.json').exists()" in s
+    assert "('_train.npz'if role=='train'else'_replay.npz')" in s
+    remote='E:/code/guest/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_transfer_comparisons_20261024/'
+    for name in('errors139_augmented_only','DKD_no_TEST_teacher_control'):
+        assert len(remote+name+'/best_replay.npz')<260

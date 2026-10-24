@@ -21,6 +21,10 @@ profile固定4个有界方法，原run `e2_actual300_20261024/fullG2_transfer_co
 TEST_information_via_teacher，不能借“学生没看TEST”将成绩转为正式测试/达标依据。中间特征
 与教师逐bit同源且冻结，特征蒸馏恒为0，没有添加无效特征loss。完整411选PT、分报原139/其余
 272恢复及丢失数；bestlast必须原CPU重载完整2011样本重放、全部冻结及10数组SHA再审计。
+首轮139拟合已完成、best已保存，但267字符的Windows预测文件路径导致落盘失败，非数值
+失败。已发布短预测文件名修复；显式resume只重放已保存best、不重训139，原history/failure/
+launch/return全部保留，另存recovery和resume收据。原139末轮尚在内存时退出，last未保存，
+必须披露last_available=false，不以best冒充last。其他三项改为先落盘实际best和last再重放。
 原始软目标蒸馏参考https://arxiv.org/abs/1503.02531；解耦目标/非目标蒸馏参考
 https://arxiv.org/abs/2203.08679。两文不支持“蒸馏能洗净TEST监督来源”的说法。
 

@@ -100,7 +100,11 @@ def optimize_pool(packet,parent_w,parent_b,teacher_w,teacher_b,recipe,c,evaluate
 def run(a):
     np,torch,m,loop=base.numerical_modules();torch.set_num_threads(2)
     from lab_caltech20_tucam_TRAIN_linear_20261023 import canonical_affine_logits
-    c=m.read(a.profile);validate(c);assert a.out.name=='fullG2_transfer_comparisons_20261024'and not a.out.exists()and not m.LOCK.exists()
+    c=m.read(a.profile);validate(c);assert a.out.name=='fullG2_transfer_comparisons_20261024'and not m.LOCK.exists()
+    if a.resume_save_failure:
+        failure=m.read(a.out/'failure.json');assert 'FileNotFoundError'in failure['error']and 'best_TRAIN_original_predictions.npz'in failure['traceback']
+        assert m.read(a.out.with_suffix('.return.json'))['returncode']==1 and not(a.out/'report.json').exists()and not(a.out/'recovery.json').exists()
+    else:assert not a.out.exists()
     root=base.HERE/'runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024';parent=root/c['parent_run'];teacher=root/c['teacher_run'];protected=root/'accepted_full_physical_continued_20261024.json'
     for folder,prefix in((parent,'parent'),(teacher,'teacher')):
         assert m.read(folder.with_suffix('.return.json'))['returncode']==0 and m.sha(folder/'best.pt')==c[prefix+'_PT_SHA256']and m.sha(folder/'report.json')==c[prefix+'_report_SHA256']
@@ -127,32 +131,50 @@ def run(a):
     def evaluate(w,b):
         with torch.no_grad():
             z=canonical_affine_logits(fx,torch.from_numpy(w),torch.from_numpy(b));pred=z.argmax(1).numpy();return dict(correct=int((pred==fy).sum()),nll=float(torch.nn.functional.cross_entropy(z,torch.from_numpy(fy))),original139_correct=int((pred[wrong]==fy[wrong]).sum()),other272_correct=int((pred[~wrong]==fy[~wrong]).sum()))
-    a.out.mkdir();protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),config=c,parent_PT_SHA256=c['parent_PT_SHA256'],teacher_PT_SHA256=c['teacher_PT_SHA256'],data_SHA256=dm['sha256'],prefix_SHA256=lineage,feature_cache_SHA256=m.sha(cache),original_split_files_unchanged=True,all_non_readout_frozen=True,allowed_keys=sorted(keys),trainable_parameters=5140,new_inference_layers=0,SDK_used=False,GPU_used=False,new_capture=False,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False)
-    m.save(a.out/'protocol.json',protocol);m.save(a.out/'baseline.json',dict(original_development_correct=272,teacher_supervised_adaptation_correct=410,original_error_sources=139,non_error_sources=272,feature_distillation_identically_zero=True,reason='Every non-readout state is bitwise identical and frozen; only classifiers differ.'))
+    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),config=c,parent_PT_SHA256=c['parent_PT_SHA256'],teacher_PT_SHA256=c['teacher_PT_SHA256'],data_SHA256=dm['sha256'],prefix_SHA256=lineage,feature_cache_SHA256=m.sha(cache),original_split_files_unchanged=True,all_non_readout_frozen=True,allowed_keys=sorted(keys),trainable_parameters=5140,new_inference_layers=0,SDK_used=False,GPU_used=False,new_capture=False,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False)
+    if a.resume_save_failure:
+        prior=m.read(a.out/'protocol.json');assert prior['config']==c and prior['prefix_SHA256']==lineage
+        m.save(a.out/'recovery.json',dict(reason='Known Windows MAX_PATH prediction filename failure after saved best; no numerical failure, no refit of errors139',source_git=m.git_head(),source_SHA256=m.sha(__file__),old_failure_SHA256=m.sha(a.out/'failure.json'),old_return_SHA256=m.sha(a.out.with_suffix('.return.json')),old_best_PT_SHA256=m.sha(a.out/'errors139_augmented_only/best.pt'),missing_original_last_disclosed=True,all_old_artifacts_preserved=True))
+    else:
+        a.out.mkdir();m.save(a.out/'protocol.json',protocol);m.save(a.out/'baseline.json',dict(original_development_correct=272,teacher_supervised_adaptation_correct=410,original_error_sources=139,non_error_sources=272,feature_distillation_identically_zero=True,reason='Every non-readout state is bitwise identical and frozen; only classifiers differ.'))
     experiments={}
     for recipe in c['recipes']:
-        out=a.out/recipe;out.mkdir();derivatives=recipe=='errors139_augmented_only';inherited=recipe in('KL_teacher','DKD_TRAIN_neighborhood');neighborhood=recipe.startswith('DKD')
+        out=a.out/recipe;recover=a.resume_save_failure and recipe=='errors139_augmented_only'
+        if recover:assert out.exists()and(out/'best.pt').exists()and not(out/'last.pt').exists()and not(out/'native_report.json').exists()
+        else:out.mkdir()
+        derivatives=recipe=='errors139_augmented_only';inherited=recipe in('KL_teacher','DKD_TRAIN_neighborhood');neighborhood=recipe.startswith('DKD')
         if derivatives:packet=error_augmented_pool(train,data['train'][1],data['train'][2],former[wrong],fy[wrong],data['test'][2][wrong],c)
         elif neighborhood:packet=neighborhood_pool(train,data['train'][1],data['train'][2],c)
         else:packet=dict(features=train,labels=data['train'][1],source_ids=data['train'][2],source_roles=np.array(['original_TRAIN']*len(train)),augmentation=np.array(['unmodified']*len(train)))
-        np.savez_compressed(out/'gradient_pool.npz',**packet)
+        if recover:
+            with np.load(out/'gradient_pool.npz')as old:assert set(old.files)==set(packet)and all(np.array_equal(old[k],v)for k,v in packet.items())
+        else:np.savez_compressed(out/'gradient_pool.npz',**packet)
         scope=dict(recipe=recipe,direct_original_TEST_rows_in_gradient=0,TEST_augmented_source_samples=139 if derivatives else 0,TEST_augmented_rows=278 if derivatives else 0,teacher_seen_TEST=inherited,TEST_information_via_teacher=inherited,student_TEST_information=derivatives or inherited,student_direct_TEST_gradient=derivatives,student_direct_original_TEST_gradient=False,independent_test_samples=0,official_TEST_accuracy=None,valid_for_formal_test_table=False,original_TEST_used_for_checkpoint_selection=True,original139_source_ids=data['test'][2][wrong].tolist()if derivatives else[],gradient_pool_rows=len(packet['labels']),trainable_parameters=5140)
-        m.save(out/'protocol.json',dict(**protocol,recipe_scope=scope));m.save(a.out/'progress.json',dict(state='fitting_recipe',recipe=recipe,scope=scope))
-        fitted=optimize_pool(packet,pw,pb,tw if inherited else pw,tb if inherited else pb,recipe,c,evaluate,out,m);results={}
-        for tag in('best','last'):
-            model.load_state_dict(original)
-            with torch.no_grad():model.linear.weight.copy_(torch.from_numpy(fitted[tag+'_weight']));model.linear.bias.copy_(torch.from_numpy(fitted[tag+'_bias']))
-            loop.validate_state(m,model,original,keys);file=out/(tag+'.pt');loop.saved_model(m,model,file,dict(**protocol,recipe_scope=scope));native,_=m.model_for(file,m.sha(file),4,reference);loop.validate_state(m,native,original,keys);results[tag]=dict(PT_SHA256=m.sha(file))
+        if not recover:m.save(out/'protocol.json',dict(**protocol,recipe_scope=scope))
+        m.save(a.out/'progress.json',dict(state='recovering_saved_best_no_refit'if recover else'fitting_recipe',recipe=recipe,scope=scope))
+        if recover:
+            native,_=m.model_for(out/'best.pt',m.sha(out/'best.pt'),4,reference);loop.validate_state(m,native,original,keys);hist=m.read(out/'history.json');last=hist[-1];check=evaluate(native.linear.weight.detach().numpy(),native.linear.bias.detach().numpy());assert check['correct']==last['selected_replay_correct']
+            fitted=dict(selected_update=last['selected_update'],selected_replay_correct=last['selected_replay_correct'],updates=last['update'],gradient_evaluations=last['gradient_evaluations']);tags=('best',)
+        else:
+            fitted=optimize_pool(packet,pw,pb,tw if inherited else pw,tb if inherited else pb,recipe,c,evaluate,out,m);tags=('best','last')
+            # Persist BOTH actual fitted endpoints before any expensive replay.
+            for tag in tags:
+                model.load_state_dict(original)
+                with torch.no_grad():model.linear.weight.copy_(torch.from_numpy(fitted[tag+'_weight']));model.linear.bias.copy_(torch.from_numpy(fitted[tag+'_bias']))
+                loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/(tag+'.pt'),dict(**protocol,recipe_scope=scope))
+        results={}
+        for tag in tags:
+            file=out/(tag+'.pt');native,_=m.model_for(file,m.sha(file),4,reference);loop.validate_state(m,native,original,keys);results[tag]=dict(PT_SHA256=m.sha(file))
             for role,display in(('train','TRAIN_original'),('test','former_TEST_development_replay')):
                 m.save(a.out/'progress.json',dict(state='strict_original_CPU_replay',recipe=recipe,checkpoint=tag,role=display,student_TEST_information=scope['student_TEST_information']))
-                metric,prob=base.evaluate(native,data,fields,role);metric.update(independent_test=False,TEST_information_in_student_training=scope['student_TEST_information']);results[tag][display]=metric;np.savez_compressed(out/(tag+'_'+display+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=prob)
+                metric,prob=base.evaluate(native,data,fields,role);metric.update(independent_test=False,TEST_information_in_student_training=scope['student_TEST_information']);results[tag][display]=metric;np.savez_compressed(out/(tag+('_train.npz'if role=='train'else'_replay.npz')),ids=data[role][2],labels=data[role][1],probabilities=prob)
                 if role=='test':
                     pred=prob.argmax(1);results[tag]['original139_correct']=int((pred[wrong]==fy[wrong]).sum());results[tag]['other272_correct']=int((pred[~wrong]==fy[~wrong]).sum())
         assert results['best']['former_TEST_development_replay']['correct']==fitted['selected_replay_correct']
-        entry=dict(scope=scope,selected_update=fitted['selected_update'],selected_E0=fitted['selected_update']==0,optimizer_updates=fitted['updates'],gradient_evaluations=fitted['gradient_evaluations'],strict_original_CPU=True,all_non_readout_bitwise_frozen=True,native_results=results)
+        entry=dict(scope=scope,selected_update=fitted['selected_update'],selected_E0=fitted['selected_update']==0,optimizer_updates=fitted['updates'],gradient_evaluations=fitted['gradient_evaluations'],strict_original_CPU=True,all_non_readout_bitwise_frozen=True,native_results=results,last_available=not recover,recovery_no_refit=recover,missing_last_reason='Original fit endpoint was in memory when long-path output failed; not reconstructed or substituted'if recover else None)
         m.save(out/'native_report.json',entry);experiments[recipe]=entry;m.save(a.out/'completed_recipes.json',experiments);print(json.dumps(dict(recipe_complete=recipe,best_correct=results['best']['former_TEST_development_replay']['correct'],original139_correct=results['best']['original139_correct'],other272_correct=results['best']['other272_correct'],scope=scope)),flush=True)
     assert base.identities(m,paths)==lineage and m.sha(protected)==c['protected_manifest_SHA256']
-    report=dict(state='complete',experiments=experiments,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False,all_non_readout_bitwise_frozen=True,all_10_capture_array_SHA_unchanged=True,SDK_used=False,GPU_used=False,new_capture=False,strict_original_CPU=True,protocol_SHA256=m.sha(a.out/'protocol.json'),NOTE='Removing raw TEST inputs from student optimization does not erase TEST-derived augmentation or teacher-inherited information. Control has no TEST-trained teacher but remains a TEST-selected development metric.')
+    report=dict(state='complete',experiments=experiments,recovery_source_git=m.git_head()if a.resume_save_failure else None,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False,all_non_readout_bitwise_frozen=True,all_10_capture_array_SHA_unchanged=True,SDK_used=False,GPU_used=False,new_capture=False,strict_original_CPU=True,protocol_SHA256=m.sha(a.out/'protocol.json'),NOTE='Removing raw TEST inputs from student optimization does not erase TEST-derived augmentation or teacher-inherited information. Control has no TEST-trained teacher but remains a TEST-selected development metric.')
     m.save(a.out/'report.json',report);m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),original_manifest_SHA256=m.sha(protected),prefix_SHA256=lineage,independent_test=False))
 
 
@@ -170,12 +192,12 @@ def selftest():
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--out',type=Path);p.add_argument('--profile',type=Path,default=base.HERE/'lab_caltech20_readout_transfer_profile_20261024.json');p.add_argument('--selftest',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--out',type=Path);p.add_argument('--profile',type=Path,default=base.HERE/'lab_caltech20_readout_transfer_profile_20261024.json');p.add_argument('--selftest',action='store_true');p.add_argument('--resume-save-failure',action='store_true');a=p.parse_args()
     if a.selftest:selftest()
     else:
         assert a.out is not None
         try:run(a)
         except BaseException as e:
             if a.out.exists():
-                _,_,m,_=base.numerical_modules();m.save(a.out/'failure.json',dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False,all_data_preserved=True))
+                _,_,m,_=base.numerical_modules();m.save(a.out/('recovery_failure.json'if a.resume_save_failure else'failure.json'),dict(error=repr(e),traceback=traceback.format_exc(),automatic_retry=False,all_data_preserved=True))
             raise
