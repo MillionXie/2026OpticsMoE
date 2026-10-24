@@ -17,14 +17,18 @@ def main():
     import fcntl
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True);parser.add_argument('--deadline',type=float,required=True)
+    parser.add_argument('--admission-idle-checks',type=int,default=12,
+        help='Consecutive ten-second idle checks; retain at least the original three, filter repeated short foreign jobs')
     args=parser.parse_args();root=args.output.resolve()
-    if root.exists() or not root.is_relative_to(TASK/'runs/simulation') or not 0<args.deadline-time.time()<=7200:
+    if (root.exists() or not root.is_relative_to(TASK/'runs/simulation')
+            or not 0<args.deadline-time.time()<=7200 or not 3<=args.admission_idle_checks<=60):
         raise ValueError('New immutable finite CPU contract required')
     root.mkdir(parents=True);child=None
     frozen={p.relative_to(REPO).as_posix():sha(p) for p in (Path(__file__),HERE/'openmoji_qwen_live.py',
         HERE/'protocol_identity.py',HERE/'protocol_amendment_openmoji_e45.json')}
     state=dict(status='exclusive_admission',pid=os.getpid(),deadline=args.deadline,no_gpu=True,
-        command=sys.argv,sources=frozen,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip())
+        required_idle_checks=args.admission_idle_checks,command=sys.argv,sources=frozen,
+        source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip())
     def save():write(root/'suite_status.json',state)
     def stable():
         if any(sha(REPO/k)!=v for k,v in frozen.items()):raise ValueError('Frozen controller source changed')
@@ -41,7 +45,7 @@ def main():
                 try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);break
                 except BlockingIOError:time.sleep(10)
             idle=0
-            while idle<3:
+            while idle<args.admission_idle_checks:
                 stable()
                 if time.time()>args.deadline-180:raise TimeoutError('Native CPU admission budget exhausted')
                 records=engine.base.guard_records(GPU)
@@ -62,7 +66,11 @@ def main():
                     if time.time()>args.deadline:raise TimeoutError('Native CPU worker deadline')
                     records=engine.base.guard_records(GPU)
                     if records:
-                        write(root/'foreign_CPU_interruption.json',dict(unix=time.time(),gpu_uuid=GPU,processes=records))
+                        pids=','.join(r[0].strip() for r in records)
+                        detail=subprocess.run(['ps','-p',pids,'-o','pid,ppid,user,lstart,args'],
+                            capture_output=True,text=True,timeout=5)
+                        write(root/'foreign_CPU_interruption.json',dict(unix=time.time(),gpu_uuid=GPU,
+                            processes=records,process_detail_stdout=detail.stdout,process_detail_stderr=detail.stderr))
                         raise RuntimeError('Foreign GPU appeared during CPU contract')
                     time.sleep(3)
                 if child.returncode:raise RuntimeError('Original/observed native CPU worker exit'+str(child.returncode))

@@ -37,7 +37,8 @@ def test_wrapper_does_not_replace_original_native_calls():
 def test_controller_has_no_torch_import_and_stops_only_own_child():
     source=(HERE/'run_openmoji_qwen_contract.py').read_text()
     assert 'import torch' not in source and "CUDA_VISIBLE_DEVICES=''" in source
-    assert "fcntl.LOCK_EX|fcntl.LOCK_NB" in source and 'while idle<3' in source
+    assert "fcntl.LOCK_EX|fcntl.LOCK_NB" in source and 'while idle<args.admission_idle_checks' in source
+    assert 'default=12' in source and '3<=args.admission_idle_checks<=60' in source
     assert 'child.terminate()' in source and 'os.kill(' not in source
 
 
