@@ -153,7 +153,8 @@ def main():
     p.add_argument('--train',type=Path,required=True)
     p.add_argument('--val',type=Path,required=True)
     p.add_argument('--test',type=Path,required=True)
-    p.add_argument('--gpu-uuid',required=True)
+    p.add_argument('--gpu-uuid')
+    p.add_argument('--device',choices=('cuda','cpu'),default='cuda')
     p.add_argument('--source-protocols',type=Path,help='Full original TRAIN for server adaptation only; hardware TRAIN remains fixed1000')
     p.add_argument('--out',type=Path,required=True)
     a=p.parse_args();c=json.loads(a.config.read_text())
@@ -162,7 +163,10 @@ def main():
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     began=time.time()
     try:
-        gpu=gpu_gate(c,a.gpu_uuid);device=torch.device('cuda:0')
+        if a.device=='cuda':
+            gpu=gpu_gate(c,a.gpu_uuid);device=torch.device('cuda:0')
+        else:
+            gpu=dict(device='CPU',threads=2,SDK=False,GPU=False);device=torch.device('cpu')
         put(a.out/'status.json',dict(state='loading_TRAIN_VAL',gpu=gpu,started=began))
         train=load_data(a.train,'train');val=load_data(a.val,'val')
         selection_split=c.get('selection_split','val')
