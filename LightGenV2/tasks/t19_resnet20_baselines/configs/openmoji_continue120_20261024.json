@@ -1,0 +1,20 @@
+{
+  "seed": 42,
+  "parent": "openmoji_optimization_fixed30_formal_s42_20261024_cacheclone1",
+  "parent_sha256": "68665ec4ca2697dbb656b9d00ebe1b7c2f31fb99ecb5590792048fa09b9172a1",
+  "parent_epoch": 90,
+  "final_epoch": 120,
+  "stage_epochs": 30,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "effective_batch": 32,
+  "gradient_clip": 1.0,
+  "loss": "scene_balanced_changed_category_and_edit_BCE",
+  "restore_optimizer": true,
+  "replay_parent_stage_sampler_epochs": 30,
+  "candidate_gpu_indices": [4, 5, 2, 6],
+  "max_physical_gpus": 4,
+  "max_jobs_per_gpu": 2,
+  "tasks": ["openmoji"],
+  "TEST_policy": "one_full_fixed_last120_only; historical_TEST_observed; never_stop_on_target"
+}

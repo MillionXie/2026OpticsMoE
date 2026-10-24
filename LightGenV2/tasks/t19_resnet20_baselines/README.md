@@ -1,5 +1,29 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-24 最新追加：OpenMoji固定续至120、LSP保留当前90轮、ABO协议诊断
+
+用户再次要求继续OpenMoji/LSP优化并处理ABO高分。科学目标仍如实核查，不承诺TEST必进区间。
+本轮只写T19，不改其他任务。当前LSP的61..90训练不中断、不重复启动，等待该固定末轮结果。
+OpenMoji61..90的TRAIN loss从0.38836降到0.13623，81..90仍下降约14.45%；据TRAIN持续改善
+固定另加30轮至120，保留last90和完整历史TEST观察，不到0.5就停、不循环搜轮数。
+
+新配置`configs/openmoji_continue120_20261024.json`，入口`continue_openmoji120.py`：严格加载
+last90 SHA`68665ec4ca2697dbb656b9d00ebe1b7c2f31fb99ecb5590792048fa09b9172a1`及原AdamW，
+不是重启优化器。视觉/BN冻结、原GRU与任务头、原balanced目标、seed42、恒定lr.001/wd.0001、
+clip1/effectivebatch32、FP32 TF32off均不改，30新轮AdamW4710→9420。完整重放父30轮
+静态TRAIN采样并逐轮核SHA，继续91..120。全5000条TRAIN在90/120各做一次只读诊断，
+明确是已见TRAIN，不能当独立VAL；新TEST仅last120一次完整1000场景，仍保存原mask/category/task。
+正式前先自身64条TRAIN两步恢复短测，验源SHA/父SHA/优化器恢复/冻结/有限loss且0TEST，
+正式重新加载父90，不能接用短测权重。新队列`queue_openmoji120.py`只允许这一项，
+沿原四卡2/4/5/6与稳定低利用率max2同卡准入，不修改任何其他进程。
+
+ABO的PCA64独立16项审核通过，TRAIN协方差特征分解的前64维投影子空间最大误差1.01e-8，
+原800×1600完整排名及全部指标复算一致；H@1仍0.78375，不能把它说成解决了低10pp目标。
+新增`abo_protocol_diagnosis.py`只读已审核官方512维缓存，完整计算TRAIN留一视角与原TEST
+查询的同SKU/异SKU余弦margin、商品/标题重叠及正例数；0新神经前向、0训练、无查询筛选、
+不改数据划分或任一原成绩。高余弦仅表示特征相似，不等于字节重复/泄漏证据。
+若主要是已见SKU闭集容易，合理的更难评测需所有Ours/Qwen/基线同协议重评，不能只难化基线。
+
 ## 2026-10-24 用户追加：同卡并行与SALICON及时评估
 
 本轮只负责T19路径。用户明确要求OpenMoji和SALICON与LSP一起推进，仍限原GPU2/4/5/6
