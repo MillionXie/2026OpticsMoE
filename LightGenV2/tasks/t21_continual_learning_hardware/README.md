@@ -32,6 +32,8 @@
 用户2026-10-24明确要求沿用此前残差实验的增强教师→蒸馏方式。独立入口`augmented_teacher_distill.py`及`config_A_augteacher_distill_20261024.json`从精确193父PT开始，不修改原TRAIN-only结果或原划分：教师在原TRAIN1000及former TEST1000上监督，错误former TEST各生成5%同类TRAIN插值与0.5%TRAIN特征标准差噪声。它们是末端特征衍生，不是新增物理CCD或光学输入增强。教师仅原7840参数头、TRAIN/former TEST损失.35/.65、错样本权重3，最多2轮×60outer/每轮120fit秒；完整重放至少900/1000才进入学生阶段。
 学生从原193头重新开始，梯度输入仅原TRAIN1000，教师固定；普通KL温度2、CE/KL固定权重由TRAIN梯度范数以倍数2和必要时4确定，每段最多60outer/120fit秒。所有非读出state逐bit冻结，原无偏置Linear结构、曝光、坐标、LUT和CCD不变；不用GPU/SDK，不妨碍D2NN采集。选择实际最高开发重放，不把超过仿真的成绩人为压低。
 **教师实际见过TEST，所以学生仍继承TEST信息。** 该独立支线全部标记`official_TEST_accuracy=null`、`independent_test_samples=0`、`valid_for_formal_test_table=false`、`student_inherits_TEST_information=true`；学生无直接TEST梯度不等于独立测试，不能用来证明原仿真—未见实验差距达标。旧19.30%及全部权重/数据/报告保护；新教师和学生均保存真实best/last、逐样本重放、来源ID及冻结/SHA审计。
+本轮已实际完成，run为`moe_A_augteacher_development_gitpath_20261024`：第一轮教师完整原样本适配1000/1000、TRAIN1000/1000；普通KL倍数2的学生在仅原TRAIN输入蒸馏后也重放1000/1000、TRAIN1000/1000，倍数4未启动。教师best SHA`103ac9f156d0a00ce6e4566abde3023680bfa634ab4b519eae83d21a5b899937`，学生best SHA`f5a4f299062b1bdfae087f55fc04f33630431df53e9616de159b3f6519ac38c3`；best/last完整1000缓存特征CPU重载与全部非读出state冻结核验通过，任务返回0、无SDK/GPU或新采集。
+**100%只是这批已被教师监督的CCD样本适配重放，原无TEST梯度19.30%仍保留；不能据此宣称独立实测100%、光路差异已消除或73.80%独立测试目标通过。** 没有为低于仿真而人为压分、挑区间或改预测。初次交互会话启动因PATH中无Git，在协议落盘前退出，未发生训练；原空run与日志/返回保留，只给新进程补MinGit路径后按同一已发布源码运行，不复拍或改变模型。
 
 ### D2NN完整适配链：同一固定分层1000条仿真对照
 
