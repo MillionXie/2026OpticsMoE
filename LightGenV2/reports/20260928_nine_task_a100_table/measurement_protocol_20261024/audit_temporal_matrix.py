@@ -106,6 +106,10 @@ def build(manifest):
             if len(completed)==3:row['aggregate']=aggregate(reports,completed)
             rows.append(row)
     anchor=next(r for r in rows if r['model']=='qwen' and r['cap']==100)
+    from lgvq_qwen_shape_receipt import attach as attach_video_qwen_MAC
+    for row in rows:
+        if row['model']=='qwen' and row['aggregate'] is not None:
+            attach_video_qwen_MAC(row['aggregate'],f"laboratory40GB_cap{row['cap']}")
     if anchor['status']!='complete':raise ValueError('Shared Qwen100 anchor must remain qualified')
     common=anchor['aggregate']['common_input_tokens_total']
     if common!=89200*3:raise ValueError('Original shared Qwen first200 token work differs')
@@ -118,10 +122,13 @@ def build(manifest):
                 source='same first200 IDs as fixed shared40GB Qwen100; same numerator for all rows',
                 not_generation_throughput=True)
     remaining=[name for name in ('deepseek','kimi') if any(r['status']!='complete' for r in rows if r['model']==name)]
+    supplementary=audit_rental_anchor(manifest)
+    if supplementary['aggregate'] is not None:
+        attach_video_qwen_MAC(supplementary['aggregate'],'supplementary80GB_cap100')
     return dict(status='PARTIAL_NOT_FINAL_PAPER_TABLE',protocol_id=entry.PROTOCOL,
         shared_qwen_temporal100=anchor,rows=rows,remaining80gb_models=remaining,
         rental_status='new authorized80GB costs complete' if not remaining else 'new authorized80GB missing trials remain',
-        supplementary_rental_qwen_anchor=audit_rental_anchor(manifest),
+        supplementary_rental_qwen_anchor=supplementary,
         platform_comparison='40GB PCIe/250W and80GB SXM/400W separately identified; not a common-hardware causal model ranking',
         all_costs_include_raw_input_and_all_internal_gaps=True,old_cost_override=False,
         formal_accuracy='confirmed original full558 only; measured200 predictions are diagnostics',

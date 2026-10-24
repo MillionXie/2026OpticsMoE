@@ -248,6 +248,9 @@ def main():
         if 'ours_lab_target' in item:
             rows[item['id']]['full_test_reference']['ours_lab']=item['ours_lab_target']
     rows['01a']['qwen']=anchor
+    from lgvq_qwen_shape_receipt import attach as attach_video_qwen_MAC
+    attach_video_qwen_MAC(anchor,'laboratory40GB_cap100')
+    rows['01a']['ops_status']='Qwen original-network/all600 saved video shapes dense-MAC independently derived; Ours pending; explicit non-MAC'
     spatial_root=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_spatial_input_a100_20261024_01'
     spatial=[audit_spatial_qwen(spatial_root/f'qwen_repeat{i:02d}',manifest) for i in (1,2,3)]
     seconds_sp=sum(r['cost']['continuous_wall_s'] for r in spatial)
