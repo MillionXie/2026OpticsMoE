@@ -29,3 +29,4 @@ def test_population_prior_bias_is_only_TRAIN_original20_and_single_fit():
     assert "keys={'linear.bias'}if a.prior_bias" in s and 'max_iter=50,max_eval=65' in s
     assert "weight=model.linear.weight.detach().numpy().copy()" in s and "prior_exponent=1." in s
     assert "parameters=20" in s and 'TEST_used=False,VALID_used=False' in s
+    assert "'TRAIN_readout':'cached_TRAIN_affine_LBFGS'" in s and 'epochs=80,seconds=60' in s

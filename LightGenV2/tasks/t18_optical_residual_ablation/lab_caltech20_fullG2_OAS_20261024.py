@@ -27,11 +27,12 @@ def run(a):
     c=m.read(cpath);base.validate_config(c);torch.set_num_threads(2)
     assert not(a.joint_source and a.local_repair)
     assert not a.teacher_local or a.local_repair
+    assert not a.affine_after_prior or a.local_repair
     assert not a.prior_bias or not(a.joint_source or a.local_repair)
     if a.prior_bias:
         assert a.out.name=='fullG2_TRAIN_priorbias_20261024'
     elif a.joint_source or a.local_repair:
-        assert a.out.name==('fullG2_teacher_local_20261024'if a.teacher_local else'fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
+        assert a.out.name==('fullG2_affine_20261024'if a.affine_after_prior else'fullG2_teacher_local_20261024'if a.teacher_local else'fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
     else:
         assert (datetime.fromisoformat('2026-10-24T08:00:00+08:00')-datetime.now(timezone.utc)).total_seconds()>=330
     assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='a8352cd34237d5f9c7f6ed21f4ff489f94baf546ee3feccdc0c6c5addbcca67c'
@@ -51,6 +52,9 @@ def run(a):
         if a.teacher_local:
             source=root.parent/'fullG2_teacher_margin_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
             fit=source/'fit';r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=m.read(source/'report.json')
+        if a.affine_after_prior:
+            source=root.parent/'fullG2_TRAIN_priorbias_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
+            fit=source;r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=r
         assert r['state']=='complete' and r['full_physical'] and not r['SDK_used']
     if a.prior_bias:
         source=root.parent/'fullG2_teacher_local_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
@@ -79,7 +83,11 @@ def run(a):
         assert m.sha(boundary.__file__)=='8ae5a132e31ab33d2dc508119f7d85810d75a35bc1e632e7de42cd7f133c774b'
         cfg=dict(maximum_classes=20,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.08,seed=73);boundary.validate(cfg)
         config={**c,'TRAIN_readout':'cached_TRAIN_local_boundary','TRAIN_local_boundary':cfg,'TRAIN_local_engine_SHA256':m.sha(boundary.__file__),'native_feature_source':fit.relative_to(base.ROOT).as_posix(),'fresh_native_TRAIN_features':True}
-        _,_,result=fit_cached_head(model,data,dm,fields,paths,pt,reference,config,dict(name='one_bounded_full_physical_TRAIN_neighbor_repair',epochs=1,seconds=180,lr_scale=1),a.out,340)
+        recipe=dict(name='one_bounded_full_physical_TRAIN_neighbor_repair',epochs=1,seconds=180,lr_scale=1)
+        if a.affine_after_prior:
+            config={**c,'TRAIN_readout':'cached_TRAIN_affine_LBFGS','TRAIN_affine_optimizer':dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80),'native_feature_source':fit.relative_to(base.ROOT).as_posix(),'fresh_native_TRAIN_features':False}
+            recipe=dict(name='one_fullbatch_TRAIN_LBFGS_existing5140',epochs=80,seconds=60,lr_scale=1)
+        _,_,result=fit_cached_head(model,data,dm,fields,paths,pt,reference,config,recipe,a.out,340)
         assert result['full_physical'] and result['strict_original_CPU'] and result['selected_correct']>=r['selected_correct']
         return
     a.out.mkdir();original=m.state_cpu(model);keys={'linear.bias'}if a.prior_bias else{'linear.weight','linear.bias'};baseline,prob=base.evaluate(model,data,fields,'test');assert baseline['correct']==r['selected_correct']
@@ -113,7 +121,7 @@ def run(a):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');parser.add_argument('--prior-bias',action='store_true');a=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');parser.add_argument('--prior-bias',action='store_true');parser.add_argument('--affine-after-prior',action='store_true');a=parser.parse_args()
     try:run(a)
     except BaseException as e:
         if a.out.exists():
