@@ -124,6 +124,31 @@ def openmoji_pair(root,ours):
     return native,common
 
 
+def attach_abo_image_existing_shape_MAC(row):
+    path=HERE/'abo_image_qwen_network_shape_MAC_01.json'
+    server=HERE/'abo_image_qwen_network_shape_MAC_server_01.json'
+    value=read(path)
+    if (value!=read(server) or value['calls']!=600 or value['GPU_forwards']!=0
+            or value['new_neural_forwards']!=0 or value['complete_scalar_OP_claim']
+            or value['model_lm_head_executed'] or value['offline_gallery_inference_in_query_OP']):
+        raise ValueError('Original image-query OP scope/independent agreement differs')
+    elapsed=row['qwen']['sample_ms']*.6;energy=row['qwen']['sample_j']*600
+    refs=value['cost_references'];op=value['MAC_OP600']
+    if (abs(sum(x['seconds200'] for x in refs)-elapsed)>1e-8
+            or abs(sum(x['joules200'] for x in refs)-energy)>1e-7
+            or op!=2*sum(x['MAC200'] for x in value['repeat_results'])):
+        raise ValueError('Original image-query OP numerator/cost denominator mismatch')
+    if [x['report_sha256'] for x in refs]!=[x['report_sha256'] for x in row['qwen']['raw_references']]:
+        raise ValueError('OP derivation selected different formal query trials')
+    row['qwen']['derived_NN_dense_MAC_subtotal']=dict(OP600=op,TOP_per_input=op/600/1e12,
+        TOPS=op/1e12/elapsed,TOPS_per_W=op/1e12/energy,
+        source='original native graph + sealed dynamic image/token shapes, zero new model forwards',
+        local_receipt=path.relative_to(REPO).as_posix(),local_receipt_sha256=sha(path),
+        server_receipt=server.relative_to(REPO).as_posix(),server_receipt_sha256=sha(server),
+        not_complete_scalar_OP=True,raw_derivation=value)
+    row['ops_status']='Qwen original-network/existing-shape dense-MAC subtotal independently derived on both CPUs; Ours pending; explicit non-MAC'
+
+
 def attach_openmoji_existing_shape_MAC(row):
     """Consume the new zero-forward CPU derivations and their independent copy.
 
@@ -293,6 +318,7 @@ def main():
         full2400_reference_hit1=.7358333333333333,measured_first200_hit1=[r['measured_first200_hit1'] for r in images],
         independent_image_audit_python=str(args.abo_image_python or sys.executable),
         raw_references=images,scope='native image file to CPU100 full ranking, continuous199 gaps, zero dedicated inference warmup')
+    attach_abo_image_existing_shape_MAC(rows['02'])
     openmoji_root=REPO/'LightGenV2/tasks/t04_semantic_interaction/runs/simulation'
     rows['07']['ours']=openmoji_e45_result(openmoji_root)
     rows['07']['qwen'],rows['07']['common_tokens']=openmoji_pair(openmoji_root,rows['07']['ours'])
@@ -320,7 +346,7 @@ def main():
                           complete_timing_energy_rows=['03','04','05','06','07'],
                           qualified_model_task_items=sum(r[m] is not None for r in rows.values() for m in ('ours','qwen')),
                           pending_rows=['01a ours','01b ours','02 ours','08 both'],
-                          operation_counts='04 Qwen and07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; other original-network/existing-shape derivations pending, no compulsory GPU replay')))
+                          operation_counts='02/04 Qwen and07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; other original-network/existing-shape derivations pending, no compulsory GPU replay')))
 
 
 if __name__=='__main__':main()

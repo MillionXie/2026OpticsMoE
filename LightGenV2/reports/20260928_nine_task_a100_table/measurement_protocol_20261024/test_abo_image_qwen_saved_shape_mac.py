@@ -27,3 +27,20 @@ def test_original_graph_counts_search_not_unused_lm_head():
 def test_missing_or_inconsistent_record_is_not_invented(key,value):
     row=fixture();row[key]=value
     with pytest.raises(ValueError):request_terms(config(),row)
+
+
+def test_index_requires_original_cost_trials_and_zero_new_forward(monkeypatch):
+    import build_measured_index as b
+    value=dict(calls=600,GPU_forwards=0,new_neural_forwards=0,complete_scalar_OP_claim=False,
+        model_lm_head_executed=False,offline_gallery_inference_in_query_OP=False,
+        MAC_OP600=100,repeat_results=[dict(MAC200=50)],
+        cost_references=[dict(seconds200=2,joules200=5,report_sha256='original')])
+    monkeypatch.setattr(b,'read',lambda p:value)
+    monkeypatch.setattr(b,'sha',lambda p:'a'*64)
+    row=dict(qwen=dict(sample_ms=2/.6,sample_j=5/600,raw_references=[dict(report_sha256='original')]))
+    b.attach_abo_image_existing_shape_MAC(row)
+    assert row['qwen']['derived_NN_dense_MAC_subtotal']['TOPS']==100/1e12/2
+    row['qwen']['raw_references'][0]['report_sha256']='different'
+    with pytest.raises(ValueError):b.attach_abo_image_existing_shape_MAC(row)
+    row['qwen']['raw_references'][0]['report_sha256']='original';value['GPU_forwards']=1
+    with pytest.raises(ValueError):b.attach_abo_image_existing_shape_MAC(row)
