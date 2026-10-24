@@ -16,7 +16,7 @@ from pathlib import Path
 import subprocess
 import sys
 import textwrap
-from types import SimpleNamespace,MethodType
+from types import MethodType
 
 HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3]
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
@@ -43,11 +43,32 @@ def full_aperture_dispatch_contract(function):
 
 
 class AppliedStages:
-    def __init__(self,meter):self.meter=meter;self.restores=[]
+    def __init__(self,meter):self.meter=meter;self.restores=[];self.additions=[]
     def close(self):
         self.meter.close()
         for owner,name,original in reversed(self.restores):setattr(owner,name,original)
+        for owner,name in reversed(self.additions):delattr(owner,name)
         self.restores.clear()
+        self.additions.clear()
+
+
+def observe_full_aperture_parent(router,parent,expand,meter,applied):
+    full_aperture_dispatch_contract(type(router).forward)
+    alias='_lightgen_observed_parent_forward'
+    if hasattr(router,alias):raise ValueError('Original router already has the observer alias')
+    # StageMeter rebinds its compiled method to its owner. That owner MUST be
+    # the real router, not a namespace/proxy: all reads and diagnostic state
+    # writes must still reach the exact original instance.
+    setattr(router,alias,MethodType(parent,router));applied.additions.append((router,alias))
+    original=router.forward
+    def measured(input_fields):
+        with meter.scope('language.full_aperture_amplitude_layout','layout',False):
+            expanded=expand(input_fields)
+        return getattr(router,alias)(expanded)
+    router.forward=measured;applied.restores.append((router,'forward',original))
+    meter.ledger.append(source_record(original,'language.original_full_aperture_dispatch','layout',False))
+    meter.ledger.append(source_record(expand,'language.full_aperture_amplitude_layout','layout',False))
+    return alias
 
 
 def patch_model(model,embedding,meter):
@@ -91,27 +112,15 @@ def patch_model(model,embedding,meter):
         meter.patch_statements(branch,'_encode_input_fields',[(mode+'.amplitude_rms','amplitude_encoding_nn',True,ix,len(body)-1)])
         meter.wrap(optical,'_direct_amplitude_load',mode+'.field_layout',family='layout',charged=False)
         meter.wrap(router,'_simulate',mode+'.router_simulation',family='simulation_only',charged=False)
-        target=router
+        target=router;parent_method='forward'
         if mode=='language':
             if type(router) is not FullApertureLanguageRouter:raise ValueError('Wrong original language router subclass')
-            full_aperture_dispatch_contract(type(router).forward)
-            # A proxy patches ONLY the unchanged bound parent method. The
-            # subclass's original amplitude expansion still executes exactly
-            # once. No global class mutation or zero-argument-super AST rewrite.
-            target=SimpleNamespace(forward=MethodType(OpticalDetectorTopKRouter.forward,router))
-            original=router.forward
-            def measured(input_fields,*,_target=target):
-                with meter.scope('language.full_aperture_amplitude_layout','layout',False):
-                    expanded=full_aperture_language_amplitude(input_fields)
-                return _target.forward(expanded)
-            router.forward=measured;applied.restores.append((router,'forward',original))
-            meter.ledger.append(source_record(original,'language.original_full_aperture_dispatch','layout',False))
-            meter.ledger.append(source_record(full_aperture_language_amplitude,
-                'language.full_aperture_amplitude_layout','layout',False))
+            parent_method=observe_full_aperture_parent(router,OpticalDetectorTopKRouter.forward,
+                full_aperture_language_amplitude,meter,applied)
         elif type(router) is not OpticalDetectorTopKRouter:raise ValueError('Wrong original visual router')
-        body=statements(target,'forward');first=assign_index(body,'energy')
+        body=statements(target,parent_method);first=assign_index(body,'energy')
         last=one(body,lambda s:s.startswith('weights, selected, indices ='))
-        meter.patch_statements(target,'forward',[(mode+'.router_energy_top2','router',True,first,last)])
+        meter.patch_statements(target,parent_method,[(mode+'.router_energy_top2','router',True,first,last)])
         meter.wrap(branch,'_simulate_detector_roi',mode+'.expert_global_simulation',family='simulation_only',charged=False)
         meter.wrap(branch.ccd_normalizer,'forward',mode+'.original_scalar_ccd_normalization',family='ccd_nonlinearity')
         for name,readout,output in (('expert',branch.expert_readout,branch.expert_output_adapter),

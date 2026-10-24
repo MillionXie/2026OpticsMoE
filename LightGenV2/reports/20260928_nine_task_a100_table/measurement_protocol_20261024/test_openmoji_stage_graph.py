@@ -8,7 +8,18 @@ HERE=Path(__file__).resolve().parent;sys.path.insert(0,str(HERE))
 import openmoji_e45_graph as graph
 
 
-class GoodDispatch:
+def full_aperture_language_amplitude(value):return value+1
+
+
+class Parent:
+    def __init__(self):self.input_size=3;self.total=0
+    def forward(self,input_fields):
+        energy=input_fields*self.input_size
+        self.total+=energy
+        return energy
+
+
+class GoodDispatch(Parent):
     def forward(self,input_fields):
         return super().forward(full_aperture_language_amplitude(input_fields))
 
@@ -40,11 +51,25 @@ def test_counts_include_true_bridge_and_each_modality_three_passes():
 
 def test_no_zero_super_AST_or_global_parent_class_mutation():
     text=(HERE/'openmoji_e45_graph.py').read_text(encoding='utf8')
-    assert "target=SimpleNamespace(forward=MethodType(OpticalDetectorTopKRouter.forward,router))" in text
-    assert "meter.patch_statements(target,'forward'" in text
+    assert 'setattr(router,alias,MethodType(parent,router))' in text
+    assert 'meter.patch_statements(target,parent_method' in text
     assert 'OpticalDetectorTopKRouter.forward=' not in text
-    assert "full_aperture_language_amplitude(input_fields)" in text
+    assert 'expanded=expand(input_fields)' in text
     assert "hasattr(core,'output_adapter')" in text
+
+
+def test_parent_observation_rebinds_real_instance_and_restores_alias():
+    from stage_meter import StageMeter
+    router=GoodDispatch();meter=StageMeter();applied=graph.AppliedStages(meter)
+    original_parent=Parent.forward
+    alias=graph.observe_full_aperture_parent(router,Parent.forward,full_aperture_language_amplitude,meter,applied)
+    meter.patch_statements(router,alias,[('language.router_energy_top2','router',True,0,0)])
+    assert router.forward(4)==15 and router.total==15
+    assert Parent.forward is original_parent
+    assert [r['stage'] for r in meter.rows]==['language.full_aperture_amplitude_layout','language.router_energy_top2']
+    applied.close()
+    assert not hasattr(router,alias)
+    assert router.forward(5)==18 and router.total==33
 
 
 def test_true_online_input_and_reuse_not_cached_producer_retest():
