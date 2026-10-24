@@ -108,7 +108,13 @@ def main():
             guard.bind()
             if args.mode=='bank':
                 frozen=imported_sources();status('encoding_original100_titles')
+                # Handoff the loading monitor to the already-bound independent
+                # worker guard, exactly as query mode does before its window.
+                # Avoid duplicate parent control queries throughout bank encoding.
+                write(output/'admission_bound.json',dict(pid=os.getpid(),unix=time.time(),sources=frozen,
+                    mode='bank',independent_worker_guard_bound=True))
                 value=original._encode_titles_student(loaded,replacement,readout,data.titles,settings)
+                guard.fast()  # A prior transient/foreign guard failure stays fatal.
                 guard.check()
                 if value.shape!=(100,64) or value.dtype!=torch.float32 or not torch.isfinite(value).all():
                     raise ValueError('Original title output is not FP32[100,64]')

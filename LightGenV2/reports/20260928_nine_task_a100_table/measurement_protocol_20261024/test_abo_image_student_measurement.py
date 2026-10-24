@@ -41,3 +41,30 @@ def test_transient_gap_does_not_trigger_immediate_reload():
     assert "'--idle-checks',type=int,default=12" in source
     assert 'while idle<args.idle_checks:' in source and 'if records:idle=0;' in source
     assert 'not 3<=args.idle_checks<=120' in source
+
+
+@pytest.mark.parametrize('failed_guard',[False,True])
+def test_bank_handoff_and_prior_guard_failure_are_not_lost(failed_guard,tmp_path):
+    from types import SimpleNamespace
+    source=(HERE/'measure_abo_image_student.py').read_text()
+    bank=next(n for n in ast.walk(ast.parse(source)) if isinstance(n,ast.If) and ast.unparse(n.test)=="args.mode == 'bank'")
+    prefix=[]
+    for statement in bank.body:
+        prefix.append(statement)
+        if ast.unparse(statement)=='guard.check()':break
+    events=[]
+    def fast():
+        events.append('fast')
+        if failed_guard:raise RuntimeError('retained independent failure')
+    values=dict(imported_sources=lambda:{},status=lambda *_:events.append('status'),
+        write=lambda path,value:events.append(('handoff',path.name,value['independent_worker_guard_bound'])),
+        output=tmp_path,os=SimpleNamespace(getpid=lambda:1),time=SimpleNamespace(time=lambda:0),
+        original=SimpleNamespace(_encode_titles_student=lambda *_:events.append('original100')),
+        loaded=None,replacement=None,readout=None,data=SimpleNamespace(titles=[]),settings=None,
+        guard=SimpleNamespace(fast=fast,check=lambda:events.append('check')))
+    code=compile(ast.Module(body=prefix,type_ignores=[]),'<original bank metadata/guard prefix>','exec')
+    if failed_guard:
+        with pytest.raises(RuntimeError,match='retained independent failure'):exec(code,values)
+        assert 'check' not in events
+    else:exec(code,values);assert events[-1]=='check'
+    assert events[:3]==['status',('handoff','admission_bound.json',True),'original100']
