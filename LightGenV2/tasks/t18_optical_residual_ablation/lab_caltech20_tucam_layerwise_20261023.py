@@ -60,22 +60,33 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
         data_SHA256=dm['sha256'],measured_stages=list(fields),allowed_keys=sorted(keys),
         TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_informed_development=True,
         full_physical=prefix==5,original_model_structure=True,new_inference_layers=0,SDK_used=False)
+    teacher=None
+    if c.get('TRAIN_teacher_margin_MSE',False):
+        assert prefix==5 and c['TRAIN_teacher_margin_MSE'] is True
+        folder=ROOT/c['TRAIN_teacher_cache'];cache=folder/'teacher_TRAIN_features.npz';tr=m.read(folder/'report.json')
+        assert m.sha(cache)=='a81f4a1c52e69482cde60427c11fd653095c40854513969af6b13a9d76c4e2d2' and m.sha(folder/'report.json')=='407fb1ef2fd97df717b75b228fbb7a71a3a05f90ded38a3408190c3e2af80bc4'
+        assert tr['role']=='train' and not tr['TEST_used'] and not tr['VALID_used'] and tr['source_PT_SHA256']==c['initial_SHA256'] and tr['data_SHA256']==dm['sha256']
+        with np.load(cache,allow_pickle=False)as z:
+            assert np.array_equal(z['ids'],data['train'][2])and np.array_equal(z['labels'],data['train'][1]);teacher=torch.from_numpy(z['logits'].copy())
+        assert teacher.shape==(1600,20)and torch.isfinite(teacher).all()
+        protocol.update(TRAIN_teacher_margin_MSE=True,teacher_cache_SHA256=m.sha(cache),teacher_source_PT_SHA256=tr['source_PT_SHA256'],teacher_gradient_fraction_max=.5,teacher_gate='TRAIN-correct',inference_teacher=False)
     m.save(out/'protocol.json',protocol);m.save(out/'baseline.json',test)
     np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob)
     loop.saved_model(m,model,out/'best.pt',protocol)
     best,bnll,selected=test['correct'],test['nll'],0
     loop.gpu_admission(m,c);model.cuda()
+    if teacher is not None:teacher=teacher.cuda()
     for name,p in model.named_parameters():p.requires_grad_(name in keys)
     groups=[]
     for prefix_name,lr in (('phase_sets.',c['phase_lr']),('electronic.',c['electronic_lr']),('fusion_logits.',c['alpha_lr']),('linear.',c['head_lr'])):
         params=[p for name,p in model.named_parameters() if name in keys and name.startswith(prefix_name)]
         if params:groups.append(dict(params=params,lr=lr*recipe['lr_scale'],weight_decay=0 if prefix_name=='fusion_logits.' else c['weight_decay']))
     opt=torch.optim.AdamW(groups);transforms=TRAINTransforms(model,list(fields)[-1],c)
-    held={};hook=model.linear.register_forward_hook(lambda module,args,value:held.update(logits=value))
+    held={};hook=model.linear.register_forward_hook(lambda module,args,value:held.update(logits=value,features=args[0]))
     rng=np.random.default_rng(c['seed']);history=[];start=time.monotonic();epoch=0;updates=0
     try:
         for epoch in range(1,recipe['epochs']+1):
-            model.cuda().train();order=rng.permutation(1600);total=0.;used=0
+            model.cuda().train();order=rng.permutation(1600);total=0.;used=0;ce_total=kd_total=0.
             cm=np.asarray(test['confusion_matrix']);errors=1-cm.diagonal()/cm.sum(1).clip(1)
             prior=np.asarray(c['original_TRAIN_counts'],float);w=(.5+.5*np.sqrt(prior/prior.mean()))*(1+recipe['TRAIN_class_emphasis']*errors)
             weights=torch.tensor(w,dtype=torch.float32,device='cuda')
@@ -83,6 +94,9 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                 ix=order[begin:begin+8];x=loop.put_fields(model,data,fields,'train',ix,'cuda');labels=torch.from_numpy(data['train'][1][ix].astype(np.int64)).cuda()
                 opt.zero_grad(set_to_none=True);model(x)
                 loss=F.cross_entropy(held['logits'],labels,weight=weights,label_smoothing=c['label_smoothing'])
+                if teacher is not None:
+                    from lab_caltech20_TRAIN_frozen_readout_20261024 import normalized_teacher_MSE
+                    ce=loss;kd,_=normalized_teacher_MSE(held['logits'],labels,teacher[ix]);gc=torch.autograd.grad(ce,held['features'],retain_graph=True)[0].detach().norm();gk=torch.autograd.grad(kd,held['features'],retain_graph=True)[0].detach().norm();coefficient=torch.minimum(ce.new_tensor(5.),.5*gc/gk.clamp_min(1e-8));assert not coefficient.requires_grad and float(coefficient*gk/gc.clamp_min(1e-8))<=.500001;loss=ce+coefficient*kd;ce_total+=float(ce.detach())*len(ix);kd_total+=float((coefficient*kd).detach())*len(ix)
                 assert torch.isfinite(loss);loss.backward();ps=[p for p in model.parameters() if p.requires_grad]
                 assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in ps)
                 norm=float(torch.nn.utils.clip_grad_norm_(ps,1.));assert norm>0;opt.step();updates+=1
@@ -97,6 +111,7 @@ def fit_suffix(model,data,dm,fields,paths,parent,reference,c,recipe,out,target):
                 if test['correct']>best or (test['correct']==best and test['nll']<bnll-1e-4):
                     best,bnll,selected=test['correct'],test['nll'],epoch;loop.saved_model(m,model,out/'best.pt',protocol)
                 row=dict(epoch=epoch,TRAIN_loss=total/1600,TRAIN_consumed=used,TEST_correct=test['correct'],TEST_NLL=test['nll'],selected_correct=best,selected_epoch=selected,elapsed_s=time.monotonic()-start)
+                if teacher is not None:row.update(TRAIN_CE=ce_total/1600,TRAIN_weighted_teacher_MSE=kd_total/1600,teacher_gradient_fraction_max=.5)
                 history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',dict(state='CPU_development_selection',latest=row));print(json.dumps(row),flush=True)
             if best>=target or time.monotonic()-start>=recipe['seconds']:break
         model.cpu();loop.validate_state(m,model,original,keys);loop.saved_model(m,model,out/'last.pt',protocol)
@@ -168,7 +183,7 @@ def selftest():
             before=model(x)[0].clone()
         original=m.state_cpu(model);keys=m.allowed_keys(model,prefix)
         transforms=TRAINTransforms(model,STAGES[prefix-1],dict(CCD_gain_sigma=.005,CCD_additive_sigma_DN=.1,feature_dropout_p=0,dropout_location='CCD_pixels',CCD_pixel_dropout_p=.002))
-        held={};hook=model.linear.register_forward_hook(lambda module,args,value:held.update(logits=value))
+        held={};hook=model.linear.register_forward_hook(lambda module,args,value:held.update(logits=value,features=args[0]))
         try:
             model.measured=fields
             with torch.no_grad():assert torch.equal(before,model(x)[0])
@@ -178,6 +193,11 @@ def selftest():
             model.train();model.measured=fields;model(x);F.cross_entropy(held['logits'],torch.tensor([0,1])).backward()
             assert all(p.grad is not None and torch.isfinite(p.grad).all() for name,p in model.named_parameters() if name in keys)
             assert all(p.grad is None for name,p in model.named_parameters() if name not in keys)
+            if prefix==5:
+                from lab_caltech20_TRAIN_frozen_readout_20261024 import normalized_teacher_MSE
+                model.zero_grad(set_to_none=True);model(x);labels=torch.tensor([0,1]);teacher=held['logits'].detach()+F.one_hot(labels,20)*8
+                ce=F.cross_entropy(held['logits'],labels);kd,_=normalized_teacher_MSE(held['logits'],labels,teacher);gc=torch.autograd.grad(ce,held['features'],retain_graph=True)[0].detach().norm();gk=torch.autograd.grad(kd,held['features'],retain_graph=True)[0].detach().norm();coefficient=torch.minimum(ce.new_tensor(5.),.5*gc/gk.clamp_min(1e-8));assert not coefficient.requires_grad and float(coefficient*gk/gc.clamp_min(1e-8))<=.500001
+                (ce+coefficient*kd).backward();assert all(p.grad is not None and torch.isfinite(p.grad).all()for name,p in model.named_parameters()if name in keys);assert all(p.grad is None for name,p in model.named_parameters()if name not in keys)
             assert all(not k.startswith('raw_router') for k in keys)
             captured=set().union(*(loop.mask_keys(model,str(k)) for k in range(prefix-1)))
             assert not captured&keys
@@ -188,7 +208,7 @@ def selftest():
             loop.validate_state(m,model,original,keys)
         finally:transforms.remove();hook.remove()
     assert gate_target(346,8)==314 and gate_target(346,1.5)==340
-    print(json.dumps(dict(passed=True,prefixes_checked=5,future_phase_gradients=True,captured_masks_frozen=True,eval_augmentation_identity=True,SDK_used=False,GPU_used=False,TEST_used=False)))
+    print(json.dumps(dict(passed=True,prefixes_checked=5,future_phase_gradients=True,captured_masks_frozen=True,eval_augmentation_identity=True,full_physical_TRAIN_teacher_gradient_cap=True,SDK_used=False,GPU_used=False,TEST_used=False)))
 
 
 if __name__=='__main__':
