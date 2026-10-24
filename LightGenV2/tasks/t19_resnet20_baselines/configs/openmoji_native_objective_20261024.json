@@ -1,0 +1,24 @@
+{
+  "profile": "openmoji_native_objective_20261024",
+  "run_tag": "native_objective1",
+  "purpose": "Single standard native-task-loss control against later bespoke scene-balanced objectives; no additional weight search or desired-TEST-score stopping. All variants, including equal-preservation77.65percent, retained.",
+  "historical_TEST_observed": true,
+  "seed": 42,
+  "epochs": 60,
+  "learning_rate": 0.001,
+  "effective_batch": 32,
+  "gradient_clip": 1.0,
+  "validation_group": "source_grid",
+  "validation_hash_modulus": 5,
+  "initialization": "official frozen ImageNet RN18; fresh seeded GRU and identical task head",
+  "loss": "original T19 Problem(openmoji) native editing_objective and settings, no reweighting or changed threshold",
+  "candidates": [
+    {"id": "native_original", "feature_dropout": 0.2, "weight_decay": 0.0001, "objective": "native_original"}
+  ],
+  "selection": "single native-task-loss control, fixed last60; VAL report only, no epoch or desired-TEST-score selection",
+  "TEST_policy": "one full original TEST after fixed last60; keep all original and new results",
+  "candidate_gpu_indices": [6, 4, 5, 2],
+  "max_physical_gpus": 4,
+  "max_jobs_per_gpu": 2,
+  "tasks": ["openmoji"]
+}

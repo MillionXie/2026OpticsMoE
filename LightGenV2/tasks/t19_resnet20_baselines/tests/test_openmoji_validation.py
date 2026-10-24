@@ -1,7 +1,7 @@
 import copy
 import pytest
 import torch
-from LightGenV2.tasks.t19_resnet20_baselines.openmoji_validation_repair import grouped_indices,regularize_features,select_candidate,validate_gate,candidate_contract
+from LightGenV2.tasks.t19_resnet20_baselines.openmoji_validation_repair import grouped_indices,regularize_features,select_candidate,validate_gate,candidate_contract,candidate_loss
 
 
 def test_fold_groups_all_equal_source_scenes_together_and_is_deterministic():
@@ -53,3 +53,19 @@ def test_preservation_ablation_does_not_relax_old_candidate_contract():
     with pytest.raises(ValueError):candidate_contract(other)
     other=copy.deepcopy(new);other['candidates'][0]['preserve_weight']=.6
     with pytest.raises(ValueError):candidate_contract(other)
+
+
+def test_native_loss_control_exactly_matches_original_task_loss():
+    from types import SimpleNamespace
+    from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.objectives import editing_objective
+    settings=SimpleNamespace(changed_cell_weight=12.,foreground_cell_weight=3.,category_loss_weight=1.,
+        edit_loss_weight=1.25,preservation_loss_weight=.15,task_loss_weight=.1,ccd_loss_weight=0.,router_balance_weight=0.)
+    torch.manual_seed(42)
+    output=dict(category_logits=torch.randn(2,17,6,6,requires_grad=True),edit_logits=torch.randn(2,6,6,requires_grad=True),task_logits=torch.randn(2,4,requires_grad=True))
+    batch=dict(target_grid=torch.randint(0,17,(2,6,6)),edit_grid=torch.randint(0,2,(2,6,6)).float(),task_index=torch.tensor([0,1]))
+    batch['preserve_grid']=1-batch['edit_grid'];candidate=dict(objective='native_original')
+    zero=torch.zeros(())
+    expected=editing_objective(dict(output,ccd_operating_loss=zero,router_balance_loss=zero),batch,settings)['total']
+    actual=candidate_loss(output,batch,candidate,settings)
+    torch.testing.assert_close(actual,expected,rtol=0,atol=0);actual.backward()
+    assert all(x.grad is not None and torch.isfinite(x.grad).all() for x in output.values())

@@ -54,6 +54,8 @@ def select_candidate(results):
 def candidate_contract(plan):
     if plan.get('profile')=='openmoji_equal_preservation_20261024':
         expected=[dict(id='equal_changed_preserved',feature_dropout=.2,weight_decay=.0001,preserve_weight=1.)]
+    elif plan.get('profile')=='openmoji_native_objective_20261024':
+        expected=[dict(id='native_original',feature_dropout=.2,weight_decay=.0001,objective='native_original')]
     elif 'profile' not in plan:
         expected=[dict(id='plain',feature_dropout=0.,weight_decay=.0001),
                   dict(id='feature_dropout20',feature_dropout=.2,weight_decay=.0001),
@@ -61,6 +63,15 @@ def candidate_contract(plan):
     else:raise ValueError('Unknown fixed experimental profile')
     if plan['candidates']!=expected:raise ValueError('Predeclared candidates differ')
     return expected
+
+
+def candidate_loss(output,batch,candidate,settings=None):
+    if candidate.get('objective')=='native_original':
+        if settings is None:raise ValueError('Native task loss requires explicit original settings')
+        from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.objectives import editing_objective
+        zero=output['category_logits'].new_zeros(())
+        return editing_objective(dict(output,ccd_operating_loss=zero,router_balance_loss=zero),batch,settings)['total']
+    return balanced_edit_loss(output,batch,preserve_weight=candidate.get('preserve_weight',.25))
 
 
 def validate_gate(gate,manifest):
@@ -76,13 +87,13 @@ def fresh_model(device):
 
 
 @torch.no_grad()
-def cache_metrics(model,cache,indices,device,*,preserve_weight=.25):
+def cache_metrics(model,cache,indices,device,*,preserve_weight=.25,candidate=None,settings=None):
     from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.metrics import MetricAccumulator
     accumulator=MetricAccumulator();total=0;count=0;model.eval()
     for start in range(0,len(indices),32):
         item=indices[start:start+32];batch,features=original.cached_batch(cache,item,device)
         output=forward_features(model,'openmoji',features,batch['tokens'])
-        loss=balanced_edit_loss(output,batch,preserve_weight=preserve_weight);total+=float(loss)*len(item);count+=len(item)
+        loss=candidate_loss(output,batch,candidate or dict(preserve_weight=preserve_weight),settings);total+=float(loss)*len(item);count+=len(item)
         accumulator.update(output,batch)
     return accumulator.compute(),total/count
 
@@ -90,6 +101,10 @@ def cache_metrics(model,cache,indices,device,*,preserve_weight=.25):
 def run(args):
     require_published_source();plan=json.loads(args.plan.read_text())
     expected=candidate_contract(plan)
+    native_sources=original.NATIVE_SOURCES['openmoji']
+    if any(c.get('objective')=='native_original' for c in expected):
+        native_sources=(*native_sources,'experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/objectives.py',
+            'experiments/qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing/settings.py')
     if plan['candidates']!=expected or plan['epochs']!=60 or plan['seed']!=42 or plan['learning_rate']!=.001:
         raise ValueError('Predeclared candidate set or budget differs')
     if (plan['validation_group']!='source_grid' or plan['validation_hash_modulus']!=5
@@ -101,7 +116,7 @@ def run(args):
     m=dict(status='preflight',task='openmoji',phase=args.phase,pid=os.getpid(),started_unix=time.time(),
         command=[sys.executable,'-m',__spec__.name,*sys.argv[1:]],git_commit=git('rev-parse','HEAD'),
         source_sha256={n:file_sha256(TASK/n) for n in SOURCES},profile_SHA=file_sha256(args.plan),
-        native_source_sha256={n:file_sha256(Path(__file__).resolve().parents[3]/n) for n in original.NATIVE_SOURCES['openmoji']},
+        native_source_sha256={n:file_sha256(Path(__file__).resolve().parents[3]/n) for n in native_sources},
         gpu_uuid=args.gpu_uuid,seed=42,learning_rate=.001,schedule='constant',warmup_epochs=0,effective_batch=32,
         precision='FP32_TF32_disabled',historical_TEST_observed=True,old_trained_head_loaded=False,
         initialization='official frozen visual; fresh seed42 GRU and unchanged task head',test_selected_checkpoint=False)
@@ -142,7 +157,7 @@ def run(args):
                     batch,features=original.cached_batch(cache,list(range(start,start+32)),device)
                     optimizer.zero_grad(set_to_none=True)
                     output=forward_features(model,'openmoji',regularize_features(features,candidate['feature_dropout'],True),batch['tokens'])
-                    loss=balanced_edit_loss(output,batch,preserve_weight=candidate.get('preserve_weight',.25))
+                    loss=candidate_loss(output,batch,candidate,problem.settings)
                     if not torch.isfinite(loss):raise ValueError('Nonfinite candidate probe loss')
                     loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1);optimizer.step();losses.append(float(loss.detach()))
                 reports.append(dict(candidate=candidate,losses=losses,frozen_encoder_audit=assert_encoder_unchanged(model.encoder,frozen),steps=2))
@@ -163,7 +178,7 @@ def run(args):
                 for step,item in enumerate(loader):
                     batch,features=original.cached_batch(cache,item.tolist(),device);optimizer.zero_grad(set_to_none=True)
                     output=forward_features(model,'openmoji',regularize_features(features,candidate['feature_dropout'],True),batch['tokens'])
-                    loss=balanced_edit_loss(output,batch,preserve_weight=candidate.get('preserve_weight',.25))
+                    loss=candidate_loss(output,batch,candidate,problem.settings)
                     if not torch.isfinite(loss):raise ValueError('Nonfinite candidate loss')
                     loss.backward();torch.nn.utils.clip_grad_norm_(parameters,1);optimizer.step()
                     n=len(item);total+=float(loss.detach())*n;count+=n;order.extend(batch['sample_id'])
@@ -176,8 +191,8 @@ def run(args):
                 write_json(folder/'history.json',history);write_json(run/'progress.json',dict(status='training',candidate=candidate['id'],**entry))
             expected_steps=math.ceil(len(training)/32)*60
             if any(int(s['step'])!=expected_steps for s in optimizer.state.values()):raise ValueError('Candidate budget step mismatch')
-            val_metrics,val_loss=cache_metrics(model,cache,validation,device,preserve_weight=candidate.get('preserve_weight',.25))
-            TRAIN_metrics,_=cache_metrics(model,cache,training,device,preserve_weight=candidate.get('preserve_weight',.25))
+            val_metrics,val_loss=cache_metrics(model,cache,validation,device,candidate=candidate,settings=problem.settings)
+            TRAIN_metrics,_=cache_metrics(model,cache,training,device,candidate=candidate,settings=problem.settings)
             result=dict(candidate=candidate,epoch=60,optimizer_steps=expected_steps,validation_metrics=val_metrics,validation_loss=val_loss,
                 TRAIN_metrics=TRAIN_metrics,checkpoint_SHA=file_sha256(folder/'last_checkpoint.pt'),test_evaluations=0)
             write_json(folder/'validation_result.json',result);results.append(result);model.cpu();del model,optimizer

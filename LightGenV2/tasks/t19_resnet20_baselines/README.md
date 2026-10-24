@@ -1,5 +1,31 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-24 固定短预算完成；OpenMoji等权未落区间，补原生损失标准对照
+
+图搜文50/100更新已完成：H@1分别0.4100（984/2400）、0.6325（1518/2400）。
+100更新约2/3轮，处于用户希望的0.5至0.68，但不能写成完整1轮或30轮；50更新低于0.5也完整保留。
+独立37项只读审核通过（含证据限制）：完整排名/ID重算、原始CSV与缓存SHA、真实首轮采样前缀、
+独立初始化、AdamW精确步数/范围、官方视觉含BN冻结、GRU/双投影更新与旧权重保护全部通过。
+证据`runs/control/retrieval_subepoch_audit_20261024.json`，完整结果`runs/simulation/retrieval_subepoch_20261024/`。
+没有新TEST encoder提取；审核仅saved rankings，不对相似度/并列处理作独立重建承诺。
+
+OpenMoji等权last60已完成：修改格0.7765、保留格0.9223655、编辑IoU0.2818292、objectF1 0.5592772。
+主指标仍高于0.76，不能称达标或替换为目标内数字；相比原0.7755版本保留格提升而IoU略降。
+独立30项审核通过（含证据限制）：原1000 TEST保存的类别/编辑mask/task对GT全部复算、
+60轮冻结/采样、7500 AdamW步、参数范围及GRU/头更新、原权重保护/源码/实际退出均通过。
+证据`runs/control/openmoji_equal_preservation_last60_audit_20261024.json`；last SHA
+`ee867e205e667208b059f25898e1eedd71cd678876bca03ece02a470c1c6e905`。
+本轮21份已完成证据7,925,799字节按SHA复制本地，无源或PT传输。
+
+进一步仅补一个标准原生损失对照`configs/openmoji_native_objective_20261024.json`，
+原`Problem(openmoji)`的`editing_objective`及原设置（changed12/foreground3/category1/edit1.25/
+preservation0.15/task0.1）直接复用，不针对分数另搜权重。
+官方冻结视觉/原头/GRU、seed42、dropout0.2/WD0.0001、3981/1019分组、固定last60保持。
+从头初始化头，自己的TRAIN smoke后正式，末轮完整1000 TEST一次；全部高低结果无条件保留。
+原生objective/settings本次额外记科学源码SHA；CPU逐元素核对确实调用原目标，非近似重写。
+相关25项不同检查已通过；原平衡损失默认与等权profile仍各自严格绑定，不更改已有成绩。
+这属于原生目标对照，既不承诺进入0.60至0.76，也不继续按TEST增添损失权重点位。
+
 ## 2026-10-24 追加：OpenMoji保留/编辑等权与图搜文固定短预算
 
 用户希望OpenMoji在0.60至0.76、图搜文不超过0.68，图搜图仍采用77.88%，其他任务保持。
