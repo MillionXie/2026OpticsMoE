@@ -131,7 +131,53 @@ def summarize(calls,samples):
         cuda_events_are_diagnostic_only=True,no_historical_cost_override=True)
 
 
-def collect(rows,prepare,transfer,forward,first_start,synchronize,check,clock=time.perf_counter,progress=None,records=None):
+def cpu_input_evidence(inputs):
+    """Read CPU-only shape/small token metadata; never execute a GPU audit op."""
+    from collections.abc import Mapping
+    shapes={};small={}
+    def visit(value,path):
+        if isinstance(value,Mapping):
+            for key,item in value.items():visit(item,str(key) if not path else path+'.'+str(key))
+        elif hasattr(value,'shape') and hasattr(value,'dtype'):
+            device=getattr(value,'device',None)
+            if device is not None and getattr(device,'type',str(device))!='cpu':
+                raise ValueError('Input evidence must not touch CUDA tensors')
+            shapes[path or 'input']=dict(shape=[int(v) for v in value.shape],dtype=str(value.dtype))
+            if path.split('.')[-1] in ('input_ids','attention_mask','image_grid_thw','video_grid_thw','images_spatial_crop'):
+                small[path]=value.tolist()
+        elif isinstance(value,(tuple,list)):
+            for index,item in enumerate(value):visit(item,path+'.'+str(index))
+    visit(inputs,'')
+    result=dict(tensors=shapes,small_cpu_values=small,
+        small_values_sha256=hashlib.sha256(json.dumps(small,sort_keys=True,separators=(',',':')).encode()).hexdigest())
+    ids=small.get('input_ids');mask=small.get('attention_mask')
+    if ids is not None:
+        if len(ids)!=1:raise ValueError('B1 token evidence required')
+        if mask is not None and (len(mask)!=1 or len(mask[0])!=len(ids[0])):
+            raise ValueError('Input IDs and attention mask differ')
+        effective=ids[0] if mask is None else [v for v,active in zip(ids[0],mask[0]) if active]
+        result.update(effective_input_tokens=len(effective),effective_input_ids_sha256=
+            hashlib.sha256(json.dumps(effective,separators=(',',':')).encode()).hexdigest())
+    return result
+
+
+def input_video_metadata(rows):
+    """Original file dimensions read AFTER T1; processor shapes come from CPU inputs."""
+    import cv2
+    result={}
+    for row in rows:
+        video=cv2.VideoCapture(row['video_path'])
+        try:
+            if not video.isOpened():raise ValueError('Video metadata could not be opened')
+            width=int(video.get(cv2.CAP_PROP_FRAME_WIDTH));height=int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            if min(width,height)<=0:raise ValueError('Invalid original video dimensions')
+            result[row['sample_id']]=dict(width=width,height=height,
+                reported_frame_count=int(video.get(cv2.CAP_PROP_FRAME_COUNT)))
+        finally:video.release()
+    return result
+
+
+def collect(rows,prepare,transfer,forward,first_start,synchronize,check,clock=time.perf_counter,progress=None,records=None,input_observer=None):
     """No warmup, synthetic waits, prepared-input reuse or conditional sampling."""
     if records is None:records=[]
     for index,row in enumerate(rows):
@@ -147,6 +193,7 @@ def collect(rows,prepare,transfer,forward,first_start,synchronize,check,clock=ti
             diagnostic_first_block_cuda_ms=float(cuda_ms),frame_positions=json.dumps(positions[0])))
         if not p<=d<=a<=s<e<=z or len(positions[0])!=4:
             raise ValueError('Invalid single-video timing or original four-frame selection')
+        if input_observer is not None:input_observer(row,cpu)
         del inputs,cpu
         if progress is not None and (index==0 or (index+1)%25==0):progress(index+1)
     return records
@@ -175,7 +222,7 @@ def worker(args):
     if os.environ.get('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE')!=str(args.cap) or os.environ.get('CUDA_VISIBLE_DEVICES')!=args.gpu_uuid:
         raise ValueError('Exact MPS cap and GPU UUID must precede CUDA initialization')
     legacy=initialize_profile(args);bound=source_map()
-    output.mkdir(parents=True);records=[];sampler=None;finish=None;guard=None
+    output.mkdir(parents=True);records=[];input_evidence=[];sampler=None;finish=None;guard=None
     identity=dict(protocol_id=PROTOCOL,model=args.model,cap=args.cap,repeat=args.repeat,batch=1,
         gpu_uuid=args.gpu_uuid,pid=os.getpid(),sources=bound,
         git_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
@@ -231,7 +278,8 @@ def worker(args):
             def check():guard.fast();sampler.check()
             # All input, embedding, compute and actual inter-request work is charged.
             collect(rows,prepare,transfer,forward,start,torch.cuda.synchronize,check,
-                progress=lambda n:status('evaluating',completed_samples=n),records=records)
+                progress=lambda n:status('evaluating',completed_samples=n),records=records,
+                input_observer=lambda row,cpu:input_evidence.append(dict(sample_id=row['sample_id'],**cpu_input_evidence(cpu))))
             sampler.request('barrier');time.sleep(.12)  # Outside T1: bracket final output with an observed power sample.
             samples=sampler.stop();sampler=None;legacy.telemetry.save_samples(output/'telemetry.csv',samples)
             cost=summarize(records,samples)
@@ -247,6 +295,12 @@ def worker(args):
             input_hashes=file_identities(rows,hash_content=True)
             if file_identities(rows)!=input_metadata:raise RuntimeError('Raw input metadata changed during measurement')
             identity['input_files']=input_hashes
+            legacy.frozen.write_json(output/'input_audit.json',dict(samples=input_evidence,
+                original_video_metadata=input_video_metadata(rows),
+                original_metadata_read_after_T1=True,processor_metadata_source='actual CPU prepare output',
+                cpu_metadata_bookkeeping_in_inter_request_gaps=True,no_extra_GPU_audit_operators=True))
+            identity['input_audit_sha256']=sha(output/'input_audit.json')
+            identity['effective_input_tokens200']=sum(v.get('effective_input_tokens',0) for v in input_evidence)
             guard.check()
             report=dict(status='complete',**identity,cost=cost,performance200=performance,
                 measured_videos=200,reference_test_videos=558,full558_reference_is_historical=True,
@@ -263,6 +317,8 @@ def worker(args):
             if finish is not None:finish()
         finally:
             legacy.write_csv(output/'calls.csv',records)
+            if not (output/'input_audit.json').exists():
+                legacy.frozen.write_json(output/'input_audit_partial.json',dict(samples=input_evidence))
             legacy.frozen.write_json(output/'identity.json',identity)
             if guard is not None:guard.close(output/'process_audit.json')
 
@@ -345,6 +401,11 @@ def audit_point(folder,manifest):
         raise ValueError('Wrong MPS or sampling contract')
     if set(report['input_files'])!={r['sample_id'] for r in expected} or any(len(v['sha256'])!=64 for v in report['input_files'].values()):
         raise ValueError('Raw input content identities incomplete')
+    evidence=read(folder/'input_audit.json')
+    if sha(folder/'input_audit.json')!=report['input_audit_sha256'] or [v['sample_id'] for v in evidence['samples']]!=[r['sample_id'] for r in expected]:
+        raise ValueError('Input metadata audit changed or incomplete')
+    if sum(v.get('effective_input_tokens',0) for v in evidence['samples'])!=report['effective_input_tokens200']:
+        raise ValueError('Shared token numerator mismatch')
     samples=[Sample(float(r['host_time_unix']),float(r['host_monotonic_s']),r['phase'],float(r['watts']),
         float(r['utilization_percent']),float(r['memory_used_mib'])) for r in raw]
     value=summarize(calls,samples)

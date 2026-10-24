@@ -111,3 +111,23 @@ def test_input_bytes_are_not_prehashed_to_warm_cache(tmp_path,monkeypatch):
     after=m.file_identities(rows,hash_content=True)
     assert reads==[path] and len(after['sample']['sha256'])==64
     assert {k:v for k,v in after['sample'].items() if k!='sha256'}==before['sample']
+
+
+def test_cpu_metadata_records_full_shapes_grid_and_nonpadding_ids():
+    import numpy as np
+    inputs=dict(input_ids=np.array([[11,12,13,0]]),attention_mask=np.array([[1,1,1,0]]),
+        pixel_values=np.zeros((4,3,224,224)),image_grid_thw=np.array([[1,16,16]]))
+    value=m.cpu_input_evidence(inputs)
+    assert value['effective_input_tokens']==3
+    assert value['small_cpu_values']['input_ids']==[[11,12,13,0]]
+    assert value['tensors']['pixel_values']['shape']==[4,3,224,224]
+    assert value['small_cpu_values']['image_grid_thw']==[[1,16,16]]
+    assert 'pixel_values' not in value['small_cpu_values']
+    assert len(value['effective_input_ids_sha256'])==64
+
+
+def test_input_evidence_refuses_cuda_without_running_any_tensor_method():
+    class CUDAInput:
+        shape=(1,4);dtype='int64';device=SimpleNamespace(type='cuda')
+        def tolist(self):raise AssertionError('Never copy CUDA audit data')
+    with pytest.raises(ValueError,match='CUDA'):m.cpu_input_evidence(dict(input_ids=CUDAInput()))

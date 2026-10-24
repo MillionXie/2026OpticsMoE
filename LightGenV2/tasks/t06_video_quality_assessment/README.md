@@ -15,6 +15,9 @@ tokenizer/H2D/embedding/全部网络/CPU返回及199段间隔，不扣日志/gua
 NVML全连续窗积分加338.2W主机代理一次，为估算系统能耗，非整机实测电表。
 每条p/d/a/s/e/r和legacyCUDAevent只作诊断，分段并集核对总wall，不能替代E2E。
 输入文件仅在T0前stat，不读视频字节预热；SHA在T1后核并验证前后元数据不变。
+每个实际CPU prepare输出另保tensor形状/精度、grid、完整IDs/mask及非padding token数；
+无额外GPU审计算子，CPU记录真实耗时留在批间间隔。原视频尺寸在T1后读文件元数据。
+两表共用Qwen同批200的有效input-token分子，不能用LightGen特征槽位替换。
 原骨干资产/原质量头/精度、原抽帧位置及200ID SHA均锁定；不训练、不Graph、不扫batch。
 
 本轮严格200预测及subset200 SRCC/PLCC；原全558精度引用绑定SHA的历史报告，
