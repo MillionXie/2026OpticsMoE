@@ -1,0 +1,22 @@
+{
+  "seed": 42,
+  "epochs": 60,
+  "learning_rate": 0.001,
+  "effective_batch": 32,
+  "gradient_clip": 1.0,
+  "validation_group": "source_grid",
+  "validation_hash_modulus": 5,
+  "initialization": "official frozen ImageNet RN18; freshly seeded GRU and identical task head; no old trained head",
+  "loss": "scene_balanced_changed_category_and_edit_BCE",
+  "candidates": [
+    {"id": "plain", "feature_dropout": 0.0, "weight_decay": 0.0001},
+    {"id": "feature_dropout20", "feature_dropout": 0.2, "weight_decay": 0.0001},
+    {"id": "feature_dropout20_wd10", "feature_dropout": 0.2, "weight_decay": 0.001}
+  ],
+  "selection": "highest grouped TRAIN-validation changed-cell accuracy at fixed last60; ties lower validation loss then candidate id",
+  "TEST_policy": "one full original TEST only for the VAL-selected fixed-last candidate; retain all candidate results",
+  "candidate_gpu_indices": [4, 5, 2, 6],
+  "max_physical_gpus": 4,
+  "max_jobs_per_gpu": 2,
+  "tasks": ["openmoji"]
+}
