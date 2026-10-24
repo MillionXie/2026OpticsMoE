@@ -117,6 +117,14 @@ SDK采集只能在新S1确认后以新manifest/PT SHA/newprefix启动；本配�
 两方A阶段原教师的TRAIN1000 logits已保存并有对应PT/配置SHA；初始1000条基线与后续训练仍需按实际history核验，
 不能把进程启动或教师缓存完成当作新精度。完整A→D由同一有限训练进程顺序接续，不设自动定时任务或后台重试。
 
+随后用户明确批准在已授权1/3/4号中限额共享两张GPU。已核PID、创建时间、命令和run后，仅SIGINT停止上述两组自有CPU探路，
+保留teacher缓存、E0 PT、日志及`manual_CPU_to_GPU_handoff_20261024.json`；其KeyboardInterrupt是人工迁移，不是新数值故障，不重启CPU旧任务。
+新run `runs/simulation/reference_adapter_TESTselect_sharedGPU_20261024/{moe,d2nn}`已以相同配置、相同原模型初始状态启动，
+不是接着CPU未完成epoch拼接预算。LightGen使用4090 UUID`1b963983-7909-af6e-0528-f0f0661ab549`（物理4），
+D2NN使用4090 UUID`e8837b85-d55b-8e81-aaa5-ec1ac326932d`（物理1），每进程PyTorch分配上限40%，最多两进程。
+运行源码commit为`7e22c78b9d06d111b567cee66f464ac04e19c862`，相对已测a5f38c4f2仅README变化，算法/config SHA不变；
+没有停止其他任务、没有使用GPU0/A100，当前只做服务器适配，无SDK或自动采集。
+
 ## 历史准备与运行记录（以下旧门槛及旧教师范围均已被上节覆盖）
 
 2026-10-24新任务，原仿真来源[T16](../t16_zero_phase_ccd_lifelong/README.md)。原T16保持只读。
