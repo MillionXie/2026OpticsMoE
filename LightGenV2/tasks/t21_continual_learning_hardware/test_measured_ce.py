@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import numpy as np
 import torch
-from .refine_measured_ce import contrast_transform, fit_convex, internal_indices, continuation_config, _convex_candidate
+from .refine_measured_ce import contrast_transform, fit_convex, internal_indices, continuation_config, _convex_candidate, enable_readout_only
 
 
 class MeasuredCETest(unittest.TestCase):
@@ -60,6 +60,21 @@ class MeasuredCETest(unittest.TestCase):
         self.assertLess(config['learning_rate'],.001)
         self.assertLess(config['TRAIN_feature_dropout'],.05)
         self.assertEqual(config['LBFGS_steps'],30)
+
+    def test_loaded_frozen_model_unfreezes_only_original_head(self):
+        from .refine_native_readout import fit_head
+        model=torch.nn.Module()
+        model.shared_head=torch.nn.Linear(784,10,bias=False)
+        model.upstream=torch.nn.Linear(2,2)
+        model.requires_grad_(False)
+        enable_readout_only(model)
+        self.assertTrue(model.shared_head.weight.requires_grad)
+        self.assertFalse(model.upstream.weight.requires_grad)
+        config=continuation_config();config.update(epochs=1,LBFGS_steps=1)
+        rows=[]
+        fit_head(model.shared_head,torch.rand(20,784),torch.arange(10).repeat(2),
+                 None,None,config,lambda *row:rows.append(row))
+        self.assertEqual([r[0] for r in rows],['baseline','adamw','lbfgs'])
 
 
 if __name__ == '__main__':

@@ -80,6 +80,13 @@ def continuation_config():
                 label_smoothing=.02, LBFGS_steps=30, LBFGS_anchor_strength=.01)
 
 
+def enable_readout_only(model):
+    for name, parameter in model.named_parameters():
+        parameter.requires_grad_(name == 'shared_head.weight')
+    if sum(p.numel() for p in model.parameters() if p.requires_grad) != 7840:
+        raise ValueError('Only original7840 readout parameters may be unfrozen')
+
+
 def main():
     p = argparse.ArgumentParser(__doc__)
     for name in ('capture', 'parent', 'out'):
@@ -113,6 +120,7 @@ def main():
         raise ValueError('Original mean-one784 camera features required')
     a.out.mkdir(parents=True, exist_ok=False);began = time.time()
     if a.continuation:
+        enable_readout_only(model)
         cfg=continuation_config();history=[]
         parent_correct=int((model.shared_head(x[test].float()).argmax(1)==labels[test]).sum())
         best_correct=parent_correct;best_weight=model.shared_head.weight.detach().clone();best_tag=('baseline',0)
