@@ -38,14 +38,24 @@ def cache(a):
     gpu = gpu_gate(dict(per_process_GPU_memory_fraction=.4,
         allowed_GPU_UUIDs=['GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd',
                           'GPU-1b963983-7909-af6e-0528-f0f0661ab549']), a.gpu_uuid)
-    paths = json.loads(a.source_protocols.read_text())
+    paths = {k: Path(v) for k, v in json.loads(a.source_protocols.read_text()).items()}
     fixed = json.loads((a.train / 'manifest.json').read_text())
     if fixed['split'] != 'train' or sha(paths['eurosat']) != fixed['source_protocol_sha256']:
         raise ValueError('Original source TRAIN protocol changed')
     d = read_source(a.train / 'inputs.npz', fixed['inputs_sha256'], 'train', np.arange(1000))
     dataset = load_dataset(paths, 'eurosat', 'train', vision_checkpoint=paths['vision'], device=torch.device('cuda:0'))
     if len(dataset) != 15998: raise ValueError('Original full TRAIN count changed')
-    model = model.cuda().eval(); a.out.mkdir(parents=True, exist_ok=False)
+    model = model.cuda().eval()
+    sample = dataset.get_batch(np.array([d['source_indices'][0]]), torch.device('cuda:0'))
+    initial_error = float((sample[0].cpu() - torch.from_numpy(d['x'][0])).abs().max())
+    with torch.no_grad(): initial = model(sample)
+    if initial_error > 3e-6 or initial['ccd_features'].shape != (1, 784):
+        raise RuntimeError('Actual source/forward preflight differs')
+    if a.preflight_only:
+        print(json.dumps(dict(passed=True,source_TRAIN_records=len(dataset),first_source_index=int(d['source_indices'][0]),
+            input_max_abs=initial_error,feature_shape=list(initial['ccd_features'].shape),SDK=False,run_written=False)))
+        return
+    a.out.mkdir(parents=True, exist_ok=False)
     lookup = {int(v): i for i, v in enumerate(d['source_indices'])}
     features, logits = [], []; maximum = 0.; checked = 0; started = time.time()
     with torch.no_grad():
@@ -163,6 +173,7 @@ def main():
     for name in ('checkpoint','source_protocols','train','capture','parent','source_cache','noise','noise_protocol'):
         p.add_argument('--'+name.replace('_','-'),type=Path)
     p.add_argument('--checkpoint-sha256');p.add_argument('--parent-sha256');p.add_argument('--gpu-uuid');p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--preflight-only',action='store_true')
     a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     (cache if a.mode=='cache' else fit)(a)
