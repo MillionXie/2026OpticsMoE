@@ -1,3 +1,13 @@
+## 2026-10-24 两层残差仿真参考ZIP（不改变最终实验）
+
+用户要求向同学提供兼容当前光路编码的仿真样例。唯一打包入口为
+`build_lab_package.py --output <本任务releases内新文件.zip> --validation <CPU验证.json>`；
+样例说明及运行入口位于`lab_examples/residual_l2/`。仅导出已发布Git的原实验室
+推理依赖闭包、82.00%仿真PT、封存TorchScript数值参考和manifest/SHA。
+不包含CCD、实验适配PT、现场坐标/LUT、凭据或SDK，不连接设备、不启动训练。
+rho=.3需联合导出振幅abs(M)与相位angle(M)；直接alpha坐标不得再sigmoid。
+当前数值/编码合同兼容不等于另一套设备免标定，详见包内README_CN.md。
+
 ## 2026-10-24 收官：按用户最终截图归档，四层有残差改用341/411
 
 本实验最终入口为[收官索引](reports/caltech20_final_20261024/README.md)及
