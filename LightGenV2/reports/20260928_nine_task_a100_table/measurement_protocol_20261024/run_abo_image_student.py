@@ -25,15 +25,16 @@ def main():
     parser.add_argument('--output',type=Path,required=True);parser.add_argument('--deadline',type=float,required=True)
     parser.add_argument('--bank',type=Path,help='Reuse an already qualified separate bank; never regenerate it')
     parser.add_argument('--repeats',type=int,nargs='+',default=[1,2,3])
+    parser.add_argument('--idle-checks',type=int,default=12,help='Ten-second consecutive idle checks before loading; reset on any foreign process')
     args=parser.parse_args();root=args.output.resolve();plan=trial_plan(args.repeats,args.bank)
-    if root.exists() or not root.is_relative_to(TASK/'runs/simulation') or not 0<args.deadline-time.time()<=7200:
+    if root.exists() or not root.is_relative_to(TASK/'runs/simulation') or not 0<args.deadline-time.time()<=7200 or not 3<=args.idle_checks<=120:
         raise ValueError('Fresh finite immutable task queue required')
     proof=cpu_contract();frozen=dict(proof['sources'])
     for name in ('run_abo_image_student.py','measure_abo_image_student.py','audit_abo_image_student.py','run_temporal_remainder.py'):
         frozen[(HERE/name).relative_to(REPO).as_posix()]=sha(HERE/name)
     root.mkdir(parents=True);bank=args.bank or root/'offline_title_bank'
     state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,command=sys.argv,repeats=args.repeats,
-        bank_root=str(bank),cpu_contract_sha256=sha(CPU),completed=[],sources=frozen,
+        bank_root=str(bank),cpu_contract_sha256=sha(CPU),completed=[],sources=frozen,required_idle_checks=args.idle_checks,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip())
     def save():write(root/'suite_status.json',state)
     def stable():
@@ -53,7 +54,7 @@ def main():
                 try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);break
                 except BlockingIOError:time.sleep(10)
             idle=0
-            while idle<3:
+            while idle<args.idle_checks:
                 stable();records=engine.base.guard_records(GPU)
                 if records:idle=0;state.update(status='waiting_foreign_process',foreign_processes=records)
                 else:validate_idle_memory(GPU);idle+=1;state.update(status='idle_guard',idle_checks=idle,foreign_processes=[])

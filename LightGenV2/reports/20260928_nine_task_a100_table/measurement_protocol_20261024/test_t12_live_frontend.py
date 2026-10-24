@@ -20,6 +20,9 @@ def test_waits_for_all_qualified_previous_rounds_and_MPS_release():
     assert not predecessor_ready(dict(done,mps_released=False))
     assert not predecessor_ready(dict(done,completed=['ours_repeat01']))
     with pytest.raises(RuntimeError):predecessor_ready({'status':'stopped'})
+    source=(HERE/'run_t12_live_contract.py').read_text()
+    assert "'--previous',type=Path,default=PREVIOUS" in source
+    assert "(previous/'suite_status.json')" in source
 
 
 def test_live_input_not_cache_or_target_and_original_quantization():

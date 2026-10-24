@@ -34,3 +34,10 @@ def test_correct_body_original_cpu_nonstable_ranking_and_no_training():
     assert 'online_title_bank_forwards=0' in source and 'formal_full2400_reference_hit1=.8058333333333333' in source
     assert 'initialize_student(' not in source and '.backward(' not in source
     assert "counts['bridge.native_merger']!=200" in source
+
+
+def test_transient_gap_does_not_trigger_immediate_reload():
+    source=(HERE/'run_abo_image_student.py').read_text()
+    assert "'--idle-checks',type=int,default=12" in source
+    assert 'while idle<args.idle_checks:' in source and 'if records:idle=0;' in source
+    assert 'not 3<=args.idle_checks<=120' in source

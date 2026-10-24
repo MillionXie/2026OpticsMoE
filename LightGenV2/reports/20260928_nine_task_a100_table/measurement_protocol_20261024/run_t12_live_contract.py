@@ -24,18 +24,21 @@ def predecessor_ready(state):
 def main():
     import fcntl
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--deadline',type=float,required=True)
+    p.add_argument('--previous',type=Path,default=PREVIOUS,help='Explicit immutable qualified predecessor; never infer latest')
     args=p.parse_args();root=args.output.resolve()
     if root.exists() or not root.is_relative_to(TASK/'runs/simulation') or not 0<args.deadline-time.time()<=7200:raise ValueError('New finite immutable CPU queue required')
     frozen={p.relative_to(REPO).as_posix():sha(p) for p in (Path(__file__),HERE/'t12_live_frontend.py',HERE/'stage_meter.py')}
     root.mkdir(parents=True);child=None
-    state=dict(status='waiting_previous_queue',pid=os.getpid(),predecessor=str(PREVIOUS),deadline=args.deadline,sources=frozen,command=sys.argv)
+    previous=args.previous.resolve()
+    if not previous.is_relative_to(REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation'):raise ValueError('Original task predecessor DATA only')
+    state=dict(status='waiting_previous_queue',pid=os.getpid(),predecessor=str(previous),deadline=args.deadline,sources=frozen,command=sys.argv)
     def save():write(root/'suite_status.json',state)
     def stable():
         if time.time()>args.deadline-180:raise TimeoutError('Finite CPU admission budget')
         if any(sha(REPO/k)!=v for k,v in frozen.items()):raise ValueError('Active T12 contract sources changed')
     save()
     try:
-        while not predecessor_ready(json.loads((PREVIOUS/'suite_status.json').read_text())):stable();time.sleep(15)
+        while not predecessor_ready(json.loads((previous/'suite_status.json').read_text())):stable();time.sleep(15)
         from LightGenV2.tasks.t06_video_quality_assessment import rental_busy_resource_20261020 as engine
         from LightGenV2.tasks.t06_video_quality_assessment.measure_mps_dataset_once import validate_idle_memory
         engine.GPU=GPU
