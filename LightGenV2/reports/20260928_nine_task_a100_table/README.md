@@ -1,5 +1,56 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 最新人工口径与完成清单（2026-10-25 02:19，北京时间）
+
+本节覆盖下方旧的12/18、Qwen CPU等待和必须每项200次GPU算量回放描述。
+人工最新明确：正式准确度沿用已确认的原代码**完整TEST**结果；first200×三fresh只测
+时间/能耗，子集预测指标仅作输出核验，不替换完整TEST准确度。OP按原网络和既有实际
+形状/长度记录推导，仅补确实缺失的形状；TOPS=OP/(1e12×匹配秒数)，
+TOPS/W=OP/(1e12×匹配焦耳数)，不另要求每项整套GPU重放，不训练、不重跑合格点。
+原protocol和所有raw不改，索引新增reporting_policy记录该人工覆盖。
+
+现在九行时间/能耗已合格**13/18模型项**，多baseline40GB仍24/24。
+新增OpenMoji Qwen固定T04 `a100_qwen_input_inclusive_20261025_01/qwen_repeat01,02,03`，
+测量源码`b069f70b3`，controller1639931及worker1640928/1643978/1648295全部complete、退出，
+MPS释放。原PNG/native完整Vision+Language/原BF16 CPU feature return/原head及CPU网格，
+连续200、零专门预热、首条及199真间隙全部保留；三轮服务器和本地独立CPU审计均通过，
+解析对象相同。63原文件15688776字节全SHA备份`backup_receipt_complete01.json`，
+外置0字节日志也已取回。600调用73.38854158180766ms/输入、28.703648822496017J/输入，
+时间加权board52.91894314590646W；正式完整1000准确度`.8120`，first200`.8`仅诊断。
+三份本地独立审计SHA依次`85348829e95aa79955ba9758171edf6e58f330dbb79f6bb563ad0b00019641ca`、
+`a6e602f131d1b552abfcc55f922f0b01700231b5ef52c397ea717f54c4e124ce`、
+`143a07f0fb1234f710107293836b328e04d410e030c1ddc428824cc0008f70d3`。
+原Qwen CPU `_04`真实200/999已通过，contract SHA
+`1bf5d3e0a761d7a72b5aa0308568959af10fc0d51565a1002335a752dc40c3bd`，6文件28534字节已SHA取回，
+不再等待或重跑它。OpenMoji双方同PNG/UTF8逐条配对，实际Qwen每轮12807有效token，
+总38421；由新索引补充Ours共同2298.231084958699tokens/s，Qwen872.5476568929895，
+倍率2.6339318738673287恰等于时间反比；Ours原raw里当时诚实记录的null不改。
+
+已本地全量独立重放`measurement_protocol_20261024/measured_index_partial_09.json`，
+SHA `6393a72b911235a7537e0bfb6ab6f89e8b6900175ac82b03b3601b744842b65c`，
+builder已发布`f77e9a02e`，仍PARTIAL；server没有生成这份私有index，旧08及以前保留。
+正式两Excel尚未生成，不用旧COMPLETE/frontend_tokens代替。
+
+余5项成本为LGVQ Ours temporal/spatial、T08图搜文Ours、T12双方。
+图搜文`.8058`原PT a2aa9a93…和原optimized配置已绑定；真实图200/2399及标题0/99
+原/插桩完整CPU逐位通过，contract SHA
+`24869bddce997cf26f0ce3dd2b2a89c7d08d956d25665d27cbf04bd0ad008e8a`，
+6文件155083字节已SHA备份，不重复该合同。唯一GPU队列controller1675400，
+T08 `a100_image_student_input_inclusive_20261025_01`，冻结runtime`d41653743`，
+deadline1792869065.7180984。独立fresh进程先建100标题FP32库（非正式成本），
+再三fresh原图200；CPU原非stable排序、原centered bicubic fit224、真实merger与6pass不改。
+最新检查还在waiting_foreign_process、无worker/合格轮，不假称已开始计时。
+真实A100占用PID1671965/hmh，02:09:17启动`fit_frozen_wave.py`，35606MiB；
+独立观察SHA `13fe7b4e8cd63b0dfafed1782b0f50151cbcfa3eeaf00780f9defb3cba00b5fa`。
+不杀对方、不混测，不将历史占用解释成用户看到空卡时也被占。
+
+T12原5b4f主体92274638字节、599805baseline1365318182字节和原TEST/instruction/embedding
+均重新全SHA核准，原t12_assets/venv依赖齐全。CPU前端/6pass观察入口`da85e0ec8`，
+静态3测试双端通过；控制器1690147位于T12 `a100_live_frontend_contract_20261025_01`，
+等待前述三轮全部完成/MPS释放和同一锁独占后才执行，不与计时重CPU骨干并发。
+这是CPU合同准备，非正式200×3，尚未称神经通过或双方正式队列均已排好。
+所有新源码已三端Git同步；peer T21的c83b7fa0f由其窗口自行先同步，B100三暂存未动。
+
 ## 新旧版入口与完成清单（2026-10-25 01:32，北京时间）
 
 OpenMoji Qwen原生网络CPU入口正在独立核验，唯一当前CPU控制器1597350位于
