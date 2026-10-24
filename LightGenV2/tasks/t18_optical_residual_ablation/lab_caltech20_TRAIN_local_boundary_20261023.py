@@ -20,7 +20,10 @@ def selection(features,labels,w,b):
     import torch
     from torch.nn import functional as F
     with torch.inference_mode():
-        logits=F.linear(torch.from_numpy(features.astype(np.float32)),torch.from_numpy(w.astype(np.float32)),torch.from_numpy(b.astype(np.float32)))
+        # Native CPU uses batch8, also for the final three TEST rows. Different
+        # GEMM batch shapes measurably change this ill-conditioned readout.
+        from lab_caltech20_tucam_TRAIN_linear_20261023 import canonical_affine_logits
+        logits=canonical_affine_logits(torch.from_numpy(features.astype(np.float32)),torch.from_numpy(w.astype(np.float32)),torch.from_numpy(b.astype(np.float32)))
         prediction=logits.argmax(1).numpy();nll=float(F.cross_entropy(logits,torch.from_numpy(labels.astype(np.int64))))
     return int((prediction==labels).sum()),nll,prediction
 

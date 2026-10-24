@@ -9,6 +9,18 @@ import json
 import lab_caltech20_tucam_layerwise_20261023 as base
 
 
+def canonical_affine_logits(features,weight,bias):
+    """Match original assess batch8 including its final zero padding."""
+    import torch
+    from torch.nn import functional as F
+    values=[]
+    for begin in range(0,len(features),8):
+        x=features[begin:begin+8];n=len(x)
+        if n<8:x=torch.cat([x,torch.zeros((8-n,x.shape[1]),dtype=x.dtype,device=x.device)])
+        values.append(F.linear(x,weight,bias)[:n])
+    return torch.cat(values)
+
+
 def TRAIN_affine_objective(weight,bias,features,labels,weights,smoothing,regularization):
     from torch.nn import functional as F
     ce=F.cross_entropy(F.linear(features,weight,bias),labels,weight=weights,label_smoothing=smoothing)
@@ -73,9 +85,9 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
             if begin%80==0:m.save(out/'progress.json',dict(state='verifying_native_TEST_features',TEST_consumed=begin+len(ix),TEST_fit=False))
     test=np.concatenate(test);train=torch.from_numpy(train);test=torch.from_numpy(test);labels=torch.from_numpy(data['train'][1].astype(np.int64));test_labels=torch.from_numpy(data['test'][1].astype(np.int64))
     with torch.inference_mode():
-        error=float(np.max(np.abs(model.linear(test).softmax(1).numpy()-prob)))
+        error=float(np.max(np.abs(canonical_affine_logits(test,model.linear.weight,model.linear.bias).softmax(1).numpy()-prob)))
         with np.load(source/'best_train_predictions.npz',allow_pickle=False) as z:
-            assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1]);train_error=float(np.max(np.abs(old.linear(train).softmax(1).numpy()-z['probabilities'])))
+            assert np.array_equal(z['ids'],data['train'][2]) and np.array_equal(z['labels'],data['train'][1]);train_error=float(np.max(np.abs(canonical_affine_logits(train,old.linear.weight,old.linear.bias).softmax(1).numpy()-z['probabilities'])))
     assert max(error,train_error)<=3e-6
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=c,recipe=recipe,parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),
         data_SHA256=dm['sha256'],prefix_SHA256=lineage,allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,
@@ -125,7 +137,7 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
         assert used==1600;head.eval()
         if epoch==1 or epoch%(5 if lbfgs else 2)==0 or epoch==recipe['epochs']:
             with torch.inference_mode():
-                logits=F.linear(test,head.weight.float(),head.bias.float()) if lbfgs else head(test);correct=int((logits.argmax(1)==test_labels).sum());nll=float(F.cross_entropy(logits,test_labels))
+                logits=canonical_affine_logits(test,head.weight.float(),head.bias.float());correct=int((logits.argmax(1)==test_labels).sum());nll=float(F.cross_entropy(logits,test_labels))
             if correct>best or (correct==best and nll<bnll-1e-4):best,bnll,selected=correct,nll,epoch;best_head={k:v.detach().clone() for k,v in head.state_dict().items()}
             row=dict(TRAIN_consumed=used,TRAIN_loss=total/used,TEST_correct=correct,selected_correct=best,optimizer_updates=updates,augmentation_strength=strength,head_lr=opt.param_groups[0]['lr'])
             row['outer_step' if lbfgs else 'epoch']=epoch;row['selected_outer_step' if lbfgs else 'selected_epoch']=selected
@@ -243,6 +255,8 @@ def selftest_affine():
     def closure():opt.zero_grad();loss=f(w,b);loss.backward();return loss
     opt.step(closure);assert float(f(w,b).detach())<before
     print(json.dumps(dict(passed=True,TRAIN_affine_gradcheck=True,fullbatch_objective_decreased=True,TEST_used=False,SDK_used=False,GPU_used=False)))
+    x=torch.randn(411,256);head=torch.nn.Linear(256,20);actual=canonical_affine_logits(x,head.weight,head.bias);last=torch.cat([x[408:],torch.zeros(5,256)]);assert torch.equal(actual[408:],head(last)[:3])
+    print(json.dumps(dict(passed=True,canonical_affine_batch8=True,padded_final3=True)))
 
 
 if __name__=='__main__':selftest();selftest_aug();selftest_affine()

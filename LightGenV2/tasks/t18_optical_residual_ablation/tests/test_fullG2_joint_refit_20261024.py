@@ -18,3 +18,6 @@ def test_full_physical_local_repair_uses_only_TRAIN_neighbors():
     assert "assert result['full_physical']" in s and "epochs=1,seconds=180" in s
     engine=(root/'lab_caltech20_tucam_TRAIN_linear_20261023.py').read_text()
     assert engine.count('full_physical=len(fields)==5')==2
+    assert "canonical_affine_logits(test,model.linear.weight,model.linear.bias)" in engine
+    boundary=(root/'lab_caltech20_TRAIN_local_boundary_20261023.py').read_text()
+    assert 'logits=canonical_affine_logits(' in boundary

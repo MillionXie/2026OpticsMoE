@@ -15,7 +15,7 @@ def run(a):
         assert a.out.name==('fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
     else:
         assert (datetime.fromisoformat('2026-10-24T08:00:00+08:00')-datetime.now(timezone.utc)).total_seconds()>=330
-    assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='14a0c82fb65c70e4e7ec31b7a8d85f61c59eb6a95f0a59a5678b03b005d766ee'
+    assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='a8352cd34237d5f9c7f6ed21f4ff489f94baf546ee3feccdc0c6c5addbcca67c'
     assert not m.LOCK.exists() and not a.out.exists()
     root=base.ROOT/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_G2PASS'
     assert m.read(root.with_suffix('.return.json'))['returncode']==0
@@ -50,7 +50,7 @@ def run(a):
     if a.local_repair:
         from lab_caltech20_tucam_TRAIN_linear_20261023 import fit_cached_head
         import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
-        assert m.sha(boundary.__file__)=='5aeb3a7433c5d094af22c68fab93e291dc5896997cdb0ac910dec8bff094bff6'
+        assert m.sha(boundary.__file__)=='8ae5a132e31ab33d2dc508119f7d85810d75a35bc1e632e7de42cd7f133c774b'
         cfg=dict(maximum_classes=20,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.08,seed=73);boundary.validate(cfg)
         config={**c,'TRAIN_readout':'cached_TRAIN_local_boundary','TRAIN_local_boundary':cfg,'TRAIN_local_engine_SHA256':m.sha(boundary.__file__),'native_feature_source':fit.relative_to(base.ROOT).as_posix(),'fresh_native_TRAIN_features':True}
         _,_,result=fit_cached_head(model,data,dm,fields,paths,pt,reference,config,dict(name='one_bounded_full_physical_TRAIN_neighbor_repair',epochs=1,seconds=180,lr_scale=1),a.out,340)
