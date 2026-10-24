@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-24",
+  "status": "audited_preparation_not_hardware_ready",
+  "source_release": "74f4c0213c059deadee531fff39cc710922dc853",
+  "zip_audit": {
+    "manifest_files": 93,
+    "original_figure1_values_verified_from_saved_predictions": true
+  },
+  "local_standard_library_numpy_tests": 8,
+  "server_native_cpu_cases": [
+    {
+      "task": 20,
+      "architecture": "moe",
+      "active": 1016,
+      "canvas": 1102,
+      "replay_logit_maxerror": 0,
+      "gradients": {
+        "router_phase": 0.031578078866004944,
+        "global_phase": 0.017228592187166214,
+        "first_phase.0": 0.012046800926327705,
+        "first_phase.1": 0.003416497493162751,
+        "first_phase.2": 0.00317907496355474,
+        "first_phase.3": 0.0024188959505409002
+      },
+      "hardware_admitted": false,
+      "performance_claim": false
+    },
+    {
+      "task": 20,
+      "architecture": "d2nn",
+      "active": 1016,
+      "canvas": 1102,
+      "replay_logit_maxerror": 0,
+      "gradients": {
+        "first_phase": 0.012336780317127705,
+        "global_phase": 0.01653594709932804
+      },
+      "hardware_admitted": false,
+      "performance_claim": false
+    },
+    {
+      "task": 21,
+      "architecture": "moe",
+      "active": 1016,
+      "canvas": 1056,
+      "replay_logit_maxerror": 0,
+      "gradients": {
+        "router_phase": 0.01744746044278145,
+        "global_phase": 0.035692647099494934,
+        "first_phase.0": 0.0011995279928669333,
+        "first_phase.5": 0.0011946310987696052,
+        "first_phase.10": 0.001150718773715198,
+        "first_phase.15": 0.0011739899637177587,
+        "shared_head.weight": 40.82999801635742
+      },
+      "hardware_admitted": false,
+      "performance_claim": false
+    },
+    {
+      "task": 21,
+      "architecture": "d2nn",
+      "active": 1016,
+      "canvas": 1056,
+      "replay_logit_maxerror": 0,
+      "gradients": {
+        "first_phase": 0.016905779018998146,
+        "global_phase": 0.023514164611697197,
+        "shared_head.weight": 24.363143920898438
+      },
+      "hardware_admitted": false,
+      "performance_claim": false
+    }
+  ],
+  "server_original_reference_cpu_smoke": [
+    {
+      "model": "moe",
+      "samples": 8,
+      "probability_maxerror": 0.002995103597640991,
+      "argmax_agreement": 1
+    },
+    {
+      "model": "d2nn",
+      "samples": 8,
+      "probability_maxerror": 0.0011875629425048828,
+      "argmax_agreement": 1
+    }
+  ],
+  "stratified_TEST_exports": {
+    "clevr": {
+      "task": "clevr",
+      "split": "test",
+      "class_counts": [
+        500,
+        500
+      ],
+      "strata": {
+        "10:6": 21,
+        "10:8": 21,
+        "10:9": 21,
+        "11:6": 21,
+        "11:8": 21,
+        "11:9": 21,
+        "12:6": 21,
+        "12:8": 21,
+        "12:9": 21,
+        "13:6": 21,
+        "13:8": 21,
+        "13:9": 21,
+        "14:6": 21,
+        "14:8": 21,
+        "14:9": 21,
+        "15:6": 21,
+        "15:8": 21,
+        "15:9": 21,
+        "16:6": 21,
+        "16:8": 21,
+        "16:9": 20,
+        "5:6": 20,
+        "5:8": 20,
+        "5:9": 20
+      },
+      "identity_sha256": "73a7168905fad674511b69e5945af2671364b88fc6668589cab4e359f49d036e",
+      "inputs_sha256": "56ebff6ed56d6b0bf5abe923d4baa034bb431eb6095dd59c82c918570046eeff"
+    },
+    "eurosat": {
+      "task": "eurosat",
+      "split": "test",
+      "class_counts": [
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100,
+        100
+      ],
+      "strata": {
+        "0": 100,
+        "1": 100,
+        "2": 100,
+        "3": 100,
+        "4": 100,
+        "5": 100,
+        "6": 100,
+        "7": 100,
+        "8": 100,
+        "9": 100
+      },
+      "identity_sha256": "0e302bae9fe7136924e3885fef15a645298c1ec993b678bfa23666475189c76a",
+      "inputs_sha256": "7bc2f78e067a0d1ff754b22ab8d0c1de3146029ed964526249f2637ce770fd03"
+    },
+    "speech_binary": {
+      "task": "speech_binary",
+      "split": "test",
+      "class_counts": [
+        500,
+        500
+      ],
+      "strata": {
+        "0": 63,
+        "1": 63,
+        "2": 63,
+        "3": 63,
+        "4": 62,
+        "5": 62,
+        "6": 62,
+        "7": 62
+      },
+      "identity_sha256": "a59723b034026e3f4866605d1f45cc72ae29fcd2c91848a289424646a283e9ec",
+      "inputs_sha256": "0226cb75488614dc224548e13757647c32f430eef2b108e545842f8e14377826"
+    },
+    "physical_binary_raw": {
+      "task": "physical_binary_raw",
+      "split": "test",
+      "class_counts": [
+        500,
+        500
+      ],
+      "strata": {
+        "0": 50,
+        "1": 50,
+        "2": 50,
+        "3": 50,
+        "4": 50,
+        "5": 50,
+        "6": 50,
+        "7": 50,
+        "8": 50,
+        "9": 50
+      },
+      "identity_sha256": "f46adef04fad33dfacf26a19eddd178bba22dd7b5148ee5c92df9a2aeb240f62",
+      "inputs_sha256": "cc655e155182042bd92512016a048bec7defd021c714749e1e185df37deb6e51"
+    }
+  },
+  "git_receivers": {
+    "server": {
+      "before": "7c768c47f121dd1e69316b13dd67cb44c03bc175",
+      "after": "74f4c0213c059deadee531fff39cc710922dc853",
+      "requested": "74f4c0213c059deadee531fff39cc710922dc853",
+      "runtime_XML_SHA256": null,
+      "SDK_opened": false
+    },
+    "lab": {
+      "before": "7c768c47f121dd1e69316b13dd67cb44c03bc175",
+      "after": "74f4c0213c059deadee531fff39cc710922dc853",
+      "requested": "74f4c0213c059deadee531fff39cc710922dc853",
+      "runtime_XML_SHA256": "7e02e63b21b5c3e601f9888ef0bd6548973c4e9385bed16df517f5f9fbdb0b8d",
+      "SDK_opened": false
+    }
+  },
+  "hardware_opened": false,
+  "GPU_used": false,
+  "adaptation_training_started": false,
+  "pending": [
+    "Fixed TRAIN display gain and grayscale quantization in hardware-aware forward",
+    "Physical phase-response and native CCD mapping admission",
+    "New sequential hardware-adaptation training and subset simulation",
+    "Bridge/pilot then physical data collection"
+  ],
+  "metric_policy": "Report original same-subset reference, native adapted simulation, and measured results separately; do not move the baseline or suppress better measured performance."
+}
