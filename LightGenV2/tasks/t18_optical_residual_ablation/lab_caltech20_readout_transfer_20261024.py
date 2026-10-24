@@ -88,7 +88,7 @@ def optimize_pool(packet,parent_w,parent_b,teacher_w,teacher_b,recipe,c,evaluate
     with torch.no_grad():
         centered=x-x.mean(0);cov=centered.T@centered/len(x);floor=c['covariance_floor_fraction']*torch.trace(cov)/256;e,v=torch.linalg.eigh(cov);pre=(v*(e.clamp_min(0)+floor).rsqrt())@v.T
         target=None if recipe=='errors139_augmented_only'else F.linear(x,torch.tensor(teacher_w,dtype=torch.float64),torch.tensor(teacher_b,dtype=torch.float64)).detach()
-    delta=torch.nn.Parameter(torch.zeros_like(w0));db=torch.nn.Parameter(torch.zeros_like(b0));opt=torch.optim.LBFGS([delta,db],lr=1,max_iter=5,max_eval=8,history_size=20,line_search_fn='strong_wolfe')
+    delta=torch.nn.Parameter(torch.zeros_like(w0));db=torch.nn.Parameter(torch.zeros_like(b0));opt=torch.optim.LBFGS([delta,db],lr=c.get('LBFGS_lr',1),max_iter=c.get('LBFGS_inner_iterations',5),max_eval=c.get('LBFGS_max_eval',8),history_size=20,line_search_fn='strong_wolfe')
     weights=torch.full((len(x),),1/len(x),dtype=torch.float64)
     if recipe=='errors139_augmented_only':
         n=int((packet['source_roles']=='original_TRAIN').sum());weights[:n]=c['TRAIN_loss_fraction']/n;weights[n:]=c['errors139_augmentation_loss_fraction']/(len(x)-n)
@@ -104,6 +104,8 @@ def optimize_pool(packet,parent_w,parent_b,teacher_w,teacher_b,recipe,c,evaluate
         loss=ce if target is None else ce_weight*ce+kd_weight*kd
         return loss+c['preconditioned_delta_L2']*(delta.square().sum()+db.square().sum())
     metrics=evaluate(parent_w,parent_b);best=metrics['correct'];nll=metrics['nll'];bw=np.array(parent_w,copy=True);bb=np.array(parent_b,copy=True);selected=calls=0;history=[];started=time.monotonic();budget=c['errors139_outer_steps']if target is None else c['outer_steps']
+    interval=c.get('selection_interval');interval_met=False;peak=best
+    if interval is not None:assert len(interval)==2 and 0<=interval[0]<=interval[1]<411
     for update in range(1,budget+1):
         def closure():
             nonlocal calls
@@ -112,10 +114,13 @@ def optimize_pool(packet,parent_w,parent_b,teacher_w,teacher_b,recipe,c,evaluate
         with torch.no_grad():
             lw=(w0+delta@pre).float().numpy().copy();lb=(b0+db).float().numpy().copy();metrics=evaluate(lw,lb);value=float(objective())
         if metrics['correct']>best or(metrics['correct']==best and metrics['nll']<nll-1e-4):best,nll,selected=metrics['correct'],metrics['nll'],update;bw,bb=lw.copy(),lb.copy()
-        row=dict(update=update,gradient_evaluations=calls,objective=value,selection_replay_correct=metrics['correct'],selected_replay_correct=best,selected_update=selected,original139_correct=metrics['original139_correct'],other272_correct=metrics['other272_correct'],elapsed_s=time.monotonic()-started)
+        peak=max(peak,metrics['correct'])
+        if interval is not None and interval[0]<=metrics['correct']<=interval[1]:
+            best,nll,selected=metrics['correct'],metrics['nll'],update;bw,bb=lw.copy(),lb.copy();interval_met=True
+        row=dict(update=update,gradient_evaluations=calls,objective=value,selection_replay_correct=metrics['correct'],selected_replay_correct=best,selected_update=selected,original139_correct=metrics['original139_correct'],other272_correct=metrics['other272_correct'],interval_met=interval_met,peak_observed_correct=peak,elapsed_s=time.monotonic()-started)
         history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',dict(recipe=recipe,state='fitting',latest=row));print(json.dumps(dict(recipe=recipe,**row)),flush=True)
-        if time.monotonic()-started>=c['fit_seconds_per_recipe']:break
-    return dict(best_weight=bw,best_bias=bb,last_weight=lw,last_bias=lb,selected_update=selected,selected_replay_correct=best,updates=update,gradient_evaluations=calls,TRAIN_gradient_balance=balance)
+        if interval_met or time.monotonic()-started>=c['fit_seconds_per_recipe']:break
+    return dict(best_weight=bw,best_bias=bb,last_weight=lw,last_bias=lb,selected_update=selected,selected_replay_correct=best,updates=update,gradient_evaluations=calls,TRAIN_gradient_balance=balance,interval_met=interval_met,peak_observed_correct=peak,selection_policy='first_actual_training_checkpoint_in_user_interval'if interval is not None else'maximum_correct_then_NLL')
 
 
 def run(a):
