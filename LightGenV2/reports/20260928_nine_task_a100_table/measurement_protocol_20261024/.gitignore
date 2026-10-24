@@ -41,3 +41,7 @@
 !replay_abo_text_qwen_ops.py
 !test_abo_text_qwen_ops.py
 !audit_abo_text_ops.py
+!measure_abo_image_qwen.py
+!run_abo_image_qwen.py
+!audit_abo_image_qwen.py
+!test_abo_image_qwen.py
