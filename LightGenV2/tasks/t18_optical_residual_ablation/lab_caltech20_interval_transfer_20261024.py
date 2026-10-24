@@ -23,7 +23,7 @@ def validate(c):
     assert c['trainable_parameters']==5140 and not any(c[k]for k in('SDK_used','GPU_used','new_capture','replace_original_development_best'))
     assert c['outer_steps']==(120 if c['depth']==4 else 600)and c['fit_seconds_per_recipe']==120 and c['LBFGS_inner_iterations']==1 and c['LBFGS_lr']==.25
     assert c['temperature']==2 and c['label_smoothing']==.01 and c['preconditioned_delta_L2']==.0005
-    assert c['gradient_balance_multipliers']=={'KL_TRAIN_interval':2.}and c['ratio_bounds']==[1/19,19.]
+    assert c['gradient_balance_multipliers']=={'KL_TRAIN_interval':4. if c.get('reuse_verified_teacher')else 2.}and c['ratio_bounds']==[1/19,19.]
 
 
 def run(a):
@@ -65,14 +65,18 @@ def run(a):
                   diagnostic_error_group='starting_student_errors_vs_starting_student_correct; legacy optimizer history names original139/other272 do not indicate fixed group counts in this run')
     m.save(a.out/'protocol.json',protocol);model.cpu().eval().requires_grad_(False)
     cache={};prob={};maxerr=0.
-    if depth==4:
+    if depth==4 or c.get('reuse_verified_teacher'):
         feature=root/c['feature_cache'];assert m.sha(feature)==c['feature_cache_SHA256']
         with np.load(feature)as z:
             for role,key in(('train','TRAIN'),('test','former_TEST')):
+                if depth==6:key=role
                 assert np.array_equal(z[key+'_ids'],data[role][2])and np.array_equal(z[key+'_labels'],data[role][1]);cache[role]=z[key+'_features'].copy()
         for role in('train','test'):
             with torch.no_grad():prob[role]=canonical_affine_logits(torch.from_numpy(cache[role]),model.linear.weight,model.linear.bias).softmax(1).numpy()
         prior=root/c['parent_predictions'];assert np.max(abs(prob['test']-np.load(prior)['probabilities']))<=3e-6
+        if depth==6:
+            prior_run=root/c['verified_prior_run'];prior_report=m.read(prior_run/'report.json');prior_audit=m.read(prior_run/'independent_audit.json')
+            assert m.read(prior_run.with_suffix('.return.json'))['returncode']==0 and prior_report['strict_original_CPU']and prior_report['full_physical']and prior_audit['passed']and prior_audit['report_SHA256']==m.sha(prior_run/'report.json')and prior_audit['prefix_SHA256']==lineage
     else:
         with torch.inference_mode():
             for role,n in(('train',1600),('test',411)):
@@ -114,7 +118,7 @@ def run(a):
         r=dict(state='complete',results=results,teacher_seen_TEST=True,student_direct_TEST_gradient=not student,official_TEST_accuracy=None,independent_test_samples=0,valid_for_formal_test_table=False,all_non_readout_bitwise_frozen=True,strict_original_CPU=True,full_physical=True,selected_update=fit.get('selected_update',fit.get('selected')),interval_met=fit.get('interval_met',False),peak_observed_correct=fit.get('peak_observed_correct',fit.get('selected_adaptation_correct')),selection_policy=fit.get('selection_policy','maximum_supervised_replay_correct'))
         m.save(out/'report.json',r);return r
     reports={}
-    if depth==6:
+    if depth==6 and not c.get('reuse_verified_teacher'):
         teacher_out=a.out/'teacher';teacher_out.mkdir();teacher_config=m.read(task/'lab_caltech20_TEST_supervised_profile_20261024.json')
         fitted=fit_head(cache['train'],data['train'][1],data['train'][2],cache['test'],fy,data['test'][2],pw,pb,prob['train'],teacher_config,teacher_out,m)
         reports['teacher']=persist_replay('teacher',fitted,teacher_out,False);tw,tb=fitted['best_weight'],fitted['best_bias']
@@ -123,6 +127,8 @@ def run(a):
             m.save(a.out/'report.json',dict(state='teacher_below_predeclared_quality_gate',experiments=reports,student_started=False,independent_test_samples=0));return
     else:
         teacher=root/c['teacher_PT'];assert m.sha(teacher)==c['teacher_PT_SHA256'];tmodel,_=m.model_for(teacher,m.sha(teacher),depth,reference);loop.validate_state(m,tmodel,original,keys);tw=tmodel.linear.weight.detach().numpy().copy();tb=tmodel.linear.bias.detach().numpy().copy();teacher_sha=m.sha(teacher)
+        if depth==6:
+            teacher_report=root/c['teacher_report'];assert m.sha(teacher_report)==c['teacher_report_SHA256']and m.read(teacher_report)['results']['best']['test']['correct']>=c['teacher_minimum_correct']
     student_out=a.out/'student';student_out.mkdir();packet=dict(features=cache['train'],labels=data['train'][1],source_ids=data['train'][2],source_roles=np.array(['original_TRAIN']*1600),augmentation=np.array(['unmodified']*1600))
     np.savez_compressed(student_out/'gradient_pool.npz',**packet)
     fitted=optimize_pool(packet,pw,pb,tw,tb,'KL_TRAIN_interval',c,evaluate,student_out,m);reports['student']=persist_replay('student',fitted,student_out,True)
