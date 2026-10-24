@@ -34,7 +34,7 @@ def one_index(body,predicate):
     return values[0]
 
 
-def patch(model,meter):
+def patch(model,meter,head_label="head.saliency_decoder"):
     visual=model.visual
     meter.wrap(visual.patch_embed,"forward","frontend.patch_embedding",family="frontend")
     for name in ("fast_pos_embed_interpolate","rot_pos_emb"):
@@ -80,7 +80,7 @@ def patch(model,meter):
         first=one_index(body,lambda s:s.startswith("detector_intensity =") and ".clamp_min(" in s)
         meter.patch_statements(readout,"forward_intensity",[(f"vision.{name}_ccd_pool_norm_nonlinearity","ccd_readout",True,first,len(body)-1)])
         meter.wrap(output,"forward",f"vision.{name}_ccd_output_linear",family="ccd_readout")
-    meter.wrap(model.head,"forward","head.saliency_decoder",family="head")
+    meter.wrap(model.head,"forward",head_label,family="head")
 
 
 def load(args,device):

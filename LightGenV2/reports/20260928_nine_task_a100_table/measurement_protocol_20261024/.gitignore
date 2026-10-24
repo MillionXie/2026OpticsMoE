@@ -12,3 +12,6 @@
 !measure_salicon.py
 !run_salicon.py
 !run_temporal_remainder.py
+!audit_salicon.py
+!measure_lsp.py
+!run_lsp.py
