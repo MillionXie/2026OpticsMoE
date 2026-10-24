@@ -95,7 +95,9 @@ def patch(model,meter):
 
 
 def sources():
-    paths={Path(__file__),HERE/'stage_meter.py'}
+    # The observation helper loads measure_ours through importlib, without a
+    # sys.modules entry. Bind that real dependency explicitly as well.
+    paths={Path(__file__),HERE/'stage_meter.py',HERE/'measure_ours.py',HERE/'measure_salicon.py'}
     for m in list(sys.modules.values()):
         value=getattr(m,'__file__',None)
         if value and Path(value).is_absolute():
@@ -119,6 +121,9 @@ def main():
     from LightGenV2.tasks.t12_text_to_image.qwen_mini_small import PromptEmbeddingLookup
     from LightGenV2.tasks.t12_text_to_image.sealed_editor import build_sealed
     from stage_meter import StageMeter
+    # Resolve observation-only lazy imports BEFORE taking the immutable source
+    # snapshot. No model/data/embedding call or dummy forward is added here.
+    from measure_salicon import one_index,shared
     torch.set_num_threads(8);torch.manual_seed(1042);meter=StageMeter();handles=[];shapes=[];checks=[]
     try:
         write(args.output/'status.json',dict(status='loading',pid=os.getpid(),no_gpu=True))

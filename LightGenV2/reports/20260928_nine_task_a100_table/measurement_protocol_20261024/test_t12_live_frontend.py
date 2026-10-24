@@ -45,3 +45,15 @@ def test_live_input_not_cache_or_target_and_original_quantization():
     assert '_qwen_prompts(processor,[prompt])' in online and '.half().float()' in online and '.batch(' not in online and 'torch.load(' not in online
     assert "for i in (200,2303)" in source and 'target_passed_to_model=False' in source
     assert '.backward(' not in source and 'torch.cuda.is_initialized()' in source
+
+
+def test_observation_dependencies_are_resolved_before_source_freeze():
+    source=(HERE/'t12_live_frontend.py').read_text();tree=ast.parse(source)
+    main=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='main')
+    early_import=next(n for n in ast.walk(main) if isinstance(n,ast.ImportFrom) and n.module=='measure_salicon')
+    freeze=next(n for n in ast.walk(main) if isinstance(n,ast.Assign) and ast.unparse(n)=='frozen = sources()')
+    assert early_import.lineno<freeze.lineno
+    sources=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='sources')
+    body=ast.unparse(sources)
+    assert "HERE / 'measure_ours.py'" in body and "HERE / 'measure_salicon.py'" in body
+    assert "if torch.cuda.is_initialized() or sources() != frozen" in ast.unparse(main)
