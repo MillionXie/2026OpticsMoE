@@ -14,7 +14,7 @@
   "new_capture": false,
   "replace_original_development_best": false,
   "new_inference_layers": 0,
-  "outer_steps": 120,
+  "outer_steps": 600,
   "fit_seconds_per_recipe": 120,
   "LBFGS_lr": 0.25,
   "LBFGS_inner_iterations": 1,
@@ -56,5 +56,7 @@
   "reference_SHA256": "617ab0d783014a71410fb992e7a6b1ac981de506601626ee6ea255ade77355a7",
   "last_capture": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/L6_remaining_TRAINexposure_20261023/L6/stage_5/capture",
   "teacher_minimum_correct": 354,
+  "simulation_admission": "LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_DVP_46_20261020/L6_response_20261020/lab_gate.json",
+  "native_laboratory_simulation_correct": 353,
   "camera_scope": "Immutable heterogeneous seven-stage capture: DVP router/E1/G1/E2/G2, TUCam E3/G3"
 }

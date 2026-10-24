@@ -21,7 +21,7 @@ def validate(c):
     assert c['TRAIN']==1600 and c['former_TEST']==411 and c['VALID']==0
     assert c['teacher_seen_TEST']and not c['student_direct_TEST_gradient']and c['independent_test_samples']==0
     assert c['trainable_parameters']==5140 and not any(c[k]for k in('SDK_used','GPU_used','new_capture','replace_original_development_best'))
-    assert c['outer_steps']==120 and c['fit_seconds_per_recipe']==120 and c['LBFGS_inner_iterations']==1 and c['LBFGS_lr']==.25
+    assert c['outer_steps']==(120 if c['depth']==4 else 600)and c['fit_seconds_per_recipe']==120 and c['LBFGS_inner_iterations']==1 and c['LBFGS_lr']==.25
     assert c['temperature']==2 and c['label_smoothing']==.01 and c['preconditioned_delta_L2']==.0005
     assert c['gradient_balance_multipliers']=={'KL_TRAIN_interval':2.}and c['ratio_bounds']==[1/19,19.]
 
@@ -41,6 +41,7 @@ def run(a):
     else:
         parent_protocol=m.read(root/c['parent_protocol']);last=root/c['last_capture']
         paths={k:Path(v['path'])for k,v in m.read(last/'protocol.json')['prefix_reports'].items()};paths['5']=last
+        gate=m.read(root/c['simulation_admission']);assert gate['passed']and gate['fixed_cached_simulation_correct']==354 and gate['native_laboratory_simulation_correct']==353 and gate['reference_SHA256']==c['reference_SHA256']and gate['checks']['test']['original_reference_maxabs']==0
     assert list(paths)==['router']+[str(i)for i in range(depth)]
     fields={};capture_proofs={}
     for stage,cap in paths.items():
@@ -60,7 +61,8 @@ def run(a):
                   data_SHA256=dm['sha256'],capture_proofs=capture_proofs,allowed_keys=sorted(keys),
                   official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,
                   teacher_seen_TEST=True,student_direct_TEST_gradient=False,new_inference_layers=0,SDK_used=False,GPU_used=False,
-                  selection_policy='first_actual_training_checkpoint_in_user_interval',original_development_best_replaced=False)
+                  selection_policy='first_actual_training_checkpoint_in_user_interval',original_development_best_replaced=False,
+                  diagnostic_error_group='starting_student_errors_vs_starting_student_correct; legacy optimizer history names original139/other272 do not indicate fixed group counts in this run')
     m.save(a.out/'protocol.json',protocol);model.cpu().eval().requires_grad_(False)
     cache={};prob={};maxerr=0.
     if depth==4:
