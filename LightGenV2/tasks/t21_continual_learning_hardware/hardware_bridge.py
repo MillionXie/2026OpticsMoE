@@ -91,7 +91,7 @@ def guard(row,noise=None,router=False):
         raise RuntimeError('Pilot/capture dynamic-range stop; preserve evidence, no automatic exposure/retry: '+repr(row))
 
 
-def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardware_sha):
+def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardware_sha,model):
     """Fixed dark/A/A/B/A TRAIN/control test before any EVAL in this layer.
 
     Repeat fluctuations include shot/display noise, not just camera read noise;
@@ -111,7 +111,16 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
     noise=max(1.,float(np.std((A1-A2)[mask])/np.sqrt(2)))
     delta99=float(np.percentile((A1-dark)[mask],99));snr=delta99/noise
     correlation=float(np.corrcoef((A1-dark)[mask],(A3-dark)[mask])[0,1])
-    repeat_drift=float(np.linalg.norm((A1-A3)[mask])/max(1.,np.linalg.norm(A1[mask])))
+    raw_repeat_drift=float(np.linalg.norm((A1-A3)[mask])/max(1.,np.linalg.norm(A1[mask])))
+    # Check exactly what the unchanged next operation consumes. Raw uniform
+    # illumination drift is already cancelled by routing/OEO/readout norms.
+    def consumer(value):
+        tensor=torch.from_numpy(value/65535)[None]
+        if stage=='router':return model.route_from_ccd(tensor)[0].numpy()
+        if stage=='first':return model.normalize(torch.nn.functional.softsign(tensor/tensor.mean((-2,-1),keepdim=True)))[0].numpy().ravel()
+        return model.features_from_ccd(tensor)[0].numpy()
+    ca,cb=consumer(A1),consumer(A3)
+    repeat_drift=float(np.abs(ca-cb).sum() if stage=='router' else np.linalg.norm(ca-cb)/max(1e-20,np.linalg.norm(ca)))
     changed=float(np.sqrt(np.mean((B-A1)[mask]**2)))
     passed=snr>=10 and delta99>=64 and correlation>=.95 and repeat_drift<=.05 and changed>=3*noise
     passed=passed and max(r['signal']['saturation_fraction'] for r in rows.values())<=.15
@@ -119,7 +128,8 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
         read_noise_upper_counts=noise,noise_scope='repeat shot/display/camera fluctuations at this stage, NOT pure read noise',
         dark_global_p99_counts=float(np.percentile(dark,99)),dark_router_ROI_p99_counts=float(np.percentile(dark[mask],99)),
         SNR=snr,signal_ROI_delta_p99_counts=delta99,repeat_correlation=correlation,
-        repeat_relative_L2=repeat_drift,changed_input_RMS_counts=changed,rows=rows,
+        repeat_consumer_drift=repeat_drift,repeat_consumer='q L1' if stage=='router' else 'actual OEO/readout relative L2',
+        raw_repeat_relative_L2=raw_repeat_drift,changed_input_RMS_counts=changed,rows=rows,
         TEST_used=False,labels_used=False,exposure_changed=False,network_background_subtraction=False,
         patterns=['dark','first_TRAIN','first_TRAIN','last_TRAIN','first_TRAIN'])
     put(folder/'report.json',receipt)
@@ -207,12 +217,18 @@ def capture(package,cfg,out,pilot=False):
                 source_index=int(data['source_indices'][k]),label=int(data['y'][k]),amplitude=data['x'][k],
                 manifest_sha256=data['manifest']['identity_sha256']))
     order=model.STAGES if model.architecture=='moe' else model.STAGES[1:]
+    reused=package.get('premeasured_stages',{})
+    if set(reused)-set(order):raise ValueError('Unknown premeasured boundary')
+    if reused and list(reused)!=list(order[:len(reused)]):raise ValueError('Only a contiguous immutable prefix may be reused')
+    stage_paths={s:Path(reused[s]) if s in reused else out/s for s in order}
     put(LOCK,dict(pid=os.getpid(),task='T21',scope='pilot' if pilot else 'capture',out=str(out)))
     started=time.time();rows=[];frozen={k:tensor_sha(v) for k,v in model.state_dict().items()}
     try:
         with Bench(cfg,out) as bench:
             for stage in order:
-                layer=out/stage;layer.mkdir();phase_file=layer/'phase.bmp';phase_sha=None
+                layer=stage_paths[stage]
+                if stage not in reused:layer.mkdir()
+                phase_file=layer/'phase.bmp';phase_sha=None
                 mask=None
                 if stage=='router':
                     mask=np.zeros((1016,1016),bool)
@@ -220,13 +236,32 @@ def capture(package,cfg,out,pilot=False):
                         y,x=model.router_centers[index];y-=model.border;x-=model.border;h=model.router_side//2
                         mask[y-h:y+h,x-h:x+h]=True
                 stage_noise=noise
+                if stage in reused:
+                    for i,entry in enumerate(entries):
+                        key=f'{i:05d}';folder=layer/key;r=json.loads((folder/'receipt.json').read_text())
+                        for field in ('task','split','local_index','source_index','manifest_sha256'):
+                            if r[field]!=entry[field]:raise ValueError('Reused prefix source identity mismatch: '+field)
+                        if r['checkpoint_sha256']!=package['checkpoint_sha256'] or r['hardware_sha256']!=package['hardware_sha256']:
+                            raise ValueError('Reused prefix PT/hardware mismatch')
+                        for filename,field in (('ccd.npy','ccd_sha256'),('raw.npy','raw_sha256'),('input.bmp','input_BMP_sha256')):
+                            if sha(folder/filename)!=r[field]:raise ValueError('Reused prefix data SHA mismatch')
+                        if sha(phase_file)!=r['phase_BMP_sha256']:raise ValueError('Reused phase BMP SHA mismatch')
+                        prefix={s:torch.from_numpy(np.load(stage_paths[s]/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
+                        amp,phase,_=model.payload(torch.from_numpy(entry['amplitude'])[None],stage,prefix)
+                        gray=np.rint(amp[0].numpy()*255).astype(np.uint8)
+                        if hashlib.sha256(gray.tobytes()).hexdigest()!=r['input_canonical_sha256']:raise ValueError('Reused prefix canonical input mismatch')
+                        value=np.load(folder/'ccd.npy');guard(signal(value,mask),stage_noise,router=stage=='router')
+                        rows.append(dict(r,reused_from=str(folder)))
+                    put(out/(stage+'_prefix_audit.json'),dict(passed=True,records=len(entries),source=str(layer),new_frames=0,
+                        same_PT=True,same_hardware=True,all_source_ids_and_raw_CCD_BMP_SHA_verified=True))
+                    continue
                 if package.get('TRAIN_stage_signal_calibration',False):
                     train_indices=[i for i,e in enumerate(entries) if e['split']=='train']
                     if len(train_indices)<2:raise ValueError('TRAIN-only stage calibration needs two source inputs')
                     examples=[]
                     for index in (train_indices[0],train_indices[-1]):
                         key=f'{index:05d}'
-                        prefix={s:torch.from_numpy(np.load(out/s/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
+                        prefix={s:torch.from_numpy(np.load(stage_paths[s]/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
                         amplitude,phase,_=model.payload(torch.from_numpy(entries[index]['amplitude'])[None],stage,prefix)
                         examples.append(np.rint(amplitude[0].numpy()*255).astype(np.uint8))
                         candidate=native_image(np.rint(phase.numpy()*256).clip(0,255).astype(np.uint8),True)
@@ -235,10 +270,10 @@ def capture(package,cfg,out,pilot=False):
                             Image.fromarray(candidate).save(phase_file);bench.stage(phase_file);phase_sha=digest
                         elif digest!=phase_sha:raise ValueError('Calibration phase changed across inputs')
                     stage_noise=stage_signal_admission(bench,layer/'TRAIN_signal_admission',examples,drive,warp,mask,
-                        stage,hardware_identity(cfg))
+                        stage,hardware_identity(cfg),model)
                 for i,entry in enumerate(entries):
                     key=f'{i:05d}';folder=layer/key;folder.mkdir()
-                    prefix={s:torch.from_numpy(np.load(out/s/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
+                    prefix={s:torch.from_numpy(np.load(stage_paths[s]/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
                     x=torch.from_numpy(entry['amplitude'])[None]
                     amplitude,phase,_=model.payload(x,stage,prefix)
                     gray=np.rint(amplitude[0].numpy()*255).astype(np.uint8)
@@ -255,7 +290,7 @@ def capture(package,cfg,out,pilot=False):
                     row.update(index=i,stage=stage,checkpoint_sha256=package['checkpoint_sha256'],
                         input_canonical_sha256=hashlib.sha256(gray.tobytes()).hexdigest(),
                         input_BMP_sha256=sha(amplitude_file),phase_BMP_sha256=sha(phase_file),
-                        prefix_CCD_sha256={s:sha(out/s/key/'ccd.npy') for s in prefix},
+                        prefix_CCD_sha256={s:sha(stage_paths[s]/key/'ccd.npy') for s in prefix},
                         raw_sha256=sha(folder/'raw.npy'),ccd_sha256=sha(folder/'ccd.npy'),
                         signal=quality,metadata=metadata,hardware_sha256=package['hardware_sha256'])
                     put(folder/'receipt.json',row);rows.append(row)
@@ -264,13 +299,15 @@ def capture(package,cfg,out,pilot=False):
                     guard(quality,stage_noise,router=stage=='router')
             features=[]
             for i in range(len(entries)):
-                value=torch.from_numpy(np.load(out/'final'/f'{i:05d}'/'ccd.npy'))[None]
+                value=torch.from_numpy(np.load(stage_paths['final']/f'{i:05d}'/'ccd.npy'))[None]
                 features.append(model.features_from_ccd(value)[0].numpy())
             np.savez_compressed(out/'features.npz',features=np.stack(features),labels=[r['label'] for r in entries],
                 tasks=[r['task'] for r in entries],splits=[r['split'] for r in entries],source_indices=[r['source_index'] for r in entries])
         if {k:tensor_sha(v) for k,v in model.state_dict().items()}!=frozen:raise RuntimeError('Frozen deployed PT changed')
         put(out/'report.json',dict(passed=True,pilot=pilot,records=len(entries),frames=len(rows),
             stages=list(order),features_sha256=sha(out/'features.npz'),checkpoint_sha256=package['checkpoint_sha256'],
+            new_network_frames=sum('reused_from' not in r for r in rows),reused_network_frames=sum('reused_from' in r for r in rows),
+            extra_TRAIN_control_frames=5*(len(order)-len(reused)) if package.get('TRAIN_stage_signal_calibration',False) else 0,
             seconds=time.time()-started,seconds_per_frame=(time.time()-started)/len(rows),
             TRAIN_records=sum(r['split']=='train' for r in entries),EVAL_records=sum(r['split']=='test' for r in entries),
             SDK_released=True,interlayer_training=False,full_physical_prefix=True))
