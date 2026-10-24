@@ -59,7 +59,7 @@ def run(a):
     np,torch,m,loop=base.numerical_modules();torch.set_num_threads(2);torch.manual_seed(73)
     from lab_caltech20_tucam_TRAIN_linear_20261023 import TRAIN_linear_fit
     assert not a.out.exists() and not m.LOCK.exists()
-    assert a.out.name==('fullG2_TRAIN_fusion_native_20261024'if a.native_branches else'fullG2_TRAIN_fusion_20261024')
+    assert a.out.name in (('fullG2_TRAIN_fusion_native_20261024','fullG2_TRAIN_fusion_nativepad_20261024')if a.native_branches else('fullG2_TRAIN_fusion_20261024',))
     if a.native_branches:
         import psutil
         assert psutil.virtual_memory().available>8*2**30,'Native branch cache needs bounded free host RAM'
@@ -88,14 +88,21 @@ def run(a):
         with torch.inference_mode():
             for role,n in (('train',1600),('test',411)):
                 pieces=[];probs=[]
-                if a.native_branches:packet={k:np.empty((n,478,478),dtype=np.float32)for k in ('e','o')}
+                if a.native_branches:packet={k:np.empty((((n+7)//8)*8,478,478),dtype=np.float32)for k in ('e','o')}
                 for begin in range(0,n,8):
-                    ix=np.arange(begin,min(begin+8,n));prob=model(loop.put_fields(model,data,fields,role,ix,'cpu'))[0];e=holder['e'];o=model.nonlinear(model.measured['3'].float(),'global')
-                    if a.native_branches:
-                        packet['e'][ix]=e.numpy();packet['o'][ix]=o.numpy();f=native_branch_features(torch.from_numpy(packet['e'][ix]),torch.from_numpy(packet['o'][ix]),model.fusion_logits[3])
+                    ix=np.arange(begin,min(begin+8,n))
+                    if len(ix)==8:encoded=loop.put_fields(model,data,fields,role,ix,'cpu')
                     else:
-                        s=branch_statistics(e,o);f=cached_features(s,model.fusion_logits[3]);pieces.append({k:v.clone()for k,v in s.items()})
-                    err=float((model.linear(f).softmax(1)-prob).abs().max());maxerr=max(maxerr,err);probs.append(prob.numpy().copy())
+                        images,count,end=m.padded(data,role,begin);model.measured={}
+                        for k,v in fields.items():
+                            array=np.asarray(v[role][begin:end]).copy();array=np.concatenate([array,np.zeros((8-count,478,478),array.dtype)]);model.measured[k]=torch.from_numpy(array)
+                        encoded=m.encode_images(images)
+                    prob=model(encoded)[0];e=holder['e'];o=model.nonlinear(model.measured['3'].float(),'global')
+                    if a.native_branches:
+                        cache_ix=np.arange(begin,begin+8);packet['e'][cache_ix]=e.numpy();packet['o'][cache_ix]=o.numpy();f=native_branch_features(torch.from_numpy(packet['e'][cache_ix]),torch.from_numpy(packet['o'][cache_ix]),model.fusion_logits[3])
+                    else:
+                        s=branch_statistics(e,o);f=cached_features(s,model.fusion_logits[3]);pieces.append({k:v[:len(ix)].clone()for k,v in s.items()})
+                    err=float((model.linear(f).softmax(1)-prob).abs().max());maxerr=max(maxerr,err);probs.append(prob[:len(ix)].numpy().copy())
                     if begin%160==0:m.save(a.out/'progress.json',dict(state='native_branch_cache',role=role,consumed=begin+len(ix),probability_max_error=maxerr,TEST_fit=False))
                 stats[role]=packet if a.native_branches else{k:torch.cat([s[k]for s in pieces])for k in pieces[0]};parent_prob[role]=np.concatenate(probs)
     finally:hook.remove()

@@ -10,11 +10,12 @@ def run(a):
     from lab_caltech20_tucam_TRAIN_linear_20261023 import TRAIN_linear_fit
     cpath=base.HERE/'lab_caltech20_tucam_layerwise_profile_20261023.json';assert m.sha(cpath)=='c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909'
     c=m.read(cpath);base.validate_config(c);torch.set_num_threads(2)
-    if a.joint_source:
-        assert a.out.name=='fullG2_joint_TRAIN_OAS_20261024'
+    assert not(a.joint_source and a.local_repair)
+    if a.joint_source or a.local_repair:
+        assert a.out.name==('fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
     else:
         assert (datetime.fromisoformat('2026-10-24T08:00:00+08:00')-datetime.now(timezone.utc)).total_seconds()>=330
-    assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='2a93328c5b954e88db63e15f525a7d580b160b68ca6c26e9ba5e856dd00792b0'
+    assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='14a0c82fb65c70e4e7ec31b7a8d85f61c59eb6a95f0a59a5678b03b005d766ee'
     assert not m.LOCK.exists() and not a.out.exists()
     root=base.ROOT/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_G2PASS'
     assert m.read(root.with_suffix('.return.json'))['returncode']==0
@@ -25,8 +26,12 @@ def run(a):
         assert m.read(source.with_suffix('.return.json'))['returncode']==0
         full=m.read(source/'report.json');assert full['state']=='complete' and full['full_physical'] and full['strict_original_CPU'] and full['SDK_released']
         fit=source/'fit';r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json')
+    if a.local_repair:
+        source=root.parent/'fullG2_TRAIN_fusion_native_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
+        fit=source;r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=r
+        assert r['state']=='complete' and r['full_physical'] and not r['SDK_used']
     assert r['strict_original_CPU'] and r['full_physical'] and audit['passed'] and audit['report_SHA256']==m.sha(fit/'report.json')
-    pt=fit/'best.pt';assert m.sha(pt)==r['results']['best']['PT_SHA256']==full['PT_SHA256']
+    pt=fit/'best.pt';assert m.sha(pt)==r['results']['best']['PT_SHA256']==full.get('PT_SHA256',r['results']['best']['PT_SHA256'])
     reference=base.ROOT/c['reference'];assert m.sha(reference)==c['reference_SHA256'];model,_=m.model_for(pt,m.sha(pt),4,reference)
     parent=root.parent/'readout_LOCALMSE/fit/best.pt';assert m.sha(parent)=='60f6883ac597fbe3a2f72000edac661998dd6fb52696ba80cb6b8bcce53f115e'
     captured,_=m.model_for(parent,m.sha(parent),4,reference);loop.validate_state(m,model,m.state_cpu(captured),m.allowed_keys(model,5));del captured
@@ -42,6 +47,15 @@ def run(a):
             path=cap/role/'ccd.npy';digest=m.sha(path);assert digest==protocol['prefix_SHA256'][stage+'/'+role]==cr['arrays'][role]['SHA256']
             v=np.load(path,mmap_mode='r');assert v.shape==(n,478,478) and v.dtype==np.uint8;fields[stage][role]=v
     lineage=base.identities(m,paths);assert list(fields)==list(base.STAGES)
+    if a.local_repair:
+        from lab_caltech20_tucam_TRAIN_linear_20261023 import fit_cached_head
+        import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
+        assert m.sha(boundary.__file__)=='5aeb3a7433c5d094af22c68fab93e291dc5896997cdb0ac910dec8bff094bff6'
+        cfg=dict(maximum_classes=20,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.08,seed=73);boundary.validate(cfg)
+        config={**c,'TRAIN_readout':'cached_TRAIN_local_boundary','TRAIN_local_boundary':cfg,'TRAIN_local_engine_SHA256':m.sha(boundary.__file__),'native_feature_source':fit.relative_to(base.ROOT).as_posix(),'fresh_native_TRAIN_features':True}
+        _,_,result=fit_cached_head(model,data,dm,fields,paths,pt,reference,config,dict(name='one_bounded_full_physical_TRAIN_neighbor_repair',epochs=1,seconds=180,lr_scale=1),a.out,340)
+        assert result['full_physical'] and result['strict_original_CPU'] and result['selected_correct']>=r['selected_correct']
+        return
     a.out.mkdir();original=m.state_cpu(model);keys={'linear.weight','linear.bias'};baseline,prob=base.evaluate(model,data,fields,'test');assert baseline['correct']==r['selected_correct']
     p=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT=str(pt),parent_PT_SHA256=m.sha(pt),source_report_SHA256=m.sha(fit/'report.json'),prefix_SHA256=lineage,data_SHA256=dm['sha256'],
         TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,full_physical=True,new_inference_layers=0,SDK_used=False,GPU_used=False,allowed_keys=sorted(keys),method='single_TRAIN_OAS_original5140_no_grid',optimizer_updates=0,hyperparameter_grid=False)
@@ -69,7 +83,7 @@ def run(a):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');a=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');a=parser.parse_args()
     try:run(a)
     except BaseException as e:
         if a.out.exists():

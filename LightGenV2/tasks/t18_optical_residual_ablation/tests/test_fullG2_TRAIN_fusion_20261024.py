@@ -17,3 +17,4 @@ def test_native_fusion_keeps_exact_pixels_and_bounded_memory():
     assert "fullG2_TRAIN_fusion_native_20261024" in s and "psutil.virtual_memory().available>8*2**30" in s
     assert "del stats['test']" in s and "native_scatter_step(stats['train'],alpha,labels)" in s
     assert "v.backward(gradient[begin:begin+8])" in s and "native_pixel_features_bitwise=True" in s
+    assert "images,count,end=m.padded(data,role,begin)" in s and "prob[:len(ix)]" in s

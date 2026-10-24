@@ -62,7 +62,14 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     baseline,prob=base.evaluate(model,data,fields,'test');test=[]
     with torch.inference_mode():
         for begin in range(0,411,8):
-            ix=np.arange(begin,min(begin+8,411));model(loop.put_fields(model,data,fields,'test',ix,'cpu'));test.append(model.readout['features'].numpy().copy())
+            ix=np.arange(begin,min(begin+8,411))
+            if len(ix)==8:model(loop.put_fields(model,data,fields,'test',ix,'cpu'))
+            else:
+                images,n,end=m.padded(data,'test',begin);model.measured={}
+                for k,v in fields.items():
+                    array=np.asarray(v['test'][begin:end]).copy();array=np.concatenate([array,np.zeros((8-n,478,478),array.dtype)]);model.measured[k]=torch.from_numpy(array)
+                model(m.encode_images(images))
+            test.append(model.readout['features'][:len(ix)].numpy().copy())
             if begin%80==0:m.save(out/'progress.json',dict(state='verifying_native_TEST_features',TEST_consumed=begin+len(ix),TEST_fit=False))
     test=np.concatenate(test);train=torch.from_numpy(train);test=torch.from_numpy(test);labels=torch.from_numpy(data['train'][1].astype(np.int64));test_labels=torch.from_numpy(data['test'][1].astype(np.int64))
     with torch.inference_mode():
@@ -72,7 +79,7 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     assert max(error,train_error)<=3e-6
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=c,recipe=recipe,parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),
         data_SHA256=dm['sha256'],prefix_SHA256=lineage,allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,
-        original_model_structure=True,new_inference_layers=0,full_physical=False,SDK_used=False,GPU_used=False,trainable_parameters=5140,
+        original_model_structure=True,new_inference_layers=0,full_physical=len(fields)==5,SDK_used=False,GPU_used=False,trainable_parameters=5140,
         method='TRAIN_local_binary_rest_full_curvature' if local else 'fullbatch_TRAIN_LBFGS_L2_original_linear' if lbfgs else 'cached_TRAIN_mixup_dropout_original_linear',TRAIN_feature_source_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),
         augmentation_is_synthetic_not_new_physical_data=True)
     if local:protocol.update(TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',per_update_parameters=257,all_other_rows_fixed_per_update=True,epoch_semantics='local row update, NOT dataset epoch',new_augmentation=False)
@@ -134,7 +141,7 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
             np.savez_compressed(out/(label+'_'+role+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=p)
     assert results['best']['test']['correct']==best and base.identities(m,paths)==lineage
     report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_epoch=None if lbfgs or local else selected,selected_E0=selected==0,actual_epochs=0 if lbfgs or local else epoch,optimizer_updates=updates,results=results,
-        strict_original_CPU=True,target=target,target_met=best>=target,all_non_readout_frozen=True,captured_upstream_bitwise_frozen=True,TEST_gradient=False,TEST_development=True,full_physical=False,
+        strict_original_CPU=True,target=target,target_met=best>=target,all_non_readout_frozen=True,captured_upstream_bitwise_frozen=True,TEST_gradient=False,TEST_development=True,full_physical=len(fields)==5,
         native_cache_probability_max_error=max(error,train_error),new_inference_layers=0,SDK_used=False,GPU_used=False,protocol_SHA256=m.sha(out/'protocol.json'))
     if lbfgs:report.update(outer_steps=epoch,selected_outer_step=selected,full_TRAIN_gradient_evaluations=closure_calls,TRAIN_only_L2=regularization)
     if local:report.update(selected_local_update=selected,local_updates=updates,local_classes=repaired['classes'],fit_elapsed_s=repaired['elapsed_s'],TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',per_update_parameters=257,local_plan_SHA256=m.sha(out/'local_boundary_plan.json'))
