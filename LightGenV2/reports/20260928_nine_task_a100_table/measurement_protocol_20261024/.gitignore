@@ -25,3 +25,5 @@
 !test_temporal_matrix.py
 !audit_lsp.py
 !test_lsp_audit.py
+!abo_query_contract.py
+!test_abo_query_contract.py
