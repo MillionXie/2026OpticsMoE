@@ -60,3 +60,18 @@ def test_new_native_pair_derives_common_work_without_editing_ours_raw(monkeypatc
     assert own['raw_references'][0]['common_Qwen_input_tokens200'] is None
     assert native['formal_full1000_reference_metrics']['changed_cell_accuracy']==.812
     assert native['measured_first200_diagnostics_only'][0]['changed_cell_accuracy']==.8
+
+
+def test_existing_MAC_receipts_match_cost_and_never_claim_optical_capacity(monkeypatch):
+    base=dict(calls=600,complete_scalar_OP_claim=False,cost_references=[dict(seconds200=2,joules200=5)])
+    native=dict(base,MAC_OP600=100,GPU_forwards=0,repeat_results=[dict(MAC200=50)])
+    own=dict(base,actual_NN_MAC_OP600=40,no_GPU_or_neural_forwards=True,
+        physical_optical_dense_equivalent_OP=None,repeat_results=[dict(actual_executed_NN_MAC200=20)])
+    monkeypatch.setattr(builder,'read',lambda p:native if 'qwen' in p.name else own)
+    monkeypatch.setattr(builder,'sha',lambda p:'a'*64)
+    row={m:dict(sample_ms=2/.6,sample_j=5/600) for m in ('ours','qwen')}
+    builder.attach_openmoji_existing_shape_MAC(row)
+    assert row['qwen']['derived_NN_dense_MAC_subtotal']['TOPS']==100/1e12/2
+    assert row['ours']['derived_NN_dense_MAC_subtotal']['physical_optical_dense_equivalent_not_in_NN_subtotal']
+    row['qwen']['sample_ms']*=2
+    with pytest.raises(ValueError):builder.attach_openmoji_existing_shape_MAC(row)

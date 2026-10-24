@@ -124,6 +124,41 @@ def openmoji_pair(root,ours):
     return native,common
 
 
+def attach_openmoji_existing_shape_MAC(row):
+    """Consume the new zero-forward CPU derivations and their independent copy.
+
+    Never label the Ours NN subtotal as total optical dense-equivalent work.
+    Both physical optics and non-MAC scalar work remain separately explicit.
+    """
+    files={'qwen':'openmoji_qwen_network_shape_MAC','ours':'openmoji_e45_saved_shape_MAC'}
+    for model,stem in files.items():
+        path=HERE/(stem+'_01.json');server=HERE/(stem+'_server_01.json');value=read(path)
+        if value!=read(server) or value['calls']!=600 or value['complete_scalar_OP_claim']:
+            raise ValueError('Independent same-scope NN MAC derivations differ')
+        elapsed=row[model]['sample_ms']*.6;energy=row[model]['sample_j']*600
+        if abs(sum(r['seconds200'] for r in value['cost_references'])-elapsed)>1e-8:
+            raise ValueError('NN OP numerator not matched to original time denominator')
+        if abs(sum(r['joules200'] for r in value['cost_references'])-energy)>1e-7:
+            raise ValueError('NN OP numerator not matched to original energy denominator')
+        if model=='qwen':
+            op=value['MAC_OP600']
+            if op!=2*sum(r['MAC200'] for r in value['repeat_results']) or value['GPU_forwards']!=0:
+                raise ValueError('Original native shape-derived numerator differs')
+        else:
+            op=value['actual_NN_MAC_OP600']
+            if (op!=2*sum(r['actual_executed_NN_MAC200'] for r in value['repeat_results'])
+                    or not value['no_GPU_or_neural_forwards'] or value['physical_optical_dense_equivalent_OP'] is not None):
+                raise ValueError('NN-only subtotal scope/unknown physical OP changed')
+        row[model]['derived_NN_dense_MAC_subtotal']=dict(OP600=op,TOP_per_input=op/600/1e12,
+            TOPS=op/1e12/elapsed,TOPS_per_W=op/1e12/energy,
+            source='original network + sealed actual input/module shapes; zero new model forward',
+            local_receipt=path.relative_to(REPO).as_posix(),local_receipt_sha256=sha(path),
+            server_receipt=server.relative_to(REPO).as_posix(),server_receipt_sha256=sha(server),
+            not_complete_scalar_OP=True,physical_optical_dense_equivalent_not_in_NN_subtotal=True,
+            raw_derivation=value)
+    row['ops_status']='Both NN dense-MAC subtotals derived from original graph/existing all200 shapes, independent two-end CPU agreement, zero new GPU; optical dense-equivalent and non-MAC separately explicit'
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--lsp-data-root',type=Path,default=REPO/'data/lsp_pose/lsp_dataset')
@@ -261,6 +296,7 @@ def main():
     openmoji_root=REPO/'LightGenV2/tasks/t04_semantic_interaction/runs/simulation'
     rows['07']['ours']=openmoji_e45_result(openmoji_root)
     rows['07']['qwen'],rows['07']['common_tokens']=openmoji_pair(openmoji_root,rows['07']['ours'])
+    attach_openmoji_existing_shape_MAC(rows['07'])
     rows['07']['status']='matched_three_round_timing_energy_independently_audited; original-network shape OP derivation pending'
     rows['07']['identity_note']='Human selected the new-layout laboratory .8655 version: epoch45/PT03cb861c, same-weight simulation .8765, Qwen epoch30/PT0be775 .8120. New first200 Ours metrics are separate from both full1000 references. Old .8880/PT579b19 and original protocol remain historical; no new laboratory capture or paired per-case CCD audit is implied.'
     rows['07']['effective_identity']=next(item for item in protocol['rows'] if item['id']=='07')
