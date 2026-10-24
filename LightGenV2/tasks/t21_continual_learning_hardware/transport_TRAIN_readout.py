@@ -32,6 +32,31 @@ def normalized_transport(source, mapping):
     return value / value.mean(1, keepdim=True).clamp_min(1e-12)
 
 
+def crossfit_residuals(source, target, labels, strength):
+    """Unexplained TRAIN response, NOT claimed pure camera shot/read noise."""
+    rng=np.random.default_rng(20261025);folds=[[] for _ in range(5)]
+    for label in range(10):
+        ix=torch.nonzero(labels==label).flatten().numpy()
+        if len(ix)!=100:raise ValueError('Balanced TRAIN100/class required')
+        for fold,part in enumerate(np.array_split(rng.permutation(ix),5)):folds[fold].extend(part.tolist())
+    result=torch.zeros_like(target)
+    for fold in folds:
+        hold=torch.tensor(fold);mask=torch.ones(len(labels),dtype=torch.bool);mask[hold]=False
+        mapping=response_map(source[mask],target[mask],strength)
+        result[hold]=target[hold]-normalized_transport(source[hold],mapping)
+    for label in range(10):
+        mask=labels==label;result[mask]-=result[mask].mean(0,keepdim=True)
+    return result
+
+
+def response_perturbation(residual, labels, requested):
+    values=torch.empty((len(requested),residual.shape[1]),dtype=residual.dtype)
+    for label in requested.unique():
+        mask=requested==label;pool=residual[labels==label]
+        values[mask]=torch.randn((int(mask.sum()),len(pool)),dtype=residual.dtype)@pool/len(pool)**.5
+    return values
+
+
 def cache(a):
     model, cp = load_checkpoint(a.checkpoint, a.checkpoint_sha256)
     if cp['stage'] != 1: raise ValueError('Only frozen corresponding A S1')
@@ -133,6 +158,15 @@ def fit(a):
     if not noise_meta['TRAIN_only'] or noise_meta['TEST_used'] or noise_meta['hardware_SHA256']!=hardware or noise_meta['source_checkpoint_SHA256']!=r['checkpoint_sha256'] or sha(a.noise)!=noise_meta['noise_array_SHA256']:
         raise ValueError('Statistical TRAIN noise provenance differs')
     with np.load(a.noise,allow_pickle=False) as d:noise=torch.tensor(d['deltas'],dtype=torch.float64)
+    residual=None
+    if a.response_residual_augmentation:
+        residual=crossfit_residuals(sx[ids[tr]],x[tr],y[tr],selected['strength'])
+        torch.save(dict(residual=residual,labels=y[tr],source_indices=ids[tr],TRAIN_only=True,
+            scope='Cross-fitted unexplained simulated-to-measured TRAIN response, not pure camera noise'),a.out/'TRAIN_crossfit_response_residual.pt')
+        protocol.update(response_residual_augmentation=True,response_crossfit_folds=5,
+            response_noise_applied_to_synthetic_only=True,TRAIN_residual_RMS=float(residual.square().mean().sqrt()),
+            residual_statistics_not_pure_camera_read_or_shot_noise=True)
+        put(a.out/'protocol.json',protocol)
     optimizer=torch.optim.AdamW([weight],lr=.001,weight_decay=.001); history=[]
     pools=[torch.nonzero(sy==k).flatten() for k in range(10)]
     for epoch in range(1,121):
@@ -142,6 +176,9 @@ def fit(a):
         synthetic=torch.cat([pool[torch.randint(len(pool),(100,))] for pool in pools]); synthetic=synthetic[torch.randperm(1000)]
         for q in range(0,1000,64):
             ix=order[q:q+64]; vi=synthetic[q:q+64]; phys=augment(x[tr][ix],mean,noise); fake=augment(virtual[vi],mean,noise)
+            if residual is not None:
+                fake=(fake+response_perturbation(residual,y[tr],sy[vi])).clamp_min(0)
+                fake=fake/fake.mean(1,keepdim=True).clamp_min(1e-12)
             both=torch.cat((phys,fake)); labels=torch.cat((y[tr][ix],sy[vi])); target=torch.cat((logits[ids[tr]][ix],logits[vi]))
             output=(both@transform.T)@weight.T
             kd=F.kl_div(F.log_softmax(output/2,1),F.softmax(target/2,1),reduction='batchmean')*4
@@ -180,6 +217,7 @@ def main():
         p.add_argument('--'+name.replace('_','-'),type=Path)
     p.add_argument('--checkpoint-sha256');p.add_argument('--parent-sha256');p.add_argument('--gpu-uuid');p.add_argument('--out',type=Path,required=True)
     p.add_argument('--preflight-only',action='store_true')
+    p.add_argument('--response-residual-augmentation',action='store_true')
     a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
     torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     (cache if a.mode=='cache' else fit)(a)
