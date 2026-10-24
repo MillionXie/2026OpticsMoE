@@ -1,6 +1,26 @@
 # T19：九项 ResNet-20 小模型 baseline
 
-## 2026-10-24 最新人工指定：原生损失新60轮继续至80，GPU6禁用
+## 2026-10-24 最新完成：指定原生60轮续训至80，修改格72.55%，GPU6禁用
+
+用户指定的新原生损失60轮权重已固定追加20轮至累计80，正式结果如下；
+末轮完整1000 TEST仅评估一次，不能把本次提升只归因于轮数，因为新阶段切换为已有平衡损失。
+
+| 固定权重版本 | 修改格准确率 | 保留格准确率 | 编辑IoU | object F1 |
+|---|---:|---:|---:|---:|
+| 独立从头原生损失last60 |0.3720|0.9824454|0.4648623|0.7632117|
+| 继承该权重、已有平衡损失last80 |**0.7255**|0.9499933|0.4058174|0.6677067|
+
+主指标72.55%处于用户希望的60%～76%，但IoU/object F1及保留格有下降，全部照报。
+总参数11,287,478，可训练110,966（GRU27,104＋头83,862），官方视觉11,176,512全部冻结含BN。
+run `runs/simulation/openmoji_validation_formal_s42_20261024_basic_resume60to80/`；
+last SHA `56d0be9520351d4951865dea88581520ab124e94b4f17a9f4dfac23888429973`。
+本轮probe及正式均实际使用GPU1，完成后自然退出，未使用GPU6。
+60轮独立审核30项、80轮独立审核29项通过（附证据限制），分别
+`runs/control/openmoji_native_objective_last60_audit_20261024.json`、
+`runs/control/openmoji_basic_resume_last80_audit_20261024.json`。
+审核包含原始1000类别/编辑mask/task预测对GT全指标重算、官方所有视觉/BN、
+新20轮冻结/fit-only采样SHA、重启AdamW精确2500步与范围、parent保护/源码/退出；0新增神经前向。
+验证集只有保存聚合量，未额外执行验证前向；不把历史TEST观察后的探索性续训称为全新盲测。
 
 原生损失独立从头训练60轮已完成，修改格准确率0.3720；正式位于
 `runs/simulation/openmoji_validation_formal_s42_20261024_native_objective1/`，
@@ -19,7 +39,7 @@
 `configs/current_gpu_authorization_20261024.json`只允许1/2/4/5，优先1，最多四物理卡；
 排队和CUDA准入双重核验UUID。原GPU6实验已在禁用前完成；禁用时只停止自有旧监管器，
 保留GPU4正常worker，未改外来进程，收据`runs/control/gpu6_prohibited_own_stop_20261024.json`。
-新续训尚需自己的TRAIN-only短测通过才放行正式20轮。
+新续训已通过自己的TRAIN-only短测，再完成正式20轮；未使用probe权重作为正式起点。
 
 ## 2026-10-24 固定短预算完成；OpenMoji等权未落区间，补原生损失标准对照
 
