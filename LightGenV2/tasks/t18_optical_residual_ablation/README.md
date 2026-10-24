@@ -1,3 +1,23 @@
+## 2026-10-24 TEST监督适配已完成：410/411仅为同样本适配重放，非正式TEST
+
+上条最新人工授权的新实验已实际结束，运行源Git7b433780d02be3b8633c4def0c12d8ebaebf4121。
+原66.18005% PT出发，两轮共120个outer更新/744次梯度计算，best选update115；首轮139个
+错分各生成两个特征变体，第二轮按当时剩余5错生成10变体。best及last均经原模型重新加载、
+完整5阶段实测CCD原CPU重放：原TEST参与训练后的同样本适配410/411=99.75669%，恢复原错
+138张、原正确无新增错误；剩余错分在buddha类。best原TRAIN1149/1600=71.8125%，last1150。
+这仅证明同一批有标签样本可被原末端读出拟合，不能证明未见样本泛化改善、光路误差已消除，
+不能用99.76%替换66.18%开发成绩或宣称仿真差距目标达成。独立TEST样本数仍为0。
+
+新run `e2_actual300_20261024/fullG2_TESTsupervised_20261024` 的best PT SHA
+fe3b5fc6de7d2ffdb1baf39fa55fac5a62e1379ad196859c89a27cb1f4ba8a53；报告SHA
+ae902dd918f7928d72d39cd2f30ad7c7dc541af3c39e19a166a90388e724c5a9。
+独立代码/状态复核确认bestlast只有linear.weight/bias变化，全部非读出state逐bit冻结，
+5阶段10个CCD数组SHA及原数据SHA完全不变；原272接受manifest89fe0c3d…完全不变。
+新独立适配交付manifest `TEST_supervised_delivery_manifest.json` SHA
+769eb98eaee6b181004e036d954ac4dfd084d49900b5bd80a201f0744fb7c65f；进程已退出、SDK无锁，
+无GPU/相机调用、无新定时任务。新profile/入口4项静态测试及实验室数值自检通过；后者明确
+验证原TEST监督梯度非零，保留数据来源ID/role，不能将其误称为TRAIN-only增强。
+
 ## 2026-10-24 新人工授权：TEST监督的末端特征增强适配，必须与原开发结果分开
 
 用户本轮明确要求用易错TEST生成增强数据并加入监督训练。该授权仅适用于新独立
