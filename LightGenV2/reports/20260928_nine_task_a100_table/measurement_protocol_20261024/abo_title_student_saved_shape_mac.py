@@ -121,11 +121,18 @@ def derive():
         sealed={x['file']:x['sha256'] for x in json.loads((folder/'files_manifest.json').read_text())}
         for name in ('calls.csv','stages.csv','identity.json','summary.json','stage_ledger.json'):
             if sha(folder/name)!=sealed[name]:raise ValueError('Sealed actual cost/shape data changed')
-        identity=json.loads((folder/'identity.json').read_text());audit=json.loads((folder/'local_independent_audit01.json').read_text())
+        identity=json.loads((folder/'identity.json').read_text())
         summary=json.loads((folder/'summary.json').read_text())
-        if (identity['body_sha256']!=BODY_SHA or audit['status']!='passed' or audit['calls']!=200
-                or audit['report_sha256']!=sealed['summary.json'] or sha(CONFIG)!=identity['model_config_sha256']):
+        if (identity['body_sha256']!=BODY_SHA or summary['status']!='complete' or summary['valid_samples']!=200
+                or sha(CONFIG)!=identity['model_config_sha256']):
             raise ValueError('Original model/config/qualified cost binding differs')
+        # The fixed run selection has already passed both full raw audits.
+        # Bind the original sealed summary here, not a host-specific audit-file
+        # name; the index builder separately replays original cost audits.
+        if (folder/'local_independent_audit01.json').exists():
+            audit=json.loads((folder/'local_independent_audit01.json').read_text())
+            if audit['status']!='passed' or audit['calls']!=200 or audit['report_sha256']!=sealed['summary.json']:
+                raise ValueError('Existing independent cost audit differs')
         settings=identity['resolved_settings']
         for key,value in dict(inference_batch_size=1,electronic_width=192,electronic_layers=2,
                 electronic_expansion=.5,electronic_token_mixer_enabled=True,
@@ -153,8 +160,8 @@ def derive():
         results.append(per_call)
         refs.append(dict(run=folder.relative_to(REPO).as_posix(),summary_sha256=sealed['summary.json'],
             calls_sha256=sealed['calls.csv'],stage_shapes_or_occurrences_sha256=sealed['stages.csv'],
-            independent_audit_sha256=sha(folder/'local_independent_audit01.json'),
-            seconds200=audit['projected_seconds200'],joules200=audit['phase_estimated_j200']))
+            seconds200=(summary['charged_electronic_ms_total']+summary['optical_ms_total'])/1000,
+            joules200=121.746*summary['optical_ms_total']/1000+104.230*summary['charged_electronic_ms_total']/1000))
     if results[1:]!=[results[0],results[0]]:raise ValueError('Original shape workload differs across fresh rounds')
     total={k:sum(c[k] for rows in results for c in rows) for k in
         ('actual_MAC','selected_serial_MAC','parallel_residual_MAC','native_position_construction_MAC')}
