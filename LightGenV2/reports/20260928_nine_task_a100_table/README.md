@@ -1,10 +1,10 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 17:22，北京时间）
+## 新旧版入口与完成清单（2026-10-24 17:26，北京时间）
 
 **本轮唯一协议/结果入口是`measurement_protocol_20261024/`。两份正式新Excel尚未
 生成，不要发送下方2026-09-28或`frontend_tokens_20261023/`里的历史工作簿作为新结果。**
-`measured_index_partial_01.json`和`temporal_matrix_partial_01.json`是可审计中间索引，
+`measured_index_partial_01.json`和`temporal_matrix_partial_02.json`是当前可审计中间索引，
 名字和内部状态均明确PARTIAL；时间推进不自动将其升级为正式表。
 
 九指标表中的“完成”只指输入包含200×3的时间/能量已独立审计，尚不表示TOP完整：
@@ -25,10 +25,10 @@
 全部TOP及其派生TOPS/TOPS/W仍需匹配真实输入形状的独立不计时回放；共同输入
 Tokens/s分子已经在已完成Qwen行保留，最终整表与时间倍率一起校验。
 
-LGVQ多baseline表：Qwen100/50各三轮、GLM100三轮已合格；GLM50第1轮已本地
-审计和备份，第2轮已完成200预测但报告/收尾校验未结束，第3轮待测。
-CLIP/YOLO各100/50三轮尚在后续串行计划。当前40GB范围共24点，已合格10点，
-不把正在收尾的第11点预先计成完成。LightGen时间质量的共同点仍待补；完整DS/Kimi
+LGVQ多baseline表：Qwen100/50各三轮、GLM100三轮已合格；GLM50前两轮均已本地
+审计和逐SHA备份，第3轮已启动。`temporal_matrix_partial_02.json`独立复算上述11轮，
+原partial01不覆盖。CLIP/YOLO各100/50三轮尚在后续串行计划。当前40GB范围共24点，
+已合格11点，不把运行中的第12点预先计成完成。LightGen时间质量的共同点仍待补；完整DS/Kimi
 各两档三轮共12点待人工提供新的80GB机器，现阶段不提前租赁或连接旧实例。
 
 原始数据均留原任务run，服务器统一前缀`/DATA/DATA1/guest3/2026OpticsMoE/`；
