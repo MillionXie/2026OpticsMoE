@@ -1,5 +1,51 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 04:04补记：新租机全部完成并取回，勿再等待旧租机队列
+
+DeepSeek完整版/Kimi各100/50MPS、各三fresh200，12/12全部完成并逐点server/local独立审计通过；
+补充的同一80GB平台Qwen100三fresh200也3/3完成并审计通过。原controller381、4294、12427及
+全部worker已退出；`post_all_rental_release01.json`实际Unix1792871599.340875核compute空、
+0MiB/0%、两套私有MPS无daemon，SHA
+`ce9b01c15ee8420d5337d9ed614f76bc83b3a5c074211a4d1cbd0e797489b15d`。
+新租机本轮工作已全部结束，raw已安全本地保存，用户若可提前停止计费即可关机；
+后续不要再连接或等待这些旧PID，也不自行续租。
+
+固定DS/Kimi路径`T06/runs/simulation/lgvq_mps_e2e_a100_20261024/rental_80gb_20261025_01`，
+根147原文件143492337B逐SHA备份。DS100/50每视频成本分别为726.0786003433168/
+969.835741414378ms、403.8316468178347/509.583800228275J；Kimi100/50分别为
+499.45168420051533/529.422261469687ms、238.64918256657876/252.28299536145283J。
+正式完整558 SRCC仍原DS`.7167352584517089`、Kimi`.805465271935947`。
+合格Qwen仅`rental_qwen_anchor_20261025_02/qwen_cap100_repeat01,02,03`，
+根42原文件12131327B逐SHA备份，600视频259.60502423966926ms/109.370473762451J、
+全窗加权board83.09567439141466W，原有效token每轮89200。
+该80GB/400W同机对照单列，不替换原40GB/250W共享Qwen三轮。
+
+旧Qwen`_01`零正式call，原9项运行资产及dtype逐字节相同，仅三个额外下载/provenance JSON
+触发原严格顶层资产集合检查；保留失败10原文件95912B及793B外置日志，诊断后仅将这三个
+非运行资产可恢复移至模型内`auxiliary_provenance_20261025_01`，未删除、未改权重/tokenizer/
+config或网络数学。归档收据及三个原JSON也已SHA取回，不将失败点混入合格三轮。
+原DS/Kimi网络metadata和原质量head另存`T06/runs/simulation/a100_rental_original_metadata_20261025_01`，
+41项manifest逐SHA本地核准，供后续原图/既有形状算量，无需租机再推理。
+
+已发布`906e055fd`的CPU矩阵汇总，原lab24点完全不动，新DS/Kimi12点和补充Qwen三轮单列。
+本地`temporal_matrix_partial_05.json` SHA
+`ba69a1361e0b72dd46a40256e4f98f492b222355ae389c29d6aaeb21e12f5f23`，
+36/36成本点及补充对照均完整；仍PARTIAL，不是正式Excel，server未生成该私有index。
+本地原始数据总索引`rental_80gb_raw_index_20261025_01.json`由已发布`026d5dcac`封存核验，
+15合格点、282文件164556829B（含拒绝/metadata/本地复算，角色分列），SHA
+`235a4ca87da208edce4fbfe55235c96bbe28f0d2c84fa2106081a6533d43092b`。
+它包含全部原始文件/外置日志/身份/收据与SHA，原件不覆盖。
+
+九行成本仍13/18，剩LGVQ Ours时/空、T08图搜文Ours、T12双方5项；两份新正式Excel仍未生成。
+实验室最后Unix1792871878.425111，1728678仍waiting_foreign_process、1737924仍waiting_previous_queue，
+同一hmh1708990/1710971仍在，未新增worker，不重复启动/通知占用。
+T08有限等待接近04:06边界，下一次先核真实status/PID，再保raw并仅对缺失工作建立有界新run；
+若已出现合格bank/轮必须精确复用，并让T12后继绑定实际续测完成证据。
+新增`807ba5ff5`的T12 baseline入口仅原完整28LanguageTF/UNet/adapter/frozenVAE代码准备，
+3纯CPU测试双端通过，尚无真实CPU模型合同/正式GPU队列，不冒称已通过。
+lab已安全ff807，78活动冻结源SHA不变；新矩阵/总索引源码本地和GitHub发布，
+没有为同步文档再连接已完成租机。
+
 ## 2026-10-25 03:30补记：DS六点已备份审计，Kimi继续；图搜文Qwen算量零前向推导
 
 新租机原controller381正常继续：DeepSeek完整版100/50MPS各三fresh200全部合格，
