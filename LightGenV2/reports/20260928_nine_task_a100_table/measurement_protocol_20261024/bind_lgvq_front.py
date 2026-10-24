@@ -38,6 +38,21 @@ def native_key(keys,component,name):
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def vision_config_at_original_runtime_dtype(actual,expected):
+    """Restore only the archived BF16 construction option, not model math.
+
+    AutoConfig alone has dtype=None for this original vision config. The
+    original cache producer passes dtype=torch.bfloat16 to from_pretrained;
+    all three actual vision tensors must still match the archived BF16 bytes.
+    Every other config field remains an exact comparison, not an allowlist.
+    """
+    result=dict(actual)
+    if result.get('dtype') is None and expected.get('dtype')=='bfloat16':
+        result['dtype']='bfloat16'
+    if result!=expected:raise ValueError('Original vision component config differs beyond BF16 construction option')
+    return result
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in ('metadata','spatial-prompt','temporal-release','model','output'):
@@ -73,6 +88,9 @@ def main():
                               ('qwen_language_embedding_fingerprint',front._config_mapping(config.text_config))):
         expected=(vision if component.startswith('qwen_vision') else language)[component]
         key='vision_config' if component.startswith('qwen_vision') else 'language_config'
+        if key=='vision_config':
+            raw_vision_dtype=actual.get('dtype')
+            actual=vision_config_at_original_runtime_dtype(actual,expected[key])
         if actual!=expected[key]:raise ValueError('Original component config differs: '+component)
     method_sha=hashlib.sha256(inspect.getsource(Qwen3VLVisionModel.fast_pos_embed_interpolate).encode('utf8')).hexdigest()
     if method_sha!=vision['qwen_vision_front_fingerprint']['position_interpolation_code_sha256']:
@@ -122,6 +140,9 @@ def main():
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
         sources={str(f.relative_to(REPO)):sha(f) for f in files},
         archived_metadata_sha256=METADATA_PIN,model_candidate=str(a.model),original_artifact_checks=file_checks,
+        vision_dtype_binding=dict(AutoConfig_only=raw_vision_dtype,original_constructor='dtype=torch.bfloat16',
+            archived_runtime_config=vision['qwen_vision_front_fingerprint']['vision_config']['dtype'],
+            actual_tensor_dtype_and_bytes_independently_checked=True),
         vision_position_method_sha256=method_sha,matched_front_tensors=checks,matched_prompt_checks=prompt_checks,
         historical_whole_checkpoint_revision_not_proved=True,used_frontend_parameter_bytes_match_original=True,
         no_full_model_instantiated=True,no_transformer_forward=True,no_video_decode=True,
