@@ -58,10 +58,13 @@ def group_paths():
         'supplementary80GB_cap100':[ROOT/'rental_qwen_anchor_20261025_02'/f'qwen_cap100_repeat{i:02d}' for i in (1,2,3)]}
 
 
-def build(config_path):
+def build(config_path,selected_groups=None):
     if sha(config_path)!=CONFIG_SHA:raise ValueError('Exact original Instruct config bytes required')
-    config=json.loads(config_path.read_text());groups=[];shared_signature=None
-    for label,folders in group_paths().items():
+    config=json.loads(config_path.read_text());groups=[];shared_signature=None;available=group_paths()
+    if selected_groups is not None and (not selected_groups or len(set(selected_groups))!=len(selected_groups) or not set(selected_groups)<=available.keys()):
+        raise ValueError('Explicit existing canonical groups only')
+    for label in (list(available) if selected_groups is None else selected_groups):
+        folders=available[label]
         refs=[];repeats=[];subtotals=Counter()
         for repeat,folder in enumerate(folders,1):
             report=json.loads((folder/'report.json').read_text());inputs=json.loads((folder/'input_audit.json').read_text())
@@ -112,8 +115,9 @@ def build(config_path):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--groups',nargs='+',choices=tuple(group_paths()),help='Explicit groups present on this CPU; does not infer or drop failed points')
     a=p.parse_args()
     if a.output.exists():raise FileExistsError('Preserve immutable formula receipt')
-    value=build(a.config)
+    value=build(a.config,a.groups)
     with a.output.open('x',encoding='utf8') as f:json.dump(value,f,indent=2)
     print(json.dumps([dict(group=g['group'],TOP_per_video=g['TOP_per_video'],TOPS=g['TOPS'],TOPS_per_W=g['TOPS_per_W']) for g in value['groups']]))
