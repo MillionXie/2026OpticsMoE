@@ -1,5 +1,35 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 03:30补记：DS六点已备份审计，Kimi继续；图搜文Qwen算量零前向推导
+
+新租机原controller381正常继续：DeepSeek完整版100/50MPS各三fresh200全部合格，
+60原文件88968516字节逐SHA本地备份，六个`local_independent_audit01.json`均CPU独立复算通过。
+100档合600为726.0786003433168ms/视频、403.8316468178347J/视频、全窗加权board217.9817227871585W；
+50档合600为969.8357414143782ms/视频、509.583800228275J/视频、board187.2331001300426W。
+正式full558 SRCC仍`.7167352584517089`；200预测不作为正式准确度重评。
+Kimi100 r1也已合格、10文件8870129字节SHA备份/本地独立CPU通过，r2已在新fresh进程继续。
+这仍是80GB 7/12点阶段，不冒称12/12，Qwen同机锚仍由4294等待原队列释放。
+05:25计算/05:46租期结束边界不变，已合格点不重跑。
+
+等待同时用原网络和已封600条实际动态grid/IDs/masks，补出02图搜文Qwen dense-MAC，
+新GPU/神经前向均0。完整24 vision/28 language、QK/AV及main+3 deepstack merger均计，
+原base-model forward不执行LMhead，不虚加词表投影；原2048×100 FP32 cosine dot计入，
+离线候选库推理不混入query OP。每输入0.30678936795135997TOP，配原85.6947604ms/
+33.2878861J得3.580024805356149TOPS、0.009216246628892762TOPS/W；仍为dense-MAC口径，
+norm/softmax/lookup/归一化/排序等非MAC显式保留，不称完整scalar OP或硬件峰值。
+新源`662e21a2a`，11纯CPU测试双端通过，双方计算解析对象相同；
+`abo_image_qwen_network_shape_MAC_01.json` SHA
+`e2852686a7758f505fcc9174561e5f1ab7fc6bed01747ef9ffe252b8d511b8b7`；
+server原件SHA`3f0912185d832cb74c3dc3522bed57b90b278209d17f1be9b62462b3e93689ea`已取回。
+server从peer已自行同步的04f277e4f，仅安全ff两个新增源至662e21a2a，
+78个T08/T12活动冻结源SHA前后全等，不热改原runtime。
+
+builder `d861d6d53`已发布，13CPU测试本地通过。已本地全量独立重放
+`measured_index_partial_11.json` SHA`fb4c53d1aa49f84ebf92df4078ad7c7ed3bed35f76020097444fd1e2350c71e7`，
+只增加02 Qwen算量；其他八行和40GB共享Qwen与10解析对象完全相同，旧10不覆盖。
+它仍13/18/PARTIAL，server没有生成这个私有index，正式两Excel仍未生成。
+最新实验室仍1728678等待原hmh1708990/1710971，1737924等待前驱；没有重启或混测。
+
 ## 2026-10-25 03:03补记：人工新租80GB已启动DS/Kimi，原40GB缺失队列继续
 
 人工新提供的租机端点已只读核为A100-SXM4-80GB、400W，真实UUID
