@@ -1,0 +1,21 @@
+{
+  "schema": "T21_A_native8_small_lr_original_TRAIN_teacher_v1",
+  "seed": 20261024,
+  "epochs": 8,
+  "minimum_epochs": 4,
+  "patience": 4,
+  "batch_size": 8,
+  "optical_lr": 0.0002,
+  "head_lr": 0.0001,
+  "minimum_lr_fraction": 0.05,
+  "weight_decay": 0.001,
+  "label_smoothing": 0.02,
+  "distillation_weight": 0.5,
+  "distillation_temperature": 2.0,
+  "teacher_scope": "immutable original 17um A model, full original TRAIN only",
+  "selection": "fixed VAL1000, E0 included; TEST evaluated after selection",
+  "TEST_gradients": false,
+  "hardware": "no SDK; changed optical state requires new downstream CCD",
+  "allowed_GPU_UUIDs": ["GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"],
+  "per_process_GPU_memory_fraction": 0.4
+}
