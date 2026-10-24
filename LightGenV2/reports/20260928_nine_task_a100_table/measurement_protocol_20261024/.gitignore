@@ -48,3 +48,5 @@
 !abo_student_graph.py
 !test_abo_student_graph.py
 !run_abo_image_remainder.py
+!run_abo_student_contract.py
+!test_abo_student_queue.py
