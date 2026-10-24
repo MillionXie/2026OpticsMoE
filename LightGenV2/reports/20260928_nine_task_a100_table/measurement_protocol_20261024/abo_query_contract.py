@@ -10,7 +10,7 @@ from pathlib import Path
 
 DIRECTIONS = ('image_to_text', 'text_to_image')
 MODEL_CONFIG_SHA = '9172f55b0b9cce70b7f67b10c58a408ccf3ec15c587e6efd4d5f41631237fded'
-MODEL_WEIGHTS_SHA = 'c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f22d486964464509c1'
+MODEL_WEIGHTS_SHA = 'c73fa9caeddeb3ff831d46c085a7a5708343248ca777e90f2d486964464509c1'
 DATA_SHA = {
     'titles.csv': 'c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1',
     'train.csv': 'f742fc9e2314b7fb2858ad486505c943f7b7e37493e5d601d8dcbf7740b5707b',
@@ -26,6 +26,16 @@ FULL_REFERENCE = {'image_to_text': .7358333333333333, 'text_to_image': .82}
 TEXT_BASELINE_BANK_SHA = '8f9bc7d1e2276f59b720e6666b8f24d7207df75d4e7ff57c3867e0cc10a447fc'
 TEXT_BASELINE_SOURCE = ('1e218991a894923906f1e70eebd41377083252dd',
     'LightGenV2/tasks/t08_abo_image_text_retrieval/text_to_image_baseline.py')
+
+
+def validate_sha256(digest):
+    if len(digest)!=64 or set(digest)-set('0123456789abcdef'):
+        raise ValueError('SHA256 must be exactly64 lowercase hexadecimal characters')
+    return digest
+
+
+for _pin in (MODEL_CONFIG_SHA,MODEL_WEIGHTS_SHA,TEXT_BASELINE_BANK_SHA,*DATA_SHA.values()):
+    validate_sha256(_pin)
 
 
 def validate_rows(titles, train, test):

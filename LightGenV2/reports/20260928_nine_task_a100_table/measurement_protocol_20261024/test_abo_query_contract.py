@@ -44,3 +44,10 @@ def test_mapping_or_overlap_changes_rejected():
     with pytest.raises(ValueError): m.validate_rows(titles, train, test)
     titles, train, test = fixture(); train[0]['sample_id'] = test[0]['sample_id']
     with pytest.raises(ValueError): m.validate_rows(titles, train, test)
+
+
+def test_sha_pins_reject_transcription_length_and_non_hex():
+    for value in (m.MODEL_CONFIG_SHA,m.MODEL_WEIGHTS_SHA,m.TEXT_BASELINE_BANK_SHA,*m.DATA_SHA.values()):
+        assert m.validate_sha256(value)==value
+    for wrong in ('0'*63,'0'*65,'g'*64,'A'*64):
+        with pytest.raises(ValueError):m.validate_sha256(wrong)
