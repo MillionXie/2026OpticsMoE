@@ -72,3 +72,6 @@
 !run_openmoji_e45.py
 !test_openmoji_e45_measurement.py
 !test_openmoji_e45_index.py
+!openmoji_qwen_live.py
+!run_openmoji_qwen_contract.py
+!test_openmoji_qwen_live.py
