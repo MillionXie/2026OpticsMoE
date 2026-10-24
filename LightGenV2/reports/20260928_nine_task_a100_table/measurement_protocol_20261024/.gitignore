@@ -6,3 +6,5 @@
 !stage_meter.py
 !measure_ours.py
 !test_stage_meter.py
+!measure_qwen.py
+!run_trials.py

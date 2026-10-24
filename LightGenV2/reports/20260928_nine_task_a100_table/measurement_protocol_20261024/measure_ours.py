@@ -24,6 +24,8 @@ import time
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[3]
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
 spec = importlib.util.spec_from_file_location("lightgen_stage_meter", HERE / "stage_meter.py")
 meter_lib = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(meter_lib)
@@ -82,6 +84,8 @@ def guard(uuid):
 
 def patch_abo(model, meter):
     """Explicit accounting ledger, with source lines for every selected span."""
+    from LightGenV2.tasks.t07_abo_image_retrieval.standalone import optics
+    meter.wrap(optics, "bounded_amplitude", "slm.bounded_tanh_nonlinearity", family="amplitude_encoding_nn")
     meter.wrap(model.frontend, "patches", "frontend.patch_position", family="frontend")
     meter.wrap(model.frontend, "embed", "frontend.token_embedding", family="frontend")
     meter.wrap(model.frontend, "merge", "bridge.native_merger", family="bridge")
@@ -201,7 +205,7 @@ def main():
     else:
         admission = None
         device = torch.device("cpu")
-    torch.set_num_threads(4)
+    torch.set_num_threads(8)
     torch.manual_seed(42)
     model, processor, queries, gallery_rows, gallery, info = load_abo(args, device)
     meter = meter_lib.StageMeter(None if args.inspect_only else torch.cuda)
@@ -212,6 +216,7 @@ def main():
                  "stage_ledger": meter.ledger, "repeat": args.repeat, "samples": len(queries), "explicit_warmup": 0,
                  "scope": "input-inclusive stage-accounted hardware projection; wall primary; excluded layout/residual/FFT retained",
                  "mps_percent": 100, "gpu_admission": admission, "inspection_only": args.inspect_only})
+    info["cpu_threads"] = torch.get_num_threads()
     args.output.mkdir(parents=True)
     write_json(args.output / "identity.json", info)
     if args.inspect_only:
@@ -261,16 +266,18 @@ def main():
                 call_start = time.perf_counter()
                 with torch.autocast("cuda", dtype=torch.bfloat16):
                     vector = model(batch)
-                with meter.scope("head.gallery_similarity_top1", "search"):
+                with meter.scope("head.gallery_similarity_stable_ranking", "search"):
                     scores = vector.float() @ gallery.T
-                    index = scores.argmax(-1)
+                    ranking = scores.argsort(dim=1, descending=True, stable=True)
                 with meter.scope("output.cpu_return", "output", gpu=False):
-                    predicted_index = int(index.cpu())
+                    cpu_ranking = ranking.cpu()
+                    predicted_index = int(cpu_ranking[0, 0])
                     predicted_id = gallery_rows[predicted_index]["product_id"]
                 last_return = time.perf_counter()
                 samples.append({"index": i, "sample_id": query["sample_id"], "image_path": query["image_path"],
                                 "expected_product_id": query["product_id"], "predicted_product_id": predicted_id,
                                 "hit1": int(predicted_id == query["product_id"]), "input_start": start,
+                                "ranking": cpu_ranking[0].tolist(),
                                 "model_call_start": call_start, "cpu_result_return": last_return,
                                 "request_wall_ms": (last_return - start) * 1000, "internal_gap_ms": gap * 1000,
                                 **input_metadata})
@@ -290,6 +297,9 @@ def main():
         charged_ms = sum(r["synchronized_wall_ms"] for r in meter.rows if r["charged"]) + sum(r["internal_gap_ms"] for r in samples)
         opt_seconds = len(samples) * 6 * .0010447
         energy = meter_lib.optical_energy_j(opt_seconds, charged_ms / 1000)
+        paired = [r for r in meter.rows if r["charged"] and r["cuda_event_ms"] is not None]
+        paired_wall = sum(r["synchronized_wall_ms"] for r in paired)
+        paired_events = sum(r["cuda_event_ms"] for r in paired)
         summary = {"status": "complete", "repeat": args.repeat, "valid_samples": len(samples),
                    "measured_subset_hit1": statistics.fmean(r["hit1"] for r in samples), "full_test_reference_hit1": .8225,
                    "software_simulation_full_window_ms": (last_return - first_start) * 1000,
@@ -299,6 +309,9 @@ def main():
                    "primary": "synchronized wall NN intervals and input/output plus internal dispatch gaps; no layout/residual/FFT",
                    "power_basis": "user-fixed phase powers, not software-FFT telemetry: optical121.746W/electronic104.230W",
                    "common_token_basis": "pending matching Qwen input audit; LightGen native token count is diagnostic only",
+                   "paired_neural_timers": {"wall_ms_total": paired_wall, "event_ms_total": paired_events,
+                                            "wall_minus_event_ms_total": paired_wall-paired_events,
+                                            "wall_event_ratio": paired_wall/paired_events if paired_events else None},
                    "op_count_status": "pending separate matching untimed replay; never reuse old synthetic-shape OP"}
         write_json(args.output / "summary.json", summary)
         print(json.dumps(summary, ensure_ascii=False), flush=True)
