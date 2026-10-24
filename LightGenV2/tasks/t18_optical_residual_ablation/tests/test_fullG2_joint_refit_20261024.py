@@ -21,3 +21,4 @@ def test_full_physical_local_repair_uses_only_TRAIN_neighbors():
     assert "canonical_affine_logits(test,model.linear.weight,model.linear.bias)" in engine
     boundary=(root/'lab_caltech20_TRAIN_local_boundary_20261023.py').read_text()
     assert 'logits=canonical_affine_logits(' in boundary
+    assert "source=root.parent/'fullG2_teacher_margin_20261024'" in s and "'fullG2_teacher_local_20261024'" in s

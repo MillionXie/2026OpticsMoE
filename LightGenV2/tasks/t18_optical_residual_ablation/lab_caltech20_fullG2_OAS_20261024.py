@@ -11,8 +11,9 @@ def run(a):
     cpath=base.HERE/'lab_caltech20_tucam_layerwise_profile_20261023.json';assert m.sha(cpath)=='c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909'
     c=m.read(cpath);base.validate_config(c);torch.set_num_threads(2)
     assert not(a.joint_source and a.local_repair)
+    assert not a.teacher_local or a.local_repair
     if a.joint_source or a.local_repair:
-        assert a.out.name==('fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
+        assert a.out.name==('fullG2_teacher_local_20261024'if a.teacher_local else'fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
     else:
         assert (datetime.fromisoformat('2026-10-24T08:00:00+08:00')-datetime.now(timezone.utc)).total_seconds()>=330
     assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='a8352cd34237d5f9c7f6ed21f4ff489f94baf546ee3feccdc0c6c5addbcca67c'
@@ -29,6 +30,9 @@ def run(a):
     if a.local_repair:
         source=root.parent/'fullG2_TRAIN_fusion_nativepad_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
         fit=source;r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=r
+        if a.teacher_local:
+            source=root.parent/'fullG2_teacher_margin_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
+            fit=source/'fit';r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=m.read(source/'report.json')
         assert r['state']=='complete' and r['full_physical'] and not r['SDK_used']
     assert r['strict_original_CPU'] and r['full_physical'] and audit['passed'] and audit['report_SHA256']==m.sha(fit/'report.json')
     pt=fit/'best.pt';assert m.sha(pt)==r['results']['best']['PT_SHA256']==full.get('PT_SHA256',r['results']['best']['PT_SHA256'])
@@ -83,7 +87,7 @@ def run(a):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');a=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');a=parser.parse_args()
     try:run(a)
     except BaseException as e:
         if a.out.exists():
