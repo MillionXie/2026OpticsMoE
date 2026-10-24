@@ -1,5 +1,26 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-24 最新人工指定：原生损失新60轮继续至80，GPU6禁用
+
+原生损失独立从头训练60轮已完成，修改格准确率0.3720；正式位于
+`runs/simulation/openmoji_validation_formal_s42_20261024_native_objective1/`，
+完整1000 TEST，last SHA `4ea842276d6ceb28b98210cd9b0b19253495238f6bd36d54b65cf841656003ef`。
+这项实际在GPU4运行并自然退出。用户最新明确选用它继续优化，覆盖此前旧30轮PT续训的提议。
+
+新固定计划`configs/openmoji_basic_resume60to80_20261024.json`仅追加20轮至累计80，
+保持同一官方冻结RN18、byte-GRU和任务头、3981 fit/1019 source-grouped验证划分，
+沿用先前已验证的编辑/保留平衡损失（preserve0.25）及dropout0.2，不另搜系数。
+因为目标从原生损失切换到已有平衡损失，继承model而重新初始化AdamW；
+新阶段seed42采样，不声称未中断80轮或优化器moments连续。
+仅固定last80完整TEST一次，验证集只在末尾报告，不按分数挑轮或到区间即停。
+原生60及所有较高/较低结果均保留，这些追加属于已观察历史TEST后的探索性实验。
+
+用户最新禁止GPU6，并允许GPU1。当前权威资源策略
+`configs/current_gpu_authorization_20261024.json`只允许1/2/4/5，优先1，最多四物理卡；
+排队和CUDA准入双重核验UUID。原GPU6实验已在禁用前完成；禁用时只停止自有旧监管器，
+保留GPU4正常worker，未改外来进程，收据`runs/control/gpu6_prohibited_own_stop_20261024.json`。
+新续训尚需自己的TRAIN-only短测通过才放行正式20轮。
+
 ## 2026-10-24 固定短预算完成；OpenMoji等权未落区间，补原生损失标准对照
 
 图搜文50/100更新已完成：H@1分别0.4100（984/2400）、0.6325（1518/2400）。

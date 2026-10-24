@@ -4,6 +4,7 @@ The delegated scientific worker and its probe/model/loss hashes stay unchanged.
 Actual wrapper command, source SHA and admission policy are added to provenance.
 """
 import argparse
+import json
 import os
 from pathlib import Path
 import sys
@@ -12,6 +13,14 @@ from . import optimization_stage as stage
 from .shared_idle_gpu import snapshot
 from .train_easy100 import TASK,sharing_pids
 from .frozen_resnet18 import file_sha256
+
+
+def require_current_gpu_authorization(uuid):
+    policy_path=TASK/'configs/current_gpu_authorization_20261024.json'
+    policy=json.loads(policy_path.read_text())
+    if uuid in policy['prohibited_UUIDs'] or uuid not in policy['allowed'].values():
+        raise RuntimeError('GPU is not authorized by the latest human instruction')
+    return dict(authorization_policy_SHA=file_sha256(policy_path),authorized_indices=policy['priority_indices'],GPU6_prohibited=True)
 
 
 def validate_shared(state, owned_pids, previous=None):
@@ -39,10 +48,11 @@ def validate_shared(state, owned_pids, previous=None):
 
 def wait_shared(args):
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=args.gpu_uuid:raise RuntimeError('Wrong CUDA UUID visibility')
+    authorization=require_current_gpu_authorization(args.gpu_uuid)
     previous=None
     while True:
         state=snapshot(args.gpu_uuid)
-        try:return validate_shared(state,sharing_pids(args),previous)
+        try:return {**validate_shared(state,sharing_pids(args),previous),**authorization}
         except (RuntimeError,FileNotFoundError) as error:print('Waiting for low-utilization shared slot:',error,flush=True)
         if previous is None or state['observed_monotonic']-previous['observed_monotonic']>=15:previous=state
         time.sleep(5)

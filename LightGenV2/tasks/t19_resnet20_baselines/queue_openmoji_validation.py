@@ -18,10 +18,16 @@ def main(args):
     require_published_source()
     if not args.suite.resolve().is_relative_to((TASK/'runs/simulation').resolve()):raise ValueError('Suite outside task')
     plan=json.loads(args.plan.read_text())
-    if set(plan['candidate_gpu_indices'])!={2,4,5,6} or plan['max_physical_gpus']!=4:
+    if not set(plan['candidate_gpu_indices']).issubset({1,2,4,5,6}) or plan['max_physical_gpus']!=4:
         raise ValueError('Cannot expand four-GPU resource authorization')
+    policy_path=TASK/'configs/current_gpu_authorization_20261024.json'
+    resource_policy=json.loads(policy_path.read_text())
+    if set(resource_policy['priority_indices'])!={1,2,4,5} or resource_policy['prohibited_indices']!=[6]:
+        raise ValueError('Latest resource authorization differs')
     if plan['tasks']!=['openmoji']:raise ValueError('Only this authorized continuation may be launched')
     tag=plan.get('run_tag','')
+    worker_module=plan.get('worker_module','openmoji_validation_repair')
+    if worker_module not in {'openmoji_validation_repair','continue_openmoji_basic'}:raise ValueError('Unknown authorized worker')
     if tag and re.fullmatch('[a-z0-9_]+',tag) is None:raise ValueError('Unsafe run tag')
     suffix='_'+tag if tag else ''
     lock=(TASK/f'runs/.t19_openmoji_validation_20261024{suffix}.lock').open('a')
@@ -29,7 +35,8 @@ def main(args):
     args.suite.mkdir(parents=True,exist_ok=False)
     rows=subprocess.check_output(['nvidia-smi','--query-gpu=index,uuid','--format=csv,noheader,nounits'],text=True)
     inventory={int(r.split(',')[0]):r.split(',')[1].strip() for r in rows.splitlines()}
-    candidates=[inventory[i] for i in plan['candidate_gpu_indices']]
+    if any(inventory[int(i)]!=uuid for i,uuid in resource_policy['allowed'].items()):raise ValueError('Physical GPU identity changed')
+    candidates=[inventory[i] for i in resource_policy['priority_indices']]
     jobs=[]
     for task in plan['tasks']:
         probe=f'{task}_validation_probe_s42_20261024{suffix}'
@@ -41,7 +48,8 @@ def main(args):
     state=dict(status='running',pid=os.getpid(),jobs=jobs,command=[sys.executable,'-m',__spec__.name,*sys.argv[1:]],
         started_unix=time.time(),git_commit=git('rev-parse','HEAD'),profile_SHA=file_sha256(args.plan),
         gpu_uuids=candidates,max_physical_gpus=4,max_jobs_per_gpu=2,
-        coordinator_source_SHA=file_sha256(Path(__file__)))
+        coordinator_source_SHA=file_sha256(Path(__file__)),authorization_policy_SHA=file_sha256(policy_path),
+        authorization_overrides_historical_plan_GPU_candidates=True,actual_candidate_indices=resource_policy['priority_indices'],GPU6_prohibited=True)
     path=args.suite/'queue_status.json';running={};observations={}
     def save():write_json(path,state)
     save()
@@ -86,7 +94,7 @@ def main(args):
                     if old is None or state_gpu['observed_monotonic']-old['observed_monotonic']>=15:observations[uuid]=state_gpu
                     continue
                 j=ready[0];category='smoke' if j['phase']=='probe' else 'simulation'
-                command=[sys.executable,'-u','-m','LightGenV2.tasks.t19_resnet20_baselines.openmoji_validation_repair',
+                command=[sys.executable,'-u','-m','LightGenV2.tasks.t19_resnet20_baselines.'+worker_module,
                     '--phase',j['phase'],'--plan',str(args.plan),'--run-dir',str(TASK/'runs'/category/j['name']),
                     '--gpu-uuid',uuid,'--queue-status-path',str(path)]
                 if j['phase']=='formal':command+=['--probe-result',str(TASK/'runs/smoke'/j['probe_name']/'result.json')]

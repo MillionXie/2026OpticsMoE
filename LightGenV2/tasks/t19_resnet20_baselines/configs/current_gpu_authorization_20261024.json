@@ -1,0 +1,14 @@
+{
+  "authorization": "Latest human explicitly prohibits GPU6 and permits GPU1; earlier GPU2/4/5 remain authorized, maximum four physical cards.",
+  "priority_indices": [1, 4, 2, 5],
+  "allowed": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "2": "GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b",
+    "4": "GPU-1b963983-7909-af6e-0528-f0f0661ab549",
+    "5": "GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb"
+  },
+  "prohibited_indices": [6],
+  "prohibited_UUIDs": ["GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"],
+  "max_physical_gpus": 4,
+  "other_processes_must_not_be_modified": true
+}

@@ -69,3 +69,10 @@ def test_native_loss_control_exactly_matches_original_task_loss():
     actual=candidate_loss(output,batch,candidate,settings)
     torch.testing.assert_close(actual,expected,rtol=0,atol=0);actual.backward()
     assert all(x.grad is not None and torch.isfinite(x.grad).all() for x in output.values())
+
+
+def test_latest_GPU_authorization_rejects_GPU6_and_allows_GPU1():
+    from LightGenV2.tasks.t19_resnet20_baselines.optimization_shared_worker import require_current_gpu_authorization
+    result=require_current_gpu_authorization('GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d')
+    assert result['GPU6_prohibited'] and set(result['authorized_indices'])=={1,2,4,5}
+    with pytest.raises(RuntimeError):require_current_gpu_authorization('GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55')
