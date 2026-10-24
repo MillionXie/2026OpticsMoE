@@ -1,5 +1,43 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 06:46补记：LSP/SALICON Qwen原图算量接入，成本仍14/18
+
+本节不新增GPU/模型前向或成本轮。`dense_vision_qwen_saved_shape_mac.py`最终`4226ac4ac`
+从两任务原600条固定224/196×1536 patch/[1,14,14]输入形状及原完整Vision、训练头推导NN dense-MAC。
+原teacher虽然抓取末层pre-merger特征给head，仍完整调用visual，故24Vision及main+3deepstack
+merger实际都计；不增加未执行的Language Transformer/词表头。LSP仍原1102990参数
+DeconvPoseHead，转置卷积按input面积×kernel面积×Cin×Cout（非output面积）计dense MAC；
+SALICON仍197184参数适配器+85412参数原progressive density decoder，逐级上采样后的卷积均计。
+采用名义dense padding约定，非硬件指令/完整scalarOP；bilinear插值、norm、activation、
+RoPE/位置插值、池化/热图argmax坐标解码等非MAC明确另列，不把这些说成已计全OP。
+源定义逐字节绑定实际run原Git blob及当前发布Git；Windows读源码的CRLF仅在本地阅读一致性检查
+转换，不归一化原runtime SHA。初次CLI因CRLF在输出前拒绝后已确诊修复，不是GPU/模型故障。
+四项公式测试双方通过，server/local解析对象完全同：
+local `dense_vision_qwen_saved_shape_MAC_01.json` SHA
+`30670abafeee9ae1f8198fd1019b0792a64e39a7f60f179405553bfe69c4775d`；
+server_01原件1014639B SHA
+`1fa167c6aef679b9fbd148ea457c41c5042e296874c1337089dd1d683dc39c24`已精确取回。
+LSP .13425491968 TOP/输入，3.6806795309625575 TOPS/.009505270512176334 TOPS/W；
+SALICON .132991387648 TOP/输入，2.468146197677673 TOPS/.0064219376045404775 TOPS/W。
+这只是Qwen NN小计，Ours/物理光dense-equivalent/其他非MAC继续分列，未拿容量填任务OP。
+
+receipt/builder `eb845867c`和5项相关CPU测试通过，本地全量原raw重放
+`measured_index_partial_15.json` SHA
+`ba77a6ba850b0c5cac9476feccff782a3af4f77f5b71d586eb72c35f7c78749b`，
+builder字节SHA `7ed2ce9b35061d70b878854c8a77093fa474236b287e0e2011309b965fc2fef2`。
+只新增05/06 Qwen NN算量及其同一aggregate索引视图、ops状态，全部原成本/正式精度、其他七行、
+sharedQwen及其他对象与14解析对象全同。旧14及以前保留，server无私有15。
+成本仍14/18，剩LGVQ Ours temporal/spatial、T12双方；多baseline36/36和额外80GB锚3/3不变。
+新两正式Excel尚无，不能用旧表充新。租机仍不再连接。
+
+最新只读Unix1792881912.4224126，T12 QwenCPU_03/controller2143363/worker2149243实际存活，
+status仍loading/no_gpu，CPU累计时间由7:49增至15:28，RSS约10GB；无错误/无合格contract，
+不能将状态未细分的真实CPU执行猜成卡死或提前通过。LGVQCPU_03/2143364及两成本_03
+2143366/2143391仍等真实proof，completed空，真实NVMLcompute空；不重复启动/热改冻结源。
+server由peer自行推进至`c6b89007a`；本窗口此前只安全ff两个新增OP文件到4226ac4ac，93冻结源
+SHA前后相同，未称新builder/本段README已在server。后续每次核真实HEAD再精确安全同步。
+T12 Ours CPU_06已passed且140094B全备份，继续精确复用，绝不为后继等待重跑该合同。
+
 ## 2026-10-25 06:32补记：图搜文LightGen三轮双端审计完成，14/18；T12修复后原CPU合同通过
 
 本节覆盖下方旧13/18、T08加载及旧CPU/成本PID描述。九行成本现在14/18，剩四项为
