@@ -119,6 +119,7 @@ def load(args,device):
               config=str(args.config),config_sha256=sha(args.config),manifest_sha256=sha(args.manifest),
               original_full_test_reference=.8624925081777596 if args.system=="ours" else .87483828,
               original_full_test_samples=5000,selected_epoch=payload["epoch"],weight_kind=payload.get("weight_kind"),
+              resolved_settings=vars(settings),
               processor="original image_processor, RGB224 bicubic, no language prompt",
               preprocessing="same original _aligned_transform(training=False) image branch",
               native_model_assets={p.name:sha(p) for p in sorted(args.model.iterdir()) if p.is_file() and p.suffix in (".json",".safetensors")})
@@ -163,7 +164,6 @@ def main():
                 script_sha256=sha(__file__),stage_ledger=meter.ledger,command=sys.argv,repeat=args.repeat,
                 explicit_warmup_forwards=0,cpu_threads=8,gpu_admission=admission,
                 torch=torch.__version__,transformer_precision="original BF16 vision; original FP32 core/head, no new global autocast")
-    info["resolved_settings"] = vars(__import__("LightGenV2.tasks.t03_saliency.settings",fromlist=["load_settings"]).load_settings(args.config))
     args.output.mkdir(parents=True);write(args.output/"identity.json",info)
     records=[];densities=[];guard=None;sampler=None;telemetry=[]
     try:
