@@ -33,3 +33,6 @@
 !test_abo_text_qwen.py
 !operation_ledger.py
 !test_operation_ledger.py
+!torch_metadata.py
+!test_torch_metadata.py
+!audit_lgvq_front_metadata.py
