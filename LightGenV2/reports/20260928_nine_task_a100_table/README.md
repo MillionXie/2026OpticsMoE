@@ -1,13 +1,15 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 19:14，北京时间）
+## 新旧版入口与完成清单（2026-10-24 19:26，北京时间）
 
 **本轮唯一协议/结果入口是`measurement_protocol_20261024/`。两份正式新Excel尚未
 生成，不要发送下方2026-09-28或`frontend_tokens_20261023/`里的历史工作簿作为新结果。**
-`measured_index_partial_01.json`和`temporal_matrix_partial_03.json`是当前可审计中间索引，
+`measured_index_partial_02.json`和`temporal_matrix_partial_03.json`是当前可审计中间索引，
 名字和内部状态均明确PARTIAL；时间推进不自动将其升级为正式表。
-九行中间索引尚未纳入下述新完成的空间Qwen；该项以原run内三份本地独立审计为准，
-不能将旧partial01的空值解释为新三轮未执行。LSP完整raw已备份，尚待独立CPU复算。
+新九行partial02已实际独立重放并纳入空间Qwen和LSP双方，不覆盖旧partial01。
+LSP六轮均已完成独立CPU复算：原joints.mat及200张原图SHA、原人体框/224裁剪、
+原始NPZ与CSV坐标、PCK分子/分母、源Git、逐段无重叠/merger/三传播次数、
+进程/MPS及完整窗口功率支持均核验；未重复执行模型推理。19项CPU合同测试通过。
 
 九指标表中的“完成”只指输入包含200×3的时间/能量已独立审计，尚不表示TOP完整：
 
@@ -18,13 +20,13 @@
 | 02 | ABO图搜文 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
 | 03 | ABO图搜图 | 三轮已审计 | 三轮已审计 |
 | 04 | ABO文搜图 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
-| 05 | LSP | 三轮完成、raw已SHA备份，独立CPU复算待补 | 同左，原模型三轮均完成 |
+| 05 | LSP | 三轮完成、本地独立审计通过 | 三轮完成、本地独立审计通过 |
 | 06 | SALICON | 三轮已审计 | 三轮已审计 |
 | 07 | OpenMoji新布局 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
 | 08 | ABO文生图 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
 
-这相当于18个模型—任务项中6项已有合格三轮时间/能量，12项尚待补齐或审计；
-其中LSP双方两项已经执行完毕，不再排队或重跑，其余十项仍待适配/正式测量。
+这相当于18个模型—任务项中8项已有合格三轮时间/能量，其余十项仍待适配/正式测量。
+匹配双方完成的任务是图搜图、LSP和SALICON；LGVQ时间/空间目前仅Qwen完成。
 全部TOP及其派生TOPS/TOPS/W仍需匹配真实输入形状的独立不计时回放；共同输入
 Tokens/s分子已经在已完成Qwen行保留，最终整表与时间倍率一起校验。
 
@@ -43,7 +45,7 @@ LightGen时间质量的共同点仍待补；完整DS/Kimi
 - 图搜图：`tasks/t07_abo_image_retrieval/runs/simulation/a100_input_inclusive_20261024_01/`
   和`a100_input_inclusive_20261024_qwen01/`。
 - SALICON：`tasks/t03_saliency/runs/simulation/a100_input_inclusive_20261024_01/`。
-- LSP完成待复算：`tasks/t02_keypoint_detection/runs/simulation/a100_input_inclusive_20261024_02/`；
+- LSP完成已复算：`tasks/t02_keypoint_detection/runs/simulation/a100_input_inclusive_20261024_02/`；
   `_01`是中断依赖，不能误用。
 - 空间Qwen完成：`tasks/t06_video_quality_assessment/runs/simulation/lgvq_spatial_input_a100_20261024_01/`。
 
@@ -55,6 +57,15 @@ LightGen时间质量的共同点仍待补；完整DS/Kimi
 与私有`ssh_connection_recovery_20261024_1914.json`保留恢复/传输证据。
 恢复时A100另有hmh进程1044253，起始19:08:33、1968MiB；不启动新测或终止对方。
 已通过审计的原测量窗口占用证据独立核验，不因当前外部进程重新跑已完成轮。
+
+LSP新独立审计为`measurement_protocol_20261024/lsp_audit_01.json`，SHA
+`588d6d2cacc01133b1ef6c1a8a61ab26f38ccc10782a771211229e2d7a3ea985`。
+新首200子集PCK分别`.7264285714/.7353571429`，不冒称原TEST1000的`.7348/.7226`。
+原人体标注框裁剪任务不变，不是全图多人检测。新输入包含计时Ours21.865820ms、
+Qwen36.475580ms/图；Ours光3.134100ms、计入电子18.731720ms，分阶段估算
+2.333971J；Qwen全窗估算14.124261J、时间加权板卡49.025122W。
+这些是三轮全部600调用聚合，与历史窄口径4.770/17.463ms不可互相替代。
+每个神经网络段/原输入处理、排除layout/并行残差及Event配对仍保存在原stages和ledger。
 
 以上`tasks/`路径均以`LightGenV2/`为基准。正式交付时会在本节列出两份已生成Excel
 的准确文件名、SHA和全部raw清单；当前不提供尚不存在的正式下载链接。
