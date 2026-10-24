@@ -7,7 +7,7 @@ import pytest
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from measure_abo_image_qwen import (original_source,ORIGINAL_SHA,validate_bank,
     MODEL_CONFIG_SHA,MODEL_WEIGHTS_SHA,DOCUMENT_INSTRUCTION)
-from audit_abo_image_qwen import validate_calls
+from audit_abo_image_qwen import validate_calls,artifact_path,REPO
 
 
 def fixture():
@@ -57,3 +57,10 @@ def test_do_not_substitute_saved_FP16_bank_or_wrong_title_identity():
     with pytest.raises(ValueError):validate_bank(dict(vectors=vectors.astype(np.float16)),receipt,titles)
     receipt['product_ids'].reverse()
     with pytest.raises(ValueError):validate_bank(dict(vectors=vectors),receipt,titles)
+
+
+def test_continuation_references_original_bank_without_copying_or_path_escape():
+    relative='LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/a100_image_input_inclusive_20261024_02/offline_title_bank'
+    assert artifact_path('/DATA/DATA1/guest3/2026OpticsMoE/'+relative)==REPO/relative
+    with pytest.raises(ValueError):artifact_path('/another/root/'+relative)
+    with pytest.raises(ValueError):artifact_path('/DATA/DATA1/guest3/2026OpticsMoE/'+relative+'/../../outside')

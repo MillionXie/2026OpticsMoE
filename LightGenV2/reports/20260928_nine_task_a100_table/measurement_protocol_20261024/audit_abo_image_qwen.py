@@ -20,6 +20,16 @@ from measure_abo_image_qwen import (GPU,PROTOCOL,MODEL_CONFIG_SHA,MODEL_WEIGHTS_
 def value(raw):return ast.literal_eval(raw) if isinstance(raw,str) else raw
 
 
+def artifact_path(recorded):
+    prefix='/DATA/DATA1/guest3/2026OpticsMoE/'
+    raw=str(recorded).replace('\\','/')
+    if not raw.startswith(prefix):raise ValueError('Unknown original artifact root')
+    relative=raw[len(prefix):]
+    if not relative.startswith('LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/') or '..' in Path(relative).parts:
+        raise ValueError('Artifact is outside original T08 runs')
+    return REPO/relative
+
+
 def validate_calls(calls,test):
     if len(calls)!=200:raise ValueError('All first200 distinct original TEST calls required')
     previous=-math.inf
@@ -66,11 +76,12 @@ def audit(folder,data):
         if sha(path)!=item['sha256'] or path.stat().st_size!=item['bytes']:raise ValueError('Original raw SHA mismatch')
     elapsed,gaps,tokens=validate_calls(calls,test)
     close(elapsed,report['continuous_wall_s']);close(tokens,report['common_reference_tokens'])
-    bank_root=folder.parent/'offline_title_bank';receipt=read(bank_root/'receipt.json')
+    bank_root=artifact_path(report['offline_title_bank']);receipt=read(bank_root/'receipt.json')
     if sha(bank_root/'title_bank.npz')!=report['bank_sha256'] or sha(bank_root/'receipt.json')!=report['bank_receipt_sha256']:
         raise ValueError('Independent offline bank SHA differs')
     gallery=validate_bank(np.load(bank_root/'title_bank.npz',allow_pickle=False),receipt,titles)
-    contract=read(folder.parent/'original_image_cpu_contract/contract.json')
+    contract_path=artifact_path(report['cpu_contract']);contract=read(contract_path)
+    if sha(contract_path)!=report['cpu_contract_sha256']:raise ValueError('Original CPU contract SHA changed')
     if (contract['status']!='passed' or contract['sources']!=report['sources']
             or contract['bank_sha256']!=report['bank_sha256'] or not contract['no_gpu_inference']
             or [c['test_index'] for c in contract['checks']]!=[200,2399]

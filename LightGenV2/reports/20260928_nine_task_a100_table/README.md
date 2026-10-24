@@ -1,6 +1,26 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 22:09，北京时间）
+## 新旧版入口与完成清单（2026-10-24 22:25，北京时间）
+
+图搜文Qwen原`_02`的前两轮200调用已完成并通过服务器独立CPU审计；
+首轮也已本地从原JPEG字节、完整FP32向量/得分/排名、源Git及全窗功率复算通过。
+新首200子集Hit@1为`.705`，与完整2400历史`.7358333333`分别标注，不混作同一精度。
+第三轮在模型加载、零计时样本时遭遇外部`hmh`进程1341516，22:19:11启动、
+命令`/home/hmh/anaconda3/envs/CLIPSalNet/bin/python encode_stages.py`。
+仅停止自有第三轮worker1341118；1323283控制器退出，未混测或终止对方。
+原私有MPS已退出。原清理函数因对方仍占卡而报`GPU not released`，不是私有MPS仍在：
+后续只读收据确认自有controller/worker/server全退出、私有control返回无daemon，
+GPU剩余只有对方3138MiB。原报错、加载守卫及拒绝原件保留。
+
+新增`run_abo_image_remainder.py`固定复用原前两轮和原FP32库/CPU合同，不重新推理
+候选库或合格轮；先等真实进程和显存释放，再只补第三轮到新不可变run。
+这仍是9/18模型任务项完成，不把2/3轮升级为完整一项。LightGen`.86`的CPU神经合同
+准备源码已发布，但因前队列中断未加载模型，也未开始正式LightGen测量。
+
+本地旧Pillow10/JPEG9对179/200个原JPEG解码产生不同RGB字节；原文件SHA和尺寸
+均相同，不是换了输入或GPU结果。改用已有bundled Python3.12/Pillow12.3/libjpeg-turbo
+后，200个解码RGB SHA全部逐位匹配原测量记录，原审计器一行未放宽即通过。
+没有安装/修改包或重跑模型；诊断留在私有`local_abo_image_decoder_binding01.json`。
 
 图搜文Qwen的新`a100_image_input_inclusive_20261024_02`已实际通过两张原TEST图片的
 原/新完整CPU前向逐位合同，离线fresh进程生成原B1 FP32标题库已完成，接着执行
