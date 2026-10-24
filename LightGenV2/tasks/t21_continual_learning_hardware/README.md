@@ -110,6 +110,13 @@ TEST仅用于完整1000开发选模，教师和梯度不使用TEST/TEST增强；
 若卡已满载，先做CPU核验/准备或显式`--device cpu`同目标有限训练；没有新的共享确认不往他人满载GPU任务追加训练，也不用A100。
 SDK采集只能在新S1确认后以新manifest/PT SHA/newprefix启动；本配置不自动连接或启动SDK。
 
+已通过21项CPU测试及8个原阶段教师的严格加载/冻结/有限CPU前向核验，训练源码发布commit
+`a5f38c4f2a297f79084dbbda29a574e8f0535603`，GitHub/服务器/实验室已同步，原硬件XML保持SHA不变。
+服务器原run `runs/simulation/reference_adapter_TESTselect_20261024/{moe,d2nn}`已实际启动，两方各CPU2线程，
+不占GPU/SDK；原因是当时六张非A100 GPU均98–100%利用率，新增限额共享尚待用户确认。
+两方A阶段原教师的TRAIN1000 logits已保存并有对应PT/配置SHA；初始1000条基线与后续训练仍需按实际history核验，
+不能把进程启动或教师缓存完成当作新精度。完整A→D由同一有限训练进程顺序接续，不设自动定时任务或后台重试。
+
 ## 历史准备与运行记录（以下旧门槛及旧教师范围均已被上节覆盖）
 
 2026-10-24新任务，原仿真来源[T16](../t16_zero_phase_ccd_lifelong/README.md)。原T16保持只读。
