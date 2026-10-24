@@ -70,8 +70,18 @@ def make_manifest(data, task, *, split, source_protocol_sha256, count=1000):
     payload = dict(schema='T21_stratified_source_records_v1',task=task,split=split,
                    seed=20261024,source_protocol_sha256=source_protocol_sha256,
                    source_indices=indices.tolist(),group_ids=ids[chosen].tolist(),
+                   group_strata=strata[chosen].astype(str).tolist(),records_per_group=unit,
                    strata={str(s):int((strata[chosen]==s).sum()) for s in sorted(set(strata))},
                    class_counts=np.bincount(labels,minlength=10 if task=='eurosat' else 2).tolist(),
                    pairing_complete=True,selection_uses_model_outputs=False)
     payload['identity_sha256']=hashlib.sha256(json.dumps(payload,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     return payload
+
+
+def memory_indices(manifest, count=300):
+    """Same paired, stratified TRAIN memory for both architectures."""
+    if manifest['split']!='train':raise ValueError('Memory may only use TRAIN')
+    unit=manifest['records_per_group']
+    if count%unit:raise ValueError('Memory would break a pair')
+    groups=select_groups(manifest['group_strata'],count//unit)
+    return (groups[:,None]*unit+np.arange(unit)).reshape(-1)

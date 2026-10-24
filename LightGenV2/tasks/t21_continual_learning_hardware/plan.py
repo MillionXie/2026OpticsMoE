@@ -6,7 +6,7 @@ import json
 def frame_budget(test_per_task=1000, train_per_current=1000, old_memory=300):
     # Ten cells per architecture: 1+2+3+4. Three/two CCD stages per input.
     evaluation = 10*test_per_task*(3+2)
-    moe_train = sum(range(1,5))*train_per_current*3
+    moe_train = sum(train_per_current+(s-1)*old_memory for s in range(1,5))*3
     d2nn_train = sum(train_per_current+(s-1)*old_memory for s in range(1,5))*2
     return dict(evaluation_frames=evaluation,
                 moe_TRAIN_frames=moe_train,d2nn_TRAIN_frames=d2nn_train,

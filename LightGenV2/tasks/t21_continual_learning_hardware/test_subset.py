@@ -28,7 +28,7 @@ class TestSubset(unittest.TestCase):
     def test_frame_budget(self):
         r=frame_budget()
         self.assertEqual(r['evaluation_frames'],50000)
-        self.assertEqual(r['total_with_proposed_TRAIN'],91600)
+        self.assertEqual(r['total_with_proposed_TRAIN'],79000)
 
 
 if __name__=='__main__':unittest.main()

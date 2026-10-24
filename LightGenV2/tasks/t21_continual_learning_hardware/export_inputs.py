@@ -31,7 +31,7 @@ def main():
     p=argparse.ArgumentParser(__doc__)
     p.add_argument('--protocols',type=Path,required=True,help='Private JSON task->original protocol paths, plus vision')
     p.add_argument('--task',choices=TASKS,required=True)
-    p.add_argument('--split',choices=('train','test'),required=True)
+    p.add_argument('--split',choices=('train','val','test'),required=True)
     p.add_argument('--out',type=Path,required=True)
     a=p.parse_args();torch.set_num_threads(2)
     paths={k:Path(v) for k,v in json.loads(a.protocols.read_text()).items()}
@@ -56,7 +56,7 @@ def main():
         raise ValueError('Invalid encoded deployment fields')
     power=fields.square().sum((-2,-1))
     torch.testing.assert_close(power,torch.ones_like(power),atol=3e-6,rtol=3e-6)
-    np.savez(a.out/'inputs.npz',amplitudes=fields.numpy(),labels=np.asarray(data.labels)[ix],source_indices=ix)
+    np.savez_compressed(a.out/'inputs.npz',amplitudes=fields.numpy(),labels=np.asarray(data.labels)[ix],source_indices=ix)
     manifest.update(vision_checkpoint_sha256=VISION_SHA,inputs_sha256=sha(a.out/'inputs.npz'),
                     scope='encoded original T16 input, not measured camera data',
                     hardware_admitted=False)
