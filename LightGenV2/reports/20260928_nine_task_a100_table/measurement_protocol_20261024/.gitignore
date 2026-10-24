@@ -91,3 +91,5 @@
 !test_t12_live_frontend.py
 !native_shape_mac.py
 !test_native_shape_mac.py
+!openmoji_saved_shape_mac.py
+!test_openmoji_saved_shape_mac.py
