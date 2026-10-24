@@ -25,6 +25,8 @@ def main():
     parser.add_argument('--lsp-data-root',type=Path,default=REPO/'data/lsp_pose/lsp_dataset')
     parser.add_argument('--abo-data-root',type=Path,default=REPO/'data/abo_easy100_dataset_20260906')
     parser.add_argument('--abo-text-op-config',type=Path,default=REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/a100_title_operations_20261024_01/audit_original/model_config.json')
+    parser.add_argument('--abo-image-python',type=Path,
+        help='Optional existing CPU runtime matching the measured JPEG decoder; original auditor unchanged')
     args=parser.parse_args()
     if args.output.exists():raise FileExistsError('Preserve previous index and source receipts')
     from LightGenV2.tasks.t06_video_quality_assessment import measure_mps_e2e_20261024 as t06
@@ -114,7 +116,19 @@ def main():
     image_root=REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation'
     image_paths=[image_root/'a100_image_input_inclusive_20261024_02'/f'qwen_repeat{i:02d}' for i in (1,2)]
     image_paths.append(image_root/'a100_image_input_inclusive_20261024_03/qwen_repeat03')
-    images=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**audit_abo_image_qwen(p,args.abo_data_root)) for p in image_paths]
+    def image_audit(path):
+        if args.abo_image_python is None:return audit_abo_image_qwen(path,args.abo_data_root)
+        # The existing local SciPy/NumPy audit runtime and measured JPEG decoder
+        # have different Python ABIs. Execute the unchanged image auditor in its
+        # explicitly selected existing runtime instead of replacing packages,
+        # faking loadmat, relaxing pixel checks or rerunning any model.
+        code=('import sys,json;from pathlib import Path;'
+              'sys.path.insert(0,sys.argv[1]);'
+              'from audit_abo_image_qwen import audit;'
+              'print(json.dumps(audit(Path(sys.argv[2]),Path(sys.argv[3]))))')
+        return json.loads(subprocess.check_output([str(args.abo_image_python),'-c',code,str(HERE),
+            str(path.resolve()),str(args.abo_data_root.resolve())],cwd=REPO,text=True))
+    images=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**image_audit(p)) for p in image_paths]
     if [r['repeat'] for r in images]!=[1,2,3] or [r['common_input_tokens200'] for r in images]!=[13728]*3:
         raise ValueError('Original image-query200x3 enrollment changed')
     image_seconds=sum(r['continuous_wall_s'] for r in images);image_energy=sum(r['system_energy_j'] for r in images)
@@ -124,6 +138,7 @@ def main():
         equivalent_frame_j=image_energy/600,time_weighted_board_w=sum(r['board_energy_j'] for r in images)/image_seconds,
         common_input_tokens_total=image_tokens,common_tokens_per_s=image_tokens/image_seconds,
         full2400_reference_hit1=.7358333333333333,measured_first200_hit1=[r['measured_first200_hit1'] for r in images],
+        independent_image_audit_python=str(args.abo_image_python or sys.executable),
         raw_references=images,scope='native image file to CPU100 full ranking, continuous199 gaps, zero dedicated inference warmup')
     rows['07']['status']='input_identity_conflict_pending_human_version_choice; no new inference'
     rows['07']['identity_note']='Selected .8880 PT579b19 uses old openmoji_grid_v2; .8120 Qwen PT0be775 uses layered scene TEST. Same numbered IDs are different input/target grids. Do not silently replace selected model or compare different datasets.'
