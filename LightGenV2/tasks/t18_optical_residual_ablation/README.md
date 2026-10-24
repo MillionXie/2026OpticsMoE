@@ -1,3 +1,29 @@
+## 2026-10-24 新授权四项读出对照：139仅增强、蒸馏及无TEST训练教师的控制
+
+用户追加要求：不放入原411张TEST，仅用原139张错分的增强特征训练；另从原272学生出发
+学习410教师，不直接给学生TEST样本。新入口`lab_caltech20_readout_transfer_20261024.py`，
+profile固定4个有界方法，原run `e2_actual300_20261024/fullG2_transfer_comparisons_20261024`。
+原272、410及原数据/CCD/接受manifest均不覆盖；只训练原5140线性头，其余state逐bit冻结。
+
+1. errors139_augmented_only：固定272父的139错分ID，各5%同类TRAIN插值和0.5%TRAIN标准差
+   噪声，共278合成特征+原TRAIN1600=1878。无任何原TEST原样行进入梯度，不重新挑139。
+   **139标签和特征的信息仍直接经增强进入学生**，不能称“不暴露TEST”或独立测试。
+2. KL_teacher：学生仅原TRAIN1600，监督CE.35+温度2的KL.65；410教师固定、不训练。
+3. DKD_TRAIN_neighborhood：仅原TRAIN及其同类插值/噪声共4800特征，区分目标类/非目标类
+   蒸馏权重1/4，教师在TRAIN错分时可靠性.25，CE.35+蒸馏.65。参考DKD思想，不冒称原论文
+   默认超参数；与普通KL不是单因素消融，须披露同时变化了目标和TRAIN增强。
+4. DKD_no_TEST_teacher_control：与3同配置，但教师改为无TEST梯度的原272，检验收益是否
+   依赖已见TEST标签的教师。该控制仍按完整411选PT，是开发结果，不是独立泛化。
+
+所有分支从精确6ebdbc0f…学生出发，L2.0005/协方差floor.01固定，139分支最多120outer，
+其余各60outer/每项120拟合秒，CPU2线程/noGPU/noSDK/no新结构。KD学生直接TEST梯度为0，
+但410教师已用411TEST标签，**蒸馏不能消除教师携带的TEST信息**，必须记录teacher_seen_TEST、
+TEST_information_via_teacher，不能借“学生没看TEST”将成绩转为正式测试/达标依据。中间特征
+与教师逐bit同源且冻结，特征蒸馏恒为0，没有添加无效特征loss。完整411选PT、分报原139/其余
+272恢复及丢失数；bestlast必须原CPU重载完整2011样本重放、全部冻结及10数组SHA再审计。
+原始软目标蒸馏参考https://arxiv.org/abs/1503.02531；解耦目标/非目标蒸馏参考
+https://arxiv.org/abs/2203.08679。两文不支持“蒸馏能洗净TEST监督来源”的说法。
+
 ## 2026-10-24 TEST监督适配已完成：410/411仅为同样本适配重放，非正式TEST
 
 上条最新人工授权的新实验已实际结束，运行源Git7b433780d02be3b8633c4def0c12d8ebaebf4121。
