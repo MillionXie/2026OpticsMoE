@@ -27,7 +27,7 @@ def run(a):
         full=m.read(source/'report.json');assert full['state']=='complete' and full['full_physical'] and full['strict_original_CPU'] and full['SDK_released']
         fit=source/'fit';r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json')
     if a.local_repair:
-        source=root.parent/'fullG2_TRAIN_fusion_native_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
+        source=root.parent/'fullG2_TRAIN_fusion_nativepad_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
         fit=source;r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=r
         assert r['state']=='complete' and r['full_physical'] and not r['SDK_used']
     assert r['strict_original_CPU'] and r['full_physical'] and audit['passed'] and audit['report_SHA256']==m.sha(fit/'report.json')
