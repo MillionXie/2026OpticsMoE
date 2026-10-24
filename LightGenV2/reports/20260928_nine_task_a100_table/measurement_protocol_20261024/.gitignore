@@ -86,3 +86,6 @@
 !audit_abo_image_student.py
 !run_abo_image_student.py
 !test_abo_image_student_measurement.py
+!t12_live_frontend.py
+!run_t12_live_contract.py
+!test_t12_live_frontend.py
