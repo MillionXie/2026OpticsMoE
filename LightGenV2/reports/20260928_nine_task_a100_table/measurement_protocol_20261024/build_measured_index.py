@@ -299,6 +299,8 @@ def main():
     qwen=audit_qwen(t07/'a100_input_inclusive_20261024_qwen01',enrolled)
     rows['03'].update(ours=ours,qwen=qwen,status='matched_three_round_timing_energy_independently_audited; OP pending')
     attach_remaining_shape_MAC(rows['03'],'t07_qwen')
+    from compact_student_shape_receipt import attach as attach_compact_student_MAC
+    attach_compact_student_MAC(rows['03'],'T07')
     our_s=sum(r['total_ms']*200/1000 for r in ours['repeats']);qwen_s=sum(r['seconds'] for r in qwen['repeats'])
     common=qwen['aggregate']['common_input_tokens_total']
     rows['03']['common_tokens']=dict(total=common,ours_per_s=common/our_s,qwen_per_s=common/qwen_s,
@@ -318,6 +320,8 @@ def main():
     from dense_vision_shape_receipt import attach as attach_dense_vision_MAC
     attach_dense_vision_MAC(rows['05'],'LSP')
     attach_dense_vision_MAC(rows['06'],'SALICON')
+    attach_compact_student_MAC(rows['05'],'LSP')
+    attach_compact_student_MAC(rows['06'],'SALICON')
     common=600*196
     our_s=lsp['aggregate']['ours']['sample_ms']*.6;qwen_s=lsp['aggregate']['qwen']['sample_ms']*.6
     rows['05']['common_tokens']=dict(total=common,ours_per_s=common/our_s,qwen_per_s=common/qwen_s,
@@ -420,7 +424,7 @@ def main():
                           complete_timing_energy_rows=['02','03','04','05','06','07'],
                           qualified_model_task_items=sum(r[m] is not None for r in rows.values() for m in ('ours','qwen')),
                           pending_rows=['01a ours','01b ours','08 both'],
-                          operation_counts='01a/01b/03/05/06 Qwen,02/04/07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; remaining original-network/existing-shape derivations pending, no compulsory GPU replay')))
+                          operation_counts='01a/01b Qwen and02/03/04/05/06/07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; remaining original-network/existing-shape derivations pending, no compulsory GPU replay')))
 
 
 if __name__=='__main__':main()
