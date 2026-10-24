@@ -1,6 +1,26 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 20:09，北京时间）
+## 新旧版入口与完成清单（2026-10-24 20:35，北京时间）
+
+20:35仅推进离线准备，没有新GPU计时，也未重启待人工恢复的T08批次。
+身份常量修正`8e7c5ed7f`已完成服务器干净快进，28项CPU测试通过、旧控制器已退出。
+随后`operation_ledger.py`准备独立不计时的实际形状MAC台账；34项纯CPU合同两端通过，
+另用真实CPU Linear、因果SDPA及Conv2d核对插桩前后逐位相同，MAC各24/144/1350，
+确认fused attention不重复计两次矩阵乘法。仅这些小张量测试，不是任务200样本回放。
+该台账同时保留实际执行总MAC、按批准计入的串行MAC、并行残差、非MAC、未知算子，
+数字FFT与物理光等效OP分开；不会把不支持的算子当作0或把容量当任务算量。
+私有`operation_ledger_cpu_contract_01.json`已逐SHA取回；全任务TOP/TOPS/TOPS/W仍待补。
+
+LGVQ只读资产查找有增量：9月10日原完整ZIP内保留空间prompt缓存，其语言张量
+与采用的9月14日`.6710`正式release首场逐位一致（`[1,38,2048]`FP16）。
+原缓存记录Instruct身份及前端/embedding张量指纹，不再凭任务名猜模型；现有快照的
+原参数指纹和真实视频前端仍需核验，不能把这份离线缓存当在线计时输入。
+同包Conv5缓存元数据还指向确切的原Stem源PT，已找到原文件并重新核SHA
+`d357fe51b888ecace74c050096febebc09c08abc21d6b42f533ecc3cf1f4de55`，
+其中`frame_stem.`参数339,312；尚未执行新的质量前端数值合同。
+原prompt数据和结构化收据已按SHA本地备份到T06
+`runs/smoke/lgvq_frontend_identity_recovery_20261024_01/`。
+Temporal前端绑定、两项Ours正式测量及全部任务算量没有因此标完成，九行仍8/18合格。
 
 20:09 T08文搜图新适配的CPU身份预检拦截：`a100_title_input_inclusive_20261024_01`
 控制器1142505在CPU原始前向之前停止，GPU正式调用为0、MPS未启动，三轮均未执行。
