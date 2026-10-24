@@ -320,7 +320,7 @@ def main():
                           complete_timing_energy_rows=['03','04','05','06','07'],
                           qualified_model_task_items=sum(r[m] is not None for r in rows.values() for m in ('ours','qwen')),
                           pending_rows=['01a ours','01b ours','02 ours','08 both'],
-                          operation_counts='04 Qwen dense-MAC subtotal validated; other original-network/existing-shape derivations pending, no compulsory GPU replay')))
+                          operation_counts='04 Qwen and07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; other original-network/existing-shape derivations pending, no compulsory GPU replay')))
 
 
 if __name__=='__main__':main()
