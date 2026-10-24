@@ -6,6 +6,7 @@ cost is a fallback for missing input-inclusive measurements or OP counts.
 """
 from __future__ import annotations
 import argparse
+import csv
 import json
 from pathlib import Path
 import subprocess
@@ -20,6 +21,7 @@ from audit_abo_text_ops import audit as audit_abo_text_ops
 from audit_abo_image_qwen import audit as audit_abo_image_qwen
 from audit_abo_title_student import audit as audit_abo_title_student
 from audit_openmoji_e45 import audit as audit_openmoji_e45
+from audit_openmoji_qwen import audit as audit_openmoji_qwen
 from protocol_identity import effective_protocol
 
 
@@ -82,6 +84,46 @@ def openmoji_e45_result(root):
         scope='real PNG/plain tokenizer/BF16 embedding, original selected NN synchronized wall plus6 parameter-derived optical passes, original CPU grid result and all199 true gaps; original residual/FFT/layout retained separately')
 
 
+def openmoji_qwen_paths(root):
+    return [root/'a100_qwen_input_inclusive_20261025_01'/f'qwen_repeat{i:02d}' for i in (1,2,3)]
+
+
+def openmoji_pair(root,ours):
+    paths=openmoji_qwen_paths(root)
+    results=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**audit_openmoji_qwen(p)) for p in paths]
+    if ([v['repeat'] for v in results]!=[1,2,3] or [v['calls'] for v in results]!=[200]*3
+            or [v['common_Qwen_input_tokens200'] for v in results]!=[12807]*3):
+        raise ValueError('Canonical native OpenMoji200x3 enrollment differs')
+    # Derive common work in the new index, never edit the sealed Ours raw that
+    # correctly recorded "pending" before the native trials existed.
+    for own_path,qwen_path,result in zip(openmoji_e45_paths(root),paths,results):
+        def calls(path):
+            with (path/'calls.csv').open(encoding='utf-8-sig',newline='') as stream:
+                return list(csv.DictReader(stream))
+        own,native=calls(own_path),calls(qwen_path)
+        if len(own)!=200 or len(native)!=200:raise ValueError('Missing matched cost queries')
+        for a,b in zip(own,native):
+            if any(a[k]!=b[k] for k in ('index','sample_id','task','instruction','instruction_utf8_sha256')):
+                raise ValueError('Different OpenMoji input identities; internal plain tokens are not common native work')
+        if sum(int(c['valid_input_tokens']) for c in native)!=result['common_Qwen_input_tokens200']:
+            raise ValueError('Common work must be actual native valid input IDs/masks')
+    seconds=sum(v['continuous_wall_s'] for v in results);energy=sum(v['system_energy_j'] for v in results)
+    tokens=sum(v['common_Qwen_input_tokens200'] for v in results);own_seconds=ours['sample_ms']*.6
+    ours.update(common_input_tokens_total=tokens,common_tokens_per_s=tokens/own_seconds,
+        common_tokens_status='derived from independently audited same-input native Qwen trials; sealed Ours raw unchanged')
+    native=dict(status='independently_audited_600_calls',calls=600,unique_images=200,
+        sample_ms=seconds/.6,equivalent_frame_ms=seconds/.6,sample_j=energy/600,equivalent_frame_j=energy/600,
+        time_weighted_board_w=sum(v['board_energy_j'] for v in results)/seconds,
+        common_input_tokens_total=tokens,common_tokens_per_s=tokens/seconds,
+        formal_full1000_reference_metrics=results[0]['formal_full1000_reference_metrics'],
+        measured_first200_diagnostics_only=[v['measured_first200_diagnostics_only'] for v in results],
+        raw_references=results,scope='original PNG/native chat full Vision+Language+CPU features+head to CPU grid, all199 gaps, zero dedicated inference warmup')
+    common=dict(total=tokens,ours_per_s=tokens/own_seconds,qwen_per_s=tokens/seconds,
+        rate_ratio=seconds/own_seconds,time_ratio=seconds/own_seconds,
+        basis='Same original PNG and UTF8 instruction per first200; actual Qwen valid native input IDs/masks, not Ours plain internal tokens')
+    return native,common
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--lsp-data-root',type=Path,default=REPO/'data/lsp_pose/lsp_dataset')
@@ -112,7 +154,7 @@ def main():
     protocol=effective_protocol()
     rows={item['id']:dict(id=item['id'],task=item['task'],metric=item['metric'],
                          full_test_reference=dict(ours=item['ours_target'],qwen=item['qwen_target']),
-                         ours=None,qwen=None,ops_status='pending actual matching-input untimed replay',
+                         ours=None,qwen=None,ops_status='pending derivation from original network and existing executed shapes; acquire only missing shapes, no mandatory GPU replay',
                          status='not_yet_complete_under_new_protocol') for item in protocol['rows']}
     for item in protocol['rows']:
         if 'ours_lab_target' in item:
@@ -218,7 +260,8 @@ def main():
         raw_references=images,scope='native image file to CPU100 full ranking, continuous199 gaps, zero dedicated inference warmup')
     openmoji_root=REPO/'LightGenV2/tasks/t04_semantic_interaction/runs/simulation'
     rows['07']['ours']=openmoji_e45_result(openmoji_root)
-    rows['07']['status']='epoch45_ours_three_round_timing_energy_independently_audited; Qwen timing and matching common tokens pending; OP pending'
+    rows['07']['qwen'],rows['07']['common_tokens']=openmoji_pair(openmoji_root,rows['07']['ours'])
+    rows['07']['status']='matched_three_round_timing_energy_independently_audited; original-network shape OP derivation pending'
     rows['07']['identity_note']='Human selected the new-layout laboratory .8655 version: epoch45/PT03cb861c, same-weight simulation .8765, Qwen epoch30/PT0be775 .8120. New first200 Ours metrics are separate from both full1000 references. Old .8880/PT579b19 and original protocol remain historical; no new laboratory capture or paired per-case CCD audit is implied.'
     rows['07']['effective_identity']=next(item for item in protocol['rows'] if item['id']=='07')
     value=dict(protocol_id=protocol['protocol_id'],status='PARTIAL_NOT_FINAL_PAPER_TABLE',
@@ -226,16 +269,22 @@ def main():
         reference_for_both_tables='shared_qwen_temporal100 in this exact index; never select another date or trial',
         current_input_protocol_sha256=sha(HERE/'protocol.json'),
         approved_identity_amendments=protocol['identity_amendments'],
+        reporting_policy=dict(formal_accuracy='confirmed original full TEST results only',
+            cost_workload='first200 TEST calls x3 fresh processes; subset prediction metrics are diagnostics only',
+            operation_counts='derive from original network and existing actual shape records; only supplement missing shapes',
+            TOPS_formula='OP / (1e12 * matched elapsed seconds)',
+            TOPS_per_W_formula='OP / (1e12 * matched energy joules)',
+            no_retraining_or_rerun_of_qualified_trials=True),
         index_builder_source_sha256=sha(Path(__file__)),
         index_builder_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
         no_predefined_speedup_claim=True,derived_optical_vs_measured_electronic_boundaries_separate=True,
         raw_data_in_original_task_runs=True,power_no_idle_subtraction=True)
     with args.output.open('x',encoding='utf8') as stream:json.dump(value,stream,ensure_ascii=False,indent=2)
     print(json.dumps(dict(status=value['status'],shared_qwen100={k:anchor[k] for k in ('calls','sample_ms','sample_j','time_weighted_board_w')},
-                          complete_timing_energy_rows=['03','04','05','06'],
+                          complete_timing_energy_rows=['03','04','05','06','07'],
                           qualified_model_task_items=sum(r[m] is not None for r in rows.values() for m in ('ours','qwen')),
-                          pending_rows=['01a ours','01b ours','02 ours','07 Qwen and matching common tokens','08 both'],
-                          operation_counts='04 Qwen dense-MAC subtotal validated; other matching-input replays pending')))
+                          pending_rows=['01a ours','01b ours','02 ours','08 both'],
+                          operation_counts='04 Qwen dense-MAC subtotal validated; other original-network/existing-shape derivations pending, no compulsory GPU replay')))
 
 
 if __name__=='__main__':main()
