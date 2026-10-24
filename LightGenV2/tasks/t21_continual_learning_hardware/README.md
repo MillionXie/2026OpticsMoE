@@ -137,6 +137,12 @@ D2NN该支线已完整完成，LightGen已保存A/B/C完整PT和结果，在D阶
 每阶段上限12/4/6/4轮或1800秒fit（完整epoch边界），只允许两张上述共享GPU，40%分配上限不变。
 固定分层TEST1000及硬件TRAIN1000完全不变；源码入口和推理图不改，不新建工程或分支。
 
+该修正已通过22项测试及8份原教师CPU加载/前向/冻结核验，源码commit
+`880b0d1aecb0d4a038c4b9b5fd3d1700b75a5358`已发布并同步三端。
+正式有限run `runs/simulation/reference_fullTRAIN_adapter_TESTselect_sharedGPU_20261025/{moe,d2nn}`已启动，
+LightGen PID1456192/4090物理4、D2NN PID1456193/4090物理1，完整UUID和配置SHA以其`launch_receipt.json`/`protocol.json`为准。
+当前已完成输入身份与完整TRAIN协议核验、进入原阶段TRAIN教师目标生成；尚无本轮可部署新S1精度，未启动新光路采集。
+
 ## 历史准备与运行记录（以下旧门槛及旧教师范围均已被上节覆盖）
 
 2026-10-24新任务，原仿真来源[T16](../t16_zero_phase_ccd_lifelong/README.md)。原T16保持只读。
