@@ -1,5 +1,45 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-24 新一轮授权：LSP/OpenMoji继续优化，SALICON小任务头
+
+用户接受既有LGVQ两个last50及参考图+指令编辑last50，原权重/指标保持。最新要求继续优化
+LSP至至少0.5、OpenMoji继续优化；SALICON改试带小任务头并希望CC<0.75。希望范围只用于
+如实报告，不按TEST落入区间即停或倒选模型。先固定方案再运行，旧所有结果完整保留。
+
+新计划`configs/optimization_train_probe_20261024.json`：视觉仍官方ImageNet RN18全部冻结
+含BN，完整每任务<15M；原seed42、AdamW lr.001/wd.0001/clip1、有效batch32、FP32 TF32关闭、
+无warmup/cosine。LSP/OpenMoji从各自last60完整model继承，因新目标而明确重新初始化AdamW，
+不是原moments连续90轮。保持原网络结构/任务头/数据/指标，仅改TRAIN目标：
+
+- LSP：每个可见关节的原高斯热图归一化为空间分布，与原14通道logits做空间交叉熵，
+  避免峰值幅度/背景像素均值主导；原hardargmax PCK不变，增强新阶段seed42重启。
+- OpenMoji：逐场景分别平均变化格类别CE、保留格类别CE（0.25权重）、正/负编辑格BCE
+  （各0.5）和原任务类别CE（0.1）；不改视觉/GRU/任务头/原阈值与指标。
+- SALICON：新`SmallSaliconHead`为冻结512×7×7特征→1×1 Conv512→1→固定bilinear224，
+  **513个可训参数**、完整11,177,025参数。用原SALICON损失实际训练，非无任务训练读出；
+  不复用原40,129参数任务头，不把先前0.5920当新模型成绩。
+
+每项先在原TRAIN中按sample ID固定哈希选32条，执行200步拟合检查，0TEST。
+LSP小样本检查关闭随机增强以确认拟合能力，正式训练仍保留原随机增强；OpenMoji/SALICON
+原输入确定性，可缓存FP32冻结特征，首批核对缓存头路径与完整前向一致（绝对1e-6）。
+LSP/OpenMoji只有固定第200步TRAIN指标>=0.8才放行正式训练；SALICON检查有限loss、确更新
+及编码器冻结，不以希望TEST分数做门槛。正式从原last60重新加载，不使用短测拟合后的权重。
+通过后各固定新增30轮：LSP/OpenMoji累计last90，SALICON新头last30，各自只在末轮完整
+TEST一次。若TRAIN门槛未过，保留诊断并阻断该项正式阶段，不盲目重试；达到0.5不作保证。
+新阶段保存每轮视觉冻结/采样SHA，末轮另存LSP热图、OpenMoji原编辑掩码/类别预测、SALICON
+7×7头输出，便于逐样本独立重算。调度仍只原2/4/5/6四卡，沿用已授权稳定低利用率共享门槛，
+不改他人进程；新入口`optimization_stage.py`与`queue_optimization.py`。
+
+ABO图搜图新增唯一固定64维PCA参考`retrieval_pca_reference.py`：维度事先与原学习投影64一致，
+只用原1600 TRAIN视图的L2冻结特征拟合，无SKU监督、无whitening/维度搜索，CPU执行，
+完整800 TEST仅一次排名评估。PCA本身是拟合预处理，不称零数据/完全未拟合；保留原512维
+0训练0.77875及新64维结果，不能只保留符合区间的一项。复用已审计原官方特征缓存并逐SHA验收。
+图搜文原0/1/5/30结果全部保留；当前没有证据保证原协议下合理方案一定低Ours10个百分点，
+不能为了轮数外观而按TEST反调学习率或冻结随机文字网络来掩盖强30轮结果。
+
+新目标/特征路径、真实probe→formal与父权重保护、仅末轮一次TEST、PCA不读query拟合及原GPU
+共享门槛的16项离线检查通过（显式隐藏CUDA）；真实数据拟合/正式状态以新run/队列为准。
+
 ## 2026-10-24 最终核查：训练完成，不是全部达到希望区间
 
 原九项last30、LGVQ两个last50、LSP/OpenMoji累计60、编辑累计50及七项检索预算、
