@@ -18,7 +18,38 @@ from audit_lgvq_spatial_qwen import audit as audit_spatial_qwen
 from audit_abo_text_qwen import audit as audit_abo_text_qwen
 from audit_abo_text_ops import audit as audit_abo_text_ops
 from audit_abo_image_qwen import audit as audit_abo_image_qwen
+from audit_abo_title_student import audit as audit_abo_title_student
 from protocol_identity import effective_protocol
+
+
+def title_student_paths(root):
+    # The two failed attempts remain raw evidence, never candidates for selection.
+    return [root/'a100_title_student_input_inclusive_20261024_02/ours_repeat01',
+            root/'a100_title_student_input_inclusive_20261025_04/ours_repeat02',
+            root/'a100_title_student_input_inclusive_20261025_04/ours_repeat03']
+
+
+def title_student_result(root,data_root):
+    results=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**audit_abo_title_student(p,data_root))
+             for p in title_student_paths(root)]
+    if ([r['repeat'] for r in results]!=[1,2,3] or [r['calls'] for r in results]!=[200]*3
+            or [r['common_input_tokens200'] for r in results]!=[9576]*3):
+        raise ValueError('Canonical original title student200x3 enrollment changed')
+    seconds=sum(r['projected_seconds200'] for r in results)
+    energy=sum(r['phase_estimated_j200'] for r in results)
+    tokens=sum(r['common_input_tokens200'] for r in results)
+    return dict(status='independently_audited_600_calls',calls=600,unique_titles=100,
+        sample_ms=seconds/.6,equivalent_frame_ms=seconds/.6,sample_j=energy/600,equivalent_frame_j=energy/600,
+        common_input_tokens_total=tokens,common_tokens_per_s=tokens/seconds,
+        full100_historical_reference_hit1=.86,measured_unique100_hit1=[r['measured_unique100_hit1'] for r in results],
+        optical_ms_total=sum(r['optical_ms_total'] for r in results),
+        charged_electronic_ms_total=sum(r['charged_electronic_ms_total'] for r in results),
+        actual_software_seconds_total=sum(r['software_wall_s'] for r in results),
+        native_unit='one UTF8 title query; image-equivalent display, no physical query frame',
+        optical_passes_per_query=3,online_visual_or_bridge_calls=0,
+        bridge_zero_reason=results[0]['bridge_zero_reason'],not_a_device_measured_e2e=True,
+        raw_references=results,
+        scope='real UTF8/tokenizer/H2D, selected original NN synchronized wall plus3 parameter-derived optical passes, CPU full2400 ranking and all199 true gaps; separate offline gallery')
 
 
 def main():
@@ -115,6 +146,15 @@ def main():
         TOPS_MAC_convention=3*text_ops['MAC_OP200']/1e12/text_seconds,
         TOPS_per_W_MAC_convention=3*text_ops['MAC_OP200']/1e12/text_energy)
     rows['04']['ops_status']='Qwen actual200-input dense-MAC subtotal validated, explicit non-MAC/unsupported; Ours pending; not full scalar OP'
+    student_root=REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation'
+    rows['04']['ours']=title_student_result(student_root,args.abo_data_root)
+    if rows['04']['ours']['common_input_tokens_total']!=text_tokens:
+        raise ValueError('Matched title systems must use the same actual input token work')
+    our_seconds=rows['04']['ours']['sample_ms']*.6
+    rows['04']['common_tokens']=dict(total=text_tokens,ours_per_s=text_tokens/our_seconds,
+        qwen_per_s=text_tokens/text_seconds,rate_ratio=text_seconds/our_seconds,time_ratio=text_seconds/our_seconds,
+        basis='Same original Qwen input IDs/masks per actual title; not generated tokens or separate internal work')
+    rows['04']['status']='matched_three_round_timing_energy_independently_audited; Qwen dense-MAC subtotal validated, Ours OP pending'
     # Immutable enrollment: two qualified original rounds, and only the missing
     # third from the continuation. Never enroll the externally rejected old r3.
     image_root=REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation'
@@ -160,8 +200,8 @@ def main():
         raw_data_in_original_task_runs=True,power_no_idle_subtraction=True)
     with args.output.open('x',encoding='utf8') as stream:json.dump(value,stream,ensure_ascii=False,indent=2)
     print(json.dumps(dict(status=value['status'],shared_qwen100={k:anchor[k] for k in ('calls','sample_ms','sample_j','time_weighted_board_w')},
-                          complete_timing_energy_rows=['03','05','06'],qualified_model_task_items=10,
-                          pending_rows=['01a ours','01b ours','02 ours','04 ours','07 both: epoch45 selected, new timing pending','08 both'],
+                          complete_timing_energy_rows=['03','04','05','06'],qualified_model_task_items=11,
+                          pending_rows=['01a ours','01b ours','02 ours','07 both: epoch45 selected, new timing pending','08 both'],
                           operation_counts='04 Qwen dense-MAC subtotal validated; other matching-input replays pending')))
 
 

@@ -62,3 +62,4 @@
 !prepare_openmoji_e45.py
 !run_openmoji_e45_preflight.py
 !test_openmoji_e45_preflight.py
+!test_title_student_index.py
