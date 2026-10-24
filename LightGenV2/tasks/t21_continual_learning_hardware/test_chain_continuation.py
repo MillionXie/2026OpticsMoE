@@ -2,13 +2,13 @@ import copy
 import unittest
 import numpy as np
 
-from .continue_native_chain import validate_resume,phase_batches
+from .continue_native_chain import validate_resume,phase_batches,paired_weight
 
 
 class ChainContinuationTests(unittest.TestCase):
     def setUp(self):
         self.old=dict(stage_epochs=[12,4,6,4],seed=73,batch_size=8,memory_cycles_per_epoch=50,optical_lr=.0003)
-        self.cfg=dict(self.old,stage_epochs=[12,8,6,4])
+        self.cfg=dict(self.old,stage_epochs=[12,8,6,4],old_clevr_pairwise_weight=0.)
         self.protocol=dict(architecture='moe',TEST_gradients=False,config=self.old)
         self.history=[dict(epoch=i) for i in range(5)]
         self.completion=dict(phase='B',best_epoch=4)
@@ -46,6 +46,14 @@ class ChainContinuationTests(unittest.TestCase):
         a=phase_batches(selection,tuple(selection),self.cfg,5,2)
         b=phase_batches(selection,tuple(selection),self.cfg,5,2)
         self.assertTrue(all(x[0]==y[0] and np.array_equal(x[1],y[1]) for x,y in zip(a,b)))
+
+    def test_old_only_pairwise_regularization(self):
+        cfg=dict(self.cfg,clevr_pairwise_weight=4.,physical_pairwise_weight=0.)
+        self.assertEqual(paired_weight('clevr',True,cfg),4.)
+        self.assertEqual(paired_weight('clevr',False,cfg),0.)
+        self.assertEqual(paired_weight('eurosat',False,cfg),0.)
+        self.assertEqual(paired_weight('speech_binary',True,cfg),0.)
+        with self.assertRaises(ValueError):validate_resume(self.protocol,self.history,self.completion,'moe',dict(self.cfg,old_clevr_pairwise_weight=1.))
 
 
 if __name__=='__main__':unittest.main()

@@ -3,6 +3,8 @@
 The four-epoch B trial was still improving on full TRAIN. This continuation
 preserves its A and selected B, adds the same four B epochs to both models,
 then trains C/D from the new selected parent, never splicing old child PTs.
+The measured old-memory overfit motivates removing the extra pairwise term
+only for old CLEVR replay, identically for both models; TRAIN KD stays fixed.
 Capture and the original trainer modules are not modified or monkey-patched.
 """
 import argparse
@@ -30,6 +32,8 @@ def validate_resume(protocol,history,completion,architecture,cfg):
         raise ValueError('Only one fixed four-epoch B extension')
     changed={k for k in old if k!='diagnostic_basis' and old[k]!=cfg.get(k)}
     if changed!={'stage_epochs'}:raise ValueError('Unapproved numerical protocol differences: '+repr(changed))
+    if set(cfg)-set(old)!={'old_clevr_pairwise_weight'} or cfg['old_clevr_pairwise_weight']!=0:
+        raise ValueError('Only fixed removal of old CLEVR pairwise overfit term')
     if history[-1]['epoch']!=4 or completion['phase']!='B' or completion['best_epoch']!=4:
         raise ValueError('Original B not fully complete')
     if len(history)!=5:raise ValueError('Incomplete original B history')
@@ -46,6 +50,12 @@ def phase_batches(selection,names,cfg,epoch,phase):
             batches.extend((name,perm[s:s+cfg['batch_size']]) for s in range(0,len(perm),cfg['batch_size']))
     rng.shuffle(batches)
     return batches
+
+
+def paired_weight(task,current,cfg):
+    if task=='clevr':return cfg['clevr_pairwise_weight'] if current else cfg['old_clevr_pairwise_weight']
+    if task=='physical_binary_raw':return cfg.get('physical_pairwise_weight',0)
+    return 0.
 
 
 def main():
@@ -136,8 +146,8 @@ def main():
                     else:x=train[task]['x'][ix].to(device);y=train[task]['y'][ix].to(device)
                     optimizer.zero_grad(set_to_none=True);logits=model(x)['logits']
                     loss=reference_TRAIN_objective(logits,y,logits_cache[task][relative].to(device),cfg)
-                    if task=='clevr' and cfg['clevr_pairwise_weight']:loss=loss+cfg['clevr_pairwise_weight']*clevr_pairwise_loss(logits,y)
-                    if task=='physical_binary_raw' and cfg.get('physical_pairwise_weight',0):loss=loss+cfg['physical_pairwise_weight']*clevr_pairwise_loss(logits,y)
+                    pair=paired_weight(task,task==names[-1],cfg)
+                    if pair:loss=loss+pair*clevr_pairwise_loss(logits,y)
                     if a.architecture=='moe' and task!=names[-1]:loss=loss*cfg.get('moe_old_task_loss_weight',1.)
                     if not torch.isfinite(loss):raise RuntimeError('Nonfinite TRAIN loss')
                     loss.backward();torch.nn.utils.clip_grad_norm_(parameters,1.);optimizer.step()
