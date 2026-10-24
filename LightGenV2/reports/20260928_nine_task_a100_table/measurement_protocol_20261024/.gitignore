@@ -17,3 +17,7 @@
 !run_lsp.py
 !build_measured_index.py
 !test_remainder.py
+!measure_lgvq_spatial_qwen.py
+!audit_lgvq_spatial_qwen.py
+!run_lgvq_spatial_qwen.py
+!test_lgvq_spatial_qwen.py
