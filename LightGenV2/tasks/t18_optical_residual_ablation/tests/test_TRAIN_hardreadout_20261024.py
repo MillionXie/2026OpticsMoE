@@ -33,3 +33,11 @@ def test_joint_followup_uses_completed_new_best_not_last():
     assert 'epochs=60,seconds=480' in src and 'TRAIN_teacher_margin_MSE=True' in src
     assert 'm.allowed_keys(model,5)' in src and '==5150' in src
     ast.parse(src)
+
+
+def test_repair_waits_for_complete_joint_native_best():
+    src=(HERE/'lab_caltech20_fullG2_OAS_20261024.py').read_text()
+    assert "fullG2_jointbest_" in src and "'fullG2_best_teacher_joint_20261024'" in src
+    assert "full['state']=='complete'" in src and "full['strict_original_CPU']" in src
+    assert "fit=source/'fit' if a.continued_joint_head=='local' else source" in src
+    assert "maximum_classes=20,steps_per_class=64" in src and "outer_steps=80" in src

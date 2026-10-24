@@ -25,11 +25,16 @@ def run(a):
     from lab_caltech20_tucam_TRAIN_linear_20261023 import TRAIN_linear_fit
     cpath=base.HERE/'lab_caltech20_tucam_layerwise_profile_20261023.json';assert m.sha(cpath)=='c077c32638e577b1c86847b5ff7cdd40ab3ede675c9b4299c0697e1b389ec909'
     c=m.read(cpath);base.validate_config(c);torch.set_num_threads(2)
+    if a.continued_joint_head:
+        assert not(a.joint_source or a.local_repair or a.teacher_local or a.prior_bias or a.affine_after_prior or a.hard_readout)
+        a.local_repair=True;a.affine_after_prior=a.continued_joint_head=='affine'
     assert not(a.joint_source and a.local_repair)
     assert not a.teacher_local or a.local_repair
     assert not a.affine_after_prior or a.local_repair
     assert not a.prior_bias or not(a.joint_source or a.local_repair)
-    if a.hard_readout:
+    if a.continued_joint_head:
+        assert a.out.name=='fullG2_jointbest_'+a.continued_joint_head+'_20261024'
+    elif a.hard_readout:
         assert not(a.joint_source or a.local_repair or a.prior_bias or a.affine_after_prior or a.teacher_local)
         assert a.out.name=='fullG2_'+a.hard_readout+'_20261024'
     elif a.prior_bias:
@@ -58,6 +63,12 @@ def run(a):
         if a.affine_after_prior:
             source=root.parent/'fullG2_TRAIN_priorbias_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
             fit=source;r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=r
+        if a.continued_joint_head:
+            source=root.parent/('fullG2_best_teacher_joint_20261024' if a.continued_joint_head=='local' else 'fullG2_jointbest_local_20261024')
+            assert m.read(source.with_suffix('.return.json'))['returncode']==0
+            full=m.read(source/'report.json');assert full['state']=='complete' and full['full_physical'] and full['strict_original_CPU'] and full['selected_correct']>=248
+            fit=source/'fit' if a.continued_joint_head=='local' else source
+            r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json')
         assert r['state']=='complete' and r['full_physical'] and not r['SDK_used']
     if a.prior_bias:
         source=root.parent/'fullG2_teacher_local_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
@@ -140,7 +151,7 @@ def run(a):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');parser.add_argument('--prior-bias',action='store_true');parser.add_argument('--affine-after-prior',action='store_true');parser.add_argument('--hard-readout',choices=('hard_pair','sameclass_augment'));a=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');parser.add_argument('--prior-bias',action='store_true');parser.add_argument('--affine-after-prior',action='store_true');parser.add_argument('--hard-readout',choices=('hard_pair','sameclass_augment'));parser.add_argument('--continued-joint-head',choices=('local','affine'));a=parser.parse_args()
     try:run(a)
     except BaseException as e:
         if a.out.exists():
