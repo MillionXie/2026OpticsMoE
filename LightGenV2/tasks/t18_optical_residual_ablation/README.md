@@ -1,3 +1,27 @@
+## 2026-10-24 新人工授权：TEST监督的末端特征增强适配，必须与原开发结果分开
+
+用户本轮明确要求用易错TEST生成增强数据并加入监督训练。该授权仅适用于新独立
+`e2_actual300_20261024/fullG2_TESTsupervised_20261024`，不追改任何旧协议或指标。
+原272/411=66.18005%的无TEST梯度开发结果、best/last、原TRAIN/TEST划分文件及接受
+manifest89fe0c3d…保持不变。新实验的411个原TEST都进入训练，故独立测试样本为0；
+相同411样本重放只能称TEST监督适配成绩，不得替换正式TEST表、冒称独立泛化，或用来
+宣称原仿真—独立实验差距<=1.5pp目标达成。必须后续另有未参与训练的数据才能评泛化。
+
+新Git入口`lab_caltech20_TEST_supervised_readout_20261024.py`和同日明确TEST_supervised
+profile：从原272精确PT6ebdbc0f…加载，只调原Linear256→20的5140参数，所有上游相位/
+电子/融合alpha逐bit冻结；无新结构、SDK、GPU或重拍。原TRAIN1600+原TEST411在独立
+适配池中保留source role与ID，不改写原数据。当前139个错分各加两个末端特征变体：
+同标签TRAIN邻居5%插值与0.5%TRAIN列标准差噪声。这些是冻结特征后的合成样本，不能
+称新增物理CCD或光学输入增强。TRAIN/原TEST来源总loss权重.35/.65，原TEST错分权重3，
+label smoothing.01、TRAIN父KL.1、增量L2.0005；最多2轮×60outer或120拟合秒，非完整epoch。
+每个原TEST样本有明确监督梯度；数值自检也应验证这一事实，不能留下noTESTgradient字样。
+
+原batch8/末3补零缓存与原概率逐样本误差<=3e-6后才训练；best/last必须原模型完整CPU
+重载重放1600TRAIN+411原TEST，报告字段明确`former_TEST_adaptation`、`TEST_gradient=true`、
+`independent_test_samples=0`、`official_TEST_accuracy=null`和`valid_for_formal_test_table=false`。
+重新核5阶段10数组SHA、全部非读出state及原272接受manifest不变，独立代码审计不代表
+独立测试。产物/备份与原272分开；不新增定时任务，不启动光路。
+
 ## 2026-10-24 本轮真实阶段交付：248→272/411，最终340目标仍未达
 
 用户要求从60.34%继续、错类有据优化、不重拍/不改结构曝光坐标LUT/无定时任务。
