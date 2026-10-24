@@ -1,34 +1,37 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 17:26，北京时间）
+## 新旧版入口与完成清单（2026-10-24 19:14，北京时间）
 
 **本轮唯一协议/结果入口是`measurement_protocol_20261024/`。两份正式新Excel尚未
 生成，不要发送下方2026-09-28或`frontend_tokens_20261023/`里的历史工作簿作为新结果。**
-`measured_index_partial_01.json`和`temporal_matrix_partial_02.json`是当前可审计中间索引，
+`measured_index_partial_01.json`和`temporal_matrix_partial_03.json`是当前可审计中间索引，
 名字和内部状态均明确PARTIAL；时间推进不自动将其升级为正式表。
+九行中间索引尚未纳入下述新完成的空间Qwen；该项以原run内三份本地独立审计为准，
+不能将旧partial01的空值解释为新三轮未执行。LSP完整raw已备份，尚待独立CPU复算。
 
 九指标表中的“完成”只指输入包含200×3的时间/能量已独立审计，尚不表示TOP完整：
 
 | 行 | 指标任务 | LightGen | Qwen |
 |---|---|---|---|
 | 01a | LGVQ时间质量 | 真实输入前端与NN分段适配/正式测量待补 | 三轮已审计，共用两表唯一锚 |
-| 01b | LGVQ空间质量 | 真实输入前端与NN分段适配/正式测量待补 | 已排队，等待LSP成功结束 |
+| 01b | LGVQ空间质量 | 真实输入前端与NN分段适配/正式测量待补 | 三轮完成、本地独立审计通过 |
 | 02 | ABO图搜文 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
 | 03 | ABO图搜图 | 三轮已审计 | 三轮已审计 |
 | 04 | ABO文搜图 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
-| 05 | LSP | 已排队，等待T06成功结束与CPU合同通过 | 同队列、原模型三轮待测 |
+| 05 | LSP | 三轮完成、raw已SHA备份，独立CPU复算待补 | 同左，原模型三轮均完成 |
 | 06 | SALICON | 三轮已审计 | 三轮已审计 |
 | 07 | OpenMoji新布局 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
 | 08 | ABO文生图 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
 
-这相当于18个模型—任务项中5项已有合格三轮时间/能量，13项尚待补齐。
+这相当于18个模型—任务项中6项已有合格三轮时间/能量，12项尚待补齐或审计；
+其中LSP双方两项已经执行完毕，不再排队或重跑，其余十项仍待适配/正式测量。
 全部TOP及其派生TOPS/TOPS/W仍需匹配真实输入形状的独立不计时回放；共同输入
 Tokens/s分子已经在已完成Qwen行保留，最终整表与时间倍率一起校验。
 
-LGVQ多baseline表：Qwen100/50各三轮、GLM100三轮已合格；GLM50前两轮均已本地
-审计和逐SHA备份，第3轮已启动。`temporal_matrix_partial_02.json`独立复算上述11轮，
-原partial01不覆盖。CLIP/YOLO各100/50三轮尚在后续串行计划。当前40GB范围共24点，
-已合格11点，不把运行中的第12点预先计成完成。LightGen时间质量的共同点仍待补；完整DS/Kimi
+LGVQ多baseline表：Qwen/GLM/CLIP/YOLO四模型、MPS100/50各三轮，当前40GB范围
+24点全部完成并通过本地独立CPU复算。`temporal_matrix_partial_03.json`固定原路径重放
+全部24轮，原partial01/02不覆盖；共享Qwen100仍是原先合格的同一三轮，没有重测。
+LightGen时间质量的共同点仍待补；完整DS/Kimi
 各两档三轮共12点待人工提供新的80GB机器，现阶段不提前租赁或连接旧实例。
 
 原始数据均留原任务run，服务器统一前缀`/DATA/DATA1/guest3/2026OpticsMoE/`；
@@ -40,9 +43,18 @@ LGVQ多baseline表：Qwen100/50各三轮、GLM100三轮已合格；GLM50前两�
 - 图搜图：`tasks/t07_abo_image_retrieval/runs/simulation/a100_input_inclusive_20261024_01/`
   和`a100_input_inclusive_20261024_qwen01/`。
 - SALICON：`tasks/t03_saliency/runs/simulation/a100_input_inclusive_20261024_01/`。
-- LSP排队：`tasks/t02_keypoint_detection/runs/simulation/a100_input_inclusive_20261024_02/`；
+- LSP完成待复算：`tasks/t02_keypoint_detection/runs/simulation/a100_input_inclusive_20261024_02/`；
   `_01`是中断依赖，不能误用。
-- 空间Qwen排队：`tasks/t06_video_quality_assessment/runs/simulation/lgvq_spatial_input_a100_20261024_01/`。
+- 空间Qwen完成：`tasks/t06_video_quality_assessment/runs/simulation/lgvq_spatial_input_a100_20261024_01/`。
+
+本次SSH故障定位到本机默认TUN路径：同端点经默认路径在服务端SSH标识前断开，
+绑定物理WLAN后握手及原known_hosts指纹校验通过，并已恢复认证读取。只调整本聊天
+私有连接工具的socket来源，不改系统VPN/路由、服务器sshd或防火墙；未重启任何测量。
+原三个控制器在断线期间按原串行合同全部完成并退出。T06续测211文件、LSP95文件、
+空间Qwen45文件已逐SHA备份；各run的`backup_receipt_recovered_complete01.json`
+与私有`ssh_connection_recovery_20261024_1914.json`保留恢复/传输证据。
+恢复时A100另有hmh进程1044253，起始19:08:33、1968MiB；不启动新测或终止对方。
+已通过审计的原测量窗口占用证据独立核验，不因当前外部进程重新跑已完成轮。
 
 以上`tasks/`路径均以`LightGenV2/`为基准。正式交付时会在本节列出两份已生成Excel
 的准确文件名、SHA和全部raw清单；当前不提供尚不存在的正式下载链接。
