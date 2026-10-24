@@ -66,3 +66,8 @@
 !openmoji_e45_graph.py
 !run_openmoji_stage_contract.py
 !test_openmoji_stage_graph.py
+!openmoji_grid_audit.py
+!measure_openmoji_e45.py
+!audit_openmoji_e45.py
+!run_openmoji_e45.py
+!test_openmoji_e45_measurement.py
