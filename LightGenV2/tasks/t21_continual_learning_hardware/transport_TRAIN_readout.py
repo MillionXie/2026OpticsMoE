@@ -43,11 +43,16 @@ def cache(a):
     if fixed['split'] != 'train' or sha(paths['eurosat']) != fixed['source_protocol_sha256']:
         raise ValueError('Original source TRAIN protocol changed')
     d = read_source(a.train / 'inputs.npz', fixed['inputs_sha256'], 'train', np.arange(1000))
-    dataset = load_dataset(paths, 'eurosat', 'train', vision_checkpoint=paths['vision'], device=torch.device('cuda:0'))
+    # Physical input NPZ was encoded on CPU. GPU half-cache boundaries differ
+    # for13/1000 TRAIN records; keep the exact admitted frozen front instead.
+    dataset = load_dataset(paths, 'eurosat', 'train', vision_checkpoint=paths['vision'], device=torch.device('cpu'))
     if len(dataset) != 15998: raise ValueError('Original full TRAIN count changed')
     model = model.cuda().eval()
+    initial_error = 0.
+    for i in range(0,1000,64):
+        matched = dataset.get_batch(d['source_indices'][i:i+64], torch.device('cpu'))
+        initial_error = max(initial_error,float((matched-torch.from_numpy(d['x'][i:i+64])).abs().max()))
     sample = dataset.get_batch(np.array([d['source_indices'][0]]), torch.device('cuda:0'))
-    initial_error = float((sample[0].cpu() - torch.from_numpy(d['x'][0])).abs().max())
     with torch.no_grad(): initial = model(sample)
     if initial_error > 3e-6 or initial['ccd_features'].shape != (1, 784):
         raise RuntimeError('Actual source/forward preflight differs')
@@ -73,6 +78,7 @@ def cache(a):
     put(a.out / 'protocol.json', dict(passed=True, TRAIN_only=True, TEST_used=False, TEST_augmented=False,
         checkpoint_SHA256=a.checkpoint_sha256, source_TRAIN_protocol_SHA256=sha(paths['eurosat']),
         fixed_TRAIN_identity=fixed['identity_sha256'], fixed_TRAIN_input_max_abs=maximum, fixed_TRAIN_checked=checked,
+        frozen_front_device='cpu', all_paired_TRAIN_inputs_preflighted=True,
         full_TRAIN_records=len(dataset), source_cache_SHA256=sha(a.out / 'synthetic_source_TRAIN.npz'),
         frozen_model=True, no_optical_retraining=True, SDK=False, GPU=gpu, seconds=time.time()-started,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(), source_SHA256=sha(__file__)))
