@@ -20,6 +20,7 @@ from audit_abo_text_qwen import audit as audit_abo_text_qwen
 from audit_abo_text_ops import audit as audit_abo_text_ops
 from audit_abo_image_qwen import audit as audit_abo_image_qwen
 from audit_abo_title_student import audit as audit_abo_title_student
+from audit_abo_image_student import audit as audit_abo_image_student
 from audit_openmoji_e45 import audit as audit_openmoji_e45
 from audit_openmoji_qwen import audit as audit_openmoji_qwen
 from protocol_identity import effective_protocol
@@ -30,6 +31,33 @@ def title_student_paths(root):
     return [root/'a100_title_student_input_inclusive_20261024_02/ours_repeat01',
             root/'a100_title_student_input_inclusive_20261025_04/ours_repeat02',
             root/'a100_title_student_input_inclusive_20261025_04/ours_repeat03']
+
+
+def image_student_paths(root):
+    # Earlier interrupted/unfinished banks and queries are never candidates.
+    return [root/'a100_image_student_input_inclusive_20261025_04'/f'ours_repeat{i:02d}' for i in (1,2,3)]
+
+
+def image_student_result(root,data_root):
+    results=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**audit_abo_image_student(p,data_root))
+             for p in image_student_paths(root)]
+    if ([r['repeat'] for r in results]!=[1,2,3] or [r['calls'] for r in results]!=[200]*3
+            or [r['common_input_tokens200'] for r in results]!=[13728]*3
+            or len({r['original_bank_sha256'] for r in results})!=1):
+        raise ValueError('Canonical original image student200x3/bank enrollment differs')
+    seconds=sum(r['projected_seconds200'] for r in results);energy=sum(r['phase_estimated_j200'] for r in results)
+    tokens=sum(r['common_input_tokens200'] for r in results)
+    return dict(status='independently_audited_600_calls',calls=600,unique_images=200,
+        sample_ms=seconds/.6,equivalent_frame_ms=seconds/.6,sample_j=energy/600,equivalent_frame_j=energy/600,
+        common_input_tokens_total=tokens,common_tokens_per_s=tokens/seconds,
+        full2400_historical_reference_hit1=.8058333333333333,
+        measured_first200_diagnostics_only=[r['first200_diagnostic_hit1'] for r in results],
+        optical_ms_total=sum(r['optical_ms_total'] for r in results),
+        charged_electronic_ms_total=sum(r['charged_electronic_ms_total'] for r in results),
+        actual_software_seconds_total=sum(r['software_wall_s'] for r in results),
+        optical_passes_per_query=6,actual_native_merger_calls=600,not_a_device_measured_e2e=True,
+        original_bank_sha256=results[0]['original_bank_sha256'],raw_references=results,
+        scope='original RGB centered fit224/native processor/H2D, selected original NN incl actual merger, six parameter passes, CPU100 full nonstable ranking and all199 gaps; separately prepared bank')
 
 
 def title_student_result(root,data_root):
@@ -351,6 +379,13 @@ def main():
         independent_image_audit_python=str(args.abo_image_python or sys.executable),
         raw_references=images,scope='native image file to CPU100 full ranking, continuous199 gaps, zero dedicated inference warmup')
     attach_abo_image_existing_shape_MAC(rows['02'])
+    rows['02']['ours']=image_student_result(image_root,args.abo_data_root)
+    image_ours_seconds=rows['02']['ours']['sample_ms']*.6
+    if rows['02']['ours']['common_input_tokens_total']!=image_tokens:raise ValueError('Matched image token work differs')
+    rows['02']['common_tokens']=dict(total=image_tokens,ours_per_s=image_tokens/image_ours_seconds,
+        qwen_per_s=image_tokens/image_seconds,rate_ratio=image_seconds/image_ours_seconds,
+        time_ratio=image_seconds/image_ours_seconds,basis='same original first200 image identities and actual Qwen valid native input IDs/masks')
+    rows['02']['status']='matched_three_round_timing_energy_independently_audited; Qwen dense-MAC verified, Ours original-shape derivation pending'
     openmoji_root=REPO/'LightGenV2/tasks/t04_semantic_interaction/runs/simulation'
     rows['07']['ours']=openmoji_e45_result(openmoji_root)
     rows['07']['qwen'],rows['07']['common_tokens']=openmoji_pair(openmoji_root,rows['07']['ours'])
@@ -375,9 +410,9 @@ def main():
         raw_data_in_original_task_runs=True,power_no_idle_subtraction=True)
     with args.output.open('x',encoding='utf8') as stream:json.dump(value,stream,ensure_ascii=False,indent=2)
     print(json.dumps(dict(status=value['status'],shared_qwen100={k:anchor[k] for k in ('calls','sample_ms','sample_j','time_weighted_board_w')},
-                          complete_timing_energy_rows=['03','04','05','06','07'],
+                          complete_timing_energy_rows=['02','03','04','05','06','07'],
                           qualified_model_task_items=sum(r[m] is not None for r in rows.values() for m in ('ours','qwen')),
-                          pending_rows=['01a ours','01b ours','02 ours','08 both'],
+                          pending_rows=['01a ours','01b ours','08 both'],
                           operation_counts='02/04 Qwen and07 both NN dense-MAC subtotals verified; optical dense-equivalent separate; other original-network/existing-shape derivations pending, no compulsory GPU replay')))
 
 
