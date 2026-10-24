@@ -60,7 +60,10 @@ def main():
                 while child.poll() is None:
                     stable()
                     if time.time()>args.deadline:raise TimeoutError('Native CPU worker deadline')
-                    if engine.base.guard_records(GPU):raise RuntimeError('Foreign GPU appeared during CPU contract')
+                    records=engine.base.guard_records(GPU)
+                    if records:
+                        write(root/'foreign_CPU_interruption.json',dict(unix=time.time(),gpu_uuid=GPU,processes=records))
+                        raise RuntimeError('Foreign GPU appeared during CPU contract')
                     time.sleep(3)
                 if child.returncode:raise RuntimeError('Original/observed native CPU worker exit'+str(child.returncode))
             result=json.loads((folder/'contract.json').read_text())

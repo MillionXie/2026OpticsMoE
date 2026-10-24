@@ -47,3 +47,11 @@ def test_original_legacy_training_location_rebound_not_applied_to_baseline():
     assert 'initialize_from_legacy(' not in source
     model=(live.TASK/'modeling.py').read_text()
     assert "'legacy_weights_loaded': False" in model
+
+
+def test_actual_original_grid_composition_signature_used_not_an_output_dict():
+    import ast
+    tree=ast.parse((HERE/'openmoji_qwen_live.py').read_text())
+    calls=[n for n in ast.walk(tree) if isinstance(n,ast.Call)
+           and isinstance(n.func,ast.Name) and n.func.id=='compose_prediction']
+    assert len(calls)==2 and all(len(n.args)==3 for n in calls)

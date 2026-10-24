@@ -136,7 +136,8 @@ def prepare(output):
                 if gold.keys()!=actual.keys() or any(not torch.equal(gold[k],actual[k]) for k in gold):
                     raise ValueError('Complete original shared-head CPU output not bitwise equal')
                 source=torch.tensor(row['source_grid']).unsqueeze(0)
-                expected=compose_prediction(gold,source);result=compose_prediction(actual,source)
+                expected=compose_prediction(gold['category_logits'],gold['edit_logits'],source)
+                result=compose_prediction(actual['category_logits'],actual['edit_logits'],source)
                 if any(not torch.equal(a,b) for a,b in zip(expected,result)):
                     raise ValueError('Original full CPU grid composition differs')
                 valid=sum(inputs['attention_mask'][0])
