@@ -2,3 +2,4 @@
 *
 !.gitignore
 !build_workbook.mjs
+!update_uniform_tokens.mjs
