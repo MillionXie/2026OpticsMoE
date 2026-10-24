@@ -1,8 +1,37 @@
 """Collect fixed-last metrics/parameter metadata for the presentation table, without inference."""
-import hashlib, json
+import hashlib, json, sys
 from pathlib import Path
 
 root=Path(__file__).resolve().parent
+if '--selected-nine' in sys.argv:
+    source_path=root/'runs/control/teacher_comparison_sources_20261024.json'
+    data=json.loads(source_path.read_text(encoding='utf-8'))
+    selected=[]
+    for row in data['rows']:
+        is_crossmodal=row['task_id'] in ['abo_image_to_text','abo_text_to_image']
+        if (is_crossmodal and row['epoch']==1) or (not is_crossmodal and row['variant'].startswith('采用')):
+            row=dict(row)
+            if is_crossmodal:
+                row['variant']='采用：1轮轻量训练 last1'
+                row['note']='用户观察全预算结果后指定采用；独立CPU1轮/150更新，不代表30轮收敛性能。'
+            selected.append(row)
+    assert len(selected)==9 and len({r['task_id'] for r in selected})==9
+    data.update(rows=selected,presentation='selected9',title='T19 九项任务最终采用结果',output_filename='T19_九项任务最终采用结果.xlsx')
+    data['sources']['runs/control/teacher_comparison_sources_20261024.json']=hashlib.sha256(source_path.read_bytes()).hexdigest()
+    data['notes']=[
+      '当前视觉统一为官方ImageNet RN18，11,176,512参数全部冻结，含BN统计/eval/no_grad；总参数包含冻结骨干。',
+      '图搜文、文搜图、OpenMoji和参考图编辑的byte-GRU 27,104参数随机初始化可训练，与任务头一起优化。',
+      '旧ResNet-20随机初始化、无预训练、全参数训练且固定last30；Ours采用原图Sim列，Qwen采用原图Qwen3VL列。',
+      'ABO采用图搜文1轮74.04%、图搜图零训练77.88%、文搜图1轮65.00%；预算在观察TEST后由用户指定，属开发汇总。',
+      '各自使用指定预算的last权重；未按TEST挑选同一run的最佳epoch。原0/1/5/30及PCA所有证据原样保留。',
+      'LGVQ/编辑为累计50轮，LSP累计90轮；OpenMoji是分组VAL选出的独立新GRU/头60轮，非累计续训。',
+      'OpenMoji修改格77.55%，保留格90.98%、IoU0.2868，较旧版有取舍；编辑为参考图＋指令，完整2304 TEST。',
+      'Ours/Qwen原图逐任务epoch/精确参数/冻结范围未核实；预训练、损失、分辨率及预算不统一，非纯骨干消融。'
+    ]
+    output=root/'runs/control/teacher_selected9_sources_20261024.json'
+    output.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    print(json.dumps({'rows':9,'path':str(output)},ensure_ascii=False))
+    sys.exit(0)
 sources={}
 def read(rel):
     p=root/rel; raw=p.read_bytes(); sources[rel]=hashlib.sha256(raw).hexdigest()
