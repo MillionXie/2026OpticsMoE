@@ -1,6 +1,8 @@
 """TRAIN class-compactness optimization of existing direct alpha, then affine OAS.
 
-Only training uses pooled branch sufficient statistics. Deployment is the
+Training can use exact native pixel branches; compressed statistics require
+the same probability parity gate and were rejected on the actual data.
+Deployment is the
 unchanged native model, with alpha3 and its existing affine head updated.
 No TEST objective/alpha sweep, no new inference operator or physical capture.
 """
@@ -25,6 +27,26 @@ def cached_features(s,alpha):
     return F.layer_norm(pooled,(256,),eps=1e-5)
 
 
+def native_branch_features(e,o,alpha):
+    from caltech20_alt246_biasfree_model import rms,features
+    a=alpha.float();re,ro=rms(e).detach(),rms(o).detach()
+    mixed=(1-a)*(e/re)+a*(o/ro)
+    return features(re*mixed/rms(mixed).detach())
+
+
+def native_scatter_step(packet,alpha,labels):
+    """Full TRAIN scatter gradient via exact batchwise native fusion recompute."""
+    import torch,numpy as np
+    values=[]
+    with torch.no_grad():
+        for begin in range(0,len(labels),8):values.append(native_branch_features(torch.from_numpy(packet['e'][begin:begin+8]),torch.from_numpy(packet['o'][begin:begin+8]),alpha))
+    f=torch.cat(values).requires_grad_(True);score=separation(f,labels);(-score).backward();gradient=f.grad.detach();alpha.grad=None
+    for begin in range(0,len(labels),8):
+        v=native_branch_features(torch.from_numpy(packet['e'][begin:begin+8]),torch.from_numpy(packet['o'][begin:begin+8]),alpha);v.backward(gradient[begin:begin+8])
+    assert alpha.grad is not None and torch.isfinite(alpha.grad)
+    return float(score.detach())
+
+
 def separation(features,labels):
     import torch
     center=features.mean(0);means=torch.stack([features[labels==k].mean(0)for k in range(20)])
@@ -37,7 +59,10 @@ def run(a):
     np,torch,m,loop=base.numerical_modules();torch.set_num_threads(2);torch.manual_seed(73)
     from lab_caltech20_tucam_TRAIN_linear_20261023 import TRAIN_linear_fit
     assert not a.out.exists() and not m.LOCK.exists()
-    assert a.out.name=='fullG2_TRAIN_fusion_20261024'
+    assert a.out.name==('fullG2_TRAIN_fusion_native_20261024'if a.native_branches else'fullG2_TRAIN_fusion_20261024')
+    if a.native_branches:
+        import psutil
+        assert psutil.virtual_memory().available>8*2**30,'Native branch cache needs bounded free host RAM'
     root=base.ROOT/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024'
     source=root/'fullG2_joint_TRAIN_OAS_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
     sr=m.read(source/'report.json');sp=m.read(source/'protocol.json');sa=m.read(source/'independent_audit.json')
@@ -56,36 +81,53 @@ def run(a):
             p=cap/role/'ccd.npy';assert m.sha(p)==sp['prefix_SHA256'][stage+'/'+role]==r['arrays'][role]['SHA256'];v=np.load(p,mmap_mode='r');assert v.shape==(n,478,478)and v.dtype==np.uint8;fields[stage][role]=v
     lineage=base.identities(m,paths);keys={'fusion_logits.3','linear.weight','linear.bias'};assert sum(v.numel()for n,v in model.named_parameters()if n in keys)==5141
     a.out.mkdir();protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT=str(pt),parent_PT_SHA256=m.sha(pt),prefix_SHA256=lineage,data_SHA256=dm['sha256'],allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,full_physical=True,TEST_gradient=False,TEST_development=True,alpha_objective='TRAIN_between_class_scatter_fraction',alpha_steps_max=300,alpha_lr=.005,fit_seconds_max=120,alpha_candidates_from_TEST=0,new_inference_layers=0,SDK_used=False,GPU_used=False)
+    protocol.update(native_pixel_branches=a.native_branches,compressed_statistics=not a.native_branches,alpha_steps_max=20 if a.native_branches else 300,alpha_lr=.05 if a.native_branches else .005,fit_seconds_max=180 if a.native_branches else 120)
     m.save(a.out/'protocol.json',protocol);model.eval().requires_grad_(False);holder={};hook=model.electronic[3].register_forward_hook(lambda module,args,value:holder.update(e=value))
     stats={};parent_prob={};maxerr=0.
     try:
         with torch.inference_mode():
             for role,n in (('train',1600),('test',411)):
                 pieces=[];probs=[]
+                if a.native_branches:packet={k:np.empty((n,478,478),dtype=np.float32)for k in ('e','o')}
                 for begin in range(0,n,8):
-                    ix=np.arange(begin,min(begin+8,n));prob=model(loop.put_fields(model,data,fields,role,ix,'cpu'))[0];s=branch_statistics(holder['e'],model.nonlinear(model.measured['3'].float(),'global'));f=cached_features(s,model.fusion_logits[3]);err=float((model.linear(f).softmax(1)-prob).abs().max());maxerr=max(maxerr,err);pieces.append({k:v.clone()for k,v in s.items()});probs.append(prob.numpy().copy())
+                    ix=np.arange(begin,min(begin+8,n));prob=model(loop.put_fields(model,data,fields,role,ix,'cpu'))[0];e=holder['e'];o=model.nonlinear(model.measured['3'].float(),'global')
+                    if a.native_branches:
+                        packet['e'][ix]=e.numpy();packet['o'][ix]=o.numpy();f=native_branch_features(torch.from_numpy(packet['e'][ix]),torch.from_numpy(packet['o'][ix]),model.fusion_logits[3])
+                    else:
+                        s=branch_statistics(e,o);f=cached_features(s,model.fusion_logits[3]);pieces.append({k:v.clone()for k,v in s.items()})
+                    err=float((model.linear(f).softmax(1)-prob).abs().max());maxerr=max(maxerr,err);probs.append(prob.numpy().copy())
                     if begin%160==0:m.save(a.out/'progress.json',dict(state='native_branch_cache',role=role,consumed=begin+len(ix),probability_max_error=maxerr,TEST_fit=False))
-                stats[role]={k:torch.cat([s[k]for s in pieces])for k in pieces[0]};parent_prob[role]=np.concatenate(probs)
+                stats[role]=packet if a.native_branches else{k:torch.cat([s[k]for s in pieces])for k in pieces[0]};parent_prob[role]=np.concatenate(probs)
     finally:hook.remove()
     assert maxerr<=3e-6,('Cache does not reproduce native probabilities',maxerr)
     # Materialize ordinary constant tensors outside inference_mode before alpha AD.
-    stats={role:{k:v.clone()for k,v in packet.items()}for role,packet in stats.items()}
+    if not a.native_branches:stats={role:{k:v.clone()for k,v in packet.items()}for role,packet in stats.items()}
     for role in ('train','test'):
         z=np.load(source/('best_'+role+'_predictions.npz'));assert np.array_equal(z['ids'],data[role][2])and np.array_equal(z['labels'],data[role][1]);assert np.max(np.abs(z['probabilities']-parent_prob[role]))<=3e-6
-        np.savez_compressed(a.out/(role+'_branch_statistics.npz'),ids=data[role][2],labels=data[role][1],**{k:v.numpy()for k,v in stats[role].items()})
+        if not a.native_branches:np.savez_compressed(a.out/(role+'_branch_statistics.npz'),ids=data[role][2],labels=data[role][1],**{k:v.numpy()for k,v in stats[role].items()})
+    del stats['test']
     # TEST statistics are cached only for admission; optimization has TRAIN only.
-    alpha=torch.nn.Parameter(model.fusion_logits[3].detach().clone());labels=torch.tensor(data['train'][1],dtype=torch.long);opt=torch.optim.Adam([alpha],lr=.005);start=time.monotonic();history=[]
-    with torch.no_grad():best_sep=float(separation(cached_features(stats['train'],alpha),labels));selected_alpha=alpha.detach().clone()
+    alpha=torch.nn.Parameter(model.fusion_logits[3].detach().clone());labels=torch.tensor(data['train'][1],dtype=torch.long);opt=torch.optim.Adam([alpha],lr=protocol['alpha_lr']);start=time.monotonic();history=[]
+    if a.native_branches:best_sep=native_scatter_step(stats['train'],alpha,labels)
+    else:
+        with torch.no_grad():best_sep=float(separation(cached_features(stats['train'],alpha),labels))
+    selected_alpha=alpha.detach().clone()
     initial_sep=best_sep
-    for step in range(1,301):
-        opt.zero_grad(set_to_none=True);score=separation(cached_features(stats['train'],alpha),labels);loss=-score;loss.backward();assert alpha.grad is not None and torch.isfinite(alpha.grad);opt.step()
+    for step in range(1,protocol['alpha_steps_max']+1):
+        opt.zero_grad(set_to_none=True)
+        if a.native_branches:value=native_scatter_step(stats['train'],alpha,labels)
+        else:
+            score=separation(cached_features(stats['train'],alpha),labels);loss=-score;loss.backward();assert alpha.grad is not None and torch.isfinite(alpha.grad);value=float(score.detach())
+        if value>best_sep:best_sep=value;selected_alpha=alpha.detach().clone()
+        evaluated_alpha=float(alpha.detach());opt.step()
         with torch.no_grad():
-            alpha.clamp_(.4001001,.95);value=float(separation(cached_features(stats['train'],alpha),labels))
-            if value>best_sep:best_sep=value;selected_alpha=alpha.detach().clone()
+            alpha.clamp_(.4001001,.95)
         if step==1 or step%20==0:
-            row=dict(step=step,alpha=float(alpha),TRAIN_separation=value,selected_TRAIN_separation=best_sep,TEST_used=False);history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='TRAIN_only_fusion_scatter',latest=row));print(__import__('json').dumps(row),flush=True)
-        if time.monotonic()-start>=120:break
-    with torch.no_grad():model.fusion_logits[3].copy_(selected_alpha);features=cached_features(stats['train'],selected_alpha).numpy()
+            row=dict(step=step,alpha=evaluated_alpha,next_proposal_alpha=float(alpha.detach()),TRAIN_separation=value,selected_TRAIN_separation=best_sep,TEST_used=False);history.append(row);m.save(a.out/'history.json',history);m.save(a.out/'progress.json',dict(state='TRAIN_only_fusion_scatter',latest=row));print(__import__('json').dumps(row),flush=True)
+        if time.monotonic()-start>=protocol['fit_seconds_max']:break
+    with torch.no_grad():
+        model.fusion_logits[3].copy_(selected_alpha)
+        features=np.concatenate([native_branch_features(torch.from_numpy(stats['train']['e'][begin:begin+8]),torch.from_numpy(stats['train']['o'][begin:begin+8]),selected_alpha).numpy()for begin in range(0,1600,8)])if a.native_branches else cached_features(stats['train'],selected_alpha).numpy()
     w,b,fit=TRAIN_linear_fit(features,data['train'][1],c['original_TRAIN_counts'])
     with torch.no_grad():model.linear.weight.copy_(torch.from_numpy(w));model.linear.bias.copy_(torch.from_numpy(b))
     m.save(a.out/'TRAIN_statistics.json',dict(initial_alpha=float(original['fusion_logits.3']),selected_alpha=float(selected_alpha),initial_separation=initial_sep,selected_separation=best_sep,steps=step,TRAIN_only=True,OAS=fit,cache_probability_max_error=maxerr))
@@ -108,11 +150,13 @@ def selftest():
     torch.set_num_threads(2);torch.manual_seed(73);e=torch.rand(40,41,41);o=torch.rand_like(e);s=branch_statistics(e,o);head=torch.nn.Linear(256,20);rows=[]
     for a in (.4001001,.8,.95):
         alpha=torch.tensor(a,dtype=torch.float64,requires_grad=True);mixed=(1-alpha.float())*(e/rms(e))+alpha.float()*(o/rms(o));native=features(rms(e)*mixed/rms(mixed));cached=cached_features(s,alpha);prob_error=float((head(native).softmax(1)-head(cached).softmax(1)).detach().abs().max());assert prob_error<=3e-6;score=separation(cached,torch.arange(40)%20);score.backward();assert torch.isfinite(alpha.grad)and float(alpha.grad.abs())>0;rows.append(dict(alpha=a,feature_roundoff=float((native-cached).detach().abs().max()),probability_error=prob_error))
-    print(__import__('json').dumps(dict(passed=True,probability_tolerance=3e-6,roundoff=rows,finite_direct_alpha_gradient=True)))
+    alpha=torch.tensor(.8,dtype=torch.float64,requires_grad=True);f=native_branch_features(e,o,alpha);mix=(1-alpha.float())*(e/rms(e))+alpha.float()*(o/rms(o));assert torch.equal(f,features(rms(e)*mix/rms(mix).detach()))
+    packet=dict(e=e.numpy(),o=o.numpy());value=native_scatter_step(packet,alpha,torch.arange(40)%20);assert 0<value<1 and torch.isfinite(alpha.grad)
+    print(__import__('json').dumps(dict(passed=True,probability_tolerance=3e-6,roundoff=rows,finite_direct_alpha_gradient=True,native_pixel_features_bitwise=True,native_full_TRAIN_scatter_gradient=True)))
 
 
 if __name__=='__main__':
-    q=argparse.ArgumentParser();q.add_argument('--out',type=Path);q.add_argument('--selftest',action='store_true');a=q.parse_args()
+    q=argparse.ArgumentParser();q.add_argument('--out',type=Path);q.add_argument('--selftest',action='store_true');q.add_argument('--native-branches',action='store_true');a=q.parse_args()
     if a.selftest:selftest()
     else:
         try:run(a)
