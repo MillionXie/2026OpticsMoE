@@ -10,6 +10,14 @@ from .train_native import TASKS,sha,put,load_data,evaluate,summary,gpu_gate
 from .hardware_bridge import load_checkpoint
 
 
+class ReferenceProbabilities(torch.nn.Module):
+    """Report adapter only: original T16 returns logits, not probabilities."""
+    def __init__(self,base):super().__init__();self.base=base
+    def forward(self,x):
+        result=self.base(x)
+        return dict(result,probabilities=result['logits'].softmax(1))
+
+
 def main():
     p=argparse.ArgumentParser(__doc__);p.add_argument('--mode',choices=('reference','native_cpu'),required=True)
     p.add_argument('--test',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
@@ -29,7 +37,7 @@ def main():
             model=DirectCCDOptics(arch,**{k:original_config[k] for k in keys if k in original_config}).to(device)
             checkpoint=torch.load(identity['checkpoint'],map_location=device,weights_only=False)
             model.load_state_dict(checkpoint['model'],strict=True)
-            scores=evaluate(model,data,TASKS[:phase],device,4)
+            scores=evaluate(ReferenceProbabilities(model),data,TASKS[:phase],device,4)
             put(a.out/(arch+'_'+chr(64+phase)+'.json'),dict(scores=scores,
                 checkpoint_sha256=identity['sha256'],scope='original 17um graph, same stratified1000 TEST',
                 historical_replay='full' if arch=='moe' else '300 old records, 50 cycles'))
