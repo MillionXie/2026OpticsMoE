@@ -101,6 +101,8 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
     folder.mkdir();values={};rows={}
     patterns={'dark':np.zeros((1016,1016),np.uint8),'A1':amplitudes[0],
               'A2':amplitudes[0],'B':amplitudes[1],'A3':amplitudes[0]}
+    marker=np.zeros((1016,1016),np.uint8);marker[145:215,145:215]=128
+    patterns.update(marker=marker,A4=amplitudes[0])
     if mask is None:mask=np.ones((1016,1016),bool)
     for name,gray in patterns.items():
         f=folder/(name+'.bmp');Image.fromarray(native_image(drive[gray])).save(f)
@@ -119,10 +121,14 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
         if stage=='router':return model.route_from_ccd(tensor)[0].numpy()
         if stage=='first':return model.normalize(torch.nn.functional.softsign(tensor/tensor.mean((-2,-1),keepdim=True)))[0].numpy().ravel()
         return model.features_from_ccd(tensor)[0].numpy()
-    ca,cb=consumer(A1),consumer(A3)
+    ca,cb=consumer(A1),consumer(values['A4'])
     repeat_drift=float(np.abs(ca-cb).sum() if stage=='router' else np.linalg.norm(ca-cb)/max(1e-20,np.linalg.norm(ca)))
     changed=float(np.sqrt(np.mean((B-A1)[mask]**2)))
-    passed=snr>=10 and delta99>=64 and correlation>=.95 and repeat_drift<=.05 and changed>=3*noise
+    marker_change=float(np.sqrt(np.mean((values['marker']-A1)[mask]**2)))
+    # Semantic records may legitimately have similar optical outputs; they are
+    # not a timing standard. An independent fixed calibration marker verifies
+    # actual input updates, followed by return to exactly the same TRAIN A.
+    passed=snr>=10 and delta99>=64 and correlation>=.95 and repeat_drift<=.05 and marker_change>=3*noise
     passed=passed and max(r['signal']['saturation_fraction'] for r in rows.values())<=.15
     receipt=dict(passed=bool(passed),stage=stage,hardware_payload_sha256=hardware_sha,
         read_noise_upper_counts=noise,noise_scope='repeat shot/display/camera fluctuations at this stage, NOT pure read noise',
@@ -130,8 +136,9 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
         SNR=snr,signal_ROI_delta_p99_counts=delta99,repeat_correlation=correlation,
         repeat_consumer_drift=repeat_drift,repeat_consumer='q L1' if stage=='router' else 'actual OEO/readout relative L2',
         raw_repeat_relative_L2=raw_repeat_drift,changed_input_RMS_counts=changed,rows=rows,
+        semantic_input_difference_is_diagnostic_not_a_gate=True,marker_change_RMS_counts=marker_change,
         TEST_used=False,labels_used=False,exposure_changed=False,network_background_subtraction=False,
-        patterns=['dark','first_TRAIN','first_TRAIN','last_TRAIN','first_TRAIN'])
+        patterns=['dark','first_TRAIN','first_TRAIN','last_TRAIN','first_TRAIN','fixed_independent_marker','first_TRAIN'])
     put(folder/'report.json',receipt)
     if not passed:raise RuntimeError('Stage-specific TRAIN/control SNR admission failed; no EVAL or automatic retry')
     return receipt
@@ -237,6 +244,11 @@ def capture(package,cfg,out,pilot=False):
                         mask[y-h:y+h,x-h:x+h]=True
                 stage_noise=noise
                 if stage in reused:
+                    prior_noise=layer/'TRAIN_signal_admission/report.json'
+                    if prior_noise.exists():
+                        stage_noise=json.loads(prior_noise.read_text())
+                        if not stage_noise['passed'] or stage_noise['stage']!=stage or stage_noise['hardware_payload_sha256']!=hardware_identity(cfg):
+                            raise ValueError('Reused prefix signal admission is not valid for this stage/session')
                     for i,entry in enumerate(entries):
                         key=f'{i:05d}';folder=layer/key;r=json.loads((folder/'receipt.json').read_text())
                         for field in ('task','split','local_index','source_index','manifest_sha256'):
@@ -307,7 +319,7 @@ def capture(package,cfg,out,pilot=False):
         put(out/'report.json',dict(passed=True,pilot=pilot,records=len(entries),frames=len(rows),
             stages=list(order),features_sha256=sha(out/'features.npz'),checkpoint_sha256=package['checkpoint_sha256'],
             new_network_frames=sum('reused_from' not in r for r in rows),reused_network_frames=sum('reused_from' in r for r in rows),
-            extra_TRAIN_control_frames=5*(len(order)-len(reused)) if package.get('TRAIN_stage_signal_calibration',False) else 0,
+            extra_TRAIN_control_frames=7*(len(order)-len(reused)) if package.get('TRAIN_stage_signal_calibration',False) else 0,
             seconds=time.time()-started,seconds_per_frame=(time.time()-started)/len(rows),
             TRAIN_records=sum(r['split']=='train' for r in entries),EVAL_records=sum(r['split']=='test' for r in entries),
             SDK_released=True,interlayer_training=False,full_physical_prefix=True))
