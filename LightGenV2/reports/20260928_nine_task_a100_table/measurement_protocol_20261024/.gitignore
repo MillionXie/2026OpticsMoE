@@ -21,3 +21,5 @@
 !audit_lgvq_spatial_qwen.py
 !run_lgvq_spatial_qwen.py
 !test_lgvq_spatial_qwen.py
+!audit_temporal_matrix.py
+!test_temporal_matrix.py
