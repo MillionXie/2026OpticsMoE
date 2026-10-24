@@ -59,3 +59,6 @@
 !protocol_amendment_openmoji_e45.json
 !protocol_identity.py
 !test_protocol_identity.py
+!prepare_openmoji_e45.py
+!run_openmoji_e45_preflight.py
+!test_openmoji_e45_preflight.py
