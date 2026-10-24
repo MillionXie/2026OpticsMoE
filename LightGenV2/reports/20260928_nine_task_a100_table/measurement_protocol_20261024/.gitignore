@@ -40,3 +40,4 @@
 !test_lgvq_front_binding.py
 !replay_abo_text_qwen_ops.py
 !test_abo_text_qwen_ops.py
+!audit_abo_text_ops.py

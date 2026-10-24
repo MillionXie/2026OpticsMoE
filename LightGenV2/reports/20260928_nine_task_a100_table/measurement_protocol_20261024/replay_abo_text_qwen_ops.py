@@ -69,8 +69,20 @@ def main():
         if engine.base.guard_records(measured.GPU):raise ValueError('Foreign A100 process')
         validate_idle_memory(measured.GPU)
         output.mkdir(parents=True);active=False;guard=None;loading_audit=[];counter=None
+        parent_controller=False;child_pid=None;child_exit=None
         try:
             engine.daemon(True);active=True
+            # The CPU parent must outlive its GPU worker: an active CUDA client
+            # cannot safely quit its own MPS daemon. Fork BEFORE importing
+            # Torch/CUDA or starting any watcher thread; inherit the same lock.
+            child_pid=os.fork()
+            if child_pid:
+                parent_controller=True
+                _,wait_status=os.waitpid(child_pid,0)
+                child_exit=os.waitstatus_to_exitcode(wait_status)
+                if child_exit:raise RuntimeError(f'Own untimed worker exited{child_exit}; retain raw')
+                return
+            active=False  # Only the separate CPU parent owns daemon shutdown.
             os.environ.update(CUDA_VISIBLE_DEVICES=measured.GPU,CUDA_DEVICE_ORDER='PCI_BUS_ID',
                 CUDA_MPS_PIPE_DIRECTORY=engine.PIPE,CUDA_MPS_ACTIVE_THREAD_PERCENTAGE='100')
             # Loading has its own process watcher; this replay is never allowed
@@ -131,6 +143,7 @@ def main():
             if not main_mac<=ledger['actual_executed_real_mac']<=main_mac*1.001:
                 raise ValueError('Actual dense MAC differs from independent native-network main terms')
             value=dict(ledger,status='UNTIMED_MAC_REPLAY_200_MATCHED_FORMAL_INPUTS_NOT_A_TIMING_RUN',
+                worker_pid=os.getpid(),controller_pid=os.getppid(),
                 gpu_uuid=measured.GPU,mps_percent=100,power_limit_w=cap,device_name=props.name,
                 protocol_id=measured.PROTOCOL,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
                 sources=frozen,measured_root=str(root.relative_to(REPO)),qualified_trial_audits=refs,
@@ -144,15 +157,24 @@ def main():
             measured.write(output/'status.json',dict(status='complete',calls=200,mac=ledger['actual_executed_real_mac'],OP_MAC_convention=2*ledger['actual_executed_real_mac']))
             print(json.dumps({k:value[k] for k in ('status','input_calls','actual_executed_real_mac','independent_QKVO_SwiGLU_attention_search_main_mac','additional_observed_dense_mac','unsupported_operators')}),flush=True)
         except BaseException as error:
-            measured.write(output/'failure.json',dict(error=repr(error)))
+            measured.write(output/('controller_failure.json' if parent_controller else 'failure.json'),dict(error=repr(error)))
             if counter is not None:measured.write(output/'partial_operations.json',counter.report())
             raise
         finally:
-            measured.write(output/'loading_process_audit.json',loading_audit)
-            if guard is not None:guard.close(output/'process_audit.json')
-            if active:engine.daemon(False)
-            measured.write(output/'files_manifest.json',[dict(file=f.name,bytes=f.stat().st_size,sha256=measured.sha(f))
-                for f in sorted(output.iterdir()) if f.is_file() and f.name!='files_manifest.json'])
+            if parent_controller:
+                try:
+                    engine.daemon(False)
+                    measured.write(output/'mps_parent_release.json',dict(status='released_after_own_child_exit',
+                        child_pid=child_pid,child_exit=child_exit,controller_pid=os.getpid(),GPU_forwards=0))
+                finally:
+                    measured.write(output/'controller_files_manifest.json',[dict(file=f.name,bytes=f.stat().st_size,sha256=measured.sha(f))
+                        for f in sorted(output.iterdir()) if f.is_file() and f.name!='controller_files_manifest.json'])
+            else:
+                measured.write(output/'loading_process_audit.json',loading_audit)
+                if guard is not None:guard.close(output/'process_audit.json')
+                if active:engine.daemon(False)  # Startup/fork failure, no CUDA client exists.
+                measured.write(output/'files_manifest.json',[dict(file=f.name,bytes=f.stat().st_size,sha256=measured.sha(f))
+                    for f in sorted(output.iterdir()) if f.is_file() and f.name!='files_manifest.json'])
 
 
 if __name__=='__main__':main()
