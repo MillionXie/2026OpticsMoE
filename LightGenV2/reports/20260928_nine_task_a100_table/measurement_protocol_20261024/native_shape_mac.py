@@ -66,7 +66,7 @@ def openmoji_standard_head_mac(instruction_length):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--openmoji-root',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
-    args=p.parse_args();root=args.openmoji_root
+    args=p.parse_args();root=args.openmoji_root.resolve()
     if args.output.exists():raise FileExistsError('Preserve prior formula receipts')
     references=[];signatures=[];by_repeat=[]
     for repeat in (1,2,3):
