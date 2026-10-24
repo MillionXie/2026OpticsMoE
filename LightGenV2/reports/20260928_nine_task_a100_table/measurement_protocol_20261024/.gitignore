@@ -31,3 +31,5 @@
 !run_abo_text_qwen.py
 !audit_abo_text_qwen.py
 !test_abo_text_qwen.py
+!operation_ledger.py
+!test_operation_ledger.py
