@@ -51,6 +51,19 @@ def feature_scores(head, x, y):
                 balanced_accuracy=float(np.mean(recall)), per_class_recall=recall)
 
 
+def readout_training_loss(logits, labels, cfg):
+    """Optional TRAIN-hardness focal weighting; default exactly prior CE."""
+    losses=F.cross_entropy(logits,labels,label_smoothing=cfg['label_smoothing'],reduction='none')
+    method=cfg.get('loss','cross_entropy')
+    if method=='focal':
+        gamma=float(cfg.get('focal_gamma',1.))
+        if not 0<=gamma<=4:raise ValueError('Bounded focal gamma required')
+        probability=logits.softmax(1).gather(1,labels[:,None]).squeeze(1)
+        losses=losses*(1-probability).pow(gamma)
+    elif method!='cross_entropy':raise ValueError('Unknown TRAIN readout objective')
+    return losses.mean()
+
+
 def fit_head(head, x, y, val_x, val_y, cfg, record):
     """Only TRAIN enters backward; VAL is consumed by a no-grad callback."""
     head = head.cpu()
@@ -73,20 +86,21 @@ def fit_head(head, x, y, val_x, val_y, cfg, record):
             batch = F.dropout(batch, p=cfg['TRAIN_feature_dropout'], training=True)
             batch = batch * (1 + torch.randn_like(batch) * cfg['TRAIN_feature_noise_std'])
             optimizer.zero_grad(set_to_none=True)
-            loss = F.cross_entropy(head(batch), y[ix], label_smoothing=cfg['label_smoothing'])
+            loss = readout_training_loss(head(batch), y[ix], cfg)
             if not torch.isfinite(loss):
                 raise RuntimeError('Nonfinite TRAIN readout loss')
             loss.backward()
             optimizer.step()
             total += float(loss.detach()) * len(ix)
         record('adamw', epoch, total / n)
-    # Deterministic convex full-batch polish, not another model or TEST search.
+    # Deterministic full-batch polish, not another model or TEST search.
+    # The default CE objective remains convex; optional focal loss is not.
     optimizer = torch.optim.LBFGS(head.parameters(), lr=.5, max_iter=1,
                                   history_size=20, line_search_fn='strong_wolfe')
     for step in range(1, cfg['LBFGS_steps'] + 1):
         def closure():
             optimizer.zero_grad(set_to_none=True)
-            loss = F.cross_entropy(head(x), y, label_smoothing=cfg['label_smoothing'])
+            loss = readout_training_loss(head(x), y, cfg)
             loss = loss + cfg['LBFGS_anchor_strength'] * (head.weight - initial).square().mean()
             if not torch.isfinite(loss):
                 raise RuntimeError('Nonfinite full-batch readout loss')

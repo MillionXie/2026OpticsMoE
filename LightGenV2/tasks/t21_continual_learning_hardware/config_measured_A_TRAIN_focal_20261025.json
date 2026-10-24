@@ -1,0 +1,26 @@
+{
+  "schema": "T21_measured_A_readout_only_v1",
+  "rationale": "Ordinary parent continuation reached644/1000 and then plateaued. One fixed TRAIN-hardness focal objective from the verified644 parent; no TEST-derived sample weights or gradient inputs.",
+  "fit": {
+    "loss": "focal",
+    "focal_gamma": 1.0,
+    "learning_rate": 0.0001,
+    "minimum_learning_rate": 0.000001,
+    "weight_decay": 0.01,
+    "epochs": 120,
+    "batch_size": 32,
+    "TRAIN_feature_dropout": 0.01,
+    "TRAIN_feature_noise_std": 0.005,
+    "label_smoothing": 0.02,
+    "LBFGS_steps": 30,
+    "LBFGS_anchor_strength": 0.01
+  },
+  "trainable_parameters": 7840,
+  "SDK": false,
+  "GPU": false,
+  "TEST_gradients": false,
+  "TEST_teacher": false,
+  "selection": "E0 parent protected; best completeTEST1000 checkpoint is development only",
+  "maximum_runs": 1,
+  "target_not_guaranteed": true
+}

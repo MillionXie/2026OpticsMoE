@@ -94,6 +94,8 @@ def main():
     p.add_argument('--parent-sha256', required=True)
     p.add_argument('--continuation', action='store_true',
                    help='One low-LR warm continuation via already published fit_head')
+    p.add_argument('--continuation-profile',type=Path,
+                   help='Published bounded readout-only hyperparameter profile')
     a = p.parse_args()
     torch.set_num_threads(2);torch.manual_seed(20261025)
     if sha(a.parent) != a.parent_sha256:
@@ -122,6 +124,15 @@ def main():
     if a.continuation:
         enable_readout_only(model)
         cfg=continuation_config();history=[]
+        if a.continuation_profile:
+            profile=json.loads(a.continuation_profile.read_text())
+            if profile['schema']!='T21_measured_A_readout_only_v1':raise ValueError('Wrong continuation profile')
+            changes=profile['fit']
+            if set(changes)-set(cfg)-{'loss','focal_gamma'}:raise ValueError('Unknown fit hyperparameters')
+            cfg.update(changes)
+            if not (1<=cfg['epochs']<=160 and 0<=cfg['LBFGS_steps']<=40 and
+                    1e-6<=cfg['learning_rate']<=1e-3 and 0<=cfg['TRAIN_feature_dropout']<=.1 and
+                    0<=cfg['TRAIN_feature_noise_std']<=.05):raise ValueError('Out-of-budget continuation')
         parent_correct=int((model.shared_head(x[test].float()).argmax(1)==labels[test]).sum())
         best_correct=parent_correct;best_weight=model.shared_head.weight.detach().clone();best_tag=('baseline',0)
         put(a.out/'protocol.json',dict(parent_sha256=a.parent_sha256,features_sha256=report['features_sha256'],
@@ -129,6 +140,7 @@ def main():
             source_sha256=sha(Path(__file__)),fit_head_source_sha256=sha(Path(__file__).with_name('refine_native_readout.py')),
             method='one fixed low-LR parent continuation, cosine AdamW then anchored full-batch LBFGS',
             config=cfg,TRAIN_records=1000,EVAL_records=1000,trainable_parameters=7840,
+            continuation_profile_sha256=sha(a.continuation_profile) if a.continuation_profile else None,
             TEST_gradients=False,TEST_teacher=False,TEST_selected_development_metric=True,
             independent_generalization_claim=False,SDK=False,GPU=False,CPU_threads=2))
         def record(method,step,loss):

@@ -76,6 +76,22 @@ class MeasuredCETest(unittest.TestCase):
                  None,None,config,lambda *row:rows.append(row))
         self.assertEqual([r[0] for r in rows],['baseline','adamw','lbfgs'])
 
+    def test_default_and_gamma_zero_preserve_CE_and_focal_has_finite_gradients(self):
+        from .refine_native_readout import readout_training_loss
+        logits=torch.randn(20,10,requires_grad=True);labels=torch.arange(10).repeat(2)
+        cfg={'label_smoothing':.02}
+        reference=torch.nn.functional.cross_entropy(logits,labels,label_smoothing=.02)
+        self.assertTrue(torch.allclose(readout_training_loss(logits,labels,cfg),reference))
+        self.assertTrue(torch.allclose(readout_training_loss(logits,labels,dict(cfg,loss='focal',focal_gamma=0)),reference))
+        loss=readout_training_loss(logits,labels,dict(cfg,loss='focal',focal_gamma=1))
+        loss.backward();self.assertTrue(torch.isfinite(logits.grad).all())
+
+    def test_focal_weight_prioritizes_TRAIN_hard_samples(self):
+        from .refine_native_readout import readout_training_loss
+        labels=torch.tensor([0]);cfg={'label_smoothing':0.,'loss':'focal','focal_gamma':1.}
+        easy=torch.tensor([[5.,-5.]]);hard=-easy
+        self.assertGreater(float(readout_training_loss(hard,labels,cfg)),float(readout_training_loss(easy,labels,cfg)))
+
 
 if __name__ == '__main__':
     unittest.main()
