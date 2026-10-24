@@ -118,16 +118,18 @@ def main():
     image_paths.append(image_root/'a100_image_input_inclusive_20261024_03/qwen_repeat03')
     def image_audit(path):
         if args.abo_image_python is None:return audit_abo_image_qwen(path,args.abo_data_root)
+        import yaml
         # The existing local SciPy/NumPy audit runtime and measured JPEG decoder
         # have different Python ABIs. Execute the unchanged image auditor in its
         # explicitly selected existing runtime instead of replacing packages,
         # faking loadmat, relaxing pixel checks or rerunning any model.
         code=('import sys,json;from pathlib import Path;'
               'sys.path.insert(0,sys.argv[1]);'
+              'sys.path.append(sys.argv[4]);'
               'from audit_abo_image_qwen import audit;'
               'print(json.dumps(audit(Path(sys.argv[2]),Path(sys.argv[3]))))')
         return json.loads(subprocess.check_output([str(args.abo_image_python),'-c',code,str(HERE),
-            str(path.resolve()),str(args.abo_data_root.resolve())],cwd=REPO,text=True))
+            str(path.resolve()),str(args.abo_data_root.resolve()),str(Path(yaml.__file__).resolve().parent.parent)],cwd=REPO,text=True))
     images=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**image_audit(p)) for p in image_paths]
     if [r['repeat'] for r in images]!=[1,2,3] or [r['common_input_tokens200'] for r in images]!=[13728]*3:
         raise ValueError('Original image-query200x3 enrollment changed')
