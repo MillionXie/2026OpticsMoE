@@ -3,7 +3,7 @@
 Uses four immutable TRAIN pilot payloads as controls, never as new network CCD.
 Every candidate has a new hardware identity; all formal layers must be new.
 """
-import argparse,copy,json,os,traceback
+import argparse,copy,hashlib,json,os,traceback
 from pathlib import Path
 import numpy as np
 from PIL import Image
@@ -33,6 +33,7 @@ def fixed_receipt_indices(count):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for name in ('hardware','package','source_capture','out'):p.add_argument('--'+name.replace('_','-'),type=Path,required=True)
+    p.add_argument('--prepare-only',action='store_true',help='Validate real TRAIN payloads/phase/SHA without opening SDK or writing a run')
     a=p.parse_args();torch.set_num_threads(2);cfg=json.loads(a.hardware.read_text());package=json.loads(a.package.read_text())
     source=json.loads((a.source_capture/'protocol.json').read_text())
     if sha(a.hardware)!=package['hardware_sha256'] or source['package']!=package or not source['pilot'] or package['stage']!='B':
@@ -60,6 +61,10 @@ def main():
         examples.append(np.rint(amp[0].numpy()*255).astype(np.uint8));image=native_image(np.rint(phase.numpy()*256).clip(0,255).astype(np.uint8),True)
         if phase_image is not None and not np.array_equal(image,phase_image):raise ValueError('Input-dependent phase')
         phase_image=image;identities.append({k:r[k] for k in ('task','split','local_index','source_index','label','manifest_sha256','ccd_sha256')})
+    if a.prepare_only:
+        print(json.dumps(dict(passed=True,TRAIN_control_identities=identities,payload_shapes=[list(v.shape) for v in examples],
+            phase_canonical_SHA256=hashlib.sha256(phase_image.tobytes()).hexdigest(),SDK_opened=False,GPU=False,run_written=False)))
+        return
     Bench,LOCK,_,drive,warp=hardware(cfg)
     if LOCK.exists():raise RuntimeError('SDK already owned')
     a.out.mkdir(parents=True,exist_ok=False)
