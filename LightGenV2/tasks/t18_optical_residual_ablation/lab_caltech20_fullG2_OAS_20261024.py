@@ -5,6 +5,21 @@ from datetime import datetime,timezone
 import lab_caltech20_tucam_layerwise_20261023 as base
 
 
+def TRAIN_prior_bias(features,labels,weight,bias,counts):
+    """One fixed-TRAIN-prior convex fit of original20 bias values only."""
+    import torch,numpy as np
+    from torch.nn import functional as F
+    torch.set_num_threads(2);x=torch.tensor(features,dtype=torch.float64);y=torch.tensor(labels,dtype=torch.long);w=torch.tensor(weight,dtype=torch.float64);b0=torch.tensor(bias,dtype=torch.float64);b=torch.nn.Parameter(b0.clone());prior=torch.tensor(counts,dtype=torch.float64);prior=prior/prior.mean();logits=F.linear(x,w).detach();calls=0
+    opt=torch.optim.LBFGS([b],lr=1,max_iter=50,max_eval=65,history_size=10,line_search_fn='strong_wolfe')
+    def objective():return F.cross_entropy(logits+b,y,weight=prior)+.005*(b-b0).square().sum()
+    before=float(objective().detach())
+    def closure():
+        nonlocal calls
+        opt.zero_grad(set_to_none=True);loss=objective();loss.backward();assert torch.isfinite(b.grad).all();calls+=1;return loss
+    opt.step(closure);after=float(objective().detach());assert after<=before+1e-8 and torch.isfinite(b).all()
+    return b.detach().float().numpy(),dict(TRAIN_only=True,parameters=20,original_TRAIN_counts=list(counts),objective_before=before,objective_after=after,gradient_evaluations=calls,max_iter=50,max_eval=65,TEST_used=False,VALID_used=False,prior_exponent=1.,bias_anchor=.01)
+
+
 def run(a):
     np,torch,m,loop=base.numerical_modules()
     from lab_caltech20_tucam_TRAIN_linear_20261023 import TRAIN_linear_fit
@@ -12,7 +27,10 @@ def run(a):
     c=m.read(cpath);base.validate_config(c);torch.set_num_threads(2)
     assert not(a.joint_source and a.local_repair)
     assert not a.teacher_local or a.local_repair
-    if a.joint_source or a.local_repair:
+    assert not a.prior_bias or not(a.joint_source or a.local_repair)
+    if a.prior_bias:
+        assert a.out.name=='fullG2_TRAIN_priorbias_20261024'
+    elif a.joint_source or a.local_repair:
         assert a.out.name==('fullG2_teacher_local_20261024'if a.teacher_local else'fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
     else:
         assert (datetime.fromisoformat('2026-10-24T08:00:00+08:00')-datetime.now(timezone.utc)).total_seconds()>=330
@@ -33,6 +51,10 @@ def run(a):
         if a.teacher_local:
             source=root.parent/'fullG2_teacher_margin_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
             fit=source/'fit';r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=m.read(source/'report.json')
+        assert r['state']=='complete' and r['full_physical'] and not r['SDK_used']
+    if a.prior_bias:
+        source=root.parent/'fullG2_teacher_local_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
+        fit=source;r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=r
         assert r['state']=='complete' and r['full_physical'] and not r['SDK_used']
     assert r['strict_original_CPU'] and r['full_physical'] and audit['passed'] and audit['report_SHA256']==m.sha(fit/'report.json')
     pt=fit/'best.pt';assert m.sha(pt)==r['results']['best']['PT_SHA256']==full.get('PT_SHA256',r['results']['best']['PT_SHA256'])
@@ -60,7 +82,7 @@ def run(a):
         _,_,result=fit_cached_head(model,data,dm,fields,paths,pt,reference,config,dict(name='one_bounded_full_physical_TRAIN_neighbor_repair',epochs=1,seconds=180,lr_scale=1),a.out,340)
         assert result['full_physical'] and result['strict_original_CPU'] and result['selected_correct']>=r['selected_correct']
         return
-    a.out.mkdir();original=m.state_cpu(model);keys={'linear.weight','linear.bias'};baseline,prob=base.evaluate(model,data,fields,'test');assert baseline['correct']==r['selected_correct']
+    a.out.mkdir();original=m.state_cpu(model);keys={'linear.bias'}if a.prior_bias else{'linear.weight','linear.bias'};baseline,prob=base.evaluate(model,data,fields,'test');assert baseline['correct']==r['selected_correct']
     p=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),parent_PT=str(pt),parent_PT_SHA256=m.sha(pt),source_report_SHA256=m.sha(fit/'report.json'),prefix_SHA256=lineage,data_SHA256=dm['sha256'],
         TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,full_physical=True,new_inference_layers=0,SDK_used=False,GPU_used=False,allowed_keys=sorted(keys),method='single_TRAIN_OAS_original5140_no_grid',optimizer_updates=0,hyperparameter_grid=False)
     m.save(a.out/'protocol.json',p);m.save(a.out/'baseline.json',baseline);np.savez_compressed(a.out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob)
@@ -70,7 +92,11 @@ def run(a):
             ix=np.arange(begin,begin+8);model(loop.put_fields(model,data,fields,'train',ix,'cpu'));parts.append(model.readout['features'].numpy().copy())
             if begin%160==0:m.save(a.out/'progress.json',dict(state='full_physical_native_TRAIN_features',TRAIN_consumed=begin+8,TEST_used_for_fit=False))
     features=np.concatenate(parts);cache=a.out/'native_TRAIN_features.npz';np.savez_compressed(cache,ids=data['train'][2],labels=data['train'][1],features=features)
-    weight,bias,stats=TRAIN_linear_fit(features,data['train'][1],c['original_TRAIN_counts']);stats.update(feature_cache_SHA256=m.sha(cache),TEST_used=False);m.save(a.out/'TRAIN_statistics.json',stats)
+    if a.prior_bias:
+        bias,stats=TRAIN_prior_bias(features,data['train'][1],model.linear.weight.detach().numpy(),model.linear.bias.detach().numpy(),c['original_TRAIN_counts']);weight=model.linear.weight.detach().numpy().copy()
+        p.update(method='one_original20_bias_TRAIN_prior_population_CE',optimizer_updates=1,analytical_fits=0);m.save(a.out/'protocol.json',p)
+    else:weight,bias,stats=TRAIN_linear_fit(features,data['train'][1],c['original_TRAIN_counts'])
+    stats.update(feature_cache_SHA256=m.sha(cache),TEST_used=False);m.save(a.out/'TRAIN_statistics.json',stats)
     with torch.no_grad():model.linear.weight.copy_(torch.from_numpy(weight).to(model.linear.weight));model.linear.bias.copy_(torch.from_numpy(bias).to(model.linear.bias))
     loop.validate_state(m,model,original,keys);loop.saved_model(m,model,a.out/'last.pt',p);results={}
     def review(label):
@@ -82,12 +108,12 @@ def run(a):
     if not better:model.load_state_dict(original)
     loop.saved_model(m,model,a.out/'best.pt',p);results['best']=review('best');best=results['best']['test']['correct'];assert best>=baseline['correct'] and base.identities(m,paths)==lineage
     report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_E0=not better,results=results,strict_original_CPU=True,full_physical=True,target=340,target_met=best>=340,
-        all_non_readout_bitwise_frozen=True,captured_upstream_bitwise_frozen=True,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,SDK_used=False,GPU_used=False,new_inference_layers=0,analytical_fits=1,optimizer_updates=0,protocol_SHA256=m.sha(a.out/'protocol.json'))
+        all_non_readout_bitwise_frozen=True,captured_upstream_bitwise_frozen=True,TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,SDK_used=False,GPU_used=False,new_inference_layers=0,analytical_fits=0 if a.prior_bias else 1,optimizer_updates=1 if a.prior_bias else 0,protocol_SHA256=m.sha(a.out/'protocol.json'))
     m.save(a.out/'report.json',report);m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),prefix_SHA256=lineage,all_non_readout_bitwise_frozen=True))
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');a=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');parser.add_argument('--prior-bias',action='store_true');a=parser.parse_args()
     try:run(a)
     except BaseException as e:
         if a.out.exists():
