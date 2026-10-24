@@ -149,6 +149,34 @@ def attach_abo_image_existing_shape_MAC(row):
     row['ops_status']='Qwen original-network/existing-shape dense-MAC subtotal independently derived on both CPUs; Ours pending; explicit non-MAC'
 
 
+def attach_abo_title_student_existing_shape_MAC(row):
+    path=HERE/'abo_title_student_saved_shape_MAC_02.json'
+    server=HERE/'abo_title_student_saved_shape_MAC_server_02.json';value=read(path)
+    if (value!=read(server) or value['calls']!=600 or not value['no_GPU_or_neural_forwards']
+            or not value['no_new_time_or_power'] or value['complete_scalar_OP_claim']
+            or value['online_vision_or_merger_calls']!=0 or value['offline_gallery_inference_included']
+            or value['physical_optical_dense_equivalent_OP'] is not None):
+        raise ValueError('Original title NN-only zero-forward scope/agreement differs')
+    original=row['ours'];elapsed=original['sample_ms']*.6;energy=original['sample_j']*600
+    refs=value['cost_references'];mac=value['actual_NN_MAC600'];serial=value['charged_serial_NN_MAC600']
+    if (abs(sum(x['seconds200'] for x in refs)-elapsed)>1e-8
+            or abs(sum(x['joules200'] for x in refs)-energy)>1e-7
+            or [x['summary_sha256'] for x in refs]!=[x['report_sha256'] for x in original['raw_references']]
+            or [x['run'] for x in refs]!=[x['raw_run_path'] for x in original['raw_references']]
+            or mac!=3*sum(x['actual_MAC'] for x in value['per_call_first_repeat'])
+            or mac!=serial+value['parallel_residual_NN_MAC600']+value['native_position_MAC600_not_in_selected_timing_spans']):
+        raise ValueError('Original title numerator/cost/trial identity differs')
+    original['derived_NN_dense_MAC_subtotal']=dict(OP600=2*mac,TOP_per_input=2*mac/600/1e12,
+        TOPS=2*mac/1e12/elapsed,TOPS_per_W=2*mac/1e12/energy,
+        charged_serial_OP600=2*serial,charged_serial_TOP_per_input=2*serial/600/1e12,
+        charged_serial_TOPS=2*serial/1e12/elapsed,charged_serial_TOPS_per_W=2*serial/1e12/energy,
+        local_receipt=path.relative_to(REPO).as_posix(),local_receipt_sha256=sha(path),
+        server_receipt=server.relative_to(REPO).as_posix(),server_receipt_sha256=sha(server),
+        source='original adopted title graph, original PT shapes and all600 saved token lengths/call occurrences; zero new forward',
+        not_complete_scalar_OP=True,physical_optical_dense_equivalent_not_in_NN_subtotal=True,raw_derivation=value)
+    row['ops_status']='Both title NN dense-MAC subtotals verified; Ours original graph/saved600 lengths derived on both CPUs, actual/selected/residual/position separated; optical dense-equivalent/non-MAC separate'
+
+
 def attach_openmoji_existing_shape_MAC(row):
     """Consume the new zero-forward CPU derivations and their independent copy.
 
@@ -286,7 +314,8 @@ def main():
     rows['04']['common_tokens']=dict(total=text_tokens,ours_per_s=text_tokens/our_seconds,
         qwen_per_s=text_tokens/text_seconds,rate_ratio=text_seconds/our_seconds,time_ratio=text_seconds/our_seconds,
         basis='Same original Qwen input IDs/masks per actual title; not generated tokens or separate internal work')
-    rows['04']['status']='matched_three_round_timing_energy_independently_audited; Qwen dense-MAC subtotal validated, Ours OP pending'
+    rows['04']['status']='matched_three_round_timing_energy_independently_audited; both NN dense-MAC subtotals verified; physical optical/non-MAC separate'
+    attach_abo_title_student_existing_shape_MAC(rows['04'])
     # Immutable enrollment: two qualified original rounds, and only the missing
     # third from the continuation. Never enroll the externally rejected old r3.
     image_root=REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation'

@@ -41,3 +41,24 @@ def test_reject_mismatched_round_work(monkeypatch):
     def wrong(path,data):return dict(fake_audit(path,data),common_input_tokens200=999)
     monkeypatch.setattr(builder,'audit_abo_title_student',wrong)
     with pytest.raises(ValueError):builder.title_student_result(builder.REPO/'synthetic_run_root',Path('unused'))
+
+
+def test_saved_shape_MAC_keeps_exact_cost_trials_and_scope(monkeypatch):
+    value=dict(calls=600,no_GPU_or_neural_forwards=True,no_new_time_or_power=True,
+        complete_scalar_OP_claim=False,online_vision_or_merger_calls=0,
+        offline_gallery_inference_included=False,physical_optical_dense_equivalent_OP=None,
+        actual_NN_MAC600=300,charged_serial_NN_MAC600=240,parallel_residual_NN_MAC600=57,
+        native_position_MAC600_not_in_selected_timing_spans=3,
+        per_call_first_repeat=[dict(actual_MAC=100)],
+        cost_references=[dict(seconds200=2,joules200=5,summary_sha256='original',run='original_run')])
+    monkeypatch.setattr(builder,'read',lambda p:value)
+    monkeypatch.setattr(builder,'sha',lambda p:'a'*64)
+    row=dict(ours=dict(sample_ms=2/.6,sample_j=5/600,
+        raw_references=[dict(report_sha256='original',raw_run_path='original_run')]))
+    builder.attach_abo_title_student_existing_shape_MAC(row)
+    assert row['ours']['derived_NN_dense_MAC_subtotal']['OP600']==600
+    assert row['ours']['derived_NN_dense_MAC_subtotal']['charged_serial_OP600']==480
+    value['no_GPU_or_neural_forwards']=False
+    with pytest.raises(ValueError):builder.attach_abo_title_student_existing_shape_MAC(row)
+    value['no_GPU_or_neural_forwards']=True;value['cost_references'][0]['run']='other_run'
+    with pytest.raises(ValueError):builder.attach_abo_title_student_existing_shape_MAC(row)
