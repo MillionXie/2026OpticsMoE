@@ -1,6 +1,29 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 23:17，北京时间）
+## 新旧版入口与完成清单（2026-10-24 23:27，北京时间）
+
+独立`.8600`图库`a100_title_student_gallery_20261024_02`已完成原B1/2400张真实图
+编码，父1398431、子1398856均退出，`controller_status`确认complete及私有MPS释放。
+不重建该已完成图库，实际标题/图片CPU合同同样保留复用。
+图库13份原文件904353字节已data-only逐SHA取回，`backup_receipt_complete01.json`；
+双端独立CPU检查2400个原CSV身份、FP32[2400,64]、原文件SHA、78份源Git及全程进程/MPS通过。
+两端`*_independent_gallery_audit01.json`解析对象一致，图库NPZ SHA
+`d653f84d6509872911c0a725fa1eb4247d8d06e74b6f232b18a45954fd669251`。
+正式`a100_title_student_input_inclusive_20261024_01`首轮在117个查询后，
+守卫发现外部非MPS GPU进程而拒绝；原控制器1398473及worker1403037已退出。
+只读后查A100外部PID1404356、2384MiB，hmh的`CLIPSalNet/bin/python encode_data.py`，
+服务器启动时间23:20:02；本聊天没有终止对方。
+首轮部分CSV/NPZ/功率/进程原件拒绝保留，不将其中任何部分拼成合格200调用。
+20份拒绝原文件2382385字节已逐SHA备份，`backup_receipt_external_interruption01.json`。
+原清理函数因外部仍占卡报告`GPU not released`；追加独立只读收据确认自有三个PID
+均退出，私有control返回无daemon，不能误报为自有MPS未释放。收据SHA
+`7440367a90bf31e6c56fa7e980e74bb517557b9f10a5b7ab4aa4c585b8d6025e`。
+新有限控制器1411319在`a100_title_student_input_inclusive_20261024_02`引用同已完成图库，
+不重建图库或CPU合同，等待三次真实独占后才补齐尚无合格轮的标题三fresh进程。
+冻结运行源码`41d468474`；不重做其他任务合格轮。
+当前仍10/18项合格，未发布新正式Excel。
+
+下列23:17及以前为历史；现有运行状态以上面和实际子status/原始数据为准：
 
 当前独立图库为`a100_title_student_gallery_20261024_02`，控制器1398431、GPU子进程1398856；
 复用原通过的图片CPU合同DATA，没有再次执行该CPU前向。实际状态为
