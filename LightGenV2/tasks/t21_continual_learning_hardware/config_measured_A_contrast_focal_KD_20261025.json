@@ -1,0 +1,22 @@
+{
+  "schema": "T21_A_contrast_masked_KD_v1",
+  "loss": {
+    "CE_weight": 1.0,
+    "KD_weight": 4.0,
+    "focal_gamma": 1.0,
+    "wrong_teacher_KD_weight": 0.25
+  },
+  "diagnostic_basis": "TRAIN-only source teacher has205 errors; current student corrects28 of these and makes24 errors on teacher-correct examples,92.8% teacher/student agreement. Reduce incorrect TRAIN teacher trust while emphasizing genuine TRAIN mistakes; no TEST label, input or augmentation enters gradients.",
+  "fixed_before_candidate_TEST": true,
+  "TRAIN_records": 1000,
+  "TEST_gradients": false,
+  "teacher_TEST_inputs": false,
+  "trainable_parameters": 7840,
+  "new_inference_layers": 0,
+  "fit_epochs": 120,
+  "maximum_fit_seconds": 120,
+  "no_noise_LR_or_optical_change": true,
+  "one_fixed_profile_not_TEST_loss_search": true,
+  "TEST_selection_is_development": true,
+  "independent_generalization_claim": false
+}

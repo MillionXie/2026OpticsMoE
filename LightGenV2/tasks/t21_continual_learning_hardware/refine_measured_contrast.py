@@ -23,11 +23,33 @@ def augment(x,mean,noise):
     return out-out.mean(1,keepdim=True)+1
 
 
+def contrast_objective(logits,labels,teacher,profile=None):
+    if profile is None:return objective(logits,labels,teacher)
+    ce=F.cross_entropy(logits,labels,label_smoothing=.02,reduction='none')
+    probability=logits.softmax(1).gather(1,labels[:,None]).squeeze(1)
+    ce=ce*(1-probability).pow(profile['focal_gamma'])
+    kd=F.kl_div(F.log_softmax(logits/2,1),F.softmax(teacher.detach()/2,1),reduction='none').sum(1)*4
+    reliable=teacher.detach().argmax(1)==labels
+    confidence=torch.where(reliable,1.,profile['wrong_teacher_KD_weight'])
+    return profile['CE_weight']*ce.mean()+profile['KD_weight']*(kd*confidence).mean()
+
+
+def validate_profile(profile):
+    if profile.get('schema')!='T21_A_contrast_masked_KD_v1':raise ValueError('Wrong bounded TRAIN-only loss profile')
+    cfg=profile['loss']
+    if set(cfg)!={'CE_weight','KD_weight','focal_gamma','wrong_teacher_KD_weight'}:raise ValueError('Unknown loss parameter')
+    if not(0<=cfg['CE_weight']<=2 and 0<=cfg['KD_weight']<=4 and 0<=cfg['focal_gamma']<=2 and 0<=cfg['wrong_teacher_KD_weight']<=1):
+        raise ValueError('Loss parameters outside declared budget')
+    return cfg
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for name in ('capture','parent','teacher','teacher_protocol','noise','noise_protocol','out'):
         p.add_argument('--'+name.replace('_','-'),type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--profile',type=Path)
+    a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
+    profile=validate_profile(json.loads(a.profile.read_text())) if a.profile else None
     r=json.loads((a.capture/'report.json').read_text());m=json.loads(a.teacher_protocol.read_text());nm=json.loads(a.noise_protocol.read_text())
     hardware=json.loads((a.capture/'protocol.json').read_text())['hardware_sha256']
     if not r['passed'] or r['pilot'] or not r['SDK_released'] or sha(a.capture/'features.npz')!=r['features_sha256']:
@@ -60,7 +82,9 @@ def main():
     put(a.out/'protocol.json',dict(parent_SHA256=a.parent_sha256,features_SHA256=r['features_sha256'],teacher_metadata=m,measured_TRAIN_noise_metadata=nm,
         external_TRAIN_noise_statistics=(nm['capture_features_SHA256']!=r['features_sha256']),same_hardware_and_optical_PT_required=True,
         augmentation='Dropout0.05 on x-TRAINmean, plus measured TRAIN residual covariance; exact mean-one restoration, TRAIN only',
-        objective='0.2 smoothed CE +4 KL(T2)',optimizer='AdamW lr.001 wd.001 cosine to.00001,120epochs,64batch',
+        objective='0.2 smoothed CE +4 KL(T2)' if profile is None else 'Fixed TRAIN-label focal CE + TRAIN-correctness-masked KL(T2)',
+        loss_profile=profile,loss_profile_SHA256=sha(a.profile) if a.profile else None,teacher_wrong_TRAIN=int((target.argmax(1)!=y[tr]).sum()),
+        optimizer='AdamW lr.001 wd.001 cosine to.00001,120epochs,64batch',
         TEST_selection='best full1000 every5epochs plus E0, development only',TEST_gradients=False,teacher_TEST_inputs=False,
         original_graph=True,trainable_parameters=7840,new_inference_layers=0,SDK=False,GPU=False,CPU_threads=2,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),independent_generalization_claim=False))
@@ -69,7 +93,7 @@ def main():
         optimizer.param_groups[0]['lr']=.00001+.5*(.001-.00001)*(1+np.cos(np.pi*(epoch-1)/119));total=0
         for ix in torch.randperm(len(tr)).split(64):
             optimizer.zero_grad(set_to_none=True);batch=augment(x[tr][ix],mean,noise)
-            logits=(batch@transform.T)@weight.T;loss=objective(logits,y[tr][ix],target[ix])
+            logits=(batch@transform.T)@weight.T;loss=contrast_objective(logits,y[tr][ix],target[ix],profile)
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite TRAIN contrast objective')
             loss.backward();torch.nn.utils.clip_grad_norm_([weight],1.);optimizer.step();total+=float(loss.detach())*len(ix)
         if epoch%5==0:
