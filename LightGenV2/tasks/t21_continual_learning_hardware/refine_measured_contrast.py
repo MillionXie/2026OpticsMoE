@@ -110,16 +110,17 @@ def main():
             readout_refinement='TRAIN-only background-preserving contrast augmentation plus source S1 KD',TEST_gradients=False,
             teacher_seen_TEST_inputs=False,TEST_selected_development_metric=True)
         torch.save(saved,a.out/(role+'_checkpoint.pt'))
-    save('last',(weight.detach()@transform).float());save('best',best_weight);scores={}
+    save('last',(weight.detach()@transform).float());save('best',best_weight);scores={};train_counts={}
     for role in ('best','last'):
         loaded,_=load_checkpoint(a.out/(role+'_checkpoint.pt'),sha(a.out/(role+'_checkpoint.pt')))
         if upstream_state(loaded)!=before:raise RuntimeError('Saved upstream identity changed')
         value=evaluate(loaded.shared_head,x.float(),y,tasks,te);scores[role]=brief(value)
+        with torch.no_grad():train_counts[role]=int((loaded.shared_head(x[tr].float()).argmax(1)==y[tr]).sum())
         if role=='best' and value['eurosat']['correct']!=best:raise RuntimeError('Saved original CPU graph differs')
         put(a.out/(role+'_test.json'),dict(scores=value,source_indices=ids[te].tolist(),TEST_selected_development_metric=True))
-    with torch.no_grad():train_correct=int((model.shared_head(x[tr].float()).argmax(1)==y[tr]).sum())
     result=dict(passed=True,parent_correct=parent_correct,best_correct=best,best_epoch=best_epoch,best=scores['best'],last=scores['last'],
-        candidate_TRAIN_correct=train_correct,retained_parent=best_epoch==0,strict_CPU_reloaded=True,frozen_upstream=True,original_graph=True,
+        candidate_TRAIN_correct=train_counts['last'],best_TRAIN_correct=train_counts['best'],last_TRAIN_correct=train_counts['last'],
+        TRAIN_metric_roles_explicit=True,retained_parent=best_epoch==0,strict_CPU_reloaded=True,frozen_upstream=True,original_graph=True,
         trainable_parameters=7840,best_sha256=sha(a.out/'best_checkpoint.pt'),last_sha256=sha(a.out/'last_checkpoint.pt'),
         TEST_gradients=False,teacher_TEST_inputs=False,TEST_selected_development_metric=True,independent_generalization_claim=False,
         seconds=time.monotonic()-started,SDK=False,GPU=False)
