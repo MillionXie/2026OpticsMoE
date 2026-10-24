@@ -69,12 +69,19 @@ def convolution_mac(input_shape,weight_shape,output_shape,groups=1,transposed=Fa
     return y[0]*prod(y[2:])*w[0]*prod(w[1:])
 
 
-def attention_mac(query,key,value):
+def attention_mac(query,key,value,grouped_query=False):
     q,k,v=map(shape,(query,key,value))
     if min(len(q),len(k),len(v))<3 or q[-1]!=k[-1] or k[-2]!=v[-2]:
         raise ValueError('Rectangular attention dimensions differ')
-    # Q,K,V leading dimensions include batch and head; head replication/GQA
-    # must already be reflected in the actual executed tensors. Do not guess.
+    if grouped_query:
+        if min(len(q),len(k),len(v))<4 or k[-3]!=v[-3] or k[-3]<1 or q[-3]%k[-3]:
+            raise ValueError('Grouped-query head mapping differs')
+        batch=broadcast(broadcast(q[:-3],k[:-3]),v[:-3])
+        # One score matrix and AV per QUERY head. KV sharing changes stored
+        # projections, not this actual attention-query head denominator.
+        return prod(batch)*q[-3]*q[-2]*k[-2]*(q[-1]+v[-1])
+    # Q,K,V leading dimensions include batch and head. Non-GQA leading shapes
+    # must be genuinely broadcast-compatible; never infer a missing head map.
     lead=broadcast(broadcast(q[:-2],k[:-2]),v[:-2])
     return prod(lead)*q[-2]*k[-2]*(q[-1]+v[-1])
 
@@ -112,7 +119,11 @@ def classify(operator,args,kwargs,output):
     if root in ('scaled_dot_product_attention','_scaled_dot_product_flash_attention',
                 '_scaled_dot_product_flash_attention_for_cpu','_scaled_dot_product_efficient_attention',
                 '_scaled_dot_product_cudnn_attention'):
-        return dict(kind='dense_attention_QK_and_AV_MAC',mac=attention_mac(*(a.shape for a in args[:3])),
+        q,k,v=(a.shape for a in args[:3])
+        grouped=(min(len(q),len(k),len(v))>=4 and q[-3]!=k[-3] and k[-3]!=1)
+        return dict(kind='dense_attention_QK_and_AV_MAC',mac=attention_mac(q,k,v,grouped_query=grouped),
+            grouped_query=grouped,
+            head_mapping='actual successfully executed fused kernel Q/K/V shapes, query heads counted once',
             attention_mask='full rectangular algorithmic count; causal/padding zeros not subtracted',
             softmax='separate non-MAC, not another matrix product')
     if root.startswith('_fft'):
@@ -215,6 +226,13 @@ def torch_cpu_contract():
         actual=F.scaled_dot_product_attention(q,k,v,is_causal=True)
     if not torch.equal(expected,actual) or counter.report()['actual_executed_real_mac']-previous!=144:
         raise ValueError('Dispatch changes actual attention values/count or double-counts fusion')
+    q=torch.randn(1,4,3,4);k=torch.randn(1,2,3,4);v=torch.randn(1,2,3,4)
+    expected=F.scaled_dot_product_attention(q,k,v,enable_gqa=True)
+    previous=counter.report()['actual_executed_real_mac']
+    with counter,meter.scope('test.grouped_query_attention'):
+        actual=F.scaled_dot_product_attention(q,k,v,enable_gqa=True)
+    if not torch.equal(expected,actual) or counter.report()['actual_executed_real_mac']-previous!=288:
+        raise ValueError('Dispatch changes actual GQA values/query-head denominator')
     image=torch.randn(1,2,5,5);kernel=torch.randn(3,2,3,3)
     expected=F.conv2d(image,kernel,padding=1)
     previous=counter.report()['actual_executed_real_mac']
@@ -222,7 +240,7 @@ def torch_cpu_contract():
         actual=F.conv2d(image,kernel,padding=1)
     if not torch.equal(expected,actual) or counter.report()['actual_executed_real_mac']-previous!=1350:
         raise ValueError('Dispatch changes actual Conv values/count')
-    return dict(status='passed',device='CPU only',actual_tensor_bitwise_contracts=['Linear','causal SDPA','Conv2d'],
+    return dict(status='passed',device='CPU only',actual_tensor_bitwise_contracts=['Linear','causal SDPA','GQA SDPA','Conv2d'],
         torch=torch.__version__,operators=sorted({r['operator'] for r in counter.report()['records']}),
         no_model_loaded=True,no_formal_replay_performed=True,
         **{k:v for k,v in counter.report().items() if k not in ('records','status')})

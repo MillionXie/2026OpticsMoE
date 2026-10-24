@@ -37,6 +37,12 @@ def test_attention_counts_both_qk_and_av_once_no_causal_discount():
     with pytest.raises(ValueError):attention_mac((1,8,7,16),(1,2,11,16),(1,2,11,16))
 
 
+def test_actual_gqa_uses_query_head_count_not_kv_head_count():
+    assert attention_mac((1,8,7,16),(1,2,11,16),(1,2,11,16),grouped_query=True)==19712
+    assert attention_mac((1,16,71,128),(1,8,71,128),(1,8,71,128),grouped_query=True)==20647936
+    with pytest.raises(ValueError):attention_mac((1,7,7,16),(1,2,11,16),(1,2,11,16),grouped_query=True)
+
+
 def test_parallel_residual_and_nested_stages_not_recharged():
     meter=OperationStageMeter();meter.sample_index=3
     with meter.scope('parallel_residual',family='parallel_residual',charged=False):

@@ -36,3 +36,5 @@
 !torch_metadata.py
 !test_torch_metadata.py
 !audit_lgvq_front_metadata.py
+!bind_lgvq_front.py
+!test_lgvq_front_binding.py
