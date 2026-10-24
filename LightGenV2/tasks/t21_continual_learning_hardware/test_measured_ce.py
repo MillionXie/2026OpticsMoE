@@ -1,7 +1,12 @@
 """CPU checks for numerical reparameterization, not new inference capacity."""
 import unittest
+import json
+import tempfile
+from pathlib import Path
+from types import SimpleNamespace
+import numpy as np
 import torch
-from .refine_measured_ce import contrast_transform, fit_convex, internal_indices
+from .refine_measured_ce import contrast_transform, fit_convex, internal_indices, continuation_config, _convex_candidate
 
 
 class MeasuredCETest(unittest.TestCase):
@@ -36,6 +41,25 @@ class MeasuredCETest(unittest.TestCase):
         self.assertTrue(torch.isfinite(weight).all())
         self.assertLess(loss,2.3)
         self.assertEqual(int(((z @ weight.T).argmax(1)==y).sum()),50)
+
+    def test_helper_protocol_uses_explicit_capture_identity(self):
+        y=torch.arange(10).repeat_interleave(100)
+        x=torch.rand(1000,12,dtype=torch.float64)+.1;x/=x.mean(1,keepdim=True)
+        with tempfile.TemporaryDirectory() as folder:
+            args=SimpleNamespace(out=Path(folder),parent_sha256='parent')
+            weight,strength,loss=_convex_candidate(x,y,np.arange(1000),np.arange(1000),args,{'features_sha256':'features'})
+            protocol=json.loads((Path(folder)/'protocol.json').read_text())
+            self.assertEqual(protocol['features_sha256'],'features')
+            self.assertFalse(protocol['TEST_gradients'])
+            self.assertEqual(tuple(weight.shape),(10,12))
+            self.assertIn(strength,[.001,.01,.1,1.])
+
+    def test_continuation_is_bounded_and_lower_learning_rate(self):
+        config=continuation_config()
+        self.assertEqual(config['epochs'],120)
+        self.assertLess(config['learning_rate'],.001)
+        self.assertLess(config['TRAIN_feature_dropout'],.05)
+        self.assertEqual(config['LBFGS_steps'],30)
 
 
 if __name__ == '__main__':

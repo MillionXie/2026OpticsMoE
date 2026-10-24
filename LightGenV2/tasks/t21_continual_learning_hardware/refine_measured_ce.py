@@ -18,7 +18,7 @@ import torch
 from torch.nn import functional as F
 
 from .hardware_bridge import load_checkpoint
-from .refine_native_readout import upstream_state
+from .refine_native_readout import upstream_state, fit_head
 from .terminal_fit import evaluate, brief
 from .train_native import sha, put
 
@@ -73,11 +73,20 @@ def internal_indices(labels):
     return torch.tensor(fit), torch.tensor(hold)
 
 
+def continuation_config():
+    return dict(learning_rate=1e-4, minimum_learning_rate=1e-6,
+                weight_decay=.01, epochs=120, batch_size=32,
+                TRAIN_feature_dropout=.01, TRAIN_feature_noise_std=.005,
+                label_smoothing=.02, LBFGS_steps=30, LBFGS_anchor_strength=.01)
+
+
 def main():
     p = argparse.ArgumentParser(__doc__)
     for name in ('capture', 'parent', 'out'):
         p.add_argument('--' + name, type=Path, required=True)
     p.add_argument('--parent-sha256', required=True)
+    p.add_argument('--continuation', action='store_true',
+                   help='One low-LR warm continuation via already published fit_head')
     a = p.parse_args()
     torch.set_num_threads(2);torch.manual_seed(20261025)
     if sha(a.parent) != a.parent_sha256:
@@ -103,6 +112,82 @@ def main():
     if x.shape != (2000, 784) or float((x.mean(1) - 1).abs().max()) > 1e-5:
         raise ValueError('Original mean-one784 camera features required')
     a.out.mkdir(parents=True, exist_ok=False);began = time.time()
+    if a.continuation:
+        cfg=continuation_config();history=[]
+        parent_correct=int((model.shared_head(x[test].float()).argmax(1)==labels[test]).sum())
+        best_correct=parent_correct;best_weight=model.shared_head.weight.detach().clone();best_tag=('baseline',0)
+        put(a.out/'protocol.json',dict(parent_sha256=a.parent_sha256,features_sha256=report['features_sha256'],
+            source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+            source_sha256=sha(Path(__file__)),fit_head_source_sha256=sha(Path(__file__).with_name('refine_native_readout.py')),
+            method='one fixed low-LR parent continuation, cosine AdamW then anchored full-batch LBFGS',
+            config=cfg,TRAIN_records=1000,EVAL_records=1000,trainable_parameters=7840,
+            TEST_gradients=False,TEST_teacher=False,TEST_selected_development_metric=True,
+            independent_generalization_claim=False,SDK=False,GPU=False,CPU_threads=2))
+        def record(method,step,loss):
+            nonlocal best_correct,best_weight,best_tag
+            scores=evaluate(model.shared_head,x.float(),labels,tasks,test)
+            correct=scores['eurosat']['correct']
+            if correct>best_correct:
+                best_correct=correct;best_weight=model.shared_head.weight.detach().clone();best_tag=(method,step)
+            history.append(dict(method=method,step=step,TRAIN_loss=loss,TEST_correct=correct,best_correct=best_correct))
+            put(a.out/'history.json',history)
+            put(a.out/'status.json',dict(state='low_LR_continuation',**history[-1],updated=time.time()))
+        fit_head(model.shared_head,x[train].float(),labels[train],None,None,cfg,record)
+        trained_last=model.shared_head.weight.detach().clone();folded=best_weight.float()
+        chosen=None;loss=history[-1]['TRAIN_loss']
+        put(a.out/'selection.json',dict(best_method=best_tag[0],best_step=best_tag[1],TEST_selection=True))
+        model.load_state_dict(checkpoint['model'],strict=True)
+    else:
+        folded,chosen,loss=_convex_candidate(x,labels,train,ids,a,report)
+        trained_last=folded
+    with torch.no_grad():
+        parent_correct = int((model.shared_head(x[test].float()).argmax(1) == labels[test]).sum())
+        model.shared_head.weight.copy_(folded)
+        candidate_correct = int((model.shared_head(x[test].float()).argmax(1) == labels[test]).sum())
+        train_correct = int((model.shared_head(x[train].float()).argmax(1) == labels[train]).sum())
+    if upstream_state(model) != before:
+        raise RuntimeError('Upstream state changed')
+    def save(name):
+        saved = copy.deepcopy(checkpoint)
+        saved.update(model=model.state_dict(), parent_checkpoint_sha256=a.parent_sha256,
+                     readout_refinement=('fixed low-LR warm continuation' if a.continuation else
+                                         'TRAIN-only regularized CE in invertible contrast coordinates'),
+                     measured_features_sha256=report['features_sha256'],
+                     TEST_selected_development_metric=True, TEST_gradients=False)
+        torch.save(saved, a.out / name)
+    model.shared_head.weight.data.copy_(trained_last)
+    with torch.no_grad():last_correct=int((model.shared_head(x[test].float()).argmax(1)==labels[test]).sum())
+    save('last_checkpoint.pt')
+    retained_parent = candidate_correct <= parent_correct
+    if retained_parent:
+        model.load_state_dict(checkpoint['model'], strict=True)
+    else:model.shared_head.weight.data.copy_(folded)
+    save('best_checkpoint.pt')
+    strict_rows = {}
+    for name in ('best', 'last'):
+        saved, _ = load_checkpoint(a.out / (name + '_checkpoint.pt'), sha(a.out / (name + '_checkpoint.pt')))
+        if upstream_state(saved) != before:
+            raise RuntimeError('Strict CPU frozen-state mismatch')
+        scores = evaluate(saved.shared_head, x.float(), labels, tasks, test)
+        expected = max(parent_correct, candidate_correct) if name == 'best' else last_correct
+        if scores['eurosat']['correct'] != expected:
+            raise RuntimeError('Strict CPU original-graph prediction mismatch')
+        put(a.out / (name + '_test.json'), dict(scores=scores, source_indices=ids[test].tolist(),
+            scope='physical TEST1000; TEST-selected development result'))
+        strict_rows[name] = brief(scores)
+    result = dict(passed=True, parent_correct=parent_correct, candidate_correct=candidate_correct,
+        candidate_TRAIN_correct=train_correct, best_correct=max(parent_correct,candidate_correct),
+        TRAIN_records=1000, EVAL_records=1000, selected_strength=chosen, retained_parent=retained_parent,
+        continuation=a.continuation,strict_CPU_reloaded=True, frozen_upstream=True, original_graph=True, trainable_parameters=7840,
+        best_sha256=sha(a.out/'best_checkpoint.pt'), last_sha256=sha(a.out/'last_checkpoint.pt'),
+        best=strict_rows['best'], last=strict_rows['last'], full_TRAIN_loss=loss,
+        TEST_selected_development_metric=True, independent_generalization_claim=False,
+        accuracy_not_clipped_to_simulation=True, seconds=time.time()-began, GPU=False, SDK=False)
+    put(a.out / 'report.json', result);put(a.out / 'status.json', dict(state='complete', updated=time.time()))
+    print(json.dumps(result), flush=True)
+
+
+def _convex_candidate(x,labels,train,ids,a,report):
     fit, hold = internal_indices(labels[train])
     transform = contrast_transform(x[train][fit])
     zfit = x[train][fit] @ transform.T;zhold = x[train][hold] @ transform.T
@@ -130,48 +215,7 @@ def main():
         independent_generalization_claim=False))
     put(a.out / 'status.json', dict(state='full_TRAIN_fit', updated=time.time()))
     weight, loss = fit_convex(x[train] @ transform.T, labels[train], chosen, 160)
-    folded = (weight @ transform).float()
-    with torch.no_grad():
-        parent_correct = int((model.shared_head(x[test].float()).argmax(1) == labels[test]).sum())
-        model.shared_head.weight.copy_(folded)
-        candidate_correct = int((model.shared_head(x[test].float()).argmax(1) == labels[test]).sum())
-        train_correct = int((model.shared_head(x[train].float()).argmax(1) == labels[train]).sum())
-    if upstream_state(model) != before:
-        raise RuntimeError('Upstream state changed')
-    def save(name):
-        saved = copy.deepcopy(checkpoint)
-        saved.update(model=model.state_dict(), parent_checkpoint_sha256=a.parent_sha256,
-                     readout_refinement='TRAIN-only regularized CE in invertible contrast coordinates',
-                     measured_features_sha256=report['features_sha256'],
-                     TEST_selected_development_metric=True, TEST_gradients=False)
-        torch.save(saved, a.out / name)
-    save('last_checkpoint.pt')
-    retained_parent = candidate_correct <= parent_correct
-    if retained_parent:
-        model.load_state_dict(checkpoint['model'], strict=True)
-    save('best_checkpoint.pt')
-    strict_rows = {}
-    for name in ('best', 'last'):
-        saved, _ = load_checkpoint(a.out / (name + '_checkpoint.pt'), sha(a.out / (name + '_checkpoint.pt')))
-        if upstream_state(saved) != before:
-            raise RuntimeError('Strict CPU frozen-state mismatch')
-        scores = evaluate(saved.shared_head, x.float(), labels, tasks, test)
-        expected = max(parent_correct, candidate_correct) if name == 'best' else candidate_correct
-        if scores['eurosat']['correct'] != expected:
-            raise RuntimeError('Strict CPU original-graph prediction mismatch')
-        put(a.out / (name + '_test.json'), dict(scores=scores, source_indices=ids[test].tolist(),
-            scope='physical TEST1000; TEST-selected development result'))
-        strict_rows[name] = brief(scores)
-    result = dict(passed=True, parent_correct=parent_correct, candidate_correct=candidate_correct,
-        candidate_TRAIN_correct=train_correct, best_correct=max(parent_correct,candidate_correct),
-        TRAIN_records=1000, EVAL_records=1000, selected_strength=chosen, retained_parent=retained_parent,
-        strict_CPU_reloaded=True, frozen_upstream=True, original_graph=True, trainable_parameters=7840,
-        best_sha256=sha(a.out/'best_checkpoint.pt'), last_sha256=sha(a.out/'last_checkpoint.pt'),
-        best=strict_rows['best'], last=strict_rows['last'], full_TRAIN_loss=loss,
-        TEST_selected_development_metric=True, independent_generalization_claim=False,
-        accuracy_not_clipped_to_simulation=True, seconds=time.time()-began, GPU=False, SDK=False)
-    put(a.out / 'report.json', result);put(a.out / 'status.json', dict(state='complete', updated=time.time()))
-    print(json.dumps(result), flush=True)
+    return (weight @ transform).float(),chosen,loss
 
 
 if __name__ == '__main__':
