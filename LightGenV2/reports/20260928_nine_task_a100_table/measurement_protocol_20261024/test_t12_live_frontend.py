@@ -5,7 +5,7 @@ import sys
 import pytest
 HERE=Path(__file__).resolve().parent;sys.path.insert(0,str(HERE))
 from t12_live_frontend import BODY_SHA,BASELINE_SHA,WEIGHT_SHA,PINS,TEST_SHA
-from run_t12_live_contract import predecessor_ready
+from run_t12_live_contract import predecessor_ready,predecessor_file_ready
 
 
 def test_exact_adopted_bodies_and_native_data():
@@ -22,7 +22,19 @@ def test_waits_for_all_qualified_previous_rounds_and_MPS_release():
     with pytest.raises(RuntimeError):predecessor_ready({'status':'stopped'})
     source=(HERE/'run_t12_live_contract.py').read_text()
     assert "'--previous',type=Path,default=PREVIOUS" in source
-    assert "(previous/'suite_status.json')" in source
+    assert "predecessor_file_ready(previous/'suite_status.json')" in source
+
+
+def test_predecessor_not_yet_created_or_partial_status_is_bounded_pending(tmp_path):
+    import json
+    path=tmp_path/'suite_status.json'
+    assert predecessor_file_ready(path) is False
+    path.write_text('{')
+    assert predecessor_file_ready(path) is False
+    path.write_text(json.dumps(dict(status='running')))
+    assert predecessor_file_ready(path) is False
+    path.write_text(json.dumps(dict(status='complete',mps_released=True,completed=['offline_title_bank','ours_repeat01','ours_repeat02','ours_repeat03'])))
+    assert predecessor_file_ready(path) is True
 
 
 def test_live_input_not_cache_or_target_and_original_quantization():

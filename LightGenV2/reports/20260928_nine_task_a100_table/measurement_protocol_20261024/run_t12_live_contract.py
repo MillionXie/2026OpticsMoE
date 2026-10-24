@@ -21,6 +21,15 @@ def predecessor_ready(state):
         'offline_title_bank','ours_repeat01','ours_repeat02','ours_repeat03']
 
 
+def predecessor_file_ready(path):
+    # The explicit predecessor controller can be launched moments earlier and
+    # may not yet have created its first status. It is pending, not failed.
+    # A partially observed status write is likewise re-read on the bounded loop.
+    try:value=json.loads(Path(path).read_text())
+    except (FileNotFoundError,json.JSONDecodeError):return False
+    return predecessor_ready(value)
+
+
 def main():
     import fcntl
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);p.add_argument('--deadline',type=float,required=True)
@@ -38,7 +47,7 @@ def main():
         if any(sha(REPO/k)!=v for k,v in frozen.items()):raise ValueError('Active T12 contract sources changed')
     save()
     try:
-        while not predecessor_ready(json.loads((previous/'suite_status.json').read_text())):stable();time.sleep(15)
+        while not predecessor_file_ready(previous/'suite_status.json'):stable();time.sleep(15)
         from LightGenV2.tasks.t06_video_quality_assessment import rental_busy_resource_20261020 as engine
         from LightGenV2.tasks.t06_video_quality_assessment.measure_mps_dataset_once import validate_idle_memory
         engine.GPU=GPU
