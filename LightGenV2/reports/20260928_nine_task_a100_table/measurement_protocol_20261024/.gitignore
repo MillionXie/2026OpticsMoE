@@ -75,3 +75,7 @@
 !openmoji_qwen_live.py
 !run_openmoji_qwen_contract.py
 !test_openmoji_qwen_live.py
+!measure_openmoji_qwen.py
+!audit_openmoji_qwen.py
+!run_openmoji_qwen.py
+!test_openmoji_qwen_measurement.py
