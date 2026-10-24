@@ -202,7 +202,7 @@ def collect(rows,prepare,transfer,forward,first_start,synchronize,check,clock=ti
 def source_map():
     from . import measure_mps_dataset_once as legacy
     extra=[Path(__file__),CONFIG,REPO/'LightGenV2/common/baseline_measurement.py',
-        *[TASK/name for name in ('quality_token_common.py','quality_token_batch_benchmark_200.py',
+        *[TASK/name for name in ('e2e_telemetry_observer.py','quality_token_common.py','quality_token_batch_benchmark_200.py',
             'visual_backbone_quality.py','evaluate_temporal_baseline_batches.py','nvml_observer_process.py','batch_telemetry.py')]]
     return {**legacy.sources(),**{str(path.relative_to(REPO)):sha(path) for path in extra}}
 
@@ -273,7 +273,10 @@ def worker(args):
                 cpu_threads=torch.get_num_threads(),tf32_matmul=torch.backends.cuda.matmul.allow_tf32,
                 cudnn_allow_tf32=torch.backends.cudnn.allow_tf32)
             legacy.frozen.write_json(output/'identity.json',identity)
-            sampler=legacy.ProcessTelemetrySampler(args.gpu_uuid,output/'telemetry_stdout.jsonl')
+            from .e2e_telemetry_observer import observer_command
+            raw_path=output/'telemetry_stdout.jsonl'
+            sampler=legacy.ProcessTelemetrySampler(args.gpu_uuid,raw_path,
+                command=observer_command(args.gpu_uuid,raw_path))
             sampler.start();sampler.set_phase('e2e_no_warmup');time.sleep(.15)  # CPU observer startup, no inference.
             def check():guard.fast();sampler.check()
             # All input, embedding, compute and actual inter-request work is charged.
