@@ -41,9 +41,12 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     np,torch,m,loop=base.numerical_modules()
     from torch.nn import functional as F
     assert not out.exists() and not m.LOCK.exists();out.mkdir();model.cpu().eval().requires_grad_(False)
-    local='TRAIN_local_boundary' in c;lbfgs='TRAIN_affine_optimizer' in c
-    cfg=c['TRAIN_local_boundary'] if local else c['TRAIN_affine_optimizer'] if lbfgs else c['TRAIN_feature_aug'];cooldown=cfg.get('cooldown',False)
-    if local:
+    local='TRAIN_local_boundary' in c;lbfgs='TRAIN_affine_optimizer' in c;hard='TRAIN_hard_readout' in c
+    cfg=c['TRAIN_hard_readout'] if hard else c['TRAIN_local_boundary'] if local else c['TRAIN_affine_optimizer'] if lbfgs else c['TRAIN_feature_aug'];cooldown=cfg.get('cooldown',False)
+    if hard:
+        import lab_caltech20_TRAIN_hardreadout_20261024 as targeted
+        assert m.sha(targeted.__file__)==c['TRAIN_hard_engine_SHA256'];targeted.validate(cfg)
+    elif local:
         import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
         assert m.sha(boundary.__file__)==c['TRAIN_local_engine_SHA256'];boundary.validate(cfg)
     elif lbfgs:assert cfg==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
@@ -92,12 +95,12 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),config=c,recipe=recipe,parent_PT=str(parent),parent_PT_SHA256=m.sha(parent),
         data_SHA256=dm['sha256'],prefix_SHA256=lineage,allowed_keys=sorted(keys),TRAIN=1600,TEST=411,VALID=0,TEST_gradient=False,TEST_development=True,
         original_model_structure=True,new_inference_layers=0,full_physical=len(fields)==5,SDK_used=False,GPU_used=False,trainable_parameters=5140,
-        method='TRAIN_local_binary_rest_full_curvature' if local else 'fullbatch_TRAIN_LBFGS_L2_original_linear' if lbfgs else 'cached_TRAIN_mixup_dropout_original_linear',TRAIN_feature_source_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),
+        method='TRAIN_hard_readout_'+cfg['method'] if hard else 'TRAIN_local_binary_rest_full_curvature' if local else 'fullbatch_TRAIN_LBFGS_L2_original_linear' if lbfgs else 'cached_TRAIN_mixup_dropout_original_linear',TRAIN_feature_source_SHA256=m.sha(cache),native_cache_probability_max_error=max(error,train_error),
         augmentation_is_synthetic_not_new_physical_data=True)
     if local:protocol.update(TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',per_update_parameters=257,all_other_rows_fixed_per_update=True,epoch_semantics='local row update, NOT dataset epoch',new_augmentation=False)
     m.save(out/'protocol.json',protocol);m.save(out/'baseline.json',baseline);np.savez_compressed(out/'baseline_TEST_predictions.npz',ids=data['test'][2],labels=data['test'][1],probabilities=prob)
     head=torch.nn.Linear(256,20);head.load_state_dict(model.linear.state_dict())
-    if local:opt=None
+    if local or hard:opt=None
     elif lbfgs:
         head.double();parent_report=m.read(parent.parent/'report.json');assert parent_report['strict_original_CPU'] and parent_report['results']['best']['PT_SHA256']==m.sha(parent)
         train_nll=parent_report['results']['best']['train']['nll'];norm=float(head.weight.detach().square().sum())
@@ -110,14 +113,21 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     prior=np.asarray(c['original_TRAIN_counts'],float);weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=head.weight.dtype)
     rng=np.random.default_rng(c['seed']);torch.manual_seed(c['seed']);best=baseline['correct'];bnll=baseline['nll'];selected=0;history=[];updates=0
     best_head={k:v.detach().clone() for k,v in head.state_dict().items()};started=__import__('time').monotonic();closure_calls=0;epoch=0
-    if local:
+    if hard:
+        def emit(row):m.save(out/'progress.json',dict(state='TRAIN_hard_readout',latest=row));print(json.dumps(row),flush=True)
+        repaired=targeted.fit(train.numpy(),labels.numpy(),test.numpy(),test_labels.numpy(),head.weight.detach().numpy(),head.bias.detach().numpy(),c['original_TRAIN_counts'],cfg,target,emit)
+        head.load_state_dict(dict(weight=torch.from_numpy(repaired['last_weight']),bias=torch.from_numpy(repaired['last_bias'])))
+        best_head=dict(weight=torch.from_numpy(repaired['best_weight']),bias=torch.from_numpy(repaired['best_bias']))
+        best,bnll,selected,updates,history=(repaired[k] for k in ('best','nll','selected','updates','history'))
+        m.save(out/'history.json',history);m.save(out/'hard_readout_plan.json',repaired['plan'])
+    elif local:
         def emit(row):m.save(out/'progress.json',dict(state='TRAIN_local_boundary',latest=row));print(json.dumps(row),flush=True)
         repaired=boundary.fit(train.numpy(),labels.numpy(),test.numpy(),test_labels.numpy(),head.weight.detach().numpy(),head.bias.detach().numpy(),cfg,target,recipe['seconds'],emit)
         head.load_state_dict(dict(weight=torch.from_numpy(repaired['last_weight']),bias=torch.from_numpy(repaired['last_bias'])))
         best_head=dict(weight=torch.from_numpy(repaired['best_weight']),bias=torch.from_numpy(repaired['best_bias']))
         best,bnll,selected,updates,history=(repaired[k] for k in ('best','nll','selected','updates','history'))
         m.save(out/'history.json',history);m.save(out/'local_boundary_plan.json',repaired['plans'])
-    for epoch in range(1,1 if local else recipe['epochs']+1):
+    for epoch in range(1,1 if local or hard else recipe['epochs']+1):
         head.train();order=rng.permutation(1600);total=used=0
         strength=0. if lbfgs else .5*(1+__import__('math').cos(__import__('math').pi*(epoch-1)/max(1,recipe['epochs']-1))) if cooldown else 1.
         if lbfgs:
@@ -152,10 +162,11 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
             m.save(out/'progress.json',dict(state='strict_native_CPU',checkpoint=label,role=role));metric,p=base.evaluate(native,data,fields,role);results[label][role]=metric
             np.savez_compressed(out/(label+'_'+role+'_predictions.npz'),ids=data[role][2],labels=data[role][1],probabilities=p)
     assert results['best']['test']['correct']==best and base.identities(m,paths)==lineage
-    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_epoch=None if lbfgs or local else selected,selected_E0=selected==0,actual_epochs=0 if lbfgs or local else epoch,optimizer_updates=updates,results=results,
+    report=dict(state='complete',baseline_correct=baseline['correct'],selected_correct=best,selected_epoch=None if lbfgs or local or hard else selected,selected_E0=selected==0,actual_epochs=0 if lbfgs or local or hard else epoch,optimizer_updates=updates,results=results,
         strict_original_CPU=True,target=target,target_met=best>=target,all_non_readout_frozen=True,captured_upstream_bitwise_frozen=True,TEST_gradient=False,TEST_development=True,full_physical=len(fields)==5,
         native_cache_probability_max_error=max(error,train_error),new_inference_layers=0,SDK_used=False,GPU_used=False,protocol_SHA256=m.sha(out/'protocol.json'))
     if lbfgs:report.update(outer_steps=epoch,selected_outer_step=selected,full_TRAIN_gradient_evaluations=closure_calls,TRAIN_only_L2=regularization)
+    if hard:report.update(outer_steps=updates,selected_outer_step=selected,full_TRAIN_gradient_evaluations=repaired['gradient_evaluations'],TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',hard_plan_SHA256=m.sha(out/'hard_readout_plan.json'))
     if local:report.update(selected_local_update=selected,local_updates=updates,local_classes=repaired['classes'],fit_elapsed_s=repaired['elapsed_s'],TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',per_update_parameters=257,local_plan_SHA256=m.sha(out/'local_boundary_plan.json'))
     m.save(out/'report.json',report);m.save(out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(out/'report.json'),prefix_SHA256=lineage,all_non_suffix_parameters_bitwise_frozen=True,all_non_readout_frozen=True))
     chosen,_=m.model_for(out/'best.pt',m.sha(out/'best.pt'),4,reference);return chosen,out/'best.pt',report
