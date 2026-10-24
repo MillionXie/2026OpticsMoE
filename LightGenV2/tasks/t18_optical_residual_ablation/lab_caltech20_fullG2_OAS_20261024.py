@@ -43,7 +43,7 @@ def run(a):
         assert a.out.name==('fullG2_affine_20261024'if a.affine_after_prior else'fullG2_teacher_local_20261024'if a.teacher_local else'fullG2_native_local_20261024'if a.local_repair else'fullG2_joint_TRAIN_OAS_20261024')
     else:
         assert (datetime.fromisoformat('2026-10-24T08:00:00+08:00')-datetime.now(timezone.utc)).total_seconds()>=330
-    assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='15bb59010a0490d57699907b2797f1831eac72c9b94f8ab00d5499cd834efa01'
+    assert m.sha(base.HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py')=='8cc49f9dfea0c43803b5082578b18cde6921f71ea023712e76410394658637e4'
     assert not m.LOCK.exists() and not a.out.exists()
     root=base.ROOT/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/readout_G2PASS'
     assert m.read(root.with_suffix('.return.json'))['returncode']==0
@@ -116,6 +116,7 @@ def run(a):
         recipe=dict(name='one_bounded_full_physical_TRAIN_neighbor_repair',epochs=1,seconds=180,lr_scale=1)
         if a.affine_after_prior:
             config={**c,'TRAIN_readout':'cached_TRAIN_affine_LBFGS','TRAIN_affine_optimizer':dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80),'native_feature_source':fit.relative_to(base.ROOT).as_posix(),'fresh_native_TRAIN_features':False}
+            if a.continued_joint_head=='affine':config['TRAIN_affine_optimizer']['class_centered_penalty']=True
             recipe=dict(name='one_fullbatch_TRAIN_LBFGS_existing5140',epochs=80,seconds=60,lr_scale=1)
         _,_,result=fit_cached_head(model,data,dm,fields,paths,pt,reference,config,recipe,a.out,340)
         assert result['full_physical'] and result['strict_original_CPU'] and result['selected_correct']>=r['selected_correct']

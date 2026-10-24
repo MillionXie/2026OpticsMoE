@@ -21,10 +21,11 @@ def canonical_affine_logits(features,weight,bias):
     return torch.cat(values)
 
 
-def TRAIN_affine_objective(weight,bias,features,labels,weights,smoothing,regularization):
+def TRAIN_affine_objective(weight,bias,features,labels,weights,smoothing,regularization,class_centered=False):
     from torch.nn import functional as F
     ce=F.cross_entropy(F.linear(features,weight,bias),labels,weight=weights,label_smoothing=smoothing)
-    penalty=.5*regularization*weight.square().sum()
+    penalized=weight-weight.mean(0,keepdim=True) if class_centered else weight
+    penalty=.5*regularization*penalized.square().sum()
     return ce+penalty,ce,penalty
 
 
@@ -49,7 +50,9 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     elif local:
         import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
         assert m.sha(boundary.__file__)==c['TRAIN_local_engine_SHA256'];boundary.validate(cfg)
-    elif lbfgs:assert cfg==dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
+    elif lbfgs:
+        origin=dict(l2_parent_TRAIN_NLL_fraction=.1,label_smoothing=.03,outer_steps=80)
+        assert cfg in(origin,{**origin,'class_centered_penalty':True})
     else:assert cfg==(dict(dropout=.1,beta=.4,lr=.0002,weight_decay=.01,label_smoothing=.03,cooldown=True) if cooldown else dict(dropout=.1,beta=.4,lr=.001,weight_decay=.05,label_smoothing=.03))
     original=m.state_cpu(model);keys={'linear.weight','linear.bias'};lineage=base.identities(m,paths)
     source=base.ROOT/c['native_feature_source'];sp=m.read(source/'protocol.json');sr=m.read(source/'report.json');sa=m.read(source/'independent_audit.json')
@@ -103,11 +106,13 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
     if local or hard:opt=None
     elif lbfgs:
         head.double();parent_report=m.read(parent.parent/'report.json');assert parent_report['strict_original_CPU'] and parent_report['results']['best']['PT_SHA256']==m.sha(parent)
-        train_nll=parent_report['results']['best']['train']['nll'];norm=float(head.weight.detach().square().sum())
+        train_nll=parent_report['results']['best']['train']['nll'];penalty_weight=head.weight.detach()
+        if cfg.get('class_centered_penalty',False):penalty_weight=penalty_weight-penalty_weight.mean(0,keepdim=True)
+        norm=float(penalty_weight.square().sum())
         assert train_nll>0 and norm>0
         regularization=2*cfg['l2_parent_TRAIN_NLL_fraction']*train_nll/norm
         train64=train.double();opt=torch.optim.LBFGS(head.parameters(),lr=1,max_iter=5,history_size=20,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-10)
-        protocol.update(TRAIN_only_L2=regularization,L2_initial_penalty_fraction=cfg['l2_parent_TRAIN_NLL_fraction'],optimizer='LBFGS',optimization_dtype='float64',native_selection_dtype='float32',epoch_semantics='outer optimizer step, NOT dataset epoch',new_augmentation=False)
+        protocol.update(TRAIN_only_L2=regularization,L2_initial_penalty_fraction=cfg['l2_parent_TRAIN_NLL_fraction'],class_centered_penalty=cfg.get('class_centered_penalty',False),penalty_weight_squared_norm=norm,optimizer='LBFGS',optimization_dtype='float64',native_selection_dtype='float32',epoch_semantics='outer optimizer step, NOT dataset epoch',new_augmentation=False)
         m.save(out/'protocol.json',protocol)
     else:opt=torch.optim.AdamW(head.parameters(),lr=cfg['lr'],weight_decay=cfg['weight_decay'])
     prior=np.asarray(c['original_TRAIN_counts'],float);weights=torch.tensor(.5+.5*np.sqrt(prior/prior.mean()),dtype=head.weight.dtype)
@@ -133,11 +138,11 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
         if lbfgs:
             def closure():
                 nonlocal closure_calls
-                opt.zero_grad(set_to_none=True);loss,_,_=TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights,cfg['label_smoothing'],regularization)
+                opt.zero_grad(set_to_none=True);loss,_,_=TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights,cfg['label_smoothing'],regularization,cfg.get('class_centered_penalty',False))
                 assert torch.isfinite(loss);loss.backward();assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in head.parameters());closure_calls+=1
                 return loss
             opt.step(closure);updates+=1;used=1600
-            with torch.no_grad():loss,_,_=TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights,cfg['label_smoothing'],regularization);total=float(loss)*used
+            with torch.no_grad():loss,_,_=TRAIN_affine_objective(head.weight,head.bias,train64,labels,weights,cfg['label_smoothing'],regularization,cfg.get('class_centered_penalty',False));total=float(loss)*used
         else:
             for group in opt.param_groups:group['lr']=cfg['lr']*(.1+.9*strength) if cooldown else cfg['lr']
             for begin in range(0,1600,64):
@@ -268,6 +273,14 @@ def selftest_affine():
     print(json.dumps(dict(passed=True,TRAIN_affine_gradcheck=True,fullbatch_objective_decreased=True,TEST_used=False,SDK_used=False,GPU_used=False)))
     x=torch.randn(411,256);head=torch.nn.Linear(256,20);actual=canonical_affine_logits(x,head.weight,head.bias);last=torch.cat([x[408:],torch.zeros(5,256)]);assert torch.equal(actual[408:],head(last)[:3])
     print(json.dumps(dict(passed=True,canonical_affine_batch8=True,padded_final3=True)))
+    # Softmax is invariant to a common class-row shift. The corrected penalty
+    # must share that invariance instead of using the irrelevant common norm.
+    x=x[:6,:3].double();y=torch.arange(6)%2;w=torch.randn(2,3,dtype=torch.float64,requires_grad=True);b=torch.zeros(2,dtype=torch.float64,requires_grad=True);weights=torch.ones(2,dtype=torch.float64)
+    f=lambda a,c:TRAIN_affine_objective(a,c,x,y,weights,.03,.01,True)[0]
+    assert torch.autograd.gradcheck(f,(w,b),eps=1e-6,atol=1e-4)
+    shift=torch.randn(1,3,dtype=torch.float64)*100
+    assert torch.allclose(f(w,b),f(w+shift,b),atol=1e-10,rtol=0)
+    print(json.dumps(dict(passed=True,class_centered_penalty_gradient=True,common_class_row_shift_invariant=True,TEST_used=False)))
 
 
 if __name__=='__main__':selftest();selftest_aug();selftest_affine()

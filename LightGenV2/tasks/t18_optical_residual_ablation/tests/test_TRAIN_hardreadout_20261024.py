@@ -41,3 +41,13 @@ def test_repair_waits_for_complete_joint_native_best():
     assert "full['state']=='complete'" in src and "full['strict_original_CPU']" in src
     assert "fit=source/'fit' if a.continued_joint_head=='local' else source" in src
     assert "maximum_classes=20,steps_per_class=64" in src and "outer_steps=80" in src
+
+
+def test_centered_regularization_only_training_objective():
+    src=(HERE/'lab_caltech20_tucam_TRAIN_linear_20261023.py').read_text()
+    tree=ast.parse(src);fun=next(v for v in tree.body if isinstance(v,ast.FunctionDef)and v.name=='TRAIN_affine_objective')
+    body=ast.get_source_segment(src,fun)
+    assert 'weight-weight.mean(0,keepdim=True)' in body and 'class_centered=False' in body
+    assert not any(isinstance(v,ast.Name)and v.id in ('test','test_labels','development') for v in ast.walk(fun))
+    assert "if cfg.get('class_centered_penalty',False):penalty_weight=penalty_weight-penalty_weight.mean(0,keepdim=True)" in src
+    assert 'common_class_row_shift_invariant=True' in src
