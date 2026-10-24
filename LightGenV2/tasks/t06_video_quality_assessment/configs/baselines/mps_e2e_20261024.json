@@ -1,0 +1,32 @@
+{
+  "protocol_id": "file_to_cpu_result_e2e_200x3_b1_20261024_v1",
+  "authorization": "2026-10-24 user approved start in thread 01a061e2-6f88-7913-87f5-b632000e4c83",
+  "batch": 1,
+  "videos_per_repeat": 200,
+  "frames_per_video": 4,
+  "repeats": [1, 2, 3],
+  "resource_caps": [100, 50],
+  "explicit_warmup_forwards": 0,
+  "host_proxy_w": 338.2,
+  "power_maximum_support_age_s": 0.25,
+  "manifest_sha256": "607c50d20662a47795c23cd2038081b30368ed108ba9be8a1bb8a9d250f8e7fc",
+  "first200_ids_sha256": "b66dcba71d923c3d7a38aeacc168146df8523b181716304e0e6e731ac2a131b4",
+  "primary_units": ["equivalent_ms_per_input_frame", "estimated_joules_per_input_frame"],
+  "additional_units": ["ms_per_video", "estimated_joules_per_video", "200_video_continuous_wall_seconds"],
+  "included": ["file_open_read", "decode_sampling_crop_resize", "processor_tokenizer", "H2D", "all_embeddings_and_neural_layers", "quality_head_and_CPU_return", "all_199_internal_gaps"],
+  "excluded": ["weight_loading_and_identity_hashing", "final_report_writing_and_shutdown"],
+  "no_historical_qwen_cost_override": true,
+  "no_training_precision_graph_or_model_change": true,
+  "profiles": {
+    "lab": {"models": ["qwen", "glm", "clip", "yolo"], "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55", "power_limit_w": 250},
+    "rental": {"models": ["deepseek", "kimi"], "gpu_uuid": null, "power_limit_w": 400, "requires_new_explicit_rental_authorization": true}
+  },
+  "references": {
+    "qwen": {"report": "lgvq_mps_dataset_once_a100_20261020/qwen_cap100_repeat01/report.json", "report_sha256": "d73c648a40290655051ea7487a797eb9677990ecaa2f25cb199e7f1062f37a31", "head_sha256": "e102adc6a7b33335c8f49ae1cbeea3302a1a10017d282da8d6091a640276d0d2"},
+    "glm": {"report": "lgvq_mps_dataset_once_a100_20261020/glm_cap100_repeat01/report.json", "report_sha256": "d14ab7ec1c5fdf58eabe0c10e9e2c3ee2744f75099d6bdce2ce1d4c30303a9af", "head_sha256": "666f797622e0addd3a2ac064b46c5e786c0572365bea49eed161b59c574abedc"},
+    "clip": {"report": "lgvq_mps_dataset_once_a100_20261020/clip_cap100_repeat01/report.json", "report_sha256": "8a2b2bced93109d38a88c78e02c3c7a257eaa2e17bdeb1a789eaa366da045a24", "head_sha256": "28729f41b09c59866ed54e0d520c48edca276ac0237d0b6bd885c8a0db4619d4"},
+    "yolo": {"report": "lgvq_mps_dataset_once_a100_20261020/yolo_cap100_repeat01/report.json", "report_sha256": "d0dfcbd3493b4efac193ff08b6a7408ddcdfa11ebde381ca94dfc28ca63a5c95", "head_sha256": "47606708c66b313174d3a04edef6ebac1b06d3310d2f1049d7a989dbc386b848"},
+    "deepseek": {"report": "lgvq_mps_dataset_once_rental_20261021_replacement02/deepseek_cap100_repeat01/report.json", "report_sha256": "0af0bb7b76273231db428da59b6056ff117b3337bd06d4ab242e6412d018354c", "head_sha256": "93e6f0de60192b0edf4e13de4af29697eb1f3ad6144567807ac0c2d3e2e395a0"},
+    "kimi": {"report": "lgvq_mps_dataset_once_rental_20261021_replacement02/kimi_cap100_repeat01/report.json", "report_sha256": "ceaa585b6aa37eb33fa18bc0c5d0f61788c8507d2ed4f74d517bdfd5b3e3598b", "head_sha256": "e6bf55b3b7ff318d37c973b67c4a6ce1062e4760ac91c2bdc748628988022586"}
+  }
+}

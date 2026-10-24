@@ -1,5 +1,39 @@
 # T06 视频质量评价
 
+## 2026-10-24 已批准六baseline文件输入至CPU评分E2E，先共享Qwen100
+
+已read_thread核实“测量模型推理时间”用户“开始测吧”及四项批注。当前仅本T06入口、
+配置、CPU合同测试与运行记录由本对话负责；九任务其他Qwen和全部LightGen由对方负责。
+两者按独占顺序使用A100，不并发。LightGen保留16视频物理并行、电子段墙钟为主及
+Event核对、排除布局、光电作用时段分开估算，均由对方分栏实现，本入口不冒充光硬件测量。
+
+新入口`measure_mps_e2e_20261024`和配置`configs/baselines/mps_e2e_20261024.json`：
+电子B1、同200个不同TEST、四帧/视频、100/50MPS、各三fresh进程、零dummy推理预热。
+从首次视频文件prepare前到第200条CPU评分返回后的连续墙钟，含decode/processor/
+tokenizer/H2D/embedding/全部网络/CPU返回及199段间隔，不扣日志/guard真实开销。
+代价先报等效单帧，同时保留单视频/200视频总wall；无历史Qwen100覆盖、无T16主数。
+NVML全连续窗积分加338.2W主机代理一次，为估算系统能耗，非整机实测电表。
+每条p/d/a/s/e/r和legacyCUDAevent只作诊断，分段并集核对总wall，不能替代E2E。
+输入文件仅在T0前stat，不读视频字节预热；SHA在T1后核并验证前后元数据不变。
+原骨干资产/原质量头/精度、原抽帧位置及200ID SHA均锁定；不训练、不Graph、不扫batch。
+
+本轮严格200预测及subset200 SRCC/PLCC；原全558精度引用绑定SHA的历史报告，
+不冒称新的全量结果。DS/Kimi只有完整模型、单80GBA100待用户租赁；CPU预检不需GPU，
+不连接或续租旧实例。四实验室模型仍单A10040GB/250W，租机80GB/400W区别明示。
+
+canonical为`runs/simulation/lgvq_mps_e2e_a100_20261024`；24点串行计划先
+qwen_cap100_repeat01/02/03（三点供两表唯一共享），再Qwen50、GLM/CLIP/YOLO两档。
+独立NVML观察进程；三次间隔10秒空闲守卫、共享文件锁、外部CUDA进程出现则退出，
+不占位/杀人/自动重测。已有完整或失败output禁止覆盖。CPU audit阶段独立重算全窗
+能量、时钟、subset指标、Git源码身份和进程审计，通过后父队列才接下一点。
+
+发布前CPU合同命令：
+`python -m pytest LightGenV2/tasks/t06_video_quality_assessment/tests/test_mps_e2e_20261024.py -q`。
+`--phase validate --manifest ...`仅核200ID、模型参考SHA，不初始化GPU。
+`--phase suite --manifest ... --deadline <finite Unix>`正式运行，默认仅lab四模型。
+不得把旧图标签改为E2E；新完整记录独立备份审计后才更新表图。初始化/加载与首200
+成本时间分开留存，实际测量进度和完成状态以本canonical的suite_status/worker文件为准。
+
 ## 2026-10-24 两对话E2E口径协调，待用户确认，不启动测量
 
 已直接读取“测量模型推理时间”人工授权，双方先统一九指标行与六baseline成本口径。
