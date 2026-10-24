@@ -19,6 +19,15 @@ LSP按原GT和保存坐标计算逐样本PCK/PCKh/误差；SALICON仅已有逐�
 OpenMoji保留各项逐场景指标；编辑保留2304 TEST逐图PSNR/SSIM。
 导出目录`runs/outputs/t19_final_plot_data_20261024/`；旧老师比较表及全部ABO预算不覆盖。
 
+现已完成：9份PT与配套JSON共59文件、439,821,554字节另存并逐SHA校验，
+归档manifest SHA `d62068d32a5cbf7c29d3ee8445f5aee254193633d042e82939b5c424436b7fae`。
+生成9个Excel、18个工作表，合计13,720行逐样本／查询数据；已用Artifact Tool全矩阵读回、
+逐页渲染检查，并以独立OOXML读取逐单元格核验保存后数值和ID一致。
+数据payload SHA `e0ea0405747544db097c52488d94978a59bd342e6a6a092b206eee0ecb9b4476`。
+`build_final_plot_workbooks.mjs`是唯一工作簿生成器；`verify_final_plot_workbooks.py`仅只读验证。
+最终选择与导出代码使用Git标签`t19-rn18-final-selected9-20261024`固定；
+各run对应的8个原训练commit保留，不能把最后一个导出commit当成九项共同训练源码。
+
 ## 2026-10-24 最新完成：指定原生60轮续训至80，修改格72.55%，GPU6禁用
 
 用户指定的新原生损失60轮权重已固定追加20轮至累计80，正式结果如下；
