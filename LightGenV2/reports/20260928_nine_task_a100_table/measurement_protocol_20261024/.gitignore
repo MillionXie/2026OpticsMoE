@@ -89,3 +89,5 @@
 !t12_live_frontend.py
 !run_t12_live_contract.py
 !test_t12_live_frontend.py
+!native_shape_mac.py
+!test_native_shape_mac.py
