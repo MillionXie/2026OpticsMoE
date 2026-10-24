@@ -42,3 +42,21 @@ def test_reject_overlap_and_fake_tokens():
 def test_reference_source_is_immutable_git_blob():
     assert hashlib.sha256(original_source().encode('utf8')).hexdigest()==ORIGINAL_SHA
     assert 'stable=True' in original_source()
+
+
+def test_title_audit_checks_original_csvs_without_fake_gallery_images(tmp_path,monkeypatch):
+    import csv
+    import audit_abo_text_qwen as audit
+    titles=[dict(product_id=str(i),title='title'+str(i),label=str(i)) for i in range(100)]
+    train=[dict(sample_id='train'+str(i)) for i in range(4800)]
+    test=[dict(sample_id=f'test{i}_{j}',product_id=str(i),label=str(i),image_path='not_an_online_title_input.jpg')
+        for i in range(100) for j in range(24)]
+    pins={}
+    for name,rows in [('titles.csv',titles),('train.csv',train),('test.csv',test),('manifest.csv',test)]:
+        with (tmp_path/name).open('w',newline='',encoding='utf8') as f:
+            writer=csv.DictWriter(f,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
+        pins[name]=hashlib.sha256((tmp_path/name).read_bytes()).hexdigest()
+    monkeypatch.setattr(audit,'CSV_SHA',pins)
+    assert audit.original_csv_contract(tmp_path)==(titles,train,test)
+    (tmp_path/'titles.csv').write_text('changed',encoding='utf8')
+    with pytest.raises(ValueError):audit.original_csv_contract(tmp_path)

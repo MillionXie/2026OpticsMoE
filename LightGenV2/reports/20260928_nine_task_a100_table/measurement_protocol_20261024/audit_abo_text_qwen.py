@@ -10,6 +10,7 @@ import sys
 
 HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3];sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
 from measure_abo_text_qwen import GPU,PROTOCOL,MODEL_CONFIG_SHA,MODEL_WEIGHTS_SHA,TEXT_BASELINE_BANK_SHA,sha
+from abo_query_contract import DATA_SHA as CSV_SHA,validate_rows
 
 
 def read(path):return json.loads(Path(path).read_text(encoding='utf8'))
@@ -17,6 +18,23 @@ def read(path):return json.loads(Path(path).read_text(encoding='utf8'))
 
 def close(a,b):
     if not math.isclose(float(a),float(b),rel_tol=1e-9,abs_tol=1e-6):raise ValueError('T08 independent replay mismatch')
+
+
+def original_csv_contract(data):
+    """Hash original titles/IDs/labels; offline gallery images are not queries.
+
+    Post-measurement CPU audit does not decode or require copies of2400 images
+    that were never online inputs to this title-only query experiment. The
+    actual gallery data are bound by their original FP32-bank SHA, not rebuilt.
+    """
+    data=Path(data)
+    for name,digest in CSV_SHA.items():
+        if sha(data/name)!=digest:raise ValueError('Original CSV SHA changed: '+name)
+    def rows(name):
+        with (data/name).open(encoding='utf8',newline='') as f:return list(csv.DictReader(f))
+    titles,train,test=rows('titles.csv'),rows('train.csv'),rows('test.csv')
+    validate_rows(titles,train,test)
+    return titles,train,test
 
 
 def validate_calls(calls,titles):
@@ -44,10 +62,9 @@ def validate_calls(calls,titles):
 
 def audit(folder,data):
     import numpy as np
-    from abo_query_contract import load_contract
     from LightGenV2.tasks.t06_video_quality_assessment.reports.strict_tf_resource_audit_20261020 import observed_energy
     folder=Path(folder);report=read(folder/'report.json');state=read(folder/'status.json')
-    titles,_,test=load_contract(data)
+    titles,_,test=original_csv_contract(data)
     def rows(path):
         with path.open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
     calls=rows(folder/'calls.csv');raw=rows(folder/'telemetry.csv')
@@ -104,4 +121,5 @@ def audit(folder,data):
         continuous_wall_s=elapsed,internal199_gaps_s=gaps,board_energy_j=board,
         system_energy_j=energy,mean_board_power_w=board/elapsed,common_input_tokens200=tokens,
         measured_unique100_hit1=quality,measured_unique100_mrr=sum(1/r for r in first[:100])/100,
+        original_csv_sha256=CSV_SHA,online_inputs_are_UTF8_titles_not_gallery_images=True,
         full100_historical_reference_hit1=.82)

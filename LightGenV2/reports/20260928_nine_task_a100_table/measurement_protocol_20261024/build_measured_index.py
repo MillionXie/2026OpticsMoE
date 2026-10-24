@@ -8,17 +8,20 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 import sys
 HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3];sys.path.insert(0,str(REPO))
 from audit_t07 import audit,audit_qwen,read,sha
 from audit_salicon import audit as audit_salicon
 from audit_lsp import audit as audit_lsp
 from audit_lgvq_spatial_qwen import audit as audit_spatial_qwen
+from audit_abo_text_qwen import audit as audit_abo_text_qwen
 
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--lsp-data-root',type=Path,default=REPO/'data/lsp_pose/lsp_dataset')
+    parser.add_argument('--abo-data-root',type=Path,default=REPO/'data/abo_easy100_dataset_20260906')
     args=parser.parse_args()
     if args.output.exists():raise FileExistsError('Preserve previous index and source receipts')
     from LightGenV2.tasks.t06_video_quality_assessment import measure_mps_e2e_20261024 as t06
@@ -83,15 +86,29 @@ def main():
     rows['05']['common_tokens']=dict(total=common,ours_per_s=common/our_s,qwen_per_s=common/qwen_s,
                                     rate_ratio=qwen_s/our_s,time_ratio=qwen_s/our_s,
                                     basis='196 common native visual input patches/image; original person crop and pose decoder')
+    text_root=REPO/'LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/a100_title_input_inclusive_20261024_02'
+    text=[audit_abo_text_qwen(text_root/f'qwen_repeat{i:02d}',args.abo_data_root) for i in (1,2,3)]
+    text_seconds=sum(v['continuous_wall_s'] for v in text);text_energy=sum(v['system_energy_j'] for v in text)
+    text_tokens=sum(v['common_input_tokens200'] for v in text)
+    rows['04']['qwen']=dict(status='independently_audited_600_calls',calls=600,unique_titles=100,
+        sample_ms=1000*text_seconds/600,equivalent_frame_ms=1000*text_seconds/600,
+        sample_j=text_energy/600,equivalent_frame_j=text_energy/600,
+        native_unit='one title query, displayed as query/image-equivalent; no physical input frame',
+        time_weighted_board_w=sum(v['board_energy_j'] for v in text)/text_seconds,
+        common_input_tokens_total=text_tokens,common_tokens_per_s=text_tokens/text_seconds,
+        full100_reference_hit1=.82,measured_unique100_hit1=[v['measured_unique100_hit1'] for v in text],
+        raw_references=text,scope='UTF8 title to CPU2400 full ranking, two complete traversals per trial, all199 gaps')
     value=dict(protocol_id=protocol['protocol_id'],status='PARTIAL_NOT_FINAL_PAPER_TABLE',
         shared_qwen_temporal100=anchor,nine_metric_rows=list(rows.values()),
         reference_for_both_tables='shared_qwen_temporal100 in this exact index; never select another date or trial',
         current_input_protocol_sha256=sha(HERE/'protocol.json'),
+        index_builder_source_sha256=sha(Path(__file__)),
+        index_builder_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
         no_predefined_speedup_claim=True,derived_optical_vs_measured_electronic_boundaries_separate=True,
         raw_data_in_original_task_runs=True,power_no_idle_subtraction=True)
     with args.output.open('x',encoding='utf8') as stream:json.dump(value,stream,ensure_ascii=False,indent=2)
     print(json.dumps(dict(status=value['status'],shared_qwen100={k:anchor[k] for k in ('calls','sample_ms','sample_j','time_weighted_board_w')},
-                          complete_timing_energy_rows=['03','05','06'],pending_rows=['01a ours','01b ours','02','04','07','08'],all_operation_counts='pending')))
+                          complete_timing_energy_rows=['03','05','06'],pending_rows=['01a ours','01b ours','02','04 ours','07','08'],all_operation_counts='pending')))
 
 
 if __name__=='__main__':main()

@@ -38,3 +38,5 @@
 !audit_lgvq_front_metadata.py
 !bind_lgvq_front.py
 !test_lgvq_front_binding.py
+!replay_abo_text_qwen_ops.py
+!test_abo_text_qwen_ops.py
