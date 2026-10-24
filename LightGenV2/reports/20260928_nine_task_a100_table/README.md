@@ -2,6 +2,20 @@
 
 ## 新旧版入口与完成清单（2026-10-24 22:57，北京时间）
 
+文搜图LightGen图库`a100_title_student_gallery_20261024_01`已完成两张真实图片的
+原/分段CPU逐位合同，但GPU模型加载后，在来源登记时把Torch声明的虚拟相对
+`_classes.py`误当作仓库实体文件而停止；原2400图库编码函数尚未调用。
+父/子进程退出、私有MPS释放，原12份数据150185字节及外置完整日志已SHA备份。
+来源登记修复只将虚拟相对模块单列说明，缺失的绝对仓库实体源码仍失败；不放宽真实源码SHA。
+新不可变run可精确复用已通过的原图CPU合同DATA，不重复该CPU前向或原标题合同。
+新`.8600`正式标题入口`measure_abo_title_student.py`、有限三fresh入口及独立CPU审计
+已准备，23项无模型/无GPU单测通过。在线仍从UTF8开始，保存tokenizer/H2D、
+原选择NN同步wall和CUDA Event、CPU输出/FP32余弦完整稳定排名及199真实间隔；
+三光pass及固定分阶段能耗不变，FFT/纯layout/并行残差均保留原结果但不计所选投影。
+仅查询进程不做图库或dummy前向。共同token由已合格Qwen同轮同标题原IDs/mask逐条绑定，
+两者实际文本输入IDs/mask另行核对；不拿内部token数改变Tokens/s倍率。
+这里只是新入口准备，图库及LightGen200×3完成前不升级10/18或发布正式Excel。
+
 图搜文Qwen缺失第三轮已在新`a100_image_input_inclusive_20261024_03/qwen_repeat03`
 完成并释放MPS；原前两轮固定复用`_02/qwen_repeat01/02`，拒绝的`_02/r3`不入表。
 新20份原文件9535787字节已逐SHA备份，三轮均从原JPEG字节、FP32向量/得分/完整排名、

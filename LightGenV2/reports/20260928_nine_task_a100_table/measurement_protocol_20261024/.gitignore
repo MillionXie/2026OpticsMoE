@@ -52,3 +52,7 @@
 !test_abo_student_queue.py
 !prepare_abo_student_gallery.py
 !test_abo_student_gallery.py
+!measure_abo_title_student.py
+!audit_abo_title_student.py
+!run_abo_title_student.py
+!test_abo_title_student.py

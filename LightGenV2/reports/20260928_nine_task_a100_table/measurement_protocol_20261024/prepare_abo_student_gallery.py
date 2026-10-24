@@ -27,9 +27,29 @@ def imported_sources():
     for module in list(sys.modules.values()):
         file=getattr(module,'__file__',None)
         if file:
+            # torch.classes declares a virtual relative _classes.py. Never
+            # resolve that synthetic name against the repository working dir.
+            # Missing ABSOLUTE repository sources still fail rather than hide.
+            if not Path(file).is_absolute():continue
             p=Path(file).resolve()
             if p.suffix=='.py' and p.is_relative_to(REPO):paths.add(p)
     return {p.relative_to(REPO).as_posix():sha(p) for p in paths}
+
+
+def generated_module_files():
+    return sorted({str(getattr(m,'__file__')) for m in list(sys.modules.values())
+        if getattr(m,'__file__',None) and not Path(getattr(m,'__file__')).is_absolute()})
+
+
+def validate_reused_image_contract(path,title_contract):
+    value=json.loads(Path(path).read_text())
+    if (value.get('status')!='passed' or value.get('no_gpu') is not True
+            or value.get('title_contract_sha256')!=sha(title_contract)
+            or value.get('identity',{}).get('body_sha256')!='cc977b83286a8e90398ebd30064428886bc3c06f1eb0557e470060f7ff5c1cae'
+            or [c.get('test_index') for c in value.get('checks',[])]!=[200,2399]
+            or not all(c.get('bitwise_equal') is True for c in value['checks'])):
+        raise ValueError('Only the already passed exact original gallery-image CPU contract may be reused')
+    return value
 
 
 def main():
@@ -37,6 +57,7 @@ def main():
     for name in ('output','data','contract'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--deadline',type=float,required=True)
     p.add_argument('--cpu-contract',action='store_true')
+    p.add_argument('--image-contract',type=Path,help='Explicit already-qualified CPU image-contract DATA; never repeat it')
     args=p.parse_args();output=args.output.resolve()
     if output.exists() or not output.is_relative_to(TASK/'runs/simulation') or not 0<args.deadline-time.time()<=7200:
         raise ValueError('Fresh finite task run required')
@@ -65,22 +86,29 @@ def main():
             # Gallery vision was not exercised by the pure-title contract.
             # Verify actual held-out images first in a separate CPU process.
             cpu=output/'original_gallery_image_cpu_contract'
-            command=[sys.executable,'-u',str(Path(__file__).resolve()),'--output',str(cpu),
-                '--data',str(args.data),'--contract',str(args.contract),'--deadline',str(args.deadline),'--cpu-contract']
-            write(output/'cpu_contract.command.json',command)
-            with (output/'cpu_contract.log').open('x') as log:
-                own=subprocess.Popen(command,cwd=REPO,env=dict(os.environ,CUDA_VISIBLE_DEVICES=''),
-                    stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-                state.update(status='real_gallery_image_cpu_contract',cpu_worker_pid=own.pid)
-                write(output/'controller_status.json',state)
-                try:
-                    while own.poll() is None:
-                        if time.time()>args.deadline-120:raise TimeoutError('No remaining gallery budget')
-                        if engine.base.guard_records(GPU):raise RuntimeError('Foreign GPU acquired during CPU gallery contract')
-                        time.sleep(2)
-                    if own.returncode:raise RuntimeError('Actual gallery image CPU contract failed')
-                finally:
-                    if own.poll() is None:own.terminate();own.wait(timeout=15)
+            if args.image_contract:
+                validate_reused_image_contract(args.image_contract,args.contract)
+                cpu.mkdir()
+                with (cpu/'contract.json').open('xb') as target:target.write(args.image_contract.read_bytes())
+                write(output/'reused_image_contract_receipt.json',dict(original=str(args.image_contract),
+                    original_sha256=sha(args.image_contract),copy_sha256=sha(cpu/'contract.json'),CPU_or_GPU_reinference_calls=0))
+            else:
+                command=[sys.executable,'-u',str(Path(__file__).resolve()),'--output',str(cpu),
+                    '--data',str(args.data),'--contract',str(args.contract),'--deadline',str(args.deadline),'--cpu-contract']
+                write(output/'cpu_contract.command.json',command)
+                with (output/'cpu_contract.log').open('x') as log:
+                    own=subprocess.Popen(command,cwd=REPO,env=dict(os.environ,CUDA_VISIBLE_DEVICES=''),
+                        stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+                    state.update(status='real_gallery_image_cpu_contract',cpu_worker_pid=own.pid)
+                    write(output/'controller_status.json',state)
+                    try:
+                        while own.poll() is None:
+                            if time.time()>args.deadline-120:raise TimeoutError('No remaining gallery budget')
+                            if engine.base.guard_records(GPU):raise RuntimeError('Foreign GPU acquired during CPU gallery contract')
+                            time.sleep(2)
+                        if own.returncode:raise RuntimeError('Actual gallery image CPU contract failed')
+                    finally:
+                        if own.poll() is None:own.terminate();own.wait(timeout=15)
             if json.loads((cpu/'contract.json').read_text())['status']!='passed':raise ValueError('Missing original image contract')
             for _ in range(3):
                 if engine.base.guard_records(GPU):raise RuntimeError('Foreign A100 during gallery admission')
@@ -186,7 +214,7 @@ def worker(args,contract,engine):
         loaded,replacement,readout,settings,data,prompts,info=load(runtime,'cuda:0')
         if info['model_assets']!=contract['identity']['model_assets']:raise ValueError('Original CPU-bound native assets changed')
         if settings.inference_batch_size!=1 or len(data.test)!=2400:raise ValueError('Original full gallery/B1 required')
-        sources=imported_sources();guard.bind()
+        sources=imported_sources();virtual=generated_module_files();guard.bind()
         write(output/'status.json',dict(status='encoding_original_gallery2400',pid=os.getpid(),images=0,no_formal_timing=True))
         with torch.inference_mode():
             vectors=original.encode_student_samples(loaded,replacement,readout,data.test,settings)
@@ -196,7 +224,7 @@ def worker(args,contract,engine):
         np.savez_compressed(output/'gallery.npz',vectors=vectors.float().numpy(),
             sample_ids=np.asarray([s.sample_id for s in data.test]),
             product_ids=np.asarray([s.sku_name for s in data.test]),labels=np.asarray([s.sku_index for s in data.test]))
-        write(output/'receipt.json',dict(status='complete',identity=info,sources=sources,images=2400,batch=1,
+        write(output/'receipt.json',dict(status='complete',identity=info,sources=sources,generated_module_files_not_Git_sources=virtual,images=2400,batch=1,
             original_function='reverse_runtime.encode_student_samples, original image instruction/settings unchanged',
             gallery_sha256=sha(output/'gallery.npz'),original_output_dtype=str(vectors.dtype),saved_dtype='float32',
             contract_sha256=sha(args.contract),gallery_image_cpu_contract_sha256=sha(output/'original_gallery_image_cpu_contract/contract.json'),
