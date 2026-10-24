@@ -24,6 +24,28 @@ def test_predecessor_must_be_complete_and_released():
     assert predecessor_action({'status':'complete','completed':['ours_repeat01','ours_repeat02','ours_repeat03'],'mps_released':True})=='admit'
 
 
+def test_explicit_supplement_preserves_round1_and_requires_only_rounds2_3():
+    retained=dict(status='stopped',completed=['ours_repeat01'],repeats=[1,2,3],gallery='fixed_gallery')
+    final=dict(status='complete',completed=['ours_repeat02','ours_repeat03'],repeats=[2,3],
+        gallery='fixed_gallery',mps_released=True)
+    assert predecessor_action(final,retained)=='admit'
+    with pytest.raises(ValueError):predecessor_action(final)
+    for changes in ({'completed':[]},{'repeats':[1,2,3]},{'mps_released':False},{'gallery':'other_gallery'}):
+        with pytest.raises(ValueError):predecessor_action(dict(final,**changes),retained)
+    for changes in ({'status':'complete'},{'completed':['ours_repeat01','ours_repeat02']},{'repeats':[1]}):
+        with pytest.raises(ValueError):predecessor_action(final,dict(retained,**changes))
+    assert predecessor_action(dict(final,status='waiting_foreign_process'),retained)=='wait'
+    with pytest.raises(RuntimeError):predecessor_action(dict(final,status='stopped'),retained)
+
+
+def test_supplement_admission_replays_raw_and_binds_original_release():
+    text=(HERE/'run_openmoji_e45_preflight.py').read_text(encoding='utf8')
+    assert "post_external_interruption_release_check01.json" in text
+    assert "release.get('own_mps_released')" in text
+    assert "audit(run/f'ours_repeat{repeat:02d}'" in text
+    assert 'retained_artifacts_sha256' in text
+
+
 def test_online_forward_not_cached_feature_and_no_target_model_input():
     text=(HERE/'prepare_openmoji_e45.py').read_text(encoding='utf8')
     assert "tokenizer.encode(record['instruction'],add_special_tokens=False)" in text

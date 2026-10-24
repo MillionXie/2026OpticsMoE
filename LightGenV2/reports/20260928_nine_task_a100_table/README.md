@@ -1,6 +1,32 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-25 00:02，北京时间）
+## 新旧版入口与完成清单（2026-10-25 00:18，北京时间）
+
+T08标题`a100_title_student_input_inclusive_20261024_02`已完成第一轮200调用，
+服务器及本地独立CPU从原始输出、完整排名、NN分段、进程/MPS及连续窗功率复算均通过。
+此轮100唯一标题Hit@1为`.85`，历史`.86`单独保留，不把两者冒称逐位性能复现；
+共同输入9576token、所选混合投影11.9546907907ms/查询、分阶段估算1.3009343167J/查询。
+这只是1/3轮，尚不升级整项合格数，也不是装置实测E2E或新完整算量。
+第二轮在加载期、0计时调用时被外部`hmh/verify_tasks.py` PID1453028打断，
+该进程00:06:45启动，当前约12210MiB；只停止自有worker1451986。
+原controller1411319及其私有MPS均已退出，T04旧等待控制器1443601随前驱停止而退出，
+不再等待或重启这两个旧controller。独立释放收据SHA
+`e9279078b74296b597ae46dfa9c6a086ebce6810852c2ca2bec1a71d75c30ba6`
+确认无自有进程/私有daemon；原`GPU not released`报错是对方仍占卡，不是自有MPS残留。
+T08完整29份原文件4000762字节逐SHA备份到原run的
+`backup_receipt_partial_foreign_interruption01.json`，第一轮
+`ours_repeat01/local_independent_audit01.json`保留；两控制器外置日志也均原SHA取回。
+
+按人工“失败后直接补缺失轮”指示，新有限controller1460638位于
+T08 `runs/simulation/a100_title_student_input_inclusive_20261025_03`，只`--repeats 2 3`，
+精确复用已合格`_02/ours_repeat01`、原图库和CPU合同，不重跑第一轮/图库/合同。
+原计时runtime及全部被冻结依赖SHA核对不变；外部未退出时仍只等待真实独占。
+OpenMoji串行入口增加显式固定保留首轮的参数；只有新前驱恰好完成2/3轮、MPS已释放，
+旧首轮独立释放证据不变，且三轮原raw再次独立CPU复算通过，才允许执行新布局真实CPU合同。
+不能把新前驱两轮直接当作三轮，也不能绕过停止的旧队列。
+九指标行仍10/18整项时间能量合格；partial06及旧索引不覆盖，新正式两Excel尚未生成。
+
+以下00:02及以前为历史，实际状态以上面和队列原始状态为准：
 
 A100外部占用已变化：原`hmh/encode_data.py`退场后，`hmh/fit_quality.py`新进程1440470
 （父1423904、23:54:58启动、12214MiB）进入；不把中间只有一次idle检查当作已独占。
