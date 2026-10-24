@@ -8,3 +8,10 @@ def test_original_five_capture_head_fusion_only_finite_continue():
     assert "audit['matched_samples']==2011" in s and "sp['prefix_SHA256'][stage+'/'+role]" in s
     assert "epochs=12,seconds=120" in s and '>=240' in s and '>=225' in s
     assert "base.fit_suffix(" in s and 'new_inference_layers=0' in s and 'TEST_gradient=False' in s and '.backward(' not in s
+
+
+def test_renewed_budget_has_separate_run_and_preserves_archived_deadline():
+    s=(Path(__file__).resolve().parents[1]/'lab_caltech20_fullG2_postOAS_20261024.py').read_text()
+    assert "a.out.name=='fullG2_joint_renewed_20261024'" in s
+    assert "epochs=80,seconds=600" in s and "if not a.renewed_offline:" in s
+    assert "2026-10-24T08:00:00+08:00" in s and "gradient_data='TRAIN only'" in s
