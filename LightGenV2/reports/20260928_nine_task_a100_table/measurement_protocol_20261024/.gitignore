@@ -27,3 +27,7 @@
 !test_lsp_audit.py
 !abo_query_contract.py
 !test_abo_query_contract.py
+!measure_abo_text_qwen.py
+!run_abo_text_qwen.py
+!audit_abo_text_qwen.py
+!test_abo_text_qwen.py
