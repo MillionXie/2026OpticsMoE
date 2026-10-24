@@ -1,4 +1,5 @@
 """TRAIN-diagnosed objectives; original models, data and metrics stay intact."""
+import math
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -19,15 +20,17 @@ def pose_distribution_loss(logits, target, visible):
     return values[valid].mean()
 
 
-def balanced_edit_loss(output, batch):
+def balanced_edit_loss(output, batch, *, preserve_weight=.25):
     """Equal scene weight, explicit changed-cell category and mask objectives."""
+    if not math.isfinite(preserve_weight) or preserve_weight <= 0:
+        raise ValueError('Preservation weight must be finite and positive')
     category = F.cross_entropy(output['category_logits'].float(), batch['target_grid'].long(), reduction='none')
     changed = batch['edit_grid'].float()
     preserve = 1. - changed
     def per_scene(values, mask):
         return ((values * mask).flatten(1).sum(1) / mask.flatten(1).sum(1).clamp_min(1)).mean()
     edit = F.binary_cross_entropy_with_logits(output['edit_logits'].float(), changed, reduction='none')
-    return (per_scene(category, changed) + .25 * per_scene(category, preserve)
+    return (per_scene(category, changed) + preserve_weight * per_scene(category, preserve)
             + .5 * per_scene(edit, changed) + .5 * per_scene(edit, preserve)
             + .1 * F.cross_entropy(output['task_logits'].float(), batch['task_index'].long()))
 

@@ -1,7 +1,7 @@
 import copy
 import pytest
 import torch
-from LightGenV2.tasks.t19_resnet20_baselines.openmoji_validation_repair import grouped_indices,regularize_features,select_candidate,validate_gate
+from LightGenV2.tasks.t19_resnet20_baselines.openmoji_validation_repair import grouped_indices,regularize_features,select_candidate,validate_gate,candidate_contract
 
 
 def test_fold_groups_all_equal_source_scenes_together_and_is_deterministic():
@@ -39,3 +39,17 @@ def test_probe_gate_binds_fold_and_rejects_TEST_observation_or_source_change():
         with pytest.raises(ValueError):validate_gate(other,m)
     other=dict(gate,test_evaluations=1)
     with pytest.raises(ValueError):validate_gate(other,m)
+
+
+def test_preservation_ablation_does_not_relax_old_candidate_contract():
+    from pathlib import Path
+    import json
+    root=Path(__file__).parents[1]
+    old=json.loads((root/'configs/openmoji_validation_repair_20261024.json').read_text())
+    new=json.loads((root/'configs/openmoji_equal_preservation_20261024.json').read_text())
+    assert len(candidate_contract(old))==3
+    assert candidate_contract(new)[0]['preserve_weight']==1.
+    other=copy.deepcopy(new);other.pop('profile')
+    with pytest.raises(ValueError):candidate_contract(other)
+    other=copy.deepcopy(new);other['candidates'][0]['preserve_weight']=.6
+    with pytest.raises(ValueError):candidate_contract(other)

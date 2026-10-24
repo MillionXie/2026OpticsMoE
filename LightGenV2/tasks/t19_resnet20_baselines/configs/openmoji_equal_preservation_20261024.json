@@ -1,0 +1,24 @@
+{
+  "profile": "openmoji_equal_preservation_20261024",
+  "run_tag": "equal_preserve1",
+  "purpose": "Prespecified editing/preservation tradeoff ablation: equal scene-normalized changed and preserved category objectives, improving preservation relative to the previous4:1 weighting. Desired TEST interval is descriptive, never a stopping or selection rule.",
+  "historical_TEST_observed": true,
+  "seed": 42,
+  "epochs": 60,
+  "learning_rate": 0.001,
+  "effective_batch": 32,
+  "gradient_clip": 1.0,
+  "validation_group": "source_grid",
+  "validation_hash_modulus": 5,
+  "initialization": "official frozen ImageNet RN18; fresh seeded GRU and unchanged task head; no old trained head",
+  "loss": "scene_balanced_changed_category1_preserved_category1_edit_BCE_positive0.5_negative0.5_taskCE0.1",
+  "candidates": [
+    {"id": "equal_changed_preserved", "feature_dropout": 0.2, "weight_decay": 0.0001, "preserve_weight": 1.0}
+  ],
+  "selection": "one prespecified equal-preservation candidate, fixed last60; VAL reported, no epoch or desired-TEST-score selection",
+  "TEST_policy": "one full original TEST only after fixed last60; retain the original77.55percent and all weaker/stronger versions",
+  "candidate_gpu_indices": [6, 4, 5, 2],
+  "max_physical_gpus": 4,
+  "max_jobs_per_gpu": 2,
+  "tasks": ["openmoji"]
+}

@@ -7,6 +7,20 @@ from LightGenV2.tasks.t19_resnet20_baselines.optimization_losses import (
 
 
 class OptimizationTests(unittest.TestCase):
+    def test_preservation_weight_changes_only_preserved_category_term(self):
+        torch.manual_seed(42)
+        output=dict(category_logits=torch.randn(2,3,6,6),edit_logits=torch.randn(2,6,6),task_logits=torch.randn(2,4))
+        batch=dict(target_grid=torch.randint(0,3,(2,6,6)),edit_grid=torch.zeros(2,6,6),task_index=torch.tensor([0,1]))
+        batch['edit_grid'][:,2,3]=1
+        old=balanced_edit_loss(output,batch)
+        self.assertEqual(float(old),float(balanced_edit_loss(output,batch,preserve_weight=.25)))
+        ce=torch.nn.functional.cross_entropy(output['category_logits'],batch['target_grid'],reduction='none')
+        mask=1-batch['edit_grid']
+        preserve=((ce*mask).flatten(1).sum(1)/mask.flatten(1).sum(1)).mean()
+        torch.testing.assert_close(balanced_edit_loss(output,batch,preserve_weight=1.)-old,.75*preserve)
+        for bad in [0.,-1.,float('nan'),float('inf')]:
+            with self.assertRaises(ValueError):balanced_edit_loss(output,batch,preserve_weight=bad)
+
     def test_cache_tensor_owns_storage_without_changing_values(self):
         from LightGenV2.tasks.t19_resnet20_baselines.optimization_stage import own_cached_value
         value=torch.randn(32,8)

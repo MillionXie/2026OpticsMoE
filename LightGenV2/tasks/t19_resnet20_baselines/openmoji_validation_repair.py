@@ -1,8 +1,10 @@
-"""Fixed three-candidate, source-scene-grouped TRAIN validation experiment.
+"""Fixed source-scene-grouped TRAIN validation experiments.
 
 Same frozen visual backbone, GRU and task head. Head/GRU start afresh so the
 internal validation scenes were not previously fitted by the initialization.
 Only the VAL-selected candidate's fixed last60 is run on original TEST once.
+The separately named equal-preservation profile has one prespecified candidate;
+its VAL report does not select an epoch or enforce a desired TEST interval.
 """
 import argparse
 import hashlib
@@ -49,6 +51,18 @@ def select_candidate(results):
     return min(results,key=lambda r:(-r['validation_metrics']['overall']['changed_cell_accuracy'],r['validation_loss'],r['candidate']['id']))
 
 
+def candidate_contract(plan):
+    if plan.get('profile')=='openmoji_equal_preservation_20261024':
+        expected=[dict(id='equal_changed_preserved',feature_dropout=.2,weight_decay=.0001,preserve_weight=1.)]
+    elif 'profile' not in plan:
+        expected=[dict(id='plain',feature_dropout=0.,weight_decay=.0001),
+                  dict(id='feature_dropout20',feature_dropout=.2,weight_decay=.0001),
+                  dict(id='feature_dropout20_wd10',feature_dropout=.2,weight_decay=.001)]
+    else:raise ValueError('Unknown fixed experimental profile')
+    if plan['candidates']!=expected:raise ValueError('Predeclared candidates differ')
+    return expected
+
+
 def validate_gate(gate,manifest):
     for key in ('profile_SHA','source_sha256','native_source_sha256','initial_trainable_SHA','fold_SHA'):
         if gate[key]!=manifest[key]:raise ValueError('Own validation-experiment probe identity differs: '+key)
@@ -62,22 +76,20 @@ def fresh_model(device):
 
 
 @torch.no_grad()
-def cache_metrics(model,cache,indices,device):
+def cache_metrics(model,cache,indices,device,*,preserve_weight=.25):
     from experiments.qwen3_vl_2b_openmoji_instruction_four_stage_optical_editing.metrics import MetricAccumulator
     accumulator=MetricAccumulator();total=0;count=0;model.eval()
     for start in range(0,len(indices),32):
         item=indices[start:start+32];batch,features=original.cached_batch(cache,item,device)
         output=forward_features(model,'openmoji',features,batch['tokens'])
-        loss=balanced_edit_loss(output,batch);total+=float(loss)*len(item);count+=len(item)
+        loss=balanced_edit_loss(output,batch,preserve_weight=preserve_weight);total+=float(loss)*len(item);count+=len(item)
         accumulator.update(output,batch)
     return accumulator.compute(),total/count
 
 
 def run(args):
     require_published_source();plan=json.loads(args.plan.read_text())
-    expected=[dict(id='plain',feature_dropout=0.,weight_decay=.0001),
-              dict(id='feature_dropout20',feature_dropout=.2,weight_decay=.0001),
-              dict(id='feature_dropout20_wd10',feature_dropout=.2,weight_decay=.001)]
+    expected=candidate_contract(plan)
     if plan['candidates']!=expected or plan['epochs']!=60 or plan['seed']!=42 or plan['learning_rate']!=.001:
         raise ValueError('Predeclared candidate set or budget differs')
     if (plan['validation_group']!='source_grid' or plan['validation_hash_modulus']!=5
@@ -130,7 +142,7 @@ def run(args):
                     batch,features=original.cached_batch(cache,list(range(start,start+32)),device)
                     optimizer.zero_grad(set_to_none=True)
                     output=forward_features(model,'openmoji',regularize_features(features,candidate['feature_dropout'],True),batch['tokens'])
-                    loss=balanced_edit_loss(output,batch)
+                    loss=balanced_edit_loss(output,batch,preserve_weight=candidate.get('preserve_weight',.25))
                     if not torch.isfinite(loss):raise ValueError('Nonfinite candidate probe loss')
                     loss.backward();torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad],1);optimizer.step();losses.append(float(loss.detach()))
                 reports.append(dict(candidate=candidate,losses=losses,frozen_encoder_audit=assert_encoder_unchanged(model.encoder,frozen),steps=2))
@@ -151,7 +163,7 @@ def run(args):
                 for step,item in enumerate(loader):
                     batch,features=original.cached_batch(cache,item.tolist(),device);optimizer.zero_grad(set_to_none=True)
                     output=forward_features(model,'openmoji',regularize_features(features,candidate['feature_dropout'],True),batch['tokens'])
-                    loss=balanced_edit_loss(output,batch)
+                    loss=balanced_edit_loss(output,batch,preserve_weight=candidate.get('preserve_weight',.25))
                     if not torch.isfinite(loss):raise ValueError('Nonfinite candidate loss')
                     loss.backward();torch.nn.utils.clip_grad_norm_(parameters,1);optimizer.step()
                     n=len(item);total+=float(loss.detach())*n;count+=n;order.extend(batch['sample_id'])
@@ -164,8 +176,8 @@ def run(args):
                 write_json(folder/'history.json',history);write_json(run/'progress.json',dict(status='training',candidate=candidate['id'],**entry))
             expected_steps=math.ceil(len(training)/32)*60
             if any(int(s['step'])!=expected_steps for s in optimizer.state.values()):raise ValueError('Candidate budget step mismatch')
-            val_metrics,val_loss=cache_metrics(model,cache,validation,device)
-            TRAIN_metrics,_=cache_metrics(model,cache,training,device)
+            val_metrics,val_loss=cache_metrics(model,cache,validation,device,preserve_weight=candidate.get('preserve_weight',.25))
+            TRAIN_metrics,_=cache_metrics(model,cache,training,device,preserve_weight=candidate.get('preserve_weight',.25))
             result=dict(candidate=candidate,epoch=60,optimizer_steps=expected_steps,validation_metrics=val_metrics,validation_loss=val_loss,
                 TRAIN_metrics=TRAIN_metrics,checkpoint_SHA=file_sha256(folder/'last_checkpoint.pt'),test_evaluations=0)
             write_json(folder/'validation_result.json',result);results.append(result);model.cpu();del model,optimizer
@@ -185,7 +197,7 @@ def run(args):
         for i,row in enumerate(rows):row.update(predicted_edit_mask=masks[i].tolist(),generated_category_grid=categories[i].tolist(),predicted_task_index=int(tasks[i]))
         if len(rows)!=1000 or len({r['sample_id'] for r in rows})!=1000:raise ValueError('Incomplete original TEST')
         write_json(run/'fixed_weight_predictions.json',rows)
-        write_json(run/'result.json',dict(status='complete',selected_epoch=60,selection='fixed_last60_per_candidate; hyperparameters selected by grouped TRAIN validation only',
+        write_json(run/'result.json',dict(status='complete',selected_epoch=60,selection=plan['selection'],
             selection_uses_test=False,test_evaluations=1,selected_candidate=winner['candidate'],metrics=metrics,checkpoint_SHA=last_SHA,
             parameter_counts=counts,fit_samples=len(training),validation_samples=len(validation),fold_SHA=fold_SHA,
             source_sha256=m['source_sha256'],profile_SHA=m['profile_SHA'],frozen_encoder_audit=assert_encoder_unchanged(model.encoder,frozen)))

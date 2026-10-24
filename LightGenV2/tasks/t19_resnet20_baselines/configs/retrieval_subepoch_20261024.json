@@ -1,0 +1,19 @@
+{
+  "profile": "retrieval_subepoch_20261024",
+  "task": "abo_image_to_text",
+  "seed": 42,
+  "optimizer_updates": [50, 100],
+  "updates_per_complete_epoch": 150,
+  "purpose": "Fixed one-third and two-thirds epoch diagnostic, complementing existing0/150/750/4500-update results. Never label as a full or converged epoch.",
+  "device": "cpu",
+  "batch_size": 32,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "gradient_clip": 1.0,
+  "schedule": "constant",
+  "warmup_epochs": 0,
+  "initialization": "independent official frozen RN18 and fresh random seed42 GRU/projections for each fixed update budget",
+  "cache_source": "runs/simulation/retrieval_fixed_budget_cpu_20261024/cache/easy100",
+  "selection": "all fixed budgets retained; complete original TEST once per terminal state; no metric-triggered stopping or additional budget search",
+  "historical_TEST_observed": true
+}
