@@ -1,5 +1,24 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-24 用户确认最终九项与画图数据导出
+
+用户确认截图九项为最终采用版本，权威选择记录
+`configs/final_selected9_20261024.json`，绑定每项run、固定权重完整SHA、预算和审核。
+采用LGVQ时空last50、图搜文100更新0.6325、图搜图零训练0.77875、文搜图last1 0.65、
+LSP last90 0.5299286、SALICON513头last30 0.6880028、OpenMoji last80 0.7255、
+参考图＋指令编辑last50 TEST PSNR17.7911541dB。
+不再训练；CPU入口`prepare_final_plot_data --archive`逐项校验并将选定PT/JSON另存至
+`runs/simulation/final_selected9_archive_20261024/`，只读归档副本不覆盖原run。
+代码用各run记录的已发布Git commit和source SHA恢复；最终选择另用Git标签固定。
+LSP/SALICON原始热图PT保留在原run并登记完整SHA；所有父权重和其他预算继续保留。
+
+为画图导出9个独立Excel，每个仅“整体指标”“逐测试样本”两个工作表。
+整体保留所有已记录指标，比例值保留0～1原数值；样本表包括实际保存或可从固定预测复算的指标，
+不新增模型推理。LGVQ逐视频无SRCC而提供MOS/预测/误差；检索按原排名计算H@K/RR/AP；
+LSP按原GT和保存坐标计算逐样本PCK/PCKh/误差；SALICON仅已有逐图CC；
+OpenMoji保留各项逐场景指标；编辑保留2304 TEST逐图PSNR/SSIM。
+导出目录`runs/outputs/t19_final_plot_data_20261024/`；旧老师比较表及全部ABO预算不覆盖。
+
 ## 2026-10-24 最新完成：指定原生60轮续训至80，修改格72.55%，GPU6禁用
 
 用户指定的新原生损失60轮权重已固定追加20轮至累计80，正式结果如下；
