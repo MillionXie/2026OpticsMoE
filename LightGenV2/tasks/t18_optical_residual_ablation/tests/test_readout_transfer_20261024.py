@@ -7,7 +7,7 @@ ENTRY=HERE/'lab_caltech20_readout_transfer_20261024.py'
 
 
 def source_functions():
-    tree=ast.parse(ENTRY.read_text());ns={};wanted={'validate','neighborhood_pool','error_augmented_pool'}
+    tree=ast.parse(ENTRY.read_text());ns={};wanted={'validate','neighborhood_pool','error_augmented_pool','TRAIN_balance_weights'}
     exec(compile(ast.Module(body=[n for n in tree.body if isinstance(n,ast.FunctionDef)and n.name in wanted],type_ignores=[]),str(ENTRY),'exec'),ns)
     return ns
 
@@ -56,3 +56,16 @@ def test_recovery_preserves_actual_best_and_never_fakes_missing_last():
     remote='E:/code/guest/2026OpticsMoE/LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/caltech20_residual_TUCam_20261022/layerwise_L4_on_20261023/e2_actual300_20261024/fullG2_transfer_comparisons_20261024/'
     for name in('errors139_augmented_only','DKD_no_TEST_teacher_control'):
         assert len(remote+name+'/best_replay.npz')<260
+
+
+def test_KL_continuation_changes_weights_not_dataset_temperature_or_objective():
+    c=json.loads((HERE/'lab_caltech20_KL_continuation_profile_20261024.json').read_text());ns=source_functions();ns['validate'](c)
+    assert c['initial_student_correct']==331 and c['teacher_adaptation_development_target']==342
+    assert c['temperature']==2 and c['student_direct_TEST_gradient']is False and c['teacher_seen_TEST']is True
+    p=ns['TRAIN_balance_weights'](3.,2.,-.9,2.,c['ratio_bounds'])
+    assert p['TRAIN_CE_weight']==.25 and p['TRAIN_KL_weight']==.75 and p['fixed_KL_to_CE_loss_ratio']==3
+    assert p['gradient_statistics_source']=='original_TRAIN_only'
+    clipped=ns['TRAIN_balance_weights'](3.,0.,0.,4.,c['ratio_bounds']);assert clipped['ratio_clipped']and clipped['TRAIN_KL_weight']==.95
+    s=ENTRY.read_text();assert "ordinary_KL=recipe=='KL_teacher'or recipe.startswith('KL_TRAIN_')" in s
+    assert "assert len(x)==1600 and set(packet['source_roles'])=={'original_TRAIN'}" in s
+    assert "if results['best']['former_TEST_development_replay']['correct']>=c['teacher_adaptation_development_target']:break" in s

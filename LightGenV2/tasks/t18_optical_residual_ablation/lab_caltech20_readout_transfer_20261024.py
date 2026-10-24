@@ -10,8 +10,15 @@ import lab_caltech20_tucam_layerwise_20261023 as base
 
 
 def validate(c):
-    assert c['schema']=='T18_readout_transfer_disclosed_TEST_lineage_v1'
-    assert c['recipes']==['errors139_augmented_only','KL_teacher','DKD_TRAIN_neighborhood','DKD_no_TEST_teacher_control']
+    continued=c['schema']=='T18_KL_TRAIN_gradient_balance_v1'
+    if continued:
+        assert c['recipes']==['KL_TRAIN_balance2','KL_TRAIN_balance4']and c['gradient_balance_multipliers']=={'KL_TRAIN_balance2':2.,'KL_TRAIN_balance4':4.}
+        assert c['initial_student_correct']==331 and c['teacher_adaptation_development_target']==342
+        assert c['student_direct_TEST_gradient']is False and c['teacher_seen_TEST']is True
+        assert c['ratio_bounds']==[1/19,19.]and c['stop_after_complete_native_target']is True
+    else:
+        assert c['schema']=='T18_readout_transfer_disclosed_TEST_lineage_v1'
+        assert c['recipes']==['errors139_augmented_only','KL_teacher','DKD_TRAIN_neighborhood','DKD_no_TEST_teacher_control']
     assert (c['TRAIN'],c['replay_former_TEST'],c['fixed_error_source_samples'],c['VALID'])==(1600,411,139,0)
     assert c['TRAIN_loss_fraction']==.35 and c['errors139_augmentation_loss_fraction']==.65 and c['KD_loss_fraction']==.65
     assert c['sameclass_mix_fraction']==.05 and c['noise_std_fraction']==.005 and c['label_smoothing']==.01
@@ -63,6 +70,14 @@ def distillation_loss(student,teacher,labels,kind,c):
     return (c['DKD_target_weight']*target+c['DKD_nontarget_weight']*other)*t*t*reliability/(c['DKD_target_weight']+c['DKD_nontarget_weight'])
 
 
+def TRAIN_balance_weights(ce_norm,kd_norm,cosine,multiplier,bounds):
+    """Fixed before fitting from TRAIN gradients; no replay labels involved."""
+    import math
+    assert all(math.isfinite(v)for v in(ce_norm,kd_norm,cosine,multiplier))and ce_norm>=0 and kd_norm>=0 and multiplier in(2.,4.)
+    ratio=max(bounds[0],min(bounds[1],multiplier*ce_norm/max(kd_norm,1e-12)))
+    return dict(TRAIN_CE_weight=1/(1+ratio),TRAIN_KL_weight=ratio/(1+ratio),TRAIN_CE_gradient_norm=ce_norm,TRAIN_KL_gradient_norm=kd_norm,TRAIN_gradient_cosine=cosine,requested_KL_to_CE_gradient_ratio=multiplier,fixed_KL_to_CE_loss_ratio=ratio,ratio_clipped=ratio!=multiplier*ce_norm/max(kd_norm,1e-12),gradient_statistics_source='original_TRAIN_only',teacher_seen_TEST=True)
+
+
 def optimize_pool(packet,parent_w,parent_b,teacher_w,teacher_b,recipe,c,evaluate,out,m):
     """Only packet is in closures. Replay callback runs detached outside them."""
     import numpy as np,torch
@@ -77,10 +92,16 @@ def optimize_pool(packet,parent_w,parent_b,teacher_w,teacher_b,recipe,c,evaluate
     weights=torch.full((len(x),),1/len(x),dtype=torch.float64)
     if recipe=='errors139_augmented_only':
         n=int((packet['source_roles']=='original_TRAIN').sum());weights[:n]=c['TRAIN_loss_fraction']/n;weights[n:]=c['errors139_augmentation_loss_fraction']/(len(x)-n)
+    ce_weight,kd_weight=c['TRAIN_loss_fraction'],c['KD_loss_fraction'];balance=None;ordinary_KL=recipe=='KL_teacher'or recipe.startswith('KL_TRAIN_')
+    if recipe.startswith('KL_TRAIN_'):
+        assert len(x)==1600 and set(packet['source_roles'])=={'original_TRAIN'}and target is not None
+        logits=F.linear(x,w0+delta@pre,b0+db);ce=F.cross_entropy(logits,y,label_smoothing=c['label_smoothing']);kd=distillation_loss(logits,target,y,'KL',c).mean()
+        gc=torch.cat([v.reshape(-1)for v in torch.autograd.grad(ce,(delta,db),retain_graph=True)]);gk=torch.cat([v.reshape(-1)for v in torch.autograd.grad(kd,(delta,db))]);nc=float(gc.norm());nk=float(gk.norm());cosine=float((gc@gk)/(gc.norm()*gk.norm()).clamp_min(1e-12))
+        balance=TRAIN_balance_weights(nc,nk,cosine,c['gradient_balance_multipliers'][recipe],c['ratio_bounds']);ce_weight,kd_weight=balance['TRAIN_CE_weight'],balance['TRAIN_KL_weight'];m.save(out/'TRAIN_gradient_balance.json',balance)
     def objective():
         z=F.linear(x,w0+delta@pre,b0+db);ce=(F.cross_entropy(z,y,reduction='none',label_smoothing=c['label_smoothing'])*weights).sum()
-        kd=z.new_tensor(0.)if target is None else distillation_loss(z,target,y,'KL'if recipe=='KL_teacher'else'DKD',c).mean()
-        loss=ce if target is None else c['TRAIN_loss_fraction']*ce+c['KD_loss_fraction']*kd
+        kd=z.new_tensor(0.)if target is None else distillation_loss(z,target,y,'KL'if ordinary_KL else'DKD',c).mean()
+        loss=ce if target is None else ce_weight*ce+kd_weight*kd
         return loss+c['preconditioned_delta_L2']*(delta.square().sum()+db.square().sum())
     metrics=evaluate(parent_w,parent_b);best=metrics['correct'];nll=metrics['nll'];bw=np.array(parent_w,copy=True);bb=np.array(parent_b,copy=True);selected=calls=0;history=[];started=time.monotonic();budget=c['errors139_outer_steps']if target is None else c['outer_steps']
     for update in range(1,budget+1):
@@ -94,13 +115,14 @@ def optimize_pool(packet,parent_w,parent_b,teacher_w,teacher_b,recipe,c,evaluate
         row=dict(update=update,gradient_evaluations=calls,objective=value,selection_replay_correct=metrics['correct'],selected_replay_correct=best,selected_update=selected,original139_correct=metrics['original139_correct'],other272_correct=metrics['other272_correct'],elapsed_s=time.monotonic()-started)
         history.append(row);m.save(out/'history.json',history);m.save(out/'progress.json',dict(recipe=recipe,state='fitting',latest=row));print(json.dumps(dict(recipe=recipe,**row)),flush=True)
         if time.monotonic()-started>=c['fit_seconds_per_recipe']:break
-    return dict(best_weight=bw,best_bias=bb,last_weight=lw,last_bias=lb,selected_update=selected,selected_replay_correct=best,updates=update,gradient_evaluations=calls)
+    return dict(best_weight=bw,best_bias=bb,last_weight=lw,last_bias=lb,selected_update=selected,selected_replay_correct=best,updates=update,gradient_evaluations=calls,TRAIN_gradient_balance=balance)
 
 
 def run(a):
     np,torch,m,loop=base.numerical_modules();torch.set_num_threads(2)
     from lab_caltech20_tucam_TRAIN_linear_20261023 import canonical_affine_logits
-    c=m.read(a.profile);validate(c);assert a.out.name=='fullG2_transfer_comparisons_20261024'and not m.LOCK.exists()
+    c=m.read(a.profile);validate(c);continued=c['schema']=='T18_KL_TRAIN_gradient_balance_v1';assert a.out.name==('fullG2_KLbalance_20261024'if continued else'fullG2_transfer_comparisons_20261024')and not m.LOCK.exists()
+    assert not continued or not a.resume_save_failure
     if a.resume_save_failure:
         failure=m.read(a.out/'failure.json');assert 'FileNotFoundError'in failure['error']and 'best_TRAIN_original_predictions.npz'in failure['traceback']
         assert m.read(a.out.with_suffix('.return.json'))['returncode']==1 and not(a.out/'report.json').exists()and not(a.out/'recovery.json').exists()
@@ -111,6 +133,12 @@ def run(a):
         au=m.read(folder/'independent_audit.json');assert au['passed']and au['report_SHA256']==m.sha(folder/'report.json')
     assert m.read(teacher/'report.json')['TEST_gradient']and not m.read(parent/'report.json')['TEST_gradient']and m.sha(protected)==c['protected_manifest_SHA256']
     physical=m.read(base.HERE/'lab_caltech20_tucam_layerwise_profile_20261023.json');base.validate_config(physical);reference=base.ROOT/physical['reference'];assert m.sha(reference)==physical['reference_SHA256'];model,_=m.model_for(parent/'best.pt',c['parent_PT_SHA256'],4,reference);tmodel,_=m.model_for(teacher/'best.pt',c['teacher_PT_SHA256'],4,reference)
+    initial_student=parent
+    if continued:
+        initial_student=root/c['student_initial_run'];assert m.sha(initial_student/'best.pt')==c['student_initial_PT_SHA256']and m.sha(initial_student/'native_report.json')==c['student_initial_report_SHA256']
+        prior=m.read(initial_student/'native_report.json');assert prior['scope']['teacher_seen_TEST']and not prior['scope']['student_direct_TEST_gradient']and prior['native_results']['best']['former_TEST_development_replay']['correct']==331
+        whole=m.read(initial_student.parent/'report.json');au=m.read(initial_student.parent/'independent_audit.json');assert whole['state']=='complete'and au['passed']and au['report_SHA256']==m.sha(initial_student.parent/'report.json')and m.read(initial_student.parent.with_suffix('.resume.return.json'))['returncode']==0
+        baseline=m.state_cpu(model);model,_=m.model_for(initial_student/'best.pt',c['student_initial_PT_SHA256'],4,reference);loop.validate_state(m,model,baseline,{'linear.weight','linear.bias'})
     original=m.state_cpu(model);keys={'linear.weight','linear.bias'};loop.validate_state(m,tmodel,original,keys)
     data,dm=m.data_for(base.ROOT/physical['sequence']);assert dm['sha256']==physical['data_SHA256'];fields={};paths={};policy=m.read(root/'readout_G2PASS/protocol.json')['policy'];sp=m.read(parent/'protocol.json')
     for stage in base.STAGES:
@@ -125,24 +153,25 @@ def run(a):
     fx=torch.from_numpy(former);fy=data['test'][1]
     with torch.no_grad():
         p=canonical_affine_logits(fx,torch.from_numpy(pw),torch.from_numpy(pb)).softmax(1).numpy();q=canonical_affine_logits(fx,torch.from_numpy(tw),torch.from_numpy(tb)).softmax(1).numpy()
-    assert int((p.argmax(1)==fy).sum())==272 and int((q.argmax(1)==fy).sum())==410
-    assert np.max(abs(p-np.load(parent/'best_test_predictions.npz')['probabilities']))<=3e-6 and np.max(abs(q-np.load(teacher/'best_former_TEST_adaptation_predictions.npz')['probabilities']))<=3e-6
-    wrong=p.argmax(1)!=fy;assert int(wrong.sum())==139
+    assert int((p.argmax(1)==fy).sum())==(331 if continued else 272)and int((q.argmax(1)==fy).sum())==410
+    recorded=initial_student/('best_replay.npz'if continued else'best_test_predictions.npz')
+    assert np.max(abs(p-np.load(recorded)['probabilities']))<=3e-6 and np.max(abs(q-np.load(teacher/'best_former_TEST_adaptation_predictions.npz')['probabilities']))<=3e-6
+    wrong=np.load(parent/'best_test_predictions.npz')['probabilities'].argmax(1)!=fy;assert int(wrong.sum())==139
     def evaluate(w,b):
         with torch.no_grad():
             z=canonical_affine_logits(fx,torch.from_numpy(w),torch.from_numpy(b));pred=z.argmax(1).numpy();return dict(correct=int((pred==fy).sum()),nll=float(torch.nn.functional.cross_entropy(z,torch.from_numpy(fy))),original139_correct=int((pred[wrong]==fy[wrong]).sum()),other272_correct=int((pred[~wrong]==fy[~wrong]).sum()))
-    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),config=c,parent_PT_SHA256=c['parent_PT_SHA256'],teacher_PT_SHA256=c['teacher_PT_SHA256'],data_SHA256=dm['sha256'],prefix_SHA256=lineage,feature_cache_SHA256=m.sha(cache),original_split_files_unchanged=True,all_non_readout_frozen=True,allowed_keys=sorted(keys),trainable_parameters=5140,new_inference_layers=0,SDK_used=False,GPU_used=False,new_capture=False,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False)
+    protocol=dict(source_git=m.git_head(),source_SHA256=m.sha(__file__),profile_SHA256=m.sha(a.profile),config=c,parent_PT_SHA256=m.sha(initial_student/'best.pt'),teacher_PT_SHA256=c['teacher_PT_SHA256'],data_SHA256=dm['sha256'],prefix_SHA256=lineage,feature_cache_SHA256=m.sha(cache),original_split_files_unchanged=True,all_non_readout_frozen=True,allowed_keys=sorted(keys),trainable_parameters=5140,new_inference_layers=0,SDK_used=False,GPU_used=False,new_capture=False,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False,continues_ordinary_KL=continued)
     if a.resume_save_failure:
         prior=m.read(a.out/'protocol.json');assert prior['config']==c and prior['prefix_SHA256']==lineage
         m.save(a.out/'recovery.json',dict(reason='Known Windows MAX_PATH prediction filename failure after saved best; no numerical failure, no refit of errors139',source_git=m.git_head(),source_SHA256=m.sha(__file__),old_failure_SHA256=m.sha(a.out/'failure.json'),old_return_SHA256=m.sha(a.out.with_suffix('.return.json')),old_best_PT_SHA256=m.sha(a.out/'errors139_augmented_only/best.pt'),missing_original_last_disclosed=True,all_old_artifacts_preserved=True))
     else:
-        a.out.mkdir();m.save(a.out/'protocol.json',protocol);m.save(a.out/'baseline.json',dict(original_development_correct=272,teacher_supervised_adaptation_correct=410,original_error_sources=139,non_error_sources=272,feature_distillation_identically_zero=True,reason='Every non-readout state is bitwise identical and frozen; only classifiers differ.'))
+        a.out.mkdir();m.save(a.out/'protocol.json',protocol);m.save(a.out/'baseline.json',dict(original_development_correct=272,initial_student_correct=331 if continued else 272,teacher_supervised_adaptation_correct=410,original_error_sources=139,non_error_sources=272,feature_distillation_identically_zero=True,reason='Every non-readout state is bitwise identical and frozen; only classifiers differ.'))
     experiments={}
     for recipe in c['recipes']:
         out=a.out/recipe;recover=a.resume_save_failure and recipe=='errors139_augmented_only'
         if recover:assert out.exists()and(out/'best.pt').exists()and not(out/'last.pt').exists()and not(out/'native_report.json').exists()
         else:out.mkdir()
-        derivatives=recipe=='errors139_augmented_only';inherited=recipe in('KL_teacher','DKD_TRAIN_neighborhood');neighborhood=recipe.startswith('DKD')
+        derivatives=recipe=='errors139_augmented_only';inherited=recipe in('KL_teacher','DKD_TRAIN_neighborhood')or continued;neighborhood=recipe.startswith('DKD')
         if derivatives:packet=error_augmented_pool(train,data['train'][1],data['train'][2],former[wrong],fy[wrong],data['test'][2][wrong],c)
         elif neighborhood:packet=neighborhood_pool(train,data['train'][1],data['train'][2],c)
         else:packet=dict(features=train,labels=data['train'][1],source_ids=data['train'][2],source_roles=np.array(['original_TRAIN']*len(train)),augmentation=np.array(['unmodified']*len(train)))
@@ -171,10 +200,14 @@ def run(a):
                 if role=='test':
                     pred=prob.argmax(1);results[tag]['original139_correct']=int((pred[wrong]==fy[wrong]).sum());results[tag]['other272_correct']=int((pred[~wrong]==fy[~wrong]).sum())
         assert results['best']['former_TEST_development_replay']['correct']==fitted['selected_replay_correct']
-        entry=dict(scope=scope,selected_update=fitted['selected_update'],selected_E0=fitted['selected_update']==0,optimizer_updates=fitted['updates'],gradient_evaluations=fitted['gradient_evaluations'],strict_original_CPU=True,all_non_readout_bitwise_frozen=True,native_results=results,last_available=not recover,recovery_no_refit=recover,missing_last_reason='Original fit endpoint was in memory when long-path output failed; not reconstructed or substituted'if recover else None)
+        entry=dict(scope=scope,selected_update=fitted['selected_update'],selected_E0=fitted['selected_update']==0,optimizer_updates=fitted['updates'],gradient_evaluations=fitted['gradient_evaluations'],strict_original_CPU=True,all_non_readout_bitwise_frozen=True,native_results=results,last_available=not recover,recovery_no_refit=recover,missing_last_reason='Original fit endpoint was in memory when long-path output failed; not reconstructed or substituted'if recover else None,TRAIN_gradient_balance=fitted.get('TRAIN_gradient_balance'))
         m.save(out/'native_report.json',entry);experiments[recipe]=entry;m.save(a.out/'completed_recipes.json',experiments);print(json.dumps(dict(recipe_complete=recipe,best_correct=results['best']['former_TEST_development_replay']['correct'],original139_correct=results['best']['original139_correct'],other272_correct=results['best']['other272_correct'],scope=scope)),flush=True)
+        if continued:
+            with torch.no_grad():model.load_state_dict(torch.load(out/'best.pt',map_location='cpu',weights_only=False)['model'])
+            pw=model.linear.weight.detach().numpy().copy();pb=model.linear.bias.detach().numpy().copy()
+            if results['best']['former_TEST_development_replay']['correct']>=c['teacher_adaptation_development_target']:break
     assert base.identities(m,paths)==lineage and m.sha(protected)==c['protected_manifest_SHA256']
-    report=dict(state='complete',experiments=experiments,recovery_source_git=m.git_head()if a.resume_save_failure else None,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False,all_non_readout_bitwise_frozen=True,all_10_capture_array_SHA_unchanged=True,SDK_used=False,GPU_used=False,new_capture=False,strict_original_CPU=True,protocol_SHA256=m.sha(a.out/'protocol.json'),NOTE='Removing raw TEST inputs from student optimization does not erase TEST-derived augmentation or teacher-inherited information. Control has no TEST-trained teacher but remains a TEST-selected development metric.')
+    report=dict(state='complete',experiments=experiments,continues_ordinary_KL=continued,teacher_adaptation_development_target_met=any(v['native_results']['best']['former_TEST_development_replay']['correct']>=c['teacher_adaptation_development_target']for v in experiments.values())if continued else None,recovery_source_git=m.git_head()if a.resume_save_failure else None,official_TEST_accuracy=None,valid_for_formal_test_table=False,independent_test_samples=0,original_development_best_replaced=False,all_non_readout_bitwise_frozen=True,all_10_capture_array_SHA_unchanged=True,SDK_used=False,GPU_used=False,new_capture=False,strict_original_CPU=True,protocol_SHA256=m.sha(a.out/'protocol.json'),NOTE='Removing raw TEST inputs from student optimization does not erase TEST-derived augmentation or teacher-inherited information. Control has no TEST-trained teacher but remains a TEST-selected development metric.')
     m.save(a.out/'report.json',report);m.save(a.out/'independent_audit.json',dict(passed=True,report_SHA256=m.sha(a.out/'report.json'),original_manifest_SHA256=m.sha(protected),prefix_SHA256=lineage,independent_test=False))
 
 
@@ -185,10 +218,14 @@ def selftest():
     for kind in('KL','DKD'):
         loss=distillation_loss(a,b,y,kind,c);assert loss.shape==(40,)and torch.isfinite(loss).all();assert distillation_loss(b,b,y,kind,c).abs().max()<1e-10;g=torch.autograd.grad(loss.sum(),a,retain_graph=True)[0];assert torch.isfinite(g).all()and g.abs().sum()>0
     assert b.grad is None
+    continued=json.loads((base.HERE/'lab_caltech20_KL_continuation_profile_20261024.json').read_text());validate(continued)
+    gc=torch.autograd.grad(torch.nn.functional.cross_entropy(a,y),a)[0];gk=torch.autograd.grad(distillation_loss(a,b,y,'KL',c).mean(),a)[0]
+    for multiplier in(2.,4.):
+        balance=TRAIN_balance_weights(float(gc.norm()),float(gk.norm()),float((gc*gk).sum()/(gc.norm()*gk.norm())),multiplier,continued['ratio_bounds']);assert abs(balance['TRAIN_CE_weight']+balance['TRAIN_KL_weight']-1)<1e-12 and 0<balance['TRAIN_CE_weight']<1
     rng=np.random.default_rng(73);x=rng.normal(size=(40,6)).astype(np.float32);labels=np.arange(40)%20;ids=np.array(['TRAIN'+str(i)for i in range(40)]);p=neighborhood_pool(x,labels,ids,c);assert len(p['features'])==120 and set(p['source_roles'])=={'original_TRAIN'}
     cc={**c,'fixed_error_source_samples':3};z=x[:3]+.1;q=error_augmented_pool(x,labels,ids,z,labels[:3],np.array(['ERR'+str(i)for i in range(3)]),cc)
     assert len(q['features'])==46 and np.array_equal(q['features'][:40],x)and not np.any(q['augmentation'][40:]=='unmodified')
-    print(json.dumps(dict(passed=True,teacher_detached=True,no_raw_TEST_rows=True,error_derivatives_still_TEST_information=True,all_non_readout_frozen=True,SDK_used=False,GPU_used=False)))
+    print(json.dumps(dict(passed=True,teacher_detached=True,no_raw_TEST_rows=True,error_derivatives_still_TEST_information=True,TRAIN_gradient_balance_finite=True,all_non_readout_frozen=True,SDK_used=False,GPU_used=False)))
 
 
 if __name__=='__main__':
