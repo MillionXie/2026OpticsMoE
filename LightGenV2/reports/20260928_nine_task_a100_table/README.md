@@ -1,5 +1,70 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 07:16补记：三项原图NN算量接入16，图搜图Ours另已双端推导；成本仍14/18
+
+本轮所有算量仅原Git图、封存600输入/分段次数及PT形状元数据读取，零Torch模型加载/神经前向/GPU/新计时。
+准确度仍原完整TEST，四缺项LGVQ Ours temporal/spatial、T12双方未完成，不把代码/CPU执行当成本。
+租机已完成，未再连接。多baseline36/36与额外80GB同机Qwen3/3不变，新正式两Excel尚无。
+
+新增三项与各自既有合格三轮成本精确绑定，receipt/builder `b2ac94812`；16相关纯CPU测试本地通过，
+其中新receipt4项和后述compact2项server也通过。双端同一公式/原raw解析对象一致，只有推导时
+checkout commit因peer提交不同而分别保留；不忽略任何公式/源SHA/形状/成本字段差异。
+
+- 01b spatial Qwen：`lgvq_spatial_qwen_saved_shape_mac.py` `0191e58af`，原head9155ec7a、
+  spatial prompt、原24Vision/28Language/GQA/全部4merger/分时视觉attention和最后pooled一次完整词表投影、
+  五行qualityhead均计，不是每token投vocab。2.455071419658 TOP/video，6.501687246024501 TOPS，
+  .016739095575183247 TOPS/W。local `lgvq_spatial_qwen_saved_shape_MAC_01.json` SHA
+  `860591f9675bd4a9e2f5bc809ea5de0dc1eb8e90a3b45932bc72ddb4764fc5dc`；server_01原683468B SHA
+  `da070924e0d843205d82e240dc5227eb8301c8784a0b5349cac5f313ad0cd3c1`已取回。
+- 02图搜文Ours：`abo_image_student_saved_shape_mac.py` `520f68f20`，原a2aa主体/实际600长度，
+  auxiliary deepstack关闭，只有一个main merger，不挪用Qwen全部4merger公式；Vision output adapter一次、
+  Language两次，真实6pass/CPU100x64检索和native位置构造分列。实际NN .003712123904 TOP/input，
+  selectedserial .003509907968 TOP/input，实际NN口径 .09537103652604494 TOPS/
+  .0008908951569816238 TOPS/W。local `abo_image_student_saved_shape_MAC_01.json` SHA
+  `7ee2a45c09b8806f9b805793bfbb5fe53a061677d929c6a6075b1437497ae8f2`；server_01原391218B SHA
+  `48521fbed0e288c23a97339943950022e20a3ffd0fbfb4625acc92774bceacaa`已取回。原PT仅需缺失metadata，
+  `T08/runs/simulation/a100_image_saved_shape_metadata_20261025_01/metadata.json` 14074B SHA
+  `9c0c061990ae5a9abfae09b43924c692dcdaebfabea66ed8591a207971dbcd20`已逐SHA备份，不加载模型。
+- 03图搜图Qwen64：`t07_qwen_saved_shape_mac.py` `1eb44a3b7`，原600动态长宽grid和全24Vision/
+  28Language/QKAV/GQA/4merger，原GPU1600x64 descriptor dot，无LMhead，offline图库不混query。
+  .30560196157952 TOP/input，3.8123404755695023 TOPS/.009752888368637141 TOPS/W。
+  local `t07_qwen_saved_shape_MAC_01.json` SHA
+  `8c229ffe14fc93cd38171eb060d6cd608a6bcc59dbad2eac29115be7ef948b76`；server_01原474464B SHA
+  `50ddd742569de9dd3fda9fa9e883bc41f2f69d276f00fcdc283d9b93b29f3bd2`已取回。
+
+本地全量原raw重新审计生成 `measurement_protocol_20261024/measured_index_partial_16.json`，
+8406617B SHA `ea6ab782cb1d6991cdd0820d064251ebf49411132b5a98c8b77a7f7a20ccb2a7`，
+builder字节SHA `8b926238317f17eaf7a928c4c78c27fb0e67fc37583631a5bc993ce2bf6da072`。
+只新增01b Qwen/02 Ours/03 Qwen算量及相应状态，全部原成本/完整TEST精度、其他六行、sharedQwen
+与15解析对象不变；旧15前保留，server没有私有16，temporal仍07。本轮未为准备重复整index。
+
+另03 Ours `t07_student_saved_shape_mac.py` `f9f8f4b8a`已双端独立推导，但尚未接入16，留待下一批
+原形状算量/成本汇总。仍是已测.8225/0b1ff5b6 compact、77固定token、原V/L kernel5、MLP384、
+一个main merger、无Language output adapter/TF/LMhead/RoPE、无后来rank72 RGB旁路，原1152→64
+spatial2x2读出和1600x64检索。NN实际 .003597127424 TOP/input，.09785906731017732 TOPS/
+.000912720406652171 TOPS/W；原两router的digital dense mask einsum另列，不能藏进非MAC或物理光OP。
+local `t07_student_saved_shape_MAC_01.json` SHA
+`7a58a1247c7e1a00a34e03e06a905ebc1de23559929e03fedd9b90def286d5d8`；server_01原5036B SHA
+`13d05b86b28ea36f4766f08e8b3805362c8b89d2487eac9bd9bfdf6039011e4d`已取回，解析对象全同。
+原69,695,212B PT全SHA核后仅有界读取pickle形状，不读tensor storage/不import Torch：
+`T07/runs/simulation/a100_standalone_saved_shape_metadata_20261025_01/metadata.json` 48800B SHA
+`70fc3a68e92fafabea6be14756074de458910ff18dc7a113f9491832c63c4463`已SHA备份。
+所有上述仅NN dense-MAC小计，非完整scalar/hardware指令；物理光denseequiv仍未知单列，非0/最大孔径容量。
+
+最新只读capture Unix1792883738.5437357..1792883738.7134018：QwenCPU_03/2143363与worker2149243
+仍真实存活，worker elapsed46:22/CPU45:58/99.1%/RSS约10.8GB；status loading覆盖load及全部原前向循环，
+未细分不等于卡死，也未取得passed contract。LGVQCPU_03/2143364、T12cost_03/2143366、
+LGVQcost_03/2143391仍等待，均无child，两成本completed[]，NVMLcompute空。原OursCPU_06已合格不重跑。
+观察文件标签0720非实际钟表，以上述Unix为准：LGVQcost_03/admission_observation_20261025_0720.json，
+1447B SHA `2d03b90bac3e088f15d7b0ea685d08998e792beaab9c012abeb0995f86fc3093`已本轮精确取回。
+先前0705观察1441B SHA `a01dedefb2a89d3a72a83d4ca92117dd551a8807863bc33d8f29a2ca6f7eedc0`已取回。
+四当前controller不重启/活动源不热改；deadline仍约08:24，若真故障/截止，先保raw/日志，诊断后missing-only续链，
+已合格proof/轮/图库精确复用。不能将单批有限截止当整体终止。
+
+server先由peer自行同步0f7902320，本窗口精确安全ff止f9f8f4b8a，仅5个本人新增OP/receipt/builder文件，
+93活动与已合格proof源SHA前后全同、28个untracked产物全保。最新观察server HEAD为peer自行同步的b53ea0839；
+本节README尚不声称server同步。B100三暂存未动，不盲ff他窗新runtime。
+
 ## 2026-10-25 06:46补记：LSP/SALICON Qwen原图算量接入，成本仍14/18
 
 本节不新增GPU/模型前向或成本轮。`dense_vision_qwen_saved_shape_mac.py`最终`4226ac4ac`
