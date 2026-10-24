@@ -73,7 +73,7 @@ def main():
         repeats.append(result);all_non_mac.update(non_mac)
         references.append(dict(run=folder.relative_to(REPO).as_posix(),shape_sha256=sha(folder/'nn_module_shapes.json'),
             summary_sha256=sha(folder/'summary.json'),source_commit=identity['source_commit'],
-            seconds200=summary['cost']['sample_ms']/5,joules200=summary['cost']['sample_j']*200))
+            seconds200=summary['projected_seconds200'],joules200=summary['phase_estimated_j200']))
     if any(r['per_call']!=repeats[0]['per_call'] for r in repeats[1:]):raise ValueError('Original workload NN shapes vary across fresh rounds')
     actual=2*sum(r['actual_executed_NN_MAC200'] for r in repeats);serial=2*sum(r['charged_serial_NN_MAC200'] for r in repeats)
     seconds=sum(r['seconds200'] for r in references);energy=sum(r['joules200'] for r in references)
