@@ -1,5 +1,43 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 07:50补记：T12 Ours原CPU双样本形状公式核验，正式成本未升级
+
+成本仍14/18，剩LGVQ Ours temporal/spatial及T12双方；多baseline36/36与额外80GB Qwen3/3不变。
+主索引仍 `measured_index_partial_17.json`、temporal仍07，本轮没有为准备工作重放主索引，没有新正式Excel，
+没有连接租机。已齐14项NN小计不重验，正式准确度仍原完整TEST。
+
+新增 `t12_student_saved_shape_mac.py`/test，发布 `e1a301ad9`，仅只读已通过OursCPU_06的原5b4f合同
+`a37514afe55c0774d411e672a0dd66641c30bbd6ad49fbf8cf2728ab47ccd1c0`、原Git及其真实NN形状。
+原224条形状是两个index各自原版/观察版两次完整前向：每次56个Linear/Conv调用，不可把112条当一次query。
+工具先逐项验证两份形状相同，保留原两次幅度adapter、expert/global读出、完整原256RGB decoder及spatial prior。
+在模块矩阵外补入原两层512宽full-MHA的QK/AV：每层 `2*L*L*512` MAC，未把原小网络说成28层预训练Qwen。
+两语言Transformer与两空间电子残差计入实际NN但从selected-serial NN中单列；两router的digital dense mask
+contraction单列，不是non-MAC也不是物理光OP。RoPE逐元素构造、norm/softmax、插值/池化等明确未合成MAC；
+物理光denseequiv仍null。原NN/输入/量化/计时源未改，没有Torch导入、模型/embedding/GPU前向。
+
+原CPU index200长度38：实际NN20101337856 MAC、serial19864368128、parallel236969728；index2303长度35：
+实际NN20084177664、serial19859846144、parallel224331520。这只是原两样本公式交叉核验，不是首200或成本完成。
+本地/服务器4项无模型测试均过、两端推导解析对象完全同。工具预留消费未来三份已合格cost原600形状/IDs/masks
+及原独立audit的入口；当前没有执行该正式分支，没有外推首200长度、TOPS或TOPS/W。
+local `measurement_protocol_20261024/t12_student_CPU_reference_shape_MAC_02.json`8453B SHA
+`83d81e3415594bc506f81a5610ff931b605e0d4642a44ee867ebfa69e87f33f8`；server_02原8272B SHA
+`630b848753a9636fbc28f778f3feb95729dd3f5da40c526e618d5807ba6854ec`已精确取回，原CRLF/LF字节各自保留。
+预发布local01保留不用。正式OursCPU_06证明没有重做。
+
+最新真实capture Unix1792885597.849816..1792885598.103555：QwenCPU_03/controller2143363/worker2149243
+存活，elapsed1:17:21/CPU1:17:31/100%/RSS约10.7GB，仍loading/no_gpu、无error/无passed合同。
+LGVQCPU2143364、T12cost2143366、LGVQcost2143391仍等各自真实前驱、无child，成本completed[]，NVMLcompute空。
+不凭未细分状态称hang或通过，不停重跑/改dtype，四控制器及活动源不热改。deadline仍约08:24、stable提前180秒
+约08:21截止；若真到期先保raw/外日志、核实际完成证据并诊断CPU长耗，再只补缺失新不可变续链、重绑后继。
+`T06/.../a100_lgvq_input_inclusive_20261025_03/admission_observation_20261025_0750.json`4643B SHA
+`1accb661685353da92d7c0c838d445aea7ee170f821246d03fd1b986dd824fa8`已原SHA取回；标签不是实际时钟。
+
+lab由peer自行同步到035a后，本窗口仅新增2个公式/test文件安全ff到e1a301ad9。
+本轮从当前suite/admission及已过proof提取的92项记录源（包括5个CPU/成本控制器）SHA前后全部相同，
+diff不含其他源，untracked全保留。起初预期93的计数门两次在fetch/merge前安全停止；核对实际记录集合后完整验92，
+不是放宽任一原源SHA，也不是GPU/模型故障。README本段的三端同步以下一实际核对为准；peer后续HEAD仍须重核。
+B100三暂存未动，已完成helper均收尾。后续直接等真实CPU/成本及缺失形状，不重推任何已过proof/库/轮。
+
 ## 2026-10-25 07:35补记：LSP/SALICON Ours原图算量及compact三项成本绑定17，四成本仍待补
 
 成本仍14/18：剩LGVQ Ours temporal/spatial、T12双方；多baseline36/36与额外80GB Qwen3/3不变。
