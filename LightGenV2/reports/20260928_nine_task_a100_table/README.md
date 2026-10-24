@@ -1,5 +1,52 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 02:40补记：原形状算量已补OpenMoji双方，新的外占只重排缺失工作
+
+时间/能耗仍13/18，正式准确度仍完整TEST，未训练、未重跑任何合格轮或CPU合同。
+按人工最新要求，OpenMoji双方NN dense-MAC已直接从原网络和既有全部600调用形状推导，
+新增模型/GPU前向均为0，双端CPU计算解析对象一致。Qwen含原完整24 vision/28 language、
+QK/AV主项、原main+3 deepstack merger及完整共享头；每输入0.31419706459456TOP，
+与原成本结合为4.2812823067797074TOPS、0.010946241244016098TOPS/W。
+Ours原PT metadata与已封`nn_module_shapes.json`逐module计算：实际执行NN
+0.00087843005568TOP/输入，排除并行残差的charged-serial NN为0.00081687207936TOP/输入。
+它们是明确的**NN MAC小计**，不是完整scalar OP、不是把光学满孔径容量塞成任务OP；
+光传播dense-equivalent与GPU FFT仍单独列，未知值不填0，不以NN小计冒充完整光学TOPS。
+原非MAC类/功能与残差执行小计保留。私有原件：
+`openmoji_qwen_network_shape_MAC_01.json` SHA
+`5a7846efdbe199d633353a4f44b0589424b45e1741493a78ae089224f1c60d12`，
+server原件`openmoji_qwen_network_shape_MAC_server_01.json` SHA
+`c2fcd8613bb30a59718459790eb7b25ab19a8b104118c3b016147c5ab4785ab9`；
+`openmoji_e45_saved_shape_MAC_01.json` SHA
+`7969ca3eed4fc1b09ea4b932609e052d74dfdf6a45022dc14eda1e5d0580f85e`，
+server原件`openmoji_e45_saved_shape_MAC_server_01.json` SHA
+`5f6645f6863449ec5a5afc1258764acb50d06992fbc71591b079ec9c577db1bf`。
+双端6+3纯CPU测试通过，原raw不改。初次两个纯算术CLI分别遇相对路径和summary字段名错误，
+均在写输出前退出，已按实际路径/原schema修复；不是模型失败或GPU重推。
+新本地全量重放`measured_index_partial_10.json` SHA
+`0077f829ad3b3e117033f6570fd9979ac7455ac6df432d3e936bb8c6ea6a0cbc`，
+builder`c5cbf53b2`；只增加07双方NN小计，其他八行及sharedQwen与09解析对象完全相同。
+仍PARTIAL、无正式两Excel；server没有生成这个私有index，旧09和以前保留。
+
+旧T08 image-student `_01`在三次idle后开始独立标题库模型加载，但02:28:15实际守卫捕获
+新非MPS进程1708990/hmh；未生成标题库/合格查询轮，controller1675400/worker1706059已退出。
+实际命令`resume_training.py`于02:28:12启动，后其child1710971在02:29:24启动
+`fit_trainable_wave.py`占23062MiB，A100原始UUID明确，不是3090或旧PID猜测。
+只停止自己，不杀对方；原11文件80416字节及785字节外置日志已SHA备份。
+独立`post_foreign_admission_release_check01.json` SHA
+`38355f6717262a2178fefb316b0370f225736bddb540d44f23a7bc625d4b3ff2`
+确认controller/worker/私有MPS server1706890退出、privatecontrol无daemon，原release_error
+来自外国仍占卡，不是自己的MPS残留。原T12 `_01`仅随前驱stopped退出，未加载CPU模型，
+1文件1238字节及1196字节日志SHA保存，不再等这两个旧控制器。
+
+新不可变续队T08 `a100_image_student_input_inclusive_20261025_02`，controller1728678，
+deadline1792872485.5070028，冻结`5f83543d1`。仍精确复用已过CPU合同，仅补未完成的库和三轮；
+现默认连续12次十秒idle/显存核验（至少两分钟），任一外部进入清零，防止短空档反复加载。
+这不改变正式计时/能耗/NN源、250ms支持年龄或任何已合格点。
+新T12 CPU `_02` controller1728679、deadline1792874285.509181，显式`--previous`绑定新T08，
+前驱全部合格并释放MPS才执行。11静态测试双端通过，两新队列先看真实PID/status勿重启。
+本次外占变化需要连续独占窗口协调；无变化不重复通知。runtime/源码均已三端发布，
+peer T21的87d0351e7由其窗口先行同步，B100三暂存原样保留。
+
 ## 最新人工口径与完成清单（2026-10-25 02:19，北京时间）
 
 本节覆盖下方旧的12/18、Qwen CPU等待和必须每项200次GPU算量回放描述。
