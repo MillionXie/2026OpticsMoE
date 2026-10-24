@@ -1,5 +1,34 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 03:03补记：人工新租80GB已启动DS/Kimi，原40GB缺失队列继续
+
+人工新提供的租机端点已只读核为A100-SXM4-80GB、400W，真实UUID
+`GPU-6d1916d1-fbd3-524b-3d98-7fb38512c388`；租期至05:46，计算硬截止05:25
+（Unix1792877100），留21分钟取回。复用该新实例挂载的原模型、独立环境、原head和
+LGVQ原DATA，不训练或重新下载；源码只Git干净ff，凭据/连接记录仅私有保存。
+原manifest与已有mapped manifest核2808条除路径外字段完全相同；原绝对视频路径
+仅新增到既有视频的DATA符号链接，未复制工程或替换输入，路径映射收据独立保留。
+
+新T06 `lgvq_mps_e2e_a100_20261024/rental_80gb_20261025_01` controller381，
+原`measure_mps_e2e_20261024 --profile rental`派发DS完整版/Kimi各100/50MPS、各三fresh，
+共12点。冻结启动HEAD `fd5f8fe7e`，不改原B1/200/零dummy/全窗成本协议。
+03:00已完成DS100 r1，r2 worker7108已进入正式200计时；尚不称12点完成。
+首轮连续146.5077926814556秒/200、估算系统81340.70337846555焦耳，server原raw审计通过；
+10文件14709251字节已逐SHA本地备份，`local_independent_audit01.json`独立复算通过。
+正式准确度仍原full558的DS .7167352584517089/Kimi .805465271935947，200预测只作核验。
+
+同机Qwen100三fresh对照已在`rental_qwen_anchor_20261025_01` controller4294等待前驱释放。
+已发布`175df3229`的独立wrapper仅绑定新GPU/400W和原模型/head路径，调用原E2E worker，
+无网络/输入/精度/计时数学变更；3纯CPU测试双端通过。Qwen原参考report/calls按原SHA
+data-only传入canonical，原头/模型和Torch2.6cu124/TF4.57.3环境均已有并核准。
+它是80GB平台对照，不替代两表既有40GB唯一共享三轮；单独role receipt明确该边界。
+新机ff175df前后DS/Kimi活动记录的47源文件SHA全等，原活动runtime不热改。
+
+实验室原1728678/1737924仍保留原12次idle守卫及T12后继，最后实际检查仍有hmh
+1708990/1710971占A100；不杀对方、不混测、不卡住其他新机工作。空出即自动接续。
+九行仍13/18、多baseline40GB24/24；新增80GB此刻仅1/12。两新正式Excel仍未生成。
+每完整point先逐SHA取回再本地CPU重算，不等租期末才备份；05:46前必须保住原raw与日志。
+
 ## 02:40补记：原形状算量已补OpenMoji双方，新的外占只重排缺失工作
 
 02:43后继队列补核：T12 `_02`在两个控制器同时启动时早于前驱首次status创建而退出，
