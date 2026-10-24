@@ -13,7 +13,8 @@ def validate(c):
     continued_E2={**origin,'maximum_classes':12,'skip_classes':[3,2,0,19,4,7,10,13]}
     continued_old282={**origin,'maximum_classes':12,'skip_classes':[3,0,2,19,1,4,9,6]}
     full_E2={**origin,'maximum_classes':20}
-    assert c in (origin,continued,continued_E2,continued_old282,full_E2)
+    full_physical_trust={**full_E2,'row_radius':.16}
+    assert c in (origin,continued,continued_E2,continued_old282,full_E2,full_physical_trust)
 
 
 def selection(features,labels,w,b):

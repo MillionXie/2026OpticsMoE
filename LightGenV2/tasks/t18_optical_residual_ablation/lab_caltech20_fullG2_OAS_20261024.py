@@ -64,7 +64,7 @@ def run(a):
             source=root.parent/'fullG2_TRAIN_priorbias_20261024';assert m.read(source.with_suffix('.return.json'))['returncode']==0
             fit=source;r=m.read(fit/'report.json');audit=m.read(fit/'independent_audit.json');protocol=m.read(fit/'protocol.json');full=r
         if a.continued_joint_head:
-            source=root.parent/('fullG2_best_teacher_joint_20261024' if a.continued_joint_head=='local' else 'fullG2_jointbest_local_20261024')
+            source=root.parent/('fullG2_best_teacher_joint_20261024' if a.continued_joint_head=='local' else 'fullG2_jointbest_affine_20261024' if a.continued_joint_head=='trust' else 'fullG2_jointbest_local_20261024')
             assert m.read(source.with_suffix('.return.json'))['returncode']==0
             full=m.read(source/'report.json');assert full['state']=='complete' and full['full_physical'] and full['strict_original_CPU'] and full['selected_correct']>=248
             fit=source/'fit' if a.continued_joint_head=='local' else source
@@ -110,8 +110,11 @@ def run(a):
     if a.local_repair:
         from lab_caltech20_tucam_TRAIN_linear_20261023 import fit_cached_head
         import lab_caltech20_TRAIN_local_boundary_20261023 as boundary
-        assert m.sha(boundary.__file__)=='8ae5a132e31ab33d2dc508119f7d85810d75a35bc1e632e7de42cd7f133c774b'
+        assert m.sha(boundary.__file__)=='06164a80c818b08944ad1ceaba21500809ab8ba88fab3487a2bb7f2ad96c55f3'
         cfg=dict(maximum_classes=20,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.08,seed=73);boundary.validate(cfg)
+        if a.continued_joint_head=='trust':
+            assert r['selected_correct']>=260
+            cfg={**cfg,'row_radius':.16};boundary.validate(cfg)
         config={**c,'TRAIN_readout':'cached_TRAIN_local_boundary','TRAIN_local_boundary':cfg,'TRAIN_local_engine_SHA256':m.sha(boundary.__file__),'native_feature_source':fit.relative_to(base.ROOT).as_posix(),'fresh_native_TRAIN_features':True}
         recipe=dict(name='one_bounded_full_physical_TRAIN_neighbor_repair',epochs=1,seconds=180,lr_scale=1)
         if a.affine_after_prior:
@@ -152,7 +155,7 @@ def run(a):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');parser.add_argument('--prior-bias',action='store_true');parser.add_argument('--affine-after-prior',action='store_true');parser.add_argument('--hard-readout',choices=('hard_pair','sameclass_augment'));parser.add_argument('--continued-joint-head',choices=('local','affine'));a=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('--out',type=Path,required=True);parser.add_argument('--joint-source',action='store_true');parser.add_argument('--local-repair',action='store_true');parser.add_argument('--teacher-local',action='store_true');parser.add_argument('--prior-bias',action='store_true');parser.add_argument('--affine-after-prior',action='store_true');parser.add_argument('--hard-readout',choices=('hard_pair','sameclass_augment'));parser.add_argument('--continued-joint-head',choices=('local','affine','trust'));a=parser.parse_args()
     try:run(a)
     except BaseException as e:
         if a.out.exists():

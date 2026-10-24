@@ -51,3 +51,14 @@ def test_centered_regularization_only_training_objective():
     assert not any(isinstance(v,ast.Name)and v.id in ('test','test_labels','development') for v in ast.walk(fun))
     assert "if cfg.get('class_centered_penalty',False):penalty_weight=penalty_weight-penalty_weight.mean(0,keepdim=True)" in src
     assert 'common_class_row_shift_invariant=True' in src
+
+
+def test_one_bounded_trust_extension(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    from lab_caltech20_TRAIN_local_boundary_20261023 import validate
+    c=dict(maximum_classes=20,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.16,seed=73)
+    validate(c)
+    import pytest
+    with pytest.raises(AssertionError):validate({**c,'row_radius':.32})
+    src=(HERE/'lab_caltech20_fullG2_OAS_20261024.py').read_text()
+    assert "r['selected_correct']>=260" in src and "a.continued_joint_head=='trust'" in src
