@@ -127,11 +127,13 @@ def fit_cached_head(model,data,dm,fields,paths,parent,reference,c,recipe,out,tar
         m.save(out/'history.json',history);m.save(out/'hard_readout_plan.json',repaired['plan'])
     elif local:
         def emit(row):m.save(out/'progress.json',dict(state='TRAIN_local_boundary',latest=row));print(json.dumps(row),flush=True)
-        repaired=boundary.fit(train.numpy(),labels.numpy(),test.numpy(),test_labels.numpy(),head.weight.detach().numpy(),head.bias.detach().numpy(),cfg,target,recipe['seconds'],emit)
+        fit_local=boundary.fit_cycles if cfg.get('rounds')==3 else boundary.fit
+        repaired=fit_local(train.numpy(),labels.numpy(),test.numpy(),test_labels.numpy(),head.weight.detach().numpy(),head.bias.detach().numpy(),cfg,target,recipe['seconds'],emit)
         head.load_state_dict(dict(weight=torch.from_numpy(repaired['last_weight']),bias=torch.from_numpy(repaired['last_bias'])))
         best_head=dict(weight=torch.from_numpy(repaired['best_weight']),bias=torch.from_numpy(repaired['best_bias']))
         best,bnll,selected,updates,history=(repaired[k] for k in ('best','nll','selected','updates','history'))
         m.save(out/'history.json',history);m.save(out/'local_boundary_plan.json',repaired['plans'])
+        if cfg.get('rounds')==3:m.save(out/'local_rounds.json',repaired['rounds'])
     for epoch in range(1,1 if local or hard else recipe['epochs']+1):
         head.train();order=rng.permutation(1600);total=used=0
         strength=0. if lbfgs else .5*(1+__import__('math').cos(__import__('math').pi*(epoch-1)/max(1,recipe['epochs']-1))) if cooldown else 1.

@@ -14,7 +14,7 @@ def validate(c):
     continued_old282={**origin,'maximum_classes':12,'skip_classes':[3,0,2,19,1,4,9,6]}
     full_E2={**origin,'maximum_classes':20}
     full_physical_trust={**full_E2,'row_radius':.16}
-    assert c in (origin,continued,continued_E2,continued_old282,full_E2,full_physical_trust)
+    assert c in (origin,continued,continued_E2,continued_old282,full_E2,full_physical_trust,{**full_physical_trust,'rounds':3})
 
 
 def selection(features,labels,w,b):
@@ -83,6 +83,30 @@ def fit(train,labels,development,development_labels,w,b,c,target,seconds,emit):
     final,final_nll,_=selection(z,dy,w,b);assert final==best and abs(final_nll-bnll)<1e-5
     return dict(best_weight=w.astype(np.float32),best_bias=b.astype(np.float32),last_weight=lastw.astype(np.float32),last_bias=lastb.astype(np.float32),best=best,nll=bnll,selected=selected,updates=updates,
         history=history,plans=plans,initial_correct=initial,initial_NLL=initial_nll,classes=used,TEST_informed_strategy=True,independent_generalization=False,gradient_data='TRAIN_only',per_update_parameters=257,elapsed_s=time.monotonic()-started)
+
+
+def fit_cycles(train,labels,development,development_labels,w,b,c,target,seconds,emit):
+    """At most three identical TRAIN optimizer rounds, not a parameter grid."""
+    validate(c);assert c['rounds']==3
+    single={k:v for k,v in c.items()if k!='rounds'};started=time.monotonic()
+    history=[];plans=[];classes=[];rounds=[];offset=selected=0;initial=None;last=None
+    for cycle in range(1,4):
+        left=seconds-(time.monotonic()-started)
+        if left<=0:break
+        base_selected=selected;class_offset=len(classes)
+        def translate(row):
+            v=dict(row);v.update(round=cycle,update=row['update']+offset,stage=row['stage']+class_offset,selected_update=offset+row['selected_update']if row['selected_update']else base_selected)
+            v['round_recovered']=v.pop('recovered');v['round_lost']=v.pop('lost');return v
+        result=fit(train,labels,development,development_labels,w,b,single,target,left,lambda row:emit(translate(row)))
+        if initial is None:initial=(result['initial_correct'],result['initial_NLL'])
+        history.extend(translate(v)for v in result['history']);plans.extend({**v,'round':cycle,'stage':v['stage']+class_offset}for v in result['plans']);classes.extend(result['classes'])
+        if result['selected']:selected=offset+result['selected']
+        offset+=result['updates'];w,b=result['best_weight'],result['best_bias'];last=result
+        rounds.append(dict(round=cycle,initial_correct=result['initial_correct'],selected_correct=result['best'],initial_NLL=result['initial_NLL'],selected_NLL=result['nll'],updates=result['updates']))
+        improved=result['best']>result['initial_correct']or(result['best']==result['initial_correct']and result['nll']<result['initial_NLL']-1e-4)
+        if not improved or result['best']>=target:break
+    assert last is not None
+    return {**last,'best_weight':w,'best_bias':b,'selected':selected,'updates':offset,'history':history,'plans':plans,'classes':classes,'initial_correct':initial[0],'initial_NLL':initial[1],'elapsed_s':time.monotonic()-started,'rounds':rounds}
 
 
 def selftest():

@@ -61,4 +61,20 @@ def test_one_bounded_trust_extension(monkeypatch):
     import pytest
     with pytest.raises(AssertionError):validate({**c,'row_radius':.32})
     src=(HERE/'lab_caltech20_fullG2_OAS_20261024.py').read_text()
-    assert "r['selected_correct']>=260" in src and "a.continued_joint_head=='trust'" in src
+    assert "'row_radius':.16" in src and "('trust','cycles')" in src
+
+
+def test_fixed_rounds_stop_on_plateau_and_keep_global_update(monkeypatch):
+    monkeypatch.syspath_prepend(str(HERE))
+    import lab_caltech20_TRAIN_local_boundary_20261023 as b
+    import numpy as np
+    calls=[]
+    def fake(*args):
+        before=267+len(calls);improvement=1 if not calls else 0;calls.append(1)
+        row=dict(update=4,stage=1,selected_update=1 if improvement else 0,recovered=improvement,lost=0)
+        return dict(initial_correct=before,initial_NLL=1.,best=before+improvement,nll=.99 if improvement else 1.,selected=1 if improvement else 0,updates=4,history=[row],plans=[dict(stage=1)],classes=[3],best_weight=np.zeros((20,256)),best_bias=np.zeros(20),last_weight=np.zeros((20,256)),last_bias=np.zeros(20))
+    monkeypatch.setattr(b,'fit',fake)
+    c=dict(maximum_classes=20,steps_per_class=64,temperature=2.,label_smoothing=.02,neighbor_weight=2.,KL=2.,anchor=.2,trust_step=.25,row_radius=.16,seed=73,rounds=3)
+    r=b.fit_cycles(None,None,None,None,None,None,c,340,180,lambda row:None)
+    assert len(calls)==2 and r['updates']==8 and r['selected']==1 and r['best']==268
+    assert r['history'][-1]['selected_update']==1 and r['history'][-1]['update']==8
