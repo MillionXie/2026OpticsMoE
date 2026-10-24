@@ -19,6 +19,7 @@ from audit_abo_text_qwen import audit as audit_abo_text_qwen
 from audit_abo_text_ops import audit as audit_abo_text_ops
 from audit_abo_image_qwen import audit as audit_abo_image_qwen
 from audit_abo_title_student import audit as audit_abo_title_student
+from audit_openmoji_e45 import audit as audit_openmoji_e45
 from protocol_identity import effective_protocol
 
 
@@ -50,6 +51,35 @@ def title_student_result(root,data_root):
         bridge_zero_reason=results[0]['bridge_zero_reason'],not_a_device_measured_e2e=True,
         raw_references=results,
         scope='real UTF8/tokenizer/H2D, selected original NN synchronized wall plus3 parameter-derived optical passes, CPU full2400 ranking and all199 true gaps; separate offline gallery')
+
+
+def openmoji_e45_paths(root):
+    # Only the complete three fresh processes, never a frontend-only contract.
+    return [root/'a100_e45_input_inclusive_20261025_01'/f'ours_repeat{i:02d}' for i in (1,2,3)]
+
+
+def openmoji_e45_result(root):
+    results=[dict(raw_run_path=p.relative_to(REPO).as_posix(),**audit_openmoji_e45(p))
+             for p in openmoji_e45_paths(root)]
+    if ([r['repeat'] for r in results]!=[1,2,3] or [r['calls'] for r in results]!=[200]*3
+            or any(r['common_Qwen_input_tokens200'] is not None for r in results)):
+        raise ValueError('Canonical new-layout epoch45 workload or pending common token basis changed')
+    seconds=sum(r['projected_seconds200'] for r in results)
+    energy=sum(r['phase_estimated_j200'] for r in results)
+    return dict(status='independently_audited_600_calls',calls=600,unique_images=200,
+        sample_ms=seconds/.6,equivalent_frame_ms=seconds/.6,sample_j=energy/600,equivalent_frame_j=energy/600,
+        full1000_historical_simulation_changed_cell_accuracy=.8765,
+        full1000_historical_laboratory_changed_cell_accuracy=.8655,
+        measured_first200_metrics=[r['measured_first200_metrics'] for r in results],
+        common_input_tokens_total=None,common_tokens_per_s=None,
+        common_tokens_status='pending actual same-input Qwen formal calls; not Ours plain internal tokens',
+        optical_ms_total=sum(r['optical_ms_total'] for r in results),
+        charged_electronic_ms_total=sum(r['charged_electronic_ms_total'] for r in results),
+        diagnostic_actual_software_seconds_total=sum(r['diagnostic_software_wall_s'] for r in results),
+        diagnostic_actual_software_board_j_total=sum(r['diagnostic_software_board_j200'] for r in results),
+        native_unit='one original PNG plus UTF8 instruction to CPU semantic grid',
+        optical_passes_per_query=6,not_a_device_measured_e2e=True,raw_references=results,
+        scope='real PNG/plain tokenizer/BF16 embedding, original selected NN synchronized wall plus6 parameter-derived optical passes, original CPU grid result and all199 true gaps; original residual/FFT/layout retained separately')
 
 
 def main():
@@ -186,8 +216,10 @@ def main():
         full2400_reference_hit1=.7358333333333333,measured_first200_hit1=[r['measured_first200_hit1'] for r in images],
         independent_image_audit_python=str(args.abo_image_python or sys.executable),
         raw_references=images,scope='native image file to CPU100 full ranking, continuous199 gaps, zero dedicated inference warmup')
-    rows['07']['status']='human_selected_lab08655_epoch45_identity_bound; input_contract_and_new_timing_pending'
-    rows['07']['identity_note']='Human selected the new-layout laboratory .8655 version: epoch45/PT03cb861c, same-weight simulation .8765, Qwen epoch30/PT0be775 .8120. Old .8880/PT579b19 and original protocol remain historical; no new timing or paired per-case CCD audit is implied.'
+    openmoji_root=REPO/'LightGenV2/tasks/t04_semantic_interaction/runs/simulation'
+    rows['07']['ours']=openmoji_e45_result(openmoji_root)
+    rows['07']['status']='epoch45_ours_three_round_timing_energy_independently_audited; Qwen timing and matching common tokens pending; OP pending'
+    rows['07']['identity_note']='Human selected the new-layout laboratory .8655 version: epoch45/PT03cb861c, same-weight simulation .8765, Qwen epoch30/PT0be775 .8120. New first200 Ours metrics are separate from both full1000 references. Old .8880/PT579b19 and original protocol remain historical; no new laboratory capture or paired per-case CCD audit is implied.'
     rows['07']['effective_identity']=next(item for item in protocol['rows'] if item['id']=='07')
     value=dict(protocol_id=protocol['protocol_id'],status='PARTIAL_NOT_FINAL_PAPER_TABLE',
         shared_qwen_temporal100=anchor,nine_metric_rows=list(rows.values()),
@@ -200,8 +232,9 @@ def main():
         raw_data_in_original_task_runs=True,power_no_idle_subtraction=True)
     with args.output.open('x',encoding='utf8') as stream:json.dump(value,stream,ensure_ascii=False,indent=2)
     print(json.dumps(dict(status=value['status'],shared_qwen100={k:anchor[k] for k in ('calls','sample_ms','sample_j','time_weighted_board_w')},
-                          complete_timing_energy_rows=['03','04','05','06'],qualified_model_task_items=11,
-                          pending_rows=['01a ours','01b ours','02 ours','07 both: epoch45 selected, new timing pending','08 both'],
+                          complete_timing_energy_rows=['03','04','05','06'],
+                          qualified_model_task_items=sum(r[m] is not None for r in rows.values() for m in ('ours','qwen')),
+                          pending_rows=['01a ours','01b ours','02 ours','07 Qwen and matching common tokens','08 both'],
                           operation_counts='04 Qwen dense-MAC subtotal validated; other matching-input replays pending')))
 
 

@@ -71,3 +71,4 @@
 !audit_openmoji_e45.py
 !run_openmoji_e45.py
 !test_openmoji_e45_measurement.py
+!test_openmoji_e45_index.py
