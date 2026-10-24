@@ -39,3 +39,11 @@ def test_controller_has_no_torch_import_and_stops_only_own_child():
     assert 'import torch' not in source and "CUDA_VISIBLE_DEVICES=''" in source
     assert "fcntl.LOCK_EX|fcntl.LOCK_NB" in source and 'while idle<3' in source
     assert 'child.terminate()' in source and 'os.kill(' not in source
+
+
+def test_original_legacy_training_location_rebound_not_applied_to_baseline():
+    source=(HERE/'openmoji_qwen_live.py').read_text()
+    assert "'legacy_warmstart_checkpoint')" in source
+    assert 'initialize_from_legacy(' not in source
+    model=(live.TASK/'modeling.py').read_text()
+    assert "'legacy_weights_loaded': False" in model

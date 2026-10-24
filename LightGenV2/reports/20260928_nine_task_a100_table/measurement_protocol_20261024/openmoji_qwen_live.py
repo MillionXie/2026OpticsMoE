@@ -78,7 +78,11 @@ def load_runtime(output,device):
             or sha(ORIGINAL/'best_checkpoint.pt')!=row['qwen_pt_sha256']):
         raise ValueError('Original epoch30 body/config/performance identity differs')
     settings=load_settings(PROFILE)
-    paths=('data_dir','svg_asset_dir','asset_dir','qwen_checkpoint','prompt_cache_path')
+    # Preserve the original stored location even for the unused training-only
+    # legacy entry. build_model's Qwen branch never calls initialize_from_legacy;
+    # its own early return also explicitly declares legacy_weights_loaded=False.
+    paths=('data_dir','svg_asset_dir','asset_dir','qwen_checkpoint','prompt_cache_path',
+           'legacy_warmstart_checkpoint')
     not_inference={'config_path','output_dir','optical_base_config',*paths}
     differences={k:(str(getattr(settings,k)),str(v)) for k,v in original.items()
         if k not in not_inference and hasattr(settings,k) and getattr(settings,k)!=v}

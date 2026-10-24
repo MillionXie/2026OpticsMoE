@@ -1,6 +1,45 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-25 00:38，北京时间）
+## 新旧版入口与完成清单（2026-10-25 01:18，北京时间）
+
+新布局实验室`.8655`所对应epoch45/PT03cb861c的LightGen真实输入正式三轮已完成：
+T04 `runs/simulation/a100_e45_input_inclusive_20261025_01/ours_repeat01,02,03`，
+冻结测量源码`cef807950`。controller1551824和三worker1552804/1554725/1557067均退出，
+私有MPS已释放；三轮各200调用完整保留首条及全部199间隙，服务器和本地独立CPU审计全通过，
+两端审计解析对象逐项相同。原66文件43339307字节逐SHA本地备份，根
+`backup_receipt_complete01.json`；外置controller日志0字节也已精确取回。
+三个本地`ours_repeatNN/local_independent_audit01.json` SHA依次为
+`63bc770ea5f0da27767575d364d7848599361194b6b9d24af254a90d377b009d`、
+`66516e318aa80f37485528017fb24b55d75ac19b40bf3c0b5c34f803132ad771`、
+`4ce158d12594e83ef45e642af9dfb83da83c7df9f3bbc5afa371dd7d9be4a4e6`。
+从原PNG/UTF8、实际输出/网格指标、源Git、原NN无重叠分段/实际merger、进程/MPS及
+全连续窗NVML独立复算；三轮投影合600调用为27.8627333949ms/输入、
+分阶段估算3.01392649295J/输入。这里包含每输入6次参数推算光传播，
+是光电混合硬件投影，不是装置实测E2E；诊断软件wall/板卡积分与所选阶段能耗分列。
+三轮新first200 changed-cell accuracy均`.855`；历史同PT完整1000仿真`.8765`及实拍`.8655`
+分别保留，不混称全量性能重现或新实拍。尚未完成同输入Qwen正式调用，
+共同输入token和Tokens/s保持null/待实测，不用Ours plain内部token替代或填0。
+
+正式测量前，原TEST200/999的完整原前向与选定NN插桩前向逐位相同，
+`a100_e45_stage_contract_20261025_02/original_instrumented_live_CPU_contract/contract.json`
+SHA`8aacd85678b9baff63f82d845f226abd86f0ee757e1af5cc22ff47ab6bb10a9f`，
+六传播、实际bridge/readout和两个并行残差均正确观察；全程CPU/noCUDA。
+其5原文件158648字节已SHA备份，不重做已合格的前端/插桩合同或正式三轮。
+旧stage `_01`的父类观察绑定错误在CPU插桩调用处被拦截，未开始GPU；
+保留原5文件56108字节及732字节外置日志，修复实际实例绑定后才以新`_02`通过，
+没有替换原神经计算、忽略真实merger或将缓存作为在线输入。
+
+本地全量独立重放新`measurement_protocol_20261024/measured_index_partial_08.json`，
+SHA`b5e3313e79f85419cb8d47ce5a7f4e47dbd4142ff31c617b31e1079fd67f4289`；
+builder源码为`6be485bb1`所发布版本，生成时仓库HEAD为同主线peer的`841909a94`，
+该peer仅T21文档/新增协议与测试，builder字节未变。除第07行新Ours数据外，
+其他八行及共享Qwen anchor与partial07解析对象完全相同；旧07及以前均保留。
+服务器未生成这个私有新索引。当前12/18模型任务项时间/能量合格，余6项是
+LGVQ Ours时间/空间、T08图搜文Ours、OpenMoji Qwen、T12双方。
+只有04文搜图Qwen实际200输入dense-MAC小计已验证，其余OP/TOPS/TOPS/W仍待匹配回放。
+正式两份新Excel仍未生成；旧COMPLETE/frontend_tokens均不能作为新交付。
+
+以下00:38及以前状态为历史，本段和不可变raw为最新事实：
 
 文搜图LightGen现在固定复用`a100_title_student_input_inclusive_20261024_02/ours_repeat01`，
 加`a100_title_student_input_inclusive_20261025_04/ours_repeat02,03`，三轮各200真实调用已
