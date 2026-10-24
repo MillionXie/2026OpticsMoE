@@ -18,6 +18,7 @@ from audit_lgvq_spatial_qwen import audit as audit_spatial_qwen
 from audit_abo_text_qwen import audit as audit_abo_text_qwen
 from audit_abo_text_ops import audit as audit_abo_text_ops
 from audit_abo_image_qwen import audit as audit_abo_image_qwen
+from protocol_identity import effective_protocol
 
 
 def main():
@@ -47,11 +48,14 @@ def main():
         full558_reference_srcc=originals[0]['original_full558_reference']['srcc'],
         measured200_subset_srcc=[r['performance200']['srcc'] for r in originals],
         raw_references=references,scope='file to CPU score, continuous whole window, all199 gaps, no dedicated inference warmup')
-    protocol=read(HERE/'protocol.json')
+    protocol=effective_protocol()
     rows={item['id']:dict(id=item['id'],task=item['task'],metric=item['metric'],
                          full_test_reference=dict(ours=item['ours_target'],qwen=item['qwen_target']),
                          ours=None,qwen=None,ops_status='pending actual matching-input untimed replay',
                          status='not_yet_complete_under_new_protocol') for item in protocol['rows']}
+    for item in protocol['rows']:
+        if 'ours_lab_target' in item:
+            rows[item['id']]['full_test_reference']['ours_lab']=item['ours_lab_target']
     rows['01a']['qwen']=anchor
     spatial_root=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_spatial_input_a100_20261024_01'
     spatial=[audit_spatial_qwen(spatial_root/f'qwen_repeat{i:02d}',manifest) for i in (1,2,3)]
@@ -142,12 +146,14 @@ def main():
         full2400_reference_hit1=.7358333333333333,measured_first200_hit1=[r['measured_first200_hit1'] for r in images],
         independent_image_audit_python=str(args.abo_image_python or sys.executable),
         raw_references=images,scope='native image file to CPU100 full ranking, continuous199 gaps, zero dedicated inference warmup')
-    rows['07']['status']='input_identity_conflict_pending_human_version_choice; no new inference'
-    rows['07']['identity_note']='Selected .8880 PT579b19 uses old openmoji_grid_v2; .8120 Qwen PT0be775 uses layered scene TEST. Same numbered IDs are different input/target grids. Do not silently replace selected model or compare different datasets.'
+    rows['07']['status']='human_selected_lab08655_epoch45_identity_bound; input_contract_and_new_timing_pending'
+    rows['07']['identity_note']='Human selected the new-layout laboratory .8655 version: epoch45/PT03cb861c, same-weight simulation .8765, Qwen epoch30/PT0be775 .8120. Old .8880/PT579b19 and original protocol remain historical; no new timing or paired per-case CCD audit is implied.'
+    rows['07']['effective_identity']=next(item for item in protocol['rows'] if item['id']=='07')
     value=dict(protocol_id=protocol['protocol_id'],status='PARTIAL_NOT_FINAL_PAPER_TABLE',
         shared_qwen_temporal100=anchor,nine_metric_rows=list(rows.values()),
         reference_for_both_tables='shared_qwen_temporal100 in this exact index; never select another date or trial',
         current_input_protocol_sha256=sha(HERE/'protocol.json'),
+        approved_identity_amendments=protocol['identity_amendments'],
         index_builder_source_sha256=sha(Path(__file__)),
         index_builder_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
         no_predefined_speedup_claim=True,derived_optical_vs_measured_electronic_boundaries_separate=True,
@@ -155,7 +161,7 @@ def main():
     with args.output.open('x',encoding='utf8') as stream:json.dump(value,stream,ensure_ascii=False,indent=2)
     print(json.dumps(dict(status=value['status'],shared_qwen100={k:anchor[k] for k in ('calls','sample_ms','sample_j','time_weighted_board_w')},
                           complete_timing_energy_rows=['03','05','06'],qualified_model_task_items=10,
-                          pending_rows=['01a ours','01b ours','02 ours','04 ours','07 both: version choice','08 both'],
+                          pending_rows=['01a ours','01b ours','02 ours','04 ours','07 both: epoch45 selected, new timing pending','08 both'],
                           operation_counts='04 Qwen dense-MAC subtotal validated; other matching-input replays pending')))
 
 

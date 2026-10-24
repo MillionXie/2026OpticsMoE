@@ -1,0 +1,44 @@
+{
+  "amendment_id": "openmoji_lab08655_epoch45_identity_20261024",
+  "status": "human_approved_identity_correction",
+  "base_protocol_id": "lightgen_qwen_input_inclusive_200x3_20261024_v1",
+  "base_protocol_sha256": "29c713f52e0f3787557bdbb26a897ecd94fe97594b1a9fad17d101d216847db2",
+  "human_confirmation": "2026-10-24: use the new-layout version that produced the laboratory0.8655 result;0.8880 was an out-of-date table entry",
+  "row_id": "07",
+  "superseded_identity": {
+    "ours_target": 0.888,
+    "ours_pt_sha256": "579b19e78befe93cd258ce02308235f1a9176316f37bc42fc2e1b6ff06d38e9f",
+    "layout": "openmoji_grid_v2",
+    "retention": "Keep the original protocol, reports, checkpoint and rejected cross-layout comparison unchanged"
+  },
+  "effective_row": {
+    "id": "07",
+    "task": "OpenMoji newlayout",
+    "metric": "Changed-cell accuracy",
+    "ours_target": 0.8765,
+    "ours_lab_target": 0.8655,
+    "qwen_target": 0.812,
+    "ours_pt_sha256": "03cb861c3ac344556601eb3eb6d7d1a22b77a54d2e7e68e85d77ee30fb09eb21",
+    "qwen_pt_sha256": "0be775796d5f64df3fab6359eb354ec6666dfc29329484a620b619a6f7ec7cf8",
+    "ours_epoch": 45,
+    "qwen_epoch": 30,
+    "profile": "layered_scene_exp05_dc30_ccdsmall",
+    "layout_version": "layered_anchor6_svg_v3",
+    "dataset_directory": "openmoji_layered_anchor6_svg_v3",
+    "test_jsonl_sha256": "93aa528c61fb7da116dc0bb7e749f7f3e525d1140050982e33604e3e72d22fca",
+    "full_test_samples": 1000,
+    "lab_ccd_images": 6000,
+    "lab_downstream_retraining": false
+  },
+  "ours_checkpoint_path": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_dc30_ccdsmall_selected_e45_s73_20260925/selected_checkpoint.pt",
+  "source_evidence": {
+    "lab_report": "LightGenV2/tasks/t04_semantic_interaction/runs/hardware/lab08655_qwen08120_comparison_20261015/ours_lab_full_report.json",
+    "lab_report_sha256": "ba51d8b425fc556f55e3c0506675c4223755673701854ad5c1d54b1f62b08dfc",
+    "qwen_report": "LightGenV2/tasks/t04_semantic_interaction/runs/hardware/lab08655_qwen08120_comparison_20261015/qwen_evaluation.json",
+    "qwen_report_sha256": "dd22cbdc39e5e6b77606ee11b45c1dbcf49e5d4dd7791485afbb56870c1482f1",
+    "selection": "LightGenV2/tasks/t04_semantic_interaction/runs/simulation/layered_dc30_ccdsmall_selected_e45_s73_20260925/selection.json",
+    "source_manifest": "LightGenV2/tasks/t04_semantic_interaction/runs/hardware/lab08655_qwen08120_comparison_20261015/source_manifest.json"
+  },
+  "audit_limits": "The sealed laboratory aggregate binds the exact checkpoint and reports1000 TEST/6000 CCD/no downstream retraining, but lacks a TEST-manifest SHA and per-sample prediction IDs. Do not claim a paired per-case CCD audit or replace the old captured report. New A100 timing must independently bind the actual new-layout files and measured first200 predictions.",
+  "unchanged": "Only row07 model/dataset/performance identity changes. Sampling200x3, timing boundary, phase energy, GPU/MPS controls, common-token numerator and all other task identities remain approved and unchanged. This is not a new timing result."
+}
