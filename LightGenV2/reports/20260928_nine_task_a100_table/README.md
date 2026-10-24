@@ -30,6 +30,13 @@
 逐位核输入、原完整模型输出和原网格后处理；target只用于参照元数据、不传给模型。
 缓存只在不计时CPU合同中作为原数值参照，不能作为后续在线计时输入。
 14项纯CPU/静态合同通过仍不等于这两张真实模型前向已执行，更不是选定NN插桩或200×3新测。
+有限控制器1443601现位于T04 `runs/simulation/a100_e45_live_frontend_contract_20261024_01`，
+实际`waiting_previous_queue`，明确引用T08标题`a100_title_student_input_inclusive_20261024_02`；
+尚未加载CPU模型或执行真实CPU前向。新源码`c953a06fb`双端14项测试通过；
+服务器原token缓存JSON声明plain text/no chat、零语言TF及原Instruct权重文件SHA
+`7de1838c87a5349b016c26a1c3f7d2bc400a3d485f95ef39a7059ffd734977a0`。
+本轮只读检查确认原/新所有推理配置字段相同、原光学base配置字节相同；
+上述权重文件整文件fresh SHA、实际live lookup与原缓存及完整模型逐位合同仍由排队worker执行。
 
 以下23:27及以前状态作为历史；未完成的正式测量仍以实际队列和原始审计为准：
 
