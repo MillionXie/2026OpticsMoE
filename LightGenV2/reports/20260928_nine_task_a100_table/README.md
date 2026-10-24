@@ -1,5 +1,58 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 07:35补记：LSP/SALICON Ours原图算量及compact三项成本绑定17，四成本仍待补
+
+成本仍14/18：剩LGVQ Ours temporal/spatial、T12双方；多baseline36/36与额外80GB Qwen3/3不变。
+正式准确度仍已确认原完整TEST，三fresh first200仅时间/能量及输出核验。本轮零GPU/模型前向/新计时，
+租机没有重连。两份新正式Excel尚无，不能拿旧表交付。
+
+`dense_student_saved_shape_mac.py`最终 `d2330d1a1`，读取原.7348 LSP/495b9c2c和.8625 SALICON/036bc8ca
+PT元数据、原Git图及600实际processor/stage次数。学生和Qwen teacher不同：学生原生Vision blocks均绕过，
+deepstack indexes被原activate清空，仅一个实际main merger；真实196patch、输入/输出adapter、两次幅度adapter、
+两个CCD output adapter及原progressive decoder逐矩阵计入。原hybrid output adapter虽然head只读192latent，
+它仍实际执行，不能漏掉。两电子残差单列，SALICON原两个384维扩展空间DW3确实存在且计入，
+不拿LSP teacher反卷积/额外adapter替学生头。所有原NN矩阵均逐项覆盖，未知矩阵即拒绝；router digital
+mask contraction另列，不塞进non-MAC/物理光。FFT、归一化/插值/位置构造等不冒称已完整计scalarOP。
+LSP NN .003673811456 TOP/input，.16801617875969996 TOPS/.0015740602714124986 TOPS/W；
+SALICON .003729230848 TOP/input，.09758845887882614 TOPS/.0009235509235730627 TOPS/W。
+local `measurement_protocol_20261024/dense_student_saved_shape_MAC_01.json`182297B SHA
+`296edc9ef566bbefb1a9303c5a2a4fd4e6d4fbaa1f76e331f49bdd0e7ce18db9`；server_01原176034B SHA
+`93651514e1db73d4442e3426620ebaa7082ad2712abb7a190578ae24a1b217bd`已原SHA取回，解析对象完全同。
+5项公式/元数据纯CPU测试双方过，不是重跑CPU模型合同。
+
+原PT本地/server都全SHA核后仅读取有界pickle描述符，不import Torch、不读tensor storage、不执行模型类。
+LSP旧pickle中的PosixPath/TorchVersion只映射为惰性路径描述/文本，未知global仍硬拒绝；未放宽Torch包。
+两任务各 `runs/simulation/a100_dense_saved_shape_metadata_20261025_01/` 保留：
+LSP local metadata_local_01.json30522B SHA
+`c6fe0e0b182429536e047497d43d44e3a1d84153d1848e48785e9852a1649ad7`，server_01原29309B SHA
+`d770140a1ff4a4b530c4e0eb6a87a6d34733fee82cb39eb00727564e221544cd`；
+SALICON local34561B SHA `d84bbfd2468465ca5cd2d1ee791a335e020c3554702d310220937c5734466989`，
+server_01原33172B SHA `c8a551141a08444b521351644559e9515c5fc13636e44cf1a4aa5112fa18cea4`。
+各server原件已由 `backup_receipt_original_metadata_complete01.json` 逐SHA取回，两端解析对象全同；
+Windows JSON CRLF与Linux LF原字节分别保留，不归一化原raw SHA。它们仍仅形状身份，不是tensor数值验证。
+
+`compact_student_shape_receipt.py`/builder `6f7addf27`，26项相关CPU tests本地通过；把本轮LSP/SALICON Ours
+及上节已双端核准的T07 Ours一次批量接入本地全量原raw重放
+`measurement_protocol_20261024/measured_index_partial_17.json`8881496B，SHA
+`5d05ea0c395b2dfdc07135b4e8cf15957c3171568af466cda7a83fb2c4593bda`，builder字节SHA
+`11c563a3926d3b90da780d6487c438727d7c62033e9334ed83e2238de2a005e1`。
+只新增03/05/06 Ours NN OP、同一raw_audit.aggregate视图及ops状态；所有原成本/完整TEST精度、其他六行、
+sharedQwen与16解析对象全同。旧16前保留，server没有私有17，temporal仍07。现有14项合格成本均有
+NN dense-MAC小计，但物理光denseequiv未知仍单列null，不填0/最大容量，不称整张光学TOPS表完成。
+
+最新实际Unix1792884735.3164065：QwenCPU_03/controller2143363/worker2149243存活，
+elapsed1:02:59/CPU1:03:07/100%/RSS约10.65GB，仍loading/no_gpu，无error/无passed contract；
+loading覆盖load和全部原200/2303 AST/live循环，不据CPU活动提前宣称通过或无依据称卡死。
+LGVQCPU2143364、T12cost2143366、LGVQcost2143391仍等待，无child，两成本completed[]，NVMLcompute空。
+原OursCPU_06合格proof继续复用，四活动controller不重启/冻结源不热改；deadline仍约08:24，
+stable在deadline-180截止。新故障/截止须保raw/外日志、诊断修复后新不可变missing-only续链，不整串空等旧前驱。
+
+本轮首次精确ff请求被已由peer同步到0e2dd0df3的较新HEAD正确拦住，未回退/覆盖；随后只核0e856565a
+提取器字节已在server便直接读取原metadata，无Git变更。之后server从peer0e2dd0df3安全精确ff两个本人OP源到
+d2330d1a1，93活动/已合格CPU源SHA前后全同。server后由peer自行推进1e2822acc，再由本窗口仅3个本人
+receipt/builder文件安全ff到6f7addf27，93冻结源SHA仍全同，新receipt3测试server通过；未在server生成私有17。
+本节README后续同步以实际核验为准，不把文档待同步当作神经测量阻塞。B100三暂存始终未动。
+
 ## 2026-10-25 07:16补记：三项原图NN算量接入16，图搜图Ours另已双端推导；成本仍14/18
 
 本轮所有算量仅原Git图、封存600输入/分段次数及PT形状元数据读取，零Torch模型加载/神经前向/GPU/新计时。
