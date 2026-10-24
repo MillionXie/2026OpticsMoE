@@ -1,11 +1,29 @@
 import unittest
 import ast
 import inspect
+import json
+from pathlib import Path
 import torch
-from .augmented_teacher_distill import teacher_pool, KL, DISCLOSURE, main
+from .augmented_teacher_distill import teacher_pool, KL, DISCLOSURE, main, reject_retired_entry
 
 
 class AugmentedTeacherTest(unittest.TestCase):
+    def test_retired_entry_cannot_execute_or_touch_data(self):
+        cfg = json.loads(Path(__file__).with_name('config_A_augteacher_distill_20261024.json').read_text())
+        self.assertFalse(cfg['execution_enabled'])
+        self.assertFalse(cfg['candidate_eligible'])
+        with self.assertRaisesRegex(RuntimeError, 'Retired TEST-supervised'):
+            reject_retired_entry()
+        body = ast.parse(inspect.getsource(main)).body[0].body
+        guard = next(i for i, n in enumerate(body) if isinstance(n, ast.Expr)
+                     and isinstance(n.value, ast.Call) and isinstance(n.value.func, ast.Name)
+                     and n.value.func.id == 'reject_retired_entry')
+        for i, statement in enumerate(body):
+            for call in (n for n in ast.walk(statement) if isinstance(n, ast.Call)):
+                if ((isinstance(call.func, ast.Attribute) and call.func.attr in {'read_text', 'mkdir', 'load'})
+                        or (isinstance(call.func, ast.Name) and call.func.id in {'load_checkpoint', 'sha'})):
+                    self.assertGreater(i, guard)
+
     def test_teacher_origin_and_gradient_are_explicit(self):
         torch.manual_seed(2)
         train = torch.rand(40, 8, dtype=torch.float64)

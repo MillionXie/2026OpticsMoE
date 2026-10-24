@@ -1,5 +1,8 @@
 {
   "schema": "T21_disclosed_former_TEST_augteacher_TRAIN_student_v1",
+  "execution_enabled": false,
+  "candidate_eligible": false,
+  "retirement_reason": "2026-10-24 user rejected direct TEST-supervised teacher. Retain historical evidence only; future teachers may use TRAIN-derived data only, never TEST or TEST-derived augmentation.",
   "seed": 20261024,
   "teacher_seen_TEST": true,
   "student_direct_TEST_gradient": false,

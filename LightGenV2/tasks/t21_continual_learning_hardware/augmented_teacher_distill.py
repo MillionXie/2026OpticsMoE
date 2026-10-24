@@ -3,6 +3,7 @@
 All results are adaptation development replay with independent_test_samples=0.
 The student inherits TEST information even though its direct inputs are TRAIN.
 The original 19.30% result remains separate and immutable. No SDK/GPU/new layer.
+RETIRED 2026-10-24: user rejected TEST supervision; CLI cannot execute again.
 """
 import argparse
 import copy
@@ -24,6 +25,14 @@ from .train_native import sha, put
 DISCLOSURE = dict(teacher_seen_TEST=True, student_inherits_TEST_information=True,
                   independent_test_samples=0, official_TEST_accuracy=None,
                   valid_for_formal_test_table=False)
+
+
+def reject_retired_entry():
+    """Fail closed before loading private data or creating a training run."""
+    raise RuntimeError(
+        'Retired TEST-supervised teacher entry: user rejected this data scope on '
+        '2026-10-24. Preserve historical results only. Future training must use '
+        'TRAIN and TRAIN-derived augmentation, not TEST or TEST-derived data.')
 
 
 def teacher_pool(train, ty, former, fy, predictions, cfg):
@@ -119,6 +128,7 @@ def main():
         p.add_argument('--' + name, type=Path, required=True)
     p.add_argument('--parent-sha256', required=True)
     args = p.parse_args()
+    reject_retired_entry()
     torch.set_num_threads(2)
     cfg = json.loads(args.config.read_text())
     assert cfg['teacher_seen_TEST'] and not cfg['student_direct_TEST_gradient']
