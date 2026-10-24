@@ -1,5 +1,52 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 新旧版入口与完成清单（2026-10-24 17:22，北京时间）
+
+**本轮唯一协议/结果入口是`measurement_protocol_20261024/`。两份正式新Excel尚未
+生成，不要发送下方2026-09-28或`frontend_tokens_20261023/`里的历史工作簿作为新结果。**
+`measured_index_partial_01.json`和`temporal_matrix_partial_01.json`是可审计中间索引，
+名字和内部状态均明确PARTIAL；时间推进不自动将其升级为正式表。
+
+九指标表中的“完成”只指输入包含200×3的时间/能量已独立审计，尚不表示TOP完整：
+
+| 行 | 指标任务 | LightGen | Qwen |
+|---|---|---|---|
+| 01a | LGVQ时间质量 | 真实输入前端与NN分段适配/正式测量待补 | 三轮已审计，共用两表唯一锚 |
+| 01b | LGVQ空间质量 | 真实输入前端与NN分段适配/正式测量待补 | 已排队，等待LSP成功结束 |
+| 02 | ABO图搜文 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
+| 03 | ABO图搜图 | 三轮已审计 | 三轮已审计 |
+| 04 | ABO文搜图 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
+| 05 | LSP | 已排队，等待T06成功结束与CPU合同通过 | 同队列、原模型三轮待测 |
+| 06 | SALICON | 三轮已审计 | 三轮已审计 |
+| 07 | OpenMoji新布局 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
+| 08 | ABO文生图 | 原模型计时适配/正式测量待补 | 原模型计时适配/正式测量待补 |
+
+这相当于18个模型—任务项中5项已有合格三轮时间/能量，13项尚待补齐。
+全部TOP及其派生TOPS/TOPS/W仍需匹配真实输入形状的独立不计时回放；共同输入
+Tokens/s分子已经在已完成Qwen行保留，最终整表与时间倍率一起校验。
+
+LGVQ多baseline表：Qwen100/50各三轮、GLM100三轮已合格；GLM50第1轮已本地
+审计和备份，第2轮已完成200预测但报告/收尾校验未结束，第3轮待测。
+CLIP/YOLO各100/50三轮尚在后续串行计划。当前40GB范围共24点，已合格10点，
+不把正在收尾的第11点预先计成完成。LightGen时间质量的共同点仍待补；完整DS/Kimi
+各两档三轮共12点待人工提供新的80GB机器，现阶段不提前租赁或连接旧实例。
+
+原始数据均留原任务run，服务器统一前缀`/DATA/DATA1/guest3/2026OpticsMoE/`；
+已验收原始文件在本地相同仓库相对路径按SHA备份：
+
+- 时间质量baseline：`tasks/t06_video_quality_assessment/runs/simulation/lgvq_mps_e2e_a100_20261024/`
+  内固定引用原`qwen100_repaired01`、`qwen100_remaining01`、`lab_remaining01`和续测`lab_remaining02`，
+  不通过目录日期或快慢挑轮；原拒绝/中断记录完整保留，不入正式均值。
+- 图搜图：`tasks/t07_abo_image_retrieval/runs/simulation/a100_input_inclusive_20261024_01/`
+  和`a100_input_inclusive_20261024_qwen01/`。
+- SALICON：`tasks/t03_saliency/runs/simulation/a100_input_inclusive_20261024_01/`。
+- LSP排队：`tasks/t02_keypoint_detection/runs/simulation/a100_input_inclusive_20261024_02/`；
+  `_01`是中断依赖，不能误用。
+- 空间Qwen排队：`tasks/t06_video_quality_assessment/runs/simulation/lgvq_spatial_input_a100_20261024_01/`。
+
+以上`tasks/`路径均以`LightGenV2/`为基准。正式交付时会在本节列出两份已生成Excel
+的准确文件名、SHA和全部raw清单；当前不提供尚不存在的正式下载链接。
+
 ## 2026-10-24 两表统一输入口径：已批准，重新测量
 
 用户已确认空闲并重新授权续测；当前`lab_remaining02`只计划余16点，合格Qwen100
@@ -70,7 +117,7 @@ LSP指定495b9c2c…的原图/原人体框前端与原神经网络计时适配�
 `run_lsp.py`仅在前队列成功结束、真实图片CPU逐位合同通过并重新独占入场后执行
 双方各三轮；不在另一计时窗口同时加载CPU大模型。尚未执行的点不填历史成本。
 
-## 当前表格：2026-10-24统一参考输入Tokens/s
+## 历史参考表格：2026-10-24统一输入Tokens/s（未按新协议重测）
 
 用户指定双方采用同样的输入token计数。当前应使用
 `frontend_tokens_20261023/九任务_统一输入Tokens_20261024.xlsx`。
@@ -213,7 +260,13 @@ idle-power subtraction. Its cost scope is not an all-devices-on wall-plug integr
 
 ## Historical workbook and measurement protocol
 
-This directory is the single current location for the nine-row comparison table. The current workbook is `A100_nine_task_energy_efficiency_COMPLETE_20260928.xlsx`; the older same-date workbook without `COMPLETE` was open/locked during regeneration and must not be used. Earlier workbooks remain archived under `20260927_demo_energy_efficiency_a100/archive_superseded_20260927/`.
+The following notes document the historical 2026-09-28 component-cost table,
+not the input-inclusive 2026-10-24 protocol above. Its workbook
+`A100_nine_task_energy_efficiency_COMPLETE_20260928.xlsx` is historical even
+though its filename contains `COMPLETE`; do not use it as the new two-table
+delivery. The older same-date workbook without `COMPLETE` was open/locked during
+that historical regeneration. Earlier workbooks remain archived under
+`20260927_demo_energy_efficiency_a100/archive_superseded_20260927/`.
 
 ## Uniform timing scope
 
