@@ -1,5 +1,50 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 05:30补记：T12相同文件输入已核准，正式成本后继已挂起而非已开跑
+
+九行成本仍13/18，余5项；多baseline36/36和额外80GB同机Qwen3/3不变。
+正式精度仍采用已确认的完整TEST；first200只测成本并核输出，OP按原网络/已有形状推导。
+两份新正式Excel尚未生成，不以新增准备或静态测试升级完成数；租机已完成，不再连接。
+
+原T12 reference-only输入准备源`e24d5e668`已三端发布；原5b4f/599805模型、缓存和GT
+不作为在线替身。T12 `runs/simulation/a100_shared_reference_files_20261025_01`内，
+固定首200原TEST的200张reference RGB PNG和200条UTF8指令，与原dataset reference及
+原prompt逐条核准；PNG反量化回原FP32 tensor全200逐位一致。原dataset为离线核验构造的
+GT未导出、未传模型，双方在线都只读相同PNG/UTF8。未加载神经模型/embedding、未CUDA。
+402原文件13437335B逐SHA取回，`backup_receipt_reference_RGB_UTF8_complete01.json`；
+原TEST JSONL也以原SHA331874ab...5d2f取回为`original_test_manifest.jsonl`。
+`input_manifest.json` SHA `c2523c81b43e450f6c8e1da215543de0426c4208f696fb4f8f51dda1947b61ea`。
+本地/服务器独立无模型输入审计均passed、解析对象相同；本地原件SHA
+`73f79a2cf7e8751391de0e6eaca0ca5a06de7e18d323897c560443efe20f9e16`，
+server原件`server_independent_input_audit01.json` SHA
+`48852c19e83de28ff6e16bb67c40ae9b2f421691d689dc089a495aa8aa60a889`已精确取回。
+这是输入数据合同通过，不是两模型神经CPU合同通过或新GPU成本。
+
+T12正式入口`measure_t12_cost.py`/`audit_t12_cost.py`/`run_t12_cost.py`及测试发布为
+`dec8410d3`，15项无模型测试双方通过；lab由peer自行同步的07641e10b只精确ff这4个新源，
+原4队列101冻结源SHA前后全等。新入口仅在两份真实CPU200/2303完整原前向proof passed、
+源及contractSHA核准后，才申请同共享锁、12次连续idle、私有MPS100。每轮fresh loadedmodel、
+零dummy，读PNG/UTF8到完整CPU FP32 RGB输出，原噪声/精度/网络不改，GT不读；原前端和全部
+199间隙保留。Ours保留真实6pass/残差/FFT执行raw并按原投影计，Qwen计原完整28LanguageTF、
+UNet/adapter/frozenVAE。实际NN形状随原200成本保存，不另外运行200次算量推理。
+独立输入审计在较早准备阶段完成，正式入场只核收据/manifest，不为SHA预读200 PNG。
+原全窗250ms功率年龄、UUID/进程/MPS/250W守卫及逐轮独立审计不放宽。
+
+唯一新T12成本后继`runs/simulation/a100_input_inclusive_20261025_01` controller2030868，
+deadline1792883902.6851099；显式引用Ours CPU `_20261025_04`和Qwen CPU `_20261025_01`。
+当前`waiting_original_CPU_proofs`、completed空、无worker；不是T12两项已通过或已GPU开跑。
+该controller及17项源冻结，支持`--points`仅补真正缺失轮；合格点不可重推。
+LGVQ CPU与该GPU后继共用同一把锁，不能与同机重CPU神经核验重叠。
+LGVQ正式GPU成本入口仍待接入，不把已有CPU准备称作成本已排队。
+
+最新只读Unix1792877176.6825166：旧4个controller1898302/1898337/1939547/1980244
+及新2030868均活着且无child；T08仍waiting_foreign_process、无bank/合格轮，其余只等前驱。
+原hmh1708990/606MiB和1710971/29534MiB仍占同一张卡，未混测/杀人，不重复通知同一占用。
+5队列105源SHA全部未变；private control返回无daemon（rc1），不是自有MPS遗留。
+新T12 `_01/admission_observation_20261025_0530.json` 2662B，SHA
+`dbafbd14d642b19969644a6c9ccda98c24395285bdd4a967ab4ed31f956af13f`。
+实际HEAD已由peer自行推进2ac5f95d5，不能盲覆盖/同步他窗活动源码；B100三暂存不动。
+
 ## 2026-10-25 05:00补记：LGVQ原视频入口接好，仍不是新增合格成本
 
 新增`lgvq_live_frontend.py`及CPU后继控制器，源`7616e7442`已local/GitHub/lab发布，
