@@ -45,3 +45,5 @@
 !run_abo_image_qwen.py
 !audit_abo_image_qwen.py
 !test_abo_image_qwen.py
+!abo_student_graph.py
+!test_abo_student_graph.py

@@ -1,6 +1,21 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
-## 新旧版入口与完成清单（2026-10-24 22:00，北京时间）
+## 新旧版入口与完成清单（2026-10-24 22:09，北京时间）
+
+图搜文Qwen的新`a100_image_input_inclusive_20261024_02`已实际通过两张原TEST图片的
+原/新完整CPU前向逐位合同，离线fresh进程生成原B1 FP32标题库已完成，接着执行
+独占MPS100三轮。冻结测量源码`19d0e4be4`；尚未三轮审计前不升级完成数。
+先前`_01`在模型加载/标题推理及正式计时开始前发现服务器少一份原性能JSON，
+原6文件16155字节已SHA备份；缺失的3750字节DATA按本地原SHA
+`dc1cc8d23895bc35ff9fcbbac0ceae4f95efd8495395b169565d4ea9ac0198ba`
+恢复且未覆盖任何差异文件，随后直接使用新不可变`_02`继续，没有等待人工再次批准。
+原参考报告与源Git、模型/精度/提示词/统计范围未改。
+
+另已准备采用`.8600`的T08原`build_student/load_checkpoint/student_embeddings`
+完整前端及语言光路计时分段；`abo_student_graph.py`只提供真实标题的CPU逐位合同，
+不是已完成的200×3结果。原`.86`纯标题在线3次传播，视觉侧和原生merger应无在线
+调用；实际输入embedding、语言adapter/CCD非线性/读出均保留，原并行残差照算出
+原结果但不计所选投影。CPU真实前向通过前不会启动正式LightGen测量。
 
 文搜图Qwen的200输入MAC审计已在服务器独立完成，原GPU回放没有重跑；
 `server_independent_MAC_audit01.json`已按SHA取回，与本地审计解析对象完全一致。
