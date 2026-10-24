@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from .hardware_bridge import native_image,crop_native
+from .hardware_bridge import native_image,crop_native,guard,signal
 
 
 class TestHardware(unittest.TestCase):
@@ -19,6 +19,14 @@ class TestHardware(unittest.TestCase):
         self.assertEqual(result.dtype,np.float32);self.assertEqual(result.shape,(1016,1016))
         np.testing.assert_allclose(result,12345/65535,atol=1e-7,rtol=0)
         self.assertNotAlmostEqual(float(result[0,0])*255,round(float(result[0,0])*255),places=3)
+
+    def test_signal_admission_not_8bit_threshold_bypass(self):
+        noise=dict(read_noise_upper_counts=50,dark_router_ROI_p99_counts=920,dark_global_p99_counts=520)
+        good=dict(p99_gray=3.2,saturation_fraction=0,readout_p99_counts=3300,readout_p10_counts=450)
+        guard(good,noise,router=True)
+        with self.assertRaises(RuntimeError):guard(dict(good,readout_p99_counts=1000),noise,router=True)
+        with self.assertRaises(RuntimeError):guard(dict(good,saturation_fraction=.16),noise,router=True)
+        with self.assertRaises(RuntimeError):guard(good)
 
 
 if __name__=='__main__':unittest.main()

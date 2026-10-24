@@ -70,13 +70,24 @@ def hardware(cfg):
     return Bench,LOCK,centroid,drive,warp
 
 
-def signal(value):
+def signal(value,mask=None):
+    readout=value if mask is None else value[mask]
     return dict(mean=float(value.mean()),p99_gray=float(np.percentile(value,99)*255),
-                maximum=float(value.max()),saturation_fraction=float((value>=1).mean()))
+                maximum=float(value.max()),saturation_fraction=float((value>=1).mean()),
+                readout_p99_counts=float(np.percentile(readout,99)*65535),
+                readout_p10_counts=float(np.percentile(readout,10)*65535))
 
 
-def guard(row):
-    if row['p99_gray']<15 or row['saturation_fraction']>.15:
+def guard(row,noise=None,router=False):
+    if noise is None:dark=row['p99_gray']<15
+    else:
+        # Original logical8-bit p99=15 is not a bit-depth-invariant dark test.
+        # This fixed TRAIN/control admission is frozen before any TEST capture.
+        floor=noise['dark_router_ROI_p99_counts' if router else 'dark_global_p99_counts']
+        margin=max(64.,10*noise['read_noise_upper_counts'])
+        dark=(row['readout_p99_counts']<floor+margin or
+              row['readout_p99_counts']-row['readout_p10_counts']<margin)
+    if dark or row['saturation_fraction']>.15:
         raise RuntimeError('Pilot/capture dynamic-range stop; preserve evidence, no automatic exposure/retry: '+repr(row))
 
 
@@ -138,6 +149,12 @@ def capture(package,cfg,out,pilot=False):
     if not admission['passed'] or sha(package['native_admission'])!=package['native_admission_sha256']:
         raise ValueError('Native admission missing or changed')
     if admission['hardware_payload_sha256']!=hardware_identity(cfg):raise ValueError('Admission uses another hardware session')
+    noise=None
+    if 'signal_admission' in package:
+        if sha(package['signal_admission'])!=package['signal_admission_sha256']:raise ValueError('Signal admission SHA changed')
+        noise=json.loads(Path(package['signal_admission']).read_text())
+        if not noise['passed'] or noise['hardware_payload_sha256']!=hardware_identity(cfg) or noise['TEST_used']:
+            raise ValueError('No same-session TRAIN/control signal admission')
     if LOCK.exists():raise RuntimeError('SDK already owned')
     model,checkpoint=load_checkpoint(package['checkpoint'],package['checkpoint_sha256'])
     out.mkdir(parents=True,exist_ok=False)
@@ -160,6 +177,12 @@ def capture(package,cfg,out,pilot=False):
         with Bench(cfg,out) as bench:
             for stage in order:
                 layer=out/stage;layer.mkdir();phase_file=layer/'phase.bmp';phase_sha=None
+                mask=None
+                if stage=='router':
+                    mask=np.zeros((1016,1016),bool)
+                    for index in model.active_indices[:int(model.active_count)].tolist():
+                        y,x=model.router_centers[index];y-=model.border;x-=model.border;h=model.router_side//2
+                        mask[y-h:y+h,x-h:x+h]=True
                 for i,entry in enumerate(entries):
                     key=f'{i:05d}';folder=layer/key;folder.mkdir()
                     prefix={s:torch.from_numpy(np.load(out/s/key/'ccd.npy'))[None] for s in order[:order.index(stage)]}
@@ -174,7 +197,7 @@ def capture(package,cfg,out,pilot=False):
                     elif digest!=phase_sha:raise ValueError('Input-dependent phase violates frozen layer contract')
                     amplitude_file=folder/'input.bmp';Image.fromarray(native_image(drive[gray])).save(amplitude_file)
                     raw,metadata=bench.capture(amplitude_file);np.save(folder/'raw.npy',raw)
-                    value=crop_native(raw,warp);np.save(folder/'ccd.npy',value);quality=signal(value)
+                    value=crop_native(raw,warp);np.save(folder/'ccd.npy',value);quality=signal(value,mask)
                     row={k:v for k,v in entry.items() if k!='amplitude'}
                     row.update(index=i,stage=stage,checkpoint_sha256=package['checkpoint_sha256'],
                         input_canonical_sha256=hashlib.sha256(gray.tobytes()).hexdigest(),
@@ -185,7 +208,7 @@ def capture(package,cfg,out,pilot=False):
                     put(folder/'receipt.json',row);rows.append(row)
                     put(out/'progress.json',dict(stage=stage,stage_frames=i+1,stage_total=len(entries),
                         total_frames=len(rows),expected_frames=len(entries)*len(order),latest=row,updated=time.time()))
-                    guard(quality)
+                    guard(quality,noise,router=stage=='router')
             features=[]
             for i in range(len(entries)):
                 value=torch.from_numpy(np.load(out/'final'/f'{i:05d}'/'ccd.npy'))[None]
