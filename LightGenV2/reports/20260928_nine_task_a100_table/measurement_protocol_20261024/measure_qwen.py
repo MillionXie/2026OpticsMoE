@@ -55,6 +55,8 @@ def load_abo(args, device):
               if p.is_file() and (p.suffix in (".json", ".safetensors") or p.name.endswith(".model"))}
     if not any(p.endswith(".safetensors") for p in assets):
         raise ValueError("Backbone tensor identity missing")
+    if assets["config.json"] != reference["model_config_sha256"]:
+        raise ValueError("Original .85125 backbone configuration differs")
     identity = dict(model_assets=assets, reference=str(args.reference), reference_sha256=sha(args.reference),
                     gallery_cache=str(feature_path), gallery_cache_sha256=sha(feature_path),
                     full_test_reference_hit1=.85125, full_test_count=800, gallery_count=1600,
@@ -83,6 +85,7 @@ def main():
     from LightGenV2.tasks.t07_abo_image_retrieval.standalone.io import template
     from LightGenV2.tasks.t06_video_quality_assessment import rental_busy_resource_20261020 as engine
     from LightGenV2.tasks.t06_video_quality_assessment.nvml_observer_process import ProcessTelemetrySampler
+    from LightGenV2.tasks.t06_video_quality_assessment.e2e_telemetry_observer import observer_command
     from LightGenV2.tasks.t06_video_quality_assessment.batch_telemetry import save_samples
     from LightGenV2.tasks.t06_video_quality_assessment.strict_tf_window_20261020 import interval_energy
     device = torch.device("cuda:0")
@@ -92,9 +95,13 @@ def main():
     torch.set_num_threads(8)
     torch.manual_seed(42)
     model, processor, queries, gallery_rows, gallery, identity = load_abo(args, device)
+    telemetry_root = REPO/"LightGenV2/tasks/t06_video_quality_assessment"
+    bound_sources = [Path(__file__), HERE/"measure_ours.py", HERE/"stage_meter.py",
+                     *[telemetry_root/name for name in ("e2e_telemetry_observer.py", "nvml_observer_process.py",
+                                                       "batch_telemetry.py", "strict_tf_window_20261020.py")]]
     identity.update(protocol_id="lightgen_qwen_input_inclusive_200x3_20261024_v1", task=args.task,
                     git_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=REPO, text=True).strip(),
-                    sources={str(f.relative_to(REPO)):sha(f) for f in (Path(__file__), HERE/"measure_ours.py", HERE/"stage_meter.py")},
+                    sources={str(f.relative_to(REPO)):sha(f) for f in bound_sources},
                     manifest_sha256=sha(args.manifest), gpu_uuid=args.gpu_uuid, mps_percent=100, repeat=args.repeat,
                     first_sample_retained=True, explicit_warmup_forwards=0, command=sys.argv,
                     GPU_admission=admission, torch=torch.__version__, cuda=torch.version.cuda,
@@ -105,7 +112,8 @@ def main():
     calls, outputs, telemetry = [], [], []
     engine.GPU, engine.PIPE = args.gpu_uuid, os.environ["CUDA_MPS_PIPE_DIRECTORY"]
     guard = engine.MPSGuard(SimpleNamespace(deadline=time.time()+1800))
-    sampler = ProcessTelemetrySampler(args.gpu_uuid, args.output/"telemetry_stdout.jsonl")
+    raw_telemetry = args.output/"telemetry_stdout.jsonl"
+    sampler = ProcessTelemetrySampler(args.gpu_uuid, raw_telemetry, command=observer_command(args.gpu_uuid,raw_telemetry))
     try:
         guard.bind()
         sampler.start()
@@ -121,7 +129,8 @@ def main():
                 cpu = processor(text=[template(processor,image)], images=[image], padding=True, return_tensors="pt")
                 metadata = dict(input_ids_shape=list(cpu["input_ids"].shape), pixel_values_shape=list(cpu["pixel_values"].shape),
                                 image_grid_thw=cpu["image_grid_thw"].tolist(),
-                                valid_input_tokens=int(cpu["attention_mask"].sum()), original_size=original_size)
+                                valid_input_tokens=int(cpu["attention_mask"].sum()), original_size=original_size,
+                                input_ids=cpu["input_ids"].tolist(), attention_mask=cpu["attention_mask"].tolist())
                 prepared = time.perf_counter()
                 inputs = {k:cpu[k].to(device) for k in ("input_ids","attention_mask","pixel_values","image_grid_thw")}
                 torch.cuda.synchronize()
@@ -131,8 +140,10 @@ def main():
                     mask = inputs["attention_mask"].bool()
                     positions = torch.arange(mask.shape[1],device=device)[None].expand_as(mask).masked_fill(~mask,-1).amax(1)
                     vector = F.normalize(hidden[torch.arange(len(mask),device=device),positions,:64].float(),dim=-1)
-                    scores = vector @ gallery.T
-                    ranking = scores.argsort(dim=1,descending=True,stable=True)
+                # Match the original FP32 cosine ranking after descriptor
+                # extraction; do not silently autocast retrieval scores to BF16.
+                scores = vector.float() @ gallery.T
+                ranking = scores.argsort(dim=1,descending=True,stable=True)
                 cpu_ranking = ranking.cpu()
                 predicted = gallery_rows[int(cpu_ranking[0,0])]["product_id"]
                 returned = time.perf_counter()
