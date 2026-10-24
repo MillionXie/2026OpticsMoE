@@ -1,0 +1,38 @@
+{
+  "seed": 42,
+  "epochs_per_stage": 30,
+  "probe_samples": 32,
+  "probe_steps": 400,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "gradient_clip": 1.0,
+  "effective_batch": 32,
+  "candidate_gpu_indices": [4, 6, 2, 5],
+  "max_physical_gpus": 4,
+  "run_tag": "cacheclone1",
+  "tasks": {
+    "lsp": {
+      "parent": "lsp_finetune60_formal_s42_20261024_cleanup1",
+      "parent_sha256": "0f3d01ce84f422307f2bb881760ef18a091e727065b471b8c9ddc4ad4ebbf557",
+      "loss": "normalized_Gaussian_spatial_cross_entropy",
+      "probe_minimum_train_score": 0.8,
+      "final_epoch": 90
+    },
+    "openmoji": {
+      "parent": "openmoji_finetune60_formal_s42_20261024",
+      "parent_sha256": "e143134da27cf53d311d1624f9b42eb0e323ce187b8e1506c94567f16b6d6e26",
+      "loss": "scene_balanced_changed_category_and_edit_BCE",
+      "probe_minimum_train_score": 0.8,
+      "probe_steps": 200,
+      "final_epoch": 90
+    },
+    "salicon": {
+      "parent": null,
+      "loss": "original_saliency_loss",
+      "probe_minimum_train_score": null,
+      "probe_steps": 200,
+      "final_epoch": 30,
+      "head_parameters": 513
+    }
+  }
+}

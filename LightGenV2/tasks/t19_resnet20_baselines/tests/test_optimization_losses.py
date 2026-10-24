@@ -7,6 +7,14 @@ from LightGenV2.tasks.t19_resnet20_baselines.optimization_losses import (
 
 
 class OptimizationTests(unittest.TestCase):
+    def test_cache_tensor_owns_storage_without_changing_values(self):
+        from LightGenV2.tasks.t19_resnet20_baselines.optimization_stage import own_cached_value
+        value=torch.randn(32,8)
+        cached=own_cached_value(value)
+        self.assertNotEqual(cached.data_ptr(),value.data_ptr())
+        torch.testing.assert_close(cached,value,rtol=0,atol=0)
+        value.zero_();self.assertGreater(float(cached.abs().sum()),0.)
+
     def test_pose_target_scale_invariant_and_invisible_channels_ignored(self):
         x=torch.randn(2,3,4,4,requires_grad=True);y=torch.rand_like(x);v=torch.tensor([[1,0,1],[1,1,0]])
         a=pose_distribution_loss(x,y,v);b=pose_distribution_loss(x,y*19,v)

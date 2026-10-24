@@ -3,6 +3,7 @@ import argparse
 import fcntl
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -18,7 +19,10 @@ def main(args):
     plan=json.loads(args.plan.read_text())
     if set(plan['candidate_gpu_indices'])!={2,4,5,6} or plan['max_physical_gpus']!=4:
         raise ValueError('Cannot expand four-GPU resource authorization')
-    lock=(TASK/'runs/.t19_optimization_stage_20261024.lock').open('a')
+    tag=plan.get('run_tag','')
+    if tag and re.fullmatch('[a-z0-9_]+',tag) is None:raise ValueError('Unsafe run tag')
+    suffix='_'+tag if tag else ''
+    lock=(TASK/f'runs/.t19_optimization_stage_20261024{suffix}.lock').open('a')
     fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     args.suite.mkdir(parents=True,exist_ok=False)
     rows=subprocess.check_output(['nvidia-smi','--query-gpu=index,uuid','--format=csv,noheader,nounits'],text=True)
@@ -26,9 +30,9 @@ def main(args):
     candidates=[inventory[i] for i in plan['candidate_gpu_indices']]
     jobs=[]
     for task in plan['tasks']:
-        probe=f'{task}_optimization_probe_s42_20261024'
+        probe=f'{task}_optimization_probe_s42_20261024{suffix}'
         for phase in ('probe','formal'):
-            name=probe if phase=='probe' else f'{task}_optimization_fixed30_formal_s42_20261024'
+            name=probe if phase=='probe' else f'{task}_optimization_fixed30_formal_s42_20261024{suffix}'
             base=TASK/'runs'/('smoke' if phase=='probe' else 'simulation')
             if (base/name).exists():raise RuntimeError('Existing run evidence; refuse duplicate')
             jobs.append(dict(task=task,phase=phase,name=name,probe_name=probe,status='queued'))
@@ -56,6 +60,19 @@ def main(args):
                 save()
             for uuid in candidates:
                 owned=[pid for pid,(_,j,_) in running.items() if j['gpu_uuid']==uuid]
+                # Respect CPU preflight reservations in the other live T19
+                # registry as well as CUDA allocations in snapshot().
+                for registry in (TASK/'runs/simulation').glob('*/queue_status.json'):
+                    if registry==path:continue
+                    try:other=json.loads(registry.read_text())
+                    except (OSError,ValueError):continue
+                    for peer in other.get('jobs',[]):
+                        if peer.get('status')!='running' or peer.get('gpu_uuid')!=uuid or not peer.get('pid'):continue
+                        try:command=Path(f"/proc/{peer['pid']}/cmdline").read_bytes().replace(b'\0',b' ').decode()
+                        except (FileNotFoundError,PermissionError):continue
+                        if ('t19_resnet20_baselines.' in command and uuid in command and str(TASK/'runs') in command):
+                            owned.append(peer['pid'])
+                if len(set(owned))>=2:continue
                 ready=[j for j in jobs if j['status']=='queued' and (j['phase']=='probe' or
                     next(p for p in jobs if p['task']==j['task'] and p['phase']=='probe')['status']=='complete')]
                 if not ready:continue

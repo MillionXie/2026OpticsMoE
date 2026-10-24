@@ -42,6 +42,11 @@ def moved(batch, device):
     return {k:v.to(device) if torch.is_tensor(v) else v for k,v in batch.items()}
 
 
+def own_cached_value(value):
+    """Release DataLoader shared-memory descriptors while preserving every bit."""
+    return value.clone() if torch.is_tensor(value) else value
+
+
 def objective(task, output, batch, settings):
     if task == 'lsp':
         return pose_distribution_loss(output,batch['heatmaps'],batch['visible'])
@@ -76,9 +81,9 @@ def cache_train(model, dataset, task, device, run, *, probe):
             image=batch['image'].to(device)
             levels=model.encoder.features(image)
             kept=levels if task=='lsp' else (levels[-1],)
-            pieces.append(tuple(x.cpu() for x in kept))
+            pieces.append(tuple(x.cpu().clone() for x in kept))
             for key,value in batch.items():
-                if key!='image':columns.setdefault(key,[]).append(value)
+                if key!='image':columns.setdefault(key,[]).append(own_cached_value(value))
             ids.extend(batch['sample_id'])
             if step==0:
                 with torch.no_grad():
@@ -167,6 +172,7 @@ def run(args):
         trainable=[p for p in model.parameters() if p.requires_grad]
         optimizer=torch.optim.AdamW(trainable,lr=.001,weight_decay=.0001)
         if args.phase=='probe':
+            probe_steps=spec.get('probe_steps',plan['probe_steps'])
             dataset=copy.deepcopy(problem.train) if args.task=='lsp' else problem.train
             if args.task=='lsp':dataset.base.training=False
             ids=[r.sample_id for r in dataset.base.records] if args.task=='lsp' else (
@@ -176,13 +182,13 @@ def run(args):
             batch,features=cached_batch(cache,list(range(32)),device)
             with torch.no_grad():baseline=score(args.task,forward_features(model,args.task,features,batch.get('tokens')),batch)
             history=[];model.train()
-            for step in range(1,plan['probe_steps']+1):
+            for step in range(1,probe_steps+1):
                 optimizer.zero_grad(set_to_none=True)
                 output=forward_features(model,args.task,features,batch.get('tokens'))
                 loss=objective(args.task,output,batch,problem.settings)
                 if not torch.isfinite(loss):raise RuntimeError('Nonfinite probe loss')
                 loss.backward();torch.nn.utils.clip_grad_norm_(trainable,1);optimizer.step()
-                if step%50==0 or step==plan['probe_steps']:
+                if step%50==0 or step==probe_steps:
                     with torch.no_grad():value=score(args.task,forward_features(model,args.task,features,batch.get('tokens')),batch)
                     history.append(dict(step=step,train_loss=float(loss.detach()),train_score=value))
                     write_json(run/'progress.json',dict(status='TRAIN_probe',**history[-1]))
@@ -195,7 +201,7 @@ def run(args):
                 initial_trainable_SHA=initial,parent_SHA=parent_sha,source_sha256=manifest['source_sha256'],
                 native_source_sha256=manifest['native_source_sha256'],
                 profile_SHA=manifest['profile_SHA'],test_evaluations=0,frozen_encoder_audit=audit,
-                optimizer_steps=plan['probe_steps'],TRAIN_cache_identity=cache_identity,trainable_changed=changed))
+                optimizer_steps=probe_steps,TRAIN_cache_identity=cache_identity,trainable_changed=changed))
             manifest['status']='complete';return
         cache=None
         if args.task!='lsp':
