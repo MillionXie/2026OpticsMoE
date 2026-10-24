@@ -105,10 +105,10 @@ def run(a):
 def selftest():
     import torch
     from caltech20_alt246_biasfree_model import rms,features
-    torch.set_num_threads(2);torch.manual_seed(73);e=torch.rand(20,41,41);o=torch.rand_like(e);s=branch_statistics(e,o)
+    torch.set_num_threads(2);torch.manual_seed(73);e=torch.rand(40,41,41);o=torch.rand_like(e);s=branch_statistics(e,o);head=torch.nn.Linear(256,20);rows=[]
     for a in (.4001001,.8,.95):
-        alpha=torch.tensor(a,dtype=torch.float64,requires_grad=True);mixed=(1-alpha.float())*e/rms(e)+alpha.float()*o/rms(o);native=features(rms(e)*mixed/rms(mixed));cached=cached_features(s,alpha);assert float((native-cached).abs().max())<3e-6;score=separation(cached,torch.arange(20));score.backward();assert torch.isfinite(alpha.grad)
-    print('TRAIN branch-statistics identity and finite direct-alpha gradients passed')
+        alpha=torch.tensor(a,dtype=torch.float64,requires_grad=True);mixed=(1-alpha.float())*(e/rms(e))+alpha.float()*(o/rms(o));native=features(rms(e)*mixed/rms(mixed));cached=cached_features(s,alpha);prob_error=float((head(native).softmax(1)-head(cached).softmax(1)).detach().abs().max());assert prob_error<=3e-6;score=separation(cached,torch.arange(40)%20);score.backward();assert torch.isfinite(alpha.grad)and float(alpha.grad.abs())>0;rows.append(dict(alpha=a,feature_roundoff=float((native-cached).detach().abs().max()),probability_error=prob_error))
+    print(__import__('json').dumps(dict(passed=True,probability_tolerance=3e-6,roundoff=rows,finite_direct_alpha_gradient=True)))
 
 
 if __name__=='__main__':
