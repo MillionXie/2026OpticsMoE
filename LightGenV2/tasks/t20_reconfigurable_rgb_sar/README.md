@@ -37,6 +37,9 @@ TRAIN共6000，两域各3000、每类300；没有更改原划分。
 `hardware_aware.py`是**待训练的新OEO适配计算图**：native8 µm，active1016²，canvas1102²，expert476²、gap64、border43。
 每层原生像素传播10 cm；中间为测量强度除均值→softsign→单位功率振幅，不再sqrt。
 仍无新增电子头/残差/alpha。原raw相位双线性插值只作为显式warm-start，不是等价变换。
+目前仍是连续值候选；实际SLM灰阶量化、每阶段固定TRAIN显示增益/相机响应尚未接入验收。
+单位L2振幅不可简单乘255导致几乎全零，也不允许逐图峰值拉满；应固定TRAIN标定的共同增益并纳入训练前向。
+沿用硬件LUT前仍须核响应；既有linearVoltage LUT不是已证实的线性相位标定。
 `reference/`只导入已审计四份原推理依赖，导入改为包内相对导入；原始ZIP成员SHA见PROVENANCE。
 
 ## 实验顺序与数据协议
