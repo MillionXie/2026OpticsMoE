@@ -16,3 +16,4 @@
 !measure_lsp.py
 !run_lsp.py
 !build_measured_index.py
+!test_remainder.py

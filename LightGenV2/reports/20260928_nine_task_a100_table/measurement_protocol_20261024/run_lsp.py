@@ -13,6 +13,7 @@ import signal
 import subprocess
 import sys
 import time
+import run_temporal_remainder as loading_guard
 
 HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3];sys.path.insert(0,str(REPO))
 TASK=REPO/'LightGenV2/tasks/t02_keypoint_detection'
@@ -40,7 +41,7 @@ def main():
         'qwen':(LEGACY/'configs/lsp_pose_opt2.yaml',LEGACY/'runs/lsp_pose_optical_moe16_opt2/checkpoints/teacher_best_train_loss.pt')}
     root.mkdir(parents=True);state=dict(status='waiting_previous_queue',pid=os.getpid(),completed=[],deadline=args.deadline,
         command=sys.argv,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip())
-    frozen={str(path.relative_to(REPO)):sha256_file(path) for path in [Path(__file__),HERE/'measure_lsp.py',HERE/'measure_salicon.py',HERE/'measure_ours.py',HERE/'stage_meter.py']}
+    frozen={str(path.relative_to(REPO)):sha256_file(path) for path in [Path(__file__),HERE/'measure_lsp.py',HERE/'measure_salicon.py',HERE/'measure_ours.py',HERE/'stage_meter.py',HERE/'run_temporal_remainder.py']}
     state['sources']=frozen
     def save():write(root/'suite_status.json',state)
     def stable():
@@ -50,9 +51,25 @@ def main():
         with (root/(name+'.log')).open('x') as log:
             child=subprocess.Popen(command,cwd=REPO,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             state.update(status='running',phase=name,child_pid=child.pid);save()
-            try:code=child.wait(timeout=min(1800,max(1,args.deadline-time.time())))
+            observations=[];worker_deadline=min(time.time()+1800,args.deadline)
+            try:
+                while True:
+                    if time.time()>=worker_deadline:raise TimeoutError('Original finite worker deadline')
+                    try:code=child.wait(timeout=1);break
+                    except subprocess.TimeoutExpired:pass
+                    if name!='cpu_contract' and not (root/name/'identity.json').exists():
+                        snapshot=loading_guard.process_snapshot(GPU,child.pid,PIPE);observations.append(snapshot)
+                        if snapshot['foreign_gpu_processes'] or snapshot['foreign_mps_clients']:
+                            write(root/(name+'.foreign_loading_interruption.json'),snapshot)
+                            loading_guard.terminate_own_loading_worker(snapshot,root/name,'measure_lsp.py')
+                            child.wait(timeout=20)
+                            raise RuntimeError('Foreign GPU process during loading; no retry')
             except BaseException:
-                os.killpg(child.pid,signal.SIGTERM);child.wait(timeout=15);raise
+                if child.poll() is None:
+                    loading_guard.terminate_own_loading_worker({'worker_pid':child.pid},root/name,'measure_lsp.py')
+                    child.wait(timeout=15)
+                raise
+            finally:write(root/(name+'.loading_process_audit.json'),observations)
         if code:raise RuntimeError(name+f' failed exit{code}; do not retry or overwrite')
     def command(method,output,repeat=1):
         config,checkpoint=variants[method]
