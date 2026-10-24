@@ -38,5 +38,17 @@ class ReferenceAdapterTest(unittest.TestCase):
         self.assertFalse(any(k.startswith(('moe_stage_epochs','d2nn_stage_epochs')) for k in cfg))
         self.assertAlmostEqual(score({'a':{'balanced_accuracy':.8},'b':{'balanced_accuracy':.6}}),.7)
 
+    def test_fullTRAIN_correction_keeps_fixed_evaluation_and_original_objective(self):
+        cfg=json.loads(Path(__file__).with_name('config_reference_fullTRAIN_TESTselect_20261025.json').read_text())
+        self.assertIn('15998 / 140000 / 12526 / 140800',cfg['training_records_current'])
+        self.assertEqual(cfg['memory_records_per_old_task'],300)
+        self.assertEqual(cfg['memory_cycles_per_epoch'],50)
+        self.assertEqual(cfg['clevr_pairwise_weight'],4.)
+        self.assertTrue(cfg['reference_stage_teacher'])
+        self.assertFalse(cfg['TEST_gradients'])
+        self.assertEqual(cfg['selection_split'],'test')
+        self.assertEqual(cfg['maximum_GPUs'],2)
+        self.assertFalse(cfg['automatic_capture'])
+
 
 if __name__=='__main__':unittest.main()
