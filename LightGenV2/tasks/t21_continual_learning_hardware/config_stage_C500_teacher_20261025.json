@@ -1,0 +1,16 @@
+{
+  "schema": "T21_stage_balanced_partial_teacher_v1",
+  "stage": 3,
+  "sources_per_task": {"eurosat": 500, "clevr": 500, "speech_binary": 500},
+  "nested_CLEVR500": false,
+  "teacher_epochs": 400,
+  "teacher_max_seconds": 600,
+  "student_epochs": 160,
+  "student_max_seconds": 240,
+  "steps_per_epoch": 12,
+  "TRAIN_floor": 0.90,
+  "development_floor": {"eurosat": 0.512, "clevr": 0.631, "speech_binary": 0.472},
+  "Euro_parent_anchor_weight": 0.0,
+  "SDK": false,
+  "GPU": false
+}
