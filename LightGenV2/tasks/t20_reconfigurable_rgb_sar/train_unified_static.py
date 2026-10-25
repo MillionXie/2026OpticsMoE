@@ -87,7 +87,7 @@ def main():
     with torch.no_grad():gains=model.calibrate_gains(batch_amplitude(train,features,calibration,device))
     fixed_gain=tensor_sha(model.display_gains);unused={k:tensor_sha(v) for k,v in model.named_parameters() if not v.requires_grad}
     first=next(balanced_batches(train,domains,cfg['batch_size'],cfg['seed']));amp=batch_amplitude(train,features,first,device);result=model(amp);loss=F.cross_entropy(result['logits'],torch.as_tensor(train['labels'][first],device=device));loss.backward()
-    if not torch.isfinite(loss) or any(v.grad is not None for n,v in model.named_parameters() if not v.requires_grad):raise RuntimeError('Real TRAIN finite/freeze preflight failed')
+    if not torch.isfinite(loss) or any(v.grad is not None for n,v in model.named_parameters() if not v.requires_grad) or any(v.grad is None or not torch.isfinite(v.grad).all() for v in model.parameters() if v.requires_grad):raise RuntimeError('Real TRAIN finite/freeze gradient preflight failed')
     if a.preflight_only:
         print(json.dumps(dict(passed=True,case=a.case,loss=float(loss.detach()),original_shared_head_parameters=model.shared_head.weight.numel(),active_experts=4 if architecture=='moe' else 0,gain_calibration=gains,TEST_loaded=False,SDK=False)));return
     model.zero_grad(set_to_none=True);val=load_arrays(a.data,'validation');val_features=cache_frontend(val,a.frontend);a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic()
