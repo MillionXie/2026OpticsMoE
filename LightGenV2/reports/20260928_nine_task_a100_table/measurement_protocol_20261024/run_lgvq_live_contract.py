@@ -15,6 +15,7 @@ import time
 HERE=Path(__file__).resolve().parent; REPO=HERE.parents[3]
 sys.path.insert(0,str(REPO));sys.path.insert(0,str(HERE))
 from lgvq_live_frontend import TASK,sources,sha,write
+from finite_queue_budget import valid_window
 GPU='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
 BASELINE_SHA='599805ad3062bebf67acf3b515f0a812fb843506643e18251004f180131b4b52'
 PYTHON='/home/guest3/miniconda3/envs/xml/bin/python'
@@ -42,7 +43,7 @@ def predecessor_file_ready(root):
 
 
 def frozen_sources():
-    return dict(sources(),**{Path(__file__).relative_to(REPO).as_posix():sha(__file__)})
+    return dict(sources(),**{p.relative_to(REPO).as_posix():sha(p) for p in (Path(__file__),HERE/'finite_queue_budget.py')})
 
 
 def main():
@@ -51,14 +52,15 @@ def main():
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--previous',type=Path,required=True)
     parser.add_argument('--deadline',type=float,required=True)
+    parser.add_argument('--queue-seconds',type=int,default=14400)
     args=parser.parse_args();root=args.output.resolve();previous=args.previous.resolve()
     t12=REPO/'LightGenV2/tasks/t12_text_to_image/runs/simulation'
     if (root.exists() or not root.is_relative_to(TASK/'runs/simulation')
-            or not previous.is_relative_to(t12) or not 0<args.deadline-time.time()<=14400):
+            or not previous.is_relative_to(t12) or not valid_window(args.deadline,args.queue_seconds)):
         raise ValueError('New bounded canonical CPU successor required')
     frozen=frozen_sources();root.mkdir(parents=True);child=None
     state=dict(status='waiting_previous_CPU_contract',pid=os.getpid(),predecessor=str(previous),
-        deadline=args.deadline,sources=frozen,command=sys.argv,no_gpu=True,
+        deadline=args.deadline,queue_seconds=args.queue_seconds,sources=frozen,command=sys.argv,no_gpu=True,
         not_a_formal_timing_or_full_TEST_evaluation=True)
     def save():write(root/'suite_status.json',state)
     def stable():

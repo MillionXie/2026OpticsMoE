@@ -27,6 +27,7 @@ def test_actual_original_cpu_proof_sha_inputs_required():
 
 def test_frozen_original_baseline_sources_include_asset_identity():
     values=frozen_sources()
-    assert len(values)==10 and all(len(pin)==64 for pin in values.values())
+    assert len(values)==11 and all(len(pin)==64 for pin in values.values())
+    assert any(name.endswith('/finite_queue_budget.py') for name in values)
     assert any(p.endswith('t12_baseline_live.py') for p in values)
     assert any(p.endswith('T12_HISTORICAL_SEVEN_MODEL_IDENTITY_20261004.json') for p in values)

@@ -12,6 +12,7 @@ import time
 HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3]
 sys.path.insert(0,str(REPO));sys.path.insert(0,str(HERE))
 from measure_lgvq_cost import TASK,GPU,MAX_QUEUE_SECONDS,live,proof_contract,sha,write
+from finite_queue_budget import valid_window,point_deadline
 
 
 def point_plan(names):
@@ -52,19 +53,20 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('output','cpu-root','previous-cost'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--deadline',type=float,required=True)
+    p.add_argument('--queue-seconds',type=int,default=MAX_QUEUE_SECONDS)
     p.add_argument('--points',nargs='+',default=[f'{t}_repeat{i:02d}' for t in ('temporal','spatial') for i in (1,2,3)])
     args=p.parse_args();root=args.output.resolve();plan=point_plan(args.points)
     if (root.exists() or not root.is_relative_to(TASK/'runs/simulation')
-            or not 0<args.deadline-time.time()<=MAX_QUEUE_SECONDS
+            or not valid_window(args.deadline,args.queue_seconds)
             or not args.cpu_root.resolve().is_relative_to(TASK/'runs/simulation')
             or not args.previous_cost.resolve().is_relative_to(REPO/'LightGenV2/tasks/t12_text_to_image/runs/simulation')):
         raise ValueError('Fresh finite explicit canonical missing-cost queue required')
     frozen=live.sources()
     for name in ('run_lgvq_cost.py','measure_lgvq_cost.py','audit_lgvq_cost.py','run_lgvq_live_contract.py',
-                 'measure_t12_cost.py','audit_t12_cost.py','run_temporal_remainder.py'):
+                 'measure_t12_cost.py','audit_t12_cost.py','run_temporal_remainder.py','finite_queue_budget.py'):
         file=HERE/name;frozen[file.relative_to(REPO).as_posix()]=sha(file)
     root.mkdir(parents=True);active=False;child=None
-    state=dict(status='waiting_actual_LGVQ_CPU_proof',pid=os.getpid(),deadline=args.deadline,sources=frozen,
+    state=dict(status='waiting_actual_LGVQ_CPU_proof',pid=os.getpid(),deadline=args.deadline,queue_seconds=args.queue_seconds,sources=frozen,
         CPU_predecessor=str(args.cpu_root.resolve()),cost_predecessor=str(args.previous_cost.resolve()),
         points=args.points,completed=[],command=sys.argv,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip())
@@ -105,7 +107,7 @@ def main():
                 stable();folder=root/name
                 command=[sys.executable,'-u',str(HERE/'measure_lgvq_cost.py'),'--target',target,'--repeat',str(repeat),
                     '--output',str(folder),'--cpu-proof',str(args.cpu_root.resolve()/'original_live_CPU_contract/contract.json'),
-                    '--deadline',str(args.deadline)]
+                    '--deadline',str(point_deadline(args.deadline))]
                 write(root/(name+'.command.json'),command);observations=[]
                 with (root/(name+'.log')).open('x') as log:
                     child=subprocess.Popen(command,cwd=REPO,env=env,stdin=subprocess.DEVNULL,

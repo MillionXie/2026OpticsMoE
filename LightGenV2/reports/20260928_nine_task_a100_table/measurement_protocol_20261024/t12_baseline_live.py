@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 from types import SimpleNamespace
 
 HERE=Path(__file__).resolve().parent; REPO=HERE.parents[3]
@@ -22,6 +23,32 @@ EXPORT_COMMIT='c657f959d877635549d68cfbb8bba4c668273adf'
 EXPORT_SHA='558e2a81c5735406fdefcea074a3b4063b5e70eb6f21ebe94fca7992b379f3e6'
 DEPENDENCY_RECORD='maintenance/storage/T12_HISTORICAL_SEVEN_MODEL_IDENTITY_20261004.json'
 DEPENDENCY_RECORD_SHA='4a567a4a956cf5815514d14a43edc6c9dbc42002f508e60633b85e22b158ea7b'
+CPU_PLATFORM='original CPU FP32 language weights; original FP16 VAE; identical CPU FP16 autocast for oracle and adapter'
+
+
+def save_case(folder,packet):
+    """An already bitwise-passed CPU case, not an online feature/output cache."""
+    index=packet['check']['test_index'];path=folder/f'passed_case_{index}.json'
+    with path.open('x',encoding='utf8') as f:json.dump(packet,f,indent=2)
+    receipt=path.with_suffix('.receipt.json')
+    with receipt.open('x',encoding='utf8') as f:json.dump(dict(file=path.name,bytes=path.stat().st_size,sha256=sha(path)),f,indent=2)
+
+
+def retained_case(folder,index,frozen):
+    path=folder/f'passed_case_{index}.json'
+    if not path.exists():return None
+    receipt=json.loads(path.with_suffix('.receipt.json').read_text())
+    if receipt!={'file':path.name,'bytes':path.stat().st_size,'sha256':sha(path)}:
+        raise ValueError('Retained CPU case SHA/size differs')
+    packet=json.loads(path.read_text());check=packet.get('check',{})
+    if (packet.get('status')!='passed' or packet.get('no_gpu') is not True
+            or packet.get('baseline_sha256')!=BASELINE_SHA or packet.get('sources')!=frozen
+            or packet.get('CPU_platform')!=CPU_PLATFORM or check.get('test_index')!=index
+            or check.get('bitwise_equal') is not True or check.get('original_reference_bitwise_equal') is not True
+            or check.get('target_passed_to_model') is not False or not packet.get('actual_NN_shapes')
+            or any(r.get('test_index')!=index for r in packet['actual_NN_shapes'])):
+        raise ValueError('Complete original retained CPU case identity/proof required')
+    return packet,dict(file=str(path.resolve()),sha256=sha(path))
 
 
 def dependency_records():
@@ -135,10 +162,13 @@ def gold_forward(runtime,reference,tokens,prompt,index):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True);args=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--resume-cases-from',type=Path);args=p.parse_args()
     if args.output.exists() or not args.output.resolve().is_relative_to(TASK/'runs/simulation'):
         raise ValueError('New immutable canonical CPU proof only')
     if os.environ.get('CUDA_VISIBLE_DEVICES')!='':raise ValueError('CPU-only environment required')
+    if args.resume_cases_from is not None and not args.resume_cases_from.resolve().is_relative_to(TASK/'runs/simulation'):
+        raise ValueError('Original canonical CPU case evidence only')
     args.output.mkdir(parents=True);write(args.output/'status.json',dict(status='identity',pid=os.getpid(),no_gpu=True))
     original_statements()
     for path,pin in [(DATA/'test.jsonl',TEST_SHA),*[(ASSETS/'datasets'/name,pin) for name,pin in PINS.items()]]:
@@ -148,19 +178,37 @@ def main():
     # Load the original oracle module before freezing the source inventory;
     # neither importing it nor reading its AST performs model inference.
     from LightGenV2.tasks.t12_text_to_image.export_matched_summary import noise_batch
-    torch.set_num_threads(8);checks=[];shapes=[];handles=[]
+    torch.set_num_threads(8);checks=[];shapes=[];handles=[];retained=[];started=time.perf_counter()
+    def progress(phase,index=None):
+        value=dict(status=phase,pid=os.getpid(),no_gpu=True,test_index=index,
+            completed_indices=[c['test_index'] for c in checks],unix=time.time(),
+            elapsed_seconds=time.perf_counter()-started,CPU_process_seconds=time.process_time())
+        write(args.output/'status.json',value);print(json.dumps(value),flush=True)
     try:
-        write(args.output/'status.json',dict(status='loading',pid=os.getpid(),no_gpu=True))
+        progress('loading_original_runtime')
         runtime=load_runtime(torch.device('cpu'))
+        progress('loading_original_dataset')
         dataset=ExpandedUnifiedProductEditDataset(DATA,'test',256,ASSETS/'datasets/abo_unified_expanded_instructions_qwen2_v2.pt')
         frozen=sources()
         with torch.inference_mode():
             for index in (200,2303):
+                progress('original_reference_and_tokenizer',index)
                 original=dataset[index];live=reference_input(dataset,index)
                 if (not torch.equal(original['reference'],live['reference']) or original['prompt']!=live['prompt']
                         or original['sample_id']!=live['sample_id']):raise ValueError('Reference-only original input differs')
                 tokens=inputs(runtime,live['prompt'])
+                previous=retained_case(args.resume_cases_from,index,frozen) if args.resume_cases_from else None
+                if previous is not None:
+                    packet,reference=previous;check=packet['check']
+                    if (packet['qwen_report']!=runtime.qwen_report or packet['frozen_dependency_binding']!=runtime.frozen_dependency_binding
+                            or check['sample_id']!=live['sample_id'] or check['input_ids']!=tokens['input_ids'].tolist()
+                            or check['attention_mask']!=tokens['attention_mask'].tolist()):
+                        raise ValueError('Retained case original inputs/fresh assets differ')
+                    checks.append(check);shapes.extend(packet['actual_NN_shapes']);retained.append(reference)
+                    progress('retained_passed_CPU_case_no_neural_replay',index);continue
+                progress('original_AST_gold_forward',index)
                 expected=gold_forward(runtime,original['reference'][None],tokens,live['prompt'],index)
+                progress('live_observed_forward',index)
                 for group in ('qwen','adapter','unet','vae'):
                     for name,module in getattr(runtime,group).named_modules():
                         if isinstance(module,(torch.nn.Linear,torch.nn.Conv2d,torch.nn.ConvTranspose2d)):
@@ -177,6 +225,12 @@ def main():
                     original_reference_bitwise_equal=True,target_passed_to_model=False,
                     input_ids=tokens['input_ids'].tolist(),attention_mask=tokens['attention_mask'].tolist(),
                     output_shape=list(actual.shape)))
+                if torch.cuda.is_initialized() or frozen!=sources():raise ValueError('CPU-only/source identity changed at case boundary')
+                save_case(args.output,dict(status='passed',no_gpu=True,baseline_sha256=BASELINE_SHA,
+                    check=checks[-1],actual_NN_shapes=[r for r in shapes if r['test_index']==index],sources=frozen,
+                    qwen_report=runtime.qwen_report,frozen_dependency_binding=runtime.frozen_dependency_binding,
+                    CPU_platform=CPU_PLATFORM,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip()))
+                progress('CPU_case_bitwise_passed',index)
         if torch.cuda.is_initialized() or frozen!=sources():raise ValueError('CPU-only/source contract changed')
         write(args.output/'contract.json',dict(status='passed',no_gpu=True,checks=checks,
             baseline_sha256=BASELINE_SHA,formal_full2304_reference_psnr=27.26045327136914,
@@ -184,7 +238,7 @@ def main():
             qwen_report=runtime.qwen_report,frozen_dependency_binding=runtime.frozen_dependency_binding,
             actual_NN_shapes=shapes,sources=frozen,
             source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
-            CPU_platform='original CPU FP32 language weights; original FP16 VAE; identical CPU FP16 autocast for oracle and adapter',
+            CPU_platform=CPU_PLATFORM,retained_original_CPU_cases=retained,
             cached_conditions_used_as_online_input=False,not_formal_timing_or_full_test_evaluation=True))
         write(args.output/'status.json',dict(status='complete',no_gpu=True,real_inputs=2,pid=os.getpid()))
     except BaseException as error:

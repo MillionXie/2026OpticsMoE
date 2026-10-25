@@ -16,6 +16,7 @@ import time
 HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3]
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
 from measure_t12_cost import TASK,GPU,MAX_QUEUE_SECONDS,proof_contract,sha,write
+from finite_queue_budget import valid_window,point_deadline
 from t12_reference_files import load_bundle
 
 
@@ -62,9 +63,10 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('output','inputs','ours-cpu','qwen-cpu'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--deadline',type=float,required=True)
+    parser.add_argument('--queue-seconds',type=int,default=MAX_QUEUE_SECONDS)
     parser.add_argument('--points',nargs='+',default=[f'{s}_repeat{i:02d}' for s in ('ours','qwen') for i in (1,2,3)])
     args=parser.parse_args();root=args.output.resolve();plan=point_plan(args.points)
-    if root.exists() or not root.is_relative_to(TASK/'runs/simulation') or not 0<args.deadline-time.time()<=MAX_QUEUE_SECONDS:
+    if root.exists() or not root.is_relative_to(TASK/'runs/simulation') or not valid_window(args.deadline,args.queue_seconds):
         raise ValueError('New bounded immutable canonical cost queue required')
     for path in (args.ours_cpu,args.qwen_cpu,args.inputs):
         if not path.resolve().is_relative_to(TASK/'runs/simulation'):raise ValueError('Original canonical artifacts required')
@@ -74,10 +76,10 @@ def main():
     for path in (args.ours_cpu,args.qwen_cpu):
         frozen.update(json.loads((path/'suite_status.json').read_text())['sources'])
     for name in ('run_t12_cost.py','measure_t12_cost.py','audit_t12_cost.py','t12_reference_files.py',
-                 't12_baseline_live.py','t12_live_frontend.py','run_temporal_remainder.py'):
+                 't12_baseline_live.py','t12_live_frontend.py','run_temporal_remainder.py','finite_queue_budget.py'):
         p=HERE/name;frozen[p.relative_to(REPO).as_posix()]=sha(p)
     root.mkdir(parents=True);active=False;child=None
-    state=dict(status='waiting_original_CPU_proofs',pid=os.getpid(),deadline=args.deadline,sources=frozen,
+    state=dict(status='waiting_original_CPU_proofs',pid=os.getpid(),deadline=args.deadline,queue_seconds=args.queue_seconds,sources=frozen,
         command=sys.argv,points=args.points,completed=[],ours_CPU=str(args.ours_cpu.resolve()),qwen_CPU=str(args.qwen_cpu.resolve()),
         input_root=str(args.inputs.resolve()),input_manifest_sha256=sha(manifest),
         earlier_shared_input_audit_sha256=input_digest,
@@ -120,7 +122,7 @@ def main():
                 proof=proofroot/'original_live_CPU_contract/contract.json'
                 command=['/DATA/DATA1/guest3/t12_assets/venv/bin/python','-u',str(HERE/'measure_t12_cost.py'),
                     '--system',system,'--repeat',str(repeat),'--output',str(folder),'--inputs',str(args.inputs.resolve()),
-                    '--cpu-proof',str(proof.resolve()),'--deadline',str(args.deadline)]
+                    '--cpu-proof',str(proof.resolve()),'--deadline',str(point_deadline(args.deadline))]
                 write(root/(name+'.command.json'),command);observations=[]
                 with (root/(name+'.log')).open('x') as log:
                     child=subprocess.Popen(command,cwd=REPO,env=env,stdin=subprocess.DEVNULL,

@@ -60,12 +60,17 @@ def test_worker_keeps_original_noise_dtype_and_zero_warmup_contract():
     assert 'dataset[' not in text and 'PromptEmbeddingLookup' not in text
 
 
-def test_exact_platform_and_one_shared_finite_deadline():
+def test_exact_platform_and_finite_wait_separate_from_unchanged_point_cap():
     assert check_platform(f'{GPU}, NVIDIA A100-PCIE-40GB, 250, 40960')['power_limit_w']==250
     for row in (f'{GPU}, NVIDIA A100-SXM4-80GB, 400, 81920',f'{GPU}, NVIDIA A100-PCIE-40GB, 200, 40960'):
         with pytest.raises(ValueError):check_platform(row)
     assert MAX_QUEUE_SECONDS==7200
-    assert '<=MAX_QUEUE_SECONDS' in (HERE/'run_t12_cost.py').read_text()
+    from finite_queue_budget import valid_window,point_deadline
+    assert not valid_window(7201,7200,0)
+    assert valid_window(21600,21600,0)
+    assert point_deadline(21600,0)<MAX_QUEUE_SECONDS
+    assert 'point_deadline(args.deadline)' in (HERE/'run_t12_cost.py').read_text()
+    assert '<=MAX_QUEUE_SECONDS' in (HERE/'measure_t12_cost.py').read_text()
 
 
 def test_admission_only_reads_existing_independent_input_proof(tmp_path):

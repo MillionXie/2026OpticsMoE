@@ -16,6 +16,7 @@ HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3]
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
 from t12_live_frontend import TASK,ASSETS,BODY_SHA,sha,write
 from measure_abo_text_qwen import GPU
+from finite_queue_budget import valid_window
 
 
 def predecessor_ready(state,proof=None,digest=None):
@@ -39,7 +40,7 @@ def predecessor_file_ready(root):
 
 
 def frozen_sources():
-    paths=[Path(__file__),HERE/'t12_baseline_live.py',HERE/'t12_live_frontend.py',
+    paths=[Path(__file__),HERE/'t12_baseline_live.py',HERE/'t12_live_frontend.py',HERE/'finite_queue_budget.py',
         REPO/'maintenance/storage/T12_HISTORICAL_SEVEN_MODEL_IDENTITY_20261004.json']
     paths.extend(TASK/name for name in ('half_qwen.py','electronic_turbo_infer.py','product_repair_model.py',
         'feature_cache.py','export_matched_summary.py','product_unified_edit_data_v2.py'))
@@ -50,14 +51,18 @@ def main():
     import fcntl
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True);parser.add_argument('--previous',type=Path,required=True)
-    parser.add_argument('--deadline',type=float,required=True);args=parser.parse_args()
+    parser.add_argument('--deadline',type=float,required=True)
+    parser.add_argument('--queue-seconds',type=int,default=7200)
+    parser.add_argument('--resume-cases-from',type=Path)
+    args=parser.parse_args()
     root=args.output.resolve();previous=args.previous.resolve()
     if (root.exists() or not root.is_relative_to(TASK/'runs/simulation')
             or not previous.is_relative_to(TASK/'runs/simulation') or root==previous
-            or not 0<args.deadline-time.time()<=7200):raise ValueError('New finite explicit canonical CPU queue required')
+            or not valid_window(args.deadline,args.queue_seconds)
+            or (args.resume_cases_from is not None and not args.resume_cases_from.resolve().is_relative_to(TASK/'runs/simulation'))):raise ValueError('New finite explicit canonical CPU queue required')
     frozen=frozen_sources();root.mkdir(parents=True);child=None
     state=dict(status='waiting_previous_CPU_contract',pid=os.getpid(),predecessor=str(previous),
-        deadline=args.deadline,sources=frozen,command=sys.argv,no_gpu=True,
+        deadline=args.deadline,queue_seconds=args.queue_seconds,sources=frozen,command=sys.argv,no_gpu=True,
         not_a_formal_timing_or_full_test_evaluation=True)
     def save():write(root/'suite_status.json',state)
     def stable():
@@ -82,6 +87,7 @@ def main():
                 save();time.sleep(30 if records else 10)
             folder=root/'original_live_CPU_contract'
             command=[str(ASSETS/'venv/bin/python'),'-u',str(HERE/'t12_baseline_live.py'),'--output',str(folder)]
+            if args.resume_cases_from is not None:command.extend(['--resume-cases-from',str(args.resume_cases_from.resolve())])
             write(root/'cpu_contract.command.json',command)
             env=dict(os.environ,CUDA_VISIBLE_DEVICES='',OMP_NUM_THREADS='8',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
             env.pop('CUDA_MPS_PIPE_DIRECTORY',None);env.pop('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE',None)
