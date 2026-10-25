@@ -54,11 +54,16 @@ def review_leaf(folder):
         blob=subprocess.check_output(['git','show',identity['published_measurement_commit']+':'+p],cwd=REPO)
         assert hashlib.sha256(blob).hexdigest()==digest,p
     guard=read(folder/'process_audit.json');assert guard
-    pid=identity['pid']
-    platform_gaps=[]
+    pid=identity['pid'];nonexclusive=identity.get('nonexclusive_authorized',False)
+    platform_gaps=[];foreign_observations=[]
     for index,g in enumerate(guard):
         assert set(g['clients'])<={pid}
-        assert all(int(x[0].strip()) in set(g['servers'])|{pid} for x in g['processes'])
+        if nonexclusive:
+            assert g['human_authorized_nonexclusive']
+            others=[x for x in g['processes'] if int(x[0].strip()) not in set(g['servers'])|{pid}]
+            foreign_observations.append(dict(unix=g['unix'],foreign_processes=others,
+                global_GPU_utilization_percent=g['global_GPU_utilization_percent'],global_memory_used_mib=g['global_memory_used_mib']))
+        else:assert all(int(x[0].strip()) in set(g['servers'])|{pid} for x in g['processes'])
         if 'platform' in g:
             assert g['platform']['power_limit_w']==250 and g['platform']['uuid']==identity['gpu_uuid']
         else:
@@ -160,7 +165,8 @@ def review_leaf(folder):
         out.append(dict(system='Qwen',mode='native_serial',repeat=identity['repeat'],cap=50,video_calls=2048,
             elapsed_ms=elapsed,time16_ms=elapsed/128,equivalent_frame_ms=elapsed/8192,
             model_front16_ms=pre,first_TF_to_score16_ms=post,inter_video_gaps16_ms=gaps/128,
-            strict_single_video_CPU_GPU_serial=strict,
+            strict_single_video_CPU_GPU_serial=strict,nonexclusive_authorized=nonexclusive,
+            not_uncontended_baseline_performance=nonexclusive,
             GPU_model_window_sum16_ms=work/128,first_TF_window_sum16_ms=post,
             first200_first_TF_window16_ms=sum(r['end_ms']-r['first_TF_ms'] for r in records[:200])/200*16,
             file_to_last_CPU_result16_ms=d.get('file_input_to_last_CPU_result_ms',0)/128 if strict else None,
@@ -172,6 +178,7 @@ def review_leaf(folder):
         tokenizer_call_count=len(tokenize),prepared_unique_inputs=512,actual_CPU_prepared_video_calls=2048 if strict else 512,
         preparation_reused_as_raw_input_across4cycles=not strict,
         guard_platform_annotation_gaps=platform_gaps,
+        human_authorized_nonexclusive=nonexclusive,foreign_observations=foreign_observations,
         wall_note=('Qwen CPU preparation and H2D occur per video, interleaved with its inference. All but first preparation are INSIDE the continuous timeline.' if strict else
             'External CPU preparation and H2D were separately observed once per512 raw inputs, not part of LG GPU-input-resident primary timeline.'))
     if strict and identity.get('tokenizer_is_CPU_separate_not_added_to_GPU_timeline'):
@@ -214,6 +221,7 @@ def main():
     strict_Qwen=[r for r in points if r['system']=='Qwen']
     assert all(r['strict_single_video_CPU_GPU_serial'] for r in strict_Qwen),'Resident-prepared Qwen is not the authorized normal comparison'
     q_gpu=sum(r['GPU_model_window_sum16_ms'] for r in strict_Qwen)/3
+    nonexclusive=any(r.get('nonexclusive_authorized',False) for r in strict_Qwen)
     for r in aggregate:r['Qwen50_GPU_model_windows_over_system_ratio']=q_gpu/r['time16_ms']
     diagnostics=[]
     if a.diagnostic_root:
@@ -229,6 +237,9 @@ def main():
         Qwen_GPU_model_window_sum16_ms=q_gpu,
         LG_CPU_file_preparation_not_in_primary=True,Qwen_inter_video_CPU_preparation_in_primary=True,
         comparison_is_requested_execution_strategies_not_symmetric_file_input_E2E=True,
+        Qwen_nonexclusive_authorized=nonexclusive,
+        ratios_eligible_for_uncontended_hardware_speedup_claim=not nonexclusive,
+        interference_warning=('Qwen shared the physical GPU with uncontrolled other applications. LG retained data were uncontended; resulting ratios are exploratory load-dependent references, not an uncontended hardware speedup.' if nonexclusive else None),
         all_points=points,aggregates=aggregate,extra_preparation=extras,LG_dense_diagnostics=diagnostics,
         actual_input_hash_sequence_verified=True,measured_overlap_is_software_body_not_physical_6cycle_coverage=True,
         metadata_warnings=[p['scope_metadata_warning'] for p in extras if 'scope_metadata_warning' in p],

@@ -38,6 +38,11 @@ block(summary,33,[['另列：仅模型窗口之和','Qwen50/ms每16','除以LG�
 block(summary,34,[['不含视频间CPU准备',data.Qwen_GPU_model_window_sum16_ms,null,null]]);summary.getRange('C34').formulas=[['=B34/D6']];summary.getRange('D34').formulas=[['=B34/D7']];summary.getRange('B34:D34').setNumberFormat('0.000');
 summary.getRange('A36').values=[['主比较按请求保留Qwen视频间CPU准备；LG的文件准备在主窗外，非对称文件端到端。']];
 summary.getRange('A37').values=[['原约1030ms/16来自提前准备全部Qwen输入的旧新测方案，已弃作当前正式对照，原件保留。']];
+if(data.Qwen_nonexclusive_authorized){
+ summary.getRange('A11').values=[['注意：Qwen为共享GPU应急测量；LG为独占原件，倍率不作公平硬件加速结论。']];
+ summary.getRange('A11:G11').format.fill='#FFF0DD';summary.getRange('A11:G11').format.font.color='#9A3412';
+ summary.getRange('F5').values=[['Qwen共卡÷本行（参考）']];
+}
 nodes.getRange('A2').values=[['起止节点和分项含义']];nodes.getRange('A2').format.font={size:16,bold:true};
 block(nodes,4,[['节点','在新GPU主窗内？','LG Temporal','Qwen 50%']]);head(nodes,'A4:D4');
 const definitions=[

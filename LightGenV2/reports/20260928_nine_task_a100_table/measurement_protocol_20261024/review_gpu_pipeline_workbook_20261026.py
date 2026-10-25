@@ -34,7 +34,8 @@ def main():
                 assert v.data_type!='e',(sh.title,c.coordinate,v.value)
                 if c.data_type=='f':
                     nformulas+=1;assert v.value is not None,(sh.title,c.coordinate,'missing formula cache')
-    assert nformulas>=50
+    for cell in ('B6','C6','D6','E6','F6','D7','D8','E15','D34'):
+        assert formula['对照结果'][cell].data_type=='f',cell
     for row,p in zip((6,7,8),report['aggregates']):
         sh=cached['对照结果'];near(sh[f'B{row}'].value,p['total_video_calls'])
         near(sh[f'C{row}'].value,p['total_elapsed_ms']/1000)
@@ -56,10 +57,12 @@ def main():
     (root/'independent_workbook_review.json').write_text(json.dumps(review,ensure_ascii=False,indent=2),encoding='utf-8')
     files=[file,*[root/name for name in ('independent_results.json','raw_file_index.csv','workbook_formula_review.json',
         'independent_workbook_review.json','summary.png','raw.png','nodes.png','parts.png')]]
-    sources=[HERE/name for name in ('lgvq_gpu_pipeline_20261026.py','lgvq_minimal_pipeline_20261026.py','qwen_strict_serial_20261026.py',
+    sources=[HERE/name for name in ('lgvq_gpu_pipeline_20261026.py','lgvq_minimal_pipeline_20261026.py','qwen_strict_serial_20261026.py','qwen_shared_serial_20261026.py',
         'audit_gpu_pipeline_20261026.py','build_gpu_pipeline_20261026.mjs','review_gpu_pipeline_workbook_20261026.py')]
     entry=lambda p:dict(path=str(p.resolve()),bytes=p.stat().st_size,sha256=digest(p))
     manifest=dict(status='passed',profile='LG_optimized_GPU_pipeline_vs_Qwen_strict_interleaved_single_video_20261026',
+        Qwen_nonexclusive_authorized=report['Qwen_nonexclusive_authorized'],
+        ratios_eligible_for_uncontended_hardware_speedup_claim=report['ratios_eligible_for_uncontended_hardware_speedup_claim'],
         deliverables=[entry(p) for p in files],generator_and_reviewer_sources=[entry(p) for p in sources],
         scope='Same512 original inputs repeated4times per mode,3fresh processes. LG raw-GPU-input optimization; Qwen prepares/transfers/infers/returns each video before starting next. Not symmetric file-input E2E or physical optical measurement.',
         raw_index_contains_exact_paths_sizes_SHA256=True,old_artifacts_preserved=True)
