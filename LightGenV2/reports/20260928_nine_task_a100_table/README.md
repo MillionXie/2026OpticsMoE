@@ -21,6 +21,7 @@ primary从首GPU模型前端开始，到最后GPU评分就绪；Qwen所有视频
 tokenizer是CPU段，单独原始记录，不能静默当作GPU embedding或相加冒真实重叠窗。
 
 GPU并行由LG单独front stream生产下一组完整原始前端、body stream保持原网络顺序，
+另有text stream每组实际计算文本embedding并与视觉前端重叠，不在计时窗外缓存embedding；
 依赖CUDA Event和两组有界队列；记录同一GPU时钟的前端/主体起止与实际交叠并集。
 主体入口内原输入适配仍在body stream，不能倒称所有第一光模块之前的操作均已重叠。
 原四主光电阶段+两个router的六次整场传播、视觉语言之间merger、末端读出全实际执行，

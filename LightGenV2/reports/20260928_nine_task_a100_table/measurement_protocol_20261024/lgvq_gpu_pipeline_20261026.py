@@ -122,14 +122,19 @@ def prep_lg(front,tests,folder,guard):
     return ready,rows
 
 
-def native_lg_front(front,position,raw,meter):
+def native_lg_front(front,position,raw,meter,text_stream):
     import torch
     from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54 import cache_qwen_front as native
+    # Text has no dependency on vision. Compute each group's embedding, not a
+    # hoisted embedding cache, on a separate stream inside the timed interval.
+    with torch.cuda.stream(text_stream):
+        with meter.scope('frontend.text_embedding'):language=front.embedding(raw['ids']).half()
+        text_done=torch.cuda.Event();text_done.record()
     with torch.autocast(device_type='cuda',dtype=torch.bfloat16):
         with meter.scope('frontend.conv_embedding'):hidden=front.visual.patch_embed(raw['pixels'])
         with meter.scope('frontend.image_position'):hidden=hidden+position.to(dtype=hidden.dtype)
         with meter.scope('frontend.mean_pool'):pooled=native.pool_qwen_front_tokens(hidden,image_count=64,output_grid=7)
-    with meter.scope('frontend.text_embedding'):language=front.embedding(raw['ids']).half()
+    torch.cuda.current_stream().wait_event(text_done)
     return dict(vision_tokens=pooled.reshape(1,16,4,49,1024).half(),quality_tokens=raw['quality'],language_tokens=language,language_mask=raw['mask'])
 
 
@@ -138,7 +143,7 @@ def lg_timed(model,front,position,raw,guard,mode,folder):
     import lgvq_live_frontend as live
     from lgvq_pipeline_demo_20261025 import EventMeter
     from LightGenV2.tasks.t06_video_quality_assessment import lab_runtime as native
-    fs=torch.cuda.Stream();bs=torch.cuda.Stream();origin=torch.cuda.Event(enable_timing=True)
+    fs=torch.cuda.Stream();bs=torch.cuda.Stream();ts=torch.cuda.Stream();origin=torch.cuda.Event(enable_timing=True)
     fm=EventMeter();bm=EventMeter();live.instrument_body(model,bm)
     tensor_queue=queue.Queue(maxsize=2);failure=[];cancel=threading.Event();events=[];predictions=[]
     origin.record();origin.synchronize();start_wall=time.perf_counter()
@@ -149,7 +154,7 @@ def lg_timed(model,front,position,raw,guard,mode,folder):
                     guard.fast()
                     if cancel.is_set():return
                     fm.field=g;lo=len(fm.rows);a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True);a.record()
-                    batch=native_lg_front(front,position,raw[g%(UNIQUE//16)],fm);b.record()
+                    batch=native_lg_front(front,position,raw[g%(UNIQUE//16)],fm,ts);b.record()
                     item=(g,batch,a,b,lo,len(fm.rows))
                     while not cancel.is_set():
                         try:tensor_queue.put(item,timeout=.25);break
@@ -170,7 +175,7 @@ def lg_timed(model,front,position,raw,guard,mode,folder):
                 else:
                     with torch.cuda.stream(fs):
                         fm.field=g;lo=len(fm.rows);a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True);a.record()
-                        batch=native_lg_front(front,position,raw[g%(UNIQUE//16)],fm);b.record();item=(g,batch,a,b,lo,len(fm.rows))
+                        batch=native_lg_front(front,position,raw[g%(UNIQUE//16)],fm,ts);b.record();item=(g,batch,a,b,lo,len(fm.rows))
                 index,batch,a,b,lo,hi=item
                 if index!=g:raise RuntimeError('Field order changed')
                 with torch.cuda.stream(bs):
