@@ -10,10 +10,10 @@ Temporal多baseline36轮及额外80GB Qwen3轮均纳入，并区分40GB PCIe/250
 
 交付目录为 `measurement_protocol_20261024/outputs/01a061e2-6f88-7913-87f5-b632000e4c83/collected_20261025_01/`：
 
-- `A100_九行任务_已采集核验_20261025.xlsx`，64114B，SHA256
-  `5822375d64a2a50efadd3ecc7005022a7ed42762c3bc155ad9bf784c994cbfb2`。
-- `A100_Temporal多基线_已采集核验_20261025.xlsx`，57979B，SHA256
-  `3f0cc2a263cc66bc9ba3a619943b1415bd46abb715794b68a0163ac47d154523`。
+- `A100_九行任务_已采集核验_20261025.xlsx`，64197B，SHA256
+  `cc4e06cf3fc12cdb397eda200433e0efbb1870e0d7179a4c38291ded19b6fa75`。
+- `A100_Temporal多基线_已采集核验_20261025.xlsx`，57997B，SHA256
+  `109a64c87e8535a3d3afba26f438c2d004e88dd81e5e25831fe2758b49a7210b`。
 - `A100_时间能耗与倍数计算说明_20261025.docx`，44958B，SHA256
   `521db953bd164dae307fb2def12afaa7908363ef1821471d1509b9664cbbac78`；20条原生可编辑公式，实际Word渲染6页逐页检查。
 - `raw_file_index.csv`逐项登记915文件的原路径/字节数/SHA与证据来源；849文件重新匹配原封存SHA/size，
@@ -21,7 +21,7 @@ Temporal多baseline36轮及额外80GB Qwen3轮均纳入，并区分40GB PCIe/250
 - `independent_delivery_audit.json`从78个去重合格点原始区间/功率重新核算15600调用与15522间隙，
   并独立读回导出Excel的537条公式缓存值；无公式错误。只复算文件，不重跑神经/完整TEST合同。
 - `delivery_manifest.json`记录上述交付及源索引的全部SHA，manifest自身SHA256
-  `3fc9f3001f1d472328d45ef943acc502b34ee196dd122a7346d82b840b4cc466`。
+  `5e39e2122061290b057b46fbb7eb70b0ec8de37ea726f8bdd54925810a75f236`。
 
 两表包含加速倍数、节能倍数、节能率、EDP改善、共同输入Tokens率、三轮原值、NN小计与raw路径。
 主表6行加速1.410–3.202倍、阶段能量降低5.129–11.638倍，仅为既定混合硬件投影与baseline计费边界比较，

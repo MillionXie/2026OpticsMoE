@@ -172,7 +172,7 @@ await fs.writeFile(path.join(OUT,'raw_file_index.csv'),'\ufeff'+['run,file,bytes
 
 const colors={navy:'#233B53',blue:'#E8F1FA',green:'#E7F2E8',fixed:'#FFF1D6',pending:'#FFF0D9',ink:'#202C38',muted:'#5E6A76'};
 const col=i=>{let s='';for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s;};
-const scaledOp=v=>v==null?null:v/600e12;
+const scaledOp=v=>v==null?'未核定':v/600e12;
 function sheet(w,name,title,headers,rows){
   const s=w.worksheets.add(name);s.showGridLines=false;
   s.getRange(`A1:${col(headers.length-1)}${rows.length+8}`).format.font={name:'Arial',size:11,color:colors.ink};
@@ -189,8 +189,9 @@ function fmt(s,range,format){s.getRange(range).setNumberFormat(format);s.getRang
 function baseData(w,records,runs){
   const data=sheet(w,'指标与计算','完整TEST指标与成本计算',
     ['键','任务','系统','正式指标','完整TEST值','TEST样本数','已验收调用数','共同输入\nTokens总数','NN OP总数小计','状态','总秒数','总焦耳','ms/样本','J/样本','任务/s','Tokens/s','NN TOP/样本','NN TOPS小计','NN TOPS/W小计','光学dense等效OP','OP来源','serial NN TOP/样本','parallel NN TOP/样本','其他digital TOP/样本'],
-    records.map(r=>[r.key,r.task,r.system,r.metric,r.accuracy,r.full_test_n,r.calls??'待测',r.tokens??'待核定',r.op?.OP600??(r.calls?'未核定':'待测'),r.status,null,null,null,null,null,null,null,null,null,r.system==='ours'?'未核定':'不适用',r.op?.local_receipt||r.op?.source||'尚无合格算量收据',scaledOp(r.op?.charged_serial_OP600??r.op?.charged_serial_NN_OP600??(r.system!=='ours'?r.op?.OP600:null)),scaledOp(r.op?.parallel_residual_OP600??r.op?.parallel_residual_NN_OP600),scaledOp(r.op?.other_executed_digital_dense_OP600_not_in_NN_subtotal)]));
+    records.map(r=>[r.key,r.task,r.system,r.metric,r.accuracy,r.full_test_n,r.calls??'待测',r.tokens??'待核定',r.op?.OP600??(r.calls?'未核定':'待测'),r.status,null,null,null,null,null,null,null,null,null,r.system==='ours'?'未核定':'不适用',r.op?.local_receipt||r.op?.source||(r.op?rel(MAIN)+' [原封存NN小计字段]':'尚无合格算量收据'),scaledOp(r.op?.charged_serial_OP600??r.op?.charged_serial_NN_OP600??(r.system!=='ours'?r.op?.OP600:null)),r.system==='ours'?scaledOp(r.op?.parallel_residual_OP600??r.op?.parallel_residual_NN_OP600):'不适用',r.system==='ours'?scaledOp(r.op?.other_executed_digital_dense_OP600_not_in_NN_subtotal):'未单列']));
   data.getRange('B5:B30').format.columnWidth=24;data.getRange('A5:A30').format.columnWidth=24;data.getRange('D5:D30').format.columnWidth=27;data.getRange('G5:H30').format.columnWidth=21;data.getRange('I5:I30').format.columnWidth=29;data.getRange('J5:J30').format.columnWidth=18;data.getRange('U5:U30').format.columnWidth=72;
+  data.getRange(`A6:X${records.length+5}`).format.rowHeight=56;
   data.getRange('U6:U30').format.wrapText=true;
   fmt(data,`E6:E${records.length+5}`,'0.0000');fmt(data,`F6:I${records.length+5}`,'#,##0');fmt(data,`K6:S${records.length+5}`,'0.000000');
   data.getRange(`E6:I${records.length+5}`).format.fill=colors.blue;data.getRange(`K6:S${records.length+5}`).format.fill=colors.green;
@@ -264,7 +265,7 @@ summary.getRange('A6:O14').conditionalFormats.addCustom('$O6<>"双方三轮齐�
 summary.getRange('A17').values=[['OpenMoji采用epoch45 仿真0.8765 实验室0.8655 后者单列于方法说明 不混入成本比。']];
 summary.getRange('A18').values=[['Ours为含输入的混合硬件投影 baseline为连续墙钟 能耗分别为阶段参数模型与主机代理加板卡积分。']];
 archiveSheet(w1,mainRecords,mainRuns);
-await finish(w1,'A100_九行任务_已采集核验_20261025',[['九行对比','A1:O18'],['指标与计算','A4:J23'],['三轮原始数据','A4:J13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
+await finish(w1,'A100_九行任务_已采集核验_20261025',[['九行对比','A1:O18'],['指标与计算','A4:J23'],['指标与计算','K4:X23'],['三轮原始数据','A4:J13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
 
 const w2=Workbook.create();
 const s2=sheet(w2,'Temporal对比','LGVQ Temporal 多baseline 已采集数据',
@@ -286,5 +287,5 @@ for(let i=0;i<6;i++){
 }
 fmt(cap,'C6:I11','0.000');cap.getRange('C6:I11').format.fill=colors.green;cap.getRange('B5:I15').format.columnWidth=23;
 archiveSheet(w2,tempRecords,tempRuns);
-await finish(w2,'A100_Temporal多基线_已采集核验_20261025',[['Temporal对比','A1:P19'],['指标与计算','A4:J19'],['三轮原始数据','A4:J13'],['资源档对比','A1:I13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
+await finish(w2,'A100_Temporal多基线_已采集核验_20261025',[['Temporal对比','A1:P19'],['指标与计算','A4:J19'],['指标与计算','K4:X19'],['三轮原始数据','A4:J13'],['资源档对比','A1:I13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
 console.log(JSON.stringify({status:payload.status,qualified_main:14,complete_pairs:6,temporal_trials:39,unique_points:folders.length,raw_files:fileRows.length,pinned_files:fileRows.filter(x=>x.verification==='封存SHA及字节数已核对').length,output:OUT}));
