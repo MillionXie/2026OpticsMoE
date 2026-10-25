@@ -106,13 +106,20 @@ def main():
         native=dict(logits=torch.cat(rows),routes=torch.cat(routes));native_receipt=dict(checkpoint_SHA256=receipt_B['best_sha256'],task=task,TRAIN_source_indices=indices.tolist(),EVAL_inputs=False)
         del previous;torch.cuda.empty_cache()
     if a.preflight_only:
-        n=cfg.get('native_B_task',names[0]);ix=np.asarray(memories[n]['indices'][:2]);result=model(train[n]['x'][ix].to(device));logits=result['logits'];labels=train[n]['y'][ix].to(device);loss=continuation_objective(logits,labels,target['logits'][n][:2].to(device),cfg)
-        if native is not None:loss+=native_retention_loss(result,native['logits'][:2].to(device),native['routes'][:2].to(device),cfg,labels)
-        loss.backward()
+        n=cfg.get('native_B_task',names[0]);ix=np.asarray(memories[n]['indices'][:2]);field=train[n]['x'][ix].to(device);labels=train[n]['y'][ix].to(device)
+        def probe_loss(result):
+            loss=continuation_objective(result['logits'],labels,target['logits'][n][:2].to(device),cfg)
+            if native is not None:loss+=native_retention_loss(result,native['logits'][:2].to(device),native['routes'][:2].to(device),cfg,labels)
+            return loss
+        loss=probe_loss(model(field));probe_before={n:v.detach().clone() for n,v in model.named_parameters() if v.requires_grad}
+        if cfg.get('TRAIN_sharpness_radius'):
+            sharpness_backward(loss,[v for v in model.parameters() if v.requires_grad],lambda:probe_loss(model(field)),cfg['TRAIN_sharpness_radius'])
+            if any(not torch.equal(v,probe_before[n]) for n,v in model.named_parameters() if v.requires_grad):raise RuntimeError('Real TRAIN sharpness probe changed parameters')
+        else:loss.backward()
         if not torch.isfinite(loss) or frozen(model)!=immutable or tensor_sha(model.display_gains)!=gain:raise RuntimeError('Real TRAIN/freeze preflight failed')
         gradients={n:dict(finite=bool(v.grad is not None and torch.isfinite(v.grad).all()),nonzero=bool(v.grad is not None and torch.count_nonzero(v.grad)>0)) for n,v in model.named_parameters() if v.requires_grad}
         if cfg.get('restore_simulation_trainability') and not all(r['finite'] and r['nonzero'] for r in gradients.values()):raise RuntimeError('Every intended parameter must receive finite nonzero TRAIN gradient')
-        print(json.dumps(dict(passed=True,loss=float(loss.detach()),TRAIN_only=True,trainable_parameters=trainable,gradient_audit=gradients,old_experts_gains_frozen=True,SDK=False)));return
+        print(json.dumps(dict(passed=True,loss=float(loss.detach()),TRAIN_only=True,trainable_parameters=trainable,gradient_audit=gradients,old_experts_gains_frozen=True,TRAIN_sharpness_probe=bool(cfg.get('TRAIN_sharpness_radius')),SDK=False)));return
     paths={k:Path(v) for k,v in json.loads(a.source_protocols.read_text()).items()}
     if sha(paths['speech_binary'])!=identity['models'][3]['config']['protocol_sha256']['speech_binary'] or sha(paths['vision'])!=train['speech_binary']['manifest']['vision_checkpoint_sha256']:raise ValueError('Original current TRAIN protocol/frontend differs')
     current=load_dataset(paths,'speech_binary','train',vision_checkpoint=paths['vision'],device=device);selection={n:np.arange(len(current)) if n==names[-1] else np.asarray(memories[n]['indices']) for n in names}
