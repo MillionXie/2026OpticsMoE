@@ -14,6 +14,11 @@ class DiagnosticTests(unittest.TestCase):
     def test_sensor_scores_keep_separate_denominators(self):
         logits=np.eye(10)[[0,1,2,4]];r=class_scores(logits,np.array([0,1,2,3]),np.array([0,0,1,1]))
         self.assertEqual(r['RGB']['accuracy'],1.);self.assertEqual(r['SAR']['accuracy'],.5)
+    def test_four_expert_diagnostic_uses_exact_frontend_and_input(self):
+        source=Path(__file__).with_name('diagnose_unified.py').read_text()
+        self.assertIn('build_static_four if four',source);self.assertIn('neutral_amplitude if four',source)
+        self.assertIn('shared_features if four',source);self.assertIn('per_process_GPU_memory_fraction=.2',source)
+        self.assertIn('TRAIN_pair_alignment',source)
 
 
 if __name__=='__main__':unittest.main()
