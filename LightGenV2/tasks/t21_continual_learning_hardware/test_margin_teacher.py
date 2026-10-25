@@ -1,8 +1,11 @@
 import unittest,torch,numpy as np
-from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions
+from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_bounded_loss_does_not_let_arbitrarily_wrong_logits_dominate(self):
+        logits=torch.tensor([[0.,100.,0.],[2.,0.,0.]],dtype=torch.float64,requires_grad=True);labels=torch.tensor([0,0]);loss=bounded_margin_rows(logits,labels,torch.ones(2,dtype=torch.float64))
+        self.assertTrue(bool((loss>=0).all()));self.assertTrue(bool((loss<=1/.7).all()));loss.mean().backward();self.assertTrue(torch.isfinite(logits.grad).all())
     def test_bag_partition_is_sourcewise_and_keeps_binary_pairs(self):
         tasks=np.tile(np.repeat('clevr',12),4);ids=np.tile(np.arange(12),4);kind=np.repeat([0,1],24);labels=ids%2
         folds=source_partitions(tasks,ids,kind,labels,3)

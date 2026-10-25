@@ -42,6 +42,12 @@ def margin_rows(logits,labels,margins):
     return .5*F.cross_entropy(logits,labels,reduction='none')+.5*F.softplus(rivals.max(1).values-true+margins)
 
 
+def bounded_margin_rows(logits,labels,margins):
+    adjusted=logits.clone();adjusted.scatter_add_(1,labels[:,None],-margins[:,None])
+    probability=adjusted.softmax(1).gather(1,labels[:,None]).squeeze(1).clamp_min(1e-9)
+    return (1-probability.pow(.7))/.7
+
+
 def source_average(loss,groups,count):
     totals=torch.zeros(count,dtype=loss.dtype,device=loss.device).scatter_add_(0,groups,loss)
     counts=torch.zeros_like(totals).scatter_add_(0,groups,torch.ones_like(loss))
@@ -102,10 +108,10 @@ def source_partitions(tasks,ids,kinds,labels,bags):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','teacher_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -133,15 +139,24 @@ def main():
                 chosen=[(n,p) for n,p in pairs if tt[n]==name]
                 if chosen:pair_views.append(torch.stack([values[p]-values[n] for n,p in chosen]).double()@transform.double().T)
     with torch.no_grad():target=torch.cat([teacher(v@transform.T) for v in pool.split(256)]).double();margins=bounded_teacher_margin(target,labels)
-    z=(pool@transform.T).double();initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform.double());weight=torch.nn.Parameter(initial.clone());threshold=torch.nn.Parameter(torch.ones(len(names),2,dtype=torch.float64))
+    warm=None;initial_head=model.shared_head.weight.detach().double()
+    if cfg.get('bounded_generalized_CE'):
+        if a.warm_assistant_run is None:raise ValueError('Sealed same-parent regret assistant required')
+        wp=json.loads((a.warm_assistant_run/'protocol.json').read_text());wr=json.loads((a.warm_assistant_run/'report.json').read_text());path=a.warm_assistant_run/'assistant_best_checkpoint.pt'
+        if wp['mode']!='regret_assistant' or not wr['passed'] or wp['parent_SHA256']!=a.parent_sha256 or wp['capture_features_SHA256']!=cr['features_sha256'] or wp['teacher_SHA256']!=rr['teacher_sha256']:raise ValueError('Warm teacher identity differs')
+        warm_model,_=load_checkpoint(path,sha(path))
+        if upstream_state(warm_model)!=before:raise ValueError('Warm teacher optical prefix differs')
+        initial_head=warm_model.shared_head.weight.detach().double();warm=dict(path=str(path),SHA256=sha(path),scope='Same frozen-prefix partial-source regret assistant, not a new student source')
+    z=(pool@transform.T).double();initial=initial_head@torch.linalg.inv(transform.double());weight=torch.nn.Parameter(initial.clone());threshold=torch.nn.Parameter(torch.ones(len(names),2,dtype=torch.float64))
     views=[]
     for n in names:
         for kind in (0,1):
             rows=np.flatnonzero((pt==n)&(kinds==kind));unique,inverse=np.unique(pi[rows],return_inverse=True);views.append((n,kind,rows,torch.tensor(inverse),len(unique)))
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();history=[];bags=cfg.get('source_bags',1);partitions=source_partitions(pt,pi,kinds,labels.numpy(),bags);bag_weights=[];bag_last=[]
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,source_budget_expanded=False,
-        objective='Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
+        objective='Equal tasks/pools; source-mean generalizedCE q=.7 after bounded teacher margins' if cfg.get('bounded_generalized_CE') else 'Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
         teacher_selection='Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
+        warm_assistant=warm,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
         source_bags=bags,bag_averaging='Fixed equal parameter average of all3 bags, no EVAL choice' if bags==3 else None,
         bag_omission_is_not_independent_holdout='Original strong teacher already knows sealed sources; bagging is variance reduction, not clean source cross-validation',
         derivative_mixing=(.1,.2) if robust else (.02,.05),derivative_noise_TRAIN_std=.001,paired_ranking_weight=cfg.get('paired_ranking_weight',0),
@@ -156,15 +171,15 @@ def main():
             selected_rows=ix if bags==1 else ix[partitions[ix]!=bag];keys,inverse=np.unique(pi[selected_rows],return_inverse=True);bag_views.append((n,kind,selected_rows,torch.tensor(inverse),len(keys)))
         opt=torch.optim.LBFGS([weight,threshold],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
         def closure():
-            opt.zero_grad(set_to_none=True);rows=margin_rows(z@weight.T,labels,margins);loss=rows.sum()*0
+            opt.zero_grad(set_to_none=True);rows=(bounded_margin_rows if cfg.get('bounded_generalized_CE') else margin_rows)(z@weight.T,labels,margins);loss=rows.sum()*0
             for n,kind,ix,groups,count in bag_views:
-                values=source_average(rows[ix],groups,count);loss+=(.5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
+                values=source_average(rows[ix],groups,count);loss+=(values.mean() if cfg.get('bounded_generalized_CE') else .5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
             if pair_views:loss+=cfg['paired_ranking_weight']*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
             loss+=cfg['delta_L2']*(weight-initial)[:,:-1].square().sum()/10
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite margin teacher objective')
             loss.backward();return loss
         for step in range(1,cfg['maximum_steps']+1):
-            opt.step(closure);objective=float(closure().detach());gradient=float(torch.cat((weight.grad.flatten(),threshold.grad.flatten())).norm())
+            opt.step(closure);objective=float(closure().detach());gradient=float(torch.cat([v.grad.flatten() for v in (weight,threshold) if v.grad is not None]).norm())
             if objective<best_obj:best_obj=objective;best_weight=weight.detach().clone()
             if step==1 or step%10==0:
                 history.append(dict(bag=bag,step=step,objective=objective,gradient_norm=gradient));put(a.out/'history.json',history);put(a.out/'status.json',dict(state='margin_teacher',**history[-1],updated=time.time()))
@@ -181,6 +196,7 @@ def main():
     def save(role,w):
         with torch.no_grad():model.shared_head.weight.copy_(w)
         if upstream_state(model)!=before or any(not torch.equal(v,teacher_before[k]) for k,v in teacher.state_dict().items()):raise RuntimeError('Frozen prefix/teacher changed')
+        if warm and sha(warm['path'])!=warm['SHA256']:raise RuntimeError('Sealed warm assistant changed')
         saved=copy.deepcopy(cp);saved.update(model=model.state_dict(),parent_checkpoint_sha256=a.parent_sha256,**DISCLOSURE);path=a.out/(role+'_checkpoint.pt');torch.save(saved,path);loaded,_=load_checkpoint(path,sha(path))
         if upstream_state(loaded)!=before or not torch.equal(loaded.shared_head.weight,w):raise RuntimeError('Strict original-graph CPU reload failed')
         scores={n:evaluate(loaded.shared_head,x,y,tasks,ix) for n,ix in groups.items()};put(a.out/(role+'_development.json'),dict(scores=scores,source_indices=ids.tolist(),tasks=tasks.tolist(),splits=splits.tolist(),**DISCLOSURE));return {n:brief(v) for n,v in scores.items()}
