@@ -1,4 +1,4 @@
-import unittest,json
+import unittest,json,ast
 from pathlib import Path
 import numpy as np
 import torch
@@ -46,6 +46,9 @@ class UnifiedNativeTests(unittest.TestCase):
         cfg=json.loads(Path(__file__).with_name('config_unified_static_20261025.json').read_text());validate(cfg)
         for key,value in [('epochs',10000),('TEST_gradients',True),('TEST_teacher',True)]:
             with self.assertRaises(ValueError):validate(dict(cfg,**{key:value}))
+    def test_CPU_auditor_does_not_reselect_or_modify_checkpoints(self):
+        p=Path(__file__).with_name('audit_unified_CPU.py');code=p.read_text();ast.parse(code)
+        self.assertIn('no_checkpoint_reselection=True',code);self.assertNotIn('torch.save(',code)
 
 
 if __name__=='__main__':unittest.main()
