@@ -1,0 +1,14 @@
+{
+  "seed": 42,
+  "allowed_GPU_UUIDs": ["GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"],
+  "per_process_GPU_memory_fraction": 0.2,
+  "fit_steps": 40,
+  "conditioner_ridge": 0.01,
+  "regularization": 0.003,
+  "label_smoothing": 0.05,
+  "TEST_gradients": false,
+  "TEST_teacher": false,
+  "selection_uses_TEST": false,
+  "phase_updates": false,
+  "frontend_SHA256": "fb7d2d52e8ca94fb92d5ee9b81cabb7c7a573d21e405fe96e973140f6803436d"
+}
