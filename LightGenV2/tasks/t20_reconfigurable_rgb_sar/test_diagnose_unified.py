@@ -19,6 +19,10 @@ class DiagnosticTests(unittest.TestCase):
         self.assertIn('build_static_four if four',source);self.assertIn('neutral_amplitude if four',source)
         self.assertIn('shared_features if four',source);self.assertIn('per_process_GPU_memory_fraction=.2',source)
         self.assertIn('TRAIN_pair_alignment',source)
+    def test_phase_gradient_diagnostic_never_updates_or_loads_TEST(self):
+        source=Path(__file__).with_name('diagnose_phase_gradients.py').read_text()
+        self.assertNotIn("load_arrays(a.data,'test')",source);self.assertNotIn('optimizer.step(',source);self.assertNotIn('torch.save(',source)
+        self.assertIn('TRAIN_unique_locations=50',source);self.assertIn('parameter_updates=False',source)
 
 
 if __name__=='__main__':unittest.main()
