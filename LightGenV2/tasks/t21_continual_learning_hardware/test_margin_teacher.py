@@ -3,6 +3,9 @@ from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_r
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_LG_bounds_are_not_D2NN_bounds(self):
+        values=dict(eurosat=dict(n=1000,correct=680),clevr=dict(n=1000,correct=733));self.assertTrue(within_bands(values,2,'moe'));self.assertFalse(within_bands(values,2))
+        with self.assertRaises(ValueError):within_bands(values,3,'moe')
     def test_retention_teacher_is_frozen_and_equal_function_has_zero_KL(self):
         target=torch.randn(12,10,dtype=torch.float64,requires_grad=True);current=target.detach().clone().requires_grad_();loss=retention_KL(current,target)
         self.assertLess(abs(float(loss)),1e-12);loss.backward();self.assertIsNone(target.grad);self.assertTrue(torch.isfinite(current.grad).all())
