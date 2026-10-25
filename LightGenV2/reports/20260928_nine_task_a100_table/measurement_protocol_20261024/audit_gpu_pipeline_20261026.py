@@ -205,15 +205,22 @@ def main():
         assert old['status']=='stopped' and old['completed']==['qwen_repeat01']
         assert new['status']=='complete' and new['plan']==[2,3] and new['completed']==['qwen_repeat02','qwen_repeat03']
         kept=new['retained_first_qualified_point']
+        retained_manifest=a.root.with_suffix('.retained01.json')
+        assert retained_manifest.is_file() and sha(retained_manifest)==kept['manifest_sha256']
+        assert read(retained_manifest)['verified_files']==kept['verified_files']
         assert kept['timing_sha256']==sha(a.retained_qwen_root/'qwen_repeat01/qwen_timing.json')
         for item in kept['verified_files']:
             member=a.retained_qwen_root/'qwen_repeat01'/item['path']
             assert member.stat().st_size==item['bytes'] and sha(member)==item['sha256']
-    points=[];sources=[];inputs_ref=None;extras=[]
+    points=[];sources=[];inputs_ref=None;extras=[];outputs_ref={}
     for system in ('lg','qwen'):
         for rep in (1,2,3):
             root=(a.lg_root or a.root) if system=='lg' else (a.retained_qwen_root if rep==1 and a.retained_qwen_root else a.root)
             pts,inputs,files,extra=review_leaf(root/f'{system}_repeat{rep:02d}');points+=pts;sources+=files;extras.append(extra)
+            prediction_file=root/f'{system}_repeat{rep:02d}'/('pipeline_outputs.npz' if system=='lg' else 'qwen_outputs.npz')
+            with np.load(prediction_file,allow_pickle=False) as saved:prediction=saved['prediction'].copy()
+            if system not in outputs_ref:outputs_ref[system]=prediction
+            else:assert np.array_equal(outputs_ref[system],prediction),'Fresh-repeat full outputs differ: '+system
             key=[(r['sample_id'],r['sha256']) for r in inputs]
             if inputs_ref is None:inputs_ref=key
             else:assert key==inputs_ref,'Models/repeats did not use identical512 original video bytes'
@@ -239,6 +246,7 @@ def main():
             assert [(r['sample_id'],r['sha256']) for r in inputs]==inputs_ref
     for root in {a.root,a.lg_root or a.root}:sources+=review_sealed_root(root,'complete')
     if a.retained_qwen_root:sources+=review_sealed_root(a.retained_qwen_root,'stopped','backup_receipt_MPS_control_stop01.json')
+    if a.retained_qwen_root:sources.append(dict(path=str(retained_manifest.resolve()),bytes=retained_manifest.stat().st_size,sha256=sha(retained_manifest)))
     if a.diagnostic_root:sources+=review_sealed_root(a.diagnostic_root,'stopped')
     sources=list({f['path']:f for f in sources}.values())
     result=dict(status='passed',matched_video_calls_per_repeat=2048,unique_original_videos=512,cycles=4,
@@ -252,6 +260,7 @@ def main():
         interference_warning=('Qwen shared the physical GPU with uncontrolled other applications. LG retained data were uncontended; resulting ratios are exploratory load-dependent references, not an uncontended hardware speedup.' if nonexclusive else None),
         all_points=points,aggregates=aggregate,extra_preparation=extras,LG_dense_diagnostics=diagnostics,
         actual_input_hash_sequence_verified=True,measured_overlap_is_software_body_not_physical_6cycle_coverage=True,
+        all_fresh_repeat_full_predictions_bitwise_equal_within_each_model=True,
         metadata_warnings=[p['scope_metadata_warning'] for p in extras if 'scope_metadata_warning' in p],
         source_files=sources)
     a.output.mkdir(parents=True,exist_ok=False)

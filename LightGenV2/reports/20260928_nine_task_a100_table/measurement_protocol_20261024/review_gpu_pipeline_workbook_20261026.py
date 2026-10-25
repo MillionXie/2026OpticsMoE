@@ -53,6 +53,11 @@ def main():
         transfer=p['packing_transfer_tokenizer_window_sum_ms'] if p['system']=='lg' else p['H2D_total_ms']
         near(cached['时间花在哪里'][f'C{15+i}'].value,cpu*16/count)
         near(cached['时间花在哪里'][f'D{15+i}'].value,transfer*16/count)
+    diagnostic=[p for p in report['LG_dense_diagnostics'] if p['mode']=='pipeline']
+    for row,key in enumerate(('frontend.conv_embedding','frontend.image_position','frontend.mean_pool',
+            'frontend.text_embedding','vision_adapter','quality_adapter','language_adapter',
+            'prompt_to_visual','frame_merger','readout'),30):
+        near(cached['时间花在哪里'][f'B{row}'].value,sum(p['stages_per16_ms'][key] for p in diagnostic)/3)
     cached.close();formula.close()
     with (root/'raw_file_index.csv').open(encoding='utf-8-sig',newline='') as stream:records=list(csv.DictReader(stream))
     for r in records:

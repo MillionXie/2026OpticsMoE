@@ -61,12 +61,13 @@ block(nodes,5,definitions);nodes.getRange('A5:D15').format.wrapText=true;nodes.g
 block(nodes,18,[['LG详细轮分段诊断','每16视频/ms','说明']]);head(nodes,'A18:C18');
 const diag=data.LG_dense_diagnostics.filter(p=>p.mode==='pipeline');const stages=[['frontend.conv_embedding','图像卷积embedding'],['frontend.image_position','图像位置相加'],['frontend.mean_pool','无参数均值池化'],['frontend.text_embedding','文本词向量查表']];
 stages.forEach(([k,n],i)=>block(nodes,19+i,[[n,diag.reduce((a,p)=>a+p.stages_per16_ms[k],0)/3,'来自独立保留的详细轮，不与主窗口强行加总']]));nodes.getRange('B19:B22').setNumberFormat('0.000');
-nodes.getRange('A25').values=[['光电结构：四个主阶段＋两个光学router＝六次传播；不是六个相同OEO块。']];
+nodes.getRange('A25').values=[['光电结构：四个主阶段＋两个光学路由器＝六次传播；不是六个相同光—电—光块。']];
 nodes.getRange('A26').values=[['视觉与语言之间的merger、最后电子读出都保留。']];
 nodes.getRange('A27').values=[['可提前的是文本分词/embedding；依赖视觉融合结果的语言主体不能整体提前。']];
 nodes.getRange('A28').values=[['实际CPU分词记录：LG准备512原输入一次；Qwen逐条准备2048次']];
 block(nodes,29,[['系统','轮次','记录到的分词调用数','每16视频分词毫秒']]);head(nodes,'A29:D29');
 data.extra_preparation.forEach((p,i)=>{let r=30+i;block(nodes,r,[[p.system==='lg'?'LG':'Qwen 50%',p.repeat,p.tokenizer_call_count||'未单独捕获',null]]);nodes.getRange(`F${r}:G${r}`).values=[[p.recorded_CPU_tokenizer_ms,p.actual_CPU_prepared_video_calls]];nodes.getRange(`D${r}`).formulas=[[`=F${r}*16/G${r}`]];});nodes.getRange('D30:D35').setNumberFormat('0.000');nodes.getRange('F29:G29').values=[['原分词累计毫秒','实际CPU准备视频数']];
+nodes.getRange('A36').values=[['LG此处只单独计量真实任务提示词分词；图像处理器内部占位文字处理含在CPU准备中。']];
 const gaps=data.extra_preparation.filter(p=>p.guard_platform_annotation_gaps?.length);if(gaps.length)nodes.getRange('A38').values=[['原守卫个别末尾记录缺平台注释，邻接记录一致；原缺项未补造，详见独立审查JSON。']];
 block(nodes,41,[['LG还有哪些可并行','当前实测实现','还可怎么做','不可误解为']]);head(nodes,'A41:D41');
 const candidates=[
@@ -79,6 +80,7 @@ const candidates=[
  ['语言主体与最后电子读出','依赖融合后序列及当前输出','可研究固定缓冲区和更少调度开销，不改原精度/数学','不能省略网络层、挑快轮、只算局部']
 ];
 block(nodes,42,candidates);nodes.getRange('A42:D48').format.wrapText=true;nodes.getRange('A42:D48').format.rowHeight=76;
+nodes.getRange('A49').values=[['LG文字还生成视觉调制条件，第一光学模块前就要就绪，并非仅在视觉计算后使用。']];
 nodes.getRange('A50').values=[['以上“还可”是依赖关系分析，不是新增实测收益；Qwen不采用这些预取/并行措施。']];
 nodes.getRange('A51').values=[['GPU流能否同时执行取决于资源，必须看完整连续窗口，不能仅凭异步代码声称变快。']];
 nodes.getRange('A52').values=[['本次90.5%–98.6%重叠发生在GPU软件主干（含FFT）上，不证明更短物理光电主干完全覆盖。']];
@@ -97,11 +99,27 @@ data.extra_preparation.forEach((p,i)=>{let r=15+i;block(parts,r,[[p.system==='lg
 parts.getRange('C15:D20').setNumberFormat('0.000');parts.getRange('G15:H20').setNumberFormat('0.000');parts.getRange('E15:E20').format.wrapText=true;parts.getRange('A15:H20').format.rowHeight=62;parts.getRange('E:E').format.columnWidth=48;parts.getRange('G:H').format.columnWidth=24;
 parts.getRange('A23').values=[['LG循环原始GPU输入，不复用神经特征；Qwen每条重新解码/分词/传输/推理。']];
 parts.getRange('A24').values=[['因此主比较是用户指定执行策略，不声称对称的视频文件端到端加速。']];
+parts.getRange('A27').values=[['进一步优化看哪些：以下为独立详细诊断轮，不与上方连续总时间强行相加或相减。']];
+block(parts,29,[['LG操作（每16视频）','诊断三轮均值/ms','当前放置','诊断r1/ms','诊断r2/ms','诊断r3/ms']]);head(parts,'A29:F29');
+const selectedStages=[
+ ['frontend.conv_embedding','图像卷积映射','已进下一组前端'],
+ ['frontend.image_position','图像位置相加','已进下一组前端'],
+ ['frontend.mean_pool','图像均值池化','已进下一组前端'],
+ ['frontend.text_embedding','文本词向量查表','每组独立GPU流'],
+ ['vision_adapter','图像特征适配','仍在主体流；可研究前移'],
+ ['quality_adapter','14维质量特征适配','仍在主体流；可研究前移'],
+ ['language_adapter','文本特征适配','仍在主体流；可研究前移'],
+ ['prompt_to_visual','文本→视觉条件映射','仍在主体流；可研究前移'],
+ ['frame_merger','视觉—语言融合映射','依赖视觉结果，不能整段提前'],
+ ['readout','最终电子评分读出','依赖主体输出，保留']
+];
+selectedStages.forEach(([stage,name,state],i)=>{let r=30+i;const values=diag.map(p=>p.stages_per16_ms[stage]);if(values.some(v=>!Number.isFinite(v)))throw new Error(`Missing diagnostic stage ${stage}`);block(parts,r,[[name,null,state,...values]]);parts.getRange(`B${r}`).formulas=[[`=AVERAGE(D${r}:F${r})`]];});parts.getRange('B30:F39').setNumberFormat('0.000');parts.getRange('C30:C39').format.wrapText=true;parts.getRange('A30:F39').format.rowHeight=38;
+parts.getRange('A41').values=[['诊断事件区间受流调度与资源竞争影响，重叠比例不是整体加速比；未测的前移收益不填数字。']];
 parts.getRange('B:F').format.columnWidth=24;parts.getRange('E:E').format.columnWidth=48;
 wb.recalculate();
 const original=raw.getRange('D5').values[0][0],old=summary.getRange('D6').values[0][0];raw.getRange('D5').values=[[original+128]];wb.recalculate();const changed=summary.getRange('D6').values[0][0];if(Math.abs(changed-old-1/3)>1e-5)throw new Error('Summary formula did not recalculate');raw.getRange('D5').values=[[original]];wb.recalculate();
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:2000});console.log(errors.ndjson);
-for(const [sh,range,name] of [[summary,'A1:G37','summary'],[raw,'A1:I14','raw'],[nodes,'A1:D52','nodes'],[parts,'A1:H24','parts']]){const b=await wb.render({sheetName:sh.name,range,scale:1,format:'png'});await fs.writeFile(path.join(output,`${name}.png`),new Uint8Array(await b.arrayBuffer()));}
+for(const [sh,range,name] of [[summary,'A1:G37','summary'],[raw,'A1:I14','raw'],[nodes,'A1:D52','nodes'],[parts,'A1:H41','parts']]){const b=await wb.render({sheetName:sh.name,range,scale:1,format:'png'});await fs.writeFile(path.join(output,`${name}.png`),new Uint8Array(await b.arrayBuffer()));}
 const x=await SpreadsheetFile.exportXlsx(wb);await x.save(file);
 await fs.writeFile(path.join(output,'workbook_formula_review.json'),JSON.stringify({status:'passed',input_change_recalculation_checked:true,restored:true,summary_values:summary.getRange('A5:G8').values},null,2));
 console.log(file);
