@@ -1,16 +1,27 @@
 # T20 RGB/SAR 可重构光学系统：光路适配准备
 
-## 2026-10-26 继续RGB优化：三项接续未突破，路由分工对照训练中
+## 2026-10-26 RGB优化本轮结果：新增83.9/70.0%候选，尚未达到领先5pp目标
 
 | 本轮有限试验 | 选择结果/验证RGB、SAR | 完整TEST RGB、SAR | 状态 |
 | --- | --- | --- | --- |
 | 关系蒸馏，22轮 | e10，81.8/72.4% | 83.4/71.3% | best/last CPU结束，零argmax差、maxprob .001299<.002；不替换父版 |
 | 固定相位DKD，80步 | step0，81.7/72.0% | 83.4/71.7% | best/last CPU完成；仍父参数，没有新提升 |
-| 原相位全灰阶重新初始化＋起点强教师，61轮 | e41，79.8/72.2% | 81.0/70.3% | best CPU零argmax差、maxprob .000432<.002；last审计中，不采用 |
-| 配对TRAIN＋路由域分工 | 实际启动，尚未锁定 | 尚未评估 | 78项回归及真实TRAIN反向通过；controller363385/创建1792954158.98 |
+| 原相位全灰阶重新初始化＋起点强教师，61轮 | e41，79.8/72.2% | 81.0/70.3% | best/last完整CPU结束，best零argmax差、maxprob .000432<.002；不采用 |
+| 配对TRAIN＋路由域分工，25轮 | e21，81.8/71.9% | CPU/GPU总分均83.9/70.0% | best/last完整CPU结束，但best有1张argmax分歧，原始PT未通过数值门槛 |
+| 同一e21的确定性等价相位导出，未训练 | 与上行同一物理mask及读出 | 83.9/70.0% | 全2000条CPU结果与原CPU概率完全一致；CPU/GPU零argmax差、maxprob .001567<.002，通过 |
 
 当前正式保留候选仍为原71d，RGB83.4/SAR71.7%。关系组last的83.6/71.4%只作审计记录，
 不据TEST另挑last替换预先锁定的e10，也不逐域拼PT。
+路由分工支线依预先固定的VAL规则选择同一e21，GPU完整TEST RGB提高.5pp而SAR下降1.7pp，
+是RGB/SAR取舍，不称整体改善；原71d仍保护。新候选SHA166925275a745f036752d32d1979a225ea6ea95feb53828b86fa1be47e38cedb，
+best/last完整CPU已退出0，last83.5/71.6%只作保留证据，不因TEST另选last。
+best虽然总分一致，但有1张SAR从错类6变错类5（index405、真类2），maxprob .001911<.002，
+**仍未通过原定零argmax分歧门槛**，不能把审计进程退出0误称数值通过。不声明达到5pp目标。
+等价导出已通过，但RGB83.9相较固定D2NN82.8也仅+1.1pp，
+距离87.8%目标仍差39/1000张。
+相同1000张RGB TEST逐ID对齐后，父MoE/D2NN共同正确799、仅MoE正确35、仅D2NN正确29、
+共同错误137；净领先6张=.6pp，距离固定D2NN82.8%＋5pp的87.8%目标还差44张。
+此为已反复查看TEST后的开发诊断，不能据此新增TEST梯度或宣称独立盲测。
 光学重启发布commit`7b93c3a63`；前端B3A和父gain不变，预检三阶段截断率0、四路平均功率
 .258/.239/.268/.234（仅8条TRAIN预检，不是验证/性能结论）。本轮按用户要求不再跨窗口发消息。
 
@@ -36,7 +47,8 @@ TRAIN按原地点RGB/SAR配对，控制批内场景/类别分布一致；域标�
 全局均衡系数1.5、JS系数2在前5轮线性升入，其他教师/视图/学习率同已保留前段对照。
 记录全TRAIN与完整VAL域均值JS，不能把小批次JS的采样噪声称作真正模态分工。
 原光学重启已按20轮无新验证最佳的既定规则在61轮退出0，best e41验证79.8/72.2、
-完整TEST81.0/70.3，低于父版，不替换。其CPU推理尚在进行；不消费将要修改的训练入口。
+完整TEST81.0/70.3，低于父版，不替换。其best/last完整CPU均退出0，last81.1/70.1%；
+best CPU与GPU零argmax差，maxprob .000432<.002。后续入口修改未改变CPU推理依赖。
 确认前三项trainer均退出后才接入路由分工支线；新run为`static4_routing_diversity_20261026/MoE_AB`，
 CPU推理后端和旧profile行为不改，启动以新run收据为准。
 此为同时改变均衡方式与配对批次的训练策略，不称单因素因果证明；D2NN保持锁定不动。
@@ -44,6 +56,38 @@ CPU推理后端和旧profile行为不改，启动以新run收据为准。
 运行HEAD仍ae9e5c0ff，其他窗口的未提交源码SHA与index保持不变，不宣称整仓干净同步。
 `runs/preparation_20261025/diversity_scoped_receive.json`及新run的
 `source_publication_receipt.json`共同锁定来源。本轮未再跨窗口发消息，也没有定时任务。
+只读诊断`runs/preparation_20261025/diversity_diagnosis.json`显示，e21 TRAIN RGB90.87%、
+验证81.8%，仍有约9.07pp差距；完整VAL路由域均值JS仅.000311→.000393，第四专家功率
+RGB8.19→8.97%、SAR7.65→8.36%，仍从未是最高路由槽位。四专家均参与，不能将此误称第四专家无梯度。
+RGB验证类别index3多对5张，但index6少对6张，表现为类别间转移而非广泛修复。
+这些只支持“本次轻微路由变化未带来大幅RGB改善”，不证明物理四专家架构存在不可突破上限。
+只读相位精度检查发现，原始CPU/GPU的router/global/E3分别有2/4/1个灰阶码差异。
+已将原有`export_canonical_phase.canonicalize`接入相同四专家工厂，发布
+`export_static_four_phase.py`及3项测试，commit`897c6fd527f3c1b55317f4e8ee40df06c40857d8`。
+此为确定性表示转换，不训练、不挑PT、不改物理相位码/非相位参数/前端/结构：
+只将原CPU相位码对应的raw logit移动到量化区间中心，源PT完全保留；冻结相位raw哈希会因表示变化，
+但其实际灰阶码必须逐像素相同。81项回归通过，完整GPU/CPU均83.9/70.0%，
+run内`equivalent_phase_export_20261026`已退出0：对原CPU逐样本概率最大差0、预测分歧0；
+导出后GPU对CPU预测分歧0、最大概率差.001567<.002。原始数值失败证据保留，未修改门槛。
+可重放的新增RGB候选为该目录`model.pt`，SHA
+`0e0587e11bad939bedc5171cee02164c768862d4a39d5e51c20b7fee616a2592`。
+它不是新的训练/选模结果，也没有实际光路采集；本轮无SDK、TEST梯度或TEST教师。
+
+本轮所有T20训练/CPU/export入口均已退出。服务器只收口本轮精确T20临时源码overlay，
+按export→routing→restart→DKD→RKD逆序恢复；所有移除的临时源码均在已发布Git commit中可恢复。
+HEAD/index未变、各步其他窗口已修改文件SHA保持，未触及其任务或发送协调消息。
+数据、父版、全部候选best/last、协议/history和逐样本结果都保留；并非整仓更新到最新main。
+主体本地SHA清单见`runs/preparation_20261025/`中的`relational_backup.json`、
+`decoupled_backup.json`、`restart_backup.json`、`diversity_backup.json`；新增等价PT/GPU报告见
+`static_export_prefetch.json`，完整CPU核验manifest已收于`static_export_status.json`。
+**归档尾项未完成：**收口后SSH握手持续超时，已收到的收口收据在同目录各`*_close*.json`中，
+但其回填主备份清单、等价导出CPU逐样本报告原文件及最终`static_export_backup.json`尚未续传。
+原件均在服务器保留；不得将当前状态写成全部最终归档完成。已尝试单连接及只读SSH banner诊断，
+未改变远程服务或联络其他窗口；恢复后仅需运行私有`t20_finalize_backups_20261026.py`续传，
+不重新训练、不重启GPU/SDK，不重复源码收口。当前没有T20后台训练或定时任务。
+原71d与新增0e0587同时保留，不按TEST逐传感器拼接两个PT，不把SAR下降隐瞒成全域改善。
+
+### 本轮历史过程记录（以下保留当时状态，当前结果以上表和收口记录为准）
 
 另准备一个独立、有限的原读出对照`config_static_four_decoupled_readout_20261026.json`：
 从同一个父71d固定全部相位/前端/gain，只优化原7840头；采用
@@ -53,7 +97,7 @@ TRAIN八D4视图、同原协方差预条件/正则、最多80步，按RGB验证�
 无额外学生参数或推理分支，不改变D2NN；run `static4_decoupled_readout_20261026/MoE_AB`。
 本段为预先声明方案，实际启动和完整结果以run收据为准，不把目标分差当成绩。
 
-**最新实际运行：**用户要求不再跨窗口协调。本轮改为只在现有服务器工作树用
+**当时实际运行（现已完成并收口）：**用户要求不再跨窗口协调。本轮改为只在现有服务器工作树用
 `git restore --source 58140b935 --worktree -- <四个T20精确路径>`接收已发布源码；
 不改HEAD/index，不改T21/报告窗口未提交文件，不创建分支、工作树或工程副本。
 这是**已发布Git源码的局部运行overlay，不是干净整仓同步**。运行身份须同时查
