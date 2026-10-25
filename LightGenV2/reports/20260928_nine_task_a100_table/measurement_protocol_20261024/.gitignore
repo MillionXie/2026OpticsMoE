@@ -109,3 +109,5 @@
 !render_first_tf_methods_20261025.ps1
 !seal_first_tf_delivery_20261025.py
 !build_baseline_e2e_fps_20261025.mjs
+!lgvq_pipeline_demo_20261025.py
+!test_lgvq_pipeline_demo_20261025.py
