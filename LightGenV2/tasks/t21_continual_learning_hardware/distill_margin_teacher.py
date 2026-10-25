@@ -122,7 +122,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -154,12 +154,13 @@ def main():
     warm=None;initial_head=model.shared_head.weight.detach().double()
     if cfg.get('bounded_generalized_CE'):
         if a.warm_assistant_run is None:raise ValueError('Sealed same-parent regret assistant required')
-        wp=json.loads((a.warm_assistant_run/'protocol.json').read_text());wr=json.loads((a.warm_assistant_run/'report.json').read_text());path=a.warm_assistant_run/('linear_teacher_checkpoint.pt' if cfg.get('warm_bounded') else 'assistant_best_checkpoint.pt')
-        warm_kind=wp.get('profile',{}).get('schema')=='T21_shared_bounded_margin_teacher_BC_v4' if cfg.get('warm_bounded') else wp.get('mode')=='regret_assistant'
+        wp=json.loads((a.warm_assistant_run/'protocol.json').read_text());wr=json.loads((a.warm_assistant_run/'report.json').read_text());path=a.warm_assistant_run/('linear_teacher_checkpoint.pt' if cfg.get('warm_bounded') or cfg.get('warm_margin') else 'assistant_best_checkpoint.pt')
+        if cfg.get('warm_margin'):warm_kind=wp.get('profile',{}).get('schema')=='T21_LG_B_shared_margin_teacher_v1' and cp['architecture']=='moe' and stage==2
+        else:warm_kind=wp.get('profile',{}).get('schema')=='T21_shared_bounded_margin_teacher_BC_v4' if cfg.get('warm_bounded') else wp.get('mode')=='regret_assistant'
         if not warm_kind or not wr['passed'] or wp['parent_SHA256']!=a.parent_sha256 or wp['capture_features_SHA256']!=cr['features_sha256'] or wp['teacher_SHA256']!=rr['teacher_sha256']:raise ValueError('Warm teacher identity differs')
         warm_model,_=load_checkpoint(path,sha(path))
         if upstream_state(warm_model)!=before:raise ValueError('Warm teacher optical prefix differs')
-        initial_head=warm_model.shared_head.weight.detach().double();warm=dict(path=str(path),SHA256=sha(path),scope='Same frozen-prefix partial-source bounded teacher' if cfg.get('warm_bounded') else 'Same frozen-prefix partial-source regret assistant, not a new student source')
+        initial_head=warm_model.shared_head.weight.detach().double();warm=dict(path=str(path),SHA256=sha(path),scope='Same frozen-prefix partial-source margin teacher' if cfg.get('warm_margin') else 'Same frozen-prefix partial-source bounded teacher' if cfg.get('warm_bounded') else 'Same frozen-prefix partial-source regret assistant, not a new student source')
     z=(pool@transform.T).double();initial=initial_head@torch.linalg.inv(transform.double());weight=torch.nn.Parameter(initial.clone());threshold=torch.nn.Parameter(torch.ones(len(names),2,dtype=torch.float64))
     retention=None;retention_rows=None;retention_target=None
     if cfg.get('Euro_TRAIN_retention_weight'):

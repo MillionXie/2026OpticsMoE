@@ -1,0 +1,17 @@
+{
+  "schema": "T21_LG_B_bounded_margin_continuation_v2",
+  "architecture": "moe",
+  "bounded_generalized_CE": true,
+  "warm_margin": true,
+  "maximum_steps": 240,
+  "maximum_seconds": 300,
+  "TRAIN_augmentations": 8,
+  "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN": true,
+  "delta_L2": 0.00001,
+  "partial_TEST_source_expansion": false,
+  "original_student_parameters": 7840,
+  "new_inference_layers": 0,
+  "SDK": false,
+  "GPU": false
+}
