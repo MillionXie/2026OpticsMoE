@@ -16,9 +16,9 @@ class SimulationResponseTests(unittest.TestCase):
     def test_duplicate_sources_rejected(self):
         with self.assertRaises(ValueError):aligned_simulation_probabilities(np.zeros(1000),np.zeros(1000),np.arange(1000),dict())
     def test_soft_loss_is_equal_task_and_label_free(self):
-        logits=torch.randn(5,10,dtype=torch.float64,requires_grad=True);p=torch.randn(5,10,dtype=torch.float64).softmax(1);tasks=np.array(['a','a','b','b','b'])
+        logits=torch.randn(5,10,dtype=torch.float64,requires_grad=True);p=torch.randn(5,10,dtype=torch.float64).softmax(1).detach().requires_grad_();tasks=np.array(['a','a','b','b','b'])
         loss=equal_task_soft_KL(logits,p,tasks,['a','b']);rows=torch.nn.functional.kl_div(logits.log_softmax(1),p,reduction='none').sum(1)
-        torch.testing.assert_close(loss,(rows[:2].mean()+rows[2:].mean())/2);loss.backward();self.assertTrue(torch.isfinite(logits.grad).all())
+        torch.testing.assert_close(loss,(rows[:2].mean()+rows[2:].mean())/2);loss.backward();self.assertTrue(torch.isfinite(logits.grad).all());self.assertIsNone(p.grad)
 
 
 if __name__=='__main__':unittest.main()

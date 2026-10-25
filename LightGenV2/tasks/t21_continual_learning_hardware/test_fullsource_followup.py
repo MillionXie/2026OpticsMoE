@@ -6,6 +6,11 @@ from .fit_stage_balanced_teacher import validate_profile
 
 
 class FullSourceFollowupTests(unittest.TestCase):
+    def test_C_binary_recovery_retains_only_TRAIN_function(self):
+        cfg=json.loads(Path(__file__).with_name('config_LG_C_TRAIN_function_20261026.json').read_text())
+        self.assertEqual(development_bands(3,'moe',cfg)['eurosat'],(706,756))
+        self.assertEqual(cfg['TRAIN_function_tasks'],['eurosat']);self.assertEqual(cfg['TRAIN_function_reference'],'warm')
+        self.assertNotIn('derivative_function_weight',cfg);self.assertEqual(cfg['source_pair_tasks'],['clevr','speech_binary'])
     def test_LG_C_full_scope_keeps_own_five_point_bands(self):
         cfg=json.loads(Path(__file__).with_name('config_LG_C_fullsource_mean_20261026.json').read_text())
         bands=development_bands(3,'moe',cfg)

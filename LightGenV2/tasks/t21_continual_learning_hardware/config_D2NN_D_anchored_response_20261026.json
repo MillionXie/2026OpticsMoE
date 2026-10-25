@@ -1,0 +1,11 @@
+{
+  "schema": "T21_D2NN_D_disclosed_anchored_simulation_response_20261026",
+  "seed": 20261026,
+  "frozen_S1_SHA256": "2706d58588fc115802b0ea39000e61105614b8893662ea9914483ae8f67dede5",
+  "maximum_steps": 60, "maximum_seconds": 360,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "retained_task_functions": ["eurosat", "clevr", "physical_binary_raw"], "retention_weight": 2.0,
+  "all_TEST_sources_authorized": true, "independent_test_samples": 0,
+  "valid_for_formal_test_table": false, "new_inference_layers": 0,
+  "SDK": false, "GPU": false
+}
