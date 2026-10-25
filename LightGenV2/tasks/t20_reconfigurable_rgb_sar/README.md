@@ -2,6 +2,30 @@
 
 ## 2026-10-25 追加RGB优化授权：独立增强教师（准备）
 
+### 最新已完整CPU复核的增强读出结果
+
+用户再次明确**前端继续冻结，只优化原光学和读出**，不解冻32128参数前端。
+教师`static4_augmented_teacher_20261025`完成95轮，按验证选择70轮：RGB88.1%、SAR78.1%，
+best SHA `85e22891297d59d440114e023fcc5d13b8377796aad88739ce123ce73f8d8920`；没有读取TEST。
+第一项联合蒸馏`static4_augmented_KD_20261025`完成25轮及原头30步，选epoch6，
+验证81.1/72.4，完整TEST80.9/69.9，CPU零argmax差/maxprob .000537，低于原父RGB81.5，不替换父候选。
+
+固定原已审计f85相位的`static4_teacher_readout_20261025/MoE_AB`使用TRAIN八种D4视图、
+强教师正确TRAIN目标的KL＋全部TRAIN标签CE，协方差预条件只在TRAIN拟合并折回原7840头。
+60步按RGB验证优先、SAR验证>=70.9%选第18步，一个PT同时评两域：
+
+| 锁定PT | 验证RGB/SAR | 完整TEST RGB/SAR | 严格CPU |
+| --- | --- | --- | --- |
+| 新强教师读出，SHA `71d6689aa387118dce1a1afeaad1e6f5e4c4e6c155e164253fa1fe7dca0fdb12` | 81.7/72.0% | 83.4/71.7% | best/last完成，零argmax差，maxprob .001193<.002 |
+| 固定D2NN RGB-only光学/读出主对照 | 79.6/63.3% | 82.8/62.1% | 原完整CPU已通过，不更新对照PT |
+
+新MoE两域TEST均高于父版；RGB主比较+0.6pp，仍未达用户>=5pp目标，不能宣称达标。
+该读出数值源码`ac663dbd5`已发布，60项回归通过；所有相位/前端/gain均冻结SHA核验，未新增推理模块。
+后续只作一个有限小步光学接续：`config_static_four_teacher_continuation_20261025.json`，
+固定父SHA71d、同教师/冻结前端/gain，沿用教师错判TRAIN不蒸馏；50%原图/50%其余D4，
+光学LR1e-4/原头5e-5、最多30轮/min15/patience12，SAR验证>=71.0%，不再接CE-only末端洗掉蒸馏。
+新run `static4_teacher_continuation_20261025/MoE_AB`；锁定后完整TEST/CPU，不保证5pp，不据TEST拼PT。
+
 用户要求继续提高MoE，争取RGB高出固定D2NN至少5个百分点；按原TEST82.8%对应目标87.8%，
 这是优化目标，不作为删改预测或压低对照的理由。D2NN已锁定PT不变，不拼接不同PT的两域结果。
 只写T20；T21/原共享光学模块、SDK及现场参数均不改，无定时任务。
@@ -10,7 +34,7 @@
 RGB:SAR损失2:1，最多100轮/1800秒，按2×RGB+SAR验证均值选择best；不读取TEST/TEST增强。
 此教师容量大于学生冻结前端，只作训练辅助，不部署到学生或冒称四专家架构本身的增益。
 run为`runs/simulation/static4_augmented_teacher_20261025`，教师TRAIN/VAL及归一化身份、原始配置、
-源码SHA、best/last和历史均保留。教师尚未完成，不预报其精度；学生仍须原四专家/7840头完整CPU复核。
+源码SHA、best/last和历史均保留。教师及两项学生已结束，完整结果见上；学生仍用原四专家/7840头完整CPU复核。
 后续学生固定公共前端及显示gain，只更新原相位与原头；每个PT同时评两域，并保留SAR约束。
 复用TEST用于开发评估，不声称重新获得了独立盲测。
 

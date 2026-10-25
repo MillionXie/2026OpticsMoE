@@ -2,7 +2,7 @@ import ast,inspect,json,unittest
 from pathlib import Path
 import torch
 from . import augmented_teacher as module
-from .train_shared_frontend import d4_views,rgb_priority_selection,validate
+from .train_shared_frontend import d4_views,rgb_priority_selection,validate,teacher_KD_rows
 import numpy as np
 
 
@@ -36,6 +36,14 @@ class TeacherTests(unittest.TestCase):
         old=rgb_priority_selection(report(.809,.719),cfg,[0,1])
         self.assertLess(rgb_priority_selection(report(.99,.70),cfg,[0,1]),old)
         self.assertGreater(rgb_priority_selection(report(.85,.71),cfg,[0,1]),old)
+
+    def test_joint_continuation_matches_winning_gated_readout(self):
+        cfg=json.loads(Path(module.__file__).with_name('config_static_four_teacher_continuation_20261025.json').read_text());validate(cfg)
+        x=torch.tensor([[1.,0.],[1.,0.]],requires_grad=True);teacher=torch.tensor([[5.,0.],[5.,0.]]);labels=torch.tensor([0,1])
+        loss=teacher_KD_rows(x,teacher,labels,cfg);ce=torch.nn.functional.cross_entropy(x,labels,label_smoothing=.02,reduction='none')
+        torch.testing.assert_close(loss[1],ce[1]);loss.mean().backward();self.assertTrue(torch.isfinite(x.grad).all())
+        self.assertFalse(cfg['recalibrate_gains']);self.assertEqual(cfg['TRAIN_original_probability'],.5)
+        self.assertEqual(cfg['readout_fit_steps'],0);self.assertEqual(len(cfg['parent_expected_SHA256']),64)
 
 
 if __name__=='__main__':unittest.main()

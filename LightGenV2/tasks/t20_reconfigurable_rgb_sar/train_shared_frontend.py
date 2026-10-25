@@ -24,7 +24,7 @@ from LightGenV2.tasks.t21_continual_learning_hardware.train_native import sha,pu
 
 
 def validate(cfg):
-    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json')
+    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json','config_static_four_teacher_continuation_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Exact finite common training profile required')
 
 
@@ -49,6 +49,12 @@ def d4_views(data):
     return [dict(data,images=np.ascontiguousarray(np.rot90(data['images'],k,(1,2))[:,:,::-1,:] if flip else np.rot90(data['images'],k,(1,2)))) for k in range(4) for flip in (False,True)]
 
 
+def teacher_KD_rows(logits,target,y,cfg):
+    temp=cfg['teacher_temperature'];kd=F.kl_div(F.log_softmax(logits/temp,1),(target/temp).softmax(1),reduction='none').sum(1)*temp**2
+    if cfg.get('teacher_correct_only',False):kd=kd*(target.argmax(1)==y)
+    return F.cross_entropy(logits,y,label_smoothing=cfg['label_smoothing'],reduction='none')+cfg['teacher_KD_weight']*kd
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('data','frontend','profile','out'):p.add_argument('--'+n,type=Path,required=True)
@@ -67,6 +73,7 @@ def main():
     else:
         if a.parent is None:raise ValueError('Audited parent required for historical continuation')
         parent=a.parent/'best_checkpoint.pt';digest=sha(parent);receipt=json.loads((a.parent/'completion.json').read_text());prior=json.loads((a.parent/'protocol.json').read_text());audit=json.loads((a.parent.parent/(a.parent.name+'_CPU')/'report.json').read_text());assert receipt['best_sha256']==digest and receipt['frontend_SHA256']==cfg.get('parent_frontend_SHA256',front_sha) and not prior['selection_uses_TEST'];best_audit=next(v for v in audit['rows'] if v['role']=='best');assert best_audit['checkpoint_SHA256']==digest and best_audit['comparison_to_GPU']['legacy_parity_passed'],'Parent original numerical gate required'
+        if cfg.get('parent_expected_SHA256'):assert digest==cfg['parent_expected_SHA256']
         saved=torch.load(parent,map_location='cpu',weights_only=False);assert saved['contract']==contract;model=(build_static_four if four else build_unified)(saved['architecture']).to(device);model.load_state_dict(saved['model'],strict=True);domains=prior['training_domains'];case=prior['case'];gain_report=None
         if four and cfg.get('recalibrate_gains',True):
             calibration=np.concatenate([np.flatnonzero((train['domains']==d)&(train['labels']==c))[:2] for c in range(10) for d in domains])
@@ -117,13 +124,13 @@ def main():
         for group,lr in zip(optimizer.param_groups,(cfg['optical_lr'],cfg['head_lr'])):group['lr']=lr*factor
         for ix in (pair_batches(train,cfg['batch_size'],cfg['seed']+epoch) if cfg.get('paired_TRAIN_batches',False) else balanced_batches(train,domains,cfg['batch_size'],cfg['seed']+epoch)):
             if external:
-                view=int(rng.integers(8));field=amplitude(views[view],view_fronts[view],ix,device);target=teacher[view][ix]
+                view=0 if rng.random()<cfg.get('TRAIN_original_probability',0.) else int(rng.integers(1 if cfg.get('TRAIN_original_probability',0.) else 0,8));field=amplitude(views[view],view_fronts[view],ix,device);target=teacher[view][ix]
             else:
                 field=amplitude(train,tf,ix,device);fl=rng.random(len(ix))<cfg['TRAIN_flip_probability'];target=teacher[0][ix].clone()
                 if fl.any():field[torch.as_tensor(fl,device=device)]=amplitude(flip,ff,ix[fl],device);target[torch.as_tensor(fl,device=device)]=teacher[1][ix[fl]]
             drop=rng.random(len(ix))<cfg['TRAIN_raw_dropout_probability']
             if drop.any():field[torch.as_tensor(drop,device=device)]=raw_region_dropout(field[torch.as_tensor(drop,device=device)])
-            optimizer.zero_grad(set_to_none=True);r=model(field);y=torch.as_tensor(train['labels'][ix],device=device);d=torch.as_tensor(train['domains'][ix],device=device);temp=cfg['teacher_temperature'];per_sample=F.cross_entropy(r['logits'],y,label_smoothing=cfg['label_smoothing'],reduction='none')+cfg['teacher_KD_weight']*F.kl_div(F.log_softmax(r['logits']/temp,1),(target/temp).softmax(1),reduction='none').sum(1)*temp**2;sample_weight=torch.where(d==0,cfg.get('RGB_loss_weight',1.),1.);cost=(per_sample*sample_weight).sum()/sample_weight.sum()+cfg['weight_regularization']*model.shared_head.weight.square().sum()/10
+            optimizer.zero_grad(set_to_none=True);r=model(field);y=torch.as_tensor(train['labels'][ix],device=device);d=torch.as_tensor(train['domains'][ix],device=device);temp=cfg['teacher_temperature'];per_sample=teacher_KD_rows(r['logits'],target,y,cfg);sample_weight=torch.where(d==0,cfg.get('RGB_loss_weight',1.),1.);cost=(per_sample*sample_weight).sum()/sample_weight.sum()+cfg['weight_regularization']*model.shared_head.weight.square().sum()/10
             if saved['architecture']=='moe':cost+=cfg['domain_balance_weight']*domain_balance(r['route_power'],d,model.active_indices[:4])
             if not torch.isfinite(cost):raise RuntimeError('Nonfinite shared-frontend TRAIN objective')
             if cfg.get('phase_gradient_projection',False):
