@@ -1,9 +1,16 @@
-import unittest
+import unittest,json
 from pathlib import Path
 from .domain_frontend_probe import configuration,FRONTEND_SHA
 
 
 class DomainFrontendTests(unittest.TestCase):
+    def test_four_readout_is_finite_frozen_and_TRAIN_only(self):
+        cfg=json.loads(Path(__file__).with_name('config_static_four_readout_20261025.json').read_text())
+        self.assertEqual(cfg['fit_steps'],40);self.assertFalse(cfg['phase_updates']);self.assertFalse(cfg['TEST_gradients']);self.assertFalse(cfg['TEST_teacher'])
+        self.assertEqual(cfg['TRAIN_domain_weights'],[1.5,1.]);self.assertTrue(cfg['TEST_informed_followup']);self.assertFalse(cfg['independent_blind_TEST_claim'])
+        code=Path(__file__).with_name('robust_readout.py').read_text()
+        self.assertIn('model.eval().requires_grad_(False)',code);self.assertIn('RGB_SAR_readout_gradient_cosine',code)
+        self.assertLess(code.index('locked_before_TEST.json'),code.index("test=load_arrays(a.data,'test')"))
     def test_fixed_shared_frontend_and_training_scope(self):
         c=configuration();self.assertEqual(c['frontend_SHA256'],FRONTEND_SHA);self.assertFalse(c['phase_updates']);self.assertFalse(c['TEST_gradients']);self.assertFalse(c['TEST_teacher']);self.assertFalse(c['selection_uses_TEST'])
     def test_weight_norm_is_single_changed_objective(self):
