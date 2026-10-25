@@ -1,5 +1,32 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 人工纠正：移除慢速CPU推理的全局测速前置，按实际A100核对
+
+用户明确要求立即推理/测速，不再让额外CPU逐位校验阻塞GPU。旧QwenCPU_06在首个index200
+原AST前向中未完成比较，无数值不一致证据；仅将CPU任务启动说成“开始测速”不准确。
+旧03/04/05/06从command写入至停止的墙钟分别6706.8355/1011.3419/70.0639/595.8121秒，
+累计8384.0534秒（约2小时19分44秒，包含加载，不含更早/中间外占排队）。没有产生合格baseline case。
+03是有界预算到期、04/05是外占打断、06是本次人工纠正后只停自有进程，不混称数值故障。
+
+旧06四控制器2848164/2848165/2848166/2848167与worker2907420经命令/归属核验后SIGINT收尾，
+原四根与外日志均`backup_receipt_user_GPU_transition01.json`逐SHA保全；原已合格OursCPU_06不动。
+`run_t12_cost.required_proofs_ready`仅要求本次missing-only plan涉及的系统，不再将Ours计划绑到
+未完成的Qwen CPU proof。双端4项无模型测试通过后发布3d0e800fc；T12成本_07仅运行Ours三轮，
+控制器2979280，仍原200×3fresh、原数学/精度/功率/守卫/能量公式，不重跑已有合格结果。
+
+其余缺失Qwen/LGVQ采用`gpu_numerical_equivalence_20261025.py`：在同一实际A100、原GPU精度
+分别执行原forward与加观察后的forward，核原输入、完整输出逐位同、真实merger/六pass和源码身份。
+T12核原非计时index200/2303；LGVQ核原temporal field13/14与spatial200/557。
+验证是独立进程、计时窗之外，随后每轮仍fresh新进程，不把验证当dummy warmup或正式计时样本。
+不更换模型、数据、prompt、噪声、量化、dtype或正式完整TEST准确度，不重评TEST，不缓存在线输入。
+
+`gpu_checked_cost_entry_20261025.py`只为原cost/audit函数接入严格GPU proof验证器与真实平台标签；
+原推理、时间段、功率积分和独立审计主体原样复用。新identity明确`numerical_proof_kind`与
+`validation_platform=same native A100 GPU, not CPU`；保留的`cpu_contract`路径/SHA键只是兼容别名，
+显式标注不代表CPU执行，不把GPU证明伪报为旧CPU证明。新独立审计输出使用numerical_contract键。
+`run_gpu_checked_missing_20261025.py`仅续缺失Qwen三轮和LGVQ两组三轮，等待Ours_07真正退出/MPS释放，
+同锁12idle、250W、MPS100、原加载全窗foreign守卫及7200秒单点上限保持不变，失败保raw不盲试。
+
 ## 2026-10-25 13:37补记：hmh新extract进程打断05，保全后仅续排06
 
 图表专项整理期间只读检测到新外占。原hmh训练PID2384972已不再是当前占用者；新PID2806339于13:10:12启动
