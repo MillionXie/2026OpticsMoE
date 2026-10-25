@@ -1,0 +1,15 @@
+{
+  "schema": "T21_LG_CD_user_relaxed_simulation5pp_v1",
+  "authorization": "User 2026-10-25: simulation may be up to5 percentage points below original same1000 reference; prior upper6pp and physical requirements unchanged",
+  "lower_correct_delta": -50, "upper_correct_delta": 60,
+  "original_same1000": {
+    "C": {"eurosat": 779, "clevr": 791, "speech_binary": 781},
+    "D": {"eurosat": 785, "clevr": 804, "speech_binary": 811, "physical_binary_raw": 763}
+  },
+  "frozen_D2NN_same1000": {
+    "C": {"eurosat": 562, "clevr": 681, "speech_binary": 522},
+    "D": {"eurosat": 578, "clevr": 617, "speech_binary": 532, "physical_binary_raw": 735}
+  },
+  "reference_device": "cpu", "TEST_gradients": false,
+  "physical_target_change": false, "legacy_GPU_probability_gate_change": false
+}
