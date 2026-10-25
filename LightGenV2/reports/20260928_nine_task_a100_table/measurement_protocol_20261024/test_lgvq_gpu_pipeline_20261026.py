@@ -14,5 +14,14 @@ class Contract(unittest.TestCase):
         self.assertEqual(steady_report([10*(i+1) for i in range(128)])['first_qualified_prefix_videos'],384)
         self.assertIsNone(steady_report([10,20])['first_qualified_prefix_videos'])
     def test_syntax(self):ast.parse(Path(__file__).with_name('lgvq_gpu_pipeline_20261026.py').read_text())
+    def test_minimal_syntax(self):
+        p=Path(__file__).with_name('lgvq_minimal_pipeline_20261026.py')
+        tree=ast.parse(p.read_text())
+        self.assertTrue(any(isinstance(x,ast.FunctionDef) and x.name=='timed' for x in tree.body))
+    def test_minimal_retains_native_forward(self):
+        text=Path(__file__).with_name('lgvq_minimal_pipeline_20261026.py').read_text()
+        self.assertIn("native.forward(model,batch)['prediction']",text)
+        self.assertIn("context.get('passes')!=6",text)
+        self.assertIn("previous['completed']",text)
 
 if __name__=='__main__':unittest.main()
