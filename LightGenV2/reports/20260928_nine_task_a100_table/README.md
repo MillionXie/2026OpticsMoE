@@ -1,5 +1,25 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26：适配前移三轮已完成未提速；下一候选仅LG原指令图复用
+
+前移实验`a100_lgvq_hoisted_pipeline_20261026_01`/controller440423已complete，
+三fresh进程每版2048次，全部完整输出和原tail AST/GPU后验核对通过，MPS释放。
+各叶15原文件先SHA备份；完整根55原文件2531812B及0B外日志已精确取回。
+前两轮每16视频control/hoisted=83.325502/100.506925、107.295710/109.309489ms，
+没有收益，不能把前移版宣称更快或替换旧保留值。共卡波动与CPU/GPU调度混杂仍在，
+后续汇总保留全部三轮，不只挑更快窗口或被干扰更慢的Qwen。
+
+新`lgvq_graph_pipeline_20261026.py`只对LG原完整forward做CUDA Graph提交复用，
+不改网络/精度/六次相干传播/融合/任务头，不执行Qwen。每组复制新的原GPU输入，
+每组CPU分词及GPU embedding/全部NN重新执行；graph缓存的是GPU指令而非神经特征。
+按PyTorch捕获前初始化要求，用最先3组真实视频正常推理，48条结果及其时间全保留，
+无额外/丢弃dummy warmup。第4组前建图，建图成本保留在完整连续CUDA/host窗，
+后125组共2000视频graph replay，合计原2048；不剔除慢首批或只报稳态replay。
+捕获完整原函数的六传播计数与replay次数分开记，不冒称每次重放都触发Python hook。
+捕获/输出若失败保CPU证据、不再调用故障CUDA流，不盲重试；完整输出在测速后核对。
+对照仍为同新进程原流水线，交替先后、三fresh全保留；7点验收目标不是硬杀健康运行。
+4项无模型合同测试本地已过，正式运行前先发布Git并在lab同测。
+
 ## 2026-10-26：人工要求7点前继续LG优化，新建同进程配对实验
 
 仅新增`measurement_protocol_20261024/lgvq_hoisted_pipeline_20261026.py`及测试，
