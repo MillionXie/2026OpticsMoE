@@ -35,11 +35,18 @@ def select_sources(ids,labels,task,count=200):
 
 
 class ResidualTeacher(nn.Module):
-    def __init__(self,parent,hidden=64):
+    def __init__(self,parent,hidden=64,dropout=.1):
         super().__init__();self.register_buffer('parent',parent.clone())
-        self.residual=nn.Sequential(nn.Linear(parent.shape[1],hidden),nn.GELU(),nn.Dropout(.1),nn.Linear(hidden,10))
+        self.residual=nn.Sequential(nn.Linear(parent.shape[1],hidden),nn.GELU(),nn.Dropout(dropout),nn.Linear(hidden,10))
         nn.init.zeros_(self.residual[-1].weight);nn.init.zeros_(self.residual[-1].bias)
     def forward(self,z):return z@self.parent.T+self.residual(z)
+
+
+def residual_teacher_from_artifact(artifact):
+    state=artifact['state_dict'];hidden=state['residual.0.weight'].shape[0]
+    if hidden not in (64,128):raise ValueError('Unknown sealed offline teacher width')
+    teacher=ResidualTeacher(state['parent'],hidden,artifact.get('teacher_dropout',.1))
+    teacher.load_state_dict(state,strict=True);return teacher.eval()
 
 
 def augment_train(x,mean,std):

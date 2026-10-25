@@ -1,0 +1,17 @@
+{
+  "schema": "T21_B_balanced_residual_teacher_v1",
+  "hidden": 128,
+  "teacher_dropout": 0.0,
+  "teacher_epochs": 400,
+  "steps_per_epoch": 12,
+  "teacher_max_seconds": 600,
+  "student_epochs": 160,
+  "student_max_seconds": 240,
+  "CLEVR_derivative_sources": 500,
+  "derivatives_per_source": 10,
+  "teacher_TRAIN_floor": 0.90,
+  "development_floor": {"eurosat": 0.483, "clevr": 0.710},
+  "original_student_parameters": 7840,
+  "SDK": false,
+  "GPU": false
+}

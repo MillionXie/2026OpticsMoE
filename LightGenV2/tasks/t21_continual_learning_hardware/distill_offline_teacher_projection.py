@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from torch.nn import functional as F
-from .fit_augmented_residual_teacher import ResidualTeacher,augment_train,select_sources
+from .fit_augmented_residual_teacher import ResidualTeacher,augment_train,select_sources,residual_teacher_from_artifact
 from .hardware_bridge import load_checkpoint
 from .refine_native_readout import upstream_state
 from .refine_measured_ce import contrast_transform
@@ -100,7 +100,7 @@ def main():
     else:
         artifact=torch.load(teacher_path,map_location='cpu',weights_only=False)
         if artifact['parent_SHA256']!=a.parent_sha256:raise ValueError('Teacher-parent identity differs')
-        teacher=ResidualTeacher(artifact['state_dict']['parent']);teacher.load_state_dict(artifact['state_dict']);teacher.eval();transform=artifact['transform']
+        teacher=residual_teacher_from_artifact(artifact);transform=artifact['transform']
         query=lambda values:teacher(values@transform.T)
         selected=protocol['selection_source_ids'];teacher_scope=protocol['scope']
         disclosure={k:report[k] for k in ('teacher_uses_EVAL_derivatives','student_inherits_EVAL_information','student_original_EVAL_inputs','original_EVAL_rows_in_teacher_pool','valid_for_formal_test_table','independent_test_samples','TEST_selected_development_metric','independent_generalization_claim')}

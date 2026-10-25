@@ -1,5 +1,22 @@
 # T21 四模态终身学习：实验室适配
 
+### 2026-10-25 继续增强B教师：原学生不变、完整质量门槛后再蒸馏
+
+用户要求继续优化教师而非直接蒸馏低质模型。本轮独立`fit_B_balanced_residual_teacher.py`，
+固定`config_B_balanced_residual_teacher_20261025.json`：原父Linear＋128-GELU-Dropout0-Linear10离线残差教师，
+只用原TRAIN1300及相同500个CLEVR来源的10份2/5%同配对TRAIN混合＋.1%TRAINstd共噪声衍生；不暴露Euro TEST、不扩来源。
+完整协方差坐标只统计TRAIN；原TRAIN均衡CE.5、衍生CE.5、两方pair排序各.25，
+原Euro TRAIN300及4份TRAIN增强上保留父KL2(T2)。教师最多400个优化轮、每轮12步（不是整集epoch）、
+600秒完整轮边界，最少100轮后允许TRAIN目标60轮无改善停止；只按完整TRAIN/衍生/旧TRAIN锚点目标选教师，不按EVAL选教师。
+保存教师best/last、完整TRAIN/开发及暴露/未暴露逐样本；只有CLEVR TRAIN>=90%且完整开发Euro>=483、CLEVR>=710才启动学生。
+学生仍原7840 Linear，无新推理模块；只用TRAIN及配对弱增强，以CE.5＋解耦蒸馏(alpha1,beta4,T2)＋配对教师margin.25＋旧TRAIN父KL1，
+最多160优化轮/240秒完整轮边界，每阶段仍只一个共享PT，按最差任务下限缺口再均分选择，保留E0，不压分或拼PT。
+非线性教师只是训练产物，不准作为实拍部署模型；学生继承部分TEST信息，全部仍开发适配，independent_test_samples=0、valid_for_formal_test_table=false。
+原A接受版本及所有历史PT/CCD保护；源码测试Git发布后才运行，CPU2/noSDK/noGPU，不影响D采集或LG D仿真。
+
+最新物理C原采集完整9200帧、TRAIN1600/EVAL3000已完成；普通末端best同PT为Euro372/CLEVR500/Speech494，整体未达标，不能用仿真替代。
+SDK已经自动接入D。LG C八轮GPU结果753/739/676，相对原779/791/781仍未过新范围，未排入硬件队列，CPU审计按完成收据执行。
+
 ### 2026-10-25 A人工通过，继续B弱扰动配对教师
 
 用户已接受LG A750/1000及D2NN A709/1000作为本轮开发适配版本；原100来源信息暴露与非独立TEST标记不撤销，
