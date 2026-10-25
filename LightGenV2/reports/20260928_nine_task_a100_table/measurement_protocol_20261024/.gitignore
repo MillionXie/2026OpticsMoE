@@ -93,3 +93,6 @@
 !test_native_shape_mac.py
 !openmoji_saved_shape_mac.py
 !test_openmoji_saved_shape_mac.py
+!lg_time_chinese_notes_20261025.mjs
+!lg_parallel_raw_notes_20261025.py
+!audit_lg_timing_annotations_20261025.py
