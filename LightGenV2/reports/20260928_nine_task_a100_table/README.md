@@ -1,5 +1,36 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 14:30：T12双方三轮已合格；LGVQ封存门懒导入已精确定位
+
+T12 Qwen唯一`a100_gpu_checked_remaining_20261025_01/qwen_repeat01,02,03`各200已complete，
+原14文件每轮100089184/100107010/100091618B均先逐SHA取回，再本地GPU-aware独立raw审计，
+审计对象与服务器原对象完全相同。三轮完整RGB逐位一致（npz同SHA
+`fd28b52c88079bc8f5d0f379fe15075e7f3188f7d1595ae820274bf9555f360f`），
+与Ours三轮逐样本sample/ID/mask全同；共同有效token600合计19596。
+Qwen均值113.65583361834676ms/51.43396096436833J，对Ours时间倍率2.734396742182599、
+能耗比11.57865029341232；共同tokens/s为Ours785.7528712478484、Qwen287.35876514417555。
+准确度仍原完整2304 TEST，不重评。实际成本16/18，尚未重建partial17或已交工作簿。
+Ours600实际形状NN MAC已离线推导：`t12_student_qualified600_shape_MAC_01.json`1811511B，
+SHA0784e041531414e3b05a80bff35ae6f0767060c2fae024746f881f39bd7c8fb1；
+实际NN MAC12042498152448、charged serial11913791397888、parallel128706754560，
+0.04014166050816TOP/input、匹配混合时间0.9657509185836827TOPS、能量0.00903656340103482TOPS/W。
+只是原图/shape的NN dense-MAC约定，物理光denseequiv仍null，无新模型/GPU调用。
+
+LGVQ原GPU校验四field已逐位passed，合同SHA
+`7045cb50c488b846c4ae55691f0fa782efebd4325a12d208191c2d9b976d1cc5`，不重做。
+随后temporal_repeat01已执行13整场/200视频，但结束封存因`Frozen source/manifest/reference changed`
+退出，没有合格cost。无模型纯导入精确复现：初始47个已记录源字节全同，manifest/Qwen参考SHA未变；
+原OLD数据包__init__懒导入run/training/metrics/preflight，使源码清单成员新增5个旧文件。
+诊断`a100_lgvq_source_inventory_diagnosis_20261025_01/diagnosis.json`1026B，
+SHAab23638e6c9ad6a56d6dc3a26897a41980bd74af19b304a8e35262ba9e6fce60，CUDAfalse/零模型零NN。
+这是清单冻结顺序问题，不是神经输出比较失败，也不是源字节被改。
+
+原controller3021462/worker3048589均退出/MPS释放，两根64/22原文件301138822/1445922B已
+`backup_receipt_LGVQ_source_gate_stop01.json`全SHA保全，外日志723B亦取回。
+修复仅将原FRAME_FRACTIONS与_sample_positions导入前移至freeze前，不放松源码门/不改NN或数据。
+续链新增显式`--lgvq-only --retained-lgvq-proof <原7045合同> --retained-lgvq-proof-sha256 <精确SHA>`，
+仅六个缺失LGVQ成本点，不重跑T12/两份已过校验。15项无模型入场/缺失计划/早导入测试先通过。
+
 ## 2026-10-25 人工纠正：移除慢速CPU推理的全局测速前置，按实际A100核对
 
 **本轮已产生实际测速进展，不只是启动校验：**T12 Ours唯一成本

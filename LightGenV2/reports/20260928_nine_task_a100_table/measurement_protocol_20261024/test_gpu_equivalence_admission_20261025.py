@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import gpu_numerical_equivalence_20261025 as validation
-from run_gpu_checked_missing_20261025 import previous_finished
+from run_gpu_checked_missing_20261025 import previous_finished,missing_plan
 
 
 class Admission(unittest.TestCase):
@@ -68,6 +68,22 @@ class Admission(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);(root/'suite_status.json').write_text(json.dumps(dict(status='complete',pid=123,mps_released=True)))
             with patch.object(Path,'exists',return_value=True):self.assertFalse(previous_finished(root))
+
+    def test_lgvq_only_never_replays_qualified_t12_or_validations(self):
+        plan=missing_plan(True)
+        self.assertEqual([r[0] for r in plan],[f'{target}_repeat{i:02d}' for target in ('temporal','spatial') for i in (1,2,3)])
+        self.assertTrue(all(task=='lgvq' and not validation for _,task,validation,_ in plan))
+
+    def test_fresh_plan_retains_exact_validation_and_repeat_order(self):
+        self.assertEqual([r[0] for r in missing_plan(False)][:5],['t12_validation','qwen_repeat01','qwen_repeat02','qwen_repeat03','lgvq_validation'])
+
+    def test_lgvq_lazy_original_imports_precede_source_freeze(self):
+        import ast
+        source=(Path(__file__).parent/'measure_lgvq_cost.py').read_text()
+        tree=ast.parse(source);main=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='main')
+        freeze=next(n for n in ast.walk(main) if isinstance(n,ast.Assign) and ast.unparse(n)=='frozen = source_files()')
+        selected=[n for n in ast.walk(main) if isinstance(n,ast.ImportFrom) and any(a.name in ('FRAME_FRACTIONS','_sample_positions') for a in n.names)]
+        self.assertTrue(all(any(n.lineno<freeze.lineno and any(a.name==name for a in n.names) for n in selected) for name in ('FRAME_FRACTIONS','_sample_positions')))
 
 
 if __name__=='__main__':unittest.main()

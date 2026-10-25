@@ -28,15 +28,33 @@ def previous_finished(root):
     return True
 
 
+def missing_plan(lgvq_only=False):
+    prefix=[] if lgvq_only else [('t12_validation','t12',True,None)] + [
+        (f'qwen_repeat{i:02d}','t12',False,i) for i in (1,2,3)] + [('lgvq_validation','lgvq',True,None)]
+    return prefix+[(f'{target}_repeat{i:02d}','lgvq',False,i)
+                   for target in ('temporal','spatial') for i in (1,2,3)]
+
+
 def main():
     import fcntl
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('t12-output','lgvq-output','previous-cost'):p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--deadline',type=float,required=True);p.add_argument('--queue-seconds',type=int,default=21600)
+    p.add_argument('--lgvq-only',action='store_true')
+    p.add_argument('--retained-lgvq-proof',type=Path)
+    p.add_argument('--retained-lgvq-proof-sha256')
     args=p.parse_args();t12=args.t12_output.resolve();lgvq=args.lgvq_output.resolve()
     if (t12.exists() or lgvq.exists() or not t12.is_relative_to(REPO/'LightGenV2/tasks/t12_text_to_image/runs/simulation')
             or not lgvq.is_relative_to(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation')
             or not valid_window(args.deadline,args.queue_seconds)):raise ValueError('New explicit bounded missing-only roots required')
+    retained=None
+    if args.lgvq_only:
+        if (args.retained_lgvq_proof is None or args.retained_lgvq_proof_sha256 is None
+                or not args.retained_lgvq_proof.resolve().is_relative_to(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation')
+                or sha(args.retained_lgvq_proof)!=args.retained_lgvq_proof_sha256):raise ValueError('Exact retained original GPU proof required')
+        lgvq_proof(args.retained_lgvq_proof);retained=args.retained_lgvq_proof.resolve()
+    elif args.retained_lgvq_proof is not None or args.retained_lgvq_proof_sha256 is not None:
+        raise ValueError('Do not silently accept an unused retained proof')
     t12.mkdir(parents=True);lgvq.mkdir(parents=True);frozen=source_inventory();child=None;active=False
     for name in ('measure_t12_cost.py','audit_t12_cost.py','measure_lgvq_cost.py','audit_lgvq_cost.py',
                  't12_baseline_live.py','t12_live_frontend.py','lgvq_live_frontend.py','stage_meter.py',
@@ -46,12 +64,14 @@ def main():
         previous_cost=str(args.previous_cost.resolve()),t12_root=str(t12),lgvq_root=str(lgvq),completed=[],sources=frozen,
         command=sys.argv,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
         CPU_inference_not_a_global_timing_gate=True,formal_cost_protocol_unchanged=True)
+    if retained is not None:state.update(retained_lgvq_proof=str(retained),retained_lgvq_proof_sha256=sha(retained))
     def save():
         write(t12/'suite_status.json',state);write(lgvq/'suite_status.json',state)
     def stable():
         if time.time()>args.deadline-120:raise TimeoutError('Finite missing-only GPU queue budget')
         for name,digest in frozen.items():
             if sha(REPO/name)!=digest:raise ValueError('Active frozen source changed: '+name)
+        if retained is not None and sha(retained)!=args.retained_lgvq_proof_sha256:raise ValueError('Retained original GPU proof changed')
     save()
     try:
         while not previous_finished(args.previous_cost):stable();time.sleep(5)
@@ -78,13 +98,10 @@ def main():
             env=dict(os.environ,CUDA_VISIBLE_DEVICES=GPU,CUDA_DEVICE_ORDER='PCI_BUS_ID',CUDA_MPS_PIPE_DIRECTORY=engine.PIPE,
                 CUDA_MPS_ACTIVE_THREAD_PERCENTAGE='100',OMP_NUM_THREADS='8',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
             t12python='/DATA/DATA1/guest3/t12_assets/venv/bin/python';xml='/home/guest3/miniconda3/envs/xml/bin/python'
-            tproof=t12/'native_GPU_contract';lproof=lgvq/'native_GPU_contract'
+            tproof=t12/'native_GPU_contract';lproof=retained.parent if retained is not None else lgvq/'native_GPU_contract'
             inputs=REPO/'LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_shared_reference_files_20261025_01'
-            plan=[('t12_validation','t12',tproof,True,None)]
-            plan += [(f'qwen_repeat{i:02d}','t12',t12/f'qwen_repeat{i:02d}',False,i) for i in (1,2,3)]
-            plan += [('lgvq_validation','lgvq',lproof,True,None)]
-            plan += [(f'{target}_repeat{i:02d}','lgvq',lgvq/f'{target}_repeat{i:02d}',False,i)
-                     for target in ('temporal','spatial') for i in (1,2,3)]
+            plan=[(name,task,(tproof if task=='t12' else lproof) if validation else (t12 if task=='t12' else lgvq)/name,validation,repeat)
+                  for name,task,validation,repeat in missing_plan(args.lgvq_only)]
             for name,task,folder,validation,repeat in plan:
                 stable();python=t12python if task=='t12' else xml;deadline=point_deadline(args.deadline)
                 if validation:

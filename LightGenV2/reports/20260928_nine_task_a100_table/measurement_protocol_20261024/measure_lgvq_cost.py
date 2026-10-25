@@ -102,6 +102,11 @@ def main():
     from LightGenV2.tasks.t06_video_quality_assessment.strict_tf_window_20261020 import interval_energy
     from LightGenV2.tasks.t06_video_quality_assessment import lab_runtime as original
     from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.data import read_manifest
+    # Resolve the original producer/post-window metadata imports BEFORE the
+    # dynamic source inventory freezes. Package __init__ imports run/training;
+    # none is executed here, and no input or model is read by these imports.
+    from experiments.lgvq_four_stage_optical_electronic_109_no_attention_vqa.data import FRAME_FRACTIONS
+    from experiments.qwen3_vl_2b_lgvq_single_metric_o2_16frame_54.cache_qwen_front import _sample_positions
     from measure_salicon import shared
     from stage_meter import StageMeter
     engine.GPU=GPU;engine.PIPE=os.environ['CUDA_MPS_PIPE_DIRECTORY']
