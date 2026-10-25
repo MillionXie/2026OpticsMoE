@@ -6,8 +6,8 @@ HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3]
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
 from first_tf_supplement_20261025 import sha,write
 GPU='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
-def templates():
-    return [
+def templates(remaining_two=False):
+    result=[
       ('02','t08_abo_image_text_retrieval','a100_image_input_inclusive_20261024_02','vision'),
       ('03','t07_abo_image_retrieval','a100_input_inclusive_20261024_qwen01','vision'),
       ('04','t08_abo_image_text_retrieval','a100_title_input_inclusive_20261024_02','language'),
@@ -15,11 +15,24 @@ def templates():
       ('06','t03_saliency','a100_input_inclusive_20261024_01','vision'),
       ('07','t04_semantic_interaction','a100_qwen_input_inclusive_20261025_01','vision'),
       ('08','t12_text_to_image','a100_gpu_checked_remaining_20261025_01','language')]
+    return [x for x in result if x[0] in ('07','08')] if remaining_two else result
 def main():
     import fcntl
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--deadline',type=float,required=True);args=p.parse_args();root=args.output.resolve()
+    p.add_argument('--deadline',type=float,required=True)
+    p.add_argument('--remaining-two',action='store_true');p.add_argument('--previous-suite',type=Path);p.add_argument('--previous-suite-sha256')
+    args=p.parse_args();root=args.output.resolve()
     if root.exists() or not root.is_relative_to(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation') or not 0<args.deadline-time.time()<=21600:raise ValueError('New bounded suite required')
+    retained=[]
+    if args.remaining_two:
+        if args.previous_suite is None or args.previous_suite_sha256 is None:raise ValueError('Exact stopped predecessor required')
+        previous=args.previous_suite/'suite_status.json';assert sha(previous)==args.previous_suite_sha256
+        state=json.loads(previous.read_text());assert state['status']=='stopped' and state['mps_released'] is True
+        assert not Path('/proc',str(state['pid'])).exists() and not Path('/proc',str(state['child_pid'])).exists()
+        retained=state['completed'];assert len(retained)==15 and {x['name'].split('_')[0] for x in retained}=={'02','03','04','05','06'}
+        for x in retained:
+            summary=Path(x['folder'])/'first_tf_summary.json';assert sha(summary)==x['summary_sha256'];assert json.loads(summary.read_text())['status']=='complete'
+    elif args.previous_suite is not None or args.previous_suite_sha256 is not None:raise ValueError('Unused predecessor prohibited')
     root.mkdir(parents=True);child=None;active=False
     sources={str(f.relative_to(REPO)):sha(f) for f in HERE.glob('*.py') if f.name in
         ('first_tf_supplement_20261025.py','run_first_tf_seven_20261025.py','run_temporal_remainder.py','stage_meter.py',
@@ -27,7 +40,8 @@ def main():
          'measure_openmoji_qwen.py','measure_t12_cost.py','gpu_checked_cost_entry_20261025.py')}
     state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,completed=[],sources=sources,
         command=sys.argv,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
-        authorization='Only seven missing first-TF baseline time/energy; retained LG, proofs, TEST and other baselines not rerun')
+        authorization='Only seven missing first-TF baseline time/energy; retained LG, proofs, TEST and other baselines not rerun',
+        retained_completed=retained,remaining_two_only=args.remaining_two)
     def save():write(root/'suite_status.json',state)
     def stable():
         if time.time()>args.deadline-30:raise TimeoutError('Finite queue deadline')
@@ -57,10 +71,11 @@ def main():
         engine.daemon(True);active=True
         env=dict(os.environ,CUDA_VISIBLE_DEVICES=GPU,CUDA_DEVICE_ORDER='PCI_BUS_ID',CUDA_MPS_PIPE_DIRECTORY=engine.PIPE,
             CUDA_MPS_ACTIVE_THREAD_PERCENTAGE='100',OMP_NUM_THREADS='8',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
-        for key,task,old,mode in templates():
+        for key,task,old,mode in templates(args.remaining_two):
           for repeat in (1,2,3):
             stable();base=REPO/'LightGenV2/tasks'/task/'runs/simulation';template=base/old/'qwen_repeat01/identity.json'
-            folder=base/('a100_first_tf_core_'+key+'_20261025_01')/f'qwen_repeat{repeat:02d}'
+            version='02' if args.remaining_two else '01'
+            folder=base/('a100_first_tf_core_'+key+'_20261025_'+version)/f'qwen_repeat{repeat:02d}'
             if folder.exists():raise ValueError('Refuse to rerun existing point')
             name=f'{key}_qwen_repeat{repeat:02d}';deadline=min(args.deadline,time.time()+7199)
             python='/DATA/DATA1/guest3/t12_assets/venv/bin/python' if key=='08' else '/home/guest3/miniconda3/envs/xml/bin/python'

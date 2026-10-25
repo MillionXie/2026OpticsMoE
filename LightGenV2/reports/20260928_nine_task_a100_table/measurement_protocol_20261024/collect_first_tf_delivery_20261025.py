@@ -57,7 +57,8 @@ def collect(allow_pending=False):
             for (name,family,charged),values in groups.items():details.append(dict(key=key,repeat=run['repeat'],stage=name,family=family,charged=charged,**values))
         elif prefix not in ('01a','01b') and len(key.split('|'))==2:
             # Only these seven points have new first-block observation authority.
-            newfolder=str(Path(folder).parent.parent/('a100_first_tf_core_'+prefix+'_20261025_01')/f'qwen_repeat{run["repeat"]:02d}').replace('\\','/')
+            version='02' if prefix in ('07','08') else '01'
+            newfolder=str(Path(folder).parent.parent/('a100_first_tf_core_'+prefix+'_20261025_'+version)/f'qwen_repeat{run["repeat"]:02d}').replace('\\','/')
             if not (REPO/newfolder/'first_tf_summary.json').exists():
                 if not allow_pending:raise FileNotFoundError(newfolder+'/first_tf_summary.json')
                 return dict(r,pending=True)
@@ -78,7 +79,7 @@ def collect(allow_pending=False):
             core=read(newfolder,'first_tf_calls.csv',True,new=True);power=read(newfolder,'telemetry.csv',True,new=True)
             energy=integrate([(float(x['first_block_start']),float(x['cpu_result_return'])) for x in core],power)
             assert abs(energy['system_j']-summary['system_j'])<1e-6
-            r.update(folder=newfolder,new_supplement=True,wall_s=energy['wall_s'],event_s=sum(float(x['diagnostic_core_cuda_ms']) for x in core)/1000,
+            r.update(folder=newfolder,new_supplement=True,cpu_output_s=None,wall_s=energy['wall_s'],event_s=sum(float(x['diagnostic_core_cuda_ms']) for x in core)/1000,
                 software_s=energy['wall_s'],system_j=energy['system_j'],board_j=energy['board_j'],max_support_age_s=energy['max_support_age_s'],
                 start_description='原生首个'+('文字' if prefix in ('04','08') else '视觉')+'Transformer块',energy_method='每次首TF至CPU任务结果区间的338.2W主机代理＋同窗NVML积分')
         else:
@@ -100,7 +101,7 @@ def collect(allow_pending=False):
             record={k:v for k,v in oldrec.items() if k in ('key','id','task','system','metric','accuracy','full_test_n','ours_lab','tokens','cap','power_limit')}
             record['old_full_graph_op']=oldrec.get('op');record['core_op']=None;record['pending']=any(p.get('pending') for p in ps)
             if not record['pending']:
-                for k in ('wall_s','event_s','optical_s','system_j','cpu_output_s','software_s'):record[k]=sum(p[k] for p in ps)
+                for k in ('wall_s','event_s','optical_s','system_j','cpu_output_s','software_s'):record[k]=sum(p[k] for p in ps) if all(p[k] is not None for p in ps) else None
                 record.update(ms=record['wall_s']/600*1000,j=record['system_j']/600,event_ms=record['event_s']/600*1000)
             result.append(record)
         return result

@@ -6,6 +6,8 @@ from run_first_tf_seven_20261025 import templates
 class Tests(unittest.TestCase):
     def test_plan_only_seven(self):
         self.assertEqual([x[0] for x in templates()],['02','03','04','05','06','07','08'])
+    def test_only_remaining_two(self):
+        self.assertEqual([x[0] for x in templates(True)],['07','08'])
     def test_vision(self):
         block=type('Qwen3VLVisionBlock',(),{})()
         self.assertIs(block_candidate(N(model=N(visual=N(blocks=[block]))),'vision')[0],block)
