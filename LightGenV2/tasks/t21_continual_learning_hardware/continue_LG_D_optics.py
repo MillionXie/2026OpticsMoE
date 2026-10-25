@@ -89,7 +89,7 @@ def main():
         model.load_state_dict(torch.load(out/'best_checkpoint.pt',map_location=device,weights_only=False)['model'],strict=True);selected=evaluate(model,test,TASKS,device,8)
         put(out/'selected_test.json',dict(scores=selected,TEST_gradients=False,TEST_selected_development_metric=True));put(out/'frozen_audit.json',dict(pass_all=True,frozen_parameter_SHA256=immutable,fixed_gain_sha256=gains))
         gate={n:dict(reference=cfg['reference'][n],adapted=selected[n]['balanced_accuracy'],within_requested_band=cfg['reference'][n]-.01-1e-9<=selected[n]['balanced_accuracy']<=cfg['reference'][n]+.06+1e-9) for n in TASKS}
-        put(out/'completion.json',dict(phase='D',best_epoch=best_epoch,best_sha256=sha(out/'best_checkpoint.pt'),last_sha256=sha(out/'last_checkpoint.pt'),test=summary(selected),original_band=gate,all_tasks_within_band=all(v['within_requested_band'] for v in gate.values()),parent_C_all_tasks_within_band=receipt['all_tasks_within_band'],hardware_admitted=False))
+        put(out/'completion.json',dict(phase='D',best_epoch=best_epoch,best_sha256=sha(out/'best_checkpoint.pt'),last_sha256=sha(out/'last_checkpoint.pt'),selected_test_sha256=sha(out/'selected_test.json'),test=summary(selected),original_band=gate,all_tasks_within_band=all(v['within_requested_band'] for v in gate.values()),parent_C_all_tasks_within_band=receipt['all_tasks_within_band'],hardware_admitted=False))
         put(a.out/'status.json',dict(state='complete_CPU_audit_pending',updated=time.time()));put(a.out/'fit_return.json',dict(returncode=0,seconds=time.time()-began))
     except BaseException:put(a.out/'failure.json',dict(traceback=traceback.format_exc(),updated=time.time()));raise
 
