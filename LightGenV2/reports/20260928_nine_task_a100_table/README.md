@@ -1,5 +1,15 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26：LG仅减少重复Graph准备的独立候选
+
+lgvq_lowlevel_capture_20261026.py复用原33段投影worker，只换公开CUDAGraph捕获API。
+按Torch2.6官方torch/cuda/graphs.py，原torch.cuda.graph上下文每段都同步、GC、
+清缓存；本候选只在首次电子捕获准备一次，成本仍计入该段，然后用原显式流逐段
+capture_begin/end。保持global捕获模式、独立默认池、33图、所有原数学与辅助字典、
+逐场同步、首48和全部2048评分核验，不混入异步队列/辅助loss删减。
+薄入口run_lgvq_lowlevel_20261026.py只派发LG一轮，不重测Qwen；候选与原模块双源
+身份分开绑定。7项无模型合同测试passed；正式结果未取得前不声称百倍或已提速。
+
 ## 2026-10-26：新人工授权A10080租机，仅DS/Kimi50新口径单轮
 
 此前租机终止限制不适用于本次用户新提供、已独立核验的空闲A100-SXM4-80GB。
