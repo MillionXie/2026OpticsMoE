@@ -32,9 +32,31 @@ def stage_bands(stage,architecture='d2nn'):
 
 def declared_source_budget(stage,architecture,cfg,protocol):
     if cfg.get('all_TEST_source_teacher'):
+        if cfg.get('full_source_development_20261026'):
+            bands=development_bands(stage,architecture,cfg)
+            expected={n:0 for n in bands}
+            if protocol.get('all_TEST_sources_used') is not True or protocol.get('independent_EVAL_sources_remaining')!=expected:
+                raise ValueError('Every complete source and disclosure must match')
+            return {n:1000 for n in bands}
         if architecture!='moe' or stage!=2 or protocol.get('all_TEST_sources_used') is not True or protocol.get('independent_EVAL_sources_remaining')!={'clevr':0,'eurosat':0}:raise ValueError('Exact disclosed full-source LG B development teacher required')
         return {'eurosat':1000,'clevr':1000}
     return {n:500 for n in stage_bands(stage,architecture)} if architecture=='moe' else {2:{'eurosat':200,'clevr':800},3:{n:500 for n in stage_bands(stage,architecture)}}[stage]
+
+
+def development_bands(stage,architecture,cfg):
+    """New human-approved scopes; never silently rewrite legacy gates."""
+    if not cfg.get('full_source_development_20261026'):return stage_bands(stage,architecture)
+    expected={('moe',2):{'eurosat':(680,730),'clevr':(756,783)},
+              ('d2nn',3):{'eurosat':(462,562),'clevr':(581,681),'speech_binary':(422,522)},
+              ('d2nn',4):{'eurosat':(478,578),'clevr':(517,617),'speech_binary':(432,532),'physical_binary_raw':(635,735)}}
+    bands={n:tuple(v) for n,v in cfg['development_bands'].items()}
+    if expected.get((architecture,stage))!=bands:raise ValueError('Undeclared stage or changed development bounds')
+    return bands
+
+
+def source_pool_objective(values,threshold,cfg):
+    if cfg.get('mean_source_objective') or cfg.get('bounded_generalized_CE'):return values.mean()
+    return .5*values.mean()+.5*smooth_tail(values,threshold)
 
 
 def objective_pool_weight(task,kind,cfg):
@@ -182,15 +204,15 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json','config_LG_B_fullsource_mean_20261026.json','config_D2NN_C_fullsource_mean_20261026.json','config_D2NN_D_fullsource_mean_20261026.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
     if not rr['teacher_quality_gate_passed'] or rr['valid_for_formal_test_table'] is not False or tp['parent_SHA256']!=a.parent_sha256 or sha(a.teacher_run/'offline_teacher.pt')!=rr['teacher_sha256']:raise ValueError('Exact qualified teacher required')
     model,cp=load_checkpoint(a.parent,a.parent_sha256);before=upstream_state(model);stage=cp['stage']
     if cp['architecture']!=cfg.get('architecture','d2nn') or cp['measured_features_sha256']!=cr['features_sha256'] or model.shared_head.weight.numel()!=7840:raise ValueError('Frozen measured original graph only')
-    bands=stage_bands(stage,cp['architecture'])
-    if cfg.get('all_TEST_source_teacher'):bands={'eurosat':(680,730),'clevr':(756,783)}
+    bands=development_bands(stage,cp['architecture'],cfg)
+    if cfg.get('all_TEST_source_teacher') and not cfg.get('full_source_development_20261026'):bands={'eurosat':(680,730),'clevr':(756,783)}
     artifact=torch.load(a.teacher_run/'offline_teacher.pt',map_location='cpu',weights_only=False);teacher=residual_teacher_from_artifact(artifact);transform=artifact['transform'];teacher_before={k:v.clone() for k,v in teacher.state_dict().items()}
     for v in teacher.parameters():v.requires_grad_(False)
     with np.load(a.capture/'features.npz',allow_pickle=False) as d:
@@ -273,7 +295,7 @@ def main():
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();history=[];bags=cfg.get('source_bags',1);partitions=source_partitions(pt,pi,kinds,labels.numpy(),bags);bag_weights=[];bag_last=[]
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,source_budget_expanded=False,
         all_TEST_sources_used=bool(cfg.get('all_TEST_source_teacher')),
-        objective='Equal tasks/pools; source-mean generalizedCE q=.7 after bounded teacher margins' if cfg.get('bounded_generalized_CE') else 'Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
+        objective='Equal tasks/pools; source-mean margin/CE, no hardest-tail reweighting' if cfg.get('mean_source_objective') else 'Equal tasks/pools; source-mean generalizedCE q=.7 after bounded teacher margins' if cfg.get('bounded_generalized_CE') else 'Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
         teacher_selection='Prospective complete-stage TEST band key, first qualifying actual shared head; otherwise closest complete-stage key' if cfg.get('whole_stage_TEST_selection') else 'Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
         warm_assistant=warm,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
         centered_TRAIN_function_retention=function_receipt,source_pair_ranking_weight=pair_weight,TEST_selected_development=bool(cfg.get('whole_stage_TEST_selection')),
@@ -304,7 +326,7 @@ def main():
         def closure():
             opt.zero_grad(set_to_none=True);rows=(bounded_margin_rows if cfg.get('bounded_generalized_CE') else margin_rows)(z@weight.T,labels,margins);loss=rows.sum()*0
             for n,kind,ix,groups,count in bag_views:
-                values=source_average(rows[ix],groups,count);loss+=objective_pool_weight(n,kind,cfg)*(values.mean() if cfg.get('bounded_generalized_CE') else .5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
+                values=source_average(rows[ix],groups,count);loss+=objective_pool_weight(n,kind,cfg)*source_pool_objective(values,threshold[names.index(n),kind],cfg)/(2*len(names))
             if pair_views:loss+=(pair_weight or cfg.get('paired_ranking_weight',0))*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
             if retention is not None:loss+=cfg['Euro_TRAIN_retention_weight']*retention_KL(z[retention_rows]@weight.T,retention_target)
             if function_rows is not None:loss+=cfg['TRAIN_function_weight']*centered_function_loss(z[function_rows]@weight.T,function_target)

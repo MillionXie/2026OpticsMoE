@@ -1,0 +1,14 @@
+{
+  "schema": "T21_D2NN_C_all_TEST_source_teacher_development_20261026",
+  "architecture": "d2nn", "stage": 3,
+  "sources_per_task": {"eurosat": 1000, "clevr": 1000, "speech_binary": 1000},
+  "all_TEST_sources_authorized": true,
+  "teacher_epochs": 300, "teacher_max_seconds": 480,
+  "student_epochs": 80, "student_max_seconds": 120,
+  "steps_per_epoch": 12, "TRAIN_floor": 0.90,
+  "teacher_quality_floor": {"eurosat": 0.95, "clevr": 0.95, "speech_binary": 0.95},
+  "development_floor": {"eurosat": 0.462, "clevr": 0.581, "speech_binary": 0.422},
+  "development_ceiling": {"eurosat": 0.562, "clevr": 0.681, "speech_binary": 0.522},
+  "whole_stage_student_TEST_selection": true,
+  "Euro_parent_anchor_weight": 0.0, "SDK": false, "GPU": false
+}

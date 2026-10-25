@@ -1,0 +1,34 @@
+import json,unittest
+from pathlib import Path
+import torch
+from .distill_margin_teacher import development_bands,declared_source_budget,source_pool_objective,whole_stage_band_key
+from .fit_stage_balanced_teacher import validate_profile
+
+
+class FullSourceFollowupTests(unittest.TestCase):
+    def test_new_scopes_keep_legacy_unchanged(self):
+        legacy=development_bands(3,'d2nn',{})
+        self.assertEqual(legacy['clevr'],(631,681))
+        for name,stage,arch in [('LG_B',2,'moe'),('D2NN_C',3,'d2nn'),('D2NN_D',4,'d2nn')]:
+            cfg=json.loads(Path(__file__).with_name('config_'+name+'_fullsource_mean_20261026.json').read_text())
+            bands=development_bands(stage,arch,cfg)
+            protocol=dict(all_TEST_sources_used=True,independent_EVAL_sources_remaining={n:0 for n in bands})
+            self.assertEqual(declared_source_budget(stage,arch,cfg,protocol),{n:1000 for n in bands})
+            self.assertLessEqual(cfg['maximum_seconds'],360)
+            with self.assertRaises(ValueError):declared_source_budget(stage,arch,cfg,dict(protocol,all_TEST_sources_used=False))
+            with self.assertRaises(ValueError):development_bands(stage,arch,dict(cfg,development_bands={'eurosat':[0,1000]}))
+    def test_new_C_teacher_scope_is_exact(self):
+        cfg=json.loads(Path(__file__).with_name('config_stage_D2NN_C_allTEST_teacher_20261026.json').read_text())
+        validate_profile(cfg)
+        with self.assertRaises(ValueError):validate_profile(dict(cfg,SDK=True))
+        self.assertEqual(sum(cfg['sources_per_task'].values()),3000)
+    def test_mean_objective_does_not_add_accuracy_ceiling_gradient(self):
+        values=torch.tensor([1.,2.,9.],requires_grad=True);threshold=torch.tensor(2.,requires_grad=True)
+        loss=source_pool_objective(values,threshold,dict(mean_source_objective=True));loss.backward()
+        torch.testing.assert_close(values.grad,torch.ones(3)/3);self.assertIsNone(threshold.grad)
+        scores=dict(eurosat=dict(n=1000,correct=652),clevr=dict(n=1000,correct=645),speech_binary=dict(n=1000,correct=618))
+        bands=dict(eurosat=(462,562),clevr=(581,681),speech_binary=(422,522))
+        self.assertEqual(whole_stage_band_key(scores,bands),(-96,-186))
+
+
+if __name__=='__main__':unittest.main()
