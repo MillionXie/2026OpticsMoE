@@ -1,0 +1,15 @@
+{
+  "schema": "T21_shared_source_bagged_margin_teacher_BC_v3",
+  "source_bags": 3,
+  "maximum_steps": 180,
+  "maximum_seconds": 180,
+  "TRAIN_augmentations": 8,
+  "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN": true,
+  "delta_L2": 0.00001,
+  "partial_TEST_source_expansion": false,
+  "original_student_parameters": 7840,
+  "new_inference_layers": 0,
+  "SDK": false,
+  "GPU": false
+}

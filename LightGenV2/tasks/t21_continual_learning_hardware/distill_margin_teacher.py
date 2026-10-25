@@ -85,13 +85,27 @@ def robust_derivatives(x,y,tasks,ids,train,exposed):
     return torch.cat(values),y[exposed].repeat(10),np.tile(tasks[exposed],10),np.tile(ids[exposed],10)
 
 
+def source_partitions(tasks,ids,kinds,labels,bags):
+    """Source groups, not augmentation rows; keep both binary partners together."""
+    if bags not in (1,3):raise ValueError('Only one finite fit or fixed three-bag average')
+    result=np.zeros(len(ids),dtype=int);rng=np.random.default_rng(20261025)
+    for name in sorted(set(tasks)):
+        for kind in (0,1):
+            rows=np.flatnonzero((tasks==name)&(kinds==kind));groups=ids[rows] if name=='eurosat' else ids[rows]//2
+            strata=range(10) if name=='eurosat' else (None,)
+            for label in strata:
+                mask=np.ones(len(rows),bool) if label is None else labels[rows]==label;keys=np.unique(groups[mask]);rng.shuffle(keys);mapping={int(key):i%bags for i,key in enumerate(keys)}
+                result[rows[mask]]=[mapping[int(key)] for key in groups[mask]]
+    return result
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','teacher_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--parent-sha256',required=True);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -107,7 +121,7 @@ def main():
     if {n:len(v) for n,v in selected.items()}!=expected or len(tr)!=1000+300*(stage-1) or any(int((tasks[te]==n).sum())!=1000 for n in names):raise ValueError('Exact fixed source budget/complete stage required')
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unex=np.setdiff1d(te,exposed)
     robust=cfg.get('paired_TRAIN_and_stronger_same_class_mix',False)
-    q,qt=robust_queries(x[tr],y[tr],tasks[tr],ids[tr],cfg) if robust else TRAIN_queries(x[tr],tasks[tr],cfg);qy=y[tr].repeat(1+cfg['TRAIN_augmentations']);qi=np.tile(ids[tr],1+cfg['TRAIN_augmentations'])
+    q,qt=robust_queries(x[tr],y[tr],tasks[tr],ids[tr],cfg) if robust or cfg.get('paired_TRAIN') else TRAIN_queries(x[tr],tasks[tr],cfg);qy=y[tr].repeat(1+cfg['TRAIN_augmentations']);qi=np.tile(ids[tr],1+cfg['TRAIN_augmentations'])
     dx,dy,dt,di=(robust_derivatives if robust else derivatives)(x,y,tasks,ids,tr,exposed);pool=torch.cat((q,dx));labels=torch.cat((qy,dy));pt=np.concatenate((qt,dt));pi=np.concatenate((qi,di));kinds=np.concatenate((np.zeros(len(q),int),np.ones(len(dx),int)))
     pair_views=[]
     if robust:
@@ -124,29 +138,40 @@ def main():
     for n in names:
         for kind in (0,1):
             rows=np.flatnonzero((pt==n)&(kinds==kind));unique,inverse=np.unique(pi[rows],return_inverse=True);views.append((n,kind,rows,torch.tensor(inverse),len(unique)))
-    a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();history=[];best_obj=float('inf');best_weight=initial.clone()
+    a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();history=[];bags=cfg.get('source_bags',1);partitions=source_partitions(pt,pi,kinds,labels.numpy(),bags);bag_weights=[];bag_last=[]
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,source_budget_expanded=False,
         objective='Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
         teacher_selection='Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
+        source_bags=bags,bag_averaging='Fixed equal parameter average of all3 bags, no EVAL choice' if bags==3 else None,
+        bag_omission_is_not_independent_holdout='Original strong teacher already knows sealed sources; bagging is variance reduction, not clean source cross-validation',
         derivative_mixing=(.1,.2) if robust else (.02,.05),derivative_noise_TRAIN_std=.001,paired_ranking_weight=cfg.get('paired_ranking_weight',0),
         final_gate_inclusive_correct_count=BANDS[stage],score_clipping=False,task_head_splicing=False,original_student_parameters=7840,new_inference_layers=0,SDK=False,GPU=False,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),**DISCLOSURE))
-    opt=torch.optim.LBFGS([weight,threshold],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
-    def closure():
-        opt.zero_grad(set_to_none=True);rows=margin_rows(z@weight.T,labels,margins);loss=rows.sum()*0
-        for n,kind,ix,groups,count in views:
-            values=source_average(rows[ix],groups,count);loss+=(.5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
-        if pair_views:loss+=cfg['paired_ranking_weight']*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
-        loss+=cfg['delta_L2']*(weight-initial)[:,:-1].square().sum()/10
-        if not torch.isfinite(loss):raise RuntimeError('Nonfinite margin teacher objective')
-        loss.backward();return loss
-    for step in range(1,cfg['maximum_steps']+1):
-        opt.step(closure);objective=float(closure().detach());gradient=float(torch.cat((weight.grad.flatten(),threshold.grad.flatten())).norm())
-        if objective<best_obj:best_obj=objective;best_weight=weight.detach().clone()
-        if step==1 or step%10==0:
-            history.append(dict(step=step,objective=objective,gradient_norm=gradient));put(a.out/'history.json',history);put(a.out/'status.json',dict(state='margin_teacher',**history[-1],updated=time.time()))
-        if gradient<1e-7 or time.monotonic()-started>=cfg['maximum_seconds']:break
-    folded=(best_weight@transform.double()).float();last_folded=(weight.detach()@transform.double()).float()
+    if bags==3:
+        if robust or pair_views:raise ValueError('Bag profile has its own fixed weak mixing objective')
+        np.savez(a.out/'source_bag_partition.npz',task=pt,source_index=pi,pool_kind=kinds,source_bag=partitions)
+    for bag in range(bags):
+        bag_started=time.monotonic();best_obj=float('inf');best_weight=initial.clone();weight=torch.nn.Parameter(initial.clone());threshold=torch.nn.Parameter(torch.ones(len(names),2,dtype=torch.float64));bag_views=[]
+        for n,kind,ix,unused,count in views:
+            selected_rows=ix if bags==1 else ix[partitions[ix]!=bag];keys,inverse=np.unique(pi[selected_rows],return_inverse=True);bag_views.append((n,kind,selected_rows,torch.tensor(inverse),len(keys)))
+        opt=torch.optim.LBFGS([weight,threshold],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
+        def closure():
+            opt.zero_grad(set_to_none=True);rows=margin_rows(z@weight.T,labels,margins);loss=rows.sum()*0
+            for n,kind,ix,groups,count in bag_views:
+                values=source_average(rows[ix],groups,count);loss+=(.5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
+            if pair_views:loss+=cfg['paired_ranking_weight']*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
+            loss+=cfg['delta_L2']*(weight-initial)[:,:-1].square().sum()/10
+            if not torch.isfinite(loss):raise RuntimeError('Nonfinite margin teacher objective')
+            loss.backward();return loss
+        for step in range(1,cfg['maximum_steps']+1):
+            opt.step(closure);objective=float(closure().detach());gradient=float(torch.cat((weight.grad.flatten(),threshold.grad.flatten())).norm())
+            if objective<best_obj:best_obj=objective;best_weight=weight.detach().clone()
+            if step==1 or step%10==0:
+                history.append(dict(bag=bag,step=step,objective=objective,gradient_norm=gradient));put(a.out/'history.json',history);put(a.out/'status.json',dict(state='margin_teacher',**history[-1],updated=time.time()))
+            if gradient<1e-7 or time.monotonic()-bag_started>=cfg['maximum_seconds']:break
+        bag_weights.append(best_weight);bag_last.append(weight.detach().clone())
+    folded=(torch.stack(bag_weights).mean(0)@transform.double()).float();last_folded=(torch.stack(bag_last).mean(0)@transform.double()).float()
+    if bags==3:np.savez(a.out/'individual_bag_weights.npz',**{'bag_'+str(i):(v@transform.double()).float().numpy() for i,v in enumerate(bag_weights)})
     with torch.no_grad():soft=q.double()@folded.double().T;soft-=soft.mean(1,keepdim=True)
     projected,rank=linear_projection((q@transform.T).double(),soft,qt);candidate=(projected.T@transform.double()).float()
     if rank['rank']!=784:raise RuntimeError('Insufficient TRAIN query span')

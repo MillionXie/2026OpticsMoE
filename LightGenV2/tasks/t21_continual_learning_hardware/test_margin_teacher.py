@@ -1,8 +1,15 @@
 import unittest,torch,numpy as np
-from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives
+from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_bag_partition_is_sourcewise_and_keeps_binary_pairs(self):
+        tasks=np.tile(np.repeat('clevr',12),4);ids=np.tile(np.arange(12),4);kind=np.repeat([0,1],24);labels=ids%2
+        folds=source_partitions(tasks,ids,kind,labels,3)
+        for pool in (0,1):
+            for source in range(12):self.assertEqual(len(set(folds[(kind==pool)&(ids==source)])),1)
+            for source in range(0,12,2):self.assertEqual(folds[(kind==pool)&(ids==source)][0],folds[(kind==pool)&(ids==source+1)][0])
+        self.assertEqual(set(folds),{0,1,2})
     def test_paired_queries_preserve_exact_TRAIN_binary_difference_before_clipping(self):
         torch.manual_seed(1);x=torch.ones(4,8);x[0,0]=1.1;x[0,1]=.9;x[1,0]=1.2;x[1,1]=.8;x[2,2]=1.1;x[2,3]=.9;x[3,2]=1.2;x[3,3]=.8
         y=torch.tensor([0,1,0,1]);tasks=np.repeat('clevr',4);ids=np.arange(4);cfg=dict(TRAIN_augmentations=3,TRAIN_noise_std=[.001,.003,.005]);q,t=robust_queries(x,y,tasks,ids,cfg)
