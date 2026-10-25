@@ -1,5 +1,31 @@
 # T19：九项 ResNet-20 小模型 baseline
 
+## 2026-10-25 图搜图类别与SALICON完整分布补充
+
+在用户已编辑的原Excel上追加主表数据，保留原整体数值及逐测试样本页，
+不重建其余七份工作簿，不新增模型推理或训练。入口`export_plot_supplement.py`
+仅CPU读取已封存排名、7×7预测图和原始GT；`append_plot_supplement.mjs`
+用Artifact Tool定向追加，`verify_plot_supplement.py`独立只读核验保存后的OOXML。
+
+`04_ABO图搜图.xlsx`主表A16:D28新增按查询类别分组的精确SKU H@1，
+顺序Vases/Mirrors/Beds/Pillows/Stools/Light fixtures/Wall art/Sofas/Rugs/Chairs，
+各80查询、20商品，正确数80/63/43/64/52/79/53/55/67/67；合计623/800=77.875%。
+类别来自原protocol及其SHA绑定的parent CSV，按sample ID与SKU核对，
+不是将同类别候选当成正确SKU。仍为最终选定的零任务训练RN18 GAP512＋L2。
+
+`07_SALICON显著性.xlsx`主表G5:K5005新增全部5000个样本的ID/MAE/KLD/CC/NSS，
+CC保留原逐图记录，复算最大差3.5763e-7；其他指标按原评估定义从封存预测图与GT计算。
+MAE按预测和标签各自峰值归一化，KLD为自然对数KL(标签||预测)，NSS用总体标准差。
+逐图均值分别0.1315718811/0.2379660545/0.6880028373/0.7478015982，与原批次FP32聚合一致。
+数据无截尾/抽样；MAE最大0.4636926、KLD最大0.9347709，绘制完整分布应扩展示意图横轴。
+GT-only读取与原adapter在首/中/尾共5图逐元素相等；5000 ID与原预测及GT全部逐行核对。
+全部5000图的四项指标均参与导出，未对神经网络做二次前向。
+
+只读payload `runs/outputs/t19_plot_supplement_20261025/data.json` SHA
+`0c774f361f0e9d7bf32418776c07a991ff2cb056f30d626a440c3d67de25ddf3`。
+两份工作簿原字节备份、修改范围审核及保存后全单元格核验位于原导出目录`verification/`。
+最终9项权重、科学版本标签及旧预算结果不变。
+
 ## 2026-10-24 用户确认最终九项与画图数据导出
 
 用户确认截图九项为最终采用版本，权威选择记录
@@ -15,7 +41,7 @@ LSP/SALICON原始热图PT保留在原run并登记完整SHA；所有父权重和�
 为画图导出9个独立Excel，每个仅“整体指标”“逐测试样本”两个工作表。
 整体保留所有已记录指标，比例值保留0～1原数值；样本表包括实际保存或可从固定预测复算的指标，
 不新增模型推理。LGVQ逐视频无SRCC而提供MOS/预测/误差；检索按原排名计算H@K/RR/AP；
-LSP按原GT和保存坐标计算逐样本PCK/PCKh/误差；SALICON仅已有逐图CC；
+LSP按原GT和保存坐标计算逐样本PCK/PCKh/误差；SALICON初版仅已有逐图CC（后续完整分布见上节）；
 OpenMoji保留各项逐场景指标；编辑保留2304 TEST逐图PSNR/SSIM。
 导出目录`runs/outputs/t19_final_plot_data_20261024/`；旧老师比较表及全部ABO预算不覆盖。
 
