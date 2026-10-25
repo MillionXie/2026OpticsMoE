@@ -16,7 +16,7 @@ from .refine_LG_retention import retention_selection
 
 
 def validate(cfg):
-    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json','config_LG_C_sharpness_20261025.json')
+    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json','config_LG_C_sharpness_20261025.json','config_LG_C_feature_retention_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only published finite C continuation profiles')
 
 
@@ -53,6 +53,12 @@ def configure_simulation_trainability(model):
     actual={name for name,value in model.named_parameters() if value.requires_grad}
     if actual!=expected:raise RuntimeError('Unexpected simulation trainable set')
     return {name:value.numel() for name,value in model.named_parameters() if value.requires_grad}
+
+
+def feature_retention_loss(current,target):
+    """Preserve old native contrast geometry without an added inference map."""
+    reference_power=(target.detach()-1).square().mean(1).clamp_min(1e-6)
+    return ((current-target.detach()).square().mean(1)/reference_power).mean()
 
 
 def sharpness_backward(loss,params,second_loss,radius):
@@ -105,11 +111,23 @@ def main():
                 result=previous(train[task]['x'][chunk].to(device));rows.append(result['logits'].cpu());routes.append(result['route_power'].cpu())
         native=dict(logits=torch.cat(rows),routes=torch.cat(routes));native_receipt=dict(checkpoint_SHA256=receipt_B['best_sha256'],task=task,TRAIN_source_indices=indices.tolist(),EVAL_inputs=False)
         del previous;torch.cuda.empty_cache()
+    feature_targets=None;feature_receipt=None
+    if cfg.get('native_B_feature_tasks'):
+        if cfg['native_B_feature_tasks']!=names[:-1]:raise ValueError('All and only old TRAIN memories required')
+        receipt_B=json.loads((a.chain/'B/completion.json').read_text());previous,_=load_checkpoint(a.chain/'B/best_checkpoint.pt',receipt_B['best_sha256']);previous.to(device).eval();feature_targets={};feature_receipt=dict(checkpoint_SHA256=receipt_B['best_sha256'],EVAL_inputs=False,tasks={})
+        with torch.no_grad():
+            for name in cfg['native_B_feature_tasks']:
+                indices=np.asarray(memories[name]['indices']);rows=[]
+                if len(indices)!=300:raise ValueError('Native feature teacher unique-memory budget changed')
+                for chunk in np.array_split(indices,38):rows.append(previous(train[name]['x'][chunk].to(device))['ccd_features'].cpu())
+                feature_targets[name]=torch.cat(rows);feature_receipt['tasks'][name]=dict(TRAIN_indices=indices.tolist(),TRAIN_source_indices=memories[name]['original_source_indices'])
+        del previous;torch.cuda.empty_cache()
     if a.preflight_only:
         n=cfg.get('native_B_task',names[0]);ix=np.asarray(memories[n]['indices'][:2]);field=train[n]['x'][ix].to(device);labels=train[n]['y'][ix].to(device)
         def probe_loss(result):
             loss=continuation_objective(result['logits'],labels,target['logits'][n][:2].to(device),cfg)
             if native is not None:loss+=native_retention_loss(result,native['logits'][:2].to(device),native['routes'][:2].to(device),cfg,labels)
+            if feature_targets is not None:loss+=cfg['native_B_feature_weight']*feature_retention_loss(result['ccd_features'],feature_targets[n][:2].to(device))
             return loss
         loss=probe_loss(model(field));probe_before={n:v.detach().clone() for n,v in model.named_parameters() if v.requires_grad}
         if cfg.get('TRAIN_sharpness_radius'):
@@ -126,6 +144,7 @@ def main():
     if len(current)!=12526 or not np.array_equal(selection['speech_binary'],target['selection']['speech_binary']):raise ValueError('Full current TRAIN teacher order changed')
     test=load_data(a.test,'test');a.out.mkdir(parents=True,exist_ok=False);out=a.out/'C';out.mkdir();started=time.monotonic()
     if native is not None:torch.save(dict(**native,provenance=native_receipt),out/'native_B_TRAIN_teacher.pt')
+    if feature_targets is not None:torch.save(dict(features=feature_targets,provenance=feature_receipt),out/'native_B_old_TRAIN_features.pt')
     teacher_TRAIN_quality={}
     if cfg.get('TRAIN_teacher_correct_only'):
         for n in names:
@@ -133,7 +152,7 @@ def main():
             teacher_TRAIN_quality[n]=dict(n=len(labels),correct=int((target['logits'][n].argmax(1)==labels).sum()))
     put(a.out/'protocol.json',dict(architecture='moe',config=cfg,config_sha256=sha(a.profile),warm_C_checkpoint_sha256=receipt['best_sha256'],original_chain_C_sha256=original['best_sha256'],
         original_A_B_unchanged=True,D_requires_retrain_from_new_C=True,no_old_D_splicing=True,TRAIN_teacher_cache_sha256=sha(cache),TEST_gradients=False,TEST_selected_development_metric=True,independent_generalization_claim=False,
-        native_B_TRAIN_teacher=native_receipt,teacher_TRAIN_quality=teacher_TRAIN_quality,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),TRAIN_sharpness_radius=cfg.get('TRAIN_sharpness_radius',0),TRAIN_forwards_per_step=2 if cfg.get('TRAIN_sharpness_radius') else 1,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
+        native_B_TRAIN_teacher=native_receipt,native_B_TRAIN_feature_teacher=feature_receipt,teacher_TRAIN_quality=teacher_TRAIN_quality,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),TRAIN_sharpness_radius=cfg.get('TRAIN_sharpness_radius',0),TRAIN_forwards_per_step=2 if cfg.get('TRAIN_sharpness_radius') else 1,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
     baseline=evaluate(model,test,names,device,8);best=retention_selection(baseline,cfg['reference']);best_epoch=0;history=[]
     def save(role,epoch):
         torch.save(dict(model={k:v.detach().cpu() for k,v in model.state_dict().items()},architecture='moe',stage=3,epoch=epoch,best_epoch=best_epoch,parent_checkpoint_sha256=cp['parent_checkpoint_sha256'],warm_C_checkpoint_sha256=receipt['best_sha256'],TEST_gradients=False,TEST_selected_development=True),out/(role+'_checkpoint.pt'))
@@ -146,6 +165,7 @@ def main():
             def train_loss(result):
                 loss=continuation_objective(result['logits'],y,target['logits'][n][relative].to(device),cfg)*(cfg['old_task_weight'] if n!=names[-1] else 1)
                 if native is not None and n==cfg['native_B_task']:loss+=native_retention_loss(result,native['logits'][relative].to(device),native['routes'][relative].to(device),cfg,y)
+                if feature_targets is not None and n in feature_targets:loss+=cfg['native_B_feature_weight']*feature_retention_loss(result['ccd_features'],feature_targets[n][relative].to(device))
                 return loss
             optimizer.zero_grad(set_to_none=True);result=model(x);logits=result['logits'];loss=train_loss(result)
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite original TRAIN objective')
