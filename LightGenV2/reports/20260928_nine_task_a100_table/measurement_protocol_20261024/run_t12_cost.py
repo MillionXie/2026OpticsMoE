@@ -47,6 +47,13 @@ def predecessor_file_ready(root,system):
     return predecessor_ready(state,proof_contract(path,system),sha(path))
 
 
+def required_proofs_ready(plan,ours_root,qwen_root):
+    """A missing-only plan must not wait for an unrelated system's proof."""
+    roots={'ours':ours_root,'qwen':qwen_root}
+    return all(predecessor_file_ready(roots[system],system)
+               for system in dict.fromkeys(system for _,system,_ in plan))
+
+
 def input_proof(root,manifest):
     """Read only an earlier independent receipt, never warm PNGs at admission."""
     path=root/'server_independent_input_audit01.json'
@@ -92,7 +99,7 @@ def main():
         if sha(input_receipt)!=input_digest:raise ValueError('Independent shared input audit changed')
     save()
     try:
-        while not (predecessor_file_ready(args.ours_cpu,'ours') and predecessor_file_ready(args.qwen_cpu,'qwen')):
+        while not required_proofs_ready(plan,args.ours_cpu,args.qwen_cpu):
             stable();time.sleep(15)
         from audit_t12_cost import audit
         from LightGenV2.tasks.t06_video_quality_assessment import rental_busy_resource_20261020 as engine
