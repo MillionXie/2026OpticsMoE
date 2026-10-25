@@ -35,6 +35,18 @@ def select_sources(ids,labels,task,count):
     return sorted(chosen.tolist())
 
 
+def paired_indices(ids,labels,tasks):
+    """Indices into derived rows, never original EVAL rows in a gradient batch."""
+    ids=np.asarray(ids);labels=np.asarray(labels);tasks=np.asarray(tasks);pairs=[]
+    for task in sorted(set(tasks)):
+        if task=='eurosat':continue
+        for group in np.unique(ids[tasks==task]//2):
+            ix=np.flatnonzero((tasks==task)&(ids//2==group))
+            if len(ix)!=2 or sorted(labels[ix].tolist())!=[0,1]:raise ValueError('Derived positive/negative pair incomplete')
+            pairs.append((int(ix[labels[ix]==0][0]),int(ix[labels[ix]==1][0])))
+    return pairs
+
+
 DISCLOSURE=dict(teacher_uses_EVAL_derivatives=True,student_inherits_EVAL_information=True,
     student_original_EVAL_inputs=False,original_EVAL_rows_in_teacher_pool=0,
     valid_for_formal_test_table=False,independent_test_samples=0,TEST_selected_development_metric=True,
@@ -59,19 +71,23 @@ def main():
     tr=np.flatnonzero(splits=='train');te=np.flatnonzero(splits=='test');names=sorted(set(tasks[te]))
     if not ((cp['architecture']=='moe' and cp['stage']==1 and names==['eurosat']) or (cp['architecture']=='d2nn' and cp['stage']==2 and names==['clevr','eurosat'])):raise ValueError('Only current LG A or D2NN B')
     if len(tr)!=1000+300*(len(names)-1) or any(int((tasks[te]==n).sum())!=1000 for n in names):raise ValueError('Fixed TRAIN memory/evaluation budget changed')
-    count=cfg['sources_per_task'];selected={n:select_sources(ids[te][tasks[te]==n],y[te][tasks[te]==n].numpy(),n,count) for n in names}
+    count=cfg['sources_per_task'];pair_mode=cfg.get('paired_teacher',False)
+    if pair_mode and (cp['architecture']!='d2nn' or cp['stage']!=2 or cfg.get('expose_tasks')!=['clevr']):raise ValueError('Paired repair is D2NN B CLEVR only')
+    selected={n:(select_sources(ids[te][tasks[te]==n],y[te][tasks[te]==n].numpy(),n,count) if not pair_mode or n in cfg['expose_tasks'] else []) for n in names}
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unexposed=np.setdiff1d(te,exposed)
     a.out.mkdir(parents=True,exist_ok=False)
     put(a.out/'protocol.json',dict(profile=cfg,profile_sha256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=capture['features_sha256'],
         selection_source_ids=selected,source_selection_uses_model_outputs=False,source_seed=20261025,
         teacher='Same7840 Linear, conditioned convex CE on TRAIN and nonidentity derivatives; no offline nonlinear capacity mismatch',
-        teacher_objective='0.25 equal-task TRAIN CE +0.75 equal-task derivative CE +1e-4 conditioned weight penalty; fixed160 LBFGS steps',
+        teacher_objective='0.25 equal-task TRAIN CE +0.75 equal-exposed-task derivative CE +1e-4 conditioned weight penalty; fixed160 LBFGS steps',
+        paired_CLEVR_repair=pair_mode,paired_derivative_ranking_weight=4 if pair_mode else 0,
+        old_Euro_TRAIN_parent_KL_weight=4 if pair_mode else 0,
         student='Function projection on TRAIN and24 fresh TRAIN augmentations; fixed ridge1e-4, folded into original Linear; no EVAL strength scan',
         teacher_gate='Complete same1000 development reference must meet each declared floor before any student fit',
         original_TEST_rows_used_for_gradients=0,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         source_sha256=sha(__file__),SDK=False,GPU=False,CPU_threads=2,**DISCLOSURE))
     transform=contrast_transform(x[tr]);initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform)
-    tx=[x[tr]];ty=[y[tr]];tw=[];tt=tasks[tr]
+    tx=[x[tr]];ty=[y[tr]];tw=[];tt=tasks[tr];derived_pairs=paired_indices(ids[exposed],y[exposed].numpy(),tasks[exposed]) if pair_mode else [];pair_deltas=[]
     tw.append(torch.tensor([.25/(len(names)*int((tt==n).sum())) for n in tt],dtype=torch.float64))
     std=x[tr].std(0,unbiased=False)
     for repeat in range(10):
@@ -79,17 +95,28 @@ def main():
         for index in exposed:
             pool=tr[(tasks[tr]==tasks[index])&(y[tr].numpy()==int(y[index]))]
             neighbor.append(int(pool[torch.randint(len(pool),(1,)).item()]))
+        if pair_mode:
+            train_pairs=paired_indices(ids[tr],y[tr].numpy(),tasks[tr])
+            for negative,positive in derived_pairs:
+                pool=[p for p in train_pairs if tasks[tr[p[0]]]==tasks[exposed[negative]]]
+                n,p=pool[int(torch.randint(len(pool),(1,)).item())];neighbor[negative]=int(tr[n]);neighbor[positive]=int(tr[p])
         mix=.1 if repeat%2==0 else .2
         values=(1-mix)*x[exposed]+mix*x[neighbor]+torch.randn_like(x[exposed])*std*.02
         values=values.clamp_min(0);values=values/values.mean(1,keepdim=True).clamp_min(1e-12)
         if torch.any(torch.all(values==x[exposed],dim=1)):raise RuntimeError('An identity derivative is forbidden')
-        tx.append(values);ty.append(y[exposed]);tw.append(torch.full((len(exposed),),.75/(10*len(names)*count),dtype=torch.float64))
+        if pair_mode:pair_deltas.extend([values[p]-values[n] for n,p in derived_pairs])
+        tx.append(values);ty.append(y[exposed]);tw.append(torch.full((len(exposed),),.75/(10*sum(bool(v) for v in selected.values())*count),dtype=torch.float64))
     tx=torch.cat(tx);ty=torch.cat(ty);tw=torch.cat(tw);z=tx@transform.T
+    pair_z=torch.stack(pair_deltas)@transform.T if pair_mode else None
+    old_ix=tr[tasks[tr]=='eurosat'];old_z=x[old_ix]@transform.T;old_target=model.shared_head(x[old_ix].float()).double().detach()
     weight=torch.nn.Parameter(initial.clone());opt=torch.optim.LBFGS([weight],lr=1,max_iter=160,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11);calls=0
     def closure():
         nonlocal calls
         if time.monotonic()-started>300:raise RuntimeError('Finite teacher300s budget reached; no student started')
         opt.zero_grad(set_to_none=True);loss=(F.cross_entropy(z@weight.T,ty,label_smoothing=.02,reduction='none')*tw).sum()+.0001*weight[:,:-1].square().sum()/10
+        if pair_mode:
+            delta=pair_z@weight.T;loss=loss+4*F.softplus(-(delta[:,1]-delta[:,0])).mean()
+            loss=loss+16*F.kl_div(F.log_softmax(old_z@weight.T/2,1),F.softmax(old_target/2,1),reduction='batchmean')
         if not torch.isfinite(loss):raise RuntimeError('Nonfinite teacher objective')
         loss.backward();calls+=1
         if calls%10==0:put(a.out/'status.json',dict(state='teacher_convex_fit',closure_calls=calls,loss=float(loss.detach()),updated=time.time()))

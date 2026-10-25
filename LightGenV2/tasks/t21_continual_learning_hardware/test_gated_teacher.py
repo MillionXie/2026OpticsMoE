@@ -1,5 +1,5 @@
 import unittest,numpy as np
-from .fit_gated_linear_teacher import select_sources,DISCLOSURE
+from .fit_gated_linear_teacher import select_sources,paired_indices,DISCLOSURE
 
 class TestGatedTeacher(unittest.TestCase):
     def test_balanced_frozen_half_sources(self):
@@ -15,5 +15,9 @@ class TestGatedTeacher(unittest.TestCase):
     def test_disclosure_remains_contaminated(self):
         self.assertFalse(DISCLOSURE['valid_for_formal_test_table']);self.assertTrue(DISCLOSURE['student_inherits_EVAL_information'])
         self.assertEqual(DISCLOSURE['independent_test_samples'],0)
+    def test_derived_pairs_follow_ids_not_capture_order(self):
+        pairs=paired_indices(np.array([11,8,10,9]),np.array([1,0,0,1]),np.array(['clevr']*4))
+        self.assertEqual(pairs,[(1,3),(2,0)])
+        with self.assertRaises(ValueError):paired_indices([11,8,10],[1,0,0],['clevr']*3)
 
 if __name__=='__main__':unittest.main()
