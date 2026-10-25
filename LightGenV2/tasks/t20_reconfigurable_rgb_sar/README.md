@@ -51,7 +51,15 @@ TEST在锁定best/last后单次完整评估，不挑TEST权重或为低于某条
 目前没有本轮统一候选的最终精度或实拍结果，不启动SDK，不占用T21光路；仿真完成仍需严格CPU/PT/相位与新包/新prefix桥接pilot。
 `audit_unified_CPU.py`对每case已锁定best/last作原完整CPU图重放、逐样本、相位与固定gain核验，
 GPU差异原样保留（旧0.002概率门槛不放宽），不据CPU结果另选PT或编辑预测。
-16项原后端/CCD重放/输入合同测试已通过，实际GPU预检及正式训练启动以私有run收据为准。
+17项原后端/CCD重放/输入合同/CPU审计边界测试已通过，三种case均完成真实TRAIN反向预检，全部应训参数梯度有限。
+有限队列已在服务器实际启动：`runs/simulation/unified_static_native8_20261025`，
+原始启动源码commit `d080c21a3e6d0b6b46264fd5e6fc8590911b9a14`（T20数值源码为已发布468fa753版），
+父队列PID3215388/进程创建时间1792913177.36；一张4090 UUID
+`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`、每进程显存上限40%。
+依次MoE_AB→D2NN_RGB→D2NN_AB_control，每项完成后独立CPU重放与下一项GPU训练并行；
+不接SDK、不重启旧任务。启动/测试/数据传输收据在`runs/preparation_20261025/`，实际进度以各case的status/history为准。
+报告口径注意：本版GPU评估JSON中`routing.winner_fraction`字段实际保存各槽获胜**次数**，
+不是比例；分析时须除该报告样本数，保留原始JSON不覆盖。该命名问题不影响训练、预测或准确率，运行中不热改数值源码。
 
 ---
 
