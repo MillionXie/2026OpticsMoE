@@ -97,6 +97,16 @@ def repeat_function_variance(weight,delta,scale):
     return noise.square().mean()/scale.detach().clamp_min(1.)
 
 
+def empirical_repeat_queries(x,delta):
+    # Use each observed centered repeat direction and its negative exactly once.
+    # A single control source does not identify input-dependent sensor noise.
+    views=[]
+    for d in delta:
+        for sign in (-1,1):
+            q=(x+sign*d).clamp_min(0);views.append(q/q.mean(1,keepdim=True).clamp_min(1e-12))
+    return torch.cat(views)
+
+
 def source_average(loss,groups,count):
     totals=torch.zeros(count,dtype=loss.dtype,device=loss.device).scatter_add_(0,groups,loss)
     counts=torch.zeros_like(totals).scatter_add_(0,groups,torch.ones_like(loss))
@@ -160,7 +170,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -230,8 +240,8 @@ def main():
     if cfg.get('TRAIN_cross_task_mixup_weight'):
         if cp['architecture']!='moe' or stage!=2:raise ValueError('This finite probe is measured LG B only')
         mx,my,mix_tasks=TRAIN_cross_task_mix(x[tr],y[tr],tasks[tr]);mix_features=(mx@transform.T).double();mix_targets=my.double()
-    repeat_delta=None;repeat_scale=None;repeat_receipt=None
-    if cfg.get('TRAIN_measured_repeat_weight'):
+    repeat_delta=None;repeat_scale=None;repeat_receipt=None;repeat_queries=None
+    if cfg.get('TRAIN_measured_repeat_weight') or cfg.get('TRAIN_measured_repeat_CE_weight'):
         from .hardware_bridge import hardware_identity
         if cp['architecture']!='moe' or stage!=2:raise ValueError('Measured repeat scope is LG B only')
         folder=a.capture/'final/TRAIN_signal_admission';control=json.loads((folder/'report.json').read_text());capture_protocol=json.loads((a.capture/'protocol.json').read_text())
@@ -240,7 +250,9 @@ def main():
         with torch.no_grad():
             observed=torch.stack([model.features_from_ccd(torch.tensor(np.load(folder/(n+'_ccd.npy')))[None])[0] for n in files]);delta=observed-observed.mean(0)
             reference=q.double()@initial_head.T;reference-=reference.mean(1,keepdim=True);repeat_scale=reference.square().mean();repeat_delta=delta.double()@transform.double().T
-        repeat_receipt=dict(folder=str(folder),report_SHA256=sha(folder/'report.json'),CCD_files_SHA256=files,feature_RMS=float(delta.square().mean().sqrt()),directions=4,TEST_sources=0,weight=cfg['TRAIN_measured_repeat_weight'],scope='Empirical same-TRAIN repeat nuisance directions, not a full input-independent noise calibration')
+        repeat_receipt=dict(folder=str(folder),report_SHA256=sha(folder/'report.json'),CCD_files_SHA256=files,feature_RMS=float(delta.square().mean().sqrt()),directions=4,TEST_sources=0,variance_weight=cfg.get('TRAIN_measured_repeat_weight',0),CE_weight=cfg.get('TRAIN_measured_repeat_CE_weight',0),scope='Empirical same-TRAIN repeat nuisance directions, not a full input-independent noise calibration')
+        if cfg.get('TRAIN_measured_repeat_CE_weight'):
+            repeat_queries=(empirical_repeat_queries(x[tr],delta)@transform.T).double();repeat_labels=y[tr].repeat(8);repeat_tasks=np.tile(tasks[tr],8)
     views=[]
     for n in names:
         for kind in (0,1):
@@ -284,7 +296,10 @@ def main():
             if mix_features is not None:
                 mixed=-(mix_targets*F.log_softmax(mix_features@weight.T,1)).sum(1)
                 loss+=cfg['TRAIN_cross_task_mixup_weight']*torch.stack([mixed[mix_tasks==n].mean() for n in names]).mean()
-            if repeat_delta is not None:loss+=cfg['TRAIN_measured_repeat_weight']*repeat_function_variance(weight,repeat_delta,repeat_scale)
+            if repeat_delta is not None and cfg.get('TRAIN_measured_repeat_weight'):loss+=cfg['TRAIN_measured_repeat_weight']*repeat_function_variance(weight,repeat_delta,repeat_scale)
+            if repeat_queries is not None:
+                empirical=F.cross_entropy(repeat_queries@weight.T,repeat_labels,reduction='none')
+                loss+=cfg['TRAIN_measured_repeat_CE_weight']*torch.stack([empirical[repeat_tasks==n].mean() for n in names]).mean()
             loss+=cfg['delta_L2']*(weight-initial)[:,:-1].square().sum()/10
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite margin teacher objective')
             loss.backward();return loss

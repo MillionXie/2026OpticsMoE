@@ -1,8 +1,12 @@
 import unittest,torch,numpy as np
-from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL,centered_function_loss,whole_stage_band_key,TRAIN_cross_task_mix,repeat_function_variance
+from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL,centered_function_loss,whole_stage_band_key,TRAIN_cross_task_mix,repeat_function_variance,empirical_repeat_queries
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_empirical_repeat_augment_is_symmetric_when_no_clipping_and_keeps_mean(self):
+        x=torch.ones(3,8);delta=torch.randn(4,8)*.01;delta-=delta.mean(1,keepdim=True);q=empirical_repeat_queries(x,delta)
+        self.assertEqual(q.shape,(24,8));torch.testing.assert_close(q.mean(1),torch.ones(24))
+        for i in range(4):torch.testing.assert_close((q[i*6:i*6+3]+q[i*6+3:i*6+6])/2,x)
     def test_measured_repeat_variance_is_class_offset_invariant_and_TRAIN_scale_frozen(self):
         delta=torch.randn(4,8,dtype=torch.float64);weight=torch.randn(10,8,dtype=torch.float64,requires_grad=True);scale=torch.tensor(3.,requires_grad=True)
         loss=repeat_function_variance(weight,delta,scale);offset=torch.randn(1,8,dtype=torch.float64)
