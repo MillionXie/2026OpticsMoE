@@ -1,0 +1,57 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {Workbook,SpreadsheetFile} from '@oai/artifact-tool';
+const out=process.argv[2];if(!out)throw Error('New audited output folder required');
+const d=JSON.parse(await fs.readFile(path.join(out,'independent_results.json'),'utf8'));
+if(d.status!=='passed')throw Error('Audit required');
+const target=path.join(out,'A100_Temporal_新计时边界_单轮2048次_20261026.xlsx');
+try{await fs.access(target);if(!process.argv.includes('--rebuild-own'))throw Error('Preserve existing workbook')}catch(e){if(e.code!=='ENOENT')throw e;}
+const w=Workbook.create(),s=w.worksheets.add('16视频对照'),l=w.worksheets.add('LG逐组原值'),q=w.worksheets.add('Qwen逐视频'),f=w.worksheets.add('原始文件索引');
+const put=(sh,r,rows)=>sh.getRangeByIndexes(r-1,0,rows.length,rows[0].length).values=rows;
+const title=(sh,r,text)=>{const last=sh===f?'C':'F';sh.getRange(`A${r}:${last}${r}`).merge();sh.getRange(`A${r}`).values=[[text]];sh.getRange(`A${r}:${last}${r}`).format={wrapText:true,rowHeight:42};};
+const header=(sh,r,last='F')=>sh.getRange(`A${r}:${last}${r}`).format={fill:'#243B53',font:{bold:true,color:'#FFFFFF',size:11},wrapText:true,rowHeight:40,verticalAlignment:'center'};
+for(const sh of [s,l,q,f]){sh.showGridLines=false;sh.getRange('A1:K2100').format.font={name:'Arial',size:11,color:'#182B3A'};sh.getRange('A1:K2100').format.rowHeight=25;sh.getRange('A1:K2100').format.verticalAlignment='center';sh.getRange('A:A').format.columnWidth=36;sh.getRange('B:E').format.columnWidth=21;sh.getRange('F:F').format.columnWidth=70;sh.freezePanes.freezeRows(5);}
+title(s,1,'Temporal：每16视频 / 64帧的单轮新口径');s.getRange('A1').format.font={size:17,bold:true};
+title(s,2,'2048次输入＝512个原TEST视频循环4次。LG每组16视频、64帧整场并行；Qwen MPS50%始终逐视频串行。');
+title(s,3,'LG为“实测计费电子部分＋固定光周期”投影，不是光路硬件端到端实测。仅一轮，不报告三轮统计或百倍达成。');
+put(s,5,[['对照量','Qwen 50%','LG新口径','Qwen ÷ LG','单位','含义']]);header(s,5);
+put(s,6,[['每16视频等效时间',null,null,null,'毫秒','全部2048次累计时间除128组'],['等效单帧',null,null,null,'毫秒/帧','两边统一把16视频时间除64，倍数不变'],['累计2048次',null,null,null,'毫秒','Qwen完整模型及其他等待；LG计费电子＋固定光路']]);
+s.getRange('B6').formulas=[['=B30/$B$12']];s.getRange('C6').formulas=[['=B26/$B$12']];s.getRange('D6').formulas=[['=B6/C6']];
+s.getRange('B7:D7').formulas=[['=B6/$B$14','=C6/$B$14','=B7/C7']];s.getRange('B8:D8').formulas=[['=B30','=B26','=B8/C8']];
+s.getRange('B6:C8').setNumberFormat('0.000');s.getRange('D6:D8').setNumberFormat('0.00"×"');s.getRange('A6:F8').format.rowHeight=46;s.getRange('F6:F8').format.wrapText=true;
+put(s,10,[['核算步骤','累计值（时间为ms）','每16视频时间/ms','如何处理','类别','中文说明']]);header(s,10);
+put(s,11,[['视频输入次数',2048,null,'','','512原视频循环4次，非2048独立视频'],['整场数量',128,null,'','','每场16视频，没有尾部补齐'],['每场视频数',16,null,'','','LG一次同时产生16个评分'],['每场帧数',64,null,'','','16视频×每视频4帧'],['LG完整软件观察窗口',d.LG.full_software_host_ms,null,'原始起点','','包含原模型所有仿真、ROI、电残差，随后逐项核算'],['原始输入传输',d.LG.removed_original_H2D_ms,null,'减去','实测','仅原CPU到GPU输入传输；图像解码/裁剪/CPU整理事先完成，不在此窗口'],['纯计量记账',d.LG.removed_measurement_only_bookkeeping_ms,null,'减去','实测','读本次计时事件、写测量状态等；不把普通推理调度等待一并删掉'],['六段光路软件仿真',d.excluded_GPU_ms_by_kind.optical_simulation,null,'减去','实测','场布置、相位、快速傅里叶变换传播、探测器强度；以固定光周期替代'],['探测后的区域提取与整理',d.excluded_GPU_ms_by_kind.detector_ROI,null,'减去','实测','从大幅CCD模拟图裁取各视频/帧区域，归一化、拼接或区域能量统计'],['电子残差分支网络',d.excluded_GPU_ms_by_kind.electronic_residual,null,'减去','实测','原视觉两分支＋语言两分支仍执行，但按本次口径不计费；不是光学直流'],['被排除三类的专属建图成本',Object.values(d.excluded_capture_CPU_ms_by_kind).reduce((a,b)=>a+b,0),null,'减去','实测','仅上面仿真/区域处理/电残差三类自己的捕获构建时间'],['实际计费电子及其他等待',null,null,'保留','实测扣项','包括GPU图像/文字前端、路由决策、学习读出、融合、merger、任务头及未排除调度'],['固定光周期 / 单次',d.LG.fixed_pass_ms,null,'固定参数','推导','1000/1400毫秒SLM刷新＋0.300毫秒曝光＋0.0307毫秒额外CCD'],['每场光周期次数',6,null,'固定结构','','视觉3次＋语言3次，128场全部实际执行仿真并核对输出'],['固定光周期合计',null,null,'加回','推导','将6周期×128场加入实际电子计费时间，不和软件仿真重复计时'],['LG最终投影时间',null,null,'结果','混合投影','ROI与电残差执行但不计费；融合与学习读出计费'],['Qwen完整原始观察窗口',d.Qwen.full_before_subtraction_ms,null,'原始起点','实测','从第一条CPU准备开始到最后评分GPU就绪'],['Qwen每条图像准备＋原始传输',d.Qwen.removed_image_preparation_and_H2D_ms,null,'减去','实测','2048条逐条扣除，不只是第一条。实际CPU文字分词保留'],['Qwen纯GPU模型窗口之和',d.Qwen.GPU_model_window_sum_ms,null,'仅辅助','实测','比本次主口径窄，未作为加速比的分子'],['Qwen最终核算时间',null,null,'结果','实测扣项','原B1完整前向，不加指令图、不并行、不预取；其余分词/调度/同步/返回等待保留']]);
+s.getRange('B22').formulas=[['=B15-SUM(B16:B21)']];s.getRange('B25').formulas=[['=B23*B24*B12']];s.getRange('B26').formulas=[['=SUM(B22,B25)']];s.getRange('B30').formulas=[['=B27-B28']];
+for(let r=15;r<=30;r++){if(![23,24].includes(r))s.getRange(`C${r}`).formulas=[[`=B${r}/$B$12`]];}
+s.getRange('B15:C30').setNumberFormat('0.000');s.getRange('A15:F30').format.rowHeight=62;s.getRange('A15:F30').format.wrapText=true;
+for(const r of [22,26,30])s.getRange(`A${r}:F${r}`).format.fill='#E7F0F6';
+title(s,32,'“融合”具体做什么：对光学/电子分支做均方根幅值归一化，按学习权重混合，再恢复幅值和应用掩码。包含加法，但不只是一次叠加。');
+title(s,33,'“电残差”不是光学直流分量：它是原模型的独立电子计算分支。本表只排除其计时，不删除其输出，因此不声称无该分支也能保持原精度。');
+title(s,34,'“区域处理”只排除裁区、归一化、拼接和区域能量统计。区域之后的学习型线性映射、非线性、路由决策、融合、帧合并及最终评分继续计时。');
+title(s,35,'首次48视频正常推理与保留电子部分的首次指令图建图成本均保留。新增计时边界分成33段图；本表不能与旧13段图直接当作纯删层提速对照。');
+title(s,36,'图像文件解码、裁剪、CPU图像整理/patch准备及原始CPU→GPU搬运，两边均不计。本次并未证明它们被后续推理覆盖，不能称文件端到端加速。');
+title(s,37,'LG全部预测与封存原模型逐位一致；双方四循环各自逐位一致。只有单轮观测，未挑最快窗口或另选最慢Qwen轮。原始数据在后续三页。');
+put(s,39,[['辅助明细','累计/ms','每16视频/ms','是否计费','类别','含义']]);header(s,39);
+const retainedCapture=d.LG.capture.segments.filter(x=>x.kind==='electronics').reduce((a,b)=>a+b.capture_host_ms,0);
+put(s,40,[['保留电子图首次捕获构建',retainedCapture,null,'包含于B22','实测','是B22的组成部分，不应重复相加'],['LG实际CPU文字分词',d.LG.records.reduce((a,r)=>a+(r.tokenizer_end-r.tokenizer_start)*1000,0),null,'包含于B22','实测','文字字符串变成整数编号，不是词向量查表'],['Qwen实际CPU文字分词',d.Qwen.tokenizer_CPU_ms,null,'包含于B30','实测','也保留实际分词，不用LG的分词时间替换Qwen'],['融合、学习读出等各自耗时','未单独打点',null,'计入B22','','总计费电子已实测，但本轮没有可独立归属的单层时间，不能编造']]);
+for(let r=40;r<=42;r++)s.getRange(`C${r}`).formulas=[[`=B${r}/$B$12`]];s.getRange('B40:C42').setNumberFormat('0.000');s.getRange('A40:F43').format.rowHeight=49;s.getRange('A40:F43').format.wrapText=true;
+title(l,1,'LG逐组原始区间核算（每组16视频、64帧）');title(l,2,'第4组包括首次分段建图。下列每组扣项均来自原始观察，不把整组时间再除16后冒称一场时间。');
+put(l,5,[['组号（从0开始）','观察跨度/ms','原始传输/ms','计量记账/ms','仿真GPU/ms','区域处理GPU/ms','电残差GPU/ms','三类建图扣项/ms','固定光周期/ms','投影本组/ms','等效帧/ms']]);header(l,5,'K');
+d.LG.records.forEach((r,i)=>{const row=6+i;const sums=k=>r.optical_simulation_spans.filter(x=>x.kind===k).reduce((a,x)=>a+x.cuda_ms,0);const span=i?r.score_ready-d.LG.records[i-1].score_ready:(r.score_ready-r.field_start)+(d.LG.full_software_host_ms-(d.LG.records.at(-1).score_ready-r.field_start)*1000)/1000;
+const book=i?(d.LG.records[i-1].bookkeeping_end-d.LG.records[i-1].bookkeeping_start)*1000:0;
+put(l,row,[[i,span*1000,(r.H2D_end-r.H2D_start)*1000,book,sums('optical_simulation'),sums('detector_ROI'),sums('electronic_residual'),i===3?s.getRange('B21').values[0][0]:0,d.LG.fixed_pass_ms*6,null,null]]);
+l.getRange(`J${row}:K${row}`).formulas=[[`=B${row}-SUM(C${row}:H${row})+I${row}`,`=J${row}/64`]];});
+l.getRange('B6:K133').setNumberFormat('0.000');l.getRange('B:K').format.columnWidth=20;
+title(q,1,'Qwen MPS50%：2048条严格逐视频串行');title(q,2,'原始准备每条都实际执行，核算时删除图像准备/传输，文字分词和其他等待保留。时间相对第一条CPU准备起点。');
+put(q,5,[['输入序号','源视频序号','循环序号','CPU准备开始/ms','CPU准备结束/ms','传输结束/ms','GPU模型开始/ms','GPU评分就绪/ms','CPU结果返回/ms','CPU文字分词/ms','图像准备与传输扣项/ms']]);header(q,5,'K');
+const origin=d.Qwen.records[0].CPU_start;
+d.Qwen.records.forEach((r,i)=>{const tok=r.tokenizer_intervals.reduce((a,t)=>a+(t.end-t.start)*1000,0);put(q,i+6,[[i,r.source_index,r.cycle,...[r.CPU_start,r.CPU_end,r.H2D_end,r.GPU_host_start,r.GPU_ready_host,r.CPU_result_return].map(x=>(x-origin)*1000),tok,null]]);q.getRange(`K${i+6}`).formulas=[[`=F${i+6}-D${i+6}-J${i+6}`]];});q.getRange('D6:K2053').setNumberFormat('0.000');q.getRange('B:K').format.columnWidth=21;
+title(f,1,'原始文件索引及逐文件SHA256');title(f,2,'完整原路径、字节数、SHA256与本地data-only备份收据逐项核对。保留02原口径数据，不覆盖。');put(f,5,[['原始文件绝对路径','字节数','SHA256']]);header(f,5,'C');
+put(f,6,d.source_files.map(x=>[x.path,x.bytes,x.sha256]));f.getRange('A:A').format.columnWidth=110;f.getRange('B:B').format.columnWidth=16;f.getRange('C:C').format.columnWidth=72;
+f.getRange(`A6:A${5+d.source_files.length}`).format.wrapText=true;f.getRange(`A6:C${5+d.source_files.length}`).format.rowHeight=62;
+for(const sh of [l,q])sh.getRange('A:A').format.columnWidth=24;
+w.recalculate();const before=s.getRange('C6').values[0][0],val=s.getRange('B15').values[0][0];s.getRange('B15').values=[[val+128]];w.recalculate();if(Math.abs(s.getRange('C6').values[0][0]-before-1)>1e-6)throw Error('Recalculation failed');s.getRange('B15').values=[[val]];w.recalculate();
+if(Math.abs(s.getRange('C8').values[0][0]-d.LG_total_ms)>1e-6||Math.abs(s.getRange('D6').values[0][0]-d.speedup)>1e-6)throw Error('Summary mismatch');
+const errors=await w.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:20},maxChars:2000});console.log(errors.ndjson);
+for(const [sheet,range,name] of [[s,'A1:F14','summary'],[s,'A15:F30','calculation'],[s,'A32:F43','definitions'],[l,'A1:K14','LG'],[q,'A1:K14','Qwen'],[f,'A1:C10','sources']]){const b=await w.render({sheetName:sheet.name,range,scale:1,format:'png'});await fs.writeFile(path.join(out,name+'.png'),new Uint8Array(await b.arrayBuffer()));}
+await (await SpreadsheetFile.exportXlsx(w)).save(target);console.log(target);
