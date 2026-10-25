@@ -1,5 +1,29 @@
 # T21 四模态终身学习：实验室适配
 
+### 2026-10-25 18:40 本轮完整学生实检快照：尚无全部区间通过的新版本
+
+以下均为同阶段同一个原7840共享Linear PT、每任务完整1000条CCD缓存重放的开发成绩，不是教师成绩，也不是独立测试。
+
+| 实际候选 | EuroSAT | CLEVR | Speech | 全部区间结论 |
+|---|---:|---:|---:|---|
+| D2NN B 有界损失＋旧TRAIN函数保持 | 462 | 764 | — | Euro低483下限21条；CLEVR高760上限4条 |
+| D2NN C 有界损失 | 652 | 645 | 618 | CLEVR在631–681；Euro高562上限90条、Speech高522上限96条 |
+| LG B 容量匹配间隔学生 | 677 | 710 | — | 低680/733下限3/23条 |
+
+对应完整原图CPU重载/冻结上游与SHA核验的本地证据：
+`runs/preparation_20261025/student_transfer/retentionB_backup/manifest.json`、
+`boundedC_backup/manifest.json`、`LG_B_margin_backup/manifest.json`（后两路径同一student_transfer下）。
+LG B间隔学生SHA608900b372ef5b7133f1f282b4fef55d61d9928aff63df37cd5cf7dfdcb8a745。
+后续LG B有界接续原图学生673/708，SHA92b489b6028e5fcd6378d582b6c5c1bdbc3be19fa75e06c74fb2df415020c9cd，
+已完整CPU与本地SHA备份到`LG_B_bounded_backup`，未改善，不覆盖677/710候选。
+所有新运行是有界普通训练/审计进程，并非定时任务；截至此快照本轮这些训练均已返回0，不能把其旧PID当作仍在训练。
+
+D2NN B/C既有6600/9200帧未重采、其定稿S1不变；LG B新9900帧全帧审计与本地bestlast/协议/逐样本SHA备份完成，SDK已释放。
+LG C本轮原TRAIN训练与严格CPU审计完成，但最佳仍756/746/765，未过适配仿真准入，未启动C光路采集；旧CPU/GPU概率门槛未放宽。
+原已接受A与其他旧候选全部保护，未用新未达标PT替换。原结构、曝光2ms、坐标、LUT、输入编码与数据身份未改。
+本轮部分TEST非恒等增强信息会被最终学生继承，`valid_for_formal_test_table=false`、独立测试样本数0；
+不能为匹配仿真趋势压分、改变预测或逐任务拼PT，也不能把C全部下限通过写成满足所有上下限。
+
 ### 2026-10-25 18:22 LG B同结构间隔学生显著提高，但尚未达标
 
 LG B容量匹配助教→仅TRAIN查询恢复原共享Linear学生，完整同PT Euro677/CLEVR710，
