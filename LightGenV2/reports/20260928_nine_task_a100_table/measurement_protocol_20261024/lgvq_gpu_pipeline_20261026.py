@@ -296,6 +296,8 @@ def worker(args):
     root.mkdir();guard=model_guard(args.deadline,cap);torch.set_num_threads(8);before=source_map()
     identity=dict(profile='GPU_model_input_resident_512x4_pipeline_20261026_v1',system=args.system,repeat=args.repeat,
         gpu_uuid=GPU,cap=cap,pid=os.getpid(),sources=before,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),
+        published_measurement_commit=os.environ.get('MEASUREMENT_PUBLISHED_COMMIT'),
+        source_installation='scoped published Git paths; runtime HEAD separately recorded; peer training source not changed',
         unique_videos=UNIQUE,video_calls=TOTAL,sequence='first512TEST in original order, repeated4 times',
         primary_start='first GPU model frontend',primary_end='last score ready on GPU',all_internal_gaps_retained=True,
         external_preparation_recorded_not_charged=True,no_input_embedding_or_prediction_cache=True,
