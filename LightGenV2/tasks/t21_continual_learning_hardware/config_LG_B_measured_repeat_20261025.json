@@ -1,0 +1,10 @@
+{
+  "schema": "T21_LG_B_empirical_TRAIN_repeat_consistency_v1", "architecture": "moe",
+  "maximum_steps": 240, "maximum_seconds": 300,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN": true, "warm_margin_function": true,
+  "TRAIN_function_task": "eurosat", "TRAIN_function_reference": "warm", "TRAIN_function_weight": 0.1,
+  "TRAIN_measured_repeat_weight": 1.0, "whole_stage_TEST_selection": true,
+  "delta_L2": 0.00001, "partial_TEST_source_expansion": false,
+  "original_student_parameters": 7840, "new_inference_layers": 0, "SDK": false, "GPU": false
+}

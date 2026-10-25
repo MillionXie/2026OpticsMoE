@@ -1,8 +1,12 @@
 import unittest,torch,numpy as np
-from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL,centered_function_loss,whole_stage_band_key,TRAIN_cross_task_mix
+from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL,centered_function_loss,whole_stage_band_key,TRAIN_cross_task_mix,repeat_function_variance
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_measured_repeat_variance_is_class_offset_invariant_and_TRAIN_scale_frozen(self):
+        delta=torch.randn(4,8,dtype=torch.float64);weight=torch.randn(10,8,dtype=torch.float64,requires_grad=True);scale=torch.tensor(3.,requires_grad=True)
+        loss=repeat_function_variance(weight,delta,scale);offset=torch.randn(1,8,dtype=torch.float64)
+        torch.testing.assert_close(loss,repeat_function_variance(weight+offset,delta,scale));loss.backward();self.assertIsNone(scale.grad);self.assertTrue(torch.isfinite(weight.grad).all())
     def test_TRAIN_mixup_keeps_normalization_and_soft_label_mass(self):
         torch.manual_seed(1);x=torch.rand(6,8);x=x/x.mean(1,keepdim=True);labels=torch.tensor([2,3,4,0,1,0]);tasks=np.array(['eurosat']*3+['clevr']*3)
         mx,my,mt=TRAIN_cross_task_mix(x,labels,tasks)

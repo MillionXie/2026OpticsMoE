@@ -1,5 +1,27 @@
 # T21 四模态终身学习：实验室适配
 
+### 2026-10-25 最新完整交接：D2NN B已满足两任务区间
+
+`native8_reference_B8_B_D2NN_priority_20261025/d2nn_B_fixed_consensus_20261025`同一原7840共享学生，
+完整Euro512/1000、CLEVR756/1000，相对固定S1 533/760分别下降2.1/0.4pp，两项均在5pp且不高于S1区间。
+学生SHA`7decac05db7fa6737b8d6185a000b000a7049ba6a646f59f7f4bcb84dfbaa2dd`；
+原图CPU重载/冻结上游/满秩784 TRAIN函数恢复通过，max TRAIN函数误差.000101，
+bestlast/协议/逐样本已本地SHA验证备份到`runs/preparation_20261025/student_transfer/consensusB_backup/manifest.json`。
+这是两个既有互补损失助教的固定各1/2函数，仅用TRAIN及弱增强查询恢复；系数事前固定，未扫描TEST系数或拼接任务头。
+此前允许的Euro200/CLEVR800部分TEST增强信息被继承，成绩属于开发适配，`valid_for_formal_test_table=false`、独立测试样本0。
+旧已接受A、其他原权重/CCD全部保留，没有改定稿S1或重新采集。
+
+LG B仍保留677/710，函数保持及TRAIN跨任务mixup未超过父版，不能冒称新提升。
+完整错分核查：CLEVR共84条被预测为其他8个Euro类别，均在未入教师增强的500条；不是单纯正负类别问题。
+同一最终层TRAIN控制图4次重复的归一化784特征RMS .008311，而原TRAIN特征std均值.015836；
+这些实测方向扰动会显著改变TRAIN预测，支持诊断读出敏感性，不证明所有误差由相机造成。
+新增`config_LG_B_measured_repeat_20261025.json`仅用原同会话控制帧估计4个经验扰动方向，
+对原共享头增加去均值logit方差约束，原部分来源500/500不变，240步/300秒/同PT完整TEST选模；
+不将4张控制图声称为完整噪声标定，不改曝光/坐标/LUT或CCD，不产生新的推理操作。
+
+LG C原TRAIN六轮巩固训练正在运行，D须依赖合格C后再接；C/D未准入不采光路。
+本节的LG C运行状态须以实际run完成与CPU报告为准，不能以旧PID代替数值进度。
+
 ### 2026-10-25 新人工范围：允许完整阶段TEST选模，继续B/LG B与LG C仿真
 
 最新人工允许从实际训练轨迹按TEST选择满足上下区间的PT。仅限同阶段同一个共享7840 Linear权重、
