@@ -1,0 +1,20 @@
+{
+  "schema": "T21_fixed_capacity_matched_hardpair_BC_v2",
+  "allowed_stages": [2, 3],
+  "maximum_steps": 240,
+  "maximum_seconds": 300,
+  "TRAIN_augmentations": 8,
+  "TRAIN_noise_std": [0.001, 0.005, 0.01],
+  "cross_entropy_weight": 0.75,
+  "teacher_KL_weight": 0.25,
+  "temperature": 2.0,
+  "train_convex_delta_L2": 0.0001,
+  "assistant_delta_L2": 0.00001,
+  "assistant_TRAIN_mass": 0.25,
+  "assistant_derivative_mass": 0.75,
+  "assistant_paired_ranking_weight": 4.0,
+  "original_student_parameters": 7840,
+  "new_inference_layers": 0,
+  "SDK": false,
+  "GPU": false
+}

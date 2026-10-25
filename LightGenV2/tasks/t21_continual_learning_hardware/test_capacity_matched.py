@@ -9,6 +9,8 @@ class CapacityMatchedTests(unittest.TestCase):
         c=self.config();validate_profile(c)
         for k,v in [('maximum_steps',10000),('new_inference_layers',1),('TRAIN_augmentations',100)]:
             with self.assertRaises(ValueError):validate_profile(dict(c,**{k:v}))
+        hard=json.loads(Path(__file__).with_name('config_capacity_matched_hardpair_20261025.json').read_text());validate_profile(hard)
+        self.assertEqual(hard['assistant_paired_ranking_weight'],4);self.assertEqual(hard['assistant_derivative_mass'],.75)
     def test_equal_tasks_not_equal_samples(self):
         t=np.array(['a']*3+['b']*7);w=equal_task_weights(t,.5);self.assertAlmostEqual(float(w[t=='a'].sum()),.25);self.assertAlmostEqual(float(w[t=='b'].sum()),.25)
     def test_convex_soft_objective_has_finite_gradient(self):

@@ -22,7 +22,8 @@ from .train_native import put,sha
 
 
 def validate_profile(cfg):
-    if cfg!=json.loads(Path(__file__).with_name('config_capacity_matched_distillation_20261025.json').read_text()):raise ValueError('Only published finite two-method B/C protocol')
+    files=('config_capacity_matched_distillation_20261025.json','config_capacity_matched_hardpair_20261025.json')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in files):raise ValueError('Only published finite B/C profiles')
 
 
 def equal_task_weights(tasks,mass=1.):
@@ -49,6 +50,7 @@ def main():
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited partial TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text());validate_profile(cfg);torch.set_num_threads(2);torch.manual_seed(20261025)
+    if cfg['schema'].endswith('v2') and a.mode!='assistant':raise ValueError('Hard-pair profile is an assistant-only method, no extra TRAIN-convex scan')
     cr=json.loads((a.capture/'report.json').read_text());trp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or trp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Full sealed capture required')
     if not rr['teacher_quality_gate_passed'] or rr['valid_for_formal_test_table'] is not False or trp['parent_SHA256']!=a.parent_sha256 or sha(a.teacher_run/'offline_teacher.pt')!=rr['teacher_sha256']:raise ValueError('Exact qualified same-parent teacher required')
@@ -82,7 +84,7 @@ def main():
     put(a.out/'protocol.json',dict(mode=a.mode,profile=cfg,profile_sha256=sha(a.profile),capture_features_SHA256=cr['features_sha256'],parent_SHA256=a.parent_sha256,teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,
         assistant_scope='TRAIN queries and exact allowed source nonidentity derivatives; inherits TEST information' if a.mode=='assistant' else None,
         final_student_inputs='Original TRAIN and its8 weak augmentations ONLY; no EVAL query inputs',assistant_source_budget_expanded=False,
-        fit='float64 deterministic full-batch convex CE.25 + KL.75(T2) + fixed coordinate-delta regularization; no EVAL loss/parameter search',
+        fit=f"float64 deterministic full-batch convex CE{cfg['cross_entropy_weight']} + KL{cfg['teacher_KL_weight']}(T2) + fixed coordinate-delta regularization; no EVAL loss/parameter search",
         assistant_gate='Same complete per-task development floors as sealed teacher; actual TRAIN fit disclosed, not assumed90% for linear approximation',
         new_inference_layers=0,original_student_parameters=7840,SDK=False,GPU=False,CPU_threads=2,maximum_fit_seconds=300,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),**DISCLOSURE))
