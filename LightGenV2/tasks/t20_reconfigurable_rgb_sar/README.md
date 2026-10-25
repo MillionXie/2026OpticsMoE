@@ -2,7 +2,34 @@
 
 ## 2026-10-25 四专家跟进：跨传感器特征迁移（最新）
 
-### 当前完整结果与仍在运行的试验
+### 当前完整结果（训练与CPU复核已结束）
+
+最后追加的相位梯度冲突处理已完成11轮，按联合验证选择epoch3（非e0），
+固定best SHA `f85fcfdb9f853fcf47c1904587457f9dee0958628dfb0e46abf29731996bdbd8`。
+best/last全2000条TEST严格CPU均完成，controller及审计进程退出码0；best与GPU分类零差异，
+最大概率差.000741869，小于原.002门槛。另用独立入口逐项重放完整2000条验证集，
+下表三个PT的CPU准确度与各自锁定训练记录完全相同，未重选权重或更新参数。
+
+| 锁定版本（每域1000条） | 完整CPU验证RGB | 完整CPU验证SAR | 完整CPU TEST RGB | 完整CPU TEST SAR |
+| --- | ---: | ---: | ---: | ---: |
+| LightGen四专家，相位梯度投影 | 80.9% | 71.9% | 81.5% | 69.7% |
+| D2NN，RGB光学/读出训练 | 79.6% | 63.3% | 82.8% | 62.1% |
+| D2NN，RGB+SAR公平控制 | 78.3% | 72.3% | 81.4% | 70.3% |
+
+原图所用验证口径下，主比较两域的LightGen>D2NN方向恢复；**独立划分TEST的RGB方向仍反转，尚不能定稿为所有趋势已恢复**。
+与下方LightGen父版本相比，投影版TEST RGB +.5pp、SAR -.2pp，只是小幅权衡，不把父版与新版逐格拼接。
+本轮接续已知先前TEST表现，因此上述复用TEST是开发评估，不冒称新盲测泛化证据。
+53项回归测试通过；冻结公共前端、四物理专家、光学层数和原读出保持不变。
+原图两条虚线baseline未在两个原ZIP文本中定位到可核实的数值赋值，不从截图估值作训练目标。
+
+完整代码和各父/失败试验保留；运行目录分别为`static4_phase_projection_20261025`、
+`static4_validation_cpu_20261025`、`static4_readout_generalization_20261025`。
+本地数据/权重SHA清单位于`runs/preparation_20261025/`下
+`projection_backup_manifest.json`、`validation_backup_manifest.json`、`readout_backup_manifest.json`，
+另有原始四专家与表示对齐父版本的`four_backup_manifest.json`、`aligned_backup_manifest.json`。
+不启动光路、不修改T21终生学习源码/权重、不新增定时任务。
+
+### 已保留的表示对齐父版本
 
 `static4_aligned_native8_20261025`三项均已完成GPU和best/last完整CPU；三个best的分类均与GPU一致，
 最大概率误差依次.001128/.000132/.000146，原.002门槛通过。每域固定1000条，同一行始终为同一个PT：
@@ -33,7 +60,7 @@ global相位梯度余弦-.417，四专家-.165/-.244/-.249/-.274，router+.467�
 源码`bc13df0b96fec009fba6aa9d8630efb66ce86c39`已Git同步，启动HEAD为`b319a2eadb25fd438d439883cd97d668ac18b711`，
 对应数值文件SHA相同；controller PID3711230/创建1792930524.68。
 46项启动测试和真实TRAIN投影梯度预检通过，全量回归52项通过；初期每块约28–41%的batch触发处理。
-这一追加试验同样属于已看过TEST结果后的开发优化，不保证恢复TEST排序；当前尚无锁定完整结果。
+这一追加试验同样属于已看过TEST结果后的开发优化；其锁定完整结果见本节顶部，不保证恢复TEST排序。
 T21与原`hardware_aware.py`保持不变，未启动SDK/光路或新定时任务。
 
 以下为本轮过程与已保留父版本，不能将各版本按单元格拼成一份结果。
@@ -68,11 +95,11 @@ VAL按各自训练域选一个PT，锁定后完整TEST并严格CPU；CPU用扩�
 原任务运行中的`audit_domain_frontend_CPU.py`/`domain_frontend_probe.py`不热改。
 终生学习源码/权重/SDK保持只读，主训练仍只用授权4090/显存40%，诊断20%，无新定时任务。
 新续训已实际启动：源码`c7fb579413bfaaea1ab7057e368815f463bfa3ea`，
-controller PID3602827/创建1792927197.48；MoE_AB已进入联合训练，随后两项D2NN及逐项CPU接续。
+controller PID3602827/创建1792927197.48；三项联合训练及逐项CPU均已完成并退出。
 启动42项测试和两项已完成父CPU审计的真实TRAIN反向预检通过；全量回归另48项通过。
 第三项入口仍核其原父CPU门槛，不跳过；目前原父三项均已CPU通过。
 原首轮及诊断/新前端等本地SHA备份清单`runs/preparation_20261025/four_backup_manifest.json`，
-启动/测试/真实loss与完整命令收据`aligned_start.json`、`final_tests.json`；新续训尚无锁定完整TEST结果。
+启动/测试/真实loss与完整命令收据`aligned_start.json`、`final_tests.json`；完整结果见顶部父版本表。
 
 ## 2026-10-25 最新人工范围：恢复原四专家的物理口径
 
@@ -102,7 +129,7 @@ TRAIN翻转/弱遮挡、TRAIN教师及其蒸馏，不训练TEST/TEST增强；按
 `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，单进程显存上限40%，CPU2线程。
 完成一case即接CPU完整best/last重放，同时下一case GPU训练；不新建定时任务，不占用T21设备。
 完整启动命令、数据/源码SHA和测试原文保存在同名`.launch.json`及`runs/preparation_20261025/four_start.json`。
-尚无这版完整最终精度，不以此前小专家口径成绩冒充本版。
+这版完整精度与CPU复核见顶部首轮记录，不以此前小专家口径成绩冒充本版。
 
 ### 历史诊断运行索引（2026-10-25；不是当前四专家部署候选）
 
