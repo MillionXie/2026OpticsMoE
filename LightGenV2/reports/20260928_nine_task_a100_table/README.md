@@ -1,5 +1,26 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25：仅多baseline端到端frame/s补充表
+
+用户另外要求端到端多baseline数据，不含LightGen，并把每个baseline换算frame/s。
+本次仅使用旧完整成本交付的封存`collected_data_and_audit.json`
+（SHA256 `f0cd430b99aae15c69ddbeeeee1aa2d2b1334a6e804d7a91097a79c6659d2ffe`），
+不使用首TF核心时间，不新增模型/GPU/CPU推理，也不连接租机。
+保留Qwen/GLM/CLIP/YOLO的40GB两档、DeepSeek/Kimi的80GB两档，
+及额外80GB Qwen100，共6模型13配置39合格轮；39个原report逐SHA/size复核。
+连续窗口含视频文件输入/解码/全部预处理/完整网络/CPU结果及199请求间隙。
+每视频4个实际抽样输入帧，frame/s＝三轮总视频数×4÷三轮原连续总秒数，
+不平均三轮FPS，也不是原视频全部帧的解码速率。
+
+新不可变文件：
+`measurement_protocol_20261024/outputs/01a061e2-6f88-7913-87f5-b632000e4c83/baseline_e2e_fps_20261025_01/A100_Temporal多基线_端到端帧率_20261025.xlsx`，
+12386B，SHA256 `e166827498d98e367c184474bfa5f7c91658351e6232096f5d96dc16512c8efa`。
+两sheet分别为13行汇总与39轮原始耗时；公式缓存及全部FPS独立读回passed，
+两sheet预览已检查，工作簿不含LG。目录内manifest记录39原路径/SHA与输出SHA。
+Qwen40GB100/50为10.492622506371816/10.394893416485758frame/s；
+补充Qwen80GB100为15.408022289688704frame/s，平台不混用。
+本次及旧全部成品、原raw均保留，未覆盖/删改。
+
 ## 2026-10-25：首计算模块口径及人工授权七项Qwen补测
 
 **已完成并交付。** 七项Qwen共21个fresh200点全部合格，最后04链于
