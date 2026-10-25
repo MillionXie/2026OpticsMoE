@@ -4,6 +4,12 @@ from .distill_capacity_matched_stage import equal_task_weights,convex_objective,
 
 
 class CapacityMatchedTests(unittest.TestCase):
+    def test_regret_weights_prioritize_train_loss_above_single_task_reference(self):
+        from .distill_capacity_matched_stage import regret_objective
+        a=torch.tensor(2.,dtype=torch.float64,requires_grad=True);b=torch.tensor(2.,dtype=torch.float64,requires_grad=True)
+        loss=regret_objective({'a':a,'b':b},{'a':1.9,'b':1.});loss.backward()
+        self.assertGreater(float(b.grad),float(a.grad));self.assertAlmostEqual(float(a.grad+b.grad),1)
+        with self.assertRaises(ValueError):regret_objective({'a':a},{'b':1.})
     def test_conflicting_gradient_projection_is_finite_and_nonconflicting_is_mean(self):
         from .distill_taskwise_conflict import project_conflicts
         a=torch.tensor([1.,0.],dtype=torch.float64);b=torch.tensor([1.,1.],dtype=torch.float64)

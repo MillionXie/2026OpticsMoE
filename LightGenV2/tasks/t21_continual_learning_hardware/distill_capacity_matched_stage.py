@@ -36,6 +36,11 @@ def convex_objective(logits,labels,target,weights,cfg):
     return (weights*(cfg['cross_entropy_weight']*ce+cfg['teacher_KL_weight']*kl)).sum()
 
 
+def regret_objective(losses,references):
+    if not losses or set(losses)!=set(references):raise ValueError('Exact complete task regret references required')
+    return .1*torch.logsumexp(torch.stack([v-references[n] for n,v in losses.items()])/.1,0)
+
+
 def TRAIN_queries(x,tasks,cfg):
     std=x.std(0,unbiased=False);values=[x]
     for repeat in range(cfg['TRAIN_augmentations']):
@@ -46,7 +51,8 @@ def TRAIN_queries(x,tasks,cfg):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','teacher_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);p.add_argument('--mode',choices=('train_convex','assistant','taskwise_diagnostic'),required=True)
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--mode',choices=('train_convex','assistant','taskwise_diagnostic','regret_assistant'),required=True)
+    p.add_argument('--taskwise-run',type=Path)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited partial TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text());validate_profile(cfg);torch.set_num_threads(2);torch.manual_seed(20261025)
@@ -56,6 +62,12 @@ def main():
     if not rr['teacher_quality_gate_passed'] or rr['valid_for_formal_test_table'] is not False or trp['parent_SHA256']!=a.parent_sha256 or sha(a.teacher_run/'offline_teacher.pt')!=rr['teacher_sha256']:raise ValueError('Exact qualified same-parent teacher required')
     model,cp=load_checkpoint(a.parent,a.parent_sha256);before=upstream_state(model)
     if cp['architecture']!='d2nn' or cp['stage'] not in cfg['allowed_stages'] or cp['measured_features_sha256']!=cr['features_sha256'] or model.shared_head.weight.numel()!=7840:raise ValueError('Original measured B/C only')
+    regret=None
+    if a.mode=='regret_assistant':
+        if cp['stage']!=3 or a.taskwise_run is None:raise ValueError('Finite C regret method requires sealed taskwise diagnostic')
+        dp=json.loads((a.taskwise_run/'protocol.json').read_text());dr=json.loads((a.taskwise_run/'report.json').read_text())
+        if dp['mode']!='taskwise_diagnostic' or dp['parent_SHA256']!=a.parent_sha256 or dp['capture_features_SHA256']!=cr['features_sha256'] or dp['teacher_SHA256']!=rr['teacher_sha256'] or dp['profile']!=cfg or not dr['passed'] or not dr['no_task_head_splicing']:raise ValueError('Exact same taskwise fit objective/provenance required')
+        regret={n:v['history'][-1]['objective'] for n,v in dr['taskwise'].items()}
     artifact=torch.load(a.teacher_run/'offline_teacher.pt',map_location='cpu',weights_only=False);teacher=residual_teacher_from_artifact(artifact);transform=artifact['transform'];teacher_state={k:v.clone() for k,v in teacher.state_dict().items()}
     for v in teacher.parameters():v.requires_grad_(False)
     with np.load(a.capture/'features.npz',allow_pickle=False) as d:
@@ -64,14 +76,14 @@ def main():
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unex=np.setdiff1d(te,exposed)
     if len(tr)!=1000+300*(cp['stage']-1) or any(int((tasks[te]==n).sum())!=1000 for n in names):raise ValueError('Full fixed TRAIN and evaluation required')
     q,qt=TRAIN_queries(x[tr],tasks[tr],cfg);qy=y[tr].repeat(1+cfg['TRAIN_augmentations']);qid=np.tile(ids[tr],1+cfg['TRAIN_augmentations'])
-    if a.mode in ('assistant','taskwise_diagnostic'):
+    if a.mode in ('assistant','taskwise_diagnostic','regret_assistant'):
         dx,dy,dt,di=derivatives(x,y,tasks,ids,tr,exposed);pool=torch.cat((q,dx));labels=torch.cat((qy,dy));pt=np.concatenate((qt,dt));pid=np.concatenate((qid,di))
         weights=torch.cat((equal_task_weights(qt,cfg['assistant_TRAIN_mass']),equal_task_weights(dt,cfg['assistant_derivative_mass'])))
     else:pool=q;labels=qy;pt=qt;pid=qid;weights=equal_task_weights(qt)
     # Pair ranking is on each complete augmented source copy, not accidentally
     # joining the same ID across distinct augmentation repeats.
     pair_deltas=[];pair_tasks=[]
-    if a.mode in ('assistant','taskwise_diagnostic'):
+    if a.mode in ('assistant','taskwise_diagnostic','regret_assistant'):
         for values,tt,ii,yy,chunk in ((q,qt,qid,qy,len(tr)),(dx,dt,di,dy,len(exposed))):
             for start in range(0,len(values),chunk):
                 pairs=paired_indices(ii[start:start+chunk],yy[start:start+chunk].numpy(),tt[start:start+chunk])
@@ -88,6 +100,7 @@ def main():
         fit=f"float64 deterministic full-batch convex CE{cfg['cross_entropy_weight']} + KL{cfg['teacher_KL_weight']}(T2) + fixed coordinate-delta regularization; no EVAL loss/parameter search",
         assistant_gate='Same complete per-task development floors as sealed teacher; actual TRAIN fit disclosed, not assumed90% for linear approximation',
         new_inference_layers=0,original_student_parameters=7840,SDK=False,GPU=False,CPU_threads=2,maximum_fit_seconds=cfg['maximum_seconds']*(len(names) if a.mode=='taskwise_diagnostic' else 1),
+        TRAIN_taskwise_objective_reference=regret,regret_smooth_max_temperature=.1 if regret is not None else None,regret_reference_report_SHA256=sha(a.taskwise_run/'report.json') if regret is not None else None,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),**DISCLOSURE))
     if a.mode=='taskwise_diagnostic':
         # Separate objectives diagnose shared-head interference. Never splice
@@ -118,11 +131,21 @@ def main():
             comparison_scope='Same authorized TRAIN/derivative pool and convex objective; task-specific diagnostic lacks deployed shared-head constraint; not a universal capacity bound',
             strict_CPU_reloaded=False,frozen_upstream=True,SDK=False,GPU=False,seconds=time.monotonic()-started,**DISCLOSURE));put(a.out/'status.json',dict(state='complete_diagnostic_only',updated=time.time()));return
     opt=torch.optim.LBFGS([weight],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
-    strength=cfg[a.mode+'_delta_L2'];calls=0
+    strength=cfg[('assistant' if a.mode=='regret_assistant' else a.mode)+'_delta_L2'];calls=0
+    task_views={n:(z[pt==n],labels[pt==n],target[pt==n],weights[pt==n]/weights[pt==n].sum(),pair_z[np.asarray(pair_tasks)==n] if pair_z is not None else None) for n in names} if regret is not None else None
     def closure():
         nonlocal calls
-        opt.zero_grad(set_to_none=True);loss=convex_objective(z@weight.T,labels,target,weights,cfg)+strength*(weight-initial)[:,:-1].square().sum()/10
-        if pair_z is not None:loss+=cfg['assistant_paired_ranking_weight']*paired_margin_loss(pair_z@weight.T)
+        opt.zero_grad(set_to_none=True);regularizer=strength*(weight-initial)[:,:-1].square().sum()/10
+        if regret is None:
+            loss=convex_objective(z@weight.T,labels,target,weights,cfg)+regularizer
+            if pair_z is not None:loss+=cfg['assistant_paired_ranking_weight']*paired_margin_loss(pair_z@weight.T)
+        else:
+            task_losses={}
+            for n,(zz,yy,tt,ww,pairs) in task_views.items():
+                task_loss=convex_objective(zz@weight.T,yy,tt,ww,cfg)+regularizer
+                if pairs is not None and len(pairs):task_loss+=cfg['assistant_paired_ranking_weight']*paired_margin_loss(pairs@weight.T)
+                task_losses[n]=task_loss
+            loss=regret_objective(task_losses,regret)
         if not torch.isfinite(loss):raise RuntimeError('Nonfinite convex distillation objective')
         loss.backward();calls+=1;return loss
     for step in range(1,cfg['maximum_steps']+1):
@@ -140,7 +163,7 @@ def main():
         if upstream_state(loaded)!=before or not torch.equal(loaded.shared_head.weight,w):raise RuntimeError('Original graph CPU reload failed')
         scores={label:evaluate(loaded.shared_head,x,y,tasks,ix) for label,ix in groups};put(a.out/(tag+role+'_development.json'),dict(scores=scores,source_indices=ids.tolist(),tasks=tasks.tolist(),splits=splits.tolist(),**DISCLOSURE));return {n:brief(v) for n,v in scores.items()}
     assistant_scores=None;function_audit=None
-    if a.mode=='assistant':
+    if a.mode in ('assistant','regret_assistant'):
         assistant_scores=save('best',folded,'assistant_');save('last',last_folded,'assistant_')
         admitted=all(assistant_scores['all_development'][n]['accuracy']+1e-7>=floor for n,floor in floors.items())
         put(a.out/'assistant_report.json',dict(passed=True,quality_gate_passed=admitted,scores=assistant_scores,strict_CPU_reloaded=True,**DISCLOSURE))
@@ -160,7 +183,7 @@ def main():
     candidate_scores=evaluate(model.shared_head,x,y,tasks,te);retain=whole_stage_selection(candidate_scores,floors)<=whole_stage_selection(baseline,floors)
     best=save('best',cp['model']['shared_head.weight'].clone() if retain else candidate);last=save('last',candidate)
     put(a.out/'report.json',dict(passed=True,mode=a.mode,baseline=brief(baseline),candidate=brief(candidate_scores),best=best,last=last,retained_parent=retain,
-        assistant_quality_gate_passed=True if a.mode=='assistant' else None,final_student_started=True,assistant=assistant_scores,TRAIN_function_recovery=function_audit,
+        assistant_quality_gate_passed=True if a.mode in ('assistant','regret_assistant') else None,final_student_started=True,assistant=assistant_scores,TRAIN_function_recovery=function_audit,
         strict_CPU_reloaded=True,frozen_upstream=True,original_student_parameters=7840,new_inference_layers=0,best_sha256=sha(a.out/'best_checkpoint.pt'),last_sha256=sha(a.out/'last_checkpoint.pt'),
         SDK=False,GPU=False,seconds=time.monotonic()-started,**DISCLOSURE));put(a.out/'status.json',dict(state='complete',updated=time.time()))
 
