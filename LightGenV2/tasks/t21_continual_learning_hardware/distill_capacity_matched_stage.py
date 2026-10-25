@@ -64,7 +64,7 @@ def main():
     if cp['architecture']!='d2nn' or cp['stage'] not in cfg['allowed_stages'] or cp['measured_features_sha256']!=cr['features_sha256'] or model.shared_head.weight.numel()!=7840:raise ValueError('Original measured B/C only')
     regret=None
     if a.mode=='regret_assistant':
-        if cp['stage']!=3 or a.taskwise_run is None:raise ValueError('Finite C regret method requires sealed taskwise diagnostic')
+        if cp['stage'] not in (2,3) or a.taskwise_run is None:raise ValueError('Finite B/C regret method requires sealed taskwise diagnostic')
         dp=json.loads((a.taskwise_run/'protocol.json').read_text());dr=json.loads((a.taskwise_run/'report.json').read_text())
         if dp['mode']!='taskwise_diagnostic' or dp['parent_SHA256']!=a.parent_sha256 or dp['capture_features_SHA256']!=cr['features_sha256'] or dp['teacher_SHA256']!=rr['teacher_sha256'] or dp['profile']!=cfg or not dr['passed'] or not dr['no_task_head_splicing']:raise ValueError('Exact same taskwise fit objective/provenance required')
         regret={n:v['history'][-1]['objective'] for n,v in dr['taskwise'].items()}
