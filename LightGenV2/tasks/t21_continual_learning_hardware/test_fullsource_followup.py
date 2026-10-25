@@ -1,11 +1,17 @@
 import json,unittest
 from pathlib import Path
 import torch
-from .distill_margin_teacher import development_bands,declared_source_budget,source_pool_objective,whole_stage_band_key,equal_task_retention_KL
+from .distill_margin_teacher import development_bands,declared_source_budget,source_pool_objective,whole_stage_band_key,equal_task_retention_KL,correct_function_rows
 from .fit_stage_balanced_teacher import validate_profile
 
 
 class FullSourceFollowupTests(unittest.TestCase):
+    def test_wrong_derivative_function_is_not_frozen_as_knowledge(self):
+        target=torch.tensor([[4.,0.],[0.,4.],[2.,1.]],requires_grad=True);labels=torch.tensor([0,0,1])
+        self.assertEqual(correct_function_rows(target,labels).tolist(),[True,False,False])
+        for name,stage,arch in [('LG_B',2,'moe'),('D2NN_D',4,'d2nn')]:
+            cfg=json.loads(Path(__file__).with_name('config_'+name+'_correct_source_retention_20261026.json').read_text())
+            self.assertTrue(cfg['derivative_function_correct_only']);self.assertEqual(len(development_bands(stage,arch,cfg)),stage)
     def test_D_CLEVR_focus_keeps_other_task_functions_without_changing_bands(self):
         cfg=json.loads(Path(__file__).with_name('config_D2NN_D_CLEVR_source_retention_20261026.json').read_text())
         self.assertEqual(development_bands(4,'d2nn',cfg)['clevr'],(517,617))

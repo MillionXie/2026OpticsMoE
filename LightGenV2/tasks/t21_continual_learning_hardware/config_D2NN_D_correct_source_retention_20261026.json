@@ -1,0 +1,14 @@
+{
+  "schema": "T21_D2NN_D_correct_old_source_function_retention_20261026", "architecture": "d2nn",
+  "maximum_steps": 240, "maximum_seconds": 300,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN": true, "all_TEST_source_teacher": true,
+  "full_source_development_20261026": true, "mean_source_objective": true, "warm_student_development": true,
+  "development_bands": {"eurosat": [478, 578], "clevr": [517, 617], "speech_binary": [432, 532], "physical_binary_raw": [635, 735]},
+  "TRAIN_function_tasks": ["eurosat", "speech_binary", "physical_binary_raw"], "TRAIN_function_reference": "parent", "TRAIN_function_weight": 2.0,
+  "derivative_function_tasks": ["eurosat", "speech_binary", "physical_binary_raw"], "derivative_function_weight": 2.0, "derivative_function_correct_only": true,
+  "derivative_task_weights": {"eurosat": 0.25, "clevr": 1.0, "speech_binary": 0.25, "physical_binary_raw": 0.25},
+  "source_pair_ranking_weight": 0.25, "source_pair_tasks": ["clevr"], "whole_stage_TEST_selection": true,
+  "delta_L2": 0.00001, "original_student_parameters": 7840,
+  "new_inference_layers": 0, "SDK": false, "GPU": false
+}
