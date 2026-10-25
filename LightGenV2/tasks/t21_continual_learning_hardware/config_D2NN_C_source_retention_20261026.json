@@ -1,0 +1,14 @@
+{
+  "schema": "T21_D2NN_C_disclosed_old_source_function_retention_20261026", "architecture": "d2nn",
+  "maximum_steps": 300, "maximum_seconds": 300,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN": true, "all_TEST_source_teacher": true,
+  "full_source_development_20261026": true, "mean_source_objective": true, "warm_student_development": true,
+  "development_bands": {"eurosat": [462, 562], "clevr": [581, 681], "speech_binary": [422, 522]},
+  "TRAIN_function_tasks": ["eurosat", "speech_binary"], "TRAIN_function_reference": "parent", "TRAIN_function_weight": 2.0,
+  "derivative_function_tasks": ["eurosat", "speech_binary"], "derivative_function_weight": 2.0,
+  "derivative_task_weights": {"eurosat": 0.25, "clevr": 1.0, "speech_binary": 0.25},
+  "source_pair_ranking_weight": 0.25, "source_pair_tasks": ["clevr"], "whole_stage_TEST_selection": true,
+  "delta_L2": 0.00001, "original_student_parameters": 7840,
+  "new_inference_layers": 0, "SDK": false, "GPU": false
+}

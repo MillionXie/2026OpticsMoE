@@ -1,11 +1,20 @@
 import json,unittest
 from pathlib import Path
 import torch
-from .distill_margin_teacher import development_bands,declared_source_budget,source_pool_objective,whole_stage_band_key
+from .distill_margin_teacher import development_bands,declared_source_budget,source_pool_objective,whole_stage_band_key,equal_task_retention_KL
 from .fit_stage_balanced_teacher import validate_profile
 
 
 class FullSourceFollowupTests(unittest.TestCase):
+    def test_source_retention_is_teacher_frozen_and_equal_task(self):
+        import numpy as np
+        target=torch.randn(5,10,dtype=torch.float64,requires_grad=True);current=target.detach().clone().requires_grad_();tasks=np.array(['a']*4+['b'])
+        loss=equal_task_retention_KL(current,target,tasks,['a','b']);self.assertLess(abs(float(loss.detach())),1e-12)
+        loss.backward();self.assertIsNone(target.grad);self.assertTrue(torch.isfinite(current.grad).all())
+        with self.assertRaises(ValueError):equal_task_retention_KL(current,target,tasks,['c'])
+        for name,stage,arch in [('LG_B',2,'moe'),('D2NN_C',3,'d2nn'),('D2NN_D',4,'d2nn')]:
+            cfg=json.loads(Path(__file__).with_name('config_'+name+'_source_retention_20261026.json').read_text());self.assertEqual(len(development_bands(stage,arch,cfg)),stage)
+            self.assertTrue(cfg['warm_student_development']);self.assertEqual(cfg['derivative_function_weight'],2.)
     def test_new_scopes_keep_legacy_unchanged(self):
         legacy=development_bands(3,'d2nn',{})
         self.assertEqual(legacy['clevr'],(631,681))

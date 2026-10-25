@@ -93,6 +93,11 @@ def retention_KL(logits,target):
     return 4*F.kl_div(F.log_softmax(logits/2,1),F.softmax(target.detach()/2,1),reduction='batchmean')
 
 
+def equal_task_retention_KL(logits,target,tasks,names):
+    if not names or not set(names)<=set(tasks):raise ValueError('Every retained task must have authorized query rows')
+    return torch.stack([retention_KL(logits[tasks==n],target[tasks==n]) for n in names]).mean()
+
+
 def centered_function_loss(logits,target):
     """TRAIN function retention without saturated softmax or teacher gradients."""
     reference=target.detach()-target.detach().mean(1,keepdim=True)
@@ -204,7 +209,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--warm-student',type=Path);p.add_argument('--warm-student-sha256');p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json','config_LG_B_fullsource_mean_20261026.json','config_D2NN_C_fullsource_mean_20261026.json','config_D2NN_D_fullsource_mean_20261026.json','config_LG_B_retained_function_20261026.json','config_D2NN_C_retained_function_20261026.json','config_D2NN_D_retained_function_20261026.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json','config_LG_B_fullsource_mean_20261026.json','config_D2NN_C_fullsource_mean_20261026.json','config_D2NN_D_fullsource_mean_20261026.json','config_LG_B_retained_function_20261026.json','config_D2NN_C_retained_function_20261026.json','config_D2NN_D_retained_function_20261026.json','config_LG_B_source_retention_20261026.json','config_D2NN_C_source_retention_20261026.json','config_D2NN_D_source_retention_20261026.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -271,6 +276,13 @@ def main():
         reference_head=initial_head if cfg['TRAIN_function_reference']=='warm' else model.shared_head.weight.detach().double()
         function_target=pool[function_rows].double()@reference_head.T
         function_receipt=dict(tasks=function_tasks,TRAIN_query_rows=len(function_rows),EVAL_query_rows=0,reference=cfg['TRAIN_function_reference'],weight=cfg['TRAIN_function_weight'])
+    derivative_rows=None;derivative_target=None;derivative_receipt=None
+    if cfg.get('derivative_function_weight'):
+        if not cfg.get('full_source_development_20261026'):raise ValueError('Explicit full-source development scope required')
+        derivative_rows=np.flatnonzero((kinds==1)&np.isin(pt,cfg['derivative_function_tasks']))
+        if not len(derivative_rows):raise ValueError('Missing declared old-task derivative queries')
+        derivative_target=(pool[derivative_rows].double()@initial_head.T).detach()
+        derivative_receipt=dict(tasks=cfg['derivative_function_tasks'],rows=len(derivative_rows),reference='Same entire warm original Linear student, frozen',weight=cfg['derivative_function_weight'],queries='Authorized TEST-source nonidentity derivatives, NOT TRAIN-only')
     pair_weight=cfg.get('source_pair_ranking_weight',0)
     if pair_weight:
         for values,tt,ii,yy,chunk in ((q,qt,qi,qy,len(tr)),(dx,dt,di,dy,len(exposed))):
@@ -307,7 +319,7 @@ def main():
         objective='Equal tasks/pools; source-mean margin/CE, no hardest-tail reweighting' if cfg.get('mean_source_objective') else 'Equal tasks/pools; source-mean generalizedCE q=.7 after bounded teacher margins' if cfg.get('bounded_generalized_CE') else 'Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
         teacher_selection='Prospective complete-stage TEST band key, first qualifying actual shared head; otherwise closest complete-stage key' if cfg.get('whole_stage_TEST_selection') else 'Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
         warm_assistant=warm,warm_student=warm_student,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
-        centered_TRAIN_function_retention=function_receipt,source_pair_ranking_weight=pair_weight,TEST_selected_development=bool(cfg.get('whole_stage_TEST_selection')),
+        centered_TRAIN_function_retention=function_receipt,derivative_function_retention=derivative_receipt,source_pair_ranking_weight=pair_weight,TEST_selected_development=bool(cfg.get('whole_stage_TEST_selection')),
         derivative_task_weights=cfg.get('derivative_task_weights'),
         TRAIN_cross_task_mixup=dict(weight=cfg['TRAIN_cross_task_mixup_weight'],fractions=[.1,.2],soft_labels=True,TRAIN_only=True,EVAL_sources=0) if cfg.get('TRAIN_cross_task_mixup_weight') else None,
         TRAIN_measured_repeat_consistency=repeat_receipt,
@@ -341,6 +353,7 @@ def main():
             if function_rows is not None:
                 current=z[function_rows]@weight.T
                 loss+=cfg['TRAIN_function_weight']*torch.stack([centered_function_loss(current[pt[function_rows]==n],function_target[pt[function_rows]==n]) for n in function_tasks]).mean()
+            if derivative_rows is not None:loss+=cfg['derivative_function_weight']*equal_task_retention_KL(z[derivative_rows]@weight.T,derivative_target,pt[derivative_rows],cfg['derivative_function_tasks'])
             if mix_features is not None:
                 mixed=-(mix_targets*F.log_softmax(mix_features@weight.T,1)).sum(1)
                 loss+=cfg['TRAIN_cross_task_mixup_weight']*torch.stack([mixed[mix_tasks==n].mean() for n in names]).mean()
