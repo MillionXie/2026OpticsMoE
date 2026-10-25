@@ -1,5 +1,52 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 08:32补记：原Qwen CPU有限预算到期全保，缺失续链04已启动
+
+成本仍14/18，剩LGVQ Ours temporal/spatial与T12双方；main partial17、temporal07不变，
+多baseline36/36及额外80GB Qwen3/3不变，没有新正式Excel。租机没有重连。
+
+Unix1792887770.858032..1792887771.1502314实际核明旧QwenCPU_03/2143363及worker2149243、
+LGVQCPU_03/2143364、T12cost_03/2143366、LGVQcost_03/2143391全部stopped/退出，compute空。
+Qwen父控制器触发 `Finite Qwen28 CPU admission/runtime budget`；LGVQ CPU等待窗口到期，
+两cost因真实CPU前驱stopped退出，completed[]。没有任何Qwen passed合同或逐index合格case，
+不能把loading当通过、也不能用samples/状态推断做了零神经调用。旧worker日志只有原dtype弃用提示；
+此前CPU确实持续忙，但旧loading覆盖load及全部四次前向，具体长耗算子仍未知，不能称模型数值失败或hang。
+四根4/1/1/6文件2924/3232/4546/29754B均已由 `backup_receipt_finite_CPU_budget_stop01.json`
+逐SHA本地取回；四外置日志942/989/1331/1047B亦已原SHA保存为各自external_controller.log。
+诊断 `T12/runs/simulation/a100_qwen_CPU_budget_diagnosis_20261025_01/diagnosis.json`22747B SHA
+`dab18693a07661b48ba7a6f7c2aa61d33dc78cf11566e7775c49e055e7e418ee`已备份，零新增模型/GPU调用。
+
+确认旧PID全退出后才发布修订 `31f9ab40b`：增加CPU阶段/index/CPU时间记录及逐index已通过case原件+SHA收据。
+只有原AST gold与live完整输出逐位一致、CUDA未初始化、源码前后相同才封存case；恢复时再核原SHA、
+source全集、PT、CPU精度描述、fresh frozen依赖及相同sample/IDs/masks，不能把预测缓存作为在线输入。
+旧_03没有可恢复case，本次不传resume、不假称复用其NN进度；后续若已写合格case才仅补未完成index。
+原加载器、tokenizer输入、原七AST、gold与live前向函数AST完全未变，FP32语言/原FP16 VAE和CPU FP16
+autocast不改。两项旧静态测试对应新增源数及等待/point边界更新后，38项无模型测试双端全部通过。
+这不是神经合同通过，也没有重做已合格OursCPU_06/a37514…1c0或任何图库/成本。
+
+新增显式有限 `--queue-seconds 21600`，默认旧窗口仍不变。较长的是lab CPU/后继等待窗口，不是租机续期，
+也不放宽GPU单点：每个GPU worker deadline仍为 `min(queue_deadline, now+7199)`，原worker7200上限、
+原shared锁/12次idle/foreign检查、MPS100、250W及250ms功率支持全部不变。
+当前四个唯一新续链，deadline1792909849.3613155（约14:30北京）；不是预计完成时间：
+
+- T12 QwenCPU `a100_qwen_live_frontend_contract_20261025_04`/2353602，previous直接复用OursCPU_06。
+- LGVQ CPU `a100_lgvq_live_frontend_contract_20261025_04`/2353615，previous绑定QwenCPU_04。
+- T12成本 `a100_input_inclusive_20261025_04`/2353626，OursCPU_06/QwenCPU_04/sharedreference_01。
+- LGVQ成本 `a100_lgvq_input_inclusive_20261025_04`/2353634，LGVQCPU_04及T12cost_04真正退出后入场。
+
+Unix1792888342.0238113..1792888342.703865实际四PID存活，Qwen仍idle_guard、其余等各自前驱，
+无worker/合格case/新成本，compute空，94活动/保留proof记录源SHA全相同，不能说已运行神经合同。
+新LGVQcost_04 `admission01.json`4467B SHA
+`0ab8ac2537ba8884631822fd01a5ec02f3b300a939c846e0dafe594446af8ed1`已精确取回。
+同根 `admission_observation_20261025_0835.json`4232B SHA
+`578c10e9aa42f3b35bf195131af61c4ba9f8ababedb11e48a543240f9ad0545e`为随后只读观察，标签非真实时钟。
+
+旧完整source集合实际93（07:50所写92是Python/experiments命名空间，另1为maintenance原依赖JSON）；
+本轮全93核对，旧队列全退出后仅改5个控制/观察源，其余88与OursCPU_06全部原字节保持。
+lab从peer已自行同步的5d37安全核到31f9，只有本人9源/test差异，untracked全保留、B100三暂存未动。
+README本段同步状态以本轮最后核对为准，活动源重新冻结，不再热改。每个合格CPU case先取其原JSON/收据，
+完整CPUproof或成本完成立即按原SHA备份/独立审计；若新故障仍先保raw再missing-only续接，不整体停。
+
 ## 2026-10-25 07:50补记：T12 Ours原CPU双样本形状公式核验，正式成本未升级
 
 成本仍14/18，剩LGVQ Ours temporal/spatial及T12双方；多baseline36/36与额外80GB Qwen3/3不变。
