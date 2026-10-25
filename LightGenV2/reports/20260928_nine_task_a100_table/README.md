@@ -1,5 +1,20 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26：LG低层捕获单轮通过，继续独立纯评分候选
+
+低层捕获根a100_lowlevel_capture_20261026_01已complete退出/MPS释放。
+2048输入全部预测与原reference逐位同，计费边界未改；原16文件1025057B先逐SHA
+备份及0B外日志取回。独立本地原区间、源Git blobs、原NPZ、进程guard复算passed。
+每16视频24.15475561032664ms，对固定Qwen50 1469.694027ms为60.84491398倍；
+不是百倍。保留电子建图从旧3144.046ms降至278.6162939ms，仍全部计费；
+6固定光周期/16为6.2699142857ms，ROI/电残差按原人工口径排除，未偷换光学仿真。
+
+下一独立候选lgvq_scoreonly_20261026.py在已验证lowlevel实现上仅不请求训练loss、
+alignment和路由辅助统计；softmax/top2、所有评分NN、六传播、融合RMS及四融合诊断
+原AST保留。新身份明确辅助字典缩减，不再泛称所有辅助输出相同；必须2048评分
+严格原reference逐位同。8项无模型AST合同测试passed，新根不覆盖旧候选。
+租机Kimi/DS当前运行源不变，不因本LG候选改动任何其记录源。
+
 ## 2026-10-26：LG仅减少重复Graph准备的独立候选
 
 lgvq_lowlevel_capture_20261026.py复用原33段投影worker，只换公开CUDAGraph捕获API。
