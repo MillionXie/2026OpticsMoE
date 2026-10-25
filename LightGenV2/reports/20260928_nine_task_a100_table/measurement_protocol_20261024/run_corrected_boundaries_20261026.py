@@ -124,7 +124,7 @@ def suite(args):
     from run_temporal_remainder import process_snapshot
     serialize_mps_commands();engine.GPU=base.GPU;engine.PIPE=base.PIPE;engine.ROOT=args.output
     assert not args.output.exists() and args.output.is_relative_to(base.ROOT);args.output.mkdir()
-    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,N=N,completed=[],plan=['qwen01','lg01'],single_round_user_requested=True)
+    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,N=N,completed=[],plan=['lg01'] if args.lg_only else ['qwen01','lg01'],single_round_user_requested=True,retained_Qwen_not_rerun=args.lg_only)
     active=False;child=None
     def save():base.write(args.output/'suite_status.json',state)
     def bounded():
@@ -166,4 +166,5 @@ def suite(args):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['suite','worker'],required=True);p.add_argument('--system',choices=['qwen','lg']);p.add_argument('--repeat',type=int);p.add_argument('--output',type=Path,required=True);p.add_argument('--videos',type=int,choices=[224,2048],default=2048);p.add_argument('--deadline',type=float,required=True)
+    p.add_argument('--lg-only',action='store_true',help='New LG scope only; retain already complete Qwen round')
     a=p.parse_args();N=a.videos;a.output=a.output.resolve();(suite if a.phase=='suite' else worker)(a)
