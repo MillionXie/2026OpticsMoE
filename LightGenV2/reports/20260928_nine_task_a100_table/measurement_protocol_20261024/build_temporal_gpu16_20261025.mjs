@@ -9,11 +9,12 @@ import {stageChinese,familyChinese} from './lg_time_chinese_notes_20261025.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const CORE=process.argv.includes('--core');
-const OUT=path.join(HERE,'outputs/01a061e2-6f88-7913-87f5-b632000e4c83',CORE?'temporal_optical_tf16_20261025_01':'temporal_gpu16_20261025_01');
+const EMBED=process.argv.includes('--embedding');
+const OUT=path.join(HERE,'outputs/01a061e2-6f88-7913-87f5-b632000e4c83',EMBED?'temporal_embedding16_20261025_01':CORE?'temporal_optical_tf16_20261025_01':'temporal_gpu16_20261025_01');
 if(fss.existsSync(path.join(OUT,'delivery_manifest.json')))throw Error('Preserve sealed report');
 const PY='C:/Users/Xml12/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe';
-const data=JSON.parse(execFileSync(PY,[path.join(HERE,'temporal_gpu16_report_20261025.py'),CORE?'--core-data':'--data'],{encoding:'utf8',maxBuffer:10*1024*1024}));
-if(CORE){await buildCore(data);}else{
+const data=JSON.parse(execFileSync(PY,[path.join(HERE,'temporal_gpu16_report_20261025.py'),EMBED?'--embedding-data':CORE?'--core-data':'--data'],{encoding:'utf8',maxBuffer:10*1024*1024}));
+if(EMBED){await buildEmbedding(data);}else if(CORE){await buildCore(data);}else{
 const lg=data.points.filter(r=>r.system==='LG'),st=data.stages;
 const total=k=>lg.reduce((a,r)=>a+r[k],0),sum=(pred,key)=>st.filter(pred).reduce((a,r)=>a+r[key],0);
 const qtotal=cap=>data.points.filter(r=>r.system==='Qwen'&&r.cap===cap).reduce((a,r)=>a+r.original_ms,0);
@@ -191,4 +192,113 @@ async function buildCore(data){
  for(const [sheet,range,name] of [[s,'A1:G12','comparison'],[s,'A14:G20','synchronized'],[s,'A23:E37','LG_parts'],[s,'A39:E43','software_reference'],[raw,'A18:G26','raw_stage_sample'],[raw,'A45:D50','source_sample']]){const image=await w.render({sheetName:sheet.name,range,scale:1.2,format:'png'});await fs.writeFile(path.join(OUT,name+'.png'),new Uint8Array(await image.arrayBuffer()));}
  const output=await SpreadsheetFile.exportXlsx(w);await output.save(path.join(OUT,'A100_Temporal_16视频_LG首光模块对Qwen首TF_20261025.xlsx'));
  console.log(JSON.stringify({output:OUT,LG16_event_ms:s.getRange('D6').values[0][0],LG16_wall_ms:s.getRange('D15').values[0][0],Qwen100_event_ms:s.getRange('D7').values[0][0],Qwen50_event_ms:s.getRange('D8').values[0][0],ratios:s.getRange('F7:F8').values}));
+}
+
+async function buildEmbedding(data){
+ const w=Workbook.create(),s=w.worksheets.add('加embedding对照'),raw=w.worksheets.add('原值与来源');
+ const ink='#233B53',calc='#EAF3EB',assumption='#FFF1D6';
+ for(const sh of [s,raw]){sh.showGridLines=false;sh.getRange('A1:G85').format={font:{name:'Arial',size:11,color:ink},verticalAlignment:'center',rowHeight:30};}
+ s.tabColor=ink;raw.tabColor='#7893A6';
+ const put=(sh,c,v)=>sh.getRange(c).values=[[v]],f=(sh,c,v)=>sh.getRange(c).formulas=[[v]];
+ const fmt=(sh,r,c='0.000')=>{sh.getRange(r).setNumberFormat(c);sh.getRange(r).format.horizontalAlignment='right';};
+ const table=(sh,r,h,v)=>{const z=String.fromCharCode(64+h.length);sh.getRange('A'+r+':'+z+r).values=[h];sh.getRange('A'+r+':'+z+r).format={fill:ink,font:{bold:true,color:'#FFFFFF'},wrapText:true,horizontalAlignment:'center',rowHeight:48};if(v.length)sh.getRange('A'+(r+1)+':'+z+(r+v.length)).values=v;};
+ [40,27,31,34,38,23,23].forEach((v,i)=>s.getRange(String.fromCharCode(65+i)+'1:'+String.fromCharCode(65+i)+'45').format.columnWidth=v);
+ put(s,'A2','Temporal：分词、嵌入、位置逐项加入后的倍数');s.getRange('A2').format.font={size:16,bold:true};
+ put(s,'A3','每一项给三者加同一份时间。按用户指定共同估算，新增项取LG原记录，不写成Qwen独立实测。');
+ const lg=data.points.filter(p=>p.system==='LG'),total=k=>lg.reduce((a,p)=>a+p[k],0),q=(cap,k)=>data.points.filter(p=>p.system==='Qwen'&&p.cap===cap).reduce((a,p)=>a+p[k],0);
+ const st=Object.fromEntries(data.embedding_stages.map(r=>[r.stage,r]));
+ const token=st['frontend.UTF8_tokenizer'];
+ const entries=[
+ ['LG起点后选定电子段',total('event_ms'),total('wall_ms'),600,'GPU事件 / 同步耗时'],
+ ['LG固定光执行',total('fixed_ms'),total('fixed_ms'),600,'固定光参数；39场×6周期'],
+ ['文字词向量阶段',st['frontend.language_embedding'].event_ms,st['frontend.language_embedding'].wall_ms,600,'GPU事件 / 同步耗时；保留原传输返回'],
+ ['图像分块嵌入',st['frontend.native_patch'].event_ms,st['frontend.native_patch'].wall_ms,600,'GPU事件 / 同步耗时；原patch embedding'],
+ ['位置特征',st['frontend.native_position'].event_ms,st['frontend.native_position'].wall_ms,600,'GPU事件 / 同步耗时；原位置插值'],
+ ['图像块平均汇聚',st['frontend.native_mean_pool'].event_ms,st['frontend.native_mean_pool'].wall_ms,600,'GPU事件 / 同步耗时'],
+ ['Qwen100首视觉TF核心',q(100,'event_ms'),q(100,'wall_ms'),600,'原第一视觉Transformer块至评分完成'],
+ ['Qwen50首视觉TF核心',q(50,'event_ms'),q(50,'wall_ms'),600,'原MPS50核心，不由100%乘2'],
+ ['CPU文字分词',token.wall_ms,token.wall_ms,600,'CPU墙钟时间；无CUDA事件，不将缺失当0'],
+ ];
+ put(raw,'A2','三轮原值与共同假设来源');raw.getRange('A2').format.font={size:16,bold:true};
+ table(raw,5,['原始汇总项目','主对照选定时间合计 ms','同步耗时合计 ms','有效视频数','取值含义'],entries);
+ [66,34,34,20,95].forEach((v,i)=>raw.getRange(String.fromCharCode(65+i)+'1:'+String.fromCharCode(65+i)+'85').format.columnWidth=v);
+ raw.getRange('A6:E14').format={wrapText:true,rowHeight:52};fmt(raw,'B6:C14');
+ // This single core/input block owns all values reused by the output scenarios.
+ table(raw,17,['16视频换算输入','主对照 ms','同步耗时 ms','中文说明'],[
+ ['LG原核心',null,null,'原光学模块起点；固定光执行加原选定电子段。'],
+ ['Qwen100原核心',null,null,'第一视觉Transformer块至评分。'],
+ ['Qwen50原核心',null,null,'第一视觉Transformer块至评分。'],
+ ['CPU文字分词',null,null,'文字变词编号和有效位置标记。'],
+ ['文字词向量阶段',null,null,'词编号查表为数值向量，含原记录中的传输返回。'],
+ ['图像分块嵌入',null,null,'原卷积/投影把图像块变为特征。'],
+ ['位置特征',null,null,'原位置特征构造及插值。'],
+ ['图像块平均汇聚',null,null,'将图像块汇聚至原网格。'],
+ ]);
+ for(const c of ['B','C']){
+  f(raw,c+'18',"=SUM("+c+"6:"+c+"7)/D6*16");
+  for(const [r,src] of [[19,12],[20,13],[21,14],[22,8],[23,9],[24,10],[25,11]])f(raw,c+r,'='+c+src+'/D'+src+'*16');
+ }
+ fmt(raw,'B18:C25');raw.getRange('A18:D25').format={wrapText:true,rowHeight:52};
+ const headers=['LG和Qwen都加入的范围','共同新增\n16视频 ms','LG合计\n16视频 ms','Qwen100合计\n16视频 ms','Qwen50合计\n16视频 ms','Qwen100/LG\n时间倍数','Qwen50/LG\n时间倍数'];
+ const definitions=[
+ ['不加任何前置项',[]],
+ ['只加文字分词',[21]],
+ ['只加文字词向量',[22]],
+ ['只加图像分块嵌入',[23]],
+ ['只加位置特征',[24]],
+ ['只加图像块平均汇聚',[25]],
+ ['图像＋文字embedding一起加',[22,23]],
+ ['以上五项全部加入',[21,22,23,24,25]],
+ ];
+ const blankRow=label=>[label,null,null,null,null,null,null];
+ table(s,5,headers,definitions.map(([label])=>blankRow(label)));
+ const scenario=(row,indices)=>{
+  f(s,'B'+row,indices.length?'=SUM('+indices.map(i=>"'原值与来源'!B"+i).join(',')+')':'=0');
+  for(const [col,src] of [['C',18],['D',19],['E',20]])f(s,col+row,"='原值与来源'!B"+src+'+$B'+row);
+  f(s,'F'+row,'=D'+row+'/C'+row);f(s,'G'+row,'=E'+row+'/C'+row);
+ };
+ definitions.forEach(([,indices],i)=>scenario(6+i,indices));fmt(s,'B6:E13');fmt(s,'F6:G13','0.00"×"');s.getRange('B6:B13').format.fill=assumption;s.getRange('C13:G13').format.fill=calc;
+ put(s,'A15','上表每行独立比较，不累加上一行。下表才是按顺序累计加入；“全部加入”指串行相加估算，不是并行执行。');
+ table(s,17,headers,[
+ blankRow('第1步：文字分词'),blankRow('第2步：再加文字词向量'),blankRow('第3步：再加图像分块嵌入'),blankRow('第4步：再加位置特征'),blankRow('第5步：再加平均汇聚（全加）'),
+ ]);
+ for(let i=0;i<5;i++)scenario(18+i,[21,22,23,24,25].slice(0,i+1));
+ fmt(s,'B18:E22');fmt(s,'F18:G22','0.00"×"');s.getRange('B18:B22').format.fill=assumption;s.getRange('C22:G22').format.fill=calc;
+ table(s,26,['组件','每16视频新增 ms','在哪里算','具体是什么意思','本表怎样取时间'],[
+ ['文字分词 tokenizer',null,'CPU','把文字拆成词编号，并生成有效位置标记。它不是词向量查表。','原CPU阶段墙钟时间。'],
+ ['文字embedding',null,'GPU（含原传输返回流程）','把词编号查表变成数值向量。查表和文字分词是两件事。','原文字词向量阶段的显卡事件记录，不冒称纯内核时间。'],
+ ['图像patch embedding',null,'GPU','用原卷积/投影把图像块变成网络特征。不是视频解码。','原图像分块嵌入阶段的显卡事件。'],
+ ['图像位置特征',null,'GPU阶段','生成、插值图像位置特征，让网络区分图像块所在位置。','原位置特征阶段单独记录，与embedding分开。'],
+ ['图像块平均汇聚',null,'GPU','把图像块特征平均汇聚到主体要求的网格大小。','原平均汇聚阶段单独记录，不与位置重复相加。'],
+ ]);
+ for(let i=0;i<5;i++)f(s,'B'+(27+i),"='原值与来源'!B"+(21+i));
+ fmt(s,'B27:B31');s.getRange('A27:E31').format={wrapText:true,rowHeight:85};
+ put(s,'A33','同输入不自动证明同耗时。本表按指定对三者使用相同新增耗时；Qwen各项并未单独打点，不能称全项实测。');
+ put(s,'A34','共同新增时间在三者中均加入，包括Qwen MPS50%，不对这份假设时间另乘2。原核心的MPS50耗时仍用其独立实测值。');
+ put(s,'A35','所有数字为16有效视频、64帧。除以64即等效有效单帧时间，加速倍数不变；LG首场和末场补齐成本全部保留。');
+ put(s,'A36','LG光学核心仍用原选定电子段＋固定光执行。本表不是完整文件输入到CPU结果，也不是新的连续光路实测。');
+ put(s,'A38','全部加入的同步耗时交叉核对');
+ table(s,39,['系统','原核心同步\n16视频 ms','共同五项同步\n16视频 ms','加后合计\n16视频 ms','加后等效\n单帧 ms','相对LG时间比'],[
+ ['LG',null,null,null,null,null],['Qwen100',null,null,null,null,null],['Qwen50',null,null,null,null,null],
+ ]);
+ for(let row=40;row<43;row++){
+  f(s,'B'+row,"='原值与来源'!C"+(18+row-40));
+  f(s,'C'+row,"=SUM('原值与来源'!C21:C25)");
+  f(s,'D'+row,'=SUM(B'+row+':C'+row+')');f(s,'E'+row,'=D'+row+'/64');f(s,'F'+row,'=D'+row+'/$D$40');
+ }
+ fmt(s,'B40:E42');fmt(s,'F40:F42','0.00"×"');
+ const sources=[...Object.entries(data.source_files).map(([p,v])=>[p,v.bytes,v.sha256,'原封存文件，字节数与SHA均一致']),...data.source_code_evidence.map(v=>[v.path,v.bytes,v.sha256,'与原运行一致的Git源码字节'])];
+ table(raw,29,['原文件相对仓库路径','字节数','SHA256','原始来源'],sources);raw.getRange('A30:D'+(29+sources.length)).format={wrapText:true,rowHeight:68};raw.getRange('C30:C60').format.columnWidth=72;raw.freezePanes.freezeRows(5);
+ const near=(a,b)=>{if(typeof a!=='number'||Math.abs(a-b)>Math.max(1e-6,Math.abs(b)*1e-9))throw Error(a+' != '+b);};
+ w.recalculate();
+ const old=raw.getRange('B9').values[0][0],before=s.getRange('C13:E13').values[0];raw.getRange('B9').values=[[old+1]];
+ for(let i=0;i<3;i++)near(s.getRange(String.fromCharCode(67+i)+'13').values[0][0],before[i]+16/600);
+ raw.getRange('B9').values=[[old]];w.recalculate();for(let i=0;i<3;i++)near(s.getRange(String.fromCharCode(67+i)+'13').values[0][0],before[i]);
+ await fs.mkdir(OUT,{recursive:true});await fs.writeFile(path.join(OUT,'analysis_data.json'),JSON.stringify(data,null,2));
+ const scan=await w.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:1200});await fs.writeFile(path.join(OUT,'formula_scan.ndjson'),scan.ndjson);
+ for(const [sheet,range,name] of [[s,'A1:G15','independent_additions'],[s,'A17:G22','cumulative_additions'],[s,'A26:E36','definitions'],[s,'A38:F42','synchronized_check'],[raw,'A1:E14','raw_values'],[raw,'A29:D33','raw_sources']]){
+  const im=await w.render({sheetName:sheet.name,range,scale:1.2,format:'png'});await fs.writeFile(path.join(OUT,name+'.png'),new Uint8Array(await im.arrayBuffer()));
+ }
+ const output=await SpreadsheetFile.exportXlsx(w);await output.save(path.join(OUT,'A100_Temporal_16视频_单独加入Embedding对照_20261025.xlsx'));
+ console.log(JSON.stringify({output:OUT,components16_ms:s.getRange('B27:B31').values,all_added16_ms:s.getRange('C13:E13').values,ratios:s.getRange('F13:G13').values,image_text_added:s.getRange('C12:G12').values}));
 }

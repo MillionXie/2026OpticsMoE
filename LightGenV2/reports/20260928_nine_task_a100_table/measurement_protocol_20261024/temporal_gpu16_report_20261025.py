@@ -15,6 +15,8 @@ OUT = BASE / 'temporal_gpu16_20261025_01'
 BOOK = OUT / 'A100_Temporal_16视频_LG显卡时间对完整Qwen_20261025.xlsx'
 CORE_OUT = BASE / 'temporal_optical_tf16_20261025_01'
 CORE_BOOK = CORE_OUT / 'A100_Temporal_16视频_LG首光模块对Qwen首TF_20261025.xlsx'
+EMBED_OUT = BASE / 'temporal_embedding16_20261025_01'
+EMBED_BOOK = EMBED_OUT / 'A100_Temporal_16视频_单独加入Embedding对照_20261025.xlsx'
 
 
 def sha(p):
@@ -387,8 +389,121 @@ def audit_core():
     print(json.dumps(report))
 
 
+def collect_embedding():
+    """Apply the user's common-embedding-time assumption to all three cores.
+
+    The common input is LG's separately observed embedding scopes. Qwen's
+    independent duration is still unknown; the user explicitly requested the
+    SAME duration be added to each core. This is an assumption, not a new
+    Qwen/MPS50 observation or a claim that equal inputs imply equal latency.
+    """
+    data = collect_core()
+    front = collect()
+    names = ('frontend.native_patch', 'frontend.language_embedding',
+             'frontend.native_position', 'frontend.native_mean_pool', 'frontend.UTF8_tokenizer')
+    data['embedding_stages'] = [r for r in front['stages'] if r['stage'] in names]
+    assert len(data['embedding_stages']) == 5
+    assert next(r for r in data['embedding_stages'] if r['stage'] == names[0])['calls'] == 624
+    assert next(r for r in data['embedding_stages'] if r['stage'] == names[1])['calls'] == 39
+    tokenizer = next(r for r in data['embedding_stages'] if r['stage'] == names[4])
+    assert tokenizer['calls'] == 39 and tokenizer['event_count'] == 0
+    data['scope'] = 'same LG-observed embedding duration added to LG and both Qwen cores by explicit user assumption'
+    data['Qwen_isolated_embedding_ms'] = None
+    data['Qwen_symmetric_embedding_comparison_available'] = False
+    data['shared_embedding_time_assumption'] = True
+    data['position_pooling_and_tokenizer_are_distinct_from_embedding'] = True
+    data['embedding_definition'] = 'five separate stages: CPU tokenizer wall; GPU text lookup, image patch, position and pooling observations'
+    data['addition_rule'] = 'shared duration per stage added to all three cores; serial algebraic sum, not new continuous timing or concurrent execution'
+    return data
+
+
+def audit_embedding():
+    import openpyxl
+    assert not (EMBED_OUT / 'delivery_manifest.json').exists(), 'Preserve sealed report'
+    data = collect_embedding()
+    book = openpyxl.load_workbook(EMBED_BOOK, data_only=True)
+    formulas = openpyxl.load_workbook(EMBED_BOOK, data_only=False)
+    s = book['加embedding对照']
+    lg = [p for p in data['points'] if p['system'] == 'LG']
+    total = lambda key: sum(p[key] for p in lg) * 16 / 600
+    stage = {r['stage']: r for r in data['embedding_stages']}
+    order = ('frontend.UTF8_tokenizer', 'frontend.language_embedding', 'frontend.native_patch',
+             'frontend.native_position', 'frontend.native_mean_pool')
+    components = [stage[name]['wall_ms' if name == order[0] else 'event_ms'] * 16 / 600 for name in order]
+    core = [total('event_ms') + total('fixed_ms')] + [sum(p['event_ms'] for p in data['points']
+        if p['system'] == 'Qwen' and p['cap'] == cap) * 16 / 600 for cap in (100, 50)]
+    scenarios = [(), (0,), (1,), (2,), (3,), (4,), (1, 2), tuple(range(5))]
+    results = []
+    def check_row(row, indices, cores):
+        extra = sum(components[i] for i in indices)
+        near(s.cell(row, 2).value, extra)
+        for column, value in enumerate(cores, 3):
+            near(s.cell(row, column).value, value + extra)
+        near(s.cell(row, 6).value, (cores[1] + extra) / (cores[0] + extra))
+        near(s.cell(row, 7).value, (cores[2] + extra) / (cores[0] + extra))
+        return dict(shared_added16_ms=extra, total16_ms=[c+extra for c in cores],
+                    ratios=[(cores[i]+extra)/(cores[0]+extra) for i in (1,2)])
+    for row, indices in enumerate(scenarios, 6):
+        results.append(check_row(row, indices, core))
+    for row, count in enumerate(range(1, 6), 18):
+        check_row(row, range(count), core)
+    for row, value in enumerate(components, 27):
+        near(s.cell(row, 2).value, value)
+    wall_core = [total('wall_ms') + total('fixed_ms')] + [sum(p['wall_ms'] for p in data['points']
+        if p['system'] == 'Qwen' and p['cap'] == cap) * 16 / 600 for cap in (100, 50)]
+    shared_wall = sum(stage[name]['wall_ms'] for name in order) * 16 / 600
+    for row, value in enumerate(wall_core, 40):
+        near(s.cell(row, 2).value, value)
+        near(s.cell(row, 3).value, shared_wall)
+        near(s.cell(row, 4).value, value + shared_wall)
+        near(s.cell(row, 5).value, (value + shared_wall) / 64)
+        near(s.cell(row, 6).value, (value+shared_wall)/(wall_core[0]+shared_wall))
+    raw = book['原值与来源']
+    for column, cores, mode in ((2, core, 'event_ms'), (3, wall_core, 'wall_ms')):
+        for row, value in enumerate(cores, 18):
+            near(raw.cell(row, column).value, value)
+        for row, name in enumerate(order, 21):
+            value = stage[name]['wall_ms' if name == order[0] else mode] * 16 / 600
+            near(raw.cell(row, column).value, value)
+    assert '同一份' in s['A3'].value
+    count = 0
+    for sheet in formulas:
+        for row in sheet:
+            for cell in row:
+                cached = book[sheet.title][cell.coordinate]
+                assert cached.data_type != 'e', (sheet.title, cell.coordinate)
+                if cell.data_type == 'f':
+                    count += 1
+                    assert cached.value is not None
+    # Preserve both previous immutable deliverables and their declared outputs.
+    for directory, expected in ((OUT, 'ffc87fbd4aef5e0364429ef50eb9f5754f1ab814e37ba8d24145acd324358eb2'),
+        (CORE_OUT, '1ad7a7861f798d26cf225e37069051885e30674281d33166959928a2539a9fa4')):
+        manifest = directory / 'delivery_manifest.json'
+        assert sha(manifest) == expected
+        for item in json.loads(manifest.read_text(encoding='utf-8'))['outputs']:
+            p = Path(item['path'])
+            assert p.stat().st_size == item['bytes'] and sha(p) == item['sha256']
+    report = dict(status='passed', no_models_no_GPU=True, matched_valid_videos_per_configuration=600,
+        original_LG_fields=39, padding_and_first_sample_retained=True, previous_workbooks_preserved=True,
+        common_embedding_time_applied_to_all_three=True, Qwen_isolated_embedding_unknown_not_zero=True,
+        five_stage_definitions_separated=True, CPU_tokenizer_uses_wall_not_invented_CUDA_zero=True,
+        formulas=count, formula_errors=0, component16_ms=components, results=results)
+    audit_path = EMBED_OUT / 'independent_audit.json'
+    audit_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
+    if '--visual-review-accepted' in sys.argv:
+        files = [EMBED_BOOK, EMBED_OUT / 'analysis_data.json', audit_path]
+        manifest = dict(report=report, visual_review_sheets=book.sheetnames,
+            outputs=[dict(path=str(p), bytes=p.stat().st_size, sha256=sha(p)) for p in files])
+        (EMBED_OUT / 'delivery_manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
+    print(json.dumps(report))
+
+
 if __name__ == '__main__':
-    if '--core-data' in sys.argv:
+    if '--embedding-data' in sys.argv:
+        print(json.dumps(collect_embedding(), ensure_ascii=True))
+    elif '--embedding-audit' in sys.argv:
+        audit_embedding()
+    elif '--core-data' in sys.argv:
         print(json.dumps(collect_core(), ensure_ascii=True))
     elif '--core-audit' in sys.argv:
         audit_core()
