@@ -8,7 +8,17 @@ class SimulationResponseTests(unittest.TestCase):
     def test_exact_C_contract_does_not_inherit_D_relaxation(self):
         self.assertEqual(stage_contract(dict(architecture='moe',stage=3))[2]['clevr'],(696,746))
         self.assertEqual(stage_contract({})[2]['clevr'],(517,617))
-        with self.assertRaises(ValueError):stage_contract(dict(architecture='moe',stage=4))
+        with self.assertRaises(ValueError):stage_contract(dict(architecture='moe',stage=2))
+    def test_exact_LG_D_contract_keeps_five_point_goal_and_PT(self):
+        import json
+        from pathlib import Path
+        cfg=json.loads(Path(__file__).with_name('config_LG_D_weak_source_response_20261026.json').read_text())
+        arch,stage,bands,warm=stage_contract(cfg);self.assertEqual((arch,stage,warm),('moe',4,'best_checkpoint.pt'))
+        self.assertEqual(bands,dict(eurosat=(788,838),clevr=(714,764),speech_binary=(711,761),physical_binary_raw=(725,775)))
+        self.assertEqual(cfg['frozen_S1_SHA256'],'030fa9aeb555065f716ed92bfe860e2ec33637ec588f7808840b0fca81b334b1')
+        from .fit_stage_balanced_teacher import validate_profile
+        teacher=json.loads(Path(__file__).with_name('config_stage_LG_D_allTEST_teacher_20261026.json').read_text());validate_profile(teacher)
+        self.assertEqual(sum(teacher['sources_per_task'].values()),4000);self.assertTrue(teacher['all_TEST_sources_authorized'])
     def test_identity_alignment_and_unmodified_probabilities(self):
         ids=np.arange(1000)*2;labels=np.arange(1000)%10;p=np.full((1000,10),.01);p[np.arange(1000),labels]=.91;order=np.arange(999,-1,-1)
         score=dict(labels=labels.tolist(),probabilities=p.tolist())
