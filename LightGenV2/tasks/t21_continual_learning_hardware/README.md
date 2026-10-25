@@ -26,10 +26,16 @@ SDK已经自动接入D。LG C八轮GPU结果753/739/676，相对原779/791/781�
 这一级仍在teacher scope内接触衍生EVAL，绝不伪称TRAIN-only。助教也须先CLEVR TRAIN>=90%、完整开发Euro>=483/CLEVR>=710，
 再用原来TRAIN/24份TRAIN增强的功能蒸馏得到最终学生；学生无新层，但依然继承EVAL信息，全部开发适配而非独立测试。
 不改光路、D2NN仿真、模型、CCD、曝光、坐标或LUT，不扩大来源或按任务拼PT；不保证达到目标。
+线性助教实际Euro503/CLEVR695，CLEVR TRAIN653/1000，未过预设TRAIN及开发门槛，最终学生未启动；
+所有完整开发/暴露/未暴露预测及助教PT、协议已本地SHA保留，不能用助教或非线性教师替代原学生宣布B通过。
 
 物理C备份审计的初次失败是校验器未应用包内固定`entry_order`，不是数据被重排或采集故障。
 只读核验已确认特征、样本ID、标签、逐层收据同步，best/last完整CPU正确数与原报告一致；保留旧失败收据，
 新审计按原包的完整置换重建期望身份并逐帧核SHA，未放宽任何身份检查、修改数据或重拍。
+重建后完整9200帧raw/CCD/input BMP/phase/prefix SHA及ID身份、最后CCD到features精确重放、best/last严格CPU均通过；
+bestlast/协议/报告/逐样本/收据相位归档已完整本地SHA备份，索引为
+`runs/preparation_20261025/latest_scope/D2_CD_evidence/order_contract_repair_20261025/C/manifest.json`。
+LG未准入C的bestlast、CPU及冻结报告等15文件也已完整本地SHA保存，不部署失败S1，不覆盖原证据。
 
 ### 2026-10-25 A人工通过，继续B弱扰动配对教师
 
