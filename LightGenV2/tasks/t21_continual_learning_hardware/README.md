@@ -51,6 +51,12 @@ TRAIN内部CE278、低LR284、focal未改善。原100来源增强教师750，学
 CPU审计采用显式`--postcompletion-binding`记录原completion及GPU逐样本文件的实际SHA，
 只允许该新schema，并披露`original_GPU_report_digest_precommitted=false`；不改原收据、预测、PT或旧数值门槛。
 
+该500来源非线性教师完整Euro537/CLEVR737，CLEVR暴露495/500、未暴露242/500；教师通过下限但不代表独立泛化。
+原Linear学生普通蒸馏仍保留父525/498，24份TRAIN增强功能投影候选429/507也未超过父均分；全部负结果本地SHA保存。
+固定再做一次`--match-teacher-jacobian`：同一教师、同一TRAIN来源和24份增强，
+以精确GELU导数匹配平均中心logit的输入Jacobian（排除固定DC维），权重固定1，不按EVAL扫描。
+仍严格折回原7840 Linear，零新推理层/CCD/TEST来源，不声称能把教师的记忆自动变成学生泛化。
+
 ### 2026-10-25 最新人工授权：固定2ms，重复相关仅记录
 
 用户明确批准LightGen固定单帧2ms继续采集，重复相关不足如实记录，不再独立停采。

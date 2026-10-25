@@ -22,6 +22,19 @@ def solve_projection(gram,cross,strength):
     return torch.linalg.solve(gram+strength*penalty,cross).T
 
 
+def centered_jacobian_mean(teacher,z,weights):
+    """Exact eval-mode GELU Jacobian mean; fixed DC coordinate is excluded."""
+    if teacher.training:raise ValueError('Sealed eval-mode teacher required')
+    first,last=teacher.residual[0],teacher.residual[-1];pre=first(z)
+    slope=.5*(1+torch.erf(pre/2**.5))+pre*torch.exp(-pre.square()/2)/(2*np.pi)**.5
+    mean_slope=(slope.double()*weights.double()).sum(0)
+    base=teacher.parent.double()-teacher.parent.double().mean(0,keepdim=True)
+    outer=last.weight.double()-last.weight.double().mean(0,keepdim=True)
+    jac=base*weights.sum()+outer@(mean_slope[:,None]*first.weight.double())
+    jac[:,-1]=0
+    return jac
+
+
 def admit_legacy_partial(protocol,report):
     if protocol.get('selection',{}).get('schema')!='T21_fixed_partial_development_100_of1000_v1' or protocol.get('EVAL_derivative_sources')!=100:
         raise ValueError('Only sealed source-frozen100 derivative teacher; retired all-TEST teacher forbidden')
@@ -36,7 +49,10 @@ def admit_legacy_partial(protocol,report):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','teacher_run','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);p.add_argument('--legacy-linear-teacher',action='store_true');a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--legacy-linear-teacher',action='store_true')
+    p.add_argument('--match-teacher-jacobian',action='store_true',help='One fixed weight1 TRAIN-only analytic teacher-gradient matching variant')
+    a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
+    if a.match_teacher_jacobian and a.legacy_linear_teacher:raise ValueError('Jacobian variant only for nonlinear offline teacher')
     capture=json.loads((a.capture/'report.json').read_text());report=json.loads((a.teacher_run/'report.json').read_text());protocol=json.loads((a.teacher_run/'protocol.json').read_text())
     teacher_path=a.teacher_run/('teacher_checkpoint.pt' if a.legacy_linear_teacher else 'offline_teacher.pt')
     if not capture['passed'] or not report['passed'] or sha(a.capture/'features.npz')!=protocol['capture_features_SHA256'] or sha(teacher_path)!=report['teacher_sha256']:
@@ -72,14 +88,15 @@ def main():
     if len(held)==0 or len(fit)==0:raise ValueError('TRAIN functional holdout required')
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic()
     put(a.out/'protocol.json',dict(parent_SHA256=a.parent_sha256,teacher_SHA256=report['teacher_sha256'],capture_features_SHA256=capture['features_sha256'],
-        method='Augmented TRAIN-only function projection of fixed teacher, centered logits, four ridge strengths selected by held TRAIN KL, refit full TRAIN',
-        strengths=[.0001,.001,.01,.1],TRAIN_augmentations_per_source=24,held_TRAIN_source_ids=ids[tr][held].tolist(),
+        method='TRAIN-only centered-logit plus exact GELU-Jacobian matching, fixed weight1, refit full TRAIN' if a.match_teacher_jacobian else 'Augmented TRAIN-only function projection of fixed teacher, centered logits, four ridge strengths selected by held TRAIN KL, refit full TRAIN',
+        strengths=[1.] if a.match_teacher_jacobian else [.0001,.001,.01,.1],TRAIN_augmentations_per_source=24,held_TRAIN_source_ids=ids[tr][held].tolist(),
+        teacher_Jacobian_matching=a.match_teacher_jacobian,Jacobian_inputs='TRAIN and its augmentations only',
         held_TRAIN_is_student_functional_approximation_not_independent_teacher_validation=True,
         original_student_parameters=7840,new_inference_layers=0,SDK=False,GPU=False,maximum_seconds=240,
         teacher_scope=teacher_scope,teacher_selection_source_ids=selected,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),**disclosure))
     def statistics(indices):
         source=x[tr][indices];st=tt[indices];mean=source.mean(0,keepdim=True);std=source.std(0,unbiased=False)
-        gram=torch.zeros((784,784),dtype=torch.float64);cross=torch.zeros((784,10),dtype=torch.float64)
+        gram=torch.zeros((784,784),dtype=torch.float64);cross=torch.zeros((784,10),dtype=torch.float64);jac=torch.zeros((10,784),dtype=torch.float64)
         weight=torch.tensor([1/(len(names)*int((st==n).sum())) for n in st],dtype=torch.float64)
         for repeat in range(24):
             if time.monotonic()-started>240:raise RuntimeError('Fixed240s projection bound reached')
@@ -87,13 +104,14 @@ def main():
             for ix in torch.arange(len(source)).split(256):
                 z=values[ix]@transform.T;target=query(values[ix]);target=target-target.mean(1,keepdim=True);zz=z.double();ww=weight[ix,None]/24
                 gram+=zz.T@(ww*zz);cross+=zz.T@(ww*target.double())
-        return gram,cross
-    gram,cross=statistics(fit);target=query(x[tr][held]).double();rows=[]
-    for strength in (.0001,.001,.01,.1):
-        w=solve_projection(gram,cross,strength);pred=(x[tr][held]@transform.T).double()@w.T
+                if a.match_teacher_jacobian:jac+=centered_jacobian_mean(teacher,z,ww)
+        return gram,cross,jac
+    gram,cross,jac=statistics(fit);target=query(x[tr][held]).double();rows=[]
+    for strength in ((1.,) if a.match_teacher_jacobian else (.0001,.001,.01,.1)):
+        w=solve_projection(gram,cross+strength*jac.T,strength);pred=(x[tr][held]@transform.T).double()@w.T
         loss=F.kl_div(F.log_softmax(pred/2,1),F.softmax(target/2,1),reduction='none').sum(1)*4
         metric=float(np.mean([float(loss[torch.tensor(tt[held]==n)].mean()) for n in names]));rows.append(dict(strength=strength,held_TRAIN_teacher_KL=metric))
-    chosen=min(rows,key=lambda r:(r['held_TRAIN_teacher_KL'],-r['strength']))['strength'];gram,cross=statistics(np.arange(len(tr)));w=solve_projection(gram,cross,chosen)
+    chosen=min(rows,key=lambda r:(r['held_TRAIN_teacher_KL'],-r['strength']))['strength'];gram,cross,jac=statistics(np.arange(len(tr)));w=solve_projection(gram,cross+chosen*jac.T,chosen)
     folded=(w@transform.double()).float();baseline=evaluate(model.shared_head,x,y,tasks,te);model.shared_head.weight.copy_(folded);candidate=evaluate(model.shared_head,x,y,tasks,te)
     retained=score(candidate)<=score(baseline);weights={'best':cp['model']['shared_head.weight'].clone() if retained else folded,'last':folded};result={}
     partial=disclosure['teacher_uses_EVAL_derivatives'];exposed=np.array([i for i in te if partial and int(ids[i]) in selected[str(tasks[i])]],dtype=int);unexposed=np.setdiff1d(te,exposed)

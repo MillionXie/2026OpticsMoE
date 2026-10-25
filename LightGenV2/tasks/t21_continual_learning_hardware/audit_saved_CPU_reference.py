@@ -69,7 +69,7 @@ def main():
         json.loads((a.run/'protocol.json').read_text()),json.loads(a.postcompletion_binding.read_text()) if a.postcompletion_binding else None)
     a.out.mkdir(parents=True,exist_ok=False);started=time.time();names=TASKS[:ord(a.phase)-64];rows=[]
     put(a.out/'protocol.json',dict(scope='CPU deployment reference, not a replacement successful GPU-parity test',
-        checkpoint_selection='Original GPU mean balanced TEST selection remains unchanged, no reselection',
+        checkpoint_selection='Original saved GPU-selected PT remains unchanged, no reselection',
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         source_SHA256=sha(__file__),model_source_SHA256=sha(Path(__file__).with_name('model.py')),
         original_GPU_report_digest_precommitted=precommitted,

@@ -1,9 +1,19 @@
 import unittest
 import torch
-from .distill_offline_teacher_projection import solve_projection,admit_legacy_partial
+from .distill_offline_teacher_projection import solve_projection,admit_legacy_partial,centered_jacobian_mean
+from .fit_augmented_residual_teacher import ResidualTeacher
 
 
 class ProjectionTests(unittest.TestCase):
+    def test_exact_GELU_teacher_Jacobian_against_autograd(self):
+        torch.manual_seed(7);teacher=ResidualTeacher(torch.randn(10,6,dtype=torch.float64),hidden=4).double().eval()
+        with torch.no_grad():teacher.residual[-1].weight.normal_()
+        x=torch.randn(3,6,dtype=torch.float64);weight=torch.full((3,1),1/3,dtype=torch.float64)
+        actual=centered_jacobian_mean(teacher,x,weight);expected=[]
+        for row in x:
+            expected.append(torch.autograd.functional.jacobian(lambda z:teacher(z[None])[0]-teacher(z[None])[0].mean(),row))
+        expected=torch.stack(expected).mean(0);expected[:,-1]=0
+        torch.testing.assert_close(actual,expected,atol=1e-10,rtol=1e-10)
     def test_exact_linear_teacher(self):
         torch.manual_seed(5);x=torch.randn(200,12,dtype=torch.float64);x[:,-1]=1;w=torch.randn(10,12,dtype=torch.float64)
         fitted=solve_projection(x.T@x/200,x.T@(x@w.T)/200,1e-12)
