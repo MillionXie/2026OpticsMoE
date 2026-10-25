@@ -7,7 +7,7 @@ from pathlib import Path
 
 class TestHardware(unittest.TestCase):
     def test_C_SNR8_is_exact_case_only_and_recorded_not_global_default(self):
-        authorization=json.loads(Path(__file__).with_name('config_LG_C_SNR8_20261025.json').read_text())
+        authorization=json.loads(Path(__file__).with_name('config_LG_C_SNR8_20261025.json').read_text(encoding='utf-8'))
         base=dict(mode='pointwise_dark_p99',authorization='Original fixed2ms permission',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)
         package=dict(architecture='moe',stage='C',checkpoint_sha256=authorization['checkpoint_sha256'],hardware_sha256=authorization['hardware_sha256'],C_SNR8_authorization=authorization,signal_guard_policy=base,TRAIN_stage_signal_calibration=True)
         for stage in ('router','first','final'):

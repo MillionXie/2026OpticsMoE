@@ -123,7 +123,7 @@ def stage_SNR_threshold(package,cfg,stage):
     if stage not in ('router','first','final'):raise ValueError('Unknown optical stage')
     scoped=package.get('C_SNR8_authorization')
     if scoped is None:return 10
-    expected=json.loads(Path(__file__).with_name('config_LG_C_SNR8_20261025.json').read_text())
+    expected=json.loads(Path(__file__).with_name('config_LG_C_SNR8_20261025.json').read_text(encoding='utf-8'))
     if scoped!=expected or package.get('architecture')!='moe' or package.get('stage')!='C' or package.get('checkpoint_sha256')!=expected['checkpoint_sha256'] or package.get('hardware_sha256')!=expected['hardware_sha256']:
         raise ValueError('SNR8 requires exact published LG C/PT/hardware permission')
     if signal_guard_policy(package.get('signal_guard_policy'),cfg.get('exposure_us'))!='pointwise_dark_p99' or not package.get('TRAIN_stage_signal_calibration'):
