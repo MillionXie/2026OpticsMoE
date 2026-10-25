@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 import torch
-from .fit_augmented_residual_teacher import select_sources,ResidualTeacher,augment_train,task_weights
+from .fit_augmented_residual_teacher import select_sources,ResidualTeacher,augment_train,task_weights,teacher_epochs
 
 
 class TeacherTests(unittest.TestCase):
@@ -19,6 +19,10 @@ class TeacherTests(unittest.TestCase):
         x=1+.01*torch.randn(40,12);v=augment_train(x,x.mean(0),x.std(0));self.assertTrue(torch.allclose(v.mean(1),torch.ones(40),atol=1e-6))
     def test_balanced_tasks(self):
         t=np.array(['a']*3+['b']*10);w=task_weights(t);self.assertAlmostEqual(float(w[t=='a'].sum()),.5,places=6)
+    def test_default_budget_unchanged_and_single_extension(self):
+        self.assertEqual(teacher_epochs(None),60)
+        self.assertEqual(teacher_epochs(dict(schema='T21_offline_teacher_fit_budget_v1',teacher_epochs=240)),240)
+        with self.assertRaises(ValueError):teacher_epochs(dict(schema='T21_offline_teacher_fit_budget_v1',teacher_epochs=1000))
 
 
 if __name__=='__main__':unittest.main()

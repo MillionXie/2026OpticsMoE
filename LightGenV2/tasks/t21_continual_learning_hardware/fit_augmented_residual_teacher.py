@@ -64,13 +64,22 @@ def task_weights(tasks):
     return torch.tensor([1/(len(set(tasks))*int((tasks==v).sum())) for v in tasks],dtype=torch.float32)
 
 
+def teacher_epochs(profile):
+    if profile is None:return 60
+    if set(profile)!={'schema','teacher_epochs'} or profile['schema']!='T21_offline_teacher_fit_budget_v1' or profile['teacher_epochs']!=240:
+        raise ValueError('Only fixed240-epoch teacher budget profile supported')
+    return 240
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','out'):p.add_argument('--'+n,type=Path,required=True)
     p.add_argument('--parent-sha256',required=True);p.add_argument('--scope',choices=('train_only','partial_development'),required=True)
+    p.add_argument('--profile',type=Path)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     partial=a.scope=='partial_development'
     if partial and not a.acknowledge_test_derived_development:raise ValueError('Explicit partial-EVAL disclosure required')
+    epochs=teacher_epochs(json.loads(a.profile.read_text()) if a.profile else None)
     torch.set_num_threads(2);torch.manual_seed(20261025);r=json.loads((a.capture/'report.json').read_text())
     if not r['passed'] or r['pilot'] or not r['SDK_released'] or sha(a.capture/'features.npz')!=r['features_sha256']:raise ValueError('Complete sealed capture required')
     model,cp=load_checkpoint(a.parent,a.parent_sha256);before=upstream_state(model)
@@ -92,7 +101,8 @@ def main():
         seed=20261025,EVAL_derivative_sources_per_task=200 if partial else 0,EVAL_derivatives_per_source=10 if partial else 0,
         source_checkpoint_SHA256=a.parent_sha256,capture_features_SHA256=r['features_sha256'],TRAIN_records=len(tr),EVAL_records=len(te),
         teacher='Offline fixed parent Linear plus64-GELU-Dropout.1-Linear10 residual; not deployed',
-        teacher_training='60epochs AdamW lr.001 wd.01, equal task and TRAIN/derivative weights, fixed last no EVAL teacher selection',
+        teacher_training=f'{epochs}epochs AdamW lr.001 wd.01, equal task and TRAIN/derivative weights, fixed last no EVAL teacher selection',
+        teacher_epochs=epochs,teacher_profile_SHA256=sha(a.profile) if a.profile else None,
         student_training='120epochs, TRAIN contrast dropout.05 plus.01 TRAINstd noise; fresh teacher targets on augmented TRAIN, CE.2+KL2(T2)',
         student_original_graph=True,student_trainable_parameters=7840,new_inference_layers=0,maximum_seconds=360,
         SDK=False,GPU=False,CPU_threads=2,augmentation_is_feature_space_not_physical_CCD=True,
@@ -105,7 +115,7 @@ def main():
         tx=torch.cat((train,aug));target_y=torch.cat((ty,ay));weights=torch.cat((task_weights(tt)*.5,task_weights(at)*.5))
     else:tx=train;target_y=ty;weights=task_weights(tt)
     teacher_history=[]
-    for epoch in range(1,61):
+    for epoch in range(1,epochs+1):
         if time.monotonic()-started>240:raise RuntimeError('Finite teacher240s bound reached; preserve evidence')
         teacher.train();total=0.
         for ix in torch.randperm(len(tx)).split(256):
