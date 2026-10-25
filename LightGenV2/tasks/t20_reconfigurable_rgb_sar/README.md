@@ -2,6 +2,18 @@
 
 ## 2026-10-26 追加RGB优化：关系蒸馏（尚无新成绩）
 
+**最新实际运行：**用户要求不再跨窗口协调。本轮改为只在现有服务器工作树用
+`git restore --source 58140b935 --worktree -- <四个T20精确路径>`接收已发布源码；
+不改HEAD/index，不改T21/报告窗口未提交文件，不创建分支、工作树或工程副本。
+这是**已发布Git源码的局部运行overlay，不是干净整仓同步**。运行身份须同时查
+`source_publication_receipt.json`（发布commit58140b935、4源码SHA）及原runtime HEAD ae9e5c0ff，
+不能只用训练协议中的HEAD字段复现。前后其他已修改文件的SHA和index一致已核验。
+68项完整回归和真实TRAIN关系损失反向预检通过（loss .454458），controller125629/
+创建1792949665.77实际启动；先提8个TRAIN视图，再有限优化，未启动SDK。
+所有相关入口退出后再核验并收口仅本轮4个路径的overlay，不覆盖其他窗口改动。
+上轮60步仅读出接续已完成best/last全量CPU，训练/审计退出码0、best仍原父参数，
+last83.3/71.6%；18项证据已本地SHA备份，`runs/preparation_20261025/refit_backup.json`。
+
 用户要求继续提高RGB，前端仍冻结；原四专家/原7840无偏置读出、显示gain、D2NN固定对照均不改。
 从当前已CPU通过的SHA71d（RGB TEST83.4/SAR71.7）作一个有限关系蒸馏接续：
 `config_static_four_relational_KD_20261026.json`、run `static4_relational_KD_20261026/MoE_AB`。
