@@ -50,6 +50,12 @@ LG C完整CPU最佳已确认为756/734/756，gain/旧专家及CPU导出可重复
 旧专家/显示增益冻结，完整轮边界3600秒保护；仅已授权空闲非A100/40%共享，noSDK。
 每个候选同一PT完整三任务，E0保底，结束自动原完整CPU图bestlast审计；不部署未准入C，不把旧D拼到新C，
 如C通过后仍需真实新D接续。该新增LG预算不声称与已冻结D2NN等训练预算。
+52项回归测试及实际原TRAIN反向/冻结预检通过后，新C已真实启动于
+`runs/simulation/LG_C_twoepoch_optics_20261025`，启动commit`2ccbf5a631cbbbeb153ff4239144e202d91c1c17`、
+wrapper PID3113156、物理3号4090 UUID`GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`，40%上限；
+首轮已实际处理TRAIN4000、loss1.10653，不以PID代替进度，完成接同PT完整CPU bestlast审计。
+独立D2NN D采集同期9412/11800，无新相机设置或SDK争用；本轮5个教师/学生/投影运行的完整本地SHA索引在
+`runs/preparation_20261025/expanded_teachers/{Cteacher,Bteacher,Banchor,Cproject,Bproject}_backup/manifest.json`。
 
 ### 2026-10-25 继续增强B教师：原学生不变、完整质量门槛后再蒸馏
 
