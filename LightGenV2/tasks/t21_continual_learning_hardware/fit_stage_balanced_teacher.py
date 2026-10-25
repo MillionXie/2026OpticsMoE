@@ -23,6 +23,7 @@ from .train_native import put,sha
 
 def validate_profile(cfg):
     name={2:'config_stage_B800_teacher_20261025.json',3:'config_stage_C500_teacher_20261025.json'}.get(cfg.get('stage'))
+    if cfg.get('stage')==2 and cfg.get('sources_per_task',{}).get('eurosat')==200:name='config_stage_B800_Euro200_teacher_20261025.json'
     if name is None or cfg!=json.loads(Path(__file__).with_name(name).read_text()):
         raise ValueError('Only published finite B800/C500 development profiles')
     return cfg

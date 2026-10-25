@@ -7,7 +7,7 @@ from .fit_stage_balanced_teacher import validate_profile,nested_pair_sources,der
 
 class StageTeacherTests(unittest.TestCase):
     def test_profiles_are_exact_and_finite(self):
-        for stage in ('B800','C500'):
+        for stage in ('B800','B800_Euro200','C500'):
             cfg=json.loads(Path(__file__).with_name('config_stage_'+stage+'_teacher_20261025.json').read_text());validate_profile(cfg)
             for key,value in [('teacher_epochs',10000),('SDK',True),('TRAIN_floor',0.)]:
                 with self.assertRaises(ValueError):validate_profile(dict(cfg,**{key:value}))
