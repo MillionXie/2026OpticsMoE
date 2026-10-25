@@ -1,5 +1,20 @@
 # T20 RGB/SAR 可重构光学系统：光路适配准备
 
+## 2026-10-26 追加RGB优化：关系蒸馏（尚无新成绩）
+
+用户要求继续提高RGB，前端仍冻结；原四专家/原7840无偏置读出、显示gain、D2NN固定对照均不改。
+从当前已CPU通过的SHA71d（RGB TEST83.4/SAR71.7）作一个有限关系蒸馏接续：
+`config_static_four_relational_KD_20261026.json`、run `static4_relational_KD_20261026/MoE_AB`。
+复用TRAIN-only强教师85e，除正确TRAIN目标logit KD与CE外，将教师256维池化表示与学生
+原784维末层CCD表示的**同传感器样本间距离/角度**对齐，方法参考
+[Park et al., CVPR 2019](https://openaccess.thecvf.com/content_CVPR_2019/html/Park_Relational_Knowledge_Distillation_CVPR_2019_paper.html)。
+不要求两表示维数相同，不加学生投影层或新推理模块；教师不部署，不使用TEST/TEST增强训练。
+距离/角度权重2/4、原图比例.5、D4 TRAIN增强、不叠原图dropout以避免关系目标不一致，
+光学LR3e-4/头1e-4、最多30轮/min15/patience12，RGB优先且SAR验证>=71%选择一个PT。
+关系损失逐轮记录，锁定后完整TEST2000及best/last严格CPU；若未超过父候选，保留父版不称提升。
+此为已经反复查看TEST后的开发跟进，不声称新的独立盲测。目标RGB>=87.8%不保证、不压低D2NN。
+仅T20源码通过Git发布后服务器训练；T21/共享硬件计算图与所有现场参数不改，无SDK、无定时任务。
+
 ## 2026-10-26 RGB优化跟进：前端冻结，RGB领先5pp目标尚未达到
 
 ### 最新已完整CPU复核的增强读出结果
