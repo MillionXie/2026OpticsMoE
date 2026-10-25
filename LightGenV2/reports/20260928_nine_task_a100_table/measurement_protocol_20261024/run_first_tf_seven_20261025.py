@@ -20,16 +20,19 @@ def main():
     import fcntl
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--deadline',type=float,required=True)
-    p.add_argument('--remaining-two',action='store_true');p.add_argument('--previous-suite',type=Path);p.add_argument('--previous-suite-sha256')
+    p.add_argument('--remaining-two',action='store_true');p.add_argument('--remaining-t12',action='store_true');p.add_argument('--previous-suite',type=Path);p.add_argument('--previous-suite-sha256')
     args=p.parse_args();root=args.output.resolve()
     if root.exists() or not root.is_relative_to(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation') or not 0<args.deadline-time.time()<=21600:raise ValueError('New bounded suite required')
     retained=[]
-    if args.remaining_two:
+    if args.remaining_two or args.remaining_t12:
         if args.previous_suite is None or args.previous_suite_sha256 is None:raise ValueError('Exact stopped predecessor required')
         previous=args.previous_suite/'suite_status.json';assert sha(previous)==args.previous_suite_sha256
         state=json.loads(previous.read_text());assert state['status']=='stopped' and state['mps_released'] is True
         assert not Path('/proc',str(state['pid'])).exists() and not Path('/proc',str(state['child_pid'])).exists()
-        retained=state['completed'];assert len(retained)==15 and {x['name'].split('_')[0] for x in retained}=={'02','03','04','05','06'}
+        retained=state.get('retained_completed',[])+state['completed'] if args.remaining_t12 else state['completed']
+        if args.remaining_t12:
+            assert not args.remaining_two and len(retained)==19 and {x['name'] for x in retained}=={f'{k:02d}_qwen_repeat{j:02d}' for k in range(2,9) for j in (1,2,3)}-{'08_qwen_repeat02','08_qwen_repeat03'}
+        else:assert len(retained)==15 and {x['name'].split('_')[0] for x in retained}=={'02','03','04','05','06'}
         for x in retained:
             summary=Path(x['folder'])/'first_tf_summary.json';assert sha(summary)==x['summary_sha256'];assert json.loads(summary.read_text())['status']=='complete'
     elif args.previous_suite is not None or args.previous_suite_sha256 is not None:raise ValueError('Unused predecessor prohibited')
@@ -71,10 +74,12 @@ def main():
         engine.daemon(True);active=True
         env=dict(os.environ,CUDA_VISIBLE_DEVICES=GPU,CUDA_DEVICE_ORDER='PCI_BUS_ID',CUDA_MPS_PIPE_DIRECTORY=engine.PIPE,
             CUDA_MPS_ACTIVE_THREAD_PERCENTAGE='100',OMP_NUM_THREADS='8',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
-        for key,task,old,mode in templates(args.remaining_two):
+        for key,task,old,mode in templates(args.remaining_two or args.remaining_t12):
+          if args.remaining_t12 and key!='08':continue
           for repeat in (1,2,3):
+            if args.remaining_t12 and repeat==1:continue
             stable();base=REPO/'LightGenV2/tasks'/task/'runs/simulation';template=base/old/'qwen_repeat01/identity.json'
-            version='02' if args.remaining_two else '01'
+            version='03' if args.remaining_t12 else '02' if args.remaining_two else '01'
             folder=base/('a100_first_tf_core_'+key+'_20261025_'+version)/f'qwen_repeat{repeat:02d}'
             if folder.exists():raise ValueError('Refuse to rerun existing point')
             name=f'{key}_qwen_repeat{repeat:02d}';deadline=min(args.deadline,time.time()+7199)
