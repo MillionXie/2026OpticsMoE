@@ -4,7 +4,7 @@ import argparse,json,os,subprocess,sys,time
 from pathlib import Path
 HERE=Path(__file__).resolve().parent;REPO=HERE.parents[3]
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
-from first_tf_supplement_20261025 import sha,write
+from first_tf_supplement_20261025 import sha,write,serialize_mps_commands
 GPU='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
 def templates(remaining_two=False):
     result=[
@@ -17,10 +17,12 @@ def templates(remaining_two=False):
       ('08','t12_text_to_image','a100_gpu_checked_remaining_20261025_01','language')]
     return [x for x in result if x[0] in ('07','08')] if remaining_two else result
 def main():
+    serialize_mps_commands()
     import fcntl
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--deadline',type=float,required=True)
     p.add_argument('--remaining-two',action='store_true');p.add_argument('--remaining-t12',action='store_true');p.add_argument('--previous-suite',type=Path);p.add_argument('--previous-suite-sha256')
+    p.add_argument('--continuation-version',default='03',choices=('03','04'))
     args=p.parse_args();root=args.output.resolve()
     if root.exists() or not root.is_relative_to(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation') or not 0<args.deadline-time.time()<=21600:raise ValueError('New bounded suite required')
     retained=[]
@@ -79,7 +81,7 @@ def main():
           for repeat in (1,2,3):
             if args.remaining_t12 and repeat==1:continue
             stable();base=REPO/'LightGenV2/tasks'/task/'runs/simulation';template=base/old/'qwen_repeat01/identity.json'
-            version='03' if args.remaining_t12 else '02' if args.remaining_two else '01'
+            version=args.continuation_version if args.remaining_t12 else '02' if args.remaining_two else '01'
             folder=base/('a100_first_tf_core_'+key+'_20261025_'+version)/f'qwen_repeat{repeat:02d}'
             if folder.exists():raise ValueError('Refuse to rerun existing point')
             name=f'{key}_qwen_repeat{repeat:02d}';deadline=min(args.deadline,time.time()+7199)

@@ -12,6 +12,21 @@ sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def write(p,v):Path(p).write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
+
+def serialize_mps_commands():
+    """Serialize FIFO control queries across parent and worker; never retry/ignore failures."""
+    import fcntl,os,subprocess,threading
+    if getattr(subprocess.run,'first_tf_serialized',False):return
+    original=subprocess.run;local=threading.Lock()
+    def serial(args,*a,**kw):
+        if not isinstance(args,(list,tuple)) or Path(str(args[0])).name!='nvidia-cuda-mps-control':return original(args,*a,**kw)
+        pipe=(kw.get('env') or os.environ).get('CUDA_MPS_PIPE_DIRECTORY')
+        if not pipe:return original(args,*a,**kw)
+        with local,Path(str(pipe)+'.query.lock').open('a') as lock:
+            fcntl.flock(lock,fcntl.LOCK_EX)
+            try:return original(args,*a,**kw)
+            finally:fcntl.flock(lock,fcntl.LOCK_UN)
+    serial.first_tf_serialized=True;subprocess.run=serial
 def readrows(p):
     csv.field_size_limit(10000000)
     with Path(p).open(encoding='utf-8-sig',newline='') as f:return list(csv.DictReader(f))
@@ -48,6 +63,7 @@ def integrate(intervals,power):
     return dict(wall_s=wall,board_j=energy,host_proxy_j=338.2*wall,system_j=energy+338.2*wall,max_support_age_s=age)
 
 def main():
+    serialize_mps_commands()
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--template',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--mode',choices=['vision','language'],required=True);p.add_argument('--repeat',type=int,required=True)
