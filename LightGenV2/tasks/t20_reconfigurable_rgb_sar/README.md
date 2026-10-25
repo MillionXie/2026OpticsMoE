@@ -68,26 +68,26 @@ TRAIN翻转/弱遮挡、TRAIN教师及其蒸馏，不训练TEST/TEST增强；按
 完整启动命令、数据/源码SHA和测试原文保存在同名`.launch.json`及`runs/preparation_20261025/four_start.json`。
 尚无这版完整最终精度，不以此前小专家口径成绩冒充本版。
 
-### 当前运行索引（2026-10-25；未进入光路）
+### 历史诊断运行索引（2026-10-25；不是当前四专家部署候选）
 
 | run | 输入/前端 | 用途与状态 |
 | --- | --- | --- |
 | `unified_static_native8_20261025` | v1分模态位置、原冻结CLEVR前端 | 三case及best/last完整CPU已结束，精度不足；原数据/权重/逐样本保留 |
 | `unified_conditioned_native8_20261025` | v1同布局，先拟合读出再调光学 | 被输入诊断否定后停止自己的controller/trainer；PT可加载及SHA确认后停止，`superseded.json`留证，不是数值异常重启 |
-| `unified_sensorneutral_native8_20261025` | v2同一三通道布局、原冻结CLEVR前端 | PID3296324/创建1792916031.45；MoE→D2NN_RGB→D2NN_AB，有限训练和CPU审计继续；不热改数值源码 |
+| `unified_sensorneutral_native8_20261025` | v2同一三通道布局、原冻结CLEVR前端 | 三case训练/CPU均已完成，三项原数值门槛均未通过；不是当前运行 |
 | `frontend_domain_diagnostic_20261025` | 同32128参数前端，在本TRAIN两域预训练 | 辅助诊断完成；临时分类头VAL RGB78.6/SAR72.8，不是光学成绩，不替换T21前端 |
-| `domain_frontend_frozen_optics_20261025` | v3同布局、两模型共享上项固定前端 | PID3322892/创建1792916989.63；冻结各自原相位、仅拟合原7840读出，再完整CPU复核的受控对照 |
-| `robust_readout_native8_20261025` | 同v3推理合同，TRAIN原图/翻转/原图区域dropout及同前端临时头蒸馏 | PID3349346/创建1792917974.51；仍只原7840读出，两个传感器/模型同规则，完整CPU审计中 |
+| `domain_frontend_frozen_optics_20261025` | v3同布局、两模型共享上项固定前端 | 三case完成，D2NN数值门槛通过，MoE最大概率差超门槛；冻结相位/仅读出控制 |
+| `robust_readout_native8_20261025` | 同v3推理合同，TRAIN原图/翻转/原图区域dropout及同前端临时头蒸馏 | 三case及CPU完成并通过数值门槛；仍为历史16槽小专家口径 |
 | `domain_frontend_weightnorm_20261025` | 与v3相比仅增加折回原读出的W范数惩罚 | 三case及best/last完整CPU已完成，原数值门槛均通过；用于隔离高增益读出敏感性 |
-| `shared_frontend_joint_native8_20261025` | 同一遥感TRAIN前端与v3输入合同，已有光学/电子共同小步训练 | PID3394881/创建1792919604.18，源码b1ded9d45；三case实际TRAIN反向通过，有限40轮→末端拟合→CPU自动接续 |
+| `shared_frontend_joint_native8_20261025` | 同一遥感TRAIN前端与v3输入合同，已有光学/电子共同小步训练 | 三case及CPU完成；MoE有1条CPU/GPU argmax差异未过旧门槛，两个D2NN通过 |
 
 完整新增结果（每格固定TEST1000，均非实拍；不同run不能逐格拼PT）：
 
 | case | 原冻结CLEVR前端+修正布局/60轮(v2) | 同规格遥感TRAIN前端+固定旧相位/原读出(v3) |
 | --- | --- | --- |
-| MoE_AB | RGB73.6/SAR60.7，CPU复核中 | RGB82.1/SAR71.0 |
-| D2NN_RGB | 接续训练中 | RGB80.8/SAR33.4 |
-| D2NN_AB_control | 队列后继 | RGB79.5/SAR69.4 |
+| MoE_AB | GPU RGB73.6/SAR60.7；CPU SAR60.8，数值未过 | RGB82.1/SAR71.0 |
+| D2NN_RGB | RGB67.0/SAR12.6，数值未过 | RGB80.8/SAR33.4 |
+| D2NN_AB_control | GPU RGB70.2/SAR56.1；CPU SAR56.0，数值未过 | RGB79.5/SAR69.4 |
 
 v3三个best/last均已完成严格CPU原图重放，argmax与GPU全部一致；两个D2NN最大概率误差.000632/.000642通过原.002门槛。
 **MoE最大概率差.005509未过原门槛**，不能仅因分类一致就宣称全部通过；原报告保留且未放宽门槛。
@@ -127,7 +127,7 @@ T21代码、权重与光路不变；所有本轮GPU工作只用原授权物理1�
 best/last/协议/历史/逐样本/CPU报告及诊断等36项已本地备份逐项SHA复验，清单`runs/preparation_20261025/baseline_backup_manifest.json`。
 这只证明原失败基线的复现性，不证明性能/趋势已达标。后续v2/v3仍须分别严格CPU核验和同一批ID完整比较后再决定是否可上机。
 
-## 2026-10-25 跟进：定位适配输入问题，统一单传感器布局（最新）
+## 历史v2：定位适配输入问题，统一单传感器布局
 
 本轮仍只写T20，不修改T21及其共享的`hardware_aware.py`。旧17µm包及已运行候选全部保留。
 第一轮v1锁定MoE TEST为RGB635/1000、SAR354/1000；RGB-only D2NN为641/1000、96/1000，均未恢复旧趋势。
@@ -160,7 +160,7 @@ v1的conditioned接续先拟合高增益读出再更新光学，早期损失上�
 `audit_sensor_neutral_CPU.py`在best/last上执行完整CPU重放、原相位/gain/逐样本/CPU-GPU差异核验，不据复核重新选模。
 仿真达标和物理pilot前不启动SDK；不接管另一分支的光路或任务。
 
-## 2026-10-25 最新接手范围：新包审计与统一T21后端（覆盖下文旧准备状态）
+## 历史初始审计：新包与T21后端的差别
 
 本对话仅负责T20，T21训练、光路、原公共模块保持只读；特别不得修改T21继承的本任务`hardware_aware.py`。
 用户要求核对`../EuroSAT_MoE_D2NN_完整数据代码与训练说明_20261025.zip`，
