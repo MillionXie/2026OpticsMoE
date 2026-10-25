@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import time
 import textwrap
+from types import MethodType
 
 import lgvq_hoisted_pipeline_20261026 as hoisted
 
@@ -76,12 +77,32 @@ def prepare_graph_constants(model):
         namespace=dict(original.__globals__,_graph_constant=constant)
         exec(compile(constant_allocation_AST(inspect.getsource(original)),inspect.getsourcefile(original)+'::constant_only','exec'),namespace)
         setattr(module,name,namespace[name])
+    fusion_originals=[]
+    for fusion in model.fusions:
+        original=fusion.forward;namespace=dict(original.__func__.__globals__)
+        exec(compile(deferred_diagnostics_AST(inspect.getsource(original)),inspect.getsourcefile(original)+'::deferred_diagnostics','exec'),namespace)
+        fusion_originals.append((fusion,original));fusion.forward=MethodType(namespace['forward'],fusion)
     def restore():
         for name,original in originals.items():setattr(module,name,original)
+        for fusion,original in fusion_originals:fusion.forward=original
     return restore,dict(only_immutable_new_tensor_allocations_precreated=True,
         phase_fraction=float(model.settings.unmodulated_power_fraction_eval),routing_bits=[1.0,2.0,4.0,8.0],
         dtype='torch.float32',no_phase_or_route_result_cache=True,
+        diagnostic_CPU_scalar_reads_deferred=True,all_diagnostic_GPU_arithmetic_retained=True,
         original_functions_restored_for_post_timing_reference=True)
+
+
+def deferred_diagnostics_AST(source):
+    """Keep every GPU statistic; defer ONLY float(Tensor) host synchronization."""
+    tree=ast.parse(textwrap.dedent(source));changed=0
+    for node in ast.walk(tree):
+        if isinstance(node,ast.Assign) and any(isinstance(t,ast.Attribute) and t.attr=='last_diagnostics' for t in node.targets):
+            assert isinstance(node.value,ast.Dict) and len(node.value.values)==4
+            for i,value in enumerate(node.value.values):
+                assert isinstance(value,ast.Call) and isinstance(value.func,ast.Name) and value.func.id=='float' and len(value.args)==1
+                node.value.values[i]=value.args[0];changed+=1
+    assert changed==4
+    return ast.fix_missing_locations(tree)
 
 
 def graph_timed(model,front,position,raw,guard,folder):
@@ -97,14 +118,16 @@ def graph_timed(model,front,position,raw,guard,folder):
     static={k:torch.empty_like(raw[0][k]) for k in ('pixels','quality','ids','mask')}
     stream=torch.cuda.Stream();graph=torch.cuda.CUDAGraph();captured_output=None
     origin=torch.cuda.Event(enable_timing=True);origin.record();origin.synchronize()
-    events=[];outputs=[];tokens=[];pending=deque();capture=None
+    events=[];outputs=[];diagnostic_outputs=[];tokens=[];pending=deque();capture=None
     counter=dict(passes=0);handles=[]
     for name in ('parallel_router','parallel_optics','serial_router','serial_optics'):
         def count(*args):counter['passes']+=1
         handles.append(getattr(model,name).propagation.register_forward_pre_hook(count))
     def full_forward():
         batch=base.native_lg_front(front,position,static,hoisted.minimal.NoInnerTimer(),stream)
-        return native.forward(model,batch)
+        task=native.forward(model,batch)
+        diagnostics=torch.stack([value for fusion in model.fusions for value in fusion.last_diagnostics.values()])
+        return dict(task=task,diagnostics=diagnostics)
     host_start=time.perf_counter()
     try:
         with torch.inference_mode(),torch.cuda.stream(stream):
@@ -123,7 +146,7 @@ def graph_timed(model,front,position,raw,guard,folder):
                 if kind=='eager_real':
                     previous=counter['passes'];result=full_forward()
                     assert counter['passes']-previous==6
-                    prediction=result['prediction'].clone()
+                    prediction=result['task']['prediction'].clone();diagnostic=result['diagnostics'].clone()
                 else:
                     if field==EAGER_REAL_FIELDS:
                         # Prior eager calls are actual first48 measured videos.
@@ -136,8 +159,8 @@ def graph_timed(model,front,position,raw,guard,folder):
                             host_ms=(capture_end-capture_start)*1000,captured_original_full_field_propagation_calls=6,
                             capture_records_operations_without_executing_a_discarded_prediction=True,
                             first48_eager_video_results_retained=True)
-                    graph.replay();prediction=captured_output['prediction'].clone()
-                end.record();events.append(dict(field=field,kind=kind,start=start,end=end));outputs.append(prediction)
+                    graph.replay();prediction=captured_output['task']['prediction'].clone();diagnostic=captured_output['diagnostics'].clone()
+                end.record();events.append(dict(field=field,kind=kind,start=start,end=end));outputs.append(prediction);diagnostic_outputs.append(diagnostic)
                 pending.append((end,ids,mask))
                 # Bound queued graph replays and pinned-input lifetime.
                 if kind=='eager_real':end.synchronize()
@@ -151,7 +174,10 @@ def graph_timed(model,front,position,raw,guard,folder):
         array=torch.cat(outputs).float().cpu().numpy()
         assert array.shape==(128,16) and np.isfinite(array).all()
         assert all(np.array_equal(array[:32],array[32*c:32*(c+1)]) for c in (1,2,3))
-        np.savez_compressed(folder/'graph_outputs.npz',prediction=array)
+        diagnostics=torch.stack(diagnostic_outputs).float().cpu().numpy()
+        assert diagnostics.shape==(128,16) and np.isfinite(diagnostics).all()
+        assert all(np.array_equal(diagnostics[:32],diagnostics[32*c:32*(c+1)]) for c in (1,2,3))
+        np.savez_compressed(folder/'graph_outputs.npz',prediction=array,diagnostics=diagnostics)
         base.write(folder/'graph_timing.json',dict(status='complete',video_calls=2048,unique_videos=512,fields=128,frames_per_field=64,
             continuous_GPU_timeline_ms=elapsed,first_GPU_front_start_ms=begin,last_GPU_score_ms=rows[-1]['end_ms'],
             dispatch_to_last_score_host_ms=(host_end-host_start)*1000,time16_ms=elapsed/128,equivalent_frame_ms=elapsed/8192,
@@ -162,6 +188,8 @@ def graph_timed(model,front,position,raw,guard,folder):
             original_function='lab_runtime.forward plus original native frontend',all_input_adapters_inside_captured_original_graph=True,
             raw_inputs_copied_on_every_field=True,all_neural_features_recomputed_on_every_graph_replay=True,
             online_CPU_tokenizer=True,original_dtype_and_precision_unchanged=True,
+            fusion_diagnostic_GPU_arithmetic_and_copy_included=True,
+            fusion_diagnostic_CPU_readback_batched_after_last_score=True,
             prefixes=[dict(video_calls=n,time16_ms=(rows[n//16-1]['end_ms']-begin)*16/n) for n in base.prefixes()],
             steady=base.steady_report([r['end_ms']-begin for r in rows])))
         base.write(folder/'online_tokenizer.json',dict(records=tokens,CPU_work_sum_ms=sum((r['end']-r['start'])*1000 for r in tokens),
@@ -172,8 +200,11 @@ def graph_timed(model,front,position,raw,guard,folder):
         with torch.inference_mode(),torch.cuda.stream(stream):
             batch=base.native_lg_front(front,position,raw[31],hoisted.minimal.NoInnerTimer(),stream)
             original=native.forward(model,batch)
-            equal_tree(original,captured_output)
+            equal_tree(original,captured_output['task'])
+            expected_diagnostics=np.asarray([v for fusion in model.fusions for v in fusion.last_diagnostics.values()],dtype=np.float32)
+            assert np.array_equal(expected_diagnostics,diagnostics[-1])
         base.write(folder/'full_output_equivalence.json',dict(status='passed',original_last_full_tree_vs_graph_bitwise_equal=True,
+            all_16_last_field_diagnostics_equal_original=True,all_fields_diagnostic_tensors_saved=True,
             validation_after_timing=True,no_forward_omitted=True))
         return array
     except BaseException as error:

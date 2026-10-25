@@ -1,5 +1,17 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26：Graph02诊断同步捕获失败已保全；Graph03仅延后诊断CPU读回
+
+Graph02/controller518309及worker518328已stopped退出、MPS释放，15原文件420401B
+经backup_receipt_capture_stop01.json逐SHA取回，外日志746B SHA
+19cf2a2b341f1eee8fd986503f428031e6f75c02ca7f4b83b8baa346132c8311。
+精确原因为四融合层last_diagnostics中16个float(Tensor)强制CPU同步，非数值不一致。
+Graph03候选保留全部诊断GPU算术，仅把诊断量逐场留在GPU并在末评分后一次读回；
+原完整评分/精度不变，每场诊断张量仍计入GPU窗，128场全部保存且末场和原诊断逐位核对。
+融合函数AST仅替换last_diagnostics四值的外层float，其他节点不变，测速后恢复原函数。
+此为“诊断读回延后＋原GPU指令图复用”的合并实现优化，不称单纯并行或模型运算减少。
+8项无模型测试本地通过；失败01/02不追认成本，不重启原根。Qwen不改不重测。
+
 ## 2026-10-26：Graph01捕获常量分配不兼容已保全，固定常量前置后另建02
 
 Graph01/controller493815及worker493835已stopped退出、MPS释放、无合格graph成本。
