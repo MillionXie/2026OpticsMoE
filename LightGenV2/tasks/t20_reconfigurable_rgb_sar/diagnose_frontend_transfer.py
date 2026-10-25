@@ -13,6 +13,20 @@ from .diagnose_unified import ridge_weights,class_scores
 
 
 @torch.no_grad()
+def checked_features(data,path,expected_sha256):
+    """Pinned TRAIN-only same32128 structure; no temporary head in encoding."""
+    if sha(path)!=expected_sha256:raise ValueError('Locked frontend identity differs')
+    cp=torch.load(path,map_location='cpu',weights_only=False)
+    if cp['TEST_access'] is not False or cp['config']['feature_parameters']!=32128:raise ValueError('Wrong frontend provenance')
+    model=VisionEncoder();model.load_state_dict(cp['model'],strict=True);model.eval().requires_grad_(False)
+    if sum(p.numel() for p in model.features.parameters())!=32128:raise ValueError('Changed frontend architecture')
+    rows=[model(torch.from_numpy(data['images'][i:i+128]))[0].half() for i in range(0,len(data['labels']),128)]
+    result=torch.cat(rows)
+    if not torch.isfinite(result).all():raise ValueError('Nonfinite fixed frontend')
+    return result
+
+
+@torch.no_grad()
 def main():
     p=argparse.ArgumentParser(__doc__)
     p.add_argument('--data',type=Path,required=True);p.add_argument('--out',type=Path,required=True)

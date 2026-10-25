@@ -37,6 +37,14 @@ class StaticFourTests(unittest.TestCase):
         with self.assertRaises(ValueError):validate(dict(cfg,epochs=9999))
         code=Path(__file__).with_name('train_shared_frontend.py').read_text()
         self.assertLess(code.index('locked_before_TEST.json'),code.index("test=load_arrays(a.data,'test')"))
+    def test_aligned_continuation_pins_one_frontend_and_same_graph(self):
+        cfg=json.loads(Path(__file__).with_name('config_static_four_aligned_20261025.json').read_text());validate(cfg)
+        self.assertEqual(cfg['contract'],CONTRACT);self.assertTrue(cfg['continuation'])
+        self.assertEqual(cfg['frontend_SHA256'],'b3a5c165cceeb4fb3329d951ddecbe7a03d4804c1dcecb2f081081ff461cf083')
+        self.assertEqual(cfg['cases'],['MoE_AB','D2NN_RGB','D2NN_AB_control'])
+        self.assertFalse(cfg['TEST_gradients']);self.assertFalse(cfg['TEST_teacher'])
+        audit=Path(__file__).with_name('audit_sensor_neutral_CPU.py').read_text()
+        self.assertIn('build_static_four if four',audit);self.assertIn('checked_features(data,a.frontend,front_sha)',audit)
 
 
 if __name__=='__main__':unittest.main()
