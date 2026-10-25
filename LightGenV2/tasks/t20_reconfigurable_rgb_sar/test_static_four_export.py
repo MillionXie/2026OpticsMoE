@@ -1,7 +1,7 @@
 import unittest
 import torch
 from .static_four import build_static_four,geometry
-from .export_static_four_phase import canonicalize,phase_codes,compare
+from .export_static_four_phase import canonicalize,phase_codes,compare,dataset_digest
 
 
 class StaticExportTests(unittest.TestCase):
@@ -19,6 +19,11 @@ class StaticExportTests(unittest.TestCase):
         a=dict(ids=['a'],labels=[0],domains=[1],predictions=[1],probabilities=[[.1,.4501,.4499]])
         b=dict(a,predictions=[2],probabilities=[[.1,.4499,.4501]])
         self.assertFalse(compare(a,b,.002)['passed']);self.assertTrue(compare(a,a,0.)['passed'])
+
+    def test_both_published_manifest_schema_names_and_conflicts(self):
+        self.assertEqual(dataset_digest(dict(dataset_manifest_sha256='abc')),'abc')
+        self.assertEqual(dataset_digest(dict(data_manifest_sha256='abc')),'abc')
+        with self.assertRaises(ValueError):dataset_digest(dict(dataset_manifest_sha256='a',data_manifest_sha256='b'))
 
 
 if __name__=='__main__':unittest.main()

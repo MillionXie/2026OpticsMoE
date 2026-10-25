@@ -24,6 +24,12 @@ def compare(reference,actual,tolerance):
     return dict(argmax_disagreements=len(delta),differing_indices=delta.tolist(),maximum_probability_error=error,tolerance=tolerance,passed=not len(delta) and error<=tolerance)
 
 
+def dataset_digest(protocol):
+    values={protocol[key] for key in ('dataset_manifest_sha256','data_manifest_sha256') if key in protocol}
+    if len(values)!=1:raise ValueError('Missing or conflicting original dataset manifest identity')
+    return values.pop()
+
+
 @torch.no_grad()
 def main():
     parser=argparse.ArgumentParser(__doc__)
@@ -33,7 +39,7 @@ def main():
     receipt=json.loads((a.run/'completion.json').read_text());protocol=json.loads((a.run/'protocol.json').read_text());audit=json.loads((a.run.parent/(a.run.name+'_CPU')/'best.json').read_text());path=a.run/'best_checkpoint.pt';original_sha=sha(path)
     assert receipt['contract']==protocol['contract']==CONTRACT and receipt['best_sha256']==audit['checkpoint_SHA256']==original_sha
     assert not protocol['selection_uses_TEST'] and not protocol['TEST_gradients'] and not protocol['TEST_teacher']
-    assert sha(a.frontend)==receipt['frontend_SHA256']==protocol['frontend_sha256'] and sha(a.data/'manifest.json')==protocol['data_manifest_sha256']
+    assert sha(a.frontend)==receipt['frontend_SHA256']==protocol['frontend_sha256'] and sha(a.data/'manifest.json')==dataset_digest(protocol)
     cp=torch.load(path,map_location='cpu',weights_only=False);assert cp['contract']==CONTRACT and cp['frontend_sha256']==protocol['frontend_sha256']
     for name,value in protocol['frozen_state_sha256'].items():assert tensor_sha(cp['model'][name])==value
     state,proof=canonicalize(cp['model']);model=build_static_four(cp['architecture']);model.load_state_dict(state,strict=True);model.eval();assert geometry(model)==protocol['geometry']
