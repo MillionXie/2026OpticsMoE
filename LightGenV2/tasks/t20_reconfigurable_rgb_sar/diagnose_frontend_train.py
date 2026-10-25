@@ -17,7 +17,7 @@ from LightGenV2.tasks.t21_continual_learning_hardware.train_native import sha,pu
 
 @torch.no_grad()
 def score(model,x,data):
-    model.eval();logits=torch.cat([model(v)[1].cpu() for v in x.split(128)])
+    model.eval();logits=torch.cat([model(v)[1][:,:10].cpu() for v in x.split(128)])
     return scores_from_logits(logits,data)
 
 
@@ -38,7 +38,7 @@ def main():
         for group,lr in zip(optimizer.param_groups,(cfg['feature_lr'],cfg['temporary_head_lr'])):group['lr']=lr*factor
         for ix in balanced_batches(train,[0,1],cfg['batch_size'],cfg['seed']+epoch):
             x=tx[ix].clone();h=torch.rand(len(x),device='cuda')<cfg['TRAIN_horizontal_flip_probability'];v=torch.rand(len(x),device='cuda')<cfg['TRAIN_vertical_flip_probability'];x[h]=x[h].flip(2);x[v]=x[v].flip(1)
-            logits=model(x)[1];cost=F.cross_entropy(logits,y[ix],label_smoothing=cfg['label_smoothing']);optimizer.zero_grad(set_to_none=True)
+            logits=model(x)[1][:,:10];cost=F.cross_entropy(logits,y[ix],label_smoothing=cfg['label_smoothing']);optimizer.zero_grad(set_to_none=True)
             if not torch.isfinite(cost):raise RuntimeError('Nonfinite auxiliary TRAIN objective')
             cost.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),5.);optimizer.step();total+=float(cost.detach())*len(ix);seen+=len(ix);correct+=int((logits.argmax(1)==y[ix]).sum())
         scores=score(model,vx,val);value=selection(scores,[0,1]);row=dict(epoch=epoch,TRAIN_loss=total/seen,TRAIN_accuracy=correct/seen,validation=scores['scores']);history.append(row)
