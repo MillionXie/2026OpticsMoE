@@ -12,7 +12,7 @@ from torch.nn import functional as F
 from .distill_capacity_matched_stage import TRAIN_queries
 from .fit_augmented_residual_teacher import residual_teacher_from_artifact
 from .fit_stage_balanced_teacher import derivatives
-from .fit_gated_linear_teacher import DISCLOSURE
+from .fit_gated_linear_teacher import DISCLOSURE,paired_indices,paired_derivative_noise,paired_margin_loss
 from .audit_student_transfer import linear_projection
 from .hardware_bridge import load_checkpoint
 from .refine_native_readout import upstream_state
@@ -55,13 +55,42 @@ def smooth_tail(values,threshold,fraction=.4):
     return threshold+(.05*F.softplus((values-threshold)/.05)).mean()/fraction
 
 
+def robust_queries(x,labels,tasks,ids,cfg):
+    """TRAIN-only bounded noise, shared within each original binary pair."""
+    std=x.std(0,unbiased=False);pairs=paired_indices(ids,labels.numpy(),tasks);values=[x]
+    for repeat in range(cfg['TRAIN_augmentations']):
+        q=(x+paired_derivative_noise(x,std,cfg['TRAIN_noise_std'][repeat%3],pairs)).clamp_min(0);values.append(q/q.mean(1,keepdim=True).clamp_min(1e-12))
+    return torch.cat(values),np.tile(tasks,len(values))
+
+
+def robust_derivatives(x,y,tasks,ids,train,exposed):
+    """Same sealed sources/count; stronger same-class TRAIN mixing, no new IDs."""
+    std=x[train].std(0,unbiased=False);values=[];source=x[exposed];pairs=paired_indices(ids[exposed],y[exposed].numpy(),tasks[exposed])
+    for repeat in range(10):
+        partner=torch.empty_like(source)
+        for name in sorted(set(tasks[exposed])):
+            ix=np.flatnonzero(tasks[exposed]==name);pool=train[tasks[train]==name]
+            if name=='eurosat':
+                for i in ix:
+                    choices=pool[y[pool].numpy()==int(y[exposed[i]])];partner[i]=x[choices[int(torch.randint(len(choices),(1,)))]]
+            else:
+                available=paired_indices(ids[pool],y[pool].numpy(),tasks[pool])
+                for n,p in pairs:
+                    if tasks[exposed[n]]!=name:continue
+                    a,b=available[int(torch.randint(len(available),(1,)))];partner[n]=x[pool[a]];partner[p]=x[pool[b]]
+        mix=.1 if repeat%2==0 else .2;out=((1-mix)*source+mix*partner+paired_derivative_noise(source,std,.001,pairs)).clamp_min(0);out=out/out.mean(1,keepdim=True).clamp_min(1e-12)
+        if torch.any(torch.all(out==source,1)):raise ValueError('Identity derivative forbidden')
+        values.append(out)
+    return torch.cat(values),y[exposed].repeat(10),np.tile(tasks[exposed],10),np.tile(ids[exposed],10)
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','teacher_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--parent-sha256',required=True);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if cfg!=json.loads(Path(__file__).with_name('config_margin_teacher_20261025.json').read_text()):raise ValueError('Only published finite profile')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -76,8 +105,18 @@ def main():
     expected={2:{'eurosat':200,'clevr':800},3:{n:500 for n in names}}[stage]
     if {n:len(v) for n,v in selected.items()}!=expected or len(tr)!=1000+300*(stage-1) or any(int((tasks[te]==n).sum())!=1000 for n in names):raise ValueError('Exact fixed source budget/complete stage required')
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unex=np.setdiff1d(te,exposed)
-    q,qt=TRAIN_queries(x[tr],tasks[tr],cfg);qy=y[tr].repeat(1+cfg['TRAIN_augmentations']);qi=np.tile(ids[tr],1+cfg['TRAIN_augmentations'])
-    dx,dy,dt,di=derivatives(x,y,tasks,ids,tr,exposed);pool=torch.cat((q,dx));labels=torch.cat((qy,dy));pt=np.concatenate((qt,dt));pi=np.concatenate((qi,di));kinds=np.concatenate((np.zeros(len(q),int),np.ones(len(dx),int)))
+    robust=cfg.get('paired_TRAIN_and_stronger_same_class_mix',False)
+    q,qt=robust_queries(x[tr],y[tr],tasks[tr],ids[tr],cfg) if robust else TRAIN_queries(x[tr],tasks[tr],cfg);qy=y[tr].repeat(1+cfg['TRAIN_augmentations']);qi=np.tile(ids[tr],1+cfg['TRAIN_augmentations'])
+    dx,dy,dt,di=(robust_derivatives if robust else derivatives)(x,y,tasks,ids,tr,exposed);pool=torch.cat((q,dx));labels=torch.cat((qy,dy));pt=np.concatenate((qt,dt));pi=np.concatenate((qi,di));kinds=np.concatenate((np.zeros(len(q),int),np.ones(len(dx),int)))
+    pair_views=[]
+    if robust:
+        for values,tt,ii,yy,chunk in ((q,qt,qi,qy,len(tr)),(dx,dt,di,dy,len(exposed))):
+            pairs=[]
+            for start in range(0,len(values),chunk):
+                pairs.extend((start+n,start+p) for n,p in paired_indices(ii[start:start+chunk],yy[start:start+chunk].numpy(),tt[start:start+chunk]))
+            for name in names:
+                chosen=[(n,p) for n,p in pairs if tt[n]==name]
+                if chosen:pair_views.append(torch.stack([values[p]-values[n] for n,p in chosen]).double()@transform.double().T)
     with torch.no_grad():target=torch.cat([teacher(v@transform.T) for v in pool.split(256)]).double();margins=bounded_teacher_margin(target,labels)
     z=(pool@transform.T).double();initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform.double());weight=torch.nn.Parameter(initial.clone());threshold=torch.nn.Parameter(torch.ones(len(names),2,dtype=torch.float64))
     views=[]
@@ -88,6 +127,7 @@ def main():
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,source_budget_expanded=False,
         objective='Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
         teacher_selection='Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
+        derivative_mixing=(.1,.2) if robust else (.02,.05),derivative_noise_TRAIN_std=.001,paired_ranking_weight=cfg.get('paired_ranking_weight',0),
         final_gate_inclusive_correct_count=BANDS[stage],score_clipping=False,task_head_splicing=False,original_student_parameters=7840,new_inference_layers=0,SDK=False,GPU=False,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),**DISCLOSURE))
     opt=torch.optim.LBFGS([weight,threshold],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
@@ -95,6 +135,7 @@ def main():
         opt.zero_grad(set_to_none=True);rows=margin_rows(z@weight.T,labels,margins);loss=rows.sum()*0
         for n,kind,ix,groups,count in views:
             values=source_average(rows[ix],groups,count);loss+=(.5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
+        if pair_views:loss+=cfg['paired_ranking_weight']*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
         loss+=cfg['delta_L2']*(weight-initial)[:,:-1].square().sum()/10
         if not torch.isfinite(loss):raise RuntimeError('Nonfinite margin teacher objective')
         loss.backward();return loss

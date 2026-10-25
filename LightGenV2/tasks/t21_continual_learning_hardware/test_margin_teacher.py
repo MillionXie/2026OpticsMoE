@@ -1,8 +1,17 @@
-import unittest,torch
-from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,source_average,smooth_tail
+import unittest,torch,numpy as np
+from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_paired_queries_preserve_exact_TRAIN_binary_difference_before_clipping(self):
+        torch.manual_seed(1);x=torch.ones(4,8);x[0,0]=1.1;x[0,1]=.9;x[1,0]=1.2;x[1,1]=.8;x[2,2]=1.1;x[2,3]=.9;x[3,2]=1.2;x[3,3]=.8
+        y=torch.tensor([0,1,0,1]);tasks=np.repeat('clevr',4);ids=np.arange(4);cfg=dict(TRAIN_augmentations=3,TRAIN_noise_std=[.001,.003,.005]);q,t=robust_queries(x,y,tasks,ids,cfg)
+        self.assertEqual(q.shape,(16,8));torch.testing.assert_close(q.mean(1),torch.ones(16))
+        for j in (4,8,12):torch.testing.assert_close(q[j+1]-q[j],x[1]-x[0],atol=2e-7,rtol=1e-4)
+    def test_robust_derivatives_keep_exact_sources_labels_and_pair_ids(self):
+        torch.manual_seed(2);x=torch.rand(8,8)+1;x=x/x.mean(1,keepdim=True);labels=torch.tensor([0,1]*4);tasks=np.repeat('clevr',8);ids=np.arange(8)
+        dx,dy,dt,di=robust_derivatives(x,labels,tasks,ids,np.arange(4),np.arange(4,8))
+        self.assertEqual(dx.shape,(40,8));self.assertEqual(set(di),{4,5,6,7});torch.testing.assert_close(dx.mean(1),torch.ones(40));self.assertFalse(bool((dx[:4]==x[4:]).all(1).any()));self.assertEqual(dy.tolist(),[0,1]*20)
     def test_inclusive_all_task_gate(self):
         scores={n:dict(n=1000,correct=k) for n,k in [('eurosat',512),('clevr',631),('speech_binary',522)]}
         self.assertTrue(within_bands(scores,3));scores['clevr']['correct']=630;self.assertFalse(within_bands(scores,3))

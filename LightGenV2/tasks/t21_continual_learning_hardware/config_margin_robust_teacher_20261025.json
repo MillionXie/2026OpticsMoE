@@ -1,0 +1,15 @@
+{
+  "schema": "T21_shared_robust_margin_teacher_BC_v2",
+  "maximum_steps": 240,
+  "maximum_seconds": 300,
+  "TRAIN_augmentations": 8,
+  "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN_and_stronger_same_class_mix": true,
+  "paired_ranking_weight": 1.0,
+  "delta_L2": 0.0001,
+  "partial_TEST_source_expansion": false,
+  "original_student_parameters": 7840,
+  "new_inference_layers": 0,
+  "SDK": false,
+  "GPU": false
+}
