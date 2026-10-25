@@ -14,6 +14,15 @@ run为`runs/simulation/static4_augmented_teacher_20261025`，教师TRAIN/VAL及�
 后续学生固定公共前端及显示gain，只更新原相位与原头；每个PT同时评两域，并保留SAR约束。
 复用TEST用于开发评估，不声称重新获得了独立盲测。
 
+教师已启动，源码`9e80bb656`、controller3854200/创建1792935666.54，实际1646122参数；
+服务器三项测试和真实TRAIN有限梯度预检通过。学生配置`config_static_four_teacher_KD_20261025.json`
+固定从已CPU通过的f85父PT续训，不重新标定gain；教师须先达到RGB验证85%、SAR72%才准入。
+学生仅原相位与7840头可训，TRAIN八种D4视图各自提同一冻结前端、配对应教师logits；
+RGB:SAR损失2:1、KD温度3/系数1、弱原图区域dropout，最多60轮/min25/patience18，
+VAL按RGB优先且SAR>=70.9%选一个PT，锁定后完整TEST2000及原CPU门槛。
+run `static4_augmented_KD_20261025/MoE_AB`，不把更大教师网络、D4多视图训练或额外预算
+伪称为单纯四专家架构优势；推理不使用教师、不做多视图投票。
+
 ## 2026-10-25 四专家跟进：跨传感器特征迁移（最新）
 
 ### 当前完整结果（训练与CPU复核已结束）
