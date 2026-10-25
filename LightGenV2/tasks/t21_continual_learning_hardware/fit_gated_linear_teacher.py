@@ -58,10 +58,10 @@ def profile_parameters(cfg):
         raise ValueError('Declared quality floor or derivative budget changed')
     if cfg['schema']=='T21_gated_partial_linear_teacher_v1':
         if cfg['sources_per_task'] not in (200,500) or cfg['teacher_max_LBFGS_steps']!=160:raise ValueError('Frozen legacy budget changed')
-        return dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False)
-    if (cfg['schema'] in ('T21_gated_partial_linear_teacher_pairweak_v2','T21_gated_partial_linear_teacher_pairwhiten_v3') and cfg['sources_per_task']==500 and
+        return dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False,paired_TRAIN_anchor=False)
+    if (cfg['schema'] in ('T21_gated_partial_linear_teacher_pairweak_v2','T21_gated_partial_linear_teacher_pairwhiten_v3','T21_gated_partial_linear_teacher_pairanchor_v4') and cfg['sources_per_task']==500 and
         cfg['teacher_max_LBFGS_steps']==240 and cfg.get('paired_teacher') is True and cfg.get('expose_tasks')==['clevr']):
-        return dict(steps=240,mixes=(.02,.05),noise=.001,L2=.000001,shared_pair_noise=True,TRAIN_floor={'clevr':.90},full_covariance=cfg['schema'].endswith('v3'))
+        return dict(steps=240,mixes=(.02,.05),noise=.001,L2=.000001,shared_pair_noise=True,TRAIN_floor={'clevr':.90},full_covariance=cfg['schema'].endswith(('v3','v4')),paired_TRAIN_anchor=cfg['schema'].endswith('v4'))
     raise ValueError('Unknown or changed finite teacher profile')
 
 
@@ -83,6 +83,11 @@ def full_covariance_transform(train,base):
     return transformed,dict(TRAIN_records=len(train),TEST_statistics=False,inference_preprocessing_added=False,
         minimum_eigenvalue=float(eigen.min()),median_eigenvalue=float(eigen.median()),maximum_eigenvalue=float(eigen.max()),
         eigenvalue_floor=floor,full_rank_coordinates=True,no_dimension_removed=True)
+
+
+def paired_margin_loss(delta_logits):
+    """Rows are positive minus negative; both use original shared output1/0."""
+    return F.softplus(-(delta_logits[:,1]-delta_logits[:,0])).mean()
 
 
 def main():
@@ -116,6 +121,8 @@ def main():
         derivative_mixes=settings['mixes'],derivative_TRAINstd_noise=settings['noise'],shared_positive_negative_noise=settings['shared_pair_noise'],
         teacher_TRAIN_minimum=settings['TRAIN_floor'],teacher_TRAIN_labels_are_original_TRAIN_only=True,
         full_TRAIN_covariance_preconditioning=settings['full_covariance'],covariance_conditioning=conditioning,
+        paired_original_TRAIN_ranking_weight=4 if settings['paired_TRAIN_anchor'] else 0,
+        old_Euro_parent_anchor_augmented_TRAIN_per_source=10 if settings['paired_TRAIN_anchor'] else 0,
         paired_CLEVR_repair=pair_mode,paired_derivative_ranking_weight=4 if pair_mode else 0,
         old_Euro_TRAIN_parent_KL_weight=4 if pair_mode else 0,
         student='Function projection on TRAIN and24 fresh TRAIN augmentations; fixed ridge1e-4, folded into original Linear; no EVAL strength scan',
@@ -146,14 +153,21 @@ def main():
     tx=torch.cat(tx);ty=torch.cat(ty);tw=torch.cat(tw);z=tx@transform.T
     pair_z=torch.stack(pair_deltas)@transform.T if pair_mode else None
     old_ix=tr[tasks[tr]=='eurosat'];old_z=x[old_ix]@transform.T;old_target=model.shared_head(x[old_ix].float()).double().detach()
+    train_pair_z=None
+    if settings['paired_TRAIN_anchor']:
+        pairs=paired_indices(ids[tr],y[tr].numpy(),tasks[tr]);train_pair_z=torch.stack([x[tr[p]]-x[tr[n]] for n,p in pairs])@transform.T
+        old=x[old_ix].float();mean=old.mean(0,keepdim=True);std=old.std(0,unbiased=False)
+        anchors=[old]+[augment_train(old,mean,std) for _ in range(10)]
+        anchors=torch.cat(anchors);old_z=anchors.double()@transform.T;old_target=model.shared_head(anchors).double().detach()
     weight=torch.nn.Parameter(initial.clone());opt=torch.optim.LBFGS([weight],lr=1,max_iter=settings['steps'],line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11);calls=0
     def closure():
         nonlocal calls
         if time.monotonic()-started>300:raise RuntimeError('Finite teacher300s budget reached; no student started')
         opt.zero_grad(set_to_none=True);loss=(F.cross_entropy(z@weight.T,ty,label_smoothing=.02,reduction='none')*tw).sum()+settings['L2']*weight[:,:-1].square().sum()/10
         if pair_mode:
-            delta=pair_z@weight.T;loss=loss+4*F.softplus(-(delta[:,1]-delta[:,0])).mean()
+            delta=pair_z@weight.T;loss=loss+4*paired_margin_loss(delta)
             loss=loss+16*F.kl_div(F.log_softmax(old_z@weight.T/2,1),F.softmax(old_target/2,1),reduction='batchmean')
+        if settings['paired_TRAIN_anchor']:loss=loss+4*paired_margin_loss(train_pair_z@weight.T)
         if not torch.isfinite(loss):raise RuntimeError('Nonfinite teacher objective')
         loss.backward();calls+=1
         if calls%10==0:put(a.out/'status.json',dict(state='teacher_convex_fit',closure_calls=calls,loss=float(loss.detach()),updated=time.time()))

@@ -1,6 +1,6 @@
 import unittest,numpy as np,torch,json
 from pathlib import Path
-from .fit_gated_linear_teacher import select_sources,paired_indices,DISCLOSURE,profile_parameters,paired_derivative_noise,full_covariance_transform
+from .fit_gated_linear_teacher import select_sources,paired_indices,DISCLOSURE,profile_parameters,paired_derivative_noise,full_covariance_transform,paired_margin_loss
 from .refine_measured_ce import contrast_transform
 
 class TestGatedTeacher(unittest.TestCase):
@@ -13,7 +13,13 @@ class TestGatedTeacher(unittest.TestCase):
             with self.assertRaises(ValueError):profile_parameters(bad)
     def test_default_profile_numerics_unchanged(self):
         cfg=json.loads(Path(__file__).with_name('config_gated_teacher_B500_20261025.json').read_text());v=profile_parameters(cfg)
-        self.assertEqual(v,dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False))
+        self.assertEqual(v,dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False,paired_TRAIN_anchor=False))
+    def test_TRAIN_pair_anchor_profile_and_margin_sign(self):
+        cfg=json.loads(Path(__file__).with_name('config_gated_teacher_B500_pairanchor_20261025.json').read_text());v=profile_parameters(cfg)
+        self.assertTrue(v['paired_TRAIN_anchor']);self.assertTrue(v['full_covariance']);self.assertEqual(v['steps'],240)
+        good=torch.tensor([[-2.,2.],[-1.,3.]],requires_grad=True);bad=-good
+        self.assertLess(float(paired_margin_loss(good)),float(paired_margin_loss(bad)))
+        paired_margin_loss(good).backward();self.assertTrue(torch.isfinite(good.grad).all());self.assertTrue((good.grad[:,1]<0).all())
     def test_full_covariance_coordinates_preserve_function_and_DC(self):
         torch.manual_seed(3);x=(1+.02*torch.randn(120,9,dtype=torch.float64));x=x/x.mean(1,keepdim=True);w=torch.randn(10,9,dtype=torch.float64)
         transform,report=full_covariance_transform(x,contrast_transform(x));z=x@transform.T
