@@ -77,14 +77,15 @@ run内`equivalent_phase_export_20261026`已退出0：对原CPU逐样本概率最
 按export→routing→restart→DKD→RKD逆序恢复；所有移除的临时源码均在已发布Git commit中可恢复。
 HEAD/index未变、各步其他窗口已修改文件SHA保持，未触及其任务或发送协调消息。
 数据、父版、全部候选best/last、协议/history和逐样本结果都保留；并非整仓更新到最新main。
-主体本地SHA清单见`runs/preparation_20261025/`中的`relational_backup.json`、
-`decoupled_backup.json`、`restart_backup.json`、`diversity_backup.json`；新增等价PT/GPU报告见
-`static_export_prefetch.json`，完整CPU核验manifest已收于`static_export_status.json`。
-**归档尾项未完成：**收口后SSH握手持续超时，已收到的收口收据在同目录各`*_close*.json`中，
-但其回填主备份清单、等价导出CPU逐样本报告原文件及最终`static_export_backup.json`尚未续传。
-原件均在服务器保留；不得将当前状态写成全部最终归档完成。已尝试单连接及只读SSH banner诊断，
-未改变远程服务或联络其他窗口；恢复后仅需运行私有`t20_finalize_backups_20261026.py`续传，
-不重新训练、不重启GPU/SDK，不重复源码收口。当前没有T20后台训练或定时任务。
+最终本地SHA清单见`runs/preparation_20261025/`中的`relational_backup.json`（21文件）、
+`decoupled_backup.json`（21）、`restart_backup.json`（21）、`diversity_backup.json`（20）
+和`static_export_backup.json`（10）。合计覆盖源/导出PT、训练协议/历史、完整报告/逐样本结果及收口收据；
+等价导出未进行训练，没有另造训练history。
+原始路由PT的数值门槛失败仍明确记录；通过的是另存的等价导出，不能混淆两者。
+传输一度因SSH握手超时中断，后用**单连接**补齐所有尾项并验证SHA；
+`backups_closed_review_20261026.json`确认服务器T20工作目录干净、T20直接运行入口为空，
+runtime HEAD仍ae9e5c0ff，不宣称整仓已更新最新main。未改变远程服务、重新训练、
+重启GPU/SDK、重复源码收口或联络其他窗口。当前没有T20后台训练或定时任务。
 原71d与新增0e0587同时保留，不按TEST逐传感器拼接两个PT，不把SAR下降隐瞒成全域改善。
 
 ### 本轮历史过程记录（以下保留当时状态，当前结果以上表和收口记录为准）
