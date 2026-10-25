@@ -1,6 +1,6 @@
 import unittest,json
 from pathlib import Path
-from .continue_LG_C_optics import validate,native_retention_loss,configure_simulation_trainability
+from .continue_LG_C_optics import validate,native_retention_loss,configure_simulation_trainability,continuation_objective
 from .model import build_model
 import torch
 
@@ -13,6 +13,13 @@ class CContinuationTests(unittest.TestCase):
         native=json.loads(Path(__file__).with_name('config_LG_C_native_B_route_20261025.json').read_text());validate(native)
         self.assertEqual(native['epochs'],1);self.assertEqual(native['memory_records_per_old_task'],300)
         corrected=json.loads(Path(__file__).with_name('config_LG_C_joint_restore_20261025.json').read_text());validate(corrected)
+        gated=json.loads(Path(__file__).with_name('config_LG_C_correct_teacher_20261025.json').read_text());validate(gated)
+
+    def test_only_wrong_TRAIN_teacher_KD_is_removed_not_label_CE(self):
+        c=json.loads(Path(__file__).with_name('config_LG_C_correct_teacher_20261025.json').read_text())
+        student=torch.zeros(1,10,requires_grad=True);teacher=torch.tensor([[10.]+[-10.]*9]);label=torch.tensor([1])
+        loss=continuation_objective(student,label,teacher,c);ce=c['reference_CE_weight']*torch.nn.functional.cross_entropy(student,label,label_smoothing=c['label_smoothing'])
+        torch.testing.assert_close(loss,ce);loss.backward();self.assertLess(float(student.grad[0,1]),0)
 
     def test_deployment_freeze_is_explicitly_undone_for_simulation_only(self):
         model=build_model('moe')

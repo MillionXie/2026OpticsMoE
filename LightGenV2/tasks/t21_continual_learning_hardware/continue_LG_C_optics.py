@@ -16,17 +16,31 @@ from .refine_LG_retention import retention_selection
 
 
 def validate(cfg):
-    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json')
+    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only published finite C continuation profiles')
 
 
-def native_retention_loss(result,logits,route,cfg):
+def native_retention_loss(result,logits,route,cfg,labels=None):
     """Frozen previous-stage teacher queried on original old TRAIN memory only."""
     temperature=cfg['native_B_temperature']
-    kd=F.kl_div(F.log_softmax(result['logits']/temperature,1),F.softmax(logits/temperature,1),reduction='batchmean')*temperature**2
+    if cfg.get('TRAIN_teacher_correct_only'):
+        if labels is None:raise ValueError('TRAIN labels required for declared teacher-error gating')
+        row=F.kl_div(F.log_softmax(result['logits']/temperature,1),F.softmax(logits/temperature,1),reduction='none').sum(1)*temperature**2
+        kd=(row*(logits.detach().argmax(1)==labels)).mean()
+    else:kd=F.kl_div(F.log_softmax(result['logits']/temperature,1),F.softmax(logits/temperature,1),reduction='batchmean')*temperature**2
     q=result['route_power'].clamp_min(1e-12)
     route_loss=(route*(route.clamp_min(1e-12).log()-q.log())).sum(1).mean()
     return cfg['native_B_logit_weight']*kd+cfg['native_B_route_weight']*route_loss
+
+
+def continuation_objective(student,labels,teacher,cfg):
+    if not cfg.get('TRAIN_teacher_correct_only'):return reference_TRAIN_objective(student,labels,teacher,cfg)
+    temperature=cfg['reference_temperature'];ce=F.cross_entropy(student,labels,label_smoothing=cfg['label_smoothing'])
+    row=F.kl_div(F.log_softmax(student/temperature,1),F.softmax(teacher.detach()/temperature,1),reduction='none').sum(1)*temperature**2
+    # Original TRAIN labels, not TEST confidence or correctness, choose whether
+    # the teacher can constrain this gradient. Every row still receives CE.
+    kd=(row*(teacher.detach().argmax(1)==labels)).mean()
+    return cfg['reference_CE_weight']*ce+cfg['reference_KD_weight']*kd
 
 
 def configure_simulation_trainability(model):
@@ -52,7 +66,8 @@ def main():
     else:model.configure_stage(3);trainable={n:v.numel() for n,v in model.named_parameters() if v.requires_grad}
     model.to(device);immutable=frozen(model);gain=tensor_sha(model.display_gains)
     source=json.loads((a.warm_run/'protocol.json').read_text());original=json.loads((a.chain/'C/completion.json').read_text())
-    if cp['architecture']!='moe' or cp['stage']!=3 or source['parent_C_sha256']!=original['best_sha256']:raise ValueError('Exact same-chain warm C required')
+    warm_origin=source.get('parent_C_sha256',source.get('original_chain_C_sha256'))
+    if cp['architecture']!='moe' or cp['stage']!=3 or warm_origin!=original['best_sha256']:raise ValueError('Exact same-chain warm C required')
     names=list(cfg['reference']);train=load_data(a.train,'train');memories=json.loads((a.chain/'memory_manifest.json').read_text());cache=a.chain/'C/TRAIN_reference_teacher_logits.pt';target=torch.load(cache,map_location='cpu',weights_only=False)
     identity=json.loads(Path(__file__).with_name('source_identity.json').read_text());ref=identity['models'][2]
     if target['TEST_inputs'] is not False or target['teacher_sha256']!=ref['sha256'] or sha(ref['checkpoint'])!=ref['sha256']:raise ValueError('Original TRAIN teacher changed')
@@ -71,8 +86,8 @@ def main():
         native=dict(logits=torch.cat(rows),routes=torch.cat(routes));native_receipt=dict(checkpoint_SHA256=receipt_B['best_sha256'],task=task,TRAIN_source_indices=indices.tolist(),EVAL_inputs=False)
         del previous;torch.cuda.empty_cache()
     if a.preflight_only:
-        n=cfg.get('native_B_task',names[0]);ix=np.asarray(memories[n]['indices'][:2]);result=model(train[n]['x'][ix].to(device));logits=result['logits'];loss=reference_TRAIN_objective(logits,train[n]['y'][ix].to(device),target['logits'][n][:2].to(device),cfg)
-        if native is not None:loss+=native_retention_loss(result,native['logits'][:2].to(device),native['routes'][:2].to(device),cfg)
+        n=cfg.get('native_B_task',names[0]);ix=np.asarray(memories[n]['indices'][:2]);result=model(train[n]['x'][ix].to(device));logits=result['logits'];labels=train[n]['y'][ix].to(device);loss=continuation_objective(logits,labels,target['logits'][n][:2].to(device),cfg)
+        if native is not None:loss+=native_retention_loss(result,native['logits'][:2].to(device),native['routes'][:2].to(device),cfg,labels)
         loss.backward()
         if not torch.isfinite(loss) or frozen(model)!=immutable or tensor_sha(model.display_gains)!=gain:raise RuntimeError('Real TRAIN/freeze preflight failed')
         gradients={n:dict(finite=bool(v.grad is not None and torch.isfinite(v.grad).all()),nonzero=bool(v.grad is not None and torch.count_nonzero(v.grad)>0)) for n,v in model.named_parameters() if v.requires_grad}
@@ -84,9 +99,14 @@ def main():
     if len(current)!=12526 or not np.array_equal(selection['speech_binary'],target['selection']['speech_binary']):raise ValueError('Full current TRAIN teacher order changed')
     test=load_data(a.test,'test');a.out.mkdir(parents=True,exist_ok=False);out=a.out/'C';out.mkdir();started=time.monotonic()
     if native is not None:torch.save(dict(**native,provenance=native_receipt),out/'native_B_TRAIN_teacher.pt')
+    teacher_TRAIN_quality={}
+    if cfg.get('TRAIN_teacher_correct_only'):
+        for n in names:
+            labels=torch.as_tensor(np.asarray(current.labels),dtype=torch.long) if n==names[-1] else train[n]['y'][selection[n]]
+            teacher_TRAIN_quality[n]=dict(n=len(labels),correct=int((target['logits'][n].argmax(1)==labels).sum()))
     put(a.out/'protocol.json',dict(architecture='moe',config=cfg,config_sha256=sha(a.profile),warm_C_checkpoint_sha256=receipt['best_sha256'],original_chain_C_sha256=original['best_sha256'],
         original_A_B_unchanged=True,D_requires_retrain_from_new_C=True,no_old_D_splicing=True,TRAIN_teacher_cache_sha256=sha(cache),TEST_gradients=False,TEST_selected_development_metric=True,independent_generalization_claim=False,
-        native_B_TRAIN_teacher=native_receipt,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
+        native_B_TRAIN_teacher=native_receipt,teacher_TRAIN_quality=teacher_TRAIN_quality,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
     baseline=evaluate(model,test,names,device,8);best=retention_selection(baseline,cfg['reference']);best_epoch=0;history=[]
     def save(role,epoch):
         torch.save(dict(model={k:v.detach().cpu() for k,v in model.state_dict().items()},architecture='moe',stage=3,epoch=epoch,best_epoch=best_epoch,parent_checkpoint_sha256=cp['parent_checkpoint_sha256'],warm_C_checkpoint_sha256=receipt['best_sha256'],TEST_gradients=False,TEST_selected_development=True),out/(role+'_checkpoint.pt'))
@@ -96,8 +116,8 @@ def main():
         model.train();seen=0;loss_sum=0.;task_stats={n:dict(seen=0,correct=0) for n in names}
         for n,relative in phase_batches(selection,names,cfg,epoch,3):
             ix=selection[n][relative];x=current.get_batch(ix,device) if n==names[-1] else train[n]['x'][ix].to(device);y=torch.as_tensor(np.asarray(current.labels)[ix],device=device,dtype=torch.long) if n==names[-1] else train[n]['y'][ix].to(device)
-            optimizer.zero_grad(set_to_none=True);result=model(x);logits=result['logits'];loss=reference_TRAIN_objective(logits,y,target['logits'][n][relative].to(device),cfg)*(cfg['old_task_weight'] if n!=names[-1] else 1)
-            if native is not None and n==cfg['native_B_task']:loss+=native_retention_loss(result,native['logits'][relative].to(device),native['routes'][relative].to(device),cfg)
+            optimizer.zero_grad(set_to_none=True);result=model(x);logits=result['logits'];loss=continuation_objective(logits,y,target['logits'][n][relative].to(device),cfg)*(cfg['old_task_weight'] if n!=names[-1] else 1)
+            if native is not None and n==cfg['native_B_task']:loss+=native_retention_loss(result,native['logits'][relative].to(device),native['routes'][relative].to(device),cfg,y)
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite original TRAIN objective')
             loss.backward();torch.nn.utils.clip_grad_norm_(params,1.);optimizer.step();seen+=len(y);loss_sum+=float(loss.detach())*len(y);task_stats[n]['seen']+=len(y);task_stats[n]['correct']+=int((logits.argmax(1)==y).sum())
             if seen%4000<len(y):put(a.out/'status.json',dict(state='training',epoch=epoch,TRAIN_seen=seen,loss=loss_sum/seen,updated=time.time()))
