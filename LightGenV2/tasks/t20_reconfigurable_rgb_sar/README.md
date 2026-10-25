@@ -3,8 +3,8 @@
 ## 2026-10-25 四专家跟进：跨传感器特征迁移（最新）
 
 四专家首轮已锁定完整TEST（每域1000）MoE_AB RGB81.5/SAR68.7、D2NN_RGB79.9/34.2、
-D2NN_AB_control79.3/70.1。前两项best/last严格CPU已完成并通过原.002概率/零argmax差异门槛；
-双域D2NN在完成GPU后正常接续CPU复核。原图是VAL，不把上述TEST直接称为原图精确复现。
+D2NN_AB_control79.3/70.1。三项best/last严格CPU均已完成，best通过原.002概率/零argmax差异门槛；
+队列三项训练及CPU退出码全0，原controller已退出。原图是VAL，不把上述TEST直接称为原图精确复现。
 相同VAL，MoE80.7/71.7，D2NN_RGB79.4/35.0、D2NN_AB78.1/72.6。
 主比较方向有差别，但D2NN的SAR迁移跌幅过大，公平双域对照也未证明MoE在两域都更优，**尚不定稿/上机**。
 
@@ -31,6 +31,12 @@ TRAIN/VAL逐阶段诊断（只读父PT；`MoE_AB_diagnosis`、`D2NN_RGB_diagnosi
 VAL按各自训练域选一个PT，锁定后完整TEST并严格CPU；CPU用扩展后的`audit_sensor_neutral_CPU.py`，
 原任务运行中的`audit_domain_frontend_CPU.py`/`domain_frontend_probe.py`不热改。
 终生学习源码/权重/SDK保持只读，主训练仍只用授权4090/显存40%，诊断20%，无新定时任务。
+新续训已实际启动：源码`c7fb579413bfaaea1ab7057e368815f463bfa3ea`，
+controller PID3602827/创建1792927197.48；MoE_AB已进入联合训练，随后两项D2NN及逐项CPU接续。
+启动42项测试和两项已完成父CPU审计的真实TRAIN反向预检通过；全量回归另48项通过。
+第三项入口仍核其原父CPU门槛，不跳过；目前原父三项均已CPU通过。
+原首轮及诊断/新前端等本地SHA备份清单`runs/preparation_20261025/four_backup_manifest.json`，
+启动/测试/真实loss与完整命令收据`aligned_start.json`、`final_tests.json`；新续训尚无锁定完整TEST结果。
 
 ## 2026-10-25 最新人工范围：恢复原四专家的物理口径
 
