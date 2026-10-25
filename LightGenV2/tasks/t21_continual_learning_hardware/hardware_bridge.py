@@ -91,7 +91,29 @@ def guard(row,noise=None,router=False):
         raise RuntimeError('Pilot/capture dynamic-range stop; preserve evidence, no automatic exposure/retry: '+repr(row))
 
 
-def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardware_sha,model):
+def repeat_policy(policy=None,exposure_us=None):
+    """Default enforcement; explicit human-approved single-frame 2 ms exception."""
+    if policy is None:return 'enforce'
+    if (set(policy)!={'mode','authorization','exposure_us','single_frame'} or
+        policy['mode']!='record_only' or not isinstance(policy['authorization'],str) or
+        not policy['authorization'].strip() or policy['exposure_us']!=2000 or
+        policy['single_frame'] is not True or not isinstance(exposure_us,(int,float)) or
+        not np.isfinite(exposure_us) or abs(exposure_us-2000)>.5):
+        raise ValueError('Repeat exception requires explicit fixed single-frame 2 ms authorization')
+    return 'record_only'
+
+
+def admission_checks(snr,delta99,correlation,repeat_drift,marker_change,noise,saturation,mode='enforce'):
+    if mode not in ('enforce','record_only'):raise ValueError('Unknown repeat policy')
+    checks=dict(finite_metrics=bool(np.isfinite([snr,delta99,correlation,repeat_drift,marker_change,noise,saturation]).all()),
+        SNR=bool(snr>=10),signal_margin=bool(delta99>=64),
+        repeat_correlation=bool(correlation>=.95),consumer_drift=bool(repeat_drift<=.05),
+        marker_update=bool(marker_change>=3*noise),saturation=bool(saturation<=.15))
+    enforced={k:v for k,v in checks.items() if k!='repeat_correlation' or mode=='enforce'}
+    return bool(all(enforced.values())),checks
+
+
+def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardware_sha,model,repeat_mode='enforce'):
     """Fixed dark/A/A/B/A TRAIN/control test before any EVAL in this layer.
 
     Repeat fluctuations include shot/display noise, not just camera read noise;
@@ -128,9 +150,11 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
     # Semantic records may legitimately have similar optical outputs; they are
     # not a timing standard. An independent fixed calibration marker verifies
     # actual input updates, followed by return to exactly the same TRAIN A.
-    passed=snr>=10 and delta99>=64 and correlation>=.95 and repeat_drift<=.05 and marker_change>=3*noise
-    passed=passed and max(r['signal']['saturation_fraction'] for r in rows.values())<=.15
+    passed,checks=admission_checks(snr,delta99,correlation,repeat_drift,marker_change,noise,
+        max(r['signal']['saturation_fraction'] for r in rows.values()),repeat_mode)
     receipt=dict(passed=bool(passed),stage=stage,hardware_payload_sha256=hardware_sha,
+        admission_checks=checks,repeat_correlation_policy=repeat_mode,
+        repeat_correlation_threshold=.95,repeat_correlation_enforced=repeat_mode=='enforce',
         read_noise_upper_counts=noise,noise_scope='repeat shot/display/camera fluctuations at this stage, NOT pure read noise',
         dark_global_p99_counts=float(np.percentile(dark,99)),dark_router_ROI_p99_counts=float(np.percentile(dark[mask],99)),
         SNR=snr,signal_ROI_delta_p99_counts=delta99,repeat_correlation=correlation,
@@ -221,6 +245,7 @@ def TRAIN_control_indices(entries,references=None):
 
 @torch.no_grad()
 def capture(package,cfg,out,pilot=False):
+    repeat_mode=repeat_policy(package.get('repeat_correlation_policy'),cfg.get('exposure_us'))
     Bench,LOCK,_,drive,warp=hardware(cfg)
     admission=json.loads(Path(package['native_admission']).read_text())
     if not admission['passed'] or sha(package['native_admission'])!=package['native_admission_sha256']:
@@ -306,7 +331,7 @@ def capture(package,cfg,out,pilot=False):
                             Image.fromarray(candidate).save(phase_file);bench.stage(phase_file);phase_sha=digest
                         elif digest!=phase_sha:raise ValueError('Calibration phase changed across inputs')
                     stage_noise=stage_signal_admission(bench,layer/'TRAIN_signal_admission',examples,drive,warp,mask,
-                        stage,hardware_identity(cfg),model)
+                        stage,hardware_identity(cfg),model,repeat_mode)
                 for i,entry in enumerate(entries):
                     frame_start=time.monotonic()
                     key=f'{i:05d}';folder=layer/key;folder.mkdir()

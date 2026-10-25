@@ -1,9 +1,29 @@
 import unittest
 import numpy as np
-from .hardware_bridge import native_image,crop_native,guard,signal,acquisition_order,TRAIN_control_indices
+from .hardware_bridge import native_image,crop_native,guard,signal,acquisition_order,TRAIN_control_indices,repeat_policy,admission_checks
 
 
 class TestHardware(unittest.TestCase):
+    def test_repeat_exception_is_explicit_and_fixed_2ms(self):
+        self.assertEqual(repeat_policy(),'enforce')
+        p=dict(mode='record_only',authorization='Human 2026-10-25 approval',exposure_us=2000,single_frame=True)
+        self.assertEqual(repeat_policy(p,2000),'record_only')
+        self.assertEqual(repeat_policy(p,1999.8),'record_only')  # Camera's quantized 2 ms readback.
+        for bad,exposure in ((dict(p,authorization=''),2000),(dict(p,single_frame=False),2000),
+                             (dict(p,mode='disable_all'),2000),(p,4000),(dict(p,extra=True),2000)):
+            with self.assertRaises(ValueError):repeat_policy(bad,exposure)
+
+    def test_only_repeat_metric_can_be_diagnostic(self):
+        values=dict(snr=16.8,delta99=100,correlation=.927,repeat_drift=.0304,
+                    marker_change=100,noise=10,saturation=0)
+        self.assertFalse(admission_checks(**values)[0])
+        passed,checks=admission_checks(**values,mode='record_only')
+        self.assertTrue(passed);self.assertFalse(checks['repeat_correlation'])
+        for field,bad in (('snr',9),('delta99',63),('repeat_drift',.051),
+                          ('marker_change',29),('saturation',.151),('correlation',float('nan'))):
+            changed=dict(values,**{field:bad})
+            self.assertFalse(admission_checks(**changed,mode='record_only')[0],field)
+
     def test_fixed_order_preserves_record_identity(self):
         rows=[dict(split='train' if i<2 else 'test',task='eurosat',local_index=i%2,label=i%2) for i in range(4)]
         ordered=acquisition_order(rows,[3,0,2,1])
