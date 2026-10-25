@@ -1,0 +1,12 @@
+{
+  "schema": "T21_LG_D_TEST_source_augmented_simulation_development_20261026",
+  "seed": 20261026, "batch_size": 8, "cache_seconds": 1800,
+  "maximum_steps": 240, "fit_seconds": 360, "delta_L2": 0.00001,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "development_bands": {"eurosat": [735, 845], "clevr": [754, 864], "speech_binary": [761, 871], "physical_binary_raw": [735, 823]},
+  "parent_C_SHA256": "e89fdcd2858a809fefa2d0086a104b5d6b5bf31744a5d02cf5e960f4f993e797",
+  "allowed_GPU_UUIDs": ["GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"],
+  "per_process_GPU_memory_fraction": 0.4,
+  "all_TEST_sources_authorized": true, "independent_test_samples": 0,
+  "valid_for_formal_test_table": false, "new_inference_layers": 0, "SDK": false
+}

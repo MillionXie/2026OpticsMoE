@@ -14,6 +14,13 @@ C Euro462–562/CLEVR581–681/Speech422–522；D Euro478–578/CLEVR517–617/
 门槛只用于完整阶段选实际PT，不进入训练损失，不拼头、不改预测、不压高分；原权重/数据保留。
 本轮LG C原SNR8队列继续采完自动接读出，不重复启动，不改2ms、坐标、LUT或原推理结构。
 用户也允许LG D使用TEST增强开发教师；若启用，必须另列测试信息参与的S1开发支线，不冒充旧TRAIN-only仿真结论。
+独立`refine_LG_D_source_development.py`固定已审计D光学前缀，仅拟合原7840读出；
+使用原旧任务300记忆及现有Physical TRAIN1000作有限末端开发子集（不同于原完整140800训练预算），
+TEST四任务各1000来源只生成10份非恒等同类/同配对TRAIN混合衍生，原样TEST不入梯度。
+容量匹配增强教师最多240步/360秒，再只TRAIN查询恢复同一线性函数；原结构/相位/编码不变。
+缓存GPU结果不作部署精度，bestlast必须独立重载完整原CPU光学图各两次，逐样本输出/冻结SHA保留。
+所有该支线PT显式development_only，clean_S1_result=false、hardware_admitted=false；
+不覆写原TRAIN-only仿真链、不用同名passed混淆信息协议，严格CPU及数字通过后另行检查部署身份。
 
 ### 2026-10-25 最新用户确认：仅LG C允许SNR>=8
 
