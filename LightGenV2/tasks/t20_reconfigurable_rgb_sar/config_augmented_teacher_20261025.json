@@ -1,0 +1,15 @@
+{
+  "seed": 73,
+  "epochs": 100,
+  "minimum_epochs": 40,
+  "patience": 25,
+  "batch_size": 64,
+  "lr": 0.001,
+  "weight_decay": 0.001,
+  "max_seconds": 1800,
+  "TRAIN_augmentation": "D4 plus reflected translation up to 2 pixels",
+  "selection": "2*RGB validation + SAR validation; never TEST",
+  "TEST_access": false,
+  "allowed_GPU_UUIDs": ["GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"],
+  "per_process_GPU_memory_fraction": 0.4
+}
