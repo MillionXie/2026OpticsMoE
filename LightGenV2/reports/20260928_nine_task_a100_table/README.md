@@ -1,5 +1,31 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25：首计算模块口径及人工授权七项Qwen补测
+
+用户最终选择不加前置：Qwen从原生首个Transformer块开始，LG从首个光学模块
+内部输入映射开始，重新整理九任务表、Temporal多基线表及中文公式Word。
+进入该起点之前的解码、分词、embedding/位置与传输不加入新核心结果；进入后
+原网络后续支路、任务头、真实merger、检索排序和CPU输出保留，不删除中间计算。
+主结果用同步耗时及匹配能量，GPU事件另列且不与墙钟相加。
+
+原LGVQ双方及Temporal全部baseline已有first_block_start，离线重切，不重测。
+其余七项原Qwen没有独立首TF起点，用户已明确授权只补这七项时间与能量。
+这项授权仅覆盖02图搜文、03图搜图、04文搜图、05LSP、06SALICON、07OpenMoji、
+08T12的Qwen三fresh轮各200，原模型/输入/精度/输出/完整TEST不变。
+旧“测量全部结束”限制被这项新授权窄范围覆盖，LG及已有证明/基线绝不重跑，
+不恢复慢CPU等价推理前置，不连接任何租机或光路电脑。
+
+新观察器和单一顺序队列源码9c886eb52已local/GitHub/lab发布，六项无模型测试
+双端通过。唯一controller3563394，根
+`LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/a100_first_tf_seven_20261025_01`，
+启动Unix1792926105.284，有限队列deadline1792947705.284，非ETA。
+各task数据根为`a100_first_tf_core_02..08_20261025_01/qwen_repeat01..03`。
+保留原共享锁、12连续idle、250W/privateMPS100/250ms和全窗foreign守卫，
+外占只停自己。计时钩子不加模型forward，不预热；原worker实际推理和输出保持原样。
+完成点先data-only逐SHA备份，再本地独立重算原区间能量及比对完整输出。
+当前已观察02三轮complete，03在续跑；后续必须读真实suite状态，不能按本段
+旧状态重复启动。新最终成品尚未交付，所有旧XLSX/DOCX及索引不可覆盖。
+
 ## 2026-10-25：三者共用相同前置耗时的分词、embedding、位置逐项对照
 
 用户明确要求Qwen也加相同embedding耗时，并进一步要求把tokenizer、文字词向量、
