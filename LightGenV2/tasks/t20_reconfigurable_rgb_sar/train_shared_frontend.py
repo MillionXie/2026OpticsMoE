@@ -20,12 +20,13 @@ from .robust_readout import raw_region_dropout
 from .diagnose_frontend_train import pair_batches
 from .augmented_teacher import load_teacher,teacher_logits
 from .relational_distillation import teacher_representations,relational_losses
+from .optical_initialization import restart_existing_parameters
 from .refine_unified import conditioned_inputs,scores_from_logits,domain_balance
 from LightGenV2.tasks.t21_continual_learning_hardware.train_native import sha,put,tensor_sha,gpu_gate
 
 
 def validate(cfg):
-    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json','config_static_four_teacher_continuation_20261025.json','config_static_four_expert_specialization_20261025.json','config_static_four_relational_KD_20261026.json')
+    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json','config_static_four_teacher_continuation_20261025.json','config_static_four_expert_specialization_20261025.json','config_static_four_relational_KD_20261026.json','config_static_four_optical_restart_20261026.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Exact finite common training profile required')
 
 
@@ -89,8 +90,12 @@ def main():
             with torch.no_grad():gain_report=model.calibrate_gains(amplitude(train,tf,calibration,device))
     if cfg.get('phase_gradient_projection',False):assert case=='MoE_AB' and domains==[0,1]
     if external:assert four and case=='MoE_AB' and domains==[0,1] and not cfg.get('recalibrate_gains',True)
+    initialization=restart_existing_parameters(model,cfg)
     restrict_phase_updates(model,cfg.get('trainable_phase_prefixes'))
-    gain=tensor_sha(model.display_gains);frozen={n:tensor_sha(v) for n,v in model.state_dict().items() if n=='display_gains' or (n in dict(model.named_parameters()) and not dict(model.named_parameters())[n].requires_grad)};optics=[v for n,v in model.named_parameters() if v.requires_grad and not n.startswith('shared_head.')];ix=next(pair_batches(train,cfg['batch_size'],42) if cfg.get('paired_TRAIN_batches',False) else balanced_batches(train,domains,cfg['batch_size'],42));r=model(amplitude(train,tf,ix,device));loss=F.cross_entropy(r['logits'],torch.as_tensor(train['labels'][ix],device=device))
+    gain=tensor_sha(model.display_gains);frozen={n:tensor_sha(v) for n,v in model.state_dict().items() if n=='display_gains' or (n in dict(model.named_parameters()) and not dict(model.named_parameters())[n].requires_grad)};optics=[v for n,v in model.named_parameters() if v.requires_grad and not n.startswith('shared_head.')];ix=next(pair_batches(train,cfg['batch_size'],42) if cfg.get('paired_TRAIN_batches',False) else balanced_batches(train,domains,cfg['batch_size'],42));r=model(amplitude(train,tf,ix,device),return_debug=initialization is not None);loss=F.cross_entropy(r['logits'],torch.as_tensor(train['labels'][ix],device=device))
+    if initialization is not None:
+        initialization['TRAIN_initial_display_stats']=r['display_stats'];initialization['TRAIN_initial_route_mean']=r['route_power'].detach().mean(0).cpu().tolist()
+        if any(v['clipped_fraction']>.15 or v['nonzero_fraction']<=0 for v in r['display_stats'].values()):raise RuntimeError('Restart invalid under unchanged parent gains; do not recalibrate to rescue')
     if cfg.get('phase_gradient_projection',False):
         named=[(n,p) for n,p in model.named_parameters() if p.requires_grad];labels=torch.as_tensor(train['labels'][ix],device=device);d=torch.as_tensor(train['domains'][ix],device=device);gr=torch.autograd.grad(F.cross_entropy(r['logits'][d==0],labels[d==0]),[p for n,p in named],retain_graph=True);gs=torch.autograd.grad(F.cross_entropy(r['logits'][d==1],labels[d==1]),[p for n,p in named])
         for (name,p),rgb_grad,sar_grad in zip(named,gr,gs):p.grad=(merge_phase_gradients(rgb_grad,sar_grad)[0] if 'phase' in name else (rgb_grad+sar_grad)*.5).detach()
@@ -104,7 +109,7 @@ def main():
         loss.backward()
     if any(v.grad is None or not torch.isfinite(v.grad).all() for v in model.parameters() if v.requires_grad):raise RuntimeError('Nonfinite real TRAIN gradients')
     if a.preflight_only:
-        print(json.dumps(dict(passed=True,case=case,loss=float(loss.detach()),parent_SHA256=digest,fresh_optical_initialization=fresh,geometry=geometry(model) if four else None,gain_calibration=gain_report,TEST_loaded=False,SDK=False)));return
+        print(json.dumps(dict(passed=True,case=case,loss=float(loss.detach()),parent_SHA256=digest,fresh_optical_initialization=fresh,optical_restart=initialization,geometry=geometry(model) if four else None,gain_calibration=gain_report,TEST_loaded=False,SDK=False)));return
     model.zero_grad(set_to_none=True);a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();val=load_arrays(a.data,'validation');vf=extract_features(val,a.frontend);flip=dict(train,images=train['images'][:,:,::-1,:].copy());ff=extract_features(flip,a.frontend);head=torch.load(a.frontend,map_location='cpu',weights_only=False)['model'];teacher=[F.linear(f.float(),head['head.weight'][:10],head['head.bias'][:10]).to(device) for f in (tf,ff)];baseline=infer(model,val,vf,device);best=rgb_priority_selection(baseline,cfg,domains);best_epoch=0;best_step=0;history=[];last_improvement=0;teacher_receipt=None;teacher_path=None;teacher_digest=None
     if external:
         tm,teacher_receipt=load_teacher(a.teacher,a.data,device);teacher_path=a.teacher/'best_checkpoint.pt';teacher_digest=sha(teacher_path)
@@ -121,6 +126,9 @@ def main():
     if relational:
         helper=Path(__file__).with_name('relational_distillation.py');sources[str(helper)]=sha(helper)
         proto=json.loads((a.out/'protocol.json').read_text());proto.update(source_sha256=sources,relational_feature='Original student final CCD features; offline teacher pooled 256; within sensor-domain distance and angle',new_student_parameters=0);put(a.out/'protocol.json',proto)
+    if initialization is not None:
+        helper=Path(__file__).with_name('optical_initialization.py');sources[str(helper)]=sha(helper)
+        proto=json.loads((a.out/'protocol.json').read_text());proto.update(source_sha256=sources,training_initialization=initialization,baseline_is_restarted_model_not_parent=True,new_student_parameters=0);put(a.out/'protocol.json',proto)
     if external:
         proto=json.loads((a.out/'protocol.json').read_text());proto.update(external_teacher_run=str(a.teacher),external_teacher_SHA256=teacher_digest,external_teacher_validation=teacher_receipt['validation'],teacher_scope='Larger offline image CNN; TRAIN and TRAIN D4 only; validation selected; no TEST access; original student inference unchanged',RGB_priority_selection=True,SAR_validation_floor=cfg['SAR_validation_floor'],trainable_parameters={n:p.numel() for n,p in model.named_parameters() if p.requires_grad});put(a.out/'protocol.json',proto)
     def save(role,epoch,step=0):

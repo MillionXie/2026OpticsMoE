@@ -2,6 +2,18 @@
 
 ## 2026-10-26 追加RGB优化：关系蒸馏（尚无新成绩）
 
+两项loss接续都未显示RGB突破后，预先声明一个不同的有限对照：
+`config_static_four_optical_restart_20261026.json`、run `static4_optical_restart_teacher_20261026/MoE_AB`。
+从CPU通过的父71d继承并冻结**相同前端和全部显示gain**，只将现有6个相位块按固定seed73
+重新初始化到全256原生相位灰阶码中心，原7840头重新初始化；不新增参数、层、编码或几何。
+这是检验旧相位初值/局部优化路径的假设，不是已确诊原因。父83.4/71.7独立保护。
+使用同一个TRAIN-only强教师，从训练起点蒸馏；原头预热5轮、光学/头LR.001、
+最多80轮/min30/patience20、RGB:SAR权重2:1，VAL按RGB优先且SAR>=71%选择一个PT，
+无CE-only末端覆盖蒸馏。不重新标定gain；真实TRAIN预检记录各层非零/截断和路由功率，
+固定gain下若预检失效就停止该候选，不改变输入合同挽救它。
+新增额外初始化/训练预算明确为MoE优化支线，不把它与D2NN差异归结成纯架构收益。
+新run e0是重启模型、不是83.4%父模型；未训练的e0不能称稳健提升。锁定后完整TEST和best/last CPU。
+
 另准备一个独立、有限的原读出对照`config_static_four_decoupled_readout_20261026.json`：
 从同一个父71d固定全部相位/前端/gain，只优化原7840头；采用
 [Zhao et al., CVPR 2022 的DKD](https://arxiv.org/abs/2203.08679)，将目标类/其余类别KL解耦，
