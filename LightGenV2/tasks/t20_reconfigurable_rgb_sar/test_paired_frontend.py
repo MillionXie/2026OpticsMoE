@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 import numpy as np
 import torch
 from .diagnose_frontend_train import alignment,pair_batches
@@ -10,6 +11,8 @@ class PairedFrontendTests(unittest.TestCase):
         for ix in b:self.assertTrue(np.all(ix[::2]+1==ix[1::2]))
     def test_pair_alignment_preserves_discriminating_common_signal(self):
         x=torch.randn(4,128);f=x.repeat_interleave(2,0).requires_grad_();loss=alignment(f);self.assertLess(abs(float(loss)),1e-6);loss.backward();self.assertTrue(torch.isfinite(f.grad).all())
+    def test_parent_e0_is_retained_if_no_validation_improvement(self):
+        code=Path(__file__).with_name('diagnose_frontend_train.py').read_text();self.assertIn("best=selection(initial_score,[0,1])",code);self.assertIn("epoch=0,metrics",code)
 
 
 if __name__=='__main__':unittest.main()

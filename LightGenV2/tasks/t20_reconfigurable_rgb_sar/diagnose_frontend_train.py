@@ -49,6 +49,10 @@ def main():
     train=load_arrays(a.data,'train');val=load_arrays(a.data,'validation');tx=torch.from_numpy(train['images']).cuda();vx=torch.from_numpy(val['images']).cuda();y=torch.as_tensor(train['labels'],device='cuda');a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();best=(-1.,-1.,-float('inf'));last_improvement=0;history=[];best_epoch=0
     optimizer=torch.optim.AdamW([dict(params=model.features.parameters(),lr=cfg['feature_lr']),dict(params=model.head.parameters(),lr=cfg['temporary_head_lr'])],weight_decay=cfg['weight_decay'])
     put(a.out/'protocol.json',dict(config=cfg,original_frontend_SHA256=initial_sha,TRAIN=6000,validation=2000,TRAIN_locations=3000,shared_pretraining_domains=['RGB','SAR'],source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),data_manifest_SHA256=sha(a.data/'manifest.json'),TEST_access=False,SDK=False,gpu=gpu,optical_result=False,automatically_replace_optical_frontend=False))
+    if paired:
+        initial_score=score(model,vx,val);best=selection(initial_score,[0,1]);put(a.out/'baseline_validation.json',initial_score)
+        baseline=dict(model={n:v.detach().cpu() for n,v in model.state_dict().items()},config=dict(original['config'],feature_parameters=32128,temporary_head_parameters=3096,test_policy='never read',T20_domain_pretraining=cfg),epoch=0,metrics=dict(epoch=0,validation=initial_score['scores']),diagnostic_only=True,TEST_access=False,original_frontend_SHA256=initial_sha)
+        torch.save(baseline,a.out/'best_checkpoint.pt');torch.save(baseline,a.out/'last_checkpoint.pt')
     for epoch in range(1,cfg['epochs']+1):
         model.train();total=0.;correct=0;seen=0;pair_total=0.;factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(1,cfg['epochs']-1)))
         for group,lr in zip(optimizer.param_groups,(cfg['feature_lr'],cfg['temporary_head_lr'])):group['lr']=lr*factor
