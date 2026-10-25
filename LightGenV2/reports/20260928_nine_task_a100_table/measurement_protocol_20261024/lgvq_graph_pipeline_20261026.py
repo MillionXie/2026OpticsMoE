@@ -7,12 +7,14 @@ selection. Every subsequent field copies new raw inputs and reexecutes the
 captured ORIGINAL full forward; no neural-feature/prediction cache.
 """
 import argparse
+import ast
 from collections import deque
 import inspect
 import json
 import os
 from pathlib import Path
 import time
+import textwrap
 
 import lgvq_hoisted_pipeline_20261026 as hoisted
 
@@ -39,6 +41,49 @@ def sources():
 base.source_map=sources
 
 
+def constant_allocation_AST(source):
+    """Replace ONLY allocation of immutable scalars/vectors, not phase math."""
+    tree=ast.parse(textwrap.dedent(source));count=0
+    class Replace(ast.NodeTransformer):
+        def visit_Call(self,node):
+            nonlocal count
+            self.generic_visit(node)
+            if isinstance(node.func,ast.Attribute) and node.func.attr=='new_tensor':
+                assert len(node.args)==1 and not node.keywords
+                count+=1
+                return ast.copy_location(ast.Call(func=ast.Name(id='_graph_constant',ctx=ast.Load()),
+                    args=[node.func.value,node.args[0]],keywords=[]),node)
+            return node
+    tree=Replace().visit(tree);assert count==1
+    return ast.fix_missing_locations(tree)
+
+
+def prepare_graph_constants(model):
+    import torch
+    module=inspect.getmodule(type(model).forward)
+    originals={name:getattr(module,name) for name in ('_phase_modulation','_slotwise_routing_statistics')}
+    parameter=next(model.parameters());cache={}
+    def key(tensor,value):
+        data=tuple(value) if isinstance(value,(tuple,list)) else float(value)
+        return str(tensor.device),tensor.dtype,data
+    for value in (model.settings.unmodulated_power_fraction_eval,(1.0,2.0,4.0,8.0)):
+        tensor=parameter.new_tensor(value,dtype=torch.float32)
+        cache[key(tensor,value)]=tensor
+        assert torch.equal(tensor,parameter.new_tensor(value,dtype=torch.float32))
+    def constant(tensor,value):
+        return cache[key(tensor,value)]  # Unknown dtype/value fails, no fallback.
+    for name,original in originals.items():
+        namespace=dict(original.__globals__,_graph_constant=constant)
+        exec(compile(constant_allocation_AST(inspect.getsource(original)),inspect.getsourcefile(original)+'::constant_only','exec'),namespace)
+        setattr(module,name,namespace[name])
+    def restore():
+        for name,original in originals.items():setattr(module,name,original)
+    return restore,dict(only_immutable_new_tensor_allocations_precreated=True,
+        phase_fraction=float(model.settings.unmodulated_power_fraction_eval),routing_bits=[1.0,2.0,4.0,8.0],
+        dtype='torch.float32',no_phase_or_route_result_cache=True,
+        original_functions_restored_for_post_timing_reference=True)
+
+
 def graph_timed(model,front,position,raw,guard,folder):
     import numpy as np
     import torch
@@ -47,6 +92,8 @@ def graph_timed(model,front,position,raw,guard,folder):
     from lgvq_live_frontend import equal_tree
     reference=json.loads((folder.parent/'external_preparation.json').read_text())['rows'][0]
     position=position.to(dtype=torch.bfloat16)
+    restore_constants,constant_receipt=prepare_graph_constants(model)
+    base.write(folder/'graph_constants.json',constant_receipt)
     static={k:torch.empty_like(raw[0][k]) for k in ('pixels','quality','ids','mask')}
     stream=torch.cuda.Stream();graph=torch.cuda.CUDAGraph();captured_output=None
     origin=torch.cuda.Event(enable_timing=True);origin.record();origin.synchronize()
@@ -121,6 +168,7 @@ def graph_timed(model,front,position,raw,guard,folder):
             all_actual_IDs_and_masks_equal_original=True,not_to_be_added_twice_to_continuous_window=True))
         # Last captured full output tree must equal original on its current raw
         # field, not only a pooled/argmax/rounded score. Validation AFTER timing.
+        restore_constants()
         with torch.inference_mode(),torch.cuda.stream(stream):
             batch=base.native_lg_front(front,position,raw[31],hoisted.minimal.NoInnerTimer(),stream)
             original=native.forward(model,batch)
@@ -136,6 +184,7 @@ def graph_timed(model,front,position,raw,guard,folder):
             capture_receipt=capture,no_GPU_readback_attempted_after_failure=True))
         raise
     finally:
+        restore_constants()
         for handle in handles:handle.remove()
 
 

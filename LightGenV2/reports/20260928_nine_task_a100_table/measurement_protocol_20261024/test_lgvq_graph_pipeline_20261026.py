@@ -1,7 +1,7 @@
 import ast
 from pathlib import Path
 import unittest
-from lgvq_graph_pipeline_20261026 import execution_plan
+from lgvq_graph_pipeline_20261026 import execution_plan,constant_allocation_AST
 
 
 class GraphContract(unittest.TestCase):
@@ -26,6 +26,13 @@ class GraphContract(unittest.TestCase):
         self.assertIn('first_eager_calls_and_capture_cost_in_continuous_window=True',source)
         self.assertIn('equal_tree(original,captured_output)',source)
         self.assertIn("assert args.system=='lg'",source)
+    def test_only_constant_creation_replaced(self):
+        source='def f(raw,settings):\n    x=raw.new_tensor(settings.value)\n    return x*raw+3'
+        tree=constant_allocation_AST(source)
+        self.assertIn('_graph_constant(raw, settings.value)',ast.unparse(tree))
+        self.assertEqual(ast.dump(tree.body[0].body[-1]),ast.dump(ast.parse(source).body[0].body[-1]))
+    def test_unknown_constant_pattern_rejected(self):
+        with self.assertRaises(AssertionError):constant_allocation_AST('def f(raw):\n    return raw+3')
 
 
 if __name__=='__main__':unittest.main()

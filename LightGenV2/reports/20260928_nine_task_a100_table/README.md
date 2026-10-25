@@ -1,5 +1,17 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26：Graph01捕获常量分配不兼容已保全，固定常量前置后另建02
+
+Graph01/controller493815及worker493835已stopped退出、MPS释放、无合格graph成本。
+14原文件428071B经backup_receipt_capture_stop01.json精确取回，外日志746B
+SHA95e1a4c4996da02a640bffcbeb4ed5d81290750f2591dcdc1142f9fb0d2cd083。
+精确报错为原_phase_modulation的raw.new_tensor固定eval系数不能在capture中执行；
+静态还查到slotwise统计new_tensor((1,2,4,8))同类常量分配。非输出不一致或外占拒绝。
+仅在Graph候选内将这两个FP32固定常量提前创建，原相位、量化、干涉、路由全部运算
+逐条仍执行，未缓存相位结果或样本特征。原函数AST只替换new_tensor分配表达式；
+测速后恢复原函数再对比完整原输出。模型源文件和权重均不改，控制版仍原实现。
+6项无模型合同测试本地过；失败Graph01原件保留，不追认为已测成本。
+
 ## 2026-10-26：适配前移三轮已完成未提速；下一候选仅LG原指令图复用
 
 前移实验`a100_lgvq_hoisted_pipeline_20261026_01`/controller440423已complete，
