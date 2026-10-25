@@ -76,6 +76,12 @@ SNR10/64counts、逐像素固定同阶段暗场差p99诊断；保留raw p99-p10�
 B临时最终函数学生严格CPU已复核510/690，原511/530与全部候选保留，best SHA
 `e6bd990f523b2d9a34c07b07688c173183a8fa837a442c08b0bcfffeaa073802`；距CLEVR下限仍20条，不宣告达标。
 
+LG C TRAIN参数核验发现并纠正旧说明：部署`load_checkpoint`冻结全部参数，旧C续训调用configure_stage只重新打开4个新专家，
+router/global/shared_head实际仍冻结；两个旧C续训不是此前所称完整光电联合训练。已对best/last实际mask差留证，
+旧协议与原数值不改写。新独立`config_LG_C_joint_restore_20261025.json`显式恢复仿真训练再按stage3冻结8个旧专家：
+仅router/global/新4专家/原共享7840头训练，gain与A/B不变。2完整epoch/3600秒，逐项有限非零梯度必须通过；
+旧两个配置数值路径保持不变。C准入及整阶段选模不放宽，不拼旧D，也不改正在采集的B权重或光路。
+
 ### 2026-10-25 追加人工范围：D2NN C增强教师、B扩来源、LG C继续优化
 
 用户明确要求D2NN C也做增强教师、继续LG C适配，并允许B教师增加部分TEST增强来源。

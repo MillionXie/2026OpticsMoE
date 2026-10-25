@@ -16,7 +16,7 @@ from .refine_LG_retention import retention_selection
 
 
 def validate(cfg):
-    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json')
+    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only published finite C continuation profiles')
 
 
@@ -29,13 +29,28 @@ def native_retention_loss(result,logits,route,cfg):
     return cfg['native_B_logit_weight']*kd+cfg['native_B_route_weight']*route_loss
 
 
+def configure_simulation_trainability(model):
+    """Undo deployment-loader freeze, then reapply the original stage contract."""
+    if model.architecture!='moe':raise ValueError('Only original LG C simulation')
+    for value in model.parameters():value.requires_grad_(True)
+    model.configure_stage(3)
+    new=model.active_indices[8:12].tolist()
+    expected={'router_phase','global_phase','shared_head.weight'}|{'first_phase.'+str(i) for i in new}
+    actual={name for name,value in model.named_parameters() if value.requires_grad}
+    if actual!=expected:raise RuntimeError('Unexpected simulation trainable set')
+    return {name:value.numel() for name,value in model.named_parameters() if value.requires_grad}
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('chain','warm_run','profile','train','test','source_protocols','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--gpu-uuid',required=True);p.add_argument('--preflight-only',action='store_true');a=p.parse_args();cfg=json.loads(a.profile.read_text());validate(cfg)
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);np.random.seed(cfg['seed']);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     gpu=gpu_gate(cfg,a.gpu_uuid);device=torch.device('cuda:0');receipt=json.loads((a.warm_run/'C/completion.json').read_text());parent=a.warm_run/'C/best_checkpoint.pt'
-    model,cp=load_checkpoint(parent,receipt['best_sha256']);model.configure_stage(3);model.to(device);immutable=frozen(model);gain=tensor_sha(model.display_gains)
+    model,cp=load_checkpoint(parent,receipt['best_sha256'])
+    if cfg.get('restore_simulation_trainability'):trainable=configure_simulation_trainability(model)
+    else:model.configure_stage(3);trainable={n:v.numel() for n,v in model.named_parameters() if v.requires_grad}
+    model.to(device);immutable=frozen(model);gain=tensor_sha(model.display_gains)
     source=json.loads((a.warm_run/'protocol.json').read_text());original=json.loads((a.chain/'C/completion.json').read_text())
     if cp['architecture']!='moe' or cp['stage']!=3 or source['parent_C_sha256']!=original['best_sha256']:raise ValueError('Exact same-chain warm C required')
     names=list(cfg['reference']);train=load_data(a.train,'train');memories=json.loads((a.chain/'memory_manifest.json').read_text());cache=a.chain/'C/TRAIN_reference_teacher_logits.pt';target=torch.load(cache,map_location='cpu',weights_only=False)
@@ -60,7 +75,9 @@ def main():
         if native is not None:loss+=native_retention_loss(result,native['logits'][:2].to(device),native['routes'][:2].to(device),cfg)
         loss.backward()
         if not torch.isfinite(loss) or frozen(model)!=immutable or tensor_sha(model.display_gains)!=gain:raise RuntimeError('Real TRAIN/freeze preflight failed')
-        print(json.dumps(dict(passed=True,loss=float(loss.detach()),TRAIN_only=True,old_experts_gains_frozen=True,SDK=False)));return
+        gradients={n:dict(finite=bool(v.grad is not None and torch.isfinite(v.grad).all()),nonzero=bool(v.grad is not None and torch.count_nonzero(v.grad)>0)) for n,v in model.named_parameters() if v.requires_grad}
+        if cfg.get('restore_simulation_trainability') and not all(r['finite'] and r['nonzero'] for r in gradients.values()):raise RuntimeError('Every intended parameter must receive finite nonzero TRAIN gradient')
+        print(json.dumps(dict(passed=True,loss=float(loss.detach()),TRAIN_only=True,trainable_parameters=trainable,gradient_audit=gradients,old_experts_gains_frozen=True,SDK=False)));return
     paths={k:Path(v) for k,v in json.loads(a.source_protocols.read_text()).items()}
     if sha(paths['speech_binary'])!=identity['models'][3]['config']['protocol_sha256']['speech_binary'] or sha(paths['vision'])!=train['speech_binary']['manifest']['vision_checkpoint_sha256']:raise ValueError('Original current TRAIN protocol/frontend differs')
     current=load_dataset(paths,'speech_binary','train',vision_checkpoint=paths['vision'],device=device);selection={n:np.arange(len(current)) if n==names[-1] else np.asarray(memories[n]['indices']) for n in names}
@@ -69,7 +86,7 @@ def main():
     if native is not None:torch.save(dict(**native,provenance=native_receipt),out/'native_B_TRAIN_teacher.pt')
     put(a.out/'protocol.json',dict(architecture='moe',config=cfg,config_sha256=sha(a.profile),warm_C_checkpoint_sha256=receipt['best_sha256'],original_chain_C_sha256=original['best_sha256'],
         original_A_B_unchanged=True,D_requires_retrain_from_new_C=True,no_old_D_splicing=True,TRAIN_teacher_cache_sha256=sha(cache),TEST_gradients=False,TEST_selected_development_metric=True,independent_generalization_claim=False,
-        native_B_TRAIN_teacher=native_receipt,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
+        native_B_TRAIN_teacher=native_receipt,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
     baseline=evaluate(model,test,names,device,8);best=retention_selection(baseline,cfg['reference']);best_epoch=0;history=[]
     def save(role,epoch):
         torch.save(dict(model={k:v.detach().cpu() for k,v in model.state_dict().items()},architecture='moe',stage=3,epoch=epoch,best_epoch=best_epoch,parent_checkpoint_sha256=cp['parent_checkpoint_sha256'],warm_C_checkpoint_sha256=receipt['best_sha256'],TEST_gradients=False,TEST_selected_development=True),out/(role+'_checkpoint.pt'))
