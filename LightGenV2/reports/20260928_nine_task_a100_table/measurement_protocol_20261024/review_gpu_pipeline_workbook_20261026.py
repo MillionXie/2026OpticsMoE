@@ -28,10 +28,10 @@ def main():
     nformulas=0
     for sh in formula:
         values=cached[sh.title]
-        for row in sh:
-            for c in row:
-                v=values[c.coordinate]
-                assert v.data_type!='e',(sh.title,c.coordinate,v.value)
+        assert sh.max_row==values.max_row and sh.max_column==values.max_column
+        for row,cache_row in zip(sh.iter_rows(),values.iter_rows()):
+            for c,v in zip(row,cache_row):
+                assert v.data_type!='e',(sh.title,getattr(c,'coordinate','empty'),v.value)
                 if c.data_type=='f':
                     nformulas+=1;assert v.value is not None,(sh.title,c.coordinate,'missing formula cache')
     for cell in ('B6','C6','D6','E6','F6','D7','D8','E15','D34'):

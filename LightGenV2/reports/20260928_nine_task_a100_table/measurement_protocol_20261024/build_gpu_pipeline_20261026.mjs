@@ -20,10 +20,10 @@ block(raw,2,[['每轮原始连续耗时与来源','','','','','','','','']]);
 block(raw,4,[['执行方式','轮次','输入次数','原总毫秒','每16视频/ms','等效单帧/ms','LG后续前端重叠/ms','Qwen视频间隙/ms','稳定判据首次满足N']]);head(raw,'A4:I4');
 const pointRows=[];
 data.all_points.forEach((p,i)=>{const r=5+i;pointRows.push({r,p});block(raw,r,[[label(p),p.repeat,p.video_calls,p.elapsed_ms,null,null,p.system==='LG'?p.observed_later_front_body_overlap_ms:null,p.system==='Qwen'?p.inter_video_gaps16_ms*128:null,p.system==='Qwen'?'不适用：逐视频串行':p.first_qualified_steady_videos??'未观察到']]);raw.getRange(`E${r}`).formulas=[[`=D${r}*16/C${r}`]];raw.getRange(`F${r}`).formulas=[[`=E${r}/64`]];const src=data.source_files.find(f=>f.path===p.original_path);if(!src)throw new Error('Original raw SHA absent');raw.getRange(`K${r}:L${r}`).values=[[p.original_path,src.sha256]];});
-raw.getRange('K4:L4').values=[['原始记录绝对路径','原始文件SHA256']];head(raw,'K4:L4');raw.getRange('K:K').format.columnWidth=85;raw.getRange('L:L').format.columnWidth=70;raw.getRange('D5:H13').setNumberFormat('0.000');raw.freezePanes.freezeRows(4);
+raw.getRange('K4:L4').values=[['原始记录绝对路径','原始文件SHA256']];head(raw,'K4:L4');raw.getRange('I:I').format.columnWidth=28;raw.getRange('I5:I13').format.horizontalAlignment='center';raw.getRange('K:K').format.columnWidth=85;raw.getRange('L:L').format.columnWidth=70;raw.getRange('D5:H13').setNumberFormat('0.000');raw.freezePanes.freezeRows(4);
 block(summary,5,[['执行方式','三轮总输入次数','三轮总秒数','每16视频/ms','等效单帧/ms','Qwen50÷本行','稳定N：三轮']]);head(summary,'A5:G5');
 keys.forEach((k,i)=>{const r=6+i;summary.getRange(`A${r}`).values=[[k]];summary.getRange(`B${r}`).formulas=[[`=SUMIFS('逐轮与来源'!$C$5:$C$13,'逐轮与来源'!$A$5:$A$13,A${r})`]];summary.getRange(`C${r}`).formulas=[[`=SUMIFS('逐轮与来源'!$D$5:$D$13,'逐轮与来源'!$A$5:$A$13,A${r})/1000`]];summary.getRange(`D${r}`).formulas=[[`=C${r}*1000*16/B${r}`]];summary.getRange(`E${r}`).formulas=[[`=D${r}/64`]];summary.getRange(`F${r}`).formulas=[[`=$D$8/D${r}`]];summary.getRange(`G${r}`).values=[[i===2?'不适用：逐视频串行':data.all_points.filter(p=>label(p)===k).map(p=>p.first_qualified_steady_videos??'未观察到').join(' / ')]];});
-summary.getRange('C6:F8').setNumberFormat('0.000');summary.getRange('F6:F8').setNumberFormat('0.00"×"');summary.getRange('G:G').format.columnWidth=28;summary.getRange('A10').values=[['起点：首GPU模型前端；终点：最后评分在GPU就绪。含全部内部间隙。']];
+summary.getRange('C6:F8').setNumberFormat('0.000');summary.getRange('F6:F8').setNumberFormat('0.00"×"');summary.getRange('F6:G8').format.horizontalAlignment='center';summary.getRange('G:G').format.columnWidth=28;summary.getRange('A10').values=[['起点：首GPU模型前端；终点：最后评分在GPU就绪。含全部内部间隙。']];
 summary.getRange('A11').values=[['完整软件包含FFT、融合和残差；不是新物理光路端到端测量。']];
 block(raw,17,[['前缀连续窗口','','','','']]);block(raw,18,[['执行方式','轮次','前缀输入次数','前缀累计毫秒','每16视频/ms']]);head(raw,'A18:E18');
 let pr=19;for(const p of data.all_points)for(const pre of p.prefixes){block(raw,pr,[[label(p),p.repeat,pre.video_calls,pre.time16_ms*pre.video_calls/16,null]]);raw.getRange(`E${pr}`).formulas=[[`=D${pr}*16/C${pr}`]];pr++}
@@ -77,13 +77,14 @@ const candidates=[
  ['图像适配＋14维质量特征适配','仍在本组主体流，尚未前移','依赖各自输入，可随下一组前端计算；归一化须等文本条件','诊断时长不是可以直接减去的收益'],
  ['CPU→GPU传输（H2D）','当前LG主窗前完成；Qwen逐条包含','若改测文件输入，可用锁页内存与拷贝流尝试和本组推理重叠','不能把原来已排除的传输再减一次'],
  ['视觉—语言merger：融合映射','保留原计算，依赖视觉输出','只能在视觉结果得到后开始；与别组独立工作有调度空间','不能在本组视觉计算前预先完成'],
- ['语言主体与最后电子读出','依赖融合后序列及当前输出','可研究固定缓冲区和更少调度开销，不改原精度/数学','不能省略网络层、挑快轮、只算局部']
+ ['语言主体与最后电子读出','依赖融合后序列及当前输出','可研究固定缓冲区和更少调度开销，不改原精度/数学','不能省略网络层、挑快轮、只算局部'],
+ ['每个光电块内的电子残差支路','原代码同一主体流，先电子支路再光路','两路依赖同一输入，可尝试分流计算，到融合点同步','旧计费投影已排除该支路，不能再扣一次；完整执行须验证']
 ];
-block(nodes,42,candidates);nodes.getRange('A42:D48').format.wrapText=true;nodes.getRange('A42:D48').format.rowHeight=76;
-nodes.getRange('A49').values=[['LG文字还生成视觉调制条件，第一光学模块前就要就绪，并非仅在视觉计算后使用。']];
-nodes.getRange('A50').values=[['以上“还可”是依赖关系分析，不是新增实测收益；Qwen不采用这些预取/并行措施。']];
-nodes.getRange('A51').values=[['GPU流能否同时执行取决于资源，必须看完整连续窗口，不能仅凭异步代码声称变快。']];
-nodes.getRange('A52').values=[['本次90.5%–98.6%重叠发生在GPU软件主干（含FFT）上，不证明更短物理光电主干完全覆盖。']];
+block(nodes,42,candidates);nodes.getRange('A42:D49').format.wrapText=true;nodes.getRange('A42:D49').format.rowHeight=76;
+nodes.getRange('A50').values=[['LG文字还生成视觉调制条件，第一光学模块前就要就绪，并非仅在视觉计算后使用。']];
+nodes.getRange('A51').values=[['以上“还可”是依赖关系分析，不是新增实测收益；Qwen不采用这些预取/并行措施。']];
+nodes.getRange('A52').values=[['GPU流能否同时执行取决于资源，必须看完整连续窗口，不能仅凭异步代码声称变快。']];
+nodes.getRange('A53').values=[['本次90.5%–98.6%重叠发生在GPU软件主干（含FFT）上，不证明更短物理光电主干完全覆盖。']];
 parts.getRange('A2').values=[['时间花在哪里：主窗内与主窗外分开']];parts.getRange('A2').format.font={size:16,bold:true};
 block(parts,4,[['方式 / 每16视频','图像＋文字前端区间/ms','主体入口适配区间/ms','第一光学/TF到评分/ms','视频间隙/ms','连续总时间/ms']]);head(parts,'A4:F4');
 for(let i=0;i<3;i++){
@@ -91,7 +92,7 @@ for(let i=0;i<3;i++){
  block(parts,5+i,[[k,i<2?mean('front_envelope16_ms'):mean('model_front16_ms'),i<2?mean('input_adapters_body_envelope16_ms'):'含在原架构窗口',i<2?mean('first_optic_to_score_software_envelope16_ms'):mean('first_TF_to_score16_ms'),i<2?'含在连续总时间':mean('inter_video_gaps16_ms'),null]]);
  parts.getRange(`F${5+i}`).formulas=[[`='对照结果'!D${6+i}`]];
 }
-parts.getRange('B5:F7').setNumberFormat('0.000');parts.getRange('A9').values=[['LG分项区间会重叠，不能横向相加；连续总时间才是实际比较分母。']];
+parts.getRange('B5:F7').setNumberFormat('0.000');parts.getRange('C5:E7').format.horizontalAlignment='center';parts.getRange('A9').values=[['LG分项区间会重叠，不能横向相加；连续总时间才是实际比较分母。']];
 parts.getRange('A10').values=[['“第一光学到评分”是完整GPU软件执行，含FFT模拟/融合/残差，不是物理光传播耗时。']];
 parts.getRange('A11').values=[['前端区间含每组文字embedding的依赖等待；未单独计时的操作不虚构细分值。']];
 block(parts,14,[['实际CPU准备与传输','轮次','CPU准备每16视频/ms','打包/传输每16视频/ms','说明','实际准备视频数','原CPU总毫秒','原打包/传输总毫秒']]);head(parts,'A14:H14');
@@ -113,13 +114,13 @@ const selectedStages=[
  ['frame_merger','视觉—语言融合映射','依赖视觉结果，不能整段提前'],
  ['readout','最终电子评分读出','依赖主体输出，保留']
 ];
-selectedStages.forEach(([stage,name,state],i)=>{let r=30+i;const values=diag.map(p=>p.stages_per16_ms[stage]);if(values.some(v=>!Number.isFinite(v)))throw new Error(`Missing diagnostic stage ${stage}`);block(parts,r,[[name,null,state,...values]]);parts.getRange(`B${r}`).formulas=[[`=AVERAGE(D${r}:F${r})`]];});parts.getRange('B30:F39').setNumberFormat('0.000');parts.getRange('C30:C39').format.wrapText=true;parts.getRange('A30:F39').format.rowHeight=38;
+selectedStages.forEach(([stage,name,state],i)=>{let r=30+i;const values=diag.map(p=>p.stages_per16_ms[stage]);if(values.some(v=>!Number.isFinite(v)))throw new Error(`Missing diagnostic stage ${stage}`);block(parts,r,[[name,null,state,...values]]);parts.getRange(`B${r}`).formulas=[[`=AVERAGE(D${r}:F${r})`]];});parts.getRange('B30:F39').setNumberFormat('0.000');parts.getRange('C30:C39').format.wrapText=true;parts.getRange('C30:C39').format.horizontalAlignment='center';parts.getRange('A30:F39').format.rowHeight=38;
 parts.getRange('A41').values=[['诊断事件区间受流调度与资源竞争影响，重叠比例不是整体加速比；未测的前移收益不填数字。']];
 parts.getRange('B:F').format.columnWidth=24;parts.getRange('E:E').format.columnWidth=48;
 wb.recalculate();
 const original=raw.getRange('D5').values[0][0],old=summary.getRange('D6').values[0][0];raw.getRange('D5').values=[[original+128]];wb.recalculate();const changed=summary.getRange('D6').values[0][0];if(Math.abs(changed-old-1/3)>1e-5)throw new Error('Summary formula did not recalculate');raw.getRange('D5').values=[[original]];wb.recalculate();
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:2000});console.log(errors.ndjson);
-for(const [sh,range,name] of [[summary,'A1:G37','summary'],[raw,'A1:I14','raw'],[nodes,'A1:D52','nodes'],[parts,'A1:H41','parts']]){const b=await wb.render({sheetName:sh.name,range,scale:1,format:'png'});await fs.writeFile(path.join(output,`${name}.png`),new Uint8Array(await b.arrayBuffer()));}
+for(const [sh,range,name] of [[summary,'A1:G37','summary'],[raw,'A1:I14','raw'],[nodes,'A1:D53','nodes'],[parts,'A1:H41','parts']]){const b=await wb.render({sheetName:sh.name,range,scale:1,format:'png'});await fs.writeFile(path.join(output,`${name}.png`),new Uint8Array(await b.arrayBuffer()));}
 const x=await SpreadsheetFile.exportXlsx(wb);await x.save(file);
 await fs.writeFile(path.join(output,'workbook_formula_review.json'),JSON.stringify({status:'passed',input_change_recalculation_checked:true,restored:true,summary_values:summary.getRange('A5:G8').values},null,2));
 console.log(file);
