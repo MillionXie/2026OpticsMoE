@@ -111,3 +111,5 @@
 !build_baseline_e2e_fps_20261025.mjs
 !lgvq_pipeline_demo_20261025.py
 !test_lgvq_pipeline_demo_20261025.py
+!audit_lgvq_pipeline_demo_20261025.py
+!test_audit_lgvq_pipeline_demo_20261025.py

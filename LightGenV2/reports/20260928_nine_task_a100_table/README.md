@@ -21,7 +21,51 @@ CPU worker的原processor初始化在加载阶段完成，计时从首次输入�
 后者不含CPU准备，绝不能冒充新流水线或物理光路端到端。此时间demo不产新能耗结论。
 对照只复用已封存Qwen50完整端到端6156.869285306893ms/16视频；百倍门为61.56869285306893ms。
 保留同一A100/250W/privateMPS100、共享锁、12次空闲、外占只停自己及30分钟总边界。
-当前仅完成无模型检查和只读资源核验；真实状态以新run的suite/status/summary为准。
+**本次demo已完成并独立离线核验。** 新不可变run为
+`LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/a100_lgvq_pipeline_demo_20261025_01`。
+controller3736806/worker3739777及CPU准备子进程已退出，私有MPS释放；最后只读查询
+目标A100无计算进程、MPS control returncode1/no daemon。24原文件450783B经
+`backup_receipt_complete01.json`逐SHA取回，外置controller.log另取回0B原件。
+没有执行Qwen、完整TEST或训练，没有覆盖任何旧正式成本。
+
+16视频/64帧GPU前端一次批量候选直接通过：第0整场及第2尾补齐场的原输入
+vision/quality/language/mask和全部16个完整输出逐位相同；没有退回单视频前端。
+六轮共240有效视频调用、288实际执行槽、18整场，完整输出跨配置/轮次逐位相同。
+固定位置插值准备0.15546588s属于模型几何设置，不是缓存样本特征；六轮全部重新解码。
+位置插值转模型缓冲是本次新执行策略，不能倒称旧正式测量已经这样做。
+
+|新LG Temporal demo配置|两轮折合16有效视频均值|等效单帧|原Qwen50端到端/LG参考比|
+|---|---:|---:|---:|
+|8路CPU准备，各场顺序|3075.133ms|48.049ms|2.0021×|
+|8路CPU准备，下一场预取重叠|2558.668ms|39.979ms|2.4063×|
+|16路CPU准备，下一场预取重叠|2102.553ms|32.852ms|2.9283×|
+
+**没有达到百倍。** 最好配置的非重叠连续区间拆分（每16有效视频）为：
+等待本场输入就绪及调度1605.092ms，输入就绪到GPU前端提交结束350.594ms，
+前端提交结束到完整软件主体GPU同步完成146.774ms，结果回CPU0.093ms。
+四项精确加总2102.553ms，前端含CPU张量拼接、实际传输、实际分词与GPU前端提交，
+不把350.594ms冒称纯GPU核时间；输入等待含进程间传输和调度，不能冒称纯解码时间。
+CPU原decode/processor/quality各任务原起止及GPU各段Event都保存在逐场records。
+`input_pixels_H2D`作用域含CPU拼接及拷贝，Event可能跨主机提交空档，不能以其数值宣称纯显存传输耗时。
+
+下一场CPU准备与上一场计算窗口确实重叠：8/16worker流水线每轮各场并集重叠平均
+605.861/1041.114ms；非流水线为0。稳态字段原`post_first_field_cadence16_ms`实为
+**16执行槽场节拍**：首场后32执行槽只有24有效视频，独立audit额外给出按24有效视频归一化
+的valid16吞吐时间，均不能代替端到端或单请求延迟。没有用选定段加固定光周期冒称新E2E。
+本次软件完整执行FFT/layout/fusion/残差，物理光路新端到端与新能耗均未测。
+
+这是首40视频、模型常驻、每配置两轮的有限demo；Qwen50引用原首200×3封存端到端，
+未新增Qwen测试。输入都属于同一原TEST且SHA与Qwen原输入reference相同，但样本规模、
+resident执行条件不同，上表倍率仅探索性参考，不能替换正式同规模对照。
+单帧由双方都除64得到，不会额外产生16×或4×收益。
+
+本地新审查目录：
+`measurement_protocol_20261024/outputs/01a061e2-6f88-7913-87f5-b632000e4c83/lgvq_pipeline_demo_review_20261025_01/`。
+含中文易读`LGVQ_Temporal_流水线demo核验说明.txt`、`independent_demo_audit.json`及
+`delivery_manifest.json`（SHA256 `3300b598cb71cd0c33c453b5dc48c99439e814481e9d194ab7f01eec53677ca4`）。
+独立复算所有原时间区间、重叠并集、240有效调用/288槽、六NPZ、24原封存SHA、
+40输入身份、15已发布Linux源blob与加载/运行GPU守卫；不额外运行模型。
+新auditor4个无模型测试通过；runtime6个无模型测试仍通过。
 
 ## 2026-10-25：仅多baseline端到端frame/s补充表
 
