@@ -21,12 +21,13 @@ from .diagnose_frontend_train import pair_batches
 from .augmented_teacher import load_teacher,teacher_logits
 from .relational_distillation import teacher_representations,relational_losses
 from .optical_initialization import restart_existing_parameters
+from .routing_diversity import balance_and_diversity,report_mean_JS
 from .refine_unified import conditioned_inputs,scores_from_logits,domain_balance
 from LightGenV2.tasks.t21_continual_learning_hardware.train_native import sha,put,tensor_sha,gpu_gate
 
 
 def validate(cfg):
-    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json','config_static_four_teacher_continuation_20261025.json','config_static_four_expert_specialization_20261025.json','config_static_four_relational_KD_20261026.json','config_static_four_optical_restart_20261026.json')
+    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json','config_static_four_teacher_continuation_20261025.json','config_static_four_expert_specialization_20261025.json','config_static_four_relational_KD_20261026.json','config_static_four_optical_restart_20261026.json','config_static_four_routing_diversity_20261026.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Exact finite common training profile required')
 
 
@@ -71,6 +72,7 @@ def main():
     p.add_argument('--gpu-uuid',required=True);p.add_argument('--preflight-only',action='store_true');a=p.parse_args();cfg=json.loads(a.profile.read_text());validate(cfg);torch.set_num_threads(2);torch.manual_seed(cfg['seed']);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False;gpu=gpu_gate(cfg,a.gpu_uuid);device=torch.device('cuda:0')
     external=cfg.get('external_augmented_teacher',False)
     relational=cfg.get('relational_distillation',False)
+    diverse=cfg.get('routing_diversity',False)
     if external!=(a.teacher is not None):raise ValueError('Explicit matching external teacher/profile required')
     four=cfg.get('contract')==FOUR_CONTRACT;fresh=four and not cfg.get('continuation',False);contract=FOUR_CONTRACT if four else CONTRACT;front_sha=cfg['frontend_SHA256'];extract_features=partial(checked_features,expected_sha256=front_sha) if four else features
     train=load_arrays(a.data,'train');tf=extract_features(train,a.frontend)
@@ -90,6 +92,7 @@ def main():
             with torch.no_grad():gain_report=model.calibrate_gains(amplitude(train,tf,calibration,device))
     if cfg.get('phase_gradient_projection',False):assert case=='MoE_AB' and domains==[0,1]
     if external:assert four and case=='MoE_AB' and domains==[0,1] and not cfg.get('recalibrate_gains',True)
+    if diverse:assert external and case=='MoE_AB' and cfg['paired_TRAIN_batches'] and not relational and not cfg.get('restart_existing_optics',False)
     initialization=restart_existing_parameters(model,cfg)
     restrict_phase_updates(model,cfg.get('trainable_phase_prefixes'))
     gain=tensor_sha(model.display_gains);frozen={n:tensor_sha(v) for n,v in model.state_dict().items() if n=='display_gains' or (n in dict(model.named_parameters()) and not dict(model.named_parameters())[n].requires_grad)};optics=[v for n,v in model.named_parameters() if v.requires_grad and not n.startswith('shared_head.')];ix=next(pair_batches(train,cfg['batch_size'],42) if cfg.get('paired_TRAIN_batches',False) else balanced_batches(train,domains,cfg['batch_size'],42));r=model(amplitude(train,tf,ix,device),return_debug=initialization is not None);loss=F.cross_entropy(r['logits'],torch.as_tensor(train['labels'][ix],device=device))
@@ -106,6 +109,8 @@ def main():
             rd,ra=relational_losses(r['ccd_features'],emb.to(device),torch.as_tensor(train['domains'][ix],device=device))
             loss=loss+cfg['relation_distance_weight']*rd+cfg['relation_angle_weight']*ra
             del tm
+        if diverse:
+            gb,js=balance_and_diversity(r['route_power'],torch.as_tensor(train['domains'][ix],device=device),model.active_indices[:4]);loss+=cfg['global_balance_weight']*gb-cfg['modality_diversity_weight']/cfg['diversity_warmup_epochs']*js
         loss.backward()
     if any(v.grad is None or not torch.isfinite(v.grad).all() for v in model.parameters() if v.requires_grad):raise RuntimeError('Nonfinite real TRAIN gradients')
     if a.preflight_only:
@@ -129,6 +134,9 @@ def main():
     if initialization is not None:
         helper=Path(__file__).with_name('optical_initialization.py');sources[str(helper)]=sha(helper)
         proto=json.loads((a.out/'protocol.json').read_text());proto.update(source_sha256=sources,training_initialization=initialization,baseline_is_restarted_model_not_parent=True,new_student_parameters=0);put(a.out/'protocol.json',proto)
+    if diverse:
+        helper=Path(__file__).with_name('routing_diversity.py');sources[str(helper)]=sha(helper)
+        proto=json.loads((a.out/'protocol.json').read_text());proto.update(source_sha256=sources,routing_objective='Global TRAIN expert balance minus paired TRAIN two-domain mean-route JS; domains are loss-only, not inference inputs',new_student_parameters=0);put(a.out/'protocol.json',proto)
     if external:
         proto=json.loads((a.out/'protocol.json').read_text());proto.update(external_teacher_run=str(a.teacher),external_teacher_SHA256=teacher_digest,external_teacher_validation=teacher_receipt['validation'],teacher_scope='Larger offline image CNN; TRAIN and TRAIN D4 only; validation selected; no TEST access; original student inference unchanged',RGB_priority_selection=True,SAR_validation_floor=cfg['SAR_validation_floor'],trainable_parameters={n:p.numel() for n,p in model.named_parameters() if p.requires_grad});put(a.out/'protocol.json',proto)
     def save(role,epoch,step=0):
@@ -151,7 +159,7 @@ def main():
         del warmx,warmy
     optimizer=torch.optim.AdamW([dict(params=optics,lr=cfg['optical_lr']),dict(params=model.shared_head.parameters(),lr=cfg['head_lr'])],weight_decay=0.)
     for epoch in range(1,cfg['epochs']+1):
-        model.train();total=0.;seen=0;relation_totals=[0.,0.];correct={d:0 for d in domains};counts={d:0 for d in domains};conflicts={n:0 for n,p in model.named_parameters() if 'phase' in n and p.requires_grad};projection_batches=0;rng=np.random.default_rng(cfg['seed']+epoch);factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(1,cfg['epochs']-1)))
+        model.train();total=0.;seen=0;relation_totals=[0.,0.];diversity_totals=[0.,0.];route_sums={d:torch.zeros(4,device=device) for d in domains} if diverse else {};correct={d:0 for d in domains};counts={d:0 for d in domains};conflicts={n:0 for n,p in model.named_parameters() if 'phase' in n and p.requires_grad};projection_batches=0;rng=np.random.default_rng(cfg['seed']+epoch);factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(1,cfg['epochs']-1)))
         for group,lr in zip(optimizer.param_groups,(cfg['optical_lr'],cfg['head_lr'])):group['lr']=lr*factor
         for ix in (pair_batches(train,cfg['batch_size'],cfg['seed']+epoch) if cfg.get('paired_TRAIN_batches',False) else balanced_batches(train,domains,cfg['batch_size'],cfg['seed']+epoch)):
             if external:
@@ -166,7 +174,12 @@ def main():
                 rd,ra=relational_losses(r['ccd_features'],teacher_embeddings[view][ix],d)
                 cost+=cfg['relation_distance_weight']*rd+cfg['relation_angle_weight']*ra
                 relation_totals[0]+=float(rd.detach())*len(ix);relation_totals[1]+=float(ra.detach())*len(ix)
-            if saved['architecture']=='moe':cost+=cfg['domain_balance_weight']*domain_balance(r['route_power'],d,model.active_indices[:4])
+            if saved['architecture']=='moe':
+                if diverse:
+                    gb,js=balance_and_diversity(r['route_power'],d,model.active_indices[:4]);cost+=cfg['global_balance_weight']*gb-cfg['modality_diversity_weight']*min(1.,epoch/cfg['diversity_warmup_epochs'])*js
+                    diversity_totals[0]+=float(gb.detach())*len(ix);diversity_totals[1]+=float(js.detach())*len(ix)
+                    for domain in domains:route_sums[domain]+=r['route_power'].detach()[d==domain].index_select(1,model.active_indices[:4]).sum(0)
+                else:cost+=cfg['domain_balance_weight']*domain_balance(r['route_power'],d,model.active_indices[:4])
             if not torch.isfinite(cost):raise RuntimeError('Nonfinite shared-frontend TRAIN objective')
             if cfg.get('phase_gradient_projection',False):
                 assert domains==[0,1] and saved['architecture']=='moe';parts=[];named=[(n,p) for n,p in model.named_parameters() if p.requires_grad]
@@ -191,6 +204,9 @@ def main():
             row['validation_routing_by_domain']=report.get('routing_by_domain');put(a.out/'history.json',history)
         if relational:
             row['TRAIN_relational_distance']=relation_totals[0]/seen;row['TRAIN_relational_angle']=relation_totals[1]/seen;put(a.out/'history.json',history)
+        if diverse:
+            means=torch.stack([route_sums[d]/counts[d] for d in domains]);_,population_js=balance_and_diversity(means,torch.as_tensor(domains,device=device),torch.arange(4,device=device))
+            row.update(TRAIN_mean_batch_balance=diversity_totals[0]/seen,TRAIN_mean_batch_JS=diversity_totals[1]/seen,TRAIN_augmented_epoch_mean_routing=means.cpu().tolist(),TRAIN_population_mean_JS=float(population_js),validation_population_mean_JS=report_mean_JS(report));put(a.out/'history.json',history)
         if time.monotonic()-started>cfg['max_case_seconds']:raise RuntimeError('Finite full-epoch time bound')
         if epoch>=cfg['minimum_epochs'] and epoch-last_improvement>=cfg['patience']:break
     epochs_completed=epoch;chosen=torch.load(a.out/'best_checkpoint.pt',map_location=device,weights_only=False);model.load_state_dict(chosen['model'],strict=True);base_epoch=chosen['epoch'];model.eval();unused,tx=infer(model,train,tf,device,True);unused,vx=infer(model,val,vf,device,True);fx=collect_augmented(model,flip,ff,device);mask=np.isin(train['domains'],domains);z,zv,t=conditioned_inputs(np.concatenate((tx[mask],fx[mask])),vx,cfg['conditioner_ridge']);labels=torch.as_tensor(np.tile(train['labels'][mask],2));param=torch.nn.Parameter(torch.linalg.solve(t,model.shared_head.weight.detach().cpu().double().T).T);headopt=torch.optim.LBFGS([param],lr=1.,max_iter=5,history_size=10,line_search_fn='strong_wolfe')
