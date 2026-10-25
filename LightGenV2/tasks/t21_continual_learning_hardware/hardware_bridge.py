@@ -70,16 +70,29 @@ def hardware(cfg):
     return Bench,LOCK,centroid,drive,warp
 
 
-def signal(value,mask=None):
+def signal(value,mask=None,dark=None):
     readout=value if mask is None else value[mask]
-    return dict(mean=float(value.mean()),p99_gray=float(np.percentile(value,99)*255),
+    row=dict(mean=float(value.mean()),p99_gray=float(np.percentile(value,99)*255),
                 maximum=float(value.max()),saturation_fraction=float((value>=1).mean()),
                 readout_p99_counts=float(np.percentile(readout,99)*65535),
                 readout_p10_counts=float(np.percentile(readout,10)*65535))
+    if dark is not None:
+        if dark.shape!=value.shape or not np.isfinite(dark).all():raise ValueError('Fixed admitted dark frame shape/values changed')
+        delta=value-dark
+        row['fixed_dark_difference_p99_counts']=float(np.percentile(delta if mask is None else delta[mask],99)*65535)
+        row['network_background_subtraction']=False
+    return row
 
 
-def guard(row,noise=None,router=False):
-    if noise is None:dark=row['p99_gray']<15
+def guard(row,noise=None,router=False,policy='legacy'):
+    if policy not in ('legacy','pointwise_dark_p99'):raise ValueError('Unknown signal guard policy')
+    if policy=='pointwise_dark_p99':
+        if noise is None or 'fixed_dark_difference_p99_counts' not in row:raise ValueError('Pointwise guard requires fixed admitted dark diagnostics')
+        margin=max(64.,10*noise['read_noise_upper_counts'])
+        metrics=[row['fixed_dark_difference_p99_counts'],row['readout_p99_counts'],row['readout_p10_counts'],row['saturation_fraction'],noise['read_noise_upper_counts']]
+        dark=(not np.isfinite(metrics).all() or noise['read_noise_upper_counts']<=0 or
+              row['fixed_dark_difference_p99_counts']<margin or row['readout_p99_counts']-row['readout_p10_counts']<margin)
+    elif noise is None:dark=row['p99_gray']<15
     else:
         # Original logical8-bit p99=15 is not a bit-depth-invariant dark test.
         # This fixed TRAIN/control admission is frozen before any TEST capture.
@@ -89,6 +102,27 @@ def guard(row,noise=None,router=False):
               row['readout_p99_counts']-row['readout_p10_counts']<margin)
     if dark or row['saturation_fraction']>.15:
         raise RuntimeError('Pilot/capture dynamic-range stop; preserve evidence, no automatic exposure/retry: '+repr(row))
+
+
+def signal_guard_policy(policy=None,exposure_us=None):
+    """Legacy default; human-authorized pointwise dark SNR changes diagnostics only."""
+    if policy is None:return 'legacy'
+    expected={'mode','authorization','minimum_signal_counts','minimum_SNR','exposure_us','single_frame','network_background_subtraction'}
+    if (set(policy)!=expected or policy['mode']!='pointwise_dark_p99' or not isinstance(policy['authorization'],str) or
+        not policy['authorization'].strip() or policy['minimum_signal_counts']!=64 or policy['minimum_SNR']!=10 or
+        policy['single_frame'] is not True or policy['network_background_subtraction'] is not False or
+        policy['exposure_us']!=2000 or not isinstance(exposure_us,(int,float)) or not np.isfinite(exposure_us) or abs(exposure_us-2000)>.5):
+        raise ValueError('Signal policy requires explicit fixed2ms single-frame SNR10/64 authorization; no network dark subtraction')
+    return 'pointwise_dark_p99'
+
+
+def admitted_guard_dark(layer,noise,mode):
+    if mode=='legacy':return None
+    p=layer/'TRAIN_signal_admission/dark_ccd.npy'
+    if noise is None or noise.get('TEST_used') is not False or sha(p)!=noise.get('dark_CCD_sha256'):raise ValueError('Fixed same-stage TRAIN/control dark SHA missing/changed')
+    value=np.load(p)
+    if value.shape!=(1016,1016) or not np.isfinite(value).all():raise ValueError('Invalid fixed dark frame')
+    return value
 
 
 def repeat_policy(policy=None,exposure_us=None):
@@ -157,6 +191,7 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
         repeat_correlation_threshold=.95,repeat_correlation_enforced=repeat_mode=='enforce',
         read_noise_upper_counts=noise,noise_scope='repeat shot/display/camera fluctuations at this stage, NOT pure read noise',
         dark_global_p99_counts=float(np.percentile(dark,99)),dark_router_ROI_p99_counts=float(np.percentile(dark[mask],99)),
+        dark_CCD_sha256=sha(folder/'dark_ccd.npy'),
         SNR=snr,signal_ROI_delta_p99_counts=delta99,repeat_correlation=correlation,
         repeat_consumer_drift=repeat_drift,repeat_consumer='q L1' if stage=='router' else 'actual OEO/readout relative L2',
         raw_repeat_relative_L2=raw_repeat_drift,changed_input_RMS_counts=changed,rows=rows,
@@ -246,6 +281,8 @@ def TRAIN_control_indices(entries,references=None):
 @torch.no_grad()
 def capture(package,cfg,out,pilot=False):
     repeat_mode=repeat_policy(package.get('repeat_correlation_policy'),cfg.get('exposure_us'))
+    guard_mode=signal_guard_policy(package.get('signal_guard_policy'),cfg.get('exposure_us'))
+    if guard_mode!='legacy' and not package.get('TRAIN_stage_signal_calibration',False):raise ValueError('Pointwise guard requires fixed per-stage TRAIN/control admission')
     Bench,LOCK,_,drive,warp=hardware(cfg)
     admission=json.loads(Path(package['native_admission']).read_text())
     if not admission['passed'] or sha(package['native_admission'])!=package['native_admission_sha256']:
@@ -261,7 +298,7 @@ def capture(package,cfg,out,pilot=False):
     model,checkpoint=load_checkpoint(package['checkpoint'],package['checkpoint_sha256'])
     out.mkdir(parents=True,exist_ok=False)
     put(out/'protocol.json',dict(package=package,hardware=cfg,hardware_sha256=package['hardware_sha256'],
-        pilot=pilot,source_sha256=sha(__file__),interlayer_tuning=False,TEST_gradients=False))
+        pilot=pilot,source_sha256=sha(__file__),signal_guard_policy=guard_mode,interlayer_tuning=False,TEST_gradients=False))
     entries=[]
     for spec in package['datasets']:
         if pilot and spec['split']!='train':continue
@@ -299,6 +336,7 @@ def capture(package,cfg,out,pilot=False):
                         stage_noise=json.loads(prior_noise.read_text())
                         if not stage_noise['passed'] or stage_noise['stage']!=stage or stage_noise['hardware_payload_sha256']!=hardware_identity(cfg):
                             raise ValueError('Reused prefix signal admission is not valid for this stage/session')
+                    stage_dark=admitted_guard_dark(layer,stage_noise,guard_mode)
                     for i,entry in enumerate(entries):
                         key=f'{i:05d}';folder=layer/key;r=json.loads((folder/'receipt.json').read_text())
                         for field in ('task','split','local_index','source_index','manifest_sha256'):
@@ -312,7 +350,7 @@ def capture(package,cfg,out,pilot=False):
                         amp,phase,_=model.payload(torch.from_numpy(entry['amplitude'])[None],stage,prefix)
                         gray=np.rint(amp[0].numpy()*255).astype(np.uint8)
                         if hashlib.sha256(gray.tobytes()).hexdigest()!=r['input_canonical_sha256']:raise ValueError('Reused prefix canonical input mismatch')
-                        value=np.load(folder/'ccd.npy');guard(signal(value,mask),stage_noise,router=stage=='router')
+                        value=np.load(folder/'ccd.npy');guard(signal(value,mask,stage_dark),stage_noise,router=stage=='router',policy=guard_mode)
                         rows.append(dict(r,reused_from=str(folder)))
                     put(out/(stage+'_prefix_audit.json'),dict(passed=True,records=len(entries),source=str(layer),new_frames=0,
                         same_PT=True,same_hardware=True,all_source_ids_and_raw_CCD_BMP_SHA_verified=True))
@@ -332,6 +370,7 @@ def capture(package,cfg,out,pilot=False):
                         elif digest!=phase_sha:raise ValueError('Calibration phase changed across inputs')
                     stage_noise=stage_signal_admission(bench,layer/'TRAIN_signal_admission',examples,drive,warp,mask,
                         stage,hardware_identity(cfg),model,repeat_mode)
+                stage_dark=admitted_guard_dark(layer,stage_noise,guard_mode)
                 for i,entry in enumerate(entries):
                     frame_start=time.monotonic()
                     key=f'{i:05d}';folder=layer/key;folder.mkdir()
@@ -347,7 +386,7 @@ def capture(package,cfg,out,pilot=False):
                     elif digest!=phase_sha:raise ValueError('Input-dependent phase violates frozen layer contract')
                     amplitude_file=folder/'input.bmp';Image.fromarray(native_image(drive[gray])).save(amplitude_file)
                     raw,metadata=bench.capture(amplitude_file);np.save(folder/'raw.npy',raw)
-                    value=crop_native(raw,warp);np.save(folder/'ccd.npy',value);quality=signal(value,mask)
+                    value=crop_native(raw,warp);np.save(folder/'ccd.npy',value);quality=signal(value,mask,stage_dark)
                     row={k:v for k,v in entry.items() if k!='amplitude'}
                     row.update(index=i,stage=stage,checkpoint_sha256=package['checkpoint_sha256'],
                         input_canonical_sha256=hashlib.sha256(gray.tobytes()).hexdigest(),
@@ -359,7 +398,7 @@ def capture(package,cfg,out,pilot=False):
                     put(folder/'receipt.json',row);rows.append(row)
                     put(out/'progress.json',dict(stage=stage,stage_frames=i+1,stage_total=len(entries),
                         total_frames=len(rows),expected_frames=len(entries)*len(order),latest=row,updated=time.time()))
-                    guard(quality,stage_noise,router=stage=='router')
+                    guard(quality,stage_noise,router=stage=='router',policy=guard_mode)
             features=[]
             for i in range(len(entries)):
                 value=torch.from_numpy(np.load(stage_paths['final']/f'{i:05d}'/'ccd.npy'))[None]

@@ -1,9 +1,24 @@
 import unittest
 import numpy as np
-from .hardware_bridge import native_image,crop_native,guard,signal,acquisition_order,TRAIN_control_indices,repeat_policy,admission_checks
+from .hardware_bridge import native_image,crop_native,guard,signal,acquisition_order,TRAIN_control_indices,repeat_policy,admission_checks,signal_guard_policy
 
 
 class TestHardware(unittest.TestCase):
+    def test_pointwise_policy_requires_fixed_guard_authority(self):
+        p=dict(mode='pointwise_dark_p99',authorization='User approved 2026-10-25',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)
+        self.assertEqual(signal_guard_policy(),'legacy');self.assertEqual(signal_guard_policy(p,1999.8),'pointwise_dark_p99')
+        for bad in (dict(p,authorization=''),dict(p,minimum_SNR=9),dict(p,minimum_signal_counts=63),dict(p,network_background_subtraction=True)):
+            with self.assertRaises(ValueError):signal_guard_policy(bad,2000)
+    def test_spatial_dark_quantile_is_not_difference_of_quantiles(self):
+        dark=np.zeros((100,100),np.float32);dark[:,:20]=1200/65535
+        value=dark.copy();value[:,20:40]=440/65535;original=value.copy();noise=dict(read_noise_upper_counts=28,dark_global_p99_counts=1200)
+        with self.assertRaises(RuntimeError):guard(signal(value),noise)
+        row=signal(value,dark=dark);guard(row,noise,policy='pointwise_dark_p99');np.testing.assert_array_equal(value,original)
+        self.assertAlmostEqual(row['fixed_dark_difference_p99_counts'],440,places=3)
+        with self.assertRaises(RuntimeError):guard(dict(row,fixed_dark_difference_p99_counts=279),noise,policy='pointwise_dark_p99')
+        with self.assertRaises(RuntimeError):guard(dict(row,saturation_fraction=.151),noise,policy='pointwise_dark_p99')
+        with self.assertRaises(RuntimeError):guard(dict(row,readout_p10_counts=1199),noise,policy='pointwise_dark_p99')
+        with self.assertRaises(ValueError):guard(signal(value),noise,policy='pointwise_dark_p99')
     def test_repeat_exception_is_explicit_and_fixed_2ms(self):
         self.assertEqual(repeat_policy(),'enforce')
         p=dict(mode='record_only',authorization='Human 2026-10-25 approval',exposure_us=2000,single_frame=True)
