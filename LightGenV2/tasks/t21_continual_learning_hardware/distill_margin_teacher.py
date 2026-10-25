@@ -79,6 +79,19 @@ def whole_stage_band_key(scores,bands):
     return (-max(gaps),-sum(gaps))
 
 
+def TRAIN_cross_task_mix(x,labels,tasks):
+    """CCD feature-space TRAIN mixup with soft labels, no inference task gate."""
+    values=[];targets=[];names=sorted(set(tasks));soft=F.one_hot(labels,10).to(x.dtype)
+    if len(names)!=2:raise ValueError('This finite domain-boundary probe is B only')
+    for fraction in (.1,.2):
+        partner=np.empty(len(x),dtype=int)
+        for name in names:
+            rows=np.flatnonzero(tasks==name);pool=np.flatnonzero(tasks!=name)
+            partner[rows]=pool[torch.randint(len(pool),(len(rows),)).numpy()]
+        values.append((1-fraction)*x+fraction*x[partner]);targets.append((1-fraction)*soft+fraction*soft[partner])
+    return torch.cat(values),torch.cat(targets),np.tile(tasks,2)
+
+
 def source_average(loss,groups,count):
     totals=torch.zeros(count,dtype=loss.dtype,device=loss.device).scatter_add_(0,groups,loss)
     counts=torch.zeros_like(totals).scatter_add_(0,groups,torch.ones_like(loss))
@@ -142,7 +155,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -208,6 +221,10 @@ def main():
             for name in names:
                 chosen=[(n,p) for n,p in pairs if tt[n]==name]
                 if chosen:pair_views.append(torch.stack([values[p]-values[n] for n,p in chosen]).double()@transform.double().T)
+    mix_features=None;mix_targets=None;mix_tasks=None
+    if cfg.get('TRAIN_cross_task_mixup_weight'):
+        if cp['architecture']!='moe' or stage!=2:raise ValueError('This finite probe is measured LG B only')
+        mx,my,mix_tasks=TRAIN_cross_task_mix(x[tr],y[tr],tasks[tr]);mix_features=(mx@transform.T).double();mix_targets=my.double()
     views=[]
     for n in names:
         for kind in (0,1):
@@ -218,6 +235,7 @@ def main():
         teacher_selection='Prospective complete-stage TEST band key, first qualifying actual shared head; otherwise closest complete-stage key' if cfg.get('whole_stage_TEST_selection') else 'Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
         warm_assistant=warm,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
         centered_TRAIN_function_retention=function_receipt,source_pair_ranking_weight=pair_weight,TEST_selected_development=bool(cfg.get('whole_stage_TEST_selection')),
+        TRAIN_cross_task_mixup=dict(weight=cfg['TRAIN_cross_task_mixup_weight'],fractions=[.1,.2],soft_labels=True,TRAIN_only=True,EVAL_sources=0) if cfg.get('TRAIN_cross_task_mixup_weight') else None,
         source_bags=bags,bag_averaging='Fixed equal parameter average of all3 bags, no EVAL choice' if bags==3 else None,
         bag_omission_is_not_independent_holdout='Original strong teacher already knows sealed sources; bagging is variance reduction, not clean source cross-validation',
         derivative_mixing=(.1,.2) if robust else (.02,.05),derivative_noise_TRAIN_std=.001,paired_ranking_weight=cfg.get('paired_ranking_weight',0),
@@ -246,6 +264,9 @@ def main():
             if pair_views:loss+=(pair_weight or cfg.get('paired_ranking_weight',0))*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
             if retention is not None:loss+=cfg['Euro_TRAIN_retention_weight']*retention_KL(z[retention_rows]@weight.T,retention_target)
             if function_rows is not None:loss+=cfg['TRAIN_function_weight']*centered_function_loss(z[function_rows]@weight.T,function_target)
+            if mix_features is not None:
+                mixed=-(mix_targets*F.log_softmax(mix_features@weight.T,1)).sum(1)
+                loss+=cfg['TRAIN_cross_task_mixup_weight']*torch.stack([mixed[mix_tasks==n].mean() for n in names]).mean()
             loss+=cfg['delta_L2']*(weight-initial)[:,:-1].square().sum()/10
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite margin teacher objective')
             loss.backward();return loss

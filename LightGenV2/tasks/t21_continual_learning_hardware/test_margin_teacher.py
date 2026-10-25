@@ -1,8 +1,13 @@
 import unittest,torch,numpy as np
-from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL,centered_function_loss,whole_stage_band_key
+from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL,centered_function_loss,whole_stage_band_key,TRAIN_cross_task_mix
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_TRAIN_mixup_keeps_normalization_and_soft_label_mass(self):
+        torch.manual_seed(1);x=torch.rand(6,8);x=x/x.mean(1,keepdim=True);labels=torch.tensor([2,3,4,0,1,0]);tasks=np.array(['eurosat']*3+['clevr']*3)
+        mx,my,mt=TRAIN_cross_task_mix(x,labels,tasks)
+        self.assertEqual(mx.shape,(12,8));torch.testing.assert_close(mx.mean(1),torch.ones(12));torch.testing.assert_close(my.sum(1),torch.ones(12))
+        self.assertEqual(mt.tolist(),tasks.tolist()*2);self.assertTrue(bool((my.max(1).values<1).all()))
     def test_TEST_selector_uses_all_tasks_both_bounds_and_earlier_ties(self):
         bands=dict(eurosat=(483,533),clevr=(710,760));valid=dict(eurosat=dict(n=1000,correct=483),clevr=dict(n=1000,correct=760))
         self.assertEqual(whole_stage_band_key(valid,bands),(0,0))
