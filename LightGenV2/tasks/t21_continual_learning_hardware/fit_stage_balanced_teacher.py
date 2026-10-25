@@ -1,4 +1,4 @@
-"""Finite B800/C500 partial-source offline teachers and original Linear students.
+"""Finite disclosed-source offline teachers and original Linear students.
 
 All partial TEST derivatives transfer TEST information. Full replay and its
 complement are development data, NOT independent confirmation. No SDK, GPU,
@@ -27,6 +27,7 @@ def validate_profile(cfg):
     if cfg.get('stage')==2 and cfg.get('architecture')=='moe':name='config_stage_LG_B500_teacher_20261025.json'
     if cfg.get('stage')==2 and cfg.get('architecture')=='moe' and cfg.get('teacher_dropout')==.1:name='config_stage_LG_B500_dropout_teacher_20261025.json'
     if cfg.get('schema')=='T21_LG_B_all_TEST_source_teacher_development_v1':name='config_stage_LG_B_allTEST_teacher_20261025.json'
+    if cfg.get('schema')=='T21_D2NN_D_all_TEST_source_teacher_development_v1':name='config_stage_D2NN_D_allTEST_teacher_20261025.json'
     if name is None or cfg!=json.loads(Path(__file__).with_name(name).read_text()):
         raise ValueError('Only published finite B800/C500 development profiles')
     return cfg
