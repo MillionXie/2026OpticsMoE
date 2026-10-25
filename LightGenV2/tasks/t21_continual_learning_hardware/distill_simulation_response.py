@@ -1,4 +1,4 @@
-"""Disclosed D2NN D simulation-to-measured-feature response transfer.
+"""Disclosed fixed-stage simulation-to-measured-feature response transfer.
 
 The original frozen S1 probabilities are unchanged. Only authorized nonidentity
 TEST derivatives enter assistant fitting; this transfers TEST information, even
@@ -39,21 +39,28 @@ def equal_task_soft_KL(logits,probabilities,tasks,names):
     return torch.stack([rows[tasks==n].mean() for n in names]).mean()
 
 
+def stage_contract(cfg):
+    if cfg.get('architecture')=='moe' and cfg.get('stage')==3:
+        return 'moe',3,dict(eurosat=(706,756),clevr=(696,746),speech_binary=(715,765)),'student_checkpoint.pt'
+    if 'architecture' not in cfg and 'stage' not in cfg:return 'd2nn',4,D_development_bands(),'best_checkpoint.pt'
+    raise ValueError('Only exact LG C or legacy D2NN D profiles')
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','package','warm_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit inherited TEST information acknowledgment required')
-    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json')
+    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only fixed published finite response-transfer profile')
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);package=json.loads(a.package.read_text());cr=json.loads((a.capture/'report.json').read_text());wr=json.loads((a.warm_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or not wr['passed'] or not wr['strict_CPU_reloaded']:raise ValueError('Completed immutable capture/warm student required')
-    model,cp=load_checkpoint(a.warm_run/'best_checkpoint.pt',wr['student_sha256']);prefix=upstream_state(model);cpu=package['cpu_report'];names=tuple(D_development_bands())
-    if cp['architecture']!='d2nn' or cp['stage']!=4 or cp['measured_features_sha256']!=cr['features_sha256'] or package['checkpoint_sha256']!=cpu['checkpoint_sha256'] or not cpu['strict_CPU']:raise ValueError('Frozen measured D and exact S1 reference required')
+    architecture,stage,bands,warm_name=stage_contract(cfg);model,cp=load_checkpoint(a.warm_run/warm_name,wr['student_sha256']);prefix=upstream_state(model);cpu=package['cpu_report'];names=tuple(bands)
+    if cp['architecture']!=architecture or cp['stage']!=stage or cp['measured_features_sha256']!=cr['features_sha256'] or package['checkpoint_sha256']!=cpu['checkpoint_sha256'] or not cpu['strict_CPU']:raise ValueError('Frozen measured stage and exact S1 reference required')
     if package['checkpoint_sha256']!=cfg['frozen_S1_SHA256'] or cr['checkpoint_sha256']!=package['checkpoint_sha256']:raise ValueError('S1 optical identity changed')
     with np.load(a.capture/'features.npz',allow_pickle=False) as d:x=torch.tensor(d['features']);y=torch.tensor(d['labels'],dtype=torch.long);tasks=d['tasks'].copy();ids=d['source_indices'].copy();splits=d['splits'].copy()
     tr=np.flatnonzero(splits=='train');te=np.flatnonzero(splits=='test')
-    if len(tr)!=1900 or len(te)!=4000:raise ValueError('Complete D source pool required')
+    if len(tr)!=1000+300*(stage-1) or len(te)!=1000*stage:raise ValueError('Complete fixed-stage source pool required')
     targets=torch.zeros((len(x),10),dtype=torch.float64);source_map={}
     for name in names:
         ix=te[tasks[te]==name];dataset=next(v for v in package['datasets'] if v['task']==name and v['split']=='test')
@@ -65,7 +72,7 @@ def main():
     z=query.double()@transform.T;dz=dx.double()@transform.T;initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform);weight=torch.nn.Parameter(initial.clone())
     retained=cfg.get('retained_task_functions',[]);warm_soft=(dx.double()@model.shared_head.weight.detach().double().T).softmax(1).detach()
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),capture_features_SHA256=cr['features_sha256'],warm_SHA256=wr['student_sha256'],S1_checkpoint_SHA256=package['checkpoint_sha256'],package_SHA256=sha(a.package),source_map=source_map,conditioning=conditioning,targets='Unmodified frozen S1 ten-output probabilities, aligned by original IDs; no correctness or accuracy filtering',loss='Equal-task original TRAIN CE.25 + derivative frozen simulation KL1 + parameter anchor1e-5; optional fixed old-task warm-function KL2',retained_task_functions=retained,student_fit_TEST_inputs=0,teacher_original_TEST_gradient_rows=0,all_TEST_sources_used=True,SDK=False,GPU=False,**DISCLOSURE))
-    bands=D_development_bands();best_weight=initial.clone();best_key=None;history=[];best_step=0
+    best_weight=initial.clone();best_key=None;history=[];best_step=0
     def scores():
         with torch.no_grad():
             folded=(weight.detach()@transform).float();pred=(x[te]@folded.T).argmax(1)

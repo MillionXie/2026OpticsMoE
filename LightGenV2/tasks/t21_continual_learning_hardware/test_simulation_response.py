@@ -1,10 +1,14 @@
 import unittest
 import numpy as np
 import torch
-from .distill_simulation_response import aligned_simulation_probabilities,equal_task_soft_KL
+from .distill_simulation_response import aligned_simulation_probabilities,equal_task_soft_KL,stage_contract
 
 
 class SimulationResponseTests(unittest.TestCase):
+    def test_exact_C_contract_does_not_inherit_D_relaxation(self):
+        self.assertEqual(stage_contract(dict(architecture='moe',stage=3))[2]['clevr'],(696,746))
+        self.assertEqual(stage_contract({})[2]['clevr'],(517,617))
+        with self.assertRaises(ValueError):stage_contract(dict(architecture='moe',stage=4))
     def test_identity_alignment_and_unmodified_probabilities(self):
         ids=np.arange(1000)*2;labels=np.arange(1000)%10;p=np.full((1000,10),.01);p[np.arange(1000),labels]=.91;order=np.arange(999,-1,-1)
         score=dict(labels=labels.tolist(),probabilities=p.tolist())
