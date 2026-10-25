@@ -1,6 +1,6 @@
 import unittest,numpy as np,torch,json
 from pathlib import Path
-from .fit_gated_linear_teacher import select_sources,paired_indices,DISCLOSURE,profile_parameters,paired_derivative_noise,full_covariance_transform,paired_margin_loss
+from .fit_gated_linear_teacher import select_sources,paired_indices,DISCLOSURE,profile_parameters,paired_derivative_noise,full_covariance_transform,paired_margin_loss,weighted_teacher_KL
 from .refine_measured_ce import contrast_transform
 
 class TestGatedTeacher(unittest.TestCase):
@@ -13,7 +13,12 @@ class TestGatedTeacher(unittest.TestCase):
             with self.assertRaises(ValueError):profile_parameters(bad)
     def test_default_profile_numerics_unchanged(self):
         cfg=json.loads(Path(__file__).with_name('config_gated_teacher_B500_20261025.json').read_text());v=profile_parameters(cfg)
-        self.assertEqual(v,dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False,paired_TRAIN_anchor=False))
+        self.assertEqual(v,dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False,paired_TRAIN_anchor=False,assistant=False))
+    def test_assistant_profile_keeps_source_gate_and_soft_KL(self):
+        cfg=json.loads(Path(__file__).with_name('config_gated_teacher_B500_assistant_20261025.json').read_text());v=profile_parameters(cfg)
+        self.assertTrue(v['assistant']);self.assertTrue(v['full_covariance']);self.assertEqual(v['TRAIN_floor'],{'clevr':.9})
+        teacher=torch.randn(7,10);weights=torch.full((7,),1/7);same=teacher.clone().requires_grad_();loss=weighted_teacher_KL(same,teacher,weights)
+        self.assertLess(abs(float(loss)),1e-5);loss.backward();self.assertTrue(torch.isfinite(same.grad).all())
     def test_TRAIN_pair_anchor_profile_and_margin_sign(self):
         cfg=json.loads(Path(__file__).with_name('config_gated_teacher_B500_pairanchor_20261025.json').read_text());v=profile_parameters(cfg)
         self.assertTrue(v['paired_TRAIN_anchor']);self.assertTrue(v['full_covariance']);self.assertEqual(v['steps'],240)

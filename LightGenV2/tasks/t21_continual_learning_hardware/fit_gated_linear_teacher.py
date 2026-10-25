@@ -15,7 +15,7 @@ from .refine_native_readout import upstream_state
 from .refine_measured_ce import contrast_transform
 from .terminal_fit import evaluate,brief,score
 from .distill_offline_teacher_projection import solve_projection
-from .fit_augmented_residual_teacher import augment_train
+from .fit_augmented_residual_teacher import augment_train,residual_teacher_from_artifact
 
 
 def select_sources(ids,labels,task,count):
@@ -58,10 +58,11 @@ def profile_parameters(cfg):
         raise ValueError('Declared quality floor or derivative budget changed')
     if cfg['schema']=='T21_gated_partial_linear_teacher_v1':
         if cfg['sources_per_task'] not in (200,500) or cfg['teacher_max_LBFGS_steps']!=160:raise ValueError('Frozen legacy budget changed')
-        return dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False,paired_TRAIN_anchor=False)
-    if (cfg['schema'] in ('T21_gated_partial_linear_teacher_pairweak_v2','T21_gated_partial_linear_teacher_pairwhiten_v3','T21_gated_partial_linear_teacher_pairanchor_v4') and cfg['sources_per_task']==500 and
+        return dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False,paired_TRAIN_anchor=False,assistant=False)
+    if (cfg['schema'] in ('T21_gated_partial_linear_teacher_pairweak_v2','T21_gated_partial_linear_teacher_pairwhiten_v3','T21_gated_partial_linear_teacher_pairanchor_v4','T21_gated_partial_linear_teacher_assistant_v5') and cfg['sources_per_task']==500 and
         cfg['teacher_max_LBFGS_steps']==240 and cfg.get('paired_teacher') is True and cfg.get('expose_tasks')==['clevr']):
-        return dict(steps=240,mixes=(.02,.05),noise=.001,L2=.000001,shared_pair_noise=True,TRAIN_floor={'clevr':.90},full_covariance=cfg['schema'].endswith(('v3','v4')),paired_TRAIN_anchor=cfg['schema'].endswith('v4'))
+        assistant=cfg['schema'].endswith('v5')
+        return dict(steps=240,mixes=(.02,.05),noise=.001,L2=.00001 if assistant else .000001,shared_pair_noise=True,TRAIN_floor={'clevr':.90},full_covariance=cfg['schema'].endswith(('v3','v4','v5')),paired_TRAIN_anchor=cfg['schema'].endswith('v4'),assistant=assistant)
     raise ValueError('Unknown or changed finite teacher profile')
 
 
@@ -90,10 +91,15 @@ def paired_margin_loss(delta_logits):
     return F.softplus(-(delta_logits[:,1]-delta_logits[:,0])).mean()
 
 
+def weighted_teacher_KL(logits,targets,weights):
+    return (F.kl_div(F.log_softmax(logits/2,1),F.softmax(targets/2,1),reduction='none').sum(1)*weights).sum()*4
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','profile','out'):p.add_argument('--'+n,type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--acknowledge-test-derived-development',action='store_true')
+    p.add_argument('--nonlinear-teacher-run',type=Path,help='Explicit sealed stronger teacher for the assistant profile only');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit development disclosure required')
     cfg=json.loads(a.profile.read_text())
     settings=profile_parameters(cfg)
@@ -111,27 +117,42 @@ def main():
     if pair_mode and (cp['architecture']!='d2nn' or cp['stage']!=2 or cfg.get('expose_tasks')!=['clevr']):raise ValueError('Paired repair is D2NN B CLEVR only')
     selected={n:(select_sources(ids[te][tasks[te]==n],y[te][tasks[te]==n].numpy(),n,count) if not pair_mode or n in cfg['expose_tasks'] else []) for n in names}
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unexposed=np.setdiff1d(te,exposed)
+    nonlinear=None;nonlinear_sha=None;nonlinear_transform=None
+    if settings['assistant']:
+        if a.nonlinear_teacher_run is None:raise ValueError('Sealed admitted nonlinear teacher required')
+        source_report=json.loads((a.nonlinear_teacher_run/'report.json').read_text());source_protocol=json.loads((a.nonlinear_teacher_run/'protocol.json').read_text());path=a.nonlinear_teacher_run/'offline_teacher.pt'
+        nonlinear_sha=sha(path)
+        if (source_report['teacher_quality_gate_passed'] is not True or source_report['valid_for_formal_test_table'] is not False or
+            nonlinear_sha!=source_report['teacher_sha256'] or source_protocol['parent_SHA256']!=a.parent_sha256 or
+            source_protocol['capture_features_SHA256']!=capture['features_sha256'] or source_protocol['selection_source_ids']!=selected):
+            raise ValueError('Teacher/capture/parent/partial-source identity differs')
+        artifact=torch.load(path,map_location='cpu',weights_only=False)
+        if artifact['parent_SHA256']!=a.parent_sha256:raise ValueError('Teacher parent differs')
+        nonlinear=residual_teacher_from_artifact(artifact);nonlinear_transform=artifact['transform']
+    elif a.nonlinear_teacher_run is not None:raise ValueError('Legacy profiles cannot consume an unrecorded teacher')
     transform=contrast_transform(x[tr]);conditioning=None
     if settings['full_covariance']:transform,conditioning=full_covariance_transform(x[tr],transform)
     a.out.mkdir(parents=True,exist_ok=False)
     put(a.out/'protocol.json',dict(profile=cfg,profile_sha256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=capture['features_sha256'],
         selection_source_ids=selected,source_selection_uses_model_outputs=False,source_seed=20261025,
-        teacher='Same7840 Linear, conditioned convex CE on TRAIN and nonidentity derivatives; no offline nonlinear capacity mismatch',
-        teacher_objective=f"0.25 equal-task TRAIN CE +0.75 equal-exposed-task derivative CE +{settings['L2']} conditioned weight penalty; fixed{settings['steps']} LBFGS steps",
+        teacher='Same7840 Linear assistant from sealed nonlinear teacher, same TRAIN and nonidentity derivatives' if settings['assistant'] else 'Same7840 Linear, conditioned convex CE on TRAIN and nonidentity derivatives; no offline nonlinear capacity mismatch',
+        nonlinear_teacher_sha256=nonlinear_sha,
+        teacher_objective=f"0.5 equal-task TRAIN KL +0.5 derivative KL(T2) +old TRAIN/augmented parentKL1(T2) +{settings['L2']} parent-coordinate delta penalty; fixed240 LBFGS" if settings['assistant'] else f"0.25 equal-task TRAIN CE +0.75 equal-exposed-task derivative CE +{settings['L2']} conditioned weight penalty; fixed{settings['steps']} LBFGS steps",
         derivative_mixes=settings['mixes'],derivative_TRAINstd_noise=settings['noise'],shared_positive_negative_noise=settings['shared_pair_noise'],
         teacher_TRAIN_minimum=settings['TRAIN_floor'],teacher_TRAIN_labels_are_original_TRAIN_only=True,
         full_TRAIN_covariance_preconditioning=settings['full_covariance'],covariance_conditioning=conditioning,
         paired_original_TRAIN_ranking_weight=4 if settings['paired_TRAIN_anchor'] else 0,
-        old_Euro_parent_anchor_augmented_TRAIN_per_source=10 if settings['paired_TRAIN_anchor'] else 0,
-        paired_CLEVR_repair=pair_mode,paired_derivative_ranking_weight=4 if pair_mode else 0,
-        old_Euro_TRAIN_parent_KL_weight=4 if pair_mode else 0,
+        old_Euro_parent_anchor_augmented_TRAIN_per_source=10 if settings['paired_TRAIN_anchor'] or settings['assistant'] else 0,
+        paired_CLEVR_repair=pair_mode,paired_derivative_ranking_weight=4 if pair_mode and not settings['assistant'] else 0,
+        old_Euro_TRAIN_parent_KL_weight=1 if settings['assistant'] else 4 if pair_mode else 0,
         student='Function projection on TRAIN and24 fresh TRAIN augmentations; fixed ridge1e-4, folded into original Linear; no EVAL strength scan',
         teacher_gate='Complete same1000 development reference must meet each declared floor before any student fit',
         original_TEST_rows_used_for_gradients=0,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         source_sha256=sha(__file__),SDK=False,GPU=False,CPU_threads=2,**DISCLOSURE))
     initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform)
     tx=[x[tr]];ty=[y[tr]];tw=[];tt=tasks[tr];derived_pairs=paired_indices(ids[exposed],y[exposed].numpy(),tasks[exposed]) if pair_mode else [];pair_deltas=[]
-    tw.append(torch.tensor([.25/(len(names)*int((tt==n).sum())) for n in tt],dtype=torch.float64))
+    train_weight=.5 if settings['assistant'] else .25
+    tw.append(torch.tensor([train_weight/(len(names)*int((tt==n).sum())) for n in tt],dtype=torch.float64))
     std=x[tr].std(0,unbiased=False)
     for repeat in range(10):
         neighbor=[]
@@ -149,12 +170,15 @@ def main():
         values=values.clamp_min(0);values=values/values.mean(1,keepdim=True).clamp_min(1e-12)
         if torch.any(torch.all(values==x[exposed],dim=1)):raise RuntimeError('An identity derivative is forbidden')
         if pair_mode:pair_deltas.extend([values[p]-values[n] for n,p in derived_pairs])
-        tx.append(values);ty.append(y[exposed]);tw.append(torch.full((len(exposed),),.75/(10*sum(bool(v) for v in selected.values())*count),dtype=torch.float64))
+        tx.append(values);ty.append(y[exposed]);tw.append(torch.full((len(exposed),),(1-train_weight)/(10*sum(bool(v) for v in selected.values())*count),dtype=torch.float64))
     tx=torch.cat(tx);ty=torch.cat(ty);tw=torch.cat(tw);z=tx@transform.T
+    soft_target=None
+    if settings['assistant']:
+        with torch.no_grad():soft_target=nonlinear(tx.float()@nonlinear_transform.T).double()
     pair_z=torch.stack(pair_deltas)@transform.T if pair_mode else None
     old_ix=tr[tasks[tr]=='eurosat'];old_z=x[old_ix]@transform.T;old_target=model.shared_head(x[old_ix].float()).double().detach()
     train_pair_z=None
-    if settings['paired_TRAIN_anchor']:
+    if settings['paired_TRAIN_anchor'] or settings['assistant']:
         pairs=paired_indices(ids[tr],y[tr].numpy(),tasks[tr]);train_pair_z=torch.stack([x[tr[p]]-x[tr[n]] for n,p in pairs])@transform.T
         old=x[old_ix].float();mean=old.mean(0,keepdim=True);std=old.std(0,unbiased=False)
         anchors=[old]+[augment_train(old,mean,std) for _ in range(10)]
@@ -163,8 +187,12 @@ def main():
     def closure():
         nonlocal calls
         if time.monotonic()-started>300:raise RuntimeError('Finite teacher300s budget reached; no student started')
-        opt.zero_grad(set_to_none=True);loss=(F.cross_entropy(z@weight.T,ty,label_smoothing=.02,reduction='none')*tw).sum()+settings['L2']*weight[:,:-1].square().sum()/10
-        if pair_mode:
+        opt.zero_grad(set_to_none=True)
+        if settings['assistant']:
+            loss=weighted_teacher_KL(z@weight.T,soft_target,tw)+settings['L2']*(weight-initial)[:,:-1].square().sum()/10
+            loss+=4*F.kl_div(F.log_softmax(old_z@weight.T/2,1),F.softmax(old_target/2,1),reduction='batchmean')
+        else:loss=(F.cross_entropy(z@weight.T,ty,label_smoothing=.02,reduction='none')*tw).sum()+settings['L2']*weight[:,:-1].square().sum()/10
+        if pair_mode and not settings['assistant']:
             delta=pair_z@weight.T;loss=loss+4*paired_margin_loss(delta)
             loss=loss+16*F.kl_div(F.log_softmax(old_z@weight.T/2,1),F.softmax(old_target/2,1),reduction='batchmean')
         if settings['paired_TRAIN_anchor']:loss=loss+4*paired_margin_loss(train_pair_z@weight.T)
