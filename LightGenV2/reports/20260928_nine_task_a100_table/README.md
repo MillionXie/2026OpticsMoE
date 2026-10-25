@@ -1,5 +1,39 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 08:55补记：新hmh外占触发CPU守卫，原件全保后仅续排05
+
+成本仍14/18，partial17/temporal07、多baseline36/36和80GB额外Qwen3/3不变；正式精度完整TEST。
+本轮未重算任何已齐NN、未重评准确度、未连接租机、无新正式Excel。
+
+QwenCPU_04在Unix1792889389.0729659实际捕获同A100外国PID2384972，检测时14780MiB。
+随后ps确认hmh于08:48:44启动 `.../20261025_defocus_stage_information/train_long.py`，
+Unix1792889579.7645833观察为19570MiB。父控制器仅终止自有worker2356982，未kill外国进程。
+新phase记录说明原runtime载入125.704秒后进入index200的原AST gold前向（Unix1792888510.0110497），
+中断前没有进入live/写出passed case或完整contract；不能推断零神经调用，也不是数值比较失败。
+`T12/.../a100_qwen_live_frontend_contract_20261025_04/foreign_CPU_interruption.json`173B SHA
+`a16ebfff5f26e81aa6d193c0e58ee503de7d0b866514a5949f90d93989c5c389`已精确取回。
+旧四控制器2353602/2353615/2353626/2353634与worker均stopped/退出，后继没有加载模型或新成本。
+四根5/1/1/3原文件4421/3502/4785/13711B全部 `backup_receipt_foreign_CPU_interruption01.json`
+逐SHA备份，四外置日志615/1245/1331/1047B原件也已SHA取回。旧_04及更早停止PID不再等待/重启。
+
+没有修改或重测已合格工具，直接复用原31f9ab40b runtime、原OursCPU_06/a37514…1c0和sharedreference_01。
+核94记录源字节全同且旧链全退出后新建唯一缺失续链05，deadline1792911261.4909506（约14:54北京，非ETA）：
+
+- T12 QwenCPU `a100_qwen_live_frontend_contract_20261025_05`/2395106，previous OursCPU_06。
+- LGVQ CPU `a100_lgvq_live_frontend_contract_20261025_05`/2395127，previous QwenCPU_05。
+- T12成本 `a100_input_inclusive_20261025_05`/2395131，原OursCPU_06+QwenCPU_05+原sharedreference_01。
+- LGVQ成本 `a100_lgvq_input_inclusive_20261025_05`/2395143，LGVQCPU_05及T12cost_05真正退出/MPS释放后。
+
+Unix1792889719.4357104..1792889720.1824372真实四PID活着、全无worker，Qwen waiting_foreign_process，
+其余等各自原前驱，cost completed[]。同一hmh2384972/19570MiB仍在，不凭利用率当空闲、不重复通知。
+保持12次连续idle+显存、shared锁、CPU/GPU排他，空出后自动接续；六小时仅有限等待窗，GPU每point仍<=7200。
+新LGVQcost_05 `admission01.json`4948B SHA
+`5716041bde84d86f4edf8b4da2889134f8b78d6f31e39c63e22088ae0b2ec071`已精确取回；同根
+`admission_observation_20261025_0855.json`4212B SHA
+`631c10dfb68a950349013a2b91c72b60a73dee1e1b93a038bf609fcb28d41b7a`已生成，标签非真实时钟，取回以本轮核准为准。
+启动HEAD70c4f0a58为peer自行同步，本窗口没有同步或改动其runtime；94本任务冻结源未变、B100三暂存未动。
+准备/排队不是成本完成。每个passed case/完整proof/point仍立即保存与审计；真正故障按保raw、只补缺失及重绑续接。
+
 ## 2026-10-25 08:32补记：原Qwen CPU有限预算到期全保，缺失续链04已启动
 
 成本仍14/18，剩LGVQ Ours temporal/spatial与T12双方；main partial17、temporal07不变，
