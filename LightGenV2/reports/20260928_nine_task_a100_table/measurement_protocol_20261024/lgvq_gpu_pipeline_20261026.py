@@ -349,7 +349,15 @@ def suite(args):
                 bounded()
                 try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);break
                 except BlockingIOError:time.sleep(5)
-            for system in ('lg','qwen'):
+            if getattr(args,'qwen_only',False):
+                previous=json.loads((args.previous/'suite_status.json').read_text())
+                if previous['status']!='stopped' or Path('/proc',str(previous['pid'])).exists():raise RuntimeError('Missing-only predecessor must be stopped and exited')
+                if previous['completed']!=['lg_repeat01','lg_repeat02','lg_repeat03']:raise RuntimeError('Retain exactly three qualified LG diagnostic points')
+                for rep in (1,2,3):
+                    leaf=args.previous/f'lg_repeat{rep:02d}'
+                    if json.loads((leaf/'status.json').read_text())['status']!='complete' or json.loads((leaf/'consistency.json').read_text())['status']!='passed':raise RuntimeError('Predecessor LG proof incomplete')
+                state['retained_LG_root']=str(args.previous);save()
+            for system in (('qwen',) if getattr(args,'qwen_only',False) else ('lg','qwen')):
                 for repeat in (1,2,3):
                     for idle in range(12):
                         bounded()
@@ -392,5 +400,6 @@ def suite(args):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['suite','worker'],required=True)
+    p.add_argument('--qwen-only',action='store_true');p.add_argument('--previous',type=Path)
     p.add_argument('--system',choices=['lg','qwen']);p.add_argument('--repeat',type=int);p.add_argument('--output',type=Path,required=True);p.add_argument('--deadline',type=float,required=True)
     a=p.parse_args();a.output=a.output.resolve();(suite if a.phase=='suite' else worker)(a)

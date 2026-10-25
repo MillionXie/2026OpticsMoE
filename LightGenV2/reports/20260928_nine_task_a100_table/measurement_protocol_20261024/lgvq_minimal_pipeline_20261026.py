@@ -131,7 +131,8 @@ def suite(args):
                 except BlockingIOError:time.sleep(5)
             previous=json.loads((args.previous/'suite_status.json').read_text())
             if previous['status']!='complete' or Path('/proc',str(previous['pid'])).exists():raise RuntimeError('Previous suite not complete and truly exited')
-            if previous['completed']!=['lg_repeat01','lg_repeat02','lg_repeat03','qwen_repeat01','qwen_repeat02','qwen_repeat03']:raise RuntimeError('Retain all qualified Qwen points')
+            allowed=[['qwen_repeat01','qwen_repeat02','qwen_repeat03'],['lg_repeat01','lg_repeat02','lg_repeat03','qwen_repeat01','qwen_repeat02','qwen_repeat03']]
+            if previous['completed'] not in allowed:raise RuntimeError('Retain all qualified Qwen points')
             state['retained_Qwen_root']=str(args.previous);save()
             for rep in (1,2,3):
                 for idle in range(12):
