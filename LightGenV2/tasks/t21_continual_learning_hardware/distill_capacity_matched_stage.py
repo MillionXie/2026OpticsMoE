@@ -46,7 +46,7 @@ def TRAIN_queries(x,tasks,cfg):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','teacher_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);p.add_argument('--mode',choices=('train_convex','assistant'),required=True)
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--mode',choices=('train_convex','assistant','taskwise_diagnostic'),required=True)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited partial TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text());validate_profile(cfg);torch.set_num_threads(2);torch.manual_seed(20261025)
@@ -64,30 +64,59 @@ def main():
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unex=np.setdiff1d(te,exposed)
     if len(tr)!=1000+300*(cp['stage']-1) or any(int((tasks[te]==n).sum())!=1000 for n in names):raise ValueError('Full fixed TRAIN and evaluation required')
     q,qt=TRAIN_queries(x[tr],tasks[tr],cfg);qy=y[tr].repeat(1+cfg['TRAIN_augmentations']);qid=np.tile(ids[tr],1+cfg['TRAIN_augmentations'])
-    if a.mode=='assistant':
+    if a.mode in ('assistant','taskwise_diagnostic'):
         dx,dy,dt,di=derivatives(x,y,tasks,ids,tr,exposed);pool=torch.cat((q,dx));labels=torch.cat((qy,dy));pt=np.concatenate((qt,dt));pid=np.concatenate((qid,di))
         weights=torch.cat((equal_task_weights(qt,cfg['assistant_TRAIN_mass']),equal_task_weights(dt,cfg['assistant_derivative_mass'])))
     else:pool=q;labels=qy;pt=qt;pid=qid;weights=equal_task_weights(qt)
     # Pair ranking is on each complete augmented source copy, not accidentally
     # joining the same ID across distinct augmentation repeats.
-    pair_deltas=[]
-    if a.mode=='assistant':
+    pair_deltas=[];pair_tasks=[]
+    if a.mode in ('assistant','taskwise_diagnostic'):
         for values,tt,ii,yy,chunk in ((q,qt,qid,qy,len(tr)),(dx,dt,di,dy,len(exposed))):
             for start in range(0,len(values),chunk):
                 pairs=paired_indices(ii[start:start+chunk],yy[start:start+chunk].numpy(),tt[start:start+chunk])
                 pair_deltas.extend([values[start+p]-values[start+n] for n,p in pairs])
+                pair_tasks.extend([str(tt[start+p]) for n,p in pairs])
     with torch.no_grad():
         target=torch.cat([teacher(v@transform.T) for v in pool.split(256)]).double()
     z=(pool@transform.T).double();initial=(model.shared_head.weight.detach().double()@torch.linalg.inv(transform.double()));weight=torch.nn.Parameter(initial.clone())
     pair_z=torch.stack(pair_deltas).double()@transform.double().T if pair_deltas else None
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();history=[];best_obj=float('inf');best_weight=weight.detach().clone()
     put(a.out/'protocol.json',dict(mode=a.mode,profile=cfg,profile_sha256=sha(a.profile),capture_features_SHA256=cr['features_sha256'],parent_SHA256=a.parent_sha256,teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,
-        assistant_scope='TRAIN queries and exact allowed source nonidentity derivatives; inherits TEST information' if a.mode=='assistant' else None,
+        assistant_scope='TRAIN queries and exact allowed source nonidentity derivatives; inherits TEST information' if a.mode!='train_convex' else None,
         final_student_inputs='Original TRAIN and its8 weak augmentations ONLY; no EVAL query inputs',assistant_source_budget_expanded=False,
         fit=f"float64 deterministic full-batch convex CE{cfg['cross_entropy_weight']} + KL{cfg['teacher_KL_weight']}(T2) + fixed coordinate-delta regularization; no EVAL loss/parameter search",
         assistant_gate='Same complete per-task development floors as sealed teacher; actual TRAIN fit disclosed, not assumed90% for linear approximation',
-        new_inference_layers=0,original_student_parameters=7840,SDK=False,GPU=False,CPU_threads=2,maximum_fit_seconds=300,
+        new_inference_layers=0,original_student_parameters=7840,SDK=False,GPU=False,CPU_threads=2,maximum_fit_seconds=cfg['maximum_seconds']*(len(names) if a.mode=='taskwise_diagnostic' else 1),
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),**DISCLOSURE))
+    if a.mode=='taskwise_diagnostic':
+        # Separate objectives diagnose shared-head interference. Never splice
+        # these task-specific functions into a deployment or final score table.
+        diagnostic={};arrays={}
+        for name in names:
+            task_started=time.monotonic();mask=pt==name;zz=z[mask];yy=labels[mask];tt=target[mask];ww=weights[mask];ww=ww/ww.sum()
+            one=torch.nn.Parameter(initial.clone());optimizer=torch.optim.LBFGS([one],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
+            task_pairs=pair_z[np.asarray(pair_tasks)==name] if pair_z is not None else None
+            def task_closure():
+                optimizer.zero_grad(set_to_none=True);loss=convex_objective(zz@one.T,yy,tt,ww,cfg)+cfg['assistant_delta_L2']*(one-initial)[:,:-1].square().sum()/10
+                if task_pairs is not None and len(task_pairs):loss+=cfg['assistant_paired_ranking_weight']*paired_margin_loss(task_pairs@one.T)
+                if not torch.isfinite(loss):raise RuntimeError('Nonfinite taskwise diagnostic')
+                loss.backward();return loss
+            task_history=[]
+            for step in range(1,cfg['maximum_steps']+1):
+                optimizer.step(task_closure);objective=float(task_closure().detach());gradient=float(one.grad.norm())
+                if step%10==0 or step==1:task_history.append(dict(step=step,objective=objective,gradient_norm=gradient));put(a.out/'status.json',dict(state='diagnostic_only_taskwise',task=name,step=step,objective=objective,updated=time.time()))
+                if time.monotonic()-task_started>=cfg['maximum_seconds'] or gradient<1e-7:break
+            folded=(one.detach()@transform.double()).float();head=torch.nn.Linear(784,10,bias=False)
+            with torch.no_grad():head.weight.copy_(folded)
+            groups=dict(TRAIN=tr,all_development=te,teacher_exposed_development=exposed,not_in_teacher_gradient_development=unex)
+            diagnostic[name]=dict(scores={group:brief(evaluate(head,x,y,tasks,ix[tasks[ix]==name])) for group,ix in groups.items()},history=task_history,seconds=time.monotonic()-task_started)
+            arrays[name]=folded.numpy()
+        if upstream_state(model)!=before or any(not torch.equal(v,teacher_state[k]) for k,v in teacher.state_dict().items()):raise RuntimeError('Diagnostic changed parent/teacher')
+        np.savez(a.out/'diagnostic_taskwise_weights.npz',**arrays)
+        put(a.out/'report.json',dict(passed=True,mode=a.mode,diagnostic_not_deployment=True,no_task_head_splicing=True,original_parent_unchanged=True,taskwise=diagnostic,
+            comparison_scope='Same authorized TRAIN/derivative pool and convex objective; task-specific diagnostic lacks deployed shared-head constraint; not a universal capacity bound',
+            strict_CPU_reloaded=False,frozen_upstream=True,SDK=False,GPU=False,seconds=time.monotonic()-started,**DISCLOSURE));put(a.out/'status.json',dict(state='complete_diagnostic_only',updated=time.time()));return
     opt=torch.optim.LBFGS([weight],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
     strength=cfg[a.mode+'_delta_L2'];calls=0
     def closure():
