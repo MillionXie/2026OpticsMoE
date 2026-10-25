@@ -1,5 +1,29 @@
 # T20 RGB/SAR 可重构光学系统：光路适配准备
 
+### 当前运行索引（2026-10-25；未进入光路）
+
+| run | 输入/前端 | 用途与状态 |
+| --- | --- | --- |
+| `unified_static_native8_20261025` | v1分模态位置、原冻结CLEVR前端 | 三case及best/last完整CPU已结束，精度不足；原数据/权重/逐样本保留 |
+| `unified_conditioned_native8_20261025` | v1同布局，先拟合读出再调光学 | 被输入诊断否定后停止自己的controller/trainer；PT可加载及SHA确认后停止，`superseded.json`留证，不是数值异常重启 |
+| `unified_sensorneutral_native8_20261025` | v2同一三通道布局、原冻结CLEVR前端 | PID3296324/创建1792916031.45；MoE→D2NN_RGB→D2NN_AB，有限训练和CPU审计继续；不热改数值源码 |
+| `frontend_domain_diagnostic_20261025` | 同32128参数前端，在本TRAIN两域预训练 | 辅助诊断完成；临时分类头VAL RGB78.6/SAR72.8，不是光学成绩，不替换T21前端 |
+| `domain_frontend_frozen_optics_20261025` | v3同布局、两模型共享上项固定前端 | PID3322892/创建1792916989.63；冻结各自原相位、仅拟合原7840读出，再完整CPU复核的受控对照 |
+
+v2已通过30项测试及三case真实TRAIN反向预检，启动源码`ffe15f91c056162a0e17ef14282e389601e0bd61`。
+v3源码`455341c309c57f127bba4d4f1425449c89c9a52a`，新增与输入/CPU边界7项测试通过；
+`domain_frontend_probe.py`/`config_domain_frontend_probe_20261025.json`固定40步，仅TRAIN与其水平翻转拟合读出，VAL按各自训练域选一个PT，锁定后一次TEST。
+预训练前端SHA `fb7d2d52e8ca94fb92d5ee9b81cabb7c7a573d21e405fe96e973140f6803436d`，
+其60轮TRAIN训练、按VAL选epoch51，仅原32128特征参数；原24输出临时存储头只用前10类训练，部署时整头丢弃。
+**v3架构与v2一致，但前端权重与预训练数据不同**，不能说只是光路几何适配或仍是原CLEVR权重。
+所有模型共享同一新前端；D2NN_RGB的“RGB-only”仅指光学/读出拟合，前端预训练已见两域TRAIN，绝不能称整个系统未见SAR。
+保留v2原前端对照以区分该预训练收益；v3未自动替换当前候选，未依据TEST挑某个模型来制造趋势。
+T21代码、权重与光路不变；所有本轮GPU工作只用原授权物理1号4090，主训练40%/短诊断20%单进程显存上限，GPU0/A100不碰，未创建定时任务。
+
+原v1三case完整CPU与GPU分类一致，最大概率差分别8.04e-5/1.86e-5/2.39e-5，旧.002门槛通过。
+best/last/协议/历史/逐样本/CPU报告及诊断等36项已本地备份逐项SHA复验，清单`runs/preparation_20261025/baseline_backup_manifest.json`。
+这只证明原失败基线的复现性，不证明性能/趋势已达标。后续v2/v3仍须分别严格CPU核验和同一批ID完整比较后再决定是否可上机。
+
 ## 2026-10-25 跟进：定位适配输入问题，统一单传感器布局（最新）
 
 本轮仍只写T20，不修改T21及其共享的`hardware_aware.py`。旧17µm包及已运行候选全部保留。
