@@ -1,8 +1,16 @@
 import unittest
-from .audit_saved_CPU_reference import comparison
+from .audit_saved_CPU_reference import comparison,report_binding
 
 
 class CPUReferenceTests(unittest.TestCase):
+    def test_new_retention_metadata_binding_is_explicit(self):
+        protocol=dict(config=dict(schema='T21_LG_retention_original_function_v1'))
+        binding=dict(schema='T21_postcompletion_report_digest_v1',completion_sha256='c',selected_test_sha256='s')
+        self.assertTrue(report_binding(dict(selected_test_sha256='s'),'c','s',protocol))
+        self.assertFalse(report_binding({},'c','s',protocol,binding))
+        for p,b in (({},binding),(protocol,None),(protocol,dict(binding,completion_sha256='wrong'))):
+            with self.assertRaises(ValueError):report_binding({},'c','s',p,b)
+        with self.assertRaises(ValueError):report_binding(dict(selected_test_sha256='wrong'),'c','s',protocol,binding)
     def test_near_tie_is_disclosed_not_called_legacy_pass(self):
         cpu=dict(labels=[0,1],predictions=[0,1],probabilities=[[.5001,.4999],[.1,.9]])
         gpu=dict(labels=[0,1],predictions=[1,1],probabilities=[[.4999,.5001],[.1,.9]])

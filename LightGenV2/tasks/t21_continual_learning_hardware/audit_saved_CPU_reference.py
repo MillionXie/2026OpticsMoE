@@ -31,6 +31,20 @@ def comparison(cpu,gpu):
         GPU_correct=int((other==np.asarray(cpu['labels'])).sum()))
 
 
+def report_binding(receipt,completion_sha,selected_sha,protocol,binding=None):
+    if 'selected_test_sha256' in receipt:
+        if receipt['selected_test_sha256']!=selected_sha:raise ValueError('Original GPU report digest differs')
+        return True
+    # A new finite retention trainer omitted this metadata field. Never edit
+    # its original completion receipt: require an explicit postcompletion
+    # binding and disclose that it was not precommitted by the trainer.
+    if (protocol.get('config',{}).get('schema')!='T21_LG_retention_original_function_v1' or
+        binding is None or binding.get('schema')!='T21_postcompletion_report_digest_v1' or
+        binding.get('completion_sha256')!=completion_sha or binding.get('selected_test_sha256')!=selected_sha):
+        raise ValueError('Missing original report digest or explicit retention postcompletion binding')
+    return False
+
+
 def phase_fingerprints(model):
     active=set(model.active_indices[:int(model.active_count)].tolist());rows={}
     for name,raw in model.named_parameters():
@@ -45,15 +59,21 @@ def phase_fingerprints(model):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for name in ('run','test','out'):p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--phase',choices=tuple('ABCD'),required=True);a=p.parse_args();torch.set_num_threads(2)
+    p.add_argument('--phase',choices=tuple('ABCD'),required=True)
+    p.add_argument('--postcompletion-binding',type=Path,help='Explicit digest binding only for the new retention trainer metadata omission')
+    a=p.parse_args();torch.set_num_threads(2)
     data=load_data(a.test,'test');folder=a.run/a.phase;receipt=json.loads((folder/'completion.json').read_text())
     frozen=json.loads((folder/'frozen_audit.json').read_text());stored=json.loads((folder/'selected_test.json').read_text())['scores']
-    if not frozen['pass_all'] or sha(folder/'selected_test.json')!=receipt['selected_test_sha256']:raise ValueError('Parent evidence differs')
+    if not frozen['pass_all']:raise ValueError('Parent frozen evidence failed')
+    precommitted=report_binding(receipt,sha(folder/'completion.json'),sha(folder/'selected_test.json'),
+        json.loads((a.run/'protocol.json').read_text()),json.loads(a.postcompletion_binding.read_text()) if a.postcompletion_binding else None)
     a.out.mkdir(parents=True,exist_ok=False);started=time.time();names=TASKS[:ord(a.phase)-64];rows=[]
     put(a.out/'protocol.json',dict(scope='CPU deployment reference, not a replacement successful GPU-parity test',
         checkpoint_selection='Original GPU mean balanced TEST selection remains unchanged, no reselection',
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         source_SHA256=sha(__file__),model_source_SHA256=sha(Path(__file__).with_name('model.py')),
+        original_GPU_report_digest_precommitted=precommitted,
+        postcompletion_binding_SHA256=sha(a.postcompletion_binding) if a.postcompletion_binding else None,
         phase=a.phase,reference_device='cpu',CPU_threads=2,batch_size=4,TEST_gradients=False,
         CPU_GPU_legacy_tolerance_unchanged=.002,SDK=False,GPU=False,TEST_selected_development_metric=True))
     for role in ('best','last'):
@@ -84,6 +104,7 @@ def main():
     legacy=all(r['legacy_gate_passed'] for r in rows[0]['comparison_to_original_GPU'].values())
     put(a.out/'report.json',dict(passed=True,pass_scope='Immutable saved-PT deterministic CPU deployment reference ONLY',
         reference_device='cpu',strict_CPU=True,saved_best_last_reloaded=True,rows=rows,
+        original_GPU_report_digest_precommitted=precommitted,
         legacy_CPU_GPU_parity_passed=legacy,legacy_gate_unchanged=True,
         no_predicted_labels_edited=True,no_checkpoint_reselection=True,no_model_structure_or_weight_change=True,
         SDK=False,GPU=False,seconds=time.time()-started,TEST_selected_development_metric=True,

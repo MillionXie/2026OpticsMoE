@@ -19,18 +19,18 @@ from .train_native import sha,put
 
 def select_sources(ids,labels,task,count=200):
     ids=np.asarray(ids);labels=np.asarray(labels)
-    if len(ids)!=1000 or len(np.unique(ids))!=1000 or count!=200:raise ValueError('Fixed200/1000 sources only')
+    if len(ids)!=1000 or len(np.unique(ids))!=1000 or count not in (200,500):raise ValueError('Fixed200/500 of1000 sources only')
     rng=np.random.default_rng(20261025)
     if task=='eurosat':
         if np.bincount(labels,minlength=10).tolist()!=[100]*10:raise ValueError('Balanced ten classes required')
-        chosen=np.concatenate([rng.choice(np.sort(ids[labels==k]),20,replace=False) for k in range(10)])
+        chosen=np.concatenate([rng.choice(np.sort(ids[labels==k]),count//10,replace=False) for k in range(10)])
     else:
         groups=np.unique(ids//2)
         if len(groups)!=500:raise ValueError('Complete500 binary source pairs required')
         for g in groups:
             ix=ids//2==g
             if set(ids[ix])!={2*g,2*g+1} or sorted(labels[ix].tolist())!=[0,1]:raise ValueError('Source pair changed')
-        chosen=ids[np.isin(ids//2,rng.choice(np.sort(groups),100,replace=False))]
+        chosen=ids[np.isin(ids//2,rng.choice(np.sort(groups),count//2,replace=False))]
     return sorted(chosen.tolist())
 
 
@@ -66,6 +66,9 @@ def task_weights(tasks):
 
 def teacher_epochs(profile):
     if profile is None:return 60
+    if (profile==dict(schema='T21_offline_teacher_500_gated_v2',teacher_epochs=240,sources_per_task=500,
+                     expose_tasks=['clevr'],teacher_floor={'clevr':.710,'eurosat':.483})):
+        return 240
     if set(profile)!={'schema','teacher_epochs'} or profile['schema']!='T21_offline_teacher_fit_budget_v1' or profile['teacher_epochs']!=240:
         raise ValueError('Only fixed240-epoch teacher budget profile supported')
     return 240
@@ -79,7 +82,8 @@ def main():
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     partial=a.scope=='partial_development'
     if partial and not a.acknowledge_test_derived_development:raise ValueError('Explicit partial-EVAL disclosure required')
-    epochs=teacher_epochs(json.loads(a.profile.read_text()) if a.profile else None)
+    fit_profile=json.loads(a.profile.read_text()) if a.profile else None;epochs=teacher_epochs(fit_profile)
+    gated=fit_profile is not None and fit_profile.get('schema')=='T21_offline_teacher_500_gated_v2'
     torch.set_num_threads(2);torch.manual_seed(20261025);r=json.loads((a.capture/'report.json').read_text())
     if not r['passed'] or r['pilot'] or not r['SDK_released'] or sha(a.capture/'features.npz')!=r['features_sha256']:raise ValueError('Complete sealed capture required')
     model,cp=load_checkpoint(a.parent,a.parent_sha256);before=upstream_state(model)
@@ -90,7 +94,9 @@ def main():
     tr=np.flatnonzero(splits=='train');te=np.flatnonzero(splits=='test');names=sorted(set(tasks[te]))
     if cp['stage']!=len(names) or x.shape[1]!=784 or any(int((tasks[te]==n).sum())!=1000 for n in names):raise ValueError('Stage/evaluation identity differs')
     if len(tr)!=(1000+300*(len(names)-1)) or float((x.mean(1)-1).abs().max())>1e-5:raise ValueError('TRAIN budget or mean-one contract differs')
-    selected={n:select_sources(ids[te][tasks[te]==n],y[te][tasks[te]==n].numpy(),n) for n in names} if partial else {}
+    if gated and (not partial or cp['architecture']!='d2nn' or cp['stage']!=2):raise ValueError('Gated500 teacher is current D2NN B development only')
+    source_count=500 if gated else 200
+    selected={n:(select_sources(ids[te][tasks[te]==n],y[te][tasks[te]==n].numpy(),n,source_count) if not gated or n in fit_profile['expose_tasks'] else []) for n in names} if partial else {}
     exposed=np.array([i for i in te if partial and int(ids[i]) in selected[str(tasks[i])]],dtype=int)
     unexposed=np.setdiff1d(te,exposed)
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic()
@@ -98,7 +104,7 @@ def main():
         student_original_EVAL_inputs=False,original_EVAL_rows_in_teacher_pool=0,valid_for_formal_test_table=not partial,
         independent_test_samples=0,TEST_selected_development_metric=True,independent_generalization_claim=False)
     put(a.out/'protocol.json',dict(scope=a.scope,selection_source_ids=selected,source_selection_uses_model_outputs=False,
-        seed=20261025,EVAL_derivative_sources_per_task=200 if partial else 0,EVAL_derivatives_per_source=10 if partial else 0,
+        seed=20261025,EVAL_derivative_sources_per_task={n:len(v) for n,v in selected.items()} if gated else 200 if partial else 0,EVAL_derivatives_per_source=10 if partial else 0,
         source_checkpoint_SHA256=a.parent_sha256,capture_features_SHA256=r['features_sha256'],TRAIN_records=len(tr),EVAL_records=len(te),
         teacher='Offline fixed parent Linear plus64-GELU-Dropout.1-Linear10 residual; not deployed',
         teacher_training=f'{epochs}epochs AdamW lr.001 wd.01, equal task and TRAIN/derivative weights, fixed last no EVAL teacher selection',
@@ -133,6 +139,13 @@ def main():
         for label,ix in [('TRAIN',tr),('all_development',te),('exposed_development',exposed),('unexposed_development',unexposed)]:
             if len(ix):teacher_scores[label]=brief(evaluate(nn.Identity(),teacher(x@transform.T),y,tasks,ix))
     del check
+    if gated:
+        teacher_passed=all(teacher_scores['all_development'][n]['accuracy']+1e-7>=floor for n,floor in fit_profile['teacher_floor'].items())
+        put(a.out/'teacher_report.json',dict(passed=True,quality_gate_passed=teacher_passed,scores=teacher_scores,**disclosure))
+        if not teacher_passed:
+            put(a.out/'report.json',dict(passed=True,teacher_quality_gate_passed=False,student_started=False,teacher_scores=teacher_scores,
+                strict_CPU_reloaded=True,frozen_upstream=upstream_state(model)==before,seconds=time.monotonic()-started,**disclosure))
+            put(a.out/'status.json',dict(state='teacher_below_floor_student_not_started',updated=time.time()));return
     weight=nn.Parameter(initial.clone());opt=torch.optim.AdamW([weight],lr=.002,weight_decay=.001)
     baseline=evaluate(model.shared_head,x,y,tasks,te);best_score=score(baseline);best_epoch=0;best_weight=model.shared_head.weight.detach().clone();history=[]
     for epoch in range(1,121):
@@ -168,6 +181,7 @@ def main():
         put(a.out/(role+'_development.json'),dict(scores=values,source_ids=ids.tolist(),tasks=tasks.tolist(),splits=splits.tolist(),**disclosure))
     if abs(score(saved_scores['best']['all_development'])-best_score)>1e-7:raise RuntimeError('Folded original CPU replay differs')
     put(a.out/'report.json',dict(passed=True,baseline=brief(baseline),best_epoch=best_epoch,retained_parent=best_epoch==0,teacher_scores=teacher_scores,
+        teacher_quality_gate_passed=True if gated else None,student_started=True,
         best=saved_scores['best'],last=saved_scores['last'],strict_CPU_reloaded=True,frozen_upstream=True,original_student_graph=True,
         student_trainable_parameters=7840,teacher_parameters=sum(v.numel() for v in teacher.parameters()),
         best_sha256=sha(a.out/'best_checkpoint.pt'),last_sha256=sha(a.out/'last_checkpoint.pt'),teacher_sha256=sha(a.out/'offline_teacher.pt'),

@@ -1,0 +1,7 @@
+{
+  "schema": "T21_offline_teacher_500_gated_v2",
+  "teacher_epochs": 240,
+  "sources_per_task": 500,
+  "expose_tasks": ["clevr"],
+  "teacher_floor": {"clevr": 0.710, "eurosat": 0.483}
+}

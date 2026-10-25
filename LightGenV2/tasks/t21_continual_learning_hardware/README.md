@@ -34,6 +34,23 @@ seed20261025按身份抽取，不按错分或分数挑来源。每来源10份10/
 另以原Euro TRAIN300的父模型logit KL4(T2)保持已达标旧任务功能。来源数、160步预算、结构、CCD均不变。
 仍先检查完整教师质量，不达门槛不蒸馏；不以更多来源、截分或按任务拼PT弥补失败。
 
+该配对修正教师Euro492/CLEVR664，仍未过710，学生未启动。固定下一项不是增加来源：
+使用已验证的64-GELU离线教师，仅同500个CLEVR来源及其10份5/15%TRAIN混合＋1%噪声，
+不暴露Euro TEST；240轮固定预算，教师完整各任务先达到483/710才允许原Linear学生120轮。
+`config_offline_B_teacher500_gated_20261025.json`单列部分来源开发协议，保留两次线性教师失败证据。
+
+LG A固定2ms完整6000帧及全量SHA/原始CCD到features精确重放均通过，普通末端best178，
+TRAIN内部CE278、低LR284、focal未改善。原100来源增强教师750，学生TRAIN增强功能投影也750/1000，
+对S1=768下降1.8pp；暴露100为100/100，其余650/900（相同900的S1为691/900，差4.556pp）。
+全部严格CPU/非读出冻结/本地bestlast和逐样本SHA已通过，best SHA
+`ff46472af390b5f585f7a657c550e8e8021b9b4f0e4e9c0039c2e210da24aecf`。
+750只是含100来源TEST信息的开发适配重放，不能冒称独立测试3pp达标；A不再追加新的来源暴露。
+原D2NN A709同为开发适配候选，原100来源及全部证据保护，不擅自重采或将其与TRAIN-only分数混列。
+
+新LG retention入口的原completion未存selected_test文件摘要。它仍在运行，不热修改入口；
+CPU审计采用显式`--postcompletion-binding`记录原completion及GPU逐样本文件的实际SHA，
+只允许该新schema，并披露`original_GPU_report_digest_precommitted=false`；不改原收据、预测、PT或旧数值门槛。
+
 ### 2026-10-25 最新人工授权：固定2ms，重复相关仅记录
 
 用户明确批准LightGen固定单帧2ms继续采集，重复相关不足如实记录，不再独立停采。

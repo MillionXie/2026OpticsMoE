@@ -23,6 +23,11 @@ class TeacherTests(unittest.TestCase):
         self.assertEqual(teacher_epochs(None),60)
         self.assertEqual(teacher_epochs(dict(schema='T21_offline_teacher_fit_budget_v1',teacher_epochs=240)),240)
         with self.assertRaises(ValueError):teacher_epochs(dict(schema='T21_offline_teacher_fit_budget_v1',teacher_epochs=1000))
+    def test_partial500_keeps_pairs_and_gated_budget(self):
+        ids=np.arange(1000);y=ids%2;selected=select_sources(ids,y,'clevr',500)
+        self.assertEqual(len(selected),500)
+        for i in selected:self.assertIn(i^1,selected)
+        self.assertEqual(teacher_epochs(dict(schema='T21_offline_teacher_500_gated_v2',teacher_epochs=240,sources_per_task=500,expose_tasks=['clevr'],teacher_floor={'clevr':.710,'eurosat':.483})),240)
 
 
 if __name__=='__main__':unittest.main()
