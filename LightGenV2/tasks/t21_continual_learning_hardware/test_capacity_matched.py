@@ -4,6 +4,11 @@ from .distill_capacity_matched_stage import equal_task_weights,convex_objective,
 
 
 class CapacityMatchedTests(unittest.TestCase):
+    def test_conflicting_gradient_projection_is_finite_and_nonconflicting_is_mean(self):
+        from .distill_taskwise_conflict import project_conflicts
+        a=torch.tensor([1.,0.],dtype=torch.float64);b=torch.tensor([1.,1.],dtype=torch.float64)
+        got,r=project_conflicts([a,b],0);torch.testing.assert_close(got,(a+b)/2);self.assertEqual(r['projected_conflicts'],0)
+        got,r=project_conflicts([a,-a],0);self.assertTrue(torch.isfinite(got).all());torch.testing.assert_close(got,torch.zeros_like(a));self.assertEqual(r['projected_conflicts'],2)
     def test_provisional_recovery_does_not_relax_absolute_band(self):
         from .recover_linear_assistant import within_bands
         self.assertFalse(within_bands(dict(eurosat=dict(accuracy=.510),clevr=dict(accuracy=.690))))
