@@ -2,6 +2,14 @@
 
 ## 2026-10-26 追加RGB优化：关系蒸馏（尚无新成绩）
 
+另准备一个独立、有限的原读出对照`config_static_four_decoupled_readout_20261026.json`：
+从同一个父71d固定全部相位/前端/gain，只优化原7840头；采用
+[Zhao et al., CVPR 2022 的DKD](https://arxiv.org/abs/2203.08679)，将目标类/其余类别KL解耦，
+温度4、权重1/4，仍仅教师正确TRAIN目标参与蒸馏、所有TRAIN标签参与CE。
+TRAIN八D4视图、同原协方差预条件/正则、最多80步，按RGB验证优先且SAR>=71%选同一PT。
+无额外学生参数或推理分支，不改变D2NN；run `static4_decoupled_readout_20261026/MoE_AB`。
+本段为预先声明方案，实际启动和完整结果以run收据为准，不把目标分差当成绩。
+
 **最新实际运行：**用户要求不再跨窗口协调。本轮改为只在现有服务器工作树用
 `git restore --source 58140b935 --worktree -- <四个T20精确路径>`接收已发布源码；
 不改HEAD/index，不改T21/报告窗口未提交文件，不创建分支、工作树或工程副本。
