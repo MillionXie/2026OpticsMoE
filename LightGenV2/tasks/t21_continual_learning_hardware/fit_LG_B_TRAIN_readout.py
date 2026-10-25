@@ -20,17 +20,24 @@ def task_weights(tasks):
     return torch.tensor([1/(len(set(tasks))*int((tasks==n).sum())) for n in tasks],dtype=torch.float64)
 
 
+def tensor_labels(values):return torch.as_tensor(values,dtype=torch.long)
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','out'):p.add_argument('--'+n,type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--preflight-only',action='store_true');a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());model,cp=load_checkpoint(a.parent,a.parent_sha256);before=upstream_state(model)
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or cp['architecture']!='moe' or cp['stage']!=2 or cp['measured_features_sha256']!=cr['features_sha256']:raise ValueError('Complete frozen measured LG B required')
     with np.load(a.capture/'features.npz',allow_pickle=False) as d:
-        x=torch.tensor(d['features']);y=torch.tensor(d['labels']);tasks=d['tasks'].copy();splits=d['splits'].copy();ids=d['source_indices'].copy()
+        x=torch.tensor(d['features']);y=tensor_labels(d['labels']);tasks=d['tasks'].copy();splits=d['splits'].copy();ids=d['source_indices'].copy()
     tr=np.flatnonzero(splits=='train');te=np.flatnonzero(splits=='test')
     if len(tr)!=1300 or {n:int((tasks[tr]==n).sum()) for n in set(tasks)}!={'eurosat':300,'clevr':1000} or any(int((tasks[te]==n).sum())!=1000 for n in set(tasks)):raise ValueError('Original fixed TRAIN/EVAL identities only')
     transform,conditioning=full_covariance_transform(x[tr],contrast_transform(x[tr]));z=x[tr].double()@transform.T;weights=task_weights(tasks[tr]);weight=torch.nn.Parameter(torch.zeros((10,784),dtype=torch.float64))
+    if a.preflight_only:
+        loss=F.cross_entropy(z[:8]@weight.T,y[tr[:8]]);loss.backward()
+        if not torch.isfinite(loss) or not torch.isfinite(weight.grad).all() or upstream_state(model)!=before:raise RuntimeError('Real TRAIN preflight failed')
+        print(json.dumps(dict(passed=True,TRAIN_records=len(tr),label_dtype=str(y.dtype),loss=float(loss.detach()),SDK=False,GPU=False,output_created=False)));return
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();baseline=evaluate(model.shared_head,x.float(),y,tasks,te);best_value=score(baseline);best_weight=model.shared_head.weight.detach().clone();best_step=0;history=[]
     put(a.out/'protocol.json',dict(parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],task_TRAIN_counts=dict(eurosat=300,clevr=1000),fit='float64 equal-task smoothedCE .02 +coordinate weightL2 1e-4, zero readout initialization plus parent E0 fallback',maximum_steps=240,maximum_seconds=300,conditioning=conditioning,original_parameters=7840,new_inference_layers=0,TEST_gradients=False,teacher_TEST_inputs=False,TEST_selected_development_metric=True,independent_generalization_claim=False,SDK=False,GPU=False,CPU_threads=2,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__)))
     opt=torch.optim.LBFGS([weight],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
