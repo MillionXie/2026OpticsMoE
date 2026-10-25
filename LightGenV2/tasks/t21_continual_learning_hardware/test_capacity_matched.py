@@ -4,6 +4,11 @@ from .distill_capacity_matched_stage import equal_task_weights,convex_objective,
 
 
 class CapacityMatchedTests(unittest.TestCase):
+    def test_provisional_recovery_does_not_relax_absolute_band(self):
+        from .recover_linear_assistant import within_bands
+        self.assertFalse(within_bands(dict(eurosat=dict(accuracy=.510),clevr=dict(accuracy=.690))))
+        self.assertTrue(within_bands(dict(eurosat=dict(accuracy=.510),clevr=dict(accuracy=.720))))
+        self.assertFalse(within_bands(dict(eurosat=dict(accuracy=.550),clevr=dict(accuracy=.720))))
     def config(self):return json.loads(Path(__file__).with_name('config_capacity_matched_distillation_20261025.json').read_text())
     def test_frozen_profile(self):
         c=self.config();validate_profile(c)
