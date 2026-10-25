@@ -9,6 +9,27 @@
 | `unified_sensorneutral_native8_20261025` | v2同一三通道布局、原冻结CLEVR前端 | PID3296324/创建1792916031.45；MoE→D2NN_RGB→D2NN_AB，有限训练和CPU审计继续；不热改数值源码 |
 | `frontend_domain_diagnostic_20261025` | 同32128参数前端，在本TRAIN两域预训练 | 辅助诊断完成；临时分类头VAL RGB78.6/SAR72.8，不是光学成绩，不替换T21前端 |
 | `domain_frontend_frozen_optics_20261025` | v3同布局、两模型共享上项固定前端 | PID3322892/创建1792916989.63；冻结各自原相位、仅拟合原7840读出，再完整CPU复核的受控对照 |
+| `robust_readout_native8_20261025` | 同v3推理合同，TRAIN原图/翻转/原图区域dropout及同前端临时头蒸馏 | PID3349346/创建1792917974.51；仍只原7840读出，两个传感器/模型同规则，完整CPU审计中 |
+
+完整新增结果（每格固定TEST1000，均非实拍；不同run不能逐格拼PT）：
+
+| case | 原冻结CLEVR前端+修正布局/60轮(v2) | 同规格遥感TRAIN前端+固定旧相位/原读出(v3) |
+| --- | --- | --- |
+| MoE_AB | RGB73.6/SAR60.7，CPU复核中 | RGB82.1/SAR71.0 |
+| D2NN_RGB | 接续训练中 | RGB80.8/SAR33.4 |
+| D2NN_AB_control | 队列后继 | RGB79.5/SAR69.4 |
+
+v3三个best/last均已完成严格CPU原图重放，argmax与GPU全部一致；两个D2NN最大概率误差.000632/.000642通过原.002门槛。
+**MoE最大概率差.005509未过原门槛**，不能仅因分类一致就宣称全部通过；原报告保留且未放宽门槛。
+无标签相位诊断确认MoE global3像素/另一个未活动expert1像素在CPU/GPU sigmoid-floor跨8bit边界，
+D2NN也各有少数跨bin像素；这是数值实现边界，不是改曝光或模型结构的理由。
+`export_canonical_phase.py`将CPU规定的原灰阶码k重参数化到logit((k+.5)/256)，
+所有实际CPU8bit相位码和全部非相位张量逐项保持不变，避免GPU浮点实现把临界值分到相邻bin。
+它不做训练/选PT/改预测，不覆盖原best/last；两项含全部256bin及原模型CPU输出精确一致性测试通过。
+导出至`releases/predeployment_canonical_20261025`的独立PT/manifest；每case仍需完整2000条CPU重放证明与原CPU概率一致、
+GPU对CPU通过旧.002门槛。PID3364989/创建1792918524.8有限导出队列运行中，不冒称已经交付实验室。
+v3数据/权重/前端/报告等38项已本地SHA备份；清单`runs/preparation_20261025/domain_backup_manifest.json`。
+RGB-only D2NN的SAR迁移仍明显不足，v3/v4尚不作为原图趋势完整验收，不为贴合旧柱高选择更差权重或削弱对照。
 
 v2已通过30项测试及三case真实TRAIN反向预检，启动源码`ffe15f91c056162a0e17ef14282e389601e0bd61`。
 v3源码`455341c309c57f127bba4d4f1425449c89c9a52a`，新增与输入/CPU边界7项测试通过；
