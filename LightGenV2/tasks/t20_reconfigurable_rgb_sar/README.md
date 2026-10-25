@@ -10,6 +10,8 @@
 | `frontend_domain_diagnostic_20261025` | 同32128参数前端，在本TRAIN两域预训练 | 辅助诊断完成；临时分类头VAL RGB78.6/SAR72.8，不是光学成绩，不替换T21前端 |
 | `domain_frontend_frozen_optics_20261025` | v3同布局、两模型共享上项固定前端 | PID3322892/创建1792916989.63；冻结各自原相位、仅拟合原7840读出，再完整CPU复核的受控对照 |
 | `robust_readout_native8_20261025` | 同v3推理合同，TRAIN原图/翻转/原图区域dropout及同前端临时头蒸馏 | PID3349346/创建1792917974.51；仍只原7840读出，两个传感器/模型同规则，完整CPU审计中 |
+| `domain_frontend_weightnorm_20261025` | 与v3相比仅增加折回原读出的W范数惩罚 | 三case及best/last完整CPU已完成，原数值门槛均通过；用于隔离高增益读出敏感性 |
+| `shared_frontend_joint_native8_20261025` | 同一遥感TRAIN前端与v3输入合同，已有光学/电子共同小步训练 | PID3394881/创建1792919604.18，源码b1ded9d45；三case实际TRAIN反向通过，有限40轮→末端拟合→CPU自动接续 |
 
 完整新增结果（每格固定TEST1000，均非实拍；不同run不能逐格拼PT）：
 
@@ -26,8 +28,20 @@ D2NN也各有少数跨bin像素；这是数值实现边界，不是改曝光或�
 `export_canonical_phase.py`将CPU规定的原灰阶码k重参数化到logit((k+.5)/256)，
 所有实际CPU8bit相位码和全部非相位张量逐项保持不变，避免GPU浮点实现把临界值分到相邻bin。
 它不做训练/选PT/改预测，不覆盖原best/last；两项含全部256bin及原模型CPU输出精确一致性测试通过。
-导出至`releases/predeployment_canonical_20261025`的独立PT/manifest；每case仍需完整2000条CPU重放证明与原CPU概率一致、
-GPU对CPU通过旧.002门槛。PID3364989/创建1792918524.8有限导出队列运行中，不冒称已经交付实验室。
+导出至`releases/predeployment_canonical_20261025`的独立PT/manifest。完整2000条CPU证明与原CPU概率**精确一致**，
+但MoE GPU对CPU最大概率差仍.005462，未过旧.002；PID3364989队列已据失败明确停止，未继续D2NN导出，不冒称修复/交付实验室。
+随后对最差数值样本的8条批次做无标签诊断，所有相位灰阶码已一致，但router/first/final振幅灰阶分别有1/8/11145处不一致，
+最终feature最大差.000399，读出Frobenius范数2609.66/谱范数1301.25，logit差.02063。
+因此小量浮点差经过中间振幅量化和高增益读出被放大，不能仅把相位临界像素当作唯一原因；失败导出/所有报告原样保留。
+单因素`config_domain_frontend_weightnorm_20261025.json`仅增加W平方范数惩罚，原相位/前端/输入/其余数据及损失保持与v3一致，
+结果MoE RGB81.5/SAR70.0、D2NN_RGB81.2/31.7、D2NN_AB81.5/70.8；全部CPU/GPU分类一致，最大概率差.001120/.000571/.000322，通过原门槛。
+这说明可以改善数值稳健性，但D2NN的SAR迁移仍不足，公平双域控制也未显示MoE明确优势，不得声称纯架构优势已证明。
+原`robust_readout_native8`三case也已完整CPU通过，MoE80.0/70.6、D2NN_RGB80.9/33.8、D2NN_AB79.5/69.4；
+没有据TEST挑last替换best或逐格拼接。当前共同训练从这组三个数值稳定、已CPU核验的父PT开始，原源PT均不覆盖。
+`train_shared_frontend.py`/`config_shared_frontend_joint_20261025.json`给三个case同样40轮上限/min15/patience12、
+optical/head LR1e-4、原读出W范数、TRAIN翻转/原图区域dropout与同前端临时分类头蒸馏；最后固定光学拟合原头30步。
+前端及显示gain、12个未活动专家冻结；原4个活动专家/router/global及原7840头可训，不新增任何推理层。
+VAL按各自训练域选PT，锁定后完整TEST；父PT须通过原CPU/GPU门槛，e0最佳须披露未采用新训练参数，不为趋势挑差PT。
 v3数据/权重/前端/报告等38项已本地SHA备份；清单`runs/preparation_20261025/domain_backup_manifest.json`。
 RGB-only D2NN的SAR迁移仍明显不足，v3/v4尚不作为原图趋势完整验收，不为贴合旧柱高选择更差权重或削弱对照。
 
