@@ -1,7 +1,7 @@
 """Chinese editable-equation appendix for the first-compute-module delivery."""
 from pathlib import Path
 from copy import deepcopy
-import json
+import json,sys
 from docx import Document
 from docx.shared import Inches,Pt,RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -11,7 +11,8 @@ from docx.oxml.ns import qn
 HERE=Path(__file__).resolve().parent
 OUT=HERE/'outputs/01a061e2-6f88-7913-87f5-b632000e4c83/first_tf_complete_20261025_01'
 assert not (OUT/'delivery_manifest.json').exists()
-data=json.loads((OUT/'core_data.json').read_text(encoding='utf8'));assert not any(x['pending'] for x in data['mainRecords'])
+data=json.loads((OUT/'core_data.json').read_text(encoding='utf8'))
+assert '--draft' in sys.argv or not any(x['pending'] for x in data['mainRecords'])
 D=Document();section=D.sections[0];section.page_width=Inches(8.5);section.page_height=Inches(11)
 section.left_margin=section.right_margin=Inches(.72);section.top_margin=section.bottom_margin=Inches(.65)
 for name in ('Normal','Title','Heading 1','Heading 2'):
@@ -59,7 +60,7 @@ def table(headers,rows,widths):
                 para.paragraph_format.space_before=Pt(4);para.paragraph_format.space_after=Pt(4)
                 if j>0:para.alignment=WD_ALIGN_PARAGRAPH.CENTER
                 for r in para.runs:
-                    r.font.size=Pt(10);r._element.get_or_add_rPr().rFonts.set(qn('w:eastAsia'),'宋体')
+                    r.font.size=Pt(10);r.font.name='Times New Roman';r._element.get_or_add_rPr().rFonts.set(qn('w:eastAsia'),'宋体')
                     if i==0:r.bold=True;r.font.color.rgb=RGBColor(255,255,255)
         if i==0:t.rows[0]._tr.get_or_add_trPr().append(OxmlElement('w:tblHeader'))
     p();return t
@@ -69,16 +70,19 @@ p('九任务主表与Temporal多基线表的方法附录 2026年10月25日')
 p('本版比较从模型主体的首个计算模块开始的时间与能量。Qwen从原生首个Transformer块进入，LG从首个光学模块的输入映射进入，计到原任务结果返回CPU。进入起点之前的文件读取、解码、分词、词向量和图像位置准备不计入主结果。')
 p(f'Temporal的LG按16视频、64帧整幅相干光场实际执行。折16个有效视频的同步耗时为{lg["ms"]*16:.4f} ms，Qwen100为{q["ms"]*16:.4f} ms，时间比为{q["ms"]/lg["ms"]:.3f}倍。等效单帧分别再除64，倍数不变。该结果是核心范围比较，不是从视频文件开始的全流程比较。')
 table(['任务','Qwen除LG时间比','Qwen除LG能耗比','节能率'],[
-    [records[k+'|ours']['task'],f'{records[k+"|qwen"]["ms"]/records[k+"|ours"]["ms"]:.3f}',
-     f'{records[k+"|qwen"]["j"]/records[k+"|ours"]["j"]:.3f}',
-     f'{1-records[k+"|ours"]["j"]/records[k+"|qwen"]["j"]:.2%}']
+    [records[k+'|ours']['task'],
+     f'{records[k+"|qwen"]["ms"]/records[k+"|ours"]["ms"]:.3f}' if not records[k+'|qwen']['pending'] else '补测中',
+     f'{records[k+"|qwen"]["j"]/records[k+"|ours"]["j"]:.3f}' if not records[k+'|qwen']['pending'] else '补测中',
+     f'{1-records[k+"|ours"]["j"]/records[k+"|qwen"]["j"]:.2%}' if not records[k+'|qwen']['pending'] else '补测中']
     for k in ('01a','01b','02','03','04','05','06','07','08')],[2.5,1.45,1.6,1.3])
 p('正式精度沿用原模型完整TEST。三轮各200次仅用于时间、能量和输出核验，不用首200条的子集指标替代完整TEST。80GB与40GB对照单独标明平台，不能把跨平台差异归因为纯模型收益。')
 
 page('1 计时起点和保留的计算')
-p('图像类Qwen从原生视觉Transformer第0块进入，纯文字与T12从原生语言Transformer第0块进入。Temporal基线使用原封存的首块时间戳，其余七项Qwen按本次授权补记相同位置。YOLO没有Transformer，沿用原生第一个卷积块起点，单独标注。')
+p('Transformer是注意力网络主体块，表中简称TF。图像类Qwen从原生视觉Transformer第0块进入，纯文字与T12从原生语言Transformer第0块进入。Temporal基线使用原封存的首块时间戳，其余七项Qwen按本次授权补记相同位置。YOLO没有Transformer，沿用原生第一个卷积块起点，单独标注。')
 p('LG按原记录中第一个光学模块的输入映射切分，不从更晚的光传播开始。光模块内部幅度映射、路由、数字读出，后续真实合并器、任务输出头、图像生成网络、检索排序和结果返回均按原计费规则保留。')
+p('“同步耗时”就是先等显卡真正算完，再记录这一段实际经过了多久；它不是把显卡任务刚发出去就停表。LG电子明细采用原互不重叠的计入阶段，固定光执行时间另外相加。')
 p('“不加前置”指不把进入首计算模块之前的时间加回去，也不使用三者共用embedding耗时的代数情景。起点之后若原模型仍执行另一个分支的词向量或图像前端，这些后续计算保留，不能借切分口径删掉原网络的中间步骤。')
+p('资源上限100%或50%是MPS对GPU可用资源的配置限制，不代表实际利用率恒为该数值。LG沿用100%资源配置，没有另测LG50%。')
 table(['项目','含义','本版处理'],[
  ['CPU输入准备','处理器读取文件，解码、抽帧、裁剪缩放并整理输入','进入起点前不计'],
  ['内存到显存传输','把CPU内存中的输入复制到GPU显存，旧表缩写H2D','进入起点前不计'],
@@ -91,8 +95,9 @@ table(['项目','含义','本版处理'],[
 
 page('2 三轮汇总和并行单位换算')
 p('每个补测基线使用三个独立新进程，每进程顺序执行原首200个真实输入，无dummy或专门推理预热，保留首条与全部慢调用。原模型、精度、输入和排序规则不变，完整输出与原合格结果核对。额外观察只记录模块入口及结果传输事件，不增加模型前向。')
-eq(sub('T','Q,r'),' = ',total('∑','i=1','200',[sub('t','CPU结果,r,i'),' − ',sub('t','首TF,r,i')]))
+eq(sub('T','Q,r'),' = ',total('∑','i=1','200',['(',sub('t','CPU结果,r,i'),' − ',sub('t','首TF,r,i'),')']))
 p('每次调用单独取首块入口到CPU任务结果的区间。只对这200个区间求和，不把区间之间的输入准备与间隙混入核心总时间。')
+p('r表示三轮中的一轮，i表示该轮的一次调用。未标r的时间与能量为三轮合计。本次复用已通过的模型身份和数值证明，不再新增CPU推理或完整TEST评估。')
 eq(sub('T','LG,r'),' = ',sub('T','选定电子,r'),' + ',sub('T','固定光,r'))
 p('LG电子时间采用起点之后原选定互斥阶段的同步墙钟之和。真实运行的GPU光传播仿真、布局、融合和原批准单列的并行电子补偿不加入硬件投影。连续软件运行时间保留为诊断，不能冒称物理装置端到端实测。')
 eq(sub('t','单光周期'),' = 0.714 + 0.300 + 0.0307 = 1.0447 ms')
@@ -100,7 +105,7 @@ p('三个固定分量分别为空间光调制器更新、曝光和额外相机�
 eq(sub('T','16视频'),' = ',frac([sub('T','三轮合计')],['600']),' × 16')
 eq(sub('T','等效单帧'),' = ',frac([sub('T','16视频')],['64']))
 p('Temporal每轮13场、每场16视频4帧，共208执行槽，200个有效视频。三轮39场执行624槽、600个有效视频，末场8个补齐槽的成本完整保留。因此折16有效视频的固定光时间为6.518928 ms，而一次满场的固定光时间为6.2682 ms。Spatial保持原模型每场1视频4帧，不将现有时间再除16。')
-p('表内显卡事件耗时是GPU事件观察区间，用来核对GPU执行，不与同步墙钟相加。主表倍率和能量时延积均使用同步耗时，避免将GPU事件分母与另一范围的能量混算。')
+p('表格仅保留本口径实际计入的同步耗时、能量及其倍数。不计入阶段、其他计时观察值和未核定运算量不列入工作表；原始记录单独保留。')
 
 page('3 能量和比较倍数')
 p('所有能量公式中的时间使用秒。LG能量按既有阶段功率模型估算，基线使用338.2 W主机功率代理加相同核心区间的实际板卡功率积分。二者都不能称为插座电表实测。')

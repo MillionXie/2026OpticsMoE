@@ -57,7 +57,7 @@ def collect(allow_pending=False):
             for (name,family,charged),values in groups.items():details.append(dict(key=key,repeat=run['repeat'],stage=name,family=family,charged=charged,**values))
         elif prefix not in ('01a','01b') and len(key.split('|'))==2:
             # Only these seven points have new first-block observation authority.
-            version='02' if prefix in ('07','08') else '01'
+            version='04' if prefix=='08' and run['repeat'] in (2,3) else '02' if prefix in ('07','08') else '01'
             newfolder=str(Path(folder).parent.parent/('a100_first_tf_core_'+prefix+'_20261025_'+version)/f'qwen_repeat{run["repeat"]:02d}').replace('\\','/')
             if not (REPO/newfolder/'first_tf_summary.json').exists():
                 if not allow_pending:raise FileNotFoundError(newfolder+'/first_tf_summary.json')
@@ -94,6 +94,37 @@ def collect(allow_pending=False):
         cached[cachekey]=dict(r);return r
     mainpoints=[point(r,r['key']) for r in d['mainRuns']]
     temppoints=[point(r,r['key']) for r in d['tempRuns']]
+    supplement_suites=[]
+    for version in ('01','02','03','04'):
+        folder='LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/a100_first_tf_seven_20261025_'+version
+        receipt=REPO/folder/'backup_receipt_suite01.json'
+        if not receipt.exists():
+            if not allow_pending:raise FileNotFoundError(receipt)
+            continue
+        received=read(folder,'backup_receipt_suite01.json',new=True)
+        for x in received['verified_files']:
+            p=REPO/folder/x['path'];assert p.stat().st_size==x['bytes'] and sha(p)==x['sha256']
+            rel=p.relative_to(REPO).as_posix();used[rel]=dict(file=rel,bytes=x['bytes'],sha256=x['sha256'])
+        state=read(folder,'suite_status.json',new=True)
+        assert state['mps_released'] is True
+        assert state['status']==('complete' if version=='04' else 'stopped')
+        assert len(state['completed'])=={'01':15,'02':4,'03':0,'04':2}[version]
+        supplement_suites.append(dict(folder=folder,status=state['status'],completed=len(state['completed']),source_commit=state['source_commit']))
+        if (REPO/folder/'external_controller.log').exists():
+            p=REPO/folder/'external_controller.log';rel=p.relative_to(REPO).as_posix();used[rel]=dict(file=rel,bytes=p.stat().st_size,sha256=sha(p))
+    rejected='LightGenV2/tasks/t04_semantic_interaction/runs/simulation/a100_first_tf_core_07_20261025_01/qwen_repeat01'
+    if (REPO/rejected/'backup_receipt_telemetry_failure01.json').exists():
+        received=read(rejected,'backup_receipt_telemetry_failure01.json',new=True)
+        for x in received['verified_files']:
+            p=REPO/rejected/x['path'];assert p.stat().st_size==x['bytes'] and sha(p)==x['sha256']
+            rel=p.relative_to(REPO).as_posix();used[rel]=dict(file=rel,bytes=x['bytes'],sha256=x['sha256'],excluded_reason='功率读数N/A，172条不完整轮，不进入指标')
+    for version in ('02','03'):
+        interrupted='LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_first_tf_core_08_20261025_'+version+'/qwen_repeat02'
+        if (REPO/interrupted/'backup_receipt_MPS_interruption01.json').exists():
+            received=read(interrupted,'backup_receipt_MPS_interruption01.json',new=True)
+            for x in received['verified_files']:
+                p=REPO/interrupted/x['path'];assert p.stat().st_size==x['bytes'] and sha(p)==x['sha256']
+                rel=p.relative_to(REPO).as_posix();used[rel]=dict(file=rel,bytes=x['bytes'],sha256=x['sha256'],excluded_reason='MPS控制通信中断，不完整轮，不进入指标')
     def records(old,raw):
         result=[]
         for oldrec in old:
@@ -110,6 +141,7 @@ def collect(allow_pending=False):
     return dict(scope='Qwen first native Transformer (YOLO first CNN) to CPU result; LG first optical module selected-stage hardware projection to CPU result',
         mainRecords=records(d['mainRecords'],mainpoints),tempRecords=records(d['tempRecords'],temppoints),
         mainRuns=mainpoints,tempRuns=temppoints,lgStages=details,raw_files=list(full_index.values()),sealed_full_input_source_sha256=sha(SEALED),
+        supplement_suites=supplement_suites,rejected_partial_run=rejected,
         input_preparation_and_inter_request_gaps_excluded=True,downstream_original_operations_preserved=True,
         primary_time='synchronized wall, matching energy',cuda_time='diagnostic event to result transfer, not added to synchronized wall',
         physical_optical_OP=None)
