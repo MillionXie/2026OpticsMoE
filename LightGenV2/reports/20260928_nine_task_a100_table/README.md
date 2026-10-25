@@ -1,5 +1,33 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 13:37补记：hmh新extract进程打断05，保全后仅续排06
+
+图表专项整理期间只读检测到新外占。原hmh训练PID2384972已不再是当前占用者；新PID2806339于13:10:12启动
+`.../20261025_defocus_stage_information/extract_stages.py`（父2413463）。QwenCPU_05曾在连续12次idle后启动
+自有worker2809619，Unix1792905129.730078记录 `loading_original_runtime/no_gpu`，随后父在
+Unix1792905195.9197338捕获同A100新外国14780MiB，仅终止自己的worker。没有AST gold/live进度或passed case/contract，
+不称数值比较失败，不推断零神经调用。05四控制器2395106/2395127/2395131/2395143与worker均已stopped并实际退出。
+
+旧四根5/1/1/3原文件3755/3502/4785/14172B全部由 `backup_receipt_foreign_CPU_interruption02.json`
+逐SHA取回，四外日志615/1245/1331/1047B亦精确取回。Qwen05 `foreign_CPU_interruption.json` SHA256为
+`2b2925a882ce2a49f385d6166d3d8263ba04331cf8df8300992fa5f73afda6e8`。
+已合格OursCPU_06/a37514…1c0保持复用；05无合格baseline case和成本，不传resume，不重推任何已合格项。
+
+94冻结源核同、旧PID全退出后，不改runtime或科学计费，直接建立唯一缺失续链06，
+共同deadline1792928134.5737193（19:35:34北京，有限等待窗非ETA），queue21600；GPU每点仍原7200上限：
+
+- T12 QwenCPU `a100_qwen_live_frontend_contract_20261025_06`/2848164，previous原OursCPU_06。
+- LGVQ CPU `a100_lgvq_live_frontend_contract_20261025_06`/2848165，previous QwenCPU_06。
+- T12成本 `a100_input_inclusive_20261025_06`/2848166，原sharedreference_01及OursCPU_06/QwenCPU_06。
+- LGVQ成本 `a100_lgvq_input_inclusive_20261025_06`/2848167，LGVQCPU_06及T12cost_06真正退出/MPS释放后。
+
+Unix1792906618.953284四控制器均活，分别等待foreign/previousCPU/originalCPUproof/LGVQCPUproof，
+全无child/case，成本completed[]。同外部2806339/33136MiB，不kill外国，不重复通知未变占用。
+12idle、shared锁、CPU/GPU排他、MPS100、250W、250ms与原NN全部不变。新LGVQcost_06的
+`admission01.json`5472B SHA256 `3a621d0fb4554bb8aa786c27f2940da4d68055ee1ccc1c82f4b94efee4d0ab8f`已原SHA取回。
+启动HEAD896fd595a为peer自行同步，本窗口未改peer源码；本轮只发布图表源码/README，94依赖未变。
+成本仍14/18，两张已交部分版及本轮光学分解表均不冒充新增测量结果；租机未连接。
+
 ## 2026-10-25 光学时间专项分解：固定周期与原实测电子阶段分列
 
 用户要求逐任务解释Ours时间组成。本轮新增单独工作簿，不修改已交两份Excel、Word或任何测量run。
