@@ -26,9 +26,29 @@ def validate_profile(cfg):
     if cfg.get('stage')==2 and cfg.get('sources_per_task',{}).get('eurosat')==200:name='config_stage_B800_Euro200_teacher_20261025.json'
     if cfg.get('stage')==2 and cfg.get('architecture')=='moe':name='config_stage_LG_B500_teacher_20261025.json'
     if cfg.get('stage')==2 and cfg.get('architecture')=='moe' and cfg.get('teacher_dropout')==.1:name='config_stage_LG_B500_dropout_teacher_20261025.json'
+    if cfg.get('schema')=='T21_LG_B_all_TEST_source_teacher_development_v1':name='config_stage_LG_B_allTEST_teacher_20261025.json'
     if name is None or cfg!=json.loads(Path(__file__).with_name(name).read_text()):
         raise ValueError('Only published finite B800/C500 development profiles')
     return cfg
+
+
+def full_development_sources(ids,labels,task):
+    """New explicit all-source development scope; never a hidden partial split."""
+    ids=np.asarray(ids);labels=np.asarray(labels)
+    if len(ids)!=1000 or len(np.unique(ids))!=1000:raise ValueError('Exactly1000 distinct fixed development identities required')
+    if task=='eurosat':
+        if np.bincount(labels,minlength=10).tolist()!=[100]*10:raise ValueError('Balanced ten-class development required')
+    else:
+        pairs=paired_indices(ids,labels,np.repeat(task,len(ids)))
+        if len(pairs)!=500:raise ValueError('All500 complete original binary pairs required')
+    return sorted(ids.tolist())
+
+
+def student_checkpoint_key(scores,cfg):
+    if not cfg.get('whole_stage_student_TEST_selection'):return whole_stage_selection(scores,cfg['development_floor'])
+    if set(scores)!=set(cfg['development_floor']) or any(v['n']!=1000 for v in scores.values()):raise ValueError('Complete same-stage tasks required')
+    gaps=[max(round(cfg['development_floor'][n]*1000)-v['correct'],v['correct']-round(cfg['development_ceiling'][n]*1000),0) for n,v in scores.items()]
+    return (-max(gaps),-sum(gaps))
 
 
 def nested_pair_sources(ids,labels,previous):
@@ -89,7 +109,10 @@ def main():
     selected={}
     for name in names:
         ix=te[tasks[te]==name];count=cfg['sources_per_task'][name]
-        if count==800:
+        if count==1000:
+            if not cfg.get('all_TEST_sources_authorized'):raise ValueError('All-source scope was not authorized in this profile')
+            selected[name]=full_development_sources(ids[ix],y[ix].numpy(),name)
+        elif count==800:
             if a.previous_teacher is None:raise ValueError('Prior sealed500 teacher required')
             pr=json.loads((a.previous_teacher/'protocol.json').read_text());rr=json.loads((a.previous_teacher/'teacher_report.json').read_text())
             if sha(a.previous_teacher/'offline_teacher.pt')!=rr['teacher_sha256'] or pr['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Prior teacher identity changed')
@@ -120,6 +143,7 @@ def main():
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic()
     put(a.out/'protocol.json',dict(profile=cfg,profile_sha256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],
         selection_source_ids=selected,source_selection_uses_model_outputs=False,derivative_sources={n:len(v) for n,v in selected.items()},teacher_covariance_conditioning=conditioning,
+        all_TEST_sources_used=bool(cfg.get('all_TEST_sources_authorized')),independent_EVAL_sources_remaining={n:1000-len(v) for n,v in selected.items()},original_TEST_rows_in_gradient=False,student_TEST_selection=bool(cfg.get('whole_stage_student_TEST_selection')),
         teacher_selection='Complete all-task development minimum floor gap then mean, subject to all TRAIN>=90%; includes warm E0, explicitly TEST selected' if cfg.get('teacher_development_selection') else 'Lowest complete TRAIN/derivative/old-TRAIN-anchor objective, no EVAL selection',warm_teacher=warm,teacher='Offline parentLinear plus128-GELU-Linear10 only',
         teacher_loss='Equal-task TRAIN CE.5 + equal-task derivativeCE.5 + paired TRAIN/derivative ranking.25 each + declared Euro TRAIN parentKL',
         student='Original7840 Linear, TRAIN-only weak augmentation CE.5 + DKD1/4 T2; no EVAL student inputs',
@@ -167,7 +191,7 @@ def main():
     artifact['state_dict']=best_state;torch.save(artifact,a.out/'offline_teacher.pt');teacher=residual_teacher_from_artifact(torch.load(a.out/'offline_teacher.pt',map_location='cpu',weights_only=False))
     groups=[('TRAIN',tr),('all_development',te),('exposed_development',exposed),('unexposed_development',unexposed)]
     with torch.no_grad():tl=teacher(x@transform.T);ts={n:evaluate(nn.Identity(),tl,y,tasks,ix) for n,ix in groups}
-    tb={n:brief(v) for n,v in ts.items()};quality=all(tb['TRAIN'][n]['accuracy']+1e-7>=cfg['TRAIN_floor'] for n in names if n!='eurosat') and all(tb['all_development'][n]['accuracy']+1e-7>=v for n,v in cfg['development_floor'].items())
+    tb={n:brief(v) for n,v in ts.items()};quality=all(tb['TRAIN'][n]['accuracy']+1e-7>=cfg['TRAIN_floor'] for n in names if n!='eurosat' or cfg.get('all_TEST_sources_authorized')) and all(tb['all_development'][n]['accuracy']+1e-7>=v for n,v in cfg.get('teacher_quality_floor',cfg['development_floor']).items())
     teacher_hash=sha(a.out/'offline_teacher.pt');put(a.out/'teacher_development.json',dict(scores=ts,source_indices=ids.tolist(),tasks=tasks.tolist(),splits=splits.tolist(),**DISCLOSURE))
     put(a.out/'teacher_report.json',dict(passed=True,quality_gate_passed=quality,teacher_scores=tb,teacher_sha256=teacher_hash,strict_CPU_reloaded=True,**DISCLOSURE))
     common=dict(passed=True,teacher_quality_gate_passed=quality,teacher_scores=tb,teacher_sha256=teacher_hash,frozen_upstream=upstream_state(model)==before,strict_CPU_reloaded=True,SDK=False,GPU=False,**DISCLOSURE)
@@ -176,7 +200,7 @@ def main():
     for v in teacher.parameters():v.requires_grad_(False)
     teacher_before={k:v.detach().clone() for k,v in teacher.state_dict().items()}
     weight=nn.Parameter(initial.clone());optimizer=torch.optim.AdamW([weight],lr=.001,weight_decay=.0001);baseline=evaluate(model.shared_head,x,y,tasks,te)
-    best_selection=whole_stage_selection(baseline,cfg['development_floor']);best_weight=model.shared_head.weight.detach().clone();best_epoch=0;history=[];ss=time.monotonic();std=x[tr].std(0,unbiased=False)
+    best_selection=student_checkpoint_key(baseline,cfg);best_weight=model.shared_head.weight.detach().clone();best_epoch=0;history=[];ss=time.monotonic();std=x[tr].std(0,unbiased=False)
     for epoch in range(1,cfg['student_epochs']+1):
         optimizer.param_groups[0]['lr']=.00001+.00099*.5*(1+np.cos(np.pi*(epoch-1)/(cfg['student_epochs']-1)));total=0.
         for _ in range(cfg['steps_per_epoch']):
@@ -189,12 +213,12 @@ def main():
                 loss+=4*F.kl_div(F.log_softmax(logits[mask]/2,1),F.softmax(oldtarget/2,1),reduction='batchmean')
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite student loss')
             optimizer.zero_grad(set_to_none=True);loss.backward();torch.nn.utils.clip_grad_norm_([weight],1.);optimizer.step();total+=float(loss.detach())
-        if epoch%5==0 or time.monotonic()-ss>=cfg['student_max_seconds']:
+        if epoch%5==0 or cfg.get('whole_stage_student_TEST_selection') or time.monotonic()-ss>=cfg['student_max_seconds']:
             with torch.no_grad():model.shared_head.weight.copy_((weight@transform).float());scores=evaluate(model.shared_head,x,y,tasks,te)
-            selection=whole_stage_selection(scores,cfg['development_floor'])
+            selection=student_checkpoint_key(scores,cfg)
             if selection>best_selection:best_selection=selection;best_epoch=epoch;best_weight=model.shared_head.weight.detach().clone()
             history.append(dict(epoch=epoch,loss=total/cfg['steps_per_epoch'],scores=brief(scores),best_epoch=best_epoch));put(a.out/'history.json',history);put(a.out/'status.json',dict(state='student',**history[-1],updated=time.time()))
-        if time.monotonic()-ss>=cfg['student_max_seconds']:break
+        if time.monotonic()-ss>=cfg['student_max_seconds'] or (cfg.get('whole_stage_student_TEST_selection') and best_selection==(0,0)):break
     saved_scores={}
     for role,w in [('best',best_weight),('last',(weight.detach()@transform).float())]:
         with torch.no_grad():model.shared_head.weight.copy_(w)
