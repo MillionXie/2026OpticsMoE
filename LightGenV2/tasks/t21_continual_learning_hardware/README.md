@@ -1,5 +1,19 @@
 # T21 四模态终身学习：实验室适配
 
+### 2026-10-25 A人工通过，继续B弱扰动配对教师
+
+用户已接受LG A750/1000及D2NN A709/1000作为本轮开发适配版本；原100来源信息暴露与非独立TEST标记不撤销，
+不追加A训练、来源或采集。精确PT及bestlast/逐样本/协议本地SHA索引为
+`runs/preparation_20261025/latest_scope/A_candidate_handoff.json`。
+针对D2NN B继续固定一次`config_gated_teacher_B500_pairweak_20261025.json`：
+仍是原500个CLEVR来源、250完整正负对，不暴露Euro TEST，也不扩来源。
+同配对TRAIN partner的混合从10/20%降至2/5%，噪声从2%降至.1% TRAINstd且正负共用噪声，
+原Linear教师L2从1e-4降至1e-6、固定240 LBFGS步；原TRAIN/衍生CE权重.25/.75、配对排序4与旧Euro TRAIN父KL4保留。
+教师必须先CLEVR TRAIN>=90%，且完整开发Euro>=483、CLEVR>=710才启动原Linear学生。
+学生仍只TRAIN及24份TRAIN增强作功能蒸馏，结构/CCD/曝光/坐标/LUT不变；不达则保留负结果、不蒸馏低质教师。
+这是对细小问句差异、教师欠拟合和非线性不可直接压缩的固定方法检验，不保证达标，不以区间或按任务拼PT凑趋势。
+全部仍是部分TEST衍生开发适配，不用于独立测试表。D2NN仿真继续冻结，LG C→D训练及现有光路队列并行不中断。
+
 ### 2026-10-25 最新人工范围：冻结D2NN，修复LG保持能力，采集与微调并行
 
 D2NN的`reference_memory_function_20261025/d2nn` A→D四个阶段已由用户定稿，不再训练其仿真。

@@ -1,7 +1,22 @@
-import unittest,numpy as np
-from .fit_gated_linear_teacher import select_sources,paired_indices,DISCLOSURE
+import unittest,numpy as np,torch,json
+from pathlib import Path
+from .fit_gated_linear_teacher import select_sources,paired_indices,DISCLOSURE,profile_parameters,paired_derivative_noise
 
 class TestGatedTeacher(unittest.TestCase):
+    def test_weak_profile_keeps_sources_and_requires_teacher_TRAIN_fit(self):
+        cfg=json.loads(Path(__file__).with_name('config_gated_teacher_B500_pairweak_20261025.json').read_text())
+        settings=profile_parameters(cfg)
+        self.assertEqual(settings['TRAIN_floor'],{'clevr':.9});self.assertEqual(settings['noise'],.001);self.assertEqual(settings['mixes'],(.02,.05))
+        for key,value in [('sources_per_task',1000),('teacher_max_LBFGS_steps',1000),('expose_tasks',['clevr','eurosat'])]:
+            bad=dict(cfg);bad[key]=value
+            with self.assertRaises(ValueError):profile_parameters(bad)
+    def test_default_profile_numerics_unchanged(self):
+        cfg=json.loads(Path(__file__).with_name('config_gated_teacher_B500_20261025.json').read_text());v=profile_parameters(cfg)
+        self.assertEqual(v,dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={}))
+    def test_pair_noise_does_not_add_differential_noise(self):
+        torch.manual_seed(5);source=torch.rand(4,9);pairs=[(0,3),(1,2)];noise=paired_derivative_noise(source,torch.ones(9),.001,pairs)
+        for a,b in pairs:torch.testing.assert_close(noise[a],noise[b],atol=0,rtol=0)
+        self.assertGreater(float(noise.abs().sum()),0)
     def test_balanced_frozen_half_sources(self):
         ids=np.arange(1000);y=np.repeat(np.arange(10),100);chosen=select_sources(ids,y,'eurosat',500)
         self.assertEqual(len(chosen),500);self.assertEqual(np.bincount(y[chosen]).tolist(),[50]*10)

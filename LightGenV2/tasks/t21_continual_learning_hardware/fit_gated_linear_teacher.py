@@ -53,14 +53,31 @@ DISCLOSURE=dict(teacher_uses_EVAL_derivatives=True,student_inherits_EVAL_informa
     independent_generalization_claim=False)
 
 
+def profile_parameters(cfg):
+    if cfg['derivatives_per_source']!=10 or cfg['teacher_minimum_per_task']!={'A_LG':.738,'B_D2_eurosat':.483,'B_D2_clevr':.710}:
+        raise ValueError('Declared quality floor or derivative budget changed')
+    if cfg['schema']=='T21_gated_partial_linear_teacher_v1':
+        if cfg['sources_per_task'] not in (200,500) or cfg['teacher_max_LBFGS_steps']!=160:raise ValueError('Frozen legacy budget changed')
+        return dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={})
+    if (cfg['schema']=='T21_gated_partial_linear_teacher_pairweak_v2' and cfg['sources_per_task']==500 and
+        cfg['teacher_max_LBFGS_steps']==240 and cfg.get('paired_teacher') is True and cfg.get('expose_tasks')==['clevr']):
+        return dict(steps=240,mixes=(.02,.05),noise=.001,L2=.000001,shared_pair_noise=True,TRAIN_floor={'clevr':.90})
+    raise ValueError('Unknown or changed finite teacher profile')
+
+
+def paired_derivative_noise(source,std,sigma,pairs):
+    noise=torch.randn_like(source)*std*sigma
+    for negative,positive in pairs:noise[positive]=noise[negative]
+    return noise
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','profile','out'):p.add_argument('--'+n,type=Path,required=True)
     p.add_argument('--parent-sha256',required=True);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit development disclosure required')
     cfg=json.loads(a.profile.read_text())
-    if cfg['schema']!='T21_gated_partial_linear_teacher_v1' or cfg['sources_per_task'] not in (200,500):raise ValueError('Frozen partial source profile required')
-    if cfg['teacher_max_LBFGS_steps']!=160 or cfg['derivatives_per_source']!=10 or cfg['teacher_minimum_per_task']!={'A_LG':.738,'B_D2_eurosat':.483,'B_D2_clevr':.710}:raise ValueError('Declared finite quality gate changed')
+    settings=profile_parameters(cfg)
     torch.set_num_threads(2);torch.manual_seed(20261025);started=time.monotonic()
     capture=json.loads((a.capture/'report.json').read_text())
     if not capture['passed'] or capture['pilot'] or not capture['SDK_released'] or sha(a.capture/'features.npz')!=capture['features_sha256']:raise ValueError('Complete immutable capture required')
@@ -79,7 +96,9 @@ def main():
     put(a.out/'protocol.json',dict(profile=cfg,profile_sha256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=capture['features_sha256'],
         selection_source_ids=selected,source_selection_uses_model_outputs=False,source_seed=20261025,
         teacher='Same7840 Linear, conditioned convex CE on TRAIN and nonidentity derivatives; no offline nonlinear capacity mismatch',
-        teacher_objective='0.25 equal-task TRAIN CE +0.75 equal-exposed-task derivative CE +1e-4 conditioned weight penalty; fixed160 LBFGS steps',
+        teacher_objective=f"0.25 equal-task TRAIN CE +0.75 equal-exposed-task derivative CE +{settings['L2']} conditioned weight penalty; fixed{settings['steps']} LBFGS steps",
+        derivative_mixes=settings['mixes'],derivative_TRAINstd_noise=settings['noise'],shared_positive_negative_noise=settings['shared_pair_noise'],
+        teacher_TRAIN_minimum=settings['TRAIN_floor'],teacher_TRAIN_labels_are_original_TRAIN_only=True,
         paired_CLEVR_repair=pair_mode,paired_derivative_ranking_weight=4 if pair_mode else 0,
         old_Euro_TRAIN_parent_KL_weight=4 if pair_mode else 0,
         student='Function projection on TRAIN and24 fresh TRAIN augmentations; fixed ridge1e-4, folded into original Linear; no EVAL strength scan',
@@ -100,8 +119,9 @@ def main():
             for negative,positive in derived_pairs:
                 pool=[p for p in train_pairs if tasks[tr[p[0]]]==tasks[exposed[negative]]]
                 n,p=pool[int(torch.randint(len(pool),(1,)).item())];neighbor[negative]=int(tr[n]);neighbor[positive]=int(tr[p])
-        mix=.1 if repeat%2==0 else .2
-        values=(1-mix)*x[exposed]+mix*x[neighbor]+torch.randn_like(x[exposed])*std*.02
+        mix=settings['mixes'][repeat%2]
+        noise=paired_derivative_noise(x[exposed],std,settings['noise'],derived_pairs) if settings['shared_pair_noise'] else torch.randn_like(x[exposed])*std*settings['noise']
+        values=(1-mix)*x[exposed]+mix*x[neighbor]+noise
         values=values.clamp_min(0);values=values/values.mean(1,keepdim=True).clamp_min(1e-12)
         if torch.any(torch.all(values==x[exposed],dim=1)):raise RuntimeError('An identity derivative is forbidden')
         if pair_mode:pair_deltas.extend([values[p]-values[n] for n,p in derived_pairs])
@@ -109,11 +129,11 @@ def main():
     tx=torch.cat(tx);ty=torch.cat(ty);tw=torch.cat(tw);z=tx@transform.T
     pair_z=torch.stack(pair_deltas)@transform.T if pair_mode else None
     old_ix=tr[tasks[tr]=='eurosat'];old_z=x[old_ix]@transform.T;old_target=model.shared_head(x[old_ix].float()).double().detach()
-    weight=torch.nn.Parameter(initial.clone());opt=torch.optim.LBFGS([weight],lr=1,max_iter=160,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11);calls=0
+    weight=torch.nn.Parameter(initial.clone());opt=torch.optim.LBFGS([weight],lr=1,max_iter=settings['steps'],line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11);calls=0
     def closure():
         nonlocal calls
         if time.monotonic()-started>300:raise RuntimeError('Finite teacher300s budget reached; no student started')
-        opt.zero_grad(set_to_none=True);loss=(F.cross_entropy(z@weight.T,ty,label_smoothing=.02,reduction='none')*tw).sum()+.0001*weight[:,:-1].square().sum()/10
+        opt.zero_grad(set_to_none=True);loss=(F.cross_entropy(z@weight.T,ty,label_smoothing=.02,reduction='none')*tw).sum()+settings['L2']*weight[:,:-1].square().sum()/10
         if pair_mode:
             delta=pair_z@weight.T;loss=loss+4*F.softplus(-(delta[:,1]-delta[:,0])).mean()
             loss=loss+16*F.kl_div(F.log_softmax(old_z@weight.T/2,1),F.softmax(old_target/2,1),reduction='batchmean')
@@ -127,8 +147,9 @@ def main():
     if upstream_state(check)!=before or not torch.equal(check.shared_head.weight,teacher_weight):raise RuntimeError('Teacher reload or upstream failed')
     teacher_scores={n:brief(evaluate(check.shared_head,x.float(),y,tasks,ix)) for n,ix in [('TRAIN',tr),('all_development',te),('exposed_development',exposed),('unexposed_development',unexposed)]}
     floors={n:(.738 if cp['architecture']=='moe' else .483 if n=='eurosat' else .710) for n in names}
-    passed_teacher=all(teacher_scores['all_development'][n]['accuracy']+1e-7>=floors[n] for n in names)
-    put(a.out/'teacher_report.json',dict(passed=True,quality_gate_passed=passed_teacher,scores=teacher_scores,required_floor=floors,teacher_sha256=sha(a.out/'teacher_checkpoint.pt'),strict_CPU_reloaded=True,frozen_upstream=True,**DISCLOSURE))
+    train_pass=all(teacher_scores['TRAIN'][n]['accuracy']+1e-7>=floor for n,floor in settings['TRAIN_floor'].items())
+    passed_teacher=train_pass and all(teacher_scores['all_development'][n]['accuracy']+1e-7>=floors[n] for n in names)
+    put(a.out/'teacher_report.json',dict(passed=True,quality_gate_passed=passed_teacher,TRAIN_gate_passed=train_pass,scores=teacher_scores,required_floor=floors,required_TRAIN_floor=settings['TRAIN_floor'],teacher_sha256=sha(a.out/'teacher_checkpoint.pt'),strict_CPU_reloaded=True,frozen_upstream=True,**DISCLOSURE))
     if not passed_teacher:
         put(a.out/'report.json',dict(passed=True,teacher_quality_gate_passed=False,student_started=False,teacher_scores=teacher_scores,strict_CPU_reloaded=True,frozen_upstream=True,seconds=time.monotonic()-started,**DISCLOSURE))
         put(a.out/'status.json',dict(state='teacher_below_floor_student_not_started',updated=time.time()));return
