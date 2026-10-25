@@ -1,5 +1,51 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-25 14:49：18/18时间与能量成本全齐；六个LGVQ点已双端独立核验
+
+唯一LGVQ续链`a100_lgvq_gpu_checked_remaining_20261025_02`在Unix1792910974.1770513
+（14:49:34北京）完成，controller3070666和最后worker3137977真实退出，private MPS已释放，
+控制查询明确无daemon。六点均先逐SHA备份原17文件，再本地GPU-aware无模型raw审计；
+审计对象和服务器原对象逐字典完全一致。没有恢复慢CPU门、没有重跑T12、原14项或两份GPU证明。
+本轮最终只读capture Unix1792911445.69236核13个冻结源全同，未因peer HEAD变化热改运行源。
+
+三轮600视频加总归一化结果（正式准确度仍原完整558 TEST，首200不冒充新full指标）：
+
+| Ours任务 | 混合投影ms/视频 | J/视频 | Qwen时间/Ours时间 | Qwen能量/Ours能量 |
+| --- | ---: | ---: | ---: | ---: |
+| LGVQ temporal | 404.07679317594227 | 42.124060749156456 | 0.9434351087624042 | 3.5211332845957 |
+| LGVQ spatial | 695.9709622025537 | 72.65084718157219 | 0.5425589549767232 | 2.0187914582977484 |
+
+因此这两项在本轮**完整真实前端计费**下没有时间加速，必须如实入表；能耗比大于1不等于时间加速。
+Temporal三轮408.75484280586505/405.45646571881633/398.01907100314537ms，
+42.611653862083315/42.26786401830022/41.49266436708584J；完整预测NPZ三轮同SHA
+`543df44496fdcb3930d98fd8def65ad6a69be8e0d71bb9e0a2901e8f40d7b356`。
+Spatial三轮700.0882414562016/690.0507805597822/697.7738645916775ms，
+73.0799911981799/72.0337866489461/72.83876369759055J；完整预测NPZ三轮同SHA
+`3fa83d39087f76ebbdf69a8eb75e3d3ff0fc8faa156654fd8ae5560fa1152d3e`。
+不删慢轮；Temporal每轮13整场/208执行视频槽/200有效视频、尾8padding全成本，光学仍0.407433ms/视频。
+Spatial每轮200整场/200视频、每视频4帧，光学仍6.2682ms/视频；等效帧均除4，不乘16。
+
+六叶分别51个temporal/51个spatial原文件已先保全。完整LGVQ根127原文件26990393B、
+T12控制记录根`a100_gpu_checked_remaining_20261025_02`4原文件400675B分别以
+`backup_receipt_complete01.json`逐SHA取回。外置`.controller.log`精确路径已核：0B/SHA
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`。
+首次按不存在的根内controller.log取回只报路径不存在，无写入/数据丢失/测量故障；随后取回实际根旁日志。
+
+新增missing-only离线汇总`complete_measured_index_20261025.py`及7项无模型测试通过。
+它只接入新四项，逐SHA核新raw/原备份收据及双端audit，保持原14个成本对象和Qwen100锚逐字典全同；
+没有重放原14项模型或审计。新不可变索引为：
+
+- `measurement_protocol_20261024/measured_index_complete_cost_18.json`，11137335B，
+  SHA256 `9a34e31111290adf67ad4ceaf281f1ea5c228b888aaaaf679a5cc035c460e082`。
+- `measurement_protocol_20261024/temporal_matrix_complete_cost_08.json`，8171091B，
+  SHA256 `557ec0a831cc07cfc6de4c8859babc3b8ff1be63305b8ba707268425e35eeed3`。
+
+新索引完整的是18/18时间/能量，不冒称全部scalar OP已知：原14 NN小计原封保留，T12 Ours已接入
+0784实际600-shape小计，T12 Qwen与LGVQ Ours两项NN OP尚待原图/封存shape离线推导或明确未核定，
+物理光dense-equivalent仍null而非0。旧partial17、temporal07、已交两表/Word/光学分解表均原SHA保留。
+最终两表、raw完整索引/SHA、中文公式Word和光学分解新版正在基于新索引整理，尚不能声称已交新版成品。
+GPU测量阶段结束，不再启动任何测量/CPU模型/租机连接。
+
 ## 2026-10-25 14:30：T12双方三轮已合格；LGVQ封存门懒导入已精确定位
 
 T12 Qwen唯一`a100_gpu_checked_remaining_20261025_01/qwen_repeat01,02,03`各200已complete，
