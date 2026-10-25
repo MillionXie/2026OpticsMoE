@@ -98,3 +98,6 @@
 !audit_lg_timing_annotations_20261025.py
 !temporal_gpu16_report_20261025.py
 !build_temporal_gpu16_20261025.mjs
+!first_tf_supplement_20261025.py
+!run_first_tf_seven_20261025.py
+!test_first_tf_supplement_20261025.py
