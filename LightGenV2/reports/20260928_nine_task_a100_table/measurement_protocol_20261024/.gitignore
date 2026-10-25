@@ -118,3 +118,6 @@
 !audit_gpu_pipeline_20261026.py
 !build_gpu_pipeline_20261026.mjs
 !lgvq_minimal_pipeline_20261026.py
+!review_gpu_pipeline_workbook_20261026.py
+!qwen_strict_serial_20261026.py
+!test_qwen_strict_serial_20261026.py
