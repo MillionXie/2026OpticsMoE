@@ -22,6 +22,13 @@ TRAIN翻转/弱遮挡、TRAIN教师及其蒸馏，不训练TEST/TEST增强；按
 目标趋势不保证，不压低D2NN、不逐格拼PT；本轮不启动SDK、不修改曝光/坐标/LUT。
 旧共享前端联合队列三项已完成，旧数值源码没有在训练中热改。
 新run固定为`runs/simulation/static4_fullaperture_native8_20261025`；启动状态以该run收据为准。
+源码`7f6d97aaadc981ba6884b6559165afd0e32b3213`已Git发布并同步服务器；
+服务器40项测试通过，三case真实TRAIN前向/反向及冻结/有限梯度预检通过。
+有限顺序队列实际启动PID3483790、创建时间1792922962.08；原授权4090 UUID
+`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，单进程显存上限40%，CPU2线程。
+完成一case即接CPU完整best/last重放，同时下一case GPU训练；不新建定时任务，不占用T21设备。
+完整启动命令、数据/源码SHA和测试原文保存在同名`.launch.json`及`runs/preparation_20261025/four_start.json`。
+尚无这版完整最终精度，不以此前小专家口径成绩冒充本版。
 
 ### 当前运行索引（2026-10-25；未进入光路）
 
