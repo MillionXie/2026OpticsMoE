@@ -1,12 +1,14 @@
 # T20 RGB/SAR 可重构光学系统：光路适配准备
 
-## 2026-10-25 追加RGB优化授权：独立增强教师（准备）
+## 2026-10-26 RGB优化跟进：前端冻结，RGB领先5pp目标尚未达到
 
 ### 最新已完整CPU复核的增强读出结果
 
 用户再次明确**前端继续冻结，只优化原光学和读出**，不解冻32128参数前端。
 教师`static4_augmented_teacher_20261025`完成95轮，按验证选择70轮：RGB88.1%、SAR78.1%，
 best SHA `85e22891297d59d440114e023fcc5d13b8377796aad88739ce123ce73f8d8920`；没有读取TEST。
+完整2000条验证集CPU重放仍为881/1000与781/1000，两域混淆矩阵与选模记录相同；
+原图像/固定D4增强只来自TRAIN，教师网络不进入学生推理。
 第一项联合蒸馏`static4_augmented_KD_20261025`完成25轮及原头30步，选epoch6，
 验证81.1/72.4，完整TEST80.9/69.9，CPU零argmax差/maxprob .000537，低于原父RGB81.5，不替换父候选。
 
@@ -19,7 +21,9 @@ best SHA `85e22891297d59d440114e023fcc5d13b8377796aad88739ce123ce73f8d8920`；�
 | 新强教师读出，SHA `71d6689aa387118dce1a1afeaad1e6f5e4c4e6c155e164253fa1fe7dca0fdb12` | 81.7/72.0% | 83.4/71.7% | best/last完成，零argmax差，maxprob .001193<.002 |
 | 固定D2NN RGB-only光学/读出主对照 | 79.6/63.3% | 82.8/62.1% | 原完整CPU已通过，不更新对照PT |
 
-新MoE两域TEST均高于父版；RGB主比较+0.6pp，仍未达用户>=5pp目标，不能宣称达标。
+新MoE两域TEST均高于父版（RGB81.5→83.4%、SAR69.7→71.7%）；RGB主比较+0.6pp，
+仍未达用户>=5pp目标，按固定D2NN82.8%需MoE至少878/1000，当前834/1000，还差44正确。
+验证口径RGB差距为+2.1pp，同样未达5pp；不把验证/TEST、教师/学生或不同PT成绩混用。
 该读出数值源码`ac663dbd5`已发布，60项回归通过；所有相位/前端/gain均冻结SHA核验，未新增推理模块。
 后续只作一个有限小步光学接续：`config_static_four_teacher_continuation_20261025.json`，
 固定父SHA71d、同教师/冻结前端/gain，沿用教师错判TRAIN不蒸馏；50%原图/50%其余D4，
@@ -34,9 +38,23 @@ best SHA `85e22891297d59d440114e023fcc5d13b8377796aad88739ce123ce73f8d8920`；�
 第4专家验证平均功率RGB8.19%/SAR7.65%、获胜比例0，而前三槽随样本变化；四专家仍均实际参与传播。
 据此最后做一个有限前段分块对照：`config_static_four_expert_specialization_20261025.json`，
 原71d父/同强教师，冻结global相位、前端与gain，只训练router+四专家原相位及原7840头，共1140720参数。
-仅将原逐域跨样本均衡系数.15提高至1.5；不强制每样本均匀、不改推理温度或检测ROI。
+该组光学LR3e-4/原头1e-4，原逐域跨样本均衡系数.15提高至1.5；
+不强制每样本均匀、不改推理温度或检测ROI，不把这一组合试验称为单因素因果结论。
 最多25轮/min15/patience12，RGB优先且SAR验证>=71%，记录每域逐槽功率；
 run `static4_expert_specialization_20261025/MoE_AB`，无新层/TEST梯度/TEST教师。
+
+该前段组实际15轮结束，同样选e0，子PT与71d全部模型张量相同，不采用新训练参数。
+末轮第4槽平均功率仅到RGB8.96%/SAR8.45%，仍无最大槽获胜；验证81.3/71.8，未超过父版。
+这说明本次增强均衡并未解决差距，不能仅凭第四槽功率低就归因全部性能损失。
+所有四项学生训练与best/last完整CPU审计均已结束、退出码0；best均零argmax差并通过原.002门槛。
+两项e0接续best均为父参数的重保存，last分别83.1/71.9和83.1/70.8%，不据TEST改选last。
+本轮源代码与完整回归64项通过；仅T20写入，T21推理源码与权重不改，不使用SDK/定时任务。
+
+当前保留候选为`static4_teacher_readout_20261025/MoE_AB/best_checkpoint.pt`（SHA71d，原四专家/原7840头）。
+其完整逐样本/协议/历史/CPU报告和强教师已在本地逐项SHA备份；清单
+`runs/preparation_20261025/teacher_head_backup_manifest.json`、`KD_backup_manifest.json`、
+`continuation_backup_manifest.json`、`expert_backup_manifest.json`；收口核验`closeout.json`。
+后续若继续研究，须以这份固定候选与D2NN锁定PT为基线，前端仍冻结；不将目标分差写成已取得的结果。
 
 用户要求继续提高MoE，争取RGB高出固定D2NN至少5个百分点；按原TEST82.8%对应目标87.8%，
 这是优化目标，不作为删改预测或压低对照的理由。D2NN已锁定PT不变，不拼接不同PT的两域结果。
