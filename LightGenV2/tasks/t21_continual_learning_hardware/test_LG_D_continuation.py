@@ -6,6 +6,13 @@ from .model import build_model
 
 
 class DTests(unittest.TestCase):
+    def test_stronger_feature_anchor_is_finite_same_memory_not_new_graph(self):
+        c=json.loads(Path(__file__).with_name('config_LG_D_feature_anchor_20261025.json').read_text());validate(c)
+        self.assertEqual(c['epochs'],2);self.assertEqual(c['memory_records_per_old_task'],300)
+        self.assertEqual(c['memory_cycles_per_epoch'],50);self.assertFalse(c['TEST_gradients'])
+        self.assertEqual(c['native_C_feature_weight'],.2)
+        with self.assertRaises(ValueError):validate(dict(c,epochs=100))
+
     def test_finite_profile_does_not_authorize_TEST_gradients(self):
         c=json.loads(Path(__file__).with_name('config_LG_D_dependent_C_20261025.json').read_text());validate(c)
         for key,value in [('TEST_gradients',True),('epochs',100),('memory_records_per_old_task',1000)]:

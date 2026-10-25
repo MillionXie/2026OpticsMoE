@@ -17,7 +17,7 @@ from .refine_LG_retention import retention_selection
 
 
 def validate(cfg):
-    names=('config_LG_D_dependent_C_20261025.json','config_LG_D_native_C_retention_20261025.json')
+    names=('config_LG_D_dependent_C_20261025.json','config_LG_D_native_C_retention_20261025.json','config_LG_D_feature_anchor_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in names):raise ValueError('Only finite published D profiles')
 
 
