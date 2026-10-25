@@ -10,6 +10,7 @@ class LGBBalancedTests(unittest.TestCase):
         self.assertEqual(cfg['sources_per_task'],dict(eurosat=500,clevr=500));self.assertEqual(cfg['architecture'],'moe')
         with self.assertRaises(ValueError):validate_profile(dict(cfg,sources_per_task=dict(eurosat=1000,clevr=1000)))
         for name,lower in cfg['development_floor'].items():self.assertAlmostEqual(cfg['development_ceiling'][name]-lower,.05)
+        warm=json.loads(Path(__file__).with_name('config_stage_LG_B500_dropout_teacher_20261025.json').read_text());validate_profile(warm);self.assertTrue(warm['teacher_development_selection']);self.assertEqual(warm['teacher_dropout'],.1)
     def test_windows_np_int32_labels_are_explicitly_long_for_CE(self):
         labels=tensor_labels(np.array([0,1],dtype=np.int32));self.assertEqual(labels.dtype,torch.long)
         loss=torch.nn.functional.cross_entropy(torch.zeros(2,10,dtype=torch.float64,requires_grad=True),labels);loss.backward();self.assertTrue(torch.isfinite(loss))

@@ -1,0 +1,20 @@
+{
+  "schema": "T21_LG_B_partial_teacher_warm_dropout_v2",
+  "architecture": "moe",
+  "stage": 2,
+  "sources_per_task": {"eurosat": 500, "clevr": 500},
+  "nested_CLEVR500": false,
+  "teacher_dropout": 0.1,
+  "teacher_development_selection": true,
+  "teacher_epochs": 200,
+  "teacher_max_seconds": 300,
+  "student_epochs": 160,
+  "student_max_seconds": 240,
+  "steps_per_epoch": 12,
+  "TRAIN_floor": 0.90,
+  "development_floor": {"eurosat": 0.680, "clevr": 0.733},
+  "development_ceiling": {"eurosat": 0.730, "clevr": 0.783},
+  "Euro_parent_anchor_weight": 0.0,
+  "SDK": false,
+  "GPU": false
+}

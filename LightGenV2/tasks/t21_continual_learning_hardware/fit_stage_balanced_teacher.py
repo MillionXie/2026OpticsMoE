@@ -25,6 +25,7 @@ def validate_profile(cfg):
     name={2:'config_stage_B800_teacher_20261025.json',3:'config_stage_C500_teacher_20261025.json'}.get(cfg.get('stage'))
     if cfg.get('stage')==2 and cfg.get('sources_per_task',{}).get('eurosat')==200:name='config_stage_B800_Euro200_teacher_20261025.json'
     if cfg.get('stage')==2 and cfg.get('architecture')=='moe':name='config_stage_LG_B500_teacher_20261025.json'
+    if cfg.get('stage')==2 and cfg.get('architecture')=='moe' and cfg.get('teacher_dropout')==.1:name='config_stage_LG_B500_dropout_teacher_20261025.json'
     if name is None or cfg!=json.loads(Path(__file__).with_name(name).read_text()):
         raise ValueError('Only published finite B800/C500 development profiles')
     return cfg
@@ -70,7 +71,7 @@ def derivatives(x,y,tasks,ids,train,exposed):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','profile','out'):p.add_argument('--'+n,type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);p.add_argument('--previous-teacher',type=Path)
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--previous-teacher',type=Path);p.add_argument('--warm-teacher-run',type=Path)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit partial TEST information disclosure required')
     cfg=validate_profile(json.loads(a.profile.read_text()));torch.set_num_threads(2);torch.manual_seed(20261025)
@@ -97,7 +98,14 @@ def main():
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unexposed=np.setdiff1d(te,exposed)
     transform,conditioning=full_covariance_transform(x[tr],contrast_transform(x[tr]));transform=transform.float()
     initial=(parent.weight.detach().double()@torch.linalg.inv(transform.double())).float()
-    dx,dy,dt,di=derivatives(x,y,tasks,ids,tr,exposed);teacher=ResidualTeacher(initial,128,0.)
+    dx,dy,dt,di=derivatives(x,y,tasks,ids,tr,exposed);teacher=ResidualTeacher(initial,128,cfg.get('teacher_dropout',0.));warm=None
+    if cfg.get('teacher_development_selection'):
+        if a.warm_teacher_run is None:raise ValueError('Sealed same-source warm teacher required')
+        wp=json.loads((a.warm_teacher_run/'protocol.json').read_text());wr=json.loads((a.warm_teacher_run/'report.json').read_text());path=a.warm_teacher_run/'offline_teacher.pt'
+        if not wr['passed'] or sha(path)!=wr['teacher_sha256'] or wp['parent_SHA256']!=a.parent_sha256 or wp['capture_features_SHA256']!=cr['features_sha256'] or wp['selection_source_ids']!=selected:raise ValueError('Warm source identity differs')
+        old=torch.load(path,map_location='cpu',weights_only=False)
+        if not torch.equal(old['transform'],transform):raise ValueError('Warm fit coordinate identity differs')
+        teacher.load_state_dict(old['state_dict'],strict=True);warm=dict(path=str(path),SHA256=sha(path),same_sources=True)
     tx=x[tr]@transform.T;dz=dx@transform.T;train_by={n:np.flatnonzero(tasks[tr]==n) for n in names};derived_by={n:np.flatnonzero(dt==n) for n in names if n in set(dt)}
     train_pairs=paired_indices(ids[tr],y[tr].numpy(),tasks[tr]);base_dp=paired_indices(ids[exposed],y[exposed].numpy(),tasks[exposed]);dp=[(n+j*len(exposed),q+j*len(exposed)) for j in range(10) for n,q in base_dp]
     old=tr[tasks[tr]=='eurosat'];anchor=x[old]
@@ -112,11 +120,27 @@ def main():
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic()
     put(a.out/'protocol.json',dict(profile=cfg,profile_sha256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],
         selection_source_ids=selected,source_selection_uses_model_outputs=False,derivative_sources={n:len(v) for n,v in selected.items()},teacher_covariance_conditioning=conditioning,
-        teacher_selection='Lowest complete TRAIN/derivative/old-TRAIN-anchor objective, no EVAL selection',teacher='Offline parentLinear plus128-GELU-Linear10 only',
+        teacher_selection='Complete all-task development minimum floor gap then mean, subject to all TRAIN>=90%; includes warm E0, explicitly TEST selected' if cfg.get('teacher_development_selection') else 'Lowest complete TRAIN/derivative/old-TRAIN-anchor objective, no EVAL selection',warm_teacher=warm,teacher='Offline parentLinear plus128-GELU-Linear10 only',
         teacher_loss='Equal-task TRAIN CE.5 + equal-task derivativeCE.5 + paired TRAIN/derivative ranking.25 each + declared Euro TRAIN parentKL',
         student='Original7840 Linear, TRAIN-only weak augmentation CE.5 + DKD1/4 T2; no EVAL student inputs',
         augmentation_is_feature_space_not_new_CCD=True,CPU_threads=2,SDK=False,GPU=False,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),**DISCLOSURE))
-    optimizer=torch.optim.AdamW(teacher.parameters(),lr=.001,weight_decay=.0001);best_obj=float('inf');best_state=None;th=[];last_improved=0
+    optimizer=torch.optim.AdamW(teacher.parameters(),lr=.001,weight_decay=.0001);best_obj=float('inf');best_state=None;th=[];last_improved=0;best_teacher_selection=(-1.,-float('inf'),-float('inf'))
+    def consider_teacher(epoch,obj,accuracies):
+        nonlocal best_obj,best_state,last_improved,best_teacher_selection
+        development=None
+        if cfg.get('teacher_development_selection'):
+            with torch.no_grad():development=brief(evaluate(nn.Identity(),teacher(x@transform.T),y,tasks,te))
+            key=(float(all(v>=cfg['TRAIN_floor']-1e-7 for v in accuracies.values())),*whole_stage_selection(development,cfg['development_floor']))
+            improve=key>best_teacher_selection
+            if improve:best_teacher_selection=key
+        else:improve=obj<best_obj
+        if improve:best_obj=obj;best_state=copy.deepcopy(teacher.state_dict());last_improved=epoch
+        return development
+    if warm is not None:
+        teacher.eval()
+        with torch.no_grad():
+            tl=teacher(tx);dl=teacher(dz);obj=.5*task_ce(tl,y[tr],train_by)+.5*task_ce(dl,dy,derived_by)+.25*(pair_loss(tl,train_pairs)+pair_loss(dl,dp));accuracies={n:float((tl[ix].argmax(1)==y[tr[ix]]).float().mean()) for n,ix in train_by.items()}
+        development=consider_teacher(0,float(obj),accuracies);th.append(dict(epoch=0,objective=float(obj),TRAIN_accuracy=accuracies,development=development))
     for epoch in range(1,cfg['teacher_epochs']+1):
         teacher.train();optimizer.param_groups[0]['lr']=.00001+.00099*.5*(1+np.cos(np.pi*(epoch-1)/(cfg['teacher_epochs']-1)))
         for _ in range(cfg['steps_per_epoch']):
@@ -135,10 +159,11 @@ def main():
                 tl=teacher(tx);dl=teacher(dz);obj=.5*task_ce(tl,y[tr],train_by)+.5*task_ce(dl,dy,derived_by)+.25*(pair_loss(tl,train_pairs)+pair_loss(dl,dp))
                 if cfg['Euro_parent_anchor_weight']:obj+=cfg['Euro_parent_anchor_weight']*4*F.kl_div(F.log_softmax(teacher(anchor_z)/2,1),F.softmax(anchor_target/2,1),reduction='batchmean')
                 accuracies={n:float((tl[ix].argmax(1)==y[tr[ix]]).float().mean()) for n,ix in train_by.items()}
-            if float(obj)<best_obj:best_obj=float(obj);best_state=copy.deepcopy(teacher.state_dict());last_improved=epoch
-            th.append(dict(epoch=epoch,objective=float(obj),TRAIN_accuracy=accuracies));put(a.out/'teacher_history.json',th);put(a.out/'status.json',dict(state='teacher',**th[-1],updated=time.time()))
+            development=consider_teacher(epoch,float(obj),accuracies)
+            th.append(dict(epoch=epoch,objective=float(obj),TRAIN_accuracy=accuracies,development=development));put(a.out/'teacher_history.json',th);put(a.out/'status.json',dict(state='teacher',**th[-1],updated=time.time()))
         if time.monotonic()-started>=cfg['teacher_max_seconds'] or (epoch>=100 and epoch-last_improved>=60):break
-    artifact=dict(state_dict=teacher.state_dict(),transform=transform,parent_SHA256=a.parent_sha256,teacher_dropout=0.,**DISCLOSURE);torch.save(artifact,a.out/'last_offline_teacher.pt')
+    if warm and sha(warm['path'])!=warm['SHA256']:raise RuntimeError('Sealed warm teacher changed')
+    artifact=dict(state_dict=teacher.state_dict(),transform=transform,parent_SHA256=a.parent_sha256,teacher_dropout=cfg.get('teacher_dropout',0.),**DISCLOSURE);torch.save(artifact,a.out/'last_offline_teacher.pt')
     artifact['state_dict']=best_state;torch.save(artifact,a.out/'offline_teacher.pt');teacher=residual_teacher_from_artifact(torch.load(a.out/'offline_teacher.pt',map_location='cpu',weights_only=False))
     groups=[('TRAIN',tr),('all_development',te),('exposed_development',exposed),('unexposed_development',unexposed)]
     with torch.no_grad():tl=teacher(x@transform.T);ts={n:evaluate(nn.Identity(),tl,y,tasks,ix) for n,ix in groups}
