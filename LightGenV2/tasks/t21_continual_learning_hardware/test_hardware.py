@@ -6,6 +6,38 @@ from pathlib import Path
 
 
 class TestHardware(unittest.TestCase):
+    def test_D_record_only_SNR_remains_exact_scope_and_other_guards(self):
+        from .hardware_bridge import scoped_SNR_record_only
+        authorization=json.loads(Path(__file__).with_name('config_LG_D_SNR_record_only_20261026.json').read_text())
+        policy=dict(mode='pointwise_dark_p99',authorization='Fixed2ms',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)
+        package=dict(architecture='moe',stage='D',checkpoint_sha256=authorization['checkpoint_sha256'],hardware_sha256=authorization['hardware_sha256'],D_SNR_record_only_authorization=authorization,signal_guard_policy=policy,TRAIN_stage_signal_calibration=True)
+        self.assertTrue(scoped_SNR_record_only(package,dict(exposure_us=2000)))
+        self.assertFalse(scoped_SNR_record_only({},{}))
+        for key,value in (('architecture','d2nn'),('stage','C'),('checkpoint_sha256','other'),('hardware_sha256','other')):
+            with self.assertRaises(ValueError):scoped_SNR_record_only(dict(package,**{key:value}),dict(exposure_us=2000))
+        row=dict(saturation_fraction=0,readout_p99_counts=1287,readout_p10_counts=321,fixed_dark_difference_p99_counts=203.8125);noise=dict(read_noise_upper_counts=27.1987)
+        with self.assertRaises(RuntimeError):guard(row,noise,policy='pointwise_dark_p99',minimum_snr=7.5)
+        guard(row,noise,policy='pointwise_dark_p99',minimum_snr=7.5,snr_record_only=True)
+        for key,value in (('fixed_dark_difference_p99_counts',63),('saturation_fraction',.151),('readout_p10_counts',1100)):
+            with self.assertRaises(RuntimeError):guard(dict(row,**{key:value}),noise,policy='pointwise_dark_p99',minimum_snr=7.5,snr_record_only=True)
+        values=dict(snr=7.49,delta99=203.81,correlation=.75,repeat_drift=.03,marker_change=200,noise=27.2,saturation=0,mode='record_only',minimum_snr=7.5,snr_record_only=True)
+        passed,checks=admission_checks(**values);self.assertTrue(passed);self.assertFalse(checks['SNR'])
+        self.assertFalse(admission_checks(**dict(values,repeat_drift=.051))[0])
+
+    def test_partial_prefix_links_preserve_original_failed_frame(self):
+        from .hardware_bridge import link_partial_prefix
+        from .train_native import sha
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);source=root/'source';target=root/'target';source.mkdir();target.mkdir();(source/'TRAIN_signal_admission').mkdir()
+            (source/'phase.bmp').write_bytes(b'phase');folder=source/'00000';folder.mkdir()
+            row={'phase_BMP_sha256':sha(source/'phase.bmp')}
+            for name,key in (('raw.npy','raw_sha256'),('ccd.npy','ccd_sha256'),('input.bmp','input_BMP_sha256')):
+                (folder/name).write_bytes(name.encode());row[key]=sha(folder/name)
+            (folder/'receipt.json').write_text(json.dumps(row));(source/'00001').mkdir();(source/'00001'/'bad').write_bytes(b'preserve')
+            link_partial_prefix(source,target,1)
+            self.assertEqual(sha(target/'00000/raw.npy'),sha(folder/'raw.npy'));self.assertFalse((target/'00001').exists());self.assertTrue((source/'00001/bad').exists())
+            with self.assertRaises(ValueError):link_partial_prefix(source,target,1)
     def test_D_SNR75_is_exact_fixed_case_and_preserves_other_guards(self):
         authorization=json.loads(Path(__file__).with_name('config_LG_D_SNR75_20261026.json').read_text())
         policy=dict(mode='pointwise_dark_p99',authorization='Fixed2ms',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)

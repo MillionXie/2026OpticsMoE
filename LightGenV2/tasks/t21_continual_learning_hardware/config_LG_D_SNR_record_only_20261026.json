@@ -1,0 +1,11 @@
+{
+  "schema": "T21_LG_D_SNR_record_only_human_authorization_20261026",
+  "authorization": "User explicitly approved continuing LG D with SNR recorded, not independently stopping; all other guards unchanged",
+  "architecture": "moe", "stage": "D",
+  "checkpoint_sha256": "030fa9aeb555065f716ed92bfe860e2ec33637ec588f7808840b0fca81b334b1",
+  "hardware_sha256": "ae499aa42aeedced1d3ce8e17c4493cf7e7a9c426999fd2898cce572d6605f6a",
+  "exposure_us": 2000, "single_frame": true, "SNR_record_only": true,
+  "minimum_signal_counts": 64, "dynamic_range_noise_multiplier": 10,
+  "maximum_consumer_drift": 0.05, "maximum_saturation_fraction": 0.15,
+  "coordinates_LUT_model_unchanged": true, "network_background_subtraction": false
+}
