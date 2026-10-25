@@ -20,12 +20,14 @@ def blobs(mapping,commits):
  matched={}
  for path,digest in mapping.items():
   rel=path.replace('\\','/')
+  for prefix in ('/DATA/DATA1/guest3/2026OpticsMoE/','/data/2026OpticsMoE/'):
+   if rel.startswith(prefix):rel=rel[len(prefix):];break
   for commit in dict.fromkeys(commits):
    b=subprocess.run(['git','show',commit+':'+rel],cwd=REPO,capture_output=True)
    if b.returncode==0 and hashlib.sha256(b.stdout).hexdigest()==digest:matched[rel]=commit;break
   else:raise ValueError('Unpublished or changed source: '+rel)
  return matched
-def rental(model):
+def rental(model,audit_name='local_independent_audit01.json'):
  root=RUN/'a10080_corrected_serial_20261026_01'/(model+'50_repeat01');t=read(root/'timing.json');identity=read(root/'identity.json')
  assert read(root/'status.json')['status']=='complete' and t['status']=='complete'
  assert t['video_calls']==2048 and t['unique_videos']==512 and t['rounds']==1 and t['cap']==50
@@ -69,8 +71,8 @@ def rental(model):
   corrected_total_ms=corrected,full_before_subtraction_ms=full,removed_image_preparation_and_H2D_ms=removed,tokenizer_CPU_ms=t['tokenizer_CPU_ms'],GPU_model_cuda_sum_ms=t['GPU_model_cuda_sum_ms'],
   source_path=str((root/'timing.json').resolve()),source_sha256=sha(root/'timing.json'),receipt_verified_files=receipt(root),source_commits=source_commits,
   four_cycles_predictions_bitwise_equal=True,first200_vs_historical_native_max_abs=historical_delta,same_512_video_bytes_as_Qwen_and_LG=True,guard_rows=len(guards))
- write=root/'local_independent_audit01.json';assert not write.exists();write.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');return result
-def lg(root):
+ write=root/audit_name;assert not write.exists();write.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');return result
+def lg(root,audit_name='local_independent_audit01.json'):
  t=read(root/'lg01/timing.json');assert t['status']=='complete' and read(root/'suite_status.json')['status']=='complete'
  rows=t['records'];assert len(rows)==128 and t['video_calls']==2048
  kinds=('optical_simulation','detector_ROI','electronic_residual');totals={k:0. for k in kinds}
@@ -83,19 +85,27 @@ def lg(root):
  h2d=sum((r['H2D_end']-r['H2D_start'])*1000 for r in rows);book=sum((r['bookkeeping_end']-r['bookkeeping_start'])*1000 for r in rows[:-1])
  charged=t['full_software_host_ms']-h2d-book-sum(totals.values())-sum(capture.values());fixed=128*6*(1000/1400+.300+.0307)
  close(charged,t['charged_actual_electronic_ms']);close(fixed,t['fixed_optical_ms']);close((charged+fixed)/128,t['time16_ms'])
- identity=read(root/'lg01/identity.json');matched=blobs(identity['sources'],[identity['published_commit'],identity['source_HEAD']])
+ identity=read(root/'lg01/identity.json');projection=read(root/'lg01/projection_identity.json')
+ matched=blobs(dict(identity['sources'],**projection['sources']),[identity['published_commit'],identity['source_HEAD']])
  with np.load(root/'lg01/outputs.npz',allow_pickle=False) as f:arr=f['prediction'].copy()
  reference=t['source_reference_for_validation_only'];p=REPO/Path(reference['path']).relative_to('/DATA/DATA1/guest3/2026OpticsMoE');assert sha(p)==reference['sha256']
  with np.load(p,allow_pickle=False) as f:assert np.array_equal(arr,f['prediction'])
  for g in read(root/'lg01/process_audit.json'):assert not g['foreign_gpu_processes'] and not g['foreign_mps_clients']
  low=read(root/'lg01/lowlevel_capture_identity.json');assert low['status']=='complete' and low['capture_audits'][0]['preparation']['calls']==1
- result=dict(status='passed',model='LG_lowlevel',platform='A100-PCIE-40GB / 250W / MPS100',video_calls=2048,time16_ms=(charged+fixed)/128,equivalent_frame_ms=(charged+fixed)/8192,
+ matched.update(blobs(low['sources'],[identity['published_commit'],identity['source_HEAD']]))
+ score_path=root/'lg01/score_only_identity.json'
+ if score_path.exists():
+  score=read(score_path);assert score['status']=='complete' and score['original_2048_prediction_reference_bitwise_passed']
+  assert score['auxiliary_outputs_omitted'] and not score['complete_auxiliary_dictionary_unchanged']
+  matched.update(blobs(score['sources'],[identity['published_commit'],identity['source_HEAD']]))
+ result=dict(status='passed',model='LG_scoreonly' if score_path.exists() else 'LG_lowlevel',platform='A100-PCIE-40GB / 250W / MPS100',video_calls=2048,time16_ms=(charged+fixed)/128,equivalent_frame_ms=(charged+fixed)/8192,
   charged_actual_electronic_ms=charged,fixed_optical_ms=fixed,full_software_host_ms=t['full_software_host_ms'],excluded_GPU_ms_by_kind=totals,excluded_capture_CPU_ms_by_kind=capture,
   electronic_capture_ms=sum(x['capture_host_ms'] for x in t['capture']['segments'] if x['kind']=='electronics'),capture_total_ms=t['capture']['total_ms'],
   source_path=str((root/'lg01/timing.json').resolve()),source_sha256=sha(root/'lg01/timing.json'),receipt_verified_files=receipt(root),source_commits=matched,
   all_predictions_bitwise_equal_original=True)
- dest=root/'local_independent_audit01.json';assert not dest.exists();dest.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');return result
+ dest=root/audit_name;assert not dest.exists();dest.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');return result
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--model',choices=['kimi','deepseek','LG_lowlevel'],required=True);a=p.parse_args()
- result=lg(RUN/'a100_lowlevel_capture_20261026_01') if a.model=='LG_lowlevel' else rental(a.model)
+ p=argparse.ArgumentParser();p.add_argument('--model',choices=['kimi','deepseek','LG_lowlevel','LG_scoreonly'],required=True);p.add_argument('--audit-name',default='local_independent_audit01.json');a=p.parse_args()
+ assert Path(a.audit_name).name==a.audit_name and a.audit_name.startswith('local_independent_audit') and a.audit_name.endswith('.json')
+ result=lg(RUN/('a100_scoreonly_20261026_01' if a.model=='LG_scoreonly' else 'a100_lowlevel_capture_20261026_01'),a.audit_name) if a.model.startswith('LG_') else rental(a.model,a.audit_name)
  print(json.dumps(result,ensure_ascii=False))
