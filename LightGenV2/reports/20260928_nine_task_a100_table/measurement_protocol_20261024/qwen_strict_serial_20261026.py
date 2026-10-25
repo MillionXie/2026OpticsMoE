@@ -8,6 +8,8 @@ import argparse
 import json
 import os
 from pathlib import Path
+import signal
+import subprocess
 import time
 from types import SimpleNamespace
 import lgvq_gpu_pipeline_20261026 as base
@@ -112,26 +114,77 @@ def worker(args):
     p=args.output/'identity.json';identity=json.loads(p.read_text())
     identity.update(profile='Qwen50_strict_single_video_interleaved_CPU_GPU_512x4_20261026_v1',
         external_preparation_recorded_not_charged=False,all_internal_gaps_retained=True,
+        tokenizer_is_CPU_separate_not_added_to_GPU_timeline=False,
         no_prefetch=True,no_prepared_input_reuse=True,CPU_preparation_one_video_at_a_time=True)
     base.write(p,identity)
 
 
 def suite(args):
-    if args.output.exists() or not args.output.is_relative_to(base.ROOT):raise ValueError('New approved task root required')
-    queue_path=args.output.with_suffix('.queue.json')
-    if queue_path.exists():raise FileExistsError('Preserve queued controller receipt')
-    base.write(queue_path,dict(status='waiting_retained_LG',pid=os.getpid(),previous=str(args.retained_lg),deadline=args.deadline))
-    while True:
+    import fcntl
+    from first_tf_supplement_20261025 import serialize_mps_commands
+    from LightGenV2.tasks.t06_video_quality_assessment import rental_busy_resource_20261020 as engine
+    from LightGenV2.tasks.t06_video_quality_assessment.measure_mps_dataset_once import validate_idle_memory
+    import run_temporal_remainder as loading
+    serialize_mps_commands();engine.GPU=base.GPU;engine.PIPE=base.PIPE;engine.ROOT=args.output
+    if args.output.exists() or not args.output.is_relative_to(base.ROOT) or not 0<args.deadline-time.time()<=10800:
+        raise ValueError('New bounded approved task root required')
+    args.output.mkdir();state=dict(status='waiting_retained_LG',pid=os.getpid(),deadline=args.deadline,completed=[]);active=False;child=None
+    def save():base.write(args.output/'suite_status.json',state)
+    def bounded():
         if time.time()>args.deadline-60:raise TimeoutError('Finite strict-serial queue')
-        p=args.retained_lg/'suite_status.json'
-        if p.exists():
-            state=json.loads(p.read_text())
-            if state['status']=='complete' and not Path('/proc',str(state['pid'])).exists():break
-            if state['status']=='stopped':raise RuntimeError('Retained LG interrupted; inspect actual qualified points')
-        time.sleep(5)
-    assert state['completed']==['lg_repeat01','lg_repeat02','lg_repeat03'] and state['mps_released']
-    args.qwen_only=True;base.suite(args)
-    base.write(queue_path,dict(status='finished',pid=os.getpid(),suite_status=str(args.output/'suite_status.json')))
+    save()
+    try:
+        with (base.ROOT/'.temporal_telemetry_a100.lock').open('a') as lock:
+            while True:
+                bounded()
+                try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);break
+                except BlockingIOError:time.sleep(5)
+            retained=json.loads((args.retained_lg/'suite_status.json').read_text())
+            assert retained['status']=='complete' and not Path('/proc',str(retained['pid'])).exists()
+            assert retained['completed']==['lg_repeat01','lg_repeat02','lg_repeat03'] and retained['mps_released']
+            previous=json.loads((args.previous/'suite_status.json').read_text())
+            assert previous['status']=='stopped' and previous['completed']==[]
+            assert not Path('/proc',str(previous['pid'])).exists() and not Path('/proc',str(previous['child'])).exists()
+            state.update(retained_LG_root=str(args.retained_lg),stopped_Qwen_predecessor=str(args.previous));save()
+            for rep in (1,2,3):
+                idle=0
+                while idle<12:
+                    bounded();foreign=engine.base.guard_records(base.GPU)
+                    if foreign:idle=0;state.update(status='waiting_foreign_process',repeat=rep,idle_checks=0,foreign=foreign)
+                    else:
+                        validate_idle_memory(base.GPU);idle+=1;state.update(status='idle_guard',repeat=rep,idle_checks=idle,foreign=[])
+                    save();time.sleep(10)
+                control=subprocess.run(['nvidia-cuda-mps-control'],input='get_server_list\n',text=True,capture_output=True,env=dict(os.environ,CUDA_MPS_PIPE_DIRECTORY=base.PIPE),timeout=5)
+                assert control.returncode!=0,'Private MPS must be released before fresh run'
+                engine.daemon(True);active=True;leaf=args.output/f'qwen_repeat{rep:02d}'
+                env=dict(os.environ,CUDA_VISIBLE_DEVICES=base.GPU,CUDA_DEVICE_ORDER='PCI_BUS_ID',CUDA_MPS_PIPE_DIRECTORY=base.PIPE,
+                    CUDA_MPS_ACTIVE_THREAD_PERCENTAGE='50',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',OMP_NUM_THREADS='1',
+                    MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',TOKENIZERS_PARALLELISM='false')
+                cmd=['/home/guest3/miniconda3/envs/xml/bin/python','-u',str(Path(__file__)),'--phase','worker','--system','qwen','--repeat',str(rep),'--output',str(leaf),'--deadline',str(args.deadline)]
+                observations=[]
+                with leaf.with_suffix('.log').open('x') as log:
+                    child=subprocess.Popen(cmd,cwd=base.REPO,env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+                    state.update(status='running',repeat=rep,child=child.pid);save()
+                    try:
+                        while child.poll() is None:
+                            bounded();snap=loading.process_snapshot(base.GPU,child.pid,base.PIPE);observations.append(snap)
+                            if snap['foreign_gpu_processes'] or snap['foreign_mps_clients']:raise RuntimeError('Foreign during strict serial Qwen')
+                            time.sleep(2)
+                    except BaseException:
+                        if child.poll() is None:os.killpg(child.pid,signal.SIGINT);child.wait(timeout=45)
+                        raise
+                base.write(args.output/f'qwen_repeat{rep:02d}_loading_and_process_guard.json',observations)
+                engine.daemon(False);active=False
+                assert child.returncode==0,'Point failed: preserve raw, no blind restart'
+                state['completed'].append(leaf.name);save()
+            state.update(status='complete',finished=time.time())
+    except BaseException as e:state.update(status='stopped',error=repr(e));raise
+    finally:
+        if active:
+            try:engine.daemon(False);state['mps_released']=True
+            except BaseException as e:state['mps_release_error']=repr(e)
+        else:state['mps_released']=True
+        save()
 
 
 if __name__=='__main__':

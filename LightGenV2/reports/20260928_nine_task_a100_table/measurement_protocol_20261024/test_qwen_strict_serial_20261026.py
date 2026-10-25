@@ -22,6 +22,11 @@ class StrictSerial(unittest.TestCase):
         self.assertIn('class Timer(BoundaryTimer)',source)
         self.assertNotIn('inputs.append(',source)
         self.assertNotIn('steady_report(',source)
+    def test_foreign_waits_without_model_loading(self):
+        source=Path(__file__).with_name('qwen_strict_serial_20261026.py').read_text(encoding='utf-8')
+        self.assertIn("status='waiting_foreign_process'",source)
+        self.assertIn('while idle<12:',source)
+        self.assertIn('tokenizer_is_CPU_separate_not_added_to_GPU_timeline=False',source)
 
 
 if __name__=='__main__':unittest.main()
