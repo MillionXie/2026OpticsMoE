@@ -58,10 +58,10 @@ def profile_parameters(cfg):
         raise ValueError('Declared quality floor or derivative budget changed')
     if cfg['schema']=='T21_gated_partial_linear_teacher_v1':
         if cfg['sources_per_task'] not in (200,500) or cfg['teacher_max_LBFGS_steps']!=160:raise ValueError('Frozen legacy budget changed')
-        return dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={})
-    if (cfg['schema']=='T21_gated_partial_linear_teacher_pairweak_v2' and cfg['sources_per_task']==500 and
+        return dict(steps=160,mixes=(.1,.2),noise=.02,L2=.0001,shared_pair_noise=False,TRAIN_floor={},full_covariance=False)
+    if (cfg['schema'] in ('T21_gated_partial_linear_teacher_pairweak_v2','T21_gated_partial_linear_teacher_pairwhiten_v3') and cfg['sources_per_task']==500 and
         cfg['teacher_max_LBFGS_steps']==240 and cfg.get('paired_teacher') is True and cfg.get('expose_tasks')==['clevr']):
-        return dict(steps=240,mixes=(.02,.05),noise=.001,L2=.000001,shared_pair_noise=True,TRAIN_floor={'clevr':.90})
+        return dict(steps=240,mixes=(.02,.05),noise=.001,L2=.000001,shared_pair_noise=True,TRAIN_floor={'clevr':.90},full_covariance=cfg['schema'].endswith('v3'))
     raise ValueError('Unknown or changed finite teacher profile')
 
 
@@ -69,6 +69,20 @@ def paired_derivative_noise(source,std,sigma,pairs):
     noise=torch.randn_like(source)*std*sigma
     for negative,positive in pairs:noise[positive]=noise[negative]
     return noise
+
+
+def full_covariance_transform(train,base):
+    """Invertible TRAIN-only fit coordinates, no inference preprocessing."""
+    values=train.double()@base.double().T;spatial=values[:,:-1]
+    covariance=spatial.T@spatial/len(spatial);eigen,vectors=torch.linalg.eigh(covariance)
+    floor=max(1e-12,float(eigen.median())*.001)
+    whitening=(vectors*eigen.clamp_min(floor).rsqrt())@vectors.T
+    coordinates=torch.eye(base.shape[0],dtype=torch.float64);coordinates[:-1,:-1]=whitening
+    transformed=coordinates@base.double()
+    if not torch.isfinite(transformed).all():raise ValueError('Nonfinite TRAIN covariance coordinates')
+    return transformed,dict(TRAIN_records=len(train),TEST_statistics=False,inference_preprocessing_added=False,
+        minimum_eigenvalue=float(eigen.min()),median_eigenvalue=float(eigen.median()),maximum_eigenvalue=float(eigen.max()),
+        eigenvalue_floor=floor,full_rank_coordinates=True,no_dimension_removed=True)
 
 
 def main():
@@ -92,6 +106,8 @@ def main():
     if pair_mode and (cp['architecture']!='d2nn' or cp['stage']!=2 or cfg.get('expose_tasks')!=['clevr']):raise ValueError('Paired repair is D2NN B CLEVR only')
     selected={n:(select_sources(ids[te][tasks[te]==n],y[te][tasks[te]==n].numpy(),n,count) if not pair_mode or n in cfg['expose_tasks'] else []) for n in names}
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unexposed=np.setdiff1d(te,exposed)
+    transform=contrast_transform(x[tr]);conditioning=None
+    if settings['full_covariance']:transform,conditioning=full_covariance_transform(x[tr],transform)
     a.out.mkdir(parents=True,exist_ok=False)
     put(a.out/'protocol.json',dict(profile=cfg,profile_sha256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=capture['features_sha256'],
         selection_source_ids=selected,source_selection_uses_model_outputs=False,source_seed=20261025,
@@ -99,13 +115,14 @@ def main():
         teacher_objective=f"0.25 equal-task TRAIN CE +0.75 equal-exposed-task derivative CE +{settings['L2']} conditioned weight penalty; fixed{settings['steps']} LBFGS steps",
         derivative_mixes=settings['mixes'],derivative_TRAINstd_noise=settings['noise'],shared_positive_negative_noise=settings['shared_pair_noise'],
         teacher_TRAIN_minimum=settings['TRAIN_floor'],teacher_TRAIN_labels_are_original_TRAIN_only=True,
+        full_TRAIN_covariance_preconditioning=settings['full_covariance'],covariance_conditioning=conditioning,
         paired_CLEVR_repair=pair_mode,paired_derivative_ranking_weight=4 if pair_mode else 0,
         old_Euro_TRAIN_parent_KL_weight=4 if pair_mode else 0,
         student='Function projection on TRAIN and24 fresh TRAIN augmentations; fixed ridge1e-4, folded into original Linear; no EVAL strength scan',
         teacher_gate='Complete same1000 development reference must meet each declared floor before any student fit',
         original_TEST_rows_used_for_gradients=0,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         source_sha256=sha(__file__),SDK=False,GPU=False,CPU_threads=2,**DISCLOSURE))
-    transform=contrast_transform(x[tr]);initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform)
+    initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform)
     tx=[x[tr]];ty=[y[tr]];tw=[];tt=tasks[tr];derived_pairs=paired_indices(ids[exposed],y[exposed].numpy(),tasks[exposed]) if pair_mode else [];pair_deltas=[]
     tw.append(torch.tensor([.25/(len(names)*int((tt==n).sum())) for n in tt],dtype=torch.float64))
     std=x[tr].std(0,unbiased=False)

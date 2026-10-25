@@ -1,0 +1,9 @@
+{
+  "schema": "T21_gated_partial_linear_teacher_pairwhiten_v3",
+  "sources_per_task": 500,
+  "teacher_max_LBFGS_steps": 240,
+  "derivatives_per_source": 10,
+  "teacher_minimum_per_task": {"A_LG": 0.738, "B_D2_eurosat": 0.483, "B_D2_clevr": 0.710},
+  "paired_teacher": true,
+  "expose_tasks": ["clevr"]
+}
