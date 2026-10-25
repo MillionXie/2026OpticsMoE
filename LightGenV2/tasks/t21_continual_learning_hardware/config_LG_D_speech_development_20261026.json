@@ -1,0 +1,7 @@
+{
+  "schema": "T21_LG_D_one_Speech_teacher_update_development_20261026",
+  "seed": 20261026, "batch_size": 8, "maximum_steps": 1,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "all_TEST_sources_authorized": true, "independent_test_samples": 0,
+  "valid_for_formal_test_table": false, "new_inference_layers": 0, "SDK": false, "GPU": false
+}
