@@ -9,7 +9,9 @@ import {Workbook,SpreadsheetFile} from '@oai/artifact-tool';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const REPO=path.resolve(HERE,'../../../..');
-const OUT=path.join(HERE,'outputs/01a061e2-6f88-7913-87f5-b632000e4c83/collected_20261025_01');
+const COMPLETE=process.argv.includes('--complete');
+const OUT=path.join(HERE,'outputs/01a061e2-6f88-7913-87f5-b632000e4c83',COMPLETE?'complete_20261025_01':'collected_20261025_01');
+if(fss.existsSync(path.join(OUT,'delivery_manifest.json')))throw Error('Preserve an existing immutable delivery');
 const norm=p=>p.replaceAll('\\','/');
 const rel=p=>norm(path.relative(REPO,p));
 const read=p=>JSON.parse(fss.readFileSync(p,'utf8'));
@@ -17,9 +19,9 @@ const shaCache=new Map();
 function sha(p){p=path.resolve(p);if(!shaCache.has(p))shaCache.set(p,crypto.createHash('sha256').update(fss.readFileSync(p)).digest('hex'));return shaCache.get(p);}
 function assert(x,s){if(!x)throw Error(s);}
 function close(a,b,s){assert(Number.isFinite(a)&&Number.isFinite(b)&&Math.abs(a-b)<=Math.max(1e-8,Math.abs(b)*1e-9),`${s}: ${a} != ${b}`);}
-const MAIN=path.join(HERE,'measured_index_partial_17.json'),TEMP=path.join(HERE,'temporal_matrix_partial_07.json');
-assert(sha(MAIN)==='5d05ea0c395b2dfdc07135b4e8cf15957c3171568af466cda7a83fb2c4593bda','Sealed main index differs');
-assert(sha(TEMP)==='3b439f3cb1b6f9b61a0349147304247259d3514e767265b6ea5a368ff34c2b1b','Sealed temporal index differs');
+const MAIN=path.join(HERE,COMPLETE?'measured_index_complete_cost_18.json':'measured_index_partial_17.json'),TEMP=path.join(HERE,COMPLETE?'temporal_matrix_complete_cost_08.json':'temporal_matrix_partial_07.json');
+assert(sha(MAIN)===(COMPLETE?'9a34e31111290adf67ad4ceaf281f1ea5c228b888aaaaf679a5cc035c460e082':'5d05ea0c395b2dfdc07135b4e8cf15957c3171568af466cda7a83fb2c4593bda'),'Sealed main index differs');
+assert(sha(TEMP)===(COMPLETE?'557ec0a831cc07cfc6de4c8859babc3b8ff1be63305b8ba707268425e35eeed3':'3b439f3cb1b6f9b61a0349147304247259d3514e767265b6ea5a368ff34c2b1b'),'Sealed temporal index differs');
 const main=read(MAIN),temp=read(TEMP),p=read(path.join(HERE,'protocol.json'));
 const t07='LightGenV2/tasks/t07_abo_image_retrieval/runs/simulation/';
 const t06='LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/';
@@ -32,7 +34,7 @@ function mainFolders(row,sys){
   if(!row[sys])return [];
   if(row.id==='03')return [1,2,3].map(i=>t07+(sys==='ours'?'a100_input_inclusive_20261024_01/':'a100_input_inclusive_20261024_qwen01/')+`${sys}_repeat0${i}`);
   if(['05','06'].includes(row.id))return [1,2,3].map(i=>`LightGenV2/tasks/${row.id==='05'?'t02_keypoint_detection':'t03_saliency'}/runs/simulation/a100_input_inclusive_20261024_${row.id==='05'?'02':'01'}/${sys}_repeat0${i}`);
-  if(row.id==='01b')return [1,2,3].map(i=>t06+`lgvq_spatial_input_a100_20261024_01/qwen_repeat0${i}`);
+  if(row.id==='01b'&&sys==='qwen')return [1,2,3].map(i=>t06+`lgvq_spatial_input_a100_20261024_01/qwen_repeat0${i}`);
   if(row.id==='04'&&sys==='qwen')return [1,2,3].map(i=>`LightGenV2/tasks/t08_abo_image_text_retrieval/runs/simulation/a100_title_input_inclusive_20261024_02/qwen_repeat0${i}`);
   return row[sys].raw_references.map(x=>norm(x.raw_run_path||x.path||''));
 }
@@ -49,7 +51,10 @@ function costFromReport(folder){
     board_j:c.gpu_energy_j??(report.optical_ms_total==null?j*200-338.2*ms/5:null)};
 }
 function opOf(x){
-  if(x?.derived_NN_dense_MAC_subtotal)return x.derived_NN_dense_MAC_subtotal;
+  if(x?.derived_NN_dense_MAC_subtotal){const op=x.derived_NN_dense_MAC_subtotal,d=op.raw_derivation;
+    if(d?.formal600_NN_MAC!=null)return {...op,charged_serial_NN_OP600:2*d.charged_serial_NN_MAC600,parallel_residual_NN_OP600:2*d.parallel_residual_NN_MAC600,
+      other_executed_digital_dense_OP600_not_in_NN_subtotal:2*d.requests.reduce((s,r)=>s+Object.values(r.other_executed_digital_dense_MAC).reduce((a,b)=>a+b,0),0)};
+    return op;}
   if(x?.TOP_MAC_convention_per_query)return {OP600:x.TOP_MAC_convention_per_query*600e12,TOP_per_input:x.TOP_MAC_convention_per_query,TOPS:x.TOPS_MAC_convention,TOPS_per_W:x.TOPS_per_W_MAC_convention,not_complete_scalar_OP:true};
   return null;
 }
@@ -117,16 +122,19 @@ for(const row of main.nine_metric_rows){
       record.optical_s=runs.reduce((s,r)=>s+r.optical_s,0);record.charged_s=sys==='ours'?runs.reduce((s,r)=>s+r.charged_s,0):null;
       record.ms=a.ms;record.j=a.j;record.common_tps=tokens/record.seconds;
       if(row.common_tokens)close(record.common_tps,row.common_tokens[sys+'_per_s'],key+' common tokens/s');
-      assert(record.op,'Qualified14 NN count required');
-      close(record.op.OP600/600e12,record.op.TOP_per_input,key+' OP per input');
-      close(record.op.OP600/1e12/record.seconds,record.op.TOPS,key+' TOPS');
-      close(record.op.OP600/1e12/record.joules,record.op.TOPS_per_W,key+' TOPSW');
+      const pendingNN=COMPLETE&&['01a|ours','01b|ours','08|qwen'].includes(key);
+      assert(record.op||pendingNN,'Previously qualified NN subtotal cannot disappear');
+      if(record.op){
+        close(record.op.OP600/600e12,record.op.TOP_per_input,key+' OP per input');
+        close(record.op.OP600/1e12/record.seconds,record.op.TOPS,key+' TOPS');
+        close(record.op.OP600/1e12/record.joules,record.op.TOPS_per_W,key+' TOPSW');
+      }
     }
     mainRecords.push(record);
   }
 }
-check('主表已验收成本单元',mainRecords.filter(r=>r.calls===600).length===14,'14/18');
-check('主表完整配对行',main.nine_metric_rows.filter(r=>r.ours&&r.qwen).length===6,'6/9');
+check('主表已验收成本单元',mainRecords.filter(r=>r.calls===600).length===(COMPLETE?18:14),COMPLETE?'18/18':'14/18');
+check('主表完整配对行',main.nine_metric_rows.filter(r=>r.ours&&r.qwen).length===(COMPLETE?9:6),COMPLETE?'9/9':'6/9');
 for(const row of [...temp.rows,{...temp.supplementary_rental_qwen_anchor,model:'qwen',cap:100,supplementary:true}]){
   assert(row.status==='complete'&&row.qualified_completed.length===3,'Qualified temporal triple required');
   const key=(row.platform.power_limit_w===400?'80GB':'40GB')+'|'+row.model+'|'+row.cap;
@@ -144,21 +152,37 @@ for(const row of [...temp.rows,{...temp.supplementary_rental_qwen_anchor,model:'
   if(record.op){close(record.op.OP600/1e12/seconds,record.op.TOPS,key+' TOPS');close(record.op.OP600/1e12/joules,record.op.TOPS_per_W,key+' TOPSW');}
   tempRecords.push(record);tempRuns.push(...runs);
 }
-tempRecords.push({key:'40GB|ours|100',id:'ours',task:'LGVQ temporal',system:'ours',metric:'SRCC',accuracy:.8044,full_test_n:558,calls:null,tokens:267600,status:'待测',platform:'A100 PCIe 40GB',power_limit:250,cap:100,op:null});
-check('多baseline正式成本轮数',tempRuns.length===39,'36 baseline +3 extra80GB Qwen');
+const ownTemporal=mainRecords.find(r=>r.key==='01a|ours');
+tempRecords.push({...ownTemporal,key:'40GB|ours|100',id:'ours',system:'ours',metric:'SRCC',accuracy:.8044,full_test_n:558,tokens:267600,platform:'A100 PCIe 40GB',power_limit:250,cap:100});
+if(COMPLETE)tempRuns.push(...mainRuns.filter(r=>r.key==='01a|ours').map(r=>({...r,key:'40GB|ours|100'})));
+check('多baseline正式成本轮数',tempRuns.filter(r=>r.system!=='ours').length===39,'36 baseline +3 extra80GB Qwen');
 const sharedMain=mainRuns.filter(r=>r.key==='01a|qwen').map(r=>norm(r.folder));
 const sharedTemp=tempRuns.filter(r=>r.key==='40GB|qwen|100').map(r=>norm(r.folder));
 check('两表共享40GB Qwen100原三轮',JSON.stringify(sharedMain)===JSON.stringify(sharedTemp));
 const folders=fileCatalog([...mainRuns,...tempRuns].map(r=>r.folder));
-check('去重合格点数量',folders.length===78,'42+39−3 shared=78');
+check('去重合格点数量',folders.length===(COMPLETE?90:78),COMPLETE?'54+42−6 shared=90':'42+39−3 shared=78');
+if(COMPLETE){
+ const inputBase='LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_shared_reference_files_20261025_01/';
+ for(const [name,pin] of [['original_test_manifest.jsonl','331874abbb8d8c7a4ac5ee3d6e030f20611cb5a9e96d3092917b7a5c4d7d5d2f'],['server_independent_input_audit01.json','48852c19e83de28ff6e16bb67c40ae9b2f421691d689dc089a495aa8aa60a889']])registerPin(path.join(REPO,inputBase,name),pin,null,'original input manifest / exact server input audit SHA recorded in parent README');
+ fileCatalog([
+ 'LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_live_frontend_contract_20261025_06/original_live_CPU_contract',
+ 'LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_gpu_checked_remaining_20261025_01/native_GPU_contract',
+ t06+'a100_lgvq_gpu_checked_remaining_20261025_01/native_GPU_contract',
+ 'LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_shared_reference_files_20261025_01',
+ 'LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_input_inclusive_20261025_07',
+ 'LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_gpu_checked_remaining_20261025_01',
+ 'LightGenV2/tasks/t12_text_to_image/runs/simulation/a100_gpu_checked_remaining_20261025_02',
+ t06+'a100_lgvq_gpu_checked_remaining_20261025_02']);
+}
 check('已核原始SHA',fileRows.filter(r=>r.verification==='封存SHA及字节数已核对').length>500);
-check('未对封存SHA的文件仅为清单本体或辅助收据',fileRows.filter(r=>r.verification!=='封存SHA及字节数已核对').every(r=>/^(backup_receipt.*\.json|local_independent.*\.json|files_manifest\.json)$/.test(path.basename(r.file))),'原始数据文件均有封存字节锚；清单不能包含自身SHA');
+const unpinnedOriginal=fileRows.filter(r=>r.verification!=='封存SHA及字节数已核对'&&!/^(backup_receipt.*\.json|local_independent.*\.json|files_manifest\.json|external_controller\.log)$/.test(path.basename(r.file)));
+check('未对封存SHA的文件仅为清单本体或辅助收据',unpinnedOriginal.length===0,JSON.stringify(unpinnedOriginal.map(r=>r.file)));
 for(const row of main.nine_metric_rows.filter(r=>r.ours&&r.qwen)){
   const o=mainRecords.find(r=>r.key===row.id+'|ours'),q=mainRecords.find(r=>r.key===row.id+'|qwen');
   close(o.common_tps/q.common_tps,q.ms/o.ms,row.id+' commonTokens ratio');
 }
-check('全部配对Tokens率比等于时间反比',true,'六行逐项复算');
-const payload={status:'PARTIAL_COLLECTED_DATA_NOT_FINAL_ALL18',created_beijing:'2026-10-25',
+check('全部配对Tokens率比等于时间反比',true,COMPLETE?'九行逐项复算':'六行逐项复算');
+const payload={status:COMPLETE?'COMPLETE_COST_18_OF_18_NN_SCOPE_EXPLICIT':'PARTIAL_COLLECTED_DATA_NOT_FINAL_ALL18',created_beijing:'2026-10-25',
   main_index:{path:rel(MAIN),bytes:fss.statSync(MAIN).size,sha256:sha(MAIN)},
   temporal_index:{path:rel(TEMP),bytes:fss.statSync(TEMP).size,sha256:sha(TEMP)},
   mainRecords,tempRecords,mainRuns:mainRuns.map(({report,root,...r})=>r),tempRuns:tempRuns.map(({report,root,...r})=>r),
@@ -168,7 +192,14 @@ const payload={status:'PARTIAL_COLLECTED_DATA_NOT_FINAL_ALL18',created_beijing:'
 await fs.mkdir(OUT,{recursive:true});
 await fs.writeFile(path.join(OUT,'collected_data_and_audit.json'),JSON.stringify(payload,null,2));
 const csv=x=>'"'+String(x??'').replaceAll('"','""')+'"';
-await fs.writeFile(path.join(OUT,'raw_file_index.csv'),'\ufeff'+['run,file,bytes,sha256,verification,pin_source,role',...fileRows.map(r=>Object.values(r).map(csv).join(','))].join('\n'));
+function originalServerPath(row){
+  if(!/backup_receipt/.test(row.pin_source))return '';
+  const receipt=read(path.join(REPO,row.pin_source));if(!receipt.source)return '';
+  const suffix=path.posix.relative(path.posix.dirname(norm(row.pin_source)),norm(row.file));
+  assert(!suffix.startsWith('..'),'Original server receipt path must contain file');
+  return receipt.source.replace(/\/$/,'')+'/'+suffix;
+}
+await fs.writeFile(path.join(OUT,'raw_file_index.csv'),'\ufeff'+['run,file,bytes,sha256,verification,pin_source,role'+(COMPLETE?',local_absolute_path,original_server_path_from_receipt':''),...fileRows.map(r=>[...Object.values(r),...(COMPLETE?[norm(path.join(REPO,r.file)),originalServerPath(r)]:[])].map(csv).join(','))].join('\n'));
 
 const colors={navy:'#233B53',blue:'#E8F1FA',green:'#E7F2E8',fixed:'#FFF1D6',pending:'#FFF0D9',ink:'#202C38',muted:'#5E6A76'};
 const col=i=>{let s='';for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s;};
@@ -212,7 +243,7 @@ function baseData(w,records,runs){
   return data;
 }
 function archiveSheet(w,records,runs){
-  const folders=new Set(runs.map(r=>r.folder)),files=fileRows.filter(r=>folders.has(r.run));
+  const folders=new Set(runs.map(r=>r.folder)),files=COMPLETE?fileRows:fileRows.filter(r=>folders.has(r.run));
   const s=sheet(w,'原始文件索引','合格点原始文件 SHA256索引',
     ['所属点','文件相对仓库路径','字节数','SHA256','核查方式','封存清单来源','类型'],
     files.map(r=>Object.values(r)));
@@ -222,11 +253,11 @@ function archiveSheet(w,records,runs){
   for(const c of ['A','B','F'])s.getRange(`${c}6:${c}${files.length+5}`).format={wrapText:true,verticalAlignment:'center',font:{size:10}};
   const methods=sheet(w,'口径与审查','参数 证据边界与独立审查',
     ['项目','数值或结论','类型','说明'],[
-      ['成本完成度',w===undefined?'':'主表14/18 多baseline36/36 额外80GB Qwen3/3','状态','尚有四成本单元待测'],
+      ['成本完成度',COMPLETE?'主表18/18 多baseline36/36 额外80GB Qwen3/3':'主表14/18 多baseline36/36 额外80GB Qwen3/3','状态',COMPLETE?'全部时间能量齐全；三项NN算量未核定，不填0':'尚有四成本单元待测'],
       ['颜色图例','蓝色 实测分量 绿色 推导 橙色 固定参数','说明','完整TEST值为原正式报告引用；原始数据计费口径另列'],
       ['单光学pass',1.0447,'固定参数 ms','.714+.300+.0307 不宣称新装置墙钟实测'],
       ['光学阶段功率',121.746,'固定参数 W','80.358+41.388'],['电子计费功率',104.230,'固定参数 W','62.842+41.388'],['baseline主机代理',338.2,'固定参数 W','另加同窗NVML板卡积分 非整机电表'],
-      ['功率最大支持年龄',.25,'固定阈值 s','守卫没有放宽'],['三轮工作负载','first200 TEST ×3 fresh loaded process','科学合同','首条及199间隙保留 零dummy预热 非200次冷启动'],
+      ['功率最大支持年龄',.25,'固定阈值 s','守卫没有放宽'],['三轮工作负载','first200 TEST ×3 fresh loaded process','科学合同','逐条B1含199间隙；temporal13整场含12场间隙；零dummy，非200次冷启动'],
       ['Ours时间与能量','实测前端和选定NN 加参数光学阶段','混合投影','非整机全软件墙钟 非已实测物理装置E2E'],
       ['baseline时间与能量','文件到CPU结果连续墙钟 同窗板卡积分','实测加主机代理','模型加载及独立离线图库不计'],
       ['光学等效算量','未核定','未知','不填0 不用最大容量或GPU FFT填充'],['NN算量','1 real MAC =2 OP','推导小计','不是完整scalarOP或硬件指令数'],
@@ -234,6 +265,10 @@ function archiveSheet(w,records,runs){
       ['加速倍数','T参照 / T被比较系统','推导','大于1才表示被比较系统更快'],['节能倍数','E参照 / E被比较系统','推导','节能率另列为1−E被比较/E参照'],
       ['EDP改善倍数','T参照×E参照/(T被比较×E被比较)','推导','等于加速倍数×节能倍数'],
       ['主索引',rel(MAIN),'封存数据',sha(MAIN)],['Temporal索引',rel(TEMP),'封存数据',sha(TEMP)],
+      ...(COMPLETE?[
+        ['数值等价验证','T12 Qwen及LGVQ用同原生A100 GPU核对','验证平台','不是CPU；兼容cpu_contract键仅是路径/SHA别名，正式各轮仍fresh零dummy'],
+        ['LGVQ完整输入口径','时间比小于1，能耗比大于1','实测结论','含CPU解码与预处理；不将只扣LG预处理的诊断比写为正式加速'],
+        ['T12与LGVQ NN算量','15项有NN小计，3项未核定','算量范围','物理光dense等效OP始终未核定；不把时间推成算量']]:[]),
       ...checks.map(r=>[r.name,r.status,'独立检查',r.detail])]);
   methods.getRange('A5:A60').format.columnWidth=29;methods.getRange('B5:B60').format.columnWidth=66;methods.getRange('C5:C60').format.columnWidth=18;methods.getRange('D5:D60').format.columnWidth=95;
   methods.getRange('B22:B23').format={wrapText:true,rowHeight:56};
@@ -244,16 +279,16 @@ async function finish(w,name,previewRanges){
   w.recalculate();
   const errors=await w.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:3000});
   await fs.writeFile(path.join(OUT,name+'.formula_scan.ndjson'),errors.ndjson);
-  for(const [sheetName,range] of previewRanges){const blob=await w.render({sheetName,range,scale:1.4,format:'png'});await fs.writeFile(path.join(OUT,name+'_'+sheetName+'.png'),new Uint8Array(await blob.arrayBuffer()));}
+  for(const [sheetName,range] of previewRanges){const blob=await w.render({sheetName,range,scale:1.4,format:'png'});await fs.writeFile(path.join(OUT,name+'_'+sheetName+'_'+range.replace(':','-')+'.png'),new Uint8Array(await blob.arrayBuffer()));}
   const out=await SpreadsheetFile.exportXlsx(w);await out.save(path.join(OUT,name+'.xlsx'));
   const inspection=await w.inspect({kind:'table',range:previewRanges[0][0]+'!A5:P16',include:'values,formulas',tableMaxRows:12,tableMaxCols:16,maxChars:7000});
   await fs.writeFile(path.join(OUT,name+'.inspect.ndjson'),inspection.ndjson);
 }
 const w1=Workbook.create();
-const summary=sheet(w1,'九行对比','A100 九行任务 已采集数据',
+const summary=sheet(w1,'九行对比',COMPLETE?'A100 九行任务 完整时间能量':'A100 九行任务 已采集数据',
   ['编号','任务与原生单位','指标','Ours 完整TEST','Qwen 完整TEST','Ours 投影ms','Qwen 实测ms','加速倍数','Ours 阶段估算J','Qwen 代理加积分J','节能倍数','节能率','EDP改善倍数','Tokens/s倍率','成本状态'],
   main.nine_metric_rows.map(r=>[r.id,names[r.id]+(['01a','01b'].includes(r.id)?' 每视频':r.id==='04'?' 每标题':' 每样本'),r.metric,r.full_test_reference.ours,r.full_test_reference.qwen,null,null,null,null,null,null,null,null,null,r.ours&&r.qwen?'双方三轮齐全':r.id==='08'?'双方待测':'Ours待测']));
-summary.getRange('A3').values=[['14/18成本单元 已有6行完整配对 其余3行保留待测 不以历史成本填充']];
+summary.getRange('A3').values=[[COMPLETE?'18/18成本单元 三轮全纳入 LGVQ含输入时间未加速 不用单侧扣减替代本表':'14/18成本单元 已有6行完整配对 其余3行保留待测 不以历史成本填充']];
 summary.getRange('A6:A14').setNumberFormat('00');summary.getRange('B5:B20').format.columnWidth=31;summary.getRange('C5:C20').format.columnWidth=20;summary.getRange('D5:E20').format.columnWidth=19;summary.getRange('I5:J20').format.columnWidth=20;summary.getRange('O5:O20').format.columnWidth=24;
 baseData(w1,mainRecords,mainRuns);
 for(let i=0;i<9;i++){
@@ -265,20 +300,21 @@ summary.getRange('A6:O14').conditionalFormats.addCustom('$O6<>"双方三轮齐�
 summary.getRange('A17').values=[['OpenMoji采用epoch45 仿真0.8765 实验室0.8655 后者单列于方法说明 不混入成本比。']];
 summary.getRange('A18').values=[['Ours为含输入的混合硬件投影 baseline为连续墙钟 能耗分别为阶段参数模型与主机代理加板卡积分。']];
 archiveSheet(w1,mainRecords,mainRuns);
-await finish(w1,'A100_九行任务_已采集核验_20261025',[['九行对比','A1:O18'],['指标与计算','A4:J23'],['指标与计算','K4:X23'],['三轮原始数据','A4:J13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
+await finish(w1,COMPLETE?'A100_九行任务_完整成本_20261025':'A100_九行任务_已采集核验_20261025',[['九行对比','A1:O18'],['指标与计算','A4:J23'],['指标与计算','K4:X23'],['三轮原始数据','A4:J13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
 
 const w2=Workbook.create();
-const s2=sheet(w2,'Temporal对比','LGVQ Temporal 多baseline 已采集数据',
+const s2=sheet(w2,'Temporal对比',COMPLETE?'LGVQ Temporal 完整成本多基线':'LGVQ Temporal 多baseline 已采集数据',
   ['模型','平台','MPS资源档','完整558 SRCC','ms/视频','J/视频','ms/等效帧','J/等效帧','相对同平台Qwen100加速','相对同平台Qwen100节能','节能率','EDP改善倍数','共同Tokens/s','Ours加速倍数','Ours节能倍数','状态'],
   tempRecords.map(r=>[r.system,r.power_limit===400?'SXM 80GB 400W':'PCIe 40GB 250W',r.cap/100,r.accuracy,null,null,null,null,null,null,null,null,null,'待Ours测量','待Ours测量',r.supplementary?'补充同机Qwen锚':r.status]));
-s2.getRange('A3').values=[['36轮正式baseline +3轮80GB同机Qwen对照 Ours成本待测 不跨平台混称模型收益']];
+s2.getRange('A3').values=[[COMPLETE?'LG三轮已齐 全部含原输入准备 40GB与80GB分平台 跨平台比仅配置对照':'36轮正式baseline +3轮80GB同机Qwen对照 Ours成本待测 不跨平台混称模型收益']];
 s2.getRange('B5:B25').format.columnWidth=23;s2.getRange('I5:P25').format.columnWidth=22;
 baseData(w2,tempRecords,tempRuns);
 for(let i=0;i<tempRecords.length;i++){
   const n=i+6,d=i+6,r=tempRecords[i],anchor=tempRecords.findIndex(x=>x.system==='qwen'&&x.cap===100&&x.power_limit===r.power_limit)+6;
   formulas(s2,n,{E:`='指标与计算'!M${d}`,F:`='指标与计算'!N${d}`,G:`=IF(ISNUMBER(E${n}),E${n}/4,"待测")`,H:`=IF(ISNUMBER(F${n}),F${n}/4,"待测")`,I:`=IF(ISNUMBER(E${n}),E${anchor}/E${n},"待测")`,J:`=IF(ISNUMBER(F${n}),F${anchor}/F${n},"待测")`,K:`=IF(ISNUMBER(J${n}),1-F${n}/F${anchor},"待测")`,L:`=IF(ISNUMBER(I${n}),I${n}*J${n},"待测")`,M:`='指标与计算'!P${d}`});
+  if(COMPLETE){const own=tempRecords.findIndex(x=>x.system==='ours')+6;formulas(s2,n,{N:`=E${n}/E$${own}`,O:`=F${n}/F$${own}`});}
 }
-fmt(s2,'C6:C19','0%');fmt(s2,'D6:D19','0.0000');fmt(s2,'E6:J19','0.000');fmt(s2,'K6:K19','0.00%');fmt(s2,'L6:M19','0.000');s2.getRange('E6:O19').format.fill=colors.green;s2.getRange('N6:O19').format.fill=colors.pending;
+fmt(s2,'C6:C19','0%');fmt(s2,'D6:D19','0.0000');fmt(s2,'E6:J19','0.000');fmt(s2,'K6:K19','0.00%');fmt(s2,'L6:O19','0.000');s2.getRange('E6:O19').format.fill=colors.green;if(!COMPLETE)s2.getRange('N6:O19').format.fill=colors.pending;
 const cap=sheet(w2,'资源档对比','50档相对100档的成本变化',
   ['模型','平台','100档 ms/视频','50档 ms/视频','耗时倍率 50/100','100档 J/视频','50档 J/视频','能耗倍率 50/100','50档加速比 100/50'],
   ['qwen','glm','clip','yolo','deepseek','kimi'].map(m=>[m,['deepseek','kimi'].includes(m)?'80GB 400W':'40GB 250W',null,null,null,null,null,null,null]));
@@ -287,5 +323,5 @@ for(let i=0;i<6;i++){
 }
 fmt(cap,'C6:I11','0.000');cap.getRange('C6:I11').format.fill=colors.green;cap.getRange('B5:I15').format.columnWidth=23;
 archiveSheet(w2,tempRecords,tempRuns);
-await finish(w2,'A100_Temporal多基线_已采集核验_20261025',[['Temporal对比','A1:P19'],['指标与计算','A4:J19'],['指标与计算','K4:X19'],['三轮原始数据','A4:J13'],['资源档对比','A1:I13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
-console.log(JSON.stringify({status:payload.status,qualified_main:14,complete_pairs:6,temporal_trials:39,unique_points:folders.length,raw_files:fileRows.length,pinned_files:fileRows.filter(x=>x.verification==='封存SHA及字节数已核对').length,output:OUT}));
+await finish(w2,COMPLETE?'A100_Temporal多基线_完整成本_20261025':'A100_Temporal多基线_已采集核验_20261025',[['Temporal对比','A1:P19'],['指标与计算','A4:J19'],['指标与计算','K4:X19'],['三轮原始数据','A4:J13'],['资源档对比','A1:I13'],['原始文件索引','A4:G10'],['口径与审查','A4:D22']]);
+console.log(JSON.stringify({status:payload.status,qualified_main:COMPLETE?18:14,complete_pairs:COMPLETE?9:6,temporal_trials:39,unique_points:folders.length,raw_files:fileRows.length,pinned_files:fileRows.filter(x=>x.verification==='封存SHA及字节数已核对').length,output:OUT}));

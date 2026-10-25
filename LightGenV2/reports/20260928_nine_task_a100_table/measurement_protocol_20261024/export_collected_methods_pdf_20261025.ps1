@@ -1,5 +1,7 @@
+param([switch]$Complete)
 $ErrorActionPreference='Stop'
-$taskRoot=Join-Path $PSScriptRoot 'outputs/01a061e2-6f88-7913-87f5-b632000e4c83/collected_20261025_01'
+$taskVersion=if($Complete){'complete_20261025_01'}else{'collected_20261025_01'}
+$taskRoot=Join-Path $PSScriptRoot ('outputs/01a061e2-6f88-7913-87f5-b632000e4c83/'+$taskVersion)
 $taskInput=Join-Path $taskRoot 'A100_时间能耗与倍数计算说明_20261025.docx'
 $taskQa=Join-Path $taskRoot 'docx_qa'
 New-Item -ItemType Directory -Path $taskQa -Force | Out-Null
