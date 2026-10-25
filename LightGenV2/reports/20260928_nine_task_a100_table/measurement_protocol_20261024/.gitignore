@@ -113,3 +113,5 @@
 !test_lgvq_pipeline_demo_20261025.py
 !audit_lgvq_pipeline_demo_20261025.py
 !test_audit_lgvq_pipeline_demo_20261025.py
+!lgvq_gpu_pipeline_20261026.py
+!test_lgvq_gpu_pipeline_20261026.py
