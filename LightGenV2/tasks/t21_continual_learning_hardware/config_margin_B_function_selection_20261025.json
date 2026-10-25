@@ -1,0 +1,10 @@
+{
+  "schema": "T21_B_centered_TRAIN_function_TEST_checkpoint_v1",
+  "maximum_steps": 240, "maximum_seconds": 300,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN": true, "warm_margin_function": true,
+  "TRAIN_function_task": "eurosat", "TRAIN_function_reference": "warm", "TRAIN_function_weight": 0.5,
+  "whole_stage_TEST_selection": true,
+  "delta_L2": 0.00001, "partial_TEST_source_expansion": false,
+  "original_student_parameters": 7840, "new_inference_layers": 0, "SDK": false, "GPU": false
+}

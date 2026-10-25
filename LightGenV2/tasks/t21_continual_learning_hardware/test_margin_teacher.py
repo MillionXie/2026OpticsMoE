@@ -1,8 +1,20 @@
 import unittest,torch,numpy as np
-from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL
+from .distill_margin_teacher import within_bands,bounded_teacher_margin,margin_rows,bounded_margin_rows,source_average,smooth_tail,robust_queries,robust_derivatives,source_partitions,retention_KL,centered_function_loss,whole_stage_band_key
 
 
 class MarginTeacherTests(unittest.TestCase):
+    def test_TEST_selector_uses_all_tasks_both_bounds_and_earlier_ties(self):
+        bands=dict(eurosat=(483,533),clevr=(710,760));valid=dict(eurosat=dict(n=1000,correct=483),clevr=dict(n=1000,correct=760))
+        self.assertEqual(whole_stage_band_key(valid,bands),(0,0))
+        too_high=dict(eurosat=dict(n=1000,correct=561),clevr=dict(n=1000,correct=768))
+        self.assertEqual(whole_stage_band_key(too_high,bands),(-28,-36))
+        with self.assertRaises(ValueError):whole_stage_band_key(dict(eurosat=valid['eurosat']),bands)
+        self.assertFalse(whole_stage_band_key(valid,bands)>whole_stage_band_key(valid,bands))
+    def test_centered_retention_is_shift_invariant_and_does_not_saturate(self):
+        reference=torch.tensor([[100.,-100.,0.]],requires_grad=True);same=(reference.detach()+27).requires_grad_()
+        self.assertLess(float(centered_function_loss(same,reference)),1e-12)
+        changed=(reference.detach()*2).requires_grad_();loss=centered_function_loss(changed,reference);loss.backward()
+        self.assertGreater(float(changed.grad.norm()),0);self.assertIsNone(reference.grad)
     def test_LG_bounds_are_not_D2NN_bounds(self):
         values=dict(eurosat=dict(n=1000,correct=680),clevr=dict(n=1000,correct=733));self.assertTrue(within_bands(values,2,'moe'));self.assertFalse(within_bands(values,2))
         with self.assertRaises(ValueError):within_bands(values,3,'moe')

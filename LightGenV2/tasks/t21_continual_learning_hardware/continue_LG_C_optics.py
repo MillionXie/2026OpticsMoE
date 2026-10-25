@@ -16,7 +16,7 @@ from .refine_LG_retention import retention_selection
 
 
 def validate(cfg):
-    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json','config_LG_C_sharpness_20261025.json','config_LG_C_feature_retention_20261025.json')
+    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json','config_LG_C_sharpness_20261025.json','config_LG_C_feature_retention_20261025.json','config_LG_C_consolidation_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only published finite C continuation profiles')
 
 

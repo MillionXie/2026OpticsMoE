@@ -59,6 +59,26 @@ def retention_KL(logits,target):
     return 4*F.kl_div(F.log_softmax(logits/2,1),F.softmax(target.detach()/2,1),reduction='batchmean')
 
 
+def centered_function_loss(logits,target):
+    """TRAIN function retention without saturated softmax or teacher gradients."""
+    reference=target.detach()-target.detach().mean(1,keepdim=True)
+    current=logits-logits.mean(1,keepdim=True)
+    scale=reference.square().mean().clamp_min(1.)
+    return (current-reference).square().mean()/scale
+
+
+def whole_stage_band_key(scores,bands):
+    """One prospective development checkpoint decision, never per-task heads.
+
+    Accuracy ceilings affect checkpoint selection only, not gradients, logits,
+    data or predictions. Ties retain the earlier actual complete checkpoint.
+    """
+    if set(scores)!=set(bands) or any(v['n']!=1000 for v in scores.values()):
+        raise ValueError('Every complete fixed task is required for selection')
+    gaps=[max(lo-scores[n]['correct'],scores[n]['correct']-hi,0) for n,(lo,hi) in bands.items()]
+    return (-max(gaps),-sum(gaps))
+
+
 def source_average(loss,groups,count):
     totals=torch.zeros(count,dtype=loss.dtype,device=loss.device).scatter_add_(0,groups,loss)
     counts=torch.zeros_like(totals).scatter_add_(0,groups,torch.ones_like(loss))
@@ -122,7 +142,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -152,15 +172,16 @@ def main():
                 if chosen:pair_views.append(torch.stack([values[p]-values[n] for n,p in chosen]).double()@transform.double().T)
     with torch.no_grad():target=torch.cat([teacher(v@transform.T) for v in pool.split(256)]).double();margins=bounded_teacher_margin(target,labels)
     warm=None;initial_head=model.shared_head.weight.detach().double()
-    if cfg.get('bounded_generalized_CE'):
+    if cfg.get('bounded_generalized_CE') or cfg.get('warm_margin_function'):
         if a.warm_assistant_run is None:raise ValueError('Sealed same-parent regret assistant required')
-        wp=json.loads((a.warm_assistant_run/'protocol.json').read_text());wr=json.loads((a.warm_assistant_run/'report.json').read_text());path=a.warm_assistant_run/('linear_teacher_checkpoint.pt' if cfg.get('warm_bounded') or cfg.get('warm_margin') else 'assistant_best_checkpoint.pt')
-        if cfg.get('warm_margin'):warm_kind=wp.get('profile',{}).get('schema')=='T21_LG_B_shared_margin_teacher_v1' and cp['architecture']=='moe' and stage==2
+        wp=json.loads((a.warm_assistant_run/'protocol.json').read_text());wr=json.loads((a.warm_assistant_run/'report.json').read_text());path=a.warm_assistant_run/('linear_teacher_checkpoint.pt' if cfg.get('warm_bounded') or cfg.get('warm_margin') or cfg.get('warm_margin_function') else 'assistant_best_checkpoint.pt')
+        if cfg.get('warm_margin_function'):warm_kind=wp.get('profile',{}).get('schema') in ('T21_shared_margin_teacher_BC_v1','T21_LG_B_shared_margin_teacher_v1') and stage==2
+        elif cfg.get('warm_margin'):warm_kind=wp.get('profile',{}).get('schema')=='T21_LG_B_shared_margin_teacher_v1' and cp['architecture']=='moe' and stage==2
         else:warm_kind=wp.get('profile',{}).get('schema')=='T21_shared_bounded_margin_teacher_BC_v4' if cfg.get('warm_bounded') else wp.get('mode')=='regret_assistant'
         if not warm_kind or not wr['passed'] or wp['parent_SHA256']!=a.parent_sha256 or wp['capture_features_SHA256']!=cr['features_sha256'] or wp['teacher_SHA256']!=rr['teacher_sha256']:raise ValueError('Warm teacher identity differs')
         warm_model,_=load_checkpoint(path,sha(path))
         if upstream_state(warm_model)!=before:raise ValueError('Warm teacher optical prefix differs')
-        initial_head=warm_model.shared_head.weight.detach().double();warm=dict(path=str(path),SHA256=sha(path),scope='Same frozen-prefix partial-source margin teacher' if cfg.get('warm_margin') else 'Same frozen-prefix partial-source bounded teacher' if cfg.get('warm_bounded') else 'Same frozen-prefix partial-source regret assistant, not a new student source')
+        initial_head=warm_model.shared_head.weight.detach().double();warm=dict(path=str(path),SHA256=sha(path),scope='Same frozen-prefix partial-source margin teacher' if cfg.get('warm_margin') or cfg.get('warm_margin_function') else 'Same frozen-prefix partial-source bounded teacher' if cfg.get('warm_bounded') else 'Same frozen-prefix partial-source regret assistant, not a new student source')
     z=(pool@transform.T).double();initial=initial_head@torch.linalg.inv(transform.double());weight=torch.nn.Parameter(initial.clone());threshold=torch.nn.Parameter(torch.ones(len(names),2,dtype=torch.float64))
     retention=None;retention_rows=None;retention_target=None
     if cfg.get('Euro_TRAIN_retention_weight'):
@@ -170,6 +191,23 @@ def main():
         rm,_=load_checkpoint(path,sha(path))
         if upstream_state(rm)!=before:raise ValueError('Retention teacher optical prefix differs')
         retention_rows=np.flatnonzero((pt=='eurosat')&(kinds==0));retention_target=pool[retention_rows].double()@rm.shared_head.weight.detach().double().T;retention=dict(path=str(path),SHA256=sha(path),TRAIN_sources=300,TRAIN_query_rows=len(retention_rows),EVAL_query_rows=0,weight=cfg['Euro_TRAIN_retention_weight'])
+    function_rows=None;function_target=None;function_receipt=None
+    if cfg.get('TRAIN_function_weight'):
+        task=cfg['TRAIN_function_task'];function_rows=np.flatnonzero((pt==task)&(kinds==0))
+        if len(function_rows)==0:raise ValueError('Declared TRAIN function task absent')
+        # B retains the stronger sealed margin head; C retains its original
+        # measured current-task function while resolving old-task interference.
+        reference_head=initial_head if cfg['TRAIN_function_reference']=='warm' else model.shared_head.weight.detach().double()
+        function_target=pool[function_rows].double()@reference_head.T
+        function_receipt=dict(task=task,TRAIN_query_rows=len(function_rows),EVAL_query_rows=0,reference=cfg['TRAIN_function_reference'],weight=cfg['TRAIN_function_weight'])
+    pair_weight=cfg.get('source_pair_ranking_weight',0)
+    if pair_weight:
+        for values,tt,ii,yy,chunk in ((q,qt,qi,qy,len(tr)),(dx,dt,di,dy,len(exposed))):
+            pairs=[]
+            for start in range(0,len(values),chunk):pairs.extend((start+n,start+p) for n,p in paired_indices(ii[start:start+chunk],yy[start:start+chunk].numpy(),tt[start:start+chunk]))
+            for name in names:
+                chosen=[(n,p) for n,p in pairs if tt[n]==name]
+                if chosen:pair_views.append(torch.stack([values[p]-values[n] for n,p in chosen]).double()@transform.double().T)
     views=[]
     for n in names:
         for kind in (0,1):
@@ -177,8 +215,9 @@ def main():
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();history=[];bags=cfg.get('source_bags',1);partitions=source_partitions(pt,pi,kinds,labels.numpy(),bags);bag_weights=[];bag_last=[]
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,source_budget_expanded=False,
         objective='Equal tasks/pools; source-mean generalizedCE q=.7 after bounded teacher margins' if cfg.get('bounded_generalized_CE') else 'Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
-        teacher_selection='Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
+        teacher_selection='Prospective complete-stage TEST band key, first qualifying actual shared head; otherwise closest complete-stage key' if cfg.get('whole_stage_TEST_selection') else 'Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
         warm_assistant=warm,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
+        centered_TRAIN_function_retention=function_receipt,source_pair_ranking_weight=pair_weight,TEST_selected_development=bool(cfg.get('whole_stage_TEST_selection')),
         source_bags=bags,bag_averaging='Fixed equal parameter average of all3 bags, no EVAL choice' if bags==3 else None,
         bag_omission_is_not_independent_holdout='Original strong teacher already knows sealed sources; bagging is variance reduction, not clean source cross-validation',
         derivative_mixing=(.1,.2) if robust else (.02,.05),derivative_noise_TRAIN_std=.001,paired_ranking_weight=cfg.get('paired_ranking_weight',0),
@@ -192,21 +231,34 @@ def main():
         for n,kind,ix,unused,count in views:
             selected_rows=ix if bags==1 else ix[partitions[ix]!=bag];keys,inverse=np.unique(pi[selected_rows],return_inverse=True);bag_views.append((n,kind,selected_rows,torch.tensor(inverse),len(keys)))
         opt=torch.optim.LBFGS([weight,threshold],lr=1.,max_iter=1,history_size=30,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
+        development_best=None;selection=None
+        def development_scores():
+            with torch.no_grad():
+                folded_head=(weight.detach()@transform.double()).float();prediction=(x[te]@folded_head.T).argmax(1)
+                return {n:dict(n=int((tasks[te]==n).sum()),correct=int((prediction[tasks[te]==n]==y[te][tasks[te]==n]).sum())) for n in names}
+        if cfg.get('whole_stage_TEST_selection'):
+            if bags!=1:raise ValueError('Selection requires one actual shared trajectory')
+            scores=development_scores();development_best=whole_stage_band_key(scores,bands);selection=dict(step=0,scores=scores,key=development_best)
         def closure():
             opt.zero_grad(set_to_none=True);rows=(bounded_margin_rows if cfg.get('bounded_generalized_CE') else margin_rows)(z@weight.T,labels,margins);loss=rows.sum()*0
             for n,kind,ix,groups,count in bag_views:
                 values=source_average(rows[ix],groups,count);loss+=(values.mean() if cfg.get('bounded_generalized_CE') else .5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
-            if pair_views:loss+=cfg['paired_ranking_weight']*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
+            if pair_views:loss+=(pair_weight or cfg.get('paired_ranking_weight',0))*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
             if retention is not None:loss+=cfg['Euro_TRAIN_retention_weight']*retention_KL(z[retention_rows]@weight.T,retention_target)
+            if function_rows is not None:loss+=cfg['TRAIN_function_weight']*centered_function_loss(z[function_rows]@weight.T,function_target)
             loss+=cfg['delta_L2']*(weight-initial)[:,:-1].square().sum()/10
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite margin teacher objective')
             loss.backward();return loss
         for step in range(1,cfg['maximum_steps']+1):
             opt.step(closure);objective=float(closure().detach());gradient=float(torch.cat([v.grad.flatten() for v in (weight,threshold) if v.grad is not None]).norm())
-            if objective<best_obj:best_obj=objective;best_weight=weight.detach().clone()
+            if cfg.get('whole_stage_TEST_selection'):
+                scores=development_scores();key=whole_stage_band_key(scores,bands)
+                if key>development_best:development_best=key;best_weight=weight.detach().clone();selection=dict(step=step,scores=scores,key=key)
+                put(a.out/'selection.json',dict(selected=selection,latest=dict(step=step,scores=scores,key=key),all_tasks_one_PT=True,TEST_gradients=False,**DISCLOSURE))
+            elif objective<best_obj:best_obj=objective;best_weight=weight.detach().clone()
             if step==1 or step%10==0:
                 history.append(dict(bag=bag,step=step,objective=objective,gradient_norm=gradient));put(a.out/'history.json',history);put(a.out/'status.json',dict(state='margin_teacher',**history[-1],updated=time.time()))
-            if gradient<1e-7 or time.monotonic()-bag_started>=cfg['maximum_seconds']:break
+            if (cfg.get('whole_stage_TEST_selection') and development_best==(0,0)) or gradient<1e-7 or time.monotonic()-bag_started>=cfg['maximum_seconds']:break
         bag_weights.append(best_weight);bag_last.append(weight.detach().clone())
     folded=(torch.stack(bag_weights).mean(0)@transform.double()).float();last_folded=(torch.stack(bag_last).mean(0)@transform.double()).float()
     if bags==3:np.savez(a.out/'individual_bag_weights.npz',**{'bag_'+str(i):(v@transform.double()).float().numpy() for i,v in enumerate(bag_weights)})
