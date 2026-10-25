@@ -121,3 +121,5 @@
 !review_gpu_pipeline_workbook_20261026.py
 !qwen_strict_serial_20261026.py
 !test_qwen_strict_serial_20261026.py
+!qwen_shared_serial_20261026.py
+!test_qwen_shared_serial_20261026.py
