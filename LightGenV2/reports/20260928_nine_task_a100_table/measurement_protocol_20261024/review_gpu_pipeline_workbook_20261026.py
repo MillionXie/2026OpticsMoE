@@ -46,6 +46,13 @@ def main():
             points=[p for p in report['all_points'] if p['system']==system and p['mode']==mode]
             expected=sum(next(x['time16_ms'] for x in p['prefixes'] if x['video_calls']==n) for p in points)/3
             near(cached['对照结果'][f'{col}{row}'].value,expected)
+    for i,p in enumerate(report['extra_preparation']):
+        count=p['actual_CPU_prepared_video_calls']
+        near(cached['节点与分项'][f'D{30+i}'].value,p['recorded_CPU_tokenizer_ms']*16/count)
+        cpu=p['CPU_preparation_span_ms'] if p['system']=='lg' else p['CPU_prepare_total_ms']
+        transfer=p['packing_transfer_tokenizer_window_sum_ms'] if p['system']=='lg' else p['H2D_total_ms']
+        near(cached['时间花在哪里'][f'C{15+i}'].value,cpu*16/count)
+        near(cached['时间花在哪里'][f'D{15+i}'].value,transfer*16/count)
     cached.close();formula.close()
     with (root/'raw_file_index.csv').open(encoding='utf-8-sig',newline='') as stream:records=list(csv.DictReader(stream))
     for r in records:

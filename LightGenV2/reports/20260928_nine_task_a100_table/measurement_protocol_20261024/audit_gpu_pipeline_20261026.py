@@ -20,9 +20,9 @@ def same_steady(a,b):
         assert x['first_group']==y['first_group'] and x['last_group']==y['last_group']
         near(x['mean_ms'],y['mean_ms']);near(x['cv'],y['cv'])
 
-def review_sealed_root(root,expected_status):
+def review_sealed_root(root,expected_status,receipt_name=None):
     state=read(root/'suite_status.json');assert state['status']==expected_status and state['mps_released']
-    receipt_path=root/('backup_receipt_complete01.json' if expected_status=='complete' else 'backup_receipt_stopped01.json')
+    receipt_path=root/(receipt_name or ('backup_receipt_complete01.json' if expected_status=='complete' else 'backup_receipt_stopped01.json'))
     receipt=read(receipt_path);files=[]
     for item in receipt['verified_files']:
         p=root/item['path'];assert p.stat().st_size==item['bytes'] and sha(p)==item['sha256']
@@ -199,11 +199,20 @@ def review_leaf(folder):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,required=True);p.add_argument('--lg-root',type=Path);p.add_argument('--diagnostic-root',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--root',type=Path,required=True);p.add_argument('--lg-root',type=Path);p.add_argument('--diagnostic-root',type=Path);p.add_argument('--retained-qwen-root',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+    if a.retained_qwen_root:
+        old=read(a.retained_qwen_root/'suite_status.json');new=read(a.root/'suite_status.json')
+        assert old['status']=='stopped' and old['completed']==['qwen_repeat01']
+        assert new['status']=='complete' and new['plan']==[2,3] and new['completed']==['qwen_repeat02','qwen_repeat03']
+        kept=new['retained_first_qualified_point']
+        assert kept['timing_sha256']==sha(a.retained_qwen_root/'qwen_repeat01/qwen_timing.json')
+        for item in kept['verified_files']:
+            member=a.retained_qwen_root/'qwen_repeat01'/item['path']
+            assert member.stat().st_size==item['bytes'] and sha(member)==item['sha256']
     points=[];sources=[];inputs_ref=None;extras=[]
     for system in ('lg','qwen'):
         for rep in (1,2,3):
-            root=(a.lg_root or a.root) if system=='lg' else a.root
+            root=(a.lg_root or a.root) if system=='lg' else (a.retained_qwen_root if rep==1 and a.retained_qwen_root else a.root)
             pts,inputs,files,extra=review_leaf(root/f'{system}_repeat{rep:02d}');points+=pts;sources+=files;extras.append(extra)
             key=[(r['sample_id'],r['sha256']) for r in inputs]
             if inputs_ref is None:inputs_ref=key
@@ -229,6 +238,7 @@ def main():
             pts,inputs,files,extra=review_leaf(a.diagnostic_root/f'lg_repeat{rep:02d}');diagnostics+=pts;sources+=files
             assert [(r['sample_id'],r['sha256']) for r in inputs]==inputs_ref
     for root in {a.root,a.lg_root or a.root}:sources+=review_sealed_root(root,'complete')
+    if a.retained_qwen_root:sources+=review_sealed_root(a.retained_qwen_root,'stopped','backup_receipt_MPS_control_stop01.json')
     if a.diagnostic_root:sources+=review_sealed_root(a.diagnostic_root,'stopped')
     sources=list({f['path']:f for f in sources}.values())
     result=dict(status='passed',matched_video_calls_per_repeat=2048,unique_original_videos=512,cycles=4,

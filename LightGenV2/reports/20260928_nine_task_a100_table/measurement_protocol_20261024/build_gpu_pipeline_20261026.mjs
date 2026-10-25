@@ -65,9 +65,23 @@ nodes.getRange('A25').values=[['光电结构：四个主阶段＋两个光学rou
 nodes.getRange('A26').values=[['视觉与语言之间的merger、最后电子读出都保留。']];
 nodes.getRange('A27').values=[['可提前的是文本分词/embedding；依赖视觉融合结果的语言主体不能整体提前。']];
 nodes.getRange('A28').values=[['实际CPU分词记录：LG准备512原输入一次；Qwen逐条准备2048次']];
-block(nodes,29,[['系统','轮次','记录到的分词调用数','分词累计毫秒']]);head(nodes,'A29:D29');
-data.extra_preparation.forEach((p,i)=>block(nodes,30+i,[[p.system==='lg'?'LG':'Qwen 50%',p.repeat,p.tokenizer_call_count||'未单独捕获',p.tokenizer_call_count?p.recorded_CPU_tokenizer_ms:'未核定']]));nodes.getRange('D30:D35').setNumberFormat('0.000');
+block(nodes,29,[['系统','轮次','记录到的分词调用数','每16视频分词毫秒']]);head(nodes,'A29:D29');
+data.extra_preparation.forEach((p,i)=>{let r=30+i;block(nodes,r,[[p.system==='lg'?'LG':'Qwen 50%',p.repeat,p.tokenizer_call_count||'未单独捕获',null]]);nodes.getRange(`F${r}:G${r}`).values=[[p.recorded_CPU_tokenizer_ms,p.actual_CPU_prepared_video_calls]];nodes.getRange(`D${r}`).formulas=[[`=F${r}*16/G${r}`]];});nodes.getRange('D30:D35').setNumberFormat('0.000');nodes.getRange('F29:G29').values=[['原分词累计毫秒','实际CPU准备视频数']];
 const gaps=data.extra_preparation.filter(p=>p.guard_platform_annotation_gaps?.length);if(gaps.length)nodes.getRange('A38').values=[['原守卫个别末尾记录缺平台注释，邻接记录一致；原缺项未补造，详见独立审查JSON。']];
+block(nodes,41,[['LG还有哪些可并行','当前实测实现','还可怎么做','不可误解为']]);head(nodes,'A41:D41');
+const candidates=[
+ ['CPU文字分词：文字→整数编号','在GPU主窗之前准备；未实测覆盖','可在当前组GPU主干期间，用CPU生产者准备下一组','分词不是词向量查表；不能写成本次已全覆盖'],
+ ['GPU文本embedding：编号→词向量','每组重新计算，已用独立GPU流','下一组文本适配、掩码汇总和文本条件映射可一并前移','不能复用预测；也不能把同视频的视觉依赖搬走'],
+ ['图像卷积、位置相加、均值池化','64帧成批；下一组已与本组主干重叠','继续控制队列深度和内存复用，减少发起/分配开销','98%区间重叠不等于整体快98%'],
+ ['图像适配＋14维质量特征适配','仍在本组主体流，尚未前移','依赖各自输入，可随下一组前端计算；归一化须等文本条件','诊断时长不是可以直接减去的收益'],
+ ['CPU→GPU传输（H2D）','当前LG主窗前完成；Qwen逐条包含','若改测文件输入，可用锁页内存与拷贝流尝试和本组推理重叠','不能把原来已排除的传输再减一次'],
+ ['视觉—语言merger：融合映射','保留原计算，依赖视觉输出','只能在视觉结果得到后开始；与别组独立工作有调度空间','不能在本组视觉计算前预先完成'],
+ ['语言主体与最后电子读出','依赖融合后序列及当前输出','可研究固定缓冲区和更少调度开销，不改原精度/数学','不能省略网络层、挑快轮、只算局部']
+];
+block(nodes,42,candidates);nodes.getRange('A42:D48').format.wrapText=true;nodes.getRange('A42:D48').format.rowHeight=76;
+nodes.getRange('A50').values=[['以上“还可”是依赖关系分析，不是新增实测收益；Qwen不采用这些预取/并行措施。']];
+nodes.getRange('A51').values=[['GPU流能否同时执行取决于资源，必须看完整连续窗口，不能仅凭异步代码声称变快。']];
+nodes.getRange('A52').values=[['本次90.5%–98.6%重叠发生在GPU软件主干（含FFT）上，不证明更短物理光电主干完全覆盖。']];
 parts.getRange('A2').values=[['时间花在哪里：主窗内与主窗外分开']];parts.getRange('A2').format.font={size:16,bold:true};
 block(parts,4,[['方式 / 每16视频','图像＋文字前端区间/ms','主体入口适配区间/ms','第一光学/TF到评分/ms','视频间隙/ms','连续总时间/ms']]);head(parts,'A4:F4');
 for(let i=0;i<3;i++){
@@ -78,16 +92,16 @@ for(let i=0;i<3;i++){
 parts.getRange('B5:F7').setNumberFormat('0.000');parts.getRange('A9').values=[['LG分项区间会重叠，不能横向相加；连续总时间才是实际比较分母。']];
 parts.getRange('A10').values=[['“第一光学到评分”是完整GPU软件执行，含FFT模拟/融合/残差，不是物理光传播耗时。']];
 parts.getRange('A11').values=[['前端区间含每组文字embedding的依赖等待；未单独计时的操作不虚构细分值。']];
-block(parts,14,[['实际CPU准备与传输','轮次','CPU准备跨度或累计/ms','CPU→GPU等窗口/ms','说明']]);head(parts,'A14:E14');
-data.extra_preparation.forEach((p,i)=>block(parts,15+i,[[p.system==='lg'?'LG：512次，窗外':'Qwen：2048次',p.repeat,p.system==='lg'?p.CPU_preparation_span_ms:p.CPU_prepare_total_ms,p.system==='lg'?p.packing_transfer_tokenizer_window_sum_ms:p.H2D_total_ms,p.system==='lg'?'CPU跨度含异步间隔；右列含打包、传输、分词，非纯传输':'逐条CPU准备含分词；除第一条外均在主连续窗内']]));
-parts.getRange('C15:D20').setNumberFormat('0.000');parts.getRange('E15:E20').format.wrapText=true;parts.getRange('A15:F20').format.rowHeight=48;parts.getRange('E:E').format.columnWidth=48;
+block(parts,14,[['实际CPU准备与传输','轮次','CPU准备每16视频/ms','打包/传输每16视频/ms','说明','实际准备视频数','原CPU总毫秒','原打包/传输总毫秒']]);head(parts,'A14:H14');
+data.extra_preparation.forEach((p,i)=>{let r=15+i;block(parts,r,[[p.system==='lg'?'LG：主窗外':'Qwen：中间计入',p.repeat,null,null,p.system==='lg'?'16路准备跨度含异步间隔；右列还含打包、分词，可重叠，不相加':'逐条准备含分词；除第一条外在主连续窗内；右列为本视频传输',p.actual_CPU_prepared_video_calls,p.system==='lg'?p.CPU_preparation_span_ms:p.CPU_prepare_total_ms,p.system==='lg'?p.packing_transfer_tokenizer_window_sum_ms:p.H2D_total_ms]]);parts.getRange(`C${r}`).formulas=[[`=G${r}*16/F${r}`]];parts.getRange(`D${r}`).formulas=[[`=H${r}*16/F${r}`]];});
+parts.getRange('C15:D20').setNumberFormat('0.000');parts.getRange('G15:H20').setNumberFormat('0.000');parts.getRange('E15:E20').format.wrapText=true;parts.getRange('A15:H20').format.rowHeight=62;parts.getRange('E:E').format.columnWidth=48;parts.getRange('G:H').format.columnWidth=24;
 parts.getRange('A23').values=[['LG循环原始GPU输入，不复用神经特征；Qwen每条重新解码/分词/传输/推理。']];
 parts.getRange('A24').values=[['因此主比较是用户指定执行策略，不声称对称的视频文件端到端加速。']];
 parts.getRange('B:F').format.columnWidth=24;parts.getRange('E:E').format.columnWidth=48;
 wb.recalculate();
 const original=raw.getRange('D5').values[0][0],old=summary.getRange('D6').values[0][0];raw.getRange('D5').values=[[original+128]];wb.recalculate();const changed=summary.getRange('D6').values[0][0];if(Math.abs(changed-old-1/3)>1e-5)throw new Error('Summary formula did not recalculate');raw.getRange('D5').values=[[original]];wb.recalculate();
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#NUM!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:2000});console.log(errors.ndjson);
-for(const [sh,range,name] of [[summary,'A1:G37','summary'],[raw,'A1:I14','raw'],[nodes,'A1:D38','nodes'],[parts,'A1:F24','parts']]){const b=await wb.render({sheetName:sh.name,range,scale:1,format:'png'});await fs.writeFile(path.join(output,`${name}.png`),new Uint8Array(await b.arrayBuffer()));}
+for(const [sh,range,name] of [[summary,'A1:G37','summary'],[raw,'A1:I14','raw'],[nodes,'A1:D52','nodes'],[parts,'A1:H24','parts']]){const b=await wb.render({sheetName:sh.name,range,scale:1,format:'png'});await fs.writeFile(path.join(output,`${name}.png`),new Uint8Array(await b.arrayBuffer()));}
 const x=await SpreadsheetFile.exportXlsx(wb);await x.save(file);
 await fs.writeFile(path.join(output,'workbook_formula_review.json'),JSON.stringify({status:'passed',input_change_recalculation_checked:true,restored:true,summary_values:summary.getRange('A5:G8').values},null,2));
 console.log(file);
