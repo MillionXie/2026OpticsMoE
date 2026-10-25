@@ -37,6 +37,11 @@ def declared_source_budget(stage,architecture,cfg,protocol):
     return {n:500 for n in stage_bands(stage,architecture)} if architecture=='moe' else {2:{'eurosat':200,'clevr':800},3:{n:500 for n in stage_bands(stage,architecture)}}[stage]
 
 
+def objective_pool_weight(task,kind,cfg):
+    # Fixed old/new task roles, never TEST correctness or target accuracies.
+    return cfg.get('derivative_task_weights',{}).get(task,1.) if kind==1 else 1.
+
+
 def within_bands(scores,stage,architecture='d2nn'):
     bands=stage_bands(stage,architecture)
     return set(scores)==set(bands) and all(v['n']==1000 and lo<=v['correct']<=hi for n,v in scores.items() for lo,hi in [bands[n]])
@@ -177,7 +182,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -272,6 +277,7 @@ def main():
         teacher_selection='Prospective complete-stage TEST band key, first qualifying actual shared head; otherwise closest complete-stage key' if cfg.get('whole_stage_TEST_selection') else 'Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
         warm_assistant=warm,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
         centered_TRAIN_function_retention=function_receipt,source_pair_ranking_weight=pair_weight,TEST_selected_development=bool(cfg.get('whole_stage_TEST_selection')),
+        derivative_task_weights=cfg.get('derivative_task_weights'),
         TRAIN_cross_task_mixup=dict(weight=cfg['TRAIN_cross_task_mixup_weight'],fractions=[.1,.2],soft_labels=True,TRAIN_only=True,EVAL_sources=0) if cfg.get('TRAIN_cross_task_mixup_weight') else None,
         TRAIN_measured_repeat_consistency=repeat_receipt,
         source_bags=bags,bag_averaging='Fixed equal parameter average of all3 bags, no EVAL choice' if bags==3 else None,
@@ -298,7 +304,7 @@ def main():
         def closure():
             opt.zero_grad(set_to_none=True);rows=(bounded_margin_rows if cfg.get('bounded_generalized_CE') else margin_rows)(z@weight.T,labels,margins);loss=rows.sum()*0
             for n,kind,ix,groups,count in bag_views:
-                values=source_average(rows[ix],groups,count);loss+=(values.mean() if cfg.get('bounded_generalized_CE') else .5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
+                values=source_average(rows[ix],groups,count);loss+=objective_pool_weight(n,kind,cfg)*(values.mean() if cfg.get('bounded_generalized_CE') else .5*values.mean()+.5*smooth_tail(values,threshold[names.index(n),kind]))/(2*len(names))
             if pair_views:loss+=(pair_weight or cfg.get('paired_ranking_weight',0))*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
             if retention is not None:loss+=cfg['Euro_TRAIN_retention_weight']*retention_KL(z[retention_rows]@weight.T,retention_target)
             if function_rows is not None:loss+=cfg['TRAIN_function_weight']*centered_function_loss(z[function_rows]@weight.T,function_target)
