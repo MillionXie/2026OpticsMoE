@@ -1,5 +1,19 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26：首轮严格串行应急结果保留，控制查询故障后只补r2/r3
+
+共卡01/controller195757与r2/255121均已退出，根status=stopped、completed=[qwen_repeat01]、
+MPS已释放。r2因`Cannot send command to MPS control daemon process`监控查询失败，
+不是外占拒绝或数值不一致。18原文件4429554B经backup_receipt_MPS_control_stop01.json
+逐SHA取回；外日志843B SHA0d1c38b4539e17ea4d377487411d7edb6fb924ce63f46719e6122610d92e758b。
+MPS日志显示工作client在worker异常后才正常退出，无此前daemon崩溃证据。
+静态诊断确认SharedGuard覆盖原guard时漏了worker端serialize_mps_commands，
+仅父进程加锁不足以保护同一FIFO；现补原跨进程查询锁，不重试/忽略查询错误，
+不改Qwen推理、CPU逐视频顺序、原计时和资源份额。此遗漏可解释通信竞态，
+但不声称独立实验已精确复现该瞬时故障。
+missing-only入口逐SHA/size核原r1七文件及完整2048串行边界，保留原结果，
+只计划2/3两轮；7项无模型测试本地通过。新根独立，不修改封存01或重跑r1。
+
 ## 2026-10-26：人工授权共卡应急测量，Qwen仍逐视频严格串行
 
 用户最新明确“占用一点点也测”，覆盖当前新Qwen必须外占归零才加载/测量的前置。

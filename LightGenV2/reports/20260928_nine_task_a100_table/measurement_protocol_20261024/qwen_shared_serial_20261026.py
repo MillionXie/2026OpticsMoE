@@ -39,6 +39,10 @@ def validate_shared_snapshot(snapshot,worker):
 
 class SharedGuard:
     def __init__(self,deadline,cap):
+        # This class replaces base.model_guard, so it must retain the original
+        # cross-process FIFO query lock in the WORKER too, not only the parent.
+        from first_tf_supplement_20261025 import serialize_mps_commands
+        serialize_mps_commands()
         self.deadline=deadline;self.cap=cap;self.audit=[];self.error=None
         self.stop=threading.Event();self.thread=None;self.pid=os.getpid();self.lock=threading.Lock();self.bound=False
         self.check()
@@ -106,6 +110,33 @@ def stop_private_daemon():
     raise RuntimeError('Own private MPS daemon did not release')
 
 
+def retained_plan(previous,manifest,manifest_sha):
+    state=json.loads((previous/'suite_status.json').read_text())
+    assert state['status']=='stopped' and state['mps_released']
+    assert not Path('/proc',str(state['pid'])).exists()
+    if manifest is None:
+        assert state['completed']==[]
+        return (1,2,3),None
+    assert base.sha(manifest)==manifest_sha
+    receipt=json.loads(manifest.read_text())
+    point=previous/'qwen_repeat01'
+    assert state['completed']==['qwen_repeat01']
+    assert Path(receipt['source']).resolve()==point.resolve()
+    files=receipt['verified_files'];assert len(files)==7
+    for row in files:
+        member=Path(row['path']);assert not member.is_absolute() and '..' not in member.parts
+        p=point/member
+        assert p.is_file() and not p.is_symlink() and p.stat().st_size==row['bytes'] and base.sha(p)==row['sha256']
+    status=json.loads((point/'status.json').read_text())
+    timing=json.loads((point/'qwen_timing.json').read_text())
+    identity=json.loads((point/'identity.json').read_text())
+    assert status['status']=='complete' and timing['video_calls']==2048
+    assert timing['no_prefetch'] and timing['no_prepared_input_reuse'] and identity['nonexclusive_authorized']
+    strict.assert_serial(timing['records'])
+    return (2,3),dict(path=str(point),manifest=str(manifest),manifest_sha256=manifest_sha,
+        timing_sha256=base.sha(point/'qwen_timing.json'),verified_files=files)
+
+
 def suite(args):
     import fcntl
     from first_tf_supplement_20261025 import serialize_mps_commands
@@ -126,10 +157,10 @@ def suite(args):
                 bounded()
                 try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB);break
                 except BlockingIOError:time.sleep(2)
-            prior=json.loads((args.previous/'suite_status.json').read_text())
-            assert prior['status']=='stopped' and prior['completed']==[] and not Path('/proc',str(prior['pid'])).exists()
+            plan,retained=retained_plan(args.previous,args.retained_manifest,args.retained_manifest_sha256)
+            state.update(plan=list(plan),retained_first_qualified_point=retained)
             state['stopped_exclusive_predecessor']=str(args.previous);save()
-            for rep in (1,2,3):
+            for rep in plan:
                 bounded()
                 # No idle-utilization wait: real free memory only, no dummy load.
                 free=float(subprocess.check_output(['nvidia-smi','-i',base.GPU,'--query-gpu=memory.free','--format=csv,noheader,nounits'],text=True))
@@ -170,4 +201,5 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['suite','worker'],required=True)
     p.add_argument('--system',default='qwen');p.add_argument('--repeat',type=int);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--deadline',type=float,required=True);p.add_argument('--previous',type=Path)
+    p.add_argument('--retained-manifest',type=Path);p.add_argument('--retained-manifest-sha256')
     a=p.parse_args();a.output=a.output.resolve();(suite if a.phase=='suite' else worker)(a)
