@@ -16,7 +16,7 @@ from .refine_LG_retention import retention_selection
 
 
 def validate(cfg):
-    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json')
+    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json','config_LG_C_sharpness_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only published finite C continuation profiles')
 
 
@@ -53,6 +53,26 @@ def configure_simulation_trainability(model):
     actual={name for name,value in model.named_parameters() if value.requires_grad}
     if actual!=expected:raise RuntimeError('Unexpected simulation trainable set')
     return {name:value.numel() for name,value in model.named_parameters() if value.requires_grad}
+
+
+def sharpness_backward(loss,params,second_loss,radius):
+    """Two TRAIN forwards; restore exact original parameters before Adam update."""
+    loss.backward();gradients=[v.grad for v in params if v.grad is not None]
+    norm=torch.sqrt(sum(v.detach().square().sum() for v in gradients))
+    if not torch.isfinite(norm):raise RuntimeError('Nonfinite sharpness gradient')
+    originals=[]
+    try:
+        with torch.no_grad():
+            for v in params:
+                if v.grad is not None:
+                    originals.append((v,v.detach().clone()));v.add_(v.grad*(radius/(norm+1e-12)))
+        for v in params:v.grad=None
+        perturbed=second_loss()
+        if not torch.isfinite(perturbed):raise RuntimeError('Nonfinite sharpness TRAIN objective')
+        perturbed.backward()
+    finally:
+        with torch.no_grad():
+            for v,original in originals:v.copy_(original)
 
 
 def main():
@@ -106,7 +126,7 @@ def main():
             teacher_TRAIN_quality[n]=dict(n=len(labels),correct=int((target['logits'][n].argmax(1)==labels).sum()))
     put(a.out/'protocol.json',dict(architecture='moe',config=cfg,config_sha256=sha(a.profile),warm_C_checkpoint_sha256=receipt['best_sha256'],original_chain_C_sha256=original['best_sha256'],
         original_A_B_unchanged=True,D_requires_retrain_from_new_C=True,no_old_D_splicing=True,TRAIN_teacher_cache_sha256=sha(cache),TEST_gradients=False,TEST_selected_development_metric=True,independent_generalization_claim=False,
-        native_B_TRAIN_teacher=native_receipt,teacher_TRAIN_quality=teacher_TRAIN_quality,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
+        native_B_TRAIN_teacher=native_receipt,teacher_TRAIN_quality=teacher_TRAIN_quality,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),TRAIN_sharpness_radius=cfg.get('TRAIN_sharpness_radius',0),TRAIN_forwards_per_step=2 if cfg.get('TRAIN_sharpness_radius') else 1,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
     baseline=evaluate(model,test,names,device,8);best=retention_selection(baseline,cfg['reference']);best_epoch=0;history=[]
     def save(role,epoch):
         torch.save(dict(model={k:v.detach().cpu() for k,v in model.state_dict().items()},architecture='moe',stage=3,epoch=epoch,best_epoch=best_epoch,parent_checkpoint_sha256=cp['parent_checkpoint_sha256'],warm_C_checkpoint_sha256=receipt['best_sha256'],TEST_gradients=False,TEST_selected_development=True),out/(role+'_checkpoint.pt'))
@@ -116,10 +136,15 @@ def main():
         model.train();seen=0;loss_sum=0.;task_stats={n:dict(seen=0,correct=0) for n in names}
         for n,relative in phase_batches(selection,names,cfg,epoch,3):
             ix=selection[n][relative];x=current.get_batch(ix,device) if n==names[-1] else train[n]['x'][ix].to(device);y=torch.as_tensor(np.asarray(current.labels)[ix],device=device,dtype=torch.long) if n==names[-1] else train[n]['y'][ix].to(device)
-            optimizer.zero_grad(set_to_none=True);result=model(x);logits=result['logits'];loss=continuation_objective(logits,y,target['logits'][n][relative].to(device),cfg)*(cfg['old_task_weight'] if n!=names[-1] else 1)
-            if native is not None and n==cfg['native_B_task']:loss+=native_retention_loss(result,native['logits'][relative].to(device),native['routes'][relative].to(device),cfg,y)
+            def train_loss(result):
+                loss=continuation_objective(result['logits'],y,target['logits'][n][relative].to(device),cfg)*(cfg['old_task_weight'] if n!=names[-1] else 1)
+                if native is not None and n==cfg['native_B_task']:loss+=native_retention_loss(result,native['logits'][relative].to(device),native['routes'][relative].to(device),cfg,y)
+                return loss
+            optimizer.zero_grad(set_to_none=True);result=model(x);logits=result['logits'];loss=train_loss(result)
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite original TRAIN objective')
-            loss.backward();torch.nn.utils.clip_grad_norm_(params,1.);optimizer.step();seen+=len(y);loss_sum+=float(loss.detach())*len(y);task_stats[n]['seen']+=len(y);task_stats[n]['correct']+=int((logits.argmax(1)==y).sum())
+            if cfg.get('TRAIN_sharpness_radius'):sharpness_backward(loss,params,lambda:train_loss(model(x)),cfg['TRAIN_sharpness_radius'])
+            else:loss.backward()
+            torch.nn.utils.clip_grad_norm_(params,1.);optimizer.step();seen+=len(y);loss_sum+=float(loss.detach())*len(y);task_stats[n]['seen']+=len(y);task_stats[n]['correct']+=int((logits.argmax(1)==y).sum())
             if seen%4000<len(y):put(a.out/'status.json',dict(state='training',epoch=epoch,TRAIN_seen=seen,loss=loss_sum/seen,updated=time.time()))
         scores=evaluate(model,test,names,device,8);value=retention_selection(scores,cfg['reference'])
         if frozen(model)!=immutable or tensor_sha(model.display_gains)!=gain:raise RuntimeError('Old expert/gain changed')
