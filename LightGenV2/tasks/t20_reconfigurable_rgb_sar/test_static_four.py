@@ -45,6 +45,10 @@ class StaticFourTests(unittest.TestCase):
         self.assertFalse(cfg['TEST_gradients']);self.assertFalse(cfg['TEST_teacher'])
         audit=Path(__file__).with_name('audit_sensor_neutral_CPU.py').read_text()
         self.assertIn('build_static_four if four',audit);self.assertIn('checked_features(data,a.frontend,front_sha)',audit)
+    def test_explicit_split_evaluation_never_selects_or_trains(self):
+        code=Path(__file__).with_name('evaluate_static_four.py').read_text()
+        self.assertIn("choices=('validation','test')",code);self.assertIn('model_reselected=False',code)
+        self.assertNotIn('torch.save(',code);self.assertNotIn('optimizer.step(',code);self.assertIn('parameter_updates=False',code)
 
 
 if __name__=='__main__':unittest.main()
