@@ -1,0 +1,14 @@
+{
+  "schema": "T21_LG_C_SNR8_human_authorization_v1",
+  "authorization": "2026-10-25 user: 仅C允许SNR≥8继续，完整记录差异",
+  "architecture": "moe", "stage": "C",
+  "checkpoint_sha256": "e89fdcd2858a809fefa2d0086a104b5d6b5bf31744a5d02cf5e960f4f993e797",
+  "hardware_sha256": "ae499aa42aeedced1d3ce8e17c4493cf7e7a9c426999fd2898cce572d6605f6a",
+  "minimum_SNR_by_optical_stage": {"router": 8, "first": 8, "final": 8},
+  "legacy_minimum_SNR": 10,
+  "exposure_us": 2000, "single_frame": true,
+  "minimum_signal_counts": 64, "dynamic_range_noise_multiplier": 10,
+  "maximum_consumer_drift": 0.05, "maximum_saturation_fraction": 0.15,
+  "network_background_subtraction": false,
+  "coordinates_LUT_model_unchanged": true
+}

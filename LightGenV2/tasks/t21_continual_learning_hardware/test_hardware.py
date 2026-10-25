@@ -1,9 +1,36 @@
 import unittest
 import numpy as np
-from .hardware_bridge import native_image,crop_native,guard,signal,acquisition_order,TRAIN_control_indices,repeat_policy,admission_checks,signal_guard_policy
+from .hardware_bridge import native_image,crop_native,guard,signal,acquisition_order,TRAIN_control_indices,repeat_policy,admission_checks,signal_guard_policy,stage_SNR_threshold
+import copy,json
+from pathlib import Path
 
 
 class TestHardware(unittest.TestCase):
+    def test_C_SNR8_is_exact_case_only_and_recorded_not_global_default(self):
+        authorization=json.loads(Path(__file__).with_name('config_LG_C_SNR8_20261025.json').read_text())
+        base=dict(mode='pointwise_dark_p99',authorization='Original fixed2ms permission',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)
+        package=dict(architecture='moe',stage='C',checkpoint_sha256=authorization['checkpoint_sha256'],hardware_sha256=authorization['hardware_sha256'],C_SNR8_authorization=authorization,signal_guard_policy=base,TRAIN_stage_signal_calibration=True)
+        for stage in ('router','first','final'):
+            self.assertEqual(stage_SNR_threshold(package,dict(exposure_us=1999.8),stage),8)
+            self.assertEqual(stage_SNR_threshold({},dict(exposure_us=2000),stage),10)
+        for key,value in (('architecture','d2nn'),('stage','D'),('checkpoint_sha256','other'),('hardware_sha256','other'),('TRAIN_stage_signal_calibration',False)):
+            with self.assertRaises(ValueError):stage_SNR_threshold(dict(package,**{key:value}),dict(exposure_us=2000),'first')
+        changed=copy.deepcopy(package);changed['C_SNR8_authorization']['minimum_signal_counts']=63
+        with self.assertRaises(ValueError):stage_SNR_threshold(changed,dict(exposure_us=2000),'first')
+        with self.assertRaises(ValueError):stage_SNR_threshold(package,dict(exposure_us=4000),'first')
+
+    def test_C_SNR8_changes_only_signal_ratio_not_other_guards(self):
+        row=dict(saturation_fraction=0,readout_p99_counts=1000,readout_p10_counts=500,fixed_dark_difference_p99_counts=229)
+        noise=dict(read_noise_upper_counts=26.77)
+        with self.assertRaises(RuntimeError):guard(row,noise,policy='pointwise_dark_p99')
+        guard(row,noise,policy='pointwise_dark_p99',minimum_snr=8)
+        for key,value in (('saturation_fraction',.151),('fixed_dark_difference_p99_counts',210),('readout_p10_counts',750)):
+            with self.assertRaises(RuntimeError):guard(dict(row,**{key:value}),noise,policy='pointwise_dark_p99',minimum_snr=8)
+        values=dict(snr=8.56,delta99=229,correlation=.79,repeat_drift=.0331,marker_change=180,noise=26.77,saturation=0,mode='record_only')
+        self.assertFalse(admission_checks(**values)[0]);self.assertTrue(admission_checks(**values,minimum_snr=8)[0])
+        for key,value in (('delta99',63),('repeat_drift',.051),('marker_change',70),('saturation',.151)):
+            self.assertFalse(admission_checks(**dict(values,**{key:value}),minimum_snr=8)[0])
+
     def test_pointwise_policy_requires_fixed_guard_authority(self):
         p=dict(mode='pointwise_dark_p99',authorization='User approved 2026-10-25',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)
         self.assertEqual(signal_guard_policy(),'legacy');self.assertEqual(signal_guard_policy(p,1999.8),'pointwise_dark_p99')
