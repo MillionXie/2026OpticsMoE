@@ -6,6 +6,17 @@ from .fit_stage_balanced_teacher import validate_profile
 
 
 class FullSourceFollowupTests(unittest.TestCase):
+    def test_D_CLEVR_focus_keeps_other_task_functions_without_changing_bands(self):
+        cfg=json.loads(Path(__file__).with_name('config_D2NN_D_CLEVR_source_retention_20261026.json').read_text())
+        self.assertEqual(development_bands(4,'d2nn',cfg)['clevr'],(517,617))
+        self.assertEqual(set(cfg['TRAIN_function_tasks']),set(cfg['development_bands'])-{'clevr'})
+        self.assertEqual(cfg['source_pair_tasks'],['clevr'])
+    def test_LG_C_partial_scope_does_not_inherit_D2NN_relaxation(self):
+        cfg=json.loads(Path(__file__).with_name('config_LG_C_partial500_margin_20261026.json').read_text())
+        self.assertEqual(development_bands(3,'moe',cfg)['speech_binary'],(715,765))
+        self.assertEqual(declared_source_budget(3,'moe',cfg,{}),dict(eurosat=500,clevr=500,speech_binary=500))
+        teacher=json.loads(Path(__file__).with_name('config_stage_LG_C500_teacher_20261026.json').read_text());validate_profile(teacher)
+        self.assertNotIn('all_TEST_sources_authorized',teacher)
     def test_source_retention_is_teacher_frozen_and_equal_task(self):
         import numpy as np
         target=torch.randn(5,10,dtype=torch.float64,requires_grad=True);current=target.detach().clone().requires_grad_();tasks=np.array(['a']*4+['b'])

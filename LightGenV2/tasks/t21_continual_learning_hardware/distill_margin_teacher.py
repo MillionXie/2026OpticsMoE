@@ -40,13 +40,15 @@ def declared_source_budget(stage,architecture,cfg,protocol):
             return {n:1000 for n in bands}
         if architecture!='moe' or stage!=2 or protocol.get('all_TEST_sources_used') is not True or protocol.get('independent_EVAL_sources_remaining')!={'clevr':0,'eurosat':0}:raise ValueError('Exact disclosed full-source LG B development teacher required')
         return {'eurosat':1000,'clevr':1000}
+    if cfg.get('partial_source_development_20261026'):return {n:500 for n in development_bands(stage,architecture,cfg)}
     return {n:500 for n in stage_bands(stage,architecture)} if architecture=='moe' else {2:{'eurosat':200,'clevr':800},3:{n:500 for n in stage_bands(stage,architecture)}}[stage]
 
 
 def development_bands(stage,architecture,cfg):
     """New human-approved scopes; never silently rewrite legacy gates."""
-    if not cfg.get('full_source_development_20261026'):return stage_bands(stage,architecture)
+    if not (cfg.get('full_source_development_20261026') or cfg.get('partial_source_development_20261026')):return stage_bands(stage,architecture)
     expected={('moe',2):{'eurosat':(680,730),'clevr':(756,783)},
+              ('moe',3):{'eurosat':(706,756),'clevr':(696,746),'speech_binary':(715,765)},
               ('d2nn',3):{'eurosat':(462,562),'clevr':(581,681),'speech_binary':(422,522)},
               ('d2nn',4):{'eurosat':(478,578),'clevr':(517,617),'speech_binary':(432,532),'physical_binary_raw':(635,735)}}
     bands={n:tuple(v) for n,v in cfg['development_bands'].items()}
@@ -209,7 +211,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--warm-student',type=Path);p.add_argument('--warm-student-sha256');p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json','config_LG_B_fullsource_mean_20261026.json','config_D2NN_C_fullsource_mean_20261026.json','config_D2NN_D_fullsource_mean_20261026.json','config_LG_B_retained_function_20261026.json','config_D2NN_C_retained_function_20261026.json','config_D2NN_D_retained_function_20261026.json','config_LG_B_source_retention_20261026.json','config_D2NN_C_source_retention_20261026.json','config_D2NN_D_source_retention_20261026.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json','config_LG_B_fullsource_mean_20261026.json','config_D2NN_C_fullsource_mean_20261026.json','config_D2NN_D_fullsource_mean_20261026.json','config_LG_B_retained_function_20261026.json','config_D2NN_C_retained_function_20261026.json','config_D2NN_D_retained_function_20261026.json','config_LG_B_source_retention_20261026.json','config_D2NN_C_source_retention_20261026.json','config_D2NN_D_source_retention_20261026.json','config_LG_C_partial500_margin_20261026.json','config_D2NN_D_CLEVR_source_retention_20261026.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')

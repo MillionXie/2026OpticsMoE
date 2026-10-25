@@ -1,0 +1,12 @@
+{
+  "schema": "T21_LG_C_partial500_teacher_development_20261026", "architecture": "moe", "stage": 3,
+  "sources_per_task": {"eurosat": 500, "clevr": 500, "speech_binary": 500},
+  "teacher_epochs": 400, "teacher_max_seconds": 600,
+  "student_epochs": 120, "student_max_seconds": 180,
+  "steps_per_epoch": 12, "TRAIN_floor": 0.90,
+  "teacher_quality_floor": {"eurosat": 0.706, "clevr": 0.696, "speech_binary": 0.715},
+  "development_floor": {"eurosat": 0.706, "clevr": 0.696, "speech_binary": 0.715},
+  "development_ceiling": {"eurosat": 0.756, "clevr": 0.746, "speech_binary": 0.765},
+  "whole_stage_student_TEST_selection": true,
+  "Euro_parent_anchor_weight": 0.0, "SDK": false, "GPU": false
+}

@@ -29,6 +29,7 @@ def validate_profile(cfg):
     if cfg.get('schema')=='T21_LG_B_all_TEST_source_teacher_development_v1':name='config_stage_LG_B_allTEST_teacher_20261025.json'
     if cfg.get('schema')=='T21_D2NN_D_all_TEST_source_teacher_development_v1':name='config_stage_D2NN_D_allTEST_teacher_20261025.json'
     if cfg.get('schema')=='T21_D2NN_C_all_TEST_source_teacher_development_20261026':name='config_stage_D2NN_C_allTEST_teacher_20261026.json'
+    if cfg.get('schema')=='T21_LG_C_partial500_teacher_development_20261026':name='config_stage_LG_C500_teacher_20261026.json'
     if name is None or cfg!=json.loads(Path(__file__).with_name(name).read_text()):
         raise ValueError('Only published finite B800/C500 development profiles')
     return cfg
