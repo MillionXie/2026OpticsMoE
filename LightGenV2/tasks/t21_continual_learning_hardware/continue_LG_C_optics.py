@@ -16,7 +16,7 @@ from .refine_LG_retention import retention_selection
 
 
 def validate(cfg):
-    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json','config_LG_C_sharpness_20261025.json','config_LG_C_feature_retention_20261025.json','config_LG_C_consolidation_20261025.json')
+    profiles=('config_LG_C_optical_continuation_20261025.json','config_LG_C_native_B_route_20261025.json','config_LG_C_joint_restore_20261025.json','config_LG_C_correct_teacher_20261025.json','config_LG_C_sharpness_20261025.json','config_LG_C_feature_retention_20261025.json','config_LG_C_consolidation_20261025.json','config_LG_C_augmented_replay_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only published finite C continuation profiles')
 
 
@@ -59,6 +59,19 @@ def feature_retention_loss(current,target):
     """Preserve old native contrast geometry without an added inference map."""
     reference_power=(target.detach()-1).square().mean(1).clamp_min(1e-6)
     return ((current-target.detach()).square().mean(1)/reference_power).mean()
+
+
+def same_class_replay(fields,labels,teacher,indices,fraction):
+    """Weak same-class amplitude replay; only the same300 TRAIN memories."""
+    if fraction!=.1:raise ValueError('Only the declared weak TRAIN replay mixture')
+    indices=torch.as_tensor(indices,dtype=torch.long);partners=[]
+    for index in indices:
+        choices=torch.nonzero(labels==labels[index],as_tuple=True)[0]
+        partners.append(choices[int(torch.randint(len(choices),(1,)))])
+    partners=torch.stack(partners)
+    mixed=(1-fraction)*fields[indices]+fraction*fields[partners]
+    targets=(1-fraction)*teacher.detach()[indices]+fraction*teacher.detach()[partners]
+    return mixed,labels[indices],targets
 
 
 def sharpness_backward(loss,params,second_loss,radius):
@@ -130,6 +143,9 @@ def main():
             if feature_targets is not None:loss+=cfg['native_B_feature_weight']*feature_retention_loss(result['ccd_features'],feature_targets[n][:2].to(device))
             return loss
         loss=probe_loss(model(field));probe_before={n:v.detach().clone() for n,v in model.named_parameters() if v.requires_grad}
+        if cfg.get('old_TRAIN_replay_augmentation_weight'):
+            mx,my,mt=same_class_replay(train[n]['x'][memories[n]['indices']],train[n]['y'][memories[n]['indices']],target['logits'][n],np.arange(2),cfg['old_TRAIN_same_class_mix'])
+            loss+=cfg['old_TRAIN_replay_augmentation_weight']*cfg['old_task_weight']*continuation_objective(model(mx.to(device))['logits'],my.to(device),mt.to(device),cfg)
         if cfg.get('TRAIN_sharpness_radius'):
             sharpness_backward(loss,[v for v in model.parameters() if v.requires_grad],lambda:probe_loss(model(field)),cfg['TRAIN_sharpness_radius'])
             if any(not torch.equal(v,probe_before[n]) for n,v in model.named_parameters() if v.requires_grad):raise RuntimeError('Real TRAIN sharpness probe changed parameters')
@@ -142,6 +158,7 @@ def main():
     if sha(paths['speech_binary'])!=identity['models'][3]['config']['protocol_sha256']['speech_binary'] or sha(paths['vision'])!=train['speech_binary']['manifest']['vision_checkpoint_sha256']:raise ValueError('Original current TRAIN protocol/frontend differs')
     current=load_dataset(paths,'speech_binary','train',vision_checkpoint=paths['vision'],device=device);selection={n:np.arange(len(current)) if n==names[-1] else np.asarray(memories[n]['indices']) for n in names}
     if len(current)!=12526 or not np.array_equal(selection['speech_binary'],target['selection']['speech_binary']):raise ValueError('Full current TRAIN teacher order changed')
+    replay_data={n:dict(x=train[n]['x'][selection[n]],y=train[n]['y'][selection[n]]) for n in names[:-1]} if cfg.get('old_TRAIN_replay_augmentation_weight') else None
     test=load_data(a.test,'test');a.out.mkdir(parents=True,exist_ok=False);out=a.out/'C';out.mkdir();started=time.monotonic()
     if native is not None:torch.save(dict(**native,provenance=native_receipt),out/'native_B_TRAIN_teacher.pt')
     if feature_targets is not None:torch.save(dict(features=feature_targets,provenance=feature_receipt),out/'native_B_old_TRAIN_features.pt')
@@ -152,14 +169,14 @@ def main():
             teacher_TRAIN_quality[n]=dict(n=len(labels),correct=int((target['logits'][n].argmax(1)==labels).sum()))
     put(a.out/'protocol.json',dict(architecture='moe',config=cfg,config_sha256=sha(a.profile),warm_C_checkpoint_sha256=receipt['best_sha256'],original_chain_C_sha256=original['best_sha256'],
         original_A_B_unchanged=True,D_requires_retrain_from_new_C=True,no_old_D_splicing=True,TRAIN_teacher_cache_sha256=sha(cache),TEST_gradients=False,TEST_selected_development_metric=True,independent_generalization_claim=False,
-        native_B_TRAIN_teacher=native_receipt,native_B_TRAIN_feature_teacher=feature_receipt,teacher_TRAIN_quality=teacher_TRAIN_quality,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),TRAIN_sharpness_radius=cfg.get('TRAIN_sharpness_radius',0),TRAIN_forwards_per_step=2 if cfg.get('TRAIN_sharpness_radius') else 1,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
+        native_B_TRAIN_teacher=native_receipt,native_B_TRAIN_feature_teacher=feature_receipt,teacher_TRAIN_quality=teacher_TRAIN_quality,trainable_parameters=trainable,simulation_trainability_restored=bool(cfg.get('restore_simulation_trainability')),TRAIN_sharpness_radius=cfg.get('TRAIN_sharpness_radius',0),TRAIN_forwards_per_step=dict(old=2,current=1) if cfg.get('old_TRAIN_replay_augmentation_weight') else 2 if cfg.get('TRAIN_sharpness_radius') else 1,old_TRAIN_replay_augmentation=dict(same_class_mix=cfg['old_TRAIN_same_class_mix'],weight=cfg['old_TRAIN_replay_augmentation_weight'],unique_memories_per_old_task=300,TEST_sources=0) if cfg.get('old_TRAIN_replay_augmentation_weight') else None,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False))
     baseline=evaluate(model,test,names,device,8);best=retention_selection(baseline,cfg['reference']);best_epoch=0;history=[]
     def save(role,epoch):
         torch.save(dict(model={k:v.detach().cpu() for k,v in model.state_dict().items()},architecture='moe',stage=3,epoch=epoch,best_epoch=best_epoch,parent_checkpoint_sha256=cp['parent_checkpoint_sha256'],warm_C_checkpoint_sha256=receipt['best_sha256'],TEST_gradients=False,TEST_selected_development=True),out/(role+'_checkpoint.pt'))
     save('best',0);params=[v for v in model.parameters() if v.requires_grad];optical=[v for n,v in model.named_parameters() if v.requires_grad and not n.startswith('shared_head.')]
     optimizer=torch.optim.AdamW([dict(params=optical,lr=cfg['optical_lr']),dict(params=model.shared_head.parameters(),lr=cfg['head_lr'])],weight_decay=cfg['weight_decay'])
     for epoch in range(1,cfg['epochs']+1):
-        model.train();seen=0;loss_sum=0.;task_stats={n:dict(seen=0,correct=0) for n in names}
+        model.train();seen=0;loss_sum=0.;task_stats={n:dict(seen=0,correct=0) for n in names};augmentation_seen={n:0 for n in names}
         for n,relative in phase_batches(selection,names,cfg,epoch,3):
             ix=selection[n][relative];x=current.get_batch(ix,device) if n==names[-1] else train[n]['x'][ix].to(device);y=torch.as_tensor(np.asarray(current.labels)[ix],device=device,dtype=torch.long) if n==names[-1] else train[n]['y'][ix].to(device)
             def train_loss(result):
@@ -168,6 +185,9 @@ def main():
                 if feature_targets is not None and n in feature_targets:loss+=cfg['native_B_feature_weight']*feature_retention_loss(result['ccd_features'],feature_targets[n][relative].to(device))
                 return loss
             optimizer.zero_grad(set_to_none=True);result=model(x);logits=result['logits'];loss=train_loss(result)
+            if cfg.get('old_TRAIN_replay_augmentation_weight') and n!=names[-1]:
+                mx,my,mt=same_class_replay(replay_data[n]['x'],replay_data[n]['y'],target['logits'][n],relative,cfg['old_TRAIN_same_class_mix'])
+                loss+=cfg['old_TRAIN_replay_augmentation_weight']*cfg['old_task_weight']*continuation_objective(model(mx.to(device))['logits'],my.to(device),mt.to(device),cfg);augmentation_seen[n]+=len(my)
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite original TRAIN objective')
             if cfg.get('TRAIN_sharpness_radius'):sharpness_backward(loss,params,lambda:train_loss(model(x)),cfg['TRAIN_sharpness_radius'])
             else:loss.backward()
@@ -176,7 +196,7 @@ def main():
         scores=evaluate(model,test,names,device,8);value=retention_selection(scores,cfg['reference'])
         if frozen(model)!=immutable or tensor_sha(model.display_gains)!=gain:raise RuntimeError('Old expert/gain changed')
         if value>best:best=value;best_epoch=epoch;save('best',epoch)
-        save('last',epoch);history.append(dict(epoch=epoch,loss=loss_sum/seen,TRAIN_by_task=task_stats,scores=summary(scores),best_epoch=best_epoch));put(out/'history.json',history);put(a.out/'status.json',dict(state='training',**history[-1],updated=time.time()))
+        save('last',epoch);history.append(dict(epoch=epoch,loss=loss_sum/seen,TRAIN_by_task=task_stats,TRAIN_same_class_augmentation_seen=augmentation_seen,scores=summary(scores),best_epoch=best_epoch));put(out/'history.json',history);put(a.out/'status.json',dict(state='training',**history[-1],updated=time.time()))
         if time.monotonic()-started>cfg['max_fit_seconds']:raise RuntimeError('Finite full-epoch fit bound reached')
     model.load_state_dict(torch.load(out/'best_checkpoint.pt',map_location=device,weights_only=False)['model'],strict=True);selected=evaluate(model,test,names,device,8)
     put(out/'selected_test.json',dict(scores=selected,TEST_gradients=False,TEST_selected_development_metric=True));put(out/'frozen_audit.json',dict(pass_all=True,frozen_parameter_SHA256=immutable,fixed_gain_sha256=gain))

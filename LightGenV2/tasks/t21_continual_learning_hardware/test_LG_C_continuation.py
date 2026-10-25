@@ -1,11 +1,17 @@
 import unittest,json
 from pathlib import Path
-from .continue_LG_C_optics import validate,native_retention_loss,configure_simulation_trainability,continuation_objective
+from .continue_LG_C_optics import validate,native_retention_loss,configure_simulation_trainability,continuation_objective,same_class_replay
 from .model import build_model
 import torch
 
 
 class CContinuationTests(unittest.TestCase):
+    def test_augmented_replay_keeps_original_classes_and_teacher_frozen(self):
+        torch.manual_seed(1);x=torch.rand(12,4,4);labels=torch.tensor([0,1,2]*4);teacher=torch.randn(12,10,requires_grad=True);ix=torch.tensor([0,4,8])
+        mx,my,mt=same_class_replay(x,labels,teacher,ix,.1)
+        self.assertEqual(mx.shape,(3,4,4));torch.testing.assert_close(my,labels[ix]);self.assertFalse(mt.requires_grad)
+        self.assertTrue(bool((mx>=0).all() and (mx<=1).all()))
+        cfg=json.loads(Path(__file__).with_name('config_LG_C_augmented_replay_20261025.json').read_text());validate(cfg);self.assertEqual(cfg['memory_records_per_old_task'],300)
     def test_finite_budget_and_original_memory(self):
         c=json.loads(Path(__file__).with_name('config_LG_C_optical_continuation_20261025.json').read_text());validate(c)
         for key,value in [('epochs',20),('memory_records_per_old_task',1000),('TEST_gradients',True)]:
