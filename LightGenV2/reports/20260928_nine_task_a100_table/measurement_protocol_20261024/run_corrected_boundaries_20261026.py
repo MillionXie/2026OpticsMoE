@@ -56,7 +56,7 @@ def qwen_worker(args,guard):
     for name,digest in pin['assets'].items():assert base.sha(opt.model/name)==digest
     processor,model,head,scores,all_rows,prompt=native.load_runtime(opt);head.requires_grad_(False);guard.bind()
     assert torch.cuda.get_device_properties(0).multi_processor_count==54
-    rows=all_rows[:N];tokenizer=[];processor.tokenizer=base.TokenizerAudit(processor.tokenizer,tokenizer)
+    unique=N if N<=512 else 512;rows=all_rows[:unique];tokenizer=[];processor.tokenizer=base.TokenizerAudit(processor.tokenizer,tokenizer)
     class Timer(BoundaryTimer):
         def __init__(self,m):super().__init__(m);self.records=[]
         def reset(self,expected_calls=1):
@@ -66,13 +66,14 @@ def qwen_worker(args,guard):
     timer=Timer(model);metadata=[];predictions=[];full_start=time.perf_counter()
     try:
         with torch.inference_mode():
-            for index,row in enumerate(rows):
+            for index in range(N):
+                row=rows[index%unique]
                 guard.fast();a=time.perf_counter();lo=len(tokenizer)
                 cpu,positions=native.prepare_batch([row],processor,prompt,torch.device('cpu'),448)
                 b=time.perf_counter();inputs={k:v.to('cuda') for k,v in cpu.items()};torch.cuda.synchronize();c=time.perf_counter()
                 _,prediction,_=native.forward_batch(inputs,model,head,scores,timer)
                 returned=time.perf_counter();predictions.append(prediction[0]);r=timer.records[-1]
-                metadata.append(dict(index=index,sample_id=row['sample_id'],CPU_start=a,CPU_end=b,H2D_end=c,
+                metadata.append(dict(index=index,source_index=index%unique,cycle=index//unique,sample_id=row['sample_id'],CPU_start=a,CPU_end=b,H2D_end=c,
                     GPU_host_start=r['host_start'],GPU_ready_host=r['host_end'],CPU_result_return=returned,
                     tokenizer_intervals=tokenizer[lo:],frame_positions=positions[0],
                     input_shapes={k:list(v.shape) for k,v in cpu.items()},input_ids=cpu['input_ids'].tolist(),attention_mask=cpu['attention_mask'].tolist()))
@@ -85,8 +86,9 @@ def qwen_worker(args,guard):
         model_sum=sum(r['GPU_end_ms']-r['GPU_start_ms'] for r in metadata)
         with_return,removed2=accounted_ms(full_start,metadata[-1]['CPU_result_return'],metadata);assert removed==removed2
         output=np.asarray(predictions,dtype=np.float32);assert output.shape==(N,) and np.isfinite(output).all()
+        assert all(np.array_equal(output[:unique],output[k:k+unique]) for k in range(unique,N,unique))
         np.savez_compressed(args.output/'outputs.npz',prediction=output)
-        base.write(args.output/'timing.json',dict(status='complete',system='Qwen50',video_calls=N,fields_equivalent=N//16,
+        base.write(args.output/'timing.json',dict(status='complete',system='Qwen50',video_calls=N,unique_videos=unique,fields_equivalent=N//16,
             corrected_GPU_ready_ms=adjusted,corrected_CPU_result_ms=with_return,removed_image_preparation_and_H2D_ms=removed,
             full_before_subtraction_ms=(metadata[-1]['GPU_ready_host']-full_start)*1000,GPU_model_window_sum_ms=model_sum,
             tokenizer_CPU_ms=sum((t['end']-t['start'])*1000 for t in tokenizer),
@@ -122,7 +124,7 @@ def suite(args):
     from run_temporal_remainder import process_snapshot
     serialize_mps_commands();engine.GPU=base.GPU;engine.PIPE=base.PIPE;engine.ROOT=args.output
     assert not args.output.exists() and args.output.is_relative_to(base.ROOT);args.output.mkdir()
-    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,N=N,completed=[],plan=['qwen01','qwen02','qwen03','lg01','lg02','lg03'])
+    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,N=N,completed=[],plan=['qwen01','lg01'],single_round_user_requested=True)
     active=False;child=None
     def save():base.write(args.output/'suite_status.json',state)
     def bounded():
@@ -142,7 +144,7 @@ def suite(args):
                 engine.daemon(True);active=True;leaf=args.output/name
                 env=dict(os.environ,CUDA_VISIBLE_DEVICES=base.GPU,CUDA_DEVICE_ORDER='PCI_BUS_ID',CUDA_MPS_PIPE_DIRECTORY=base.PIPE,
                     CUDA_MPS_ACTIVE_THREAD_PERCENTAGE='50' if system=='qwen' else '100',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1',TOKENIZERS_PARALLELISM='false')
-                command=['/home/guest3/miniconda3/envs/xml/bin/python','-u',str(ENTRY),'--phase','worker','--system',system,'--repeat',str(repeat),'--output',str(leaf),'--deadline',str(args.deadline)]
+                command=['/home/guest3/miniconda3/envs/xml/bin/python','-u',str(ENTRY),'--phase','worker','--system',system,'--repeat',str(repeat),'--output',str(leaf),'--videos',str(N),'--deadline',str(args.deadline)]
                 with leaf.with_suffix('.log').open('x') as logfile:
                     child=subprocess.Popen(command,cwd=REPO,env=env,stdin=subprocess.DEVNULL,stdout=logfile,stderr=subprocess.STDOUT,start_new_session=True)
                     state.update(status='running',point=name,child=child.pid);save()
@@ -163,5 +165,5 @@ def suite(args):
         state['mps_released']=True;save()
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['suite','worker'],required=True);p.add_argument('--system',choices=['qwen','lg']);p.add_argument('--repeat',type=int);p.add_argument('--output',type=Path,required=True);p.add_argument('--deadline',type=float,required=True)
-    a=p.parse_args();a.output=a.output.resolve();(suite if a.phase=='suite' else worker)(a)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=['suite','worker'],required=True);p.add_argument('--system',choices=['qwen','lg']);p.add_argument('--repeat',type=int);p.add_argument('--output',type=Path,required=True);p.add_argument('--videos',type=int,choices=[224,2048],default=2048);p.add_argument('--deadline',type=float,required=True)
+    a=p.parse_args();N=a.videos;a.output=a.output.resolve();(suite if a.phase=='suite' else worker)(a)
