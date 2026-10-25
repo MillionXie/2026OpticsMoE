@@ -31,8 +31,10 @@ def features(data,path):
     return torch.cat(result)
 
 
-def configuration():
-    cfg=json.loads(Path(__file__).with_name('config_domain_frontend_probe_20261025.json').read_text())
+def configuration(profile=None):
+    profile=Path(__file__).with_name('config_domain_frontend_probe_20261025.json') if profile is None else Path(profile)
+    if profile.resolve() not in {Path(__file__).with_name(n).resolve() for n in ('config_domain_frontend_probe_20261025.json','config_domain_frontend_weightnorm_20261025.json')}:raise ValueError('Published controlled profile required')
+    cfg=json.loads(profile.read_text())
     if cfg['frontend_SHA256']!=FRONTEND_SHA or cfg['TEST_gradients'] or cfg['TEST_teacher'] or cfg['phase_updates'] or cfg['fit_steps']!=40:raise ValueError('Published finite shared-frontend control required')
     return cfg
 
@@ -40,7 +42,7 @@ def configuration():
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('parent','data','frontend','out'):p.add_argument('--'+n,type=Path,required=True)
-    p.add_argument('--gpu-uuid',required=True);a=p.parse_args();torch.set_num_threads(2);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False;cfg=configuration();gpu=gpu_gate(cfg,a.gpu_uuid);device=torch.device('cuda:0');parent=a.parent/'best_checkpoint.pt';digest=sha(parent);receipt=json.loads((a.parent/'completion.json').read_text());old=json.loads((a.parent/'protocol.json').read_text())
+    p.add_argument('--profile',type=Path);p.add_argument('--gpu-uuid',required=True);a=p.parse_args();torch.set_num_threads(2);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False;cfg=configuration(a.profile);gpu=gpu_gate(cfg,a.gpu_uuid);device=torch.device('cuda:0');parent=a.parent/'best_checkpoint.pt';digest=sha(parent);receipt=json.loads((a.parent/'completion.json').read_text());old=json.loads((a.parent/'protocol.json').read_text())
     if digest!=receipt['best_sha256'] or old['selection_uses_TEST']:raise ValueError('Locked parent required')
     cp=torch.load(parent,map_location='cpu',weights_only=False);model=build_unified(cp['architecture']).to(device);model.load_state_dict(cp['model'],strict=True);model.eval();domains=old['training_domains'];case=old['case'];train=load_arrays(a.data,'train');val=load_arrays(a.data,'validation');tf=features(train,a.frontend);vf=features(val,a.frontend);cal=np.concatenate([np.flatnonzero((train['domains']==d)&(train['labels']==c))[:2] for c in range(10) for d in domains])
     with torch.no_grad():gains=model.calibrate_gains(amplitude(train,tf,cal,device))
@@ -51,7 +53,10 @@ def main():
     save('best',0);put(a.out/'baseline_validation.json',vr)
     for step in range(1,cfg['fit_steps']+1):
         def closure():
-            optimizer.zero_grad();cost=F.cross_entropy(z@param.T,labels,label_smoothing=cfg['label_smoothing'])+cfg['regularization']*param.square().sum()/10;cost.backward();return cost
+            optimizer.zero_grad()
+            cost=F.cross_entropy(z@param.T,labels,label_smoothing=cfg['label_smoothing'])+cfg['regularization']*param.square().sum()/10
+            cost=cost+cfg.get('weight_regularization',0.)*(param@t.T).square().sum()/10
+            cost.backward();return cost
         loss=float(optimizer.step(closure).detach());w=(param.detach()@t.T).float()
         if not np.isfinite(loss) or not torch.isfinite(w).all():raise RuntimeError('Nonfinite readout fit')
         with torch.no_grad():model.shared_head.weight.copy_(w.to(device))
