@@ -59,7 +59,8 @@ def robust_queries(x,labels,tasks,ids,cfg):
     """TRAIN-only bounded noise, shared within each original binary pair."""
     std=x.std(0,unbiased=False);pairs=paired_indices(ids,labels.numpy(),tasks);values=[x]
     for repeat in range(cfg['TRAIN_augmentations']):
-        q=(x+paired_derivative_noise(x,std,cfg['TRAIN_noise_std'][repeat%3],pairs)).clamp_min(0);values.append(q/q.mean(1,keepdim=True).clamp_min(1e-12))
+        noise=paired_derivative_noise(x,std,cfg['TRAIN_noise_std'][repeat%3],pairs);noise=noise-noise.mean(1,keepdim=True)
+        q=(x+noise).clamp_min(0);values.append(q/q.mean(1,keepdim=True).clamp_min(1e-12))
     return torch.cat(values),np.tile(tasks,len(values))
 
 
