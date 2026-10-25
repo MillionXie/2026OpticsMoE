@@ -15,15 +15,17 @@ from .refine_measured_ce import contrast_transform
 from .fit_gated_linear_teacher import full_covariance_transform
 from .terminal_fit import evaluate,brief
 from .refine_LG_retention import retention_selection
+from .continue_LG_C_optics import continuation_objective
 
 
 def validate(cfg):
-    if cfg!=json.loads(Path(__file__).with_name('config_LG_C_readout_20261025.json').read_text()):raise ValueError('Only published fixed finite C readout profile')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_LG_C_readout_20261025.json','config_LG_C_strong_parent_readout_20261025.json')):raise ValueError('Only published fixed finite C readout profiles')
 
 
 def main():
     p=argparse.ArgumentParser(__doc__)
     for name in ('parent_run','profile','train','test','source_protocols','out'):p.add_argument('--'+name.replace('_','-'),type=Path,required=True)
+    p.add_argument('--chain',type=Path)
     p.add_argument('--gpu-uuid',required=True);a=p.parse_args();cfg=json.loads(a.profile.read_text());validate(cfg)
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
     gpu=gpu_gate(cfg,a.gpu_uuid);device=torch.device('cuda:0');done=json.loads((a.parent_run/'C/completion.json').read_text());parent=a.parent_run/'C/best_checkpoint.pt'
@@ -31,8 +33,12 @@ def main():
     if cp['architecture']!='moe' or cp['stage']!=3:raise ValueError('Exact complete LG C required')
     for name,v in model.named_parameters():v.requires_grad_(name=='shared_head.weight')
     if sum(v.numel() for v in model.parameters() if v.requires_grad)!=7840:raise ValueError('Only original Linear may change')
-    train=load_data(a.train,'train');test=load_data(a.test,'test');memory=json.loads((a.parent_run/'memory_manifest.json').read_text());names=list(cfg['TRAIN_counts'])
-    targets=torch.load(a.parent_run/'C/TRAIN_reference_teacher_logits.pt',map_location='cpu',weights_only=False)
+    chain=a.chain or a.parent_run
+    if a.chain:
+        origin=json.loads((a.parent_run/'protocol.json').read_text());expected=json.loads((chain/'C/completion.json').read_text())['best_sha256']
+        if origin.get('parent_C_sha256',origin.get('original_chain_C_sha256'))!=expected:raise ValueError('Warm C and memory chain differ')
+    train=load_data(a.train,'train');test=load_data(a.test,'test');memory=json.loads((chain/'memory_manifest.json').read_text());names=list(cfg['TRAIN_counts'])
+    targets=torch.load(chain/'C/TRAIN_reference_teacher_logits.pt',map_location='cpu',weights_only=False)
     identity=json.loads(Path(__file__).with_name('source_identity.json').read_text());original=identity['models'][2]
     if targets['TEST_inputs'] is not False or targets['teacher_sha256']!=original['sha256'] or sha(original['checkpoint'])!=original['sha256']:raise ValueError('TRAIN teacher identity changed')
     paths={k:Path(v) for k,v in json.loads(a.source_protocols.read_text()).items()}
@@ -45,7 +51,8 @@ def main():
     a.out.mkdir(parents=True,exist_ok=False);out=a.out/'C';out.mkdir();started=time.monotonic()
     put(a.out/'protocol.json',dict(architecture='moe',config=cfg,config_sha256=sha(a.profile),parent_run=str(a.parent_run),parent_C_sha256=done['best_sha256'],
         candidate_scope='C readout-only, not a spliced A-D chain; any accepted C change requires new D',old_A_B_unmodified=True,
-        TRAIN_teacher_sha256=targets['teacher_sha256'],TRAIN_teacher_cache_sha256=sha(a.parent_run/'C/TRAIN_reference_teacher_logits.pt'),
+        original_chain_C_sha256=json.loads((chain/'C/completion.json').read_text())['best_sha256'],
+        TRAIN_teacher_sha256=targets['teacher_sha256'],TRAIN_teacher_cache_sha256=sha(chain/'C/TRAIN_reference_teacher_logits.pt'),
         frozen_prefix_SHA256=before,TRAIN_counts=cfg['TRAIN_counts'],TEST_gradients=False,TEST_selected_development_metric=True,independent_generalization_claim=False,
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),gpu=gpu,SDK=False,new_inference_layers=0))
     rows=[];labels=[];task_rows=[];split_rows=[];source_rows=[];tr_targets=[];model.to(device).eval()
@@ -65,7 +72,7 @@ def main():
     x=torch.cat(rows);y=torch.tensor(labels,dtype=torch.long);tasks=np.asarray(task_rows);splits=np.asarray(split_rows);tr=np.flatnonzero(splits=='train');te=np.flatnonzero(splits=='test');teacher=torch.cat(tr_targets)
     np.savez(a.out/'fixed_prefix_features.npz',features=x.numpy(),labels=y.numpy(),tasks=tasks,splits=splits,source_indices=np.asarray(source_rows))
     transform,conditioning=full_covariance_transform(x[tr],contrast_transform(x[tr]));transform=transform.float();z=x[tr]@transform.T
-    weight=nn.Parameter((model.shared_head.weight.detach().double()@torch.linalg.inv(transform.double())).float());optimizer=torch.optim.AdamW([weight],lr=cfg['learning_rate'],weight_decay=cfg['weight_decay'])
+    weight=nn.Parameter((model.shared_head.weight.detach().double()@torch.linalg.inv(transform.double())).float());initial=weight.detach().clone();optimizer=torch.optim.AdamW([weight],lr=cfg['learning_rate'],weight_decay=cfg['weight_decay'])
     baseline=evaluate(model.shared_head,x,y,tasks,te);best_score=retention_selection(baseline,cfg['original_reference']);best_weight=model.shared_head.weight.detach().clone();best_epoch=0;history=[];fit_start=time.monotonic()
     pools={n:np.flatnonzero(tasks[tr]==n) for n in names}
     def record(epoch,loss):
@@ -82,7 +89,8 @@ def main():
         perm=np.random.default_rng(cfg['seed']+epoch).permutation(len(pools['speech_binary']))
         for start in range(0,len(perm),256):
             cur=pools['speech_binary'][perm[start:start+256]];ix=np.concatenate([cur]+[np.random.default_rng(cfg['seed']+epoch+start+j).choice(pools[n],len(cur),replace=True) for j,n in enumerate(names[:-1])])
-            logits=z[ix]@weight.T;loss=reference_TRAIN_objective(logits,y[tr[ix]],teacher[ix],cfg)
+            logits=z[ix]@weight.T;loss=continuation_objective(logits,y[tr[ix]],teacher[ix],cfg)
+            if cfg.get('warm_coordinate_anchor'):loss+=cfg['warm_coordinate_anchor']*(weight-initial).square().mean()
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite fullTRAIN readout objective')
             optimizer.zero_grad(set_to_none=True);loss.backward();torch.nn.utils.clip_grad_norm_([weight],1.);optimizer.step();total+=float(loss.detach())
         if epoch%5==0 or time.monotonic()-fit_start>=cfg['fit_seconds']:record(epoch,total)

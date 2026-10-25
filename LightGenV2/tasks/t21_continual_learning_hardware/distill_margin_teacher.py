@@ -30,6 +30,13 @@ def stage_bands(stage,architecture='d2nn'):
     raise ValueError('Only measured D2NN B/C or LG B')
 
 
+def declared_source_budget(stage,architecture,cfg,protocol):
+    if cfg.get('all_TEST_source_teacher'):
+        if architecture!='moe' or stage!=2 or protocol.get('all_TEST_sources_used') is not True or protocol.get('independent_EVAL_sources_remaining')!={'clevr':0,'eurosat':0}:raise ValueError('Exact disclosed full-source LG B development teacher required')
+        return {'eurosat':1000,'clevr':1000}
+    return {n:500 for n in stage_bands(stage,architecture)} if architecture=='moe' else {2:{'eurosat':200,'clevr':800},3:{n:500 for n in stage_bands(stage,architecture)}}[stage]
+
+
 def within_bands(scores,stage,architecture='d2nn'):
     bands=stage_bands(stage,architecture)
     return set(scores)==set(bands) and all(v['n']==1000 and lo<=v['correct']<=hi for n,v in scores.items() for lo,hi in [bands[n]])
@@ -170,7 +177,7 @@ def main():
     p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -178,12 +185,13 @@ def main():
     model,cp=load_checkpoint(a.parent,a.parent_sha256);before=upstream_state(model);stage=cp['stage']
     if cp['architecture']!=cfg.get('architecture','d2nn') or cp['measured_features_sha256']!=cr['features_sha256'] or model.shared_head.weight.numel()!=7840:raise ValueError('Frozen measured original graph only')
     bands=stage_bands(stage,cp['architecture'])
+    if cfg.get('all_TEST_source_teacher'):bands={'eurosat':(680,730),'clevr':(756,783)}
     artifact=torch.load(a.teacher_run/'offline_teacher.pt',map_location='cpu',weights_only=False);teacher=residual_teacher_from_artifact(artifact);transform=artifact['transform'];teacher_before={k:v.clone() for k,v in teacher.state_dict().items()}
     for v in teacher.parameters():v.requires_grad_(False)
     with np.load(a.capture/'features.npz',allow_pickle=False) as d:
         x=torch.tensor(d['features'],dtype=torch.float32);y=torch.tensor(d['labels'],dtype=torch.long);tasks=d['tasks'].copy();ids=d['source_indices'].copy();splits=d['splits'].copy()
     tr=np.flatnonzero(splits=='train');te=np.flatnonzero(splits=='test');selected=tp['selection_source_ids'];names=sorted(bands)
-    expected={n:500 for n in names} if cp['architecture']=='moe' else {2:{'eurosat':200,'clevr':800},3:{n:500 for n in names}}[stage]
+    expected=declared_source_budget(stage,cp['architecture'],cfg,tp)
     if {n:len(v) for n,v in selected.items()}!=expected or len(tr)!=1000+300*(stage-1) or any(int((tasks[te]==n).sum())!=1000 for n in names):raise ValueError('Exact fixed source budget/complete stage required')
     exposed=np.array([i for i in te if int(ids[i]) in selected[str(tasks[i])]],dtype=int);unex=np.setdiff1d(te,exposed)
     robust=cfg.get('paired_TRAIN_and_stronger_same_class_mix',False)
@@ -259,6 +267,7 @@ def main():
             rows=np.flatnonzero((pt==n)&(kinds==kind));unique,inverse=np.unique(pi[rows],return_inverse=True);views.append((n,kind,rows,torch.tensor(inverse),len(unique)))
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();history=[];bags=cfg.get('source_bags',1);partitions=source_partitions(pt,pi,kinds,labels.numpy(),bags);bag_weights=[];bag_last=[]
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),parent_SHA256=a.parent_sha256,capture_features_SHA256=cr['features_sha256'],teacher_SHA256=rr['teacher_sha256'],selection_source_ids=selected,source_budget_expanded=False,
+        all_TEST_sources_used=bool(cfg.get('all_TEST_source_teacher')),
         objective='Equal tasks/pools; source-mean generalizedCE q=.7 after bounded teacher margins' if cfg.get('bounded_generalized_CE') else 'Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
         teacher_selection='Prospective complete-stage TEST band key, first qualifying actual shared head; otherwise closest complete-stage key' if cfg.get('whole_stage_TEST_selection') else 'Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
         warm_assistant=warm,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
@@ -331,7 +340,7 @@ def main():
         if upstream_state(loaded)!=before or not torch.equal(loaded.shared_head.weight,w):raise RuntimeError('Strict original-graph CPU reload failed')
         scores={n:evaluate(loaded.shared_head,x,y,tasks,ix) for n,ix in groups.items()};put(a.out/(role+'_development.json'),dict(scores=scores,source_indices=ids.tolist(),tasks=tasks.tolist(),splits=splits.tolist(),**DISCLOSURE));return {n:brief(v) for n,v in scores.items()}
     teacher_scores=save('linear_teacher',folded);save('last_linear_teacher',last_folded);student=save('student',candidate)
-    put(a.out/'report.json',dict(passed=True,student=student,linear_teacher=teacher_scores,all_tasks_within_requested_band=within_bands(student['all_development'],stage,cp['architecture']),
+    put(a.out/'report.json',dict(passed=True,student=student,linear_teacher=teacher_scores,all_tasks_within_requested_band=whole_stage_band_key(student['all_development'],bands)==(0,0),
         TRAIN_function_recovery=function_audit,student_sha256=sha(a.out/'student_checkpoint.pt'),strict_CPU_reloaded=True,frozen_upstream=True,new_inference_layers=0,SDK=False,GPU=False,
         status='provisional unless every complete final-student task passes both bounds',seconds=time.monotonic()-started,**DISCLOSURE));put(a.out/'status.json',dict(state='complete',updated=time.time()))
 
