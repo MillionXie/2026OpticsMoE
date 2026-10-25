@@ -17,7 +17,7 @@ class DiagnosticTests(unittest.TestCase):
     def test_four_expert_diagnostic_uses_exact_frontend_and_input(self):
         source=Path(__file__).with_name('diagnose_unified.py').read_text()
         self.assertIn('build_static_four if four',source);self.assertIn('neutral_amplitude if four',source)
-        self.assertIn('shared_features if four',source);self.assertIn('per_process_GPU_memory_fraction=.2',source)
+        self.assertIn("checked_features(data,path,state['frontend_sha256'])",source);self.assertIn('per_process_GPU_memory_fraction=.2',source)
         self.assertIn('TRAIN_pair_alignment',source)
     def test_phase_gradient_diagnostic_never_updates_or_loads_TEST(self):
         source=Path(__file__).with_name('diagnose_phase_gradients.py').read_text()

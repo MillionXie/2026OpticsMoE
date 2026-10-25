@@ -11,7 +11,6 @@ from torch.nn import functional as F
 from .train_unified_static import load_arrays,cache_frontend,batch_amplitude,balanced_batches
 from .unified_native import build_unified,CONTRACT
 from .static_four import build_static_four,CONTRACT as FOUR_CONTRACT
-from .domain_frontend_probe import features as shared_features
 from .sensor_neutral import amplitude as neutral_amplitude
 from LightGenV2.tasks.t21_continual_learning_hardware.train_native import gpu_gate,put,sha,tensor_sha
 
@@ -62,7 +61,12 @@ def main():
     if parent_sha!=receipt['best_sha256']:raise ValueError('Parent changed')
     state=torch.load(path,map_location='cpu',weights_only=False)
     if state['contract'] not in (CONTRACT,FOUR_CONTRACT):raise ValueError('Changed graph')
-    four=state['contract']==FOUR_CONTRACT;factory=build_static_four if four else build_unified;amplitude_fn=neutral_amplitude if four else batch_amplitude;frontend_fn=shared_features if four else cache_frontend
+    four=state['contract']==FOUR_CONTRACT;factory=build_static_four if four else build_unified;amplitude_fn=neutral_amplitude if four else batch_amplitude;frontend_fn=cache_frontend
+    if four:
+        # Late import avoids the ridge-helper import cycle and pins THIS PT's
+        # frozen frontend instead of silently assuming the first FB7D revision.
+        from .diagnose_frontend_transfer import checked_features
+        def frontend_fn(data,path):return checked_features(data,path,state['frontend_sha256'])
     model=factory(state['architecture']).to(device);model.load_state_dict(state['model'],strict=True);model.eval();a.out.mkdir(parents=True,exist_ok=False)
     original={n:tensor_sha(v) for n,v in model.state_dict().items()};train=load_arrays(a.data,'train');val=load_arrays(a.data,'validation');front=frontend_fn(train,a.frontend);vf=frontend_fn(val,a.frontend)
     tr,ts=extract(model,train,front,device,a.out,'train',amplitude_fn);va,vs=extract(model,val,vf,device,a.out,'validation',amplitude_fn);gradients=[]
@@ -85,7 +89,7 @@ def main():
             x=tr[stage].astype(np.float64);x-=x.mean(0,keepdims=True);x/=np.maximum(np.linalg.norm(x,axis=1,keepdims=True),1e-12)
             same=(x[::2]*x[1::2]).sum(1);other=(x[::2]*np.roll(x[1::2],1,axis=0)).sum(1)
             pairing[stage]=dict(TRAIN_pair_cosine_mean=float(same.mean()),TRAIN_shuffled_cosine_mean=float(other.mean()),pair_cosine_std=float(same.std()))
-    put(a.out/'report.json',dict(passed=True,contract=state['contract'],parent_SHA256=parent_sha,training=ts,validation=vs,gradient_groups=gradients,linear_probes=probes,TRAIN_pair_alignment=pairing,TEST_loaded=False,SDK=False,original_graph_unchanged=True,gpu=gpu,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
+    put(a.out/'report.json',dict(passed=True,contract=state['contract'],parent_SHA256=parent_sha,frontend_SHA256=state.get('frontend_sha256'),training=ts,validation=vs,gradient_groups=gradients,linear_probes=probes,TRAIN_pair_alignment=pairing,TEST_loaded=False,SDK=False,original_graph_unchanged=True,gpu=gpu,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
     put(a.out/'status.json',dict(state='complete',updated=time.time()))
 
 
