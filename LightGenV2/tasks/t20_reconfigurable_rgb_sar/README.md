@@ -26,6 +26,18 @@ best SHA `85e22891297d59d440114e023fcc5d13b8377796aad88739ce123ce73f8d8920`；�
 光学LR1e-4/原头5e-5、最多30轮/min15/patience12，SAR验证>=71.0%，不再接CE-only末端洗掉蒸馏。
 新run `static4_teacher_continuation_20261025/MoE_AB`；锁定后完整TEST/CPU，不保证5pp，不据TEST拼PT。
 
+这项接续实际15轮后仍选e0；子PT611a与父71d**所有模型张量相同**，只改变checkpoint元数据，
+`parent_equivalence.json`已核验，不称新提升。对应最后参数另保留并CPU审计，父83.4/71.7不覆盖。
+只读`MoE_AB_stage_diagnosis`已完成TRAIN/VAL分层诊断：原TRAIN RGB89.9/SAR76.8，
+验证81.7/72.0；RGB验证的同规格TRAIN线性探针为前端78.1、编码76.7、first78.0、final78.8%，
+不是正式光学成绩/上界。未发现简单换线性读出即可直接达到强教师的证据。
+第4专家验证平均功率RGB8.19%/SAR7.65%、获胜比例0，而前三槽随样本变化；四专家仍均实际参与传播。
+据此最后做一个有限前段分块对照：`config_static_four_expert_specialization_20261025.json`，
+原71d父/同强教师，冻结global相位、前端与gain，只训练router+四专家原相位及原7840头，共1140720参数。
+仅将原逐域跨样本均衡系数.15提高至1.5；不强制每样本均匀、不改推理温度或检测ROI。
+最多25轮/min15/patience12，RGB优先且SAR验证>=71%，记录每域逐槽功率；
+run `static4_expert_specialization_20261025/MoE_AB`，无新层/TEST梯度/TEST教师。
+
 用户要求继续提高MoE，争取RGB高出固定D2NN至少5个百分点；按原TEST82.8%对应目标87.8%，
 这是优化目标，不作为删改预测或压低对照的理由。D2NN已锁定PT不变，不拼接不同PT的两域结果。
 只写T20；T21/原共享光学模块、SDK及现场参数均不改，无定时任务。

@@ -2,7 +2,7 @@ import ast,inspect,json,unittest
 from pathlib import Path
 import torch
 from . import augmented_teacher as module
-from .train_shared_frontend import d4_views,rgb_priority_selection,validate,teacher_KD_rows
+from .train_shared_frontend import d4_views,rgb_priority_selection,validate,teacher_KD_rows,restrict_phase_updates
 import numpy as np
 
 
@@ -44,6 +44,13 @@ class TeacherTests(unittest.TestCase):
         torch.testing.assert_close(loss[1],ce[1]);loss.mean().backward();self.assertTrue(torch.isfinite(x.grad).all())
         self.assertFalse(cfg['recalibrate_gains']);self.assertEqual(cfg['TRAIN_original_probability'],.5)
         self.assertEqual(cfg['readout_fit_steps'],0);self.assertEqual(len(cfg['parent_expected_SHA256']),64)
+
+    def test_expert_scope_freezes_global_without_changing_values(self):
+        from .static_four import build_static_four
+        cfg=json.loads(Path(module.__file__).with_name('config_static_four_expert_specialization_20261025.json').read_text());validate(cfg);m=build_static_four('moe');old={n:v.clone() for n,v in m.state_dict().items()};restrict_phase_updates(m,cfg['trainable_phase_prefixes'])
+        self.assertFalse(m.global_phase.requires_grad);self.assertTrue(m.router_phase.requires_grad);self.assertTrue(all(p.requires_grad for p in m.first_phase));self.assertTrue(m.shared_head.weight.requires_grad)
+        self.assertEqual(sum(p.numel() for p in m.parameters() if p.requires_grad),1140720)
+        for n,v in m.state_dict().items():torch.testing.assert_close(v,old[n],atol=0,rtol=0)
 
 
 if __name__=='__main__':unittest.main()

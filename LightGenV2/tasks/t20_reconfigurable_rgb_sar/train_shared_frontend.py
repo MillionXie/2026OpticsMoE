@@ -24,7 +24,7 @@ from LightGenV2.tasks.t21_continual_learning_hardware.train_native import sha,pu
 
 
 def validate(cfg):
-    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json','config_static_four_teacher_continuation_20261025.json')
+    profiles=('config_shared_frontend_joint_20261025.json','config_static_four_20261025.json','config_static_four_aligned_20261025.json','config_static_four_phase_projection_20261025.json','config_static_four_teacher_KD_20261025.json','config_static_four_teacher_continuation_20261025.json','config_static_four_expert_specialization_20261025.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Exact finite common training profile required')
 
 
@@ -55,6 +55,13 @@ def teacher_KD_rows(logits,target,y,cfg):
     return F.cross_entropy(logits,y,label_smoothing=cfg['label_smoothing'],reduction='none')+cfg['teacher_KD_weight']*kd
 
 
+def restrict_phase_updates(model,prefixes):
+    """Freeze existing phase blocks only; never change the inference graph."""
+    if prefixes:
+        for name,p in model.named_parameters():
+            if 'phase' in name:p.requires_grad_(name.startswith(tuple(prefixes)))
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('data','frontend','profile','out'):p.add_argument('--'+n,type=Path,required=True)
@@ -80,6 +87,7 @@ def main():
             with torch.no_grad():gain_report=model.calibrate_gains(amplitude(train,tf,calibration,device))
     if cfg.get('phase_gradient_projection',False):assert case=='MoE_AB' and domains==[0,1]
     if external:assert four and case=='MoE_AB' and domains==[0,1] and not cfg.get('recalibrate_gains',True)
+    restrict_phase_updates(model,cfg.get('trainable_phase_prefixes'))
     gain=tensor_sha(model.display_gains);frozen={n:tensor_sha(v) for n,v in model.state_dict().items() if n=='display_gains' or (n in dict(model.named_parameters()) and not dict(model.named_parameters())[n].requires_grad)};optics=[v for n,v in model.named_parameters() if v.requires_grad and not n.startswith('shared_head.')];ix=next(pair_batches(train,cfg['batch_size'],42) if cfg.get('paired_TRAIN_batches',False) else balanced_batches(train,domains,cfg['batch_size'],42));r=model(amplitude(train,tf,ix,device));loss=F.cross_entropy(r['logits'],torch.as_tensor(train['labels'][ix],device=device))
     if cfg.get('phase_gradient_projection',False):
         named=[(n,p) for n,p in model.named_parameters() if p.requires_grad];labels=torch.as_tensor(train['labels'][ix],device=device);d=torch.as_tensor(train['domains'][ix],device=device);gr=torch.autograd.grad(F.cross_entropy(r['logits'][d==0],labels[d==0]),[p for n,p in named],retain_graph=True);gs=torch.autograd.grad(F.cross_entropy(r['logits'][d==1],labels[d==1]),[p for n,p in named])
@@ -99,7 +107,7 @@ def main():
     sources={str(v):sha(v) for v in [Path(__file__),a.profile,Path(__file__).with_name('augmented_teacher.py'),Path(__file__).with_name('static_four.py'),Path(__file__).with_name('diagnose_frontend_transfer.py'),Path(__file__).with_name('diagnose_frontend_train.py'),Path(__file__).with_name('domain_frontend_probe.py'),Path(__file__).with_name('sensor_neutral.py'),Path(__file__).with_name('train_sensor_neutral.py'),Path(__file__).with_name('refine_unified.py'),Path('LightGenV2/tasks/t21_continual_learning_hardware/model.py'),Path(__file__).with_name('hardware_aware.py')]}
     put(a.out/'protocol.json',dict(contract=contract,config=cfg,case=case,architecture=saved['architecture'],parent_run=str(a.parent) if a.parent else None,parent_SHA256=digest,fresh_optical_initialization=fresh,geometry=geometry(model) if four else None,gain_calibration=gain_report,training_domains=domains,frontend_sha256=front_sha,fixed_gain_sha256=gain,frozen_state_sha256=frozen,phase_updates=True,original_head_parameters=7840,teacher_scope='Original TRAIN and TRAIN flips only; shared frontend pretrained on both TRAIN domains; RGB-only means optical/student fitting only',dataset_manifest_sha256=sha(a.data/'manifest.json'),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sources,SDK=False,selection_uses_TEST=False,TEST_gradients=False,TEST_teacher=False,gpu=gpu));put(a.out/'baseline_validation.json',baseline)
     if external:
-        proto=json.loads((a.out/'protocol.json').read_text());proto.update(external_teacher_run=str(a.teacher),external_teacher_SHA256=teacher_digest,external_teacher_validation=teacher_receipt['validation'],teacher_scope='Larger offline image CNN; TRAIN and TRAIN D4 only; validation selected; no TEST access; original student inference unchanged',RGB_priority_selection=True,SAR_validation_floor=cfg['SAR_validation_floor']);put(a.out/'protocol.json',proto)
+        proto=json.loads((a.out/'protocol.json').read_text());proto.update(external_teacher_run=str(a.teacher),external_teacher_SHA256=teacher_digest,external_teacher_validation=teacher_receipt['validation'],teacher_scope='Larger offline image CNN; TRAIN and TRAIN D4 only; validation selected; no TEST access; original student inference unchanged',RGB_priority_selection=True,SAR_validation_floor=cfg['SAR_validation_floor'],trainable_parameters={n:p.numel() for n,p in model.named_parameters() if p.requires_grad});put(a.out/'protocol.json',proto)
     def save(role,epoch,step=0):
         torch.save(dict(model={n:v.detach().cpu() for n,v in model.state_dict().items()},architecture=saved['architecture'],stage=1,epoch=epoch,readout_step=step,training_stage='head_warm' if step<0 else ('fixed_optics_readout' if step else 'joint_training'),case=case,contract=contract,frontend_sha256=front_sha,parent_SHA256=digest,TEST_gradients=False),a.out/(role+'_checkpoint.pt'))
     def consider(report,epoch,step=0):
@@ -152,6 +160,8 @@ def main():
         guard();report=infer(model,val,vf,device)
         if consider(report,epoch):last_improvement=epoch
         save('last',epoch);row=dict(stage='joint_training',epoch=epoch,TRAIN_loss=total/seen,TRAIN_accuracy_by_domain={str(d):correct[d]/counts[d] for d in domains},validation=report['scores'],best_epoch=best_epoch,head_norm=float(model.shared_head.weight.detach().norm()),TRAIN_phase_conflict_fraction={n:v/projection_batches for n,v in conflicts.items()} if projection_batches else None);history.append(row);put(a.out/'history.json',history);put(a.out/'status.json',dict(state='joint_training',**row,updated=time.time()))
+        if cfg.get('trainable_phase_prefixes'):
+            row['validation_routing_by_domain']=report.get('routing_by_domain');put(a.out/'history.json',history)
         if time.monotonic()-started>cfg['max_case_seconds']:raise RuntimeError('Finite full-epoch time bound')
         if epoch>=cfg['minimum_epochs'] and epoch-last_improvement>=cfg['patience']:break
     epochs_completed=epoch;chosen=torch.load(a.out/'best_checkpoint.pt',map_location=device,weights_only=False);model.load_state_dict(chosen['model'],strict=True);base_epoch=chosen['epoch'];model.eval();unused,tx=infer(model,train,tf,device,True);unused,vx=infer(model,val,vf,device,True);fx=collect_augmented(model,flip,ff,device);mask=np.isin(train['domains'],domains);z,zv,t=conditioned_inputs(np.concatenate((tx[mask],fx[mask])),vx,cfg['conditioner_ridge']);labels=torch.as_tensor(np.tile(train['labels'][mask],2));param=torch.nn.Parameter(torch.linalg.solve(t,model.shared_head.weight.detach().cpu().double().T).T);headopt=torch.optim.LBFGS([param],lr=1.,max_iter=5,history_size=10,line_search_fn='strong_wolfe')
