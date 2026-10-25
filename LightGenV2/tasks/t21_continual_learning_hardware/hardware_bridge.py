@@ -86,7 +86,7 @@ def signal(value,mask=None,dark=None):
 
 def guard(row,noise=None,router=False,policy='legacy',minimum_snr=10):
     if policy not in ('legacy','pointwise_dark_p99'):raise ValueError('Unknown signal guard policy')
-    if minimum_snr not in (8,10) or (minimum_snr!=10 and policy!='pointwise_dark_p99'):raise ValueError('Only scoped pointwise SNR8 or unchanged SNR10')
+    if minimum_snr not in (7.5,8,10) or (minimum_snr!=10 and policy!='pointwise_dark_p99'):raise ValueError('Only explicitly scoped pointwise SNR7.5/8 or unchanged10')
     if policy=='pointwise_dark_p99':
         if noise is None or 'fixed_dark_difference_p99_counts' not in row:raise ValueError('Pointwise guard requires fixed admitted dark diagnostics')
         margin=max(64.,minimum_snr*noise['read_noise_upper_counts'])
@@ -119,8 +119,16 @@ def signal_guard_policy(policy=None,exposure_us=None):
 
 
 def stage_SNR_threshold(package,cfg,stage):
-    """Explicit latest C permission; never leaks to D2NN, another PT or phase."""
+    """Exact human-authorized C/D cases, not a global lowered threshold."""
     if stage not in ('router','first','final'):raise ValueError('Unknown optical stage')
+    d_scoped=package.get('D_SNR75_authorization')
+    if d_scoped is not None:
+        expected=json.loads(Path(__file__).with_name('config_LG_D_SNR75_20261026.json').read_text(encoding='utf-8'))
+        if package.get('C_SNR8_authorization') is not None or d_scoped!=expected or package.get('architecture')!='moe' or package.get('stage')!='D' or package.get('checkpoint_sha256')!=expected['checkpoint_sha256'] or package.get('hardware_sha256')!=expected['hardware_sha256']:
+            raise ValueError('SNR7.5 requires exact published LG D/PT/hardware permission')
+        if signal_guard_policy(package.get('signal_guard_policy'),cfg.get('exposure_us'))!='pointwise_dark_p99' or not package.get('TRAIN_stage_signal_calibration'):
+            raise ValueError('SNR7.5 retains fixed2ms TRAIN/control pointwise admission')
+        return expected['minimum_SNR_by_optical_stage'][stage]
     scoped=package.get('C_SNR8_authorization')
     if scoped is None:return 10
     expected=json.loads(Path(__file__).with_name('config_LG_C_SNR8_20261025.json').read_text(encoding='utf-8'))
@@ -154,7 +162,7 @@ def repeat_policy(policy=None,exposure_us=None):
 
 def admission_checks(snr,delta99,correlation,repeat_drift,marker_change,noise,saturation,mode='enforce',minimum_snr=10):
     if mode not in ('enforce','record_only'):raise ValueError('Unknown repeat policy')
-    if minimum_snr not in (8,10):raise ValueError('Only SNR8 or original10')
+    if minimum_snr not in (7.5,8,10):raise ValueError('Only authorized SNR7.5/8 or original10')
     checks=dict(finite_metrics=bool(np.isfinite([snr,delta99,correlation,repeat_drift,marker_change,noise,saturation]).all()),
         SNR=bool(snr>=minimum_snr),signal_margin=bool(delta99>=64),
         repeat_correlation=bool(correlation>=.95),consumer_drift=bool(repeat_drift<=.05),
@@ -203,7 +211,7 @@ def stage_signal_admission(bench,folder,amplitudes,drive,warp,mask,stage,hardwar
     passed,checks=admission_checks(snr,delta99,correlation,repeat_drift,marker_change,noise,
         max(r['signal']['saturation_fraction'] for r in rows.values()),repeat_mode,minimum_snr)
     receipt=dict(passed=bool(passed),stage=stage,hardware_payload_sha256=hardware_sha,
-        minimum_SNR=minimum_snr,legacy_SNR10_passed=bool(snr>=10),legacy_SNR_threshold=10,
+        minimum_SNR=minimum_snr,legacy_SNR10_passed=bool(snr>=10),legacy_SNR8_passed=bool(snr>=8),legacy_SNR_threshold=10,
         admission_checks=checks,repeat_correlation_policy=repeat_mode,
         repeat_correlation_threshold=.95,repeat_correlation_enforced=repeat_mode=='enforce',
         read_noise_upper_counts=noise,noise_scope='repeat shot/display/camera fluctuations at this stage, NOT pure read noise',
@@ -408,6 +416,7 @@ def capture(package,cfg,out,pilot=False):
                     if guard_mode=='pointwise_dark_p99':
                         quality.update(minimum_SNR=thresholds[stage],fixed_stage_noise_counts=stage_noise['read_noise_upper_counts'],
                             SNR_vs_fixed_stage_noise=quality['fixed_dark_difference_p99_counts']/stage_noise['read_noise_upper_counts'],
+                            legacy_SNR8_passed=bool(quality['fixed_dark_difference_p99_counts']>=max(64.,8*stage_noise['read_noise_upper_counts'])),
                             legacy_SNR10_passed=bool(quality['fixed_dark_difference_p99_counts']>=max(64.,10*stage_noise['read_noise_upper_counts'])))
                     row={k:v for k,v in entry.items() if k!='amplitude'}
                     row.update(index=i,stage=stage,checkpoint_sha256=package['checkpoint_sha256'],
@@ -431,6 +440,8 @@ def capture(package,cfg,out,pilot=False):
         new_frames=sum('reused_from' not in r for r in rows);elapsed=time.time()-started
         put(out/'report.json',dict(passed=True,pilot=pilot,records=len(entries),frames=len(rows),
             minimum_SNR_by_optical_stage=thresholds,C_SNR8_authorization=package.get('C_SNR8_authorization'),
+            D_SNR75_authorization=package.get('D_SNR75_authorization'),
+            frames_below_legacy_SNR8=sum(r.get('signal',{}).get('legacy_SNR8_passed') is False for r in rows),
             frames_below_legacy_SNR10=sum(r.get('signal',{}).get('legacy_SNR10_passed') is False for r in rows),
             stages=list(order),features_sha256=sha(out/'features.npz'),checkpoint_sha256=package['checkpoint_sha256'],
             new_network_frames=sum('reused_from' not in r for r in rows),reused_network_frames=sum('reused_from' in r for r in rows),

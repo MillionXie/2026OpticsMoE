@@ -6,6 +6,20 @@ from pathlib import Path
 
 
 class TestHardware(unittest.TestCase):
+    def test_D_SNR75_is_exact_fixed_case_and_preserves_other_guards(self):
+        authorization=json.loads(Path(__file__).with_name('config_LG_D_SNR75_20261026.json').read_text())
+        policy=dict(mode='pointwise_dark_p99',authorization='Fixed2ms',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)
+        package=dict(architecture='moe',stage='D',checkpoint_sha256=authorization['checkpoint_sha256'],hardware_sha256=authorization['hardware_sha256'],D_SNR75_authorization=authorization,signal_guard_policy=policy,TRAIN_stage_signal_calibration=True)
+        self.assertEqual(stage_SNR_threshold(package,dict(exposure_us=2000),'first'),7.5)
+        for key,value in (('architecture','d2nn'),('stage','C'),('checkpoint_sha256','other'),('hardware_sha256','other'),('TRAIN_stage_signal_calibration',False),('C_SNR8_authorization',{})):
+            with self.assertRaises(ValueError):stage_SNR_threshold(dict(package,**{key:value}),dict(exposure_us=2000),'first')
+        with self.assertRaises(ValueError):stage_SNR_threshold(package,dict(exposure_us=4000),'first')
+        row=dict(saturation_fraction=0,readout_p99_counts=1000,readout_p10_counts=500,fixed_dark_difference_p99_counts=216.4);noise=dict(read_noise_upper_counts=27.6)
+        guard(row,noise,policy='pointwise_dark_p99',minimum_snr=7.5)
+        for key,value in (('fixed_dark_difference_p99_counts',206),('saturation_fraction',.151),('readout_p10_counts',750)):
+            with self.assertRaises(RuntimeError):guard(dict(row,**{key:value}),noise,policy='pointwise_dark_p99',minimum_snr=7.5)
+        values=dict(snr=7.84,delta99=216.4,correlation=.75,repeat_drift=.0332,marker_change=200,noise=27.6,saturation=0,mode='record_only',minimum_snr=7.5)
+        self.assertTrue(admission_checks(**values)[0]);self.assertFalse(admission_checks(**dict(values,repeat_drift=.051))[0])
     def test_C_SNR8_is_exact_case_only_and_recorded_not_global_default(self):
         authorization=json.loads(Path(__file__).with_name('config_LG_C_SNR8_20261025.json').read_text(encoding='utf-8'))
         base=dict(mode='pointwise_dark_p99',authorization='Original fixed2ms permission',minimum_signal_counts=64,minimum_SNR=10,exposure_us=2000,single_frame=True,network_background_subtraction=False)
