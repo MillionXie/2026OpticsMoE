@@ -32,7 +32,7 @@ LG C六轮巩固训练已结束，完整best/last CPU审计返回0，所选父�
 不是扩大回放到全量旧TRAIN，也不接触TEST梯度。原训练/审计退出后已按Git92e671fed同步并启动，
 真实TRAIN预检7组参数均有限非零梯度、旧专家/增益冻结；新run `LG_C_augmented_replay_20261025`，
 GPU3 UUID4d8bfdb9、显存限额40%；最近实检epoch1/TRAIN_seen12004/loss1.6234（含新增强目标，不与前项loss直接比较）。
-本地/服务器/实验室90项测试通过；训练结束自动bestlast CPU审计，无定时任务。
+数值回归在服务器及实验室均90项通过（本机未运行Torch数值测试）；训练结束自动bestlast CPU审计，无定时任务。
 D须依赖合格C后再接；C/D未准入不采光路，实际结果以run及CPU报告为准。
 
 ### 2026-10-25 新人工范围：允许完整阶段TEST选模，继续B/LG B与LG C仿真
