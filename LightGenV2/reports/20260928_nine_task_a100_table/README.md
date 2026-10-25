@@ -1,5 +1,42 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26 04:07北京：本轮LG实现优化及验收表完成，Qwen未改未重测
+
+交付新不可变目录 measurement_protocol_20261024/outputs/
+01a061e2-6f88-7913-87f5-b632000e4c83/lg_optimization_20261026_02：
+`A100_LG指令图与诊断同步优化_三轮2048次_20261026.xlsx`18530B
+SHA7e7e4bc2f2997e69774a498b09e3f339cc0b089f66f9bce64c45a05f186c4a0b。
+两sheet：16视频/64帧结果、完整中文口径及优化说明；逐轮原值、建图开销、256至2048前缀。
+每方案三fresh进程、每版每轮2048输入，512原TEST循环4次（非2048独立视频）。
+77公式已读回缓存独立复算、0错误，改原值联动并恢复；三张实际预览逐项视觉审查。
+`raw_file_index.csv`255原/收据/独立审计文件101985B
+SHAddd926626317d2765d52c4e95eda2908180529cc716fcd62cb949f7038694546；
+只对真实transfer receipt映射远程路径，local辅助不伪造远程来源。
+`independent_results.json`SHA880b6c0c29d3bb5440a7334b8bb1f7fcb1cb59a338f775864a35e72436b8da6a，
+9个LG配对点全部区间、在线分词ID/mask、源Git blobs、GPU平台和全部输出独立离线复核passed；
+跨全部三种实现及三fresh完整评分数组全同，诊断数组四循环全同且末场原完整输出/诊断逐位同。
+`delivery_manifest.json`3061B
+SHAdae2b81f73ddfc4876ef80506a4516c416175db0d880acacfc2f2b93a81914a2。
+lg_optimization_20261026_01为只含前两方案的本地前期预览，保留但不充本次九点验收版。
+
+整体均值（每16视频ms，全部首批/建图成本保留）：
+输入适配前移：control99.107184 / candidate103.920726，0.953681倍，未提速；
+诊断延后＋完整图：control97.212480 / candidate41.174179，2.361006倍；
+诊断延后＋双缓冲前后端图：control116.163980 / candidate50.324693，2.308283倍。
+最后一个实现本轮三均值不如完整图，不用其较快单轮替代。共卡波动保留，不选择最慢Qwen。
+选完整图41.174179ms/16＝0.643346548ms/帧；与保留Qwen50完整串行4843.341309ms/16
+相除117.630549倍；仅Qwen GPU模型窗口1720.202226ms/16相除41.778665倍。
+前者按人工指定计入Qwen内部逐视频CPU准备、而LG图像原输入驻留，不是双方文件端到端；
+不同共卡时间，也不声称独占硬件百倍。本轮只测实现时间，没有新增能耗测量或重评完整TEST。
+完整GPU软件含FFT/残差/融合，不能拿它冒称物理光路实测；原18/18成本和历史成品均未覆盖。
+
+双缓冲根a100_lgvq_split_graph_pipeline_20261026_01/controller583522，workers583541/595095/607835
+已complete退出，MPS释放；每叶16原文件先SHA备份，完整58原文件2549149B及0B外日志已取回。
+最后只读captureUnix1792958816.5383198：26记录源全同，原图与双缓冲八个PID全退出，
+private MPS查询returncode1/no daemon。lab实际HEAD仍ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40，
+源码是已发布Git路径覆盖，未整仓ff活动peer。所有本轮exec/helper已收尾，无待poll。
+24无模型合同测试本地passed，新双缓冲4项lab亦passed；无训练、无新Qwen调用、不连租机。
+
 ## 2026-10-26：原完整图03三轮通过，配对2.36倍；继续测试双缓冲前后端图
 
 Graph03/controller540027与子540049/552250/564224已complete退出，MPS释放。
