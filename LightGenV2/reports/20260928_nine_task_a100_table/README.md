@@ -37,6 +37,24 @@ SHA0d50873d01941f5df45308d31eae0d1897e9d59e2dc39a2104355c5924496607。保留此�
 只改已停止的独立Qwen入口，继续相同逐视频数学与原边界；新队列等待外占、连续12idle
 后才加载，每轮鲜进程，不重复任何合格LG。原deadline1792957315.848585仍有限非ETA。
 
+后续02/controller152576/worker156525在加载前资产SHA核查阶段被新外国hmh156957
+打断；它01:46:27启动，01:50:26真实index6/UUID3f60d773...6c55利用率57%、3954MiB，
+不是把01:39旧占用误当现在。02已退出，8原文件9059B经`backup_receipt_foreign_stop01.json`
+逐SHA取回，含实际`foreign_resource_observation_20261026_01.json`；外日志862B
+SHAd7fe48c1905b32becbc2e9d27335ad721c3b6cbd7ab4c99be4af44def6f079d6。
+本次没有正式GPU推理结果，不冒数值失败；不碰外人进程。严格串行入口修复继承scope标签
+并在每轮等待外占归零，不在等待期间加载模型；5项无模型tests本地及lab通过。
+发布76a4b81167528b8d622c064e1a38f8a379236d9c，server仅Git安装本人两个入口/test路径，
+运行HEAD仍ae9e5c0ff，保留peer源码及21个合格LG记录源字节不变，不盲目ff。
+
+唯一当前是`a100_qwen_strict_serial_20261026_03`/controller165220，previous02；
+Unix1792950723.3738637为waiting_foreign_process、无child/completed[]，同hmh156957/3954MiB。
+只排Qwen50三轮严格逐视频2048，不重做任何LG；共同原deadline1792957315.848585。
+启动helper在controller导入完成前1秒读状态文件遭FileNotFoundError，但新PID已真正创建，
+随后实查165220及suite正常，未重复启动。此前02/01旧PID已退出且raw全备，不再等旧链。
+新输出/auditor/builder适配仍在本地进行，尚无新最终XLSX，不拿旧1030ms resident-Qwen
+冒当前正式对照；原缺项未补造、全部旧交付保留。
+
 ## 2026-10-26：新授权GPU前端跨组流水线与Qwen50同2048输入序列
 
 本轮用户已另行授权LG优化测量及同数量Qwen50重测，覆盖旧“不补大模型”限制，
