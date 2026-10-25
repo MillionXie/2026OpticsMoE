@@ -201,10 +201,10 @@ def source_partitions(tasks,ids,kinds,labels,bags):
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','parent','teacher_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
-    p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
+    p.add_argument('--parent-sha256',required=True);p.add_argument('--warm-assistant-run',type=Path);p.add_argument('--warm-student',type=Path);p.add_argument('--warm-student-sha256');p.add_argument('--retention-teacher-run',type=Path);p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Inherited TEST information must be disclosed')
     cfg=json.loads(a.profile.read_text())
-    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json','config_LG_B_fullsource_mean_20261026.json','config_D2NN_C_fullsource_mean_20261026.json','config_D2NN_D_fullsource_mean_20261026.json')):raise ValueError('Only published finite profiles')
+    if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in ('config_margin_teacher_20261025.json','config_margin_robust_teacher_20261025.json','config_margin_bagged_teacher_20261025.json','config_margin_bounded_teacher_20261025.json','config_margin_B_retention_teacher_20261025.json','config_LG_B_margin_teacher_20261025.json','config_LG_B_bounded_teacher_20261025.json','config_margin_B_function_selection_20261025.json','config_margin_C_function_selection_20261025.json','config_LG_B_function_selection_20261025.json','config_LG_B_domain_mixup_20261025.json','config_LG_B_measured_repeat_20261025.json','config_LG_B_repeat_augmentation_20261025.json','config_LG_B_full_source_margin_20261025.json','config_LG_B_new_task_transfer_20261025.json','config_LG_B_fullsource_mean_20261026.json','config_D2NN_C_fullsource_mean_20261026.json','config_D2NN_D_fullsource_mean_20261026.json','config_LG_B_retained_function_20261026.json','config_D2NN_C_retained_function_20261026.json','config_D2NN_D_retained_function_20261026.json')):raise ValueError('Only published finite profiles')
     torch.set_num_threads(2);torch.manual_seed(20261025)
     cr=json.loads((a.capture/'report.json').read_text());tp=json.loads((a.teacher_run/'protocol.json').read_text());rr=json.loads((a.teacher_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or tp['capture_features_SHA256']!=cr['features_sha256']:raise ValueError('Sealed same capture required')
@@ -231,9 +231,17 @@ def main():
             for start in range(0,len(values),chunk):
                 pairs.extend((start+n,start+p) for n,p in paired_indices(ii[start:start+chunk],yy[start:start+chunk].numpy(),tt[start:start+chunk]))
             for name in names:
+                if cfg.get('source_pair_tasks') and name not in cfg['source_pair_tasks']:continue
                 chosen=[(n,p) for n,p in pairs if tt[n]==name]
                 if chosen:pair_views.append(torch.stack([values[p]-values[n] for n,p in chosen]).double()@transform.double().T)
     with torch.no_grad():target=torch.cat([teacher(v@transform.T) for v in pool.split(256)]).double();margins=bounded_teacher_margin(target,labels)
+    warm_student=None
+    if bool(a.warm_student)!=bool(cfg.get('warm_student_development')):raise ValueError('Warm student scope must be explicit')
+    if a.warm_student:
+        wm,wcp=load_checkpoint(a.warm_student,a.warm_student_sha256)
+        if wcp['architecture']!=cp['architecture'] or wcp['stage']!=stage or wcp['measured_features_sha256']!=cr['features_sha256'] or upstream_state(wm)!=before or wcp.get('valid_for_formal_test_table') is not False:raise ValueError('Exact same measured-prefix development student required')
+        with torch.no_grad():model.shared_head.weight.copy_(wm.shared_head.weight)
+        warm_student=dict(path=str(a.warm_student),SHA256=a.warm_student_sha256,all_task_shared_PT=True)
     warm=None;initial_head=model.shared_head.weight.detach().double()
     if cfg.get('bounded_generalized_CE') or cfg.get('warm_margin_function'):
         if a.warm_assistant_run is None:raise ValueError('Sealed same-parent regret assistant required')
@@ -254,21 +262,22 @@ def main():
         rm,_=load_checkpoint(path,sha(path))
         if upstream_state(rm)!=before:raise ValueError('Retention teacher optical prefix differs')
         retention_rows=np.flatnonzero((pt=='eurosat')&(kinds==0));retention_target=pool[retention_rows].double()@rm.shared_head.weight.detach().double().T;retention=dict(path=str(path),SHA256=sha(path),TRAIN_sources=300,TRAIN_query_rows=len(retention_rows),EVAL_query_rows=0,weight=cfg['Euro_TRAIN_retention_weight'])
-    function_rows=None;function_target=None;function_receipt=None
+    function_rows=None;function_target=None;function_receipt=None;function_tasks=None
     if cfg.get('TRAIN_function_weight'):
-        task=cfg['TRAIN_function_task'];function_rows=np.flatnonzero((pt==task)&(kinds==0))
+        function_tasks=cfg.get('TRAIN_function_tasks',[cfg.get('TRAIN_function_task')]);function_rows=np.flatnonzero(np.isin(pt,function_tasks)&(kinds==0))
         if len(function_rows)==0:raise ValueError('Declared TRAIN function task absent')
         # B retains the stronger sealed margin head; C retains its original
         # measured current-task function while resolving old-task interference.
         reference_head=initial_head if cfg['TRAIN_function_reference']=='warm' else model.shared_head.weight.detach().double()
         function_target=pool[function_rows].double()@reference_head.T
-        function_receipt=dict(task=task,TRAIN_query_rows=len(function_rows),EVAL_query_rows=0,reference=cfg['TRAIN_function_reference'],weight=cfg['TRAIN_function_weight'])
+        function_receipt=dict(tasks=function_tasks,TRAIN_query_rows=len(function_rows),EVAL_query_rows=0,reference=cfg['TRAIN_function_reference'],weight=cfg['TRAIN_function_weight'])
     pair_weight=cfg.get('source_pair_ranking_weight',0)
     if pair_weight:
         for values,tt,ii,yy,chunk in ((q,qt,qi,qy,len(tr)),(dx,dt,di,dy,len(exposed))):
             pairs=[]
             for start in range(0,len(values),chunk):pairs.extend((start+n,start+p) for n,p in paired_indices(ii[start:start+chunk],yy[start:start+chunk].numpy(),tt[start:start+chunk]))
             for name in names:
+                if cfg.get('source_pair_tasks') and name not in cfg['source_pair_tasks']:continue
                 chosen=[(n,p) for n,p in pairs if tt[n]==name]
                 if chosen:pair_views.append(torch.stack([values[p]-values[n] for n,p in chosen]).double()@transform.double().T)
     mix_features=None;mix_targets=None;mix_tasks=None
@@ -297,7 +306,7 @@ def main():
         all_TEST_sources_used=bool(cfg.get('all_TEST_source_teacher')),
         objective='Equal tasks/pools; source-mean margin/CE, no hardest-tail reweighting' if cfg.get('mean_source_objective') else 'Equal tasks/pools; source-mean generalizedCE q=.7 after bounded teacher margins' if cfg.get('bounded_generalized_CE') else 'Equal tasks and TRAIN/allowed-derivative pools; .5 mean+.5 smooth worst40% source margin/CE; clipped correct-teacher margins, not ten-logit matching',
         teacher_selection='Prospective complete-stage TEST band key, first qualifying actual shared head; otherwise closest complete-stage key' if cfg.get('whole_stage_TEST_selection') else 'Lowest fit objective, no EVAL selection or score ceiling loss',final_student_inputs='TRAIN and its8 weak augmentations only; full-rank function recovery',
-        warm_assistant=warm,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
+        warm_assistant=warm,warm_student=warm_student,Euro_TRAIN_function_retention=retention,bounded_loss='Mean source generalizedCE q=.7 after bounded correct-teacher margin; no hardest-tail weighting' if cfg.get('bounded_generalized_CE') else None,
         centered_TRAIN_function_retention=function_receipt,source_pair_ranking_weight=pair_weight,TEST_selected_development=bool(cfg.get('whole_stage_TEST_selection')),
         derivative_task_weights=cfg.get('derivative_task_weights'),
         TRAIN_cross_task_mixup=dict(weight=cfg['TRAIN_cross_task_mixup_weight'],fractions=[.1,.2],soft_labels=True,TRAIN_only=True,EVAL_sources=0) if cfg.get('TRAIN_cross_task_mixup_weight') else None,
@@ -329,7 +338,9 @@ def main():
                 values=source_average(rows[ix],groups,count);loss+=objective_pool_weight(n,kind,cfg)*source_pool_objective(values,threshold[names.index(n),kind],cfg)/(2*len(names))
             if pair_views:loss+=(pair_weight or cfg.get('paired_ranking_weight',0))*torch.stack([paired_margin_loss(v@weight.T) for v in pair_views]).mean()
             if retention is not None:loss+=cfg['Euro_TRAIN_retention_weight']*retention_KL(z[retention_rows]@weight.T,retention_target)
-            if function_rows is not None:loss+=cfg['TRAIN_function_weight']*centered_function_loss(z[function_rows]@weight.T,function_target)
+            if function_rows is not None:
+                current=z[function_rows]@weight.T
+                loss+=cfg['TRAIN_function_weight']*torch.stack([centered_function_loss(current[pt[function_rows]==n],function_target[pt[function_rows]==n]) for n in function_tasks]).mean()
             if mix_features is not None:
                 mixed=-(mix_targets*F.log_softmax(mix_features@weight.T,1)).sum(1)
                 loss+=cfg['TRAIN_cross_task_mixup_weight']*torch.stack([mixed[mix_tasks==n].mean() for n in names]).mean()

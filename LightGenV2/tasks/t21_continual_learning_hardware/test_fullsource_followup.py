@@ -22,6 +22,13 @@ class FullSourceFollowupTests(unittest.TestCase):
         validate_profile(cfg)
         with self.assertRaises(ValueError):validate_profile(dict(cfg,SDK=True))
         self.assertEqual(sum(cfg['sources_per_task'].values()),3000)
+    def test_retained_function_uses_TRAIN_and_same_original_scope(self):
+        for name,stage,arch in [('LG_B',2,'moe'),('D2NN_C',3,'d2nn'),('D2NN_D',4,'d2nn')]:
+            cfg=json.loads(Path(__file__).with_name('config_'+name+'_retained_function_20261026.json').read_text())
+            self.assertEqual(len(development_bands(stage,arch,cfg)),stage)
+            self.assertTrue(set(cfg['TRAIN_function_tasks'])<=set(cfg['development_bands']))
+            for n in cfg['TRAIN_function_tasks']:self.assertEqual(cfg['derivative_task_weights'][n],0.)
+            self.assertEqual(cfg['TRAIN_function_weight'],2.)
     def test_mean_objective_does_not_add_accuracy_ceiling_gradient(self):
         values=torch.tensor([1.,2.,9.],requires_grad=True);threshold=torch.tensor(2.,requires_grad=True)
         loss=source_pool_objective(values,threshold,dict(mean_source_objective=True));loss.backward()
