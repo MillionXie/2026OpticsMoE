@@ -13,6 +13,12 @@ class PairedFrontendTests(unittest.TestCase):
         x=torch.randn(4,128);f=x.repeat_interleave(2,0).requires_grad_();loss=alignment(f);self.assertLess(abs(float(loss)),1e-6);loss.backward();self.assertTrue(torch.isfinite(f.grad).all())
     def test_parent_e0_is_retained_if_no_validation_improvement(self):
         code=Path(__file__).with_name('diagnose_frontend_train.py').read_text();self.assertIn("best=selection(initial_score,[0,1])",code);self.assertIn("epoch=0,metrics",code)
+    def test_transfer_is_TRAIN_fitted_and_not_optical_claim(self):
+        code=Path(__file__).with_name('diagnose_frontend_train.py').read_text()
+        self.assertIn("ridge_weights(tr[mask],train['labels'][mask]",code)
+        self.assertNotIn("load_arrays(a.data,'test')",code)
+        self.assertIn('optical_result=False',code)
+        self.assertIn("cfg['TRAIN_teacher_SHA256']",code)
 
 
 if __name__=='__main__':unittest.main()

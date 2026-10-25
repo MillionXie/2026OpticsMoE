@@ -12,6 +12,7 @@ from LightGenV2.tasks.t09_multimodal_matching.vision import VisionEncoder
 from .unified_native import FRONTEND_SHA256
 from .train_unified_static import load_arrays,balanced_batches,selection
 from .refine_unified import scores_from_logits
+from .diagnose_unified import ridge_weights,class_scores
 from LightGenV2.tasks.t21_continual_learning_hardware.train_native import sha,put,gpu_gate
 
 
@@ -35,11 +36,27 @@ def score(model,x,data):
     return scores_from_logits(logits,data)
 
 
+@torch.no_grad()
+def transfer_score(model,tx,vx,train,val):
+    """Ridge fit on TRAIN only; VAL evaluates transfer, never enters the solve."""
+    model.eval()
+    def extract(x):
+        f=torch.cat([model(v)[0].cpu().half().float() for v in x.split(128)]).numpy()
+        return f/np.maximum(np.linalg.norm(f,axis=1,keepdims=True),1e-12)
+    tr=extract(tx);va=extract(vx);rows=[]
+    for domain,name in ((0,'RGB_to_SAR'),(1,'SAR_to_RGB')):
+        mask=train['domains']==domain;w=ridge_weights(tr[mask],train['labels'][mask],.001)
+        report=class_scores(va@w.T,val['labels'],val['domains']);other='SAR' if domain==0 else 'RGB'
+        rows.append(dict(direction=name,validation_accuracy=report[other]['accuracy']))
+    return dict(directions=rows,mean=float(np.mean([r['validation_accuracy'] for r in rows])),TRAIN_fitting_only=True)
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('data','frontend','profile','out'):p.add_argument('--'+n,type=Path,required=True)
+    p.add_argument('--teacher',type=Path)
     p.add_argument('--gpu-uuid',required=True);a=p.parse_args();cfg=json.loads(a.profile.read_text())
-    if a.profile.resolve() not in {Path(__file__).with_name(v).resolve() for v in ('config_frontend_diagnostic_20261025.json','config_frontend_paired_20261025.json')}:raise ValueError('Published finite diagnostic profile required')
+    if a.profile.resolve() not in {Path(__file__).with_name(v).resolve() for v in ('config_frontend_diagnostic_20261025.json','config_frontend_paired_20261025.json','config_frontend_transfer_retained_20261025.json')}:raise ValueError('Published finite diagnostic profile required')
     paired=bool(cfg.get('paired_alignment_weight',0.));initial_sha=cfg.get('initial_frontend_SHA256',FRONTEND_SHA256)
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);gpu=gpu_gate(cfg,a.gpu_uuid)
     if sha(a.frontend)!=initial_sha:raise ValueError('Wrong original frontend')
@@ -47,10 +64,16 @@ def main():
     if cfg.get('reset_temporary_head',True):torch.nn.init.xavier_uniform_(model.head.weight);torch.nn.init.zeros_(model.head.bias)
     if sum(v.numel() for v in model.features.parameters())!=32128 or sum(v.numel() for v in model.head.parameters())!=3096:raise ValueError('Changed original architecture')
     train=load_arrays(a.data,'train');val=load_arrays(a.data,'validation');tx=torch.from_numpy(train['images']).cuda();vx=torch.from_numpy(val['images']).cuda();y=torch.as_tensor(train['labels'],device='cuda');a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();best=(-1.,-1.,-float('inf'));last_improvement=0;history=[];best_epoch=0
+    retained=bool(cfg.get('TRAIN_teacher_KD_weight',0.));teacher=None
+    if retained:
+        assert a.teacher is not None and sha(a.teacher)==cfg['TRAIN_teacher_SHA256']
+        teacher=VisionEncoder().cuda();teacher.load_state_dict(torch.load(a.teacher,map_location='cpu',weights_only=False)['model'],strict=True);teacher.eval().requires_grad_(False)
     optimizer=torch.optim.AdamW([dict(params=model.features.parameters(),lr=cfg['feature_lr']),dict(params=model.head.parameters(),lr=cfg['temporary_head_lr'])],weight_decay=cfg['weight_decay'])
     put(a.out/'protocol.json',dict(config=cfg,original_frontend_SHA256=initial_sha,TRAIN=6000,validation=2000,TRAIN_locations=3000,shared_pretraining_domains=['RGB','SAR'],source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_sha256=sha(__file__),data_manifest_SHA256=sha(a.data/'manifest.json'),TEST_access=False,SDK=False,gpu=gpu,optical_result=False,automatically_replace_optical_frontend=False))
     if paired:
-        initial_score=score(model,vx,val);best=selection(initial_score,[0,1]);put(a.out/'baseline_validation.json',initial_score)
+        initial_score=score(model,vx,val);best=selection(initial_score,[0,1]);transfer=transfer_score(model,tx,vx,train,val) if retained else None
+        if retained:best=(best[0]+cfg['transfer_selection_weight']*transfer['mean'],*best)
+        put(a.out/'baseline_validation.json',dict(**initial_score,transfer=transfer))
         baseline=dict(model={n:v.detach().cpu() for n,v in model.state_dict().items()},config=dict(original['config'],feature_parameters=32128,temporary_head_parameters=3096,test_policy='never read',T20_domain_pretraining=cfg),epoch=0,metrics=dict(epoch=0,validation=initial_score['scores']),diagnostic_only=True,TEST_access=False,original_frontend_SHA256=initial_sha)
         torch.save(baseline,a.out/'best_checkpoint.pt');torch.save(baseline,a.out/'last_checkpoint.pt')
     for epoch in range(1,cfg['epochs']+1):
@@ -61,16 +84,23 @@ def main():
             x=tx[ix].clone();n=len(x)//2 if paired else len(x);h=torch.rand(n,device='cuda')<cfg['TRAIN_horizontal_flip_probability'];v=torch.rand(n,device='cuda')<cfg['TRAIN_vertical_flip_probability']
             if paired:h=h.repeat_interleave(2);v=v.repeat_interleave(2)
             x[h]=x[h].flip(2);x[v]=x[v].flip(1);encoded,raw_logits=model(x);logits=raw_logits[:,:10];cost=F.cross_entropy(logits,y[ix],label_smoothing=cfg['label_smoothing']);pair_cost=alignment(encoded) if paired else cost*0;cost=cost+cfg.get('paired_alignment_weight',0.)*pair_cost;pair_total+=float(pair_cost.detach())*len(ix);optimizer.zero_grad(set_to_none=True)
+            if retained:
+                with torch.no_grad():target=teacher(x)[1][:,:10]
+                temp=cfg['TRAIN_teacher_temperature'];cost+=cfg['TRAIN_teacher_KD_weight']*F.kl_div(F.log_softmax(logits/temp,1),(target/temp).softmax(1),reduction='batchmean')*temp**2
             if not torch.isfinite(cost):raise RuntimeError('Nonfinite auxiliary TRAIN objective')
             cost.backward();torch.nn.utils.clip_grad_norm_(model.parameters(),5.);optimizer.step();total+=float(cost.detach())*len(ix);seen+=len(ix);correct+=int((logits.argmax(1)==y[ix]).sum())
-        scores=score(model,vx,val);value=selection(scores,[0,1]);row=dict(epoch=epoch,TRAIN_loss=total/seen,TRAIN_pair_alignment=pair_total/seen,TRAIN_accuracy=correct/seen,validation=scores['scores']);history.append(row)
+        scores=score(model,vx,val);value=selection(scores,[0,1]);probe_due=not retained or epoch%cfg['transfer_probe_interval']==0 or epoch==cfg['epochs']
+        transfer=transfer_score(model,tx,vx,train,val) if retained and probe_due else None
+        if retained and probe_due:value=(value[0]+cfg['transfer_selection_weight']*transfer['mean'],*value)
+        row=dict(epoch=epoch,TRAIN_loss=total/seen,TRAIN_pair_alignment=pair_total/seen,TRAIN_accuracy=correct/seen,validation=scores['scores'],transfer=transfer);history.append(row)
         checkpoint=dict(model={n:v.detach().cpu() for n,v in model.state_dict().items()},config=dict(original['config'],feature_parameters=32128,temporary_head_parameters=3096,test_policy='never read',T20_domain_pretraining=cfg),epoch=epoch,metrics=row,diagnostic_only=True,TEST_access=False,original_frontend_SHA256=initial_sha)
         torch.save(checkpoint,a.out/'last_checkpoint.pt')
-        if value>best:best=value;best_epoch=epoch;last_improvement=epoch;torch.save(checkpoint,a.out/'best_checkpoint.pt')
+        if probe_due and value>best:best=value;best_epoch=epoch;last_improvement=epoch;torch.save(checkpoint,a.out/'best_checkpoint.pt')
         put(a.out/'history.json',history);put(a.out/'status.json',dict(state='training',**row,best_epoch=best_epoch,updated=time.time()))
         if time.monotonic()-started>cfg['max_seconds'] or (epoch>=cfg['minimum_epochs'] and epoch-last_improvement>=cfg['patience']):break
     assert sha(a.frontend)==initial_sha
-    put(a.out/'completion.json',dict(passed=True,optical_result=False,best_epoch=best_epoch,epochs_completed=epoch,best_validation_mean=best[0],best_SHA256=sha(a.out/'best_checkpoint.pt'),last_SHA256=sha(a.out/'last_checkpoint.pt'),TEST_access=False,SDK=False,automatically_replace_optical_frontend=False,seconds=time.monotonic()-started));put(a.out/'status.json',dict(state='complete',best_epoch=best_epoch,updated=time.time()))
+    if retained:assert sha(a.teacher)==cfg['TRAIN_teacher_SHA256'] and all(p.grad is None for p in teacher.parameters())
+    put(a.out/'completion.json',dict(passed=True,optical_result=False,best_epoch=best_epoch,epochs_completed=epoch,best_validation_mean=best[1] if retained else best[0],selection_objective=best[0],selection_uses_transfer_probe=retained,best_SHA256=sha(a.out/'best_checkpoint.pt'),last_SHA256=sha(a.out/'last_checkpoint.pt'),TEST_access=False,SDK=False,automatically_replace_optical_frontend=False,seconds=time.monotonic()-started));put(a.out/'status.json',dict(state='complete',best_epoch=best_epoch,updated=time.time()))
 
 
 if __name__=='__main__':main()
