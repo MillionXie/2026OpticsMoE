@@ -1,0 +1,15 @@
+{
+  "schema": "T21_LG_C_actual_TRAIN_teacher_views_v1",
+  "seed": 20261025, "epochs": 2, "max_fit_seconds": 5400,
+  "memory_records_per_old_task": 300, "memory_cycles_per_epoch": 50,
+  "batch_size": 8, "old_task_weight": 4,
+  "views_per_old_source": 8, "view_noise_TRAIN_std": 0.005, "view_gain_delta": 0.02,
+  "actual_teacher_view_weight": 0.5,
+  "optical_lr": 0.00003, "head_lr": 0.00005,
+  "weight_decay": 0.001, "label_smoothing": 0.02,
+  "reference_CE_weight": 0.5, "reference_KD_weight": 4.0, "reference_temperature": 2.0,
+  "TRAIN_teacher_correct_only": true,
+  "allowed_GPU_UUIDs": ["GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d", "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd", "GPU-1b963983-7909-af6e-0528-f0f0661ab549"],
+  "per_process_GPU_memory_fraction": 0.4, "TEST_gradients": false,
+  "reference": {"eurosat": 0.779, "clevr": 0.791, "speech_binary": 0.781}
+}
