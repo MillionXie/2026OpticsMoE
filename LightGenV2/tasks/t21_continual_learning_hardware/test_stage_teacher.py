@@ -6,6 +6,13 @@ from .fit_stage_balanced_teacher import validate_profile,nested_pair_sources,der
 
 
 class StageTeacherTests(unittest.TestCase):
+    def test_weak_derivatives_remain_nonidentity_and_default_is_unchanged(self):
+        x=torch.rand(16,12)+.3;x=x/x.mean(1,keepdim=True);tasks=np.array(['eurosat']*4+['clevr']*4+['eurosat']*4+['clevr']*4);ids=np.array([0,1,2,3]*4);y=torch.tensor([0,1,0,1]*4)
+        torch.manual_seed(4);default=derivatives(x,y,tasks,ids,np.arange(8),np.arange(8,16))[0]
+        torch.manual_seed(4);explicit=derivatives(x,y,tasks,ids,np.arange(8),np.arange(8,16),(.02,.05),.001)[0]
+        torch.testing.assert_close(default,explicit)
+        weak=derivatives(x,y,tasks,ids,np.arange(8),np.arange(8,16),(.002,.005),.0001)[0]
+        self.assertFalse(torch.any(torch.all(weak==x[8:].repeat(10,1),1)));torch.testing.assert_close(weak.mean(1),torch.ones(80))
     def test_profiles_are_exact_and_finite(self):
         for stage in ('B800','B800_Euro200','C500'):
             cfg=json.loads(Path(__file__).with_name('config_stage_'+stage+'_teacher_20261025.json').read_text());validate_profile(cfg)

@@ -1,0 +1,12 @@
+{
+  "schema": "T21_LG_C_disclosed_weak_source_joint_response_20261026",
+  "architecture": "moe", "stage": 3, "seed": 20261026,
+  "frozen_S1_SHA256": "e89fdcd2858a809fefa2d0086a104b5d6b5bf31744a5d02cf5e960f4f993e797",
+  "maximum_steps": 240, "maximum_seconds": 360,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.0001, 0.0003, 0.0005],
+  "derivative_mixing": [0.002, 0.005], "derivative_noise_scale": 0.0001,
+  "binary_derivative_CE": true, "delta_L2": 0.0000001,
+  "all_TEST_sources_authorized": true, "independent_test_samples": 0,
+  "valid_for_formal_test_table": false, "new_inference_layers": 0,
+  "SDK": false, "GPU": false
+}

@@ -51,7 +51,7 @@ def main():
     for n in ('capture','package','warm_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit inherited TEST information acknowledgment required')
-    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json')
+    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json','config_LG_C_weak_source_response_20261026.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only fixed published finite response-transfer profile')
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);package=json.loads(a.package.read_text());cr=json.loads((a.capture/'report.json').read_text());wr=json.loads((a.warm_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or not wr['passed'] or not wr['strict_CPU_reloaded']:raise ValueError('Completed immutable capture/warm student required')
@@ -68,10 +68,10 @@ def main():
         with np.load(dataset['path'],allow_pickle=False) as data:original_ids=data['source_indices'].copy()
         targets[ix]=torch.tensor(aligned_simulation_probabilities(ids[ix],y[ix].numpy(),original_ids,cpu['scores'][name]));source_map[name]=dict(ids=ids[ix].tolist(),dataset_SHA256=dataset['sha256'],S1_correct=cpu['scores'][name]['correct'])
     a.out.mkdir(parents=True,exist_ok=False);started=time.monotonic();transform,conditioning=full_covariance_transform(x[tr],contrast_transform(x[tr]));query,qt=TRAIN_queries(x[tr],tasks[tr],cfg);qy=y[tr].repeat(1+cfg['TRAIN_augmentations'])
-    dx,dy,dt,di=derivatives(x,y,tasks,ids,tr,te);target_lookup={(str(tasks[i]),int(ids[i])):targets[i] for i in te};soft=torch.stack([target_lookup[(str(n),int(v))] for n,v in zip(dt,di)])
+    dx,dy,dt,di=derivatives(x,y,tasks,ids,tr,te,tuple(cfg.get('derivative_mixing',(.02,.05))),cfg.get('derivative_noise_scale',.001));target_lookup={(str(tasks[i]),int(ids[i])):targets[i] for i in te};soft=torch.stack([target_lookup[(str(n),int(v))] for n,v in zip(dt,di)])
     z=query.double()@transform.T;dz=dx.double()@transform.T;initial=model.shared_head.weight.detach().double()@torch.linalg.inv(transform);weight=torch.nn.Parameter(initial.clone())
     retained=cfg.get('retained_task_functions',[]);warm_soft=(dx.double()@model.shared_head.weight.detach().double().T).softmax(1).detach()
-    put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),capture_features_SHA256=cr['features_sha256'],warm_SHA256=wr['student_sha256'],S1_checkpoint_SHA256=package['checkpoint_sha256'],package_SHA256=sha(a.package),source_map=source_map,conditioning=conditioning,targets='Unmodified frozen S1 ten-output probabilities, aligned by original IDs; no correctness or accuracy filtering',loss='Equal-task original TRAIN CE.25 + derivative frozen simulation KL1 + parameter anchor1e-5; optional fixed old-task warm-function KL2',retained_task_functions=retained,student_fit_TEST_inputs=0,teacher_original_TEST_gradient_rows=0,all_TEST_sources_used=True,SDK=False,GPU=False,**DISCLOSURE))
+    put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),capture_features_SHA256=cr['features_sha256'],warm_SHA256=wr['student_sha256'],S1_checkpoint_SHA256=package['checkpoint_sha256'],package_SHA256=sha(a.package),source_map=source_map,conditioning=conditioning,targets='Unmodified S1 probabilities; fixed weak variant uses Euro soft response and authorized binary derivative labels; no accuracy filtering',loss='TRAIN CE.25; default all-task S1 KL1, weak variant Euro KL.25 plus binary derivativeCE.75; configured L2; optional warm-function KL2',retained_task_functions=retained,student_fit_TEST_inputs=0,teacher_original_TEST_gradient_rows=0,all_TEST_sources_used=True,SDK=False,GPU=False,**DISCLOSURE))
     best_weight=initial.clone();best_key=None;history=[];best_step=0
     def scores():
         with torch.no_grad():
@@ -80,7 +80,11 @@ def main():
     s=scores();best_key=whole_stage_band_key(s,bands);history.append(dict(step=0,scores=s))
     opt=torch.optim.LBFGS([weight],lr=1.,max_iter=1,history_size=20,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-11)
     def closure():
-        opt.zero_grad(set_to_none=True);ce=F.cross_entropy(z@weight.T,qy,reduction='none');loss=.25*torch.stack([ce[qt==n].mean() for n in names]).mean()+equal_task_soft_KL(dz@weight.T,soft,dt,names)+1e-5*(weight-initial)[:,:-1].square().sum()/10
+        opt.zero_grad(set_to_none=True);ce=F.cross_entropy(z@weight.T,qy,reduction='none');loss=.25*torch.stack([ce[qt==n].mean() for n in names]).mean()
+        if cfg.get('binary_derivative_CE'):
+            binary=F.cross_entropy(dz@weight.T,dy,reduction='none');loss+=.25*equal_task_soft_KL(dz@weight.T,soft,dt,['eurosat'])+.75*torch.stack([binary[dt==n].mean() for n in names if n!='eurosat']).mean()
+        else:loss+=equal_task_soft_KL(dz@weight.T,soft,dt,names)
+        loss+=cfg.get('delta_L2',1e-5)*(weight-initial)[:,:-1].square().sum()/10
         if retained:loss+=cfg['retention_weight']*equal_task_soft_KL(dz@weight.T,warm_soft,dt,retained)
         if not torch.isfinite(loss):raise RuntimeError('Nonfinite response transfer')
         loss.backward();return loss

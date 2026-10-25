@@ -67,7 +67,7 @@ def nested_pair_sources(ids,labels,previous):
     return sorted(previous|{v for g in added for v in (int(2*g),int(2*g+1))})
 
 
-def derivatives(x,y,tasks,ids,train,exposed):
+def derivatives(x,y,tasks,ids,train,exposed,mixing=(.02,.05),noise_scale=.001):
     """Nonidentity mix; binary positive/negative share partner and noise."""
     std=x[train].std(0,unbiased=False);values=[]
     for repeat in range(10):
@@ -84,8 +84,8 @@ def derivatives(x,y,tasks,ids,train,exposed):
                 for n,p in pairs:
                     if tasks[exposed[n]]!=task:continue
                     tn,pp=tp[int(torch.randint(len(tp),(1,)))];partner[n]=x[pool[tn]];partner[p]=x[pool[pp]]
-        mix=.02 if repeat%2==0 else .05
-        out=((1-mix)*source+mix*partner+paired_derivative_noise(source,std,.001,pairs)).clamp_min(0)
+        mix=mixing[repeat%2]
+        out=((1-mix)*source+mix*partner+paired_derivative_noise(source,std,noise_scale,pairs)).clamp_min(0)
         out=out/out.mean(1,keepdim=True).clamp_min(1e-12)
         if torch.any(torch.all(out==source,1)):raise ValueError('Identity EVAL derivative forbidden')
         values.append(out)
