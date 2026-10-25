@@ -1,0 +1,18 @@
+{
+  "schema": "T21_B_bounded_teacher_old_TRAIN_retention_v5",
+  "allowed_stage": 2,
+  "bounded_generalized_CE": true,
+  "warm_bounded": true,
+  "Euro_TRAIN_retention_weight": 0.5,
+  "maximum_steps": 240,
+  "maximum_seconds": 300,
+  "TRAIN_augmentations": 8,
+  "TRAIN_noise_std": [0.001, 0.003, 0.005],
+  "paired_TRAIN": true,
+  "delta_L2": 0.00001,
+  "partial_TEST_source_expansion": false,
+  "original_student_parameters": 7840,
+  "new_inference_layers": 0,
+  "SDK": false,
+  "GPU": false
+}
