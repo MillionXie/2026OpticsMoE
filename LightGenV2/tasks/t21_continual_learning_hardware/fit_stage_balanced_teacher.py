@@ -24,6 +24,7 @@ from .train_native import put,sha
 def validate_profile(cfg):
     name={2:'config_stage_B800_teacher_20261025.json',3:'config_stage_C500_teacher_20261025.json'}.get(cfg.get('stage'))
     if cfg.get('stage')==2 and cfg.get('sources_per_task',{}).get('eurosat')==200:name='config_stage_B800_Euro200_teacher_20261025.json'
+    if cfg.get('stage')==2 and cfg.get('architecture')=='moe':name='config_stage_LG_B500_teacher_20261025.json'
     if name is None or cfg!=json.loads(Path(__file__).with_name(name).read_text()):
         raise ValueError('Only published finite B800/C500 development profiles')
     return cfg
@@ -76,7 +77,7 @@ def main():
     cr=json.loads((a.capture/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256']:raise ValueError('Sealed full capture required')
     model,cp=load_checkpoint(a.parent,a.parent_sha256);before=upstream_state(model)
-    if cp['architecture']!='d2nn' or cp['stage']!=cfg['stage'] or cp.get('measured_features_sha256')!=cr['features_sha256'] or model.shared_head.weight.numel()!=7840:raise ValueError('Original measured stage required')
+    if cp['architecture']!=cfg.get('architecture','d2nn') or cp['stage']!=cfg['stage'] or cp.get('measured_features_sha256')!=cr['features_sha256'] or model.shared_head.weight.numel()!=7840:raise ValueError('Original measured stage required')
     parent=copy.deepcopy(model.shared_head).eval()
     for v in parent.parameters():v.requires_grad_(False)
     with np.load(a.capture/'features.npz',allow_pickle=False) as d:
@@ -177,7 +178,8 @@ def main():
         if upstream_state(loaded)!=before or not torch.equal(loaded.shared_head.weight,w):raise RuntimeError('Original graph CPU replay differs')
         scores={n:evaluate(loaded.shared_head,x,y,tasks,ix) for n,ix in groups};saved_scores[role]={n:brief(v) for n,v in scores.items()}
         put(a.out/(role+'_development.json'),dict(scores=scores,source_indices=ids.tolist(),tasks=tasks.tolist(),splits=splits.tolist(),**DISCLOSURE))
-    put(a.out/'report.json',dict(**common,student_started=True,original_student_parameters=7840,new_inference_layers=0,baseline=brief(baseline),best=saved_scores['best'],last=saved_scores['last'],best_epoch=best_epoch,retained_parent=best_epoch==0,best_sha256=sha(a.out/'best_checkpoint.pt'),last_sha256=sha(a.out/'last_checkpoint.pt'),seconds=time.monotonic()-started))
+    band=all(cfg['development_floor'][n]-1e-7<=saved_scores['best']['all_development'][n]['accuracy']<=upper+1e-7 for n,upper in cfg['development_ceiling'].items()) if 'development_ceiling' in cfg else None
+    put(a.out/'report.json',dict(**common,student_started=True,all_tasks_within_requested_band=band,original_student_parameters=7840,new_inference_layers=0,baseline=brief(baseline),best=saved_scores['best'],last=saved_scores['last'],best_epoch=best_epoch,retained_parent=best_epoch==0,best_sha256=sha(a.out/'best_checkpoint.pt'),last_sha256=sha(a.out/'last_checkpoint.pt'),seconds=time.monotonic()-started))
     put(a.out/'status.json',dict(state='complete',updated=time.time()))
 
 
