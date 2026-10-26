@@ -44,7 +44,7 @@ class CaptureContractTests(unittest.TestCase):
         self.assertEqual(prediction.value, 19)
         self.assertEqual(len(slot['segments']), 34)
         self.assertTrue(all(s['graph'].calls == 1 for s in slot['segments']))
-        self.assertEqual(len(record['events']), 35)
+        self.assertEqual(len(record['events']), 36)
         self.assertEqual(slot['score_ready'].waits, 1)
         self.assertIsNone(tapes[0].context)
 

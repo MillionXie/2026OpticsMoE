@@ -50,16 +50,22 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
     mask = cpu_mask.bool().pin_memory()
     with torch.cuda.stream(front_stream):
         h0 = torch.cuda.Event(enable_timing=True); h1 = torch.cuda.Event(enable_timing=True)
+        h2d_host_start = time.perf_counter()
         h0.record()
         static['ids'].copy_(ids, non_blocking=True)
         static['mask'].copy_(mask, non_blocking=True)
         h1.record()
+        h2d_host_end = time.perf_counter()
+        d0 = torch.cuda.Event(enable_timing=True); d1 = torch.cuda.Event(enable_timing=True)
+        refresh_host_start = time.perf_counter(); d0.record()
         for name in ('pixels', 'quality'):
             static[name].copy_(raw[name], non_blocking=True)
+        d1.record(); refresh_host_end = time.perf_counter()
     # capture_begin(global) must not run with outstanding work on another stream.
     torch.cuda.synchronize()
     tape = tape_factory(torch, front_stream)
-    events = []
+    events = [dict(kind='frontend', label='input_device_refresh', start=d0, end=d1,
+                   stream='frontend', host_submit_start=refresh_host_start, host_submit_end=refresh_host_end)]
     captures = []
     restored = None
     try:
@@ -71,9 +77,11 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
         tape.segments[0]['kind'] = 'frontend'
         with torch.cuda.stream(front_stream):
             a = torch.cuda.Event(enable_timing=True); b = torch.cuda.Event(enable_timing=True)
+            submit_start = time.perf_counter()
             a.record(); tape.segments[0]['graph'].replay(); b.record()
             events.append(dict(kind='frontend', label='original_frontend_and_input_adapters',
-                               start=a, end=b, stream='frontend'))
+                               start=a, end=b, stream='frontend',
+                               host_submit_start=submit_start, host_submit_end=time.perf_counter()))
         b.synchronize()
         captures.append(dict(phase='frontend', start=started, end=time.perf_counter()))
         tape.stream = body_stream
@@ -94,12 +102,15 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
             body_stream.wait_event(b)
             for segment in tape.segments[1:]:
                 a = torch.cuda.Event(enable_timing=True); b = torch.cuda.Event(enable_timing=True)
+                submit_start = time.perf_counter()
                 a.record(); segment['graph'].replay(); b.record()
                 events.append(dict(kind=segment['kind'], label=segment['label'],
-                                   start=a, end=b, stream='body'))
+                                   start=a, end=b, stream='body',
+                                   host_submit_start=submit_start, host_submit_end=time.perf_counter()))
             a = torch.cuda.Event(enable_timing=True); b = torch.cuda.Event(enable_timing=True)
-            a.record(); prediction = result['prediction'].clone(); b.record()
-            events.append(dict(kind='electronics', label='retain_current_score', start=a, end=b, stream='body'))
+            submit_start = time.perf_counter(); a.record(); prediction = result['prediction'].clone(); b.record()
+            events.append(dict(kind='electronics', label='retain_current_score', start=a, end=b, stream='body',
+                               host_submit_start=submit_start, host_submit_end=time.perf_counter()))
         b.synchronize()
         prefix_owned = {k: v for k, v in prefix.items() if torch.is_tensor(v)}
         if not prefix_owned:
@@ -108,7 +119,9 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
                     segments=tape.segments, prediction=result['prediction'],
                     score_ready=b, keepalive=(ids, mask), tape=tape)
         record = dict(field=field, captures=captures, events=events,
+                      graph_construction=[{k: v for k, v in s.items() if k != 'graph'} for s in tape.segments],
                       original_H2D_events=(h0, h1), score_ready=b,
+                      H2D_host_submit_start=h2d_host_start, H2D_host_submit_end=h2d_host_end,
                       host_start=started, host_end=time.perf_counter(),
                       no_extra_or_discarded_forward=True, optical_replacement_ledger=ledger)
         return slot, prediction, record

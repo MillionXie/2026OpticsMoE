@@ -53,33 +53,42 @@ def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,firs
             # CPU tokenizer runs while the preceding queued GPU field executes.
             cpu_ids,cpu_mask,token_record=tokenize(field)
             if token_record['field']!=field:raise ValueError('Tokenizer field order changed')
+            pin_start=time.perf_counter()
             ids=cpu_ids.pin_memory();mask=cpu_mask.bool().pin_memory()
+            pin_end=time.perf_counter()
             # Wait only before REUSING this slot, not for the immediately prior
             # field. This also keeps old pinned CPU buffers alive until safe.
             wait_start=time.perf_counter();slot['score_ready'].synchronize();wait_end=time.perf_counter()
             current=raw[field%32];observed=[]
             with torch.cuda.stream(front_stream):
                 h0=torch.cuda.Event(enable_timing=True);h1=torch.cuda.Event(enable_timing=True)
+                h2d_host_start=time.perf_counter()
                 h0.record();slot['static']['ids'].copy_(ids,non_blocking=True)
                 slot['static']['mask'].copy_(mask,non_blocking=True);h1.record()
+                h2d_host_end=time.perf_counter()
                 # Device-to-device refresh remains charged, just as before.
-                x=torch.cuda.Event(enable_timing=True);y=torch.cuda.Event(enable_timing=True);x.record()
+                x=torch.cuda.Event(enable_timing=True);y=torch.cuda.Event(enable_timing=True)
+                submit_start=time.perf_counter();x.record()
                 for name in ('pixels','quality'):slot['static'][name].copy_(current[name],non_blocking=True)
                 slot['segments'][0]['graph'].replay();y.record()
-                observed.append(dict(kind='frontend',label='input_refresh_and_original_prefix',start=x,end=y,stream='frontend'))
+                observed.append(dict(kind='frontend',label='input_refresh_and_original_prefix',start=x,end=y,stream='frontend',
+                    host_submit_start=submit_start,host_submit_end=time.perf_counter()))
             with torch.cuda.stream(body_stream):
                 body_stream.wait_event(y)
                 for segment in slot['segments'][1:]:
                     a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True)
-                    a.record();segment['graph'].replay();b.record()
-                    observed.append(dict(kind=segment['kind'],label=segment['label'],start=a,end=b,stream='body'))
+                    submit_start=time.perf_counter();a.record();segment['graph'].replay();b.record()
+                    observed.append(dict(kind=segment['kind'],label=segment['label'],start=a,end=b,stream='body',
+                        host_submit_start=submit_start,host_submit_end=time.perf_counter()))
                 # Clone each score before that slot's output may be overwritten.
                 a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True)
-                a.record();prediction=slot['prediction'].clone();b.record()
-                observed.append(dict(kind='electronics',label='retain_current_score',start=a,end=b,stream='body'))
+                submit_start=time.perf_counter();a.record();prediction=slot['prediction'].clone();b.record()
+                observed.append(dict(kind='electronics',label='retain_current_score',start=a,end=b,stream='body',
+                    host_submit_start=submit_start,host_submit_end=time.perf_counter()))
             slot['score_ready']=b;slot['keepalive']=(ids,mask)
             outputs.append(prediction)
             records.append(dict(field=field,slot=slot_index,tokenizer=token_record,
+                pin_host_start=pin_start,pin_host_end=pin_end,H2D_host_submit_start=h2d_host_start,H2D_host_submit_end=h2d_host_end,
                 slot_reuse_wait_host_start=wait_start,slot_reuse_wait_host_end=wait_end,
                 original_H2D_events=(h0,h1),events=observed,score_ready=b,
                 host_submission_end=time.perf_counter()))
