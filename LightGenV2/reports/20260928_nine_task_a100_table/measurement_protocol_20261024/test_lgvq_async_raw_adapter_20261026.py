@@ -78,6 +78,16 @@ def fixture():
 
 
 class RawAdapterTests(unittest.TestCase):
+    def test_reused_event_requires_every_completed_snapshot_inside_its_fence(self):
+        raw=fixture();raw['event_reuse']=dict(enabled=True,allocated_events=144,
+            completed_fields_snapshotted_before_reuse=121,initialization_and_snapshot_overhead_inside_measured_window=True)
+        for field in range(5,126):
+            future=raw['records'][field+2];a=future['slot_reuse_wait_host_end']
+            raw['records'][field]['event_snapshot_before_reuse']=dict(reused_at_field=field+2,
+                prior_score_synchronized=True,host_start=a,host_end=a)
+        adapt(raw)
+        raw['records'][6]['event_snapshot_before_reuse']['host_end']=999.
+        with self.assertRaisesRegex(ValueError,'snapshot'):adapt(raw)
     def test_complete_causal_trace_projection_and_actual_overlap(self):
         raw=fixture();trace,result=adapt(raw)
         self.assertEqual(result['status'],'complete')

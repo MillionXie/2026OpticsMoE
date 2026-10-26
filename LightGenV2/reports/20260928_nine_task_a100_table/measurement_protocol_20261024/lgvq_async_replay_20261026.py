@@ -34,7 +34,8 @@ def validate_slots(slots):
         if slot.get('score_ready') is None:raise ValueError('Initial real field fence missing')
 
 
-def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,first_field,total_fields):
+def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,first_field,total_fields,
+                  reuse_events=False,snapshot_completed=None):
     """Queue next frontend during previous body, bounded to two live fields.
 
     No model is loaded here. `tokenize` returns newly computed CPU ids/mask and
@@ -45,7 +46,10 @@ def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,firs
     validate_slots(slots)
     if not 0<=first_field<total_fields or len(raw)!=32:
         raise ValueError('Original 512-video, 32-field workload required')
+    if reuse_events and snapshot_completed is None:
+        raise ValueError('Event reuse requires completed timestamp snapshots before overwrite')
     outputs=[];records=[]
+    pools=[[],[]];pending=[None,None];snapshot_count=0
     with torch.inference_mode():
         for field in range(first_field,total_fields):
             guard.fast()
@@ -59,15 +63,30 @@ def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,firs
             # Wait only before REUSING this slot, not for the immediately prior
             # field. This also keeps old pinned CPU buffers alive until safe.
             wait_start=time.perf_counter();slot['score_ready'].synchronize();wait_end=time.perf_counter()
+            if reuse_events and pending[slot_index] is not None:
+                previous=pending[slot_index]
+                snapshot_start=time.perf_counter()
+                records[previous]=snapshot_completed(records[previous])
+                records[previous]['event_snapshot_before_reuse']=dict(reused_at_field=field,
+                    host_start=snapshot_start,host_end=time.perf_counter(),prior_score_synchronized=True)
+                snapshot_count+=1
+            cursor=0
+            def event():
+                nonlocal cursor
+                if not reuse_events:return torch.cuda.Event(enable_timing=True)
+                pool=pools[slot_index]
+                if cursor==len(pool):pool.append(torch.cuda.Event(enable_timing=True))
+                result=pool[cursor];cursor+=1
+                return result
             current=raw[field%32];observed=[]
             with torch.cuda.stream(front_stream):
-                h0=torch.cuda.Event(enable_timing=True);h1=torch.cuda.Event(enable_timing=True)
+                h0=event();h1=event()
                 h2d_host_start=time.perf_counter()
                 h0.record();slot['static']['ids'].copy_(ids,non_blocking=True)
                 slot['static']['mask'].copy_(mask,non_blocking=True);h1.record()
                 h2d_host_end=time.perf_counter()
                 # Device-to-device refresh remains charged, just as before.
-                x=torch.cuda.Event(enable_timing=True);y=torch.cuda.Event(enable_timing=True)
+                x=event();y=event()
                 submit_start=time.perf_counter();x.record()
                 for name in ('pixels','quality'):slot['static'][name].copy_(current[name],non_blocking=True)
                 slot['segments'][0]['graph'].replay();y.record()
@@ -76,12 +95,12 @@ def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,firs
             with torch.cuda.stream(body_stream):
                 body_stream.wait_event(y)
                 for segment in slot['segments'][1:]:
-                    a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True)
+                    a=event();b=event()
                     submit_start=time.perf_counter();a.record();segment['graph'].replay();b.record()
                     observed.append(dict(kind=segment['kind'],label=segment['label'],start=a,end=b,stream='body',
                         host_submit_start=submit_start,host_submit_end=time.perf_counter()))
                 # Clone each score before that slot's output may be overwritten.
-                a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True)
+                a=event();b=event()
                 submit_start=time.perf_counter();a.record();prediction=slot['prediction'].clone();b.record()
                 observed.append(dict(kind='electronics',label='retain_current_score',start=a,end=b,stream='body',
                     host_submit_start=submit_start,host_submit_end=time.perf_counter()))
@@ -92,10 +111,14 @@ def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,firs
                 slot_reuse_wait_host_start=wait_start,slot_reuse_wait_host_end=wait_end,
                 original_H2D_events=(h0,h1),events=observed,score_ready=b,
                 host_submission_end=time.perf_counter()))
+            pending[slot_index]=len(records)-1
         final_sync_start=time.perf_counter();records[-1]['score_ready'].synchronize()
         end_host=time.perf_counter()
         records[-1]['final_synchronization_observation']=dict(start=final_sync_start,end=end_host)
     return dict(outputs=outputs,records=records,last_score_ready_host=end_host,
+        event_reuse=dict(enabled=reuse_events,allocated_events=sum(map(len,pools)),
+            completed_fields_snapshotted_before_reuse=snapshot_count,
+            initialization_and_snapshot_overhead_inside_measured_window=True),
         actual_online_tokenizer_calls=total_fields-first_field,
         independent_input_buffers=2,body_stream_serial=True,
         next_field_frontend_stream=True,all_startup_costs_owned_by_caller=True,

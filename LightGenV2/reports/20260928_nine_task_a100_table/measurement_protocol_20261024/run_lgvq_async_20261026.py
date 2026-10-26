@@ -239,6 +239,7 @@ def suite(args):
             env['CUDA_MODULE_LOADING']='LAZY'
             command.append('--optimize-runtime')
         if args.parallel_text:command.append('--parallel-text')
+        if args.reuse_events:command.append('--reuse-events')
         write(args.root/'lg_repeat01.command.json',command)
         with (args.root/'lg_repeat01.log').open('x') as log:
             child=subprocess.Popen(command,cwd=REPO,env=env,stdin=subprocess.DEVNULL,
@@ -276,6 +277,7 @@ def main():
     parser.add_argument('--optimize-runtime',action='store_true',
                         help='Fresh candidate: LAZY loading, no forced GC/cache purge, detailed phases')
     parser.add_argument('--parallel-text',action='store_true',help='Optional independent same-field text stream; not assumed faster')
+    parser.add_argument('--reuse-events',action='store_true',help='Snapshot completed CUDA timestamps before reusing slot-owned timing events')
     args=parser.parse_args();validate_args(args)
     (suite if args.phase=='suite' else worker)(args)
 

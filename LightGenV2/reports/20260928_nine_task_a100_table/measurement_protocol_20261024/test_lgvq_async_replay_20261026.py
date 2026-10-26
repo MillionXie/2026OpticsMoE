@@ -35,6 +35,36 @@ def slot():
     return s
 
 class SchedulingTests(unittest.TestCase):
+    def test_event_pool_snapshots_every_completed_field_before_overwrite(self):
+        from lgvq_async_worker_20261026 import serialize_field
+        class ClockEvent(Event):
+            created=0;clock=0
+            def __init__(self,**kw):super().__init__(**kw);ClockEvent.created+=1;self.timestamp=None
+            def record(self):super().record();ClockEvent.clock+=1;self.timestamp=ClockEvent.clock
+        origin=SimpleNamespace(elapsed_time=lambda e:e.timestamp)
+        slots=[slot(),slot()]
+        raw=[dict(pixels=Tensor(i),quality=Tensor(i)) for i in range(32)]
+        torch=SimpleNamespace(inference_mode=nullcontext,cuda=SimpleNamespace(Event=ClockEvent,stream=lambda s:nullcontext()))
+        snapshots=[]
+        def snapshot(row):
+            self.assertGreater(row['score_ready'].waits,0)
+            value=serialize_field(origin,row);snapshots.append(value);return value
+        result=replay_fields(torch,slots,raw,lambda f:(Tensor(f),Tensor(1),dict(field=f)),
+            SimpleNamespace(fast=lambda:None),Stream(),Stream(),first_field=5,total_fields=20,
+            reuse_events=True,snapshot_completed=snapshot)
+        rows=[serialize_field(origin,r) for r in result['records']]
+        self.assertEqual(len(snapshots),13)
+        self.assertEqual(ClockEvent.created,2*72)
+        self.assertEqual(result['event_reuse']['allocated_events'],ClockEvent.created)
+        self.assertEqual([x.value for x in result['outputs']],list(range(5,20)))
+        self.assertTrue(all(a['score_ready_cuda_ms']<b['score_ready_cuda_ms'] for a,b in zip(rows,rows[1:])))
+        self.assertTrue(all('score_ready' not in r and 'original_H2D_events' not in r for r in rows))
+        self.assertLess(rows[0]['events'][0]['cuda_start_ms'],rows[2]['events'][0]['cuda_start_ms'])
+
+    def test_reuse_without_snapshot_callback_rejected(self):
+        with self.assertRaisesRegex(ValueError,'snapshot'):
+            replay_fields(None,[slot(),slot()],[None]*32,None,None,None,None,
+                first_field=5,total_fields=10,reuse_events=True)
     def test_offset_storage_alias_is_not_independent(self):
         class View(Tensor):
             def __init__(self, root):self.root=root

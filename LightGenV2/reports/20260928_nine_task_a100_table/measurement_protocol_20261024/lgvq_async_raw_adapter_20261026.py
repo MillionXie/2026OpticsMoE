@@ -26,6 +26,18 @@ def prepare_records(raw):
         raise ValueError('Original 250-ms telemetry acceptance is unchanged')
     start = raw['host_start']
     detailed = raw.get('detailed_electronics_phases', False)
+    reuse=raw.get('event_reuse',{})
+    if reuse.get('enabled'):
+        if (reuse.get('allocated_events')!=(160 if detailed else 144)
+                or reuse.get('completed_fields_snapshotted_before_reuse')!=121
+                or reuse.get('initialization_and_snapshot_overhead_inside_measured_window') is not True):
+            raise ValueError('Complete timed two-slot event-pool evidence required')
+        for field in range(5,126):
+            snapshot=rows[field].get('event_snapshot_before_reuse',{})
+            future=rows[field+2]
+            if (snapshot.get('reused_at_field')!=field+2 or snapshot.get('prior_score_synchronized') is not True
+                    or not future['slot_reuse_wait_host_end']<=snapshot.get('host_start',-1)<=snapshot.get('host_end',-1)<=future['H2D_host_submit_start']):
+                raise ValueError('A CUDA event was reused before its completed timestamp snapshot')
     ms = lambda value: (value-start)*1000
     actions = []; ops = []; scores = {}; fronts = {}; transfers = {}
     def action(name, kind, a, b, field, *, wait_for=()):

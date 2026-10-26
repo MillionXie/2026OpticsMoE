@@ -67,6 +67,11 @@ def event_record(origin, event):
 
 
 def serialize_field(origin, record):
+    if 'original_H2D_cuda_ms' in record:
+        if ('original_H2D_events' in record or 'score_ready' in record
+                or any('start' in e or 'end' in e for e in record['events'])):
+            raise ValueError('A completed timestamp snapshot must not retain mutable event handles')
+        return record
     row = {k: v for k, v in record.items()
            if k not in ('events', 'original_H2D_events', 'score_ready', 'body_envelope')}
     row['events'] = [event_record(origin, e) for e in record['events']]
@@ -116,6 +121,7 @@ def worker(args, guard, N):
     output = args.output
     optimized = bool(getattr(args, 'optimize_runtime', False))
     parallel_text = bool(getattr(args, 'parallel_text', False))
+    reuse_events = bool(getattr(args, 'reuse_events', False))
     if parallel_text and not optimized:raise ValueError('Independent text stream requires the explicit optimized candidate')
     if optimized and os.environ.get('CUDA_MODULE_LOADING') != 'LAZY':
         raise ValueError('Revised optimized runtime selects LAZY before worker CUDA initialization')
@@ -268,7 +274,8 @@ def worker(args, guard, N):
                     tape_factory=OncePreparedTape, install_boundaries=install, phase_detail=optimized)
                 record.update(mode='capture_real', slot=field-3, tokenizer=token_record)
                 slots.append(slot); outputs.append(prediction); records.append(record)
-            online = replay.replay_fields(torch, slots, raw, tokenize, guard, fs, bs, first_field=5, total_fields=128)
+            online = replay.replay_fields(torch, slots, raw, tokenize, guard, fs, bs, first_field=5, total_fields=128,
+                reuse_events=reuse_events,snapshot_completed=lambda record:serialize_field(origin,record))
             outputs.extend(online['outputs']); records.extend(online['records'])
             host_end = online['last_score_ready_host']; monotonic_end = time.monotonic()
         if [slot['tape'].preparation_calls for slot in slots] != [1, 0]:
@@ -294,6 +301,7 @@ def worker(args, guard, N):
         timing = dict(status='actual_software_complete_projection_pending', video_calls=N,
             unique_videos=512, fields=128, cycles=4, actual_async_software_wall_ms=wall_ms,
             detailed_electronics_phases=optimized, optimized_runtime=optimized, same_field_parallel_text=parallel_text,
+            event_reuse=online['event_reuse'],
             actual_async_software_time16_ms=wall_ms/128,
             common_effective_tokens=913408, actual_software_common_tokens_s=913408/(wall_ms/1000),
             origin_host_clock_bracket=[clock_before, clock_after],
