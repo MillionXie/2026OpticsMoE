@@ -5,6 +5,13 @@ from .distill_simulation_response import aligned_simulation_probabilities,equal_
 
 
 class SimulationResponseTests(unittest.TestCase):
+    def test_task_weighting_is_fixed_source_mean_not_accuracy_loss(self):
+        from .distill_simulation_response import equal_or_weighted_task_mean,cross_task_gradient_cosines
+        values=torch.tensor([1.,3.,4.,8.],dtype=torch.float64);tasks=np.array(['a','a','b','b'])
+        torch.testing.assert_close(equal_or_weighted_task_mean(values,tasks,['a','b'],{'b':2}),torch.tensor(14/3,dtype=torch.float64))
+        w=torch.nn.Parameter(torch.zeros(2,2,dtype=torch.float64));x=torch.tensor([[1.,0.],[1.,0.]],dtype=torch.float64)
+        c=cross_task_gradient_cosines(w,x,torch.tensor([0,1]),np.array(['a','b']),['a','b'])
+        self.assertLess(c['a']['b'],-.99);self.assertIsNone(w.grad)
     def test_pair_deltas_keep_each_nonidentity_view_and_label_order(self):
         from .distill_simulation_response import derivative_pair_deltas
         x=torch.tensor([[1.,2.],[4.,6.],[10.,20.],[14.,26.]],dtype=torch.float64)

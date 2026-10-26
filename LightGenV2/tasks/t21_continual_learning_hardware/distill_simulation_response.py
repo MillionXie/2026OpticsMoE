@@ -74,12 +74,23 @@ def derivative_pair_deltas(features,ids,labels,tasks,source_count,names):
     return result
 
 
+def equal_or_weighted_task_mean(values,tasks,names,weights):
+    factors=[float(weights.get(n,1.)) for n in names]
+    if any(v<=0 for v in factors):raise ValueError('Positive fixed task weights required')
+    return sum(v*values[tasks==n].mean() for n,v in zip(names,factors))/sum(factors)
+
+
+def cross_task_gradient_cosines(weight,features,labels,tasks,names):
+    gradients={n:torch.autograd.grad(F.cross_entropy(features[tasks==n]@weight.T,labels[tasks==n]),weight)[0] for n in names}
+    return {n:{m:float((a*b).sum()/(a.norm()*b.norm()).clamp_min(1e-30)) for m,b in gradients.items()} for n,a in gradients.items()}
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','package','warm_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit inherited TEST information acknowledgment required')
-    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json','config_LG_C_weak_source_response_20261026.json','config_LG_D_weak_source_response_20261026.json','config_LG_D_soft_response_20261026.json','config_LG_D_low_TRAIN_anchor_20261026.json','config_LG_D_paired_response_20261026.json')
+    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json','config_LG_C_weak_source_response_20261026.json','config_LG_D_weak_source_response_20261026.json','config_LG_D_soft_response_20261026.json','config_LG_D_low_TRAIN_anchor_20261026.json','config_LG_D_paired_response_20261026.json','config_LG_D_Physical_retention_20261026.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only fixed published finite response-transfer profile')
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);package=json.loads(a.package.read_text());cr=json.loads((a.capture/'report.json').read_text());wr=json.loads((a.warm_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or not wr['passed'] or not wr['strict_CPU_reloaded']:raise ValueError('Completed immutable capture/warm student required')
@@ -103,6 +114,9 @@ def main():
     retained=cfg.get('retained_task_functions',[]);warm_soft=(dx.double()@model.shared_head.weight.detach().double().T).softmax(1).detach()
     train_weight=cfg.get('TRAIN_CE_weight',.25)
     pair_deltas=derivative_pair_deltas(dz,di,dy,dt,len(te),names) if cfg.get('derivative_pair_weight') else {}
+    if cfg.get('diagnose_cross_task'):
+        cross=cross_task_gradient_cosines(weight,dz,dy,dt,[n for n in names if n!='eurosat']);put(a.out/'cross_task_gradient_diagnosis.json',dict(gradient_cosines=cross,read_only_gradient_evaluation=True,SDK=False,GPU=False,**DISCLOSURE))
+        if not any(v<0 for n,v in cross['physical_binary_raw'].items() if n!='physical_binary_raw'):raise RuntimeError('No Physical/other-task gradient conflict; proposed retention fit not justified')
     if cfg.get('diagnose_conflict') and not any(v['gradient_cosine']<0 for v in diagnostic.values()):
         raise RuntimeError('No TRAIN/derivative gradient conflict found; proposed low-anchor test not justified')
     put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),capture_features_SHA256=cr['features_sha256'],warm_SHA256=warm_sha,S1_checkpoint_SHA256=package['checkpoint_sha256'],package_SHA256=sha(a.package),source_map=source_map,conditioning=conditioning,targets='Unmodified S1 probabilities; fixed weak variant uses Euro soft response and authorized binary derivative labels; no accuracy filtering',loss='Configured TRAIN CE coefficient; default all-task S1 KL1, weak variant Euro KL.25 plus binary derivativeCE.75; configured L2; optional warm-function KL2 and equal binary pair-ranking',TRAIN_CE_weight=train_weight,derivative_pair_weight=cfg.get('derivative_pair_weight',0),derivative_pairs={n:len(v) for n,v in pair_deltas.items()},retained_task_functions=retained,student_fit_TEST_inputs=0,teacher_original_TEST_gradient_rows=0,all_TEST_sources_used=True,SDK=False,GPU=False,**DISCLOSURE))
@@ -116,7 +130,7 @@ def main():
     def closure():
         opt.zero_grad(set_to_none=True);ce=F.cross_entropy(z@weight.T,qy,reduction='none');loss=train_weight*torch.stack([ce[qt==n].mean() for n in names]).mean()
         if cfg.get('binary_derivative_CE'):
-            binary=F.cross_entropy(dz@weight.T,dy,reduction='none');loss+=.25*equal_task_soft_KL(dz@weight.T,soft,dt,['eurosat'])+.75*torch.stack([binary[dt==n].mean() for n in names if n!='eurosat']).mean()
+            binary=F.cross_entropy(dz@weight.T,dy,reduction='none');loss+=.25*equal_task_soft_KL(dz@weight.T,soft,dt,['eurosat'])+.75*equal_or_weighted_task_mean(binary,dt,[n for n in names if n!='eurosat'],cfg.get('binary_task_weights',{}))
         else:loss+=equal_task_soft_KL(dz@weight.T,soft,dt,names)
         loss+=cfg.get('delta_L2',1e-5)*(weight-initial)[:,:-1].square().sum()/10
         if pair_deltas:loss+=cfg['derivative_pair_weight']*torch.stack([paired_margin_loss(v@weight.T) for v in pair_deltas.values()]).mean()

@@ -1,0 +1,15 @@
+{
+  "schema": "T21_LG_D_Physical_gradient_conflict_function_retention_20261026",
+  "architecture": "moe", "stage": 4, "seed": 20261026,
+  "frozen_S1_SHA256": "030fa9aeb555065f716ed92bfe860e2ec33637ec588f7808840b0fca81b334b1",
+  "maximum_steps": 160, "maximum_seconds": 240,
+  "TRAIN_augmentations": 8, "TRAIN_noise_std": [0.0001, 0.0003, 0.0005],
+  "derivative_mixing": [0.002, 0.005], "derivative_noise_scale": 0.0001,
+  "binary_derivative_CE": true, "delta_L2": 0.0000001,
+  "TRAIN_CE_weight": 0.05, "diagnose_cross_task": true,
+  "binary_task_weights": {"clevr": 1, "speech_binary": 1, "physical_binary_raw": 2},
+  "retained_task_functions": ["eurosat", "clevr", "speech_binary"], "retention_weight": 2,
+  "all_TEST_sources_authorized": true, "independent_test_samples": 0,
+  "valid_for_formal_test_table": false, "new_inference_layers": 0,
+  "SDK": false, "GPU": false
+}
