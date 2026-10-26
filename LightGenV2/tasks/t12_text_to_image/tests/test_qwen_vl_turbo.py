@@ -9,6 +9,7 @@ from diffusers import EulerDiscreteScheduler
 
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_data import validate_roles, pilot_subset
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_model import NativeTurboHead, QueryResampler, pack_hidden, region_weighted_loss
+from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_training import configure_unet_training
 
 
 def row(split, mode, source, target):
@@ -54,6 +55,19 @@ class DummyVAE(nn.Module):
 
 
 class NativeHeadTests(unittest.TestCase):
+    def test_training_scope_changes_no_parameters_or_modules(self):
+        net=nn.Module();net.block=nn.Module()
+        net.block.attn2=nn.Linear(2,2);net.block.attn1=nn.Linear(2,2)
+        net.block.lora_example=nn.Linear(2,2)
+        count=sum(p.numel() for p in net.parameters())
+        configure_unet_training(net,'cross_attention')
+        self.assertTrue(net.block.attn2.weight.requires_grad)
+        self.assertFalse(net.block.attn1.weight.requires_grad)
+        self.assertTrue(net.block.lora_example.weight.requires_grad)
+        configure_unet_training(net,'lora')
+        self.assertFalse(net.block.attn2.weight.requires_grad)
+        self.assertEqual(sum(p.numel() for p in net.parameters()),count)
+
     def test_foreground_supervision_is_normalized_and_differentiable(self):
         a=torch.zeros(1,3,4,4,requires_grad=True); b=torch.zeros_like(a)
         b[:,:,0,0]=1

@@ -28,6 +28,7 @@ from .qwen_vl_turbo_data import (add_descriptions, pilot_subset, prepare_pairs,
                                   render_pair, sha256, validate_roles, write_json)
 from .qwen_vl_turbo_model import (NativeTurboHead, QueryResampler, encode_reference,
                                    image_tensor, pack_hidden, region_weighted_loss)
+from .qwen_vl_turbo_training import configure_unet_training
 
 
 def git_identity() -> dict:
@@ -36,6 +37,7 @@ def git_identity() -> dict:
         return subprocess.check_output(['git', '-C', str(root), *args], text=True).strip()
     files = [Path(__file__), Path(__file__).with_name('qwen_vl_turbo_model.py'),
              Path(__file__).with_name('qwen_vl_turbo_data.py'),
+             Path(__file__).with_name('qwen_vl_turbo_training.py'),
              Path(__file__).with_name('product_scene_replace_data.py'),
              Path(__file__).with_name('product_object_replace_data.py'),
              Path(__file__).with_name('product_scene_data.py')]
@@ -221,6 +223,10 @@ def train(args, cfg, device):
     import lpips
     payload = torch.load(args.output / 'frozen_features.pt', map_location='cpu', weights_only=False)
     validate_roles(payload['rows'])
+    if 'shared_noise_seed' in cfg:
+        # Same noise across all pairs forces differences to come from Qwen's
+        # RGB/text condition. This pilot does not claim seed diversity.
+        for row in payload['rows']: row['noise_seed']=int(cfg['shared_noise_seed'])
     train_ids = [i for i,r in enumerate(payload['rows']) if r['split']=='train']
     val_ids = [i for i,r in enumerate(payload['rows']) if r['split']=='val']
     adapter = QueryResampler(hidden=cfg['adapter_hidden'], layers=cfg['adapter_layers']).to(device)
@@ -262,16 +268,17 @@ def train(args, cfg, device):
                     torch_dtype=torch.bfloat16, local_files_only=True).to(device).requires_grad_(False)
     unet.add_adapter(LoraConfig(r=cfg['unet_lora_rank'],lora_alpha=cfg['unet_lora_rank'],
                                target_modules=['to_q','to_k','to_v','to_out.0'],init_lora_weights=True))
+    configure_unet_training(unet,cfg.get('unet_training','lora'))
     for p in unet.parameters():
         if p.requires_grad:
             p.data = p.data.float()
     if resumed is not None:
         names={n for n,p in unet.named_parameters() if p.requires_grad}
-        if names != set(resumed['unet_trainable']):
+        if not set(resumed['unet_trainable']).issubset(names):
             raise ValueError('Resume LoRA parameter names changed')
         with torch.no_grad():
             for name,p in unet.named_parameters():
-                if name in names: p.copy_(resumed['unet_trainable'][name].to(device))
+                if name in resumed['unet_trainable']: p.copy_(resumed['unet_trainable'][name].to(device))
     unet.enable_gradient_checkpointing()
     vae = AutoencoderKL.from_pretrained(args.sd, subfolder='vae', variant='fp16',
                     torch_dtype=torch.bfloat16, local_files_only=True).to(device).eval().requires_grad_(False)
@@ -306,6 +313,7 @@ def train(args, cfg, device):
               'vae_encoder':sum(p.numel() for p in vae.encoder.parameters())+sum(p.numel() for p in vae.quant_conv.parameters()),
               'vae_decoder':sum(p.numel() for p in vae.decoder.parameters())+sum(p.numel() for p in vae.post_quant_conv.parameters()),
               'trainable':sum(p.numel() for p in params)}
+    counts['unet_training_scope']=cfg.get('unet_training','lora')
     counts['inference_total'] = counts['qwen_full_forward']+counts['adapter']+counts['unet_including_lora']+counts['vae_decoder']
     write_json(args.output/'parameter_counts.json',counts)
     native = (evaluate(model,payload,train_ids,device,args.output,'train_native_caption_teacher',native_teacher=True)
@@ -368,6 +376,7 @@ def train(args, cfg, device):
                'best_val':val,'train':tr,'val_before_paired_training':baseline,'val_wrong_condition':wrong,
                'parameters':counts,'native_caption_teacher_train_diagnostic':native,
                'alignment_train_mse':alignment_mse,'test_evaluated':False,'overfit_pilot_only':True,
+               'shared_noise_seed':cfg.get('shared_noise_seed'),
                'checkpoint_sha256':sha256(args.output/'best_checkpoint.pt'),
                'interpretation':'Feasibility/overfit pilot; VAL is development only. Not final independent generalization evidence.'})
 

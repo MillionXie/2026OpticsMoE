@@ -45,7 +45,8 @@ class NativeTurboHead(nn.Module):
         t = self.scheduler.timesteps[0]
         latents = noise.to(self.unet.dtype) * self.scheduler.init_noise_sigma
         model_input = self.scheduler.scale_model_input(latents, t)
-        prediction = self.unet(model_input, t, encoder_hidden_states=conditions.to(self.unet.dtype)).sample
+        with torch.autocast(noise.device.type,dtype=torch.bfloat16,enabled=noise.is_cuda):
+            prediction = self.unet(model_input, t, encoder_hidden_states=conditions.to(self.unet.dtype)).sample
         generated = self.scheduler.step(prediction, t, latents).prev_sample
         rgb = self.vae.decode(generated.to(self.vae.dtype) / self.vae.config.scaling_factor).sample
         return generated.float(), rgb.float()
