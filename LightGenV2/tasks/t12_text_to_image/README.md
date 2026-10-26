@@ -121,6 +121,10 @@ LPIPS0.358324。感知指标略改善、PSNR下降，图像仍有目标形态错
 Qwen→CLIP接口，或把原生教师样图当作本模型推理结果。
 这些额外目标描述只来自TRAIN、无优化，不作为VAL/TEST性能或严格因果消融。
 结果位于该run的`conditioning_probe`，与正式图文输入结果分开保存。
+本轮best权重SHA256为`455d3a9e8f1440586ed9c6a26328271191ff9f61db607e7f90eed9dcc903d7ea`。
+其`uncached_probe`用固定VAL第50项的RGB／指令重新执行完整Qwen及生成头，
+Qwen融合特征SHA与缓存完全一致，原生生成PNG逐像素一致（最大uint8通道差0）；
+推理及该一致性核验均不读取GT，核验比较的是已保存的模型输出。
 
 9月21—22日旧cleanrender GAN、parallel optical、lamp场景／半Qwen替换、商品修复、
 chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与原7093ec4608
