@@ -17,6 +17,8 @@ class MeasuredReadoutRefineTests(unittest.TestCase):
         self.assertFalse(relation_matches(requested_relation(dict(RGB=dict(correct=886),SAR=dict(correct=716)),'D2NN',cfg)))
         self.assertFalse(relation_matches(requested_relation(dict(RGB=dict(correct=839),SAR=dict(correct=700)),'LG',cfg)))
         with self.assertRaises(ValueError):validate_profile(dict(cfg,teacher_SAR_sources_per_class=10))
+        sar2=read(Path(__file__).with_name('config_measured_readout_D2NN_SAR2_20261026.json'));validate_profile(sar2)
+        self.assertEqual(sar2,dict(cfg,teacher_SAR_sources_per_class=2,allowed_case='D2NN'))
 
     def test_reduced_profile_changes_only_predeclared_source_budget_and_retention(self):
         base=read(Path(__file__).with_name('config_measured_readout_refine_20261026.json'))

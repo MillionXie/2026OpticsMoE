@@ -38,7 +38,9 @@ def validate_profile(cfg):
         intermediate_stages=['partial_TEST_augmented_teacher'],
         intermediate_retention_authorization='2026-10-26 user requested continuation from lower PT with intermediate retention',
         requested_relation='LG strictly below within 2pp; D2NN not above within 5pp')
-    if reduced!=expected or weak!=weak_expected or cfg not in (base,reduced,weak):raise ValueError('Exact bounded refinement profile required')
+    sar2=read(Path(__file__).with_name('config_measured_readout_D2NN_SAR2_20261026.json'))
+    sar2_expected=dict(weak_expected,teacher_SAR_sources_per_class=2,allowed_case='D2NN')
+    if reduced!=expected or weak!=weak_expected or sar2!=sar2_expected or cfg not in (base,reduced,weak,sar2):raise ValueError('Exact bounded refinement profile required')
 
 
 def requested_relation(scores,case,cfg):
@@ -125,6 +127,7 @@ def main():
     published=subprocess.check_output(['git','show',a.source_commit+':'+relative],cwd=root)
     if hashlib.sha256(published).hexdigest()!=sha(__file__):raise ValueError('Refinement entry does not match declared Git publication')
     cr=read(a.capture/'report.json');case=cr['case'];package=read(a.package/'manifest.json');spec=package['cases'][case]
+    if cfg.get('allowed_case',case)!=case:raise ValueError('Case-specific profile used with another model')
     if not (cr['passed'] and not cr['pilot'] and cr['SDK_released'] and cr['full_physical_prefix'] and cr['frames']==spec['network_frames'] and cr['checkpoint_sha256']==PINS[case]['sha256']):raise ValueError('Complete fixed physical prefix required')
     if sha(a.capture/'features.npz')!=cr['features_sha256']:raise ValueError('Measured feature SHA changed')
     model,original=load_locked(case,a.package/spec['checkpoint'])

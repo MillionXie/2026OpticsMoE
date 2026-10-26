@@ -1,0 +1,22 @@
+{
+  "steps": 80,
+  "inner_iterations": 1,
+  "max_seconds_per_stage": 600,
+  "covariance_shrink": 0.00001,
+  "label_smoothing": 0.01,
+  "weight_anchor": 0.0001,
+  "centered_dropout": 0.02,
+  "noise_TRAIN_std": 0.02,
+  "teacher_sources_per_class_domain": 5,
+  "teacher_SAR_sources_per_class": 2,
+  "teacher_augmented_views": 4,
+  "student_TRAIN_query_views": 4,
+  "CPU_threads": 2,
+  "SDK": false,
+  "GPU": false,
+  "optimizer_learning_rate": 0.05,
+  "intermediate_stages": ["partial_TEST_augmented_teacher"],
+  "intermediate_retention_authorization": "2026-10-26 user requested continuation from lower PT with intermediate retention",
+  "requested_relation": "LG strictly below within 2pp; D2NN not above within 5pp",
+  "allowed_case": "D2NN"
+}
