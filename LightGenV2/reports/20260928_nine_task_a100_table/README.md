@@ -56,6 +56,15 @@ AST只加capture_begin的pool hint，分配仍在原计时窗，所有原图/首
 128场仍分别实际tokenize，不缓存token张量/特征/评分，首次渲染仍计入原tokenizer时间。
 AST只改一条固定temporal模板语句，CPU线程/图池/事件分配均恢复01基线，不叠加未见收益的方法。
 
+05固定TEXT渲染从128次降至1次，128次原tokenizer及首次计时保留，但整轮27.798965976217005ms/16，
+比01慢2.31195%，不采用；2048同卡逐字节/四循环/功率/原连续墙钟独立审计通过，DAG仍拒收。
+父1815955/子1816161真退出、MPS释放，22原文件4220034B和0B外log已本地SHA保全。
+下一单项针对GPU前端：保留原Qwen3VLVisionPatchEmbed的有bias BF16 Conv3d、kernel/stride(2,14,14)
+及全部权重值，只改channels_last_3d存储布局；权重布局随加载设置、输入布局转换留在实际计时forward。
+服务器原class源码SHA固定b80abab0ebe915256e6c0630c70472670e4e6aa99d6a8d1f4c0cfc62cd7977e0，
+AST只为原dtype转换添加memory_format，不用Linear替换或降低精度。数值必须逐字节同01，
+不同kernel导致数值不符也拒收，不替换参考；其他优化全部关闭，仍不将4090结果冒称A100百倍。
+
 ## 2026-10-27：LG05与全部36个baseline点统一总表已封存
 
 新不可变交付为协议目录下
