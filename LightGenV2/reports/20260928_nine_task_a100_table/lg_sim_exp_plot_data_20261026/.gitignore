@@ -1,0 +1,7 @@
+*.xlsx
+*.ndjson
+plot_data.json
+version_audit.csv
+verification/
+source_records/
+__pycache__/
