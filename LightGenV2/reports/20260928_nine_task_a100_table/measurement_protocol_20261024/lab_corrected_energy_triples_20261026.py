@@ -85,7 +85,12 @@ def worker(args):
     class Guard(legacy.engine.MPSGuard):
         def check(self):
             if sources()!=bound:raise RuntimeError('Frozen source changed')
-            snapshot_check(self)
+            try:snapshot_check(self)
+            except BaseException as error:
+                accounting.write(args.output/'guard_rejection_snapshot.json',dict(unix=time.time(),
+                    error=repr(error),snapshot=self.audit[-1] if self.audit else None,
+                    recorded_before_model_or_cleanup_unwinding=True))
+                raise
     guard=Guard(args);sampler=None;finish=None;records=[];tokenizer=[];restored=[]
     identity=dict(model=args.model,cap=args.cap,repeat=args.repeat,video_calls=2048,
         unique_videos=512,batch=1,sources=bound,command=sys.argv,pid=os.getpid(),gpu_uuid=GPU,
