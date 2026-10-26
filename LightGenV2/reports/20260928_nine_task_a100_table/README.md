@@ -98,6 +98,12 @@ CUDA/perf偏移。真实GPU排队延迟有原ready→start区间证据、在反�
 与固定光路反事实时间/组件代理能量分栏，不把GPU各stream跨度相加冒墙钟。
 11项纯数据测试过，现有9实验室点与5租机点的14轮/173项文件索引只读复核通过、未导入Torch。
 缺24个实验室点或LG独立audit时默认拒绝最终输出，显式partial只作准备，不冒已交最终成品。
+`build_energy_summary_20261026.mjs`已准备三sheet最终模板：结果与阶段、轮次原值、原始文件索引，
+只允许上述final-qualified JSON；6项纯布局测试及语法检查通过，尚未创建工作簿或验证最终渲染。
+`audit_energy_summary_workbook_20261026.py`为保存后缓存独立复算入口，另6项纯数据测试通过。
+最终使用时仍须按表格技能先标记实际authoring、导出后逐sheet视觉检查，并执行保存后审计；
+只有显式确认视觉检查并通过原始证据与公式缓存复算，才以open-x新建delivery_manifest封存。
+这些是汇总工具准备，不代表baseline测齐或LG异步已有GPU实测。
 
 ## 2026-10-26：人工授权3号4090共享环境tokenizer短测完成
 
