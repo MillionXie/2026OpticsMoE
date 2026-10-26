@@ -1,5 +1,24 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26 12:26：进程守卫一次拒收，原触发PID未留存，补齐失败快照后仅续20点
+
+实验室02的Qwen50 r1已完整2048、原SHA备份及本地能量/时间/输出审计passed，
+T16 1489.7860479854899ms/E16 587.6195300357715J；Qwen100三轮也均已合格保留。
+随后Qwen50 r2只执行1条，原MPSGuard报告Foreign non-MPS GPU process并停止本点及父队列。
+原guard在验证后才append快照，因此未保存触发失败的PID/进程原行；已有最后两份通过快照
+只有自有server1895517/worker2164844，不能据此确认实际外占，也不能倒称无外占或数值失败。
+停止后controller1892737/worker2164844均已退出、GPU空闲，MPS server正常退出。
+原02根48文件215289962B逐SHA备份，外置957B日志
+SHA875469b808d0523fac2a4e1deeac0536f8c62278d0acaa03822fa7c994e32663已取回。
+
+42715830c仅通过AST将原snapshot append移到原验证条件之前，所有查询、source/deadline、
+私有MPS/进程拒收条件AST完全保留，修的是失败证据缺失，不是放宽外占门或修改NN。
+3项纯计量/故障记录测试双端passed。原链完全退出后新建唯一根
+`a100_lab_corrected_energy_20261026_03`/controller2187107，精确保留四个合格点，
+只plan余20点，从Qwen50 r2开始；不重跑Qwen100三轮/已合格Qwen50 r1。
+80GB两个队列不受影响，Kimi50 r2已完整2048、11文件78290580B逐SHA备份并本地审计passed，
+T16 5255.552571470616ms/E16 2527.3181957240845J；当前继续DS50 r2。
+
 ## 2026-10-26 11:45：实验室一条非法NVML利用率导致原r2拒收，仅续缺失23点
 
 实验室原01根Qwen100 r2在951/2048处，独立nvidia-smi原始行
