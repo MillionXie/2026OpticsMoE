@@ -10,6 +10,34 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+2026-10-26开始独立的**纯电子可行性试验**，不替换上述封存模型。入口
+`qwen_vl_turbo_run.py`，配置`configs/qwen_vl_turbo_electronic_20261026.json`。
+完整公开Qwen3-VL-2B（视觉24层＋语言28层，不裁token／层）处理参考RGB和编辑指令；
+保留全部融合token，经77个可训练query的两层cross-attention适配器，驱动公开SD-Turbo
+UNet及原生单步Euler调度器，再由配套冻结VAE decoder输出全部像素。
+推理无参考图VAE encoder、CLIP、GT、mask、检索或像素贴回。不是原Qwen本身会生图；
+生成先验来自SD-Turbo，Qwen负责图文条件，适配器及UNet rank8 LoRA学习编辑。
+
+本轮仅TRAIN/VAL开发验证：从原TRAIN选96商品×6视角，从原VAL选12商品×2视角；
+每输入两种背景、两种目标、两种联合编辑，完整候选3456/144对。目标池也限于各自划分，
+按source及target双角色检查SKU、上游family（存在时）和解码RGB＋alpha哈希隔离。
+缺失family元数据时只能宣称SKU／精确像素隔离，不能冒称已人工排除所有近似款式；
+正式独立TEST尚未建立，不读取旧TEST，不将旧T12权重或教师用于初始化。
+先选类别×模式各2对，得到18 TRAIN＋18 VAL的小样本试验，不将其结果称为正式泛化。
+
+公开冻结Qwen对选中商品生成外观短描述作为数据标注（包含VAL指令标注，但不拟合VAL），
+先仅用TRAIN的目标场景描述和冻结原生CLIP文本条件对齐适配器；CLIP只作训练教师。
+之后冻结VAE及Qwen，训练adapter和UNet LoRA，监督为训练目标VAE latent MSE、
+0.1 RGB L1、0.1 LPIPS及0.01条件对齐。VAL只选best，不反传、不按TEST调参。
+VAE encoder仅用于目标监督／重建诊断。固定噪声逐样本可复现，暂不宣称seed多样性。
+先检查VAE重建、小样本过拟合和图／文条件响应，再决定是否扩展完整训练集。
+这是含数十亿公开骨干参数的电子baseline，缓存不免除部署Qwen参数；不是小光电模型。
+
+运行记录进入`runs/smoke/qwen_vl_turbo_electronic_20261026`，保存配置、命令、Git身份、
+源码和公开权重SHA、划分审计、完整token缓存身份、best/last、TRAIN/VAL预览及逐图PSNR。
+使用用户指定GPU1 UUID`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，允许同卡共享，
+本进程显存上限70%；结束核对自身PID，不终止其他任务。
+
 9月21—22日旧cleanrender GAN、parallel optical、lamp场景／半Qwen替换、商品修复、
 chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与原7093ec4608
 和实际服务器v2源码一致。它们是旧容量／划分的历史仿真、训练耗时及PT身份，
