@@ -62,6 +62,8 @@ def setup(root):
             rel=f.relative_to(component);target=cuda/rel
             if f.is_dir():target.mkdir(parents=True,exist_ok=True)
             elif not target.exists():target.symlink_to(f)
+    # NVIDIA redistributables use lib/; nvcc's default linker search uses lib64/.
+    if not (cuda/'lib64').exists():(cuda/'lib64').symlink_to(cuda/'lib',target_is_directory=True)
     env=dict(os.environ,PYTHONPATH=str(DEPS/'python'),CUDA_HOME=str(cuda),CUDACXX=str(cuda/'bin/nvcc'),
              CUDAToolkit_ROOT=str(cuda),CMAKE_BUILD_PARALLEL_LEVEL='2')
     env['PATH']=str(cuda/'bin')+':'+str(DEPS/'python/bin')+':'+env['PATH']
@@ -165,8 +167,8 @@ def bench(root):
     for b in (16,256):
         texts=[prompts['temporal']]*b;a=cpu(texts);z=gpu_call(texts);assert all(torch.equal(a[k],z[k]) for k in a)
     samples=[];results=[]
-    cases=[('actual_prompt_B1',[prompts['temporal']],200),('same_prompt_B16',[prompts['temporal']]*16,60),
-           ('same_prompt_B256',[prompts['temporal']]*256,15)]
+    cases=[('actual_prompt_B1',[prompts['temporal']],50),('same_prompt_B16',[prompts['temporal']]*16,20),
+           ('same_prompt_B256',[prompts['temporal']]*256,8)]
     try:
         for case,texts,count in cases:
             for device in (False,True):
