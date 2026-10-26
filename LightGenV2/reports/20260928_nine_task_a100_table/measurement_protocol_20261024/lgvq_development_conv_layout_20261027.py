@@ -14,6 +14,7 @@ import textwrap
 from types import MethodType
 
 PINNED_CLASS_SHA256='b80abab0ebe915256e6c0630c70472670e4e6aa99d6a8d1f4c0cfc62cd7977e0'
+PINNED_KERNEL=(2,16,16)  # actual frozen Qwen3 config, not Qwen2's patch14 default
 
 
 def layout_AST(source):
@@ -37,7 +38,7 @@ def install(front):
     patch=front.visual.patch_embed;conv=patch.proj
     digest=hashlib.sha256(inspect.getsource(type(patch)).encode()).hexdigest()
     if (digest!=PINNED_CLASS_SHA256 or not isinstance(conv,torch.nn.Conv3d)
-            or tuple(conv.kernel_size)!=(2,14,14) or tuple(conv.stride)!=(2,14,14)
+            or tuple(conv.kernel_size)!=PINNED_KERNEL or tuple(conv.stride)!=PINNED_KERNEL
             or tuple(conv.padding)!=(0,0,0) or tuple(conv.dilation)!=(1,1,1) or conv.groups!=1
             or conv.weight.dtype!=torch.bfloat16 or conv.bias is None or conv.bias.dtype!=torch.bfloat16):
         raise ValueError('Original learned BF16 biased Qwen3 patch convolution required')
@@ -49,6 +50,7 @@ def install(front):
         inspect.getsourcefile(original)+'::development_channels_last_3d','exec'),ns)
     patch.forward=MethodType(ns['forward'],patch)
     return dict(profile='original_Conv3d_channels_last_3d_storage_only',class_source_sha256=digest,
+        actual_original_kernel=list(conv.kernel_size),actual_original_stride=list(conv.stride),
         weight_shape=shape,original_weight_stride=before,new_weight_stride=list(conv.weight.stride()),
         weight_dtype=str(conv.weight.dtype),bias_dtype=str(conv.bias.dtype),
         original_convolution_and_bias_retained=True,weight_values_or_precision_changed=False,

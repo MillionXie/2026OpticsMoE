@@ -153,6 +153,7 @@ def audit(baseline,candidate,output):
     if method=='Conv3d_channels_last_3d_storage_only':
         info=read(candidate/'conv_layout_identity.json')
         if (info['weight_dtype']!='torch.bfloat16' or info['bias_dtype']!='torch.bfloat16'
+                or info['actual_original_kernel']!=[2,16,16] or info['actual_original_stride']!=[2,16,16]
                 or info['original_convolution_and_bias_retained'] is not True
                 or info['weight_values_or_precision_changed'] is not False
                 or info['input_layout_conversion_inside_actual_forward'] is not True or info['extra_forward_calls']!=0):

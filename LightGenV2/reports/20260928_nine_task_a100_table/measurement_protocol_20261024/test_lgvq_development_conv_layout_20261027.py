@@ -11,6 +11,9 @@ SOURCE='''def forward(self,hidden_states):
 
 
 class LayoutTests(unittest.TestCase):
+    def test_pinned_geometry_is_actual_frozen_Qwen3_patch16(self):
+        self.assertEqual(layout.PINNED_KERNEL,(2,16,16))
+
     def test_original_convolution_and_dtype_AST_unchanged_except_layout_keyword(self):
         expected=SOURCE.replace('to(dtype=target_dtype)','to(dtype=target_dtype,memory_format=torch.channels_last_3d)')
         self.assertEqual(ast.dump(layout.layout_AST(SOURCE)),ast.dump(ast.parse(expected)))

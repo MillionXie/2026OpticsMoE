@@ -59,11 +59,17 @@ AST只改一条固定temporal模板语句，CPU线程/图池/事件分配均恢�
 05固定TEXT渲染从128次降至1次，128次原tokenizer及首次计时保留，但整轮27.798965976217005ms/16，
 比01慢2.31195%，不采用；2048同卡逐字节/四循环/功率/原连续墙钟独立审计通过，DAG仍拒收。
 父1815955/子1816161真退出、MPS释放，22原文件4220034B和0B外log已本地SHA保全。
-下一单项针对GPU前端：保留原Qwen3VLVisionPatchEmbed的有bias BF16 Conv3d、kernel/stride(2,14,14)
+下一单项针对GPU前端：保留原Qwen3VLVisionPatchEmbed的有bias BF16 Conv3d、kernel/stride(2,16,16)
 及全部权重值，只改channels_last_3d存储布局；权重布局随加载设置、输入布局转换留在实际计时forward。
 服务器原class源码SHA固定b80abab0ebe915256e6c0630c70472670e4e6aa99d6a8d1f4c0cfc62cd7977e0，
 AST只为原dtype转换添加memory_format，不用Linear替换或降低精度。数值必须逐字节同01，
 不同kernel导致数值不符也拒收，不替换参考；其他优化全部关闭，仍不将4090结果冒称A100百倍。
+
+06开发入口最初误将kernel守卫写为(2,14,14)，在加载后检查处拒收，未进入原推理窗口，不能判快慢。
+实际原冻结config的patch_size=16、temporal_patch_size=2，config SHA256
+`bec4b3d446efa05807365c9e1cec03ac590836879d02f3a6da879971154bdd3b`；仅修入口守卫为实际(2,16,16)，
+不改配置/权重/输入。父1829078/子1829287真退出、MPS释放，10原文件25076B及972B外log本地保全。
+该明确代码检查错误修复后用新07根测布局方法，旧06不覆盖、不重标；补充纯测试钉实际patch16。
 
 ## 2026-10-27：LG05与全部36个baseline点统一总表已封存
 
