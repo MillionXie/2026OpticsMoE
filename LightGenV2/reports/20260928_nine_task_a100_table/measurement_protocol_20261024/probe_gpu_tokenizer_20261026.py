@@ -109,6 +109,13 @@ def bench(root):
         available=sorted(os.sched_getaffinity(0));os.sched_setaffinity(0,set(available[-2:]))
     binding_path=REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/smoke/lgvq_frontend_identity_recovery_20261024_01/front_parameter_binding_02.json'
     binding=json.loads(binding_path.read_text());model=P(binding['model_candidate']);vocab=model/'tokenizer.json'
+    stop=threading.Event();errors=[];observations=[]
+    def monitor():
+        while not stop.is_set():
+            try:observations.append({'unix':time.time(),'gpu':check(own=True)})
+            except BaseException as e:errors.append(repr(e));return
+            stop.wait(.5)
+    thread=threading.Thread(target=monitor,daemon=True);thread.start()
     gpu_name=torch.cuda.get_device_name(0);assert '4090' in gpu_name
     hf=AutoTokenizer.from_pretrained(str(model),local_files_only=True)
     started=time.perf_counter();gpu=gbpe.Tokenizer(str(vocab),host_max_bytes=0,max_input_chars=65536);torch.cuda.synchronize()
@@ -153,13 +160,6 @@ def bench(root):
     sample_ids=hf([prompts['temporal']],add_special_tokens=False)['input_ids'][0]
     for b in (16,256):
         texts=[prompts['temporal']]*b;a=cpu(texts);z=gpu_call(texts);assert all(torch.equal(a[k],z[k]) for k in a)
-    stop=threading.Event();errors=[];observations=[]
-    def monitor():
-        while not stop.is_set():
-            try:observations.append({'unix':time.time(),'gpu':check(own=True)})
-            except BaseException as e:errors.append(repr(e));return
-            stop.wait(.5)
-    thread=threading.Thread(target=monitor,daemon=True);thread.start()
     samples=[];results=[]
     cases=[('actual_prompt_B1',[prompts['temporal']],200),('same_prompt_B16',[prompts['temporal']]*16,60),
            ('same_prompt_B256',[prompts['temporal']]*256,15),
