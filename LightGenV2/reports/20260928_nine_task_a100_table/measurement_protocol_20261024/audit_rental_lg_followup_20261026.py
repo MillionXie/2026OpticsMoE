@@ -29,7 +29,18 @@ def blobs(mapping,commits):
  return matched
 def rental(model,audit_name='local_independent_audit01.json'):
  root=RUN/'a10080_corrected_serial_20261026_01'/(model+'50_repeat01');t=read(root/'timing.json');identity=read(root/'identity.json')
- assert read(root/'status.json')['status']=='complete' and t['status']=='complete'
+ point_status=read(root/'status.json');qualification='normal_worker_complete'
+ if point_status['status']!='complete':
+  assert model=='deepseek' and point_status['status']=='failed' and point_status['error']=='KeyboardInterrupt()' and point_status['samples']==2048
+  proof=read(RUN/'a10080_postwrite_data_seal_20261026_01/postwrite_seal.json')
+  assert proof['status']=='passed' and proof['kind']=='data_only_seal_after_complete_inference_and_timing_write'
+  assert proof['no_model_loaded'] and proof['no_CUDA_context_created'] and proof['original_status_not_rewritten']
+  assert proof['original_worker_status']==point_status and proof['all_2048_timing_records_written_before_interruption'] and proof['partial_records_equal_complete_timing']
+  assert proof['post_assets_exactly_equal_pre_assets']==identity['assets'] and proof['quality_head_sha256']==identity['checkpoint_sha256']
+  assert proof['frozen_sources_before_and_after_unchanged']==identity['sources'] and proof['official_runtime_source_directories'] and proof['mps_returncode']!=0
+  for name,rec in proof['raw_files'].items():assert (root/name).stat().st_size==rec['bytes'] and sha(root/name)==rec['sha256']
+  assert read(root/'partial_records.json')==t['records'];qualification='complete_2048_inference_qualified_by_postwrite_data_only_seal'
+ assert t['status']=='complete'
  assert t['video_calls']==2048 and t['unique_videos']==512 and t['rounds']==1 and t['cap']==50
  assert identity['checkpoint_sha256']==HEADS[model] and identity['visible_multiprocessors']==54 and identity['power_limit_w']==400
  assert identity['gpu_uuid']=='GPU-ecac2c49-306a-9ec5-1572-8fcd2d232165'
@@ -58,19 +69,21 @@ def rental(model,audit_name='local_independent_audit01.json'):
   allowed=set(g['servers'])|set(g['clients']);pids={int(r[0].strip()) for r in g['processes']};assert pids<=allowed
  source_commits=blobs(identity['sources'],[identity['published_commit'],identity['actual_HEAD']])
  qfiles=read(RUN/'a100_corrected_boundaries_20261026_02/qwen01/input_files.json');actual=read(root/'input_files.json')
+ qrows=read(RUN/'a100_corrected_boundaries_20261026_02/qwen01/timing.json')['records']
  assert len(actual)==512
  assert [(x['sample_id'],x['bytes'],x['sha256']) for x in actual]==[(x['sample_id'],x['bytes'],x['sha256']) for x in qfiles]
  assert [r['sample_id'] for r in rows]==[x['sample_id'] for _ in range(4) for x in actual]
+ assert all(r['frame_positions']==q['frame_positions'] for r,q in zip(rows,qrows))
  historical=RUN/'lgvq_mps_e2e_a100_20261024/rental_80gb_20261025_01'/(model+'_cap50_repeat01')/'calls.csv'
  historical_delta=None
  if historical.exists():
   with historical.open(encoding='utf-8-sig',newline='') as f:prior=list(csv.DictReader(f))
   assert [r['sample_id'] for r in rows[:200]]==[r['sample_id'] for r in prior]
   historical_delta=float(np.max(np.abs(arr[:200]-np.array([float(r['prediction']) for r in prior],dtype=np.float32))))
- result=dict(status='passed',model=model,platform='A100-SXM4-80GB / 400W / MPS50',video_calls=2048,unique_videos=512,time16_ms=corrected/128,equivalent_frame_ms=corrected/8192,
+ result=dict(status='passed',model=model,qualification=qualification,original_worker_status=point_status['status'],platform='A100-SXM4-80GB / 400W / MPS50',video_calls=2048,unique_videos=512,time16_ms=corrected/128,equivalent_frame_ms=corrected/8192,
   corrected_total_ms=corrected,full_before_subtraction_ms=full,removed_image_preparation_and_H2D_ms=removed,tokenizer_CPU_ms=t['tokenizer_CPU_ms'],GPU_model_cuda_sum_ms=t['GPU_model_cuda_sum_ms'],
   source_path=str((root/'timing.json').resolve()),source_sha256=sha(root/'timing.json'),receipt_verified_files=receipt(root),source_commits=source_commits,
-  four_cycles_predictions_bitwise_equal=True,first200_vs_historical_native_max_abs=historical_delta,same_512_video_bytes_as_Qwen_and_LG=True,guard_rows=len(guards))
+  four_cycles_predictions_bitwise_equal=True,first200_vs_historical_native_max_abs=historical_delta,same_512_video_bytes_as_Qwen_and_LG=True,same_original_frame_positions_as_Qwen=True,guard_rows=len(guards))
  write=root/audit_name;assert not write.exists();write.write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8');return result
 def lg(root,audit_name='local_independent_audit01.json'):
  t=read(root/'lg01/timing.json');assert t['status']=='complete' and read(root/'suite_status.json')['status']=='complete'

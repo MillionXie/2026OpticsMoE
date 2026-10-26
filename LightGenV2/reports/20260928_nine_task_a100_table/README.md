@@ -1,5 +1,45 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26 08:42：新租机两单轮数据齐，LG理想覆盖估算另列
+
+本次新租机Kimi/完整DS各一fresh进程、2048输入（首512原TEST循环4次）、MPS50
+实际54SM、A100-SXM4-80GB/400W，全部逐视频CPU准备/搬运/完整原native模型/返回，
+无跨视频并行、无Graph、无预取。核算逐条删除图像准备与原始H2D，实际CPU分词调用
+区间取并集保留，其他调度/同步/中间返回等待保留；GPU前端、全部网络、词表与质量头均计。
+Kimi每16视频5233.791229315102ms、DS12135.199980562902ms；每帧
+81.77798795804847/189.61249969629534ms。两模型四循环预测逐位同，首200对原历史native
+输出最大差均0，原512视频字节与采帧位置逐条匹配Qwen，未重跑完整558 TEST精度。
+
+DS已完成2048推理并写出完整timing/outputs/input_files后，旧控制器的备份预留截止
+在末尾verify_assets权重SHA阶段SIGINT。用户已将租期放宽到09:00，本窗口未及时将
+新授权反映到控制预算，工程处理不周；但没有推理或数值失败、也没有重跑DS。
+原failed/KeyboardInterrupt状态与stopped suite完整保留、不改写成正常complete。
+新a10080_postwrite_data_seal_20261026_01/postwrite_seal.json只执行stdlib文件SHA：
+所有官方资产、7个原官方runtime源、训练receipt/任务头与测前完全同；13冻结源前后同，
+完整2048 timing与partial_records逐字典同，自有293/323/34840退出、MPS无daemon。
+本地GPU/raw/source/四循环/同输入独立复算passed，将这组明确标成完整推理后的数据补封存，
+不是恢复慢CPU模型门或重跑数值。proof7957B SHA6a6c33777559085302187c9c3fb793e7bf586cb5dea2a0a790e5a350baa84e81。
+原root20文件310583785B先逐SHA备份，外置642B日志也精确取回；GPU/MPS已释放，可结束租机。
+
+用户另要求先简单扣除LG异步cover、九点前不补测。当前score-only单轮24.02751627839617ms/16，
+尚未真正跨场覆盖；CPU分词0.5246252908、电子建图摊销2.3867771083、固定光6.2699142857，
+余14.8461995935ms包含GPU前端/其他电子/调度。当前Graph未单独测embedding回放。
+仅借此前同A100同native_lg_front AST的三轮各后125场（共375场）GPU分项作参考：
+conv8.7458310852、位置相加.2332672008、池化.1536436925、文字embedding.1451704317，
+合计9.2779124101ms。历史eager分项可能高估当前Graph前端，不能冒称本轮逐层profiling。
+保留首场和全部电子建图，理想扣后127场实际CPU分词＋127/128历史GPU前端，得
+14.310177213238509ms/16、对原Qwen50为102.702713286945倍；明确THEORETICAL_ONLY，
+不是已测百倍。只用固定光间隙覆盖前端的理想估算17.2946753523ms/84.98倍。
+同卡GPU争用、六段光等待的碎片调度均未验证；卷积→位置→池化本身有依赖，不能互扣。
+
+新合并成品目录measurement_protocol_20261024/outputs/01a061e2-6f88-7913-87f5-b632000e4c83/rental_lg_followup_20261026_01。
+A100_Temporal_Kimi_DS与LG优化_单轮2048次_20261026.xlsx已生成、六sheet已预览，
+SHA63f7f70e7beb58dca2ee465b773d352789ae41edfe7026125ccc734bf2452d3e。
+原始索引122文件含MPS日志、原路径/size/SHA与补封存proof，不混同全部远端封存收据；
+raw_file_index.csv SHA4fb28409aaa70a71daee34d69ba4861f3f8d09f1544c86b2417f27d5211efff8。
+生成器每次recalc后改输入并复原验证，最终导出缓存/6144串行记录/384场账本的独立复核
+与封存manifest由review_rental_lg_delivery_20261026.py生成。旧18/18表/旧partial与此前成品不覆盖。
+
 ## 2026-10-26：新租机Kimi50已完成；两LG优化候选已封存
 
 新A100-SXM4-80GB/400W、MPS50（实际54SM）Kimi单fresh轮2048输入已complete，
