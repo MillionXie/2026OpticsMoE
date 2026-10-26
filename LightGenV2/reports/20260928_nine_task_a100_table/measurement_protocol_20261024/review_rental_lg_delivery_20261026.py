@@ -10,7 +10,6 @@ def review(out):
     p=out/'A100_Temporal_Kimi_DS与LG优化_单轮2048次_20261026.xlsx'
     v=openpyxl.load_workbook(p,data_only=True,read_only=True);f=openpyxl.load_workbook(p,data_only=False,read_only=True)
     assert v.sheetnames==['LG理想覆盖估算','16视频对照','累计时间怎么算','LG逐组原值','大模型逐视频','原始文件索引']
-    assert v['LG逐组原值'].max_row>=389 and v['大模型逐视频'].max_row>=6149
     formulas=0
     for sheet in f:
         caches=v[sheet.title]
@@ -27,19 +26,23 @@ def review(out):
     overlap=d['ideal_overlap'];close(v['LG理想覆盖估算']['B20'].value,overlap['simple_ideal_time16_ms']);close(v['LG理想覆盖估算']['C20'].value,overlap['simple_ideal_Qwen50_ratio'])
     close(v['LG理想覆盖估算']['B19'].value,overlap['only_fixed_optical_gaps_ideal_time16_ms'])
     close(v['LG理想覆盖估算']['B37'].value,d['models'][5]['time16_ms']-d['models'][5]['tokenizer_ms']/128-d['models'][5]['electronic_capture_ms']/128-d['models'][5]['fixed_ms']/128)
-    lg={k:0. for k in ('LG_original','LG_lowlevel','LG_scoreonly')}
+    lg={k:0. for k in ('LG_original','LG_lowlevel','LG_scoreonly')};lg_count=0
     for actual,r in zip(v['LG逐组原值'].iter_rows(min_row=6,max_row=389,values_only=True),d['LG_rows']):
+        lg_count+=1
         actual=list(actual)
         assert actual[0]==r[0] and actual[1]==r[1]
         for a,b in zip(actual[2:12],r[2:12]):close(a,b)
         lg[r[0]]+=actual[10]
+    assert lg_count==384
     for m in d['models'][3:]:close(lg[m['key']],m['total_ms'])
-    serial={k:0. for k in ('Qwen50','kimi','deepseek')}
+    serial={k:0. for k in ('Qwen50','kimi','deepseek')};serial_count=0
     for actual,r in zip(v['大模型逐视频'].iter_rows(min_row=6,max_row=6149,values_only=True),d['serial_rows']):
+        serial_count+=1
         actual=list(actual)
         assert actual[:5]==r[:5]
         for a,b in zip(actual[5:13],r[5:13]):close(a,b)
         serial[r[0]]+=actual[12]
+    assert serial_count==6144
     for m in d['models'][:3]:close(serial[m['key']],m['image_H2D_ms'])
     for rec in d['source_files']:
         raw=Path(rec['path']);assert raw.stat().st_size==rec['bytes'] and sha(raw)==rec['sha256'],str(raw)
