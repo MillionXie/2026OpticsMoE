@@ -141,7 +141,25 @@ def suite(args):
     from run_temporal_remainder import process_snapshot
     args.root.mkdir();legacy=old.initialize_profile(args);active=False;child=None
     plan=[(m,c,r) for m in ('qwen','glm','clip','yolo') for c in (100,50) for r in (1,2,3)]
-    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,plan=plan,completed=[],sources=sources())
+    retained=[]
+    if len(args.retained_point)!=len(args.retained_cost_sha256):raise ValueError('Exact retained cost SHA required')
+    for folder,digest in zip(args.retained_point,args.retained_cost_sha256):
+        folder=folder.resolve()
+        if folder.parent.parent!=TASK/'runs/simulation':raise ValueError('Canonical retained point only')
+        previous=json.loads((folder.parent/'suite_status.json').read_text())
+        point=json.loads((folder/'status.json').read_text());cost=json.loads((folder/'cost_report.json').read_text())
+        if previous['status'] not in ('stopped','complete') or point['status']!='complete' or cost['status']!='complete':
+            raise ValueError('Only fully complete retained points from a closed predecessor')
+        if old.sha(folder/'cost_report.json')!=digest or cost['video_calls']!=2048:raise ValueError('Retained evidence changed')
+        identity=json.loads((folder/'identity.json').read_text());now=sources()
+        own=Path(__file__).relative_to(REPO).as_posix()
+        if any(now.get(k)!=v for k,v in identity['sources'].items() if k!=own):raise ValueError('Original model/runtime source changed')
+        name=f"{cost['model']}_cap{cost['cap']}_repeat{cost['repeat']:02d}"
+        if folder.name!=name or name in {x['name'] for x in retained}:raise ValueError('Duplicate or mismatched retained identity')
+        retained.append(dict(name=name,path=str(folder),cost_sha256=digest))
+    names={x['name'] for x in retained}
+    plan=[(m,c,r) for m,c,r in plan if f'{m}_cap{c}_repeat{r:02d}' not in names]
+    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,plan=plan,completed=[],retained=retained,sources=sources())
     def save():accounting.write(args.root/'suite_status.json',state)
     save()
     try:
@@ -189,6 +207,8 @@ def main():
     p.add_argument('--output',type=Path);p.add_argument('--model',choices=['qwen','glm','clip','yolo'])
     p.add_argument('--model-path',type=Path);p.add_argument('--checkpoint',type=Path)
     p.add_argument('--reproduction-receipt',type=Path);p.add_argument('--cap',type=int,choices=[50,100]);p.add_argument('--repeat',type=int)
+    p.add_argument('--retained-point',type=Path,action='append',default=[])
+    p.add_argument('--retained-cost-sha256',action='append',default=[])
     p.add_argument('--deadline',type=float,required=True);args=p.parse_args()
     args.root=args.root.resolve();args.suite_root=args.root;args.profile='lab';args.gpu_uuid=GPU
     args.pipe='/DATA/DATA1/guest3/.cache/'+args.root.name
