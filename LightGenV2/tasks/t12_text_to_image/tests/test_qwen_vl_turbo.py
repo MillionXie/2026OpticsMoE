@@ -8,7 +8,7 @@ from torch import nn
 from diffusers import EulerDiscreteScheduler
 
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_data import validate_roles, pilot_subset
-from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_model import NativeTurboHead, QueryResampler, pack_hidden
+from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_model import NativeTurboHead, QueryResampler, pack_hidden, region_weighted_loss
 
 
 def row(split, mode, source, target):
@@ -54,6 +54,17 @@ class DummyVAE(nn.Module):
 
 
 class NativeHeadTests(unittest.TestCase):
+    def test_foreground_supervision_is_normalized_and_differentiable(self):
+        a=torch.zeros(1,3,4,4,requires_grad=True); b=torch.zeros_like(a)
+        b[:,:,0,0]=1
+        region=torch.zeros(1,1,4,4); region[:,:,0,0]=1
+        uniform=region_weighted_loss(a,b,region,0)
+        torch.testing.assert_close(uniform,(a-b).square().mean())
+        focused=region_weighted_loss(a,b,region,5)
+        self.assertGreater(focused.item(),uniform.item())
+        focused.backward()
+        self.assertTrue(torch.isfinite(a.grad).all())
+
     def test_padding_does_not_affect_condition(self):
         torch.manual_seed(1)
         adapter=QueryResampler(input_dim=16,hidden=16,output_dim=8,queries=4,layers=1).eval()

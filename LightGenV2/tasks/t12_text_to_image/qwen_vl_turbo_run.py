@@ -27,7 +27,7 @@ from torch.nn import functional as F
 from .qwen_vl_turbo_data import (add_descriptions, pilot_subset, prepare_pairs,
                                   render_pair, sha256, validate_roles, write_json)
 from .qwen_vl_turbo_model import (NativeTurboHead, QueryResampler, encode_reference,
-                                   image_tensor, pack_hidden)
+                                   image_tensor, pack_hidden, region_weighted_loss)
 
 
 def git_identity() -> dict:
@@ -224,13 +224,22 @@ def train(args, cfg, device):
     train_ids = [i for i,r in enumerate(payload['rows']) if r['split']=='train']
     val_ids = [i for i,r in enumerate(payload['rows']) if r['split']=='val']
     adapter = QueryResampler(hidden=cfg['adapter_hidden'], layers=cfg['adapter_layers']).to(device)
+    resumed = None
+    if args.resume:
+        resumed = torch.load(args.resume, map_location='cpu', weights_only=False)
+        if resumed['cache_sha256'] != sha256(args.output/'frozen_features.pt'):
+            raise ValueError('Resume weights refer to a different data/conditioning cache')
+        adapter.load_state_dict(resumed['adapter'])
+        write_json(args.output/'resume_identity.json',{'checkpoint':str(args.resume),
+                   'sha256':sha256(args.resume),'source_step':resumed['step'],
+                   'source_git':resumed['git'],'optimizer_restarted':True})
     opt = torch.optim.AdamW(adapter.parameters(), lr=cfg['alignment_lr'])
     # Match native UNet condition statistics using TRAIN only, never fit VAL.
     with torch.no_grad():
         mean = torch.stack(list(payload['train_clip_teacher'].values())).float().mean((0,1)).to(device)
-        adapter.output.bias.copy_(mean)
+        if resumed is None: adapter.output.bias.copy_(mean)
     rng = random.Random(cfg['seed'])
-    for step in range(cfg['alignment_steps']):
+    for step in range(0 if resumed is not None else cfg['alignment_steps']):
         ids = rng.sample(train_ids, min(6,len(train_ids)))
         h, valid = pack_hidden([payload['hidden'][i] for i in ids], device)
         target = torch.stack([payload['train_clip_teacher'][i] for i in ids]).float().to(device)
@@ -246,7 +255,8 @@ def train(args, cfg, device):
         target=torch.stack([payload['train_clip_teacher'][i] for i in train_ids]).float().to(device)
         alignment_mse=float(F.mse_loss(adapter(h,valid),target))
     write_json(args.output/'alignment_report.json',{'train_condition_mse':alignment_mse,
-               'steps':cfg['alignment_steps'],'no_val_fit':True})
+               'steps':0 if resumed is not None else cfg['alignment_steps'],
+               'resumed_adapter':resumed is not None,'no_val_fit':True})
     del opt
     unet = UNet2DConditionModel.from_pretrained(args.sd, subfolder='unet', variant='fp16',
                     torch_dtype=torch.bfloat16, local_files_only=True).to(device).requires_grad_(False)
@@ -255,13 +265,20 @@ def train(args, cfg, device):
     for p in unet.parameters():
         if p.requires_grad:
             p.data = p.data.float()
+    if resumed is not None:
+        names={n for n,p in unet.named_parameters() if p.requires_grad}
+        if names != set(resumed['unet_trainable']):
+            raise ValueError('Resume LoRA parameter names changed')
+        with torch.no_grad():
+            for name,p in unet.named_parameters():
+                if name in names: p.copy_(resumed['unet_trainable'][name].to(device))
     unet.enable_gradient_checkpointing()
     vae = AutoencoderKL.from_pretrained(args.sd, subfolder='vae', variant='fp16',
                     torch_dtype=torch.bfloat16, local_files_only=True).to(device).eval().requires_grad_(False)
     scheduler = EulerDiscreteScheduler.from_pretrained(args.sd,subfolder='scheduler', local_files_only=True)
     model = NativeTurboHead(unet,vae,scheduler,adapter)
     # Encoder is used solely for supervised targets and VAE diagnostic, not reference conditioning.
-    targets_latent, vae_mse = {}, []
+    targets_latent, target_regions, vae_mse = {}, {}, []
     with torch.no_grad():
         for i in train_ids + val_ids:
             t = payload['target'][i:i+1].to(device, dtype=vae.dtype)
@@ -271,6 +288,9 @@ def train(args, cfg, device):
                             'psnr':float(-10*torch.log10((rec-t.float()).square().mean()/4).clamp(min=-120))})
             if i in train_ids:
                 targets_latent[i] = (z*vae.config.scaling_factor).float().detach()
+                from .product_object_replace_data import ProductObjectReplacementDataset
+                _,mask=ProductObjectReplacementDataset._load_product(payload['rows'][i]['target'],cfg['image_size'])
+                target_regions[i]=torch.from_numpy(np.asarray(mask).copy()).float()[None,None].to(device)/255
             if i == train_ids[0]:
                 tensor_image(rec[0]).save(args.output/'vae_reconstruction.png')
     write_json(args.output/'vae_diagnostic.json', {'targets_only':True,'records':vae_mse})
@@ -288,7 +308,8 @@ def train(args, cfg, device):
               'trainable':sum(p.numel() for p in params)}
     counts['inference_total'] = counts['qwen_full_forward']+counts['adapter']+counts['unet_including_lora']+counts['vae_decoder']
     write_json(args.output/'parameter_counts.json',counts)
-    native = evaluate(model,payload,train_ids,device,args.output,'train_native_caption_teacher',native_teacher=True)
+    native = (evaluate(model,payload,train_ids,device,args.output,'train_native_caption_teacher',native_teacher=True)
+              if resumed is None else {'not_run':'Resumed UNet is not the untouched public prior'})
     baseline = evaluate(model,payload,val_ids,device,args.output,'val_before_paired_training')
     best, best_step, history = float('-inf'),0,[]
     for step in range(1,cfg['train_steps']+1):
@@ -300,8 +321,10 @@ def train(args, cfg, device):
             with torch.autocast('cuda',dtype=torch.bfloat16):
                 z,pred=model(h,valid,noise_for([payload['rows'][i]],device))
                 target=payload['target'][i:i+1].to(device)
-                latent_loss=F.mse_loss(z,targets_latent[i])
-                rgb_loss=F.l1_loss(pred,target)
+                latent_loss=region_weighted_loss(z,targets_latent[i],target_regions[i],
+                                                cfg.get('latent_foreground_weight',0))
+                rgb_loss=region_weighted_loss(pred,target,target_regions[i],
+                                             cfg.get('rgb_foreground_weight',0),squared=False)
                 perceptual=lp(pred.clamp(-1,1),target).mean()
                 cond=adapter(h,valid)
                 align=F.mse_loss(cond,payload['train_clip_teacher'][i][None].float().to(device))
@@ -357,6 +380,7 @@ def main():
     p.add_argument('--sd',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--stage',choices=['prepare','cache','train','all'],default='all')
+    p.add_argument('--resume',type=Path,help='Same-data pilot best/last only; never an old T12 task weight')
     args=p.parse_args()
     cfg=json.loads(args.config.read_text())
     if cfg['test_enabled']:

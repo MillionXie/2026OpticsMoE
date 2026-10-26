@@ -56,6 +56,15 @@ def image_tensor(image):
     return torch.from_numpy(np.asarray(image.convert('RGB')).copy()).permute(2, 0, 1).float() / 127.5 - 1
 
 
+def region_weighted_loss(prediction, target, region, strength, squared=True):
+    """Normalized TRAIN supervision only; region never enters the generator."""
+    weights = 1 + strength * torch.nn.functional.interpolate(
+        region.float(), size=prediction.shape[-2:], mode='area')
+    error = prediction.float() - target.float()
+    error = error.square() if squared else error.abs()
+    return (error * weights).sum() / (weights.sum() * prediction.shape[1])
+
+
 def pack_hidden(rows, device):
     length = max(r.shape[0] for r in rows)
     h = torch.zeros(len(rows), length, rows[0].shape[-1], device=device, dtype=rows[0].dtype)
