@@ -38,6 +38,48 @@ VAE encoder仅用于目标监督／重建诊断。固定噪声逐样本可复现
 使用用户指定GPU1 UUID`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，允许同卡共享，
 本进程显存上限70%；结束核对自身PID，不终止其他任务。
 
+**该电子方案尚未通过可用性验证。**10月26日四轮小样本试验均已完成，未扩到
+3456对正式候选、未接光、未打开TEST。下面均为同一18 TRAIN／18 VAL开发队列，
+表内TRAIN与VAL来自各轮按VAL选中的同一best权重；不与旧封存指标比较。
+
+| smoke run后缀（均为20261026） | VAL选中的step | TRAIN PSNR/dB | VAL PSNR/dB |
+| --- | ---: | ---: | ---: |
+| `electronic` | 120 | 19.2584 | 16.1480 |
+| `aligned` | 180 | 20.7363 | 14.8750 |
+| `foreground` | 600 | 22.8725 | 15.4519 |
+| `cross_attention` | 200 | 23.6289 | 15.0387 |
+
+目录完整格式为`runs/smoke/qwen_vl_turbo_<后缀>_20261026`，配置文件同名。
+首轮VAE对36个开发目标的平均重建PSNR为37.5302dB。
+第二轮仅把TRAIN条件对齐由240增至2400步；第三轮从同数据第二轮best继续，
+增加归一化前景latent/RGB损失及LPIPS权重；第四轮从第三轮best继续，
+解冻UNet已有cross-attention，并将所有样本噪声统一为seed1042。
+第四轮last的TRAIN为27.1884dB，但对应VAL仅14.3632dB，不能用这个TRAIN数字
+描述VAL选中best。第四轮交换跨样本的整组图文条件后VAL为15.2423dB，
+比正确条件15.0387dB还高；这是整组条件错配诊断，并非独立图／文消融，
+不足以宣称参考图与指令的泛化控制成立。仅凭当前结果不能确定唯一失败原因。
+
+推理总参数3,047,511,259（约3.05B，含311,164,928词嵌入；按旧约定排除后
+2,736,346,331），包括Qwen 2,127,532,032、adapter 2,918,400、UNet含LoRA
+867,570,628、VAE decoder 49,490,199。前三轮可训练4,578,304，第四轮54,930,624；
+解冻不增加部署参数。训练用VAE encoder 34,163,664及CLIP教师不进入推理。
+各轮仅保留best/last，不把微调参数量当成部署参数量。原光电模型／实拍数据未更改。
+
+不依赖缓存的入口为`qwen_vl_turbo_infer.py --image ... --prompt ... --checkpoint ...
+--qwen ... --sd ... --output ... --seed 1042`。它只有RGB、文字、噪声输入，
+不读取数据集、目标图、mask或CLIP；完整Qwen实际前向后再加载生成头。
+第四轮`uncached_probe/verification.json`核验该入口与缓存的Qwen特征SHA完全一致，
+单样本PNG PSNR与缓存浮点计算仅差0.00224dB（量化差异），无GT推理支路。
+四轮训练与该推理核验的五个自有PID均已退出，GPU1上其他任务保留。
+
+汇总脚本为[小样本诊断整理](reports/qwen_vl_turbo_electronic_20261026/summarize_pilot.py)，
+生成第四轮`overview/pilot_summary.json`和固定三模式对照图；完整18样本网格亦在各run。
+TRAIN展示last与VAL展示best时已分区注明不同权重，不伪装为同一权重的泛化差距。
+这批结果是接口／训练可行性诊断，**不是已达标baseline或论文独立TEST结果**。
+代码已发布main；服务器主目录另有其他任务未提交修改，故仅按公开commit检出本轮
+T12路径并核验字节，不整仓pull、不切换其他运行目录，实际server HEAD与发布commit
+分别记录在各run的execution／launch身份中。
+
 9月21—22日旧cleanrender GAN、parallel optical、lamp场景／半Qwen替换、商品修复、
 chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与原7093ec4608
 和实际服务器v2源码一致。它们是旧容量／划分的历史仿真、训练耗时及PT身份，
