@@ -1,0 +1,85 @@
+"""Actual two-stream replay core; not yet a standalone qualified GPU worker.
+
+The caller must capture two INDEPENDENT input/prefix/output allocations using
+real retained fields, retain every eager/capture cost, and validate all scores.
+This module only supplies the bounded online steady execution, with real
+tokenization on every field and no feature/prediction/CCD cache.
+"""
+import time
+
+
+def validate_slots(slots):
+    if len(slots)!=2:raise ValueError('Exactly two independent slots required')
+    seen=set()
+    for slot in slots:
+        if not slot['segments'] or slot['segments'][0]['kind']!='frontend':
+            raise ValueError('Separate frontend graph required')
+        kinds=[x['kind'] for x in slot['segments']]
+        if kinds.count('frontend')!=1 or kinds.count('optical_simulation')!=6 or kinds.count('electronics')!=17:
+            raise ValueError('One original frontend and six coherent propagations')
+        if kinds.count('detector_ROI')!=6 or kinds.count('electronic_residual')!=4:
+            raise ValueError('Original excluded operations still execute')
+        inputs={v.data_ptr() for v in slot['static'].values()}
+        if len(inputs)!=4 or not slot.get('prefix_owned'):raise ValueError('Owned input/prefix tensors required')
+        pointers=inputs|{v.data_ptr() for v in slot['prefix_owned'].values()}|{slot['prediction'].data_ptr()}
+        if seen & pointers:raise ValueError('Cross-slot input/prefix/output allocation alias')
+        seen.update(pointers)
+        if slot.get('score_ready') is None:raise ValueError('Initial real field fence missing')
+
+
+def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,first_field,total_fields):
+    """Queue next frontend during previous body, bounded to two live fields.
+
+    No model is loaded here. `tokenize` returns newly computed CPU ids/mask and
+    exact timing/ID evidence. All callbacks are owned by the future worker.
+    Raw pixels and quality retain the original outside-window preparation scope.
+    Each segment's event pair is preserved for dependency-aware projection.
+    """
+    validate_slots(slots)
+    if not 0<=first_field<total_fields or len(raw)!=32:
+        raise ValueError('Original 512-video, 32-field workload required')
+    outputs=[];records=[]
+    with torch.inference_mode():
+        for field in range(first_field,total_fields):
+            guard.fast()
+            slot_index=(field-first_field)%2;slot=slots[slot_index]
+            # CPU tokenizer runs while the preceding queued GPU field executes.
+            cpu_ids,cpu_mask,token_record=tokenize(field)
+            if token_record['field']!=field:raise ValueError('Tokenizer field order changed')
+            ids=cpu_ids.pin_memory();mask=cpu_mask.bool().pin_memory()
+            # Wait only before REUSING this slot, not for the immediately prior
+            # field. This also keeps old pinned CPU buffers alive until safe.
+            wait_start=time.perf_counter();slot['score_ready'].synchronize();wait_end=time.perf_counter()
+            current=raw[field%32];observed=[]
+            with torch.cuda.stream(front_stream):
+                h0=torch.cuda.Event(enable_timing=True);h1=torch.cuda.Event(enable_timing=True)
+                h0.record();slot['static']['ids'].copy_(ids,non_blocking=True)
+                slot['static']['mask'].copy_(mask,non_blocking=True);h1.record()
+                # Device-to-device refresh remains charged, just as before.
+                x=torch.cuda.Event(enable_timing=True);y=torch.cuda.Event(enable_timing=True);x.record()
+                for name in ('pixels','quality'):slot['static'][name].copy_(current[name],non_blocking=True)
+                slot['segments'][0]['graph'].replay();y.record()
+                observed.append(dict(kind='frontend',label='input_refresh_and_original_prefix',start=x,end=y,stream='frontend'))
+            with torch.cuda.stream(body_stream):
+                body_stream.wait_event(y)
+                for segment in slot['segments'][1:]:
+                    a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True)
+                    a.record();segment['graph'].replay();b.record()
+                    observed.append(dict(kind=segment['kind'],label=segment['label'],start=a,end=b,stream='body'))
+                # Clone each score before that slot's output may be overwritten.
+                a=torch.cuda.Event(enable_timing=True);b=torch.cuda.Event(enable_timing=True)
+                a.record();prediction=slot['prediction'].clone();b.record()
+                observed.append(dict(kind='electronics',label='retain_current_score',start=a,end=b,stream='body'))
+            slot['score_ready']=b;slot['keepalive']=(ids,mask)
+            outputs.append(prediction)
+            records.append(dict(field=field,slot=slot_index,tokenizer=token_record,
+                slot_reuse_wait_host_start=wait_start,slot_reuse_wait_host_end=wait_end,
+                original_H2D_events=(h0,h1),events=observed,score_ready=b,
+                host_submission_end=time.perf_counter()))
+        records[-1]['score_ready'].synchronize()
+        end_host=time.perf_counter()
+    return dict(outputs=outputs,records=records,last_score_ready_host=end_host,
+        actual_online_tokenizer_calls=total_fields-first_field,
+        independent_input_buffers=2,body_stream_serial=True,
+        next_field_frontend_stream=True,all_startup_costs_owned_by_caller=True,
+        fixed_optics_projection_not_computed_by_summing_spans=True)
