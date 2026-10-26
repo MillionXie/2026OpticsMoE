@@ -12,6 +12,7 @@ import torch
 from .model import ScalingOptics
 from .plan import load_protocol
 from .train import evaluate, sha
+from .locked_test_cache import verified_cached_result
 
 
 def save(path, value):
@@ -29,6 +30,8 @@ def main():
                          'Training-cache identity is still verified with --data.')
     ap.add_argument('--selection-lock', type=Path, required=True)
     ap.add_argument('--batch', type=int, default=2)
+    ap.add_argument('--cache-locked-result', action='store_true',
+                    help='Permit later identity-checked reuse without repeated inference')
     ap.add_argument('--checkpoint', choices=['best_checkpoint.pt', 'last_checkpoint.pt'],
                     default='best_checkpoint.pt')
     args = ap.parse_args()
@@ -56,6 +59,23 @@ def main():
     test_archive = args.test_source or args.data
     if args.test_source and sha(args.test_source) != manifest['source_sha256']:
         raise ValueError('Official test-source hash differs from data manifest')
+    stem = 'test' if args.checkpoint == 'best_checkpoint.pt' else 'last_test'
+    identity = dict(checkpoint_sha256=checkpoint_sha, checkpoint_file=args.checkpoint,
+                    data_sha256=sha(args.data), data_manifest_sha256=sha(manifest_path),
+                    test_source_sha256=sha(test_archive),
+                    evaluator_source_sha256=sha(Path(__file__)),
+                    evaluation_dependencies={name:sha(Path(__file__).with_name(name))
+                                             for name in ('model.py','plan.py','train.py')},
+                    evaluation_protocol=load_protocol())
+    cached = verified_cached_result(args.run, stem, identity)
+    if cached is not None:
+        save(args.run/f'{stem}_reuse_receipt.json', dict(
+            result_sha256=sha(args.run/f'{stem}_result.json'),
+            selection_lock_sha256=sha(args.selection_lock), checkpoint_sha256=checkpoint_sha,
+            reused_without_inference=True, timestamp=time.time()))
+        print(json.dumps(dict(run=args.run.name, reused_without_inference=True,
+                              test_accuracy=cached['test']['accuracy'])), flush=True)
+        return
     archive = np.load(test_archive, allow_pickle=False)
     images = archive['test_images']
     labels = archive['test_labels'].reshape(-1).astype(np.int64)
@@ -95,6 +115,10 @@ def main():
         test=metrics, elapsed_seconds=time.time()-started,
         cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
         device=torch.cuda.get_device_name(), source_commit=metadata['git_commit'])
+    payload.update(locked_result_cache=args.cache_locked_result,
+                   predictions_sha256=sha(args.run/f'{stem}_predictions.npz'),
+                   evaluator_source_sha256=sha(Path(__file__)))
+    payload.update(identity)
     save(args.run / f'{stem}_result.json', payload)
     print(json.dumps({'run': args.run.name, 'test_accuracy': metrics['accuracy'],
                       'test_macro_f1': metrics['macro_f1'], 'elapsed_seconds': payload['elapsed_seconds']}), flush=True)
