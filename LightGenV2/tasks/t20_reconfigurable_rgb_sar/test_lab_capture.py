@@ -13,6 +13,18 @@ from LightGenV2.tasks.t21_continual_learning_hardware.hardware_bridge import har
 
 
 class LabCaptureTests(unittest.TestCase):
+    def test_audit_reads_original_chinese_authorization_as_utf8(self):
+        from .audit_lab_capture import read_json
+        original=Path.read_text
+        def explicit_utf8(path,*args,**kwargs):
+            self.assertEqual(kwargs.get('encoding'),'utf-8')
+            return original(path,*args,**kwargs)
+        with tempfile.TemporaryDirectory() as name:
+            p=Path(name)/'protocol.json'
+            p.write_text('{"authorization":"允许，仅相关改为记录，其余守卫不变"}',encoding='utf-8')
+            with patch.object(Path,'read_text',explicit_utf8):
+                self.assertEqual(read_json(p)['authorization'],'允许，仅相关改为记录，其余守卫不变')
+
     def test_full_npz_members_are_decompressed_once_not_per_sample(self):
         original=np.load;counts={}
         class Once:

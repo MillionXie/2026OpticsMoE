@@ -15,13 +15,18 @@ from LightGenV2.tasks.t21_continual_learning_hardware.hardware_bridge import har
 from LightGenV2.tasks.t21_continual_learning_hardware.train_native import tensor_sha
 
 
+def read_json(path):
+    """Protocol writer uses UTF-8, including the original human authorization."""
+    return json.loads(Path(path).read_text(encoding='utf-8'))
+
+
 @torch.no_grad()
 def main():
     p=argparse.ArgumentParser(__doc__)
     for name in ('package','capture','out'):p.add_argument('--'+name,type=Path,required=True)
     a=p.parse_args();torch.set_num_threads(2)
-    report=json.loads((a.capture/'report.json').read_text());protocol=json.loads((a.capture/'protocol.json').read_text())
-    manifest=json.loads((a.package/'manifest.json').read_text());case=report['case']
+    report=read_json(a.capture/'report.json');protocol=read_json(a.capture/'protocol.json')
+    manifest=read_json(a.package/'manifest.json');case=report['case']
     if not report['passed'] or sha(a.package/'manifest.json')!=protocol['package_sha256']:
         raise ValueError('Only a complete immutable same-package capture may be audited')
     if sha(a.capture/'features.npz')!=report['features_sha256']:raise ValueError('Changed measured features')
@@ -33,13 +38,13 @@ def main():
     a.out.mkdir(parents=True,exist_ok=False);began=time.monotonic();rows=[];features=[]
     for stage in order:
         layer=a.capture/stage;phase_file=layer/'phase.bmp';phase_sha=sha(phase_file)
-        noise=json.loads((layer/'TRAIN_signal_admission/report.json').read_text())
+        noise=read_json(layer/'TRAIN_signal_admission/report.json')
         if not noise['passed'] or noise['TEST_used']:raise ValueError('Invalid TRAIN signal admission')
         dark=np.load(layer/'TRAIN_signal_admission/dark_ccd.npy')
         if sha(layer/'TRAIN_signal_admission/dark_ccd.npy')!=noise['dark_CCD_sha256']:raise ValueError('Fixed control dark changed')
         mask=router_mask(model) if stage=='router' else None
         for i,entry in enumerate(entries):
-            folder=layer/f'{i:05d}';r=json.loads((folder/'receipt.json').read_text())
+            folder=layer/f'{i:05d}';r=read_json(folder/'receipt.json')
             if not r['passed']:raise ValueError('Failed evidence is not a valid network frame')
             for field in ('split','local_index','source_index','source_id','domain','label','source_identity_sha256'):
                 if r[field]!=entry[field]:raise ValueError('Captured source identity mismatch: '+field)
