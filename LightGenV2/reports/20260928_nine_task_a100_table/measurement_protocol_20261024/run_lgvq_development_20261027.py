@@ -2,8 +2,9 @@
 
 The original worker file is NOT edited. A fail-closed AST adapter changes only
 its GPU UUID, two actual-SM literals and power-cap literal for this fresh process.
-All model/input/math/timing/numerical gates are original, including bitwise
-equality to the sealed A100 reference. A cross-architecture mismatch stops A/B.
+All model/input/math/timing/numerical gates are original. The default reference
+is sealed A100; explicit --same-card-reference is the later human authorization
+to compare ONLY this card's optimization with its preserved unmodified output.
 The first round is LG05's no-pool implementation; only after its success does
 the second fresh process enable the existing, GPU-unverified event-pool method.
 No foreign signals, power/clock changes, retries, or formal artifact updates.
@@ -32,6 +33,8 @@ GPU = 'GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d'
 NAME = 'NVIDIA GeForce RTX 4090'
 SMS = 128
 CAP = 450.
+SAME_CARD_REFERENCE = SIM/'lgvq_rtx4090_development_20261027_01'/'baseline'
+SAME_CARD_SHA256 = '31fedd4d30d24b705774007be0baa34f78c34a7bfa21b8890718a7334fd3bc88'
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(REPO))
 
@@ -108,6 +111,48 @@ def verify_sources(commit, sources):
             raise RuntimeError('Source does not match published Git blob: '+name)
 
 
+def same_card_reference():
+    """Admit the precise preserved baseline only; never relabel its rejection."""
+    import numpy as np
+    folder = SAME_CARD_REFERENCE
+    read = lambda p:json.loads(p.read_text())
+    suite = read(folder.parent/'suite_status.json'); identity = read(folder/'identity.json')
+    actual = read(folder/'async_identity.json'); status = read(folder/'status.json')
+    candidate, _ = load_candidate()
+    if (suite['status'] != 'stopped' or suite['mps_released'] is not True
+            or status['status'] != 'failed'
+            or status['error'] != "ValueError('Every score must be bitwise equal to the sealed reference')"
+            or identity['gpu'] != GPU or identity['expected_sms'] != SMS or identity['observed_cap_w'] != CAP
+            or identity['performance_change'] != 'none_LG05_baseline'
+            or actual['gpu_uuid'] != GPU or actual['checkpoint_sha256'] != '5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c'
+            or actual['optimized_runtime'] is not True or actual['same_field_parallel_text'] is not False):
+        raise ValueError('Exact unmodified same-card baseline identity required')
+    for pid in (suite['pid'], identity['pid']):
+        if Path('/proc', str(pid)).exists():raise RuntimeError('Baseline process not released')
+    if control(identity['private_MPS_pipe'], 'get_server_list').returncode == 0:
+        raise RuntimeError('Baseline private MPS not released')
+    for name, digest in candidate.source_map().items():
+        if identity['sources'].get(name) != digest:raise RuntimeError('Baseline mathematical/timing source changed: '+name)
+    if sha(folder/'outputs.npz') != SAME_CARD_SHA256:raise ValueError('Preserved same-card outputs changed')
+    if sha(REPO/candidate.REFERENCE_RELATIVE) != candidate.REFERENCE_SHA256:
+        raise ValueError('Original A100 reference changed')
+    with np.load(folder/'outputs.npz', allow_pickle=False) as z:array = z['prediction']
+    candidate.validate_predictions(array, array.copy())  # original shape/dtype/finite/four-cycle gates
+    audit = read(folder/'process_audit.json')
+    if not audit or any(r['foreign_gpu_processes'] or r['foreign_mps_clients']
+            or r['platform']['uuid'] != GPU for r in audit):raise ValueError('Baseline not exclusive')
+    events = read(folder/'async_event_records.json')
+    if len(events['records']) != 128 or [r['field'] for r in events['records']] != list(range(128)):
+        raise ValueError('Full unmodified baseline event records required')
+    return dict(profile='HUMAN_AUTHORIZED_SAME_CARD_DEVELOPMENT_ONLY',
+        path=str(folder/'outputs.npz'), sha256=SAME_CARD_SHA256,
+        original_A100_reference_sha256=candidate.REFERENCE_SHA256,
+        baseline_software_ms16=events['measured_software_wall_ms']/128,
+        baseline_identity_sha256=sha(folder/'identity.json'),
+        baseline_events_sha256=sha(folder/'async_event_records.json'),
+        baseline_rejection_preserved=True, not_A100_bitwise_equivalence=True)
+
+
 def control(pipe, command):
     return subprocess.run(['nvidia-cuda-mps-control'], input=command+'\n', text=True,
         capture_output=True, env=dict(os.environ, CUDA_MPS_PIPE_DIRECTORY=pipe), timeout=5)
@@ -168,13 +213,18 @@ def worker(args):
     if os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:raise ValueError('Wrong development GPU')
     args.output.mkdir()
     candidate, counts = load_candidate()
+    reference = same_card_reference() if args.same_card_reference else None
+    if reference:
+        candidate.REFERENCE_RELATIVE = str(Path(reference['path']).relative_to(REPO))
+        candidate.REFERENCE_SHA256 = reference['sha256']
     write(args.output/'identity.json', dict(profile='RTX4090_DEVELOPMENT_ONLY', gpu=GPU,
         name=NAME, expected_sms=SMS, observed_cap_w=CAP, source_HEAD=subprocess.check_output(
             ['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
         published_commit=bound['commit'], sources=bound['sources'], command=sys.argv,
         hardware_only_AST_substitution_counts=counts, original_worker_sha256=sha(WORKER),
         performance_change='event_pool_only' if args.reuse_events else 'none_LG05_baseline',
-        reference_policy='original_sealed_A100_bitwise_unchanged',
+        reference_policy='same_card_development_bitwise' if reference else 'original_sealed_A100_bitwise_unchanged',
+        same_card_reference=reference,
         qualified_for_final_hybrid_table=False, not_A100_speedup_evidence=True,
         private_MPS_pipe=args.pipe, pid=os.getpid()))
     # The reused raw adapter computes the identical DAG. Downgrade its result
@@ -186,7 +236,8 @@ def worker(args):
         trace, report = original_adapt(raw)
         report.update(qualified_for_final_hybrid_table=False, development_only=True,
             hardware_profile='RTX4090_450W_128SM', not_A100_speedup_evidence=True,
-            physical_hardware_time_measured=False)
+            physical_hardware_time_measured=False, same_card_reference=reference,
+            A100_bitwise_equivalence_claimed=False)
         return trace, report
     adapter.adapt = development_adapt
     guard = Guard(args, bound['sources'])
@@ -223,9 +274,11 @@ def suite(args):
     serialize_mps_commands()
     sources = source_map(); commit = os.environ['MEASUREMENT_PUBLISHED_COMMIT']
     verify_sources(commit, sources)
+    reference = same_card_reference() if args.same_card_reference else None
     if args.root.exists():raise FileExistsError('Preserve prior development root; no retry')
     args.root.mkdir()
     write(args.root/'source_receipt.json', dict(commit=commit, sources=sources))
+    if reference:write(args.root/'development_reference_receipt.json', reference)
     receipt_sha = sha(args.root/'source_receipt.json')
     state = dict(status='admission', pid=os.getpid(), deadline=args.deadline, command=sys.argv,
         gpu=GPU, profile='RTX4090_DEVELOPMENT_ONLY', completed=[], mps_released=False)
@@ -250,7 +303,8 @@ def suite(args):
                 MKL_NUM_THREADS='8', OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
             subprocess.run(['nvidia-cuda-mps-control', '-d'], env=env, capture_output=True,
                 text=True, timeout=10, check=True); active = True
-            for label, reuse in [('baseline', False), ('event_pool', True)]:
+            plan = [('event_pool', True)] if reference else [('baseline', False), ('event_pool', True)]
+            for label, reuse in plan:
                 if time.time() >= args.deadline-60:raise TimeoutError('No new round beyond deadline')
                 if source_map() != sources:raise RuntimeError('Development source changed')
                 snapshot(args.pipe, -1)
@@ -258,6 +312,7 @@ def suite(args):
                 command = [sys.executable, '-u', str(ENTRY), '--phase', 'worker', '--root', str(args.root),
                     '--output', str(leaf), '--deadline', str(args.deadline), '--receipt-sha', receipt_sha]
                 if reuse:command.append('--reuse-events')
+                if reference:command.append('--same-card-reference')
                 write(args.root/(label+'.command.json'), command)
                 with (args.root/(label+'.log')).open('x') as log:
                     child = subprocess.Popen(command, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
@@ -294,6 +349,8 @@ def main():
     p.add_argument('--root', type=Path, required=True); p.add_argument('--output', type=Path)
     p.add_argument('--deadline', type=float, required=True); p.add_argument('--receipt-sha')
     p.add_argument('--reuse-events', action='store_true')
+    p.add_argument('--same-card-reference', action='store_true',
+        help='Explicit human authorization: event-pool round only, bytewise to preserved RTX4090 baseline')
     args = p.parse_args(); args.root = args.root.resolve()
     if args.root.parent != SIM or not re.fullmatch(r'lgvq_rtx4090_development_20261027_\d{2}', args.root.name):
         raise ValueError('New canonical development root required')
