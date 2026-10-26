@@ -24,6 +24,17 @@ TASK=REPO/'LightGenV2/tasks/t06_video_quality_assessment'
 GPU='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
 
 
+def point_plan(model_order,retained_names=()):
+    """Scheduling only: retain all 24 identities and every missing round."""
+    if len(model_order)!=4 or set(model_order)!={'qwen','glm','clip','yolo'}:
+        raise ValueError('Model order must be an exact permutation of all four baselines')
+    retained=set(retained_names)
+    plan=[(m,c,r) for m in model_order for c in (100,50) for r in (1,2,3)]
+    expected={f'{m}_cap{c}_repeat{r:02d}' for m,c,r in plan}
+    if not retained<=expected:raise ValueError('Unknown retained point identity')
+    return [(m,c,r) for m,c,r in plan if f'{m}_cap{c}_repeat{r:02d}' not in retained]
+
+
 def diagnostic_guard_check(original):
     """Move ONLY the original audit append before validation, preserving gates.
 
@@ -191,7 +202,7 @@ def suite(args):
     import fcntl
     from LightGenV2.tasks.t06_video_quality_assessment import measure_mps_e2e_20261024 as old
     args.root.mkdir();legacy=old.initialize_profile(args);active=False;child=None
-    plan=[(m,c,r) for m in ('qwen','glm','clip','yolo') for c in (100,50) for r in (1,2,3)]
+    plan=point_plan(args.model_order)
     retained=[]
     if len(args.retained_point)!=len(args.retained_cost_sha256):raise ValueError('Exact retained cost SHA required')
     for folder,digest in zip(args.retained_point,args.retained_cost_sha256):
@@ -209,8 +220,8 @@ def suite(args):
         if folder.name!=name or name in {x['name'] for x in retained}:raise ValueError('Duplicate or mismatched retained identity')
         retained.append(dict(name=name,path=str(folder),cost_sha256=digest))
     names={x['name'] for x in retained}
-    plan=[(m,c,r) for m,c,r in plan if f'{m}_cap{c}_repeat{r:02d}' not in names]
-    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,plan=plan,completed=[],retained=retained,sources=sources())
+    plan=point_plan(args.model_order,names)
+    state=dict(status='admission',pid=os.getpid(),deadline=args.deadline,plan=plan,model_order=args.model_order,completed=[],retained=retained,sources=sources())
     def save():accounting.write(args.root/'suite_status.json',state)
     save()
     try:
@@ -277,7 +288,9 @@ def main():
     p.add_argument('--reproduction-receipt',type=Path);p.add_argument('--cap',type=int,choices=[50,100]);p.add_argument('--repeat',type=int)
     p.add_argument('--retained-point',type=Path,action='append',default=[])
     p.add_argument('--retained-cost-sha256',action='append',default=[])
+    p.add_argument('--model-order',nargs=4,choices=['qwen','glm','clip','yolo'],default=['qwen','glm','clip','yolo'])
     p.add_argument('--deadline',type=float,required=True);args=p.parse_args()
+    point_plan(args.model_order)
     args.root=args.root.resolve();args.suite_root=args.root;args.profile='lab';args.gpu_uuid=GPU
     args.pipe='/DATA/DATA1/guest3/.cache/'+args.root.name
     args.manifest=REPO/'experiments/lgvq_four_stage_optical_electronic_109_no_attention_vqa/artifacts/lgvq_train2250_test558.csv'
