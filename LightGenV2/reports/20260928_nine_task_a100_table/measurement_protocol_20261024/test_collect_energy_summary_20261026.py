@@ -26,6 +26,7 @@ def fixture(folder, model='qwen', repeat=1, elapsed=256.):
     visual = model in ('clip', 'yolo'); energy = elapsed*400
     cost = dict(status='complete',model=model,cap=50,repeat=repeat,video_calls=2048,unique_videos=512,
         common_Qwen_effective_tokens=913408,host_proxy_w=338.2,elapsed_s=elapsed,energy_j=energy,
+        GPU_energy_j=energy-338.2*elapsed,observed_timeweighted_GPU_w=61.8,
         max_power_sample_age_s=.1,time16_ms=elapsed*1000/128,energy16_j=energy/128,
         common_tokens_per_s=913408/elapsed,native_effective_tokens=None if visual else 913408,
         native_tokens_per_s=None if visual else 913408/elapsed)
@@ -62,13 +63,14 @@ class SummaryTests(unittest.TestCase):
             write(p/'identity.json',dict(GPU=collector.LAB_GPU))
             c=collector.read(p/'cost_report.json')
             c.update(qualified_for_final_hybrid_table=True,physical_hardware_time_measured=False,
-                actual_async_software_wall_ms=128000.,native_token_scope='one prompt per field',
+                actual_async_software_wall_ms=128000.,native_token_scope='one prompt per field',common_effective_tokens=913408,
                 measured_next_frontend_prior_body_overlap_ms=10.,actual_GPU_resource_span_totals_ms={'electronics':200.},
                 phase_energy_proxy={'controller_union_ms':200.})
             write(p/'cost_report.json',c)
             raw=('async_raw_timing.json','async_event_records.json','async_causal_trace.json',
                  'outputs.npz','telemetry.csv','cost_report.json')
             for name in raw[:3]:write(p/name,dict(synthetic=True))
+            write(p/'async_raw_timing.json',dict(raw_board_energy=dict(elapsed_s=128.,energy_j=128.,host_proxy_w=0.)))
             write(p/'local_independent_async_audit01.json',dict(status='passed',video_calls=2048,
                 all_2048_scores_bitwise_equal_sealed_reference=True,every_original_DAG_node_start_reproduced=True,
                 physical_hardware_time_or_energy_measured=False,projected_time16_ms=c['time16_ms'],
@@ -98,6 +100,7 @@ class SummaryTests(unittest.TestCase):
             group=collector.collect([a,b],allow_partial=True)['groups'][0]
             self.assertAlmostEqual(group['pooled_common_tokens_per_s'],2*913408/640)
             self.assertEqual(group['rounds'],2)
+            self.assertAlmostEqual(group['measured_matched_board_average_w'],61.8)
             self.assertAlmostEqual(group['time16_ms'],2500.)
             self.assertAlmostEqual(sum(group['stage_equivalent16_ms'].values()),group['time16_ms'])
 
@@ -145,6 +148,7 @@ class SummaryTests(unittest.TestCase):
         for model,cap,repeat in collector.EXPECTED:
             rows.append(dict(platform='A10040GB_PCIE_250W',model=model,cap=cap,repeat=repeat,
                 calls=2048,elapsed_s=1.,energy_j=400.,common_effective_tokens=913408,
+                measured_board_energy_j=61.8,hardware_power_limit_w=250,host_proxy_w=338.2,
                 native_effective_tokens=None if model in ('clip','yolo') else 913408,
                 stage_totals_ms={'stage':1000.},first_TF_node_recorded=True,files=[]))
         with patch.object(collector,'point',side_effect=rows):
@@ -153,6 +157,21 @@ class SummaryTests(unittest.TestCase):
     def test_nonfinite_and_boolean_numeric_rejected(self):
         for value in (float('nan'),float('inf'),True,None):
             with self.assertRaises(ValueError):collector.number(value)
+
+    def test_rental100_identity_and_matched_board_power(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=fixture(Path(d)/'p')
+            write(p/'identity.json',dict(gpu_uuid=collector.RENTAL_GPU,power_limit_w=400,visible_multiprocessors=108))
+            c=collector.read(p/'cost_report.json');c.update(model='deepseek',cap=100)
+            write(p/'cost_report.json',c)
+            a=collector.read(p/'local_independent_energy_audit01.json')
+            a['raw_sha256']['cost_report.json']=collector.sha(p/'cost_report.json')
+            write(p/'local_independent_energy_audit01.json',a);reseal(p)
+            self.assertEqual(collector.point(p)['hardware_power_limit_w'],400)
+            c['GPU_energy_j']+=1;write(p/'cost_report.json',c)
+            a['raw_sha256']['cost_report.json']=collector.sha(p/'cost_report.json')
+            write(p/'local_independent_energy_audit01.json',a);reseal(p)
+            with self.assertRaises(ValueError):collector.point(p)
 
 
 if __name__ == '__main__':unittest.main()

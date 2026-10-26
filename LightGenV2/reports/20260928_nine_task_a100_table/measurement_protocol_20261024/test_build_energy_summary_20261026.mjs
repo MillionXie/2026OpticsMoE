@@ -42,3 +42,16 @@ test('column indices cover source hashes without off-by-one shifts',()=>{
   assert.equal(col(0),'A');assert.equal(col(13),'N');assert.equal(col(22),'W');assert.equal(col(23),'X');assert.equal(col(27),'AB');
   assert.equal(stages.length,10);assert.equal(stages[2][0],'CPU_tokenizer_retained_ms');
 });
+
+test('36 original rounds map to 12 non-overlapping three-round groups',()=>{
+  const d=fixture();
+  d.rounds=d.rounds.filter(p=>p.platform==='A10040GB_PCIE_250W');
+  d.groups=d.groups.filter(p=>p.platform==='A10040GB_PCIE_250W');
+  for(const model of ['kimi','deepseek'])for(const cap of [50,100]){
+    d.groups.push({platform:'A10080GB_SXM4_400W',model,cap,rounds:3});
+    for(const repeat of [1,2,3])d.rounds.push({platform:'A10080GB_SXM4_400W',model,cap,repeat});
+  }
+  const p=layout(d);assert.equal(p.rounds.length,36);assert.equal(p.groups.length,12);
+  assert.equal(p.groups.at(-1).summaryRow,18);assert.equal(p.rounds.at(-1).row,37);
+  assert.equal(p.lgInputStart,41);
+});

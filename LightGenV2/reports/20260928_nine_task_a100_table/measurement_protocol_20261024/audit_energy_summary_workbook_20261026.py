@@ -56,6 +56,8 @@ def verify_values(data,sheets):
         n=sum(p['calls'] for p in points);seconds=sum(p['elapsed_s'] for p in points)
         energy=sum(p['energy_j'] for p in points);common=sum(p['common_effective_tokens'] for p in points)
         values=dict(E=seconds*1000/n*16,F=seconds*1000/(n*4),G=energy/n*16,H=energy/(n*4),I=common/seconds,K=n)
+        values.update(L=points[0]['hardware_power_limit_w'],
+                      M=sum(p['measured_board_energy_j'] for p in points)/seconds,N=points[0]['host_proxy_w'])
         if points[0]['native_effective_tokens'] is not None:
             values['J']=sum(p['native_effective_tokens'] for p in points)/seconds
         for c,value in values.items():close(summary.get(c+str(i+7)),value)
@@ -66,7 +68,9 @@ def verify_values(data,sheets):
         close(charged,seconds*1000)
         for p in points:
             for c,value in [('E',p['calls']),('F',p['elapsed_s']),('G',p['energy_j']),
-                            ('J',p['time16_ms']),('K',p['energy16_j']),('L',p['common_effective_tokens']/p['elapsed_s'])]:
+                            ('J',p['time16_ms']),('K',p['energy16_j']),('L',p['common_effective_tokens']/p['elapsed_s']),
+                            ('AC',p['hardware_power_limit_w']),('AD',p['measured_board_energy_j']),
+                            ('AE',p['measured_board_energy_j']/p['elapsed_s']),('AF',p['host_proxy_w'])]:
                 close(rounds.get(c+str(row)),value)
             if p['native_effective_tokens'] is not None:
                 close(rounds.get('M'+str(row)),p['native_effective_tokens']/p['elapsed_s'])
@@ -78,8 +82,13 @@ def verify_values(data,sheets):
     lg=data['LG']
     for cell,key in [('B26','measured_software_time16_ms'),('C26','measured_software_board_FFT_energy16_j'),
                      ('B27','fixed_optics_counterfactual_time16_ms'),('C27','fixed_optics_component_proxy_energy16_j'),
-                     ('D27','projected_common_tokens_per_s'),('E27','projected_native_tokens_per_s')]:
+                     ('D27','projected_common_tokens_per_s'),('E27','projected_native_tokens_per_s'),
+                     ('D26','measured_software_common_tokens_per_s'),('E26','measured_software_native_tokens_per_s')]:
         close(summary.get(cell),lg[key])
+    for cell,key in [('I26','hardware_power_limit_w'),('I27','measured_software_matched_board_average_w')]:
+        close(summary.get(cell),lg[key])
+    for cell,key in [('I28','controller'),('I29','optical_devices'),('I30','electronic_board')]:
+        close(summary.get(cell),lg['component_energy_proxy']['powers_w'][key])
 
 
 def audit(folder,seal=False,visual_reviewed=False):

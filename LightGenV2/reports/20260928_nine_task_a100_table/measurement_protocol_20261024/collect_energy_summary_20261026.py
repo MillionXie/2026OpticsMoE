@@ -112,7 +112,17 @@ def point(folder, kind='baseline'):
         close(cost['native_tokens_per_s'], audit['projected_native_tokens_per_s'])
         if not 0 <= number(audit['max_power_sample_age_s']) <= .25:
             raise ValueError('LG original software power-age gate differs')
+        raw = read(folder / 'async_raw_timing.json')
+        board = raw['raw_board_energy']
+        close(board['elapsed_s'] * 1000, cost['actual_async_software_wall_ms'])
+        close(board['energy_j'], audit['actual_board_FFT_diagnostic_j'])
+        close(board['host_proxy_w'], 0.)
+        close(cost['common_effective_tokens'], 913408)
         return dict(path=str(folder), kind='LG_async', platform='A10040GB_PCIE_250W',
+                    hardware_power_limit_w=250, diagnostic_host_proxy_w=0.,
+                    measured_software_matched_board_average_w=board['energy_j'] / board['elapsed_s'],
+                    measured_software_common_tokens_per_s=cost['common_effective_tokens'] / board['elapsed_s'],
+                    measured_software_native_tokens_per_s=number(cost['native_effective_tokens']) / board['elapsed_s'],
                     measured_software_time16_ms=cost['actual_async_software_wall_ms'] / 128,
                     measured_software_board_FFT_energy16_j=audit['actual_board_FFT_diagnostic_j'] / 128,
                     fixed_optics_counterfactual_time16_ms=cost['time16_ms'],
@@ -130,7 +140,7 @@ def point(folder, kind='baseline'):
         raise ValueError('Conflicting original round identities')
     if identity['gpu_uuid'] == LAB_GPU and model in ('qwen', 'glm', 'clip', 'yolo'):
         platform = 'A10040GB_PCIE_250W'; limit = 250
-    elif identity['gpu_uuid'] == RENTAL_GPU and model in ('kimi', 'deepseek') and cap == 50:
+    elif identity['gpu_uuid'] == RENTAL_GPU and model in ('kimi', 'deepseek'):
         platform = 'A10080GB_SXM4_400W'; limit = 400
     else:
         raise ValueError('Unknown or mixed platform/model identity')
@@ -142,6 +152,10 @@ def point(folder, kind='baseline'):
             or not audit['energy_is_same_time_intervals']):
         raise ValueError('Original baseline scope/identity/audit differs')
     elapsed = number(cost['elapsed_s']); energy = number(cost['energy_j'])
+    board = number(cost['GPU_energy_j'])
+    if board <= 0:raise ValueError('Positive matched-interval board energy required')
+    close(energy, board + cost['host_proxy_w'] * elapsed)
+    close(cost['observed_timeweighted_GPU_w'], board / elapsed)
     if elapsed <= 0 or energy <= 0 or not 0 <= number(cost['max_power_sample_age_s']) <= .25:
         raise ValueError('Invalid time, energy, or original power-age gate')
     close(cost['time16_ms'], elapsed * 1000 / 128)
@@ -159,6 +173,8 @@ def point(folder, kind='baseline'):
         close(cost['native_tokens_per_s'], native / elapsed)
     return dict(path=str(folder), kind='baseline', platform=platform, model=model, cap=cap, repeat=repeat,
                 calls=2048, elapsed_s=elapsed, energy_j=energy, common_effective_tokens=913408,
+                hardware_power_limit_w=limit, measured_board_energy_j=board,
+                measured_matched_board_average_w=board / elapsed, host_proxy_w=cost['host_proxy_w'],
                 native_effective_tokens=native, time16_ms=cost['time16_ms'], energy16_j=cost['energy16_j'],
                 stage_totals_ms=stages, first_TF_node_recorded=audit['first_TF_node_recorded'], files=files)
 
@@ -173,6 +189,9 @@ def aggregate(points):
     for (platform, model, cap), rows in sorted(groups.items()):
         calls = sum(r['calls'] for r in rows); elapsed = sum(r['elapsed_s'] for r in rows)
         energy = sum(r['energy_j'] for r in rows); common = sum(r['common_effective_tokens'] for r in rows)
+        board = sum(r['measured_board_energy_j'] for r in rows)
+        if len({(r['hardware_power_limit_w'], r['host_proxy_w']) for r in rows}) != 1:
+            raise ValueError('Mixed power cap or host proxy within one configuration')
         natives = [r['native_effective_tokens'] for r in rows]
         if any(x is None for x in natives) and not all(x is None for x in natives):
             raise ValueError('Mixed native token applicability')
@@ -186,6 +205,8 @@ def aggregate(points):
             pooled_native_tokens_per_s=None if natives[0] is None else sum(natives) / elapsed,
             common_effective_tokens=common, native_effective_tokens=None if natives[0] is None else sum(natives),
             elapsed_s=elapsed, energy_j=energy, all_available_rounds_used=True,
+            hardware_power_limit_w=rows[0]['hardware_power_limit_w'], host_proxy_w=rows[0]['host_proxy_w'],
+            measured_board_energy_j=board, measured_matched_board_average_w=board / elapsed,
             stage_equivalent16_ms={k:sum(r['stage_totals_ms'][k] for r in rows) * 16 / calls for k in sorted(stage_keys)},
             first_TF_node_recorded=all(r['first_TF_node_recorded'] for r in rows)))
     return result

@@ -1,5 +1,27 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-27：LG05与全部36个baseline点统一总表已封存
+
+新不可变交付为协议目录下
+`outputs/01a061e2-6f88-7913-87f5-b632000e4c83/Temporal_unified_energy_20261027_02/Temporal_LG与全部baseline统一时间能量功率_20261027.xlsx`，
+76593B，SHA256 `1ef75102c139003890912df6e61bc308e4c7ccef33cd4dd1e6e1c95e0def4692`。
+24个lab点与12个80GB点全部沿用原逐SHA备份及passed独立审计，每配置三轮、合6144调用，
+未选最快轮、未将中断或LG06拒收轮纳入。原正式精度仍沿用完整TEST，没有重跑模型。
+
+四张表保留汇总、逐轮原值、477项原文件索引及物理阶段；硬件250/400W上限、
+同保留区间实测NVML板卡平均W、338.2W固定主机代理与LG固定组件代理分列。
+平均板卡功率为合板卡J/合保留秒，common/native速率为合有效token/合保留秒；
+LG软件窗的实际速率和光电DAG投影速率分行，不把固定代理冒充功率实测。
+baseline未独立打点的embedding/adapter/merger/decoder细项明确未记录，不事后分配数字；
+LG保留六次光周期、OEO、前端、merger、decoder、首次真实建图及调度的原DAG归纳。
+
+26项纯数据测试通过；使用artifact-tool新作者、单次操作marker、四sheet九PNG逐一视觉核验，
+独立读取已保存XLSX核对478个公式缓存、全部原SHA/size、阶段闭合与速率，通过后封存。
+manifest SHA256 `20f2ba2010fbce5a1e42a564ca11ffe05e0f19bd16326def58839dbe89ccaea2`，
+原文件索引SHA256 `0ba13481c0b4bcda6749de478df0db48e2a7754f63e80b2ccff3a80c50bb2971`。
+同前LG05 v2相对Qwen50仍为95.243099倍投影时间比，非物理光路测速；LG06事件池优化尚无GPU验证。
+旧sealed文件完全不覆盖；本次只发布报表采集/作者/审计源码，不改变任何服务器运行源或HEAD。
+
 ## 2026-10-27：80GB四配置各三轮全部完成，原数据保全与独立审计通过
 
 新授权恢复盘的missing-only七轮已全部完成，与原五个合格点合为12/12；
