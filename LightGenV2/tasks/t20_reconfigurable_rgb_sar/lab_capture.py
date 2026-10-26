@@ -22,7 +22,7 @@ import torch
 from .build_lab_package import CONTRACT, PINS, load_locked, put, sha
 from LightGenV2.tasks.t21_continual_learning_hardware.hardware_bridge import (
     hardware, hardware_identity, native_image, crop_native, signal, guard,
-    stage_signal_admission)
+    stage_signal_admission, repeat_policy)
 from LightGenV2.tasks.t21_continual_learning_hardware.train_native import tensor_sha
 
 
@@ -117,8 +117,21 @@ def verify_admission(path, cfg):
     return sha(path)
 
 
+def scoped_repeat_mode(case, cfg, path=None):
+    """Disabled by default; exact LG/PT/hardware human-approval provenance."""
+    if path is None:
+        return 'enforce', None
+    policy=json.loads(Path(path).read_text())
+    expected={'task','case','checkpoint_sha256','hardware_payload_sha256','policy'}
+    if (set(policy)!=expected or policy['task']!='T20' or case!='LG' or policy['case']!=case or
+        policy['checkpoint_sha256']!=PINS[case]['sha256'] or
+        policy['hardware_payload_sha256']!=hardware_identity(cfg)):
+        raise ValueError('Repeat exception requires this exact T20 LG/PT/hardware approval')
+    return repeat_policy(policy['policy'],cfg['exposure_us']),policy
+
+
 @torch.no_grad()
-def capture(folder, case, cfg, out, handoff_path, spatial_path, source_commit, pilot=False, pilot_report=None):
+def capture(folder, case, cfg, out, handoff_path, spatial_path, source_commit, pilot=False, pilot_report=None, repeat_policy_path=None):
     manifest_path = folder/'manifest.json'
     manifest = json.loads(manifest_path.read_text())
     if manifest['contract'] != CONTRACT or not manifest['passed'] or manifest.get('hardware_admitted'):
@@ -127,6 +140,8 @@ def capture(folder, case, cfg, out, handoff_path, spatial_path, source_commit, p
     if abs(cfg['exposure_us']-2000) > .5 or cfg['wait_ms'] != 240 or cfg['sensor_full_scale'] != 65535:
         raise ValueError('Fixed single-frame 2ms / wait240 / uint16 contract required')
     spatial_sha = verify_admission(spatial_path, cfg)
+    repeat_mode, repeat_authorization = scoped_repeat_mode(case, cfg, repeat_policy_path)
+    repeat_policy_sha = sha(repeat_policy_path) if repeat_policy_path is not None else None
     spec = manifest['cases'][case]
     model, _ = load_locked(case, folder/spec['checkpoint'])
     expected = PINS[case]['sha256']
@@ -137,7 +152,8 @@ def capture(folder, case, cfg, out, handoff_path, spatial_path, source_commit, p
             raise ValueError('Same-model TRAIN24 pilot must precede full capture')
         pr = json.loads(pilot_report.read_text())
         if not (pr['passed'] and pr['pilot'] and pr['checkpoint_sha256'] == expected and
-                pr['hardware_payload_sha256'] == hardware_identity(cfg) and pr['records'] == 24):
+                pr['hardware_payload_sha256'] == hardware_identity(cfg) and pr['records'] == 24 and
+                pr.get('repeat_policy_sha256') == repeat_policy_sha):
             raise ValueError('Pilot identity/pass mismatch')
     entries = read_entries(folder, manifest, case, pilot)
     order = tuple(spec['stages'])
@@ -169,6 +185,7 @@ def capture(folder, case, cfg, out, handoff_path, spatial_path, source_commit, p
         TEST_records=sum(e['split']=='test' for e in entries), frozen_state_sha256=frozen,
         interlayer_tuning=False, network_background_subtraction=False, single_frame=True,
         SNR_minimum=10, repeat_correlation_minimum=.95, repeat_consumer_drift_maximum=.05,
+        repeat_correlation_mode=repeat_mode,repeat_authorization=repeat_authorization,repeat_policy_sha256=repeat_policy_sha,
         signal_guard='pointwise fixed TRAIN/control dark; SNR10, minimum64 counts and dynamic-range guard',
         saturation_maximum=.15, TEST_gradients=False, automatic_retry=False))
     attempted = valid = 0
@@ -200,7 +217,7 @@ def capture(folder, case, cfg, out, handoff_path, spatial_path, source_commit, p
                             raise ValueError('Input-dependent phase violates frozen-mask capture')
                         controls.append(gray)
                     noise = stage_signal_admission(bench, layer/'TRAIN_signal_admission', controls,
-                        drive, warp, mask, stage, hardware_identity(cfg), model)
+                        drive, warp, mask, stage, hardware_identity(cfg), model,repeat_mode=repeat_mode)
                     dark = np.load(layer/'TRAIN_signal_admission/dark_ccd.npy')
                     if sha(layer/'TRAIN_signal_admission/dark_ccd.npy') != noise['dark_CCD_sha256']:
                         raise ValueError('Same-stage control dark-frame identity changed')
@@ -245,6 +262,7 @@ def capture(folder, case, cfg, out, handoff_path, spatial_path, source_commit, p
             TRAIN_records=sum(e['split']=='train' for e in entries), TEST_records=sum(e['split']=='test' for e in entries),
             checkpoint_sha256=expected, features_sha256=sha(out/'features.npz'),
             hardware_payload_sha256=hardware_identity(cfg), SDK_released=True,
+            repeat_policy_sha256=repeat_policy_sha,repeat_correlation_mode=repeat_mode,
             full_physical_prefix=True, interlayer_tuning=False, seconds=time.monotonic()-began,
             extra_TRAIN_control_frames=7*len(order), mean_seconds_per_network_frame=(time.monotonic()-began)/valid))
     except BaseException:
@@ -262,9 +280,10 @@ def main():
     p.add_argument('--source-commit', required=True)
     p.add_argument('--pilot', action='store_true')
     p.add_argument('--pilot-report', type=Path)
+    p.add_argument('--repeat-policy', type=Path)
     a = p.parse_args(); torch.set_num_threads(2)
     capture(a.package, a.case, json.loads(a.hardware.read_text()), a.out, a.handoff,
-        a.spatial_admission, a.source_commit, pilot=a.pilot, pilot_report=a.pilot_report)
+        a.spatial_admission, a.source_commit, pilot=a.pilot, pilot_report=a.pilot_report,repeat_policy_path=a.repeat_policy)
 
 
 if __name__ == '__main__':

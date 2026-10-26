@@ -6,10 +6,27 @@ import unittest
 import numpy as np
 
 from .build_lab_package import sha, export_pilot_subsets
-from .lab_capture import sdk_owner, validate_handoff, read_entries
+from .lab_capture import sdk_owner, validate_handoff, read_entries,scoped_repeat_mode
+from .build_lab_package import PINS
+from LightGenV2.tasks.t21_continual_learning_hardware.hardware_bridge import hardware_identity
 
 
 class LabCaptureTests(unittest.TestCase):
+    def test_repeat_exception_defaults_off_and_is_exact_scoped(self):
+        cfg=dict(exposure_us=2000)
+        self.assertEqual(scoped_repeat_mode('LG',cfg),('enforce',None))
+        self.assertEqual(scoped_repeat_mode('D2NN',cfg),('enforce',None))
+        with tempfile.TemporaryDirectory() as name:
+            path=Path(name)/'policy.json'
+            policy=dict(task='T20',case='LG',checkpoint_sha256=PINS['LG']['sha256'],hardware_payload_sha256=hardware_identity(cfg),
+                policy=dict(mode='record_only',authorization='Explicit synthetic test approval; not live permission',exposure_us=2000,single_frame=True))
+            path.write_text(json.dumps(policy))
+            self.assertEqual(scoped_repeat_mode('LG',cfg,path)[0],'record_only')
+            with self.assertRaises(ValueError):scoped_repeat_mode('D2NN',cfg,path)
+            with self.assertRaises(ValueError):scoped_repeat_mode('LG',dict(exposure_us=4000),path)
+            policy['checkpoint_sha256']='other';path.write_text(json.dumps(policy))
+            with self.assertRaises(ValueError):scoped_repeat_mode('LG',cfg,path)
+
     def test_small_pilot_is_bitwise_same_and_not_formal_data_replacement(self):
         with tempfile.TemporaryDirectory() as name:
             folder=Path(name);path=folder/'train_inputs.npz'
