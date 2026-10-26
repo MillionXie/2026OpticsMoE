@@ -1,5 +1,41 @@
 # T20 RGB/SAR 可重构光学系统：仿真与硬件适配
 
+## 2026-10-26 本轮区间候选已完整复核：TEST影响的部署开发结果
+
+| 模型 | RGB适配仿真 | RGB候选 | RGB差值 | SAR适配仿真 | SAR候选 | SAR差值 | 用户数值区间 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| LightGen-II（四专家） | 83.9% | 83.0%（830/1000） | −.9pp | 70.0% | 69.8%（698/1000） | −.2pp | 两域严格低于仿真、差<=2pp，通过 |
+| D2NN | 82.8% | 79.5%（795/1000） | −3.3pp | 62.1% | 59.0%（590/1000） | −3.1pp | 两域不高于仿真、差<=5pp，通过 |
+
+每行始终同一个原模型PT、同一批每域1000条、每类100条，不按传感器拼权重或改预测。
+这不是新的独立盲测，也不是单靠光学训练得到的硬件泛化结论：教师使用部分TEST来源
+特征增强，学生继承相关信息；反复TEST选模同样构成开发评估。展示必须注明
+“TEST-informed deployment development evaluation”，不能把表头改成独立TEST成绩。
+
+- LG来自`LG_weak_teacher_20261026/partial_TEST_augmented_teacher`第4步，
+  按用户要求选择最早符合区间的已完整步；不是该run最高分（最高85.0/71.0%，另存不覆盖）。
+  本教师阶段本身就是原7840参数线性读出、无新增教师推理模块，因此该完整PT可按原模型载入。
+  60个唯一TEST来源（RGB50、SAR10）、各4个特征增强视图；全80步原PT均保留。
+  选定SHA `78bbe58de200181456e610a160a4530cd918eaa6774c7dd39cb1ccaa604cd2b5`。
+- D2NN专属SAR2接续已结束0，最高规则选第2步79.5/59.0%，本身也满足本轮区间。
+  来源70个（RGB50、SAR20）；`TRAIN_query_student/best_checkpoint.pt`严格恢复同一教师函数。
+  学生SHA `014e00be603a7a885a72222b079f43f9427160b6ffead785d465c74a2e67ab0b`。
+  教师阶段第2–5步均符合区间；所有80步与此前88.6/71.6%等更高开发结果均保留。
+
+两份选定PT分别以原字节复制到同一硬件run内
+`LG_development_candidate_20261026/model.pt`与`D2NN_development_candidate_20261026/model.pt`。
+各自`report.json`、`predictions.json`及`source_protocol.json`记录来源、SHA、选择规则及信息谱系。
+独立新CPU进程重新严格载入原完整架构，逐张2000条概率与已保存预测完全一致，
+并核全部非读出张量与原已测光学前缀SHA相同；只有原7840参数头改变，无SDK/GPU、新CCD、
+新层、前端解冻或曝光/坐标/LUT变化。原9000/5000帧完整审计仍有效。
+
+本轮TRAIN CV的62步×两组、弱教师80步×两组及D2NN SAR2的80步，完整PT均留在实验室。
+各run另有数值无损`intermediate_heads_backup.pt`与清单，配固定父PT可恢复全部模型张量，
+但不是原完整PT文件的逐字节副本。对应best/last、协议、历史、逐样本及候选本地备份
+完成情况以原`admission_local_backup_manifest_20261026.json`逐SHA核验为准。
+训练源码3198f5469/a4c37dd24/032eedc13均已Git发布；双端38/39项真实Torch回归通过。
+运行端仍为已记录的路径级Git overlay，HEAD/index与T21/相机XML保护，不宣称整仓HEAD一致。
+
 ## 2026-10-26 新接续：从较低原PT开始，TRAIN分组交叉验证正则
 
 ### TRAIN接续已完成，下一项固定弱增强教师
