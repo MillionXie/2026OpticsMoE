@@ -33,6 +33,28 @@ def same(a,b):
     if b is None:return a is None
     if isinstance(b,(float,int)):return isinstance(a,(float,int)) and math.isclose(a,b,rel_tol=3e-15,abs_tol=1e-13)
     return a==b
+
+def pearson(x,y):
+    mx=sum(x)/len(x);my=sum(y)/len(y)
+    dx=[v-mx for v in x];dy=[v-my for v in y]
+    return sum(a*b for a,b in zip(dx,dy))/math.sqrt(sum(a*a for a in dx)*sum(b*b for b in dy))
+
+def average_ranks(values):
+    order=sorted(range(len(values)),key=values.__getitem__);ranks=[0.0]*len(values);i=0
+    while i<len(order):
+        j=i+1
+        while j<len(order) and values[order[j]]==values[order[i]]:j+=1
+        for k in range(i,j):ranks[order[k]]=(i+j+1)/2
+        i=j
+    return ranks
+
+def kendall_b(x,y):
+    numerator=non_tied_x=non_tied_y=0
+    for i in range(len(x)):
+        for j in range(i):
+            dx=(x[i]>x[j])-(x[i]<x[j]);dy=(y[i]>y[j])-(y[i]<y[j])
+            numerator+=dx*dy;non_tied_x+=dx!=0;non_tied_y+=dy!=0
+    return numerator/math.sqrt(non_tied_x*non_tied_y)
 result=[];metric_checks=[]
 for d,entry in zip(data['tasks'],audit['files']):
     path=OUT/d['filename'];assert hashlib.sha256(path.read_bytes()).hexdigest()==entry['sha256']
@@ -83,8 +105,16 @@ for d,entry in zip(data['tasks'],audit['files']):
             assert info['checkpoint_sha256']==d['stages']['Sim']['checkpoint_sha256']
             assert info['primary_value']==1927/2400 and len(rows)==2400
             assert info['status']=='user_selected_verified_capture' and d['selection']['selected_by_user']
+        if d['task']=='abo_image_to_text' and stage=='Sim':
+            assert info['status']=='verified_frozen_CPU_replay' and len(rows)==2400
+            assert info['historical_top1_reproduced'] and not info['historical_per_sample_recovered']
+            assert sum(r[h['H@1']] for r in rows)==1934
+            assert info['sample_provenance']=='frozen_original_model_CPU_inference_20261026'
         if not rows:continue
         if d['task'].startswith('lgvq'):
+            targets=[r[h['MOS_target']] for r in rows];predictions=[r[h['predicted_score']] for r in rows]
+            for key,value in [('srcc',pearson(average_ranks(targets),average_ranks(predictions))),('krcc',kendall_b(targets,predictions)),('plcc',pearson(targets,predictions))]:
+                check(stage,'overall',key,value,metrics['overall',key],1e-12)
             for key,value in [('mae',sum(r[h['absolute_error']] for r in rows)/len(rows)),('rmse',math.sqrt(sum(r[h['squared_error']] for r in rows)/len(rows)))]:check(stage,'overall',key,value,metrics['overall',key],2e-5)
         elif d['task'].startswith('abo_') and d['task']!='abo_conditional_edit':
             for r in rows:
@@ -135,6 +165,6 @@ for d in data['tasks']:
             continue
         assert info['sample_rows_with_primary_observation']==info['sample_rows']>0,(d['task'],stage,'Missing primary observation')
         assert not info['missing_overall_metrics'],(d['task'],stage,info['missing_overall_metrics'])
-        coverage.append({'task':d['task'],'stage':stage,'sample_rows':info['sample_rows'],'primary_rows':info['sample_rows_with_primary_observation'],'missing_requested_overall_metrics':[]})
+        coverage.append({'task':d['task'],'stage':stage,'sample_rows':info['sample_rows'],'primary_rows':info['sample_rows_with_primary_observation'],'missing_requested_overall_metrics':[],'provenance':info.get('sample_provenance',info['status'])})
 (OUT/'verification/saved_xml_verification.json').write_text(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result),'archive_records_checked':sum(r['archived_rows_checked'] for r in result),'files':result,'metric_recalculations':metric_checks,'coverage':coverage},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 print(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result),'archive_records_checked':sum(r['archived_rows_checked'] for r in result)}))

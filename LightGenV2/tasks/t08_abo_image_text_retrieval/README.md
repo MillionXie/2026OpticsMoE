@@ -2,6 +2,20 @@
 
 两方向共用任务编号，不共用可互换的主体PT：图搜文从`optical_moe.py`进入，
 文搜图从`text_to_image.py`及`physical10cm/`进入。图搜图属于T07。
+
+## 2026-10-26 指定epoch25 EMA的逐样本补推理
+
+用户授权缺少逐样本时用指定PT冻结推理，不训练。`replay_selected_sim.py`复用原
+编码、标题编码、排名函数，以CPU/4线程/固定batch4完成2400张TEST与100标题，
+原入口Git为`16978e65c`，run为`runs/simulation/sim_frozen_restore_20261026`。
+PT仍为`a2aa9a93…`，推理前后学生state SHA完全一致，未使用GPU/光路，未做TRAIN前向或训练。
+Hit@1复现1934/2400=.8058333333；Hit@5/10=.9579166667/.9875、MRR=.8713793829。
+其余排名指标并未复现旧GPU汇总，因此不能混入旧Top5/10/MRR或冒称找回历史排名。
+本次Torch2.6/CPU不同于历史Torch2.8/RTX5090，未声称差异根因已单独验证。
+完整2400条排名、FP32 embedding和manifest已SHA备份本地既有九任务报告目录；
+选定绘图表采用本次完整Sim排名及用户确认的Exp1927/2400=.8029166667。
+原历史报告、A100的1931次命中回放及原实拍质量标记全部保留，不修改权重或成本数据。
+
 图搜文原始数据与baseline初审保留在[2026-09-08审查](reports/reproduction/CHECK_20260908.md)
 及[原机器证据](reports/reproduction/EVIDENCE_20260908.json)：包含跨划分重复图像、
 TEST选模限制和不同测速记录的区分。这是历史审查，不替代下方的最终版本或本轮资产核验。

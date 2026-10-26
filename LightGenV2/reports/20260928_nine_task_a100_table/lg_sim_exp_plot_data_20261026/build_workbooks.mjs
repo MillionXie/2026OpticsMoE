@@ -75,6 +75,12 @@ for(const d of payload.tasks){
   const expFirst=Math.max(2,view.samples.findIndex(r=>r[0]==='Exp')+2);
   const expPic=await wb.render({sheetName:raw.name,range:`A${expFirst}:${colName(Math.min(c,12)-1)}${expFirst+7}`,scale:1,format:'png'});
   await fs.writeFile(path.join(verify,d.task+'_samples_exp.png'),new Uint8Array(await expPic.arrayBuffer()));
+  const simIndex=view.samples.findIndex(r=>r[0]==='Sim');
+  if(simIndex>=0){
+    const first=simIndex+2;
+    const pic=await wb.render({sheetName:raw.name,range:`A${first}:${colName(Math.min(c,12)-1)}${first+7}`,scale:1,format:'png'});
+    await fs.writeFile(path.join(verify,d.task+'_samples_sim.png'),new Uint8Array(await pic.arrayBuffer()));
+  }
   const file=path.join(out,d.filename);await(await SpreadsheetFile.exportXlsx(wb)).save(file);
   const bytes=await fs.readFile(file);
   audit.push({task:d.task,filename:d.filename,sha256:createHash('sha256').update(bytes).digest('hex'),bytes:bytes.length,sheets:2,summary_start_row:4,

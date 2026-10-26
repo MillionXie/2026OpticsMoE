@@ -96,7 +96,7 @@ def main():
         report=dict(status='complete',mode='frozen_selected_student_CPU_replay',metrics=metrics,
             queries=2400,candidates=100,correct_at_1=correct,checkpoint_sha256=EXPECTED,
             historical_correct_at_1=1934,historical_hit_at_1=1934/2400,
-            historical_summary_reproduced=correct==1934,weights_unchanged=True,
+            historical_top1_reproduced=correct==1934,weights_unchanged=True,
             student_state_sha256_before=before,student_state_sha256_after=after,
             training=False,hardware_access=False,device='cpu',torch=torch.__version__,
             batch_size=4,original_evaluation_functions=True,source_unchanged=True,
@@ -104,7 +104,7 @@ def main():
         write(args.output/'report.json',report)
         manifest={name:sha(args.output/name) for name in ('identity.json','retrieval_predictions.csv','student_embeddings.pt','report.json')}
         write(args.output/'artifact_manifest.json',manifest)
-        status('complete',completed_queries=2400,correct_at_1=correct,hit_at_1=metrics['recall_at_1'],historical_summary_reproduced=correct==1934)
+        status('complete',completed_queries=2400,correct_at_1=correct,hit_at_1=metrics['recall_at_1'],historical_top1_reproduced=correct==1934)
     except BaseException as error:
         status('failed',error=repr(error));raise
     finally:

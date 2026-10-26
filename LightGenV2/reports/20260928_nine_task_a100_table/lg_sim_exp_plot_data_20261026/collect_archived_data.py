@@ -125,6 +125,23 @@ d['reference_sample_bindings']={'Sim':{'row_label':'Sim复评参考（非指定�
 for row in d['samples']:
     if row[0]=='Sim':row[0]=d['reference_sample_bindings']['Sim']['row_label']
 
+# Original full-run predictions recovered from its canonical server run.
+prediction_file=SR/'server/71565e1d6d_test_predictions_optical_on.csv'
+metric_file=SR/'server/c0ccb03319_test_metrics_optical_on.json'
+log_file=SR/'server/f88af82ec8_formal_evaluate.log'
+original_rows=[(x['sample_id'],float(x['target']),float(x['prediction']),'TEST') for x in csvread(prediction_file)]
+assert len(original_rows)==558 and {x[0]:x[1] for x in original_rows}=={x[0]:x[1] for x in er}
+assert r['checkpoint_sha256'] in log_file.read_text(encoding='utf-8')
+original_recalculated=quality(original_rows);archived_metrics=read(metric_file)
+for key in ['srcc','krcc','plcc','rmse','mae']:
+    assert abs(original_recalculated[key]-archived_metrics[key])<2e-6
+    assert archived_metrics[key]==original['normal_optical_electronic'][key]
+for p in [prediction_file,metric_file,log_file,SR/'server/b3f2f4a509_resolved_config.json']:source(d,p)
+quality_samples(d,'Sim',original_rows)
+del d['reference_sample_bindings']['Sim']
+d['stages']['Sim'].update(status='verified_saved_predictions',notes='已恢复服务器原运行558条预测，原日志绑定PT95e12397；SRCC和KRCC与原.6710报告完全一致，其他指标仅float32/64归约末位差异。')
+check(d,'Sim','original_full_run_predictions_recovered',{'rows':558,'recalculated':original_recalculated,'checkpoint_sha256':r['checkpoint_sha256'],'no_new_inference_needed':True})
+
 # 3. Image-to-text: distinguish the historical training aggregate and the
 # complete same-weight A100 replay; never invent the historical 1934 ranks.
 d=new('abo_image_to_text','ABO 图搜文','hit_at_1',[.8058,.8029],'用户确认Exp更正为1927/2400=.8029167（显示.8029），原.8019167保留。Sim已补2400条同PT A100回放：1931/2400=.8045833；历史训练.8058333另列，不能假称回放明细属于历史1934次命中。')
@@ -204,6 +221,45 @@ for row in d['samples']:
     if row[0]==d['reference_sample_bindings']['Exp']['row_label']:row[0]='Exp'
 del d['reference_sample_bindings']['Exp']
 check(d,'Exp','user_adopted_same_checkpoint_completed_capture',d['selection'])
+
+# User requested missing observations be regenerated with the fixed model.
+# New CPU inference reproduces Top-1, not every historical rank statistic.
+replay_report=SR/'server/8c5107f756_report.json'
+replay_csv=SR/'server/8506011ae6_retrieval_predictions.csv'
+replay_embeddings=SR/'server/985521c47b_student_embeddings.pt'
+replay_identity=SR/'server/8f24f22c7d_identity.json'
+replay_manifest=SR/'server/76f7b36831_artifact_manifest.json'
+restored=read(replay_report);restored_identity=read(replay_identity);restored_manifest=read(replay_manifest)
+for name,path in [('report.json',replay_report),('retrieval_predictions.csv',replay_csv),('student_embeddings.pt',replay_embeddings),('identity.json',replay_identity)]:
+    assert sha(path)==restored_manifest[name];source(d,path)
+source(d,replay_manifest)
+assert restored['status']=='complete' and restored['checkpoint_sha256']==d['stages']['Sim']['checkpoint_sha256']
+assert restored['queries']==2400 and restored['candidates']==100 and restored['correct_at_1']==1934
+assert restored['weights_unchanged'] and restored['source_unchanged'] and not restored['training'] and not restored['hardware_access']
+assert restored['student_state_sha256_before']==restored['student_state_sha256_after']
+embeddings=saved_tensors(replay_embeddings)
+sim_order,sim_ranks,sim_ap,_,_=full_rankings(embeddings['query'],embeddings['titles'],
+    [int(test[x['sample_id']]['label']) for x in csvread(replay_csv)],list(range(100)))
+restored_rows=csvread(replay_csv)
+assert len(restored_rows)==2400 and len({x['sample_id'] for x in restored_rows})==2400
+for i,x in enumerate(restored_rows):
+    sid=x['sample_id'];label=int(x['predicted_label']);true_rank=int(x['true_rank'])
+    assert int(test[sid]['label'])==int(x['true_label']) and test[sid]['product_id']==x['product_id']
+    assert int(sim_ranks[i])==true_rank and int(sim_order[i,0])==label
+    d['samples'].append(['Sim',sid,x['product_id'],str(label),titles[label]['product_id'],true_rank,int(true_rank<=1),int(true_rank<=5),int(true_rank<=10),1/true_rank,float(sim_ap[i]),1])
+new_metrics={('overall',k.replace('recall_at_','hit_at_')):v for k,v in restored['metrics'].items()}
+new_metrics.update({('overall','queries'):2400,('overall','candidates'):100,('overall','map'):restored['metrics']['mrr']})
+old_metrics={(g,k):v for g,k,v in d['stages']['Sim']['metrics']}
+new_metrics.update({(('historical_original_report' if g=='overall' else g),k):v for (g,k),v in old_metrics.items()})
+d['stages']['Sim'].update(metrics=[[g,k,v] for (g,k),v in new_metrics.items()],status='verified_frozen_CPU_replay',
+    notes='同epoch25 EMA、原编码和评估函数、固定batch4的2400查询/100标题CPU补推理；1934次命中与原.8058一致。Top5/10/MRR采用本次完整排名，不混用原GPU汇总；不是找回原历史逐样本。',
+    sample_provenance='frozen_original_model_CPU_inference_20261026',historical_per_sample_recovered=False,historical_top1_reproduced=True)
+del d['reference_sample_bindings']['Sim']
+d['notes']='同PT Sim .8058 / Exp .8029。Sim逐样本由用户授权CPU冻结推理补齐，Top1复现1934/2400；其余排名指标以同一次新推理为准。Exp为原已完成实拍1927/2400；不称后续重采。'
+check(d,'Sim','frozen_CPU_prediction_recovery',{'rows':2400,'metrics':restored['metrics'],'weights_unchanged':True,
+    'historical_top1_reproduced':True,'historical_per_sample_recovered':False,'runtime_torch':restored['torch'],
+    'historical_torch':restored_identity['historical_torch'],'runner_source_commit':restored_identity['runner_source_commit'],
+    'historical_other_metrics_not_substituted':True,'independent_embedding_ranks_match_all_2400':True})
 
 # 4. Image-to-image: screenshot is not a same-checkpoint pair.
 d=new('abo_image_to_image','ABO 图搜图','hit_at_1',[.8225,.8113],'从原2400条全量特征补齐两侧完整排名/AP，并与800查询Top-1逐条一致。Sim .8225不含RGB旁路；Exp rank72 .81125，其同PT仿真.83375，当前两列不是同权重对照。')
@@ -419,7 +475,7 @@ for i,d in enumerate(TASKS,1):
         s['sample_rows']=sum(row[0]==label for row in d['samples'])
         s['missing_overall_metrics']=[k for k in d['required_metrics'] if ('overall',k) not in values]
         expected=d['expected'][label];s['screenshot_numeric_rounding_matches']=(s['primary_value'] is not None and round(s['primary_value'],2 if d['primary']=='psnr_db' else 4)==expected)
-        s['screenshot_lineage_confirmed']=s['status'] in ['user_selected_verified_capture','original_final_report','verified_full_test','verified_mixed_test','verified_saved_predictions','verified_saved_metrics','verified_user_selected_adapted','verified_saved_top1','aggregate_with_verified_sample_identity','verified_full_queries','verified_corrected_saved_summary','verified_frozen_CCD_replay']
+        s['screenshot_lineage_confirmed']=s['status'] in ['verified_frozen_CPU_replay','user_selected_verified_capture','original_final_report','verified_full_test','verified_mixed_test','verified_saved_predictions','verified_saved_metrics','verified_user_selected_adapted','verified_saved_top1','aggregate_with_verified_sample_identity','verified_full_queries','verified_corrected_saved_summary','verified_frozen_CCD_replay']
         primary_header={'changed_cell_accuracy':'changed_cell_accuracy','pck_at_0.2_torso':'PCK@0.2_torso','cc':'CC','psnr_db':'PSNR_dB','srcc':'predicted_score','hit_at_1':'H@1'}[d['primary']]
         s['sample_rows_with_primary_observation']=sum(row[0]==label and row[d['headers'].index(primary_header)] is not None for row in d['samples'])
     assert all(len(row)==len(d['headers']) for row in d['samples'])

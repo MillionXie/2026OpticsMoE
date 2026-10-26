@@ -1,5 +1,5 @@
 """Pure CPU contracts for archived-ranking completion; no formal data writes."""
-import ast,unittest
+import ast,unittest,math
 from pathlib import Path
 import numpy as np
 
@@ -8,6 +8,10 @@ tree=ast.parse(source.read_text(encoding='utf-8'))
 function=next(n for n in tree.body if isinstance(n,ast.FunctionDef) and n.name=='full_rankings')
 scope={'np':np};exec(compile(ast.Module(body=[function],type_ignores=[]),str(source),'exec'),scope)
 rank=scope['full_rankings']
+verification=source.with_name('verify_saved_workbooks.py')
+verification_tree=ast.parse(verification.read_text(encoding='utf-8'))
+stat_scope={'math':math}
+exec(compile(ast.Module(body=[n for n in verification_tree.body if isinstance(n,ast.FunctionDef) and n.name in ['pearson','average_ranks','kendall_b']],type_ignores=[]),str(verification),'exec'),stat_scope)
 
 class SavedRankingContracts(unittest.TestCase):
     def test_multi_positive_full_ap_is_not_reciprocal_rank(self):
@@ -27,5 +31,12 @@ class SavedRankingContracts(unittest.TestCase):
         self.assertEqual(order.tolist(),[[0,1]]);self.assertEqual(first.tolist(),[2])
     def test_no_positive_is_not_silently_filled(self):
         with self.assertRaises(AssertionError):rank([[1,0]],[[1,0]],['A'],['B'])
+    def test_tied_average_ranks(self):
+        self.assertEqual(stat_scope['average_ranks']([4,1,1,3]),[4,1.5,1.5,3])
+    def test_independent_kendall_tie_denominator(self):
+        self.assertAlmostEqual(stat_scope['kendall_b']([1,1,2],[1,2,3]),2/math.sqrt(6))
+        self.assertEqual(stat_scope['kendall_b']([1,2,3],[3,2,1]),-1)
+    def test_independent_pearson(self):
+        self.assertAlmostEqual(stat_scope['pearson']([1,2,3],[2,4,6]),1)
 
 if __name__=='__main__':unittest.main()
