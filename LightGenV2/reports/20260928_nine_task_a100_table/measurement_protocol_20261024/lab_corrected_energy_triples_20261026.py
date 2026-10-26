@@ -53,6 +53,27 @@ def sources():
     return dict(old.source_map(),**{p.relative_to(REPO).as_posix():old.sha(p) for p in paths})
 
 
+def admission_snapshot(pipe):
+    """No private daemon is normal while an unrelated GPU process is present."""
+    from run_temporal_remainder import classify_processes
+    from LightGenV2.tasks.t06_video_quality_assessment.rental_busy_resource_20261020 import numeric_lines
+    raw=subprocess.check_output(['nvidia-smi','--id='+GPU,'--query-compute-apps=pid,gpu_uuid,used_memory',
+        '--format=csv,noheader,nounits'],text=True)
+    processes=[line.split(',') for line in raw.splitlines() if line.strip()]
+    env=dict(os.environ,CUDA_MPS_PIPE_DIRECTORY=pipe)
+    result=subprocess.run(['nvidia-cuda-mps-control'],input='get_server_list\n',env=env,
+        capture_output=True,text=True,timeout=5)
+    servers=numeric_lines(result.stdout) if result.returncode==0 else set()
+    clients=set()
+    for server in servers:
+        item=subprocess.run(['nvidia-cuda-mps-control'],input='get_client_list '+str(server)+'\n',
+            env=env,capture_output=True,text=True,timeout=5)
+        if item.returncode:raise RuntimeError('Existing private MPS query failed')
+        clients.update(numeric_lines(item.stdout))
+    return dict(unix=time.time(),processes=processes,servers=sorted(servers),clients=sorted(clients),
+        private_MPS_returncode=result.returncode,**classify_processes(processes,servers,clients,-1,GPU))
+
+
 def wrap_tokenizers(prepare, records):
     """Only observe processors referenced by the native preparation closure."""
     restored=[];seen=set()
@@ -169,7 +190,6 @@ def worker(args):
 def suite(args):
     import fcntl
     from LightGenV2.tasks.t06_video_quality_assessment import measure_mps_e2e_20261024 as old
-    from run_temporal_remainder import process_snapshot
     args.root.mkdir();legacy=old.initialize_profile(args);active=False;child=None
     plan=[(m,c,r) for m in ('qwen','glm','clip','yolo') for c in (100,50) for r in (1,2,3)]
     retained=[]
@@ -199,7 +219,7 @@ def suite(args):
             idle=0
             while idle<12:
                 if time.time()>=args.deadline:raise TimeoutError('Finite admission queue deadline')
-                snapshot=process_snapshot(GPU,-1,args.pipe)
+                snapshot=admission_snapshot(args.pipe)
                 if snapshot['foreign_gpu_processes'] or snapshot['foreign_mps_clients']:
                     idle=0;state.update(status='waiting_foreign_process',admission_observation=snapshot);save()
                     time.sleep(5);continue
