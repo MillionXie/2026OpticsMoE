@@ -33,7 +33,7 @@ def source_map():
     names = ['lgvq_async_worker_20261026.py', 'lgvq_async_capture_20261026.py',
              'lgvq_async_replay_20261026.py', 'lgvq_async_trace_contract_20261026.py',
              'lgvq_async_component_energy_20261026.py', 'lgvq_async_observed_dag_20261026.py',
-             'lgvq_async_raw_adapter_20261026.py',
+             'lgvq_async_raw_adapter_20261026.py', 'lgvq_async_optimization_20261026.py',
              'lgvq_scoreonly_20261026.py', 'lgvq_lowlevel_capture_20261026.py',
              'lgvq_physical_projection_20261026.py', 'lgvq_graph_pipeline_20261026.py',
              'lgvq_hoisted_pipeline_20261026.py', 'lgvq_minimal_pipeline_20261026.py',
@@ -100,6 +100,7 @@ def worker(args, guard, N):
     import lgvq_lowlevel_capture_20261026 as lowlevel
     import lgvq_async_capture_20261026 as capture
     import lgvq_async_replay_20261026 as replay
+    import lgvq_async_optimization_20261026 as optimization
     import lgvq_live_frontend as live
     from lgvq_pipeline_demo_20261025 import PreparedFront
     from LightGenV2.tasks.t06_video_quality_assessment import lab_runtime as native
@@ -113,6 +114,9 @@ def worker(args, guard, N):
         raise ValueError('Original exclusive lab GPU / actual 108-SM allocation required')
     guard.check()
     output = args.output
+    optimized = bool(getattr(args, 'optimize_runtime', False))
+    if optimized and os.environ.get('CUDA_MODULE_LOADING') != 'EAGER':
+        raise ValueError('Optimized runtime must select EAGER before worker CUDA initialization')
     frozen = source_map()
     reference = REPO/REFERENCE_RELATIVE
     if sha(reference) != REFERENCE_SHA256:
@@ -146,6 +150,8 @@ def worker(args, guard, N):
         unique_videos=512, video_calls=N, fields=128, cycles=4, constants=constants,
         scoring_partition=partition, first_three_eager_real_fields_retained=True,
         two_independent_real_capture_fields_retained=True, dummy_forwards=0,
+        optimized_runtime=optimized, detailed_electronics_phases=optimized,
+        CUDA_MODULE_LOADING=os.environ.get('CUDA_MODULE_LOADING','not_explicitly_set'),
         original_full_field_coherent_six_passes=True, fixed_optics_projection_pending=True))
     fs, bs = torch.cuda.Stream(), torch.cuda.Stream()
     meter = approved.hoisted.minimal.NoInnerTimer()
@@ -157,6 +163,8 @@ def worker(args, guard, N):
             if shared_preparation[0] is not None:
                 self.preparation = shared_preparation[0]
         def start(self, kind, label):
+            if optimized and self.preparation is None:
+                optimization.prepare_without_cache_purge(self)
             super().start(kind, label)
             if shared_preparation[0] is None:
                 shared_preparation[0] = self.preparation
@@ -183,6 +191,11 @@ def worker(args, guard, N):
         return prefix_fn(model, **batch, optical_enabled=True)
     def tail(prepared):
         return tail_fn(model, prepared, optical_enabled=True)
+    def install(model, tape):
+        original = lowlevel.projection.install_simulation_boundaries
+        return optimization.detailed_boundaries(model, tape, original) if optimized else original(model, tape)
+    gc_policy = optimization.runtime_gc_policy(optimized)
+    gc_policy.__enter__()
     try:
         sampler = ProcessTelemetrySampler(GPU, output/'telemetry_stdout.jsonl',
             command=observer.observer_command(GPU, output/'telemetry_stdout.jsonl'))
@@ -198,7 +211,7 @@ def worker(args, guard, N):
         clock_before = time.perf_counter(); origin.record(); origin.synchronize(); clock_after = time.perf_counter()
         mono_before = time.monotonic(); host_start = time.perf_counter(); mono_after = time.monotonic()
         eager_tape = ObservedEagerTape(torch, bs)
-        restore_eager, eager_ledger = lowlevel.projection.install_simulation_boundaries(model, eager_tape)
+        restore_eager, eager_ledger = install(model, eager_tape)
         with torch.inference_mode():
             for field in range(3):
                 guard.fast(); sampler.check()
@@ -246,7 +259,7 @@ def worker(args, guard, N):
                 slot, prediction, record = capture.capture_real_slot(torch, field=field,
                     raw=raw[field], cpu_ids=ids, cpu_mask=mask, model=model,
                     front_stream=fs, body_stream=bs, prepare_prefix=prefix, forward_tail=tail,
-                    tape_factory=OncePreparedTape, install_boundaries=lowlevel.projection.install_simulation_boundaries)
+                    tape_factory=OncePreparedTape, install_boundaries=install, phase_detail=optimized)
                 record.update(mode='capture_real', slot=field-3, tokenizer=token_record)
                 slots.append(slot); outputs.append(prediction); records.append(record)
             online = replay.replay_fields(torch, slots, raw, tokenize, guard, fs, bs, first_field=5, total_fields=128)
@@ -274,6 +287,7 @@ def worker(args, guard, N):
         energy = interval_energy([(host_start+offset, host_end+offset)], samples, host_w=0.)
         timing = dict(status='actual_software_complete_projection_pending', video_calls=N,
             unique_videos=512, fields=128, cycles=4, actual_async_software_wall_ms=wall_ms,
+            detailed_electronics_phases=optimized, optimized_runtime=optimized,
             actual_async_software_time16_ms=wall_ms/128,
             common_effective_tokens=913408, actual_software_common_tokens_s=913408/(wall_ms/1000),
             origin_host_clock_bracket=[clock_before, clock_after],
@@ -321,3 +335,4 @@ def worker(args, guard, N):
             restore_constants()
             if sampler is not None:
                 save_samples(output/'telemetry.csv', sampler.stop(raise_on_error=False))
+            gc_policy.__exit__(None, None, None)

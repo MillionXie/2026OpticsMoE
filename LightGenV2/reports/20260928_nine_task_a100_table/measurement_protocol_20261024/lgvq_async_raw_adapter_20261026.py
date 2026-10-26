@@ -25,6 +25,7 @@ def prepare_records(raw):
     if not isinstance(age,(int,float)) or not math.isfinite(age) or not 0<=age<=.25:
         raise ValueError('Original 250-ms telemetry acceptance is unchanged')
     start = raw['host_start']
+    detailed = raw.get('detailed_electronics_phases', False)
     ms = lambda value: (value-start)*1000
     actions = []; ops = []; scores = {}; fronts = {}; transfers = {}
     def action(name, kind, a, b, field, *, wait_for=()):
@@ -62,10 +63,10 @@ def prepare_records(raw):
         body_kinds=[e['kind'] for _,e in body_events]
         if (body_kinds.count('optical_simulation')!=6 or body_kinds.count('detector_ROI')!=6
                 or body_kinds.count('electronic_residual')!=4
-                or body_kinds.count('electronics')!=(0 if field<3 else 18)):
+                or body_kinds.count('electronics')!=((2 if detailed else 0) if field<3 else (22 if detailed else 18))):
             raise ValueError('All original simulation/ROI/residual/electronic segments must execute')
         if field < 3:
-            if row.get('mode') != 'eager_real' or len(body_events) != 16:
+            if row.get('mode') != 'eager_real' or len(body_events) != (18 if detailed else 16):
                 raise ValueError('The first three real eager fields must be retained')
             a = row['body_envelope_cuda_ms'][0]
             host_a = row['body_host_start']
@@ -91,7 +92,7 @@ def prepare_records(raw):
         for j,s in enumerate(row.get('graph_construction',[])):
             kind = 'capture_excluded' if s['kind'] in {'optical_simulation','detector_ROI','electronic_residual'} else 'capture_electronics'
             action(prefix+f'.capture{j}',kind,s['capture_host_start'],s['capture_host_end'],field)
-        if field in (3,4) and len(row.get('graph_construction',[])) != 34:
+        if field in (3,4) and len(row.get('graph_construction',[])) != (38 if detailed else 34):
             raise ValueError('Original 34 independent capture segments missing')
         if field>=5 and 'slot_reuse_wait_host_start' not in row:
             raise ValueError('Original i-2 slot reuse fence missing')

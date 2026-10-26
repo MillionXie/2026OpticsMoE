@@ -235,6 +235,9 @@ def suite(args):
                  OPENBLAS_NUM_THREADS='1',TOKENIZERS_PARALLELISM='false')
         command=[PYTHON,'-u',str(ENTRY),'--phase','worker','--root',str(args.root),'--output',str(leaf),
                  '--deadline',str(args.deadline),'--source-receipt-sha256',receipt_sha]
+        if args.optimize_runtime:
+            env['CUDA_MODULE_LOADING']='EAGER'
+            command.append('--optimize-runtime')
         write(args.root/'lg_repeat01.command.json',command)
         with (args.root/'lg_repeat01.log').open('x') as log:
             child=subprocess.Popen(command,cwd=REPO,env=env,stdin=subprocess.DEVNULL,
@@ -269,6 +272,8 @@ def main():
     parser.add_argument('--root',type=Path,required=True);parser.add_argument('--output',type=Path)
     parser.add_argument('--after-suite',type=Path);parser.add_argument('--deadline',type=float,required=True)
     parser.add_argument('--source-receipt-sha256')
+    parser.add_argument('--optimize-runtime',action='store_true',
+                        help='Fresh candidate: EAGER module loading, no forced GC/cache purge, detailed electronic phases')
     args=parser.parse_args();validate_args(args)
     (suite if args.phase=='suite' else worker)(args)
 

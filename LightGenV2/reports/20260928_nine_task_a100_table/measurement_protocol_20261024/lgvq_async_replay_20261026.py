@@ -22,7 +22,7 @@ def validate_slots(slots):
         if not slot['segments'] or slot['segments'][0]['kind']!='frontend':
             raise ValueError('Separate frontend graph required')
         kinds=[x['kind'] for x in slot['segments']]
-        if kinds.count('frontend')!=1 or kinds.count('optical_simulation')!=6 or kinds.count('electronics')!=17:
+        if kinds.count('frontend')!=1 or kinds.count('optical_simulation')!=6 or kinds.count('electronics')!=(21 if slot.get('phase_detail') else 17):
             raise ValueError('One original frontend and six coherent propagations')
         if kinds.count('detector_ROI')!=6 or kinds.count('electronic_residual')!=4:
             raise ValueError('Original excluded operations still execute')

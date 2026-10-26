@@ -34,7 +34,7 @@ def serial_capture_plan(fields=128):
 
 def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
                       front_stream, body_stream, prepare_prefix, forward_tail,
-                      tape_factory, install_boundaries):
+                      tape_factory, install_boundaries, phase_detail=False):
     """Capture/execute one REAL field exactly once; keep every startup cost.
 
     Frontend capture is replayed once for this field, before capturing the
@@ -96,8 +96,8 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
         tape.capturing = False
         captures.append(dict(phase='body', start=ca, end=time.perf_counter()))
         kinds = [s['kind'] for s in tape.segments]
-        if (len(kinds) != 34 or kinds.count('frontend') != 1
-                or kinds.count('electronics') != 17 or kinds.count('optical_simulation') != 6
+        if (len(kinds) != (38 if phase_detail else 34) or kinds.count('frontend') != 1
+                or kinds.count('electronics') != (21 if phase_detail else 17) or kinds.count('optical_simulation') != 6
                 or kinds.count('detector_ROI') != 6 or kinds.count('electronic_residual') != 4):
             raise RuntimeError('Original complete six-pass body boundaries changed')
         with torch.cuda.stream(body_stream):
@@ -117,7 +117,7 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
         prefix_owned = {k: v for k, v in prefix.items() if torch.is_tensor(v)}
         if not prefix_owned:
             raise RuntimeError('Prefix must retain its real captured tensor allocations')
-        slot = dict(static=static, prefix_owned=prefix_owned, prefix=prefix,
+        slot = dict(static=static, prefix_owned=prefix_owned, prefix=prefix, phase_detail=phase_detail,
                     segments=tape.segments, prediction=result['prediction'],
                     score_ready=b, keepalive=(ids, mask), tape=tape)
         record = dict(field=field, captures=captures, events=events,
