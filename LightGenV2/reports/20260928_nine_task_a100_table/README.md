@@ -1,5 +1,41 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26：人工授权3号4090共享环境tokenizer短测完成
+
+本次只试分词，不加载神经网络权重、不做embedding/模型前向、不占A100、
+不向任何他人进程发信号，也不更改GPU功率/MPS配置或现有训练环境。
+3号RTX4090 UUID为`GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`，
+明确为人工批准的共享环境；入场及测量中有他人进程，观察GPU利用率约69–94%，
+CPU系统load约50。CPU仅2线程、亲和CPU78/79，不是80线程满核对比。
+
+原Qwen3-VL-2B-Instruct tokenizer.json不变，实际LGVQ temporal渲染后189UTF8字节、38词编号。
+CPU原AutoTokenizer与GraphTok GPU后端对本次输入的input_ids/attention_mask完全相同；
+GPU自动CPU回退禁用。GraphTok Qwen NFC正规化仍在CPU，预分词/BPE/编号组装在GPU。
+两者分别对齐CPU或GPU上的int64词编号与mask，所需传输、包装及同步均计入墙钟。
+独立工具链位于本用户私有cache，CUDA12.6.85/sm89；GraphTok Git
+`8bd40e1e9d09cc684f2579415072db9516e36b3b`；未修改现有CUDA11.8/conda环境。
+GPU后端每情景5次预热、三组计时，B1/16/256分别每组50/20/8次。
+这是分词微基准，不是原200×3零dummy正式模型测量，不替换旧论文成本。
+
+| 情景（整批，平均ms） | CPU原调用 | GPU后端调用 | CPU/GPU时间比 |
+| --- | ---: | ---: | ---: |
+| B1，结果在CPU | 0.35992865333333335 | 1.31563696 | 0.2735774870092836 |
+| B1，结果在GPU | 1.2594200466666667 | 1.34907832 | 0.9335410909773324 |
+| B16，结果在GPU | 2.637584933333333 | 1.2006590833333333 | 2.1967808930497825 |
+| B256，结果在GPU | 28.584614041666665 | 0.7839541666666666 | 36.462098496404444 |
+
+实际B1短提示词没有观察到GPU加速。B16/B256是额外批量吞吐情景，
+不能写成当前LGVQ模型或实际单次分词加速，更不能推广为独占GPU对满核CPU的倍率。
+计时抖动较大，原JSON同时保留均值/中位数；936个单次原值全部保留，未选快轮。
+
+唯一成功根：`LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/gpu_tokenizer_shared4090_20261026_03`。
+`result.json` SHA256 `5ea5faf0014b113778cd7ff0d4c66f59ab79f578aec472df0bee77a308fbcb2e`；
+4原文件77424B已通过`backup_receipt_tokenizer_probe01.json`逐SHA取回，
+936条计时均值独立文件重算passed。前共享01/02只是隔离依赖编译失败，均保留，
+不冒称模型/分词数值错误。源码已发布`9d24f9f30f9079757ebc6a89f1c0a62369cf5ed8`，
+实验室通过Git blob导出单入口执行，未盲ff其他窗口正在运行的checkout。
+测试已退出，结束后的3号卡仅见他人原有PID1823175/4612MiB，没有遗留自有CUDA进程。
+
 ## 2026-10-26 12:36：已实际捕获hmh新外占，只停自有，缺失链04等待空闲
 
 新03 Qwen50 r2在85/2048被守卫拒收；随后Unix1792989001与1792989080直接捕获同A100
