@@ -1,5 +1,20 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-27：人工授权空闲 RTX4090 上的独立开发 A/B
+
+用户要求不再仅等待 GPU6，先在实验室其他空闲卡测当前实现，再改动比较。
+只读盘点 GPU1/GPU3 均为 RTX4090、12MiB、无计算进程；开发入口固定 GPU1 UUID
+`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，观察到的原功率上限450W，不修改功率或频率。
+`run_lgvq_development_20261027.py` 使用新 `lgvq_rtx4090_development_20261027_NN` 根，
+单卡私有MPS/独立锁/12次空闲门/有限一小时deadline，排外失败停止，不触碰他人作业。
+原A100源码原位不改；已发布的显式AST适配器只替换UUID、两处SM身份和功率上限断言，
+其完整AST差异由纯测试核对，不改数学、精度、512视频四循环、六次整场传播、首3场及两次真实capture。
+先fresh进程测LG05无事件池基线，通过原2048逐字节sealed reference和250ms功率门后，
+才以第二fresh进程启用既有事件池候选；数值跨架构不符也停止，不以allclose追认。
+所有结果强制标记 development_only、qualified_for_final_hybrid_table=false，
+不纳入A100正式表、不换算A100百倍结论；4090改动收益仍须A100后续实测验证。
+当前仅发布开发入口和纯测试，实际GPU结果以新root原始记录为准；旧sealed交付不修改。
+
 ## 2026-10-27：LG05与全部36个baseline点统一总表已封存
 
 新不可变交付为协议目录下
