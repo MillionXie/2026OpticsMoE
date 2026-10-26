@@ -19,6 +19,9 @@ class SimulationResponseTests(unittest.TestCase):
         from .fit_stage_balanced_teacher import validate_profile
         teacher=json.loads(Path(__file__).with_name('config_stage_LG_D_allTEST_teacher_20261026.json').read_text());validate_profile(teacher)
         self.assertEqual(sum(teacher['sources_per_task'].values()),4000);self.assertTrue(teacher['all_TEST_sources_authorized'])
+        soft=json.loads(Path(__file__).with_name('config_LG_D_soft_response_20261026.json').read_text())
+        self.assertEqual(stage_contract(soft),stage_contract(cfg));self.assertFalse(soft['binary_derivative_CE'])
+        self.assertEqual(soft['maximum_steps'],120);self.assertEqual(soft['frozen_S1_SHA256'],cfg['frozen_S1_SHA256'])
     def test_identity_alignment_and_unmodified_probabilities(self):
         ids=np.arange(1000)*2;labels=np.arange(1000)%10;p=np.full((1000,10),.01);p[np.arange(1000),labels]=.91;order=np.arange(999,-1,-1)
         score=dict(labels=labels.tolist(),probabilities=p.tolist())

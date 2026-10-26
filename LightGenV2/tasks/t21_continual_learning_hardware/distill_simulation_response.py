@@ -53,7 +53,7 @@ def main():
     for n in ('capture','package','warm_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit inherited TEST information acknowledgment required')
-    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json','config_LG_C_weak_source_response_20261026.json','config_LG_D_weak_source_response_20261026.json')
+    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json','config_LG_C_weak_source_response_20261026.json','config_LG_D_weak_source_response_20261026.json','config_LG_D_soft_response_20261026.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only fixed published finite response-transfer profile')
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);package=json.loads(a.package.read_text());cr=json.loads((a.capture/'report.json').read_text());wr=json.loads((a.warm_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or not wr['passed'] or not wr['strict_CPU_reloaded']:raise ValueError('Completed immutable capture/warm student required')
