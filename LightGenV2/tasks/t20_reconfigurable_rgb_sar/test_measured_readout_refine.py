@@ -2,10 +2,22 @@ import unittest
 from pathlib import Path
 import numpy as np
 import torch
-from .refine_measured_readout import transform_from_TRAIN,augment_features,partial_sources,TRAIN_projection,read,validate_profile,checkpoint_information,reference_relation
+from .refine_measured_readout import transform_from_TRAIN,augment_features,partial_sources,TRAIN_projection,read,validate_profile,checkpoint_information,reference_relation,requested_relation,relation_matches
 
 
 class MeasuredReadoutRefineTests(unittest.TestCase):
+    def test_predeclared_small_weak_teacher_and_exact_new_relation(self):
+        cfg=read(Path(__file__).with_name('config_measured_readout_weak_teacher_20261026.json'));validate_profile(cfg)
+        domains=np.repeat([0,1],1000);y=torch.arange(10).repeat_interleave(100).repeat(2)
+        ids=np.asarray([str(i) for i in range(2000)]);source=partial_sources(ids,y,domains,np.arange(2000),(y+1)%10,{0:5,1:1})
+        self.assertEqual(len(source),60)
+        self.assertEqual(np.bincount(y[source[domains[source]==0]],minlength=10).tolist(),[5]*10)
+        self.assertEqual(np.bincount(y[source[domains[source]==1]],minlength=10).tolist(),[1]*10)
+        self.assertTrue(relation_matches(requested_relation(dict(RGB=dict(correct=778),SAR=dict(correct=571)),'D2NN',cfg)))
+        self.assertFalse(relation_matches(requested_relation(dict(RGB=dict(correct=886),SAR=dict(correct=716)),'D2NN',cfg)))
+        self.assertFalse(relation_matches(requested_relation(dict(RGB=dict(correct=839),SAR=dict(correct=700)),'LG',cfg)))
+        with self.assertRaises(ValueError):validate_profile(dict(cfg,teacher_SAR_sources_per_class=10))
+
     def test_reduced_profile_changes_only_predeclared_source_budget_and_retention(self):
         base=read(Path(__file__).with_name('config_measured_readout_refine_20261026.json'))
         reduced=read(Path(__file__).with_name('config_measured_readout_TEST10_midPT_20261026.json'))

@@ -32,7 +32,23 @@ def validate_profile(cfg):
     expected=dict(base,teacher_sources_per_class_domain=10,
         intermediate_stages=['partial_TEST_augmented_teacher'],
         intermediate_retention_authorization='2026-10-26 user explicitly requested intermediate PT retention')
-    if reduced!=expected or cfg not in (base,reduced):raise ValueError('Exact bounded refinement profile required')
+    weak=read(Path(__file__).with_name('config_measured_readout_weak_teacher_20261026.json'))
+    weak_expected=dict(base,teacher_sources_per_class_domain=5,teacher_SAR_sources_per_class=1,
+        optimizer_learning_rate=.05,inner_iterations=1,
+        intermediate_stages=['partial_TEST_augmented_teacher'],
+        intermediate_retention_authorization='2026-10-26 user requested continuation from lower PT with intermediate retention',
+        requested_relation='LG strictly below within 2pp; D2NN not above within 5pp')
+    if reduced!=expected or weak!=weak_expected or cfg not in (base,reduced,weak):raise ValueError('Exact bounded refinement profile required')
+
+
+def requested_relation(scores,case,cfg):
+    if 'requested_relation' not in cfg:return reference_relation(scores,case)
+    from .refine_measured_TRAIN_cv import relation
+    return relation(scores,case)
+
+
+def relation_matches(result):
+    return result.get('both_meet',result.get('both_within_2pp_below',False))
 
 
 def checkpoint_information(inherited, teacher_role):
@@ -78,7 +94,8 @@ def partial_sources(ids, y, domains, test, predictions, per_class):
             pool=[int(i) for i in test if domains[i]==domain and int(y[i])==label]
             if len(pool)!=100:raise ValueError('Fixed balanced TEST1000 per domain required')
             pool.sort(key=lambda i:(int(predictions[i])==label,hashlib.sha256(str(ids[i]).encode()).hexdigest()))
-            chosen.extend(pool[:per_class])
+            count=per_class[domain] if isinstance(per_class,dict) else per_class
+            chosen.extend(pool[:count])
     return np.asarray(chosen,int)
 
 
@@ -161,7 +178,7 @@ def main():
             views.append(aug);targets.append(y[source])
         design=torch.cat(views)@matrix;labels=torch.cat(targets)
         initial=torch.linalg.solve(matrix,start.T).T
-        weight=torch.nn.Parameter(initial.clone());optimizer=torch.optim.LBFGS([weight],lr=.5,max_iter=cfg['inner_iterations'],history_size=20,line_search_fn='strong_wolfe')
+        weight=torch.nn.Parameter(initial.clone());optimizer=torch.optim.LBFGS([weight],lr=cfg.get('optimizer_learning_rate',.5),max_iter=cfg['inner_iterations'],history_size=20,line_search_fn='strong_wolfe')
         best=start.clone();best_epoch=0;best_key=selection(scores(best),case);history=[]
         put(folder/'protocol.json',dict(**provenance,teacher_source_ids=ids[source].tolist(),teacher_source_labels=y[source].tolist(),teacher_source_count=len(source),all_TEST_sources_used=False,teacher_inputs='original TRAIN + weak TRAIN feature views; partial TEST-derived feature views only' if inherited else 'TRAIN and TRAIN feature views only',TEST_information_inherited=inherited,TEST_labels_in_gradient=inherited,augmentation='centered feature dropout plus noise scaled by TRAIN standard deviation; not physical camera calibration'))
         for epoch in range(1,cfg['steps']+1):
@@ -175,11 +192,11 @@ def main():
             ev=scores(effective);key=selection(ev,case)
             if key>best_key:best=effective.clone();best_epoch=epoch;best_key=key
             row=dict(epoch=epoch,loss=loss,TRAIN=brief(scores(effective,tr)),TEST=brief(ev),best_epoch=best_epoch,seconds=time.monotonic()-began)
-            row['reference_relation']=reference_relation(ev,case)
+            row['reference_relation']=requested_relation(ev,case,cfg)
             if retain:
                 verified,digest=save(folder/'intermediate_checkpoints',f'step_{epoch:03d}',effective,epoch,inherited,teacher_role=True)
                 snapshots.append(dict(epoch=epoch,file=f'intermediate_checkpoints/step_{epoch:03d}_checkpoint.pt',SHA256=digest,
-                    scores=brief(verified),reference_relation=reference_relation(verified,case),strict_CPU_reloaded=True,
+                    scores=brief(verified),reference_relation=requested_relation(verified,case,cfg),strict_CPU_reloaded=True,
                     frozen_upstream=True,TEST_information_inherited=inherited))
                 put(folder/'intermediate_manifest.json',dict(user_authorization=cfg['intermediate_retention_authorization'],all_completed_steps_saved=True,
                     selection_not_changed=True,checkpoints=snapshots))
@@ -188,15 +205,16 @@ def main():
         last=weight.detach()@matrix.T
         best_scores,best_sha=save(folder,'best',best,best_epoch,inherited);last_scores,last_sha=save(folder,'last',last,epoch,inherited)
         r=dict(passed=True,best=brief(best_scores),last=brief(last_scores),best_epoch=best_epoch,best_SHA256=best_sha,last_SHA256=last_sha,target_met=selection(best_scores,case)[0]>=0,strict_CPU_reloaded=True,frozen_upstream=True,TEST_information_inherited=inherited,independent_generalization_claim=False,steps=epoch)
-        r.update(reference_relation=reference_relation(best_scores,case),intermediate_checkpoints=len(snapshots),
-            requested_relation_observed_epochs=[s['epoch'] for s in snapshots if s['reference_relation']['both_within_2pp_below']])
+        r.update(reference_relation=requested_relation(best_scores,case,cfg),intermediate_checkpoints=len(snapshots),
+            requested_relation_observed_epochs=[s['epoch'] for s in snapshots if relation_matches(s['reference_relation'])])
         if inherited:r.update(teacher_augmented_source_development=brief(scores(best,source)),remaining_development=brief(scores(best,np.setdiff1d(te,source))),remaining_is_not_independent_TEST=True)
         put(folder/'report.json',r);return best,r
     clean,clean_report=fit_stage('TRAIN_conditioned',model.shared_head.weight.detach().double(),np.asarray([],int))
-    if clean_report['target_met']:
+    if clean_report['target_met'] and ('requested_relation' not in cfg or relation_matches(clean_report['reference_relation'])):
         put(a.out/'report.json',dict(passed=True,selected_stage='TRAIN_conditioned',target_met=True,results=clean_report,TEST_information_inherited=False,independent_generalization_claim=False));return
     predictions=F.linear(x,clean).argmax(1)
-    source=partial_sources(ids,y,domains,te,predictions,cfg['teacher_sources_per_class_domain'])
+    counts={0:cfg['teacher_sources_per_class_domain'],1:cfg['teacher_SAR_sources_per_class']} if 'teacher_SAR_sources_per_class' in cfg else cfg['teacher_sources_per_class_domain']
+    source=partial_sources(ids,y,domains,te,predictions,counts)
     teacher,teacher_report=fit_stage('partial_TEST_augmented_teacher',clean,source)
     query=torch.cat([x[tr]]+[augment_features(x[tr],mean,std,cfg,8300+i) for i in range(cfg['student_TRAIN_query_views'])])@matrix
     projected,rank=TRAIN_projection(query,torch.linalg.solve(matrix,teacher.T).T)
@@ -207,7 +225,7 @@ def main():
     if any(student_scores[d]['predictions']!=teacher_scores[d]['predictions'] for d in ('RGB','SAR')):raise RuntimeError('Student did not recover teacher decisions')
     put(folder/'protocol.json',dict(**provenance,teacher_SHA256=teacher_report['best_SHA256'],teacher_source_ids=ids[source].tolist(),student_gradient_TEST_inputs=0,student_query_source='TRAIN and augmented TRAIN only',TEST_information_inherited=True,distillation_does_not_remove_TEST_leakage=True,TRAIN_projection=rank))
     put(a.out/'report.json',dict(passed=True,selected_stage='TRAIN_query_student',TRAIN_conditioned=clean_report,teacher=teacher_report,student=brief(student_scores),student_SHA256=student_sha,last_SHA256=last_sha,teacher_source_count=len(source),target_met=selection(student_scores,case)[0]>=0,strict_CPU_reloaded=True,frozen_upstream=True,parameters=7840,TEST_information_inherited=True,independent_generalization_claim=False,SDK=False,GPU=False,TRAIN_projection=rank,
-        reference_relation=reference_relation(student_scores,case),requested_relation_observed_epochs=teacher_report['requested_relation_observed_epochs']))
+        reference_relation=requested_relation(student_scores,case,cfg),requested_relation_observed_epochs=teacher_report['requested_relation_observed_epochs']))
     put(a.out/'status.json',dict(stage='complete',updated=time.time()))
 
 
