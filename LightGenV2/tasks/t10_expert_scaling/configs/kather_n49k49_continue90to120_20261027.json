@@ -1,0 +1,57 @@
+{
+  "study": "Kather2016 N49 k49 bounded continuation from90 to120",
+  "role": "development_followup_after_observed_test",
+  "gpu": 3,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "slots": 2,
+  "min_free_mib_to_start": 6000,
+  "extra_epochs": 30,
+  "lr": 0.0003,
+  "microbatch": 2,
+  "margin_weight": 0.2,
+  "capture_weight": 0.005,
+  "selection": "validation_accuracy_tiebreak_macro_nll_including_source_best",
+  "pairs": [
+    [
+      49,
+      49
+    ]
+  ],
+  "seeds": [
+    17,
+    27,
+    37
+  ],
+  "jobs": [
+    {
+      "experts": 49,
+      "top_k": 49,
+      "seed": 17,
+      "source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k49_s17",
+      "source_epochs": 90,
+      "best_sha256": "8ad4825ebcee14acdcc7b844b5ad0a6ca49af21e9d4b705d6489f789bdebf8ff",
+      "last_sha256": "ef865fe719f453cd13a743f0b4f0d4eb4a1a18c7e23e43b541e1d397d15bbba8"
+    },
+    {
+      "experts": 49,
+      "top_k": 49,
+      "seed": 27,
+      "source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k49_s27",
+      "source_epochs": 90,
+      "best_sha256": "697940de95bb64fa00b810fbfd0d37e2ddcf431b7d8d5592bf44a3bf4c55a435",
+      "last_sha256": "478366c923e51d5d5452b8a3fac25d607dedaea98fe532a39f6ad6fcb58b3790"
+    },
+    {
+      "experts": 49,
+      "top_k": 49,
+      "seed": 37,
+      "source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k49_s37",
+      "source_epochs": 90,
+      "best_sha256": "a8c1df5091b6bd85e59584ac18e0abd279a55f3f11aeb72b527587b744b8700d",
+      "last_sha256": "1058fbaaeb42b2397da64b5d3cf29f7cceae868602b73a9e58c6429e699a8866"
+    }
+  ],
+  "test_policy": "lock_all_3_after_120_before_test; no_test_based_stop_or_selection",
+  "comparison_role": "extra_budget_development_result_not_equal_budget_topk_ablation",
+  "budget_note": "30 additional epochs from the previous90 last; original90 best included; no metric threshold stops or extensions"
+}

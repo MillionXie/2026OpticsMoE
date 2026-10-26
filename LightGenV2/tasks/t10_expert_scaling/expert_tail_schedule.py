@@ -37,15 +37,25 @@ def audit_source(job):
     for field in ('experts', 'top_k', 'seed'):
         if int(m['arguments'][field]) != job[field]:
             raise ValueError(f'Source {field} mismatch: {p}')
-    if int(m['arguments']['epochs']) != 60 or int(m['arguments']['layers']) != 4:
-        raise ValueError(f'Expected original60, four-layer source: {p}')
+    expected_epochs = int(job.get('source_epochs', 60))
+    if int(m['arguments']['epochs']) != expected_epochs or int(m['arguments']['layers']) != 4:
+        raise ValueError(f'Expected {expected_epochs}-epoch, four-layer source: {p}')
     actual = sha(p/'best_checkpoint.pt')
     if actual != job['best_sha256'] or actual != r['checkpoint_sha256']:
         raise ValueError(f'Source checkpoint mismatch: {p}')
     if m.get('training_profile') or not (p/'last_checkpoint.pt').exists():
         raise ValueError(f'Expected legacy source with optimizer: {p}')
+    last_sha = sha(p/'last_checkpoint.pt')
+    if job.get('last_sha256') and last_sha != job['last_sha256']:
+        raise ValueError(f'Source last-checkpoint mismatch: {p}')
+    if expected_epochs != 60:
+        if not job.get('last_sha256'):
+            raise ValueError('Chained continuation requires a locked last-checkpoint SHA')
+        history = json.loads((p/'history.json').read_text())
+        if not history or int(history[-1]['epoch']) != expected_epochs:
+            raise ValueError(f'Source history does not reach {expected_epochs}: {p}')
     return dict(source=str(p.resolve()), best_sha256=actual,
-                last_sha256=sha(p/'last_checkpoint.pt'), data_sha256=m['data_sha256'])
+                last_sha256=last_sha, data_sha256=m['data_sha256'], source_epochs=expected_epochs)
 
 
 def main():
@@ -65,6 +75,8 @@ def main():
          source_identity='Published T10 files checked against Git blobs; host HEAD may be older',
          source_files={str(p):sha(p) for p in [Path(__file__), Path(__file__).with_name('diagnose_topk.py')]}))
     uuid = subprocess.check_output(['nvidia-smi','-i','3','--query-gpu=uuid','--format=csv,noheader'],text=True).strip()
+    if cfg.get('gpu_uuid') and uuid != cfg['gpu_uuid']:
+        raise ValueError('GPU3 UUID differs from the authorized device')
     env = os.environ.copy()
     env.update(CUDA_VISIBLE_DEVICES=uuid, CUDA_DEVICE_ORDER='PCI_BUS_ID', OMP_NUM_THREADS='4', MKL_NUM_THREADS='4')
     pending, complete, running, pids = list(jobs), [], {}, []
