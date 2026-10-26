@@ -25,10 +25,11 @@ from PIL import Image, ImageDraw
 from torch.nn import functional as F
 
 from .qwen_vl_turbo_data import (add_descriptions, pilot_subset, prepare_pairs,
-                                  render_pair, sha256, validate_roles, write_json)
+                                  render_pair, sha256, validate_roles, write_json, normalized_product)
 from .qwen_vl_turbo_model import (NativeTurboHead, QueryResampler, encode_reference,
                                    image_tensor, pack_hidden, region_weighted_loss)
 from .qwen_vl_turbo_training import configure_unet_training
+from .qwen_vl_turbo_cache import image_float, save_with_digest
 
 
 def git_identity() -> dict:
@@ -38,6 +39,7 @@ def git_identity() -> dict:
     files = [Path(__file__), Path(__file__).with_name('qwen_vl_turbo_model.py'),
              Path(__file__).with_name('qwen_vl_turbo_data.py'),
              Path(__file__).with_name('qwen_vl_turbo_training.py'),
+             Path(__file__).with_name('qwen_vl_turbo_cache.py'),
              Path(__file__).with_name('product_scene_replace_data.py'),
              Path(__file__).with_name('product_object_replace_data.py'),
              Path(__file__).with_name('product_scene_data.py')]
@@ -75,7 +77,10 @@ def prepare(args, cfg):
     else:
         prepare_pairs(args.data, manifest, cfg)
     payload = json.loads(manifest.read_text())
-    selected = pilot_subset(payload['pairs'], cfg['pilot_pairs_per_category_mode'])
+    selected = (list(payload['pairs']) if cfg.get('use_all_pairs',False) else
+                pilot_subset(payload['pairs'], cfg['pilot_pairs_per_category_mode']))
+    if cfg.get('explicit_category_teacher',False):
+        selected=[{**r,'explicit_category_teacher':True} for r in selected]
     validate_roles(selected)
     write_json(args.output / 'pilot_pairs.json', selected)
     print(json.dumps({'stage': 'prepared', 'audit': payload['audit'],
@@ -89,7 +94,7 @@ def cache(args, cfg, rows, device):
         payload = torch.load(path, map_location='cpu', weights_only=False)
         if payload['pilot_sha256'] != sha256(args.output / 'pilot_pairs.json'):
             raise ValueError('Feature cache does not match selected pairs')
-        return
+        return sha256(path)
     from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
     # Public Qwen weights, all vision and all 28 language blocks preserved.
     model = Qwen3VLForConditionalGeneration.from_pretrained(
@@ -120,17 +125,26 @@ def cache(args, cfg, rows, device):
         descriptions[sid] = description
         write_json(desc_path, descriptions)
         print('description', sid, description, flush=True)
+        write_json(args.output/'progress.json',{'stage':'product_annotation','done':len(descriptions),
+                   'needed':len(products)})
     annotated = add_descriptions(rows, descriptions)
     write_json(args.output / 'annotated_pairs.json', annotated)
     tensors, hidden = [], []
+    preview_ids={r['sample_id'] for r in pilot_subset(annotated,2)} if cfg.get('use_all_pairs') else {r['sample_id'] for r in annotated}
     for i, row in enumerate(annotated):
         reference, target = render_pair(row, cfg['image_size'])
-        tensors.append((image_tensor(reference), image_tensor(target)))
+        if cfg.get('uint8_image_cache',False):
+            tensors.append(tuple(torch.from_numpy(np.asarray(im).copy()).permute(2,0,1) for im in (reference,target)))
+        else:
+            tensors.append((image_tensor(reference),image_tensor(target)))
         hidden.append(encode_reference(model, processor, reference, row['prompt'], device))
         (args.output / 'data_preview').mkdir(exist_ok=True)
-        reference.save(args.output / 'data_preview' / f'{i:03d}_input.png')
-        target.save(args.output / 'data_preview' / f'{i:03d}_target.png')
+        if row['sample_id'] in preview_ids:
+            reference.save(args.output / 'data_preview' / f'{i:03d}_input.png')
+            target.save(args.output / 'data_preview' / f'{i:03d}_target.png')
         print('multimodal_features', i+1, '/', len(rows), list(hidden[-1].shape), flush=True)
+        if (i+1)%20==0:
+            write_json(args.output/'progress.json',{'stage':'multimodal_features','done':i+1,'total':len(rows)})
     # Demonstrate BOTH modalities reach Qwen's fused hidden representation.
     reference, _ = render_pair(annotated[0])
     blank = encode_reference(model, processor, Image.new('RGB', (256, 256), (127,127,127)),
@@ -159,20 +173,28 @@ def cache(args, cfg, rows, device):
     train_captions = [annotated[i]['teacher_caption'] for i in train_indices]
     teacher = {}
     with torch.inference_mode():
-        for i, caption in zip(train_indices, train_captions):
-            ids = tokenizer(caption, padding='max_length', max_length=77, truncation=True,
-                            return_tensors='pt').input_ids.to(device)
-            teacher[i] = clip(ids).last_hidden_state[0].bfloat16().cpu()
-    torch.save({'pilot_sha256': sha256(args.output / 'pilot_pairs.json'), 'rows': annotated,
+        batch=cfg.get('clip_cache_batch_size',1)
+        for start in range(0,len(train_indices),batch):
+            current=train_indices[start:start+batch]
+            captions=train_captions[start:start+batch]
+            ids=tokenizer(captions,padding='max_length',max_length=77,truncation=True,return_tensors='pt').input_ids.to(device)
+            encoded=clip(ids).last_hidden_state.bfloat16().cpu()
+            for i,value in zip(current,encoded):teacher[i]=value.contiguous()
+    del clip
+    flush_gpu()
+    digest=save_with_digest({'pilot_sha256': sha256(args.output / 'pilot_pairs.json'), 'rows': annotated,
                 'hidden': hidden, 'reference': torch.stack([t[0] for t in tensors]),
                 'target': torch.stack([t[1] for t in tensors]), 'train_clip_teacher': teacher,
                 'qwen_checks': controls,
                 'clip_scope': 'frozen TRAIN-only native text-condition alignment teacher'}, path)
-    del clip
-    flush_gpu()
+    write_json(args.output/'cache_identity.json',{'sha256':digest,'bytes':path.stat().st_size,
+               'images_uint8':cfg.get('uint8_image_cache',False),'stream_hash':True})
+    return digest
 
 
 def tensor_image(tensor):
+    if tensor.dtype==torch.uint8:
+        return Image.fromarray(tensor.cpu().permute(1,2,0).numpy())
     return Image.fromarray(((tensor.detach().cpu().clamp(-1,1)+1)*127.5).round().byte().permute(1,2,0).numpy())
 
 
@@ -197,7 +219,7 @@ def evaluate(model, payload, indices, device, output, label, ablation=False, nat
         else:
             latent, prediction = model(hidden, valid, noise_for([row], device))
         prediction = prediction.clamp(-1,1)
-        target = payload['target'][i:i+1].to(device)
+        target = image_float(payload['target'][i:i+1],device)
         mse = (prediction-target).square().mean().item()/4
         psnr = -10*np.log10(max(mse,1e-12))
         errors.append({'sample_id': row['sample_id'], 'mode': row['mode'], 'category': row['category'],
@@ -217,11 +239,14 @@ def evaluate(model, payload, indices, device, output, label, ablation=False, nat
     return report
 
 
-def train(args, cfg, device):
+def train(args, cfg, device, cache_digest=None):
     from diffusers import AutoencoderKL, EulerDiscreteScheduler, UNet2DConditionModel
     from peft import LoraConfig
     import lpips
     payload = torch.load(args.output / 'frozen_features.pt', map_location='cpu', weights_only=False)
+    if payload['pilot_sha256']!=sha256(args.output/'pilot_pairs.json'):
+        raise ValueError('Training cache inputs do not match this run selection')
+    cache_digest=cache_digest or sha256(args.output/'frozen_features.pt')
     validate_roles(payload['rows'])
     if 'shared_noise_seed' in cfg:
         # Same noise across all pairs forces differences to come from Qwen's
@@ -229,12 +254,35 @@ def train(args, cfg, device):
         for row in payload['rows']: row['noise_seed']=int(cfg['shared_noise_seed'])
     train_ids = [i for i,r in enumerate(payload['rows']) if r['split']=='train']
     val_ids = [i for i,r in enumerate(payload['rows']) if r['split']=='val']
+    train_eval_ids=train_ids
+    if cfg.get('use_all_pairs',False):
+        evaluation_names={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='train'}
+        train_eval_ids=[i for i in train_ids if payload['rows'][i]['sample_id'] in evaluation_names]
     adapter = QueryResampler(hidden=cfg['adapter_hidden'], layers=cfg['adapter_layers']).to(device)
     resumed = None
     if args.resume:
         resumed = torch.load(args.resume, map_location='cpu', weights_only=False)
-        if resumed['cache_sha256'] != sha256(args.output/'frozen_features.pt'):
-            raise ValueError('Resume weights refer to a different data/conditioning cache')
+        if resumed['cache_sha256'] != cache_digest:
+            if not args.allow_expanded_train:
+                raise ValueError('Resume weights refer to a different data/conditioning cache')
+            parent_cache=args.resume.parent/'frozen_features.pt'
+            if sha256(parent_cache)!=resumed['cache_sha256']:
+                raise ValueError('Parent conditioning cache fingerprint mismatch')
+            parent=torch.load(parent_cache,map_location='cpu',weights_only=False)
+            validate_roles(parent['rows']+payload['rows'])
+            child={r['sample_id']:r for r in payload['rows']}
+            for previous in parent['rows']:
+                current=child.get(previous['sample_id'])
+                if current is None:raise ValueError('Expanded run omitted a parent TRAIN/VAL pair')
+                for field in ('split','prompt','source_scene','target_scene'):
+                    if previous[field]!=current[field]:raise ValueError('Parent model input changed: '+field)
+                for role in ('source','target'):
+                    if previous[role]['rgba_sha256']!=current[role]['rgba_sha256']:
+                        raise ValueError('Parent source/target pixels changed')
+            write_json(args.output/'expanded_resume_audit.json',{'parent_pairs':len(parent['rows']),
+                       'child_pairs':len(payload['rows']),'parent_inputs_and_roles_preserved':True,
+                       'train_val_roles_disjoint':True,'test_used':False})
+            del parent
         adapter.load_state_dict(resumed['adapter'])
         write_json(args.output/'resume_identity.json',{'checkpoint':str(args.resume),
                    'sha256':sha256(args.resume),'source_step':resumed['step'],
@@ -245,8 +293,9 @@ def train(args, cfg, device):
         mean = torch.stack(list(payload['train_clip_teacher'].values())).float().mean((0,1)).to(device)
         if resumed is None: adapter.output.bias.copy_(mean)
     rng = random.Random(cfg['seed'])
-    for step in range(0 if resumed is not None else cfg['alignment_steps']):
-        ids = rng.sample(train_ids, min(6,len(train_ids)))
+    do_align=resumed is None or cfg.get('realign_expanded_train',False)
+    for step in range(cfg['alignment_steps'] if do_align else 0):
+        ids = rng.sample(train_ids, min(cfg.get('alignment_batch_size',6),len(train_ids)))
         h, valid = pack_hidden([payload['hidden'][i] for i in ids], device)
         target = torch.stack([payload['train_clip_teacher'][i] for i in ids]).float().to(device)
         loss = F.mse_loss(adapter(h,valid), target)
@@ -257,11 +306,16 @@ def train(args, cfg, device):
             print('alignment',step+1,'loss',float(loss.detach()),flush=True)
             write_json(args.output / 'progress.json', {'stage':'alignment','step':step+1,'loss':float(loss.detach())})
     with torch.no_grad():
-        h,valid=pack_hidden([payload['hidden'][i] for i in train_ids],device)
-        target=torch.stack([payload['train_clip_teacher'][i] for i in train_ids]).float().to(device)
-        alignment_mse=float(F.mse_loss(adapter(h,valid),target))
+        alignment_sum=0.;alignment_count=0
+        for begin in range(0,len(train_ids),16):
+            ids=train_ids[begin:begin+16]
+            h,valid=pack_hidden([payload['hidden'][i] for i in ids],device)
+            target=torch.stack([payload['train_clip_teacher'][i] for i in ids]).float().to(device)
+            alignment_sum+=float(F.mse_loss(adapter(h,valid),target))*len(ids)
+            alignment_count+=len(ids)
+        alignment_mse=alignment_sum/alignment_count
     write_json(args.output/'alignment_report.json',{'train_condition_mse':alignment_mse,
-               'steps':0 if resumed is not None else cfg['alignment_steps'],
+               'steps':cfg['alignment_steps'] if do_align else 0,
                'resumed_adapter':resumed is not None,'no_val_fit':True})
     del opt
     unet = UNet2DConditionModel.from_pretrained(args.sd, subfolder='unet', variant='fp16',
@@ -286,25 +340,36 @@ def train(args, cfg, device):
     model = NativeTurboHead(unet,vae,scheduler,adapter)
     # Encoder is used solely for supervised targets and VAE diagnostic, not reference conditioning.
     targets_latent, target_regions, vae_mse = {}, {}, []
+    gpu_regions={}
+    diagnostic_ids=set(train_eval_ids+val_ids)
+    if cfg.get('use_all_pairs',False):
+        names={r['sample_id'] for r in pilot_subset(payload['rows'],2)}
+        diagnostic_ids={i for i,r in enumerate(payload['rows']) if r['sample_id'] in names}
     with torch.no_grad():
         for i in train_ids + val_ids:
-            t = payload['target'][i:i+1].to(device, dtype=vae.dtype)
+            t = image_float(payload['target'][i:i+1],device,vae.dtype)
             z = vae.encode(t).latent_dist.mode()
-            rec = vae.decode(z).sample.float().clamp(-1,1)
-            vae_mse.append({'sample_id':payload['rows'][i]['sample_id'], 'split':payload['rows'][i]['split'],
-                            'psnr':float(-10*torch.log10((rec-t.float()).square().mean()/4).clamp(min=-120))})
+            if i in diagnostic_ids:
+                rec = vae.decode(z).sample.float().clamp(-1,1)
+                vae_mse.append({'sample_id':payload['rows'][i]['sample_id'], 'split':payload['rows'][i]['split'],
+                              'psnr':float(-10*torch.log10((rec-t.float()).square().mean()/4).clamp(min=-120))})
             if i in train_ids:
                 targets_latent[i] = (z*vae.config.scaling_factor).float().detach()
-                from .product_object_replace_data import ProductObjectReplacementDataset
-                _,mask=ProductObjectReplacementDataset._load_product(payload['rows'][i]['target'],cfg['image_size'])
-                target_regions[i]=torch.from_numpy(np.asarray(mask).copy()).float()[None,None].to(device)/255
+                product=payload['rows'][i]['target'];sid=product['sample_id']
+                if sid not in gpu_regions:
+                    _,mask=normalized_product(product,cfg['image_size'])
+                    gpu_regions[sid]=torch.from_numpy(np.asarray(mask).copy()).float()[None,None].to(device)/255
+                target_regions[i]=gpu_regions[sid]
             if i == train_ids[0]:
                 tensor_image(rec[0]).save(args.output/'vae_reconstruction.png')
     write_json(args.output/'vae_diagnostic.json', {'targets_only':True,'records':vae_mse})
     # Allocation may change while sharing the GPU; do not occupy the whole card.
     lp = lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.AdamW(params, lr=cfg['train_lr'])
+    adapter_params=list(adapter.parameters())
+    unet_params=[p for p in unet.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW([{'params':adapter_params,'lr':cfg.get('adapter_lr',cfg['train_lr'])},
+                                  {'params':unet_params,'lr':cfg['train_lr']}])
     counts = {'qwen_full_forward': payload['qwen_checks']['qwen_forward_parameters'],
               'qwen_loaded_including_lm_head':payload['qwen_checks']['qwen_loaded_parameters'],
               'qwen_embedding':payload['qwen_checks']['qwen_embedding_parameters'],
@@ -316,26 +381,36 @@ def train(args, cfg, device):
     counts['unet_training_scope']=cfg.get('unet_training','lora')
     counts['inference_total'] = counts['qwen_full_forward']+counts['adapter']+counts['unet_including_lora']+counts['vae_decoder']
     write_json(args.output/'parameter_counts.json',counts)
-    native = (evaluate(model,payload,train_ids,device,args.output,'train_native_caption_teacher',native_teacher=True)
+    native = (evaluate(model,payload,train_eval_ids,device,args.output,'train_native_caption_teacher',native_teacher=True)
               if resumed is None else {'not_run':'Resumed UNet is not the untouched public prior'})
     baseline = evaluate(model,payload,val_ids,device,args.output,'val_before_paired_training')
     best, best_step, history = float('-inf'),0,[]
+    batch_size=cfg.get('batch_size',1)
+    sample_order=[]
+    order_rng=random.Random(cfg['seed']+8181)
+    needed=cfg['train_steps']*cfg['gradient_accumulation']*batch_size
+    while len(sample_order)<needed:
+        order=list(train_ids)
+        if cfg.get('shuffle_training',False):order_rng.shuffle(order)
+        sample_order.extend(order)
     for step in range(1,cfg['train_steps']+1):
         model.train(); vae.eval(); optimizer.zero_grad(set_to_none=True)
         total=0.0
         for micro in range(cfg['gradient_accumulation']):
-            i=train_ids[((step-1)*cfg['gradient_accumulation']+micro)%len(train_ids)]
-            h,valid=pack_hidden([payload['hidden'][i]],device)
+            begin=((step-1)*cfg['gradient_accumulation']+micro)*batch_size
+            ids=sample_order[begin:begin+batch_size]
+            h,valid=pack_hidden([payload['hidden'][i] for i in ids],device)
+            regions=torch.cat([target_regions[i] for i in ids])
             with torch.autocast('cuda',dtype=torch.bfloat16):
-                z,pred=model(h,valid,noise_for([payload['rows'][i]],device))
-                target=payload['target'][i:i+1].to(device)
-                latent_loss=region_weighted_loss(z,targets_latent[i],target_regions[i],
+                z,pred=model(h,valid,noise_for([payload['rows'][i] for i in ids],device))
+                target=image_float(payload['target'][ids],device)
+                latent_loss=region_weighted_loss(z,torch.cat([targets_latent[i] for i in ids]),regions,
                                                 cfg.get('latent_foreground_weight',0))
-                rgb_loss=region_weighted_loss(pred,target,target_regions[i],
+                rgb_loss=region_weighted_loss(pred,target,regions,
                                              cfg.get('rgb_foreground_weight',0),squared=False)
                 perceptual=lp(pred.clamp(-1,1),target).mean()
                 cond=adapter(h,valid)
-                align=F.mse_loss(cond,payload['train_clip_teacher'][i][None].float().to(device))
+                align=F.mse_loss(cond,torch.stack([payload['train_clip_teacher'][i] for i in ids]).float().to(device))
                 loss=(cfg['latent_mse_weight']*latent_loss+cfg['rgb_l1_weight']*rgb_loss+
                       cfg['lpips_weight']*perceptual+cfg['condition_alignment_weight']*align)
             if not torch.isfinite(loss):
@@ -350,13 +425,13 @@ def train(args, cfg, device):
                        'loss':total,'best_val_psnr':None if best_step==0 else best,'best_step':best_step})
         if step%cfg['eval_every']==0 or step==cfg['train_steps']:
             val=evaluate(model,payload,val_ids,device,args.output,'val_latest')
-            tr=evaluate(model,payload,train_ids,device,args.output,'train_latest')
+            tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_latest')
             history.append({'step':step,'train_loss':total,'val_psnr':val['mean_per_image_psnr_db'],
                             'train_psnr':tr['mean_per_image_psnr_db']})
             state={'step':step,'adapter':adapter.state_dict(),
                    'unet_trainable':{n:p.detach().cpu().clone() for n,p in unet.named_parameters() if p.requires_grad},
                    'config':cfg,'git':git_identity(),'val':val,
-                   'cache_sha256':sha256(args.output/'frozen_features.pt')}
+                   'cache_sha256':cache_digest}
             torch.save(state,args.output/'last_checkpoint.pt')
             if val['mean_per_image_psnr_db']>best:
                 best,best_step=val['mean_per_image_psnr_db'],step
@@ -370,15 +445,17 @@ def train(args, cfg, device):
             if name in selected['unet_trainable']:
                 p.copy_(selected['unet_trainable'][name].to(device))
     val=evaluate(model,payload,val_ids,device,args.output,'val_best')
-    tr=evaluate(model,payload,train_ids,device,args.output,'train_best')
+    tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_best')
     wrong=evaluate(model,payload,val_ids,device,args.output,'val_wrong_condition',ablation=True)
     write_json(args.output/'report.json',{'complete':True,'protocol':cfg['protocol'],'best_step':best_step,
                'best_val':val,'train':tr,'val_before_paired_training':baseline,'val_wrong_condition':wrong,
                'parameters':counts,'native_caption_teacher_train_diagnostic':native,
-               'alignment_train_mse':alignment_mse,'test_evaluated':False,'overfit_pilot_only':True,
+               'train_optimization_pairs':len(train_ids),'train_evaluation_pairs':len(train_eval_ids),
+               'alignment_train_mse':alignment_mse,'test_evaluated':False,
+               'overfit_pilot_only':not cfg.get('use_all_pairs',False),
                'shared_noise_seed':cfg.get('shared_noise_seed'),
                'checkpoint_sha256':sha256(args.output/'best_checkpoint.pt'),
-               'interpretation':'Feasibility/overfit pilot; VAL is development only. Not final independent generalization evidence.'})
+               'interpretation':'TRAIN fit with development VAL selection. No independent TEST or final generalization claim.'})
 
 
 def main():
@@ -390,6 +467,7 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--stage',choices=['prepare','cache','train','all'],default='all')
     p.add_argument('--resume',type=Path,help='Same-data pilot best/last only; never an old T12 task weight')
+    p.add_argument('--allow-expanded-train',action='store_true',help='Audit a parent TRAIN/VAL subset before reusing its weights')
     args=p.parse_args()
     cfg=json.loads(args.config.read_text())
     if cfg['test_enabled']:
@@ -402,6 +480,7 @@ def main():
     write_json(args.output/'config.json',cfg)
     write_json(args.output/'execution.json',{'argv':sys.argv,'git':git_identity(),'python':sys.version,
                'torch':torch.__version__,'platform':platform.platform(),'pid':os.getpid(),
+               'config_sha256':sha256(args.config),
                'CUDA_VISIBLE_DEVICES':os.environ.get('CUDA_VISIBLE_DEVICES'),'started_unix':time.time()})
     rows=prepare(args,cfg)
     if args.stage=='prepare': return
@@ -413,8 +492,9 @@ def main():
         write_json(args.output/'pretrained_manifest.json',{'qwen':pretrained_manifest(args.qwen),
                                                           'sd_turbo':pretrained_manifest(args.sd)})
     try:
-        if args.stage in ('cache','all'): cache(args,cfg,rows,device)
-        if args.stage in ('train','all'): train(args,cfg,device)
+        cache_digest=None
+        if args.stage in ('cache','all'): cache_digest=cache(args,cfg,rows,device)
+        if args.stage in ('train','all'): train(args,cfg,device,cache_digest)
     except Exception:
         write_json(args.output/'failure.json',{'time':time.time(),'traceback':traceback.format_exc()})
         raise

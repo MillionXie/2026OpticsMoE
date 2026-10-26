@@ -47,7 +47,7 @@ def main():
         sources.append({'file':str(run/name),'sha256':digest(run/name),'rows':list(chosen),'label':title})
     panel.save(a.output/'fixed_three_mode_examples.png')
     summary={'scope':'18 TRAIN + 18 VAL development pairs; not a usable baseline; no TEST evaluation',
-             'decision':'Do not scale data or replace blocks with optics yet: held-out grounding/generalization gate failed',
+             'decision':'Pilot held-out grounding gate failed; only 6 source products trained. Full approved TRAIN coverage is required before judging the architecture. No optical replacement yet.',
              'runs':records,'examples':sources,
              'image_note':'Panels crop existing JPEG previews only; metrics come from raw floating outputs, not JPEGs',
              'parameter_note':'Deployment includes full Qwen, adapter, UNet including LoRA, and VAE decoder. CLIP and VAE encoder are training only.',

@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import json
 import random
+from functools import lru_cache
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -148,19 +149,28 @@ def pilot_subset(pairs: list[dict], per_cell: int = 2) -> list[dict]:
 
 
 def render_pair(row: dict, size: int = 256) -> tuple[Image.Image, Image.Image]:
-    from .product_object_replace_data import ProductObjectReplacementDataset
     from .product_scene_replace_data import render_composed_background
-    for product in (row['source'], row['target']):
-        if _pixels_hash(product) != product['rgba_sha256']:
-            raise ValueError('Raw product pixels changed after manifest preparation')
-    fg, mask = ProductObjectReplacementDataset._load_product(row['source'], size)
+    fg, mask = normalized_product(row['source'],size)
     bg = render_composed_background(tuple(row['source_scene']), size, row['sample_id'], 'source')
     reference = Image.composite(fg, bg, mask)
     if row['mode'] != 'background':
-        fg, mask = ProductObjectReplacementDataset._load_product(row['target'], size)
+        fg, mask = normalized_product(row['target'],size)
     if row['mode'] != 'object':
         bg = render_composed_background(tuple(row['target_scene']), size, row['sample_id'], 'target')
     return reference, Image.composite(fg, bg, mask)
+
+
+@lru_cache(maxsize=1024)
+def _normalized_product(image_path,mask_path,pixels_sha,size):
+    from .product_object_replace_data import ProductObjectReplacementDataset
+    row={'image_path':image_path,'mask_path':mask_path}
+    if _pixels_hash(row)!=pixels_sha:
+        raise ValueError('Raw product pixels changed after manifest preparation')
+    return ProductObjectReplacementDataset._load_product(row,size)
+
+
+def normalized_product(row,size):
+    return _normalized_product(row['image_path'],row['mask_path'],row['rgba_sha256'],size)
 
 
 def scene_text(scene) -> str:
@@ -183,6 +193,12 @@ def add_descriptions(rows: list[dict], descriptions: dict[str, str]) -> list[dic
             prompt = f'Replace the central {row["category"]} with {target}, and replace the background with {scene}.'
         # Frozen CLIP TRAIN-only alignment teacher describes the intended image.
         row['prompt'] = prompt
-        row['teacher_caption'] = f'A centered product photograph of {source if row["mode"] == "background" else target} in {scene}.'
+        if row.get('explicit_category_teacher',False):
+            room,tone,brightness,direction=row['target_scene']
+            short_scene=f'{room.replace("_"," ")}, {tone}, {brightness}, {direction} window light'
+            row['teacher_caption'] = (f'Full view of one {row["category"]}, '
+                f'{source if row["mode"] == "background" else target}, centered, entirely visible; {short_scene}.')
+        else:
+            row['teacher_caption'] = f'A centered product photograph of {source if row["mode"] == "background" else target} in {scene}.'
         result.append(row)
     return result

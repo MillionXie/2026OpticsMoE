@@ -2,6 +2,9 @@
 import copy
 from types import SimpleNamespace
 import unittest
+import tempfile
+import hashlib
+from pathlib import Path
 
 import torch
 from torch import nn
@@ -10,6 +13,7 @@ from diffusers import EulerDiscreteScheduler
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_data import validate_roles, pilot_subset
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_model import NativeTurboHead, QueryResampler, pack_hidden, region_weighted_loss
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_training import configure_unet_training
+from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_cache import image_float,save_with_digest
 
 
 def row(split, mode, source, target):
@@ -19,6 +23,18 @@ def row(split, mode, source, target):
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_streamed_cache_hash_and_uint8_images_are_lossless(self):
+        pixels=torch.arange(256,dtype=torch.uint8).reshape(1,1,16,16).expand(2,3,16,16).clone()
+        expected=pixels.float().div(127.5).sub(1)
+        torch.testing.assert_close(image_float(pixels,'cpu'),expected,atol=0,rtol=0)
+        torch.testing.assert_close(image_float(expected,'cpu'),expected,atol=0,rtol=0)
+        with tempfile.TemporaryDirectory() as d:
+            path=Path(d)/'cache.pt'
+            digest=save_with_digest({'pixels':pixels},path)
+            self.assertEqual(digest,hashlib.sha256(path.read_bytes()).hexdigest())
+            actual=torch.load(path,weights_only=True)['pixels']
+            self.assertTrue(torch.equal(actual,pixels))
+
     def test_target_role_leakage_is_rejected(self):
         with self.assertRaisesRegex(ValueError,'Cross-split'):
             validate_roles([row('train','object','a','shared'),row('val','object','v','shared')])

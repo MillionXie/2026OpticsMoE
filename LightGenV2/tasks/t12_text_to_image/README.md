@@ -38,8 +38,8 @@ VAE encoder仅用于目标监督／重建诊断。固定噪声逐样本可复现
 使用用户指定GPU1 UUID`GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，允许同卡共享，
 本进程显存上限70%；结束核对自身PID，不终止其他任务。
 
-**该电子方案尚未通过可用性验证。**10月26日四轮小样本试验均已完成，未扩到
-3456对正式候选、未接光、未打开TEST。下面均为同一18 TRAIN／18 VAL开发队列，
+**该电子方案尚未通过可用性验证。**10月26日四轮小样本试验均已完成，短程阶段未扩到
+3456对完整候选、未接光、未打开TEST。下面均为同一18 TRAIN／18 VAL开发队列，
 表内TRAIN与VAL来自各轮按VAL选中的同一best权重；不与旧封存指标比较。
 
 | smoke run后缀（均为20261026） | VAL选中的step | TRAIN PSNR/dB | VAL PSNR/dB |
@@ -79,6 +79,17 @@ TRAIN展示last与VAL展示best时已分区注明不同权重，不伪装为同�
 代码已发布main；服务器主目录另有其他任务未提交修改，故仅按公开commit检出本轮
 T12路径并核验字节，不整仓pull、不切换其他运行目录，实际server HEAD与发布commit
 分别记录在各run的execution／launch身份中。
+
+小样本仅含每类2款输入、合计6款，并不能代表批准的96款TRAIN覆盖。末步能拟合
+商品结构，因此后续按`configs/qwen_vl_turbo_full_20261026.json`进入完整3456 TRAIN／
+144 VAL开发训练，再判断泛化；原四轮失败现象保留，不据此宣称整个架构已失败。
+完整run为`runs/simulation/qwen_vl_turbo_full_20261026`，仍不打开TEST／接光。
+使用同一分割与当前小样本last初始化；扩充resume必须校验父TRAIN/VAL角色与输入
+均为子集合、像素哈希相同，拒绝跨角色曝光。只重对齐TRAIN条件，不拟合VAL。
+批量2×累积2，2592更新正好遍历3456对三轮；每轮洗牌，VAL144只选best。
+TRAIN PSNR仅评估固定18对诊断子集，不冒充3456对全量均值。CLIP教师描述明确类别，
+Qwen实际输入指令不因教师描述修订而改变。缓存RGB改存无损uint8、保留全部融合token；
+流式SHA已做序列化往返检查，每次评估不再重复读取数GB缓存。模型推理图保持不变。
 
 9月21—22日旧cleanrender GAN、parallel optical、lamp场景／半Qwen替换、商品修复、
 chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与原7093ec4608
