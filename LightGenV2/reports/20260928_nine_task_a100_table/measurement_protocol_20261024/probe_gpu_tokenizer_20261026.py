@@ -83,7 +83,7 @@ def setup(root):
     library=DEPS/'GraphTok'
     if not library.exists():run(['git','clone','--depth','1','https://github.com/Msiavashi/GraphTok.git',library],timeout=120)
     commit=run(['git','rev-parse','HEAD'],cwd=library).strip()
-    build=DEPS/'graphtok_build';pybind=pydeps/'pybind11/share/cmake/pybind11'
+    build=DEPS/'graphtok_build_shared_clean01';pybind=pydeps/'pybind11/share/cmake/pybind11'
     nvtx=next(iter((cuda/'lib').glob('libnvToolsExt.so*')),None)
     if nvtx is None:nvtx=next(iter((cuda/'lib64').glob('libnvToolsExt.so*')),None)
     if nvtx is None:
@@ -105,7 +105,7 @@ def setup(root):
 def bench(root):
     import threading
     assert not (root/'result.json').exists()
-    setup_data=json.loads((root/'setup.json').read_text());sys.path.insert(0,str(DEPS/'graphtok_build'))
+    setup_data=json.loads((root/'setup.json').read_text());sys.path.insert(0,str(P(setup_data['extension']).parent))
     import _gpu_bpe_tokenizer as gbpe
     import torch,numpy as np
     from transformers import AutoTokenizer
