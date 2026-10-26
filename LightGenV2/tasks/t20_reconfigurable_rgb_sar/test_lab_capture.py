@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 import numpy as np
 
 from .build_lab_package import sha, export_pilot_subsets
@@ -12,6 +13,29 @@ from LightGenV2.tasks.t21_continual_learning_hardware.hardware_bridge import har
 
 
 class LabCaptureTests(unittest.TestCase):
+    def test_full_npz_members_are_decompressed_once_not_per_sample(self):
+        original=np.load;counts={}
+        class Once:
+            def __init__(self,path,**kwargs):self.path=str(path);self.archive=original(path,**kwargs)
+            def __enter__(self):return self
+            def __exit__(self,*args):self.archive.close()
+            def __getitem__(self,key):
+                identity=(self.path,key);counts[identity]=counts.get(identity,0)+1
+                if counts[identity]>1:raise AssertionError('Repeated full member decompression')
+                return self.archive[key]
+        with tempfile.TemporaryDirectory() as name:
+            folder=Path(name);manifest=dict(files=[],datasets={},cases=dict(D2NN=dict(TRAIN_indices=list(range(500)),TEST_indices=list(range(2000)),TRAIN_records=500)))
+            for split,n in (('train',1000),('test',2000)):
+                path=folder/(split+'.npz');np.savez_compressed(path,amplitudes=np.ones((n,2,2),np.float32),
+                    labels=np.arange(n)%10,domains=np.arange(n)%2,ids=np.asarray([f'{split}-{i}' for i in range(n)]),source_indices=np.arange(n))
+                manifest['files'].append(dict(name=path.name,sha256=sha(path)))
+                manifest['datasets'][split]=dict(file=path.name,identity_sha256=split)
+            with patch('LightGenV2.tasks.t20_reconfigurable_rgb_sar.lab_capture.np.load',side_effect=Once):
+                rows=read_entries(folder,manifest,'D2NN',False)
+            self.assertEqual(len(rows),2500);self.assertEqual(len(counts),10)
+            self.assertTrue(all(v==1 for v in counts.values()))
+            self.assertEqual(rows[0]['source_id'],'train-0');self.assertEqual(rows[-1]['source_id'],'test-1999')
+
     def test_repeat_exception_defaults_off_and_is_exact_scoped(self):
         cfg=dict(exposure_us=2000)
         self.assertEqual(scoped_repeat_mode('LG',cfg),('enforce',None))

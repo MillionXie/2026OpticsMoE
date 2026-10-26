@@ -68,17 +68,18 @@ def read_entries(folder, manifest, case, pilot):
             part['checkpoint_sha256']!=spec['checkpoint_sha256'] or part['local_indices']!=expected or
             part['records']!=24 or sha(folder/part['file'])!=part['sha256']):
             raise ValueError('Lossless pilot derivative provenance mismatch')
-        with np.load(folder/part['file'],allow_pickle=False) as d:
-            if (d['local_indices'].tolist()!=expected or d['ids'].tolist()!=part['ids'] or
-                d['source_indices'].tolist()!=part['source_indices'] or
-                hashlib.sha256(d['amplitudes'].tobytes()).hexdigest()!=part['amplitude_array_sha256']):
-                raise ValueError('Pilot source IDs or amplitudes changed')
-            for k,i in enumerate(expected):
-                if str(d['ids'][k])!=str(manifest['datasets']['train']['ids'][i]):
-                    raise ValueError('Pilot record not in the original full TRAIN identity')
-                rows.append(dict(split='train',local_index=i,source_index=int(d['source_indices'][k]),
-                    source_id=str(d['ids'][k]),domain=int(d['domains'][k]),label=int(d['labels'][k]),
-                    amplitude=d['amplitudes'][k].copy(),source_identity_sha256=manifest['datasets']['train']['identity_sha256']))
+        with np.load(folder/part['file'],allow_pickle=False) as archive:
+            d={name:archive[name] for name in ('amplitudes','labels','domains','ids','source_indices','local_indices')}
+        if (d['local_indices'].tolist()!=expected or d['ids'].tolist()!=part['ids'] or
+            d['source_indices'].tolist()!=part['source_indices'] or
+            hashlib.sha256(d['amplitudes'].tobytes()).hexdigest()!=part['amplitude_array_sha256']):
+            raise ValueError('Pilot source IDs or amplitudes changed')
+        for k,i in enumerate(expected):
+            if str(d['ids'][k])!=str(manifest['datasets']['train']['ids'][i]):
+                raise ValueError('Pilot record not in the original full TRAIN identity')
+            rows.append(dict(split='train',local_index=i,source_index=int(d['source_indices'][k]),
+                source_id=str(d['ids'][k]),domain=int(d['domains'][k]),label=int(d['labels'][k]),
+                amplitude=d['amplitudes'][k].copy(),source_identity_sha256=manifest['datasets']['train']['identity_sha256']))
         return rows
     for split in ('train', 'test'):
         if pilot and split != 'train':
@@ -91,11 +92,14 @@ def read_entries(folder, manifest, case, pilot):
         indices = spec['TRAIN_indices' if split == 'train' else 'TEST_indices']
         if pilot:
             indices = np.asarray(indices)[np.linspace(0, len(indices)-1, 24, dtype=int)].tolist()
-        with np.load(path, allow_pickle=False) as d:
-            for i in indices:
-                rows.append(dict(split=split, local_index=int(i), source_index=int(d['source_indices'][i]),
-                    source_id=str(d['ids'][i]), domain=int(d['domains'][i]), label=int(d['labels'][i]),
-                    amplitude=d['amplitudes'][i].copy(), source_identity_sha256=info['identity_sha256']))
+        # NPZ member access decompresses the entire member, not the requested
+        # row. Cache once before iterating; no value/order/encoding changes.
+        with np.load(path, allow_pickle=False) as archive:
+            d={name:archive[name] for name in ('amplitudes','labels','domains','ids','source_indices')}
+        for i in indices:
+            rows.append(dict(split=split, local_index=int(i), source_index=int(d['source_indices'][i]),
+                source_id=str(d['ids'][i]), domain=int(d['domains'][i]), label=int(d['labels'][i]),
+                amplitude=d['amplitudes'][i].copy(), source_identity_sha256=info['identity_sha256']))
     if len(rows) != (24 if pilot else spec['TRAIN_records']+2000):
         raise ValueError('Incomplete fixed acquisition identities')
     return rows
