@@ -55,6 +55,7 @@ r3成本SHA`a499b9a5c1d1401cad172642926c43497f673f25337aa1dc0d16e687bb486e65`；
 `lgvq_async_raw_adapter_20261026.py`现已实际接上原worker事件：按CPU提交/同步、前端stream、
 主干stream、同场prefix和i-2槽复用建图；用原origin时钟括号及全部提交/同步因果界求可行
 CUDA/perf偏移。真实GPU排队延迟有原ready→start区间证据、在反事实中显式保持；
+前端/上一场主干的交叠以共同CUDA事件时钟报告stream-span证据，不冒逐kernel活跃占用证明。
 同步等待改为GPU完成依赖＋原返回开销，不能把原阻塞时长固定下来或补尾差。
 首3场body envelope按原分段事件切开，电子片段包括实际调度、不冒kernel-only分解。
 `run_lgvq_async_20261026.py`新增唯一2048调用LG入口，显式指定baseline predecessor。

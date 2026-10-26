@@ -236,6 +236,8 @@ def adapt(raw):
                 phase_energy_proxy=projection['phase_energy_proxy'],fixed_optics_projection=projection,
                 measured_next_frontend_prior_body_overlap_ms=length(overlap),
                 measured_overlap_intervals_ms=interval_union(overlap),
+                overlap_evidence='CUDA event spans on separate streams, not per-kernel active occupancy',
+                kernel_occupancy_concurrency_proven=False,
                 actual_GPU_resource_span_totals_ms=stage_totals,
                 stage_totals_are_NOT_additive_wall_or_energy_decomposition=True,
                 causal_clock_alignment=clock,every_observed_node_start_reproduced=True,

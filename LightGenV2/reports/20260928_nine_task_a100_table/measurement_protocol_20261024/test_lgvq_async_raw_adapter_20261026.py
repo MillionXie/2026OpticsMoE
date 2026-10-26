@@ -84,6 +84,7 @@ class RawAdapterTests(unittest.TestCase):
         self.assertEqual(result['fixed_optics_projection']['optical_passes'],768)
         self.assertEqual(sum(n['kind']=='optical_simulation' for n in trace['nodes']),768)
         self.assertGreater(result['measured_next_frontend_prior_body_overlap_ms'],0.)
+        self.assertFalse(result['kernel_occupancy_concurrency_proven'])
         self.assertFalse(result['arbitrary_wall_padding'])
         self.assertTrue(result['phase_energy_proxy']['controller_counted_once'])
         self.assertEqual(result['native_effective_tokens'],256)
