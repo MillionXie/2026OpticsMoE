@@ -5,6 +5,12 @@ from .distill_simulation_response import aligned_simulation_probabilities,equal_
 
 
 class SimulationResponseTests(unittest.TestCase):
+    def test_gradient_conflict_diagnostic_uses_derivatives_without_step(self):
+        import torch
+        from .distill_simulation_response import gradient_conflicts
+        w=torch.nn.Parameter(torch.zeros(2,2,dtype=torch.float64));before=w.detach().clone();x=torch.eye(2,dtype=torch.float64);tasks=np.array(['a','a'])
+        rows=gradient_conflicts(w,x,torch.tensor([0,1]),tasks,x,torch.tensor([1,0]),tasks,['a'])
+        self.assertLess(rows['a']['gradient_cosine'],-.99);self.assertTrue(torch.equal(w,before));self.assertIsNone(w.grad)
     def test_exact_C_contract_does_not_inherit_D_relaxation(self):
         self.assertEqual(stage_contract(dict(architecture='moe',stage=3))[2]['clevr'],(696,746))
         self.assertEqual(stage_contract({})[2]['clevr'],(517,617))
