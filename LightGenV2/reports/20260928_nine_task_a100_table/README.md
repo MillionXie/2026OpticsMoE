@@ -37,8 +37,10 @@ A100_Temporal_Kimi_DS与LG优化_单轮2048次_20261026.xlsx已生成、六sheet
 SHA63f7f70e7beb58dca2ee465b773d352789ae41edfe7026125ccc734bf2452d3e。
 原始索引122文件含MPS日志、原路径/size/SHA与补封存proof，不混同全部远端封存收据；
 raw_file_index.csv SHA4fb28409aaa70a71daee34d69ba4861f3f8d09f1544c86b2417f27d5211efff8。
-生成器每次recalc后改输入并复原验证，最终导出缓存/6144串行记录/384场账本的独立复核
-与封存manifest由review_rental_lg_delivery_20261026.py生成。旧18/18表/旧partial与此前成品不覆盖。
+生成器每次recalc后改输入并复原验证，最终6975公式缓存/6144串行记录/384场账本及122
+原路径size/SHA的独立读回复核passed，六sheet与关键说明已预览；不依赖可省略的XML
+dimension字段。封存delivery_manifest.json SHA500a87b886c113560b28141cdbf190e281091142317300b70c117b7ddc2805f9，
+其中分析源绑定已发布6445c7fd9的Git blobs与当前工作树SHA；旧18/18表/旧partial及此前成品不覆盖。
 
 ## 2026-10-26：新租机Kimi50已完成；两LG优化候选已封存
 
