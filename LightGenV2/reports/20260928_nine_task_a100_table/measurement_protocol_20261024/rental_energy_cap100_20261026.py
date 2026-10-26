@@ -40,6 +40,10 @@ def worker(args):
     before = original.worker
     tree, counts = resource_worker(inspect.getsource(before))
     namespace = dict(before.__globals__)
+    # Resource-only compilation has its own globals dictionary. Resolve the
+    # scoped observer/source wrapper dynamically rather than retaining the old
+    # function object copied before energy.worker installs its source binding.
+    namespace['sources'] = lambda: original.sources()
     exec(compile(tree, __file__+'::resource_only', 'exec'), namespace)
     original.worker = namespace['worker']
     before_sources = original.sources
@@ -64,6 +68,7 @@ def suite(args):
     root = args.root
     root.mkdir()
     state = dict(status='waiting_previous_MPS50_release', pid=os.getpid(), deadline=args.deadline,
+        source_commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT'], source_sha256=original.sha(__file__),
         previous=str(args.previous), cap=100, completed=[], plan=[(m,r) for r in (1,2,3) for m in ('kimi','deepseek')])
     def save():energy.write(root/'suite_status.json', state)
     save()
