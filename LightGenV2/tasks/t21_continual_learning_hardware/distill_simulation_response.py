@@ -14,7 +14,7 @@ from .hardware_bridge import load_checkpoint
 from .refine_native_readout import upstream_state
 from .terminal_fit import evaluate,brief
 from .fit_stage_balanced_teacher import derivatives
-from .fit_gated_linear_teacher import DISCLOSURE,full_covariance_transform
+from .fit_gated_linear_teacher import DISCLOSURE,full_covariance_transform,paired_indices,paired_margin_loss
 from .refine_measured_ce import contrast_transform
 from .distill_capacity_matched_stage import TRAIN_queries
 from .audit_student_transfer import linear_projection
@@ -58,12 +58,28 @@ def gradient_conflicts(weight,z,qy,qt,dz,dy,dt,names):
     return rows
 
 
+def derivative_pair_deltas(features,ids,labels,tasks,source_count,names):
+    """Keep each authorized nonidentity view's original positive/negative pairs."""
+    if len(features)%source_count:raise ValueError('Complete derivative views required')
+    result={}
+    for name in names:
+        if name=='eurosat':continue
+        rows=[]
+        for start in range(0,len(features),source_count):
+            end=start+source_count
+            pairs=paired_indices(ids[start:end],labels[start:end].numpy(),tasks[start:end])
+            rows.extend(features[start+p]-features[start+n] for n,p in pairs if tasks[start+n]==name)
+        if not rows:raise ValueError('Missing binary pairs')
+        result[name]=torch.stack(rows)
+    return result
+
+
 def main():
     p=argparse.ArgumentParser(__doc__)
     for n in ('capture','package','warm_run','profile','out'):p.add_argument('--'+n.replace('_','-'),type=Path,required=True)
     p.add_argument('--acknowledge-test-derived-development',action='store_true');a=p.parse_args()
     if not a.acknowledge_test_derived_development:raise ValueError('Explicit inherited TEST information acknowledgment required')
-    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json','config_LG_C_weak_source_response_20261026.json','config_LG_D_weak_source_response_20261026.json','config_LG_D_soft_response_20261026.json','config_LG_D_low_TRAIN_anchor_20261026.json')
+    cfg=json.loads(a.profile.read_text());profiles=('config_D2NN_D_simulation_response_20261026.json','config_D2NN_D_anchored_response_20261026.json','config_LG_C_simulation_response_20261026.json','config_LG_C_weak_source_response_20261026.json','config_LG_D_weak_source_response_20261026.json','config_LG_D_soft_response_20261026.json','config_LG_D_low_TRAIN_anchor_20261026.json','config_LG_D_paired_response_20261026.json')
     if not any(cfg==json.loads(Path(__file__).with_name(n).read_text()) for n in profiles):raise ValueError('Only fixed published finite response-transfer profile')
     torch.set_num_threads(2);torch.manual_seed(cfg['seed']);package=json.loads(a.package.read_text());cr=json.loads((a.capture/'report.json').read_text());wr=json.loads((a.warm_run/'report.json').read_text())
     if not cr['passed'] or cr['pilot'] or not cr['SDK_released'] or sha(a.capture/'features.npz')!=cr['features_sha256'] or not wr['passed'] or not wr['strict_CPU_reloaded']:raise ValueError('Completed immutable capture/warm student required')
@@ -86,9 +102,10 @@ def main():
     if diagnostic:put(a.out/'gradient_diagnosis.json',dict(by_task=diagnostic,read_only_gradient_evaluation=True,SDK=False,GPU=False,**DISCLOSURE))
     retained=cfg.get('retained_task_functions',[]);warm_soft=(dx.double()@model.shared_head.weight.detach().double().T).softmax(1).detach()
     train_weight=cfg.get('TRAIN_CE_weight',.25)
+    pair_deltas=derivative_pair_deltas(dz,di,dy,dt,len(te),names) if cfg.get('derivative_pair_weight') else {}
     if cfg.get('diagnose_conflict') and not any(v['gradient_cosine']<0 for v in diagnostic.values()):
         raise RuntimeError('No TRAIN/derivative gradient conflict found; proposed low-anchor test not justified')
-    put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),capture_features_SHA256=cr['features_sha256'],warm_SHA256=warm_sha,S1_checkpoint_SHA256=package['checkpoint_sha256'],package_SHA256=sha(a.package),source_map=source_map,conditioning=conditioning,targets='Unmodified S1 probabilities; fixed weak variant uses Euro soft response and authorized binary derivative labels; no accuracy filtering',loss='Configured TRAIN CE coefficient; default all-task S1 KL1, weak variant Euro KL.25 plus binary derivativeCE.75; configured L2; optional warm-function KL2',TRAIN_CE_weight=train_weight,retained_task_functions=retained,student_fit_TEST_inputs=0,teacher_original_TEST_gradient_rows=0,all_TEST_sources_used=True,SDK=False,GPU=False,**DISCLOSURE))
+    put(a.out/'protocol.json',dict(profile=cfg,profile_SHA256=sha(a.profile),source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),source_SHA256=sha(__file__),capture_features_SHA256=cr['features_sha256'],warm_SHA256=warm_sha,S1_checkpoint_SHA256=package['checkpoint_sha256'],package_SHA256=sha(a.package),source_map=source_map,conditioning=conditioning,targets='Unmodified S1 probabilities; fixed weak variant uses Euro soft response and authorized binary derivative labels; no accuracy filtering',loss='Configured TRAIN CE coefficient; default all-task S1 KL1, weak variant Euro KL.25 plus binary derivativeCE.75; configured L2; optional warm-function KL2 and equal binary pair-ranking',TRAIN_CE_weight=train_weight,derivative_pair_weight=cfg.get('derivative_pair_weight',0),derivative_pairs={n:len(v) for n,v in pair_deltas.items()},retained_task_functions=retained,student_fit_TEST_inputs=0,teacher_original_TEST_gradient_rows=0,all_TEST_sources_used=True,SDK=False,GPU=False,**DISCLOSURE))
     best_weight=initial.clone();best_key=None;history=[];best_step=0
     def scores():
         with torch.no_grad():
@@ -102,6 +119,7 @@ def main():
             binary=F.cross_entropy(dz@weight.T,dy,reduction='none');loss+=.25*equal_task_soft_KL(dz@weight.T,soft,dt,['eurosat'])+.75*torch.stack([binary[dt==n].mean() for n in names if n!='eurosat']).mean()
         else:loss+=equal_task_soft_KL(dz@weight.T,soft,dt,names)
         loss+=cfg.get('delta_L2',1e-5)*(weight-initial)[:,:-1].square().sum()/10
+        if pair_deltas:loss+=cfg['derivative_pair_weight']*torch.stack([paired_margin_loss(v@weight.T) for v in pair_deltas.values()]).mean()
         if retained:loss+=cfg['retention_weight']*equal_task_soft_KL(dz@weight.T,warm_soft,dt,retained)
         if not torch.isfinite(loss):raise RuntimeError('Nonfinite response transfer')
         loss.backward();return loss

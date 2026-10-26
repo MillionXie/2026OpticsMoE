@@ -5,6 +5,13 @@ from .distill_simulation_response import aligned_simulation_probabilities,equal_
 
 
 class SimulationResponseTests(unittest.TestCase):
+    def test_pair_deltas_keep_each_nonidentity_view_and_label_order(self):
+        from .distill_simulation_response import derivative_pair_deltas
+        x=torch.tensor([[1.,2.],[4.,6.],[10.,20.],[14.,26.]],dtype=torch.float64)
+        labels=torch.tensor([0,1,0,1]);ids=np.array([0,1,0,1]);tasks=np.array(['clevr']*4)
+        out=derivative_pair_deltas(x,ids,labels,tasks,2,['clevr'])
+        torch.testing.assert_close(out['clevr'],torch.tensor([[3.,4.],[4.,6.]],dtype=torch.float64))
+        with self.assertRaises(ValueError):derivative_pair_deltas(x,ids,labels,tasks,3,['clevr'])
     def test_gradient_conflict_diagnostic_uses_derivatives_without_step(self):
         import torch
         from .distill_simulation_response import gradient_conflicts
