@@ -9,7 +9,11 @@
 该轮首前端调用实测4385.603177ms，旧轮为280.356614ms；不能把EAGER库装载策略当作已获收益。
 取消采用02，完整保留慢轮，不覆盖旧18.082306ms成品。去掉强制GC的准备本身降为0.014516ms，
 但这不足以证明总成本改善，也不能从总墙钟追扣该差额。
-后续独立候选改回LAZY装载，保留无强制GC策略，并将原四条文字adapter语句按相同AST移入
+候选03在任何计时/评分输出前因AST边界不匹配而停止：初稿及测试误选了单视频类，而真实PT使用
+`MultiVideo9x4OpticalVQA`，其文字前缀为六条语句而非四条。父1321575/子1321742均已真退出、
+MPS释放，11原文件479683B及899B外日志已逐SHA备份；该次没有合格时间，不作速度比较。
+修复以真实多视频类经过score-only及prefix分割的完整AST链做纯数据测试，禁止退回另一模型。
+后续独立候选改回LAZY装载，保留无强制GC策略，并将原六条文字adapter语句按相同AST移入
 同场文字stream：H2D后fork，文字embedding/adapter与vision的conv/位置/pool分支并行，
 在使用prompt条件的视觉adapter前join。全部算术执行一次，未改精度/归约/权重或缓存特征；
 全场传播、完整评分/功率/DAG门保持。实际是否更快及是否逐字节相同，须由新轮验证。
@@ -23,7 +27,7 @@
 旧双stream实测只证明下一场前端与前场主干事件跨度重叠，同场文字embedding在该版本与视觉前端
 使用同一stream，不能冒称已经独立并行。旧raw未独立记录的内部模块不凭总时间事后拆分。
 
-新增可选`--optimize-runtime`候选：在worker启动前选择`CUDA_MODULE_LOADING=EAGER`，
+历史候选02的`--optimize-runtime`配置在worker启动前选择`CUDA_MODULE_LOADING=EAGER`，
 不做额外前向/预热；保留原全部首场和真实capture，但不再强制整堆`gc.collect`及allocator
 `empty_cache`，计时窗暂禁Python自动GC并在finally恢复。模型加载/库初始化仍在原加载阶段，
 推理窗与加载耗时分开，不能把此配置收益冒称算子数学加速。原默认策略不变。

@@ -12,15 +12,26 @@ class PolicyTests(unittest.TestCase):
     def test_prompt_arithmetic_relocated_not_reassociated(self):
         from lgvq_async_optimization_20261026 import separate_prompt_adapter
         from pathlib import Path
-        path=Path(__file__).resolve().parents[4]/'experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py'
+        path=Path(__file__).resolve().parents[4]/'LightGenV2/tasks/t06_video_quality_assessment/models/multivideo9x4.py'
         tree=ast.parse(path.read_text(encoding='utf-8'))
-        cls=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='LGVQSingleMetricOEO16')
+        cls=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='MultiVideo9x4OpticalVQA')
         forward=next(n for n in cls.body if isinstance(n,ast.FunctionDef) and n.name=='forward')
-        forward.name='prepare_native_prefix'
-        changed,receipt=separate_prompt_adapter(ast.Module(body=[forward],type_ignores=[]))
+        import lgvq_scoreonly_20261026 as score
+        import copy,hashlib,textwrap
+        score_tree,_=score.score_forward_AST(ast.unparse(forward))
+        helper=ast.parse((Path(__file__).parent/'lgvq_hoisted_pipeline_20261026.py').read_text(encoding='utf-8'))
+        partition=next(n for n in helper.body if isinstance(n,ast.FunctionDef) and n.name=='partition_forward')
+        ns=dict(ast=ast,copy=copy,hashlib=hashlib,textwrap=textwrap,
+            PREFIX_NAMES=('batch','videos','vision','prompt_tokens','prompt_mask'))
+        exec(compile(ast.Module(body=[partition],type_ignores=[]),'<actual_partition>','exec'),ns)
+        original,_=ns['partition_forward'](ast.unparse(score_tree))
+        changed,receipt=separate_prompt_adapter(original)
+        self.assertEqual(ast.dump(original.body[1]),ast.dump(changed.body[1]))
         self.assertTrue(receipt['original_prompt_adapter_arithmetic_unchanged'])
         self.assertEqual(changed.body[-1].name,'prepare_text_adapter')
-        self.assertEqual(len(changed.body[-1].body),5)
+        self.assertEqual(len(changed.body[-1].body),8)
+        self.assertNotIn('prompt_base = self.language_adapter',ast.unparse(changed.body[0]))
+        self.assertIn('prompt_base = self.language_adapter',ast.unparse(changed.body[-1]))
     def test_single_synchronization_without_forced_gc_or_cache_purge(self):
         cuda=SimpleNamespace(synchronize=Mock(),empty_cache=Mock())
         tape=SimpleNamespace(preparation=None,preparation_calls=0,

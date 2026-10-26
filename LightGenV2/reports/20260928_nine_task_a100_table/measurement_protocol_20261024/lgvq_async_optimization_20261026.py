@@ -1,7 +1,7 @@
 """Optional fresh-run runtime policy and explicit electronic phase boundaries.
 
 No inference, warmup, cached features, dtype changes or GPU actions on import.
-EAGER module loading is selected before worker startup, never by a dummy forward.
+LAZY module loading is selected before worker startup, never by a dummy forward.
 The capture policy keeps synchronization and every capture but does not force a
 full Python GC / allocator-cache purge. All remaining preparation stays timed.
 """
@@ -13,19 +13,22 @@ import time
 
 
 def separate_prompt_adapter(module):
-    """Move four unchanged independent statements, never simplify arithmetic."""
+    """Move the actual MultiVideo six text statements without changing math."""
     module=copy.deepcopy(module);prefix=next(n for n in module.body if n.name=='prepare_native_prefix')
     def assigns(node,name):
         return isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id==name for t in node.targets)
-    start=next(i for i,n in enumerate(prefix.body) if assigns(n,'prompt_tokens'))
-    end=next(i for i,n in enumerate(prefix.body) if assigns(n,'qwen_vision'))
+    starts=[i for i,n in enumerate(prefix.body) if assigns(n,'prompt_base')]
+    ends=[i for i,n in enumerate(prefix.body) if assigns(n,'qwen')]
+    if len(starts)!=1 or len(ends)!=1:raise ValueError('Pinned MultiVideo text/vision boundaries required')
+    start,end=starts[0],ends[0]
     statements=prefix.body[start:end]
-    if len(statements)!=4:raise ValueError('Original four prompt-adapter statements required')
-    names=('prompt_tokens','prompt_valid','prompt_summary','prompt_scale','prompt_shift')
+    if len(statements)!=6:raise ValueError('Original six MultiVideo prompt-adapter statements required')
+    names=('prompt_base','prompt_valid','prompt_summary','prompt_scale','prompt_shift','prompt_tokens','prompt_mask')
     fn=ast.parse('def prepare_text_adapter(self,language_tokens,language_mask):\n    pass').body[0]
-    fn.body=copy.deepcopy(statements)+[ast.Return(ast.Dict(
+    settings=ast.parse('videos=self.settings.videos_per_field').body
+    fn.body=settings+copy.deepcopy(statements)+[ast.Return(ast.Dict(
         keys=[ast.Constant(n) for n in names],values=[ast.Name(id=n,ctx=ast.Load()) for n in names]))]
-    if ast.dump(ast.Module(body=fn.body[:-1],type_ignores=[]))!=ast.dump(ast.Module(body=statements,type_ignores=[])):
+    if ast.dump(ast.Module(body=fn.body[1:-1],type_ignores=[]))!=ast.dump(ast.Module(body=statements,type_ignores=[])):
         raise ValueError('Prompt adapter arithmetic changed')
     prefix.args.kwonlyargs.append(ast.arg(arg='_async_text_prefix'));prefix.args.kw_defaults.append(ast.Constant(None))
     bindings=ast.parse('\n'.join(f'{n}=_async_text_prefix[{n!r}]' for n in names)).body
