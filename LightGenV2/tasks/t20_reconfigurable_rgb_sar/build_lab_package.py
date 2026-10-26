@@ -71,6 +71,33 @@ def datasets_for(case, train_domains):
     return np.flatnonzero(np.isin(domains, PINS[case]['training_domains'])).tolist()
 
 
+def export_pilot_subsets(folder):
+    """Lossless TRAIN24 transport while the complete input package is in flight.
+
+    This is exactly the existing pilot selection, not a new subset or encoding.
+    The small derivative is bound to the original full-file/package hashes.
+    """
+    folder=Path(folder);manifest=json.loads((folder/'manifest.json').read_text())
+    expected=next(r['sha256'] for r in manifest['files'] if r['name']=='train_inputs.npz')
+    path=folder/'train_inputs.npz'
+    if sha(path)!=expected:raise ValueError('Original full TRAIN encoding SHA mismatch')
+    proof=dict(parent_manifest_sha256=sha(folder/'manifest.json'),full_TRAIN_file_sha256=expected,
+        rule='Exact original np.linspace TRAIN24 pilot selection; no changed encoding',cases={})
+    with np.load(path,allow_pickle=False) as source:
+        for case,spec in manifest['cases'].items():
+            pool=np.asarray(spec['TRAIN_indices'],dtype=np.int64)
+            ix=pool[np.linspace(0,len(pool)-1,24,dtype=int)]
+            target=folder/(case+'_pilot_inputs.npz')
+            if target.exists():raise FileExistsError(target)
+            np.savez_compressed(target,**{k:source[k][ix] for k in ('amplitudes','labels','domains','ids','source_indices')},local_indices=ix)
+            proof['cases'][case]=dict(file=target.name,sha256=sha(target),records=24,
+                checkpoint_sha256=spec['checkpoint_sha256'],local_indices=ix.tolist(),
+                ids=source['ids'][ix].tolist(),source_indices=source['source_indices'][ix].tolist(),
+                amplitude_array_sha256=hashlib.sha256(source['amplitudes'][ix].tobytes()).hexdigest())
+    put(folder/'pilot_inputs.json',proof)
+    return proof
+
+
 def load_locked(case, path):
     """T20 factory, never the incompatible T21 sixteen-slot checkpoint loader."""
     import torch
