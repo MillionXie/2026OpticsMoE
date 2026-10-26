@@ -15,7 +15,7 @@ def digest(path):
 
 
 def read_run(run):
-    report=json.loads((run/'report.json').read_text())
+    report=json.loads((run/'report.json').read_text(encoding='utf-8'))
     if not report.get('complete') or report['best_step']<=0:
         raise ValueError('Selected checkpoint is not ready: '+str(run))
     if report.get('test_evaluated'):
@@ -35,7 +35,7 @@ def main():
         raise ValueError('VAL cohorts/order differ')
     if before['train_optimization_pairs']!=after['train_optimization_pairs']:
         raise ValueError('Training cohorts differ')
-    annotations={r['sample_id']:r for r in json.loads((args.after/'annotated_pairs.json').read_text())}
+    annotations={r['sample_id']:r for r in json.loads((args.after/'annotated_pairs.json').read_text(encoding='utf-8'))}
     chosen=[]
     for category in ('lamp','table','pillow'):
         for mode in ('background','object','joint'):
