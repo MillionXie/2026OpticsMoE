@@ -191,9 +191,18 @@ def suite(args):
     try:
         with (TASK/'runs/simulation/.temporal_telemetry_a100.lock').open('a') as lock:
             fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-            for _ in range(12):
+            idle=0
+            while idle<12:
+                if time.time()>=args.deadline:raise TimeoutError('Finite admission queue deadline')
                 snapshot=process_snapshot(GPU,-1,args.pipe)
-                if snapshot['foreign_gpu_processes'] or snapshot['foreign_mps_clients']:raise RuntimeError('Foreign GPU process')
+                if snapshot['foreign_gpu_processes'] or snapshot['foreign_mps_clients']:
+                    idle=0;state.update(status='waiting_foreign_process',admission_observation=snapshot);save()
+                    time.sleep(5);continue
+                try:legacy.validate_idle_memory(GPU)
+                except RuntimeError as error:
+                    idle=0;state.update(status='waiting_idle_memory',admission_observation=snapshot,
+                        admission_memory_error=str(error));save();time.sleep(5);continue
+                idle+=1
                 time.sleep(.25)
             legacy.validate_idle_memory(GPU);legacy.engine.daemon(True);active=True
             for model,cap,repeat in plan:
@@ -223,8 +232,16 @@ def suite(args):
         if child is not None and child.poll() is None:os.killpg(child.pid,signal.SIGINT);child.wait(timeout=60)
         raise
     finally:
-        if active:legacy.engine.daemon(False)
-        save()
+        try:
+            if active:
+                try:legacy.engine.daemon(False)
+                except BaseException as error:
+                    # The old cleanup also demanded the entire shared GPU be
+                    # empty after quitting OUR private MPS daemon. A foreign
+                    # process can make that postcondition false; preserve the
+                    # cleanup error without losing the original stopped state.
+                    state['cleanup_error']=repr(error)
+        finally:save()
 
 
 def main():
