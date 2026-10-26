@@ -4,6 +4,8 @@ import argparse,csv,hashlib,importlib.metadata,json,os,pathlib,shutil,statistics
 P=pathlib.Path
 HERE=P(__file__).resolve().parent;REPO=P(os.environ.get('TOKENIZER_PROBE_REPO',str(HERE.parents[3]))).resolve()
 GPU='GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d'
+SHARED_GPU='GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd'
+SHARED=False
 BLOCKED='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
 DEPS=P('/DATA/DATA1/guest3/.cache/tokenizer_gpu_probe_20261026')
 
@@ -21,9 +23,10 @@ def processes():
     return [x.strip().split(',') for x in text.splitlines() if x.strip()]
 def check(own=False):
     foreign=[x for x in processes() if x[2].strip()==GPU and (not own or int(x[0])!=os.getpid())]
-    if foreign:raise RuntimeError('Non-A100 card acquired by another process: '+json.dumps(foreign))
-    text=run(['nvidia-smi','--id='+GPU,'--query-gpu=name,uuid,memory.used,utilization.gpu','--format=csv,noheader,nounits'],timeout=10)
-    if not own and float(text.split(',')[2])>128:raise RuntimeError('Card memory is not idle: '+text)
+    if foreign and not SHARED:raise RuntimeError('Non-A100 card acquired by another process: '+json.dumps(foreign))
+    text=run(['nvidia-smi','--id='+GPU,'--query-gpu=name,uuid,memory.used,utilization.gpu,memory.free','--format=csv,noheader,nounits'],timeout=10)
+    if not SHARED and not own and float(text.split(',')[2])>128:raise RuntimeError('Card memory is not idle: '+text)
+    if SHARED and float(text.split(',')[4])<(512 if own else 2048):raise RuntimeError('Shared GPU has insufficient free memory; stop own probe only')
     return text.strip()
 def download(url,target,digest=None):
     target=P(target)
@@ -113,7 +116,7 @@ def bench(root):
     stop=threading.Event();errors=[];observations=[]
     def monitor():
         while not stop.is_set():
-            try:observations.append({'unix':time.time(),'gpu':check(own=True)})
+            try:observations.append({'unix':time.time(),'gpu':check(own=True),'other_processes':[x for x in processes() if int(x[0])!=os.getpid()]})
             except BaseException as e:errors.append(repr(e));return
             stop.wait(.5)
     thread=threading.Thread(target=monitor,daemon=True);thread.start()
@@ -163,8 +166,7 @@ def bench(root):
         texts=[prompts['temporal']]*b;a=cpu(texts);z=gpu_call(texts);assert all(torch.equal(a[k],z[k]) for k in a)
     samples=[];results=[]
     cases=[('actual_prompt_B1',[prompts['temporal']],200),('same_prompt_B16',[prompts['temporal']]*16,60),
-           ('same_prompt_B256',[prompts['temporal']]*256,15),
-           ('synthetic_long_B1',[prompts['temporal']*256],15)]
+           ('same_prompt_B256',[prompts['temporal']]*256,15)]
     try:
         for case,texts,count in cases:
             for device in (False,True):
@@ -190,12 +192,12 @@ def bench(root):
     if errors:raise RuntimeError(errors[0])
     with (root/'timing_samples.csv').open('x',newline='') as f:
         w=csv.DictWriter(f,fieldnames=samples[0].keys());w.writeheader();w.writerows(samples)
-    save(root/'result.json',{'status':'complete','gpu_uuid':GPU,'gpu_name':gpu_name,'CPU_model':run(['lscpu']),
+    save(root/'result.json',{'status':'complete','shared_environment':SHARED,'other_processes_never_signaled':True,'gpu_uuid':GPU,'gpu_name':gpu_name,'CPU_model':run(['lscpu']),
          'tokenizer_model_path':str(model),'tokenizer_sha256':sha(vocab),'binding_sha256':sha(binding_path),'prompt_token_ids':sample_ids,
          'original_prompt_tokens':len(sample_ids),'normalization':'original Qwen NFC remains on CPU in GraphTok; GPU pretokenization+BPE+assembly',
          'GPU_fallback_disabled':True,'extra_neural_forwards':0,'initialization_s':initialization_s,'warmup_calls_per_case_method':5,
          'scope':'same raw strings to equal padded int64 input_ids and attention_mask; includes required transfers and synchronization',
-         'synthetic_long_case_is_not_original_LGVQ':True,'CPU_affinity':sorted(os.sched_getaffinity(0)),'system_load':os.getloadavg(),
+         'B16_B256_are_throughput_scenarios_not_original_single_prompt_call':True,'CPU_threads':2,'CPU_affinity':sorted(os.sched_getaffinity(0)),'system_load':os.getloadavg(),
          'versions':{x:importlib.metadata.version(x) for x in ('torch','transformers','tokenizers','numpy')},
          'third_party_commit':setup_data['third_party_commit'],'source_sha256':sha(__file__),'source_commit':os.environ.get('TOKENIZER_PROBE_SOURCE_COMMIT'),
          'repository_HEAD':run(['git','rev-parse','HEAD'],cwd=REPO).strip(),
@@ -203,13 +205,16 @@ def bench(root):
     print(json.dumps({'status':'complete','results':results}),flush=True)
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--phase',choices=('setup','bench'),required=True);p.add_argument('--output',type=P,required=True);a=p.parse_args();root=a.output.resolve()
+    global GPU,SHARED
+    p=argparse.ArgumentParser();p.add_argument('--phase',choices=('setup','bench'),required=True);p.add_argument('--output',type=P,required=True);p.add_argument('--shared-card3',action='store_true');a=p.parse_args();root=a.output.resolve()
+    if a.shared_card3:GPU=SHARED_GPU;SHARED=True
+    assert GPU!=BLOCKED
     assert root.is_relative_to(REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation')
     os.environ.update(CUDA_VISIBLE_DEVICES=GPU,CUDA_DEVICE_ORDER='PCI_BUS_ID',OMP_NUM_THREADS='2',RAYON_NUM_THREADS='2',TOKENIZERS_PARALLELISM='true',HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1')
     os.environ.pop('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE',None);os.environ['CUDA_MPS_PIPE_DIRECTORY']=str(DEPS/'no_mps')
     root.mkdir(parents=True,exist_ok=True)
     try:
-        print(json.dumps({'phase':a.phase,'gpu':GPU,'idle':check()}),flush=True)
+        print(json.dumps({'phase':a.phase,'gpu':GPU,'shared_environment':SHARED,'admission_state':check()}),flush=True)
         (setup if a.phase=='setup' else bench)(root)
     except BaseException as e:
         save(root/(a.phase+'_failure.json'),{'error':repr(e),'unix':time.time(),'source_sha256':sha(__file__)});raise
