@@ -175,7 +175,7 @@ def tensor_image(tensor):
 
 
 @torch.no_grad()
-def evaluate(model, payload, indices, device, output, label, ablation=False):
+def evaluate(model, payload, indices, device, output, label, ablation=False, native_teacher=False):
     model.eval()
     errors, latent_errors = [], []
     cell = 256
@@ -187,7 +187,13 @@ def evaluate(model, payload, indices, device, output, label, ablation=False):
             other = indices[(pos+1) % len(indices)]
             hidden, valid = pack_hidden([payload['hidden'][other]], device)
         row = payload['rows'][i]
-        latent, prediction = model(hidden, valid, noise_for([row], device))
+        if native_teacher:
+            if row['split'] != 'train':
+                raise ValueError('Native caption-teacher probe is TRAIN diagnostic only')
+            latent, prediction = model.generate_from_conditions(
+                payload['train_clip_teacher'][i][None].to(device), noise_for([row], device))
+        else:
+            latent, prediction = model(hidden, valid, noise_for([row], device))
         prediction = prediction.clamp(-1,1)
         target = payload['target'][i:i+1].to(device)
         mse = (prediction-target).square().mean().item()/4
@@ -203,7 +209,8 @@ def evaluate(model, payload, indices, device, output, label, ablation=False):
     report = {'mean_per_image_psnr_db': mean, 'count': len(errors), 'images': errors,
               'by_mode': {m: float(np.mean([r['psnr'] for r in errors if r['mode']==m]))
                           for m in ('background','object','joint')},
-              'scope': 'development pilot TRAIN or VAL, never independent TEST'}
+              'scope': ('TRAIN native target-caption-teacher diagnostic, NOT a Qwen inference result'
+                        if native_teacher else 'development pilot TRAIN or VAL, never independent TEST')}
     write_json(output / f'{label}.json', report)
     return report
 
@@ -234,6 +241,12 @@ def train(args, cfg, device):
         if (step+1)%40==0:
             print('alignment',step+1,'loss',float(loss.detach()),flush=True)
             write_json(args.output / 'progress.json', {'stage':'alignment','step':step+1,'loss':float(loss.detach())})
+    with torch.no_grad():
+        h,valid=pack_hidden([payload['hidden'][i] for i in train_ids],device)
+        target=torch.stack([payload['train_clip_teacher'][i] for i in train_ids]).float().to(device)
+        alignment_mse=float(F.mse_loss(adapter(h,valid),target))
+    write_json(args.output/'alignment_report.json',{'train_condition_mse':alignment_mse,
+               'steps':cfg['alignment_steps'],'no_val_fit':True})
     del opt
     unet = UNet2DConditionModel.from_pretrained(args.sd, subfolder='unet', variant='fp16',
                     torch_dtype=torch.bfloat16, local_files_only=True).to(device).requires_grad_(False)
@@ -275,6 +288,7 @@ def train(args, cfg, device):
               'trainable':sum(p.numel() for p in params)}
     counts['inference_total'] = counts['qwen_full_forward']+counts['adapter']+counts['unet_including_lora']+counts['vae_decoder']
     write_json(args.output/'parameter_counts.json',counts)
+    native = evaluate(model,payload,train_ids,device,args.output,'train_native_caption_teacher',native_teacher=True)
     baseline = evaluate(model,payload,val_ids,device,args.output,'val_before_paired_training')
     best, best_step, history = float('-inf'),0,[]
     for step in range(1,cfg['train_steps']+1):
@@ -329,7 +343,8 @@ def train(args, cfg, device):
     wrong=evaluate(model,payload,val_ids,device,args.output,'val_wrong_condition',ablation=True)
     write_json(args.output/'report.json',{'complete':True,'protocol':cfg['protocol'],'best_step':best_step,
                'best_val':val,'train':tr,'val_before_paired_training':baseline,'val_wrong_condition':wrong,
-               'parameters':counts,'test_evaluated':False,'overfit_pilot_only':True,
+               'parameters':counts,'native_caption_teacher_train_diagnostic':native,
+               'alignment_train_mse':alignment_mse,'test_evaluated':False,'overfit_pilot_only':True,
                'checkpoint_sha256':sha256(args.output/'best_checkpoint.pt'),
                'interpretation':'Feasibility/overfit pilot; VAL is development only. Not final independent generalization evidence.'})
 

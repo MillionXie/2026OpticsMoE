@@ -35,6 +35,10 @@ class NativeTurboHead(nn.Module):
 
     def forward(self, hidden, valid, noise):
         conditions = self.adapter(hidden, valid)
+        return self.generate_from_conditions(conditions, noise)
+
+    def generate_from_conditions(self, conditions, noise):
+        """Native generator; exposed for a TRAIN-only native-condition probe."""
         # Reset scheduler state for EVERY forward. Its native epsilon/v/sample
         # contract and scaling remain intact; no hand-written residual edit.
         self.scheduler.set_timesteps(1, device=noise.device)
