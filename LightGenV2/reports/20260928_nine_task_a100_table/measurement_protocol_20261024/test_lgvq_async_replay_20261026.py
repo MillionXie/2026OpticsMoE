@@ -7,6 +7,7 @@ from lgvq_async_replay_20261026 import replay_fields,validate_slots
 class Tensor:
     def __init__(self,value=0):self.value=value
     def data_ptr(self):return id(self)
+    def untyped_storage(self):return self
     def pin_memory(self):return self
     def bool(self):return self
     def copy_(self,other,non_blocking=False):self.value=other.value
@@ -34,6 +35,15 @@ def slot():
     return s
 
 class SchedulingTests(unittest.TestCase):
+    def test_offset_storage_alias_is_not_independent(self):
+        class View(Tensor):
+            def __init__(self, root):self.root=root
+            def untyped_storage(self):return self.root
+        slots=[slot(),slot()]
+        slots[1]['prefix_owned']['vision']=View(slots[0]['prefix_owned']['vision'])
+        self.assertNotEqual(slots[0]['prefix_owned']['vision'].data_ptr(),slots[1]['prefix_owned']['vision'].data_ptr())
+        with self.assertRaisesRegex(ValueError,'alias'):validate_slots(slots)
+
     def test_field_order_buffers_and_scores_retained(self):
         slots=[slot(),slot()];old_fences=[s['score_ready'] for s in slots]
         raw=[dict(pixels=Tensor(i),quality=Tensor(i)) for i in range(32)];calls=[]

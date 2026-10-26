@@ -8,6 +8,13 @@ tokenization on every field and no feature/prediction/CCD cache.
 import time
 
 
+def allocation_pointer(tensor):
+    # Views may have different data_ptr() while still sharing one allocation.
+    # Treat the entire storage as owned so an offset view cannot bypass checks.
+    storage = getattr(tensor, 'untyped_storage', None)
+    return storage().data_ptr() if storage is not None else tensor.data_ptr()
+
+
 def validate_slots(slots):
     if len(slots)!=2:raise ValueError('Exactly two independent slots required')
     seen=set()
@@ -19,9 +26,9 @@ def validate_slots(slots):
             raise ValueError('One original frontend and six coherent propagations')
         if kinds.count('detector_ROI')!=6 or kinds.count('electronic_residual')!=4:
             raise ValueError('Original excluded operations still execute')
-        inputs={v.data_ptr() for v in slot['static'].values()}
+        inputs={allocation_pointer(v) for v in slot['static'].values()}
         if len(inputs)!=4 or not slot.get('prefix_owned'):raise ValueError('Owned input/prefix tensors required')
-        pointers=inputs|{v.data_ptr() for v in slot['prefix_owned'].values()}|{slot['prediction'].data_ptr()}
+        pointers=inputs|{allocation_pointer(v) for v in slot['prefix_owned'].values()}|{allocation_pointer(slot['prediction'])}
         if seen & pointers:raise ValueError('Cross-slot input/prefix/output allocation alias')
         seen.update(pointers)
         if slot.get('score_ready') is None:raise ValueError('Initial real field fence missing')
