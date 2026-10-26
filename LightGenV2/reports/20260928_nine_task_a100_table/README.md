@@ -1,5 +1,26 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-26 12:36：已实际捕获hmh新外占，只停自有，缺失链04等待空闲
+
+新03 Qwen50 r2在85/2048被守卫拒收；随后Unix1792989001与1792989080直接捕获同A100
+hmh PID2197662占22044MiB，命令为其CLIPSalNet环境的
+`20261026_full_benchmark/run_lizbaka.py --classes 8 --seed 123`。
+这是本轮03实际外占证据，不能反推旧02那次未捕获PID的原因。未signal/联系对方。
+本方worker已处于failed后的资产核验finally，核命令/UID/进程组后仅SIGINT自有2187575；
+controller2187107与worker均实际退出，私有MPS查询returncode1/no daemon。
+原cleanup在quit私有MPS后还要求整卡无进程，被仍在的外人触发异常，导致原suite_status
+停留running；保留原状态不改写，另closure_observation01证明退出/释放。
+原03根13文件2792144B已逐SHA备份，包括foreign_process_observation01/closure；
+外置日志1590B SHAf11a3e71605caada13c32d6d890148395a03ed20b9be9663229a1ba3f91def3a取回。
+
+95bcdacc9（含e84f53524/016eb9c71）只修改父队列入场等待与失败落盘：外国进程存在时
+不加载模型，12连续idle+显存后才开始；私有MPS无daemon是等待期正常状态，不用抛异常helper。
+原运行窗守卫、250ms数值/功率门和NN数学不变；失败快照在清理展开前立即落盘，cleanup异常
+不再丢失原stopped状态。3项原拒收条件/记录测试双端过。
+唯一新实验室根`a100_lab_corrected_energy_20261026_04`，controller2235404，保留相同四个
+合格点、只补余20点，当前CPU入场初始化/待外占释放，不重复启动。原03绝不复活。
+80GB两链正常继续，不受本实验室外占影响；同PID未变不反复通知。
+
 ## 2026-10-26 12:26：进程守卫一次拒收，原触发PID未留存，补齐失败快照后仅续20点
 
 实验室02的Qwen50 r1已完整2048、原SHA备份及本地能量/时间/输出审计passed，
