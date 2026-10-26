@@ -138,12 +138,18 @@ def audit(baseline,candidate,output):
                     or g['development_pool_scope']!='same_real_slot_same_stream_only' for g in graphs):
                 raise ValueError('Actual slot/stream pool evidence incomplete')
             if graphs[-1]['development_stream_pool_count']!=2:raise ValueError('Exactly separate frontend/body pools required')
-        elif method=='CPU_intraop_threads_1':
+        elif method in ('CPU_intraop_threads_1','constant_prompt_TEXT_render_once_inside_window'):
             identity=read(candidate/'identity.json')
-            if identity['CPU_intraop_threads']!=1 or any(g['independent_default_pool'] is not True for g in graphs):
+            threads=1 if method=='CPU_intraop_threads_1' else 8
+            if identity['CPU_intraop_threads']!=threads or any(g['independent_default_pool'] is not True for g in graphs):
                 raise ValueError('Isolated CPU-thread candidate required')
         else:raise ValueError('Unknown development candidate')
     if read(candidate/'async_raw_timing.json')['event_reuse']['enabled'] is not False:raise ValueError('One-change graph pool candidate required')
+    if method=='constant_prompt_TEXT_render_once_inside_window':
+        info=read(candidate/'prompt_render_identity.json');first=pool[0]['tokenizer'];a0,a1=info['first_render_interval']
+        if (info['requests']!=128 or info['renders']!=1 or not first['start']<=a0<=a1<=first['end']
+                or info['token_tensors_cached'] or info['features_cached'] or info['scores_cached']):
+            raise ValueError('Only one timed TEXT render; all original tokenizer work retained')
     if report.get('causal_DAG_accepted') is False:
         if report.get('projection_computed') is not False or report.get('clock_values_modified') is not False:
             raise ValueError('Rejected clock cannot produce a repaired projection')

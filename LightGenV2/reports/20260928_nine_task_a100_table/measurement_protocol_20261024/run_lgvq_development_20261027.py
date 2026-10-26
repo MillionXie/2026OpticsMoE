@@ -84,11 +84,17 @@ def development_adapter(source):
     return ast.fix_missing_locations(tree), counts
 
 
-def load_candidate():
+def load_candidate(once_prompt_render=False):
     tree, counts = development_adapter(WORKER.read_text(encoding='utf8'))
+    if once_prompt_render:
+        from lgvq_development_prompt_render_20261027 import prompt_render_AST
+        tree=prompt_render_AST(tree)
     candidate = types.ModuleType('lgvq_async_development_worker')
     candidate.__file__ = str(WORKER)
     exec(compile(tree, str(WORKER), 'exec'), candidate.__dict__)
+    if once_prompt_render:
+        from lgvq_development_prompt_render_20261027 import RenderOnce
+        candidate.development_render_once=RenderOnce()
     return candidate, counts
 
 
@@ -96,7 +102,8 @@ def source_map():
     candidate, _ = load_candidate()
     result = candidate.source_map()
     for name in ('run_lgvq_development_20261027.py', 'run_temporal_remainder.py',
-                 'first_tf_supplement_20261025.py', 'lgvq_development_graph_pools_20261027.py'):
+                 'first_tf_supplement_20261025.py', 'lgvq_development_graph_pools_20261027.py',
+                 'lgvq_development_prompt_render_20261027.py'):
         p = HERE/name
         result[p.relative_to(REPO).as_posix()] = sha(p)
     return result
@@ -212,7 +219,7 @@ def worker(args):
     bound = json.loads(receipt.read_text()); verify_sources(bound['commit'], bound['sources'])
     if os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:raise ValueError('Wrong development GPU')
     args.output.mkdir()
-    candidate, counts = load_candidate()
+    candidate, counts = load_candidate(args.once_prompt_render)
     reference = same_card_reference() if args.same_card_reference else None
     if reference:
         candidate.REFERENCE_RELATIVE = str(Path(reference['path']).relative_to(REPO))
@@ -222,7 +229,8 @@ def worker(args):
             ['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
         published_commit=bound['commit'], sources=bound['sources'], command=sys.argv,
         hardware_only_AST_substitution_counts=counts, original_worker_sha256=sha(WORKER),
-        performance_change=('CPU_intraop_threads_1' if args.cpu_threads==1 else
+        performance_change=('constant_prompt_TEXT_render_once_inside_window' if args.once_prompt_render else
+            'CPU_intraop_threads_1' if args.cpu_threads==1 else
             'same_slot_same_stream_graph_allocator_pool' if args.share_graph_pools else
             'event_pool_only' if args.reuse_events else 'none_LG05_baseline'),
         CPU_intraop_threads=args.cpu_threads,
@@ -271,6 +279,16 @@ def worker(args):
         torch.set_num_threads(args.cpu_threads)
         report = candidate.worker(args, guard, 2048)
         guard.check()
+        if args.once_prompt_render:
+            cache=candidate.development_render_once
+            if cache.requests!=128 or cache.renders!=1:raise ValueError('Exactly128 real tokenizer requests and one timed text render required')
+            raw=json.loads((args.output/'async_event_records.json').read_text())
+            first=raw['records'][0]['tokenizer']
+            if not first['start']<=cache.first_interval[0]<=cache.first_interval[1]<=first['end']:
+                raise ValueError('First string render must stay inside original measured first tokenizer')
+            write(args.output/'prompt_render_identity.json',dict(requests=cache.requests,renders=cache.renders,
+                first_render_interval=cache.first_interval,first_render_in_original_window=True,
+                token_tensors_cached=False,features_cached=False,scores_cached=False))
         if report.get('all_predictions_bitwise_equal') is not True:raise ValueError('Original numerical gate missing')
         write(args.output/'status.json', dict(status='complete_development_only', pid=os.getpid(),
             unix=time.time(), qualified_for_final_hybrid_table=False))
@@ -327,7 +345,8 @@ def suite(args):
                 MKL_NUM_THREADS=str(args.cpu_threads), OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
             subprocess.run(['nvidia-cuda-mps-control', '-d'], env=env, capture_output=True,
                 text=True, timeout=10, check=True); active = True
-            plan = ([('cpu_threads1', False)] if args.cpu_threads==1 else
+            plan = ([('prompt_render', False)] if args.once_prompt_render else
+                [('cpu_threads1', False)] if args.cpu_threads==1 else
                 [('graph_pool', False)] if args.share_graph_pools else
                 [('event_pool', True)] if reference else [('baseline', False), ('event_pool', True)])
             for label, reuse in plan:
@@ -342,6 +361,7 @@ def suite(args):
                 if args.share_graph_pools:command.append('--share-graph-pools')
                 if args.software_only_development:command.append('--software-only-development')
                 command.extend(['--cpu-threads',str(args.cpu_threads)])
+                if args.once_prompt_render:command.append('--once-prompt-render')
                 write(args.root/(label+'.command.json'), command)
                 with (args.root/(label+'.log')).open('x') as log:
                     child = subprocess.Popen(command, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
@@ -382,6 +402,7 @@ def main():
         help='Explicit human authorization: event-pool round only, bytewise to preserved RTX4090 baseline')
     p.add_argument('--share-graph-pools', action='store_true')
     p.add_argument('--cpu-threads', type=int, choices=[1,8], default=8)
+    p.add_argument('--once-prompt-render', action='store_true')
     p.add_argument('--software-only-development', action='store_true',
         help='Keep rejected CUDA clock evidence; report CPU-wall development only, never a repaired DAG projection')
     args = p.parse_args(); args.root = args.root.resolve()
@@ -391,19 +412,22 @@ def main():
         raise ValueError('Finite development deadline at most one hour required')
     args.pipe = '/DATA/DATA1/guest3/.cache/'+args.root.name
     args.optimize_runtime = True; args.parallel_text = False
+    if args.once_prompt_render and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools or args.reuse_events):
+        raise ValueError('Prompt-render candidate changes only constant TEXT render frequency')
     if args.share_graph_pools and (not args.same_card_reference or args.reuse_events):
         raise ValueError('Graph-pool candidate requires same-card reference and original non-reused events')
     if args.cpu_threads==1 and (not args.same_card_reference or args.share_graph_pools or args.reuse_events):
         raise ValueError('CPU-thread candidate requires same-card reference with original graph/event allocation')
-    if args.software_only_development and not (args.share_graph_pools or args.cpu_threads==1):
+    if args.software_only_development and not (args.share_graph_pools or args.cpu_threads==1 or args.once_prompt_render):
         raise ValueError('Explicit software-only scope is limited to new authorized development candidates')
     if args.phase == 'worker':
-        if args.output is None or args.output.resolve() not in [args.root/'baseline', args.root/'event_pool', args.root/'graph_pool',args.root/'cpu_threads1']:
+        if args.output is None or args.output.resolve() not in [args.root/x for x in ('baseline','event_pool','graph_pool','cpu_threads1','prompt_render')]:
             raise ValueError('Exact development leaf required')
         args.output = args.output.resolve()
         if args.reuse_events != (args.output.name == 'event_pool'):raise ValueError('Frozen A/B plan differs')
         if args.share_graph_pools != (args.output.name == 'graph_pool'):raise ValueError('Frozen graph-pool plan differs')
         if (args.cpu_threads==1) != (args.output.name=='cpu_threads1'):raise ValueError('Frozen CPU-thread plan differs')
+        if args.once_prompt_render != (args.output.name=='prompt_render'):raise ValueError('Frozen prompt-render plan differs')
     (suite if args.phase == 'suite' else worker)(args)
 
 
