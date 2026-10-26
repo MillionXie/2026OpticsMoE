@@ -143,6 +143,32 @@ controller728323经原入场门启动唯一lg_repeat01/worker728848；Unix179302
 精确argv/root匹配、原LG模型加载中，无error。有限安全界1793043783.426597为启动后6小时，
 不是ETA；未切服务器HEAD或修改活动源。这只是正式异步测量启动，尚无合格LG结果或倍率。
 
+LG唯一正式轮随后正常complete：128场共2048调用，Unix1793022303实核父728323/子728848
+均真实退出、私有MPS释放。闭合根20原文件13145853B、叶14原文件13081446B各逐SHA保全，
+外置controller日志为0B。`local_independent_async_audit01.json`通过全部2048评分与封存参考
+逐字节及四循环核对、每个原DAG节点开始复现、原功率逐行/同窗积分、排外MPS和8项源码Git闭包。
+最大功率样本年龄50.714688ms；不加载模型或CUDA重测，不放宽任何门。
+实际异步软件总墙钟3878.50706896279ms，折16视频30.300836476271797ms；
+原软件FFT窗NVML板卡诊断能量折16视频4.2736999143913685J，不冒光电混合系统能耗。
+固定六光周期反事实折16视频18.082306415504398ms、固定组件并集代理2.3827774014444456J，
+投影共同394639.9223652877、自身2101.5018287389203token/s；自身分子为每场共享prompt计一次。
+前端/前场主干CUDA事件跨度交叠共1129.1373291015625ms，只证明stream-span交叠，不证明逐kernel活跃并行。
+相对Qwen100三轮主时间，实际软件时间比43.993134×，投影时间比73.720063×；
+后者仍非物理光路测速或已测百倍，组件代理与baseline NVML加主机代理也不是同一电表模型。
+LG raw位于T06 `runs/simulation/a100_lgvq_async_20261026_01/lg_repeat01`；
+cost SHA`5e17b5f6991a584dec327fdb3082489fd1d6a04f911a3cec949a61cf4197f771`，
+原时序SHA`bda3be3bf92f0f73a1df3cd24a31569789238a61142ebe83faba4338189db54c`。
+
+最终新表封存目录为`measurement_protocol_20261024/outputs/01a061e2-6f88-7913-87f5-b632000e4c83/Temporal_async_energy_20261026_03`。
+`Temporal_三轮baseline与LG异步_时间能耗明细_20261026.xlsx`为56044B，SHA256
+`78aa12a4f013c266df79d8adae693d0597d85c16929008e0e4aa05b53996ce96`。
+三sheet含24实验室轮、5已接受租机轮及LG实际/反事实分栏、pooled共同/自身速率、阶段与倍率，
+369项原始文件/收据/audit索引逐SHA/size再核；302个保存后公式缓存独立复算、输入修改复原及逐sheet视觉检查通过。
+`raw_file_index.csv` SHA`3d8c5992f8ecde5d371a81bd4ae69ba7400d80482394686487161823121ce206`。
+`saved_workbook_audit.json`及open-x `delivery_manifest.json`封存；_01/_02仅版式QA候选，不作正式交付，
+旧rental50成品和所有raw/PT均未覆盖。builder只修长标签/路径换行、数值对齐和补充原资源跨度预览，
+6项布局及6项缓存审计纯测试通过，真实author/export/render亦已验证，不改变测量合同或活动运行源。
+
 用户新增要求正式测LG异步并行。先准备CPU分词提前一场、双缓冲图像/文字前端与输入适配、
 有界输出队列和降低逐场同步；不改评分数学、不缓存embedding/评分，不动活动baseline源，
 也不与其GPU窗共测。新`lgvq_async_trace_contract_20261026.py`目前只准备数据契约和关键路径

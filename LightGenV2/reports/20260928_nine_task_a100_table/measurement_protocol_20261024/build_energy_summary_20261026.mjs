@@ -92,8 +92,8 @@ export async function build(input,out){
     for(const [c,f] of [['E',`=${sums('F')}*1000/${sums('E')}*16`],['F',`=E${r}/64`],['G',`=${sums('G')}/${sums('E')}*16`],['H',`=G${r}/64`],['I',`=${sums('H')}/${sums('F')}`],['K',`=${sums('E')}`]])formula(summary,c+r,f);
     if(g.pooled_native_tokens_per_s===null)summary.getRange('J'+r).values=[['不适用']];else formula(summary,'J'+r,`=${sums('I')}/${sums('F')}`);
   }
-  summary.getRange('A1:A1').format.columnWidth=26;summary.getRange('B1:B1').format.columnWidth=18;
-  summary.getRange('C1:D1').format.columnWidth=11;summary.getRange('E1:M1').format.columnWidth=18;
+  summary.getRange('A1:A1').format.columnWidth=29;summary.getRange('B1:B1').format.columnWidth=24;
+  summary.getRange('C1:E1').format.columnWidth=21;summary.getRange('F1:M1').format.columnWidth=19;
   summary.getRange('E7:J18').setNumberFormat('#,##0.000');summary.getRange('K7:K18').setNumberFormat('#,##0');
   const last=6+plan.groups.length;
   put(summary,last+2,[['共同速率＝合有效token数÷合保留秒数。自身token定义因模型不同不能互换。CLIP/YOLO自身文字token不适用。']]);
@@ -106,12 +106,12 @@ export async function build(input,out){
     ['实际FFT窗板卡能量',lg.measured_software_board_FFT_energy16_j,'J/16视频','只作原软件诊断，不借作光路代理能量'],
     ['固定组件代理能量',lg.fixed_optics_component_proxy_energy16_j,'J/16视频','控制器、光器件、板卡各时间并集，重叠不重复'],
     ['投影共同有效token速率',lg.projected_common_tokens_per_s,'tokens/s','共同Qwen有效token分子'],
-    ['投影自身有效token速率',lg.projected_native_tokens_per_s,'tokens/s',lg.native_token_scope],
-    ['下一场前端与上场主干交叠',lg.actual_stream_span_overlap_ms,'ms，完整128场','CUDA事件stream跨度，不证明逐kernel活跃并行']];
+    ['投影自身有效token速率',lg.projected_native_tokens_per_s,'tokens/s','每16视频光场共享prompt实际词编号计一次，不复制16份'],
+    ['前端与上场主干交叠',lg.actual_stream_span_overlap_ms,'ms/128场','CUDA事件stream跨度，不证明逐kernel活跃并行']];
   put(rounds,lr+1,values);rounds.getRange(`B${lr+1}:B${lr+7}`).setNumberFormat('#,##0.000000');
   title(summary,23,'LG异步：软件实测与固定光周期反事实分开报告',11);
   put(summary,25,[['口径','时间/ms每16视频','能量/J每16视频','共同tokens/s','自身tokens/s']]);header(summary,25,5);
-  put(summary,26,[['实际异步软件',null,null,'不套用光路分母','不套用光路分母'],['固定光周期反事实',null,null,null,null]]);
+  put(summary,26,[['实际异步软件',null,null,'不适用此投影分母','不适用此投影分母'],['固定光周期反事实',null,null,null,null]]);
   formula(summary,'B26',`='轮次原值'!B${lr+1}`);formula(summary,'C26',`='轮次原值'!B${lr+3}`);
   formula(summary,'B27',`='轮次原值'!B${lr+2}`);formula(summary,'C27',`='轮次原值'!B${lr+4}`);
   formula(summary,'D27',`='轮次原值'!B${lr+5}`);formula(summary,'E27',`='轮次原值'!B${lr+6}`);
@@ -141,13 +141,24 @@ export async function build(input,out){
   put(summary,63,[['lab首网络节点为原首TF，YOLO为首网络层。租机没有独立首TF记录，不伪造该分解。']]);
   put(summary,64,[['完整GPU模型包括原图像前端、文字embedding、全部神经网络、完整词表和任务头，不只算网络主干。']]);
   put(summary,66,[['LG GPU各资源跨度（完整128场）','原CUDA事件跨度合计/ms','性质']]);header(summary,66,3);
-  let sr=67;for(const [kind,value] of Object.entries(lg.GPU_resource_span_totals_NOT_additive))put(summary,sr++,[[kind,value,'有交叠，不相加冒墙钟或能量分解']]);
+  const resourceLabels={optical_simulation:'软件光传播FFT',electronic_residual:'电子残差',electronics:'融合、merger及任务头',detector_ROI:'探测器ROI',frontend:'图文前端',H2D:'原始H2D搬运'};
+  let sr=67;for(const [kind,value] of Object.entries(lg.GPU_resource_span_totals_NOT_additive))put(summary,sr++,[[resourceLabels[kind]??kind,value,'跨度有交叠，不能直接相加']]);
   const indexRows=data.raw_file_index.map(r=>[r.role,r.local_path,r.remote_path??'不适用，本地生成',r.bytes,r.sha256,'原SHA/size重核']);
   put(index,1,[['文件类型','本地绝对路径','远端原绝对路径','字节数','SHA256','核验']]);put(index,2,indexRows);header(index,1,6);
   index.freezePanes.freezeRows(1);index.freezePanes.freezeColumns(1);
   index.getRange('A1:A1').format.columnWidth=29;index.getRange('B1:C1').format.columnWidth=100;
   index.getRange('D1:D1').format.columnWidth=17;index.getRange('E1:E1').format.columnWidth=68;index.getRange('F1:F1').format.columnWidth=23;
   index.getRange(`D2:D${indexRows.length+1}`).setNumberFormat('#,##0');
+  // Fit actual multi-table column widths, long provenance paths and N/A markers.
+  summary.getRange('C7:K18').format.horizontalAlignment='right';
+  summary.getRange('B26:E27').format.horizontalAlignment='right';
+  summary.getRange('B26:E26').format.wrapText=true;summary.getRange('A26:E26').format.rowHeight=40;
+  summary.getRange('D49:M58').format.horizontalAlignment='right';
+  summary.getRange('B67:B72').setNumberFormat('0.000');summary.getRange('B67:B72').format.horizontalAlignment='right';
+  rounds.getRange(`C2:W${plan.rounds.length+1}`).format.horizontalAlignment='right';
+  rounds.getRange(`X2:X${plan.rounds.length+1}`).format={wrapText:true,rowHeight:66};
+  index.getRange(`B2:C${indexRows.length+1}`).format={wrapText:true,rowHeight:66};
+  index.getRange(`D2:D${indexRows.length+1}`).format.horizontalAlignment='right';
   w.recalculate();
   for(const g of plan.groups){const r=g.summaryRow;for(const [cell,value] of [['E',g.time16_ms],['G',g.energy16_j],['I',g.pooled_common_tokens_per_s]])close(summary.getRange(cell+r).values[0][0],value);}
   const g=plan.groups[0],source=rounds.getRange('F'+g.lo),original=source.values[0][0],before=summary.getRange('E'+g.summaryRow).values[0][0];
@@ -161,7 +172,7 @@ export async function build(input,out){
   console.log((await w.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:1400})).ndjson);
   await fs.mkdir(out);const target=path.join(out,'Temporal_三轮baseline与LG异步_时间能耗明细_20261026.xlsx');
   await (await SpreadsheetFile.exportXlsx(w)).save(target);
-  for(const [sheetName,range,name] of [['结果与阶段',`A2:K${last}`,'summary'],['结果与阶段','A23:F43','LG'],['结果与阶段','A46:M58','stages'],['轮次原值','A1:M8','rounds'],['原始文件索引','A1:F5','index']]){
+  for(const [sheetName,range,name] of [['结果与阶段',`A2:K${last}`,'summary'],['结果与阶段','A23:F43','LG'],['结果与阶段','A46:M58','stages'],['结果与阶段','A61:K72','LG_resources'],['轮次原值','A1:M8','rounds'],['轮次原值',`A${lr}:H${lr+7}`,'LG_inputs'],['原始文件索引','A1:F5','index']]){
     const preview=await w.render({sheetName,range,scale:1.3,format:'png'});await fs.writeFile(path.join(out,name+'.png'),new Uint8Array(await preview.arrayBuffer()));
   }
   const csv=x=>'"'+String(x??'').replaceAll('"','""')+'"';
