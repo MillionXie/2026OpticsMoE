@@ -66,7 +66,8 @@ def setup(root):
     if not (pydeps/'pybind11').exists():
         run([sys.executable,'-m','pip','install','--disable-pip-version-check','--no-input','--target',pydeps,'--no-deps',
              'cmake==3.30.9','ninja==1.11.1.4','pybind11==2.13.6'],timeout=180)
-    cmake=pydeps/'cmake/data/bin/cmake';ninja=pydeps/'ninja/data/bin/ninja'
+    cmake=pydeps/'cmake/data/bin/cmake';ninja=pydeps/'bin/ninja'
+    assert ninja.exists()
     utf_archive=downloads/'utf8proc-v2.10.0.tar.gz'
     receipts.append(download('https://codeload.github.com/JuliaStrings/utf8proc/tar.gz/refs/tags/v2.10.0',utf_archive))
     extract(utf_archive,DEPS/'utf8proc_source');utf_src=next((DEPS/'utf8proc_source').iterdir())
