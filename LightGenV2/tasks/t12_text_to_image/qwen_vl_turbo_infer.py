@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import gc
+import hashlib
 import os
 from pathlib import Path
 
@@ -77,6 +78,8 @@ def main():
     write_json(args.output.with_suffix('.json'),{'input_image':str(args.image),'input_sha256':sha256(args.image),
           'prompt':args.prompt,'seed':args.seed,'checkpoint_sha256':sha256(args.checkpoint),
           'training_source_commit':state['git']['published_source_commit'],
+          'qwen_hidden_shape':list(hidden.shape),
+          'qwen_hidden_sha256':hashlib.sha256(hidden.contiguous().view(torch.uint8).numpy().tobytes()).hexdigest(),
           'training_shared_noise_seed':cfg.get('shared_noise_seed'),'seed_diversity_validated':False,
           'qwen':str(args.qwen),'sd_turbo':str(args.sd),'output_sha256':sha256(args.output),
           'model_input':'RGB + text + Gaussian noise; no GT, masks, dataset lookup or reference VAE',
