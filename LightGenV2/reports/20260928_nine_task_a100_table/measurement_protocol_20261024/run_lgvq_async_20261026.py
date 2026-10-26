@@ -238,6 +238,7 @@ def suite(args):
         if args.optimize_runtime:
             env['CUDA_MODULE_LOADING']='LAZY'
             command.append('--optimize-runtime')
+        if args.parallel_text:command.append('--parallel-text')
         write(args.root/'lg_repeat01.command.json',command)
         with (args.root/'lg_repeat01.log').open('x') as log:
             child=subprocess.Popen(command,cwd=REPO,env=env,stdin=subprocess.DEVNULL,
@@ -273,7 +274,8 @@ def main():
     parser.add_argument('--after-suite',type=Path);parser.add_argument('--deadline',type=float,required=True)
     parser.add_argument('--source-receipt-sha256')
     parser.add_argument('--optimize-runtime',action='store_true',
-                        help='Fresh candidate: LAZY loading, no forced GC/cache purge, same-field text branch, detailed phases')
+                        help='Fresh candidate: LAZY loading, no forced GC/cache purge, detailed phases')
+    parser.add_argument('--parallel-text',action='store_true',help='Optional independent same-field text stream; not assumed faster')
     args=parser.parse_args();validate_args(args)
     (suite if args.phase=='suite' else worker)(args)
 

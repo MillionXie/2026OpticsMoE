@@ -115,6 +115,8 @@ def worker(args, guard, N):
     guard.check()
     output = args.output
     optimized = bool(getattr(args, 'optimize_runtime', False))
+    parallel_text = bool(getattr(args, 'parallel_text', False))
+    if parallel_text and not optimized:raise ValueError('Independent text stream requires the explicit optimized candidate')
     if optimized and os.environ.get('CUDA_MODULE_LOADING') != 'LAZY':
         raise ValueError('Revised optimized runtime selects LAZY before worker CUDA initialization')
     frozen = source_map()
@@ -141,9 +143,9 @@ def worker(args, guard, N):
     base.write(output/'input_files.json', [dict(**r, bytes=Path(r['video_path']).stat().st_size,
         sha256=sha(r['video_path'])) for r in files])
     restore_constants, constants = approved.prepare_graph_constants(model)
-    parts = capture.scoring_partition(model, score, approved.hoisted, text_parallel=optimized)
+    parts = capture.scoring_partition(model, score, approved.hoisted, text_parallel=parallel_text)
     prefix_fn, tail_fn, partition = parts[:3]
-    text_fn = parts[3] if optimized else None
+    text_fn = parts[3] if parallel_text else None
     base.write(output/'async_identity.json', dict(status='prepared_for_actual_execution', sources=frozen,
         gpu_uuid=GPU, actual_visible_multiprocessors=108, power_limit_w=power_limit,
         published_commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT'],
@@ -152,11 +154,11 @@ def worker(args, guard, N):
         unique_videos=512, video_calls=N, fields=128, cycles=4, constants=constants,
         scoring_partition=partition, first_three_eager_real_fields_retained=True,
         two_independent_real_capture_fields_retained=True, dummy_forwards=0,
-        optimized_runtime=optimized, detailed_electronics_phases=optimized,
+        optimized_runtime=optimized, detailed_electronics_phases=optimized, same_field_parallel_text=parallel_text,
         CUDA_MODULE_LOADING=os.environ.get('CUDA_MODULE_LOADING','not_explicitly_set'),
         original_full_field_coherent_six_passes=True, fixed_optics_projection_pending=True))
     fs, bs = torch.cuda.Stream(), torch.cuda.Stream()
-    ts = torch.cuda.Stream() if optimized else fs
+    ts = torch.cuda.Stream() if parallel_text else fs
     meter = approved.hoisted.minimal.NoInnerTimer()
     outputs = []; records = []; slots = []; sampler = None; restore_eager = None
     shared_preparation = [None]
@@ -191,7 +193,7 @@ def worker(args, guard, N):
             input_ids=token['input_ids'].tolist(), attention_mask=token['attention_mask'].tolist())
     def prefix(current):
         batch = (optimization.parallel_front(torch, front, position, current, model, text_fn, ts)
-                 if optimized else base.native_lg_front(front, position, current, meter, fs))
+                 if parallel_text else base.native_lg_front(front, position, current, meter, fs))
         return prefix_fn(model, **batch, optical_enabled=True)
     def tail(prepared):
         return tail_fn(model, prepared, optical_enabled=True)
@@ -291,7 +293,7 @@ def worker(args, guard, N):
         energy = interval_energy([(host_start+offset, host_end+offset)], samples, host_w=0.)
         timing = dict(status='actual_software_complete_projection_pending', video_calls=N,
             unique_videos=512, fields=128, cycles=4, actual_async_software_wall_ms=wall_ms,
-            detailed_electronics_phases=optimized, optimized_runtime=optimized,
+            detailed_electronics_phases=optimized, optimized_runtime=optimized, same_field_parallel_text=parallel_text,
             actual_async_software_time16_ms=wall_ms/128,
             common_effective_tokens=913408, actual_software_common_tokens_s=913408/(wall_ms/1000),
             origin_host_clock_bracket=[clock_before, clock_after],
