@@ -94,7 +94,7 @@ Qwen实际输入指令不因教师描述修订而改变。缓存RGB改存无损u
 完整覆盖阶段已完成3遍TRAIN：best为step2160，固定144 VAL的平均PSNR
 21.0465dB（背景21.2968、目标20.8280、联合21.0147）；错配整组条件后16.4111dB。
 因此正确条件已有明确影响，但仍存在模糊和目标属性偏差，尚不称为最终可用版本。
-后续`configs/qwen_vl_turbo_semantic_refine_20261026.json`使用相同TRAIN/VAL及缓存继续：
+清晰度微调`configs/qwen_vl_turbo_semantic_refine_20261026.json`使用相同TRAIN/VAL及缓存继续：
 解冻UNet已有最后一级decoder，加入TRAIN前景CLIP图文／图像语义约束及渐进的
 full-frame＋前景PatchGAN。正图文对按逐样本配对计算，不平均无关的B×B相似度。
 这是借鉴pix2pix-Turbo损失家族的自定义训练，并非照搬其trainer；相关官方源码
@@ -102,6 +102,25 @@ full-frame＋前景PatchGAN。正图文对按逐样本配对计算，不平均�
 GT框／mask仅生成TRAIN损失裁剪，Qwen和生成器forward不接收它们。
 CLIP和discriminator仅用于训练，不进入推理图；解冻已有层不增加部署参数。
 微调仍以VAL PSNR选best，附LPIPS和三模式结果，TEST保持封存。
+
+这轮864更新（再遍历TRAIN一次）已完成，run为
+`runs/simulation/qwen_vl_turbo_semantic_refine_20261026`。VAL选中step432，
+PSNR20.730876dB、LPIPS0.346143；相同输入／权重的微调前复算为21.046506dB、
+LPIPS0.358324。感知指标略改善、PSNR下降，图像仍有目标形态错误和纹理缺失，
+**尚未达到可用基线的质量要求，不因新run完成而替换原best或进入光学压缩。**
+推理结构／总参数仍为3,047,511,259；本轮可训练71,651,264。
+692,449参数判别器和151,277,313参数语义CLIP均仅训练使用，不计部署。
+同样本完整144条逐图指标、best/last和原生256 PNG保留在服务器run；
+`overview/full_cohort_summary.json`与固定九类×模式对照由
+`reports/qwen_vl_turbo_electronic_20261026/summarize_full.py`生成，不挑选高分样本。
+
+`qwen_vl_turbo_diagnose.py`还在固定18 TRAIN诊断对上对比原生目标描述CLIP条件：
+公开未微调UNet的PSNR12.2898/LPIPS0.7746，微调后UNet为20.2380/0.3573，
+同一微调头接Qwen条件为23.0069/0.2746。公开生成先验可以给出清晰图像，
+但其构图与配对GT不同；微调后接原生文字条件也存在形变，因此不能把失败唯一归因于
+Qwen→CLIP接口，或把原生教师样图当作本模型推理结果。
+这些额外目标描述只来自TRAIN、无优化，不作为VAL/TEST性能或严格因果消融。
+结果位于该run的`conditioning_probe`，与正式图文输入结果分开保存。
 
 9月21—22日旧cleanrender GAN、parallel optical、lamp场景／半Qwen替换、商品修复、
 chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与原7093ec4608

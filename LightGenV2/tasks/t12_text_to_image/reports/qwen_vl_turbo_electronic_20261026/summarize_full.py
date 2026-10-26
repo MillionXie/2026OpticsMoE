@@ -69,6 +69,10 @@ def main():
     for j,i in enumerate((2,5,8)):
         joint.paste(panel.crop((0,316*i,1024,316*(i+1))),(0,316*j))
     joint.save(args.output/'fixed_joint_preview.png')
+    three=Image.new('RGB',(1024,316*3),'white')
+    for j,i in enumerate((0,4,8)):
+        three.paste(panel.crop((0,316*i,1024,316*(i+1))),(0,316*j))
+    three.save(args.output/'fixed_three_mode_preview.png')
     records=[]
     for run,report in ((args.before,before),(args.after,after)):
         records.append({'run':str(run.resolve()),'best_step':report['best_step'],
