@@ -22,6 +22,8 @@ class WorkerIntegrationTests(unittest.TestCase):
         changed = reference.copy(); changed[0, 0] = -0.
         self.assertTrue(np.array_equal(reference, changed))
         with self.assertRaisesRegex(ValueError, 'bitwise'):worker.validate_predictions(changed, reference)
+        changed=reference.copy();changed[32,0]=-0.
+        with self.assertRaisesRegex(ValueError,'cycles'):worker.validate_predictions(changed,changed.copy())
 
     def test_probe_or_wrong_dtype_cannot_qualify(self):
         with self.assertRaises(ValueError):worker.worker(None, None, 224)

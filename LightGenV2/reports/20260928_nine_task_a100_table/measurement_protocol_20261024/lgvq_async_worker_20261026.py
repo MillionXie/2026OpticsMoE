@@ -56,7 +56,7 @@ def validate_predictions(array, expected):
     if (array.dtype != np.float32 or expected.dtype != np.float32
             or not np.isfinite(array).all() or array.tobytes() != expected.tobytes()):
         raise ValueError('Every score must be bitwise equal to the sealed reference')
-    if not all(np.array_equal(array[:32], array[i:i+32]) for i in (32, 64, 96)):
+    if not all(array[:32].tobytes()==array[i:i+32].tobytes() for i in (32, 64, 96)):
         raise ValueError('Four original 512-video cycles differ')
 
 
