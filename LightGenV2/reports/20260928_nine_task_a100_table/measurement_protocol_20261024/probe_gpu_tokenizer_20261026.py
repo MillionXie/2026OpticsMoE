@@ -2,7 +2,7 @@
 from __future__ import annotations
 import argparse,csv,hashlib,importlib.metadata,json,os,pathlib,shutil,statistics,subprocess,sys,tarfile,time,urllib.request
 P=pathlib.Path
-HERE=P(__file__).resolve().parent;REPO=HERE.parents[3]
+HERE=P(__file__).resolve().parent;REPO=P(os.environ.get('TOKENIZER_PROBE_REPO',str(HERE.parents[3]))).resolve()
 GPU='GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d'
 BLOCKED='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
 DEPS=P('/DATA/DATA1/guest3/.cache/tokenizer_gpu_probe_20261026')
@@ -196,7 +196,8 @@ def bench(root):
          'scope':'same raw strings to equal padded int64 input_ids and attention_mask; includes required transfers and synchronization',
          'synthetic_long_case_is_not_original_LGVQ':True,'CPU_affinity':sorted(os.sched_getaffinity(0)),'system_load':os.getloadavg(),
          'versions':{x:importlib.metadata.version(x) for x in ('torch','transformers','tokenizers','numpy')},
-         'third_party_commit':setup_data['third_party_commit'],'source_sha256':sha(__file__),'source_commit':run(['git','rev-parse','HEAD'],cwd=REPO).strip(),
+         'third_party_commit':setup_data['third_party_commit'],'source_sha256':sha(__file__),'source_commit':os.environ.get('TOKENIZER_PROBE_SOURCE_COMMIT'),
+         'repository_HEAD':run(['git','rev-parse','HEAD'],cwd=REPO).strip(),
          'device_observations':observations,'results':results})
     print(json.dumps({'status':'complete','results':results}),flush=True)
 
