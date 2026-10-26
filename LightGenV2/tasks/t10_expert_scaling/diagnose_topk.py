@@ -81,6 +81,8 @@ def main():
     ap.add_argument('--margin-weight', type=float, default=0.)
     ap.add_argument('--capture-weight', type=float)
     ap.add_argument('--selection-metric', choices=['macro_nll', 'accuracy'], default='macro_nll')
+    ap.add_argument('--route-audit', action='store_true', help='Save selected per-sample train/validation routes')
+    ap.add_argument('--defer-test', action='store_true', help='Finish validation selection without reading TEST')
     a = ap.parse_args()
     if a.out.resolve() == a.source.resolve():
         raise ValueError('Source runs are immutable')
@@ -127,9 +129,17 @@ def run(a):
     optimizer.load_state_dict(state['optimizer'])
     origin_epoch = int(state['epoch'])
     del state
-    commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+    host_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+    commit = os.environ.get('T10_SOURCE_COMMIT', host_commit)
+    if commit != host_commit:
+        root = Path(subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], text=True).strip())
+        for filename in ('diagnose_topk.py', 'train.py', 'model.py', 'plan.py'):
+            path = Path(__file__).with_name(filename).resolve()
+            blob = subprocess.check_output(['git', 'show', f'{commit}:{path.relative_to(root).as_posix()}'])
+            if blob != path.read_bytes():
+                raise ValueError(f'Published-source mismatch: {path}')
     metadata = copy.deepcopy(original)
-    metadata.update(git_commit=commit, protocol=cfg, pid=os.getpid(), device=torch.cuda.get_device_name(),
+    metadata.update(git_commit=commit, host_head=host_commit, protocol=cfg, pid=os.getpid(), device=torch.cuda.get_device_name(),
                     cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'),
                     source_run=str(a.source.resolve()), source_last_sha256=sha(a.source/'last_checkpoint.pt'),
                     source_best_sha256=result['checkpoint_sha256'],
@@ -222,13 +232,13 @@ def run(a):
         save(a.out/'status.json', dict(state='training', epoch=epoch, total_epochs=origin_epoch+a.epochs,
                                        best_epoch=best_epoch, pid=os.getpid()))
         print(json.dumps(entry), flush=True)
-    if a.hard_balance_weight:
+    if a.hard_balance_weight or a.route_audit:
         save_route_audit(ema, splits['val'], a.out/'last_val_routes.npz')
     chosen = torch.load(a.out/'best_checkpoint.pt', map_location='cpu', weights_only=False)
     ema.load_state_dict(chosen['model'])
     train_metrics, _ = evaluate(ema, splits['train'], a.batch)
     val_metrics, _ = evaluate(ema, splits['val'], a.batch)
-    if a.hard_balance_weight:
+    if a.hard_balance_weight or a.route_audit:
         for split in ('train', 'val'):
             save_route_audit(ema, splits[split], a.out/f'selected_{split}_routes.npz')
     selected = dict(best_epoch=best_epoch, train=train_metrics, val=val_metrics,
@@ -238,6 +248,9 @@ def run(a):
     lock = a.out/'test_selection_lock.json'
     save(lock, dict(selection=f'validation_{a.selection_metric}_including_original_best',
                     runs=[dict(run_dir=str(a.out.resolve()), checkpoint_sha256=selected['checkpoint_sha256'])]))
+    if a.defer_test:
+        save(a.out/'status.json', dict(state='validation_complete_test_deferred', pid=os.getpid(), **selected))
+        return
     cmd = [sys.executable, '-m', 'LightGenV2.tasks.t10_expert_scaling.evaluate_test',
            '--run', str(a.out), '--data', str(cache), '--selection-lock', str(lock), '--batch', str(a.batch)]
     if a.test_source:
