@@ -52,5 +52,12 @@ class DevelopmentTests(unittest.TestCase):
         self.assertNotIn('allclose', source)
         self.assertIn("[('baseline', False), ('event_pool', True)]", source)
 
+    def test_CPU_thread_candidate_is_isolated(self):
+        source = Path(dev.__file__).read_text(encoding='utf8')
+        self.assertIn('choices=[1,8], default=8',source)
+        self.assertIn('torch.set_num_threads(args.cpu_threads)',source)
+        self.assertIn('not args.same_card_reference or args.share_graph_pools or args.reuse_events',source)
+        self.assertIn("[('cpu_threads1', False)]",source)
+
 
 if __name__ == '__main__':unittest.main()

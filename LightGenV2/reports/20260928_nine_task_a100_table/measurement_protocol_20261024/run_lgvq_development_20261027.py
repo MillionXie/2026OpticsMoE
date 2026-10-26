@@ -222,8 +222,10 @@ def worker(args):
             ['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
         published_commit=bound['commit'], sources=bound['sources'], command=sys.argv,
         hardware_only_AST_substitution_counts=counts, original_worker_sha256=sha(WORKER),
-        performance_change=('same_slot_same_stream_graph_allocator_pool' if args.share_graph_pools else
+        performance_change=('CPU_intraop_threads_1' if args.cpu_threads==1 else
+            'same_slot_same_stream_graph_allocator_pool' if args.share_graph_pools else
             'event_pool_only' if args.reuse_events else 'none_LG05_baseline'),
+        CPU_intraop_threads=args.cpu_threads,
         reference_policy='same_card_development_bitwise' if reference else 'original_sealed_A100_bitwise_unchanged',
         same_card_reference=reference,
         qualified_for_final_hybrid_table=False, not_A100_speedup_evidence=True,
@@ -266,7 +268,7 @@ def worker(args):
     try:
         guard.check()
         import torch
-        torch.set_num_threads(8)
+        torch.set_num_threads(args.cpu_threads)
         report = candidate.worker(args, guard, 2048)
         guard.check()
         if report.get('all_predictions_bitwise_equal') is not True:raise ValueError('Original numerical gate missing')
@@ -321,11 +323,12 @@ def suite(args):
             env = dict(os.environ, CUDA_VISIBLE_DEVICES=GPU, CUDA_DEVICE_ORDER='PCI_BUS_ID',
                 CUDA_MPS_PIPE_DIRECTORY=args.pipe, CUDA_MPS_LOG_DIRECTORY=str(args.root/'mps_logs'),
                 CUDA_MPS_ACTIVE_THREAD_PERCENTAGE='100', CUDA_MODULE_LOADING='LAZY',
-                HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', OMP_NUM_THREADS='8',
-                MKL_NUM_THREADS='8', OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
+                HF_HUB_OFFLINE='1', TRANSFORMERS_OFFLINE='1', OMP_NUM_THREADS=str(args.cpu_threads),
+                MKL_NUM_THREADS=str(args.cpu_threads), OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
             subprocess.run(['nvidia-cuda-mps-control', '-d'], env=env, capture_output=True,
                 text=True, timeout=10, check=True); active = True
-            plan = ([('graph_pool', False)] if args.share_graph_pools else
+            plan = ([('cpu_threads1', False)] if args.cpu_threads==1 else
+                [('graph_pool', False)] if args.share_graph_pools else
                 [('event_pool', True)] if reference else [('baseline', False), ('event_pool', True)])
             for label, reuse in plan:
                 if time.time() >= args.deadline-60:raise TimeoutError('No new round beyond deadline')
@@ -338,6 +341,7 @@ def suite(args):
                 if reference:command.append('--same-card-reference')
                 if args.share_graph_pools:command.append('--share-graph-pools')
                 if args.software_only_development:command.append('--software-only-development')
+                command.extend(['--cpu-threads',str(args.cpu_threads)])
                 write(args.root/(label+'.command.json'), command)
                 with (args.root/(label+'.log')).open('x') as log:
                     child = subprocess.Popen(command, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
@@ -377,6 +381,7 @@ def main():
     p.add_argument('--same-card-reference', action='store_true',
         help='Explicit human authorization: event-pool round only, bytewise to preserved RTX4090 baseline')
     p.add_argument('--share-graph-pools', action='store_true')
+    p.add_argument('--cpu-threads', type=int, choices=[1,8], default=8)
     p.add_argument('--software-only-development', action='store_true',
         help='Keep rejected CUDA clock evidence; report CPU-wall development only, never a repaired DAG projection')
     args = p.parse_args(); args.root = args.root.resolve()
@@ -388,14 +393,17 @@ def main():
     args.optimize_runtime = True; args.parallel_text = False
     if args.share_graph_pools and (not args.same_card_reference or args.reuse_events):
         raise ValueError('Graph-pool candidate requires same-card reference and original non-reused events')
-    if args.software_only_development and not args.share_graph_pools:
-        raise ValueError('Explicit software-only scope is limited to new graph-pool development candidate')
+    if args.cpu_threads==1 and (not args.same_card_reference or args.share_graph_pools or args.reuse_events):
+        raise ValueError('CPU-thread candidate requires same-card reference with original graph/event allocation')
+    if args.software_only_development and not (args.share_graph_pools or args.cpu_threads==1):
+        raise ValueError('Explicit software-only scope is limited to new authorized development candidates')
     if args.phase == 'worker':
-        if args.output is None or args.output.resolve() not in [args.root/'baseline', args.root/'event_pool', args.root/'graph_pool']:
+        if args.output is None or args.output.resolve() not in [args.root/'baseline', args.root/'event_pool', args.root/'graph_pool',args.root/'cpu_threads1']:
             raise ValueError('Exact development leaf required')
         args.output = args.output.resolve()
         if args.reuse_events != (args.output.name == 'event_pool'):raise ValueError('Frozen A/B plan differs')
         if args.share_graph_pools != (args.output.name == 'graph_pool'):raise ValueError('Frozen graph-pool plan differs')
+        if (args.cpu_threads==1) != (args.output.name=='cpu_threads1'):raise ValueError('Frozen CPU-thread plan differs')
     (suite if args.phase == 'suite' else worker)(args)
 
 
