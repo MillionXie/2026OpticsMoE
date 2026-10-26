@@ -78,14 +78,20 @@ def openmoji(root,limit):
     for p in model._optical_paths():p.set_phase_dropout_active(False)
     initial=state_sha(model);data=OpenMojiEditingDataset(cfg.test_manifest,cfg,load_prompt_cache(cfg.prompt_cache_path));assert len(data)==1000
     phases={stage:sha(session/'phase'/(stage+'.bmp')) for stage in runtime.STAGES}
-    accumulator=metric_module.MetricAccumulator();rows=[];evidence=[];t0=time.monotonic()
+    accumulator=metric_module.MetricAccumulator();rows=[];evidence=[];camera_readback={};t0=time.monotonic()
     with torch.inference_mode():
         for i in range(limit):
             record=data.records[i];sid=record['sample_id'];batch=collate_samples([data[i]]);frames={};hashes={}
             for stage in runtime.STAGES:
                 p=session/'ccd'/stage/(sid+'.png');rec=read(p.with_suffix('.json'))
                 assert rec['sample_id']==sid and rec['phase_sha256']==phases[stage] and rec['no_photometric_normalization']
-                assert rec['exposure']['exposure_us']==contract['exposure_us'] if 'exposure_us' in rec['exposure'] else True
+                # Preserve the camera's ACTUAL readback, not the requested
+                # rounded value: the original receipts report 20002 us for
+                # a 20000-us request. Require exact constancy within a plane.
+                observed=dict(exposure=rec['exposure'],wait_ms=rec['wait_ms'])
+                if stage in camera_readback:assert observed==camera_readback[stage],('Camera readback changed',sid,stage)
+                else:camera_readback[stage]=observed
+                assert rec['wait_ms']==contract['wait_ms']
                 array=np.array(Image.open(p),dtype=np.float32);assert array.shape==(478,478)
                 frames[stage]=torch.from_numpy(array[None]/255);hashes[stage]=sha(p)
             with runtime.OpticalBoundary(model,frames) as tap:output=model(batch['source_image'],batch['prompt_hidden'])
@@ -99,7 +105,7 @@ def openmoji(root,limit):
             for k,v in values.items():
                 if abs(metrics[group][k]-v)>2e-6:differences.append(dict(group=group,metric=k,replayed=metrics[group][k],archived=v))
     assert initial==state_sha(model) and sha(checkpoint)==contract['checkpoint_sha256']
-    return dict(task='openmoji',expected_samples=1000,completed_samples=limit,metrics=metrics,rows=rows,checkpoint_sha256=contract['checkpoint_sha256'],weights_unchanged_sha256=initial,test_manifest_sha256=contract['test_manifest_sha256'],phase_sha256=phases,input_evidence=evidence,source_modules=sources([runtime,modeling,metric_module]),aggregate_validation_passed=not differences,aggregate_differences=differences,elapsed_seconds=time.monotonic()-t0)
+    return dict(task='openmoji',expected_samples=1000,completed_samples=limit,metrics=metrics,rows=rows,checkpoint_sha256=contract['checkpoint_sha256'],weights_unchanged_sha256=initial,test_manifest_sha256=contract['test_manifest_sha256'],phase_sha256=phases,requested_camera_exposure_us=contract['exposure_us'],observed_camera_settings=camera_readback,input_evidence=evidence,source_modules=sources([runtime,modeling,metric_module]),aggregate_validation_passed=not differences,aggregate_differences=differences,elapsed_seconds=time.monotonic()-t0)
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--task',choices=['salicon','openmoji'],required=True);p.add_argument('--limit',type=int);a=p.parse_args()
