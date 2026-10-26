@@ -9,6 +9,7 @@
   "use_all_pairs": true,
   "pilot_pairs_per_category_mode": 2,
   "uint8_image_cache": true,
+  "export_png": true,
   "explicit_category_teacher": true,
   "clip_cache_batch_size": 16,
   "adapter_hidden": 256,

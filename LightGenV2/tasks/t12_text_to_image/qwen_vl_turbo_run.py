@@ -199,7 +199,7 @@ def tensor_image(tensor):
 
 
 @torch.no_grad()
-def evaluate(model, payload, indices, device, output, label, ablation=False, native_teacher=False):
+def evaluate(model, payload, indices, device, output, label, ablation=False, native_teacher=False, export_png=False):
     model.eval()
     errors, latent_errors = [], []
     cell = 256
@@ -224,6 +224,12 @@ def evaluate(model, payload, indices, device, output, label, ablation=False, nat
         psnr = -10*np.log10(max(mse,1e-12))
         errors.append({'sample_id': row['sample_id'], 'mode': row['mode'], 'category': row['category'],
                        'psnr': psnr, 'mse_01': mse})
+        if export_png:
+            for role,value in (('reference',payload['reference'][i]),('target',payload['target'][i]),
+                               ('generated',prediction[0])):
+                directory=output/'images'/label/role
+                directory.mkdir(parents=True,exist_ok=True)
+                tensor_image(value).save(directory/f'sample_{pos:04d}.png')
         for col, image in enumerate((payload['reference'][i], payload['target'][i], prediction[0])):
             sheet.paste(tensor_image(image), (col*cell, pos*(cell+42)+42))
         draw.text((6,pos*(cell+42)+4), f'{label} {row["split"]} {row["category"]}/{row["mode"]} PSNR {psnr:.2f} dB', fill='black')
@@ -444,8 +450,8 @@ def train(args, cfg, device, cache_digest=None):
         for name,p in unet.named_parameters():
             if name in selected['unet_trainable']:
                 p.copy_(selected['unet_trainable'][name].to(device))
-    val=evaluate(model,payload,val_ids,device,args.output,'val_best')
-    tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_best')
+    val=evaluate(model,payload,val_ids,device,args.output,'val_best',export_png=cfg.get('export_png',False))
+    tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_best',export_png=cfg.get('export_png',False))
     wrong=evaluate(model,payload,val_ids,device,args.output,'val_wrong_condition',ablation=True)
     write_json(args.output/'report.json',{'complete':True,'protocol':cfg['protocol'],'best_step':best_step,
                'best_val':val,'train':tr,'val_before_paired_training':baseline,'val_wrong_condition':wrong,
