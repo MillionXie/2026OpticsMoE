@@ -4,11 +4,26 @@
     27,
     37
   ],
-  "completed_test_seeds": [
-    17,
-    27
+  "completed_test_rows": 4,
+  "all15_complete": false,
+  "groups": [
+    {
+      "experts": 49,
+      "top_k": 49,
+      "n_seeds": 3,
+      "complete": true,
+      "test_mean": 0.7881205673758865,
+      "test_sample_sd": 0.0033465578170526486
+    },
+    {
+      "experts": 49,
+      "top_k": 24,
+      "n_seeds": 1,
+      "complete": false,
+      "test_mean": 0.8031914893617021,
+      "test_sample_sd": null
+    }
   ],
-  "group_complete": false,
   "rows": [
     {
       "experts": 49,
@@ -44,6 +59,42 @@
       "checkpoint_sha256": "697940de95bb64fa00b810fbfd0d37e2ddcf431b7d8d5592bf44a3bf4c55a435",
       "test_result_sha256": "5074eaba473fc0ccbfad2c3a46d3cbee80c71a608b9a304e22b484b648b0d217",
       "run": "LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k49_s27",
+      "test_role": "development_followup_after_observed_test"
+    },
+    {
+      "experts": 49,
+      "top_k": 49,
+      "seed": 37,
+      "total_epochs": 90,
+      "selected_epoch": 87,
+      "train_accuracy": 0.8781464695930481,
+      "validation_accuracy": 0.7779255509376526,
+      "test_accuracy": 0.7845744680851063,
+      "original_test_accuracy": 0.769946813583374,
+      "delta_test_percentage_points": 1.4627654501732312,
+      "test_correct": 590,
+      "test_samples": 752,
+      "checkpoint_sha256": "a8c1df5091b6bd85e59584ac18e0abd279a55f3f11aeb72b527587b744b8700d",
+      "test_result_sha256": "24fceec9d79273c90c8439982f36e862da189c930b60a0cf4c3c739ef56ca591",
+      "run": "LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k49_s37",
+      "test_role": "development_followup_after_observed_test"
+    },
+    {
+      "experts": 49,
+      "top_k": 24,
+      "seed": 17,
+      "total_epochs": 90,
+      "selected_epoch": 61,
+      "train_accuracy": 0.8818649649620056,
+      "validation_accuracy": 0.8098404407501221,
+      "test_accuracy": 0.8031914893617021,
+      "original_test_accuracy": 0.8018617033958435,
+      "delta_test_percentage_points": 0.1329785965858643,
+      "test_correct": 604,
+      "test_samples": 752,
+      "checkpoint_sha256": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+      "test_result_sha256": "8f96080d6b7589ebb1145b4b94e90532b2f06408f803c671960d25ac25abf7cb",
+      "run": "LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s17",
       "test_role": "development_followup_after_observed_test"
     }
   ],
