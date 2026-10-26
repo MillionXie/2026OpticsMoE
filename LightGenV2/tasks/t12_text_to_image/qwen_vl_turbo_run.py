@@ -40,6 +40,7 @@ def git_identity() -> dict:
              Path(__file__).with_name('qwen_vl_turbo_data.py'),
              Path(__file__).with_name('qwen_vl_turbo_training.py'),
              Path(__file__).with_name('qwen_vl_turbo_cache.py'),
+             Path(__file__).with_name('qwen_vl_turbo_losses.py'),
              Path(__file__).with_name('product_scene_replace_data.py'),
              Path(__file__).with_name('product_object_replace_data.py'),
              Path(__file__).with_name('product_scene_data.py')]
@@ -199,7 +200,7 @@ def tensor_image(tensor):
 
 
 @torch.no_grad()
-def evaluate(model, payload, indices, device, output, label, ablation=False, native_teacher=False, export_png=False):
+def evaluate(model, payload, indices, device, output, label, ablation=False, native_teacher=False, export_png=False, metric_network=None):
     model.eval()
     errors, latent_errors = [], []
     cell = 256
@@ -224,6 +225,8 @@ def evaluate(model, payload, indices, device, output, label, ablation=False, nat
         psnr = -10*np.log10(max(mse,1e-12))
         errors.append({'sample_id': row['sample_id'], 'mode': row['mode'], 'category': row['category'],
                        'psnr': psnr, 'mse_01': mse})
+        if metric_network is not None:
+            errors[-1]['lpips']=float(metric_network(prediction.float(),target.float()).mean())
         if export_png:
             for role,value in (('reference',payload['reference'][i]),('target',payload['target'][i]),
                                ('generated',prediction[0])):
@@ -241,6 +244,10 @@ def evaluate(model, payload, indices, device, output, label, ablation=False, nat
                           for m in ('background','object','joint')},
               'scope': ('TRAIN native target-caption-teacher diagnostic, NOT a Qwen inference result'
                         if native_teacher else 'development pilot TRAIN or VAL, never independent TEST')}
+    if metric_network is not None:
+        report['mean_lpips']=float(np.mean([r['lpips'] for r in errors]))
+        report['lpips_by_mode']={m:float(np.mean([r['lpips'] for r in errors if r['mode']==m]))
+                                 for m in ('background','object','joint')}
     write_json(output / f'{label}.json', report)
     return report
 
@@ -347,6 +354,12 @@ def train(args, cfg, device, cache_digest=None):
     # Encoder is used solely for supervised targets and VAE diagnostic, not reference conditioning.
     targets_latent, target_regions, vae_mse = {}, {}, []
     gpu_regions={}
+    target_boxes={}
+    has_clip=any(cfg.get(k,0)>0 for k in ('foreground_clip_text_weight','foreground_clip_image_weight','global_clip_text_weight'))
+    has_gan=cfg.get('gan_weight',0)>0
+    if has_clip or has_gan:
+        from .qwen_vl_turbo_losses import (FrozenCLIPSemantic,PatchDiscriminator,region_boxes,
+                  crop_regions,discriminator_views,hinge_discriminator_loss)
     diagnostic_ids=set(train_eval_ids+val_ids)
     if cfg.get('use_all_pairs',False):
         names={r['sample_id'] for r in pilot_subset(payload['rows'],2)}
@@ -366,11 +379,48 @@ def train(args, cfg, device, cache_digest=None):
                     _,mask=normalized_product(product,cfg['image_size'])
                     gpu_regions[sid]=torch.from_numpy(np.asarray(mask).copy()).float()[None,None].to(device)/255
                 target_regions[i]=gpu_regions[sid]
+                if has_clip or has_gan:
+                    target_boxes[i]=region_boxes(target_regions[i])
             if i == train_ids[0]:
                 tensor_image(rec[0]).save(args.output/'vae_reconstruction.png')
     write_json(args.output/'vae_diagnostic.json', {'targets_only':True,'records':vae_mse})
     # Allocation may change while sharing the GPU; do not occupy the whole card.
     lp = lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
+    metric_network=lp if cfg.get('report_lpips',False) else None
+    semantic=None;discriminator=None;optimizer_disc=None
+    foreground_text={};global_text={};foreground_visual={}
+    if has_clip:
+        assets=args.sd.parent.parent
+        vendor=assets/'vendor/CLIP'
+        sys.path.insert(0,str(vendor));sys.path.insert(1,str(assets/'pix2pix_dependencies'))
+        import clip
+        weights=Path(cfg.get('clip_weights',str(Path.home()/'.cache/clip/ViT-B-32.pt')))
+        clip_model,_=clip.load(str(weights),device=device,jit=False)
+        semantic=FrozenCLIPSemantic(clip_model).to(device).eval()
+        descriptions=json.loads((args.output/'product_descriptions.json').read_text())
+        with torch.no_grad():
+            for start in range(0,len(train_ids),16):
+                ids=train_ids[start:start+16]
+                captions=[f"One {payload['rows'][i]['category']}: {descriptions[payload['rows'][i]['target']['sample_id']]}" for i in ids]
+                fg_tokens=clip.tokenize(captions,truncate=True).to(device)
+                whole_tokens=clip.tokenize([payload['rows'][i]['teacher_caption'] for i in ids],truncate=True).to(device)
+                fg_features=F.normalize(semantic.clip.encode_text(fg_tokens).float(),dim=-1)
+                whole_features=F.normalize(semantic.clip.encode_text(whole_tokens).float(),dim=-1)
+                images=image_float(payload['target'][ids],device)
+                boxes=torch.cat([target_boxes[i] for i in ids])
+                visual=semantic.image_features(crop_regions(images,boxes,224))
+                for i,fg,whole,image_feat in zip(ids,fg_features,whole_features,visual):
+                    foreground_text[i]=fg.detach();global_text[i]=whole.detach();foreground_visual[i]=image_feat.detach()
+        vendor_commit=subprocess.check_output(['git','-C',str(vendor),'rev-parse','HEAD'],text=True).strip()
+        write_json(args.output/'semantic_teacher_identity.json',{'weight_path':str(weights),'sha256':sha256(weights),
+              'vendor_git':vendor_commit,'clip_module_path':clip.__file__,
+              'optimized_on':'TRAIN only','inference_required':False,
+              'foreground_pairwise_loss':'positive image/text pairs; no off-diagonal batch average'})
+    if has_gan:
+        discriminator=PatchDiscriminator(cfg.get('discriminator_width',32)).to(device)
+        if resumed is not None and 'discriminator' in resumed.get('training_aux',{}):
+            discriminator.load_state_dict(resumed['training_aux']['discriminator'])
+        optimizer_disc=torch.optim.AdamW(discriminator.parameters(),lr=cfg['discriminator_lr'],betas=(.5,.999))
     params = [p for p in model.parameters() if p.requires_grad]
     adapter_params=list(adapter.parameters())
     unet_params=[p for p in unet.parameters() if p.requires_grad]
@@ -385,11 +435,13 @@ def train(args, cfg, device, cache_digest=None):
               'vae_decoder':sum(p.numel() for p in vae.decoder.parameters())+sum(p.numel() for p in vae.post_quant_conv.parameters()),
               'trainable':sum(p.numel() for p in params)}
     counts['unet_training_scope']=cfg.get('unet_training','lora')
+    counts['training_only_discriminator']=sum(p.numel() for p in discriminator.parameters()) if discriminator is not None else 0
+    counts['training_only_semantic_clip']=sum(p.numel() for p in semantic.parameters()) if semantic is not None else 0
     counts['inference_total'] = counts['qwen_full_forward']+counts['adapter']+counts['unet_including_lora']+counts['vae_decoder']
     write_json(args.output/'parameter_counts.json',counts)
     native = (evaluate(model,payload,train_eval_ids,device,args.output,'train_native_caption_teacher',native_teacher=True)
               if resumed is None else {'not_run':'Resumed UNet is not the untouched public prior'})
-    baseline = evaluate(model,payload,val_ids,device,args.output,'val_before_paired_training')
+    baseline = evaluate(model,payload,val_ids,device,args.output,'val_before_paired_training',metric_network=metric_network)
     best, best_step, history = float('-inf'),0,[]
     batch_size=cfg.get('batch_size',1)
     sample_order=[]
@@ -402,6 +454,8 @@ def train(args, cfg, device, cache_digest=None):
     for step in range(1,cfg['train_steps']+1):
         model.train(); vae.eval(); optimizer.zero_grad(set_to_none=True)
         total=0.0
+        fake_views=[];real_views=[];last_losses={}
+        if discriminator is not None:discriminator.eval().requires_grad_(False)
         for micro in range(cfg['gradient_accumulation']):
             begin=((step-1)*cfg['gradient_accumulation']+micro)*batch_size
             ids=sample_order[begin:begin+batch_size]
@@ -419,25 +473,60 @@ def train(args, cfg, device, cache_digest=None):
                 align=F.mse_loss(cond,torch.stack([payload['train_clip_teacher'][i] for i in ids]).float().to(device))
                 loss=(cfg['latent_mse_weight']*latent_loss+cfg['rgb_l1_weight']*rgb_loss+
                       cfg['lpips_weight']*perceptual+cfg['condition_alignment_weight']*align)
+                boxes=torch.cat([target_boxes[i] for i in ids]) if (has_clip or has_gan) else None
+                if semantic is not None:
+                    fg=crop_regions(pred,boxes,224)
+                    whole=F.interpolate(pred.float(),size=(224,224),mode='bilinear',align_corners=False)
+                    features=semantic.image_features(torch.cat([fg,whole]))
+                    n=len(ids);fg_features=features[:n];whole_features=features[n:]
+                    text_goal=torch.stack([foreground_text[i] for i in ids])
+                    image_goal=torch.stack([foreground_visual[i] for i in ids])
+                    whole_goal=torch.stack([global_text[i] for i in ids])
+                    clip_text=(1-(fg_features*text_goal).sum(-1)).mean()
+                    clip_image=(1-(fg_features*image_goal).sum(-1)).mean()
+                    clip_global=(1-(whole_features*whole_goal).sum(-1)).mean()
+                    loss=loss+cfg['foreground_clip_text_weight']*clip_text+cfg['foreground_clip_image_weight']*clip_image+cfg['global_clip_text_weight']*clip_global
+                    last_losses.update(clip_fg_text=float(clip_text.detach()),clip_fg_image=float(clip_image.detach()))
+                if discriminator is not None:
+                    fake=discriminator_views(pred,boxes)
+                    real=discriminator_views(target,boxes)
+                    adversarial=-discriminator(fake).mean()
+                    scale=cfg['gan_weight']*min(1.,step/cfg['gan_ramp_steps'])
+                    loss=loss+scale*adversarial
+                    fake_views.append(fake.detach());real_views.append(real.detach())
+                    last_losses['gan_generator']=float(adversarial.detach())
             if not torch.isfinite(loss):
                 raise FloatingPointError(f'Non-finite loss at {step}')
             (loss/cfg['gradient_accumulation']).backward()
             total+=float(loss.detach())/cfg['gradient_accumulation']
         norm=torch.nn.utils.clip_grad_norm_(params,1.)
         optimizer.step()
+        if discriminator is not None:
+            discriminator.train().requires_grad_(True)
+            optimizer_disc.zero_grad(set_to_none=True)
+            loss_disc=hinge_discriminator_loss(discriminator(torch.cat(real_views)),discriminator(torch.cat(fake_views)))
+            if not torch.isfinite(loss_disc):raise FloatingPointError('Non-finite discriminator loss')
+            loss_disc.backward()
+            torch.nn.utils.clip_grad_norm_(discriminator.parameters(),1.)
+            optimizer_disc.step()
+            last_losses['discriminator']=float(loss_disc.detach())
         if step%10==0:
             print('paired',step,'/',cfg['train_steps'],'loss',total,'grad_norm',float(norm),flush=True)
             write_json(args.output/'progress.json',{'stage':'paired_training','step':step,'total_steps':cfg['train_steps'],
-                       'loss':total,'best_val_psnr':None if best_step==0 else best,'best_step':best_step})
+                       'loss':total,'best_val_psnr':None if best_step==0 else best,'best_step':best_step,
+                       'auxiliary_losses':last_losses})
         if step%cfg['eval_every']==0 or step==cfg['train_steps']:
-            val=evaluate(model,payload,val_ids,device,args.output,'val_latest')
-            tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_latest')
+            val=evaluate(model,payload,val_ids,device,args.output,'val_latest',metric_network=metric_network)
+            tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_latest',metric_network=metric_network)
             history.append({'step':step,'train_loss':total,'val_psnr':val['mean_per_image_psnr_db'],
-                            'train_psnr':tr['mean_per_image_psnr_db']})
+                            'train_psnr':tr['mean_per_image_psnr_db'],
+                            'val_lpips':val.get('mean_lpips'),'train_lpips':tr.get('mean_lpips')})
             state={'step':step,'adapter':adapter.state_dict(),
                    'unet_trainable':{n:p.detach().cpu().clone() for n,p in unet.named_parameters() if p.requires_grad},
                    'config':cfg,'git':git_identity(),'val':val,
                    'cache_sha256':cache_digest}
+            if discriminator is not None:
+                state['training_aux']={'discriminator':{n:p.detach().cpu().clone() for n,p in discriminator.state_dict().items()}}
             torch.save(state,args.output/'last_checkpoint.pt')
             if val['mean_per_image_psnr_db']>best:
                 best,best_step=val['mean_per_image_psnr_db'],step
@@ -450,9 +539,9 @@ def train(args, cfg, device, cache_digest=None):
         for name,p in unet.named_parameters():
             if name in selected['unet_trainable']:
                 p.copy_(selected['unet_trainable'][name].to(device))
-    val=evaluate(model,payload,val_ids,device,args.output,'val_best',export_png=cfg.get('export_png',False))
-    tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_best',export_png=cfg.get('export_png',False))
-    wrong=evaluate(model,payload,val_ids,device,args.output,'val_wrong_condition',ablation=True)
+    val=evaluate(model,payload,val_ids,device,args.output,'val_best',export_png=cfg.get('export_png',False),metric_network=metric_network)
+    tr=evaluate(model,payload,train_eval_ids,device,args.output,'train_best',export_png=cfg.get('export_png',False),metric_network=metric_network)
+    wrong=evaluate(model,payload,val_ids,device,args.output,'val_wrong_condition',ablation=True,metric_network=metric_network)
     write_json(args.output/'report.json',{'complete':True,'protocol':cfg['protocol'],'best_step':best_step,
                'best_val':val,'train':tr,'val_before_paired_training':baseline,'val_wrong_condition':wrong,
                'parameters':counts,'native_caption_teacher_train_diagnostic':native,

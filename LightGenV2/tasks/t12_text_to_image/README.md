@@ -91,6 +91,18 @@ TRAIN PSNR仅评估固定18对诊断子集，不冒充3456对全量均值。CLIP
 Qwen实际输入指令不因教师描述修订而改变。缓存RGB改存无损uint8、保留全部融合token；
 流式SHA已做序列化往返检查，每次评估不再重复读取数GB缓存。模型推理图保持不变。
 
+完整覆盖阶段已完成3遍TRAIN：best为step2160，固定144 VAL的平均PSNR
+21.0465dB（背景21.2968、目标20.8280、联合21.0147）；错配整组条件后16.4111dB。
+因此正确条件已有明确影响，但仍存在模糊和目标属性偏差，尚不称为最终可用版本。
+后续`configs/qwen_vl_turbo_semantic_refine_20261026.json`使用相同TRAIN/VAL及缓存继续：
+解冻UNet已有最后一级decoder，加入TRAIN前景CLIP图文／图像语义约束及渐进的
+full-frame＋前景PatchGAN。正图文对按逐样本配对计算，不平均无关的B×B相似度。
+这是借鉴pix2pix-Turbo损失家族的自定义训练，并非照搬其trainer；相关官方源码
+保留在已钉住Git版本的`assets/vendor/img2img-turbo-ssh`。
+GT框／mask仅生成TRAIN损失裁剪，Qwen和生成器forward不接收它们。
+CLIP和discriminator仅用于训练，不进入推理图；解冻已有层不增加部署参数。
+微调仍以VAL PSNR选best，附LPIPS和三模式结果，TEST保持封存。
+
 9月21—22日旧cleanrender GAN、parallel optical、lamp场景／半Qwen替换、商品修复、
 chair style及decoder optical共11份原JSON汇总已补入main，逐LF字节与原7093ec4608
 和实际服务器v2源码一致。它们是旧容量／划分的历史仿真、训练耗时及PT身份，

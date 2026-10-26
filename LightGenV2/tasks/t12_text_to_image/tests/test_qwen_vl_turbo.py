@@ -83,6 +83,13 @@ class NativeHeadTests(unittest.TestCase):
         configure_unet_training(net,'lora')
         self.assertFalse(net.block.attn2.weight.requires_grad)
         self.assertEqual(sum(p.numel() for p in net.parameters()),count)
+        net.up_blocks=nn.ModuleList([nn.Linear(2,2),nn.Linear(2,2)])
+        count=sum(p.numel() for p in net.parameters())
+        configure_unet_training(net,'cross_attention_decoder')
+        self.assertFalse(net.up_blocks[0].weight.requires_grad)
+        self.assertTrue(net.up_blocks[1].weight.requires_grad)
+        self.assertTrue(net.block.attn2.weight.requires_grad)
+        self.assertEqual(sum(p.numel() for p in net.parameters()),count)
 
     def test_foreground_supervision_is_normalized_and_differentiable(self):
         a=torch.zeros(1,3,4,4,requires_grad=True); b=torch.zeros_like(a)
