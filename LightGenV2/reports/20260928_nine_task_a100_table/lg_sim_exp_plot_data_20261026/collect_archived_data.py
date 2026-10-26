@@ -113,6 +113,18 @@ quality_samples(d,'Exp',er)
 assert {x[0] for x in er}=={x[0] for x in release_rows(r)}
 assert abs(quality(er)['srcc']-e['after']['original_test_all_mixed']['srcc'])<1e-12
 
+# Use the originally requested .6710 aggregate, not the packaged replay.
+original_spatial=T/'t06_video_quality_assessment/reports/paper_results/spatial_readout_1m_srcc067/result.json'
+original=read(original_spatial);assert original['checkpoint_sha256']==r['checkpoint_sha256']
+assert original['normal_optical_electronic']['srcc']==r['reference_srcc']
+source(d,original_spatial)
+original_metrics=flat({**original['normal_optical_electronic'],'count':original['test_videos']})
+original_metrics.update({('packaged_replay_reference',k):v for g,k,v in d['stages']['Sim']['metrics'] if g=='overall'})
+d['stages']['Sim'].update(metrics=[[g,k,v] for (g,k),v in original_metrics.items()],status='original_final_report',notes='采用原结果报告SRCC=.6710079009及其同轮其余指标；发布包复评及其逐视频仅存档，不替代原结果。')
+d['reference_sample_bindings']={'Sim':{'row_label':'Sim复评参考（非指定轮次）','metric_group':'packaged_replay_reference','rows':558}}
+for row in d['samples']:
+    if row[0]=='Sim':row[0]=d['reference_sample_bindings']['Sim']['row_label']
+
 # 3. Image-to-text: distinguish the historical training aggregate and the
 # complete same-weight A100 replay; never invent the historical 1934 ranks.
 d=new('abo_image_to_text','ABO 图搜文','hit_at_1',[.8058,.8029],'用户确认Exp更正为1927/2400=.8029167（显示.8029），原.8019167保留。Sim已补2400条同PT A100回放：1931/2400=.8045833；历史训练.8058333另列，不能假称回放明细属于历史1934次命中。')
@@ -175,6 +187,23 @@ for name in ['i2t_final_identity_full_20261026.inventory.json','4246fd452c_00_RE
     source(d,SR/'lab'/name)
 check(d,'Sim','original_final_report_identity',{'best_epoch':25,'weight_variant':'ema','correct':1934,'total':2400,'reference_replay_not_substituted':True})
 check(d,'Exp','final_identity_not_established',{'old_metrics_not_current':True,'new_final_report_located':False,'superseded_reference_only':True})
+
+# Latest human choice: adopt this completed .8029 capture for the paper.
+# This does not certify the later retake or remove the original qualification flags.
+local_exp=ROOT/'archive/legacy_lab_projects/ABO_Lab_SHS_8um/results/20260913_400us240ms/manual_language_global_20260913_232642/metrics.json'
+adopted=read(local_exp);source(d,local_exp)
+assert adopted['checkpoint_sha256']==r['checkpoint_sha256'] and adopted['n_queries']==2400
+assert adopted['metrics']['recall_at_1']==1927/2400
+assert [(x['sample_id'],x['true_rank'],x['predicted_label']) for x in adopted['predictions']]==[(x['sample_id'],x['true_rank'],x['predicted_label']) for x in e['predictions']]
+selected_metrics={(('overall' if g=='superseded_session_reference' else g),k):v for g,k,v in d['stages']['Exp']['metrics']}
+d['stages']['Exp'].update(metrics=[[g,k,v] for (g,k),v in selected_metrics.items()],checkpoint_sha256=adopted['checkpoint_sha256'],status='user_selected_verified_capture',formal_export_eligible=True,notes='用户在2026-10-26核实同PT部署关系后，明确采用这次完整实拍作为论文Exp。1927/2400=.8029167，原本地报告与预测一致；不是后续重采结果，不将原production_qualified=false或重采标记改成通过。')
+d['selection']={'selected_by_user':True,'sim_hit1':1934/2400,'exp_hit1':1927/2400,'deployment_checkpoint_same_as_sim':True,'hardware_qualification_claimed':False,'later_recapture_claimed':False}
+d['notes']='用户指定采用Sim .8058 / Exp .8029；两者绑定同一epoch25 EMA PT a2aa9a93。Exp为已完成2400查询的原实拍1927次命中，不是后续重采。原Sim逐查询尚未恢复，不以其他回放补齐。'
+d['expected']['Exp']=.8029
+for row in d['samples']:
+    if row[0]==d['reference_sample_bindings']['Exp']['row_label']:row[0]='Exp'
+del d['reference_sample_bindings']['Exp']
+check(d,'Exp','user_adopted_same_checkpoint_completed_capture',d['selection'])
 
 # 4. Image-to-image: screenshot is not a same-checkpoint pair.
 d=new('abo_image_to_image','ABO 图搜图','hit_at_1',[.8225,.8113],'从原2400条全量特征补齐两侧完整排名/AP，并与800查询Top-1逐条一致。Sim .8225不含RGB旁路；Exp rank72 .81125，其同PT仿真.83375，当前两列不是同权重对照。')
@@ -390,11 +419,29 @@ for i,d in enumerate(TASKS,1):
         s['sample_rows']=sum(row[0]==label for row in d['samples'])
         s['missing_overall_metrics']=[k for k in d['required_metrics'] if ('overall',k) not in values]
         expected=d['expected'][label];s['screenshot_numeric_rounding_matches']=(s['primary_value'] is not None and round(s['primary_value'],2 if d['primary']=='psnr_db' else 4)==expected)
-        s['screenshot_lineage_confirmed']=s['status'] in ['original_final_report','verified_full_test','verified_mixed_test','verified_saved_predictions','verified_saved_metrics','verified_user_selected_adapted','verified_saved_top1','aggregate_with_verified_sample_identity','verified_full_queries','verified_corrected_saved_summary','verified_frozen_CCD_replay']
+        s['screenshot_lineage_confirmed']=s['status'] in ['user_selected_verified_capture','original_final_report','verified_full_test','verified_mixed_test','verified_saved_predictions','verified_saved_metrics','verified_user_selected_adapted','verified_saved_top1','aggregate_with_verified_sample_identity','verified_full_queries','verified_corrected_saved_summary','verified_frozen_CCD_replay']
         primary_header={'changed_cell_accuracy':'changed_cell_accuracy','pck_at_0.2_torso':'PCK@0.2_torso','cc':'CC','psnr_db':'PSNR_dB','srcc':'predicted_score','hit_at_1':'H@1'}[d['primary']]
         s['sample_rows_with_primary_observation']=sum(row[0]==label and row[d['headers'].index(primary_header)] is not None for row in d['samples'])
     assert all(len(row)==len(d['headers']) for row in d['samples'])
     assert len({(row[0],row[1]) for row in d['samples']})==len(d['samples'])
+    # A plotting workbook contains selected results only. All audit/reference
+    # records remain in this JSON and the immutable original evidence.
+    def keep_metric(group,key):
+        if group=='overall':return key in d['required_metrics']
+        if d['task']=='lsp':return group.startswith('PCK group/') or group.startswith('overall/per_joint_')
+        if d['task']=='openmoji':return group in ['add','replace','move','remove'] and key in d['required_metrics']
+        if d['task']=='abo_conditional_edit':return group.startswith('mode/') and key in d['required_metrics']
+        return False
+    metrics={s:[m for m in info['metrics'] if keep_metric(m[0],m[1])] for s,info in d['stages'].items()}
+    if d['task']=='salicon':
+        for s in ['Sim','Exp']:
+            replay_metrics={k:v for g,k,v in d['stages'][s]['metrics'] if g=='CPU_replay_validation'}
+            metrics[s]=[[g,k,replay_metrics[k] if k in ['kld','mae','nss','sim','auc_judd'] else v] for g,k,v in metrics[s]]
+    indices=[j for j,h in enumerate(d['headers']) if h not in ['record_origin','record_status','CC_CPU_replay']]
+    selected_rows=[[row[j] for j in indices] for row in d['samples'] if row[0] in ['Sim','Exp']]
+    d['plot_view']={'metrics':metrics,'headers':[d['headers'][j] for j in indices],
+                   'samples':selected_rows,'excluded_reference_rows':len(d['samples'])-len(selected_rows),
+                   'selected_results_only':True,'notes_and_identity_kept_in_archive':True}
 payload=dict(date='2026-10-26',collector_runs_model_inference=False,contains_new_frozen_CPU_CCD_replays=True,no_training=True,no_hardware_access=True,
     source_root=str(ROOT),reference='LightGenV2/tasks/t19_resnet20_baselines/runs/outputs/t19_final_plot_data_20261024',
     blanks='Missing/unavailable, not zero. Screenshot target fields are not measured data.',tasks=TASKS)

@@ -40,34 +40,49 @@ for d,entry in zip(data['tasks'],audit['files']):
         sheets=ET.fromstring(z.read('xl/workbook.xml')).find('m:sheets',NS)
         assert [s.attrib['name'] for s in sheets]==['整体指标','逐测试样本']
         a=cells(z,'xl/worksheets/sheet1.xml');b=cells(z,'xl/worksheets/sheet2.xml')
-        for i,row in enumerate(entry['summary_values'],9):
+        for i,row in enumerate(entry['summary_values'],entry['summary_start_row']):
             for j,value in enumerate(row):assert same(a.get((i,j)),value),(d['task'],i,j,a.get((i,j)),value)
-        for j,h in enumerate(d['headers']):assert b[1,j]==h
-        for i,row in enumerate(d['samples'],2):
+        exported_headers=d['plot_view']['headers']
+        for j,h in enumerate(exported_headers):assert b[1,j]==h
+        exported_rows=d.get('plot_view',{}).get('samples',d['samples'])
+        for i,row in enumerate(exported_rows,2):
             for j,value in enumerate(row):assert same(b.get((i,j)),value),(d['task'],i,j,b.get((i,j)),value)
-        result.append({'task':d['task'],'file':d['filename'],'rows':len(d['samples']),'columns':len(d['headers']),'all_summary_cells_equal':True,'all_raw_cells_equal':True,'sha256':entry['sha256']})
+        if d.get('plot_view'):
+            assert entry['source_sample_rows']==len(exported_rows)
+            assert entry['archived_reference_rows']==len(d['samples'])-len(exported_rows)==d['plot_view']['excluded_reference_rows']
+            assert entry['view']=='selected_plot_only' and d['plot_view']['selected_results_only']
+            summary=entry['summary_values'];primary=next(row for row in summary if row[0]=='Overall' and row[1]==d['primary'])
+            assert primary[2:4]==[d['stages'][s]['primary_value'] for s in ['Sim','Exp']]
+            assert all(row[0] not in ['历史训练记录','原FP32汇总','固定权重CPU回放','同PT回放参考（非指定版）','旧会话参考（非最终）'] for row in summary)
+            assert all(r[0] in ['Sim','Exp'] for r in exported_rows)
+            assert all(h not in exported_headers for h in ['record_origin','record_status','CC_CPU_replay'])
+            assert not any(isinstance(v,str) and ('Sim回放参考' in v or 'Exp旧会话参考' in v) for v in b.values())
+        result.append({'task':d['task'],'file':d['filename'],'rows':len(exported_rows),'archived_rows_checked':len(d['samples']),'columns':len(exported_headers),'all_summary_cells_equal':True,'all_raw_cells_equal':True,'sha256':entry['sha256']})
     h={k:i for i,k in enumerate(d['headers'])}
     def check(stage,scope,key,value,expected,tolerance=1e-7):
         assert abs(value-expected)<=tolerance,(d['task'],stage,scope,key,value,expected)
         metric_checks.append({'task':d['task'],'stage':stage,'scope':scope,'metric':key,'recalculated':value,'archived':expected,'absolute_difference':abs(value-expected)})
     for stage,info in d['stages'].items():
         rows=[r for r in d['samples'] if r[0]==stage];metrics={(g,k):v for g,k,v in info['metrics']}
-        if d.get('reference_sample_bindings'):
+        if stage in d.get('reference_sample_bindings',{}):
             binding=d['reference_sample_bindings'][stage]
             assert not rows and info['sample_rows']==0,'Reference rows must not be attributed to the requested original run'
             rows=[r for r in d['samples'] if r[0]==binding['row_label']]
-            assert len(rows)==binding['rows']==2400
+            assert len(rows)==binding['rows']
             metrics={('overall',k):v for (g,k),v in metrics.items() if g==binding['metric_group']}
-            if stage=='Sim':
+            if d['task']=='abo_image_to_text':
+                assert stage=='Sim' and len(rows)==2400
                 original={(g,k):v for g,k,v in info['metrics']}
                 assert original['overall','hit_at_1']==1934/2400
                 assert metrics['overall','hit_at_1']==1931/2400
                 assert info['formal_export_eligible'] and info['status']=='original_final_report'
             else:
-                assert info['primary_value'] is None and not info['formal_export_eligible']
-                assert info['status']=='final_identity_unconfirmed'
-                assert info['checkpoint_sha256'] is None and info['reference_checkpoint_sha256']==d['stages']['Sim']['checkpoint_sha256']
-                assert metrics['overall','hit_at_1']==1927/2400
+                assert d['task']=='lgvq_spatial' and stage=='Sim' and len(rows)==558
+                assert info['primary_value']==.6710079009479295 and metrics['overall','srcc']==.6710968960031272
+        if d['task']=='abo_image_to_text' and stage=='Exp':
+            assert info['checkpoint_sha256']==d['stages']['Sim']['checkpoint_sha256']
+            assert info['primary_value']==1927/2400 and len(rows)==2400
+            assert info['status']=='user_selected_verified_capture' and d['selection']['selected_by_user']
         if not rows:continue
         if d['task'].startswith('lgvq'):
             for key,value in [('mae',sum(r[h['absolute_error']] for r in rows)/len(rows)),('rmse',math.sqrt(sum(r[h['squared_error']] for r in rows)/len(rows)))]:check(stage,'overall',key,value,metrics['overall',key],2e-5)
@@ -111,14 +126,15 @@ for d,entry in zip(data['tasks'],audit['files']):
 coverage=[];unresolved=[]
 for d in data['tasks']:
     for stage,info in d['stages'].items():
-        if d.get('reference_sample_bindings'):
+        if stage in d.get('reference_sample_bindings',{}):
             assert info['sample_rows_with_primary_observation']==info['sample_rows']==0
-            assert info['missing_overall_metrics']==([] if stage=='Sim' else d['required_metrics'])
-            unresolved.append({'task':d['task'],'stage':stage,'reason':'Original 1934-hit ranks not recovered' if stage=='Sim' else 'Final experimental session not established; superseded session excluded','reference_rows_retained':2400})
-            coverage.append({'task':d['task'],'stage':stage,'sample_rows':0,'primary_rows':0,'missing_requested_overall_metrics':info['missing_overall_metrics'],'reference_only_rows':2400,'final_version_complete':False})
+            assert not info['missing_overall_metrics']
+            reference_count=d['reference_sample_bindings'][stage]['rows']
+            unresolved.append({'task':d['task'],'stage':stage,'reason':'Original selected-run per-sample observations not recovered; aggregate retained','reference_rows_retained_outside_workbook':reference_count})
+            coverage.append({'task':d['task'],'stage':stage,'sample_rows':0,'primary_rows':0,'missing_requested_overall_metrics':[],'reference_only_rows':reference_count,'final_version_complete':False})
             continue
         assert info['sample_rows_with_primary_observation']==info['sample_rows']>0,(d['task'],stage,'Missing primary observation')
         assert not info['missing_overall_metrics'],(d['task'],stage,info['missing_overall_metrics'])
         coverage.append({'task':d['task'],'stage':stage,'sample_rows':info['sample_rows'],'primary_rows':info['sample_rows_with_primary_observation'],'missing_requested_overall_metrics':[]})
-(OUT/'verification/saved_xml_verification.json').write_text(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result),'files':result,'metric_recalculations':metric_checks,'coverage':coverage},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-print(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result)}))
+(OUT/'verification/saved_xml_verification.json').write_text(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result),'archive_records_checked':sum(r['archived_rows_checked'] for r in result),'files':result,'metric_recalculations':metric_checks,'coverage':coverage},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result),'archive_records_checked':sum(r['archived_rows_checked'] for r in result)}))
