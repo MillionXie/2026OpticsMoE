@@ -52,6 +52,22 @@ for d,entry in zip(data['tasks'],audit['files']):
         metric_checks.append({'task':d['task'],'stage':stage,'scope':scope,'metric':key,'recalculated':value,'archived':expected,'absolute_difference':abs(value-expected)})
     for stage,info in d['stages'].items():
         rows=[r for r in d['samples'] if r[0]==stage];metrics={(g,k):v for g,k,v in info['metrics']}
+        if d.get('reference_sample_bindings'):
+            binding=d['reference_sample_bindings'][stage]
+            assert not rows and info['sample_rows']==0,'Reference rows must not be attributed to the requested original run'
+            rows=[r for r in d['samples'] if r[0]==binding['row_label']]
+            assert len(rows)==binding['rows']==2400
+            metrics={('overall',k):v for (g,k),v in metrics.items() if g==binding['metric_group']}
+            if stage=='Sim':
+                original={(g,k):v for g,k,v in info['metrics']}
+                assert original['overall','hit_at_1']==1934/2400
+                assert metrics['overall','hit_at_1']==1931/2400
+                assert info['formal_export_eligible'] and info['status']=='original_final_report'
+            else:
+                assert info['primary_value'] is None and not info['formal_export_eligible']
+                assert info['status']=='final_identity_unconfirmed'
+                assert info['checkpoint_sha256'] is None and info['reference_checkpoint_sha256']==d['stages']['Sim']['checkpoint_sha256']
+                assert metrics['overall','hit_at_1']==1927/2400
         if not rows:continue
         if d['task'].startswith('lgvq'):
             for key,value in [('mae',sum(r[h['absolute_error']] for r in rows)/len(rows)),('rmse',math.sqrt(sum(r[h['squared_error']] for r in rows)/len(rows)))]:check(stage,'overall',key,value,metrics['overall',key],2e-5)
@@ -92,11 +108,17 @@ for d,entry in zip(data['tasks'],audit['files']):
             for column,key in [('PCK@0.2_torso','pck_at_0.2_torso'),('PCKh@0.5_head','pckh_at_0.5_head'),('mean_pixel_error_px','mean_pixel_error'),('normalized_mean_error_torso','normalized_mean_error_torso')]:check(stage,'overall',key,sum(r[h[column]]*r[h['visible_joints']] for r in rows)/sum(r[h['visible_joints']] for r in rows),metrics['overall',key],3e-6)
             for (scope,key),expected in metrics.items():
                 if scope=='overall/per_joint_pck_at_0.2_torso':check(stage,scope,key,sum(r[h[key+'_PCK_hit']] for r in rows)/len(rows),expected)
-coverage=[]
+coverage=[];unresolved=[]
 for d in data['tasks']:
     for stage,info in d['stages'].items():
+        if d.get('reference_sample_bindings'):
+            assert info['sample_rows_with_primary_observation']==info['sample_rows']==0
+            assert info['missing_overall_metrics']==([] if stage=='Sim' else d['required_metrics'])
+            unresolved.append({'task':d['task'],'stage':stage,'reason':'Original 1934-hit ranks not recovered' if stage=='Sim' else 'Final experimental session not established; superseded session excluded','reference_rows_retained':2400})
+            coverage.append({'task':d['task'],'stage':stage,'sample_rows':0,'primary_rows':0,'missing_requested_overall_metrics':info['missing_overall_metrics'],'reference_only_rows':2400,'final_version_complete':False})
+            continue
         assert info['sample_rows_with_primary_observation']==info['sample_rows']>0,(d['task'],stage,'Missing primary observation')
         assert not info['missing_overall_metrics'],(d['task'],stage,info['missing_overall_metrics'])
         coverage.append({'task':d['task'],'stage':stage,'sample_rows':info['sample_rows'],'primary_rows':info['sample_rows_with_primary_observation'],'missing_requested_overall_metrics':[]})
-(OUT/'verification/saved_xml_verification.json').write_text(json.dumps({'workbooks':len(result),'all_passed':True,'sample_records':sum(r['rows'] for r in result),'files':result,'metric_recalculations':metric_checks,'coverage':coverage},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
-print(json.dumps({'workbooks':len(result),'all_passed':True,'sample_records':sum(r['rows'] for r in result)}))
+(OUT/'verification/saved_xml_verification.json').write_text(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result),'files':result,'metric_recalculations':metric_checks,'coverage':coverage},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+print(json.dumps({'workbooks':len(result),'all_passed':True,'all_requested_versions_complete':not unresolved,'unresolved_original_versions':unresolved,'sample_records':sum(r['rows'] for r in result)}))

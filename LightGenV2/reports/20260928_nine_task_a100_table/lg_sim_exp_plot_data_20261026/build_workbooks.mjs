@@ -16,10 +16,11 @@ const statusLabels={verified_full_test:'原报告与样本已核对',verified_mi
 Object.assign(statusLabels,{source_found_inconsistent:'原报告已找回；汇总与明细不符',verified_saved_top1:'原800条Top-1与原汇总已核对',verified_user_selected_adapted:'用户已明确确认采用的实验适配版',aggregate_with_verified_sample_identity:'样本身份已核对；逐例结果未导出'});
 Object.assign(statusLabels,{verified_corrected_saved_summary:'用户确认校正；逐条与embedding复算一致',verified_frozen_CCD_replay:'原CCD固定权重补算；整体/分组已核对'});
 statusLabels.same_pt_packaged_replay='同PT回放；与历史训练另列';
+Object.assign(statusLabels,{original_final_report:'指定原最终报告已核；原排名待恢复',final_identity_unconfirmed:'最终实验身份未确认；旧会话不代用'});
 const count=k=>/^(samples|queries|candidates|count|gallery_count|query_count|candidate_count|relevant_images_per_query|relevant_candidates_per_query|evaluated_joints|pck_evaluated_joints|pckh_evaluated_joints)$/.test(k);
 const unit=(k,d)=>k==='psnr_db'?'dB':count(k)?'个':k.includes('pixel_error')?'px':d.task.startsWith('lgvq')&&['mae','rmse'].includes(k)?'MOS分':['srcc','krcc','plcc','cc'].includes(k)?'相关系数':'无量纲';
 const dir=k=>count(k)||k==='epoch'?'—':/loss|mae|rmse|mse|kld|error|mean_rank|median_rank/.test(k)?'越小越好':'越大越好';
-const label=g=>g==='overall'?'整体':g==='historical_training'?'历史训练记录':g==='historical_FP32_summary'?'原FP32汇总':g==='original_reported_summary'?'原报告汇总（校正前）':g==='CPU_replay_validation'?'固定权重CPU回放':g.startsWith('PCK group/')?g.slice(10):g.startsWith('category/')?'类别/'+g.slice(9):g.startsWith('mode/')?'编辑类型/'+g.slice(5):g;
+const label=g=>g==='overall'?'整体':g==='same_pt_replay_reference'?'同PT回放参考（非指定版）':g==='superseded_session_reference'?'旧会话参考（非最终）':g==='historical_training'?'历史训练记录':g==='historical_FP32_summary'?'原FP32汇总':g==='original_reported_summary'?'原报告汇总（校正前）':g==='CPU_replay_validation'?'固定权重CPU回放':g.startsWith('PCK group/')?g.slice(10):g.startsWith('category/')?'类别/'+g.slice(9):g.startsWith('mode/')?'编辑类型/'+g.slice(5):g;
 const colName=n=>{let s='';for(n++;n;n=Math.floor((n-1)/26))s=String.fromCharCode(65+(n-1)%26)+s;return s;};
 const header={fill:'#116A9D',font:{name:'Arial',size:11,bold:true,color:'#FFFFFF'},rowHeight:30,verticalAlignment:'center'};
 const audit=[];
@@ -34,13 +35,17 @@ for(const d of payload.tasks){
   const meta=[];
   for(const s of ['Sim','Exp']){
     const r=d.stages[s];meta.push([s+' 核对状态',statusLabels[r.status]],
-      [s+' 截图目标（非数据）',d.expected[s]],[s+' 归档主指标',r.primary_value],
+      [s+' 截图目标（非数据）',d.expected[s]],[s+' 归档主指标',r.primary_value??'最终版本未确认'],
       [s+' 逐样本记录条数',r.sample_rows],[s+' 有主指标的样本条数',r.sample_rows_with_primary_observation],
       [s+' 权重SHA256',r.checkpoint_sha256??'未定位'],
       [s+' 说明',r.notes],[s+' 缺失整体指标',r.missing_overall_metrics.join(', ')||'无']);
   }
-  if(d.original_screenshot_exp!==undefined)meta.push(['原截图Exp（用户已更正）',d.original_screenshot_exp],['用户确认更正后的Exp目标',d.expected.Exp]);
-  meta.push(['空白单元格','该阶段不适用或原记录未提供，不是0。单侧历史汇总不填另一侧；主指标及所需绘图明细已补齐。'],
+  if(d.reference_sample_bindings){
+    meta.push(['原截图Exp（最终身份待核）',d.original_screenshot_exp],['旧会话校正值（不作最终结果）',d.superseded_session_corrected_value]);
+    for(const s of ['Sim','Exp'])meta.push([s+' 参考明细（不对应主列）',d.reference_sample_bindings[s].row_label+'：'+d.reference_sample_bindings[s].rows+'条']);
+    meta.push(['Exp旧会话权重SHA（非最终）',d.stages.Exp.reference_checkpoint_sha256]);
+  } else if(d.original_screenshot_exp!==undefined)meta.push(['原截图Exp（用户已更正）',d.original_screenshot_exp],['用户确认更正后的Exp目标',d.expected.Exp]);
+  meta.push(['空白单元格',d.reference_sample_bindings?'指定Sim原排名未恢复；最终Exp身份未核，不用参考回放或已作废会话填充主列。参考明细保留，空白不是0。':'该阶段不适用或原记录未提供，不是0。单侧历史汇总不填另一侧；主指标及所需绘图明细已补齐。'],
     ['数据内容','原保存结果与固定权重CPU补算分开标注；无训练、无新光路采集，原件不改。'],
     ['原始证据 SHA256','以下每个文件都按本地现存内容计算SHA256；plot_data.json保留完整清单。']);
   for(let i=0;i<d.sources.length;i++){const p=d.sources[i];meta.push([`来源 ${i+1}`,p.path],[`来源 ${i+1} SHA256`,p.sha256]);}
@@ -50,7 +55,7 @@ for(const d of payload.tasks){
   main.getRange('A2:F2').merge();main.getRange('A2').values=[[d.name+'  |  LightGen-II']];main.getRange('A2:F2').format={font:{name:'Arial',size:17,bold:true,color:'#174D70'},rowHeight:36};
   main.getRange('A3:F3').merge();main.getRange('A3').values=[['Sim. 与括号内 Exp. 的归档核对　2026-10-26　｜　参照 T19 两表结构']];main.getRange('A3:F3').format={font:{name:'Arial',size:10,color:'#526B7B'},rowHeight:26};
   main.getRange('A4:F4').merge();main.getRange('A4').values=[[d.notes]];main.getRange('A4:F4').format={fill:'#FFF2D8',font:{name:'Arial',size:11,color:'#745319'},wrapText:true,rowHeight:80};
-  main.getRange('A6:B6').merge();main.getRange('A6').values=[['逐样本条数（Sim. / Exp.）']];main.getRange('C6:D6').values=[[d.stages.Sim.sample_rows,d.stages.Exp.sample_rows]];main.getRange('C6:D6').setNumberFormat('#,##0');
+  main.getRange('A6:B6').merge();main.getRange('A6').values=[[d.reference_sample_bindings?'指定版本逐样本数（参考另列）':'逐样本条数（Sim. / Exp.）']];main.getRange('C6:D6').values=[[d.stages.Sim.sample_rows,d.stages.Exp.sample_rows]];main.getRange('C6:D6').setNumberFormat('#,##0');
   main.getRange('A8:F8').values=[['范围','指标','Sim.','Exp.','单位','方向']];main.getRange('A8:F8').format=header;
   main.getRange(`A9:F${end}`).values=values;main.getRange(`C9:D${end}`).setNumberFormat('0.000000');main.getRange(`C9:D${end}`).format.horizontalAlignment='right';
   for(let i=0;i<values.length;i++){
@@ -58,7 +63,7 @@ for(const d of payload.tasks){
     if(i%2===0)main.getRange(`A${row}:F${row}`).format.fill='#F0F5F8';
     if(values[i][4]==='个'||allKeys[i].includes('/per_joint_counts\t'))main.getRange(`C${row}:D${row}`).setNumberFormat('#,##0');
     if(values[i][0]==='整体'&&values[i][1]===d.primary)main.getRange(`A${row}:F${row}`).format={fill:'#DCECF5',font:{name:'Arial',size:11,bold:true,color:'#164D6D'}};
-    for(const [j,column] of [[2,'C'],[3,'D']])if(values[i][j]===null)main.getRange(`${column}${row}`).format.fill=/historical|original_reported/.test(allKeys[i])?'#F0F5F8':'#FCE5DF';
+    for(const [j,column] of [[2,'C'],[3,'D']])if(values[i][j]===null)main.getRange(`${column}${row}`).format.fill=/historical|original_reported|reference/.test(allKeys[i])?'#F0F5F8':'#FCE5DF';
   }
   main.tables.add(`A8:F${end}`,true,'OverallMetrics');main.freezePanes.freezeRows(8);
   main.getRange('H8:I8').values=[['版本及证据','内容']];main.getRange('H8:I8').format=header;main.getRangeByIndexes(8,7,meta.length,2).values=meta;
@@ -77,7 +82,7 @@ for(const d of payload.tasks){
   else {raw.getRange('A3:F3').merge();raw.getRange('A3').values=[['本版本逐查询原始排名尚未找回；此页不以其他版本或截图数值补造记录。']];raw.getRange('A3:F3').format={fill:'#FFF2D8',wrapText:true,rowHeight:55};}
   for(let i=0;i<c;i++){
     const key=d.headers[i],first=d.samples.find(r=>r[i]!==null)?.[i];
-    const text=typeof first==='string';const w=i===0?12:key==='sample_id'&&d.task.startsWith('lgvq')?80:/instruction|prompt/.test(key)?64:key==='positive_ranks'?64:/record_origin|record_status/.test(key)?36:/sample_id|query_id|source_id/.test(key)?32:typeof first==='string'?24:25;
+    const text=typeof first==='string';const w=i===0?(d.reference_sample_bindings?36:12):key==='sample_id'&&d.task.startsWith('lgvq')?80:/instruction|prompt/.test(key)?64:key==='positive_ranks'?64:/record_origin|record_status/.test(key)?36:/sample_id|query_id|source_id/.test(key)?32:typeof first==='string'?24:25;
     raw.getRangeByIndexes(0,i,Math.max(n+1,4),1).format.columnWidth=w;
     if(n&&key==='positive_ranks'){
       raw.getRangeByIndexes(1,i,n,1).format.wrapText=true;
@@ -95,7 +100,7 @@ for(const d of payload.tasks){
     const pic=await wb.render({sheetName:s.name,range,scale:1,format:'png'});await fs.writeFile(path.join(verify,d.task+'_'+suffix+'.png'),new Uint8Array(await pic.arrayBuffer()));
   }
   if(maxRow>32){const pic=await wb.render({sheetName:main.name,range:'A2:I32',scale:1,format:'png'});await fs.writeFile(path.join(verify,d.task+'_overall_top.png'),new Uint8Array(await pic.arrayBuffer()));}
-  const expFirst=d.samples.findIndex(r=>r[0]==='Exp')+2;
+  const expFirst=d.samples.findIndex(r=>r[0]===(d.reference_sample_bindings?.Exp.row_label??'Exp'))+2;
   for(const [range,suffix] of [[`E1:${colName(c-1)}9`,'metric_details'],[`A${expFirst}:${colName(Math.min(c,12)-1)}${expFirst+7}`,'samples_exp']]){
     const pic=await wb.render({sheetName:raw.name,range,scale:1,format:'png'});await fs.writeFile(path.join(verify,d.task+'_'+suffix+'.png'),new Uint8Array(await pic.arrayBuffer()));
   }

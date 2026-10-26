@@ -150,6 +150,32 @@ check(d,'Exp','embedding_ranks_equal_saved_predictions_all_2400',True);check(d,'
 assert {x[1]:x[2] for x in d['samples'] if x[0]=='Sim'}=={x[1]:x[2] for x in d['samples'] if x[0]=='Exp'}
 check(d,'pair','same_2400_query_ids_SKUs_and_checkpoint',True)
 
+# Identity takes precedence over completeness: neither a later same-PT replay
+# nor a superseded capture can replace the specifically requested final result.
+d['notes']='指定Sim恢复原最终报告1934/2400=.8058333（.8058），epoch25 EMA；.8045833回放仅作参考。Exp的.8029167来自已标记过时的旧会话，不能确认是最终版，主列不采用；两批2400条参考明细完整保留并独立标识。'
+d['expected']['Exp']=.8019
+d['superseded_session_corrected_value']=1927/2400
+sm={(g,k):v for g,k,v in d['stages']['Sim']['metrics']}
+formal={('overall','queries'):2400,('overall','candidates'):100}
+formal.update({('overall',k.replace('recall_at_','hit_at_')):v for k,v in r['student'].items()})
+formal['overall','map']=r['student']['mrr']  # One positive per query: AP=RR.
+formal.update({('same_pt_replay_reference',k):v for (g,k),v in sm.items() if g=='overall'})
+d['stages']['Sim'].update(metrics=[[g,k,v] for (g,k),v in formal.items()],status='original_final_report',notes='指定原最终报告：epoch25 EMA，1934/2400=.8058333333，PT a2aa9a93。原1934命中这一轮的逐样本排名尚未恢复；1931命中的A100回放不替代指定版本。',formal_export_eligible=True)
+em={(('superseded_session_reference' if g=='overall' else g),k):v for g,k,v in d['stages']['Exp']['metrics']}
+d['stages']['Exp'].update(metrics=[[g,k,v] for (g,k),v in em.items()],status='final_identity_unconfirmed',notes='仅找回已被替代旧会话：原会话明确old_metrics_not_current=true，vision_expert重采后下游四层作废。旧数据复算1927/2400=.8029167只证明该旧文件内部计数，不证明最新/最终实验身份。最终Exp主指标待核，不以旧会话补齐。',formal_export_eligible=False)
+d['stages']['Exp']['reference_checkpoint_sha256']=d['stages']['Exp']['checkpoint_sha256']
+d['stages']['Exp']['checkpoint_sha256']=None  # The final Exp checkpoint is not established.
+d['reference_sample_bindings']={
+    'Sim':{'row_label':'Sim回放参考（非指定版）','metric_group':'same_pt_replay_reference','rows':2400},
+    'Exp':{'row_label':'Exp旧会话参考（非最终）','metric_group':'superseded_session_reference','rows':2400}}
+for row in d['samples']:row[0]=d['reference_sample_bindings'][row[0]]['row_label']
+for name in ['FINAL_VERIFICATION.json']:
+    source(d,p.parent/name)
+for name in ['i2t_final_identity_full_20261026.inventory.json','4246fd452c_00_READ_ME.md','641f7946ff_02_summary.json']:
+    source(d,SR/'lab'/name)
+check(d,'Sim','original_final_report_identity',{'best_epoch':25,'weight_variant':'ema','correct':1934,'total':2400,'reference_replay_not_substituted':True})
+check(d,'Exp','final_identity_not_established',{'old_metrics_not_current':True,'new_final_report_located':False,'superseded_reference_only':True})
+
 # 4. Image-to-image: screenshot is not a same-checkpoint pair.
 d=new('abo_image_to_image','ABO 图搜图','hit_at_1',[.8225,.8113],'从原2400条全量特征补齐两侧完整排名/AP，并与800查询Top-1逐条一致。Sim .8225不含RGB旁路；Exp rank72 .81125，其同PT仿真.83375，当前两列不是同权重对照。')
 ip=T/'t07_abo_image_retrieval/runs/simulation/a100_input_inclusive_20261024_01/ours_repeat01/identity.json'
@@ -364,7 +390,7 @@ for i,d in enumerate(TASKS,1):
         s['sample_rows']=sum(row[0]==label for row in d['samples'])
         s['missing_overall_metrics']=[k for k in d['required_metrics'] if ('overall',k) not in values]
         expected=d['expected'][label];s['screenshot_numeric_rounding_matches']=(s['primary_value'] is not None and round(s['primary_value'],2 if d['primary']=='psnr_db' else 4)==expected)
-        s['screenshot_lineage_confirmed']=s['status'] in ['verified_full_test','verified_mixed_test','verified_saved_predictions','verified_saved_metrics','verified_user_selected_adapted','verified_saved_top1','aggregate_with_verified_sample_identity','verified_full_queries','verified_corrected_saved_summary','verified_frozen_CCD_replay']
+        s['screenshot_lineage_confirmed']=s['status'] in ['original_final_report','verified_full_test','verified_mixed_test','verified_saved_predictions','verified_saved_metrics','verified_user_selected_adapted','verified_saved_top1','aggregate_with_verified_sample_identity','verified_full_queries','verified_corrected_saved_summary','verified_frozen_CCD_replay']
         primary_header={'changed_cell_accuracy':'changed_cell_accuracy','pck_at_0.2_torso':'PCK@0.2_torso','cc':'CC','psnr_db':'PSNR_dB','srcc':'predicted_score','hit_at_1':'H@1'}[d['primary']]
         s['sample_rows_with_primary_observation']=sum(row[0]==label and row[d['headers'].index(primary_header)] is not None for row in d['samples'])
     assert all(len(row)==len(d['headers']) for row in d['samples'])
