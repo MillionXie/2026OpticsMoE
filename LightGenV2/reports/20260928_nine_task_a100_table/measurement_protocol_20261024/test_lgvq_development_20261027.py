@@ -38,7 +38,7 @@ class DevelopmentTests(unittest.TestCase):
         self.assertEqual(dev.SAME_CARD_REFERENCE.parent.name, 'lgvq_rtx4090_development_20261027_01')
         self.assertEqual(dev.SAME_CARD_SHA256, '31fedd4d30d24b705774007be0baa34f78c34a7bfa21b8890718a7334fd3bc88')
         source = Path(dev.__file__).read_text(encoding='utf8')
-        self.assertIn("plan = [('event_pool', True)] if reference", source)
+        self.assertIn("[('event_pool', True)] if reference", source)
         self.assertIn('A100_bitwise_equivalence_claimed=False', source)
 
     def test_import_and_adaptation_do_not_import_torch(self):

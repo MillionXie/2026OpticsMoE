@@ -96,7 +96,7 @@ def source_map():
     candidate, _ = load_candidate()
     result = candidate.source_map()
     for name in ('run_lgvq_development_20261027.py', 'run_temporal_remainder.py',
-                 'first_tf_supplement_20261025.py'):
+                 'first_tf_supplement_20261025.py', 'lgvq_development_graph_pools_20261027.py'):
         p = HERE/name
         result[p.relative_to(REPO).as_posix()] = sha(p)
     return result
@@ -222,7 +222,8 @@ def worker(args):
             ['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
         published_commit=bound['commit'], sources=bound['sources'], command=sys.argv,
         hardware_only_AST_substitution_counts=counts, original_worker_sha256=sha(WORKER),
-        performance_change='event_pool_only' if args.reuse_events else 'none_LG05_baseline',
+        performance_change=('same_slot_same_stream_graph_allocator_pool' if args.share_graph_pools else
+            'event_pool_only' if args.reuse_events else 'none_LG05_baseline'),
         reference_policy='same_card_development_bitwise' if reference else 'original_sealed_A100_bitwise_unchanged',
         same_card_reference=reference,
         qualified_for_final_hybrid_table=False, not_A100_speedup_evidence=True,
@@ -233,13 +234,34 @@ def worker(args):
     import lgvq_async_raw_adapter_20261026 as adapter
     original_adapt = adapter.adapt
     def development_adapt(raw):
-        trace, report = original_adapt(raw)
+        try:
+            trace, report = original_adapt(raw)
+        except ValueError as error:
+            if (not args.software_only_development or str(error) !=
+                    'No causal host/CUDA clock alignment; preserve raw, do not shift clocks arbitrarily'):
+                raise
+            # The CPU continuous wall and exact scores are independently saved.
+            # Do NOT repair clocks, produce a projection, or qualify this DAG.
+            trace = dict(status='REJECTED_HOST_CUDA_ALIGNMENT', error=str(error),
+                clock_values_modified=False, projection_computed=False)
+            report = dict(status='SOFTWARE_ONLY_DEVELOPMENT_DAG_REJECTED',
+                all_predictions_bitwise_equal=True,
+                actual_async_software_wall_ms=raw['actual_async_software_wall_ms'],
+                software_time16_ms=raw['actual_async_software_time16_ms'],
+                reference_sha256=raw['reference_sha256'],
+                raw_board_energy=raw['raw_board_energy'], projection_computed=False,
+                causal_DAG_accepted=False, clock_values_modified=False)
         report.update(qualified_for_final_hybrid_table=False, development_only=True,
             hardware_profile='RTX4090_450W_128SM', not_A100_speedup_evidence=True,
             physical_hardware_time_measured=False, same_card_reference=reference,
             A100_bitwise_equivalence_claimed=False)
         return trace, report
     adapter.adapt = development_adapt
+    import lgvq_lowlevel_capture_20261026 as lowlevel
+    original_tape = lowlevel.LowLevelTape
+    if args.share_graph_pools:
+        from lgvq_development_graph_pools_20261027 import tape_class
+        lowlevel.LowLevelTape = tape_class(original_tape)
     guard = Guard(args, bound['sources'])
     try:
         guard.check()
@@ -254,7 +276,7 @@ def worker(args):
         write(args.output/'status.json', dict(status='failed', pid=os.getpid(), unix=time.time(), error=repr(error)))
         raise
     finally:
-        guard.close(); adapter.adapt = original_adapt
+        guard.close(); adapter.adapt = original_adapt; lowlevel.LowLevelTape = original_tape
 
 
 def stop_child(child, leaf):
@@ -303,7 +325,8 @@ def suite(args):
                 MKL_NUM_THREADS='8', OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
             subprocess.run(['nvidia-cuda-mps-control', '-d'], env=env, capture_output=True,
                 text=True, timeout=10, check=True); active = True
-            plan = [('event_pool', True)] if reference else [('baseline', False), ('event_pool', True)]
+            plan = ([('graph_pool', False)] if args.share_graph_pools else
+                [('event_pool', True)] if reference else [('baseline', False), ('event_pool', True)])
             for label, reuse in plan:
                 if time.time() >= args.deadline-60:raise TimeoutError('No new round beyond deadline')
                 if source_map() != sources:raise RuntimeError('Development source changed')
@@ -313,6 +336,8 @@ def suite(args):
                     '--output', str(leaf), '--deadline', str(args.deadline), '--receipt-sha', receipt_sha]
                 if reuse:command.append('--reuse-events')
                 if reference:command.append('--same-card-reference')
+                if args.share_graph_pools:command.append('--share-graph-pools')
+                if args.software_only_development:command.append('--software-only-development')
                 write(args.root/(label+'.command.json'), command)
                 with (args.root/(label+'.log')).open('x') as log:
                     child = subprocess.Popen(command, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
@@ -351,6 +376,9 @@ def main():
     p.add_argument('--reuse-events', action='store_true')
     p.add_argument('--same-card-reference', action='store_true',
         help='Explicit human authorization: event-pool round only, bytewise to preserved RTX4090 baseline')
+    p.add_argument('--share-graph-pools', action='store_true')
+    p.add_argument('--software-only-development', action='store_true',
+        help='Keep rejected CUDA clock evidence; report CPU-wall development only, never a repaired DAG projection')
     args = p.parse_args(); args.root = args.root.resolve()
     if args.root.parent != SIM or not re.fullmatch(r'lgvq_rtx4090_development_20261027_\d{2}', args.root.name):
         raise ValueError('New canonical development root required')
@@ -358,11 +386,16 @@ def main():
         raise ValueError('Finite development deadline at most one hour required')
     args.pipe = '/DATA/DATA1/guest3/.cache/'+args.root.name
     args.optimize_runtime = True; args.parallel_text = False
+    if args.share_graph_pools and (not args.same_card_reference or args.reuse_events):
+        raise ValueError('Graph-pool candidate requires same-card reference and original non-reused events')
+    if args.software_only_development and not args.share_graph_pools:
+        raise ValueError('Explicit software-only scope is limited to new graph-pool development candidate')
     if args.phase == 'worker':
-        if args.output is None or args.output.resolve() not in [args.root/'baseline', args.root/'event_pool']:
+        if args.output is None or args.output.resolve() not in [args.root/'baseline', args.root/'event_pool', args.root/'graph_pool']:
             raise ValueError('Exact development leaf required')
         args.output = args.output.resolve()
         if args.reuse_events != (args.output.name == 'event_pool'):raise ValueError('Frozen A/B plan differs')
+        if args.share_graph_pools != (args.output.name == 'graph_pool'):raise ValueError('Frozen graph-pool plan differs')
     (suite if args.phase == 'suite' else worker)(args)
 
 
