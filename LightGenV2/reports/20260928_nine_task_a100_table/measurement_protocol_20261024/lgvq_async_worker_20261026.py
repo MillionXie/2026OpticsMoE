@@ -115,8 +115,8 @@ def worker(args, guard, N):
     guard.check()
     output = args.output
     optimized = bool(getattr(args, 'optimize_runtime', False))
-    if optimized and os.environ.get('CUDA_MODULE_LOADING') != 'EAGER':
-        raise ValueError('Optimized runtime must select EAGER before worker CUDA initialization')
+    if optimized and os.environ.get('CUDA_MODULE_LOADING') != 'LAZY':
+        raise ValueError('Revised optimized runtime selects LAZY before worker CUDA initialization')
     frozen = source_map()
     reference = REPO/REFERENCE_RELATIVE
     if sha(reference) != REFERENCE_SHA256:
@@ -141,7 +141,9 @@ def worker(args, guard, N):
     base.write(output/'input_files.json', [dict(**r, bytes=Path(r['video_path']).stat().st_size,
         sha256=sha(r['video_path'])) for r in files])
     restore_constants, constants = approved.prepare_graph_constants(model)
-    prefix_fn, tail_fn, partition = capture.scoring_partition(model, score, approved.hoisted)
+    parts = capture.scoring_partition(model, score, approved.hoisted, text_parallel=optimized)
+    prefix_fn, tail_fn, partition = parts[:3]
+    text_fn = parts[3] if optimized else None
     base.write(output/'async_identity.json', dict(status='prepared_for_actual_execution', sources=frozen,
         gpu_uuid=GPU, actual_visible_multiprocessors=108, power_limit_w=power_limit,
         published_commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT'],
@@ -154,6 +156,7 @@ def worker(args, guard, N):
         CUDA_MODULE_LOADING=os.environ.get('CUDA_MODULE_LOADING','not_explicitly_set'),
         original_full_field_coherent_six_passes=True, fixed_optics_projection_pending=True))
     fs, bs = torch.cuda.Stream(), torch.cuda.Stream()
+    ts = torch.cuda.Stream() if optimized else fs
     meter = approved.hoisted.minimal.NoInnerTimer()
     outputs = []; records = []; slots = []; sampler = None; restore_eager = None
     shared_preparation = [None]
@@ -187,7 +190,8 @@ def worker(args, guard, N):
         return token['input_ids'], token['attention_mask'], dict(field=field, start=a, end=b,
             input_ids=token['input_ids'].tolist(), attention_mask=token['attention_mask'].tolist())
     def prefix(current):
-        batch = base.native_lg_front(front, position, current, meter, fs)
+        batch = (optimization.parallel_front(torch, front, position, current, model, text_fn, ts)
+                 if optimized else base.native_lg_front(front, position, current, meter, fs))
         return prefix_fn(model, **batch, optical_enabled=True)
     def tail(prepared):
         return tail_fn(model, prepared, optical_enabled=True)

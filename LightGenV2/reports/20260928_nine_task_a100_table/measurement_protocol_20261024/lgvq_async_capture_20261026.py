@@ -10,20 +10,25 @@ import inspect
 import time
 
 
-def scoring_partition(model, score_module, partition_module):
+def scoring_partition(model, score_module, partition_module, *, text_parallel=False):
     """Partition the approved score AST, never reintroduce auxiliary losses."""
     original = type(model).forward
     score_tree, score_receipt = score_module.score_forward_AST(inspect.getsource(original))
     tree, partition_receipt = partition_module.partition_forward(ast.unparse(score_tree))
+    if text_parallel:
+        from lgvq_async_optimization_20261026 import separate_prompt_adapter
+        tree, text_receipt = separate_prompt_adapter(tree)
+        partition_receipt['same_field_text_adapter_branch'] = text_receipt
     namespace = dict(original.__globals__)
     # Use the approved scoring-only router; routing arithmetic is unchanged.
     router_tree, router_receipt = score_module.router_score_AST(
         inspect.getsource(namespace['_standardized_router']))
     exec(compile(router_tree, inspect.getsourcefile(original)+'::async_router', 'exec'), namespace)
     exec(compile(tree, inspect.getsourcefile(original)+'::async_partition', 'exec'), namespace)
-    return namespace['prepare_native_prefix'], namespace['forward_from_prefix'], dict(
+    result = (namespace['prepare_native_prefix'], namespace['forward_from_prefix'], dict(
         scoring=score_receipt, partition=partition_receipt, router=router_receipt,
-        original_scoring_tail_AST_unchanged=True, auxiliary_outputs_omitted=True)
+        original_scoring_tail_AST_unchanged=True, auxiliary_outputs_omitted=True))
+    return result+(namespace['prepare_text_adapter'],) if text_parallel else result
 
 
 def serial_capture_plan(fields=128):

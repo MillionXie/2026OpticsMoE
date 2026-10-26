@@ -125,3 +125,5 @@
 !test_qwen_shared_serial_20261026.py
 !lgvq_async_optimization_20261026.py
 !test_lgvq_async_optimization_20261026.py
+!lgvq_phase_ledger_20261026.py
+!test_lgvq_phase_ledger_20261026.py

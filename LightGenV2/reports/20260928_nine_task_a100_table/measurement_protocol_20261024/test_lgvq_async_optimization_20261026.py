@@ -1,5 +1,6 @@
 """No model/CUDA: candidate policy, restoration and unchanged math calls."""
 import gc
+import ast
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock
@@ -8,6 +9,18 @@ from lgvq_async_optimization_20261026 import (
 
 
 class PolicyTests(unittest.TestCase):
+    def test_prompt_arithmetic_relocated_not_reassociated(self):
+        from lgvq_async_optimization_20261026 import separate_prompt_adapter
+        from pathlib import Path
+        path=Path(__file__).resolve().parents[4]/'experiments/qwen3_vl_2b_lgvq_single_metric_o2_16frame_54/modeling.py'
+        tree=ast.parse(path.read_text(encoding='utf-8'))
+        cls=next(n for n in tree.body if isinstance(n,ast.ClassDef) and n.name=='LGVQSingleMetricOEO16')
+        forward=next(n for n in cls.body if isinstance(n,ast.FunctionDef) and n.name=='forward')
+        forward.name='prepare_native_prefix'
+        changed,receipt=separate_prompt_adapter(ast.Module(body=[forward],type_ignores=[]))
+        self.assertTrue(receipt['original_prompt_adapter_arithmetic_unchanged'])
+        self.assertEqual(changed.body[-1].name,'prepare_text_adapter')
+        self.assertEqual(len(changed.body[-1].body),5)
     def test_single_synchronization_without_forced_gc_or_cache_purge(self):
         cuda=SimpleNamespace(synchronize=Mock(),empty_cache=Mock())
         tape=SimpleNamespace(preparation=None,preparation_calls=0,
