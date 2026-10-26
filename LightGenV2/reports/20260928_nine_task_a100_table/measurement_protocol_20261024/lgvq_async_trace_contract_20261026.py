@@ -7,6 +7,7 @@ frontend and backbone overlap. Counterfactual physical timing remains labelled
 as a projection; no hardware optical execution is claimed.
 """
 import math
+from collections import deque
 
 OPTICAL_PASS_MS=1000/1400+.300+.0307
 KINDS={'tokenizer','frontend','electronics','dispatch','sync','optical_simulation',
@@ -16,20 +17,26 @@ def critical_path(nodes, durations=None):
     """Every stream/resource order and real dispatch gap must be explicit edges."""
     by_id={n['id']:n for n in nodes}
     if len(by_id)!=len(nodes):raise ValueError('Duplicate trace node')
-    ends={};starts={};pending=dict(by_id)
-    while pending:
-        ready=[n for n in pending.values() if all(p in ends for p in n['parents'])]
-        if not ready:raise ValueError('Cycle or missing dependency')
-        for n in ready:
-            measured=n['duration_ms']
-            if n['kind'] not in KINDS or not isinstance(measured,(int,float)) or not math.isfinite(measured) or measured<0:
-                raise ValueError('Unknown or invalid measured duration')
-            duration=durations[n['id']] if durations is not None else measured
-            if not isinstance(duration,(int,float)) or not math.isfinite(duration) or duration<0:
-                raise ValueError('Invalid counterfactual duration')
-            start=max((ends[p] for p in n['parents']),default=0.)
-            starts[n['id']]=start;ends[n['id']]=start+duration
-            del pending[n['id']]
+    ends={};starts={};children={key:[] for key in by_id};degree={}
+    for n in nodes:
+        degree[n['id']]=len(n['parents'])
+        for parent in n['parents']:
+            if parent not in by_id:raise ValueError('Cycle or missing dependency')
+            children[parent].append(n['id'])
+    ready=deque(key for key in by_id if degree[key]==0)
+    while ready:
+        key=ready.popleft();n=by_id[key];measured=n['duration_ms']
+        if n['kind'] not in KINDS or not isinstance(measured,(int,float)) or not math.isfinite(measured) or measured<0:
+            raise ValueError('Unknown or invalid measured duration')
+        duration=durations[key] if durations is not None else measured
+        if not isinstance(duration,(int,float)) or not math.isfinite(duration) or duration<0:
+            raise ValueError('Invalid counterfactual duration')
+        start=max((ends[p] for p in n['parents']),default=0.)
+        starts[key]=start;ends[key]=start+duration
+        for child in children[key]:
+            degree[child]-=1
+            if degree[child]==0:ready.append(child)
+    if len(ends)!=len(nodes):raise ValueError('Cycle or missing dependency')
     return dict(wall_ms=max(ends.values(),default=0.),starts_ms=starts,ends_ms=ends)
 
 def project(trace):

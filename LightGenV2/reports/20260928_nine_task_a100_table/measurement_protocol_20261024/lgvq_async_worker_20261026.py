@@ -4,8 +4,9 @@ Never import this to start GPU work. A future exclusive controller must supply
 the original guard after the baseline suite actually exits/releases its lock.
 This worker retains the actual software wall, all 128 real outputs, the first
 three eager fields, both real capture fields and original NVML raw evidence.
-Fixed-optics DAG/phase-energy integration is still pending, explicitly labelled.
-There is intentionally no CLI or auto-dispatch until that gate is implemented.
+Original raw events are admitted through the witnessed DAG before fixed-optics
+and component-union energy projection. No CLI or automatic dispatch is provided;
+the external controller must still enforce exclusive original GPU admission.
 """
 import hashlib
 import json
@@ -32,6 +33,7 @@ def source_map():
     names = ['lgvq_async_worker_20261026.py', 'lgvq_async_capture_20261026.py',
              'lgvq_async_replay_20261026.py', 'lgvq_async_trace_contract_20261026.py',
              'lgvq_async_component_energy_20261026.py', 'lgvq_async_observed_dag_20261026.py',
+             'lgvq_async_raw_adapter_20261026.py',
              'lgvq_scoreonly_20261026.py', 'lgvq_lowlevel_capture_20261026.py',
              'lgvq_physical_projection_20261026.py', 'lgvq_graph_pipeline_20261026.py',
              'lgvq_hoisted_pipeline_20261026.py', 'lgvq_minimal_pipeline_20261026.py',
@@ -80,8 +82,8 @@ def serialize_field(origin, record):
 def worker(args, guard, N):
     """Execute only when called by an exclusive, separately approved controller.
 
-    The present return status is NOT a formal fixed-optics cost; a controller
-    must not translate software completion into completed hybrid projection.
+    Raw software completion is saved separately. A successful projected report
+    requires every observed DAG node start, complete scoring and telemetry gates.
     """
     if N != 2048:
         raise ValueError('No probe/fast-prefix/round selection in this candidate')
@@ -291,7 +293,16 @@ def worker(args, guard, N):
         if source_map() != frozen or sha(checkpoint) != live.PINS['temporal'][1] or sha(reference) != REFERENCE_SHA256:
             raise RuntimeError('Source/weights/reference changed during candidate')
         guard.check()
-        return timing
+        from lgvq_async_raw_adapter_20261026 import adapt
+        trace, report = adapt(timing)
+        if source_map()!=frozen:raise RuntimeError('Source changed during data-only DAG validation')
+        guard.check()
+        base.write(output/'async_causal_trace.json',trace)
+        report.update(raw_timing_sha256=sha(output/'async_raw_timing.json'),
+                      event_records_sha256=sha(output/'async_event_records.json'),
+                      outputs_sha256=sha(output/'outputs.npz'),telemetry_sha256=sha(output/'telemetry.csv'))
+        base.write(output/'cost_report.json',report)
+        return report
     except BaseException as error:
         # Do not try to synchronize failed CUDA contexts just to format evidence.
         # Preserve completed host/token/capture records and original observer raw.
