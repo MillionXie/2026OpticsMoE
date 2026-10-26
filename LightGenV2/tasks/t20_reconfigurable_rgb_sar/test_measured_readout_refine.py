@@ -1,10 +1,33 @@
 import unittest
+from pathlib import Path
 import numpy as np
 import torch
-from .refine_measured_readout import transform_from_TRAIN,augment_features,partial_sources,TRAIN_projection
+from .refine_measured_readout import transform_from_TRAIN,augment_features,partial_sources,TRAIN_projection,read,validate_profile,checkpoint_information,reference_relation
 
 
 class MeasuredReadoutRefineTests(unittest.TestCase):
+    def test_reduced_profile_changes_only_predeclared_source_budget_and_retention(self):
+        base=read(Path(__file__).with_name('config_measured_readout_refine_20261026.json'))
+        reduced=read(Path(__file__).with_name('config_measured_readout_TEST10_midPT_20261026.json'))
+        validate_profile(base);validate_profile(reduced)
+        self.assertEqual(reduced['teacher_sources_per_class_domain'],10)
+        for key in base:
+            if key!='teacher_sources_per_class_domain':self.assertEqual(reduced[key],base[key])
+        with self.assertRaises(ValueError):validate_profile(dict(reduced,steps=9999))
+
+    def test_teacher_gradient_and_student_inheritance_are_distinguished(self):
+        self.assertTrue(checkpoint_information(True,True)['TEST_gradients'])
+        self.assertFalse(checkpoint_information(True,False)['TEST_gradients'])
+        self.assertTrue(checkpoint_information(True,False)['TEST_information_inherited'])
+        self.assertFalse(checkpoint_information(False,False)['TEST_information_inherited'])
+
+    def test_requested_relation_is_only_a_report_never_clips_better_scores(self):
+        def scores(a,b):return dict(RGB=dict(correct=a),SAR=dict(correct=b))
+        self.assertTrue(reference_relation(scores(819,680),'LG')['both_within_2pp_below'])
+        self.assertFalse(reference_relation(scores(839,700),'LG')['both_within_2pp_below'])
+        result=reference_relation(scores(961,893),'LG')
+        self.assertFalse(result['both_within_2pp_below']);self.assertEqual(result['domains']['RGB']['correct'],961)
+
     def test_conditioning_folds_into_existing_bias_free_head(self):
         torch.manual_seed(73);x=torch.randn(80,12,dtype=torch.float64)+1
         matrix=transform_from_TRAIN(x,1e-5);u=torch.randn(10,12,dtype=x.dtype)
@@ -24,6 +47,8 @@ class MeasuredReadoutRefineTests(unittest.TestCase):
         self.assertEqual(len(source),400);self.assertEqual(len(set(source)),400)
         for d in (0,1):self.assertEqual(np.bincount(y[source[domains[source]==d]],minlength=10).tolist(),[20]*10)
         np.testing.assert_array_equal(source,partial_sources(ids,y,domains,np.arange(2000),pred,20))
+        smaller=partial_sources(ids,y,domains,np.arange(2000),pred,10)
+        self.assertEqual(len(smaller),200);self.assertTrue(set(smaller)<=set(source))
 
     def test_TRAIN_queries_recover_linear_teacher_but_not_erase_lineage(self):
         torch.manual_seed(73);query=torch.randn(80,12,dtype=torch.float64);teacher=torch.randn(10,12,dtype=query.dtype)

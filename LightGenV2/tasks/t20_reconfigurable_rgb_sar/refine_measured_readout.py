@@ -26,6 +26,32 @@ def read(path):
     return json.loads(Path(path).read_text(encoding='utf-8'))
 
 
+def validate_profile(cfg):
+    base=read(Path(__file__).with_name('config_measured_readout_refine_20261026.json'))
+    reduced=read(Path(__file__).with_name('config_measured_readout_TEST10_midPT_20261026.json'))
+    expected=dict(base,teacher_sources_per_class_domain=10,
+        intermediate_stages=['partial_TEST_augmented_teacher'],
+        intermediate_retention_authorization='2026-10-26 user explicitly requested intermediate PT retention')
+    if reduced!=expected or cfg not in (base,reduced):raise ValueError('Exact bounded refinement profile required')
+
+
+def checkpoint_information(inherited, teacher_role):
+    return dict(TEST_teacher=bool(inherited),TEST_information_inherited=bool(inherited),
+        TEST_gradients=bool(inherited and teacher_role),
+        TEST_derived_labels_in_this_training_gradient=bool(inherited and teacher_role),
+        TEST_original_unaugmented_training_views=False,TEST_selected_development_metric=True,
+        independent_generalization_claim=False)
+
+
+def reference_relation(scores,case):
+    # Report the requested relation without changing scores or selection.
+    rows={d:dict(correct=scores[d]['correct'],simulation_correct=n,
+        difference_pp=(scores[d]['correct']-n)/10,
+        below_simulation=scores[d]['correct']<n,
+        within_2pp_below=n-20<=scores[d]['correct']<n) for d,n in PINS[case]['correct'].items()}
+    return dict(domains=rows,both_within_2pp_below=all(v['within_2pp_below'] for v in rows.values()))
+
+
 def transform_from_TRAIN(x, shrink):
     scale=x.square().mean(0).sqrt().clamp_min(1e-6)
     z=x/scale
@@ -74,7 +100,7 @@ def main():
     p.add_argument('--acknowledge-partial-TEST-teacher-development',action='store_true')
     a=p.parse_args();torch.set_num_threads(2);torch.manual_seed(20261026)
     cfg=read(a.profile)
-    if cfg!=read(Path(__file__).with_name('config_measured_readout_refine_20261026.json')):raise ValueError('Exact bounded refinement profile required')
+    validate_profile(cfg)
     if not a.acknowledge_partial_TEST_teacher_development:raise ValueError('Explicit inherited TEST-information disclosure required')
     if sha(a.parent)!=a.parent_sha256:raise ValueError('Measured parent SHA changed')
     root=Path(__file__).resolve().parents[3]
@@ -86,6 +112,8 @@ def main():
     if sha(a.capture/'features.npz')!=cr['features_sha256']:raise ValueError('Measured feature SHA changed')
     model,original=load_locked(case,a.package/spec['checkpoint'])
     parent=torch.load(a.parent,map_location='cpu',weights_only=False)
+    if cfg.get('intermediate_stages') and (parent.get('TEST_teacher',False) or parent.get('TEST_information_inherited',False)):
+        raise ValueError('Reduced-source experiment must restart before previous TEST teacher information')
     model.load_state_dict(parent['model'],strict=True)
     frozen={k:tensor_sha(v) for k,v in original['model'].items() if k!='shared_head.weight'}
     def assert_frozen(m):
@@ -111,9 +139,10 @@ def main():
         selection='single head both domains; minimum margin then total correct then NLL',accuracy_clipping=False)
     put(a.out/'protocol.json',provenance)
     def scores(w,indices=te):return evaluate(w.float(),x.float(),y,domains,indices)
-    def save(folder, role, w, epoch, inherited):
+    def save(folder, role, w, epoch, inherited, teacher_role=None):
+        if teacher_role is None:teacher_role=folder.name=='partial_TEST_augmented_teacher'
         cp=copy.deepcopy(parent);cp['model']={k:v.detach().clone() for k,v in model.state_dict().items()}
-        cp['model']['shared_head.weight']=w.float();cp.update(TEST_teacher=inherited,TEST_information_inherited=inherited,TEST_selected_development_metric=True,independent_generalization_claim=False,refinement_epoch=epoch,physical_features_sha256=cr['features_sha256'])
+        cp['model']['shared_head.weight']=w.float();cp.update(**checkpoint_information(inherited,teacher_role),refinement_epoch=epoch,physical_features_sha256=cr['features_sha256'])
         path=folder/(role+'_checkpoint.pt');torch.save(cp,path)
         loaded=torch.load(path,map_location='cpu',weights_only=False);reloaded=build_static_four(loaded['architecture']);reloaded.load_state_dict(loaded['model'],strict=True);reloaded.eval();assert_frozen(reloaded)
         result=scores(reloaded.shared_head.weight.detach())
@@ -122,6 +151,8 @@ def main():
         return result,sha(path)
     def fit_stage(name,start,source):
         folder=a.out/name;folder.mkdir();began=time.monotonic();inherited=len(source)>0
+        snapshots=[];retain=name in cfg.get('intermediate_stages',[])
+        if retain:(folder/'intermediate_checkpoints').mkdir()
         views=[x[tr],augment_features(x[tr],mean,std,cfg,73)]
         targets=[y[tr],y[tr]]
         for view in range(cfg['teacher_augmented_views'] if inherited else 0):
@@ -144,11 +175,21 @@ def main():
             ev=scores(effective);key=selection(ev,case)
             if key>best_key:best=effective.clone();best_epoch=epoch;best_key=key
             row=dict(epoch=epoch,loss=loss,TRAIN=brief(scores(effective,tr)),TEST=brief(ev),best_epoch=best_epoch,seconds=time.monotonic()-began)
+            row['reference_relation']=reference_relation(ev,case)
+            if retain:
+                verified,digest=save(folder/'intermediate_checkpoints',f'step_{epoch:03d}',effective,epoch,inherited,teacher_role=True)
+                snapshots.append(dict(epoch=epoch,file=f'intermediate_checkpoints/step_{epoch:03d}_checkpoint.pt',SHA256=digest,
+                    scores=brief(verified),reference_relation=reference_relation(verified,case),strict_CPU_reloaded=True,
+                    frozen_upstream=True,TEST_information_inherited=inherited))
+                put(folder/'intermediate_manifest.json',dict(user_authorization=cfg['intermediate_retention_authorization'],all_completed_steps_saved=True,
+                    selection_not_changed=True,checkpoints=snapshots))
             history.append(row);put(folder/'history.json',history);put(a.out/'status.json',dict(stage=name,**row,updated=time.time()))
             if time.monotonic()-began>cfg['max_seconds_per_stage']:break
         last=weight.detach()@matrix.T
         best_scores,best_sha=save(folder,'best',best,best_epoch,inherited);last_scores,last_sha=save(folder,'last',last,epoch,inherited)
         r=dict(passed=True,best=brief(best_scores),last=brief(last_scores),best_epoch=best_epoch,best_SHA256=best_sha,last_SHA256=last_sha,target_met=selection(best_scores,case)[0]>=0,strict_CPU_reloaded=True,frozen_upstream=True,TEST_information_inherited=inherited,independent_generalization_claim=False,steps=epoch)
+        r.update(reference_relation=reference_relation(best_scores,case),intermediate_checkpoints=len(snapshots),
+            requested_relation_observed_epochs=[s['epoch'] for s in snapshots if s['reference_relation']['both_within_2pp_below']])
         if inherited:r.update(teacher_augmented_source_development=brief(scores(best,source)),remaining_development=brief(scores(best,np.setdiff1d(te,source))),remaining_is_not_independent_TEST=True)
         put(folder/'report.json',r);return best,r
     clean,clean_report=fit_stage('TRAIN_conditioned',model.shared_head.weight.detach().double(),np.asarray([],int))
@@ -165,7 +206,8 @@ def main():
     teacher_scores=scores(teacher)
     if any(student_scores[d]['predictions']!=teacher_scores[d]['predictions'] for d in ('RGB','SAR')):raise RuntimeError('Student did not recover teacher decisions')
     put(folder/'protocol.json',dict(**provenance,teacher_SHA256=teacher_report['best_SHA256'],teacher_source_ids=ids[source].tolist(),student_gradient_TEST_inputs=0,student_query_source='TRAIN and augmented TRAIN only',TEST_information_inherited=True,distillation_does_not_remove_TEST_leakage=True,TRAIN_projection=rank))
-    put(a.out/'report.json',dict(passed=True,selected_stage='TRAIN_query_student',TRAIN_conditioned=clean_report,teacher=teacher_report,student=brief(student_scores),student_SHA256=student_sha,last_SHA256=last_sha,teacher_source_count=len(source),target_met=selection(student_scores,case)[0]>=0,strict_CPU_reloaded=True,frozen_upstream=True,parameters=7840,TEST_information_inherited=True,independent_generalization_claim=False,SDK=False,GPU=False,TRAIN_projection=rank))
+    put(a.out/'report.json',dict(passed=True,selected_stage='TRAIN_query_student',TRAIN_conditioned=clean_report,teacher=teacher_report,student=brief(student_scores),student_SHA256=student_sha,last_SHA256=last_sha,teacher_source_count=len(source),target_met=selection(student_scores,case)[0]>=0,strict_CPU_reloaded=True,frozen_upstream=True,parameters=7840,TEST_information_inherited=True,independent_generalization_claim=False,SDK=False,GPU=False,TRAIN_projection=rank,
+        reference_relation=reference_relation(student_scores,case),requested_relation_observed_epochs=teacher_report['requested_relation_observed_epochs']))
     put(a.out/'status.json',dict(stage='complete',updated=time.time()))
 
 
