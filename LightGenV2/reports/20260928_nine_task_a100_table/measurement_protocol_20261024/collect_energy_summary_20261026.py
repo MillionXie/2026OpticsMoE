@@ -191,12 +191,32 @@ def aggregate(points):
     return result
 
 
-def collect(folders, lg_folder=None, allow_partial=False):
+def collect(folders, lg_folder=None, allow_partial=False, physical_scope_ledger=None):
     points = [point(p) for p in folders]
     groups = aggregate(points)
     done = {(p['model'], p['cap'], p['repeat']) for p in points if p['platform']=='A10040GB_PCIE_250W'}
     missing = sorted(EXPECTED - done)
     lg = point(lg_folder, 'LG_async') if lg_folder else None
+    if physical_scope_ledger is not None:
+        if lg is None:raise ValueError('Measured accepted LG required before physical scope replay')
+        from lgvq_phase_ledger_20261026 import build as phase_build
+        ledger_path=Path(physical_scope_ledger).resolve();ledger=read(ledger_path)
+        if ledger.get('scope_version')!='exclude_software_CPU_submit_v2' or ledger!=phase_build(lg_folder,True):
+            raise ValueError('New physical scope must replay from every original measured node')
+        keys=('fixed_optics_counterfactual_time16_ms','fixed_optics_component_proxy_energy16_j',
+              'projected_common_tokens_per_s','projected_native_tokens_per_s','component_energy_proxy')
+        lg['legacy_fixed_optics_v1']={k:lg[k] for k in keys}
+        lg.update(fixed_optics_counterfactual_time16_ms=ledger['fixed_optics']['wall_ms16'],
+            fixed_optics_component_proxy_energy16_j=ledger['fixed_optics_component_energy']['energy16_j'],
+            projected_common_tokens_per_s=ledger['projected_common_tokens_per_s'],
+            projected_native_tokens_per_s=ledger['projected_native_tokens_per_s'],
+            component_energy_proxy=ledger['fixed_optics_component_energy'],
+            physical_scope_version=ledger['scope_version'],physical_scope_ledger_path=str(ledger_path),
+            physical_scope_ledger_sha256=sha(ledger_path))
+        lg['files'].append(dict(local_path=str(ledger_path),remote_path=None,bytes=ledger_path.stat().st_size,
+            sha256=sha(ledger_path),role='local_derived_physical_scope'))
+        if ledger.get('reference_round'):
+            lg['files'].extend(point(Path(ledger['reference_round']['source_leaf']),'LG_async')['files'])
     if not allow_partial and (missing or lg is None):
         raise ValueError('Final summary requires all 24 lab points and a qualified async LG point')
     files = {}
@@ -224,11 +244,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--point', action='append', type=Path, required=True)
     parser.add_argument('--lg-point', type=Path)
+    parser.add_argument('--lg-physical-scope',type=Path)
     parser.add_argument('--allow-partial', action='store_true')
     parser.add_argument('--out', type=Path, required=True)
     args = parser.parse_args()
     if args.out.exists(): raise FileExistsError('Preserve immutable summary; choose a new output path')
-    result = collect(args.point, args.lg_point, args.allow_partial)
+    result = collect(args.point, args.lg_point, args.allow_partial,args.lg_physical_scope)
     with args.out.open('x', encoding='utf-8') as stream:
         json.dump(result, stream, ensure_ascii=False, indent=2, allow_nan=False)
     print(json.dumps(dict(status=result['status'], lab_complete_points=result['lab_complete_points'],

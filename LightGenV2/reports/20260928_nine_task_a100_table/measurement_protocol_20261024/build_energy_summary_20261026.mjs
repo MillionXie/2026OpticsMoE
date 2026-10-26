@@ -42,8 +42,10 @@ export function layout(data){
   return {groups,rounds,lgInputStart:row+3};
 }
 
-export async function build(input,out){
+export async function build(input,out,phasePath=null){
   const data=JSON.parse(await fs.readFile(input,'utf8'));const plan=layout(data);
+  const phase=phasePath?JSON.parse(await fs.readFile(phasePath,'utf8')):null;
+  if(phase&&(phase.status!=='passed'||path.resolve(phase.source_leaf)!==path.resolve(data.LG.path)||!phase.sum_only_additive_wall_column))throw Error('Qualified matching LG phase ledger required');
   try{await fs.access(out);throw Error('Preserve existing output directory');}catch(e){if(e.code!=='ENOENT')throw e;}
   for(const r of data.raw_file_index){
     if((await fs.stat(r.local_path)).size!==r.bytes||await sha(r.local_path)!==r.sha256)throw Error('Input evidence changed: '+r.local_path);
@@ -51,6 +53,7 @@ export async function build(input,out){
   const {Workbook,SpreadsheetFile}=await import('@oai/artifact-tool');
   const w=Workbook.create();
   const summary=w.worksheets.add('结果与阶段'),rounds=w.worksheets.add('轮次原值'),index=w.worksheets.add('原始文件索引');
+  const physical=phase?w.worksheets.add('物理阶段'):null;
   const base=(s,rows,cols)=>{s.showGridLines=false;s.getRangeByIndexes(0,0,rows,cols).format={font:{name:'Arial',size:11,color:'#182B3A'},rowHeight:25,verticalAlignment:'center'};};
   base(summary,80,13);base(rounds,plan.lgInputStart+20,28);base(index,data.raw_file_index.length+1,6);
   summary.tabColor='#243B53';
@@ -58,6 +61,52 @@ export async function build(input,out){
   const header=(s,r,n)=>{s.getRangeByIndexes(r-1,0,1,n).format={fill:'#243B53',font:{bold:true,color:'#FFFFFF'},horizontalAlignment:'center',verticalAlignment:'center',wrapText:true,rowHeight:56};};
   const title=(s,r,text,n)=>{put(s,r,[[text]]);s.getRangeByIndexes(r-1,0,1,n).format={font:{size:15,bold:true},rowHeight:30,borders:{bottom:{style:'thin',color:'#8FA4B5'}}};};
   const formula=(s,cell,value)=>s.getRange(cell).formulas=[[value]];
+  if(physical){
+    base(physical,65,12);physical.tabColor='#526D82';
+    physical.getRange('A1:A1').format.columnWidth=44;physical.getRange('B1:D1').format.columnWidth=22;
+    physical.getRange('E1:E1').format.columnWidth=39;physical.getRange('F1:L1').format.columnWidth=21;
+    title(physical,2,'LG：物理阶段与并行墙钟分解',5);
+    put(physical,4,[['每16视频。节点跨度可重叠，调度含观测等候；只有墙钟贡献列可求和。首场和真实建图保留。']]);
+    put(physical,5,[['光电口径剔除FFT/ROI/电残差/H2D及其CPU提交，再按原依赖重排。原因不明的观测排队保留。']]);
+    put(physical,7,[['阶段','节点跨度/ms','总墙钟贡献/ms','占墙钟比例','记录范围']]);header(physical,7,5);
+    for(const [i,p] of phase.rows.entries()){
+      const r=8+i;put(physical,r,[[p.block,p.executed_work_ms16,p.additive_wall_contribution_ms16,null,
+        p.key==='frontend'?'embedding、位置、adapter合并打点':p.key==='scheduling'?'含CPU返回、提交与必要同步':
+        p.key==='startup'?'真实首次建图准备，不摊销删去':p.key==='excluded'?'光电口径置零，软件仍真实执行':
+        p.key.startsWith('optics')?'固定光周期，非硬件计时':p.key.startsWith('oeo')?'原路由/读出、融合和下一段编码':
+        ['merger','decoder'].includes(p.key)&&!phase.merger_decoder_independently_measured?'未单独打点，归入相邻OEO':'原事件边界']]);
+      formula(physical,'D'+r,`=C${r}/$C$30`);
+    }
+    if(phase.rows.length>22)throw Error('Physical phase table exceeds reserved layout');
+    put(physical,30,[['合计（仅可加墙钟列）',null,null,1,'工作跨度不求和']]);formula(physical,'C30',`=SUM(C8:C${7+phase.rows.length})`);
+    put(physical,31,[['独立主时间',null,phase.fixed_optics.wall_ms16]]);
+    put(physical,32,[['墙钟闭合差',null,null]]);formula(physical,'C32','=C30-C31');
+    put(physical,34,[['Qwen MPS50对照/ms',data.groups.find(g=>g.model==='qwen'&&g.cap===50).time16_ms]]);
+    put(physical,35,[['100倍门槛/ms',null]]);formula(physical,'B35','=B34/100');
+    put(physical,36,[['光电投影时间比',null]]);formula(physical,'B36','=B34/C30');
+    put(physical,37,[['距100倍门槛/ms',null]]);formula(physical,'B37','=C30-B35');
+    put(physical,38,[['本轮旧口径/ms',phase.legacy_fixed_optics_time16_ms]]);
+    put(physical,39,[['旧轮同新口径/ms',phase.reference_round?.same_scope_time16_ms??'不适用']]);
+    physical.getRange('B8:C37').setNumberFormat('0.000000');physical.getRange('D8:D30').setNumberFormat('0.0%');
+    physical.getRange('A8:A29').format.rowHeight=30;physical.getRange('E8:E29').format.rowHeight=30;
+    title(physical,42,'baseline：串行主时间按对应阶段归纳',12);
+    put(physical,44,[['模型','MPS/%','平台','文字tokenizer/ms','GPU前端/ms','主干与decoder/ms','调度含CPU返回/ms','主时间合计/ms','独立主时间/ms','闭合差/ms','末条CPU返回/ms','至末CPU返回/ms']]);header(physical,44,12);
+    for(const [i,g] of plan.groups.entries()){
+      const r=45+i,stage=g.stage_equivalent16_ms;
+      const front=stage.GPU_model_entry_to_first_TF_host_ms,body=stage.first_TF_to_score_host_ms;
+      const source=(key)=>stage[key]??0;
+      put(physical,r,[[labels[g.model],g.cap,g.platform==='A10040GB_PCIE_250W'?'40GB/250W':'80GB/400W',source('CPU_tokenizer_retained_ms'),
+        front??'未独立记录',body??stage.full_GPU_model_to_score_host_ms,
+        source('entry_dispatch_retained_ms')+source('intermediate_CPU_output_retained_ms')+source('intervideo_dispatch_retained_ms'),
+        null,g.time16_ms,null,source('final_CPU_output_outside_primary_ms'),null]]);
+      formula(physical,'H'+r,`=SUM(D${r}:G${r})`);formula(physical,'J'+r,`=H${r}-I${r}`);formula(physical,'L'+r,`=H${r}+K${r}`);
+    }
+    physical.getRange('D45:L54').setNumberFormat('0.000');physical.getRange('B38:B39').setNumberFormat('0.000000');
+    physical.getRange('B45:C54').format.horizontalAlignment='center';physical.getRange('D45:L54').format.horizontalAlignment='right';
+    put(physical,57,[['租机无首网络节点独立记录，GPU前端并入主干与decoder。baseline没有光传播阶段。']]);
+    put(physical,58,[['原baseline未逐embedding/adapter/merger/decoder打点，不事后估分。中间CPU返回并入调度；末次返回单列并给含它的总时间。']]);
+    put(physical,60,[['LG阶段来源SHA256',await sha(phasePath)]]);
+  }
   const fileByPath=new Map(data.raw_file_index.map(r=>[path.resolve(r.local_path),r]));
   const digest=(p,name)=>{const r=fileByPath.get(path.resolve(p.path,name));if(!r)throw Error('Missing source index: '+name);return r.sha256;};
   const sourceCols=['原cost绝对路径','原cost SHA256','本地audit SHA256','输出NPZ SHA256','首网络节点是否独立记录'];
@@ -102,22 +151,22 @@ export async function build(input,out){
   put(rounds,lr,[['LG独立审计处理值','数值','单位','含义']]);header(rounds,lr,4);
   const lg=data.LG;
   const values=[['实际异步软件',lg.measured_software_time16_ms,'ms/16视频','含原软件FFT、首场与全部电子建图'],
-    ['固定光周期反事实',lg.fixed_optics_counterfactual_time16_ms,'ms/16视频','完整DAG改用六固定光周期，非物理光路实测'],
+    ['实测电子＋固定光周期投影',lg.fixed_optics_counterfactual_time16_ms,'ms/16视频','完整DAG重排，非物理光路实测'],
     ['实际FFT窗板卡能量',lg.measured_software_board_FFT_energy16_j,'J/16视频','只作原软件诊断，不借作光路代理能量'],
     ['固定组件代理能量',lg.fixed_optics_component_proxy_energy16_j,'J/16视频','控制器、光器件、板卡各时间并集，重叠不重复'],
     ['投影共同有效token速率',lg.projected_common_tokens_per_s,'tokens/s','共同Qwen有效token分子'],
     ['投影自身有效token速率',lg.projected_native_tokens_per_s,'tokens/s','每16视频光场共享prompt实际词编号计一次，不复制16份'],
     ['前端与上场主干交叠',lg.actual_stream_span_overlap_ms,'ms/128场','CUDA事件stream跨度，不证明逐kernel活跃并行']];
   put(rounds,lr+1,values);rounds.getRange(`B${lr+1}:B${lr+7}`).setNumberFormat('#,##0.000000');
-  title(summary,23,'LG异步：软件实测与固定光周期反事实分开报告',11);
+  title(summary,23,'LG异步：软件实测与光电时间投影',11);
   put(summary,25,[['口径','时间/ms每16视频','能量/J每16视频','共同tokens/s','自身tokens/s']]);header(summary,25,5);
-  put(summary,26,[['实际异步软件',null,null,'不适用此投影分母','不适用此投影分母'],['固定光周期反事实',null,null,null,null]]);
+  put(summary,26,[['实际异步软件',null,null,'不适用此投影分母','不适用此投影分母'],['电子＋固定光周期投影',null,null,null,null]]);
   formula(summary,'B26',`='轮次原值'!B${lr+1}`);formula(summary,'C26',`='轮次原值'!B${lr+3}`);
   formula(summary,'B27',`='轮次原值'!B${lr+2}`);formula(summary,'C27',`='轮次原值'!B${lr+4}`);
   formula(summary,'D27',`='轮次原值'!B${lr+5}`);formula(summary,'E27',`='轮次原值'!B${lr+6}`);
   summary.getRange('B26:E27').setNumberFormat('#,##0.000');
   put(summary,29,[['异步软件能量只指原FFT窗NVML板卡诊断。固定光周期行是改变传播时长后的DAG投影，不是光路计时或电表测量。']]);
-  put(summary,30,[['原ROI和电残差仅在批准反事实中置零，全部电子capture、融合、merger、任务头及必要等待保留。']]);
+  put(summary,30,[[phase?.scope_version==='exclude_software_CPU_submit_v2'?'新口径同时剔除纯FFT/ROI/电残差/H2D的CPU提交；保留电子建图、融合、merger、decoder及观测排队。':'原ROI和电残差在投影中置零，电子capture、融合、merger、任务头及必要等待保留。']]);
   put(summary,31,[['LG自身token按每16视频光场的实际共享prompt记一次，不乘16。不能与baseline自身token分子偷换。']]);
   put(summary,33,[['baseline相对LG','MPS/%','相对实际软件时间比','相对投影时间比','两种代理能量比','平台关系']]);header(summary,33,6);
   for(const [i,g] of plan.groups.entries()){
@@ -160,6 +209,8 @@ export async function build(input,out){
   index.getRange(`B2:C${indexRows.length+1}`).format={wrapText:true,rowHeight:66};
   index.getRange(`D2:D${indexRows.length+1}`).format.horizontalAlignment='right';
   w.recalculate();
+  if(physical){close(physical.getRange('C30').values[0][0],data.LG.fixed_optics_counterfactual_time16_ms);close(physical.getRange('C32').values[0][0],0);
+    for(let r=45;r<45+plan.groups.length;r++)close(physical.getRange('J'+r).values[0][0],0);}
   for(const g of plan.groups){const r=g.summaryRow;for(const [cell,value] of [['E',g.time16_ms],['G',g.energy16_j],['I',g.pooled_common_tokens_per_s]])close(summary.getRange(cell+r).values[0][0],value);}
   const g=plan.groups[0],source=rounds.getRange('F'+g.lo),original=source.values[0][0],before=summary.getRange('E'+g.summaryRow).values[0][0];
   source.values=[[original+1]];w.recalculate();close(summary.getRange('E'+g.summaryRow).values[0][0]-before,1000*16/g.video_calls);
@@ -170,10 +221,16 @@ export async function build(input,out){
   }
   console.log((await w.inspect({kind:'table',range:`结果与阶段!A6:K${last}`,include:'values,formulas',tableMaxRows:11,tableMaxCols:11,maxChars:1600})).ndjson);
   console.log((await w.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:1400})).ndjson);
-  await fs.mkdir(out);const target=path.join(out,'Temporal_三轮baseline与LG异步_时间能耗明细_20261026.xlsx');
+  await fs.mkdir(out);const target=path.join(out,phase?'Temporal_LG优化与分阶段时间能耗_20261027.xlsx':'Temporal_三轮baseline与LG异步_时间能耗明细_20261026.xlsx');
   await (await SpreadsheetFile.exportXlsx(w)).save(target);
   for(const [sheetName,range,name] of [['结果与阶段',`A2:K${last}`,'summary'],['结果与阶段','A23:F43','LG'],['结果与阶段','A46:M58','stages'],['结果与阶段','A61:K72','LG_resources'],['轮次原值','A1:M8','rounds'],['轮次原值',`A${lr}:H${lr+7}`,'LG_inputs'],['原始文件索引','A1:F5','index']]){
     const preview=await w.render({sheetName,range,scale:1.3,format:'png'});await fs.writeFile(path.join(out,name+'.png'),new Uint8Array(await preview.arrayBuffer()));
+  }
+  if(physical){
+    for(const [range,name] of [['A2:E39','physical_LG'],['A42:L58','physical_baseline']]){
+      const preview=await w.render({sheetName:'物理阶段',range,scale:1.3,format:'png'});await fs.writeFile(path.join(out,name+'.png'),new Uint8Array(await preview.arrayBuffer()));
+    }
+    await fs.copyFile(phasePath,path.join(out,'phase_ledger.json'));
   }
   const csv=x=>'"'+String(x??'').replaceAll('"','""')+'"';
   await fs.writeFile(path.join(out,'raw_file_index.csv'),'\uFEFF'+[['role','local_path','remote_path','bytes','sha256'],...data.raw_file_index.map(r=>[r.role,r.local_path,r.remote_path,r.bytes,r.sha256])].map(r=>r.map(csv).join(',')).join('\r\n'));
@@ -184,6 +241,6 @@ export async function build(input,out){
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  const [input,out]=process.argv.slice(2);if(!input||!out)throw Error('Usage: node build_energy_summary_20261026.mjs qualified.json NEW_OUTPUT_DIRECTORY');
-  await build(path.resolve(input),path.resolve(out));
+  const [input,out,phase]=process.argv.slice(2);if(!input||!out)throw Error('Usage: node build_energy_summary_20261026.mjs qualified.json NEW_OUTPUT_DIRECTORY [phase_ledger.json]');
+  await build(path.resolve(input),path.resolve(out),phase?path.resolve(phase):null);
 }

@@ -31,9 +31,9 @@ def cached_sheets(workbook):
     sheets=[];formula_count=0
     with ZipFile(workbook) as z:
         names=[n.attrib['name'] for n in ET.fromstring(z.read('xl/workbook.xml')).findall('s:sheets/s:sheet',NS)]
-        if names!=['结果与阶段','轮次原值','原始文件索引']:
+        if names not in (['结果与阶段','轮次原值','原始文件索引'],['结果与阶段','轮次原值','原始文件索引','物理阶段']):
             raise ValueError('Unexpected exported worksheet order/names')
-        for i in range(1,4):
+        for i in range(1,len(names)+1):
             cells={}
             for cell in ET.fromstring(z.read(f'xl/worksheets/sheet{i}.xml')).findall('.//s:sheetData/s:row/s:c',NS):
                 value=cell.find('s:v',NS)
@@ -48,7 +48,7 @@ def cached_sheets(workbook):
 
 
 def verify_values(data,sheets):
-    summary,rounds,_=sheets
+    summary,rounds=sheets[:2]
     row=2
     for i,g in enumerate(data['groups']):
         points=sorted((p for p in data['rounds'] if (p['platform'],p['model'],p['cap'])==
@@ -85,12 +85,40 @@ def verify_values(data,sheets):
 def audit(folder,seal=False,visual_reviewed=False):
     folder=Path(folder).resolve();data=read(folder/'collected_results.json')
     if data['status']!='final_qualified_inputs':raise ValueError('No partial delivery can be sealed as final')
-    replay=collect([Path(p['path']) for p in data['rounds']],Path(data['LG']['path']))
+    replay=collect([Path(p['path']) for p in data['rounds']],Path(data['LG']['path']),
+                   physical_scope_ledger=data['LG'].get('physical_scope_ledger_path'))
     for key in ('status','lab_complete_points','groups','LG','rounds','raw_file_index','comparisons'):
         if replay[key]!=data[key]:raise ValueError('Current qualified inputs differ: '+key)
     books=list(folder.glob('*.xlsx'))
     if len(books)!=1:raise ValueError('Exactly one final workbook required')
     sheets,formula_count=cached_sheets(books[0]);verify_values(data,sheets)
+    if len(sheets)==4:
+        from lgvq_phase_ledger_20261026 import build as phase_build
+        phase=read(folder/'phase_ledger.json');phase_replay=phase_build(Path(data['LG']['path']),
+            data['LG'].get('physical_scope_version')=='exclude_software_CPU_submit_v2')
+        if phase_replay!=phase:raise ValueError('Physical phase ledger does not replay from original evidence')
+        cells=sheets[3]
+        for i,row in enumerate(phase['rows'],8):
+            close(cells.get('B'+str(i)),row['executed_work_ms16'])
+            close(cells.get('C'+str(i)),row['additive_wall_contribution_ms16'])
+            close(cells.get('D'+str(i)),row['additive_wall_contribution_ms16']/phase['fixed_optics']['wall_ms16'])
+        close(cells.get('C30'),phase['fixed_optics']['wall_ms16']);close(cells.get('C32'),0)
+        qwen50=next(g['time16_ms'] for g in data['groups'] if g['model']=='qwen' and g['cap']==50)
+        close(cells.get('B34'),qwen50);close(cells.get('B35'),qwen50/100)
+        close(cells.get('B36'),qwen50/phase['fixed_optics']['wall_ms16'])
+        close(cells.get('B37'),phase['fixed_optics']['wall_ms16']-qwen50/100)
+        close(cells.get('B38'),phase['legacy_fixed_optics_time16_ms'])
+        if phase.get('reference_round'):close(cells.get('B39'),phase['reference_round']['same_scope_time16_ms'])
+        for i,g in enumerate(data['groups'],45):
+            stage=g['stage_equivalent16_ms']
+            close(cells.get('D'+str(i)),stage.get('CPU_tokenizer_retained_ms',0))
+            front=stage.get('GPU_model_entry_to_first_TF_host_ms')
+            if front is not None:close(cells.get('E'+str(i)),front)
+            close(cells.get('F'+str(i)),stage.get('first_TF_to_score_host_ms',stage['full_GPU_model_to_score_host_ms']))
+            close(cells.get('G'+str(i)),sum(stage[k] for k in ('entry_dispatch_retained_ms','intermediate_CPU_output_retained_ms','intervideo_dispatch_retained_ms')))
+            close(cells.get('H'+str(i)),g['time16_ms']);close(cells.get('J'+str(i)),0)
+            close(cells.get('K'+str(i)),stage['final_CPU_output_outside_primary_ms'])
+            close(cells.get('L'+str(i)),g['time16_ms']+stage['final_CPU_output_outside_primary_ms'])
     with (folder/'raw_file_index.csv').open(encoding='utf-8-sig',newline='') as f:rows=list(csv.DictReader(f))
     if len(rows)!=len(data['raw_file_index']):raise ValueError('Raw index row count differs')
     for row,expected in zip(rows,data['raw_file_index']):
@@ -109,6 +137,7 @@ def audit(folder,seal=False,visual_reviewed=False):
         json.dump(result,f,ensure_ascii=False,indent=2)
     if seal:
         names=[books[0].name,'collected_results.json','raw_file_index.csv','builder_checks.json','saved_workbook_audit.json']
+        if len(sheets)==4:names.append('phase_ledger.json')
         manifest=dict(status='sealed',physical_optical_hardware_measured=False,
             files=[dict(path=name,bytes=(folder/name).stat().st_size,sha256=sha(folder/name)) for name in names])
         with (folder/'delivery_manifest.json').open('x',encoding='utf-8') as f:json.dump(manifest,f,ensure_ascii=False,indent=2)

@@ -85,7 +85,19 @@ def longest_path_partition(nodes,durations,mapping,fields):
                 critical_path_node_ids=[n['id'] for n in reversed(chain)])
 
 
-def build(folder):
+def software_only_submissions(raw):
+    """Only precisely timed software-only calls, never generic queue gaps."""
+    excluded={'optical_simulation','detector_ROI','electronic_residual'}
+    ids=set()
+    for row in raw['records']:
+        prefix=f"f{row['field']}"
+        ids.add(prefix+'.H2Dsubmit')
+        for i,event in enumerate(row['events']):
+            if event['kind'] in excluded:ids.add(prefix+f'.submit{i}')
+    return ids
+
+
+def build(folder,exclude_software_submit=False):
     folder=Path(folder);read=lambda n:json.loads((folder/n).read_text(encoding='utf-8-sig'))
     audit=read('local_independent_async_audit01.json')
     if audit['status']!='passed':raise ValueError('Independent accepted audit required first')
@@ -97,28 +109,59 @@ def build(folder):
     projected={n['id']:(OPTICAL_PASS_MS if n['kind']=='optical_simulation' else
         0. if n['kind'] in {'detector_ROI','electronic_residual','capture_excluded','H2D'} else n['duration_ms']) for n in nodes}
     a=longest_path_partition(nodes,actual,mapping,fields)
-    p=longest_path_partition(nodes,projected,mapping,fields)
-    if not math.isclose(p['wall_ms16'],cost['time16_ms'],rel_tol=1e-10,abs_tol=1e-6):
+    legacy=longest_path_partition(nodes,projected,mapping,fields)
+    if not math.isclose(legacy['wall_ms16'],cost['time16_ms'],rel_tol=1e-10,abs_tol=1e-6):
         raise ValueError('Physical-phase ledger differs from accepted main time')
+    submission_ids=software_only_submissions(raw) if exclude_software_submit else set()
+    by_id={n['id']:n for n in nodes}
+    if not submission_ids<=set(by_id) or any(by_id[k]['kind']!='dispatch' for k in submission_ids):
+        raise ValueError('Explicit software-only CPU submission evidence missing')
+    for key in submission_ids:projected[key]=0.
+    p=longest_path_partition(nodes,projected,mapping,fields)
+    from lgvq_async_component_energy_20261026 import component_energy
+    energy=component_energy(nodes,critical_path(nodes,projected),fields)
     work=defaultdict(float)
     for n in nodes:
-        if n['kind'] not in ('dispatch','sync'):
-            work[phase_of(n,mapping)]+=projected[n['id']]/fields
-    keys=[k for k in LABELS if k in work or k in p['critical_path_contribution_ms16']]
+        work[phase_of(n,mapping)]+=projected[n['id']]/fields
+    order=['tokenizer','frontend','vision_entry']
+    for i in (1,2,3):order.extend((f'optics{i}',f'oeo{i}'))
+    order.extend(('merger','language_entry'))
+    for i in (4,5,6):order.extend((f'optics{i}',f'oeo{i}'))
+    order.extend(('decoder','startup','scheduling','excluded'))
+    keys=[k for k in order if k in work or k in p['critical_path_contribution_ms16']]
     rows=[dict(block=LABELS[k],key=k,executed_work_ms16=work.get(k,0.),
                additive_wall_contribution_ms16=p['critical_path_contribution_ms16'].get(k,0.)) for k in keys]
+    reference=None
+    ref_folder=folder.parent.parent/'a100_lgvq_async_20261026_01'/'lg_repeat01'
+    if exclude_software_submit and ref_folder.resolve()!=folder.resolve() and ref_folder.exists():
+        ref=build(ref_folder,True)
+        reference=dict(source_leaf=ref['source_leaf'],raw_sha256=ref['raw_sha256'],
+            same_scope_time16_ms=ref['fixed_optics']['wall_ms16'],
+            legacy_scope_time16_ms=ref['legacy_fixed_optics_time16_ms'])
     return dict(status='passed',source_leaf=str(folder.resolve()),raw_sha256=audit['raw_sha256'],
         fields=fields,actual_software=a,fixed_optics=p,rows=rows,
+        scope_version='exclude_software_CPU_submit_v2' if exclude_software_submit else 'original_CPU_dispatch_retained_v1',
+        legacy_fixed_optics_time16_ms=legacy['wall_ms16'],
+        software_only_CPU_submission_node_ids=sorted(submission_ids),
+        software_only_CPU_submission_work_ms16=sum(by_id[k]['duration_ms'] for k in submission_ids)/fields,
+        observed_queue_latencies_retained_not_assumed_removed=True,
+        reference_round=reference,
+        fixed_pass_components_ms=dict(SLM=1000/1400,CCD_exposure=.300,camera_readout=.0307),
+        fixed_optics_component_energy=energy,
+        projected_common_tokens_per_s=cost['common_effective_tokens']/(p['wall_ms16']*fields/1000),
+        projected_native_tokens_per_s=cost['native_effective_tokens']/(p['wall_ms16']*fields/1000),
         sum_only_additive_wall_column=True,work_spans_NOT_additive_wall=True,
+        scheduling_span_includes_CPU_actions_and_observed_queue_not_kernel_work=True,
         frontend_internal_embedding_adapter_not_individually_measured=True,
         merger_decoder_independently_measured=raw.get('detailed_electronics_phases',False),
         physical_optical_hardware_measured=False,
-        scope='OEO includes charged post-detector electronics and next-field encoding, not the excluded electronic residual branch')
+        scope='OEO includes charged post-detector electronics and next-segment encoding, not the excluded electronic residual branch')
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('leaf',type=Path);parser.add_argument('out',type=Path)
-    args=parser.parse_args();result=build(args.leaf)
+    parser.add_argument('--exclude-software-submit',action='store_true')
+    args=parser.parse_args();result=build(args.leaf,args.exclude_software_submit)
     if args.out.exists() or args.out.with_suffix('.csv').exists():raise FileExistsError('Preserve existing phase ledger')
     with args.out.open('x',encoding='utf-8') as f:json.dump(result,f,ensure_ascii=False,indent=2)
     with args.out.with_suffix('.csv').open('x',encoding='utf-8-sig',newline='') as f:

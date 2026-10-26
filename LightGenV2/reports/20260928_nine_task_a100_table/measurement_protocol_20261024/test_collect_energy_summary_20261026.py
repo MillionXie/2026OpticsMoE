@@ -42,6 +42,9 @@ def fixture(folder, model='qwen', repeat=1, elapsed=256.):
 
 
 class SummaryTests(unittest.TestCase):
+    def test_new_scope_without_original_measured_LG_rejected(self):
+        with self.assertRaisesRegex(ValueError,'Measured accepted LG'):
+            collector.collect([],allow_partial=True,physical_scope_ledger=Path('not_read_without_LG.json'))
     def test_closed_parent_receipt_preserved(self):
         with tempfile.TemporaryDirectory() as d:
             p=fixture(Path(d)/'p');receipt=collector.read(p/'backup_receipt_complete01.json')

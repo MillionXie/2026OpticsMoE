@@ -1,5 +1,59 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-27：LG操作优化与物理阶段新口径交付（旧封存不覆写）
+
+正式新成品位于协议目录
+`outputs/01a061e2-6f88-7913-87f5-b632000e4c83/Temporal_optimized_energy_20261027_02/`：
+`Temporal_LG优化与分阶段时间能耗_20261027.xlsx`，63875B，SHA256
+`5dfc6cb48ef456ee1bf4e8bc860d3f0dccf2abff38ba3312d024445d5776f521`。
+`delivery_manifest.json` 已sealed，SHA256
+`28759effc50afdf6f5aabd3eaa719eaeb82c438ea74b8b8d8be90a13192fd8ee`；
+386项原文件/收据/audit/新口径来源索引SHA256
+`dd9da2c4e7e84ef714919b185eaa86f37c93f7eeb5fd9eceb73f263e736b8b31`。
+全部原SHA/size、358保存后公式缓存及四sheet/9PNG已复核。新作者marker恰一次；
+本轮`_01`为版式QA候选，不是交付。10月26日sealed成品、全部baseline及租机五点原位保留。
+
+候选05保留原同stream前端、跨场双槽异步，LAZY加载并取消强制GC/cache purge，临时禁自动GC，
+增加原merger/readout独立边界。运行绑定main `c67051db12765f45ad1794e708bb940c3d0e6e48`，
+42源逐Git核同；父1357206/子1357563均已真实退出、MPS及锁释放。14叶原文件14367038B、
+20根原文件14430140B及0B外日志全SHA保全，独立audit通过。2048输出逐字节同sealed reference，
+512原视频四循环不变；未训练、重跑TEST或改变数值/250ms门。cost SHA256
+`2f6fd6f789141576accbaed81368cb2e14fe3d1f8b83ec2c4603c2e85885442d`，
+raw timing SHA256 `57cc8e4e4f96cc9a59b46c4abf3a0b8c3f6676a02550954a33ea526fa7c8fc64`。
+软件实测3694.2975880228914ms/128场，即28.86169990642884ms/16视频。
+原v1（GPU段替换）16.87714199156035ms、2.256888430380298J，比旧v1 18.082306415504398ms短。
+
+人工本次明确纯FFT/ROI/电残差/H2D不计入，发现v1仍保留相应CPU软件提交。
+新增**v2范围修正**：仅将原精确打点的2176个此类CPU提交节点置零（原工作跨度合2.567507403ms/16），
+GPU FFT各替一次固定光周期，ROI/电残差/H2D及相应capture仍为零；原依赖、全部真实首场、
+电子capture、融合、merger、decoder和原因不明的观测排队保持。零化节点后重排全DAG，
+绝不从重叠wall直接减跨度，也不覆盖v1 cost/audit。新ledger为
+`LG05_phase_ledger_20261027_04.json`，SHA256
+`267a433a634eaf6cc26f3bf4f0c09c83816d7ec29c73924c0352e84f47b74a89`。
+新光电投影 **15.561670639845403ms/16**、固定组件并集代理 **2.1114656109062855J/16**，
+投影common **458562.5904283303token/s**、native共享prompt **2441.8972023930146token/s**。
+旧LG01同v2为16.59662791819404ms，所以同口径运行优化为1.034957278348637ms，约6.236%；
+不能将范围修正冒称GPU优化收益。相对Qwen50 1482.1417388422258ms为**95.24309909549339倍**，
+百倍门槛14.821417388422258ms，仍差0.740253251423145ms，**未达百倍，且不是物理光路实测**。
+
+新“物理阶段”表按图文前处理、vision router/expert/global三光周期及各OEO、merger、language
+router/expert/global三光周期及各OEO、decoder、建图、调度归纳。每固定光周期为
+SLM `1000/1400`、CCD曝光`.300`、相机读出`.0307`ms；它不是单独纯传播时间。
+OEO电子段是后续原路由概率/Top-k、学习读出、融合与下一段编码，非被排除的电子残差。
+分别给出可重叠节点跨度与可加的最长路径墙钟贡献，后者精确闭合。前处理内部未独立的embedding/
+位置/adapter仍合并，不伪造更细数值。baseline相应粗分前端/主干头/分词/调度，中间CPU返回
+并入调度，末次CPU返回原窗外单列并给含它的总时间，不改原主基准；无细打点的模块不估分。
+
+真实并行证据仍是CUDA event stream-span，05前端与上场主干交叠1135.439208984375ms/128场，
+非逐kernel活跃证明。04已实际测试独立同场文字embedding/adapter流并通过逐字节，但光电成本
+反而较慢，故未采用；不能仅凭有两个stream就宣称更快。进一步可能方向是减少CPU launch/
+trace调度、首场库启动与frontend争用，尚无新增实测收益，不按理想全覆盖填百倍。
+
+新数据工具支持`lgvq_phase_ledger_20261026.py LEAF NEW.json --exclude-software-submit`，
+collector可用`--lg-physical-scope NEW.json`，会重新核原SHA、重放v2且保留v1。builder可加该ledger
+作第四sheet，独立保存审计核原DAG范围、公式缓存及阶段闭合。21纯数据测试、6布局测试通过；
+reporting工具不改变已结束GPU运行身份。服务器HEAD不盲ff，原42运行源不随文档更新。
+
 ## 2026-10-26：人工要求继续LG优化与按物理阶段归纳（新候选，旧表不改）
 
 候选04（LAZY＋同场textstream）已全2048逐字节通过、本地独立audit通过，父1338196/子1338442
