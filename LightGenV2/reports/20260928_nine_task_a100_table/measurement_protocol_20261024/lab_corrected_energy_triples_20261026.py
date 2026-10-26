@@ -5,6 +5,7 @@ and H2D execute one video at a time but are excluded in accounting; tokenizer,
 GPU frontend, native backbone/head and other actual internal waits remain.
 """
 import argparse
+import ast
 import inspect
 import json
 import math
@@ -13,6 +14,7 @@ from pathlib import Path
 import signal
 import subprocess
 import sys
+import textwrap
 import time
 from types import SimpleNamespace
 import rental_energy_triples_20261026 as accounting
@@ -20,6 +22,29 @@ import rental_energy_triples_20261026 as accounting
 REPO=accounting.REPO
 TASK=REPO/'LightGenV2/tasks/t06_video_quality_assessment'
 GPU='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
+
+
+def diagnostic_guard_check(original):
+    """Move ONLY the original audit append before validation, preserving gates.
+
+    The old guard discarded the exact offending process snapshot on failure.
+    Every original query, source/deadline/MPS/process condition stays identical.
+    """
+    tree=ast.parse(textwrap.dedent(inspect.getsource(original)))
+    fn=tree.body[0]
+    append=fn.body[-1]
+    if not isinstance(append,ast.Expr) or not isinstance(append.value,ast.Call):raise ValueError('Guard audit AST changed')
+    if ast.unparse(append.value.func)!='self.audit.append':raise ValueError('Guard audit target changed')
+    prefix=fn.body[:-1]
+    original_AST=ast.dump(ast.Module(body=prefix,type_ignores=[]),include_attributes=False)
+    index=next(i for i,node in enumerate(prefix) if isinstance(node,ast.If) and 'clients - self.self_ids' in ast.unparse(node.test))
+    fn.body=prefix[:index]+[append]+prefix[index:]
+    without=[node for node in fn.body if node is not append]
+    if ast.dump(ast.Module(body=without,type_ignores=[]),include_attributes=False)!=original_AST:
+        raise ValueError('Original guard mathematics/queries changed')
+    namespace=dict(original.__globals__)
+    exec(compile(ast.fix_missing_locations(tree),__file__+'::audit_before_guard_rejection','exec'),namespace)
+    return namespace[fn.name]
 
 
 def sources():
@@ -56,10 +81,11 @@ def worker(args):
     if args.output.exists():raise FileExistsError('Preserve old point')
     args.output.mkdir()
     legacy=old.initialize_profile(args);bound=sources()
+    snapshot_check=diagnostic_guard_check(legacy.engine.MPSGuard.check)
     class Guard(legacy.engine.MPSGuard):
         def check(self):
             if sources()!=bound:raise RuntimeError('Frozen source changed')
-            super().check()
+            snapshot_check(self)
     guard=Guard(args);sampler=None;finish=None;records=[];tokenizer=[];restored=[]
     identity=dict(model=args.model,cap=args.cap,repeat=args.repeat,video_calls=2048,
         unique_videos=512,batch=1,sources=bound,command=sys.argv,pid=os.getpid(),gpu_uuid=GPU,
