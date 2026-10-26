@@ -11,10 +11,12 @@ import json
 import math
 from pathlib import Path
 import subprocess
+import sys
 
 import numpy as np
 from lgvq_async_raw_adapter_20261026 import adapt
 from lgvq_async_worker_20261026 import GPU, REFERENCE_RELATIVE, REFERENCE_SHA256, REPO, validate_predictions
+sys.path.insert(0,str(REPO))
 
 CHECKPOINT_SHA256='5303b574b200e14bf943af21c60a246720be453b9cf8847cd93c0eaaa243a77c'
 OBSERVER_RELATIVE='LightGenV2/tasks/t06_video_quality_assessment/e2e_telemetry_observer.py'
