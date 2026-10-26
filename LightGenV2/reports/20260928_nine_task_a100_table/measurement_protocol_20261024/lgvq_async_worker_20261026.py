@@ -9,6 +9,7 @@ There is intentionally no CLI or auto-dispatch until that gate is implemented.
 """
 import hashlib
 import json
+from contextlib import contextmanager
 from pathlib import Path
 import time
 
@@ -30,6 +31,7 @@ def sha(path):
 def source_map():
     names = ['lgvq_async_worker_20261026.py', 'lgvq_async_capture_20261026.py',
              'lgvq_async_replay_20261026.py', 'lgvq_async_trace_contract_20261026.py',
+             'lgvq_async_component_energy_20261026.py', 'lgvq_async_observed_dag_20261026.py',
              'lgvq_scoreonly_20261026.py', 'lgvq_lowlevel_capture_20261026.py',
              'lgvq_physical_projection_20261026.py', 'lgvq_graph_pipeline_20261026.py',
              'lgvq_hoisted_pipeline_20261026.py', 'lgvq_minimal_pipeline_20261026.py',
@@ -156,6 +158,17 @@ def worker(args, guard, N):
             super().start(kind, label)
             if shared_preparation[0] is None:
                 shared_preparation[0] = self.preparation
+    class ObservedEagerTape(lowlevel.projection.Tape):
+        @contextmanager
+        def excluded(self, label, kind):
+            a = torch.cuda.Event(enable_timing=True); b = torch.cuda.Event(enable_timing=True)
+            started = time.perf_counter(); a.record()
+            try:
+                yield
+            finally:
+                b.record(); ended = time.perf_counter()
+                self.eager.append((kind, label, a, b))
+                self.eager_host.append((started, ended))
     def tokenize(field):
         a = time.perf_counter()
         rendered = text.render_prompt(front.tokenizer, target_name='temporal', prompt=text.TARGET_PROMPTS['temporal'])
@@ -182,32 +195,47 @@ def worker(args, guard, N):
         origin = torch.cuda.Event(enable_timing=True)
         clock_before = time.perf_counter(); origin.record(); origin.synchronize(); clock_after = time.perf_counter()
         mono_before = time.monotonic(); host_start = time.perf_counter(); mono_after = time.monotonic()
-        eager_tape = lowlevel.projection.Tape(torch, bs)
+        eager_tape = ObservedEagerTape(torch, bs)
         restore_eager, eager_ledger = lowlevel.projection.install_simulation_boundaries(model, eager_tape)
         with torch.inference_mode():
             for field in range(3):
                 guard.fast(); sampler.check()
                 ids, mask, token_record = tokenize(field)
+                pin_start = time.perf_counter()
                 ids = ids.pin_memory(); mask = mask.bool().pin_memory()
+                pin_end = time.perf_counter()
                 with torch.cuda.stream(fs):
                     a = torch.cuda.Event(enable_timing=True); b = torch.cuda.Event(enable_timing=True)
+                    h2d_host_start = time.perf_counter()
                     a.record(); current = dict(raw[field], ids=ids.to('cuda', non_blocking=True),
                                                mask=mask.to('cuda', non_blocking=True)); b.record()
+                    h2d_host_end = time.perf_counter()
                     x = torch.cuda.Event(enable_timing=True); y = torch.cuda.Event(enable_timing=True)
+                    prefix_host_start = time.perf_counter()
                     x.record(); prepared = prefix(current); y.record()
-                eager_tape.eager = []
+                    prefix_host_end = time.perf_counter()
+                eager_tape.eager = []; eager_tape.eager_host = []
                 with torch.cuda.stream(bs):
                     bs.wait_event(y)
                     body_start = torch.cuda.Event(enable_timing=True); body_end = torch.cuda.Event(enable_timing=True)
+                    body_host_start = time.perf_counter()
                     body_start.record(); result = tail(prepared); prediction = result['prediction'].clone(); body_end.record()
-                body_end.synchronize()
-                events = [dict(kind='frontend', label='original_prefix', start=x, end=y, stream='frontend')]
-                events += [dict(kind=kind, label=label, start=x, end=y, stream='body') for kind, label, x, y in eager_tape.eager]
+                    body_host_end = time.perf_counter()
+                score_sync_start = time.perf_counter(); body_end.synchronize(); score_sync_end = time.perf_counter()
+                events = [dict(kind='frontend', label='original_prefix', start=x, end=y, stream='frontend',
+                               host_submit_start=prefix_host_start, host_submit_end=prefix_host_end)]
+                events += [dict(kind=kind, label=label, start=x, end=y, stream='body',
+                                host_submit_start=h[0], host_submit_end=h[1])
+                           for (kind, label, x, y), h in zip(eager_tape.eager, eager_tape.eager_host)]
                 if sum(e['kind'] == 'optical_simulation' for e in events) != 6:
                     raise RuntimeError('Original eager field lost a coherent optical pass')
                 outputs.append(prediction)
                 records.append(dict(field=field, mode='eager_real', tokenizer=token_record,
                     events=events, original_H2D_events=(a, b), body_envelope=(body_start, body_end),
+                    body_host_start=body_host_start, body_host_end=body_host_end,
+                    pin_host_start=pin_start, pin_host_end=pin_end,
+                    H2D_host_submit_start=h2d_host_start, H2D_host_submit_end=h2d_host_end,
+                    synchronization_observations=[dict(kind='score_ready',start=score_sync_start,end=score_sync_end)],
                     score_ready=body_end, score_ready_host=time.perf_counter()))
             restore_eager(); restore_eager = None
             for field in (3, 4):

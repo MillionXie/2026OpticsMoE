@@ -15,6 +15,14 @@ def example():
                 measured_software_wall_ms=66.)
 
 class ContractTests(unittest.TestCase):
+    def test_original_input_transfer_is_zero_node_not_wall_subtraction(self):
+        t=example()
+        t['nodes'].insert(0,dict(id='h2d',kind='H2D',duration_ms=2.,parents=[]))
+        t['nodes'][1]['parents']=['h2d'];t['measured_software_wall_ms']=68.
+        r=project(t)
+        self.assertAlmostEqual(r['projected_wall_ms'],6+6*OPTICAL_PASS_MS)
+        self.assertTrue(r['phase_energy_proxy']['controller_counted_once'])
+
     def test_keeps_startup_capture_and_overlapping_tokenizer(self):
         r=project(example());self.assertAlmostEqual(r['projected_wall_ms'],6+6*OPTICAL_PASS_MS)
         self.assertFalse(r['physical_hardware_time_measured'])

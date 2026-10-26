@@ -10,7 +10,7 @@ import math
 
 OPTICAL_PASS_MS=1000/1400+.300+.0307
 KINDS={'tokenizer','frontend','electronics','dispatch','sync','optical_simulation',
-       'detector_ROI','electronic_residual','capture_electronics','capture_excluded'}
+       'detector_ROI','electronic_residual','capture_electronics','capture_excluded','H2D'}
 
 def critical_path(nodes, durations=None):
     """Every stream/resource order and real dispatch gap must be explicit edges."""
@@ -25,6 +25,8 @@ def critical_path(nodes, durations=None):
             if n['kind'] not in KINDS or not isinstance(measured,(int,float)) or not math.isfinite(measured) or measured<0:
                 raise ValueError('Unknown or invalid measured duration')
             duration=durations[n['id']] if durations is not None else measured
+            if not isinstance(duration,(int,float)) or not math.isfinite(duration) or duration<0:
+                raise ValueError('Invalid counterfactual duration')
             start=max((ends[p] for p in n['parents']),default=0.)
             starts[n['id']]=start;ends[n['id']]=start+duration
             del pending[n['id']]
@@ -49,15 +51,19 @@ def project(trace):
             optical[n['field']].append(n)
     if any(len(v)!=6 for v in optical.values()):raise ValueError('Exactly six original optical passes per field')
     durations={n['id']:(OPTICAL_PASS_MS if n['kind']=='optical_simulation' else
-        0. if n['kind'] in {'detector_ROI','electronic_residual','capture_excluded'} else n['duration_ms']) for n in nodes}
+        0. if n['kind'] in {'detector_ROI','electronic_residual','capture_excluded','H2D'} else n['duration_ms']) for n in nodes}
     projected=critical_path(nodes,durations)
+    from lgvq_async_component_energy_20261026 import component_energy
+    energy=component_energy(nodes,projected,fields)
     return dict(status='COUNTERFACTUAL_FIXED_OPTICS_PROJECTION',actual_async_software_wall_ms=original['wall_ms'],
                 projected_wall_ms=projected['wall_ms'],projected_time16_ms=projected['wall_ms']/fields,
                 equivalent_frame_ms=projected['wall_ms']/(fields*64),fixed_pass_ms=OPTICAL_PASS_MS,
                 optical_passes=fields*6,first_field_and_all_charged_capture_retained=True,
                 physical_hardware_time_measured=False,subtract_overlapping_simulation_spans_from_wall=False,
                 changed_optical_timing_may_change_GPU_contention=True,
-                overlap_requires_actual_worker_trace=True)
+                overlap_requires_actual_worker_trace=True,
+                original_H2D_excluded_by_DAG_node_not_overlapping_span_subtraction=True,
+                phase_energy_proxy=energy)
 
 PREPARED_PLAN={
     'status':'PREPARED_CONTRACT_NOT_YET_MEASURED',
@@ -75,5 +81,7 @@ PREPARED_PLAN={
                          'no cached embeddings, scores, detector outputs or substituted model branches'],
     'safety':'wait for current baseline suite/lock/private MPS release; no shared GPU timing windows',
     'reporting':'measured full-software async wall and fixed-optics critical-path projection separate',
-    'not_done':['actual async worker integration','GPU validation and measured overlap','matched LG energy trace'],
+    'not_done':['raw worker events to fully witnessed causal-DAG adapter',
+                'exclusive controller admission after baseline exit/lock/MPS release',
+                'GPU validation and measured overlap','matched LG energy trace'],
 }

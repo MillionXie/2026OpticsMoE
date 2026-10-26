@@ -92,8 +92,9 @@ def replay_fields(torch,slots,raw,tokenize,guard,front_stream,body_stream,*,firs
                 slot_reuse_wait_host_start=wait_start,slot_reuse_wait_host_end=wait_end,
                 original_H2D_events=(h0,h1),events=observed,score_ready=b,
                 host_submission_end=time.perf_counter()))
-        records[-1]['score_ready'].synchronize()
+        final_sync_start=time.perf_counter();records[-1]['score_ready'].synchronize()
         end_host=time.perf_counter()
+        records[-1]['final_synchronization_observation']=dict(start=final_sync_start,end=end_host)
     return dict(outputs=outputs,records=records,last_score_ready_host=end_host,
         actual_online_tokenizer_calls=total_fields-first_field,
         independent_input_buffers=2,body_stream_serial=True,

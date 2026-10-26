@@ -44,7 +44,9 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
     Independent default graph pools and fresh static inputs are mandatory.
     """
     started = time.perf_counter()
+    initial_sync_start = time.perf_counter()
     torch.cuda.synchronize()
+    initial_sync_end = time.perf_counter()
     static = {name: torch.empty_like(raw[name]) for name in ('pixels', 'quality', 'ids', 'mask')}
     ids = cpu_ids.pin_memory()
     mask = cpu_mask.bool().pin_memory()
@@ -62,7 +64,7 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
             static[name].copy_(raw[name], non_blocking=True)
         d1.record(); refresh_host_end = time.perf_counter()
     # capture_begin(global) must not run with outstanding work on another stream.
-    torch.cuda.synchronize()
+    transfer_sync_start = time.perf_counter(); torch.cuda.synchronize(); transfer_sync_end = time.perf_counter()
     tape = tape_factory(torch, front_stream)
     events = [dict(kind='frontend', label='input_device_refresh', start=d0, end=d1,
                    stream='frontend', host_submit_start=refresh_host_start, host_submit_end=refresh_host_end)]
@@ -82,7 +84,7 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
             events.append(dict(kind='frontend', label='original_frontend_and_input_adapters',
                                start=a, end=b, stream='frontend',
                                host_submit_start=submit_start, host_submit_end=time.perf_counter()))
-        b.synchronize()
+        front_sync_start = time.perf_counter(); b.synchronize(); front_sync_end = time.perf_counter()
         captures.append(dict(phase='frontend', start=started, end=time.perf_counter()))
         tape.stream = body_stream
         restored, ledger = install_boundaries(model, tape)
@@ -111,7 +113,7 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
             submit_start = time.perf_counter(); a.record(); prediction = result['prediction'].clone(); b.record()
             events.append(dict(kind='electronics', label='retain_current_score', start=a, end=b, stream='body',
                                host_submit_start=submit_start, host_submit_end=time.perf_counter()))
-        b.synchronize()
+        score_sync_start = time.perf_counter(); b.synchronize(); score_sync_end = time.perf_counter()
         prefix_owned = {k: v for k, v in prefix.items() if torch.is_tensor(v)}
         if not prefix_owned:
             raise RuntimeError('Prefix must retain its real captured tensor allocations')
@@ -122,6 +124,11 @@ def capture_real_slot(torch, *, field, raw, cpu_ids, cpu_mask, model,
                       graph_construction=[{k: v for k, v in s.items() if k != 'graph'} for s in tape.segments],
                       original_H2D_events=(h0, h1), score_ready=b,
                       H2D_host_submit_start=h2d_host_start, H2D_host_submit_end=h2d_host_end,
+                      synchronization_observations=[
+                          dict(kind='device_before_buffers', start=initial_sync_start, end=initial_sync_end),
+                          dict(kind='device_after_transfer', start=transfer_sync_start, end=transfer_sync_end),
+                          dict(kind='frontend_before_body_capture', start=front_sync_start, end=front_sync_end),
+                          dict(kind='score_ready', start=score_sync_start, end=score_sync_end)],
                       host_start=started, host_end=time.perf_counter(),
                       no_extra_or_discarded_forward=True, optical_replacement_ledger=ledger)
         return slot, prediction, record
