@@ -1,0 +1,19 @@
+{
+  "folds": 3,
+  "ridge_candidates": [0.001, 0.01, 0.1, 1.0, 10.0],
+  "covariance_shrink": 0.00001,
+  "steps": 60,
+  "inner_iterations": 3,
+  "learning_rate": 0.2,
+  "label_smoothing": 0.05,
+  "centered_dropout": 0.02,
+  "noise_TRAIN_std": 0.02,
+  "mixup": 0.15,
+  "max_seconds": 900,
+  "CPU_threads": 2,
+  "SDK": false,
+  "GPU": false,
+  "TEST_gradients": false,
+  "TEST_teacher": false,
+  "retain_completed_steps": true
+}
