@@ -14,7 +14,7 @@ from .qwen_vl_turbo_training import configure_unet_training
 
 
 class SpatialBridge(nn.Module):
-    def __init__(self,input_dim=2048,width=128,channels=16,grid=8):
+    def __init__(self,input_dim=2048,width=128,channels=16,grid=8,conditional=False):
         super().__init__()
         self.grid=grid
         self.norm=nn.LayerNorm(input_dim)
@@ -23,18 +23,33 @@ class SpatialBridge(nn.Module):
         self.up2=nn.Conv2d(width//2,width//4,3,padding=1)
         self.output=nn.Conv2d(width//4,channels,1)
         self.aux_reference=nn.Conv2d(width//4,4,1)
+        self.film=nn.Linear(input_dim,2*width) if conditional else None
+        if self.film is not None:
+            nn.init.zeros_(self.film.weight);nn.init.zeros_(self.film.bias)
 
-    def forward(self,visual_tokens,with_aux=False):
+    def decode_features(self,x):
+        x=F.silu(self.up1(F.interpolate(x,scale_factor=2,mode='bilinear',align_corners=False)))
+        return F.silu(self.up2(F.interpolate(x,scale_factor=2,mode='bilinear',align_corners=False)))
+
+    def forward(self,visual_tokens,with_aux=False,context=None):
         if visual_tokens.ndim!=3 or visual_tokens.shape[1]!=self.grid**2:
             raise ValueError('Expected one verified, row-major Qwen visual grid')
         x=self.project(self.norm(visual_tokens.float())).transpose(1,2)
         x=x.reshape(len(x),-1,self.grid,self.grid)
-        x=F.silu(self.up1(F.interpolate(x,scale_factor=2,mode='bilinear',align_corners=False)))
-        x=F.silu(self.up2(F.interpolate(x,scale_factor=2,mode='bilinear',align_corners=False)))
+        auxiliary=None
+        if self.film is not None:
+            if context is None or context.shape!=(len(x),self.film.in_features):raise ValueError('Instruction context required by conditional spatial readout')
+            if with_aux:
+                if self.aux_reference is None:raise ValueError('TRAIN-only auxiliary readout was discarded')
+                auxiliary=self.aux_reference(self.decode_features(x))
+            gamma,beta=self.film(F.layer_norm(context.float(),(context.shape[-1],))).chunk(2,-1)
+            rms=x.float().square().mean((1,2,3),keepdim=True).sqrt().detach().clamp_min(1e-6)
+            x=x*(1+gamma.tanh()[:,:,None,None])+.5*beta.tanh()[:,:,None,None]*rms
+        x=self.decode_features(x)
         spatial=self.output(x)
         if with_aux:
             if self.aux_reference is None:raise ValueError('TRAIN-only auxiliary readout was discarded')
-            return spatial,self.aux_reference(x)
+            return spatial,auxiliary if auxiliary is not None else self.aux_reference(x)
         return spatial
 
 
@@ -84,13 +99,19 @@ class SpatialTurboHead(NativeTurboHead):
             return self.adapter(hidden, mask)
         return self.adapter(hidden[:,self.semantic_prefix:],valid[:,self.semantic_prefix:])
 
-    def forward_with_aux(self,hidden,valid,noise,with_aux=True):
+    def spatial_inputs(self,hidden,valid):
         visual=self.visual_tokens(hidden,valid)
+        context=None
         if self.instruction_span is not None:
             from .qwen_vl_postfree import focus_features
-            visual, _ = focus_features(hidden, valid, self.visual_positions, *self.instruction_span, self.text_readout_gain)
-        if with_aux:spatial,aux=self.spatial(visual,with_aux=True)
-        else:spatial,aux=self.spatial(visual),None
+            visual, mask = focus_features(hidden, valid, self.visual_positions, *self.instruction_span, self.text_readout_gain)
+            if self.spatial.film is not None:context=(hidden.float()*mask[:,:,None]).sum(1)/mask.sum(1,keepdim=True)
+        return visual,context
+
+    def forward_with_aux(self,hidden,valid,noise,with_aux=True):
+        visual,context=self.spatial_inputs(hidden,valid)
+        if with_aux:spatial,aux=self.spatial(visual,with_aux=True,context=context)
+        else:spatial,aux=self.spatial(visual,context=context),None
         if self.zero_spatial:spatial=spatial*0
         conditions=self.semantic_conditions(hidden,valid)
         self.scheduler.set_timesteps(1,device=noise.device)
@@ -149,8 +170,12 @@ def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False,iden
     unet.register_to_config(in_channels=4+cfg['spatial_channels'])
     if 'conv_in.spatial.weight' in saved:
         with torch.no_grad():unet.conv_in.spatial.weight.copy_(saved['conv_in.spatial.weight'].to(device))
-    spatial=SpatialBridge(width=cfg['spatial_width'],channels=cfg['spatial_channels'],grid=cfg['visual_grid']).to(device)
-    if 'spatial' in state:spatial.load_state_dict(state['spatial'])
+    spatial=SpatialBridge(width=cfg['spatial_width'],channels=cfg['spatial_channels'],grid=cfg['visual_grid'],conditional=cfg.get('conditional_spatial',False)).to(device)
+    if cfg.get('conditional_spatial') and not cfg.get('focus_instruction'):raise ValueError('Conditional spatial readout needs verified instruction masking')
+    if 'spatial' in state:
+        missing,unexpected=spatial.load_state_dict(state['spatial'],strict=False)
+        allowed={'film.weight','film.bias'} if cfg.get('initialize_conditional_spatial') and cfg.get('conditional_spatial') and not state['config'].get('conditional_spatial') else set()
+        if unexpected or set(missing)-allowed:raise ValueError('Spatial checkpoint scope differs: '+str((missing,unexpected)))
     model=SpatialTurboHead(unet,vae,scheduler,adapter,spatial,positions,cfg.get('semantic_prefix',0))
     if cfg.get('focus_instruction'):
         model.instruction_span = tuple(cfg['instruction_bounds'])

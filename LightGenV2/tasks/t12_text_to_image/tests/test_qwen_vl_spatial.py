@@ -26,6 +26,34 @@ class VAE(nn.Module):
 
 
 class SpatialTests(unittest.TestCase):
+    def test_counterfactuals_only_use_different_train_instructions_on_identical_rgb(self):
+        from ..qwen_vl_spatial_run import counterfactual_negatives
+        rows=[{'split':'train','render_protocol':'rich_product_scene_v1','source':{'sample_id':'one'},'mode':'object','prompt':p} for p in ('red','blue')]
+        data={'rows':rows,'reference':torch.zeros(2,3,4,4,dtype=torch.uint8)}
+        self.assertEqual(counterfactual_negatives(data,[0,1]),{0:[1],1:[0]})
+        rows[1]['split']='val'
+        with self.assertRaises(ValueError):counterfactual_negatives(data,[0,1])
+        rows[1]['split']='train';data['reference'][1]+=1
+        with self.assertRaises(ValueError):counterfactual_negatives(data,[0,1])
+
+    def test_conditional_spatial_identity_then_text_control_without_reference_aux_corruption(self):
+        torch.manual_seed(3)
+        old=SpatialBridge(16,16,4,2)
+        conditioned=SpatialBridge(16,16,4,2,conditional=True)
+        missing,extra=conditioned.load_state_dict(old.state_dict(),strict=False)
+        self.assertEqual(set(missing),{'film.weight','film.bias'});self.assertFalse(extra)
+        visual=torch.randn(2,4,16);text=torch.randn(2,16,requires_grad=True)
+        original,aux=old(visual,with_aux=True)
+        actual,actual_aux=conditioned(visual,with_aux=True,context=text)
+        torch.testing.assert_close(actual,original,atol=0,rtol=0)
+        torch.testing.assert_close(actual_aux,aux,atol=0,rtol=0)
+        with torch.no_grad():conditioned.film.weight.normal_(std=.03)
+        edited,unmodified_aux=conditioned(visual,with_aux=True,context=text)
+        self.assertFalse(torch.equal(edited,original))
+        torch.testing.assert_close(unmodified_aux,aux,atol=0,rtol=0)
+        edited.square().mean().backward();self.assertGreater(float(text.grad.abs().sum()),0.)
+        with self.assertRaises(ValueError):conditioned(visual)
+
     def test_two_category_scope_preserves_all_modes_and_excludes_other_rows(self):
         rows=[{'category':cat,'split':split,'mode':mode} for cat in ('lamp','pillow','ottoman')
               for split in ('train','val') for mode in ('background','object','joint')]

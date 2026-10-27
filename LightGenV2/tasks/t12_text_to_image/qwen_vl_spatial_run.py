@@ -112,6 +112,23 @@ def masks(row,device):
     return edit,dst
 
 
+def counterfactual_negatives(payload,ids):
+    """Different TRAIN instructions on the SAME RGB, never DEV negatives."""
+    groups=collections.defaultdict(list)
+    for i in ids:
+        row=payload['rows'][i]
+        if row['split']!='train' or row.get('render_protocol')!='rich_product_scene_v1':raise ValueError('Counterfactual ranking requires rich TRAIN only')
+        groups[row['source']['sample_id'],row['mode']].append(i)
+    result={}
+    for group in groups.values():
+        for i in group:
+            candidates=[j for j in group if payload['rows'][j]['prompt']!=payload['rows'][i]['prompt']]
+            if not candidates:raise ValueError('No distinct same-reference TRAIN instruction')
+            if any(not torch.equal(payload['reference'][i],payload['reference'][j]) for j in candidates):raise ValueError('Counterfactual source pixels changed')
+            result[i]=candidates
+    return result
+
+
 @torch.no_grad()
 def evaluate(model,payload,ids,device,output,label,metric,export=False):
     model.eval();records=[]
@@ -306,10 +323,12 @@ def run(args,cfg):
             if start%256==0:
                 write_json(out/'progress.json',{'stage':'TRAIN_vae_supervision','done':start+len(batch),'total':len(ids)})
     rng=random.Random(cfg['seed']);warm=torch.optim.AdamW(model.spatial.parameters(),lr=cfg['warm_lr'])
+    negatives=counterfactual_negatives(payload,ids) if cfg.get('counterfactual_weight',0) else None
     for step in range(1,cfg['warm_steps']+1):
         batch=rng.sample(ids,min(cfg['warm_batch_size'],len(ids)))
         h,valid=pack_hidden([payload['hidden'][i] for i in batch],device)
-        _,source=model.spatial(model.visual_tokens(h,valid),with_aux=True)
+        visual,context=model.spatial_inputs(h,valid)
+        _,source=model.spatial(visual,with_aux=True,context=context)
         loss=F.mse_loss(source.float(),torch.stack([ref_latent[i] for i in batch]).to(device))
         warm.zero_grad(set_to_none=True);loss.backward()
         torch.nn.utils.clip_grad_norm_(model.spatial.parameters(),1.);warm.step()
@@ -359,7 +378,8 @@ def run(args,cfg):
                 latent=region_weighted_loss(z,torch.stack([target_latent[i] for i in batch]).to(device),
                     torch.cat([target_regions[i] for i in batch]).to(device),cfg['latent_foreground_weight'])
                 pixel=balanced_region_l1(rgb,target,torch.cat([edit_regions[i] for i in batch]).to(device))
-                perceptual=metric(rgb.clamp(-1,1),target).mean()
+                correct_perceptual=metric(rgb.clamp(-1,1),target).flatten()
+                perceptual=correct_perceptual.mean()
                 spatial_loss=F.mse_loss(source.float(),torch.stack([ref_latent[i] for i in batch]).to(device))
                 conditions=model.semantic_conditions(h,valid)
                 align=F.mse_loss(conditions.float(),torch.stack([payload['train_clip_teacher'][i] for i in batch]).float().to(device))
@@ -371,9 +391,16 @@ def run(args,cfg):
                     boxes=region_boxes(torch.cat([masks({**payload['rows'][i],'mode':'object'},device)[0] for i in batch]))
                     product_loss=semantic(crop_regions(rgb,boxes),torch.stack([semantic_product[i] for i in batch]).to(device))
                     loss=loss+cfg.get('semantic_scene_weight',0)*scene_loss+cfg.get('semantic_product_weight',0)*product_loss
+                if negatives is not None:
+                    wrong_ids=[rng.choice(negatives[i]) for i in batch]
+                    wrong_target=image_float(payload['target'][wrong_ids],device)
+                    wrong_perceptual=metric(rgb.clamp(-1,1),wrong_target).flatten()
+                    ranking=F.relu(cfg.get('counterfactual_margin',.05)+correct_perceptual-wrong_perceptual).mean()
+                    loss=loss+cfg['counterfactual_weight']*ranking
             if not torch.isfinite(loss):raise FloatingPointError('Nonfinite training loss')
             (loss/cfg['gradient_accumulation']).backward();total+=float(loss.detach())/cfg['gradient_accumulation']
             terms={k:float(v.detach()) for k,v in {'latent':latent,'rgb':pixel,'lpips':perceptual,'reference':spatial_loss,'condition':align}.items()}
+            if negatives is not None:terms['counterfactual_rank']=float(ranking.detach())
         norm=torch.nn.utils.clip_grad_norm_(params,1.)
         if not torch.isfinite(norm):raise FloatingPointError('Nonfinite gradient')
         optimizer.step()
