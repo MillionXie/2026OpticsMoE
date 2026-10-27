@@ -103,7 +103,8 @@ def source_map():
     result = candidate.source_map()
     for name in ('run_lgvq_development_20261027.py', 'run_temporal_remainder.py',
                  'first_tf_supplement_20261025.py', 'lgvq_development_graph_pools_20261027.py',
-                 'lgvq_development_prompt_render_20261027.py', 'lgvq_development_conv_layout_20261027.py'):
+                 'lgvq_development_prompt_render_20261027.py', 'lgvq_development_conv_layout_20261027.py',
+                 'lgvq_development_patch_linear_20261027.py'):
         p = HERE/name
         result[p.relative_to(REPO).as_posix()] = sha(p)
     return result
@@ -229,7 +230,8 @@ def worker(args):
             ['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
         published_commit=bound['commit'], sources=bound['sources'], command=sys.argv,
         hardware_only_AST_substitution_counts=counts, original_worker_sha256=sha(WORKER),
-        performance_change=('same_field_text_visual_stream_overlap' if args.parallel_text else
+        performance_change=('one_patch_biased_linear' if args.patch_linear else
+            'same_field_text_visual_stream_overlap' if args.parallel_text else
             'Conv3d_channels_last_3d_storage_only' if args.channels_last_3d else
             'constant_prompt_TEXT_render_once_inside_window' if args.once_prompt_render else
             'CPU_intraop_threads_1' if args.cpu_threads==1 else
@@ -279,6 +281,12 @@ def worker(args):
             original_front_init(front,*a,**kw)
             write(args.output/'conv_layout_identity.json',install(front))
         live.LiveFront.__init__=layout_front_init
+    if args.patch_linear:
+        from lgvq_development_patch_linear_20261027 import install
+        def linear_front_init(front,*a,**kw):
+            original_front_init(front,*a,**kw)
+            write(args.output/'patch_linear_identity.json',install(front))
+        live.LiveFront.__init__=linear_front_init
     if args.share_graph_pools:
         from lgvq_development_graph_pools_20261027 import tape_class
         lowlevel.LowLevelTape = tape_class(original_tape)
@@ -356,7 +364,8 @@ def suite(args):
                 MKL_NUM_THREADS=str(args.cpu_threads), OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
             subprocess.run(['nvidia-cuda-mps-control', '-d'], env=env, capture_output=True,
                 text=True, timeout=10, check=True); active = True
-            plan = ([('parallel_text', False)] if args.parallel_text else
+            plan = ([('patch_linear', False)] if args.patch_linear else
+                [('parallel_text', False)] if args.parallel_text else
                 [('conv_layout', False)] if args.channels_last_3d else
                 [('prompt_render', False)] if args.once_prompt_render else
                 [('cpu_threads1', False)] if args.cpu_threads==1 else
@@ -377,6 +386,7 @@ def suite(args):
                 if args.once_prompt_render:command.append('--once-prompt-render')
                 if args.channels_last_3d:command.append('--channels-last-3d')
                 if args.parallel_text:command.append('--parallel-text')
+                if args.patch_linear:command.append('--patch-linear')
                 write(args.root/(label+'.command.json'), command)
                 with (args.root/(label+'.log')).open('x') as log:
                     child = subprocess.Popen(command, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
@@ -421,6 +431,8 @@ def main():
     p.add_argument('--channels-last-3d', action='store_true')
     p.add_argument('--parallel-text', action='store_true',
         help='Original same-field text arithmetic on its own stream; fork after H2D and join before use')
+    p.add_argument('--patch-linear', action='store_true',
+        help='Exact one-complete-patch biased convolution as matrix multiplication; original byte gate retained')
     p.add_argument('--software-only-development', action='store_true',
         help='Keep rejected CUDA clock evidence; report CPU-wall development only, never a repaired DAG projection')
     args = p.parse_args(); args.root = args.root.resolve()
@@ -430,6 +442,9 @@ def main():
         raise ValueError('Finite development deadline at most one hour required')
     args.pipe = '/DATA/DATA1/guest3/.cache/'+args.root.name
     args.optimize_runtime = True
+    if args.patch_linear and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools
+            or args.reuse_events or args.once_prompt_render or args.channels_last_3d or args.parallel_text):
+        raise ValueError('Patch-linear candidate changes only the complete-patch convolution implementation')
     if args.parallel_text and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools
             or args.reuse_events or args.once_prompt_render or args.channels_last_3d):
         raise ValueError('Text-stream candidate changes only same-field dependency scheduling')
@@ -441,10 +456,10 @@ def main():
         raise ValueError('Graph-pool candidate requires same-card reference and original non-reused events')
     if args.cpu_threads==1 and (not args.same_card_reference or args.share_graph_pools or args.reuse_events):
         raise ValueError('CPU-thread candidate requires same-card reference with original graph/event allocation')
-    if args.software_only_development and not (args.parallel_text or args.share_graph_pools or args.cpu_threads==1 or args.once_prompt_render or args.channels_last_3d):
+    if args.software_only_development and not (args.patch_linear or args.parallel_text or args.share_graph_pools or args.cpu_threads==1 or args.once_prompt_render or args.channels_last_3d):
         raise ValueError('Explicit software-only scope is limited to new authorized development candidates')
     if args.phase == 'worker':
-        if args.output is None or args.output.resolve() not in [args.root/x for x in ('baseline','event_pool','graph_pool','cpu_threads1','prompt_render','conv_layout','parallel_text')]:
+        if args.output is None or args.output.resolve() not in [args.root/x for x in ('baseline','event_pool','graph_pool','cpu_threads1','prompt_render','conv_layout','parallel_text','patch_linear')]:
             raise ValueError('Exact development leaf required')
         args.output = args.output.resolve()
         if args.reuse_events != (args.output.name == 'event_pool'):raise ValueError('Frozen A/B plan differs')
@@ -453,6 +468,7 @@ def main():
         if args.once_prompt_render != (args.output.name=='prompt_render'):raise ValueError('Frozen prompt-render plan differs')
         if args.channels_last_3d != (args.output.name=='conv_layout'):raise ValueError('Frozen Conv-layout plan differs')
         if args.parallel_text != (args.output.name=='parallel_text'):raise ValueError('Frozen text-stream plan differs')
+        if args.patch_linear != (args.output.name=='patch_linear'):raise ValueError('Frozen patch-linear plan differs')
     (suite if args.phase == 'suite' else worker)(args)
 
 

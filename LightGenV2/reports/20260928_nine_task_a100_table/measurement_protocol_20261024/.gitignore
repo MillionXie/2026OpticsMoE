@@ -129,3 +129,5 @@
 !test_lgvq_phase_ledger_20261026.py
 !rental_energy_missing_20261027.py
 !test_rental_energy_missing_20261027.py
+!lgvq_development_patch_linear_20261027.py
+!test_lgvq_development_patch_linear_20261027.py

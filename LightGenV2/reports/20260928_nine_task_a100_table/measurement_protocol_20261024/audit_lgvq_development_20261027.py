@@ -138,7 +138,7 @@ def audit(baseline,candidate,output):
                     or g['development_pool_scope']!='same_real_slot_same_stream_only' for g in graphs):
                 raise ValueError('Actual slot/stream pool evidence incomplete')
             if graphs[-1]['development_stream_pool_count']!=2:raise ValueError('Exactly separate frontend/body pools required')
-        elif method in ('CPU_intraop_threads_1','constant_prompt_TEXT_render_once_inside_window','Conv3d_channels_last_3d_storage_only','same_field_text_visual_stream_overlap'):
+        elif method in ('CPU_intraop_threads_1','constant_prompt_TEXT_render_once_inside_window','Conv3d_channels_last_3d_storage_only','same_field_text_visual_stream_overlap','one_patch_biased_linear'):
             identity=read(candidate/'identity.json')
             threads=1 if method=='CPU_intraop_threads_1' else 8
             if identity['CPU_intraop_threads']!=threads or any(g['independent_default_pool'] is not True for g in graphs):
@@ -166,6 +166,15 @@ def audit(baseline,candidate,output):
                 or info['weight_values_or_precision_changed'] is not False
                 or info['input_layout_conversion_inside_actual_forward'] is not True or info['extra_forward_calls']!=0):
             raise ValueError('Original biased BF16 Conv3d layout-only identity required')
+    if method=='one_patch_biased_linear':
+        info=read(candidate/'patch_linear_identity.json')
+        if (info['weight_dtype']!='torch.bfloat16' or info['bias_dtype']!='torch.bfloat16'
+                or info['actual_original_kernel']!=[2,16,16] or info['actual_original_stride']!=[2,16,16]
+                or info['original_weight_shape']!=[1024,3,2,16,16]
+                or info['original_parameters_retained'] is not True or info['weight_values_or_precision_changed'] is not False
+                or info['one_output_per_complete_patch'] is not True or info['input_row_order_unchanged'] is not True
+                or info['flatten_and_linear_inside_actual_forward'] is not True or info['extra_forward_calls']!=0):
+            raise ValueError('Exact original biased BF16 complete-patch linear identity required')
     if report.get('causal_DAG_accepted') is False:
         if report.get('projection_computed') is not False or report.get('clock_values_modified') is not False:
             raise ValueError('Rejected clock cannot produce a repaired projection')

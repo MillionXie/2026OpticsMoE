@@ -79,5 +79,12 @@ class DevelopmentTests(unittest.TestCase):
         self.assertEqual(source.count('text_fn(model,'),1)
         self.assertNotIn('synchronize()',source)
 
+    def test_patch_linear_candidate_is_isolated(self):
+        source=Path(dev.__file__).read_text(encoding='utf8')
+        self.assertIn("[('patch_linear', False)]",source)
+        self.assertIn("if args.patch_linear:command.append('--patch-linear')",source)
+        self.assertIn("args.patch_linear != (args.output.name=='patch_linear')",source)
+        self.assertIn('or args.channels_last_3d or args.parallel_text',source)
+
 
 if __name__ == '__main__':unittest.main()
