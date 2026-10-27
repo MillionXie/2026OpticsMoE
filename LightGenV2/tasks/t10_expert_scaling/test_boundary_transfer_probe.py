@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from .boundary_transfer_probe import matched_groups,transfer_metrics
+from .boundary_transfer_probe import matched_groups,transfer_metrics,cached_suffix
 from .phase_repair_probe import select_groups
 
 
@@ -25,6 +25,21 @@ class PolicyTests(unittest.TestCase):
         q=np.array([[.3,.4,.2,.1],[.3,.4,.2,.1]]);p=np.array([[.35,.3,.36,.0],[.4,.3,.2,.1]])
         m=transfer_metrics(p,np.array([0,0]),np.array(['fit_s','fit_s']),q)
         self.assertEqual(m['fit_s_clean']['corrected'],0);self.assertEqual(m['fit_s_d4']['corrected'],1)
+
+
+class TorchTests(unittest.TestCase):
+    def test_expert_suffix_keeps_gradient_through_real_oeo_and_fixed_global(self):
+        import torch
+        from unittest.mock import patch
+        class Tiny:
+            expert_phases=[None,torch.nn.Parameter(torch.tensor(2.))]
+            def phase_step(self,field,phase,expert):
+                self.called=expert;return (field.real*phase).to(torch.complex64)
+        model=Tiny();field=torch.tensor([3.]);rp=torch.tensor([1.])
+        with patch('LightGenV2.tasks.t10_expert_scaling.boundary_refine.suffix',side_effect=lambda m,f,r:dict(probabilities=f*4)):
+            p=cached_suffix(model,field,rp,'expert_phases.1')['probabilities'];p.sum().backward()
+        self.assertTrue(model.called);self.assertEqual(float(p),24.);self.assertEqual(float(model.expert_phases[1].grad),12.)
+        with self.assertRaises(ValueError):cached_suffix(model,field,rp,'router_phase')
 
 
 if __name__=='__main__':unittest.main()

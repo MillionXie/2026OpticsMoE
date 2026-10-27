@@ -1,0 +1,155 @@
+{
+  "run_id": "kather_n49_boundary_transfer_probe_20261027",
+  "source_commit": "b85cdce433198191c9c1ddbe935cc8c3c6e7c732",
+  "gradient_cosine": -0.9390963912010193,
+  "gradient_norms": {
+    "fit_s": 0.14715823531150818,
+    "fit_d": 0.12370611727237701
+  },
+  "directional_derivatives": {
+    "repair_s": {
+      "fit_s": -257.2325744628906,
+      "fit_d": 203.06857299804688
+    },
+    "repair_d": {
+      "fit_s": 241.56619262695312,
+      "fit_d": -216.23831176757812
+    },
+    "common": {
+      "fit_s": -44.88825225830078,
+      "fit_d": -37.73454666137695
+    }
+  },
+  "trials": [
+    {
+      "direction": "repair_s",
+      "rms": 0.0015,
+      "clean_fit_s_repaired": 8,
+      "clean_observe_s_repaired": 8,
+      "clean_fit_d_repaired": 0,
+      "clean_observe_d_repaired": 0,
+      "clean_guard_new_wrong": {
+        "guard_s": 0,
+        "guard_d": 9,
+        "guard_c": 4
+      }
+    },
+    {
+      "direction": "repair_s",
+      "rms": 0.005,
+      "clean_fit_s_repaired": 8,
+      "clean_observe_s_repaired": 8,
+      "clean_fit_d_repaired": 0,
+      "clean_observe_d_repaired": 0,
+      "clean_guard_new_wrong": {
+        "guard_s": 0,
+        "guard_d": 14,
+        "guard_c": 6
+      }
+    },
+    {
+      "direction": "repair_s",
+      "rms": 0.01,
+      "clean_fit_s_repaired": 8,
+      "clean_observe_s_repaired": 8,
+      "clean_fit_d_repaired": 0,
+      "clean_observe_d_repaired": 0,
+      "clean_guard_new_wrong": {
+        "guard_s": 0,
+        "guard_d": 16,
+        "guard_c": 8
+      }
+    },
+    {
+      "direction": "repair_d",
+      "rms": 0.0015,
+      "clean_fit_s_repaired": 0,
+      "clean_observe_s_repaired": 0,
+      "clean_fit_d_repaired": 8,
+      "clean_observe_d_repaired": 8,
+      "clean_guard_new_wrong": {
+        "guard_s": 12,
+        "guard_d": 0,
+        "guard_c": 0
+      }
+    },
+    {
+      "direction": "repair_d",
+      "rms": 0.005,
+      "clean_fit_s_repaired": 0,
+      "clean_observe_s_repaired": 0,
+      "clean_fit_d_repaired": 8,
+      "clean_observe_d_repaired": 8,
+      "clean_guard_new_wrong": {
+        "guard_s": 15,
+        "guard_d": 0,
+        "guard_c": 3
+      }
+    },
+    {
+      "direction": "repair_d",
+      "rms": 0.01,
+      "clean_fit_s_repaired": 0,
+      "clean_observe_s_repaired": 0,
+      "clean_fit_d_repaired": 8,
+      "clean_observe_d_repaired": 8,
+      "clean_guard_new_wrong": {
+        "guard_s": 15,
+        "guard_d": 0,
+        "guard_c": 5
+      }
+    },
+    {
+      "direction": "common",
+      "rms": 0.0015,
+      "clean_fit_s_repaired": 0,
+      "clean_observe_s_repaired": 0,
+      "clean_fit_d_repaired": 0,
+      "clean_observe_d_repaired": 0,
+      "clean_guard_new_wrong": {
+        "guard_s": 1,
+        "guard_d": 0,
+        "guard_c": 0
+      }
+    },
+    {
+      "direction": "common",
+      "rms": 0.005,
+      "clean_fit_s_repaired": 5,
+      "clean_observe_s_repaired": 3,
+      "clean_fit_d_repaired": 1,
+      "clean_observe_d_repaired": 1,
+      "clean_guard_new_wrong": {
+        "guard_s": 2,
+        "guard_d": 1,
+        "guard_c": 2
+      }
+    },
+    {
+      "direction": "common",
+      "rms": 0.01,
+      "clean_fit_s_repaired": 6,
+      "clean_observe_s_repaired": 4,
+      "clean_fit_d_repaired": 6,
+      "clean_observe_d_repaired": 3,
+      "clean_guard_new_wrong": {
+        "guard_s": 3,
+        "guard_d": 4,
+        "guard_c": 5
+      }
+    }
+  ],
+  "unique_train_images": 80,
+  "train_views": 160,
+  "elapsed_seconds": 32.493409633636475,
+  "no_val_test_forward": true,
+  "source_restored_exactly": true,
+  "manifest_files": 16,
+  "archive_sha256": "00cbc6f961795b0ed5d7fd0716f00ba71da6b096ff4bed87bb5a13c3b8cf8296",
+  "independent_numpy_probability_and_sampling_audit_passed": true,
+  "resource_release_verified": true,
+  "interpretation": "Two class gradients strongly oppose (cosine -0.939). Individual directions transfer to same-class heldout yet damage opposite-class guards. Normalized common direction improves both heldout sets at RMS .005/.01 but still harms correct S/D/COMPLEX guards; no tested common point meets protection criterion. Do not train more of same final-phase projection. This does not prove all last-phase directions impossible; next finite comparison may measure whether the previous expert block reduces this conflict under unchanged inference graph.",
+  "current_best_test_correct": 600,
+  "target_correct": 616,
+  "pilot_target_met": false
+}

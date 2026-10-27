@@ -1,0 +1,20 @@
+{
+  "seed": 17,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "amplitudes": [
+    0.0015,
+    0.005,
+    0.01
+  ],
+  "boundary_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_boundary_refine_20261027.json",
+  "reference_train_scores": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_boundary_refine_20261027/cache/reference_train_scores.npz",
+  "reference_train_scores_sha256": "77f5d8d8344e32eb6987c5a9a80b52bd4998f3d6373c13c512c4f278be5a587f",
+  "selection": "Exclude all32 old repair-fit IDs. Each confusion has16 new source-margin-ranked examples paired adjacently, fixed random split into8 direction/8 observation with matched difficulty. Correct STROMA/DEBRIS/COMPLEX guards each16=8 margin(0,.2]+8 margin(.2,.5]. Fixed clean+D4 views; source TRAIN only.",
+  "budget": "Only preceding expert block gradient diagnosis, same80 TRAIN images/160 fixed views as prior global test. Two class gradients and their cosine/directional derivatives; only normalized common direction at .0015/.005/.01 RMS,3 exact source-reset trials. No optimizer trajectory or VAL/TEST forwards. Freeze original final global/router/earlier two phases; unchanged original inference graph.",
+  "purpose": "Determine whether the preceding expert block has less class-gradient conflict and safer bilateral heldout transfer than final global. Last-global cos-.939 and all tested common points harmed guards. This does not prove last phase incapable; no formal extra-layer training unless comparative evidence supports it.",
+  "continuation": "Do not proceed to training unless common direction improves both confusion observation groups while limiting correct S/D/COMPLEX harm in both views. Only unilateral benefit supports a boundary tradeoff, not more of the same projected updates. Use evidence to decide next finite work; current616 TEST target remains unachieved.",
+  "trainable_block": "expert_phases.1",
+  "directions": [
+    "common"
+  ]
+}

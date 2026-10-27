@@ -12,6 +12,28 @@ from .phase_repair_probe import select_groups, rgb_views, phase_direction, sha_t
 from .expert_tail_schedule import save,sha
 
 
+def cached_prefix(model,rgb,block):
+    if block=='global_phases.1':return base.prefix(model,rgb)
+    if block!='expert_phases.1':raise ValueError('Only final global or preceding expert block')
+    import torch
+    from .model import encode_rgb
+    amp,rp,mask=model.route(encode_rgb(rgb,model.router_side))
+    assert torch.all(mask==1)
+    source=encode_rgb(rgb);field=model.assemble(source[:,None]*amp[:,:,None,None]).to(torch.complex64)
+    field=model.phase_step(field,model.expert_phases[0],True)
+    field=model.phase_step(field,model.global_phases[0],False)
+    assert float(field.imag.abs().max())==0.
+    return field.real,rp
+
+
+def cached_suffix(model,field,rp,block):
+    if block=='expert_phases.1':
+        import torch
+        field=model.phase_step(field.to(torch.complex64),model.expert_phases[1],True).real
+    elif block!='global_phases.1':raise ValueError('Only final global or preceding expert block')
+    return base.suffix(model,field,rp)
+
+
 def matched_groups(labels,scores):
     import numpy as np
     y=np.asarray(labels);pred=scores.argmax(1);logs=np.log(np.maximum(scores,1e-12));wrong=logs.copy();wrong[np.arange(len(y)),y]=-np.inf
@@ -67,21 +89,22 @@ def run(c,out,profile):
     ix=np.array(sum(groups.values(),[]));rows=np.repeat(ix,2);tags=np.repeat(np.array(sum(([n]*len(v) for n,v in groups.items()),[])),2);y=train[1].numpy()[rows]
     with np.load(m['arguments']['data'],allow_pickle=False) as z:assert set(train[2][ix]).isdisjoint(z['test_ids'].astype(str))
     assert set(train[2][ix]).isdisjoint(splits['val'][2]);codes=np.zeros(len(rows),np.int64);codes[1::2]=np.random.default_rng(17).integers(1,8,size=len(ix))
-    for n,p in model.named_parameters():p.requires_grad_(n=='global_phases.1')
-    phase=model.global_phases[-1];anchor=phase.detach().clone();frozen={n:sha_tensor(p) for n,p in model.named_parameters() if n!='global_phases.1'}
+    block=c.get('trainable_block','global_phases.1');assert block in ['global_phases.1','expert_phases.1']
+    for n,p in model.named_parameters():p.requires_grad_(n==block)
+    phase=dict(model.named_parameters())[block];anchor=phase.detach().clone();frozen={n:sha_tensor(p) for n,p in model.named_parameters() if n!=block}
     save(out/'metadata.json',dict(pid=os.getpid(),command=sys.argv,source_commit=commit,source_files=hashes,configuration=c,source_epoch=source_epoch,source_checkpoint_sha256=cfg['reference_sha256'],data_sha256=m['data_sha256'],
-        groups={n:train[2][v].tolist() for n,v in groups.items()},matched_pairs={n:train[2][v].tolist() for n,v in pairs.items()},selection='Source TRAIN margins only; old32 repair fit excluded; adjacent pairs split by fixed seed; correct guards stratified8+8. No VAL/TEST forward or optimizer trajectory.'))
+        trainable_block=block,trainable_parameters=phase.numel(),groups={n:train[2][v].tolist() for n,v in groups.items()},matched_pairs={n:train[2][v].tolist() for n,v in pairs.items()},selection='Source TRAIN margins only; old32 repair fit excluded; adjacent pairs split by fixed seed; correct guards stratified8+8. No VAL/TEST forward or optimizer trajectory.'))
     fields=np.empty((len(rows),model.c,model.c),np.float32);rp=[];parent=[]
     for start in range(0,len(rows),2):
         rgb=rgb_views(train,rows[start:start+2],codes[start:start+2])
         with torch.no_grad():
-            f,r=base.prefix(model,rgb);p=base.suffix(model,f,r)['probabilities']
+            f,r=cached_prefix(model,rgb,block);p=cached_suffix(model,f,r,block)['probabilities']
             if start==0:assert torch.equal(p,model(rgb)['probabilities'])
         fields[start:start+2]=f.cpu().numpy();rp.append(r.cpu().numpy());parent.append(p.cpu().numpy())
         save(out/'status.json',dict(state='train_fields',pid=os.getpid(),completed=min(start+2,len(rows)),total=len(rows),timestamp=time.time()))
     rp=np.concatenate(rp);parent=np.concatenate(parent);assert np.max(abs(parent[::2]-reference_scores[ix]))<1e-6
     np.savez_compressed(out/'train_identity.npz',ids=train[2][rows],indices=rows,labels=y,groups=tags,view_codes=codes,parent=parent)
-    def forward(order):return base.suffix(model,torch.from_numpy(fields[order]).cuda(),torch.from_numpy(rp[order]).cuda())['probabilities']
+    def forward(order):return cached_suffix(model,torch.from_numpy(fields[order]).cuda(),torch.from_numpy(rp[order]).cuda(),block)['probabilities']
     grads={}
     for group in ['fit_s','fit_d']:
         subset=np.flatnonzero(tags==group);g=torch.zeros_like(phase)
@@ -95,7 +118,10 @@ def run(c,out,profile):
     if float(common.norm())>1e-6:directions['common']=phase_direction(common)
     directional={name:{k:float((d*g).sum()) for k,g in grads.items()} for name,d in directions.items()}
     baseline=transfer_metrics(parent,y,tags,parent);trials=[]
-    for name,direction in directions.items():
+    selected=c.get('directions',list(directions));assert selected and set(selected).issubset({'repair_s','repair_d','common'})
+    selected=[name for name in selected if name in directions]
+    for name in selected:
+        direction=directions[name]
         for amplitude in c['amplitudes']:
             with torch.no_grad():phase.copy_(anchor+amplitude*direction)
             rms=base.project_phase(phase,anchor,.02);scores=[]
@@ -103,11 +129,11 @@ def run(c,out,profile):
                 for start in range(0,len(rows),2):scores.append(forward(np.arange(start,min(start+2,len(rows)))).cpu().numpy())
             scores=np.concatenate(scores);assert np.isfinite(scores).all() and abs(scores.sum(1)-1).max()<1e-5
             stats=transfer_metrics(scores,y,tags,parent);np.savez_compressed(out/(name+'_'+str(amplitude)+'_scores.npz'),scores=scores)
-            trials.append(dict(direction=name,amplitude=amplitude,circular_rms=rms,groups=stats));save(out/'progress.json',dict(pid=os.getpid(),completed=len(trials),total=len(directions)*3,latest=trials[-1],timestamp=time.time()))
+            trials.append(dict(direction=name,amplitude=amplitude,circular_rms=rms,groups=stats));save(out/'progress.json',dict(pid=os.getpid(),completed=len(trials),total=len(selected)*3,latest=trials[-1],timestamp=time.time()))
             with torch.no_grad():phase.copy_(anchor)
             assert torch.equal(phase,anchor)
     assert all(sha_tensor(p)==frozen[n] for n,p in model.named_parameters() if n in frozen)
-    result=dict(source_commit=commit,gradient_cosine=cos,gradient_norms={n:float(g.norm()) for n,g in grads.items()},directional_derivatives=directional,baseline=baseline,trials=trials,
+    result=dict(source_commit=commit,trainable_block=block,gradient_cosine=cos,gradient_norms={n:float(g.norm()) for n,g in grads.items()},directional_derivatives=directional,baseline=baseline,trials=trials,
         source_restored_exactly=True,frozen_parameter_sha256=frozen,no_val_test_forward=True,unique_train_images=len(ix),train_views=len(rows),elapsed_seconds=time.time()-start_time)
     save(out/'result.json',result);save(out/'status.json',dict(state='complete',pid=os.getpid(),timestamp=time.time()))
 
