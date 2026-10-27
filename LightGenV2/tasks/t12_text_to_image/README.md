@@ -34,6 +34,11 @@ TRAIN每视角四种输入场景×三种编辑，共216对；VAL每视角两种�
 完整Qwen视觉24层＋语言28层、融合后空间读出、单步SD-Turbo UNet和VAE decoder不变。
 训练方法沿用父模型，无新增GAN或网络结构；VAL选best，附类别×模式及编辑区指标。
 本节是启动协议，不预先声称坐墩生成质量已达标；仅GPU6，结束检查自有PID释放。
+针对首轮预览仍有目标颜色／花纹跟随不足，另配
+`configs/qwen_vl_ottoman_condition_refine_20261027.json`，仅使用原有TRAIN条件教师
+缓存校准adapter800步，再以较低UNet学习率继续8遍TRAIN，条件对齐权重.15。
+这不增加推理CLIP或新网络，不改变数据／VAL；从首轮best继续，保存独立best/last及
+训练前同队列重评，不预先认定这一小对照一定优于首轮。
 
 2026-10-27按用户要求增加**结构清楚的人工审核开发数据**：
 `configs/qwen_vl_curated_easy_20261027.json`逐商品固定清晰视角和无品牌外观描述；
