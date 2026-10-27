@@ -51,6 +51,8 @@ def main():
     p.add_argument('--rounds', type=int, default=3)
     p.add_argument('--seed', type=int, default=1042)
     p.add_argument('--memory-fraction', type=float, default=.5)
+    p.add_argument('--hybrid-checkpoint', type=Path)
+    p.add_argument('--tail-checkpoint', type=Path)
     a = p.parse_args()
     if os.environ.get('CUDA_VISIBLE_DEVICES') != a.gpu_uuid:
         raise ValueError('GPU UUID must match the authorized device')
@@ -79,6 +81,20 @@ def main():
                                             min_pixels=65536, max_pixels=65536)
     head = build_spatial_head(a.sd, state, cfg, layout['positions'], device,
                              drop_vae_encoder=True).eval().requires_grad_(False)
+    if a.hybrid_checkpoint:
+        from .qwen_vl_hybrid import apply_hybrid
+        hybrid = torch.load(a.hybrid_checkpoint, map_location='cpu', weights_only=False)
+        macros = apply_hybrid(qwen, hybrid['config']['vision_pairs'], hybrid['config']['language_pairs'], hybrid['config']['residual_width'])
+        macros.load_state_dict(hybrid['macros']); qwen.eval().requires_grad_(False)
+    if a.tail_checkpoint:
+        if not a.hybrid_checkpoint:
+            raise ValueError('Compressed-tail protocol requires its hybrid Qwen identity')
+        from .qwen_vl_tail import build_tail_student
+        tail = torch.load(a.tail_checkpoint, map_location='cpu', weights_only=False)
+        if tail['hybrid_checkpoint_sha256'] != sha256(a.hybrid_checkpoint):
+            raise ValueError('Tail and hybrid weights do not match')
+        smaller, _ = build_tail_student(head.unet, tail['profile']['channels'], tail['profile']['heads'])
+        smaller.load_state_dict(tail['unet']); head.unet = smaller.to(device).eval().requires_grad_(False)
     vision, language = qwen.model.visual, qwen.model.language_model
     if len(vision.blocks) != 24 or len(language.layers) != 28:
         raise ValueError('Wrong full-Qwen architecture')
@@ -93,6 +109,9 @@ def main():
                  'torch': torch.__version__, 'cuda': torch.version.cuda,
                  'batch_size': 1, 'extra_warmups': 0,
                  'training_source_commit': state['git']['published_source_commit']}
+    execution.update(hybrid_sha256=sha256(a.hybrid_checkpoint) if a.hybrid_checkpoint else None,
+                     tail_sha256=sha256(a.tail_checkpoint) if a.tail_checkpoint else None,
+                     optical_path_execution='GPU FFT simulation' if a.hybrid_checkpoint else 'none')
     write_json(a.output/'execution.json', execution)
 
     def prepare(index):
@@ -182,6 +201,31 @@ def main():
                'qwen.visual': vision, 'qwen.language': language,
                'head.spatial': head.spatial, 'head.adapter': head.adapter,
                'head.unet': head.unet, 'head.vae_decoder': head.vae.decoder}
+    restored_methods = []
+    if a.hybrid_checkpoint:
+        for modality, macro in macros.items():
+            for i, module in enumerate(macro.electronic):
+                modules[f'hybrid.{modality}.electronic_residual.{i}'] = module
+            for j, path in enumerate(macro.paths):
+                original = path._t12_physical_simulate
+                def detector(*args, _original=original, _modality=modality, _j=j, **kwargs):
+                    name = f'optical.{_modality}.{_j}.'+kwargs['phase_support']
+                    pre(name)(None, None)
+                    out = _original(*args, **kwargs)
+                    post(name)(None, None, out)
+                    return out
+                restored_methods.append((path, '_t12_physical_simulate', original))
+                path._t12_physical_simulate = detector
+            router = macro.paths[0].core.router
+            original = router._t12_physical_simulate
+            def route(*args, _original=original, _modality=modality, **kwargs):
+                name = f'optical.{_modality}.router'
+                pre(name)(None, None)
+                out = _original(*args, **kwargs)
+                post(name)(None, None, out)
+                return out
+            restored_methods.append((router, '_t12_physical_simulate', original))
+            router._t12_physical_simulate = route
     for name, module in modules.items():
         handles += [module.register_forward_pre_hook(pre(name)), module.register_forward_hook(post(name))]
     diagnostics = []
@@ -203,6 +247,8 @@ def main():
     finally:
         for handle in handles:
             handle.remove()
+        for obj, key, method in restored_methods:
+            setattr(obj, key, method)
     fields = ['preprocess_h2d_ms', 'gpu_ready_to_gpu_rgb_wall_ms', 'gpu_stream_span_ms',
               'rgb_cpu_conversion_ms', 'rgb_text_ready_to_cpu_rgb_ms']
     summaries = {key: summarize([r[key] for r in records]) for key in fields}
@@ -230,6 +276,20 @@ def main():
              'main_uses_stage_hooks': False, 'diagnostic_no_intermediate_synchronize': True,
              'rgb_outputs_hooked_and_unhooked_identical': True,
              'selection_test_independent': False, 'hardware_optical_estimate_included': False}}
+    if a.hybrid_checkpoint:
+        cycles = sum(1+2*m.pairs for m in macros.values())
+        optical_ms = [sum(v for k, v in d['stages_ms'].items() if k.startswith('optical.')) for d in diagnostics]
+        residual_ms = [sum(v for k, v in d['stages_ms'].items() if k.startswith('hybrid.') and '.electronic_residual.' in k) for d in diagnostics]
+        estimate = [d['first_tf_to_gpu_rgb_stream_ms']-o-e+cycles*(1000/1400+.3+.0307)
+                    for d, o, e in zip(diagnostics, optical_ms, residual_ms)]
+        report['optical_timing_model'] = {'cycles': cycles, 'cycle_ms': 1000/1400+.3+.0307,
+            'cycle_total_ms': cycles*(1000/1400+.3+.0307),
+            'measured_fft_simulator_ms': summarize(optical_ms),
+            'user_excluded_electronic_residual_ms': summarize(residual_ms),
+            'user_scope_serial_cuda_span_substitution_ms': summarize(estimate),
+            'actual_hardware_measured': False,
+            'not_final_end_to_end_dag_claim': True,
+            'limitations': 'Single CUDA stream diagnostic interval substitution only. CPU submission/optical device dependency changes, transfers and OEO require final DAG audit. Bounded amplitude encoding and readout remain outside excluded optical methods. Never call FFT simulation latency physical optical latency.'}
     write_json(a.output/'report.json', report)
     print(json.dumps({'complete': True, 'summaries_ms': summaries, 'feasibility': report['feasibility']}, indent=2))
 

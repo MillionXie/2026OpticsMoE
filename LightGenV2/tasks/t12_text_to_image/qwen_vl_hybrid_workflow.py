@@ -1,0 +1,147 @@
+"""One-GPU, failure-stopping continuation AFTER the electronic baseline.
+
+No process is killed, no physical optical path is operated, and no original
+run/checkpoint is overwritten. All stage children must exit before the next.
+"""
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+import traceback
+from pathlib import Path
+
+
+def write(path, value):
+    temporary = path.with_suffix('.tmp')
+    temporary.write_text(json.dumps(value, indent=2), encoding='utf-8')
+    temporary.replace(path)
+
+
+def gpu_pids(uuid):
+    lines = subprocess.check_output(['nvidia-smi', '--query-compute-apps=gpu_uuid,pid', '--format=csv,noheader,nounits']).decode().splitlines()
+    return [int(row.split(',')[1]) for row in lines if row.startswith(uuid)]
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__)
+    for name in ('parent', 'data', 'qwen', 'sd', 'config', 'smoke-config', 'tail-config', 'output'):
+        p.add_argument('--'+name, type=Path, required=True)
+    p.add_argument('--parent-workflow-pid', type=int, required=True)
+    a = p.parse_args()
+    if (a.output/'execution.json').exists():
+        raise ValueError('Do not start a duplicate workflow')
+    a.output.mkdir(parents=True, exist_ok=True)
+    cfg = json.loads(a.config.read_text()); gpu = cfg['gpu_uuid']
+    if os.environ.get('CUDA_VISIBLE_DEVICES') != gpu or cfg['alpha_minimum'] != .6:
+        raise ValueError('GPU or alpha authorization differs')
+    stages, children, started = [], [], time.time()
+    write(a.output/'execution.json', {'pid': os.getpid(), 'argv': sys.argv, 'started_unix': started,
+          'source_commit': os.environ.get('T12_SOURCE_COMMIT'), 'gpu_uuid': gpu, 'alpha_minimum': .6,
+          'wait_for_completed_electronic_baseline': True, 'parent_workflow_pid': a.parent_workflow_pid})
+    module = 'LightGenV2.tasks.t12_text_to_image.'
+    def run(label, tail, gpu_job=True):
+        if gpu_job and gpu_pids(gpu):
+            raise RuntimeError('Authorized GPU occupied; do not stop or overlap another process')
+        cmd = [sys.executable, '-m', module+tail[0], *tail[1:]]
+        with (a.output/(label+'.log')).open('ab') as log:
+            child = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
+            children.append(child.pid)
+            write(a.output/'progress.json', {'stage': label, 'pid': child.pid, 'own_children': children, 'command': cmd})
+            rc = child.wait()
+        stages.append({'stage': label, 'pid': child.pid, 'returncode': rc, 'command': cmd})
+        write(a.output/'stages.json', stages)
+        if rc:
+            raise RuntimeError(label+' failed; inspect its log')
+    def hybrid_args(stage, config, out, initial=None):
+        cmd = ['qwen_vl_hybrid_run', '--stage', stage, '--config', str(config), '--data', str(a.data),
+             '--parent', str(a.parent), '--qwen', str(a.qwen), '--sd', str(a.sd), '--output', str(out),
+             '--features', str(a.output/'teacher_cache')]
+        if initial:
+            cmd += ['--initial', str(initial)]
+        return cmd
+    def timing(label, hybrid=None, tail=None):
+        cmd = ['qwen_vl_latency', '--checkpoint', str(a.parent/'best_checkpoint.pt'),
+              '--manifest', str(a.parent/'raw_inputs.json'), '--qwen', str(a.qwen), '--sd', str(a.sd),
+              '--gpu-uuid', gpu, '--rounds', '3', '--memory-fraction', '.85', '--output', str(a.output/label)]
+        if hybrid:
+            cmd += ['--hybrid-checkpoint', str(hybrid/'best_checkpoint.pt')]
+        if tail:
+            cmd += ['--tail-checkpoint', str(tail/'best_checkpoint.pt')]
+        run(label, cmd)
+    try:
+        while not (a.parent/'workflow_report.json').exists():
+            failure = a.parent/'workflow_failure.json'
+            if failure.exists():
+                raise RuntimeError('Electronic baseline workflow failed; diagnose before continuation')
+            proc = Path(f'/proc/{a.parent_workflow_pid}/cmdline')
+            if not proc.exists() or 'qwen_vl_expanded_workflow' not in proc.read_bytes().decode(errors='replace'):
+                raise RuntimeError('Electronic workflow exited without a completion report')
+            write(a.output/'progress.json', {'stage': 'waiting_electronic_baseline', 'gpu_used_by_continuation': False,
+                   'observed_unix': time.time(), 'parent_progress': json.loads((a.parent/'progress.json').read_text()) if (a.parent/'progress.json').exists() else None})
+            time.sleep(30)
+        done = json.loads((a.parent/'workflow_report.json').read_text())
+        if not done['complete']:
+            raise RuntimeError('Baseline report is incomplete')
+        # Completion is written just before the parent's release receipt; wait
+        # for its GPU children rather than racing the final raw-input process.
+        for _ in range(12):
+            if not gpu_pids(gpu):
+                break
+            time.sleep(5)
+        if shutil.disk_usage(a.output).free < 20*2**30:
+            raise RuntimeError('Need 20 GiB for feature caches and retained best/last')
+        timing('electronic_latency')
+        run('teacher_cache', hybrid_args('cache', a.config, a.output/'teacher_cache'))
+        smoke_features = a.output/'smoke_features'
+        run('smoke_features', hybrid_args('distill', a.smoke_config, smoke_features))
+        run('smoke_joint', hybrid_args('joint', a.smoke_config, a.output/'smoke_joint', smoke_features))
+        for folder in (smoke_features, a.output/'smoke_joint'):
+            report = json.loads((folder/'report.json').read_text())
+            if not report['complete'] or report['best_step'] <= 0:
+                raise RuntimeError('Real-backward smoke incomplete')
+        features, joint, tail = (a.output/x for x in ('feature_distillation', 'hybrid_recovery', 'tail_quality'))
+        run('feature_distillation', hybrid_args('distill', a.config, features))
+        run('hybrid_recovery', hybrid_args('joint', a.config, joint, features))
+        run('hybrid_review', ['qwen_vl_hybrid_review', '--run', str(joint)], gpu_job=False)
+        timing('hybrid_latency', joint)
+        tail_smoke_config = a.output/'tail_smoke_config.json'
+        tail_cfg = json.loads(a.tail_config.read_text()); tail_cfg.update(smoke=True, steps=2, batch_size=2, warmup_steps=0, eval_every=2)
+        write(tail_smoke_config, tail_cfg)
+        def tail_cmd(config, out):
+            return ['qwen_vl_tail_run', '--config', str(config), '--data', str(a.data), '--parent', str(a.parent),
+                  '--hybrid', str(joint), '--qwen', str(a.qwen), '--sd', str(a.sd), '--output', str(out)]
+        run('tail_smoke', tail_cmd(tail_smoke_config, a.output/'tail_smoke'))
+        smoke = json.loads((a.output/'tail_smoke/report.json').read_text())
+        if not smoke['complete'] or smoke['best_step'] <= 0:
+            raise RuntimeError('Tail real-backward smoke incomplete')
+        run('tail_quality', tail_cmd(a.tail_config, tail))
+        run('tail_review', ['qwen_vl_hybrid_review', '--run', str(tail)], gpu_job=False)
+        timing('tail_latency', joint, tail)
+        baseline_time = json.loads((a.output/'electronic_latency/report.json').read_text())
+        tail_time = json.loads((a.output/'tail_latency/report.json').read_text())
+        optical = tail_time['optical_timing_model']['user_scope_serial_cuda_span_substitution_ms']['mean']
+        baseline = baseline_time['first_tf_to_gpu_rgb_stream_ms']['mean']
+        tail_report = json.loads((tail/'report.json').read_text())
+        write(a.output/'report.json', {'complete': True, 'baseline_checkpoint_sha256': done['checkpoint_sha256'],
+              'tail_quality_gate': tail_report['quality_gate'], 'user_scope_cuda_substitution_estimated_speedup': baseline/optical,
+              'speedup_is_physical_measurement': False, 'final_end_to_end_dag_audit_pending': True,
+              'quality_accepted': False, 'stages': stages, 'alpha_minimum': .60,
+              'evaluation_label': 'development_test', 'independent_test_claim': False,
+              'note': 'Pipeline completion is not the 5%/2x acceptance. Review task images and per-mode gates; if needed add E/G capacity or further tail compression, then do final timing audit.'})
+        write(a.output/'progress.json', {'stage': 'complete_pending_quality_review', 'finished_unix': time.time()})
+    except Exception:
+        write(a.output/'failure.json', {'traceback': traceback.format_exc(), 'stages': stages})
+        write(a.output/'progress.json', {'stage': 'failed', 'finished_unix': time.time()})
+        raise
+    finally:
+        active = gpu_pids(gpu)
+        own = [pid for pid in active if pid in children]
+        write(a.output/'gpu_release_receipt.json', {'own_children': children, 'own_remaining_gpu_pids': own,
+              'own_gpu_released': not own, 'other_processes_untouched': True, 'finished_unix': time.time()})
+
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,21 @@
+{
+  "seed": 1042,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "gpu_memory_fraction": 0.85,
+  "channels": [256, 512, 1024, 1024],
+  "heads": [4, 8, 16, 16],
+  "epochs": 30,
+  "batch_size": 4,
+  "lr": 0.00002,
+  "warmup_steps": 120,
+  "eval_every": 480,
+  "early_stop_evaluations": 5,
+  "latent_kd_weight": 1.0,
+  "rgb_kd_weight": 0.3,
+  "rgb_weight": 0.2,
+  "lpips_weight": 0.5,
+  "attention_weight": 0.05,
+  "evaluation_label": "development_test",
+  "test_gradient_updates": false,
+  "protocol": "Quality-first channel/depth pruning of the actually trained SD-Turbo UNet; initialize from folded LoRA weights, preserve native timestep embedding, concatenate channel slices and both GEGLU halves. Distill TRAIN teacher latent/RGB/spatial attention plus original paired supervision. Frozen hybrid Qwen with alpha>=0.6 and original VAE retained."
+}
