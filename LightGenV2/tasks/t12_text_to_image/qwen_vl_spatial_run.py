@@ -1,0 +1,290 @@
+"""TRAIN/VAL-only spatial Qwen experiment; resume public-backbone T12 baseline.
+
+All image conditioning is read from a verified full Qwen-VL cache. Token layout
+is checked against the unchanged public processor, never guessed from indices.
+"""
+import argparse,collections,json,math,os,random,subprocess,sys,time,traceback
+from pathlib import Path
+
+import numpy as np
+import torch
+from PIL import Image,ImageDraw
+from torch.nn import functional as F
+
+from .qwen_vl_turbo_cache import image_float
+from .qwen_vl_turbo_data import normalized_product,pilot_subset,sha256,validate_roles,write_json
+from .qwen_vl_turbo_model import pack_hidden,region_weighted_loss
+from .qwen_vl_turbo_run import git_identity,noise_for,tensor_image
+from .qwen_vl_spatial import balanced_region_l1,build_spatial_head
+
+
+def identity():
+    result=git_identity()
+    result['additional_source_sha256']={name:sha256(Path(__file__).with_name(name)) for name in
+        ('qwen_vl_spatial.py','qwen_vl_spatial_run.py')}
+    return result
+
+
+def verify_layout(payload,qwen,output):
+    from transformers import AutoProcessor
+    processor=AutoProcessor.from_pretrained(qwen,local_files_only=True,min_pixels=65536,max_pixels=65536)
+    config=json.loads((qwen/'config.json').read_text())
+    token_id=config['image_token_id'];count=64
+    positions=None
+    probes={0,len(payload['rows'])-1,next(i for i,r in enumerate(payload['rows']) if r['split']=='val')}
+    dummy=tensor_image(payload['reference'][0])
+    for i,row in enumerate(payload['rows']):
+        messages=[{'role':'user','content':[{'type':'image','image':dummy},{'type':'text','text':row['prompt']}]}]
+        text=processor.apply_chat_template(messages,tokenize=False,add_generation_prompt=True,enable_thinking=False)
+        expanded=text.replace(processor.image_token,processor.image_token*count)
+        ids=processor.tokenizer(expanded,return_tensors='pt')['input_ids'][0]
+        found=torch.where(ids==token_id)[0].tolist()
+        if len(found)!=count or len(ids)!=len(payload['hidden'][i]):
+            raise ValueError('Processor and frozen hidden layout differ for '+row['sample_id'])
+        if positions is None:positions=found
+        if found!=positions:raise ValueError('This fixed-grid experiment requires consistent visual token positions')
+        if i in probes:
+            actual=processor(text=[text],images=[tensor_image(payload['reference'][i])],return_tensors='pt')
+            if actual['image_grid_thw'].tolist()!=[[1,16,16]] or not torch.equal(actual['input_ids'][0],ids):
+                raise ValueError('Actual processor image expansion disagrees with layout verification')
+    result={'positions':positions,'merged_grid':[8,8],'unmerged_grid':[1,16,16],
+      'checked_rows':len(payload['rows']),'actual_processor_probes':sorted(probes),
+      'image_token_id':token_id,'qwen_config_sha256':sha256(qwen/'config.json'),
+      'ordering':'Qwen3-VL rot_pos_emb traverses merged block rows/columns; merger reduces each contiguous 2x2 block; no window permutation in this installed forward',
+      'inputs_used':'reference RGB + original instruction only; no target image passed to processor'}
+    write_json(output/'visual_layout.json',result)
+    return result
+
+
+def training_ids(payload,parent,exclude=True):
+    descriptions=json.loads((parent/'product_descriptions.json').read_text(encoding='utf-8'))
+    groups=collections.defaultdict(set)
+    for r in payload['rows']:
+        if r['split']=='train' and r['mode']!='background':
+            groups[descriptions[r['target']['sample_id']].strip().lower()].add(r['target']['product_id'])
+    ambiguous={k:sorted(v) for k,v in groups.items() if len(v)>1}
+    excluded=[];ids=[]
+    for i,r in enumerate(payload['rows']):
+        if r['split']!='train':continue
+        desc=descriptions[r['target']['sample_id']].strip().lower()
+        if exclude and r['mode']!='background' and desc in ambiguous:excluded.append(r['sample_id'])
+        else:ids.append(i)
+    return ids,{'ambiguous_descriptions':ambiguous,'excluded_training_pairs':excluded,
+       'reason':'Coarse identical target description names multiple TRAIN product identities under deterministic paired latent regression; no brand/SKU labels introduced',
+       'remaining_training_pairs':len(ids),'validation_filtered':False}
+
+
+def masks(row,device):
+    _,source=normalized_product(row['source'],256)
+    _,target=normalized_product(row['target'],256)
+    src=torch.from_numpy(np.asarray(source).copy()).float()[None,None].to(device)/255
+    dst=torch.from_numpy(np.asarray(target).copy()).float()[None,None].to(device)/255
+    edit=(1-src if row['mode']=='background' else torch.maximum(src,dst) if row['mode']=='object' else torch.ones_like(src))
+    return edit,dst
+
+
+@torch.no_grad()
+def evaluate(model,payload,ids,device,output,label,metric,export=False):
+    model.eval();records=[]
+    selected=[]
+    for cat in ('lamp','table','pillow'):
+        for mode in ('background','object','joint'):
+            choices=[j for j,i in enumerate(ids) if (payload['rows'][i]['category'],payload['rows'][i]['mode'])==(cat,mode)]
+            if choices:selected.append(choices[0])
+    panel=Image.new('RGB',(768,310*len(selected)),'white');draw=ImageDraw.Draw(panel)
+    for pos,i in enumerate(ids):
+        row=payload['rows'][i];h,valid=pack_hidden([payload['hidden'][i]],device)
+        _,prediction=model(h,valid,noise_for([row],device));prediction=prediction.clamp(-1,1)
+        target=image_float(payload['target'][i:i+1],device)
+        err=(prediction-target).square()/4
+        edit,_=masks(row,device);keep=1-edit
+        mse=float(err.mean());psnr=-10*math.log10(max(mse,1e-12))
+        record={'sample_id':row['sample_id'],'category':row['category'],'mode':row['mode'],'prompt':row['prompt'],
+          'psnr':psnr,'mse_01':mse,'lpips':float(metric(prediction.float(),target.float()).mean()),
+          'edited_psnr':-10*math.log10(max(float((err*edit).sum()/(edit.sum().clamp_min(1)*3)),1e-12)),
+          'retained_psnr':None if float(keep.sum())<1 else -10*math.log10(max(float((err*keep).sum()/(keep.sum()*3)),1e-12))}
+        records.append(record)
+        values=(payload['reference'][i],payload['target'][i],prediction[0])
+        if export:
+            for role,value in zip(('reference','target','generated'),values):
+                path=output/'images'/label/role;path.mkdir(parents=True,exist_ok=True)
+                tensor_image(value).save(path/f'sample_{pos:04d}.png')
+        if pos in selected:
+            y=selected.index(pos)*310
+            draw.text((4,y+3),f"{label} {row['category']}/{row['mode']} PSNR {psnr:.2f} LPIPS {record['lpips']:.3f}",fill='black')
+            draw.text((4,y+23),'REFERENCE                          TARGET                              GENERATED',fill='black')
+            for col,value in enumerate(values):panel.paste(tensor_image(value),(col*256,y+54))
+    panel.save(output/(label+'.png'))
+    result={'count':len(records),'mean_per_image_psnr_db':float(np.mean([r['psnr'] for r in records])),
+       'mean_lpips':float(np.mean([r['lpips'] for r in records])),'images':records,
+       'by_mode':{m:float(np.mean([r['psnr'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
+       'lpips_by_mode':{m:float(np.mean([r['lpips'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
+       'edited_psnr_by_mode':{m:float(np.mean([r['edited_psnr'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
+       'retained_psnr_by_mode':{m:(float(np.mean(a)) if (a:=[r['retained_psnr'] for r in records if r['mode']==m and r['retained_psnr'] is not None]) else None) for m in ('background','object','joint')},
+       'scope':'Development TRAIN diagnostics or VAL; no TEST evaluation; masks used for metrics only'}
+    write_json(output/(label+'.json'),result)
+    return result
+
+
+def run(args,cfg):
+    out=args.output;out.mkdir(parents=True,exist_ok=True)
+    if (out/'report.json').exists():raise ValueError('Existing completed run; inspect instead of restarting')
+    parent_report=json.loads((args.parent/'report.json').read_text())
+    if not parent_report['complete'] or parent_report['best_step']<=0:raise ValueError('Parent VAL-selected model is not ready')
+    checkpoint=args.parent/'best_checkpoint.pt'
+    if sha256(checkpoint)!=parent_report['checkpoint_sha256']:raise ValueError('Parent checkpoint SHA mismatch')
+    state=torch.load(checkpoint,map_location='cpu',weights_only=False)
+    cache=args.parent/'frozen_features.pt'
+    if sha256(cache)!=state['cache_sha256']:raise ValueError('Frozen feature cache SHA mismatch')
+    payload=torch.load(cache,map_location='cpu',weights_only=False,mmap=True)
+    validate_roles(payload['rows'])
+    # Modify only in-memory sampling state; the parent cache is never overwritten.
+    payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
+    layout=verify_layout(payload,args.qwen,out)
+    ids,audit=training_ids(payload,args.parent,cfg['exclude_ambiguous_descriptions'])
+    val_ids=[i for i,r in enumerate(payload['rows']) if r['split']=='val']
+    diagnostics={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='train'}
+    train_eval=[i for i in ids if payload['rows'][i]['sample_id'] in diagnostics]
+    if cfg.get('smoke',False):
+        ids=train_eval
+        names={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='val'}
+        val_ids=[i for i in val_ids if payload['rows'][i]['sample_id'] in names]
+    write_json(out/'annotation_audit.json',audit)
+    write_json(out/'config.json',cfg)
+    write_json(out/'execution.json',{'argv':sys.argv,'git':identity(),'started_unix':time.time(),
+       'torch':torch.__version__,'parent_run':str(args.parent),'parent_checkpoint_sha256':sha256(checkpoint),
+       'cache_sha256':state['cache_sha256'],'train_pairs':len(ids),'val_pairs':len(val_ids),
+       'test_opened':False,'visual_layout':layout,'gpu_uuid':os.environ.get('CUDA_VISIBLE_DEVICES')})
+    if args.stage=='layout':return
+    if os.environ.get('CUDA_VISIBLE_DEVICES')!=cfg['gpu_uuid']:raise ValueError('Unauthorized GPU UUID')
+    device=torch.device('cuda:0');torch.cuda.set_per_process_memory_fraction(cfg['gpu_memory_fraction'],0)
+    model=build_spatial_head(args.sd,state,cfg,layout['positions'],device)
+    model.unet.enable_gradient_checkpointing()
+    import lpips
+    metric=lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
+    before=evaluate(model,payload,val_ids,device,out,'val_before_training',metric)
+    expected={r['sample_id']:r['psnr'] for r in parent_report['best_val']['images']}
+    deviations=[abs(r['psnr']-expected[r['sample_id']]) for r in before['images']]
+    write_json(out/'zero_injection_identity.json',{'max_per_sample_psnr_difference':max(deviations),
+        'samples':len(deviations),'passed':max(deviations)<.01})
+    if max(deviations)>=.01:raise ValueError('Spatial zero-injection changed the selected parent prediction')
+    if not cfg.get('smoke') and abs(before['mean_per_image_psnr_db']-parent_report['best_val']['mean_per_image_psnr_db'])>.01:
+        raise ValueError('Zero-injection model does not reproduce the parent VAL baseline')
+    ref_latent={};target_latent={};edit_regions={};target_regions={}
+    model.eval()
+    with torch.no_grad():
+        for start in range(0,len(ids),16):
+            batch=ids[start:start+16]
+            for role,destination in (('reference',ref_latent),('target',target_latent)):
+                images=image_float(payload[role][batch],device,model.vae.dtype)
+                z=(model.vae.encode(images).latent_dist.mode()*model.vae.config.scaling_factor).float().cpu()
+                for i,value in zip(batch,z):destination[i]=value
+            for i in batch:edit_regions[i],target_regions[i]=[v.cpu() for v in masks(payload['rows'][i],device)]
+            if start%256==0:
+                write_json(out/'progress.json',{'stage':'TRAIN_vae_supervision','done':start+len(batch),'total':len(ids)})
+    rng=random.Random(cfg['seed']);warm=torch.optim.AdamW(model.spatial.parameters(),lr=cfg['warm_lr'])
+    for step in range(1,cfg['warm_steps']+1):
+        batch=rng.sample(ids,min(cfg['warm_batch_size'],len(ids)))
+        h,valid=pack_hidden([payload['hidden'][i] for i in batch],device)
+        _,source=model.spatial(model.visual_tokens(h,valid),with_aux=True)
+        loss=F.mse_loss(source.float(),torch.stack([ref_latent[i] for i in batch]).to(device))
+        warm.zero_grad(set_to_none=True);loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.spatial.parameters(),1.);warm.step()
+        if step%50==0 or step==cfg['warm_steps']:
+            print('spatial warm',step,float(loss.detach()),flush=True)
+            write_json(out/'progress.json',{'stage':'spatial_warm','step':step,'total_steps':cfg['warm_steps'],'loss':float(loss.detach())})
+    del warm
+    params=[p for p in model.parameters() if p.requires_grad]
+    optimizer=torch.optim.AdamW([{'params':model.spatial.parameters(),'lr':cfg['spatial_lr']},
+       {'params':model.adapter.parameters(),'lr':cfg['adapter_lr']},
+       {'params':[p for p in model.unet.parameters() if p.requires_grad],'lr':cfg['train_lr']}],weight_decay=.01)
+    aux_count=sum(p.numel() for p in model.spatial.aux_reference.parameters())
+    counts={'qwen_full_forward':payload['qwen_checks']['qwen_forward_parameters'],
+      'qwen_embedding':payload['qwen_checks']['qwen_embedding_parameters'],
+      'adapter':sum(p.numel() for p in model.adapter.parameters()),
+      'unet_including_lora':sum(p.numel() for p in model.unet.parameters()),
+      'spatial_readout':sum(p.numel() for p in model.spatial.parameters())-aux_count,
+      'training_only_spatial_auxiliary':aux_count,
+      'vae_decoder':sum(p.numel() for p in model.vae.decoder.parameters())+sum(p.numel() for p in model.vae.post_quant_conv.parameters()),
+      'trainable':sum(p.numel() for p in params)}
+    counts['inference_total']=sum(counts[k] for k in ('qwen_full_forward','adapter','unet_including_lora','spatial_readout','vae_decoder'))
+    write_json(out/'parameter_counts.json',counts)
+    effective=cfg['batch_size']*cfg['gradient_accumulation']
+    steps=cfg.get('train_steps') or math.ceil(len(ids)*cfg['epochs']/effective)
+    order=[]
+    while len(order)<steps*effective:
+        block=ids.copy();rng.shuffle(block);order.extend(block)
+    best=-float('inf');best_step=0;history=[]
+    for step in range(1,steps+1):
+        model.train();model.vae.eval();optimizer.zero_grad(set_to_none=True);total=0.;terms={}
+        for micro in range(cfg['gradient_accumulation']):
+            start=((step-1)*cfg['gradient_accumulation']+micro)*cfg['batch_size'];batch=order[start:start+cfg['batch_size']]
+            h,valid=pack_hidden([payload['hidden'][i] for i in batch],device)
+            with torch.autocast('cuda',dtype=torch.bfloat16):
+                z,rgb,source=model.forward_with_aux(h,valid,noise_for([payload['rows'][i] for i in batch],device))
+                target=image_float(payload['target'][batch],device)
+                latent=region_weighted_loss(z,torch.stack([target_latent[i] for i in batch]).to(device),
+                    torch.cat([target_regions[i] for i in batch]).to(device),cfg['latent_foreground_weight'])
+                pixel=balanced_region_l1(rgb,target,torch.cat([edit_regions[i] for i in batch]).to(device))
+                perceptual=metric(rgb.clamp(-1,1),target).mean()
+                spatial_loss=F.mse_loss(source.float(),torch.stack([ref_latent[i] for i in batch]).to(device))
+                conditions=model.adapter(h,valid)
+                align=F.mse_loss(conditions.float(),torch.stack([payload['train_clip_teacher'][i] for i in batch]).float().to(device))
+                loss=(cfg['latent_weight']*latent+cfg['rgb_weight']*pixel+cfg['lpips_weight']*perceptual+
+                      cfg['reference_weight']*spatial_loss+cfg['condition_weight']*align)
+            if not torch.isfinite(loss):raise FloatingPointError('Nonfinite training loss')
+            (loss/cfg['gradient_accumulation']).backward();total+=float(loss.detach())/cfg['gradient_accumulation']
+            terms={k:float(v.detach()) for k,v in {'latent':latent,'rgb':pixel,'lpips':perceptual,'reference':spatial_loss,'condition':align}.items()}
+        norm=torch.nn.utils.clip_grad_norm_(params,1.)
+        if not torch.isfinite(norm):raise FloatingPointError('Nonfinite gradient')
+        optimizer.step()
+        if step%10==0:
+            print('paired',step,'/',steps,'loss',total,terms,flush=True)
+            write_json(out/'progress.json',{'stage':'paired','step':step,'total_steps':steps,'loss':total,'terms':terms,'best_step':best_step,'best_val_psnr':None if best_step==0 else best})
+        if step%cfg['eval_every']==0 or step==steps:
+            val=evaluate(model,payload,val_ids,device,out,'val_latest',metric)
+            tr=evaluate(model,payload,train_eval,device,out,'train_latest',metric)
+            entry={'step':step,'train_loss':total,'val_psnr':val['mean_per_image_psnr_db'],'val_lpips':val['mean_lpips'],'train_psnr':tr['mean_per_image_psnr_db']}
+            history.append(entry);print('validation',entry,flush=True)
+            saved={'schema':'qwen_spatial_v1','step':step,'adapter':model.adapter.state_dict(),
+              'spatial':model.spatial.state_dict(),'unet_trainable':{n:p.detach().cpu().clone() for n,p in model.unet.named_parameters() if p.requires_grad},
+              'config':cfg,'visual_layout':layout,'git':identity(),'cache_sha256':state['cache_sha256'],
+              'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'val':val}
+            torch.save(saved,out/'last_checkpoint.pt')
+            if val['mean_per_image_psnr_db']>best:
+                best=val['mean_per_image_psnr_db'];best_step=step;torch.save(saved,out/'best_checkpoint.pt')
+            write_json(out/'history.json',history)
+    selected=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+    model.adapter.load_state_dict(selected['adapter']);model.spatial.load_state_dict(selected['spatial'])
+    with torch.no_grad():
+        for n,p in model.unet.named_parameters():
+            if n in selected['unet_trainable']:p.copy_(selected['unet_trainable'][n].to(device))
+    val=evaluate(model,payload,val_ids,device,out,'val_best',metric,export=True)
+    train=evaluate(model,payload,train_eval,device,out,'train_best',metric,export=True)
+    model.zero_spatial=True
+    without=evaluate(model,payload,val_ids,device,out,'val_without_spatial',metric)
+    model.zero_spatial=False
+    write_json(out/'report.json',{'complete':True,'best_step':best_step,'best_val':val,'train':train,
+       'val_before_paired_training':before,'val_without_spatial':without,'parameters':counts,
+       'train_optimization_pairs':len(ids),'train_evaluation_pairs':len(train_eval),'test_evaluated':False,
+       'checkpoint_sha256':sha256(out/'best_checkpoint.pt'),'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],
+       'scope':'Development TRAIN/VAL only. Source VAE latents supervise auxiliary readout only; all inference image information enters through full Qwen-VL.',
+       'new_spatial_contribution_psnr':val['mean_per_image_psnr_db']-without['mean_per_image_psnr_db'],
+       'quality_accepted':False,'quality_note':'Requires visual review and separate raw Qwen image/text ablations; completion alone is not an acceptance claim'})
+
+
+def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    for key in ('config','parent','qwen','sd','output'):parser.add_argument('--'+key,type=Path,required=True)
+    parser.add_argument('--stage',choices=('layout','train'),default='train')
+    args=parser.parse_args();cfg=json.loads(args.config.read_text(encoding='utf-8'))
+    if cfg.get('test_enabled',False):raise ValueError('This development runner has no TEST path')
+    random.seed(cfg['seed']);np.random.seed(cfg['seed']);torch.manual_seed(cfg['seed']);torch.set_num_threads(4)
+    try:run(args,cfg)
+    except Exception:
+        write_json(args.output/'failure.json',{'traceback':traceback.format_exc(),'time':time.time()});raise
+    finally:
+        if torch.cuda.is_initialized():torch.cuda.empty_cache()
+
+
+if __name__=='__main__':main()

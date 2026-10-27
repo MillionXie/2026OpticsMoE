@@ -10,6 +10,35 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+2026-10-27启动**Qwen视觉空间读出**开发试验，入口`qwen_vl_spatial_run.py`，
+配置`configs/qwen_vl_spatial_20261027.json`。完整Qwen视觉24层和语言28层保留，
+256参考图＋文字仍是唯一编码输入；tokenizer、预训练Qwen层及全部融合token不裁剪。
+除现有77×1024语义条件外，按公开processor验证的image token位置取出8×8视觉网格，
+经过2048→128投影、两级卷积上采样及16通道输出，得到16×32×32空间条件。
+UNet原4通道噪声卷积保留，新增16通道零初始化卷积注入空间条件；仍使用原生一步Euler
+和VAE decoder，不恢复旧纯文本Qwen，不添加独立图像encoder、参考VAE推理支路、
+GT／mask／目录索引或像素贴回。空间头4通道辅助读出仅TRAIN预测参考VAE latent。
+原Qwen3-VL rot_pos_emb按merged block行列遍历，merger合并连续2×2块；
+本机安装的Qwen3-VL forward无窗口置换。每条缓存的token数／image位置均由原processor
+核验，实际图片processor再检查首TRAIN、首VAL和末样本，拒绝静默猜测位置。
+
+沿用10月26日完整TRAIN／VAL身份与像素、从21.0465dB的full best继续，旧run不覆盖。
+该父权重完整训练3456对；本轮发现6条粗略目标描述各指向多个TRAIN商品，
+在确定性latent监督下先排除对应58条优化样本，剩余3398 TRAIN／144 VAL。
+这是减少本轮歧义监督，不声称父权重没有见过这58条TRAIN样本；VAL角色不变化。
+训练商品允许复用，重点是不用品牌/SKU作指令、不把未见目标商品放入TRAIN，
+也不把扩大随机种子解释成已验证多样性。背景仍为原程序场景，不宣称开放域背景泛化。
+
+先做600步TRAIN参考latent读出预热，再以batch8训练约3遍TRAIN，VAL逐图PSNR选best。
+主损失初值：目标latent MSE1（前景权重3）、编辑／保留区域均衡RGB L1 .2、LPIPS .5、
+参考latent辅助 .1、TRAIN条件对齐 .01。Qwen/VAE冻结，训练空间读出、条件adapter、
+UNet LoRA及原文字cross-attention；冻结原噪声卷积，不新增GAN。VAE encoder仅产生
+TRAIN参考／目标监督，CLIP只复用原TRAIN条件缓存，不进入推理。
+记录整图／编辑区／保留区PSNR、LPIPS、空间条件置零及重新编码灰图／错配文字对照；
+“视觉塔调用过”不能替代对实际贡献的核验。所有结果仍是开发VAL，不评独立TEST。
+本轮仅使用用户授权A100 GPU6 UUID`GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`，
+显存上限75%，不停止其他任务；代码先发布Git再运行，完成核验自有PID释放。
+
 2026-10-26开始独立的**纯电子可行性试验**，不替换上述封存模型。入口
 `qwen_vl_turbo_run.py`，配置`configs/qwen_vl_turbo_electronic_20261026.json`。
 完整公开Qwen3-VL-2B（视觉24层＋语言28层，不裁token／层）处理参考RGB和编辑指令；
