@@ -3,6 +3,7 @@ import argparse
 import csv
 import json
 import math
+import re
 from collections import defaultdict
 from pathlib import Path
 from zipfile import ZipFile
@@ -58,7 +59,142 @@ def phase_evidence(folder,raw,ledger):
         selected=[n for n in nodes if n['field']==0 and phase_of(n,mapping)==key and durations[n['id']]>0]
         bounds[key]=None if not selected else [min(schedule['starts_ms'][n['id']] for n in selected),max(schedule['ends_ms'][n['id']] for n in selected)]
     bounds['scheduling'][0]=0.
-    return dict(bounds=bounds,wall_ms=schedule['wall_ms'],fields=raw['fields'],rows=ledger['rows'])
+    fine=fine_accounting(nodes,durations,mapping,raw,ledger)
+    return dict(bounds=bounds,wall_ms=schedule['wall_ms'],fields=raw['fields'],rows=ledger['rows'],fine=fine)
+
+
+CONTROL_KEYS=('initial_entry','field_entry','slot_sync','capture_sync','score_sync','final_sync','capture_gap')
+
+
+def fine_accounting(nodes,durations,mapping,raw,ledger):
+    """Partition exactly the same witnessed path; reclassify, never retime."""
+    records={r['field']:r for r in raw['records']};context={}
+    for row in raw['records']:
+        current='vision_entry';active=0
+        for i,event in enumerate(row['events']):
+            key=f"f{row['field']}.g{i}";phase=mapping[key]
+            context[key]=current if phase=='excluded' else phase
+            if event['kind']=='optical_simulation':active+=1;current=f'oeo{active}'
+            elif phase not in ('frontend','excluded'):current=phase
+    critical=set(ledger['fixed_optics']['critical_path_node_ids'])
+    work=defaultdict(float);compute=defaultdict(float);overhead=defaultdict(float);breakdown=defaultdict(float);witness=[]
+    for node in nodes:
+        key=node['id'];duration=durations[key]
+        if duration==0:continue
+        if node['kind'] not in ('dispatch','sync'):
+            owner=phase_of(node,mapping)
+            if owner in ('startup','excluded','scheduling'):raise ValueError('Unexpected nonzero computation scope: '+key)
+            work[owner]+=duration
+            if key in critical:compute[owner]+=duration
+            continue
+        field=node['field'];prefix=f'f{field}.';suffix=key[len(prefix):] if key.startswith(prefix) else key
+        if suffix=='token.hostgap':owner='initial_entry' if field==0 else 'field_entry';kind='主机动作间隙'
+        elif suffix.startswith('slotwait'):owner='slot_sync';kind='槽位评分fence'
+        elif suffix.startswith('finalsync'):owner='final_sync';kind='最终同步/返回'
+        elif re.fullmatch(r'sync\d+(?:\.(?:hostgap|begin))?',suffix):
+            index=int(re.search(r'\d+',suffix).group());sync=records[field]['synchronization_observations'][index]['kind']
+            owner='score_sync' if sync=='score_ready' else 'capture_sync';kind='显式同步/相邻间隙'
+        elif re.fullmatch(r'capture\d+\.hostgap',suffix):owner='capture_gap';kind='捕获相邻主机间隙'
+        elif suffix.startswith('pin') or suffix.startswith('H2D'):
+            owner='frontend';kind='输入页锁定/传输就绪间隙'
+        elif re.fullmatch(r'submit\d+(?:\.(?:hostgap|begin))?',suffix):
+            index=int(re.search(r'\d+',suffix).group());owner=context[prefix+f'g{index}'];kind='CPU提交前间隙' if suffix.endswith('hostgap') else 'CPU提交函数'
+        elif re.fullmatch(r'g\d+\.queue',suffix):owner=context[key[:-len('.queue')]];kind='GPU就绪队列'
+        elif re.fullmatch(r'eagergap\d+(?:\.(?:hostgap|begin))?',suffix):
+            index=int(re.search(r'\d+',suffix).group());owner=mapping[prefix+f'gap{index}'];kind='首三场电子段主机动作'
+        elif suffix.startswith('eagertail'):owner='decoder';kind='首三场读出后主机动作'
+        elif re.fullmatch(r'gap\d+\.queue',suffix):owner=mapping[key[:-len('.queue')]];kind='首三场电子段就绪队列'
+        else:raise ValueError('Unclassified nonzero control node: '+key)
+        if owner not in PHASE_NAMES and owner not in CONTROL_KEYS:raise ValueError('Unknown control owner')
+        if key in critical:
+            overhead[owner]+=duration;breakdown[(owner,kind)]+=duration
+            witness.append(dict(node=key,owner=owner,kind=kind,ms=duration))
+    compare(sum(compute.values())+sum(overhead.values()),ledger['fixed_optics']['wall_ms16']*raw['fields'],'fine_node_partition')
+    compare(sum(overhead.values()),ledger['fixed_optics']['critical_path_contribution_ms16']['scheduling']*raw['fields'],'old_scheduling_partition')
+    return dict(work=dict(work),compute=dict(compute),overhead=dict(overhead),
+        control_breakdown=[dict(owner=o,kind=k,ms=v) for (o,k),v in sorted(breakdown.items())],control_witness=witness)
+
+
+def detailed_appendix(evidence,detail,time16):
+    fields=sum(e['fields'] for e in evidence);work=defaultdict(float);compute=defaultdict(float);overhead=defaultdict(float);breakdown=defaultdict(float)
+    for e in evidence:
+        for source,target in [('work',work),('compute',compute),('overhead',overhead)]:
+            for key,value in e['fine'][source].items():target[key]+=value/fields
+        for r in e['fine']['control_breakdown']:breakdown[(r['owner'],r['kind'])]+=r['ms']/fields
+    rows=[];types=[];module_rows=[];assigned=[]
+    def line(module,label,keys,relation):
+        assigned.extend(keys);c=sum(compute[k] for k in keys);h=sum(overhead[k] for k in keys)
+        span=sum(work[k] for k in keys) if any(k in PHASE_NAMES for k in keys) else '不适用'
+        rows.append([module,label,span,c,h,c+h,relation]);types.append('accounted')
+    def missing(label,explanation):
+        rows.append(['预处理',label,'未独立计时','含于联合行','含于联合行','不另加',explanation]);types.append('unmeasured')
+    def subtotal(module,start):
+        source=[r for r,t in zip(rows[start:],types[start:]) if t=='accounted']
+        c=sum(r[3] for r in source);h=sum(r[4] for r in source)
+        rows.append([module,'小计','不相加',c,h,c+h,'小计仅用于阅读，不与下方总计重复累加。']);types.append('subtotal')
+        module_rows.append([module,c,h,c+h])
+    start=len(rows)
+    line('预处理','文本分词（Tokenizer）',['tokenizer'],'原共享prompt每场真实分词；可与前一场主体重叠。')
+    missing('视觉Embedding','只有联合事件，不能从总时长按FLOPs或参数量摊分。')
+    missing('位置编码','位置查表/加法等没有独立事件；计入下方联合行。')
+    missing('Adapter','视觉/质量/语言Adapter、归一化等未分别计时；不是0 ms。')
+    missing('文本Embedding与池化等','同一联合事件还含文本Embedding、池化、cast及原输入刷新。')
+    line('预处理','Embedding/位置/Adapter联合前处理',['frontend'],'上述未独立计时项只在此计一次；原完整patch双流fork/join，保留汇合。')
+    line('预处理','Adapter后光场输入映射',['vision_entry'],'原parallel_optics.fields：把特征映为整场光学输入；归预处理，不冒称Adapter独立耗时。')
+    subtotal('预处理',start)
+    for module,indices in [('视觉光电处理',range(1,4)),('语言光电处理',range(4,7))]:
+        if module=='语言光电处理':
+            start=len(rows)
+            line('多模态融合','Merger与序列组装',['merger'],'本场视觉三周期完成后执行。')
+            line('多模态融合','语言侧输入编码',['language_entry'],'原语言入口事件；归融合后的输入准备，不与Merger重复。')
+            subtotal('多模态融合',start)
+        start=len(rows)
+        for i in indices:
+            name=('Router','Expert','Global')[(i-1)%3]
+            line(module,name+'：光传播',[f'optics{i}'],'同场按Router→Expert→Global依赖执行；每周期16视频整幅光场联合传播。')
+            line(module,name+'：OEO电子段',[f'oeo{i}'],'光后必要读出/路由/融合/下段编码；保持原段边界，非纯A/D或D/A器件延时。')
+        subtotal(module,start)
+    start=len(rows)
+    line('解码器','Decoder、读出与最终评分',['decoder'],'依赖本场语言段；相关首场主机尾部动作在CPU列单列。')
+    subtotal('解码器',start)
+    start=len(rows)
+    labels=[('initial_entry','整轮起点→首场分词前','只含t=0到第0场分词前的主机动作间隙。'),
+        ('field_entry','前场主机动作→本场分词前','由原CPU动作边界界定，不能称为GPU场输出→下场输入的完整间隔。'),
+        ('slot_sync','复用槽位前评分fence','场i等待场i−2评分；GPU等待通过依赖处理，本行仅剩余主机贡献。'),
+        ('capture_sync','首次/捕获阶段设备同步','前三真实eager/两次真实capture的初始化、传输后、前端后同步。'),
+        ('capture_gap','捕获相邻主机动作间隙','批准排除的建图函数本身为0；仍保留其相邻观测间隙。'),
+        ('score_sync','首三场/捕获场评分同步','首次与捕获场的score_ready同步和其前主机间隙。'),
+        ('final_sync','全窗末尾同步与返回','最后一场输出就绪后的同步返回贡献，不再加整段GPU等待。')]
+    for key,label,note in labels:line('调度与同步',label,[key],note)
+    subtotal('调度与同步',start)
+    if len(assigned)!=len(set(assigned)) or set(assigned)!=((set(PHASE_NAMES)-{'scheduling'})|set(CONTROL_KEYS)):
+        raise ValueError('Detailed appendix keys overlap or are missing')
+    c=sum(r[3] for r,t in zip(rows,types) if t=='accounted');h=sum(r[4] for r,t in zip(rows,types) if t=='accounted')
+    compare(c+h,time16,'detailed_appendix_closes');old=next(r[2] for r in detail['rows'] if r[0]==PHASE_NAMES['scheduling'])
+    compare(h,old,'old_scheduling_exactly_redistributed')
+    rows.append(['合计','仅核算行相加；不重复加小计','不可相加',c,h,time16,'计算贡献＋主机/队列贡献＝同一见证关键路径总时间。']);types.append('total')
+    notes=[
+        '单位均为ms/16视频（64帧）。C为各阶段累计计算跨度，不能直接相加；D/E为同一关键路径上的互斥贡献，只有F的核算行可相加。',
+        '空缺不等于0：视觉Embedding、位置编码、Adapter、文本Embedding/池化仅有联合事件。联合行包含这些操作，未按理论算量拆数。',
+        '视觉入口编码现归预处理：它是Adapter之后的特征→光场输入映射，不是另一个Transformer，也不是Adapter总耗时。',
+        '原“调度与同步”2.410047725980500 ms含CPU提交函数、CPU动作间隙、GPU就绪队列、页锁定、槽位等待及显式同步。',
+        '现将明确关联提交/队列按原目标事件放入对应Part的E列。相邻动作间隙按下一事件标注位置，不声称该间隙全为该算子的计算。',
+        '调度模块仅保留不能当作计算Part的全窗/跨场控制项。场间分词前间隙是CPU动作边界，不是GPU输出到下一GPU输入的完整区间。',
+        'E列不含重复GPU计算或整段阻塞等待；GPU就绪等待的依赖路径仍保留。所有正时长关键路径节点恰归一个核算行，无新增排除。',
+        '同场六周期及Merger/Decoder保持串行依赖；跨场前处理与前场主体流水重叠，原前处理内部双流fork/join；不冒称逐kernel占用并发。',
+        'OEO段沿用原路由/读出、融合、归一化及下段编码边界；光周期为0.714285714＋0.300000000＋0.030700000 ms，非物理光路直接实测。',
+        't=0至最后CPU评分返回。窗口前模型加载/原图准备/批量H2D不计；窗口内首三eager与两capture输出保留，无额外预热。',
+        '批准电子图构建函数排除，其他原边界不变。总时间T=(1939.062297384＋1870.511531500＋1848.945302635)/384=14.735726904997131 ms。',
+        '每轮用E(v)=d(v)+max前驱E、L=max_vE计算依赖最长路径；三轮L相加后除384。仅重新分类原计时，不重跑模型、不改变总时间。']
+    return dict(title='LightGen分阶段计时与控制开销归属（每16视频/64帧）',
+        headers=['模块','Part（执行顺序）','累计计算跨度/ms\n不可直接相加','关键路径计算/ms','相关CPU/队列/ms','可加贡献/ms','串并行关系与计时边界'],
+        rows=rows,row_types=types,notes=notes,module_rows=module_rows,
+        module_headers=['模块','关键路径计算/ms','CPU/队列/ms','模块合计/ms'],
+        control_breakdown=[dict(owner=o,kind=k,ms16=v) for (o,k),v in sorted(breakdown.items())],
+        old_scheduling_ms16=old,all_positive_path_nodes_assigned_once=True,
+        module_local_control_ms16=sum(overhead[k] for k in PHASE_NAMES if k!='scheduling'),
+        remaining_window_control_ms16=sum(overhead[k] for k in CONTROL_KEYS),
+        no_independent_embedding_position_adapter_timings=True)
 
 
 def pooled_phase_table(evidence,time16):
@@ -122,6 +258,21 @@ def parameter_metadata(data):
     return dict(values_billion=values,baseline_catalog=sources,LightGen_student_numel=6804011,
         LightGen_frozen_frontend_numel=front,LightGen_total_numel=6804011+front,
         sources=[dict(path=str(p),sha256=h) for p,h in pins.items()],Qwen_GLM_are_nominal=True)
+
+
+def read_workbook_cells(book,number):
+    ns={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+    with ZipFile(book) as z:
+        shared=[''.join(s.itertext()) for s in ET.fromstring(z.read('xl/sharedStrings.xml')).findall('s:si',ns)] if 'xl/sharedStrings.xml' in z.namelist() else []
+        cells={}
+        for c in ET.fromstring(z.read(f'xl/worksheets/sheet{number}.xml')).findall('.//s:sheetData/s:row/s:c',ns):
+            if c.find('s:f',ns) is not None or c.get('t')=='e':raise ValueError('Only fixed source values supported')
+            v=c.find('s:v',ns);inline=c.find('s:is',ns)
+            value=v.text if v is not None else ''.join(inline.itertext()) if inline is not None else None
+            if c.get('t')=='s':value=shared[int(value)]
+            elif value is not None and c.get('t') not in ('inlineStr','str'):value=float(value)
+            cells[c.get('r')]=value
+        return cells
 
 
 def appendix_table(detail,time16):
@@ -208,23 +359,40 @@ def prepare(source):
     parameters=parameter_metadata(data)
     for row in rows:row.insert(2,parameters['values_billion'][row[1]])
     detail=pooled_phase_table(phase_records,t)
+    base=source.parent/'Temporal_LightGen_appendix_20261027_05'/BOOK_NAME
+    base_sha='4c2f4de37b8e98162af59be29b431ff3933d18f7814e12efff25a44a8562a7ed'
+    if sha(base)!=base_sha:raise ValueError('User-edited base workbook changed; re-inspect before editing')
+    main_cells=read_workbook_cells(base,1)
+    for i,row in enumerate([HEADERS]+rows,1):
+        for j,value in enumerate(row):
+            address=chr(65+j)+str(i)
+            if address=='C2' and main_cells.get(address) is None:continue
+            compare(value,main_cells.get(address),'base_main_'+address)
     return dict(status='raw_rechecked_fixed_values',headers=HEADERS,rows=rows,notes=NOTES,
         source_json=str(snapshot),source_json_sha256=sha(snapshot),source_manifest_sha256=MANIFEST_SHA,
         baseline_original_points_rechecked=36,LG_original_points_rechecked=3,LG_source_receipts=raw_sources,
-        edited_XLSX_read=False,explicit_extra_warmup_forwards=0,physical_optical_hardware_measured=False,
+        edited_XLSX_read=True,edited_XLSX_used_for_timing_calculation=False,
+        explicit_extra_warmup_forwards=0,physical_optical_hardware_measured=False,
         energy_is_component_accounting=True,excel_formulas_requested=False,
         token_scope='LightGen: Qwen reference equivalent tokens; baselines: each original native token count',
         common_effective_tokens=common,common_tokens_per_16_videos=7136,
         LG_native_prompt_tokens_not_used_for_display=native,
         throughput_ratio_direction='LightGen Qwen-reference rate / baseline native rate',
         baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
-        cross_model_token_definitions_differ=True,phase_table=detail,appendix_table=appendix_table(detail,t),parameters=parameters)
+        cross_model_token_definitions_differ=True,phase_table=detail,appendix_table=detailed_appendix(phase_records,detail,t),parameters=parameters,
+        base_workbook=str(base),base_workbook_sha256=base_sha,base_main_cells=main_cells,
+        source_main_sheet_user_edits_preserved=True,base_workbook_used_for_presentation_only=True)
 
 
 def audit(folder,visual_reviewed=False):
     folder=Path(folder).resolve();expected=read(folder/'static_values.json');book=folder/BOOK_NAME
     # Recheck the raw data independently again; no workbook is used as an input.
-    compare(expected,prepare(Path(expected['source_json']).parent),'independent_raw_replay')
+    replay_expected=dict(expected)
+    if replay_expected.get('base_workbook_used_for_presentation_only'):
+        # Explicitly normalize the documented legacy access flag, never raw values.
+        replay_expected['edited_XLSX_read']=True
+        replay_expected['edited_XLSX_used_for_timing_calculation']=False
+    compare(replay_expected,prepare(Path(expected['source_json']).parent),'independent_raw_replay')
     ns={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
     with ZipFile(book) as z:
         names=[n.get('name') for n in ET.fromstring(z.read('xl/workbook.xml')).findall('s:sheets/s:sheet',ns)]
@@ -245,27 +413,37 @@ def audit(folder,visual_reviewed=False):
             if any(isinstance(v,str) and ('投影' in v or '软件' in v) for v in cells.values()):raise ValueError('Presentation must contain only the requested LG metric')
             return cells
         cells=parse_sheet(1)
-        for r,row in enumerate([expected['headers']]+expected['rows'],1):
-            for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'cell_{r}_{i}')
-        for i,note in enumerate(expected['notes'],16):compare(note,cells.get('A'+str(i)))
+        for address,value in expected['base_main_cells'].items():compare(value,cells.get(address),'preserved_'+address)
+        compare({k:v for k,v in expected['base_main_cells'].items() if v is not None},
+                {k:v for k,v in cells.items() if v is not None},'main_values_exactly_preserved')
         phase=expected['appendix_table'];cells=parse_sheet(2)
         compare(phase['title'],cells.get('A1'))
         for r,row in enumerate([phase['headers']]+phase['rows'],3):
             for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'phase_cell_{r}_{i}')
-        for i,note in enumerate(phase['notes'],13):compare(note,cells.get('A'+str(i)))
-        for r,row in enumerate([phase['round_headers']]+phase['rounds'],25):
+        notes_start=len(phase['rows'])+6
+        for i,note in enumerate(phase['notes'],notes_start):compare(note,cells.get('A'+str(i)))
+        modules_start=notes_start+len(phase['notes'])+2
+        for r,row in enumerate([phase['module_headers']]+phase['module_rows'],modules_start):
             for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'round_cell_{r}_{i}')
-        compare(sum(r[2] for r in phase['rows'][:-1]),expected['rows'][0][5],'saved_phase_sum_equals_main_time')
-        compare(sum(r[3] for r in phase['rows'][:-1]),1.,'saved_phase_fractions_sum')
+        accounted=[r for r,t in zip(phase['rows'],phase['row_types']) if t=='accounted']
+        compare(sum(r[5] for r in accounted),expected['rows'][0][5],'saved_phase_sum_equals_main_time')
+        compare(sum(r[4] for r in accounted),phase['old_scheduling_ms16'],'old_scheduling_redistributed_exactly')
+        compare(sum(r[3] for r in phase['module_rows']),expected['rows'][0][5],'saved_module_subtotals_close')
     if not visual_reviewed:raise ValueError('Review the one-sheet render before sealing')
+    main_render_sha=sha(folder/'preview.png')
+    if main_render_sha!='93dcaa7bbc6bd204cb97dd6380f5195e1d6485ab741f71c8ce57643d6fc81dbb':
+        raise ValueError('Unchanged main sheet render differs from the actual user-edited base')
     result=dict(status='passed',rows=13,sheets=2,formulas=0,external_links=0,raw_points_rechecked=39,
-        all_saved_values_independently_verified=True,edited_XLSX_used_as_source=False,
+        all_saved_values_independently_verified=True,edited_XLSX_used_for_timing_calculation=False,
+        edited_XLSX_imported_for_main_preservation=True,
         deletion_cannot_trigger_reference_recalculation=True,visual_reviewed=True,workbook_sha256=sha(book),
         common_effective_tokens=expected['common_effective_tokens'],
         baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
         cross_model_token_definitions_differ=True,phase_table_closes_to_main_time=True,
         original_t0_retained=True,phase_overlap_not_double_counted=True,parameter_sources_verified=True,
-        appendix_blocks=6,filename_contains_fixed_values=False)
+        appendix_blocks=6,filename_contains_fixed_values=False,source_main_user_edits_preserved=True,
+        CPU_control_redistributed_not_retimed=True,missing_component_timings_not_fabricated=True,
+        main_sheet_render_pixel_identical=True,main_sheet_render_sha256=main_render_sha)
     with (folder/'saved_values_audit.json').open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
     with (folder/'delivery_manifest.json').open('x',encoding='utf8') as f:
         json.dump(dict(status='sealed',files=[dict(path=p.name,bytes=p.stat().st_size,sha256=sha(p)) for p in
