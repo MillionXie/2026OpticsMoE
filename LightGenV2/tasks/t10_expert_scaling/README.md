@@ -68,20 +68,31 @@ GPU3的seed17/27保留原PID、权重、优化器、EMA和进度；seed37在GPU1
 最终控制器仍保存三模型总锁；通过checkpoint/data/model/evaluator/预测SHA校验后
 复用已完成TEST，另存reuse_receipt，不重复forward或覆盖首次收据。预算与选模规则不变。
 
-已完成两份120轮模型的752样本TEST并下载预测，逐文件SHA、accuracy、混淆矩阵、
-分数argmax和跨run样本身份均已独立核验；下表仅含已完成seed，不能冒充三seed最终结果。
+三个seed均已完成累计120轮及752样本TEST，逐文件SHA、accuracy、混淆矩阵、
+分数argmax和跨run样本身份均已独立核验。下表对应各自验证选定的同一权重。
 
 | Seed | 选定epoch | Train(%) | Validation(%) | TEST(%) | 同seed 90轮49/49 TEST(%) | 同seed 90轮49/24 TEST(%) |
 |---|---:|---:|---:|---:|---:|---:|
 | 17 | 117 | 89.85 | 78.32 | 79.79 | 79.12 | 80.32 |
 | 27 | 109 | 89.59 | 79.65 | 80.19 | 78.86 | 81.12 |
+| 37 | 119 | 90.27 | 79.39 | 77.93 | 78.46 | 81.25 |
 
-两seed均值79.99% ± 样本标准差0.28%（n=2），同seed对比90轮49/49分别提高0.66/1.33pp，
-仍比同seed的49/24低0.53/0.93pp。seed37尚在训练；不得用n=2统计替代完整三seed表。
-机器可读结果见`reports/kather_n49k49_continue90to120_20261027/partial_test_20261027.json`。
-33份原始JSON/路由NPZ/TEST预测已下载并通过run下`early_test_artifacts_manifest_20261027_001.json`；
-锁和评估收据为`completed_models_test_lock_20261027_001.json`与`early_test_execution_20261027_001.json`。
-GPU3本次评估已结束；GPU1保留seed37训练，全部完成后核验本任务进程与显存释放。
+| 配置 | Train(%) | Validation(%) | TEST(%) |
+|---|---:|---:|---:|
+| 49/49，90轮 | 87.69 ± 0.13 | 77.70 ± 0.67 | 78.81 ± 0.33 |
+| 49/49，120轮 | 89.90 ± 0.35 | 79.12 ± 0.70 | 79.30 ± 1.21 |
+| 49/24，90轮 | 90.06 ± 1.68 | 80.36 ± 0.55 | 80.90 ± 0.50 |
+
+均为三个seed的均值±样本标准差。追加预算使49/49的TEST均值提高0.49pp，
+仍比90轮49/24低1.60pp；seed37自身TEST下降0.53pp，不能用两个改善seed替代完整统计。
+训练与验证仍相差约10.78pp，未证明继续堆叠轮数可以消除泛化落差。
+最终机器可读结果见`reports/kather_n49k49_continue90to120_20261027/final_summary_20261027.json`；
+之前的n=2快照`partial_test_20261027.json`保留为历史，不能作为最终三seed表。
+67份JSON/路由NPZ/逐样本预测已下载，按`final_artifact_manifest_20261027.json`逐份校验SHA，
+独立复算三个seed分别600/603/586个正确TEST样本；best/last权重SHA已在服务器核验。
+seed17/27既有TEST经身份核验复用，未重复forward；seed37由原控制器完成首次TEST。
+`release_check.json`及额外身份收据确认本120轮任务的训练/评估子进程均退出，GPU1已无本任务分配。
+GPU3仅保留独立的渐进温度开发试验；原120轮数据、权重和结果完整保留。
 
 ## 五组尾部微调最终结果（2026-10-27）
 
