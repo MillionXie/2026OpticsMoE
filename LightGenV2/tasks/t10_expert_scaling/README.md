@@ -1,5 +1,19 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 用户追加：直接按开发TEST选择保留PT（2026-10-28）
+
+用户最新明确要求“直接按照test选取pt”，因此当前硬标签/SAM阶段的最终选模改为开发TEST正确数优先、
+相同时按TEST macro-NLL选择，不再用VAL决定最终采用哪一份PT。原训练进程、24轮预算、梯度和增强保持运行身份不变，
+不热改活动`sharpness_refine.py`或其profile。另设`checkpoint_test_selection.py`及
+`configs/kather_n49_sam_test_selection_20261028.json`，CPU等待原父/两worker及原评估全部退出后，
+在GPU1顺序比较两组实际保留的best/last EMA PT与原E117候选，共最多五项。
+原best已完成TEST或模型逐张量相同时，校验权重、数据、依赖与逐样本预测身份后复用，不重复forward。
+这里比较的是实际保留的四份新PT及原候选，不声称找回已被覆盖的所有中间轮权重；VAL仅用于诊断。
+所有候选先锁SHA，选择后的PT另存该选模run的`best_checkpoint.pt`，原best/last和原VAL选模记录均保留。
+新run为`runs/simulation/kather_n49_sam_test_selection_20261028`，不占用正在训练的计算槽位、不暂停训练、不追加训练或其他seed。
+最终TEST选中权重另评完整3496 TRAIN/752 VAL、保存对应预测和路由；直接TEST选模是用户授权的开发成绩，
+不是独立泛化确认，不能替换旧等预算Top-k表。目标仍为616/752，不能只凭选模口径变化声称达标。
+
 ## 局部转移诊断后的全模型平坦性目标成对检验（2026-10-28）
 
 最近竞争类guard的两组Jacobian各三个源恢复点已完成，global37.29秒/router33.67秒，22小产物SHA、
