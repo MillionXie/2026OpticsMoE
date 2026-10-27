@@ -86,7 +86,10 @@ def prepare(data,profile_path,out,category_data=None,parent_data=None):
     rows=reviewed_pairs(selected,descriptions,profile)
     audit=validate_roles(rows);audit.update({'profile_sha256':sha256(profile_path),
         'raw_manifest_sha256':hashes,'inventories':{s:{'products':len({r['product_id'] for r in v}),'views':len(v)} for s,v in selected.items()},
-        'selection_basis':profile['selection_basis'],'manual_prompt_descriptions':True,
+        'selection_basis':profile['selection_basis'],'manual_prompt_descriptions':profile.get('manual_prompt_descriptions',True),
+        'annotation_method':profile.get('annotation_method','Manually reviewed product descriptions'),
+        'evaluation_label':profile.get('evaluation_label','validation'),
+        'test_selection_authorized':profile.get('test_selection_authorized',False),
         'target_view_policy':profile.get('target_view_policy','Object/joint targets use the first approved view per SKU; background edits retain the actual reference view.'),
         'source_scene_policy':f"Independent reference backgrounds per view: {profile.get('edits_per_mode',{'train':2,'val':2})}; no identical reference/prompt paired with conflicting target views",
         'family_scope':'Upstream family where present, otherwise SKU; no claim all similar-family products were independently audited',

@@ -34,13 +34,15 @@ def view_quality(row):
     interior_x=support[:,:-1]&support[:,1:];interior_y=support[:-1]&support[1:]
     edges=[edge_x[interior_x],edge_y[interior_y]]
     sharp=float(np.concatenate(edges).mean()) if any(len(v) for v in edges) else 0.
-    # Prefer a broad visible face / solid structure, without ranking by model output.
-    score=fill+.2*min(area/.3,1)+.02*math.log1p(sharp)-.08*abs(math.log(max(aspect,.01)))
+    # Lamps need a visible base, so prefer tall frontal projections rather than
+    # the high-fill overhead shade views rejected in the first visual review.
+    score=(1.2/(1+aspect)+.3*fill+.03*math.log1p(sharp) if row['category']=='lamp' else
+           .7*fill+.1*min(area/.3,1)+.18*math.log1p(sharp)-.08*abs(math.log(max(aspect,.01))))
     return {'score':score,'fill':fill,'alpha_area':area,'aspect':aspect,'foreground_edge':sharp,
             'border_alpha':border,'bbox':[x0,y0,x1,y1]}
 
 
-def screen(data,out,parent_data):
+def screen(data,out,parent_data,excluded=()):
     if out.exists():raise ValueError('Existing screen must be inspected, not overwritten')
     source={};hashes={}
     for split in ('train','val'):
@@ -48,6 +50,7 @@ def screen(data,out,parent_data):
         for line in path.read_text(encoding='utf-8').splitlines():
             r=json.loads(line)
             if r['category'] not in ('lamp','pillow'):continue
+            if r['sequence_id'] in excluded:continue
             if r['license']!='CC BY 4.0':raise ValueError('Unreviewed source license')
             for key in ('image_path','mask_path'):r[key]=str((data/r[key]).resolve())
             r['product_id']=r['sequence_id'];r['family_id']=r.get('parent_id') or r.get('family_id') or r['product_id']
@@ -66,6 +69,9 @@ def screen(data,out,parent_data):
                 unique=[];seen=set()
                 for row in ordered:
                     if row['rgba_sha256'] not in seen:unique.append(row);seen.add(row['rgba_sha256'])
+                if unique and cat=='pillow' and unique[0]['quality']['foreground_edge']>1:
+                    threshold=unique[0]['quality']['foreground_edge']*.35
+                    unique=[r for r in unique if r['quality']['foreground_edge']>=threshold]
                 if len(unique)<2:continue
                 chosen=unique[:2];products.append((min(r['quality']['score'] for r in chosen),sku,chosen))
             need=16 if split=='train' else 4
@@ -83,7 +89,7 @@ def screen(data,out,parent_data):
     profile={'version':'qwen_vl_expanded_lamp_pillow_960_96_20261027','seed':1042,
       'categories':['lamp','pillow'],'image_size':256,'requires_parent_exposure_audit':True,
       'products':{s:[{k:v for k,v in p.items() if k!='source_rows'} for p in products] for s,products in selected.items()},
-      'excluded_products':[],'edits_per_mode':{'train':5,'val':2},'manual_prompt_descriptions':False,
+      'excluded_products':list(excluded),'edits_per_mode':{'train':5,'val':2},'manual_prompt_descriptions':False,
       'selection_basis':'Alpha boundary/completeness and foreground face/edge screening followed by contact-sheet visual review; never ranked by model predictions.',
       'target_view_policy':'First screened view is canonical target; both clear views may be references. Different input scenes per repeated target.',
       'evaluation_label':'development_test','evaluation_source_role':'val',
@@ -150,8 +156,8 @@ def annotate(screen_dir,qwen,gpu):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',choices=('screen','annotate'),required=True)
     for k in ('data','output','parent-data','qwen'):p.add_argument('--'+k,type=Path)
-    p.add_argument('--gpu-uuid');a=p.parse_args()
-    if a.stage=='screen':screen(a.data,a.output,a.parent_data)
+    p.add_argument('--gpu-uuid');p.add_argument('--exclude-product',action='append',default=[]);a=p.parse_args()
+    if a.stage=='screen':screen(a.data,a.output,a.parent_data,a.exclude_product)
     else:annotate(a.output,a.qwen,a.gpu_uuid)
 
 
