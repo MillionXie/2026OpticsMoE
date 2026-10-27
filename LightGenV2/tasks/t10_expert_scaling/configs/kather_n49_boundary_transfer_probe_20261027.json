@@ -1,0 +1,16 @@
+{
+  "seed": 17,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "amplitudes": [
+    0.0015,
+    0.005,
+    0.01
+  ],
+  "boundary_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_boundary_refine_20261027.json",
+  "reference_train_scores": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_boundary_refine_20261027/cache/reference_train_scores.npz",
+  "reference_train_scores_sha256": "77f5d8d8344e32eb6987c5a9a80b52bd4998f3d6373c13c512c4f278be5a587f",
+  "selection": "Exclude all32 old repair-fit IDs. Each confusion has16 new source-margin-ranked examples paired adjacently, fixed random split into8 direction/8 observation with matched difficulty. Correct STROMA/DEBRIS/COMPLEX guards each16=8 margin(0,.2]+8 margin(.2,.5]. Fixed clean+D4 views; source TRAIN only.",
+  "budget": "Three directions (individual S repair,individual D repair,sum of separately L2-normalized class gradients) times3 RMS amplitudes=9 source-reset probes maximum. At most80 unique TRAIN images/160views. No optimizer trajectory or VAL/TEST forward. Exact phase reset and frozen-prefix SHA; no automatic extra trials.",
+  "purpose": "Diagnose class gradient conflict and transfer from new matched fit to disjoint near-boundary TRAIN observation; correct S/D/COMPLEX harm reported separately. Joint direction is first-order common descent only, not a guarantee of finite-amplitude repair or generalization.",
+  "continuation": "Do not proceed to training unless common direction improves both confusion observation groups while limiting correct S/D/COMPLEX harm in both views. Only unilateral benefit supports a boundary tradeoff, not more of the same projected updates. Use evidence to decide next finite work; current616 TEST target remains unachieved."
+}
