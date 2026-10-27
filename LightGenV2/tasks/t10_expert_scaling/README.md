@@ -12,7 +12,8 @@ seed17/27/37第80至90轮VAL分别76.60→76.86%、78.32→78.19%、77.53→77.5
 对应90轮last追加30轮至120，lr=3e-4余弦降至3e-5。保留live模型、Adam动量和EMA，
 架构、数据划分/增强、batch16/microbatch2、margin权重0.2、capture0.005和原soft均衡不变。
 随机状态按原seed初始化，epoch依赖的采样沿累计epoch计算；不是恢复全部RNG的位级续训。
-按验证accuracy选best、NLL打破平局，包含90轮best作为候选，三个模型锁定后评一次TEST。
+按验证accuracy选best、NLL打破平局，包含90轮best作为候选；按用户最新要求，
+每项完成验证选模并锁定后立即TEST，不等待其他seed。
 这是额外预算、观察过原TEST后的开发续训，不能作为新的独立确认性结果或等预算Top-k消融。
 
 入口复用`expert_tail_schedule.py`，只扩展来源身份审计以接受配置明确声明、锁定best/last SHA
@@ -27,7 +28,24 @@ GPU3的seed17/27保留原PID、权重、优化器、EMA和进度；seed37在GPU1
 现控制器身份以`status.json.scheduler_pid`及`handoff_ack.json`为准，`plan.json.pid`为旧父进程。
 训练源固定`d7270f1de`，控制器单独记录发布commit，后续监测不把旧父进程退出误判为故障。
 两卡每卡最多两项本任务计算，只启动尚未运行的原待跑项；所有seed训练参数保持一致。
-完成后仍统一锁定三个验证best再TEST，释放两张卡上的本任务资源。
+用户随后要求完成项即时测试：seed17/27已在GPU3顺序评估，未暂停GPU1的seed37。
+最终控制器仍保存三模型总锁；通过checkpoint/data/model/evaluator/预测SHA校验后
+复用已完成TEST，另存reuse_receipt，不重复forward或覆盖首次收据。预算与选模规则不变。
+
+已完成两份120轮模型的752样本TEST并下载预测，逐文件SHA、accuracy、混淆矩阵、
+分数argmax和跨run样本身份均已独立核验；下表仅含已完成seed，不能冒充三seed最终结果。
+
+| Seed | 选定epoch | Train(%) | Validation(%) | TEST(%) | 同seed 90轮49/49 TEST(%) | 同seed 90轮49/24 TEST(%) |
+|---|---:|---:|---:|---:|---:|---:|
+| 17 | 117 | 89.85 | 78.32 | 79.79 | 79.12 | 80.32 |
+| 27 | 109 | 89.59 | 79.65 | 80.19 | 78.86 | 81.12 |
+
+两seed均值79.99% ± 样本标准差0.28%（n=2），同seed对比90轮49/49分别提高0.66/1.33pp，
+仍比同seed的49/24低0.53/0.93pp。seed37尚在训练；不得用n=2统计替代完整三seed表。
+机器可读结果见`reports/kather_n49k49_continue90to120_20261027/partial_test_20261027.json`。
+33份原始JSON/路由NPZ/TEST预测已下载并通过run下`early_test_artifacts_manifest_20261027_001.json`；
+锁和评估收据为`completed_models_test_lock_20261027_001.json`与`early_test_execution_20261027_001.json`。
+GPU3本次评估已结束；GPU1保留seed37训练，全部完成后核验本任务进程与显存释放。
 
 ## 五组尾部微调最终结果（2026-10-27）
 

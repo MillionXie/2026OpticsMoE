@@ -1,0 +1,112 @@
+{
+  "role": "development_followup_after_observed_test_extra_training_budget",
+  "all_three_complete": false,
+  "n_tested_seeds": 2,
+  "pending_seed": 37,
+  "rows": [
+    {
+      "seed": 17,
+      "completed_epochs": 120,
+      "selected_epoch": 117,
+      "train_accuracy": 0.8984553813934326,
+      "validation_accuracy": 0.7832446694374084,
+      "test_accuracy": 0.7978723404255319,
+      "test_correct": 600,
+      "test_samples": 752,
+      "reference_90_k49": {
+        "train": 0.8755720853805542,
+        "validation": 0.769946813583374,
+        "test": 0.7912234042553191
+      },
+      "reference_90_k24": {
+        "train": 0.8818649649620056,
+        "validation": 0.8098404407501221,
+        "test": 0.8031914893617021
+      },
+      "test_delta_vs_90_k49_pp": 0.6648936170212782,
+      "test_delta_vs_90_k24_pp": -0.5319148936170248,
+      "checkpoint_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+      "predictions_sha256": "bb326b59d97fa37b76595fb90775af943ffe649406b39100dcf8992bb91b8b66",
+      "test_result_sha256": "ab630547a73c24cc5b59caec8e634884dd4b3d7767a86fb42ac6e3eb140950a8",
+      "run": "LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17"
+    },
+    {
+      "seed": 27,
+      "completed_epochs": 120,
+      "selected_epoch": 109,
+      "train_accuracy": 0.8958809971809387,
+      "validation_accuracy": 0.7965425252914429,
+      "test_accuracy": 0.8018617021276596,
+      "test_correct": 603,
+      "test_samples": 752,
+      "reference_90_k49": {
+        "train": 0.8770022988319397,
+        "validation": 0.7832446694374084,
+        "test": 0.788563829787234
+      },
+      "reference_90_k24": {
+        "train": 0.9144737124443054,
+        "validation": 0.8018617033958435,
+        "test": 0.8111702127659575
+      },
+      "test_delta_vs_90_k49_pp": 1.3297872340425565,
+      "test_delta_vs_90_k24_pp": -0.9308510638297851,
+      "checkpoint_sha256": "d0def9c832863ddf947ad8677d5108a2238526b72f5fe88383d5ed938498a7d9",
+      "predictions_sha256": "9641032495f420bd75028d2eecfb7c780eb93d14f869515087c8089a80910bc3",
+      "test_result_sha256": "e6fea679622bd7f402c9ad3c4f13b2fc0b8abeb2d9c533cf51c39d96a3b96f09",
+      "run": "LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s27"
+    }
+  ],
+  "test_mean": 0.7998670212765957,
+  "test_sample_sd": 0.002820904712180414,
+  "reference_90_complete_groups": [
+    {
+      "experts": 49,
+      "top_k": 24,
+      "n_seeds": 3,
+      "complete": true,
+      "train": {
+        "mean": 0.9005530079205831,
+        "sample_sd": 0.016818984508745877
+      },
+      "validation": {
+        "mean": 0.803634762763977,
+        "sample_sd": 0.005536347469378751
+      },
+      "test": {
+        "mean": 0.8089539007092199,
+        "sample_sd": 0.005034493214361936
+      },
+      "original_test": {
+        "mean": 0.8040780226389567,
+        "sample_sd": 0.0038387775348646606
+      },
+      "delta_test_mean_percentage_points": 0.487587807026324
+    },
+    {
+      "experts": 49,
+      "top_k": 49,
+      "n_seeds": 3,
+      "complete": true,
+      "train": {
+        "mean": 0.876906951268514,
+        "sample_sd": 0.0012898379304288072
+      },
+      "validation": {
+        "mean": 0.7770390113194784,
+        "sample_sd": 0.006693108915116636
+      },
+      "test": {
+        "mean": 0.7881205673758865,
+        "sample_sd": 0.0033465578170526486
+      },
+      "original_test": {
+        "mean": 0.7664006948471069,
+        "sample_sd": 0.0030710289104432698
+      },
+      "delta_test_mean_percentage_points": 2.1719872528779605
+    }
+  ],
+  "artifacts_manifest": "LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/early_test_artifacts_manifest_20261027_001.json",
+  "policy": "Completed validation-selected model tested immediately; final controller identity-checks cached predictions; no TEST-based retraining or seed selection"
+}
