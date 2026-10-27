@@ -2,6 +2,37 @@
 
 ## TRAIN难例回放与评估降频（2026-10-27，用户追加要求）
 
+### 本轮最终结果：三方法完成并测试，性能目标未达到
+
+三组均仅seed17，按预定最少10聚焦round后耐心6停止；颜色16轮、颜色＋相位噪声17轮、筛选蒸馏20轮，
+合计53个1024图像聚焦round、54272次TRAIN图像曝光。此前已完成的短试验与extended训练成本另存，不隐藏。
+验证accuracy优先、NLL平局选择蒸馏EMA逻辑E144（该新阶段第14round，计数不等于训练144个全量epoch）；
+其他两方案未读TEST。全量TRAIN指标来自3496张最终评估，区别于逐轮512张TRAIN探针。
+
+| 方法 | 完成聚焦round | 验证选中round | 全量TRAIN | VAL | TEST |
+|---|---:|---:|---:|---:|---:|
+| 颜色增强 | 16 | 12 | 90.16% | 78.46% | 未选，不读取 |
+| 颜色＋相位噪声 | 17 | 12 | 90.07% | 78.46% | 未选，不读取 |
+| 颜色＋筛选蒸馏 | 20 | 14 | 90.10% | 78.59% | **79.12%（595/752）** |
+
+已下载65份最终JSON/NPZ/记录，所有传输manifest SHA及三方法best/last SHA核验通过。
+对TEST752个样本独立重算accuracy、混淆矩阵、argmax、有限分数、跨版本相同IDs/labels，均通过。
+验证比原120seed17多对2张，TEST却比原120的79.79%（600/752）少对5张（−0.66pp）；
+配对错例分析为纠正3错、同时新增8错，主要净损失为COMPLEX类6张。相同seed的90轮49/k24为80.32%（604/752），
+本轮低1.20pp；相同seed的90轮49/k49也是79.12%，但不是同一权重或同一逐样本预测。
+此前90轮49/k24三seed均值80.90%±样本SD0.50%仍单列为旧结果，本单seed开发不能报告三seed均值SD或当作等预算消融。
+
+训练采样提高了难例密度和轮效率，但当前没有得到净TEST收益；全k路由hard全1是定义，soft功率仍接近均分，
+未证实专家分工改善。圆周SWA已按VAL比较，最终选择EMA。当前不扩其他seed、不按TEST结果再追加预算。
+三方法所有训练/评估进程与父调度器均退出，GPU1/3实查各12MiB/0%，无本任务显存占用；
+`final_independent_server_audit.json`与`release_check.json`留证，旧原始权重、失败数据和全部结果保留。
+
+证据与复算入口：
+- `reports/kather_n49_focused_adaptation_20261027/final_summary_20261027.json`
+- `reports/kather_n49_focused_adaptation_20261027/final_convergence_20261027.png`
+- `python -m LightGenV2.tasks.t10_expert_scaling.summarize_focused --snapshot <downloaded_final_snapshot> --report <report_directory>`
+
+
 启动核验：旧extended父子进程均已退出，颜色两路从完整E127、蒸馏从E130接续；三路初始VAL与源记录复现，RNG恢复。
 TRAIN-only采样审计：1024样本中保留约311–318个当前错例（全TRAIN约344–349错），约30.4–31.1%样本为当前错例，
 而均匀全TRAIN约9.8–10.0%；类计数128、ID唯一及与VAL/TEST不相交均由服务器和下载后NumPy独立核验。
