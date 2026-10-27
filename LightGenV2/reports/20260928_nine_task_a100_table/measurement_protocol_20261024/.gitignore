@@ -162,3 +162,4 @@
 !audit_lgvq_a100_warmup_20261027.py
 !run_lgvq_a100_deployed_20261027.py
 !test_lgvq_a100_deployed_20261027.py
+!collect_lgvq_deployed_summary_20261027.py

@@ -89,13 +89,34 @@ def verify_values(data,sheets):
         close(summary.get(cell),lg[key])
     for cell,key in [('I28','controller'),('I29','optical_devices'),('I30','electronic_board')]:
         close(summary.get(cell),lg['component_energy_proxy']['powers_w'][key])
+    if data.get('LG_deployed_profile'):
+        for i,c in enumerate(data['comparisons'],34):
+            close(summary.get('F'+str(i)),c['projected_common_throughput_gain'])
+            close(summary.get('G'+str(i)),c['baseline_over_LG_system_proxy_average_power'])
+        for row,source in ((76,26),(77,27)):
+            close(summary.get('B'+str(row)),float(summary['B'+str(source)])/16)
+            close(summary.get('C'+str(row)),float(summary['B'+str(source)])/64)
+            close(summary.get('D'+str(row)),float(summary['C'+str(source)])/16)
+            close(summary.get('E'+str(row)),float(summary['C'+str(source)])/64)
+        start=len(data['rounds'])+19
+        for i,r in enumerate(data['LG_rounds'],start):
+            for col,key in [('A','repeat'),('B','calls'),('C','software_elapsed_s'),('D','previous_v2_elapsed_s'),
+                ('E','graph_build_host_ms'),('F','projected_elapsed_s'),('G','component_proxy_energy_j'),
+                ('H','common_effective_tokens'),('I','native_effective_tokens'),('J','software_board_energy_j'),
+                ('K','software_matched_board_average_w')]:close(rounds.get(col+str(i)),r[key])
 
 
 def audit(folder,seal=False,visual_reviewed=False):
     folder=Path(folder).resolve();data=read(folder/'collected_results.json')
     if data['status']!='final_qualified_inputs':raise ValueError('No partial delivery can be sealed as final')
-    replay=collect([Path(p['path']) for p in data['rounds']],Path(data['LG']['path']),
-                   physical_scope_ledger=data['LG'].get('physical_scope_ledger_path'))
+    deployed=bool(data.get('LG_deployed_profile'))
+    if deployed:
+        from collect_lgvq_deployed_summary_20261027 import collect as collect_deployed
+        replay,replayed_phase=collect_deployed(data['base_delivery'],[p['path'] for p in data['LG_rounds']])
+        if replay!=data:raise ValueError('Deployed triple/old sealed baseline inputs differ')
+    else:
+        replay=collect([Path(p['path']) for p in data['rounds']],Path(data['LG']['path']),
+                       physical_scope_ledger=data['LG'].get('physical_scope_ledger_path'))
     for key in ('status','lab_complete_points','groups','LG','rounds','raw_file_index','comparisons'):
         if replay[key]!=data[key]:raise ValueError('Current qualified inputs differ: '+key)
     books=list(folder.glob('*.xlsx'))
@@ -103,7 +124,7 @@ def audit(folder,seal=False,visual_reviewed=False):
     sheets,formula_count=cached_sheets(books[0]);verify_values(data,sheets)
     if len(sheets)==4:
         from lgvq_phase_ledger_20261026 import build as phase_build
-        phase=read(folder/'phase_ledger.json');phase_replay=phase_build(Path(data['LG']['path']),
+        phase=read(folder/'phase_ledger.json');phase_replay=replayed_phase if deployed else phase_build(Path(data['LG']['path']),
             data['LG'].get('physical_scope_version')=='exclude_software_CPU_submit_v2')
         if phase_replay!=phase:raise ValueError('Physical phase ledger does not replay from original evidence')
         cells=sheets[3]
@@ -116,8 +137,9 @@ def audit(folder,seal=False,visual_reviewed=False):
         close(cells.get('B34'),qwen50);close(cells.get('B35'),qwen50/100)
         close(cells.get('B36'),qwen50/phase['fixed_optics']['wall_ms16'])
         close(cells.get('B37'),phase['fixed_optics']['wall_ms16']-qwen50/100)
-        close(cells.get('B38'),phase['legacy_fixed_optics_time16_ms'])
-        if phase.get('reference_round'):close(cells.get('B39'),phase['reference_round']['same_scope_time16_ms'])
+        close(cells.get('B38'),phase['previous_v2_time16_ms'] if deployed else phase['legacy_fixed_optics_time16_ms'])
+        if deployed:close(cells.get('B39'),phase['critical_path_reduction_from_graph_build_ms16'])
+        elif phase.get('reference_round'):close(cells.get('B39'),phase['reference_round']['same_scope_time16_ms'])
         for i,g in enumerate(data['groups'],45):
             stage=g['stage_equivalent16_ms']
             close(cells.get('D'+str(i)),stage.get('CPU_tokenizer_retained_ms',0))

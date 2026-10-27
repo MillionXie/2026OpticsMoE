@@ -46,6 +46,23 @@ def fixture():
 
 
 class WorkbookAuditTests(unittest.TestCase):
+    def test_new_LG_triple_and_all_multiplier_caches_checked(self):
+        data,sheets=fixture();data['LG_deployed_profile']='synthetic';data['comparisons']=[];data['LG_rounds']=[]
+        for i in range(2):
+            c=dict(projected_common_throughput_gain=10.+i,baseline_over_LG_system_proxy_average_power=2.+i)
+            data['comparisons'].append(c);sheets[0]['F'+str(34+i)]=str(10.+i);sheets[0]['G'+str(34+i)]=str(2.+i)
+        for row,source in ((76,26),(77,27)):
+            for col,key,divisor in [('B','B',16),('C','B',64),('D','C',16),('E','C',64)]:
+                sheets[0][col+str(row)]=str(float(sheets[0][key+str(source)])/divisor)
+        keys=['repeat','calls','software_elapsed_s','previous_v2_elapsed_s','graph_build_host_ms','projected_elapsed_s',
+              'component_proxy_energy_j','common_effective_tokens','native_effective_tokens','software_board_energy_j','software_matched_board_average_w']
+        for i in range(3):
+            values={k:(i+1)*10.+j for j,k in enumerate(keys)};data['LG_rounds'].append(values)
+            for j,key in enumerate(keys):sheets[1][auditor.column(j)+str(len(data['rounds'])+19+i)]=str(values[key])
+        auditor.verify_values(data,sheets)
+        sheets[1]['F'+str(len(data['rounds'])+20)]='999999'
+        with self.assertRaises(ValueError):auditor.verify_values(data,sheets)
+
     def test_expected_saved_cache_maps_pass(self):
         data,sheets=fixture();auditor.verify_values(data,sheets)
 
