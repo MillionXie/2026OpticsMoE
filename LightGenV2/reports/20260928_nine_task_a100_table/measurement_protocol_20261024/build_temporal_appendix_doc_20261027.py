@@ -116,6 +116,8 @@ def build(folder,revise=False):
     if (folder/'delivery_manifest.json').exists():raise ValueError('Never modify a sealed delivery')
     if target.exists() and not revise:raise FileExistsError(target)
     data=json.loads((folder/'static_values.json').read_text(encoding='utf8'));p=data['appendix_table'];total=data['rows'][0][5]
+    if data.get('edit_mode')=='raw_appendix':
+        return edit_raw_appendix(folder,data,target)
     if data.get('edit_mode')=='optical_control_to_electronics':
         return edit_optical_control(folder,data,target)
     if len(p['rows'])!=18 or not p['rows'][0][1].endswith('视觉Adapter'):raise ValueError('Functional adapter grouping required')
@@ -223,13 +225,47 @@ def edit_optical_control(folder,data,target):
         equations=5,timing_rows=len(p['rows']),preserved_original_document=True),ensure_ascii=True))
 
 
+def edit_raw_appendix(folder,data,target):
+    source=Path(data['base_word_document'])
+    if digest(source)!=data['base_word_sha256']:raise ValueError('Source Word changed')
+    doc=Document(source);raw=data['raw_appendix'];p=data['appendix_table']
+    for row,expected in zip(doc.tables[1].rows[1:],p['rows']):
+        if [c.text for c in row.cells]!=[expected[0],expected[1],f'{expected[2]:.6f}']:raise ValueError('Existing Word and edited Excel differ')
+    found=0
+    for para in doc.paragraphs:
+        if para.text.startswith('电子阶段沿用三轮A100原始事件。每个光周期'):
+            replace_plain_text(para,para.text.replace('1000/1400 ms、0.300000 ms和0.030700 ms',
+                'SLM刷新1000/1400 ms、CCD曝光0.300000 ms和CCD读出0.030700 ms'))
+            found+=1
+    if found!=1:raise ValueError('Original optical boundary paragraph missing')
+    doc.add_page_break();doc.add_heading('原始分块与等效时间核对',level=1)
+    paragraph(doc,'表3将三轮原始计算事件按表2相同功能边界合并。下列各值均除以384场，单位为ms/16视频场（64帧）。控制开销单独列出，光传播使用固定器件时序。原计算累计未处理并行覆盖，不能直接相加作为总时间。')
+    paragraph(doc,'对于每一行，等效时间等于并行后计算与并行后控制之和。三轮各自保留128场的逐轮分块数据，汇总时按合计时间除以合计场数核算，不挑选较快窗口。')
+    rows=[[r[0]+' '+r[1].replace('\n',' '),*[f'{r[j]/384:.6f}' for j in [2,3,4]],f'{r[6]:.6f}'] for r in raw['summary_rows']]
+    table(doc,['模块与步骤','原计算累计\n未去重','并行后\n计算','并行后\n控制','等效时间'],rows,[3.1,1.,1.,1.,1.],(1,2,3,4))
+    paragraph(doc,'“原计算累计”是原电子事件或固定光周期的时长之和，再除以384；“并行后计算”和“并行后控制”只计原依赖链中决定完成时间的部分。两列逐行相加得到表2等效时间，所有行合计14.735726904997131 ms。')
+    paragraph(doc,'预处理保留联合计时，不将未独立测量的Embedding或Adapter子操作人为分配时间。光传播行的提交与排队归入对应OEO电子处理，全程调度不再次包含这些部件内控制。')
+    doc.add_page_break();doc.add_heading('全程调度原始记录与汇总核对',level=1)
+    paragraph(doc,f'原始调度数据共{raw["original_control_records"]}条。Excel的“调度原始明细”每行保存一个原始同步调用或相邻主机间隙，保留轮次、从0计的场次、原始起止时间、原始时长、原始节点ID和依赖节点。未按场平均或合并原始记录。所有起止时间相对该轮原始host_start。')
+    paragraph(doc,'同步调用的原始区间可能包含等待GPU完成的阻塞。该等待由原依赖边表达。依赖分离后的节点时长仅保留GPU就绪后仍必要的返回开销，随后再按原并行依赖链核算计入量。原始阻塞区间始终保存在明细中，没有用缩短后的节点时长覆盖。')
+    paragraph(doc,'表4是额外分类统计，不替代原始明细。前三个时间列为三轮累计ms，最后一列除以384场，逐项相加对应表2“全程调度与同步”。')
+    rows=[[r[0],str(r[1]),f'{r[2]:.6f}',f'{r[3]:.6f}',f'{r[4]:.6f}',f'{r[5]:.6f}'] for r in raw['global_rows']]
+    total=['合计',str(raw['original_control_records']),*[f'{math.fsum(r[j] for r in raw["global_rows"]):.6f}' for j in range(2,6)]]
+    table(doc,['调度类别','条数','原始区间\n累计/ms','依赖分离后\n节点累计/ms','并行后\n计入/ms','等效时间\nms/16视频'],rows+[total],[1.55,.5,1.35,1.4,1.15,1.15],(1,2,3,4,5))
+    paragraph(doc,f'各类别等效时间之和为{raw["global_ms16"]:.15f} ms，与表2及Excel附录中的全程调度行一致。它们分布在整轮进入、场间、槽位复用、真实捕获周边以及最后返回，不是Decoder之后额外串行执行的一段。')
+    paragraph(doc,'对应三轮原始运行：'+ '、'.join(r['run'] for r in raw['sources'])+'。Excel原始分块表保留原始计时、依赖节点及批准时间账本的SHA256，逐条节点ID可定位原记录。所有保存值均为固定数值，不依赖其他工作表。')
+    doc.save(target)
+    print(json.dumps(dict(status='edited',path=str(target),source_sha256=digest(source),equations=5,
+        original_control_records=raw['original_control_records'],preserved_original_document=True),ensure_ascii=True))
+
+
 def audit(folder,pages,visual_reviewed):
     folder=Path(folder).resolve();target=folder/NAME;data=json.loads((folder/'static_values.json').read_text());p=data['appendix_table']
     d=Document(target);ns={'m':'http://schemas.openxmlformats.org/officeDocument/2006/math','w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
     with ZipFile(target) as z:
         xml=ET.fromstring(z.read('word/document.xml'))
         if len(xml.findall('.//m:oMath',ns))!=5:raise ValueError('Five native editable equations required')
-    if len(d.tables)!=2:raise ValueError('Only rounds and timing tables expected')
+    if len(d.tables)!=(4 if data.get('edit_mode')=='raw_appendix' else 2):raise ValueError('Unexpected document tables')
     timing=d.tables[1]
     if len(timing.rows)!=19:raise ValueError('17 accounted groups plus total and header required')
     for row,expected in zip(timing.rows[1:],p['rows']):
@@ -239,7 +275,7 @@ def audit(folder,pages,visual_reviewed):
     if any(s in text for s in ['语言光场Adapter','文本Adapter”','[待补','TODO']):raise ValueError('Unresolved terminology or placeholder')
     if '不是物理光电整机的直接端到端实测' not in text:raise ValueError('Retain timing basis qualification')
     preserved_native_content=None
-    if data.get('edit_mode')=='optical_control_to_electronics':
+    if data.get('edit_mode') in ('optical_control_to_electronics','raw_appendix'):
         source=Path(data['base_word_document'])
         if digest(source)!=data['base_word_sha256']:raise ValueError('Source Word changed')
         with ZipFile(source) as old,ZipFile(target) as new:
@@ -249,6 +285,13 @@ def audit(folder,pages,visual_reviewed):
             if names!=sorted(n for n in new.namelist() if n.startswith('word/media/')) or any(old.read(n)!=new.read(n) for n in names):raise ValueError('Existing illustration changed')
         if '统一合入紧接其后的同名OEO电子处理行' not in text:raise ValueError('Missing optical control scope')
         preserved_native_content=True
+    if data.get('edit_mode')=='raw_appendix':
+        raw=data['raw_appendix']
+        expected=[[r[0]+' '+r[1].replace('\n',' '),*[f'{r[j]/384:.6f}' for j in [2,3,4]],f'{r[6]:.6f}'] for r in raw['summary_rows']]
+        if [[c.text for c in r.cells] for r in d.tables[2].rows[1:]]!=expected:raise ValueError('Word raw summary mismatch')
+        expected=[[r[0],str(r[1]),*[f'{r[j]:.6f}' for j in range(2,6)]] for r in raw['global_rows']]
+        expected+=[['合计',str(raw['original_control_records']),*[f'{math.fsum(r[j] for r in raw["global_rows"]):.6f}' for j in range(2,6)]]]
+        if [[c.text for c in r.cells] for r in d.tables[3].rows[1:]]!=expected:raise ValueError('Word original-control aggregate mismatch')
     images=sorted((folder/'word_native_render_final').glob('page-*.png'))
     if len(images)!=pages or pages<4 or not visual_reviewed:raise ValueError('Review every rendered page before sealing')
     result=dict(status='passed',native_Word_equations=5,word_Excel_timing_cells_identical=True,

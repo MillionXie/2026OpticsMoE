@@ -167,3 +167,5 @@
 !build_temporal_static_20261027.mjs
 !test_temporal_static_values_20261027.py
 !build_temporal_appendix_doc_20261027.py
+!temporal_raw_appendix_20261027.py
+!test_temporal_raw_appendix_20261027.py
