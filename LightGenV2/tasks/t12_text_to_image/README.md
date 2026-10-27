@@ -11,6 +11,16 @@
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
 **2026-10-27用户已批准继续960 TRAIN＋96开发测试、100轮训练。**
+当前视角审核已通过并绑定profile SHA
+`64c5dd7b8d5e0f9ce4bad96cc1f250425a87e46fe780607699851b581ffbdbf3`。
+自动文字初稿有一处把灯座装饰误称“三个灯泡”，已在任何梯度训练前停止本任务自己的
+初始缓存PID2716726，保留原缓存／失败日志；未停止其他进程。
+逐款视觉校正的灯描述见`configs/qwen_vl_960_96_caption_review_20261027.json`，
+原自动描述和审核后profile分别保留，审核后缓存为
+`qwen_vl_lamp_pillow_960_96_reviewed_cache_20261027`。从
+`caption_reviewed_launch.json`记录的工作流PID2722419恢复，源码
+`feeba4f2e0c0c21cf9f346f02a2b46360f86e1ba`；恢复前断言未有任何训练execution／best权重。
+这段记录说明标注纠正和运行身份，不表示100轮已完成；进度以工作流报告为准。
 本轮实施入口为`qwen_vl_expanded_workflow.py`，只用GPU6，按标注→prepare→cache→
 4步真实smoke→100轮训练→原生PNG／完整prompt／语义指标／原图Qwen核验的顺序执行。
 任何阶段失败即停并保存failure，GPU子进程退出后保存释放收据；不终止其他任务。
@@ -23,7 +33,7 @@
 训练。最终改为视觉逐款核对所有可用灯视角，人工指定配置
 `configs/qwen_vl_960_96_reviewed_views_20261027.json`：全部TRAIN台灯改成底座与灯罩
 可辨认的正面／轻侧面，开发测试去掉三脚灯B073P39KRV并换为完整红色台灯B076V9V7DM；
-靠垫两视图用同一图案面，排除纯色背面／过薄侧面。复核只看原始图，不按生成成绩筛图。
+靠垫两视图用同一图案面，排除纯色背面／过薄侧面。由助手进行视觉复核，只看原始图，不按生成成绩筛图。
 接续run中的`visual_review.json`标明实际审阅方式，绑定profile与联系图SHA。
 `revise`保存自动候选原件及具名修改收据，不覆盖原数据、旧run或正式光电模型。
 图文描述由冻结完整Qwen根据单个商品正面生成，禁止品牌与SKU；它是数据标注步骤，
