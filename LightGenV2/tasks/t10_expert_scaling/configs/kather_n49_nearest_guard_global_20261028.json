@@ -1,0 +1,23 @@
+{
+  "seed": 17,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "amplitudes": [
+    0.0015,
+    0.005,
+    0.01
+  ],
+  "boundary_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_boundary_refine_20261027.json",
+  "reference_train_scores": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_boundary_refine_20261027/cache/reference_train_scores.npz",
+  "reference_train_scores_sha256": "77f5d8d8344e32eb6987c5a9a80b52bd4998f3d6373c13c512c4f278be5a587f",
+  "selection": "Same80 unique source TRAIN images/160 fixed views.16fit+48guard dual views form128 Jacobian rows;16paired observations never enter matrix,target or solve. Source-defined competitors fixed: S/D pair,COMPLEX source strongest wrong class per view.",
+  "budget": "One fixed ridge solve and3 exact source-reset RMS trials per arm,6total. No continuous training,VAL/TEST or newseed. GPU1 global/GPU3 router,one job each. No changed temperature,k,power fraction,detector or inference graph.",
+  "purpose": "Correct guard target before attributing block differences. Router only changes original content-dependent49-way inlet probabilities atT.05/k49; all49positive normalized power and per-input entropy/effective experts/changes saved. Router J/trials use original full model, never a frozen-router feature cache. Global uses verified fixed-prefix cache. Does not assume low parameter count improves generalization.",
+  "continuation": "Only bilateral observation gains with no new correct S/D/COMPLEX errors support a later finite training profile. Fit-only or small-eigenvalue interpolation is negative evidence; do not reduce lambda or add iterations to chase TEST.",
+  "ridge_factor": 0.01,
+  "target_margin": 0.05,
+  "objective": "Rows are true original last-global optical logmargin derivatives. Fit b=max(0,.05-source_margin),guard b=0; normalize each fit direction and each guard class by row count (five equal groups),without individual gradient unit normalization. Delta=A.T solve(A A.T+lambda I,sqrt(W)b); zero guard target is soft, not guaranteed protection.",
+  "trainable_block": "global_phases.1",
+  "guard_competitor": "source_strongest_wrong",
+  "arm": "global",
+  "comparison": "Two controlled block diagnoses with sameE117,same80TRAIN/160views,fitS/D pair,all guards source strongest wrong per view,five group weights,same lambda formula and3RMS. Equal RMS does not mean equal function change; compare measured fit improvement/heldout transfer/guard harm without adding amplitude searches."
+}

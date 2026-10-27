@@ -13,11 +13,19 @@ from .phase_repair_probe import rgb_views,sha_tensor
 from .expert_tail_schedule import save,sha
 
 
-def competitors(parent,labels):
+def competitors(parent,labels,tags=None,guard_strongest=False):
     import numpy as np
     other=parent.copy();other[np.arange(len(labels)),labels]=-np.inf
     comp=other.argmax(1);comp[labels==1]=4;comp[labels==4]=1
+    if guard_strongest:
+        guard=np.char.startswith(tags,'guard');comp[guard]=other[guard].argmax(1)
     return comp
+
+
+def probe_output(model,values,rp,block):
+    if block=='router_phase':return model(values)
+    if block!='global_phases.1':raise ValueError('Only router or final-global diagnosis')
+    return cached_suffix(model,values,rp,'global_phases.1')
 
 
 def solve_gram(gram,target):
@@ -52,7 +60,8 @@ def run(c,out,profile):
     import torch
     from .train import data
     assert c['amplitudes']==[.0015,.005,.01] and c['ridge_factor']==.01 and c['target_margin']==.05
-    assert os.environ['CUDA_VISIBLE_DEVICES']=='GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd'
+    assert c['gpu_uuid'] in ['GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd','GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d']
+    assert os.environ['CUDA_VISIBLE_DEVICES']==c['gpu_uuid']
     commit=os.environ['T10_JACOBIAN_SOURCE_COMMIT'];root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],text=True).strip());hashes={}
     paths=[Path(__file__),profile,Path(c['boundary_profile']),*[Path(__file__).with_name(n) for n in ['boundary_transfer_probe.py','phase_repair_probe.py','boundary_refine.py','model.py','train.py','plan.py','diagnose_topk.py','expert_tail_schedule.py']],Path(__file__).parent/'configs/study.json',root/'LightGenV2/common/optical_contract.py']
     for p in paths:
@@ -65,26 +74,39 @@ def run(c,out,profile):
     ix=np.array(sum(groups.values(),[]));rows=np.repeat(ix,2);tags=np.repeat(np.array(sum(([n]*len(v) for n,v in groups.items()),[])),2);y=train[1].numpy()[rows]
     with np.load(m['arguments']['data'],allow_pickle=False) as z:assert set(train[2][ix]).isdisjoint(z['test_ids'].astype(str))
     assert set(train[2][ix]).isdisjoint(splits['val'][2]);codes=np.zeros(len(rows),np.int64);codes[1::2]=np.random.default_rng(17).integers(1,8,size=len(ix))
-    for n,p in model.named_parameters():p.requires_grad_(n=='global_phases.1')
-    phase=model.global_phases[-1];anchor=phase.detach().clone();frozen={n:sha_tensor(p) for n,p in model.named_parameters() if n!='global_phases.1'}
+    block=c.get('trainable_block','global_phases.1');assert block in ['global_phases.1','router_phase']
+    for n,p in model.named_parameters():p.requires_grad_(n==block)
+    phase=dict(model.named_parameters())[block];anchor=phase.detach().clone();frozen={n:sha_tensor(p) for n,p in model.named_parameters() if n!=block}
     save(out/'metadata.json',dict(pid=os.getpid(),command=sys.argv,source_commit=commit,source_files=hashes,configuration=c,source_selected_epoch=epoch,
         data_sha256=m['data_sha256'],source_checkpoint_sha256=cfg['reference_sha256'],groups={n:train[2][v].tolist() for n,v in groups.items()},
+        trainable_block=block,trainable_parameters=phase.numel(),field_contract='Original RGB input; full original model for every router derivative/trial' if block=='router_phase' else 'Frozen original three-feature-layer OEO real amplitude',
         role='TRAIN optical margin Jacobian/ridge diagnosis only; observations excluded from Jacobian and target; no VAL/TEST forward or continuous optimizer'))
-    fields=np.empty((len(rows),model.c,model.c),np.float32);rp=[];parent=[]
+    field_shape=tuple(train[0].shape[1:]) if block=='router_phase' else (model.c,model.c)
+    fields=np.empty((len(rows),*field_shape),np.float32);rp=[];parent=[]
     for start in range(0,len(rows),2):
         rgb=rgb_views(train,rows[start:start+2],codes[start:start+2])
         with torch.no_grad():
-            f,r=cached_prefix(model,rgb,'global_phases.1');p=cached_suffix(model,f,r,'global_phases.1')['probabilities']
+            if block=='router_phase':
+                f=rgb;o=model(rgb);r=o['route_probabilities'];p=o['probabilities']
+            else:
+                f,r=cached_prefix(model,rgb,'global_phases.1');p=cached_suffix(model,f,r,'global_phases.1')['probabilities']
             if start==0:assert torch.equal(p,model(rgb)['probabilities'])
         fields[start:start+2]=f.cpu().numpy();rp.append(r.cpu().numpy());parent.append(p.cpu().numpy())
         save(out/'status.json',dict(state='train_fields',pid=os.getpid(),completed=min(start+2,len(rows)),total=len(rows),timestamp=time.time()))
-    rp=np.concatenate(rp);parent=np.concatenate(parent);assert abs(parent[::2]-reference[ix]).max()<1e-6;fixed=competitors(parent,y)
+    rp=np.concatenate(rp);parent=np.concatenate(parent);assert abs(parent[::2]-reference[ix]).max()<1e-6
+    assert c.get('guard_competitor','pair') in ['pair','source_strongest_wrong']
+    fixed=competitors(parent,y,tags,c.get('guard_competitor','pair')=='source_strongest_wrong')
     selected=np.flatnonzero(~np.char.startswith(tags,'observe'));assert len(selected)==128
     source_logs=np.log(np.maximum(parent,1e-12));source_margins=source_logs[np.arange(len(y)),y]-source_logs[np.arange(len(y)),fixed]
     weights=np.array([1/int((tags[selected]==tags[row]).sum()) for row in selected],np.float32)
     target=np.array([max(0,.05-source_margins[row]) if tags[row].startswith('fit') else 0. for row in selected],np.float64)
-    np.savez_compressed(out/'train_identity.npz',ids=train[2][rows],indices=rows,labels=y,groups=tags,view_codes=codes,parent=parent,fixed_competitors=fixed,jacobian_rows=selected)
-    def forward(order):return cached_suffix(model,torch.from_numpy(fields[order]).cuda(),torch.from_numpy(rp[order]).cuda(),'global_phases.1')['probabilities']
+    np.savez_compressed(out/'train_identity.npz',ids=train[2][rows],indices=rows,labels=y,groups=tags,view_codes=codes,parent=parent,route_probabilities=rp,fixed_competitors=fixed,jacobian_rows=selected)
+    route_rows=[]
+    def forward(order,collect_routes=False):
+        o=probe_output(model,torch.from_numpy(fields[order]).cuda(),torch.from_numpy(rp[order]).cuda(),block)
+        assert torch.all(o['route_mask']==1) and torch.all(o['route_probabilities']>0)
+        if collect_routes:route_rows.append(o['route_probabilities'].detach().cpu().numpy())
+        return o['probabilities']
     jac=np.empty((len(selected),phase.numel()),np.float32)
     for j,row in enumerate(selected):
         p=forward(np.array([row]));logp=p.clamp_min(1e-12).log();margin=logp[0,int(y[row])]-logp[0,int(fixed[row])]
@@ -111,19 +133,28 @@ def run(c,out,profile):
     del A,delta
     for amplitude in c['amplitudes']:
         with torch.no_grad():phase.copy_(anchor+amplitude*direction)
-        rms=base.project_phase(phase,anchor,.02);actual_phase=torch.atan2((phase-anchor).sin(),(phase-anchor).cos()).detach().cpu().reshape(-1);linear=torch.mv(J,actual_phase).numpy();scores=[]
+        rms=base.project_phase(phase,anchor,.02);actual_phase=torch.atan2((phase-anchor).sin(),(phase-anchor).cos()).detach().cpu().reshape(-1);linear=torch.mv(J,actual_phase).numpy();scores=[];route_rows.clear()
         with torch.no_grad():
-            for start in range(0,len(rows),2):scores.append(forward(np.arange(start,min(start+2,len(rows)))).cpu().numpy())
+            for start in range(0,len(rows),2):scores.append(forward(np.arange(start,min(start+2,len(rows))),True).cpu().numpy())
         scores=np.concatenate(scores);assert np.isfinite(scores).all() and abs(scores.sum(1)-1).max()<1e-5
         metrics,changes=stats(scores,y,tags,parent,fixed);err=changes[selected]-linear
-        np.savez_compressed(out/('ridge_'+str(amplitude)+'_scores.npz'),scores=scores,actual_margin_change=changes,predicted_jacobian_row_change=linear)
+        routes=np.concatenate(route_rows);assert np.isfinite(routes).all() and (routes>0).all() and abs(routes.sum(1)-1).max()<1e-5
+        route_delta=np.abs(routes-rp).sum(1);neff=1/(routes**2).sum(1);entropy=-(routes*np.log(np.maximum(routes,1e-12))).sum(1)
+        guard_errors={}
+        for name in ['guard_s','guard_d','guard_c']:
+            sub=tags[selected]==name;near=sub&(np.abs(source_margins[selected])<=.2)
+            guard_errors[name]=dict(mean_abs=float(abs(err[sub]).mean()),max_abs=float(abs(err[sub]).max()),near_boundary_max_abs=float(abs(err[near]).max()) if near.any() else None)
+        np.savez_compressed(out/('ridge_'+str(amplitude)+'_scores.npz'),scores=scores,actual_margin_change=changes,predicted_jacobian_row_change=linear,route_probabilities=routes)
         trials.append(dict(amplitude=amplitude,circular_rms=rms,max_circular_phase_change=float(actual_phase.abs().max()),groups=metrics,linear_actual_mean_abs_error=float(abs(err).mean()),
-            linear_actual_correlation=float(np.corrcoef(linear,changes[selected])[0,1]) if np.std(linear)>0 and np.std(changes[selected])>0 else None))
+            linear_actual_correlation=float(np.corrcoef(linear,changes[selected])[0,1]) if np.std(linear)>0 and np.std(changes[selected])>0 else None,
+            guard_linear_prediction_errors=guard_errors,
+            phase_l2=float(actual_phase.norm()),routes=dict(all49_positive=True,power_sum_max_error=float(abs(routes.sum(1)-1).max()),mean_l1_change=float(route_delta.mean()),std_l1_change=float(route_delta.std()),
+                effective_experts_mean=float(neff.mean()),entropy_mean=float(entropy.mean()),per_sample_change_variation=float((routes-rp).std(0).mean()))))
         save(out/'progress.json',dict(pid=os.getpid(),completed=len(trials),total=3,latest=trials[-1],timestamp=time.time()))
         with torch.no_grad():phase.copy_(anchor)
         assert torch.equal(phase,anchor)
     assert all(sha_tensor(p)==frozen[n] for n,p in model.named_parameters() if n in frozen)
-    result=dict(source_commit=commit,baseline=baseline,trials=trials,spectral=spectral,class_mean_explanation=explanation,predicted_full_solution_groups=predicted,
+    result=dict(source_commit=commit,trainable_block=block,baseline=baseline,trials=trials,spectral=spectral,class_mean_explanation=explanation,predicted_full_solution_groups=predicted,
         raw_solution_rms=solution_rms,jacobian_shape=list(jac.shape),jacobian_sha256=jac_sha,source_restored_exactly=True,frozen_parameter_sha256=frozen,
         no_val_test_forward=True,elapsed_seconds=time.time()-started)
     save(out/'result.json',result);save(out/'status.json',dict(state='complete',pid=os.getpid(),timestamp=time.time()))

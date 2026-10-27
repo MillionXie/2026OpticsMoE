@@ -1,5 +1,20 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 源最强错误类保护下的router/末层受控诊断（2026-10-28）
+
+旧成对guard未保护STROMA对COMPLEX的实际最近边界，因此先修正共同保护定义，再比较作用位置。
+沿用`jacobian_probe.py`，新profile为`configs/kather_n49_nearest_guard_global_20261028.json`和
+`configs/kather_n49_nearest_guard_router_20261028.json`，分别GPU1/3、每卡一项、仅seed17。
+两组同原E117、同80TRAIN图/160视图及128个fit/guard Jacobian行，fit仍S↔D固定成对margin，
+所有正确类guard改用源模型逐图/逐视图最强错误类（固定后求导），观察图不进矩阵/目标。
+同五组行数归一化、同lambda=.01×trace(K)/128公式，各仅三个同RMS源恢复点，共六点，不强行用同lambda数值。
+global只改原末global相位，router只改原50,176参数router_phase；后者每行/试探都经原完整四层光学图，
+不能使用冻结router之后的缓存。原T=.05、k=49、全49路正且归一化入口功率、原OEO/探测器/总参数及单视图推理不改，
+没有重启降温或部分功率过渡，也没有新电子头。router记录每样本功率变化、熵与有效专家数，变得不均匀不等于成功。
+相同相位RMS对应两块L2变化相差约7.8倍，须同时报告实际输出/fit间隔收益、观察转移/guard误伤，不以改动较弱就判优；
+不为匹配效果追加幅度搜索。guard仍软约束，源最强错误类之外的类别可能越界，始终按全部八类argmax检查，
+另报告近边界guard逐点线性预测误差。无VAL/TEST前向、无连续训练；只有可转移且保护受控的证据才支持后续有限训练。
+
 ## 逐样本光学Jacobian固定ridge诊断（2026-10-28）
 
 该固定诊断已完成，耗40.23秒，lambda=3.93616e-5，小于lambda的谱方向目标能量比例为0，
