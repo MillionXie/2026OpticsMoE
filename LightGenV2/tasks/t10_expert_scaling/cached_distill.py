@@ -36,6 +36,13 @@ def conditional_kl_part(probabilities,target,eligible,total_eligible):
     return ((target*(target.clamp_min(1e-12).log()-probabilities.clamp_min(1e-12).log())).sum(1)*eligible).sum()/max(1,int(total_eligible))
 
 
+def calibration_weight_choice(sup_norms,kd_norms,fixed=None):
+    candidate,ratio=calibrated_weight(sup_norms,kd_norms)
+    if fixed is None:return candidate,ratio,candidate
+    if not math.isfinite(fixed) or not .1<=fixed<=3:raise ValueError('Invalid frozen control weight')
+    return fixed,fixed*ratio/candidate,candidate
+
+
 def calibration_indices(labels,teacher,parent):
     import numpy as np
     rng=np.random.default_rng(17);used=set();batches=[]
@@ -147,7 +154,7 @@ def calibrate(c,out,profile,auxiliary_factory=Auxiliary):
     commit,hashes=base.sources(profile,c);aux=auxiliary_factory(c,False);aux.calibration_view0=True;aux.start_round(0)
     model,m,protocol,splits,manifest,cache=base.prepare(c,'student');aux.configure(splits);x,y,ids=splits['train'];tc=protocol['training_proposal']
     original={n:p.detach().cpu().clone() for n,p in model.state_dict().items()};weights=len(y)/(8*torch.bincount(y,minlength=8).float().cuda())
-    batches=calibration_indices(aux.y,aux.teacher[0],aux.parent[0]);norms=[];rows=[]
+    batches=aux.calibration_batches() if hasattr(aux,'calibration_batches') else calibration_indices(aux.y,aux.teacher[0],aux.parent[0]);norms=[];rows=[]
     def vector():return [torch.zeros_like(p) if p.grad is None else p.grad.detach().clone() for p in model.parameters()]
     def norm(v):return float(torch.stack([p.norm() for p in v]).norm())
     def relationship(a,b):
@@ -175,7 +182,7 @@ def calibrate(c,out,profile,auxiliary_factory=Auxiliary):
         rows.append(dict(batch=no,indices=values.tolist(),ids=ids[values].tolist(),classes=np.bincount(aux.y[values],minlength=8).tolist(),gradients=r,groups=groups))
         if hasattr(aux,'extra_loss'):
             rows[-1].update(extra_indices=aux.extra_indices.tolist(),extra_codes=aux.extra_codes.tolist(),extra_ids=ids[aux.extra_indices].tolist())
-    weight,weighted_ratio=calibrated_weight([p[0] for p in norms],[p[1] for p in norms]);aux.weight=weight
+    weight,weighted_ratio,candidate_weight=calibration_weight_choice([p[0] for p in norms],[p[1] for p in norms],c.get('fixed_lambda_kd'));aux.weight=weight
     # Verify all eight TRAIN encodings against the frozen parent cache before any optimizer probe.
     equivalence=[];ix=torch.from_numpy(batches[0][:2]);model.eval()
     with torch.no_grad():
@@ -208,6 +215,7 @@ def calibrate(c,out,profile,auxiliary_factory=Auxiliary):
     out.mkdir(parents=True,exist_ok=False);save(out/'receipt.json',dict(source_commit=commit,source_files=hashes,profile_sha256=sha(profile),pid=os.getpid(),
         cache_manifest_sha256=aux.identity['cache_manifest_sha256'],lambda_kd=weight,weighted_gradient_ratio=weighted_ratio,
         calibration_target_ratio=.5,lambda_bounds=[.1,3.],batches=rows,unique_train_samples=32,optimizer_probe_updates=6,
+        weight_frozen_from_matched_control='fixed_lambda_kd' in c,lambda_recalibration_candidate=candidate_weight,
         source_restored_exactly=True,parent_cache_d4_max_errors=equivalence,auxiliary_identity=aux.identity,
         no_val_test_forward=not c.get('test_images_enter_student_gradient',False),
         calibration_scope='TRAIN+TEST' if c.get('test_images_enter_student_gradient',False) else 'TRAIN',passed=passed))

@@ -142,8 +142,10 @@ class Auxiliary(kd.Auxiliary):
     def __init__(self,c,calibrated=True):
         import numpy as np
         self.c=c;self.root=Path(c['target_cache']);m=json.loads((self.root/'teacher_manifest.json').read_text());r=Path(c['parent_cache']);pr=json.loads((r/'receipt.json').read_text())
-        commit=os.environ['T10_DISTILL_SOURCE_COMMIT'];assert m['source_commit']==pr['source_commit']==commit
-        assert m['data_sha256']==pr['data_sha256']==c['data_sha256'] and pr['source_checkpoint_sha256']==c['incumbent_sha256']
+        commit=os.environ['T10_DISTILL_SOURCE_COMMIT']
+        assert m['source_commit']==c.get('teacher_cache_source_commit',commit) and pr['source_commit']==c.get('parent_cache_source_commit',commit)
+        parent_sha=c.get('parent_checkpoint_sha256',c['incumbent_sha256'])
+        assert m['data_sha256']==pr['data_sha256']==c['data_sha256'] and pr['source_checkpoint_sha256']==parent_sha
         assert sha(self.root/'teacher_targets.npz')==m['targets_sha256'] and sha(r/'parent_scores.npz')==pr['parent_scores_sha256']
         n=4248 if c['test_images_enter_student_gradient'] else 3496
         with np.load(self.root/'teacher_targets.npz',allow_pickle=False) as z,np.load(r/'parent_scores.npz',allow_pickle=False) as p:
@@ -155,7 +157,8 @@ class Auxiliary(kd.Auxiliary):
         assert np.max(abs(q-self.teacher))<1e-6 and np.isfinite(self.parent).all() and np.max(abs(self.parent.sum(-1)-1))<3e-6
         self.weight=1.;self.calibration_view0=False;self.bad=0
         self.identity=dict(cache_manifest_sha256=sha(self.root/'teacher_manifest.json'),parent_receipt_sha256=sha(r/'receipt.json'),targets_sha256=m['targets_sha256'],
-            teacher_test_training=True,student_gradient_splits=['train','test'] if n==4248 else ['train'],samples=n,temperature=2,external_pretraining='ImageNet1K',parent_checkpoint_sha256=c['incumbent_sha256'])
+            teacher_test_training=True,student_gradient_splits=['train','test'] if n==4248 else ['train'],samples=n,temperature=2,external_pretraining='ImageNet1K',parent_checkpoint_sha256=parent_sha,
+            teacher_cache_source_commit=m['source_commit'],parent_cache_source_commit=pr['source_commit'])
         if calibrated:
             p=Path(c['calibration_run'])/'receipt.json';a=json.loads(p.read_text())
             assert a['passed'] and a['profile_sha256']==sha(Path(c['_profile'])) and a['source_commit']==commit

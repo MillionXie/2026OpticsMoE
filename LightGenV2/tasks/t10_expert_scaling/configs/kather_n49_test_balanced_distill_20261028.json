@@ -1,0 +1,84 @@
+{
+  "stage": "Explicit_TEST_objective_reweighting_matched_start_and_budget",
+  "seed": 17,
+  "recipes": [
+    "source_balanced"
+  ],
+  "rounds": 16,
+  "check_rounds": [
+    4,
+    8,
+    12,
+    16
+  ],
+  "samples_per_class": 128,
+  "batch": 16,
+  "microbatch": 2,
+  "schedule_type": "distill",
+  "peak_lr": 0.0003,
+  "end_lr": 3e-05,
+  "ema_decay": 0.95,
+  "target_correct": 616,
+  "temperature": 2,
+  "parent_weight": 0.5,
+  "gradient_target_ratio": 0.5,
+  "minimum_weighted_gradient_ratio": 0.05,
+  "recipe_gpu": {
+    "source_balanced": 3
+  },
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "sources": {
+    "student": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+      "sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+      "actual_epoch": 16
+    },
+    "source_balanced": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+      "sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+      "actual_epoch": 16
+    }
+  },
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_distill_20261028/train_test_s17",
+  "incumbent_result_name": "result.json",
+  "incumbent_result_is_selected": true,
+  "incumbent_sha256": "c1b56ca4a4855629280f1051517a761e9d3baea17dec905a84ac1eed6d9546dd",
+  "incumbent_predictions_sha256": "92c54861732c781cefd1e23788fd6a14a6b65a9c22fe90dbaf0a3a87d58c6c15",
+  "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "worker_module": "test_balanced_distill",
+  "auxiliary_dependencies": [
+    "test_exposed_distill.py",
+    "cnn_teacher_cache.py",
+    "cnn_distill.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py",
+    "test_balanced_distill.py"
+  ],
+  "role": "Single finite source-weighting comparison under explicit human TEST-training authorization. OriginalB already completed is the matched control: SAMEf6d602initialweights, freshAdamW/RNG, teacher, parentcache, D4, all loss coefficients including frozenlambda.3203496288685833, LR and16x1024/1024updates. Only student sampling weights change to50/50TRAIN/TEST. Current606 B is selection incumbent ONLY, not training initialization or parentcache. All TEST scores are exposed fit, never held-out or original equal-budget Top-k improvement. No extra seeds or temperature/LR grid.",
+  "targets": "Unchanged de9...9dd TEST-exposed CNN teacher and f6d602parent8viewrawlogit/probability caches from source654. KDcorrectsameviewT2/Tsquared4, wholeglobal16 conditionalmean sharedmicro2, parentKL.5 only parentcorrectteacherwrong. Never use a cache as probability of the606incumbent. Teacher absent from optical inference.",
+  "calibration": "Two new fixed mutually-disjoint class-balanced16view0 batches, each8TRAIN+8TEST (1eachsource/class), preferrepair/commoncorrectalternating. Freeze lambda exactly originalB.3203496288685833 rather than recalibrate the training coefficient; record candidate recalibration and actualweightedgradientratio. Six restored freshAdam probes/fivefinitegroups/8viewsourcecachemaxerror1e-6; actualnormratio>=.05 anddirectionchange>10repeaterror+1e-7. Teacher/parent cache reused only by lockedmanifest/receipt/data/sourcef6dSHA. Source model602 and selectionincumbent606 deliberately separate.",
+  "schedule": "Fixedmax16rounds, each class64TRAIN+64TEST withoutreplacement, globallyshuffle1024unique; effective16micro2/64updates eachround. 8192TRAIN+8192TEST inputs total, intentional TEST reweighting. OriginalB gave each image about3.86 exposures; newTRAIN2.34/TEST10.89, not a coverage bug fix. Every7round covers original3496TRAIN and union4248; every2round coversTEST752. LR1e-4/2e-4/3e-4 then cosine3e-5,global.5/router.1,EMA.95,AdamWwd0. OriginalCE+margin/physics andT2KD unchanged.",
+  "selection": "Fixed4/8/12/16 save lastSHA/field/tensor thenliveEMA TESTfit scoring; correctcount thenNLL, existing606candidate retained. Onlybest/last. Eachcheck reports EMA originalTRAIN,TESTfit,union,VAL;4/12extra3496TRAINforward thenreuse lockedTESTprobabilities (no extra TESTselection). OriginalB fullTRAINavailable8/16 andfinal; missing fullTRAIN4/12 not invented. Final best originalTRAIN/VAL/routes/TEST lockedsameweights.",
+  "stop_rule": "Numeric/source/identity failure rejects/preserves. Atboth4and8 if own newcandidate max(EMA,live) no better than same-round originalB candidate and no greaterthan606, stop this recipe; incumbentfallback does not count as candidateimprovement. Otherwisefixedmax16; original two-fixedcheckprobe+VAL both>5ppdegradationguard retained. No automatic70/30, extra rounds, newLR/teacher/KDgating. This comparison uses alreadycompleted identical-initialization16roundcontrol, NOT an uncontrolled continuation from606.",
+  "previous_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_distill_20261028",
+  "parent_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_parent_20261028",
+  "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "source_val_correct": 590,
+  "teacher_schedule": "No new teacher or parentcache production. Reuse completed TEST-exposed teacher3491TRAIN/747TESTfit/736VAL, ImageNetknowledge and prior costs explicitly inherited. Manifest and parentreceiptSHA locked.",
+  "explicit_test_training_authorization": true,
+  "parent_checkpoint_sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+  "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+  "parent_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+  "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+  "locked_parent_receipt_sha256": "f63b730c1c5796d94f72af26a2b5e5136161a94b1dd810ea9ddcf74b61cd4a63",
+  "test_images_enter_student_gradient": true,
+  "source_samples_per_class": 64,
+  "fixed_lambda_kd": 0.3203496288685833,
+  "matched_control_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_distill_20261028/train_test_s17",
+  "matched_control_history_sha256": "47f88e38221fc22e4c6dede44e578dd02bf20251815e915ba2570ab83273961c",
+  "calibration_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/smoke/kather_n49_test_balanced_calibration_20261028"
+}
