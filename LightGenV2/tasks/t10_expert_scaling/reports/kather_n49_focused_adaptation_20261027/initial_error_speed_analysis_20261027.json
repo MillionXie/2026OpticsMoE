@@ -1,0 +1,256 @@
+{
+  "role": "TEST-observed single-seed targeted development; early mechanism and speed audit, not final accuracy result",
+  "source_commit": "1d9cdd8b324a93a184bd078b44a064d7f35d11a8",
+  "run_id": "kather_n49_focused_adaptation_20261027",
+  "seed": 17,
+  "observed_test_error_analysis": {
+    "role": "User-authorized already observed TEST error development diagnosis; no independent generalization claim",
+    "samples": 752,
+    "student_correct": 600,
+    "teacher_correct": 604,
+    "both_wrong": 104,
+    "teacher_rescues": 48,
+    "student_rescues": 44,
+    "confusions": [
+      [
+        22,
+        "STROMA",
+        "DEBRIS"
+      ],
+      [
+        16,
+        "TUMOR",
+        "MUCOSA"
+      ],
+      [
+        13,
+        "STROMA",
+        "COMPLEX"
+      ],
+      [
+        13,
+        "DEBRIS",
+        "STROMA"
+      ],
+      [
+        9,
+        "COMPLEX",
+        "TUMOR"
+      ],
+      [
+        8,
+        "TUMOR",
+        "LYMPHO"
+      ],
+      [
+        8,
+        "TUMOR",
+        "COMPLEX"
+      ],
+      [
+        8,
+        "COMPLEX",
+        "STROMA"
+      ],
+      [
+        6,
+        "MUCOSA",
+        "LYMPHO"
+      ],
+      [
+        6,
+        "LYMPHO",
+        "TUMOR"
+      ],
+      [
+        6,
+        "DEBRIS",
+        "MUCOSA"
+      ],
+      [
+        5,
+        "ADIPOSE",
+        "EMPTY"
+      ]
+    ],
+    "per_class": [
+      {
+        "name": "TUMOR",
+        "errors": 32,
+        "teacher_rescues": 13,
+        "student_rescues": 6
+      },
+      {
+        "name": "STROMA",
+        "errors": 37,
+        "teacher_rescues": 13,
+        "student_rescues": 9
+      },
+      {
+        "name": "COMPLEX",
+        "errors": 26,
+        "teacher_rescues": 6,
+        "student_rescues": 9
+      },
+      {
+        "name": "LYMPHO",
+        "errors": 12,
+        "teacher_rescues": 3,
+        "student_rescues": 7
+      },
+      {
+        "name": "DEBRIS",
+        "errors": 23,
+        "teacher_rescues": 9,
+        "student_rescues": 10
+      },
+      {
+        "name": "MUCOSA",
+        "errors": 15,
+        "teacher_rescues": 4,
+        "student_rescues": 2
+      },
+      {
+        "name": "ADIPOSE",
+        "errors": 6,
+        "teacher_rescues": 0,
+        "student_rescues": 0
+      },
+      {
+        "name": "EMPTY",
+        "errors": 1,
+        "teacher_rescues": 0,
+        "student_rescues": 1
+      }
+    ],
+    "high_confidence_errors": 6
+  },
+  "train_only_sampling_audit": {
+    "timestamp": 1793094096.4670014,
+    "methods": {
+      "color_s17": {
+        "train_samples": 3496,
+        "source_train_errors": 346,
+        "selected_errors": 315,
+        "hard_pool_errors": 310,
+        "selected_error_fraction": 0.3076171875,
+        "uniform_expected_error_fraction": 0.09897025171624714,
+        "selected_unique": 1024,
+        "per_class": [
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128
+        ],
+        "no_val_test_ids": true,
+        "source_error_counts_per_class": [
+          71,
+          90,
+          51,
+          33,
+          67,
+          19,
+          7,
+          8
+        ],
+        "selection_round": 1
+      },
+      "phase_color_s17": {
+        "train_samples": 3496,
+        "source_train_errors": 349,
+        "selected_errors": 318,
+        "hard_pool_errors": 313,
+        "selected_error_fraction": 0.310546875,
+        "uniform_expected_error_fraction": 0.09982837528604119,
+        "selected_unique": 1024,
+        "per_class": [
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128
+        ],
+        "no_val_test_ids": true,
+        "source_error_counts_per_class": [
+          71,
+          90,
+          52,
+          33,
+          67,
+          19,
+          10,
+          7
+        ],
+        "selection_round": 1
+      },
+      "distill_s17": {
+        "train_samples": 3496,
+        "source_train_errors": 344,
+        "selected_errors": 311,
+        "hard_pool_errors": 306,
+        "selected_error_fraction": 0.3037109375,
+        "uniform_expected_error_fraction": 0.09839816933638444,
+        "selected_unique": 1024,
+        "per_class": [
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128,
+          128
+        ],
+        "no_val_test_ids": true,
+        "source_error_counts_per_class": [
+          72,
+          93,
+          47,
+          33,
+          65,
+          19,
+          7,
+          8
+        ],
+        "selection_round": 2,
+        "first_round_timing": {
+          "training_seconds": 96.74649429321289,
+          "probe_seconds": 10.317501306533813,
+          "validation_seconds": 15.137253284454346,
+          "scoring_seconds": 0.0
+        },
+        "first_round_val": 0.7792553305625916
+      }
+    }
+  },
+  "distill_first_round_speed": {
+    "new_optimized_images": 1024,
+    "old_optimized_images": 3496,
+    "new_round_seconds": 122.20124888420105,
+    "old_full_epoch_median_seconds": 423.44132900238037,
+    "round_walltime_ratio": 3.4651145783594814,
+    "initial_train_scoring_seconds": 70.42952466011047,
+    "train_refresh_every_rounds": 5,
+    "breakdown": {
+      "training_seconds": 96.74649429321289,
+      "probe_seconds": 10.317501306533813,
+      "validation_seconds": 15.137253284454346,
+      "scoring_seconds": 0.0
+    },
+    "comparison_limit": "Different samples per round; this is reduction of repeated work, not3.4x same-work kernel acceleration. Refresh and SWA add periodic overhead."
+  },
+  "accuracy_status": "First focused round VAL77.9255% vs inherited78.3245%; improvement not established. No new TEST read.",
+  "transfer": {
+    "archive_sha256": "2a932667bf11f9f8547659c5c04700c21fbba45c2048c60fbd34683d98c7d6a8",
+    "entries": 11,
+    "all_sha_verified": true,
+    "local_numpy_sampling_recalculation_passed": true
+  }
+}
