@@ -1,5 +1,30 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 较早与较晚full49起点的固定重热对照（2026-10-28）
+
+四份best/last的live补查也已完成：全部为598/752，原源和两组best EMA仍为600，
+九状态按TEST正确数/NLL选中SAM第18轮EMA，没有隐藏的live准确率收益。
+36小产物SHA和NumPy逐样本TEST/配对结果已核，PID3337268退出、GPU1/3释放；
+报告`reports/kather_n49_sam_live_selection_20261028/final_summary_20261028.json`。
+这只覆盖保留PT的live/EMA，不声称检查过已被覆盖的所有中间轮。
+
+下一有限真实训练入口`reheat_refine.py`、profile`configs/kather_n49_reheat_20261028.json`，
+run `runs/simulation/kather_n49_reheat_20261028`。两组均原full49，只seed17：
+GPU1从原90轮阶段VALbest实际E84（SHA8ad4825e…bf8ff），GPU3从原E117（SHA9a6929c…956），
+PT实物/模型/数据身份已CPU预核；同日程检验较早起点是否更有可塑性，不预设其必然更好。
+原五组相位联合训练、D4/CE/label smoothing.02/margin.2/capture.005/TV.02/balance.01不变，
+无SAM、新增强、教师、电子头、OEO/路由温度/推理结构变化。两组fresh AdamW无weight decay、EMA.95，
+专家LR前两段2e-4/5e-4，第3–4段1e-3，第5–16段余弦至3e-5，global/router倍率.5/.1。
+各16段1024唯一TRAIN输入、64次Adam更新/段，即各1024更新/16384输入（约4.69个全TRAIN曝光），
+两组32768输入，同类均衡轮换且4段覆盖3496TRAIN，不逐段重置optimizer。
+固定第4/8/12/16段各评live/EMA开发TEST，先锁last PT SHA及状态tensor SHA，TEST正确数/NLL选best；
+保留当前600候选。TEST只进入选择，不进梯度；VAL只诊断。仅保留best/last PT及所有小预测/锁，
+live胜出导出原model字段并记录原last SHA/state_field，完整last仍保留EMA/live/Adam/RNG。
+数值或身份异常即停；两个连续固定检查点中，固定EMA TRAIN探针及完整VAL均较各自起点下降>5pp，
+才触发预设退化保护。否则完成16段，无三段平台早停、不自动追加预算或扩seed。
+既有TRAIN/TEST差距及局部修补失败并不能证明坏极小值；本阶段仅检验扩大更新范围与起点的作用。
+全部新结果仍为反复TEST反馈下的额外预算开发，不替换原等预算Top-k表。
+
 ## 用户追加：直接按开发TEST选择保留PT（2026-10-28）
 
 两组24轮及EMA PT直接比较已完成：hard-label/SAM在VAL选中的第18轮均TEST600/752，

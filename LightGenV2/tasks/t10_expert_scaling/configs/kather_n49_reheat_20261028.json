@@ -1,0 +1,34 @@
+{
+  "seed": 17,
+  "recipes": ["early", "recent"],
+  "rounds": 16,
+  "check_rounds": [4, 8, 12, 16],
+  "samples_per_class": 128,
+  "batch": 16,
+  "microbatch": 2,
+  "peak_lr": 0.001,
+  "end_lr": 0.00003,
+  "ema_decay": 0.95,
+  "target_correct": 616,
+  "recipe_gpu": {"early": 1, "recent": 3},
+  "gpus": {"1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d", "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"},
+  "sources": {
+    "early": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k49_s17",
+      "sha256": "8ad4825ebcee14acdcc7b844b5ad0a6ca49af21e9d4b705d6489f789bdebf8ff",
+      "actual_epoch": 84
+    },
+    "recent": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17",
+      "sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+      "actual_epoch": 117
+    }
+  },
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_sam_live_selection_20261028",
+  "incumbent_sha256": "82a52177a126e21cbd07ab393d33e3fe40ca87b6f3a7c5cee970897f5d15a925",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "role": "User-authorized direct TEST-development PT selection. Earlier vs later full49 source, identical reheat schedule, no independent-generalization claim or equal-budget table replacement. TRAIN alone enters gradients. TEST evaluates live and EMA only at fixed4/8/12/16 checks and never changes the finite16-round budget except preset TRAIN+VAL collapse protection.",
+  "schedule": "Expert LR rounds1/2=.0002/.0005, rounds3/4=.001, rounds5..16 cosine to.00003; global half/router tenth. Fresh AdamW weight_decay0 and EMA.95; no extra augmentation, SAM, teacher, electronic head, OEO change or TTA.",
+  "budget": "Two seed17 recipes each16x1024 inputs,64 updates/round=1024 updates each,32768 optimizer inputs total. Uniform rotation covers3496 TRAIN per4 rounds. Each fixed checkpoint has live+EMA TEST, at most8 states per recipe. Save only best/last PT and all small lock/prediction records; same-shape incumbent always retained.",
+  "stop_rule": "NaN/Inf/source or identity inconsistency fails. At fixed checks, if both clean fixedTRAIN-probe and fullVAL are each more than5pp below that recipe initial state at two consecutive checks, stop that recipe. Otherwise complete16 rounds, no3round plateau stopping and no automatic extra rounds or seeds."
+}
