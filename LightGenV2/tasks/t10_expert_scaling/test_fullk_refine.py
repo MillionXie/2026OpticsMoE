@@ -71,7 +71,9 @@ class FullKRefinementTests(unittest.TestCase):
         torch.set_num_threads(2)
         cfg = load_protocol()
         cfg['training_proposal']['phase_noise_std'] = .02
-        model = ScalingOptics(cfg, 1, 1, 'moe_oeo', 8, 2, 1, checkpointing=False)
+        # Use a supported geometry: N=1 cannot fit the router-inclusive D2NN
+        # parameter match inside the aperture used by this study.
+        model = ScalingOptics(cfg, 4, 4, 'moe_oeo', 8, 4, 1, checkpointing=False)
         x = torch.rand(2, 3, 32, 32)
         with torch.no_grad():
             model.eval()
