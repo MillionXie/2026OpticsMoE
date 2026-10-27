@@ -1,5 +1,34 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## N49/k49路由温度微调试验（2026-10-27）
+
+用户在120轮两个已完成seed的TEST之后再次授权GPU3微调。原120轮及seed37训练保持不变，
+新试验只修改T10新增入口`route_temperature_tune.py`，不热改正在使用的model/train/diagnose/evaluator。
+观察到seed17/27选定权重的验证样本平均有效专家数约47.69/47.76，功率最高24路合计
+仅占54.32%/54.27%；全49路入口功率较均匀。这是温度微调的假设依据，不是已证实的性能瓶颈。
+
+固定profile：`configs/kather_n49_temperature_pilot_20261027.json`。保持N=k=49、相位参数形状、
+RGB输入/OEO/数据划分与增强不变；原路由softmax温度0.05，试0.02和0.01两档，
+通过softmax(log(p)*0.05/T)等价重标定入口功率，场振幅取其平方根。49个专家始终保留，
+不使用TTA、电子分类头或新增可训练参数；温度改变了路由前向合同，应作为单独开发配置。
+
+先用seed17从同一120轮验证best的EMA权重做两项各12轮试验，GPU3最多两路。
+新AdamW优化器，live及EMA均从选定EMA初始化；不是精确续训，旧Adam动量不沿用。
+lr=2e-4余弦至2e-5，batch16/micro2，原label smoothing0.02、phase TV0.02、
+soft balance0.01、capture0.005及margin权重0.2不变。逻辑epoch标121–132，
+实际来源权重选定epoch另记，不能把来源E117冒充完整连续132轮优化轨迹。
+
+两档按验证accuracy选方案，NLL打破平局，在读取新TEST前保存recipe_selection。
+仅当较原seed17验证结果至少多判对4/752张（0.53个百分点）时，固定该方案再微调seed27/37，
+每项仍12轮；seed37来源须完成原120轮并锁定best SHA。总优化预算最多48个epoch-job，
+不根据TEST是否超过49/k24改变预算、挑seed或继续追加。仅验证选定的温度方案评TEST，
+未选中的候选保留完整验证记录。若验证门槛未达到，不启动额外两seed。
+
+每项保存best/last、初始VAL、训练/验证曲线、梯度和selected train/val逐样本路由，
+完成项立即评TEST。评估使用温度模型factory和源码/数据/权重身份，不调用会忽略温度的旧模型加载器。
+run为`runs/simulation/kather_n49_temperature_pilot_20261027`；仅GPU3，结束核自己的进程及显存释放。
+这是观察旧TEST后的超参开发，不与原Top-k等预算表混用，也不保证超过49/k24。
+
 ## N49/k49从90轮追加至120轮（2026-10-27）
 
 用户授权仅GPU3继续优化N49/k49，以超过前面的结果为开发目标；不保证达标，
