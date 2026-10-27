@@ -13,6 +13,7 @@ import random
 import sys
 import time
 import traceback
+import shutil
 from pathlib import Path
 
 import torch
@@ -31,14 +32,122 @@ from .qwen_vl_turbo_model import pack_hidden, region_weighted_loss
 from .qwen_vl_turbo_run import noise_for, tensor_image
 
 
-def build_generator(sd, parent, tail, device, drop_encoder=False, compressed=True):
-    base = build_spatial_head(sd, parent, parent['config'], parent['visual_layout']['positions'],
+def build_generator(sd, parent, tail, device, drop_encoder=False, compressed=True, public_prior=False):
+    if public_prior and compressed:
+        raise ValueError('First verify the uncompressed public prior, then distill')
+    generator_state = parent
+    if public_prior:
+        generator_state = {**parent, 'unet_trainable': {},
+                           'config': {**parent['config'], 'unet_training': 'lora'}}
+    base = build_spatial_head(sd, generator_state, generator_state['config'], parent['visual_layout']['positions'],
                               device, drop_vae_encoder=drop_encoder).eval().requires_grad_(False)
     if compressed:
         smaller, _ = build_tail_student(base.unet, tail['profile']['channels'], tail['profile']['heads'])
         smaller.load_state_dict(tail['unet'], strict=True)
         base.unet = smaller.to(device).bfloat16().eval().requires_grad_(False)
     return base
+
+
+def prepare_conditions(a, cfg, payload, parent, hybrid, hybrid_report, device):
+    rows = payload['rows']; postfree = cfg.get('frontend', 'postfree') == 'postfree'
+    if cfg.get('reuse_feature_run'):
+        source = Path(cfg['reuse_feature_run'])
+        selected = torch.load(source/'best_checkpoint.pt', map_location='cpu', weights_only=False)
+        source_report = json.loads((source/'report.json').read_text())
+        if not source_report['complete'] or sha256(source/'best_checkpoint.pt') != source_report['checkpoint_sha256']:
+            raise ValueError('Reused feature source model differs')
+        path = source/'postfree_features.pt'; digest = sha256(path)
+        if digest != selected['feature_sha256']:
+            raise ValueError('Reused condition cache SHA differs')
+        cache = torch.load(path, map_location='cpu', weights_only=False, mmap=True)
+        if cache['sample_ids'] != [r['sample_id'] for r in rows] or cache['post_tf_removed'] != postfree:
+            raise ValueError('Reused condition frontend or rows differ')
+        if postfree and cache['hybrid_sha256'] != hybrid_report['checkpoint_sha256']:
+            raise ValueError('Reused optical weights differ')
+        try:
+            os.link(path, a.output/'postfree_features.pt')
+            storage = 'immutable same-volume hardlink'
+        except OSError:
+            shutil.copyfile(path, a.output/'postfree_features.pt'); storage = 'byte copy'
+        write_json(a.output/'feature_reuse.json', {'source': str(path.resolve()), 'sha256': digest,
+            'storage': storage, 'training_cache_only': True, 'source_model_sha256': source_report['checkpoint_sha256']})
+        return (cache['original_hidden'], cache['concise_hidden'], cache['concise_prompts'],
+                tuple(cache['instruction_bounds']), digest, source_report['parameters']['frontend_including_embedding'])
+    descriptions = json.loads((a.data/'product_descriptions.json').read_text())
+    qwen, processor = load_qwen(a.qwen, device)
+    if postfree:
+        macros = apply_postfree(qwen, hybrid['config']['vision_pairs'], hybrid['config']['language_pairs'], hybrid['config']['residual_width'])
+        load_macro_state(macros, hybrid['macros'])
+    qwen.eval().requires_grad_(False)
+    frontend_parameters = sum(p.numel() for p in qwen.model.parameters())
+    original_hidden, concise_hidden, concise_prompts, boundary = [], [], [], None
+    vision_end = processor.tokenizer.convert_tokens_to_ids('<|vision_end|>')
+    message_end = processor.tokenizer.convert_tokens_to_ids('<|im_end|>')
+    for i, row in enumerate(rows):
+        concise = short_prompt(row, descriptions[row['target']['sample_id']]); concise_prompts.append(concise)
+        for prompt, destination in ((row['prompt'], original_hidden), (concise, concise_hidden)):
+            inputs = raw_inputs(processor, payload['reference'][i], prompt, parent['visual_layout'], device)
+            bound = instruction_bounds(inputs['input_ids'][0], vision_end, message_end)
+            start, suffix = bound
+            if processor.tokenizer.decode(inputs['input_ids'][0, start:-suffix]).strip() != prompt.strip():
+                raise ValueError('Native instruction token extraction differs')
+            if boundary is None:
+                boundary = bound
+            if bound != boundary:
+                raise ValueError('Instruction layout changed; no guessed token masks')
+            with torch.inference_mode():
+                destination.append(qwen.model(**inputs, use_cache=False, return_dict=True).last_hidden_state[0].bfloat16().cpu())
+        if (i+1) % 24 == 0:
+            write_json(a.output/'progress.json', {'stage': 'postfree_frozen_feature_cache', 'done': i+1, 'total': len(rows)})
+    digest = save_with_digest({'sample_ids': [r['sample_id'] for r in rows], 'original_hidden': original_hidden,
+        'concise_hidden': concise_hidden, 'concise_prompts': concise_prompts, 'instruction_bounds': boundary,
+        'hybrid_sha256': hybrid_report['checkpoint_sha256'], 'post_tf_removed': postfree}, a.output/'postfree_features.pt')
+    del qwen, processor
+    if postfree:
+        del macros
+    gc.collect(); torch.cuda.empty_cache()
+    return original_hidden, concise_hidden, concise_prompts, boundary, digest, frontend_parameters
+
+
+def condition_warmup(model, payload, train, original, concise, cfg, output, boundary, device):
+    steps = cfg.get('condition_warm_steps', 0)
+    if not steps:
+        return
+    augmented = None
+    if cfg.get('condition_aug_run'):
+        folder = Path(cfg['condition_aug_run']); report = json.loads((folder/'report.json').read_text())
+        if not report['complete'] or sha256(folder/'alignment_examples.pt') != report['sha256']:
+            raise ValueError('Synthetic TRAIN text alignment identity differs')
+        augmented = torch.load(folder/'alignment_examples.pt', map_location='cpu', weights_only=False)
+        if not augmented['TRAIN_only'] or tuple(augmented['instruction_bounds']) != tuple(boundary) or cfg.get('frontend') != 'baseline':
+            raise ValueError('Synthetic alignment uses a different frontend or instruction span')
+    rng = random.Random(cfg['seed']+1)
+    optimizer = torch.optim.AdamW(model.base.adapter.parameters(), lr=cfg['condition_warm_lr'], weight_decay=.001)
+    def batch():
+        hidden, goals = [], []
+        for _ in range(cfg['condition_warm_batch_size']):
+            if augmented is not None and rng.random() < .5:
+                i = rng.randrange(len(augmented['hidden']))
+                hidden.append(augmented['hidden'][i]); goals.append(augmented['native_clip'][i])
+            else:
+                i = rng.choice(train)
+                hidden.append(concise[i] if rng.random() < .5 else original[i]); goals.append(payload['train_clip_teacher'][i])
+        return hidden, torch.stack(goals).to(device).float()
+    model.train()
+    for step in range(1, steps+1):
+        hidden, goal = batch(); h, valid = pack_hidden(hidden, device)
+        prediction = model.conditions(h, valid).float()
+        loss = F.mse_loss(prediction, goal)+.1*(1-F.cosine_similarity(prediction, goal, dim=-1)).mean()
+        if not torch.isfinite(loss):
+            raise FloatingPointError('Nonfinite native condition alignment')
+        optimizer.zero_grad(set_to_none=True); loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.base.adapter.parameters(), 1.); optimizer.step()
+        if step % 50 == 0:
+            write_json(output/'progress.json', {'stage': 'TRAIN_native_condition_alignment', 'step': step,
+                'total_steps': steps, 'train_loss': float(loss.detach())})
+    write_json(output/'condition_warmup.json', {'steps': steps, 'last_train_loss': float(loss.detach()),
+        'TRAIN_only': True, 'synthetic_text_cases': len(augmented['hidden']) if augmented else 0,
+        'new_target_images': 0, 'teacher_at_inference': False})
 
 
 def main():
@@ -78,50 +187,14 @@ def main():
     write_json(a.output/'config.json', cfg)
     try:
         payload = load_data(a.data)
-        descriptions = json.loads((a.data/'product_descriptions.json').read_text())
         rows = payload['rows']; train = [i for i, r in enumerate(rows) if r['split'] == 'train']
         dev = [i for i, r in enumerate(rows) if r['split'] == 'val']
-        qwen, processor = load_qwen(a.qwen, device)
         postfree = cfg.get('frontend', 'postfree') == 'postfree'
         if cfg.get('frontend', 'postfree') not in ('postfree', 'baseline'):
             raise ValueError('Unknown frontend')
-        if postfree:
-            macros = apply_postfree(qwen, hybrid['config']['vision_pairs'],
-                                   hybrid['config']['language_pairs'], hybrid['config']['residual_width'])
-            load_macro_state(macros, hybrid['macros'])
-        qwen.eval().requires_grad_(False)
-        frontend_parameters = sum(p.numel() for p in qwen.model.parameters())
-        original_hidden, concise_hidden, concise_prompts, boundary = [], [], [], None
-        vision_end = processor.tokenizer.convert_tokens_to_ids('<|vision_end|>')
-        message_end = processor.tokenizer.convert_tokens_to_ids('<|im_end|>')
-        for i, row in enumerate(rows):
-            concise = short_prompt(row, descriptions[row['target']['sample_id']])
-            concise_prompts.append(concise)
-            for prompt, destination in ((row['prompt'], original_hidden), (concise, concise_hidden)):
-                inputs = raw_inputs(processor, payload['reference'][i], prompt, parent['visual_layout'], device)
-                bound = instruction_bounds(inputs['input_ids'][0], vision_end, message_end)
-                start, suffix = bound
-                decoded = processor.tokenizer.decode(inputs['input_ids'][0, start:-suffix]).strip()
-                if decoded != prompt.strip():
-                    raise ValueError('Native instruction token extraction differs')
-                if boundary is None:
-                    boundary = bound
-                if bound != boundary:
-                    raise ValueError('Instruction layout changed; no guessed token masks')
-                with torch.inference_mode():
-                    h = qwen.model(**inputs, use_cache=False, return_dict=True).last_hidden_state[0].bfloat16().cpu()
-                destination.append(h)
-            if (i+1) % 24 == 0:
-                write_json(a.output/'progress.json', {'stage': 'postfree_frozen_feature_cache', 'done': i+1, 'total': len(rows)})
-        feature_sha = save_with_digest({'sample_ids': [r['sample_id'] for r in rows],
-            'original_hidden': original_hidden, 'concise_hidden': concise_hidden,
-            'concise_prompts': concise_prompts, 'instruction_bounds': boundary,
-            'hybrid_sha256': hr['checkpoint_sha256'], 'post_tf_removed': postfree}, a.output/'postfree_features.pt')
-        del qwen, processor
-        if postfree:
-            del macros
-        gc.collect(); torch.cuda.empty_cache()
-        base = build_generator(a.sd, parent, tail, device, compressed=cfg.get('compressed_tail', True))
+        original_hidden, concise_hidden, concise_prompts, boundary, feature_sha, frontend_parameters = prepare_conditions(a, cfg, payload, parent, hybrid, hr, device)
+        base = build_generator(a.sd, parent, tail, device, compressed=cfg.get('compressed_tail', True),
+                               public_prior=cfg.get('public_generator_prior', False))
         target_latent = {}; edits, unions = {}, {}
         with torch.inference_mode():
             for start in range(0, len(train), 16):
@@ -137,15 +210,24 @@ def main():
             edits[i] = masks(rows[i], torch.device('cpu'))
             unions[i] = masks({**rows[i], 'mode': 'object'}, torch.device('cpu'))[0]
         model = FocusedHead(base, parent['visual_layout']['positions'], *boundary,
-                            initial_gain=cfg['initial_readout_text_gain']).to(device)
+                            initial_gain=cfg['initial_readout_text_gain'], spatial_dropout=cfg.get('spatial_dropout', 0.)).to(device)
+        if cfg.get('reuse_feature_run') and cfg.get('resume_focused_readout'):
+            from .qwen_vl_native_condition_probe import restore_parameters
+            old = torch.load(Path(cfg['reuse_feature_run'])/'best_checkpoint.pt', map_location='cpu', weights_only=False)
+            restore_parameters(model, {n: v for n, v in old['trainable_head'].items()
+                if n == 'raw_text_gain' or n.startswith(('base.adapter.', 'base.spatial.'))})
         model.base.requires_grad_(False)
         model.base.adapter.requires_grad_(True); model.base.spatial.requires_grad_(True)
         for name, parameter in model.base.unet.named_parameters():
-            parameter.requires_grad_('.attn2.' in name or name.startswith('up_blocks.3.') or name == 'conv_in.spatial.weight')
+            if cfg.get('public_generator_prior'):
+                parameter.requires_grad_('lora_' in name or name == 'conv_in.spatial.weight')
+            else:
+                parameter.requires_grad_('.attn2.' in name or name.startswith('up_blocks.3.') or name == 'conv_in.spatial.weight')
         for parameter in model.parameters():
             if parameter.requires_grad:
                 parameter.data = parameter.data.float()
         model.base.unet.enable_gradient_checkpointing()
+        condition_warmup(model, payload, train, original_hidden, concise_hidden, cfg, a.output, boundary, device)
         groups = [{'params': model.base.adapter.parameters(), 'lr': cfg['readout_lr']},
                   {'params': model.base.spatial.parameters(), 'lr': cfg['readout_lr']},
                   {'params': [p for p in model.base.unet.parameters() if p.requires_grad], 'lr': cfg['unet_lr']},
@@ -195,6 +277,9 @@ def main():
                 boxes = region_boxes(torch.cat([unions[i] for i in batch]).to(device))
                 crop = metric(crop_regions(image.clamp(-1, 1), boxes), crop_regions(target, boxes)).mean()
                 loss = cfg['latent_weight']*latent+cfg['rgb_weight']*pixel+cfg['lpips_weight']*perceptual+cfg['crop_weight']*crop
+                if cfg.get('condition_weight'):
+                    native = torch.stack([payload['train_clip_teacher'][i] for i in batch]).to(device).float()
+                    loss = loss+cfg['condition_weight']*F.mse_loss(model.conditions(h, valid).float(), native)
             if not torch.isfinite(loss):
                 raise FloatingPointError('Nonfinite focused instruction loss')
             loss.backward(); norm = torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.)

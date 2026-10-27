@@ -1,7 +1,7 @@
 """TRAIN-only oracle diagnostic of Qwen alignment versus spatial conditioning.
 
 Oracle caption features are privileged TRAIN labels, never a deployable model
-result. This module performs no optimizer updates and never opens DEV or TEST.
+result. This module performs no optimizer updates or DEV/TEST model evaluation.
 """
 import argparse
 import contextlib
@@ -106,7 +106,8 @@ def main():
         if features['sample_ids'] != [r['sample_id'] for r in payload['rows']]:
             raise ValueError('Cache row identity differs')
         base = build_generator(a.sd, parent, tail, device, drop_encoder=True,
-                               compressed=selected['config'].get('compressed_tail', True))
+                               compressed=selected['config'].get('compressed_tail', True),
+                               public_prior=selected['config'].get('public_generator_prior', False))
         model = FocusedHead(base, parent['visual_layout']['positions'], *selected['instruction_bounds']).to(device)
         restore_parameters(model, selected['trainable_head']); model.eval().requires_grad_(False)
         metadata[label] = {'checkpoint_sha256': report['checkpoint_sha256'],

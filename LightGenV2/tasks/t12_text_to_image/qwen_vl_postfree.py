@@ -63,11 +63,14 @@ def focus_features(hidden, valid, positions, text_start, suffix_tokens, gain):
 
 
 class FocusedHead(nn.Module):
-    def __init__(self, base, positions, text_start, suffix_tokens, initial_gain=.1):
+    def __init__(self, base, positions, text_start, suffix_tokens, initial_gain=.1, spatial_dropout=0.):
         super().__init__()
         self.base = base
         self.positions = list(positions)
         self.text_start, self.suffix_tokens = text_start, suffix_tokens
+        if not 0 <= spatial_dropout < 1:
+            raise ValueError('Invalid TRAIN spatial dropout')
+        self.spatial_dropout = spatial_dropout
         self.raw_text_gain = nn.Parameter(torch.tensor(math.log(initial_gain/(1-initial_gain))))
 
     @property
@@ -78,10 +81,18 @@ class FocusedHead(nn.Module):
     def text_gain(self):
         return self.raw_text_gain.sigmoid()
 
+    def conditions(self, hidden, valid):
+        _, text_mask = focus_features(hidden, valid, self.positions,
+            self.text_start, self.suffix_tokens, self.text_gain)
+        return self.base.adapter(hidden, text_mask)
+
     def forward(self, hidden, valid, noise):
         visual, text_mask = focus_features(hidden, valid, self.positions,
             self.text_start, self.suffix_tokens, self.text_gain)
         spatial = self.base.spatial(visual)
+        if self.training and self.spatial_dropout:
+            keep = torch.rand(len(spatial), 1, 1, 1, device=spatial.device) >= self.spatial_dropout
+            spatial = spatial*keep.to(spatial.dtype)
         condition = self.base.adapter(hidden, text_mask)
         scheduler, unet, vae = self.base.scheduler, self.base.unet, self.base.vae
         scheduler.set_timesteps(1, device=noise.device)
