@@ -132,6 +132,7 @@ def worker(c,out,profile,recipe,auxiliary=None):
     metadata['arguments'].update(out=str(out),epochs=c['rounds'],lr=c['peak_lr'])
     if auxiliary is not None:
         auxiliary.configure(splits)
+        if hasattr(auxiliary,'set_output'):auxiliary.set_output(out)
         metadata['auxiliary']=auxiliary.identity
     save(out/'metadata.json',metadata)
     x,y,ids=splits['train'];weights=len(y)/(8*torch.bincount(y,minlength=8).float().cuda())
@@ -172,6 +173,9 @@ def worker(c,out,profile,recipe,auxiliary=None):
                     contribution=loss/8
                     if auxiliary is not None:contribution=contribution+auxiliary.loss(output['probabilities'],u,step)
                     contribution.backward();value+=float(contribution.detach())
+                if auxiliary is not None and hasattr(auxiliary,'extra_loss'):
+                    extra=auxiliary.extra_loss(model,x,step)
+                    extra.backward();value+=float(extra.detach())
                 return value
             info=optimization_step(model,optimizer,closure);assert len(info['gradients'])==5 and all(v['finite'] and v['norm']>0 for v in info['gradients'].values());total+=info['clean_loss']
             with torch.no_grad():
@@ -242,7 +246,7 @@ def supervisor(c,out,profile,validator=validate):
             assert subprocess.check_output(['nvidia-smi','-i',index,'--query-gpu=uuid','--format=csv,noheader'],text=True).strip()==gpu
             assert int(subprocess.check_output(['nvidia-smi','-i',index,'--query-gpu=memory.free','--format=csv,noheader,nounits'],text=True))>=7000
             d=out/(recipe+'_s17');log=d.with_suffix('.log').open('x');env=dict(os.environ,CUDA_VISIBLE_DEVICES=gpu,CUDA_DEVICE_ORDER='PCI_BUS_ID',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4')
-            entry=c.get('worker_module','reheat_refine');assert entry in ['reheat_refine','cached_distill']
+            entry=c.get('worker_module','reheat_refine');assert entry in ['reheat_refine','cached_distill','complement_distill']
             p=subprocess.Popen([sys.executable,'-u','-m',__package__+'.'+entry,'--profile',str(profile),'--out',str(d),'--worker','--recipe',recipe],env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             running[p.pid]=(p,log,d);pids.append(p.pid)
         while running:

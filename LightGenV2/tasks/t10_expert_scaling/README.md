@@ -1,11 +1,42 @@
 # T10 专家数量与 Top-k 扩展实验
 
-## 同视图缓存蒸馏学生：TRAIN梯度校准后固定训练（2026-10-28）
+## 补集定向蒸馏与全部父正确样本保留（2026-10-28）
+
+上一同视图蒸馏已完成20段/1280更新/20480学生输入，五次固定EMA/live开发TEST为
+601/598、601/600、600/600、599/600、599/599。第8段EMA仅因同601正确下NLL更低而选中，
+完整TRAIN3157/3496、VAL588/752、TEST601/752（79.9202%）；相对本阶段父模型仍无精度净收益。
+最后EMA的teacher-only TRAIN补集164修复32、parent-only133新增7错，不能把TRAIN修好当TEST过线。
+36小产物manifest及全部10状态752预测/混淆矩阵/采样/权重身份已独立核验，父子退出、GPU1/3释放。
+报告`reports/kather_n49_ensemble_distill_20261028/final_summary_20261028.json`，原best/last和失败成本保留。
+
+新入口`complement_distill.py`、profile`configs/kather_n49_complement_distill_20261028.json`，
+run `runs/simulation/kather_n49_complement_distill_20261028`，只seed17/GPU3。
+起点为上一实际选中第8段EMA（PT SHA75e51f4e…55a7），先重算其八D4 TRAIN父概率，
+不能用旧955…9ee父缓存保护另一份权重；三既有光学教师同view概率仍复用，教师不在线参与学生推理。
+共同正确组3005张中，教师平均真实类概率.70265、父.73456，平均log(parent_y/teacher_y)=.04464；
+这支持检验去掉共同正确样本上的教师牵引，不单独证明其造成COMPLEX的TEST损失。
+
+每更新保留原均匀分类effective16/micro2，再加4张冻结teacher正确且新父错误的同图同D4补集，
+额外4张只贡献T1 KD，不重复CE/物理项；其ID互不重复且排除当次main16。
+原main16只额外接受权重.5的父KL，覆盖所有父模型正确样本的完整八类分布，
+按整个main16中的有效数归一化，不仅保护父独有组或某一成对类别间隔。
+只在两个固定互斥类平衡main16和额外互斥repair4上校准KD权重，目标梯度范数比.5、截断[.1,3]，
+并测真实Adam方向、重复基线和源恢复；旧lambda1.53036不沿用，无VAL/TEST前向校准。
+
+固定16段：主监督16384输入、额外补集4096输入，共20480学生输入/1024更新；
+仍原五组光学相位、full49/T.05/OEO/RGB/探测器/11078432参数/单视图，无电子头/TTA/外部CNN/SAM。
+专家LR1e-4/2e-4/3e-4再余弦到3e-5，global/router倍率.5/.1，fresh AdamW无weight decay、EMA.95。
+第4/8/12/16段锁last SHA/statefield/tensor身份后评live与EMA开发TEST，601始终保留。
+第8段若无TEST净增、repair比例已≥上一广泛KD8的28/164且全部父正确样本误伤率仍≥20/3138，
+预设为没有更好保留/转移而停；这是不同冻结源集合的比例诊断，不冒称配对因果检验。
+否则最多16段；不追加轮数、权重或seed。辅助ID/view逐更新记账，额外父缓存27968冻结模型输入单列。
+
+## 已完成同视图缓存蒸馏：原固定训练合同（2026-10-28）
 
 清洁TRAIN准入已通过且独立NumPy核验：三教师均值3169正确、父模型3138，
 teacher-only补集164、parent-only133、共同错194；补集各类37/55/11/18/30/11/2/0，六类各至少4张。
 教师TRAIN NLL=.49337高于父模型.45655、置信度更低，故不能把更多正确直接等同更强或必然有用的梯度。
-报告`reports/kather_n49_teacher_cache_20261028/train_admission_20261028.json`，原D4八视图正缓存中。
+报告`reports/kather_n49_teacher_cache_20261028/train_admission_20261028.json`，原D4八视图缓存已完成并核验。
 
 学生入口`cached_distill.py`，profile`configs/kather_n49_ensemble_distill_20261028.json`，
 run `runs/simulation/kather_n49_ensemble_distill_20261028`。父调度先CPU等待缓存生产者全部退出，

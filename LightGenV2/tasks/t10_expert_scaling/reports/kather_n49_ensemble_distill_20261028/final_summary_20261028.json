@@ -1,0 +1,480 @@
+{
+  "status": "completed_without_test_accuracy_gain",
+  "run": "kather_n49_ensemble_distill_20261028",
+  "published_training_source": "28ca662a98b42546f9ffef14985b076923798ad3",
+  "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "scope": "Repeated TEST-development; single original N49/k49 seed17 model; extra budget, not independent generalization/equal-budget Top-k.",
+  "source_checkpoint_sha256": "955e03e7eb8150835f231ac9288549b09ae95540b49b13c2fa8ca73f988459ee",
+  "source_state_origin": "Prior reheat round4 live exported model, original E117 chain, fresh optimizer not exact resume.",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "selected_round": 8,
+  "selected_state_field": "model (EMA)",
+  "best_checkpoint_sha256": "75e51f4e117f451ae7eb7947f0d001af0c07155450280fea3b19d9e9970d55a7",
+  "last_checkpoint_sha256": "4ef48a7cb876953261560afa8b24e2b6b28a12110dd68edf44ea92e0a0cc5bc3",
+  "selected_model_tensor_sha256": "821809ee5960586d401bd1d63e599e6ad534aa849d17df005b5104649b81ccf5",
+  "source_train_val_test": [
+    3138,
+    587,
+    601
+  ],
+  "selected_train_val_test": [
+    3157,
+    588,
+    601
+  ],
+  "selected_test_percent": 79.92021276595744,
+  "target_correct": 616,
+  "target_met": false,
+  "remaining_to_target": 15,
+  "remaining_to_same_seed_minimum612": 11,
+  "selection_reason": "Same correct count, lower TEST macro-NLL .6395686 vs incumbent .6396459; no accuracy improvement.",
+  "states": [
+    {
+      "round": 4,
+      "state_field": "model",
+      "correct": 601,
+      "nll": 0.6400582194328308,
+      "corrected": 9,
+      "new_wrong": 9,
+      "per_class_net": [
+        1,
+        2,
+        -6,
+        1,
+        4,
+        -2,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "11c68b1e3db658b3073a1dd1e8b20ed1952b73fa0411069dc5f6a5e45097cd5d",
+      "model_tensor_sha256": "95c03111e29d99e777d1298ff5399a27d94552554f9c53227226a47faa42a336"
+    },
+    {
+      "round": 4,
+      "state_field": "live_model",
+      "correct": 598,
+      "nll": 0.640992283821106,
+      "corrected": 6,
+      "new_wrong": 9,
+      "per_class_net": [
+        1,
+        0,
+        -6,
+        1,
+        2,
+        -1,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "11c68b1e3db658b3073a1dd1e8b20ed1952b73fa0411069dc5f6a5e45097cd5d",
+      "model_tensor_sha256": "e00e8a551c8dd61cb6338b95ef0a2d4a4c82a73787cedf0c7718d37e3317d481"
+    },
+    {
+      "round": 8,
+      "state_field": "model",
+      "correct": 601,
+      "nll": 0.639568567276001,
+      "corrected": 10,
+      "new_wrong": 10,
+      "per_class_net": [
+        1,
+        2,
+        -6,
+        0,
+        4,
+        -1,
+        0,
+        0
+      ],
+      "selected": true,
+      "locked_source_checkpoint_sha256": "7427c1528d12ce3e72332d9de625c21164455cafb9b4e1dde37ef7cb14c8eca4",
+      "model_tensor_sha256": "821809ee5960586d401bd1d63e599e6ad534aa849d17df005b5104649b81ccf5"
+    },
+    {
+      "round": 8,
+      "state_field": "live_model",
+      "correct": 600,
+      "nll": 0.6396768689155579,
+      "corrected": 9,
+      "new_wrong": 10,
+      "per_class_net": [
+        1,
+        2,
+        -6,
+        0,
+        3,
+        -1,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "7427c1528d12ce3e72332d9de625c21164455cafb9b4e1dde37ef7cb14c8eca4",
+      "model_tensor_sha256": "ded994eb99d07fbbbae259a2204ea49d30f36f901e3ec60e8fd7fe75bd3e2d5f"
+    },
+    {
+      "round": 12,
+      "state_field": "model",
+      "correct": 600,
+      "nll": 0.639581024646759,
+      "corrected": 10,
+      "new_wrong": 11,
+      "per_class_net": [
+        1,
+        2,
+        -7,
+        1,
+        4,
+        -2,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "f187fb39b1792e15a5614e8a754da0767bdbe946d88320185bbc4aed4113618c",
+      "model_tensor_sha256": "03c8251ca6c7aac25053715fe10e61c894144aed38078a9745a2cf6986ee9f39"
+    },
+    {
+      "round": 12,
+      "state_field": "live_model",
+      "correct": 600,
+      "nll": 0.6400830149650574,
+      "corrected": 10,
+      "new_wrong": 11,
+      "per_class_net": [
+        1,
+        2,
+        -7,
+        1,
+        4,
+        -2,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "f187fb39b1792e15a5614e8a754da0767bdbe946d88320185bbc4aed4113618c",
+      "model_tensor_sha256": "3770ee5c38a4367edb437c3961621500b2851fbae92be51761207dd1d4323bb5"
+    },
+    {
+      "round": 16,
+      "state_field": "model",
+      "correct": 599,
+      "nll": 0.6408700346946716,
+      "corrected": 10,
+      "new_wrong": 12,
+      "per_class_net": [
+        1,
+        2,
+        -7,
+        0,
+        4,
+        -2,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "fabca1b9abefcb101fa963cccff20d53368c48ac91cf0ee69cf342418f548be3",
+      "model_tensor_sha256": "ec517bfed780dd89fdd0041927bee416d17a004c90bbdb7f221d8105d12244fe"
+    },
+    {
+      "round": 16,
+      "state_field": "live_model",
+      "correct": 600,
+      "nll": 0.6410966515541077,
+      "corrected": 11,
+      "new_wrong": 12,
+      "per_class_net": [
+        1,
+        3,
+        -7,
+        0,
+        4,
+        -2,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "fabca1b9abefcb101fa963cccff20d53368c48ac91cf0ee69cf342418f548be3",
+      "model_tensor_sha256": "1c2b8d1aa3cf4a71c82d2716adc81e5b2323473b6c26c2f5bcaa3532512456ac"
+    },
+    {
+      "round": 20,
+      "state_field": "model",
+      "correct": 599,
+      "nll": 0.6405850052833557,
+      "corrected": 10,
+      "new_wrong": 12,
+      "per_class_net": [
+        1,
+        2,
+        -7,
+        0,
+        4,
+        -2,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "4ef48a7cb876953261560afa8b24e2b6b28a12110dd68edf44ea92e0a0cc5bc3",
+      "model_tensor_sha256": "726a926cc0480030ff302c811cac1e7e32bea7d8cb48773bf951c3694d93c389"
+    },
+    {
+      "round": 20,
+      "state_field": "live_model",
+      "correct": 599,
+      "nll": 0.6407499313354492,
+      "corrected": 10,
+      "new_wrong": 12,
+      "per_class_net": [
+        1,
+        2,
+        -7,
+        0,
+        4,
+        -2,
+        0,
+        0
+      ],
+      "selected": false,
+      "locked_source_checkpoint_sha256": "4ef48a7cb876953261560afa8b24e2b6b28a12110dd68edf44ea92e0a0cc5bc3",
+      "model_tensor_sha256": "26c89cb7ab62eaebdc867f475af86d714a063e75eea85cf80ed14c1d9e0ecac3"
+    }
+  ],
+  "full_train_checks": [
+    {
+      "round": 8,
+      "correct": 3157
+    },
+    {
+      "round": 16,
+      "correct": 3166
+    }
+  ],
+  "train_diagnostics": [
+    {
+      "round": 4,
+      "repair": {
+        "samples": 164,
+        "correct": 21,
+        "new_wrong": 0,
+        "margin": -0.2772122621536255,
+        "source_margin": -0.34262433648109436
+      },
+      "protected": {
+        "samples": 133,
+        "correct": 124,
+        "new_wrong": 9,
+        "margin": 0.49469441175460815,
+        "source_margin": 0.5610754489898682
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    },
+    {
+      "round": 8,
+      "repair": {
+        "samples": 164,
+        "correct": 28,
+        "new_wrong": 0,
+        "margin": -0.2502205967903137,
+        "source_margin": -0.34262433648109436
+      },
+      "protected": {
+        "samples": 133,
+        "correct": 124,
+        "new_wrong": 9,
+        "margin": 0.48825085163116455,
+        "source_margin": 0.5610754489898682
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    },
+    {
+      "round": 12,
+      "repair": {
+        "samples": 164,
+        "correct": 31,
+        "new_wrong": 0,
+        "margin": -0.2357713133096695,
+        "source_margin": -0.34262433648109436
+      },
+      "protected": {
+        "samples": 133,
+        "correct": 123,
+        "new_wrong": 10,
+        "margin": 0.5064302086830139,
+        "source_margin": 0.5610754489898682
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    },
+    {
+      "round": 16,
+      "repair": {
+        "samples": 164,
+        "correct": 34,
+        "new_wrong": 0,
+        "margin": -0.22647497057914734,
+        "source_margin": -0.34262433648109436
+      },
+      "protected": {
+        "samples": 133,
+        "correct": 125,
+        "new_wrong": 8,
+        "margin": 0.5046717524528503,
+        "source_margin": 0.5610754489898682
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    },
+    {
+      "round": 20,
+      "repair": {
+        "samples": 164,
+        "correct": 32,
+        "new_wrong": 0,
+        "margin": -0.2297384887933731,
+        "source_margin": -0.34262433648109436
+      },
+      "protected": {
+        "samples": 133,
+        "correct": 126,
+        "new_wrong": 7,
+        "margin": 0.5147560238838196,
+        "source_margin": 0.5610754489898682
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    }
+  ],
+  "lambda_kd": 1.5303607534666068,
+  "student_rounds": 20,
+  "optimizer_updates": 1280,
+  "student_optimizer_inputs": 20480,
+  "full_train_exposure_equivalent": 5.85812356979405,
+  "teacher_cache_frozen_model_image_exposures": 111872,
+  "calibration_probe_updates": 6,
+  "training_seconds_sum": 1468.132640361786,
+  "evaluation_seconds_sum": 851.4517135620117,
+  "manifest_files": 36,
+  "archive_sha256": "eaa2a8199ffd7632712ec94996bc90635aa46c28f274ab3ff6dbb9975bd8c202",
+  "archive_bytes": 1401665,
+  "checks": {
+    "manifest_all_sha_verified": true,
+    "all10_test_752_accuracy_cm_argmax_finite_idslabels": true,
+    "all20_sampling_1024_unique128_per_class": true,
+    "every4_round_window_covers3496": true,
+    "full_train_scores_and_identity": true,
+    "route_ids_labels_probabilities": true,
+    "five_gradient_groups_all20_finite_nonzero": true,
+    "selected_test_reuses_locked_round8": true,
+    "best_last_pt_tensor_identity_runtime_receipt": true,
+    "all_pids_exited_and_authorized_gpu_no_task_allocation": true
+  },
+  "mechanism": "Teacher-only TRAIN fixes32 with parent-only7 new errors at final EMA, but no net TEST gain; original correctly classified COMPLEX loses7 in round12. Effective KD gradient and actual optimizer changes were verified, so auxiliary inactivity is not supported.",
+  "common_correct_cpu_audit": {
+    "common": {
+      "n": 3005,
+      "mean_log_parent_true_over_teacher": 0.04464402794837952,
+      "mean_parent_true": 0.7345622777938843,
+      "mean_teacher_true": 0.7026532888412476,
+      "parent_entropy": 0.833267867565155,
+      "teacher_entropy": 0.9628521203994751,
+      "parent_mean_logmargin": 2.0379505157470703,
+      "teacher_mean_logmargin": 1.9439693689346313
+    },
+    "per_class": {
+      "0": {
+        "n": 351,
+        "mean_log_parent_true_over_teacher": -0.06203843653202057,
+        "mean_parent_true": 0.5912907719612122,
+        "mean_teacher_true": 0.6250021457672119,
+        "parent_entropy": 1.1823437213897705,
+        "teacher_entropy": 1.156009554862976,
+        "parent_mean_logmargin": 1.1168625354766846,
+        "teacher_mean_logmargin": 1.3333934545516968
+      },
+      "1": {
+        "n": 310,
+        "mean_log_parent_true_over_teacher": -0.009206138551235199,
+        "mean_parent_true": 0.6367380619049072,
+        "mean_teacher_true": 0.641291618347168,
+        "parent_entropy": 0.9845970869064331,
+        "teacher_entropy": 1.0643861293792725,
+        "parent_mean_logmargin": 1.2181978225708008,
+        "teacher_mean_logmargin": 1.3862794637680054
+      },
+      "2": {
+        "n": 366,
+        "mean_log_parent_true_over_teacher": 0.10910622775554657,
+        "mean_parent_true": 0.652699887752533,
+        "mean_teacher_true": 0.5842539072036743,
+        "parent_entropy": 1.08036208152771,
+        "teacher_entropy": 1.292770266532898,
+        "parent_mean_logmargin": 1.4256001710891724,
+        "teacher_mean_logmargin": 1.2517266273498535
+      },
+      "3": {
+        "n": 380,
+        "mean_log_parent_true_over_teacher": 0.05326959863305092,
+        "mean_parent_true": 0.6869733333587646,
+        "mean_teacher_true": 0.6527163982391357,
+        "parent_entropy": 0.9778772592544556,
+        "teacher_entropy": 1.10927152633667,
+        "parent_mean_logmargin": 1.496872067451477,
+        "teacher_mean_logmargin": 1.4900590181350708
+      },
+      "4": {
+        "n": 344,
+        "mean_log_parent_true_over_teacher": 0.059810981154441833,
+        "mean_parent_true": 0.6278335452079773,
+        "mean_teacher_true": 0.5887884497642517,
+        "parent_entropy": 1.0944151878356934,
+        "teacher_entropy": 1.2464673519134521,
+        "parent_mean_logmargin": 1.3414051532745361,
+        "teacher_mean_logmargin": 1.1778496503829956
+      },
+      "5": {
+        "n": 410,
+        "mean_log_parent_true_over_teacher": 0.11785577237606049,
+        "mean_parent_true": 0.7145311832427979,
+        "mean_teacher_true": 0.6345353126525879,
+        "parent_entropy": 0.9782132506370544,
+        "teacher_entropy": 1.2167723178863525,
+        "parent_mean_logmargin": 1.8957322835922241,
+        "teacher_mean_logmargin": 1.6267598867416382
+      },
+      "6": {
+        "n": 419,
+        "mean_log_parent_true_over_teacher": 0.06988649815320969,
+        "mean_parent_true": 0.9335086941719055,
+        "mean_teacher_true": 0.8740377426147461,
+        "parent_entropy": 0.3068227171897888,
+        "teacher_entropy": 0.533548891544342,
+        "parent_mean_logmargin": 3.9109888076782227,
+        "teacher_mean_logmargin": 3.148268699645996
+      },
+      "7": {
+        "n": 425,
+        "mean_log_parent_true_over_teacher": 0.001014329376630485,
+        "mean_parent_true": 0.9468635320663452,
+        "mean_teacher_true": 0.9470669627189636,
+        "parent_entropy": 0.2603089213371277,
+        "teacher_entropy": 0.2629557251930237,
+        "parent_mean_logmargin": 3.2621219158172607,
+        "teacher_mean_logmargin": 3.5958335399627686
+      }
+    },
+    "interpretation": "Positive mean log ratio supports average softer teacher true-class probability among common-correct TRAIN; does not by itself explain TEST COMPLEX harm."
+  },
+  "follow_up": "Do not restart or extend this recipe. Evaluate one finite teacher-complement-only auxiliary with full parent-correct retention after refreshed parent cache and TRAIN calibration, keeping original full49 contract.",
+  "next_method_train_benchmark": {
+    "broadKD_round8_repair_fraction": 0.17073170731707318,
+    "broadKD_round8_all_parent_correct_new_errors": 20,
+    "broadKD_round8_all_parent_correct_count": 3138,
+    "broadKD_round8_all_parent_correct_error_fraction": 0.006373486297004461,
+    "new_source_teacher_only_clean": 147,
+    "new_source_parent_correct": 3157,
+    "note": "New source sets differ; rate-based stopping diagnostic only."
+  }
+}

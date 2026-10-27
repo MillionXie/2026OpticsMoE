@@ -138,13 +138,13 @@ class Auxiliary:
         return result
 
 
-def calibrate(c,out,profile):
+def calibrate(c,out,profile,auxiliary_factory=Auxiliary):
     import numpy as np
     import torch
     from .train import objective
     from .diagnose_topk import classification_margin_loss
     from .sharpness_refine import optimization_step
-    commit,hashes=base.sources(profile,c);aux=Auxiliary(c,False);aux.calibration_view0=True;aux.start_round(0)
+    commit,hashes=base.sources(profile,c);aux=auxiliary_factory(c,False);aux.calibration_view0=True;aux.start_round(0)
     model,m,protocol,splits,manifest,cache=base.prepare(c,'student');aux.configure(splits);x,y,ids=splits['train'];tc=protocol['training_proposal']
     original={n:p.detach().cpu().clone() for n,p in model.state_dict().items()};weights=len(y)/(8*torch.bincount(y,minlength=8).float().cuda())
     batches=calibration_indices(aux.y,aux.teacher[0],aux.parent[0]);norms=[];rows=[]
@@ -155,6 +155,9 @@ def calibrate(c,out,profile):
         return dict(supervised_norm=na,kd_norm=nb,cosine=float(torch.stack([(p*q).sum() for p,q in zip(a,b)]).sum())/max(na*nb,1e-30))
     def gradient(ix,kind):
         model.zero_grad(set_to_none=True);model.train();aux.start_batch(ix,0)
+        if kind=='kd' and hasattr(aux,'extra_loss'):
+            aux.extra_loss(model,x,0,weighted=False).backward()
+            return vector()
         for start in range(0,len(ix),2):
             u=ix[start:start+2];o=model(aux.images(x,u,0));labels=y[u].cuda()
             if kind=='sup':
@@ -165,11 +168,13 @@ def calibrate(c,out,profile):
     for no,values in enumerate(batches,1):
         ix=torch.from_numpy(values);gs=gradient(ix,'sup');gk=gradient(ix,'kd');r=relationship(gs,gk);norms.append((r['supervised_norm'],r['kd_norm']));del gs,gk
         groups={}
-        for group,mask in [('repair',(aux.teacher[0].argmax(1)==aux.y)&(aux.parent[0].argmax(1)!=aux.y)),('already_correct',aux.parent[0].argmax(1)==aux.y)]:
+        for group,mask in ([] if hasattr(aux,'extra_loss') else [('repair',(aux.teacher[0].argmax(1)==aux.y)&(aux.parent[0].argmax(1)!=aux.y)),('already_correct',aux.parent[0].argmax(1)==aux.y)]):
             selected=values[mask[values]]
             if len(selected):
                 a=gradient(torch.from_numpy(selected),'sup');b=gradient(torch.from_numpy(selected),'kd');groups[group]=dict(samples=len(selected),**relationship(a,b));del a,b
         rows.append(dict(batch=no,indices=values.tolist(),ids=ids[values].tolist(),classes=np.bincount(aux.y[values],minlength=8).tolist(),gradients=r,groups=groups))
+        if hasattr(aux,'extra_loss'):
+            rows[-1].update(extra_indices=aux.extra_indices.tolist(),extra_codes=aux.extra_codes.tolist(),extra_ids=ids[aux.extra_indices].tolist())
     weight,weighted_ratio=calibrated_weight([p[0] for p in norms],[p[1] for p in norms]);aux.weight=weight
     # Verify all eight TRAIN encodings against the frozen parent cache before any optimizer probe.
     equivalence=[];ix=torch.from_numpy(batches[0][:2]);model.eval()
@@ -188,6 +193,8 @@ def calibrate(c,out,profile):
                     u=ix[start:start+2];output=model(aux.images(x,u,0));loss=(objective(model,output,y[u].cuda(),weights,tc)+.2*classification_margin_loss(output['probabilities'],y[u].cuda()))/8
                     if mode=='distill':loss=loss+aux.loss(output['probabilities'],u,0)
                     loss.backward();value+=float(loss.detach())
+                if mode=='distill' and hasattr(aux,'extra_loss'):
+                    extra=aux.extra_loss(model,x,0);extra.backward();value+=float(extra.detach())
                 return value
             info=optimization_step(model,opt,closure);assert len(info['gradients'])==5 and all(v['finite'] and v['norm']>0 for v in info['gradients'].values())
             change=[(p.detach().cpu()-original[n]).flatten() for n,p in model.named_parameters()]
@@ -201,7 +208,7 @@ def calibrate(c,out,profile):
     out.mkdir(parents=True,exist_ok=False);save(out/'receipt.json',dict(source_commit=commit,source_files=hashes,profile_sha256=sha(profile),pid=os.getpid(),
         cache_manifest_sha256=aux.identity['cache_manifest_sha256'],lambda_kd=weight,weighted_gradient_ratio=weighted_ratio,
         calibration_target_ratio=.5,lambda_bounds=[.1,3.],batches=rows,unique_train_samples=32,optimizer_probe_updates=6,
-        source_restored_exactly=True,parent_cache_d4_max_errors=equivalence,no_val_test_forward=True,passed=passed))
+        source_restored_exactly=True,parent_cache_d4_max_errors=equivalence,auxiliary_identity=aux.identity,no_val_test_forward=True,passed=passed))
     if not passed:raise RuntimeError('TRAIN numeric KD admission rejected')
 
 
