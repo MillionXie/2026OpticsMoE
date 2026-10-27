@@ -76,7 +76,7 @@ def raw_inputs(processor, reference, prompt, layout, device):
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True, enable_thinking=False)
     inputs = processor(text=[text], images=[image], return_tensors='pt')
     positions = torch.where(inputs['input_ids'][0] == layout['image_token_id'])[0].tolist()
-    if positions != layout['positions'] or inputs['image_grid_thw'].tolist() != [[1, 16, 16]]:
+    if positions != layout.get('qwen_image_positions',layout['positions']) or inputs['image_grid_thw'].tolist() != [[1, 16, 16]]:
         raise ValueError('Native Qwen image layout differs')
     if not inputs['attention_mask'].all() or inputs['input_ids'].shape[1] > 224:
         raise ValueError('B1 full prompt without truncation/padding is required')
@@ -85,7 +85,16 @@ def raw_inputs(processor, reference, prompt, layout, device):
 
 def raw_hidden(qwen, processor, payload, i, layout, device):
     inputs = raw_inputs(processor, payload['reference'][i], payload['rows'][i]['prompt'], layout, device)
-    return qwen.model(**inputs, use_cache=False, return_dict=True).last_hidden_state[0].bfloat16()
+    if not layout.get('semantic_prefix',0):
+        return qwen.model(**inputs, use_cache=False, return_dict=True).last_hidden_state[0].bfloat16()
+    if layout['semantic_prefix']!=64:raise ValueError('Unreviewed native visual prefix')
+    native=[]
+    handle=qwen.model.visual.register_forward_hook(lambda module,args,out:native.append(out[0]))
+    try:
+        hidden=qwen.model(**inputs,use_cache=False,return_dict=True).last_hidden_state[0].bfloat16()
+    finally:handle.remove()
+    if len(native)!=1 or native[0].shape!=(64,2048):raise ValueError('Native visual merger differs')
+    return torch.cat([native[0].bfloat16(),hidden],0)
 
 
 def frontend_input_hash(payload,i):

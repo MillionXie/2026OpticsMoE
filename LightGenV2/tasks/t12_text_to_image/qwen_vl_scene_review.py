@@ -50,6 +50,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for name in ('parent','data','qwen','sd','output'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--hybrid',type=Path);parser.add_argument('--tail',type=Path)
+    parser.add_argument('--visual-cache',type=Path,help='Verified native merger cache for raw/cache identity only')
     parser.add_argument('--gpu-uuid',required=True);parser.add_argument('--label',required=True)
     a=parser.parse_args()
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=a.gpu_uuid or a.output.exists():raise ValueError('Unauthorized GPU or immutable existing review')
@@ -59,6 +60,14 @@ def main():
     torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.85,0);device=torch.device('cuda:0')
     state=torch.load(a.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     payload=load_data(a.data);ids=[i for i,r in enumerate(payload['rows']) if r['split']=='val']
+    if state['config'].get('semantic_prefix',0):
+        if a.visual_cache is None:raise ValueError('Native readout requires its explicit cache for identity checks')
+        ready=json.loads((a.visual_cache/'report.json').read_text());path=a.visual_cache/'native_vision.pt'
+        if not ready['complete'] or ready['sha256']!=sha256(path) or ready['source_cache_sha256']!=sha256(a.data/'frozen_features.pt'):
+            raise ValueError('Native visual cache identity changed')
+        native=torch.load(path,map_location='cpu',weights_only=False,mmap=True)
+        if native['sample_ids']!=[r['sample_id'] for r in payload['rows']]:raise ValueError('Native feature row identities differ')
+        payload['hidden']=[torch.cat([v,h],0) for v,h in zip(native['vision'],payload['hidden'])]
     qwen,processor=load_qwen(a.qwen,device)
     head=build_spatial_head(a.sd,state,state['config'],state['visual_layout']['positions'],device,drop_vae_encoder=True).eval().requires_grad_(False)
     if a.hybrid:

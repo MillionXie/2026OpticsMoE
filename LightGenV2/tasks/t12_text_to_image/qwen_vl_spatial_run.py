@@ -233,8 +233,10 @@ def run(args,cfg):
         if cfg.get('semantic_prefix')!=64:raise ValueError('Native vision requires an explicit 64-token prefix')
         if any(v.shape!=(64,2048) for v in native['vision']):raise ValueError('Native vision shape differs')
         payload['hidden']=[torch.cat([v,h],0) for v,h in zip(native['vision'],payload['hidden'])]
-        layout.update(qwen_image_positions=layout['positions'],positions=list(range(64)),
-                      semantic_prefix=64,visual_source='native Qwen visual merger before language')
+        from .qwen_vl_native_readout import native_layout
+        layout=native_layout(layout)
+        if cfg.get('focus_instruction'):
+            cfg['instruction_bounds']=layout['instruction_bounds']
         write_json(out/'visual_layout.json',layout)
     elif cfg.get('semantic_prefix',0):raise ValueError('Native visual prefix configured without verified cache')
     ids,audit=training_ids(payload,data_run,cfg['exclude_ambiguous_descriptions'])
@@ -275,8 +277,10 @@ def run(args,cfg):
     if 'spatial' in state:
         for key in ('adapter_hidden','adapter_layers','spatial_width','spatial_channels','visual_grid','unet_lora_rank','unet_training'):
             if cfg[key]!=state['config'][key]:raise ValueError('Resume architecture mismatch: '+key)
-        if layout['positions']!=state['visual_layout']['positions']:raise ValueError('Resume token layout changed')
-        if cfg.get('semantic_prefix',0)!=state['config'].get('semantic_prefix',0):raise ValueError('Resume visual source changed; start from unaugmented parent')
+        from .qwen_vl_native_readout import valid_native_migration
+        migrating=valid_native_migration(cfg,state,args.visual_cache is not None)
+        if layout['positions']!=state['visual_layout']['positions'] and not migrating:raise ValueError('Resume token layout changed')
+        if cfg.get('semantic_prefix',0)!=state['config'].get('semantic_prefix',0) and not migrating:raise ValueError('Resume visual source changed; explicit native migration/cache required')
     model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,
         identity_probe=None if 'spatial' in state else probe)
     write_json(out/'zero_injection_identity.json',model.initial_identity if 'spatial' not in state else
