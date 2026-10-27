@@ -1,0 +1,56 @@
+{
+  "study": "Kather full-k TRAIN color and physical phase perturbation control",
+  "role": "post_test_development_extra_budget",
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "epochs": 4,
+  "freeze_router_epochs": 0,
+  "patience": 3,
+  "pilot_seed": 17,
+  "rollout_seeds": [
+    27,
+    37
+  ],
+  "recipes": [
+    "color",
+    "phase_color"
+  ],
+  "batch": 16,
+  "microbatch": 2,
+  "lr": 0.0001,
+  "lr_end_fraction": 0.2,
+  "group_lr_scales": {
+    "expert": 1.0,
+    "global": 0.5,
+    "router": 0.1
+  },
+  "kd_weight": 0.0,
+  "kd_temperature": 2.0,
+  "kd_gate": "Teacher argmax is correct AND its correct-label probability exceeds detached student correct-label probability",
+  "required_validation_gain_correct": 4,
+  "maximum_optimized_epochs_across_jobs": 16,
+  "student_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027",
+  "teacher_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026",
+  "student_sha256": {
+    "17": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+    "27": "d0def9c832863ddf947ad8677d5108a2238526b72f5fe88383d5ed938498a7d9",
+    "37": "39f88b7585fb58f4f4fdf9ed821226144ffe6fe40945d5774865f6a3c5481389"
+  },
+  "teacher_sha256": {
+    "17": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+    "27": "6c496428ed22bdc0847b0a07f3bc669bfe4a738577017228dfac502d4e14a2cc",
+    "37": "5a3a0c735c45aafc9bdf607f54f48dc3ecc21eb3d2703f74bce6ed8034d9beb6"
+  },
+  "inference": "Original ScalingOptics N49/k49 and router temperature0.05; clean RGB; model.eval disables phase perturbation; no teacher or new inference parameters",
+  "training": "Both recipes use stateless TRAIN-only RGB**channel_gain augmentation and joint differential-LR optimization from start. phase_color additionally uses phase_noise_std0.02 already implemented in ScalingOptics; eval mode disables noise. Reset AdamW and live/EMA from source selected EMA.",
+  "selection": "VAL accuracy then NLL, include source best; choose recipe before TEST; rollout to27/37 only if >=4 more correct VAL examples",
+  "supersedes": "Staged and confidence-gated distillation both stopped at three epochs without VAL benefit; existing selected source and TEST preserved, no rollout. This separate profile uses the remaining finite method budget.",
+  "study_kind": "training_robustness",
+  "color_gain_range": [
+    0.9,
+    1.1
+  ],
+  "phase_noise_std": 0.02,
+  "prior_staged_distill_epoch_jobs": 6,
+  "total_method_campaign_maximum_epoch_jobs": 22,
+  "campaign_ceiling": 24
+}

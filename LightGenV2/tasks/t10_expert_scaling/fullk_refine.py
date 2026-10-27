@@ -1,4 +1,4 @@
-"""Paired full-k optimization control and TRAIN-only sparse-teacher distillation."""
+"""Bounded full-k training-method studies with unmodified optical inference."""
 import argparse
 import copy
 import json
@@ -18,18 +18,33 @@ from .expert_tail_schedule import save, sha
 def validate(cfg):
     if cfg['gpu_uuid'] != 'GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd':
         raise ValueError('Only GPU3 is authorized')
-    if cfg['epochs'] != 6 or cfg['freeze_router_epochs'] != 2 or cfg['patience'] != 3:
+    robust = cfg.get('study_kind') == 'training_robustness'
+    if cfg['epochs'] != (4 if robust else 6) or cfg['freeze_router_epochs'] != (0 if robust else 2) or cfg['patience'] != 3:
         raise ValueError('Keep the bounded, staged optimization budget')
     if cfg['pilot_seed'] != 17 or cfg['rollout_seeds'] != [27, 37]:
         raise ValueError('Seed identity changed')
-    if cfg['recipes'] != ['staged', 'distill'] or cfg['batch'] != 16 or cfg['microbatch'] != 2:
+    recipes = ['color', 'phase_color'] if robust else ['staged', 'distill']
+    if cfg['recipes'] != recipes or cfg['batch'] != 16 or cfg['microbatch'] != 2:
         raise ValueError('Paired training contract changed')
     if cfg['required_validation_gain_correct'] != 4:
         raise ValueError('Rollout is selected using validation only')
-    if cfg['lr'] != 5e-5 or cfg['group_lr_scales'] != {'expert': 1., 'global': .5, 'router': .1}:
+    if cfg['lr'] != (1e-4 if robust else 5e-5) or cfg['group_lr_scales'] != {'expert': 1., 'global': .5, 'router': .1}:
         raise ValueError('Keep paired conservative parameter-group learning rates')
-    if cfg['kd_weight'] != .3 or cfg['kd_temperature'] != 2. or cfg['lr_end_fraction'] != .2:
+    if cfg['kd_weight'] != (0. if robust else .3) or cfg['kd_temperature'] != 2. or cfg['lr_end_fraction'] != .2:
         raise ValueError('Distillation or learning-rate budget changed')
+    if robust and (cfg['color_gain_range'] != [.9, 1.1] or cfg['phase_noise_std'] != .02):
+        raise ValueError('Keep bounded TRAIN-only image/phase perturbations')
+
+
+def color_augmentation(batch, indices, epoch, seed, cfg):
+    """RGB**gain is channel-wise optical-density scaling; black/white stay fixed."""
+    low, high = cfg['color_gain_range']
+    parameters = []
+    for index in indices.tolist():
+        rng = random.Random((seed * 1000003 + epoch * 1000033 + index) * 1000037 + 2718281)
+        parameters.append([rng.uniform(low, high) for _ in range(3)])
+    gain = batch.new_tensor(parameters)[:, :, None, None]
+    return batch.clamp(0, 1).pow(gain)
 
 
 def choose(rows, baseline):
@@ -101,6 +116,8 @@ def worker(cfg, out, profile, seed, recipe):
     splits, manifest = data(cache)  # Only TRAIN and VAL arrays are read.
     protocol = copy.deepcopy(original['protocol'])
     tc = protocol['training_proposal']
+    if cfg.get('study_kind') == 'training_robustness':
+        tc['phase_noise_std'] = cfg['phase_noise_std'] if recipe == 'phase_color' else 0.
     model = ScalingOptics(protocol, 49, 49, 'moe_oeo', len(manifest['classes']), args['layers'], args['padding']).cuda()
     model.load_state_dict(torch.load(source / 'best_checkpoint.pt', map_location='cpu', weights_only=False)['model'])
     ema = copy.deepcopy(model).eval().requires_grad_(False)
@@ -128,7 +145,7 @@ def worker(cfg, out, profile, seed, recipe):
                     inference='Unmodified ScalingOptics N49/k49, original router temperature0.05'),
                     pid=os.getpid(), cuda_visible_devices=os.environ['CUDA_VISIBLE_DEVICES'])
     metadata.pop('diagnosis', None)
-    metadata['arguments'].update(out=str(out), epochs=126, lr=cfg['lr'])
+    metadata['arguments'].update(out=str(out), epochs=120 + cfg['epochs'], lr=cfg['lr'])
     save(out / 'metadata.json', metadata)
     initial, _ = evaluate(ema, splits['val'], 2)
     if abs(initial['accuracy'] - baseline['val']['accuracy']) > 1.001 / 752:
@@ -163,6 +180,8 @@ def worker(cfg, out, profile, seed, recipe):
             for offset in range(0, len(effective), 2):
                 ix = effective[offset:offset + 2]
                 batch = images(x, ix, epoch, seed, True)
+                if cfg.get('study_kind') == 'training_robustness':
+                    batch = color_augmentation(batch, ix, epoch, seed, cfg)
                 output = model(batch)
                 labels = y[ix].cuda()
                 supervised = objective(model, output, labels, weights, tc)
@@ -202,6 +221,7 @@ def worker(cfg, out, profile, seed, recipe):
                      router_frozen=not model.router_phase.requires_grad, gradient_norm=float(norm), gradients=gradients,
                      supervised_loss=totals['supervised'] / batches, kd_loss=totals['distillation'] / batches,
                      kd_eligible_fraction=totals['eligible_fraction'] / batches,
+                     phase_noise_std=model.phase_noise_std,
                      teacher_forwards=totals['teacher_forwards'], elapsed_seconds=time.time() - started)
         history.append(entry)
         save(out / 'history.json', history)
@@ -380,7 +400,7 @@ def main():
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--worker', action='store_true')
     parser.add_argument('--seed', type=int)
-    parser.add_argument('--recipe', choices=['staged', 'distill'])
+    parser.add_argument('--recipe', choices=['staged', 'distill', 'color', 'phase_color'])
     args = parser.parse_args()
     cfg = json.loads(args.profile.read_text())
     validate(cfg)
