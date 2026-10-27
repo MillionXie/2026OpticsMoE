@@ -221,9 +221,15 @@ def run(args,cfg):
         ids=train_eval
         names={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='val'}
         val_ids=[i for i in val_ids if payload['rows'][i]['sample_id'] in names]
+    if cfg.get('expected_train_pairs',len(ids))!=len(ids) or cfg.get('expected_evaluation_pairs',len(val_ids))!=len(val_ids):
+        raise ValueError('Approved pair budget differs; inspect exclusions before training')
+    evaluation_label=cfg.get('evaluation_label','validation')
+    if evaluation_label=='development_test' and not (cfg.get('test_selection_authorized') and data_audit.get('test_selection_authorized')):
+        raise ValueError('Development-test selection requires the authorized data protocol')
     write_json(out/'annotation_audit.json',audit)
     write_json(out/'active_pairs.json',{'cache_sha256':cache_digest,
         'train':[payload['rows'][i] for i in ids],'val':[payload['rows'][i] for i in val_ids],
+        'evaluation_label':evaluation_label,'independent_test_claim':False,
         'note':'Identity-preserving subset of verified full-Qwen cache; excluded categories receive no optimization/evaluation'})
     write_json(out/'config.json',cfg)
     write_json(out/'execution.json',{'argv':sys.argv,'git':identity(),'started_unix':time.time(),
@@ -378,6 +384,7 @@ def run(args,cfg):
     without=evaluate(model,payload,val_ids,device,out,'val_without_spatial',metric,export=True)
     model.zero_spatial=False
     write_json(out/'report.json',{'complete':True,'best_step':best_step,'best_val':val,'train':train,
+       'evaluation_label':evaluation_label,'evaluation_used_for_selection':True,'independent_test_claim':False,
        'selection_metric':selector,'best_selection_score':best,'epochs_completed':steps*effective/len(ids),
        'val_before_paired_training':before,'val_without_spatial':without,'parameters':counts,
        'train_optimization_pairs':len(ids),'train_evaluation_pairs':len(train_eval),'test_evaluated':False,

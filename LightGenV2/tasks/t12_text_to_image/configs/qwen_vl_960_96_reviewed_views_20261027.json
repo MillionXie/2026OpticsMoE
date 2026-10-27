@@ -1,0 +1,20 @@
+{
+  "basis": "Visual review of every candidate and all available lamp views; select full frontal table-lamp bodies, remove tripod evaluation lamp; pillow face-consistency screen retained. No model outputs or metrics used.",
+  "remove_products": {"val": ["B073P39KRV"]},
+  "views": {
+    "train": {
+      "B075X1T4ZS": [2, 5], "B075X2Y3VK": [2, 12],
+      "B075X12QV5": [5, 11], "B075X2Y3Q9": [5, 12],
+      "B075X2LKNZ": [6, 19], "B076V4XHNG": [6, 11],
+      "B075X3S2Z1": [5, 12], "B075X3S2Z5": [12, 20],
+      "B075X2FW6F": [2, 12], "B075X2NLKP": [5, 11],
+      "B07MF1S1Z2": [2, 5], "B075X2BH3Z": [12, 21],
+      "B07B4W2X69": [6, 19], "B075X12JW7": [6, 11],
+      "B075X1KVK8": [6, 12], "B075X12HWJ": [5, 25]
+    },
+    "val": {
+      "B075X1T517": [2, 6], "B07B4W2GY1": [17, 21],
+      "B07B4VYKPR": [2, 11], "B076V9V7DM": [5, 17]
+    }
+  }
+}

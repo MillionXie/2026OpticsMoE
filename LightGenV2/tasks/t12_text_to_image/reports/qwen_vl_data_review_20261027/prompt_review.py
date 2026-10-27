@@ -34,7 +34,8 @@ def main():
     assert report['checkpoint_sha256'] == manifest['checkpoint_sha256']
     records = report['best_val']['images']
     selected = [(i, r) for i, r in enumerate(records) if r['category'] in ('lamp', 'pillow')]
-    assert len(selected) == 24 and len({r['sample_id'] for _, r in selected}) == 24
+    assert selected and len({r['sample_id'] for _, r in selected}) == len(selected)
+    evaluation_label=report.get('evaluation_label','validation')
     args.output.mkdir(parents=True, exist_ok=True)
     entries = []
     for i, record in selected:
@@ -52,7 +53,7 @@ def main():
         writer.writerows(r for _, r in selected)
     blocks = ['<!doctype html><meta charset="utf-8"><title>T12 exact prompts and VAL outputs</title>',
               '<style>body{font:16px Arial;max-width:1050px;margin:24px auto}article{border-bottom:1px solid #aaa;padding:16px 0}figure{display:inline-block;margin:8px}img{width:256px;height:256px}pre{white-space:pre-wrap}figcaption{margin:8px}</style>',
-              '<h1>Lamp + pillow: all 24 existing VAL cases</h1><p>Subset of the existing three-category model; no new training. Native 256 PNG pixels, no enhancement. Target is offline evaluation only. Exact English prompts are retained.</p>']
+              f'<h1>Lamp + pillow: all {len(selected)} {html.escape(evaluation_label)} cases</h1><p>Existing checkpoint outputs, not new inference or training. Native 256 PNG pixels, no enhancement. Target is offline evaluation only. Exact English prompts are retained. Evaluation participates in model selection; no independent TEST claim.</p>']
     for i, r, paths in entries:
         blocks.append(f'<article><h2>{i:02d} {html.escape(r["category"]+" / "+r["mode"])}</h2><pre>{html.escape(r["sample_id"])}</pre><p><b>Prompt:</b> {html.escape(r["prompt"])}</p><p>PSNR {r["psnr"]:.3f} dB; LPIPS {r["lpips"]:.3f}; edited-region PSNR {r["edited_psnr"]:.3f} dB</p>')
         for role, path in paths.items():
@@ -70,8 +71,8 @@ def main():
             seen = set()
             for entry in entries:
                 r = entry[1]
-                source_id = r['sample_id'].split(':')[2]
-                if (r['category'], r['mode']) == (category, mode) and source_id not in seen:
+                source_id = r['sample_id'].split(':')[2].rsplit('-',1)[0]
+                if (r['category'], r['mode']) == (category, mode) and source_id not in seen and len(seen)<2:
                     seen.add(source_id)
                     examples.append(entry)
         assert len(examples) == 4, 'Require both held-out products in both categories'
@@ -93,7 +94,8 @@ def main():
                 sheet.paste(image, (x, y+212))
                 assert np.array_equal(np.asarray(sheet.crop((x, y+212, x+256, y+468))), np.asarray(image))
         sheet.save(args.output/f'{name}_prompt_examples.png')
-    summary = {'scope': 'Existing three-category checkpoint, lamp/pillow 24-case development VAL subset; NOT retrained two-category performance',
+    summary = {'scope': 'Existing checkpoint, lamp/pillow development evaluation outputs; no independent TEST claim',
+               'evaluation_label':evaluation_label,
                'checkpoint_sha256': report['checkpoint_sha256'], 'source_report_sha256': digest(args.run/'report.json'),
                'input_manifest_sha256': digest(args.run/'overview/image_manifest.json'),
                'renderer_source_sha256': digest(Path(__file__)), 'exact_prompts': True, 'native_tile_size': [256, 256],

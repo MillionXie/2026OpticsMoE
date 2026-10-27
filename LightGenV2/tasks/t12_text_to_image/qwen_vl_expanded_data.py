@@ -157,11 +157,51 @@ def annotate(screen_dir,qwen,gpu):
       'profile_sha256':sha256(screen_dir/'annotated_profile.json'),'product_count':len(annotations),'source_sha256':sha256(Path(__file__))})
 
 
+def revise(data,out,revisions):
+    if (out/'manual_revision.json').exists():raise ValueError('Reviewed revision already applied')
+    rules=json.loads(revisions.read_text());profile=json.loads((out/'screen_profile.json').read_text());products=json.loads((out/'screened_products.json').read_text())
+    original=sha256(out/'screen_profile.json')
+    for name in ('screen_profile.json','screened_products.json','screen_report.json'):
+        (out/('automatic_'+name)).write_bytes((out/name).read_bytes())
+    for split,groups in rules['views'].items():
+        raw=[json.loads(s) for s in (data/(split+'.jsonl')).read_text().splitlines()];lookup={r['sample_id']:r for r in raw}
+        products[split]=[p for p in products[split] if p['product_id'] not in rules.get('remove_products',{}).get(split,[])]
+        for sku,views in groups.items():
+            rows=[]
+            for view in views:
+                r=dict(lookup[f'lamp-{sku}-{view:02d}'])
+                for k in ('image_path','mask_path'):r[k]=str((data/r[k]).resolve())
+                r.update(product_id=sku,family_id=r.get('family_id') or r.get('parent_id') or sku)
+                r['rgba_sha256']=_pixels_hash(r);r['quality']=view_quality(r) or {'manual_complete_frontal_view_override':True}
+                with Image.open(r['mask_path']) as im:mask=np.asarray(im.convert('L'))>.1*255
+                y,x=np.where(mask)
+                if not len(x) or min(x.min(),y.min(),mask.shape[1]-1-x.max(),mask.shape[0]-1-y.max())<2:raise ValueError('Manual view is empty/clipped')
+                rows.append(r)
+            products[split]=[p for p in products[split] if p['product_id']!=sku]
+            products[split].append({'category':'lamp','product_id':sku,'views':views,'description':'','source_rows':rows})
+        products[split].sort(key=lambda p:(p['category'],p['product_id']))
+    for split,group in products.items():
+        expected=16 if split=='train' else 4
+        if any(sum(p['category']==cat for p in group)!=expected for cat in ('lamp','pillow')):raise ValueError('Reviewed product quota changed')
+        profile['products'][split]=[{k:v for k,v in p.items() if k!='source_rows'} for p in group]
+        for cat in ('lamp','pillow'):
+            chosen=[p for p in group if p['category']==cat];sheet=Image.new('RGB',(1280,190*math.ceil(len(chosen)/4)),'white');draw=ImageDraw.Draw(sheet)
+            for i,p in enumerate(chosen):
+                x=i%4*320;y=i//4*190;draw.text((x+3,y+3),p['product_id'],fill='black')
+                for j,r in enumerate(p['source_rows']):
+                    fg,alpha=normalized_product(r,256);im=Image.composite(fg,Image.new('RGB',(256,256),'white'),alpha);im.thumbnail((155,155));sheet.paste(im,(x+j*160,y+30));draw.text((x+j*160+3,y+17),str(p['views'][j]),fill='black')
+            sheet.save(out/f'{split}_{cat}_reviewed.png')
+    profile['manual_view_overrides_sha256']=sha256(revisions);profile['selection_basis']+=' '+rules['basis']
+    write_json(out/'screen_profile.json',profile);write_json(out/'screened_products.json',products)
+    write_json(out/'manual_revision.json',{'original_profile_sha256':original,'revisions_sha256':sha256(revisions),'revised_profile_sha256':sha256(out/'screen_profile.json'),'basis':rules['basis']})
+
+
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',choices=('screen','annotate'),required=True)
-    for k in ('data','output','parent-data','qwen'):p.add_argument('--'+k,type=Path)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',choices=('screen','revise','annotate'),required=True)
+    for k in ('data','output','parent-data','qwen','revisions'):p.add_argument('--'+k,type=Path)
     p.add_argument('--gpu-uuid');p.add_argument('--exclude-product',action='append',default=[]);a=p.parse_args()
     if a.stage=='screen':screen(a.data,a.output,a.parent_data,a.exclude_product)
+    elif a.stage=='revise':revise(a.data,a.output,a.revisions)
     else:annotate(a.output,a.qwen,a.gpu_uuid)
 
 

@@ -77,7 +77,7 @@ def main():
         examples.append({'sample_id':r['sample_id'],'val_index':index,'prompt':r['prompt'],'sources':provenance})
     panel.save(args.output/'fixed_nine_mode_comparison.png')
     small=Image.new('RGB',(1280,930),'white')
-    for j,i in enumerate((0,4,8)):small.paste(panel.crop((0,i*310,1280,(i+1)*310)),(0,j*310))
+    for j,i in enumerate(((m%len(categories))*3+m for m in range(3))):small.paste(panel.crop((0,i*310,1280,(i+1)*310)),(0,j*310))
     small.save(args.output/'fixed_three_mode_preview.png')
     summary={'scope':'Development VAL only; all generator comparisons on the same A100',
       'train_pairs':report['train_optimization_pairs'],'val_pairs':len(ids),'best_step':report['best_step'],
