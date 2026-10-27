@@ -89,6 +89,17 @@ class SpatialTests(unittest.TestCase):
         model=SpatialTurboHead(UNet(),VAE(),None,None,bridge,[1,2,3,4])
         with self.assertRaises(ValueError):model.visual_tokens(torch.randn(1,6,16),torch.tensor([[1,1,1,1,0,0]],dtype=torch.bool))
 
+    def test_focused_readout_only_uses_verified_instruction_span(self):
+        torch.manual_seed(5)
+        adapter=QueryResampler(16,16,8,4,1)
+        model=SpatialTurboHead(UNet(),VAE(),None,adapter,SpatialBridge(16,16,16,2),[1,2,3,4]).eval()
+        model.instruction_span=(6,2);model.text_readout_gain=.15
+        h=torch.randn(2,12,16);valid=torch.ones(2,12,dtype=torch.bool)
+        mask=valid.clone();mask[:,:6]=False;mask[:,10:]=False
+        torch.testing.assert_close(model.semantic_conditions(h,valid),adapter(h,mask),atol=0,rtol=0)
+        altered=h.clone();altered[:,:6]+=100
+        torch.testing.assert_close(model.semantic_conditions(altered,valid),model.semantic_conditions(h,valid),atol=0,rtol=0)
+
     def test_region_balance_does_not_hide_small_edit(self):
         pred=torch.zeros(1,3,4,4,requires_grad=True);target=torch.zeros_like(pred)
         target[:,:,0,0]=1;region=torch.zeros(1,1,4,4);region[:,:,0,0]=1

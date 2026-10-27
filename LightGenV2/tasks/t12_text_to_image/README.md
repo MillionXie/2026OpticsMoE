@@ -33,6 +33,18 @@ TRAIN为32款／64视图／960对，DEV为另外8款／16视图／96对，每任
 六个任务单元的原生tile汇总。它们是**重制数据示例，不是新模型生成效果**。
 该新协议尚无训练权重／模型分数；旧复杂场景权重没有被覆盖。
 
+用户授权随后6小时自主推进电子效果与LG同口径>=2×。电子候选配置为
+`qwen_vl_simple_baseline_20261028.json`：先从新参考RGB＋7–12词指令重新缓存完整冻结
+Qwen视觉24／语言28输出，再从已训电子空间头继续最多60轮，DEV每2轮选LPIPS best，
+12轮无改善早停；不排除同款式多商品样本，保持960／96预算。可选原生instruction
+读出由processor逐行验证token边界，只让现有语义resampler关注指令token，并以固定
+0.15 RMS增益将其上下文混入已有空间读出；不增网络、参考VAE分支或额外TF。
+冻结Qwen／VAE，训练原adapter、空间读出、UNet cross-attention／LoRA／空间注入；
+以新TRAIN latent／区域RGB／感知及参考辅助损失学习简单编辑，不再对齐旧复杂caption。
+保存best／last、四步真实反向smoke及学习曲线，完成须核查短指令实际执行，不能只看清晰度。
+缓存入口`qwen_vl_simple_edits --stage cache`按准备清单SHA核对，不复用旧复杂场景特征。
+本候选初始化使用已训生成骨干，后续所有LG对比必须在同一新协议上重做，不能借用旧均值。
+
 **2026-10-28公开生成先验轻量修复pilot已完成，未通过质量验收。**
 run `qwen_vl_baseline_nativeprior_20261028`在600步TRAIN条件暖启动后完成10轮，
 选择step1200，SHA`22c62dfb252fb55ec6e5c26923f3c20dec478425b390df8b5f647fd990e3cbcf`。

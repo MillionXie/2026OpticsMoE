@@ -64,6 +64,8 @@ class SpatialTurboHead(NativeTurboHead):
         self.semantic_prefix=semantic_prefix
         self.register_buffer('visual_positions',torch.tensor(positions,dtype=torch.long),persistent=False)
         self.zero_spatial=False
+        self.instruction_span = None
+        self.text_readout_gain = 0.
 
     def visual_tokens(self,hidden,valid):
         positions=self.visual_positions
@@ -76,10 +78,17 @@ class SpatialTurboHead(NativeTurboHead):
         return z,rgb
 
     def semantic_conditions(self,hidden,valid):
+        if self.instruction_span is not None:
+            from .qwen_vl_postfree import focus_features
+            _, mask = focus_features(hidden, valid, self.visual_positions, *self.instruction_span, self.text_readout_gain)
+            return self.adapter(hidden, mask)
         return self.adapter(hidden[:,self.semantic_prefix:],valid[:,self.semantic_prefix:])
 
     def forward_with_aux(self,hidden,valid,noise,with_aux=True):
         visual=self.visual_tokens(hidden,valid)
+        if self.instruction_span is not None:
+            from .qwen_vl_postfree import focus_features
+            visual, _ = focus_features(hidden, valid, self.visual_positions, *self.instruction_span, self.text_readout_gain)
         if with_aux:spatial,aux=self.spatial(visual,with_aux=True)
         else:spatial,aux=self.spatial(visual),None
         if self.zero_spatial:spatial=spatial*0
@@ -143,6 +152,9 @@ def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False,iden
     spatial=SpatialBridge(width=cfg['spatial_width'],channels=cfg['spatial_channels'],grid=cfg['visual_grid']).to(device)
     if 'spatial' in state:spatial.load_state_dict(state['spatial'])
     model=SpatialTurboHead(unet,vae,scheduler,adapter,spatial,positions,cfg.get('semantic_prefix',0))
+    if cfg.get('focus_instruction'):
+        model.instruction_span = tuple(cfg['instruction_bounds'])
+        model.text_readout_gain = cfg.get('text_readout_gain', .15)
     if identity_probe is not None:
         model.eval()
         with torch.no_grad():actual=model(*identity_probe)

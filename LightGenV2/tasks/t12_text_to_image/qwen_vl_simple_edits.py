@@ -232,7 +232,27 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     for key in ('source', 'profile', 'output'):
         p.add_argument('--'+key, type=Path, required=True)
-    a = p.parse_args();print(json.dumps(prepare(a.source, a.profile, a.output), indent=2))
+    p.add_argument('--stage', choices=('prepare', 'cache'), default='prepare')
+    p.add_argument('--qwen', type=Path);p.add_argument('--sd', type=Path);p.add_argument('--gpu-uuid')
+    a = p.parse_args()
+    if a.stage == 'prepare':
+        print(json.dumps(prepare(a.source, a.profile, a.output), indent=2));return
+    report = json.loads((a.output/'report.json').read_text())
+    if not report['complete'] or sha256(a.profile) != report['profile_sha256'] or sha256(a.output/'annotated_pairs.json') != report['pair_sha256']:
+        raise ValueError('Prepared simple data identity differs')
+    if not a.qwen or not a.sd or os.environ.get('CUDA_VISIBLE_DEVICES') != a.gpu_uuid:
+        raise ValueError('Explicit approved GPU and public backbones required')
+    import torch,sys,time
+    from .qwen_vl_turbo_run import cache
+    torch.set_num_threads(4);torch.manual_seed(1042);torch.cuda.set_per_process_memory_fraction(.65, 0)
+    write_json(a.output/'cache_execution.json', {'pid': os.getpid(), 'argv': sys.argv, 'started_unix': time.time(),
+        'source_commit': os.environ.get('T12_SOURCE_COMMIT'), 'gpu_uuid': a.gpu_uuid,
+        'source_sha256': sha256(Path(__file__)), 'original_pair_sha256': report['pair_sha256']})
+    rows = json.loads((a.output/'annotated_pairs.json').read_text())
+    digest = cache(a, {'image_size': 256, 'use_all_pairs': True, 'uint8_image_cache': True,
+                      'clip_cache_batch_size': 16}, rows, torch.device('cuda:0'))
+    write_json(a.output/'cache_complete.json', {'complete': True, 'sha256': digest, 'samples': len(rows),
+        'source_commit': os.environ.get('T12_SOURCE_COMMIT'), 'reference_RGB_and_short_text_only': True})
 
 
 if __name__ == '__main__':

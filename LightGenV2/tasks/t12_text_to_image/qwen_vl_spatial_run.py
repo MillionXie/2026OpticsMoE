@@ -27,10 +27,11 @@ def identity():
 
 def verify_layout(payload,qwen,output):
     from transformers import AutoProcessor
+    from .qwen_vl_postfree import instruction_bounds
     processor=AutoProcessor.from_pretrained(qwen,local_files_only=True,min_pixels=65536,max_pixels=65536)
     config=json.loads((qwen/'config.json').read_text(encoding='utf-8'))
     token_id=config['image_token_id'];count=64
-    positions=None
+    positions=None;span=None
     probes={0,len(payload['rows'])-1,next(i for i,r in enumerate(payload['rows']) if r['split']=='val')}
     dummy=tensor_image(payload['reference'][0])
     for i,row in enumerate(payload['rows']):
@@ -38,6 +39,9 @@ def verify_layout(payload,qwen,output):
         text=processor.apply_chat_template(messages,tokenize=False,add_generation_prompt=True,enable_thinking=False)
         expanded=text.replace(processor.image_token,processor.image_token*count)
         ids=processor.tokenizer(expanded,return_tensors='pt')['input_ids'][0]
+        bounds=instruction_bounds(ids,processor.tokenizer.convert_tokens_to_ids('<|vision_end|>'),processor.tokenizer.convert_tokens_to_ids('<|im_end|>'))
+        if span is None:span=bounds
+        if bounds!=span:raise ValueError('Native instruction token boundaries changed')
         found=torch.where(ids==token_id)[0].tolist()
         if len(found)!=count or len(ids)!=len(payload['hidden'][i]):
             raise ValueError('Processor and frozen hidden layout differ for '+row['sample_id'])
@@ -47,7 +51,7 @@ def verify_layout(payload,qwen,output):
             actual=processor(text=[text],images=[tensor_image(payload['reference'][i])],return_tensors='pt')
             if actual['image_grid_thw'].tolist()!=[[1,16,16]] or not torch.equal(actual['input_ids'][0],ids):
                 raise ValueError('Actual processor image expansion disagrees with layout verification')
-    result={'positions':positions,'merged_grid':[8,8],'unmerged_grid':[1,16,16],
+    result={'positions':positions,'instruction_bounds':span,'merged_grid':[8,8],'unmerged_grid':[1,16,16],
       'checked_rows':len(payload['rows']),'actual_processor_probes':sorted(probes),
       'image_token_id':token_id,'qwen_config_sha256':sha256(qwen/'config.json'),
       'ordering':'Qwen3-VL rot_pos_emb traverses merged block rows/columns; merger reduces each contiguous 2x2 block; no window permutation in this installed forward',
@@ -194,6 +198,8 @@ def run(args,cfg):
     # Modify only in-memory sampling state; the parent cache is never overwritten.
     payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
     layout=verify_layout(payload,args.qwen,out)
+    if cfg.get('focus_instruction'):
+        cfg['instruction_bounds']=layout['instruction_bounds']
     native_digest=None
     if args.visual_cache:
         ready=json.loads((args.visual_cache/'report.json').read_text())
@@ -236,7 +242,7 @@ def run(args,cfg):
        'torch':torch.__version__,'parent_run':str(args.parent),'parent_checkpoint_sha256':sha256(checkpoint),
        'cache_sha256':cache_digest,'data_run':str(data_run),'parent_cache_sha256':state['cache_sha256'],
        'native_visual_cache_sha256':native_digest,
-       'data_profile_sha256':data_audit['profile_sha256'] if args.data_run else None,
+       'data_profile_sha256':(data_audit.get('profile_sha256') or json.loads((data_run/'report.json').read_text())['profile_sha256']) if args.data_run else None,
        'train_pairs':len(ids),'val_pairs':len(val_ids),
        'test_opened':False,'visual_layout':layout,'gpu_uuid':os.environ.get('CUDA_VISIBLE_DEVICES')})
     if args.stage=='layout':return
@@ -356,6 +362,9 @@ def run(args,cfg):
         norm=torch.nn.utils.clip_grad_norm_(params,1.)
         if not torch.isfinite(norm):raise FloatingPointError('Nonfinite gradient')
         optimizer.step()
+        if step==4:
+            write_json(out/'smoke_report.json',{'real_backward_steps':4,'finite_loss_gradient':True,
+                       'TRAIN_only':True,'Qwen_frozen':True,'VAE_frozen':not any(p.requires_grad for p in model.vae.parameters())})
         if step%10==0:
             print('paired',step,'/',steps,'loss',total,terms,flush=True)
             write_json(out/'progress.json',{'stage':'paired','step':step,'total_steps':steps,'loss':total,'terms':terms,'best_step':best_step,'best_val_psnr':best_psnr,'selection_metric':selector,'learning_rates':[g['lr'] for g in optimizer.param_groups]})
@@ -373,6 +382,8 @@ def run(args,cfg):
             if selection_score(val,selector)>best:
                 best=selection_score(val,selector);best_psnr=val['mean_per_image_psnr_db'];best_step=step;torch.save(saved,out/'best_checkpoint.pt')
             write_json(out/'history.json',history)
+            if cfg.get('early_stop_evaluations') and step-best_step>=cfg['early_stop_evaluations']*cfg['eval_every']:
+                break
     selected=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     model.adapter.load_state_dict(selected['adapter']);model.spatial.load_state_dict(selected['spatial'])
     with torch.no_grad():
@@ -385,7 +396,7 @@ def run(args,cfg):
     model.zero_spatial=False
     write_json(out/'report.json',{'complete':True,'best_step':best_step,'best_val':val,'train':train,
        'evaluation_label':evaluation_label,'evaluation_used_for_selection':True,'independent_test_claim':False,
-       'selection_metric':selector,'best_selection_score':best,'epochs_completed':steps*effective/len(ids),
+       'selection_metric':selector,'best_selection_score':best,'epochs_completed':step*effective/len(ids),
        'val_before_paired_training':before,'val_without_spatial':without,'parameters':counts,
        'train_optimization_pairs':len(ids),'train_evaluation_pairs':len(train_eval),'test_evaluated':False,
        'checkpoint_sha256':sha256(out/'best_checkpoint.pt'),'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],
