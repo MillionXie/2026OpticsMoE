@@ -35,5 +35,17 @@ class TransferTests(unittest.TestCase):
         self.assertIn('--defer-test',cmd)
         self.assertIn('--route-audit',cmd)
 
+    def test_three_chained_runs_partition_without_restarting(self):
+        jobs=[dict(experts=49,top_k=49,seed=s,source=f'90/{s}',out=f'120/{s}',
+                   best_sha256=f'best-{s}',last_sha256=f'last-{s}',source_epochs=90)
+              for s in [17,27,37]]
+        snapshot=dict(pending=[jobs[2]],complete=[],running={'11':jobs[0],'12':jobs[1]})
+        validate_partition(snapshot,jobs)
+        for field,value in [('last_sha256','replaced'),('source_epochs',60)]:
+            broken=copy.deepcopy(snapshot)
+            broken['pending'][0][field]=value
+            with self.assertRaises(ValueError):
+                validate_partition(broken,jobs)
+
 
 if __name__=='__main__':unittest.main()

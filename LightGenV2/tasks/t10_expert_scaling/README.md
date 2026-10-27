@@ -20,7 +20,14 @@ seed17/27/37第80至90轮VAL分别76.60→76.86%、78.32→78.19%、77.53→77.5
 GPU3 UUID固定`GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd`，最多两项并行，禁止其他GPU；
 调度结束或异常时仅回收本任务子进程并写release_check。新run为
 `runs/simulation/kather_n49k49_continue90to120_20261027`，不得复写上一轮目录。
-当前尚未产生本轮训练结果；训练源和配置先发布Git，再从Git逐路径同步服务器启动。
+用户随后追加授权GPU1（UUID `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`，
+PCI `1B:00.0`）启动待跑seed37。沿用`expert_tail_expand.py`接管同一个run的队列，
+GPU3的seed17/27保留原PID、权重、优化器、EMA和进度；seed37在GPU1从原90轮来源启动。
+不修改原profile文件，资源授权变更通过handoff snapshot/ack另记；总训练仍为三个seed各30轮。
+现控制器身份以`status.json.scheduler_pid`及`handoff_ack.json`为准，`plan.json.pid`为旧父进程。
+训练源固定`d7270f1de`，控制器单独记录发布commit，后续监测不把旧父进程退出误判为故障。
+两卡每卡最多两项本任务计算，只启动尚未运行的原待跑项；所有seed训练参数保持一致。
+完成后仍统一锁定三个验证best再TEST，释放两张卡上的本任务资源。
 
 ## 五组尾部微调最终结果（2026-10-27）
 

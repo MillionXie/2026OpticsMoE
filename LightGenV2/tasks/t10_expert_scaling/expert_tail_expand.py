@@ -21,13 +21,16 @@ def validate_partition(snapshot, jobs):
     groups = snapshot['pending']+snapshot['complete']+list(snapshot['running'].values())
     keys = [task_key(j) for j in groups]
     if len(expected) != len(jobs) or len(set(keys)) != len(keys) or set(keys) != expected:
-        raise ValueError('Handoff must partition all 15 unique tasks exactly once')
+        raise ValueError('Handoff must partition the configured unique tasks exactly once')
     by_key = {task_key(j):j for j in jobs}
     for j in groups:
         original = by_key[task_key(j)]
         for field in ('source', 'out', 'best_sha256'):
             if j[field] != original[field]:
                 raise ValueError(f'Handoff source/output identity changed: {field}')
+        for field in ('source_epochs', 'last_sha256'):
+            if j.get(field) != original.get(field):
+                raise ValueError(f'Handoff continuation identity changed: {field}')
 
 
 def process_matches(pid, module, out):
@@ -73,6 +76,8 @@ def main():
     adopted = False
     uuids = {gpu:subprocess.check_output(['nvidia-smi','-i',str(gpu),'--query-gpu=uuid',
                                         '--format=csv,noheader'], text=True).strip() for gpu in (1,3)}
+    if uuids[1] != 'GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d':
+        raise ValueError('GPU1 identity changed')
     if uuids[3] != 'GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd':
         raise ValueError('GPU3 identity changed')
     source_commit = plan['published_source_commit']
