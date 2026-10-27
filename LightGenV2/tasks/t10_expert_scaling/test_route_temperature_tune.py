@@ -4,12 +4,12 @@ import json
 from pathlib import Path
 import unittest
 
-from .route_temperature_tune import select_pilot, validate_profile
+from .route_temperature_tune import annealed_temperature, select_pilot, validate_profile
 
 
 class TemperatureStudyTests(unittest.TestCase):
     def setUp(self):
-        self.cfg = json.loads((Path(__file__).parent / 'configs/kather_n49_temperature_pilot_20261027.json').read_text())
+        self.cfg = json.loads((Path(__file__).parent / 'configs/kather_n49_temperature_anneal_20261027.json').read_text())
 
     def test_fixed_budget_and_gpu_boundary(self):
         validate_profile(self.cfg)
@@ -38,6 +38,19 @@ class TemperatureStudyTests(unittest.TestCase):
                       dict(val=dict(accuracy=.8, macro_nll=.6))]
         best, _ = select_pilot(candidates, .78, self.cfg)
         self.assertIs(best, candidates[1])
+
+    def test_schedule_starts_at_original_temperature_and_reaches_target(self):
+        for target in [.02, .01]:
+            values = [annealed_temperature(target, step) for step in range(1, 13)]
+            self.assertEqual(values[0], .05)
+            self.assertAlmostEqual(values[-1], target)
+            self.assertTrue(all(a > b for a, b in zip(values, values[1:])))
+
+    def test_abrupt_profile_is_rejected(self):
+        cfg = copy.deepcopy(self.cfg)
+        cfg.pop('temperature_schedule')
+        with self.assertRaises(ValueError):
+            validate_profile(cfg)
 
 
 if __name__ == '__main__':

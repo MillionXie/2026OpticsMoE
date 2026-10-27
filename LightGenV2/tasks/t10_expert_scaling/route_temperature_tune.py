@@ -25,6 +25,14 @@ def validate_profile(cfg):
         raise ValueError('Keep the existing batch contract')
     if cfg['required_validation_gain_correct'] != 4 or cfg['validation_samples'] != 752:
         raise ValueError('Validation-only rollout criterion changed')
+    if cfg.get('temperature_schedule') != 'linear_from_0.05_over_12_epochs':
+        raise ValueError('Use gradual input-power adaptation, not an abrupt temperature change')
+
+
+def annealed_temperature(target, step, epochs=12):
+    if target <= 0 or not 1 <= step <= epochs or epochs < 2:
+        raise ValueError('Invalid temperature schedule')
+    return .05 + (target - .05) * (step - 1) / (epochs - 1)
 
 
 def select_pilot(results, baseline_accuracy, cfg):
@@ -41,13 +49,15 @@ def model_factory(protocol, arguments, classes, temperature):
         def route(self, source, dense=False, ste=True):
             _, original_probability, mask = super().route(source, dense=dense, ste=ste)
             # softmax(log(softmax(score/0.05))*0.05/T) == softmax(score/T).
-            probability = (original_probability.clamp_min(1e-12).log() * (.05 / temperature)).softmax(1)
+            probability = (original_probability.clamp_min(1e-12).log() * (.05 / self.routing_temperature)).softmax(1)
             return probability.clamp_min(1e-12).sqrt(), probability, mask
 
     if int(arguments['experts']) != 49 or int(arguments['top_k']) != 49:
         raise ValueError('This study preserves all 49 active experts')
-    return TemperatureOptics(protocol, 49, 49, arguments['arch'], classes,
-                             int(arguments['layers']), int(arguments['padding']))
+    model = TemperatureOptics(protocol, 49, 49, arguments['arch'], classes,
+                              int(arguments['layers']), int(arguments['padding']))
+    model.routing_temperature = temperature
+    return model
 
 
 def source_identity(cfg, seed):
@@ -85,7 +95,7 @@ def verify_sources():
     return commit, hashes
 
 
-def worker(cfg, out, seed, temperature, profile_path):
+def worker(cfg, out, seed, temperature, profile_path, expected_source_sha=None):
     import numpy as np
     import torch
     from .train import data, images, objective, evaluate
@@ -97,6 +107,8 @@ def worker(cfg, out, seed, temperature, profile_path):
     np.random.seed(seed)
     random.seed(seed)
     source, original, source_result, digest = source_identity(cfg, seed)
+    if expected_source_sha is not None and digest != expected_source_sha:
+        raise ValueError('Rollout source changed after recipe lock')
     out.mkdir(parents=True, exist_ok=False)
     cache = Path(original['arguments']['data'])
     if sha(cache) != original['data_sha256']:
@@ -105,7 +117,7 @@ def worker(cfg, out, seed, temperature, profile_path):
     protocol = copy.deepcopy(original['protocol'])
     protocol['model']['routing_temperature'] = temperature
     tc = protocol['training_proposal']
-    model = model_factory(protocol, original['arguments'], len(manifest['classes']), temperature).cuda()
+    model = model_factory(protocol, original['arguments'], len(manifest['classes']), .05).cuda()
     state = torch.load(source / 'best_checkpoint.pt', map_location='cpu', weights_only=False)
     model.load_state_dict(state['model'])
     del state
@@ -118,7 +130,9 @@ def worker(cfg, out, seed, temperature, profile_path):
                     source_selected_epoch=source_result['best_epoch'], command=sys.argv,
                     profile_sha256=sha(profile_path), source_files=sources,
                     cuda_visible_devices=os.environ.get('CUDA_VISIBLE_DEVICES'), pid=os.getpid(),
-                    temperature_tune=dict(temperature=temperature, extra_epochs=12, lr_start=cfg['lr'],
+                    temperature_tune=dict(target_temperature=temperature,
+                                          temperature_schedule=cfg['temperature_schedule'],
+                                          extra_epochs=12, lr_start=cfg['lr'],
                                           lr_end=cfg['lr']*.1, optimizer_reset=True,
                                           live_and_ema_initialized_from_selected_ema=True,
                                           source_training_budget=120, not_exact_resume=True,
@@ -126,13 +140,16 @@ def worker(cfg, out, seed, temperature, profile_path):
     metadata['arguments'].update(out=str(out), epochs=132, lr=cfg['lr'])
     save(out / 'metadata.json', metadata)
     initial, _ = evaluate(ema, splits['val'], 2)
+    if abs(initial['accuracy'] - source_result['val']['accuracy']) > 1.001 / cfg['validation_samples']:
+        raise ValueError('The unchanged-temperature warm start does not reproduce source VAL')
     save(out / 'initial_val.json', initial)
     best_key = (-initial['accuracy'], initial['macro_nll'])
     best_epoch = 120
 
     def payload(epoch, val):
         return dict(model=ema.state_dict(), live_model=model.state_dict(),
-                    optimizer=optimizer.state_dict(), epoch=epoch, val=val, metadata=metadata)
+                    optimizer=optimizer.state_dict(), epoch=epoch, val=val, metadata=metadata,
+                    routing_temperature=ema.routing_temperature)
 
     torch.save(payload(120, initial), out / 'best_checkpoint.pt')
     x, y, _ = splits['train']
@@ -142,6 +159,7 @@ def worker(cfg, out, seed, temperature, profile_path):
     started = time.time()
     for step in range(1, 13):
         epoch = 120 + step
+        model.routing_temperature = ema.routing_temperature = annealed_temperature(temperature, step)
         model.train()
         order = torch.randperm(len(y), generator=torch.Generator().manual_seed(seed + epoch*100003))
         lr = cfg['lr'] * (.1 + .9*(1 + math.cos(math.pi*(step-1)/11))/2)
@@ -169,7 +187,8 @@ def worker(cfg, out, seed, temperature, profile_path):
                     ep.lerp_(p, 1-tc['ema_decay'])
             batches += 1
         val, _ = evaluate(ema, splits['val'], 2)
-        entry = dict(epoch=epoch, train_objective=total/batches, val=val, lr=lr,
+        entry = dict(epoch=epoch, temperature=ema.routing_temperature,
+                     train_objective=total/batches, val=val, lr=lr,
                      gradient_norm=float(norm), elapsed_seconds=time.time()-started)
         if step in (1, 5, 10, 12):
             entry['train'], _ = evaluate(ema, splits['train'], 2)
@@ -185,11 +204,13 @@ def worker(cfg, out, seed, temperature, profile_path):
         print(json.dumps(entry), flush=True)
     selected = torch.load(out / 'best_checkpoint.pt', map_location='cpu', weights_only=False)
     ema.load_state_dict(selected['model'])
+    ema.routing_temperature = selected['routing_temperature']
     train, _ = evaluate(ema, splits['train'], 2)
     val, _ = evaluate(ema, splits['val'], 2)
     for label in ('train', 'val'):
         save_route_audit(ema, splits[label], out / f'selected_{label}_routes.npz')
-    result = dict(seed=seed, temperature=temperature, best_epoch=best_epoch, train=train, val=val,
+    result = dict(seed=seed, temperature=ema.routing_temperature, target_temperature=temperature,
+                  best_epoch=best_epoch, train=train, val=val,
                   checkpoint_sha256=sha(out / 'best_checkpoint.pt'), source_best_sha256=digest,
                   original_temperature_val=source_result['val'], test_read=False)
     save(out / 'result.json', result)
@@ -255,13 +276,16 @@ def supervise(cfg, out, profile):
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
 
-    def launch(seed, temperature, directory):
+    def launch(seed, temperature, directory, source_sha=None):
         if int(subprocess.check_output(['nvidia-smi', '-i', '3', '--query-gpu=memory.free', '--format=csv,noheader,nounits'], text=True)) < 6000:
             raise RuntimeError('Insufficient free GPU3 memory; preserve the run and report')
         log = (out / (directory.name + '.log')).open('x')
-        proc = subprocess.Popen([sys.executable, '-u', '-m', __package__ + '.route_temperature_tune',
+        command = [sys.executable, '-u', '-m', __package__ + '.route_temperature_tune',
                 '--profile', str(profile), '--out', str(directory), '--worker', '--seed', str(seed),
-                '--temperature', str(temperature)], env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                '--temperature', str(temperature)]
+        if source_sha:
+            command.extend(['--source-sha', source_sha])
+        proc = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         running[proc.pid] = (proc, log, directory)
         pids.append(proc.pid)
 
@@ -300,9 +324,11 @@ def supervise(cfg, out, profile):
             for seed in cfg['rollout_seeds']:
                 p, _, _, h = source_identity(cfg, seed)
                 locks.append(dict(seed=seed, source=str(p), best_sha256=h))
-            save(out / 'rollout_sources_lock.json', dict(sources=locks, temperature=chosen['temperature']))
-            for seed in cfg['rollout_seeds']:
-                launch(seed, chosen['temperature'], out / f'rollout_T{chosen["temperature"]:g}_s{seed}')
+            save(out / 'rollout_sources_lock.json', dict(sources=locks, target_temperature=chosen['target_temperature']))
+            for locked in locks:
+                seed = locked['seed']
+                launch(seed, chosen['target_temperature'],
+                       out / f'rollout_T{chosen["target_temperature"]:g}_s{seed}', locked['best_sha256'])
             finals.extend(collect('rollout_training', test_when_complete=True))
         rows = []
         for p in finals:
@@ -310,7 +336,7 @@ def supervise(cfg, out, profile):
             result.update(test=json.loads((p / 'test_result.json').read_text())['test'], run=str(p))
             rows.append(result)
         save(out / 'summary.json', dict(role='validation_selected_temperature_development', rollout=rollout,
-                                        selected_temperature=chosen['temperature'], rows=rows))
+                                        target_temperature=chosen['target_temperature'], rows=rows))
         save(out / 'status.json', dict(state='complete', scheduler_pid=os.getpid(), rollout=rollout, running={}))
     except BaseException as error:
         save(out / 'status.json', dict(state='failed', error=repr(error), scheduler_pid=os.getpid()))
@@ -335,12 +361,13 @@ def main():
     ap.add_argument('--worker', action='store_true')
     ap.add_argument('--seed', type=int)
     ap.add_argument('--temperature', type=float)
+    ap.add_argument('--source-sha')
     a = ap.parse_args()
     cfg = json.loads(a.profile.read_text())
     validate_profile(cfg)
     if a.worker:
         try:
-            worker(cfg, a.out, a.seed, a.temperature, a.profile)
+            worker(cfg, a.out, a.seed, a.temperature, a.profile, a.source_sha)
         except BaseException as error:
             if a.out.exists():
                 save(a.out / 'status.json', dict(state='failed', error=repr(error), pid=os.getpid()))

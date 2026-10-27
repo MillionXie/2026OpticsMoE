@@ -7,13 +7,19 @@
 观察到seed17/27选定权重的验证样本平均有效专家数约47.69/47.76，功率最高24路合计
 仅占54.32%/54.27%；全49路入口功率较均匀。这是温度微调的假设依据，不是已证实的性能瓶颈。
 
-固定profile：`configs/kather_n49_temperature_pilot_20261027.json`。保持N=k=49、相位参数形状、
-RGB输入/OEO/数据划分与增强不变；原路由softmax温度0.05，试0.02和0.01两档，
+直接降温的初始验证准确率降至33.91%/27.26%，旧试验已保全并停止，未将失败试验冒充完成；
+收据见旧run的`stopped_for_initial_distribution_shift.json`。据此改为逐步降温，
+不热改活动进程，旧源码身份保留在Git `b79f0d8c7`。
+固定profile：`configs/kather_n49_temperature_anneal_20261027.json`。保持N=k=49、相位参数形状、
+RGB输入/OEO/数据划分与增强不变；原路由softmax温度0.05，分别在12轮内线性降至0.02和0.01，
 通过softmax(log(p)*0.05/T)等价重标定入口功率，场振幅取其平方根。49个专家始终保留，
 不使用TTA、电子分类头或新增可训练参数；温度改变了路由前向合同，应作为单独开发配置。
 
 先用seed17从同一120轮验证best的EMA权重做两项各12轮试验，GPU3最多两路。
 新AdamW优化器，live及EMA均从选定EMA初始化；不是精确续训，旧Adam动量不沿用。
+初始模型及第一轮保持T=0.05，先核对初始VAL复现原结果（容许最多1/752浮点边界差异），
+后续每轮缓慢改变输入功率；best checkpoint保存该时刻的实际温度，推理按选中温度加载。
+选方固定的是目标温度与12轮降温流程；各seed仍按自己的VAL选择权重及其配套温度。
 lr=2e-4余弦至2e-5，batch16/micro2，原label smoothing0.02、phase TV0.02、
 soft balance0.01、capture0.005及margin权重0.2不变。逻辑epoch标121–132，
 实际来源权重选定epoch另记，不能把来源E117冒充完整连续132轮优化轨迹。
@@ -26,7 +32,8 @@ soft balance0.01、capture0.005及margin权重0.2不变。逻辑epoch标121–13
 
 每项保存best/last、初始VAL、训练/验证曲线、梯度和selected train/val逐样本路由，
 完成项立即评TEST。评估使用温度模型factory和源码/数据/权重身份，不调用会忽略温度的旧模型加载器。
-run为`runs/simulation/kather_n49_temperature_pilot_20261027`；仅GPU3，结束核自己的进程及显存释放。
+新run为`runs/simulation/kather_n49_temperature_anneal_20261027`；旧直接降温run
+`kather_n49_temperature_pilot_20261027`保持原样。仅GPU3，结束核自己的进程及显存释放。
 这是观察旧TEST后的超参开发，不与原Top-k等预算表混用，也不保证超过49/k24。
 
 ## N49/k49从90轮追加至120轮（2026-10-27）

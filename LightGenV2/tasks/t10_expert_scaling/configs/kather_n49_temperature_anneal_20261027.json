@@ -1,0 +1,37 @@
+{
+  "study": "Kather2016 gradual routing temperature pilot",
+  "role": "post_test_development_extra_budget",
+  "gpu": 3,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "slots": 2,
+  "temperatures": [
+    0.02,
+    0.01
+  ],
+  "pilot_seed": 17,
+  "rollout_seeds": [
+    27,
+    37
+  ],
+  "extra_epochs": 12,
+  "lr": 0.0002,
+  "effective_batch": 16,
+  "microbatch": 2,
+  "margin_weight": 0.2,
+  "required_validation_gain_correct": 4,
+  "validation_samples": 752,
+  "source_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027",
+  "source_best_sha256": {
+    "17": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+    "27": "d0def9c832863ddf947ad8677d5108a2238526b72f5fe88383d5ed938498a7d9",
+    "37": null
+  },
+  "source37_policy": "After original120 run has completed, lock validation-selected source SHA before rollout",
+  "warm_start": "Selected EMA weights initialize both live and EMA; new AdamW optimizer; not exact resume",
+  "selection": "Choose temperature by seed17 VAL accuracy then NLL before TEST; rollout requires >=4 additional correct VAL images vs original120 baseline",
+  "inference": "Single view; all49 experts remain active; no TTA or new trainable electronic weights",
+  "maximum_optimized_epochs_across_all_jobs": 48,
+  "temperature_schedule": "linear_from_0.05_over_12_epochs",
+  "initial_temperature": 0.05,
+  "supersedes": "Abrupt .02/.01 pilot stopped before completion after initial VAL33.91/27.26%; preserved separately"
+}
