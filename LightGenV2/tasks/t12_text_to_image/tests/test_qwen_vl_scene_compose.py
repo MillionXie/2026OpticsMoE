@@ -18,6 +18,7 @@ class RichScenePairTests(unittest.TestCase):
         self.assertTrue(all(r!=source for r in rows))
         self.assertTrue(any(sum(r[k]!=source[k] for k in source)==1 for r in rows))
         self.assertEqual(rows,pick_conditions(source,pool,8,'source'))
+        self.assertEqual(len(pick_conditions(source,pool,2,'dev-source')),2)
 
 
 if __name__=='__main__':unittest.main()

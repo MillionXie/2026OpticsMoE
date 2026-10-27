@@ -44,6 +44,7 @@ def pick_conditions(source,pool,count,key):
         candidate=candidates[0];identity=tuple(candidate[f] for f in fields)
         picked.append(candidate);seen.add(identity)
         if len(picked)==min(4,count):break
+    if len(picked)==count:return picked
     rest=[p for p in choices if tuple(p[f] for f in fields) not in seen];rng.shuffle(rest)
     for candidate in rest:
         identity=tuple(candidate[f] for f in fields)
