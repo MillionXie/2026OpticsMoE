@@ -60,15 +60,29 @@ def main():
             blocks.append(f'<figure><figcaption>{role}</figcaption><img src="data:image/png;base64,{encoded}"></figure>')
         blocks.append('</article>')
     (args.output/'all_two_category_with_prompts.html').write_text('\n'.join(blocks), encoding='utf-8')
+    panels = {}
     for category in ('lamp', 'pillow'):
-        examples = [next(e for e in entries if (e[1]['category'], e[1]['mode']) == (category, mode))
-                    for mode in ('background', 'object', 'joint')]
+        panels[category] = [next(e for e in entries if (e[1]['category'], e[1]['mode']) == (category, mode))
+                           for mode in ('background', 'object', 'joint')]
+    for mode in ('background', 'object', 'joint'):
+        examples = []
+        for category in ('lamp', 'pillow'):
+            seen = set()
+            for entry in entries:
+                r = entry[1]
+                source_id = r['sample_id'].split(':')[2]
+                if (r['category'], r['mode']) == (category, mode) and source_id not in seen:
+                    seen.add(source_id)
+                    examples.append(entry)
+        assert len(examples) == 4, 'Require both held-out products in both categories'
+        panels[mode] = examples
+    for name, examples in panels.items():
         # Each row has its full prompt followed by three native 256-pixel tiles.
-        sheet = Image.new('RGB', (1024, 480*3), 'white')
+        sheet = Image.new('RGB', (1024, 480*len(examples)), 'white')
         draw = ImageDraw.Draw(sheet)
         for row, (i, r, paths) in enumerate(examples):
             y = row*480
-            draw.text((12, y+8), f'{category} / {r["mode"]} | PSNR {r["psnr"]:.2f} dB | LPIPS {r["lpips"]:.3f}', font=font(21), fill='black')
+            draw.text((12, y+8), f'{r["category"]} / {r["mode"]} | PSNR {r["psnr"]:.2f} dB | LPIPS {r["lpips"]:.3f}', font=font(21), fill='black')
             lines = textwrap.wrap(r['prompt'], width=93)
             assert len(lines) <= 6, 'Prompt requires a larger caption area, never truncate'
             draw.multiline_text((12, y+40), '\n'.join(lines), font=font(19), spacing=4, fill='black')
@@ -78,7 +92,7 @@ def main():
                 image = Image.open(path).convert('RGB')
                 sheet.paste(image, (x, y+212))
                 assert np.array_equal(np.asarray(sheet.crop((x, y+212, x+256, y+468))), np.asarray(image))
-        sheet.save(args.output/f'{category}_prompt_examples.png')
+        sheet.save(args.output/f'{name}_prompt_examples.png')
     summary = {'scope': 'Existing three-category checkpoint, lamp/pillow 24-case development VAL subset; NOT retrained two-category performance',
                'checkpoint_sha256': report['checkpoint_sha256'], 'source_report_sha256': digest(args.run/'report.json'),
                'input_manifest_sha256': digest(args.run/'overview/image_manifest.json'),

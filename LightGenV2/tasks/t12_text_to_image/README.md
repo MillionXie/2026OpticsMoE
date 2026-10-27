@@ -59,6 +59,20 @@ Qwen adapter条件，分开诊断文本／生成先验。TRAIN目标描述仅是
 为自包含的全部24条浏览页，`all_prompts_metrics.csv`保留逐样本完整prompt与区域指标。
 这些都是既有三类权重的两类子集；原PNG保持256、不缩放、不锐化、不贴回GT。
 
+用户随后要求以正常训练方法建立电子baseline、最多100 epoch，并展示更多三任务例子。
+三任务仍是背景替换／物体替换／联合替换，不缩成只有物体替换。
+`prompt_review.py`现额外输出`background_prompt_examples.png`、
+`object_prompt_examples.png`、`joint_prompt_examples.png`，各按清单顺序保留每类两个
+VAL商品的首个场景，共四例；每例完整prompt＋输入＋GT＋已有best生成，不按质量选图。
+这12例与完整24条浏览页均来自原三类权重，并非拟议新baseline的结果。
+
+100 epoch是拟议训练上限，不代表一定收敛或必然提高；仍须TRAIN训练、VAL选best、
+保留best/last，独立TEST不参与调参。拟议结构保留完整Qwen视觉＋语言，额外用参考图
+VAE encoder提取空间latent，将其作为生成UNet的图像条件，而非直接重建输出或贴回像素；
+Qwen条件控制语义，UNet修改生成latent，VAE decoder输出整图。训练GT只用于监督，
+推理仅输入参考RGB＋文字＋采样状态。用户正在澄清该额外VAE编码路径，
+**结构尚未确认，100轮训练尚未启动，也未分配GPU**；不能将旧单步回归训练默认为新方案。
+
 用户2026-10-27进一步要求取消桌类，新一轮类别选为**台灯＋靠垫＋软包坐墩
 （ottoman）**。坐墩先从现有ABO CC BY 4.0原TRAIN/VAL中视觉筛选6/2款，
 选封闭块状软包、完整视角及低矮脚，排除开放木架、细长腿和组合家具。
