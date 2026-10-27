@@ -149,6 +149,9 @@ def pilot_subset(pairs: list[dict], per_cell: int = 2) -> list[dict]:
 
 
 def render_pair(row: dict, size: int = 256) -> tuple[Image.Image, Image.Image]:
+    if row.get('render_protocol') == 'rich_product_scene_v1':
+        from .qwen_vl_scene_render import render_pair as render_rich
+        return render_rich(row, size)
     if row.get('render_protocol') == 'simple_studio_edit_v1':
         from .qwen_vl_simple_edits import render_simple_pair
         return render_simple_pair(row, size)
@@ -185,7 +188,7 @@ def add_descriptions(rows: list[dict], descriptions: dict[str, str]) -> list[dic
     result = []
     for original in rows:
         row = dict(original)
-        if row.get('render_protocol') == 'simple_studio_edit_v1':
+        if row.get('render_protocol') in ('simple_studio_edit_v1','rich_product_scene_v1'):
             # Prepared, reviewed short instruction. Never regenerate it from
             # the full product/scene annotation during Qwen feature caching.
             if not row.get('prompt') or not row.get('teacher_caption') or row.get('edit_count') not in (1, 2):

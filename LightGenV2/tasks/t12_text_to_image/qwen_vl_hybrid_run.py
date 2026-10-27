@@ -48,9 +48,16 @@ def load_data(data):
         raise ValueError('Frozen source cache identity changed')
     payload = torch.load(data/'frozen_features.pt', map_location='cpu', weights_only=False, mmap=True)
     validate_roles(payload['rows'])
-    if {s: sum(r['split'] == s for r in payload['rows']) for s in ('train', 'val')} != {'train': 960, 'val': 96}:
-        raise ValueError('Approved 960/96 budget differs')
-    payload['rows'] = [{**r, 'noise_seed': 1042} for r in payload['rows']]
+    expected={'train':960,'val':96}
+    if audit.get('protocol')=='rich_product_scene_v1':
+        expected={'train':1824,'val':96}
+        report=json.loads((data/'report.json').read_text())
+        if not report['complete'] or report['pair_sha256']!=sha256(data/'annotated_pairs.json') or audit['expected_counts']!=expected:
+            raise ValueError('Rich scene data identity/budget differs')
+    if {s: sum(r['split'] == s for r in payload['rows']) for s in ('train', 'val')} != expected:
+        raise ValueError('Approved training/development budget differs')
+    if audit.get('protocol')!='rich_product_scene_v1':
+        payload['rows'] = [{**r, 'noise_seed': 1042} for r in payload['rows']]
     return payload
 
 

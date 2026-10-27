@@ -110,7 +110,7 @@ class FocusedHead(nn.Module):
 
 
 def short_prompt(row, description):
-    if row.get('render_protocol') == 'simple_studio_edit_v1':
+    if row.get('render_protocol') in ('simple_studio_edit_v1','rich_product_scene_v1'):
         return row['prompt']
     # Only concise grammar is changed; no blind truncation of distinguishing
     # target attributes, and no product identifier or new object is introduced.

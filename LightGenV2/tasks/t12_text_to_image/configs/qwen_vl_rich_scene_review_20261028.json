@@ -48,7 +48,7 @@
     },
     {
       "category": "pillow",
-      "product_id": "B074VM5DY",
+      "product_id": "B074VMD5DY",
       "views": [
         21
       ],
@@ -72,7 +72,7 @@
     },
     {
       "category": "pillow",
-      "product_id": "B07BMTRT4F",
+      "product_id": "B07BMT4F21",
       "views": [
         5
       ],
@@ -80,7 +80,7 @@
     },
     {
       "category": "pillow",
-      "product_id": "B07JLPFNHT",
+      "product_id": "B07JL5PNHT",
       "views": [
         26
       ],
@@ -154,5 +154,6 @@
   "basis": "Assistant reviewed original pixel contact sheets, then all available views of candidate desk lamps and two additional heldout products. Preserve original hand-reviewed front views: geometry-only ranking erroneously favors overhead lamps or reverse cushion faces and is NOT approved as automatic final selection. New products use one visually confirmed complete front or mild side view only. Exclude multi-head/floor/tripod lamps, rear pillow faces, and the seat-cushion-like TEST product B07YJ4HM7S. No student predictions or heldout model scores were used. Proposed complexity remains multiattribute product-scenes, three edit modes; these are product/view identities only, not yet a generated final dataset.",
   "data_design_required": "Complex prompts must be factorized from true visible attributes, with TRAIN coverage of colors/shapes/materials/patterns and scenes; same-reference counterfactual groups. Keep objects complete. Do not multiply nearly identical templates and call that diversity. Declare synthetic color/lighting or teacher-background augmentation if used. Heldout products/targets never become gradients or model selection inputs. Test targets/background seeds must be disjoint from TRAIN. Freeze final checkpoint and protocol before heldout inference.",
   "not_540_independent_products": true,
-  "heldout_predictions_used": false
+  "heldout_predictions_used": false,
+  "identity_validation": "Three visual sheet labels were resolved against the actual raw inventory before any rich targets/training: B074VMD5DY, B07BMT4F21, B07JL5PNHT. The shorter/misread labels in the initial unexecuted review are not aliases and must never be used."
 }

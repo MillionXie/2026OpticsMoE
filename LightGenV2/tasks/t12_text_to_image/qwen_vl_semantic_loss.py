@@ -36,7 +36,7 @@ def prepare_caption_loss(repo, weights, rows, train_ids, descriptions, device):
     for start in range(0,len(train_ids),32):
         ids=train_ids[start:start+32]
         for dest,texts in ((scene,[rows[i]['teacher_caption'] for i in ids]),
-                           (product,[descriptions[rows[i]['target']['sample_id']] for i in ids])):
+                           (product,[rows[i].get('target_description',descriptions[rows[i]['target']['sample_id']]) for i in ids])):
             tokens=clip.tokenize(texts,truncate=False).to(device)
             with torch.no_grad():features=F.normalize(encoder.encode_text(tokens).float(),dim=-1).cpu()
             dest.update(zip(ids,features))
