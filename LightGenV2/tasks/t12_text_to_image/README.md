@@ -10,6 +10,15 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+用户2026-10-27进一步要求取消桌类，新一轮类别选为**台灯＋靠垫＋软包坐墩
+（ottoman）**。坐墩先从现有ABO CC BY 4.0原TRAIN/VAL中视觉筛选6/2款，
+选封闭块状软包、完整视角及低矮脚，排除开放木架、细长腿和组合家具。
+明确候选见`configs/qwen_vl_ottoman_screen_20261027.json`；CPU复现入口
+`screen_third_category.py --profile ... --data ... --output ...`，预览保存在
+`runs/simulation/qwen_vl_third_category_screen_20261027/selected_ottoman_candidates.png`。
+这只是第三类别筛选，尚未训练该类别，预览是原始渲染前景，不是模型生成；
+不把结构更简单等同于已验证生成质量。旧桌类数据、权重和下面结果原样保留作历史对照。
+
 2026-10-27按用户要求增加**结构清楚的人工审核开发数据**：
 `configs/qwen_vl_curated_easy_20261027.json`逐商品固定清晰视角和无品牌外观描述；
 入口`qwen_vl_curated.py --stage prepare|cache`。从原TRAIN保留36款商品×2视角，

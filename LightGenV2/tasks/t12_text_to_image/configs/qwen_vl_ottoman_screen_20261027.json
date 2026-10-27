@@ -1,0 +1,60 @@
+{
+  "name": "qwen_vl_ottoman_screen_20261027",
+  "category": "ottoman",
+  "display_name": "软包坐墩／收纳脚凳",
+  "next_categories": [
+    "lamp",
+    "pillow",
+    "ottoman"
+  ],
+  "status": "Visually screened category candidates, not a trained model or final evaluation split",
+  "selection": "Closed upholstered body; complete recognizable view; no backrest, open frame, slender tall legs or chair/table sets. Short low feet are permitted.",
+  "source_dataset": "abo_category_screen_256_v1",
+  "license": "CC BY 4.0",
+  "excluded_source_products": [
+    "B07D4FS7GY",
+    "B07DYK2Y61"
+  ],
+  "samples": [
+    {
+      "split": "train",
+      "sample_id": "ottoman-B07M8F6P67-17",
+      "description": "a compact black faux-leather rectangular storage ottoman with a padded lid and short low feet"
+    },
+    {
+      "split": "train",
+      "sample_id": "ottoman-B07CP9YN5Y-21",
+      "description": "a dark-brown faux-leather rectangular storage ottoman with a thick padded lid"
+    },
+    {
+      "split": "train",
+      "sample_id": "ottoman-B07DYK2CMN-11",
+      "description": "a beige fabric rectangular storage ottoman with a rounded pillow-top lid and short feet"
+    },
+    {
+      "split": "train",
+      "sample_id": "ottoman-B072M1WJHP-06",
+      "description": "a charcoal-gray textured fabric cube storage ottoman with a thick square lid"
+    },
+    {
+      "split": "train",
+      "sample_id": "ottoman-B07H2HGZLK-21",
+      "description": "a low almond-colored fabric rectangular storage ottoman with a plain padded lid"
+    },
+    {
+      "split": "train",
+      "sample_id": "ottoman-B075X5HBB2-03",
+      "description": "a low caramel-brown leather square ottoman with a thick rounded cushion top and short feet"
+    },
+    {
+      "split": "val",
+      "sample_id": "ottoman-B07CPQP34D-09",
+      "description": "an ivory square upholstered ottoman with broad stitched panels and a padded top"
+    },
+    {
+      "split": "val",
+      "sample_id": "ottoman-B07BLDHK7W-18",
+      "description": "a low gray fabric rectangular storage ottoman with a plain flat padded lid"
+    }
+  ]
+}
