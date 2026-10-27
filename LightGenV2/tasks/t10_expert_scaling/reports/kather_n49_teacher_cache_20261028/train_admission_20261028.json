@@ -1,0 +1,26 @@
+{
+  "source_commit": "5ea4ea62947f291834ada440316863f36701cc51",
+  "archive_sha256": "019e9a47d1fa6826885f43a4b752850263f25082192841282c99e768b3334de4",
+  "files_sha_verified": 10,
+  "independent_numpy_verified": true,
+  "teacher_correct": 3169,
+  "parent_correct": 3138,
+  "teacher_correct_parent_wrong": 164,
+  "parent_correct_teacher_wrong": 133,
+  "complement_per_class": [
+    37,
+    55,
+    11,
+    18,
+    30,
+    11,
+    2,
+    0
+  ],
+  "teacher_macro_nll": 0.4933745265007019,
+  "parent_macro_nll": 0.456551730632782,
+  "admitted": true,
+  "train_only": true,
+  "no_new_student_test": true,
+  "interpretation": "Complement exists across six classes but reverse-only parent ability133 must be preserved. Teacher TRAIN NLL is higher/lower confidence; no guaranteed student improvement."
+}

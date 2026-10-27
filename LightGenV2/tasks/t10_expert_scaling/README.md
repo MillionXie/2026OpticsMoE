@@ -1,5 +1,35 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 同视图缓存蒸馏学生：TRAIN梯度校准后固定训练（2026-10-28）
+
+清洁TRAIN准入已通过且独立NumPy核验：三教师均值3169正确、父模型3138，
+teacher-only补集164、parent-only133、共同错194；补集各类37/55/11/18/30/11/2/0，六类各至少4张。
+教师TRAIN NLL=.49337高于父模型.45655、置信度更低，故不能把更多正确直接等同更强或必然有用的梯度。
+报告`reports/kather_n49_teacher_cache_20261028/train_admission_20261028.json`，原D4八视图正缓存中。
+
+学生入口`cached_distill.py`，profile`configs/kather_n49_ensemble_distill_20261028.json`，
+run `runs/simulation/kather_n49_ensemble_distill_20261028`。父调度先CPU等待缓存生产者全部退出，
+再以独立GPU3子进程在两个固定、互斥、类均衡的effective16 TRAIN批次做校准，才启动一个seed17学生。
+等待状态写run旁`_wait.json`，真实训练启动后使用run内status；不抢缓存GPU、不启动其他学生seed。
+学生从实际best601的导出live PT初始化，fresh AdamW/RNG、EMA.95，原五组光学相位及原full49/T.05推理不改。
+
+分类梯度仅计CE(.02 smoothing)+.2margin，与原物理损失另辨；KD为T1、仅教师均值正确时启用，
+取消更自信门控，按整个effective16的有效数归一化，每个micro2共享该分母。
+父KL只保护父正确而教师错误的同视图TRAIN，权重.5、同样全batch条件均值。
+校准固定lambda=clip(.5×mean全5组分类梯度L2范数/mean全5组KD梯度L2范数,.1,3)，随后不变；
+要求加权KD/分类范数比至少.05，并在两个批次测真实Adam方向变化超过10倍相同baseline重复误差+1e-7。
+另记录repair/已正确组梯度夹角、六个真实优化器探针步骤（均恢复源，不计学生训练）、
+全部相位组有限非零、8视图父缓存/原模型对应输出误差≤1e-6。校准不做VAL/TEST前向，不把loss占比当梯度占比。
+
+复用已结束的重热循环仅作可选auxiliary和预算泛化，旧16段profile默认行为保持；
+未修改活动缓存的module/profile及model/train/plan/optical等依赖。学生固定20×1024、1280更新/20480输入，
+每类128且4段覆盖3496；专家LR三段1e-4/2e-4/3e-4，再余弦至3e-5，global/router倍率.5/.1。
+固定第4/8/12/16/20段锁PT/tensor身份后评live及EMA开发TEST，当前601始终保留候选。
+固定TRAIN repair/protected组同时报告真类对最强错误类间隔、修复及新增错；
+第4/8两个检查点均无repair margin改善、稳定组误伤抵消修复且TEST无净进步，才按预设失败停止，
+原连续两个检查点TRAIN探针和VAL均下降>5pp的保护也保留。其余完成20段，不三段停或自动加预算。
+只保存best/last PT及所有小预测/锁；最终选中同权重完整TRAIN/VAL/路由，结果仍是重复TEST开发。
+
 ## 重热结果与三既有光学教师的TRAIN准入（2026-10-28）
 
 E84/E117两组均完成16段/1024更新，各16384 TRAIN输入，全部预设检查和best/last保留。

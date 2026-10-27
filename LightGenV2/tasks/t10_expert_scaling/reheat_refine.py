@@ -33,6 +33,10 @@ def validate(c):
 
 
 def rate(step,c):
+    if c.get('schedule_type')=='distill':
+        if not 1<=step<=c['rounds']:raise ValueError('Outside finite distillation schedule')
+        if step<=3:return c['peak_lr']*step/3
+        return c['end_lr']+(c['peak_lr']-c['end_lr'])*(1+math.cos(math.pi*(step-3)/(c['rounds']-3)))/2
     if not 1<=step<=16:raise ValueError('Outside finite schedule')
     if step==1:return .0002
     if step==2:return .0005
@@ -51,6 +55,9 @@ def sources(profile,c):
     files=[Path(__file__),profile,*[Path(__file__).with_name(n) for n in
         ['model.py','train.py','plan.py','diagnose_topk.py','expert_tail_schedule.py','mixup_curriculum.py','sharpness_refine.py','checkpoint_test_selection.py']],
         Path(__file__).parent/'configs/study.json',repo/'LightGenV2/common/optical_contract.py']
+    for name in c.get('auxiliary_dependencies',[]):
+        assert Path(name).name==name
+        files.append(Path(__file__).with_name(name))
     hashes={}
     for p in files:
         name=p.resolve().relative_to(repo).as_posix()
@@ -105,7 +112,7 @@ def smoke(c,out,profile):
         actual_step=info,parameter_max_changes=changes,source_restored_exactly=True,no_val_test_forward=True))
 
 
-def worker(c,out,profile,recipe):
+def worker(c,out,profile,recipe,auxiliary=None):
     import numpy as np
     import torch
     from .train import evaluate,images,objective
@@ -120,9 +127,12 @@ def worker(c,out,profile,recipe):
     metadata=copy.deepcopy(m);metadata.update(pid=os.getpid(),command=sys.argv,git_commit=commit,source_files=hashes,protocol=protocol,
         host_head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
         source_checkpoint_sha256=c['sources'][recipe]['sha256'],source_selected_epoch=c['sources'][recipe]['actual_epoch'],
-        cuda_visible_devices=os.environ['CUDA_VISIBLE_DEVICES'],reheat=dict(recipe=recipe,configuration=c,
-        initialization='Source EMA, fresh AdamW/RNG; continuous16-round path, not prior optimizer resume'))
-    metadata['arguments'].update(out=str(out),epochs=16,lr=.001)
+        cuda_visible_devices=os.environ['CUDA_VISIBLE_DEVICES'],adaptation=dict(stage=c.get('stage','reheat'),recipe=recipe,configuration=c,
+        initialization='Selected source weights, fresh AdamW/RNG; continuous finite path, not prior optimizer resume'))
+    metadata['arguments'].update(out=str(out),epochs=c['rounds'],lr=c['peak_lr'])
+    if auxiliary is not None:
+        auxiliary.configure(splits)
+        metadata['auxiliary']=auxiliary.identity
     save(out/'metadata.json',metadata)
     x,y,ids=splits['train'];weights=len(y)/(8*torch.bincount(y,minlength=8).float().cuda())
     rng=np.random.default_rng(17);ix=np.concatenate([rng.permutation(np.flatnonzero(y.numpy()==k))[:64] for k in range(8)])
@@ -130,30 +140,38 @@ def worker(c,out,profile,recipe):
     expected=json.loads((Path(c['sources'][recipe]['run'])/'result.json').read_text())['val']['accuracy']
     assert abs(initial_val['accuracy']-expected)<=1.001/752
     save(out/'initial_validation.json',dict(val=initial_val,train_probe=initial_probe))
-    incumbent=Path(c['incumbent_run']);prior=json.loads((incumbent/'summary.json').read_text());best_test=prior['selected']['test']
+    incumbent=Path(c['incumbent_run']);prior=json.loads((incumbent/c.get('incumbent_result_name','summary.json')).read_text())
+    prior_selected=prior if c.get('incumbent_result_is_selected') else prior['selected'];best_test=prior_selected['test']
     best_key=(round(best_test['accuracy']*752),-best_test['macro_nll']);best_record=dict(origin='incumbent',round=0,state_field='model',
         test_correct=best_key[0],test=best_test,source_checkpoint_sha256=c['incumbent_sha256'])
-    assert sha(incumbent/'selected_test_predictions.npz')==prior['selected']['predictions_sha256']
+    assert sha(incumbent/'selected_test_predictions.npz')==c.get('incumbent_predictions_sha256',prior_selected.get('predictions_sha256'))
     shutil.copy2(incumbent/'best_checkpoint.pt',out/'best_checkpoint.pt');shutil.copy2(incumbent/'selected_test_predictions.npz',out/'selected_test_predictions.npz')
     save(out/'incumbent_lock.json',dict(checkpoint_sha256=c['incumbent_sha256'],test_correct=best_key[0],test=best_test,source=str(incumbent)))
     test_split=None;history=[];bad=0;last_progress=0.;started=time.time()
     def payload(step,val):
         return dict(model=ema.state_dict(),live_model=model.state_dict(),optimizer=optimizer.state_dict(),epoch=step,round=step,
             val=val,power_fraction=1.,metadata=metadata,rng=dict(torch_cpu=torch.get_rng_state(),torch_cuda=torch.cuda.get_rng_state(),numpy=np.random.get_state(),python=random.getstate()))
-    for step in range(1,17):
+    aux_stop=False
+    for step in range(1,c['rounds']+1):
         model.train();order=torch.from_numpy(sample_indices(y.numpy(),step,17))
+        if auxiliary is not None:auxiliary.start_round(step)
         with (out/'sampling_history.jsonl').open('a') as f:f.write(json.dumps(dict(round=step,indices=order.tolist(),ids=ids[order.numpy()].tolist()))+'\n')
         for group in optimizer.param_groups:group['lr']=rate(step,c)*group['lr_scale']
         total=0.;torch.cuda.synchronize();t0=time.time()
         for start in range(0,1024,16):
             batch=order[start:start+16]
+            if auxiliary is not None:auxiliary.start_batch(batch,step)
             def closure():
                 value=0.
                 for offset in range(0,16,2):
-                    u=batch[offset:offset+2];output=model(images(x,u,10000+step,17,True));labels=y[u].cuda()
+                    u=batch[offset:offset+2]
+                    input_batch=images(x,u,10000+step,17,True) if auxiliary is None else auxiliary.images(x,u,step)
+                    output=model(input_batch);labels=y[u].cuda()
                     loss=objective(model,output,labels,weights,tc)+.2*classification_margin_loss(output['probabilities'],labels)
                     if not torch.isfinite(loss):raise RuntimeError('Nonfinite reheat objective')
-                    (loss/8).backward();value+=float(loss.detach())/8
+                    contribution=loss/8
+                    if auxiliary is not None:contribution=contribution+auxiliary.loss(output['probabilities'],u,step)
+                    contribution.backward();value+=float(contribution.detach())
                 return value
             info=optimization_step(model,optimizer,closure);assert len(info['gradients'])==5 and all(v['finite'] and v['norm']>0 for v in info['gradients'].values());total+=info['clean_loss']
             with torch.no_grad():
@@ -169,6 +187,7 @@ def worker(c,out,profile,recipe):
             np.savez_compressed(out/f'train_scores_round{step}.npz',ids=ids,labels=y.numpy(),scores=tscores.numpy())
         torch.save(payload(step,val),out/'last_checkpoint.pt')
         decisions=[]
+        aux_diagnostics=None
         if step in c['check_rounds']:
             if test_split is None:
                 with np.load(cache,allow_pickle=False) as z:tx=z['test_images'];ty=z['test_labels'].astype(np.int64);tids=z['test_ids'].astype(str)
@@ -183,32 +202,36 @@ def worker(c,out,profile,recipe):
                 name=f'test_round{step}_{field}.npz';np.savez_compressed(out/name,ids=tids,labels=ty,scores=scores.numpy(),predictions=scores.argmax(1).numpy())
                 decision=dict(**lock,test_correct=correct,test=metrics,predictions=name,predictions_sha256=sha(out/name),selected=key>best_key)
                 if key>best_key:
-                    best_key=key;best_record=dict(origin='reheat',**decision)
+                    best_key=key;best_record=dict(origin='adaptation',**decision)
                     p=payload(step,val);torch.save(selected_payload(p,dict(checkpoint=str(out/'last_checkpoint.pt'),checkpoint_sha256=locked_sha,state_field=field)),out/'best_checkpoint.pt')
                     shutil.copy2(out/name,out/'selected_test_predictions.npz');save(out/'best_development_result.json',best_record)
                 decisions.append(decision)
                 with (out/'development_decisions.jsonl').open('a') as f:f.write(json.dumps(decision)+'\n')
             bad=degradation_count(initial_probe['accuracy'],initial_val['accuracy'],train_probe['accuracy'],val['accuracy'],bad)
+            if auxiliary is not None:
+                aux_diagnostics=auxiliary.diagnostics(ema,splits['train'],step,best_key[0])
+                aux_stop=aux_diagnostics['stop_for_no_transfer']
         history.append(dict(round=step,recipe=recipe,clean_loss=total/64,training_seconds=training_seconds,evaluation_seconds=time.time()-t0,
             train_probe=train_probe,val=val,train_full=full_train,gradients=info['gradients'],gradient_norm=info['gradient_norm'],
             learning_rates={g['name']:g['lr'] for g in optimizer.param_groups},optimized_images=step*1024,development_checks=decisions,
-            degradation_check_streak=bad,best_test_correct=best_key[0],elapsed_seconds=time.time()-started))
+            degradation_check_streak=bad,best_test_correct=best_key[0],elapsed_seconds=time.time()-started,
+            auxiliary_statistics=None if auxiliary is None else auxiliary.round_statistics(),auxiliary_diagnostics=aux_diagnostics))
         save(out/'history.json',history);save(out/'status.json',dict(state='training',pid=os.getpid(),round=step,best_test_correct=best_key[0],degradation_streak=bad))
         print(json.dumps(dict(round=step,train_probe=train_probe['accuracy'],val=val['accuracy'],development_test=[r['test_correct'] for r in decisions],best_correct=best_key[0])),flush=True)
-        if bad>=2:break
+        if bad>=2 or aux_stop:break
     checkpoint=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False);ema.load_state_dict(checkpoint['model']);identity=model_hash(ema.state_dict());del checkpoint
-    assert identity==(best_record['model_tensor_sha256'] if best_record['origin']=='reheat' else prior['selected']['model_tensor_sha256'])
+    assert identity==(best_record['model_tensor_sha256'] if best_record['origin']!='incumbent' else prior_selected.get('model_tensor_sha256',prior_selected.get('selected_model_tensor_sha256')))
     train,_=evaluate(ema,splits['train'],4);val,_=evaluate(ema,splits['val'],4)
     for split in ['train','val']:save_route_audit(ema,splits[split],out/f'selected_{split}_routes.npz')
     result=dict(recipe=recipe,source_commit=commit,completed_rounds=len(history),optimized_images=len(history)*1024,
         selection=best_record,selected_model_tensor_sha256=identity,test=best_record['test'],test_correct=best_key[0],train=train,val=val,
         checkpoint_sha256=sha(out/'best_checkpoint.pt'),last_checkpoint_sha256=sha(out/'last_checkpoint.pt'),
-        pilot_target_met=best_key[0]>=616,role=c['role'],stop_reason='preset_degradation' if bad>=2 else 'fixed16_round_budget')
+        pilot_target_met=best_key[0]>=616,role=c['role'],stop_reason='preset_degradation' if bad>=2 else 'preset_no_distillation_transfer' if aux_stop else 'fixed_round_budget')
     save(out/'result.json',result);save(out/'status.json',dict(state='complete',pid=os.getpid(),test_correct=best_key[0],completed_rounds=len(history)))
 
 
-def supervisor(c,out,profile):
-    validate(c);commit,hashes=sources(profile,c);out.mkdir(parents=True,exist_ok=False)
+def supervisor(c,out,profile,validator=validate):
+    validator(c);commit,hashes=sources(profile,c);out.mkdir(parents=True,exist_ok=False)
     save(out/'plan.json',dict(configuration=c,source_commit=commit,source_files=hashes,pid=os.getpid(),host_head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()))
     running={};done=[];pids=[]
     def stop(signum,frame):raise KeyboardInterrupt(str(signum))
@@ -219,7 +242,8 @@ def supervisor(c,out,profile):
             assert subprocess.check_output(['nvidia-smi','-i',index,'--query-gpu=uuid','--format=csv,noheader'],text=True).strip()==gpu
             assert int(subprocess.check_output(['nvidia-smi','-i',index,'--query-gpu=memory.free','--format=csv,noheader,nounits'],text=True))>=7000
             d=out/(recipe+'_s17');log=d.with_suffix('.log').open('x');env=dict(os.environ,CUDA_VISIBLE_DEVICES=gpu,CUDA_DEVICE_ORDER='PCI_BUS_ID',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4')
-            p=subprocess.Popen([sys.executable,'-u','-m',__package__+'.reheat_refine','--profile',str(profile),'--out',str(d),'--worker','--recipe',recipe],env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
+            entry=c.get('worker_module','reheat_refine');assert entry in ['reheat_refine','cached_distill']
+            p=subprocess.Popen([sys.executable,'-u','-m',__package__+'.'+entry,'--profile',str(profile),'--out',str(d),'--worker','--recipe',recipe],env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             running[p.pid]=(p,log,d);pids.append(p.pid)
         while running:
             for pid,(p,log,d) in list(running.items()):
