@@ -27,6 +27,7 @@ def main():
     parser.add_argument('--prompt')
     parser.add_argument('--manifest',type=Path,help='Input-only JSON list of image/prompt/sample_id; no GT fields')
     parser.add_argument('--ablate',action='store_true',help='Also gray the Qwen image and permute matched-group text')
+    parser.add_argument('--reference-reconstruction',action='store_true',help='Export TRAIN-learned Qwen-to-reference latent auxiliary readout as a separately labelled diagnostic')
     for name in ('checkpoint','qwen','sd','output'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--seed',type=int,default=1042)
     args=parser.parse_args()
@@ -63,15 +64,27 @@ def main():
             features.append((i,kind,prompt,hidden))
         print('raw Qwen',i+1,'/',len(records),flush=True)
     del qwen,processor;gc.collect();torch.cuda.empty_cache()
-    model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,drop_vae_encoder=True).eval().requires_grad_(False)
+    model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,
+        drop_vae_encoder=not args.reference_reconstruction).eval().requires_grad_(False)
+    if args.reference_reconstruction:
+        model.vae.encoder=None;model.vae.quant_conv=None
     args.output.mkdir(parents=True,exist_ok=True);reports=[]
     for i,kind,prompt,hidden in features:
         h,valid=pack_hidden([hidden],device)
         noise=torch.randn(1,4,32,32,device=device,generator=torch.Generator(device=device).manual_seed(args.seed))
-        with torch.inference_mode():_,prediction=model(h,valid,noise)
+        auxiliary=None
+        with torch.inference_mode():
+            if args.reference_reconstruction and kind=='normal':
+                _,prediction,reference=model.forward_with_aux(h,valid,noise)
+                auxiliary=model.vae.decode(reference.to(model.vae.dtype)/model.vae.config.scaling_factor).sample.float()
+            else:_,prediction=model(h,valid,noise)
         array=((prediction[0].cpu().clamp(-1,1)+1)*127.5).round().byte().permute(1,2,0).numpy()
         directory=args.output/kind;directory.mkdir(exist_ok=True)
         filename=directory/f'sample_{i:04d}.png';Image.fromarray(array).save(filename)
+        if auxiliary is not None:
+            path=args.output/'qwen_reference_reconstruction';path.mkdir(exist_ok=True)
+            aux_array=((auxiliary[0].cpu().clamp(-1,1)+1)*127.5).round().byte().permute(1,2,0).numpy()
+            Image.fromarray(aux_array).save(path/f'sample_{i:04d}.png')
         reports.append({'sample_id':records[i]['sample_id'],'variant':kind,'prompt':prompt,
           'reference_sha256':sha256(Path(records[i]['image'])),'seed':args.seed,
           'qwen_hidden_sha256':hashlib.sha256(hidden.contiguous().view(torch.uint8).numpy().tobytes()).hexdigest(),
@@ -80,7 +93,8 @@ def main():
     write_json(args.output/'report.json',{'complete':True,'records':reports,
        'checkpoint_sha256':sha256(args.checkpoint),'training_source_commit':state['git']['published_source_commit'],
        'model_inputs':'Raw RGB + text + Gaussian noise; all image information passes full Qwen-VL',
-       'reference_vae_encoder':False,'target_or_mask_input':False,'training_auxiliary_discarded':True,
+       'reference_vae_encoder':False,'target_or_mask_input':False,'training_auxiliary_discarded':not args.reference_reconstruction,
+       'reference_reconstruction_note':'Optional auxiliary decoder diagnostic from Qwen features; not the edited result and not used by ordinary inference',
        'ablation_note':'Gray-image ablation recomputes the FULL Qwen fused representation while retaining the original instruction. Text permutation is within optional category/mode groups.'})
 
 
