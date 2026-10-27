@@ -40,5 +40,21 @@ class Conv2dTests(unittest.TestCase):
     def test_no_torch_model_or_backend_mutation_on_import(self):
         self.assertNotIn('torch',sys.modules)
 
+    def test_channel_temporal_fold_preserves_product_order(self):
+        x=np.arange(2*3*2*4*4,dtype=np.int64).reshape(2,3,2,4,4)%13
+        w=np.arange(5*3*2*4*4,dtype=np.int64).reshape(5,3,2,4,4)%11
+        y=x.reshape(2,6,4,4);v=w.reshape(5,6,4,4)
+        for n in range(2):
+            for o in range(5):
+                self.assertEqual([x[n,c,t,h,k]*w[o,c,t,h,k] for c in range(3) for t in range(2) for h in range(4) for k in range(4)],
+                    [y[n,c,h,k]*v[o,c,h,k] for c in range(6) for h in range(4) for k in range(4)])
+
+    def test_channel_fold_AST_only_changes_complete_patch_geometry(self):
+        text=ast.unparse(conv2d_AST(SOURCE,channels_fold=True))
+        self.assertIn('reshape(-1, self.in_channels * self.temporal_patch_size, self.patch_size, self.patch_size)',text)
+        self.assertIn('self.proj.bias, stride=(self.patch_size, self.patch_size)',text)
+        self.assertEqual(text.count('torch.nn.functional.conv2d'),1)
+        self.assertNotIn('linear',text)
+
 
 if __name__=='__main__':unittest.main()
