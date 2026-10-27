@@ -44,7 +44,7 @@ def sources(profile):
     return commit,hashes
 
 
-def optimization_step(model,optimizer,closure,rho=0.,clip_norm=1.):
+def optimization_step(model,optimizer,closure,rho=0.,clip_norm=1.,reference_gradients=None):
     """Accumulate the whole effective batch before the SAM ascent and descent."""
     import torch
     optimizer.zero_grad(set_to_none=True)
@@ -52,13 +52,17 @@ def optimization_step(model,optimizer,closure,rho=0.,clip_norm=1.):
     params=[p for p in model.parameters() if p.grad is not None]
     norm=torch.stack([p.grad.detach().norm() for p in params]).norm()
     if not torch.isfinite(norm) or float(norm)<=0:raise RuntimeError('Invalid clean gradient')
-    first_norm=float(norm);perturbed_loss=None;actual_radius=0.;restored=True;gradient_cosine=None;gradient_relative_change=None
+    first_norm=float(norm);perturbed_loss=None;actual_radius=0.;restored=True;gradient_cosine=None;gradient_relative_change=None;linear_ascent=None;group_changes={};repeat_relative_error=None
+    names={id(p):n for n,p in model.named_parameters()}
+    if reference_gradients is not None:
+        repeat_relative_error=float(torch.stack([(p.grad-reference_gradients[names[id(p)]]).norm() for p in params]).norm()/norm)
     if rho:
         original_gradients=[p.grad.detach().clone() for p in params]
         original=[p.detach().clone() for p in params]
         with torch.no_grad():
             for p in params:p.add_(p.grad,alpha=rho/first_norm)
             actual_radius=float(torch.stack([(p-v).norm() for p,v in zip(params,original)]).norm())
+            linear_ascent=float(torch.stack([((p-v)*g).sum() for p,v,g in zip(params,original,original_gradients)]).sum())
         optimizer.zero_grad(set_to_none=True)
         try:
             perturbed_loss=closure()
@@ -70,6 +74,10 @@ def optimization_step(model,optimizer,closure,rho=0.,clip_norm=1.):
         second_norm=torch.stack([p.grad.norm() for p in params]).norm()
         gradient_cosine=float(torch.stack([(g*p.grad).sum() for g,p in zip(original_gradients,params)]).sum()/(norm*second_norm))
         gradient_relative_change=float(torch.stack([(p.grad-g).norm() for g,p in zip(original_gradients,params)]).norm()/norm)
+        for p,g in zip(params,original_gradients):
+            a=float(g.norm());b=float(p.grad.norm());denom=a*b
+            group_changes[names[id(p)]]=dict(clean_norm=a,perturbed_norm=b,cosine=float((g*p.grad).sum())/denom if denom else None,
+                relative_change=float((p.grad-g).norm())/max(a,1e-30),repeat_relative_error=float((g-reference_gradients[names[id(p)]]).norm())/max(a,1e-30) if reference_gradients is not None else None)
     gradient_groups={n:dict(norm=float(p.grad.norm()),finite=bool(torch.isfinite(p.grad).all()))
                      for n,p in model.named_parameters() if p.grad is not None}
     if not all(g['finite'] for g in gradient_groups.values()):raise RuntimeError('Nonfinite descent gradient')
@@ -81,7 +89,8 @@ def optimization_step(model,optimizer,closure,rho=0.,clip_norm=1.):
     return dict(clean_loss=clean_loss,perturbed_loss=perturbed_loss,first_gradient_norm=first_norm,
         gradient_norm=float(final_norm),gradients=gradient_groups,rho_actual=actual_radius,
         restored_before_optimizer=restored,sharpness_delta=None if perturbed_loss is None else perturbed_loss-clean_loss,
-        sam_gradient_cosine=gradient_cosine,sam_gradient_relative_change=gradient_relative_change)
+        sam_gradient_cosine=gradient_cosine,sam_gradient_relative_change=gradient_relative_change,sam_group_gradient_changes=group_changes,
+        first_order_ascent=linear_ascent,nonlinear_ascent_residual=None if perturbed_loss is None else perturbed_loss-clean_loss-linear_ascent,clean_gradient_repeat_relative_error=repeat_relative_error)
 
 
 def gradient_probe(c,out,profile):
@@ -95,28 +104,31 @@ def gradient_probe(c,out,profile):
     reference=Path(c['reference_run']);assert sha(reference/'best_checkpoint.pt')==c['reference_sha256'];m=json.loads((reference/'metadata.json').read_text())
     assert sha(Path(m['arguments']['data']))==m['data_sha256'];splits,_=data(Path(m['arguments']['data']));x,y,ids=splits['train'];cfg=copy.deepcopy(m['protocol']);cfg['training_proposal']['phase_noise_std']=0.
     model=ScalingOptics(cfg,49,49,'moe_oeo',8,m['arguments']['layers'],m['arguments']['padding']).cuda();checkpoint=torch.load(reference/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(checkpoint['model']);del checkpoint
-    original={n:p.detach().cpu().clone() for n,p in model.state_dict().items()};indices=torch.from_numpy(np.concatenate([np.flatnonzero(y.numpy()==k)[:2] for k in range(8)]));weights=len(y)/(8*torch.bincount(y,minlength=8).float().cuda())
-    model.eval()
-    with torch.no_grad():baseline=model(images(x,indices[:2],10001,17,True))['probabilities'].clone()
-    model.train();initial_lr=learning_rate(1,c);optimizer=torch.optim.AdamW([{'params':list(model.expert_phases),'lr':initial_lr},
-        {'params':list(model.global_phases),'lr':initial_lr*.5},{'params':[model.router_phase],'lr':initial_lr*.1}],weight_decay=0.)
-    def closure():
-        value=0.
-        for start in range(0,16,2):
-            ix=indices[start:start+2];output=model(images(x,ix,10001,17,True));labels=y[ix].cuda()
-            assert torch.all(output['route_mask']==1) and torch.all(output['route_probabilities']>0)
-            loss=objective(model,output,labels,weights,cfg['training_proposal'])+.2*classification_margin_loss(output['probabilities'],labels)
-            (loss/8).backward();value+=float(loss.detach())/8
-        return value
-    info=optimization_step(model,optimizer,closure,c['rho']);assert len(info['gradients'])==5 and all(q['finite'] and q['norm']>0 for q in info['gradients'].values())
-    assert abs(info['rho_actual']-c['rho'])<1e-5 and info['restored_before_optimizer']
-    changes={n:float((p.detach().cpu()-original[n]).abs().max()) for n,p in model.named_parameters()};assert all(v>0 for v in changes.values())
-    model.load_state_dict(original);model.eval()
-    with torch.no_grad():assert torch.equal(model(images(x,indices[:2],10001,17,True))['probabilities'],baseline)
+    original={n:p.detach().cpu().clone() for n,p in model.state_dict().items()};weights=len(y)/(8*torch.bincount(y,minlength=8).float().cuda());batches=[];initial_lr=learning_rate(1,c)
+    for batch_number,offset in enumerate([0,2],1):
+        indices=torch.from_numpy(np.concatenate([np.flatnonzero(y.numpy()==k)[offset:offset+2] for k in range(8)]));model.load_state_dict(original);model.eval()
+        with torch.no_grad():baseline=model(images(x,indices[:2],10001,17,True))['probabilities'].clone()
+        model.train();optimizer=torch.optim.AdamW([{'params':list(model.expert_phases),'lr':initial_lr},
+            {'params':list(model.global_phases),'lr':initial_lr*.5},{'params':[model.router_phase],'lr':initial_lr*.1}],weight_decay=0.)
+        def closure():
+            value=0.
+            for start in range(0,16,2):
+                ix=indices[start:start+2];output=model(images(x,ix,10001,17,True));labels=y[ix].cuda()
+                assert torch.all(output['route_mask']==1) and torch.all(output['route_probabilities']>0)
+                loss=objective(model,output,labels,weights,cfg['training_proposal'])+.2*classification_margin_loss(output['probabilities'],labels)
+                (loss/8).backward();value+=float(loss.detach())/8
+            return value
+        optimizer.zero_grad(set_to_none=True);repeat_loss=closure();reference_gradients={n:p.grad.detach().clone() for n,p in model.named_parameters()}
+        info=optimization_step(model,optimizer,closure,c['rho'],reference_gradients=reference_gradients);assert len(info['gradients'])==5 and all(q['finite'] and q['norm']>0 for q in info['gradients'].values())
+        assert abs(info['rho_actual']-c['rho'])<1e-5 and info['restored_before_optimizer']
+        changes={n:float((p.detach().cpu()-original[n]).abs().max()) for n,p in model.named_parameters()};assert all(v>0 for v in changes.values())
+        model.load_state_dict(original);model.eval()
+        with torch.no_grad():assert torch.equal(model(images(x,indices[:2],10001,17,True))['probabilities'],baseline)
+        batches.append(dict(batch=batch_number,train_ids=ids[indices.numpy()].tolist(),samples=16,classes=8,repeat_clean_loss=repeat_loss,actual_optimizer_step=info,parameter_max_changes=changes))
     save(out/'receipt.json',dict(source_commit=commit,source_files=hashes,profile_sha256=sha(profile),pid=os.getpid(),command=sys.argv,optimizer_group_lrs=[g['lr'] for g in optimizer.param_groups],
-        source_checkpoint_sha256=c['reference_sha256'],data_sha256=m['data_sha256'],train_ids=ids[indices.numpy()].tolist(),samples=16,classes=8,full_parameters=sum(p.numel() for p in model.parameters()),
-        actual_optimizer_step=info,parameter_max_changes=changes,source_restored_exactly=True,no_val_test_forward=True,
-        numeric_gate_passed=bool(info['sam_gradient_relative_change']>=.01 and info['sam_gradient_cosine']<.9999995),numeric_gate='Gradient change>=1% and cosine<.9999995 only establishes a measurable second-pass change on16TRAIN views, not generalization.'))
+        source_checkpoint_sha256=c['reference_sha256'],data_sha256=m['data_sha256'],batches=batches,samples=32,classes=8,full_parameters=sum(p.numel() for p in model.parameters()),
+        source_restored_exactly=True,no_val_test_forward=True,numeric_gate_passed=all(q['actual_optimizer_step']['sam_gradient_relative_change']>10*q['actual_optimizer_step']['clean_gradient_repeat_relative_error']+1e-7 for q in batches),
+        numeric_gate='Finite/restored full-model step and change above same-input clean-gradient repeat error on two fixed TRAIN batches. Cosine and group changes are measurements, not arbitrary generalization thresholds.'))
 
 
 def worker(c,out,profile,recipe):
@@ -203,6 +215,7 @@ def worker(c,out,profile,recipe):
             training_seconds=training_seconds,probe_and_val_seconds=eval_seconds,elapsed_seconds=time.time()-started,
             clean_loss=total/64,sharpness_delta_mean=None if not sharpness else sum(sharpness)/len(sharpness),
             sam_gradient_cosine_mean=None if not cosines else sum(cosines)/len(cosines),sam_gradient_relative_change_mean=None if not relative_changes else sum(relative_changes)/len(relative_changes),
+            sam_group_gradient_changes_last=info['sam_group_gradient_changes'],nonlinear_ascent_residual_last=info['nonlinear_ascent_residual'],
             first_gradient_norm_mean=sum(first_norms)/len(first_norms),gradient_norm=info['gradient_norm'],gradients=info['gradients'],
             rho_actual_last=info['rho_actual'],restored_before_optimizer=info['restored_before_optimizer'],
             learning_rates={g['group_name']:g['lr'] for g in optimizer.param_groups},best_round=best_round,optimized_images=step*1024,

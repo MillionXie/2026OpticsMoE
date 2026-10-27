@@ -25,6 +25,19 @@ class StrategyTests(unittest.TestCase):
 
 
 class OptimizerTests(unittest.TestCase):
+    def test_clean_repeat_error_and_actual_float_first_order_residual(self):
+        import torch
+        model=torch.nn.Linear(1,1,bias=False)
+        with torch.no_grad():model.weight.fill_(1.)
+        optimizer=torch.optim.SGD(model.parameters(),lr=.1)
+        def closure():
+            loss=model(torch.ones(1,1)).square().mean();loss.backward();return float(loss.detach())
+        closure();reference={n:p.grad.clone() for n,p in model.named_parameters()}
+        result=optimization_step(model,optimizer,closure,rho=.05,clip_norm=None,reference_gradients=reference)
+        self.assertEqual(result['clean_gradient_repeat_relative_error'],0.)
+        self.assertEqual(result['sam_group_gradient_changes']['weight']['repeat_relative_error'],0.)
+        self.assertAlmostEqual(result['nonlinear_ascent_residual'],.0025,places=6)
+
     def test_gradient_change_diagnostic_is_not_only_loss_increase(self):
         import torch
         model=torch.nn.Linear(2,1,bias=False)
@@ -34,6 +47,8 @@ class OptimizerTests(unittest.TestCase):
             loss=model(torch.tensor([[1.,0.],[0.,2.]])).square().mean();loss.backward();return float(loss.detach())
         result=optimization_step(model,optimizer,closure,rho=.05,clip_norm=None)
         self.assertGreater(result['sam_gradient_relative_change'],.01);self.assertGreater(result['sam_gradient_cosine'],.99);self.assertLess(result['sam_gradient_cosine'],1.)
+        self.assertAlmostEqual(result['nonlinear_ascent_residual'],result['sharpness_delta']-result['first_order_ascent'])
+        self.assertIn('weight',result['sam_group_gradient_changes'])
 
     def test_sam_descent_gradient_and_restoration(self):
         import torch
