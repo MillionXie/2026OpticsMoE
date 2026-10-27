@@ -1,5 +1,22 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-27：图组合12接口拒收已保全，改查C++原生调度循环
+
+独立A100根12在首3真实eager和两真实capture之后，进入图组合时被PyTorch2.6
+`Cannot prepare for replay during capturing stage`拒收。没有2048完整结果或有效速度；
+不跑complete audit/ledger、不修钟追认。原父2027647/子2027899真退出、MPS释放、共享锁可取，
+47源逐Git不变、65排外记录无foreign；停止根18原文件551576B及926B外log已逐SHA本地保全。
+停止receipt SHA256 `ef3d8c2b9dfc6483b2563f4fccb22323bacc8a28bd68b76b32f8e732b1d8bff6`。
+PyTorch2.6原生`CUDAGraph::replay`先调用generator replay_prologue再cudaGraphLaunch；
+不绕过RNG/allocator状态、不访问protected graph_exec_、不再次原样嵌套捕获。
+
+后续新方法是host-only C++调度循环：保留37次原生`CUDAGraph::replay()`和74次CUDA事件record，
+只减少Python/C++跨边界次数。每一段CPU开始/结束都在C++实测并通过真实Python perf_counter
+括号验证同一单调时钟，失败则拒收、不平移时钟；原raw adapter、功率、数值及v2 ledger直接复用。
+两个槽各绑定一次原37图与74事件，仍按i-2评分fence后先固化再复用；首场/两capture及所有开销留原窗。
+构建脚本只用已有host C++编译器与头文件，不安装环境或查询/执行GPU；源码/构建器48源逐Git冻结，
+编译.so不进Git，记录原源码、构建器和binary SHA及编译命令。新独立入口和有限一轮，不复活12。
+
 ## 2026-10-27：原口径主体单次图提交候选（未测，不作速度结果）
 
 人工要求继续改善剩余0.301ms，并提出可宽松扣除难以并行的部分。原口径验收不因此放宽：

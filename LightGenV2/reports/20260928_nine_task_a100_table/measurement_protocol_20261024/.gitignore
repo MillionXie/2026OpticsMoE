@@ -147,3 +147,9 @@
 !run_lgvq_a100_batch_replay_20261027.py
 !test_lgvq_a100_batch_replay_20261027.py
 !audit_lgvq_a100_batch_replay_20261027.py
+!lgvq_a100_cpp_dispatch_20261027.cpp
+!lgvq_a100_cpp_dispatch_20261027.py
+!run_lgvq_a100_cpp_dispatch_20261027.py
+!test_lgvq_a100_cpp_dispatch_20261027.py
+!audit_lgvq_a100_cpp_dispatch_20261027.py
+!build_lgvq_cpp_dispatch_20261027.py
