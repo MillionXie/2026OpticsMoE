@@ -1,0 +1,47 @@
+{
+  "study": "Kather N49/k49 staged optimization and confidence-gated sparse-teacher distillation",
+  "role": "post_test_development_extra_budget",
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "epochs": 6,
+  "freeze_router_epochs": 2,
+  "patience": 3,
+  "pilot_seed": 17,
+  "rollout_seeds": [
+    27,
+    37
+  ],
+  "recipes": [
+    "staged",
+    "distill"
+  ],
+  "batch": 16,
+  "microbatch": 2,
+  "lr": 5e-05,
+  "lr_end_fraction": 0.2,
+  "group_lr_scales": {
+    "expert": 1.0,
+    "global": 0.5,
+    "router": 0.1
+  },
+  "kd_weight": 0.3,
+  "kd_temperature": 2.0,
+  "kd_gate": "Teacher argmax is correct AND its correct-label probability exceeds detached student correct-label probability",
+  "required_validation_gain_correct": 4,
+  "maximum_optimized_epochs_across_jobs": 24,
+  "student_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027",
+  "teacher_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026",
+  "student_sha256": {
+    "17": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+    "27": "d0def9c832863ddf947ad8677d5108a2238526b72f5fe88383d5ed938498a7d9",
+    "37": "39f88b7585fb58f4f4fdf9ed821226144ffe6fe40945d5774865f6a3c5481389"
+  },
+  "teacher_sha256": {
+    "17": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+    "27": "6c496428ed22bdc0847b0a07f3bc669bfe4a738577017228dfac502d4e14a2cc",
+    "37": "5a3a0c735c45aafc9bdf607f54f48dc3ecc21eb3d2703f74bce6ed8034d9beb6"
+  },
+  "inference": "Unmodified ScalingOptics N49/k49, original routing temperature0.05, no teacher, no new parameters",
+  "training": "Same augmented TRAIN image to teacher and student; teacher frozen; full TRAIN and VAL metrics each epoch; batch progress each60s; reset AdamW, EMA initialized from selected source",
+  "selection": "VAL accuracy then NLL, include source best; choose recipe before TEST; rollout to27/37 only if >=4 more correct VAL examples",
+  "supersedes": "Stopped temperature annealing after four epochs without source VAL improvement; all artifacts preserved"
+}

@@ -1,5 +1,38 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## N49/k49训练方法对照（2026-10-27）
+
+用户要求主动改进训练方法。两路渐进降温在追加第4轮（逻辑124）仍未超过初始VAL78.32%，
+较激进一路为76.46%，另一为77.66%；已保留全部best/last/history并结束，未测TEST。
+收据为该run的`stopped_for_method_redesign.json`。这说明本次降温未提供收益证据，
+不能把入口功率更不均匀本身当作改进。
+
+在固定8张TRAIN图像（每类一张、教师学生同一增强视图）上分解分类、capture、TV、balance梯度：
+TV及balance远小于分类梯度；未发现它们压倒分类的证据。无筛选的蒸馏在部分学生已学好的样本上
+出现很大的相反方向梯度，因此采用有正确性及置信度筛选的蒸馏。该小样本梯度检查是机制诊断，
+不是整个数据集的统计结论；原始收据`runs/smoke/kather_fullk_loss_gradient_20261027/receipt.json`保留。
+
+新入口`fullk_refine.py`、profile `configs/kather_n49_fullk_refine_20261027.json`，
+run `runs/simulation/kather_n49_fullk_refine_20261027`。两项均保持原`ScalingOptics` N49/k49
+推理结构、路由温度0.05、原损失及数据/增强不变，从同seed累计120轮VAL best的EMA权重初始化
+live与EMA，重置AdamW，不是精确续训。仅训练策略作成对比较：
+
+- `staged`：前2轮冻结router，先适应专家及全局相位；以后解冻router。专家学习率5e-5，
+  global为其0.5倍，router为其0.1倍；6轮余弦降至各自初值0.2倍，避免同时大幅扰动入口与光场。
+- `distill`：完全相同的分阶段优化，另用同seed的90轮49/k24 VAL best作冻结教师，
+  教师只处理相同增强的TRAIN图像。只有教师argmax正确且正确类概率高于学生时才计算该样本的KL；
+  类别蒸馏温度2、权重0.3，按整个microbatch求均值。该温度不改变光学router。
+  VAL/TEST推理只使用49/k49学生，教师、额外分类头和新增可训练参数均不参与推理。
+
+先seed17两路并行，各最多6轮；若连续3轮VALaccuracy和NLL均未刷新历史最佳，提前停止并保留
+源模型候选。每轮记录完整TRAIN/VAL、逐组梯度、两项损失、蒸馏样本比例和耗时；每分钟另存
+optimizer batch进度。按VALaccuracy选best、NLL平局。两个方案均结束后按VAL选择，再锁定并TEST；
+若选中源模型且推理/张量完全一致，则复用已核验的旧TEST，另存收据，不重复forward。
+仅较源seed17 VAL多对至少4/752张时，将同一方法用于seed27/37各最多6轮，总预算最多24个
+新epoch-job。后续各项选模完成即TEST，不按TEST挑方法或追加预算。教师及学生来源均按SHA锁定。
+新结果是已观察旧TEST后的额外预算方法开发，不能直接替换原等预算Top-k消融。
+仅GPU3最多两项计算，结束核子进程与显存释放；此前60/90/120结果全部保留。
+
 ## N49/k49路由温度微调试验（2026-10-27）
 
 用户在120轮两个已完成seed的TEST之后再次授权GPU3微调。原120轮及seed37训练保持不变，
