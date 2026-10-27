@@ -1,5 +1,26 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 末层边界试验结束与TRAIN方向诊断（2026-10-27）
+
+`kather_n49_boundary_refine_20261027`两组各12段/384步/6144个TRAIN视图已完成。
+control开发TEST第4/8/12段为599/596/596张正确，boundary为599/596/595；均选回原E117的600/752，
+没有达到单seed保守目标616/752。boundary末次纠正3错却新增8错，COMPLEX净少7张。
+两组best SHA与原模型一致，TEST核验复用；全部59份小产物已manifest+SHA下载，逐样本argmax/finite/cm、
+采样顺序/身份、路由、冻结前缀及best/last SHA独立核验，父/缓存/worker退出、GPU1/3释放已实查。
+报告`reports/kather_n49_boundary_refine_20261027/final_summary_20261027.json`。大fields/PT保留服务器。
+
+同池EMA干净TRAIN准确率变化很小，不能把换池后的准确率升高当作训练收益；日志gradient_norm是段末batch，
+不是全池范数。KL/锚定损失标量小、RMS未触上限也不能排除梯度冲突，RMS更不能直接等同输出改动大小。
+按“微调方法总结”后续只读建议新增`phase_repair_probe.py`、
+`configs/kather_n49_phase_repair_probe_20261027.json`，在GPU3做有限TRAIN诊断，不再盲加正则或启动SAM。
+从固定原E117出发，只按TRAIN选择最多各16张近边界STROMA↔DEBRIS错例（log-margin在[-.5,0)，不足则缩小），
+32张正确COMPLEX保护图、32张八类回放及32张不进梯度的独立TRAIN观察图，各干净加固定D4视图。
+对负修复梯度与Adam预条件方向分别试RMS=.0015/.005/.01/.02，共八个精确恢复源的方向探针，
+不等于八条训练路线，不执行VAL/TEST前向，也不把TEST样本加入梯度。
+记录修复/新增错、分视图margin与概率变化、末层OEO激活变化；源点及一处TRAIN最修复点另做固定小batch的
+repair/COMPLEX保护/KL/capture/TV/锚定梯度范数和夹角诊断。源点保护梯度为零是定义结果。
+只有诊断后才能区分局部步幅/方向不足、修复方向冲突或需开放前层；没有预设诊断必能提高性能。
+
 ## 冻结前缀的末层边界修复（2026-10-27，采用窗口咨询建议）
 
 六份保留last已在GPU1完成一次有限开发TEST，原90/120、focused颜色/相位/蒸馏、Mixup分别为

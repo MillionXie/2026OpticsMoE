@@ -1,0 +1,168 @@
+{
+  "run_id": "kather_n49_boundary_refine_20261027",
+  "source_commit": "99f6c1e9da09cbbbcbfe4ef055b4501ce584993f",
+  "target_correct": 616,
+  "pilot_target_met": false,
+  "reference_correct": 600,
+  "reference_accuracy_percent": 79.7872340425532,
+  "role": "User-authorized repeated TEST-feedback development, not independent generalization or equal-budget Top-k evidence. Single seed17; no three-seed mean.",
+  "transfer": {
+    "archive_sha256": "e028075f5a80c548b96607e0504357862bc5736631d6e6cf90ed3fa834dca96d",
+    "manifest_files": 59,
+    "all_sha256_verified": true
+  },
+  "recipes": {
+    "control_s17": {
+      "segments": 12,
+      "optimizer_updates": 384,
+      "optimized_train_views": 6144,
+      "unique_images_per_pool": 256,
+      "selected_segment": 0,
+      "selected_model": "Original E117 VALbest EMA; verified unchanged checkpoint and reused TEST",
+      "train_correct": 3141,
+      "val_correct": 589,
+      "test_correct": 600,
+      "development_checks": {
+        "4": {
+          "correct": 599,
+          "corrected": 1,
+          "new_wrong": 2,
+          "nll": 0.6383458971977234,
+          "class_correct_delta": [
+            0,
+            -1,
+            -1,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "8": {
+          "correct": 596,
+          "corrected": 2,
+          "new_wrong": 6,
+          "nll": 0.6391440033912659,
+          "class_correct_delta": [
+            0,
+            1,
+            -5,
+            1,
+            -1,
+            0,
+            0,
+            0
+          ]
+        },
+        "12": {
+          "correct": 596,
+          "corrected": 2,
+          "new_wrong": 6,
+          "nll": 0.6390921473503113,
+          "class_correct_delta": [
+            0,
+            1,
+            -5,
+            1,
+            -1,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "last_phase_rms": 0.0010777474381029606,
+      "training_seconds_sum": 569.1681916713715,
+      "elapsed_seconds_last_history": 1665.6296305656433,
+      "frozen_prefix_verified": true
+    },
+    "boundary_s17": {
+      "segments": 12,
+      "optimizer_updates": 384,
+      "optimized_train_views": 6144,
+      "unique_images_per_pool": 256,
+      "selected_segment": 0,
+      "selected_model": "Original E117 VALbest EMA; verified unchanged checkpoint and reused TEST",
+      "train_correct": 3141,
+      "val_correct": 589,
+      "test_correct": 600,
+      "development_checks": {
+        "4": {
+          "correct": 599,
+          "corrected": 2,
+          "new_wrong": 3,
+          "nll": 0.6391912698745728,
+          "class_correct_delta": [
+            0,
+            1,
+            -3,
+            1,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "8": {
+          "correct": 596,
+          "corrected": 3,
+          "new_wrong": 7,
+          "nll": 0.6402556896209717,
+          "class_correct_delta": [
+            0,
+            2,
+            -6,
+            1,
+            -1,
+            0,
+            0,
+            0
+          ]
+        },
+        "12": {
+          "correct": 595,
+          "corrected": 3,
+          "new_wrong": 8,
+          "nll": 0.640276312828064,
+          "class_correct_delta": [
+            0,
+            2,
+            -7,
+            1,
+            -1,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "last_phase_rms": 0.0014215081464499235,
+      "training_seconds_sum": 537.7436120510101,
+      "elapsed_seconds_last_history": 1662.6412377357483,
+      "frozen_prefix_verified": true
+    }
+  },
+  "interpretation": "Both loss recipes failed to improve development TEST; selected original source. Earlier pool accuracy was EMA clean-view, not live augmented-view. Gradient norms logged per segment are last-batch norms. Small KL/anchor scalar or unused RMS radius does not establish absence of gradient conflict. Next bounded TRAIN-only direction diagnostic will distinguish near-boundary repair ability and cross-class conflict before further training.",
+  "resources": {
+    "timestamp": 1793113629.41415,
+    "pids_absent": [
+      3061945,
+      3061960,
+      3078036,
+      3078042
+    ],
+    "authorized_gpus_no_compute_process": true,
+    "gpu_query": "1, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 12 MiB, 0 %\n3, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 12 MiB, 0 %\n",
+    "weights": {
+      "control_s17": {
+        "best_checkpoint.pt": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+        "last_checkpoint.pt": "07678817c8b55755de62e3c8cb8d7bd31300dcdfcc267488f5487bfc2fc1b0dc"
+      },
+      "boundary_s17": {
+        "best_checkpoint.pt": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+        "last_checkpoint.pt": "17e9e89bd9c302cecc3c7bc3e5898928de66868154aace4b85621ea9139a578c"
+      }
+    }
+  }
+}

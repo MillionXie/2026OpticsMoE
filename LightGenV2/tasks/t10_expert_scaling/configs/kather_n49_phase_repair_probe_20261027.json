@@ -1,0 +1,16 @@
+{
+  "seed": 17,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "amplitudes": [
+    0.0015,
+    0.005,
+    0.01,
+    0.02
+  ],
+  "boundary_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_boundary_refine_20261027.json",
+  "reference_train_scores": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_boundary_refine_20261027/cache/reference_train_scores.npz",
+  "reference_train_scores_sha256": "77f5d8d8344e32eb6987c5a9a80b52bd4998f3d6373c13c512c4f278be5a587f",
+  "selection": "Only TRAIN: <=16 near-boundary STROMA->DEBRIS and <=16 reverse, log margin [-.5,0);32 correct COMPLEX near those competitors;32 balanced replay;32 disjoint balanced observation. No extreme-error backfill. Clean plus deterministic D4 each.",
+  "budget": "Two directions, four RMS amplitudes, eight exact source-reset probes; no optimization trajectory or VAL/TEST forward. At most128 unique TRAIN images/256 views. Full repair gradient; fixed <=16-view component-gradient diagnostic at source and one TRAIN-most-repaired trial.",
+  "purpose": "Measure real margin/probability/activation changes and cross-class gradient conflict before deciding whether larger steps or opening a prior layer is justified. This is not a performance result or automatic training authorization beyond existing user scope."
+}
