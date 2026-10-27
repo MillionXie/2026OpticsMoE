@@ -138,7 +138,7 @@ def audit(baseline,candidate,output):
                     or g['development_pool_scope']!='same_real_slot_same_stream_only' for g in graphs):
                 raise ValueError('Actual slot/stream pool evidence incomplete')
             if graphs[-1]['development_stream_pool_count']!=2:raise ValueError('Exactly separate frontend/body pools required')
-        elif method in ('CPU_intraop_threads_1','constant_prompt_TEXT_render_once_inside_window','Conv3d_channels_last_3d_storage_only','same_field_text_visual_stream_overlap','one_patch_biased_linear','one_patch_linear_separate_bias'):
+        elif method in ('CPU_intraop_threads_1','constant_prompt_TEXT_render_once_inside_window','Conv3d_channels_last_3d_storage_only','same_field_text_visual_stream_overlap','one_patch_biased_linear','one_patch_linear_separate_bias','complete_patch_temporal_height_fold_conv2d'):
             identity=read(candidate/'identity.json')
             threads=1 if method=='CPU_intraop_threads_1' else 8
             if identity['CPU_intraop_threads']!=threads or any(g['independent_default_pool'] is not True for g in graphs):
@@ -177,6 +177,17 @@ def audit(baseline,candidate,output):
             raise ValueError('Exact original biased BF16 complete-patch linear identity required')
         if method=='one_patch_linear_separate_bias' and info.get('bias_after_BF16_matrix_output') is not True:
             raise ValueError('Original low-precision convolution materialization before separate bias required')
+    if method=='complete_patch_temporal_height_fold_conv2d':
+        info=read(candidate/'patch_conv2d_identity.json')
+        if (info['original_kernel']!=[2,16,16] or info['original_stride']!=[2,16,16]
+                or info['folded_kernel']!=[32,16] or info['folded_stride']!=[32,16]
+                or info['original_weight_shape']!=[1024,3,2,16,16]
+                or info['weight_dtype']!='torch.bfloat16' or info['bias_dtype']!='torch.bfloat16'
+                or any(info[k] is not True for k in ['native_convolution_retained','original_parameter_objects_retained',
+                    'one_output_per_complete_patch','reduction_index_order_unchanged','folding_inside_actual_forward'])
+                or info['weight_values_or_precision_changed'] is not False
+                or info['autotune_or_backend_policy_changed'] is not False or info['extra_forward_calls']!=0):
+            raise ValueError('Complete-patch native convolution folding identity required')
     if report.get('causal_DAG_accepted') is False:
         if report.get('projection_computed') is not False or report.get('clock_values_modified') is not False:
             raise ValueError('Rejected clock cannot produce a repaired projection')

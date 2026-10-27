@@ -104,7 +104,7 @@ def source_map():
     for name in ('run_lgvq_development_20261027.py', 'run_temporal_remainder.py',
                  'first_tf_supplement_20261025.py', 'lgvq_development_graph_pools_20261027.py',
                  'lgvq_development_prompt_render_20261027.py', 'lgvq_development_conv_layout_20261027.py',
-                 'lgvq_development_patch_linear_20261027.py'):
+                 'lgvq_development_patch_linear_20261027.py','lgvq_development_patch_conv2d_20261027.py'):
         p = HERE/name
         result[p.relative_to(REPO).as_posix()] = sha(p)
     return result
@@ -230,7 +230,8 @@ def worker(args):
             ['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
         published_commit=bound['commit'], sources=bound['sources'], command=sys.argv,
         hardware_only_AST_substitution_counts=counts, original_worker_sha256=sha(WORKER),
-        performance_change=('one_patch_linear_separate_bias' if args.patch_linear_separate_bias else
+        performance_change=('complete_patch_temporal_height_fold_conv2d' if args.patch_conv2d else
+            'one_patch_linear_separate_bias' if args.patch_linear_separate_bias else
             'one_patch_biased_linear' if args.patch_linear else
             'same_field_text_visual_stream_overlap' if args.parallel_text else
             'Conv3d_channels_last_3d_storage_only' if args.channels_last_3d else
@@ -288,6 +289,12 @@ def worker(args):
             original_front_init(front,*a,**kw)
             write(args.output/'patch_linear_identity.json',install(front,separate_bias=args.patch_linear_separate_bias))
         live.LiveFront.__init__=linear_front_init
+    if args.patch_conv2d:
+        from lgvq_development_patch_conv2d_20261027 import install
+        def conv2d_front_init(front,*a,**kw):
+            original_front_init(front,*a,**kw)
+            write(args.output/'patch_conv2d_identity.json',install(front))
+        live.LiveFront.__init__=conv2d_front_init
     if args.share_graph_pools:
         from lgvq_development_graph_pools_20261027 import tape_class
         lowlevel.LowLevelTape = tape_class(original_tape)
@@ -365,7 +372,8 @@ def suite(args):
                 MKL_NUM_THREADS=str(args.cpu_threads), OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
             subprocess.run(['nvidia-cuda-mps-control', '-d'], env=env, capture_output=True,
                 text=True, timeout=10, check=True); active = True
-            plan = ([('patch_linear_separate_bias', False)] if args.patch_linear_separate_bias else
+            plan = ([('patch_conv2d', False)] if args.patch_conv2d else
+                [('patch_linear_separate_bias', False)] if args.patch_linear_separate_bias else
                 [('patch_linear', False)] if args.patch_linear else
                 [('parallel_text', False)] if args.parallel_text else
                 [('conv_layout', False)] if args.channels_last_3d else
@@ -390,6 +398,7 @@ def suite(args):
                 if args.parallel_text:command.append('--parallel-text')
                 if args.patch_linear:command.append('--patch-linear')
                 if args.patch_linear_separate_bias:command.append('--patch-linear-separate-bias')
+                if args.patch_conv2d:command.append('--patch-conv2d')
                 write(args.root/(label+'.command.json'), command)
                 with (args.root/(label+'.log')).open('x') as log:
                     child = subprocess.Popen(command, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
@@ -438,6 +447,8 @@ def main():
         help='Exact one-complete-patch biased convolution as matrix multiplication; original byte gate retained')
     p.add_argument('--patch-linear-separate-bias', action='store_true',
         help='Keep original cuDNN BF16 output rounding before separate bias addition')
+    p.add_argument('--patch-conv2d', action='store_true',
+        help='Fold complete-patch temporal/height axes for native biased convolution, no GEMM substitution')
     p.add_argument('--software-only-development', action='store_true',
         help='Keep rejected CUDA clock evidence; report CPU-wall development only, never a repaired DAG projection')
     args = p.parse_args(); args.root = args.root.resolve()
@@ -447,6 +458,10 @@ def main():
         raise ValueError('Finite development deadline at most one hour required')
     args.pipe = '/DATA/DATA1/guest3/.cache/'+args.root.name
     args.optimize_runtime = True
+    if args.patch_conv2d and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools
+            or args.reuse_events or args.once_prompt_render or args.channels_last_3d or args.parallel_text
+            or args.patch_linear or args.patch_linear_separate_bias):
+        raise ValueError('Conv2d-fold candidate changes only complete-patch native convolution geometry')
     if args.patch_linear_separate_bias and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools
             or args.reuse_events or args.once_prompt_render or args.channels_last_3d or args.parallel_text or args.patch_linear):
         raise ValueError('Separate-bias patch candidate retains original rounding boundary, no other method')
@@ -464,10 +479,10 @@ def main():
         raise ValueError('Graph-pool candidate requires same-card reference and original non-reused events')
     if args.cpu_threads==1 and (not args.same_card_reference or args.share_graph_pools or args.reuse_events):
         raise ValueError('CPU-thread candidate requires same-card reference with original graph/event allocation')
-    if args.software_only_development and not (args.patch_linear_separate_bias or args.patch_linear or args.parallel_text or args.share_graph_pools or args.cpu_threads==1 or args.once_prompt_render or args.channels_last_3d):
+    if args.software_only_development and not (args.patch_conv2d or args.patch_linear_separate_bias or args.patch_linear or args.parallel_text or args.share_graph_pools or args.cpu_threads==1 or args.once_prompt_render or args.channels_last_3d):
         raise ValueError('Explicit software-only scope is limited to new authorized development candidates')
     if args.phase == 'worker':
-        if args.output is None or args.output.resolve() not in [args.root/x for x in ('baseline','event_pool','graph_pool','cpu_threads1','prompt_render','conv_layout','parallel_text','patch_linear','patch_linear_separate_bias')]:
+        if args.output is None or args.output.resolve() not in [args.root/x for x in ('baseline','event_pool','graph_pool','cpu_threads1','prompt_render','conv_layout','parallel_text','patch_linear','patch_linear_separate_bias','patch_conv2d')]:
             raise ValueError('Exact development leaf required')
         args.output = args.output.resolve()
         if args.reuse_events != (args.output.name == 'event_pool'):raise ValueError('Frozen A/B plan differs')
@@ -478,6 +493,7 @@ def main():
         if args.parallel_text != (args.output.name=='parallel_text'):raise ValueError('Frozen text-stream plan differs')
         if args.patch_linear != (args.output.name=='patch_linear'):raise ValueError('Frozen patch-linear plan differs')
         if args.patch_linear_separate_bias != (args.output.name=='patch_linear_separate_bias'):raise ValueError('Frozen separate-bias patch plan differs')
+        if args.patch_conv2d != (args.output.name=='patch_conv2d'):raise ValueError('Frozen Conv2d-fold patch plan differs')
     (suite if args.phase == 'suite' else worker)(args)
 
 

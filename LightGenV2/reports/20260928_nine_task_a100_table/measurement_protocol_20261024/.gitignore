@@ -131,3 +131,5 @@
 !test_rental_energy_missing_20261027.py
 !lgvq_development_patch_linear_20261027.py
 !test_lgvq_development_patch_linear_20261027.py
+!lgvq_development_patch_conv2d_20261027.py
+!test_lgvq_development_patch_conv2d_20261027.py

@@ -93,5 +93,12 @@ class DevelopmentTests(unittest.TestCase):
         self.assertIn('or args.parallel_text or args.patch_linear',source)
         self.assertIn('install(front,separate_bias=args.patch_linear_separate_bias)',source)
 
+    def test_folded_native_conv_profile_is_separate(self):
+        source=Path(dev.__file__).read_text(encoding='utf8')
+        self.assertIn("[('patch_conv2d', False)]",source)
+        self.assertIn("if args.patch_conv2d:command.append('--patch-conv2d')",source)
+        self.assertIn('or args.patch_linear or args.patch_linear_separate_bias',source)
+        self.assertIn("args.patch_conv2d != (args.output.name=='patch_conv2d')",source)
+
 
 if __name__ == '__main__':unittest.main()
