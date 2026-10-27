@@ -1,5 +1,16 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-27：人工批准电子图构建单列，三轮无额外预热
+
+用户明确批准仅将一次性电子CUDA图构建移出投影计费，并要求新口径LG三轮及新版统一表。
+预先命名`A100_NO_EXTRA_WARMUP_ELECTRONIC_GRAPH_BUILD_SEPARATE_V3`：沿用双流原native前端，
+每轮2048调用、首三场eager和两个真实capture输出、六传播、原逐字节/功率/排外/时钟门全保留，
+不额外预热、不选最快轮。原始连续软件窗完整保留；v3在v2基础上仅零化44个有原时间戳的
+`capture_electronics` host节点，重算DAG和组件能量并集，不扣队列、快照、必要同步或NN。
+Qwen/baseline原测量边界不变，LG为参数导出的不含电子图构建投影，非实测物理光路。
+三轮用独立fresh-process新根16/17/18，各1800s安全界、串行；若故障保全并报告，不盲补跑挑结果。
+三轮合计速率/功率按合分子/合区间，旧sealed表不覆写；新表保留全部baseline并补齐LG及倍数。
+
 ## 2026-10-27：一次额外真实光场预热，单独诊断口径
 
 人工明确要求实测额外预热一次。新入口`run_lgvq_a100_warmup_20261027.py`沿用双流native patch，
