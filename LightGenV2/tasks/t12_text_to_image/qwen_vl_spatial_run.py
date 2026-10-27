@@ -118,14 +118,17 @@ def counterfactual_negatives(payload,ids):
     for i in ids:
         row=payload['rows'][i]
         if row['split']!='train' or row.get('render_protocol')!='rich_product_scene_v1':raise ValueError('Counterfactual ranking requires rich TRAIN only')
+    for i,row in enumerate(payload['rows']):
+        if row['split']!='train':continue
+        if row.get('render_protocol')!='rich_product_scene_v1':raise ValueError('Mixed TRAIN render protocol')
         groups[row['source']['sample_id'],row['mode']].append(i)
     result={}
-    for group in groups.values():
-        for i in group:
-            candidates=[j for j in group if payload['rows'][j]['prompt']!=payload['rows'][i]['prompt']]
-            if not candidates:raise ValueError('No distinct same-reference TRAIN instruction')
-            if any(not torch.equal(payload['reference'][i],payload['reference'][j]) for j in candidates):raise ValueError('Counterfactual source pixels changed')
-            result[i]=candidates
+    for i in ids:
+        row=payload['rows'][i];group=groups[row['source']['sample_id'],row['mode']]
+        candidates=[j for j in group if payload['rows'][j]['prompt']!=row['prompt']]
+        if not candidates:raise ValueError('No distinct same-reference TRAIN instruction')
+        if any(not torch.equal(payload['reference'][i],payload['reference'][j]) for j in candidates):raise ValueError('Counterfactual source pixels changed')
+        result[i]=candidates
     return result
 
 

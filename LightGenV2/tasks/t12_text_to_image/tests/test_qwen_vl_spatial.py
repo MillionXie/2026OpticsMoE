@@ -31,6 +31,7 @@ class SpatialTests(unittest.TestCase):
         rows=[{'split':'train','render_protocol':'rich_product_scene_v1','source':{'sample_id':'one'},'mode':'object','prompt':p} for p in ('red','blue')]
         data={'rows':rows,'reference':torch.zeros(2,3,4,4,dtype=torch.uint8)}
         self.assertEqual(counterfactual_negatives(data,[0,1]),{0:[1],1:[0]})
+        self.assertEqual(counterfactual_negatives(data,[0]),{0:[1]})
         rows[1]['split']='val'
         with self.assertRaises(ValueError):counterfactual_negatives(data,[0,1])
         rows[1]['split']='train';data['reference'][1]+=1
