@@ -87,8 +87,8 @@ def prepare(data,profile_path,out,category_data=None,parent_data=None):
     audit=validate_roles(rows);audit.update({'profile_sha256':sha256(profile_path),
         'raw_manifest_sha256':hashes,'inventories':{s:{'products':len({r['product_id'] for r in v}),'views':len(v)} for s,v in selected.items()},
         'selection_basis':profile['selection_basis'],'manual_prompt_descriptions':True,
-        'target_view_policy':'Object/joint targets use the first manually approved view per SKU; prevents one identical description supervising unrelated target views. Both approved views remain references; background edits retain the actual reference view.',
-        'source_scene_policy':'Two independently composed reference backgrounds per source view; no identical reference/prompt paired with conflicting target views',
+        'target_view_policy':profile.get('target_view_policy','Object/joint targets use the first approved view per SKU; background edits retain the actual reference view.'),
+        'source_scene_policy':f"Independent reference backgrounds per view: {profile.get('edits_per_mode',{'train':2,'val':2})}; no identical reference/prompt paired with conflicting target views",
         'family_scope':'Upstream family where present, otherwise SKU; no claim all similar-family products were independently audited',
         'prior_exposure':profile.get('prior_exposure','Warm-start parent trained on a superset of TRAIN products. This smaller profile does not erase prior training exposure.'),
         'metrics_scope':'New development VAL cohort. Rescore every comparison on these same pairs; do not compare its mean to old 144-VAL means.'})
