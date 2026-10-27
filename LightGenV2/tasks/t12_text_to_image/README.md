@@ -10,6 +10,38 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-27 新电子baseline已完成100轮，接续光电工作流已启动。**
+电子run `runs/simulation/qwen_vl_lamp_pillow_960_96_100epoch_20261027`，按预先指定的
+完整开发96条平均LPIPS选择第50轮／step6000，权重SHA256
+`64e3c1b0ae3b52e8c29a90a488acf49bed7bb64cc2fb6f896c24c9d38cf41fa6`。
+全图PSNR22.323428dB、LPIPS0.251404、物体crop LPIPS0.332593；这些是开发选模指标。
+完整推理3,047,916,491参数，含词嵌入311,164,928；仅TRAIN的VAE encoder34,163,664
+及参考辅助头132不计入推理。其全流程／原图核验已完成，原GPU子进程释放收据为真。
+
+| 开发任务（各32条） | PSNR dB | LPIPS↓ | 物体crop LPIPS↓ |
+|---|---:|---:|---:|
+| 换背景 | 22.288031 | 0.271183 | 0.381730 |
+| 换物体 | 22.310653 | 0.242724 | 0.305678 |
+| 同时修改 | 22.371600 | 0.240304 | 0.310370 |
+
+第50轮后TRAIN诊断继续改善而开发感知指标回退，未因100轮末步训练分数更高而覆盖best。
+定性检查仍发现指令遵循问题，例如红色灯罩指令生成白色灯罩、绿色条纹枕头生成浅色纹理；
+故该版本是**已训练、固定的电子对照，不是已通过最终质量验收的成品**。后续既检查
+相对指标，也检查文字语义与局部细节，不能以接近这个均值直接宣称成功。
+带完整prompt的示例在该run `overview/prompt_review/{background,object,joint}_prompt_examples.png`，
+全部96条浏览页为`all_two_category_with_prompts.html`。历史17M的34dB结果属于另一数据／模型
+协议，不与本轮96条数值混作升降比较。
+
+接续run为`runs/simulation/qwen_vl_native_hybrid_tail_20261027`，顺序workflow PID2840723，
+实际实现源码`0cc8cc563cf996dbdd6a93a91c50a565f28f4073`；先通过本地和服务器9项CPU合同测试，
+等待电子全流程结束后已进入教师特征准备，尚不代表光电质量达标。原始1056条实际语言
+序列99–131 tokens，未超过224行容量，无静默截断。当前仍使用GPU6做接续任务，不能
+把电子baseline的释放收据说成整个后续任务已释放。
+新选中电子权重计时在该接续run `electronic_latency`：第一视觉TF→GPU RGB的附加分段诊断
+平均156.183ms；无分段钩子的GPU输入就绪→GPU RGB中位156.441ms，CPU现成RGB／文字
+→CPU RGB中位160.412ms、平均187.509ms（36次包含首次1105.367ms）。与旧父权重预评估
+137ms不是同一次测量，最终speedup使用匹配的新计时，不能挑旧的快慢数拼倍数。
+
 **2026-10-27 用户已批准顺序实施：电子baseline完成后，光电替换和尾部压缩。**
 本轮新增实现入口为`qwen_vl_hybrid_workflow.py`，配置
 `configs/qwen_vl_hybrid_eg1_20261027.json`和`configs/qwen_vl_tail_quality_20261027.json`。
