@@ -130,6 +130,7 @@ def run(args,cfg):
     out=args.output;out.mkdir(parents=True,exist_ok=True)
     if (out/'report.json').exists():raise ValueError('Existing completed run; inspect instead of restarting')
     parent_report=json.loads((args.parent/'report.json').read_text(encoding='utf-8'))
+    parent_execution=json.loads((args.parent/'execution.json').read_text(encoding='utf-8'))
     if not parent_report['complete'] or parent_report['best_step']<=0:raise ValueError('Parent VAL-selected model is not ready')
     checkpoint=args.parent/'best_checkpoint.pt'
     if sha256(checkpoint)!=parent_report['checkpoint_sha256']:raise ValueError('Parent checkpoint SHA mismatch')
@@ -185,7 +186,8 @@ def run(args,cfg):
     expected={r['sample_id']:r['psnr'] for r in parent_report['best_val']['images']}
     deviations=[abs(r['psnr']-expected[r['sample_id']]) for r in before['images'] if r['sample_id'] in expected]
     write_json(out/'cross_device_parent_comparison.json',{'max_per_sample_psnr_difference':max(deviations) if deviations else None,
-        'samples':len(deviations),'original_parent_gpu':'RTX4090','current_gpu':torch.cuda.get_device_name(0),
+        'samples':len(deviations),'original_parent_gpu':parent_execution.get('gpu_uuid',parent_execution.get('CUDA_VISIBLE_DEVICES')),
+        'current_gpu':torch.cuda.get_device_name(0),
         'note':'New data profiles require the freshly rescored before-training cohort, not old VAL means. Any overlapping historical scores are diagnostic only.'})
     ref_latent={};target_latent={};edit_regions={};target_regions={}
     model.eval()
