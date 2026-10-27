@@ -10,6 +10,18 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+2026-10-27按用户要求增加**结构清楚的人工审核开发数据**：
+`configs/qwen_vl_curated_easy_20261027.json`逐商品固定清晰视角和无品牌外观描述；
+入口`qwen_vl_curated.py --stage prepare|cache`。从原TRAIN保留36款商品×2视角，
+生成432对；原VAL另留6款×2视角，生成72对；两划分三种任务均衡。
+排除悬浮桌、柜体、组合家具及难辨认视角，不因模型生成好坏筛选。
+所有目标仍限于本划分；完整Qwen视觉／语言处理参考RGB＋指令，GT仅用于配对监督。
+`qwen_vl_spatial_run.py --data-run <审核缓存目录>`从已验证空间权重继续训练，
+配置`configs/qwen_vl_curated_spatial_train_20261027.json`；不从头训练，不改变前向图。
+父模型见过更大TRAIN池，本次缩小不能解释成擦除历史暴露。新72条VAL重新测量父模型
+和候选，不与旧144条均值直接比较，不声称独立TEST泛化；原数据／模型／结果均保留。
+审核像素、配对预览、哈希和训练产物在对应任务run中，Git仅维护源码和审核profile。
+
 2026-10-27启动**Qwen视觉空间读出**开发试验，入口`qwen_vl_spatial_run.py`，
 配置`configs/qwen_vl_spatial_20261027.json`。完整Qwen视觉24层和语言28层保留，
 256参考图＋文字仍是唯一编码输入；tokenizer、预训练Qwen层及全部融合token不裁剪。

@@ -1,0 +1,400 @@
+{
+  "version": "qwen_vl_curated_easy_20261027",
+  "selection_basis": "Manual review of original RGB and alpha, structural completeness, class validity and instruction/view agreement; no ranking by generated outputs",
+  "image_size": 256,
+  "seed": 1042,
+  "categories": [
+    "lamp",
+    "table",
+    "pillow"
+  ],
+  "products": {
+    "train": [
+      {
+        "category": "lamp",
+        "product_id": "B073P2CP5G",
+        "views": [
+          11,
+          24
+        ],
+        "description": "a lamp with a white drum shade and reddish wooden tripod legs"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B0742DR7C7",
+        "views": [
+          5,
+          10
+        ],
+        "description": "a lamp with a wide light-gray cylindrical shade and three straight brown wooden legs"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X12HW9",
+        "views": [
+          5,
+          10
+        ],
+        "description": "a tall lamp with a gray drum shade, a slender dark stem and a small round brass base"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X12HWJ",
+        "views": [
+          5,
+          9
+        ],
+        "description": "a lamp with a gray drum shade suspended from a curved brass arm on a black stem and round black base"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X12JW7",
+        "views": [
+          6,
+          11
+        ],
+        "description": "a table lamp with a gray tapered shade and an ivory hourglass-shaped base with a brass foot"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X1KVK8",
+        "views": [
+          6,
+          12
+        ],
+        "description": "a table lamp with a white square shade and a rectangular vertically ribbed ivory base"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X1T4ZS",
+        "views": [
+          5,
+          10
+        ],
+        "description": "a table lamp with a light-gray tapered shade and a turned light-wood pedestal base"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X2FW6F",
+        "views": [
+          2,
+          12
+        ],
+        "description": "a table lamp with a tan cylindrical fabric shade and a short dark-brown cylindrical base"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X2LKNZ",
+        "views": [
+          6,
+          11
+        ],
+        "description": "a table lamp with a gray tapered shade and a narrow perforated rectangular ivory base"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X2Y3Q9",
+        "views": [
+          5,
+          17
+        ],
+        "description": "a table lamp with a gray tapered shade and a rounded ivory base with a brass foot"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B075X2Y3VK",
+        "views": [
+          2,
+          12
+        ],
+        "description": "a table lamp with a gray cylindrical shade and a teal textured cylindrical base"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B076V4XHNG",
+        "views": [
+          6,
+          11
+        ],
+        "description": "a table lamp with a tan cylindrical shade and a short black ribbed cylindrical base"
+      },
+      {
+        "category": "table",
+        "product_id": "B003PBOMJ6",
+        "views": [
+          12,
+          24
+        ],
+        "description": "a tall narrow light-wood square table with four straight legs and a small drawer"
+      },
+      {
+        "category": "table",
+        "product_id": "B00BBDF500",
+        "views": [
+          11,
+          19
+        ],
+        "description": "a light-wood rectangular console table with two small drawers, four square legs and a low stretcher"
+      },
+      {
+        "category": "table",
+        "product_id": "B01LWVEZ1C",
+        "views": [
+          6,
+          10
+        ],
+        "description": "a light-brown rectangular wooden coffee table with four square legs and an open lower shelf"
+      },
+      {
+        "category": "table",
+        "product_id": "B01M642Q91",
+        "views": [
+          11,
+          19
+        ],
+        "description": "a plain white rectangular low table with four broad straight legs"
+      },
+      {
+        "category": "table",
+        "product_id": "B07DMHP1ZY",
+        "views": [
+          12,
+          24
+        ],
+        "description": "a dark-brown rectangular wooden table with four legs and an open lower shelf"
+      },
+      {
+        "category": "table",
+        "product_id": "B07GZY278M",
+        "views": [
+          0,
+          10
+        ],
+        "description": "a honey-colored wooden console table with a rectangular top, two drawers, four legs and a lower shelf"
+      },
+      {
+        "category": "table",
+        "product_id": "B07L85XV75",
+        "views": [
+          11,
+          19
+        ],
+        "description": "a pale natural-wood rectangular coffee table with thick square legs and a lower shelf"
+      },
+      {
+        "category": "table",
+        "product_id": "B07L8DMTMS",
+        "views": [
+          12,
+          25
+        ],
+        "description": "a small warm-brown round wooden table with four straight legs and a drawer"
+      },
+      {
+        "category": "table",
+        "product_id": "B07QF9Y71V",
+        "views": [
+          5,
+          10
+        ],
+        "description": "a low rectangular table with a natural-wood slatted top and two black rectangular metal supports"
+      },
+      {
+        "category": "table",
+        "product_id": "B07SMJXGSW",
+        "views": [
+          11,
+          17
+        ],
+        "description": "a low square light-wood coffee table with thick straight legs and an open lower shelf"
+      },
+      {
+        "category": "table",
+        "product_id": "B07W3LR8Y6",
+        "views": [
+          5,
+          11
+        ],
+        "description": "a small round table with a dark-brown top and a black geometric metal base"
+      },
+      {
+        "category": "table",
+        "product_id": "B0853Q71J6",
+        "views": [
+          11,
+          18
+        ],
+        "description": "a plain medium-brown square wooden table with four slim straight legs"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B074VKVP98",
+        "views": [
+          0,
+          9
+        ],
+        "description": "a long rectangular black cushion with a small light geometric woven pattern"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B074VLRP92",
+        "views": [
+          0,
+          10
+        ],
+        "description": "a long rectangular ivory cushion with subtle vertical ribbing"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B074VLT2MB",
+        "views": [
+          0,
+          10
+        ],
+        "description": "a square charcoal cushion with a light-gray circular ornamental pattern"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B074VMBGCP",
+        "views": [
+          0,
+          9
+        ],
+        "description": "a long rectangular rust-red cushion with a small light woven geometric pattern"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B079TXJCP3",
+        "views": [
+          0,
+          10
+        ],
+        "description": "a square deep-blue cushion with multicolored geometric woven bands"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B079TXJTY4",
+        "views": [
+          1,
+          12
+        ],
+        "description": "a square ivory cushion with a blue diamond lattice pattern"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07BMT4F21",
+        "views": [
+          0,
+          11
+        ],
+        "description": "a square cushion with purple, gray and black angular geometric shapes"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07C8MT64T",
+        "views": [
+          0,
+          9
+        ],
+        "description": "a square cushion with a black, white and gray triangular geometric pattern"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07JKJSJ8G",
+        "views": [
+          1,
+          12
+        ],
+        "description": "a square cushion with horizontal green, ivory and dark zigzag woven stripes"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07JL5PNGZ",
+        "views": [
+          0,
+          11
+        ],
+        "description": "a round muted-green cushion with radial pleats and a small central button"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07JLGCKP6",
+        "views": [
+          1,
+          10
+        ],
+        "description": "a square muted-lilac cushion with diagonal raised stitched lines"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07JLZC56G",
+        "views": [
+          1,
+          12
+        ],
+        "description": "a square dusty-pink cushion with a soft mottled velvet texture"
+      }
+    ],
+    "val": [
+      {
+        "category": "lamp",
+        "product_id": "B0742GG15D",
+        "views": [
+          6,
+          19
+        ],
+        "description": "a lamp with a beige drum shade and three slender pale wooden tripod legs"
+      },
+      {
+        "category": "lamp",
+        "product_id": "B07B4VYKPR",
+        "views": [
+          6,
+          15
+        ],
+        "description": "a table lamp with a wide pale-gray cylindrical shade and a gray cylindrical base with a brass foot"
+      },
+      {
+        "category": "table",
+        "product_id": "B07H2HXQVC",
+        "views": [
+          11,
+          19
+        ],
+        "description": "a narrow black rectangular console table with four straight legs and an open lower shelf"
+      },
+      {
+        "category": "table",
+        "product_id": "B07GZXLWRQ",
+        "views": [
+          17,
+          25
+        ],
+        "description": "a natural-brown rectangular wooden console table with four straight legs and an open lower shelf"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07C8MSZ5T",
+        "views": [
+          0,
+          26
+        ],
+        "description": "a square charcoal cushion with large light-gray circular ornamental motifs"
+      },
+      {
+        "category": "pillow",
+        "product_id": "B07JL5PLPD",
+        "views": [
+          0,
+          26
+        ],
+        "description": "a square ivory cushion with one wide dark-green horizontal stripe"
+      }
+    ]
+  },
+  "excluded_products": [
+    "B07SMJY25Q",
+    "B079VNL3GM"
+  ],
+  "protocol": "Development TRAIN/VAL. Original raw split assignments retained for both roles. Parent has prior TRAIN exposure; no independent TEST claim. No brands or product identifiers enter prompts. Two clear views per product; generic visible-attribute descriptions."
+}

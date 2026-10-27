@@ -134,14 +134,21 @@ def run(args,cfg):
     checkpoint=args.parent/'best_checkpoint.pt'
     if sha256(checkpoint)!=parent_report['checkpoint_sha256']:raise ValueError('Parent checkpoint SHA mismatch')
     state=torch.load(checkpoint,map_location='cpu',weights_only=False)
-    cache=args.parent/'frozen_features.pt'
-    if sha256(cache)!=state['cache_sha256']:raise ValueError('Frozen feature cache SHA mismatch')
+    data_run=args.data_run or args.parent
+    cache=data_run/'frozen_features.pt'
+    cache_digest=sha256(cache)
+    if args.data_run:
+        prepared=json.loads((data_run/'cache_complete.json').read_text())
+        if not prepared['complete'] or cache_digest!=prepared['sha256']:raise ValueError('Reviewed feature cache incomplete/changed')
+        data_audit=json.loads((data_run/'data_audit.json').read_text())
+        if not data_audit['role_disjoint'] or data_audit['test_opened']:raise ValueError('Reviewed split audit failed')
+    elif cache_digest!=state['cache_sha256']:raise ValueError('Frozen feature cache SHA mismatch')
     payload=torch.load(cache,map_location='cpu',weights_only=False,mmap=True)
     validate_roles(payload['rows'])
     # Modify only in-memory sampling state; the parent cache is never overwritten.
     payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
     layout=verify_layout(payload,args.qwen,out)
-    ids,audit=training_ids(payload,args.parent,cfg['exclude_ambiguous_descriptions'])
+    ids,audit=training_ids(payload,data_run,cfg['exclude_ambiguous_descriptions'])
     val_ids=[i for i,r in enumerate(payload['rows']) if r['split']=='val']
     diagnostics={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='train'}
     train_eval=[i for i in ids if payload['rows'][i]['sample_id'] in diagnostics]
@@ -153,24 +160,33 @@ def run(args,cfg):
     write_json(out/'config.json',cfg)
     write_json(out/'execution.json',{'argv':sys.argv,'git':identity(),'started_unix':time.time(),
        'torch':torch.__version__,'parent_run':str(args.parent),'parent_checkpoint_sha256':sha256(checkpoint),
-       'cache_sha256':state['cache_sha256'],'train_pairs':len(ids),'val_pairs':len(val_ids),
+       'cache_sha256':cache_digest,'data_run':str(data_run),'parent_cache_sha256':state['cache_sha256'],
+       'data_profile_sha256':data_audit['profile_sha256'] if args.data_run else None,
+       'train_pairs':len(ids),'val_pairs':len(val_ids),
        'test_opened':False,'visual_layout':layout,'gpu_uuid':os.environ.get('CUDA_VISIBLE_DEVICES')})
     if args.stage=='layout':return
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=cfg['gpu_uuid']:raise ValueError('Unauthorized GPU UUID')
     device=torch.device('cuda:0');torch.cuda.set_per_process_memory_fraction(cfg['gpu_memory_fraction'],0)
     h,valid=pack_hidden([payload['hidden'][val_ids[0]]],device)
     probe=(h,valid,noise_for([payload['rows'][val_ids[0]]],device))
-    model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,identity_probe=probe)
-    write_json(out/'zero_injection_identity.json',model.initial_identity)
+    if 'spatial' in state:
+        for key in ('adapter_hidden','adapter_layers','spatial_width','spatial_channels','visual_grid','unet_lora_rank','unet_training'):
+            if cfg[key]!=state['config'][key]:raise ValueError('Resume architecture mismatch: '+key)
+        if layout['positions']!=state['visual_layout']['positions']:raise ValueError('Resume token layout changed')
+    model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,
+        identity_probe=None if 'spatial' in state else probe)
+    write_json(out/'zero_injection_identity.json',model.initial_identity if 'spatial' not in state else
+        {'applicable':False,'reason':'Continue a trained spatial checkpoint; its injection is already nonzero',
+         'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'architecture_and_layout_matched':True})
     model.unet.enable_gradient_checkpointing()
     import lpips
     metric=lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
     before=evaluate(model,payload,val_ids,device,out,'val_before_training',metric)
     expected={r['sample_id']:r['psnr'] for r in parent_report['best_val']['images']}
-    deviations=[abs(r['psnr']-expected[r['sample_id']]) for r in before['images']]
-    write_json(out/'cross_device_parent_comparison.json',{'max_per_sample_psnr_difference':max(deviations),
+    deviations=[abs(r['psnr']-expected[r['sample_id']]) for r in before['images'] if r['sample_id'] in expected]
+    write_json(out/'cross_device_parent_comparison.json',{'max_per_sample_psnr_difference':max(deviations) if deviations else None,
         'samples':len(deviations),'original_parent_gpu':'RTX4090','current_gpu':torch.cuda.get_device_name(0),
-        'note':'Historical per-image scores are a cross-device BF16 diagnostic, not the zero-injection identity gate. The actual gate compares both forwards on this GPU.'})
+        'note':'New data profiles require the freshly rescored before-training cohort, not old VAL means. Any overlapping historical scores are diagnostic only.'})
     ref_latent={};target_latent={};edit_regions={};target_regions={}
     model.eval()
     with torch.no_grad():
@@ -250,7 +266,7 @@ def run(args,cfg):
             history.append(entry);print('validation',entry,flush=True)
             saved={'schema':'qwen_spatial_v1','step':step,'adapter':model.adapter.state_dict(),
               'spatial':model.spatial.state_dict(),'unet_trainable':{n:p.detach().cpu().clone() for n,p in model.unet.named_parameters() if p.requires_grad},
-              'config':cfg,'visual_layout':layout,'git':identity(),'cache_sha256':state['cache_sha256'],
+              'config':cfg,'visual_layout':layout,'git':identity(),'cache_sha256':cache_digest,
               'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'val':val}
             torch.save(saved,out/'last_checkpoint.pt')
             if val['mean_per_image_psnr_db']>best:
@@ -279,6 +295,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     for key in ('config','parent','qwen','sd','output'):parser.add_argument('--'+key,type=Path,required=True)
     parser.add_argument('--stage',choices=('layout','train'),default='train')
+    parser.add_argument('--data-run',type=Path,help='Explicit reviewed data/cache profile; preserve parent training exposure in provenance')
     args=parser.parse_args();cfg=json.loads(args.config.read_text(encoding='utf-8'))
     if cfg.get('test_enabled',False):raise ValueError('This development runner has no TEST path')
     random.seed(cfg['seed']);np.random.seed(cfg['seed']);torch.manual_seed(cfg['seed']);torch.set_num_threads(4)
