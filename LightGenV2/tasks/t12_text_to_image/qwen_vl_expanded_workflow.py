@@ -20,8 +20,19 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in ('screen','data','data-run','parent-data','parent','qwen','sd','config','smoke-output','output','clip-repo','clip-weights'):
         p.add_argument('--'+key,type=Path,required=True)
+    p.add_argument('--reviewed-profile',type=Path)
+    p.add_argument('--resume-before-training',action='store_true')
     a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
-    if (a.output/'workflow_progress.json').exists():raise ValueError('Existing workflow; inspect before restarting')
+    if (a.output/'workflow_progress.json').exists():
+        if not a.resume_before_training or (a.output/'execution.json').exists() or (a.output/'best_checkpoint.pt').exists():raise ValueError('Existing training workflow; do not restart')
+        old=json.loads((a.output/'workflow_progress.json').read_text())
+        if old['stage'] not in ('cache','prepare','annotate'):raise ValueError('Resume restricted to pre-training failure')
+        write_json(a.output/'workflow_before_caption_correction.json',old)
+        failure=a.output/'workflow_failure.json'
+        if failure.exists():
+            destination=a.output/'workflow_failure_before_caption_correction.json'
+            if destination.exists():raise ValueError('Repeated resume requires inspection')
+            failure.rename(destination)
     cfg=json.loads(a.config.read_text(encoding='utf-8'));gpu=cfg['gpu_uuid']
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=gpu:raise ValueError('Unauthorized GPU')
     review=json.loads((a.screen/'visual_review.json').read_text())
@@ -38,8 +49,13 @@ def main():
             result=child.wait()
         if result:raise RuntimeError(f'{label} failed, exit {result}; inspect its log')
     try:
-        run('annotate',[module+'qwen_vl_expanded_data','--stage','annotate','--output',str(a.screen),'--qwen',str(a.qwen),'--gpu-uuid',gpu])
-        profile=a.screen/'annotated_profile.json'
+        if a.reviewed_profile:
+            checked=json.loads((a.screen/'caption_review.json').read_text())
+            if not checked['passed'] or checked['reviewed_profile_sha256']!=sha256(a.reviewed_profile):raise ValueError('Caption review identity differs')
+            profile=a.reviewed_profile
+        else:
+            run('annotate',[module+'qwen_vl_expanded_data','--stage','annotate','--output',str(a.screen),'--qwen',str(a.qwen),'--gpu-uuid',gpu])
+            profile=a.screen/'annotated_profile.json'
         run('prepare',[module+'qwen_vl_curated','--stage','prepare','--profile',str(profile),'--data',str(a.data),'--parent-data',str(a.parent_data),'--output',str(a.data_run)])
         audit=json.loads((a.data_run/'data_audit.json').read_text())
         if audit['pairs']!={'train':960,'val':96} or not audit['role_disjoint'] or audit['evaluation_label']!='development_test':raise ValueError('Approved data budget/identity differs')

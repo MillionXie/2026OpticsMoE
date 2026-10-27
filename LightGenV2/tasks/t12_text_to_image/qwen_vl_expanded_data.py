@@ -196,12 +196,29 @@ def revise(data,out,revisions):
     write_json(out/'manual_revision.json',{'original_profile_sha256':original,'revisions_sha256':sha256(revisions),'revised_profile_sha256':sha256(out/'screen_profile.json'),'basis':rules['basis']})
 
 
+def review_captions(out,revisions):
+    profile=json.loads((out/'annotated_profile.json').read_text());rules=json.loads(revisions.read_text())
+    annotations=json.loads((out/'product_annotations.json').read_text())
+    products={p['product_id']:p for group in profile['products'].values() for p in group}
+    if set(rules['descriptions'])-set(products):raise ValueError('Caption override names unselected product')
+    for sku,description in rules['descriptions'].items():
+        if re.search(r'\bB0[A-Z0-9]{8}\b|\bSKU\b|\bAmazon\b',description,re.I):raise ValueError('Identity leaked into caption')
+        products[sku]['description']=description
+    profile['annotation_method']+='; lamp descriptions corrected by visual review of original selected views; cushion descriptions retained'
+    profile['caption_review_sha256']=sha256(revisions)
+    write_json(out/'reviewed_profile.json',profile)
+    write_json(out/'caption_review.json',{'passed':True,'original_profile_sha256':sha256(out/'annotated_profile.json'),
+        'reviewed_profile_sha256':sha256(out/'reviewed_profile.json'),'overrides_sha256':sha256(revisions),'basis':rules['basis'],
+        'changed_products':list(rules['descriptions']),'source_annotation_count':len(annotations),'model_outputs_used':False})
+
+
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',choices=('screen','revise','annotate'),required=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',choices=('screen','revise','annotate','review-captions'),required=True)
     for k in ('data','output','parent-data','qwen','revisions'):p.add_argument('--'+k,type=Path)
     p.add_argument('--gpu-uuid');p.add_argument('--exclude-product',action='append',default=[]);a=p.parse_args()
     if a.stage=='screen':screen(a.data,a.output,a.parent_data,a.exclude_product)
     elif a.stage=='revise':revise(a.data,a.output,a.revisions)
+    elif a.stage=='review-captions':review_captions(a.output,a.revisions)
     else:annotate(a.output,a.qwen,a.gpu_uuid)
 
 
