@@ -208,7 +208,9 @@ def calibrate(c,out,profile,auxiliary_factory=Auxiliary):
     out.mkdir(parents=True,exist_ok=False);save(out/'receipt.json',dict(source_commit=commit,source_files=hashes,profile_sha256=sha(profile),pid=os.getpid(),
         cache_manifest_sha256=aux.identity['cache_manifest_sha256'],lambda_kd=weight,weighted_gradient_ratio=weighted_ratio,
         calibration_target_ratio=.5,lambda_bounds=[.1,3.],batches=rows,unique_train_samples=32,optimizer_probe_updates=6,
-        source_restored_exactly=True,parent_cache_d4_max_errors=equivalence,auxiliary_identity=aux.identity,no_val_test_forward=True,passed=passed))
+        source_restored_exactly=True,parent_cache_d4_max_errors=equivalence,auxiliary_identity=aux.identity,
+        no_val_test_forward=not c.get('test_images_enter_student_gradient',False),
+        calibration_scope='TRAIN+TEST' if c.get('test_images_enter_student_gradient',False) else 'TRAIN',passed=passed))
     if not passed:raise RuntimeError('TRAIN numeric KD admission rejected')
 
 

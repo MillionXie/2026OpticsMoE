@@ -1,0 +1,89 @@
+{
+  "stage": "Explicit_TEST_exposed_teacher_two_student_scopes",
+  "seed": 17,
+  "recipes": [
+    "train_only",
+    "train_test"
+  ],
+  "rounds": 16,
+  "check_rounds": [
+    4,
+    8,
+    12,
+    16
+  ],
+  "samples_per_class": 128,
+  "batch": 16,
+  "microbatch": 2,
+  "schedule_type": "distill",
+  "peak_lr": 0.0003,
+  "end_lr": 3e-05,
+  "ema_decay": 0.95,
+  "target_correct": 616,
+  "temperature": 2,
+  "parent_weight": 0.5,
+  "gradient_target_ratio": 0.5,
+  "minimum_weighted_gradient_ratio": 0.05,
+  "recipe_gpu": {
+    "train_only": 1,
+    "train_test": 3
+  },
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "sources": {
+    "student": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+      "sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+      "actual_epoch": 16
+    },
+    "train_only": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+      "sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+      "actual_epoch": 16
+    },
+    "train_test": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+      "sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+      "actual_epoch": 16
+    }
+  },
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+  "incumbent_result_name": "result.json",
+  "incumbent_result_is_selected": true,
+  "incumbent_sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+  "incumbent_predictions_sha256": "bcb1b450179e72cb40836a18341b150eb617f35e8d98548e7b9a86b18bc3a3f9",
+  "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "worker_module": "test_exposed_distill",
+  "auxiliary_dependencies": [
+    "test_exposed_distill.py",
+    "cnn_teacher_cache.py",
+    "cnn_distill.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py"
+  ],
+  "role": "User explicitly authorized original TEST images and labels in augmented teacher training, and both TRAIN-only / TRAIN+TEST student gradient scopes. All subsequent TEST scores are training-exposed development fit scores, NOT independent generalization or original equal-budget Top-k improvement. Original602 asset preserved separately. Teacher ImageNet1K knowledge and all added costs explicit.",
+  "targets": "Teacher trained on original TRAIN3496 plus TEST752, exact8D4, rawlogits per view. Parent cache recomputed for exact source EMA16 f6d718...7128c on both splits. No averaging views. Students use original optical model, T2 KD on teacher-correct inputs, wholeeffective16 denominator/micro2shared, parentKL.5 only parent-correct/teacher-wrong. Teachers absent from inference.",
+  "calibration": "Two fixed disjoint class-balanced16 inputs from each declared student pool, actual input split origins recorded. lambda clip(.5mean classification CE+margin norm/meanT2KD norm,.1,3). Six restored freshAdam probes per scope, finite fivegroups, repeatbaseline and exact source restoration, eightviewparent identity maxerror1e-6. TRAIN+TEST calibration is explicitly TEST-exposed; not called TRAIN-only.",
+  "schedule": "Both students16x1024unique classbalanced128/class, effective16/micro2,64updates/round=1024updates16384inputs each. TRAIN-only3496 uniform rotation4roundcovers; union4248 uniform rotation5roundcovers (not4). Same sourcef6d, freshAdamWwd0,EMA.95,LR1e-4/2e-4/3e-4 then cosine3e-5,global.5/router.1. OriginalCE+margin and physics retained. Original optical inference unchanged.",
+  "selection": "Fixed4/8/12/16 locklastPTSHA/statefield/tensor before bothliveEMA cleanTEST-fit forward. Correct thenNLL; prior602 always retained. Training-exposed fit target>=616 does not establish original held-out goal. best/last only, all scores/locks kept; full originalTRAIN+VAL final, union metrics separately.",
+  "stop_rule": "Fixed16 budget, no adaptive distillation no-transfer rule; original two-check probe+VAL both>5pp degradation guard plus numerical/source failure retained. Teacher gate/calibration failure rejects both/affected preparation without blind restart, no automatic budget/seed/weight/temperature grid.",
+  "previous_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028",
+  "parent_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_parent_20261028",
+  "teacher_epochs": 8,
+  "teacher_batch": 32,
+  "pretrained_weights": "/home/guest3/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth",
+  "pretrained_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "source_val_correct": 590,
+  "teacher_schedule": "Existing supervised ResNet18 teacher383...62f, freshAdamWwd1e-4, eight full4248-image epochs, batch32, backbone5e-5/fc2e-4 cosine to.1. D4(index+epoch-1)%8, each image sees each view once. Original VAL untouched by gradients. Select TEST-fit correct/NLL among teacher candidates with VAL>=715; gate cleanTRAIN>=3427/3496,cleanTEST-fit>=737/752,VAL>=715/752. No automatic extension.",
+  "explicit_test_training_authorization": true,
+  "calibration_runs": {
+    "train_only": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/smoke/kather_n49_test_exposed_calibration_train_only_20261028",
+    "train_test": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/smoke/kather_n49_test_exposed_calibration_train_test_20261028"
+  },
+  "teacher_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_teacher_20261028/best_checkpoint.pt",
+  "teacher_source_sha256": "383162fbd84390a0ec816beda9a753040e9d61fcd99df932d7eb48d9222ec62f"
+}

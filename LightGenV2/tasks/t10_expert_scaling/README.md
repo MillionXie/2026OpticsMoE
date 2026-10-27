@@ -1,5 +1,32 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 新授权：TEST参与教师训练，两种学生蒸馏范围（2026-10-28）
+
+用户明确要求使用增强TEST训练强教师，并同时尝试学生只用TRAIN、学生用TRAIN+TEST两路，最多三张空闲GPU。
+新入口`test_exposed_distill.py`、profile`configs/kather_n49_test_exposed_distill_20261028.json`，
+新run `runs/simulation/kather_n49_test_exposed_distill_20261028`；只使用已核空闲GPU1和3，不抢其他任务。
+**本阶段之后的TEST数字是训练暴露的开发拟合分数，不能作为独立TEST泛化、原等预算Top-k提升或原目标已证实。**
+原602/752与原教师/学生best、last、逐样本证据独立保留，旧协议不改写。
+
+教师从已核ResNet18教师383162fb…62f继续fresh AdamW，TRAIN3496+TEST752共同监督，
+固定8个完整4248图epoch、batch32，backbone5e-5/fc2e-4余弦到.1倍，weight decay1e-4。
+每图D4轮换八epoch各view一次，全patch resize224及ImageNet mean/std不改；额外ImageNet知识和电子教师成本继续单列。
+VAL752不进入梯度。教师在VAL≥715的候选中按TEST拟合正确数/NLL选best，准入cleanTRAIN≥3427、
+TEST拟合≥737、VAL≥715；失败不自动延长。缓存八个分开的rawlogits/T1概率，不做八view平均。
+并行在GPU3重算当前602的EMA16源f6d718bd…7128c在全部4248图的八D4父概率，绑定PT/data/ID/label/view/SHA。
+
+准备进程全部退出后，两路独立校准T2蒸馏lambda，实际分类/KD梯度比目标.5、截断[.1,3]，
+验证真实Adam方向变化、五组finite非零、源恢复与八view缓存误差≤1e-6；记录校准每个ID的原split，
+TRAIN+TEST校准不得误标为TRAIN-only。通过后GPU1学生`train_only`、GPU3学生`train_test`并行。
+两者同源602、fresh AdamW无weight decay/EMA.95、同16段×1024输入/1024更新，
+effective16/micro2、每类128。TRAIN-only四段覆盖3496，union五段覆盖4248，不能沿用四段覆盖说法。
+专家LR1e-4/2e-4/3e-4后余弦3e-5，global×.5/router×.1；原CE+margin/物理项保持。
+教师正确同view图使用T2、T²4的KL，whole-effective16条件分母共享micro2；父KL.5仅父正确教师错误图。
+学生原N49/k49/T.05/四层OEO/RGB/detectors/11078432参数/单view不改，教师不参加学生最终推理。
+固定4/8/12/16锁PT SHA/field/tensor后测live和EMA的干净TEST拟合分数选best，旧602始终候选；只保best/last。
+原两个检查点探针与VAL同时下降>5pp保护保留，不临时追加预算/seed/温度/权重。
+最终分别保存原TRAIN、VAL、TEST拟合及B路union指标、采样来源、成本和释放收据。
+
 ## 当前保留602；实际Adam分块核验未提供新训练依据（2026-10-28）
 
 两批实际retained-Adam分块核验已完成，源为last16 live及其step1024状态，
