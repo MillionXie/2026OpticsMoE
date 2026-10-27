@@ -28,6 +28,17 @@ class ReviewedPairsTests(unittest.TestCase):
             if r['mode']=='object':self.assertEqual(r['source_scene'],r['target_scene'])
             else:self.assertNotEqual(r['source_scene'],r['target_scene'])
         self.assertEqual(rows,reviewed_pairs(groups,descriptions,profile))
+        target_views=collections.defaultdict(set)
+        for r in rows:
+            if r['mode']!='background':target_views[r['target']['product_id']].add(r['target']['sample_id'])
+        self.assertEqual({len(v) for v in target_views.values()},{1})
+        # With just two VAL products, repeated target identity still has a
+        # different input background: no contradictory identical input/prompt.
+        signatures={}
+        for r in rows:
+            key=(r['source']['sample_id'],tuple(r['source_scene']),r['prompt'])
+            value=(r['target']['sample_id'],tuple(r['target_scene']))
+            self.assertEqual(signatures.setdefault(key,value),value)
 
     def test_cross_split_target_leakage_is_rejected(self):
         groups,descriptions,profile=fixture()

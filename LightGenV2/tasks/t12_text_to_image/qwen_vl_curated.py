@@ -15,7 +15,9 @@ def reviewed_pairs(selected,descriptions,profile):
         groups=collections.defaultdict(list)
         for row in products:groups[row['category']].append(row)
         for source in products:
-            targets=sorted((r for r in groups[source['category']] if r['product_id']!=source['product_id']),
+            canonical={}
+            for r in groups[source['category']]:canonical.setdefault(r['product_id'],r)
+            targets=sorted((r for r in canonical.values() if r['product_id']!=source['product_id']),
                            key=lambda r:r['sample_id'])
             if not targets:raise ValueError('Need another reviewed product in each category/split')
             rng=random.Random(seed(profile['seed'],source['sample_id'],'reviewed-targets'));rng.shuffle(targets)
@@ -25,11 +27,12 @@ def reviewed_pairs(selected,descriptions,profile):
             base=seed(profile['seed'],source['sample_id'],'reviewed-scene')%len(COMBINATIONS)
             for mode in ('background','object','joint'):
                 for j,target in enumerate((first,second)):
+                    source_scene=COMBINATIONS[(base+7*j)%len(COMBINATIONS)]
                     pairs.append({'sample_id':f"{split}:reviewed:{source['sample_id']}:{mode}:{j}",
                         'split':split,'category':source['category'],'mode':mode,'source':source,
                         'target':source if mode=='background' else target,
-                        'source_scene':COMBINATIONS[base],
-                        'target_scene':COMBINATIONS[base if mode=='object' else (base+11+13*j)%len(COMBINATIONS)],
+                        'source_scene':source_scene,
+                        'target_scene':source_scene if mode=='object' else COMBINATIONS[(base+11+13*j)%len(COMBINATIONS)],
                         'noise_seed':profile['seed'],'explicit_category_teacher':True})
     rows=add_descriptions(pairs,descriptions)
     validate_roles(rows)
@@ -65,6 +68,8 @@ def prepare(data,profile_path,out):
     audit=validate_roles(rows);audit.update({'profile_sha256':sha256(profile_path),
         'raw_manifest_sha256':hashes,'inventories':{s:{'products':len({r['product_id'] for r in v}),'views':len(v)} for s,v in selected.items()},
         'selection_basis':profile['selection_basis'],'manual_prompt_descriptions':True,
+        'target_view_policy':'Object/joint targets use the first manually approved view per SKU; prevents one identical description supervising unrelated target views. Both approved views remain references; background edits retain the actual reference view.',
+        'source_scene_policy':'Two independently composed reference backgrounds per source view; no identical reference/prompt paired with conflicting target views',
         'family_scope':'Upstream family where present, otherwise SKU; no claim all similar-family products were independently audited',
         'prior_exposure':'Warm-start parent trained on a superset of TRAIN products. This smaller profile does not erase prior training exposure.',
         'metrics_scope':'New development VAL cohort. Rescore every comparison on these same pairs; do not compare its mean to old 144-VAL means.'})

@@ -2,6 +2,7 @@
   "version": "qwen_vl_curated_easy_20261027",
   "selection_basis": "Manual review of original RGB and alpha, structural completeness, class validity and instruction/view agreement; no ranking by generated outputs",
   "image_size": 256,
+  "target_view_policy": "First approved view per product for object/joint supervision; two source views and two source backgrounds; background edits retain their actual input view",
   "seed": 1042,
   "categories": [
     "lamp",
