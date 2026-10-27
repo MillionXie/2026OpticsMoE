@@ -58,6 +58,22 @@ def hinge_discriminator_loss(real_logits,fake_logits):
     return .5*(F.relu(1-real_logits).mean()+F.relu(1+fake_logits).mean())
 
 
+def foreground_detail_losses(prediction,target,alpha):
+    """Area-normalized TRAIN foreground color and true-alpha boundary gradients."""
+    image,target,alpha=prediction.float(),target.float(),alpha.float()
+    if alpha.shape!=(len(image),1,*image.shape[-2:]) or (alpha.sum((1,2,3))<=0).any():
+        raise ValueError('Nonempty genuine target alpha is required for supervision')
+    error=(image-target).abs()
+    pixel=((error*alpha).sum((1,2,3))/(3*alpha.sum((1,2,3)).clamp_min(1))).mean()
+    band=(F.max_pool2d(alpha,3,1,1)+F.max_pool2d(-alpha,3,1,1)).clamp_min(0)
+    boundary=image.sum()*0
+    for axis in (-1,-2):
+        delta=(torch.diff(image,dim=axis)-torch.diff(target,dim=axis)).abs()
+        weights=band.narrow(axis,0,band.shape[axis]-1)
+        boundary=boundary+((delta*weights).sum((1,2,3))/(3*weights.sum((1,2,3)).clamp_min(1))).mean()/2
+    return pixel,boundary
+
+
 class FrozenCLIPSemantic(nn.Module):
     def __init__(self,model):
         super().__init__()

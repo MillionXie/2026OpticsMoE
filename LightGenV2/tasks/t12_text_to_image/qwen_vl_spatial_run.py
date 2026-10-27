@@ -99,6 +99,7 @@ def lr_factor(step, total, warmup=0, minimum=0.1):
 
 def selection_score(val, metric):
     if metric=='mean_lpips':return -val[metric]
+    if metric=='mean_lpips_plus_object_crop':return -(val['mean_lpips']+.5*val['mean_object_crop_lpips'])
     if metric=='mean_per_image_psnr_db':return val[metric]
     raise ValueError('Unknown VAL selection metric')
 
@@ -356,6 +357,19 @@ def run(args,cfg):
       'trainable':sum(p.numel() for p in params)}
     counts['training_only_vae_encoder']=sum(p.numel() for p in model.vae.encoder.parameters())+sum(p.numel() for p in model.vae.quant_conv.parameters())
     if semantic is not None:counts['training_only_semantic_encoder']=semantic_meta['frozen_parameters']
+    has_detail=any(cfg.get(k,0) for k in ('foreground_rgb_weight','object_crop_weight','boundary_weight'))
+    discriminator=None;optimizer_disc=None
+    if has_detail or cfg.get('gan_weight',0):
+        from .qwen_vl_turbo_losses import foreground_detail_losses,region_boxes,crop_regions,PatchDiscriminator,discriminator_views,hinge_discriminator_loss
+    if cfg.get('gan_weight',0):
+        discriminator=PatchDiscriminator(cfg.get('discriminator_width',32)).to(device)
+        if 'training_only_discriminator' in state:discriminator.load_state_dict(state['training_only_discriminator'],strict=True)
+        # Spectral-norm power iteration must run before the first frozen-critic
+        # G pass. Zero tensors initialize weight-only buffers, not DEV statistics.
+        with torch.no_grad():
+            for _ in range(3):discriminator(torch.zeros(1,3,128,128,device=device))
+        optimizer_disc=torch.optim.Adam(discriminator.parameters(),lr=cfg.get('discriminator_lr',1e-4),betas=(.5,.999))
+        counts['training_only_discriminator']=sum(p.numel() for p in discriminator.parameters())
     counts['inference_total']=sum(counts[k] for k in ('qwen_full_forward','adapter','unet_including_lora','spatial_readout','vae_decoder'))
     write_json(out/'parameter_counts.json',counts)
     effective=cfg['batch_size']*cfg['gradient_accumulation']
@@ -371,7 +385,7 @@ def run(args,cfg):
         if cfg.get('lr_schedule')=='cosine':
             factor=lr_factor(step,steps,cfg.get('lr_warmup_steps',0),cfg.get('lr_min_factor',.1))
             for group,rate in zip(optimizer.param_groups,rates):group['lr']=rate*factor
-        model.train();model.vae.eval();optimizer.zero_grad(set_to_none=True);total=0.;terms={}
+        model.train();model.vae.eval();optimizer.zero_grad(set_to_none=True);total=0.;terms={};real_views=[];fake_views=[]
         for micro in range(cfg['gradient_accumulation']):
             start=((step-1)*cfg['gradient_accumulation']+micro)*cfg['batch_size'];batch=order[start:start+cfg['batch_size']]
             h,valid=pack_hidden([payload['hidden'][i] for i in batch],device)
@@ -400,16 +414,39 @@ def run(args,cfg):
                     wrong_perceptual=metric(rgb.clamp(-1,1),wrong_target).flatten()
                     ranking=F.relu(cfg.get('counterfactual_margin',.05)+correct_perceptual-wrong_perceptual).mean()
                     loss=loss+cfg['counterfactual_weight']*ranking
+                if has_detail or discriminator is not None:
+                    foreground=torch.cat([target_regions[i] for i in batch]).to(device)
+                    detail_boxes=region_boxes(foreground)
+                if has_detail:
+                    foreground_rgb,boundary=foreground_detail_losses(rgb,target,foreground)
+                    crop_perceptual=metric(crop_regions(rgb.clamp(-1,1),detail_boxes),crop_regions(target,detail_boxes)).mean()
+                    loss=loss+cfg.get('foreground_rgb_weight',0)*foreground_rgb+cfg.get('boundary_weight',0)*boundary+cfg.get('object_crop_weight',0)*crop_perceptual
+                if discriminator is not None:
+                    discriminator.eval().requires_grad_(False)
+                    fake=discriminator_views(rgb.clamp(-1,1),detail_boxes)
+                    adversarial=-discriminator(fake).mean()
+                    ramp=min(1.,step/max(1,cfg.get('gan_warmup_steps',128)))
+                    loss=loss+cfg['gan_weight']*ramp*adversarial
+                    fake_views.append(fake.detach());real_views.append(discriminator_views(target,detail_boxes).detach())
             if not torch.isfinite(loss):raise FloatingPointError('Nonfinite training loss')
             (loss/cfg['gradient_accumulation']).backward();total+=float(loss.detach())/cfg['gradient_accumulation']
             terms={k:float(v.detach()) for k,v in {'latent':latent,'rgb':pixel,'lpips':perceptual,'reference':spatial_loss,'condition':align}.items()}
             if negatives is not None:terms['counterfactual_rank']=float(ranking.detach())
+            if has_detail:terms.update(foreground_rgb=float(foreground_rgb.detach()),boundary=float(boundary.detach()),object_crop_lpips=float(crop_perceptual.detach()))
+            if discriminator is not None:terms['generator_adversarial']=float(adversarial.detach())
         norm=torch.nn.utils.clip_grad_norm_(params,1.)
         if not torch.isfinite(norm):raise FloatingPointError('Nonfinite gradient')
         optimizer.step()
+        if discriminator is not None:
+            discriminator.train().requires_grad_(True);optimizer_disc.zero_grad(set_to_none=True)
+            loss_disc=hinge_discriminator_loss(discriminator(torch.cat(real_views)),discriminator(torch.cat(fake_views)))
+            if not torch.isfinite(loss_disc):raise FloatingPointError('Nonfinite TRAIN discriminator loss')
+            loss_disc.backward();disc_norm=torch.nn.utils.clip_grad_norm_(discriminator.parameters(),1.)
+            if not torch.isfinite(disc_norm):raise FloatingPointError('Nonfinite TRAIN discriminator gradient')
+            optimizer_disc.step();terms['discriminator']=float(loss_disc.detach())
         if step==4:
             write_json(out/'smoke_report.json',{'real_backward_steps':4,'finite_loss_gradient':True,
-                       'TRAIN_only':True,'Qwen_frozen':True,'VAE_frozen':not any(p.requires_grad for p in model.vae.parameters())})
+                       'TRAIN_only':True,'Qwen_frozen':True,'VAE_frozen':not any(p.requires_grad for p in model.vae.parameters()),'adversarial_training':discriminator is not None})
         if step%10==0:
             print('paired',step,'/',steps,'loss',total,terms,flush=True)
             write_json(out/'progress.json',{'stage':'paired','step':step,'total_steps':steps,'loss':total,'terms':terms,'best_step':best_step,'best_val_psnr':best_psnr,'selection_metric':selector,'learning_rates':[g['lr'] for g in optimizer.param_groups]})
@@ -423,6 +460,7 @@ def run(args,cfg):
               'config':cfg,'visual_layout':layout,'git':identity(),'cache_sha256':cache_digest,
               'native_visual_cache_sha256':native_digest,
               'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'val':val}
+            if discriminator is not None:saved['training_only_discriminator']={k:v.detach().cpu().clone() for k,v in discriminator.state_dict().items()}
             torch.save(saved,out/'last_checkpoint.pt')
             if selection_score(val,selector)>best:
                 best=selection_score(val,selector);best_psnr=val['mean_per_image_psnr_db'];best_step=step;torch.save(saved,out/'best_checkpoint.pt')

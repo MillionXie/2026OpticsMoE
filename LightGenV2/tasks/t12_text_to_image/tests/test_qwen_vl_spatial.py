@@ -69,6 +69,8 @@ class SpatialTests(unittest.TestCase):
         detailed={'mean_lpips':.2,'mean_per_image_psnr_db':28}
         self.assertGreater(selection_score(detailed,'mean_lpips'),selection_score(smooth,'mean_lpips'))
         self.assertGreater(selection_score(smooth,'mean_per_image_psnr_db'),selection_score(detailed,'mean_per_image_psnr_db'))
+        self.assertGreater(selection_score({'mean_lpips':.3,'mean_object_crop_lpips':.2},'mean_lpips_plus_object_crop'),
+                           selection_score({'mean_lpips':.3,'mean_object_crop_lpips':.4},'mean_lpips_plus_object_crop'))
         self.assertEqual(lr_factor(36,1800,36,.1),1)
         self.assertAlmostEqual(lr_factor(1800,1800,36,.1),.1)
         self.assertLess(lr_factor(1,1800,36,.1),lr_factor(20,1800,36,.1))

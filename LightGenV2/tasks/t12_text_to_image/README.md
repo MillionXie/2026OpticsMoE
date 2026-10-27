@@ -66,7 +66,26 @@ token均值调制128个空间通道；TRAIN参考重建aux保持未调制。CPU�
 相同，启用调制后文字有非零梯度。另加TRAIN同RGB／不同指令的LPIPS排序损失，
 负例不能来自DEV／TEST，也不能偷偷改变参考像素。仅在单独run真实反向、视觉审查后
 判断是否改善；不把架构分析当作已证实的唯一原因。正在执行的旧run和待审查队列仍
-固定原发布源码，候选源码暂不替换其运行版本，待队列释放后再按Git同步。
+固定各自发布源码；追加loss候选暂不替换当前FiLM运行版本，待其训练和raw审查释放后再同步。
+复杂数据已正式早停24轮，best为14轮step3192、SHA`4655a12a833e773772f0958fd6c9ddc3203f2ed5c3f4588e0dbae39654571bff`；
+完整raw DEV96为PSNR16.805277／LPIPS0.419855／crop0.381493。六cell raw与cache的hidden、RGB及PNG完全一致，
+红灯罩幽灵形／灰化、枕横条遗漏等未通过语义审查，不作为合格生成或LG质量结论。
+已测基线firstTF到GPU RGB均值127.38ms，UNet53.43ms、VAE11.11ms；即便删掉全部TF且无替换开销，
+仅UNet＋VAE地板也约限制在1.97倍，因此两倍目标必须同时压缩尾部。此为单进程诊断，不是最终DAG或实机加速。
+
+条件化轮次后若小前景仍被场景损失掩盖，备用`qwen_vl_rich_detail_baseline_20261028.json`
+在相同推理网络上强化面积归一的GT前景RGB、真实alpha边界梯度和物体crop LPIPS，并试弱PatchGAN。
+判别器只看TRAIN完整图／目标crop，推理没有D或GT裁剪；先用零张量对SN做权重缓冲初始化，再执行
+G／D独立更新，D及CLIP参数单列训练专用、D状态随checkpoint保存。DEV按全图LPIPS＋0.5crop选模。
+所有新增loss默认关闭，不改变旧run；CPU区域归一／边界梯度／G-D隔离验证通过，GPU效果尚待独立smoke与审查。
+TRAIN原图进一步抽查发现一处新引入的数据增强缺陷：旧绝对RGB色差阈值会漏掉暗部，
+再用亮度比例缩放时可能红通道裁切，导致部分“红灯罩”GT仍带绿块／过饱和色斑。
+原始ABO图未改动，问题仅在声明的150张TRAIN合成配色目标，DEV／TEST不含该增强。
+`qwen_vl_scene_repair`以逐行显式`hsv_component_hull_v2`修正组件色相，保留HSV明度／饱和度、
+中性高光和暖色黄铜；旧recipe仍保持原像素便于复现。修复写入独立数据run，原数据不覆盖。
+只有逐张验证参考RGB、prompt、caption、noise完全不变，且原PNG与原cache匹配后，才复用
+冻结Qwen特征并重绑定150个TRAIN目标tensor；1920输入没有重算或混入DEV监督。修正后仍需
+先看原色／旧增强／修正增强QA板，再进行真实GPU反向，不把CPU修复代码当作已改善模型。
 所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
 仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
 

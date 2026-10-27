@@ -4,6 +4,17 @@ from ..qwen_vl_scene_render import light_field,unmatte_white,recolor_component
 
 
 class SceneDataRenderTests(unittest.TestCase):
+    def test_hsv_component_repairs_dark_green_without_flat_clipping_or_brass_edits(self):
+        fg=np.zeros((64,64,3),dtype=np.float32);alpha=np.zeros((64,64),dtype=np.float32)
+        for x in range(10,54):fg[8:36,x]=np.array([.2,1.,.3])*(20+x*2);alpha[8:36,x]=1
+        fg[16:20,24:28]=[140,90,30];fg[24:27,36:39]=[220,220,220]
+        new=recolor_component(fg,alpha,{'part':'shade','color':'red','recipe':'hsv_component_hull_v2'})
+        self.assertGreater(float(new[12,11,0]),float(new[12,11,1]))
+        self.assertGreater(float(new[12,51,0]),float(new[12,51,1]))
+        np.testing.assert_allclose(new.max(2),fg.max(2),atol=1e-5)
+        np.testing.assert_array_equal(new[16:20,24:28],fg[16:20,24:28])
+        np.testing.assert_array_equal(new[24:27,36:39],fg[24:27,36:39])
+
     def test_white_unmatting_avoids_double_alpha_edge(self):
         rgb=np.array([[[255,128,128]]],dtype=np.uint8);alpha=np.array([[128]],dtype=np.uint8)
         fg,a=unmatte_white(rgb,alpha)

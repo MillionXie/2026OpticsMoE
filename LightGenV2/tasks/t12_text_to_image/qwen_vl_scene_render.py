@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image,ImageDraw,ImageFilter
 
 from .qwen_vl_turbo_data import normalized_product, sha256
 
@@ -56,6 +56,9 @@ def unmatte_white(rgb, alpha):
 
 def recolor_component(foreground, alpha, variant):
     if not variant:return foreground
+    recipe=variant.get('recipe','threshold_luminance_v1')
+    if recipe=='hsv_component_hull_v2':return recolor_component_hsv(foreground,alpha,variant)
+    if recipe!='threshold_luminance_v1':raise ValueError('Unknown color augmentation recipe')
     h,w=alpha.shape;yy=np.arange(h)[:,None]/h;rgb=foreground/255
     spread=rgb.max(2)-rgb.min(2)
     if variant['part']=='shade':
@@ -68,6 +71,47 @@ def recolor_component(foreground, alpha, variant):
     tint=np.asarray(color,dtype=np.float32);luminance=rgb@np.array([.2126,.7152,.0722],dtype=np.float32)
     shaded=(luminance[:,:,None]/float(tint@np.array([.2126,.7152,.0722])))*tint
     result=foreground.copy();result[mask]=shaded.clip(0,1)[mask]*255
+    return result
+
+
+def recolor_component_hsv(foreground,alpha,variant):
+    """Whole cold-colored component; preserve HSV value, saturation and highlights.
+
+    Unlike the historical absolute-spread threshold, dim colored surfaces are
+    included. A seeded convex component support fills neutral specular holes;
+    true alpha and warm brass parts remain protected. This recipe is explicit
+    in each repaired TRAIN row so historical pixels remain reproducible.
+    """
+    import colorsys
+    h,w=alpha.shape;yy=np.arange(h)[:,None]/h;rgb=np.clip(foreground/255,0,1)
+    value=rgb.max(2);minimum=rgb.min(2);saturation=(value-minimum)/np.maximum(value,1e-6)
+    if variant['part']=='shade':
+        part=yy<.62;chromatic=(rgb[:,:,1]>1.03*rgb[:,:,0])&(rgb[:,:,1]>=.95*rgb[:,:,2])
+    elif variant['part']=='base':
+        part=yy>.48;chromatic=(rgb[:,:,1]>1.05*rgb[:,:,0])&(rgb[:,:,2]>1.05*rgb[:,:,0])
+    else:raise ValueError('Unsupported component')
+    seeds=part&chromatic&(saturation>.15)&(value>.03)&(alpha>.25)
+    ys,xs=np.where(seeds)
+    if len(xs)<30:raise ValueError('No reliable colored component for HSV repair')
+    points=sorted(set(zip(xs.tolist(),ys.tolist())))
+    def cross(a,b,c):return (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
+    lower=[];upper=[]
+    for point in points:
+        while len(lower)>1 and cross(lower[-2],lower[-1],point)<=0:lower.pop()
+        lower.append(point)
+    for point in reversed(points):
+        while len(upper)>1 and cross(upper[-2],upper[-1],point)<=0:upper.pop()
+        upper.append(point)
+    polygon=lower[:-1]+upper[:-1]
+    if len(polygon)<3:raise ValueError('Degenerate color component')
+    support=Image.new('L',(w,h));ImageDraw.Draw(support).polygon(polygon,fill=255)
+    support=np.asarray(support.filter(ImageFilter.MaxFilter(5)))>0
+    warm=(rgb[:,:,0]>1.15*rgb[:,:,1])&(rgb[:,:,1]>1.05*rgb[:,:,2])
+    mask=support&part&(alpha>.01)&~warm&(saturation>.08)
+    hue={'red':.01,'blue':.62}[variant['color']]
+    basis=np.asarray(colorsys.hsv_to_rgb(hue,1.,1.),dtype=np.float32)
+    recolored=value[:,:,None]*((1-saturation[:,:,None])+saturation[:,:,None]*basis)
+    result=foreground.copy();result[mask]=recolored[mask]*255
     return result
 
 

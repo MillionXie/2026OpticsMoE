@@ -14,6 +14,18 @@ class FakeCLIP(nn.Module):
 
 
 class LossTests(unittest.TestCase):
+    def test_foreground_losses_are_area_normalized_and_have_boundary_gradients(self):
+        from ..qwen_vl_turbo_losses import foreground_detail_losses
+        target=torch.zeros(2,3,32,32);alpha=torch.zeros(2,1,32,32)
+        alpha[0,:,8:24,8:24]=1;alpha[1,:,12:20,12:20]=1
+        prediction=alpha.expand(-1,3,-1,-1).clone().requires_grad_()
+        pixel,edge=foreground_detail_losses(prediction,target,alpha)
+        self.assertAlmostEqual(float(pixel.detach()),1.);self.assertGreater(float(edge.detach()),0.)
+        (pixel+edge).backward();self.assertTrue(torch.isfinite(prediction.grad).all())
+        zero=foreground_detail_losses(target,target,alpha)
+        self.assertEqual([float(v) for v in zero],[0.,0.])
+        with self.assertRaises(ValueError):foreground_detail_losses(target,target,alpha*0)
+
     def test_crop_has_image_gradient_and_empty_region_fallback(self):
         masks=torch.zeros(2,1,32,32);masks[0,:,8:24,6:20]=1
         boxes=region_boxes(masks)
