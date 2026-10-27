@@ -142,6 +142,11 @@ def main():
             raise RuntimeError('Tail real-backward smoke incomplete')
         run('tail_quality', tail_cmd(a.tail_config, tail))
         run('tail_review', ['qwen_vl_hybrid_review', '--run', str(tail)], gpu_job=False)
+        run('tail_raw_prompt_review', ['qwen_vl_scene_review', '--parent', str(a.parent),
+            '--data', str(a.data), '--qwen', str(a.qwen), '--sd', str(a.sd),
+            '--hybrid', str(joint), '--tail', str(tail), '--gpu-uuid', gpu,
+            '--output', str(a.output/'tail_raw_prompt_review'),
+            '--label', 'LG postfree + compressed tail candidate; semantic acceptance pending'])
         timing('tail_latency', joint, tail)
         baseline_time = json.loads((a.output/'electronic_latency/report.json').read_text())
         tail_time = json.loads((a.output/'tail_latency/report.json').read_text())
