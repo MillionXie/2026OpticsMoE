@@ -1,0 +1,22 @@
+{
+  "schema": "qwen_vl_holdout_review_v1",
+  "screen_audit_sha256": "de347037cc758b3994dfd0875c015a26c159d1c8d413bb877f829ea90ded97fa",
+  "visual_review_complete": true,
+  "reviewer": "Assistant visually inspected the complete two category contact sheets of original held-out render views, before any model inference on this cohort.",
+  "contact_sha256": {
+    "lamp_candidate_views.png": "6dc5f2bbb28501c98eff56c95a3835d7724f25dc6a234c7cdfd10a9ad51f7411",
+    "pillow_candidate_views.png": "a7e63632def86c0dd9f6fa3759d590299891837ffb7e3d2e1847402b9e9c0972"
+  },
+  "basis": "Four full-body table lamps and four complete single cushions, two clearly identifiable front or mild side views per product. No floor lamps, multiple light heads, thin cushion edge, rear-face target, chair, table or paired seat cushion. Selection uses only original product appearance and view completeness, never model scores.",
+  "evaluation_policy": "Independent of recorded native Qwen warm-start TRAIN and development cohorts in both roles. Prepare only; freeze checkpoint and protocol before inference. Existing 96 development rows remain unchanged; this cohort is never a training cache or an early-stop input.",
+  "products": [
+    {"category": "lamp", "product_id": "B073P46SHG", "views": [17, 21], "description": "a table lamp with a white tapered fabric shade, a brass-colored curved arm, a dark slim stem and a reddish-brown circular base"},
+    {"category": "lamp", "product_id": "B075X2LKPV", "views": [20, 25], "description": "a table lamp with a gray tapered fabric shade and a rounded light-gray ceramic base with a small textured pattern"},
+    {"category": "lamp", "product_id": "B07B4YYC4V", "views": [17, 21], "description": "a desk lamp with a black metal shade, a curved brass-colored arm and a black circular base"},
+    {"category": "lamp", "product_id": "B07B4Z6JZ4", "views": [17, 21], "description": "a table lamp with a white cylindrical fabric shade, a brass-colored open wire-cage stem and a circular brass-colored base"},
+    {"category": "pillow", "product_id": "B07JKJSTL4", "views": [12, 11], "description": "a square cushion with a patchwork face of navy-blue and medium-blue rectangles, narrow white stripes and light cream panels"},
+    {"category": "pillow", "product_id": "B07JL5PT18", "views": [12, 3], "description": "a square cream cushion with a repeating mustard-yellow interlocking curved-line pattern"},
+    {"category": "pillow", "product_id": "B07JLZJFVL", "views": [10, 19], "description": "a square cushion with horizontal red, gray and cream bands of small geometric motifs"},
+    {"category": "pillow", "product_id": "B07ML7J5DS", "views": [4, 12], "description": "a square pale-yellow cushion with a multicolored floral and leaf print and turquoise edge piping"}
+  ]
+}

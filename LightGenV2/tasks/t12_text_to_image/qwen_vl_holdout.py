@@ -7,6 +7,9 @@ import argparse
 import collections
 import json
 import subprocess
+import textwrap
+import os
+import zipfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -135,6 +138,8 @@ def prepare(screen_dir, selection, output, baseline, root):
     audit = json.loads((screen_dir/'screen_audit.json').read_text())
     if profile['screen_audit_sha256'] != sha256(screen_dir/'screen_audit.json'):
         raise ValueError('Visual review is not bound to this exposure audit')
+    if not profile.get('visual_review_complete'):
+        raise ValueError('Explicit original-view review is required')
     if sha256(Path(audit['raw_test_manifest'])) != audit['raw_test_manifest_sha256']:
         raise ValueError('Raw TEST changed after screening')
     raw = json.loads((screen_dir/'candidate_products.json').read_text())
@@ -163,6 +168,19 @@ def prepare(screen_dir, selection, output, baseline, root):
         row['sample_id'] = 'holdout_'+str(index).zfill(5)
     cells = check_pairs(rows)
     output.mkdir(parents=True)
+    sheet = Image.new('RGB', (640, 8*190), 'white')
+    draw = ImageDraw.Draw(sheet)
+    for i, spec in enumerate(profile['products']):
+        draw.text((3, i*190+2), spec['category']+' '+spec['product_id'], fill='black')
+        for j, view in enumerate(spec['views']):
+            row = lookup[f"{spec['category']}-{spec['product_id']}-{view:02d}"]
+            fg, alpha = normalized_product(row, 256)
+            image = Image.composite(fg, Image.new('RGB', fg.size, 'white'), alpha)
+            image.thumbnail((160, 160))
+            sheet.paste(image, (j*180, i*190+25))
+        for j, line in enumerate(textwrap.wrap(spec['description'], 42)):
+            draw.text((365, i*190+30+j*13), line, fill='black')
+    sheet.save(output/'selected_products.png')
     inputs, pixel_hashes = [], {}
     for row in rows:
         reference, target = render_pair(row)
@@ -178,6 +196,7 @@ def prepare(screen_dir, selection, output, baseline, root):
     write_json(output/'inference_inputs.json', inputs)
     write_json(output/'evaluation_pairs.json', rows)
     write_json(output/'asset_sha256.json', pixel_hashes)
+    write_json(output/'selection.json', profile)
     write_json(output/'protocol.json', {**lineage, 'complete': True, 'selection_sha256': sha256(selection),
                'screen_audit_sha256': sha256(screen_dir/'screen_audit.json'),
                'pair_manifest_sha256': sha256(output/'evaluation_pairs.json'),
@@ -189,8 +208,15 @@ def prepare(screen_dir, selection, output, baseline, root):
                'existing_train_pairs': 960, 'existing_development_pairs': 96,
                'evaluation_status': 'Prepared, unevaluated; only evaluate after checkpoint/selection protocol freeze. Any later feedback tuning revokes held-out claim.',
                'family_limit': 'Upstream family if present, otherwise SKU; visual review is not exhaustive near-duplicate certification.',
-               'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(),
+               'source_commit': os.environ.get('T12_SOURCE_COMMIT') or subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip(),
                'source_sha256': sha256(Path(__file__))})
+    paths = [p for p in output.rglob('*') if p.is_file()]
+    with zipfile.ZipFile(output/'evaluation_assets.zip', 'w', zipfile.ZIP_DEFLATED) as bundle:
+        for path in sorted(paths):
+            bundle.write(path, path.relative_to(output))
+    write_json(output/'bundle_receipt.json', {'sha256': sha256(output/'evaluation_assets.zip'),
+               'bytes': (output/'evaluation_assets.zip').stat().st_size, 'members': len(paths),
+               'kind': 'Data assets only, not a hardware deployment package'})
 
 
 def main():

@@ -10,6 +10,24 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-27 新增240对保留评估集（与960 TRAIN／96开发集分开）。**
+用户已批准增加测试样本。CPU入口`qwen_vl_holdout`先沿完整电子baseline的
+`--parent`和早期`--resume`追溯8级运行，核对每一级TRAIN及开发集的source/target商品、
+已有family标识及RGBA哈希；随后打开原始ABO TEST池，只看原始视角筛选，不运行模型。
+审核配置`configs/qwen_vl_holdout_240_reviewed_20261027.json`绑定原清单与两张候选联系图SHA。
+4款台灯＋4款靠垫，各2个完整视角、5组场景／指令、3任务，共240对；
+每类别120对、每任务80对、类别×任务各40对。240对来自8款／16视图，不冒充240个独立商品。
+已记录父模型及本轮开发商品／像素与新商品池不交叉；family缺失时仍回退SKU，
+不声称已穷尽近重复家族，更不声称公开Qwen/SD预训练从未见过这些商品。
+
+筛选run `qwen_vl_holdout_240_screen_20261027`，数据run `qwen_vl_holdout_240_20261027`，
+均位于本任务`runs/simulation`。`prepare`导出原生256PNG、`evaluation_pairs.json`、
+仅含参考图／文字的`inference_inputs.json`、逐文件SHA及数据ZIP；不生成训练／特征PT。
+本次不改变正在运行的960 TRAIN／96开发集或模型，不追加任何GPU任务。
+新增240对须在冻结比较权重／选模协议后统一推理，不进入早停／梯度／针对性调参；
+若之后据其结果继续优化，必须改标为开发结果。baseline只需对新增样本重跑推理，
+不因评估样本数增加而重新训练。尚无该240对的模型分数或FID，数据准备完成不代表评价完成。
+
 **2026-10-27 路由诊断与保留权重续训。**
 原接续run `qwen_vl_native_hybrid_tail_20261027` 的特征蒸馏开发loss从step250的20.81
 升至step2000的3685.85，TRAIN也同步增大，属于优化不稳定而非仅凭train/dev差距判过拟合。
