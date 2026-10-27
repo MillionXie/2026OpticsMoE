@@ -1,5 +1,24 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 逐样本光学Jacobian固定ridge诊断（2026-10-28）
+
+按咨询建议先用既有预测计算统一z=log(p_STROMA/p_DEBRIS)，不混合两个标签相反的margin。
+在所选S/D干净TRAIN图中，单S/单D方向RMS=.0015的常量移动能量占比分别94.8%/94.2%，
+各拟合/观察/保护组z变化均值近似同号同幅；共同方向仅3.3%。这是所选样本的共享边界移动证据，
+不是全TRAIN总体或“所有梯度都只是偏置”的证明。CPU逐组均值/标准差存`reports/kather_n49_jacobian_probe_20261028/class_shift_preflight.json`。
+
+新增`jacobian_probe.py`、`configs/kather_n49_jacobian_probe_20261028.json`，同80TRAIN图/160双视图，
+只原最后global相位求导。16张fit+48张guard的双视图形成128行真实光学margin Jacobian，
+16张配对观察图不进入Jacobian、目标或解。S/D固定对方为竞争类，COMPLEX按源模型逐视图固定最强错误竞争类；
+候选仍按全部八类argmax计实际修复和新增错。Jacobian约1.56GB FP32留服务器，仅解128维系统，不构造参数Hessian。
+fit目标max(0,.05−源margin)、guard目标0；两类fit和三类guard各按本组行数归一化，不逐行单位化梯度。
+A=sqrt(W)J，t=sqrt(W)b，固定lambda=.01×trace(A A^T)/128，float64求解后Delta=A^T(K+lambda I)^{-1}t。
+guard目标0是软约束，不是保证。只解释类均值空间占比，不先删除fit均值而使目标不可达。
+记录谱与小于lambda方向上的目标能量、一阶各组收益/误伤、原解RMS；仍只试RMS=.0015/.005/.01三次精确源恢复，
+比较一阶与实际margin变化、配对观察转移、干净/D4三类保护误伤和竞争类切换。
+没有VAL/TEST前向、不搜索lambda、不做连续优化；拟合成功而观察不转移时不再降低lambda追插值，
+只有双侧观察收益兼顾保护才支持另一个有限短训练，当前616目标仍未达成。
+
 ## 双向类别梯度与难度配对的TRAIN转移诊断（2026-10-27）
 
 前一expert块比较也已完成：三个共同方向源恢复点耗31.70秒，cos=−.9216，仍高度对立；

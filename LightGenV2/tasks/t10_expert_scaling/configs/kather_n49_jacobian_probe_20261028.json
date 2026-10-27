@@ -1,0 +1,19 @@
+{
+  "seed": 17,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "amplitudes": [
+    0.0015,
+    0.005,
+    0.01
+  ],
+  "boundary_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_boundary_refine_20261027.json",
+  "reference_train_scores": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_boundary_refine_20261027/cache/reference_train_scores.npz",
+  "reference_train_scores_sha256": "77f5d8d8344e32eb6987c5a9a80b52bd4998f3d6373c13c512c4f278be5a587f",
+  "selection": "Same80 unique source TRAIN images/160 fixed views.16fit+48guard dual views form128 Jacobian rows;16paired observations never enter matrix,target or solve. Source-defined competitors fixed: S/D pair,COMPLEX source strongest wrong class per view.",
+  "budget": "One128x128 weighted Gram ridge solve,lambda=.01*trace(K)/128 in float64; three source-reset RMS .0015/.005/.01 probes only. No lambda search, optimizer trajectory,VAL/TEST forward,PT export or architecture change. Large128x3055504 FP32 Jacobian stays server, small artifacts manifestSHA only.",
+  "purpose": "Test sample-specific optical directions after measured class-average boundary tradeoffs. Class-mean energy is descriptive; fit means are NOT projected away. Full8-class argmax scores distinguish pairwise margin repair from actual classification. Track spectral target energy below lambda, linear feasibility and actual prediction error/heldout transfer/guard harm.",
+  "continuation": "Only bilateral observation gains with no new correct S/D/COMPLEX errors support a later finite training profile. Fit-only or small-eigenvalue interpolation is negative evidence; do not reduce lambda or add iterations to chase TEST.",
+  "ridge_factor": 0.01,
+  "target_margin": 0.05,
+  "objective": "Rows are true original last-global optical logmargin derivatives. Fit b=max(0,.05-source_margin),guard b=0; normalize each fit direction and each guard class by row count (five equal groups),without individual gradient unit normalization. Delta=A.T solve(A A.T+lambda I,sqrt(W)b); zero guard target is soft, not guaranteed protection."
+}
