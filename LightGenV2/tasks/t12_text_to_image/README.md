@@ -16,7 +16,7 @@
 明确候选见`configs/qwen_vl_ottoman_screen_20261027.json`；CPU复现入口
 `screen_third_category.py --profile ... --data ... --output ...`，预览保存在
 `runs/simulation/qwen_vl_third_category_screen_20261027/selected_ottoman_candidates.png`。
-这只是第三类别筛选，尚未训练该类别，预览是原始渲染前景，不是模型生成；
+这是最初筛选阶段的原始渲染前景预览，不是模型生成；随后训练结果见下文。
 不把结构更简单等同于已验证生成质量。旧桌类数据、权重和下面结果原样保留作历史对照。
 
 随后用户批准继续训练。当前新轮廓数据配置为
@@ -33,12 +33,45 @@ TRAIN每视角四种输入场景×三种编辑，共216对；VAL每视角两种�
 `configs/qwen_vl_ottoman_continue_20261027.json`从审核数据续训best继续16遍TRAIN，
 完整Qwen视觉24层＋语言28层、融合后空间读出、单步SD-Turbo UNet和VAE decoder不变。
 训练方法沿用父模型，无新增GAN或网络结构；VAL选best，附类别×模式及编辑区指标。
-本节是启动协议，不预先声称坐墩生成质量已达标；仅GPU6，结束检查自有PID释放。
+以上是启动协议；以下记录完成结果，不预先声称坐墩生成质量已达标。
 针对首轮预览仍有目标颜色／花纹跟随不足，另配
 `configs/qwen_vl_ottoman_condition_refine_20261027.json`，仅使用原有TRAIN条件教师
 缓存校准adapter800步，再以较低UNet学习率继续8遍TRAIN，条件对齐权重.15。
 这不增加推理CLIP或新网络，不改变数据／VAL；从首轮best继续，保存独立best/last及
 训练前同队列重评，不预先认定这一小对照一定优于首轮。
+
+**本轮已完成，保留首轮续训best，不采用条件校准权重。**同一36条开发VAL结果：
+
+| 版本 | 逐图平均PSNR/dB↑ | LPIPS↓ |
+| --- | ---: | ---: |
+| 父权重在新36条上重新评估 | 20.803183 | 0.331757 |
+| 首轮续训，best step108 | 21.105553 | 0.314567 |
+| TRAIN条件校准后继续，best step108 | 20.537715 | 0.321835 |
+
+首轮完成432步；条件校准对照完成216步，均按VAL选模、保留best/last，没有读取TEST。
+首轮三个模式背景／物体／联合的PSNR分别20.996873／20.987332／21.332456dB，
+均为12条；未接入光学，仍为完整冻结Qwen视觉＋语言的电子可行性版本。
+空间支路关闭的同权重诊断为21.073062dB，不能当作另行训练的架构消融。
+新坐墩输出出现块状主体，但仍明显模糊、变形，不能可靠保持或替换目标外观；
+颜色、纹理、轮廓和指令跟随仍有明显错误，
+**尚未通过生成质量验收**；不替换原封存17.03M光电部署模型。
+
+首轮选用权重为`runs/simulation/qwen_vl_ottoman_continue_20261027/best_checkpoint.pt`，
+SHA256 `25b994d9959d2f5d4d46415fcc83c268eb85e9d43d81016b83ce6814266cef2d`；
+训练源码`22213bacf899f277c95656382e5b988b022bbe47`。
+原图核验固定18条VAL，仅RGB＋文字重新运行完整Qwen：与训练缓存路径的生成PNG
+逐像素一致；正常／灰图／错配文字的PNG域PSNR分别20.819044／18.120168／14.932350。
+这些18条干预诊断不是全36条浮点指标，也不证明模型已具备开放生成能力；
+目标图仅由独立离线评分程序读取，推理未输入GT、mask或训练辅助latent。
+
+首轮run的`overview/`集中保存`all_val_generated.png`全部36张生成图、
+`lamp_three_modes.png`／`pillow_three_modes.png`／`ottoman_three_modes.png`
+固定首样本原图／GT／父权重／本轮best四列对照、`per_image_metrics.csv`、
+`image_manifest.json`和全108张原生256PNG的`val_images.tar`。
+导出入口`reports/qwen_vl_data_review_20261027/export_val.py --run <首轮run>`验证
+best权重SHA及逐文件像素身份；本机解包在该run的`images/val_best/`，不做锐化或GT贴回。
+条件校准run `qwen_vl_ottoman_condition_refine_20261027`保留作失败开发对照。
+本轮不与旧封闭商品库的34dB、旧72／144条VAL或独立TEST指标混比。
 
 2026-10-27按用户要求增加**结构清楚的人工审核开发数据**：
 `configs/qwen_vl_curated_easy_20261027.json`逐商品固定清晰视角和无品牌外观描述；
