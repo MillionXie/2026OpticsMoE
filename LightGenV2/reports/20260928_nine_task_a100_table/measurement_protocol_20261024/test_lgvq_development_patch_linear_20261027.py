@@ -44,5 +44,20 @@ class PatchLinearTests(unittest.TestCase):
     def test_import_does_not_import_torch(self):
         self.assertNotIn('torch',sys.modules)
 
+    def test_separate_bias_retains_materialized_BF16_boundary(self):
+        text=ast.unparse(linear_AST(SOURCE,separate_bias=True))
+        self.assertIn('self.proj.weight.view(self.embed_dim, -1), None).add_(self.proj.bias)',text)
+        self.assertEqual(text.count('torch.nn.functional.linear'),1)
+        self.assertEqual(text.count('add_('),1)
+        self.assertIn('hidden_states.to(dtype=target_dtype)',text)
+
+    def test_fused_bias_is_not_a_valid_rounding_substitute(self):
+        def bf16(value):
+            bits=np.array([value],dtype=np.float32).view(np.uint32)
+            bits=(bits+np.uint32(0x7fff)+((bits>>16)&1))&np.uint32(0xffff0000)
+            return float(bits.view(np.float32)[0])
+        dot=1.00390625;bias=.00390625
+        self.assertNotEqual(bf16(dot+bias),bf16(bf16(dot)+bias))
+
 
 if __name__=='__main__':unittest.main()

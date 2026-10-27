@@ -86,5 +86,12 @@ class DevelopmentTests(unittest.TestCase):
         self.assertIn("args.patch_linear != (args.output.name=='patch_linear')",source)
         self.assertIn('or args.channels_last_3d or args.parallel_text',source)
 
+    def test_separate_bias_patch_profile_is_not_fused_or_combined(self):
+        source=Path(dev.__file__).read_text(encoding='utf8')
+        self.assertIn("[('patch_linear_separate_bias', False)]",source)
+        self.assertIn("if args.patch_linear_separate_bias:command.append('--patch-linear-separate-bias')",source)
+        self.assertIn('or args.parallel_text or args.patch_linear',source)
+        self.assertIn('install(front,separate_bias=args.patch_linear_separate_bias)',source)
+
 
 if __name__ == '__main__':unittest.main()

@@ -13,12 +13,16 @@ from types import MethodType
 from lgvq_development_conv_layout_20261027 import PINNED_CLASS_SHA256,PINNED_KERNEL
 
 
-def linear_AST(source):
+def linear_AST(source, separate_bias=False):
     tree=ast.parse(textwrap.dedent(source));count=0
     signature=ast.dump(ast.parse('self.proj(hidden_states.to(dtype=target_dtype))').body[0].value)
+    # PyTorch 2.6 native/Convolution.cpp Cudnn branch first materializes the
+    # BF16 convolution, then output.add_(bias). A fused addmm bias changes that
+    # rounding boundary; the separate variant explicitly retains it.
     replacement=ast.parse('torch.nn.functional.linear('
         'hidden_states.to(dtype=target_dtype).reshape(-1, self.in_channels*self.temporal_patch_size*self.patch_size*self.patch_size),'
-        'self.proj.weight.view(self.embed_dim,-1),self.proj.bias)').body[0].value
+        'self.proj.weight.view(self.embed_dim,-1),'+
+        ('None).add_(self.proj.bias)' if separate_bias else 'self.proj.bias)')).body[0].value
     class OnePatch(ast.NodeTransformer):
         def visit_Call(self,node):
             nonlocal count
@@ -31,7 +35,7 @@ def linear_AST(source):
     return ast.fix_missing_locations(tree)
 
 
-def install(front):
+def install(front, separate_bias=False):
     import torch
     patch=front.visual.patch_embed;conv=patch.proj
     digest=hashlib.sha256(inspect.getsource(type(patch)).encode()).hexdigest()
@@ -42,10 +46,12 @@ def install(front):
             or not conv.weight.is_contiguous() or tuple(conv.weight.shape)!=(1024,3,2,16,16)):
         raise ValueError('Frozen contiguous biased BF16 one-patch Qwen3 Conv3d required')
     original=type(patch).forward;ns=dict(original.__globals__)
-    exec(compile(linear_AST(inspect.getsource(original)),
+    exec(compile(linear_AST(inspect.getsource(original),separate_bias),
         inspect.getsourcefile(original)+'::development_one_patch_linear','exec'),ns)
     patch.forward=MethodType(ns['forward'],patch)
-    return dict(profile='one_complete_nonoverlapping_patch_biased_linear',class_source_sha256=digest,
+    return dict(profile=('one_complete_patch_linear_then_original_BF16_bias' if separate_bias else
+        'one_complete_nonoverlapping_patch_biased_linear'),class_source_sha256=digest,
+        bias_after_BF16_matrix_output=bool(separate_bias),
         actual_original_kernel=list(conv.kernel_size),actual_original_stride=list(conv.stride),
         original_weight_shape=list(conv.weight.shape),weight_dtype=str(conv.weight.dtype),bias_dtype=str(conv.bias.dtype),
         original_parameters_retained=True,weight_values_or_precision_changed=False,
