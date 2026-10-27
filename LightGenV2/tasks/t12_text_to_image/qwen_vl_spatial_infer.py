@@ -16,9 +16,15 @@ def raw_hidden(qwen,processor,image,prompt,layout,device):
     text=processor.apply_chat_template(messages,tokenize=False,add_generation_prompt=True,enable_thinking=False)
     inputs=processor(text=[text],images=[image],return_tensors='pt')
     positions=torch.where(inputs['input_ids'][0]==layout['image_token_id'])[0].tolist()
-    if positions!=layout['positions'] or inputs['image_grid_thw'].tolist()!=[layout['unmerged_grid']]:
+    if positions!=layout.get('qwen_image_positions',layout['positions']) or inputs['image_grid_thw'].tolist()!=[layout['unmerged_grid']]:
         raise ValueError('Raw image token layout differs from the verified spatial grid')
-    return encode_reference(qwen,processor,image,prompt,device)
+    if not layout.get('semantic_prefix',0):return encode_reference(qwen,processor,image,prompt,device)
+    native=[]
+    hook=qwen.model.visual.register_forward_hook(lambda module,args,output:native.append(output[0].detach().bfloat16().cpu()))
+    try:hidden=encode_reference(qwen,processor,image,prompt,device)
+    finally:hook.remove()
+    if len(native)!=1 or native[0].shape!=(64,2048):raise ValueError('Full Qwen native visual capture differs')
+    return torch.cat([native[0],hidden],0)
 
 
 def main():

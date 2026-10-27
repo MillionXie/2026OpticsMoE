@@ -56,11 +56,12 @@ class SpatialInputConv(nn.Module):
 
 
 class SpatialTurboHead(NativeTurboHead):
-    def __init__(self,unet,vae,scheduler,adapter,spatial,positions):
+    def __init__(self,unet,vae,scheduler,adapter,spatial,positions,semantic_prefix=0):
         super().__init__(unet,vae,scheduler,adapter)
         if len(positions)!=spatial.grid**2 or len(set(positions))!=len(positions):
             raise ValueError('Invalid image token positions')
         self.spatial=spatial
+        self.semantic_prefix=semantic_prefix
         self.register_buffer('visual_positions',torch.tensor(positions,dtype=torch.long),persistent=False)
         self.zero_spatial=False
 
@@ -74,12 +75,15 @@ class SpatialTurboHead(NativeTurboHead):
         z,rgb,_=self.forward_with_aux(hidden,valid,noise,with_aux=False)
         return z,rgb
 
+    def semantic_conditions(self,hidden,valid):
+        return self.adapter(hidden[:,self.semantic_prefix:],valid[:,self.semantic_prefix:])
+
     def forward_with_aux(self,hidden,valid,noise,with_aux=True):
         visual=self.visual_tokens(hidden,valid)
         if with_aux:spatial,aux=self.spatial(visual,with_aux=True)
         else:spatial,aux=self.spatial(visual),None
         if self.zero_spatial:spatial=spatial*0
-        conditions=self.adapter(hidden,valid)
+        conditions=self.semantic_conditions(hidden,valid)
         self.scheduler.set_timesteps(1,device=noise.device)
         t=self.scheduler.timesteps[0]
         latents=noise.to(self.unet.dtype)*self.scheduler.init_noise_sigma
@@ -130,14 +134,15 @@ def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False,iden
     if identity_probe is not None:
         if 'spatial' in state:raise ValueError('Zero-injection identity applies to an unaugmented parent only')
         base=NativeTurboHead(unet,vae,scheduler,adapter).eval()
-        with torch.no_grad():expected_output=base(*identity_probe)
+        h,valid,noise=identity_probe;prefix=cfg.get('semantic_prefix',0)
+        with torch.no_grad():expected_output=base(h[:,prefix:],valid[:,prefix:],noise)
     unet.conv_in=SpatialInputConv(unet.conv_in,cfg['spatial_channels'])
     unet.register_to_config(in_channels=4+cfg['spatial_channels'])
     if 'conv_in.spatial.weight' in saved:
         with torch.no_grad():unet.conv_in.spatial.weight.copy_(saved['conv_in.spatial.weight'].to(device))
     spatial=SpatialBridge(width=cfg['spatial_width'],channels=cfg['spatial_channels'],grid=cfg['visual_grid']).to(device)
     if 'spatial' in state:spatial.load_state_dict(state['spatial'])
-    model=SpatialTurboHead(unet,vae,scheduler,adapter,spatial,positions)
+    model=SpatialTurboHead(unet,vae,scheduler,adapter,spatial,positions,cfg.get('semantic_prefix',0))
     if identity_probe is not None:
         model.eval()
         with torch.no_grad():actual=model(*identity_probe)

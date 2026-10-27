@@ -24,6 +24,16 @@
 和候选，不与旧144条均值直接比较，不声称独立TEST泛化；原数据／模型／结果均保留。
 审核像素、配对预览、哈希和训练产物在对应任务run中，Git仅维护源码和审核profile。
 
+审核数据还增加一个开发对照`qwen_vl_curated_native_spatial_20261027.json`：
+空间条件取同一个Qwen视觉塔merger的原生64个token，语义条件继续使用完整视觉＋
+语言融合状态。缓存以校验过的原特征缓存SHA和逐样本ID绑定，使用
+`qwen_vl_visual_cache.py --cache-run <审核缓存>`产生；生成前向没有第二个图像encoder。
+原图推理在一次完整Qwen前向中用hook截取merger输出，额外缓存不是部署时检索库。
+该对照从未加空间头的full父权重初始化，用TRAIN条件预热1500步、TRAIN参考latent
+预热600步，再训练8遍审核TRAIN，条件对齐权重.5。两种视觉token组织共享同样的
+空间读出参数量；该试验同时调整特征读出与条件训练，不能将收益独立归因于某一项。
+不使用VAL条件教师，不以TRAIN教师替代Qwen推理，不访问TEST或实物光路。
+
 2026-10-27启动**Qwen视觉空间读出**开发试验，入口`qwen_vl_spatial_run.py`，
 配置`configs/qwen_vl_spatial_20261027.json`。完整Qwen视觉24层和语言28层保留，
 256参考图＋文字仍是唯一编码输入；tokenizer、预训练Qwen层及全部融合token不裁剪。

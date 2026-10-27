@@ -149,6 +149,21 @@ def run(args,cfg):
     # Modify only in-memory sampling state; the parent cache is never overwritten.
     payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
     layout=verify_layout(payload,args.qwen,out)
+    native_digest=None
+    if args.visual_cache:
+        ready=json.loads((args.visual_cache/'report.json').read_text())
+        native_path=args.visual_cache/'native_vision.pt';native_digest=sha256(native_path)
+        if not ready['complete'] or native_digest!=ready['sha256'] or ready['source_cache_sha256']!=cache_digest:
+            raise ValueError('Native visual cache identity differs')
+        native=torch.load(native_path,map_location='cpu',weights_only=False,mmap=True)
+        if native['sample_ids']!=[r['sample_id'] for r in payload['rows']]:raise ValueError('Native vision sample order differs')
+        if cfg.get('semantic_prefix')!=64:raise ValueError('Native vision requires an explicit 64-token prefix')
+        if any(v.shape!=(64,2048) for v in native['vision']):raise ValueError('Native vision shape differs')
+        payload['hidden']=[torch.cat([v,h],0) for v,h in zip(native['vision'],payload['hidden'])]
+        layout.update(qwen_image_positions=layout['positions'],positions=list(range(64)),
+                      semantic_prefix=64,visual_source='native Qwen visual merger before language')
+        write_json(out/'visual_layout.json',layout)
+    elif cfg.get('semantic_prefix',0):raise ValueError('Native visual prefix configured without verified cache')
     ids,audit=training_ids(payload,data_run,cfg['exclude_ambiguous_descriptions'])
     val_ids=[i for i,r in enumerate(payload['rows']) if r['split']=='val']
     diagnostics={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='train'}
@@ -162,6 +177,7 @@ def run(args,cfg):
     write_json(out/'execution.json',{'argv':sys.argv,'git':identity(),'started_unix':time.time(),
        'torch':torch.__version__,'parent_run':str(args.parent),'parent_checkpoint_sha256':sha256(checkpoint),
        'cache_sha256':cache_digest,'data_run':str(data_run),'parent_cache_sha256':state['cache_sha256'],
+       'native_visual_cache_sha256':native_digest,
        'data_profile_sha256':data_audit['profile_sha256'] if args.data_run else None,
        'train_pairs':len(ids),'val_pairs':len(val_ids),
        'test_opened':False,'visual_layout':layout,'gpu_uuid':os.environ.get('CUDA_VISIBLE_DEVICES')})
@@ -174,6 +190,7 @@ def run(args,cfg):
         for key in ('adapter_hidden','adapter_layers','spatial_width','spatial_channels','visual_grid','unet_lora_rank','unet_training'):
             if cfg[key]!=state['config'][key]:raise ValueError('Resume architecture mismatch: '+key)
         if layout['positions']!=state['visual_layout']['positions']:raise ValueError('Resume token layout changed')
+        if cfg.get('semantic_prefix',0)!=state['config'].get('semantic_prefix',0):raise ValueError('Resume visual source changed; start from unaugmented parent')
     model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,
         identity_probe=None if 'spatial' in state else probe)
     write_json(out/'zero_injection_identity.json',model.initial_identity if 'spatial' not in state else
@@ -183,6 +200,21 @@ def run(args,cfg):
     import lpips
     metric=lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
     before=evaluate(model,payload,val_ids,device,out,'val_before_training',metric)
+    # TRAIN-only recalibration; no VAL conditions or images supervise this step.
+    if cfg.get('condition_warm_steps',0):
+        warm_condition=torch.optim.AdamW(model.adapter.parameters(),lr=cfg['condition_warm_lr'])
+        warm_rng=random.Random(cfg['seed'])
+        for step in range(1,cfg['condition_warm_steps']+1):
+            batch=warm_rng.sample(ids,min(cfg['condition_warm_batch_size'],len(ids)))
+            h,valid=pack_hidden([payload['hidden'][i] for i in batch],device)
+            goal=torch.stack([payload['train_clip_teacher'][i] for i in batch]).float().to(device)
+            loss=F.mse_loss(model.semantic_conditions(h,valid).float(),goal)
+            warm_condition.zero_grad(set_to_none=True);loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.adapter.parameters(),1.);warm_condition.step()
+            if step%100==0:
+                write_json(out/'progress.json',{'stage':'TRAIN_condition_warm','step':step,'total_steps':cfg['condition_warm_steps'],'mse':float(loss.detach())})
+        write_json(out/'condition_warm_report.json',{'steps':step,'last_train_batch_mse':float(loss.detach()),'val_used':False})
+        del warm_condition
     expected={r['sample_id']:r['psnr'] for r in parent_report['best_val']['images']}
     deviations=[abs(r['psnr']-expected[r['sample_id']]) for r in before['images'] if r['sample_id'] in expected]
     write_json(out/'cross_device_parent_comparison.json',{'max_per_sample_psnr_difference':max(deviations) if deviations else None,
@@ -248,7 +280,7 @@ def run(args,cfg):
                 pixel=balanced_region_l1(rgb,target,torch.cat([edit_regions[i] for i in batch]).to(device))
                 perceptual=metric(rgb.clamp(-1,1),target).mean()
                 spatial_loss=F.mse_loss(source.float(),torch.stack([ref_latent[i] for i in batch]).to(device))
-                conditions=model.adapter(h,valid)
+                conditions=model.semantic_conditions(h,valid)
                 align=F.mse_loss(conditions.float(),torch.stack([payload['train_clip_teacher'][i] for i in batch]).float().to(device))
                 loss=(cfg['latent_weight']*latent+cfg['rgb_weight']*pixel+cfg['lpips_weight']*perceptual+
                       cfg['reference_weight']*spatial_loss+cfg['condition_weight']*align)
@@ -269,6 +301,7 @@ def run(args,cfg):
             saved={'schema':'qwen_spatial_v1','step':step,'adapter':model.adapter.state_dict(),
               'spatial':model.spatial.state_dict(),'unet_trainable':{n:p.detach().cpu().clone() for n,p in model.unet.named_parameters() if p.requires_grad},
               'config':cfg,'visual_layout':layout,'git':identity(),'cache_sha256':cache_digest,
+              'native_visual_cache_sha256':native_digest,
               'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'val':val}
             torch.save(saved,out/'last_checkpoint.pt')
             if val['mean_per_image_psnr_db']>best:
@@ -298,6 +331,7 @@ def main():
     for key in ('config','parent','qwen','sd','output'):parser.add_argument('--'+key,type=Path,required=True)
     parser.add_argument('--stage',choices=('layout','train'),default='train')
     parser.add_argument('--data-run',type=Path,help='Explicit reviewed data/cache profile; preserve parent training exposure in provenance')
+    parser.add_argument('--visual-cache',type=Path,help='Verified native output from the SAME Qwen vision tower; semantic fused states still retained')
     args=parser.parse_args();cfg=json.loads(args.config.read_text(encoding='utf-8'))
     if cfg.get('test_enabled',False):raise ValueError('This development runner has no TEST path')
     random.seed(cfg['seed']);np.random.seed(cfg['seed']);torch.manual_seed(cfg['seed']);torch.set_num_threads(4)

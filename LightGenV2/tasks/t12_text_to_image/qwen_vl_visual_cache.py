@@ -15,7 +15,9 @@ from .qwen_vl_turbo_run import git_identity,tensor_image
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    for name in ('parent','qwen','output'):parser.add_argument('--'+name,type=Path,required=True)
+    for name in ('qwen','output'):parser.add_argument('--'+name,type=Path,required=True)
+    parser.add_argument('--parent',type=Path)
+    parser.add_argument('--cache-run',type=Path,help='Completed reviewed cache; no model checkpoint needed')
     parser.add_argument('--gpu-uuid',required=True)
     parser.add_argument('--batch-size',type=int,default=8)
     args=parser.parse_args()
@@ -23,12 +25,19 @@ def main():
     if (args.output/'report.json').exists():raise ValueError('Cache already complete; reuse instead of rerunning')
     args.output.mkdir(parents=True,exist_ok=True);torch.set_num_threads(2)
     torch.cuda.set_per_process_memory_fraction(.20,0);device=torch.device('cuda:0')
-    cache=args.parent/'frozen_features.pt'
-    parent=torch.load(args.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False,mmap=True)
-    if sha256(cache)!=parent['cache_sha256']:raise ValueError('Parent frozen input cache changed')
+    if bool(args.parent)==bool(args.cache_run):raise ValueError('Provide exactly one parent or cache-run')
+    cache=(args.cache_run or args.parent)/'frozen_features.pt'
+    if args.cache_run:
+        ready=json.loads((args.cache_run/'cache_complete.json').read_text())
+        if not ready['complete']:raise ValueError('Reviewed cache incomplete')
+        source_digest=ready['sha256']
+    else:
+        parent=torch.load(args.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False,mmap=True)
+        source_digest=parent['cache_sha256']
+    if sha256(cache)!=source_digest:raise ValueError('Parent frozen input cache changed')
     data=torch.load(cache,map_location='cpu',weights_only=False,mmap=True)
     identity={'git':git_identity(),'script_sha256':sha256(Path(__file__)),'qwen':str(args.qwen),
-       'source_cache_sha256':parent['cache_sha256'],'gpu_uuid':args.gpu_uuid,'started_unix':time.time(),
+       'source_cache_sha256':source_digest,'gpu_uuid':args.gpu_uuid,'started_unix':time.time(),
        'scope':'Native Qwen vision output for exact cached reference RGB; no target image input; no optimization'}
     write_json(args.output/'identity.json',identity)
     from transformers import AutoProcessor,Qwen3VLForConditionalGeneration
@@ -51,12 +60,12 @@ def main():
             if (start//args.batch_size)%10==0:
                 print('native vision',len(features),'/',len(data['rows']),flush=True)
                 write_json(args.output/'progress.json',{'done':len(features),'total':len(data['rows'])})
-    saved={'source_cache_sha256':parent['cache_sha256'],'sample_ids':[r['sample_id'] for r in data['rows']],
+    saved={'source_cache_sha256':source_digest,'sample_ids':[r['sample_id'] for r in data['rows']],
        'vision':features,'grid':[8,8],'source':'Qwen3-VL native visual merger before language layers',
        'identity':identity}
     digest=save_with_digest(saved,args.output/'native_vision.pt')
     write_json(args.output/'report.json',{'complete':True,'samples':len(features),'sha256':digest,
-       'file':'native_vision.pt','source_cache_sha256':parent['cache_sha256'],
+       'file':'native_vision.pt','source_cache_sha256':source_digest,
        'vision_parameters':sum(p.numel() for p in vision.parameters()),
        'note':'This cache does not replace full Qwen in deployment; native vision and fused language states come from one full Qwen forward at inference.'})
 

@@ -51,6 +51,18 @@ class SpatialTests(unittest.TestCase):
         self.assertGreater(bridge.project.weight.grad.abs().sum().item(),0)
         self.assertGreater(conv.spatial.weight.abs().sum().item(),0)
 
+    def test_native_prefix_does_not_change_semantic_conditioning(self):
+        torch.manual_seed(8)
+        unet=UNet();vae=VAE();adapter=QueryResampler(16,16,8,4,1)
+        scheduler=EulerDiscreteScheduler(timestep_spacing='trailing')
+        fused=torch.randn(2,7,16);valid=torch.ones(2,7,dtype=torch.bool);noise=torch.randn(2,4,8,8)
+        base=NativeTurboHead(unet,vae,scheduler,adapter).eval();expected=base(fused,valid,noise)
+        unet.conv_in=SpatialInputConv(unet.conv_in,16)
+        model=SpatialTurboHead(unet,vae,scheduler,adapter,SpatialBridge(16,16,16,2),[0,1,2,3],4).eval()
+        h=torch.cat([torch.randn(2,4,16),fused],1);v=torch.ones(2,11,dtype=torch.bool)
+        for a,b in zip(model(h,v,noise),expected):torch.testing.assert_close(a,b,atol=0,rtol=0)
+        torch.testing.assert_close(model.semantic_conditions(h,v),adapter(fused,valid),atol=0,rtol=0)
+
     def test_bad_grid_and_padding_are_rejected(self):
         bridge=SpatialBridge(16,16,16,2)
         with self.assertRaises(ValueError):bridge(torch.randn(1,3,16))
