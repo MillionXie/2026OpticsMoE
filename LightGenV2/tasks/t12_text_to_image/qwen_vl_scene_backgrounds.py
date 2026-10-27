@@ -2,7 +2,8 @@
 
 These are synthetic data assets, not editor predictions or benchmark scores.
 ABO's CC BY 4.0 provenance applies to ABO renders, not a claim about these assets.
-The independent evaluation split is deliberately unsupported by this producer.
+Independent evaluation assets require a separate explicit flag and run; they
+never become TRAIN/DEV assets or feature caches.
 """
 import argparse
 import itertools
@@ -18,9 +19,10 @@ from .qwen_vl_turbo_model import NativeTurboHead
 from .qwen_vl_turbo_run import tensor_image
 
 
-def specifications(base_seed=12491, layout='room', probe=False):
+def specifications(base_seed=12491, layout='room', probe=False, evaluation_assets=False):
     rows = []
-    for split, count in (('train', 2), ('val', 1)):
+    if evaluation_assets and probe:raise ValueError('Evaluation assets are not a TRAIN probe')
+    for split, count in ((('test',1),) if evaluation_assets else (('train', 2), ('val', 1))):
         for room, tone, brightness, direction in itertools.product(
                 ('modern study', 'minimal bedroom', 'boutique lounge'),
                 ('warm', 'cool', 'neutral'), ('bright', 'softly lit'), ('left', 'right')):
@@ -48,6 +50,7 @@ def main():
     p.add_argument('--sd', type=Path, required=True);p.add_argument('--output', type=Path, required=True)
     p.add_argument('--gpu-uuid', required=True)
     p.add_argument('--layout', choices=('room', 'tabletop'), default='room');p.add_argument('--probe', action='store_true')
+    p.add_argument('--evaluation-assets',action='store_true',help='Separate sealed evaluation-only backgrounds, never training/cache assets')
     a = p.parse_args()
     if a.output.exists() or os.environ.get('CUDA_VISIBLE_DEVICES') != a.gpu_uuid:
         raise ValueError('Immutable assets and approved GPU only')
@@ -61,7 +64,7 @@ def main():
     text = CLIPTextModel.from_pretrained(a.sd, subfolder='text_encoder', variant='fp16', torch_dtype=torch.bfloat16, local_files_only=True).to(device).eval().requires_grad_(False)
     tokenizer = CLIPTokenizer.from_pretrained(a.sd, subfolder='tokenizer', local_files_only=True)
     model = NativeTurboHead(unet, vae, EulerDiscreteScheduler.from_pretrained(a.sd, subfolder='scheduler', local_files_only=True), torch.nn.Identity())
-    records = specifications(layout=a.layout, probe=a.probe)
+    records = specifications(layout=a.layout, probe=a.probe,evaluation_assets=a.evaluation_assets)
     for i, row in enumerate(records):
         tokens = tokenizer(row['prompt'], padding='max_length', max_length=77, truncation=False, return_tensors='pt').input_ids
         if tokens.shape[1] > 77:
@@ -76,7 +79,7 @@ def main():
         row.update(image=str(small.resolve()), sha256=sha256(small), original_512_sha256=sha256(original))
         write_json(a.output/'progress.json', {'stage': 'TRAIN_DEV_background_asset_generation', 'done': i+1, 'total': len(records)})
     for room in ('modern study', 'minimal bedroom', 'boutique lounge'):
-        chosen = [r for r in records if r['split'] == 'train' and r['room'] == room and r['variant'] == 0]
+        chosen = [r for r in records if r['split'] == ('test' if a.evaluation_assets else 'train') and r['room'] == room and r['variant'] == 0]
         panel = Image.new('RGB', (640, 3*188), 'white');draw = ImageDraw.Draw(panel)
         for j, row in enumerate(chosen):
             x=j%4*160;y=j//4*188;im=Image.open(row['image']).convert('RGB');im.thumbnail((160, 160))
@@ -90,8 +93,8 @@ def main():
         'public_frozen_teacher': 'SD-Turbo', 'dataset_assets_not_editor_outputs': True,
         'source_commit': os.environ.get('T12_SOURCE_COMMIT'), 'source_sha256': sha256(Path(__file__)),
         'manifest_sha256': sha256(a.output/'background_manifest.json'), 'visual_review_required': True,
-        'heldout_generated': False, 'not_model_benchmark': True,
-        'seed_policy': 'TRAIN and DEV seeds disjoint; no independent TEST path. A future frozen-model holdout needs separately bound backgrounds/seeds.',
+        'heldout_generated': a.evaluation_assets, 'not_model_benchmark': True,
+        'seed_policy': 'TRAIN, DEV and separately requested TEST seeds disjoint; TEST assets never enter training or model selection. No editor predictions are generated here.',
         'limitations': 'Scene instructions are teacher generation prompts, not proof that every asset satisfies window direction/clear tabletop. Review before composing ABO or making scene adherence claims.'})
 
 

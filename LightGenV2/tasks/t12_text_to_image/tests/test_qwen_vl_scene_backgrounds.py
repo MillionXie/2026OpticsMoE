@@ -19,6 +19,12 @@ class BackgroundDataContract(unittest.TestCase):
         self.assertEqual({r['split'] for r in rows},{'train'})
         self.assertTrue(all(r['prompt'].startswith('An empty wooden tabletop') for r in rows))
 
+    def test_explicit_evaluation_assets_have_unseen_seeds_and_no_training_rows(self):
+        rows=specifications(layout='tabletop',evaluation_assets=True)
+        self.assertEqual(len(rows),36);self.assertEqual({r['split'] for r in rows},{'test'})
+        self.assertFalse({r['seed'] for r in rows}&{r['seed'] for r in specifications(layout='tabletop')})
+        with self.assertRaises(ValueError):specifications(probe=True,evaluation_assets=True)
+
 
 if __name__ == '__main__':
     unittest.main()

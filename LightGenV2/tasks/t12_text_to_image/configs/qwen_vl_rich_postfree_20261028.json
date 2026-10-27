@@ -4,6 +4,8 @@
   "gpu_memory_fraction": 0.85,
   "postfree": true,
   "directional_feature_loss": true,
+  "adapt_head": true,
+  "head_lr": 0.00001,
   "vision_pairs": 1,
   "language_pairs": 1,
   "residual_width": 256,

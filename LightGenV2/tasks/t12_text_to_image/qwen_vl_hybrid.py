@@ -38,6 +38,27 @@ def apply_configured_hybrid(qwen, config):
     return factory(qwen,config['vision_pairs'],config['language_pairs'],config['residual_width'])
 
 
+def restore_head_overlay(head, checkpoint):
+    """Small trained readouts belong to the LG checkpoint, not its teacher."""
+    overlay=checkpoint.get('head_overlay')
+    if overlay is None:return
+    if set(overlay)!={'adapter','spatial'}:raise ValueError('Unexpected LG head overlay')
+    head.adapter.load_state_dict(overlay['adapter'],strict=True)
+    head.spatial.load_state_dict(overlay['spatial'],strict=True)
+
+
+def clone_readout_head(teacher, unet=None, trainable=False):
+    """Share frozen generator weights, isolate trainable conditioning readouts."""
+    import copy
+    from .qwen_vl_spatial import SpatialTurboHead
+    head=SpatialTurboHead(teacher.unet if unet is None else unet,teacher.vae,
+        copy.deepcopy(teacher.scheduler),copy.deepcopy(teacher.adapter),copy.deepcopy(teacher.spatial),
+        teacher.visual_positions.tolist(),teacher.semantic_prefix)
+    head.instruction_span=teacher.instruction_span;head.text_readout_gain=teacher.text_readout_gain
+    head.adapter.requires_grad_(trainable);head.spatial.requires_grad_(trainable)
+    return head.eval()
+
+
 class TokenCodec(nn.Module):
     def __init__(self, modality, width):
         super().__init__()

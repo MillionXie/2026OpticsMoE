@@ -6,6 +6,23 @@ from LightGenV2.tasks.t12_text_to_image.qwen_vl_hybrid import OpticalMacro, Toke
 
 
 class HybridTests(unittest.TestCase):
+    def test_student_head_overlay_isolated_from_frozen_teacher(self):
+        from ..qwen_vl_hybrid import clone_readout_head,restore_head_overlay
+        from ..qwen_vl_spatial import SpatialTurboHead
+        spatial=torch.nn.Linear(2,2);spatial.grid=1
+        teacher=SpatialTurboHead(torch.nn.Linear(2,2),torch.nn.Linear(2,2),None,torch.nn.Linear(2,2),spatial,[0]).requires_grad_(False)
+        teacher.instruction_span=(3,2);teacher.text_readout_gain=.15
+        student=clone_readout_head(teacher,trainable=True)
+        self.assertIs(student.unet,teacher.unet);self.assertIs(student.vae,teacher.vae)
+        self.assertEqual(student.instruction_span,(3,2));self.assertEqual(student.text_readout_gain,.15)
+        original=teacher.adapter.weight.detach().clone()
+        with torch.no_grad():student.adapter.weight.add_(1)
+        self.assertTrue(torch.equal(teacher.adapter.weight,original))
+        self.assertFalse(any(p.requires_grad for p in teacher.parameters()))
+        checkpoint={'head_overlay':{n:getattr(student,n).state_dict() for n in ('adapter','spatial')}}
+        reloaded=clone_readout_head(teacher);restore_head_overlay(reloaded,checkpoint)
+        self.assertTrue(torch.equal(reloaded.adapter.weight,student.adapter.weight))
+
     def test_directional_loss_stays_finite_across_large_rms_mismatch(self):
         from ..qwen_vl_hybrid import directional_feature_loss
         x=(torch.randn(1,9,16)*10000).requires_grad_();target=torch.randn_like(x)*.01

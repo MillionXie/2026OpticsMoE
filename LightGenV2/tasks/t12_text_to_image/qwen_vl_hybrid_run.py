@@ -19,7 +19,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .qwen_vl_hybrid import OpticalMacro, apply_configured_hybrid, feature_loss, directional_feature_loss, hybrid_config, load_macro_state, optimizer_groups
+from .qwen_vl_hybrid import OpticalMacro, apply_configured_hybrid, feature_loss, directional_feature_loss, hybrid_config, load_macro_state, optimizer_groups, restore_head_overlay, clone_readout_head
 from .qwen_vl_spatial import balanced_region_l1, build_spatial_head
 from .qwen_vl_spatial_run import evaluate, masks
 from .qwen_vl_turbo_cache import image_float, save_with_digest
@@ -289,6 +289,10 @@ def stage_joint(a, cfg, payload, state, device):
         raise ValueError('This native fused-only protocol does not silently add a visual prefix')
     head = build_spatial_head(a.sd, state, state['config'], layout['positions'], device,
                               drop_vae_encoder=True).eval().requires_grad_(False)
+    teacher_head=head
+    if cfg.get('adapt_head',False):
+        head=clone_readout_head(teacher_head,trainable=True)
+        restore_head_overlay(head,init);head.eval()
     import lpips
     metric = lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
     train = [i for i, r in enumerate(payload['rows']) if r['split'] == 'train']
@@ -299,7 +303,18 @@ def stage_joint(a, cfg, payload, state, device):
         train, dev = train_diagnostic[:6], [i for i in dev if payload['rows'][i]['sample_id'] in names][:6]
     before = evaluate_hybrid(qwen, processor, head, payload, dev, layout, device, a.output, 'dev_before', metric)
     teacher_report = completed_teacher(a.parent)
-    optimizer = torch.optim.AdamW(optimizer_groups(macros, cfg), weight_decay=.001)
+    groups=optimizer_groups(macros,cfg)
+    if cfg.get('adapt_head',False):
+        groups.append({'params':list(head.adapter.parameters())+list(head.spatial.parameters()),
+            'lr':cfg['head_lr'],'base_lr':cfg['head_lr'],'name':'existing_head_readouts'})
+    optimizer = torch.optim.AdamW(groups, weight_decay=.001)
+    trainable=[p for group in groups for p in group['params']]
+    def extra_state():
+        extra={'teacher_checkpoint_sha256':sha256(a.parent/'best_checkpoint.pt')}
+        if cfg.get('adapt_head',False):
+            extra['head_overlay']={name:{k:v.detach().cpu().clone() for k,v in getattr(head,name).state_dict().items()}
+                                   for name in ('adapter','spatial')}
+        return extra
     best, best_step, history, rng = math.inf, 0, [], random.Random(cfg['seed'])
     steps = cfg.get('joint_steps') or math.ceil(len(train)*cfg['joint_epochs']/cfg['gradient_accumulation'])
     order = []
@@ -318,7 +333,7 @@ def stage_joint(a, cfg, payload, state, device):
             # student input or an inference image retrieved from a catalogue.
             with torch.no_grad():
                 teacher_hidden, teacher_valid = pack_hidden([features[i]['final']], device)
-                teacher_z, teacher_rgb = head(teacher_hidden, teacher_valid, noise_for([row], device))
+                teacher_z, teacher_rgb = teacher_head(teacher_hidden, teacher_valid, noise_for([row], device))
             hidden = raw_hidden(qwen, processor, payload, i, layout, device)
             valid = torch.ones(1, len(hidden), dtype=torch.bool, device=device)
             z, rgb = head(hidden[None], valid, noise_for([row], device))
@@ -348,7 +363,7 @@ def stage_joint(a, cfg, payload, state, device):
             calibration = router_batch_balance(macros, features, selected_train, device,
                                                cfg.get('router_mutual_information_weight', .25))
             (cfg.get('router_calibration_weight', .05)*calibration).backward()
-        norm = torch.nn.utils.clip_grad_norm_(macros.parameters(), 1.)
+        norm = torch.nn.utils.clip_grad_norm_(trainable, 1.)
         if not torch.isfinite(norm):
             raise FloatingPointError('Nonfinite hybrid gradient')
         optimizer.step()
@@ -368,11 +383,11 @@ def stage_joint(a, cfg, payload, state, device):
                 'dev_crop_by_mode': val['object_crop_lpips_by_mode'], 'dev_category_mode': val['by_category_mode'],
                 'quality_gate': quality_gate(val, teacher_report['best_val'])}
             history.append(entry)
-            save_macros(macros, cfg, step, entry, a.output, extra={'teacher_checkpoint_sha256': sha256(a.parent/'best_checkpoint.pt')})
+            save_macros(macros, cfg, step, entry, a.output, extra=extra_state())
             if score < best:
                 best, best_step = score, step
                 save_macros(macros, cfg, step, entry, a.output, best=True,
-                            extra={'teacher_checkpoint_sha256': sha256(a.parent/'best_checkpoint.pt')})
+                            extra=extra_state())
             write_json(a.output/'history.json', history)
             # Stop sustained late deterioration; retain best/last, not the last
             # epoch as a purported optimum. Only after at least five evaluations.
@@ -380,6 +395,7 @@ def stage_joint(a, cfg, payload, state, device):
                 break
     selected = torch.load(a.output/'best_checkpoint.pt', map_location='cpu', weights_only=False)
     macros.load_state_dict(selected['macros'])
+    restore_head_overlay(head,selected)
     val = evaluate_hybrid(qwen, processor, head, payload, dev, layout, device, a.output, 'dev_best', metric, export=True)
     write_json(a.output/'report.json', {'complete': True, 'best_step': best_step, 'best_val': val,
         'before': before, 'teacher_checkpoint_sha256': sha256(a.parent/'best_checkpoint.pt'),

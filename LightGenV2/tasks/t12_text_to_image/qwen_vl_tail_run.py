@@ -18,7 +18,7 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
-from .qwen_vl_hybrid import apply_configured_hybrid, load_macro_state
+from .qwen_vl_hybrid import apply_configured_hybrid, load_macro_state, restore_head_overlay, clone_readout_head
 from .qwen_vl_hybrid_run import completed_teacher, load_data, load_qwen, quality_gate, raw_hidden
 from .qwen_vl_spatial import balanced_region_l1, build_spatial_head
 from .qwen_vl_spatial_run import evaluate, masks
@@ -88,11 +88,8 @@ def main():
         student_unet = student_unet.to(device).float().requires_grad_(True)
         student_unet.enable_gradient_checkpointing()
         # Use a new head: a shallow nn.Module copy would alias its registry.
-        from .qwen_vl_spatial import SpatialTurboHead
-        student = SpatialTurboHead(student_unet, teacher.vae, copy.deepcopy(teacher.scheduler),
-                  teacher.adapter, teacher.spatial, state['visual_layout']['positions'], state['config'].get('semantic_prefix', 0))
-        student.instruction_span=teacher.instruction_span
-        student.text_readout_gain=teacher.text_readout_gain
+        student = clone_readout_head(teacher,unet=student_unet)
+        restore_head_overlay(student,hybrid)
         import lpips
         metric = lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
         train_goals, teacher_maps = {}, {}
