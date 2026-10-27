@@ -97,10 +97,13 @@ def software_only_submissions(raw):
     return ids
 
 
-def build(folder,exclude_software_submit=False):
+def build(folder,exclude_software_submit=False,*,warmed_diagnostic=False):
     folder=Path(folder);read=lambda n:json.loads((folder/n).read_text(encoding='utf-8-sig'))
-    audit=read('local_independent_async_audit01.json')
+    audit=read('local_warmed_async_audit01.json' if warmed_diagnostic else 'local_independent_async_audit01.json')
     if audit['status']!='passed':raise ValueError('Independent accepted audit required first')
+    if warmed_diagnostic and (audit.get('timing_profile')!='ONE_EXTRA_REAL_WARMUP_FIELD_DIAGNOSTIC'
+            or audit.get('original_cold_scope_qualified') is not False):
+        raise ValueError('Explicit separate warmed-diagnostic audit required')
     for name,digest in audit['raw_sha256'].items():
         if hashlib.sha256((folder/name).read_bytes()).hexdigest()!=digest:raise ValueError('Original raw SHA changed')
     raw=read('async_raw_timing.json');trace=read('async_causal_trace.json');cost=read('cost_report.json')
@@ -138,7 +141,7 @@ def build(folder,exclude_software_submit=False):
         reference=dict(source_leaf=ref['source_leaf'],raw_sha256=ref['raw_sha256'],
             same_scope_time16_ms=ref['fixed_optics']['wall_ms16'],
             legacy_scope_time16_ms=ref['legacy_fixed_optics_time16_ms'])
-    return dict(status='passed',source_leaf=str(folder.resolve()),raw_sha256=audit['raw_sha256'],
+    result=dict(status='passed',source_leaf=str(folder.resolve()),raw_sha256=audit['raw_sha256'],
         fields=fields,actual_software=a,fixed_optics=p,rows=rows,
         scope_version='exclude_software_CPU_submit_v2' if exclude_software_submit else 'original_CPU_dispatch_retained_v1',
         legacy_fixed_optics_time16_ms=legacy['wall_ms16'],
@@ -156,12 +159,20 @@ def build(folder,exclude_software_submit=False):
         merger_decoder_independently_measured=raw.get('detailed_electronics_phases',False),
         physical_optical_hardware_measured=False,
         scope='OEO includes charged post-detector electronics and next-segment encoding, not the excluded electronic residual branch')
+    if warmed_diagnostic:
+        result.update(timing_profile=audit['timing_profile'],original_cold_scope_qualified=False,
+            qualified_for_final_hybrid_table=False,extra_pre_window_real_fields=1,
+            scope_version='WARMED_DIAGNOSTIC_'+result['scope_version'],warmup_accounting=audit['warmup_accounting'],
+            fixed_optics_result_is_measured_main_window_only=True,
+            warmup_inclusive_optical_projection_not_claimed=True,Qwen_baseline_also_warmed=False)
+    return result
 
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('leaf',type=Path);parser.add_argument('out',type=Path)
     parser.add_argument('--exclude-software-submit',action='store_true')
-    args=parser.parse_args();result=build(args.leaf,args.exclude_software_submit)
+    parser.add_argument('--warmed-diagnostic',action='store_true',help='Separate profile, not original cold table')
+    args=parser.parse_args();result=build(args.leaf,args.exclude_software_submit,warmed_diagnostic=args.warmed_diagnostic)
     if args.out.exists() or args.out.with_suffix('.csv').exists():raise FileExistsError('Preserve existing phase ledger')
     with args.out.open('x',encoding='utf-8') as f:json.dump(result,f,ensure_ascii=False,indent=2)
     with args.out.with_suffix('.csv').open('x',encoding='utf-8-sig',newline='') as f:
