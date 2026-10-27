@@ -1,5 +1,40 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 追加目标：前一Top-k至少＋1个百分点（2026-10-27，用户新授权）
+
+用户核定未达标继续利用TEST反馈做微调。本轮TEST可参与两个配方的开发比较，明确是已观察测试集的超参开发，
+不冒称独立泛化或等预算消融；仍仅TRAIN样本进入梯度。原结果、全部失败路径/预算、best/last永久保留。
+上一轮N49/k49 seed17选定TEST79.12%（595/752），确实未达标。同seed90轮k24为80.32%（604/752），
+＋1pp需至少612/752=81.38%；旧k24三seed均值80.90%，＋1pp约81.90%。本轮单seed开发使用更保守的
+**616/752=81.91%**门槛；单seed过线不等于已证明三seed均值过线，暂不扩seed27/37。
+
+新入口`mixup_curriculum.py`、profile`configs/kather_n49_mixup_curriculum_20261027.json`，
+run `runs/simulation/kather_n49_mixup_curriculum_20261027`。只用GPU1/3各一路，UUID与上一轮相同。
+对比两种训练路径：原120轮full49 VALbest＋Mixup，及同seed90轮k24 VALbest＋输入功率连续过渡＋Mixup。
+直接把k24权重改为k49，未训练VAL从80.98%降至18.62%；k28/32/36/40/44分别68.09/62.63/55.32/40.43/29.65%。
+因此不能直接移植并把稀疏模型成绩冒充full49。本次过渡的必要性是待验证假设，未承诺过渡能保住准确率。
+原始诊断`runs/smoke/kather_n49_curriculum_transition_20261027/receipt.json`，参数11078432，未读新TEST。
+
+过渡定义：归一化top24入口功率p24与原full49概率p49按(1−t)*p24+t*p49混合，再sqrt转振幅，
+t随前16轮余弦从0升至1，第16轮起完全调用原ScalingOptics k49路由。t>0全部49入口功率为正；
+t=0仅作原k24初始化复现。任何t<1的checkpoint不得参与full49选模/测试，最终TEST只用原始ScalingOptics N49/k49，
+无额外推理头、教师、TTA、学习参数或永久偏置。训练期使用与原实现同定义的dense-amplitude STE。
+共享model.py/train.py/plan.py/OEO不修改，专用factory仅用于过渡训练，t=0/1需实际输出复现检查。
+
+Mixup按[原论文](https://arxiv.org/abs/1710.09412)在TRAIN配对图像及标签上做凸组合，alpha0.2；
+每个effective batch16的图像经各自确定性D4后混合，标签CE和margin按同lambda加权，原capture/TV/soft均衡总权重不变。
+不再采用上一轮50%困难样本反复追逐；每轮各类均匀轮换128张，共1024唯一样本，每4轮覆盖全部3496TRAIN。
+新AdamW/seeded RNG从源选定EMA初始化，不能称恢复旧动量的精确resume。专家LR3轮预热1e-4→3e-4，
+global0.5倍/router0.1倍，余弦至3e-5；原EMA0.95、labelsmoothing.02、TV.02、softbalance.01、capture.005、margin.2。
+
+每配方最多32聚焦round，总65536 TRAIN图像曝光。每轮512 TRAIN探针＋752VAL，每8轮保存完整TRAIN评分，
+每分钟保存批次/梯度/功率比例；完整采样IDs逐轮写sampling_history.jsonl，修复上一轮中间难度缓存覆盖导致历史回放不可完全追溯的局限。
+只在完全full49阶段累计early-stop观察，至少12个full49 round后才开始8轮无accuracy/NLL纪录改善早停；
+过渡模型不能因稀疏VAL高而选入。原120 full49 best始终作回退候选。各配方结束后按VAL锁各自full49 checkpoint，
+每个候选TEST一次（权重完全相同的原候选核验后复用），再按用户授权的TEST开发成绩比较配方及616门槛。
+本阶段是有限方法比较，不承诺必达标；后续调整须有训练/验证/开发TEST证据、明确新增预算和独立profile。
+
+
 ## TRAIN难例回放与评估降频（2026-10-27，用户追加要求）
 
 ### 本轮最终结果：三方法完成并测试，性能目标未达到

@@ -1,0 +1,42 @@
+{
+  "study": "User-authorized TEST-feedback development targeting previous Top-k plus1pp",
+  "seed": 17,
+  "recipes": [
+    "mixup",
+    "power_curriculum_mixup"
+  ],
+  "rounds": 32,
+  "samples_per_class": 128,
+  "eval_batch": 4,
+  "batch": 16,
+  "microbatch": 2,
+  "mixup_alpha": 0.2,
+  "transition_rounds": 16,
+  "minimum_fullk_rounds": 12,
+  "patience": 8,
+  "lr": 0.0003,
+  "lr_end": 3e-05,
+  "warmup_rounds": 3,
+  "ema_decay": 0.95,
+  "margin_weight": 0.2,
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "recipe_gpu": {
+    "mixup": 1,
+    "power_curriculum_mixup": 3
+  },
+  "reference_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17",
+  "reference_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+  "curriculum_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s17",
+  "curriculum_sha256": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+  "target_test_correct": 616,
+  "test_samples": 752,
+  "target_basis": "Conservative seed17 development target81.9149%; previous three-seed k24 mean80.90% plus1 percentage point. A single-seed pass does not establish a three-seed mean.",
+  "test_role": "User explicitly authorized TEST feedback and development recipe selection; only TRAIN images/labels enter gradients. Each final full49 candidate is locked by VAL then TEST once. No partial-power checkpoint may be tested as49/49.",
+  "source_initialization": "Selected EMA weights; fresh AdamW, RNG reset by seed. No exact optimizer resume claim. Original120 full49best remains eligible fallback.",
+  "budget": "Two seed17 recipes, each at most32 rounds1024 TRAIN images; minimum12 full49 rounds then8 stale rounds; no automatic extra seeds or unbounded budget.",
+  "mixup_reference": "https://arxiv.org/abs/1710.09412",
+  "inference": "Original ScalingOptics N49/k49/routerT0.05; full49 power fraction1, no teacher/head/TTA/new parameters."
+}
