@@ -1,0 +1,19 @@
+{
+  "seed": 17,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "boundary_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_boundary_refine_20261027.json",
+  "reference_train_scores": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_boundary_refine_20261027/cache/reference_train_scores.npz",
+  "reference_train_scores_sha256": "77f5d8d8344e32eb6987c5a9a80b52bd4998f3d6373c13c512c4f278be5a587f",
+  "selection": "Only TRAIN: <=16 near-boundary STROMA->DEBRIS and <=16 reverse, log margin [-.5,0);32 correct COMPLEX near those competitors;32 balanced replay;32 disjoint balanced observation. No extreme-error backfill. Clean plus deterministic D4 each.",
+  "budget": "At most8 proposed and accepted whole-pool updates,3 backtracking candidates each (24 total),stop on entire rejected direction. Same128 TRAIN images/two fixed views; observation32 never enters gradients or acceptance. GPU3 only. One full original-model3496TRAIN/752VAL/752developmentTEST after TRAIN candidate lock if any update accepted; no improvement retains source.",
+  "purpose": "Measure real margin/probability/activation changes and cross-class gradient conflict before deciding whether larger steps or opening a prior layer is justified. This is not a performance result or automatic training authorization beyond existing user scope.",
+  "max_updates": 8,
+  "trial_rms": [
+    0.0015,
+    0.00075,
+    0.000375
+  ],
+  "radius": 0.02,
+  "optimization": "Only original last global phase, fresh AdamW for preconditioned direction; repair squared logmargin(.2),targeted COMPLEX margin-protection slack.02,parent KL.5/.05,original capture.005/TV.02/balance.01,anchor50 circular,RMS<=.02. Three bounded cyclic passes remove linearized direction components that lower source-correct COMPLEX margins against STROMA/DEBRIS; not exact QP. Actual nonlinear accuracy tested by backtracking. No EMA or electronic head.",
+  "acceptance": "Repair clean corrected>=2; no new error in COMPLEX clean or source-correct D4; replay clean new_wrong<=1; clean total net correct rises from source; repair D4 mean margin improves from current by>1e-5. Accept increased current total or tied total with summed group NLL lower>1e-4. Observation metrics monitor only. Candidate locked before single authorized developmentTEST; reference600 remains development best candidate."
+}

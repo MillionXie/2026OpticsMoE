@@ -1,0 +1,29 @@
+{
+  "run_id": "kather_n49_phase_repair_probe_retry_20261027",
+  "source_commit": "fde7a971818e1682910b3cf2ff69a405194f22d1",
+  "train_unique_images": 128,
+  "train_views": 256,
+  "trials": 8,
+  "elapsed_seconds": 68.50320863723755,
+  "no_val_test_forward": true,
+  "source_restored_exactly": true,
+  "manifest_files": 16,
+  "archive_sha256": "84adef995a77d59303a4a7a717dfe6cd18ba57489b7fcaeb16493a60d7f97212",
+  "independent_numpy_audit_passed": true,
+  "findings": {
+    "adam_RMS_0.0015": {
+      "repair_clean_corrected": 4,
+      "complex_clean_new_wrong": 1
+    },
+    "adam_RMS_0.005": {
+      "repair_clean_corrected": 10,
+      "complex_clean_new_wrong": 1
+    },
+    "negative_gradient_RMS_0.0015": {
+      "repair_clean_corrected": 16,
+      "complex_clean_new_wrong": 18
+    },
+    "interpretation": "Last-phase directions can repair TRAIN errors, but there is a measured cross-class conflict. Larger steps alone are unsafe. Fixed small-batch protection-gradient at most-repaired point is opposed to repair gradient; this is not a whole-dataset statistic. No new TEST performance was measured."
+  },
+  "next": "Bounded projected Adam direction with TRAIN COMPLEX constraints and backtracking; at most8 accepted updates/24 candidates before one locked full-model development TEST; do not open prior layer yet."
+}
