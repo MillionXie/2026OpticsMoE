@@ -1,5 +1,6 @@
 """Rebuild a fixed-value display from audited raw records, never edited XLSX."""
 import argparse
+import csv
 import json
 import math
 from collections import defaultdict
@@ -12,10 +13,16 @@ from lgvq_phase_ledger_20261026 import build as phase_build,event_phases,phase_o
 from lgvq_async_trace_contract_20261026 import critical_path,OPTICAL_PASS_MS
 
 MANIFEST_SHA='dd709c4d527b05e5ff1e4e681e5969efbc33200f90542b7c4b899ee18b576be2'
-HEADERS=['平台','模型','MPS/%','轮次','每16视频/ms','等效单帧/ms','每16视频/J','等效单帧/J','tokens/s','LightGen时间加速比','LightGen能效比','LightGen tokens/s加速比']
+BOOK_NAME='Temporal_LightGen与baseline_模型对比与附录计时_20261027.xlsx'
+HEADERS=['平台','模型','参数规模/B','MPS/%','轮次','每16视频/ms','等效单帧/ms','每16视频/J','等效单帧/J','tokens/s','LightGen时间加速比','LightGen能效比','LightGen tokens/s加速比']
 NOTES=['LightGen：电子阶段计时＋固定光周期，不含电子图构建；能量按组件核算，非光路直接实测。',
        '仅LightGen按千问参考计数（每16视频7,136 token）；其他模型保留各自原生计数，CLIP/YOLO不适用。',
-       '时间/能效比＝各行时间/能量÷LightGen；tokens/s加速比＝LightGen÷各行，token定义不同。40GB与80GB非同卡受控比较。']
+       '时间/能效比＝各行时间/能量÷LightGen；tokens/s加速比＝LightGen÷各行，token定义不同。40GB与80GB非同卡受控比较。',
+       '参数规模：1 B＝10⁹个参数；Qwen 2 B、GLM 9 B沿用标称规格，其余baseline为原模型总量记录，非仅本次激活量。',
+       'LightGen：学生6.804011 M＋已绑定冻结前端315.098112 M＝321.902123 M（0.321902123 B）；不加载完整Qwen Transformer。',
+       'LightGen学生计数含光学可学习自由度与电子部分；非单纯GPU矩阵权重，不与MoE激活参数混同。',
+       'DeepSeek-VL2总量27.480134248 B、标称激活约4.5 B；Kimi总量16.407656048 B、标称激活约3 B。',
+       'CLIP含未用于本视觉推理的文本分支；YOLO按原完整检测模型。参数不代表执行FLOPs；baseline附加质量头未计入原主干总量。']
 MODEL_NAMES={'clip':'OpenAI CLIP ViT-B/32','glm':'GLM-4.6V-Flash','qwen':'Qwen3-VL-2B-Instruct',
              'yolo':'Ultralytics YOLO11s','deepseek':'DeepSeek-VL2','kimi':'Kimi-VL-A3B-Instruct'}
 PHASE_HEADERS=['部分','阶段累计跨度\nms/16视频（不可相加）','端到端分摊\nms/16视频（可相加）',
@@ -85,6 +92,76 @@ def pooled_phase_table(evidence,time16):
         first_field_times_are_not_amortized_stage_times=True)
 
 
+def parameter_metadata(data):
+    repo=Path(__file__).resolve().parents[4]
+    catalog=repo/'LightGenV2/reports/20260927_lgvq_temporal_multi_baseline_a100/recalculated_20261013/plot_data.csv'
+    document=repo/'LightGenV2/tasks/t06_video_quality_assessment/reports/architecture/ELECTRONIC_PARAMETER_AUDIT_20260912.md'
+    binding=repo/'LightGenV2/tasks/t06_video_quality_assessment/runs/smoke/lgvq_frontend_identity_recovery_20261024_01/front_parameter_binding_02.json'
+    pins={catalog:'c387f68e75ac02adbe790c4b19c0e67f727465191a36c1498425400c8b7fb3a9',
+          document:'9c3405fe99b802ddac6c9fabba34ebf87a73d095cfcf216f8b7889e7eff29be6',
+          binding:'6bb38fe494d35cc568fc3e00e1bd9901ce6f9e88e5e5dd8d3d7041292d8d4ed0'}
+    for path,digest in pins.items():
+        if sha(path)!=digest:raise ValueError('Parameter source changed: '+str(path))
+    with catalog.open(encoding='utf-8-sig',newline='') as f:records=list(csv.DictReader(f))
+    values={};sources={}
+    for model in MODEL_NAMES:
+        row=next(r for r in records if r['baseline']==('full' if model=='deepseek' else model))
+        values[MODEL_NAMES[model]]=float(row['model_total_parameters_billion'])
+        sources[model]={k:row[k] for k in ['parameter_basis','parameter_source','checkpoint_sha256','moe_active_parameters_billion']}
+        for r in data['rounds']:
+            identity=read(Path(r['path'])/'identity.json')
+            if identity['model']!=model:continue
+            if identity['checkpoint_sha256']!=row['checkpoint_sha256']:raise ValueError('Parameter catalog/checkpoint mismatch')
+            if 'original_parameters' in identity:compare(identity['original_parameters']/1e9,values[MODEL_NAMES[model]],'original_model_numel')
+    text=document.read_text(encoding='utf-8')
+    if 'multivideo16x4_rank_s163/best_checkpoint.pt' not in text or '**6,804,011**' not in text:
+        raise ValueError('Original s163 student count missing')
+    front=sum(t['numel'] for t in read(binding)['matched_front_tensors'])
+    if front!=315098112:raise ValueError('Bound frontend count changed')
+    values['LightGen']=(6804011+front)/1e9
+    return dict(values_billion=values,baseline_catalog=sources,LightGen_student_numel=6804011,
+        LightGen_frozen_frontend_numel=front,LightGen_total_numel=6804011+front,
+        sources=[dict(path=str(p),sha256=h) for p,h in pins.items()],Qwen_GLM_are_nominal=True)
+
+
+def appendix_table(detail,time16):
+    groups=[('前端编码',['tokenizer','frontend','vision_entry'],'文本分词；视觉Embedding/位置编码/Adapter；视觉入口编码',
+        '场内前处理双流fork/join，汇合后进入视觉主体；下一场前处理可与前一场主体并行。'),
+        ('视觉光电处理',[f'{p}{i}' for i in range(1,4) for p in ('optics','oeo')],'视觉Router→Expert→Global三个光周期及OEO电子段',
+        '同场三周期及其间电子段串行依赖；每周期16视频整幅光场联合传播。'),
+        ('跨模态桥接',['merger','language_entry'],'Merger、序列组装、语言入口编码',
+        '依赖视觉段输出；桥接完成后才能进入本场语言段，不能无依据重叠。'),
+        ('语言光电处理',[f'{p}{i}' for i in range(4,7) for p in ('optics','oeo')],'语言Router→Expert→Global三个光周期及OEO电子段',
+        '同场三周期及其间电子段串行依赖；可与后续场前处理流水重叠。'),
+        ('解码与评分',['decoder'],'Decoder、读出与最终质量评分',
+        '依赖本场语言段完成；评分fence完成后才能复用对应槽位。'),
+        ('调度与同步',['scheduling'],'CPU提交/返回、观测队列、槽位等待与必要同步',
+        '贯穿全窗，不是附加串行尾段；仅关键路径上的实际开销计入此行。')]
+    by={r[0]:r for r in detail['rows'][:-1]};rows=[];members=[]
+    for name,keys,operations,relation in groups:
+        members+=keys;value=sum(by[PHASE_NAMES[k]][2] for k in keys)
+        rows.append([name,operations,value,value/time16,relation])
+    if set(members)!=set(PHASE_NAMES) or len(members)!=len(set(members)):raise ValueError('Appendix partition not exact')
+    compare(sum(r[2] for r in rows),time16,'coarse_phase_closure')
+    rows.append(['合计','三轮共6144视频、384组光场',time16,1.,'各行关键路径贡献可相加；不能将各并行阶段累计跨度相加。'])
+    total=sum(r[3] for r in detail['rounds']);fields=sum(r[1] for r in detail['rounds'])
+    compare(total/fields,time16,'three_round_normalization')
+    notes=[
+        '计时边界：t=0沿用原host_start，至最后CPU评分返回。窗口前模型加载、原图准备及批量H2D不计入此表。',
+        '依赖规则：E(v)=d(v)+max{E(u):u为v的前驱}，E(origin)=0；整轮L=max_v E(v)。依赖含流顺序、真实提交和必要同步。',
+        '总时间：T=ΣLᵣ/ΣFᵣ=('+ '＋'.join(f'{r[3]:.9f}' for r in detail['rounds'])+f')/384={time16:.9f} ms/16视频。',
+        '表内贡献：选取每轮一条见证最长路径，按以上六块归类，三轮合计后除以384；不是六次独立实验耗时之和。',
+        '并行只通过原DAG依赖和最长路径处理：已重叠部分不重复计费，也不再从总时间另减重叠跨度。',
+        '双槽流水：场i前处理可与场i−1主体重叠；复用槽位前须等场i−2评分fence。跨流重叠不等于证明逐kernel占用并发。',
+        '同场保持视觉3周期→Merger→语言3周期→Decoder依赖；16视频是整幅光场并行，不是把16路独立结果无损拼接。',
+        '光周期各为0.714285714 ms SLM＋0.300000000 ms曝光＋0.030700000 ms读出；电子段用原计时，非物理光路直接实测。',
+        '沿用批准范围：电子图构建作为部署成本不计入本表；FFT/ROI/电残差/H2D仍按原口径处理，无新增排除。',
+        '首三场真实eager与两次capture输出保留，无额外预热、未挑最快轮。所有表值保留全精度，显示值相加可能有末位舍入差。']
+    return dict(title='LightGen窗口端到端时间分解（每16视频/64帧）',headers=['模块','包含操作','端到端贡献/ms','占总时间','并行与串行关系'],
+        rows=rows,notes=notes,round_headers=detail['round_headers'],rounds=detail['rounds'],
+        member_keys=[g[1] for g in groups],whole_window_total_ms=total,fields=fields)
+
+
 def prepare(source):
     source=Path(source).resolve()
     if sha(source/'delivery_manifest.json')!=MANIFEST_SHA:raise ValueError('Original data manifest changed')
@@ -128,6 +205,9 @@ def prepare(source):
         if native_rate is not None:
             compare(g['native_effective_tokens']/g['elapsed_s'],native_rate,'original_native_token_rate')
         if g['model']=='qwen':compare(rows[-1][9],rows[-1][11],'Qwen_throughput_ratio_equals_time_ratio')
+    parameters=parameter_metadata(data)
+    for row in rows:row.insert(2,parameters['values_billion'][row[1]])
+    detail=pooled_phase_table(phase_records,t)
     return dict(status='raw_rechecked_fixed_values',headers=HEADERS,rows=rows,notes=NOTES,
         source_json=str(snapshot),source_json_sha256=sha(snapshot),source_manifest_sha256=MANIFEST_SHA,
         baseline_original_points_rechecked=36,LG_original_points_rechecked=3,LG_source_receipts=raw_sources,
@@ -138,17 +218,17 @@ def prepare(source):
         LG_native_prompt_tokens_not_used_for_display=native,
         throughput_ratio_direction='LightGen Qwen-reference rate / baseline native rate',
         baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
-        cross_model_token_definitions_differ=True,phase_table=pooled_phase_table(phase_records,t))
+        cross_model_token_definitions_differ=True,phase_table=detail,appendix_table=appendix_table(detail,t),parameters=parameters)
 
 
 def audit(folder,visual_reviewed=False):
-    folder=Path(folder).resolve();expected=read(folder/'static_values.json');book=folder/'Temporal_LightGen与baseline_固定数值_20261027.xlsx'
+    folder=Path(folder).resolve();expected=read(folder/'static_values.json');book=folder/BOOK_NAME
     # Recheck the raw data independently again; no workbook is used as an input.
     compare(expected,prepare(Path(expected['source_json']).parent),'independent_raw_replay')
     ns={'s':'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
     with ZipFile(book) as z:
         names=[n.get('name') for n in ET.fromstring(z.read('xl/workbook.xml')).findall('s:sheets/s:sheet',ns)]
-        if names!=['统一结果','LightGen时间分块']:raise ValueError('Exactly two fixed-value sheets required')
+        if names!=['统一结果','LightGen附录计时']:raise ValueError('Exactly two fixed-value sheets required')
         if any(n.startswith('xl/externalLinks/') for n in z.namelist()):raise ValueError('External links forbidden')
         shared=[''.join(s.itertext()) for s in ET.fromstring(z.read('xl/sharedStrings.xml')).findall('s:si',ns)] if 'xl/sharedStrings.xml' in z.namelist() else []
         def parse_sheet(number):
@@ -168,14 +248,15 @@ def audit(folder,visual_reviewed=False):
         for r,row in enumerate([expected['headers']]+expected['rows'],1):
             for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'cell_{r}_{i}')
         for i,note in enumerate(expected['notes'],16):compare(note,cells.get('A'+str(i)))
-        phase=expected['phase_table'];cells=parse_sheet(2)
-        for r,row in enumerate([phase['headers']]+phase['rows'],1):
+        phase=expected['appendix_table'];cells=parse_sheet(2)
+        compare(phase['title'],cells.get('A1'))
+        for r,row in enumerate([phase['headers']]+phase['rows'],3):
             for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'phase_cell_{r}_{i}')
-        for i,note in enumerate(phase['notes'],24):compare(note,cells.get('A'+str(i)))
-        for r,row in enumerate([phase['round_headers']]+phase['rounds'],33):
+        for i,note in enumerate(phase['notes'],13):compare(note,cells.get('A'+str(i)))
+        for r,row in enumerate([phase['round_headers']]+phase['rounds'],25):
             for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'round_cell_{r}_{i}')
-        compare(sum(r[2] for r in phase['rows'][:-1]),expected['rows'][0][4],'saved_phase_sum_equals_main_time')
-        if any(isinstance(r[3],(int,float)) and (r[3]<0 or r[4]<r[3]) for r in phase['rows'][:-1]):raise ValueError('Invalid first-field boundaries')
+        compare(sum(r[2] for r in phase['rows'][:-1]),expected['rows'][0][5],'saved_phase_sum_equals_main_time')
+        compare(sum(r[3] for r in phase['rows'][:-1]),1.,'saved_phase_fractions_sum')
     if not visual_reviewed:raise ValueError('Review the one-sheet render before sealing')
     result=dict(status='passed',rows=13,sheets=2,formulas=0,external_links=0,raw_points_rechecked=39,
         all_saved_values_independently_verified=True,edited_XLSX_used_as_source=False,
@@ -183,7 +264,8 @@ def audit(folder,visual_reviewed=False):
         common_effective_tokens=expected['common_effective_tokens'],
         baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
         cross_model_token_definitions_differ=True,phase_table_closes_to_main_time=True,
-        original_t0_retained=True,phase_overlap_not_double_counted=True)
+        original_t0_retained=True,phase_overlap_not_double_counted=True,parameter_sources_verified=True,
+        appendix_blocks=6,filename_contains_fixed_values=False)
     with (folder/'saved_values_audit.json').open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
     with (folder/'delivery_manifest.json').open('x',encoding='utf8') as f:
         json.dump(dict(status='sealed',files=[dict(path=p.name,bytes=p.stat().st_size,sha256=sha(p)) for p in
@@ -197,5 +279,5 @@ if __name__=='__main__':
     if a.mode=='prepare':
         result=prepare(a.source)
         with a.out.open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
-        print(json.dumps(dict(status='passed',rows=len(result['rows']),LG_time16_ms=result['rows'][0][4]),ensure_ascii=True))
+        print(json.dumps(dict(status='passed',rows=len(result['rows']),LG_time16_ms=result['rows'][0][5]),ensure_ascii=True))
     else:print(json.dumps(audit(a.source,a.visual_reviewed),ensure_ascii=True))
