@@ -1,0 +1,78 @@
+{
+  "run_id": "kather_n49_expert_tail_transfer_probe_20261028",
+  "source_commit": "0e85a3b36acad7f89b935f918bd4a61b3c8289c5",
+  "block": "expert_phases.1",
+  "gradient_cosine": -0.9215773940086365,
+  "comparison_last_global_cosine": -0.9390963912010193,
+  "gradient_norms": {
+    "fit_s": 0.2554004490375519,
+    "fit_d": 0.2472047060728073
+  },
+  "directional_derivatives": {
+    "repair_s": {
+      "fit_s": -400.46795654296875,
+      "fit_d": 357.2190246582031
+    },
+    "repair_d": {
+      "fit_s": 369.0621643066406,
+      "fit_d": -387.6169738769531
+    },
+    "common": {
+      "fit_s": -79.30007934570312,
+      "fit_d": -76.75536346435547
+    }
+  },
+  "trials": [
+    {
+      "rms": 0.0015,
+      "fit_s_repaired": 0,
+      "observe_s_repaired": 0,
+      "fit_d_repaired": 0,
+      "observe_d_repaired": 0,
+      "guard_new_wrong": {
+        "guard_s": 1,
+        "guard_d": 0,
+        "guard_c": 0
+      },
+      "observe_s_pair_margin_change": -0.013394847512245178
+    },
+    {
+      "rms": 0.005,
+      "fit_s_repaired": 6,
+      "observe_s_repaired": 1,
+      "fit_d_repaired": 6,
+      "observe_d_repaired": 3,
+      "guard_new_wrong": {
+        "guard_s": 4,
+        "guard_d": 1,
+        "guard_c": 4
+      },
+      "observe_s_pair_margin_change": -0.04937957972288132
+    },
+    {
+      "rms": 0.01,
+      "fit_s_repaired": 7,
+      "observe_s_repaired": 3,
+      "fit_d_repaired": 7,
+      "observe_d_repaired": 7,
+      "guard_new_wrong": {
+        "guard_s": 6,
+        "guard_d": 2,
+        "guard_c": 7
+      },
+      "observe_s_pair_margin_change": -0.1094721108675003
+    }
+  ],
+  "elapsed_seconds": 31.70200252532959,
+  "no_val_test_forward": true,
+  "source_restored_exactly": true,
+  "matched_train_identity_bitwise_equal_to_global_probe": true,
+  "all_manifest_and_numpy_audits_passed": true,
+  "manifest_files": 10,
+  "archive_sha256": "1234fe9f39fc2f38d3ff5083a66dc7326576bfe1a4d3f06c1df0a7432db3a774",
+  "resources_released": true,
+  "pilot_target_met": false,
+  "current_best_test_correct": 600,
+  "target_correct": 616,
+  "interpretation": "Expert block cosine remains strongly opposed (-.922); normalized common direction repairs more fit samples and D observation, but S observation mean margin deteriorates at every tested amplitude and correct guards are harmed. No point supports expanding same group-average direction training. This finite comparison does not prove all directions or earlier features incapable. Next diagnosis should distinguish global class-bias components from sample-specific gradient residuals before more training or TEST."
+}
