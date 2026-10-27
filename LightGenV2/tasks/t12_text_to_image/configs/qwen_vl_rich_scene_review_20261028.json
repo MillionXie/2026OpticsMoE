@@ -1,0 +1,158 @@
+{
+  "schema": "rich_scene_curriculum_review_v1",
+  "visual_review_complete": true,
+  "source_screen_run": "LightGenV2/tasks/t12_text_to_image/runs/simulation/qwen_vl_rich_scene_asset_screen_20261028",
+  "screen_report_sha256": "81e3f88ecfe1b76370a909ecc6ffa5de42e79333822ad3b75227dce67be17c3d",
+  "parent_reviewed_pairs_sha256": "aa16850f629df4809e8ffc973331649969a688fb0da104e75e908c9b180b0938",
+  "retain_original_train_and_dev_views": true,
+  "additional_TRAIN_products": [
+    {
+      "category": "lamp",
+      "product_id": "B073P3562J",
+      "views": [
+        0
+      ],
+      "description": "a table lamp with a white rounded glass shade, a curved brass arm and a silver circular base"
+    },
+    {
+      "category": "lamp",
+      "product_id": "B073P3HHFS",
+      "views": [
+        6
+      ],
+      "description": "a desk lamp with a silver-gray metal bell shade, an angled silver arm and a gray circular base"
+    },
+    {
+      "category": "lamp",
+      "product_id": "B0742FHDJF",
+      "views": [
+        5
+      ],
+      "description": "a desk lamp with a black rounded shade, an angled brass arm and a brass circular base"
+    },
+    {
+      "category": "lamp",
+      "product_id": "B076VF4KRN",
+      "views": [
+        3
+      ],
+      "description": "a desk lamp with a green metal bell shade, a curved dark-bronze arm and a dark circular base"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B074VLST26",
+      "views": [
+        21
+      ],
+      "description": "a rectangular solid teal fabric cushion"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B074VM5DY",
+      "views": [
+        21
+      ],
+      "description": "a square solid turquoise fabric cushion"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B079V329QM",
+      "views": [
+        26
+      ],
+      "description": "a square brown leather cushion"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B079V7M9K4",
+      "views": [
+        12
+      ],
+      "description": "a square white fabric cushion"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B07BMTRT4F",
+      "views": [
+        5
+      ],
+      "description": "a square black fabric cushion"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B07JLPFNHT",
+      "views": [
+        26
+      ],
+      "description": "a square cushion with wide black and white vertical stripes"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B07JLZC56G",
+      "views": [
+        26
+      ],
+      "description": "a square blush-pink velvet cushion"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B07JLZ7QC7",
+      "views": [
+        29
+      ],
+      "description": "a rectangular coral-red fabric cushion"
+    }
+  ],
+  "additional_TEST_products": [
+    {
+      "category": "lamp",
+      "product_id": "B073P2ZGMJ",
+      "views": [
+        12
+      ],
+      "description": "a desk lamp with a gray metal bell shade, a dark angled arm and a dark circular base"
+    },
+    {
+      "category": "pillow",
+      "product_id": "B07C8MSZ2W",
+      "views": [
+        10
+      ],
+      "description": "a square cream cushion with a repeating pale geometric pattern"
+    }
+  ],
+  "retain_original_TEST_profile": "configs/qwen_vl_holdout_240_reviewed_20261027.json",
+  "original_TEST_profile_sha256": "1d4afae0a7d05c830c4fc5e1d9968e94a1429115da9d6cbe72ff3622dc5df311",
+  "desired_budgets": {
+    "train_products": 44,
+    "train_views": 76,
+    "edits_per_mode_per_train_view": 8,
+    "train_pairs": 1824,
+    "development_products": 8,
+    "development_views": 16,
+    "development_pairs": 96,
+    "test_products": 10,
+    "test_views": 18,
+    "edits_per_mode_per_test_view": 10,
+    "test_pairs": 540
+  },
+  "contact_sha256": {
+    "train_lamp_candidates_00.png": "93915d777d5fae686a903b9e86d1db15308aca1b94d136f47017d40e02bde602",
+    "train_lamp_candidates_01.png": "dfd580d5fe1ff0a8f6dd7af5501a9a2123fa36d94bd7d328fc7d5581bc9cb2db",
+    "train_lamp_candidates_02.png": "71a19231abae335f22d01f83f7e4d8d632d14991d381ac7a6b9187cdb4cd617d",
+    "train_lamp_candidates_03.png": "1a05f2c0f5fc48b69695b66e8f72aa9d5d9482cf5cdb6382efc6ba5cda3d15ce",
+    "train_pillow_candidates_00.png": "355f74dfb391434ce70a42110259a4756d6a71fa63963659e88cdc3aa75babb8",
+    "train_pillow_candidates_01.png": "c48ff8983cb98b4bc32399a0c14be1d744df38c71f0b41e3c27d922eadbcacea",
+    "train_pillow_candidates_02.png": "45315afa386ff5f03a26c49cd5587c27b434cfc87464b858b3404b1c649085e8",
+    "train_pillow_candidates_03.png": "11eece28ff2d101c97710d74c08f5ce564dd4ddfa27d1d9f9926f1a6a791051d",
+    "details/B073P2ZGMJ.png": "58b730ff025045840134ffe22591215c562e293459bae7b4c778d1327c65e402",
+    "details/B0742FHDJF.png": "e3cf432aceca60af64ef812d432626be58813f3415d084530b09a05d656d8cfd",
+    "details/test_0.png": "7b927e690a6de816746d39a1bdc73e9573ae7b69969d2fa2fb7572f1bb24ef5e",
+    "details/train_0.png": "0a3fb018e1e316c52e5f89f49e077f45e9541446c6bc80dfed2c8ca738e220d8",
+    "details/train_1.png": "8818844c6ea424980aae42e0b3cb15f316d0f3332c1795a5a578eb8ec2fb3cac"
+  },
+  "basis": "Assistant reviewed original pixel contact sheets, then all available views of candidate desk lamps and two additional heldout products. Preserve original hand-reviewed front views: geometry-only ranking erroneously favors overhead lamps or reverse cushion faces and is NOT approved as automatic final selection. New products use one visually confirmed complete front or mild side view only. Exclude multi-head/floor/tripod lamps, rear pillow faces, and the seat-cushion-like TEST product B07YJ4HM7S. No student predictions or heldout model scores were used. Proposed complexity remains multiattribute product-scenes, three edit modes; these are product/view identities only, not yet a generated final dataset.",
+  "data_design_required": "Complex prompts must be factorized from true visible attributes, with TRAIN coverage of colors/shapes/materials/patterns and scenes; same-reference counterfactual groups. Keep objects complete. Do not multiply nearly identical templates and call that diversity. Declare synthetic color/lighting or teacher-background augmentation if used. Heldout products/targets never become gradients or model selection inputs. Test targets/background seeds must be disjoint from TRAIN. Freeze final checkpoint and protocol before heldout inference.",
+  "not_540_independent_products": true,
+  "heldout_predictions_used": false
+}
