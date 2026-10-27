@@ -10,7 +10,43 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
-2026-10-27用户复核模糊结果后，**暂停新训练，后续只保留台灯＋靠垫两类，移除新加的
+**2026-10-27最新授权：只保留Qwen作为参考RGB＋文字的图像编码入口，明确拒绝额外
+参考VAE推理支路；现在开始台灯＋靠垫的完整100轮电子baseline实验。**
+推理链保持完整冻结Qwen视觉24＋语言28→语义／空间读出→预训练单步SD-Turbo UNet
+→VAE decoder。TRAIN的VAE encoder只编码监督latent，原有参考重建辅助监督也只在
+TRAIN使用；没有参考VAE latent作为推理条件，没有像素贴回、目录检索或GT输入。
+这次是现有单步配对监督生成器的微调，不能冒称DDPM随机时间步去噪训练或未经改动的
+原生公开模型。Qwen缓存来自完整原图＋文字前向，推理参数仍计入全Qwen。
+
+配置`configs/qwen_vl_lamp_pillow_100epoch_20261027.json`：从
+`qwen_vl_ottoman_continue_20261027/best_checkpoint.pt`继续，保留其训练历史。
+按类别过滤已验证252条缓存，TRAIN144／VAL24，各类6／2款商品，每类三任务均衡，
+各模式TRAIN48／VAL8。坐墩、桌子不参与本轮梯度或模型评估，不重新选商品、prompt
+或GT。全部身份保存在run的`active_pairs.json`，原缓存及SHA不覆盖。
+100轮×18步＝1800次更新，batch8；UNet5e-6／adapter1e-5／空间5e-5、注入1e-5，
+36步warmup，cosine降至起始学习率10%。每5轮对完整VAL评估，按**全图LPIPS最低**
+选best，报告其PSNR而非另挑PSNR最优权重，保留best/last；100轮不等于必然收敛。
+启动前执行12项CPU合同测试及4步真实反向smoke；只用GPU6，正式完成后核对自有PID。
+新run `runs/simulation/qwen_vl_lamp_pillow_100epoch_20261027`，smoke为
+`runs/smoke/qwen_vl_lamp_pillow_100epoch_20261027`；下方旧run保留不覆盖。
+
+评价主张：三任务分别报告全图LPIPS↓＋物体区域LPIPS↓＋编辑区／保留区PSNR↑，
+避免平均背景掩盖主体。物体LPIPS统一使用source／target前景并集的固定box，外扩8px，
+两图同box裁剪后bilinear到128；这是显式命名的裁剪协议，不能混同全图LPIPS。
+换背景时物体box为保留物体，换物体／联合时为两者并集；GT mask只参与离线loss／指标，
+不进入生成前向。全图LPIPS net=alex，原图256；已同步写入逐样本JSON。
+指令语义建议补充CLIP目标描述相似度及CLIP方向相似度，后者必须有输入／目标两段
+场景描述，不能把“replace...”操作指令直接当成目标场景caption；保留CLIP偏差说明，
+与盲评“指令是否执行、主体是否完整、纹理是否自然”搭配。该语义指标尚未计算，
+不得把推荐或待算指标写成已测结果。LPIPS也不是唯一真值，且当前训练已有LPIPS loss。
+FID／KID作为分布指标不适合由只有4款商品的24条VAL做主要结论；KID虽有无偏估计，
+小样本方差及重复商品依赖仍然存在。未来独立扩充评估池后再统一计算，不靠改变指标
+掩盖形变。来源：[LPIPS](https://richzhang.github.io/PerceptualSimilarity/)、
+[Diffusers编辑评估](https://huggingface.co/docs/diffusers/v0.32.0/conceptual/evaluation)、
+[KID](https://arxiv.org/abs/1801.01401)。先做好电子质量，再替换Qwen中的TF block；
+本轮未开始任何光学结构替换。
+
+此前2026-10-27用户复核模糊结果后，**曾暂停新训练，后续只保留台灯＋靠垫两类，移除新加的
 坐墩（ottoman），桌类也不恢复**。以下三类run保留为历史开发证据；未将删除坐墩后的
 24条VAL子集冒称新训练或性能提升。沿用现有商品和编辑次数时，两类为TRAIN12款／
 144对，VAL另4款／24对；这只是下一轮范围，尚未准备新缓存或启动两类训练。

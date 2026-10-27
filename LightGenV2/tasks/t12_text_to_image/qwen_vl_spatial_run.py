@@ -74,6 +74,31 @@ def training_ids(payload,parent,exclude=True):
        'remaining_training_pairs':len(ids),'validation_filtered':False}
 
 
+def category_ids(rows, categories):
+    allowed=set(categories) if categories else {r['category'] for r in rows}
+    if not allowed or allowed-{r['category'] for r in rows}:raise ValueError('Unknown/empty training categories')
+    ids=[i for i,r in enumerate(rows) if r['category'] in allowed]
+    for split in ('train','val'):
+        for cat in allowed:
+            for mode in ('background','object','joint'):
+                if not any(rows[i]['split']==split and rows[i]['category']==cat and rows[i]['mode']==mode for i in ids):
+                    raise ValueError('Missing category/mode/split cell')
+    return ids
+
+
+def lr_factor(step, total, warmup=0, minimum=0.1):
+    if not 0<=warmup<total or not 0<=minimum<=1:raise ValueError('Invalid cosine schedule')
+    if warmup and step<=warmup:return step/warmup
+    fraction=min(1.,max(0.,(step-warmup)/max(1,total-warmup)))
+    return minimum+(1-minimum)*.5*(1+math.cos(math.pi*fraction))
+
+
+def selection_score(val, metric):
+    if metric=='mean_lpips':return -val[metric]
+    if metric=='mean_per_image_psnr_db':return val[metric]
+    raise ValueError('Unknown VAL selection metric')
+
+
 def masks(row,device):
     _,source=normalized_product(row['source'],256)
     _,target=normalized_product(row['target'],256)
@@ -98,10 +123,20 @@ def evaluate(model,payload,ids,device,output,label,metric,export=False):
         _,prediction=model(h,valid,noise_for([row],device));prediction=prediction.clamp(-1,1)
         target=image_float(payload['target'][i:i+1],device)
         err=(prediction-target).square()/4
-        edit,_=masks(row,device);keep=1-edit
+        edit,foreground=masks(row,device);keep=1-edit
+        # Same source/target union box for both images. Offline metric only;
+        # crops/masks never condition the model or alter exported predictions.
+        union=foreground if row['mode']=='background' else edit if row['mode']=='object' else torch.maximum(foreground,masks({**row,'mode':'object'},device)[0])
+        coords=torch.where(union[0,0]>.05)
+        if not len(coords[0]):raise ValueError('Empty metric object support')
+        y0=max(0,int(coords[0].min())-8);y1=min(256,int(coords[0].max())+9)
+        x0=max(0,int(coords[1].min())-8);x1=min(256,int(coords[1].max())+9)
+        crop_a=F.interpolate(prediction[:,:,y0:y1,x0:x1].float(),(128,128),mode='bilinear',align_corners=False)
+        crop_b=F.interpolate(target[:,:,y0:y1,x0:x1].float(),(128,128),mode='bilinear',align_corners=False)
         mse=float(err.mean());psnr=-10*math.log10(max(mse,1e-12))
         record={'sample_id':row['sample_id'],'category':row['category'],'mode':row['mode'],'prompt':row['prompt'],
           'psnr':psnr,'mse_01':mse,'lpips':float(metric(prediction.float(),target.float()).mean()),
+          'object_crop_lpips':float(metric(crop_a,crop_b).mean()),'object_crop_box':[x0,y0,x1,y1],
           'edited_psnr':-10*math.log10(max(float((err*edit).sum()/(edit.sum().clamp_min(1)*3)),1e-12)),
           'retained_psnr':None if float(keep.sum())<1 else -10*math.log10(max(float((err*keep).sum()/(keep.sum()*3)),1e-12))}
         records.append(record)
@@ -117,14 +152,17 @@ def evaluate(model,payload,ids,device,output,label,metric,export=False):
             for col,value in enumerate(values):panel.paste(tensor_image(value),(col*256,y+54))
     panel.save(output/(label+'.png'))
     result={'count':len(records),'mean_per_image_psnr_db':float(np.mean([r['psnr'] for r in records])),
-       'mean_lpips':float(np.mean([r['lpips'] for r in records])),'images':records,
+       'mean_lpips':float(np.mean([r['lpips'] for r in records])),
+       'mean_object_crop_lpips':float(np.mean([r['object_crop_lpips'] for r in records])),'images':records,
        'by_mode':{m:float(np.mean([r['psnr'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
        'lpips_by_mode':{m:float(np.mean([r['lpips'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
+       'object_crop_lpips_by_mode':{m:float(np.mean([r['object_crop_lpips'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
        'edited_psnr_by_mode':{m:float(np.mean([r['edited_psnr'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
        'retained_psnr_by_mode':{m:(float(np.mean(a)) if (a:=[r['retained_psnr'] for r in records if r['mode']==m and r['retained_psnr'] is not None]) else None) for m in ('background','object','joint')},
        'by_category_mode':{cat:{mode:{'n':len(cell),
            'psnr':float(np.mean([r['psnr'] for r in cell])),
            'lpips':float(np.mean([r['lpips'] for r in cell])),
+           'object_crop_lpips':float(np.mean([r['object_crop_lpips'] for r in cell])),
            'edited_psnr':float(np.mean([r['edited_psnr'] for r in cell]))}
            for mode in ('background','object','joint') if (cell:=[r for r in records if r['category']==cat and r['mode']==mode])}
            for cat in categories},
@@ -172,7 +210,11 @@ def run(args,cfg):
         write_json(out/'visual_layout.json',layout)
     elif cfg.get('semantic_prefix',0):raise ValueError('Native visual prefix configured without verified cache')
     ids,audit=training_ids(payload,data_run,cfg['exclude_ambiguous_descriptions'])
-    val_ids=[i for i,r in enumerate(payload['rows']) if r['split']=='val']
+    permitted=set(category_ids(payload['rows'],cfg.get('categories')))
+    ids=[i for i in ids if i in permitted]
+    val_ids=[i for i,r in enumerate(payload['rows']) if r['split']=='val' and i in permitted]
+    audit.update(active_categories=sorted({payload['rows'][i]['category'] for i in permitted}),
+        remaining_training_pairs=len(ids),selected_val_pairs=len(val_ids),category_filter_is_not_quality_selection=True)
     diagnostics={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='train'}
     train_eval=[i for i in ids if payload['rows'][i]['sample_id'] in diagnostics]
     if cfg.get('smoke',False):
@@ -180,6 +222,9 @@ def run(args,cfg):
         names={r['sample_id'] for r in pilot_subset(payload['rows'],2) if r['split']=='val'}
         val_ids=[i for i in val_ids if payload['rows'][i]['sample_id'] in names]
     write_json(out/'annotation_audit.json',audit)
+    write_json(out/'active_pairs.json',{'cache_sha256':cache_digest,
+        'train':[payload['rows'][i] for i in ids],'val':[payload['rows'][i] for i in val_ids],
+        'note':'Identity-preserving subset of verified full-Qwen cache; excluded categories receive no optimization/evaluation'})
     write_json(out/'config.json',cfg)
     write_json(out/'execution.json',{'argv':sys.argv,'git':identity(),'started_unix':time.time(),
        'torch':torch.__version__,'parent_run':str(args.parent),'parent_checkpoint_sha256':sha256(checkpoint),
@@ -272,11 +317,17 @@ def run(args,cfg):
     write_json(out/'parameter_counts.json',counts)
     effective=cfg['batch_size']*cfg['gradient_accumulation']
     steps=cfg.get('train_steps') or math.ceil(len(ids)*cfg['epochs']/effective)
+    rates=[g['lr'] for g in optimizer.param_groups]
+    selector=cfg.get('selection_metric','mean_per_image_psnr_db')
+    selection_score(before,selector)
     order=[]
     while len(order)<steps*effective:
         block=ids.copy();rng.shuffle(block);order.extend(block)
-    best=-float('inf');best_step=0;history=[]
+    best=-float('inf');best_step=0;history=[];best_psnr=None
     for step in range(1,steps+1):
+        if cfg.get('lr_schedule')=='cosine':
+            factor=lr_factor(step,steps,cfg.get('lr_warmup_steps',0),cfg.get('lr_min_factor',.1))
+            for group,rate in zip(optimizer.param_groups,rates):group['lr']=rate*factor
         model.train();model.vae.eval();optimizer.zero_grad(set_to_none=True);total=0.;terms={}
         for micro in range(cfg['gradient_accumulation']):
             start=((step-1)*cfg['gradient_accumulation']+micro)*cfg['batch_size'];batch=order[start:start+cfg['batch_size']]
@@ -301,11 +352,11 @@ def run(args,cfg):
         optimizer.step()
         if step%10==0:
             print('paired',step,'/',steps,'loss',total,terms,flush=True)
-            write_json(out/'progress.json',{'stage':'paired','step':step,'total_steps':steps,'loss':total,'terms':terms,'best_step':best_step,'best_val_psnr':None if best_step==0 else best})
+            write_json(out/'progress.json',{'stage':'paired','step':step,'total_steps':steps,'loss':total,'terms':terms,'best_step':best_step,'best_val_psnr':best_psnr,'selection_metric':selector,'learning_rates':[g['lr'] for g in optimizer.param_groups]})
         if step%cfg['eval_every']==0 or step==steps:
             val=evaluate(model,payload,val_ids,device,out,'val_latest',metric)
             tr=evaluate(model,payload,train_eval,device,out,'train_latest',metric)
-            entry={'step':step,'train_loss':total,'val_psnr':val['mean_per_image_psnr_db'],'val_lpips':val['mean_lpips'],'train_psnr':tr['mean_per_image_psnr_db']}
+            entry={'step':step,'epoch':step*effective/len(ids),'train_loss':total,'val_psnr':val['mean_per_image_psnr_db'],'val_lpips':val['mean_lpips'],'val_object_crop_lpips':val['mean_object_crop_lpips'],'train_psnr':tr['mean_per_image_psnr_db'],'learning_rates':[g['lr'] for g in optimizer.param_groups]}
             history.append(entry);print('validation',entry,flush=True)
             saved={'schema':'qwen_spatial_v1','step':step,'adapter':model.adapter.state_dict(),
               'spatial':model.spatial.state_dict(),'unet_trainable':{n:p.detach().cpu().clone() for n,p in model.unet.named_parameters() if p.requires_grad},
@@ -313,8 +364,8 @@ def run(args,cfg):
               'native_visual_cache_sha256':native_digest,
               'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'val':val}
             torch.save(saved,out/'last_checkpoint.pt')
-            if val['mean_per_image_psnr_db']>best:
-                best=val['mean_per_image_psnr_db'];best_step=step;torch.save(saved,out/'best_checkpoint.pt')
+            if selection_score(val,selector)>best:
+                best=selection_score(val,selector);best_psnr=val['mean_per_image_psnr_db'];best_step=step;torch.save(saved,out/'best_checkpoint.pt')
             write_json(out/'history.json',history)
     selected=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     model.adapter.load_state_dict(selected['adapter']);model.spatial.load_state_dict(selected['spatial'])
@@ -327,6 +378,7 @@ def run(args,cfg):
     without=evaluate(model,payload,val_ids,device,out,'val_without_spatial',metric,export=True)
     model.zero_spatial=False
     write_json(out/'report.json',{'complete':True,'best_step':best_step,'best_val':val,'train':train,
+       'selection_metric':selector,'best_selection_score':best,'epochs_completed':steps*effective/len(ids),
        'val_before_paired_training':before,'val_without_spatial':without,'parameters':counts,
        'train_optimization_pairs':len(ids),'train_evaluation_pairs':len(train_eval),'test_evaluated':False,
        'checkpoint_sha256':sha256(out/'best_checkpoint.pt'),'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],

@@ -8,6 +8,7 @@ from diffusers import EulerDiscreteScheduler
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_spatial import (
     SpatialBridge,SpatialInputConv,SpatialTurboHead,balanced_region_l1)
 from LightGenV2.tasks.t12_text_to_image.qwen_vl_turbo_model import NativeTurboHead,QueryResampler
+from LightGenV2.tasks.t12_text_to_image.qwen_vl_spatial_run import category_ids,lr_factor,selection_score
 
 
 class UNet(nn.Module):
@@ -25,6 +26,25 @@ class VAE(nn.Module):
 
 
 class SpatialTests(unittest.TestCase):
+    def test_two_category_scope_preserves_all_modes_and_excludes_other_rows(self):
+        rows=[{'category':cat,'split':split,'mode':mode} for cat in ('lamp','pillow','ottoman')
+              for split in ('train','val') for mode in ('background','object','joint')]
+        ids=category_ids(rows,['lamp','pillow'])
+        self.assertEqual(len(ids),12)
+        self.assertTrue(all(rows[i]['category']!='ottoman' for i in ids))
+        with self.assertRaises(ValueError):category_ids(rows,['chair'])
+        with self.assertRaises(ValueError):category_ids(rows[:-1],['ottoman'])
+
+    def test_perceptual_selection_and_decay_direction(self):
+        smooth={'mean_lpips':.4,'mean_per_image_psnr_db':30}
+        detailed={'mean_lpips':.2,'mean_per_image_psnr_db':28}
+        self.assertGreater(selection_score(detailed,'mean_lpips'),selection_score(smooth,'mean_lpips'))
+        self.assertGreater(selection_score(smooth,'mean_per_image_psnr_db'),selection_score(detailed,'mean_per_image_psnr_db'))
+        self.assertEqual(lr_factor(36,1800,36,.1),1)
+        self.assertAlmostEqual(lr_factor(1800,1800,36,.1),.1)
+        self.assertLess(lr_factor(1,1800,36,.1),lr_factor(20,1800,36,.1))
+        self.assertGreater(lr_factor(100,1800,36,.1),lr_factor(1000,1800,36,.1))
+
     def test_zero_injection_preserves_entire_native_step(self):
         torch.manual_seed(5)
         unet=UNet();vae=VAE();adapter=QueryResampler(16,16,8,4,1)
