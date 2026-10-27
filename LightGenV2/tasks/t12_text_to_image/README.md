@@ -10,6 +10,14 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-28原生条件／空间条件诊断入口。**`qwen_vl_native_condition_probe`仅使用固定的
+4条TRAIN物体替换样本（每类2款不同目标），分别检查已训Qwen条件、原生CLIP训练目标
+caption条件、关闭空间条件的原生caption，以及公开SD-Turbo纯文字生成。caption特征
+是明确标记的特权训练标签，只用于定位瓶颈，不能当作可部署模型或同任务baseline；
+公开纯文字生成不接收参考图，与编辑任务不同。GT图像仅用于显示和诊断指标，
+不输入生成器，不执行优化，不读取96开发／240保留测试样本。训练后曾提升到FP32的
+可训练参数恢复时保持原dtype，覆盖条件的临时forward在结束／异常时均恢复。
+
 **2026-10-27删后续TF／指令读出10轮pilot结果：已完成，尚未验收。**
 顺序workflow `qwen_vl_postfree_instruction_workflow_20261027`已完整结束，两个子进程均退出GPU，
 释放收据`own_gpu_released=true`。LG run `qwen_vl_postfree_focused_20261027`选择第8轮／step960，
