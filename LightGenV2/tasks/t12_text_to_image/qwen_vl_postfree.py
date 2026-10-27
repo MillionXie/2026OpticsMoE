@@ -86,10 +86,12 @@ class FocusedHead(nn.Module):
             self.text_start, self.suffix_tokens, self.text_gain)
         return self.base.adapter(hidden, text_mask)
 
-    def forward(self, hidden, valid, noise):
+    def forward(self, hidden, valid, noise, disable_spatial=False, decode=True):
         visual, text_mask = focus_features(hidden, valid, self.positions,
             self.text_start, self.suffix_tokens, self.text_gain)
         spatial = self.base.spatial(visual)
+        if disable_spatial:
+            spatial = spatial*0
         if self.training and self.spatial_dropout:
             keep = torch.rand(len(spatial), 1, 1, 1, device=spatial.device) >= self.spatial_dropout
             spatial = spatial*keep.to(spatial.dtype)
@@ -103,8 +105,8 @@ class FocusedHead(nn.Module):
         with torch.autocast(noise.device.type, dtype=torch.bfloat16, enabled=noise.is_cuda):
             prediction = unet(inputs, timestep, encoder_hidden_states=condition.to(unet.dtype)).sample
         generated = scheduler.step(prediction, timestep, latent).prev_sample
-        image = vae.decode(generated.to(vae.dtype)/vae.config.scaling_factor).sample
-        return generated.float(), image.float()
+        image = vae.decode(generated.to(vae.dtype)/vae.config.scaling_factor).sample if decode else None
+        return generated.float(), image.float() if image is not None else None
 
 
 def short_prompt(row, description):

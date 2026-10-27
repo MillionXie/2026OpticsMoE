@@ -121,6 +121,8 @@ def condition_warmup(model, payload, train, original, concise, cfg, output, boun
         augmented = torch.load(folder/'alignment_examples.pt', map_location='cpu', weights_only=False)
         if not augmented['TRAIN_only'] or tuple(augmented['instruction_bounds']) != tuple(boundary) or cfg.get('frontend') != 'baseline':
             raise ValueError('Synthetic alignment uses a different frontend or instruction span')
+        if cfg.get('rendered_teacher_weight'):
+            validate_rendered_teacher(augmented)
     rng = random.Random(cfg['seed']+1)
     optimizer = torch.optim.AdamW(model.base.adapter.parameters(), lr=cfg['condition_warm_lr'], weight_decay=.001)
     def batch():
@@ -134,6 +136,11 @@ def condition_warmup(model, payload, train, original, concise, cfg, output, boun
                 hidden.append(concise[i] if rng.random() < .5 else original[i]); goals.append(payload['train_clip_teacher'][i])
         return hidden, torch.stack(goals).to(device).float()
     model.train()
+    warm_frozen = []
+    if cfg.get('rendered_teacher_weight'):
+        for name, parameter in model.named_parameters():
+            if parameter.requires_grad and not name.startswith('base.adapter.'):
+                warm_frozen.append(parameter);parameter.requires_grad_(False)
     for step in range(1, steps+1):
         hidden, goal = batch(); h, valid = pack_hidden(hidden, device)
         prediction = model.conditions(h, valid).float()
@@ -141,13 +148,71 @@ def condition_warmup(model, payload, train, original, concise, cfg, output, boun
         if not torch.isfinite(loss):
             raise FloatingPointError('Nonfinite native condition alignment')
         optimizer.zero_grad(set_to_none=True); loss.backward()
+        rendered = None
+        if cfg.get('rendered_teacher_weight') and step % cfg['warm_render_every'] == 0:
+            rendered = rendered_teacher_loss(model, augmented, rng, cfg['rendered_batch_size'], device)
+            (cfg['rendered_teacher_weight']*rendered).backward()
         torch.nn.utils.clip_grad_norm_(model.base.adapter.parameters(), 1.); optimizer.step()
         if step % 50 == 0:
             write_json(output/'progress.json', {'stage': 'TRAIN_native_condition_alignment', 'step': step,
                 'total_steps': steps, 'train_loss': float(loss.detach())})
+    for parameter in warm_frozen:
+        parameter.requires_grad_(True)
     write_json(output/'condition_warmup.json', {'steps': steps, 'last_train_loss': float(loss.detach()),
         'TRAIN_only': True, 'synthetic_text_cases': len(augmented['hidden']) if augmented else 0,
-        'new_target_images': 0, 'teacher_at_inference': False})
+        'new_ABO_target_images': 0, 'synthetic_teacher_targets': len(augmented['hidden']) if augmented and cfg.get('rendered_teacher_weight') else 0,
+        'last_rendered_train_loss': float(rendered.detach()) if rendered is not None else None,
+        'teacher_at_inference': False})
+    return augmented
+
+
+def validate_rendered_teacher(augmented):
+    if (not augmented['TRAIN_only'] or augmented.get('source_frontend') != 'full_frozen_qwen'
+            or not augmented.get('synthetic_target_images') or augmented.get('teacher_reference_input') is not False
+            or not augmented.get('teacher_is_public_native_text_only') or augmented.get('noise_seed') != 1042
+            or any(s['source_split'] != 'train' for s in augmented['specs'])
+            or len(augmented.get('teacher_latents', [])) != len(augmented['hidden'])):
+        raise ValueError('Rendered teacher must use verified TRAIN text/reference conditions only')
+
+
+def rendered_teacher_loss(model, augmented, rng, batch_size, device):
+    # Source-image bypass is disabled ONLY for this text-prior preservation
+    # auxiliary loss. Main editing/inference still uses the spatial readout.
+    ids = [rng.randrange(len(augmented['hidden'])) for _ in range(batch_size)]
+    hidden, valid = pack_hidden([augmented['hidden'][i] for i in ids], device)
+    noise = noise_for([{'noise_seed': augmented['noise_seed']}]*len(ids), device)
+    z, _ = model(hidden, valid, noise, disable_spatial=True, decode=False)
+    goal = torch.stack([augmented['teacher_latents'][i] for i in ids]).to(device).float()
+    scale = goal.square().mean((1, 2, 3)).detach().clamp_min(.01)
+    loss = ((z-goal).square().mean((1, 2, 3))/scale).mean()
+    if not torch.isfinite(loss):
+        raise FloatingPointError('Nonfinite TRAIN rendered-prior consistency loss')
+    return loss
+
+
+@torch.no_grad()
+def alignment_preview(model, augmented, output, label, device):
+    if not augmented or not augmented.get('teacher_rgb'):
+        return
+    import textwrap
+    from PIL import Image, ImageDraw
+    ids = (0, 2, 4, 6, 64, 66, 68, 70)
+    panel = Image.new('RGB', (520, 340*len(ids)), 'white');draw = ImageDraw.Draw(panel)
+    model.eval();scores = []
+    for j, i in enumerate(ids):
+        hidden, valid = pack_hidden([augmented['hidden'][i]], device)
+        z, rgb = model(hidden, valid, noise_for([{'noise_seed': augmented['noise_seed']}], device), disable_spatial=True)
+        goal = augmented['teacher_latents'][i].to(device).float()
+        scores.append(float((z[0]-goal).square().mean()/goal.square().mean().clamp_min(.01)))
+        y = j*340
+        draw.text((4, y+2), 'TRAIN synthetic teacher alignment ONLY | '+label, fill='black')
+        draw.multiline_text((4, y+18), '\n'.join(textwrap.wrap(augmented['specs'][i]['prompt'], 83)), fill='black')
+        draw.text((4, y+70), 'Public teacher (no reference)', fill='black')
+        draw.text((264, y+70), 'Qwen student (spatial disabled)', fill='black')
+        panel.paste(tensor_image(augmented['teacher_rgb'][i]), (4, y+84));panel.paste(tensor_image(rgb[0]), (264, y+84))
+    panel.save(output/(label+'.png'))
+    write_json(output/(label+'.json'), {'TRAIN_synthetic_diagnostic_only': True, 'not_independent_evaluation': True,
+        'indices': ids, 'relative_latent_mse': scores, 'mean_relative_latent_mse': sum(scores)/len(scores)})
 
 
 def main():
@@ -227,7 +292,8 @@ def main():
             if parameter.requires_grad:
                 parameter.data = parameter.data.float()
         model.base.unet.enable_gradient_checkpointing()
-        condition_warmup(model, payload, train, original_hidden, concise_hidden, cfg, a.output, boundary, device)
+        augmented = condition_warmup(model, payload, train, original_hidden, concise_hidden, cfg, a.output, boundary, device)
+        alignment_preview(model, augmented, a.output, 'text_alignment_after_warmup', device)
         groups = [{'params': model.base.adapter.parameters(), 'lr': cfg['readout_lr']},
                   {'params': model.base.spatial.parameters(), 'lr': cfg['readout_lr']},
                   {'params': [p for p in model.base.unet.parameters() if p.requires_grad], 'lr': cfg['unet_lr']},
@@ -282,7 +348,11 @@ def main():
                     loss = loss+cfg['condition_weight']*F.mse_loss(model.conditions(h, valid).float(), native)
             if not torch.isfinite(loss):
                 raise FloatingPointError('Nonfinite focused instruction loss')
-            loss.backward(); norm = torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.)
+            loss.backward()
+            if cfg.get('rendered_teacher_weight') and step % cfg['joint_render_every'] == 0:
+                rendered = rendered_teacher_loss(model, augmented, rng, cfg['rendered_batch_size'], device)
+                (cfg['rendered_teacher_weight']*rendered).backward()
+            norm = torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.)
             if not torch.isfinite(norm):
                 raise FloatingPointError('Nonfinite focused instruction gradient')
             optimizer.step()
@@ -314,6 +384,7 @@ def main():
                 if name in selected['trainable_head']:
                     parameter.copy_(selected['trainable_head'][name].to(device))
         val = evaluate(model, temporary, dev, device, a.output, 'dev_best', metric, export=True)
+        alignment_preview(model, augmented, a.output, 'text_alignment_after_paired_training', device)
         # Close the cache/inference gap with real RGB+instruction forwards.
         del optimizer; gc.collect(); torch.cuda.empty_cache()
         qwen, processor = load_qwen(a.qwen, device)

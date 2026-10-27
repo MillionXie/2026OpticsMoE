@@ -5,10 +5,38 @@ from pathlib import Path
 import torch
 
 from ..qwen_vl_native_prior_data import alignment_specs
-from ..qwen_vl_postfree_run import build_generator
+from ..qwen_vl_postfree_run import build_generator, validate_rendered_teacher, rendered_teacher_loss
+import random
 
 
 class NativePriorTests(unittest.TestCase):
+    def test_rendered_supervision_rejects_non_train_and_wrong_teacher(self):
+        aug = {'TRAIN_only': True, 'source_frontend': 'full_frozen_qwen', 'synthetic_target_images': True,
+               'teacher_reference_input': False, 'teacher_is_public_native_text_only': True, 'noise_seed': 1042,
+               'specs': [{'source_split': 'train'}], 'teacher_latents': [torch.zeros(4, 32, 32)],
+               'hidden': [torch.ones(8, 4)]}
+        validate_rendered_teacher(aug)
+        for changed in ({'TRAIN_only': False}, {'noise_seed': 5}, {'teacher_reference_input': True},
+                        {'specs': [{'source_split': 'val'}]}, {'source_frontend': 'postfree'}):
+            with self.assertRaises(ValueError):
+                validate_rendered_teacher({**aug, **changed})
+
+    def test_prior_loss_reaches_adapter_and_explicitly_disables_spatial(self):
+        class Tiny(torch.nn.Module):
+            def __init__(self):
+                super().__init__();self.adapter = torch.nn.Linear(4, 1)
+            def forward(self, hidden, valid, noise, disable_spatial=False, decode=True):
+                if not disable_spatial or decode:
+                    raise AssertionError('Auxiliary prior loss must disable spatial and RGB decoding')
+                z = self.adapter(hidden.mean(1))[:, :, None, None].expand(-1, 4, 32, 32)
+                return z, None
+        model = Tiny()
+        aug = {'hidden': [torch.ones(8, 4)], 'teacher_latents': [torch.ones(4, 32, 32)], 'noise_seed': 1042}
+        loss = rendered_teacher_loss(model, aug, random.Random(1), 2, torch.device('cpu'))
+        loss.backward()
+        self.assertTrue(torch.isfinite(loss))
+        self.assertTrue(torch.isfinite(model.adapter.weight.grad).all())
+
     def test_text_alignment_uses_only_train_and_is_not_new_image_pairs(self):
         rows = []
         for cat in ('lamp', 'pillow'):
