@@ -45,6 +45,15 @@ def phase_direction(gradient, adam=False):
     return direction/rms
 
 
+def rgb_views(train, indices, codes):
+    import torch
+    from .train import images
+    rgb=images(train[0],torch.as_tensor(indices),0,17,False)
+    for j,code in enumerate(codes):
+        x=rgb[j].clone();rgb[j]=torch.rot90(x.flip(-1) if code>=4 else x,int(code%4),(-2,-1))
+    return rgb
+
+
 def grouped_metrics(scores, labels, groups, source):
     import numpy as np
     pred=scores.argmax(1);old=source.argmax(1);result={}
@@ -64,7 +73,7 @@ def run(c,out,profile):
     import numpy as np
     import torch
     import torch.nn.functional as F
-    from .train import data, images
+    from .train import data
     assert c['gpu_uuid']=='GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd' and os.environ['CUDA_VISIBLE_DEVICES']==c['gpu_uuid']
     assert c['amplitudes']==[.0015,.005,.01,.02] and c['seed']==17
     commit=os.environ['T10_PHASE_PROBE_SOURCE_COMMIT'];root=Path(subprocess.check_output(['git','rev-parse','--show-toplevel'],text=True).strip())
@@ -92,9 +101,7 @@ def run(c,out,profile):
     phase=model.global_phases[-1];anchor=phase.detach().clone();frozen={n:sha_tensor(p) for n,p in model.named_parameters() if n!='global_phases.1'}
     fields=np.empty((len(rows),model.c,model.c),np.float32);rp=[];parent=[]
     for start in range(0,len(rows),2):
-        rgb=images(train,torch.as_tensor(rows[start:start+2]),'cuda',0,17,False)
-        for j,code in enumerate(codes[start:start+2]):
-            x=rgb[j].clone();rgb[j]=torch.rot90(x.flip(-1) if code>=4 else x,int(code%4),(-2,-1))
+        rgb=rgb_views(train,rows[start:start+2],codes[start:start+2])
         with torch.no_grad():
             f,r=base.prefix(model,rgb);p=base.suffix(model,f,r)['probabilities']
             if start==0:assert torch.equal(p,model(rgb)['probabilities'])

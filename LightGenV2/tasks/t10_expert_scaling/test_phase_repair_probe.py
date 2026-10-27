@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from .phase_repair_probe import select_groups, grouped_metrics, phase_direction
+from .phase_repair_probe import select_groups, grouped_metrics, phase_direction, rgb_views
 
 
 class PolicyTests(unittest.TestCase):
@@ -31,6 +31,17 @@ class PolicyTests(unittest.TestCase):
 
 
 class TorchTests(unittest.TestCase):
+    def test_training_tuple_is_unpacked_and_d4_does_not_alias(self):
+        import torch
+        from unittest.mock import patch
+        x=torch.arange(24).reshape(2,3,2,2).float();train=(x,torch.zeros(2),np.array(['a','b']))
+        def fake_images(image_tensor,indices,epoch,seed,augment=False):
+            self.assertIs(image_tensor,x);self.assertEqual((epoch,seed,augment),(0,17,False));return image_tensor[indices].clone()
+        with patch('LightGenV2.tasks.t10_expert_scaling.train.images',side_effect=fake_images):
+            rgb=rgb_views(train,np.array([0,1]),np.array([0,5]))
+        self.assertTrue(torch.equal(rgb[0],x[0]));self.assertTrue(torch.equal(rgb[1],x[1].flip(-1).rot90(1,(-2,-1))))
+        self.assertTrue(torch.equal(x,torch.arange(24).reshape(2,3,2,2).float()))
+
     def test_directions_are_unit_rms_and_descent(self):
         import torch
         g=torch.tensor([1e-4,-.1,0.,1.])
