@@ -1,0 +1,146 @@
+{
+  "run_id": "kather_n49_jacobian_probe_20261028",
+  "source_commit": "dc65077c771cc4ba52f53ba2b73504009ec00f78",
+  "jacobian_shape": [
+    128,
+    3055504
+  ],
+  "jacobian_sha256": "3b509f3e7381999755e8e6a97f0b6186e95ef99e38ac5b8b7b6fe60602550703",
+  "large_jacobian_stays_server": true,
+  "ridge_lambda": 3.9361608714898465e-05,
+  "target_energy_below_lambda_fraction": 0.0,
+  "class_mean_explanation": {
+    "raw_J_energy_in_fit_mean_span": 0.2027810662984848,
+    "solution_energy_in_fit_mean_span": 0.2907544672489166,
+    "note": "Descriptive fit-mean span only; not removed from solve. Small-eigenvalue target energy is a stability diagnostic, not proof of transfer."
+  },
+  "raw_solution_rms": 0.010470032691955566,
+  "trials": [
+    {
+      "rms": 0.0015,
+      "fit_s_corrected": 0,
+      "fit_d_corrected": 0,
+      "observe_s_corrected": 0,
+      "observe_d_corrected": 0,
+      "observe_s_margin_change": 0.0021849796175956726,
+      "guard_new_wrong": {
+        "guard_s": 0,
+        "guard_d": 0,
+        "guard_c": 0
+      },
+      "linear_actual_mean_abs_error": 0.0011877324432134628,
+      "linear_actual_correlation": 0.9961549647701997
+    },
+    {
+      "rms": 0.005,
+      "fit_s_corrected": 0,
+      "fit_d_corrected": 0,
+      "observe_s_corrected": 0,
+      "observe_d_corrected": 0,
+      "observe_s_margin_change": 0.001963317394256592,
+      "guard_new_wrong": {
+        "guard_s": 3,
+        "guard_d": 0,
+        "guard_c": 0
+      },
+      "linear_actual_mean_abs_error": 0.012797202914953232,
+      "linear_actual_correlation": 0.9632130878870627
+    },
+    {
+      "rms": 0.01,
+      "fit_s_corrected": 1,
+      "fit_d_corrected": 7,
+      "observe_s_corrected": 1,
+      "observe_d_corrected": 1,
+      "observe_s_margin_change": -0.011783674359321594,
+      "guard_new_wrong": {
+        "guard_s": 5,
+        "guard_d": 1,
+        "guard_c": 0
+      },
+      "linear_actual_mean_abs_error": 0.05316147208213806,
+      "linear_actual_correlation": 0.8635194252150953
+    }
+  ],
+  "guard_error_transitions": {
+    "0.0015": [],
+    "0.005": [
+      {
+        "id": "hf_04050",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 2,
+        "new_prediction": 2
+      },
+      {
+        "id": "hf_03924",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 2,
+        "new_prediction": 2
+      },
+      {
+        "id": "hf_04198",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 2,
+        "new_prediction": 2
+      }
+    ],
+    "0.01": [
+      {
+        "id": "hf_04050",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 2,
+        "new_prediction": 2
+      },
+      {
+        "id": "hf_03924",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 2,
+        "new_prediction": 2
+      },
+      {
+        "id": "hf_04119",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 4,
+        "new_prediction": 4
+      },
+      {
+        "id": "hf_04198",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 2,
+        "new_prediction": 2
+      },
+      {
+        "id": "hf_04192",
+        "label": 1,
+        "source_fixed_competitor": 4,
+        "source_strongest_wrong": 2,
+        "new_prediction": 2
+      },
+      {
+        "id": "hf_01499",
+        "label": 4,
+        "source_fixed_competitor": 1,
+        "source_strongest_wrong": 5,
+        "new_prediction": 5
+      }
+    ]
+  },
+  "elapsed_seconds": 40.23296570777893,
+  "no_val_test_forward": true,
+  "source_restored_exactly": true,
+  "manifest_files": 11,
+  "archive_sha256": "27eeec877bb175322e6092c8ee6f48446942e95e3b3dbd11fe858eb2fc150cc8",
+  "independent_numpy_metrics_and_128dim_solve_verified": true,
+  "resources_released": true,
+  "current_best_test_correct": 600,
+  "target_correct": 616,
+  "pilot_target_met": false,
+  "interpretation": "Fixed ridge is numerically stable at small steps but provides insufficient bilateral observation repair. Larger step fitsD strongly, S observation mean margin decreases and guardS/D are harmed. Tiny-eigenvalue target energy is0, so do not blame ill-conditioning or lower lambda to chase interpolation. Fit-mean span explains20.3% of raw Jacobian energy; sample-specific directions exist, but this fixed solution fails transfer/protection. GuardS/D pairwise constraints do not protect other wrong competitors; actual8-class argmax catches the harm. No new TEST or performance gain."
+}
