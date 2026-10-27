@@ -57,12 +57,13 @@ def main():
                     break
         figure_rows[mode] = chosen
         height, width = 384, 256*(2+len(models))
-        panel = Image.new('RGB', (width, height*len(chosen)+32), 'white')
+        panel = Image.new('RGB', (width, height*len(chosen)+54), 'white')
         draw = ImageDraw.Draw(panel)
         draw.text((6, 4), 'DEV96: selected during development. Candidate failures retained; native 256 PNGs.', fill='black', font=font)
+        draw.text((6, 28), 'P = PSNR (dB, higher better); L = LPIPS; crop = object LPIPS (lower better).', fill='black', font=small)
         for j, sid in enumerate(chosen):
             index, row = models[0][3][sid]
-            y = 32+j*height
+            y = 54+j*height
             draw.text((6, y), sid, fill='black', font=small)
             draw.multiline_text((6,y+22), '\n'.join(textwrap.wrap(row['prompt'], max(70, width//9))),
                                 fill='black', font=font, spacing=3)
