@@ -13,6 +13,12 @@ class BackgroundDataContract(unittest.TestCase):
         self.assertEqual(rows,specifications())
         self.assertTrue(all(r['direction']+' window light' in r['prompt'] for r in rows))
 
+    def test_tabletop_layout_probe_is_train_only_and_small(self):
+        rows=specifications(layout='tabletop',probe=True)
+        self.assertEqual(len(rows),6)
+        self.assertEqual({r['split'] for r in rows},{'train'})
+        self.assertTrue(all(r['prompt'].startswith('An empty wooden tabletop') for r in rows))
+
 
 if __name__ == '__main__':
     unittest.main()

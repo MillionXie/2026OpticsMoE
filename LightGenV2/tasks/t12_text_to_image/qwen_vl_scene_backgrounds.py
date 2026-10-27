@@ -18,7 +18,7 @@ from .qwen_vl_turbo_model import NativeTurboHead
 from .qwen_vl_turbo_run import tensor_image
 
 
-def specifications(base_seed=12491):
+def specifications(base_seed=12491, layout='room', probe=False):
     rows = []
     for split, count in (('train', 2), ('val', 1)):
         for room, tone, brightness, direction in itertools.product(
@@ -28,8 +28,15 @@ def specifications(base_seed=12491):
                 prompt = (f'Interior photograph of a {brightness} {tone} {room}, window on the {direction}, '
                           f'large empty wooden display surface in the foreground, soft {direction} window light, '
                           'eye-level camera, clean uncluttered central surface, no lamp, no cushion, no people.')
+                if layout == 'tabletop':
+                    prompt = ('An empty wooden tabletop, close-up at table height, tabletop fills the lower half, '
+                              f'softly blurred {brightness} {tone} {room} behind it, '
+                              f'daylight from a single window on the {direction}, '
+                              'product photography backdrop, clear center, no products or people.')
+                if probe and (split != 'train' or variant != 0 or tone != 'warm' or brightness != 'bright'):
+                    continue
                 rows.append({'split': split, 'room': room, 'tone': tone, 'brightness': brightness,
-                    'direction': direction, 'variant': variant, 'prompt': prompt,
+                    'direction': direction, 'variant': variant, 'prompt': prompt, 'layout': layout,
                     'seed': seed(base_seed, split, room, tone, brightness, direction, variant) % (2**31)})
     return rows
 
@@ -37,7 +44,9 @@ def specifications(base_seed=12491):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--sd', type=Path, required=True);p.add_argument('--output', type=Path, required=True)
-    p.add_argument('--gpu-uuid', required=True);a = p.parse_args()
+    p.add_argument('--gpu-uuid', required=True)
+    p.add_argument('--layout', choices=('room', 'tabletop'), default='room');p.add_argument('--probe', action='store_true')
+    a = p.parse_args()
     if a.output.exists() or os.environ.get('CUDA_VISIBLE_DEVICES') != a.gpu_uuid:
         raise ValueError('Immutable assets and approved GPU only')
     a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.6, 0)
@@ -50,7 +59,7 @@ def main():
     text = CLIPTextModel.from_pretrained(a.sd, subfolder='text_encoder', variant='fp16', torch_dtype=torch.bfloat16, local_files_only=True).to(device).eval().requires_grad_(False)
     tokenizer = CLIPTokenizer.from_pretrained(a.sd, subfolder='tokenizer', local_files_only=True)
     model = NativeTurboHead(unet, vae, EulerDiscreteScheduler.from_pretrained(a.sd, subfolder='scheduler', local_files_only=True), torch.nn.Identity())
-    records = specifications()
+    records = specifications(layout=a.layout, probe=a.probe)
     for i, row in enumerate(records):
         tokens = tokenizer(row['prompt'], padding='max_length', max_length=77, truncation=False, return_tensors='pt').input_ids
         if tokens.shape[1] > 77:
@@ -73,7 +82,9 @@ def main():
             draw.text((x+2, y+15), row['direction']+' window', fill='black');panel.paste(im, (x,y+28))
         panel.save(a.output/(room.replace(' ', '_')+'_candidates.png'))
     write_json(a.output/'background_manifest.json', records)
-    write_json(a.output/'report.json', {'complete': True, 'count': len(records), 'TRAIN': 72, 'DEV': 36,
+    write_json(a.output/'report.json', {'complete': True, 'count': len(records),
+        'TRAIN': sum(r['split']=='train' for r in records), 'DEV': sum(r['split']=='val' for r in records),
+        'layout': a.layout, 'preview_only': a.probe,
         'public_frozen_teacher': 'SD-Turbo', 'dataset_assets_not_editor_outputs': True,
         'source_commit': os.environ.get('T12_SOURCE_COMMIT'), 'source_sha256': sha256(Path(__file__)),
         'manifest_sha256': sha256(a.output/'background_manifest.json'), 'visual_review_required': True,
