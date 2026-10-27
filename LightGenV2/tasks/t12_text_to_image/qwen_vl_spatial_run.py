@@ -87,7 +87,8 @@ def masks(row,device):
 def evaluate(model,payload,ids,device,output,label,metric,export=False):
     model.eval();records=[]
     selected=[]
-    for cat in ('lamp','table','pillow'):
+    categories=list(dict.fromkeys(payload['rows'][i]['category'] for i in ids))
+    for cat in categories:
         for mode in ('background','object','joint'):
             choices=[j for j,i in enumerate(ids) if (payload['rows'][i]['category'],payload['rows'][i]['mode'])==(cat,mode)]
             if choices:selected.append(choices[0])
@@ -121,6 +122,12 @@ def evaluate(model,payload,ids,device,output,label,metric,export=False):
        'lpips_by_mode':{m:float(np.mean([r['lpips'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
        'edited_psnr_by_mode':{m:float(np.mean([r['edited_psnr'] for r in records if r['mode']==m])) for m in ('background','object','joint')},
        'retained_psnr_by_mode':{m:(float(np.mean(a)) if (a:=[r['retained_psnr'] for r in records if r['mode']==m and r['retained_psnr'] is not None]) else None) for m in ('background','object','joint')},
+       'by_category_mode':{cat:{mode:{'n':len(cell),
+           'psnr':float(np.mean([r['psnr'] for r in cell])),
+           'lpips':float(np.mean([r['lpips'] for r in cell])),
+           'edited_psnr':float(np.mean([r['edited_psnr'] for r in cell]))}
+           for mode in ('background','object','joint') if (cell:=[r for r in records if r['category']==cat and r['mode']==mode])}
+           for cat in categories},
        'scope':'Development TRAIN diagnostics or VAL; no TEST evaluation; masks used for metrics only'}
     write_json(output/(label+'.json'),result)
     return result

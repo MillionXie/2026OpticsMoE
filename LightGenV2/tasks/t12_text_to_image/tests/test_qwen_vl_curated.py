@@ -1,6 +1,6 @@
 import collections,unittest
 
-from LightGenV2.tasks.t12_text_to_image.qwen_vl_curated import reviewed_pairs
+from LightGenV2.tasks.t12_text_to_image.qwen_vl_curated import reviewed_pairs,prior_exposure
 
 
 def fixture():
@@ -49,6 +49,25 @@ class ReviewedPairsTests(unittest.TestCase):
         groups,descriptions,profile=fixture()
         groups['val']=[r for r in groups['val'] if r['product_id'].endswith('-0')]
         with self.assertRaises(ValueError):reviewed_pairs(groups,descriptions,profile)
+
+    def test_multi_source_parent_exposure_is_rejected_across_categories(self):
+        groups,descriptions,profile=fixture();rows=reviewed_pairs(groups,descriptions,profile)
+        audit=prior_exposure(rows,rows);self.assertFalse(audit['new_val_parent_train_overlap'])
+        historical=[dict(r) for r in rows]
+        victim=next(r for r in rows if r['split']=='val')['target']
+        historical[0]={**historical[0],'target':{**victim,'category':'different_upstream_alias'}}
+        with self.assertRaises(ValueError):prior_exposure(rows,historical)
+
+    def test_balanced_four_train_edits_with_new_category(self):
+        groups,descriptions,profile=fixture()
+        for split,items in groups.items():
+            for row in items:
+                if row['category']=='table':row['category']='ottoman'
+        profile['edits_per_mode']={'train':4,'val':2}
+        rows=reviewed_pairs(groups,descriptions,profile)
+        counts=collections.Counter((r['split'],r['category'],r['mode']) for r in rows)
+        self.assertEqual({n for (s,c,m),n in counts.items() if s=='train'},{16})
+        self.assertEqual({n for (s,c,m),n in counts.items() if s=='val'},{8})
 
 
 if __name__=='__main__':unittest.main()

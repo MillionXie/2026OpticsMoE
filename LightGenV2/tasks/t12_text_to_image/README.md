@@ -19,6 +19,22 @@
 这只是第三类别筛选，尚未训练该类别，预览是原始渲染前景，不是模型生成；
 不把结构更简单等同于已验证生成质量。旧桌类数据、权重和下面结果原样保留作历史对照。
 
+随后用户批准继续训练。当前新轮廓数据配置为
+`configs/qwen_vl_lamp_pillow_ottoman_20261027.json`：每类6款TRAIN／2款VAL，
+每商品一个清晰完整视角；台灯只选实体底座款，不再使用三脚或弯杆款。
+TRAIN每视角四种输入场景×三种编辑，共216对；VAL每视角两种输入场景×三种编辑，
+共36对。各类别／模式完全均衡；这不是216／36款商品，而是18／6款商品的编辑配对。
+坐墩从`abo_category_screen_256_v1`继承原角色，灯／靠垫来自原256数据；使用
+`qwen_vl_curated.py --category-data ottoman=<目录> --parent-data <完整历史角色清单>`
+准备，禁止把父模型TRAIN暴露过的商品或解码RGB＋alpha放入新VAL，TEST保持封存。
+旧父模型的桌类TRAIN历史不被擦除；只是在本轮优化/验证清单中排除桌类。
+缓存和权重分别进入`runs/simulation/qwen_vl_lamp_pillow_ottoman_cache_20261027`及
+`runs/simulation/qwen_vl_ottoman_continue_20261027`；配置
+`configs/qwen_vl_ottoman_continue_20261027.json`从审核数据续训best继续16遍TRAIN，
+完整Qwen视觉24层＋语言28层、融合后空间读出、单步SD-Turbo UNet和VAE decoder不变。
+训练方法沿用父模型，无新增GAN或网络结构；VAL选best，附类别×模式及编辑区指标。
+本节是启动协议，不预先声称坐墩生成质量已达标；仅GPU6，结束检查自有PID释放。
+
 2026-10-27按用户要求增加**结构清楚的人工审核开发数据**：
 `configs/qwen_vl_curated_easy_20261027.json`逐商品固定清晰视角和无品牌外观描述；
 入口`qwen_vl_curated.py --stage prepare|cache`。从原TRAIN保留36款商品×2视角，
