@@ -13,7 +13,7 @@ if(createHash('sha256').update(sourceBytes).digest('hex')!==data.base_workbook_s
 const w=await SpreadsheetFile.importXlsx(await FileBlob.load(data.base_workbook));
 const s=w.worksheets.getItem('统一结果'); // Preserve all user deletions, values and formatting.
 const p=data.appendix_table;
-if(!p||p.rows.length!==36||p.module_rows.length!==6)throw Error('Complete source-derived appendix table required');
+if(!p||p.rows.length!==31||p.module_rows.length!==6)throw Error('Complete source-derived appendix table required');
 const t=w.worksheets.getItem('LightGen附录计时');t.getUsedRange().clear({applyTo:'all'});t.showGridLines=false;
 const lastRow=3+p.rows.length,notesStart=p.rows.length+6,modulesStart=notesStart+p.notes.length+2,endRow=modulesStart+p.module_rows.length;
 t.getRange(`A1:G${endRow}`).format={font:{name:'Arial',size:11,color:'#192E40'},rowHeight:34,verticalAlignment:'center'};
@@ -46,7 +46,7 @@ const target=path.join(out,'Temporal_LightGen与baseline_模型对比与附录�
 await (await SpreadsheetFile.exportXlsx(w)).save(target);
 const preview=await w.render({sheetName:'统一结果',range:'A1:M16',scale:1.2,format:'png'});
 await fs.writeFile(path.join(out,'preview.png'),new Uint8Array(await preview.arrayBuffer()));
-for(const [name,range] of [['phase_pre_vision','A1:G21'],['phase_language_control',`A22:G${lastRow}`],['phase_notes',`A${notesStart-1}:G${endRow}`]]){
+for(const [name,range] of [['phase_pre_vision','A1:G16'],['phase_language_control',`A17:G${lastRow}`],['phase_notes',`A${notesStart-1}:G${endRow}`]]){
   const blob=await w.render({sheetName:'LightGen附录计时',range,scale:1.3,format:'png'});
   await fs.writeFile(path.join(out,name+'.png'),new Uint8Array(await blob.arrayBuffer()));
 }

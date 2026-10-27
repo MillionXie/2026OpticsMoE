@@ -126,8 +126,6 @@ def detailed_appendix(evidence,detail,time16):
         assigned.extend(keys);c=sum(compute[k] for k in keys);h=sum(overhead[k] for k in keys)
         span=sum(work[k] for k in keys) if any(k in PHASE_NAMES for k in keys) else '不适用'
         rows.append([module,label,span,c,h,c+h,relation]);types.append('accounted')
-    def missing(label,explanation):
-        rows.append(['预处理',label,'未独立计时','含于联合行','含于联合行','不另加',explanation]);types.append('unmeasured')
     def subtotal(module,start):
         source=[r for r,t in zip(rows[start:],types[start:]) if t=='accounted']
         c=sum(r[3] for r in source);h=sum(r[4] for r in source)
@@ -135,12 +133,7 @@ def detailed_appendix(evidence,detail,time16):
         module_rows.append([module,c,h,c+h])
     start=len(rows)
     line('预处理','文本分词（Tokenizer）',['tokenizer'],'原共享prompt每场真实分词；可与前一场主体重叠。')
-    missing('视觉Embedding','只有联合事件，不能从总时长按FLOPs或参数量摊分。')
-    missing('位置编码','位置查表/加法等没有独立事件；计入下方联合行。')
-    missing('Adapter','视觉/质量/语言Adapter、归一化等未分别计时；不是0 ms。')
-    missing('文本Embedding与池化等','同一联合事件还含文本Embedding、池化、cast及原输入刷新。')
-    line('预处理','Embedding/位置/Adapter联合前处理',['frontend'],'上述未独立计时项只在此计一次；原完整patch双流fork/join，保留汇合。')
-    line('预处理','Adapter后光场输入映射',['vision_entry'],'原parallel_optics.fields：把特征映为整场光学输入；归预处理，不冒称Adapter独立耗时。')
+    line('预处理','Embedding/位置/Adapter（含光场输入映射）',['frontend','vision_entry'],'合并原联合前处理与特征→光场输入映射；含文本Embedding/池化、cast及输入刷新。保留原双流fork/join与映射依赖，不另拆未独立计时项。')
     subtotal('预处理',start)
     for module,indices in [('视觉光电处理',range(1,4)),('语言光电处理',range(4,7))]:
         if module=='语言光电处理':
@@ -175,8 +168,8 @@ def detailed_appendix(evidence,detail,time16):
     rows.append(['合计','仅核算行相加；不重复加小计','不可相加',c,h,time16,'计算贡献＋主机/队列贡献＝同一见证关键路径总时间。']);types.append('total')
     notes=[
         '单位均为ms/16视频（64帧）。C为各阶段累计计算跨度，不能直接相加；D/E为同一关键路径上的互斥贡献，只有F的核算行可相加。',
-        '空缺不等于0：视觉Embedding、位置编码、Adapter、文本Embedding/池化仅有联合事件。联合行包含这些操作，未按理论算量拆数。',
-        '视觉入口编码现归预处理：它是Adapter之后的特征→光场输入映射，不是另一个Transformer，也不是Adapter总耗时。',
+        '预处理仅列Tokenizer和Embedding/位置/Adapter（含光场输入映射）。后者合并原联合前处理与映射事件，未将各未独立计时子项按理论算量摊分。',
+        '光场输入映射纳入适配过程，不再单列；联合行仍包含视觉/文本Embedding、位置编码、Adapter、池化、cast及原输入刷新，所有原计时只计一次。',
         '原“调度与同步”2.410047725980500 ms含CPU提交函数、CPU动作间隙、GPU就绪队列、页锁定、槽位等待及显式同步。',
         '现将明确关联提交/队列按原目标事件放入对应Part的E列。相邻动作间隙按下一事件标注位置，不声称该间隙全为该算子的计算。',
         '调度模块仅保留不能当作计算Part的全窗/跨场控制项。场间分词前间隙是CPU动作边界，不是GPU输出到下一GPU输入的完整区间。',
@@ -359,8 +352,8 @@ def prepare(source):
     parameters=parameter_metadata(data)
     for row in rows:row.insert(2,parameters['values_billion'][row[1]])
     detail=pooled_phase_table(phase_records,t)
-    base=source.parent/'Temporal_LightGen_appendix_20261027_05'/BOOK_NAME
-    base_sha='4c2f4de37b8e98162af59be29b431ff3933d18f7814e12efff25a44a8562a7ed'
+    base=source.parent/'Temporal_LightGen_appendix_20261027_06'/BOOK_NAME
+    base_sha='a5e589f5e44958ce9f77c9cd0fb490e07158770609721b7187d19dc9805dbcc5'
     if sha(base)!=base_sha:raise ValueError('User-edited base workbook changed; re-inspect before editing')
     main_cells=read_workbook_cells(base,1)
     for i,row in enumerate([HEADERS]+rows,1):
@@ -381,6 +374,7 @@ def prepare(source):
         baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
         cross_model_token_definitions_differ=True,phase_table=detail,appendix_table=detailed_appendix(phase_records,detail,t),parameters=parameters,
         base_workbook=str(base),base_workbook_sha256=base_sha,base_main_cells=main_cells,
+        base_appendix_cells=read_workbook_cells(base,2),
         source_main_sheet_user_edits_preserved=True,base_workbook_used_for_presentation_only=True)
 
 
@@ -429,6 +423,14 @@ def audit(folder,visual_reviewed=False):
         compare(sum(r[5] for r in accounted),expected['rows'][0][5],'saved_phase_sum_equals_main_time')
         compare(sum(r[4] for r in accounted),phase['old_scheduling_ms16'],'old_scheduling_redistributed_exactly')
         compare(sum(r[3] for r in phase['module_rows']),expected['rows'][0][5],'saved_module_subtotals_close')
+        # Only preprocessing and its two explanatory notes may change. Every later
+        # Part, control row and module total must preserve the user's actual file.
+        original=expected['base_appendix_cells']
+        untouched_rows=[*range(12,40),42,*range(45,54),*range(56,63)]
+        for old_row in untouched_rows:
+            for col in 'ABCDEFG':
+                compare(original.get(f'{col}{old_row}'),cells.get(f'{col}{old_row-5}'),
+                        f'unmodified_appendix_{col}{old_row}')
     if not visual_reviewed:raise ValueError('Review the one-sheet render before sealing')
     main_render_sha=sha(folder/'preview.png')
     if main_render_sha!='93dcaa7bbc6bd204cb97dd6380f5195e1d6485ab741f71c8ce57643d6fc81dbb':
@@ -443,7 +445,9 @@ def audit(folder,visual_reviewed=False):
         original_t0_retained=True,phase_overlap_not_double_counted=True,parameter_sources_verified=True,
         appendix_blocks=6,filename_contains_fixed_values=False,source_main_user_edits_preserved=True,
         CPU_control_redistributed_not_retimed=True,missing_component_timings_not_fabricated=True,
-        main_sheet_render_pixel_identical=True,main_sheet_render_sha256=main_render_sha)
+        main_sheet_render_pixel_identical=True,main_sheet_render_sha256=main_render_sha,
+        preprocessing_accounted_parts=2,preprocessing_mapping_merged_once=True,
+        language_entry_and_global_control_unchanged=True)
     with (folder/'saved_values_audit.json').open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
     with (folder/'delivery_manifest.json').open('x',encoding='utf8') as f:
         json.dump(dict(status='sealed',files=[dict(path=p.name,bytes=p.stat().st_size,sha256=sha(p)) for p in
