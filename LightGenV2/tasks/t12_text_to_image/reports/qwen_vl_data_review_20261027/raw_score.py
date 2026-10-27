@@ -32,23 +32,32 @@ def main():
     args.output.mkdir(parents=True,exist_ok=True)
     with (args.output/'raw_metrics.csv').open('w',newline='',encoding='utf-8-sig') as f:
         w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
+    categories=list(dict.fromkeys(x['category'] for x in inputs))
     selected=[next(i for i,x in enumerate(inputs) if (x['category'],x['mode'])==(cat,mode))
-        for cat in ('lamp','table','pillow') for mode in ('background','object','joint')]
-    sheet=Image.new('RGB',(1024,310*9),'white');draw=ImageDraw.Draw(sheet)
+        for cat in categories for mode in ('background','object','joint')]
+    reconstruction=all((args.raw/'qwen_reference_reconstruction'/f'sample_{i:04d}.png').exists() for i in selected)
+    width=1024 if reconstruction else 1280
+    sheet=Image.new('RGB',(width,310*len(selected)),'white');draw=ImageDraw.Draw(sheet)
     for j,i in enumerate(selected):
-        x=inputs[i];y=j*310;draw.text((3,y+3),x['category']+'/'+x['mode']+' | reference reconstruction is diagnostic, NOT the edited output',fill='black')
-        for col,title in enumerate(('Reference RGB','Qwen reference reconstruction','Target (offline scoring only)','Raw RGB + text generation')):draw.text((col*256+3,y+25),title,fill='black')
-        paths=[Path(x['image']),args.raw/'qwen_reference_reconstruction'/f'sample_{i:04d}.png',Path(mapping[i]['target']),args.raw/'normal'/f'sample_{i:04d}.png']
+        x=inputs[i];y=j*310;draw.text((3,y+3),x['category']+'/'+x['mode']+' | GT is offline scoring only; ablations are separate forward passes',fill='black')
+        if reconstruction:
+            titles=('Reference RGB','Qwen reference reconstruction','Target (offline scoring only)','Raw RGB + text generation')
+            paths=[Path(x['image']),args.raw/'qwen_reference_reconstruction'/f'sample_{i:04d}.png',Path(mapping[i]['target']),args.raw/'normal'/f'sample_{i:04d}.png']
+        else:
+            titles=('Reference RGB','Target (offline scoring only)','Raw RGB + text generation','Gray reference input','Wrong instruction')
+            paths=[Path(x['image']),Path(mapping[i]['target']),args.raw/'normal'/f'sample_{i:04d}.png',args.raw/'gray_vision'/f'sample_{i:04d}.png',args.raw/'shuffled_text'/f'sample_{i:04d}.png']
+        for col,title in enumerate(titles):draw.text((col*256+3,y+25),title,fill='black')
         for col,path in enumerate(paths):
             im=Image.open(path).convert('RGB')
             if im.size!=(256,256):raise ValueError('Unexpected image size')
             sheet.paste(im,(col*256,y+54))
     sheet.save(args.output/'raw_nine_mode_diagnostic.png')
-    sheet.crop((0,930,1024,1860)).save(args.output/'raw_table_diagnostic.png')
-    summary={'scope':'18 development VAL cases; PNG-domain metrics, not the full 72 float-domain mean',
+    for j,category in enumerate(categories):sheet.crop((0,930*j,width,930*(j+1))).save(args.output/f'raw_{category}_diagnostic.png')
+    full_n=read(args.run/'report.json')['best_val']['count']
+    summary={'scope':f'{len(inputs)} development VAL cases; PNG-domain metrics, not the full {full_n} float-domain mean',
         'psnr_png_by_variant':{v:float(np.mean([r['psnr_png_db'] for r in rows if r['variant']==v])) for v in ('normal','gray_vision','shuffled_text')},
         'cached_vs_fresh_raw_png':differences,'inference_target_or_mask_input':False,
-        'caution':'Gray/shuffled comparisons are interventions, not separately trained baselines. Native visual features were cached in batches and may differ numerically from a fresh full-Qwen forward.',
+        'caution':'Gray/shuffled comparisons are interventions, not separately trained baselines. Cached-versus-fresh equality is measured, not assumed.',
         'checkpoint_sha256':report['checkpoint_sha256']}
     (args.output/'raw_summary.json').write_text(json.dumps(summary,indent=2));print(json.dumps(summary,indent=2))
 
