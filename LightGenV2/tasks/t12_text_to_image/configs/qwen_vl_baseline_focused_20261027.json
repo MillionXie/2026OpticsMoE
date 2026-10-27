@@ -1,0 +1,21 @@
+{
+  "seed": 1042,
+  "frontend": "baseline",
+  "compressed_tail": false,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "epochs": 10,
+  "batch_size": 8,
+  "eval_every": 240,
+  "early_stop_evaluations": 3,
+  "warmup_steps": 60,
+  "unet_lr": 0.000005,
+  "readout_lr": 0.00003,
+  "gain_lr": 0.001,
+  "initial_readout_text_gain": 0.1,
+  "concise_probability": 0.5,
+  "latent_weight": 1.0,
+  "rgb_weight": 0.2,
+  "lpips_weight": 0.5,
+  "crop_weight": 0.3,
+  "protocol": "Separate updated electronic control: retain full frozen public vision24/language28 Qwen and original 867M trained UNet. Same focused instruction readout, original/concise augmentation and TRAIN GT losses as the postfree LG pilot. Preserve the original baseline unchanged; DEV96 selects, heldout240 remains sealed. This is a ten-epoch continuation, not a fresh backbone training."
+}

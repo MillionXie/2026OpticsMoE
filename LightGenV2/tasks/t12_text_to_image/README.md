@@ -10,6 +10,33 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-27用户追加：删去每模态光电模块后全部TF，并优化指令遵循。**
+新增候选由`qwen_vl_postfree.py`和`qwen_vl_postfree_run.py`实现，保留视觉前6／语言前4
+原生TF，视觉18:24及语言24:28也实际移除，合计移除42/52个TF；保留原merger、
+DeepStack位置接口、末端norm及每模态单router＋E/G，alpha仍>=0.6。
+原有20个TF的候选、best/last、数据与指标原样保留；这不是静默改变原候选。
+新候选关闭RMS融合里逐forward的GPU→CPU标量日志，融合输出及梯度逐元素一致测试通过，
+alpha和路由在评估时显式记录，不能因此省略训练／部署中的编码、读出或融合耗时。
+
+同RGB／seed的2条TRAIN诊断发现，单独将red改blue，原baseline的适配条件相对RMS变化
+约24.2%（灯）／13.7%（靠垫），LG仅1.54%／1.82%；输出颜色仍不正确。
+短句本身没有解决问题，少量TRAIN诊断不推广为全部数据上的因果结论。
+候选因此让已有QueryResampler只关注经原processor验证的指令token；将这组Qwen上下文
+按RMS匹配后广播注入现有视觉空间读出，只增加一个可学习缩放标量，不新增TF／宽MLP。
+Qwen及光电核心在首轮快速pilot冻结，缓存实际删层后原／简短两套特征；训练时50%短句，
+保留商品区分属性、场景条件与原RGB/GT，不盲目截断描述。仅TRAIN目标VAE编码监督
+latent，结合区域RGB、全图和物体crop LPIPS；不以错误teacher图像作为主要KD目标。
+训练已有adapter、空间读出、UNet cross-attention／空间输入卷积及最后decoder块，
+VAE冻结。缓存是训练加速，部署仍必须从原RGB＋文字运行实际光电Qwen；结束核查
+6个类别×任务单元的原输入推理PNG与缓存推理的一致性。新240评估集不参与此pilot。
+
+`configs/qwen_vl_postfree_focused_20261027.json`为10轮LG快速pilot，使用已训379.56M
+UNet尾部；随后`configs/qwen_vl_baseline_focused_20261027.json`作为完整Qwen＋原867.62M
+UNet的同类读出／训练方法电子对照，各自独立run、不覆盖旧baseline。
+10轮只用于快速检查是否恢复语义，完成不代表达到5%质量或2×速度门槛。
+旧候选最终诊断计时仅约1.31×串行CUDA区间替换估算，且质量未过门槛；不是实机加速，
+不能作为已经实现2×的证据。删层与读出候选还需按同边界重测及DAG核验。
+
 **2026-10-27指令敏感性小诊断。**用户要求加快迭代并检查长prompt的影响。
 `qwen_vl_instruction_probe`只取960 TRAIN中每类第一条固定参考RGB，比较长红色指令、
 短红／蓝／黑指令、保留原图及简单背景指令；同参考、同seed、完整Qwen与LG使用

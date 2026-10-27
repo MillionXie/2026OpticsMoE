@@ -1,0 +1,22 @@
+{
+  "seed": 1042,
+  "frontend": "postfree",
+  "compressed_tail": true,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "epochs": 10,
+  "batch_size": 8,
+  "eval_every": 240,
+  "early_stop_evaluations": 3,
+  "warmup_steps": 60,
+  "unet_lr": 0.000005,
+  "readout_lr": 0.00003,
+  "gain_lr": 0.001,
+  "initial_readout_text_gain": 0.1,
+  "concise_probability": 0.5,
+  "latent_weight": 1.0,
+  "rgb_weight": 0.2,
+  "lpips_weight": 0.5,
+  "crop_weight": 0.3,
+  "alpha_minimum": 0.6,
+  "protocol": "User-approved removal of ALL TF following each optical macro: retain first vision6 and language4 only, original tokenizers/mergers/normalization and physical router/E/G. Freeze actual macros for this fast readout pilot and cache both original/concise Qwen features; no reference VAE inference. Focus existing semantic adapter on native instruction-span states, broadcast a scaled pooled instruction context to the visual readout with ONE added scalar. Train existing adapter/spatial readout/UNet cross-attention, input injection and last decoder block with original TRAIN GT latent/RGB/LPIPS, no imitation of failed teacher colors. DEV96 selects; heldout240 stays sealed. Actual raw-input quality and matched timing remain required before any success claim."
+}
