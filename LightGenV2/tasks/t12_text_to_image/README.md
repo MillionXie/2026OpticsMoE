@@ -10,6 +10,24 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-27删后续TF／指令读出10轮pilot结果：已完成，尚未验收。**
+顺序workflow `qwen_vl_postfree_instruction_workflow_20261027`已完整结束，两个子进程均退出GPU，
+释放收据`own_gpu_released=true`。LG run `qwen_vl_postfree_focused_20261027`选择第8轮／step960，
+SHA`727b302f37dd8cd5c213f773f9b66b546b39a2b57a0401541174defe157c9181`；
+完整960 TRAIN／96开发的PSNR19.162805dB、LPIPS0.343111、crop LPIPS0.377389。
+其整体含词嵌入1,132,149,024参数，按约定排除311,164,928后820,984,096；本轮训练34,269,681。
+对应电子续训run `qwen_vl_baseline_focused_20261027`选择第10轮／step1200，
+SHA`cc2d7af88b62ada0740bd2ce8a311e3e17e21c49f2abf851504a24f28cee7da3`；
+PSNR21.987018、LPIPS0.254200、crop LPIPS0.330950。原100轮baseline仍单独保留，
+这次续训没有实质改善整体感知均值；新LG全图指标及换物体仍明显落后。
+各run完整类别×任务／历史、原始PNG与全部提示词保留；不得只选改善的crop指标宣称成功。
+两组各6个原RGB＋文字核验与缓存推理的PNG逐像素一致，推理没有GT／掩码／参考VAE旁路。
+从execution开始到最终report，LG约545.66秒、电子约842.22秒，包含缓存／评估／原图核验；
+这是本次冻结前端的10轮适配时长，不能当作动态光学恢复训练的等价加速倍数。
+新增240对仍未进行模型推理，未进入选模；当前postfree＋FocusedHead尚未正式测推理时间，
+不套用旧候选1.31倍估算。当前图像仍有明显白色灯罩／靠垫纹理不遵循指令的问题，
+仅简短指令与单标量读出注入没有解决；后续须先定位原生文字条件、空间条件及生成尾部的瓶颈。
+
 **2026-10-27用户追加：删去每模态光电模块后全部TF，并优化指令遵循。**
 新增候选由`qwen_vl_postfree.py`和`qwen_vl_postfree_run.py`实现，保留视觉前6／语言前4
 原生TF，视觉18:24及语言24:28也实际移除，合计移除42/52个TF；保留原merger、
