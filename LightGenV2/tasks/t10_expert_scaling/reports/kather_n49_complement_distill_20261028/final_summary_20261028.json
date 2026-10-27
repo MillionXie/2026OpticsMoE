@@ -1,0 +1,264 @@
+{
+  "status": "stopped_by_fixed_no_transfer_rule_without_test_gain",
+  "run": "kather_n49_complement_distill_20261028",
+  "published_training_source": "48bf86d2bf33315bdeb7ef1e9b4e2f0862460c6b",
+  "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "scope": "Single original full49 seed17, repeated TEST-development and additional teacher/optimizer budget, not independent generalization or equal-budget original Top-k.",
+  "source_checkpoint_sha256": "75e51f4e117f451ae7eb7947f0d001af0c07155450280fea3b19d9e9970d55a7",
+  "source_origin": "Previous broadKD round8 EMA, fresh AdamW/RNG, chain reheat4 live and originalE117; not exact optimizer resume.",
+  "best_origin": "incumbent; all new candidates worse",
+  "best_train_val_test": [
+    3157,
+    588,
+    601
+  ],
+  "best_test_percent": 79.92021276595744,
+  "best_checkpoint_sha256": "75e51f4e117f451ae7eb7947f0d001af0c07155450280fea3b19d9e9970d55a7",
+  "last_checkpoint_sha256": "e1171c9b8eca6aea0cc286935dbe014e3d2e31aa3f963105d254a80ffa350ec1",
+  "last_candidate_ema_train_val_test": [
+    3177,
+    591,
+    599
+  ],
+  "last_candidate_live_test": 598,
+  "development_states": [
+    {
+      "round": 4,
+      "field": "model",
+      "correct": 598,
+      "nll": 0.6413994431495667,
+      "corrected": 7,
+      "new_wrong": 10,
+      "class_net": [
+        4,
+        3,
+        -2,
+        0,
+        -6,
+        -2,
+        0,
+        0
+      ],
+      "checkpoint_sha256": "8577c8f54a698293ce2d5909abfb87f3062607e608a0565e085327235a29973e",
+      "model_tensor_sha256": "018b2ae59d9ccfc825739f059074c5650d84ed740c97aafd2911866c87bf7c13"
+    },
+    {
+      "round": 4,
+      "field": "live_model",
+      "correct": 599,
+      "nll": 0.6417370438575745,
+      "corrected": 6,
+      "new_wrong": 8,
+      "class_net": [
+        2,
+        3,
+        -1,
+        0,
+        -6,
+        0,
+        0,
+        0
+      ],
+      "checkpoint_sha256": "8577c8f54a698293ce2d5909abfb87f3062607e608a0565e085327235a29973e",
+      "model_tensor_sha256": "34d6dbf5dc0d0cd1e175a5f07b0c8268f4293b043430229c3adc68e1c913d310"
+    },
+    {
+      "round": 8,
+      "field": "model",
+      "correct": 599,
+      "nll": 0.6407943964004517,
+      "corrected": 6,
+      "new_wrong": 8,
+      "class_net": [
+        4,
+        2,
+        -1,
+        0,
+        -6,
+        -1,
+        0,
+        0
+      ],
+      "checkpoint_sha256": "e1171c9b8eca6aea0cc286935dbe014e3d2e31aa3f963105d254a80ffa350ec1",
+      "model_tensor_sha256": "37ac53b1ac56ab41bb9b232b745a362f30c5b099c208db66c50af32dea5a7386"
+    },
+    {
+      "round": 8,
+      "field": "live_model",
+      "correct": 598,
+      "nll": 0.6404380202293396,
+      "corrected": 6,
+      "new_wrong": 9,
+      "class_net": [
+        4,
+        0,
+        -1,
+        0,
+        -5,
+        -1,
+        0,
+        0
+      ],
+      "checkpoint_sha256": "e1171c9b8eca6aea0cc286935dbe014e3d2e31aa3f963105d254a80ffa350ec1",
+      "model_tensor_sha256": "b5dd53606fbc017ee0761228880f60dd164fc04d8556ff67bb1bd835f2debb9b"
+    }
+  ],
+  "train_diagnostics": [
+    {
+      "round": 4,
+      "repair": {
+        "samples": 147,
+        "correct": 22,
+        "new_wrong": 0,
+        "margin": -0.2678621709346771,
+        "source_margin": -0.31486377120018005,
+        "correct_per_class": [
+          9,
+          13,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "wrong_per_class": [
+          21,
+          30,
+          18,
+          17,
+          29,
+          10,
+          0,
+          0
+        ]
+      },
+      "all_parent_correct": {
+        "samples": 3157,
+        "correct": 3138,
+        "new_wrong": 19,
+        "margin": 2.033202886581421,
+        "source_margin": 1.9816454648971558,
+        "correct_per_class": [
+          370,
+          345,
+          391,
+          396,
+          361,
+          418,
+          428,
+          429
+        ],
+        "wrong_per_class": [
+          0,
+          0,
+          3,
+          3,
+          11,
+          2,
+          0,
+          0
+        ]
+      },
+      "stop_for_no_transfer": false,
+      "criterion": "At8: no TEST gain and TRAIN repair fraction>=prior broadKD8, while original-correct error rate is not lower than prior broadKD8"
+    },
+    {
+      "round": 8,
+      "repair": {
+        "samples": 147,
+        "correct": 29,
+        "new_wrong": 0,
+        "margin": -0.2057524472475052,
+        "source_margin": -0.31486377120018005,
+        "correct_per_class": [
+          8,
+          15,
+          1,
+          0,
+          4,
+          1,
+          0,
+          0
+        ],
+        "wrong_per_class": [
+          22,
+          28,
+          17,
+          17,
+          25,
+          9,
+          0,
+          0
+        ]
+      },
+      "all_parent_correct": {
+        "samples": 3157,
+        "correct": 3132,
+        "new_wrong": 25,
+        "margin": 2.0196478366851807,
+        "source_margin": 1.9816454648971558,
+        "correct_per_class": [
+          370,
+          343,
+          388,
+          397,
+          362,
+          418,
+          428,
+          426
+        ],
+        "wrong_per_class": [
+          0,
+          2,
+          6,
+          2,
+          10,
+          2,
+          0,
+          3
+        ]
+      },
+      "stop_for_no_transfer": true,
+      "criterion": "At8: no TEST gain and TRAIN repair fraction>=prior broadKD8, while original-correct error rate is not lower than prior broadKD8"
+    }
+  ],
+  "lambda_kd": 1.3012928565801285,
+  "planned_max_rounds": 16,
+  "actual_rounds": 8,
+  "actual_optimizer_updates": 512,
+  "main_optimizer_inputs": 8192,
+  "extra_kd_only_inputs": 2048,
+  "total_student_optimizer_inputs": 10240,
+  "parent_cache_forward_exposures": 27968,
+  "teacher_cache_reused_no_new_teacher_forward": true,
+  "calibration_probe_updates": 6,
+  "stop_reason": "preset_no_distillation_transfer",
+  "stop_thresholds": {
+    "repair_fraction_at_least": 0.17073170731707318,
+    "parent_correct_error_rate_at_least": 0.006373486297004461,
+    "no_test_gain_over": 601
+  },
+  "observed_stop_values": {
+    "repair_fraction": 0.19727891156462585,
+    "parent_correct_error_rate": 0.007918910357934749
+  },
+  "remaining_to616": 15,
+  "target_met": false,
+  "training_seconds_sum": 732.9416146278381,
+  "evaluation_seconds_sum": 477.981924533844,
+  "manifest_files": 28,
+  "archive_sha256": "ab7c90dfdf39d1a8fa35d492190ff230ddfb16c0ee9a5278d95c4d92f7130ad7",
+  "archive_bytes": 1099555,
+  "checks": {
+    "all_manifest_sha_verified": true,
+    "all4_development_test_752_cm_argmax_finite_idslabels_and_sha": true,
+    "all8main_sampling_1024unique128class_fourroundcover": true,
+    "all512extra_batches4_unique_main_disjoint_same_view_teacher_complement": true,
+    "source_and_selected_tensor_identity_receipt": true,
+    "all5_phase_gradients_allrounds_finite_nonzero": true,
+    "all_pids_exited_gpu1and3_no_task_allocation": true
+  },
+  "interpretation": "TRAIN repair improves, but full-distribution parent retention did not reduce errors sufficiently or improve development TEST. This rejects this finite recipe, not all possible full49 methods. No extra rounds or lambda grid.",
+  "follow_up": "Read-only verified existing ImageNet ResNet18 weight SHA and torchvision compatibility. Consider a separately disclosed pretrained CNN TRAIN teacher only if a fixed TRAIN/VAL gate establishes much stronger supervision; not started at report time."
+}

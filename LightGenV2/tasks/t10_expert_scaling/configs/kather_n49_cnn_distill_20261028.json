@@ -1,0 +1,76 @@
+{
+  "stage": "ImageNet_CNN_teacher_distillation",
+  "seed": 17,
+  "recipes": [
+    "student"
+  ],
+  "rounds": 16,
+  "check_rounds": [
+    4,
+    8,
+    12,
+    16
+  ],
+  "samples_per_class": 128,
+  "batch": 16,
+  "microbatch": 2,
+  "schedule_type": "distill",
+  "peak_lr": 0.0003,
+  "end_lr": 3e-05,
+  "ema_decay": 0.95,
+  "target_correct": 616,
+  "temperature": 2,
+  "parent_weight": 0.5,
+  "gradient_target_ratio": 0.5,
+  "minimum_weighted_gradient_ratio": 0.05,
+  "recipe_gpu": {
+    "student": 3
+  },
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "sources": {
+    "student": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_complement_distill_20261028/student_s17",
+      "sha256": "75e51f4e117f451ae7eb7947f0d001af0c07155450280fea3b19d9e9970d55a7",
+      "actual_epoch": 8
+    }
+  },
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_complement_distill_20261028/student_s17",
+  "incumbent_result_name": "result.json",
+  "incumbent_result_is_selected": true,
+  "incumbent_sha256": "75e51f4e117f451ae7eb7947f0d001af0c07155450280fea3b19d9e9970d55a7",
+  "incumbent_predictions_sha256": "c5adb95ba3de877318a1cbc8f7e1ecdf2b90a440813f9a904aa8a4b0a92e2c7c",
+  "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_teacher_20261028",
+  "target_cache_source_commit": "runtime_T10_CNN_SOURCE_COMMIT",
+  "calibration_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/smoke/kather_n49_cnn_distill_calibration_20261028",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "worker_module": "cnn_distill",
+  "auxiliary_dependencies": [
+    "cnn_teacher_cache.py",
+    "cnn_distill.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py"
+  ],
+  "role": "Repeated TEST-development, one original full49 student seed17. ADDITIONAL ImageNet1K-pretrained electronic ResNet18 teacher, trained on original TRAIN only and selected/admitted by original VAL; no teacher TEST or student-inference participation. External pretraining and teacher cost disclosed separately; not original equal-budget Top-k comparison. Source is actual broadKD round8 EMA75e...55a7 preserved by complement fallback, chain reheat4live/E117; fresh optimizer, not exact resume.",
+  "targets": "CNN raw TRAIN logits and T1 probabilities for each separateD4 view, parent probabilities bound to exact75e...55a7. Eligibility CNN argmax==TRAINlabel. KD=4*mean_eligible KL(softmax(logitsCNN/2)||softmax(log(pstudent)/2)), not probabilities-as-logits. Wholeeffective16 conditional denominator shared bymicro2. ParentKL(T1).5 only parent-correct/CNN-wrong views. No extra4 complement sampling; all supervised inputs uniformly rotated.",
+  "calibration": "Two fixed disjoint class-balanced16TRAIN view0 batches. TRAIN-only full5group gradientnorm ratio weightedT2KD/classification CE+margin=.5,lambda clip(.1,3), immutable thereafter. Six actual freshAdam baseline/repeat/combined probes, fivefinitegroups, source restore,8viewparentcacheequivalence, repeatedbaselineerror threshold. No VAL/TEST calibration. Parentcache already exactly matches selected75e PT, reuse justified by SHA rather than recompute.",
+  "schedule": "Fixed16x1024uniformuniqueTRAIN128/class/effective16micro2/64updates =1024updates16384student inputs,4roundcovers3496. LR1e-4/2e-4/3e-4 thencosine3e-5,global.5/router.1,EMA.95,AdamWweightdecay0,continuouspath. Original optical CE(.02smoothing)+.2margin/capture.005/TV.02/softbalance.01 preserved. No new studentparams/electronichead/TTA/powercurriculum.",
+  "selection": "Fixed4/8/12/16 locklastPTSHA/statefield/modeltensorhash, thenlive+EMAdevelopmentTEST; correctcount first,macroNLL tie; incumbent601 alwayscandidate. Onlybest/lastPT plus allsmallpredictions/locks/history. Same selectedfullmodel fullTRAIN/VAL/routes; TESTreuses lockedselectedstate,teacherneverparticipates.",
+  "stop_rule": "TeacherTRAIN/VALgatefailure:reject and no student. Numeric/source/identity mismatch fails. If both4/8checks show teacheronlyTRAINrepair margin no>1e-5gain, allparentcorrectnewerrors offsetrepairs, and bestTEST<=601,stop. Otherwisemax16; original two-checktrainprobe+VALboth>5ppcollapseguard retained. No automatic temperature/teacher/seed/budget extension. Teacher stronger does not guarantee optical transfer or616.",
+  "previous_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_complement_distill_20261028",
+  "parent_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_complement_parent_20261028",
+  "teacher_epochs": 8,
+  "teacher_batch": 32,
+  "pretrained_weights": "/home/guest3/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth",
+  "pretrained_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+  "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "source_val_correct": 588,
+  "teacher_val_class_floors": {
+    "1": 58,
+    "2": 68,
+    "4": 60
+  },
+  "teacher_schedule": "Fixed8 full3496TRAIN epochs: epoch1 only8class fc lr1e-3, backbone gradients and BatchNorm running stats frozen; epochs2..8 allCNN, backbone1e-4/fc5e-4 cosine to.1 multiplier; AdamWweightdecay1e-4,batch32,CE,no extra augment. Each patch sees deterministic exactD4 code(index+epoch-1)%8, each code once over8epochs. Whole150px patch resize224bilinear antialias, ImageNetmean(.485,.456,.406)/std(.229,.224,.225); custom fullpatch transform deliberately avoids default256resize/224centercrop. Same transform forVAL/cache. No downloads, localweightSHA locked. Only VALcorrect thenNLL selects teacher best/last. Gate TRAIN teacheronly>=128 across>=4classes each>=4; VALcorrect>=626, difficult STROMA/COMPLEX/DEBRIS not below source58/68/60. Reject means no student; no other teacher or automatic extension."
+}

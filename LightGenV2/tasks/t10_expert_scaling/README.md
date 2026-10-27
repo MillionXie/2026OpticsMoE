@@ -1,6 +1,45 @@
 # T10 专家数量与 Top-k 扩展实验
 
-## 补集定向蒸馏与全部父正确样本保留（2026-10-28）
+## 有条件引入ImageNet预训练CNN教师的有限路线（2026-10-28）
+
+补集定向训练按第8段预设停止：TRAIN补集修复29/147，但原父正确3157张新增25错；
+固定4/8段EMA/live开发TEST598/599、599/598，全部新权重不如incumbent601。
+last EMA完整TRAIN3177/VAL591/TEST599；最终best回退原PT75e51f4e…55a7，完整3157/588/601。
+不能把回退601当新候选成绩。实际512更新、8192主输入+2048辅助输入，共10240，未跑满原16段上限。
+28份小产物manifest、全部四状态752预测/配对/混淆矩阵、全部512extra batch同view补集/互斥、
+8轮主采样、权重与释放均已独立核验；报告`reports/kather_n49_complement_distill_20261028/final_summary_20261028.json`。
+
+下一路线入口`cnn_distill.py`、profile`configs/kather_n49_cnn_distill_20261028.json`，
+run `runs/simulation/kather_n49_cnn_distill_20261028`。先GPU1运行`cnn_teacher_cache.py`，
+采用服务器已有ImageNet1K ResNet18权重SHAf37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec，
+已核torch2.6.0/torchvision0.21.0可导入；不下载、不安装依赖。
+这是**额外ImageNet预训练知识与电子教师训练成本**，不属于原等预算Top-k实验；
+ResNet18的8类电子输出仅在教师中，绝不进入学生VAL/TEST/最终推理，学生仍原full49光学模型。
+
+教师固定8个完整TRAIN epoch，只有TRAIN进入梯度：首epoch仅fc LR1e-3、backbone及BN统计冻结，
+其后7epoch全CNN，backbone1e-4/fc5e-4余弦衰减至.1倍率、AdamW weight_decay1e-4、batch32。
+每图确定D4 code=(index+epoch-1)%8，8epoch每视图恰一次；完整150px patch bilinear抗锯齿resize224，
+再用ImageNet mean/std。此自定义全patch预处理明确避免
+[官方权重默认的resize256+中心裁224](https://docs.pytorch.org/vision/main/models/generated/torchvision.models.resnet18)，
+训练、VAL和缓存一致。只按单视图VAL正确数/NLL选教师，不读教师TEST。
+准入预先固定：TRAIN teacher-only补集≥128、至少4类各≥4；VAL比学生588多≥38正确，
+且STROMA/COMPLEX/DEBRIS分别不低于源58/68/60。未通过则结束，不换模型、延长或启动学生。
+通过才缓存八个分开的TRAIN raw logits及概率，复用与75e…55a7匹配的父概率，所有ID/label/view/SHA绑定。
+
+学生只GPU3/seed17，从实际best75e…55a7开始fresh AdamW/RNG、EMA.95；
+固定16×1024主TRAIN输入/1024更新，无额外4图补集采样。原均匀CE+margin与物理项全部保留。
+新KD对CNN正确的全部同view TRAIN启用，T=2，
+`4*KL(softmax(teacher_logits/2)||softmax(log(student_p)/2))`，
+不能把概率直接当logits；effective16条件均值、micro2共享全batch分母。
+父KL权重.5仅用于父正确而CNN错误的view，不强锚全部原正确判断。
+只用两个固定TRAIN batch重新校准weightedKD/分类梯度norm=.5的lambda、验证真实Adam方向及源恢复，
+不沿用任何旧lambda、不按TEST调整。源父缓存身份不变可按PT/SHA复用，不盲重算。
+原稳定LR1e-4/2e-4/3e-4余弦3e-5、global/router倍率.5/.1，原五组相位/4层OEO/T.05/参数/单视图均不改。
+固定4/8/12/16段锁定live/EMA后直接开发TEST选择，601保留；
+若4/8两检查点均无补集margin改善、全父正确组误伤抵消修复且TEST无净增则停，否则最多16。
+教师更强不保证光学学生可迁移，仍不能保证07:00前616，未过线不加温度/教师/轮数网格。
+
+## 已完成补集定向蒸馏：原训练合同（2026-10-28）
 
 上一同视图蒸馏已完成20段/1280更新/20480学生输入，五次固定EMA/live开发TEST为
 601/598、601/600、600/600、599/600、599/599。第8段EMA仅因同601正确下NLL更低而选中，

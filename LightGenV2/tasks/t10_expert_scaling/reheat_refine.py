@@ -246,7 +246,7 @@ def supervisor(c,out,profile,validator=validate):
             assert subprocess.check_output(['nvidia-smi','-i',index,'--query-gpu=uuid','--format=csv,noheader'],text=True).strip()==gpu
             assert int(subprocess.check_output(['nvidia-smi','-i',index,'--query-gpu=memory.free','--format=csv,noheader,nounits'],text=True))>=7000
             d=out/(recipe+'_s17');log=d.with_suffix('.log').open('x');env=dict(os.environ,CUDA_VISIBLE_DEVICES=gpu,CUDA_DEVICE_ORDER='PCI_BUS_ID',OMP_NUM_THREADS='4',MKL_NUM_THREADS='4')
-            entry=c.get('worker_module','reheat_refine');assert entry in ['reheat_refine','cached_distill','complement_distill']
+            entry=c.get('worker_module','reheat_refine');assert entry in ['reheat_refine','cached_distill','complement_distill','cnn_distill']
             p=subprocess.Popen([sys.executable,'-u','-m',__package__+'.'+entry,'--profile',str(profile),'--out',str(d),'--worker','--recipe',recipe],env=env,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
             running[p.pid]=(p,log,d);pids.append(p.pid)
         while running:
