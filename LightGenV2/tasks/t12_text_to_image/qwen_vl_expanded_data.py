@@ -28,18 +28,20 @@ def view_quality(row):
     border=float(np.concatenate([alpha[0],alpha[-1],alpha[:,0],alpha[:,-1]]).mean())
     if area<.015 or min(bw,bh)<24 or border>.002 or min(x0,y0,w-x1,h-y1)<2:return None
     aspect=bw/bh
-    if row['category']=='lamp' and not .13<aspect<1.55:return None
-    if row['category']=='pillow' and not .4<aspect<2.3:return None
+    if row['category']=='lamp' and (not .4<aspect<1.2 or fill<.5):return None
+    if row['category']=='pillow' and not .7<aspect<2.3:return None
     gray=rgb.mean(2);edge_x=np.abs(np.diff(gray,axis=1));edge_y=np.abs(np.diff(gray,axis=0))
     interior_x=support[:,:-1]&support[:,1:];interior_y=support[:-1]&support[1:]
     edges=[edge_x[interior_x],edge_y[interior_y]]
     sharp=float(np.concatenate(edges).mean()) if any(len(v) for v in edges) else 0.
     # Lamps need a visible base, so prefer tall frontal projections rather than
     # the high-fill overhead shade views rejected in the first visual review.
-    score=(1.2/(1+aspect)+.3*fill+.03*math.log1p(sharp) if row['category']=='lamp' else
+    score=(.7*fill-.65*abs(math.log(aspect/.55))+.03*math.log1p(sharp) if row['category']=='lamp' else
            .7*fill+.1*min(area/.3,1)+.18*math.log1p(sharp)-.08*abs(math.log(max(aspect,.01))))
+    histogram=np.concatenate([np.histogram(rgb[:,:,c][support],bins=24,range=(0,256))[0] for c in range(3)]).astype(float)
+    histogram/=max(histogram.sum(),1)
     return {'score':score,'fill':fill,'alpha_area':area,'aspect':aspect,'foreground_edge':sharp,
-            'border_alpha':border,'bbox':[x0,y0,x1,y1]}
+            'border_alpha':border,'bbox':[x0,y0,x1,y1],'foreground_color_histogram':histogram.tolist()}
 
 
 def screen(data,out,parent_data,excluded=()):
@@ -69,9 +71,11 @@ def screen(data,out,parent_data,excluded=()):
                 unique=[];seen=set()
                 for row in ordered:
                     if row['rgba_sha256'] not in seen:unique.append(row);seen.add(row['rgba_sha256'])
-                if unique and cat=='pillow' and unique[0]['quality']['foreground_edge']>1:
-                    threshold=unique[0]['quality']['foreground_edge']*.35
-                    unique=[r for r in unique if r['quality']['foreground_edge']>=threshold]
+                if unique and cat=='pillow':
+                    anchor=unique[0]['quality'];threshold=anchor['foreground_edge']*.5 if anchor['foreground_edge']>.5 else 0
+                    hist=np.asarray(anchor['foreground_color_histogram'])
+                    unique=[r for r in unique if r['quality']['foreground_edge']>=threshold and
+                            np.sqrt(hist*np.asarray(r['quality']['foreground_color_histogram'])).sum()>=.92]
                 if len(unique)<2:continue
                 chosen=unique[:2];products.append((min(r['quality']['score'] for r in chosen),sku,chosen))
             need=16 if split=='train' else 4
