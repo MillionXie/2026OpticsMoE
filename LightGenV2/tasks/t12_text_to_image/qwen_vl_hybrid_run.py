@@ -5,6 +5,7 @@ TRAIN pairs produce gradients. Native Qwen visual/semantic interfaces remain.
 """
 import argparse
 import gc
+import hashlib
 import json
 import math
 import os
@@ -87,6 +88,12 @@ def raw_hidden(qwen, processor, payload, i, layout, device):
     return qwen.model(**inputs, use_cache=False, return_dict=True).last_hidden_state[0].bfloat16()
 
 
+def frontend_input_hash(payload,i):
+    image=tensor_image(payload['reference'][i])
+    value=hashlib.sha256(image.tobytes()+b'\0'+payload['rows'][i]['prompt'].encode('utf-8'))
+    return value.hexdigest()
+
+
 def stage_cache(a, cfg, payload, parent_state, device):
     if (a.output/'report.json').exists():
         raise ValueError('Existing cache; do not repeat')
@@ -102,7 +109,7 @@ def stage_cache(a, cfg, payload, parent_state, device):
         handles.append(qwen.model.visual.blocks[i].register_forward_hook(post('vision_'+str(i))))
     for i in ((8,13,18,23,27) if cfg.get('postfree') else (8,13,18,23)):
         handles.append(qwen.model.language_model.layers[i].register_forward_hook(post('language_'+str(i))))
-    records = []
+    records = [];vision_pool={};deduplicated=0
     maximum = 0.
     try:
         for i, row in enumerate(payload['rows']):
@@ -117,7 +124,12 @@ def stage_cache(a, cfg, payload, parent_state, device):
             for key in list(record):
                 if key.startswith('vision_'):
                     record[key] = record[key].unsqueeze(0)
-            record.update(final=hidden, sample_id=row['sample_id'], split=row['split'])
+            image_key=hashlib.sha256(tensor_image(payload['reference'][i]).tobytes()).hexdigest()
+            if image_key in vision_pool:
+                for key,value in vision_pool[image_key].items():
+                    if torch.equal(record[key],value):record[key]=value;deduplicated+=1
+            else:vision_pool[image_key]={k:v for k,v in record.items() if k.startswith('vision_')}
+            record.update(final=hidden, sample_id=row['sample_id'], split=row['split'],input_sha256=frontend_input_hash(payload,i))
             records.append(record)
             if (i+1) % 24 == 0:
                 write_json(a.output/'progress.json', {'stage': 'teacher_features', 'done': i+1, 'total': len(payload['rows'])})
@@ -128,6 +140,8 @@ def stage_cache(a, cfg, payload, parent_state, device):
     write_json(a.output/'report.json', {'complete': True, 'count': len(records), 'sha256': digest,
         'raw_qwen_vs_parent_cache_max_abs': maximum, 'target_or_mask_input': False,
         'input_contract': 'Reference RGB and full edit text only; Qwen original vision24/language28',
+        'input_fingerprints_exclude_targets_and_noise':True,'exactly_equal_vision_tensors_shared':deduplicated,
+        'qwen_path':str(a.qwen.resolve()),'qwen_config_sha256':sha256(a.qwen/'config.json'),
         'feature_targets_are_teacher_activations': True})
 
 
@@ -138,6 +152,11 @@ def checked_features(path, payload):
     features = torch.load(path/'teacher_features.pt', map_location='cpu', weights_only=False, mmap=True)['records']
     if [f['sample_id'] for f in features] != [r['sample_id'] for r in payload['rows']]:
         raise ValueError('Feature/source sample identity mismatch')
+    for i,record in enumerate(features):
+        if 'input_sha256' in record:
+            if record['input_sha256']!=frontend_input_hash(payload,i):raise ValueError('Teacher RGB/text fingerprint differs')
+        elif 'target_only_rebind' in payload:
+            raise ValueError('Rebound targets require an input-fingerprinted teacher cache')
     return features
 
 

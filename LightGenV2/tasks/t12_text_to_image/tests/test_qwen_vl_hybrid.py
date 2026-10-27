@@ -6,6 +6,15 @@ from LightGenV2.tasks.t12_text_to_image.qwen_vl_hybrid import OpticalMacro, Toke
 
 
 class HybridTests(unittest.TestCase):
+    def test_frontend_fingerprint_binds_rgb_text_and_excludes_supervision(self):
+        from ..qwen_vl_hybrid_run import frontend_input_hash
+        p={'reference':torch.zeros(1,3,8,8,dtype=torch.uint8),'target':torch.zeros(1,3,8,8),'rows':[{'prompt':'red lamp','noise_seed':1}]}
+        original=frontend_input_hash(p,0);p['target']+=1;p['rows'][0]['noise_seed']=2
+        self.assertEqual(frontend_input_hash(p,0),original)
+        p['rows'][0]['prompt']='blue lamp';self.assertNotEqual(frontend_input_hash(p,0),original)
+        p['rows'][0]['prompt']='red lamp';p['reference'][0,0,0,0]=1
+        self.assertNotEqual(frontend_input_hash(p,0),original)
+
     def test_student_head_overlay_isolated_from_frozen_teacher(self):
         from ..qwen_vl_hybrid import clone_readout_head,restore_head_overlay
         from ..qwen_vl_spatial import SpatialTurboHead
