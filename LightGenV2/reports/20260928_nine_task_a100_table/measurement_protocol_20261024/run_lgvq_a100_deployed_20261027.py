@@ -20,13 +20,17 @@ def source_map():
 
 
 def deployed_worker(args):
-    core.original.write(args.output/'a100_deployed_scope_identity.json',dict(
+    scope=dict(
         profile=PROFILE,explicit_extra_warmup_forwards=0,
         exclusion='capture_electronics host graph construction ONLY',
         original_measured_window_retained=True,first_three_real_eager_fields_retained=True,
         both_real_capture_field_outputs_retained=True,all_other_v2_nodes_retained=True,
-        baseline_scope_unchanged=True,physical_optical_hardware_measured=False))
-    return core.parallel_worker(args)
+        baseline_scope_unchanged=True,physical_optical_hardware_measured=False)
+    # Original worker alone creates its exclusive new leaf. Persist this
+    # predeclared source-bound scope after its measured window, never pre-mkdir.
+    try:return core.parallel_worker(args)
+    finally:
+        if args.output.exists():core.original.write(args.output/'a100_deployed_scope_identity.json',scope)
 
 
 @contextmanager

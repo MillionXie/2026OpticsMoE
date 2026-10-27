@@ -1,10 +1,23 @@
 import sys
 import unittest
+from unittest.mock import patch
+from tempfile import TemporaryDirectory
+from pathlib import Path
+from types import SimpleNamespace
 import run_lgvq_a100_deployed_20261027 as entry
 from lgvq_phase_ledger_20261026 import electronic_graph_build_nodes
 
 
 class DeployedTests(unittest.TestCase):
+    def test_original_worker_owns_new_leaf_creation(self):
+        with TemporaryDirectory() as tmp:
+            output=Path(tmp)/'leaf';args=SimpleNamespace(output=output)
+            def original(arg):
+                self.assertFalse(arg.output.exists());arg.output.mkdir();return 'complete'
+            with patch.object(entry.core,'parallel_worker',original):
+                self.assertEqual(entry.deployed_worker(args),'complete')
+            self.assertTrue((output/'a100_deployed_scope_identity.json').exists())
+
     def test_original_42_blobs_and_worker_unchanged(self):
         original=entry.core.ORIGINAL_SOURCES();worker=entry.core.original.worker
         with entry.configured():
