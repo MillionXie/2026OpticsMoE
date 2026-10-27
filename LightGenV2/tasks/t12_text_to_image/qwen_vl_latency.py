@@ -82,9 +82,9 @@ def main():
     head = build_spatial_head(a.sd, state, cfg, layout['positions'], device,
                              drop_vae_encoder=True).eval().requires_grad_(False)
     if a.hybrid_checkpoint:
-        from .qwen_vl_hybrid import apply_hybrid, load_macro_state
+        from .qwen_vl_hybrid import apply_configured_hybrid, load_macro_state
         hybrid = torch.load(a.hybrid_checkpoint, map_location='cpu', weights_only=False)
-        macros = apply_hybrid(qwen, hybrid['config']['vision_pairs'], hybrid['config']['language_pairs'], hybrid['config']['residual_width'])
+        macros = apply_configured_hybrid(qwen,hybrid['config'])
         load_macro_state(macros, hybrid['macros']); qwen.eval().requires_grad_(False)
     if a.tail_checkpoint:
         if not a.hybrid_checkpoint:

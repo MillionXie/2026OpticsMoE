@@ -6,6 +6,19 @@ from LightGenV2.tasks.t12_text_to_image.qwen_vl_hybrid import OpticalMacro, Toke
 
 
 class HybridTests(unittest.TestCase):
+    def test_directional_loss_stays_finite_across_large_rms_mismatch(self):
+        from ..qwen_vl_hybrid import directional_feature_loss
+        x=(torch.randn(1,9,16)*10000).requires_grad_();target=torch.randn_like(x)*.01
+        loss=directional_feature_loss(x,target);loss.backward()
+        self.assertLess(float(loss.detach()),5.)
+        self.assertTrue(torch.isfinite(x.grad).all());self.assertGreater(float(x.grad.abs().sum()),0.)
+
+    def test_postfree_teacher_goals_reach_actual_terminal_layers(self):
+        from ..qwen_vl_hybrid_run import macro_goals
+        record={f'{mod}_{k}':k for mod in ('vision','language') for k in (8,11,13,14,17,18,23,27)}
+        self.assertEqual(macro_goals(record,'vision',1,True),[11,23])
+        self.assertEqual(macro_goals(record,'language',2,True),[8,13,23,27])
+
     def test_native_visual_field_layout_and_overflow(self):
         codec = TokenCodec('vision', 16)
         hidden = torch.randn(1, 256, 16)

@@ -24,7 +24,8 @@ class PostfreeTest(unittest.TestCase):
         root.model.visual = torch.nn.Module(); root.model.language_model = torch.nn.Module()
         root.model.visual.blocks = torch.nn.ModuleList([torch.nn.Linear(1, 1) for _ in range(24)])
         root.model.language_model.layers = torch.nn.ModuleList([torch.nn.Linear(1, 1) for _ in range(28)])
-        macros = apply_postfree(root)
+        from ..qwen_vl_hybrid import apply_configured_hybrid
+        macros = apply_configured_hybrid(root,{'postfree':True,'vision_pairs':1,'language_pairs':1,'residual_width':256})
         self.assertEqual(sum(isinstance(b, torch.nn.Linear) for b in root.model.visual.blocks), 6)
         self.assertEqual(sum(isinstance(b, torch.nn.Linear) for b in root.model.language_model.layers), 4)
         self.assertTrue(all(isinstance(b, IdentityBlock) for b in root.model.visual.blocks[18:]))

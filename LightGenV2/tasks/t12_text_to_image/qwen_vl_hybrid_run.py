@@ -19,7 +19,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .qwen_vl_hybrid import OpticalMacro, apply_hybrid, feature_loss, hybrid_config, load_macro_state, optimizer_groups
+from .qwen_vl_hybrid import OpticalMacro, apply_configured_hybrid, feature_loss, directional_feature_loss, hybrid_config, load_macro_state, optimizer_groups
 from .qwen_vl_spatial import balanced_region_l1, build_spatial_head
 from .qwen_vl_spatial_run import evaluate, masks
 from .qwen_vl_turbo_cache import image_float, save_with_digest
@@ -98,9 +98,9 @@ def stage_cache(a, cfg, payload, parent_state, device):
         return lambda module, args, out: captured.__setitem__(name, out.detach().bfloat16().cpu())
     handles.append(qwen.model.visual.blocks[6].register_forward_pre_hook(pre('vision_input')))
     handles.append(qwen.model.language_model.layers[4].register_forward_pre_hook(pre('language_input')))
-    for i in (8, 11, 14, 17):
+    for i in ((8,11,14,17,23) if cfg.get('postfree') else (8,11,14,17)):
         handles.append(qwen.model.visual.blocks[i].register_forward_hook(post('vision_'+str(i))))
-    for i in (8, 13, 18, 23):
+    for i in ((8,13,18,23,27) if cfg.get('postfree') else (8,13,18,23)):
         handles.append(qwen.model.language_model.layers[i].register_forward_hook(post('language_'+str(i))))
     records = []
     maximum = 0.
@@ -141,8 +141,10 @@ def checked_features(path, payload):
     return features
 
 
-def macro_goals(record, modality, pairs):
+def macro_goals(record, modality, pairs, postfree=False):
     indexes = ((11, 17) if pairs == 1 else (8, 11, 14, 17)) if modality == 'vision' else ((13, 23) if pairs == 1 else (8, 13, 18, 23))
+    if postfree:
+        indexes=((11,23) if pairs==1 else (8,11,17,23)) if modality=='vision' else ((13,27) if pairs==1 else (8,13,23,27))
     return [record[modality+'_'+str(i)] for i in indexes]
 
 
@@ -150,6 +152,8 @@ def save_macros(macros, cfg, step, metrics, output, best=False, extra=None):
     state = {'schema': 'qwen_vl_native_hybrid_v1', 'step': step, 'config': cfg,
              'hybrid_config': hybrid_config(cfg['vision_pairs'], cfg['language_pairs']),
              'macros': macros.state_dict(), 'metrics': metrics, 'git': git_identity(), **(extra or {})}
+    if cfg.get('postfree'):
+        state['hybrid_config'].update(postfree=True,vision_replaced=list(range(6,24)),language_replaced=list(range(4,28)))
     save_with_digest(state, output/('best_checkpoint.pt' if best else 'last_checkpoint.pt'))
 
 
@@ -157,6 +161,9 @@ def stage_distill(a, cfg, payload, state, device):
     features = checked_features(a.features, payload)
     macros = nn.ModuleDict({m: OpticalMacro(m, w, cfg[m+'_pairs'], cfg['residual_width'])
                           for m, w in (('vision', 1024), ('language', 2048))}).to(device)
+    if a.initial:
+        initial=torch.load(a.initial/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        load_macro_state(macros,initial['macros'])
     train = [i for i, r in enumerate(payload['rows']) if r['split'] == 'train']
     dev = [i for i, r in enumerate(payload['rows']) if r['split'] == 'val']
     if cfg.get('smoke'):
@@ -171,8 +178,9 @@ def stage_distill(a, cfg, payload, state, device):
         for modality in ('vision', 'language'):
             macro = macros[modality]
             macro(features[i][modality+'_input'].to(device))
-            goals = macro_goals(features[i], modality, macro.pairs)
-            values.append(sum(feature_loss(x, y.to(device)) for x, y in zip(macro.last_stages, goals))/len(goals))
+            goals = macro_goals(features[i], modality, macro.pairs,cfg.get('postfree',False))
+            distance=directional_feature_loss if cfg.get('directional_feature_loss') else feature_loss
+            values.append(sum(distance(x, y.to(device)) for x, y in zip(macro.last_stages, goals))/len(goals))
         return sum(values)+cfg['balance_weight']*sum(m.balance_loss() for m in macros.values())
     for step in range(1, cfg['feature_steps']+1):
         macros.train(); optimizer.zero_grad(set_to_none=True)
@@ -248,10 +256,15 @@ def router_batch_balance(macros, features, ids, device, mi_weight=.25):
     losses = []
     for modality, macro in macros.items():
         rows = [features[i][modality+'_input'][0] for i in ids]
-        hidden, valid = pack_hidden(rows, device)
-        packed = macro.codecs[0].pack(hidden)
-        padding = torch.zeros(packed.shape[:2], dtype=torch.bool, device=device) if modality == 'vision' else ~valid
-        fields, _ = macro.paths[0]._encode_input_fields(packed, padding)
+        fields=[]
+        # Encode each actual token length before batching physical fields. A
+        # padded token sent through a biased projection need not remain zero.
+        for row in rows:
+            packed=macro.codecs[0].pack(row[None].to(device))
+            padding=torch.zeros(packed.shape[:2],dtype=torch.bool,device=device)
+            field,_=macro.paths[0]._encode_input_fields(packed,padding)
+            fields.append(field)
+        fields=torch.cat(fields,0)
         routing = macro.paths[0].core.router(fields)
         p = routing['probabilities'].float().clamp_min(1e-8)
         mean = p.mean(0)
@@ -266,7 +279,7 @@ def router_batch_balance(macros, features, ids, device, mi_weight=.25):
 def stage_joint(a, cfg, payload, state, device):
     features = checked_features(a.features, payload)
     qwen, processor = load_qwen(a.qwen, device)
-    macros = apply_hybrid(qwen, cfg['vision_pairs'], cfg['language_pairs'], cfg['residual_width'])
+    macros = apply_configured_hybrid(qwen,cfg)
     init = torch.load(a.initial/'best_checkpoint.pt', map_location='cpu', weights_only=False)
     compatibility = load_macro_state(macros, init['macros'])
     for macro in macros.values():
@@ -312,7 +325,8 @@ def stage_joint(a, cfg, payload, state, device):
             target = image_float(payload['target'][i:i+1], device)
             edit, foreground = masks(row, device)
             with torch.autocast('cuda', dtype=torch.bfloat16):
-                h_loss = feature_loss(hidden, features[i]['final'].to(device))
+                distance=directional_feature_loss if cfg.get('directional_feature_loss') else feature_loss
+                h_loss = distance(hidden, features[i]['final'].to(device))
                 z_loss = F.mse_loss(z.float(), teacher_z.float())
                 rgb_loss = balanced_region_l1(rgb, target, edit)
                 p_loss = metric(rgb.clamp(-1, 1), target).mean()

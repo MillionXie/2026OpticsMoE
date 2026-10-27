@@ -21,6 +21,23 @@ def feature_loss(actual, target):
     return ((a-b)/rms).square().mean()+(.5*(1-F.cosine_similarity(a, b, dim=-1))).mean()
 
 
+def directional_feature_loss(actual, target):
+    """Independently normalize directions; weak log-RMS matching avoids huge MSE."""
+    a,b=actual.float(),target.float()
+    ra=a.square().mean(-1,keepdim=True).add(1e-8).sqrt()
+    rb=b.square().mean(-1,keepdim=True).add(1e-8).sqrt()
+    return ((a/ra-b/rb)**2).mean()+.02*F.smooth_l1_loss(ra.log(),rb.log())
+
+
+def apply_configured_hybrid(qwen, config):
+    """Reconstruct the checkpoint's actual retained-TF contract in every entry."""
+    factory=apply_hybrid
+    if config.get('postfree',False):
+        from .qwen_vl_postfree import apply_postfree
+        factory=apply_postfree
+    return factory(qwen,config['vision_pairs'],config['language_pairs'],config['residual_width'])
+
+
 class TokenCodec(nn.Module):
     def __init__(self, modality, width):
         super().__init__()
