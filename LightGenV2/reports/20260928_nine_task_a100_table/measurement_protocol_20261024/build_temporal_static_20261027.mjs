@@ -16,8 +16,14 @@ const w=await SpreadsheetFile.importXlsx(await FileBlob.load(data.base_workbook)
 const s=w.worksheets.getItem('统一结果'); // Preserve all user deletions, values and formatting.
 const p=data.appendix_table;
 if(!p||p.rows.length!==18||p.headers.length!==4||p.module_rows.length!==6)throw Error('Complete source-derived appendix table required');
-const t=w.worksheets.getItem('LightGen附录计时');t.getUsedRange().clear({applyTo:'all'});t.showGridLines=false;
+const t=w.worksheets.getItem('LightGen附录计时');
 const lastRow=3+p.rows.length,notesStart=p.rows.length+6,endRow=notesStart+p.notes.length-1;
+if(data.edit_mode==='optical_control_to_electronics'){
+  for(const row of [5,6,7,8,9,10,13,14,15,16,17,18])t.getRange('C'+row).values=[[p.rows[row-4][2]]];
+  for(const row of [6,8,10,14,16,18])t.getRange('D'+row).values=[[p.rows[row-4][3]]];
+  t.getRange('A26').values=[[p.notes[2]]];
+}else{
+t.getUsedRange().clear({applyTo:'all'});t.showGridLines=false;
 t.getRange(`A1:D${endRow}`).format={font:{name:'Arial',size:11,color:'#192E40'},rowHeight:40,verticalAlignment:'center'};
 for(const [i,width] of [22,54,28,105].entries())t.getRange(`${String.fromCharCode(65+i)}1`).format.columnWidth=width;
 t.getRange('A1').values=[[p.title]];t.getRange('A1').format.font={size:14,bold:true};
@@ -42,6 +48,7 @@ for(const [i,note] of p.notes.entries()){
   t.getRange(`A${notesStart+i}:D${notesStart+i}`).format={font:{size:10,color:'#526879'},rowHeight:27,wrapText:false};
 }
 t.freezePanes.freezeRows(3);
+}
 w.recalculate();
 if(s.getUsedRange().formulas.flat().some(Boolean))throw Error('No formulas permitted');
 if(t.getRange(`A1:D${endRow}`).formulas.flat().some(Boolean))throw Error('No phase formulas permitted');

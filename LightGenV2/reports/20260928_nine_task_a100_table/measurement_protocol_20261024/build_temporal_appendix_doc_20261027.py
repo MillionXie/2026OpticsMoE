@@ -116,6 +116,8 @@ def build(folder,revise=False):
     if (folder/'delivery_manifest.json').exists():raise ValueError('Never modify a sealed delivery')
     if target.exists() and not revise:raise FileExistsError(target)
     data=json.loads((folder/'static_values.json').read_text(encoding='utf8'));p=data['appendix_table'];total=data['rows'][0][5]
+    if data.get('edit_mode')=='optical_control_to_electronics':
+        return edit_optical_control(folder,data,target)
     if len(p['rows'])!=18 or not p['rows'][0][1].endswith('视觉Adapter'):raise ValueError('Functional adapter grouping required')
     if not math.isclose(math.fsum(r[2] for r in p['rows'][:-1]),total,abs_tol=1e-11):raise ValueError('Timing table does not close')
     image=folder/'timing_workflow.png';flow_figure(image)
@@ -189,6 +191,38 @@ def build(folder,revise=False):
     print(json.dumps(dict(status='created',path=str(target),equations=5,timing_rows=len(timing_rows)),ensure_ascii=True))
 
 
+def replace_plain_text(paragraph,text):
+    """Retain the paragraph and its first run formatting during a narrow edit."""
+    if paragraph.runs:
+        paragraph.runs[0].text=text
+        for run in paragraph.runs[1:]:run.text=''
+    else:paragraph.add_run(text)
+
+
+def edit_optical_control(folder,data,target):
+    source=Path(data['base_word_document'])
+    if digest(source)!=data['base_word_sha256']:raise ValueError('Source Word changed')
+    doc=Document(source);p=data['appendix_table']
+    if len(doc.tables)!=2 or len(doc.tables[1].rows)!=19:raise ValueError('Unexpected source Word structure')
+    for row,expected in zip(doc.tables[1].rows[1:],p['rows']):
+        for cell,value in zip(row.cells,[expected[0],expected[1],f'{expected[2]:.6f}']):
+            if cell.text!=value:
+                if len(cell.paragraphs)!=1:raise ValueError('Unexpected cell paragraphs')
+                replace_plain_text(cell.paragraphs[0],value)
+    changed=[]
+    for para in doc.paragraphs:
+        if para.text.startswith('OEO指光—电—光衔接所需的电子处理。'):
+            replace_plain_text(para,para.text+' 光传播行仅列纯光学等效部分；原归入该光传播行的CPU提交、主机间隙和就绪排队，统一合入紧接其后的同名OEO电子处理行。每个光、电两行小计与总时间均保持不变。')
+            changed.append('oeo_scope')
+        elif para.text.startswith('电子阶段沿用三轮A100原始事件。每个光周期'):
+            replace_plain_text(para,para.text+' 表2六个光传播行均为0.348329 ms/16视频场（64帧）的纯光学等效贡献；它是并行核算后的整轮平均分摊，不是单次光周期的1.044985714 ms延时。')
+            changed.append('optical_units')
+    if changed!=['oeo_scope','optical_units']:raise ValueError('Expected two source paragraphs')
+    doc.save(target)
+    print(json.dumps(dict(status='edited',path=str(target),source_sha256=digest(source),
+        equations=5,timing_rows=len(p['rows']),preserved_original_document=True),ensure_ascii=True))
+
+
 def audit(folder,pages,visual_reviewed):
     folder=Path(folder).resolve();target=folder/NAME;data=json.loads((folder/'static_values.json').read_text());p=data['appendix_table']
     d=Document(target);ns={'m':'http://schemas.openxmlformats.org/officeDocument/2006/math','w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
@@ -204,11 +238,23 @@ def audit(folder,pages,visual_reviewed):
     text='\n'.join(x.text for x in d.paragraphs)+'\n'+'\n'.join(c.text for t in d.tables for r in t.rows for c in r.cells)
     if any(s in text for s in ['语言光场Adapter','文本Adapter”','[待补','TODO']):raise ValueError('Unresolved terminology or placeholder')
     if '不是物理光电整机的直接端到端实测' not in text:raise ValueError('Retain timing basis qualification')
+    preserved_native_content=None
+    if data.get('edit_mode')=='optical_control_to_electronics':
+        source=Path(data['base_word_document'])
+        if digest(source)!=data['base_word_sha256']:raise ValueError('Source Word changed')
+        with ZipFile(source) as old,ZipFile(target) as new:
+            oldxml=ET.fromstring(old.read('word/document.xml'))
+            if [ET.tostring(x) for x in oldxml.findall('.//m:oMath',ns)]!=[ET.tostring(x) for x in xml.findall('.//m:oMath',ns)]:raise ValueError('Native equations changed')
+            names=sorted(n for n in old.namelist() if n.startswith('word/media/'))
+            if names!=sorted(n for n in new.namelist() if n.startswith('word/media/')) or any(old.read(n)!=new.read(n) for n in names):raise ValueError('Existing illustration changed')
+        if '统一合入紧接其后的同名OEO电子处理行' not in text:raise ValueError('Missing optical control scope')
+        preserved_native_content=True
     images=sorted((folder/'word_native_render_final').glob('page-*.png'))
     if len(images)!=pages or pages<4 or not visual_reviewed:raise ValueError('Review every rendered page before sealing')
     result=dict(status='passed',native_Word_equations=5,word_Excel_timing_cells_identical=True,
         all_pages_visually_reviewed=True,pages=pages,document_sha256=digest(target),
         source_values_sha256=digest(folder/'static_values.json'),render_engine='Microsoft Word native PDF export then bundled Poppler',
+        original_equations_and_illustration_preserved=preserved_native_content,
         stage_sum_ms=math.fsum(r[2] for r in p['rows'][:-1]),canonical_total_ms=data['rows'][0][5])
     with (folder/'document_audit.json').open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
     print(json.dumps(result,ensure_ascii=True))

@@ -52,6 +52,21 @@ class AppendixAccountingTests(unittest.TestCase):
         self.assertAlmostEqual(math.fsum(r[1] for r in self.result['module_rows']),self.total)
         self.assertAlmostEqual(sum(r['control_ms16'] for r in self.result['phase_accounting']),self.detail['rows'][0][2])
 
+    def test_optical_controls_move_to_corresponding_electronics(self):
+        accounting=self.result['phase_accounting']
+        for i in range(1,7):
+            optical=next(r for r in accounting if r['keys']==[f'optics{i}'])
+            electronic=next(r for r in accounting if r['keys']==[f'oeo{i}'])
+            self.assertEqual(optical['control_ms16'],0)
+            self.assertEqual(electronic['control_keys'],[f'optics{i}',f'oeo{i}'])
+            expected=sum(self.compute[k]+self.overhead[k] for k in [f'optics{i}',f'oeo{i}'])
+            self.assertAlmostEqual(optical['equivalent_ms16']+electronic['equivalent_ms16'],expected)
+
+    def test_controls_are_assigned_once_after_transfer(self):
+        keys=[k for r in self.result['phase_accounting'] for k in r['control_keys']]
+        self.assertEqual(len(keys),len(set(keys)))
+        self.assertEqual(set(keys),(set(PHASE_NAMES)-{'scheduling'})|set(CONTROL_KEYS))
+
     def test_no_tensor_framework_import(self):
         self.assertNotIn('torch',sys.modules)
 

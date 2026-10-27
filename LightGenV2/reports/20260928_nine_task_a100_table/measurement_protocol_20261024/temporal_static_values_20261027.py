@@ -121,12 +121,14 @@ def detailed_appendix(evidence,detail,time16):
         for source,target in [('work',work),('compute',compute),('overhead',overhead)]:
             for key,value in e['fine'][source].items():target[key]+=value/fields
         for r in e['fine']['control_breakdown']:breakdown[(r['owner'],r['kind'])]+=r['ms']/fields
-    rows=[];types=[];module_rows=[];assigned=[];accounting=[]
-    def line(module,label,keys,relation):
-        assigned.extend(keys);c=sum(compute[k] for k in keys);h=sum(overhead[k] for k in keys)
+    rows=[];types=[];module_rows=[];assigned=[];assigned_controls=[];accounting=[]
+    def line(module,label,keys,relation,control_keys=None):
+        control_keys=keys if control_keys is None else control_keys
+        assigned.extend(keys);assigned_controls.extend(control_keys)
+        c=sum(compute[k] for k in keys);h=sum(overhead[k] for k in control_keys)
         span=sum(work[k] for k in keys) if any(k in PHASE_NAMES for k in keys) else '不适用'
         rows.append([module,label,c+h,relation]);types.append('accounted')
-        accounting.append(dict(module=module,part=label,keys=keys,cumulative_work_ms16=span,
+        accounting.append(dict(module=module,part=label,keys=keys,control_keys=control_keys,cumulative_work_ms16=span,
                                computation_ms16=c,control_ms16=h,equivalent_ms16=c+h))
     line('预处理','① 文本分词与视觉、文本Embedding\n② 视觉Adapter',['tokenizer','frontend','vision_entry'],'两步联合计时。文本与视觉Embedding有并行；视觉Adapter含前端位置处理、特征转换、缩放/偏置、视觉调制及首次视觉光场输入映射。原事件未完全拆开，不人为分配两步时间。')
     for module,indices in [('视觉光电处理',range(1,4)),('语言光电处理',range(4,7))]:
@@ -135,12 +137,14 @@ def detailed_appendix(evidence,detail,time16):
             line('语言光电处理','语言Adapter',['language_entry'],'Merger之后，进入语言Router光场前的适配；按功能定义Adapter，不对应源码类名。此处不重复执行文本Embedding。')
         for i in indices:
             name=('Router','Expert','Global')[(i-1)%3]
-            line(module,name+'光传播',[f'optics{i}'],'本场按Router、Expert、Global依赖执行；每周期16视频整幅光场联合传播。跨场重叠只核算一次。')
-            line(module,name+' OEO电子处理',[f'oeo{i}'],'保留本周期后必要的读出、路由、融合及下段输入准备；并非仅A/D或D/A器件延时。')
+            line(module,name+'光传播',[f'optics{i}'],'本场按Router、Expert、Global依赖执行；每周期16视频整幅光场联合传播。跨场重叠只核算一次。',control_keys=[])
+            line(module,name+' OEO电子处理',[f'oeo{i}'],'含上一行光传播的相关提交、间隙和就绪排队；保留本周期的必要读出、路由、融合及下段输入准备。',control_keys=[f'optics{i}',f'oeo{i}'])
     line('解码器','Decoder与最终评分',['decoder'],'本场语言光电处理完成后执行，包含原读出及最终评分边界。')
     line('调度与同步','全程调度与同步',list(CONTROL_KEYS),'贯穿整轮的进入、换场、换槽、捕获周边间隙和同步返回。末行仅汇总，不是串行尾段；不重复各步骤已计的提交/排队。')
     if len(assigned)!=len(set(assigned)) or set(assigned)!=((set(PHASE_NAMES)-{'scheduling'})|set(CONTROL_KEYS)):
         raise ValueError('Detailed appendix keys overlap or are missing')
+    if len(assigned_controls)!=len(set(assigned_controls)) or set(assigned_controls)!=set(assigned):
+        raise ValueError('Every original control owner must occur exactly once')
     c=math.fsum(r['computation_ms16'] for r in accounting);h=math.fsum(r['control_ms16'] for r in accounting)
     compare(c+h,time16,'detailed_appendix_closes');old=next(r[2] for r in detail['rows'] if r[0]==PHASE_NAMES['scheduling'])
     compare(h,old,'old_scheduling_exactly_redistributed')
@@ -150,7 +154,7 @@ def detailed_appendix(evidence,detail,time16):
     notes=[
         '工作量：512个原TEST视频循环4次，每轮2048次视频调用、128组；3轮共6144次调用、384组。每组16视频，每视频4帧，即64帧。',
         '等效时间是整轮并行运行时间中分配给该步骤的部分，已处理重叠。各行相加等于总时间；不是步骤单独运行的耗时，也不是首组返回延迟。',
-        '各步骤的等效时间已含相关CPU提交、必要间隙及就绪排队的非重复部分。CPU负责发出计算指令；队列表示工作就绪后等待执行。不得再加一次这些时间。',
+        '光传播行仅列纯光学等效部分，不含CPU提交、间隙和就绪排队；这些开销合入紧接其后的同名OEO电子处理行。光、电两行小计及总时间不变，单位均为每16视频场（64帧）的等效ms。',
         '先后关系：文本分词先生成token ID，文本与视觉Embedding有并行；然后视觉Adapter完成进入视觉光场前的特征适配。Merger使用已完成的文本特征，不在此重新分词或Embedding。',
         'Adapter统一按光场输入前的适配功能命名。视觉Adapter包含前端特征转换、缩放/偏置、视觉调制及首次光场映射；语言Adapter是Merger后进入语言Router前的适配。后续周期的适配保留在相应OEO电子处理中。',
         '调度与同步仅合计未分配给单一步骤的全程控制：整轮进入、场间主机间隙、槽位复用、捕获周边间隙和同步返回。它不是最后才执行的串行段。',
@@ -339,10 +343,24 @@ def prepare(source):
     parameters=parameter_metadata(data)
     for row in rows:row.insert(2,parameters['values_billion'][row[1]])
     detail=pooled_phase_table(phase_records,t)
-    base=source.parent/'Temporal_LightGen_appendix_20261027_07'/BOOK_NAME
-    base_sha='9b6700366cded705972f9a776d8e260370b5bafc1a52d27a8c07c01a9cc04e22'
+    base=source.parent/'Temporal_LightGen_appendix_20261027_08'/BOOK_NAME
+    base_sha='68f87be2255b92aede08d6de49543e34905f4aff94de250e2fed23928d43c0cc'
     if sha(base)!=base_sha:raise ValueError('User-edited base workbook changed; re-inspect before editing')
     main_cells=read_workbook_cells(base,1)
+    base_appendix=read_workbook_cells(base,2);appendix=detailed_appendix(phase_records,detail,t)
+    # Preserve the user's edited labels and descriptions; only the six electronic
+    # scope descriptions and one control-scope note are affected by this request.
+    for n,row in enumerate(appendix['rows'],4):
+        row[0]=base_appendix.get(f'A{n}');row[1]=base_appendix.get(f'B{n}')
+        if n not in [6,8,10,14,16,18]:row[3]=base_appendix.get(f'D{n}')
+    appendix['title']=base_appendix.get('A1');appendix['scope']=base_appendix.get('A2')
+    appendix['headers']=[base_appendix.get(c+'3') for c in 'ABCD']
+    scope_note=appendix['notes'][2]
+    appendix['notes']=[base_appendix.get('A'+str(n)) for n in range(24,34)]
+    appendix['notes'][2]=scope_note
+    base_word=base.with_name('Temporal_LightGen_附录计时与统计方法_20261027.docx')
+    base_word_sha='54599c17599e0e8117d0fd6ed043661ccaa69aad716ceec06c2d631eff8ba1d0'
+    if sha(base_word)!=base_word_sha:raise ValueError('Reinspect the changed source Word document')
     for i,row in enumerate([HEADERS]+rows,1):
         for j,value in enumerate(row):
             address=chr(65+j)+str(i)
@@ -359,9 +377,10 @@ def prepare(source):
         LG_native_prompt_tokens_not_used_for_display=native,
         throughput_ratio_direction='LightGen Qwen-reference rate / baseline native rate',
         baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
-        cross_model_token_definitions_differ=True,phase_table=detail,appendix_table=detailed_appendix(phase_records,detail,t),parameters=parameters,
+        cross_model_token_definitions_differ=True,phase_table=detail,appendix_table=appendix,parameters=parameters,
         base_workbook=str(base),base_workbook_sha256=base_sha,base_main_cells=main_cells,
-        base_appendix_cells=read_workbook_cells(base,2),
+        base_appendix_cells=base_appendix,base_word_document=str(base_word),base_word_sha256=base_word_sha,
+        edit_mode='optical_control_to_electronics',
         source_main_sheet_user_edits_preserved=True,base_workbook_used_for_presentation_only=True)
 
 
@@ -408,11 +427,18 @@ def audit(folder,visual_reviewed=False):
         compare(math.fsum(r[2] for r in accounted),expected['rows'][0][5],'saved_phase_sum_equals_main_time')
         compare(math.fsum(r['control_ms16'] for r in phase['phase_accounting']),phase['old_scheduling_ms16'],'control_redistributed_exactly')
         compare(math.fsum(r[1] for r in phase['module_rows']),expected['rows'][0][5],'saved_module_subtotals_close')
-        # New columns, canonical names and grouping must not change any timing.
+        # Pure optical contributions and the following electronic row keep the
+        # original pair totals, without changing a duration or dependency.
         original=expected['base_appendix_cells']
-        original_rows=[[4,5],*[ [r] for r in [7,8,9,10,11,12,14,15,17,18,19,20,21,22,24,33] ]]
-        for new_row,old_rows in enumerate(original_rows,4):
-            compare(math.fsum(original[f'F{r}'] for r in old_rows),cells.get(f'C{new_row}'),f'unchanged_equivalent_time_{old_rows}')
+        optical_rows=[5,7,9,13,15,17];electronic_rows=[n+1 for n in optical_rows]
+        mutable={f'C{n}' for n in optical_rows+electronic_rows}|{f'D{n}' for n in electronic_rows}|{'A26'}
+        for address,value in original.items():
+            if address not in mutable:compare(value,cells.get(address),'preserved_appendix_'+address)
+        for n in optical_rows:
+            compare(original[f'C{n}']+original[f'C{n+1}'],cells[f'C{n}']+cells[f'C{n+1}'],f'unchanged_pair_{n}')
+            compare(cells[f'C{n}'],cells['C5'],'equal_pure_optical_contribution')
+        optics=[r for r in phase['phase_accounting'] if r['keys'][0].startswith('optics')]
+        if any(r['control_ms16']!=0 for r in optics):raise ValueError('Optical rows must have no control overhead')
         if len(accounted)!=17 or len([r for r in accounted if r[0]=='调度与同步'])!=1:
             raise ValueError('Exactly 17 accounted groups and one aggregate control row required')
         if any(v is not None and re.match(r'[E-Z]',a) for a,v in cells.items()):
@@ -438,7 +464,8 @@ def audit(folder,visual_reviewed=False):
         CPU_control_redistributed_not_retimed=True,missing_component_timings_not_fabricated=True,
         main_sheet_render_pixel_identical=True,main_sheet_render_sha256=main_render_sha,
         preprocessing_accounted_parts=1,preprocessing_mapping_merged_once=True,
-        all_equivalent_times_unchanged=True,global_control_merged_once=True,
+        optical_electronic_pair_totals_unchanged=True,pure_optical_rows_equal=True,
+        optical_control_moved_to_following_electronics=True,global_control_merged_once=True,
         language_field_adapter_not_text_embedding=True,original_execution_order_checked_fields=384,
         matching_Word_appendix_audited=True,Word_pages=doc_audit['pages'])
     with (folder/'saved_values_audit.json').open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
