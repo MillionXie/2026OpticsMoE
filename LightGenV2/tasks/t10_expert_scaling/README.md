@@ -2,6 +2,16 @@
 
 ## TRAIN方向冲突实证与受约束更新（2026-10-27）
 
+后续`kather_n49_projected_repair_20261027`已完成：接受2次整池更新，第3方向的3个回溯均不满足预定条件而拒绝，
+没有增加预算。TRAIN候选锁定后，完整TRAIN3141→3148正确、VAL589→585、开发TEST600→597；
+逐样本TEST纠正0/新增3，全部新增错来自DEBRIS。子集6张修复全部为STROMA，反向DEBRIS错例未修复，
+COMPLEX保护组无误伤，独立随机TRAIN观察组正确数不变，说明随机小观察组未检出该边界方向的转移问题。
+原模型600继续保留为best，候选last SHA`cee3c264…539c`及其597张正确的预测保留；不能把回退后600当作候选成绩。
+14份小产物已manifest+SHA传输并独立复算采样分组/所有5个试探逐视图正确数、752TEST的argmax/cm/finite及源/权重SHA，
+PID3155358退出、GPU3释放。全程158.19秒。报告`reports/kather_n49_projected_repair_20261027/final_summary_20261027.json`。
+尚未达到616/752目标，不扩种子；下一步须分别检查双向修复梯度和独立TRAIN近边界转移，
+并保护原正确DEBRIS与COMPLEX，而不是继续同一配置加步数。已将证据反馈“微调方法总结”只读咨询。
+
 有限方向诊断`kather_n49_phase_repair_probe_retry_20261027`已完成八个试探，耗68.50秒，
 128唯一TRAIN图/256视图；16份产物manifest+SHA及分视图逐样本正确数已独立核验，源相位精确恢复、GPU3释放。
 Adam方向RMS=.0015修复4/32张干净近边界错例、误伤1/32张COMPLEX；.005修复10张、仍误伤1张；
