@@ -136,7 +136,8 @@ def stage_cache(a, cfg, payload, parent_state, device):
     finally:
         for handle in handles:
             handle.remove()
-    digest = save_with_digest({'records': records, 'source_cache_sha256': parent_state['cache_sha256']}, a.output/'teacher_features.pt')
+    source_cache_sha=json.loads((a.data/'cache_complete.json').read_text())['sha256']
+    digest = save_with_digest({'records': records, 'source_cache_sha256': source_cache_sha}, a.output/'teacher_features.pt')
     write_json(a.output/'report.json', {'complete': True, 'count': len(records), 'sha256': digest,
         'raw_qwen_vs_parent_cache_max_abs': maximum, 'target_or_mask_input': False,
         'input_contract': 'Reference RGB and full edit text only; Qwen original vision24/language28',
@@ -206,7 +207,14 @@ def stage_distill(a, cfg, payload, state, device):
         loss = loss_for(rng.choice(train))
         if not torch.isfinite(loss):
             raise FloatingPointError('Nonfinite feature loss')
-        loss.backward(); torch.nn.utils.clip_grad_norm_(macros.parameters(), 1.); optimizer.step()
+        loss.backward();norm=torch.nn.utils.clip_grad_norm_(macros.parameters(),1.)
+        if not torch.isfinite(norm):raise FloatingPointError('Nonfinite feature-distillation gradient')
+        if step==4:
+            phase=sum(float(p.grad.detach().abs().sum()) for n,p in macros.named_parameters() if 'raw_phase' in n and p.grad is not None)
+            router=sum(float(p.grad.detach().abs().sum()) for n,p in macros.named_parameters() if 'raw_router_phase' in n and p.grad is not None)
+            write_json(a.output/'smoke_report.json',{'real_backward_steps':4,'finite_loss_gradient':True,'TRAIN_only':True,
+                'phase_gradient_absolute_sum':phase,'router_phase_gradient_absolute_sum':router,'generation_teacher_images_used':False})
+        optimizer.step()
         if step % 10 == 0:
             write_json(a.output/'progress.json', {'stage': 'feature_distillation', 'step': step, 'total_steps': cfg['feature_steps'], 'train_loss': float(loss.detach()), 'best_step': best_step})
         if step % cfg['feature_eval_every'] == 0 or step == cfg['feature_steps']:
