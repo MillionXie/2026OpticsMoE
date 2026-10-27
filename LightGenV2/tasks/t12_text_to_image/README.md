@@ -10,6 +10,28 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-28六小时自主推进：课程预热已完成，最终仍为复杂商品场景。**
+`qwen_vl_sixhour_curriculum_workflow_20261028`已完整结束并释放自己的两个GPU进程。
+8轮短指令课程`qwen_vl_simple_curriculum_warm_20261028`选step960，
+SHA`52cf761c2df4781caa9ae5dec0ef09e8e63ecc41c76c6423308bd402fece3588`，
+课程DEV PSNR20.989052、LPIPS0.293820、crop LPIPS0.376259；它不是最终复杂任务baseline。
+原生指令mask＋固定0.15文字注入已通过真实反向，条纹／灯罩形状有响应，但未知靠垫
+纹样保持仍不足，不把课程分数与旧复杂任务分数混用。后续从已训骨干继续，而非随机重训。
+
+`qwen_vl_scene_backgrounds`只由冻结公开SD-Turbo准备TRAIN／DEV合成背景资产，不是
+编辑模型的预测。首批108张广角房间图因缺少合适桌面、产品比例会失真，未批准作为GT。
+6张`--layout tabletop --probe`近景探针桌面构图改善，房间语义／侧光仍需逐项复核；
+新完整池要求书房书架、卧室床头、客厅沙发等上下文，不能仅凭teacher prompt认定实际属性正确。
+所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
+仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
+
+新增可选`qwen_vl_semantic_loss`为冻结官方CLIP的TRAIN图像—caption感知约束，
+可分别约束完整场景和物体crop，梯度只回传生成图／学生，CLIP不加入推理。
+仅在配置显式开启时加载本地已固定上游与权重，记录训练专用冻结参数和权重SHA；
+缓存仅TRAIN文本，不用GT图像作为该loss编码器输入。旧配置关闭，旧推理图不变。
+该新loss已通过CPU梯度合同，尚未做GPU训练；不得先称已提升。多随机种子新协议可保留
+每条记录noise_seed，只有显式非空shared_noise_seed才覆盖，避免默默固定所有生成状态。
+
 **2026-10-28用户要求重做简短指令／简单背景数据。**
 用户随后明确论文最终仍需多属性复杂商品场景生成，并授权增加TRAIN、将独立评估扩至
 500余对。故简单数据仅作为8轮`qwen_vl_simple_curriculum_warm_20261028.json`课程预热，

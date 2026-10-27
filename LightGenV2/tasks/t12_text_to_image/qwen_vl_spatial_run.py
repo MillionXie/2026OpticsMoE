@@ -196,7 +196,8 @@ def run(args,cfg):
     payload=torch.load(cache,map_location='cpu',weights_only=False,mmap=True)
     validate_roles(payload['rows'])
     # Modify only in-memory sampling state; the parent cache is never overwritten.
-    payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
+    if cfg.get('shared_noise_seed') is not None:
+        payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
     layout=verify_layout(payload,args.qwen,out)
     if cfg.get('focus_instruction'):
         cfg['instruction_bounds']=layout['instruction_bounds']
@@ -263,6 +264,13 @@ def run(args,cfg):
     model.unet.enable_gradient_checkpointing()
     import lpips
     metric=lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
+    semantic=None;semantic_scene={};semantic_product={};semantic_meta={'enabled':False}
+    if cfg.get('semantic_scene_weight',0) or cfg.get('semantic_product_weight',0):
+        from .qwen_vl_semantic_loss import prepare_caption_loss
+        descriptions=json.loads((data_run/'product_descriptions.json').read_text(encoding='utf-8'))
+        semantic,semantic_scene,semantic_product,semantic_meta=prepare_caption_loss(
+            cfg['clip_repo'],cfg['clip_weights'],payload['rows'],ids,descriptions,device)
+    write_json(out/'semantic_loss_protocol.json',semantic_meta)
     before=evaluate(model,payload,val_ids,device,out,'val_before_training',metric)
     # TRAIN-only recalibration; no VAL conditions or images supervise this step.
     if cfg.get('condition_warm_steps',0):
@@ -325,6 +333,7 @@ def run(args,cfg):
       'vae_decoder':sum(p.numel() for p in model.vae.decoder.parameters())+sum(p.numel() for p in model.vae.post_quant_conv.parameters()),
       'trainable':sum(p.numel() for p in params)}
     counts['training_only_vae_encoder']=sum(p.numel() for p in model.vae.encoder.parameters())+sum(p.numel() for p in model.vae.quant_conv.parameters())
+    if semantic is not None:counts['training_only_semantic_encoder']=semantic_meta['frozen_parameters']
     counts['inference_total']=sum(counts[k] for k in ('qwen_full_forward','adapter','unet_including_lora','spatial_readout','vae_decoder'))
     write_json(out/'parameter_counts.json',counts)
     effective=cfg['batch_size']*cfg['gradient_accumulation']
@@ -356,6 +365,12 @@ def run(args,cfg):
                 align=F.mse_loss(conditions.float(),torch.stack([payload['train_clip_teacher'][i] for i in batch]).float().to(device))
                 loss=(cfg['latent_weight']*latent+cfg['rgb_weight']*pixel+cfg['lpips_weight']*perceptual+
                       cfg['reference_weight']*spatial_loss+cfg['condition_weight']*align)
+                if semantic is not None:
+                    from .qwen_vl_turbo_losses import crop_regions,region_boxes
+                    scene_loss=semantic(rgb,torch.stack([semantic_scene[i] for i in batch]).to(device))
+                    boxes=region_boxes(torch.cat([masks({**payload['rows'][i],'mode':'object'},device)[0] for i in batch]))
+                    product_loss=semantic(crop_regions(rgb,boxes),torch.stack([semantic_product[i] for i in batch]).to(device))
+                    loss=loss+cfg.get('semantic_scene_weight',0)*scene_loss+cfg.get('semantic_product_weight',0)*product_loss
             if not torch.isfinite(loss):raise FloatingPointError('Nonfinite training loss')
             (loss/cfg['gradient_accumulation']).backward();total+=float(loss.detach())/cfg['gradient_accumulation']
             terms={k:float(v.detach()) for k,v in {'latent':latent,'rgb':pixel,'lpips':perceptual,'reference':spatial_loss,'condition':align}.items()}

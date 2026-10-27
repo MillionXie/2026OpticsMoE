@@ -29,8 +29,10 @@ def specifications(base_seed=12491, layout='room', probe=False):
                           f'large empty wooden display surface in the foreground, soft {direction} window light, '
                           'eye-level camera, clean uncluttered central surface, no lamp, no cushion, no people.')
                 if layout == 'tabletop':
+                    context = {'modern study': 'bookshelves', 'minimal bedroom': 'a bed and headboard',
+                               'boutique lounge': 'an upholstered sofa and curtains'}[room]
                     prompt = ('An empty wooden tabletop, close-up at table height, tabletop fills the lower half, '
-                              f'softly blurred {brightness} {tone} {room} behind it, '
+                              f'{context} softly blurred in a {brightness} {tone} {room} behind it, '
                               f'daylight from a single window on the {direction}, '
                               'product photography backdrop, clear center, no products or people.')
                 if probe and (split != 'train' or variant != 0 or tone != 'warm' or brightness != 'bright'):
