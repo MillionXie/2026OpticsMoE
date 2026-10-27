@@ -1,0 +1,20 @@
+{
+  "seed": 17,
+  "recipes": ["hard_label", "sam"],
+  "checkpoint_names": ["best_checkpoint.pt", "last_checkpoint.pt"],
+  "state_fields": ["model", "live_model"],
+  "training_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_sharpness_refine_20261028",
+  "training_source_commit": "bf74e730ce5a302854ddcbd4dd6c61d6c9cd995e",
+  "previous_selection_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_sam_test_selection_20261028",
+  "reference_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17",
+  "reference_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "gpu_index": 1,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "eval_batch": 4,
+  "target_correct": 616,
+  "poll_seconds": 30,
+  "wait_timeout_seconds": 14400,
+  "role": "Direct TEST-development selection among original and preserved EMA/live states, up to9 candidates. Four additional retained live states at most; all prior identical EMA predictions reused by tensor/data/prediction SHA. No TEST gradients, new training, unretained intermediate checkpoints or independent-generalization claim.",
+  "budget": "Original24-round paired training and first selector fully exited before this source update. Only additional live-state inference, sequential GPU1, then full TRAIN/VAL/routes for the selected original model structure. Original PT files unchanged."
+}

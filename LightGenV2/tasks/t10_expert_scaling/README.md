@@ -2,6 +2,20 @@
 
 ## 用户追加：直接按开发TEST选择保留PT（2026-10-28）
 
+两组24轮及EMA PT直接比较已完成：hard-label/SAM在VAL选中的第18轮均TEST600/752，
+各纠正3错并新增3错；两组末轮EMA均598/752。按TEST正确数/NLL在五候选中选择SAM第18轮，
+只是同600正确下NLL较低，不是准确率提高。选中模型全量TRAIN分别3150/3148、VAL均591，
+SAM并未在本有限预算内给出净TEST收益。两组各1536更新/24576优化输入，SAM两次前后向的额外计算单列。
+74份小产物manifest SHA、NumPy逐样本752TEST/cm/finite/argmax/配对错例及采样覆盖、best/last SHA均核验，
+原父/两个worker/选模PID均退出，两卡各12MiB/0%。正式报告
+`reports/kather_n49_sharpness_refine_20261028/final_summary_20261028.json`，尚未达到616目标。
+
+按只读咨询另设`configs/kather_n49_sam_live_selection_20261028.json`，在上述所有进程退出后，
+复用同一选模入口有限检查四份best/last实际保存的`live_model`，与已评的EMA和原源合计最多九状态。
+旧EMA结果按模型张量/数据/预测SHA复用，最多四个新live前向；每份记录原PT SHA、真实round和state_field。
+若live胜出，导出原结构model权重及来源字段，不把导出文件SHA冒充原PT SHA；不自动追加训练或恢复旧run。
+该补查run为`runs/simulation/kather_n49_sam_live_selection_20261028`，只GPU1顺序评估。
+
 用户最新明确要求“直接按照test选取pt”，因此当前硬标签/SAM阶段的最终选模改为开发TEST正确数优先、
 相同时按TEST macro-NLL选择，不再用VAL决定最终采用哪一份PT。原训练进程、24轮预算、梯度和增强保持运行身份不变，
 不热改活动`sharpness_refine.py`或其profile。另设`checkpoint_test_selection.py`及

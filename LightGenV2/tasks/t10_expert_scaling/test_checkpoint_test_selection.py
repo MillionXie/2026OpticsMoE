@@ -1,8 +1,18 @@
 import unittest
-from .checkpoint_test_selection import choose, ready
+from .checkpoint_test_selection import choose, ready, selected_payload
 
 
 class SelectionTests(unittest.TestCase):
+    def test_live_export_uses_live_not_ema_and_records_source(self):
+        ck=dict(model={'w':1},live_model={'w':2},epoch=18,round=18,metadata={'seed':17})
+        candidate=dict(checkpoint='source.pt',checkpoint_sha256='source-sha',state_field='live_model')
+        result=selected_payload(ck,candidate)
+        self.assertIs(result['model'],ck['live_model'])
+        self.assertEqual(result['development_selection']['source_checkpoint_sha256'],'source-sha')
+        self.assertEqual(result['epoch'],18)
+        self.assertNotIn('optimizer',result)
+        with self.assertRaises(ValueError):selected_payload(dict(model={},epoch=18),candidate)
+
     def test_test_accuracy_then_test_nll_ignores_validation(self):
         a=dict(name='better_val',test_correct=600,test=dict(macro_nll=.5),val=dict(accuracy=.9))
         b=dict(name='better_test',test_correct=601,test=dict(macro_nll=.7),val=dict(accuracy=.7))

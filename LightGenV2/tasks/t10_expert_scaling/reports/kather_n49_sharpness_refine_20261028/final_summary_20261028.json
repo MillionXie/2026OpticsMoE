@@ -1,0 +1,141 @@
+{
+  "role": "Repeated TEST-feedback development, single seed17; original equal-budget table unchanged",
+  "training_source_commit": "bf74e730ce5a302854ddcbd4dd6c61d6c9cd995e",
+  "selection_source_commit": "60cd5996848ccb75d236629c933a92ebebbb87be",
+  "archive_sha256": "2ff9a1df6f14963f0143b6e56e598c9d3b0ad23733799a5a6ff5bb2461bb5b46",
+  "manifest_files_verified": 74,
+  "numpy_verification_passed": true,
+  "training": [
+    {
+      "recipe": "hard_label",
+      "completed_rounds": 24,
+      "optimizer_updates": 1536,
+      "optimizer_images": 24576,
+      "full_train_equivalent": 7.02974828375286,
+      "selected_round": 18,
+      "selected_train_correct": 3150,
+      "selected_val_correct": 591,
+      "training_seconds": 1841.632904291153,
+      "forward_backward_passes_per_batch": 1,
+      "last_full_train_correct": 3152
+    },
+    {
+      "recipe": "sam",
+      "completed_rounds": 24,
+      "optimizer_updates": 1536,
+      "optimizer_images": 24576,
+      "full_train_equivalent": 7.02974828375286,
+      "selected_round": 18,
+      "selected_train_correct": 3148,
+      "selected_val_correct": 591,
+      "training_seconds": 3497.7887897491455,
+      "forward_backward_passes_per_batch": 2,
+      "last_full_train_correct": 3149
+    }
+  ],
+  "test_candidates": [
+    {
+      "name": "original_reference",
+      "correct": 600,
+      "accuracy_percent": 79.7872340425532,
+      "test_macro_nll": 0.6378410458564758,
+      "corrected": 0,
+      "new_wrong": 0,
+      "checkpoint_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+      "model_tensor_sha256": "6332d38ac8b927bbc2d8f40cdcc058fdd6e9ae77b0f394220770be6005c4fa9f",
+      "counter": 117,
+      "reused": true
+    },
+    {
+      "name": "hard_label_best",
+      "correct": 600,
+      "accuracy_percent": 79.7872340425532,
+      "test_macro_nll": 0.6376707553863525,
+      "corrected": 3,
+      "new_wrong": 3,
+      "checkpoint_sha256": "c5951516efc51c11c66280599be101ff27b49fda3829233f59e335c594336d03",
+      "model_tensor_sha256": "39cfc9810b441e95e2b4eb89743ec8296a0d1bc5b97ddbbb6abf0850b0d43150",
+      "counter": 18,
+      "reused": true
+    },
+    {
+      "name": "hard_label_last",
+      "correct": 598,
+      "accuracy_percent": 79.52127659574468,
+      "test_macro_nll": 0.635828971862793,
+      "corrected": 1,
+      "new_wrong": 3,
+      "checkpoint_sha256": "0cedd4755ff001b2713eaadc3c6e237756d06abeed357a84f5cb46310af5fc1d",
+      "model_tensor_sha256": "1073aa8e54d0bbeee12a2dd19a4c84b0eec7d3ed0a0a4381b3d76c3488843657",
+      "counter": 24,
+      "reused": false
+    },
+    {
+      "name": "sam_best",
+      "correct": 600,
+      "accuracy_percent": 79.7872340425532,
+      "test_macro_nll": 0.6370939612388611,
+      "corrected": 3,
+      "new_wrong": 3,
+      "checkpoint_sha256": "82a52177a126e21cbd07ab393d33e3fe40ca87b6f3a7c5cee970897f5d15a925",
+      "model_tensor_sha256": "d3957807cd4ba030edce54fe635bc82657e97510656c49069e1fbf0275f4f187",
+      "counter": 18,
+      "reused": true
+    },
+    {
+      "name": "sam_last",
+      "correct": 598,
+      "accuracy_percent": 79.52127659574468,
+      "test_macro_nll": 0.6352556943893433,
+      "corrected": 1,
+      "new_wrong": 3,
+      "checkpoint_sha256": "071cbe7c77ec7368e54b69cd96fa9953727fb0291e8b3f56057889fdf8384afa",
+      "model_tensor_sha256": "18859056178232807a8529cfd7fd69d9a00cffef18381b30ad18b3d7da80f79f",
+      "counter": 24,
+      "reused": false
+    }
+  ],
+  "selected": "sam_best",
+  "best_test_correct": 600,
+  "target_correct": 616,
+  "pilot_target_met": false,
+  "three_seed_mean_target_established": false,
+  "total_optimizer_images": 49152,
+  "resource_and_weight_audit": {
+    "timestamp": 1793125796.08984,
+    "verified_pids_exited": [
+      3247008,
+      3247048,
+      3247054,
+      3262269
+    ],
+    "authorized_gpu_state": "1, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 12 MiB, 0 %\n3, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 12 MiB, 0 %\n",
+    "weight_files": {
+      "training/hard_label_s17/best_checkpoint.pt": {
+        "sha256": "c5951516efc51c11c66280599be101ff27b49fda3829233f59e335c594336d03",
+        "bytes": 177289341
+      },
+      "training/hard_label_s17/last_checkpoint.pt": {
+        "sha256": "0cedd4755ff001b2713eaadc3c6e237756d06abeed357a84f5cb46310af5fc1d",
+        "bytes": 177289341
+      },
+      "training/sam_s17/best_checkpoint.pt": {
+        "sha256": "82a52177a126e21cbd07ab393d33e3fe40ca87b6f3a7c5cee970897f5d15a925",
+        "bytes": 177289277
+      },
+      "training/sam_s17/last_checkpoint.pt": {
+        "sha256": "071cbe7c77ec7368e54b69cd96fa9953727fb0291e8b3f56057889fdf8384afa",
+        "bytes": 177289277
+      },
+      "selection/best_checkpoint.pt": {
+        "sha256": "82a52177a126e21cbd07ab393d33e3fe40ca87b6f3a7c5cee970897f5d15a925",
+        "bytes": 177289277
+      }
+    },
+    "training_source_commit": "bf74e730ce5a302854ddcbd4dd6c61d6c9cd995e",
+    "selection_source_commit": "60cd5996848ccb75d236629c933a92ebebbb87be",
+    "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+    "target_met": false
+  },
+  "interpretation": "Both recipes finished24 rounds. SAM gradients changed but this finite comparison gave no TEST accuracy gain. Retained live states are a separate bounded follow-up, not part of this EMA-only result."
+}

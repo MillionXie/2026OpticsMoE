@@ -40,6 +40,17 @@ def model_hash(state):
     return h.hexdigest()
 
 
+def selected_payload(checkpoint, candidate):
+    field = candidate.get('state_field', 'model')
+    if field not in ['model', 'live_model'] or field not in checkpoint:
+        raise ValueError('Requested retained state is unavailable')
+    return dict(model=checkpoint[field], epoch=checkpoint['epoch'],
+                round=checkpoint.get('round'), metadata=checkpoint['metadata'], power_fraction=1.,
+                development_selection=dict(source_checkpoint=candidate['checkpoint'],
+                    source_checkpoint_sha256=candidate['checkpoint_sha256'], state_field=field,
+                    exported_weights_only_not_optimizer_resume=True))
+
+
 def sources(profile, c):
     commit = os.environ['T10_TEST_SELECT_SOURCE_COMMIT']
     repo = Path(subprocess.check_output(['git', 'rev-parse', '--show-toplevel'], text=True).strip())
@@ -62,6 +73,8 @@ def run(profile, out):
     c = json.loads(profile.read_text())
     assert c['seed'] == 17 and c['recipes'] == ['hard_label', 'sam']
     assert c['checkpoint_names'] == ['best_checkpoint.pt', 'last_checkpoint.pt']
+    fields = c.get('state_fields', ['model'])
+    assert fields in [['model'], ['model', 'live_model']]
     assert c['target_correct'] == 616 and c['gpu_index'] == 1
     commit, hashes = sources(profile, c)
     root = Path(c['training_root'])
@@ -84,6 +97,12 @@ def run(profile, out):
             time.sleep(c['poll_seconds'])
         # Recheck byte identities after waiting; no active training PT can race us.
         sources(profile, c)
+        previous = Path(c['previous_selection_run']) if c.get('previous_selection_run') else None
+        known = []
+        if previous:
+            old_status=json.loads((previous/'status.json').read_text())
+            assert old_status['state']=='complete' and not Path('/proc',str(old_status['pid'])).exists()
+            known=json.loads((previous/'summary.json').read_text())['candidates']
         assert os.environ['CUDA_VISIBLE_DEVICES'] == c['gpu_uuid']
         assert subprocess.check_output(['nvidia-smi','-i','1','--query-gpu=uuid','--format=csv,noheader'],text=True).strip() == c['gpu_uuid']
         import numpy as np
@@ -104,7 +123,7 @@ def run(profile, out):
         assert len(ids) == len(set(ids)) == 752 and ids.tolist() == manifest['split_ids']['test']
         assert set(ids).isdisjoint(manifest['split_ids']['train']) and set(ids).isdisjoint(manifest['split_ids']['val'])
         split = (torch.from_numpy(x.transpose(0,3,1,2).copy()), torch.from_numpy(y), ids)
-        candidates = [dict(name='original_reference', directory=str(ref), checkpoint=str(ref/'best_checkpoint.pt'))]
+        candidates = [dict(name='original_reference', directory=str(ref), checkpoint=str(ref/'best_checkpoint.pt'),state_field='model')]
         for recipe in c['recipes']:
             d = root/(recipe+'_s17')
             meta = json.loads((d/'metadata.json').read_text())
@@ -112,12 +131,14 @@ def run(profile, out):
             assert meta['arguments']['seed'] == 17 and meta['arguments']['experts'] == meta['arguments']['top_k'] == 49
             assert len(json.loads((d/'history.json').read_text())) == 24
             for n in c['checkpoint_names']:
-                candidates.append(dict(name=recipe+'_'+n.replace('_checkpoint.pt',''),directory=str(d),checkpoint=str(d/n)))
+                for field in fields:
+                    candidates.append(dict(name=recipe+'_'+n.replace('_checkpoint.pt','')+('_live' if field=='live_model' else ''),
+                                           directory=str(d),checkpoint=str(d/n),state_field=field))
         for row in candidates:
             row['checkpoint_sha256'] = sha(Path(row['checkpoint']))
         save(out/'all_checkpoint_lock.json', dict(candidates=candidates, source_commit=commit,
              selection='Direct development TEST correct count, then TEST macro-NLL; VAL not used',
-             candidate_scope='Original reference plus two recipes preserved best and last EMA PTs; no unretained intermediate epochs',
+             candidate_scope='Original reference plus two recipes retained best/last states '+str(fields)+'; no unretained intermediate epochs',
              timestamp=time.time(), data_sha256=c['data_sha256'], manifest_sha256=sha(mp)))
         rows, identities = [], {}
         old_predictions = None
@@ -127,17 +148,23 @@ def run(profile, out):
                  completed=[r['name'] for r in rows], timestamp=time.time()))
             checkpoint = torch.load(candidate['checkpoint'], map_location='cpu', weights_only=False)
             assert checkpoint.get('power_fraction',1.) == 1. and checkpoint.get('routing_temperature',.05) == .05
-            state = checkpoint['model']; identity = model_hash(state)
+            state = checkpoint[candidate['state_field']]; identity = model_hash(state)
             counter = checkpoint.get('round',checkpoint['epoch'])
             duplicate = identities.get(identity)
             original = Path(candidate['directory'])
             old_path = original/'test_result.json'
             reuse = None
+            cached = next((x for x in known if x['model_tensor_sha256']==identity),None)
             if duplicate:
                 reuse = dict(from_candidate=duplicate['name'], identical_model_tensors=True)
                 source_predictions = out/duplicate['name']/'test_predictions.npz'
                 metrics = duplicate['test']
-            elif Path(candidate['checkpoint']).name == 'best_checkpoint.pt' and old_path.exists():
+            elif cached:
+                assert cached['data_sha256']==c['data_sha256']
+                source_predictions=previous/cached['name']/'test_predictions.npz'
+                assert sha(source_predictions)==cached['predictions_sha256']
+                metrics=cached['test'];reuse=dict(from_previous_selection=str(previous),from_candidate=cached['name'],identical_model_tensors=True)
+            elif candidate['state_field']=='model' and Path(candidate['checkpoint']).name == 'best_checkpoint.pt' and old_path.exists():
                 old = json.loads(old_path.read_text())
                 assert old['checkpoint_sha256'] == candidate['checkpoint_sha256'] and old['data_sha256'] == c['data_sha256']
                 for n, value in old.get('evaluation_dependencies', {}).items():
@@ -175,7 +202,11 @@ def run(profile, out):
             del checkpoint,state
         winner = choose(rows)
         assert sha(Path(winner['checkpoint'])) == winner['checkpoint_sha256']
-        shutil.copy2(winner['checkpoint'],out/'best_checkpoint.pt')
+        if winner['state_field']=='model':
+            shutil.copy2(winner['checkpoint'],out/'best_checkpoint.pt')
+        else:
+            selected=torch.load(winner['checkpoint'],map_location='cpu',weights_only=False)
+            torch.save(selected_payload(selected,winner),out/'best_checkpoint.pt');del selected
         shutil.copy2(out/winner['name']/'test_predictions.npz',out/'selected_test_predictions.npz')
         # Final same-weight TRAIN/VAL and routes accompany the TEST-selected PT.
         metadata=json.loads((Path(winner['directory'])/'metadata.json').read_text());a=metadata['arguments']
