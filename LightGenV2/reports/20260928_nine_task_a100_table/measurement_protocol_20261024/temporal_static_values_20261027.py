@@ -121,68 +121,48 @@ def detailed_appendix(evidence,detail,time16):
         for source,target in [('work',work),('compute',compute),('overhead',overhead)]:
             for key,value in e['fine'][source].items():target[key]+=value/fields
         for r in e['fine']['control_breakdown']:breakdown[(r['owner'],r['kind'])]+=r['ms']/fields
-    rows=[];types=[];module_rows=[];assigned=[]
+    rows=[];types=[];module_rows=[];assigned=[];accounting=[]
     def line(module,label,keys,relation):
         assigned.extend(keys);c=sum(compute[k] for k in keys);h=sum(overhead[k] for k in keys)
         span=sum(work[k] for k in keys) if any(k in PHASE_NAMES for k in keys) else '不适用'
-        rows.append([module,label,span,c,h,c+h,relation]);types.append('accounted')
-    def subtotal(module,start):
-        source=[r for r,t in zip(rows[start:],types[start:]) if t=='accounted']
-        c=sum(r[3] for r in source);h=sum(r[4] for r in source)
-        rows.append([module,'小计','不相加',c,h,c+h,'小计仅用于阅读，不与下方总计重复累加。']);types.append('subtotal')
-        module_rows.append([module,c,h,c+h])
-    start=len(rows)
-    line('预处理','文本分词（Tokenizer）',['tokenizer'],'原共享prompt每场真实分词；可与前一场主体重叠。')
-    line('预处理','Embedding/位置/Adapter（含光场输入映射）',['frontend','vision_entry'],'合并原联合前处理与特征→光场输入映射；含文本Embedding/池化、cast及输入刷新。保留原双流fork/join与映射依赖，不另拆未独立计时项。')
-    subtotal('预处理',start)
+        rows.append([module,label,c+h,relation]);types.append('accounted')
+        accounting.append(dict(module=module,part=label,keys=keys,cumulative_work_ms16=span,
+                               computation_ms16=c,control_ms16=h,equivalent_ms16=c+h))
+    line('预处理','① 文本分词与视觉、文本Embedding\n② 视觉Adapter',['tokenizer','frontend','vision_entry'],'两步联合计时。文本与视觉Embedding有并行；视觉Adapter含前端位置处理、特征转换、缩放/偏置、视觉调制及首次视觉光场输入映射。原事件未完全拆开，不人为分配两步时间。')
     for module,indices in [('视觉光电处理',range(1,4)),('语言光电处理',range(4,7))]:
         if module=='语言光电处理':
-            start=len(rows)
-            line('多模态融合','Merger与序列组装',['merger'],'本场视觉三周期完成后执行。')
-            line('多模态融合','语言侧输入编码',['language_entry'],'原语言入口事件；归融合后的输入准备，不与Merger重复。')
-            subtotal('多模态融合',start)
-        start=len(rows)
+            line('多模态融合','Merger与多模态序列准备',['merger'],'先聚合视觉特征，再与已完成的文本特征拼接；含序列位置/掩码及同一事件边界内的输入准备，不是单独一次Merger调用。')
+            line('语言光电处理','语言Adapter',['language_entry'],'Merger之后，进入语言Router光场前的适配；按功能定义Adapter，不对应源码类名。此处不重复执行文本Embedding。')
         for i in indices:
             name=('Router','Expert','Global')[(i-1)%3]
-            line(module,name+'：光传播',[f'optics{i}'],'同场按Router→Expert→Global依赖执行；每周期16视频整幅光场联合传播。')
-            line(module,name+'：OEO电子段',[f'oeo{i}'],'光后必要读出/路由/融合/下段编码；保持原段边界，非纯A/D或D/A器件延时。')
-        subtotal(module,start)
-    start=len(rows)
-    line('解码器','Decoder、读出与最终评分',['decoder'],'依赖本场语言段；相关首场主机尾部动作在CPU列单列。')
-    subtotal('解码器',start)
-    start=len(rows)
-    labels=[('initial_entry','整轮起点→首场分词前','只含t=0到第0场分词前的主机动作间隙。'),
-        ('field_entry','前场主机动作→本场分词前','由原CPU动作边界界定，不能称为GPU场输出→下场输入的完整间隔。'),
-        ('slot_sync','复用槽位前评分fence','场i等待场i−2评分；GPU等待通过依赖处理，本行仅剩余主机贡献。'),
-        ('capture_sync','首次/捕获阶段设备同步','前三真实eager/两次真实capture的初始化、传输后、前端后同步。'),
-        ('capture_gap','捕获相邻主机动作间隙','批准排除的建图函数本身为0；仍保留其相邻观测间隙。'),
-        ('score_sync','首三场/捕获场评分同步','首次与捕获场的score_ready同步和其前主机间隙。'),
-        ('final_sync','全窗末尾同步与返回','最后一场输出就绪后的同步返回贡献，不再加整段GPU等待。')]
-    for key,label,note in labels:line('调度与同步',label,[key],note)
-    subtotal('调度与同步',start)
+            line(module,name+'光传播',[f'optics{i}'],'本场按Router、Expert、Global依赖执行；每周期16视频整幅光场联合传播。跨场重叠只核算一次。')
+            line(module,name+' OEO电子处理',[f'oeo{i}'],'保留本周期后必要的读出、路由、融合及下段输入准备；并非仅A/D或D/A器件延时。')
+    line('解码器','Decoder与最终评分',['decoder'],'本场语言光电处理完成后执行，包含原读出及最终评分边界。')
+    line('调度与同步','全程调度与同步',list(CONTROL_KEYS),'贯穿整轮的进入、换场、换槽、捕获周边间隙和同步返回。末行仅汇总，不是串行尾段；不重复各步骤已计的提交/排队。')
     if len(assigned)!=len(set(assigned)) or set(assigned)!=((set(PHASE_NAMES)-{'scheduling'})|set(CONTROL_KEYS)):
         raise ValueError('Detailed appendix keys overlap or are missing')
-    c=sum(r[3] for r,t in zip(rows,types) if t=='accounted');h=sum(r[4] for r,t in zip(rows,types) if t=='accounted')
+    c=math.fsum(r['computation_ms16'] for r in accounting);h=math.fsum(r['control_ms16'] for r in accounting)
     compare(c+h,time16,'detailed_appendix_closes');old=next(r[2] for r in detail['rows'] if r[0]==PHASE_NAMES['scheduling'])
     compare(h,old,'old_scheduling_exactly_redistributed')
-    rows.append(['合计','仅核算行相加；不重复加小计','不可相加',c,h,time16,'计算贡献＋主机/队列贡献＝同一见证关键路径总时间。']);types.append('total')
+    for module in dict.fromkeys(r[0] for r in rows):
+        module_rows.append([module,math.fsum(r[2] for r in rows if r[0]==module)])
+    rows.append(['合计','17个联合处理/控制项相加',time16,'原起点、首三场和两次真实捕获的输出均保留；无新增预热或排除项。']);types.append('total')
     notes=[
-        '单位均为ms/16视频（64帧）。C为各阶段累计计算跨度，不能直接相加；D/E为同一关键路径上的互斥贡献，只有F的核算行可相加。',
-        '预处理仅列Tokenizer和Embedding/位置/Adapter（含光场输入映射）。后者合并原联合前处理与映射事件，未将各未独立计时子项按理论算量摊分。',
-        '光场输入映射纳入适配过程，不再单列；联合行仍包含视觉/文本Embedding、位置编码、Adapter、池化、cast及原输入刷新，所有原计时只计一次。',
-        '原“调度与同步”2.410047725980500 ms含CPU提交函数、CPU动作间隙、GPU就绪队列、页锁定、槽位等待及显式同步。',
-        '现将明确关联提交/队列按原目标事件放入对应Part的E列。相邻动作间隙按下一事件标注位置，不声称该间隙全为该算子的计算。',
-        '调度模块仅保留不能当作计算Part的全窗/跨场控制项。场间分词前间隙是CPU动作边界，不是GPU输出到下一GPU输入的完整区间。',
-        'E列不含重复GPU计算或整段阻塞等待；GPU就绪等待的依赖路径仍保留。所有正时长关键路径节点恰归一个核算行，无新增排除。',
-        '同场六周期及Merger/Decoder保持串行依赖；跨场前处理与前场主体流水重叠，原前处理内部双流fork/join；不冒称逐kernel占用并发。',
-        'OEO段沿用原路由/读出、融合、归一化及下段编码边界；光周期为0.714285714＋0.300000000＋0.030700000 ms，非物理光路直接实测。',
-        't=0至最后CPU评分返回。窗口前模型加载/原图准备/批量H2D不计；窗口内首三eager与两capture输出保留，无额外预热。',
-        '批准电子图构建函数排除，其他原边界不变。总时间T=(1939.062297384＋1870.511531500＋1848.945302635)/384=14.735726904997131 ms。',
-        '每轮用E(v)=d(v)+max前驱E、L=max_vE计算依赖最长路径；三轮L相加后除384。仅重新分类原计时，不重跑模型、不改变总时间。']
-    return dict(title='LightGen分阶段计时与控制开销归属（每16视频/64帧）',
-        headers=['模块','Part（执行顺序）','累计计算跨度/ms\n不可直接相加','关键路径计算/ms','相关CPU/队列/ms','可加贡献/ms','串并行关系与计时边界'],
+        '工作量：512个原TEST视频循环4次，每轮2048次视频调用、128组；3轮共6144次调用、384组。每组16视频，每视频4帧，即64帧。',
+        '等效时间是整轮并行运行时间中分配给该步骤的部分，已处理重叠。各行相加等于总时间；不是步骤单独运行的耗时，也不是首组返回延迟。',
+        '各步骤的等效时间已含相关CPU提交、必要间隙及就绪排队的非重复部分。CPU负责发出计算指令；队列表示工作就绪后等待执行。不得再加一次这些时间。',
+        '先后关系：文本分词先生成token ID，文本与视觉Embedding有并行；然后视觉Adapter完成进入视觉光场前的特征适配。Merger使用已完成的文本特征，不在此重新分词或Embedding。',
+        'Adapter统一按光场输入前的适配功能命名。视觉Adapter包含前端特征转换、缩放/偏置、视觉调制及首次光场映射；语言Adapter是Merger后进入语言Router前的适配。后续周期的适配保留在相应OEO电子处理中。',
+        '调度与同步仅合计未分配给单一步骤的全程控制：整轮进入、场间主机间隙、槽位复用、捕获周边间隙和同步返回。它不是最后才执行的串行段。',
+        '同场光周期、OEO电子处理、Merger、Decoder保持原依赖；跨场前处理和主体流水重叠。总时间按依赖汇合时较晚完成者确定，不再从总时间二次扣重叠。',
+        '电子段取自A100原始时序；每光周期采用0.714285714＋0.300000000＋0.030700000 ms固定器件时序，非物理整机直接实测。OEO含必要读出/路由/融合/下段输入准备。',
+        '保留原t=0、首三真实eager和两次真实捕获的输出；不新增预热。模型加载/原图准备/批量H2D在窗口前；电子图构建函数按已批准口径排除，其相邻间隙仍保留。',
+        'T=(1939.0622973842435＋1870.5115314995921＋1848.9453026350632)/384=14.735726904997131 ms/16视频。全精度计算后显示6位小数，尾数可能有舍入差。']
+    return dict(title='LightGen分阶段等效时间（每组16视频，共64帧）',
+        scope='3轮共6144次视频调用、384组；按整轮流水线运行时间折算每组平均值。',
+        headers=['模块','处理步骤（按本场数据依赖顺序）','等效时间/ms\n每16视频（64帧）','内容与先后及并行关系'],
         rows=rows,row_types=types,notes=notes,module_rows=module_rows,
-        module_headers=['模块','关键路径计算/ms','CPU/队列/ms','模块合计/ms'],
+        module_headers=['模块','等效时间/ms（每16视频）'],phase_accounting=accounting,
         control_breakdown=[dict(owner=o,kind=k,ms16=v) for (o,k),v in sorted(breakdown.items())],
         old_scheduling_ms16=old,all_positive_path_nodes_assigned_once=True,
         module_local_control_ms16=sum(overhead[k] for k in PHASE_NAMES if k!='scheduling'),
@@ -324,6 +304,13 @@ def prepare(source):
         phase=phase_build(folder,True,exclude_graph_construction=True)
         compare(read(folder/'local_deployed_phase_ledger_v3_01.json'),phase,'v3_replay')
         identity=read(folder/'identity.json');raw=read(folder/'async_raw_timing.json');cost=read(folder/'cost_report.json')
+        for record in raw['records']:
+            token=record['tokenizer'];events=record['events']
+            if token['field']!=record['field'] or token['end']>min(e['host_submit_start'] for e in events if e['stream']=='frontend'):
+                raise ValueError('Tokenizer must precede this field frontend')
+            labels=[e['label'] for e in events]
+            if not labels.index('frame_merger')<labels.index('language_routes.0')<labels.index('serial_router.forward'):
+                raise ValueError('Original Merger/language Router order changed')
         workers.add(identity['pid'])
         if raw['explicit_warmup_forwards']!=0:raise ValueError('No extra warmup permitted')
         seconds+=phase['fixed_optics']['wall_ms16']*raw['fields']/1000
@@ -352,8 +339,8 @@ def prepare(source):
     parameters=parameter_metadata(data)
     for row in rows:row.insert(2,parameters['values_billion'][row[1]])
     detail=pooled_phase_table(phase_records,t)
-    base=source.parent/'Temporal_LightGen_appendix_20261027_06'/BOOK_NAME
-    base_sha='a5e589f5e44958ce9f77c9cd0fb490e07158770609721b7187d19dc9805dbcc5'
+    base=source.parent/'Temporal_LightGen_appendix_20261027_07'/BOOK_NAME
+    base_sha='9b6700366cded705972f9a776d8e260370b5bafc1a52d27a8c07c01a9cc04e22'
     if sha(base)!=base_sha:raise ValueError('User-edited base workbook changed; re-inspect before editing')
     main_cells=read_workbook_cells(base,1)
     for i,row in enumerate([HEADERS]+rows,1):
@@ -412,29 +399,33 @@ def audit(folder,visual_reviewed=False):
                 {k:v for k,v in cells.items() if v is not None},'main_values_exactly_preserved')
         phase=expected['appendix_table'];cells=parse_sheet(2)
         compare(phase['title'],cells.get('A1'))
+        compare(phase['scope'],cells.get('A2'))
         for r,row in enumerate([phase['headers']]+phase['rows'],3):
             for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'phase_cell_{r}_{i}')
         notes_start=len(phase['rows'])+6
         for i,note in enumerate(phase['notes'],notes_start):compare(note,cells.get('A'+str(i)))
-        modules_start=notes_start+len(phase['notes'])+2
-        for r,row in enumerate([phase['module_headers']]+phase['module_rows'],modules_start):
-            for i,value in enumerate(row):compare(value,cells.get(chr(65+i)+str(r)),f'round_cell_{r}_{i}')
         accounted=[r for r,t in zip(phase['rows'],phase['row_types']) if t=='accounted']
-        compare(sum(r[5] for r in accounted),expected['rows'][0][5],'saved_phase_sum_equals_main_time')
-        compare(sum(r[4] for r in accounted),phase['old_scheduling_ms16'],'old_scheduling_redistributed_exactly')
-        compare(sum(r[3] for r in phase['module_rows']),expected['rows'][0][5],'saved_module_subtotals_close')
-        # Only preprocessing and its two explanatory notes may change. Every later
-        # Part, control row and module total must preserve the user's actual file.
+        compare(math.fsum(r[2] for r in accounted),expected['rows'][0][5],'saved_phase_sum_equals_main_time')
+        compare(math.fsum(r['control_ms16'] for r in phase['phase_accounting']),phase['old_scheduling_ms16'],'control_redistributed_exactly')
+        compare(math.fsum(r[1] for r in phase['module_rows']),expected['rows'][0][5],'saved_module_subtotals_close')
+        # New columns, canonical names and grouping must not change any timing.
         original=expected['base_appendix_cells']
-        untouched_rows=[*range(12,40),42,*range(45,54),*range(56,63)]
-        for old_row in untouched_rows:
-            for col in 'ABCDEFG':
-                compare(original.get(f'{col}{old_row}'),cells.get(f'{col}{old_row-5}'),
-                        f'unmodified_appendix_{col}{old_row}')
+        original_rows=[[4,5],*[ [r] for r in [7,8,9,10,11,12,14,15,17,18,19,20,21,22,24,33] ]]
+        for new_row,old_rows in enumerate(original_rows,4):
+            compare(math.fsum(original[f'F{r}'] for r in old_rows),cells.get(f'C{new_row}'),f'unchanged_equivalent_time_{old_rows}')
+        if len(accounted)!=17 or len([r for r in accounted if r[0]=='调度与同步'])!=1:
+            raise ValueError('Exactly 17 accounted groups and one aggregate control row required')
+        if any(v is not None and re.match(r'[E-Z]',a) for a,v in cells.items()):
+            raise ValueError('Remove obsolete timing columns from presentation')
     if not visual_reviewed:raise ValueError('Review the one-sheet render before sealing')
     main_render_sha=sha(folder/'preview.png')
     if main_render_sha!='93dcaa7bbc6bd204cb97dd6380f5195e1d6485ab741f71c8ce57643d6fc81dbb':
         raise ValueError('Unchanged main sheet render differs from the actual user-edited base')
+    document=folder/'Temporal_LightGen_附录计时与统计方法_20261027.docx'
+    doc_audit=read(folder/'document_audit.json')
+    if (doc_audit['status']!='passed' or doc_audit['document_sha256']!=sha(document)
+            or doc_audit['source_values_sha256']!=sha(folder/'static_values.json')):
+        raise ValueError('The matching Word appendix must pass native-render and value checks')
     result=dict(status='passed',rows=13,sheets=2,formulas=0,external_links=0,raw_points_rechecked=39,
         all_saved_values_independently_verified=True,edited_XLSX_used_for_timing_calculation=False,
         edited_XLSX_imported_for_main_preservation=True,
@@ -446,12 +437,14 @@ def audit(folder,visual_reviewed=False):
         appendix_blocks=6,filename_contains_fixed_values=False,source_main_user_edits_preserved=True,
         CPU_control_redistributed_not_retimed=True,missing_component_timings_not_fabricated=True,
         main_sheet_render_pixel_identical=True,main_sheet_render_sha256=main_render_sha,
-        preprocessing_accounted_parts=2,preprocessing_mapping_merged_once=True,
-        language_entry_and_global_control_unchanged=True)
+        preprocessing_accounted_parts=1,preprocessing_mapping_merged_once=True,
+        all_equivalent_times_unchanged=True,global_control_merged_once=True,
+        language_field_adapter_not_text_embedding=True,original_execution_order_checked_fields=384,
+        matching_Word_appendix_audited=True,Word_pages=doc_audit['pages'])
     with (folder/'saved_values_audit.json').open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
     with (folder/'delivery_manifest.json').open('x',encoding='utf8') as f:
         json.dump(dict(status='sealed',files=[dict(path=p.name,bytes=p.stat().st_size,sha256=sha(p)) for p in
-            (book,folder/'static_values.json',folder/'saved_values_audit.json')]),f,ensure_ascii=True,indent=2)
+            (book,document,folder/'static_values.json',folder/'saved_values_audit.json',folder/'document_audit.json')]),f,ensure_ascii=True,indent=2)
     return result
 
 
