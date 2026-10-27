@@ -1,6 +1,26 @@
 # T10 专家数量与 Top-k 扩展实验
 
-## 有条件引入ImageNet预训练CNN教师的有限路线（2026-10-28）
+## CNN蒸馏已完成：602/752，尚未达到目标（2026-10-28）
+
+学生完成固定16段/1024更新/16384输入，四次EMA/live开发TEST为599/600、601/602、600/599、602/601。
+最终选第16段EMA：与第8段live同602正确，TEST NLL更低；完整TRAIN3135/3496、VAL590/752，
+TEST602/752（80.0532%），相对本阶段incumbent601仅纠正5/新增4，仍低原Top-k604两张，距保守616差14张。
+best PT SHA f6d718bd…7128c，last SHA b90221a0…1bb72；第8live的预测与来源锁保留，best权重已依规则更新。
+46小产物manifest、全部8个TEST状态752逐样本/cm/argmax/finite/身份、16轮均匀采样、teacher/cache/calibration、
+源与best/last tensor身份、全部进程退出/GPU1和3释放已独立核验。报告
+`reports/kather_n49_cnn_distill_20261028/final_summary_20261028.json`；额外ImageNet知识和教师成本单列。
+教师TRAIN3469/VAL730没有变成学生成绩，也不证明此架构的最终能力上限。
+
+下一有限核验入口`adam_block_probe.py`、profile`configs/kather_n49_adam_block_probe_20261028.json`，
+run `runs/smoke/kather_n49_adam_block_probe_20261028`，仅TRAIN、GPU3。
+使用保留last16的live权重及其同一Adam状态，两个互斥、每类2张的普通effective16输入，
+每次均恢复相同源和optimizer后形成实际下一Adam候选；保持其原末段LR，不改倍率、不归一化或扩大步幅。
+分别施加router/expert/global/full部分，在独立TRAIN补集和原正确近边界组各最多4张/类、clean和固定D4上测实际间隔收益及误伤。
+heldout排除两个fit batch，不做VAL/TEST，不建Jacobian或幅度网格；总2个候选Adam步骤/8个源恢复分块试探。
+router仅当两个batch、两个view均repair平均margin增量>max(1e-5,10倍重复概率误差)，且guard无新增错、guard增量q10不低于负门槛，才记为可进一步考虑。
+诊断不自动启动训练；无一致正向证据就不放大该方向。该结果只评价所试源/输入/实际步幅，不把失败当router没有能力。
+
+## 已完成CNN教师与学生：原固定合同（2026-10-28）
 
 补集定向训练按第8段预设停止：TRAIN补集修复29/147，但原父正确3157张新增25错；
 固定4/8段EMA/live开发TEST598/599、599/598，全部新权重不如incumbent601。

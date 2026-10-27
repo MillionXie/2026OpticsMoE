@@ -1,0 +1,587 @@
+{
+  "status": "completed_with_one_additional_test_correct_but_target_not_met",
+  "run": "kather_n49_cnn_distill_20261028",
+  "published_training_source": "e74a32be7ef1577cfdc51c21d1366da394dc502a",
+  "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "scope": "Single original full49 seed17; repeated TEST-development with ADDITIONAL ImageNet1K pretraining and CNN teacher cost. Not independent generalization or old equal-budget Top-k table.",
+  "source_checkpoint_sha256": "75e51f4e117f451ae7eb7947f0d001af0c07155450280fea3b19d9e9970d55a7",
+  "source_train_val_test": [
+    3157,
+    588,
+    601
+  ],
+  "selected_round": 16,
+  "selected_state_field": "model (EMA)",
+  "best_checkpoint_sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+  "last_checkpoint_sha256": "b90221a02c779ce2359b6b2236bb4b97c1fdf485420336b168deae47d721bb72",
+  "selected_model_tensor_sha256": "4a1cd1e7ea1eef8892b01025d1093e1d6967e1f9895020792b82897cf9a6510c",
+  "selected_train_val_test": [
+    3135,
+    590,
+    602
+  ],
+  "selected_test_percent": 80.0531914893617,
+  "selection_reason": "Correctcount first; EMA16 ties live8 at602 and has lower TEST NLL. Earlier live8 is no longer retained best PT; its predictions and source lock remain.",
+  "target_correct": 616,
+  "target_met": false,
+  "remaining_to616": 14,
+  "remaining_to_same_seed_minimum612": 10,
+  "old_topk_same_seed_correct": 604,
+  "difference_vs_old_topk_correct": -2,
+  "development_states": [
+    {
+      "round": 4,
+      "state_field": "model",
+      "correct": 599,
+      "nll": 0.6327512860298157,
+      "corrected": 3,
+      "new_wrong": 5,
+      "per_class_net": [
+        0,
+        1,
+        -2,
+        1,
+        -2,
+        0,
+        0,
+        0
+      ],
+      "checkpoint_sha256": "b7f1a3a12160f1f668112f3d8377610fa6e30dc603ce9dec3e767969912d935b",
+      "model_tensor_sha256": "8f628872d8ad28063e89ee0181d0cca7bc1833a7ee4968c2a43e33bd755eea1a",
+      "selected_at_that_check": false
+    },
+    {
+      "round": 4,
+      "state_field": "live_model",
+      "correct": 600,
+      "nll": 0.6328704357147217,
+      "corrected": 3,
+      "new_wrong": 4,
+      "per_class_net": [
+        0,
+        1,
+        0,
+        0,
+        -3,
+        1,
+        0,
+        0
+      ],
+      "checkpoint_sha256": "b7f1a3a12160f1f668112f3d8377610fa6e30dc603ce9dec3e767969912d935b",
+      "model_tensor_sha256": "3a565dd61b1adf3c0a15a12cc49a9aeb3f8d19b4fec78b8701fac1c3a4b63ff7",
+      "selected_at_that_check": false
+    },
+    {
+      "round": 8,
+      "state_field": "model",
+      "correct": 601,
+      "nll": 0.6289520263671875,
+      "corrected": 5,
+      "new_wrong": 5,
+      "per_class_net": [
+        0,
+        2,
+        -2,
+        1,
+        -3,
+        1,
+        1,
+        0
+      ],
+      "checkpoint_sha256": "e4bb710bebb74e59333f4d207f754ab233d9d97d148770928a611e8ba7825899",
+      "model_tensor_sha256": "83e3bec40956138983a98576cbc4f46fc328f518c6a4f39d0d5a3ae362c4e380",
+      "selected_at_that_check": true
+    },
+    {
+      "round": 8,
+      "state_field": "live_model",
+      "correct": 602,
+      "nll": 0.6287550330162048,
+      "corrected": 4,
+      "new_wrong": 3,
+      "per_class_net": [
+        0,
+        0,
+        -1,
+        1,
+        -1,
+        1,
+        1,
+        0
+      ],
+      "checkpoint_sha256": "e4bb710bebb74e59333f4d207f754ab233d9d97d148770928a611e8ba7825899",
+      "model_tensor_sha256": "175402bdd0374dace095113c605a4c9eb19be16b21af19743bdc10bfa92c1258",
+      "selected_at_that_check": true
+    },
+    {
+      "round": 12,
+      "state_field": "model",
+      "correct": 600,
+      "nll": 0.6272947192192078,
+      "corrected": 4,
+      "new_wrong": 5,
+      "per_class_net": [
+        0,
+        0,
+        -2,
+        1,
+        -2,
+        1,
+        1,
+        0
+      ],
+      "checkpoint_sha256": "3c3fd44f88de7ea334bfb981b217b8ecdd7353b4f681d94271573fd9e55b1ff1",
+      "model_tensor_sha256": "f2346ecf4c9c48ffaae3cf73df781b99b1d5e02c8b4eb9f9935d12e9f68b2ab6",
+      "selected_at_that_check": false
+    },
+    {
+      "round": 12,
+      "state_field": "live_model",
+      "correct": 599,
+      "nll": 0.627683162689209,
+      "corrected": 4,
+      "new_wrong": 6,
+      "per_class_net": [
+        0,
+        -1,
+        -2,
+        1,
+        -2,
+        1,
+        1,
+        0
+      ],
+      "checkpoint_sha256": "3c3fd44f88de7ea334bfb981b217b8ecdd7353b4f681d94271573fd9e55b1ff1",
+      "model_tensor_sha256": "95960bc7e640cf6a8a9abcbd2d176a08160e5af0a93fc251281e6f9aee823229",
+      "selected_at_that_check": false
+    },
+    {
+      "round": 16,
+      "state_field": "model",
+      "correct": 602,
+      "nll": 0.6282488107681274,
+      "corrected": 5,
+      "new_wrong": 4,
+      "per_class_net": [
+        0,
+        0,
+        -2,
+        1,
+        -1,
+        2,
+        1,
+        0
+      ],
+      "checkpoint_sha256": "b90221a02c779ce2359b6b2236bb4b97c1fdf485420336b168deae47d721bb72",
+      "model_tensor_sha256": "4a1cd1e7ea1eef8892b01025d1093e1d6967e1f9895020792b82897cf9a6510c",
+      "selected_at_that_check": true
+    },
+    {
+      "round": 16,
+      "state_field": "live_model",
+      "correct": 601,
+      "nll": 0.6283314228057861,
+      "corrected": 5,
+      "new_wrong": 5,
+      "per_class_net": [
+        0,
+        0,
+        -2,
+        1,
+        -2,
+        2,
+        1,
+        0
+      ],
+      "checkpoint_sha256": "b90221a02c779ce2359b6b2236bb4b97c1fdf485420336b168deae47d721bb72",
+      "model_tensor_sha256": "2e4a677809dc6cec6740d1684b62471cd610f2a21dc34762ab80ceb3571d9d4f",
+      "selected_at_that_check": false
+    }
+  ],
+  "full_train_checks": [
+    {
+      "round": 8,
+      "EMA_correct": 3141
+    },
+    {
+      "round": 16,
+      "EMA_correct": 3135
+    }
+  ],
+  "train_diagnostics": [
+    {
+      "round": 4,
+      "repair": {
+        "samples": 328,
+        "correct": 11,
+        "new_wrong": 0,
+        "margin": -0.5362151265144348,
+        "source_margin": -0.5124619603157043,
+        "correct_per_class": [
+          3,
+          5,
+          0,
+          1,
+          1,
+          0,
+          1,
+          0
+        ],
+        "wrong_per_class": [
+          64,
+          82,
+          42,
+          35,
+          64,
+          17,
+          5,
+          8
+        ]
+      },
+      "all_parent_correct": {
+        "samples": 3157,
+        "correct": 3138,
+        "new_wrong": 19,
+        "margin": 2.1873910427093506,
+        "source_margin": 1.9816454648971558,
+        "correct_per_class": [
+          370,
+          341,
+          387,
+          398,
+          366,
+          420,
+          428,
+          428
+        ],
+        "wrong_per_class": [
+          0,
+          4,
+          7,
+          1,
+          6,
+          0,
+          0,
+          1
+        ]
+      },
+      "no_transfer_streak": 1,
+      "stop_for_no_transfer": false
+    },
+    {
+      "round": 8,
+      "repair": {
+        "samples": 328,
+        "correct": 13,
+        "new_wrong": 0,
+        "margin": -0.5483458638191223,
+        "source_margin": -0.5124619603157043,
+        "correct_per_class": [
+          1,
+          5,
+          0,
+          2,
+          1,
+          0,
+          4,
+          0
+        ],
+        "wrong_per_class": [
+          66,
+          82,
+          42,
+          34,
+          64,
+          17,
+          2,
+          8
+        ]
+      },
+      "all_parent_correct": {
+        "samples": 3157,
+        "correct": 3128,
+        "new_wrong": 29,
+        "margin": 2.1959633827209473,
+        "source_margin": 1.9816454648971558,
+        "correct_per_class": [
+          366,
+          344,
+          385,
+          397,
+          363,
+          420,
+          428,
+          425
+        ],
+        "wrong_per_class": [
+          4,
+          1,
+          9,
+          2,
+          9,
+          0,
+          0,
+          4
+        ]
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    },
+    {
+      "round": 12,
+      "repair": {
+        "samples": 328,
+        "correct": 13,
+        "new_wrong": 0,
+        "margin": -0.5507525205612183,
+        "source_margin": -0.5124619603157043,
+        "correct_per_class": [
+          1,
+          5,
+          0,
+          2,
+          1,
+          0,
+          4,
+          0
+        ],
+        "wrong_per_class": [
+          66,
+          82,
+          42,
+          34,
+          64,
+          17,
+          2,
+          8
+        ]
+      },
+      "all_parent_correct": {
+        "samples": 3157,
+        "correct": 3123,
+        "new_wrong": 34,
+        "margin": 2.2378087043762207,
+        "source_margin": 1.9816454648971558,
+        "correct_per_class": [
+          367,
+          340,
+          385,
+          398,
+          362,
+          419,
+          428,
+          424
+        ],
+        "wrong_per_class": [
+          3,
+          5,
+          9,
+          1,
+          10,
+          1,
+          0,
+          5
+        ]
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    },
+    {
+      "round": 16,
+      "repair": {
+        "samples": 328,
+        "correct": 10,
+        "new_wrong": 0,
+        "margin": -0.5541458129882812,
+        "source_margin": -0.5124619603157043,
+        "correct_per_class": [
+          1,
+          5,
+          0,
+          2,
+          1,
+          0,
+          1,
+          0
+        ],
+        "wrong_per_class": [
+          66,
+          82,
+          42,
+          34,
+          64,
+          17,
+          5,
+          8
+        ]
+      },
+      "all_parent_correct": {
+        "samples": 3157,
+        "correct": 3125,
+        "new_wrong": 32,
+        "margin": 2.2663633823394775,
+        "source_margin": 1.9816454648971558,
+        "correct_per_class": [
+          366,
+          340,
+          384,
+          397,
+          364,
+          419,
+          428,
+          427
+        ],
+        "wrong_per_class": [
+          4,
+          5,
+          10,
+          2,
+          8,
+          1,
+          0,
+          2
+        ]
+      },
+      "no_transfer_streak": 0,
+      "stop_for_no_transfer": false
+    }
+  ],
+  "tail_analysis_round8_EMA": {
+    "teacher_repair": {
+      "samples": 328,
+      "source_mean_margin": -0.5124619603157043,
+      "current_mean_margin": -0.5483458638191223,
+      "delta_mean": -0.035883937031030655,
+      "delta_median": -0.02088141441345215,
+      "delta_q10": -0.15553445816040037,
+      "delta_q90": 0.07851436734199524,
+      "improved_fraction": 0.4176829268292683,
+      "worsened_fraction": 0.5823170731707317,
+      "corrected": 13,
+      "new_wrong": 0,
+      "new_wrong_by_class": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "all_parent_correct": {
+      "samples": 3157,
+      "source_mean_margin": 1.9816454648971558,
+      "current_mean_margin": 2.1959633827209473,
+      "delta_mean": 0.21431827545166016,
+      "delta_median": 0.041020870208740234,
+      "delta_q10": -0.10475348234176636,
+      "delta_q90": 0.9392858028411866,
+      "improved_fraction": 0.6306620209059234,
+      "worsened_fraction": 0.3693379790940767,
+      "corrected": 0,
+      "new_wrong": 29,
+      "new_wrong_by_class": [
+        4,
+        1,
+        9,
+        2,
+        9,
+        0,
+        0,
+        4
+      ]
+    },
+    "parent_correct_lowmargin_0_to_point2": {
+      "samples": 125,
+      "source_mean_margin": 0.10141436755657196,
+      "current_mean_margin": 0.07745590060949326,
+      "delta_mean": -0.023958468809723854,
+      "delta_median": -0.022038042545318604,
+      "delta_q10": -0.11744581460952759,
+      "delta_q90": 0.0640336275100708,
+      "improved_fraction": 0.44,
+      "worsened_fraction": 0.56,
+      "corrected": 0,
+      "new_wrong": 24,
+      "new_wrong_by_class": [
+        4,
+        1,
+        9,
+        2,
+        8,
+        0,
+        0,
+        0
+      ]
+    },
+    "source_wrong": {
+      "samples": 339,
+      "source_mean_margin": -0.5395159721374512,
+      "current_mean_margin": -0.5778871774673462,
+      "delta_mean": -0.03837118297815323,
+      "delta_median": -0.02085745334625244,
+      "delta_q10": -0.15769881010055542,
+      "delta_q90": 0.07848221063613892,
+      "improved_fraction": 0.41887905604719766,
+      "worsened_fraction": 0.5811209439528023,
+      "corrected": 13,
+      "new_wrong": 0,
+      "new_wrong_by_class": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "teacher": {
+    "architecture": "ResNet18",
+    "pretraining_dataset": "ImageNet1K",
+    "pretrained_weights_sha256": "f37072fd47e89c5e827621c5baffa7500819f7896bbacec160b1a16c560e07ec",
+    "best_checkpoint_sha256": "383162fbd84390a0ec816beda9a753040e9d61fcd99df932d7eb48d9222ec62f",
+    "last_checkpoint_sha256": "ad1722486149cc1ba58f6e06e5e1f9844f117d47f0fc269912e3f45b661eb6eb",
+    "selected_epoch": 8,
+    "train_correct": 3469,
+    "val_correct": 730,
+    "teacher_only_train": 328,
+    "teacher_test_forward": false,
+    "teacher_in_student_inference": false,
+    "extra_pretraining_compute_unknown_not_zero": true,
+    "training_epochs": 8,
+    "optimizer_updates": 880,
+    "training_inputs": 27968,
+    "val_forward_inputs": 6016,
+    "train_cache_forward_inputs": 27968,
+    "elapsed_seconds": 39.49662399291992
+  },
+  "lambda_kd": 0.34239393895809284,
+  "temperature": 2,
+  "temperature_squared_factor": 4,
+  "actual_student_rounds": 16,
+  "student_optimizer_updates": 1024,
+  "student_optimizer_inputs": 16384,
+  "calibration_probe_updates": 6,
+  "training_seconds_sum": 1177.2387435436249,
+  "evaluation_seconds_sum": 962.3173060417175,
+  "archive_sha256": "334f3b06eac573c5b4ea6ba7b7e5568c8657c248e80acfdc68d04217cf4a0f8f",
+  "archive_bytes": 4203547,
+  "manifest_files": 46,
+  "checks": {
+    "all_manifest_sha_verified": true,
+    "teacher_raw_logits_scores_idslabels_D4_gate_verified_preparation": true,
+    "all8_student_TEST752_cm_argmax_finite_idslabels_and_predictionSHA": true,
+    "all16sampling_1024unique128class_fourroundcoverage": true,
+    "all5phase_gradients_allrounds_finite_nonzero": true,
+    "selected_TEST_exact_locked_EMA16_reused": true,
+    "best_last_source_tensorSHA_runtime_receipts_verified": true,
+    "allteacher_calibration_parent_worker_exited_authorized_gpu_no_task_allocation": true
+  },
+  "conclusion": "Stronger teacher and measured nonzero aligned KD do not produce the required optical transfer in this finite budget. Accuracy gain is one image relative to incumbent601, still below prior604 Top-k. TRAIN boundary-tail deterioration remains despite increasing confidence among easy correct examples. No architecture ceiling is established.",
+  "next_work": "No blind router scale, temperature, lambda or epoch grid. Any further training requires two disjoint TRAIN batches of actual Adam block-direction benefits on independent repair/near-boundary correct TRAIN groups; preserve every existing PT/result/cost."
+}

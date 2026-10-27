@@ -1,0 +1,41 @@
+{
+  "seed": 17,
+  "fit_batches": 2,
+  "fit_batch": 16,
+  "heldout_per_class_per_group": 4,
+  "blocks": [
+    "router",
+    "expert",
+    "global",
+    "full"
+  ],
+  "no_val_test_forward": true,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "sources": {
+    "student": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+      "sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+      "actual_epoch": 16
+    }
+  },
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+  "incumbent_sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+  "source_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_distill_20261028/student_s17",
+  "source_last_sha256": "b90221a02c779ce2359b6b2236bb4b97c1fdf485420336b168deae47d721bb72",
+  "source_live_tensor_sha256": "2e4a677809dc6cec6740d1684b62471cd610f2a21dc34762ab80ceb3571d9d4f",
+  "cnn_targets": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_cnn_teacher_20261028",
+  "teacher_cache_source_commit": "e74a32be7ef1577cfdc51c21d1366da394dc502a",
+  "objective_parent_sha256": "75e51f4e117f451ae7eb7947f0d001af0c07155450280fea3b19d9e9970d55a7",
+  "lambda_kd": 0.34239393895809284,
+  "auxiliary_dependencies": [
+    "adam_block_probe.py",
+    "cnn_distill.py",
+    "cnn_teacher_cache.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py"
+  ],
+  "role": "TRAIN-only actual Adam block-direction evidence, not a new trained model or development TEST result. Initialize retained last16 live_model and its own AdamW state; selected bestEMA16 is only separately preserved incumbent602. Restore source+same optimizer before each of2 fit batches, no sequential training. Keep actual retained optimizer LRs/hyperparameters. Original full49/T.05/OEO/parameters unchanged. Original CNN T2 KD objective and its frozen75e parent retained; not a new parent refresh or fresh optimizer.",
+  "selection": "Full3496 clean TRAIN scoring of actual retainedlive first. Fixedseed balanced up-to4/class teacher-correct/live-wrong repair and4/class nearest-boundary live-correct guard. Both clean and deterministicnonzero D4 heldout views. Exclude allheldout IDs from2 disjoint balanced16 fit batches. No VAL/TEST images/labels or Test-based sample choice.",
+  "admission": "Only actual router block direction with repair mean logmargin gain>max(1e-5,10baseline probability repeaterror) on both batches and both views, guardnewwrong0 andguarddeltaq10>=-threshold. No automatic student train, LRscale choice, amplitude/temperature/lambda/seed grid. Reject is limited to these actual directions and source, not block capacity."
+}
