@@ -1,5 +1,38 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 硬标签优化与SAM成对对照（2026-10-27）
+
+Mixup与功率渐进阶段已完成，未达到616/752目标；不能把“阶段完成”当作性能目标完成。
+纯Mixup实际20轮、20480个TRAIN优化输入，验证选第2轮：TRAIN89.87%、VAL78.86%、TEST595/752=79.12%。
+对原120轮600/752的配对分析：纠正5错、新增10错，STROMA/COMPLEX分别净少4/5张。
+功率渐进完成32轮、32768个优化输入，其中17轮完全原始49路；末轮VAL45.08%，没有恢复源性能。
+其验证选模回退原120轮full49模型，核验相同checkpoint/数据/依赖/预测SHA后复用原600/752=79.79% TEST，
+未将过渡模型成绩当作49/49。两项best/last及全部失败轨迹保留；55份最终产物manifest+SHA、
+逐样本accuracy/cm/argmax/finite/IDs、所有逐轮采样和五组梯度独立核验通过，全部原父子进程退出、两卡各12MiB/0%。
+报告`reports/kather_n49_mixup_curriculum_20261027/final_summary_20261027.json`；
+复算入口`summarize_mixup_curriculum.py`。源代码身份仍为`252fed1a07056ab032e2e300b4e3e04f849b7e2e`。
+
+干净TRAIN与VAL同时退化，不支持把所有失败都归因于经典过拟合、再盲目增加输入扰动。
+新入口`sharpness_refine.py`、profile`configs/kather_n49_sharpness_refine_20261027.json`，
+run `runs/simulation/kather_n49_sharpness_refine_20261027`。只seed17，GPU1硬标签AdamW对照、GPU3 SAM-AdamW。
+两组从同一原120轮full49验证best EMA（源实际E117，SHA9a6929c…956）初始化，均fresh AdamW及seeded RNG，
+不是精确resume。原始ScalingOptics N49/k49/routerT.05/参数11078432/OEO/数据划分/原D4全部保持；
+不使用Mixup、颜色扰动、功率过渡、教师、新头或TTA。原CE标签平滑.02、margin.2、capture.005、TV.02及softbalance.01不变。
+
+每组固定24个1024样本round，每类轮换128、4轮覆盖3496TRAIN；无三轮早停。最多49152个优化输入，
+约7.03个全TRAIN等效epoch/组。两组相同数据/增强/学习率：expert预热1e-4→3e-4，再余弦至3e-5，global.5/router.1。
+SAM依据[原论文](https://arxiv.org/abs/2010.01412)，在完整effective16梯度累积后按全体相位参数的
+全局L2半径rho=.05rad作一次梯度方向扰动，对同一增强batch再次前向/反向，逐张量精确恢复原参数后再执行
+裁剪AdamW及EMA更新。rho不是每像素噪声标准差。与硬标签对照唯一优化差异是SAM的上升/第二遍反向；
+SAM因此增加一倍前反向计算，不能把相同图像数冒称相同计算预算，也不保证提升。
+
+每轮512 TRAIN探针及752完整VAL，每8轮完整3496 TRAIN评分；分别记录clean/perturbed损失、sharpness差值、
+实际扰动范数、恢复校验、五组梯度/学习率/耗时及采样IDs。仅VALaccuracy/NLL选择checkpoint，原best保留候选。
+每组训练及选模结束、GPU1训练槽空闲后立即锁定并TEST一次，SAM仍在GPU3训练时允许先测硬标签对照；
+不会再为等待更慢的一组而推迟已完成候选的TEST。相同原权重继续核验复用旧TEST。
+用户授权的TEST开发比较及616门槛不变；仍不是独立确认性泛化或等预算Top-k表，不自动跑27/37。
+本次成对对照用于检验优化邻域稳定性假设，不能把方法名称或梯度正常当作有效的证据。
+
 ## 追加目标：前一Top-k至少＋1个百分点（2026-10-27，用户新授权）
 
 用户核定未达标继续利用TEST反馈做微调。本轮TEST可参与两个配方的开发比较，明确是已观察测试集的超参开发，

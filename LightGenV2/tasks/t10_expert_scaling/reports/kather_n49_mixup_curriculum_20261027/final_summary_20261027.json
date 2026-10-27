@@ -1,0 +1,367 @@
+{
+  "dataset": "Kather2016",
+  "seed": 17,
+  "samples": {
+    "train": 3496,
+    "val": 752,
+    "test": 752
+  },
+  "role": "User-authorized TEST-feedback method development; no independent confirmatory claim.",
+  "checkpoint_selection": "VAL accuracy; NLL tie-break; only original full49 inference eligible",
+  "recipe_selection": "Authorized observed TEST development score, then VAL tie-break",
+  "source_commit": "252fed1a07056ab032e2e300b4e3e04f849b7e2e",
+  "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "rows": [
+    {
+      "recipe": "mixup",
+      "seed": 17,
+      "rounds": 20,
+      "full49_rounds": 20,
+      "selected_round": 2,
+      "selected_power_fraction": 1,
+      "optimized_images": 20480,
+      "full_train_epoch_equivalent": 5.85812356979405,
+      "source_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17",
+      "source_selected_epoch": 117,
+      "source_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+      "checkpoint_sha256": "08af7a355b0a346542c5a94882c5e765c251ef009ddb288d8c01b425826f0243",
+      "last_checkpoint_sha256": "7586c698fa38691bba2f32504dc0929f7f1cb7b58ad13d25aa8b6f75da59dde2",
+      "train_accuracy": 0.8987414240837097,
+      "validation_accuracy": 0.7885638475418091,
+      "validation_nll": 0.6285279989242554,
+      "test_accuracy": 0.7912234042553191,
+      "test_correct": 595,
+      "test_confusion_matrix": [
+        [
+          62,
+          0,
+          7,
+          9,
+          0,
+          16,
+          0,
+          0
+        ],
+        [
+          1,
+          53,
+          16,
+          0,
+          23,
+          1,
+          0,
+          0
+        ],
+        [
+          10,
+          7,
+          63,
+          8,
+          5,
+          1,
+          0,
+          0
+        ],
+        [
+          5,
+          0,
+          3,
+          83,
+          0,
+          3,
+          0,
+          0
+        ],
+        [
+          0,
+          12,
+          2,
+          0,
+          72,
+          6,
+          2,
+          0
+        ],
+        [
+          4,
+          1,
+          1,
+          6,
+          1,
+          81,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          88,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          93
+        ]
+      ],
+      "test_predictions_sha256": "b0a413c33f3f1c0a5a783da9e8d8391437653c9fb1c77e71b2a2965e7a4eb027",
+      "test_reused": false,
+      "round_wall_median_seconds": 103.42261815071106,
+      "history_elapsed_seconds": 2210.6015293598175,
+      "route": {
+        "train": {
+          "mean_sample_entropy_neff": 48.410913698825716,
+          "mean_sample_participation_ratio": 47.753564431769625,
+          "mean_top24_power": 0.5423708795623117,
+          "hard_all_one_is_fullk_definition": true
+        },
+        "val": {
+          "mean_sample_entropy_neff": 48.38201630696419,
+          "mean_sample_participation_ratio": 47.68519268580563,
+          "mean_top24_power": 0.5432111795699383,
+          "hard_all_one_is_fullk_definition": true
+        }
+      },
+      "sampling_all_rounds_verified": true,
+      "gradients_all_finite_nonzero": true,
+      "paired_with_original120": {
+        "old_correct": 600,
+        "new_correct": 595,
+        "corrected": 5,
+        "new_wrong": 10,
+        "both_wrong": 147,
+        "class_correct_delta": [
+          0,
+          -4,
+          -5,
+          1,
+          1,
+          2,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "recipe": "power_curriculum_mixup",
+      "seed": 17,
+      "rounds": 32,
+      "full49_rounds": 17,
+      "selected_round": 0,
+      "selected_power_fraction": 1,
+      "optimized_images": 32768,
+      "full_train_epoch_equivalent": 9.37299771167048,
+      "source_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s17",
+      "source_selected_epoch": 61,
+      "source_sha256": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+      "checkpoint_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+      "last_checkpoint_sha256": "80e4815a4f3af3f0f752f9e8b5f4f07d641a1823e2f6efa386f6d2c24fe10eff",
+      "train_accuracy": 0.8984553813934326,
+      "validation_accuracy": 0.7832446694374084,
+      "validation_nll": 0.6218442916870117,
+      "test_accuracy": 0.7978723404255319,
+      "test_correct": 600,
+      "test_confusion_matrix": [
+        [
+          62,
+          0,
+          8,
+          8,
+          0,
+          16,
+          0,
+          0
+        ],
+        [
+          1,
+          57,
+          13,
+          0,
+          22,
+          1,
+          0,
+          0
+        ],
+        [
+          9,
+          8,
+          68,
+          3,
+          4,
+          2,
+          0,
+          0
+        ],
+        [
+          6,
+          0,
+          3,
+          82,
+          0,
+          3,
+          0,
+          0
+        ],
+        [
+          0,
+          13,
+          2,
+          0,
+          71,
+          6,
+          2,
+          0
+        ],
+        [
+          3,
+          1,
+          3,
+          6,
+          2,
+          79,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          88,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          93
+        ]
+      ],
+      "test_predictions_sha256": "bb326b59d97fa37b76595fb90775af943ffe649406b39100dcf8992bb91b8b66",
+      "test_reused": true,
+      "round_wall_median_seconds": 101.74265849590302,
+      "history_elapsed_seconds": 3535.7745592594147,
+      "route": {
+        "train": {
+          "mean_sample_entropy_neff": 48.410991714979936,
+          "mean_sample_participation_ratio": 47.75374793313209,
+          "mean_top24_power": 0.5423685572018476,
+          "hard_all_one_is_fullk_definition": true
+        },
+        "val": {
+          "mean_sample_entropy_neff": 48.38208510869965,
+          "mean_sample_participation_ratio": 47.68535050295817,
+          "mean_top24_power": 0.5432088502207176,
+          "hard_all_one_is_fullk_definition": true
+        }
+      },
+      "sampling_all_rounds_verified": true,
+      "gradients_all_finite_nonzero": true,
+      "paired_with_original120": {
+        "old_correct": 600,
+        "new_correct": 600,
+        "corrected": 0,
+        "new_wrong": 0,
+        "both_wrong": 152,
+        "class_correct_delta": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "selected_recipe": "power_curriculum_mixup",
+  "target": {
+    "correct": 616,
+    "total": 752,
+    "accuracy": 0.8191489361702128,
+    "comparison": "Previous three-seed k24 mean80.90% plus1pp",
+    "same_seed_k24_correct": 604,
+    "same_seed_plus1pp_min_correct": 612
+  },
+  "pilot_target_met": false,
+  "three_seed_mean_target_established": false,
+  "outcome": "Target not reached; this finite phase is complete, the authorized optimization objective remains unmet.",
+  "optimized_images_total": 53248,
+  "source_weights_preserved": true,
+  "all_downloaded_sha_verified": true,
+  "manifest_sha256": "8ab151ab348a60b06798f3d4bdd9cb936f9798b0731dc9770ad73421c1ebe268",
+  "artifact_count": 55,
+  "server_weight_and_release_audit": {
+    "timestamp": 1793107469.9327288,
+    "source_commit": "252fed1a07056ab032e2e300b4e3e04f849b7e2e",
+    "source_files_verified": {
+      "LightGenV2/tasks/t10_expert_scaling/mixup_curriculum.py": "5475e1ea21b2dd86db04fdb84100f81472428aa4d9e1eedc28912909908cc109",
+      "LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_mixup_curriculum_20261027.json": "fa2be8712229a9015f28504fc0bbfe60e585ad3fac124685309d376e557e313a",
+      "LightGenV2/tasks/t10_expert_scaling/model.py": "d7be573246e2068fe4b3fa955efade2421a926816b72cc3ee559243a9522539f",
+      "LightGenV2/tasks/t10_expert_scaling/train.py": "428432ffba1f983c8b39a966c5293ab1d2fbd6046d2e54fcaf02ab2edb5c5cc0",
+      "LightGenV2/tasks/t10_expert_scaling/plan.py": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+      "LightGenV2/tasks/t10_expert_scaling/diagnose_topk.py": "7fb6aaa5824b9939e4250afdd8f7595e486dc2dfcf144f4c1ede6216b02395a4",
+      "LightGenV2/tasks/t10_expert_scaling/expert_tail_schedule.py": "7ce924e0f2c403446a3203b94d30607b9e05ec996686610fa0eaffdad4319832",
+      "LightGenV2/tasks/t10_expert_scaling/configs/study.json": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+      "LightGenV2/common/optical_contract.py": "2dd7f8b78391b5c60e7b5f580eccadac37b1b7baa5e8998a6f019b0d31d1ca06"
+    },
+    "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+    "own_pids": [
+      2935444,
+      2935476,
+      2935482
+    ],
+    "all_own_pids_exited": true,
+    "release_verified": true,
+    "matching_active_processes": [],
+    "gpu_status": "1, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, 12 MiB, 0 %\n3, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, 12 MiB, 0 %",
+    "methods": {
+      "mixup_s17": {
+        "best_sha256": "08af7a355b0a346542c5a94882c5e765c251ef009ddb288d8c01b425826f0243",
+        "last_sha256": "7586c698fa38691bba2f32504dc0929f7f1cb7b58ad13d25aa8b6f75da59dde2",
+        "source_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+        "selected_power_fraction": 1,
+        "selected_round": 2,
+        "last_round": 20,
+        "last_power_fraction": 1.0,
+        "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+      },
+      "power_curriculum_mixup_s17": {
+        "best_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+        "last_sha256": "80e4815a4f3af3f0f752f9e8b5f4f07d641a1823e2f6efa386f6d2c24fe10eff",
+        "source_sha256": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+        "selected_power_fraction": 1,
+        "selected_round": 0,
+        "last_round": 32,
+        "last_power_fraction": 1.0,
+        "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+      }
+    },
+    "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+  },
+  "limitations": [
+    "Only seed17; no three-seed mean or SD.",
+    "Partial-power scores are transition diagnostics, never full49 target results.",
+    "Each round has1024 training optimizer inputs; it is not a3496-image full epoch.",
+    "Round wall time includes periodic fullTRAIN evaluation and checkpoint overhead; startup/final exports are separate.",
+    "Mixup changes training targets; raw objective is not comparable to hard-label loss.",
+    "All older trials and their additional development costs remain preserved."
+  ]
+}
