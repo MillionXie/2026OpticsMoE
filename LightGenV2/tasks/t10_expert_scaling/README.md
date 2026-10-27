@@ -1,5 +1,39 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 冻结前缀的末层边界修复（2026-10-27，采用窗口咨询建议）
+
+六份保留last已在GPU1完成一次有限开发TEST，原90/120、focused颜色/相位/蒸馏、Mixup分别为
+592/598/593/594/595/596张正确，均未超过原验证选定模型600/752。19份产物传输SHA与全部逐样本结果已独立核验，
+审计PID退出、两卡释放；报告`reports/kather_n49_checkpoint_dev_audit_20261027/final_summary_20261027.json`。
+这排除了本次列出的六份末轮权重中存在漏选过线模型的可能，不代表检查过所有历史中间权重。
+
+新模块`boundary_refine.py`、profile`configs/kather_n49_boundary_refine_20261027.json`，
+run `runs/simulation/kather_n49_boundary_refine_20261027`。按“微调方法总结”窗口建议，优先只训练最后global相位
+3,055,504个参数，冻结router及前三层；推理仍原ScalingOptics N49/k49、4层逐层OEO、原detector、总参数11,078,432。
+两组从同一原120轮VALbest E117 EMA（SHA9a6929c…956）初始化，fresh AdamW、weight_decay=0，不冒称恢复原动量。
+GPU1为原CE(.02smoothing)+.2倍线性margin对照，GPU3为去掉CE的平方margin边界组。
+两组都使用同一full49父模型概率保护及相位锚定，唯一主要监督目标差异为CE+线性hinge与margin-only平方hinge。
+
+边界项为mean(max(0,.2+log p_wrong−log p_y)^2)，使间隔足够的样本不再贡献该监督梯度；
+父模型正确且log-margin≥.2时KL权重.5，其余.05，按全部microbatch平均。原capture.005、TV.02、softbalance.01保持；
+周期相位锚定50×mean(1−cos(delta))，用等价的100×mean(sin(delta/2)^2)避免小角度消减误差；
+每步把相对原父模型的圆周相位RMS投影到≤.02rad。最后一层仍影响全部类别，不能冒称单类相位行。
+
+两组共用三个TRAIN-only池，每池256张、每类8低log-margin＋24轮换回放，每张两个固定D4视图，512优化输入/段。
+每四段更换池；每组固定12段、每段32个effective16/micro2 AdamW更新，共384步/6144个优化输入，
+两组合计12288输入，约1.76个3496样本全TRAIN等效epoch/组。这里的双视图不是512张不同图像。
+LR第1段5e-5、第2段1e-4，再余弦到第12段2e-5；EMA.95。连续live/optimizer路径不因短时持平回滚，
+固定父模型KL/相位锚不随checkpoint选择变化。只在第4/8/12段锁定EMA候选后检查开发TEST：正确数优先，
+相同时NLL需下降>1e-4才更新best，原600张正确模型保留。实时报告live/EMA VAL与净修复/误伤，
+不能用单seed或测试反馈开发成绩声称三seed均值或独立泛化。
+
+缓存是原冻结前缀的float32 OEO实幅度，绑定源权重/输入ID/D4码/代码/数据SHA；两组从同一缓存取相同视图和顺序。
+每个512视图池约6.55GB，三个池连同VAL/TEST前缀约38.9GB，留服务器CPU内存映射文件，不传输或进入Git，微批送GPU。
+缓存生成器先在GPU3单独完成并退出，之后才启动GPU1/3两个训练worker；不会另起竞争GPU任务。
+初始缓存输出须复现原模型；前缀参数SHA逐项保护。最终选中模型用原整模型确认、评全3496 TRAIN/752 VAL，
+新权重的最终TEST还需与缓存分数比较；原权重回退则核验复用旧TEST，不重新forward。
+路由只取决于冻结的router/原RGB输入，selected route NPZ在ID/labels及冻结身份核验后复用并留收据，不冒充新路由分工。
+
 ## 按“微调方法总结”经验修正开发顺序（2026-10-27）
 
 用户明确要求向“微调方法总结”窗口学习。已只读交流并核对该窗口的实际经验：先区分困难类别训练不足与泛化差距，
