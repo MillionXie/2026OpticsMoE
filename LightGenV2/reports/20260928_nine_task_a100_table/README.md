@@ -1,5 +1,31 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-27：完整型号与LightGen分块计时展示04
+
+按人工要求将主表模型名改为LightGen、OpenAI CLIP ViT-B/32、GLM-4.6V-Flash、
+Qwen3-VL-2B-Instruct、Ultralytics YOLO11s、DeepSeek-VL2、Kimi-VL-A3B-Instruct。
+型号依据本仓库原测量入口/资产合同；DeepSeek为完整VL2而非Tiny/Small。
+主表除模型字符串和相应列宽外，所有时间、能量、tokens/s及倍数与固定03逐项一致；
+仍仅LightGen采用千问参考token，其他模型保留原生计数。
+
+新增独立sheet `LightGen时间分块`：按既有v3分块列19部分，六个原顺序光周期及其OEO电子段完整保留，
+另列文本分词、视觉前处理、视觉/语言入口、Merger、Decoder和贯穿全程的调度/CPU返回/同步。
+每16视频累计阶段跨度不可相加（其和28.98966522518796ms），三轮384光场的最长路径分摊可相加，
+合计14.73572690499705ms，与主表14.735726904997131ms在浮点精度内闭合。
+同时给出各轮第0场相对原host_start的阶段开始/结束三轮均值，区别首场冷启动延迟与全窗平均吞吐间隔。
+首场语言入口未独立hook，明确标缺失，不按稳态事件补造首场边界；前处理内部细项也不硬拆。
+原窗口前模型加载/原图准备/批量H2D不纳入，原窗口内首场、前三eager、两capture输出与必要同步仍按原合同保留。
+光周期用固定SLM/CCD/读出参数，电子阶段用原计时；不是物理光路直接实测。
+并行说明记录双流完整patch fork/join、跨场前处理/主体重叠、双槽i−2评分fence与同场六周期依赖，
+不以理想并行删时间，不从端到端再减一次重叠跨度。三轮整窗0起点/终点也同页固定列出。
+
+成品在协议`outputs/01a061e2-6f88-7913-87f5-b632000e4c83/Temporal_LightGen_static_20261027_04/`，
+`Temporal_LightGen与baseline_固定数值_20261027.xlsx`，SHA256
+`6bb84880ad2be567a74390f1cf38668b59c6c10609e91fc79d31a001a6957204`。
+2sheet、全固定数值、0公式/外链；原39点、收据、独立audit、原v3 ledger和DAG再次只读重核，
+保存后独立审计passed；两sheet三PNG真实核看，作者marker本次恰一次。
+旧01/02/03、用户编辑表和原始运行证据全部原位保留，不运行模型、不连接服务器。
+
 ## 2026-10-27：仅LightGen用千问token，其他模型恢复原生计数
 
 最新人工明确：不将其他模型统一为千问计数。固定展示03仅LightGen使用千问参考token，
