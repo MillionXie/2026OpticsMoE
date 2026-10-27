@@ -1,5 +1,34 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## TRAIN难例回放与评估降频（2026-10-27，用户追加要求）
+
+用户要求分析已观察TEST的错例、减少不必要的全量TRAIN重复并加快速度。对齐seed17旧TEST预测：
+49/k49累计120轮为600/752，49/k24累计90轮为604/752；教师可纠正学生48个错误，学生也能纠正
+教师44个错误，二者共同错104个。学生152错中118个来自TUMOR/STROMA/COMPLEX/DEBRIS四类；
+STROMA→DEBRIS22、TUMOR→MUCOSA16、STROMA→COMPLEX13、DEBRIS→STROMA13。
+这些是用户授权的已观察TEST开发诊断，不是独立确认性分析；绝不把TEST样本加入TRAIN，也不按TEST挑训练样本。
+
+新入口`focused_adaptation.py`、profile`configs/kather_n49_focused_adaptation_20261027.json`，
+run `runs/simulation/kather_n49_focused_adaptation_20261027`。只继续seed17三方法，GPU1蒸馏、GPU3颜色/相位噪声，
+资源与原光学推理合同保持。从活动`extended_adaptation`的下一个完整checkpoint边界交接：先核PID及启动身份，
+冻结旧调度器防重复，等待各worker写完新last，保留live/EMA/AdamW/完整RNG及源best，再退出旧父子进程、启动新worker。
+独立有界SIGCONT保护处理交接异常；旧run、全部权重和历史不删除。完整checkpoint后到冻结之间极少量下一批工作可能未保存，
+如实记录，不冒充任意批次精确恢复。
+
+按当前EMA在TRAIN上的clean正确类margin排序，每类选64个低margin难例＋64个轮换均匀回放，共1024个唯一样本/聚焦轮。
+固定类平衡；保留容易样本回放而不是永久删除已学会样本；每5轮重新评分刷新难例，避免持续追逐陈旧或噪声样本。
+这是有意改变TRAIN采样目标的难例优先开发，不能称为未改变原训练分布的无偏全量训练。
+每轮只评固定512张类平衡TRAIN探针，完整3496张TRAIN仅在初始化、每5轮刷新及最终评估；752张VAL仍逐轮全量选模。
+训练micro2/effective16保持；评估batch4只改变计算分批。分别记录训练/探针/VAL/刷新耗时，不能把探针准确率冒充全量TRAIN。
+
+每个方法最多20个1024样本聚焦轮，且不超过原20轮适应预算剩余的TRAIN图像曝光数；旧完整epoch与新聚焦round分别报告。
+新阶段前10聚焦轮不累计早停，之后连续6轮VALaccuracy/NLL均无纪录改善才停。20round约等于5.86个全TRAIN epoch，
+不能写成追加20个全量epoch。LR新阶段3轮预热1e-5→3e-5→5e-5再余弦至5e-6，global/router倍率不变；
+蒸馏权重已预热到1并保持，仍仅对正确且更自信的冻结同seed教师TRAIN输出做筛选KL。
+第10聚焦轮起比较圆周SWA候选，推理仍原49/k49、无教师/新电子头/TTA；单seed试验不报告三seed均值SD。
+三方法完成后只按VAL选择并锁权重，再TEST或核验复用张量相同的旧预测。训练预算、TEST已观察、实际来源及评估降频均必须披露。
+
+
 ## 单seed充分适应续训（2026-10-27，用户最新要求）
 
 用户明确指出三轮筛选过短，要求先在一个seed上找到有效方法，再跑其他seed，并追加GPU1。

@@ -1,0 +1,68 @@
+{
+  "study": "User-requested TRAIN hard-example replay and faster evaluation",
+  "role": "TEST_observed_development_TRAIN_only_selection",
+  "parallel_jobs": 3,
+  "seed": 17,
+  "recipes": [
+    "color",
+    "phase_color",
+    "distill"
+  ],
+  "reference_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17",
+  "reference_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+  "source_runs": {
+    "color": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_extended_adaptation_20261027/color_s17",
+    "phase_color": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_extended_adaptation_20261027/phase_color_s17",
+    "distill": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_extended_adaptation_20261027/distill_s17"
+  },
+  "teacher_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s17",
+  "teacher_sha256": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+  "reference_training_budget": 120,
+  "max_adaptation_epochs": 20,
+  "patience_after_window": 6,
+  "new_stage_lr": 5e-05,
+  "warmup_new_epochs": 3,
+  "lr_end_fraction": 0.1,
+  "group_lr_scales": {
+    "expert": 1.0,
+    "global": 0.5,
+    "router": 0.1
+  },
+  "batch": 16,
+  "microbatch": 2,
+  "color_gain_range": [
+    0.9,
+    1.1
+  ],
+  "phase_noise_std": 0.02,
+  "kd_weight_start": 1.0,
+  "kd_weight_target": 1.0,
+  "kd_warmup_new_epochs": 3,
+  "kd_temperature": 2.0,
+  "kd_gate": "Teacher correct and more confident on true label than student; same augmented TRAIN image",
+  "swa_mode": "Circular mean of EMA phase masks across epochs, validation-only candidate alongside EMA",
+  "initialization": "Checkpoint-boundary handoff from current live/EMA/AdamW/RNG; preserve old weights/results. Logical counter is a round, not a full3496-image epoch.",
+  "early_stop": "Minimum10 new focused rounds; then6 non-improving rounds; no TEST stopping.",
+  "test": "Choose recipe and weight by VAL accuracy then NLL after all three jobs. TEST once for chosen weight or reuse tensor-identical original prediction with SHA receipt. No TEST-based stopping.",
+  "budget": "At most20 focused rounds1024images/method, and never exceed remaining image exposures from prior20-full-epoch cap. No new seeds.",
+  "inference": "Original49/k49 clean inference; onlyseed17; observed TEST errors used as dev diagnosis, never as training samples.",
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "recipe_gpu": {
+    "color": 3,
+    "phase_color": 3,
+    "distill": 1
+  },
+  "adaptation_window_new_epochs": 10,
+  "swa_start_new_stage_epoch": 10,
+  "active_source_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_extended_adaptation_20261027",
+  "samples_per_class": 128,
+  "hard_per_class": 64,
+  "refresh_rounds": 5,
+  "max_rounds": 20,
+  "eval_batch": 4,
+  "train_evaluation": "Fixed class-balanced512-image probe each round; full3496-image scoring at initialization and every5 rounds refreshes TRAIN-only difficulty; full TRAIN and VAL final. VAL752 every round.",
+  "sampling": "Each class64 lowest TRAIN correct-class margins and64 rotating uniform replay from remainder. No TEST/VAL image enters optimizer."
+}
