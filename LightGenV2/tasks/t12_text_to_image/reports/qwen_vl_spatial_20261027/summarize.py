@@ -34,7 +34,21 @@ def main():
     with (args.output/'mode_metrics.csv').open('w',newline='',encoding='utf-8-sig') as handle:
         writer=csv.DictWriter(handle,fieldnames=list(rows[0]));writer.writeheader();writer.writerows(rows)
     chosen=[]
-    for category in ('lamp','table','pillow'):
+    categories=list(dict.fromkeys(r['category'] for r in groups['spatial']['images']))
+    category_rows=[]
+    for model,group in groups.items():
+        for category in categories:
+            for mode in ('background','object','joint'):
+                records=[r for r in group['images'] if (r['category'],r['mode'])==(category,mode)]
+                if not records:continue
+                row={'model':model,'category':category,'mode':mode,'n':len(records)}
+                for key in ('psnr','lpips','edited_psnr','retained_psnr'):
+                    values=[r[key] for r in records if r[key] is not None]
+                    row[key]=sum(values)/len(values) if values else None
+                category_rows.append(row)
+    with (args.output/'category_mode_metrics.csv').open('w',newline='',encoding='utf-8-sig') as handle:
+        writer=csv.DictWriter(handle,fieldnames=list(category_rows[0]));writer.writeheader();writer.writerows(category_rows)
+    for category in categories:
         for mode in ('background','object','joint'):
             chosen.append(next(i for i,r in enumerate(groups['spatial']['images']) if (r['category'],r['mode'])==(category,mode)))
     # The parent prediction is extracted from the saved LOSSLESS preview PNG,
@@ -69,7 +83,7 @@ def main():
       'train_pairs':report['train_optimization_pairs'],'val_pairs':len(ids),'best_step':report['best_step'],
       'checkpoint_sha256':report['checkpoint_sha256'],'parameters':report['parameters'],
       'metrics':{name:{k:v for k,v in group.items() if k!='images'} for name,group in groups.items()},
-      'mode_rows':rows,'examples':examples,
+      'mode_rows':rows,'category_mode_rows':category_rows,'examples':examples,
       'selection':'First sample of each category/mode, fixed independently of image quality',
       'ablation_note':'without_new_spatial leaves full Qwen multimodal semantic conditioning active; it is not removal of the whole vision tower',
       'image_note':'Native PNG tiles, parent crop from a lossless PNG; no enhancement. Float model outputs determine metrics.'}
