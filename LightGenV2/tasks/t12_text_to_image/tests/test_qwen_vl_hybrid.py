@@ -2,7 +2,7 @@ import unittest
 
 import torch
 
-from LightGenV2.tasks.t12_text_to_image.qwen_vl_hybrid import OpticalMacro, TokenCodec, IdentityBlock, MacroStageBlock, apply_hybrid, feature_loss, hybrid_config
+from LightGenV2.tasks.t12_text_to_image.qwen_vl_hybrid import OpticalMacro, TokenCodec, IdentityBlock, MacroStageBlock, apply_hybrid, feature_loss, hybrid_config, load_macro_state, optimizer_groups
 
 
 class HybridTests(unittest.TestCase):
@@ -57,6 +57,35 @@ class HybridTests(unittest.TestCase):
         self.assertIsInstance(root.model.visual.blocks[17], IdentityBlock)
         self.assertTrue(any(p.requires_grad for p in macros.parameters()))
         self.assertFalse(any(p.requires_grad for p in original.parameters()))
+
+    def test_resume_compatibility_and_phase_learning_rate_partition(self):
+        macros = torch.nn.ModuleDict({'language': OpticalMacro('language', 16, residual_width=8)})
+        old = {k: v for k, v in macros.state_dict().items() if not k.endswith('.routing_load')}
+        report = load_macro_state(macros, old)
+        self.assertEqual(report['initialized_training_only_load_ema'], ['language.routing_load'])
+        groups = optimizer_groups(macros, {'joint_lr': 1e-5, 'phase_lr': 3e-4, 'router_lr': 5e-4})
+        self.assertEqual({g['name']: g['lr'] for g in groups}, {'electronics': 1e-5, 'phase': 3e-4, 'router_phase': 5e-4})
+        params = [id(p) for g in groups for p in g['params']]
+        self.assertEqual(len(params), len(set(params)))
+        self.assertEqual(set(params), {id(p) for p in macros.parameters()})
+        del old[next(k for k in old if 'raw_router_phase' in k)]
+        with self.assertRaises(ValueError):
+            load_macro_state(macros, old)
+
+    def test_router_batch_training_only_and_variable_prompt_lengths(self):
+        from LightGenV2.tasks.t12_text_to_image.qwen_vl_hybrid_run import router_batch_balance
+        macros = torch.nn.ModuleDict({'language': OpticalMacro('language', 16, residual_width=8)})
+        features = [{'split': 'train', 'language_input': torch.randn(1, n, 16)} for n in (3, 5, 7)]
+        loss = router_batch_balance(macros, features, [0, 1, 2], torch.device('cpu'))
+        self.assertTrue(torch.isfinite(loss))
+        loss.backward()
+        gradient = macros['language'].paths[0].core.router.raw_router_phase.grad
+        self.assertIsNotNone(gradient)
+        self.assertTrue(torch.isfinite(gradient).all())
+        self.assertGreater(float(gradient.abs().sum()), 0)
+        features[1]['split'] = 'val'
+        with self.assertRaises(ValueError):
+            router_batch_balance(macros, features, [0, 1], torch.device('cpu'))
 
 
 if __name__ == '__main__':

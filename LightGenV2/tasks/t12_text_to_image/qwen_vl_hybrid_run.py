@@ -19,7 +19,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .qwen_vl_hybrid import OpticalMacro, apply_hybrid, feature_loss, hybrid_config
+from .qwen_vl_hybrid import OpticalMacro, apply_hybrid, feature_loss, hybrid_config, load_macro_state, optimizer_groups
 from .qwen_vl_spatial import balanced_region_l1, build_spatial_head
 from .qwen_vl_spatial_run import evaluate, masks
 from .qwen_vl_turbo_cache import image_float, save_with_digest
@@ -186,6 +186,13 @@ def stage_distill(a, cfg, payload, state, device):
                 best, best_step = metric, step
                 save_macros(macros, cfg, step, entry, a.output, best=True)
             write_json(a.output/'history.json', history)
+            # Raw intermediate amplitudes need not remain stable under detached
+            # fusion scales. Do not spend the rest of the budget on divergence.
+            patience = cfg.get('feature_early_stop_evaluations', 0)
+            if patience and step-best_step >= patience*cfg['feature_eval_every'] and metric > best*1.2:
+                write_json(a.output/'feature_early_stop.json', {'step': step, 'best_step': best_step,
+                    'reason': 'Sustained train/development feature-loss deterioration; retain best, do not call it convergence'})
+                break
     write_json(a.output/'report.json', {'complete': True, 'best_step': best_step, 'best_development_feature_loss': best,
        'evaluation_label': 'development_test', 'evaluation_used_for_selection': True,
        'test_gradient_updates': False, 'alpha_minimum': .60, 'checkpoint_sha256': sha256(a.output/'best_checkpoint.pt')})
@@ -223,12 +230,40 @@ def quality_gate(actual, baseline):
             'scope': 'Development TEST-selected; no independent generalization claim'}
 
 
+def router_batch_balance(macros, features, ids, device, mi_weight=.25):
+    """Same-parameter TRAIN batch, not an EMA across changing model versions.
+
+    Only the existing optical router/field encoder is used. This supplemental
+    TRAIN loss never adds a deployment router or forces per-example uniformity.
+    """
+    if not ids or any(features[i]['split'] != 'train' for i in ids):
+        raise ValueError('Router calibration gradients are TRAIN-only')
+    losses = []
+    for modality, macro in macros.items():
+        rows = [features[i][modality+'_input'][0] for i in ids]
+        hidden, valid = pack_hidden(rows, device)
+        packed = macro.codecs[0].pack(hidden)
+        padding = torch.zeros(packed.shape[:2], dtype=torch.bool, device=device) if modality == 'vision' else ~valid
+        fields, _ = macro.paths[0]._encode_input_fields(packed, padding)
+        routing = macro.paths[0].core.router(fields)
+        p = routing['probabilities'].float().clamp_min(1e-8)
+        mean = p.mean(0)
+        load = routing['selected_mask'].float().mean(0).detach()/2
+        importance = 4*mean.square().sum()-1
+        hard_load = 4*(mean*load).sum()-1
+        information = (p*(p.log()-mean.clamp_min(1e-8).log())).sum(-1).mean()
+        losses.append(importance+hard_load-mi_weight*information)
+    return sum(losses)
+
+
 def stage_joint(a, cfg, payload, state, device):
     features = checked_features(a.features, payload)
     qwen, processor = load_qwen(a.qwen, device)
     macros = apply_hybrid(qwen, cfg['vision_pairs'], cfg['language_pairs'], cfg['residual_width'])
     init = torch.load(a.initial/'best_checkpoint.pt', map_location='cpu', weights_only=False)
-    macros.load_state_dict(init['macros'])
+    compatibility = load_macro_state(macros, init['macros'])
+    for macro in macros.values():
+        macro.hard_load_balance_weight = cfg.get('hard_load_balance_weight', 0.)
     layout = state['visual_layout']
     if state['config'].get('semantic_prefix', 0):
         raise ValueError('This native fused-only protocol does not silently add a visual prefix')
@@ -244,7 +279,7 @@ def stage_joint(a, cfg, payload, state, device):
         train, dev = train_diagnostic[:6], [i for i in dev if payload['rows'][i]['sample_id'] in names][:6]
     before = evaluate_hybrid(qwen, processor, head, payload, dev, layout, device, a.output, 'dev_before', metric)
     teacher_report = completed_teacher(a.parent)
-    optimizer = torch.optim.AdamW(macros.parameters(), lr=cfg['joint_lr'], weight_decay=.001)
+    optimizer = torch.optim.AdamW(optimizer_groups(macros, cfg), weight_decay=.001)
     best, best_step, history, rng = math.inf, 0, [], random.Random(cfg['seed'])
     steps = cfg.get('joint_steps') or math.ceil(len(train)*cfg['joint_epochs']/cfg['gradient_accumulation'])
     order = []
@@ -252,9 +287,10 @@ def stage_joint(a, cfg, payload, state, device):
         block = train.copy(); rng.shuffle(block); order.extend(block)
     for step in range(1, steps+1):
         macros.train(); optimizer.zero_grad(set_to_none=True); total = 0.
-        factor = .1+.9*.5*(1+math.cos(math.pi*step/steps))
+        warmup = cfg.get('joint_warmup_steps', 0)
+        factor = (.1+.9*.5*(1+math.cos(math.pi*step/steps)))*min(1., max(.1, step/max(1, warmup))) if warmup else .1+.9*.5*(1+math.cos(math.pi*step/steps))
         for group in optimizer.param_groups:
-            group['lr'] = cfg['joint_lr']*factor
+            group['lr'] = group['base_lr']*factor
         for micro in range(cfg['gradient_accumulation']):
             i = order[(step-1)*cfg['gradient_accumulation']+micro]
             row = payload['rows'][i]
@@ -285,6 +321,12 @@ def stage_joint(a, cfg, payload, state, device):
                 raise FloatingPointError('Nonfinite joint loss')
             (loss/cfg['gradient_accumulation']).backward()
             total += float(loss.detach())/cfg['gradient_accumulation']
+        calibration = None
+        if cfg.get('router_calibration_every') and step % cfg['router_calibration_every'] == 0:
+            selected_train = rng.sample(train, min(len(train), cfg.get('router_calibration_batch', 18)))
+            calibration = router_batch_balance(macros, features, selected_train, device,
+                                               cfg.get('router_mutual_information_weight', .25))
+            (cfg.get('router_calibration_weight', .05)*calibration).backward()
         norm = torch.nn.utils.clip_grad_norm_(macros.parameters(), 1.)
         if not torch.isfinite(norm):
             raise FloatingPointError('Nonfinite hybrid gradient')
@@ -292,6 +334,8 @@ def stage_joint(a, cfg, payload, state, device):
         if step % 10 == 0:
             write_json(a.output/'progress.json', {'stage': 'raw_hybrid_joint', 'step': step, 'total_steps': steps,
                 'epoch': step*cfg['gradient_accumulation']/len(train), 'train_loss': total, 'best_step': best_step,
+                'learning_rates': {g['name']: g['lr'] for g in optimizer.param_groups},
+                'train_router_calibration_loss': float(calibration.detach()) if calibration is not None else None,
                 'alpha': {m: [float(f.alpha.detach()) for f in v.fusions] for m, v in macros.items()}})
         if step % cfg['joint_eval_every'] == 0 or step == steps:
             val = evaluate_hybrid(qwen, processor, head, payload, dev, layout, device, a.output, 'dev_latest', metric)
@@ -320,6 +364,7 @@ def stage_joint(a, cfg, payload, state, device):
         'before': before, 'teacher_checkpoint_sha256': sha256(a.parent/'best_checkpoint.pt'),
         'checkpoint_sha256': sha256(a.output/'best_checkpoint.pt'), 'alpha_minimum': .60,
         'quality_gate': quality_gate(val, teacher_report['best_val']), 'evaluation_label': 'development_test',
+        'initial_checkpoint_sha256': sha256(a.initial/'best_checkpoint.pt'), 'checkpoint_compatibility': compatibility,
         'evaluation_used_for_selection': True, 'test_gradient_updates': False,
         'inference_parameters_including_embedding': sum(p.numel() for p in qwen.model.parameters())+sum(p.numel() for p in head.parameters()),
         'macro_parameters': sum(p.numel() for p in macros.parameters()),

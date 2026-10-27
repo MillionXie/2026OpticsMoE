@@ -106,6 +106,8 @@ class OpticalMacro(nn.Module):
         self.optical_enabled = True
         self.router_calls = 0
         self.register_buffer('routing_mean', torch.full((4,), .25))
+        self.register_buffer('routing_load', torch.full((4,), .25))
+        self.hard_load_balance_weight = 0.
 
     def train(self, mode=True):
         super().train(mode)
@@ -167,10 +169,15 @@ class OpticalMacro(nn.Module):
         # B1 training must balance ACROSS examples, not force every instruction
         # to select a uniform mixture (which would collapse hard top-2 ties).
         reference = self.routing_mean.detach().clone()
+        load_reference = self.routing_load.detach().clone()
         if self.training:
             with torch.no_grad():
                 self.routing_mean.mul_(.97).add_(mean.detach(), alpha=.03)
-        return 4*(mean*reference).sum()-1
+                selected = self.routing['selected_mask'].float().mean(0)/2
+                self.routing_load.mul_(.97).add_(selected, alpha=.03)
+        importance = 4*(mean*reference).sum()-1
+        hard_load = 4*(mean*load_reference).sum()-1
+        return importance+self.hard_load_balance_weight*hard_load
 
     def diagnostics(self):
         route = self.routing or {}
@@ -234,3 +241,22 @@ def hybrid_config(vision_pairs=1, language_pairs=1):
             'bounded_amplitude': {'kind': 'tanh', 'scale': .5}, 'one_router_per_modality': True,
             'original_vision_tokens': 256, 'visual_packed_shape': [224, 224],
             'reference_vae_inference': False}
+
+
+def load_macro_state(macros, state):
+    """Only the new training-only load EMA may be absent in old checkpoints."""
+    missing, unexpected = macros.load_state_dict(state, strict=False)
+    if unexpected or any(not key.endswith('.routing_load') for key in missing):
+        raise ValueError('Incompatible macro checkpoint: '+str((missing, unexpected)))
+    return {'initialized_training_only_load_ema': missing}
+
+
+def optimizer_groups(macros, config):
+    groups = {'electronics': [], 'phase': [], 'router_phase': []}
+    for name, parameter in macros.named_parameters():
+        key = 'router_phase' if 'raw_router_phase' in name else 'phase' if 'raw_phase' in name else 'electronics'
+        groups[key].append(parameter)
+    rates = {'electronics': config['joint_lr'], 'phase': config.get('phase_lr', config['joint_lr']),
+             'router_phase': config.get('router_lr', config['joint_lr'])}
+    return [{'params': params, 'lr': rates[name], 'base_lr': rates[name], 'name': name}
+            for name, params in groups.items() if params]

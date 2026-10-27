@@ -18,7 +18,7 @@ from pathlib import Path
 import torch
 from torch.nn import functional as F
 
-from .qwen_vl_hybrid import apply_hybrid
+from .qwen_vl_hybrid import apply_hybrid, load_macro_state
 from .qwen_vl_hybrid_run import completed_teacher, load_data, load_qwen, quality_gate, raw_hidden
 from .qwen_vl_spatial import balanced_region_l1, build_spatial_head
 from .qwen_vl_spatial_run import evaluate, masks
@@ -72,7 +72,7 @@ def main():
     try:
         qwen, processor = load_qwen(a.qwen, device)
         macros = apply_hybrid(qwen, hybrid['config']['vision_pairs'], hybrid['config']['language_pairs'], hybrid['config']['residual_width'])
-        macros.load_state_dict(hybrid['macros']); qwen.eval().requires_grad_(False)
+        load_macro_state(macros, hybrid['macros']); qwen.eval().requires_grad_(False)
         temporary = dict(payload); temporary['hidden'] = list(payload['hidden'])
         with torch.no_grad():
             for j, i in enumerate(train+dev):

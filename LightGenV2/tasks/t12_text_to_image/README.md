@@ -10,6 +10,30 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-27 路由诊断与保留权重续训。**
+原接续run `qwen_vl_native_hybrid_tail_20261027` 的特征蒸馏开发loss从step250的20.81
+升至step2000的3685.85，TRAIN也同步增大，属于优化不稳定而非仅凭train/dev差距判过拟合。
+原流程正确选择step250；图像恢复随后已改善至第6轮PSNR19.6396dB、LPIPS0.412820、
+crop LPIPS0.431661，但尚未达到电子baseline的质量门槛。96条开发样本的视觉top2始终
+为[1,3]、语言始终[0,1]，两模态各只有一种选择，不能据soft概率熵接近均匀声称均衡通过。
+因此有记录地停止本任务自己的恢复PID2881299，保留step2880 best/last及全部结果，best SHA
+`547e0e96af2a10c0277482ba9ae45018e5ca9aaf0ace8dbd5c39dbdf221192ba`；
+`controlled_stop.json`校验权重未丢失、原GPU子进程已退出，未停止其他任务。
+原工作流的failure表示受控切换导致的子进程退出，不冒称完成或悄悄删除失败证据。
+
+后续run为`runs/simulation/qwen_vl_native_hybrid_phasebalanced_20261027`，具体启动／进度
+以其execution/progress为准；通过工作流`--reuse-features`与`--initial-hybrid`复用原教师缓存
+和上述已训练best，不重新训练电子baseline、不从随机光电模型开始。配置
+`configs/qwen_vl_hybrid_phasebalanced_20261027.json`：电子LR1e-5，相位LR3e-4、
+router相位LR5e-4，240步暖启动再余弦衰减；这些是待验证的训练调整，不声称已证明原因。
+跨TRAIN样本EMA加入真实硬负载项，同时每20步用18条TRAIN的固定同版本光学router
+做批量边际／硬负载及弱互信息正则，避免只平衡跨训练时间变化的soft EMA。
+补充训练批次只用于优化，每条推理仍每模态一个router；不强迫每条指令均匀、不增加
+电子分类router、不在开发测试上更新统计或梯度。新增4维load EMA仅为训练状态buffer，
+不增加部署参数或光学层数。旧checkpoint只允许缺失该训练buffer，其余权重严格校验。
+alpha仍[0.60,0.90]，原数据、光学几何、幅度编码、生成尾部与电子对照均不变。
+后续特征蒸馏增加持续恶化早停；当前续训直接复用图像best，跳过已完成的特征蒸馏。
+
 **2026-10-27 新电子baseline已完成100轮，接续光电工作流已启动。**
 电子run `runs/simulation/qwen_vl_lamp_pillow_960_96_100epoch_20261027`，按预先指定的
 完整开发96条平均LPIPS选择第50轮／step6000，权重SHA256
