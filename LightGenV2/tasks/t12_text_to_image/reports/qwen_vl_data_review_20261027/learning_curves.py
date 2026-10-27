@@ -64,11 +64,12 @@ def render(run, output):
     snaps = sorted([read(p) for p in output.glob('step_*.json')], key=lambda s: s['step'])
     for mode, color in zip(('background', 'object', 'joint'), ('C0', 'C1', 'C2')):
         for ax, metric in zip(axes[1], ('lpips_by_mode', 'object_crop_lpips_by_mode')):
-            ax.plot([0]+[s['epoch'] for s in snaps],
-                    [before[metric][mode]]+[s['development_test'][metric][mode] for s in snaps],
-                    'o-', color=color, label=mode)
-    axes[1, 0].set(title='Per-mode full-image LPIPS', ylabel='LPIPS')
-    axes[1, 1].set(title='Per-mode object-crop LPIPS', ylabel='LPIPS')
+            ax.plot([0], [before[metric][mode]], 'o', color=color, label=mode)
+            ax.plot([s['epoch'] for s in snaps],
+                    [s['development_test'][metric][mode] for s in snaps],
+                    'o-', color=color)
+    axes[1, 0].set(title='Available per-mode snapshots: full-image LPIPS', ylabel='LPIPS')
+    axes[1, 1].set(title='Available per-mode snapshots: object-crop LPIPS', ylabel='LPIPS')
     for ax in axes.flat:
         ax.set_xlabel('Epoch in the current continuation')
         ax.grid(alpha=.2)
