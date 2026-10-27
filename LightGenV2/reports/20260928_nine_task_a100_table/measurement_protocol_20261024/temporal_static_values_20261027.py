@@ -9,10 +9,10 @@ from audit_lgvq_async_point_20261026 import compare
 from lgvq_phase_ledger_20261026 import build as phase_build
 
 MANIFEST_SHA='dd709c4d527b05e5ff1e4e681e5969efbc33200f90542b7c4b899ee18b576be2'
-HEADERS=['平台','模型','MPS/%','轮次','每16视频/ms','等效单帧/ms','每16视频/J','等效单帧/J','tokens/s（千问统一计数）','LightGen时间加速比','LightGen能效比','LightGen tokens/s加速比']
+HEADERS=['平台','模型','MPS/%','轮次','每16视频/ms','等效单帧/ms','每16视频/J','等效单帧/J','tokens/s','LightGen时间加速比','LightGen能效比','LightGen tokens/s加速比']
 NOTES=['LightGen：电子阶段计时＋固定光周期，不含电子图构建；能量按组件核算，非光路直接实测。',
-       'tokens/s统一按千问参考工作量计数：每16视频7,136 token；不是各模型内部实际生成token数。',
-       '时间/能效比＝各行时间/能量÷LightGen；tokens/s加速比＝LightGen÷各行。40GB与80GB并非同卡受控比较。']
+       '仅LightGen按千问参考计数（每16视频7,136 token）；其他模型保留各自原生计数，CLIP/YOLO不适用。',
+       '时间/能效比＝各行时间/能量÷LightGen；tokens/s加速比＝LightGen÷各行，token定义不同。40GB与80GB非同卡受控比较。']
 
 
 def prepare(source):
@@ -49,20 +49,26 @@ def prepare(source):
     rows=[['40GB PCIe / 250W','LightGen',100,3,t,t/64,e,e/64,rate,1.,1.,1.]]
     labels={'clip':'CLIP','glm':'GLM','qwen':'Qwen','yolo':'YOLO','deepseek':'DeepSeek完整','kimi':'Kimi'}
     for g in groups:
+        native_rate=g['pooled_native_tokens_per_s']
+        throughput_ratio='不适用' if native_rate is None else rate/native_rate
         rows.append(['40GB PCIe / 250W' if g['platform']=='A10040GB_PCIE_250W' else '80GB SXM4 / 400W',
             labels[g['model']],g['cap'],g['rounds'],g['time16_ms'],g['equivalent_frame_ms'],g['energy16_j'],g['energy_per_frame_j'],
-            g['pooled_common_tokens_per_s'],g['time16_ms']/t,g['energy16_j']/e,rate/g['pooled_common_tokens_per_s']])
+            '不适用' if native_rate is None else native_rate,g['time16_ms']/t,g['energy16_j']/e,throughput_ratio])
         if g['common_effective_tokens']!=common or g['video_calls']!=calls:raise ValueError('Mismatched reference workload')
-        compare(rows[-1][9],rows[-1][11],'common_throughput_ratio_equals_time_ratio')
+        if native_rate is not None:
+            compare(g['native_effective_tokens']/g['elapsed_s'],native_rate,'original_native_token_rate')
+        if g['model']=='qwen':compare(rows[-1][9],rows[-1][11],'Qwen_throughput_ratio_equals_time_ratio')
     return dict(status='raw_rechecked_fixed_values',headers=HEADERS,rows=rows,notes=NOTES,
         source_json=str(snapshot),source_json_sha256=sha(snapshot),source_manifest_sha256=MANIFEST_SHA,
         baseline_original_points_rechecked=36,LG_original_points_rechecked=3,LG_source_receipts=raw_sources,
         edited_XLSX_read=False,explicit_extra_warmup_forwards=0,physical_optical_hardware_measured=False,
         energy_is_component_accounting=True,excel_formulas_requested=False,
-        token_scope='Qwen reference equivalent workload for every model, not native generation',
+        token_scope='LightGen: Qwen reference equivalent tokens; baselines: each original native token count',
         common_effective_tokens=common,common_tokens_per_16_videos=7136,
         LG_native_prompt_tokens_not_used_for_display=native,
-        throughput_ratio_direction='LightGen / row',throughput_ratios_equal_time_ratios=True)
+        throughput_ratio_direction='LightGen Qwen-reference rate / baseline native rate',
+        baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
+        cross_model_token_definitions_differ=True)
 
 
 def audit(folder,visual_reviewed=False):
@@ -92,7 +98,8 @@ def audit(folder,visual_reviewed=False):
         all_saved_values_independently_verified=True,edited_XLSX_used_as_source=False,
         deletion_cannot_trigger_reference_recalculation=True,visual_reviewed=True,workbook_sha256=sha(book),
         common_effective_tokens=expected['common_effective_tokens'],
-        throughput_ratios_equal_time_ratios=True)
+        baseline_native_token_rates_preserved=True,throughput_ratios_equal_time_ratios_for_Qwen_only=True,
+        cross_model_token_definitions_differ=True)
     with (folder/'saved_values_audit.json').open('x',encoding='utf8') as f:json.dump(result,f,ensure_ascii=True,indent=2)
     with (folder/'delivery_manifest.json').open('x',encoding='utf8') as f:
         json.dump(dict(status='sealed',files=[dict(path=p.name,bytes=p.stat().st_size,sha256=sha(p)) for p in

@@ -1,5 +1,22 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-27：仅LightGen用千问token，其他模型恢复原生计数
+
+最新人工明确：不将其他模型统一为千问计数。固定展示03仅LightGen使用千问参考token，
+其484,265.21786177123 tokens/s不变；GLM、Qwen、DeepSeek、Kimi恢复各自原生有效token计数，
+按原三轮合token/合保留秒，CLIP/YOLO的tokens/s及吞吐倍数仍不适用。
+tokens/s加速比按LightGen速率/该行原生速率重算：GLM50/100为147.50282070641097/105.22212556489502，
+Qwen50/100为100.58151514328124/90.46236932596284，DeepSeek50/100为211.42919042225702/143.75118241373582，
+Kimi50/100为143.62281190010344/129.63372917667763。不同模型token定义不同，该吞吐比不等同于统一token工作量加速比；
+仅Qwen同计数时与时间倍数相等。时间、能量、等效帧和时间/能效倍数全部不变。
+
+03位于协议`outputs/01a061e2-6f88-7913-87f5-b632000e4c83/Temporal_LightGen_static_20261027_03/`，
+成品`Temporal_LightGen与baseline_固定数值_20261027.xlsx`，SHA256
+`0c130fdd10f504332846744b47f0d67b4646e68acb29a518164c1d20bc7f680d`。
+1sheet、13配置、12列、0公式/外链，固定全精度数值；39原点再次重核，未以用户修改XLSX取数。
+独立保存值审计passed，另逐项核对baseline tokens/s与原固定01完全一致，非token列与02完全一致。
+单页PNG真实核看，作者marker本次恰一次；旧01/02及全部原始结果保留，不覆写。
+
 ## 2026-10-27：纠正固定展示版的token计数，新增吞吐加速比
 
 人工明确LightGen的tokens应使用千问参考计数。上一固定展示01误填每轮4,864个自身共享prompt token，
