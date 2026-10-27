@@ -71,6 +71,15 @@ AST只为原dtype转换添加memory_format，不用Linear替换或降低精度�
 不改配置/权重/输入。父1829078/子1829287真退出、MPS释放，10原文件25076B及972B外log本地保全。
 该明确代码检查错误修复后用新07根测布局方法，旧06不覆盖、不重标；补充纯测试钉实际patch16。
 
+07布局候选完整2048逐字节同卡一致，但软件28.420760555036395ms/16，比01慢4.6004169%，不采用。
+父1833401/子1833638真退出、私有MPS释放；22原文件4218985B和0B外log本地SHA保全。
+独立 `local_independent_software_audit05.json` 通过软件范围审计；原DAG拒收，不修钟、不造光电投影。
+下一项只启用既有同场文本分支调度：原embedding和六条prompt adapter语句移到独立text stream，
+在原H2D后fork、视觉条件融合前join，原算术AST逐节点相同，不缓存任何token/特征/评分。
+新 `--parallel-text --same-card-reference --software-only-development` 只跑 `parallel_text` 叶一次；
+线程8、原独立graph池、原Event分配、原卷积布局和128次原TEXT渲染均恢复基线，不叠加前五项负收益方法。
+2048逐字节、四循环、首3场、两次真实capture、6光周期、原连续墙钟、NVML及排外门保持。
+
 ## 2026-10-27：LG05与全部36个baseline点统一总表已封存
 
 新不可变交付为协议目录下

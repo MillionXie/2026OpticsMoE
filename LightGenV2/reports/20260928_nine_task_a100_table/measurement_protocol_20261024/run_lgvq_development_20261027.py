@@ -229,7 +229,8 @@ def worker(args):
             ['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip(),
         published_commit=bound['commit'], sources=bound['sources'], command=sys.argv,
         hardware_only_AST_substitution_counts=counts, original_worker_sha256=sha(WORKER),
-        performance_change=('Conv3d_channels_last_3d_storage_only' if args.channels_last_3d else
+        performance_change=('same_field_text_visual_stream_overlap' if args.parallel_text else
+            'Conv3d_channels_last_3d_storage_only' if args.channels_last_3d else
             'constant_prompt_TEXT_render_once_inside_window' if args.once_prompt_render else
             'CPU_intraop_threads_1' if args.cpu_threads==1 else
             'same_slot_same_stream_graph_allocator_pool' if args.share_graph_pools else
@@ -355,7 +356,8 @@ def suite(args):
                 MKL_NUM_THREADS=str(args.cpu_threads), OPENBLAS_NUM_THREADS='1', TOKENIZERS_PARALLELISM='false')
             subprocess.run(['nvidia-cuda-mps-control', '-d'], env=env, capture_output=True,
                 text=True, timeout=10, check=True); active = True
-            plan = ([('conv_layout', False)] if args.channels_last_3d else
+            plan = ([('parallel_text', False)] if args.parallel_text else
+                [('conv_layout', False)] if args.channels_last_3d else
                 [('prompt_render', False)] if args.once_prompt_render else
                 [('cpu_threads1', False)] if args.cpu_threads==1 else
                 [('graph_pool', False)] if args.share_graph_pools else
@@ -374,6 +376,7 @@ def suite(args):
                 command.extend(['--cpu-threads',str(args.cpu_threads)])
                 if args.once_prompt_render:command.append('--once-prompt-render')
                 if args.channels_last_3d:command.append('--channels-last-3d')
+                if args.parallel_text:command.append('--parallel-text')
                 write(args.root/(label+'.command.json'), command)
                 with (args.root/(label+'.log')).open('x') as log:
                     child = subprocess.Popen(command, cwd=REPO, env=env, stdin=subprocess.DEVNULL,
@@ -416,6 +419,8 @@ def main():
     p.add_argument('--cpu-threads', type=int, choices=[1,8], default=8)
     p.add_argument('--once-prompt-render', action='store_true')
     p.add_argument('--channels-last-3d', action='store_true')
+    p.add_argument('--parallel-text', action='store_true',
+        help='Original same-field text arithmetic on its own stream; fork after H2D and join before use')
     p.add_argument('--software-only-development', action='store_true',
         help='Keep rejected CUDA clock evidence; report CPU-wall development only, never a repaired DAG projection')
     args = p.parse_args(); args.root = args.root.resolve()
@@ -424,7 +429,10 @@ def main():
     if not math.isfinite(args.deadline) or not 0 < args.deadline-time.time() <= 3600:
         raise ValueError('Finite development deadline at most one hour required')
     args.pipe = '/DATA/DATA1/guest3/.cache/'+args.root.name
-    args.optimize_runtime = True; args.parallel_text = False
+    args.optimize_runtime = True
+    if args.parallel_text and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools
+            or args.reuse_events or args.once_prompt_render or args.channels_last_3d):
+        raise ValueError('Text-stream candidate changes only same-field dependency scheduling')
     if args.channels_last_3d and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools or args.reuse_events or args.once_prompt_render):
         raise ValueError('Conv-layout candidate changes only original Conv3d storage format')
     if args.once_prompt_render and (not args.same_card_reference or args.cpu_threads!=8 or args.share_graph_pools or args.reuse_events):
@@ -433,10 +441,10 @@ def main():
         raise ValueError('Graph-pool candidate requires same-card reference and original non-reused events')
     if args.cpu_threads==1 and (not args.same_card_reference or args.share_graph_pools or args.reuse_events):
         raise ValueError('CPU-thread candidate requires same-card reference with original graph/event allocation')
-    if args.software_only_development and not (args.share_graph_pools or args.cpu_threads==1 or args.once_prompt_render or args.channels_last_3d):
+    if args.software_only_development and not (args.parallel_text or args.share_graph_pools or args.cpu_threads==1 or args.once_prompt_render or args.channels_last_3d):
         raise ValueError('Explicit software-only scope is limited to new authorized development candidates')
     if args.phase == 'worker':
-        if args.output is None or args.output.resolve() not in [args.root/x for x in ('baseline','event_pool','graph_pool','cpu_threads1','prompt_render','conv_layout')]:
+        if args.output is None or args.output.resolve() not in [args.root/x for x in ('baseline','event_pool','graph_pool','cpu_threads1','prompt_render','conv_layout','parallel_text')]:
             raise ValueError('Exact development leaf required')
         args.output = args.output.resolve()
         if args.reuse_events != (args.output.name == 'event_pool'):raise ValueError('Frozen A/B plan differs')
@@ -444,6 +452,7 @@ def main():
         if (args.cpu_threads==1) != (args.output.name=='cpu_threads1'):raise ValueError('Frozen CPU-thread plan differs')
         if args.once_prompt_render != (args.output.name=='prompt_render'):raise ValueError('Frozen prompt-render plan differs')
         if args.channels_last_3d != (args.output.name=='conv_layout'):raise ValueError('Frozen Conv-layout plan differs')
+        if args.parallel_text != (args.output.name=='parallel_text'):raise ValueError('Frozen text-stream plan differs')
     (suite if args.phase == 'suite' else worker)(args)
 
 

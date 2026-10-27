@@ -138,13 +138,21 @@ def audit(baseline,candidate,output):
                     or g['development_pool_scope']!='same_real_slot_same_stream_only' for g in graphs):
                 raise ValueError('Actual slot/stream pool evidence incomplete')
             if graphs[-1]['development_stream_pool_count']!=2:raise ValueError('Exactly separate frontend/body pools required')
-        elif method in ('CPU_intraop_threads_1','constant_prompt_TEXT_render_once_inside_window','Conv3d_channels_last_3d_storage_only'):
+        elif method in ('CPU_intraop_threads_1','constant_prompt_TEXT_render_once_inside_window','Conv3d_channels_last_3d_storage_only','same_field_text_visual_stream_overlap'):
             identity=read(candidate/'identity.json')
             threads=1 if method=='CPU_intraop_threads_1' else 8
             if identity['CPU_intraop_threads']!=threads or any(g['independent_default_pool'] is not True for g in graphs):
                 raise ValueError('Isolated CPU-thread candidate required')
         else:raise ValueError('Unknown development candidate')
     if read(candidate/'async_raw_timing.json')['event_reuse']['enabled'] is not False:raise ValueError('One-change graph pool candidate required')
+    if method=='same_field_text_visual_stream_overlap':
+        raw=read(candidate/'async_raw_timing.json');actual=read(candidate/'async_identity.json')
+        branch=actual['scoring_partition']['partition']['same_field_text_adapter_branch']
+        if (raw['same_field_parallel_text'] is not True or actual['same_field_parallel_text'] is not True
+                or branch['original_prompt_adapter_arithmetic_unchanged'] is not True
+                or branch['executed_once_per_real_field'] is not True
+                or branch['text_adapters_join_before_prompt_conditioned_vision'] is not True):
+            raise ValueError('Original once-per-field text math and join dependency required')
     if method=='constant_prompt_TEXT_render_once_inside_window':
         info=read(candidate/'prompt_render_identity.json');first=pool[0]['tokenizer'];a0,a1=info['first_render_interval']
         if (info['requests']!=128 or info['renders']!=1 or not first['start']<=a0<=a1<=first['end']

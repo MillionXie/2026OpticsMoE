@@ -59,5 +59,25 @@ class DevelopmentTests(unittest.TestCase):
         self.assertIn('not args.same_card_reference or args.share_graph_pools or args.reuse_events',source)
         self.assertIn("[('cpu_threads1', False)]",source)
 
+    def test_text_stream_candidate_is_isolated_and_forwarded(self):
+        source=Path(dev.__file__).read_text(encoding='utf8')
+        self.assertIn("[('parallel_text', False)]",source)
+        self.assertIn("if args.parallel_text:command.append('--parallel-text')",source)
+        self.assertIn("args.parallel_text != (args.output.name=='parallel_text')",source)
+        self.assertIn('or args.reuse_events or args.once_prompt_render or args.channels_last_3d',source)
+        self.assertNotIn('args.parallel_text = False',source)
+
+    def test_text_stream_fork_and_join_remain_inside_original_prefix(self):
+        import inspect
+        from lgvq_async_optimization_20261026 import parallel_front
+        source=inspect.getsource(parallel_front)
+        self.assertLess(source.index('text_stream.wait_stream'),source.index("front.embedding(raw['ids'])"))
+        self.assertLess(source.index('prepared=text_fn'),source.index('ready.record()'))
+        self.assertLess(source.index("front.visual.patch_embed(raw['pixels'])"),source.index('wait_event(ready)'))
+        self.assertLess(source.index('wait_event(ready)'),source.index('return dict'))
+        self.assertEqual(source.count('front.embedding('),1)
+        self.assertEqual(source.count('text_fn(model,'),1)
+        self.assertNotIn('synchronize()',source)
+
 
 if __name__ == '__main__':unittest.main()
