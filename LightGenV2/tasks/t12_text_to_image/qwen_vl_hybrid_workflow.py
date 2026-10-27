@@ -25,6 +25,14 @@ def gpu_pids(uuid):
     return [int(row.split(',')[1]) for row in lines if row.startswith(uuid)]
 
 
+def verify_feature_count(report, audit):
+    """Reuse only a complete cache covering the explicitly recorded cohort."""
+    expected = audit['pairs']['train'] + audit['pairs']['val']
+    if not report['complete'] or report['count'] != expected:
+        raise ValueError('Reused teacher cache does not cover the data cohort')
+    return expected
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ('parent', 'data', 'qwen', 'sd', 'config', 'smoke-config', 'tail-config', 'output'):
@@ -32,6 +40,7 @@ def main():
     p.add_argument('--parent-workflow-pid', type=int, required=True)
     p.add_argument('--reuse-features', type=Path, help='Verified completed teacher feature cache; never recompute it')
     p.add_argument('--initial-hybrid', type=Path, help='Preserved trained macro best, including an interrupted recovery')
+    p.add_argument('--input-manifest', type=Path, help='Raw RGB/text-only development inputs for matched diagnostic timing')
     a = p.parse_args()
     if (a.output/'execution.json').exists():
         raise ValueError('Do not start a duplicate workflow')
@@ -67,7 +76,7 @@ def main():
         return cmd
     def timing(label, hybrid=None, tail=None):
         cmd = ['qwen_vl_latency', '--checkpoint', str(a.parent/'best_checkpoint.pt'),
-              '--manifest', str(a.parent/'raw_inputs.json'), '--qwen', str(a.qwen), '--sd', str(a.sd),
+              '--manifest', str(a.input_manifest or a.parent/'raw_inputs.json'), '--qwen', str(a.qwen), '--sd', str(a.sd),
               '--gpu-uuid', gpu, '--rounds', '3', '--memory-fraction', '.85', '--output', str(a.output/label)]
         if hybrid:
             cmd += ['--hybrid-checkpoint', str(hybrid/'best_checkpoint.pt')]
@@ -80,7 +89,7 @@ def main():
             if failure.exists():
                 raise RuntimeError('Electronic baseline workflow failed; diagnose before continuation')
             proc = Path(f'/proc/{a.parent_workflow_pid}/cmdline')
-            if not proc.exists() or 'qwen_vl_expanded_workflow' not in proc.read_bytes().decode(errors='replace'):
+            if not proc.exists() or 'qwen_vl_' not in proc.read_bytes().decode(errors='replace'):
                 raise RuntimeError('Electronic workflow exited without a completion report')
             write(a.output/'progress.json', {'stage': 'waiting_electronic_baseline', 'gpu_used_by_continuation': False,
                    'observed_unix': time.time(), 'parent_progress': json.loads((a.parent/'progress.json').read_text()) if (a.parent/'progress.json').exists() else None})
@@ -88,6 +97,9 @@ def main():
         done = json.loads((a.parent/'workflow_report.json').read_text())
         if not done['complete']:
             raise RuntimeError('Baseline report is incomplete')
+        parent_report = json.loads((a.parent/'report.json').read_text())
+        if not parent_report['complete'] or parent_report['best_step'] <= 0:
+            raise RuntimeError('No completed selected electronic checkpoint')
         # Completion is written just before the parent's release receipt; wait
         # for its GPU children rather than racing the final raw-input process.
         for _ in range(12):
@@ -99,8 +111,7 @@ def main():
         timing('electronic_latency')
         if a.reuse_features:
             feature_report = json.loads((teacher_features/'report.json').read_text())
-            if not feature_report['complete'] or feature_report['count'] != 1056:
-                raise RuntimeError('Reused teacher cache incomplete')
+            verify_feature_count(feature_report, json.loads((a.data/'data_audit.json').read_text()))
             write(a.output/'reuse_identity.json', {'teacher_features': str(teacher_features),
                 'teacher_features_sha256': feature_report['sha256'], 'initial_hybrid': str(a.initial_hybrid) if a.initial_hybrid else None})
         else:
@@ -137,7 +148,7 @@ def main():
         optical = tail_time['optical_timing_model']['user_scope_serial_cuda_span_substitution_ms']['mean']
         baseline = baseline_time['first_tf_to_gpu_rgb_stream_ms']['mean']
         tail_report = json.loads((tail/'report.json').read_text())
-        write(a.output/'report.json', {'complete': True, 'baseline_checkpoint_sha256': done['checkpoint_sha256'],
+        write(a.output/'report.json', {'complete': True, 'baseline_checkpoint_sha256': parent_report['checkpoint_sha256'],
               'tail_quality_gate': tail_report['quality_gate'], 'user_scope_cuda_substitution_estimated_speedup': baseline/optical,
               'speedup_is_physical_measurement': False, 'final_end_to_end_dag_audit_pending': True,
               'quality_accepted': False, 'stages': stages, 'alpha_minimum': .60,

@@ -1,0 +1,22 @@
+{
+  "seed": 1042,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "gpu_memory_fraction": 0.85,
+  "channels": [192, 384, 768, 768],
+  "heads": [3, 6, 12, 12],
+  "epochs": 8,
+  "batch_size": 4,
+  "lr": 0.00003,
+  "warmup_steps": 114,
+  "eval_every": 456,
+  "early_stop_evaluations": 3,
+  "latent_kd_weight": 1.0,
+  "rgb_kd_weight": 0.3,
+  "rgb_weight": 0.2,
+  "lpips_weight": 0.5,
+  "crop_lpips_weight": 0.3,
+  "attention_weight": 0.05,
+  "evaluation_label": "development_test",
+  "test_gradient_updates": false,
+  "protocol": "Candidate pruning after raw LG recovery on corrected TRAIN1824/DEV96. Preserve folded LoRA, GEGLU halves, skip channel semantics, native VAE and all instruction FiLM/head overlays. Eight-epoch candidate, not an accepted quality or twofold speed claim. Independent TEST540 remains sealed."
+}
