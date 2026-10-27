@@ -110,6 +110,8 @@ class FocusedHead(nn.Module):
 
 
 def short_prompt(row, description):
+    if row.get('render_protocol') == 'simple_studio_edit_v1':
+        return row['prompt']
     # Only concise grammar is changed; no blind truncation of distinguishing
     # target attributes, and no product identifier or new object is introduced.
     description = description.replace(', entirely visible', '').replace('entirely visible', '').strip().rstrip('.')

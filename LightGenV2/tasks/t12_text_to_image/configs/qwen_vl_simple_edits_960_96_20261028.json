@@ -1,0 +1,19 @@
+{
+  "schema": "simple_studio_edit_v1",
+  "seed": 1042,
+  "parent_sha256": {
+    "annotated_pairs.json": "aa16850f629df4809e8ffc973331649969a688fb0da104e75e908c9b180b0938",
+    "product_descriptions.json": "13159cf8faebeacee880b461da7f6ee29dcbaefb81cfcf47ab4766771f184b43"
+  },
+  "categories": ["lamp", "pillow"],
+  "train_pairs": 960,
+  "development_pairs": 96,
+  "max_instruction_words": 14,
+  "edits_per_instruction": {"background": 1, "object": 1, "joint": 2},
+  "background_colors": ["light_gray", "warm_beige", "pale_blue", "sage_green", "muted_rose"],
+  "target_families": {"lamp": ["cylindrical shade", "tapered shade"], "pillow": ["striped", "geometric pattern"]},
+  "basis": "Reuse reviewed complete ABO render views and original TRAIN/DEV product roles. One requested object-family change or one studio-background color change; joint combines these two. No material, base, stem, lighting, brightness, window or room constraints in the user instruction. Genuine alpha is preserved. Source references with other shapes/patterns may remain references but are not falsely labelled as a replacement family. No holdout reads, model-based selection or GPU work.",
+  "target_policy": "TRAIN family labels correspond to multiple product identities. Within a source product and requested family, the canonical replacement product is fixed independently of background to prevent a color-to-SKU side channel. Source and target product identities differ for object/joint. Identical reference RGB + prompt + seed must not map to conflicting GT. Targets are one supervised example of a family, not the only semantically valid output.",
+  "inference": "Reference RGB + short instruction only. No target image, alpha, teacher caption or SKU.",
+  "holdout": "The existing independent 240-pair complex-scene cohort remains unopened by models. A separately versioned simple-scene evaluation protocol must be prepared and frozen before final evaluation; never mix new-task scores with old-task scores."
+}

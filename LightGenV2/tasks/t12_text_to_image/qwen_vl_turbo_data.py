@@ -149,6 +149,9 @@ def pilot_subset(pairs: list[dict], per_cell: int = 2) -> list[dict]:
 
 
 def render_pair(row: dict, size: int = 256) -> tuple[Image.Image, Image.Image]:
+    if row.get('render_protocol') == 'simple_studio_edit_v1':
+        from .qwen_vl_simple_edits import render_simple_pair
+        return render_simple_pair(row, size)
     from .product_scene_replace_data import render_composed_background
     fg, mask = normalized_product(row['source'],size)
     bg = render_composed_background(tuple(row['source_scene']), size, row['sample_id'], 'source')
@@ -182,6 +185,13 @@ def add_descriptions(rows: list[dict], descriptions: dict[str, str]) -> list[dic
     result = []
     for original in rows:
         row = dict(original)
+        if row.get('render_protocol') == 'simple_studio_edit_v1':
+            # Prepared, reviewed short instruction. Never regenerate it from
+            # the full product/scene annotation during Qwen feature caching.
+            if not row.get('prompt') or not row.get('teacher_caption') or row.get('edit_count') not in (1, 2):
+                raise ValueError('Incomplete simple editing row')
+            result.append(row)
+            continue
         source = descriptions[row['source']['sample_id']]
         target = descriptions[row['target']['sample_id']]
         scene = scene_text(row['target_scene'])
