@@ -1,0 +1,171 @@
+{
+  "status": "complete_no_router_direction_admission",
+  "run": "kather_n49_adam_block_probe_20261028",
+  "published_source": "7bbd0a8bad680f1f8b489d5665ca9e0e275f1fcc",
+  "source_last_checkpoint_sha256": "b90221a02c779ce2359b6b2236bb4b97c1fdf485420336b168deae47d721bb72",
+  "source_state_field": "live_model",
+  "source_live_tensor_sha256": "2e4a677809dc6cec6740d1684b62471cd610f2a21dc34762ab80ceb3571d9d4f",
+  "actual_optimizer_state": "retained last16 step1024, expert3e-5/global1.5e-5/router3e-6, restored before each of two fit candidates",
+  "actual_source_clean_train_correct": 3134,
+  "preserved_incumbent_best_test_correct": 602,
+  "preserved_incumbent_best_state": "Separate selectedEMA16, not probe source live16",
+  "fit_batches": 2,
+  "fit_images": 32,
+  "heldout_clean_defined_repair": 32,
+  "heldout_clean_defined_guard": 32,
+  "heldout_views": 2,
+  "actual_candidate_Adam_steps": 2,
+  "block_source_restore_trials": 8,
+  "forward_image_inputs": 4808,
+  "new_trained_model_delivered": false,
+  "new_val_test_forward": false,
+  "router_admitted": false,
+  "admission_threshold": 1e-05,
+  "repeated_baseline_max_error": 0.0,
+  "results": [
+    {
+      "batch": 1,
+      "block": "router",
+      "view": 0,
+      "repair_mean_delta": -5.830079317092896e-07,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -6.020069122314453e-06
+    },
+    {
+      "batch": 1,
+      "block": "router",
+      "view": 1,
+      "repair_mean_delta": 5.308538675308228e-07,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -3.331899642944336e-06
+    },
+    {
+      "batch": 1,
+      "block": "expert",
+      "view": 0,
+      "repair_mean_delta": -7.896311581134796e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -0.00010507702827453612
+    },
+    {
+      "batch": 1,
+      "block": "expert",
+      "view": 1,
+      "repair_mean_delta": -7.274188101291656e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -0.00012110471725463867
+    },
+    {
+      "batch": 1,
+      "block": "global",
+      "view": 0,
+      "repair_mean_delta": -8.234754204750061e-06,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -3.807544708251953e-05
+    },
+    {
+      "batch": 1,
+      "block": "global",
+      "view": 1,
+      "repair_mean_delta": -7.549300789833069e-06,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -3.46064567565918e-05
+    },
+    {
+      "batch": 1,
+      "block": "full",
+      "view": 0,
+      "repair_mean_delta": -8.791685104370117e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -0.00015683770179748536
+    },
+    {
+      "batch": 1,
+      "block": "full",
+      "view": 1,
+      "repair_mean_delta": -8.031167089939117e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -0.00014634132385253905
+    },
+    {
+      "batch": 2,
+      "block": "router",
+      "view": 0,
+      "repair_mean_delta": -5.047768354415894e-07,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -5.358457565307617e-06
+    },
+    {
+      "batch": 2,
+      "block": "router",
+      "view": 1,
+      "repair_mean_delta": 3.371387720108032e-07,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -4.0531158447265625e-06
+    },
+    {
+      "batch": 2,
+      "block": "expert",
+      "view": 0,
+      "repair_mean_delta": -6.040744483470917e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -0.00010072588920593262
+    },
+    {
+      "batch": 2,
+      "block": "expert",
+      "view": 1,
+      "repair_mean_delta": -5.5827200412750244e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -6.877779960632325e-05
+    },
+    {
+      "batch": 2,
+      "block": "global",
+      "view": 0,
+      "repair_mean_delta": -4.986301064491272e-06,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -2.981424331665039e-05
+    },
+    {
+      "batch": 2,
+      "block": "global",
+      "view": 1,
+      "repair_mean_delta": -4.377216100692749e-06,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -2.5719404220581055e-05
+    },
+    {
+      "batch": 2,
+      "block": "full",
+      "view": 0,
+      "repair_mean_delta": -6.652809679508209e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -0.00014445185661315918
+    },
+    {
+      "batch": 2,
+      "block": "full",
+      "view": 1,
+      "repair_mean_delta": -5.983375012874603e-05,
+      "guard_new_wrong": 0,
+      "guard_delta_q10": -0.000102996826171875
+    }
+  ],
+  "source_weights_restored_exact_receipt": true,
+  "optimizer_state_reloaded_receipt": true,
+  "source_disk_PT_unchanged": true,
+  "all_probe_and_prior_training_pids_exited_gpu_released": true,
+  "archive_sha256": "bae9b9bd623bba4a5a039b4554b62a7f3ef648cd076d72c7cd218278491f7c08",
+  "archive_bytes": 179637,
+  "manifest_files": 24,
+  "checks": {
+    "all_manifest_sha_verified": true,
+    "fullTRAIN_reference_finite_ids_labels": true,
+    "2fit_batches_balanced_disjoint_heldout": true,
+    "all16_predictions_metrics_recomputed_independent_numpy": true,
+    "all5_gradient_groups_finite_nonzero_receipt": true,
+    "router_admission_recomputed_false": true
+  },
+  "limitation": "Only actual retained-Adam candidates at these learning rates and TRAIN subsets. Clean-defined heldout IDs are reused forD4; only25/32 guard IDs are source-correct at that D4 view. Tiny router effects and nonpositive clean repair change do not prove block incapacity. No amplitude scale or follow-up training is justified by this probe."
+}
