@@ -246,9 +246,11 @@ def run(args,cfg):
             write_json(out/'progress.json',{'stage':'spatial_warm','step':step,'total_steps':cfg['warm_steps'],'loss':float(loss.detach())})
     del warm
     params=[p for p in model.parameters() if p.requires_grad]
+    injection=list(model.unet.conv_in.spatial.parameters());injection_ids={id(p) for p in injection}
     optimizer=torch.optim.AdamW([{'params':model.spatial.parameters(),'lr':cfg['spatial_lr']},
        {'params':model.adapter.parameters(),'lr':cfg['adapter_lr']},
-       {'params':[p for p in model.unet.parameters() if p.requires_grad],'lr':cfg['train_lr']}],weight_decay=.01)
+       {'params':[p for p in model.unet.parameters() if p.requires_grad and id(p) not in injection_ids],'lr':cfg['train_lr']},
+       {'params':injection,'lr':cfg.get('spatial_injection_lr',cfg['train_lr'])}],weight_decay=.01)
     aux_count=sum(p.numel() for p in model.spatial.aux_reference.parameters())
     counts={'qwen_full_forward':payload['qwen_checks']['qwen_forward_parameters'],
       'qwen_embedding':payload['qwen_checks']['qwen_embedding_parameters'],

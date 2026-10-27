@@ -18,6 +18,7 @@
   "train_lr": 0.00001,
   "adapter_lr": 0.00001,
   "spatial_lr": 0.0001,
+  "spatial_injection_lr": 0.0001,
   "eval_every": 54,
   "latent_weight": 1,
   "latent_foreground_weight": 3,
