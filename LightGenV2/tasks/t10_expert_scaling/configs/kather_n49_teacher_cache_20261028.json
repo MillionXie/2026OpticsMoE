@@ -1,0 +1,18 @@
+{
+  "seed": 17,
+  "data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "models": {
+    "teacher17": {"run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s17", "sha256": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60", "top_k": 24},
+    "teacher27": {"run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s27", "sha256": "6c496428ed22bdc0847b0a07f3bc669bfe4a738577017228dfac502d4e14a2cc", "top_k": 24},
+    "teacher37": {"run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s37", "sha256": "5a3a0c735c45aafc9bdf607f54f48dc3ecc21eb3d2703f74bce6ed8034d9beb6", "top_k": 24},
+    "parent": {"run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_reheat_20261028/recent_s17", "sha256": "955e03e7eb8150835f231ac9288549b09ae95540b49b13c2fa8ca73f988459ee", "top_k": 49}
+  },
+  "gpu_jobs": {"1": ["teacher17", "teacher27"], "3": ["teacher37", "parent"]},
+  "gpus": {"1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d", "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"},
+  "minimum_complement": 64,
+  "minimum_classes": 4,
+  "minimum_per_class": 4,
+  "role": "TRAIN-only frozen existing optical teacher admission and exact D4-view cache. No new teacher/student optimization, no VAL/TEST forward, no external pretrained CNN. Three teacher probabilities average equally per input/view; eight views are kept separate. Teachers27/37 are previously completed assets, not new student-seed training. Only an admitted TRAIN complement computes all8 views. Final student inference will remain original single full49 model, and teacher ensemble scores are never a full49 result.",
+  "prospective_student": "After successful cache and two fixed TRAIN-batch gradient calibration, a separate fixed20x1024 seed17 full49 student may use T1 conditional-mean KD for teacher-correct TRAIN, without more-confident gating. Parent KL only for parent-correct/teacher-wrong TRAIN. TRAIN gradient-calibrated lambda then fixed, direct live/EMA development TEST only at4/8/12/16/20. No promise of accuracy or automatic other seeds."
+}
