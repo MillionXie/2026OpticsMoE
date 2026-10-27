@@ -52,7 +52,7 @@ class SpatialInputConv(nn.Module):
 
     def forward(self,x):
         if x.shape[1]!=self.in_channels:raise ValueError('Spatial/noise channel contract mismatch')
-        return self.original(x[:,:4])+self.spatial(x[:,4:].to(self.spatial.weight.dtype))
+        return self.original(x[:,:4].contiguous())+self.spatial(x[:,4:].to(self.spatial.weight.dtype))
 
 
 class SpatialTurboHead(NativeTurboHead):
@@ -104,7 +104,7 @@ def balanced_region_l1(prediction,target,edit_region):
     return (values/count).mean()
 
 
-def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False):
+def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False,identity_probe=None):
     from diffusers import AutoencoderKL,EulerDiscreteScheduler,UNet2DConditionModel
     from peft import LoraConfig
     adapter=QueryResampler(hidden=cfg['adapter_hidden'],layers=cfg['adapter_layers']).to(device)
@@ -123,16 +123,28 @@ def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False):
     with torch.no_grad():
         for n,p in unet.named_parameters():
             if n in saved:p.copy_(saved[n].to(device))
+    vae=AutoencoderKL.from_pretrained(sd,subfolder='vae',variant='fp16',
+        torch_dtype=torch.bfloat16,local_files_only=True).to(device).eval().requires_grad_(False)
+    scheduler=EulerDiscreteScheduler.from_pretrained(sd,subfolder='scheduler',local_files_only=True)
+    expected_output=None
+    if identity_probe is not None:
+        if 'spatial' in state:raise ValueError('Zero-injection identity applies to an unaugmented parent only')
+        base=NativeTurboHead(unet,vae,scheduler,adapter).eval()
+        with torch.no_grad():expected_output=base(*identity_probe)
     unet.conv_in=SpatialInputConv(unet.conv_in,cfg['spatial_channels'])
     unet.register_to_config(in_channels=4+cfg['spatial_channels'])
     if 'conv_in.spatial.weight' in saved:
         with torch.no_grad():unet.conv_in.spatial.weight.copy_(saved['conv_in.spatial.weight'].to(device))
     spatial=SpatialBridge(width=cfg['spatial_width'],channels=cfg['spatial_channels'],grid=cfg['visual_grid']).to(device)
     if 'spatial' in state:spatial.load_state_dict(state['spatial'])
-    vae=AutoencoderKL.from_pretrained(sd,subfolder='vae',variant='fp16',
-        torch_dtype=torch.bfloat16,local_files_only=True).to(device).eval().requires_grad_(False)
-    scheduler=EulerDiscreteScheduler.from_pretrained(sd,subfolder='scheduler',local_files_only=True)
     model=SpatialTurboHead(unet,vae,scheduler,adapter,spatial,positions)
+    if identity_probe is not None:
+        model.eval()
+        with torch.no_grad():actual=model(*identity_probe)
+        differences=[float((a-b).abs().max()) for a,b in zip(actual,expected_output)]
+        model.initial_identity={'same_device':True,'latent_max_absolute_difference':differences[0],
+          'rgb_max_absolute_difference':differences[1],'passed':max(differences)<1e-5}
+        if not model.initial_identity['passed']:raise ValueError('Same-device zero-injection forward identity failed: '+str(model.initial_identity))
     if drop_vae_encoder:
         vae.encoder=None;vae.quant_conv=None
         spatial.aux_reference=None

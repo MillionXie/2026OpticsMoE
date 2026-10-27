@@ -28,7 +28,7 @@ def identity():
 def verify_layout(payload,qwen,output):
     from transformers import AutoProcessor
     processor=AutoProcessor.from_pretrained(qwen,local_files_only=True,min_pixels=65536,max_pixels=65536)
-    config=json.loads((qwen/'config.json').read_text())
+    config=json.loads((qwen/'config.json').read_text(encoding='utf-8'))
     token_id=config['image_token_id'];count=64
     positions=None
     probes={0,len(payload['rows'])-1,next(i for i,r in enumerate(payload['rows']) if r['split']=='val')}
@@ -129,7 +129,7 @@ def evaluate(model,payload,ids,device,output,label,metric,export=False):
 def run(args,cfg):
     out=args.output;out.mkdir(parents=True,exist_ok=True)
     if (out/'report.json').exists():raise ValueError('Existing completed run; inspect instead of restarting')
-    parent_report=json.loads((args.parent/'report.json').read_text())
+    parent_report=json.loads((args.parent/'report.json').read_text(encoding='utf-8'))
     if not parent_report['complete'] or parent_report['best_step']<=0:raise ValueError('Parent VAL-selected model is not ready')
     checkpoint=args.parent/'best_checkpoint.pt'
     if sha256(checkpoint)!=parent_report['checkpoint_sha256']:raise ValueError('Parent checkpoint SHA mismatch')
@@ -158,18 +158,19 @@ def run(args,cfg):
     if args.stage=='layout':return
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=cfg['gpu_uuid']:raise ValueError('Unauthorized GPU UUID')
     device=torch.device('cuda:0');torch.cuda.set_per_process_memory_fraction(cfg['gpu_memory_fraction'],0)
-    model=build_spatial_head(args.sd,state,cfg,layout['positions'],device)
+    h,valid=pack_hidden([payload['hidden'][val_ids[0]]],device)
+    probe=(h,valid,noise_for([payload['rows'][val_ids[0]]],device))
+    model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,identity_probe=probe)
+    write_json(out/'zero_injection_identity.json',model.initial_identity)
     model.unet.enable_gradient_checkpointing()
     import lpips
     metric=lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
     before=evaluate(model,payload,val_ids,device,out,'val_before_training',metric)
     expected={r['sample_id']:r['psnr'] for r in parent_report['best_val']['images']}
     deviations=[abs(r['psnr']-expected[r['sample_id']]) for r in before['images']]
-    write_json(out/'zero_injection_identity.json',{'max_per_sample_psnr_difference':max(deviations),
-        'samples':len(deviations),'passed':max(deviations)<.01})
-    if max(deviations)>=.01:raise ValueError('Spatial zero-injection changed the selected parent prediction')
-    if not cfg.get('smoke') and abs(before['mean_per_image_psnr_db']-parent_report['best_val']['mean_per_image_psnr_db'])>.01:
-        raise ValueError('Zero-injection model does not reproduce the parent VAL baseline')
+    write_json(out/'cross_device_parent_comparison.json',{'max_per_sample_psnr_difference':max(deviations),
+        'samples':len(deviations),'original_parent_gpu':'RTX4090','current_gpu':torch.cuda.get_device_name(0),
+        'note':'Historical per-image scores are a cross-device BF16 diagnostic, not the zero-injection identity gate. The actual gate compares both forwards on this GPU.'})
     ref_latent={};target_latent={};edit_regions={};target_regions={}
     model.eval()
     with torch.no_grad():
@@ -207,6 +208,7 @@ def run(args,cfg):
       'training_only_spatial_auxiliary':aux_count,
       'vae_decoder':sum(p.numel() for p in model.vae.decoder.parameters())+sum(p.numel() for p in model.vae.post_quant_conv.parameters()),
       'trainable':sum(p.numel() for p in params)}
+    counts['training_only_vae_encoder']=sum(p.numel() for p in model.vae.encoder.parameters())+sum(p.numel() for p in model.vae.quant_conv.parameters())
     counts['inference_total']=sum(counts[k] for k in ('qwen_full_forward','adapter','unet_including_lora','spatial_readout','vae_decoder'))
     write_json(out/'parameter_counts.json',counts)
     effective=cfg['batch_size']*cfg['gradient_accumulation']
@@ -262,7 +264,7 @@ def run(args,cfg):
     val=evaluate(model,payload,val_ids,device,out,'val_best',metric,export=True)
     train=evaluate(model,payload,train_eval,device,out,'train_best',metric,export=True)
     model.zero_spatial=True
-    without=evaluate(model,payload,val_ids,device,out,'val_without_spatial',metric)
+    without=evaluate(model,payload,val_ids,device,out,'val_without_spatial',metric,export=True)
     model.zero_spatial=False
     write_json(out/'report.json',{'complete':True,'best_step':best_step,'best_val':val,'train':train,
        'val_before_paired_training':before,'val_without_spatial':without,'parameters':counts,
