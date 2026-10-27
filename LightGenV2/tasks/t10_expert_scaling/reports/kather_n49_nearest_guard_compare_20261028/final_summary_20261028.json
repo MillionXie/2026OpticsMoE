@@ -1,0 +1,207 @@
+{
+  "source_commit": "0973c2fd167c72fb002f3492280c45a3d01e9251",
+  "run_ids": [
+    "kather_n49_nearest_guard_global_20261028",
+    "kather_n49_nearest_guard_router_20261028"
+  ],
+  "archive_sha256": "c1d672dc8ec1ed46af89d5a20339df59b54aa821dca1a740cc0331c9a246d4c1",
+  "manifest_files": 22,
+  "all_manifest_and_numpy_audits_passed": true,
+  "no_val_test_forward": true,
+  "resources_released": true,
+  "current_best_test_correct": 600,
+  "target_correct": 616,
+  "pilot_target_met": false,
+  "arms": {
+    "global": {
+      "jacobian_shape": [
+        128,
+        3055504
+      ],
+      "jacobian_sha256": "594536862d83374001002d4821bf0a957da6124e200785021c10f6944f96851f",
+      "raw_solution_rms": 0.010331209748983383,
+      "lambda_value": 4.419775949827454e-05,
+      "target_energy_below_lambda_fraction": 0.0,
+      "trials": [
+        {
+          "rms": 0.0015,
+          "phase_l2": 2.621906042098999,
+          "mean_clean_fit_margin_gain": 0.036661479622125626,
+          "clean_fit_corrected": [
+            0,
+            0
+          ],
+          "clean_observe_corrected": [
+            0,
+            0
+          ],
+          "clean_guard_new_wrong": [
+            0,
+            0,
+            0
+          ],
+          "routes": {
+            "all49_positive": true,
+            "power_sum_max_error": 1.1920928955078125e-07,
+            "mean_l1_change": 0.0,
+            "std_l1_change": 0.0,
+            "effective_experts_mean": 47.12848663330078,
+            "entropy_mean": 3.873767137527466,
+            "per_sample_change_variation": 0.0
+          }
+        },
+        {
+          "rms": 0.005,
+          "phase_l2": 8.739611625671387,
+          "mean_clean_fit_margin_gain": 0.11956825852394104,
+          "clean_fit_corrected": [
+            0,
+            0
+          ],
+          "clean_observe_corrected": [
+            0,
+            0
+          ],
+          "clean_guard_new_wrong": [
+            0,
+            0,
+            0
+          ],
+          "routes": {
+            "all49_positive": true,
+            "power_sum_max_error": 1.1920928955078125e-07,
+            "mean_l1_change": 0.0,
+            "std_l1_change": 0.0,
+            "effective_experts_mean": 47.12848663330078,
+            "entropy_mean": 3.873767137527466,
+            "per_sample_change_variation": 0.0
+          }
+        },
+        {
+          "rms": 0.01,
+          "phase_l2": 17.479223251342773,
+          "mean_clean_fit_margin_gain": 0.2282608300447464,
+          "clean_fit_corrected": [
+            1,
+            8
+          ],
+          "clean_observe_corrected": [
+            0,
+            1
+          ],
+          "clean_guard_new_wrong": [
+            5,
+            1,
+            0
+          ],
+          "routes": {
+            "all49_positive": true,
+            "power_sum_max_error": 1.1920928955078125e-07,
+            "mean_l1_change": 0.0,
+            "std_l1_change": 0.0,
+            "effective_experts_mean": 47.12848663330078,
+            "entropy_mean": 3.873767137527466,
+            "per_sample_change_variation": 0.0
+          }
+        }
+      ],
+      "elapsed_seconds": 37.28633522987366
+    },
+    "router": {
+      "jacobian_shape": [
+        128,
+        50176
+      ],
+      "jacobian_sha256": "6c11e441cf224985eac5ded7ed67096f185f826dfe2b2125dbd8b66a50f0aa5e",
+      "raw_solution_rms": 0.41231346130371094,
+      "lambda_value": 3.944597182776732e-06,
+      "target_energy_below_lambda_fraction": 0.4170492032392446,
+      "trials": [
+        {
+          "rms": 0.0015,
+          "phase_l2": 0.3360000252723694,
+          "mean_clean_fit_margin_gain": 0.0006838329136371613,
+          "clean_fit_corrected": [
+            0,
+            0
+          ],
+          "clean_observe_corrected": [
+            0,
+            0
+          ],
+          "clean_guard_new_wrong": [
+            0,
+            0,
+            0
+          ],
+          "routes": {
+            "all49_positive": true,
+            "power_sum_max_error": 1.1920928955078125e-07,
+            "mean_l1_change": 0.0001639065594645217,
+            "std_l1_change": 3.483871842036024e-05,
+            "effective_experts_mean": 47.12945556640625,
+            "entropy_mean": 3.8737761974334717,
+            "per_sample_change_variation": 1.3877056517230812e-06
+          }
+        },
+        {
+          "rms": 0.005,
+          "phase_l2": 1.119999885559082,
+          "mean_clean_fit_margin_gain": 0.0023059360682964325,
+          "clean_fit_corrected": [
+            0,
+            0
+          ],
+          "clean_observe_corrected": [
+            0,
+            0
+          ],
+          "clean_guard_new_wrong": [
+            0,
+            0,
+            0
+          ],
+          "routes": {
+            "all49_positive": true,
+            "power_sum_max_error": 1.1920928955078125e-07,
+            "mean_l1_change": 0.0005450801691040397,
+            "std_l1_change": 0.00011662951874313876,
+            "effective_experts_mean": 47.13166427612305,
+            "entropy_mean": 3.873795986175537,
+            "per_sample_change_variation": 4.619750598067185e-06
+          }
+        },
+        {
+          "rms": 0.01,
+          "phase_l2": 2.239999771118164,
+          "mean_clean_fit_margin_gain": 0.0046839043498039246,
+          "clean_fit_corrected": [
+            0,
+            0
+          ],
+          "clean_observe_corrected": [
+            0,
+            0
+          ],
+          "clean_guard_new_wrong": [
+            0,
+            0,
+            0
+          ],
+          "routes": {
+            "all49_positive": true,
+            "power_sum_max_error": 1.7881393432617188e-07,
+            "mean_l1_change": 0.0010868574026972055,
+            "std_l1_change": 0.00023443743702955544,
+            "effective_experts_mean": 47.13471603393555,
+            "entropy_mean": 3.87382435798645,
+            "per_sample_change_variation": 9.222630069416482e-06
+          }
+        }
+      ],
+      "elapsed_seconds": 33.671273708343506
+    }
+  },
+  "identical_train_identity_across_arms": true,
+  "interpretation": "Nearest guard corrects prior target omission. Global at .005 now avoids earlier guard harm but still repairs nothing; .01 fits9, observes1 and harms6 guards. Router tested points have no repairs or harm, but functional changes are much weaker: max mean fit margin gain .00468 versus global min .03666, so measured ranges cannot establish router superiority or inability. Router raw solution RMS .412 and41.7% target energy below lambda show a different scale/stability challenge; do not enlarge amplitude or lower lambda within this fixed comparison. All49 powers remain positive normalized, content-specific changes tiny; no TEST gain or safe transferable candidate."
+}

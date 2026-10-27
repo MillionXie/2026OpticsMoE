@@ -25,6 +25,16 @@ class StrategyTests(unittest.TestCase):
 
 
 class OptimizerTests(unittest.TestCase):
+    def test_gradient_change_diagnostic_is_not_only_loss_increase(self):
+        import torch
+        model=torch.nn.Linear(2,1,bias=False)
+        with torch.no_grad():model.weight.fill_(1.)
+        optimizer=torch.optim.SGD(model.parameters(),lr=.1)
+        def closure():
+            loss=model(torch.tensor([[1.,0.],[0.,2.]])).square().mean();loss.backward();return float(loss.detach())
+        result=optimization_step(model,optimizer,closure,rho=.05,clip_norm=None)
+        self.assertGreater(result['sam_gradient_relative_change'],.01);self.assertGreater(result['sam_gradient_cosine'],.99);self.assertLess(result['sam_gradient_cosine'],1.)
+
     def test_sam_descent_gradient_and_restoration(self):
         import torch
         model=torch.nn.Linear(1,1,bias=False)

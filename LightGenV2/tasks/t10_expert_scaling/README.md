@@ -1,5 +1,27 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 局部转移诊断后的全模型平坦性目标成对检验（2026-10-28）
+
+最近竞争类guard的两组Jacobian各三个源恢复点已完成，global37.29秒/router33.67秒，22小产物SHA、
+NumPy两组128维solve/分组指标/完全相同TRAIN身份/49路正功率和资源释放已核。
+global .005修复0/误伤0，.01拟合S/D修1/8、观察0/1、guard新增5/1/0；router三个幅度均无修复/误伤，
+但其最大fit平均间隔变化仅.00468，小于global最小点.03666，不能据无误伤判优或据无修复判无能力。
+router原解RMS=.4123、41.7%目标能量落lambda以下，global原解RMS=.01033、比例0；不继续放大幅度/降低lambda追拟合。
+报告`reports/kather_n49_nearest_guard_compare_20261028/final_summary_20261028.json`，无新VAL/TEST成绩，源模型保留。
+
+原全量TRAIN−VAL差约10.78pp、局部子集修复未转移，支持另设一次有限的全模型训练目标比较，
+而非继续相同小池插值。采用先前已发布但从未正式启动的硬标签/SAM实现，新增profile
+`configs/kather_n49_sharpness_refine_20261028.json`；GPU1硬标签AdamW、GPU3 SAM，均只seed17，
+从原E117 EMA初始化、新AdamW和seeded RNG，五组相位联合更新、分组LR expert/global/router=1/.5/.1。
+两组同D4原增强、原CE/margin/capture/TV/balance与原N49/k49推理，每段均匀轮换1024唯一TRAIN图、
+四段覆盖3496，固定24段/组，不做三段早停。专家LR三段1e-4→3e-4预热再余弦至3e-5，EMA.95，
+SAM全局L2 rho=.05，同一effective16数据求上升/下降、精确恢复后再clip/AdamW；SAM两次前反向的额外计算单列。
+这是检验[原论文SAM目标](https://arxiv.org/abs/2010.01412)在本光学模型上的适用性，不承诺平坦性必能提高此数据集成绩。
+正式启动前新增固定16TRAIN数值smoke，除真实更新、半径、恢复与五组梯度外，还测两次梯度cosine和相对变化；
+门槛为相对变化≥1%、cosine<.9999995，仅排除数值上几乎相同的第二遍，不能当泛化证据或用于TEST调参。
+history/progress同步记录梯度变化指标，损失上升本身含一阶项，不能单凭它声称找到了更平坦解。
+每组VAL锁checkpoint后TEST一次、相同源回退核SHA复用旧预测；当前600始终候选，目标616，未扩其他seed。
+
 ## 源最强错误类保护下的router/末层受控诊断（2026-10-28）
 
 旧成对guard未保护STROMA对COMPLEX的实际最近边界，因此先修正共同保护定义，再比较作用位置。

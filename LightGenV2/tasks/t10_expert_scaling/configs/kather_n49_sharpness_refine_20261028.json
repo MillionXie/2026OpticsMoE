@@ -1,0 +1,39 @@
+{
+  "study": "Finite full-model hard-label/SAM comparison after targeted local repairs failed heldout transfer",
+  "seed": 17,
+  "recipes": [
+    "hard_label",
+    "sam"
+  ],
+  "rounds": 24,
+  "samples_per_class": 128,
+  "batch": 16,
+  "microbatch": 2,
+  "eval_batch": 4,
+  "rho": 0.05,
+  "lr": 0.0003,
+  "lr_end": 3e-05,
+  "warmup_rounds": 3,
+  "ema_decay": 0.95,
+  "margin_weight": 0.2,
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "recipe_gpu": {
+    "hard_label": 1,
+    "sam": 3
+  },
+  "reference_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17",
+  "reference_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+  "target_test_correct": 616,
+  "test_role": "User-authorized TEST-feedback development, not independent confirmation. Both checkpoints selected by VAL, each tested once immediately when GPU1 becomes available; recipes compared by development TEST. TRAIN only enters gradients.",
+  "budget": "Two seed17 recipes, exactly24 rounds1024 optimizer inputs each, total49152; SAM has two forward/backward passes on the same effective batch and thus double backward compute. No3-round early stop; no automatic other seeds.",
+  "inference": "Unchanged original ScalingOptics N49/k49/routerT.05, no input power transition, Mixup, teacher, head, extra parameters or TTA. Original D4 augmentation only in TRAIN.",
+  "initialization": "Original120 VALbest EMA weights, source actual epoch117; new AdamW and seeded RNG, not exact resume. Stage rounds are not cumulative full epochs.",
+  "sam_definition": "Unclipped gradient over effective16 batch, phase perturbation rho*g/||g|| with globalL2 rho.05rad; second loss/backward on identical augmented images and labels; exact restoration before clipped AdamW descent and EMA update. Control differs only by skipping ascent/second backward.",
+  "reference": "https://arxiv.org/abs/2010.01412",
+  "motivation": "Original TRAIN-VAL gap about10.78pp, projected subset repair increased fullTRAIN by7 but TEST lost3, and local Jacobian/guard refinements did not yield safe bilateral observation transfer. Test a different full-model flatness objective on uniformly rotated TRAIN coverage; hypothesis only, not evidence SAM must improve.",
+  "smoke_gate": "Before formal run: exact ascent restoration, actual rho .05,all5 finite nonzero gradients/source restored; perturbed-vs-clean gradient relative change>=.01 and cosine<.9999995 on fixed16TRAIN. Numeric gate only; no VAL/TEST, no rho search or generalization claim.",
+  "runtime_reporting": "Report measured round times and distinct optimizer inputs separately from SAM double forward/backward compute; never count24x1024 as24full epochs. Exactly24rounds per arm, no3round early stopping, source best candidate preserved. Local diagnosis costs remain separate."
+}
