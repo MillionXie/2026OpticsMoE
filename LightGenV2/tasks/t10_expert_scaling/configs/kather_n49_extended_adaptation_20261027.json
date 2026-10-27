@@ -1,0 +1,64 @@
+{
+  "study": "Kather full-k extended adaptation requested after overly short screening",
+  "role": "post_test_development_single_seed_training_methods",
+  "parallel_jobs": 3,
+  "seed": 17,
+  "recipes": [
+    "color",
+    "phase_color",
+    "distill"
+  ],
+  "reference_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s17",
+  "reference_sha256": "9a6929c25ad6c62e2181a3ac031455d56ce7989967002b3c13c811e76c290956",
+  "prerequisite_roots": [
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_training_robustness_20261027",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_fullk_refine_20261027"
+  ],
+  "source_runs": {
+    "color": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_training_robustness_20261027/color_s17",
+    "phase_color": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_training_robustness_20261027/phase_color_s17",
+    "distill": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_fullk_refine_20261027/distill_s17"
+  },
+  "teacher_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N49_k24_s17",
+  "teacher_sha256": "6e933de6724465f93ca6b848a8e1afd5ca8f281061464a5881942732cfeabd60",
+  "reference_training_budget": 120,
+  "max_adaptation_epochs": 20,
+  "patience_after_window": 6,
+  "new_stage_lr": 5e-05,
+  "warmup_new_epochs": 3,
+  "lr_end_fraction": 0.1,
+  "group_lr_scales": {
+    "expert": 1.0,
+    "global": 0.5,
+    "router": 0.1
+  },
+  "batch": 16,
+  "microbatch": 2,
+  "color_gain_range": [
+    0.9,
+    1.1
+  ],
+  "phase_noise_std": 0.02,
+  "kd_weight_start": 0.3,
+  "kd_weight_target": 1.0,
+  "kd_warmup_new_epochs": 3,
+  "kd_temperature": 2.0,
+  "kd_gate": "Teacher correct and more confident on true label than student; same augmented TRAIN image",
+  "swa_mode": "Circular mean of EMA phase masks across epochs, validation-only candidate alongside EMA",
+  "initialization": "Resume last live model, EMA and AdamW state from each completed short trial; RNG reset because source lacks full RNG checkpoint; subsequent last checkpoints save RNG",
+  "early_stop": "Do not count patience during the first10 NEW continuation epochs; stop after6 consecutive non-improving new epochs after that. Source3-4 epochs count toward20 total, so earliest total19-20; maximum20.",
+  "test": "Choose recipe and weight by VAL accuracy then NLL after all three jobs. TEST once for chosen weight or reuse tensor-identical original prediction with SHA receipt. No TEST-based stopping.",
+  "budget": "At most20 total adaptation epochs per method, including source3-4. At most51 new epoch-jobs. Earlier24-epoch self-imposed screening cap superseded by user request to train methods sufficiently.",
+  "inference": "Original N49/k49, original router temperature0.05, no teacher, no test augmentation, phase noise off. Only seed17 method development now; seeds27/37 are NOT scheduled until an effective method is found and a repeat protocol is defined.",
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "recipe_gpu": {
+    "color": 3,
+    "phase_color": 3,
+    "distill": 1
+  },
+  "adaptation_window_new_epochs": 10,
+  "swa_start_new_stage_epoch": 10
+}
