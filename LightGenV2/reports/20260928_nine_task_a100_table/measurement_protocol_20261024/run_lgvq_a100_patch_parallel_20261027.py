@@ -32,7 +32,7 @@ def verify_exact_published(commit,sources):
 def assert_unique():
     current=original.ENTRY
     try:
-        for entry in (ORIGINAL_ENTRY,ENTRY,ENTRY.with_name('run_lgvq_a100_layout_20261027.py')):
+        for entry in (ORIGINAL_ENTRY,ENTRY,Path(__file__).resolve(),ENTRY.with_name('run_lgvq_a100_layout_20261027.py')):
             original.ENTRY=entry
             ORIGINAL_UNIQUE()
     finally:original.ENTRY=current

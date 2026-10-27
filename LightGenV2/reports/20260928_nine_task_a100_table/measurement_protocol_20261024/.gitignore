@@ -141,3 +141,4 @@
 !run_lgvq_a100_patch_parallel_20261027.py
 !test_lgvq_a100_patch_parallel_20261027.py
 !audit_lgvq_a100_patch_parallel_20261027.py
+!run_lgvq_a100_patch_fourway_20261027.py
