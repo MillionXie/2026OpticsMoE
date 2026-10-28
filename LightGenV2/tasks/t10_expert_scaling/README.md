@@ -19,6 +19,19 @@ T2/T²4、父KL0.5、原分类/物理损失、LR预热后余弦、EMA0.95均沿�
 固定4/8/12/16先锁后评EMA/live，正确数优先、NLL平手；自身598起点始终候选。
 原TRAIN/VAL/union与TEST同时报告。此profile不会自动追加轮数或展开其他seed；先判断pilot实际收益。
 
+seed17 pilot现已完成固定16段，最终选16live：原TRAIN2992/3496、VAL579/752、
+TEST暴露拟合606/752（80.5851%）、union3598/4248。相对自身598，纠正13/新增5、净增8张（+1.0638pp），
+但原TRAIN−20/VAL−3/union−12，不能称所有集合全面提高。
+固定4/8/12/16 EMA/live为599/604、603/602、604/606、606/606，16live以NLL平手规则选中。
+最终best SHA`44af3cd4237cc6a8bade0505c624ed45e385e662cf9479902ecc540bb4710c39`，
+last SHA`537a9f2b2eac085336811afec73bba321b8142f9ab0348cf2bfded33428aec62`，
+选中tensor`2f5b17a2b6b09ed4e4c676e5ac713210e95cf896e2f646ea226804d2a9e02e1c`。
+48小产物manifest、8状态752、16轮采样/来源/覆盖、父八视图、六个恢复源Adam校准步骤、
+CPU best/last/export字段、最终同权重完整评分及pilot进程退出均经独立核验；PT留服务器。
+训练923.22秒、逐段评估532.65秒，不含最后评分/路由/I/O；校准240模型输入、父缓存33984冻结输入单列。
+报告[final_summary_20261028.json](reports/kather_n25_balanced_distill_20261028/final_summary_20261028.json)。
+pilot没有追加轮数，释放GPU1后才由独立seed37进入准备；seed27/37继续，三seed汇总尚未完成。
+
 后续两seed的预备入口为`n25_seed_followup.py`、profile
 `configs/kather_n25_seed_balanced_followup_20261028.json`。它必须读取独立pilot审计，
 确认固定检查点新权重正确数高于598，并绑定CPU best/tensor/field、原始预测SHA和pilot20源码锁；

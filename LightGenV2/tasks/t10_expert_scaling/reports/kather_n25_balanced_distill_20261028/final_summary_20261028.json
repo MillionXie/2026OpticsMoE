@@ -1,0 +1,275 @@
+{
+  "run_id": "kather_n25_balanced_distill_20261028",
+  "stage": "N25_seed17_frozen_source_balanced_recipe_pilot",
+  "source_commit": "85d5524b5b205bee5b6d279a2940ce07b6c1a048",
+  "source_files": {
+    "LightGenV2/tasks/t10_expert_scaling/reheat_refine.py": "624315596f5240ffe33babb47172d9ea3a1f363c62d93633ba4109b8026e7615",
+    "LightGenV2/tasks/t10_expert_scaling/configs/kather_n25_balanced_distill_20261028.json": "c041f89124cff1cd59fd5f49498391faa784f5ebee4c6834500b628c713bb85a",
+    "LightGenV2/tasks/t10_expert_scaling/model.py": "d7be573246e2068fe4b3fa955efade2421a926816b72cc3ee559243a9522539f",
+    "LightGenV2/tasks/t10_expert_scaling/train.py": "428432ffba1f983c8b39a966c5293ab1d2fbd6046d2e54fcaf02ab2edb5c5cc0",
+    "LightGenV2/tasks/t10_expert_scaling/plan.py": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+    "LightGenV2/tasks/t10_expert_scaling/diagnose_topk.py": "7fb6aaa5824b9939e4250afdd8f7595e486dc2dfcf144f4c1ede6216b02395a4",
+    "LightGenV2/tasks/t10_expert_scaling/expert_tail_schedule.py": "7ce924e0f2c403446a3203b94d30607b9e05ec996686610fa0eaffdad4319832",
+    "LightGenV2/tasks/t10_expert_scaling/mixup_curriculum.py": "5475e1ea21b2dd86db04fdb84100f81472428aa4d9e1eedc28912909908cc109",
+    "LightGenV2/tasks/t10_expert_scaling/sharpness_refine.py": "5642bf4742458f6fa187b32183d463cd0ef8dc6638947f028330e5ab1e481425",
+    "LightGenV2/tasks/t10_expert_scaling/checkpoint_test_selection.py": "d63fac83bd55c8facebe8275af7a81fee60eb6c98023f73524dd2999e5223141",
+    "LightGenV2/tasks/t10_expert_scaling/test_exposed_distill.py": "84bb24e6cc1186dbde57258b70dc58b0f796f253f88b43ef9a3ecede612e46dd",
+    "LightGenV2/tasks/t10_expert_scaling/cnn_teacher_cache.py": "8af0bb5cada49528984c991d5dc3ec80b1c153cc29b2e4eb298827cac7baef5e",
+    "LightGenV2/tasks/t10_expert_scaling/cnn_distill.py": "dc4fc9d7d6200fa456ba1bcca989f7c35057823dd56c8235e1900345034d3420",
+    "LightGenV2/tasks/t10_expert_scaling/cached_distill.py": "50986d7d862ccd42b7ff769f33ced33adf30024acceac4683d4cf3ac99322dba",
+    "LightGenV2/tasks/t10_expert_scaling/ensemble_teacher_cache.py": "8a02956ac49417eab1e7f9a3377e5246460ffd473bc98e9787cd021359ea56d3",
+    "LightGenV2/tasks/t10_expert_scaling/test_balanced_distill.py": "50b66309c649b0846a679e19880209cd3c4c71956ac1ba83010f3b550623fbf1",
+    "LightGenV2/tasks/t10_expert_scaling/seed_balanced_distill.py": "62bdbe923843c8b22489d3fe19bc8480cf0bd542077c196e252e75cc7066f008",
+    "LightGenV2/tasks/t10_expert_scaling/n25_balanced_distill.py": "8cf991f7d801086e6584313a6e33a516f286540be08ab488731247e75c623447",
+    "LightGenV2/tasks/t10_expert_scaling/configs/study.json": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+    "LightGenV2/common/optical_contract.py": "2dd7f8b78391b5c60e7b5f580eccadac37b1b7baa5e8998a6f019b0d31d1ca06"
+  },
+  "configuration": {
+    "seed": 17,
+    "seeds": [
+      17
+    ],
+    "model_experts": 25,
+    "expected_parameter_count": 5634176,
+    "rounds": 16,
+    "check_rounds": [
+      4,
+      8,
+      12,
+      16
+    ],
+    "samples_per_class": 128,
+    "batch": 16,
+    "microbatch": 2,
+    "schedule_type": "distill",
+    "peak_lr": 0.0003,
+    "end_lr": 3e-05,
+    "ema_decay": 0.95,
+    "target_correct": 616,
+    "temperature": 2,
+    "parent_weight": 0.5,
+    "gradient_target_ratio": 0.5,
+    "minimum_weighted_gradient_ratio": 0.05,
+    "fixed_lambda_kd": 0.3203496288685833,
+    "seed_gpu": {
+      "17": 1
+    },
+    "gpus": {
+      "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+    },
+    "allow_shared_gpu": true,
+    "minimum_free_memory_mib": 6000,
+    "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+    "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+    "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+    "explicit_test_training_authorization": true,
+    "test_images_enter_student_gradient": true,
+    "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+    "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+    "stage": "N25_seed17_frozen_source_balanced_recipe_pilot",
+    "automatic_additional_seeds": false,
+    "automatic_extension": false,
+    "source_runs": {
+      "17": {
+        "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N25_k25_s17",
+        "sha256": "274a06192417a9226abd21074491a58995ebef95e08d01a5cb1dbcd1e1e3fd8e",
+        "actual_epoch": 79
+      }
+    },
+    "auxiliary_dependencies": [
+      "test_exposed_distill.py",
+      "cnn_teacher_cache.py",
+      "cnn_distill.py",
+      "cached_distill.py",
+      "ensemble_teacher_cache.py",
+      "test_balanced_distill.py",
+      "seed_balanced_distill.py",
+      "n25_balanced_distill.py"
+    ],
+    "role": "Finite seed17 pilot transfers the discovered fixed50/50/T2/lambda/LR/16round recipe to the original N25/k25 selected checkpoint, preserving the N25 optical architecture and original baseline candidate. Reuse the locked TEST-exposed CNN teacher, generate an independent exact-N25 parent8view cache, and admit only after source-restoring numeric and actualAdam calibration checks. Both TRAIN and TEST enter student gradients; all TEST results are exposed-development fit, not independent generalization. GPU1 sharing is explicitly authorized; require6000MiB free, never stop foreign jobs, and run only one own GPU process at a time. No automatic additional seeds or extensions.",
+    "_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n25_balanced_distill_20261028.json"
+  },
+  "status": "complete",
+  "seed": 17,
+  "experts": 25,
+  "top_k": 25,
+  "parameter_count": 5634176,
+  "selected": {
+    "round": 16,
+    "state_field": "live_model",
+    "original_TRAIN_correct": 2992,
+    "original_TRAIN_total": 3496,
+    "VAL_correct": 579,
+    "VAL_total": 752,
+    "TEST_fit_correct": 606,
+    "TEST_total": 752,
+    "TEST_fit_accuracy_percent": 80.58510638297872,
+    "union_correct": 3598,
+    "union_total": 4248,
+    "NLL": 0.6223726868629456,
+    "best_checkpoint_sha256": "44af3cd4237cc6a8bade0505c624ed45e385e662cf9479902ecc540bb4710c39",
+    "last_checkpoint_sha256": "537a9f2b2eac085336811afec73bba321b8142f9ab0348cf2bfded33428aec62",
+    "model_tensor_sha256": "2f5b17a2b6b09ed4e4c676e5ac713210e95cf896e2f646ea226804d2a9e02e1c",
+    "prediction_sha256": "7de032b440521f0dd6588070a4a742c38be05d2a638828fb58db8da35b8cb134"
+  },
+  "baseline": {
+    "original_TRAIN_correct": 3012,
+    "VAL_correct": 582,
+    "TEST_correct": 598,
+    "union_correct": 3610,
+    "source_checkpoint_sha256": "274a06192417a9226abd21074491a58995ebef95e08d01a5cb1dbcd1e1e3fd8e",
+    "source_epoch": 79
+  },
+  "paired": {
+    "corrected": 13,
+    "new_wrong": 5,
+    "TEST_net": 8,
+    "TEST_accuracy_change_percentage_points": 1.0638297872340425,
+    "original_TRAIN_net": -20,
+    "VAL_net": -3,
+    "union_net": -12,
+    "class_net_T_S_C_L_D_M_A_E": [
+      0,
+      8,
+      -1,
+      1,
+      -2,
+      1,
+      1,
+      0
+    ]
+  },
+  "fixed_checks": [
+    {
+      "round": 4,
+      "EMA": 599,
+      "live": 604
+    },
+    {
+      "round": 8,
+      "EMA": 603,
+      "live": 602
+    },
+    {
+      "round": 12,
+      "EMA": 604,
+      "live": 606
+    },
+    {
+      "round": 16,
+      "EMA": 606,
+      "live": 606
+    }
+  ],
+  "EMA_diagnostics": [
+    {
+      "round": 4,
+      "EMA_original_train_correct": 3007,
+      "EMA_test_fit_correct": 599,
+      "EMA_union_correct": 3606,
+      "EMA_val_correct": 580
+    },
+    {
+      "round": 8,
+      "EMA_original_train_correct": 2996,
+      "EMA_test_fit_correct": 603,
+      "EMA_union_correct": 3599,
+      "EMA_val_correct": 579
+    },
+    {
+      "round": 12,
+      "EMA_original_train_correct": 2992,
+      "EMA_test_fit_correct": 604,
+      "EMA_union_correct": 3596,
+      "EMA_val_correct": 577
+    },
+    {
+      "round": 16,
+      "EMA_original_train_correct": 2991,
+      "EMA_test_fit_correct": 606,
+      "EMA_union_correct": 3597,
+      "EMA_val_correct": 579
+    }
+  ],
+  "costs": {
+    "student_optimizer_updates": 1024,
+    "student_model_training_inputs": 16384,
+    "student_original_TRAIN_training_inputs": 8192,
+    "student_TEST_training_inputs": 8192,
+    "parent_cache_frozen_model_inputs": 33984,
+    "parent_updates": 0,
+    "calibration_restored_Adam_steps": 6,
+    "calibration_model_inputs": 240,
+    "calibration_input_breakdown": {
+      "full_batch_gradient_inputs": 64,
+      "group_gradient_inputs": 64,
+      "parent_equivalence_forward_inputs": 16,
+      "actual_Adam_probe_inputs": 96
+    },
+    "calibration_unique_original_TRAIN_ids": 16,
+    "calibration_unique_TEST_ids": 16,
+    "extra_round4_and12_original_TRAIN_diagnostic_inputs": 6992,
+    "initial_uniform_pool_probe_and_VAL_inputs": 1264,
+    "per_round_uniform_pool_probe_and_VAL_inputs": 20224,
+    "round8_and16_EMA_pool_inputs": 8496,
+    "fixed_TEST_fit_selection_inputs": 6016,
+    "final_same_best_union_VAL_original_TRAIN_full_model_inputs": 8496,
+    "final_router_only_inputs": 5000,
+    "teacher_retraining_updates_this_stage": 0,
+    "teacher_cache_reused": true,
+    "previous_teacher_and_ImageNet_costs": "Shared published teacher; extra pretraining cost unknown and not zero. See prior teacher report.",
+    "training_seconds": 923.2184157371521,
+    "per_round_evaluation_seconds": 532.6510033607483,
+    "timing_excludes_final_scoring_routes_initial_setup_and_IO": true
+  },
+  "calibration": {
+    "source_original_train_correct": 3012,
+    "source_val_correct": 582,
+    "source_test_fit_correct": 598,
+    "source_checkpoint_sha256": "274a06192417a9226abd21074491a58995ebef95e08d01a5cb1dbcd1e1e3fd8e",
+    "parent_source_tensor_sha256": "d802c5ee4df62dae099393befc8c4c80d7763dad926bdcfb91e161e9e783c213",
+    "parent_scores_sha256": "da0651d0df2be8d388e6ccc6d2e0e2bad79357d2c5b0207b669b74a67b0393ef",
+    "fixed_lambda": 0.3203496288685833,
+    "actual_weighted_gradient_ratio": 0.4925048560460385,
+    "unused_recalibration_candidate": 0.32522484289843995,
+    "actual_restored_Adam_updates": [
+      {
+        "cosine": 0.8579187495561367,
+        "relative_change": 0.5317844377667508,
+        "repeat_relative_error": 0.0,
+        "finite_all_groups": true
+      },
+      {
+        "cosine": 0.8677659858142411,
+        "relative_change": 0.5130070332099742,
+        "repeat_relative_error": 0.0,
+        "finite_all_groups": true
+      }
+    ],
+    "parent_cache_max_error": 1.7881393432617188e-07,
+    "calibration_unique_inputs": 32,
+    "calibration_original_TRAIN_inputs": 16,
+    "calibration_TEST_inputs": 16
+  },
+  "validation": {
+    "manifest_files": 48,
+    "independent_NumPy_and_manifest_SHA_passed": true,
+    "source20_Git_objects_and_actual_server_bytes_verified": true,
+    "all8_fixed752_states_verified": true,
+    "all16_round_sampling_source_class_and_coverage_verified": true,
+    "actual_best_last_tensor_and_export_field_verified": true,
+    "selected_same_weight_full_TRAIN_VAL_union_scoring_verified": true,
+    "stored_latest_VAL_probabilities": "EMA16; not selected live probabilities",
+    "all_pilot_process_identities_exited_and_own_context_released": true,
+    "resource_scope": "Completed pilot only; seed27/37 and foreign jobs continue",
+    "PTs_stay_on_server": true
+  },
+  "metric_role": "Teacher and student trained on original TEST labels/images. These are exposed-development fit results, not independent generalization or original equal-budget Topk evidence.",
+  "interpretation": "TESTfit improved8 and paired13repair/5harm, with originalTRAIN-20/VAL-3/union-12 cost. Not all-set improvement. Finish frozen independent seed27/37 before updating descriptive three-seed table; no pilot extension.",
+  "archive": {
+    "path": ".codex_tmp\\t10_n25_balanced_final_20261028.tar.gz",
+    "sha256": "ff5804e68ac281da887b8927a8c5bc60e37c2a8389930e04c5ff3e882f0ba7b8",
+    "bytes": 1609157
+  },
+  "independent_audit_sha256": "c154edbc829a60aa8fb6dfbd1317abfa1ed308730f0e8ada9eebc90289bc1c67"
+}
