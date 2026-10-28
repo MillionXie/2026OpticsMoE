@@ -164,6 +164,8 @@ def supervise(c, root, profile):
             time.sleep(5)
         failures = {} if not p.returncode else {'17': dict(returncode=p.returncode, log=str(root / 'seed17_pipeline.log'))}
         save(root / 'status.json', dict(state='failed' if failures else 'complete', scheduler_pid=os.getpid(), running={}, failures=failures, source_commit=commit, seed17_pilot_only=True))
+        if failures:
+            raise RuntimeError(f'N25 pipeline failed: {failures}')
     except BaseException as error:
         save(root / 'status.json', dict(state='failed', scheduler_pid=os.getpid(), running={'17': p.pid} if p and p.poll() is None else {}, error=repr(error), source_commit=commit))
         raise
@@ -208,7 +210,11 @@ def main():
         receipt = json.loads((out / 'receipt.json').read_text())
         for batch in receipt['batches']:
             batch['split_origins'] = ['train' if i < 3496 else 'test' for i in batch['indices']]
-        receipt.update(seed=17, model_experts=25, model_top_k=25, expected_parameter_count=5634176)
+        indices = {i for batch in receipt['batches'] for i in batch['indices']}
+        assert len(indices) == 32 and sum(i < 3496 for i in indices) == 16
+        receipt.update(seed=17, model_experts=25, model_top_k=25, expected_parameter_count=5634176,
+            unique_calibration_samples=32, unique_train_samples=16,
+            unique_original_train_samples=16, unique_test_samples=16)
         save(out / 'receipt.json', receipt)
     else:
         base.worker(v, a.out / 'student_s17', a.profile, 'source_balanced', Auxiliary(v))
