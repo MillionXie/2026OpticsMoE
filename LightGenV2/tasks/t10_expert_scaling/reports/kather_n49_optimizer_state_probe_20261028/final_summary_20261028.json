@@ -1,0 +1,279 @@
+{
+  "stage": "Current613_originalC_objective_fresh_vs_retained_Adam_direction_probe",
+  "source_commit": "7bd5e938050e9afe8d58382643260973b9c31bbb",
+  "source_checkpoint_sha256": "2ee3bc9b738d1ad1bdb785d01288a0dbdf541955b7186570afa640451956bad2",
+  "source_last_sha256": "09929b15126837208cd363443b8de5ebba362d12da14b112f7e406a233b1e46a",
+  "source_model_tensor_sha256": "2a39fdabeaa54dfb16c915a81fe260e488dc550d6c8b606f556629bbba2efb56",
+  "source_optimizer_fingerprint": "694dc0da649975eb56a799cf68a7265429f40c25a389c6aaabfba3274e63f603",
+  "parent_checkpoint_sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+  "parent_semantics": "Unchanged originalC objective anchorf6d, not current613 probabilities",
+  "auxiliary_identity": {
+    "cache_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+    "parent_receipt_sha256": "f63b730c1c5796d94f72af26a2b5e5136161a94b1dd810ea9ddcf74b61cd4a63",
+    "targets_sha256": "cb3d517dd7a3dee5881dfc945fda1dbcf1d5811e9f1b6623cde708944ea728e1",
+    "teacher_test_training": true,
+    "student_gradient_splits": [
+      "train",
+      "test"
+    ],
+    "samples": 4248,
+    "temperature": 2,
+    "external_pretraining": "ImageNet1K",
+    "parent_checkpoint_sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+    "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+    "parent_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb"
+  },
+  "result": "rejected_no_continuation_admitted",
+  "new_checkpoint_exported": false,
+  "current_incumbent_test_fit_correct": 613,
+  "current_incumbent_test_fit_total": 752,
+  "whole_TEST_rescored": false,
+  "independent_generalization_established": false,
+  "test_images_enter_diagnostic_gradient": true,
+  "protocol": {
+    "seed": 17,
+    "arms": [
+      "fresh",
+      "fresh_repeat",
+      "retained"
+    ],
+    "source_weights": "sameC16last.live=best613",
+    "parent": "originalC f6d cached anchor shared by all arms",
+    "retained_source_step": 1024,
+    "fresh_post_step": 1,
+    "retained_post_step": 1025,
+    "fit_batches": 2,
+    "fit_images_per_batch": 16,
+    "heldout_images": 256,
+    "unique_original_images": 288,
+    "learning_rates": [
+      3e-05,
+      1.5e-05,
+      3e-06
+    ],
+    "lambda_kd": 0.3203496288685833,
+    "temperature": 2,
+    "parent_weight": 0.5,
+    "parameter_count": 11078432,
+    "every_group_hyperparameter_identical": true
+  },
+  "admission": {
+    "state": "rejected",
+    "admitted": false,
+    "insufficient": [],
+    "rejected": [
+      "batch1/clean/train/retained_repair_not_positive_and_superior_to_fresh",
+      "batch1/clean/test/retained_repair_not_positive_and_superior_to_fresh",
+      "batch1/clean/train/TRAIN_mean_margin_regression",
+      "batch1/d4/train/TRAIN_mean_margin_regression",
+      "batch2/clean/train/retained_repair_not_positive_and_superior_to_fresh",
+      "batch2/clean/test/retained_repair_not_positive_and_superior_to_fresh",
+      "batch2/clean/train/guard_tail_worse_than_fresh",
+      "batch2/clean/train/boundary_tail_worse_than_fresh",
+      "batch2/clean/train/TRAIN_mean_margin_regression",
+      "batch2/clean/test/guard_tail_worse_than_fresh",
+      "batch2/d4/train/TRAIN_mean_margin_regression",
+      "batch2/d4/test/guard_tail_worse_than_fresh"
+    ],
+    "margin_threshold": 1e-05,
+    "nll_threshold": 1e-05,
+    "requirement": "Both fit batches; retained clean repair positive and superior to fresh separately by origin; same strict source-guard and NLL criteria"
+  },
+  "actual_cost": {
+    "source_heldout_forward_inputs": 1024,
+    "post_update_heldout_forward_inputs": 3072,
+    "actual_Adam_input_images": 96,
+    "actual_Adam_steps": 6,
+    "new_parent_forward_inputs": 0,
+    "total_model_image_inputs": 4192
+  },
+  "elapsed_seconds": 192.22927260398865,
+  "repeat_error": {
+    "probability": 0.0,
+    "logmargin": 0.0,
+    "NLL": 0.0
+  },
+  "cases": [
+    {
+      "batch": 1,
+      "retained_vs_fresh_actual_update_relativechange": 0.9724568972945826,
+      "retained_clean_heldout": {
+        "train": {
+          "samples": 128,
+          "repair_samples": 16,
+          "repair_mean_delta": 0.00018167123198509216,
+          "repair_corrected": 0,
+          "source_correct_guard": 112,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.0005562555743381381,
+          "guard_delta_q10": -0.003618288040161131,
+          "boundary_guard_samples": 3,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": -4.259745401213877e-05,
+          "boundary_guard_delta_q10": -0.00015106201171875,
+          "all_mean_margin_delta": -0.0004640147089958191,
+          "nll_delta": -2.1877523977309465e-05,
+          "source_correct": 112,
+          "candidate_correct": 112
+        },
+        "test": {
+          "samples": 128,
+          "repair_samples": 20,
+          "repair_mean_delta": 2.3424624941981165e-06,
+          "repair_corrected": 0,
+          "source_correct_guard": 107,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.0005518019897863269,
+          "guard_delta_q10": -0.0032651901245117185,
+          "boundary_guard_samples": 12,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": -4.639228336600354e-06,
+          "boundary_guard_delta_q10": -0.00022608637809753417,
+          "all_mean_margin_delta": -0.0004609227180480957,
+          "nll_delta": 9.625560778658837e-06,
+          "source_correct": 107,
+          "candidate_correct": 107
+        }
+      },
+      "fresh_clean_heldout": {
+        "train": {
+          "samples": 128,
+          "repair_samples": 16,
+          "repair_mean_delta": 0.0006228014826774597,
+          "repair_corrected": 0,
+          "source_correct_guard": 112,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.0023267518263310194,
+          "guard_delta_q10": -0.01804871559143066,
+          "boundary_guard_samples": 3,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": 0.00011555353557923809,
+          "boundary_guard_delta_q10": -0.0002331256866455078,
+          "all_mean_margin_delta": -0.001958057750016451,
+          "nll_delta": -5.0805683713406324e-05,
+          "source_correct": 112,
+          "candidate_correct": 112
+        },
+        "test": {
+          "samples": 128,
+          "repair_samples": 20,
+          "repair_mean_delta": -8.146166510414332e-05,
+          "repair_corrected": 0,
+          "source_correct_guard": 107,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.0022071264684200287,
+          "guard_delta_q10": -0.01664609909057617,
+          "boundary_guard_samples": 12,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": 5.855659765074961e-05,
+          "boundary_guard_delta_q10": -0.0016102850437164306,
+          "all_mean_margin_delta": -0.001851160079240799,
+          "nll_delta": 7.275793177541345e-05,
+          "source_correct": 107,
+          "candidate_correct": 107
+        }
+      }
+    },
+    {
+      "batch": 2,
+      "retained_vs_fresh_actual_update_relativechange": 0.9799271696766211,
+      "retained_clean_heldout": {
+        "train": {
+          "samples": 128,
+          "repair_samples": 16,
+          "repair_mean_delta": 0.0001864507794380188,
+          "repair_corrected": 0,
+          "source_correct_guard": 112,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.0004829434328712523,
+          "guard_delta_q10": -0.002821063995361328,
+          "boundary_guard_samples": 3,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": -4.120667654206045e-05,
+          "boundary_guard_delta_q10": -0.00018923282623291017,
+          "all_mean_margin_delta": -0.000399269163608551,
+          "nll_delta": -2.131147266482003e-05,
+          "source_correct": 112,
+          "candidate_correct": 112
+        },
+        "test": {
+          "samples": 128,
+          "repair_samples": 20,
+          "repair_mean_delta": 1.3485550880432129e-05,
+          "repair_corrected": 0,
+          "source_correct_guard": 107,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.0004947965499013662,
+          "guard_delta_q10": -0.0027739048004150387,
+          "boundary_guard_samples": 12,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": -1.8417835235595703e-05,
+          "boundary_guard_delta_q10": -0.0004101395606994629,
+          "all_mean_margin_delta": -0.0004113023169338703,
+          "nll_delta": 7.666698365937918e-06,
+          "source_correct": 107,
+          "candidate_correct": 107
+        }
+      },
+      "fresh_clean_heldout": {
+        "train": {
+          "samples": 128,
+          "repair_samples": 16,
+          "repair_mean_delta": 0.0002613663673400879,
+          "repair_corrected": 0,
+          "source_correct_guard": 112,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.00023466827406082302,
+          "guard_delta_q10": -0.0026495933532714845,
+          "boundary_guard_samples": 3,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": 0.00015612442803103477,
+          "boundary_guard_delta_q10": 3.707408905029297e-05,
+          "all_mean_margin_delta": -0.00017266394570469856,
+          "nll_delta": -1.2913045793538913e-05,
+          "source_correct": 112,
+          "candidate_correct": 112
+        },
+        "test": {
+          "samples": 128,
+          "repair_samples": 20,
+          "repair_mean_delta": 3.767609450733289e-05,
+          "repair_corrected": 0,
+          "source_correct_guard": 107,
+          "guard_new_wrong": 0,
+          "guard_delta_mean": -0.00026525292196311057,
+          "guard_delta_q10": -0.002130579948425293,
+          "boundary_guard_samples": 12,
+          "boundary_guard_new_wrong": 0,
+          "boundary_guard_delta_mean": -7.147093856474385e-05,
+          "boundary_guard_delta_q10": -0.0016707777976989746,
+          "all_mean_margin_delta": -0.0002086823806166649,
+          "nll_delta": 1.6700254491297528e-05,
+          "source_correct": 107,
+          "candidate_correct": 107
+        }
+      }
+    }
+  ],
+  "interpretation": "Retained history changes actual updates but does not give a repeatable repair advantage over fresh in both TRAIN/TEST batches; TEST repair means2.34e-6/1.35e-5, batch1below1e-5 and batch2inferiorfresh3.77e-5. TRAINmean and some guard tails fail the unchanged gate. No new model or full752 gain. Closes this source/two-batch/endpoint-state hypothesis, not architecture capacity.",
+  "curve_correction": "C8live612to16live613+1 only; seeds27/37 already plateau accuracy12to16 at608/601, only NLL decreases. Weak curve motivation was not treated as evidence of further gain.",
+  "validation": {
+    "manifest_files": 24,
+    "source_files": 25,
+    "independent_numpy_reconstruction_passed": true,
+    "CPU_best_equals_last_live": true,
+    "source_Adam_groups_moments_finite_shapes_steps_verified": true,
+    "all_six_steps_restored_independently": true,
+    "source_best_last_Adam_unchanged": true,
+    "all_task_processes_exited": true,
+    "own_GPU3_released": true,
+    "foreign_GPU_processes_untouched": true
+  },
+  "archive": {
+    "path": ".codex_tmp/t10_optimizer_probe_final_20261028.tar.gz",
+    "sha256": "a0e35faec38be10c1f6451d5131293d0d71ae19c6490e967d98731415a2f03d9",
+    "bytes": 353963
+  },
+  "independent_audit_sha256": "247ac0839f4b8c935063ab2a737b4bddafbef32309830fb3dfd2705998787f2a",
+  "future_action": "No automatic continuation or additional optimizer/LR/state search. Retain613/608/601 while the separate N25 fixed-recipe three-seed transfer completes."
+}

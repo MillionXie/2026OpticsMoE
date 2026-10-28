@@ -25,7 +25,13 @@ T2/T²4、父KL0.5、原分类/物理损失、LR预热后余弦、EMA0.95均沿�
 598回退或仅NLL下降不能准入。seed27从自身epoch89/587、seed37从自身epoch90/586开始，
 各自生成25专家父缓存、使用自身随机种子并按相同冻结配方训练16段，原各自baseline保留。
 seed27用GPU3；seed37必须等pilot完整成功、所有pilot实际进程退出且GPU1无本任务计算进程后才用GPU1。
-只读等待不占GPU，foreign共卡进程保留。该入口当前仅预备，发布不等于已启动；启动与结果以正式run收据为准。
+只读等待不占GPU，foreign共卡进程保留。现已由seed17第4段live的604/752（自身598净增6，修10/新增4）
+及CPU PT/tensor/field/752预测独立核验准入，启动run `runs/simulation/kather_n25_seed_balanced_followup_20261028`，
+固定源`3305101519266ad6e64747a37b5ebd9ebeed18f8`；seed27实际准备、seed37只读等待pilot释放。
+启动汇总：[launch_summary_20261028.json](reports/kather_n25_seed_balanced_followup_20261028/launch_summary_20261028.json)。
+pilot第8段EMA/live为603/602，均低于已保留604，不因NLL下降换成正确数较少模型，继续固定16段。
+第8段EMA原TRAIN2996/VAL579/TEST603/union3599只是EMA诊断，不当作选中第4段live的完整评分；
+同best完整TRAIN/VAL仍待阶段末。三seed完成前不把pilot或计划填入展示表。
 
 N49先检验当前613源上原视图与D4是否存在不同的真实更新方向，另立有限探针，
 不把此前阴性的D4覆盖审计重新描述为采样bug，不凭差几张盲续旧run。
@@ -61,6 +67,15 @@ fresh仅清空state，retained每个fit都从原1024恢复到1025，不能把两
 保留同样的困难组/guard/NLL准入，失败不扩大样本或放宽门槛。
 旧Adam分块探针的源/教师/父与本次不同；C8至16只多1张，27/37在12至16正确数已平台，
 这些曲线仅允许有限状态区分，不能预测追加训练必有收益。
+
+该Adam状态诊断也已完整完成并独立核验，
+报告[final_summary_20261028.json](reports/kather_n49_optimizer_state_probe_20261028/final_summary_20261028.json)。
+CPU确认613=last.live、五个Adam状态1024；6次实际步骤分别fresh到1/retained到1025，没有串到1026，
+源best/last及原Adam指纹不变。24小产物manifest、25源路径、全部16组诊断预测和原f6d目标均通过独立核验，
+重复误差0。retained的TEST困难组平均margin变化为+2.34e-6/+1.35e-5，首批低于固定门槛、
+第二批低于fresh的+3.77e-5，TRAIN平均margin及部分guard尾部也未准入；样本充足，结论rejected。
+不导出新PT、不追加8段或继续扫优化器状态。GPU3该进程已退出并释放自己的显存后，才启动N25 seed27。
+N49原613/608/601与80.76±0.80拟合汇总保持，不声称本轮有新的全752收益或架构上限。
 
 上述教师已见TEST，N25及后续N49学生也使用TEST梯度，全部TEST数字是训练暴露的开发拟合；
 不建立独立泛化、原等预算Top-k或相同累计开发成本的结论。
