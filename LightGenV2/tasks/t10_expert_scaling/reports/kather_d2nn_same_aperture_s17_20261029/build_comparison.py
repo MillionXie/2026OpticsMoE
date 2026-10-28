@@ -28,7 +28,7 @@ def data():
             rows.append(dict(N=n,k=k,ratio=k/n,LG_correct=correct,LG_accuracy_percent=100*correct/752,LG_checkpoint_sha256=r['checkpoint_sha256'],LG_original_run=r['run_name'],Dense_OEO_correct=b['metrics']['test']['correct'],Dense_OEO_accuracy_percent=b['metrics']['test']['accuracy_percent'],G=g,LG_parameters=b['LG_parameters_including_router'],Dense_OEO_parameters=b['parameters']))
         full=rows[-1]
         paired.append(dict(**full,difference_pp=full['LG_accuracy_percent']-full['Dense_OEO_accuracy_percent']))
-    return dict(seed=17,epochs=60,TEST_per_model=752,statistics='Single seed; no SD or significance claim.',scope='Original60-epoch LG vs new same-global-aperture Dense-OEO. Post-hoc architecture control; unequal RGB source bandwidth remains.',color_encoding='Same global phase aperture G x G, not equal active pixels per layer or total parameters.',rows=rows,full_k_pairs=paired,sources=[dict(path=str(p.relative_to(REPORTS)),LF_sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [SUMMARY,BASE]])
+    return dict(seed=17,epochs=60,TEST_per_model=752,statistics='Single seed; no SD or significance claim.',scope='Original60-epoch LG vs new same-global-aperture Dense-OEO. Post-hoc architecture control; unequal RGB source bandwidth remains.',color_encoding='Same global phase aperture G x G, not equal active pixels per layer or total parameters.',rows=rows,full_k_pairs=paired,sources=[dict(path=p.relative_to(REPORTS).as_posix(),LF_sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [SUMMARY,BASE]])
 
 def documents(d):
     lines=['# 同全局孔径的结构对照：seed17，60轮','',

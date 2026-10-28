@@ -295,11 +295,11 @@
   ],
   "sources": [
     {
-      "path": "kather_d2nn_same_aperture_s17_20261029\\final_summary_20261029.json",
+      "path": "kather_d2nn_same_aperture_s17_20261029/final_summary_20261029.json",
       "LF_sha256": "5d9999aae7f93e26618eb50bab3e20b07ac16ebb467459563f69742ac495cb75"
     },
     {
-      "path": "plotting\\kather_expert_count_20260921\\three_seed_test_per_seed.csv",
+      "path": "plotting/kather_expert_count_20260921/three_seed_test_per_seed.csv",
       "LF_sha256": "02c1f2fa71f9f3791d2a4a1bcd118f2c817e59aa44f8badb08af2e0fd764dee7"
     }
   ]
