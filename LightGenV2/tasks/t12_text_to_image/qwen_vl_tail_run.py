@@ -54,6 +54,8 @@ def main():
     if not hybrid_report['complete'] or sha256(a.hybrid/'best_checkpoint.pt') != hybrid_report['checkpoint_sha256']:
         raise ValueError('Hybrid recovery checkpoint incomplete or changed')
     state = torch.load(a.parent/'best_checkpoint.pt', map_location='cpu', weights_only=False)
+    if state.get('schema')=='qwen_spatial_joint_lora_v1':
+        raise ValueError('Wait for validated joint-teacher LG terminal features and recovery before tail compression')
     hybrid = torch.load(a.hybrid/'best_checkpoint.pt', map_location='cpu', weights_only=False)
     payload = load_data(a.data)
     train = [i for i, r in enumerate(payload['rows']) if r['split'] == 'train']

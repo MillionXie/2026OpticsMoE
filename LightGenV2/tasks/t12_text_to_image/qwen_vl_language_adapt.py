@@ -13,6 +13,8 @@ TARGETS=['q_proj','k_proj','v_proj','o_proj','gate_proj','up_proj','down_proj']
 
 
 def frontend_adapter_digest(state):
+    if state.get('schema')=='qwen_spatial_joint_lora_v1' or 'qwen_joint_lora' in state:
+        raise ValueError('Native joint vision/language terminal-feature binding is not yet validated')
     if state.get('schema')!='qwen_spatial_language_lora_v1':
         if 'qwen_language_lora' in state:raise ValueError('Unrecognized frontend adapter schema')
         return None

@@ -63,7 +63,7 @@ def main():
     torch.cuda.set_per_process_memory_fraction(a.memory_fraction, 0)
     device = torch.device('cuda:0')
     state = torch.load(a.checkpoint, map_location='cpu', weights_only=False)
-    if state.get('schema') not in ('qwen_spatial_v1','qwen_spatial_language_lora_v1'):
+    if state.get('schema') not in ('qwen_spatial_v1','qwen_spatial_language_lora_v1','qwen_spatial_joint_lora_v1'):
         raise ValueError('Expected the full-Qwen spatial checkpoint')
     cfg, layout = state['config'], state['visual_layout']
     rows = validate_inputs(json.loads(a.manifest.read_text(encoding='utf-8')))
@@ -80,6 +80,10 @@ def main():
     if state.get('schema')=='qwen_spatial_language_lora_v1':
         from .qwen_vl_language_adapt import install_in_full_qwen
         install_in_full_qwen(qwen,state)
+    if state.get('schema')=='qwen_spatial_joint_lora_v1':
+        if a.hybrid_checkpoint or a.tail_checkpoint:raise ValueError('Joint-adapted teacher LG protocol not yet validated')
+        from .qwen_vl_joint_adapt import install_joint_lora
+        install_joint_lora(qwen,cfg,state['qwen_joint_lora'],train=False)
     processor = AutoProcessor.from_pretrained(a.qwen, local_files_only=True,
                                             min_pixels=65536, max_pixels=65536)
     head = build_spatial_head(a.sd, state, cfg, layout['positions'], device,

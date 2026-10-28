@@ -113,6 +113,8 @@ def frontend_input_hash(payload,i):
 
 
 def stage_cache(a, cfg, payload, parent_state, device):
+    if parent_state.get('schema')=='qwen_spatial_joint_lora_v1':
+        raise ValueError('Joint vision/language teacher needs its own validated terminal cache, not public or language-only features')
     from .qwen_vl_language_adapt import frontend_adapter_digest,install_in_full_qwen,NativeLanguageTail
     adapted=parent_state.get('schema')=='qwen_spatial_language_lora_v1'
     if (a.output/'report.json').exists():

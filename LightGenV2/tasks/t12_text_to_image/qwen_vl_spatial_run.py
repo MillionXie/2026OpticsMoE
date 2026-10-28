@@ -144,7 +144,8 @@ def evaluate(model,payload,ids,device,output,label,metric,export=False):
             if choices:selected.append(choices[0])
     panel=Image.new('RGB',(768,310*len(selected)),'white');draw=ImageDraw.Draw(panel)
     for pos,i in enumerate(ids):
-        row=payload['rows'][i];h,valid=pack_hidden([payload['hidden'][i]],device)
+        row=payload['rows'][i]
+        h,valid=model.raw_features(payload,[i],device) if hasattr(model,'raw_qwen') else pack_hidden([payload['hidden'][i]],device)
         _,prediction=model(h,valid,noise_for([row],device));prediction=prediction.clamp(-1,1)
         target=image_float(payload['target'][i:i+1],device)
         err=(prediction-target).square()/4
@@ -205,6 +206,8 @@ def run(args,cfg):
     checkpoint=args.parent/'best_checkpoint.pt'
     if sha256(checkpoint)!=parent_report['checkpoint_sha256']:raise ValueError('Parent checkpoint SHA mismatch')
     state=torch.load(checkpoint,map_location='cpu',weights_only=False)
+    if state.get('schema')=='qwen_spatial_joint_lora_v1' and not cfg.get('adapt_raw_qwen',False):
+        raise ValueError('Native multimodal LoRA teacher requires raw adapted Qwen')
     if state.get('schema')=='qwen_spatial_language_lora_v1' and not cfg.get('adapt_qwen_language',False):
         raise ValueError('Cannot resume adapted Qwen using the original frozen final-feature cache')
     data_run=args.data_run or args.parent
@@ -343,6 +346,30 @@ def run(args,cfg):
             'new_TF_layers':0,'rank':cfg['qwen_lora_rank'],'language_context_sha256':cfg['language_context_sha256'],
             'source_sha256':sha256(Path(__file__).with_name('qwen_vl_language_adapt.py')),
             'cached_prefix_is_training_acceleration_only':True,'deployment_requires_complete_raw_Qwen':True})
+    if cfg.get('adapt_raw_qwen',False):
+        if language_contexts is not None or cfg.get('warm_steps',0) or cfg.get('condition_warm_steps',0) or 'spatial' not in state:
+            raise ValueError('Raw multimodal adaptation requires a completed spatial teacher and no cache-only warmup')
+        from .qwen_vl_hybrid_run import load_qwen
+        from .qwen_vl_joint_adapt import RawQwenHead,install_joint_lora
+        qwen,processor=load_qwen(args.qwen,device)
+        install_joint_lora(qwen,cfg,state.get('qwen_joint_lora'),train=True)
+        qwen.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant':False})
+        if any(isinstance(m,torch.nn.Dropout) and m.p for m in qwen.modules()):raise ValueError('Raw native checkpointing requires the audited zero-dropout Qwen')
+        model=RawQwenHead(model,qwen,processor,layout);model.eval()
+        checks=[];seen=set()
+        if 'qwen_joint_lora' not in state:
+            with torch.no_grad():
+                for i in val_ids:
+                    cell=payload['rows'][i]['category'],payload['rows'][i]['mode']
+                    if cell in seen:continue
+                    seen.add(cell);h,valid=model.raw_features(payload,[i],device)
+                    difference=float((h[0].float()-payload['hidden'][i].to(device).float()).abs().max())
+                    checks.append({'sample_id':payload['rows'][i]['sample_id'],'max_abs_hidden':difference})
+                    if not math.isfinite(difference) or difference>1e-3:raise ValueError('Zero native vision/language LoRA differs from verified actual full Qwen')
+        write_json(out/'zero_joint_lora_identity.json',{'applicable':'qwen_joint_lora' not in state,'passed':True,'checks':checks})
+        write_json(out/'qwen_joint_protocol.json',{'vision_LoRA_layers':[20,21,22,23],'language_LoRA_layers':[24,25,26,27],
+            'base_parameters_frozen':True,'raw_RGB_text_training':True,'no_hidden_cache_in_training_forward':True,
+            'reference_VAE_inference_branch':False,'new_native_TF_layers':0,'source_sha256':sha256(Path(__file__).with_name('qwen_vl_joint_adapt.py'))})
     write_json(out/'zero_injection_identity.json',model.initial_identity if 'spatial' not in state else
         {'applicable':False,'reason':'Continue a trained spatial checkpoint; its injection is already nonzero',
          'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'architecture_and_layout_matched':True})
@@ -413,6 +440,9 @@ def run(args,cfg):
     if language_contexts is not None:
         optimizer.add_param_group({'params':[p for p in model.qwen_language_tail.parameters() if p.requires_grad],
                                    'lr':cfg['qwen_lora_lr']})
+    if hasattr(model,'raw_qwen'):
+        optimizer.add_param_group({'params':[p for p in model.raw_qwen.parameters() if p.requires_grad],
+                                   'lr':cfg['qwen_joint_lora_lr']})
     aux_count=sum(p.numel() for p in model.spatial.aux_reference.parameters())
     counts={'qwen_full_forward':payload['qwen_checks']['qwen_forward_parameters'],
       'qwen_embedding':payload['qwen_checks']['qwen_embedding_parameters'],
@@ -442,6 +472,10 @@ def run(args,cfg):
         counts['qwen_language_lora_parameters']=sum(p.numel() for p in model.qwen_language_tail.parameters() if p.requires_grad)
         counts['inference_total_if_qwen_lora_folded']=counts['inference_total']
         counts['inference_total']+=counts['qwen_language_lora_parameters']
+    if hasattr(model,'raw_qwen'):
+        counts['qwen_joint_lora_parameters']=sum(p.numel() for p in model.raw_qwen.parameters() if p.requires_grad)
+        counts['inference_total_if_qwen_lora_folded']=counts['inference_total']
+        counts['inference_total']+=counts['qwen_joint_lora_parameters']
     write_json(out/'parameter_counts.json',counts)
     effective=cfg['batch_size']*cfg['gradient_accumulation']
     steps=cfg.get('train_steps') or math.ceil(len(ids)*cfg['epochs']/effective)
@@ -459,7 +493,7 @@ def run(args,cfg):
         model.train();model.vae.eval();optimizer.zero_grad(set_to_none=True);total=0.;terms={};real_views=[];fake_views=[]
         for micro in range(cfg['gradient_accumulation']):
             start=((step-1)*cfg['gradient_accumulation']+micro)*cfg['batch_size'];batch=order[start:start+cfg['batch_size']]
-            h,valid=pack_hidden([payload['hidden'][i] for i in batch],device)
+            h,valid=model.raw_features(payload,batch,device) if hasattr(model,'raw_qwen') else pack_hidden([payload['hidden'][i] for i in batch],device)
             with torch.autocast('cuda',dtype=torch.bfloat16):
                 z,rgb,source=model.forward_with_aux(h,valid,noise_for([payload['rows'][i] for i in batch],device))
                 target=image_float(payload['target'][batch],device)
@@ -517,8 +551,10 @@ def run(args,cfg):
             optimizer_disc.step();terms['discriminator']=float(loss_disc.detach())
         if step==4:
             write_json(out/'smoke_report.json',{'real_backward_steps':4,'finite_loss_gradient':True,
-                       'TRAIN_only':True,'Qwen_frozen':language_contexts is None,
+                       'TRAIN_only':True,'Qwen_frozen':language_contexts is None and not hasattr(model,'raw_qwen'),
                        'language_lora_gradient_absolute_sum':sum(float(p.grad.detach().abs().sum()) for p in model.qwen_language_tail.parameters() if p.requires_grad and p.grad is not None) if language_contexts is not None else None,
+                       'joint_vision_lora_gradient_absolute_sum':sum(float(p.grad.detach().abs().sum()) for n,p in model.raw_qwen.named_parameters() if 'model.visual.' in n and p.requires_grad and p.grad is not None) if hasattr(model,'raw_qwen') else None,
+                       'joint_language_lora_gradient_absolute_sum':sum(float(p.grad.detach().abs().sum()) for n,p in model.raw_qwen.named_parameters() if 'model.language_model.' in n and p.requires_grad and p.grad is not None) if hasattr(model,'raw_qwen') else None,
                        'VAE_frozen':not any(p.requires_grad for p in model.vae.parameters()),'adversarial_training':discriminator is not None})
         if step%10==0:
             print('paired',step,'/',steps,'loss',total,terms,flush=True)
@@ -536,6 +572,9 @@ def run(args,cfg):
             if language_contexts is not None:
                 saved['schema']='qwen_spatial_language_lora_v1'
                 saved['qwen_language_lora']=model.qwen_language_tail.adapter_state()
+            if hasattr(model,'raw_qwen'):
+                from .qwen_vl_joint_adapt import SCHEMA,joint_adapter_state
+                saved['schema']=SCHEMA;saved['qwen_joint_lora']=joint_adapter_state(model.raw_qwen)
             if discriminator is not None:saved['training_only_discriminator']={k:v.detach().cpu().clone() for k,v in discriminator.state_dict().items()}
             torch.save(saved,out/'last_checkpoint.pt')
             if selection_score(val,selector)>best:
@@ -546,6 +585,9 @@ def run(args,cfg):
     selected=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     model.adapter.load_state_dict(selected['adapter']);model.spatial.load_state_dict(selected['spatial'])
     if language_contexts is not None:model.qwen_language_tail.load_adapters(selected['qwen_language_lora'])
+    if hasattr(model,'raw_qwen'):
+        from .qwen_vl_joint_adapt import load_joint_adapters
+        load_joint_adapters(model.raw_qwen,selected['qwen_joint_lora'])
     with torch.no_grad():
         for n,p in model.unet.named_parameters():
             if n in selected['unet_trainable']:p.copy_(selected['unet_trainable'][n].to(device))

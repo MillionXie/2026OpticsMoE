@@ -167,7 +167,24 @@ PSNR16.855801／LPIPS0.480210／crop0.427568，三任务均未过5%门槛。
 置换重排读出，保持原生成头的64图像位置／指令mask，无新网络／参数／参考VAE支路。
 须重算1920条实际完整Qwen特征，TRAIN目标／参考RGB／prompt／noise和DEV划分不改；
 原图推理、缓存、LG特征指纹及诊断计时均绑定新顺序。保持旧版接口默认不变，先4步真实反向再
-最多8轮对照，当前仅CPU测试通过，未预称改善；TEST540继续封存。
+最多8轮对照。实际6轮早停，选epoch3／step684，SHA `38716e0bb663b6416fbd7432757603c237ea2af7a7252fcbc922d2d1e1bfb3d5`；
+raw DEV96为16.615857dB／LPIPS0.433708／crop0.376474，商品识别31.25%／53.125%／50%。
+仍有灰色重影、绿条纹遗漏及背景误改，不算成功；顺序改变有特征响应也不保证生成正确。
+
+`qwen_vl_reference_inversion_probe`仅比较76个TRAIN／16个DEV去重参考场景，用小型读出从
+LM图像64token、原merger64token或vision23未合并256token回归参考VAE latent。
+未合并token先按原Qwen的2×2分块顺序恢复16×16空间位置。600步latent MSE诊断的三种输出均明显模糊，
+显式标注的VAE重建oracle则清晰；没有把oracle当编辑器或新增推理VAE支路。
+该小型读出容量、训练损失及特征阶段均构成限制，不能据此断言Qwen不可逆或唯一失败原因。
+
+下一候选`qwen_vl_rich_joint_raw_lora_20261028.json`使原视觉20:24和语言24:28均可通过rank8 LoRA适配，
+其余Qwen基础参数／VAE冻结，原生成头继续训练。每个训练／开发样本真实RGB＋原指令经过
+完整原生Qwen，训练前向不再用冻结hidden缓存，仍为先文后图＋已核验的无参数读出置换。
+原始视觉／语言LoRA都必须在4步真实反向中有有限非零梯度；先6cell零LoRA原生hidden检查。
+只有TRAIN梯度，先4轮预算并按DEV96早停；新schema `qwen_spatial_joint_lora_v1`完整保存两模态LoRA。
+所选权重的raw重载导出必须与训练中实际B1原始输入导出逐PNG一致，不能拿公共冻结hidden冒充新特征。
+联合适配teacher的LG缓存／恢复／尾部入口暂时显式拒绝，待独立验证终端特征协议后再放行。
+部署参数要另计未合并LoRA；未验证折叠／质量／正式计时前不称达标。TEST540继续封存。
 所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
 仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
 

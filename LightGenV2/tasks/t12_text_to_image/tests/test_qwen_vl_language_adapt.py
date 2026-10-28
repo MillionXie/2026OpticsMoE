@@ -23,6 +23,7 @@ class LanguageAdaptTests(unittest.TestCase):
         with self.assertRaises(ValueError):verify_frontend_feature_report({'qwen_language_lora_state_sha256':digest},state)
         with self.assertRaises(ValueError):verify_frontend_feature_report({},state)
         verify_frontend_feature_report({}, {'schema':'qwen_spatial_v1'})
+        with self.assertRaises(ValueError):verify_frontend_feature_report({}, {'schema':'qwen_spatial_joint_lora_v1','qwen_joint_lora':{}})
     def test_zero_adapter_identity_gradients_and_exact_reload(self):
         context={n:{'position_embeddings':(torch.ones(1,n,4),torch.zeros(1,n,4)),
                     'attention_mask':None,'position_ids':torch.arange(n)[None],
