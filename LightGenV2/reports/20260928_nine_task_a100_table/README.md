@@ -1,5 +1,34 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：baseline首点采样缺口拒收，独立NVML采集候选
+
+`baselines_fullscope_20261029_01/qwen_cap100_repeat01`已实际计算512视频，但原250ms功率门
+检测到0.3663873430341482s及0.39778359595220536s的原接收时间缺口，原队列停止、completed为空。
+不补/移动时戳、不丢行、不把这512计算当合格速度/能耗点；该现象能证明接收间隔不合格，
+尚不能仅凭旧stdout行定位为CLI缓冲、进程调度或驱动查询中的哪一环。
+父1201308/子1202469真退出，精确privateMPS get_server_list rc1、原锁只读打开核可取。
+14原文件9654765B含精确外log已逐原SHA/size本地保全再核，rootreceipt
+`20bf778ea50f211fe89c574170c199325b88f4a85aaa65297c77c166b1e95bfb`。
+
+具体不同候选`nvml_direct_observer_20261029.py`去掉nvidia-smi stdout/接收线程这一层，
+独立CPU进程直接调用NVML功率、利用率、内存查询。每行保存实际API调用起止、power-return
+时刻及原整数mW/bytes；功率由mW转W、内存由bytes转MiB，仍用原数值拒收规则。
+50ms请求间隔、实际单调时钟及原250ms积分支撑门均保留；查询本身超过250ms也拒收。
+没有按样本序号重造时间、补齐/追赶伪样本、插值或采集线程写共享盘，也不引入CUDA/模型负载。
+三项纯测试双端通过，四模型原venv均已只读核有pynvml；不改原推理/预处理/采帧/精度/资源分配。
+30s CPU-only新诊断`baselines_fullscope_20261029_nvml_diag01`实收595样本，
+最大实际间隔0.0544061599066481s、最小0.05024995398707688s，原0.25s门通过；
+这不是正式模型负载证明。4原文件412614B全SHA保全，receipt
+`2b8f18301a7977da852bbc713bf161e22c79899359e77f927892353dc46d6da7`。
+
+新采集源码与入口`run_baselines_direct_nvml_20261029.py`发布于
+`8cb2ff8e2d0022a94a3573d720abd2c9b550460e`，仅精确新Git blobs安装，serverHEAD不切。
+旧根/原source不覆盖；在旧PID退出/MPS释放及新CPU诊断通过后，已唯一启动
+`baselines_fullscope_20261029_02`控制器1233625，52源、deadline1793235509.8442001。
+原21点计划、保留Qwen50三轮、LG先完成及DS/Kimi不动均不变；新接收器仍需正式模型窗逐点验收，
+若再次故障保全并查因，不将新候选变成无限同源重试。新suite显示标签修正为512视频/511内部间隙，
+旧01继承的200/199显示标签原样保留；原512 calls与全窗计算没有因改标签而改变。
+
 ## 2026-10-29：LG已纳入真实resize与归一化，随后补测其余lab baseline
 
 人工新批准先测LG、纳入resize和归一化，再测除DS/Kimi外其余baseline的MPS50/100。
