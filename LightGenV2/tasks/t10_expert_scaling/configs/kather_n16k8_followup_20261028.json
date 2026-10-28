@@ -1,0 +1,84 @@
+{
+  "study": "N16 top-k8 TRAIN-only three-seed follow-up after observed TEST",
+  "seeds": [
+    17,
+    27,
+    37
+  ],
+  "baseline_counts": [
+    522,
+    518,
+    540
+  ],
+  "previous_k4_counts": [
+    541,
+    512,
+    535
+  ],
+  "minimum_total_correct": 1589,
+  "extra_epochs": 30,
+  "lr": 0.0005,
+  "microbatch": 2,
+  "margin_weight": 0.2,
+  "capture_weight": 0.005,
+  "minimum_free_mib": 6000,
+  "TEST_enters_gradient": false,
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "blocked_own_run_prefixes": [
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n25_safeguarded_resume_20261028",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_safeguarded_resume_20261028"
+  ],
+  "blocked_processes": [
+    {
+      "gpu": 1,
+      "pid": 126496,
+      "run_prefix": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n25_safeguarded_resume_20261028"
+    },
+    {
+      "gpu": 3,
+      "pid": 126572,
+      "run_prefix": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_safeguarded_resume_20261028"
+    }
+  ],
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "jobs": [
+    {
+      "seed": 17,
+      "experts": 16,
+      "top_k": 8,
+      "source": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s17",
+      "best_sha256": "92ef43c371d3cbfd4740a1660fb181f9cece6ccc964e5ca114e5e046b928fe39",
+      "last_sha256": "0b9f91c07849b8788f18a2b74ace81b2f6073512db02b883710da654fe3013d6",
+      "source_epochs": 60
+    },
+    {
+      "seed": 27,
+      "experts": 16,
+      "top_k": 8,
+      "source": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s27",
+      "best_sha256": "a89fe5db0e82247b41a587ab53a7db3056240662fb50185ec635dd2711889a99",
+      "last_sha256": "13e3ddfe6289f1c458c020a798bfd290837601a9088ef8cedefec3433853f3e1",
+      "source_epochs": 60
+    },
+    {
+      "seed": 37,
+      "experts": 16,
+      "top_k": 8,
+      "source": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s37",
+      "best_sha256": "0e5c158a9180294454a5c3d0f4452d37cf22cbf2b8abe468680a6edac96426af",
+      "last_sha256": "1c5a11ad998ebb8080ff97b38c238af219f124ffb38aa63339398636b5bb43d0",
+      "source_epochs": 60
+    }
+  ],
+  "selection": "VAL accuracy then macro NLL; old best retained; all three models locked before any new TEST",
+  "budget_per_seed": {
+    "original_TRAIN_gradient_inputs": 104880,
+    "optimizer_updates": 6570,
+    "TEST_gradient_inputs": 0,
+    "total_epochs": 90
+  },
+  "no_teacher": true
+}

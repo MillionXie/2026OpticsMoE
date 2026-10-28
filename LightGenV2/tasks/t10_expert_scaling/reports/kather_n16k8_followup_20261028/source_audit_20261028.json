@@ -1,0 +1,166 @@
+{
+  "rows": [
+    {
+      "seed": 17,
+      "experts": 16,
+      "top_k": 8,
+      "source": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s17",
+      "best_sha256": "92ef43c371d3cbfd4740a1660fb181f9cece6ccc964e5ca114e5e046b928fe39",
+      "last_sha256": "0b9f91c07849b8788f18a2b74ace81b2f6073512db02b883710da654fe3013d6",
+      "best_epoch": 59,
+      "last_epoch": 60,
+      "baseline_test_correct": 522,
+      "baseline_VAL_correct": 535,
+      "baseline_TRAIN_correct": 2571,
+      "parameter_count": 3600200,
+      "parameter_shapes": {
+        "router_phase": [
+          224,
+          224
+        ],
+        "expert_phases.0": [
+          16,
+          224,
+          224
+        ],
+        "expert_phases.1": [
+          16,
+          224,
+          224
+        ],
+        "global_phases.0": [
+          986,
+          986
+        ],
+        "global_phases.1": [
+          986,
+          986
+        ]
+      },
+      "best_tensor_sha256": "468c824f41901b7050d66595eb00bed8ae47a862202ac5b6c51400c38f4adfc5",
+      "last_EMA_tensor_sha256": "eee143dbd43e68786578aea4310afb3e3c90c96c6236f09ba27490855aa5a3a8",
+      "last_live_tensor_sha256": "438721abef02c04a90d14ed43c668bbf0b63f1697451d64826636528e2623f3b",
+      "optimizer_steps": [
+        13140.0,
+        13140.0,
+        13140.0,
+        13140.0,
+        13140.0
+      ],
+      "source_pid_identity_absent": true,
+      "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+    },
+    {
+      "seed": 27,
+      "experts": 16,
+      "top_k": 8,
+      "source": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s27",
+      "best_sha256": "a89fe5db0e82247b41a587ab53a7db3056240662fb50185ec635dd2711889a99",
+      "last_sha256": "13e3ddfe6289f1c458c020a798bfd290837601a9088ef8cedefec3433853f3e1",
+      "best_epoch": 58,
+      "last_epoch": 60,
+      "baseline_test_correct": 518,
+      "baseline_VAL_correct": 540,
+      "baseline_TRAIN_correct": 2578,
+      "parameter_count": 3600200,
+      "parameter_shapes": {
+        "router_phase": [
+          224,
+          224
+        ],
+        "expert_phases.0": [
+          16,
+          224,
+          224
+        ],
+        "expert_phases.1": [
+          16,
+          224,
+          224
+        ],
+        "global_phases.0": [
+          986,
+          986
+        ],
+        "global_phases.1": [
+          986,
+          986
+        ]
+      },
+      "best_tensor_sha256": "aaed6283d7420edaf531cec8436258e939332e7e5bf791b1a6ffaa179aeccc8d",
+      "last_EMA_tensor_sha256": "16bc5ee8448c94173e5660dedbf5a947a7b9752610f95cef7d700535d9834eef",
+      "last_live_tensor_sha256": "8fd17bb64a2827a3af42e425fcfa10583b4f3cd7803b128bf7732041763c528b",
+      "optimizer_steps": [
+        13140.0,
+        13140.0,
+        13140.0,
+        13140.0,
+        13140.0
+      ],
+      "source_pid_identity_absent": true,
+      "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+    },
+    {
+      "seed": 37,
+      "experts": 16,
+      "top_k": 8,
+      "source": "/DATA/DATA1/guest3/t10_topk32_20260920_runs/kather/moe_oeo_N16_k8_L4_lr0.002_s37",
+      "best_sha256": "0e5c158a9180294454a5c3d0f4452d37cf22cbf2b8abe468680a6edac96426af",
+      "last_sha256": "1c5a11ad998ebb8080ff97b38c238af219f124ffb38aa63339398636b5bb43d0",
+      "best_epoch": 60,
+      "last_epoch": 60,
+      "baseline_test_correct": 540,
+      "baseline_VAL_correct": 542,
+      "baseline_TRAIN_correct": 2556,
+      "parameter_count": 3600200,
+      "parameter_shapes": {
+        "router_phase": [
+          224,
+          224
+        ],
+        "expert_phases.0": [
+          16,
+          224,
+          224
+        ],
+        "expert_phases.1": [
+          16,
+          224,
+          224
+        ],
+        "global_phases.0": [
+          986,
+          986
+        ],
+        "global_phases.1": [
+          986,
+          986
+        ]
+      },
+      "best_tensor_sha256": "2a2f634b676866a510a69c28e95228e696887240dc097f5e47d8a71119c845fe",
+      "last_EMA_tensor_sha256": "2a2f634b676866a510a69c28e95228e696887240dc097f5e47d8a71119c845fe",
+      "last_live_tensor_sha256": "f5344fe3961977b0da9ceefbf7947a1f8cb65bb4459781283c053ba2d1134863",
+      "optimizer_steps": [
+        13140.0,
+        13140.0,
+        13140.0,
+        13140.0,
+        13140.0
+      ],
+      "source_pid_identity_absent": true,
+      "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+    }
+  ],
+  "k8_total": 1580,
+  "k4_counts": [
+    541,
+    512,
+    535
+  ],
+  "k4_total": 1588,
+  "minimum_target_total": 1589,
+  "minimum_target_mean": 70.43439716312056,
+  "no_gpu_initialized": true,
+  "role": "CPU-only immutable 60-epoch source identity audit; no new training or TEST inference",
+  "data_immutable": true
+}

@@ -1,5 +1,22 @@
 # T10 专家数量与 Top-k 扩展实验
 
+
+## N16/k8新增验收与固定续训（2026-10-28）
+
+用户新增要求N16/k8高于同专家数k4。原seed17/27/37正确数522/518/540，总1580；
+k4为541/512/535，总1588。须至少1589/2256（70.4344%），不以两位小数平局算超过。
+原60轮best/last、Adam/EMA及原表永久保留，CPU身份审计见
+[来源审计](reports/kather_n16k8_followup_20261028/source_audit_20261028.json)。
+新入口`n16_midk_followup.py`与profile `configs/kather_n16k8_followup_20261028.json`
+仅排GPU1/3队列；每卡确认当前full25/full49自身任务退出且空闲显存至少6000MiB后才接手，不中断其他任务。
+复用已有`diagnose_topk.py`，从各自epoch60 last恢复live/Adam/EMA，新增30个完整TRAIN epoch，
+LR 5e-4余弦至5e-5、effective16/micro2、margin .2/capture .005；其余原损失、D4和光学结构不变。
+不重新初始化为其他seed，不使用teacher，不将TEST加入梯度。每seed额外104880原TRAIN输入、6570更新，累计90轮。
+随机数按既有续训入口重新设种子，不能称为原RNG逐位恢复。
+按VAL准确率优先/NLL平手保留原best，三seed全部训练结束、模型一起锁定后才分别评TEST一次。
+这是观察旧TEST后追加预算的开发结果，不能冒称原等预算独立比较；两路full25/full49的原目标继续。
+队列启动/真实子PID与源SHA以新run的plan/status为准，准备或等待不当作已训练。
+
 ## 新验收目标与有效batch检验（2026-10-28）
 
 用户要求full25、full49至少高于各自上一档Top-k，覆盖此前该轮已收尾的状态。
