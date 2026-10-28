@@ -38,6 +38,20 @@ Taichi的[Science原论文](https://doi.org/10.1126/science.adl1203)图4E–F展
 风格分类或性能数字当作本任务指令正确率。作者[实验室说明](https://media.au.tsinghua.edu.cn/cn/info/1016/1359.htm)
 确认其纹理图像生成任务；具体VGG-16评估核对了原论文正文第7页／图4F，不臆测其使用FID。
 
+新无方向16图及全部64图自动评分已经完整完成，运行源码`d882e861fd78e25e889eb64732be15e46da2fff0`，
+run `white_reference_sdxl_free_lighting_20261029`／`white_reference_automatic_metrics_64_20261029`。
+新16图的CLIP-T均值0.339376、DINOv2-I0.324111、ImageReward_compact−0.195712；
+同一SDXL旧0.6预置分别0.280466／0.763873／−2.253098。
+旧0.6易保留白底／原外观而忽略文字，说明较高DINO不能单独代表生成任务成功。
+这些均为4款TRAIN商品先导／不同prompt预置，不是独立测试、属性正确率或改善显著性检验。
+新16图原生1024均已SHA下载并逐图查看：能生成家具房间、蓝／红灯罩或靠垫，
+但仍有长枕／灯臂造型漂移、台灯变落地灯、条纹出现在椅子或其他靠垫、单色靠垫和纯背景等失败。
+因此仍未接受为批量训练GT或Qwen／LG教师；下一步优先验证来自参考RGB的粗轮廓条件，不能以自动均值刷高替代明确要求。
+无GT评估／全部prompt与seed／全部逐样本值均已下载核SHA。可视化入口`reports/white_reference_scene_20261029/plot_targetfree.py`
+输出本地run `white_reference_targetfree_review_20261029`：两分类全16图和固定四请求预览，不挑best-of-seed。
+工作流`white_reference_free_lighting_metrics_workflow_20261029`已complete；本轮GPU子PID856491／864366全部退出，
+释放收据`own_gpu_released=true`，其他任务未停止；本地与服务器11项CPU检查均通过。
+
 输入不再使用程序窗／台面房间，而使用已有ABO商品的白底图；保留主体大致造型，允许按文字改变面料、
 颜色、底座等细节。背景包含桌椅／书架／窗帘／植物及空间光照，不以纯色背景代替场景生成。
 先导入口`white_reference_scene_probe`固定选4款TRAIN商品（两灯、两靠垫，含不同粗造型），
