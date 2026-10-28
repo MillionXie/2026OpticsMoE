@@ -23,6 +23,13 @@ class CaptionImageLoss(nn.Module):
         return (1-(visual*F.normalize(text_features.float(),dim=-1)).sum(-1)).mean()
 
 
+def product_caption(row,descriptions):
+    if row.get('render_protocol')=='controlled_room_edit_v1' and row['mode']!='background':
+        from .qwen_vl_simple_edits import LABELS
+        return LABELS[row['category']][row['requested_family']]
+    return row.get('target_description',descriptions[row['target']['sample_id']])
+
+
 def prepare_caption_loss(repo, weights, rows, train_ids, descriptions, device):
     repo,weights=Path(repo),Path(weights)
     revision=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD']).decode().strip()
@@ -36,7 +43,7 @@ def prepare_caption_loss(repo, weights, rows, train_ids, descriptions, device):
     for start in range(0,len(train_ids),32):
         ids=train_ids[start:start+32]
         for dest,texts in ((scene,[rows[i]['teacher_caption'] for i in ids]),
-                           (product,[rows[i].get('target_description',descriptions[rows[i]['target']['sample_id']]) for i in ids])):
+                           (product,[product_caption(rows[i],descriptions) for i in ids])):
             tokens=clip.tokenize(texts,truncate=False).to(device)
             with torch.no_grad():features=F.normalize(encoder.encode_text(tokens).float(),dim=-1).cpu()
             dest.update(zip(ids,features))
