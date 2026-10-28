@@ -8,7 +8,7 @@ import sys
 def read(p):return json.loads(Path(p).read_text(encoding='utf8'))
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
-def collect(lg,qwen,destination):
+def collect(lg,qwen,destination,*,extra_metadata=None):
     lg=Path(lg);qwen=Path(qwen);state=read(lg/'suite_status.json')
     names=[f'lg_repeat{i:02d}' for i in (1,2,3)]
     if state['status']!='complete' or state['completed']!=names or not state['mps_released']:
@@ -43,6 +43,7 @@ def collect(lg,qwen,destination):
         Qwen_time_basis='measured cold B1 MPS50 continuous file preparation to CPU score, zero inference warmups',
         physical_photonic_hardware_time_measured=False,matched_end_to_end_physical_speedup_claim=False,
         energy_qualified=False,energy_note='No FFT-context NVML substitution for physical hybrid deployment GPU energy')
+    if extra_metadata:result.update(extra_metadata)
     with Path(destination).open('x',encoding='utf8') as f:json.dump(result,f,indent=2,ensure_ascii=True,allow_nan=False)
     return result
 
