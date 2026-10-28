@@ -1,5 +1,72 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：LG扩展预处理与lab baseline测量交付，8配置24点完成
+
+最终CPU collector状态为`PASSED_8_CONFIG_24_POINT_FULL_INPUT_BASELINES`：
+已停止且保全的02根保留Qwen100/GLM50共6点，03根完成其余15点，合21个新点；
+另保留既有Qwen50三轮，共8配置×3轮=24点，不要求03单根完成21点。
+每配置三fresh进程；每点512个不同原TEST视频、每视频四帧、B1、零推理预热；
+模型加载窗外，首文件准备至末CPU评分连续窗保留全部原前端、完整模型和511内部间隙。
+MPS50/100实际分别54/108SM，原数学/精度/权重/采帧、逐字节数值与250ms功率门均未放宽。
+未连接或补测DS/Kimi，未重跑已合格点；失败01/02叶原样保留，不追认其部分计算。
+
+下表均按三轮总时间/96组、总J/96组、总token/总时间汇总，未平均比率或挑最快轮。
+能量为同窗NVML板卡积分加338.2W固定host代理一次，非整机电表值；250W仅为硬件cap。
+显示值四舍五入，完整精度、三轮值及24个report SHA见
+[新不可变24点汇总JSON](measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/Lab_baselines_fullscope_20261029_01.json)，
+10414B，SHA256=`4edd1231fd94329f2f227c936d83c4bb2d05d567c1e5874c51dd6e546f45237e`。
+本地另逐24个原report核SHA，并重算总时间/板卡J/系统代理J/token、54/108SM及零预热；
+八配置所有功率样本最大年龄均小于250ms，README表格舍入值与新JSON一致。
+该静态汇总与原始保全数据按既有outputs忽略规则留本地；本次Git仅发布父README，不将raw/PT/凭据加入Git。
+
+| 配置 | T16(s) | E16(J，含host代理) | GPU均值(W) | 原生token/s | baseline T16 / LG等效T16 | LG token/s / baseline原生token/s |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Qwen MPS50 | 4.665645 | 1846.332104 | 57.529250 | 1529.477780 | 101.539378 | 101.539378 |
+| Qwen MPS100 | 4.564841 | 1791.149871 | 54.179488 | 1563.252787 | 99.345559 | 99.345559 |
+| GLM MPS50 | 6.201163 | 2998.058700 | 145.267159 | 1460.371204 | 134.957176 | 106.344347 |
+| GLM MPS100 | 5.275095 | 2487.145913 | 133.288338 | 1716.746237 | 114.802974 | 90.463121 |
+| CLIP MPS50 | 3.240744 | 1226.745063 | 40.338092 | N/A | 70.528973 | N/A |
+| CLIP MPS100 | 3.198707 | 1210.639811 | 40.277835 | N/A | 69.614119 | N/A |
+| YOLO MPS50 | 3.621904 | 1376.195984 | 41.764793 | N/A | 78.824234 | N/A |
+| YOLO MPS100 | 3.583709 | 1360.909558 | 41.548950 | N/A | 77.992979 | N/A |
+
+LG仍只采用含resize/归一化的新三轮等效汇总**45.94911715143696ms/16视频**，
+不混入旧36.262898ms结果。它是固定光周期与实测CPU/kernel的依赖/资源排程等效计算，
+并非物理光路E2E，也未包含baseline同范围的文件读取/解码、RGB转换/65%crop及quality-pixel准备。
+因此以上比值不是同范围物理E2E百倍证明；Qwen100为99.345559，CLIP/YOLO均未达100，
+Qwen50的101.539378也不是每轮或稳定百倍保证。LG的`energy_qualified=false`，不生成LG部署能耗比。
+各baseline保留自身原生token：Qwen三轮685056、GLM869376，只有LG共用Qwen分子，
+LG为155302.22216199507token/s；GLM时间比与token速率比不可强行相等。
+CLIP/YOLO有效输入token原字段0，速率及相应LG比值为N/A，不灌入Qwen分子。
+LG静态汇总7063B的SHA256仍为
+`08b4682698b2f67f16435444d35737677d61728c1ada5cc7a564eb9fcfb227ab`。
+
+### YOLO MPS100最后三轮与收尾证据
+
+`baselines_fullscope_20261029_03/yolo_cap100_repeat01/02/03`三轮server cpu_audit及本地
+`local_independent_fullscope_audit01.json`全passed，worker1708124/1727253/1746501均真退出。
+三轮T16为3.6289818473123887、3.6196235946263187、3.50252018899846s；
+合1536视频/96组、344.03602018998936s，pooled T16=3.5837085436457223s，
+E16=1360.909558287236J，GPU均值41.54895048322671W，另计338.2W host代理一次。
+最大功率样本年龄0.05514328507706523、0.055562566965818405、0.05820487893652171s，
+均通过原250ms门。三叶33原文件8121272B逐原SHA/size保全，receipt分别为
+`1a66d3314ffc70fb11dc93c42cc0396b6f43068334bd545dcb6ef0215b10c386`、
+`ecf559de1f0e41de2ae6fb6cfe9f9aefe0c2a8a7c5ece72234611f034fa82420`、
+`57864a2039b395e87f0782668a69639ca89d4fafb75d2807a71cd4a2667d7c84`。
+
+03 suite于Unix1793230594.6521444完成；Unix1793230729.6626694实核controller1442794及15个worker
+全部16 PID均已不在/proc，精确私有pipe
+`/DATA/DATA1/guest3/.cache/baselines_fullscope_20261029_03`的`get_server_list`返回rc1、
+`Cannot find MPS control daemon process`，原共享锁以只读rb打开后非阻塞排他锁可取并立即释放。
+GPU6 UUID仍为`GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55`，14MiB/250W。
+03整根含MPS日志及精确外controller.log的184原文件75571904B已逐SHA/size本地保全，root receipt为
+`283128319b0ef9373f593707adf3341eeeac5cbc384c050d4194bf4ab22770f9`。
+02根86文件92817558B与Qwen50根40文件31163291B的既有receipt全部记录再核SHA/size一致，
+未重复传输旧根或重跑已完成叶；未修改原suite/raw以拼接结果。
+03运行源仍绑定`744ef81d5432e3ef973ad7fb207b3fb56ff1596f`的54冻结源，
+未延长原deadline1793235509.8442001，serverHEAD仍为`ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40`不切换。
+全部旧sealed、B100三暂存及T10/T12/T20/T21不动；本次不新建Word/表格，测量链到此结束。
+
 ## 2026-10-29：YOLO MPS50冷全输入三轮完成
 
 `baselines_fullscope_20261029_03/yolo_cap50_repeat01/02/03`各完成512个不同原TEST视频，
