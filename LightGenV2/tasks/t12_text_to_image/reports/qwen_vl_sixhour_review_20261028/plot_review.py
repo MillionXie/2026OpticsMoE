@@ -19,10 +19,11 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--model', action='append', required=True, help='LABEL=completed raw review or run')
     p.add_argument('--curve', action='append', default=[], help='LABEL=completed training run')
+    p.add_argument('--counterfactuals',action='store_true',help='Show every instruction for the first identical reference RGB/category/task')
     p.add_argument('--output', type=Path, required=True)
     a = p.parse_args()
     a.output.mkdir(parents=True, exist_ok=False)
-    models, provenance = [], {}
+    models, provenance = [], {};cohort=None
     for value in a.model:
         label, directory = value.split('=', 1)
         directory = Path(directory)
@@ -30,10 +31,13 @@ def main():
         if not report['complete']:
             raise ValueError('Only completed exports may be compared')
         metrics = report.get('metrics', report.get('best_val'))
-        folder = 'raw_dev' if 'metrics' in report else 'dev_best'
+        current=report.get('evaluation_label','development_test')
+        if cohort is None:cohort=current
+        if current!=cohort:raise ValueError('Never mix TRAIN fit and development metrics')
+        folder = ('raw_train' if report.get('cohort')=='train_probe' else 'raw_dev') if 'metrics' in report else 'dev_best'
         records = {r['sample_id']: (i, r) for i, r in enumerate(metrics['images'])}
         if len(records) != 96:
-            raise ValueError('Expected the same development 96, not independent TEST')
+            raise ValueError('Expected the same 96-row DEV or fixed TRAIN fit probe, not independent TEST')
         models.append((label, directory, folder, records))
         provenance[label] = {'directory': str(directory.resolve()), 'report_sha256': digest(directory/'report.json'),
                              'metrics': {k:v for k,v in metrics.items() if k != 'images'}}
@@ -48,6 +52,15 @@ def main():
     for mode in ('background', 'object', 'joint'):
         chosen = []
         for category in ('lamp', 'pillow'):
+            if a.counterfactuals:
+                reference_sha=None
+                for sid,(index,row) in models[0][3].items():
+                    if row['mode']!=mode or row['category']!=category:continue
+                    path=models[0][1]/'images'/models[0][2]/'reference'/f'sample_{index:04d}.png'
+                    value=digest(path)
+                    if reference_sha is None:reference_sha=value
+                    if value==reference_sha:chosen.append(sid)
+                continue
             seen = set()
             for sid, (_, row) in models[0][3].items():
                 product = sid.split(':')[2].rsplit('-', 1)[0]
@@ -59,7 +72,8 @@ def main():
         height, width = 384, 256*(2+len(models))
         panel = Image.new('RGB', (width, height*len(chosen)+54), 'white')
         draw = ImageDraw.Draw(panel)
-        draw.text((6, 4), 'DEV96: selected during development. Candidate failures retained; native 256 PNGs.', fill='black', font=font)
+        title='TRAIN fit only; all same-RGB instructions, no quality filtering.' if cohort=='TRAIN_resubstitution_diagnostic' else 'DEV96: selected during development. Candidate failures retained.'
+        draw.text((6, 4), title+' Native 256 PNGs.', fill='black', font=font)
         draw.text((6, 28), 'P = PSNR (dB, higher better); L = LPIPS; crop = object LPIPS (lower better).', fill='black', font=small)
         for j, sid in enumerate(chosen):
             index, row = models[0][3][sid]
@@ -110,9 +124,9 @@ def main():
         axes[0].legend(fontsize=8)
         fig.suptitle('Same DEV96; each stage has its own initialization. Stars: selected best.')
         fig.savefig(a.output/'development_curves.png',dpi=180);plt.close(fig)
-    (a.output/'plot_data.json').write_text(json.dumps({'evaluation':'development_test; not independent TEST',
+    (a.output/'plot_data.json').write_text(json.dumps({'evaluation':cohort+'; not independent TEST',
         'model_provenance':provenance,'figure_sample_ids':figure_rows,'curves':curves,
-        'selection':'First two distinct reference products per category and task; never selected by metric value'},indent=2),encoding='utf-8')
+        'selection':'All instructions for first identical RGB per category/task' if a.counterfactuals else 'First two distinct reference products per category and task; never selected by metric value'},indent=2),encoding='utf-8')
 
 
 if __name__ == '__main__': main()
