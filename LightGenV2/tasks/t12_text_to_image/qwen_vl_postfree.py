@@ -46,13 +46,17 @@ def instruction_bounds(ids, vision_end_id, message_end_id):
     return start, len(values)-stop
 
 
-def focus_features(hidden, valid, positions, text_start, suffix_tokens, gain):
+def focus_features(hidden, valid, positions, text_start, suffix_tokens, gain, visual_override=None):
     lengths = valid.sum(1)
     steps = torch.arange(hidden.shape[1], device=hidden.device)[None]
     mask = valid & (steps >= text_start) & (steps < lengths[:, None]-suffix_tokens)
     if not mask.any(1).all() or mask[:, positions].any():
         raise ValueError('Instruction mask empty or overlaps visual tokens')
-    visual = hidden[:, positions].float()
+    visual = hidden[:, positions] if visual_override is None else visual_override
+    if visual_override is not None:
+        if visual.shape != hidden[:, positions].shape or not torch.isfinite(visual).all():
+            raise ValueError('Spatial-only visual override must match the finite native image-token layout')
+    visual = visual.float()
     context = (hidden.float()*mask[:, :, None]).sum(1)/mask.sum(1, keepdim=True)
     vrms = visual.square().mean((1, 2), keepdim=True).sqrt().detach().clamp_min(1e-6)
     crms = context.square().mean(1, keepdim=True).sqrt().detach().clamp_min(1e-6)

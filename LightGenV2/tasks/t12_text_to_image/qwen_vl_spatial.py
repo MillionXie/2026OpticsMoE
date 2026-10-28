@@ -89,8 +89,8 @@ class SpatialTurboHead(NativeTurboHead):
             raise ValueError('Cached Qwen token layout differs from the verified image grid')
         return hidden[:,positions]
 
-    def forward(self,hidden,valid,noise):
-        z,rgb,_=self.forward_with_aux(hidden,valid,noise,with_aux=False)
+    def forward(self,hidden,valid,noise,native_visual=None):
+        z,rgb,_=self.forward_with_aux(hidden,valid,noise,with_aux=False,native_visual=native_visual)
         return z,rgb
 
     def semantic_conditions(self,hidden,valid):
@@ -106,17 +106,24 @@ class SpatialTurboHead(NativeTurboHead):
             return self.adapter(hidden, mask)
         return self.adapter(hidden[:,self.semantic_prefix:],valid[:,self.semantic_prefix:])
 
-    def spatial_inputs(self,hidden,valid):
+    def spatial_inputs(self,hidden,valid,native_visual=None):
         visual=self.visual_tokens(hidden,valid)
+        if native_visual is not None:
+            if native_visual.shape!=visual.shape or not torch.isfinite(native_visual).all():
+                raise ValueError('Spatial-only native features must match the finite verified image grid')
+            visual=native_visual
         context=None
         if self.instruction_span is not None:
             from .qwen_vl_postfree import focus_features
-            visual, mask = focus_features(hidden, valid, self.visual_positions, *self.instruction_span, self.text_readout_gain)
+            visual, mask = focus_features(hidden, valid, self.visual_positions, *self.instruction_span, self.text_readout_gain, visual_override=native_visual)
             if self.spatial.film is not None:context=(hidden.float()*mask[:,:,None]).sum(1)/mask.sum(1,keepdim=True)
         return visual,context
 
-    def forward_with_aux(self,hidden,valid,noise,with_aux=True):
-        visual,context=self.spatial_inputs(hidden,valid)
+    def forward_with_aux(self,hidden,valid,noise,with_aux=True,native_visual=None):
+        # A diagnostic override affects spatial readout only. In particular,
+        # semantic_conditions below still sees the original complete fused
+        # sequence and its original image/text/final-token attention mask.
+        visual,context=self.spatial_inputs(hidden,valid,native_visual=native_visual)
         if with_aux:spatial,aux=self.spatial(visual,with_aux=True,context=context)
         else:spatial,aux=self.spatial(visual,context=context),None
         if self.zero_spatial:spatial=spatial*0

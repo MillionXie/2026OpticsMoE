@@ -47,6 +47,44 @@ pair SHA`c442d874bc4c152ed395b672aa100313b78f6c480879614c268ade70236db2e0`。
 描述重新加入语义监督；换背景保留商品时仍可用原商品描述。独立CPU审核需另报款式、墙色与保留区域，
 不能只靠固定目标SKU检索或整图PSNR判定通用指令是否正确。
 
+两组受控房间试验已完整结束，实际完整Qwen重载的96张生成PNG均与各自选中训练导出逐SHA一致；
+不能把冻结特征缓存当部署。standard在第10轮早停、选第4轮step480，region在第8轮早停、选第2轮step240。
+同一DEV96的实际raw结果如下，尚未推理独立TEST或接受为最终LG教师：
+
+| 试验 | PSNR/dB | LPIPS | 商品crop LPIPS | best checkpoint SHA256 |
+|---|---:|---:|---:|---|
+| standard | 20.577457 | 0.252151 | 0.349405 | `f69020e34b34ee23f1072caf435acd0833bf95afcb60daa63f91485fe7fbdb00` |
+| region | 21.045277 | 0.239847 | 0.329367 | `317dda083ee93dfb5cc96d1245d38a22b23d493bfbf8602b5d6a710ec113d813` |
+
+region改善整图／crop感知均值，但未解决所有保留错误：换背景仍会改商品纹样，换商品仍有墙色漂移。
+离线保留区L1（RGB[0,1]，背景／物品／联合）standard为0.06013／0.02989／0.02757，
+region为0.06119／0.03366／0.03526；墙色正确率分别75.0／56.25／84.375%和68.75／71.875／65.625%。
+这些由真实改变像素掩码计分；GT保留误差严格为0，不能仅因LPIPS改善就宣布编辑语义通过。
+选中轮后TRAIN12诊断继续改善而DEV感知变差，已有过拟合迹象；TRAIN12只覆盖少数商品和instruction0，
+不代表完整TRAIN分布，不能靠继续加轮解决或把其与DEV差距直接当完整泛化差距。
+
+CPU ViT-B/16通用款式分类必须同时显示GT控制：灯类object／joint的GT仅25%正确，
+唯一锥形目标被分类器持续错认，故不能用生成图分类率高于GT声称语义更好，也不为迎合分类器更改商品标签。
+条纹指令未要求方向、颜色或底座；合法的不同款式仍可能被单一GT的LPIPS惩罚。
+新离线绘图入口`reports/qwen_vl_sixhour_review_20261028/plot_controlled_review.py`核验完整PNG与报告身份，
+按每类前两款不同参考商品固定选图，保留原生256像素和完整prompt，标注感知、墙色、保留区及GT分类控制，
+导出全96条绘图数据和选中轮学习曲线，不按效果挑图。
+随后已用现成`qwen_vl_scene_review --cohort train_probe`完整重跑相同60条TRAIN／30组同RGB同seed指令，
+两版各180张PNG已SHA下载；CPU配对审计入口为`reports/qwen_vl_sixhour_review_20261028/audit_controlled_counterfactual.py`。
+条纹／几何、灯罩轮廓确有文字响应，但同一参考在换墙色时也改商品细节：共同保留区成对L1为
+standard0.016694、region0.021483；每输出对原参考保留区L1为0.031865／0.040704，GT控制全部为0。
+减弱编辑区域回归没有改善该TRAIN探针的整体保留表现；既不能把输出变化本身当成功，也不能据此
+认定MSE或Qwen压缩为唯一病因。该探针是TRAIN重代入、每任务灯6组／靠垫4组，不是独立测试。
+A/B工作流9个子进程及随后两版TRAIN推理2个子进程均已退出，两个GPU释放收据均为true；整个质量／速度目标仍未通过。
+
+下一项受控读出诊断只比较同一适配后Qwen的原生merger64与LM图像64作为空间来源；两者均8×8、2048维，
+不增加参考VAE、RGB编码器或TF，原完整融合序列及语义resampler／指令mask保持相同。
+`native_visual`可选参数只送空间读出；旧配置默认计算图不变，不采用会连语义mask一起改变的旧native-prefix迁移。
+原生特征须由安装完整联合LoRA后的同一次实际GPU前向捕获；不能重用旧公开Qwen的CPU merger重放缓存。
+两组从同一standard选中头开始，使用相同TRAIN60、噪声、400步参考warmup与300步配对预算，
+仅训练已有空间投影／空间注入，VAE／Qwen／语义头及UNet主干冻结。
+这是定位保留瓶颈的TRAIN拟合试验，不是已改善的baseline或LG教师；是否通过真实反向、同GPU raw重放及质量均看独立新run报告。
+
 上一复杂fused-readout轮次已完整4轮，best为第2轮step912，SHA
 `e808194d6dfc2a4ceef9c49e3c6ce7021317bb576db5eac5251ec878851cd627`，
 raw DEV96为16.944438dB／LPIPS0.432043／crop0.371938，仍不是已合格的复杂生成或LG教师。
