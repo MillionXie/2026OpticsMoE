@@ -206,6 +206,14 @@ LM图像64token、原merger64token或vision23未合并256token回归参考VAE la
 `qwen_vl_rich_multimodal_identity_probe_20261028.json`从同一联合微调父权重独立做相同300步对照，
 不从identity已训权重继续；同时实测新／旧mask条件对不同参考图的敏感度。
 它仍只用原TRAIN、不打开DEV或TEST，必须看实际图像才能判断改善，不把条件有响应当作编辑成功。
+上述mask对照已完整300步：同一句指令下18张参考的旧语义条件差严格为0，新mask相对RMS差最大0.6724；
+这是直接测得的信息流区别，不是逐属性成功率。相同12张拟合组LPIPS为0.188715（旧mask0.340563），
+6张原TRAIN迁移组0.426570（旧0.484878），灯／靠垫类别与部分轮廓保留改善，但新形态及纹理仍不准。
+best SHA`22752b304cdb60b89f31a5d3140edb918667874be9a3738d1e03629233fbdf23`，18张重载PNG一致。
+接下来`qwen_vl_rich_fused_readout_20261028.json`回到原1824／96三任务和复杂prompt，
+从同一已完成联合LoRA编辑权重继续，**不继承identity拟合后的权重**；除语义mask外保持上一轮loss／LR／参数范围。
+先四步真实反向，再最多4轮DEV选best、完整raw重载／三任务prompt图及独立B16审查；
+该轮尚未取得正式编辑质量结果，不能从identity改善提前宣称语义或LG达标。
 所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
 仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
 
