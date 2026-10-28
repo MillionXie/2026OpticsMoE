@@ -1,5 +1,32 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：CLIP MPS50冷全输入三轮完成
+
+`baselines_fullscope_20261029_03/clip_cap50_repeat01/02/03`各完成原512不同TEST视频，
+每视频四帧、B1、三fresh进程、零推理预热、实际54SM；加载窗外，首文件准备到末CPU评分
+连续窗保留原读取/解码/resize/归一化/H2D/完整模型及511内部间隙，不删前端或挑最快轮。
+三worker1534622/1553919/1573323均已真退出，三叶server cpu_audit与本地
+`local_independent_fullscope_audit01.json`全部passed；逐叶receipt原文件SHA/size再核一致。
+
+三轮T16为3.252958005592518、3.2453322244691662、3.2239418640929216s。
+合1536视频/96组、311.1114270129474s，按总时间/总组数汇总为
+**3.2407440313848688s/16视频**；同窗NVML板卡平均40.338092217351615W，
+另加338.2W固定host代理一次，合**1226.7450630051972J/16视频**，250W仍只是硬件cap。
+最大功率样本年龄分别0.05407256504986435、0.054913191008381546、0.05681227007880807s，
+原250ms门未变，未补行、移动时戳或丢行。该CLIP原生运行无计入的有效输入token（原字段为0），
+故token速率与LG token速率比均不适用，不灌入Qwen分子造CLIP token指标。
+
+对最新含resize/归一化LG等效45.94911715143696ms，时间比为**70.52897274835935**，
+未达到100；LG仍非同范围物理光路E2E实测，部署能耗`energy_qualified=false`，不造LG能量比。
+三叶33原文件7702959B已逐原SHA/size本地保全，receipt分别为
+`942a0da94a1bb9d28c2f71af71c453f2ff7d134e8f0067b9d3ada4b6ab694a54`、
+`08ae7283562377a22bb4b175b61d0c8ff803be71368c8504966dc0f62fc58851`、
+`fa7eb9245fa61a2f88686e178e7dc0a69692c9c4e4934ed4a2614c04241b076d`。
+Unix1793229261.3667486实核同一controller1442794已自动进入`clip_cap100_repeat01`/worker1592564加载，
+无error。03完成6/15，加02保留6为12/21新点，再加既有Qwen50为15/24，尚未全完成。
+仍保持原deadline1793235509.8442001、744ef81d5绑定54源、serverHEAD不切，活root不整根immutable备份；
+本次仅父README正式整档记录，B100三暂存和全部旧sealed不动。
+
 ## 2026-10-29：GLM-4.6V-Flash MPS100冷全输入三轮完成
 
 `baselines_fullscope_20261029_03/glm_cap100_repeat01/02/03`均完成512个不同原TEST视频，
