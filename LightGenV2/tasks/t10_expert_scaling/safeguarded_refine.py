@@ -53,6 +53,15 @@ def pool_indices(labels,seed):
     return indices
 
 
+def attach_test_split(splits):
+    # train.data deliberately defers TEST. Auxiliary.configure has already
+    # explicitly assembled the authorized TRAIN+TEST pool in this stage.
+    x,y,ids=splits['train']
+    assert len(y)==len(ids)==4248 and len(splits['original_train'][1])==3496
+    splits['test']=(x[3496:],y[3496:],ids[3496:])
+    assert len(splits['test'][1])==752
+
+
 def validate(c):
     assert c['model_experts'] in [25,49] and c['seed'] in [27,37]
     assert c['expected_parameter_count']=={25:5634176,49:11078432}[c['model_experts']]
@@ -82,7 +91,7 @@ def run(c,out,profile):
     assert sha(Path(c['parent_cache'])/'parent_scores.npz')==c['locked_parent_scores_sha256']
     assert sha(Path(c['target_cache'])/'teacher_manifest.json')==c['locked_teacher_manifest_sha256']
     aux=Auxiliary(c,False);aux.weight=c['fixed_lambda_kd'];aux.calibration_view0=True;aux.start_round(0)
-    model,metadata,protocol,splits,_,_=base.prepare(c,'student');aux.configure(splits)
+    model,metadata,protocol,splits,_,_=base.prepare(c,'student');aux.configure(splits);attach_test_split(splits)
     source_hash=model_hash(model.state_dict());assert source_hash==c['source_tensor_sha256']
     x,y,ids=splits['train'];indices=pool_indices(y.numpy(),c['seed'])
     assert set(ids[indices]).isdisjoint(splits['val'][2])
@@ -111,7 +120,35 @@ def run(c,out,profile):
     best=dict(origin='incumbent',step=0,test_correct=prior['test_correct'],test=prior['test'],model_tensor_sha256=source_hash,
         checkpoint_sha256=c['incumbent_sha256'],state_field='model',predictions_sha256=c['incumbent_predictions_sha256'])
     save(out/'best_development_result.json',best);best_key=(best['test_correct'],-best['test']['macro_nll'])
-    history=[];memory=[];bad=0;reason='fixed_step_budget';checked=set()
+    history=[];memory=[];bad=0;reason='fixed_step_budget';checked=set();elapsed_offset=0.
+    resume_objective=None;resume_gradient_norm=None
+    if c.get('resume_run'):
+        old=Path(c['resume_run']);resume_path=old/'last_checkpoint.pt'
+        assert sha(resume_path)==c['resume_checkpoint_sha256'] and sha(old/'pool.json')==c['resume_pool_sha256']
+        assert json.loads((old/'status.json').read_text())['error']=="KeyError('test')"
+        assert json.loads((old/'best_development_result.json').read_text())['origin']=='incumbent'
+        value=torch.load(resume_path,map_location='cpu',weights_only=False)
+        assert value['metadata']['source_commit']==c['resume_previous_source_commit']
+        assert value['round']==value['epoch']==c['resume_accepted_steps']==2
+        assert model_hash(value['model'])==c['resume_model_tensor_sha256']
+        for key in ['seed','model_experts','data_sha256','max_steps','max_objective_passes','max_line_trials','history_size','direction_radius','fixed_lambda_kd','parent_checkpoint_sha256']:
+            assert value['metadata']['configuration'][key]==c[key],key
+        previous_pool=json.loads((old/'pool.json').read_text())
+        assert previous_pool==json.loads((out/'pool.json').read_text())
+        history=json.loads((old/'history.json').read_text())
+        assert [r['step'] for r in history]==[1,2] and history[-1]['model_tensor_sha256']==c['resume_model_tensor_sha256']
+        model.load_state_dict(value['model']);counts=copy.deepcopy(value['cost'])
+        assert counts==history[-1]['cost'] and counts['objective_passes']==5 and counts['gradient_passes']==3
+        memory=[(s.cuda(),v.cuda(),rho) for s,v,rho in value['lbfgs_history']]
+        assert len(memory)<=3 and all(s.numel()==v.numel()==c['expected_parameter_count'] and torch.isfinite(s).all() and torch.isfinite(v).all() and rho>0 for s,v,rho in memory)
+        assert all(abs(float((s*v).sum())*rho-1)<1e-4 for s,v,rho in memory)
+        resume_objective=value['objective'];resume_gradient_norm=history[-1]['gradient_norm'];elapsed_offset=history[-1]['elapsed_seconds']
+        metadata['resume']=dict(previous_run=str(old),previous_source_commit=value['metadata']['source_commit'],
+            checkpoint_sha256=c['resume_checkpoint_sha256'],model_tensor_sha256=c['resume_model_tensor_sha256'],
+            accepted_steps_restored=2,LBFGS_history_pairs_restored=len(memory),previous_cost=copy.deepcopy(counts),
+            gradient_recomputed_once_and_charged_to_original_budget=True,previous_elapsed_seconds=elapsed_offset)
+        save(out/'metadata.json',metadata);save(out/'history.json',history)
+        del value
 
     def objective_pass(backward,phase):
         nonlocal last_progress
@@ -140,7 +177,8 @@ def run(c,out,profile):
 
     def checkpoint(step,loss):
         torch.save(dict(model={n:p.detach().cpu() for n,p in model.state_dict().items()},epoch=step,round=step,
-            metadata=metadata,objective=loss,lbfgs_history=[(s.cpu(),v.cpu(),rho) for s,v,rho in memory],cost=counts),out/'last_checkpoint.pt')
+            metadata=metadata,objective=loss,current_gradient=gradient.detach().cpu(),
+            lbfgs_history=[(s.cpu(),v.cpu(),rho) for s,v,rho in memory],cost=counts),out/'last_checkpoint.pt')
 
     def check(step):
         nonlocal best,best_key,bad
@@ -159,8 +197,16 @@ def run(c,out,profile):
         bad=bad+1 if prior['val']['accuracy']-val['accuracy']>.05 else 0
         return decision
 
-    loss,gradient=objective_pass(True,'initial_full_gradient');checkpoint(0,loss)
-    for step in range(1,c['max_steps']+1):
+    loss,gradient=objective_pass(True,'resume_full_gradient' if history else 'initial_full_gradient')
+    if history:
+        assert abs(loss-resume_objective)<1e-5 and abs(float(gradient.norm())-resume_gradient_norm)<1e-5
+        metadata['resume'].update(recomputed_objective=loss,recomputed_gradient_norm=float(gradient.norm()),
+            objective_absolute_error=abs(loss-resume_objective),gradient_norm_absolute_error=abs(float(gradient.norm())-resume_gradient_norm))
+        counts['resume_recomputed_gradient_passes']=1;save(out/'metadata.json',metadata)
+    checkpoint(len(history),loss)
+    if history:
+        history[-1]['development_check']=check(len(history));save(out/'history.json',history)
+    for step in range(len(history)+1,c['max_steps']+1):
         if counts['objective_passes']+2>c['max_objective_passes']:reason='objective_pass_budget';break
         old_vector=parameters_to_vector([p.detach() for p in params]).clone();old_gradient=gradient.clone();old_loss=loss
         p,info=direction(gradient,memory,scales,c['direction_radius']);slope=info['directional_derivative']
@@ -182,7 +228,7 @@ def run(c,out,profile):
         row=dict(step=step,objective_before=old_loss,objective_after=loss,direction=info,trials=trials,
             accepted_alpha=alpha,actual_step_norm=float(s.norm()),curvature=curvature,history_pairs=len(memory),
             gradient_norm=float(gradient.norm()),gradients={n:dict(norm=float(p.grad.norm()),finite=bool(torch.isfinite(p.grad).all())) for n,p in model.named_parameters()},
-            model_tensor_sha256=model_hash(model.state_dict()),elapsed_seconds=time.time()-started,cost=copy.deepcopy(counts))
+            model_tensor_sha256=model_hash(model.state_dict()),elapsed_seconds=elapsed_offset+time.time()-started,cost=copy.deepcopy(counts))
         history.append(row);checkpoint(step,loss);save(out/'history.json',history)
         if step in c['check_steps']:
             row['development_check']=check(step);save(out/'history.json',history)
@@ -201,7 +247,7 @@ def run(c,out,profile):
         original_train=train,val=val,union_correct=int(np.trace(union)),union_confusion_matrix=union.tolist(),
         checkpoint_sha256=sha(out/'best_checkpoint.pt'),last_checkpoint_sha256=sha(out/'last_checkpoint.pt'),
         selected_model_tensor_sha256=best['model_tensor_sha256'],source_best_disk_SHA_unchanged=True,cost=counts,
-        final_full_model_inputs=4248,final_router_only_inputs=5000,stop_reason=reason,elapsed_seconds=time.time()-started,
+        final_full_model_inputs=4248,final_router_only_inputs=5000,stop_reason=reason,elapsed_seconds=elapsed_offset+time.time()-started,
         original_equal_budget_target_established=False,test_exposed_teacher=True,test_images_enter_student_gradient=True,
         metric_role='Adaptive TEST-exposed fit; uniform fixed752TRAIN subset and all752TEST, clean view, safeguarded optimizer; no independent/equal-budget claim.')
     save(out/'result.json',result);save(out/'status.json',dict(state='complete',pid=os.getpid(),timestamp=time.time(),test_correct=best['test_correct'],accepted_steps=len(history),stop_reason=reason))

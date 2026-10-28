@@ -1,5 +1,5 @@
 import unittest
-from .safeguarded_refine import armijo_accept,direction,pool_indices
+from .safeguarded_refine import armijo_accept,direction,pool_indices,attach_test_split
 
 
 class Safeguards(unittest.TestCase):
@@ -34,6 +34,14 @@ class Safeguards(unittest.TestCase):
         self.assertTrue(np.array_equal(np.bincount(labels[indices[indices<3496]],minlength=8),np.repeat(94,8)))
         self.assertTrue(np.array_equal(indices,pool_indices(labels,27)))
         self.assertFalse(np.array_equal(indices,pool_indices(labels,37)))
+
+    def test_explicit_deferred_TEST_split(self):
+        import numpy as np
+        x=np.arange(4248)[:,None];y=np.arange(4248)%8;ids=np.arange(4248)
+        splits=dict(train=(x,y,ids),original_train=(x[:3496],y[:3496],ids[:3496]))
+        self.assertNotIn('test',splits);attach_test_split(splits)
+        self.assertTrue(np.array_equal(splits['test'][2],np.arange(3496,4248)))
+        self.assertEqual(len(splits['test'][1]),752)
 
 
 if __name__=='__main__':unittest.main()
