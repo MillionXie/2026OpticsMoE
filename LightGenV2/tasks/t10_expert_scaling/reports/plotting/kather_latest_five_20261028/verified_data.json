@@ -881,22 +881,23 @@
       "display": "80.76 ± 0.80"
     }
   },
+  "source_checksum_scope": "UTF-8 source text with CRLF normalized to LF; matches Git blob identity across Windows/Linux.",
   "source_files": [
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_test_per_seed.csv",
-      "sha256": "4b860727b1f2fecb3dc42943e222c8d069e7647574b1b2e585cf111b33d562b2"
+      "sha256": "02c1f2fa71f9f3791d2a4a1bcd118f2c817e59aa44f8badb08af2e0fd764dee7"
     },
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/expert_tail_followup_20261026/final_summary_20261027.json",
-      "sha256": "0fc37895a588a1c2004b57744aa00c5acddefdbe83f1b7fc035d74027d27b8ad"
+      "sha256": "6f260a20f80b81a1f9920b1b6a4e3f5326b09033ae9cdada70c088c9e5b34650"
     },
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n49k49_continue90to120_20261027/final_summary_20261027.json",
-      "sha256": "e1b56f5d33936edccedf09fc01072e3f71a22de430d008e212c5b758373fee86"
+      "sha256": "3063be5560f05bab476fc37a4f151f003dce3fd0ced1b3c6f457023e9320e8d8"
     },
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json",
-      "sha256": "ed3f85d6fc2e139389e8ef66ebea9933c472b80574f7d96bd4b53cc093619c0d"
+      "sha256": "75e7ca5a1dc3b2704be71ffe2a18f962db261ada68ae13ff30ecf7f094c41697"
     }
   ],
   "checks": {
