@@ -90,7 +90,7 @@ def prepare(c,root,profile):
     assert model_hash(model.state_dict())==identity and sha(source/'best_checkpoint.pt')==c['incumbent_sha256']
     np.savez_compressed(parent/'parent_scores.npz',ids=ids,labels=y,scores=scores,view_codes=np.arange(8))
     train=score_metrics(scores[0,:3496],y[:3496]);test=score_metrics(scores[0,3496:],y[3496:]);prior=json.loads((source/'result.json').read_text())
-    assert train['confusion_matrix']==prior['train']['confusion_matrix']
+    assert train['confusion_matrix']==prior.get('original_train',prior['train'])['confusion_matrix']
     os.link(source/'best_checkpoint.pt',reference/'best_checkpoint.pt')
     save(reference/'metadata.json',dict(m,reference_provenance=dict(original_run=str(source),original_checkpoint_sha256=c['incumbent_sha256'],new_code_source=commit,no_optimization=True)))
     np.savez_compressed(reference/'selected_test_predictions.npz',ids=ids[3496:],labels=y[3496:],scores=scores[0,3496:],predictions=scores[0,3496:].argmax(1))

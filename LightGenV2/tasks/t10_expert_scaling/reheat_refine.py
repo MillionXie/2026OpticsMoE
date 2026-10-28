@@ -33,6 +33,9 @@ def validate(c):
 
 
 def rate(step,c):
+    if c.get('schedule_type')=='constant':
+        if not 1<=step<=c['rounds']:raise ValueError('Outside fixed constant schedule')
+        return c['peak_lr']
     if c.get('schedule_type')=='distill':
         if not 1<=step<=c['rounds']:raise ValueError('Outside finite distillation schedule')
         if step<=3:return c['peak_lr']*step/3
@@ -76,14 +79,15 @@ def prepare(c,recipe):
     from .train import data
     from .model import ScalingOptics
     row=c['sources'][recipe];source=Path(row['run']);m=copy.deepcopy(json.loads((source/'metadata.json').read_text()));a=m['arguments']
-    assert a['seed']==c['seed'] and a['experts']==a['top_k']==49 and a['layers']==4
+    experts=c.get('model_experts',49)
+    assert experts in [25,49] and a['seed']==c['seed'] and a['experts']==a['top_k']==experts and a['layers']==4
     assert m['data_sha256']==c['data_sha256'];cache=Path(a['data']);assert sha(cache)==c['data_sha256']
     splits,manifest=data(cache);protocol=copy.deepcopy(m['protocol']);protocol['training_proposal']['phase_noise_std']=0.
     torch.manual_seed(c['seed']);np.random.seed(c['seed']);random.seed(c['seed']);torch.set_num_threads(4)
-    model=ScalingOptics(protocol,49,49,'moe_oeo',8,a['layers'],a['padding']).cuda()
+    model=ScalingOptics(protocol,experts,experts,'moe_oeo',8,a['layers'],a['padding']).cuda()
     checkpoint=torch.load(source/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     assert checkpoint['epoch']==row['actual_epoch'];model.load_state_dict(checkpoint['model']);del checkpoint
-    assert sum(p.numel() for p in model.parameters())==11078432
+    assert sum(p.numel() for p in model.parameters())==c.get('expected_parameter_count',11078432)
     return model,m,protocol,splits,manifest,cache
 
 
