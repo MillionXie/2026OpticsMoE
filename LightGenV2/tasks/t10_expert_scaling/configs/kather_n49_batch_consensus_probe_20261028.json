@@ -1,0 +1,63 @@
+{
+  "stage": "full49_source_restored_effective16_vs128_gradient_averaging_probe",
+  "seed": 17,
+  "model_experts": 49,
+  "expected_parameter_count": 11078432,
+  "fit_batches": 2,
+  "microbatch": 2,
+  "heldout_per_class_per_origin": 16,
+  "arms": [
+    "small",
+    "small_repeat",
+    "large"
+  ],
+  "learning_rate": 3e-05,
+  "global_lr_scale": 0.5,
+  "router_lr_scale": 0.1,
+  "fixed_lambda_kd": 0.3203496288685833,
+  "temperature": 2,
+  "parent_weight": 0.5,
+  "minimum_repair_per_origin": 8,
+  "minimum_boundary_guard_pooled": 8,
+  "boundary_margin_max": 0.2,
+  "explicit_test_training_authorization": true,
+  "test_images_enter_student_gradient": true,
+  "training_auto_started": false,
+  "gpu_index": 3,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "minimum_gpu_free_mib": 6000,
+  "sources": {
+    "student": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_balanced_distill_20261028/source_balanced_s17",
+      "sha256": "2ee3bc9b738d1ad1bdb785d01288a0dbdf541955b7186570afa640451956bad2",
+      "actual_epoch": 16
+    }
+  },
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_balanced_distill_20261028/source_balanced_s17",
+  "incumbent_sha256": "2ee3bc9b738d1ad1bdb785d01288a0dbdf541955b7186570afa640451956bad2",
+  "source_tensor_sha256": "2a39fdabeaa54dfb16c915a81fe260e488dc550d6c8b606f556629bbba2efb56",
+  "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+  "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+  "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+  "teacher_targets_sha256": "cb3d517dd7a3dee5881dfc945fda1dbcf1d5811e9f1b6623cde708944ea728e1",
+  "teacher_checkpoint_sha256": "de9decdfb47553814c9d4cb8b77ffca7272e75a5f75cb823c3457a15a306b9dd",
+  "parent_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_parent_20261028",
+  "parent_checkpoint_sha256": "f6d718bd04ab9f2d99ff759fadc4654d82d04454b7c7b2df9bac4300ca97128c",
+  "parent_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+  "locked_parent_receipt_sha256": "f63b730c1c5796d94f72af26a2b5e5136161a94b1dd810ea9ddcf74b61cd4a63",
+  "locked_parent_scores_sha256": "d8b33842352e9d9bf9b110a7c513141f51836c0289cc0310dddac0c60786cc49",
+  "auxiliary_dependencies": [
+    "test_exposed_distill.py",
+    "cnn_teacher_cache.py",
+    "cnn_distill.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py",
+    "view_conflict_probe.py",
+    "batch_consensus_probe.py"
+  ],
+  "role": "Finite paired16-vs128 source-restored actualAdam diagnostic. Original architecture, losses, views, teacher and original parent anchor unchanged. Candidate has8x gradient inputs per step, explicitly extra compute. Uniform512 disjoint underlying IDs:256 held diagnostic, two128 fit banks each containing a16 control. Two batches and repeated16 control only; no grid, no VAL, no PT or full752 score; no automatic training. TEST exposed development diagnostic.",
+  "small_batch": 16,
+  "large_batch": 128
+}
