@@ -6,45 +6,47 @@
 本任务每卡至多一个自己的计算进程，启动前要求至少6000MiB空闲，不停止或修改其他任务。
 旧三seed结果与所有best/last保留，尚无本轮新成绩时不改展示表数值。
 
-N25先以seed17做有限迁移：入口`n25_balanced_distill.py`，profile
-`configs/kather_n25_balanced_distill_20261028.json`，run
-`runs/simulation/kather_n25_balanced_distill_20261028`。
-从自身原epoch79、598/752的N25/k25权重开始，保持25专家/Top-k25、四层OEO、RGB/detectors、
-5634176参数及单视图推理。复用已锁de9 CNN教师及654版本八视图raw-logits缓存，不重训教师；
-先对该N25源单独生成8×4248父概率、锁PT/tensor，再以两个互斥16批（各8TRAIN+8TEST）做源恢复数值准入。
-固定λ0.3203496288685833，不应用新估计值；真实梯度比例至少0.05、两批Adam方向变化超过重复误差、
-五组finite非零和八D4完整父等价误差不超过1e-6才进入学生训练。
-学生固定16×1024unique/1024更新，每类64TRAIN+64TEST，effective16/micro2，
-T2/T²4、父KL0.5、原分类/物理损失、LR预热后余弦、EMA0.95均沿用已发现的C配方。
-固定4/8/12/16先锁后评EMA/live，正确数优先、NLL平手；自身598起点始终候选。
-原TRAIN/VAL/union与TEST同时报告。此profile不会自动追加轮数或展开其他seed；先判断pilot实际收益。
+N25三seed已全部完成固定配方并独立核验。seed17入口`n25_balanced_distill.py`、
+profile `configs/kather_n25_balanced_distill_20261028.json`，训练源`85d5524b5b205bee5b6d279a2940ce07b6c1a048`；
+后续seed27/37入口`n25_seed_followup.py`、profile `configs/kather_n25_seed_balanced_followup_20261028.json`，
+训练源`3305101519266ad6e64747a37b5ebd9ebeed18f8`。
+最终报告：[seed17 pilot](reports/kather_n25_balanced_distill_20261028/final_summary_20261028.json)、
+[seed27/37及三seed汇总](reports/kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json)。
 
-seed17 pilot现已完成固定16段，最终选16live：原TRAIN2992/3496、VAL579/752、
-TEST暴露拟合606/752（80.5851%）、union3598/4248。相对自身598，纠正13/新增5、净增8张（+1.0638pp），
-但原TRAIN−20/VAL−3/union−12，不能称所有集合全面提高。
-固定4/8/12/16 EMA/live为599/604、603/602、604/606、606/606，16live以NLL平手规则选中。
-最终best SHA`44af3cd4237cc6a8bade0505c624ed45e385e662cf9479902ecc540bb4710c39`，
-last SHA`537a9f2b2eac085336811afec73bba321b8142f9ab0348cf2bfded33428aec62`，
-选中tensor`2f5b17a2b6b09ed4e4c676e5ac713210e95cf896e2f646ea226804d2a9e02e1c`。
-48小产物manifest、8状态752、16轮采样/来源/覆盖、父八视图、六个恢复源Adam校准步骤、
-CPU best/last/export字段、最终同权重完整评分及pilot进程退出均经独立核验；PT留服务器。
-训练923.22秒、逐段评估532.65秒，不含最后评分/路由/I/O；校准240模型输入、父缓存33984冻结输入单列。
-报告[final_summary_20261028.json](reports/kather_n25_balanced_distill_20261028/final_summary_20261028.json)。
-pilot没有追加轮数，释放GPU1后才由独立seed37进入准备；seed27/37继续，三seed汇总尚未完成。
+| seed | 最终选中 | 原TRAIN/3496 | VAL/752 | TEST暴露拟合/752 | union/4248 | 相对自身起点TEST净增 |
+|---|---|---:|---:|---:|---:|---:|
+| 17 | 第16段live | 2992 | 579 | 606 | 3598 | +8 |
+| 27 | 第16段EMA | 3042 | 581 | 597 | 3639 | +10 |
+| 37 | 第12段EMA | 3020 | 579 | 599 | 3619 | +13 |
 
-后续两seed的预备入口为`n25_seed_followup.py`、profile
-`configs/kather_n25_seed_balanced_followup_20261028.json`。它必须读取独立pilot审计，
-确认固定检查点新权重正确数高于598，并绑定CPU best/tensor/field、原始预测SHA和pilot20源码锁；
-598回退或仅NLL下降不能准入。seed27从自身epoch89/587、seed37从自身epoch90/586开始，
-各自生成25专家父缓存、使用自身随机种子并按相同冻结配方训练16段，原各自baseline保留。
-seed27用GPU3；seed37必须等pilot完整成功、所有pilot实际进程退出且GPU1无本任务计算进程后才用GPU1。
-只读等待不占GPU，foreign共卡进程保留。现已由seed17第4段live的604/752（自身598净增6，修10/新增4）
-及CPU PT/tensor/field/752预测独立核验准入，启动run `runs/simulation/kather_n25_seed_balanced_followup_20261028`，
-固定源`3305101519266ad6e64747a37b5ebd9ebeed18f8`；seed27实际准备、seed37只读等待pilot释放。
-启动汇总：[launch_summary_20261028.json](reports/kather_n25_seed_balanced_followup_20261028/launch_summary_20261028.json)。
-pilot第8段EMA/live为603/602，均低于已保留604，不因NLL下降换成正确数较少模型，继续固定16段。
-第8段EMA原TRAIN2996/VAL579/TEST603/union3599只是EMA诊断，不当作选中第4段live的完整评分；
-同best完整TRAIN/VAL仍待阶段末。三seed完成前不把pilot或计划填入展示表。
+三seed拟合准确率为**79.8759±0.6284%**（展示79.88±0.63%，样本SD、ddof=1），
+原90轮开发结果598/587/586为78.5018±0.8854%，均值净增1.3741个百分点。
+各自相对起点纠正/新增错为13/5、16/6、15/2；原TRAIN分别−20/−17/−25、
+VAL为−3/+3/+2、union为−12/−7/−12，不能称整体全面提升。
+seed37完成了全部16段，但16段EMA/live均未超过已保留第12段EMA的599，不能把最终评分写成16段权重。
+
+三路均从各自原90轮训练的已有best开始，实际选中源epoch79/89/90，保留自身baseline候选。
+保持25专家/Top-k25、四层OEO、RGB/detectors、5634176参数和单视图推理；教师不进入学生推理。
+每seed固定16×1024unique、1024更新，8192原TRAIN+8192TEST输入；这不是追加16个完整epoch。
+每轮每类64TRAIN+64TEST后整体打乱，普通16图batch不要求恰好8+8；effective16/micro2。
+连续7轮覆盖TRAIN/union、2轮覆盖TEST；所有实际采样和来源计数均核验。
+T2/T²4、冻结λ0.3203496288685833、仅父正确教师错的KL0.5、原分类/物理损失、LR及EMA0.95保持。
+两互斥16校准批各8TRAIN+8TEST，候选重估λ仅记录，不应用；五组有限梯度、真实Adam方向、
+源恢复和8D4完整父模型等价通过才训练。每seed单独生成33984冻结父前向、校准240模型输入/6个恢复源Adam步，
+共用已锁de9教师/654版缓存，不重训教师；此前教师和ImageNet知识及成本另计。
+固定4/8/12/16先锁last/field/tensor再评EMA/live，正确数优先、NLL平手；没有追加预算。
+
+seed17最终best/last SHA为`44af3cd4237cc6a8bade0505c624ed45e385e662cf9479902ecc540bb4710c39` /
+`537a9f2b2eac085336811afec73bba321b8142f9ab0348cf2bfded33428aec62`；
+seed27为`b00992b5d2df7d4c8d487180b064a50d211761667f6c7b49ddf583d62db119ef` /
+`9c568a654d0375161d5bf528c5433e7a5a29a5d22c7957b00ee0db164fbbcfc8`；
+seed37为`5ebcc95969b40fd2f29144e86f9f113906877c80f268c3a1317f176ab3853c7a` /
+`67609f2d70126b0eb893679fa94671fc741d46f89a277ce23c104824568f1850`。PT均留服务器。
+seed17的48份、后续两seed的100份最终小产物manifest SHA、全部固定752预测/混淆、
+实际采样/自身父八视图/校准、CPU best/last tensor及导出字段、最终同best原TRAIN/VAL/union和路由均已独立核验。
+TEST选模数字复用预先锁定预测；最终完整union评分中的752个TEST前向另计，不增加选模候选。
+所有本任务scheduler/pipeline/worker已实际退出，无自身GPU计算进程；共卡foreign任务保持运行。
+启动准入604是历史pilot第4段证据，最终三seed采用606/597/599，旧准入证据和所有旧best/last永久保留。
 
 N49先检验当前613源上原视图与D4是否存在不同的真实更新方向，另立有限探针，
 不把此前阴性的D4覆盖审计重新描述为采样bug，不凭差几张盲续旧run。
@@ -97,8 +99,9 @@ N49原613/608/601与80.76±0.80拟合汇总保持，不声称本轮有新的全7
 
 用户截图对应表格的五行更新、逐seed正确数、统计口径与可重绘源码见
 [表格整理](reports/plotting/kather_latest_five_20261028/README.md)。
-该展示合并原60轮、累计90轮及49/49最新TEST训练拟合结果，已显式分标记；
-不覆盖原等预算对照表，也不把80.76±0.80拟合汇总当作独立泛化结果。
+该展示合并原60轮、累计90轮及25/25、49/49最新TEST训练拟合结果，已显式分标记；
+25/25更新为79.88±0.63†，49/49仍为80.76±0.80†。本轮N49两项有限探针均未准入，未获得新提升。
+不覆盖原等预算对照表，不把拟合汇总当作独立泛化结果。
 
 ## 用户接受seed17定稿，seed27/37固定配方跟进已完成（2026-10-28）
 

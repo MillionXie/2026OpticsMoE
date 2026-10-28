@@ -1,0 +1,650 @@
+{
+  "run_id": "kather_n25_seed_balanced_followup_20261028",
+  "stage": "N25_frozen_source_balanced_recipe_seeds27_37",
+  "status": "complete",
+  "source_commit": "3305101519266ad6e64747a37b5ebd9ebeed18f8",
+  "source_files": {
+    "LightGenV2/tasks/t10_expert_scaling/reheat_refine.py": "624315596f5240ffe33babb47172d9ea3a1f363c62d93633ba4109b8026e7615",
+    "LightGenV2/tasks/t10_expert_scaling/configs/kather_n25_seed_balanced_followup_20261028.json": "6eccb212d69d978e7c62d3578cff7226f96bad0af135793367ba911a6d5aff4e",
+    "LightGenV2/tasks/t10_expert_scaling/model.py": "d7be573246e2068fe4b3fa955efade2421a926816b72cc3ee559243a9522539f",
+    "LightGenV2/tasks/t10_expert_scaling/train.py": "428432ffba1f983c8b39a966c5293ab1d2fbd6046d2e54fcaf02ab2edb5c5cc0",
+    "LightGenV2/tasks/t10_expert_scaling/plan.py": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+    "LightGenV2/tasks/t10_expert_scaling/diagnose_topk.py": "7fb6aaa5824b9939e4250afdd8f7595e486dc2dfcf144f4c1ede6216b02395a4",
+    "LightGenV2/tasks/t10_expert_scaling/expert_tail_schedule.py": "7ce924e0f2c403446a3203b94d30607b9e05ec996686610fa0eaffdad4319832",
+    "LightGenV2/tasks/t10_expert_scaling/mixup_curriculum.py": "5475e1ea21b2dd86db04fdb84100f81472428aa4d9e1eedc28912909908cc109",
+    "LightGenV2/tasks/t10_expert_scaling/sharpness_refine.py": "5642bf4742458f6fa187b32183d463cd0ef8dc6638947f028330e5ab1e481425",
+    "LightGenV2/tasks/t10_expert_scaling/checkpoint_test_selection.py": "d63fac83bd55c8facebe8275af7a81fee60eb6c98023f73524dd2999e5223141",
+    "LightGenV2/tasks/t10_expert_scaling/test_exposed_distill.py": "84bb24e6cc1186dbde57258b70dc58b0f796f253f88b43ef9a3ecede612e46dd",
+    "LightGenV2/tasks/t10_expert_scaling/cnn_teacher_cache.py": "8af0bb5cada49528984c991d5dc3ec80b1c153cc29b2e4eb298827cac7baef5e",
+    "LightGenV2/tasks/t10_expert_scaling/cnn_distill.py": "dc4fc9d7d6200fa456ba1bcca989f7c35057823dd56c8235e1900345034d3420",
+    "LightGenV2/tasks/t10_expert_scaling/cached_distill.py": "50986d7d862ccd42b7ff769f33ced33adf30024acceac4683d4cf3ac99322dba",
+    "LightGenV2/tasks/t10_expert_scaling/ensemble_teacher_cache.py": "8a02956ac49417eab1e7f9a3377e5246460ffd473bc98e9787cd021359ea56d3",
+    "LightGenV2/tasks/t10_expert_scaling/test_balanced_distill.py": "50b66309c649b0846a679e19880209cd3c4c71956ac1ba83010f3b550623fbf1",
+    "LightGenV2/tasks/t10_expert_scaling/seed_balanced_distill.py": "62bdbe923843c8b22489d3fe19bc8480cf0bd542077c196e252e75cc7066f008",
+    "LightGenV2/tasks/t10_expert_scaling/n25_seed_followup.py": "b48192864fd8a57f972b7c3018d5f5f4f1880a5a7f5a0bef4038112862cd5db9",
+    "LightGenV2/tasks/t10_expert_scaling/configs/study.json": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+    "LightGenV2/common/optical_contract.py": "2dd7f8b78391b5c60e7b5f580eccadac37b1b7baa5e8998a6f019b0d31d1ca06"
+  },
+  "configuration": {
+    "profile_state": "prepared_only_until_passed_pilot_evidence",
+    "requires_pilot_evidence": true,
+    "seeds": [
+      27,
+      37
+    ],
+    "seed_gpu": {
+      "27": 3,
+      "37": 1
+    },
+    "model_experts": 25,
+    "expected_parameter_count": 5634176,
+    "rounds": 16,
+    "check_rounds": [
+      4,
+      8,
+      12,
+      16
+    ],
+    "samples_per_class": 128,
+    "batch": 16,
+    "microbatch": 2,
+    "schedule_type": "distill",
+    "peak_lr": 0.0003,
+    "end_lr": 3e-05,
+    "ema_decay": 0.95,
+    "target_correct": 616,
+    "temperature": 2,
+    "parent_weight": 0.5,
+    "gradient_target_ratio": 0.5,
+    "minimum_weighted_gradient_ratio": 0.05,
+    "fixed_lambda_kd": 0.3203496288685833,
+    "gpus": {
+      "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+    },
+    "allow_shared_gpu": true,
+    "minimum_free_memory_mib": 6000,
+    "automatic_extension": false,
+    "automatic_additional_seeds": false,
+    "pilot_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n25_balanced_distill_20261028",
+    "pilot_source_commit": "85d5524b5b205bee5b6d279a2940ce07b6c1a048",
+    "pilot_original_checkpoint_sha256": "274a06192417a9226abd21074491a58995ebef95e08d01a5cb1dbcd1e1e3fd8e",
+    "pilot_baseline_correct": 598,
+    "pilot_minimum_new_candidate_correct": 599,
+    "pilot_wait_timeout_seconds": 7200,
+    "pilot_wait_poll_seconds": 10,
+    "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+    "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+    "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+    "explicit_test_training_authorization": true,
+    "test_images_enter_student_gradient": true,
+    "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+    "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+    "stage": "N25_evidence_gated_frozen_recipe_own_seed_followups",
+    "source_runs": {
+      "27": {
+        "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N25_k25_s27",
+        "sha256": "bc0ee540681cb1d6faa8c4d859a598a3188a5c7ee561ff8a1ae7a39a4abacf98",
+        "actual_epoch": 89,
+        "baseline_original_train_correct": 3059,
+        "baseline_val_correct": 578,
+        "baseline_test_correct": 587
+      },
+      "37": {
+        "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_expert_tail_followup_20261026/N25_k25_s37",
+        "sha256": "4f4e1b04f7091beff187b5840524794f273d462b5fdef1348621c34cc8729aa1",
+        "actual_epoch": 90,
+        "baseline_original_train_correct": 3045,
+        "baseline_val_correct": 577,
+        "baseline_test_correct": 586
+      }
+    },
+    "auxiliary_dependencies": [
+      "test_exposed_distill.py",
+      "cnn_teacher_cache.py",
+      "cnn_distill.py",
+      "cached_distill.py",
+      "ensemble_teacher_cache.py",
+      "test_balanced_distill.py",
+      "seed_balanced_distill.py",
+      "n25_seed_followup.py"
+    ],
+    "role": "Prepared-only fixed N25/k25 seed27/37 transfer. Launch requires a passed independent N25seed17 fixed4/8/12/16 check audit with genuine new candidate correct>598, locked CPUbest/PTtensor/field/predictionSHA and exact pilot20source/profile identity. Seed27 may prepare/train on sharedGPU3 immediately after evidence admission; seed37 must wait for full successful seed17 status, actual original taskPID exit and no T10GPU1compute before using sharedGPU1. Foreign processes are never stopped and free memory must be>=6000MiB at each stage launch. Each seed uses its own original90epoch selectedN25 weights, own8viewparent cache, own RNG/32input calibration with16TRAIN+16TEST, and freshAdamW. Freeze50/50/T2/lambda/LR/EMA/16x1024; original baseline always remains candidate. All TEST values are teacher-and-student-exposed development fit, not independent generalization. Failure of one pipeline preserves and does not stop the other healthy pipeline. No automatic additional seeds or budget extensions.",
+    "_profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/configs/kather_n25_seed_balanced_followup_20261028.json"
+  },
+  "experts": 25,
+  "top_k": 25,
+  "parameter_count": 5634176,
+  "students": [
+    {
+      "seed": 27,
+      "status": "complete",
+      "selected": {
+        "round": 16,
+        "state_field": "model",
+        "origin": "adaptation",
+        "original_TRAIN_correct": 3042,
+        "original_TRAIN_total": 3496,
+        "VAL_correct": 581,
+        "VAL_total": 752,
+        "TEST_fit_correct": 597,
+        "TEST_total": 752,
+        "TEST_fit_accuracy_percent": 79.38829787234043,
+        "union_correct": 3639,
+        "union_total": 4248,
+        "NLL": 0.6233460903167725,
+        "best_checkpoint_sha256": "b00992b5d2df7d4c8d487180b064a50d211761667f6c7b49ddf583d62db119ef",
+        "last_checkpoint_sha256": "9c568a654d0375161d5bf528c5433e7a5a29a5d22c7957b00ee0db164fbbcfc8",
+        "model_tensor_sha256": "cd99e02746a4db3297d990d8334013255bd7d7f095a6c94e77942406b1e6b26f",
+        "source_last_checkpoint_sha256": "9c568a654d0375161d5bf528c5433e7a5a29a5d22c7957b00ee0db164fbbcfc8",
+        "prediction_sha256": "654aa5d5882253fa7b8135884e58693afb5c4a2d29d775caf95f88b42d31263f"
+      },
+      "baseline": {
+        "original_TRAIN_correct": 3059,
+        "VAL_correct": 578,
+        "TEST_correct": 587,
+        "union_correct": 3646,
+        "source_checkpoint_sha256": "bc0ee540681cb1d6faa8c4d859a598a3188a5c7ee561ff8a1ae7a39a4abacf98",
+        "source_epoch": 89
+      },
+      "paired": {
+        "corrected": 16,
+        "new_wrong": 6,
+        "TEST_net": 10,
+        "TEST_accuracy_change_percentage_points": 1.3297872340425532,
+        "original_TRAIN_net": -17,
+        "VAL_net": 3,
+        "union_net": -7,
+        "class_net_T_S_C_L_D_M_A_E": [
+          -1,
+          2,
+          5,
+          2,
+          -3,
+          5,
+          0,
+          0
+        ]
+      },
+      "fixed_checks": [
+        {
+          "round": 4,
+          "EMA": 590,
+          "live": 589
+        },
+        {
+          "round": 8,
+          "EMA": 592,
+          "live": 594
+        },
+        {
+          "round": 12,
+          "EMA": 595,
+          "live": 595
+        },
+        {
+          "round": 16,
+          "EMA": 597,
+          "live": 597
+        }
+      ],
+      "EMA_diagnostics": [
+        {
+          "round": 4,
+          "EMA_original_train_correct": 3053,
+          "EMA_test_fit_correct": 590,
+          "EMA_union_correct": 3643,
+          "EMA_val_correct": 581
+        },
+        {
+          "round": 8,
+          "EMA_original_train_correct": 3046,
+          "EMA_test_fit_correct": 592,
+          "EMA_union_correct": 3638,
+          "EMA_val_correct": 581
+        },
+        {
+          "round": 12,
+          "EMA_original_train_correct": 3045,
+          "EMA_test_fit_correct": 595,
+          "EMA_union_correct": 3640,
+          "EMA_val_correct": 581
+        },
+        {
+          "round": 16,
+          "EMA_original_train_correct": 3042,
+          "EMA_test_fit_correct": 597,
+          "EMA_union_correct": 3639,
+          "EMA_val_correct": 581
+        }
+      ],
+      "costs": {
+        "student_optimizer_updates": 1024,
+        "student_model_training_inputs": 16384,
+        "student_original_TRAIN_training_inputs": 8192,
+        "student_TEST_training_inputs": 8192,
+        "parent_cache_frozen_model_inputs": 33984,
+        "parent_updates": 0,
+        "calibration_restored_Adam_steps": 6,
+        "calibration_model_inputs": 240,
+        "calibration_input_breakdown": {
+          "full_batch_gradient_inputs": 64,
+          "group_gradient_inputs": 64,
+          "parent_equivalence_forward_inputs": 16,
+          "actual_Adam_probe_inputs": 96
+        },
+        "calibration_unique_original_TRAIN_ids": 16,
+        "calibration_unique_TEST_ids": 16,
+        "extra_round4_and12_original_TRAIN_diagnostic_inputs": 6992,
+        "initial_uniform_pool_probe_and_VAL_inputs": 1264,
+        "per_round_uniform_pool_probe_and_VAL_inputs": 20224,
+        "round8_and16_EMA_pool_inputs": 8496,
+        "fixed_TEST_fit_selection_inputs": 6016,
+        "final_same_best_union_VAL_original_TRAIN_full_model_inputs": 8496,
+        "final_router_only_inputs": 5000,
+        "teacher_retraining_updates_this_stage": 0,
+        "teacher_cache_reused": true,
+        "previous_teacher_and_ImageNet_costs": "Shared published teacher; extra pretraining cost unknown and not zero. See prior teacher report.",
+        "training_seconds": 1162.668212890625,
+        "per_round_evaluation_seconds": 683.9253258705139,
+        "timing_excludes_final_scoring_routes_initial_setup_and_IO": true,
+        "final_full_model_input_breakdown": {
+          "union": 4248,
+          "VAL": 752,
+          "original_TRAIN": 3496
+        },
+        "final_union_includes_TEST_forward_inputs": 752,
+        "TEST_selection_metrics_reuse_locked_predictions_without_extra_selection_forward": true
+      },
+      "calibration": {
+        "seed": 27,
+        "source_checkpoint_sha256": "bc0ee540681cb1d6faa8c4d859a598a3188a5c7ee561ff8a1ae7a39a4abacf98",
+        "source_original_epoch": 89,
+        "baseline_original_train_correct": 3059,
+        "baseline_val_correct": 578,
+        "baseline_test_fit_correct": 587,
+        "parent_source_tensor_sha256": "9142423143f0846d85530d90a8c2ec1f0eb9eb36790071778b1a0cffb5f44519",
+        "parent_scores_sha256": "d1b134344b145034deef606908e7c42c0001ef2669a525f438429df0bf5714c2",
+        "fixed_lambda": 0.3203496288685833,
+        "actual_weighted_gradient_ratio": 0.5029701931330152,
+        "unused_recalibration_candidate": 0.31845786613428984,
+        "actual_restored_Adam_updates": [
+          {
+            "cosine": 0.8772502314584694,
+            "relative_change": 0.49326268287195424,
+            "repeat_relative_error": 0.0,
+            "finite_all_groups": true
+          },
+          {
+            "cosine": 0.8915237221938355,
+            "relative_change": 0.46260978106927236,
+            "repeat_relative_error": 0.0,
+            "finite_all_groups": true
+          }
+        ],
+        "parent_cache_max_error": 4.3213367462158203e-07,
+        "calibration_unique_inputs": 32,
+        "calibration_original_TRAIN_inputs": 16,
+        "calibration_TEST_inputs": 16
+      },
+      "selected_VAL_evidence": "Final same-best-model evaluation confusion and route IDs; latest VAL probability file belongs to last EMA, not necessarily selected live/earlier weights."
+    },
+    {
+      "seed": 37,
+      "status": "complete",
+      "selected": {
+        "round": 12,
+        "state_field": "model",
+        "origin": "adaptation",
+        "original_TRAIN_correct": 3020,
+        "original_TRAIN_total": 3496,
+        "VAL_correct": 579,
+        "VAL_total": 752,
+        "TEST_fit_correct": 599,
+        "TEST_total": 752,
+        "TEST_fit_accuracy_percent": 79.65425531914893,
+        "union_correct": 3619,
+        "union_total": 4248,
+        "NLL": 0.6249529123306274,
+        "best_checkpoint_sha256": "5ebcc95969b40fd2f29144e86f9f113906877c80f268c3a1317f176ab3853c7a",
+        "last_checkpoint_sha256": "67609f2d70126b0eb893679fa94671fc741d46f89a277ce23c104824568f1850",
+        "model_tensor_sha256": "d96dfb07a58ab7b10c6f2e13a6b843c21631297bef2fd1930f557ac5c1cbfeca",
+        "source_last_checkpoint_sha256": "e9aaeec8b0ab4f07d935b3a6c1ea1aa79a367ea87377e16d7547fdb18569d5fc",
+        "prediction_sha256": "4a83536cc8a926fadc8e792f3bd6442004da33ca57dac808a9d1bda3332b6476"
+      },
+      "baseline": {
+        "original_TRAIN_correct": 3045,
+        "VAL_correct": 577,
+        "TEST_correct": 586,
+        "union_correct": 3631,
+        "source_checkpoint_sha256": "4f4e1b04f7091beff187b5840524794f273d462b5fdef1348621c34cc8729aa1",
+        "source_epoch": 90
+      },
+      "paired": {
+        "corrected": 15,
+        "new_wrong": 2,
+        "TEST_net": 13,
+        "TEST_accuracy_change_percentage_points": 1.7287234042553192,
+        "original_TRAIN_net": -25,
+        "VAL_net": 2,
+        "union_net": -12,
+        "class_net_T_S_C_L_D_M_A_E": [
+          2,
+          5,
+          4,
+          0,
+          -2,
+          3,
+          1,
+          0
+        ]
+      },
+      "fixed_checks": [
+        {
+          "round": 4,
+          "EMA": 590,
+          "live": 591
+        },
+        {
+          "round": 8,
+          "EMA": 593,
+          "live": 594
+        },
+        {
+          "round": 12,
+          "EMA": 599,
+          "live": 598
+        },
+        {
+          "round": 16,
+          "EMA": 597,
+          "live": 597
+        }
+      ],
+      "EMA_diagnostics": [
+        {
+          "round": 4,
+          "EMA_original_train_correct": 3042,
+          "EMA_test_fit_correct": 590,
+          "EMA_union_correct": 3632,
+          "EMA_val_correct": 577
+        },
+        {
+          "round": 8,
+          "EMA_original_train_correct": 3024,
+          "EMA_test_fit_correct": 593,
+          "EMA_union_correct": 3617,
+          "EMA_val_correct": 581
+        },
+        {
+          "round": 12,
+          "EMA_original_train_correct": 3020,
+          "EMA_test_fit_correct": 599,
+          "EMA_union_correct": 3619,
+          "EMA_val_correct": 579
+        },
+        {
+          "round": 16,
+          "EMA_original_train_correct": 3021,
+          "EMA_test_fit_correct": 597,
+          "EMA_union_correct": 3618,
+          "EMA_val_correct": 581
+        }
+      ],
+      "costs": {
+        "student_optimizer_updates": 1024,
+        "student_model_training_inputs": 16384,
+        "student_original_TRAIN_training_inputs": 8192,
+        "student_TEST_training_inputs": 8192,
+        "parent_cache_frozen_model_inputs": 33984,
+        "parent_updates": 0,
+        "calibration_restored_Adam_steps": 6,
+        "calibration_model_inputs": 240,
+        "calibration_input_breakdown": {
+          "full_batch_gradient_inputs": 64,
+          "group_gradient_inputs": 64,
+          "parent_equivalence_forward_inputs": 16,
+          "actual_Adam_probe_inputs": 96
+        },
+        "calibration_unique_original_TRAIN_ids": 16,
+        "calibration_unique_TEST_ids": 16,
+        "extra_round4_and12_original_TRAIN_diagnostic_inputs": 6992,
+        "initial_uniform_pool_probe_and_VAL_inputs": 1264,
+        "per_round_uniform_pool_probe_and_VAL_inputs": 20224,
+        "round8_and16_EMA_pool_inputs": 8496,
+        "fixed_TEST_fit_selection_inputs": 6016,
+        "final_same_best_union_VAL_original_TRAIN_full_model_inputs": 8496,
+        "final_router_only_inputs": 5000,
+        "teacher_retraining_updates_this_stage": 0,
+        "teacher_cache_reused": true,
+        "previous_teacher_and_ImageNet_costs": "Shared published teacher; extra pretraining cost unknown and not zero. See prior teacher report.",
+        "training_seconds": 1167.0671050548553,
+        "per_round_evaluation_seconds": 687.8529603481293,
+        "timing_excludes_final_scoring_routes_initial_setup_and_IO": true,
+        "final_full_model_input_breakdown": {
+          "union": 4248,
+          "VAL": 752,
+          "original_TRAIN": 3496
+        },
+        "final_union_includes_TEST_forward_inputs": 752,
+        "TEST_selection_metrics_reuse_locked_predictions_without_extra_selection_forward": true
+      },
+      "calibration": {
+        "seed": 37,
+        "source_checkpoint_sha256": "4f4e1b04f7091beff187b5840524794f273d462b5fdef1348621c34cc8729aa1",
+        "source_original_epoch": 90,
+        "baseline_original_train_correct": 3045,
+        "baseline_val_correct": 577,
+        "baseline_test_fit_correct": 586,
+        "parent_source_tensor_sha256": "b16382acf5c7bc5dd3610c5317a789ece41553d28bef94ff87c27b6a0a044132",
+        "parent_scores_sha256": "5194cbf86e70e32c9f9272bca43c4853fa710d2e6f455b59ccb013f4825be2ef",
+        "fixed_lambda": 0.3203496288685833,
+        "actual_weighted_gradient_ratio": 0.4664748747723086,
+        "unused_recalibration_candidate": 0.34337286549993656,
+        "actual_restored_Adam_updates": [
+          {
+            "cosine": 0.8784355976834327,
+            "relative_change": 0.49109077745849133,
+            "repeat_relative_error": 0.0,
+            "finite_all_groups": true
+          },
+          {
+            "cosine": 0.8731598675815089,
+            "relative_change": 0.5027042327466494,
+            "repeat_relative_error": 0.0,
+            "finite_all_groups": true
+          }
+        ],
+        "parent_cache_max_error": 3.5762786865234375e-07,
+        "calibration_unique_inputs": 32,
+        "calibration_original_TRAIN_inputs": 16,
+        "calibration_TEST_inputs": 16
+      },
+      "selected_VAL_evidence": "Final same-best-model evaluation confusion and route IDs; latest VAL probability file belongs to last EMA, not necessarily selected live/earlier weights."
+    }
+  ],
+  "seed17_pilot": {
+    "report": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n25_balanced_distill_20261028/final_summary_20261028.json",
+    "report_sha256": "559c5a45e6372aba4bc883ce6ed430f3c99bdce88e4f16dbdce2a45f54c205fc",
+    "source_commit": "85d5524b5b205bee5b6d279a2940ce07b6c1a048",
+    "selected": {
+      "round": 16,
+      "state_field": "live_model",
+      "original_TRAIN_correct": 2992,
+      "original_TRAIN_total": 3496,
+      "VAL_correct": 579,
+      "VAL_total": 752,
+      "TEST_fit_correct": 606,
+      "TEST_total": 752,
+      "TEST_fit_accuracy_percent": 80.58510638297872,
+      "union_correct": 3598,
+      "union_total": 4248,
+      "NLL": 0.6223726868629456,
+      "best_checkpoint_sha256": "44af3cd4237cc6a8bade0505c624ed45e385e662cf9479902ecc540bb4710c39",
+      "last_checkpoint_sha256": "537a9f2b2eac085336811afec73bba321b8142f9ab0348cf2bfded33428aec62",
+      "model_tensor_sha256": "2f5b17a2b6b09ed4e4c676e5ac713210e95cf896e2f646ea226804d2a9e02e1c",
+      "prediction_sha256": "7de032b440521f0dd6588070a4a742c38be05d2a638828fb58db8da35b8cb134"
+    },
+    "baseline": {
+      "original_TRAIN_correct": 3012,
+      "VAL_correct": 582,
+      "TEST_correct": 598,
+      "union_correct": 3610,
+      "source_checkpoint_sha256": "274a06192417a9226abd21074491a58995ebef95e08d01a5cb1dbcd1e1e3fd8e",
+      "source_epoch": 79
+    },
+    "costs": {
+      "student_optimizer_updates": 1024,
+      "student_model_training_inputs": 16384,
+      "student_original_TRAIN_training_inputs": 8192,
+      "student_TEST_training_inputs": 8192,
+      "parent_cache_frozen_model_inputs": 33984,
+      "parent_updates": 0,
+      "calibration_restored_Adam_steps": 6,
+      "calibration_model_inputs": 240,
+      "calibration_input_breakdown": {
+        "full_batch_gradient_inputs": 64,
+        "group_gradient_inputs": 64,
+        "parent_equivalence_forward_inputs": 16,
+        "actual_Adam_probe_inputs": 96
+      },
+      "calibration_unique_original_TRAIN_ids": 16,
+      "calibration_unique_TEST_ids": 16,
+      "extra_round4_and12_original_TRAIN_diagnostic_inputs": 6992,
+      "initial_uniform_pool_probe_and_VAL_inputs": 1264,
+      "per_round_uniform_pool_probe_and_VAL_inputs": 20224,
+      "round8_and16_EMA_pool_inputs": 8496,
+      "fixed_TEST_fit_selection_inputs": 6016,
+      "final_same_best_union_VAL_original_TRAIN_full_model_inputs": 8496,
+      "final_router_only_inputs": 5000,
+      "teacher_retraining_updates_this_stage": 0,
+      "teacher_cache_reused": true,
+      "previous_teacher_and_ImageNet_costs": "Shared published teacher; extra pretraining cost unknown and not zero. See prior teacher report.",
+      "training_seconds": 923.2184157371521,
+      "per_round_evaluation_seconds": 532.6510033607483,
+      "timing_excludes_final_scoring_routes_initial_setup_and_IO": true
+    }
+  },
+  "descriptive_three_seed_fit": {
+    "seeds": [
+      17,
+      27,
+      37
+    ],
+    "correct_counts": [
+      606,
+      597,
+      599
+    ],
+    "total_per_seed": 752,
+    "mean_percent": 79.87588652482269,
+    "sample_standard_deviation_percent": 0.6284329290229516,
+    "ddof": 1
+  },
+  "previous_three_seed_90epoch_development_result": {
+    "seeds": [
+      17,
+      27,
+      37
+    ],
+    "correct_counts": [
+      598,
+      587,
+      586
+    ],
+    "total_per_seed": 752,
+    "mean_percent": 78.5017730496454,
+    "sample_standard_deviation_percent": 0.885415973202048,
+    "ddof": 1
+  },
+  "mean_fit_change_percentage_points": 1.374113475177296,
+  "frozen_protocol": {
+    "source_balancing": "64 originalTRAIN +64 TEST per class per round, whole round512+512; ordinary batches need not be8+8.",
+    "rounds": 16,
+    "optimizer_updates_per_seed": 1024,
+    "formal_training_inputs_per_seed": 16384,
+    "original_TRAIN_inputs_per_seed": 8192,
+    "TEST_inputs_per_seed": 8192,
+    "minimum_consecutive_rounds_for_TRAIN_union_coverage": 7,
+    "minimum_consecutive_rounds_for_TEST_coverage": 2,
+    "own_seed_initial_weights_parent_cache_RNG": true,
+    "fresh_AdamW": true,
+    "lambda_kd": 0.3203496288685833,
+    "temperature": 2,
+    "parent_KL_weight": 0.5,
+    "optical_graph_unchanged": true,
+    "inference_single_view": true,
+    "teacher_not_used_at_student_inference": true,
+    "checkpoint_policy": "best/last only; retain fixed predictions and locks, not every periodic PT",
+    "no_automatic_extension": true
+  },
+  "metric_role": "Original TEST images/labels enter both teacher and student gradients. All new TEST numbers are training-exposed development fit, not independent generalization or original equal-budget Topk evidence.",
+  "budget_scope": "Each seed starts from its own existing90-epoch N25/k25 selected checkpoint, actual epochs79/89/90. Each receives the same frozen16x1024-input adaptation recipe. This is not106 complete epochs; teacher discovery/pretraining and prior optical baselines remain separate costs.",
+  "teacher": {
+    "source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+    "checkpoint_sha256": "de9decdfb47553814c9d4cb8b77ffca7272e75a5f75cb823c3457a15a306b9dd",
+    "targets_sha256": "cb3d517dd7a3dee5881dfc945fda1dbcf1d5811e9f1b6623cde708944ea728e1",
+    "manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+    "retraining_this_stage": false,
+    "extra_ImageNet_pretraining_cost": "Unknown, nonzero; prior teacher training/cache costs are shared published assets."
+  },
+  "validation": {
+    "manifest_files": 100,
+    "all_manifest_SHA_passed": true,
+    "actual_CPU_best_last_tensor_export_and_fixed_locks_passed": true,
+    "all16_fixed_TEST_states_752_verified": true,
+    "both16_round_actual_sampling_7union_2TEST_coverage_verified": true,
+    "source20_and_nested_pilot_source20_Git_SHA_verified": true,
+    "selected_same_weight_original_TRAIN_VAL_union_and_routes_verified": true,
+    "all_pipeline_scheduler_and_worker_processes_exited": true,
+    "no_own_compute_processes": true,
+    "foreign_processes_untouched": true,
+    "PTs_stay_on_server": true,
+    "local_policy_tests": 6,
+    "server_CPU_tests": 6,
+    "local_Torch_DLL_limitation_preserved": true
+  },
+  "resource_release": {
+    "checked_seeds": [
+      27,
+      37
+    ],
+    "known_selected_task_pids": {
+      "27": [
+        4102162,
+        4102322,
+        4117832,
+        4118999
+      ],
+      "37": [
+        4102163,
+        4116893,
+        4133168,
+        4134255
+      ]
+    },
+    "all_selected_task_process_identities_absent": true,
+    "no_selected_task_compute_processes": true,
+    "matched_selected_live_processes": [],
+    "matched_selected_compute_processes": [],
+    "global_scheduler_and_children_absence_checked": true,
+    "foreign_processes_untouched": true,
+    "timestamp": 1793168153.0357199
+  },
+  "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "archive": {
+    "path": ".codex_tmp/t10_n25_seeds_final_20261028.tar.gz",
+    "sha256": "065c57c67012bf81fc90bdce17dc20a1ff51587c1c8463524a0ca9577b71f02f",
+    "bytes": 3264933
+  },
+  "independent_audit_sha256": "a89b1de44e14d9f010d827311b34a6b027ab00adf13f19c762ec8e30279e4ed9",
+  "N49_this_optimization_round": {
+    "new_full_TEST_score": false,
+    "retained_seed_counts": [
+      613,
+      608,
+      601
+    ],
+    "interpretation": "Both finite view and optimizer-state probes rejected by prespecified transfer/guard gates. No additional formal N49 training or claim of improvement. Preserve all original assets and failed-probe costs."
+  }
+}

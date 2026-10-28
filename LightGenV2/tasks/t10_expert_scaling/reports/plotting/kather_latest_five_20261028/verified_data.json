@@ -46,9 +46,9 @@
       "experts": 25,
       "top_k": 25,
       "correct_counts": [
-        598,
-        587,
-        586
+        606,
+        597,
+        599
       ],
       "total_per_seed": 752,
       "seeds": [
@@ -56,11 +56,11 @@
         27,
         37
       ],
-      "mean_percent": 78.5017730496454,
-      "sample_sd_percent": 0.885415973202048,
-      "display": "78.50 ± 0.89",
-      "marker": "*",
-      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient"
+      "mean_percent": 79.87588652482269,
+      "sample_sd_percent": 0.6284329290229516,
+      "display": "79.88 ± 0.63",
+      "marker": "†",
+      "role": "TEST-trained exposed development fit; 90-epoch baseline plus fixed16x1024 adaptation and shared extra teacher"
     },
     {
       "experts": 49,
@@ -565,9 +565,9 @@
       },
       "latest": {
         "correct_counts": [
-          598,
-          587,
-          586
+          606,
+          597,
+          599
         ],
         "total_per_seed": 752,
         "seeds": [
@@ -575,13 +575,13 @@
           27,
           37
         ],
-        "mean_percent": 78.5017730496454,
-        "sample_sd_percent": 0.885415973202048,
-        "display": "78.50 ± 0.89"
+        "mean_percent": 79.87588652482269,
+        "sample_sd_percent": 0.6284329290229516,
+        "display": "79.88 ± 0.63"
       },
-      "marker": "*",
+      "marker": "†",
       "updated": true,
-      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient",
+      "role": "TEST-trained exposed development fit; 90-epoch baseline plus fixed16x1024 adaptation and shared extra teacher",
       "bold_group_max": false
     },
     {
@@ -815,6 +815,56 @@
       "display": "62.54 ± 0.43"
     }
   ],
+  "full25_history": {
+    "original60": {
+      "correct_counts": [
+        581,
+        563,
+        581
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 76.46276595744682,
+      "sample_sd_percent": 1.3819554315709137,
+      "display": "76.46 ± 1.38"
+    },
+    "tail90": {
+      "correct_counts": [
+        598,
+        587,
+        586
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 78.5017730496454,
+      "sample_sd_percent": 0.885415973202048,
+      "display": "78.50 ± 0.89"
+    },
+    "latest_TEST_trained_fit": {
+      "correct_counts": [
+        606,
+        597,
+        599
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 79.87588652482269,
+      "sample_sd_percent": 0.6284329290229516,
+      "display": "79.88 ± 0.63"
+    }
+  },
   "full49_history": {
     "original60": {
       "correct_counts": [
@@ -898,13 +948,26 @@
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json",
       "sha256": "75e7ca5a1dc3b2704be71ffe2a18f962db261ada68ae13ff30ecf7f094c41697"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n25_balanced_distill_20261028/final_summary_20261028.json",
+      "sha256": "c2b1393da16e45e9438baec93a995a5d1b036b79f68ad03e97d08cb9d1b43c3a"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json",
+      "sha256": "6dd0bdfd7a0fb936a970cf43657a7fec4471e93eb212a01b82c524a5e0dfa8af"
     }
   ],
   "checks": {
     "all20_screenshot_cells_match_original_sources": true,
     "exactly_five_MoE_rows_updated": true,
+    "only_N25_latest_value_replaced": true,
+    "N25_all_three_completed_reports_used": true,
+    "other15_MoE_values_unchanged": true,
     "D2NN_unchanged": true,
+    "full49_history_unchanged": true,
     "group_maxima_recomputed": true,
+    "group_maxima_recomputed_from_integer_totals": true,
     "no_VAL_or_teacher_accuracy_used": true,
     "no_rounding_before_aggregation": true
   }

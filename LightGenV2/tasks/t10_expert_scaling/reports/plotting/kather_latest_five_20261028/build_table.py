@@ -16,6 +16,8 @@ BASE=REPORTS/'plotting/kather_expert_count_20260921/three_seed_test_per_seed.csv
 TAIL=REPORTS/'expert_tail_followup_20261026/final_summary_20261027.json'
 FULL120=REPORTS/'kather_n49k49_continue90to120_20261027/final_summary_20261027.json'
 FIT=REPORTS/'kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json'
+N25_PILOT=REPORTS/'kather_n25_balanced_distill_20261028/final_summary_20261028.json'
+N25_FOLLOWUP=REPORTS/'kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json'
 SEEDS=[17,27,37]
 GROUPS={4:[1,2,3,4],16:[1,4,8,16],25:[1,6,12,25],49:[1,12,24,49]}
 UPDATES={(4,4),(16,16),(25,25),(49,24),(49,49)}
@@ -28,8 +30,32 @@ def stats(counts):
     return dict(correct_counts=counts,total_per_seed=752,seeds=SEEDS,mean_percent=mean,sample_sd_percent=sd,display=f'{mean:.2f} ± {sd:.2f}')
 
 
+def mark_group_maxima(rows):
+    # Equal denominators/seed counts make integer totals an exact comparison,
+    # including ties; rounded displays and floating-point means are not selectors.
+    for n in GROUPS:
+        candidates=[row for row in rows if row['experts']==n]
+        maximum=max(sum(row['latest']['correct_counts']) for row in candidates)
+        for row in candidates:row['bold_group_max']=sum(row['latest']['correct_counts'])==maximum
+
+
 def data():
-    raw=list(csv.DictReader(BASE.open(encoding='utf-8-sig')));tail=json.loads(TAIL.read_text());fit=json.loads(FIT.read_text());full120=json.loads(FULL120.read_text())
+    raw=list(csv.DictReader(BASE.open(encoding='utf-8-sig')))
+    def read(path):return json.loads(path.read_text(encoding='utf-8-sig'))
+    tail=read(TAIL);fit=read(FIT);full120=read(FULL120)
+    pilot25=read(N25_PILOT);followup25=read(N25_FOLLOWUP)
+    assert pilot25['status']=='complete' and pilot25['seed']==17
+    assert pilot25['experts']==pilot25['top_k']==25
+    assert followup25['status']=='complete', 'N25 follow-up report is not final; keep the previous table'
+    assert len(followup25['students'])==2
+    students25={row['seed']:row['selected'] for row in followup25['students']}
+    assert sorted(students25)==[27,37]
+    selected25={17:pilot25['selected'],**students25}
+    for selected in selected25.values():
+        assert selected['TEST_total']==752 and type(selected['TEST_fit_correct']) is int
+        assert type(selected['original_TRAIN_correct']) is int and 0<=selected['original_TRAIN_correct']<=3496
+        assert type(selected['VAL_correct']) is int and 0<=selected['VAL_correct']<=752
+    latest25=stats([selected25[seed]['TEST_fit_correct'] for seed in SEEDS])
     groups={}
     for row in raw:
         key=(row['architecture'],int(row['experts']),int(row['top_k']));groups.setdefault(key,{})[int(row['seed'])]=row
@@ -57,14 +83,42 @@ def data():
     rows=[]
     for n,ks in GROUPS.items():
         for k in ks:
-            value=latest_fit if (n,k)==(49,49) else tail_groups[n,k] if (n,k) in UPDATES else original['MoE',n,k]
-            marker='†' if (n,k)==(49,49) else '*' if (n,k) in UPDATES else ''
-            rows.append(dict(experts=n,top_k=k,original_60=original['MoE',n,k],latest=value,marker=marker,updated=(n,k) in UPDATES,role='TEST-trained exposed development fit; unequal discovery budgets' if marker=='†' else '90-epoch post-TEST-observation development follow-up; TEST not in gradient' if marker=='*' else 'Original60-epoch result'))
-        candidates=[v for v in rows if v['experts']==n];best=max(v['latest']['mean_percent'] for v in candidates)
-        for v in candidates:v['bold_group_max']=v['latest']['mean_percent']==best
+            value=latest25 if (n,k)==(25,25) else latest_fit if (n,k)==(49,49) else tail_groups[n,k] if (n,k) in UPDATES else original['MoE',n,k]
+            marker='†' if (n,k) in [(25,25),(49,49)] else '*' if (n,k) in UPDATES else ''
+            role=('TEST-trained exposed development fit; 90-epoch baseline plus fixed16x1024 adaptation and shared extra teacher' if (n,k)==(25,25)
+                else 'TEST-trained exposed development fit; unequal discovery budgets' if (n,k)==(49,49)
+                else '90-epoch post-TEST-observation development follow-up; TEST not in gradient' if marker=='*' else 'Original60-epoch result')
+            rows.append(dict(experts=n,top_k=k,original_60=original['MoE',n,k],latest=value,marker=marker,updated=(n,k) in UPDATES,role=role))
+    mark_group_maxima(rows)
     assert sum(v['updated'] for v in rows)==5
-    assert [(v['experts'],v['top_k']) for v in rows if v['bold_group_max']]==[(4,4),(16,16),(25,12),(49,24)]
-    return dict(statistics='Each seed752 samples; mean±sample SD across seeds17/27/37, ddof=1; computed from integer correct counts before rounding.',display_role='Latest mixed-budget/protocol display. It is not an equal-budget or held-out-generalization comparison.',updated_five=[dict(experts=v['experts'],top_k=v['top_k'],**v['latest'],marker=v['marker'],role=v['role']) for v in rows if v['updated']],rows=rows,d2nn=[dict(experts=n,**original['D2NN',n,n]) for n in GROUPS],full49_history=dict(original60=original['MoE',49,49],tail90=tail_groups[49,49],continued120=stats([v['test_correct'] for v in sorted(full120['rows'],key=lambda v:v['seed'])]),latest_TEST_trained_fit=latest_fit),source_checksum_scope='UTF-8 source text with CRLF normalized to LF; matches Git blob identity across Windows/Linux.',source_files=[dict(path=p.relative_to(ROOT).as_posix(),sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [BASE,TAIL,FULL120,FIT]],checks=dict(all20_screenshot_cells_match_original_sources=True,exactly_five_MoE_rows_updated=True,D2NN_unchanged=True,group_maxima_recomputed=True,no_VAL_or_teacher_accuracy_used=True,no_rounding_before_aggregation=True))
+    assert [(v['experts'],v['top_k']) for v in rows if v['bold_group_max'] and v['experts']!=25]==[(4,4),(16,16),(49,24)]
+    # All fifteen other MoE values remain on their previous exact integer counts.
+    for row in rows:
+        key=(row['experts'],row['top_k'])
+        if key==(25,25):continue
+        previous=latest_fit if key==(49,49) else tail_groups[key] if key in UPDATES else original[('MoE',)+key]
+        assert row['latest']==previous
+    return dict(statistics='Each seed752 samples; mean±sample SD across seeds17/27/37, ddof=1; computed from integer correct counts before rounding.',display_role='Latest mixed-budget/protocol display. It is not an equal-budget or held-out-generalization comparison.',updated_five=[dict(experts=v['experts'],top_k=v['top_k'],**v['latest'],marker=v['marker'],role=v['role']) for v in rows if v['updated']],rows=rows,d2nn=[dict(experts=n,**original['D2NN',n,n]) for n in GROUPS],full25_history=dict(original60=original['MoE',25,25],tail90=tail_groups[25,25],latest_TEST_trained_fit=latest25),full49_history=dict(original60=original['MoE',49,49],tail90=tail_groups[49,49],continued120=stats([v['test_correct'] for v in sorted(full120['rows'],key=lambda v:v['seed'])]),latest_TEST_trained_fit=latest_fit),source_checksum_scope='UTF-8 source text with CRLF normalized to LF; matches Git blob identity across Windows/Linux.',source_files=[dict(path=p.relative_to(ROOT).as_posix(),sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [BASE,TAIL,FULL120,FIT,N25_PILOT,N25_FOLLOWUP]],checks=dict(all20_screenshot_cells_match_original_sources=True,exactly_five_MoE_rows_updated=True,only_N25_latest_value_replaced=True,N25_all_three_completed_reports_used=True,other15_MoE_values_unchanged=True,D2NN_unchanged=True,full49_history_unchanged=True,group_maxima_recomputed=True,group_maxima_recomputed_from_integer_totals=True,no_VAL_or_teacher_accuracy_used=True,no_rounding_before_aggregation=True))
+
+
+def update_readme(d):
+    """Fill only the two explicit generated blocks after final reports validate."""
+    path=OUT/'README.md';text=path.read_text(encoding='utf-8')
+    def replace_block(name,body):
+        nonlocal text
+        begin=f'<!-- BEGIN {name} -->';end=f'<!-- END {name} -->'
+        assert text.count(begin)==text.count(end)==1
+        before,rest=text.split(begin);_,after=rest.split(end)
+        text=before+begin+'\n'+body+'\n'+end+after
+    lines=['| 专家数 | Top-k | Seed17正确数 | Seed27正确数 | Seed37正确数 | 最新均值±样本SD（%） | 口径 |',
+        '|---|---|---:|---:|---:|---:|---|']
+    for row in d['updated_five']:
+        a,b,c=row['correct_counts'];role='TEST参与教师和学生训练后的暴露拟合' if row['marker']=='†' else '累计90轮开发跟进'
+        lines.append(f"| {row['experts']} | {row['top_k']} | {a} | {b} | {c} | {row['display']}{row['marker']} | {role} |")
+    replace_block('VERIFIED FIVE','\n'.join(lines))
+    maxima='、'.join(f"{row['experts']}/{row['top_k']}" for row in d['rows'] if row['bold_group_max'])
+    replace_block('GROUP MAXIMA',f'按三个seed整数正确数总和比较组内列示均值，加粗位置为{maxima}；总数相同则并列加粗。')
+    path.write_text(text,encoding='utf-8')
 
 
 def render(d):
@@ -102,7 +156,7 @@ def render(d):
         ax.add_patch(Rectangle((x[3],y),x[4]-x[3],4*rh,facecolor=bg,edgecolor='white',linewidth=1.4))
         ax.text((x[3]+x[4])/2,y+2*rh,v['display'],fontproperties=num,ha='center',va='center')
     foot=top+hh+16*rh+30
-    notes=['单位：%；三个seed（17/27/37）的均值 ± 样本标准差（ddof=1）。','* 四行更新为累计90轮的开发跟进：4/4、16/16、25/25、49/24。','† 49/49的TEST已进入教师和学生训练，属于拟合结果，不是独立泛化结果。','   该行三seed正确数为613/608/601；起点与累计开发预算不同。','未标记行及D2NN沿用原60轮；本表不用于等预算优劣判断。','加粗为每组列示均值最大项；原数据和全部历史结果均保留。']
+    notes=['单位：%；三个seed（17/27/37）的均值 ± 样本标准差（ddof=1）。','* 三行累计90轮开发跟进：4/4、16/16、49/24；未标记行及D2NN沿用原60轮。','† 25/25、49/49的TEST已进入教师和学生训练，属于暴露拟合，不是独立泛化。','25/25每seed另加16×1024输入短段；49/49保留不同起点与累计发现预算。','† 两行复用含ImageNet知识的教师；额外教师成本单列，不作等预算优劣判断。','加粗按组内整数正确数总和判定最大列示均值；原数据和全部历史结果均保留。']
     for j,note in enumerate(notes):ax.text(24,foot+j*27,note,fontproperties=cn,va='center',color='#6F471D' if j in [2,3] else '#444444')
     fig.savefig(OUT/'latest_table.png',dpi=180,facecolor='white')
     fig.savefig(OUT/'latest_table.svg',facecolor='white')
@@ -110,5 +164,5 @@ def render(d):
 
 
 if __name__=='__main__':
-    d=data();(OUT/'verified_data.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');render(d)
+    d=data();(OUT/'verified_data.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');render(d);update_readme(d)
     print(json.dumps(dict(updated_five=[{k:v[k] for k in ['experts','top_k','correct_counts','display','marker']} for v in d['updated_five']],checks=d['checks']),ensure_ascii=True))
