@@ -21,12 +21,22 @@ def audit_point(leaf,destination):
     if result['measured_videos']!=512 or result['status']!='passed':raise ValueError('Independent complete512 audit required')
     save(destination,result);return result
 
-def collect(root,qwen50,destination,LG_summary=None):
+def collect(root,qwen50,destination,LG_summary=None,retained_baselines=None):
     root=Path(root);qwen50=Path(qwen50);state=read(root/'suite_status.json')
     import run_baselines_fullscope_20261029 as entry
     expected=[f'{m}_cap{c}_repeat{r:02d}' for m,c,r in entry.missing_plan('lab')]
-    if state['status']!='complete' or state['completed']!=expected or not state['mps_released']:
-        raise ValueError('All missing21 complete and controller released required')
+    retained_names=[]
+    if retained_baselines is not None:
+        retained_baselines=Path(retained_baselines)
+        prior=read(retained_baselines/'suite_status.json')
+        retained_names=[f'{m}_cap{c}_repeat{r:02d}' for m,c in [('qwen',100),('glm',50)] for r in (1,2,3)]
+        if (prior['status']!='stopped' or not prior.get('mps_released') or prior['completed']!=retained_names
+                or retained_baselines.name!='baselines_fullscope_20261029_02'
+                or root.name!='baselines_fullscope_20261029_03'):
+            raise ValueError('Exact stopped02 retained six and independent03 recovery required')
+    current_expected=[name for name in expected if name not in retained_names]
+    if state['status']!='complete' or state['completed']!=current_expected or not state['mps_released']:
+        raise ValueError('All required new points complete and controller released required')
     if read(qwen50/'local_independent_pooled_audit01.json')['status']!='passed':raise ValueError('Retained Qwen50 audit required')
     lg=read(LG_summary) if LG_summary else None
     records=[]
@@ -34,9 +44,10 @@ def collect(root,qwen50,destination,LG_summary=None):
         for cap in (50,100):
             points=[];audits=[]
             for repeat in (1,2,3):
-                parent=qwen50 if (model,cap)==('qwen',50) else root
-                leaf=parent/f'{model}_cap{cap}_repeat{repeat:02d}';report=read(leaf/'report.json')
-                if parent==root:
+                name=f'{model}_cap{cap}_repeat{repeat:02d}'
+                parent=qwen50 if (model,cap)==('qwen',50) else (retained_baselines if name in retained_names else root)
+                leaf=parent/name;report=read(leaf/'report.json')
+                if parent!=qwen50:
                     audit=read(leaf/'local_independent_fullscope_audit01.json')
                     if audit['report_sha256']!=sha(leaf/'report.json') or audit['status']!='passed':raise ValueError('Original point report/audit differs')
                 else:audit=read(leaf/'cpu_audit.json')
@@ -61,6 +72,7 @@ def collect(root,qwen50,destination,LG_summary=None):
                     comparison_is_same_scope_physical_E2E=False,LightGenII_energy_ratio=None)
             records.append(row)
     result=dict(status='PASSED_8_CONFIG_24_POINT_FULL_INPUT_BASELINES',new_points=21,retained_Qwen50_points=3,
+        current_root_points=len(current_expected),retained_baseline02_points=len(retained_names),
         point_video_count=512,records=records,DS_Kimi_not_remeasured=True,
         tokens_policy='Each baseline retains its own actual nonpadding input count; only LightGen-II shares Qwen numerator',
         energy_policy='matched NVML board integral plus338.2W host proxy once, not wattmeter total')
@@ -69,6 +81,7 @@ def collect(root,qwen50,destination,LG_summary=None):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=('point','collect'),required=True)
     p.add_argument('--source',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--qwen50',type=Path);p.add_argument('--LG-summary',dest='LG_summary',type=Path);args=p.parse_args()
-    result=audit_point(args.source,args.output) if args.phase=='point' else collect(args.source,args.qwen50,args.output,args.LG_summary)
+    p.add_argument('--qwen50',type=Path);p.add_argument('--LG-summary',dest='LG_summary',type=Path)
+    p.add_argument('--retained-baselines',type=Path);args=p.parse_args()
+    result=audit_point(args.source,args.output) if args.phase=='point' else collect(args.source,args.qwen50,args.output,args.LG_summary,args.retained_baselines)
     print(json.dumps({k:v for k,v in result.items() if k not in ('cost','records')},ensure_ascii=True))
