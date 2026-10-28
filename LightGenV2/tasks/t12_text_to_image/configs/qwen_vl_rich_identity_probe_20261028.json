@@ -1,0 +1,20 @@
+{
+  "seed": 1042,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "gpu_memory_fraction": 0.8,
+  "fit_per_category": 6,
+  "transfer_per_category": 3,
+  "identity_prompt": "Keep the entire reference image unchanged, including the product, background, colors, and texture.",
+  "steps": 300,
+  "batch_size": 2,
+  "warmup_steps": 20,
+  "evaluate_every": 100,
+  "readout_lr": 0.0001,
+  "unet_lr": 0.00001,
+  "qwen_lr": 0.00005,
+  "latent_weight": 0.2,
+  "pixel_weight": 1.0,
+  "lpips_weight": 1.0,
+  "evaluation_seed": 1042,
+  "protocol": "Identity-fit diagnostic of the complete existing raw editor, after small latent-only inverse heads were inconclusive. Use first six distinct original TRAIN products/category for gradient fitting and next three/category as transfer within original TRAIN; no DEV or independent TEST. Same native Qwen/UNet/VAE graph and LoRA scope, no new deployed branch. VAE reference encodings are TRAIN loss targets only. Fresh random noise every training presentation and exactly shared evaluation noise across all references prevent source-specific seeds from identifying a reconstruction. Select diagnostic best on fit TRAIN LPIPS only. This is not an editing baseline or accepted LG teacher; do not substitute its scores for the three editing tasks. Preserve best/last and actual RGB+identity-prompt outputs."
+}
