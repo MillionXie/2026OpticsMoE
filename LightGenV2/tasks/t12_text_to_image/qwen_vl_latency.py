@@ -63,7 +63,7 @@ def main():
     torch.cuda.set_per_process_memory_fraction(a.memory_fraction, 0)
     device = torch.device('cuda:0')
     state = torch.load(a.checkpoint, map_location='cpu', weights_only=False)
-    if state.get('schema') != 'qwen_spatial_v1':
+    if state.get('schema') not in ('qwen_spatial_v1','qwen_spatial_language_lora_v1'):
         raise ValueError('Expected the full-Qwen spatial checkpoint')
     cfg, layout = state['config'], state['visual_layout']
     rows = validate_inputs(json.loads(a.manifest.read_text(encoding='utf-8')))
@@ -77,6 +77,9 @@ def main():
     qwen = Qwen3VLForConditionalGeneration.from_pretrained(
         a.qwen, torch_dtype=torch.bfloat16, attn_implementation='sdpa',
         local_files_only=True).to(device).eval().requires_grad_(False)
+    if state.get('schema')=='qwen_spatial_language_lora_v1':
+        from .qwen_vl_language_adapt import install_in_full_qwen
+        install_in_full_qwen(qwen,state)
     processor = AutoProcessor.from_pretrained(a.qwen, local_files_only=True,
                                             min_pixels=65536, max_pixels=65536)
     head = build_spatial_head(a.sd, state, cfg, layout['positions'], device,

@@ -104,6 +104,8 @@ def frontend_input_hash(payload,i):
 
 
 def stage_cache(a, cfg, payload, parent_state, device):
+    if parent_state.get('schema')=='qwen_spatial_language_lora_v1':
+        raise ValueError('Adapted language teacher requires an explicitly validated adapted frontend cache; do not reuse the public-Qwen terminal cache')
     if (a.output/'report.json').exists():
         raise ValueError('Existing cache; do not repeat')
     qwen, processor = load_qwen(a.qwen, device)
@@ -313,6 +315,8 @@ def router_batch_balance(macros, features, ids, device, mi_weight=.25):
 
 
 def stage_joint(a, cfg, payload, state, device):
+    if state.get('schema')=='qwen_spatial_language_lora_v1':
+        raise ValueError('Adapted teacher terminal-feature protocol must be implemented and validated before LG recovery')
     features = checked_features(a.features, payload)
     qwen, processor = load_qwen(a.qwen, device)
     macros = apply_configured_hybrid(qwen,cfg)

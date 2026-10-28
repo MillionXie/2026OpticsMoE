@@ -117,6 +117,34 @@ GT图片走同样评分作为描述可判别性对照，不能因相似度高就
 先400步TRAIN参考latent对齐，再4轮配对训练；需要真实反向和完整prompt审查后判断是否改善。
 这是待GPU验证的电子读出候选，当前LG特征／恢复工具仍拒绝native prefix，不冒称已支持该候选的LG。
 正在运行的201b36b9光电／尾部流程先按原源码完成，新增核心读出代码须等其退出后才能同步。
+201b36b9流程现已全部完成并释放11个自有子PID。LG恢复选第1轮step912，SHA
+`3a3937f9f2c8da7702f5f8abab28f5cb43db7607c4b096ac1015a01bba6e7983`，
+DEV96 PSNR17.092614／LPIPS0.421834／crop0.379328；换背景crop比电子版差7.97%，门槛未过。
+UNet从867,616,708剪至219,430,276参数，8轮选第6轮step2736，SHA
+`f80bd9371bec433a10fde779d570ae83ddb871c802a910fa8aefb32195f9cafa`，
+PSNR16.855801／LPIPS0.480210／crop0.427568，三任务均未过5%门槛。
+压缩版全部96张raw推理PNG与训练加速缓存导出逐SHA相同，证明部署确实重跑Qwen，而不是把缓存当部署。
+这轮电子、LG宽尾部、LG窄尾部的实际GPU FFT软件请求均值分别134.83／123.87／81.13ms；
+单流核心光学替换诊断仅1.6787倍，未到2倍，也不是物理整机测量或最终DAG结论。
+原生视觉读出试验亦完成4轮，raw DEV96为17.041346／0.428108／0.371733，
+商品crop四选一识别34.4%／40.6%／43.8%，没有解决语义问题。CPU merger与GPU实际输出有
+约0.05%–0.06%的hidden相对RMSE，不能冒称逐PNG完全相同；正式数值取raw重新推理。
+所有提示词／同样本图及学习曲线数据由`reports/qwen_vl_sixhour_review_20261028/plot_review.py`
+从完成run生成，样本按每类前两款参考商品固定选取，不按分数挑图。
+
+另做`qwen_vl_train_noise_probe`的两款TRAIN商品同prompt、参考条件×seed交叉检查。
+换参考条件的crop LPIPS变化0.4875，大于换来源seed的0.0975；没有观察到仅由seed替换商品身份。
+这是CPU float32小探针，不是泛化证明，也不据此更改固定评估seed或宣称唯一失败原因。
+
+下一候选为`qwen_vl_rich_language_lora_20261028.json`：原Qwen视觉24层及语言前24层冻结，
+仅对原语言24:28的q/k/v/o与MLP投影做rank8 LoRA，并继续原生成头训练。没有新增TF层、图像编码器
+或参考VAE输入。冻结前缀沿用逐输入指纹审核的language23，rotary／causal mask／position参数由
+`qwen_vl_language_context_cache`从实际原生调用逐长度核验取得，不用猜测的文本位置。
+训练按真实长度分组，Qwen attention内部不补零；raw部署必须运行完整原Qwen并加载LoRA。
+新schema为`qwen_spatial_language_lora_v1`，LoRA权重随best/last保存，单列未合并部署参数；
+不先宣称已折叠或改善质量。先6cell零LoRA前后hidden严格检查及真实4步非零LoRA梯度，再最多12轮。
+原公共Qwen终端feature缓存不能冒用于该新teacher的LG蒸馏；当前LG入口对新schema显式拒绝，
+待新电子版有效后，必须另做适配后teacher终端缓存和接口核验。DEV96继续选模，TEST540继续封存。
 所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
 仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
 

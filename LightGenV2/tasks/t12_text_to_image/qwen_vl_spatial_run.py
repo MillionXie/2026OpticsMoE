@@ -205,6 +205,8 @@ def run(args,cfg):
     checkpoint=args.parent/'best_checkpoint.pt'
     if sha256(checkpoint)!=parent_report['checkpoint_sha256']:raise ValueError('Parent checkpoint SHA mismatch')
     state=torch.load(checkpoint,map_location='cpu',weights_only=False)
+    if state.get('schema')=='qwen_spatial_language_lora_v1' and not cfg.get('adapt_qwen_language',False):
+        raise ValueError('Cannot resume adapted Qwen using the original frozen final-feature cache')
     data_run=args.data_run or args.parent
     cache=data_run/'frozen_features.pt'
     cache_digest=sha256(cache)
@@ -239,6 +241,23 @@ def run(args,cfg):
             cfg['instruction_bounds']=layout['instruction_bounds']
         write_json(out/'visual_layout.json',layout)
     elif cfg.get('semantic_prefix',0):raise ValueError('Native visual prefix configured without verified cache')
+    language_contexts=None;original_final_hidden=None
+    if cfg.get('adapt_qwen_language',False):
+        if cfg.get('semantic_prefix',0) or args.language_context is None or args.teacher_features is None or cfg.get('warm_steps',0):
+            raise ValueError('Language adaptation needs explicit native contexts/frozen prefix, fused-only input and no separate spatial warmup')
+        from .qwen_vl_hybrid_run import checked_features
+        ready=json.loads((args.language_context/'report.json').read_text());context_path=args.language_context/'native_contexts.pt'
+        if not ready['complete'] or sha256(context_path)!=ready['sha256']:
+            raise ValueError('Native Qwen language contexts incomplete or changed')
+        language_contexts=torch.load(context_path,map_location='cpu',weights_only=False)
+        feature_report=json.loads((args.teacher_features/'report.json').read_text())
+        if language_contexts['prefix_feature_sha256']!=feature_report['sha256'] or language_contexts['source_cache_sha256']!=cache_digest:
+            raise ValueError('Language prefix/context/data identities differ')
+        features=checked_features(args.teacher_features,payload)
+        original_final_hidden=payload['hidden']
+        payload['hidden']=[f['language_23'][0] for f in features]
+        cfg['language_context_sha256']=ready['sha256'];cfg['language_prefix_sha256']=feature_report['sha256']
+        del features
     ids,audit=training_ids(payload,data_run,cfg['exclude_ambiguous_descriptions'])
     permitted=set(category_ids(payload['rows'],cfg.get('categories')))
     ids=[i for i in ids if i in permitted]
@@ -283,6 +302,37 @@ def run(args,cfg):
         if cfg.get('semantic_prefix',0)!=state['config'].get('semantic_prefix',0) and not migrating:raise ValueError('Resume visual source changed; explicit native migration/cache required')
     model=build_spatial_head(args.sd,state,cfg,layout['positions'],device,
         identity_probe=None if 'spatial' in state else probe)
+    if language_contexts is not None:
+        from transformers import Qwen3VLForConditionalGeneration
+        from .qwen_vl_language_adapt import NativeLanguageTail,AdaptiveLanguageHead,inject_language_lora
+        full=Qwen3VLForConditionalGeneration.from_pretrained(args.qwen,torch_dtype=torch.bfloat16,
+            attn_implementation='sdpa',local_files_only=True).eval().requires_grad_(False)
+        lm=full.model.language_model
+        tail=NativeLanguageTail(list(lm.layers[24:28]),lm.norm,language_contexts['contexts'])
+        del lm,full
+        __import__('gc').collect()
+        inject_language_lora(tail,cfg['qwen_lora_rank']);tail=tail.to(device)
+        if 'qwen_language_lora' in state:tail.load_adapters(state['qwen_language_lora'])
+        model=AdaptiveLanguageHead(model,tail)
+        if 'qwen_language_lora' not in state:
+            seen=set();checks=[]
+            with torch.no_grad():
+                for i in val_ids:
+                    cell=payload['rows'][i]['category'],payload['rows'][i]['mode']
+                    if cell in seen:continue
+                    seen.add(cell)
+                    prefix=payload['hidden'][i][None].to(device)
+                    actual=tail(prefix,torch.ones(prefix.shape[:2],dtype=torch.bool,device=device))[0]
+                    difference=float((actual.float()-original_final_hidden[i].to(device).float()).abs().max())
+                    checks.append({'sample_id':payload['rows'][i]['sample_id'],'max_abs_final_hidden_difference':difference})
+                    if difference>1e-3:raise ValueError('Zero-LoRA native layer replay differs from the original full Qwen: '+str(checks[-1]))
+            write_json(out/'zero_qwen_lora_identity.json',{'passed':True,'checks':checks,
+                'scope':'Actual original final-four layers with recorded native rotary/mask arguments; no optimizer step'})
+        write_json(out/'qwen_language_protocol.json',{'original_vision_layers_frozen':24,
+            'original_language_prefix_layers_frozen':24,'original_language_layers_with_LoRA':[24,25,26,27],
+            'new_TF_layers':0,'rank':cfg['qwen_lora_rank'],'language_context_sha256':cfg['language_context_sha256'],
+            'source_sha256':sha256(Path(__file__).with_name('qwen_vl_language_adapt.py')),
+            'cached_prefix_is_training_acceleration_only':True,'deployment_requires_complete_raw_Qwen':True})
     write_json(out/'zero_injection_identity.json',model.initial_identity if 'spatial' not in state else
         {'applicable':False,'reason':'Continue a trained spatial checkpoint; its injection is already nonzero',
          'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'architecture_and_layout_matched':True})
@@ -350,6 +400,9 @@ def run(args,cfg):
        {'params':model.adapter.parameters(),'lr':cfg['adapter_lr']},
        {'params':[p for p in model.unet.parameters() if p.requires_grad and id(p) not in injection_ids],'lr':cfg['train_lr']},
        {'params':injection,'lr':cfg.get('spatial_injection_lr',cfg['train_lr'])}],weight_decay=.01)
+    if language_contexts is not None:
+        optimizer.add_param_group({'params':[p for p in model.qwen_language_tail.parameters() if p.requires_grad],
+                                   'lr':cfg['qwen_lora_lr']})
     aux_count=sum(p.numel() for p in model.spatial.aux_reference.parameters())
     counts={'qwen_full_forward':payload['qwen_checks']['qwen_forward_parameters'],
       'qwen_embedding':payload['qwen_checks']['qwen_embedding_parameters'],
@@ -375,6 +428,10 @@ def run(args,cfg):
         optimizer_disc=torch.optim.Adam(discriminator.parameters(),lr=cfg.get('discriminator_lr',1e-4),betas=(.5,.999))
         counts['training_only_discriminator']=sum(p.numel() for p in discriminator.parameters())
     counts['inference_total']=sum(counts[k] for k in ('qwen_full_forward','adapter','unet_including_lora','spatial_readout','vae_decoder'))
+    if language_contexts is not None:
+        counts['qwen_language_lora_parameters']=sum(p.numel() for p in model.qwen_language_tail.parameters() if p.requires_grad)
+        counts['inference_total_if_qwen_lora_folded']=counts['inference_total']
+        counts['inference_total']+=counts['qwen_language_lora_parameters']
     write_json(out/'parameter_counts.json',counts)
     effective=cfg['batch_size']*cfg['gradient_accumulation']
     steps=cfg.get('train_steps') or math.ceil(len(ids)*cfg['epochs']/effective)
@@ -450,7 +507,9 @@ def run(args,cfg):
             optimizer_disc.step();terms['discriminator']=float(loss_disc.detach())
         if step==4:
             write_json(out/'smoke_report.json',{'real_backward_steps':4,'finite_loss_gradient':True,
-                       'TRAIN_only':True,'Qwen_frozen':True,'VAE_frozen':not any(p.requires_grad for p in model.vae.parameters()),'adversarial_training':discriminator is not None})
+                       'TRAIN_only':True,'Qwen_frozen':language_contexts is None,
+                       'language_lora_gradient_absolute_sum':sum(float(p.grad.detach().abs().sum()) for p in model.qwen_language_tail.parameters() if p.requires_grad and p.grad is not None) if language_contexts is not None else None,
+                       'VAE_frozen':not any(p.requires_grad for p in model.vae.parameters()),'adversarial_training':discriminator is not None})
         if step%10==0:
             print('paired',step,'/',steps,'loss',total,terms,flush=True)
             write_json(out/'progress.json',{'stage':'paired','step':step,'total_steps':steps,'loss':total,'terms':terms,'best_step':best_step,'best_val_psnr':best_psnr,'selection_metric':selector,'learning_rates':[g['lr'] for g in optimizer.param_groups]})
@@ -464,6 +523,9 @@ def run(args,cfg):
               'config':cfg,'visual_layout':layout,'git':identity(),'cache_sha256':cache_digest,
               'native_visual_cache_sha256':native_digest,
               'parent_checkpoint_sha256':parent_report['checkpoint_sha256'],'val':val}
+            if language_contexts is not None:
+                saved['schema']='qwen_spatial_language_lora_v1'
+                saved['qwen_language_lora']=model.qwen_language_tail.adapter_state()
             if discriminator is not None:saved['training_only_discriminator']={k:v.detach().cpu().clone() for k,v in discriminator.state_dict().items()}
             torch.save(saved,out/'last_checkpoint.pt')
             if selection_score(val,selector)>best:
@@ -473,6 +535,7 @@ def run(args,cfg):
                 break
     selected=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     model.adapter.load_state_dict(selected['adapter']);model.spatial.load_state_dict(selected['spatial'])
+    if language_contexts is not None:model.qwen_language_tail.load_adapters(selected['qwen_language_lora'])
     with torch.no_grad():
         for n,p in model.unet.named_parameters():
             if n in selected['unet_trainable']:p.copy_(selected['unet_trainable'][n].to(device))
@@ -498,6 +561,8 @@ def main():
     parser.add_argument('--stage',choices=('layout','train'),default='train')
     parser.add_argument('--data-run',type=Path,help='Explicit reviewed data/cache profile; preserve parent training exposure in provenance')
     parser.add_argument('--visual-cache',type=Path,help='Verified native output from the SAME Qwen vision tower; semantic fused states still retained')
+    parser.add_argument('--language-context',type=Path,help='Verified original final-four language-layer call metadata')
+    parser.add_argument('--teacher-features',type=Path,help='Verified frozen original Qwen language23 input cache')
     args=parser.parse_args();cfg=json.loads(args.config.read_text(encoding='utf-8'))
     if cfg.get('test_enabled',False):raise ValueError('This development runner has no TEST path')
     random.seed(cfg['seed']);np.random.seed(cfg['seed']);torch.manual_seed(cfg['seed']);torch.set_num_threads(4)

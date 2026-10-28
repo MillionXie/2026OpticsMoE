@@ -51,6 +51,8 @@ def main():
     for name in ('parent','data','qwen','sd','output'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--hybrid',type=Path);parser.add_argument('--tail',type=Path)
     parser.add_argument('--visual-cache',type=Path,help='Verified native merger cache for raw/cache identity only')
+    parser.add_argument('--language-context',type=Path)
+    parser.add_argument('--teacher-features',type=Path)
     parser.add_argument('--gpu-uuid',required=True);parser.add_argument('--label',required=True)
     a=parser.parse_args()
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=a.gpu_uuid or a.output.exists():raise ValueError('Unauthorized GPU or immutable existing review')
@@ -69,6 +71,23 @@ def main():
         if native['sample_ids']!=[r['sample_id'] for r in payload['rows']]:raise ValueError('Native feature row identities differ')
         payload['hidden']=[torch.cat([v,h],0) for v,h in zip(native['vision'],payload['hidden'])]
     qwen,processor=load_qwen(a.qwen,device)
+    if state.get('schema')=='qwen_spatial_language_lora_v1':
+        from .qwen_vl_language_adapt import install_in_full_qwen,NativeLanguageTail
+        from .qwen_vl_hybrid_run import checked_features
+        install_in_full_qwen(qwen,state)
+        if a.language_context is None or a.teacher_features is None:raise ValueError('Adapted Qwen raw replay requires its verified frozen-prefix contexts')
+        ready=json.loads((a.language_context/'report.json').read_text());path=a.language_context/'native_contexts.pt'
+        if not ready['complete'] or ready['sha256']!=sha256(path) or ready['sha256']!=state['config']['language_context_sha256']:
+            raise ValueError('Adapted Qwen native contexts differ')
+        contexts=torch.load(path,map_location='cpu',weights_only=False)
+        features=checked_features(a.teacher_features,payload)
+        if contexts['prefix_feature_sha256']!=state['config']['language_prefix_sha256']:raise ValueError('Adapted prefix SHA differs')
+        lm=qwen.model.language_model
+        replay=NativeLanguageTail(list(lm.layers[24:28]),lm.norm,contexts['contexts']).eval().requires_grad_(False)
+        with torch.no_grad():
+            for i in ids:
+                prefix=features[i]['language_23'].to(device)
+                payload['hidden'][i]=replay(prefix,torch.ones(prefix.shape[:2],dtype=torch.bool,device=device))[0].cpu()
     head=build_spatial_head(a.sd,state,state['config'],state['visual_layout']['positions'],device,drop_vae_encoder=True).eval().requires_grad_(False)
     if a.hybrid:
         hybrid_report=json.loads((a.hybrid/'report.json').read_text())
