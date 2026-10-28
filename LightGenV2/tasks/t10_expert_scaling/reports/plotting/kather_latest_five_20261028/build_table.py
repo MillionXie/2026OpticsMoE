@@ -19,6 +19,7 @@ FIT=REPORTS/'kather_n49_seed_balanced_followup_20261028/final_summary_20261028.j
 N25_PILOT=REPORTS/'kather_n25_balanced_distill_20261028/final_summary_20261028.json'
 N25_FOLLOWUP=REPORTS/'kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json'
 REFINE=REPORTS/'kather_safeguarded_refine_20261028/final_summary_20261028.json'
+MARGIN=REPORTS/'kather_safeguarded_margin_20261028/final_summary_20261028.json'
 N16=REPORTS/'kather_n16k8_followup_20261028/final_summary_20261028.json'
 SEEDS=[17,27,37]
 GROUPS={4:[1,2,3,4],16:[1,4,8,16],25:[1,6,12,25],49:[1,12,24,49]}
@@ -103,22 +104,38 @@ def data():
         g=refine['groups'][f'{n}/{n}']
         assert abs(value['mean_percent']-g['mean_percent'])<1e-10 and abs(value['sample_sd_percent']-g['sample_sd_percent'])<1e-10
         assert g['strict_previous_Topk_target_met'] and sum(value['correct_counts'])>g['previous_Topk_stats']['total_correct']
+    prior_refined25=latest25;prior_refined49=latest_fit
+    margin=read(MARGIN)
+    assert margin['status']=='complete' and margin['validation']['independent_NumPy_status']=='passed'
+    extended={v['experts']:v for v in margin['students']}
+    assert set(extended)=={25,49} and all(v['status']=='complete' and v['selected']['TEST_total']==752 for v in extended.values())
+    assert extended[25]['seed']==27 and extended[49]['seed']==37
+    counts25=latest25['correct_counts'].copy();counts25[1]=extended[25]['selected']['TEST_fit_correct'];latest25=stats(counts25)
+    counts49=latest_fit['correct_counts'].copy();counts49[2]=extended[49]['selected']['TEST_fit_correct'];latest_fit=stats(counts49)
+    for n,value in [(25,latest25),(49,latest_fit)]:
+        g=margin['groups'][f'{n}/{n}']
+        assert value['correct_counts']==g['correct_counts'] and g['working_margin_target_met']
+        assert sum(value['correct_counts'])>=g['minimum_total_correct']
+        assert abs(value['mean_percent']-g['mean_percent'])<1e-10 and abs(value['sample_sd_percent']-g['sample_sd_percent'])<1e-10
     rows=[]
     for n,ks in GROUPS.items():
         for k in ks:
             value=latest16 if (n,k)==(16,8) else latest25 if (n,k)==(25,25) else latest_fit if (n,k)==(49,49) else tail_groups[n,k] if (n,k) in TAIL_UPDATES else original['MoE',n,k]
             marker='†' if (n,k) in [(25,25),(49,49)] else '*' if (n,k) in UPDATES else ''
-            role=('TEST-trained exposed development fit; 90-epoch baseline plus16x1024 adaptation and extra8-step safeguarded refinement on seed27' if (n,k)==(25,25)
-                else 'TEST-trained exposed development fit; unequal discovery budgets and extra8-step safeguarded refinement on seed37' if (n,k)==(49,49)
+            role=('TEST-trained exposed development fit; 90-epoch baseline plus16x1024 adaptation and 16 total safeguarded steps (8 initial plus8 user-requested extension) on seed27' if (n,k)==(25,25)
+                else 'TEST-trained exposed development fit; unequal discovery budgets and 16 total safeguarded steps (8 initial plus8 user-requested extension) on seed37' if (n,k)==(49,49)
                 else '90-epoch post-TEST-observation development follow-up; TEST not in gradient' if marker=='*' else 'Original60-epoch result')
             rows.append(dict(experts=n,top_k=k,original_60=original['MoE',n,k],latest=value,marker=marker,updated=(n,k) in UPDATES,role=role))
     mark_group_maxima(rows)
     assert sum(v['updated'] for v in rows)==6
     assert [(v['experts'],v['top_k']) for v in rows if v['bold_group_max']]==[(4,4),(16,16),(25,25),(49,49)]
-    # This publication adds N16/k8; previously verified full-k rows are retained.
+    # This publication changes only the two completed full-k margin rows.
     for row in rows:
         key=(row['experts'],row['top_k'])
-        if key in [(16,8),(25,25),(49,49)]:continue
+        if key in [(25,25),(49,49)]:continue
+        if key==(16,8):
+            assert row['latest']==latest16
+            continue
         previous=tail_groups[key] if key in TAIL_UPDATES else original[('MoE',)+key]
         assert row['latest']==previous
     return dict(
@@ -127,14 +144,14 @@ def data():
         updated_five=[dict(experts=v['experts'],top_k=v['top_k'],**v['latest'],marker=v['marker'],role=v['role']) for v in rows if v['updated']],
         updated_rows_count=6,
         rows=rows,d2nn=[dict(experts=n,**original['D2NN',n,n]) for n in GROUPS],
-        full25_history=dict(original60=original['MoE',25,25],tail90=tail_groups[25,25],pre_safeguarded_TEST_trained_fit=previous_fit25,latest_TEST_trained_fit=latest25),
-        full49_history=dict(original60=original['MoE',49,49],tail90=tail_groups[49,49],continued120=stats([v['test_correct'] for v in sorted(full120['rows'],key=lambda v:v['seed'])]),pre_safeguarded_TEST_trained_fit=previous_fit49,latest_TEST_trained_fit=latest_fit),
-        strict_target_checks=refine['groups'],
+        full25_history=dict(original60=original['MoE',25,25],tail90=tail_groups[25,25],pre_safeguarded_TEST_trained_fit=previous_fit25,initial8_safeguarded_fit=prior_refined25,latest_TEST_trained_fit=latest25),
+        full49_history=dict(original60=original['MoE',49,49],tail90=tail_groups[49,49],continued120=stats([v['test_correct'] for v in sorted(full120['rows'],key=lambda v:v['seed'])]),pre_safeguarded_TEST_trained_fit=previous_fit49,initial8_safeguarded_fit=prior_refined49,latest_TEST_trained_fit=latest_fit),
+        strict_target_checks=margin['groups'],
         N16k8_followup=dict(status='complete',original60=original['MoE',16,8],latest90=latest16,minimum_total_correct=1589,strict_target_met=sum(latest16['correct_counts'])>1588,TEST_gradient_inputs=0),
         source_checksum_scope='UTF-8 source text with CRLF normalized to LF; matches Git blobs across Windows/Linux.',
-        source_files=[dict(path=p.relative_to(ROOT).as_posix(),sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [BASE,TAIL,FULL120,FIT,N25_PILOT,N25_FOLLOWUP,REFINE,N16]],
-        checks=dict(all20_screenshot_cells_match_original_sources=True,exactly_six_completed_MoE_rows_updated=True,only_N16k8_changed_since_previous_verified_table=True,
-            N25_all_three_completed_reports_used=True,N49_completed_refinement_used=True,other15_latest_MoE_values_unchanged=True,N16k8_all_three_locked_TEST_results_used=True,
+        source_files=[dict(path=p.relative_to(ROOT).as_posix(),sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [BASE,TAIL,FULL120,FIT,N25_PILOT,N25_FOLLOWUP,REFINE,N16,MARGIN]],
+        checks=dict(all20_screenshot_cells_match_original_sources=True,exactly_six_completed_MoE_rows_updated=True,only_two_fullk_changed_since_previous_verified_table=True,
+            N25_all_three_completed_reports_used=True,N49_completed_refinement_used=True,both_completed_margin_reports_used=True,both_half_percentage_point_targets_met=True,other14_latest_MoE_values_unchanged=True,N16k8_all_three_locked_TEST_results_used=True,
             D2NN_unchanged=True,prior_full25_full49_history_preserved=True,group_maxima_recomputed_from_integer_totals=True,
             no_VAL_or_teacher_accuracy_used=True,no_rounding_before_aggregation=True))
 
@@ -195,7 +212,7 @@ def render(d):
         ax.add_patch(Rectangle((x[3],y),x[4]-x[3],4*rh,facecolor=bg,edgecolor='white',linewidth=1.4))
         ax.text((x[3]+x[4])/2,y+2*rh,v['display'],fontproperties=num,ha='center',va='center')
     foot=top+hh+16*rh+30
-    notes=['单位：%；三个seed（17/27/37）的均值 ± 样本标准差（ddof=1）。','* 四行累计90轮开发跟进：4/4、16/8、16/16、49/24；其余及D2NN沿用原60轮。','† 25/25、49/49的TEST已进入教师和学生训练，属于暴露拟合，不是独立泛化。','25/25每seed另加16×1024短段；49/49保留不同起点与累计发现预算。','25/25的seed27、49/49的seed37另加8步有限优化；均不作等预算比较。','† 两行复用含ImageNet知识的教师；额外教师成本单列；16/8为TRAIN-only额外30轮。','加粗按组内整数正确数总和判定最大列示均值；原数据和全部历史结果均保留。']
+    notes=['单位：%；三个seed（17/27/37）的均值 ± 样本标准差（ddof=1）。','* 四行累计90轮开发跟进：4/4、16/8、16/16、49/24；其余及D2NN沿用原60轮。','† 25/25、49/49的TEST已进入教师和学生训练，属于暴露拟合，不是独立泛化。','25/25每seed另加16×1024短段；49/49保留不同起点与累计发现预算。','25/25的seed27、49/49的seed37共16步有限优化（先8步、再8步）；预算不等。','† 两行复用含ImageNet知识的教师；额外教师成本单列；16/8为TRAIN-only额外30轮。','加粗按组内整数正确数总和判定最大列示均值；原数据和全部历史结果均保留。']
     for j,note in enumerate(notes):ax.text(24,foot+j*27,note,fontproperties=cn,va='center',color='#6F471D' if j in [2,3] else '#444444')
     fig.savefig(OUT/'latest_table.png',dpi=180,facecolor='white')
     fig.savefig(OUT/'latest_table.svg',facecolor='white')
