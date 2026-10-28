@@ -1,0 +1,67 @@
+{
+  "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+  "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+  "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+  "teacher_targets_sha256": "cb3d517dd7a3dee5881dfc945fda1dbcf1d5811e9f1b6623cde708944ea728e1",
+  "teacher_checkpoint_sha256": "de9decdfb47553814c9d4cb8b77ffca7272e75a5f75cb823c3457a15a306b9dd",
+  "seed": 37,
+  "model_experts": 49,
+  "expected_parameter_count": 11078432,
+  "max_steps": 8,
+  "max_objective_passes": 24,
+  "max_line_trials": 4,
+  "check_steps": [
+    2,
+    4,
+    8
+  ],
+  "history_size": 3,
+  "direction_radius": 0.25,
+  "fixed_lambda_kd": 0.3203496288685833,
+  "temperature": 2,
+  "parent_weight": 0.5,
+  "explicit_test_training_authorization": true,
+  "test_images_enter_student_gradient": true,
+  "gpu_index": 3,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "minimum_gpu_free_mib": 6000,
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_seed_balanced_followup_20261028/student_s37",
+  "incumbent_sha256": "321d239bf7dd9df12729fcc3acbd2ac358456c09b68baa4af203c4aab33d2f64",
+  "source_tensor_sha256": "4679a6a1306ffeb7783b05aca6af3f8ec0ab78a4fe1d00486ea3af8c17119882",
+  "incumbent_predictions_sha256": "a237d9176246ca3c9208bd3de8936867256315df1dea2c39171f5ee8b8b3ab0f",
+  "baseline_test_correct": 601,
+  "sources": {
+    "student": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_seed_balanced_followup_20261028/student_s37",
+      "sha256": "321d239bf7dd9df12729fcc3acbd2ac358456c09b68baa4af203c4aab33d2f64",
+      "actual_epoch": 16
+    }
+  },
+  "parent_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_seed_balanced_followup_20261028/parent_s37",
+  "parent_cache_source_commit": "150fabbbd8529c251175943a3229ac0b828b3d75",
+  "parent_checkpoint_sha256": "39f88b7585fb58f4f4fdf9ed821226144ffe6fe40945d5774865f6a3c5481389",
+  "locked_parent_receipt_sha256": "b8eeefd1710755398c0c076115da18351719ed7c1dfd3332ab57453fa135cf5a",
+  "locked_parent_scores_sha256": "5453fb3f6256280c17e256bee8bdfb77fd2f6d53179e2151da34355ba802aea8",
+  "auxiliary_dependencies": [
+    "test_exposed_distill.py",
+    "cnn_teacher_cache.py",
+    "cnn_distill.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py",
+    "safeguarded_refine.py"
+  ],
+  "role": "Finite deterministic clean-view safeguarded optimization from own current best. Fixed752 originalTRAIN +all752 TEST pool, uniform94TRAIN/class chosen without predictions; VAL excluded from gradients. Fresh L-BFGS history, original loss weights/own original parent anchor/teacher retained; source pool/view and optimizer change together, not a single-variable causal comparison. Max8 accepted steps/24full objective passes/4halving trials per step/history3. Only actual Armijo objective descent accepted; loss decrease does not guarantee accuracy gain. Fixed2/4/8TEST exposed fit and VAL, incumbent always candidate. Final early-stop check if needed; no automatic extension. Adaptive seed budgets, not independent generalization/equal-budget3seed evidence.",
+  "aggregate_target": {
+    "current_counts": [
+      613,
+      608,
+      601
+    ],
+    "updated_seed": 37,
+    "previous_Topk_total_correct": 1825,
+    "minimum_aggregate_total_correct": 1826,
+    "not_a_per_seed616_requirement": true
+  }
+}
