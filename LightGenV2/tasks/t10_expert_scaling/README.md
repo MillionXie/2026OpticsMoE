@@ -34,6 +34,15 @@ run `runs/smoke/kather_n49_view_conflict_probe_20261028`。两互斥普通16图f
 原正确及近边界guard不新增错，TRAIN平均margin、guard尾部与NLL保护均通过才考虑有限正式对照。
 样本不足判inconclusive，不追加第三批、扩大样本或改门槛。
 
+N49该探针已完整结束并经独立NumPy复算，
+报告[final_summary_20261028.json](reports/kather_n49_view_conflict_probe_20261028/final_summary_20261028.json)。
+6步/4256输入全部执行，重复误差0；clean相对D4的实际Adam更新变化为1.320/1.181，确有方向差异。
+但clean在TEST困难组的平均margin变化为−4.26e-5/+2.26e-5，第二批低于D4的+3.77e-5；
+TRAIN平均margin及部分原正确guard尾部亦未过预定保护门槛。样本数量充足，结论为rejected而非inconclusive。
+没有导出新模型、没有全752新分数、没有启动clean正式训练；613及全部旧三seed结果保持原身份。
+26个小产物manifest、22源路径、288互斥ID、全部16组诊断概率与实际6步/源恢复均独立核验，
+该GPU3进程已退出、自己的显存释放，foreign进程保留。此结论仅针对该源/两批/步幅，不推断架构上限。
+
 上述教师已见TEST，N25及后续N49学生也使用TEST梯度，全部TEST数字是训练暴露的开发拟合；
 不建立独立泛化、原等预算Top-k或相同累计开发成本的结论。
 
