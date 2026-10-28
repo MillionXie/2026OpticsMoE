@@ -1,0 +1,8 @@
+{
+  "schema": "sd_turbo_text_only_prior_control_v1",
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "gpu_memory_fraction": 0.6,
+  "seeds": [1042, 1043],
+  "native_resolutions": [256, 512],
+  "protocol": "Diagnostic text-only native SD-Turbo prior control, not reference-guided editing, same-model quality comparison or TRAIN assets. Eight fixed generic captions cover lamp/pillow x red/blue x one color attribute/composed four attributes. Red compositions request pale-blue wall, wooden tabletop and right light; blue compositions request warm-beige wall, neutral-stone tabletop and left light. Two fixed seeds1042/1043 at both native256/512 yield32 separate one-step images. Use official local fp16 variant UNet/VAE/native CLIP text weights in BF16, NativeTurboHead's unchanged native Euler scaling/step, guidance0 and no CFG. All parameters frozen; VAE encoder/quant_conv removed. No Qwen, reference images, source captions, ABO, dataset, GT, masks, training cache, optical model or optimizer. Hash selected local component weights/configs/scheduler and native tokenizer files. CLIP full tokens must fit77 with truncationFalse; include all padded/unpadded token IDs. Export32 native PNGs with SHA and eight full-caption panels with two seed columns/two color rows; no resizing, sharpening, automated success metric, unique-GT score, timing/performance or2x claim. Requested-attribute and quality fields remain null pending manual review; independent TEST540 remains sealed."
+}
