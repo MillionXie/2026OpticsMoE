@@ -35,7 +35,7 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding='utf-8')
 
 
-def conditions(category):
+def conditions(category, profile='directional_v1'):
     common = {'reference_constraint': 'retain coarse product outline; fine appearance may change',
               'background_source': 'generated entire scene; no external room photograph'}
     if category == 'lamp':
@@ -52,8 +52,15 @@ def conditions(category):
              {'fabric_color': 'terracotta', 'fabric_pattern': 'broad cream stripes', 'scene': 'reading nook', 'support': 'grey armchair', 'background_elements': ['stone side table', 'bookshelves', 'leafy plant'], 'light_side': 'left'})]
     else:
         raise ValueError('Only reviewed lamp/pillow subjects')
-    return [{'condition_id': str(i), 'prompt': prompt, 'requested_attributes': attrs, **common}
-            for i, (prompt, attrs) in enumerate(prompts)]
+    if profile not in ['directional_v1', 'free_lighting_v2']:
+        raise ValueError('Unreviewed scene prompt profile')
+    result = [{'condition_id': str(i), 'prompt': prompt, 'requested_attributes': attrs, **common}
+              for i, (prompt, attrs) in enumerate(prompts)]
+    if profile == 'free_lighting_v2':
+        for row in result:
+            row['prompt'] = row['prompt'].rsplit('. ', 1)[0]+'.'
+            row['requested_attributes'].pop('light_side')
+    return result
 
 
 def choose_sources(rows, indices):
@@ -67,7 +74,7 @@ def choose_sources(rows, indices):
     return chosen
 
 
-def native_caption(category, condition, style):
+def native_caption(category, condition, style, profile='directional_v1'):
     """Explicit object-attribute wording, with no target-derived information."""
     if style == 'original': return condition['prompt']
     if style != 'explicit_caption': raise ValueError('Unreviewed prompt translation')
@@ -78,8 +85,13 @@ def native_caption(category, condition, style):
         'pillow': [
             'Generate an interior product photograph of one deep blue woven cushion with thin cream piping on a beige sofa. An oak coffee table, curtains and a leafy plant furnish the living room behind the cushion. Soft window light enters from the right. Retain the reference cushion outline.',
             'Generate an interior product photograph of one terracotta cushion with broad cream stripes on a grey armchair beside a stone side table. Bookshelves and a leafy plant furnish the reading nook behind the cushion. Warm daylight enters from the left. Retain the reference cushion outline.']}
-    if condition not in conditions(category): raise ValueError('Canonical requested attributes required')
-    return captions[category][int(condition['condition_id'])]
+    if condition not in conditions(category, profile): raise ValueError('Canonical requested attributes required')
+    caption = captions[category][int(condition['condition_id'])]
+    if profile == 'free_lighting_v2':
+        # Keep the historical directional_v1 bytes exactly reproducible.
+        caption = '. '.join(s for s in caption.split('. ') if not any(
+            s.startswith(prefix) for prefix in ['Warm window light', 'Soft daylight', 'Soft window light', 'Warm daylight']))
+    return caption
 
 
 def checked_tokens(tokenizer, prompt):
@@ -185,8 +197,9 @@ def infer(args, cfg):
         if digest(path) != ref['input_sha256']: raise ValueError('Reference RGB changed')
         shutil.copyfile(path, args.output/ref['input_PNG'])
         with Image.open(path) as im: reference = im.convert('RGB').copy()
-        for condition in conditions(ref['category']):
-            prompt = native_caption(ref['category'], condition, preset.get('prompt_style', 'original'))
+        profile = cfg.get('prompt_profile', 'directional_v1')
+        for condition in conditions(ref['category'], profile):
+            prompt = native_caption(ref['category'], condition, preset.get('prompt_style', 'original'), profile)
             token_audit = [checked_tokens(pipe.tokenizer, prompt)]
             if args.model == 'sdxl_ipadapter': token_audit.append(checked_tokens(pipe.tokenizer_2, prompt))
             for seed in cfg['seeds']:
@@ -210,6 +223,7 @@ def infer(args, cfg):
     panels = render_panels(args.output, records, inputs)
     write(args.output/'report.json', {'complete': True, 'schema': SCHEMA, 'model': args.model, 'source_commit': os.environ['T12_SOURCE_COMMIT'],
           'generator_input_whitelist': ['reference RGB', 'complete prompt', 'random noise'], 'no_Qwen_used': True,
+          'prompt_profile': cfg.get('prompt_profile', 'directional_v1'),
           'parameters_in_loaded_pipeline': count, 'reference_manifest_sha256': digest(args.inputs/'reference_manifest.json'),
           'model_assets_sha256': digest(args.output/'model_assets.json'), 'generated_count': len(records),
           'input_resolution': 256, 'inference_resolution': resolution, 'input_resizing': 'LANCZOS256to512 for IP2P only; SDXL uses native CLIP image preprocessing',

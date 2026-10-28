@@ -11,6 +11,31 @@
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
 **2026-10-29人工更新：白底ABO参考＋详细文字生成有家具／层次的商品场景，先验证非Qwen模型。**
+最新追加合同：自由生成推理只接收白底参考RGB、完整文字与随机种子，不提供唯一目标图或掩码；
+TRAIN配对监督仍允许，独立TEST仍不参与训练／选模。`free_lighting_v2`去掉显式光照方向要求，
+自然光照自由生成；商品颜色／材质、家具场景和粗造型要求保留。旧`directional_v1`与48张输出原样保留，
+不能改写旧prompt再把旧图称为新协议结果。新配置`white_reference_sdxl_free_lighting_20261029`保持其余
+SDXL0.25预置不变，固定全部四款／两提示／两seed，继续保存全部输出。
+
+自动量化入口`white_reference_metrics`无需目标图：CLIP-T为OpenAI ViT-B/32的完整原Generate请求与输出图
+余弦相似度；DINOv2-I为`facebook/dinov2-small`的参考／输出全图CLS余弦，相比原DreamBench的DINOv1-S/16
+是明确不同的编码器版本，不能直接对比文献绝对数值。辅助CLIP-I也保存。ImageReward使用官方未修改`score()`，
+以固定紧凑商品场景描述评分，逐条断言不超过官方35-token窗口；这是`ImageReward_compact`，不宣称它检查了
+长指令每一项。四个紧凑描述／原全文、模型资产SHA、全部逐图值、均值与样本标准差均保存。
+三主代理分数为CLIP-T／DINOv2-I／ImageReward_compact；它们不是属性正确率，不设临时阈值将输出自动判合格。
+全图相似度可能奖励忽略文字的白背景图，偏好模型也会误判；不能单用任一分数替代指令检查。
+仅4款TRAIN商品的先导分数不是独立泛化，旧512与1024分辨率也不构成公平模型排名；新profile单列汇总。
+目前没有匹配且来源清楚的场景参考分布，故不计算FID；白底输入不冒充生成场景的真实分布。
+正式测试可固定约500个参考／文字请求，无需每请求唯一GT；生成分布FID若补充，必须另行冻结合法参考池与协议。
+
+方法来源：[DreamBooth评估](https://arxiv.org/html/2208.12242v2)、
+[ImageReward官方实现](https://github.com/zai-org/ImageReward)、
+[TIFA自动问答评价](https://arxiv.org/abs/2303.11897)。TIFA可作为后续自动属性诊断，不声称本次已运行TIFA。
+Taichi的[Science原论文](https://doi.org/10.1126/science.adl1203)图4E–F展示艺术纹理／风格生成，
+正文说明用微调预训练VGG-16给出艺术家风格分类结果；这不是同一参考图＋长文本商品场景任务，也不能把它的
+风格分类或性能数字当作本任务指令正确率。作者[实验室说明](https://media.au.tsinghua.edu.cn/cn/info/1016/1359.htm)
+确认其纹理图像生成任务；具体VGG-16评估核对了原论文正文第7页／图4F，不臆测其使用FID。
+
 输入不再使用程序窗／台面房间，而使用已有ABO商品的白底图；保留主体大致造型，允许按文字改变面料、
 颜色、底座等细节。背景包含桌椅／书架／窗帘／植物及空间光照，不以纯色背景代替场景生成。
 先导入口`white_reference_scene_probe`固定选4款TRAIN商品（两灯、两靠垫，含不同粗造型），
