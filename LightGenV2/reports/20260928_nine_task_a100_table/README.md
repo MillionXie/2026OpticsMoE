@@ -1,5 +1,49 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：LG已纳入真实resize与归一化，随后补测其余lab baseline
+
+人工新批准先测LG、纳入resize和归一化，再测除DS/Kimi外其余baseline的MPS50/100。
+`lgvq_compute_scope_20261029_05`三fresh轮各512视频/32场，每场16视频64帧、额外3完整场预热，
+已全部完成；正式1536评分及各轮预热都逐字节原A100参考一致，原数值/250ms/排外门未改。
+全部原始kernel归属、CPU分段、资源/数学依赖和等效时间加总通过三叶本地独立审计
+`audit_lgvq_resize_norm_20261029.py`，不是将旧联合准备时间相加。
+
+实际重算原65%中心crop至448×448的OpenCV INTER_AREA resize、官方Processor resize、
+原图像tensor整理与rescale/normalize，再执行已验证的精确patch与原BF16输入转换。
+每正式场从未缩放、未归一化RGB crop缓冲开始；不缓存正式Embedding/Adapter。
+读取/解码、RGB转换/65%crop和原quality-pixel输入准备仍在外，调度排队等待仍排除，
+因此本范围仍不是文件输入端到端。原六光周期、神经数学、权重、精度与输入语义不变。
+CPU每视频resize/normalization/patch及thread_cpu_s/实际wall均记录，原像素/归一化/
+FP32 patch SHA/原cast后BF16字节逐一核对，三段加总闭合；16线程分配实录，不假定16倍。
+
+三轮等效时间为**47.624460963448696、45.52681141362651、44.69607907723567ms/16视频**，
+pooled **45.94911715143696ms/16视频**，0.7179549554912025ms/帧、1392.845041811615帧/s。
+对既有Qwen50冷全输入三轮4.66564476537557s/16视频，比值**101.53937778605747**；
+同Qwen token分子速率155302.22216199507token/s，速率比相同。
+仅平均过百倍门，余量0.7073305023187413ms，首轮未过，不能称每轮或稳定保证百倍。
+新增CPU部分的pooled等效贡献resize11.842363718749937ms、normalization20.962766197916697ms、
+patch10.120847822916692ms；这是并行后贡献，不是各原始CPU跨度或光层实际周期。
+LG仍为实测算子+固定光周期的资源排程等效计算，Qwen为冷文件全流程；
+不是同口径物理E2E百倍实测，LG部署能耗仍未核定，FFT上下文NVML只诊断。
+
+05父1142127/末子1178685全部真退出，交接前核私有MPS get_server_list rc1、原锁只读打开可取。
+53原文件1441676416B含外controller.log已逐原SHA/size本地保全再核，根receipt
+`00b2675923986aad2b66a7e2bb255e2a61cfbaa1c21d3c8b1fc7b7526acfed69`。
+新不可变汇总`measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/LightGenII_resize_normalization_20261029_01/LightGenII_timing_summary.json`，
+7063B，SHA256 `08b4682698b2f67f16435444d35737677d61728c1ada5cc7a564eb9fcfb227ab`；旧03不含resize的汇总不覆写。
+04仅在Git逐文件读取10s超时、模型加载和叶创建前停止，无速度结果；7原文件13200B保全，
+receipt`30bd96cc0550ffce30b3dfd51fad4f42aa45979959b9c274e4276cb05c4ad903`。
+修正是一次有界Git batch、仍逐原SHA校验，非跳过身份门。运行绑定
+`cecc6b8e69300a1778fc43741a52719ab347bf68`，48源冻结，服务器HEAD未切。
+
+LG全部审计保全后，已唯一派发`baselines_fullscope_20261029_01`控制器1201308，
+入口`run_baselines_fullscope_20261029.py`、运行同cecc6b8e6、50源，期限1793234759.5112817。
+只补Qwen100×3及GLM/CLIP/YOLO各50/100×3，恰21新点；已有Qwen50合格三轮SHA轻核保留不重跑。
+所有新点B1/四帧、512不同TEST、3fresh/零推理预热、加载窗外、首读取准备至末CPU评分全窗，
+含全部预处理/模型/实际内部等待，原NVML+338.2W hostproxy。每点退出且原CPU audit通过才下一点。
+DS/Kimi不重测、不连接租机。各baseline保原生token分子，仅LG用Qwen分子。
+实际进度以该根suite_status/PID/leaf为准；不把启动视为21点已完成。B100三暂存与旧sealed全不动。
+
 ## 2026-10-29：LightGen-II新计算口径三轮完成，保全与独立审计闭合
 
 新候选`lgvq_compute_scope_20261029_03`三fresh轮各512不同视频、32个16视频/64帧场，
