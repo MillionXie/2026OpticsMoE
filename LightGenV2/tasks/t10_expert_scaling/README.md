@@ -2,6 +2,26 @@
 
 ## D2NN全局面尺寸对齐重跑（2026-10-29）
 
+**已完成并独立核验。** 四路各60轮、seed17；全部模型先统一锁定，再各执行一次752张TEST，父子进程均已实际退出。
+新基线展示名为“无路由稠密衍射基线（Dense-OEO，同全局孔径）”，保留4层OEO非线性；不是无源线性D2NN，也不是仅去Router的单因素消融。
+
+| LG容量N | Dense-OEO每层相位面 | TEST正确数 | 单seed准确率（%） | VAL选中EMA轮次 |
+|---:|---:|---:|---:|---:|
+| 4 | 478×478 | 457/752 | 60.77 | 60 |
+| 16 | 986×986 | 457/752 | 60.77 | 59 |
+| 25 | 1240×1240 | 464/752 | 61.70 | 60 |
+| 49 | 1748×1748 | 465/752 | 61.84 | 60 |
+
+[正式报告](reports/kather_d2nn_same_aperture_s17_20261029/final_summary_20261029.json)；
+[同孔径配对图表、中文图注与参数说明](reports/kather_d2nn_same_aperture_s17_20261029/README.md)。
+对照图采用原始60轮LG seed17，不混入90轮跟进及TEST梯度拟合；原混预算最终表和旧D2NN三seed结果保留。
+同孔径不代表等参数或等源信息带宽：Dense-OEO使用更大RGB编码采样网格。本重跑为已观察历史TEST后的结构开发对照，单seed不报告跨seedSD或统计显著性。
+53份小产物、11源码SHA、CPU实读best/last/live/Adam、60轮历史/LR/VAL选模、先锁后TEST及逐样本IDs/labels/概率/CM/NLL均核验通过。
+N16继承前28轮及Adam6132→13140，迁移后完成32轮；中断部分轮的实际丢弃输入数未知。TRAIN核完整混淆，未导出逐样本概率。
+源大PT留服务器，数据、全部旧权重及foreign进程保留。本次停止追加训练，A100收回后未再使用。
+
+以下为本轮启动与迁移记录：
+
 2026-10-29用户临时收回A100：N4已完成60轮并退出；仅N16需从最后完整checkpoint迁移到GPU0。
 原A100 worker和旧CPU scheduler已停止，N25/GPU1与N49/GPU3不间断。新入口`d2nn_aperture_migration.py`及profile
 `configs/kather_d2nn_aperture_migration_20261029.json`接管等待、全四模型锁定和一次TEST；之后完全不再使用GPU6。
@@ -13,7 +33,7 @@ N16旧run/best/last/history保留，复制到新resume run继承live/EMA/Adam和
 用户要求D2NN每层可训练相位面等于LG全局有效面，改用已有`d2nn_same_aperture`，不再使用原expert/global参数匹配尺寸。
 仅重跑seed17、N=4/16/25/49各一次；4层及4次OEO、旧60轮AdamW LR.002/effective16micro2/EMA.95、D4、CE smoothing.02/capture.02/TV.02和VALmacroNLL选EMA均保持。
 入口`d2nn_aperture_rerun.py`，profile `configs/kather_d2nn_same_aperture_s17_20261029.json`，原数据/划分/旧权重不变。
-GPU6并行N4/16，GPU1跑N25，GPU3跑N49，UUID绑定，保留foreign进程。各自完整TRAIN完成后四模型统一锁定再各一次TEST；无teacher、TEST梯度或额外网格。
+初始GPU6并行N4/16，GPU1跑N25，GPU3跑N49；用户收回A100后按上文迁移，之后禁止GPU6。UUID绑定，保留foreign进程。各自完整TRAIN完成后四模型统一锁定再各一次TEST；无teacher、TEST梯度或额外网格。
 
 | N | LG全局面＝D2NN每层面 | LG每专家层像素合计 | LG总参数（含224² Router） | D2NN总参数（4G²） |
 |---:|---:|---:|---:|---:|
@@ -25,7 +45,7 @@ GPU6并行N4/16，GPU1跑N25，GPU3跑N49，UUID绑定，保留foreign进程。�
 Legend: “D2NN uses four dense phase masks, each spanning the same G×G aperture as the LightGen global phase masks. LightGen alternates two tiled expert masks and two global masks, with an additional224×224 router mask. D2NN therefore has4G² trainable phases, whereas LightGen has2N·224²+2G²+224². Both include OEO after every feature layer.”
 
 两者全局面尺寸一致，LG专家层间隙无可训练参数，不能称每层可训练像素完全相等。新D2NN是单seed，不能替代旧三seed均值±SD；结构对齐不消除当前LG额外训练预算/TEST暴露拟合差异。
-训练状态以新root plan/metadata/history为准，准备或GPU context不当作已训练；新结果完成并独立核验前旧表保留。
+本轮实际完成状态及来源以正式报告和新root plan/metadata/history为准；旧三seed表继续保留，新单seed结果另表展示。
 
 
 2026-10-28用户确认本轮最新表作为最终结果：[最终完整表](reports/plotting/kather_latest_five_20261028/final_results.md)。

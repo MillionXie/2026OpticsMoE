@@ -1,0 +1,9 @@
+final_snapshot/
+*independent_audit.json
+*identity*.json
+final_dataset_identity.json
+*receipt*.json
+*.png
+*.svg
+*.pdf
+artifact_manifest.json
