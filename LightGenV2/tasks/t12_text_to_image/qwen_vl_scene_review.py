@@ -23,7 +23,28 @@ from .qwen_vl_turbo_model import pack_hidden
 from .qwen_vl_turbo_run import noise_for,tensor_image
 
 
-def prompt_panels(output,metrics,label):
+def review_ids(rows,cohort):
+    if cohort=='development':return [i for i,r in enumerate(rows) if r['split']=='val']
+    if cohort!='train_probe':raise ValueError('Unknown review cohort')
+    chosen={}
+    for category in ('lamp','pillow'):
+        sources={}
+        for row in rows:
+            if row['split']!='train' or row['category']!=category:continue
+            source=row['source']
+            if source['product_id'] not in sources and len(sources)<2:
+                sources[source['product_id']]=source['sample_id']
+        if len(sources)!=2:raise ValueError('Need two distinct TRAIN reference products per category')
+        chosen[category]=set(sources.values())
+    ids=[i for i,r in enumerate(rows) if r['split']=='train' and r['source']['sample_id'] in chosen[r['category']]]
+    if {rows[i]['category'] for i in ids}!={'lamp','pillow'}:raise ValueError('Incomplete TRAIN probe')
+    for category in chosen:
+        if {rows[i]['mode'] for i in ids if rows[i]['category']==category}!={'background','object','joint'}:
+            raise ValueError('Incomplete TRAIN task probe')
+    return ids
+
+
+def prompt_panels(output,metrics,label,folder='raw_dev',cohort_label='DEV'):
     for mode in ('background','object','joint'):
         chosen=[]
         for category in ('lamp','pillow'):
@@ -38,11 +59,11 @@ def prompt_panels(output,metrics,label):
         height=360;panel=Image.new('RGB',(768,height*len(chosen)),'white');draw=ImageDraw.Draw(panel)
         for j,(i,row) in enumerate(chosen):
             y=j*height
-            draw.text((4,y+2),f"{label} | {row['category']}/{mode} | DEV | PSNR {row['psnr']:.2f} LPIPS {row['lpips']:.3f}",fill='black')
+            draw.text((4,y+2),f"{label} | {row['category']}/{mode} | {cohort_label} | PSNR {row['psnr']:.2f} LPIPS {row['lpips']:.3f}",fill='black')
             draw.multiline_text((4,y+18),'\n'.join(textwrap.wrap(row['prompt'],110)),fill='black')
             draw.text((4,y+78),'REFERENCE                         TARGET (offline scoring)           GENERATED (raw RGB+text)',fill='black')
             for k,role in enumerate(('reference','target','generated')):
-                with Image.open(output/'images'/'raw_dev'/role/f'sample_{i:04d}.png') as im:panel.paste(im,(k*256,y+100))
+                with Image.open(output/'images'/folder/role/f'sample_{i:04d}.png') as im:panel.paste(im,(k*256,y+100))
         panel.save(output/(mode+'_full_prompts.png'))
 
 
@@ -53,6 +74,7 @@ def main():
     parser.add_argument('--visual-cache',type=Path,help='Verified native merger cache for raw/cache identity only')
     parser.add_argument('--language-context',type=Path)
     parser.add_argument('--teacher-features',type=Path)
+    parser.add_argument('--cohort',choices=('development','train_probe'),default='development')
     parser.add_argument('--gpu-uuid',required=True);parser.add_argument('--label',required=True)
     a=parser.parse_args()
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=a.gpu_uuid or a.output.exists():raise ValueError('Unauthorized GPU or immutable existing review')
@@ -61,7 +83,7 @@ def main():
         'source_sha256':sha256(Path(__file__)),'started_unix':time.time(),'gpu_uuid':a.gpu_uuid})
     torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.85,0);device=torch.device('cuda:0')
     state=torch.load(a.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False)
-    payload=load_data(a.data);ids=[i for i,r in enumerate(payload['rows']) if r['split']=='val']
+    payload=load_data(a.data);ids=review_ids(payload['rows'],a.cohort)
     if state['config'].get('semantic_prefix',0):
         if a.visual_cache is None:raise ValueError('Native readout requires its explicit cache for identity checks')
         ready=json.loads((a.visual_cache/'report.json').read_text());path=a.visual_cache/'native_vision.pt'
@@ -117,15 +139,18 @@ def main():
             if (number+1)%12==0:write_json(a.output/'progress.json',{'stage':'raw_DEV_features','done':number+1,'total':len(ids)})
     import lpips
     metric=lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
-    metrics=evaluate(head,temporary,ids,device,a.output,'raw_dev',metric,export=True)
-    prompt_panels(a.output,metrics,a.label)
+    folder='raw_dev' if a.cohort=='development' else 'raw_train'
+    metrics=evaluate(head,temporary,ids,device,a.output,folder,metric,export=True)
+    prompt_panels(a.output,metrics,a.label,folder,'DEV' if a.cohort=='development' else 'TRAIN FIT ONLY')
     write_json(a.output/'routing.json',routes);write_json(a.output/'raw_cached_identity.json',checks)
     write_json(a.output/'report.json',{'complete':True,'model_label':a.label,'count':len(ids),'metrics':metrics,
         'parent_checkpoint_sha256':sha256(a.parent/'best_checkpoint.pt'),
         'hybrid_checkpoint_sha256':sha256(a.hybrid/'best_checkpoint.pt') if a.hybrid else None,
         'tail_checkpoint_sha256':sha256(a.tail/'best_checkpoint.pt') if a.tail else None,
         'source_commit':os.environ.get('T12_SOURCE_COMMIT'),'source_sha256':sha256(Path(__file__)),
-        'evaluation_label':'development_test','independent_test_opened':False,
+        'evaluation_label':'development_test' if a.cohort=='development' else 'TRAIN_resubstitution_diagnostic',
+        'cohort':a.cohort,'independent_test_opened':False,
+        'sample_selection':'All DEV rows' if a.cohort=='development' else 'First view of first two distinct TRAIN reference products/category; all original counterfactual instructions; no quality filtering',
         'generator_input':'Reference RGB and full instruction through actual Qwen, no cached hidden bypass and no GT/mask/CLIP inference branch',
         'completed_unix':time.time(),'quality_accepted':False})
 
