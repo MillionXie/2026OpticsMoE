@@ -136,7 +136,7 @@ PSNR16.855801／LPIPS0.480210／crop0.427568，三任务均未过5%门槛。
 换参考条件的crop LPIPS变化0.4875，大于换来源seed的0.0975；没有观察到仅由seed替换商品身份。
 这是CPU float32小探针，不是泛化证明，也不据此更改固定评估seed或宣称唯一失败原因。
 
-下一候选为`qwen_vl_rich_language_lora_20261028.json`：原Qwen视觉24层及语言前24层冻结，
+语言LoRA候选`qwen_vl_rich_language_lora_20261028.json`：原Qwen视觉24层及语言前24层冻结，
 仅对原语言24:28的q/k/v/o与MLP投影做rank8 LoRA，并继续原生成头训练。没有新增TF层、图像编码器
 或参考VAE输入。冻结前缀沿用逐输入指纹审核的language23，rotary／causal mask／position参数由
 `qwen_vl_language_context_cache`从实际原生调用逐长度核验取得，不用猜测的文本位置。
@@ -154,6 +154,20 @@ PSNR16.855801／LPIPS0.480210／crop0.427568，三任务均未过5%门槛。
 参考商品的首个视图，保留这些参考图的所有三任务／反事实指令；图中标为TRAIN FIT ONLY，
 报告标为TRAIN重代入诊断。它使用与DEV相同的完整raw输入图，GT仅用于离线评分，
 不把训练拟合当作测试表现；用于区分训练样本本身未学好与开发商品外推失败。
+上述语言LoRA候选已在5轮早停，选epoch1／step228，SHA `a203d34021623a51dad85d05dfcc9b6591586be6a5ed0a7c309c04fef2907bff`。
+实际raw DEV96为16.896841dB／LPIPS0.425611／crop0.371671；六cell原始推理／前缀重放PNG完全相同。
+商品crop四选一识别为31.25%／46.875%／43.75%（背景／物品／联合），红灯罩、绿条纹和背景保留
+仍不合格，不能当成生成能力恢复。固定TRAIN96探针中旧detail和语言LoRA的crop分别0.188896／0.183789，
+与DEV有明显差距；这只是训练重代入，不是等难度泛化比较，前者TRAIN图也有错误。
+
+`qwen_vl_order_probe`在4款TRAIN参考商品上用等长red／blue文本控制token位置：先图后文的
+原生最终图像token变化严格为0，先文后图则有响应；末端融合token两者均有响应。
+这证实可达性区别，不证明新顺序生成质量。下一候选`qwen_vl_rich_textfirst_20261028.json`
+仅将同一完整指令放在原生Qwen图像前，前向仍用原attention及RoPE；结束后按逐token严格核验的
+置换重排读出，保持原生成头的64图像位置／指令mask，无新网络／参数／参考VAE支路。
+须重算1920条实际完整Qwen特征，TRAIN目标／参考RGB／prompt／noise和DEV划分不改；
+原图推理、缓存、LG特征指纹及诊断计时均绑定新顺序。保持旧版接口默认不变，先4步真实反向再
+最多8轮对照，当前仅CPU测试通过，未预称改善；TEST540继续封存。
 所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
 仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
 

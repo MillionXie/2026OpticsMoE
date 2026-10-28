@@ -84,6 +84,14 @@ def raw_inputs(processor, reference, prompt, layout, device):
 
 
 def raw_hidden(qwen, processor, payload, i, layout, device):
+    if layout.get('native_input_order'):
+        from .qwen_vl_ordered_input import ORDER,ordered_inputs
+        if layout['native_input_order']!=ORDER or layout.get('semantic_prefix',0):raise ValueError('Unreviewed combined input order')
+        inputs,permutation,canonical=ordered_inputs(processor,tensor_image(payload['reference'][i]),payload['rows'][i]['prompt'])
+        positions=torch.where(canonical['input_ids'][0]==layout['image_token_id'])[0].tolist()
+        if positions!=layout['positions'] or inputs['input_ids'].shape[1]>224:raise ValueError('Canonical readout layout differs')
+        hidden=qwen.model(**inputs.to(device),use_cache=False,return_dict=True).last_hidden_state[0]
+        return hidden[permutation.to(device)].bfloat16()
     inputs = raw_inputs(processor, payload['reference'][i], payload['rows'][i]['prompt'], layout, device)
     if not layout.get('semantic_prefix',0):
         return qwen.model(**inputs, use_cache=False, return_dict=True).last_hidden_state[0].bfloat16()
@@ -100,6 +108,7 @@ def raw_hidden(qwen, processor, payload, i, layout, device):
 def frontend_input_hash(payload,i):
     image=tensor_image(payload['reference'][i])
     value=hashlib.sha256(image.tobytes()+b'\0'+payload['rows'][i]['prompt'].encode('utf-8'))
+    if payload.get('frontend_input_order'):value.update(b'\0'+payload['frontend_input_order'].encode('utf-8'))
     return value.hexdigest()
 
 

@@ -118,7 +118,18 @@ def main():
                      optical_path_execution='GPU FFT simulation' if a.hybrid_checkpoint else 'none')
     write_json(a.output/'execution.json', execution)
 
+    active_readout_permutation=None
     def prepare(index):
+        nonlocal active_readout_permutation
+        active_readout_permutation=None
+        if layout.get('native_input_order'):
+            from .qwen_vl_ordered_input import ORDER,ordered_inputs
+            if layout['native_input_order']!=ORDER or cfg.get('semantic_prefix',0):raise ValueError('Unreviewed combined input order')
+            inputs,perm,canonical=ordered_inputs(processor,images[index],rows[index]['prompt'])
+            positions=torch.where(canonical['input_ids'][0]==layout['image_token_id'])[0].tolist()
+            if positions!=expected_positions:raise ValueError('Canonical timing readout layout differs')
+            active_readout_permutation=perm.to(device)
+            return inputs.to(device)
         message = [{'role': 'user', 'content': [
             {'type': 'image', 'image': images[index]},
             {'type': 'text', 'text': rows[index]['prompt']}]}]
@@ -143,6 +154,7 @@ def main():
         native.clear()
         output = qwen.model(**inputs, use_cache=False, return_dict=True)
         hidden = output.last_hidden_state[:, inputs['attention_mask'][0].bool()].bfloat16()
+        if active_readout_permutation is not None:hidden=hidden[:,active_readout_permutation]
         if cfg.get('semantic_prefix', 0):
             if len(native) != 1 or native[0].shape != (64, 2048):
                 raise ValueError('Native visual prefix contract differs')

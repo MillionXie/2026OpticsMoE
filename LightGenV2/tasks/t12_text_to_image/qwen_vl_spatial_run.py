@@ -222,6 +222,16 @@ def run(args,cfg):
     if cfg.get('shared_noise_seed') is not None:
         payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
     layout=verify_layout(payload,args.qwen,out)
+    if cfg.get('native_input_order')!=payload.get('frontend_input_order'):
+        raise ValueError('Requested native input order differs from verified feature cache')
+    if cfg.get('native_input_order'):
+        from .qwen_vl_ordered_input import ORDER
+        if cfg['native_input_order']!=ORDER or cfg.get('adapt_qwen_language') or cfg.get('semantic_prefix',0):
+            raise ValueError('Unreviewed combination of native input-order changes')
+        if state['config'].get('native_input_order')!=ORDER and not cfg.get('migrate_native_input_order',False):
+            raise ValueError('Changing Qwen native input order requires explicit migration')
+        layout['native_input_order']=ORDER
+        write_json(out/'visual_layout.json',layout)
     if cfg.get('focus_instruction'):
         cfg['instruction_bounds']=layout['instruction_bounds']
     native_digest=None
