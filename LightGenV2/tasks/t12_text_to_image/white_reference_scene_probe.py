@@ -67,6 +67,21 @@ def choose_sources(rows, indices):
     return chosen
 
 
+def native_caption(category, condition, style):
+    """Explicit object-attribute wording, with no target-derived information."""
+    if style == 'original': return condition['prompt']
+    if style != 'explicit_caption': raise ValueError('Unreviewed prompt translation')
+    captions = {
+        'lamp': [
+            'Generate an interior product photograph of one table lamp with a deep blue fabric lampshade and brass base on an oak desk. Books and a small plant sit beside the lamp. Bookshelves and curtains furnish a modern study behind it. Warm window light enters from the right. Retain the reference lamp outline.',
+            'Generate an interior product photograph of one table lamp with a terracotta red lampshade and matte black base on a pale stone side table. An armchair, bookshelves and framed abstract shapes furnish the reading corner behind the lamp. Soft daylight enters from the left. Retain the reference lamp outline.'],
+        'pillow': [
+            'Generate an interior product photograph of one deep blue woven cushion with thin cream piping on a beige sofa. An oak coffee table, curtains and a leafy plant furnish the living room behind the cushion. Soft window light enters from the right. Retain the reference cushion outline.',
+            'Generate an interior product photograph of one terracotta cushion with broad cream stripes on a grey armchair beside a stone side table. Bookshelves and a leafy plant furnish the reading nook behind the cushion. Warm daylight enters from the left. Retain the reference cushion outline.']}
+    if condition not in conditions(category): raise ValueError('Canonical requested attributes required')
+    return captions[category][int(condition['condition_id'])]
+
+
 def checked_tokens(tokenizer, prompt):
     ids = tokenizer(prompt, truncation=False, padding=False)['input_ids']
     if len(ids) > tokenizer.model_max_length:
@@ -130,6 +145,8 @@ def render_panels(output, records, inputs):
         for condition in range(2):
             subset = [r for r in selected if r['condition_id'] == str(condition)]; y = 28+condition*stride
             draw.multiline_text((4, y), '\n'.join(textwrap.wrap(subset[0]['prompt'], max(70, (width-10)//6))), fill='black')
+            if subset[0].get('model_prompt', subset[0]['prompt']) != subset[0]['prompt']:
+                draw.multiline_text((4, y+34), '\n'.join(textwrap.wrap('MODEL INPUT: '+subset[0]['model_prompt'], max(70, (width-10)//6))), fill='black')
             with Image.open(output/ref['input_PNG']) as im: sheet.paste(im, (0, y+110))
             for j, row in enumerate(subset):
                 draw.text((256+j*resolution+4, y+90), 'seed '+str(row['seed']), fill='black')
@@ -169,7 +186,8 @@ def infer(args, cfg):
         shutil.copyfile(path, args.output/ref['input_PNG'])
         with Image.open(path) as im: reference = im.convert('RGB').copy()
         for condition in conditions(ref['category']):
-            prompt = condition['prompt']; token_audit = [checked_tokens(pipe.tokenizer, prompt)]
+            prompt = native_caption(ref['category'], condition, preset.get('prompt_style', 'original'))
+            token_audit = [checked_tokens(pipe.tokenizer, prompt)]
             if args.model == 'sdxl_ipadapter': token_audit.append(checked_tokens(pipe.tokenizer_2, prompt))
             for seed in cfg['seeds']:
                 began = time.time(); kwargs = dict(prompt=prompt, negative_prompt=cfg['negative_prompt'],
@@ -182,7 +200,8 @@ def infer(args, cfg):
                 if result.size != (resolution, resolution): raise ValueError('Unexpected native output size')
                 name = f'{ref["reference_id"]}_condition{condition["condition_id"]}_seed{seed}.png'; result.save(args.output/name)
                 records.append({'model': args.model, 'reference_id': ref['reference_id'], 'condition_id': condition['condition_id'],
-                     'category': ref['category'], 'prompt': prompt, 'requested_attributes': condition['requested_attributes'],
+                     'category': ref['category'], 'prompt': condition['prompt'], 'model_prompt': prompt,
+                     'requested_attributes': condition['requested_attributes'],
                      'seed': seed, 'resolution': resolution, 'preset': preset, 'full_prompt_tokens': token_audit,
                      'input_sha256': ref['input_sha256'], 'generated_PNG': name, 'generated_sha256': digest(args.output/name),
                      'diagnostic_generation_seconds_not_latency_benchmark': time.time()-began,

@@ -1,7 +1,7 @@
 import unittest
 from tempfile import TemporaryDirectory
 from pathlib import Path
-from ..white_reference_scene_probe import conditions, choose_sources, checked_tokens, digest
+from ..white_reference_scene_probe import conditions, choose_sources, checked_tokens, digest, native_caption
 
 
 class ProbeContractTests(unittest.TestCase):
@@ -44,6 +44,13 @@ class ProbeContractTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             p = Path(tmp)/'input.png'; p.write_bytes(b'original'); before = digest(p)
             p.write_bytes(b'changed'); self.assertNotEqual(before, digest(p))
+
+    def test_explicit_caption_preserves_requested_binding(self):
+        lamp = conditions('lamp')[0]; cushion = conditions('pillow')[1]
+        self.assertEqual(native_caption('lamp', lamp, 'original'), lamp['prompt'])
+        self.assertIn('deep blue fabric lampshade', native_caption('lamp', lamp, 'explicit_caption'))
+        self.assertIn('terracotta cushion with broad cream stripes', native_caption('pillow', cushion, 'explicit_caption'))
+        with self.assertRaises(ValueError): native_caption('lamp', lamp, 'invented')
 
 
 if __name__ == '__main__': unittest.main()
