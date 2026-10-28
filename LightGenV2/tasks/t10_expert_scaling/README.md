@@ -51,6 +51,17 @@ TRAIN平均margin及部分原正确guard尾部亦未过预定保护门槛。样�
 26个小产物manifest、22源路径、288互斥ID、全部16组诊断概率与实际6步/源恢复均独立核验，
 该GPU3进程已退出、自己的显存释放，foreign进程保留。此结论仅针对该源/两批/步幅，不推断架构上限。
 
+另一个有限诊断为`optimizer_state_probe.py`、profile
+`configs/kather_n49_optimizer_state_probe_20261028.json`，只比较精确C16的Adam历史与清空历史。
+先CPU读取best和last，核best613=last.live、五个Adam m/v形状finite、三组超参和step1024；
+fresh仅清空state，retained每个fit都从原1024恢复到1025，不能把两fit串到1026。
+两臂均使用原C的f6d父锚及同D4/teacher/冻结λ/端点LR，重跑fresh作为对照，
+不能拿前一个current613父的fresh结果替代。本次复用之前锁定的两fit和256诊断ID/视图，
+共6步/96梯度输入、4192模型图输入，不生成父缓存、不导出PT或全752新成绩、不自动正式训练。
+保留同样的困难组/guard/NLL准入，失败不扩大样本或放宽门槛。
+旧Adam分块探针的源/教师/父与本次不同；C8至16只多1张，27/37在12至16正确数已平台，
+这些曲线仅允许有限状态区分，不能预测追加训练必有收益。
+
 上述教师已见TEST，N25及后续N49学生也使用TEST梯度，全部TEST数字是训练暴露的开发拟合；
 不建立独立泛化、原等预算Top-k或相同累计开发成本的结论。
 
