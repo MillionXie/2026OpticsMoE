@@ -140,5 +140,19 @@ class SpatialTests(unittest.TestCase):
         torch.testing.assert_close(balanced_region_l1(pred.detach(),target,torch.ones_like(region)),
                                    (pred.detach()-target).abs().mean())
 
+    def test_opt_in_multimodal_semantic_readout_sees_visual_and_final_states_without_padding(self):
+        torch.manual_seed(15)
+        adapter=QueryResampler(16,16,8,4,1)
+        model=SpatialTurboHead(UNet(),VAE(),None,adapter,SpatialBridge(16,16,16,2),[1,2,3,4]).eval()
+        model.instruction_span=(6,2);model.multimodal_semantic_readout=True
+        h=torch.randn(2,12,16,requires_grad=True);valid=torch.ones(2,12,dtype=torch.bool);valid[1,10:]=False
+        mask=torch.zeros_like(valid);mask[:,1:5]=True;mask[0,6:10]=True;mask[1,6:8]=True;mask[0,11]=True;mask[1,9]=True
+        actual=model.semantic_conditions(h,valid)
+        torch.testing.assert_close(actual,adapter(h,mask),atol=0,rtol=0)
+        actual.square().mean().backward()
+        self.assertGreater(float(h.grad[:,1:5].abs().sum()),0)
+        self.assertGreater(float(h.grad[0,11].abs().sum()),0)
+        self.assertEqual(float(h.grad[1,10:].abs().sum()),0)
+
 
 if __name__=='__main__':unittest.main()

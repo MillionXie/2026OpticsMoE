@@ -55,7 +55,8 @@ def main():
             'reference_RGB_sha256':hashlib.sha256(tensor_image(inference['reference'][j]).tobytes()).hexdigest()} for j,i in enumerate(ids)]})
     qwen,processor=load_qwen(a.qwen,device);install_joint_lora(qwen,state['config'],state['qwen_joint_lora'],train=True)
     qwen.gradient_checkpointing_enable(gradient_checkpointing_kwargs={'use_reentrant':False})
-    head=build_spatial_head(a.sd,state,state['config'],state['visual_layout']['positions'],device)
+    generator_cfg={**state['config'],'multimodal_semantic_readout':cfg.get('multimodal_semantic_readout',False)}
+    head=build_spatial_head(a.sd,state,generator_cfg,state['visual_layout']['positions'],device)
     head.unet.enable_gradient_checkpointing();model=RawQwenHead(head,qwen,processor,state['visual_layout'])
     references=image_float(inference['reference'],device)
     # VAE encoder produces TRAIN loss targets only; forward below takes RGB
@@ -77,9 +78,18 @@ def main():
         chosen += [j for j,i in enumerate(ids) if payload['rows'][i]['category']==category and j>=nfit][:1]
     @torch.no_grad()
     def evaluate(step):
-        model.eval();records=[];outputs=[]
+        model.eval();records=[];outputs=[];first_condition=None;first_instruction_condition=None
         for j,i in enumerate(ids):
             h,valid=model.raw_features(inference,[j],device)
+            condition=model.semantic_conditions(h,valid).float()
+            if first_condition is None:first_condition=condition.clone()
+            relative_condition=float((condition-first_condition).square().mean().sqrt()/first_condition.square().mean().sqrt().clamp_min(1e-6))
+            flag=model.head.multimodal_semantic_readout
+            model.head.multimodal_semantic_readout=False
+            instruction_condition=model.semantic_conditions(h,valid).float()
+            model.head.multimodal_semantic_readout=flag
+            if first_instruction_condition is None:first_instruction_condition=instruction_condition.clone()
+            relative_instruction=float((instruction_condition-first_instruction_condition).square().mean().sqrt()/first_instruction_condition.square().mean().sqrt().clamp_min(1e-6))
             # Exactly the same noise for every reference: product-specific
             # random seeds cannot identify the reconstruction target here.
             noise=torch.randn(1,4,32,32,device=device,generator=torch.Generator(device=device).manual_seed(cfg['evaluation_seed']))
@@ -88,6 +98,8 @@ def main():
             records.append({'sample_id':payload['rows'][i]['sample_id'],'category':payload['rows'][i]['category'],
                 'group':'identity_fit_TRAIN' if j<nfit else 'identity_transfer_within_original_TRAIN',
                 'PSNR':-10*math.log10(max(mse,1e-12)),'LPIPS':float(metric(rgb,target).mean()),
+                'semantic_condition_relative_RMS_vs_first_reference':relative_condition,
+                'instruction_only_condition_relative_RMS_vs_first_reference':relative_instruction,
                 'latent_MSE':float(F.mse_loss(z,goal[j:j+1]))})
             outputs.append(tensor_image(rgb[0]))
         result={'step':step,'groups':{},'images':records}
@@ -107,7 +119,7 @@ def main():
     initial,before_images=evaluate(0);write_json(a.output/'before.json',initial);(a.output/'identity_before.png').write_bytes((a.output/'identity_latest.png').read_bytes())
     def save(step,result,path):
         return save_with_digest({'schema':'qwen_identity_diagnostic_v1','step':step,'config':cfg,
-            'generator_config':state['config'],'visual_layout':state['visual_layout'],
+            'generator_config':generator_cfg,'visual_layout':state['visual_layout'],
             'parent_checkpoint_sha256':parent['checkpoint_sha256'],'qwen_joint_lora':joint_adapter_state(qwen),
             'adapter':model.adapter.state_dict(),'spatial':model.spatial.state_dict(),
             'unet_trainable':{n:v.detach().cpu().clone() for n,v in model.unet.named_parameters() if v.requires_grad},'metrics':result},path)
@@ -155,6 +167,7 @@ def main():
         'transfer_is_original_TRAIN_not_independent_test':True,'before':initial,'best':best_result,'best_selection':'identity fit TRAIN LPIPS only',
         'checkpoint_sha256':best_digest,'parent_checkpoint_sha256':parent['checkpoint_sha256'],'source_commit':os.environ.get('T12_SOURCE_COMMIT'),
         'source_sha256':sha256(Path(__file__)),'fresh_random_TRAIN_noise':True,'shared_noise_across_all_evaluation_references':cfg['evaluation_seed'],
+        'multimodal_semantic_readout':cfg.get('multimodal_semantic_readout',False),'additional_deployment_parameters':0,
         'forward_inputs':'Reference RGB and identity instruction only through actual full Qwen; no reference VAE input, GT latent, masks or identifiers',
         'limits':'Small reference-identity fit is a capacity diagnostic, not editing success or evidence of unique causation. Transfer references belong to the original TRAIN cohort.'})
 

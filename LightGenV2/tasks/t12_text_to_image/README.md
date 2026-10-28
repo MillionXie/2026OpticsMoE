@@ -196,6 +196,16 @@ LM图像64token、原merger64token或vision23未合并256token回归参考VAE la
 每次训练随机噪声、所有参考评估共享同一噪声，避免用商品专属seed记住目标；300步仅按拟合组LPIPS选诊断best。
 保存可重放的原模型配置／LoRA／读出、best和last，以及实际raw重载PNG一致性检查。
 这不是三任务编辑baseline或已接受LG教师，用于区分基本细节保留与复杂编辑学习的困难，不能由单项小试断言唯一原因。
+该完整模型identity诊断已完成300步，拟合12张原TRAIN参考的LPIPS从0.5545降至0.3406，
+但灯仍常被画成靠垫、保留区域不准确；另外6张原TRAIN迁移组LPIPS0.4849，不能称基本复制已解决。
+诊断best SHA`f3ae0563fb91272499c92ed58f8e731b043b3612e4f94b516ed215cfa0a31c6a`，18张raw重载PNG一致。
+代码还确认text-first后，原“仅指令token”语义mask排除了后面的图像及最终融合状态：
+同一句保留指令的语义条件理论上无法随图变化，参考图只能走原空间注入。新可选
+`multimodal_semantic_readout`让同一个已有resampler同时读原图像token和最后有效融合token，
+保留文字token、FiLM及其他网络，不新增参数或TF，旧配置默认关闭且CPU旧输出测试保持一致。
+`qwen_vl_rich_multimodal_identity_probe_20261028.json`从同一联合微调父权重独立做相同300步对照，
+不从identity已训权重继续；同时实测新／旧mask条件对不同参考图的敏感度。
+它仍只用原TRAIN、不打开DEV或TEST，必须看实际图像才能判断改善，不把条件有响应当作编辑成功。
 所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
 仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
 

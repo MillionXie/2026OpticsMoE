@@ -81,6 +81,7 @@ class SpatialTurboHead(NativeTurboHead):
         self.zero_spatial=False
         self.instruction_span = None
         self.text_readout_gain = 0.
+        self.multimodal_semantic_readout = False
 
     def visual_tokens(self,hidden,valid):
         positions=self.visual_positions
@@ -96,6 +97,12 @@ class SpatialTurboHead(NativeTurboHead):
         if self.instruction_span is not None:
             from .qwen_vl_postfree import focus_features
             _, mask = focus_features(hidden, valid, self.visual_positions, *self.instruction_span, self.text_readout_gain)
+            if self.multimodal_semantic_readout:
+                # In native text-first order the instruction states precede
+                # the image and cannot encode its contents. Let the SAME
+                # existing resampler also read image and final fused states.
+                mask=mask.clone();mask[:,self.visual_positions]=valid[:,self.visual_positions]
+                mask.scatter_(1,(valid.sum(1)-1)[:,None],True)
             return self.adapter(hidden, mask)
         return self.adapter(hidden[:,self.semantic_prefix:],valid[:,self.semantic_prefix:])
 
@@ -180,6 +187,10 @@ def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False,iden
     if cfg.get('focus_instruction'):
         model.instruction_span = tuple(cfg['instruction_bounds'])
         model.text_readout_gain = cfg.get('text_readout_gain', .15)
+    if cfg.get('multimodal_semantic_readout',False):
+        if not cfg.get('focus_instruction') or cfg.get('native_input_order')!='text_first_canonical_readout':
+            raise ValueError('Multimodal semantic readout requires the audited focused text-first layout')
+        model.multimodal_semantic_readout=True
     if identity_probe is not None:
         model.eval()
         with torch.no_grad():actual=model(*identity_probe)
