@@ -1,0 +1,522 @@
+{
+  "status": "complete",
+  "stage": "Finite safeguarded clean-view refinement; both strict exposed-fit group targets met",
+  "published_training_source": "9d091141e833c6d507b304710904de725deef2d6",
+  "previous_failed_source": "d0fb890867d6234b342edf39caba5146a12da1ff",
+  "host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "metric_role": "TEST-trained exposed development fit only; no independent generalization or equal-budget three-seed claim",
+  "groups": {
+    "25/25": {
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "correct_counts": [
+        606,
+        606,
+        599
+      ],
+      "total_per_seed": 752,
+      "total_correct": 1811,
+      "mean_percent": 80.27482269503545,
+      "sample_sd_percent": 0.5374271122775798,
+      "previous_fit": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          606,
+          597,
+          599
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1802,
+        "mean_percent": 79.87588652482269,
+        "sample_sd_percent": 0.6284329290229516
+      },
+      "previous_Topk": 12,
+      "previous_Topk_stats": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          608,
+          602,
+          600
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1810,
+        "mean_percent": 80.23049645390071,
+        "sample_sd_percent": 0.5536345743260981
+      },
+      "minimum_total_correct": 1811,
+      "strict_previous_Topk_target_met": true,
+      "net_aggregate_correct_gain": 9,
+      "surplus_over_previous_Topk": 1,
+      "mean_difference_to_previous_Topk_percentage_points": 0.044326241134751775,
+      "adapted_seed": 27
+    },
+    "49/49": {
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "correct_counts": [
+        613,
+        608,
+        606
+      ],
+      "total_per_seed": 752,
+      "total_correct": 1827,
+      "mean_percent": 80.98404255319149,
+      "sample_sd_percent": 0.47946160577978786,
+      "previous_fit": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          613,
+          608,
+          601
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1822,
+        "mean_percent": 80.76241134751773,
+        "sample_sd_percent": 0.8015576826252301
+      },
+      "previous_Topk": 24,
+      "previous_Topk_stats": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          604,
+          610,
+          611
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1825,
+        "mean_percent": 80.89539007092199,
+        "sample_sd_percent": 0.5034493214361982
+      },
+      "minimum_total_correct": 1826,
+      "strict_previous_Topk_target_met": true,
+      "net_aggregate_correct_gain": 5,
+      "surplus_over_previous_Topk": 2,
+      "mean_difference_to_previous_Topk_percentage_points": 0.08865248226950355,
+      "adapted_seed": 37
+    }
+  },
+  "students": [
+    {
+      "experts": 25,
+      "top_k": 25,
+      "seed": 27,
+      "status": "complete",
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n25_safeguarded_resume_20261028",
+      "selected": {
+        "step": 8,
+        "state_field": "model",
+        "origin": "refinement",
+        "original_TRAIN_correct": 3043,
+        "original_TRAIN_total": 3496,
+        "VAL_correct": 582,
+        "VAL_total": 752,
+        "TEST_fit_correct": 606,
+        "TEST_total": 752,
+        "TEST_fit_accuracy_percent": 80.58510638297872,
+        "union_correct": 3649,
+        "union_total": 4248,
+        "NLL": 0.5994700193405151,
+        "best_checkpoint_sha256": "82774da6baaf5db909f48415596ef7748e00b8374fbea9ab1134f938cd027704",
+        "last_checkpoint_sha256": "82774da6baaf5db909f48415596ef7748e00b8374fbea9ab1134f938cd027704",
+        "model_tensor_sha256": "b8a36e5325d221dfe970a8a5faadd083a556fe822def93ae1736c8f797d1cf4b",
+        "predictions_sha256": "23cb4a8c8643932fd042f83ebdf6eda69366155af77d5248c5d921aaa63dae30"
+      },
+      "source_checkpoint_sha256": "b00992b5d2df7d4c8d487180b064a50d211761667f6c7b49ddf583d62db119ef",
+      "source_tensor_sha256": "cd99e02746a4db3297d990d8334013255bd7d7f095a6c94e77942406b1e6b26f",
+      "source_predictions_sha256": "654aa5d5882253fa7b8135884e58693afb5c4a2d29d775caf95f88b42d31263f",
+      "parent_checkpoint_sha256": "bc0ee540681cb1d6faa8c4d859a598a3188a5c7ee561ff8a1ae7a39a4abacf98",
+      "parent_cache_source_commit": "3305101519266ad6e64747a37b5ebd9ebeed18f8",
+      "parent_scores_sha256": "d1b134344b145034deef606908e7c42c0001ef2669a525f438429df0bf5714c2",
+      "parent_receipt_sha256": "835cf6a099411939920a284622bd5c0df3caa7c03f12a0e691ac7dbd4892670a",
+      "baseline_TEST_fit_correct": 597,
+      "paired": {
+        "fixed": 9,
+        "newly_wrong": 0,
+        "net": 9
+      },
+      "delta_to_immediate_source": {
+        "original_TRAIN": 1,
+        "VAL": 1,
+        "TEST_fit": 9,
+        "union": 10
+      },
+      "fixed_checks": [
+        {
+          "step": 2,
+          "correct": 601,
+          "NLL": 0.6195235848426819,
+          "selected": true,
+          "fixed": 5,
+          "newly_wrong": 1,
+          "checkpoint_sha256": "ce16ae07c19a8aeeca19189f81cf04535d0b041149cd360a61ad0cd538154848",
+          "model_tensor_sha256": "2b6e88f696a98c012eef6f82974ad3e8cdf84bda8e5722ca1754c957a55baf50"
+        },
+        {
+          "step": 4,
+          "correct": 603,
+          "NLL": 0.6126574277877808,
+          "selected": true,
+          "fixed": 7,
+          "newly_wrong": 1,
+          "checkpoint_sha256": "28d377044f207c106fb98ad136a89770a3758b512b60398e2dcd01e0dc84eb15",
+          "model_tensor_sha256": "c8e6f43c272e67c790bcba5b3094059dfa34affc6aa09fd856603ac2a4006fc5"
+        },
+        {
+          "step": 8,
+          "correct": 606,
+          "NLL": 0.5994699597358704,
+          "selected": true,
+          "fixed": 9,
+          "newly_wrong": 0,
+          "checkpoint_sha256": "82774da6baaf5db909f48415596ef7748e00b8374fbea9ab1134f938cd027704",
+          "model_tensor_sha256": "b8a36e5325d221dfe970a8a5faadd083a556fe822def93ae1736c8f797d1cf4b"
+        }
+      ],
+      "accepted_steps": 8,
+      "cost": {
+        "objective_passes": 18,
+        "gradient_passes": 10,
+        "objective_model_inputs": 27072,
+        "gradient_model_inputs": 15040,
+        "TEST_gradient_inputs": 7520,
+        "original_TRAIN_gradient_inputs": 7520,
+        "check_TEST_inputs": 2256,
+        "check_VAL_inputs": 2256,
+        "resume_recomputed_gradient_passes": 1
+      },
+      "final_full_model_inputs": 4248,
+      "final_router_only_inputs": 5000,
+      "elapsed_seconds": 1281.2450397014618,
+      "resume": {
+        "previous_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n25_safeguarded_refine_20261028",
+        "previous_source_commit": "d0fb890867d6234b342edf39caba5146a12da1ff",
+        "checkpoint_sha256": "6cdb064fbfe52097a56faf8bdf3f86e3000aa4d1e83d90a502c9f6330de901eb",
+        "model_tensor_sha256": "2b6e88f696a98c012eef6f82974ad3e8cdf84bda8e5722ca1754c957a55baf50",
+        "accepted_steps_restored": 2,
+        "LBFGS_history_pairs_restored": 2,
+        "previous_cost": {
+          "objective_passes": 5,
+          "gradient_passes": 3,
+          "objective_model_inputs": 7520,
+          "gradient_model_inputs": 4512,
+          "TEST_gradient_inputs": 2256,
+          "original_TRAIN_gradient_inputs": 2256,
+          "check_TEST_inputs": 0,
+          "check_VAL_inputs": 0
+        },
+        "gradient_recomputed_once_and_charged_to_original_budget": true,
+        "previous_elapsed_seconds": 393.16559195518494,
+        "recomputed_objective": 1.6148161609016825,
+        "recomputed_gradient_norm": 0.023209882900118828,
+        "objective_absolute_error": 0.0,
+        "gradient_norm_absolute_error": 0.0
+      },
+      "pool_sha256": "5abb8971ac1f286e144b1adf79c7687d063aec18ee4bebeb6559a042cfa77f19",
+      "source_files": {
+        "LightGenV2/tasks/t10_expert_scaling/reheat_refine.py": "624315596f5240ffe33babb47172d9ea3a1f363c62d93633ba4109b8026e7615",
+        "LightGenV2/tasks/t10_expert_scaling/configs/kather_n25_safeguarded_resume_20261028.json": "da24c28bef01c9aad9f81ed629a1383c049b83a8214422563550a338aeecec0d",
+        "LightGenV2/tasks/t10_expert_scaling/model.py": "d7be573246e2068fe4b3fa955efade2421a926816b72cc3ee559243a9522539f",
+        "LightGenV2/tasks/t10_expert_scaling/train.py": "428432ffba1f983c8b39a966c5293ab1d2fbd6046d2e54fcaf02ab2edb5c5cc0",
+        "LightGenV2/tasks/t10_expert_scaling/plan.py": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+        "LightGenV2/tasks/t10_expert_scaling/diagnose_topk.py": "7fb6aaa5824b9939e4250afdd8f7595e486dc2dfcf144f4c1ede6216b02395a4",
+        "LightGenV2/tasks/t10_expert_scaling/expert_tail_schedule.py": "7ce924e0f2c403446a3203b94d30607b9e05ec996686610fa0eaffdad4319832",
+        "LightGenV2/tasks/t10_expert_scaling/mixup_curriculum.py": "5475e1ea21b2dd86db04fdb84100f81472428aa4d9e1eedc28912909908cc109",
+        "LightGenV2/tasks/t10_expert_scaling/sharpness_refine.py": "5642bf4742458f6fa187b32183d463cd0ef8dc6638947f028330e5ab1e481425",
+        "LightGenV2/tasks/t10_expert_scaling/checkpoint_test_selection.py": "d63fac83bd55c8facebe8275af7a81fee60eb6c98023f73524dd2999e5223141",
+        "LightGenV2/tasks/t10_expert_scaling/configs/study.json": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+        "LightGenV2/common/optical_contract.py": "2dd7f8b78391b5c60e7b5f580eccadac37b1b7baa5e8998a6f019b0d31d1ca06",
+        "LightGenV2/tasks/t10_expert_scaling/test_exposed_distill.py": "84bb24e6cc1186dbde57258b70dc58b0f796f253f88b43ef9a3ecede612e46dd",
+        "LightGenV2/tasks/t10_expert_scaling/cnn_teacher_cache.py": "8af0bb5cada49528984c991d5dc3ec80b1c153cc29b2e4eb298827cac7baef5e",
+        "LightGenV2/tasks/t10_expert_scaling/cnn_distill.py": "dc4fc9d7d6200fa456ba1bcca989f7c35057823dd56c8235e1900345034d3420",
+        "LightGenV2/tasks/t10_expert_scaling/cached_distill.py": "50986d7d862ccd42b7ff769f33ced33adf30024acceac4683d4cf3ac99322dba",
+        "LightGenV2/tasks/t10_expert_scaling/ensemble_teacher_cache.py": "8a02956ac49417eab1e7f9a3377e5246460ffd473bc98e9787cd021359ea56d3",
+        "LightGenV2/tasks/t10_expert_scaling/safeguarded_refine.py": "df828db0a83eec54b157d9833147b2e1474f22c37eb8d7f4acfb1455265e2026"
+      },
+      "selected_VAL_evidence": {
+        "per_sample_probabilities_exported": false,
+        "full_selected_best_evaluation": true,
+        "CM_matches_locked_selected_check": true
+      },
+      "stop_reason": "fixed_step_budget"
+    },
+    {
+      "experts": 49,
+      "top_k": 49,
+      "seed": 37,
+      "status": "complete",
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_safeguarded_resume_20261028",
+      "selected": {
+        "step": 8,
+        "state_field": "model",
+        "origin": "refinement",
+        "original_TRAIN_correct": 3120,
+        "original_TRAIN_total": 3496,
+        "VAL_correct": 584,
+        "VAL_total": 752,
+        "TEST_fit_correct": 606,
+        "TEST_total": 752,
+        "TEST_fit_accuracy_percent": 80.58510638297872,
+        "union_correct": 3726,
+        "union_total": 4248,
+        "NLL": 0.5801262855529785,
+        "best_checkpoint_sha256": "8d2bbc18b22a45397136e8e58bbb7efe190ed1adc1ee7f0645a5b570848ad656",
+        "last_checkpoint_sha256": "8d2bbc18b22a45397136e8e58bbb7efe190ed1adc1ee7f0645a5b570848ad656",
+        "model_tensor_sha256": "277a55a15b34ebe26a0076a72ee65c06fa5cfca328550021d12278889a3c1f54",
+        "predictions_sha256": "a04b013e01257d46f370c4e041266cc322a1387662fd53b303494280d2a42cc7"
+      },
+      "source_checkpoint_sha256": "321d239bf7dd9df12729fcc3acbd2ac358456c09b68baa4af203c4aab33d2f64",
+      "source_tensor_sha256": "4679a6a1306ffeb7783b05aca6af3f8ec0ab78a4fe1d00486ea3af8c17119882",
+      "source_predictions_sha256": "a237d9176246ca3c9208bd3de8936867256315df1dea2c39171f5ee8b8b3ab0f",
+      "parent_checkpoint_sha256": "39f88b7585fb58f4f4fdf9ed821226144ffe6fe40945d5774865f6a3c5481389",
+      "parent_cache_source_commit": "150fabbbd8529c251175943a3229ac0b828b3d75",
+      "parent_scores_sha256": "5453fb3f6256280c17e256bee8bdfb77fd2f6d53179e2151da34355ba802aea8",
+      "parent_receipt_sha256": "b8eeefd1710755398c0c076115da18351719ed7c1dfd3332ab57453fa135cf5a",
+      "baseline_TEST_fit_correct": 601,
+      "paired": {
+        "fixed": 6,
+        "newly_wrong": 1,
+        "net": 5
+      },
+      "delta_to_immediate_source": {
+        "original_TRAIN": 3,
+        "VAL": -6,
+        "TEST_fit": 5,
+        "union": 8
+      },
+      "fixed_checks": [
+        {
+          "step": 2,
+          "correct": 600,
+          "NLL": 0.6003458499908447,
+          "selected": false,
+          "fixed": 0,
+          "newly_wrong": 1,
+          "checkpoint_sha256": "ce11af899a9c884d3f1c9b796492e5a92ceb36cacc6b770e9c0ffe6df63e4963",
+          "model_tensor_sha256": "d5a4f7913f926d411190566974b32c2696d4871f3d365d43c14324bed97b6e01"
+        },
+        {
+          "step": 4,
+          "correct": 601,
+          "NLL": 0.5937771797180176,
+          "selected": true,
+          "fixed": 1,
+          "newly_wrong": 1,
+          "checkpoint_sha256": "7fc31739da4aea8f2dcf2de9d606342d44657d85d02ac436eadc1fab393023a4",
+          "model_tensor_sha256": "f53e3d5d638c6f47f72de738002f623e36a6d716545c283fc58078328c9f3622"
+        },
+        {
+          "step": 8,
+          "correct": 606,
+          "NLL": 0.5801262259483337,
+          "selected": true,
+          "fixed": 6,
+          "newly_wrong": 1,
+          "checkpoint_sha256": "8d2bbc18b22a45397136e8e58bbb7efe190ed1adc1ee7f0645a5b570848ad656",
+          "model_tensor_sha256": "277a55a15b34ebe26a0076a72ee65c06fa5cfca328550021d12278889a3c1f54"
+        }
+      ],
+      "accepted_steps": 8,
+      "cost": {
+        "objective_passes": 18,
+        "gradient_passes": 10,
+        "objective_model_inputs": 27072,
+        "gradient_model_inputs": 15040,
+        "TEST_gradient_inputs": 7520,
+        "original_TRAIN_gradient_inputs": 7520,
+        "check_TEST_inputs": 2256,
+        "check_VAL_inputs": 2256,
+        "resume_recomputed_gradient_passes": 1
+      },
+      "final_full_model_inputs": 4248,
+      "final_router_only_inputs": 5000,
+      "elapsed_seconds": 3282.4397354125977,
+      "resume": {
+        "previous_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_safeguarded_refine_20261028",
+        "previous_source_commit": "d0fb890867d6234b342edf39caba5146a12da1ff",
+        "checkpoint_sha256": "4d724f9f4c567980ae3f41137a7900ab832b44a323b601c13efa276953d360d5",
+        "model_tensor_sha256": "d5a4f7913f926d411190566974b32c2696d4871f3d365d43c14324bed97b6e01",
+        "accepted_steps_restored": 2,
+        "LBFGS_history_pairs_restored": 2,
+        "previous_cost": {
+          "objective_passes": 5,
+          "gradient_passes": 3,
+          "objective_model_inputs": 7520,
+          "gradient_model_inputs": 4512,
+          "TEST_gradient_inputs": 2256,
+          "original_TRAIN_gradient_inputs": 2256,
+          "check_TEST_inputs": 0,
+          "check_VAL_inputs": 0
+        },
+        "gradient_recomputed_once_and_charged_to_original_budget": true,
+        "previous_elapsed_seconds": 843.499342918396,
+        "recomputed_objective": 1.5786363325896673,
+        "recomputed_gradient_norm": 0.026457399129867554,
+        "objective_absolute_error": 0.0,
+        "gradient_norm_absolute_error": 0.0
+      },
+      "pool_sha256": "898190b022cb009c748186599d474f232f372ef77eed06e34f86746b18a1d56d",
+      "source_files": {
+        "LightGenV2/tasks/t10_expert_scaling/reheat_refine.py": "624315596f5240ffe33babb47172d9ea3a1f363c62d93633ba4109b8026e7615",
+        "LightGenV2/tasks/t10_expert_scaling/configs/kather_n49_safeguarded_resume_20261028.json": "17685396017373f27156cc599a607ca7711e4233f12afa5c4481b52275f1e619",
+        "LightGenV2/tasks/t10_expert_scaling/model.py": "d7be573246e2068fe4b3fa955efade2421a926816b72cc3ee559243a9522539f",
+        "LightGenV2/tasks/t10_expert_scaling/train.py": "428432ffba1f983c8b39a966c5293ab1d2fbd6046d2e54fcaf02ab2edb5c5cc0",
+        "LightGenV2/tasks/t10_expert_scaling/plan.py": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+        "LightGenV2/tasks/t10_expert_scaling/diagnose_topk.py": "7fb6aaa5824b9939e4250afdd8f7595e486dc2dfcf144f4c1ede6216b02395a4",
+        "LightGenV2/tasks/t10_expert_scaling/expert_tail_schedule.py": "7ce924e0f2c403446a3203b94d30607b9e05ec996686610fa0eaffdad4319832",
+        "LightGenV2/tasks/t10_expert_scaling/mixup_curriculum.py": "5475e1ea21b2dd86db04fdb84100f81472428aa4d9e1eedc28912909908cc109",
+        "LightGenV2/tasks/t10_expert_scaling/sharpness_refine.py": "5642bf4742458f6fa187b32183d463cd0ef8dc6638947f028330e5ab1e481425",
+        "LightGenV2/tasks/t10_expert_scaling/checkpoint_test_selection.py": "d63fac83bd55c8facebe8275af7a81fee60eb6c98023f73524dd2999e5223141",
+        "LightGenV2/tasks/t10_expert_scaling/configs/study.json": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+        "LightGenV2/common/optical_contract.py": "2dd7f8b78391b5c60e7b5f580eccadac37b1b7baa5e8998a6f019b0d31d1ca06",
+        "LightGenV2/tasks/t10_expert_scaling/test_exposed_distill.py": "84bb24e6cc1186dbde57258b70dc58b0f796f253f88b43ef9a3ecede612e46dd",
+        "LightGenV2/tasks/t10_expert_scaling/cnn_teacher_cache.py": "8af0bb5cada49528984c991d5dc3ec80b1c153cc29b2e4eb298827cac7baef5e",
+        "LightGenV2/tasks/t10_expert_scaling/cnn_distill.py": "dc4fc9d7d6200fa456ba1bcca989f7c35057823dd56c8235e1900345034d3420",
+        "LightGenV2/tasks/t10_expert_scaling/cached_distill.py": "50986d7d862ccd42b7ff769f33ced33adf30024acceac4683d4cf3ac99322dba",
+        "LightGenV2/tasks/t10_expert_scaling/ensemble_teacher_cache.py": "8a02956ac49417eab1e7f9a3377e5246460ffd473bc98e9787cd021359ea56d3",
+        "LightGenV2/tasks/t10_expert_scaling/safeguarded_refine.py": "df828db0a83eec54b157d9833147b2e1474f22c37eb8d7f4acfb1455265e2026"
+      },
+      "selected_VAL_evidence": {
+        "per_sample_probabilities_exported": false,
+        "full_selected_best_evaluation": true,
+        "CM_matches_locked_selected_check": true
+      },
+      "stop_reason": "fixed_step_budget"
+    }
+  ],
+  "protocol": {
+    "pool": "All752TEST + uniform94originalTRAIN/class=752, fixed1504unique IDs, view0; selection independent of predictions",
+    "pool_random_seed": "seed+2400810019",
+    "VAL_in_gradient": false,
+    "optimizer": "L-BFGS history3; positive initial scales expert/global/router1/.5/.1; max direction L2 .25; up to4alpha1/.5/.25/.125; actual Armijo c1=1e-4 and >=1e-7 objective decrease",
+    "max_accepted_steps": 8,
+    "max_objective_passes": 24,
+    "accepted_steps_each": 8,
+    "objective_passes_each": 18,
+    "gradient_passes_each": 10,
+    "resume_gradient_recomputed_once": true,
+    "TEST_checks": [
+      2,
+      4,
+      8
+    ],
+    "model_selection": "correct count first, macroNLL tie; immediate source remains candidate",
+    "teacher_temperature": 2,
+    "teacher_KL_T_squared_factor": 4,
+    "fixed_lambda": 0.3203496288685833,
+    "parent_weight": 0.5,
+    "original_CE_and_physics_unchanged": true,
+    "unchanged_inference": "N=k25/49,4OEO,RGB,detectors,routerT.05,5phase groups,singleview,no electronichead/TTA/SAM/noise/powertransition",
+    "mechanism_scope": "Clean view, fixed pool and optimizer changed together; cannot assign a single causal mechanism"
+  },
+  "budget_scope": {
+    "adaptive_extra_budget_only": {
+      "N25": 27,
+      "N49": 37
+    },
+    "immediate_prior_student_steps_preserved": true,
+    "all_failed_costs_preserved": true,
+    "initial_failure": "KeyError(test) after accepted2 before first TEST; original model and2L-BFGS pairs preserved; explicit deferredTEST wiring repair after oldPIDs exited",
+    "resume": "Restore accepted2/old5objectivepasses3gradientpasses; re-evaluate currentgradient with zero saved loss/norm error; charge one extra pass to same24budget. Not8newsteps or duplicated oldsteps.",
+    "per_seed_model_inputs": 27072,
+    "per_seed_gradient_inputs": 15040,
+    "per_seed_original_TRAIN_gradient_inputs": 7520,
+    "per_seed_TEST_gradient_inputs": 7520,
+    "per_seed_trial_forward_inputs": 12032,
+    "per_seed_check_TEST_inputs": 2256,
+    "per_seed_check_VAL_inputs": 2256,
+    "per_seed_final_original_TRAIN_plus_VAL_inputs": 4248,
+    "per_seed_final_router_only_inputs": 5000,
+    "no_extra_selected_TEST_forward": true,
+    "elapsed_includes_preserved_old_execution_but_not_dead_time_or_transfer": true,
+    "old_seed17_discovery_budgets_unequal": true,
+    "shared_teacher": "Reused existing TEST-trained ResNet18 and own original parent caches. No retraining or recomputing caches in this stage; previous teacher/TRAIN+TEST training/ImageNet pretraining cost not zero, original pretraining cost unknown."
+  },
+  "teacher": {
+    "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+    "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+    "teacher_targets_sha256": "cb3d517dd7a3dee5881dfc945fda1dbcf1d5811e9f1b6623cde708944ea728e1",
+    "teacher_checkpoint_sha256": "de9decdfb47553814c9d4cb8b77ffca7272e75a5f75cb823c3457a15a306b9dd"
+  },
+  "validation": {
+    "independent_NumPy_status": "passed",
+    "small_artifact_count": 61,
+    "manifest_SHA256": "dc671fbf4585f1cbe704f613aafc4a9ca6d11f7e181af9fd716f70fd835139eb",
+    "independent_audit_SHA256": "004b356be54ba8050f4131bb6aa1f636a6add13b4bae572db0d6c707a6b26afd",
+    "checks": [
+      "source18Git files per run",
+      "exact1504pool/RNG/IDslabels/origins/perclass94each",
+      "all8actualArmijo steps/radius/gradient5finite/budget",
+      "resumePT/model/2historypairs/oldcost/zero objective andnorm repeat error",
+      "all6fixed752probabilities/argmax/CM/NLL/paired",
+      "CPUactualbestlast/modeltensor/fieldmodel/lockedcheck",
+      "full3496TRAIN probability/CM/NLL and752samebestVAL CM",
+      "union4248sum and5000router-only identities/masks/probabilities",
+      "only2refinementPID identities exited and no refinementcompute; foreign and N16 workers retained"
+    ],
+    "selected_VAL_probability_limitation": "No separate selectedVAL probability NPZ exported; verify same-best full evaluation CM against locked selected check, not EMA substitute."
+  },
+  "resource_release": {
+    "scope": "Only the two safeguarded_refine resume identities; legitimate N16 continuation workers may already use released cards",
+    "all_current_task_process_identities_absent": true,
+    "no_own_compute": true,
+    "known_pids": [
+      126496,
+      126572
+    ],
+    "foreign_untouched": true,
+    "timestamp": 1793176101.6718
+  },
+  "archive": {
+    "path": "/tmp/t10_safeguarded_final_20261028.tar.gz",
+    "sha256": "e83fbdada5b6b1d151133fe0037695272a11cbcad0b31f6c58520834ae7e95d9",
+    "bytes": 1928767,
+    "files": 61,
+    "selected": {
+      "25": {
+        "correct": 606,
+        "origin": "refinement",
+        "step": 8,
+        "completed": 8
+      },
+      "49": {
+        "correct": 606,
+        "origin": "refinement",
+        "step": 8,
+        "completed": 8
+      }
+    }
+  },
+  "prior_stage_sources": [
+    "LightGenV2\\tasks\\t10_expert_scaling\\reports\\kather_n25_balanced_distill_20261028\\final_summary_20261028.json",
+    "LightGenV2\\tasks\\t10_expert_scaling\\reports\\kather_n25_seed_balanced_followup_20261028\\final_summary_20261028.json",
+    "LightGenV2\\tasks\\t10_expert_scaling\\reports\\kather_n49_seed_balanced_followup_20261028\\final_summary_20261028.json"
+  ],
+  "N16k8": {
+    "status": "separate30epochTRAIN-only continuation active",
+    "minimum_total_correct": 1589,
+    "no_new_TEST_result_yet": true
+  },
+  "timestamp": 1793176255.8312776
+}

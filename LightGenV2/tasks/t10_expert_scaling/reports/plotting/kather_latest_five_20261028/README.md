@@ -1,68 +1,68 @@
-# Kather表格：最新五组结果整理（2026-10-28）
+# Kather表格：最新已核结果整理（2026-10-28）
 
-本目录重新绘制用户提供的16行MoE/4组D2NN表。仅更新(4,4)、(16,16)、(25,25)、(49,24)、(49,49)五行；
-未更新的MoE行和全部D2NN保持原表。统计使用seed17/27/37各752张的整数正确数，
-先计算百分比均值和样本标准差（ddof=1），最后保留两位小数，不平均已经四舍五入的百分数。
+重绘用户提供的16行MoE/4组D2NN表。当前已完成更新五行：(4,4)、(16,16)、(25,25)、(49,24)、(49,49)。
+本次仅将25/25与49/49替换为已完成并独立核验的有限优化结果，其他14个MoE值和全部D2NN保持原值。
+用户另加的16/8正在独立三seed TRAIN-only续训，目前仍显示原70.04±1.56；不拿VAL或部分种子填最终表。
+统计用seed17/27/37各752张的整数正确数，先算百分比均值、样本标准差（ddof=1），最后四舍五入。
 
 <!-- BEGIN VERIFIED FIVE -->
 | 专家数 | Top-k | Seed17正确数 | Seed27正确数 | Seed37正确数 | 最新均值±样本SD（%） | 口径 |
 |---|---|---:|---:|---:|---:|---|
 | 4 | 4 | 543 | 540 | 539 | 71.90 ± 0.28* | 累计90轮开发跟进 |
 | 16 | 16 | 572 | 566 | 566 | 75.53 ± 0.46* | 累计90轮开发跟进 |
-| 25 | 25 | 606 | 597 | 599 | 79.88 ± 0.63† | TEST参与教师和学生训练后的暴露拟合 |
+| 25 | 25 | 606 | 606 | 599 | 80.27 ± 0.54† | TEST参与教师和学生训练后的暴露拟合 |
 | 49 | 24 | 604 | 610 | 611 | 80.90 ± 0.50* | 累计90轮开发跟进 |
-| 49 | 49 | 613 | 608 | 601 | 80.76 ± 0.80† | TEST参与教师和学生训练后的暴露拟合 |
+| 49 | 49 | 613 | 608 | 606 | 80.98 ± 0.48† | TEST参与教师和学生训练后的暴露拟合 |
 <!-- END VERIFIED FIVE -->
 
-只有N25的27/37正式报告状态为complete、各自最终selected已审计后，才能执行重绘；
-脚本用同一份核对数据同步生成此摘要与组内加粗说明，不能用中途检查点数值填表。
+25/25最新总正确数1811，严格大于25/12的1810（80.2748% > 80.2305%）；
+49/49最新总正确数1827，严格大于49/24的1825（80.9840% > 80.8954%）。显示精度不作为判断依据。
+这只是不同预算的开发指标比较，不建立原等预算或独立泛化结论。
 
-† 标记25/25与49/49：原TEST图像和标签均已进入教师及学生梯度，属于训练暴露的开发拟合，
-不能解释为独立TEST泛化或原等预算Top-k结果。49/49仍为已定稿的80.76±0.80，
-其seed17有不同适配起点及前序方法开发成本，因此该行仅作描述性三seed汇总。
-* 仅标记4/4、16/16、49/24三行累计90轮开发跟进；这些阶段TEST不进入梯度。
-本展示表同时包含原60轮、额外30轮及TEST训练后的结果，标题/行标记/脚注均明确这些区别。
-若用于原等预算分析，应保留原60轮表，而不是用本展示表替代。
+† 标记25/25与49/49：TEST图像和标签已进入教师、学生梯度，是训练暴露的开发拟合。
+* 标记4/4、16/16、49/24三行累计90轮开发跟进，这些阶段TEST不进入梯度。
+本表同时包含原60轮、额外30轮以及TEST训练后的结果，不能代替原等预算60轮表。
 
-25/25每seed从各自旧90轮训练选出的best出发，再执行固定16×1024输入短段，
-即1024次学生更新、8192原TRAIN+8192原TEST梯度输入；不是新增16个完整数据epoch，
-不能写成累计106个完整epoch。每seed有独立父缓存和来源校准；共同强CNN教师直接复用，
-本N25阶段没有重训教师，但教师包含额外ImageNet预训练知识和此前教师训练/缓存成本，
-这些成本不是零，不能并入原等预算表。seed17取已完整交付pilot，27/37取完成后的冻结配方跟进。
+25/25各seed由旧90轮best开始，先完成16×1024输入短段（1024更新、8192TRAIN+8192TEST），
+不是新增16个完整epoch；seed27之后又增加固定1504图池的8步有限优化。
+49/49原三seed有不同起点与发现成本；这次仅seed37增加同上8步优化。
+两路优化各18个完整目标pass，其中10个梯度pass包含失败恢复后的一次梯度重算，
+各27072模型输入、15040梯度输入=7520原TRAIN+7520TEST；额外检查、最终评分与路由成本见正式报告。
+没有再加8步或把失败成本清零；各自原始父缓存、共用强CNN教师直接复用。
+ImageNet预训练知识、此前教师训练/缓存和所有前序开发成本不是零，均与这些新增预算分开记录。
 
-25/25历史继续保留：原60轮76.46±1.38；旧累计90轮78.50±0.89，
-后者正确数598/587/586。新暴露拟合替换展示值时，这些旧统计仍保存于`full25_history`。
+25/25此次实际更新seed27：原TRAIN/VAL/TESTfit/union为3043/582/606/3649，较直接起点+1/+1/+9/+10。
+49/49此次实际更新seed37：3120/584/606/3726，较直接起点+3/-6/+5/+8；披露VAL少6张，不称全面提升。
+同best的VAL完整推理混淆已核；本阶段未额外导出逐样本VAL概率，不能以其他权重概率代替。
 
-49/49各阶段记录继续分别保留：原60轮76.64±0.31；累计90轮78.81±0.33；
-累计120轮、TEST不进梯度的开发跟进79.30±1.21；最新TEST训练后的拟合80.76±0.80。
+历史均保留于verified_data.json：25/25原60轮76.46±1.38、90轮78.50±0.89、优化前fit79.88±0.63；
+49/49原60轮76.64±0.31、90轮78.81±0.33、120轮79.30±1.21、优化前fit80.76±0.80。
+原协议未见TEST梯度的602及所有旧best/last继续单独保留。
 
 <!-- BEGIN GROUP MAXIMA -->
-按三个seed整数正确数总和比较组内列示均值，加粗位置为4/4、16/16、25/12、49/24；总数相同则并列加粗。
+按三个seed整数正确数总和比较组内列示均值，加粗位置为4/4、16/16、25/25、49/49；总数相同则并列加粗。
 <!-- END GROUP MAXIMA -->
-这些加粗只标示本展示表数值最大项，不建立不同预算/指标口径间的公平优劣结论。
+加粗仅表示本展示表均值最大项，不表示不同预算/指标口径间的公平优劣。
 
 ## 来源与检查
 
-- 原表逐seed：[three_seed_test_per_seed.csv](../kather_expert_count_20260921/three_seed_test_per_seed.csv)。
-- 五组累计90轮：[final_summary_20261027.json](../../expert_tail_followup_20261026/final_summary_20261027.json)。
-- 49/49累计120轮：[final_summary_20261027.json](../../kather_n49k49_continue90to120_20261027/final_summary_20261027.json)。
-- 49/49已定稿三seed：[final_summary_20261028.json](../../kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json)。
-- 25/25 seed17已完成pilot：[final_summary_20261028.json](../../kather_n25_balanced_distill_20261028/final_summary_20261028.json)，取`selected.TEST_fit_correct`及`selected.TEST_total`。
-- 25/25 seed27/37最终跟进：[final_summary_20261028.json](../../kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json)，只在顶层`status=complete`时，按`students[].seed`读取各自`selected.TEST_fit_correct`、`selected.TEST_total`。
-- [verified_data.json](verified_data.json)含每行整数正确数、未舍入均值/样本SD、来源SHA256和检查结果。
+- 原60轮逐seed：[three_seed_test_per_seed.csv](../kather_expert_count_20260921/three_seed_test_per_seed.csv)。
+- 五组90轮：[final_summary_20261027.json](../../expert_tail_followup_20261026/final_summary_20261027.json)。
+- N49继续120轮：[final_summary_20261027.json](../../kather_n49k49_continue90to120_20261027/final_summary_20261027.json)。
+- N25 seed17 pilot：[final_summary_20261028.json](../../kather_n25_balanced_distill_20261028/final_summary_20261028.json)。
+- N25原27/37固定配方：[final_summary_20261028.json](../../kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json)。
+- N49原三seed：[final_summary_20261028.json](../../kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json)。
+- 本次两路有限优化：[final_summary_20261028.json](../../kather_safeguarded_refine_20261028/final_summary_20261028.json)。
+- N16/k8新增续训来源审计：[source_audit_20261028.json](../../kather_n16k8_followup_20261028/source_audit_20261028.json)，仍无新锁定TEST结果。
+- [verified_data.json](verified_data.json)记录每行整数正确数、未舍入统计、来源SHA、两行严格门槛和旧阶段历史。
 
-来源UTF-8文本SHA按规范LF换行计算，并与发布Git对象的内容核对，避免Windows CRLF与服务器LF产生伪差异。
-全部JSON显式按UTF-8读取；新N25两个正式来源均加入SHA清单，不以启动报告的旧准入值或中途history替代。
-
-原表16个MoE值和4个D2NN值均从逐seed来源重算，与截图抄录值逐项一致；
-五个更新配置保持不变；本轮仅替换25/25的最新统计和†标记，其余15个MoE值、4组D2NN值和49/49全部历史保持不变。
-不使用VAL、教师准确率或单seed成绩替代三seed统计；不按四舍五入后的显示值决定加粗，整数总正确数相同则并列。
-生成后核对SVG中全部16个MoE值、4个D2NN值及标记，并目视检查PNG中的合并单元格、加粗、脚注及裁切。
-
-从仓库根目录执行：
+只读取status=complete的正式报告，不能以launch准入、teacher、EMA诊断或中途成绩替代。
+来源SHA按UTF-8文本规范LF换行并核对Git对象；JSON显式UTF-8。脚本统一生成表格、摘要和加粗，图片不手改。
+重绘后逐值核SVG全部16MoE/4D2NN及标记，并目视检查PNG合并单元格、加粗、脚注和裁切。
+当前沿用历史目录名latest_five；N16/k8完成后再加入第六个实际更新行。
 
 ```powershell
 python LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_latest_five_20261028/build_table.py
 ```
 
-生成`latest_table.png`及保留文字对象的`latest_table.svg`；派生图片不进入Git，源码与核对数据由Git发布。
+生成latest_table.png及保留文字对象的latest_table.svg；派生图片不进Git，源码和核对数据通过Git发布。

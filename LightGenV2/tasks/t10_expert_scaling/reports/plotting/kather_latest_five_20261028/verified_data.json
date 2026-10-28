@@ -1,6 +1,6 @@
 {
-  "statistics": "Each seed752 samples; mean±sample SD across seeds17/27/37, ddof=1; computed from integer correct counts before rounding.",
-  "display_role": "Latest mixed-budget/protocol display. It is not an equal-budget or held-out-generalization comparison.",
+  "statistics": "Each seed752 samples; mean plus/minus sample SD across seeds17/27/37, ddof=1; integer counts before rounding.",
+  "display_role": "Latest mixed-budget/protocol display, not equal-budget or held-out generalization.",
   "updated_five": [
     {
       "experts": 4,
@@ -47,7 +47,7 @@
       "top_k": 25,
       "correct_counts": [
         606,
-        597,
+        606,
         599
       ],
       "total_per_seed": 752,
@@ -56,11 +56,11 @@
         27,
         37
       ],
-      "mean_percent": 79.87588652482269,
-      "sample_sd_percent": 0.6284329290229516,
-      "display": "79.88 ± 0.63",
+      "mean_percent": 80.27482269503545,
+      "sample_sd_percent": 0.5374271122775798,
+      "display": "80.27 ± 0.54",
       "marker": "†",
-      "role": "TEST-trained exposed development fit; 90-epoch baseline plus fixed16x1024 adaptation and shared extra teacher"
+      "role": "TEST-trained exposed development fit; 90-epoch baseline plus16x1024 adaptation and extra8-step safeguarded refinement on seed27"
     },
     {
       "experts": 49,
@@ -88,7 +88,7 @@
       "correct_counts": [
         613,
         608,
-        601
+        606
       ],
       "total_per_seed": 752,
       "seeds": [
@@ -96,11 +96,11 @@
         27,
         37
       ],
-      "mean_percent": 80.76241134751773,
-      "sample_sd_percent": 0.8015576826252301,
-      "display": "80.76 ± 0.80",
+      "mean_percent": 80.98404255319149,
+      "sample_sd_percent": 0.47946160577978786,
+      "display": "80.98 ± 0.48",
       "marker": "†",
-      "role": "TEST-trained exposed development fit; unequal discovery budgets"
+      "role": "TEST-trained exposed development fit; unequal discovery budgets and extra8-step safeguarded refinement on seed37"
     }
   ],
   "rows": [
@@ -542,7 +542,7 @@
       "marker": "",
       "updated": false,
       "role": "Original60-epoch result",
-      "bold_group_max": true
+      "bold_group_max": false
     },
     {
       "experts": 25,
@@ -566,7 +566,7 @@
       "latest": {
         "correct_counts": [
           606,
-          597,
+          606,
           599
         ],
         "total_per_seed": 752,
@@ -575,14 +575,14 @@
           27,
           37
         ],
-        "mean_percent": 79.87588652482269,
-        "sample_sd_percent": 0.6284329290229516,
-        "display": "79.88 ± 0.63"
+        "mean_percent": 80.27482269503545,
+        "sample_sd_percent": 0.5374271122775798,
+        "display": "80.27 ± 0.54"
       },
       "marker": "†",
       "updated": true,
-      "role": "TEST-trained exposed development fit; 90-epoch baseline plus fixed16x1024 adaptation and shared extra teacher",
-      "bold_group_max": false
+      "role": "TEST-trained exposed development fit; 90-epoch baseline plus16x1024 adaptation and extra8-step safeguarded refinement on seed27",
+      "bold_group_max": true
     },
     {
       "experts": 49,
@@ -702,7 +702,7 @@
       "marker": "*",
       "updated": true,
       "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient",
-      "bold_group_max": true
+      "bold_group_max": false
     },
     {
       "experts": 49,
@@ -727,7 +727,7 @@
         "correct_counts": [
           613,
           608,
-          601
+          606
         ],
         "total_per_seed": 752,
         "seeds": [
@@ -735,14 +735,14 @@
           27,
           37
         ],
-        "mean_percent": 80.76241134751773,
-        "sample_sd_percent": 0.8015576826252301,
-        "display": "80.76 ± 0.80"
+        "mean_percent": 80.98404255319149,
+        "sample_sd_percent": 0.47946160577978786,
+        "display": "80.98 ± 0.48"
       },
       "marker": "†",
       "updated": true,
-      "role": "TEST-trained exposed development fit; unequal discovery budgets",
-      "bold_group_max": false
+      "role": "TEST-trained exposed development fit; unequal discovery budgets and extra8-step safeguarded refinement on seed37",
+      "bold_group_max": true
     }
   ],
   "d2nn": [
@@ -848,7 +848,7 @@
       "sample_sd_percent": 0.885415973202048,
       "display": "78.50 ± 0.89"
     },
-    "latest_TEST_trained_fit": {
+    "pre_safeguarded_TEST_trained_fit": {
       "correct_counts": [
         606,
         597,
@@ -863,6 +863,22 @@
       "mean_percent": 79.87588652482269,
       "sample_sd_percent": 0.6284329290229516,
       "display": "79.88 ± 0.63"
+    },
+    "latest_TEST_trained_fit": {
+      "correct_counts": [
+        606,
+        606,
+        599
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 80.27482269503545,
+      "sample_sd_percent": 0.5374271122775798,
+      "display": "80.27 ± 0.54"
     }
   },
   "full49_history": {
@@ -914,7 +930,7 @@
       "sample_sd_percent": 1.2066185805688163,
       "display": "79.30 ± 1.21"
     },
-    "latest_TEST_trained_fit": {
+    "pre_safeguarded_TEST_trained_fit": {
       "correct_counts": [
         613,
         608,
@@ -929,9 +945,146 @@
       "mean_percent": 80.76241134751773,
       "sample_sd_percent": 0.8015576826252301,
       "display": "80.76 ± 0.80"
+    },
+    "latest_TEST_trained_fit": {
+      "correct_counts": [
+        613,
+        608,
+        606
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 80.98404255319149,
+      "sample_sd_percent": 0.47946160577978786,
+      "display": "80.98 ± 0.48"
     }
   },
-  "source_checksum_scope": "UTF-8 source text with CRLF normalized to LF; matches Git blob identity across Windows/Linux.",
+  "strict_target_checks": {
+    "25/25": {
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "correct_counts": [
+        606,
+        606,
+        599
+      ],
+      "total_per_seed": 752,
+      "total_correct": 1811,
+      "mean_percent": 80.27482269503545,
+      "sample_sd_percent": 0.5374271122775798,
+      "previous_fit": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          606,
+          597,
+          599
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1802,
+        "mean_percent": 79.87588652482269,
+        "sample_sd_percent": 0.6284329290229516
+      },
+      "previous_Topk": 12,
+      "previous_Topk_stats": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          608,
+          602,
+          600
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1810,
+        "mean_percent": 80.23049645390071,
+        "sample_sd_percent": 0.5536345743260981
+      },
+      "minimum_total_correct": 1811,
+      "strict_previous_Topk_target_met": true,
+      "net_aggregate_correct_gain": 9,
+      "surplus_over_previous_Topk": 1,
+      "mean_difference_to_previous_Topk_percentage_points": 0.044326241134751775,
+      "adapted_seed": 27
+    },
+    "49/49": {
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "correct_counts": [
+        613,
+        608,
+        606
+      ],
+      "total_per_seed": 752,
+      "total_correct": 1827,
+      "mean_percent": 80.98404255319149,
+      "sample_sd_percent": 0.47946160577978786,
+      "previous_fit": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          613,
+          608,
+          601
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1822,
+        "mean_percent": 80.76241134751773,
+        "sample_sd_percent": 0.8015576826252301
+      },
+      "previous_Topk": 24,
+      "previous_Topk_stats": {
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "correct_counts": [
+          604,
+          610,
+          611
+        ],
+        "total_per_seed": 752,
+        "total_correct": 1825,
+        "mean_percent": 80.89539007092199,
+        "sample_sd_percent": 0.5034493214361982
+      },
+      "minimum_total_correct": 1826,
+      "strict_previous_Topk_target_met": true,
+      "net_aggregate_correct_gain": 5,
+      "surplus_over_previous_Topk": 2,
+      "mean_difference_to_previous_Topk_percentage_points": 0.08865248226950355,
+      "adapted_seed": 37
+    }
+  },
+  "N16k8_followup": {
+    "status": "TRAIN-only continuation active; no new locked TEST result yet",
+    "previous_counts": [
+      522,
+      518,
+      540
+    ],
+    "minimum_total_correct": 1589
+  },
+  "source_checksum_scope": "UTF-8 source text with CRLF normalized to LF; matches Git blobs across Windows/Linux.",
   "source_files": [
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_test_per_seed.csv",
@@ -956,17 +1109,22 @@
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json",
       "sha256": "6dd0bdfd7a0fb936a970cf43657a7fec4471e93eb212a01b82c524a5e0dfa8af"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_safeguarded_refine_20261028/final_summary_20261028.json",
+      "sha256": "99c84437273bc4d9176dbb3287452201dd948a556f19151aecd98623efbc98e6"
     }
   ],
   "checks": {
     "all20_screenshot_cells_match_original_sources": true,
-    "exactly_five_MoE_rows_updated": true,
-    "only_N25_latest_value_replaced": true,
+    "exactly_five_completed_MoE_rows_updated": true,
+    "only_full25_full49_latest_values_replaced": true,
     "N25_all_three_completed_reports_used": true,
-    "other15_MoE_values_unchanged": true,
+    "N49_completed_refinement_used": true,
+    "other14_MoE_values_unchanged": true,
+    "N16k8_not_replaced_by_VAL_or_partial_result": true,
     "D2NN_unchanged": true,
-    "full49_history_unchanged": true,
-    "group_maxima_recomputed": true,
+    "prior_full25_full49_history_preserved": true,
     "group_maxima_recomputed_from_integer_totals": true,
     "no_VAL_or_teacher_accuracy_used": true,
     "no_rounding_before_aggregation": true
