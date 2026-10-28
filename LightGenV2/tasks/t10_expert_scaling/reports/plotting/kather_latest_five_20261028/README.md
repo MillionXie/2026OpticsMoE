@@ -31,6 +31,8 @@ seed17有不同适配起点及前序方法开发成本，因此该行仅作描�
 - 最新定稿三seed：[final_summary_20261028.json](../../kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json)。
 - [verified_data.json](verified_data.json)含每行整数正确数、未舍入均值/样本SD、来源SHA256和检查结果。
 
+来源文本SHA按规范LF换行计算，并与Git blob核对，避免Windows CRLF与服务器LF产生伪差异。
+
 原表16个MoE值和4个D2NN值均从逐seed来源重算，与截图抄录值逐项一致；
 只更新五行，不使用VAL、教师准确率或单seed成绩替代三seed统计。
 生成后核对SVG中全部16个MoE值、4个D2NN值及标记，并目视检查PNG中的合并单元格、加粗、脚注及裁切。
