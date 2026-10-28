@@ -1,5 +1,12 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 最新五组展示表（2026-10-28）
+
+用户截图对应表格的五行更新、逐seed正确数、统计口径与可重绘源码见
+[表格整理](reports/plotting/kather_latest_five_20261028/README.md)。
+该展示合并原60轮、累计90轮及49/49最新TEST训练拟合结果，已显式分标记；
+不覆盖原等预算对照表，也不把80.76±0.80拟合汇总当作独立泛化结果。
+
 ## 用户接受seed17定稿，seed27/37固定配方跟进已完成（2026-10-28）
 
 最终报告：[final_summary_20261028.json](reports/kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json)。

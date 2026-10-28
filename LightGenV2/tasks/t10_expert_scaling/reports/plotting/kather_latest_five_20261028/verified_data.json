@@ -1,0 +1,910 @@
+{
+  "statistics": "Each seed752 samples; mean±sample SD across seeds17/27/37, ddof=1; computed from integer correct counts before rounding.",
+  "display_role": "Latest mixed-budget/protocol display. It is not an equal-budget or held-out-generalization comparison.",
+  "updated_five": [
+    {
+      "experts": 4,
+      "top_k": 4,
+      "correct_counts": [
+        543,
+        540,
+        539
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 71.89716312056737,
+      "sample_sd_percent": 0.2768172871630519,
+      "display": "71.90 ± 0.28",
+      "marker": "*",
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient"
+    },
+    {
+      "experts": 16,
+      "top_k": 16,
+      "correct_counts": [
+        572,
+        566,
+        566
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 75.53191489361703,
+      "sample_sd_percent": 0.46065181052363513,
+      "display": "75.53 ± 0.46",
+      "marker": "*",
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient"
+    },
+    {
+      "experts": 25,
+      "top_k": 25,
+      "correct_counts": [
+        598,
+        587,
+        586
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 78.5017730496454,
+      "sample_sd_percent": 0.885415973202048,
+      "display": "78.50 ± 0.89",
+      "marker": "*",
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient"
+    },
+    {
+      "experts": 49,
+      "top_k": 24,
+      "correct_counts": [
+        604,
+        610,
+        611
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 80.89539007092199,
+      "sample_sd_percent": 0.5034493214361982,
+      "display": "80.90 ± 0.50",
+      "marker": "*",
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient"
+    },
+    {
+      "experts": 49,
+      "top_k": 49,
+      "correct_counts": [
+        613,
+        608,
+        601
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 80.76241134751773,
+      "sample_sd_percent": 0.8015576826252301,
+      "display": "80.76 ± 0.80",
+      "marker": "†",
+      "role": "TEST-trained exposed development fit; unequal discovery budgets"
+    }
+  ],
+  "rows": [
+    {
+      "experts": 4,
+      "top_k": 1,
+      "original_60": {
+        "correct_counts": [
+          468,
+          468,
+          474
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 62.5,
+        "sample_sd_percent": 0.46065181052363924,
+        "display": "62.50 ± 0.46"
+      },
+      "latest": {
+        "correct_counts": [
+          468,
+          468,
+          474
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 62.5,
+        "sample_sd_percent": 0.46065181052363924,
+        "display": "62.50 ± 0.46"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 4,
+      "top_k": 2,
+      "original_60": {
+        "correct_counts": [
+          523,
+          532,
+          522
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 69.90248226950355,
+        "sample_sd_percent": 0.7323897004369844,
+        "display": "69.90 ± 0.73"
+      },
+      "latest": {
+        "correct_counts": [
+          523,
+          532,
+          522
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 69.90248226950355,
+        "sample_sd_percent": 0.7323897004369844,
+        "display": "69.90 ± 0.73"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 4,
+      "top_k": 3,
+      "original_60": {
+        "correct_counts": [
+          537,
+          537,
+          528
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 71.01063829787235,
+        "sample_sd_percent": 0.6909777157854609,
+        "display": "71.01 ± 0.69"
+      },
+      "latest": {
+        "correct_counts": [
+          537,
+          537,
+          528
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 71.01063829787235,
+        "sample_sd_percent": 0.6909777157854609,
+        "display": "71.01 ± 0.69"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 4,
+      "top_k": 4,
+      "original_60": {
+        "correct_counts": [
+          522,
+          525,
+          526
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 69.72517730496453,
+        "sample_sd_percent": 0.2768172871630462,
+        "display": "69.73 ± 0.28"
+      },
+      "latest": {
+        "correct_counts": [
+          543,
+          540,
+          539
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 71.89716312056737,
+        "sample_sd_percent": 0.2768172871630519,
+        "display": "71.90 ± 0.28"
+      },
+      "marker": "*",
+      "updated": true,
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient",
+      "bold_group_max": true
+    },
+    {
+      "experts": 16,
+      "top_k": 1,
+      "original_60": {
+        "correct_counts": [
+          369,
+          367,
+          355
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 48.35992907801418,
+        "sample_sd_percent": 1.0068986428723894,
+        "display": "48.36 ± 1.01"
+      },
+      "latest": {
+        "correct_counts": [
+          369,
+          367,
+          355
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 48.35992907801418,
+        "sample_sd_percent": 1.0068986428723894,
+        "display": "48.36 ± 1.01"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 16,
+      "top_k": 4,
+      "original_60": {
+        "correct_counts": [
+          541,
+          512,
+          535
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 70.39007092198581,
+        "sample_sd_percent": 2.0356316495044386,
+        "display": "70.39 ± 2.04"
+      },
+      "latest": {
+        "correct_counts": [
+          541,
+          512,
+          535
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 70.39007092198581,
+        "sample_sd_percent": 2.0356316495044386,
+        "display": "70.39 ± 2.04"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 16,
+      "top_k": 8,
+      "original_60": {
+        "correct_counts": [
+          522,
+          518,
+          540
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 70.0354609929078,
+        "sample_sd_percent": 1.5583684247559382,
+        "display": "70.04 ± 1.56"
+      },
+      "latest": {
+        "correct_counts": [
+          522,
+          518,
+          540
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 70.0354609929078,
+        "sample_sd_percent": 1.5583684247559382,
+        "display": "70.04 ± 1.56"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 16,
+      "top_k": 16,
+      "original_60": {
+        "correct_counts": [
+          561,
+          554,
+          552
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 73.8918439716312,
+        "sample_sd_percent": 0.6284329290229571,
+        "display": "73.89 ± 0.63"
+      },
+      "latest": {
+        "correct_counts": [
+          572,
+          566,
+          566
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 75.53191489361703,
+        "sample_sd_percent": 0.46065181052363513,
+        "display": "75.53 ± 0.46"
+      },
+      "marker": "*",
+      "updated": true,
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient",
+      "bold_group_max": true
+    },
+    {
+      "experts": 25,
+      "top_k": 1,
+      "original_60": {
+        "correct_counts": [
+          478,
+          477,
+          484
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 63.7854609929078,
+        "sample_sd_percent": 0.5034493214361926,
+        "display": "63.79 ± 0.50"
+      },
+      "latest": {
+        "correct_counts": [
+          478,
+          477,
+          484
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 63.7854609929078,
+        "sample_sd_percent": 0.5034493214361926,
+        "display": "63.79 ± 0.50"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 25,
+      "top_k": 6,
+      "original_60": {
+        "correct_counts": [
+          604,
+          604,
+          601
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.18617021276596,
+        "sample_sd_percent": 0.23032590526181757,
+        "display": "80.19 ± 0.23"
+      },
+      "latest": {
+        "correct_counts": [
+          604,
+          604,
+          601
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.18617021276596,
+        "sample_sd_percent": 0.23032590526181757,
+        "display": "80.19 ± 0.23"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 25,
+      "top_k": 12,
+      "original_60": {
+        "correct_counts": [
+          608,
+          602,
+          600
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.23049645390071,
+        "sample_sd_percent": 0.5536345743260981,
+        "display": "80.23 ± 0.55"
+      },
+      "latest": {
+        "correct_counts": [
+          608,
+          602,
+          600
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.23049645390071,
+        "sample_sd_percent": 0.5536345743260981,
+        "display": "80.23 ± 0.55"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": true
+    },
+    {
+      "experts": 25,
+      "top_k": 25,
+      "original_60": {
+        "correct_counts": [
+          581,
+          563,
+          581
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 76.46276595744682,
+        "sample_sd_percent": 1.3819554315709137,
+        "display": "76.46 ± 1.38"
+      },
+      "latest": {
+        "correct_counts": [
+          598,
+          587,
+          586
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 78.5017730496454,
+        "sample_sd_percent": 0.885415973202048,
+        "display": "78.50 ± 0.89"
+      },
+      "marker": "*",
+      "updated": true,
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient",
+      "bold_group_max": false
+    },
+    {
+      "experts": 49,
+      "top_k": 1,
+      "original_60": {
+        "correct_counts": [
+          466,
+          449,
+          464
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 61.1258865248227,
+        "sample_sd_percent": 1.2355815482948886,
+        "display": "61.13 ± 1.24"
+      },
+      "latest": {
+        "correct_counts": [
+          466,
+          449,
+          464
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 61.1258865248227,
+        "sample_sd_percent": 1.2355815482948886,
+        "display": "61.13 ± 1.24"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 49,
+      "top_k": 12,
+      "original_60": {
+        "correct_counts": [
+          606,
+          607,
+          602
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.45212765957447,
+        "sample_sd_percent": 0.3518286317904977,
+        "display": "80.45 ± 0.35"
+      },
+      "latest": {
+        "correct_counts": [
+          606,
+          607,
+          602
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.45212765957447,
+        "sample_sd_percent": 0.3518286317904977,
+        "display": "80.45 ± 0.35"
+      },
+      "marker": "",
+      "updated": false,
+      "role": "Original60-epoch result",
+      "bold_group_max": false
+    },
+    {
+      "experts": 49,
+      "top_k": 24,
+      "original_60": {
+        "correct_counts": [
+          603,
+          608,
+          603
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.40780141843972,
+        "sample_sd_percent": 0.3838765087696987,
+        "display": "80.41 ± 0.38"
+      },
+      "latest": {
+        "correct_counts": [
+          604,
+          610,
+          611
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.89539007092199,
+        "sample_sd_percent": 0.5034493214361982,
+        "display": "80.90 ± 0.50"
+      },
+      "marker": "*",
+      "updated": true,
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient",
+      "bold_group_max": true
+    },
+    {
+      "experts": 49,
+      "top_k": 49,
+      "original_60": {
+        "correct_counts": [
+          575,
+          575,
+          579
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 76.64007092198581,
+        "sample_sd_percent": 0.3071012070157622,
+        "display": "76.64 ± 0.31"
+      },
+      "latest": {
+        "correct_counts": [
+          613,
+          608,
+          601
+        ],
+        "total_per_seed": 752,
+        "seeds": [
+          17,
+          27,
+          37
+        ],
+        "mean_percent": 80.76241134751773,
+        "sample_sd_percent": 0.8015576826252301,
+        "display": "80.76 ± 0.80"
+      },
+      "marker": "†",
+      "updated": true,
+      "role": "TEST-trained exposed development fit; unequal discovery budgets",
+      "bold_group_max": false
+    }
+  ],
+  "d2nn": [
+    {
+      "experts": 4,
+      "correct_counts": [
+        449,
+        449,
+        448
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 59.663120567375884,
+      "sample_sd_percent": 0.07677530175394055,
+      "display": "59.66 ± 0.08"
+    },
+    {
+      "experts": 16,
+      "correct_counts": [
+        471,
+        468,
+        471
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 62.5,
+      "sample_sd_percent": 0.23032590526182167,
+      "display": "62.50 ± 0.23"
+    },
+    {
+      "experts": 25,
+      "correct_counts": [
+        454,
+        459,
+        467
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 61.17021276595745,
+      "sample_sd_percent": 0.871999803763564,
+      "display": "61.17 ± 0.87"
+    },
+    {
+      "experts": 49,
+      "correct_counts": [
+        474,
+        468,
+        469
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 62.54432624113475,
+      "sample_sd_percent": 0.42746678905110747,
+      "display": "62.54 ± 0.43"
+    }
+  ],
+  "full49_history": {
+    "original60": {
+      "correct_counts": [
+        575,
+        575,
+        579
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 76.64007092198581,
+      "sample_sd_percent": 0.3071012070157622,
+      "display": "76.64 ± 0.31"
+    },
+    "tail90": {
+      "correct_counts": [
+        595,
+        593,
+        590
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 78.81205673758865,
+      "sample_sd_percent": 0.33465578170526417,
+      "display": "78.81 ± 0.33"
+    },
+    "continued120": {
+      "correct_counts": [
+        600,
+        603,
+        586
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 79.29964539007092,
+      "sample_sd_percent": 1.2066185805688163,
+      "display": "79.30 ± 1.21"
+    },
+    "latest_TEST_trained_fit": {
+      "correct_counts": [
+        613,
+        608,
+        601
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 80.76241134751773,
+      "sample_sd_percent": 0.8015576826252301,
+      "display": "80.76 ± 0.80"
+    }
+  },
+  "source_files": [
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_expert_count_20260921/three_seed_test_per_seed.csv",
+      "sha256": "4b860727b1f2fecb3dc42943e222c8d069e7647574b1b2e585cf111b33d562b2"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/expert_tail_followup_20261026/final_summary_20261027.json",
+      "sha256": "0fc37895a588a1c2004b57744aa00c5acddefdbe83f1b7fc035d74027d27b8ad"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n49k49_continue90to120_20261027/final_summary_20261027.json",
+      "sha256": "e1b56f5d33936edccedf09fc01072e3f71a22de430d008e212c5b758373fee86"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n49_seed_balanced_followup_20261028/final_summary_20261028.json",
+      "sha256": "ed3f85d6fc2e139389e8ef66ebea9933c472b80574f7d96bd4b53cc093619c0d"
+    }
+  ],
+  "checks": {
+    "all20_screenshot_cells_match_original_sources": true,
+    "exactly_five_MoE_rows_updated": true,
+    "D2NN_unchanged": true,
+    "group_maxima_recomputed": true,
+    "no_VAL_or_teacher_accuracy_used": true,
+    "no_rounding_before_aggregation": true
+  }
+}
