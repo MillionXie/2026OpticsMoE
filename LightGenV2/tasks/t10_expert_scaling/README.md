@@ -19,6 +19,14 @@ T2/T²4、父KL0.5、原分类/物理损失、LR预热后余弦、EMA0.95均沿�
 固定4/8/12/16先锁后评EMA/live，正确数优先、NLL平手；自身598起点始终候选。
 原TRAIN/VAL/union与TEST同时报告。此profile不会自动追加轮数或展开其他seed；先判断pilot实际收益。
 
+后续两seed的预备入口为`n25_seed_followup.py`、profile
+`configs/kather_n25_seed_balanced_followup_20261028.json`。它必须读取独立pilot审计，
+确认固定检查点新权重正确数高于598，并绑定CPU best/tensor/field、原始预测SHA和pilot20源码锁；
+598回退或仅NLL下降不能准入。seed27从自身epoch89/587、seed37从自身epoch90/586开始，
+各自生成25专家父缓存、使用自身随机种子并按相同冻结配方训练16段，原各自baseline保留。
+seed27用GPU3；seed37必须等pilot完整成功、所有pilot实际进程退出且GPU1无本任务计算进程后才用GPU1。
+只读等待不占GPU，foreign共卡进程保留。该入口当前仅预备，发布不等于已启动；启动与结果以正式run收据为准。
+
 N49先检验当前613源上原视图与D4是否存在不同的真实更新方向，另立有限探针，
 不把此前阴性的D4覆盖审计重新描述为采样bug，不凭差几张盲续旧run。
 该方向得到数值和固定诊断组的正向证据后，才另立同起点同预算的正式对照。
