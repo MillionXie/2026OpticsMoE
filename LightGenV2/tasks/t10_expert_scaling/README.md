@@ -22,6 +22,17 @@ T2/T²4、父KL0.5、原分类/物理损失、LR预热后余弦、EMA0.95均沿�
 N49先检验当前613源上原视图与D4是否存在不同的真实更新方向，另立有限探针，
 不把此前阴性的D4覆盖审计重新描述为采样bug，不凭差几张盲续旧run。
 该方向得到数值和固定诊断组的正向证据后，才另立同起点同预算的正式对照。
+入口`view_conflict_probe.py`、profile`configs/kather_n49_view_conflict_probe_20261028.json`，
+run `runs/smoke/kather_n49_view_conflict_probe_20261028`。两互斥普通16图fit批，
+每批每类各1TRAIN+1TEST；固定均匀256图诊断组每类各16TRAIN+16TEST，288原ID互斥，
+不按错误或预测挑fit。两个臂都从当前613/fresh Adam出发，当前613同view父概率作锚，
+其父身份与历史C的f6d不同；只比较这两个臂间的view差异，不称与历史C仅一变量。
+固定expert/global/router LR为3e-5/1.5e-5/3e-6，每批D4、重复D4、clean各恢复源后实际一步，
+共6步/96梯度图输入；源父64、源诊断及重复1024、更新后诊断3072，总4256模型图输入。
+保存匹配的teacher raw logits与父view/IDs/labels/来源；无VAL前向、不导出新PT、不自动开训练。
+两批的TRAIN和TEST困难组clean方向均须正向且胜D4超过重复误差门槛，
+原正确及近边界guard不新增错，TRAIN平均margin、guard尾部与NLL保护均通过才考虑有限正式对照。
+样本不足判inconclusive，不追加第三批、扩大样本或改门槛。
 
 上述教师已见TEST，N25及后续N49学生也使用TEST梯度，全部TEST数字是训练暴露的开发拟合；
 不建立独立泛化、原等预算Top-k或相同累计开发成本的结论。
