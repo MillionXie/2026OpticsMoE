@@ -3,11 +3,30 @@
 Training may reuse the frozen prefix cache. Actual inference still executes
 the complete original Qwen vision/language graph, with these adapters loaded.
 """
+import hashlib
+import json
 import torch
 from torch import nn
 
 
 TARGETS=['q_proj','k_proj','v_proj','o_proj','gate_proj','up_proj','down_proj']
+
+
+def frontend_adapter_digest(state):
+    if state.get('schema')!='qwen_spatial_language_lora_v1':
+        if 'qwen_language_lora' in state:raise ValueError('Unrecognized frontend adapter schema')
+        return None
+    digest=hashlib.sha256()
+    for name,value in sorted(state['qwen_language_lora'].items()):
+        tensor=value.detach().cpu().contiguous()
+        digest.update(json.dumps([name,str(tensor.dtype),list(tensor.shape)]).encode('utf-8'))
+        digest.update(tensor.view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
+
+
+def verify_frontend_feature_report(report,state):
+    if report.get('qwen_language_lora_state_sha256')!=frontend_adapter_digest(state):
+        raise ValueError('Terminal features belong to a different Qwen language adapter')
 
 
 def inject_language_lora(module,rank):

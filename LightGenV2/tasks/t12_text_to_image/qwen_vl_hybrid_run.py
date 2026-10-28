@@ -20,7 +20,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .qwen_vl_hybrid import OpticalMacro, apply_configured_hybrid, feature_loss, directional_feature_loss, hybrid_config, load_macro_state, optimizer_groups, restore_head_overlay, clone_readout_head
+from .qwen_vl_hybrid import OpticalMacro, apply_configured_hybrid, feature_loss, directional_feature_loss, hybrid_config, load_macro_state, optimizer_groups, restore_head_overlay, clone_readout_head, encode_dense_field
 from .qwen_vl_spatial import balanced_region_l1, build_spatial_head
 from .qwen_vl_spatial_run import evaluate, masks
 from .qwen_vl_turbo_cache import image_float, save_with_digest
@@ -104,11 +104,24 @@ def frontend_input_hash(payload,i):
 
 
 def stage_cache(a, cfg, payload, parent_state, device):
-    if parent_state.get('schema')=='qwen_spatial_language_lora_v1':
-        raise ValueError('Adapted language teacher requires an explicitly validated adapted frontend cache; do not reuse the public-Qwen terminal cache')
+    from .qwen_vl_language_adapt import frontend_adapter_digest,install_in_full_qwen,NativeLanguageTail
+    adapted=parent_state.get('schema')=='qwen_spatial_language_lora_v1'
     if (a.output/'report.json').exists():
         raise ValueError('Existing cache; do not repeat')
     qwen, processor = load_qwen(a.qwen, device)
+    replay=None;prefix_records=None
+    if adapted:
+        if a.language_context is None or a.prefix_features is None:raise ValueError('Adapted teacher requires verified original prefix and actual native call contexts')
+        ready=json.loads((a.language_context/'report.json').read_text());path=a.language_context/'native_contexts.pt'
+        if not ready['complete'] or ready['sha256']!=sha256(path) or ready['sha256']!=parent_state['config']['language_context_sha256']:
+            raise ValueError('Adapted teacher language contexts differ')
+        contexts=torch.load(path,map_location='cpu',weights_only=False)
+        prefix_report=json.loads((a.prefix_features/'report.json').read_text())
+        if prefix_report['sha256']!=parent_state['config']['language_prefix_sha256']:raise ValueError('Adapted teacher prefix differs')
+        prefix_records=checked_features(a.prefix_features,payload)
+        install_in_full_qwen(qwen,parent_state)
+        lm=qwen.model.language_model
+        replay=NativeLanguageTail(list(lm.layers[24:28]),lm.norm,contexts['contexts']).eval().requires_grad_(False)
     captured, handles = {}, []
     def pre(name):
         return lambda module, args: captured.__setitem__(name, args[0].detach().bfloat16().cpu())
@@ -127,11 +140,16 @@ def stage_cache(a, cfg, payload, parent_state, device):
             captured.clear()
             with torch.no_grad():
                 hidden = raw_hidden(qwen, processor, payload, i, parent_state['visual_layout'], device).cpu()
-            diff = float((hidden.float()-payload['hidden'][i].float()).abs().max())
-            maximum = max(maximum, diff)
-            if diff > 1.:
-                raise ValueError('Raw Qwen differs from the audited frozen feature cache')
             record = dict(captured)
+            expected=payload['hidden'][i]
+            if adapted:
+                with torch.no_grad():
+                    prefix=prefix_records[i]['language_23'].to(device)
+                    expected=replay(prefix,torch.ones(prefix.shape[:2],dtype=torch.bool,device=device))[0].cpu()
+            diff = float((hidden.float()-expected.float()).abs().max())
+            maximum = max(maximum, diff)
+            if not math.isfinite(diff) or diff > (1e-3 if adapted else 1.):
+                raise ValueError('Raw Qwen differs from the audited frozen feature cache')
             for key in list(record):
                 if key.startswith('vision_'):
                     record[key] = record[key].unsqueeze(0)
@@ -154,6 +172,8 @@ def stage_cache(a, cfg, payload, parent_state, device):
         'input_contract': 'Reference RGB and full edit text only; Qwen original vision24/language28',
         'input_fingerprints_exclude_targets_and_noise':True,'exactly_equal_vision_tensors_shared':deduplicated,
         'qwen_path':str(a.qwen.resolve()),'qwen_config_sha256':sha256(a.qwen/'config.json'),
+        'qwen_language_lora_state_sha256':frontend_adapter_digest(parent_state),
+        'raw_compared_to_adapted_native_prefix_replay':adapted,
         'feature_targets_are_teacher_activations': True})
 
 
@@ -189,6 +209,8 @@ def save_macros(macros, cfg, step, metrics, output, best=False, extra=None):
 
 
 def stage_distill(a, cfg, payload, state, device):
+    from .qwen_vl_language_adapt import verify_frontend_feature_report
+    verify_frontend_feature_report(json.loads((a.features/'report.json').read_text()),state)
     features = checked_features(a.features, payload)
     macros = nn.ModuleDict({m: OpticalMacro(m, w, cfg[m+'_pairs'], cfg['residual_width'])
                           for m, w in (('vision', 1024), ('language', 2048))}).to(device)
@@ -299,8 +321,7 @@ def router_batch_balance(macros, features, ids, device, mi_weight=.25):
         # padded token sent through a biased projection need not remain zero.
         for row in rows:
             packed=macro.codecs[0].pack(row[None].to(device))
-            padding=torch.zeros(packed.shape[:2],dtype=torch.bool,device=device)
-            field,_=macro.paths[0]._encode_input_fields(packed,padding)
+            field,_=encode_dense_field(macro.paths[0],packed)
             fields.append(field)
         fields=torch.cat(fields,0)
         routing = macro.paths[0].core.router(fields)
@@ -315,8 +336,8 @@ def router_batch_balance(macros, features, ids, device, mi_weight=.25):
 
 
 def stage_joint(a, cfg, payload, state, device):
-    if state.get('schema')=='qwen_spatial_language_lora_v1':
-        raise ValueError('Adapted teacher terminal-feature protocol must be implemented and validated before LG recovery')
+    from .qwen_vl_language_adapt import verify_frontend_feature_report
+    verify_frontend_feature_report(json.loads((a.features/'report.json').read_text()),state)
     features = checked_features(a.features, payload)
     qwen, processor = load_qwen(a.qwen, device)
     macros = apply_configured_hybrid(qwen,cfg)
@@ -332,7 +353,10 @@ def stage_joint(a, cfg, payload, state, device):
     teacher_head=head
     if cfg.get('adapt_head',False):
         head=clone_readout_head(teacher_head,trainable=True)
-        restore_head_overlay(head,init);head.eval()
+        if init.get('head_overlay') and init.get('teacher_checkpoint_sha256')!=sha256(a.parent/'best_checkpoint.pt'):
+            if not cfg.get('initial_macros_only',False):raise ValueError('Readout overlay belongs to a different electronic teacher; explicitly warm-start macros only')
+        else:restore_head_overlay(head,init)
+        head.eval()
     import lpips
     metric = lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
     train = [i for i, r in enumerate(payload['rows']) if r['split'] == 'train']
@@ -455,6 +479,8 @@ def main():
         p.add_argument('--'+name, type=Path, required=True)
     p.add_argument('--features', type=Path)
     p.add_argument('--initial', type=Path)
+    p.add_argument('--language-context',type=Path)
+    p.add_argument('--prefix-features',type=Path)
     a = p.parse_args(); cfg = json.loads(a.config.read_text())
     if os.environ.get('CUDA_VISIBLE_DEVICES') != cfg['gpu_uuid']:
         raise ValueError('Unauthorized GPU UUID')

@@ -29,6 +29,20 @@ def directional_feature_loss(actual, target):
     return ((a/ra-b/rb)**2).mean()+.02*F.smooth_l1_loss(ra.log(),rb.log())
 
 
+def encode_dense_field(path,packed):
+    """T12 fields have no token padding: lengths are shape metadata, not GPU reductions.
+
+    Preserve the audited adapter, field geometry and differentiable RMS scale.
+    Avoid the GPU-to-host length reduction in each optical macro stage.
+    """
+    if packed.ndim!=3 or not 1<=packed.shape[1]<=224 or packed.shape[2]!=224:
+        raise ValueError('Require complete actual-length T12 token fields')
+    lengths=[packed.shape[1]]*len(packed)
+    fields=path.core.encode_groups([packed[i] for i in range(len(packed))])
+    rms=fields.square().mean(dim=(-2,-1),keepdim=True).sqrt().clamp_min(1e-6)
+    return fields*(path.input_rms/rms),lengths
+
+
 def apply_configured_hybrid(qwen, config):
     """Reconstruct the checkpoint's actual retained-TF contract in every entry."""
     factory=apply_hybrid
@@ -169,8 +183,7 @@ class OpticalMacro(nn.Module):
         with torch.autocast(x.device.type, enabled=False):
             codec, path = self.codecs[stage], self.paths[stage//2]
             packed = codec.pack(x)
-            padding = torch.zeros(packed.shape[:2], dtype=torch.bool, device=x.device)
-            fields, lengths = path._encode_input_fields(packed, padding)
+            fields, lengths = encode_dense_field(path,packed)
             if stage == 0:
                 field, self.routing = path.core.begin(fields)
                 self.router_calls += 1

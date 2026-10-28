@@ -143,8 +143,13 @@ PSNR16.855801／LPIPS0.480210／crop0.427568，三任务均未过5%门槛。
 训练按真实长度分组，Qwen attention内部不补零；raw部署必须运行完整原Qwen并加载LoRA。
 新schema为`qwen_spatial_language_lora_v1`，LoRA权重随best/last保存，单列未合并部署参数；
 不先宣称已折叠或改善质量。先6cell零LoRA前后hidden严格检查及真实4步非零LoRA梯度，再最多12轮。
-原公共Qwen终端feature缓存不能冒用于该新teacher的LG蒸馏；当前LG入口对新schema显式拒绝，
-待新电子版有效后，必须另做适配后teacher终端缓存和接口核验。DEV96继续选模，TEST540继续封存。
+原公共Qwen终端feature缓存不能冒用于该新teacher的LG蒸馏；新候选缓存入口要求显式提供
+原前缀及真实调用上下文，将实际完整Qwen＋所选LoRA的输出与前缀重放逐条核验（绝对差≤1e-3），
+原始hook结果在重放前独立保存。缓存报告绑定LoRA张量摘要，KD／图像恢复拒绝不同适配权重的终端缓存。
+旧head_overlay不得跨teacher混用；宏参数单独暖启动须显式声明。该新缓存协议目前仅CPU检查通过，
+尚待新电子版完成后的GPU验证，不提前声称LG质量恢复。运行中的旧版本保持固定，不热替换源码。
+稠密真实长度field编码也有审计后端旧／新输出及输入梯度逐元素一致检查；仅减少长度读取同步，
+不改物理编码、网络或时间计费边界，未测前不宣称加速。DEV96继续选模，TEST540继续封存。
 所有教师资产保留出处、seed和SHA；不为独立TEST生成背景或缓存。ABO CC BY 4.0
 仅陈述ABO来源，不把教师背景自动标成ABO授权资产。
 

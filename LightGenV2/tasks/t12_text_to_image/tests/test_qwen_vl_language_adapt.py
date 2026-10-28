@@ -2,7 +2,7 @@ import unittest
 import torch
 from torch import nn
 
-from LightGenV2.tasks.t12_text_to_image.qwen_vl_language_adapt import NativeLanguageTail,inject_language_lora,install_in_full_qwen,TARGETS
+from LightGenV2.tasks.t12_text_to_image.qwen_vl_language_adapt import NativeLanguageTail,inject_language_lora,install_in_full_qwen,frontend_adapter_digest,verify_frontend_feature_report,TARGETS
 
 
 class Block(nn.Module):
@@ -15,6 +15,14 @@ class Block(nn.Module):
 
 
 class LanguageAdaptTests(unittest.TestCase):
+    def test_adapted_terminal_cache_must_match_selected_frontend_weights(self):
+        state={'schema':'qwen_spatial_language_lora_v1','qwen_language_lora':{'a':torch.ones(2,2)}}
+        digest=frontend_adapter_digest(state)
+        verify_frontend_feature_report({'qwen_language_lora_state_sha256':digest},state)
+        state['qwen_language_lora']['a'][0,0]+=1
+        with self.assertRaises(ValueError):verify_frontend_feature_report({'qwen_language_lora_state_sha256':digest},state)
+        with self.assertRaises(ValueError):verify_frontend_feature_report({},state)
+        verify_frontend_feature_report({}, {'schema':'qwen_spatial_v1'})
     def test_zero_adapter_identity_gradients_and_exact_reload(self):
         context={n:{'position_embeddings':(torch.ones(1,n,4),torch.zeros(1,n,4)),
                     'attention_mask':None,'position_ids':torch.arange(n)[None],

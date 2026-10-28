@@ -6,6 +6,20 @@ from LightGenV2.tasks.t12_text_to_image.qwen_vl_hybrid import OpticalMacro, Toke
 
 
 class HybridTests(unittest.TestCase):
+    def test_actual_length_encoding_matches_audited_field_and_input_gradient(self):
+        from ..qwen_vl_hybrid import encode_dense_field
+        from ..audited_unified import optical_path
+        torch.manual_seed(11);path=optical_path(224,224).eval()
+        x=torch.randn(1,7,224,requires_grad=True)
+        old,lengths=path._encode_input_fields(x,torch.zeros(1,7,dtype=torch.bool))
+        new,actual=encode_dense_field(path,x)
+        self.assertEqual(lengths,actual);torch.testing.assert_close(new,old,rtol=0,atol=0)
+        weight=torch.randn_like(old)
+        a=torch.autograd.grad((old*weight).sum(),x)[0]
+        b=torch.autograd.grad((new*weight).sum(),x)[0]
+        torch.testing.assert_close(a,b,rtol=0,atol=0)
+        with self.assertRaises(ValueError):encode_dense_field(path,torch.zeros(1,225,224))
+
     def test_frontend_fingerprint_binds_rgb_text_and_excludes_supervision(self):
         from ..qwen_vl_hybrid_run import frontend_input_hash
         p={'reference':torch.zeros(1,3,8,8,dtype=torch.uint8),'target':torch.zeros(1,3,8,8),'rows':[{'prompt':'red lamp','noise_seed':1}]}
