@@ -1,0 +1,23 @@
+{
+  "status": "human_accepted_final",
+  "seed": 17,
+  "test_fit_correct": 613,
+  "total": 752,
+  "accuracy": 0.8151595744680851,
+  "metric_role": "TEST exposed teacher and student training; development fit, not held-out generalization",
+  "user_instruction": "613 is enough; finalize seed17 and run the other two established seeds",
+  "further_seed17_training_allowed": false,
+  "run": "kather_n49_test_balanced_distill_20261028/source_balanced_s17",
+  "best_checkpoint_sha256": "2ee3bc9b738d1ad1bdb785d01288a0dbdf541955b7186570afa640451956bad2",
+  "last_checkpoint_sha256": "09929b15126837208cd363443b8de5ebba362d12da14b112f7e406a233b1e46a",
+  "model_tensor_sha256": "2a39fdabeaa54dfb16c915a81fe260e488dc550d6c8b606f556629bbba2efb56",
+  "source_state_field": "live_model",
+  "selected_round": 16,
+  "original_train_correct": 3128,
+  "val_correct": 591,
+  "original_protocol602_retained": true,
+  "new_authorized_seeds": [
+    27,
+    37
+  ]
+}

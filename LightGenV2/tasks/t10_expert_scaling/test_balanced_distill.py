@@ -44,9 +44,9 @@ def sample_source_balanced(labels,step,seed=17):
     return chosen
 
 
-def balanced_calibration_indices(labels,teacher,parent):
+def balanced_calibration_indices(labels,teacher,parent,seed=17):
     import numpy as np
-    y=np.asarray(labels);assert len(y)==4248;rows=np.arange(len(y));rng=np.random.default_rng(17);used=set();batches=[]
+    y=np.asarray(labels);assert len(y)==4248;rows=np.arange(len(y));rng=np.random.default_rng(seed);used=set();batches=[]
     t=teacher.argmax(1)==y;p=parent.argmax(1)==y
     for batch in range(2):
         chosen=[]

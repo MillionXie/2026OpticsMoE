@@ -76,10 +76,10 @@ def prepare(c,recipe):
     from .train import data
     from .model import ScalingOptics
     row=c['sources'][recipe];source=Path(row['run']);m=copy.deepcopy(json.loads((source/'metadata.json').read_text()));a=m['arguments']
-    assert a['seed']==17 and a['experts']==a['top_k']==49 and a['layers']==4
+    assert a['seed']==c['seed'] and a['experts']==a['top_k']==49 and a['layers']==4
     assert m['data_sha256']==c['data_sha256'];cache=Path(a['data']);assert sha(cache)==c['data_sha256']
     splits,manifest=data(cache);protocol=copy.deepcopy(m['protocol']);protocol['training_proposal']['phase_noise_std']=0.
-    torch.manual_seed(17);np.random.seed(17);random.seed(17);torch.set_num_threads(4)
+    torch.manual_seed(c['seed']);np.random.seed(c['seed']);random.seed(c['seed']);torch.set_num_threads(4)
     model=ScalingOptics(protocol,49,49,'moe_oeo',8,a['layers'],a['padding']).cuda()
     checkpoint=torch.load(source/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     assert checkpoint['epoch']==row['actual_epoch'];model.load_state_dict(checkpoint['model']);del checkpoint
@@ -136,7 +136,7 @@ def worker(c,out,profile,recipe,auxiliary=None):
         metadata['auxiliary']=auxiliary.identity
     save(out/'metadata.json',metadata)
     x,y,ids=splits['train'];weights=len(y)/(8*torch.bincount(y,minlength=8).float().cuda())
-    rng=np.random.default_rng(17);ix=np.concatenate([rng.permutation(np.flatnonzero(y.numpy()==k))[:64] for k in range(8)])
+    rng=np.random.default_rng(c['seed']);ix=np.concatenate([rng.permutation(np.flatnonzero(y.numpy()==k))[:64] for k in range(8)])
     probe=(x[ix],y[ix],ids[ix]);initial_probe,_=evaluate(ema,probe,4);initial_val,_=evaluate(ema,splits['val'],4)
     expected=json.loads((Path(c['sources'][recipe]['run'])/'result.json').read_text())['val']['accuracy']
     assert abs(initial_val['accuracy']-expected)<=1.001/752
@@ -154,7 +154,7 @@ def worker(c,out,profile,recipe,auxiliary=None):
             val=val,power_fraction=1.,metadata=metadata,rng=dict(torch_cpu=torch.get_rng_state(),torch_cuda=torch.cuda.get_rng_state(),numpy=np.random.get_state(),python=random.getstate()))
     aux_stop=False
     for step in range(1,c['rounds']+1):
-        model.train();values=auxiliary.sample_indices(y.numpy(),step,17) if auxiliary is not None and hasattr(auxiliary,'sample_indices') else sample_indices(y.numpy(),step,17)
+        model.train();values=auxiliary.sample_indices(y.numpy(),step,c['seed']) if auxiliary is not None and hasattr(auxiliary,'sample_indices') else sample_indices(y.numpy(),step,c['seed'])
         order=torch.from_numpy(values)
         if auxiliary is not None:auxiliary.start_round(step)
         with (out/'sampling_history.jsonl').open('a') as f:f.write(json.dumps(dict(round=step,indices=order.tolist(),ids=ids[order.numpy()].tolist()))+'\n')
@@ -167,7 +167,7 @@ def worker(c,out,profile,recipe,auxiliary=None):
                 value=0.
                 for offset in range(0,16,2):
                     u=batch[offset:offset+2]
-                    input_batch=images(x,u,10000+step,17,True) if auxiliary is None else auxiliary.images(x,u,step)
+                    input_batch=images(x,u,10000+step,c['seed'],True) if auxiliary is None else auxiliary.images(x,u,step)
                     output=model(input_batch);labels=y[u].cuda()
                     loss=objective(model,output,labels,weights,tc)+.2*classification_margin_loss(output['probabilities'],labels)
                     if not torch.isfinite(loss):raise RuntimeError('Nonfinite reheat objective')

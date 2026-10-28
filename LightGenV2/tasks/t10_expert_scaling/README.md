@@ -1,5 +1,32 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## 用户接受seed17定稿，固定配方扩展seed27/37（2026-10-28）
+
+用户已明确接受seed17的613/752（81.5160%）作为定稿，不再为该seed追616；
+该权重、完整last和原协议602均保留，指标仍为TEST已参与训练的暴露拟合。
+接受记录：[seed17_user_finalization_20261028.json](reports/kather_n49_seed_balanced_followup_20261028/seed17_user_finalization_20261028.json)。
+
+新增入口`seed_balanced_distill.py`、profile`configs/kather_n49_seed_balanced_followup_20261028.json`，
+run `runs/simulation/kather_n49_seed_balanced_followup_20261028`，seed27/GPU1与seed37/GPU3并行。
+复用同一个已锁de9教师和八view raw logits，不重训教师；各自从既有原full49最优权重开始：
+seed27原epoch109/PT`d0def9c8…498a7d9`，seed37原epoch119/PT`39f88b75…5481389`。
+各自生成8×4248父概率并绑定自己的源PT，绝不借用seed17/f6d父概率或613作为其他seed的候选。
+准备阶段只读原权重，记录源tensor/原TRAIN/TEST概率；reference的PT为原不可变best的硬链接。
+原VAL记录作为初始化核验参照，学生进入训练前完整重评VAL。
+
+冻结已发现的C配方：16段×1024unique，effective16/micro2、64步，每类64TRAIN+64TEST；
+每路8192TRAIN+8192TEST、1024更新，7段覆盖union、2段覆盖TEST。
+保持原full49光学推理/T2/λ0.3203496288685833/父KL0.5/CE及物理项/LR/EMA完全相同，
+初始化、采样、D4、校准批和探针随机性均使用实际seed27或37，fresh AdamW/RNG。
+各自两互斥16校准批含8TRAIN+8TEST；冻结λ只测实际比例和真实Adam方向、5组finite、8D4父等价及源恢复，
+不重新选择λ，不把校准步接入正式优化器。固定4/8/12/16锁last/field/tensor后live+EMA拟合选模，
+原seed自身起点始终保留；数值/身份失败和原连续两点probe+VAL退化保护保留。
+没有seed17特有的旧B匹配停止规则，也不因某一路先高分停掉另一条或自动追加轮数。
+
+这是从各自现成权重出发的固定配方迁移验证，**不是重放seed17全部方法开发链或匹配其累计开发预算**。
+后续三seed分数如汇总，会明确上述起点与预算差异，并继续与原等预算Top-k表分开。
+最终保存各路best/last、全部固定752预测/锁/采样/原TRAIN/VAL/union/路由、源及资源释放收据，独立核验后发布。
+
 ## 来源权重对照C已完成：暴露拟合613/752，仍差616三张（2026-10-28）
 
 正式报告：[final_summary_20261028.json](reports/kather_n49_test_balanced_distill_20261028/final_summary_20261028.json)。

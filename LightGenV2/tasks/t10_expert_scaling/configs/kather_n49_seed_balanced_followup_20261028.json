@@ -1,0 +1,72 @@
+{
+  "rounds": 16,
+  "check_rounds": [
+    4,
+    8,
+    12,
+    16
+  ],
+  "samples_per_class": 128,
+  "batch": 16,
+  "microbatch": 2,
+  "schedule_type": "distill",
+  "peak_lr": 0.0003,
+  "end_lr": 3e-05,
+  "ema_decay": 0.95,
+  "target_correct": 616,
+  "temperature": 2,
+  "parent_weight": 0.5,
+  "gradient_target_ratio": 0.5,
+  "minimum_weighted_gradient_ratio": 0.05,
+  "gpus": {
+    "1": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "3": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "explicit_test_training_authorization": true,
+  "test_images_enter_student_gradient": true,
+  "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+  "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+  "fixed_lambda_kd": 0.3203496288685833,
+  "stage": "Human_finalized_seed17_fixed_recipe_followups",
+  "seeds": [
+    27,
+    37
+  ],
+  "seed_gpu": {
+    "27": 1,
+    "37": 3
+  },
+  "seed17_finalized": {
+    "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_balanced_distill_20261028/source_balanced_s17",
+    "checkpoint_sha256": "2ee3bc9b738d1ad1bdb785d01288a0dbdf541955b7186570afa640451956bad2",
+    "test_fit_correct": 613,
+    "total": 752,
+    "further_training_allowed": false,
+    "user_accepted": true
+  },
+  "source_runs": {
+    "27": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s27",
+      "sha256": "d0def9c832863ddf947ad8677d5108a2238526b72f5fe88383d5ed938498a7d9",
+      "actual_epoch": 109
+    },
+    "37": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49k49_continue90to120_20261027/N49_k49_s37",
+      "sha256": "39f88b7585fb58f4f4fdf9ed821226144ffe6fe40945d5774865f6a3c5481389",
+      "actual_epoch": 119
+    }
+  },
+  "auxiliary_dependencies": [
+    "test_exposed_distill.py",
+    "cnn_teacher_cache.py",
+    "cnn_distill.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py",
+    "test_balanced_distill.py",
+    "seed_balanced_distill.py"
+  ],
+  "role": "Human finalized seed17 exposed-fit613 and requested other established seeds27/37. Freeze discovered C50/50/T2/lambda/LR/16round recipe; independent own-seed originalfull49 parents and freshAdamW/RNG. Reuse the common locked TEST-exposed teacher. These are fixed-recipe transfer followups from their existing best checkpoints, not a budget-matched replay of seed17 method discovery. All TEST scores remain exposed fit. No automatic extensions or seed17 retraining."
+}
