@@ -1,0 +1,12 @@
+{
+  "schema": "abo_white_reference_scene_feasibility_v1",
+  "source_pair_sha256": "c442d874bc4c152ed395b672aa100313b78f6c480879614c268ade70236db2e0",
+  "source_row_indices": [0, 54, 480, 516],
+  "seeds": [1042, 1043],
+  "negative_prompt": "people, readable text, logo, watermark, duplicate product, malformed structure, flat solid-color backdrop",
+  "ip2p": {"resolution": 512, "steps": 30, "text_guidance": 7.5, "image_guidance": 1.5},
+  "sdxl_ipadapter": {"resolution": 1024, "steps": 30, "text_guidance": 7.5, "image_scale": 0.6},
+  "sdxl_model_revision": "462165984030d82259a11f4367a4eed129e94a7b",
+  "ip_adapter_revision": "018e402774aeeddd60609b4ecdb7e298259dc729",
+  "protocol": "TRAIN-only white-background ABO feasibility,4distinct products/two detailed Generate prompts/two fixed seeds=16outputs/model, all outputs retained. Frozen non-Qwen InstructPix2Pix and SDXL+IP-Adapter Plus are separate native-resolution diagnostic baselines, not a resolution-matched performance comparison. Detailed furnished scenes and changed object appearance; retain coarse outline. No external room photo, unique paired GT, mask, retrieval/paste, new training or independentTEST. Main1024 SDXL and512 IP2P outputs are native, no output enhancement. Exact source/license/model/prompt/seed identity retained. Model/asset licenses are separate from rights in outputs and publisher approval. Explicit manual review before creating synthetic TRAIN supervision. No scheduled follow-up is created."
+}
