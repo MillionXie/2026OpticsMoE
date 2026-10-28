@@ -26,6 +26,13 @@ def forward_from_prefix(self,prefix,*,optical_enabled=True):
     return normalized
 
 class Checks(unittest.TestCase):
+    def test_legacy_import_does_not_redirect_guard_pipe(self):
+        import run_lgvq_compute_scope_20261029 as entry
+        import lgvq_hoisted_pipeline_20261026
+        import qwen_shared_serial_20261026 as shared
+        entry.restore_guard_context('/explicit/private/pipe')
+        self.assertEqual(shared.base.PIPE,'/explicit/private/pipe')
+
     def test_patch_native_AST(self):
         captured=[]
         observed,patch,receipt=scope.processor_adapter(preprocess,lambda *x:captured.append(x))

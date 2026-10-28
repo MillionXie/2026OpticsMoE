@@ -59,6 +59,15 @@ def alive(pid):
     try:return Path('/proc',str(int(pid)),'stat').read_text().rsplit(')',1)[1].split()[0]!='Z'
     except FileNotFoundError:return False
 
+def restore_guard_context(pipe):
+    # Legacy helper imports intentionally select their own module-global pipe.
+    # Restore the explicit controller-owned context AFTER all helper imports.
+    import lgvq_gpu_pipeline_20261026 as base
+    import qwen_shared_serial_20261026 as shared
+    import run_corrected_boundaries_20261026 as original
+    for module in (base,shared.base,original.base):module.GPU=GPU;module.PIPE=pipe
+    if shared.base.PIPE!=pipe or original.base.PIPE!=pipe:raise ValueError('Guard pipe context mismatch')
+
 def execute(args,guard):
     from concurrent.futures import ProcessPoolExecutor,ThreadPoolExecutor
     import multiprocessing
@@ -81,6 +90,7 @@ def execute(args,guard):
     from LightGenV2.tasks.t06_video_quality_assessment.nvml_observer_process import ProcessTelemetrySampler
     from LightGenV2.tasks.t06_video_quality_assessment.batch_telemetry import save_samples
     from LightGenV2.tasks.t06_video_quality_assessment.strict_tf_window_20261020 import interval_energy
+    restore_guard_context(args.pipe)
     output=args.output;sampler=None;restore=None
     def status(value,**kw):write(output/'status.json',dict(status=value,pid=os.getpid(),unix=time.time(),**kw))
     checkpoint=TASK/'runs/simulation/multivideo16x4_rank_s163/best_checkpoint.pt'
