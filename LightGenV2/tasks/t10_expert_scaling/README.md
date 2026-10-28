@@ -2,6 +2,14 @@
 
 ## D2NN全局面尺寸对齐重跑（2026-10-29）
 
+2026-10-29用户临时收回A100：N4已完成60轮并退出；仅N16需从最后完整checkpoint迁移到GPU0。
+原A100 worker和旧CPU scheduler已停止，N25/GPU1与N49/GPU3不间断。新入口`d2nn_aperture_migration.py`及profile
+`configs/kather_d2nn_aperture_migration_20261029.json`接管等待、全四模型锁定和一次TEST；之后完全不再使用GPU6。
+N16旧run/best/last/history保留，复制到新resume run继承live/EMA/Adam和已完成history，累计仍60轮，不从头重训。
+按原入口重新设RNG，不称逐位RNG恢复；丢弃的未完成epoch及其中断时间单列，不能当已完成轮次或假定确切图数。
+最终TEST分配N4/GPU4、N16/GPU0、N25/GPU1、N49/GPU3，各一自身进程，foreign不动。
+
+
 用户要求D2NN每层可训练相位面等于LG全局有效面，改用已有`d2nn_same_aperture`，不再使用原expert/global参数匹配尺寸。
 仅重跑seed17、N=4/16/25/49各一次；4层及4次OEO、旧60轮AdamW LR.002/effective16micro2/EMA.95、D4、CE smoothing.02/capture.02/TV.02和VALmacroNLL选EMA均保持。
 入口`d2nn_aperture_rerun.py`，profile `configs/kather_d2nn_same_aperture_s17_20261029.json`，原数据/划分/旧权重不变。
