@@ -64,9 +64,10 @@ def restore_guard_context(pipe):
     # Restore the explicit controller-owned context AFTER all helper imports.
     import lgvq_gpu_pipeline_20261026 as base
     import qwen_shared_serial_20261026 as shared
-    import run_corrected_boundaries_20261026 as original
-    for module in (base,shared.base,original.base):module.GPU=GPU;module.PIPE=pipe
-    if shared.base.PIPE!=pipe or original.base.PIPE!=pipe:raise ValueError('Guard pipe context mismatch')
+    original=sys.modules.get('run_corrected_boundaries_20261026')
+    modules=[base,shared.base]+([original.base] if original is not None else [])
+    for module in modules:module.GPU=GPU;module.PIPE=pipe
+    if any(module.PIPE!=pipe for module in modules):raise ValueError('Guard pipe context mismatch')
 
 def execute(args,guard):
     from concurrent.futures import ProcessPoolExecutor,ThreadPoolExecutor
