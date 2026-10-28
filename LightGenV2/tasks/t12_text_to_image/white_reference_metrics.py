@@ -19,8 +19,22 @@ from pathlib import Path
 import statistics
 import sys
 import traceback
+import types
 
 from .white_reference_scene_probe import digest, write, GPU
+
+
+def reward_loader():
+    # Import the unchanged official scoring modules without the package root's
+    # unrelated ReFL training API, which imports modern diffusers/PEFT. Metrics
+    # have a private transformers4.35 runtime; generator/Qwen environments stay
+    # unchanged. No vendor files, model forward, or score formula are patched.
+    if 'ImageReward' not in sys.modules:
+        package = types.ModuleType('ImageReward')
+        package.__path__ = [str(importlib.metadata.distribution('image-reward').locate_file('ImageReward'))]
+        sys.modules['ImageReward'] = package
+    from ImageReward.utils import load
+    return load
 
 
 def reward_caption(category, condition_id):
@@ -86,7 +100,7 @@ def main():
         import clip
         from PIL import Image
         from transformers import AutoImageProcessor, AutoModel
-        import ImageReward as RM
+        load_reward = reward_loader()
         torch.set_num_threads(4)
         rows = [r for run in args.runs for r in load_records(run)]
         if len({r.name for r in args.runs}) != len(args.runs): raise ValueError('Duplicate run identity')
@@ -123,7 +137,7 @@ def main():
                 row['DINOv2_I'] = (features[0]*features[1]).sum().item()
                 write(args.output/'progress.json', {'stage':'DINOv2','done':i+1,'total':len(rows)})
         del model; gc.collect(); torch.cuda.empty_cache()
-        model = RM.load(str(args.reward_path/'ImageReward.pt'), device='cuda', med_config=str(args.reward_path/'med_config.json'))
+        model = load_reward(str(args.reward_path/'ImageReward.pt'), device='cuda', med_config=str(args.reward_path/'med_config.json'))
         model.eval().requires_grad_(False)
         with torch.inference_mode():
             for i, row in enumerate(rows):
