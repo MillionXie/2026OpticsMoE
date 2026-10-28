@@ -1,0 +1,274 @@
+{
+  "status": "complete",
+  "experts": 16,
+  "top_k": 8,
+  "published_training_source": "1c6dc479b2a3741cd91746a52b40f449cbbbe1e8",
+  "server_host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "students": [
+    {
+      "seed": 17,
+      "status": "complete",
+      "run": "runs/simulation/kather_n16k8_followup_20261028/N16_k8_s17",
+      "selected": {
+        "epoch": 75,
+        "state_field": "model",
+        "origin": "continued_EMA",
+        "original_TRAIN_correct": 2702,
+        "original_TRAIN_total": 3496,
+        "VAL_correct": 569,
+        "VAL_total": 752,
+        "TEST_correct": 544,
+        "TEST_total": 752,
+        "TEST_NLL": 0.8917732834815979,
+        "best_checkpoint_sha256": "b4c2054cce5930a47579251962a30f77091e8f25d7b1275c952f8a8fa9e7f408",
+        "last_checkpoint_sha256": "e471bc88b00d04390843db77c940d1a11c848db2cf54914e7850309c62bafb7a",
+        "model_tensor_sha256": "8924ce2a78e5724b7462314fdd540f0a4ebd144c69ad820ddb70d3d1c3be1abc",
+        "TEST_predictions_sha256": "dcfa8f2e3f0b1d687aa8d7a101690fd5b8d4aa290ba3d158da202f456aa1b51f"
+      },
+      "baseline": {
+        "original_TRAIN_correct": 2571,
+        "VAL_correct": 535,
+        "TEST_correct": 522,
+        "source_best_sha256": "92ef43c371d3cbfd4740a1660fb181f9cece6ccc964e5ca114e5e046b928fe39",
+        "source_last_sha256": "0b9f91c07849b8788f18a2b74ace81b2f6073512db02b883710da654fe3013d6"
+      },
+      "paired": {
+        "fixed": 27,
+        "newly_wrong": 5,
+        "net": 22
+      },
+      "delta": {
+        "original_TRAIN": 131,
+        "VAL": 34,
+        "TEST": 22
+      },
+      "extra_epochs": 30,
+      "total_epochs": 90,
+      "TRAIN_gradient_inputs": 104880,
+      "TEST_gradient_inputs": 0,
+      "extra_optimizer_updates": 6570,
+      "last_Adam_steps": [
+        19710.0,
+        19710.0,
+        19710.0,
+        19710.0,
+        19710.0
+      ],
+      "training_and_evaluation_seconds": 4321.89192032814,
+      "locked_TEST_forward_seconds": 11.217087745666504,
+      "saved_complete_TRAIN_VAL_probabilities": false
+    },
+    {
+      "seed": 27,
+      "status": "complete",
+      "run": "runs/simulation/kather_n16k8_followup_20261028/N16_k8_s27",
+      "selected": {
+        "epoch": 89,
+        "state_field": "model",
+        "origin": "continued_EMA",
+        "original_TRAIN_correct": 2722,
+        "original_TRAIN_total": 3496,
+        "VAL_correct": 567,
+        "VAL_total": 752,
+        "TEST_correct": 548,
+        "TEST_total": 752,
+        "TEST_NLL": 0.9000198841094971,
+        "best_checkpoint_sha256": "8eae64dbbe438e497936e27bd271e36d732c3536352747c88cb92f379b7a6d11",
+        "last_checkpoint_sha256": "daf1d7418f77a9e99b337d5f4474c43710cf7d1476cfeceaeb2ce6b6a2ad9524",
+        "model_tensor_sha256": "c11cb3d9946a67e85959a634dd3c0f7d8879b5e3933424435e3f051ccb9e254c",
+        "TEST_predictions_sha256": "ee8bf52d6d635e5230b29acf571de42138d9f3de6251b99fe9f587295e10327c"
+      },
+      "baseline": {
+        "original_TRAIN_correct": 2578,
+        "VAL_correct": 540,
+        "TEST_correct": 518,
+        "source_best_sha256": "a89fe5db0e82247b41a587ab53a7db3056240662fb50185ec635dd2711889a99",
+        "source_last_sha256": "13e3ddfe6289f1c458c020a798bfd290837601a9088ef8cedefec3433853f3e1"
+      },
+      "paired": {
+        "fixed": 35,
+        "newly_wrong": 5,
+        "net": 30
+      },
+      "delta": {
+        "original_TRAIN": 144,
+        "VAL": 27,
+        "TEST": 30
+      },
+      "extra_epochs": 30,
+      "total_epochs": 90,
+      "TRAIN_gradient_inputs": 104880,
+      "TEST_gradient_inputs": 0,
+      "extra_optimizer_updates": 6570,
+      "last_Adam_steps": [
+        19710.0,
+        19710.0,
+        19710.0,
+        19710.0,
+        19710.0
+      ],
+      "training_and_evaluation_seconds": 4207.955211400986,
+      "locked_TEST_forward_seconds": 10.56910490989685,
+      "saved_complete_TRAIN_VAL_probabilities": false
+    },
+    {
+      "seed": 37,
+      "status": "complete",
+      "run": "runs/simulation/kather_n16k8_followup_20261028/N16_k8_s37",
+      "selected": {
+        "epoch": 87,
+        "state_field": "model",
+        "origin": "continued_EMA",
+        "original_TRAIN_correct": 2708,
+        "original_TRAIN_total": 3496,
+        "VAL_correct": 566,
+        "VAL_total": 752,
+        "TEST_correct": 559,
+        "TEST_total": 752,
+        "TEST_NLL": 0.8816525936126709,
+        "best_checkpoint_sha256": "fb64670fa14c871733554510a495be289adc7955c1600c651102a7f4e4fe316a",
+        "last_checkpoint_sha256": "08d5f4af177d5f53f664f85be30c43e99db06b30dbca969308179c5899dc3632",
+        "model_tensor_sha256": "e218c7363af8af5436b8c8f71332f9c68f8933d92dabeacc3c7d4bc92ad96f42",
+        "TEST_predictions_sha256": "275655c9eda9945a86a62a079acca8b98a938a79600f3689a3ded9bd5e207ad4"
+      },
+      "baseline": {
+        "original_TRAIN_correct": 2556,
+        "VAL_correct": 542,
+        "TEST_correct": 540,
+        "source_best_sha256": "0e5c158a9180294454a5c3d0f4452d37cf22cbf2b8abe468680a6edac96426af",
+        "source_last_sha256": "1c5a11ad998ebb8080ff97b38c238af219f124ffb38aa63339398636b5bb43d0"
+      },
+      "paired": {
+        "fixed": 26,
+        "newly_wrong": 7,
+        "net": 19
+      },
+      "delta": {
+        "original_TRAIN": 152,
+        "VAL": 24,
+        "TEST": 19
+      },
+      "extra_epochs": 30,
+      "total_epochs": 90,
+      "TRAIN_gradient_inputs": 104880,
+      "TEST_gradient_inputs": 0,
+      "extra_optimizer_updates": 6570,
+      "last_Adam_steps": [
+        19710.0,
+        19710.0,
+        19710.0,
+        19710.0,
+        19710.0
+      ],
+      "training_and_evaluation_seconds": 4173.745818376541,
+      "locked_TEST_forward_seconds": 12.373258829116821,
+      "saved_complete_TRAIN_VAL_probabilities": false
+    }
+  ],
+  "aggregate": {
+    "seeds": [
+      17,
+      27,
+      37
+    ],
+    "correct_counts": [
+      544,
+      548,
+      559
+    ],
+    "total_correct": 1651,
+    "total_per_seed": 752,
+    "mean_percent": 73.18262411347517,
+    "sample_sd_percent": 1.0329060458981432,
+    "previous_k4_correct_counts": [
+      541,
+      512,
+      535
+    ],
+    "previous_k4_total": 1588,
+    "previous_k4_mean_percent": 70.39007092198581,
+    "previous_k4_sample_sd_percent": 2.0356316495044386,
+    "minimum_total_correct": 1589,
+    "strict_target_met": true,
+    "mean_difference_to_k4_percentage_points": 2.792553191489361,
+    "working_half_pp_margin_met": true,
+    "original_k8_counts": [
+      522,
+      518,
+      540
+    ],
+    "original_k8_total": 1580,
+    "net_total_gain": 71
+  },
+  "protocol": {
+    "unchanged_optical_model": "N16 top8,3600200parameters,4OEO RGB detectors routerT.05 five phase groups singleview",
+    "initialization": "Each own immutable epoch60 last live/EMA/Adam retained; RNG freshly seeded per original continuation entry, not bitwise RNG restoration",
+    "budget": "30full originalTRAIN epochs,3496each=104880TRAIN inputs/6570optimizerupdates per seed; cumulative90epochs, TESTgradient0, no teacher",
+    "LR": "5e-4 cosine to5e-5, original effective16/micro2",
+    "loss": "Original classification/physical losses with margin.2/capture.005; no new hardbalance, original softbalance retained",
+    "selection": "VAL accuracy, macroNLLtie, include oldbest; all three selected models locked together before any new TEST; one TEST per model after lock",
+    "metric_role": "TRAIN-only post-observed-TEST development follow-up with extra budget; not original equal-budget or untouched independent-generalization evidence"
+  },
+  "source_files": {
+    "LightGenV2/tasks/t10_expert_scaling/n16_midk_followup.py": "fc83d91748037e33334ab5f8143837c9b57d14a9a5e19fb67db9021cc6e99d65",
+    "LightGenV2/tasks/t10_expert_scaling/configs/kather_n16k8_followup_20261028.json": "ea6c15783df023495049afe7e67f98386b49febc26caa1fc729b2166b4722b6f",
+    "LightGenV2/tasks/t10_expert_scaling/diagnose_topk.py": "7fb6aaa5824b9939e4250afdd8f7595e486dc2dfcf144f4c1ede6216b02395a4",
+    "LightGenV2/tasks/t10_expert_scaling/expert_tail_schedule.py": "7ce924e0f2c403446a3203b94d30607b9e05ec996686610fa0eaffdad4319832",
+    "LightGenV2/tasks/t10_expert_scaling/train.py": "428432ffba1f983c8b39a966c5293ab1d2fbd6046d2e54fcaf02ab2edb5c5cc0",
+    "LightGenV2/tasks/t10_expert_scaling/model.py": "d7be573246e2068fe4b3fa955efade2421a926816b72cc3ee559243a9522539f",
+    "LightGenV2/tasks/t10_expert_scaling/plan.py": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+    "LightGenV2/tasks/t10_expert_scaling/evaluate_test.py": "65ce3e62d122acee5c63fff2c0281985cb6cc838ce1baec24e42c95c97115097",
+    "LightGenV2/tasks/t10_expert_scaling/locked_test_cache.py": "cfec4423c974934b950b13207238e5b840de442f3c5d9cf3c858b632a28b9856",
+    "LightGenV2/tasks/t10_expert_scaling/configs/study.json": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+    "LightGenV2/common/optical_contract.py": "2dd7f8b78391b5c60e7b5f580eccadac37b1b7baa5e8998a6f019b0d31d1ca06"
+  },
+  "costs_derived_from_locked_code": {
+    "per_seed_extra_TRAIN_gradient_inputs": 104880,
+    "per_seed_extra_optimizer_updates": 6570,
+    "per_seed_TEST_gradient_inputs": 0,
+    "per_seed_initial_two_models_TRAIN_VAL_forward_inputs": 8496,
+    "per_seed30_VAL_forward_inputs": 22560,
+    "per_seed7_TRAIN_diagnostic_forward_inputs": 24472,
+    "per_seed_final_selected_TRAIN_VAL_forward_inputs": 4248,
+    "per_seed_locked_TEST_forward_inputs": 752,
+    "per_seed_total_full_model_inputs": 165408,
+    "per_seed_router_only_inputs": 5000,
+    "excludes_checkpoint_loading_hashing_and_queue_wait": true
+  },
+  "validation": {
+    "status": "passed",
+    "small_artifact_count": 69,
+    "source_Git_files": 11,
+    "manifest_sha256": "1bd768a24c6ad992b45ef802147a6eac4d4b68bf9fb2e307ca5e7b73c645f70f",
+    "independent_audit_sha256": "14b0305480247390492b577844de480babd11d4ec190dcb8153ae430232e1931",
+    "CPU_actual_best_last_identity": true,
+    "all5lastAdamsteps19710": true,
+    "all3models_locked_before_TEST": true,
+    "source_best_last_unchanged": true,
+    "all3saved_TEST752_predictions_CM_NLL_paired_recomputed": true,
+    "VAL_selection_from_source_and30history_recomputed": true,
+    "route_masks_top8_and_sample_IDs_verified": true,
+    "limitation": "Full TRAIN/VAL metrics verified from saved CM and selected checkpoint VAL; no TRAIN/VAL per-sample score NPZ exported by this historical continuation entry."
+  },
+  "resource_release": {
+    "scheduler_identity_absent": true,
+    "all_own_child_identities_absent": true,
+    "no_current_N16_compute": true,
+    "foreign_processes_untouched": true,
+    "scope": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n16k8_followup_20261028",
+    "timestamp": 1793183977.3590362
+  },
+  "archive": {
+    "path": "/tmp/t10_n16k8_final_20261028.tar.gz",
+    "sha256": "12cce81c1b706e5a42d7561e57e94759398a9c5168f583f7133ca741e64ec2ef",
+    "bytes": 1157222,
+    "files": 69,
+    "counts": [
+      544,
+      548,
+      559
+    ]
+  },
+  "new_user_request": "N16 already exceeds k4 by2.79pp, no extra N16 training. New full25/full49 margin extension authorized separately; retain ongoing follow-up.",
+  "timestamp": 1793184294.3525317
+}

@@ -1,0 +1,79 @@
+{
+  "teacher_data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "target_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_test_exposed_teacher_20261028",
+  "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+  "locked_teacher_manifest_sha256": "47c7add1fd82c6aa05c4595cd885ee5f80c5eadd98fe3892b14236ebf1d8af61",
+  "teacher_targets_sha256": "cb3d517dd7a3dee5881dfc945fda1dbcf1d5811e9f1b6623cde708944ea728e1",
+  "teacher_checkpoint_sha256": "de9decdfb47553814c9d4cb8b77ffca7272e75a5f75cb823c3457a15a306b9dd",
+  "seed": 37,
+  "model_experts": 49,
+  "expected_parameter_count": 11078432,
+  "max_steps": 16,
+  "max_objective_passes": 42,
+  "max_line_trials": 4,
+  "check_steps": [
+    12,
+    16
+  ],
+  "history_size": 3,
+  "direction_radius": 0.25,
+  "fixed_lambda_kd": 0.3203496288685833,
+  "temperature": 2,
+  "parent_weight": 0.5,
+  "explicit_test_training_authorization": true,
+  "test_images_enter_student_gradient": true,
+  "gpu_index": 3,
+  "gpu_uuid": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd",
+  "minimum_gpu_free_mib": 6000,
+  "incumbent_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_safeguarded_resume_20261028",
+  "incumbent_sha256": "8d2bbc18b22a45397136e8e58bbb7efe190ed1adc1ee7f0645a5b570848ad656",
+  "source_tensor_sha256": "277a55a15b34ebe26a0076a72ee65c06fa5cfca328550021d12278889a3c1f54",
+  "incumbent_predictions_sha256": "a04b013e01257d46f370c4e041266cc322a1387662fd53b303494280d2a42cc7",
+  "baseline_test_correct": 606,
+  "sources": {
+    "student": {
+      "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_safeguarded_resume_20261028",
+      "sha256": "8d2bbc18b22a45397136e8e58bbb7efe190ed1adc1ee7f0645a5b570848ad656",
+      "actual_epoch": 8
+    }
+  },
+  "parent_cache": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_seed_balanced_followup_20261028/parent_s37",
+  "parent_cache_source_commit": "150fabbbd8529c251175943a3229ac0b828b3d75",
+  "parent_checkpoint_sha256": "39f88b7585fb58f4f4fdf9ed821226144ffe6fe40945d5774865f6a3c5481389",
+  "locked_parent_receipt_sha256": "b8eeefd1710755398c0c076115da18351719ed7c1dfd3332ab57453fa135cf5a",
+  "locked_parent_scores_sha256": "5453fb3f6256280c17e256bee8bdfb77fd2f6d53179e2151da34355ba802aea8",
+  "auxiliary_dependencies": [
+    "test_exposed_distill.py",
+    "cnn_teacher_cache.py",
+    "cnn_distill.py",
+    "cached_distill.py",
+    "ensemble_teacher_cache.py",
+    "safeguarded_refine.py"
+  ],
+  "role": "New human request to increase the margin after the previous finite8step experiment finished. Restore exact own step8 model, three L-BFGS history pairs and all completed costs including step8 checks; recompute current gradient and compare saved vector, charge to new24-pass additional budget. Same1504clean pool, teacher, original parent and coefficients; ONLY additional optimization time changes. At most8additional accepted steps9..16 and24additional objective passes, global max16/42; checks12/16 only, no duplicate step8 TEST, incumbent606 retained. TEST-trained adaptive development fit, no equal-budget/generalization claim; working target +.5pp aggregate above previous Topk, no endless extension if unmet.",
+  "aggregate_target": {
+    "current_counts": [
+      613,
+      608,
+      606
+    ],
+    "updated_seed": 37,
+    "previous_Topk_total_correct": 1825,
+    "working_margin_percentage_points": 0.5,
+    "minimum_aggregate_total_correct": 1837,
+    "not_a_per_seed616_requirement": true
+  },
+  "resume_run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_n49_safeguarded_resume_20261028",
+  "resume_checkpoint_sha256": "8d2bbc18b22a45397136e8e58bbb7efe190ed1adc1ee7f0645a5b570848ad656",
+  "resume_model_tensor_sha256": "277a55a15b34ebe26a0076a72ee65c06fa5cfca328550021d12278889a3c1f54",
+  "resume_pool_sha256": "898190b022cb009c748186599d474f232f372ef77eed06e34f86746b18a1d56d",
+  "resume_accepted_steps": 8,
+  "resume_previous_source_commit": "9d091141e833c6d507b304710904de725deef2d6",
+  "continuation_kind": "user_requested_margin_extension",
+  "max_additional_steps": 8,
+  "max_additional_objective_passes": 24,
+  "check_restored_step": false,
+  "resume_previous_objective_passes": 18,
+  "resume_previous_gradient_passes": 10
+}

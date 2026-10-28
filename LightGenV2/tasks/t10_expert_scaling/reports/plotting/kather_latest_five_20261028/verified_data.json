@@ -24,6 +24,26 @@
     },
     {
       "experts": 16,
+      "top_k": 8,
+      "correct_counts": [
+        544,
+        548,
+        559
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 73.18262411347517,
+      "sample_sd_percent": 1.0329060458981432,
+      "display": "73.18 ± 1.03",
+      "marker": "*",
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient"
+    },
+    {
+      "experts": 16,
       "top_k": 16,
       "correct_counts": [
         572,
@@ -103,6 +123,7 @@
       "role": "TEST-trained exposed development fit; unequal discovery budgets and extra8-step safeguarded refinement on seed37"
     }
   ],
+  "updated_rows_count": 6,
   "rows": [
     {
       "experts": 4,
@@ -365,9 +386,9 @@
       },
       "latest": {
         "correct_counts": [
-          522,
-          518,
-          540
+          544,
+          548,
+          559
         ],
         "total_per_seed": 752,
         "seeds": [
@@ -375,13 +396,13 @@
           27,
           37
         ],
-        "mean_percent": 70.0354609929078,
-        "sample_sd_percent": 1.5583684247559382,
-        "display": "70.04 ± 1.56"
+        "mean_percent": 73.18262411347517,
+        "sample_sd_percent": 1.0329060458981432,
+        "display": "73.18 ± 1.03"
       },
-      "marker": "",
-      "updated": false,
-      "role": "Original60-epoch result",
+      "marker": "*",
+      "updated": true,
+      "role": "90-epoch post-TEST-observation development follow-up; TEST not in gradient",
       "bold_group_max": false
     },
     {
@@ -1076,13 +1097,42 @@
     }
   },
   "N16k8_followup": {
-    "status": "TRAIN-only continuation active; no new locked TEST result yet",
-    "previous_counts": [
-      522,
-      518,
-      540
-    ],
-    "minimum_total_correct": 1589
+    "status": "complete",
+    "original60": {
+      "correct_counts": [
+        522,
+        518,
+        540
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 70.0354609929078,
+      "sample_sd_percent": 1.5583684247559382,
+      "display": "70.04 ± 1.56"
+    },
+    "latest90": {
+      "correct_counts": [
+        544,
+        548,
+        559
+      ],
+      "total_per_seed": 752,
+      "seeds": [
+        17,
+        27,
+        37
+      ],
+      "mean_percent": 73.18262411347517,
+      "sample_sd_percent": 1.0329060458981432,
+      "display": "73.18 ± 1.03"
+    },
+    "minimum_total_correct": 1589,
+    "strict_target_met": true,
+    "TEST_gradient_inputs": 0
   },
   "source_checksum_scope": "UTF-8 source text with CRLF normalized to LF; matches Git blobs across Windows/Linux.",
   "source_files": [
@@ -1113,16 +1163,20 @@
     {
       "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_safeguarded_refine_20261028/final_summary_20261028.json",
       "sha256": "99c84437273bc4d9176dbb3287452201dd948a556f19151aecd98623efbc98e6"
+    },
+    {
+      "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_n16k8_followup_20261028/final_summary_20261028.json",
+      "sha256": "6cc6ee0e9a11326616e45370deb8b1186cad1d38d909b9c74ca7941d4fb63604"
     }
   ],
   "checks": {
     "all20_screenshot_cells_match_original_sources": true,
-    "exactly_five_completed_MoE_rows_updated": true,
-    "only_full25_full49_latest_values_replaced": true,
+    "exactly_six_completed_MoE_rows_updated": true,
+    "only_N16k8_changed_since_previous_verified_table": true,
     "N25_all_three_completed_reports_used": true,
     "N49_completed_refinement_used": true,
-    "other14_MoE_values_unchanged": true,
-    "N16k8_not_replaced_by_VAL_or_partial_result": true,
+    "other15_latest_MoE_values_unchanged": true,
+    "N16k8_all_three_locked_TEST_results_used": true,
     "D2NN_unchanged": true,
     "prior_full25_full49_history_preserved": true,
     "group_maxima_recomputed_from_integer_totals": true,

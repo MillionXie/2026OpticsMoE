@@ -1,4 +1,4 @@
-"""Recompute the five latest rows from integer correct counts and render a table.
+"""Recompute the six latest rows from integer correct counts and render a table.
 
 This is an explicitly mixed-protocol display, not an equal-budget comparison.
 No screenshot pixels or manually rounded per-seed accuracies enter statistics.
@@ -19,9 +19,11 @@ FIT=REPORTS/'kather_n49_seed_balanced_followup_20261028/final_summary_20261028.j
 N25_PILOT=REPORTS/'kather_n25_balanced_distill_20261028/final_summary_20261028.json'
 N25_FOLLOWUP=REPORTS/'kather_n25_seed_balanced_followup_20261028/final_summary_20261028.json'
 REFINE=REPORTS/'kather_safeguarded_refine_20261028/final_summary_20261028.json'
+N16=REPORTS/'kather_n16k8_followup_20261028/final_summary_20261028.json'
 SEEDS=[17,27,37]
 GROUPS={4:[1,2,3,4],16:[1,4,8,16],25:[1,6,12,25],49:[1,12,24,49]}
-UPDATES={(4,4),(16,16),(25,25),(49,24),(49,49)}
+TAIL_UPDATES={(4,4),(16,16),(25,25),(49,24),(49,49)}
+UPDATES=TAIL_UPDATES|{(16,8)}
 
 
 def stats(counts):
@@ -65,6 +67,12 @@ def data():
     counts25=previous_fit25['correct_counts'].copy();counts25[1]=refined[25]['selected']['TEST_fit_correct']
     latest25=stats(counts25)
     assert counts25==refine['groups']['25/25']['correct_counts']
+    n16=read(N16);assert n16['status']=='complete' and n16['validation']['status']=='passed'
+    assert n16['experts']==16 and n16['top_k']==8 and n16['aggregate']['strict_target_met']
+    n16students={v['seed']:v for v in n16['students']};assert sorted(n16students)==SEEDS
+    assert all(v['status']=='complete' and v['selected']['TEST_total']==752 and v['TEST_gradient_inputs']==0 for v in n16students.values())
+    latest16=stats([n16students[seed]['selected']['TEST_correct'] for seed in SEEDS])
+    assert latest16['correct_counts']==n16['aggregate']['correct_counts']
     groups={}
     for row in raw:
         key=(row['architecture'],int(row['experts']),int(row['top_k']));groups.setdefault(key,{})[int(row['seed'])]=row
@@ -81,7 +89,7 @@ def data():
         assert [original['MoE',n,k]['display'] for k in ks]==expected[n]
         assert original['D2NN',n,n]['display']==d2nn_expected[n]
     tail_groups={}
-    for n,k in sorted(UPDATES):
+    for n,k in sorted(TAIL_UPDATES):
         rows=sorted([v for v in tail['rows'] if (v['experts'],v['top_k'])==(n,k)],key=lambda v:v['seed']);assert [v['seed'] for v in rows]==SEEDS
         assert all(v['test_samples']==752 and v['total_epochs']==90 and abs(v['test_accuracy']-v['test_correct']/752)<1e-7 for v in rows)
         tail_groups[n,k]=stats([v['test_correct'] for v in rows])
@@ -98,34 +106,35 @@ def data():
     rows=[]
     for n,ks in GROUPS.items():
         for k in ks:
-            value=latest25 if (n,k)==(25,25) else latest_fit if (n,k)==(49,49) else tail_groups[n,k] if (n,k) in UPDATES else original['MoE',n,k]
+            value=latest16 if (n,k)==(16,8) else latest25 if (n,k)==(25,25) else latest_fit if (n,k)==(49,49) else tail_groups[n,k] if (n,k) in TAIL_UPDATES else original['MoE',n,k]
             marker='†' if (n,k) in [(25,25),(49,49)] else '*' if (n,k) in UPDATES else ''
             role=('TEST-trained exposed development fit; 90-epoch baseline plus16x1024 adaptation and extra8-step safeguarded refinement on seed27' if (n,k)==(25,25)
                 else 'TEST-trained exposed development fit; unequal discovery budgets and extra8-step safeguarded refinement on seed37' if (n,k)==(49,49)
                 else '90-epoch post-TEST-observation development follow-up; TEST not in gradient' if marker=='*' else 'Original60-epoch result')
             rows.append(dict(experts=n,top_k=k,original_60=original['MoE',n,k],latest=value,marker=marker,updated=(n,k) in UPDATES,role=role))
     mark_group_maxima(rows)
-    assert sum(v['updated'] for v in rows)==5
+    assert sum(v['updated'] for v in rows)==6
     assert [(v['experts'],v['top_k']) for v in rows if v['bold_group_max']]==[(4,4),(16,16),(25,25),(49,49)]
-    # Only the two full-k rows change in this publication; N16/k8 remains pending.
+    # This publication adds N16/k8; previously verified full-k rows are retained.
     for row in rows:
         key=(row['experts'],row['top_k'])
-        if key in [(25,25),(49,49)]:continue
-        previous=tail_groups[key] if key in UPDATES else original[('MoE',)+key]
+        if key in [(16,8),(25,25),(49,49)]:continue
+        previous=tail_groups[key] if key in TAIL_UPDATES else original[('MoE',)+key]
         assert row['latest']==previous
     return dict(
         statistics='Each seed752 samples; mean plus/minus sample SD across seeds17/27/37, ddof=1; integer counts before rounding.',
         display_role='Latest mixed-budget/protocol display, not equal-budget or held-out generalization.',
         updated_five=[dict(experts=v['experts'],top_k=v['top_k'],**v['latest'],marker=v['marker'],role=v['role']) for v in rows if v['updated']],
+        updated_rows_count=6,
         rows=rows,d2nn=[dict(experts=n,**original['D2NN',n,n]) for n in GROUPS],
         full25_history=dict(original60=original['MoE',25,25],tail90=tail_groups[25,25],pre_safeguarded_TEST_trained_fit=previous_fit25,latest_TEST_trained_fit=latest25),
         full49_history=dict(original60=original['MoE',49,49],tail90=tail_groups[49,49],continued120=stats([v['test_correct'] for v in sorted(full120['rows'],key=lambda v:v['seed'])]),pre_safeguarded_TEST_trained_fit=previous_fit49,latest_TEST_trained_fit=latest_fit),
         strict_target_checks=refine['groups'],
-        N16k8_followup=dict(status='TRAIN-only continuation active; no new locked TEST result yet',previous_counts=original['MoE',16,8]['correct_counts'],minimum_total_correct=1589),
+        N16k8_followup=dict(status='complete',original60=original['MoE',16,8],latest90=latest16,minimum_total_correct=1589,strict_target_met=sum(latest16['correct_counts'])>1588,TEST_gradient_inputs=0),
         source_checksum_scope='UTF-8 source text with CRLF normalized to LF; matches Git blobs across Windows/Linux.',
-        source_files=[dict(path=p.relative_to(ROOT).as_posix(),sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [BASE,TAIL,FULL120,FIT,N25_PILOT,N25_FOLLOWUP,REFINE]],
-        checks=dict(all20_screenshot_cells_match_original_sources=True,exactly_five_completed_MoE_rows_updated=True,only_full25_full49_latest_values_replaced=True,
-            N25_all_three_completed_reports_used=True,N49_completed_refinement_used=True,other14_MoE_values_unchanged=True,N16k8_not_replaced_by_VAL_or_partial_result=True,
+        source_files=[dict(path=p.relative_to(ROOT).as_posix(),sha256=hashlib.sha256(p.read_bytes().replace(b'\r\n',b'\n')).hexdigest()) for p in [BASE,TAIL,FULL120,FIT,N25_PILOT,N25_FOLLOWUP,REFINE,N16]],
+        checks=dict(all20_screenshot_cells_match_original_sources=True,exactly_six_completed_MoE_rows_updated=True,only_N16k8_changed_since_previous_verified_table=True,
+            N25_all_three_completed_reports_used=True,N49_completed_refinement_used=True,other15_latest_MoE_values_unchanged=True,N16k8_all_three_locked_TEST_results_used=True,
             D2NN_unchanged=True,prior_full25_full49_history_preserved=True,group_maxima_recomputed_from_integer_totals=True,
             no_VAL_or_teacher_accuracy_used=True,no_rounding_before_aggregation=True))
 
@@ -186,7 +195,7 @@ def render(d):
         ax.add_patch(Rectangle((x[3],y),x[4]-x[3],4*rh,facecolor=bg,edgecolor='white',linewidth=1.4))
         ax.text((x[3]+x[4])/2,y+2*rh,v['display'],fontproperties=num,ha='center',va='center')
     foot=top+hh+16*rh+30
-    notes=['单位：%；三个seed（17/27/37）的均值 ± 样本标准差（ddof=1）。','* 三行累计90轮开发跟进：4/4、16/16、49/24；未标记行及D2NN沿用原60轮。','† 25/25、49/49的TEST已进入教师和学生训练，属于暴露拟合，不是独立泛化。','25/25每seed另加16×1024短段；49/49保留不同起点与累计发现预算。','25/25的seed27、49/49的seed37另加8步有限优化；均不作等预算比较。','† 两行复用含ImageNet知识的教师；额外教师成本单列；16/8续训尚未更新。','加粗按组内整数正确数总和判定最大列示均值；原数据和全部历史结果均保留。']
+    notes=['单位：%；三个seed（17/27/37）的均值 ± 样本标准差（ddof=1）。','* 四行累计90轮开发跟进：4/4、16/8、16/16、49/24；其余及D2NN沿用原60轮。','† 25/25、49/49的TEST已进入教师和学生训练，属于暴露拟合，不是独立泛化。','25/25每seed另加16×1024短段；49/49保留不同起点与累计发现预算。','25/25的seed27、49/49的seed37另加8步有限优化；均不作等预算比较。','† 两行复用含ImageNet知识的教师；额外教师成本单列；16/8为TRAIN-only额外30轮。','加粗按组内整数正确数总和判定最大列示均值；原数据和全部历史结果均保留。']
     for j,note in enumerate(notes):ax.text(24,foot+j*27,note,fontproperties=cn,va='center',color='#6F471D' if j in [2,3] else '#444444')
     fig.savefig(OUT/'latest_table.png',dpi=180,facecolor='white')
     fig.savefig(OUT/'latest_table.svg',facecolor='white')

@@ -1,8 +1,24 @@
 import unittest
-from .safeguarded_refine import armijo_accept,direction,pool_indices,attach_test_split
+from .safeguarded_refine import armijo_accept,direction,pool_indices,attach_test_split,completed_resume_cost,validate
 
 
 class Safeguards(unittest.TestCase):
+    def test_completed_check_cost_is_not_lost_on_continuation(self):
+        saved=dict(objective_passes=18,gradient_passes=10,check_TEST_inputs=1504,check_VAL_inputs=1504)
+        completed=dict(saved,check_TEST_inputs=2256,check_VAL_inputs=2256)
+        self.assertEqual(completed_resume_cost(saved,completed),completed)
+        with self.assertRaises(AssertionError):completed_resume_cost(saved,saved)
+        with self.assertRaises(AssertionError):completed_resume_cost(saved,dict(completed,objective_passes=0))
+
+    def test_extension_cannot_reset_or_expand_authorized_budget(self):
+        import copy,json
+        from pathlib import Path
+        c=json.loads((Path(__file__).parent/'configs/kather_n25_safeguarded_margin_20261028.json').read_text())
+        validate(c)
+        for field,value in [('max_steps',17),('max_objective_passes',43),('resume_accepted_steps',0),('check_restored_step',True)]:
+            wrong=copy.deepcopy(c);wrong[field]=value
+            with self.assertRaises(AssertionError):validate(wrong)
+
     def test_strict_decrease_and_finite(self):
         self.assertTrue(armijo_accept(1.,.99,-.2,1.))
         self.assertFalse(armijo_accept(1.,1.,-.2,1.))

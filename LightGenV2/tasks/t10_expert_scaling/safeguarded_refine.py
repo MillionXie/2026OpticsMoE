@@ -62,11 +62,27 @@ def attach_test_split(splits):
     assert len(splits['test'][1])==752
 
 
+def completed_resume_cost(checkpoint_cost,completed_cost):
+    """Restore the completed step8 check as well as the pre-check PT counters."""
+    assert checkpoint_cost['objective_passes']==18 and checkpoint_cost['gradient_passes']==10
+    assert set(completed_cost)==set(checkpoint_cost)
+    assert all(completed_cost[k]==v+(752 if k in ['check_TEST_inputs','check_VAL_inputs'] else 0)
+               for k,v in checkpoint_cost.items())
+    return copy.deepcopy(completed_cost)
+
+
 def validate(c):
     assert c['model_experts'] in [25,49] and c['seed'] in [27,37]
     assert c['expected_parameter_count']=={25:5634176,49:11078432}[c['model_experts']]
-    assert c['max_steps']==8 and c['max_objective_passes']==24 and c['max_line_trials']==4
-    assert c['check_steps']==[2,4,8] and c['history_size']==3 and c['direction_radius']==.25
+    if c.get('continuation_kind')=='user_requested_margin_extension':
+        assert c['resume_accepted_steps']==8 and c['max_steps']==16
+        assert c['resume_previous_objective_passes']==18 and c['resume_previous_gradient_passes']==10
+        assert c['max_additional_steps']==8 and c['max_additional_objective_passes']==24
+        assert c['max_objective_passes']==42 and c['check_steps']==[12,16]
+        assert c['check_restored_step'] is False
+    else:
+        assert c['max_steps']==8 and c['max_objective_passes']==24 and c['check_steps']==[2,4,8]
+    assert c['max_line_trials']==4 and c['history_size']==3 and c['direction_radius']==.25
     assert c['fixed_lambda_kd']==.3203496288685833 and c['temperature']==2 and c['parent_weight']==.5
     assert c['explicit_test_training_authorization'] and c['test_images_enter_student_gradient']
     assert c['gpu_index'] in [1,3] and c['minimum_gpu_free_mib']>=6000
@@ -108,7 +124,7 @@ def run(c,out,profile):
         profile_sha256=sha(profile),configuration=c,auxiliary_identity=aux.identity,protocol=protocol,
         host_head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),optimizer_method='Bounded Armijo L-BFGS; no Adam or EMA',
         metric_role='TEST-exposed fitting; clean fixed1504 pool and optimizer change together; adaptive seed budgets; no equal-budget/independent-generalization claim.')
-    metadata['arguments'].update(out=str(out),epochs=8,optimizer='safeguarded_LBFGS')
+    metadata['arguments'].update(out=str(out),epochs=c['max_steps'],optimizer='safeguarded_LBFGS')
     save(out/'metadata.json',metadata)
     save(out/'pool.json',dict(indices=indices.tolist(),ids=ids[indices].tolist(),labels=y[indices].tolist(),
         origins=np.where(indices<3496,'train','test').tolist(),view_codes=[0]*len(indices),
@@ -121,32 +137,47 @@ def run(c,out,profile):
         checkpoint_sha256=c['incumbent_sha256'],state_field='model',predictions_sha256=c['incumbent_predictions_sha256'])
     save(out/'best_development_result.json',best);best_key=(best['test_correct'],-best['test']['macro_nll'])
     history=[];memory=[];bad=0;reason='fixed_step_budget';checked=set();elapsed_offset=0.
-    resume_objective=None;resume_gradient_norm=None
+    resume_objective=None;resume_gradient_norm=None;resume_gradient=None
     if c.get('resume_run'):
         old=Path(c['resume_run']);resume_path=old/'last_checkpoint.pt'
         assert sha(resume_path)==c['resume_checkpoint_sha256'] and sha(old/'pool.json')==c['resume_pool_sha256']
-        assert json.loads((old/'status.json').read_text())['error']=="KeyError('test')"
-        assert json.loads((old/'best_development_result.json').read_text())['origin']=='incumbent'
+        extension=c.get('continuation_kind')=='user_requested_margin_extension'
+        oldstatus=json.loads((old/'status.json').read_text())
+        if extension:
+            assert oldstatus['state']=='complete' and oldstatus['accepted_steps']==8
+            assert source.resolve()==old.resolve() and c['resume_checkpoint_sha256']==c['incumbent_sha256']
+        else:
+            assert oldstatus['error']=="KeyError('test')"
+            assert json.loads((old/'best_development_result.json').read_text())['origin']=='incumbent'
         value=torch.load(resume_path,map_location='cpu',weights_only=False)
         assert value['metadata']['source_commit']==c['resume_previous_source_commit']
-        assert value['round']==value['epoch']==c['resume_accepted_steps']==2
+        assert value['round']==value['epoch']==c['resume_accepted_steps']
         assert model_hash(value['model'])==c['resume_model_tensor_sha256']
-        for key in ['seed','model_experts','data_sha256','max_steps','max_objective_passes','max_line_trials','history_size','direction_radius','fixed_lambda_kd','parent_checkpoint_sha256']:
+        for key in ['seed','model_experts','data_sha256','max_line_trials','history_size','direction_radius','fixed_lambda_kd','temperature','parent_weight','parent_checkpoint_sha256','locked_parent_scores_sha256','teacher_targets_sha256']:
             assert value['metadata']['configuration'][key]==c[key],key
+        assert value['metadata']['configuration']['max_steps']==8 and value['metadata']['configuration']['max_objective_passes']==24
         previous_pool=json.loads((old/'pool.json').read_text())
         assert previous_pool==json.loads((out/'pool.json').read_text())
         history=json.loads((old/'history.json').read_text())
-        assert [r['step'] for r in history]==[1,2] and history[-1]['model_tensor_sha256']==c['resume_model_tensor_sha256']
+        assert [r['step'] for r in history]==list(range(1,c['resume_accepted_steps']+1)) and history[-1]['model_tensor_sha256']==c['resume_model_tensor_sha256']
         model.load_state_dict(value['model']);counts=copy.deepcopy(value['cost'])
-        assert counts==history[-1]['cost'] and counts['objective_passes']==5 and counts['gradient_passes']==3
+        assert counts==history[-1]['cost']
+        if extension:
+            counts=completed_resume_cost(counts,prior['cost'])
+            resume_gradient=value['current_gradient'].cuda()
+            assert resume_gradient.numel()==c['expected_parameter_count'] and torch.isfinite(resume_gradient).all()
+        else:
+            assert counts['objective_passes']==5 and counts['gradient_passes']==3
         memory=[(s.cuda(),v.cuda(),rho) for s,v,rho in value['lbfgs_history']]
         assert len(memory)<=3 and all(s.numel()==v.numel()==c['expected_parameter_count'] and torch.isfinite(s).all() and torch.isfinite(v).all() and rho>0 for s,v,rho in memory)
         assert all(abs(float((s*v).sum())*rho-1)<1e-4 for s,v,rho in memory)
         resume_objective=value['objective'];resume_gradient_norm=history[-1]['gradient_norm'];elapsed_offset=history[-1]['elapsed_seconds']
         metadata['resume']=dict(previous_run=str(old),previous_source_commit=value['metadata']['source_commit'],
             checkpoint_sha256=c['resume_checkpoint_sha256'],model_tensor_sha256=c['resume_model_tensor_sha256'],
-            accepted_steps_restored=2,LBFGS_history_pairs_restored=len(memory),previous_cost=copy.deepcopy(counts),
-            gradient_recomputed_once_and_charged_to_original_budget=True,previous_elapsed_seconds=elapsed_offset)
+            accepted_steps_restored=c['resume_accepted_steps'],LBFGS_history_pairs_restored=len(memory),previous_cost=copy.deepcopy(counts),
+            gradient_recomputed_once_and_charged_to_original_budget=True,previous_elapsed_seconds=elapsed_offset,
+            continuation_kind=c.get('continuation_kind','evaluation_wiring_repair'),additional_step_budget=c['max_steps']-c['resume_accepted_steps'],
+            additional_objective_pass_budget=c['max_objective_passes']-counts['objective_passes'])
         save(out/'metadata.json',metadata);save(out/'history.json',history)
         del value
 
@@ -202,10 +233,16 @@ def run(c,out,profile):
         assert abs(loss-resume_objective)<1e-5 and abs(float(gradient.norm())-resume_gradient_norm)<1e-5
         metadata['resume'].update(recomputed_objective=loss,recomputed_gradient_norm=float(gradient.norm()),
             objective_absolute_error=abs(loss-resume_objective),gradient_norm_absolute_error=abs(float(gradient.norm())-resume_gradient_norm))
-        counts['resume_recomputed_gradient_passes']=1;save(out/'metadata.json',metadata)
+        if resume_gradient is not None:
+            error=float((gradient-resume_gradient).abs().max());assert error<=1e-7
+            metadata['resume']['stored_gradient_max_absolute_error']=error
+            del resume_gradient
+        counts['resume_recomputed_gradient_passes']=counts.get('resume_recomputed_gradient_passes',0)+1;save(out/'metadata.json',metadata)
     checkpoint(len(history),loss)
-    if history:
+    if history and c.get('check_restored_step',True):
         history[-1]['development_check']=check(len(history));save(out/'history.json',history)
+    elif history:
+        checked.add(len(history)) # The completed source step was already scored.
     for step in range(len(history)+1,c['max_steps']+1):
         if counts['objective_passes']+2>c['max_objective_passes']:reason='objective_pass_budget';break
         old_vector=parameters_to_vector([p.detach() for p in params]).clone();old_gradient=gradient.clone();old_loss=loss
