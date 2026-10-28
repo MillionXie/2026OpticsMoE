@@ -1,0 +1,51 @@
+{
+  "seed": 17,
+  "layers": 4,
+  "epochs": 60,
+  "architecture": "d2nn_same_aperture",
+  "data": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+  "assignments": {
+    "4": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "16": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "25": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "49": "GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd"
+  },
+  "geometry": {
+    "4": {
+      "experts": 4,
+      "global_side": 478,
+      "expert_layer_pixels": 200704,
+      "global_layer_pixels": 228484,
+      "LG_parameters": 908552,
+      "D2NN_parameters": 913936
+    },
+    "16": {
+      "experts": 16,
+      "global_side": 986,
+      "expert_layer_pixels": 802816,
+      "global_layer_pixels": 972196,
+      "LG_parameters": 3600200,
+      "D2NN_parameters": 3888784
+    },
+    "25": {
+      "experts": 25,
+      "global_side": 1240,
+      "expert_layer_pixels": 1254400,
+      "global_layer_pixels": 1537600,
+      "LG_parameters": 5634176,
+      "D2NN_parameters": 6150400
+    },
+    "49": {
+      "experts": 49,
+      "global_side": 1748,
+      "expert_layer_pixels": 2458624,
+      "global_layer_pixels": 3055504,
+      "LG_parameters": 11078432,
+      "D2NN_parameters": 12222016
+    }
+  },
+  "training_contract": "Old D2NN: AdamW lr.002 cosine floor.01; batch16 micro2; EMA.95; smoothing.02 capture.02 TV.02; D4; no teacher/TEST gradients; VALmacroNLL minEMA; 60epochs then all4lockedTESTonce",
+  "comparison_scope": "Aperture matched, not parameter matched; new single seed17 results must not be presented as three-seed mean/SD or equal-budget with adaptive TEST-exposed LG fits"
+}

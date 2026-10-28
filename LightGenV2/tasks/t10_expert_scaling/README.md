@@ -1,5 +1,25 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## D2NN全局面尺寸对齐重跑（2026-10-29）
+
+用户要求D2NN每层可训练相位面等于LG全局有效面，改用已有`d2nn_same_aperture`，不再使用原expert/global参数匹配尺寸。
+仅重跑seed17、N=4/16/25/49各一次；4层及4次OEO、旧60轮AdamW LR.002/effective16micro2/EMA.95、D4、CE smoothing.02/capture.02/TV.02和VALmacroNLL选EMA均保持。
+入口`d2nn_aperture_rerun.py`，profile `configs/kather_d2nn_same_aperture_s17_20261029.json`，原数据/划分/旧权重不变。
+GPU6并行N4/16，GPU1跑N25，GPU3跑N49，UUID绑定，保留foreign进程。各自完整TRAIN完成后四模型统一锁定再各一次TEST；无teacher、TEST梯度或额外网格。
+
+| N | LG全局面＝D2NN每层面 | LG每专家层像素合计 | LG总参数（含224² Router） | D2NN总参数（4G²） |
+|---:|---:|---:|---:|---:|
+| 4 | 478×478 | 200704 | 908552 | 913936 |
+| 16 | 986×986 | 802816 | 3600200 | 3888784 |
+| 25 | 1240×1240 | 1254400 | 5634176 | 6150400 |
+| 49 | 1748×1748 | 2458624 | 11078432 | 12222016 |
+
+Legend: “D2NN uses four dense phase masks, each spanning the same G×G aperture as the LightGen global phase masks. LightGen alternates two tiled expert masks and two global masks, with an additional224×224 router mask. D2NN therefore has4G² trainable phases, whereas LightGen has2N·224²+2G²+224². Both include OEO after every feature layer.”
+
+两者全局面尺寸一致，LG专家层间隙无可训练参数，不能称每层可训练像素完全相等。新D2NN是单seed，不能替代旧三seed均值±SD；结构对齐不消除当前LG额外训练预算/TEST暴露拟合差异。
+训练状态以新root plan/metadata/history为准，准备或GPU context不当作已训练；新结果完成并独立核验前旧表保留。
+
+
 2026-10-28用户确认本轮最新表作为最终结果：[最终完整表](reports/plotting/kather_latest_five_20261028/final_results.md)。
 本次定稿不改变已核数字；保留TRAIN-only跟进（*）与TEST暴露开发拟合（†）的预算和指标说明，历史结果及权重继续保留。
 
