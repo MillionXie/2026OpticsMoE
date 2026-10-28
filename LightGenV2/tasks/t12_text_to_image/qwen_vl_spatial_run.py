@@ -4,6 +4,7 @@ All image conditioning is read from a verified full Qwen-VL cache. Token layout
 is checked against the unchanged public processor, never guessed from indices.
 """
 import argparse,collections,json,math,os,random,subprocess,sys,time,traceback
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +16,7 @@ from .qwen_vl_turbo_cache import image_float
 from .qwen_vl_turbo_data import normalized_product,pilot_subset,sha256,validate_roles,write_json
 from .qwen_vl_turbo_model import pack_hidden,region_weighted_loss
 from .qwen_vl_turbo_run import git_identity,noise_for,tensor_image
-from .qwen_vl_spatial import balanced_region_l1,build_spatial_head
+from .qwen_vl_spatial import balanced_region_l1,build_spatial_head,weighted_edit_regression
 
 
 def identity():
@@ -104,28 +105,43 @@ def selection_score(val, metric):
     raise ValueError('Unknown VAL selection metric')
 
 
-def masks(row,device):
+@lru_cache(maxsize=2048)
+def supervised_edit_mask(path,digest):
+    if sha256(Path(path))!=digest:raise ValueError('Supervised edit-mask identity changed')
+    with Image.open(path) as image:value=np.asarray(image.convert('L')).copy()
+    if value.shape!=(256,256) or not value.any():raise ValueError('Invalid supervised edit region')
+    return torch.from_numpy(value).float()[None,None]/255
+
+
+def masks(row,device,object_union=False):
     _,source=normalized_product(row['source'],256)
     _,target=normalized_product(row['target'],256)
     src=torch.from_numpy(np.asarray(source).copy()).float()[None,None].to(device)/255
     dst=torch.from_numpy(np.asarray(target).copy()).float()[None,None].to(device)/255
     edit=(1-src if row['mode']=='background' else torch.maximum(src,dst) if row['mode']=='object' else torch.ones_like(src))
+    if object_union:edit=torch.maximum(src,dst)
+    elif row.get('render_protocol')=='controlled_room_edit_v1':
+        edit=supervised_edit_mask(row['edit_mask_path'],row['edit_mask_sha256']).to(device)
     return edit,dst
 
 
 def counterfactual_negatives(payload,ids):
     """Different TRAIN instructions on the SAME RGB, never DEV negatives."""
     groups=collections.defaultdict(list)
+    allowed={'rich_product_scene_v1','controlled_room_edit_v1'}
+    protocols={payload['rows'][i].get('render_protocol') for i in ids}
+    if len(protocols)!=1 or not protocols<=allowed:raise ValueError('Counterfactuals require one reviewed TRAIN protocol')
     for i in ids:
         row=payload['rows'][i]
-        if row['split']!='train' or row.get('render_protocol')!='rich_product_scene_v1':raise ValueError('Counterfactual ranking requires rich TRAIN only')
+        if row['split']!='train':raise ValueError('Counterfactual ranking requires TRAIN only')
     for i,row in enumerate(payload['rows']):
         if row['split']!='train':continue
-        if row.get('render_protocol')!='rich_product_scene_v1':raise ValueError('Mixed TRAIN render protocol')
-        groups[row['source']['sample_id'],row['mode']].append(i)
+        if row.get('render_protocol') not in protocols:raise ValueError('Mixed TRAIN render protocol')
+        context=row.get('reference_context_id',row['source']['sample_id'])
+        groups[context,row['mode']].append(i)
     result={}
     for i in ids:
-        row=payload['rows'][i];group=groups[row['source']['sample_id'],row['mode']]
+        row=payload['rows'][i];group=groups[row.get('reference_context_id',row['source']['sample_id']),row['mode']]
         candidates=[j for j in group if payload['rows'][j]['prompt']!=row['prompt']]
         if not candidates:raise ValueError('No distinct same-reference TRAIN instruction')
         if any(not torch.equal(payload['reference'][i],payload['reference'][j]) for j in candidates):raise ValueError('Counterfactual source pixels changed')
@@ -152,7 +168,7 @@ def evaluate(model,payload,ids,device,output,label,metric,export=False):
         edit,foreground=masks(row,device);keep=1-edit
         # Same source/target union box for both images. Offline metric only;
         # crops/masks never condition the model or alter exported predictions.
-        union=foreground if row['mode']=='background' else edit if row['mode']=='object' else torch.maximum(foreground,masks({**row,'mode':'object'},device)[0])
+        union=foreground if row['mode']=='background' else masks(row,device,object_union=True)[0]
         coords=torch.where(union[0,0]>.05)
         if not len(coords[0]):raise ValueError('Empty metric object support')
         y0=max(0,int(coords[0].min())-8);y1=min(256,int(coords[0].max())+9)
@@ -206,7 +222,10 @@ def run(args,cfg):
     checkpoint=args.parent/'best_checkpoint.pt'
     if sha256(checkpoint)!=parent_report['checkpoint_sha256']:raise ValueError('Parent checkpoint SHA mismatch')
     state=torch.load(checkpoint,map_location='cpu',weights_only=False)
-    if state.get('schema')=='qwen_spatial_joint_lora_v1' and not cfg.get('adapt_raw_qwen',False):
+    frozen_joint=bool(cfg.get('freeze_joint_qwen',False))
+    if frozen_joint and (cfg.get('adapt_raw_qwen') or state.get('schema')!='qwen_spatial_joint_lora_v1'):
+        raise ValueError('Frozen joint cache and raw adaptation are separate training modes')
+    if state.get('schema')=='qwen_spatial_joint_lora_v1' and not (cfg.get('adapt_raw_qwen',False) or frozen_joint):
         raise ValueError('Native multimodal LoRA teacher requires raw adapted Qwen')
     if state.get('schema')=='qwen_spatial_language_lora_v1' and not cfg.get('adapt_qwen_language',False):
         raise ValueError('Cannot resume adapted Qwen using the original frozen final-feature cache')
@@ -221,6 +240,12 @@ def run(args,cfg):
     elif cache_digest!=state['cache_sha256']:raise ValueError('Frozen feature cache SHA mismatch')
     payload=torch.load(cache,map_location='cpu',weights_only=False,mmap=True)
     validate_roles(payload['rows'])
+    if frozen_joint:
+        from .qwen_vl_joint_feature_cache import validate_frozen_joint_cache
+        teacher_sha=state['config'].get('frozen_joint_teacher_checkpoint_sha256',parent_report['checkpoint_sha256'])
+        frozen_meta=validate_frozen_joint_cache(payload,state,teacher_sha)
+        cfg['frozen_joint_teacher_checkpoint_sha256']=teacher_sha
+        write_json(out/'frozen_joint_frontend_protocol.json',frozen_meta)
     # Modify only in-memory sampling state; the parent cache is never overwritten.
     if cfg.get('shared_noise_seed') is not None:
         payload['rows']=[{**r,'noise_seed':cfg['shared_noise_seed']} for r in payload['rows']]
@@ -460,7 +485,8 @@ def run(args,cfg):
         from .qwen_vl_turbo_losses import foreground_detail_losses,region_boxes,crop_regions,PatchDiscriminator,discriminator_views,hinge_discriminator_loss
     if cfg.get('gan_weight',0):
         discriminator=PatchDiscriminator(cfg.get('discriminator_width',32)).to(device)
-        if 'training_only_discriminator' in state:discriminator.load_state_dict(state['training_only_discriminator'],strict=True)
+        if 'training_only_discriminator' in state and not cfg.get('reset_discriminator',False):
+            discriminator.load_state_dict(state['training_only_discriminator'],strict=True)
         # Spectral-norm power iteration must run before the first frozen-critic
         # G pass. Zero tensors initialize weight-only buffers, not DEV statistics.
         with torch.no_grad():
@@ -474,6 +500,10 @@ def run(args,cfg):
         counts['inference_total']+=counts['qwen_language_lora_parameters']
     if hasattr(model,'raw_qwen'):
         counts['qwen_joint_lora_parameters']=sum(p.numel() for p in model.raw_qwen.parameters() if p.requires_grad)
+        counts['inference_total_if_qwen_lora_folded']=counts['inference_total']
+        counts['inference_total']+=counts['qwen_joint_lora_parameters']
+    elif frozen_joint:
+        counts['qwen_joint_lora_parameters']=sum(v.numel() for v in state['qwen_joint_lora'].values())
         counts['inference_total_if_qwen_lora_folded']=counts['inference_total']
         counts['inference_total']+=counts['qwen_joint_lora_parameters']
     write_json(out/'parameter_counts.json',counts)
@@ -500,6 +530,11 @@ def run(args,cfg):
                 latent=region_weighted_loss(z,torch.stack([target_latent[i] for i in batch]).to(device),
                     torch.cat([target_regions[i] for i in batch]).to(device),cfg['latent_foreground_weight'])
                 pixel=balanced_region_l1(rgb,target,torch.cat([edit_regions[i] for i in batch]).to(device))
+                if cfg.get('region_regression',False):
+                    edit=torch.cat([edit_regions[i] for i in batch]).to(device)
+                    latent=weighted_edit_regression(z,torch.stack([target_latent[i] for i in batch]).to(device),edit,
+                        cfg['latent_edit_factor'],cfg['latent_keep_factor'],squared=True)
+                    pixel=weighted_edit_regression(rgb,target,edit,cfg['rgb_edit_factor'],cfg['rgb_keep_factor'])
                 correct_perceptual=metric(rgb.clamp(-1,1),target).flatten()
                 perceptual=correct_perceptual.mean()
                 spatial_loss=F.mse_loss(source.float(),torch.stack([ref_latent[i] for i in batch]).to(device))
@@ -510,7 +545,7 @@ def run(args,cfg):
                 if semantic is not None:
                     from .qwen_vl_turbo_losses import crop_regions,region_boxes
                     scene_loss=semantic(rgb,torch.stack([semantic_scene[i] for i in batch]).to(device))
-                    boxes=region_boxes(torch.cat([masks({**payload['rows'][i],'mode':'object'},device)[0] for i in batch]))
+                    boxes=region_boxes(torch.cat([masks(payload['rows'][i],device,object_union=True)[0] for i in batch]))
                     product_loss=semantic(crop_regions(rgb,boxes),torch.stack([semantic_product[i] for i in batch]).to(device))
                     loss=loss+cfg.get('semantic_scene_weight',0)*scene_loss+cfg.get('semantic_product_weight',0)*product_loss
                 if negatives is not None:
@@ -575,6 +610,9 @@ def run(args,cfg):
             if hasattr(model,'raw_qwen'):
                 from .qwen_vl_joint_adapt import SCHEMA,joint_adapter_state
                 saved['schema']=SCHEMA;saved['qwen_joint_lora']=joint_adapter_state(model.raw_qwen)
+            elif frozen_joint:
+                saved['schema']='qwen_spatial_joint_lora_v1';saved['qwen_joint_lora']=state['qwen_joint_lora']
+                saved['frozen_joint_teacher']=frozen_meta
             if discriminator is not None:saved['training_only_discriminator']={k:v.detach().cpu().clone() for k,v in discriminator.state_dict().items()}
             torch.save(saved,out/'last_checkpoint.pt')
             if selection_score(val,selector)>best:

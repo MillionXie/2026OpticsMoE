@@ -1,0 +1,19 @@
+{
+  "schema": "controlled_room_edit_v1",
+  "seed": 1042,
+  "parent_sha256": {
+    "annotated_pairs.json": "9c7f3bea70608f34665f85c783f83325866f206f099deb0ba0613ea325806530",
+    "product_descriptions.json": "5b65e4bad336861f4c8bba2343f50a904516efd01bb37b3c881079632c59a55f"
+  },
+  "instruction_conditions_per_category": {"train": 160, "val": 16},
+  "background_colors": ["light_gray", "warm_beige", "pale_blue", "sage_green", "muted_rose"],
+  "expected_source_inventory": {"train": {"products": 44, "views": 76}, "val": {"products": 8, "views": 16}},
+  "minimum_train_target_products_per_object_prompt": 3,
+  "train_pairs": 960,
+  "development_pairs": 96,
+  "purpose": "User-requested return to legible procedural room backgrounds with a clear central ABO product. Fix room geometry, window, tabletop and lighting; background edits change only one wall palette. Product substitution specifies only one broad family; joint requests this family and one wall palette. No generated photographic room assets or complex multi-part product descriptions.",
+  "diversity": "Each literal TRAIN object instruction covers multiple target product identities (at least3), balanced across distinct source references. Targets exclude the source SKU and source->requested-family mapping never depends on background, mode or seed. Same reference RGB+text+noise cannot have conflicting target supervision. This coverage is not proof of true one-input multimodal synthesis.",
+  "counterfactuals": "TRAIN paired instruction variants share identical RGB and source-context noise across all tasks. DEV retains all8 original isolated products and16 reviewed views; same-family replacement is unavailable for a one-SKU DEV family, so DEV uses opposite-family requests with distinct reference contexts instead of no-op/duplicate targets. Audit actual distinct contexts and prompt-to-SKU counts, not sample count alone.",
+  "supervision": "Genuine ABO alpha and white-unmatte foregrounds; exact changed-pixel masks are training/metric labels only, never forward inputs. Repeated generic instructions do not contain SKU, brand or full teacher descriptions. No new artificial component recoloring is introduced.",
+  "inference": "Reference RGB+supplied short instruction only through full native Qwen. No target, mask, SKU, retrieval or reference-VAE input. The existing independent TEST540 remains sealed; this new data protocol requires separately frozen final evaluation before claims."
+}

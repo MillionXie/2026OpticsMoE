@@ -145,6 +145,20 @@ def balanced_region_l1(prediction,target,edit_region):
     return (values/count).mean()
 
 
+def weighted_edit_regression(prediction,target,edit_region,edit_factor=1.,keep_factor=1.,squared=False):
+    """TRAIN label regions only; absolute factors retain meaning for all-edit joint rows."""
+    if min(edit_factor,keep_factor)<0 or not 0<edit_factor+keep_factor:
+        raise ValueError('Nonnegative, nonzero regression factors required')
+    error=prediction.float()-target.float();error=error.square() if squared else error.abs()
+    region=F.interpolate(edit_region.float(),size=error.shape[-2:],mode='area')
+    values=[]
+    for support,factor in ((region,edit_factor),(1-region,keep_factor)):
+        area=support.sum((1,2,3));valid=area>1e-6
+        loss=(error*support).sum((1,2,3))/(area.clamp_min(1)*error.shape[1])
+        values.append((factor*loss*valid,valid))
+    return (sum(v for v,_ in values)/sum(v.float() for _,v in values).clamp_min(1)).mean()
+
+
 def build_spatial_head(sd,state,cfg,positions,device,drop_vae_encoder=False,identity_probe=None):
     from diffusers import AutoencoderKL,EulerDiscreteScheduler,UNet2DConditionModel
     from peft import LoraConfig

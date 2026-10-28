@@ -138,7 +138,7 @@ def main():
                 image_kd = (rgb.float()-torch.cat([train_goals[i]['rgb'] for i in ids]).to(device).float()).abs().mean()
                 rgb_loss = balanced_region_l1(rgb, target, edit)
                 perception = metric(rgb.clamp(-1, 1), target).mean()
-                union = torch.cat([masks({**payload['rows'][i], 'mode': 'object'}, device)[0] for i in ids])
+                union = torch.cat([masks(payload['rows'][i], device, object_union=True)[0] for i in ids])
                 boxes = region_boxes(union)
                 crop_loss = metric(crop_regions(rgb.clamp(-1, 1), boxes), crop_regions(target, boxes)).mean()
                 attention = sum(F.mse_loss(value.float(), torch.cat([train_goals[i]['maps'][k] for i in ids]).to(device)) for k, value in maps.items())/len(maps)

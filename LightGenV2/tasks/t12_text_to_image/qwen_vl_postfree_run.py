@@ -273,7 +273,7 @@ def main():
         base.vae.encoder = None; base.vae.quant_conv = None; base.spatial.aux_reference = None
         for i in train:
             edits[i] = masks(rows[i], torch.device('cpu'))
-            unions[i] = masks({**rows[i], 'mode': 'object'}, torch.device('cpu'))[0]
+            unions[i] = masks(rows[i], torch.device('cpu'), object_union=True)[0]
         model = FocusedHead(base, parent['visual_layout']['positions'], *boundary,
                             initial_gain=cfg['initial_readout_text_gain'], spatial_dropout=cfg.get('spatial_dropout', 0.)).to(device)
         if cfg.get('reuse_feature_run') and cfg.get('resume_focused_readout'):

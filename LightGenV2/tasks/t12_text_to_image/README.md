@@ -10,6 +10,42 @@
 
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
+**2026-10-28最新用户修订：回到简单程序房间，每次只请求1–2项改变。**
+新协议`controlled_room_edit_v1`从已审查的44款／76视图TRAIN和另外8款／16视图DEV构建960／96对，
+三任务分别320／32对。背景固定窗、台面、几何与光照；换背景仅改墙色，换商品仅指定一种款式，
+联合只组合这两项，不继续增加摄影房间、底座材质、纹理和窗光等多重约束。它覆盖前文复杂课程的
+后续开发方向，但原数据、权重和全部失败证据保留，不能跨任务背景协议直接比较均值。
+配置`qwen_vl_controlled_room_960_96_20261028.json`不读取独立TEST540。TRAIN为160个独特参考场景，
+每场景三任务各有两条同RGB／同来源seed的反事实指令；DEV为32个独特参考场景、每场景三任务。
+DEV一类商品只有单SKU时，只用可实现的异款替换，不伪造同SKU无变化目标或从TEST补款。
+原生256输入／目标和精确改变像素掩码附SHA；掩码只用于损失和离线区域指标，不进入生成器。
+真实alpha不侵蚀，并沿用已审核的white-unmatte。数据预览须标为监督数据，不能冒充模型效果。
+
+本地清单审计确认旧rich TRAIN46种完整换物指令均各绑定一款目标SKU，506种联合指令亦如此；
+这支持固定目标关联的疑虑，但不是生成失败的唯一原因证据。新通用换物指令分别对应8款圆柱灯罩、
+7款锥形灯罩、3款条纹靠垫和9款几何靠垫，附每条文字的目标商品数量、最大占比和条件熵审计。
+同一句话跨不同参考图对应多款商品；同一RGB＋同一句话不建立互相冲突的任意GT，也不以seed暗藏目标SKU。
+商品替换只约束一种家族，未指定属性仍可能变化；这不是已经学到同一输入下任意多种造型的随机分布。
+
+当前训练有目标latent区域MSE（权重0.15）和参考latent辅助MSE（0.02）；RGB项主要是L1，另有LPIPS、
+区域／语义和弱GAN。MSE本身并非错误：
+[官方pix2pix-Turbo](https://github.com/GaParmar/img2img-turbo/blob/main/src/train_pix2pix_turbo.py)也用生成图MSE配合感知／语义／对抗损失；
+[官方InstructPix2Pix](https://github.com/huggingface/diffusers/blob/main/examples/instruct_pix2pix/train_instruct_pix2pix.py)则对随机时间步的噪声／速度预测做MSE，不能与最终图回归混为一谈。
+新A/B短轮次使用相同数据、初始化、学习率和冻结前端：standard保留原损失；region仅减弱编辑区域的
+latent回归至0.15倍、RGB回归至0.35倍，保留区域均为1，前景RGB系数从0.4降为0.1，感知／语义／GAN其余不变。
+区域系数在全编辑样本上也保留绝对缩放；不是把目标掩码交给网络，更不能预称已提高多样性。
+
+两组均冻结完整选定Qwen24V／28L及其联合LoRA，用实际RGB＋文字重新缓存融合特征以加速训练，
+只训练已有adapter／spatial／UNet，VAE冻结。缓存绑定完整LoRA张量、原始RGB／prompt／顺序、监督目标、
+掩码和教师checkpoint，六单元实际重算核验；保存权重仍完整含联合LoRA。部署重跑全Qwen，96张PNG须与
+独立raw重载逐SHA一致，不能把缓存当部署、把LoRA数量当部署总量，或绕开尚未验证的LG中间端点协议。
+新数据域的训练专用D重新初始化，不继承旧摄影背景判别器；GPU阶段串行，先真实反向smoke再两组12轮上限／DEV早停。
+
+上一复杂fused-readout轮次已完整4轮，best为第2轮step912，SHA
+`e808194d6dfc2a4ceef9c49e3c6ce7021317bb576db5eac5251ec878851cd627`，
+raw DEV96为16.944438dB／LPIPS0.432043／crop0.371938，仍不是已合格的复杂生成或LG教师。
+原workflow4个子PID均退出并有GPU释放收据。新协议从该完成权重暖启动，不使用诊断identity拟合权重。
+
 **2026-10-28六小时自主推进：课程预热已完成，最终仍为复杂商品场景。**
 `qwen_vl_sixhour_curriculum_workflow_20261028`已完整结束并释放自己的两个GPU进程。
 8轮短指令课程`qwen_vl_simple_curriculum_warm_20261028`选step960，

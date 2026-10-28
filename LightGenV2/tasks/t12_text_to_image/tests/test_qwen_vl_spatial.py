@@ -140,6 +140,26 @@ class SpatialTests(unittest.TestCase):
         torch.testing.assert_close(balanced_region_l1(pred.detach(),target,torch.ones_like(region)),
                                    (pred.detach()-target).abs().mean())
 
+    def test_edit_regression_relaxes_only_edited_values_and_keeps_absolute_joint_scale(self):
+        from ..qwen_vl_spatial import weighted_edit_regression
+        prediction=torch.zeros(1,3,4,4,requires_grad=True);target=torch.ones_like(prediction)
+        edit=torch.zeros(1,1,4,4);edit[:,:,:2]=1
+        legacy=balanced_region_l1(prediction,target,edit)
+        torch.testing.assert_close(weighted_edit_regression(prediction,target,edit),legacy,atol=0,rtol=0)
+        loss=weighted_edit_regression(prediction,target,edit,.1,1.,squared=True);loss.backward()
+        torch.testing.assert_close(loss,torch.tensor(.55))
+        self.assertAlmostEqual(float(prediction.grad[:,:,:2].abs().mean()/prediction.grad[:,:,2:].abs().mean()),.1,places=6)
+        torch.testing.assert_close(weighted_edit_regression(prediction,target,torch.ones_like(edit),.1,1.,squared=True),torch.tensor(.1))
+
+    def test_controlled_counterfactuals_require_same_context_rgb_and_different_text(self):
+        from ..qwen_vl_spatial_run import counterfactual_negatives
+        rows=[{'split':'train','render_protocol':'controlled_room_edit_v1','reference_context_id':'same',
+               'source':{'sample_id':'view'},'mode':'object','prompt':p} for p in ('striped','geometric')]
+        data={'rows':rows,'reference':torch.zeros(2,3,4,4,dtype=torch.uint8)}
+        self.assertEqual(counterfactual_negatives(data,[0,1]),{0:[1],1:[0]})
+        rows[1]['reference_context_id']='other'
+        with self.assertRaises(ValueError):counterfactual_negatives(data,[0,1])
+
     def test_opt_in_multimodal_semantic_readout_sees_visual_and_final_states_without_padding(self):
         torch.manual_seed(15)
         adapter=QueryResampler(16,16,8,4,1)

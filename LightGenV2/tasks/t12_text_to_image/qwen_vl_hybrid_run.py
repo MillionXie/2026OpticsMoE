@@ -50,14 +50,14 @@ def load_data(data):
     payload = torch.load(data/'frozen_features.pt', map_location='cpu', weights_only=False, mmap=True)
     validate_roles(payload['rows'])
     expected={'train':960,'val':96}
-    if audit.get('protocol')=='rich_product_scene_v1':
-        expected={'train':1824,'val':96}
+    if audit.get('protocol') in ('rich_product_scene_v1','controlled_room_edit_v1'):
+        expected={'train':1824 if audit['protocol']=='rich_product_scene_v1' else 960,'val':96}
         report=json.loads((data/'report.json').read_text())
         if not report['complete'] or report['pair_sha256']!=sha256(data/'annotated_pairs.json') or audit['expected_counts']!=expected:
             raise ValueError('Rich scene data identity/budget differs')
     if {s: sum(r['split'] == s for r in payload['rows']) for s in ('train', 'val')} != expected:
         raise ValueError('Approved training/development budget differs')
-    if audit.get('protocol')!='rich_product_scene_v1':
+    if audit.get('protocol') not in ('rich_product_scene_v1','controlled_room_edit_v1'):
         payload['rows'] = [{**r, 'noise_seed': 1042} for r in payload['rows']]
     return payload
 
@@ -420,7 +420,7 @@ def stage_joint(a, cfg, payload, state, device):
                 z_loss = F.mse_loss(z.float(), teacher_z.float())
                 rgb_loss = balanced_region_l1(rgb, target, edit)
                 p_loss = metric(rgb.clamp(-1, 1), target).mean()
-                union = masks({**row, 'mode': 'object'}, device)[0]
+                union = masks(row, device, object_union=True)[0]
                 boxes = region_boxes(union)
                 crop_loss = metric(crop_regions(rgb.clamp(-1, 1), boxes), crop_regions(target, boxes)).mean()
                 image_kd = (rgb.float()-teacher_rgb.float()).abs().mean()

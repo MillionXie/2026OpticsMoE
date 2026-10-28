@@ -98,6 +98,9 @@ def main():
         if a.hybrid or a.tail:raise ValueError('Joint-adapted teacher needs a separately validated LG terminal-feature protocol')
         from .qwen_vl_joint_adapt import install_joint_lora
         install_joint_lora(qwen,state['config'],state['qwen_joint_lora'],train=False)
+        if state['config'].get('freeze_joint_qwen',False):
+            from .qwen_vl_joint_feature_cache import validate_frozen_joint_cache
+            validate_frozen_joint_cache(payload,state,state['config']['frozen_joint_teacher_checkpoint_sha256'])
     if state.get('schema')=='qwen_spatial_language_lora_v1':
         from .qwen_vl_language_adapt import install_in_full_qwen,NativeLanguageTail
         from .qwen_vl_hybrid_run import checked_features
@@ -135,12 +138,14 @@ def main():
             temporary['hidden'][i]=hidden.cpu()
             if a.hybrid:routes.append({'sample_id':payload['rows'][i]['sample_id'],**{m:v.diagnostics() for m,v in macros.items()}})
             cell=payload['rows'][i]['category'],payload['rows'][i]['mode']
-            if not a.hybrid and not joint and cell not in checked_cells:
+            if not a.hybrid and (not joint or state['config'].get('freeze_joint_qwen',False)) and cell not in checked_cells:
                 checked_cells.add(cell)
                 h,valid=pack_hidden([hidden],device);_,raw=head(h,valid,noise_for([payload['rows'][i]],device))
                 h,valid=pack_hidden([payload['hidden'][i]],device);_,cached=head(h,valid,noise_for([payload['rows'][i]],device))
                 checks.append({'sample_id':payload['rows'][i]['sample_id'],'raw_cached_same_png':tensor_image(raw[0]).tobytes()==tensor_image(cached[0]).tobytes(),
                     'max_abs_hidden':float((hidden.float()-payload['hidden'][i].to(device).float()).abs().max()),'max_abs_RGB':float((raw-cached).abs().max())})
+                if state['config'].get('freeze_joint_qwen',False) and (not checks[-1]['raw_cached_same_png'] or checks[-1]['max_abs_hidden']>1e-3):
+                    raise ValueError('Actual frozen joint frontend differs from its audited training cache')
             if (number+1)%12==0:write_json(a.output/'progress.json',{'stage':'raw_DEV_features','done':number+1,'total':len(ids)})
     import lpips
     metric=lpips.LPIPS(net='alex').to(device).eval().requires_grad_(False)
@@ -155,7 +160,8 @@ def main():
             selected_checks.append({'sample_id':row['sample_id'],'same_raw_selected_training_png':same})
             if not same:raise ValueError('Actual adapted raw Qwen differs from selected raw-training export')
         write_json(a.output/'raw_selected_training_identity.json',{'passed':True,'count':len(selected_checks),'checks':selected_checks,
-            'frozen_public_hidden_cache_used':False,'scope':'Actual B1 raw Qwen in selected training evaluator versus separately reloaded complete raw editor'})
+            'frozen_public_hidden_cache_used':False,'frozen_adapted_joint_cache_in_training':state['config'].get('freeze_joint_qwen',False),
+            'scope':'Selected frozen adapted-frontend cache outputs versus separately reloaded complete raw editor' if state['config'].get('freeze_joint_qwen',False) else 'Actual B1 raw Qwen in selected training evaluator versus separately reloaded complete raw editor'})
     prompt_panels(a.output,metrics,a.label,folder,'DEV' if a.cohort=='development' else 'TRAIN FIT ONLY')
     write_json(a.output/'routing.json',routes);write_json(a.output/'raw_cached_identity.json',checks)
     write_json(a.output/'report.json',{'complete':True,'model_label':a.label,'count':len(ids),'metrics':metrics,
