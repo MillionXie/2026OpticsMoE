@@ -41,6 +41,25 @@ SDXL的0.6参考权重更容易保留商品，却常保留灰／白背景和旧�
 固定seed1042的全四商品／两提示缩略对照由`reports/white_reference_scene_20261029/plot_probe.py`生成，
 缩略图仅供审查，原生PNG和另一seed均完整保留，不作为独立指标／公平分辨率排名。
 
+0.25＋显式caption的完整16图也已运行、SHA下载并检查：台灯开始生成书架／窗帘／台面及蓝／红灯罩，
+靠垫部分生成红白宽条纹和家具场景；但仍有灰背景、长方枕变方形、灯臂变化或颜色绑定不完整。
+因此这只是比首轮更可行的开发预置，尚未通过整组属性／参考造型的质量门槛，不直接扩大为合成GT。
+`white_reference_sdxl_caption025_20261029`由源码`7e370bd739e4085ac3f389029abcb3b02dddfb61`运行，
+原始Generate要求和模型实际caption均未截断（后者53–62 native tokens），全量保留，没有选best-of-seed。
+旧等待队列802903尚未启动推理时受控退出，记录原因后转到同GPU6的空余显存准入队列；没有重复推理或停止其他AI。
+这16图为共享GPU上的质量验证，不能用其耗时作正式测速；子PID807830已退出，自己的GPU释放收据为true。
+本轮共48张原生输出、4张白底输入及全部prompt／模型／种子／SHA已保存。
+下一步应继续解决参考粗几何与文字条件的平衡，必要时测试由输入RGB派生的粗轮廓条件；
+在任务形态和基线质量经人工确认前，Qwen改造、大规模数据制作和LG训练保持未启动。
+完整48张视觉诊断与固定样本／全prompt预览在本地任务run `white_reference_review_20261029`，
+由单独的`manual_visual_review.json`记录；它是开发诊断，不是盲评或独立测试准确率。
+本轮参考的原始条款为[ABO](https://amazon-berkeley-objects.s3.amazonaws.com/index.html)、
+[CC BY4.0](https://creativecommons.org/licenses/by/4.0/)、
+[SDXL许可](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/LICENSE.md)、
+[IP-Adapter模型卡](https://huggingface.co/h94/IP-Adapter)及
+[Nature关于研究中AI使用的说明](https://www.nature.com/articles/s43588-026-01043-4)。
+这些来源支持许可／披露条件的核对，不构成特定生成图的权利保证或期刊预先许可。
+
 **2026-10-28最新人工确认：参考图约束主体大致造型，未指定细节自由生成。**
 新目标为reference- and text-conditioned product-scene generation：采用多属性Generate提示，
 要求明确指定的颜色、场景／表面和光照兑现，保留参考主体的大致造型；不要求照搬纹理、原背景、

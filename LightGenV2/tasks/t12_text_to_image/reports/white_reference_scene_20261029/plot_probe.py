@@ -48,8 +48,23 @@ def main():
                 root, rows = groups[model]
                 with Image.open(root/selected[model]['generated_PNG']) as im: sheet.paste(im.resize((256, 256), Image.Resampling.LANCZOS), (x, y+126))
         sheet.save(a.output/(category+'_seed1042_overview.png'))
+    summary = Image.new('RGB', (1024, 28+2*500), 'white'); draw = ImageDraw.Draw(summary)
+    draw.text((5, 4), 'AI-GENERATED | first source/category, both requests, fixed seed1042; includes failures, not best-of-seed', fill='black')
+    root, rows = groups['sdxl_ipadapter']
+    for column, category in enumerate(['lamp', 'pillow']):
+        ref = next(r for r in refs if r['category'] == category)
+        for condition in ['0', '1']:
+            x = column*512; y = 28+int(condition)*500
+            row = next(r for r in rows if r['reference_id'] == ref['reference_id'] and r['condition_id'] == condition and r['seed'] == 1042)
+            prompt = row.get('model_prompt', row['prompt'])
+            draw.multiline_text((x+4, y), '\n'.join(textwrap.wrap(prompt, 82)), fill='black')
+            draw.text((x+4, y+88), 'ABO reference', fill='black')
+            draw.text((x+132, y+88), 'SDXL+IP-Adapter / AI-generated / native1024', fill='black')
+            with Image.open(inputs/ref['input_PNG']) as im: summary.paste(im.resize((128, 128), Image.Resampling.LANCZOS), (x, y+110+128))
+            with Image.open(root/row['generated_PNG']) as im: summary.paste(im.resize((384, 384), Image.Resampling.LANCZOS), (x+128, y+110))
+    summary.save(a.output/'fixed_four_requests.png')
     (a.output/'plot_data.json').write_text(json.dumps({'scope': 'Feasibility review, not independent quality or resolution-matched comparison',
-       'fixed_selection': 'all4 references x2conditions at prespecified1042;1043 remains in complete run',
+       'fixed_selection': 'Overviews:all4references x2conditions at1042. Summary:first reference/category,bothconditions,1042. No quality selection;1043 remains in complete run.',
        'source_reports': {m: sha(root/'report.json') for m,(root,rows) in groups.items()},
        'rows': [dict(row, source_run=str(root)) for root,rows in groups.values() for row in rows]}, indent=2), encoding='utf-8')
     print(a.output.resolve())
