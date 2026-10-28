@@ -1,5 +1,36 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：GLM100终检MPS查询失败；保全后用串行查询补剩余15点
+
+`baselines_fullscope_20261029_02/glm_cap100_repeat01`实际执行512视频后，在输入身份审计完成后的
+最终`guard.check()`中收到`MPS control failed: Cannot send command to MPS control daemon process`。
+原门严格将叶标为failed，没有complete report，也不对失败叶跑complete audit或追认时间/能量。
+06:13:48的control.log记录两次`get_server_list`紧接着重叠UI连接；代码中主线程终检与
+1s后台guard线程确实可并发调用同一MPS控制通道。报错后控制器仍有成功只读响应，随后在
+suite finally中正常quit，不能将日志解释为MPS daemon已先行崩溃，也不能认定查询竞争是唯一驱动根因。
+
+父1233625/子1398217及原control1234935/server1236586均真退出；精确02私有pipe
+`get_server_list` rc1、原共享锁以只读打开核可取。02停止根86原文件92817558B连同精确外log
+已逐原SHA/size本地保全，receipt
+`bc4c26bec973f02c122e823c5505682c2cafb08661998f6095d53e38279fa5a3`。
+此前Qwen100及GLM50共6个合格点的独立audit/receipt保留，不重跑；失败GLM100点不混入。
+
+新独立入口`run_baselines_serial_mps_20261029.py`只将原MPSGuard.check完整事务用每worker RLock
+串行化，避免主线程终检与后台监测的控制查询重叠。原check内容、1s后台节奏、源身份、自己client、
+foreign排外、deadline和任何失败即拒收均保留；不缓存快照、不重试失败命令、不吞错、不放宽门。
+三项必要CPU测试双端通过：双线程check不重叠、异常原样传递且只调用一次、恰剩15点且未导入torch。
+未额外运行GPU smoke；正式负载仍必须逐点通过原数值/资源/250ms/完整全窗审计。
+运行源码发布`744ef81d5432e3ef973ad7fb207b3fb56ff1596f`，54源逐Git SHA核同，仅精确新blob安装，
+原52源/权重/输入/精度/原raw均不变，serverHEAD仍未切。
+
+Unix1793226191.4414唯一启动新根`baselines_fullscope_20261029_03`/controller1442794，
+仍用原deadline1793235509.8442001，不延长或循环建root。启动前只读核UUID一致、14MiB/250W、无foreign；
+原共享锁、三次idle、私有MPS和worker守卫继续负责正式入场。03仅GLM100×3及CLIP/YOLO各50/100×3，
+恰15点；旧Qwen50三轮及02六个合格点逐audit SHA核留，失败02永不复活。
+本地collect新增显式`--retained-baselines <停止02根>`，只接受02这6个已独立审计点加03完整15点，
+再与保留Qwen50三轮合24点；不合成旧suite状态、不复制/修改原raw、不伪造LG能量。
+本次仍保护B100三暂存与全部旧sealed；如串行查询仍报错，保全查因，不无限同源重试。
+
 ## 2026-10-29：GLM-4.6V-Flash MPS50冷全输入三轮完成
 
 `baselines_fullscope_20261029_02/glm_cap50_repeat01/02/03`均完成原512个不同视频，
