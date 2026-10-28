@@ -1,0 +1,619 @@
+{
+  "status": "completed_both_requested_seed_followups",
+  "published_training_source": "150fabbbd8529c251175943a3229ac0b828b3d75",
+  "server_host_head": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "run": "kather_n49_seed_balanced_followup_20261028",
+  "user_instruction": "Accept seed17 fit613 as final and run established other seeds27 and37 promptly.",
+  "metric_role": "TRAIN and TEST labels/images trained the common CNN teacher; TEST also entered every follow-up student gradient. These are exposed development-fit scores, not held-out generalization or the original equal-budget Top-k experiment.",
+  "unchanged_optical_inference": {
+    "experts": 49,
+    "top_k": 49,
+    "layers": 4,
+    "router_temperature": 0.05,
+    "parameters": 11078432,
+    "single_view": true,
+    "teacher_in_final_inference": false,
+    "new_electronic_head": false
+  },
+  "seed17_finalization": {
+    "status": "human_accepted_final",
+    "seed": 17,
+    "test_fit_correct": 613,
+    "total": 752,
+    "accuracy": 0.8151595744680851,
+    "metric_role": "TEST exposed teacher and student training; development fit, not held-out generalization",
+    "user_instruction": "613 is enough; finalize seed17 and run the other two established seeds",
+    "further_seed17_training_allowed": false,
+    "run": "kather_n49_test_balanced_distill_20261028/source_balanced_s17",
+    "best_checkpoint_sha256": "2ee3bc9b738d1ad1bdb785d01288a0dbdf541955b7186570afa640451956bad2",
+    "last_checkpoint_sha256": "09929b15126837208cd363443b8de5ebba362d12da14b112f7e406a233b1e46a",
+    "model_tensor_sha256": "2a39fdabeaa54dfb16c915a81fe260e488dc550d6c8b606f556629bbba2efb56",
+    "source_state_field": "live_model",
+    "selected_round": 16,
+    "original_train_correct": 3128,
+    "val_correct": 591,
+    "original_protocol602_retained": true,
+    "new_authorized_seeds": [
+      27,
+      37
+    ]
+  },
+  "students": [
+    {
+      "seed": 27,
+      "selected_round": 16,
+      "selected_field": "model",
+      "original_train_correct": 3115,
+      "original_train_total": 3496,
+      "val_correct": 595,
+      "val_total": 752,
+      "test_fit_correct": 608,
+      "test_total": 752,
+      "test_fit_accuracy": 0.8085106382978723,
+      "union_correct": 3723,
+      "union_total": 4248,
+      "baseline_original_train_correct": 3132,
+      "baseline_val_correct": 599,
+      "baseline_test_correct": 603,
+      "test_net_gain": 5,
+      "paired_to_own_baseline": {
+        "round": 16,
+        "field": "model",
+        "test_fit_correct": 608,
+        "nll": 0.6096293926239014,
+        "selected_at_check": true,
+        "corrected_relative_own_baseline": 10,
+        "new_wrong_relative_own_baseline": 5,
+        "class_net": [
+          0,
+          6,
+          -2,
+          2,
+          -2,
+          0,
+          1,
+          0
+        ],
+        "model_tensor_sha256": "b646a02c78052619f8afc944c1d87e578ac10f867d2f3c7a3aeba5ea445688f8",
+        "source_last_checkpoint_sha256": "acbf27c3d8ceba1d4c9a0f6efa75564ef4623f2d7bb27ece76a661abeee15040"
+      },
+      "best_checkpoint_sha256": "ad86374302b4cc6337f27758e6511f22e4cd326fcdea85dd666402a09d3b7797",
+      "last_checkpoint_sha256": "acbf27c3d8ceba1d4c9a0f6efa75564ef4623f2d7bb27ece76a661abeee15040",
+      "selected_model_tensor_sha256": "b646a02c78052619f8afc944c1d87e578ac10f867d2f3c7a3aeba5ea445688f8",
+      "selected_predictions_sha256": "e271a948d07cfcceb9d2f5fe668857c789448725fd49f6b601f3fc6099ea5ba2",
+      "selected_source_last_sha256": "acbf27c3d8ceba1d4c9a0f6efa75564ef4623f2d7bb27ece76a661abeee15040",
+      "best_path": "kather_n49_seed_balanced_followup_20261028/student_s27/best_checkpoint.pt",
+      "training_seconds": 1188.7577188014984,
+      "per_round_evaluation_seconds": 859.8703937530518,
+      "completed_rounds": 16,
+      "optimizer_updates": 1024,
+      "student_image_inputs": 16384,
+      "original_train_gradient_inputs": 8192,
+      "TEST_gradient_inputs": 8192,
+      "source_checkpoint_sha256": "d0def9c832863ddf947ad8677d5108a2238526b72f5fe88383d5ed938498a7d9",
+      "source_original_epoch": 109,
+      "calibration_fixed_lambda": 0.3203496288685833,
+      "calibration_actual_weighted_gradient_ratio": 0.4641843939695556,
+      "calibration_restored_Adam_probe_updates": 6,
+      "calibration_forward_inputs_derived_from_locked_code": 240,
+      "parent_cache_forward_inputs": 33984,
+      "extra_original_train_diagnostic_inputs": 6992,
+      "stop_reason": "fixed_round_budget",
+      "fixed_development_checks": [
+        {
+          "round": 4,
+          "field": "model",
+          "test_fit_correct": 602,
+          "nll": 0.628562331199646,
+          "selected_at_check": false,
+          "corrected_relative_own_baseline": 8,
+          "new_wrong_relative_own_baseline": 9,
+          "class_net": [
+            -1,
+            4,
+            -5,
+            2,
+            -2,
+            0,
+            1,
+            0
+          ],
+          "model_tensor_sha256": "84a63013fe07f2024ff2e4f3ba60273567314d6b42a6a42651d5e19a60cdf4d3",
+          "source_last_checkpoint_sha256": "1e1e1c8561235f0ec8ec211277260271865dc0761d18a768af5d81bdbf1ff948"
+        },
+        {
+          "round": 4,
+          "field": "live_model",
+          "test_fit_correct": 602,
+          "nll": 0.6272248029708862,
+          "selected_at_check": false,
+          "corrected_relative_own_baseline": 6,
+          "new_wrong_relative_own_baseline": 7,
+          "class_net": [
+            -2,
+            3,
+            -2,
+            1,
+            -2,
+            0,
+            1,
+            0
+          ],
+          "model_tensor_sha256": "a032158502a03837234c3e60595182fd01cd5452b88f71b08a291a8158f39299",
+          "source_last_checkpoint_sha256": "1e1e1c8561235f0ec8ec211277260271865dc0761d18a768af5d81bdbf1ff948"
+        },
+        {
+          "round": 8,
+          "field": "model",
+          "test_fit_correct": 605,
+          "nll": 0.6195276379585266,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 9,
+          "new_wrong_relative_own_baseline": 7,
+          "class_net": [
+            -1,
+            5,
+            -2,
+            2,
+            -3,
+            0,
+            1,
+            0
+          ],
+          "model_tensor_sha256": "4d265e89e5495688a5d91070e864c6f7a5ee7bd9ce7a0e62288c8e4bff075058",
+          "source_last_checkpoint_sha256": "3f5c8a81dc001a1436c9ed6d33403c458bed9941999ab5c8b3eeb65206d58789"
+        },
+        {
+          "round": 8,
+          "field": "live_model",
+          "test_fit_correct": 605,
+          "nll": 0.6191964745521545,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 10,
+          "new_wrong_relative_own_baseline": 8,
+          "class_net": [
+            -2,
+            5,
+            -2,
+            2,
+            -3,
+            1,
+            1,
+            0
+          ],
+          "model_tensor_sha256": "2e10f5e29df71f94eabced00a8b2ce2ade462dee48c97fe3057e7797664cec79",
+          "source_last_checkpoint_sha256": "3f5c8a81dc001a1436c9ed6d33403c458bed9941999ab5c8b3eeb65206d58789"
+        },
+        {
+          "round": 12,
+          "field": "model",
+          "test_fit_correct": 607,
+          "nll": 0.6125888228416443,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 9,
+          "new_wrong_relative_own_baseline": 5,
+          "class_net": [
+            0,
+            6,
+            -2,
+            2,
+            -2,
+            0,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "33aba99c2cd46f4f117876ea9cced35874279ecf53e4dd071924a3ef7434a726",
+          "source_last_checkpoint_sha256": "5337a7d704bc2263af3040a759f06f7fdd393c759a5d1f8bd7a486afe56c559c"
+        },
+        {
+          "round": 12,
+          "field": "live_model",
+          "test_fit_correct": 608,
+          "nll": 0.6121425032615662,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 9,
+          "new_wrong_relative_own_baseline": 4,
+          "class_net": [
+            0,
+            6,
+            -1,
+            2,
+            -2,
+            0,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "39d7fe2440747d4cf79305e63cd8a973c42fa871bf90068db5fce8ef53d4cd3f",
+          "source_last_checkpoint_sha256": "5337a7d704bc2263af3040a759f06f7fdd393c759a5d1f8bd7a486afe56c559c"
+        },
+        {
+          "round": 16,
+          "field": "model",
+          "test_fit_correct": 608,
+          "nll": 0.6096293926239014,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 10,
+          "new_wrong_relative_own_baseline": 5,
+          "class_net": [
+            0,
+            6,
+            -2,
+            2,
+            -2,
+            0,
+            1,
+            0
+          ],
+          "model_tensor_sha256": "b646a02c78052619f8afc944c1d87e578ac10f867d2f3c7a3aeba5ea445688f8",
+          "source_last_checkpoint_sha256": "acbf27c3d8ceba1d4c9a0f6efa75564ef4623f2d7bb27ece76a661abeee15040"
+        },
+        {
+          "round": 16,
+          "field": "live_model",
+          "test_fit_correct": 608,
+          "nll": 0.6098137497901917,
+          "selected_at_check": false,
+          "corrected_relative_own_baseline": 10,
+          "new_wrong_relative_own_baseline": 5,
+          "class_net": [
+            0,
+            6,
+            -2,
+            2,
+            -2,
+            0,
+            1,
+            0
+          ],
+          "model_tensor_sha256": "a771b53ab23ed00d7c764ec74bf2d932e040b3926813a71830105ffacf44b11a",
+          "source_last_checkpoint_sha256": "acbf27c3d8ceba1d4c9a0f6efa75564ef4623f2d7bb27ece76a661abeee15040"
+        }
+      ],
+      "EMA_diagnostics": [
+        {
+          "round": 4,
+          "EMA_original_train_correct": 3125,
+          "EMA_test_fit_correct": 602,
+          "EMA_union_correct": 3727,
+          "EMA_val_correct": 598
+        },
+        {
+          "round": 8,
+          "EMA_original_train_correct": 3121,
+          "EMA_test_fit_correct": 605,
+          "EMA_union_correct": 3726,
+          "EMA_val_correct": 595
+        },
+        {
+          "round": 12,
+          "EMA_original_train_correct": 3118,
+          "EMA_test_fit_correct": 607,
+          "EMA_union_correct": 3725,
+          "EMA_val_correct": 595
+        },
+        {
+          "round": 16,
+          "EMA_original_train_correct": 3115,
+          "EMA_test_fit_correct": 608,
+          "EMA_union_correct": 3723,
+          "EMA_val_correct": 595
+        }
+      ]
+    },
+    {
+      "seed": 37,
+      "selected_round": 16,
+      "selected_field": "live_model",
+      "original_train_correct": 3117,
+      "original_train_total": 3496,
+      "val_correct": 590,
+      "val_total": 752,
+      "test_fit_correct": 601,
+      "test_total": 752,
+      "test_fit_accuracy": 0.7992021276595744,
+      "union_correct": 3718,
+      "union_total": 4248,
+      "baseline_original_train_correct": 3156,
+      "baseline_val_correct": 597,
+      "baseline_test_correct": 586,
+      "test_net_gain": 15,
+      "paired_to_own_baseline": {
+        "round": 16,
+        "field": "live_model",
+        "test_fit_correct": 601,
+        "nll": 0.6036549210548401,
+        "selected_at_check": true,
+        "corrected_relative_own_baseline": 18,
+        "new_wrong_relative_own_baseline": 3,
+        "class_net": [
+          2,
+          4,
+          3,
+          1,
+          0,
+          5,
+          0,
+          0
+        ],
+        "model_tensor_sha256": "4679a6a1306ffeb7783b05aca6af3f8ec0ab78a4fe1d00486ea3af8c17119882",
+        "source_last_checkpoint_sha256": "e58fd7740ee9124d5ba2aa0953844e55f9675c0ef92f006593a1c1c97bb91ffc"
+      },
+      "best_checkpoint_sha256": "321d239bf7dd9df12729fcc3acbd2ac358456c09b68baa4af203c4aab33d2f64",
+      "last_checkpoint_sha256": "e58fd7740ee9124d5ba2aa0953844e55f9675c0ef92f006593a1c1c97bb91ffc",
+      "selected_model_tensor_sha256": "4679a6a1306ffeb7783b05aca6af3f8ec0ab78a4fe1d00486ea3af8c17119882",
+      "selected_predictions_sha256": "a237d9176246ca3c9208bd3de8936867256315df1dea2c39171f5ee8b8b3ab0f",
+      "selected_source_last_sha256": "e58fd7740ee9124d5ba2aa0953844e55f9675c0ef92f006593a1c1c97bb91ffc",
+      "best_path": "kather_n49_seed_balanced_followup_20261028/student_s37/best_checkpoint.pt",
+      "training_seconds": 1176.3471207618713,
+      "per_round_evaluation_seconds": 853.1843974590302,
+      "completed_rounds": 16,
+      "optimizer_updates": 1024,
+      "student_image_inputs": 16384,
+      "original_train_gradient_inputs": 8192,
+      "TEST_gradient_inputs": 8192,
+      "source_checkpoint_sha256": "39f88b7585fb58f4f4fdf9ed821226144ffe6fe40945d5774865f6a3c5481389",
+      "source_original_epoch": 119,
+      "calibration_fixed_lambda": 0.3203496288685833,
+      "calibration_actual_weighted_gradient_ratio": 0.5382216509484941,
+      "calibration_restored_Adam_probe_updates": 6,
+      "calibration_forward_inputs_derived_from_locked_code": 240,
+      "parent_cache_forward_inputs": 33984,
+      "extra_original_train_diagnostic_inputs": 6992,
+      "stop_reason": "fixed_round_budget",
+      "fixed_development_checks": [
+        {
+          "round": 4,
+          "field": "model",
+          "test_fit_correct": 594,
+          "nll": 0.6226599812507629,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 11,
+          "new_wrong_relative_own_baseline": 3,
+          "class_net": [
+            0,
+            1,
+            3,
+            0,
+            1,
+            3,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "dc8671db73a01cb53491723ff81c8eff7c8b6ec67c432b40f025a459f4de698b",
+          "source_last_checkpoint_sha256": "cf1648fda5765466c59b028c21b9bbf84b7808c44108f387d2c08282b11621f6"
+        },
+        {
+          "round": 4,
+          "field": "live_model",
+          "test_fit_correct": 596,
+          "nll": 0.6215459704399109,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 11,
+          "new_wrong_relative_own_baseline": 1,
+          "class_net": [
+            0,
+            1,
+            4,
+            0,
+            2,
+            3,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "d22a69a877d9fdc7fa1aed80a1447fad436801835255f9003e4b389b7a2919c1",
+          "source_last_checkpoint_sha256": "cf1648fda5765466c59b028c21b9bbf84b7808c44108f387d2c08282b11621f6"
+        },
+        {
+          "round": 8,
+          "field": "model",
+          "test_fit_correct": 595,
+          "nll": 0.6114744544029236,
+          "selected_at_check": false,
+          "corrected_relative_own_baseline": 14,
+          "new_wrong_relative_own_baseline": 5,
+          "class_net": [
+            1,
+            4,
+            3,
+            0,
+            -2,
+            3,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "569def6cb726187ca50ae1611f02bf4d987143ed2d42aa851112a1cc06835d58",
+          "source_last_checkpoint_sha256": "df7ac06d79e5514ffe630dd09809c02521328e49ec138d8bf7191a8024350a93"
+        },
+        {
+          "round": 8,
+          "field": "live_model",
+          "test_fit_correct": 595,
+          "nll": 0.610536515712738,
+          "selected_at_check": false,
+          "corrected_relative_own_baseline": 14,
+          "new_wrong_relative_own_baseline": 5,
+          "class_net": [
+            1,
+            3,
+            3,
+            0,
+            -2,
+            4,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "078eb17873c6aebbabd328e8dfcdd1331c85fbf6d99fdd75a9b9755dcd5c37d4",
+          "source_last_checkpoint_sha256": "df7ac06d79e5514ffe630dd09809c02521328e49ec138d8bf7191a8024350a93"
+        },
+        {
+          "round": 12,
+          "field": "model",
+          "test_fit_correct": 601,
+          "nll": 0.6068001389503479,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 19,
+          "new_wrong_relative_own_baseline": 4,
+          "class_net": [
+            2,
+            4,
+            3,
+            1,
+            -1,
+            6,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "d8b5c1e8b293563110bb5bd611be66afa1220dc475316d3833cf762ea690acdc",
+          "source_last_checkpoint_sha256": "14dce81effd333550b4fce32ef5c5cd48cfcc4934996716372e1653e2ea6b9f2"
+        },
+        {
+          "round": 12,
+          "field": "live_model",
+          "test_fit_correct": 601,
+          "nll": 0.6068866848945618,
+          "selected_at_check": false,
+          "corrected_relative_own_baseline": 18,
+          "new_wrong_relative_own_baseline": 3,
+          "class_net": [
+            2,
+            4,
+            2,
+            1,
+            0,
+            6,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "b56cb240dac52fe572d31b9410e2367e7c4a89ebbdf7ea48cca5e446df760c0d",
+          "source_last_checkpoint_sha256": "14dce81effd333550b4fce32ef5c5cd48cfcc4934996716372e1653e2ea6b9f2"
+        },
+        {
+          "round": 16,
+          "field": "model",
+          "test_fit_correct": 601,
+          "nll": 0.6037783026695251,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 18,
+          "new_wrong_relative_own_baseline": 3,
+          "class_net": [
+            2,
+            4,
+            3,
+            1,
+            0,
+            5,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "2699f64efdded6ec448118b47dc3321fc5fc8ee2c1addbedaaf7b6fb0f20d22b",
+          "source_last_checkpoint_sha256": "e58fd7740ee9124d5ba2aa0953844e55f9675c0ef92f006593a1c1c97bb91ffc"
+        },
+        {
+          "round": 16,
+          "field": "live_model",
+          "test_fit_correct": 601,
+          "nll": 0.6036549210548401,
+          "selected_at_check": true,
+          "corrected_relative_own_baseline": 18,
+          "new_wrong_relative_own_baseline": 3,
+          "class_net": [
+            2,
+            4,
+            3,
+            1,
+            0,
+            5,
+            0,
+            0
+          ],
+          "model_tensor_sha256": "4679a6a1306ffeb7783b05aca6af3f8ec0ab78a4fe1d00486ea3af8c17119882",
+          "source_last_checkpoint_sha256": "e58fd7740ee9124d5ba2aa0953844e55f9675c0ef92f006593a1c1c97bb91ffc"
+        }
+      ],
+      "EMA_diagnostics": [
+        {
+          "round": 4,
+          "EMA_original_train_correct": 3142,
+          "EMA_test_fit_correct": 594,
+          "EMA_union_correct": 3736,
+          "EMA_val_correct": 592
+        },
+        {
+          "round": 8,
+          "EMA_original_train_correct": 3128,
+          "EMA_test_fit_correct": 595,
+          "EMA_union_correct": 3723,
+          "EMA_val_correct": 588
+        },
+        {
+          "round": 12,
+          "EMA_original_train_correct": 3118,
+          "EMA_test_fit_correct": 601,
+          "EMA_union_correct": 3719,
+          "EMA_val_correct": 590
+        },
+        {
+          "round": 16,
+          "EMA_original_train_correct": 3116,
+          "EMA_test_fit_correct": 601,
+          "EMA_union_correct": 3717,
+          "EMA_val_correct": 590
+        }
+      ]
+    }
+  ],
+  "descriptive_three_seed_fit": {
+    "seeds": [
+      17,
+      27,
+      37
+    ],
+    "correct_counts": [
+      613,
+      608,
+      601
+    ],
+    "per_seed_percent": [
+      81.5159574468085,
+      80.85106382978722,
+      79.92021276595744
+    ],
+    "mean_percent": 80.76241134751773,
+    "sample_standard_deviation_percent": 0.8015576826252226,
+    "comparison_limit": "Seed17 includes preceding method discovery and a different adapted initialization chain. Seeds27/37 apply the locked C recipe directly to their own existing full49 best. This aggregate is descriptive, not three matched from-scratch or equal-discovery-budget replications."
+  },
+  "fixed_recipe": {
+    "rounds_per_new_seed": 16,
+    "teacher_cache_source_commit": "654183a3c16bd3cfef329a132fc15478e53f6bdb",
+    "teacher_best_sha256": "de9decdfb47553814c9d4cb8b77ffca7272e75a5f75cb823c3457a15a306b9dd",
+    "lambda_kd": 0.3203496288685833,
+    "temperature": 2,
+    "parent_KL_weight": 0.5,
+    "TRAIN_TEST_source_weights": [
+      0.5,
+      0.5
+    ],
+    "no_new_teacher_training_or_teacher_cache": true,
+    "parent_cache_own_seed_source": true,
+    "actual_random_seed_used_for_init_sampling_D4_calibration": true,
+    "no_automatic_budget_extension": true
+  },
+  "validation": {
+    "all_manifest_SHA_verified": true,
+    "all16_fixed_TEST_states_752_numpy_verified": true,
+    "all32_round_actual_sampling_source_and_class_counts_verified": true,
+    "seven_round_union_two_round_TEST_coverage": true,
+    "selected_TEST_reuses_locked_predictions": true,
+    "selected_original_TRAIN_and_union_confusions_numpy_verified": true,
+    "selected_VAL": "Final full-best-model evaluation confusion and selected route IDs verified; stored latest VAL probabilities are EMA16 and are not substituted for any earlier/live selected model.",
+    "source19_files_and_CPU_best_last_tensors_verified": true,
+    "all_task_pids_absent": true,
+    "no_task_compute_processes": true,
+    "prior_checkpoints_data_and_failed_costs_preserved": true,
+    "manifest_files": 68,
+    "archive_sha256": "0a886fd2941130a18d88c9b67a59e7621ae28e38db486ac68977a0c8677e43e8",
+    "archive_bytes": 3734067
+  },
+  "cost_scope": "Per-round train/eval timings exclude final full-best evaluation/routes/I/O; extra4/12TRAIN diagnosis6992 inputs reported separately. Parent33984 forward inputs per seed and calibration probes are additional. Common CNN teacher/ImageNet pretraining and seed17 method development costs remain in their prior reports, not treated as zero or optical inference.",
+  "conclusion": "Both requested seeds completed the fixed budget. Seed17 remains finalized613. Retain all best/last and explicit metric roles; publish this report/README and verify exact server Git publication before stopping the follow-up. No additional tuning requested."
+}
