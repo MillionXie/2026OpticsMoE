@@ -360,5 +360,236 @@
     "prior_original_protocol602_retained": true,
     "no_claim_of_optical_capacity_ceiling": true,
     "next_step": "Retain this result and all prior best/last. No extension of C or weight/temperature/LR grid; any next finite method requires a separate evidence-based specification. Keep follow-up active while target remains unresolved."
+  },
+  "posthoc_CPU_evidence": {
+    "no_new_forward_or_optimizer": true,
+    "B_to_C_margins": {
+      "original_train": {
+        "all": {
+          "n": 3496,
+          "source_correct": 3126,
+          "C_correct": 3128,
+          "delta_mean": -0.056941453367471695,
+          "delta_median": -0.030794501304626465,
+          "delta_q10": -0.23533272743225098,
+          "fraction_positive": 0.3306636155606407
+        },
+        "teacher_correct_Bwrong": {
+          "n": 367,
+          "source_correct": 0,
+          "C_correct": 17,
+          "delta_mean": -0.008950991556048393,
+          "delta_median": -0.00629347562789917,
+          "delta_q10": -0.09074267148971557,
+          "fraction_positive": 0.4822888283378747
+        },
+        "Bcorrect_near_boundary": {
+          "n": 133,
+          "source_correct": 133,
+          "C_correct": 118,
+          "delta_mean": -0.002223957795649767,
+          "delta_median": 0.006458282470703125,
+          "delta_q10": -0.06917293071746826,
+          "fraction_positive": 0.5263157894736842
+        },
+        "Bcorrect": {
+          "n": 3126,
+          "source_correct": 3126,
+          "C_correct": 3111,
+          "delta_mean": -0.06282345950603485,
+          "delta_median": -0.0337202250957489,
+          "delta_q10": -0.24985575675964355,
+          "fraction_positive": 0.3122200895713372
+        },
+        "corrected": 17,
+        "new_wrong": 15,
+        "remaining_teacher_correct_Cwrong": 365
+      },
+      "test_fit": {
+        "all": {
+          "n": 752,
+          "source_correct": 606,
+          "C_correct": 613,
+          "delta_mean": -0.02123001404106617,
+          "delta_median": -0.007922142744064331,
+          "delta_q10": -0.22347307205200195,
+          "fraction_positive": 0.4627659574468085
+        },
+        "teacher_correct_Bwrong": {
+          "n": 141,
+          "source_correct": 0,
+          "C_correct": 9,
+          "delta_mean": 0.07124509662389755,
+          "delta_median": 0.04372447729110718,
+          "delta_q10": -0.059017300605773926,
+          "fraction_positive": 0.6666666666666666
+        },
+        "Bcorrect_near_boundary": {
+          "n": 47,
+          "source_correct": 47,
+          "C_correct": 45,
+          "delta_mean": 0.03396712616086006,
+          "delta_median": 0.029116392135620117,
+          "delta_q10": -0.036565053462982174,
+          "fraction_positive": 0.6382978723404256
+        },
+        "Bcorrect": {
+          "n": 606,
+          "source_correct": 606,
+          "C_correct": 604,
+          "delta_mean": -0.04560695216059685,
+          "delta_median": -0.018445521593093872,
+          "delta_q10": -0.24298977851867676,
+          "fraction_positive": 0.41089108910891087
+        },
+        "corrected": 9,
+        "new_wrong": 2,
+        "remaining_teacher_correct_Cwrong": 134
+      }
+    },
+    "remaining_wrong_count": 139,
+    "wrong_per_class": [
+      30,
+      30,
+      23,
+      11,
+      28,
+      11,
+      5,
+      1
+    ],
+    "coverage_all_test": {
+      "n": 752,
+      "exposures_histogram": {
+        "10": 80,
+        "11": 672
+      },
+      "distinct_D4_histogram": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 24,
+        "5": 165,
+        "6": 289,
+        "7": 236,
+        "8": 36
+      },
+      "mean_distinct_D4": 6.118351063829787,
+      "clean_view_unseen": 173,
+      "mean_clean_exposures": 1.3909574468085106,
+      "view_exposures": [
+        1046,
+        984,
+        1089,
+        1036,
+        1058,
+        1012,
+        985,
+        982
+      ],
+      "teacher_eligible_gradient_inputs": 8150,
+      "mean_true_probability": 0.6344506144523621,
+      "mean_prediction_confidence": 0.6845979690551758,
+      "median_true_wrong_logmargin": 1.2370461225509644
+    },
+    "coverage_wrong": {
+      "n": 139,
+      "exposures_histogram": {
+        "10": 16,
+        "11": 123
+      },
+      "distinct_D4_histogram": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 5,
+        "5": 28,
+        "6": 63,
+        "7": 34,
+        "8": 9
+      },
+      "mean_distinct_D4": 6.100719424460432,
+      "clean_view_unseen": 33,
+      "mean_clean_exposures": 1.316546762589928,
+      "view_exposures": [
+        183,
+        160,
+        224,
+        163,
+        186,
+        196,
+        199,
+        202
+      ],
+      "teacher_eligible_gradient_inputs": 1474,
+      "mean_true_probability": 0.2503926753997803,
+      "mean_prediction_confidence": 0.5216934084892273,
+      "median_true_wrong_logmargin": -0.6249726414680481
+    },
+    "coverage_correct": {
+      "n": 613,
+      "exposures_histogram": {
+        "10": 64,
+        "11": 549
+      },
+      "distinct_D4_histogram": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 2,
+        "4": 19,
+        "5": 137,
+        "6": 226,
+        "7": 202,
+        "8": 27
+      },
+      "mean_distinct_D4": 6.122349102773247,
+      "clean_view_unseen": 140,
+      "mean_clean_exposures": 1.4078303425774878,
+      "view_exposures": [
+        863,
+        824,
+        865,
+        873,
+        872,
+        816,
+        786,
+        780
+      ],
+      "teacher_eligible_gradient_inputs": 6676,
+      "mean_true_probability": 0.721537172794342,
+      "mean_prediction_confidence": 0.721537172794342,
+      "median_true_wrong_logmargin": 1.5549105405807495
+    },
+    "class_stratified_coverage_associations": [
+      {
+        "feature": "distinct_D4",
+        "wrong_minus_correct": -0.021629678312814704,
+        "class_stratified_two_sided_permutation_p": 0.8563071846407679,
+        "permutations": 20000
+      },
+      {
+        "feature": "clean_exposure_count",
+        "wrong_minus_correct": -0.09128357998755976,
+        "class_stratified_two_sided_permutation_p": 0.4352282385880706,
+        "permutations": 20000
+      },
+      {
+        "feature": "clean_unseen_indicator",
+        "wrong_minus_correct": 0.009025080099052896,
+        "class_stratified_two_sided_permutation_p": 0.8292085395730213,
+        "permutations": 20000
+      }
+    ],
+    "D4_codes": "Deterministically reconstructed from locked source and executed sampling; independent server NumPy1.26.4 reconstruction hash matched local.",
+    "D4_counts_sha256": "a73677939b1975aabeaf197b457c8d83e2d21457e61d7542a6d1b1e3ffdbf6c2",
+    "conclusion": "C improved the exposed TEST teacher-correct/B-wrong margin distribution and corrected9 versus harming2. No evidence here supports a systematic coverage deficit specific to the139 remaining errors. Ordinary finite iid missing views do not by themselves admit a coverage-correction training. TRAIN near-boundary protection is a hypothesis, without evidence it would raise TEST fit from613 to616.",
+    "consultation": {
+      "authorized_thread": "01a14f5d-4f38-7902-8380-a3a70c5d4899",
+      "completed_turn": "01a17fed-d901-7df1-af80-ce1d0871f970",
+      "role": "Read-only; no T10 mutation or GPU. Does not support another automatic training recipe. Does not establish optical capacity limit."
+    }
   }
 }
