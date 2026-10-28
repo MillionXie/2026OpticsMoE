@@ -18,13 +18,14 @@ import time
 ENTRY=Path(__file__).resolve();HERE=ENTRY.parent;REPO=HERE.parents[3]
 sys.path.insert(0,str(HERE));sys.path.insert(0,str(REPO))
 import run_temporal_qwen_fullscope_20261029 as adapter
+import git_blob_identity_20261029 as identity
 
 base=adapter.base;ORIGINAL_CONFIG=adapter.ORIGINAL_CONFIG;ORIGINAL_SOURCES=adapter.ORIGINAL_SOURCES
 PROTOCOL='lab_baselines_cold_file_to_CPU_B1_512x3_20261029'
 SIM=base.TASK/'runs/simulation';GPU=adapter.GPU
 
 def source_map():
-    paths=[ENTRY,Path(adapter.__file__)]
+    paths=[ENTRY,Path(adapter.__file__),Path(identity.__file__)]
     return {**ORIGINAL_SOURCES(),**{p.relative_to(REPO).as_posix():base.sha(p) for p in paths}}
 
 def missing_plan(profile,models=None,caps=None,repeats=None):
@@ -98,9 +99,7 @@ def main():
     configure(root)
     if args.phase=='audit':print(json.dumps(base.audit_point(args.output,args.manifest),ensure_ascii=True));return
     commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT']
-    for name,digest in source_map().items():
-        blob=subprocess.check_output(['git','show',commit+':'+name.replace('\\','/')],cwd=REPO,timeout=10)
-        if hashlib.sha256(blob).hexdigest()!=digest:raise ValueError('Published baseline source differs: '+name)
+    identity.verify(commit,source_map(),REPO)
     if args.phase=='suite':
         if args.after_lg is None:raise ValueError('Explicit completed LG predecessor required')
         verify_predecessor(args.after_lg);retained=retained_qwen50()

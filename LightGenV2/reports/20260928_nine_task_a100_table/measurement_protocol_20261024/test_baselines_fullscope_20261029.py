@@ -4,6 +4,14 @@ import sys
 import run_baselines_fullscope_20261029 as entry
 
 class Checks(unittest.TestCase):
+    def test_batch_blob_identity_not_weakened(self):
+        import hashlib
+        import git_blob_identity_20261029 as identity
+        blob=b'exact source\n';expected={'a.py':hashlib.sha256(blob).hexdigest()}
+        data=b'0'*40+b' blob '+str(len(blob)).encode()+b'\n'+blob+b'\n'
+        identity.check_batch(data,['a.py'],expected)
+        with self.assertRaises(ValueError):identity.check_batch(data.replace(b'exact',b'wrong'),['a.py'],expected)
+
     def test_missing_only_plan(self):
         plan=entry.missing_plan('lab')
         self.assertEqual(len(plan),21);self.assertEqual(len(set(plan)),21)

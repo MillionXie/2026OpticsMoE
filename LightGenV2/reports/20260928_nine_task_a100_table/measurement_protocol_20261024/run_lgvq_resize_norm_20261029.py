@@ -4,12 +4,15 @@ import run_lgvq_compute_scope_20261029 as runtime
 import lgvq_compute_scope_20261029 as scope
 import lgvq_resize_norm_20261029 as preprocessing
 import lgvq_patch_layout_20261029 as layout
+import git_blob_identity_20261029 as identity
 
 ENTRY=Path(__file__).resolve();NATIVE_SOURCES=runtime.sources;NATIVE_WRITE=runtime.write
 
 def sources():
     return {**NATIVE_SOURCES(),**{p.relative_to(runtime.REPO).as_posix():runtime.sha(p)
-        for p in (ENTRY,Path(runtime.__file__),Path(preprocessing.__file__),Path(layout.__file__))}}
+        for p in (ENTRY,Path(runtime.__file__),Path(preprocessing.__file__),Path(layout.__file__),Path(identity.__file__))}}
+
+def verify(commit,frozen):return identity.verify(commit,frozen,runtime.REPO)
 
 def write(path,value):
     if path.name=='input_preparation.json':
@@ -23,7 +26,7 @@ def write(path,value):
 if __name__=='__main__':
     import cv2
     cv2.setNumThreads(1)
-    runtime.ENTRY=ENTRY;runtime.sources=sources;runtime.write=write
+    runtime.ENTRY=ENTRY;runtime.sources=sources;runtime.write=write;runtime.verify=verify
     scope.prepare_cpu_worker=preprocessing.prepare_cpu_worker;scope.prepare_video=preprocessing.prepare_video
     scope.patch_video=preprocessing.patch_video;scope.summarize_compute=preprocessing.summarize_compute
     runtime.main()
