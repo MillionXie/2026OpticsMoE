@@ -1,6 +1,8 @@
 {
+  "result_status": "finalized",
+  "finalized_on": "2026-10-28",
   "statistics": "Each seed752 samples; mean plus/minus sample SD across seeds17/27/37, ddof=1; integer counts before rounding.",
-  "display_role": "Latest mixed-budget/protocol display, not equal-budget or held-out generalization.",
+  "display_role": "Final mixed-budget/protocol result table, not equal-budget or held-out generalization.",
   "updated_five": [
     {
       "experts": 4,

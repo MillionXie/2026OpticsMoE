@@ -139,8 +139,9 @@ def data():
         previous=tail_groups[key] if key in TAIL_UPDATES else original[('MoE',)+key]
         assert row['latest']==previous
     return dict(
+        result_status='finalized',finalized_on='2026-10-28',
         statistics='Each seed752 samples; mean plus/minus sample SD across seeds17/27/37, ddof=1; integer counts before rounding.',
-        display_role='Latest mixed-budget/protocol display, not equal-budget or held-out generalization.',
+        display_role='Final mixed-budget/protocol result table, not equal-budget or held-out generalization.',
         updated_five=[dict(experts=v['experts'],top_k=v['top_k'],**v['latest'],marker=v['marker'],role=v['role']) for v in rows if v['updated']],
         updated_rows_count=6,
         rows=rows,d2nn=[dict(experts=n,**original['D2NN',n,n]) for n in GROUPS],
@@ -166,7 +167,7 @@ def update_readme(d):
         assert text.count(begin)==text.count(end)==1
         before,rest=text.split(begin);_,after=rest.split(end)
         text=before+begin+'\n'+body+'\n'+end+after
-    lines=['| 专家数 | Top-k | Seed17正确数 | Seed27正确数 | Seed37正确数 | 最新均值±样本SD（%） | 口径 |',
+    lines=['| 专家数 | Top-k | Seed17正确数 | Seed27正确数 | Seed37正确数 | 最终均值±样本SD（%） | 口径 |',
         '|---|---|---:|---:|---:|---:|---|']
     for row in d['updated_five']:
         a,b,c=row['correct_counts'];role='TEST参与教师和学生训练后的暴露拟合' if row['marker']=='†' else '累计90轮开发跟进'
@@ -175,6 +176,26 @@ def update_readme(d):
     maxima='、'.join(f"{row['experts']}/{row['top_k']}" for row in d['rows'] if row['bold_group_max'])
     replace_block('GROUP MAXIMA',f'按三个seed整数正确数总和比较组内列示均值，加粗位置为{maxima}；总数相同则并列加粗。')
     path.write_text(text,encoding='utf-8')
+
+
+def write_final_table(d):
+    d2nn={row['experts']:row['display'] for row in d['d2nn']}
+    lines=['# Kather2016 专家数与 Top-k：最终结果',
+        '', '定稿日期：2026-10-28。单位：%；seed17/27/37的均值 ± 样本标准差（ddof=1），各seed752张。',
+        '', '| 专家数 | Top-k | MoE准确率（%） | D2NN准确率（%） |',
+        '|---:|---:|---:|---:|']
+    for row in d['rows']:
+        value=row['latest']['display']
+        if row['bold_group_max']:value=f'**{value}**'
+        value+=r'\*' if row['marker']=='*' else row['marker']
+        lines.append(f"| {row['experts']} | {row['top_k']} | {value} | {d2nn[row['experts']]} |")
+    lines.extend(['', '*：4/4、16/8、16/16、49/24为累计90轮、观察旧TEST后的TRAIN-only开发跟进；其余无标记行及D2NN沿用原60轮。',
+        '', '†：25/25、49/49的TEST已参与教师和学生训练，是暴露开发拟合；两行含ImageNet教师知识及不等的适应性额外预算，不代表独立泛化或等预算比较。',
+        '', '25/25每seed先有16×1024短段；seed27及49/49的seed37各完成两阶段共16步有限优化。完整预算及TRAIN/VAL变化见来源报告。',
+        '', '加粗为同专家数组内列示均值最大项，按三seed整数正确数总和判定。',
+        '', '生成源：[build_table.py](build_table.py)；精确计数、来源SHA及历史：[verified_data.json](verified_data.json)；[核验与预算说明](README.md)。',
+        '', '![最终结果表](final_table.png)', ''])
+    (OUT/'final_results.md').write_text('\n'.join(lines),encoding='utf-8')
 
 
 def render(d):
@@ -193,8 +214,8 @@ def render(d):
     bold=font('timesbd.ttf','DejaVu Serif',24,'bold')
     plt.rcParams.update({'svg.fonttype':'none','pdf.fonttype':42})
     fig,ax=plt.subplots(figsize=(11.1,13.3),dpi=180);fig.subplots_adjust(0,0,1,1);ax.set_xlim(0,1110);ax.set_ylim(1330,0);ax.axis('off');fig.patch.set_facecolor('white')
-    ax.text(24,29,'专家数与 Top-k：最新已核结果汇总',fontproperties=font('msyh.ttc','Noto Sans CJK SC',18,'bold'),va='center',color='#154A73')
-    ax.text(24,62,'不同训练预算与指标口径，供汇总展示',fontproperties=cn,va='center',color='#555555')
+    ax.text(24,29,'专家数与 Top-k：最终结果',fontproperties=font('msyh.ttc','Noto Sans CJK SC',18,'bold'),va='center',color='#154A73')
+    ax.text(24,62,'定稿：2026-10-28；不同训练预算与指标口径',fontproperties=cn,va='center',color='#555555')
     x=[24,254,484,794,1086];top=90;hh=92;rh=57
     headers=['专家数','Top-k','MoE 准确率','D2NN准确率']
     for j in range(4):
@@ -216,9 +237,11 @@ def render(d):
     for j,note in enumerate(notes):ax.text(24,foot+j*27,note,fontproperties=cn,va='center',color='#6F471D' if j in [2,3] else '#444444')
     fig.savefig(OUT/'latest_table.png',dpi=180,facecolor='white')
     fig.savefig(OUT/'latest_table.svg',facecolor='white')
+    fig.savefig(OUT/'final_table.png',dpi=180,facecolor='white')
+    fig.savefig(OUT/'final_table.svg',facecolor='white')
     plt.close(fig)
 
 
 if __name__=='__main__':
-    d=data();(OUT/'verified_data.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');render(d);update_readme(d)
+    d=data();(OUT/'verified_data.json').write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');render(d);update_readme(d);write_final_table(d)
     print(json.dumps(dict(updated_five=[{k:v[k] for k in ['experts','top_k','correct_counts','display','marker']} for v in d['updated_five']],checks=d['checks']),ensure_ascii=True))

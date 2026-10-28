@@ -1,4 +1,7 @@
-# Kather表格：最新已核结果整理（2026-10-28）
+# Kather表格：最终结果（2026-10-28定稿）
+
+用户已确认将本轮最新已核表作为最终结果。[完整最终表](final_results.md)；图片为`final_table.png`，可编辑矢量图为`final_table.svg`。
+本次定稿仅整理展示、文件入口与标记，所有20项统计值及组内加粗位置与已发布结果一致。
 
 重绘用户提供的16行MoE/4组D2NN表。当前已完成更新六行：(4,4)、(16,8)、(16,16)、(25,25)、(49,24)、(49,49)。
 本次将25/25与49/49替换为已完成并独立核验的扩大余量结果；其他14个最新MoE值（包括16/8）和全部D2NN保持上次核定值。
@@ -6,7 +9,7 @@
 统计用seed17/27/37各752张的整数正确数，先算百分比均值、样本标准差（ddof=1），最后四舍五入。
 
 <!-- BEGIN VERIFIED FIVE -->
-| 专家数 | Top-k | Seed17正确数 | Seed27正确数 | Seed37正确数 | 最新均值±样本SD（%） | 口径 |
+| 专家数 | Top-k | Seed17正确数 | Seed27正确数 | Seed37正确数 | 最终均值±样本SD（%） | 口径 |
 |---|---|---:|---:|---:|---:|---|
 | 4 | 4 | 543 | 540 | 539 | 71.90 ± 0.28* | 累计90轮开发跟进 |
 | 16 | 8 | 544 | 548 | 559 | 73.18 ± 1.03* | 累计90轮开发跟进 |
@@ -68,4 +71,4 @@
 python LightGenV2/tasks/t10_expert_scaling/reports/plotting/kather_latest_five_20261028/build_table.py
 ```
 
-生成latest_table.png及保留文字对象的latest_table.svg；派生图片不进Git，源码和核对数据通过Git发布。
+生成final_results.md、final_table.png及保留文字对象的final_table.svg，同时保留latest_table.png/svg兼容入口；派生图片不进Git，源码、完整文字表和核对数据通过Git发布。

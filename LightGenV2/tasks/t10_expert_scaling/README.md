@@ -1,5 +1,8 @@
 # T10 专家数量与 Top-k 扩展实验
 
+2026-10-28用户确认本轮最新表作为最终结果：[最终完整表](reports/plotting/kather_latest_five_20261028/final_results.md)。
+本次定稿不改变已核数字；保留TRAIN-only跟进（*）与TEST暴露开发拟合（†）的预算和指标说明，历史结果及权重继续保留。
+
 
 
 
