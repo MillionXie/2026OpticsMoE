@@ -48,7 +48,7 @@ def input_rows(manifest):
     return selected
 
 
-def adapt(original):
+def adapt(original, power_only=False):
     """Scope adapter only: native model/preparation/forward functions untouched."""
     tree = ast.parse(textwrap.dedent(inspect.getsource(original)))
     class Scope(ast.NodeTransformer):
@@ -76,6 +76,11 @@ def adapt(original):
 
         def visit_Call(self, node):
             self.generic_visit(node)
+            # New explicitly labelled power-only acquisition has no utilization
+            # or memory observations. Keep them missing, never synthesize zeros.
+            if power_only and ast.unparse(node) in (
+                    "float(r['utilization_percent'])", "float(r['memory_used_mib'])"):
+                return ast.copy_location(ast.Constant(None), node)
             if ast.unparse(node) == "subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True).strip()":
                 return ast.copy_location(ast.parse("os.environ['MEASUREMENT_PUBLISHED_COMMIT']", mode='eval').body, node)
             return node
