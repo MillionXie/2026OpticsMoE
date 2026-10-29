@@ -43,6 +43,9 @@ class InferenceSampler(unittest.TestCase):
         torch.testing.assert_close(pipe.scheduler.sigmas[-2],teacher.sigmas[-2],rtol=1e-6,atol=1e-6)
         torch.testing.assert_close(pipe.scheduler.betas,old.betas,rtol=0,atol=0)
         self.assertEqual(float(pipe.scheduler.sigmas[-1]),0.)
+        pipe.scheduler.set_timesteps(14);x=torch.randn(1,4,8,8)
+        for timestep in pipe.scheduler.timesteps:x=pipe.scheduler.step(torch.zeros_like(x),timestep,x).prev_sample
+        self.assertEqual(pipe.scheduler.num_inference_steps,14);self.assertTrue(torch.isfinite(x).all())
         with self.assertRaises(ValueError):install(SimpleNamespace(scheduler=old),'unknown')
 
 

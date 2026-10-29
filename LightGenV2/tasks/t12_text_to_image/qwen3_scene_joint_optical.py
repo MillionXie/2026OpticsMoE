@@ -50,7 +50,7 @@ def recover(a):
     extra_parameters=0
     if getattr(a,'expand_pairs',False):
         from .scene_macro_expansion import expand,contract
-        macros,extra_parameters=expand(qwen);cfg['pair_expansion']=contract()
+        macros,extra_parameters=expand(qwen);cfg.update(pair_expansion=contract(),vision_pairs=2,language_pairs=2)
     rows={r['input_key']:r for r in payload['records'] if r['split']=='train'}
     assert set(payload['TRAIN_electronic_conditions'])==set(rows)
     assert not set(rows)&{r['input_key'] for r in payload['records'] if r['split']=='dev'}

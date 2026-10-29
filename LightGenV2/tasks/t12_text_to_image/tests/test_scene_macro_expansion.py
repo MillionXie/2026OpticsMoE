@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from ..qwen_vl_hybrid import OpticalMacro,MacroStageBlock,IdentityBlock
 from ..qwen_vl_postfree import QuietFusion
-from ..scene_macro_expansion import expand,contract,validate_state,placement
+from ..scene_macro_expansion import expand,contract,validate_state,placement,build
 from ..scene_frontend_rebind import binding_metadata
 
 
@@ -50,7 +50,7 @@ class MacroExpansion(unittest.TestCase):
             self.assertEqual(macro.router_calls,1);self.assertIsInstance(macro.paths[1].core.router,nn.Identity)
             self.assertEqual(macro.diagnostics()['optical_cycles_per_forward'],5)
             self.assertTrue(all(.6<=float(f.alpha.detach())<=.9 for f in macro.fusions))
-        state={'config':{'pair_expansion':contract()},'macros':macros.state_dict()};validate_state(state,old)
+        state={'config':{'pair_expansion':contract(),'vision_pairs':2,'language_pairs':2},'macros':macros.state_dict()};validate_state(state,old)
         bad=dict(state,macros=dict(state['macros'],unexpected_router=torch.zeros(1)))
         with self.assertRaises(ValueError):validate_state(bad,old)
         macros.requires_grad_(True);opt=torch.optim.AdamW(macros.parameters(),lr=.001)
@@ -67,6 +67,8 @@ class MacroExpansion(unittest.TestCase):
         report=dict(complete=True,parent_frontend_sha256='old',pair_expansion=contract(),extra_deployment_parameters=20,
             head_UNet_VAE_retained_Qwen_TF_frozen=True,TEST_opened=False,DEV_or_TEST_forward_performed=False)
         bound=binding_metadata(state,report,'new');self.assertEqual(bound['pair_expansion']['optical_cycles'],10)
+        for config in [dict(residual_width=2,vision_pairs=2),dict(residual_width=2,vision_pairs=1,pair_expansion=contract())]:
+            with self.assertRaises(ValueError):build(None,config)
         for change in [dict(pair_expansion=dict(contract(),optical_cycles=6)),dict(extra_deployment_parameters=0),
                 dict(head_UNet_VAE_retained_Qwen_TF_frozen=False),dict(DEV_or_TEST_forward_performed=True)]:
             with self.assertRaises(ValueError):binding_metadata(state,dict(report,**change),'new')

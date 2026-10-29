@@ -33,6 +33,8 @@ def build(qwen,config):
     choice=config.get('pair_expansion')
     if choice is not None and choice!=contract():raise ValueError('Unknown optical placement/cycle contract')
     pairs=2 if choice else 1
+    if any(config.get(key,pairs)!=pairs for key in ['vision_pairs','language_pairs']):
+        raise ValueError('Pair-count metadata differs from explicit optical contract')
     macros=apply_postfree(qwen,pairs,pairs,config['residual_width'])
     if choice:placement(qwen,macros)
     return macros
@@ -46,6 +48,8 @@ def parent_key(name):
 
 def validate_state(new,old):
     if new['config'].get('pair_expansion')!=contract():raise ValueError('Missing explicit extra-cycle contract')
+    if any(new['config'].get(key)!=2 for key in ['vision_pairs','language_pairs']):
+        raise ValueError('Expanded pair-count metadata is inconsistent')
     expected=set(old['macros'])
     for name in old['macros']:
         if '.paths.0.' in name and '.core.router.' not in name:

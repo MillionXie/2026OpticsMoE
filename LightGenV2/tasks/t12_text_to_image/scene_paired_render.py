@@ -105,6 +105,7 @@ def render(a):
         assert len(sampling['timesteps'])==a.steps and all(x>y for x,y in zip(sampling['timesteps'],sampling['timesteps'][1:]))
         assert a.ip_scale==sampling['IP_scale'] and sampling['CFG']==1.
     elif not fast and a.steps in [4,6,7,8,15]:raise ValueError('This few-step budget requires its verified trained/distilled tail')
+    if a.steps==14 and not sampler:raise ValueError('The explicit fourteen-step ablation requires a DPM sampler')
     is_test=getattr(a,'scope','dev')=='test'
     expanded_folder=getattr(a,'expanded_development',None)
     if expanded_folder and (is_test or a.measure_software_latency):raise ValueError('Expanded DEV is separate from frozen TEST and fixed timing cohorts')
@@ -297,7 +298,7 @@ def main():
     p.add_argument('--lcm-guidance',type=float,choices=[1.,1.5,2.],default=1.,help='Explicit low LCM guidance; >1 includes real classifier-free double batch cost')
     p.add_argument('--expanded-development',type=Path,help='Audited original-DEV sixteen-view/eight-scene grid; never a TEST or timing override')
     p.add_argument('--sampler',choices=['original','dpmpp2m-karras','dpmpp2m-karras-teacher30'],default='original',help='Matched inference solver ablation; optional accepted Euler30 noise bounds; no stacking with LCM or learned tail')
-    p.add_argument('--steps',type=int,choices=[4,6,7,8,12,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 12/30 retain original sampler')
+    p.add_argument('--steps',type=int,choices=[4,6,7,8,12,14,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 14 requires explicit DPM; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
     p.add_argument('--scope',choices=['dev','test'],default='dev')
