@@ -31,5 +31,19 @@ class InferenceSampler(unittest.TestCase):
             a.sampler='original'
             with self.assertRaises(AssertionError):frozen_test_protocol(a,state,ready)
 
+    def test_teacher30_Karras_bounds_match_native_teacher_without_changing_betas(self):
+        from diffusers import EulerDiscreteScheduler
+        old=EulerDiscreteScheduler(num_train_timesteps=1000,beta_start=.00085,beta_end=.012,beta_schedule='scaled_linear',
+            prediction_type='epsilon',timestep_spacing='leading',steps_offset=1)
+        teacher=EulerDiscreteScheduler.from_config(old.config);teacher.set_timesteps(30)
+        pipe=SimpleNamespace(scheduler=old);choice=install(pipe,'dpmpp2m-karras-teacher30');pipe.scheduler.set_timesteps(12)
+        self.assertNotEqual(choice,descriptor('dpmpp2m-karras'));self.assertEqual(int(pipe.scheduler.timesteps[0]),int(teacher.timesteps[0]))
+        self.assertEqual(int(pipe.scheduler.timesteps[-1]),int(teacher.timesteps[-1]))
+        torch.testing.assert_close(pipe.scheduler.sigmas[0],teacher.sigmas[0],rtol=1e-6,atol=1e-6)
+        torch.testing.assert_close(pipe.scheduler.sigmas[-2],teacher.sigmas[-2],rtol=1e-6,atol=1e-6)
+        torch.testing.assert_close(pipe.scheduler.betas,old.betas,rtol=0,atol=0)
+        self.assertEqual(float(pipe.scheduler.sigmas[-1]),0.)
+        with self.assertRaises(ValueError):install(SimpleNamespace(scheduler=old),'unknown')
+
 
 if __name__=='__main__':unittest.main()

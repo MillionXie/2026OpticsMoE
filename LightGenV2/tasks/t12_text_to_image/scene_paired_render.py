@@ -276,6 +276,7 @@ def render(a):
         'inference_sampler':sampler,
         'actual_scheduler_class':type(pipe.scheduler).__name__,
         'actual_timesteps':[float(x) for x in pipe.scheduler.timesteps.detach().cpu().tolist()],
+        'actual_scheduler_sigmas':[float(x) for x in pipe.scheduler.sigmas.detach().cpu().tolist()],
         'initial_noise_sigma':float(pipe.scheduler.init_noise_sigma),
         'fast_tail':fast,
         'task_LoRA_fused':fuse_task,'task_fusion':task_fusion,
@@ -295,7 +296,7 @@ def main():
     p.add_argument('--fuse-task-lora',action='store_true',help='Fair optional merge for either model; requires a new quality run before timing')
     p.add_argument('--lcm-guidance',type=float,choices=[1.,1.5,2.],default=1.,help='Explicit low LCM guidance; >1 includes real classifier-free double batch cost')
     p.add_argument('--expanded-development',type=Path,help='Audited original-DEV sixteen-view/eight-scene grid; never a TEST or timing override')
-    p.add_argument('--sampler',choices=['original','dpmpp2m-karras'],default='original',help='Matched inference solver ablation; no new weights, no stacking with LCM or learned tail')
+    p.add_argument('--sampler',choices=['original','dpmpp2m-karras','dpmpp2m-karras-teacher30'],default='original',help='Matched inference solver ablation; optional accepted Euler30 noise bounds; no stacking with LCM or learned tail')
     p.add_argument('--steps',type=int,choices=[4,6,7,8,12,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
