@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import sys
 import time
@@ -104,7 +105,8 @@ def run(command,deadline,**kw):
     subprocess.run(command,check=True,timeout=max(1,min(3600,deadline-time.time())),**kw)
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--deadline',type=float,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--deadline',type=float,required=True)
+    p.add_argument('--verified-local-flash-continuation',action='store_true');a=p.parse_args()
     if not 0<a.deadline-time.time()<=7200:raise ValueError('Finite setup <=two hours')
     if sys.version_info[:2]!=(3,12) or REPO!=BASE/'repo':raise ValueError('Exact rental Python/repo only')
     if (REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/rental_fullscope_20261029_01').exists():
@@ -113,6 +115,37 @@ def main():
         if Path(f'/proc/{pid}').exists():raise ValueError('Original installer still active')
     receipt=BASE/'python_setup_receipt03.json'
     if receipt.exists():raise FileExistsError('Preserve completed setup receipt')
+    if a.verified_local_flash_continuation:
+        # A different transport for the same original official binary. The old
+        # downloader remains untouched until every byte has been verified and
+        # the new installer has a valid complete receipt. Never restart a model.
+        started=json.loads((BASE/'python_setup_started03.json').read_text())
+        if a.deadline>started['deadline']:raise ValueError('Do not extend original setup cutoff')
+        cmd=Path(f"/proc/{started['pid']}/cmdline").read_bytes()
+        if b'provision_rental_python_20261029.py' not in cmd:raise ValueError('Exact old CPU downloader only')
+        records=json.loads((BASE/'python_wheel_manifest03.json').read_text())
+        if {r['package']:r['version'] for r in records[:-1]}!=PINS:raise ValueError('Original package pins')
+        if records[-1]['name']!=FLASH or records[-1]['sha256']!=FLASH_SHA:raise ValueError('Original Flash SHA')
+        cache=BASE/'python_wheels03'
+        for r in records:
+            dst=cache/r['name']
+            if not dst.exists():
+                parts=sorted((cache/(r['name']+'.ranges')).glob('*.bin'))
+                if len(parts)!=8 or sum(p.stat().st_size for p in parts)!=r['bytes']:
+                    raise ValueError('Complete original ranges or exact wheel required')
+                with dst.open('xb') as out:
+                    for part in parts:
+                        with part.open('rb') as src:shutil.copyfileobj(src,out,4194304)
+            if dst.stat().st_size!=r['bytes'] or sha(dst)!=r['sha256']:raise ValueError('Original whole wheel SHA')
+        wheels=[str(cache/r['name']) for r in records]
+        install_packages(wheels,records,receipt,a.deadline)
+        # Only our still-running, pre-model HTTP downloader is stopped; keep all
+        # of its original partials/logs. A formal suite is not signalled.
+        try:os.killpg(started['pid'],signal.SIGTERM)
+        except ProcessLookupError:pass
+        write(BASE/'wheel_transport_handover03.json',{'status':'same_official_SHA_local_transport_completed',
+              'old_downloader_pid':started['pid'],'time':time.time(),'no_formal_model_restarted':True})
+        return
     with concurrent.futures.ThreadPoolExecutor(4) as pool:records=list(pool.map(wheel_record,PINS.items()))
     meta=get_json('https://api.github.com/repos/Dao-AILab/flash-attention/releases/tags/v2.7.4.post1')
     f=next(f for f in meta['assets'] if f['id']==224784686)
@@ -121,19 +154,22 @@ def main():
                sha256=FLASH_SHA,url=f['browser_download_url'],official_json=meta['url'])
     write(BASE/'python_wheel_manifest03.json',records+[flash])
     wheels=download_all(records+[flash],a.deadline)
+    install_packages(wheels,records+[flash],receipt,a.deadline)
+
+def install_packages(wheels,records,receipt,deadline):
     common=BASE/'venvs/common';common.parent.mkdir(exist_ok=True)
     if common.exists():raise FileExistsError('No blind install over prior environment')
     venv.EnvBuilder(with_pip=True).create(common)
     env=dict(os.environ,TMPDIR=str(BASE/'tmp'),PIP_DISABLE_PIP_VERSION_CHECK='1')
     py=str(common/'bin/python')
-    run([py,'-m','pip','install','--no-deps',*wheels[:-1]],a.deadline,env=env)
+    run([py,'-m','pip','install','--no-deps',*wheels[:-1]],deadline,env=env)
     # GPU/backend versions above are frozen. These non-backend utilities are
     # resolved once, then freeze and wheel/source identity are preserved.
     utilities=['opencv-python==4.11.0.86','accelerate==1.12.0','huggingface-hub==0.36.0',
                'sympy==1.13.1','setuptools','packaging','ninja','scipy','psutil','Pillow',
                'tiktoken','einops','timm==1.0.22','nvidia-ml-py','sentencepiece','attrdict','easydict']
     run([py,'-m','pip','install','--retries','0','--timeout','20','--no-cache-dir',
-         '-i','https://mirrors.aliyun.com/pypi/simple',*utilities],a.deadline,env=env)
+         '-i','https://mirrors.aliyun.com/pypi/simple',*utilities],deadline,env=env)
     common_site=common/'lib/python3.12/site-packages'
     for model,tf in [('kimi','4.48.2'),('deepseek','4.38.2')]:
         folder=BASE/'venvs'/model
@@ -142,13 +178,13 @@ def main():
         (folder/'lib/python3.12/site-packages/shared_original_torch.pth').write_text(str(common_site)+'\n')
         mp=str(folder/'bin/python')
         run([mp,'-m','pip','install','--retries','0','--timeout','20','--no-cache-dir',
-             '-i','https://mirrors.aliyun.com/pypi/simple','transformers=='+tf],a.deadline,env=env)
-        if model=='kimi':run([mp,'-m','pip','install','--no-deps',wheels[-1]],a.deadline,env=env)
+             '-i','https://mirrors.aliyun.com/pypi/simple','transformers=='+tf],deadline,env=env)
+        if model=='kimi':run([mp,'-m','pip','install','--no-deps',wheels[-1]],deadline,env=env)
         else:run([mp,'-m','pip','install','--retries','0','--timeout','20','--no-cache-dir',
-                  '--no-deps','-i','https://mirrors.aliyun.com/pypi/simple','xformers==0.0.29.post2'],a.deadline,env=env)
-        run([mp,'-m','pip','freeze','--all'],a.deadline,stdout=(BASE/(model+'_pip_freeze03.txt')).open('x'))
+                  '--no-deps','-i','https://mirrors.aliyun.com/pypi/simple','xformers==0.0.29.post2'],deadline,env=env)
+        run([mp,'-m','pip','freeze','--all'],deadline,stdout=(BASE/(model+'_pip_freeze03.txt')).open('x'))
     write(receipt,{'status':'packages_installed_not_formal_GPU_proof','completed':time.time(),
-                   'wheels':records+[flash],'original_failed_install_preserved':True,
+                   'wheels':records,'original_failed_install_preserved':True,
                    'no_CUDA_or_model_import':True})
 
 if __name__=='__main__':main()
