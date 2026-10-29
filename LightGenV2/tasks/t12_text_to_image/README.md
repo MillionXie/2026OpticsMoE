@@ -19,6 +19,10 @@
 正式配对入口还纠正Qwen推理的CFG无条件分支：冻结TRAIN教师预编码同一空／负面文本条件并保存为
 部署常量，不能用全零张量冒充原生CLIP无条件表示。Qwen推理不加载CLIP；原生对照使用相同负面描述。
 新训练与raw推理严格共用尺寸微条件，输出latent仍64×64／RGB512；旧零条件结果不覆盖。
+独立架构对照增加官方MIT许可`Shitao/OmniGen-v1-diffusers`（revision `016e2f61…`），
+`scene_omnigen_peer`固定完整32个DEV请求、512输出／输入最大256；官方50步、文字2.5／图像1.6，
+与SDXL30步明确分列。原生peer可使用其自带参考VAE，不据此改Qwen唯一图文入口合同。
+权重下载使用官方snapshot API，逐LFS SHA／小文件Git blob核验后才加载；未运行不记完成指标。
 用户进一步要求控制LG资源：优先验证**Qwen图像输入256（64个merger空间token）、原生输出512**。
 `scene_resolution512_workflow_20261029`以同32个DEV输入／30步／三设置实际重跑512，
 与之前1024原图分列，禁止把1024缩略图当512推理或借跨分辨率计算LG加速。
