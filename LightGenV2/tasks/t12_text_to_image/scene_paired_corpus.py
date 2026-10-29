@@ -117,18 +117,18 @@ def composite(rgba, background, category, placement=None):
 
 
 def compose(a):
-    report = json.loads((a.sources/'report.json').read_text())
-    backgrounds_report = json.loads((a.backgrounds/'report.json').read_text())
+    report = json.loads((a.sources/'report.json').read_text(encoding='utf-8'))
+    backgrounds_report = json.loads((a.backgrounds/'report.json').read_text(encoding='utf-8'))
     review_path = a.review_file or a.backgrounds/'visual_review.json'
-    review = json.loads(review_path.read_text())
+    review = json.loads(review_path.read_text(encoding='utf-8'))
     assert report['complete'] and not report['TEST_opened'] and backgrounds_report['complete']
     assert review['backgrounds_sha256'] == digest(a.backgrounds/'backgrounds.json')
     # Per-asset factual recaption is allowed only for TRAIN/DEV data preparation.
     # Missing or rejected assets cannot be silently filled by a different split.
     accepted = {r['asset_id']: r for r in review['assets'] if r['approved']}
-    assets = json.loads((a.backgrounds/'backgrounds.json').read_text())
+    assets = json.loads((a.backgrounds/'backgrounds.json').read_text(encoding='utf-8'))
     assert set(accepted) <= {r['asset_id'] for r in assets}
-    sources = json.loads((a.sources/'sources.json').read_text())
+    sources = json.loads((a.sources/'sources.json').read_text(encoding='utf-8'))
     if a.stage == 'preview':
         chosen = {}; limited = []
         for source in sources:
