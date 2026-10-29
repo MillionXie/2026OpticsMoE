@@ -11,8 +11,9 @@ const REPO=path.resolve(HERE,'../../../..');
 const runtime=process.env.ARTIFACT_RUNTIME_DIR;
 if(!runtime)throw Error('ARTIFACT_RUNTIME_DIR must point to the bundled dependency junction');
 const {Workbook,SpreadsheetFile}=await import(pathToFileURL(createRequire(path.join(runtime,'loader.cjs')).resolve('@oai/artifact-tool')).href);
-const OUT=path.join(HERE,'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/Lab8_Rental4_timing_20261029_01');
-const BOOK='A100_Lab8_Rental4_full_input_20261029.xlsx';
+const includeABO=process.argv.includes('--include-abo');
+const OUT=path.join(HERE,'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b',includeABO?'Lab8_Rental4_ABO_closeout_20261029_01':'Lab8_Rental4_timing_20261029_01');
+const BOOK=includeABO?'A100_T06_ABO_results_20261029.xlsx':'A100_Lab8_Rental4_full_input_20261029.xlsx';
 if(fss.existsSync(path.join(OUT,'lab_delivery_receipt01.json')))throw Error('Preserve the SHA-backed delivered workbook');
 const repairDraft=process.argv.includes('--repair-own-draft');
 if(fss.existsSync(path.join(OUT,BOOK))){
@@ -79,7 +80,60 @@ assert(trials.length===36&&new Set(trials.map(t=>t.report_sha256)).size===36,'Ex
 const aggregate=c=>{const sec=c.trials.reduce((s,t)=>s+t.seconds,0),tok=c.trials.reduce((s,t)=>s+t.tokens,0);return {key:c.key,model:c.model,cap:c.cap,hardware:c.hardware,time16_s:sec/96,native_tokens:tok,native_tokens_per_s:tok?tok/sec:null,energy16_j:c.energy?c.trials.reduce((s,t)=>s+t.system_j,0)/96:null,gpu_mean_w:c.energy?c.trials.reduce((s,t)=>s+t.gpu_j,0)/sec:null,energy_qualified:c.energy,report_sha256:c.trials.map(t=>t.report_sha256)};};
 const summary=configs.map(aggregate);
 await fs.mkdir(OUT,{recursive:true});
-const wb=Workbook.create(),s=wb.worksheets.add('Comparison'),raw=wb.worksheets.add('Trials');
+const wb=Workbook.create(),s=wb.worksheets.add('Comparison');
+const aboSheet=includeABO?wb.worksheets.add('ABO retrieval'):null;
+const raw=wb.worksheets.add('Trials');
+let aboResult=null;
+if(includeABO){
+  const task=path.join(REPO,'LightGenV2/tasks/t08_abo_image_text_retrieval');
+  const run=path.join(task,'runs/simulation/abo_t2i_a100_20261029_01');
+  const pack=path.join(task,'releases/abo_text_to_image_FULL_TEST_20261029_01');
+  const report=path.join(run,'inference/report.json');
+  const audit=path.join(run,'inference/local_independent_cpu_audit01.json');
+  const delivery=path.join(run,'lab_full_TEST_delivery_receipt01.json');
+  assert(sha(report)==='1d0677338c3a9ee0217ef9c92779e50f757fe8d04f266aff0c0e579059cc59e3','Pinned completed FULL report');
+  assert(sha(audit)==='337b0035280c4d85ff2c9fe04f5a98b97b88f463dbfafaac375d0c273baf8fd3','Existing CPU score replay audit');
+  assert(sha(delivery)==='8a6fb592c1014670f0d4b3527e0e27600f53e1dd1966998588898d217711dcc7','Existing local and lab ZIP delivery receipt');
+  assert(sha(pack+'.zip')==='fe8a1d9764a43e42df152104c2f965a2ab975c9c9e82d00c4f47e8c6ca1316d9','Delivered ZIP unchanged');
+  const manifest=read(path.join(pack,'manifest.json'));
+  const sourceRead=name=>{
+    const file=path.join(pack,'source',name),pin=manifest.files.find(x=>x.path==='source/'+name);
+    assert(pin&&sha(file)===pin.sha256,'Pinned package source '+name);return read(file);
+  };
+  const ds=read(report);assert(ds.status==='complete'&&ds.query_count===100&&ds.gallery_count===2400&&ds.model_metadata.backbone_total_parameters===27480134248,'Full model, complete population');
+  const records=[
+    {model:'DeepSeek-VL2 Full',provenance:'New A10080 frozen inference',metrics:ds.metrics,source:rel(report),sha256:sha(report)},
+    {model:'LightGen-II simulation',provenance:'Historical, TEST-selected',metrics:sourceRead('historical_ours_10cm_final_report.json').bidirectional.text_to_image,source:'source/historical_ours_10cm_final_report.json'},
+    {model:'Qwen dynamic 2048D',provenance:'Historical frozen baseline',metrics:sourceRead('historical_qwen_report.json').metrics.dynamic_2048,source:'source/historical_qwen_report.json'},
+    {model:'CLIP ViT-B/32',provenance:'Historical frozen baseline',metrics:sourceRead('historical_clip_report.json').results.easy100.text_to_image,source:'source/historical_clip_report.json'}
+  ];
+  for(const row of records){assert(row.metrics.query_count===100&&row.metrics.gallery_count===2400,'All 100 queries, same gallery');if(!row.sha256)row.sha256=sha(path.join(pack,row.source));}
+  aboResult={records,query_count:100,gallery_count:2400,positives_per_query:24,zip_sha256:sha(pack+'.zip'),audit_sha256:sha(audit),lab_delivery_receipt_sha256:sha(delivery),visual_QA:'pending_manual_not_waived',rental_work_complete:true};
+  const a=aboSheet;a.showGridLines=false;a.tabColor='#263C5A';
+  a.getRange('A1:H25').format={font:{name:'Arial',size:10},verticalAlignment:'center',rowHeight:25};
+  a.getRange('A2').values=[['ABO official-title text-to-image retrieval']];a.getRange('A2:H2').format.font={name:'Arial',size:15,bold:true};
+  a.getRange('A3').values=[['100 queries, 2400 original TEST images, 24 exact-SKU positives per query.']];
+  a.getRange('A5:H5').values=[['Model','Result origin','Hit@1','Hit@5','Hit@10','MRR','mAP','Queries']];
+  a.getRange('A6:H9').values=records.map(r=>[r.model,r.provenance,r.metrics.hit_at_1,r.metrics.hit_at_5,r.metrics.hit_at_10,r.metrics.mrr,r.metrics.map,r.metrics.query_count]);
+  a.getRange('A5:H5').format={fill:'#263C5A',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},horizontalAlignment:'center',rowHeight:32};
+  a.getRange('C6:E9').setNumberFormat('0.0%');a.getRange('F6:G9').setNumberFormat('0.000000');a.getRange('H6:H9').setNumberFormat('0');a.getRange('C6:H9').format.horizontalAlignment='right';
+  [31,34,12,12,12,14,14,10].forEach((w,i)=>a.getRangeByIndexes(0,i,25,1).format.columnWidth=w);
+  const notes=[
+    'Only DeepSeek-VL2 Full is newly measured here. The other three models reuse saved historical results.',
+    'DeepSeek Full: 27,480,134,248 parameters, 2560D, zero trainable parameters. No quality head or tuning.',
+    'Hit@K means at least one exact-SKU positive in the first K images. It is not category accuracy or Recall@K.',
+    'LightGen-II is historical simulation (86%), not physical 85%. Historical TEST selection limits generalization.',
+    'All 100 queries are retained. The older 10 examples were deliberately selected in favor of LightGen-II.',
+    'DeepSeek audit replays saved scores, full order and Top10. It does not recompute all embedding cosines.',
+    'ABO latency and energy were not formally measured. Do not reuse T06 timings as ABO latency.',
+    'Original results and the complete figure ZIP are SHA-preserved locally and on lab. No rental work remains.',
+    'Offline HTML visual review is still pending. It is not marked passed or waived and can be done locally.'
+  ];
+  a.getRange('A12:A20').values=notes.map(n=>[n]);a.getRange('A12:H20').format.rowHeight=24;
+  a.getRange('A12:H18').format.font.italic=true;
+  a.getRange('A22').values=[['Source identity (SHA256)']];a.getRange('A22:H22').format.font.bold=true;
+  a.getRange('A23:B25').values=[['New FULL DS report',sha(report)],['Independent CPU replay',sha(audit)],['Complete TEST ZIP',aboResult.zip_sha256]];
+}
 for(const sheet of [s,raw]){sheet.showGridLines=false;sheet.getRange(sheet===s?'A1:I31':'A1:O42').format.font={name:'Arial',size:10};}
 s.tabColor='#263C5A';
 s.getRange('A2').values=[['A100 full-input timing comparison']];s.getRange('A2:I2').format.font={name:'Arial',size:15,bold:true};
@@ -134,11 +188,11 @@ close(s.getRange('D6').values[0][0],old+1000/96);raw.getRange('H2').values=[[ori
 console.log((await wb.inspect({kind:'table',range:'Comparison!A5:I19',include:'values,formulas',tableMaxRows:15,tableMaxCols:9,maxChars:3500})).ndjson);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:1500});console.log(errors.ndjson);
 assert(!/#REF!|#DIV\/0!|#VALUE!|#NAME\?|#NUM!|#NULL!|#SPILL!|#CALC!/.test(errors.ndjson),'Formula error scan');
-for(const [sheetName,range,name] of [['Comparison','A1:I29','comparison_preview.png'],['Trials','A1:L13','trials_preview.png']]){
+for(const [sheetName,range,name] of [['Comparison','A1:I29','comparison_preview.png'],...(includeABO?[['ABO retrieval','A1:H25','abo_preview.png']]:[]),['Trials','A1:L13','trials_preview.png']]){
   const blob=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(OUT,name),new Uint8Array(await blob.arrayBuffer()));
 }
 await (await SpreadsheetFile.exportXlsx(wb)).save(path.join(OUT,BOOK));
-const result={status:'36_ACCEPTED_TRIALS_12_CONFIGS_WITH_DISTINCT_HARDWARE_AND_ENERGY_SCOPE',LG_reference:{file:rel(lgFile),sha256:sha(lgFile),time16_ms:lg.LG_time16_s*1000,native_tokens_per_s:lg.LG_tokens_per_s,energy_qualified:false},records:summary,trials};
+const result={status:'36_ACCEPTED_TRIALS_12_CONFIGS_WITH_DISTINCT_HARDWARE_AND_ENERGY_SCOPE',LG_reference:{file:rel(lgFile),sha256:sha(lgFile),time16_ms:lg.LG_time16_s*1000,native_tokens_per_s:lg.LG_tokens_per_s,energy_qualified:false},records:summary,trials,...(includeABO?{ABO:aboResult}:{})};
 await fs.writeFile(path.join(OUT,'combined_summary.json'),JSON.stringify(result,null,2),{flag:repairDraft?'w':'wx'});
 await fs.writeFile(path.join(OUT,'workbook_receipt.json'),JSON.stringify({file:BOOK,sha256:sha(path.join(OUT,BOOK)),bytes:fss.statSync(path.join(OUT,BOOK)).size,tests:{trials:36,configs:12,formula_input_perturbation_and_restore:true,all_summary_time_formulas_match:true},source_pins:{lab:sha(labFile),lg:sha(lgFile),rental_root:sha(rootReceipt)}},null,2),{flag:repairDraft?'w':'wx'});
 console.log(JSON.stringify({status:'exported_needs_visual_review_and_lab_backup',output:path.join(OUT,BOOK),sha256:sha(path.join(OUT,BOOK))}));

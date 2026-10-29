@@ -1,5 +1,22 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：测速与ABO合并表已交付，租机计算工作结束
+
+按人工“测完就整理好表格，我要关机释放了”的要求，原36次测速与一次完整版DS ABO结果
+合并到新表，不覆盖此前已交付Excel：
+`measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/`
+`Lab8_Rental4_ABO_closeout_20261029_01/A100_T06_ABO_results_20261029.xlsx`。
+SHA256为`c30f015675b4ce813b33e5b4bdc06ebf92724816cb7196e41e3f50b02828df1c`。
+三页为Comparison、ABO retrieval和Trials，原测速单元格/公式与36次明细保持不变；
+新增四模型ABO五项指标，只有FULL DS本次新测，LG仿真/Qwen/CLIP明确为历史结果。
+已核保存文件CRC、公式零错误、输入扰动还原、三页预览，未重跑任何GPU或原run审计。
+新表及数据收据也已local+lab逐SHA保存，`lab_delivery_receipt01.json` SHA为
+`76fd9c988c4fab0d8be41823e7ff07edcf1696e37f17833920217ada92ebf0ad`。
+原始结果与完整TEST画图ZIP此前已双端安全，租机不再有本线程待运行或待取回工作，
+可由人工关机释放；本线程不自动执行释放，也不声称平台已停止计费。
+HTML人工视检仍未确认、未豁免，但可在本地离线进行，不需要继续保留租机。
+因此结束租机心跳，不将“停止监控/允许人工释放”冒称页面视检通过或整体视觉验收完成。
+
 ## 2026-10-29：追加ABO完整版冻结推理及完整TEST包已安全，页面核验待人工
 
 T06之后的一次完整版DeepSeek-VL2 ABO文搜图已完成100标题×2400 TEST，无训练、调参或其他模型重测。
