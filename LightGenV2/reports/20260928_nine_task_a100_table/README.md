@@ -1,5 +1,46 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：新租机12点全部安全，合并lab八配置的新Excel已交付
+
+唯一`rental_timing_only_20261029_02`已完成12/12：Kimi及完整版DeepSeek-VL2各MPS50/100三fresh轮，
+每轮512原TEST、B1四帧、零额外推理预热；全文件准备至末CPU评分的连续墙钟及511段间隔保持。
+Unix1793273004.5431383实核12个worker与wrapper13363/controller13364全部真退出，
+私有MPS精确rc1、共享锁只读打开后可取、GPU30 A10080/400W无compute进程，随后才允许ABO入场。
+全部12叶server与本地独立CPU时间审计通过，原始字节均已local+lab逐SHA保全，不重复测量或审计。
+
+DeepSeek100三轮T16为12.08660444704583、12.091482448100578、12.040518058493035s；
+合1158.9953585164621s、1536视频、96组，pooled T16为**12.072868317879815s**。
+原生有效token合2677248，吞吐2309.9730126848244token/s，不选择最快轮或套用Qwen分子。
+最后一叶8原文件36601530B，report SHA为
+`9ebe1cda63980cded6dfcc50cb53aca4a03afea64faf54c43ae7db2ed79b53db`，
+lab收据SHA为`0705d8eee6392c7ab2de018fe7b6698f6fb7193291ed793ebd63d539e92a5980`。
+整根及精确外`timing_controller02.log`的112原文件354859848B也已local+lab逐SHA保全，
+整根收据`whole_root_backup_receipt_complete01.json` SHA为
+`9394417869da90fd83f24348a03b62bcb2d19631b6a2eee975dd06274774bac4`；复用已接受叶，不重复其独立审计。
+
+| 新A10080/400W配置 | 三轮pooled T16(s) | 各模型原生token/s | 能耗 |
+| --- | ---: | ---: | --- |
+| Kimi MPS50 | 8.909084374492522 | 1988.0830908629607 | N/A |
+| Kimi MPS100 | 8.562793965655146 | 2068.483729848198 | N/A |
+| DeepSeek-VL2 Full MPS50 | 15.8971027546213 | 1754.2819235972377 | N/A |
+| DeepSeek-VL2 Full MPS100 | 12.072868317879815 | 2309.9730126848244 | N/A |
+
+新合并表由`measurement_protocol_20261024/build_lab8_rental4_20261029.mjs`从36份不同原report及
+既有独立审计生成，原lab八配置24点的SHA逐一绑定；未覆盖任何旧Excel、raw或sealed结果。
+交付为[12配置36轮比较表](measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/Lab8_Rental4_timing_20261029_01/A100_Lab8_Rental4_full_input_20261029.xlsx)，
+工作簿SHA `26b38a7f5d95a720b50013569e716b86dc0755c3b6e63be84e0638cf38780ab4`，
+同目录`combined_summary.json`保留完整精度、36轮源路径与report/audit SHA。
+汇总公式按总时间/总组数、总原生token/总时间、lab同窗总J/总组数计算；
+输入扰动还原、公式错误扫描、保存后ZIP/XML缓存值检查及两页视检通过，未冒称已在原生Excel执行测试。
+工作簿、JSON、收据及两页预览均已local+lab逐SHA读回，lab交付收据SHA
+`955f3326500e279876cfd2ebfcf955ce6041ddac8d3d1cfcb7542b273dcb48c7`。
+
+lab为A10040GB/250W，租机为A10080GB/400W，硬件分栏；租机与LG能耗均不合格，始终N/A。
+LG仅用含resize/归一化的45.94911715143696ms等效值，其155302.22216199507token/s仅共用Qwen分子。
+LG仍排除文件读取/解码、RGB/crop及quality-pixel准备，不是同范围物理E2E；不捏造百倍或LG能量比。
+ABO完整版本进程35339已在T06释放之后按原deadline一次启动；本节不把加载或启动冒称ABO推理已完成。
+仍须其完整结果、CPU审计及四模型完整TEST画图ZIP交付，未通知可释放，也不自动续费/释放。
+
 ## 2026-10-29：新A10080完整版DeepSeek MPS50三轮时间测量完成，能耗N/A
 
 `rental_timing_only_20261029_02/deepseek_cap50_repeat01/02/03`三fresh轮各512原TEST、
