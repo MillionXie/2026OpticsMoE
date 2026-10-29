@@ -1,5 +1,42 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-30：LGVQ十二组时间/能量与LightGen诊断新表已双端交付
+
+原六Kimi、独立CPU派生DS50首轮及新根五个DS均已完成，合计四配置各三轮。
+`rental_energy_userZOH_20261030_04`五点complete，父39968及末子48613实际退出，
+suite记录MPS已释放。没有重复合格推理，没有自动续费、关机或平台释放操作。
+新根及外部启动/日志86原文件200,471,663B已local+lab逐SHA保存，
+`whole_root_backup_receipt_complete01.json` SHA为
+`e1564b07e63da1a4e5a8d4dcfab350e4fd31b7d87dc5a8417b882d8beae9c6fe`。
+一次最终独立CPU审计按各组真实协议复放并通过，共12个不同报告SHA，未导入Torch/模型。
+`local_independent_pooled_audit01.json` SHA为
+`7d9277404bcfd8f0a59ac3f16d88c295b7d01c0f28508c1dd337c48b755fc3ff`。
+DS50首轮仍为独立派生，原failed状态/原raw不变，延后输入核验事实保留。
+
+新表位于`measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/`
+`Lab8_Rental4_energy_LightGen_20261029_01/A100_LGVQ_energy_LightGen_20261029.xlsx`，
+21,405B，SHA256 `6a269406b109f36be0a1c201cace31af870589b320e2727b2691b625dac50d6a`。
+四页Comparison、LightGen rental、ABO retrieval、Trials，保留lab原24点，合36点。
+公式时间/能量/LG分母扰动还原、零错误、四页及租机明细/协议预览实际视检、保存ZIP/XML/CRC核验均通过。
+新表、JSON、六PNG和三个最终CPU审计阶段等14文件已local+lab逐SHA保存，
+`lab_delivery_receipt01.json` SHA为
+`2eacfecedc4a6988dbe8d88631ed3c08ba97ab1d6790ba3bddac79c35abb3cbf`。
+
+| 配置 | 三轮pooled秒/16视频 | 板卡J/16视频 | 板卡均功率W | 板卡+固定主机代理J/16视频 |
+|---|---:|---:|---:|---:|
+| Kimi50 | 8.92580501436411 | 1393.1499839443002 | 156.08115813669838 | 4411.857239802243 |
+| Kimi100 | 8.502463199576596 | 1346.170528343952 | 158.32712200518412 | 4221.703582440757 |
+| DeepSeek Full50 | 15.886729356958918 | 3230.270603881283 | 203.33138000278933 | 8603.162472404763 |
+| DeepSeek Full100 | 12.055552343071517 | 2770.1876181929642 | 229.78520928450263 | 6847.375420619751 |
+
+主机338.2W为固定估算，不是整机功率实测。DeepSeek按新人工授权真实观测ZOH，
+严格250ms资格和实际gap数/age/覆盖比例逐组另列，不冒称原门全部通过。
+LG原45.94911715143696ms等效调度参考保留，倍率明确不同范围，非同范围端到端。
+租机LG实际685.4211618483532ms软件窗及板卡约56.176286J/16视频另列诊断页，
+原92/512数值匹配失败事实保留，不称合格同reference或物理光路测量。
+ABO原FULL报告/完整TEST ZIP不变，人工HTML视检仍pending且可本地处理，不需要保留租机。
+全部本轮原始数据和新表双端安全后，可由人工关机释放；不声称平台已经停止计费。
+
 ## 2026-10-30：人工授权超过250ms继续原零阶保持积分，补测最后五点
 
 人工明确要求必须测完，并允许超过250ms的真实观测沿用之前积分，不再因百毫秒空档停止。
