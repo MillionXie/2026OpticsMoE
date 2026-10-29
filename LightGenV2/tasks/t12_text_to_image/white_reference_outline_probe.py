@@ -63,7 +63,8 @@ def main():
     args.output.mkdir(parents=True)
     write(args.output/'execution.json',{'argv':sys.argv,'pid':os.getpid(),'source_commit':commit,
         'source_sha256':digest(Path(__file__)),'config':cfg,'config_sha256':digest(args.config),
-        'versions':{n:importlib.metadata.version(n) for n in ['torch','diffusers','transformers','opencv-python']}})
+        'versions':{**{n:importlib.metadata.version(n) for n in ['torch','diffusers','transformers']},
+                    'opencv_import':__import__('cv2').__version__}})
     try:
         import torch
         from diffusers import ControlNetModel, StableDiffusionXLControlNetPipeline
