@@ -39,6 +39,15 @@ Kimi七个权重分片及全部官方代码现已逐原SHA一致，三个代码�
 Torch2.6及其CUDA12.4依赖固定；Kimi/DS独立transformers与attention环境不互相污染。
 这些仍是准备阶段，不代表正式12点测量已完成或通过。
 
+正式入场前发现同一SSH端点的可见GPU已从上述初始UUID变为
+`GPU-30fecb94-0222-a3d5-d952-a91f2cab2f43`（PCI26:00.0）；用户表示未操作实例。
+不能据此断言平台迁移的唯一原因。nvidia-smi及直接NVML均只见这一张A100-SXM4-80GB，
+81920MiB/400W/同驱动、无计算进程，旧UUID查询返回rc6，不回填或覆盖初始快照。
+新硬件快照`environment_after_disk01.json`460506B已原字节保全本地/lab，
+SHA=`e99bff91784e2b4b5250f31c1fe79a09890a4b002c67148f4d5e15511974fd22`。
+由于尚未开始任何正式推理，新入口仅在正式入场前绑定实际唯一可见卡；测量中身份若变则立即拒收，
+不将两次硬件身份混入同组结果，也未触碰宿主其他GPU。
+
 ## 2026-10-29：LG扩展预处理与lab baseline测量交付，8配置24点完成
 
 最终CPU collector状态为`PASSED_8_CONFIG_24_POINT_FULL_INPUT_BASELINES`：
