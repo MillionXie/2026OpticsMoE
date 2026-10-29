@@ -1,5 +1,17 @@
 # T10 专家数量与 Top-k 扩展实验
 
+## N16同孔径基线的有限微调（2026-10-29，用户追加）
+
+用户在看到N4/N16同为457/752后要求N16至少高0.4个百分点，且至少低于N25的464/752达0.2个百分点。
+按未四舍五入的整数差值计算，工作区间为461–462/752；这是争取目标，不是按TEST挑checkpoint或压低更高成绩的规则。
+仅N16 seed17从已完成60轮last（live/EMA/Adam13140）接续30完整TRAIN轮，累计90轮；原best59始终候选，原source best/last及其他三组不覆盖。
+入口`d2nn_N16_followup.py`复用`diagnose_topk.py`，profile为`configs/kather_d2nn_N16_followup_20261029.json`。
+固定LR2e-4→2e-5余弦、effective16/micro2、原EMA.95、D4、CEsmooth.02/capture.02/TV.02；无teacher、TEST梯度、新margin/head/TTA或额外seed/grid。
+仍按VAL macro-NLL最低EMA选模，锁定后一次TEST；若原best仍入选，复用已有锁定TEST，不重复前向。较高成绩照实保留，不为凑区间选差模型。
+本轮新增104880个完整TRAIN梯度输入、6570次更新，原迁移中断的未知部分成本另保留。重设自身RNG，不称逐位恢复。
+仅授权GPU1 UUID绑定、空闲≥6000MiB且无本任务计算进程才启动，共卡foreign保留，禁止A100。
+这是观察TEST后调整训练预算的开发跟进；即使TRAIN-only，也不能与其余60轮组混称等预算确认性对照。原60轮表继续保留，完成独立核验后另表报告。
+
 ## D2NN全局面尺寸对齐重跑（2026-10-29）
 
 **已完成并独立核验。** 四路各60轮、seed17；全部模型先统一锁定，再各执行一次752张TEST，父子进程均已实际退出。
