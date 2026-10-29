@@ -44,6 +44,13 @@ def test_native_rows_subset():
     assert rows[:512]==entry.base.input_rows(manifest)
     assert 'torch' not in sys.modules
 
+def test_finite_launcher_cpu():
+    import launch_rental_when_ready_20261029 as launcher
+    assert launcher.entry.ROOT==entry.ROOT
+    assert launcher.DEADLINE==1793278441.7376518
+    assert launcher.entry.GPU=='GPU-30fecb94-0222-a3d5-d952-a91f2cab2f43'
+    assert 'torch' not in sys.modules
+
 if __name__=='__main__':
-    test_exact_plan();test_cpu_scope();test_receiver();test_native_rows_subset()
-    print('{"status":"passed","tests":4,"torch_imported":false}')
+    test_exact_plan();test_cpu_scope();test_receiver();test_native_rows_subset();test_finite_launcher_cpu()
+    print('{"status":"passed","tests":5,"torch_imported":false}')
