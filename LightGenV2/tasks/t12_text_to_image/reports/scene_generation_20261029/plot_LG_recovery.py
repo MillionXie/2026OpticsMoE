@@ -34,7 +34,7 @@ def main():
     rows = json.loads((a.root/a.runs[0]/'images.json').read_text())
     scores = {(r['run_id'], r['sample_id']): r for r in json.loads((a.metrics/'per_image.json').read_text())}
     summary = json.loads((a.metrics/'summary.json').read_text())
-    assert len(rows) == 32 and len({r['sample_id'] for r in rows}) == 32
+    assert len(rows) in (32,128) and len({r['sample_id'] for r in rows}) == len(rows)
     by_run = {}
     for name in a.runs:
         folder = a.root/name
@@ -75,7 +75,7 @@ def main():
         name = f'QA_page{start//4+1}.png'
         panel.save(a.output/name)
         pages.append(name)
-    heading = ['<h1>LG recovery: all 32 DEV requests</h1>', '<p>Same reference, two-sentence prompt and initial noise. Native output 512. No TEST use or image feedback. Scores are proxies; semantic review is required.</p>',
+    heading = [f'<h1>LG recovery: all {len(rows)} DEV requests</h1>', '<p>Same reference, two-sentence prompt and initial noise. Native output 512. No TEST use or image feedback. Scores are proxies; semantic review is required.</p>',
         '<p>Group means and changes relative to the first model below. CLIP/DINO changes are percentages; negative ImageReward uses an absolute difference. Green/red checks only these proxy means, not complete instruction compliance or statistical equivalence.</p>',
         '<table><tr><th>Model</th><th>Group</th><th>CLIP-T</th><th>DINO-I</th><th>CLIP-I</th><th>IR compact</th></tr>']
     for name, label in zip(a.runs, a.labels):
@@ -92,7 +92,7 @@ def main():
     heading.extend(f'<p><a href="{n}"><img style="width:100%;max-width:1300px" src="{n}"></a></p>' for n in pages)
     (a.output/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>LG recovery review</title><style>body{font:16px Arial;margin:24px}td,th{padding:8px;border:1px solid #aaa}table{border-collapse:collapse}</style>'+''.join(heading),encoding='utf8')
     (a.output/'plot_data.json').write_text(json.dumps([scores[n,r['sample_id']] for r in rows for n in a.runs],indent=2),encoding='utf8')
-    (a.output/'report.json').write_text(json.dumps({'complete':True,'all_requests':32,'model_runs':a.runs,'pages':pages,'image_and_noise_SHA_checked':True,'quality_selected':False,'source_sha256':sha(Path(__file__))},indent=2))
+    (a.output/'report.json').write_text(json.dumps({'complete':True,'all_requests':len(rows),'model_runs':a.runs,'pages':pages,'image_and_noise_SHA_checked':True,'quality_selected':False,'source_sha256':sha(Path(__file__))},indent=2))
     print(a.output.resolve())
 
 

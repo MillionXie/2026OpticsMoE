@@ -61,10 +61,12 @@ def load_records(run,allow_frozen_test=False):
         raise ValueError('Only completed, frozen TRAIN feasibility runs allowed')
     records = json.loads((run/'images.json').read_text(encoding='utf-8'))
     keys = [(r['reference_id'], r['condition_id'], r['seed']) for r in records]
-    expected = 500 if is_test else (32 if report.get('scope') == 'DEV' else 16)
+    expanded=report.get('scope')=='DEV_expanded'
+    if expanded and not report.get('expanded_DEV_protocol'):raise ValueError('Expanded DEV requires its audited canonical-grid identity')
+    expected = 500 if is_test else (128 if expanded else (32 if report.get('scope') == 'DEV' else 16))
     if len(records) != report['generated_count'] or len(records) != expected or len(set(keys)) != expected:
         raise ValueError('All prespecified unique outputs required; no best-of-seed selection')
-    if report.get('scope') == 'DEV' and any(r.get('split') != 'dev' for r in records):
+    if report.get('scope') in ['DEV','DEV_expanded'] and any(r.get('split') != 'dev' for r in records):
         raise ValueError('DEV comparison contains another split')
     if is_test and any(r.get('split')!='test' for r in records):raise ValueError('TEST comparison contains another split')
     for r in records:
@@ -118,6 +120,11 @@ def main():
             assert all(r.get('scope')=='TEST' for r in reports)
             assert len({r['frozen_TEST_protocol']['manifest_sha256'] for r in reports})==1
         rows = [r for run in args.runs for r in load_records(run,args.allow_frozen_test)]
+        if any(r.get('scope')=='DEV_expanded' for r in reports):
+            assert all(r.get('scope')=='DEV_expanded' for r in reports),'Do not mix expanded and original DEV cohorts'
+            assert len({r['expanded_DEV_protocol']['manifest_sha256'] for r in reports})==1
+            signatures=[{r['sample_id']:(r['input_sha256'],r['prompt'],r['seed'],r['initial_latent_sha256']) for r in rows if r['run_id']==run.name} for run in args.runs]
+            assert all(s==signatures[0] for s in signatures)
         if args.allow_frozen_test:
             signatures=[]
             for run in args.runs:

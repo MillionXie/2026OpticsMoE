@@ -97,8 +97,14 @@ def render(a):
         assert a.ip_scale==sampling['IP_scale'] and sampling['CFG']==1.
     elif not fast and a.steps in [4,6,7,8,15]:raise ValueError('This few-step budget requires its verified trained/distilled tail')
     is_test=getattr(a,'scope','dev')=='test'
+    expanded_folder=getattr(a,'expanded_development',None)
+    if expanded_folder and (is_test or a.measure_software_latency):raise ValueError('Expanded DEV is separate from frozen TEST and fixed timing cohorts')
     frozen=frozen_test_protocol(a,state,previous) if is_test else None
     inputs = inference_inputs(a.data,'test' if is_test else 'dev')
+    expanded=None
+    if expanded_folder:
+        from .scene_development_grid import checked_grid
+        inputs,expanded=checked_grid(expanded_folder,a.data,state,inputs)
     if is_test:
         assert len(inputs)==500 and len({r['sample_id'] for r in inputs})==500
         assets=json.loads((a.cache/'model_assets.json').read_text())
@@ -106,7 +112,7 @@ def render(a):
         from .white_reference_scene_probe import model_manifest
         assert assets['SDXL']==model_manifest(a.model_path) and assets['IPAdapter']==model_manifest(a.adapter_path)
         if state['variant']=='qwen':assert assets['Qwen']==qwen_asset_manifest(a.qwen)
-    rows = inputs if is_test else [r for r in inputs if r['condition_id'] in ['0','1']]
+    rows = inputs if is_test or expanded else [r for r in inputs if r['condition_id'] in ['0','1']]
     expected=None;latencies=[]
     if a.measure_software_latency:
         if a.reference_run is None:raise ValueError('Timing requires a completed same-weight quality run for output identity')
@@ -198,12 +204,16 @@ def render(a):
         # Diagnostics and disk output are outside the RGB/text-ready -> CPU RGB
         # window. The first real generation remains in the measured requests.
         noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
+        known_identity=False
         if head is not None and identity is not None:
-            key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest();old=identity['features'][key]
-            assert torch.equal(ids.cpu(),old['input_ids'])
-            if exact_identity:assert torch.equal(h.cpu(),old['hidden']) and torch.equal(v.cpu(),old['visual'])
-            else:assert h.shape==old['hidden'].shape and v.shape==old['visual'].shape and torch.isfinite(h).all() and torch.isfinite(v).all()
-        elif head is not None:
+            key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest();old=identity['features'].get(key)
+            if old is None:
+                assert expanded is not None,'New DEV prompts require an explicit audited development grid'
+            else:
+                known_identity=True;assert torch.equal(ids.cpu(),old['input_ids'])
+                if exact_identity:assert torch.equal(h.cpu(),old['hidden']) and torch.equal(v.cpu(),old['visual'])
+                else:assert h.shape==old['hidden'].shape and v.shape==old['visual'].shape and torch.isfinite(h).all() and torch.isfinite(v).all()
+        if head is not None and not known_identity:
             assert h.shape==(ids.shape[1],2048) and v.shape==((a.qwen_side//32)**2,2048)
             assert torch.isfinite(h).all() and torch.isfinite(v).all()
         name = row['sample_id']+'.png'; image.save(a.output/name)
@@ -216,7 +226,7 @@ def render(a):
             routes={m:x.diagnostics() for m,x in qwen.model.hybrid.items()}
         records.append({**row,'split':'test' if is_test else 'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
-            'raw_Qwen_identity_exact':exact_identity,'resolution':resolution,'sampling_steps':a.steps,
+            'raw_Qwen_identity_exact':exact_identity and known_identity,'resolution':resolution,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
             'sampling_contract':sampling,
             'fast_tail':fast,
@@ -238,12 +248,13 @@ def render(a):
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,
             'LoRA_unmerged_for_both_models':not fuse_task,'task_LoRA_fused':fuse_task,'task_fusion':task_fusion})
-    write(a.output/'report.json',{'complete':True,'scope':'TEST' if is_test else ('DEV_software_latency' if latencies else 'DEV'),'source_commit':os.environ['T12_SOURCE_COMMIT'],
+    write(a.output/'report.json',{'complete':True,'scope':'TEST' if is_test else ('DEV_expanded' if expanded else ('DEV_software_latency' if latencies else 'DEV')),'source_commit':os.environ['T12_SOURCE_COMMIT'],
         'generated_count':len(records),'prompt_profile':rows[0]['prompt_profile'],'training_performed':False,
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
         'independent_TEST_opened':is_test,'GT_mask_or_target_latent_files_opened':False,
-        'raw_Qwen_identity_checked':exact_identity,'image_feedback':False,'quality_accepted':False,
-        'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None and identity is not None,
+        'raw_Qwen_identity_checked':exact_identity and expanded is None,'image_feedback':False,'quality_accepted':False,
+        'expanded_DEV_protocol':expanded,'original_DEV_raw_identity_rows':sum(r['raw_Qwen_identity_exact'] for r in records),
+        'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None and identity is not None and expanded is None,
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
         'IP_adapter_scale':a.ip_scale,
         'sampling_contract':sampling,
@@ -264,6 +275,7 @@ def main():
     p.add_argument('--lcm-adapter',type=Path,help='Pinned, SHA-verified official SDXL LCM-LoRA; requires 4 or 8 steps, no extra input encoder')
     p.add_argument('--fuse-task-lora',action='store_true',help='Fair optional merge for either model; requires a new quality run before timing')
     p.add_argument('--lcm-guidance',type=float,choices=[1.,1.5,2.],default=1.,help='Explicit low LCM guidance; >1 includes real classifier-free double batch cost')
+    p.add_argument('--expanded-development',type=Path,help='Audited original-DEV sixteen-view/eight-scene grid; never a TEST or timing override')
     p.add_argument('--steps',type=int,choices=[4,6,7,8,12,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
