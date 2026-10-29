@@ -75,10 +75,19 @@ def main():
         name = f'QA_page{start//4+1}.png'
         panel.save(a.output/name)
         pages.append(name)
-    heading = ['<h1>LG recovery: all 32 DEV requests</h1>', '<p>Same reference, two-sentence prompt and initial noise. Native output 512. No TEST use or image feedback. Scores are proxies; semantic review is required.</p>', '<table><tr><th>Model</th><th>CLIP-T</th><th>DINO-I</th><th>CLIP-I</th><th>IR compact</th></tr>']
+    heading = ['<h1>LG recovery: all 32 DEV requests</h1>', '<p>Same reference, two-sentence prompt and initial noise. Native output 512. No TEST use or image feedback. Scores are proxies; semantic review is required.</p>',
+        '<p>Group means and changes relative to the first model below. CLIP/DINO changes are percentages; negative ImageReward uses an absolute difference. Green/red checks only these proxy means, not complete instruction compliance or statistical equivalence.</p>',
+        '<table><tr><th>Model</th><th>Group</th><th>CLIP-T</th><th>DINO-I</th><th>CLIP-I</th><th>IR compact</th></tr>']
     for name, label in zip(a.runs, a.labels):
-        s=summary[name+'/all']['scores']
-        heading.append('<tr><td>'+html.escape(label)+'</td>'+''.join(f'<td>{s[m]["mean"]:.4f}</td>' for m in METRICS)+'</tr>')
+        for group in ['all','lamp','pillow']:
+            s=summary[name+'/'+group]['scores'];reference=summary[a.runs[0]+'/'+group]['scores'];cells=[]
+            for metric in METRICS:
+                value=s[metric]['mean'];base=reference[metric]['mean'];change=value-base if metric=='ImageReward_compact' else value/base-1
+                text=f'{change:+.3f}' if metric=='ImageReward_compact' else f'{change:+.1%}'
+                passed=change>=(-.1 if metric=='ImageReward_compact' else -.05)
+                suffix='' if name==a.runs[0] else f'<br><small style="color:{"#176838" if passed else "#a02020"}">{text}</small>'
+                cells.append(f'<td>{value:.4f}{suffix}</td>')
+            heading.append('<tr><td>'+html.escape(label)+'</td><td>'+group+'</td>'+''.join(cells)+'</tr>')
     heading.append('</table>')
     heading.extend(f'<p><a href="{n}"><img style="width:100%;max-width:1300px" src="{n}"></a></p>' for n in pages)
     (a.output/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>LG recovery review</title><style>body{font:16px Arial;margin:24px}td,th{padding:8px;border:1px solid #aaa}table{border-collapse:collapse}</style>'+''.join(heading),encoding='utf8')
