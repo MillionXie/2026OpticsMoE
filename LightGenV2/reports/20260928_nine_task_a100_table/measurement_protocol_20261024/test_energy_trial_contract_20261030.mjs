@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {energyScope,USER_ZOH} from './energy_trial_contract_20261030.mjs';
+const record=()=>({status:'complete',model:'deepseek',power_limit_w:400,cost:{continuous_wall_s:2,gpu_energy_j:400,estimated_system_energy_j:1076.4,power_integration:{max_power_sample_age_s:.46,strict250ms_qualified:false,no_synthetic_or_retimed_samples:true,gap_over250ms_count:1,gap_over250ms_support_fraction:.23}}});
+const audit=()=>({status:'passed',energy_qualified:true,qualification:USER_ZOH});
+test('authorized real long-gap estimate is accepted with its separate strict flag',()=>assert.equal(energyScope(record(),audit(),{rental:true}).strict250ms_qualified,false));
+test('cannot silently accept a long gap as the original protocol',()=>{const r=record();r.model='kimi';assert.throws(()=>energyScope(r,{status:'passed',energy_qualified:true,power_only:true},{rental:true}));});
+test('explicit protocol is required',()=>assert.throws(()=>energyScope(record(),{status:'passed',energy_qualified:true},{rental:true})));
+test('cannot forge a strict pass',()=>{const r=record();r.cost.power_integration.strict250ms_qualified=true;assert.throws(()=>energyScope(r,audit(),{rental:true}));});
+test('derived report retains failed source and late verification',()=>{const r=record();assert.throws(()=>energyScope(r,audit(),{rental:true,derived:true}));Object.assign(r,{status:'complete_separate_CPU_derivation',original_failed_status_unchanged:true,input_verification_was_late:true});assert.equal(energyScope(r,audit(),{rental:true,derived:true}).qualification,USER_ZOH);});
+test('board energy cannot be missing or host proxy double-counted',()=>{const r=record();r.cost.estimated_system_energy_j+=100;assert.throws(()=>energyScope(r,audit(),{rental:true}));r.cost.gpu_energy_j=NaN;assert.throws(()=>energyScope(r,audit(),{rental:true}));});
+test('original strict source is preserved',()=>{const r=record();r.model='qwen';r.power_limit_w=250;r.cost.power_integration.max_power_sample_age_s=.05;assert.equal(energyScope(r,{status:'passed'}).qualification,'original_strict250ms');});

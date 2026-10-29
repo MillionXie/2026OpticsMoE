@@ -5,6 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import {createRequire} from 'node:module';
 import {fileURLToPath,pathToFileURL} from 'node:url';
+import {energyScope,USER_ZOH} from './energy_trial_contract_20261030.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const REPO=path.resolve(HERE,'../../../..');
@@ -35,7 +36,7 @@ const lgFile=path.join(source,'LightGenII_resize_normalization_20261029_01/Light
 assert(sha(labFile)==='4edd1231fd94329f2f227c936d83c4bb2d05d567c1e5874c51dd6e546f45237e','Pinned lab summary');
 assert(sha(lgFile)==='08b4682698b2f67f16435444d35737677d61728c1ada5cc7a564eb9fcfb227ab','Pinned resize-inclusive LG summary');
 const lab=read(labFile),lg=read(lgFile);
-const rentalRoot=path.join(base,energyRemeasured?'rental_energy_remeasure_20261030_03':'rental_timing_only_20261029_02');
+const rentalRoot=path.join(base,energyRemeasured?'rental_energy_userZOH_20261030_04':'rental_timing_only_20261029_02');
 const priorEnergyRoot=path.join(base,'rental_energy_remeasure_20261029_01');
 const secondEnergyRoot=path.join(base,'rental_energy_remeasure_20261029_02');
 const rootReceipt=path.join(rentalRoot,'whole_root_backup_receipt_complete01.json');
@@ -43,8 +44,12 @@ if(energyRemeasured){
   const pin=process.argv.find(x=>x.startsWith('--rental-root-receipt-sha256='))?.split('=')[1];
   assert(pin&&/^[a-f0-9]{64}$/.test(pin)&&sha(rootReceipt)===pin,'Explicit SHA pin for new sealed rental root');
   const state=read(path.join(rentalRoot,'suite_status.json'));
-  assert(state.status==='complete'&&state.completed.length===6,'All six final points complete');
+  const expected=['deepseek_cap50_repeat02','deepseek_cap50_repeat03',...['01','02','03'].map(n=>'deepseek_cap100_repeat'+n)];
+  assert(state.status==='complete'&&state.mps_released&&JSON.stringify(state.completed)===JSON.stringify(expected),'All five final native points complete and MPS released');
   assert(sha(path.join(priorEnergyRoot,'whole_root_backup_receipt_complete01.json'))==='81c24a2587832c8c1d4abc9e2e5456eb477127612a45126417da796d8737a057','Five original qualified points and failed sixth remain preserved');
+  assert(sha(path.join(secondEnergyRoot,'whole_root_backup_receipt_complete01.json'))==='1b9465a7a6a9b72973c47810ef95b6123fa29dd77f6884580827b19a036936ca','Sixth Kimi continuation preserved');
+  const audit=read(path.join(rentalRoot,'local_independent_pooled_audit01.json'));
+  assert(audit.status==='passed'&&audit.original_root_receipt_sha256===pin&&audit.round_audits.length===12&&new Set(audit.round_audits.map(a=>a.report_sha256)).size===12,'Exact mixed-source twelve-point independent audit');
 }else assert(sha(rootReceipt)==='9394417869da90fd83f24348a03b62bcb2d19631b6a2eee975dd06274774bac4','Sealed whole rental root');
 const candidates=new Map();
 for(const stem of ['qwen_fullscope_20261029_02','baselines_fullscope_20261029_02','baselines_fullscope_20261029_03']){
@@ -60,7 +65,7 @@ function addTrial(file,energy,rentalNew=false){
   const r=read(file),p=path.dirname(file),c=r.cost;
   assert(r.status==='complete'&&r.measured_videos===512&&r.batch===1&&r.explicit_warmup_forwards===0,'Exact cold B1 512 trial');
   assert(r.visible_multiprocessors===(r.cap===50?54:108),'Actual MPS SM count');
-  assert(jsonAudit(p,'cpu_audit.json').status==='passed','Server CPU audit');
+  const parentAudit=jsonAudit(p,'cpu_audit.json');assert(parentAudit.status==='passed','Server CPU audit');
   let auditFile=path.join(p,'local_independent_fullscope_audit01.json');
   if(fss.existsSync(auditFile))assert(read(auditFile).status==='passed','Existing independent audit');
   else if(rentalNew){
@@ -71,14 +76,28 @@ function addTrial(file,energy,rentalNew=false){
     auditFile=path.join(path.dirname(p),'local_independent_pooled_audit01.json');
     const audit=read(auditFile);assert(audit.status==='passed'&&audit.round_audits.some(a=>a.status==='passed'&&a.report_sha256===sha(file)),'Exact existing pooled round audit');
   }
-  if(energy){assert(c.power_integration.max_power_sample_age_s<=0.25,'Unchanged 250ms age gate');assert(r.power_limit_w===(rentalNew?400:250),'Exact source hardware cap');}
-  else{assert(r.energy_qualified===false&&c.energy_qualified===false&&r.power_limit_w===400,'Rental timing-only, not energy');assert(fss.existsSync(path.join(p,'lab_backup_receipt_complete01.json')),'Lab receipt');}
-  if(rentalNew)assert(jsonAudit(p,'cpu_audit.json').energy_qualified===true&&jsonAudit(p,'cpu_audit.json').power_only===true,'New power-only energy qualified');
+  const scope=energy?energyScope(r,parentAudit,{rental:rentalNew}):{};
+  if(energy&&rentalNew){
+    const accepted=read(path.join(rentalRoot,'local_independent_pooled_audit01.json')).round_audits.find(a=>a.report_sha256===sha(file));
+    assert(accepted?.status==='passed'&&accepted.energy_qualified===true,'Exact mixed-source independent acceptance');
+    if(r.model==='deepseek')assert(accepted.qualification===USER_ZOH,'Independent ZOH qualification');
+  }
+  if(!energy){assert(r.energy_qualified===false&&c.energy_qualified===false&&r.power_limit_w===400,'Rental timing-only, not energy');assert(fss.existsSync(path.join(p,'lab_backup_receipt_complete01.json')),'Lab receipt');}
   const key=r.model+'_'+r.cap;
-  const t={key,model:r.model,cap:r.cap,hardware:rentalNew||!energy?'A100 80GB / 400W':'A100 40GB / 250W',repeat:r.repeat,videos:512,groups:32,seconds:c.continuous_wall_s,tokens:r.effective_input_tokens512,gpu_j:energy?c.gpu_energy_j:null,system_j:energy?c.estimated_system_energy_j:null,energy,report_sha256:sha(file),source:rel(file),audit_sha256:sha(auditFile)};
+  const t={key,model:r.model,cap:r.cap,hardware:rentalNew||!energy?'A100 80GB / 400W':'A100 40GB / 250W',repeat:r.repeat,videos:512,groups:32,seconds:c.continuous_wall_s,tokens:r.effective_input_tokens512,gpu_j:energy?c.gpu_energy_j:null,system_j:energy?c.estimated_system_energy_j:null,energy,report_sha256:sha(file),source:rel(file),audit_sha256:sha(auditFile),...scope};
   assert(t.seconds>0&&Number.isInteger(t.tokens)&&t.tokens>=0,'Native numerator');trials.push(t);return t;
 }
 function jsonAudit(p,n){return read(path.join(p,n));}
+function addDerivedTrial(){
+  const p=path.join(source,'DeepSeek50_repeat01_userZOH_20261030_01'),file=path.join(p,'derived_report01.json');
+  assert(sha(file)==='07c9c12eb1f24f45f695c673c5ad4d32783721377d9dbc5feac47ce28a9a382e'&&sha(path.join(p,'late_input_verification01.json'))==='a8404f961d2a07b1d1b05635ecd01d4b80ac83cf8b672b7d0397baaecddc76f9'&&sha(path.join(p,'lab_derived_data_receipt01.json'))==='ac06ed4dc855dc5cb1f7d8f2b801bfd8e93e4bbbe3a30e04b4da45095ff26926','Accepted immutable separate derivation and dual-site data receipt');
+  const r=read(file),auditFile=path.join(rentalRoot,'local_independent_pooled_audit01.json');
+  const a=read(auditFile).round_audits.find(a=>a.report_sha256===sha(file));
+  assert(r.model==='deepseek'&&r.cap===50&&r.repeat===1&&r.batch===1&&r.measured_videos===512&&r.explicit_warmup_forwards===0&&r.visible_multiprocessors===54&&a?.original_failed_status_unchanged===true,'Exact separately derived full DS50 first round');
+  const scope=energyScope(r,a,{rental:true,derived:true}),c=r.cost;
+  const t={key:'deepseek_50',model:r.model,cap:r.cap,hardware:'A100 80GB / 400W',repeat:1,videos:512,groups:32,seconds:c.continuous_wall_s,tokens:r.effective_input_tokens512,gpu_j:c.gpu_energy_j,system_j:c.estimated_system_energy_j,energy:true,report_sha256:sha(file),source:rel(file),audit_sha256:sha(auditFile),original_raw_source:r.raw_source,input_verification_was_late:true,...scope};
+  assert(Number.isInteger(t.tokens)&&t.tokens>0,'Actual derived native numerator');trials.push(t);return t;
+}
 for(const c of lab.records){
   const a=c.round_report_SHA256.map(pin=>{assert(candidates.has(pin),'Pinned lab report is installed');return addTrial(candidates.get(pin),true);});
   close(a.reduce((s,t)=>s+t.seconds,0)/96,c.time16_s);
@@ -87,6 +106,7 @@ for(const c of lab.records){
 }
 for(const model of ['kimi','deepseek'])for(const cap of [50,100]){
   const a=[1,2,3].map(n=>{
+    if(energyRemeasured&&model==='deepseek'&&cap===50&&n===1)return addDerivedTrial();
     const prior=energyRemeasured&&model==='kimi'&&(cap===50||n<3);
     return addTrial(path.join(prior?priorEnergyRoot:energyRemeasured&&model==='kimi'?secondEnergyRoot:rentalRoot,`${model}_cap${cap}_repeat0${n}/report.json`),energyRemeasured,energyRemeasured);
   });
@@ -198,6 +218,13 @@ const headers=energyRemeasured?['Model','MPS (%)','Hardware','Time / 16 videos (
 s.getRange('A5:I5').values=[headers];
 raw.getRange('A1:O1').values=[['Config','Model','MPS (%)','Hardware','Repeat','Videos','Groups of 16','Continuous wall (s)','Native input tokens','GPU energy (J)','System proxy energy (J)','Energy qualified','Report SHA256','Original source','Independent audit SHA256']];
 raw.getRange('A2:O37').values=trials.map(t=>[t.key,display[t.model],t.cap,t.hardware,t.repeat,t.videos,t.groups,t.seconds,t.tokens,t.gpu_j,t.system_j,t.energy,t.report_sha256,t.source,t.audit_sha256]);
+if(energyRemeasured){
+  raw.getRange('P1:T1').values=[['Energy protocol','Strict250ms qualified','Maximum support age (s)','Gaps over250ms','Gap support fraction']];
+  raw.getRange('P2:T37').values=trials.map(t=>[t.qualification,t.strict250ms_qualified,t.max_power_sample_age_s,t.gap_over250ms_count,t.gap_over250ms_support_fraction]);
+  raw.getRange('P1:T37').format={font:{name:'Arial',size:10},rowHeight:28,columnWidth:24};
+  raw.getRange('P1:T1').format={fill:'#263C5A',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},horizontalAlignment:'center',rowHeight:38,wrapText:true};
+  raw.getRange('P2:P37').format.columnWidth=64;raw.getRange('R2:R37').setNumberFormat('0.000000');raw.getRange('T2:T37').setNumberFormat('0.0000%');
+}
 for(const [i,c] of configs.entries()){
   const row=6+i+(i>=8?2:0),key=JSON.stringify(c.key),sum=col=>`SUMIFS('Trials'!$${col}$2:$${col}$37,'Trials'!$A$2:$A$37,${key})`;
   s.getRange(`A${row}:C${row}`).values=[[display[c.model],c.cap,c.hardware]];
@@ -224,12 +251,12 @@ s.getRange('A29').values=[['LG alone shares Qwen input-token counts. Model loadi
 if(energyRemeasured){
   s.getRange('A22:I23').clear({applyTo:'contents'});
   s.getRange('A22').values=[['LightGen rental software runtime and energy are on the next tab.']];
-  s.getRange('A25').values=[['All36 baseline trials have qualified board-energy integration with the unchanged250ms support gate.']];
+  s.getRange('A25').values=[['36 baseline trials. DeepSeek uses authorized actual-sample ZOH. Per-trial protocol flags are in Trials.']];
   s.getRange('A26').values=[['Lab A10040GB/250W and rental A10080GB/400W are distinct hardware, not identical-device comparisons.']];
   s.getRange('A27').values=[['GPU board energy is measured. Column H adds the fixed338.2W host proxy once; it is not socket power.']];
   s.getRange('A28').values=[['No old timing-only rental result is used. Missing utilization/memory diagnostics do not mean missing power.']];
   s.getRange('A29').values=[['Baseline loading is excluded. All511 gaps from the first file preparation to final CPU score are included.']];
-  s.getRange('A30').values=[['Five original + one continuation + six completion points. Failed267-video attempt preserved and excluded.']];
+  s.getRange('A30').values=[['Rental: six Kimi, one separate DS CPU derivation and five new DS rounds. Original failed files retained.']];
 }
 raw.getRange('A40:B42').values=[['Source summary',rel(labFile)],['LG reference',rel(lgFile)],['Rental root receipt',rel(rootReceipt)]];
 for(const sheet of [s,raw]){
