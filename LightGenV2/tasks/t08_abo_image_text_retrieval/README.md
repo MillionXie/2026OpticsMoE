@@ -1,5 +1,37 @@
 # T08 商品双向检索：图搜文、文搜图
 
+## 2026-10-29 新增A100 DeepSeek文搜图冻结推理与完整画图包准备
+
+人工要求在当前租用A10080上补一次文搜图性能推理，不训练；先完成同卡T06 Kimi/DS测速队列，
+避免并行干扰。新入口`deepseek_t2i_a100_20261029.py`只使用DeepSeek-VL2-Tiny
+（3,370,501,440参数、1280D、可训练参数0），不拿LGVQ非Tiny模型或质量头代替。
+复用原`abo_backbone_baselines.py`官方processor/BF16/末层最后有效token、原两种prompt，
+FP32 L2归一化余弦分数及稳定降序排序。100官方标题检索全部2400 TEST图，每标题24同SKU正例；
+不读取TRAIN图、不拟合对齐头、不生成文字重排、不按结果调prompt或选模型。
+新入口须确认T06完整12点通过、控制器退出/私有MPS释放并取得同一共享锁，再经三次空闲检查入场；
+只允许原租机硬截止内一次独立输出。当前只是CPU合同和资产准备，**尚未执行本次ABO GPU推理**。
+
+原ABO历史报告没有钉住模型revision/逐权重SHA/完整环境，不能补造这些身份。
+本次已对lab现存Tiny原目录逐文件记录内容身份：权重6741334208B，SHA256
+`cc1e5047280253e224b299677bea16b7960c2436ec676d28911ebd9de3bb0074`；
+九文件清单SHA为`96707edfffe966f91e095e2d9fcb7aeefe5590de7adddaf59025b507e9ac3fbd`。
+使用已核验的租机DS环境并记录实际版本，不能冒称历史软件环境完全相同或保证复现旧.08。
+新输出保存原图/标题embedding、完整100×2400 FP32分数矩阵与全排序、逐标题Top10、过程排外和硬件/源码身份，
+独立CPU重放全部排名和指标；该任务是性能推理，不报告正式延迟或能耗。
+
+全部2400原TEST图片及原CSV已从lab逐SHA取回本地，数据包114733424B，SHA
+`9fc2f663ae3aaafc4e1dfb70613220e2a02d4a513eed8aad9fda95d421e16615`；
+输入清单SHA为`87d4213653d1df3051b982de712f8cabbc8e1ad4bb9d33efcaaf84b8a447c8dc`。
+原`test.csv`与`titles.csv`分别保持`4ca5834a...`与`c97e8da3...`，不改划分或标题。
+准备数据在新`runs/simulation/abo_t2i_a100_20261029_01/preparation/`；raw/PT/模型/ZIP不进Git。
+
+任务自己的`build_lab_package.py`将在新DS推理及审计完成后生成新ZIP（不覆盖旧包）：
+包含全部2400原图、100查询全文、四模型Top10 CSV/JSON、逐查询Top3离线浏览页、source身份及manifest/SHA。
+只有DS列标为本次A100，LightGen-II仿真.86、Qwen冻结动态2048D、CLIP列沿用已保存历史排名，
+不冒称它们也是本次重测，不将仿真.86换成实拍.85。完整100查询均交付；示意图的16/20/99商品只作类别示例，
+旧十例“ours对而三基线错”的筛选偏倚如实说明，不能替代总体指标。
+源码通过Git发布/同步，结果和画图ZIP须逐SHA保存本地与lab后再通知人工释放租机。
+
 两方向共用任务编号，不共用可互换的主体PT：图搜文从`optical_moe.py`进入，
 文搜图从`text_to_image.py`及`physical10cm/`进入。图搜图属于T07。
 
