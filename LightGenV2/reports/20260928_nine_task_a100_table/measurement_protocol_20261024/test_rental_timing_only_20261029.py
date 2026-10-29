@@ -25,7 +25,21 @@ def main():
     assert entry.base.audit_point is entry.audit_point
     assert len(entry.native.plan('rental'))==12
     assert entry.base.initialize_profile is entry.native.initialize
+    assert entry.ROOT.name=='rental_timing_only_20261029_02'
+    assert entry.PIPE.endswith('_02')
+    rows=[dict(sample_id='one')]
+    stored=dict(records=[dict(sample_id='one',sha256='abc',bytes=3,original_path='/original')])
+    actual={'one':dict(sha256='abc',size_bytes=3,path='/original')}
+    entry.validate_storage_input_hashes(stored,rows,actual)
+    for field,value in [('sha256','wrong'),('size_bytes',4),('path','/other')]:
+        bad=copy.deepcopy(actual);bad['one'][field]=value
+        try:entry.validate_storage_input_hashes(stored,rows,bad)
+        except ValueError:pass
+        else:raise AssertionError('Byte/path/size gate must reject')
+    try:entry.storage_receipt('{}')
+    except ValueError:pass
+    else:raise AssertionError('Unbound storage receipt must reject')
     assert 'torch' not in sys.modules
-    print('{"status":"passed","tests":5,"torch_imported":false,"energy_qualified":false}')
+    print('{"status":"passed","tests":10,"torch_imported":false,"energy_qualified":false}')
 
 if __name__=='__main__':main()

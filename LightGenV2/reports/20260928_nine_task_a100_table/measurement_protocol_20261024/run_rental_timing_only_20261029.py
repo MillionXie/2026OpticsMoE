@@ -17,11 +17,50 @@ import time
 import run_rental_fullscope_20261029 as native
 
 ENTRY=Path(__file__).resolve();HERE=ENTRY.parent;REPO=native.REPO;base=native.base
-ROOT=base.TASK/'runs/simulation/rental_timing_only_20261029_01'
-PIPE='/data/tmp/rental_timing_only_20261029_01';GPU=native.GPU
+ROOT=base.TASK/'runs/simulation/rental_timing_only_20261029_02'
+PIPE='/data/tmp/rental_timing_only_20261029_02';GPU=native.GPU
 PROTOCOL='rental80_TIMING_ONLY_energy_UNQUALIFIED_file_to_CPU_B1_512x3_20261029'
 DEADLINE=1793278441.7376518
 NAMES=None
+STORAGE_RECEIPT=Path('/root/data/lgvq_20261029/input_local_overlay_receipt01.json')
+STORAGE_SHA='defa12da6d650ef3079311939f34ec108d54ec94a5607d1ec9cf999ab88b0339'
+
+
+def storage_receipt(text):
+    if hashlib.sha256(text.encode('utf-8')).hexdigest()!=STORAGE_SHA:raise ValueError('Exact local input transport receipt required')
+    value=json.loads(text)
+    if (value['status']!='same_original512_bytes_verified_on_local_overlay'
+            or value['local_directory']!='/root/lgvq_inputs_local_20261029_01'
+            or value['all_original_metadata_gates_retained'] is not True
+            or value['original_shared_files_and_old_symlinks_preserved'] is not True
+            or len(value['records'])!=512 or len({r['sample_id'] for r in value['records']})!=512):
+        raise ValueError('Original512 local storage contract required')
+    return value
+
+
+def validate_storage_input_hashes(value,rows,actual):
+    records=value['records']
+    if [r['sample_id'] for r in records]!=[r['sample_id'] for r in rows]:raise ValueError('Storage input order differs')
+    if set(actual)!={r['sample_id'] for r in records}:raise ValueError('All512 actual byte hashes required')
+    for r in records:
+        got=actual[r['sample_id']]
+        if got['sha256']!=r['sha256'] or got['size_bytes']!=r['bytes'] or got['path']!=r['original_path']:
+            raise ValueError('Original input bytes differ after timing')
+
+
+def verified_timing_predecessor():
+    old=ROOT.with_name('rental_timing_only_20261029_01');state_path=old/'suite_status.json'
+    if base.sha(state_path)!='425182352b8ec3fe14c61f2470af7f37e729f148b3c955ce595df438cb5411cf':raise ValueError('Preserved failed timing01 required')
+    state=base.read(state_path);leaf=old/'kimi_cap50_repeat01';status=base.read(leaf/'status.json')
+    if (state['status']!='stopped' or state['completed'] or state.get('mps_released') is not True
+            or status['status']!='failed' or status['samples']!=512
+            or status['error']!="ValueError('Input changed during timing')" or (leaf/'report.json').exists()):
+        raise ValueError('Never promote or revive failed timing01')
+    if any(Path('/proc/'+str(pid)).exists() for pid in (3442,3443,3462)):raise ValueError('Old timing processes must exit')
+    check=subprocess.run(['nvidia-cuda-mps-control'],input='get_server_list\n',text=True,capture_output=True,timeout=5,
+        env=dict(os.environ,CUDA_MPS_PIPE_DIRECTORY='/data/tmp/rental_timing_only_20261029_01'))
+    if check.returncode!=1:raise ValueError('Old private daemon must be absent')
+    storage_receipt(STORAGE_RECEIPT.read_text())
 
 def sources():return {n:base.sha(REPO/n) for n in NAMES}
 
@@ -29,7 +68,8 @@ def config():
     return dict(native.config(),protocol_id=PROTOCOL,energy_qualified=False,
         energy_policy='NOT measured/qualified in this timing-only protocol; never estimate J or energy ratios',
         authorization='Human urgent proceed after explanation of NVML latency; timing first, energy explicitly unqualified',
-        telemetry_diagnostics_are_not_formal_energy=True)
+        telemetry_diagnostics_are_not_formal_energy=True,
+        input_storage='local_overlay_verified_same_bytes_not_shared_Lustre',input_storage_receipt_sha256=STORAGE_SHA)
 
 def timing_cost(calls):
     if len(calls)!=512 or len({r['sample_id'] for r in calls})!=512:raise ValueError('Exactly512 distinct calls')
@@ -62,6 +102,7 @@ def audit_point(folder,manifest):
     if base.sha(folder/'input_audit.json')!=report['input_audit_sha256'] or [r['sample_id'] for r in evidence['samples']]!=[r['sample_id'] for r in rows]:raise ValueError('Input evidence differs')
     if sum(r.get('effective_input_tokens',0) for r in evidence['samples'])!=report['effective_input_tokens512']:raise ValueError('Native token numerator differs')
     if set(report['input_files'])!={r['sample_id'] for r in rows}:raise ValueError('Actual input byte hashes required')
+    validate_storage_input_hashes(storage_receipt(report['input_storage_receipt_json']),rows,report['input_files'])
     if [float(r['target_mos']) for r in calls]!=[float(r['temporal']) for r in rows]:raise ValueError('Original targets differ')
     from scipy.stats import spearmanr,pearsonr
     pred=[float(r['prediction']) for r in calls];target=[float(r['target_mos']) for r in calls]
@@ -79,6 +120,10 @@ def audit_point(folder,manifest):
 
 def worker(a):
     rows=base.input_rows(a.manifest);ref_path,ref=base.reference(a.model)
+    storage_text=STORAGE_RECEIPT.read_text();storage=storage_receipt(storage_text)
+    if [r['sample_id'] for r in storage['records']]!=[r['sample_id'] for r in rows]:raise ValueError('Exact local input order')
+    for r in storage['records']:
+        if Path(r['original_path']).resolve()!=Path(r['new_target']) or not Path(r['old_link_backup']).is_symlink():raise ValueError('Recoverable exact local storage handover required')
     if a.output.exists():raise FileExistsError('No repeat/overwrite')
     if base.sha(a.checkpoint)!=config()['references'][a.model]['head_sha256']:raise ValueError('Original trained head')
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU or os.environ.get('CUDA_MPS_ACTIVE_THREAD_PERCENTAGE')!=str(a.cap):raise ValueError('Exact MPS/GPU before CUDA')
@@ -87,6 +132,8 @@ def worker(a):
     identity=dict(protocol_id=PROTOCOL,model=a.model,cap=a.cap,repeat=a.repeat,batch=1,pid=os.getpid(),
         gpu_uuid=GPU,git_commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT'],sources=bound,energy_qualified=False,
         qualification='TIMING_ONLY_ENERGY_UNQUALIFIED',energy_sampler_not_started=True,
+        input_storage='local_overlay_verified_same_bytes_not_shared_Lustre',
+        input_storage_receipt_sha256=STORAGE_SHA,input_storage_receipt_json=storage_text,
         failed_energy_diagnostics_preserved_separately=True,manifest_sha256=base.sha(a.manifest),
         first512_ids_sha256=base.ordered_id_sha(rows),explicit_warmup_forwards=0,first_sample_included=True,
         expected_head_sha256=ref['checkpoint_sha256'],command=sys.argv)
@@ -131,6 +178,7 @@ def worker(a):
             finish();finish=None
             identity['input_files']=base.file_identities(rows,hash_content=True)
             if base.file_identities(rows)!=metadata:raise ValueError('Input changed during timing')
+            validate_storage_input_hashes(storage,rows,identity['input_files'])
             legacy.frozen.write_json(a.output/'input_audit.json',dict(samples=evidence,original_video_metadata=base.input_video_metadata(rows),original_metadata_read_after_T1=True))
             identity.update(input_audit_sha256=base.sha(a.output/'input_audit.json'),effective_input_tokens512=sum(r.get('effective_input_tokens',0) for r in evidence))
             guard.check()
@@ -168,7 +216,7 @@ def main():
     a.models=['kimi','deepseek'];a.caps=[50,100];a.repeats=[1,2,3];configure()
     if a.phase=='audit':print(json.dumps(audit_point(a.output,a.manifest),ensure_ascii=True));return
     native.identity.verify(os.environ['MEASUREMENT_PUBLISHED_COMMIT'],sources(),REPO)
-    if a.phase=='suite':native.verified_admission_predecessor();native.prepare_pipe_parent(PIPE)
+    if a.phase=='suite':native.verified_admission_predecessor();verified_timing_predecessor();native.prepare_pipe_parent(PIPE)
     (base.suite if a.phase=='suite' else worker)(a)
 
 if __name__=='__main__':main()
