@@ -1,5 +1,55 @@
 # T08 商品双向检索：图搜文、文搜图
 
+## 2026-10-29 完整版DeepSeek文搜图已完成，完整TEST包等待人工页面核验
+
+`runs/simulation/abo_t2i_a100_20261029_01/inference`已完成一次冻结推理：
+100条官方标题检索全部2400张原TEST图，每查询24个精确同SKU正例；2400图与100标题各编码一次。
+模型为`deepseek-ai/deepseek-vl2`完整版27,480,134,248参数、2560D、可训练参数0，
+revision及原14资产SHA沿下节原合同，源Git `1710b4ccb9d7aabdbf64db65babb1481b1aba8a0`。
+不训练、不拟合对齐头、不改prompt或选较好运行；未加载LGVQ质量头，未重测另外三模型。
+
+| 新A10080完整版DS，文搜图 | 值 |
+| --- | ---: |
+| Hit@1 | 0.10 |
+| Hit@5 | 0.20 |
+| Hit@10 | 0.31 |
+| MRR | 0.16418066039178314 |
+| mAP | 0.13286790371162535 |
+
+原report SHA为`1d0677338c3a9ee0217ef9c92779e50f757fe8d04f266aff0c0e579059cc59e3`；
+原FP32 embedding、100×2400分数与完整排序PT SHA为
+`f616e6e7b83b56ae56530d3c8e9bb00dbca4c18e036fe58a42bbfb890fda705c`，
+原Top10预测SHA为`bc5dc6b769d5ca7df487a5108f96debfc0e1f78d5633de09eb59c100d24bde34`。
+9份原始输出及外日志/启动/数据交接证据共29,882,264B已逐原SHA保全local+lab；
+`inference/lab_backup_original_run_receipt01.json` SHA为
+`3898d7d2669122c994d4f00739cb3c32b9426f75664ed0b840595bf360037673`。
+本地CPU审计复放全部100×2400保存分数的稳定全排序、全部指标及Top10，结果精确一致，
+`local_independent_cpu_audit01.json` SHA为
+`337b0035280c4d85ff2c9fe04f5a98b97b88f463dbfafaac375d0c273baf8fd3`。
+审计没有重新加载模型或调用GPU，也没有从embedding重新计算全余弦矩阵，不扩大其证明范围。
+本地默认Python用户site的PyTorch曾在审计执行及输出目录创建前DLL初始化失败；
+实际成功审计使用既有`mujoco`环境的Python/Torch2.5.1+cu118、NumPy1.23.5，禁用用户site且仅CPU，
+与GPU推理Torch2.6.0环境分开记录；未安装或修改环境。
+
+新[完整TEST画图ZIP](releases/abo_text_to_image_FULL_TEST_20261029_01.zip)为115,595,271B，
+SHA256=`fe8a1d9764a43e42df152104c2f965a2ab975c9c9e82d00c4f47e8c6ca1316d9`；
+解包目录`releases/abo_text_to_image_FULL_TEST_20261029_01/`含2400原JPG、原test/titles CSV、
+100查询全文、四模型Top10共4000条CSV/JSON、100个逐查询四列Top3页和原source/manifest。
+2719个ZIP成员CRC及manifest逐文件SHA核验通过，不裁剪、重编码或生成原照片，不含权重/凭据。
+DS列是本次完整版新测；LightGen-II仿真.86、Qwen动态2048D历史.82、CLIP历史.64仍明确标历史，
+不混用实拍.85或旧Tiny.08。保留全部100查询，旧十例筛选偏倚不隐瞒。
+ZIP、旁SHA、manifest/README、CPU与资源释放证据已local+lab逐SHA读回，
+`lab_full_TEST_delivery_receipt01.json` SHA为
+`8a6fb592c1014670f0d4b3527e0e27600f53e1dd1966998588898d217711dcc7`。
+
+Unix1793275312.2862597记录complete；随后实核PID35339退出、原privateMPSrc1、共享锁free且GPU无compute进程，
+只读证据`rental_release_readonly01.json` SHA为
+`70488b97dc9b5cd98b3fe5881adca6bbb9e45aaed44cbddca459ca95b2c90599`。
+未自动重启、续费、延长deadline或释放租机。
+**剩余交付门：**自动离线页视检因浏览器安全策略禁止本地file URL而停止，未换浏览器/HTTP代理绕过。
+已请求人工打开包内`index.html`确认标题、四模型列和图片正常，或明确同意跳过视检；
+在得到该确认前不将页面视检标为通过，也不将本次任务声称全部验收完成。
+
 ## 2026-10-29 新增A100 DeepSeek文搜图冻结推理与完整画图包准备
 
 人工要求在当前租用A10080上补一次文搜图性能推理，不训练；先完成同卡T06 Kimi/DS测速队列，
@@ -11,7 +61,7 @@
 FP32 L2归一化余弦分数及稳定降序排序。100官方标题检索全部2400 TEST图，每标题24同SKU正例；
 不读取TRAIN图、不拟合对齐头、不生成文字重排、不按结果调prompt或选模型。
 新入口须确认T06完整12点通过、控制器退出/私有MPS释放并取得同一共享锁，再经三次空闲检查入场；
-只允许原租机硬截止内一次独立输出。当前只是CPU合同和资产准备，**尚未执行本次ABO GPU推理**。
+只允许原租机硬截止内一次独立输出。本段为原协议与准备记录；最新GPU结果和待人工核验项见上节。
 
 原ABO历史Tiny报告没有钉住revision/逐权重SHA/完整环境，不能补造，且不再是本次目标。
 本次完整版固定revision `f363772d1c47f4239dd844015b4bd53beb87951b`，直接核验既有T06

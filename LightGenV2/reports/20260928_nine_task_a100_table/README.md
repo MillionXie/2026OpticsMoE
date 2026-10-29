@@ -1,5 +1,20 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：追加ABO完整版冻结推理及完整TEST包已安全，页面核验待人工
+
+T06之后的一次完整版DeepSeek-VL2 ABO文搜图已完成100标题×2400 TEST，无训练、调参或其他模型重测。
+Hit@1/5/10为.10/.20/.31，MRR .16418066039178314、mAP .13286790371162535。
+原完整embedding/分数/排序、预测及过程证据9文件29,882,264B已local+lab逐SHA保全，
+CPU对保存分数的完整稳定排序/指标/Top10精确复放通过，未声称重算embedding全余弦矩阵。
+完整2400原图、100查询与四模型4000条Top10的115,595,271B ZIP已双端安全，
+2719成员CRC及逐文件SHA通过；ZIP SHA为
+`fe8a1d9764a43e42df152104c2f965a2ab975c9c9e82d00c4f47e8c6ca1316d9`。
+模型身份、指标/收据与[画图包链接](../../tasks/t08_abo_image_text_retrieval/README.md)归T08 README维护，
+这些是检索性能，不替代T06质量head指标，也不是新的ABO正式时延或能耗。
+PID35339已退出、privateMPSrc1/共享锁free、GPU无compute进程，只读核验后未自动释放/续费。
+浏览器安全策略禁止本地file URL的自动离线页视检；未绕过，已请求人工确认页面正常或明确跳过。
+目前仅此页面人工确认待办，不把已安全的GPU结果误报为失败，也不重复启动任何队列。
+
 ## 2026-10-29：新租机12点全部安全，合并lab八配置的新Excel已交付
 
 唯一`rental_timing_only_20261029_02`已完成12/12：Kimi及完整版DeepSeek-VL2各MPS50/100三fresh轮，
