@@ -31,5 +31,12 @@ class CoarseSceneDataTest(unittest.TestCase):
         bad=self.sources();bad[0]['split']='test'
         with self.assertRaises(AssertionError):requests_for(bad)
 
+    def test_small_budget_still_covers_all_rooms_and_products(self):
+        rows=requests_for(self.sources(),False,[],2)
+        train=[r for r in rows if r['split']=='train']
+        self.assertEqual(len(train),32)
+        self.assertEqual(len({r['source_product_id'] for r in train}),8)
+        self.assertEqual({r['condition_id'] for r in train},set(map(str,range(8))))
+
 
 if __name__=='__main__':unittest.main()

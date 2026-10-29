@@ -10,7 +10,7 @@ import traceback
 import torch
 from PIL import Image
 from .qwen3_scene_conditioning import QwenSDXLConditions
-from .qwen3_scene_paired_train import new_qwen, raw_features_512, pipeline
+from .qwen3_scene_paired_train import new_qwen, raw_scene_features, pipeline
 from .white_reference_scene_probe import GPU, digest, write, checked_tokens
 
 
@@ -28,6 +28,7 @@ def render(a):
     from diffusers import StableDiffusionXLPipeline
     from transformers import CLIPVisionModelWithProjection
     state = torch.load(a.checkpoint/'best_checkpoint.pt', map_location='cpu', weights_only=False)
+    a.qwen_side=state['Qwen_input_side'];resolution=state['resolution']
     previous = json.loads((a.checkpoint/'report.json').read_text())
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
     inputs = inference_inputs(a.data)
@@ -63,13 +64,13 @@ def render(a):
         if not dst.exists(): shutil.copyfile(src,dst)
         with Image.open(src) as im: reference = im.convert('RGB').copy()
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
-        noise = torch.randn((1,4,128,128), generator=generator, device='cuda', dtype=torch.bfloat16)
+        noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
         noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
-        kwargs = dict(width=1024,height=1024,num_inference_steps=30,guidance_scale=7.5,latents=noise,generator=generator)
+        kwargs = dict(width=resolution,height=resolution,num_inference_steps=30,guidance_scale=7.5,latents=noise,generator=generator)
         with torch.inference_mode():
             if head is not None:
-                h,v,ids = raw_features_512(qwen,processor,reference,row['prompt'])
-                key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+b'\0Qwen512').hexdigest()
+                h,v,ids = raw_scene_features(qwen,processor,reference,row['prompt'],a.qwen_side)
+                key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
                 old = identity['features'][key]
                 assert torch.equal(h,old['hidden']) and torch.equal(v,old['visual']) and torch.equal(ids,old['input_ids'])
                 cond = head(h.unsqueeze(0).cuda().float(),v.unsqueeze(0).cuda().float())
@@ -84,7 +85,7 @@ def render(a):
         name = row['sample_id']+'.png'; image.save(a.output/name)
         records.append({**row,'split':'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
-            'raw_Qwen_identity_exact':head is not None,'resolution':1024,'sampling_steps':30})
+            'raw_Qwen_identity_exact':head is not None,'resolution':resolution,'sampling_steps':30})
         write(a.output/'images.json',records)
         write(a.output/'progress.json',{'stage':'independent_raw_DEV_render','done':i+1,'total':len(rows)})
     generator_count = sum(p.numel() for p in {id(p):p for c in pipe.components.values()
@@ -94,7 +95,7 @@ def render(a):
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
         'independent_TEST_opened':False,'GT_mask_or_target_latent_files_opened':False,
         'raw_Qwen_identity_checked':head is not None,'image_feedback':False,'quality_accepted':False,
-        'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':1024,'sampling_steps':30,
+        'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':30,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
         'head_parameters':0 if head is None else sum(p.numel() for p in head.parameters()),
         'factual_evaluation_captions':True})

@@ -23,7 +23,7 @@ from .scene_generation_data import request_seed
 from .white_reference_scene_probe import GPU,digest,write,checked_tokens,model_manifest
 
 
-def requests_for(sources,pilot=False):
+def requests_for(sources,pilot=False,double_seed_scenes=None,train_scene_stride=1):
     if pilot:
         chosen=[]
         for category in ['lamp','pillow']:
@@ -34,11 +34,13 @@ def requests_for(sources,pilot=False):
             chosen.extend(unique[keys[i]] for i in indices)
         sources=chosen
     rows=[]
-    for source in sources:
+    for source_index,source in enumerate(sources):
         assert source['split'] in ['train','dev']
         for scene in conditions(source['category'],COARSE_PROFILE):
             if pilot and scene['condition_id'] not in ['0','1']:continue
-            for index in ([0,1] if source['split']=='train' else [2]):
+            if not pilot and source['split']=='train' and int(scene['condition_id'])%train_scene_stride!=source_index%train_scene_stride:continue
+            indices=[2] if source['split']=='dev' else ([0,1] if pilot or double_seed_scenes is None or int(scene['condition_id']) in double_seed_scenes else [0])
+            for index in indices:
                 rows.append({**scene,'sample_id':source['sample_id']+'-scene'+scene['condition_id']+'-draw'+str(index),
                     'split':source['split'],'reference_id':source['sample_id'],
                     'reference':'references/'+source['sample_id']+'.png','reference_sha256':source['white_reference_sha256'],
@@ -54,12 +56,22 @@ def generate(a):
     from diffusers import StableDiffusionXLControlNetPipeline,ControlNetModel
     from transformers import CLIPVisionModelWithProjection
     cfg=json.loads(a.config.read_text(encoding='utf8'))
-    assert cfg['prompt_profile']==COARSE_PROFILE and cfg['resolution']==1024 and cfg['batch_size_max']==2
+    assert cfg['prompt_profile']==COARSE_PROFILE and cfg['resolution'] in [512,1024] and cfg['batch_size_max']==2
+    resolution=cfg['resolution']
     write(a.output/'configuration.json',{'profile':cfg,'config_sha256':digest(a.config)})
     source_report=json.loads((a.sources/'report.json').read_text(encoding='utf8'))
     assert source_report['complete'] and not source_report['TEST_opened']
     sources=json.loads((a.sources/'sources.json').read_text(encoding='utf8'))
-    rows=requests_for(sources,a.pilot)
+    rows=requests_for(sources,a.pilot,cfg.get('TRAIN_double_seed_scenes'),cfg.get('TRAIN_scene_stride',1))
+    if a.reuse_pilot and cfg.get('include_extra_TRAIN_pilot_requests'):
+        old_report=json.loads((a.reuse_pilot/'report.json').read_text())
+        assert old_report['complete'] and old_report['pilot_only'] and old_report['resolution']==resolution
+        prior=json.loads((a.reuse_pilot/'candidates.json').read_text());keys=set(rows[0]);known={r['sample_id'] for r in rows}
+        sources_by_id={r['sample_id']:r for r in sources}
+        for row in prior:
+            assert row['split']=='train' and row['prompt_profile']==COARSE_PROFILE
+            assert sources_by_id[row['reference_id']]['white_reference_sha256']==row['reference_sha256']
+            if row['sample_id'] not in known:rows.append({k:row[k] for k in keys});known.add(row['sample_id'])
     source_map={r['sample_id']:r for r in sources}
     (a.output/'references').mkdir();(a.output/'targets').mkdir()
     for ref in {r['reference_id'] for r in rows}:
@@ -86,6 +98,9 @@ def generate(a):
     if a.reuse_pilot:
         prior=json.loads((a.reuse_pilot/'report.json').read_text(encoding='utf8'))
         assert prior['complete'] and prior['pilot_only'] and prior['prompt_profile']==COARSE_PROFILE
+        assert prior['resolution']==resolution,'Do not present resized old teacher images as native new-resolution generations'
+        old_cfg=json.loads((a.reuse_pilot/'configuration.json').read_text())['profile']
+        assert all(old_cfg[k]==cfg[k] for k in ['resolution','sampling_steps','text_guidance','IP_scale','Canny_scale','Canny_end'])
         assert json.loads((a.reuse_pilot/'model_assets.json').read_text())==json.loads((a.output/'model_assets.json').read_text())
         reused={r['sample_id']:r for r in json.loads((a.reuse_pilot/'candidates.json').read_text())}
     for i,subset in enumerate(groups.values()):
@@ -102,17 +117,17 @@ def generate(a):
         assert len(keep) in [1,2] and len({r['prompt'] for r in keep})==1
         row=keep[0]
         with Image.open(a.output/row['reference']) as im:reference=im.convert('RGB').copy()
-        edges=cv2.Canny(np.asarray(reference),100,200)
+        edges=cv2.Canny(np.asarray(reference.resize((resolution,resolution),Image.Resampling.LANCZOS)),100,200)
         audit=[checked_tokens(t,row['native_caption']) for t in [pipe.tokenizer,pipe.tokenizer_2]]
         generators=[torch.Generator(device='cuda').manual_seed(r['seed']) for r in keep]
-        noises=[torch.randn((1,4,128,128),device='cuda',dtype=dtype,generator=g) for g in generators]
+        noises=[torch.randn((1,4,resolution//8,resolution//8),device='cuda',dtype=dtype,generator=g) for g in generators]
         noise_sha=[hashlib.sha256(n.cpu().numpy().tobytes()).hexdigest() for n in noises]
         began=time.monotonic()
         with torch.inference_mode():
             images=pipe(prompt=row['native_caption'],ip_adapter_image=reference,
                 image=Image.fromarray(np.repeat(edges[:,:,None],3,axis=2)),
                 controlnet_conditioning_scale=cfg['Canny_scale'],control_guidance_end=cfg['Canny_end'],
-                width=1024,height=1024,num_inference_steps=cfg['sampling_steps'],guidance_scale=cfg['text_guidance'],
+                width=resolution,height=resolution,num_inference_steps=cfg['sampling_steps'],guidance_scale=cfg['text_guidance'],
                 num_images_per_prompt=len(keep),latents=torch.cat(noises),generator=generators).images
         assert len(images)==len(keep)
         for r,image,noise_hash in zip(keep,images,noise_sha):
@@ -134,8 +149,9 @@ def generate(a):
             draw.text((x+2,y+2),r['reference_id']+' s'+r['condition_id']+' n'+str(r['seed_index']),fill='black')
         sheet.save(a.output/f'all_candidates_QA_page{page+1}.png')
     write(a.output/'report.json',{'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],
-        'prompt_profile':COARSE_PROFILE,'pilot_only':a.pilot,'candidate_count':len(records),
+        'prompt_profile':COARSE_PROFILE,'pilot_only':a.pilot,'candidate_count':len(records),'resolution':resolution,
         'candidate_manifest_sha256':digest(a.output/'candidates.json'),'TEST_opened':False,
+        'sources_report_sha256':digest(a.sources/'report.json'),
         'no_foreground_compositing':True,'no_rotation_or_image_feedback':True,
         'all_candidates_require_acceptance':True,'eligible_for_training':False,
         'backgrounds_are_AI_generated_not_external_room_photographs':True,

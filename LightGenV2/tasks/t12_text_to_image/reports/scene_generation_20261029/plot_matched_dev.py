@@ -15,7 +15,8 @@ MODELS = [('qwen_single_forward','Qwen single forward'),
 
 def panel(generation, rows, scores, summary, path):
     image = Image.new('RGB',(1280,170+len(rows)*468),'white');draw=ImageDraw.Draw(image)
-    draw.text((8,4),'Matched DEV | same RGB / initial noise / 1024 / 30 denoising steps | no image feedback',font=font(17),fill='black')
+    resolution=rows[0]['resolution']
+    draw.text((8,4),f'Matched DEV | same RGB / initial noise / native{resolution} / 30 denoising steps | no image feedback',font=font(17),fill='black')
     draw.text((8,30),'8 held-out DEV products, 16 views, 32 requests/model. DEV selection data; independent TEST500 remains sealed.',font=font(13),fill='black')
     draw.text((8,51),'All scores higher is better; proxy similarities/preferences, NOT instruction accuracy. Qwen has not yet had full paired training.',font=font(12),fill='black')
     for i,(name,label) in enumerate(MODELS):
@@ -66,7 +67,7 @@ def main():
     write(a.output/'plot_data.json',measured);write(a.output/'summary.json',summary)
     write(a.output/'report.json',{'complete':True,'source_sha256':digest(Path(__file__)),
         'n_outputs':96,'all_requests_shown':panels,'same_initial_latents_verified':True,
-        'native_images_1024_only_resized_for_preview':True,'quality_selected_outputs':False,
+        'native_generation_resolution':rows[0]['resolution'],'images_only_resized_for_preview':True,'quality_selected_outputs':False,
         'DEV_not_independent_TEST':True,'score_source_sha256':digest(a.metrics/'report.json')})
 
 

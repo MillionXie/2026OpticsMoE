@@ -27,18 +27,18 @@ from .qwen3_scene_conditioning import QwenSDXLConditions, fresh_qwen, qwen_asset
 from .white_reference_scene_probe import GPU, digest, write, checked_tokens, model_manifest
 
 
-def raw_features_512(model, processor, image, prompt):
+def raw_scene_features(model, processor, image, prompt, image_side):
     content = [{'type': 'image', 'image': image}, {'type': 'text', 'text': prompt}]
     text = processor.apply_chat_template([{'role': 'user', 'content': content}], tokenize=False,
         add_generation_prompt=True, enable_thinking=False)
     inputs = processor(text=[text], images=[image], return_tensors='pt').to('cuda')
-    assert inputs['image_grid_thw'].tolist() == [[1, 32, 32]] and inputs['attention_mask'].all()
+    assert inputs['image_grid_thw'].tolist() == [[1, image_side//16, image_side//16]] and inputs['attention_mask'].all()
     native = []
     hook = model.model.visual.register_forward_hook(lambda m, a, out: native.append(out[0]))
     try:
         with torch.inference_mode(): hidden = model.model(**inputs, use_cache=False, return_dict=True).last_hidden_state
     finally: hook.remove()
-    assert len(native) == 1 and native[0].shape == (256, 2048)
+    assert len(native) == 1 and native[0].shape == ((image_side//32)**2, 2048)
     return hidden[0].cpu(), native[0].cpu(), inputs['input_ids'].cpu()
 
 
@@ -46,7 +46,7 @@ def new_qwen(a):
     from transformers import AutoProcessor
     model, _ = fresh_qwen(a.qwen)
     processor = AutoProcessor.from_pretrained(a.qwen, local_files_only=True,
-        min_pixels=512*512, max_pixels=512*512)
+        min_pixels=a.qwen_side**2, max_pixels=a.qwen_side**2)
     return model, processor
 
 
@@ -96,9 +96,9 @@ def cache(a, rows):
     features = {}; captions = {}; images = {}; records = []
     for i, row in enumerate(rows):
         path = a.data/row['reference']
-        key = hashlib.sha256(path.read_bytes()+b'\0'+row['prompt'].encode()+b'\0Qwen512').hexdigest()
+        key = hashlib.sha256(path.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
         if key not in features:
-            with Image.open(path) as im: h, v, ids = raw_features_512(qwen, processor, im.convert('RGB'), row['prompt'])
+            with Image.open(path) as im: h, v, ids = raw_scene_features(qwen, processor, im.convert('RGB'), row['prompt'],a.qwen_side)
             features[key] = {'hidden': h, 'visual': v, 'input_ids': ids}
         if row['native_caption'] not in captions:
             conditions = []; lengths = []
@@ -116,7 +116,18 @@ def cache(a, rows):
             assert visual.shape == (1, 257, 1280)
             images[row['reference_sha256']] = visual[0].cpu()
         records.append({**row, 'input_key': key})
-        if i % 16 == 0: write(a.output/'progress.json', {'stage': 'full_Qwen_512_and_native_condition_cache', 'done': i+1, 'total': len(rows)})
+        if i % 16 == 0: write(a.output/'progress.json', {'stage': 'full_Qwen_and_native_condition_cache', 'Qwen_input_side':a.qwen_side,'done': i+1, 'total': len(rows)})
+    # The final raw renderer must evaluate the fixed complete DEV input set,
+    # including requests whose teacher candidate was rejected as a noise-loss GT.
+    dev_inputs=json.loads((a.data/'inference_dev_inputs.json').read_text())
+    dev_keys=set()
+    for row in dev_inputs:
+        path=a.data/row['reference'];assert digest(path)==row['reference_sha256']
+        key=hashlib.sha256(path.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
+        dev_keys.add(key)
+        if key not in features:
+            with Image.open(path) as im:h,v,ids=raw_scene_features(qwen,processor,im.convert('RGB'),row['prompt'],a.qwen_side)
+            features[key]={'hidden':h,'visual':v,'input_ids':ids}
     with torch.inference_mode(): negative = vision(torch.zeros_like(pixels), output_hidden_states=True).hidden_states[-2].cpu()
     frontend_count = sum(p.numel() for p in qwen.parameters())
     del qwen, processor, text_encoders, vision; gc.collect(); torch.cuda.empty_cache()
@@ -125,7 +136,7 @@ def cache(a, rows):
     latents = {}
     for i, row in enumerate(records):
         with Image.open(a.data/row['target']) as im:
-            assert im.size == (1024, 1024)
+            assert im.size == (a.resolution, a.resolution)
             rgb = np.asarray(im.convert('RGB')).copy()
         image = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).cuda().float()/127.5-1
         with torch.inference_mode(): latent = vae.encode(image).latent_dist.mode()*vae.config.scaling_factor
@@ -136,12 +147,12 @@ def cache(a, rows):
     payload = {'records': records, 'features': features, 'captions': captions, 'images': images,
         'latents': latents, 'negative_image': negative, 'pair_sha256': digest(a.data/'pairs.json')}
     torch.save(payload, a.output/'paired_cache.pt')
-    dev_keys = {r['input_key'] for r in records if r['split'] == 'dev'}
-    torch.save({'features': {k:v for k,v in features.items() if k in dev_keys}, 'Qwen_input_side':512,
+    torch.save({'features': {k:v for k,v in features.items() if k in dev_keys}, 'Qwen_input_side':a.qwen_side,
         'contains_targets_or_masks':False}, a.output/'DEV_frontend_identity_only.pt')
     write(a.output/'report.json', {'complete': True, 'source_commit': os.environ['T12_SOURCE_COMMIT'],
-        'cache_sha256': digest(a.output/'paired_cache.pt'), 'n': len(rows), 'Qwen_input_side': 512,
-        'visual_tokens': 256, 'complete_Qwen_parameters':frontend_count, 'vision_layers':24, 'language_layers':28,
+        'cache_sha256': digest(a.output/'paired_cache.pt'), 'n': len(rows), 'Qwen_input_side': a.qwen_side,
+        'target_resolution':a.resolution,'complete_DEV_frontend_contexts':len(dev_keys),
+        'visual_tokens': (a.qwen_side//32)**2, 'complete_Qwen_parameters':frontend_count, 'vision_layers':24, 'language_layers':28,
         'TEST_opened': False, 'target_images_enter_Qwen': False,
         'cache_inputs_only_RGB_and_prompt': True, 'cache_is_training_optimization_not_deployment': True})
 
@@ -208,7 +219,7 @@ def fit(a, payload):
     trainable = lora + ([] if head is None else list(head.parameters()))
     scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
     assert scheduler.config.prediction_type == 'epsilon'
-    time_ids = torch.tensor([[1024, 1024, 0, 0, 1024, 1024]], device='cuda', dtype=torch.bfloat16)
+    time_ids = torch.tensor([[a.resolution, a.resolution, 0, 0, a.resolution, a.resolution]], device='cuda', dtype=torch.bfloat16)
     def loss_for(row, seed, auxiliary=True):
         cond = conditions_for(head, payload, row)
         latent = payload['latents'][row['target_sha256']].unsqueeze(0).cuda()
@@ -246,7 +257,7 @@ def fit(a, payload):
         smoke.append({'step': step+1, 'loss': loss.item(), 'LoRA_gradient': lg, 'head_gradient': hg,
                       'epsilon_only_head_gradient':direct,
                       'seconds_including_backward': time.monotonic()-began})
-    write(a.output/'smoke_report.json', {'complete': True, 'resolution': 1024, 'steps': smoke,
+    write(a.output/'smoke_report.json', {'complete': True, 'resolution': a.resolution, 'steps': smoke,
         'Qwen_and_VAE_and_UNet_base_frozen': True, 'reset_after_smoke': True})
     with torch.no_grad():
         for p, before in zip(trainable, initial): p.copy_(before)
@@ -286,7 +297,7 @@ def fit(a, payload):
             'unet_lora': {n:p.detach().cpu() for n,p in unet.named_parameters() if 'lora_' in n},
             'negative_image': payload['negative_image'], 'DEV_epsilon_MSE': score,
             'pair_sha256': payload['pair_sha256'], 'cache_sha256': cache_digest,
-            'source_commit': os.environ['T12_SOURCE_COMMIT'], 'Qwen_input_side': 512}
+            'source_commit': os.environ['T12_SOURCE_COMMIT'], 'Qwen_input_side': a.qwen_side,'resolution':a.resolution}
         torch.save(state, a.output/'last_checkpoint.pt')
         if score < best:
             best = score; stale = 0; torch.save(state, a.output/'best_checkpoint.pt')
@@ -299,7 +310,7 @@ def fit(a, payload):
         'TRAIN_pairs': len(train), 'DEV_noise_loss_pairs': len(dev), 'best_DEV_epsilon_MSE': best,
         'best_sha256': digest(a.output/'best_checkpoint.pt'), 'head_parameters': 0 if head is None else sum(p.numel() for p in head.parameters()),
         'trainable_UNet_LoRA_parameters': sum(p.numel() for p in lora), 'VAE_and_Qwen_and_UNet_base_frozen': True,
-        'TEST_opened': False, 'training_resolution': 1024, 'training_precision': 'BF16 base, FP32 trainable parameters',
+        'TEST_opened': False, 'training_resolution': a.resolution, 'training_precision': 'BF16 base, FP32 trainable parameters',
         'best_selection': 'Fixed DEV diffusion noise loss; not free-generation quality/comparability proof',
         'training_input_order_noise_schedule_sha256':schedule.hexdigest(),
         'image_feedback': False, 'rotation': False, 'quality_or_speed_accepted': False})
@@ -309,7 +320,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--stage', choices=['cache', 'train'], required=True)
     p.add_argument('--variant', choices=['qwen', 'native'], default='qwen')
-    p.add_argument('--config', type=Path, default=Path(__file__).parent/'configs/scene_paired_training_20261029.json')
+    p.add_argument('--config', type=Path, default=Path(__file__).parent/'configs/scene_paired_training512_20261029.json')
     for key in ['data', 'qwen', 'model-path', 'adapter-path', 'alignment', 'cache', 'output']:
         p.add_argument('--'+key, type=Path, required=key in ['data', 'model-path', 'adapter-path', 'output'])
     p.add_argument('--epochs', type=int)
@@ -317,7 +328,8 @@ def main():
     p.add_argument('--lr', type=float)
     a = p.parse_args()
     config = json.loads(a.config.read_text())
-    assert config['training_resolution'] == 1024 and config['Qwen_image_side'] == 512
+    assert config['training_resolution'] in [512,1024] and config['Qwen_image_side'] in [256,512]
+    a.resolution=config['training_resolution'];a.qwen_side=config['Qwen_image_side']
     assert config['UNet_LoRA_rank'] == 4 and config['condition_anchor_weight'] == .02 and config['batch_size'] == 1
     for key in ['epochs','warmup','lr']:
         if getattr(a,key) is None: setattr(a,key,config[key])
