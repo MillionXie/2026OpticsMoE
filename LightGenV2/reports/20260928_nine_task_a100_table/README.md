@@ -1,5 +1,33 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：新A10080完整版DeepSeek MPS50三轮时间测量完成，能耗N/A
+
+`rental_timing_only_20261029_02/deepseek_cap50_repeat01/02/03`三fresh轮各512原TEST、
+B1四帧、零推理预热、实际54SM，完整文件输入至CPU评分连续窗及511内部间隙不变。
+实际模型是`deepseek-ai/deepseek-vl2`完整版，revision `f363772d1c47f4239dd844015b4bd53beb87951b`、
+27,480,134,248参数、2560D、8个原权重分片；不是Tiny，也不能因旧脚本名含small就称Small。
+运行identity的14份模型资产SHA与原provisioning收据逐一一致；原已训练质量头与数学精度不改。
+三worker54730/8129/26817真退出，server CPU及本地独立CPU时间审计全部passed，
+24原文件109893718B已逐SHA保全本地与lab。原全字段输入元数据相等及512原字节SHA终检全通过。
+
+三轮T16为15.945086966035888、15.846018554409966、15.900202743418049s；
+总1526.1218644436449s/1536视频/96组，pooled **15.8971027546213s/16视频**。
+原生token总2677248，pooled **1754.2819235972377token/s**，不灌Qwen分子、不选最快轮。
+这是TIMING_ONLY、energyfalse，所有能耗为N/A；不报告GPU平均W、J或能量比，不放宽250ms门。
+本次A10080GB400W与lab40GB250W分列，LG仍只引用含resize/归一化等效45.94911715143696ms，
+不是同范围物理E2E；不同token分子所得吞吐比不得强行等于等效时间比。
+
+三report SHA为`42e97ef51a53f9efb590f133d5ec96bfee6793fc021907890a83af655350a73e`、
+`7e9bd2dfd8f433922846a3d3bf1c8b1be4ab4294a2b7bec86e95fe3ff2012881`、
+`252f6f0115120fb7713383b211f2c4a6ea27c7e11adef11a591b829e5ed87357`；
+lab receipt SHA为`7a5cec85b2b684d2ee37b62e60cab34bd062eb2c745d2a77314d568269942b69`、
+`906d56df5d9714bfa2fcb038a5681d2ac8c5a8526d6278ca231d3144e0236a15`、
+`920e3a18317cb79cf4b224891f1879d760e47a1a99ce857a4f5df4c4f95c61a6`。
+Unix1793268373.182824实查唯一controller13364已自动转入DS100首轮worker45629加载，无error；
+当前9/12点完成，运行源9fd1f4c22及原截止1793278441.7376518不变，不安装文档到活租机。
+新增ABO也必须使用同套完整版原权重，冻结无微调、无LGVQ质量头；先前误选Tiny的准备未执行GPU推理且已停止。
+ABO入场仍须等T06全部12点与父子退出/私有MPS释放；不并行占卡，不自动续费或释放。
+
 ## 2026-10-29：新A10080 Kimi MPS100三轮时间测量完成，能耗N/A
 
 `rental_timing_only_20261029_02/kimi_cap100_repeat01/02/03`三fresh轮各512不同原TEST、
@@ -24,7 +52,8 @@ lab receipt SHA为`56965014f8e3874c6891dce927336d6117f1be94b578a718e601ec5225b54
 `620706fcfaad13ea0059843be9bddb6eba711e41c65c805e3d24c6e472eec30e`。
 Unix1793265497.1572332实核唯一controller13364已转入DS50首轮worker54730加载，
 无error，现6/12点完成；原9fd1f4c22运行源、54源及1793278441.7376518截止不改。
-新增ABO Tiny冻结文搜图是人工后续任务，须等该12点队列释放后再独占入场，不能同卡并行。
+新增ABO冻结文搜图须按人工最新纠正使用完整版DeepSeek-VL2（旧Tiny准备已停且未上卡），
+等该12点队列释放后再独占入场，不能同卡并行。
 
 ## 2026-10-29：新A10080 Kimi MPS50三轮时间测量完成，能耗N/A
 
