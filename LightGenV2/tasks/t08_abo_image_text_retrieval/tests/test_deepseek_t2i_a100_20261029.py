@@ -6,6 +6,8 @@ from unittest.mock import patch
 from types import SimpleNamespace
 import os
 import time
+import json
+from pathlib import Path
 from LightGenV2.tasks.t08_abo_image_text_retrieval import deepseek_t2i_a100_20261029 as task
 
 
@@ -26,6 +28,25 @@ class Contract(unittest.TestCase):
         for value in ('../images/a.jpg','/images/a.jpg','images/../a.jpg','weights/a.pt'):
             with self.assertRaises(ValueError):task.checked_relative(value)
     def test_no_model_import(self):self.assertNotIn('torch',sys.modules)
+    def test_original_full_receipt(self):
+        p=task.REPO/'LightGenV2/tasks/t06_video_quality_assessment/runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/provisioning/deepseek_asset_receipt.json'
+        if not p.exists():self.skipTest('Original data receipt not installed in this CPU-only environment')
+        self.assertEqual(task.sha(p),task.ASSET_MANIFEST_SHA)
+        task.validate_asset_manifest(json.loads(p.read_text(encoding='utf8')))
+    def test_tiny_and_small_rejected(self):
+        for model in ('deepseek-ai/deepseek-vl2-tiny','deepseek-ai/deepseek-vl2-small'):
+            with self.assertRaises(ValueError):task.validate_asset_manifest(dict(model=model,revision=task.MODEL_REVISION,status='complete'))
+    def test_wrong_revision_rejected(self):
+        with self.assertRaises(ValueError):task.validate_asset_manifest(dict(model=task.MODEL_ID,revision='other',status='complete'))
+    def test_exact_full_architecture(self):
+        config=dict(language_config=dict(hidden_size=2560,n_routed_experts=72,num_experts_per_tok=6),projector_config=dict(n_embed=2560))
+        task.validate_model_config(config)
+        for width in (1280,2048):
+            changed=copy.deepcopy(config);changed['language_config']['hidden_size']=width
+            with self.assertRaises(ValueError):task.validate_model_config(changed)
+    def test_full_parameter_contract(self):
+        self.assertEqual(task.MODEL_PARAMETERS,27480134248)
+        self.assertNotIn('Tiny',task.PROTOCOL)
     def test_foreign_rejected_once(self):
         value=SimpleNamespace(returncode=0,stdout='999999, '+task.GPU+'\n')
         with patch.object(task.subprocess,'run',return_value=value) as command:

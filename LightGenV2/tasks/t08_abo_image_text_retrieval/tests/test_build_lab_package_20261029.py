@@ -21,6 +21,8 @@ class PackageContract(unittest.TestCase):
     def test_all100_joined(self):
         result=normalized_rankings(self.titles,self.rows,self.root,self.pred)
         self.assertEqual(len(result),100);self.assertEqual(sum(len(v) for r in result for v in r['models'].values()),4000)
+        self.assertIn('DeepSeek-VL2_full_new_A100',result[0]['models'])
+        self.assertFalse(any('Tiny' in name for name in result[0]['models']))
     def test_wrong_query_rejected(self):
         self.pred[0]['product_id']='not_this_SKU'
         with self.assertRaises(ValueError):normalized_rankings(self.titles,self.rows,self.root,self.pred)

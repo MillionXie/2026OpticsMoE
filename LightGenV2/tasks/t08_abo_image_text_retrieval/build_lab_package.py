@@ -28,7 +28,7 @@ def normalized_rankings(titles,rows,reference,new_predictions):
         models={
             'LightGen-II_historical_simulation':json.loads(ours[i]['top10_sample_ids']),
             'Qwen3-VL_historical_frozen_2048D':qwen[i]['top10_sample_ids'],
-            'DeepSeek-VL2-Tiny_new_A100': [r['sample_id'] for r in new_predictions[i]['top10']],
+            'DeepSeek-VL2_full_new_A100': [r['sample_id'] for r in new_predictions[i]['top10']],
             'CLIP_historical_frozen_ViT-B32':clip[i],
         }
         values={}
@@ -83,7 +83,7 @@ def build(a):
 打开 index.html，可按100条官方标题查四组Top3；各查询目录另有完整标题query.txt和Top10 CSV。
 dataset/包含全部2400张原TEST JPG字节，以及原test.csv/titles.csv，不含TRAIN图片、模型权重或凭据。
 all_queries_top10.csv/queries_and_top10.json提供4000项可追溯检索记录；正确性只按同商品SKU，不按视觉相似。
-DeepSeek-VL2-Tiny是本次A100冻结零训练推理；LightGen-II仿真.86、Qwen动态2048D、CLIP为已保存历史比较。
+完整版DeepSeek-VL2（非Tiny）是本次A100冻结零训练推理；LightGen-II仿真.86、Qwen动态2048D、CLIP为已保存历史比较。
 不把其他三列冒称本次A100重测，也不把LightGen仿真.86混成实拍.85。
 用户示意图的三个类别可看16/20/99；旧十例原有选择偏倚，不能代表整体胜率。此包保留全部100查询。
 指标、版本和源文件身份见source/。manifest.json与ZIP旁SHA用于交接校验。原图未裁剪、去背景、重编码或生成。

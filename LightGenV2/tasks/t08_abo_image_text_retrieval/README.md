@@ -3,19 +3,23 @@
 ## 2026-10-29 新增A100 DeepSeek文搜图冻结推理与完整画图包准备
 
 人工要求在当前租用A10080上补一次文搜图性能推理，不训练；先完成同卡T06 Kimi/DS测速队列，
-避免并行干扰。新入口`deepseek_t2i_a100_20261029.py`只使用DeepSeek-VL2-Tiny
-（3,370,501,440参数、1280D、可训练参数0），不拿LGVQ非Tiny模型或质量头代替。
+避免并行干扰。人工随后明确：论文已删除Tiny，本次必须用完整版`deepseek-ai/deepseek-vl2`，
+不是Tiny或Small。新入口`deepseek_t2i_a100_20261029.py`固定27,480,134,248参数、2560D、
+可训练参数0；复用租机已有完整版原权重，不下载另一套，不加载LGVQ质量头。
+此前误按历史Tiny准备的方案没有执行GPU推理，现已停用，旧资产证据仍保留但不作为新论文结果。
 复用原`abo_backbone_baselines.py`官方processor/BF16/末层最后有效token、原两种prompt，
 FP32 L2归一化余弦分数及稳定降序排序。100官方标题检索全部2400 TEST图，每标题24同SKU正例；
 不读取TRAIN图、不拟合对齐头、不生成文字重排、不按结果调prompt或选模型。
 新入口须确认T06完整12点通过、控制器退出/私有MPS释放并取得同一共享锁，再经三次空闲检查入场；
 只允许原租机硬截止内一次独立输出。当前只是CPU合同和资产准备，**尚未执行本次ABO GPU推理**。
 
-原ABO历史报告没有钉住模型revision/逐权重SHA/完整环境，不能补造这些身份。
-本次已对lab现存Tiny原目录逐文件记录内容身份：权重6741334208B，SHA256
-`cc1e5047280253e224b299677bea16b7960c2436ec676d28911ebd9de3bb0074`；
-九文件清单SHA为`96707edfffe966f91e095e2d9fcb7aeefe5590de7adddaf59025b507e9ac3fbd`。
-使用已核验的租机DS环境并记录实际版本，不能冒称历史软件环境完全相同或保证复现旧.08。
+原ABO历史Tiny报告没有钉住revision/逐权重SHA/完整环境，不能补造，且不再是本次目标。
+本次完整版固定revision `f363772d1c47f4239dd844015b4bd53beb87951b`，直接核验既有T06
+`lgvq_full_deepseek_kimi_rental_20261017/provisioning/deepseek_asset_receipt.json`的14份文件SHA；
+原收据SHA为`bca93d6098e82aaa01f02f138cae817ed77d37f486970c3cb11a0a3c02f0365a`，
+8个权重分片、原index张量总字节54,960,268,496。原完整身份与本次LGVQ运行记录已核相符。
+使用已核验的租机DS环境并记录实际版本，不冒称复现历史Tiny的.08或历史环境。
+运行时`--model /data/models/deepseek`，`--asset-manifest`指向上述原收据，不再使用Tiny清单。
 新输出保存原图/标题embedding、完整100×2400 FP32分数矩阵与全排序、逐标题Top10、过程排外和硬件/源码身份，
 独立CPU重放全部排名和指标；该任务是性能推理，不报告正式延迟或能耗。
 

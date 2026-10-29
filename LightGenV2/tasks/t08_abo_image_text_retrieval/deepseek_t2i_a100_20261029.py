@@ -1,4 +1,4 @@
-"""One frozen DeepSeek-VL2-Tiny ABO T2I pass, AFTER the authorized T06 queue.
+"""One frozen full DeepSeek-VL2 ABO T2I pass, AFTER the authorized T06 queue.
 
 Reuses the historical decoder/processor and prompt roles, without training,
 calibration, generated text or a fitted quality head. Not a latency/energy run.
@@ -22,9 +22,14 @@ HERE=Path(__file__).resolve().parent;REPO=HERE.parents[2]
 GPU='GPU-30fecb94-0222-a3d5-d952-a91f2cab2f43'
 CSV_SHA={'titles.csv':'c97e8da3c6c608a706f2cc0d284aeafb873fc6cc17d04a7c9f9f66b2135846c1',
          'test.csv':'4ca5834abf4bb4d614b41f05b5b2481b3d41720dd78c1c37b05923c97657dfb8'}
-PROTOCOL='ABO_easy100_frozen_DeepSeekVL2Tiny_T2I_100x2400_A10080_20261029'
+PROTOCOL='ABO_easy100_frozen_DeepSeekVL2Full_T2I_100x2400_A10080_20261029'
 INPUT_MANIFEST_SHA='87d4213653d1df3051b982de712f8cabbc8e1ad4bb9d33efcaaf84b8a447c8dc'
-ASSET_MANIFEST_SHA='96707edfffe966f91e095e2d9fcb7aeefe5590de7adddaf59025b507e9ac3fbd'
+# Existing original T06 provisioning/deepseek_asset_receipt.json, not a new download.
+ASSET_MANIFEST_SHA='bca93d6098e82aaa01f02f138cae817ed77d37f486970c3cb11a0a3c02f0365a'
+MODEL_ID='deepseek-ai/deepseek-vl2'
+MODEL_REVISION='f363772d1c47f4239dd844015b4bd53beb87951b'
+MODEL_PARAMETERS=27480134248
+MODEL_WIDTH=2560
 
 
 def sha(path):
@@ -71,14 +76,27 @@ def verify_inputs(data,manifest):
     return titles,rows
 
 
+def validate_asset_manifest(manifest):
+    if manifest.get('model')!=MODEL_ID or manifest.get('revision')!=MODEL_REVISION or manifest.get('status')!='complete':
+        raise ValueError('Exact original full DeepSeek-VL2 revision required; no Tiny/Small substitution')
+    expected={f'model-{i:05d}-of-000008.safetensors' for i in range(1,9)}|{
+        'config.json','model.safetensors.index.json','processor_config.json',
+        'special_tokens_map.json','tokenizer.json','tokenizer_config.json'}
+    if set(manifest['files'])!=expected:raise ValueError('All14 original full-model files required')
+
+
+def validate_model_config(config):
+    language=config['language_config']
+    if (language['hidden_size']!=MODEL_WIDTH or config['projector_config']['n_embed']!=MODEL_WIDTH
+            or language['n_routed_experts']!=72 or language['num_experts_per_tok']!=6):
+        raise ValueError('Exact full DeepSeek-VL2 architecture required')
+
+
 def verify_assets(model,manifest):
-    if manifest['model_id']!='deepseek-ai/deepseek-vl2-tiny':raise ValueError('Tiny, not LGVQ non-Tiny')
-    for r in manifest['files']:
-        if Path(r['name']).name!=r['name']:raise ValueError('Flat original model assets')
-        p=model/r['name']
-        if p.stat().st_size!=r['bytes'] or sha(p)!=r['sha256']:raise ValueError('Original lab Tiny asset bytes differ')
-    config=json.loads((model/'config.json').read_text(encoding='utf8'))
-    if config['language_config']['hidden_size']!=1280:raise ValueError('Original Tiny hidden width required')
+    validate_asset_manifest(manifest)
+    for name,digest in manifest['files'].items():
+        if sha(model/name)!=digest:raise ValueError('Original full DeepSeek-VL2 asset bytes differ')
+    validate_model_config(json.loads((model/'config.json').read_text(encoding='utf8')))
 
 
 def predecessor():
@@ -90,6 +108,9 @@ def predecessor():
     for name in expected:
         p=root/name
         if json.loads((p/'cpu_audit.json').read_text(encoding='utf8'))['status']!='passed':raise ValueError('T06 CPU audit incomplete')
+        worker=json.loads((p/'status.json').read_text(encoding='utf8'))
+        if worker['status']!='complete' or Path('/proc/'+str(worker['pid'])).exists():raise ValueError('All T06 workers must truly exit')
+    if Path('/proc/13363').exists():raise ValueError('Original T06 wrapper must truly exit')
     r=subprocess.run(['nvidia-cuda-mps-control'],input='get_server_list\n',text=True,capture_output=True,timeout=5,
         env=dict(os.environ,CUDA_MPS_PIPE_DIRECTORY='/data/tmp/rental_timing_only_20261029_02'))
     if r.returncode!=1:raise ValueError('Old private MPS must be released')
@@ -131,7 +152,7 @@ def run(a):
         blob=subprocess.check_output(['git','show',commit+':'+name],cwd=REPO,timeout=10)
         if hashlib.sha256(blob).hexdigest()!=digest:raise ValueError('Published Git source binding')
     evidence=predecessor()
-    if sha(a.input_manifest)!=INPUT_MANIFEST_SHA or sha(a.asset_manifest)!=ASSET_MANIFEST_SHA:raise ValueError('Exact original lab transport manifests required')
+    if sha(a.input_manifest)!=INPUT_MANIFEST_SHA or sha(a.asset_manifest)!=ASSET_MANIFEST_SHA:raise ValueError('Exact TEST and original full-model receipt required')
     titles,rows=verify_inputs(a.data,json.loads(a.input_manifest.read_text(encoding='utf8')))
     assets=json.loads(a.asset_manifest.read_text(encoding='utf8'));verify_assets(a.model,assets)
     import fcntl
@@ -141,7 +162,8 @@ def run(a):
         identity=dict(protocol_id=PROTOCOL,source_commit=commit,sources=sources,command=sys.argv,pid=os.getpid(),
             gpu_uuid=GPU,predecessor=evidence,no_training=True,trainable_parameters=0,energy_qualified=False,
             performance_only_not_formal_timing=True,asset_manifest_sha256=sha(a.asset_manifest),input_manifest_sha256=sha(a.input_manifest),
-            csv_sha256=CSV_SHA,model_assets=assets,reference_model='historical frozen DeepSeek-VL2-Tiny; not LGVQ DeepSeek-VL2')
+            csv_sha256=CSV_SHA,model_assets=assets,model_id=MODEL_ID,model_revision=MODEL_REVISION,
+            reference_model='new full DeepSeek-VL2; historical Tiny explicitly excluded; no LGVQ quality head')
         def status(value,**kw):
             # Append-only events retain every progress/failure, never delete a bad row.
             with (a.output/'status_events.jsonl').open('a') as f:f.write(json.dumps(dict(status=value,time=time.time(),pid=os.getpid(),**kw),ensure_ascii=True)+'\n')
@@ -160,7 +182,10 @@ def run(a):
             if identity['packages']['transformers']!='4.38.2' or identity['packages']['numpy']!='1.26.4':raise ValueError('Verified rental DS numeric/runtime packages')
             bundle=base._load_deepseek(a.model,torch.device('cuda:0'))
             if torch.cuda.device_count()!=1 or torch.cuda.get_device_properties(0).multi_processor_count!=108:raise ValueError('Actual full A100108SM required')
-            if bundle.metadata['backbone_total_parameters']!=3370501440 or bundle.image_width!=1280 or bundle.metadata['backbone_trainable_parameters']!=0:raise ValueError('Exact frozen Tiny; no fitted head')
+            if bundle.metadata['backbone_total_parameters']!=MODEL_PARAMETERS or bundle.image_width!=MODEL_WIDTH or bundle.text_width!=MODEL_WIDTH or bundle.metadata['backbone_trainable_parameters']!=0:raise ValueError('Exact frozen full DeepSeek-VL2; no fitted head')
+            # The preserved historical loader has a Tiny display name, but loads
+            # the explicit path/config. Correct this wrapper label after checks.
+            bundle.name='deepseek_vl2_full'
             identity['model_metadata']=bundle.metadata
             identity['loaded_deepseek_source_SHA']={name:dict(path=str(Path(m.__file__).resolve()),sha256=sha(Path(m.__file__))) for name,m in list(sys.modules.items()) if name.startswith('deepseek_vl2') and getattr(m,'__file__',None) and str(m.__file__).endswith('.py')}
             write(a.output/'identity.json',identity)
@@ -203,6 +228,9 @@ def audit_saved_run(folder):
     events=[json.loads(line) for line in (folder/'status_events.jsonl').read_text(encoding='utf8').splitlines()]
     if not events or events[-1]['status']!='complete':raise ValueError('Terminal complete status required')
     if (report['status']!='complete' or report['protocol_id']!=PROTOCOL or report['no_training'] is not True
+            or report['model_id']!=MODEL_ID or report['model_revision']!=MODEL_REVISION
+            or report['model_metadata']['backbone_total_parameters']!=MODEL_PARAMETERS
+            or report['model_metadata']['hidden_width']!=MODEL_WIDTH
             or report['trainable_parameters']!=0 or report['query_count']!=100 or report['gallery_count']!=2400
             or report['energy_qualified'] is not False or report['GPU_mean_power'] is not None or report['energy_j'] is not None):raise ValueError('Only complete frozen performance-only ABO run')
     if sha(folder/'features_and_rankings_fp32.pt')!=report['features_sha256'] or sha(folder/'predictions.json')!=report['predictions_sha256']:raise ValueError('Original saved score bytes differ')
