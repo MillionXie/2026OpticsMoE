@@ -244,6 +244,14 @@ def anchor_loss(pred, payload, row):
     return sum(losses)
 
 
+def electronic_condition_loss(pred,payload,row):
+    if row['split']!='train':raise ValueError('Condition KD gradients are TRAIN-only')
+    wanted=payload['TRAIN_electronic_conditions'][row['input_key']]
+    return sum(weight*(pred[name].float()-wanted[name].unsqueeze(0).to(pred[name].device).float()).square().mean()/
+        wanted[name].float().square().mean().clamp_min(1e-6).to(pred[name].device)
+        for name,weight in [('image',2.),('text',1.),('pooled',.25)])
+
+
 def fit(a, payload):
     from diffusers import DDPMScheduler
     from peft import LoraConfig
@@ -311,7 +319,9 @@ def fit(a, payload):
         noise_mse = F.mse_loss(prediction.float(), noise.float())
         # Native-encoder anchoring uses TRAIN inputs, not a second image target.
         anchor = anchor_loss(cond, payload, row) if head is not None and auxiliary else noise_mse*0
-        return noise_mse+.02*anchor, noise_mse, anchor
+        kd_weight=a.config_profile.get('teacher_condition_kd_weight',0.)
+        kd=electronic_condition_loss(cond,payload,row) if auxiliary and kd_weight else noise_mse*0
+        return noise_mse+.02*anchor+kd_weight*kd, noise_mse, anchor
     def optimizer():
         groups = [{'params': lora, 'lr': a.lr}]
         if head is not None: groups.append({'params': head.parameters(), 'lr': a.lr})
@@ -398,6 +408,8 @@ def fit(a, payload):
         'optical_frontend':payload.get('optical_frontend'),
         'initial_paired_checkpoint_sha256':None if a.initial_paired is None else digest(a.initial_paired/'best_checkpoint.pt'),
         'optical_parameters_updated':False,
+        'teacher_condition_kd_weight':a.config_profile.get('teacher_condition_kd_weight',0.),
+        'condition_teacher_sha256':payload.get('condition_teacher_sha256'),
         'image_feedback': False, 'rotation': False, 'quality_or_speed_accepted': False})
 
 

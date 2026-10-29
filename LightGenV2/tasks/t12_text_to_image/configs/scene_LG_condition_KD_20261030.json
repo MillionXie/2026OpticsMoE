@@ -1,0 +1,18 @@
+{
+  "protocol": "white_ABO_to_two_sentence_furnished_room_v3",
+  "training_resolution": 512,
+  "Qwen_image_side": 256,
+  "UNet_LoRA_rank": 4,
+  "epochs": 3,
+  "warmup": 0,
+  "lr": 0.000005,
+  "condition_anchor_weight": 0.02,
+  "teacher_condition_kd_weight": 0.1,
+  "batch_size": 1,
+  "sampling_steps": 12,
+  "SDXL_conditioning_size": 1024,
+  "negative_prompt": "drawing, painting, illustration, cartoon, sketch, line art, outlines, flat shading, CGI, 3d render, watermark, text",
+  "only_TRAIN_gradients": true,
+  "extra_deployment_parameters": 0,
+  "optical_phases_frozen": true
+}
