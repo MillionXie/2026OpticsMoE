@@ -75,6 +75,17 @@ TRAIN条件loss .2763600564。后续16次真实RGB／完整文字前向与缓存
 完整冻结Qwen对这6条新文字实际前向；冻结VAE只编码TRAIN目标，标准随机timestep加噪latent监督epsilon MSE，
 适配器与UNet rank4 LoRA接收真实梯度，基础UNet/VAE/Qwen冻结；无参考VAE推理旁路。
 4步512反向smoke是内存／梯度检查，正式生图协议仍1024，不能冒称已完成配对训练或效果达标。
+该配对链路已实际检查：首次FP16联合梯度门禁未通过，原失败证据保留；改A100 BF16基础网络、
+FP32适配器／LoRA更新与FP32 VAE目标编码后，`qwen3_scene_paired_noise_smoke_v2_20261029`
+4步均通过有限loss、适配器与UNet LoRA非零梯度门禁，末步文字／图像读出梯度也都非零。
+UNet LoRA5,969,920参数，另适配器7,791,616；Qwen基础／UNet基础／VAE均冻结。
+四步使用不同样本与预定timestep128/384/640/896，不能把loss .3558→.0065写成收敛改善。
+源码`78db79fc1`，诊断last权重SHA`1ef6d4b27e6b36f77f8a389b24b7663d97e9365ee36685a3a2ec685b6730467b`，
+不用于论文／LG选教师；GPU峰值分配7,108,617,728字节是该512smoke而非1024部署峰值。
+父`qwen3_scene_paired_smoke_workflow_v2_20261029`子2038344已退出、GPU释放true，报告／数据均SHA下载。
+全量2432条仍是请求预算，只有64张生成候选及6对用于反向smoke的TRAIN事实重标注，
+尚未形成2432张审核合格场景图或训练完成的正式baseline。下一步扩合格多商品配对并做标准扩散训练；
+TEST500继续无预测、不用于选模，LG替换与正式同口径2倍验证尚未开始。
 
 新增先导`white_reference_outline_probe`／配置`white_reference_outline_sweep_20261029`验证参考粗几何：
 固定原4款TRAIN白底RGB、完整无光照方向Generate提示和两seed，使用冻结SDXL＋IP-Adapter Plus，
