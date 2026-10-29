@@ -18,13 +18,17 @@ def binding_metadata(state,report,new_sha):
     optical_only=report.get('only_existing_optical_macros_trainable') and report.get('head_UNet_VAE_retained_Qwen_frozen')
     with_native=(report.get('existing_native_readouts_also_trainable') and report.get('head_UNet_VAE_retained_Qwen_TF_frozen')
         and report.get('native_readout_parameters_trained',0)>0 and report.get('extra_deployment_parameters')==0)
-    if not old or not report.get('complete') or not (optical_only or with_native):
+    from .scene_macro_expansion import contract
+    expanded=(report.get('pair_expansion')==contract() and report.get('head_UNet_VAE_retained_Qwen_TF_frozen')
+        and report.get('extra_deployment_parameters',0)>0)
+    if not old or not report.get('complete') or not (optical_only or with_native or expanded):
         raise ValueError('A completed raw optical recovery and an LG generator are required')
     if report['parent_frontend_sha256']!=old['checkpoint_sha256']:raise ValueError('Frontend parent differs from generator binding')
     if report.get('TEST_opened') or report.get('DEV_or_TEST_forward_performed'):
         raise ValueError('Only a completed TRAIN-only frontend update can be rebound here')
     return dict(old,checkpoint_sha256=new_sha,feature_distillation_only_generator_recovery_not_yet_trained=False,
-        TRAIN_coupled_optical_recovery=True,native_visual_readouts_adapted=bool(with_native),generator_not_updated_after_frontend_recovery=True)
+        TRAIN_coupled_optical_recovery=True,native_visual_readouts_adapted=bool(report.get('existing_native_readouts_also_trainable')),
+        pair_expansion=report.get('pair_expansion'),generator_not_updated_after_frontend_recovery=True)
 
 
 def main():
@@ -36,8 +40,13 @@ def main():
     front=torch.load(a.frontend/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     old=torch.load(a.old_frontend/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     assert front['schema']==old['schema']=='qwen3_scene_optical_frontend_v1' and front['step']>0
-    assert front['feature_cache_sha256']==old['feature_cache_sha256'] and set(front['macros'])==set(old['macros'])
-    assert all(v.shape==old['macros'][n].shape for n,v in front['macros'].items())
+    assert front['feature_cache_sha256']==old['feature_cache_sha256']
+    if front['config'].get('pair_expansion'):
+        from .scene_macro_expansion import validate_state
+        validate_state(front,old)
+    else:
+        assert set(front['macros'])==set(old['macros'])
+        assert all(v.shape==old['macros'][n].shape for n,v in front['macros'].items())
     state=dict(state,optical_frontend=binding_metadata(state,report,report['best_sha256']),source_commit=os.environ['T12_SOURCE_COMMIT'])
     a.output.mkdir(parents=True);torch.save(state,a.output/'best_checkpoint.pt');torch.save(state,a.output/'last_checkpoint.pt')
     write(a.output/'execution.json',dict(argv=sys.argv,source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=digest(Path(__file__)),pid=os.getpid()))

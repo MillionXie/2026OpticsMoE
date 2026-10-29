@@ -55,7 +55,7 @@ def frozen_test_protocol(a,state,previous):
 
 
 def install_optical_frontend(qwen,folder,features,baseline_cache):
-    from .qwen_vl_postfree import apply_postfree
+    from .scene_macro_expansion import build
     from .qwen_vl_hybrid import load_macro_state
     if features is None:raise ValueError('LG teacher feature provenance required')
     report=json.loads((folder/'report.json').read_text())
@@ -67,7 +67,7 @@ def install_optical_frontend(qwen,folder,features,baseline_cache):
     assert state['feature_cache_sha256']==feature_report['cache_sha256']
     assert json.loads((features/'model_assets.json').read_text())==json.loads((baseline_cache/'model_assets.json').read_text())['Qwen']
     vision_class=type(qwen.model.visual.blocks[0]);language_class=type(qwen.model.language_model.layers[0])
-    macros=apply_postfree(qwen,vision_pairs=1,language_pairs=1,residual_width=state['config']['residual_width'])
+    macros=build(qwen,state['config'])
     load_macro_state(macros,state['macros']);qwen.eval().requires_grad_(False)
     if state.get('native_readouts') is not None:
         from .scene_native_readouts import restore
@@ -78,6 +78,7 @@ def install_optical_frontend(qwen,folder,features,baseline_cache):
     assert all(.6<=f.alpha.item()<=.900001 for m in macros.values() for f in m.fusions)
     return {'checkpoint_sha256':report['best_sha256'],'retained_original_TF':counts,'actual_removed_TF':42,
             'native_visual_readouts_adapted':state.get('native_readouts') is not None,
+            'pair_expansion':state['config'].get('pair_expansion'),
             'feature_distillation_only_generator_recovery_not_yet_trained':True}
 
 

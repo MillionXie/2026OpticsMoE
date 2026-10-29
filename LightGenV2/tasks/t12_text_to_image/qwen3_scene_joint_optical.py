@@ -2,7 +2,8 @@
 
 Unlike independent feature KD, language prefix states here receive the student's
 actual visual merger/DeepStack outputs. Native retained TF and the readout head
-are frozen. Only existing optical macros update, with TRAIN-only supervision.
+are frozen. Existing native visual readouts and a second E/G pair are optional,
+explicit ablations. Every variant uses TRAIN-only supervision.
 """
 import argparse
 import hashlib
@@ -46,6 +47,10 @@ def recover(a):
     cfg['adapt_native_readouts']=bool(getattr(a,'adapt_native_readouts',False))
     head=QwenSDXLConditions(joint_image_context=parent.get('joint_image_context',False)).cuda().eval().requires_grad_(False)
     head.load_state_dict(parent['head'],strict=True)
+    extra_parameters=0
+    if getattr(a,'expand_pairs',False):
+        from .scene_macro_expansion import expand,contract
+        macros,extra_parameters=expand(qwen);cfg['pair_expansion']=contract()
     rows={r['input_key']:r for r in payload['records'] if r['split']=='train'}
     assert set(payload['TRAIN_electronic_conditions'])==set(rows)
     assert not set(rows)&{r['input_key'] for r in payload['records'] if r['split']=='dev'}
@@ -108,6 +113,11 @@ def recover(a):
         if readouts is not None:readouts.copy_to_native()
         smoke.append(dict(step=i+1,loss=loss.item(),phase_gradients=grads,text_condition_to_visual_phase_gradient=direct_gradient[-1],gradient_norm=float(norm),
             native_readout_gradient_sum=0 if readouts is None else sum(p.grad.abs().sum().item() for p in readouts.master if p.grad is not None)))
+        if getattr(a,'expand_pairs',False) and i==3:
+            new_pair={m:sum(p.grad.abs().sum().item() for n,p in macro.paths[1].named_parameters()
+                if 'raw_phase' in n and p.grad is not None) for m,macro in macros.items()}
+            assert all(math.isfinite(x) and x>0 for x in new_pair.values()),new_pair
+            smoke[-1]['new_pair_nonzero_phase_gradients']=new_pair
     macros.load_state_dict(original,strict=True)
     if readouts is not None:
         from .scene_native_readouts import restore
@@ -143,11 +153,12 @@ def recover(a):
     write(a.output/'report.json',dict(complete=True,stage='distill',steps=a.steps,best_sha256=digest(a.output/'best_checkpoint.pt'),best_fixed_TRAIN_loss=best,
         source_commit=os.environ['T12_SOURCE_COMMIT'],parent_frontend_sha256=bound['checkpoint_sha256'],frozen_generator_head_sha256=ready['best_sha256'],
         teacher_cache_sha256=teacher_ready['cache_sha256'],student_cache_sha256=cache_ready['cache_sha256'],TRAIN_contexts=len(rows),
-        only_existing_optical_macros_trainable=readouts is None,raw_visual_to_language_gradient_path=True,
+        only_existing_optical_macros_trainable=readouts is None and not extra_parameters,raw_visual_to_language_gradient_path=True,
         head_UNet_VAE_retained_Qwen_frozen=readouts is None,head_UNet_VAE_retained_Qwen_TF_frozen=True,
         existing_native_readouts_also_trainable=readouts is not None,
         native_readout_parameters_trained=0 if readouts is None else sum(p.numel() for p in readouts.master),
-        DEV_or_TEST_forward_performed=False,GT_images_or_masks_opened=False,extra_deployment_parameters=0,quality_or_speed_accepted=False,TEST_opened=False))
+        DEV_or_TEST_forward_performed=False,GT_images_or_masks_opened=False,extra_deployment_parameters=extra_parameters,
+        pair_expansion=cfg.get('pair_expansion'),quality_or_speed_accepted=False,TEST_opened=False))
     write(a.output/'effective_config.json',cfg)
 
 
@@ -157,7 +168,9 @@ def statistics_mean(values):return sum(values)/len(values)
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['generator','student-cache','teacher-cache','data','qwen','frontend','features','output']:p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--steps',type=int,default=400);p.add_argument('--adapt-native-readouts',action='store_true');a=p.parse_args();a.qwen_side=256
+    p.add_argument('--steps',type=int,default=400);p.add_argument('--adapt-native-readouts',action='store_true')
+    p.add_argument('--expand-pairs',action='store_true',help='Approved second E/G pair, same router; all ten optical cycles counted')
+    a=p.parse_args();a.qwen_side=256
     assert a.steps>0 and not a.output.exists() and os.environ.get('CUDA_VISIBLE_DEVICES')==GPU and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
     a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0);torch.manual_seed(1042)
     write(a.output/'execution.json',dict(argv=sys.argv,source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=digest(Path(__file__)),pid=os.getpid()))
