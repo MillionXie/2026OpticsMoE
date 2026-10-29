@@ -33,6 +33,28 @@ caption做active-token MSE／弱padding／pooled对齐，4步真实梯度smoke�
 同一图保留完整prompt、模型／权重身份，另给全16张均值与全部原图，不挑最好样本。
 旧颜色协议评分caption与输出不可变；新图须用新prompt实际重推理、重评分，不直接沿用旧数值。
 
+该新协议实跑`qwen3_scene_appearance_adapt_20261029`已完成，训练／生成／评分源码`42c599ab4`：
+64个TRAIN条件实际完整Qwen前向，4步有限非零梯度smoke后从同一父权重重置，正式600步只训练
+3,848,448个原有文字读出／pooled参数，图像读出与共享投影逐张量核验不变。TRAIN文字目标loss
+.8702109→.0376946（同一新目标）；best SHA`db09e6f2a93371e37b43f395fc0e54be5710a835fe4f976a319aeb042e7dc32a`。
+这个loss不与旧颜色任务loss跨目标比较，也不是生图正确率。随后两版各16次实际raw Qwen前向，
+raw hidden／vision与对应新缓存逐元素相同；每请求初始noise SHA相同，全部32个原始1024PNG保留。
+新run `qwen3_scene_appearance_metrics32_20261029`的全组均值如下，各行16张、同一无换色完整提示／紧凑评分描述：
+
+| 无换色开发设置 | CLIP-T↑ | DINOv2-I↑ | ImageReward_compact↑ |
+|---|---:|---:|---:|
+| 现有接口权重 | .305321 | .276364 | −2.139351 |
+| 小范围文字适配后 | .306680 | .289865 | −1.885012 |
+
+这些均值变化未作显著性结论，且不普遍：台灯DINOv2-I .393389→.339911，靠垫CLIP-T .317817→.312366。
+已查看全部32图：部分主体更突出／房间家具更明确，但仍有灯形变化、家具遗漏、靠垫图案铺满沙发等错误。
+不将新权重直接认定为正式配对训练baseline或LG合格教师，不用去掉颜色要求来宣称已解决换色。
+`reports/scene_generation_20261029/plot_appearance_probe.py`生成固定四请求和四页全部请求图，
+每张都标CLIP-T／DINOv2-I／ImageReward，页首明确完整组均值与n，保留完整prompt与种子，逐条核对RGB／评分SHA。
+当前结果属8款TRAIN商品的开发小试，DEV128与独立TEST500均未推理／选模；无唯一GT，未使用PSNR／SSIM／FID伪评。
+本地／服务器12项新旧CPU检查通过，所有数据／图／分数均SHA下载；父
+`qwen3_scene_appearance_workflow_20261029`的生成子2106099与评分子2116589已退出且GPU释放收据true。
+
 用户已认可这种展示形式，并授权推进数据与Qwen baseline。输入为白底商品RGB、完整Generate文字、
 source像素与seed序号派生的随机种子；保留主体大致造型，未指定细节自由。无光照方向要求，
 TEST不设唯一正确图；明确颜色／材质／条纹及有家具的房间仍须遵循。历史严格编辑分数不能当新任务结果。
