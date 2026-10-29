@@ -1,7 +1,7 @@
 import unittest
 from PIL import Image,ImageDraw
 import numpy as np
-from ..white_reference_outline_probe import outline_from_rgb
+from ..white_reference_outline_probe import outline_from_rgb,structural_canny_from_rgb
 
 PRESET={'white_threshold':245,'minimum_component_area':9,'maximum_product_extent':.68,'center_y':.53,'edge_width':2}
 
@@ -32,6 +32,17 @@ class OutlineConditionTests(unittest.TestCase):
     def test_blank_or_nonwhite_reference_rejected(self):
         for image in [Image.new('RGB',(256,256),'white'),Image.new('RGB',(256,256),'grey')]:
             with self.assertRaises(ValueError):outline_from_rgb(image,512,PRESET)
+
+    def test_native_canny_retains_internal_structure_without_modifying_RGB(self):
+        im=Image.new('RGB',(256,256),'white');d=ImageDraw.Draw(im)
+        d.rectangle((30,70,225,180),fill='grey');d.rectangle((80,90,100,160),fill='black')
+        before=im.tobytes();preset=dict(PRESET,canny_low=100,canny_high=200,canny_blur_sigma=1.5)
+        edge,meta=structural_canny_from_rgb(im,512,preset)
+        self.assertEqual(before,im.tobytes());self.assertEqual(meta['condition_type'],'native_RGB_canny')
+        self.assertEqual(set(np.unique(np.asarray(edge))),{0,255})
+        # The inner black strip supplies an edge absent from the external silhouette.
+        outline,_=outline_from_rgb(im,512,PRESET)
+        self.assertFalse(np.array_equal(np.asarray(edge),np.asarray(outline)))
 
 
 if __name__=='__main__':unittest.main()

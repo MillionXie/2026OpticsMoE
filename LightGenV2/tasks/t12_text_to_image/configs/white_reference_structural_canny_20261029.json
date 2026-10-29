@@ -1,0 +1,14 @@
+{
+  "schema": "abo_white_reference_scene_feasibility_v1",
+  "prompt_profile": "free_lighting_v2",
+  "condition_type": "native_RGB_canny",
+  "use_ip_adapter": false,
+  "seeds": [1042, 1043],
+  "negative_prompt": "people, readable text, logo, watermark, duplicate product, malformed structure, flat solid-color backdrop",
+  "sdxl_ipadapter": {"resolution": 1024, "steps": 30, "text_guidance": 7.5, "image_scale": 0.0, "prompt_style": "explicit_caption"},
+  "outline": {"white_threshold": 245, "minimum_component_area": 9, "maximum_product_extent": 0.68, "center_y": 0.53, "edge_width": 2, "canny_blur_sigma": 1.5, "canny_low": 100, "canny_high": 200},
+  "control_guidance_end": 0.5,
+  "variants": [{"name": "canny025", "control_scale": 0.25}, {"name": "canny045", "control_scale": 0.45}],
+  "controlnet_revision": "eb115a19a10d14909256db740ed109532ab1483c",
+  "protocol": "Frozen native SDXL ControlNet with RGB Canny, no IP-Adapter/image encoder loaded. Keep structural as well as external edges from reference RGB, never GT. Two strengths, all16 requests each, explicit shared initial latent verified. Other prompt/seed/resolution settings stay unchanged; no independent TEST, no training. This changes both edge recipe and conditioning architecture/end step relative to the earlier outline sweep, so compare whole configurations without single-cause attribution."
+}

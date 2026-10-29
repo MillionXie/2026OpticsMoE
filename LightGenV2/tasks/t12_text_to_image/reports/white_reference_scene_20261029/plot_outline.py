@@ -14,12 +14,14 @@ def sha(path):return hashlib.sha256(path.read_bytes()).hexdigest()
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--runs',type=Path,required=True);p.add_argument('--metrics',type=Path,required=True)
+    p.add_argument('--sweep-run',default='white_reference_outline_sweep_20261029')
+    p.add_argument('--variant-names',nargs=2,default=['scale035','scale065'])
     p.add_argument('--output',type=Path,required=True);a=p.parse_args()
     if a.output.exists():raise ValueError('New review run required')
     assert json.loads((a.metrics/'report.json').read_text())['complete']
     variants=[('No outline',a.runs/'white_reference_sdxl_free_lighting_20261029'),
-              ('Outline0.35',a.runs/'white_reference_outline_sweep_20261029/scale035'),
-              ('Outline0.65',a.runs/'white_reference_outline_sweep_20261029/scale065')]
+              ('Control '+a.variant_names[0],a.runs/a.sweep_run/a.variant_names[0]),
+              ('Control '+a.variant_names[1],a.runs/a.sweep_run/a.variant_names[1])]
     scores=json.loads((a.metrics/'per_image.json').read_text());groups={}
     for label,root in variants:
         rows=[r for r in scores if r['run_id']==root.name];assert len(rows)==16
@@ -29,7 +31,7 @@ def main():
     for key in keys:
         reference=groups['No outline'][1][key]
         for _,rows in groups.values():assert (rows[key]['prompt'],rows[key]['input_sha256'])==(reference['prompt'],reference['input_sha256'])
-        assert groups['Outline0.35'][1][key]['initial_latent_sha256']==groups['Outline0.65'][1][key]['initial_latent_sha256']
+        assert groups[variants[1][0]][1][key]['initial_latent_sha256']==groups[variants[2][0]][1][key]['initial_latent_sha256']
     font=ImageFont.load_default()
     for name in ['arial.ttf','DejaVuSans.ttf']:
         try:font=ImageFont.truetype(name,14);break

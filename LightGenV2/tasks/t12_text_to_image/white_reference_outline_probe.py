@@ -51,6 +51,22 @@ def outline_from_rgb(reference, resolution, preset):
         'recipe':preset}
 
 
+def structural_canny_from_rgb(reference, resolution, preset):
+    """Native RGB Canny includes structural/shading boundaries, never GT."""
+    import cv2
+    _,meta=outline_from_rgb(reference,resolution,preset)
+    x,y,w,h=meta['source_bbox_xywh'];s=resolution*preset['maximum_product_extent']/max(w,h)
+    size=(round(w*s),round(h*s));offset=(round(resolution*.5-size[0]*.5),round(resolution*preset['center_y']-size[1]*.5))
+    canvas=Image.new('RGB',(resolution,resolution),'white')
+    canvas.paste(reference.convert('RGB').crop((x,y,x+w,y+h)).resize(size,Image.Resampling.BICUBIC),offset)
+    blurred=cv2.GaussianBlur(np.asarray(canvas),(5,5),preset['canny_blur_sigma'])
+    edge=cv2.Canny(blurred,preset['canny_low'],preset['canny_high'])
+    if not np.any(edge):raise ValueError('Empty native RGB Canny condition')
+    return Image.fromarray(edge).convert('RGB'),{**meta,'condition_type':'native_RGB_canny',
+        'internal_texture_edges_used':'Possible; native RGB edges include structural and some texture boundaries',
+        'RGB_canvas_is_input_preprocessing_only_not_output_pasting':True}
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['config','inputs','model-path','adapter-path','controlnet-path','output']:
@@ -73,8 +89,9 @@ def main():
         inputs=json.loads((args.inputs/'reference_manifest.json').read_text(encoding='utf-8'))
         if inputs['schema']!=SCHEMA or len(inputs['references'])!=4 or any(r['split']!='train' for r in inputs['references']):
             raise ValueError('Exactly four reviewed TRAIN references required')
-        assets={'base':model_manifest(args.model_path),'adapter':model_manifest(args.adapter_path),
-                'controlnet':model_manifest(args.controlnet_path)}
+        use_adapter=cfg.get('use_ip_adapter',True)
+        assets={'base':model_manifest(args.model_path),'controlnet':model_manifest(args.controlnet_path)}
+        if use_adapter:assets['adapter']=model_manifest(args.adapter_path)
         write(args.output/'model_assets.json',assets)
         preset=cfg['sdxl_ipadapter'];resolution=preset['resolution'];geometry={}
         sheet=Image.new('RGB',(512,4*282),'white');draw=ImageDraw.Draw(sheet)
@@ -82,7 +99,8 @@ def main():
             path=args.inputs/ref['input_PNG']
             if digest(path)!=ref['input_sha256']:raise ValueError('Reference changed')
             with Image.open(path) as im:reference=im.convert('RGB').copy()
-            edge,meta=outline_from_rgb(reference,resolution,cfg['outline'])
+            recipe=structural_canny_from_rgb if cfg.get('condition_type')=='native_RGB_canny' else outline_from_rgb
+            edge,meta=recipe(reference,resolution,cfg['outline'])
             name=ref['reference_id']+'_outline.png';edge.save(args.output/name)
             geometry[ref['reference_id']]={**meta,'edge_PNG':name,'edge_sha256':digest(args.output/name),
                                          'reference_sha256':ref['input_sha256']}
@@ -91,12 +109,14 @@ def main():
             sheet.paste(edge.resize((256,256)),(256,i*282+24))
         sheet.save(args.output/'input_outline_preview.png');write(args.output/'geometry.json',geometry)
         control=ControlNetModel.from_pretrained(args.controlnet_path,variant='fp16',torch_dtype=torch.float16,local_files_only=True)
-        encoder=CLIPVisionModelWithProjection.from_pretrained(args.adapter_path/'models/image_encoder',torch_dtype=torch.float16,local_files_only=True)
+        encoder=CLIPVisionModelWithProjection.from_pretrained(args.adapter_path/'models/image_encoder',torch_dtype=torch.float16,local_files_only=True) if use_adapter else None
         pipe=StableDiffusionXLControlNetPipeline.from_pretrained(args.model_path,variant='fp16',torch_dtype=torch.float16,
                   controlnet=control,image_encoder=encoder,local_files_only=True).to('cuda')
-        pipe.load_ip_adapter(str(args.adapter_path),subfolder='sdxl_models',weight_name='ip-adapter-plus_sdxl_vit-h.safetensors',
-                             image_encoder_folder=None,local_files_only=True)
-        pipe.set_ip_adapter_scale(preset['image_scale']);pipe.set_progress_bar_config(disable=True)
+        if use_adapter:
+            pipe.load_ip_adapter(str(args.adapter_path),subfolder='sdxl_models',weight_name='ip-adapter-plus_sdxl_vit-h.safetensors',
+                                 image_encoder_folder=None,local_files_only=True)
+            pipe.set_ip_adapter_scale(preset['image_scale'])
+        pipe.set_progress_bar_config(disable=True)
         for component in pipe.components.values():
             if isinstance(component,torch.nn.Module):component.eval().requires_grad_(False)
         count=sum(p.numel() for p in {id(p):p for c in pipe.components.values() if isinstance(c,torch.nn.Module) for p in c.parameters()}.values())
@@ -118,14 +138,14 @@ def main():
                         noise=torch.randn((1,4,resolution//8,resolution//8),generator=generator,device='cuda',dtype=torch.float16)
                         noise_sha=__import__('hashlib').sha256(noise.cpu().numpy().tobytes()).hexdigest()
                         with torch.inference_mode():
-                            result=pipe(prompt=prompt,negative_prompt=cfg['negative_prompt'],ip_adapter_image=reference,
+                            result=pipe(prompt=prompt,negative_prompt=cfg['negative_prompt'],**({'ip_adapter_image':reference} if use_adapter else {}),
                                 image=edge,width=resolution,height=resolution,num_inference_steps=preset['steps'],
                                 guidance_scale=preset['text_guidance'],generator=generator,latents=noise,
                                 controlnet_conditioning_scale=variant['control_scale'],control_guidance_start=0.,
                                 control_guidance_end=cfg['control_guidance_end']).images[0]
                         if result.size!=(resolution,resolution):raise ValueError('Native resolution mismatch')
                         name=f'{ref["reference_id"]}_condition{condition["condition_id"]}_seed{seed}.png';result.save(out/name)
-                        records.append({'model':'sdxl_ipadapter_controlnet_outline','reference_id':ref['reference_id'],
+                        records.append({'model':'sdxl_ipadapter_controlnet_outline' if use_adapter else 'sdxl_controlnet_RGB_canny','reference_id':ref['reference_id'],
                             'condition_id':condition['condition_id'],'category':ref['category'],'prompt':condition['prompt'],'model_prompt':prompt,
                             'requested_attributes':condition['requested_attributes'],'seed':seed,'resolution':resolution,'preset':preset,
                             'control_scale':variant['control_scale'],'input_sha256':ref['input_sha256'],'derived_outline':geometry[ref['reference_id']],
@@ -133,10 +153,10 @@ def main():
                             'diagnostic_generation_seconds_not_latency_benchmark':time.time()-began})
                         write(out/'images.json',records);write(args.output/'progress.json',{'variant':variant['name'],'done':len(records),'total':16})
             panels=render_panels(out,records,inputs)
-            report={'complete':True,'schema':SCHEMA,'model':'sdxl_ipadapter_controlnet_outline','source_commit':commit,
+            report={'complete':True,'schema':SCHEMA,'model':'sdxl_ipadapter_controlnet_outline' if use_adapter else 'sdxl_controlnet_RGB_canny','source_commit':commit,
                 'generated_count':len(records),'prompt_profile':cfg['prompt_profile'],'input_resolution':256,'inference_resolution':resolution,
                 'training_performed':False,'quality_accepted':False,'independent_TEST_opened':False,
-                'generator_input_whitelist':['white reference RGB','full text','seed'],'derived_input_condition':'RGB external outline only, no GT mask',
+                'generator_input_whitelist':['white reference RGB','full text','seed'],'derived_input_condition':cfg.get('condition_type','external_outline')+', no GT mask',
                 'GT_mask_retrieval_paste_or_external_background_used':False,'parameters_in_loaded_pipeline':count,'panels':panels,
                 'shared_assets_sha256':digest(args.output/'model_assets.json'),'reference_manifest_sha256':digest(args.inputs/'reference_manifest.json')}
             write(out/'report.json',report);variant_reports[variant['name']]=report
