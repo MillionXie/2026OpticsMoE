@@ -53,6 +53,29 @@ native CLIP教师只在TRAIN缓存阶段运行，训练后部署可不加载它�
 后续需要真实raw输入生成重载／逐属性审查，再做审核场景对的标准噪声预测训练及必要LoRA。
 这是保留公开生成先验的工程候选，不保证仅靠条件特征拟合就能超过原生生成器的多属性绑定能力。
 
+`scene_generation_TRAIN_pilot64_20261029`已完整64图，8张全条件／全seed板均查看并下载SHA核验，
+父`scene_data_pilot_workflow_20261029`的两子1963388/1964478已退出且GPU释放收据true。
+房间形式可用，但仍有台灯变落地灯、长枕变方、纯色／条纹保留花纹、缺少指定支撑物等，
+不将64张全部提升为正确GT，目视记录SHA`ab0401b5c40c0ffd7d556f322c49408f33213c63c934e134ef3a1e5ee26cb3f4`。
+Qwen接口首次启动在资产清单阶段因HF绝对`.cache`父目录被过滤而退出，没有训练；
+修复只按snapshot相对路径过滤，失败证据与GPU释放收据保留。新实现`46f7f598f`在服务器8项CPU测试通过。
+`qwen3_scene_condition_alignment_v2_20261029`已完成256个TRAIN输入实际完整Qwen缓存、4步真实有限梯度smoke、
+1200步条件对齐，best SHA`b3f1abd51c54ad63b112b11e5322a9959a8c7b05f3476833c1e7580fd6a029eb`，
+TRAIN条件loss .2763600564。后续16次真实RGB／完整文字前向与缓存hidden及原生vision逐元素差0，
+生成时CLIP编码器均未加载、未调用参考VAE。完整原Qwen2,127,532,032参数、适配器7,791,616，
+生成端驻留SDXL/IP/VAE参数3,074,866,411，固定无条件图像buffer328,960元素，不能只报适配器作部署总数。
+所有16图均查看：颜色常沿用参考、靠垫纹理扩散至沙发，复杂条件未遵循；该loss不是编辑／生成成功证明。
+父`qwen3_scene_condition_workflow_v2_20261029`子1992021退出且GPU释放true。
+`reports/scene_generation_20261029/plot_condition_pilot.py`固定／全部同请求对照并核初始噪声SHA，
+不按效果选图；两端条件架构不同，不作单因素因果或正式主表排名。
+
+下一步`qwen3_scene_diffusion_smoke`使用独立`scene_TRAIN_curated_smoke6_20261029`：从上述TRAIN候选
+目视挑6对／5款，按画面中可确认的内容**只修正TRAIN文字标签**，保留原请求／生成记录，不改变DEV/TEST。
+它只用于配对loader／反向链路测试，不是足够的正式训练集，不将筛选后的成功图当测试正确率。
+完整冻结Qwen对这6条新文字实际前向；冻结VAE只编码TRAIN目标，标准随机timestep加噪latent监督epsilon MSE，
+适配器与UNet rank4 LoRA接收真实梯度，基础UNet/VAE/Qwen冻结；无参考VAE推理旁路。
+4步512反向smoke是内存／梯度检查，正式生图协议仍1024，不能冒称已完成配对训练或效果达标。
+
 新增先导`white_reference_outline_probe`／配置`white_reference_outline_sweep_20261029`验证参考粗几何：
 固定原4款TRAIN白底RGB、完整无光照方向Generate提示和两seed，使用冻结SDXL＋IP-Adapter Plus，
 再加官方`diffusers/controlnet-canny-sdxl-1.0@eb115a19a10d14909256db740ed109532ab1483c`。
