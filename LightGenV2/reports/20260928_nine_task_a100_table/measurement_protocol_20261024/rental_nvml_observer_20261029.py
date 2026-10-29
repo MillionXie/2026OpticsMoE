@@ -8,6 +8,12 @@ GPU='GPU-30fecb94-0222-a3d5-d952-a91f2cab2f43'
 def observer_command(gpu,path):
     if gpu!=GPU:raise ValueError('Exact new rental GPU required')
     return [sys.executable,'-u',str(Path(__file__).resolve()),'--observer','--gpu',gpu,'--raw',str(path)]
-if __name__=='__main__':
+
+def configure_receiver():
     original.GPU=GPU
+    original.POWER_LIMIT_MW=400000
+    original.observer_command=observer_command
+
+if __name__=='__main__':
+    configure_receiver()
     original.main()

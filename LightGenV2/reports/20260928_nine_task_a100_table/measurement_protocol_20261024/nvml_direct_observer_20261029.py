@@ -24,7 +24,12 @@ from LightGenV2.tasks.t06_video_quality_assessment.batch_telemetry import Sample
 from LightGenV2.tasks.t06_video_quality_assessment.nvml_observer_process import ProcessTelemetrySampler
 
 GPU='GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55'
+POWER_LIMIT_MW=250000  # laboratory default; explicit rental profile must pin400000
 VERSION='direct_NVML_actual_API_receipt_no_stdout_hop_v1'
+
+def validate_device_identity(actual,power_limit_mw):
+    if actual!=GPU or power_limit_mw!=POWER_LIMIT_MW:
+        raise ValueError('Exact physical UUID and configured power cap required, never changed')
 
 def acquire(nvml,handle,phase,clock=time.monotonic,unix=time.time):
     start=clock();mw=nvml.nvmlDeviceGetPowerUsage(handle);power_receipt=clock();power_unix=unix()
@@ -51,9 +56,10 @@ class Sampler:
         self.handle=pynvml.nvmlDeviceGetHandleByUUID(self.gpu)
         actual=pynvml.nvmlDeviceGetUUID(self.handle)
         if isinstance(actual,bytes):actual=actual.decode()
-        if actual!=GPU or pynvml.nvmlDeviceGetPowerManagementLimit(self.handle)!=250000:
-            raise ValueError('Original physical UUID and250W cap required, never changed')
+        power_limit_mw=pynvml.nvmlDeviceGetPowerManagementLimit(self.handle)
+        validate_device_identity(actual,power_limit_mw)
         self.identity=dict(version=VERSION,pid=os.getpid(),gpu_uuid=actual,
+            power_limit_milliwatts=power_limit_mw,expected_power_limit_milliwatts=POWER_LIMIT_MW,
             requested_poll_interval_s=.05,query_functions=['nvmlDeviceGetPowerUsage','nvmlDeviceGetUtilizationRates','nvmlDeviceGetMemoryInfo'],
             timestamp_origin='power API return in isolated observer process',API_bracket_maximum_s=.25,
             raw_IO_in_acquisition_thread=False,CUDA_context_created=False,

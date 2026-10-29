@@ -34,7 +34,7 @@ def test_receiver():
 def test_native_rows_subset():
     from types import SimpleNamespace
     manifest=entry.base.TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/provisioning/original_manifest.csv'
-    args=SimpleNamespace(profile='rental',gpu_uuid=entry.GPU,pipe='/data/tmp/rental_fullscope_20261029_02',suite_root=entry.ROOT,manifest=manifest)
+    args=SimpleNamespace(profile='rental',gpu_uuid=entry.GPU,pipe='/data/tmp/rental_fullscope_20261029_03',suite_root=entry.ROOT,manifest=manifest)
     legacy=entry.initialize(args)
     rows=legacy.engine.base.old.rows()
     # Original native runtime insists on558 metadata rows. The outer
@@ -59,6 +59,36 @@ def test_pipe_parent_provision():
         assert pipe.parent.is_dir() and not pipe.exists()
     assert 'torch' not in sys.modules
 
+def test_rental_NVML400_profile_actual_sampler_start():
+    from tempfile import TemporaryDirectory
+    from types import SimpleNamespace
+    from unittest.mock import patch
+    original=entry.observer.original
+    old_gpu,old_cap,old_command=original.GPU,original.POWER_LIMIT_MW,original.observer_command
+    fake=SimpleNamespace(nvmlInit=lambda:None,nvmlShutdown=lambda:None,
+        nvmlDeviceGetHandleByUUID=lambda x:x,nvmlDeviceGetUUID=lambda h:entry.GPU,
+        nvmlDeviceGetPowerManagementLimit=lambda h:400000,
+        nvmlDeviceGetPowerUsage=lambda h:65837,nvmlDeviceGetUtilizationRates=lambda h:SimpleNamespace(gpu=37),
+        nvmlDeviceGetMemoryInfo=lambda h:SimpleNamespace(used=1536*1024**2),
+        nvmlSystemGetDriverVersion=lambda:'CPU fake',nvmlSystemGetNVMLVersion=lambda:'CPU fake')
+    try:
+        entry.observer.configure_receiver()
+        with TemporaryDirectory() as folder,patch.dict(sys.modules,{'pynvml':fake}):
+            sampler=original.Sampler(entry.GPU,Path(folder)/'new.jsonl');sampler.start()
+            assert sampler.identity['power_limit_milliwatts']==400000
+            sampler.stop()
+            fake.nvmlDeviceGetPowerManagementLimit=lambda h:250000
+            try:original.Sampler(entry.GPU,Path(folder)/'must_not_create.jsonl').start()
+            except ValueError:pass
+            else:raise AssertionError('Lab250 cap must not qualify for rental400')
+            fake.nvmlDeviceGetPowerManagementLimit=lambda h:400000
+            fake.nvmlDeviceGetUUID=lambda h:'foreign'
+            try:original.Sampler(entry.GPU,Path(folder)/'foreign.jsonl').start()
+            except ValueError:pass
+            else:raise AssertionError('Foreign UUID must be rejected')
+    finally:original.GPU,original.POWER_LIMIT_MW,original.observer_command=old_gpu,old_cap,old_command
+    assert old_cap==250000 and 'torch' not in sys.modules
+
 if __name__=='__main__':
-    test_exact_plan();test_cpu_scope();test_receiver();test_native_rows_subset();test_finite_launcher_cpu();test_pipe_parent_provision()
-    print('{"status":"passed","tests":6,"torch_imported":false}')
+    test_exact_plan();test_cpu_scope();test_receiver();test_native_rows_subset();test_finite_launcher_cpu();test_pipe_parent_provision();test_rental_NVML400_profile_actual_sampler_start()
+    print('{"status":"passed","tests":7,"torch_imported":false}')

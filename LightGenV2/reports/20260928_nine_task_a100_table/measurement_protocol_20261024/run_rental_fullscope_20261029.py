@@ -7,6 +7,7 @@ import argparse
 import csv
 import json
 import os
+import subprocess
 from pathlib import Path
 import sys
 import time
@@ -17,7 +18,7 @@ import nvml_direct_observer_20261029 as direct
 import serialized_mps_guard_20261029 as serialized
 
 ENTRY=Path(__file__).resolve();HERE=ENTRY.parent;REPO=adapter.REPO;base=adapter.base
-ROOT=base.TASK/'runs/simulation/rental_fullscope_20261029_02'
+ROOT=base.TASK/'runs/simulation/rental_fullscope_20261029_03'
 GPU=observer.GPU
 PROTOCOL='rental80_cold_file_to_CPU_B1_512x3_20261029'
 NATIVE_INITIALIZE=base.initialize_profile
@@ -31,7 +32,7 @@ def prepare_pipe_parent(pipe):
     if not parent.is_dir():raise ValueError('Private pipe parent is not a directory')
 
 def verified_admission_predecessor():
-    """Only the preserved, zero-worker01 missing-parent failure may precede02."""
+    """Exact preserved zero-inference01/02 failures; never resume either root."""
     old=ROOT.with_name('rental_fullscope_20261029_01');p=old/'suite_status.json'
     if base.sha(p)!='76b8d63325c64ef9df2351fcf5266bc72a28afb99c52745f3d53dacbe14a2002':
         raise ValueError('Original stopped admission evidence differs')
@@ -42,6 +43,21 @@ def verified_admission_predecessor():
     if any(Path('/proc/'+str(pid)).exists() for pid in (2836,2837)):
         raise ValueError('Original admission processes must truly exit')
     if Path('/data/tmp/rental_fullscope_20261029_01').exists():raise ValueError('Old private pipe unexpectedly exists')
+    old=ROOT.with_name('rental_fullscope_20261029_02');p=old/'suite_status.json'
+    if base.sha(p)!='e09855bd1656679dbfd7b16792d7c6f79152a26ae6124f588729dbcfd270b4b6':
+        raise ValueError('Original observer-profile failure evidence differs')
+    state=json.loads(p.read_text());leaf=old/'kimi_cap50_repeat01'
+    if state['status']!='stopped' or state['completed'] or state.get('mps_released') is not True:
+        raise ValueError('Original02 must be stopped and fully released')
+    status=json.loads((leaf/'status.json').read_text())
+    if (status['status']!='failed' or status['samples']!=0 or (leaf/'calls.csv').read_text().strip()
+            or 'Original physical UUID and250W cap required' not in status['error']):
+        raise ValueError('Only exact pre-inference resource-profile error is authorized here')
+    if any(Path('/proc/'+str(pid)).exists() for pid in (2970,2971,2989)):
+        raise ValueError('Original02 parent/worker must truly exit')
+    check=subprocess.run(['nvidia-cuda-mps-control'],input='get_server_list\n',text=True,capture_output=True,timeout=5,
+        env=dict(os.environ,CUDA_MPS_PIPE_DIRECTORY='/data/tmp/rental_fullscope_20261029_02'))
+    if check.returncode!=1:raise ValueError('Original02 private daemon must be absent')
 
 def plan(profile,models=None,caps=None,repeats=None):
     if profile!='rental':raise ValueError('Only explicit new rental authorization')
@@ -115,8 +131,8 @@ def main():
     if a.phase!='audit' and (a.deadline is None or not 0<a.deadline-time.time()<=28800):raise ValueError('Finite at most eight-hour deadline required')
     if a.phase=='worker' and (a.model,a.cap,a.repeat) not in plan('rental'):raise ValueError('Exact native worker required')
     a.models=['kimi','deepseek'];a.caps=[50,100];a.repeats=[1,2,3]
-    a.pipe=a.pipe or '/data/tmp/rental_fullscope_20261029_02'
-    if a.pipe!='/data/tmp/rental_fullscope_20261029_02':raise ValueError('Exact private MPS pipe required')
+    a.pipe=a.pipe or '/data/tmp/rental_fullscope_20261029_03'
+    if a.pipe!='/data/tmp/rental_fullscope_20261029_03':raise ValueError('Exact private MPS pipe required')
     configure()
     if a.phase=='audit':
         import json
