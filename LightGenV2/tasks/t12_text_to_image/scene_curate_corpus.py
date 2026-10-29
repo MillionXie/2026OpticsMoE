@@ -72,7 +72,7 @@ def main():
         'parent_candidates_manifest_sha256':digest(a.candidates/'candidates.json'),
         'original_synthetic_outputs_are_training_examples_not_unique_test_GT':True,
         'ABO_reference_attribution':'Amazon Berkeley Objects (ABO), CC BY 4.0',
-        'target_provenance':'Own frozen public SDXL/IP-Adapter/Canny generations, separate from ABO original images.',
+        'target_provenance':'Own synthetic generations from '+', '.join(sorted({r.get('teacher','unspecified teacher') for r in selected}))+', separate from ABO original images.',
         'RGB_compositing_at_inference':False,'image_feedback':False})
 
 

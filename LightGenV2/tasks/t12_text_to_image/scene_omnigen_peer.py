@@ -101,7 +101,7 @@ def generate(a):
         if corpus:records[-1].update(target=filename,target_sha256=digest(a.output/filename),QA_accepted=False,
             teacher='frozen official OmniGen-v1',RGB_paste_or_target_inputs=False)
         write(a.output/('candidates.json' if corpus else 'images.json'),records)
-        write(a.output/'progress.json',{'stage':'raw_frozen_OmniGen_DEV','done':i+1,'total':len(rows)})
+        write(a.output/'progress.json',{'stage':'TRAIN_DEV_whole_scene_candidates' if corpus else 'raw_frozen_OmniGen_DEV','done':i+1,'total':len(rows)})
     parameters=sum(p.numel() for p in {id(p):p for component in pipe.components.values()
         if isinstance(component,torch.nn.Module) for p in component.parameters()}.values())
     final={'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],'scope':'TRAIN_DEV_candidates' if corpus else 'DEV',
