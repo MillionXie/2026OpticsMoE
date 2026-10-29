@@ -1,6 +1,6 @@
 """Same native LightGen-II resize-inclusive computation on the new A10080.
 
-Three original512-video traces, exact original weights and frontend bytes.
+One original512-video trace for the requested approximate software runtime.
 Report actual FFT software wall/board energy separately from the fixed-optics
 schedule estimate. No physical optical hardware or measured hybrid power.
 """
@@ -81,7 +81,8 @@ def suite(a):
     if ROOT.exists():raise FileExistsError('Preserve original LightGen attempt')
     frozen=sources();commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT'];runtime.verify(commit,frozen)
     lock=(SIM/'.temporal_telemetry_a100.lock').open('a');active=False;child=None
-    record=dict(status='admission',pid=os.getpid(),deadline=a.deadline,completed=[],plan=['lg_repeat01','lg_repeat02','lg_repeat03'],gpu_uuid=GPU)
+    record=dict(status='admission',pid=os.getpid(),deadline=a.deadline,completed=[],plan=['lg_repeat01'],gpu_uuid=GPU,
+                purpose='one complete512-video approximate software runtime, not three-round inference statistics')
     try:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
         ROOT.mkdir();runtime.write(ROOT/'source_receipt.json',dict(published_commit=commit,sources=frozen))
