@@ -1,0 +1,80 @@
+{
+  "seed": 17,
+  "total_per_model": 752,
+  "statistics": "Single seed; no across-seed SD.",
+  "role": "Mixed-budget development follow-up: N16=90 epochs, others=60; TEST never in N16 follow-up gradient.",
+  "rows": [
+    {
+      "N": 4,
+      "seed": 17,
+      "phase_side": 478,
+      "parameters": 913936,
+      "original_60_TEST_correct": 457,
+      "new_90_TEST_correct": null,
+      "display_TEST_correct": 457,
+      "display_accuracy_percent": 60.77127659574468,
+      "display_epochs": 60,
+      "role": "Original60-epoch aperture control",
+      "checkpoint_sha256": "6749d5b125f037786bbe6d19d519c872a50a61afd6d61cea044ec425ff6854c0"
+    },
+    {
+      "N": 16,
+      "seed": 17,
+      "phase_side": 986,
+      "parameters": 3888784,
+      "original_60_TEST_correct": 457,
+      "new_90_TEST_correct": 462,
+      "display_TEST_correct": 462,
+      "display_accuracy_percent": 61.43617021276596,
+      "display_epochs": 90,
+      "role": "TRAIN-only post-observed-TEST development follow-up",
+      "checkpoint_sha256": "90cba5064d8c86c2de950892ff79d83ba3ab6af97f9d596ca4f8538c2abdcee8"
+    },
+    {
+      "N": 25,
+      "seed": 17,
+      "phase_side": 1240,
+      "parameters": 6150400,
+      "original_60_TEST_correct": 464,
+      "new_90_TEST_correct": null,
+      "display_TEST_correct": 464,
+      "display_accuracy_percent": 61.702127659574465,
+      "display_epochs": 60,
+      "role": "Original60-epoch aperture control",
+      "checkpoint_sha256": "160729cf52c0fbbc378da5c8772e65e2a4acf246f580b22b8e65b6e01b893177"
+    },
+    {
+      "N": 49,
+      "seed": 17,
+      "phase_side": 1748,
+      "parameters": 12222016,
+      "original_60_TEST_correct": 465,
+      "new_90_TEST_correct": null,
+      "display_TEST_correct": 465,
+      "display_accuracy_percent": 61.83510638297872,
+      "display_epochs": 60,
+      "role": "Original60-epoch aperture control",
+      "checkpoint_sha256": "29f2e1f5b275b452029ce225fe08696a7cb76c51b6426020bfff3bf85fd8ef17"
+    }
+  ],
+  "target": {
+    "interval_correct": [
+      461,
+      462
+    ],
+    "met": true,
+    "margin_above_N4_pp": 0.6648936170212766,
+    "margin_below_N25_pp": 0.26595744680851063,
+    "at_least_0_4pp_above_N4": true,
+    "at_least_0_2pp_below_N25": true,
+    "performance_not_guaranteed": true,
+    "TEST_used_to_select_checkpoint": false
+  },
+  "paired": {
+    "fixed": 5,
+    "regressed": 0,
+    "net": 5
+  },
+  "best_epoch": 89,
+  "source_summary_LF_sha256": "ac7153de88fe96b36fe7ca7c5ea718cf87992492c6d4ab88977851712a086f72"
+}

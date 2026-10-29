@@ -1,0 +1,719 @@
+{
+  "status": "complete",
+  "date": "2026-10-29",
+  "architecture": "d2nn_same_aperture",
+  "display_name": "Dense-OEO N16 TRAIN-only开发跟进",
+  "seed": 17,
+  "experts": 16,
+  "parameters": 3888784,
+  "phase_side": 986,
+  "feature_layers": 4,
+  "nonlinear_OEO_layers": 4,
+  "source_commit": "cebb233f2d0b294938adee7b831d06b8ad8a8d2e",
+  "source_files": {
+    "LightGenV2/tasks/t10_expert_scaling/d2nn_N16_followup.py": "7fb87a19f48cb23b756aee00ec596a74742eaf9a79afce717b1d63aff7243f39",
+    "LightGenV2/tasks/t10_expert_scaling/configs/kather_d2nn_N16_followup_20261029.json": "4439c8412f10eba70345e42a071405fc24158b8af7b60edbfa06e43cf7ba1532",
+    "LightGenV2/tasks/t10_expert_scaling/diagnose_topk.py": "7fb6aaa5824b9939e4250afdd8f7595e486dc2dfcf144f4c1ede6216b02395a4",
+    "LightGenV2/tasks/t10_expert_scaling/train.py": "428432ffba1f983c8b39a966c5293ab1d2fbd6046d2e54fcaf02ab2edb5c5cc0",
+    "LightGenV2/tasks/t10_expert_scaling/model.py": "d7be573246e2068fe4b3fa955efade2421a926816b72cc3ee559243a9522539f",
+    "LightGenV2/tasks/t10_expert_scaling/plan.py": "8edb50ee63f38a24604ccef5535325d506317f00e33ef62ded7a08cd9a31a23a",
+    "LightGenV2/tasks/t10_expert_scaling/configs/study.json": "084b49a4f45488974b3ca682fdf1cbc4ee966cfb632d74ad5cd54fd4d7bc3e4e",
+    "LightGenV2/tasks/t10_expert_scaling/evaluate_test.py": "65ce3e62d122acee5c63fff2c0281985cb6cc838ce1baec24e42c95c97115097",
+    "LightGenV2/tasks/t10_expert_scaling/locked_test_cache.py": "cfec4423c974934b950b13207238e5b840de442f3c5d9cf3c858b632a28b9856",
+    "LightGenV2/common/optical_contract.py": "2dd7f8b78391b5c60e7b5f580eccadac37b1b7baa5e8998a6f019b0d31d1ca06"
+  },
+  "manager_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_d2nn_N16_followup_20261029",
+  "run_dir": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_d2nn_N16_followup_20261029/N16_s17",
+  "source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_d2nn_aperture_migration_20261029/d2nn_same_aperture_N16_s17_resume",
+  "source_best_sha256": "6949a9af03d80abe231aacd6d63c09e793e9f6b89e021779544ea0c093fc193f",
+  "source_last_sha256": "b83b238e7f78b7c562a78dc988c5f07415088c3e520cdd04d85abe857b989946",
+  "training_contract": {
+    "source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t10_expert_scaling/runs/simulation/kather_d2nn_aperture_migration_20261029/d2nn_same_aperture_N16_s17_resume",
+    "source_best_sha256": "6949a9af03d80abe231aacd6d63c09e793e9f6b89e021779544ea0c093fc193f",
+    "source_last_sha256": "b83b238e7f78b7c562a78dc988c5f07415088c3e520cdd04d85abe857b989946",
+    "source_prediction_sha256": "2a033c49971d593ac7de9476bd2f94be1eaf869d447db2874ec6536adb0469a2",
+    "data_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+    "manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+    "gpu_index": 1,
+    "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "minimum_free_mib": 6000,
+    "extra_epochs": 30,
+    "source_epochs": 60,
+    "lr_start": 0.0002,
+    "lr_end": 2e-05,
+    "microbatch": 2,
+    "selection": "VAL_macro_NLL_minimum_EMA_including_source_best",
+    "TEST_gradient_inputs": 0,
+    "source_TEST_correct": 457,
+    "N4_TEST_correct": 457,
+    "N25_TEST_correct": 464,
+    "minimum_margin_above_N4_pp": 0.4,
+    "minimum_margin_below_N25_pp": 0.2,
+    "target_correct_min": 461,
+    "target_correct_max": 462,
+    "target_is_not_guaranteed_or_a_TEST_checkpoint_selector": true,
+    "A100_forbidden": true,
+    "role": "Post-observed-TEST TRAIN-only development follow-up; extra budget makes comparison unequal. Preserve any better result even outside requested narrow interval."
+  },
+  "target": {
+    "interval_correct": [
+      461,
+      462
+    ],
+    "met": true,
+    "margin_above_N4_pp": 0.6648936170212766,
+    "margin_below_N25_pp": 0.26595744680851063,
+    "at_least_0_4pp_above_N4": true,
+    "at_least_0_2pp_below_N25": true,
+    "performance_not_guaranteed": true,
+    "TEST_used_to_select_checkpoint": false
+  },
+  "selected": {
+    "epoch": 89,
+    "TEST": {
+      "correct": 462,
+      "accuracy_percent": 61.43617021276596,
+      "NLL": 0.9992798566818237
+    },
+    "source_TEST": {
+      "correct": 457,
+      "accuracy_percent": 60.77127659574468,
+      "NLL": 1.0141950845718384
+    },
+    "paired": {
+      "fixed": 5,
+      "regressed": 0,
+      "net": 5
+    },
+    "original_TRAIN_correct": 2363,
+    "VAL_correct": 488,
+    "TRAIN": {
+      "accuracy": 0.6759153604507446,
+      "balanced_accuracy": 0.6759153008460999,
+      "macro_f1": 0.6709988117218018,
+      "macro_nll": 0.9187808036804199,
+      "capture_mean": 0.08072755485773087,
+      "confusion_matrix": [
+        [
+          184,
+          7,
+          47,
+          107,
+          2,
+          90,
+          0,
+          0
+        ],
+        [
+          4,
+          325,
+          46,
+          2,
+          32,
+          28,
+          0,
+          0
+        ],
+        [
+          14,
+          78,
+          279,
+          38,
+          12,
+          16,
+          0,
+          0
+        ],
+        [
+          55,
+          4,
+          62,
+          280,
+          0,
+          36,
+          0,
+          0
+        ],
+        [
+          5,
+          160,
+          25,
+          1,
+          177,
+          60,
+          9,
+          0
+        ],
+        [
+          56,
+          4,
+          26,
+          56,
+          25,
+          270,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          8,
+          0,
+          421,
+          8
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          9,
+          427
+        ]
+      ]
+    },
+    "VAL": {
+      "accuracy": 0.6489361524581909,
+      "balanced_accuracy": 0.6489361524581909,
+      "macro_f1": 0.6446899175643921,
+      "macro_nll": 0.9585617780685425,
+      "capture_mean": 0.08129427582025528,
+      "confusion_matrix": [
+        [
+          39,
+          0,
+          15,
+          23,
+          0,
+          17,
+          0,
+          0
+        ],
+        [
+          0,
+          61,
+          14,
+          1,
+          15,
+          3,
+          0,
+          0
+        ],
+        [
+          3,
+          26,
+          52,
+          4,
+          5,
+          4,
+          0,
+          0
+        ],
+        [
+          9,
+          0,
+          22,
+          56,
+          0,
+          7,
+          0,
+          0
+        ],
+        [
+          2,
+          25,
+          5,
+          1,
+          39,
+          13,
+          9,
+          0
+        ],
+        [
+          9,
+          0,
+          5,
+          10,
+          6,
+          64,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          4,
+          0,
+          85,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          92
+        ]
+      ]
+    },
+    "locked_TEST": {
+      "accuracy": 0.6143617033958435,
+      "balanced_accuracy": 0.6143617033958435,
+      "macro_f1": 0.5998831987380981,
+      "macro_nll": 0.9992798566818237,
+      "capture_mean": 0.08140227943658829,
+      "confusion_matrix": [
+        [
+          23,
+          0,
+          15,
+          30,
+          1,
+          25,
+          0,
+          0
+        ],
+        [
+          2,
+          66,
+          9,
+          0,
+          15,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          19,
+          60,
+          6,
+          4,
+          4,
+          0,
+          0
+        ],
+        [
+          15,
+          0,
+          10,
+          62,
+          1,
+          6,
+          0,
+          0
+        ],
+        [
+          0,
+          37,
+          10,
+          0,
+          26,
+          16,
+          5,
+          0
+        ],
+        [
+          15,
+          3,
+          9,
+          13,
+          9,
+          44,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          88,
+          5
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          93
+        ]
+      ]
+    },
+    "best_checkpoint": {
+      "sha256": "90cba5064d8c86c2de950892ff79d83ba3ab6af97f9d596ca4f8538c2abdcee8",
+      "epoch": 89,
+      "model_tensor_sha256": "2ac4814cdfac5fae01591c5e72c3cba44ee57c6dcd20790ec04924a9434c34ba",
+      "live_model_tensor_sha256": "2d481728e987b4bab63c668049ddd548c644f6aa46a41b875f8eb7f211075ca5",
+      "shapes": {
+        "dense_phases.0": [
+          986,
+          986
+        ],
+        "dense_phases.1": [
+          986,
+          986
+        ],
+        "dense_phases.2": [
+          986,
+          986
+        ],
+        "dense_phases.3": [
+          986,
+          986
+        ]
+      },
+      "Adam_steps": [
+        19491,
+        19491,
+        19491,
+        19491
+      ],
+      "val": {
+        "accuracy": 0.6489361524581909,
+        "balanced_accuracy": 0.6489361524581909,
+        "macro_f1": 0.6446899175643921,
+        "macro_nll": 0.9585617780685425,
+        "capture_mean": 0.08129427582025528,
+        "confusion_matrix": [
+          [
+            39,
+            0,
+            15,
+            23,
+            0,
+            17,
+            0,
+            0
+          ],
+          [
+            0,
+            61,
+            14,
+            1,
+            15,
+            3,
+            0,
+            0
+          ],
+          [
+            3,
+            26,
+            52,
+            4,
+            5,
+            4,
+            0,
+            0
+          ],
+          [
+            9,
+            0,
+            22,
+            56,
+            0,
+            7,
+            0,
+            0
+          ],
+          [
+            2,
+            25,
+            5,
+            1,
+            39,
+            13,
+            9,
+            0
+          ],
+          [
+            9,
+            0,
+            5,
+            10,
+            6,
+            64,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            85,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            92
+          ]
+        ]
+      },
+      "all_model_live_Adam_finite": true
+    },
+    "last_checkpoint": {
+      "sha256": "905a8ce4ad232339a7ec486f47de733f00ebe409b7559a58a7ca2794a53f5a06",
+      "epoch": 90,
+      "model_tensor_sha256": "a077c37f02f445598b9a60fb97af122e46ad82d50784ecb2fb1479e1abfaae8b",
+      "live_model_tensor_sha256": "0c5a7e30a3bc6ff8955e4d209572ad802234ff0912ec071f108c79c5f1e5bd6c",
+      "shapes": {
+        "dense_phases.0": [
+          986,
+          986
+        ],
+        "dense_phases.1": [
+          986,
+          986
+        ],
+        "dense_phases.2": [
+          986,
+          986
+        ],
+        "dense_phases.3": [
+          986,
+          986
+        ]
+      },
+      "Adam_steps": [
+        19710,
+        19710,
+        19710,
+        19710
+      ],
+      "val": {
+        "accuracy": 0.6489361524581909,
+        "balanced_accuracy": 0.6489361524581909,
+        "macro_f1": 0.6446899175643921,
+        "macro_nll": 0.9587548971176147,
+        "capture_mean": 0.08140531927347183,
+        "confusion_matrix": [
+          [
+            39,
+            0,
+            15,
+            23,
+            0,
+            17,
+            0,
+            0
+          ],
+          [
+            0,
+            61,
+            14,
+            1,
+            15,
+            3,
+            0,
+            0
+          ],
+          [
+            3,
+            26,
+            52,
+            4,
+            5,
+            4,
+            0,
+            0
+          ],
+          [
+            9,
+            0,
+            22,
+            56,
+            0,
+            7,
+            0,
+            0
+          ],
+          [
+            2,
+            25,
+            5,
+            1,
+            39,
+            13,
+            9,
+            0
+          ],
+          [
+            9,
+            0,
+            5,
+            10,
+            6,
+            64,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
+            0,
+            85,
+            5
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            92
+          ]
+        ]
+      },
+      "all_model_live_Adam_finite": true
+    },
+    "TEST_prediction_sha256": "9648eb90e34eae10e652e68e8d03a0151767f126d07ea3ba5263eb0cda2f72c6",
+    "source_TRAIN_correct": 2321,
+    "source_VAL_correct": 479
+  },
+  "cost": {
+    "extra_TRAIN_gradient_inputs": 104880,
+    "extra_updates": 6570,
+    "source_live_EMA_TRAIN_VAL_forward_inputs": 8496,
+    "per_epoch_VAL_forward_inputs": 22560,
+    "periodic_TRAIN_forward_inputs": 24472,
+    "final_selected_TRAIN_VAL_forward_inputs": 4248,
+    "new_TEST_forward_inputs": 752,
+    "extra_fullmodel_inputs": 165408,
+    "completed_total_TRAIN_gradient_inputs": 314640,
+    "total_optimizer_updates": 19710,
+    "new_stage_elapsed_seconds": 3791.1525280475616,
+    "source_completed_saved_elapsed_seconds": 6764.56312417984,
+    "cumulative_saved_training_selection_elapsed_excluding_TEST_seconds": 10555.715652227402,
+    "TEST_elapsed_seconds": 9.499597549438477,
+    "prior_discarded_partial_epoch_inputs": null,
+    "prior_discarded_partial_epoch_compute_seconds": null,
+    "queue_transfer_deadtime_included": false,
+    "prior_TEST_elapsed_seconds": 15.369940280914307,
+    "recorded_training_selection_and_TEST_elapsed_seconds": 10580.585190057755,
+    "setup_and_CPU_admission_elapsed_included": false
+  },
+  "rows": [
+    {
+      "N": 4,
+      "seed": 17,
+      "phase_side": 478,
+      "parameters": 913936,
+      "original_60_TEST_correct": 457,
+      "new_90_TEST_correct": null,
+      "display_TEST_correct": 457,
+      "display_accuracy_percent": 60.77127659574468,
+      "display_epochs": 60,
+      "role": "Original60-epoch aperture control",
+      "checkpoint_sha256": "6749d5b125f037786bbe6d19d519c872a50a61afd6d61cea044ec425ff6854c0"
+    },
+    {
+      "N": 16,
+      "seed": 17,
+      "phase_side": 986,
+      "parameters": 3888784,
+      "original_60_TEST_correct": 457,
+      "new_90_TEST_correct": 462,
+      "display_TEST_correct": 462,
+      "display_accuracy_percent": 61.43617021276596,
+      "display_epochs": 90,
+      "role": "TRAIN-only post-observed-TEST development follow-up",
+      "checkpoint_sha256": "90cba5064d8c86c2de950892ff79d83ba3ab6af97f9d596ca4f8538c2abdcee8"
+    },
+    {
+      "N": 25,
+      "seed": 17,
+      "phase_side": 1240,
+      "parameters": 6150400,
+      "original_60_TEST_correct": 464,
+      "new_90_TEST_correct": null,
+      "display_TEST_correct": 464,
+      "display_accuracy_percent": 61.702127659574465,
+      "display_epochs": 60,
+      "role": "Original60-epoch aperture control",
+      "checkpoint_sha256": "160729cf52c0fbbc378da5c8772e65e2a4acf246f580b22b8e65b6e01b893177"
+    },
+    {
+      "N": 49,
+      "seed": 17,
+      "phase_side": 1748,
+      "parameters": 12222016,
+      "original_60_TEST_correct": 465,
+      "new_90_TEST_correct": null,
+      "display_TEST_correct": 465,
+      "display_accuracy_percent": 61.83510638297872,
+      "display_epochs": 60,
+      "role": "Original60-epoch aperture control",
+      "checkpoint_sha256": "29f2e1f5b275b452029ce225fe08696a7cb76c51b6426020bfff3bf85fd8ef17"
+    }
+  ],
+  "baseline_report": {
+    "path": "LightGenV2/tasks/t10_expert_scaling/reports/kather_d2nn_same_aperture_s17_20261029/final_summary_20261029.json",
+    "LF_sha256": "5d9999aae7f93e26618eb50bab3e20b07ac16ebb467459563f69742ac495cb75",
+    "preserved": true
+  },
+  "validation": {
+    "status": "passed",
+    "independent_audit_sha256": "7e882306f318eb80920e629e1cebd686b654eedc299cd3d0324a67f0fac5f4c4",
+    "snapshot_manifest_sha256": "d8561510e3cd308c76d1411a25792df54200d2ba18263f6e97ceae4a644c676f",
+    "files_verified": 30,
+    "Git_source_files_verified": 10,
+    "CPU_best_last_source_identity": true,
+    "new_history61_to90_and_Adam19710": true,
+    "source_best59_and_source_last_Adam13140_retained": true,
+    "TEST_real_IDs_labels_probability_CM_NLL_and_paired_verified": true,
+    "TRAIN_VAL_saved_CM_and_CPUbestVAL_verified": true,
+    "TRAIN_VAL_probabilities_exported": false,
+    "PT_downloaded": false,
+    "model_tensor_hash_algorithm": "Sorted parameter name, shape, dtype and contiguous CPU tensor bytes; SHA256"
+  },
+  "artifacts": {
+    "archive_sha256": "4c65ece7c80468471333808ad46ec33c206b7cfc5a7ff3b3d51312ecccbfcd75",
+    "archive_bytes": 225442,
+    "server_archive": "/tmp/t10_d2nn_N16_followup_final_20261029.tar.gz"
+  },
+  "resource_release": {
+    "parent_and_all_children_exited": true,
+    "no_own_compute": true,
+    "foreign_untouched": true,
+    "A100_unused": true,
+    "timestamp": 1793238630.3552775
+  },
+  "interpretation": [
+    "Single seed17, no across-seed mean/SD or significance claim.",
+    "N16 has90 completed TRAIN epochs, other aperture baselines60; this is a mixed-budget development display.",
+    "TEST was already observed before the follow-up request, but never used in this training gradient or checkpoint selection.",
+    "The higher observed incumbent is preserved; no deliberately degraded checkpoint is chosen to satisfy an upper accuracy bound.",
+    "Original60-epoch equal-budget paired plot, all original results, data and PT are retained.",
+    "N4/N25/N49 were not retrained or retested.",
+    "Same global aperture does not equalize total trainable phases or RGB source bandwidth.",
+    "Unknown cost from the previous A100 partial-epoch interruption is not erased."
+  ]
+}
