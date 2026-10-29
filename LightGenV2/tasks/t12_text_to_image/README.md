@@ -36,6 +36,23 @@ Qwen新baseline拟使用新鲜公开完整Qwen3-VL视觉＋语言作为唯一RGB
 先冻结Qwen基础权重／VAE／生成器基础权重，训练适配器；后续LoRA需真实反向smoke及完整raw重载核验，
 不能仅凭条件loss下降声称生图成功。此段为新实现合同，未启动训练前不得写成已完成结果。
 
+新请求run `scene_generation_requests_20261029`已实际CPU制作并SHA下载：2432TRAIN／128DEV／500TEST，
+商品44／8／10、原白底视图76／16／10，重复模型输入0；TEST无生成或特征。当前仅64张TRAIN候选生成，
+全量训练标签尚未验收。数值核查`scene_metric_numeric_audit_20261029`重算三套64／48／48记录，
+均值／样本标准差最大误差1.11e-16，跨3进程重复16输出的四项逐图分数最大差0，6个共同模型资产SHA一致。
+`scene_vqa_calibration_20261029`独立BLIP-VQA预先固定16个TRAIN部件颜色／条纹正反例，15/16与目视标签一致；
+一张暖白灯罩回答yellow而标签white，保留错误不事后放宽答案。这是非盲小型评测器校准，不是生成正确率，
+不足以认证全量自动验收。旧CLIP／DINO／ImageReward仍只能作对应代理分数。
+
+`qwen3_scene_conditioning`实现首个接口小试：全新公开Qwen3-VL-2B完整24视觉／28语言冻结，
+同一模型的完整融合状态与原视觉merger状态进入两个条件读出，分别预测SDXL原生77×2048文字／1280 pooled
+和IP-Adapter Plus所需257×1280图像条件；不新增图文编码器或参考VAE推理旁路。
+native CLIP教师只在TRAIN缓存阶段运行，训练后部署可不加载它们。先取上述8款TRAIN参考的256条件做
+4步真实梯度smoke、从相同随机初始化重置后1200步条件MSE／余弦对齐，保存TRAIN-loss best/last；
+不使用合成场景GT、DEV或TEST，不把它当已完成配对扩散训练。形态和文字两条件都来自Qwen入口，
+后续需要真实raw输入生成重载／逐属性审查，再做审核场景对的标准噪声预测训练及必要LoRA。
+这是保留公开生成先验的工程候选，不保证仅靠条件特征拟合就能超过原生生成器的多属性绑定能力。
+
 新增先导`white_reference_outline_probe`／配置`white_reference_outline_sweep_20261029`验证参考粗几何：
 固定原4款TRAIN白底RGB、完整无光照方向Generate提示和两seed，使用冻结SDXL＋IP-Adapter Plus，
 再加官方`diffusers/controlnet-canny-sdxl-1.0@eb115a19a10d14909256db740ed109532ab1483c`。
