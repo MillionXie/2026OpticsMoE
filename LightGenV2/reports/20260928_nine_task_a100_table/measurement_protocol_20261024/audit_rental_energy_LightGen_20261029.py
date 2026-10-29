@@ -41,19 +41,21 @@ def preserved(root):
 
 def baselines():
     import run_rental_energy_remeasure_20261029 as entry
-    root=SIM/'rental_energy_remeasure_20261029_02';out=root/'local_independent_pooled_audit01.json'
+    root=SIM/'rental_energy_remeasure_20261030_03';out=root/'local_independent_pooled_audit01.json'
     if out.exists():raise FileExistsError('Do not repeat accepted independent audit')
     receipt_sha=preserved(root);s=read(root/'suite_status.json')
     prior=SIM/'rental_energy_remeasure_20261029_01';prior_sha=preserved(prior);old=read(prior/'suite_status.json')
+    second=SIM/'rental_energy_remeasure_20261029_02';second_sha=preserved(second);mid=read(second/'suite_status.json')
     if old['status']!='stopped' or old['completed']!=EXPECTED[:5]:raise ValueError('Exact five-qualified-point prefix required')
-    if s['status']!='complete' or s['completed']!=EXPECTED[5:] or s.get('mps_released') is not True:raise ValueError('All seven remaining original points must close')
+    if mid['status']!='stopped' or mid['completed']!=EXPECTED[5:6] or not mid.get('mps_released'):raise ValueError('Qualified sixth point preserved across safe deadline transition')
+    if s['status']!='complete' or s['completed']!=EXPECTED[6:] or s.get('mps_released') is not True:raise ValueError('All six remaining original points must close')
     entry.configure()
     # Transport-only location of the unchanged exact-SHA receipt, not a gate change.
     entry.timing.STORAGE_RECEIPT=root/'evidence/input_local_overlay_receipt01.json'
     manifest=entry.base.TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/provisioning/original_manifest.csv'
     audits=[]
     for name in EXPECTED:
-        leaf=(prior if name in EXPECTED[:5] else root)/name
+        leaf=(prior if name in EXPECTED[:5] else second if name==EXPECTED[5] else root)/name
         report=read(leaf/'report.json')
         source='LightGenV2/reports/20260928_nine_task_a100_table/measurement_protocol_20261024/rental_power_observer_20261029.py'
         blob=subprocess.check_output(['git','show',report['git_commit']+':'+source],cwd=REPO,timeout=15)
@@ -68,8 +70,8 @@ def baselines():
         if a['status']!='passed' or not a['energy_qualified'] or a['measured_videos']!=512:raise ValueError('New time+energy audit failed')
         audits.append(a)
     if 'torch' in sys.modules:raise RuntimeError('Baseline audit must not import Torch')
-    value=dict(status='passed',round_audits=audits,original_root_receipt_sha256=receipt_sha,prior_root_receipt_sha256=prior_sha,
-               qualification='five qualified original points plus seven new points; failed267-video attempt excluded and preserved',
+    value=dict(status='passed',round_audits=audits,original_root_receipt_sha256=receipt_sha,prior_root_receipt_sha256=prior_sha,second_root_receipt_sha256=second_sha,
+               qualification='five original plus one qualified point plus six completion points; failed267-video attempt and unmeasured loading transition excluded and preserved',
                actual_board_power_and_energy=True,host_power_is_fixed338_2W_proxy=True,
                full_window_replayed=True,original250ms_gate_retained=True,model_loaded=False,torch_imported=False)
     save(out,value);return dict(status='passed',path=str(out),sha256=sha(out),rounds=len(audits))

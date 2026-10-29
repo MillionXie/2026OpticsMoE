@@ -35,14 +35,15 @@ const lgFile=path.join(source,'LightGenII_resize_normalization_20261029_01/Light
 assert(sha(labFile)==='4edd1231fd94329f2f227c936d83c4bb2d05d567c1e5874c51dd6e546f45237e','Pinned lab summary');
 assert(sha(lgFile)==='08b4682698b2f67f16435444d35737677d61728c1ada5cc7a564eb9fcfb227ab','Pinned resize-inclusive LG summary');
 const lab=read(labFile),lg=read(lgFile);
-const rentalRoot=path.join(base,energyRemeasured?'rental_energy_remeasure_20261029_02':'rental_timing_only_20261029_02');
+const rentalRoot=path.join(base,energyRemeasured?'rental_energy_remeasure_20261030_03':'rental_timing_only_20261029_02');
 const priorEnergyRoot=path.join(base,'rental_energy_remeasure_20261029_01');
+const secondEnergyRoot=path.join(base,'rental_energy_remeasure_20261029_02');
 const rootReceipt=path.join(rentalRoot,'whole_root_backup_receipt_complete01.json');
 if(energyRemeasured){
   const pin=process.argv.find(x=>x.startsWith('--rental-root-receipt-sha256='))?.split('=')[1];
   assert(pin&&/^[a-f0-9]{64}$/.test(pin)&&sha(rootReceipt)===pin,'Explicit SHA pin for new sealed rental root');
   const state=read(path.join(rentalRoot,'suite_status.json'));
-  assert(state.status==='complete'&&state.completed.length===7,'All seven remaining points complete');
+  assert(state.status==='complete'&&state.completed.length===6,'All six final points complete');
   assert(sha(path.join(priorEnergyRoot,'whole_root_backup_receipt_complete01.json'))==='81c24a2587832c8c1d4abc9e2e5456eb477127612a45126417da796d8737a057','Five original qualified points and failed sixth remain preserved');
 }else assert(sha(rootReceipt)==='9394417869da90fd83f24348a03b62bcb2d19631b6a2eee975dd06274774bac4','Sealed whole rental root');
 const candidates=new Map();
@@ -87,7 +88,7 @@ for(const c of lab.records){
 for(const model of ['kimi','deepseek'])for(const cap of [50,100]){
   const a=[1,2,3].map(n=>{
     const prior=energyRemeasured&&model==='kimi'&&(cap===50||n<3);
-    return addTrial(path.join(prior?priorEnergyRoot:rentalRoot,`${model}_cap${cap}_repeat0${n}/report.json`),energyRemeasured,energyRemeasured);
+    return addTrial(path.join(prior?priorEnergyRoot:energyRemeasured&&model==='kimi'?secondEnergyRoot:rentalRoot,`${model}_cap${cap}_repeat0${n}/report.json`),energyRemeasured,energyRemeasured);
   });
   configs.push({key:a[0].key,model,cap,hardware:a[0].hardware,energy:energyRemeasured,trials:a});
 }
@@ -228,7 +229,7 @@ if(energyRemeasured){
   s.getRange('A27').values=[['GPU board energy is measured. Column H adds the fixed338.2W host proxy once; it is not socket power.']];
   s.getRange('A28').values=[['No old timing-only rental result is used. Missing utilization/memory diagnostics do not mean missing power.']];
   s.getRange('A29').values=[['Baseline loading is excluded. All511 gaps from the first file preparation to final CPU score are included.']];
-  s.getRange('A30').values=[['Five qualified points retained. One267-video power-API failure preserved; only remaining seven points rerun.']];
+  s.getRange('A30').values=[['Five original + one continuation + six completion points. Failed267-video attempt preserved and excluded.']];
 }
 raw.getRange('A40:B42').values=[['Source summary',rel(labFile)],['LG reference',rel(lgFile)],['Rental root receipt',rel(rootReceipt)]];
 for(const sheet of [s,raw]){
