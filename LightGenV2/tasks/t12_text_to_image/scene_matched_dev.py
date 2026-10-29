@@ -94,11 +94,11 @@ def run(a):
             if not dst.exists(): shutil.copyfile(src, dst)
             with Image.open(src) as im: reference = im.convert('RGB').copy()
             generator = torch.Generator(device='cuda').manual_seed(row['seed'])
-            noise = torch.randn((1, 4, 128, 128), device='cuda', dtype=torch.float16, generator=generator)
+            noise = torch.randn((1, 4, a.resolution//8, a.resolution//8), device='cuda', dtype=torch.float16, generator=generator)
             noise_sha = hashlib.sha256(noise.cpu().numpy().tobytes()).hexdigest()
             previous = noise_identities.setdefault(row['sample_id'], noise_sha)
             assert previous == noise_sha, 'Initial latent mismatch between models'
-            kwargs = dict(width=1024, height=1024, num_inference_steps=30, guidance_scale=7.5,
+            kwargs = dict(width=a.resolution, height=a.resolution, num_inference_steps=30, guidance_scale=7.5,
                           generator=generator, latents=noise)
             with torch.inference_mode():
                 if variant == 'qwen_single_forward':
@@ -117,18 +117,18 @@ def run(a):
                     kwargs.update(prompt=row['native_caption'], ip_adapter_image=reference)
                     if variant.endswith('canny'):
                         import cv2
-                        resized = np.asarray(reference.resize((1024, 1024), Image.Resampling.LANCZOS))
+                        resized = np.asarray(reference.resize((a.resolution, a.resolution), Image.Resampling.LANCZOS))
                         edges = cv2.Canny(resized, 100, 200)
                         kwargs.update(image=Image.fromarray(np.repeat(edges[:, :, None], 3, axis=2)),
                                       controlnet_conditioning_scale=.35, control_guidance_end=.5)
                 result = pipe(**kwargs).images[0]
-            assert result.size == (1024, 1024)
+            assert result.size == (a.resolution, a.resolution)
             filename = row['sample_id']+'.png'
             result.save(out/filename)
             records.append({**row, 'generated_PNG': filename, 'generated_sha256': digest(out/filename),
                 'input_sha256': digest(src), 'initial_latent_sha256': noise_sha,
                 'model_prompt': row['prompt'] if variant == 'qwen_single_forward' else row['native_caption'],
-                'token_audit': token_audit, 'model': variant, 'resolution': 1024, 'sampling_steps': 30})
+                'token_audit': token_audit, 'model': variant, 'resolution': a.resolution, 'sampling_steps': 30})
             write(out/'images.json', records)
             write(a.output/'progress.json', {'stage': variant, 'done': i+1, 'total': len(rows)})
         count = sum(p.numel() for p in {id(p): p for c in pipe.components.values()
@@ -138,7 +138,7 @@ def run(a):
             'training_performed': False, 'independent_TEST_opened': False,
             'loaded_generator_parameters': count, 'Qwen_parameters': 0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
             'head_parameters': 0 if head is None else sum(p.numel() for p in head.parameters()),
-            'image_feedback': False, 'rotation': False, 'resolution': 1024, 'sampling_steps': 30,
+            'image_feedback': False, 'rotation': False, 'resolution': a.resolution, 'sampling_steps': 30,
             'native_caption_translation_recorded': True, 'unique_GT_or_mask_used': False,
             'CLIP_encoders_loaded_at_inference': variant != 'qwen_single_forward', 'quality_accepted': False})
         del pipe, qwen, processor, head
@@ -148,13 +148,15 @@ def run(a):
         torch.cuda.empty_cache()
     write(a.output/'report.json', {'complete': True, 'source_commit': os.environ['T12_SOURCE_COMMIT'],
         'DEV_requests': 32, 'generated_count': 96, 'identical_initial_latents_verified': True,
-        'independent_TEST_opened': False, 'quality_accepted': False, 'training_performed': False})
+        'independent_TEST_opened': False, 'quality_accepted': False, 'training_performed': False,
+        'resolution':a.resolution,'Qwen_input_side':256})
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for key in ['data', 'checkpoint', 'qwen', 'model-path', 'adapter-path', 'controlnet-path', 'output']:
         p.add_argument('--'+key, type=Path, required=True)
+    p.add_argument('--resolution',type=int,choices=[512,1024],default=1024)
     a = p.parse_args()
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT', '')) != 40 or os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:
         raise ValueError('Fresh run, published source and GPU6 required')
