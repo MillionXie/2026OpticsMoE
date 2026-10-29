@@ -5,6 +5,7 @@ timestamps, 250ms gate and serialized original MPS guard. No LG/lab rerun.
 """
 import argparse
 import csv
+import json
 import os
 from pathlib import Path
 import sys
@@ -16,11 +17,31 @@ import nvml_direct_observer_20261029 as direct
 import serialized_mps_guard_20261029 as serialized
 
 ENTRY=Path(__file__).resolve();HERE=ENTRY.parent;REPO=adapter.REPO;base=adapter.base
-ROOT=base.TASK/'runs/simulation/rental_fullscope_20261029_01'
+ROOT=base.TASK/'runs/simulation/rental_fullscope_20261029_02'
 GPU=observer.GPU
 PROTOCOL='rental80_cold_file_to_CPU_B1_512x3_20261029'
 NATIVE_INITIALIZE=base.initialize_profile
 FROZEN_SOURCES=None
+
+def prepare_pipe_parent(pipe):
+    """New image has no /data/tmp; never leave creation to the old daemon."""
+    parent=Path(pipe).parent
+    if parent.is_symlink():raise ValueError('Private pipe parent may not be redirected')
+    parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+    if not parent.is_dir():raise ValueError('Private pipe parent is not a directory')
+
+def verified_admission_predecessor():
+    """Only the preserved, zero-worker01 missing-parent failure may precede02."""
+    old=ROOT.with_name('rental_fullscope_20261029_01');p=old/'suite_status.json'
+    if base.sha(p)!='76b8d63325c64ef9df2351fcf5266bc72a28afb99c52745f3d53dacbe14a2002':
+        raise ValueError('Original stopped admission evidence differs')
+    state=json.loads(p.read_text())
+    if (state['status']!='stopped' or state['completed'] or state.get('phase') or state.get('child_pid')
+            or state['error']!="FileNotFoundError(2, 'No such file or directory')"):
+        raise ValueError('No measured worker may be revived or skipped')
+    if any(Path('/proc/'+str(pid)).exists() for pid in (2836,2837)):
+        raise ValueError('Original admission processes must truly exit')
+    if Path('/data/tmp/rental_fullscope_20261029_01').exists():raise ValueError('Old private pipe unexpectedly exists')
 
 def plan(profile,models=None,caps=None,repeats=None):
     if profile!='rental':raise ValueError('Only explicit new rental authorization')
@@ -94,13 +115,16 @@ def main():
     if a.phase!='audit' and (a.deadline is None or not 0<a.deadline-time.time()<=28800):raise ValueError('Finite at most eight-hour deadline required')
     if a.phase=='worker' and (a.model,a.cap,a.repeat) not in plan('rental'):raise ValueError('Exact native worker required')
     a.models=['kimi','deepseek'];a.caps=[50,100];a.repeats=[1,2,3]
-    a.pipe=a.pipe or '/data/tmp/rental_fullscope_20261029_01'
-    if a.pipe!='/data/tmp/rental_fullscope_20261029_01':raise ValueError('Exact private MPS pipe required')
+    a.pipe=a.pipe or '/data/tmp/rental_fullscope_20261029_02'
+    if a.pipe!='/data/tmp/rental_fullscope_20261029_02':raise ValueError('Exact private MPS pipe required')
     configure()
     if a.phase=='audit':
         import json
         print(json.dumps(base.audit_point(a.output,a.manifest),ensure_ascii=True));return
     identity.verify(os.environ['MEASUREMENT_PUBLISHED_COMMIT'],sources(),REPO)
+    if a.phase=='suite':
+        verified_admission_predecessor()
+        prepare_pipe_parent(a.pipe)
     (base.suite if a.phase=='suite' else base.worker)(a)
 
 if __name__=='__main__':main()

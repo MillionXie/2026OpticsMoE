@@ -34,7 +34,7 @@ def test_receiver():
 def test_native_rows_subset():
     from types import SimpleNamespace
     manifest=entry.base.TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/provisioning/original_manifest.csv'
-    args=SimpleNamespace(profile='rental',gpu_uuid=entry.GPU,pipe='/data/tmp/rental_fullscope_20261029_01',suite_root=entry.ROOT,manifest=manifest)
+    args=SimpleNamespace(profile='rental',gpu_uuid=entry.GPU,pipe='/data/tmp/rental_fullscope_20261029_02',suite_root=entry.ROOT,manifest=manifest)
     legacy=entry.initialize(args)
     rows=legacy.engine.base.old.rows()
     # Original native runtime insists on558 metadata rows. The outer
@@ -51,6 +51,14 @@ def test_finite_launcher_cpu():
     assert launcher.entry.GPU=='GPU-30fecb94-0222-a3d5-d952-a91f2cab2f43'
     assert 'torch' not in sys.modules
 
+def test_pipe_parent_provision():
+    from tempfile import TemporaryDirectory
+    with TemporaryDirectory() as folder:
+        pipe=Path(folder)/'previously_missing_parent'/'private_pipe'
+        entry.prepare_pipe_parent(pipe);entry.prepare_pipe_parent(pipe)
+        assert pipe.parent.is_dir() and not pipe.exists()
+    assert 'torch' not in sys.modules
+
 if __name__=='__main__':
-    test_exact_plan();test_cpu_scope();test_receiver();test_native_rows_subset();test_finite_launcher_cpu()
-    print('{"status":"passed","tests":5,"torch_imported":false}')
+    test_exact_plan();test_cpu_scope();test_receiver();test_native_rows_subset();test_finite_launcher_cpu();test_pipe_parent_provision()
+    print('{"status":"passed","tests":6,"torch_imported":false}')
