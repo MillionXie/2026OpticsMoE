@@ -101,9 +101,10 @@ def render(a):
         assert sampling is None and a.steps in [4,8],'Do not stack an unvalidated task-distilled tail with pretrained LCM'
     elif getattr(a,'lcm_guidance',1.)!=1.:raise ValueError('LCM guidance requires a checked LCM tail')
     if sampling:
-        assert sampling['kind'] in ['guided_Euler12_to_conditional6_v1','progressive_guided_Euler_v2'] and a.steps==sampling['steps']
+        assert sampling['kind'] in ['guided_Euler12_to_conditional6_v1','progressive_guided_Euler_v2','progressive_guided_Euler_CFGpreserved_v1'] and a.steps==sampling['steps']
         assert len(sampling['timesteps'])==a.steps and all(x>y for x,y in zip(sampling['timesteps'],sampling['timesteps'][1:]))
-        assert a.ip_scale==sampling['IP_scale'] and sampling['CFG']==1.
+        assert a.ip_scale==sampling['IP_scale']
+        assert sampling['CFG']==(7.5 if sampling['kind']=='progressive_guided_Euler_CFGpreserved_v1' else 1.)
     elif not fast and a.steps in [4,6,7,8,15]:raise ValueError('This few-step budget requires its verified trained/distilled tail')
     if a.steps==14 and not sampler:raise ValueError('The explicit fourteen-step ablation requires a DPM sampler')
     is_test=getattr(a,'scope','dev')=='test'

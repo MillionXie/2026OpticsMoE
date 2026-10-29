@@ -7,6 +7,7 @@ Related method: https://arxiv.org/abs/2210.03142 ; Euler step documentation:
 https://huggingface.co/docs/diffusers/api/schedulers/euler
 """
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -67,14 +68,20 @@ def load_generator(a,state,trainable=False):
 
 
 def predict(unet,x,t,cond,state,sigma,guided):
+    batch=len(x);device=x.device
+    scale=((torch.as_tensor(sigma,device=device,dtype=torch.float32)**2+1)**.5)
+    if scale.ndim and scale.numel()!=batch:raise ValueError('One sigma per original sample required')
     if guided:
-        x=torch.cat([x,x]);text=torch.cat([state['negative_text'].cuda(),cond['text']]);pool=torch.cat([state['negative_pooled'].cuda(),cond['pooled']])
-        images=torch.cat([state['negative_image'].cuda(),cond['image']]).unsqueeze(1)
+        x=torch.cat([x,x]);text=torch.cat([state['negative_text'].to(device).expand(batch,-1,-1),cond['text']])
+        pool=torch.cat([state['negative_pooled'].to(device).expand(batch,-1),cond['pooled']])
+        images=torch.cat([state['negative_image'].to(device).expand(batch,-1,-1),cond['image']]).unsqueeze(1)
+        if scale.ndim:scale=scale.repeat(2)
+        t=torch.as_tensor(t,device=device)
+        if t.ndim and t.numel()==batch:t=t.repeat(2)
     else:text,pool,images=cond['text'],cond['pooled'],cond['image'].unsqueeze(1)
     side=state.get('SDXL_conditioning_size',512)
-    ids=torch.tensor([[side,side,0,0,side,side]],device='cuda',dtype=torch.bfloat16).repeat(len(x),1)
+    ids=torch.tensor([[side,side,0,0,side,side]],device=device,dtype=torch.bfloat16).repeat(len(x),1)
     # Match EulerDiscreteScheduler.scale_model_input dtype and rounding.
-    scale=((torch.as_tensor(sigma,device=x.device,dtype=torch.float32)**2+1)**.5)
     if scale.ndim:scale=scale[:,None,None,None]
     scaled=x/scale
     out=unet(scaled.bfloat16(),t,
@@ -83,6 +90,15 @@ def predict(unet,x,t,cond,state,sigma,guided):
     if guided:
         u,c=out.chunk(2);return u+7.5*(c-u)
     return out
+
+
+def student_sampling_contract(targets,guidance,ip_scale):
+    if guidance not in [1.,7.5]:raise ValueError('Only conditional1 or preserved externalCFG7.5 is supported')
+    if not 0<=ip_scale<=1:raise ValueError('Invalid reference strength')
+    grid=targets['timesteps'];steps=targets['student_steps']
+    if len(grid)!=steps or not all(a>b for a,b in zip(grid,grid[1:])):raise ValueError('Invalid student grid')
+    kind='progressive_guided_Euler_v2' if guidance==1. else 'progressive_guided_Euler_CFGpreserved_v1'
+    return dict(kind=kind,steps=steps,teacher_steps=targets['teacher_steps'],CFG=guidance,timesteps=grid,IP_scale=ip_scale)
 
 
 def trajectories(a):
@@ -146,7 +162,7 @@ def trajectories(a):
 
 def train(a):
     state,parent=complete_state(a.student);payload,cache_report=load_cache(a.student_cache)
-    assert payload.get('optical_frontend') and state['optical_frontend']['checkpoint_sha256']==payload['optical_frontend']['checkpoint_sha256']
+    assert (state.get('optical_frontend') or {}).get('checkpoint_sha256')==(payload.get('optical_frontend') or {}).get('checkpoint_sha256')
     ready=json.loads((a.trajectories/'report.json').read_text());assert ready['complete']
     assert digest(a.trajectories/'TRAIN_trajectories.pt')==ready['trajectory_sha256']
     targets=torch.load(a.trajectories/'TRAIN_trajectories.pt',map_location='cpu',weights_only=False)
@@ -154,6 +170,20 @@ def train(a):
     train_keys={r['input_key'] for r in payload['records'] if r['split']=='train'}
     assert all(r['split']=='train' and r['input_key'] in train_keys for r in targets['records'])
     pipe,head=load_generator(a,state,True);pipe.set_ip_adapter_scale(a.ip_scale)
+    guidance=getattr(a,'student_guidance',1.);sampling=student_sampling_contract(targets,guidance,a.ip_scale)
+    # The frozen electronic control can use the same optimization budget. Its
+    # initial head supplies TRAIN-only condition regularization; it is never
+    # added to deployment. LG keeps the already audited electronic targets.
+    teacher_head=copy.deepcopy(head).eval().requires_grad_(False) if a.adapt_head and not payload.get('TRAIN_electronic_conditions') else None
+    def condition_regularizer(cond,row):
+        assert row['split']=='train' and row['input_key'] in train_keys
+        from .qwen3_scene_paired_train import electronic_condition_loss
+        if teacher_head is None:
+            return electronic_condition_loss(cond,payload,row)
+        f=payload['features'][row['input_key']]
+        with torch.no_grad():wanted=teacher_head(f['hidden'].unsqueeze(0).cuda().float(),f['visual'].unsqueeze(0).cuda().float())
+        local={'TRAIN_electronic_conditions':{row['input_key']:{n:v[0].bfloat16().detach() for n,v in wanted.items()}}}
+        return electronic_condition_loss(cond,local,row)
     lora=[p for p in pipe.unet.parameters() if p.requires_grad];assert lora
     # Re-loading from ordinary serialization removes inference-tensor status.
     conds={}
@@ -168,11 +198,10 @@ def train(a):
         if a.adapt_head:
             f=payload['features'][row['input_key']];cond=head(f['hidden'].unsqueeze(0).cuda().float(),f['visual'].unsqueeze(0).cuda().float())
         else:cond=conds[row['input_key']]
-        pred=predict(pipe.unet,x,torch.tensor(row['timestep'],device='cuda'),cond,state,row['sigma'],False)
+        pred=predict(pipe.unet,x,torch.tensor(row['timestep'],device='cuda'),cond,state,row['sigma'],guidance>1)
         main=(pred.float()-wanted).square().mean()/wanted.square().mean().clamp_min(1.)
         if a.adapt_head:
-            from .qwen3_scene_paired_train import electronic_condition_loss
-            return main+.05*electronic_condition_loss(cond,payload,dict(row,split='train')),main
+            return main+.05*condition_regularizer(cond,dict(row,split='train')),main
         return main,main
     def loss_batch(rows):
         if len(rows)==1:return loss_for(rows[0])
@@ -182,11 +211,10 @@ def train(a):
             h,v,padding=pack_features([payload['features'][r['input_key']] for r in rows],'cuda');cond=head(h,v,padding)
         else:cond={name:torch.cat([conds[r['input_key']][name] for r in rows]) for name in ['text','image','pooled']}
         x=torch.stack([r['x'] for r in rows]).cuda();wanted=torch.stack([r['target_epsilon'] for r in rows]).cuda()
-        predicted=predict(pipe.unet,x,torch.tensor([r['timestep'] for r in rows],device='cuda'),cond,state,[r['sigma'] for r in rows],False)
+        predicted=predict(pipe.unet,x,torch.tensor([r['timestep'] for r in rows],device='cuda'),cond,state,[r['sigma'] for r in rows],guidance>1)
         main=interval_loss(predicted,wanted)
         if a.adapt_head:
-            from .qwen3_scene_paired_train import electronic_condition_loss
-            kd=sum(electronic_condition_loss({n:v[i:i+1] for n,v in cond.items()},payload,row) for i,row in enumerate(rows))/len(rows)
+            kd=sum(condition_regularizer({n:v[i:i+1] for n,v in cond.items()},row) for i,row in enumerate(rows))/len(rows)
             return main+.05*kd,main
         return main,main
     trainable=lora+(list(head.parameters()) if a.adapt_head else [])
@@ -223,8 +251,7 @@ def train(a):
         result=dict(state,step=updates,epoch=epoch,source_commit=os.environ['T12_SOURCE_COMMIT'],
             unet_lora={n:p.detach().cpu() for n,p in pipe.unet.named_parameters() if 'lora_' in n},
             head={n:p.detach().cpu() for n,p in head.state_dict().items()},
-            sampling_contract={'kind':'progressive_guided_Euler_v2','steps':targets['student_steps'],'teacher_steps':targets['teacher_steps'],
-                'CFG':1.,'timesteps':targets['timesteps'],'IP_scale':a.ip_scale},
+            sampling_contract=sampling,
             trajectory_sha256=ready['trajectory_sha256'])
         result.pop('DEV_epsilon_MSE',None)
         torch.save(result,a.output/'last_checkpoint.pt')
@@ -234,6 +261,8 @@ def train(a):
         'TRAIN_intervals':len(rows),'TRAIN_contexts':len(train_keys),'epochs':epochs,'trainable_UNet_LoRA_parameters':sum(p.numel() for p in lora),
         'trainable_existing_head_parameters':sum(p.numel() for p in head.parameters() if p.requires_grad),
         'training_batch_size':a.batch_size,'gradient_checkpointing':not a.no_gradient_checkpointing,
+        'student_CFG':guidance,'effective_epsilon_targets_independent_of_student_CFG':True,
+        'trajectory_creation_student_CFG_metadata':ready['student_CFG'],
         'head_frozen':not a.adapt_head,'Qwen_optical_VAE_frozen':True,'extra_deployment_parameters':0,'trajectory_sha256':ready['trajectory_sha256'],
         'parent_checkpoint_sha256':parent['best_sha256'],'student_cache_sha256':cache_report['cache_sha256'],
         'best_selection':'TRAIN trajectory loss only; DEV generation evaluation still required','quality_or_speed_accepted':False,'TEST_opened':False})
@@ -246,6 +275,7 @@ def main():
     p.add_argument('--epochs',type=int,default=2);p.add_argument('--lr',type=float,default=1e-5);p.add_argument('--ip-scale',type=float,default=.25)
     p.add_argument('--teacher-steps',type=int,choices=[12,30],default=12);p.add_argument('--student-steps',type=int)
     p.add_argument('--noise-index',type=int,default=137);p.add_argument('--adapt-head',action='store_true')
+    p.add_argument('--student-guidance',type=float,choices=[1.,7.5],default=1.,help='Keep external CFG7.5 while distilling step intervals, or legacy conditional1')
     p.add_argument('--batch-size',type=int,choices=[1,2],default=1);p.add_argument('--no-gradient-checkpointing',action='store_true')
     p.add_argument('--teacher-quality-approval',type=Path)
     a=p.parse_args();assert not a.output.exists() and os.environ.get('CUDA_VISIBLE_DEVICES')==GPU and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
