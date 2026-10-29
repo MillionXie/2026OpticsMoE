@@ -20,6 +20,11 @@ def main():
     _,counts=entry.frontend_storage.constructor_tree(inspect.getsource(live.LiveFront.__init__))
     assert counts=={'path':1,'container':1,'size_gate':1}
     assert 'torch' not in sys.modules
+    stopped=dict(status='stopped',completed=['kimi_cap50_repeat01','kimi_cap50_repeat02','kimi_cap50_repeat03','kimi_cap100_repeat01','kimi_cap100_repeat02'],mps_released=True)
+    assert entry.predecessor_admission(stopped,True).startswith('after_stopped')
+    try:entry.predecessor_admission(stopped,False)
+    except ValueError:pass
+    else:raise AssertionError('No silent failed-to-complete conversion')
     print('{"status":"passed","tests":8,"torch_imported":false,"native_execute_unchanged":true}')
 
 if __name__=='__main__':main()

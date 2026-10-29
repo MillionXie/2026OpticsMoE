@@ -69,19 +69,27 @@ def configure():
     original.ExclusiveGuard=RentalGuard;observer.observer_command=power.observer_command
     if os.environ.get('LIGHTGEN_FRONT_COMPONENT_RECEIPT_SHA256'):frontend_storage.install()
 
+def predecessor_admission(state,after_stopped=False):
+    complete=state['status']=='complete' and len(state['completed'])==12
+    stopped=after_stopped and state['status']=='stopped' and state['completed']==[
+        'kimi_cap50_repeat01','kimi_cap50_repeat02','kimi_cap50_repeat03','kimi_cap100_repeat01','kimi_cap100_repeat02']
+    if not (complete or stopped) or not state.get('mps_released'):
+        raise ValueError('Exact terminal predecessor required; never pretend failed energy suite completed')
+    return 'after_stopped_power_API_attempt_for_requested_LightGen_runtime' if stopped else 'after12_energy_complete'
+
 def suite(a):
     import fcntl
     from LightGenV2.tasks.t06_video_quality_assessment import rental_busy_resource_20261020 as engine
     from LightGenV2.tasks.t06_video_quality_assessment import measure_mps_e2e_20261024 as old
     predecessor=SIM/'rental_energy_remeasure_20261029_01'
     state=json.loads((predecessor/'suite_status.json').read_text())
-    if state['status']!='complete' or len(state['completed'])!=12 or not state.get('mps_released'):
-        raise ValueError('All twelve new time+energy points must complete first')
+    admission=predecessor_admission(state,a.after_stopped_energy)
     if runtime.alive(state['pid']):raise ValueError('Predecessor controller still alive')
     if ROOT.exists():raise FileExistsError('Preserve original LightGen attempt')
     frozen=sources();commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT'];runtime.verify(commit,frozen)
     lock=(SIM/'.temporal_telemetry_a100.lock').open('a');active=False;child=None
     record=dict(status='admission',pid=os.getpid(),deadline=a.deadline,completed=[],plan=['lg_repeat01'],gpu_uuid=GPU,
+                predecessor_admission=admission,predecessor_status=state['status'],
                 purpose='one complete512-video approximate software runtime, not three-round inference statistics')
     try:
         fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
@@ -131,6 +139,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=('suite','worker'),required=True)
     p.add_argument('--root',type=Path,required=True);p.add_argument('--output',type=Path)
     p.add_argument('--deadline',type=float,required=True);p.add_argument('--source-receipt-sha256')
+    p.add_argument('--after-stopped-energy',action='store_true',help='Run requested LightGen runtime after the exact failed power-only suite has exited')
     a=p.parse_args();a.root=a.root.resolve();a.pipe=PIPE
     if a.root!=ROOT or not 0<a.deadline-time.time()<=9000:raise ValueError('Exact new rental root and bounded deadline')
     if a.phase=='worker' and (a.output is None or a.output.resolve().parent!=ROOT or a.output.name not in ('lg_repeat01','lg_repeat02','lg_repeat03')):

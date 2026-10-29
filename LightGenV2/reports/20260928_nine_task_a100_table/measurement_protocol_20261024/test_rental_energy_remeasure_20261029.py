@@ -38,6 +38,7 @@ def main():
     assert run.QUALIFIED_AUDIT.__globals__['NEW_PROTOCOL']==run.PROTOCOL
     # The transformed independent replay must not coerce missing diagnostics.
     assert 'torch' not in sys.modules
+    assert power.select_cpu([0,1],{0:(10,5),1:(10,5)},{0:(20,6),1:(20,14)})==1
     print('{"status":"passed","tests":15,"torch_imported":false,"full_models_and_250ms_preserved":true}')
 
 if __name__=='__main__':main()
