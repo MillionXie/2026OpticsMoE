@@ -49,6 +49,10 @@ def derive():
   if sha(SIM/'rental_energy_remeasure_20261030_03'/r['name'])!=r['sha256']:raise ValueError('Sealed raw bytes differ')
  late=read(OUT/'late_input_verification01.json');identity=read(RAW/'identity.json');expected=rows()
  if late['status']!='passed_late_independent_input_verification':raise ValueError('Late byte/metadata validation required')
+ zoh.entry.native.configure();ref_path,reference=zoh.entry.base.reference('deepseek')
+ for key in ['assets','checkpoint_sha256','floating_parameter_dtypes','quality_readout_dtypes']:
+  if identity[key]!=reference[key]:raise ValueError('Original frozen FULL model/head/precision differs')
+ if identity['checkpoint_sha256']!='93e6f0de60192b0edf4e13de4af29697eb1f3ad6144567807ac0c2d3e2e395a0' or identity['batch']!=1 or identity['explicit_warmup_forwards']!=0 or identity['visible_multiprocessors']!=54:raise ValueError('Original native execution contract differs')
  for name,digest in late['raw_pins'].items():
   if sha(RAW/name)!=digest:raise ValueError('Input verifier raw pin differs')
  with (RAW/'calls.csv').open(newline='') as f:calls=list(csv.DictReader(f))
@@ -56,6 +60,8 @@ def derive():
  evidence=read(RAW/'input_audit_partial.json')['samples']
  ids=[r['sample_id'] for r in expected]
  if len(calls)!=512 or [r['sample_id'] for r in calls]!=ids or [r['sample_id'] for r in evidence]!=ids or list(late['input_files'])!=ids:raise ValueError('All512 ordered native calls required')
+ with ref_path.with_name('calls.csv').open(newline='',encoding='utf-8-sig') as f:reference_calls=list(csv.DictReader(f))[:200]
+ if len(reference_calls)!=200 or any(a['sample_id']!=b['sample_id'] or json.loads(a['frame_positions'])!=json.loads(b['frame_positions']) for a,b in zip(calls,reference_calls)):raise ValueError('Original frame selection differs')
  previous=-math.inf
  for c,r in zip(calls,expected):
   a,b,d,e,f=(float(c[k]) for k in ['preprocess_start','model_call_start','first_block_start','gpu_output','call_return'])
