@@ -104,38 +104,38 @@ let lgRental=null;
 if(energyRemeasured){
   const root=path.join(base,'lightgen_rental_20261029_01'),leaf=path.join(root,'lg_repeat01');
   const state=read(path.join(root,'suite_status.json'));
-  assert(state.status==='complete'&&state.mps_released&&state.completed.length===1&&state.completed[0]==='lg_repeat01','One complete LightGen round');
-  const reportFile=path.join(leaf,'compute_report.json'),wallFile=path.join(leaf,'rental_wall_summary.json');
-  const r=read(reportFile),wall=read(wallFile),numeric=read(path.join(leaf,'numeric_audit.json'));
+  assert(state.status==='stopped'&&state.mps_released&&state.completed.length===0,'Preserved LightGen numerical-gate failure');
+  const reportFile=path.join(leaf,'numeric_audit.json'),numeric=read(reportFile);
   const auditFile=path.join(root,'local_independent_cpu_audit01.json'),audit=read(auditFile);
-  assert(audit.status==='passed'&&audit.report_sha256===sha(reportFile),'Independent saved LightGen CPU audit');
-  assert(r.all_predictions_bitwise_equal&&numeric.all_formal_scores_bitwise_equal&&numeric.warm_scores_bitwise_equal&&numeric.equal_scores===512,'Original512 exact outputs');
+  assert(audit.status==='diagnostic_only_numeric_gate_failed'&&audit.numeric_audit_sha256===sha(reportFile),'Independent saved LightGen diagnostic replay');
+  assert(!numeric.all_formal_scores_bitwise_equal&&numeric.equal_scores===92,'Do not relabel failed numerical gate as passed');
+  const wall=audit;
   assert(wall.measured_videos===512&&wall.formal_fields===32&&wall.extra_warm_fields===3&&wall.physical_photonic_hardware_measured===false,'Original LightGen population and scope');
-  const e=r.diagnostic_FFT_board_energy;
+  const e=audit.board_energy_replayed;
   assert(e.energy_j>0&&e.elapsed_s>0&&e.host_proxy_w===0&&e.max_power_sample_age_s<=.25,'Actual software board-only energy, unchanged250ms gate');
-  close(wall.actual_FFT_software_window_s,r.actual_FFT_software_wall_s);
   lgRental={...wall,gpu_board_energy_j:e.energy_j,gpu_board_mean_w:e.energy_j/e.elapsed_s,report_sha256:sha(reportFile),source:rel(reportFile),audit_sha256:sha(auditFile),physical_optical_energy_qualified:false};
   const a=lgRentalSheet;a.showGridLines=false;a.tabColor='#526983';
   a.getRange('A1:C24').format={font:{name:'Arial',size:10},verticalAlignment:'center',rowHeight:27};
   a.getRange('A2').values=[['LightGen-II on the same A100 80GB']];a.getRange('A2:C2').format.font={name:'Arial',size:15,bold:true};
   a.getRange('A4:C4').values=[['Measurement','Value','Unit and scope']];
   a.getRange('A5:C14').values=[
-    ['Full fresh process',wall.full_fresh_process_wall_s,'s, loading + decode/setup + warmup + trace + saving'],
+    ['Full fresh process','Not recorded','No independent enclosing monotonic stopwatch saved'],
     ['Formal software window',wall.actual_FFT_software_window_s,'s, 512 videos / 32 fields, with profiler overhead'],
     ['Software time / 16 videos',null,'s, formal window divided by32'],
     ['GPU board energy',e.energy_j,'J, formal FFT software window only'],
     ['GPU mean power',null,'W, board integral divided by its elapsed window'],
     ['GPU board energy / 16 videos',null,'J, formal FFT software energy divided by32'],
-    ['Optical schedule estimate',wall.resize_inclusive_fixed_optics_schedule_s_per_16*1000,'ms / 16 videos, modelled resource schedule only'],
+    ['Numerical qualification','FAILED','Actual software runtime is diagnostic only'],
     ['Videos',512,'one original TEST subset; no training'],
-    ['Numerically equal scores',512,'bitwise equal to the same-checkpoint reference'],
+    ['Numerically equal scores',numeric.equal_scores,'of512 bitwise equal to the same-checkpoint reference'],
     ['Energy integration window',e.elapsed_s,'s, original monotonic-clock interval']
   ];
   a.getRange('B7').formulas=[['=B6/32']];a.getRange('B9').formulas=[['=B8/B14']];a.getRange('B10').formulas=[['=B8/32']];
+  a.getRange('A15:C15').values=[['Maximum score difference',numeric.maximum_absolute_difference,'absolute difference from original same-checkpoint reference']];
   a.getRange('B5:B11').setNumberFormat('#,##0.000000');a.getRange('B12:B13').setNumberFormat('0');a.getRange('B5:B13').format.horizontalAlignment='right';
   a.getRange('A4:C4').format={fill:'#263C5A',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},horizontalAlignment:'center',rowHeight:30};
   [37,22,83].forEach((w,i)=>a.getRangeByIndexes(0,i,24,1).format.columnWidth=w);
-  a.getRange('A16:A19').values=[['This run executes the original joint-field model with FFT software on the rental GPU.'],['It does not measure physical optical latency, optical deployment energy or wall-socket power.'],['There are three real extra warm fields. The 512 formal predictions must match bitwise.'],['File decoding and loading are outside the formal window but included in the full-process row.']];
+  a.getRange('A16:A19').values=[['All32 formal fields executed. The failed numerical gate is retained, not relaxed or retried.'],['Software time and board energy are diagnostic, not a qualified same-reference performance result.'],['This is not physical optical latency, optical deployment energy or wall-socket power.'],['Loading, file decoding, RGB/crop and quality-pixel preparation are outside the software window.']];
   a.getRange('A16:C19').format.font.italic=true;
   a.getRange('A21:B24').values=[['Original report',rel(reportFile)],['Report SHA256',sha(reportFile)],['Independent audit',rel(auditFile)],['Audit SHA256',sha(auditFile)]];
 }

@@ -83,6 +83,7 @@ def lightgen():
     root=SIM/'lightgen_rental_20261029_01';out=root/'local_independent_cpu_audit01.json'
     if out.exists():raise FileExistsError('Do not repeat accepted independent audit')
     receipt_sha=preserved(root);s=read(root/'suite_status.json');leaf=root/'lg_repeat01'
+    if s['status']=='stopped':return lightgen_diagnostic(root,receipt_sha)
     if s['status']!='complete' or s['completed']!=['lg_repeat01'] or not s.get('mps_released'):raise ValueError('Single complete LightGen round required')
     r=read(leaf/'compute_report.json');raw=read(leaf/'raw_operator_records.json');ident=read(leaf/'compute_identity.json')
     for name,key in [('raw_kernel_trace.json','raw_trace_sha256'),('raw_operator_records.json','raw_operator_records_sha256'),('outputs.npz','outputs_sha256')]:
@@ -113,6 +114,41 @@ def lightgen():
                actual_FFT_wall_replayed=True,board_energy_replayed=energy,original250ms_gate_retained=True,
                physical_photonic_hardware_measured=False,model_loaded=False,torch_imported=False)
     save(out,value);return dict(status='passed',path=str(out),sha256=sha(out),scores=512)
+
+def lightgen_diagnostic(root,receipt_sha):
+    import numpy as np
+    from LightGenV2.tasks.t06_video_quality_assessment.batch_telemetry import Sample
+    from LightGenV2.tasks.t06_video_quality_assessment.strict_tf_window_20261020 import interval_energy
+    leaf=root/'lg_repeat01';out=root/'local_independent_cpu_audit01.json';numeric=read(leaf/'numeric_audit.json')
+    if read(leaf/'status.json')['status']!='failed' or numeric['all_formal_scores_bitwise_equal']:raise ValueError('Exact failed numerical gate evidence required')
+    identity=read(leaf/'compute_identity.json');raw=read(leaf/'raw_operator_records.json')
+    ref=SIM/'a100_lgvq_graph_pipeline_20261026_03/lg_repeat01/graph/graph_outputs.npz'
+    if sha(ref)!=identity['reference_sha256']:raise ValueError('Original reference differs')
+    with np.load(ref,allow_pickle=False) as f:expected=f['prediction'][:32].copy()
+    with np.load(leaf/'outputs.npz',allow_pickle=False) as f:actual=f['prediction'];warm=f['warm_prediction']
+    if actual.shape!=(32,16) or actual.dtype!=expected.dtype or warm.shape!=(3,16):raise ValueError('Actual complete512 output population required')
+    equal=int(np.count_nonzero(actual.view('uint32')==expected.view('uint32')));difference=float(np.max(np.abs(actual-expected)))
+    if equal!=numeric['equal_scores'] or difference!=numeric['maximum_absolute_difference']:raise ValueError('Saved numeric failure replay differs')
+    fields=[x for x in raw['host_records'] if not x['warm']]
+    if [x['field'] for x in fields]!=list(range(32)):raise ValueError('All formal fields required')
+    elapsed=raw['formal_host_end']-raw['formal_host_start']
+    if elapsed<=0:raise ValueError('Actual positive software window required')
+    frozen=read(root/'source_receipt.json')
+    for name,digest in frozen['sources'].items():
+        b=subprocess.check_output(['git','show',frozen['published_commit']+':'+name],cwd=REPO,timeout=15)
+        if hashlib.sha256(b).hexdigest()!=digest:raise ValueError('Original published source differs')
+    with (leaf/'telemetry.csv').open(newline='',encoding='utf-8-sig') as f:rows=list(csv.DictReader(f))
+    samples=[Sample(float(x['host_time_unix']),float(x['host_monotonic_s']),x['phase'],float(x['watts']),None,None) for x in rows]
+    energy=interval_energy([(raw['formal_monotonic_start'],raw['formal_monotonic_end'])],samples,host_w=0.)
+    value=dict(status='diagnostic_only_numeric_gate_failed',source=leaf.relative_to(REPO).as_posix(),numeric_audit_sha256=sha(leaf/'numeric_audit.json'),
+               original_root_receipt_sha256=receipt_sha,actual_FFT_software_window_s=elapsed,actual_FFT_s_per_16_videos=elapsed/32,
+               measured_videos=512,formal_fields=32,extra_warm_fields=3,equal_scores=equal,maximum_absolute_difference=difference,
+               gpu_board_energy_j=energy['energy_j'],gpu_board_mean_w=energy['energy_j']/energy['elapsed_s'],board_energy_replayed=energy,
+               physical_photonic_hardware_measured=False,numeric_gate_passed=False,formal_qualified_result=False,
+               model_loaded=False,torch_imported='torch' in sys.modules,raw_kernel_trace_sha256=sha(leaf/'raw_kernel_trace.json'),
+               kernel_schedule_replayed=False,full_fresh_process_monotonic_wall_not_saved=True)
+    if value['torch_imported']:raise RuntimeError('CPU-only diagnostic must not import Torch')
+    save(out,value);return dict(status=value['status'],path=str(out),sha256=sha(out),software_window_s=elapsed,equal_scores=equal)
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=('baselines','lightgen'),required=True);a=p.parse_args()
