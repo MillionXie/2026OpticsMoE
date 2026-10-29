@@ -69,11 +69,15 @@ def install_optical_frontend(qwen,folder,features,baseline_cache):
     vision_class=type(qwen.model.visual.blocks[0]);language_class=type(qwen.model.language_model.layers[0])
     macros=apply_postfree(qwen,vision_pairs=1,language_pairs=1,residual_width=state['config']['residual_width'])
     load_macro_state(macros,state['macros']);qwen.eval().requires_grad_(False)
+    if state.get('native_readouts') is not None:
+        from .scene_native_readouts import restore
+        restore(qwen,state['native_readouts'])
     counts={'vision':sum(type(x)==vision_class for x in qwen.model.visual.blocks),
             'language':sum(type(x)==language_class for x in qwen.model.language_model.layers)}
     assert counts=={'vision':6,'language':4}
     assert all(.6<=f.alpha.item()<=.900001 for m in macros.values() for f in m.fusions)
     return {'checkpoint_sha256':report['best_sha256'],'retained_original_TF':counts,'actual_removed_TF':42,
+            'native_visual_readouts_adapted':state.get('native_readouts') is not None,
             'feature_distillation_only_generator_recovery_not_yet_trained':True}
 
 

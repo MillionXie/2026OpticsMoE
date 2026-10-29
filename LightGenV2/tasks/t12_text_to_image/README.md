@@ -93,6 +93,14 @@ CFG仍7.5；二阶midpoint＋Karras、thresholding关闭，训练beta／epsilon�
 该备用尚未GPU生成／计时；先做CPU检查，并等当前候选完整审查失败、自己的GPU释放后才可运行。
 依据：[官方DPM-Solver++调度器说明](https://huggingface.co/docs/diffusers/api/schedulers/multistep_dpm_solver)。
 
+另备 `qwen3_scene_joint_optical --adapt-native-readouts`：在同一个TRAIN-only原始图文恢复中，
+允许已有主visual merger及3个DeepStack merger一起适配，原6V／4L TF、生成头、UNet、VAE仍冻结。
+这是既有Qwen读出权重的适配，不新增TF、推理模块、参数位置或RGB／VAE入口；光学周期仍6。
+前向保持原BF16算式，FP32 master仅用于优化器累积小更新，保存／部署只有原生BF16读出权重。
+前四步真实反向必须有读出／光相位梯度，重置全部权重和优化器后才正式训练。
+checkpoint及raw重载显式绑定这些读出，旧无该字段时保持旧算式；只准TRAIN监督，不能把不同前端缓存当相同输入。
+此备用尚未GPU训练；先CPU／真实反向，且仅在当前纯推理候选仍未满足造型与语义时运行。
+
 当前实拍主表使用17.03M小版：原权重 `5b4f9a37…` 与末端decoder适配权重 `eeec…`
 分别保留。原权重仿真34.277751dB、未适配实拍27.551289dB；适配权重实拍31.552886dB、
 其自身仿真28.890612dB，不能跨权重拼成sim-exp差距。精确指标口径和原产物见下面复现入口。

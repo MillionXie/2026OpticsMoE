@@ -15,13 +15,16 @@ from .white_reference_scene_probe import digest,write
 
 def binding_metadata(state,report,new_sha):
     old=state.get('optical_frontend')
-    if not old or not report.get('complete') or not report.get('only_existing_optical_macros_trainable'):
+    optical_only=report.get('only_existing_optical_macros_trainable') and report.get('head_UNet_VAE_retained_Qwen_frozen')
+    with_native=(report.get('existing_native_readouts_also_trainable') and report.get('head_UNet_VAE_retained_Qwen_TF_frozen')
+        and report.get('native_readout_parameters_trained',0)>0 and report.get('extra_deployment_parameters')==0)
+    if not old or not report.get('complete') or not (optical_only or with_native):
         raise ValueError('A completed raw optical recovery and an LG generator are required')
     if report['parent_frontend_sha256']!=old['checkpoint_sha256']:raise ValueError('Frontend parent differs from generator binding')
-    if not report.get('head_UNet_VAE_retained_Qwen_frozen') or report.get('TEST_opened') or report.get('DEV_or_TEST_forward_performed'):
+    if report.get('TEST_opened') or report.get('DEV_or_TEST_forward_performed'):
         raise ValueError('Only a completed TRAIN-only frontend update can be rebound here')
     return dict(old,checkpoint_sha256=new_sha,feature_distillation_only_generator_recovery_not_yet_trained=False,
-        TRAIN_coupled_optical_recovery=True,generator_not_updated_after_frontend_recovery=True)
+        TRAIN_coupled_optical_recovery=True,native_visual_readouts_adapted=bool(with_native),generator_not_updated_after_frontend_recovery=True)
 
 
 def main():

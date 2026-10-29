@@ -43,6 +43,7 @@ def recover(a):
     macros=qwen.model.hybrid
     cfg=json.loads((a.frontend/'execution.json').read_text())['config']
     cfg=dict(cfg,joint_lr=1e-5,phase_lr=1e-4,router_lr=1e-4)
+    cfg['adapt_native_readouts']=bool(getattr(a,'adapt_native_readouts',False))
     head=QwenSDXLConditions(joint_image_context=parent.get('joint_image_context',False)).cuda().eval().requires_grad_(False)
     head.load_state_dict(parent['head'],strict=True)
     rows={r['input_key']:r for r in payload['records'] if r['split']=='train'}
@@ -70,7 +71,14 @@ def recover(a):
             controls.append(row['sample_id'])
     write(a.output/'initial_raw_identity.json',dict(complete=True,TRAIN_controls=controls,hidden_and_visual_exact=True))
     macros.requires_grad_(True)
-    assert all(not p.requires_grad for n,p in qwen.named_parameters() if '.hybrid.' not in n)
+    readouts=None;readout_initial=None
+    if getattr(a,'adapt_native_readouts',False):
+        from .scene_native_readouts import ReadoutMasters,snapshot
+        readout_initial=snapshot(qwen);readouts=ReadoutMasters(qwen)
+    allowed=set() if readouts is None else {id(p) for p in readouts.actual}
+    assert all(not p.requires_grad for n,p in qwen.named_parameters() if '.hybrid.' not in n and id(p) not in allowed)
+    optimization=torch.nn.ModuleDict({'optics':macros})
+    if readouts is not None:optimization['readout_masters']=readouts
     direct_gradient=[]
     def loss_for(row,training,probe=False):
         h,v=forward_with_visual(qwen.model,prepare(row));assert h.shape[0]==1 and v.shape==(64,2048)
@@ -87,23 +95,38 @@ def recover(a):
         loss=condition+.1*direction
         if training:loss=loss+.02*contrast.loss(predicted,row)+.02*sum(m.balance_loss() for m in macros.values())
         return loss
-    def optimizer():return torch.optim.AdamW(optimizer_groups(macros,cfg),weight_decay=.001)
+    def optimizer():return torch.optim.AdamW(optimizer_groups(optimization,cfg),weight_decay=.001)
     original={n:v.detach().clone() for n,v in macros.state_dict().items()};opt=optimizer();smoke=[]
     for i,row in enumerate([groups['lamp'][0],groups['pillow'][0],groups['lamp'][1],groups['pillow'][1]]):
-        macros.train();opt.zero_grad();loss=loss_for(row,True,probe=True);loss.backward()
+        macros.train();opt.zero_grad()
+        if readouts is not None:readouts.zero_native_grad()
+        loss=loss_for(row,True,probe=True);loss.backward()
+        if readouts is not None:
+            readouts.collect();assert sum(p.grad.abs().sum().item() for p in readouts.master if p.grad is not None)>0
         grads={kind:sum(p.grad.abs().sum().item() for n,p in macros.named_parameters() if kind in n and p.grad is not None) for kind in ['raw_phase','raw_router_phase']}
-        assert all(math.isfinite(g) and g>0 for g in grads.values());norm=torch.nn.utils.clip_grad_norm_(macros.parameters(),1.,error_if_nonfinite=True);opt.step()
-        smoke.append(dict(step=i+1,loss=loss.item(),phase_gradients=grads,text_condition_to_visual_phase_gradient=direct_gradient[-1],gradient_norm=float(norm)))
-    macros.load_state_dict(original,strict=True);del original,opt;opt=optimizer();contrast=TRAINReferenceContrast(payload)
-    write(a.output/'smoke_report.json',dict(complete=True,real_backward_steps=smoke,all_macro_state_reset_before_training=True,TRAIN_only=True,head_and_native_Qwen_frozen=True))
+        assert all(math.isfinite(g) and g>0 for g in grads.values());norm=torch.nn.utils.clip_grad_norm_(optimization.parameters(),1.,error_if_nonfinite=True);opt.step()
+        if readouts is not None:readouts.copy_to_native()
+        smoke.append(dict(step=i+1,loss=loss.item(),phase_gradients=grads,text_condition_to_visual_phase_gradient=direct_gradient[-1],gradient_norm=float(norm),
+            native_readout_gradient_sum=0 if readouts is None else sum(p.grad.abs().sum().item() for p in readouts.master if p.grad is not None)))
+    macros.load_state_dict(original,strict=True)
+    if readouts is not None:
+        from .scene_native_readouts import restore
+        restore(qwen,readout_initial);readouts.reset_from_native()
+    del original,opt;opt=optimizer();contrast=TRAINReferenceContrast(payload)
+    write(a.output/'smoke_report.json',dict(complete=True,real_backward_steps=smoke,all_macro_state_reset_before_training=True,
+        native_readouts_reset_before_training=readouts is not None,TRAIN_only=True,head_and_native_Qwen_TF_frozen=True,
+        existing_native_readouts_trainable=readouts is not None))
     rng=random.Random(1042);history=[];best=math.inf;fixed=[r for category in groups for r in groups[category][:6]]
     for step in range(1,a.steps+1):
         macros.train();opt.zero_grad()
+        if readouts is not None:readouts.zero_native_grad()
         # Accumulate across both categories at one parameter version; EMA soft
         # balance is diagnostic only, never claimed to prove hard-route diversity.
         for category in ['lamp','pillow']:
             loss=loss_for(rng.choice(groups[category]),True)/2;assert torch.isfinite(loss);loss.backward()
-        norm=torch.nn.utils.clip_grad_norm_(macros.parameters(),1.,error_if_nonfinite=True);opt.step()
+        if readouts is not None:readouts.collect()
+        norm=torch.nn.utils.clip_grad_norm_(optimization.parameters(),1.,error_if_nonfinite=True);opt.step()
+        if readouts is not None:readouts.copy_to_native()
         for g in opt.param_groups:g['lr']=g['base_lr']*(.1+.9*.5*(1+math.cos(math.pi*step/a.steps)))
         if step%10==0:write(a.output/'progress.json',dict(stage='actual_coupled_RGB_text_optical_condition_training',step=step,total=a.steps,last_loss=loss.item()*2))
         if step%100==0 or step==a.steps:
@@ -112,12 +135,18 @@ def recover(a):
             history.append(dict(step=step,fixed_TRAIN_condition_feature_loss=score));write(a.output/'history.json',history)
             source=torch.load(a.frontend/'best_checkpoint.pt',map_location='cpu',weights_only=False)
             source.update(step=step,config=cfg,macros={n:v.detach().cpu() for n,v in macros.state_dict().items()},source_commit=os.environ['T12_SOURCE_COMMIT'],raw_coupled_condition_recovery=True)
+            if readouts is not None:
+                from .scene_native_readouts import snapshot
+                source['native_readouts']=snapshot(qwen)
             torch.save(source,a.output/'last_checkpoint.pt')
             if score<best:best=score;torch.save(source,a.output/'best_checkpoint.pt')
     write(a.output/'report.json',dict(complete=True,stage='distill',steps=a.steps,best_sha256=digest(a.output/'best_checkpoint.pt'),best_fixed_TRAIN_loss=best,
         source_commit=os.environ['T12_SOURCE_COMMIT'],parent_frontend_sha256=bound['checkpoint_sha256'],frozen_generator_head_sha256=ready['best_sha256'],
         teacher_cache_sha256=teacher_ready['cache_sha256'],student_cache_sha256=cache_ready['cache_sha256'],TRAIN_contexts=len(rows),
-        only_existing_optical_macros_trainable=True,raw_visual_to_language_gradient_path=True,head_UNet_VAE_retained_Qwen_frozen=True,
+        only_existing_optical_macros_trainable=readouts is None,raw_visual_to_language_gradient_path=True,
+        head_UNet_VAE_retained_Qwen_frozen=readouts is None,head_UNet_VAE_retained_Qwen_TF_frozen=True,
+        existing_native_readouts_also_trainable=readouts is not None,
+        native_readout_parameters_trained=0 if readouts is None else sum(p.numel() for p in readouts.master),
         DEV_or_TEST_forward_performed=False,GT_images_or_masks_opened=False,extra_deployment_parameters=0,quality_or_speed_accepted=False,TEST_opened=False))
     write(a.output/'effective_config.json',cfg)
 
@@ -128,7 +157,7 @@ def statistics_mean(values):return sum(values)/len(values)
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['generator','student-cache','teacher-cache','data','qwen','frontend','features','output']:p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--steps',type=int,default=400);a=p.parse_args();a.qwen_side=256
+    p.add_argument('--steps',type=int,default=400);p.add_argument('--adapt-native-readouts',action='store_true');a=p.parse_args();a.qwen_side=256
     assert a.steps>0 and not a.output.exists() and os.environ.get('CUDA_VISIBLE_DEVICES')==GPU and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
     a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0);torch.manual_seed(1042)
     write(a.output/'execution.json',dict(argv=sys.argv,source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=digest(Path(__file__)),pid=os.getpid()))
