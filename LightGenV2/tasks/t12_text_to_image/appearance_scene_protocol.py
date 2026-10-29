@@ -32,8 +32,11 @@ def conditions(category,profile=PROFILE):
             row['prompt_profile']=profile
             row['prompt']=row['prompt'].replace("Retain the product's overall shape and original appearance.",
                 "Retain the product's overall shape; fine details may vary naturally.")
-            row['native_caption']=row['native_caption'].replace('with its original shape and appearance.',
-                'with its overall shape retained; fine details may vary naturally.')
+            attrs=row['requested_attributes'];subject='table lamp' if category=='lamp' else 'cushion'
+            row['native_caption']=(f"A furnished {attrs['scene']} with {attrs['background_elements']}. "
+                f"In the foreground, one {subject} {attrs['support']}, clearly visible as the main product. "
+                "Retain the reference product's overall shape; fine details may vary naturally.")
+            row['native_caption_style']='scene_first_v1'
             row['requested_attributes']['retain_original_appearance']=False
             row['requested_attributes']['fine_details_free']=True
     elif profile!=PROFILE:raise ValueError('Unreviewed scene contract')
