@@ -99,7 +99,42 @@ def native_negative_conditions(tokenizers,encoders,caption,force_zeros,device='c
     return text,pooled
 
 
+def optical_cache(a,rows):
+    from .scene_paired_render import install_optical_frontend,inference_inputs
+    if a.cache is None:raise ValueError('Reviewed electronic cache required for LG refresh')
+    report=json.loads((a.cache/'report.json').read_text());assert report['complete']
+    parent_sha=digest(a.cache/'paired_cache.pt');assert parent_sha==report['cache_sha256']
+    payload=torch.load(a.cache/'paired_cache.pt',map_location='cpu',weights_only=False)
+    assert payload['pair_sha256']==digest(a.data/'pairs.json')
+    assert [r['sample_id'] for r in rows]==[r['sample_id'] for r in payload['records']]
+    qwen,processor=new_qwen(a)
+    optical=install_optical_frontend(qwen,a.lg_frontend,a.lg_features,a.cache)
+    features={};dev_keys=set();all_rows=rows+[dict(r,split='dev') for r in inference_inputs(a.data)]
+    for i,row in enumerate(all_rows):
+        src=a.data/row['reference'];assert digest(src)==row['reference_sha256']
+        key=hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
+        if row['split']=='dev':dev_keys.add(key)
+        if key not in features:
+            with Image.open(src) as im:h,v,ids=raw_scene_features(qwen,processor,im.convert('RGB'),row['prompt'],a.qwen_side)
+            assert torch.equal(ids,payload['features'][key]['input_ids'])
+            features[key]={'hidden':h,'visual':v,'input_ids':ids}
+        if i%16==0:write(a.output/'progress.json',{'stage':'actual_frozen_postfree_RGB_text_features','done':i+1,'total':len(all_rows),'unique':len(features)})
+    assert set(features)==set(payload['features'])
+    payload['features']=features;payload['optical_frontend']=optical
+    torch.save(payload,a.output/'paired_cache.pt')
+    torch.save({'features':{k:v for k,v in features.items() if k in dev_keys},'Qwen_input_side':a.qwen_side,
+        'contains_targets_or_masks':False,'optical_frontend':optical},a.output/'DEV_frontend_identity_only.pt')
+    shutil.copyfile(a.cache/'model_assets.json',a.output/'model_assets.json')
+    write(a.output/'report.json',{'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],
+        'cache_sha256':digest(a.output/'paired_cache.pt'),'parent_electronic_cache_sha256':parent_sha,
+        'optical_frontend':optical,'n':len(rows),'complete_DEV_frontend_contexts':len(dev_keys),
+        'Qwen_input_side':a.qwen_side,'target_resolution':a.resolution,'visual_tokens':64,
+        'TRAIN_DEV_targets_and_native_condition_supervision_reused_unchanged':True,
+        'actual_LG_RGB_text_forward_not_teacher_features_at_deployment':True,'TEST_opened':False})
+
+
 def cache(a, rows):
+    if a.lg_frontend:return optical_cache(a,rows)
     from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextModelWithProjection, CLIPVisionModelWithProjection, CLIPImageProcessor
     write(a.output/'model_assets.json', {'Qwen':qwen_asset_manifest(a.qwen),
         'SDXL':model_manifest(a.model_path),'IPAdapter':model_manifest(a.adapter_path)})
@@ -220,12 +255,28 @@ def fit(a, payload):
     for p in lora: p.data = p.data.float()
     assert all('lora_' in n for n, p in unet.named_parameters() if p.requires_grad)
     head = None
+    parent=None
+    if payload.get('optical_frontend') and (a.variant!='qwen' or a.initial_paired is None):
+        raise ValueError('LG recovery requires the matched paired Qwen parent')
+    if a.initial_paired:
+        ready=json.loads((a.initial_paired/'report.json').read_text())
+        assert ready['complete'] and digest(a.initial_paired/'best_checkpoint.pt')==ready['best_sha256']
+        parent=torch.load(a.initial_paired/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        assert parent['variant']==a.variant and parent['resolution']==a.resolution and parent['step']>0
+        assert parent['pair_sha256']==payload['pair_sha256'] and parent['Qwen_input_side']==a.qwen_side
+        named=dict(unet.named_parameters());assert set(parent['unet_lora'])=={n for n in named if 'lora_' in n}
+        with torch.no_grad():
+            for n,value in parent['unet_lora'].items():named[n].copy_(value)
+    if payload.get('optical_frontend'):
+        payload['optical_frontend']=dict(payload['optical_frontend'],feature_distillation_only_generator_recovery_not_yet_trained=False)
     if a.variant == 'qwen':
         head = QwenSDXLConditions().cuda().train()
-        state = torch.load(a.alignment/'best_checkpoint.pt', map_location='cpu', weights_only=False)
-        identity = json.loads((a.alignment/'adaptation_report.json').read_text())
-        assert digest(a.alignment/'best_checkpoint.pt') == identity['best_sha256']
-        head.load_state_dict(state['state_dict'], strict=True)
+        if parent is not None:head.load_state_dict(parent['head'],strict=True)
+        else:
+            state = torch.load(a.alignment/'best_checkpoint.pt', map_location='cpu', weights_only=False)
+            identity = json.loads((a.alignment/'adaptation_report.json').read_text())
+            assert digest(a.alignment/'best_checkpoint.pt') == identity['best_sha256']
+            head.load_state_dict(state['state_dict'], strict=True)
     train = [r for r in payload['records'] if r['split'] == 'train']
     dev = [r for r in payload['records'] if r['split'] == 'dev' and r['condition_id'] in ['0', '1']]
     assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
@@ -325,7 +376,9 @@ def fit(a, payload):
             'pair_sha256': payload['pair_sha256'], 'cache_sha256': cache_digest,
             'source_commit': os.environ['T12_SOURCE_COMMIT'], 'Qwen_input_side': a.qwen_side,'resolution':a.resolution,
             'SDXL_conditioning_size':conditioning_side,'negative_text':payload['negative_text'],
-            'negative_pooled':payload['negative_pooled'],'negative_caption':payload['negative_caption']}
+            'negative_pooled':payload['negative_pooled'],'negative_caption':payload['negative_caption'],
+            'optical_frontend':payload.get('optical_frontend'),
+            'frozen_optical_frontend_head_UNet_recovery':bool(payload.get('optical_frontend'))}
         torch.save(state, a.output/'last_checkpoint.pt')
         if score < best:
             best = score; stale = 0; torch.save(state, a.output/'best_checkpoint.pt')
@@ -341,6 +394,9 @@ def fit(a, payload):
         'TEST_opened': False, 'training_resolution': a.resolution, 'training_precision': 'BF16 base, FP32 trainable parameters',
         'best_selection': 'Fixed DEV diffusion noise loss; not free-generation quality/comparability proof',
         'training_input_order_noise_schedule_sha256':schedule.hexdigest(),
+        'optical_frontend':payload.get('optical_frontend'),
+        'initial_paired_checkpoint_sha256':None if a.initial_paired is None else digest(a.initial_paired/'best_checkpoint.pt'),
+        'optical_parameters_updated':False,
         'image_feedback': False, 'rotation': False, 'quality_or_speed_accepted': False})
 
 
@@ -354,6 +410,8 @@ def main():
     p.add_argument('--epochs', type=int)
     p.add_argument('--warmup', type=int)
     p.add_argument('--lr', type=float)
+    p.add_argument('--initial-paired',type=Path)
+    p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
     a = p.parse_args()
     config = json.loads(a.config.read_text())
     a.config_profile=config

@@ -58,6 +58,8 @@ def render(a):
     rows = [r for r in inputs if r['condition_id'] in ['0','1']]
     qwen = processor = head = identity = None
     optical=None
+    exact_identity=False
+    if state.get('optical_frontend') and a.lg_frontend is None:raise ValueError('LG-trained head requires its bound optical frontend')
     if state['variant'] == 'qwen':
         qwen, processor = new_qwen(a)
         head = QwenSDXLConditions().cuda().eval().requires_grad_(False)
@@ -66,6 +68,10 @@ def render(a):
         identity = torch.load(a.cache/'DEV_frontend_identity_only.pt', map_location='cpu', weights_only=False)
         assert not identity['contains_targets_or_masks']
         if a.lg_frontend:optical=install_optical_frontend(qwen,a.lg_frontend,a.lg_features,a.cache)
+        if state.get('optical_frontend'):
+            assert optical['checkpoint_sha256']==state['optical_frontend']['checkpoint_sha256']
+            optical['feature_distillation_only_generator_recovery_not_yet_trained']=False
+        exact_identity=optical is None or identity.get('optical_frontend',{}).get('checkpoint_sha256')==optical['checkpoint_sha256']
     else:
         if a.lg_frontend:raise ValueError('LG replacement belongs to Qwen branch only')
         encoder = CLIPVisionModelWithProjection.from_pretrained(a.adapter_path/'models/image_encoder',
@@ -101,7 +107,7 @@ def render(a):
                 key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
                 old = identity['features'][key]
                 assert torch.equal(ids,old['input_ids'])
-                if optical is None:assert torch.equal(h,old['hidden']) and torch.equal(v,old['visual'])
+                if exact_identity:assert torch.equal(h,old['hidden']) and torch.equal(v,old['visual'])
                 else:assert h.shape==old['hidden'].shape and v.shape==old['visual'].shape and torch.isfinite(h).all() and torch.isfinite(v).all()
                 cond = head(h.unsqueeze(0).cuda().float(),v.unsqueeze(0).cuda().float())
                 images = torch.cat([state['negative_image'].cuda().bfloat16(),cond['image'].bfloat16()],dim=0).unsqueeze(1)
@@ -115,7 +121,7 @@ def render(a):
         name = row['sample_id']+'.png'; image.save(a.output/name)
         records.append({**row,'split':'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
-            'raw_Qwen_identity_exact':head is not None and optical is None,'resolution':resolution,'sampling_steps':a.steps,
+            'raw_Qwen_identity_exact':exact_identity,'resolution':resolution,'sampling_steps':a.steps,
             'optical_frontend':optical})
         write(a.output/'images.json',records)
         write(a.output/'progress.json',{'stage':'independent_raw_DEV_render','done':i+1,'total':len(rows)})
@@ -125,7 +131,7 @@ def render(a):
         'generated_count':len(records),'prompt_profile':rows[0]['prompt_profile'],'training_performed':False,
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
         'independent_TEST_opened':False,'GT_mask_or_target_latent_files_opened':False,
-        'raw_Qwen_identity_checked':head is not None and optical is None,'image_feedback':False,'quality_accepted':False,
+        'raw_Qwen_identity_checked':exact_identity,'image_feedback':False,'quality_accepted':False,
         'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None,
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
