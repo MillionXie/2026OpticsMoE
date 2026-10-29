@@ -101,6 +101,7 @@ def generate(a):
         assert prior['resolution']==resolution,'Do not present resized old teacher images as native new-resolution generations'
         old_cfg=json.loads((a.reuse_pilot/'configuration.json').read_text())['profile']
         assert all(old_cfg[k]==cfg[k] for k in ['resolution','sampling_steps','text_guidance','IP_scale','Canny_scale','Canny_end'])
+        assert all(old_cfg.get(k)==cfg.get(k) for k in ['negative_prompt','SDXL_conditioning_size'])
         assert json.loads((a.reuse_pilot/'model_assets.json').read_text())==json.loads((a.output/'model_assets.json').read_text())
         reused={r['sample_id']:r for r in json.loads((a.reuse_pilot/'candidates.json').read_text())}
     for i,subset in enumerate(groups.values()):
@@ -123,12 +124,17 @@ def generate(a):
         noises=[torch.randn((1,4,resolution//8,resolution//8),device='cuda',dtype=dtype,generator=g) for g in generators]
         noise_sha=[hashlib.sha256(n.cpu().numpy().tobytes()).hexdigest() for n in noises]
         began=time.monotonic()
+        options={}
+        if cfg.get('negative_prompt'):options['negative_prompt']=cfg['negative_prompt']
+        if cfg.get('SDXL_conditioning_size'):
+            side=int(cfg['SDXL_conditioning_size'])
+            options.update(original_size=(side,side),target_size=(side,side))
         with torch.inference_mode():
             images=pipe(prompt=row['native_caption'],ip_adapter_image=reference,
                 image=Image.fromarray(np.repeat(edges[:,:,None],3,axis=2)),
                 controlnet_conditioning_scale=cfg['Canny_scale'],control_guidance_end=cfg['Canny_end'],
                 width=resolution,height=resolution,num_inference_steps=cfg['sampling_steps'],guidance_scale=cfg['text_guidance'],
-                num_images_per_prompt=len(keep),latents=torch.cat(noises),generator=generators).images
+                num_images_per_prompt=len(keep),latents=torch.cat(noises),generator=generators,**options).images
         assert len(images)==len(keep)
         for r,image,noise_hash in zip(keep,images,noise_sha):
             filename='targets/'+r['sample_id']+'.png';image.save(a.output/filename)
