@@ -1,0 +1,46 @@
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+import torch
+from torch import nn
+from LightGenV2.tasks.t12_text_to_image.scene_fast_tail import checked_tail,REPO,REVISION
+from LightGenV2.tasks.t12_text_to_image.scene_paired_render import frozen_test_protocol
+from LightGenV2.tasks.t12_text_to_image.tests.test_scene_frozen_test import FrozenSceneTEST
+
+
+class FastTailContract(unittest.TestCase):
+    def test_pretrained_merge_unload_then_task_adapter_remains_active(self):
+        from peft import LoraConfig,inject_adapter_in_model
+        from diffusers.utils.peft_utils import recurse_remove_peft_layers
+        torch.manual_seed(1042);model=nn.Sequential();model.add_module('proj',nn.Linear(4,4))
+        original={n:tuple(p.shape) for n,p in model.named_parameters()}
+        inject_adapter_in_model(LoraConfig(r=2,lora_alpha=2,target_modules=['proj']),model,adapter_name='lcm')
+        with torch.no_grad():model.proj.lora_A['lcm'].weight.fill_(.1);model.proj.lora_B['lcm'].weight.fill_(.2)
+        x=torch.ones(1,4);pretrained=model(x).detach();model.proj.merge(adapter_names=['lcm'],safe_merge=True)
+        recurse_remove_peft_layers(model);torch.testing.assert_close(model(x),pretrained)
+        self.assertEqual(original,{n:tuple(p.shape) for n,p in model.named_parameters()})
+        inject_adapter_in_model(LoraConfig(r=1,lora_alpha=1,target_modules=['proj']),model,adapter_name='task')
+        with torch.no_grad():model.proj.lora_A['task'].weight.fill_(.05);model.proj.lora_B['task'].weight.fill_(.3)
+        torch.testing.assert_close(model(x),pretrained+torch.full((1,4),.06),atol=1e-6,rtol=1e-6)
+
+    def test_bad_external_model_identity_fails_before_loading_weights(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);report=dict(complete=True,repo_id=REPO,revision=REVISION,license='openrail++',weight_sha256='wrong')
+            (root/'asset_report.json').write_text(json.dumps(report))
+            with self.assertRaises(ValueError):checked_tail(root)
+
+    def test_TEST_cannot_silently_change_to_an_unfrozen_fast_tail(self):
+        with tempfile.TemporaryDirectory() as folder:
+            a,state,ready,frozen=FrozenSceneTEST().fixture(Path(folder));a.lcm_adapter=Path('verified-asset')
+            descriptor=dict(kind='verified-fast-tail',sha256='external-weights')
+            with patch('LightGenV2.tasks.t12_text_to_image.scene_fast_tail.checked_tail',return_value=descriptor):
+                with self.assertRaises(KeyError):frozen_test_protocol(a,state,ready)
+                frozen['models']['qwen']['fast_tail']=descriptor;a.frozen_evaluation.write_text(json.dumps(frozen))
+                self.assertEqual(frozen_test_protocol(a,state,ready)['descriptor']['fast_tail'],descriptor)
+                a.lcm_adapter=None
+                with self.assertRaises(AssertionError):frozen_test_protocol(a,state,ready)
+
+
+if __name__=='__main__':unittest.main()

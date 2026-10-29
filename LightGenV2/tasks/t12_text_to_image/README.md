@@ -34,6 +34,24 @@ sigma和噪声监督独立，损失先按单区间归一再平均，不能改成
 新设置只能在后续独立run中经四步真实反向／峰值显存核验后训练；目前尚未GPU试验，不预称训练加速。
 正在运行的2160区间实验继续固定原发布版本，不中断或热换源码。
 
+30→15试验已经完整训练2160更新（2191秒），best SHA
+`d46588e41999f2b7f367b988ef61763facc59fb97c6e9b06d037fc02096c94d4`。
+完整raw32／四指标及八板审核均完成：总体CLIP-T .30767／DINO-I .32309／CLIP-I .77967／IR −2.02467；
+靠垫DINO .28682相对电子30的.39349低约27%，并有主体缺失，**拒绝此尾部，7步没有启动**。
+所有best／last、失败图片和指标保留，不将TRAIN轨迹损失.01909当生成成功。
+已转入上述400步原始RGB／文字联合光学恢复，使用未蒸馏的旧joint生成头；后续先重新比较12／30步。
+
+另准备官方充分训练的LCM-LoRA尾部作为独立候选（不是本项目新增蒸馏成功）：
+`latent-consistency/lcm-lora-sdxl` revision `a18548dd4956b174ec5b0d78d340c8dae0a129cd`，
+官方模型卡许可标注openrail++，权重SHA `a764e6859b6e04047cd761c08ff0cee96413a8e004c9f07707530cd776b19141`。
+`scene_fast_tail`只下载／校验资产；`scene_paired_render --lcm-adapter`显式使用LCMScheduler、4或8步、CFG1，
+在已有UNet融合并卸载预训练LoRA后，再安装任务LoRA，避免PEFT部分融合导致后者被忽略；融合前后UNet参数形状须相同。
+Qwen仍唯一RGB＋文字入口，没有新编码器、参考VAE或图片回输。此候选尚未GPU生成，不能预称质量／速度达标。
+必须同时提供完整电子Qwen＋相同LCM尾部对照，避免把公共生成尾部的减步收益全部归给光电替换。
+TEST冻结和测速身份额外绑定该外部权重／采样器，旧模型不能直接使用4／8步。现有运行仍固定原源码，释放后才同步renderer。
+方法／接口来源：[官方模型卡](https://huggingface.co/latent-consistency/lcm-lora-sdxl)、
+[官方Diffusers IP-Adapter说明](https://huggingface.co/docs/diffusers/v0.35.1/en/using-diffusers/ip_adapter)。
+
 当前实拍主表使用17.03M小版：原权重 `5b4f9a37…` 与末端decoder适配权重 `eeec…`
 分别保留。原权重仿真34.277751dB、未适配实拍27.551289dB；适配权重实拍31.552886dB、
 其自身仿真28.890612dB，不能跨权重拼成sim-exp差距。精确指标口径和原产物见下面复现入口。

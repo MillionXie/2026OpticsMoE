@@ -42,6 +42,11 @@ def frozen_test_protocol(a,state,previous):
     assert model['joint_image_context']==state.get('joint_image_context',False)
     assert model['sampling_contract']==state.get('sampling_contract')
     assert model['optical_frontend_sha256']==(state.get('optical_frontend') or {}).get('checkpoint_sha256')
+    fast=getattr(a,'lcm_adapter',None)
+    if fast:
+        from .scene_fast_tail import checked_tail
+        assert model['fast_tail']==checked_tail(fast)
+    else:assert model.get('fast_tail') is None
     if a.measure_software_latency:raise ValueError('Use the separate fixed DEV timing protocol; TEST500 is generation-only')
     return {'manifest_sha256':digest(a.frozen_evaluation),'model_key':a.frozen_model_key,'descriptor':model}
 
@@ -78,11 +83,16 @@ def render(a):
     previous = json.loads((a.checkpoint/'report.json').read_text())
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
     sampling=state.get('sampling_contract')
+    fast=None
+    if getattr(a,'lcm_adapter',None):
+        from .scene_fast_tail import checked_tail
+        fast=checked_tail(a.lcm_adapter)
+        assert sampling is None and a.steps in [4,8],'Do not stack an unvalidated task-distilled tail with pretrained LCM'
     if sampling:
         assert sampling['kind'] in ['guided_Euler12_to_conditional6_v1','progressive_guided_Euler_v2'] and a.steps==sampling['steps']
         assert len(sampling['timesteps'])==a.steps and all(x>y for x,y in zip(sampling['timesteps'],sampling['timesteps'][1:]))
         assert a.ip_scale==sampling['IP_scale'] and sampling['CFG']==1.
-    elif a.steps in [6,7,15]:raise ValueError('This few-step budget requires its trained distilled checkpoint')
+    elif not fast and a.steps in [4,6,7,8,15]:raise ValueError('This few-step budget requires its verified trained/distilled tail')
     is_test=getattr(a,'scope','dev')=='test'
     frozen=frozen_test_protocol(a,state,previous) if is_test else None
     inputs = inference_inputs(a.data,'test' if is_test else 'dev')
@@ -100,6 +110,7 @@ def render(a):
         verified=json.loads((a.reference_run/'report.json').read_text())
         assert verified['complete'] and verified['checkpoint_sha256']==previous['best_sha256'] and verified['sampling_steps']==a.steps
         assert verified.get('IP_adapter_scale',.25)==a.ip_scale,'Timing and quality reference strengths differ'
+        assert verified.get('fast_tail')==fast,'Timing and quality tail identities differ'
         expected={r['sample_id']:r for r in json.loads((a.reference_run/'images.json').read_text())}
         rows=[r for category in ['lamp','pillow'] for r in [x for x in rows if x['category']==category][:4]]
         assert len(rows)==8
@@ -129,6 +140,9 @@ def render(a):
         pipe.load_ip_adapter(str(a.adapter_path), subfolder='sdxl_models',
             weight_name='ip-adapter-plus_sdxl_vit-h.safetensors', image_encoder_folder=None, local_files_only=True)
         pipe.set_ip_adapter_scale(.25); pipe.set_progress_bar_config(disable=True)
+    if fast:
+        from .scene_fast_tail import install_tail
+        assert fast==install_tail(pipe,a.lcm_adapter)
     pipe.unet.add_adapter(LoraConfig(r=4, lora_alpha=4, init_lora_weights='gaussian',
         target_modules=['to_q','to_k','to_v','to_out.0']), adapter_name='scene_pair')
     named = dict(pipe.unet.named_parameters())
@@ -149,7 +163,7 @@ def render(a):
         if a.measure_software_latency:torch.cuda.synchronize();began=time.perf_counter()
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
-        kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=7.5,latents=noise,generator=generator)
+        kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=1. if fast else 7.5,latents=noise,generator=generator)
         if sampling:
             kwargs.pop('num_inference_steps')
             kwargs.update(timesteps=sampling['timesteps'],guidance_scale=sampling['CFG'])
@@ -196,6 +210,7 @@ def render(a):
             'raw_Qwen_identity_exact':exact_identity,'resolution':resolution,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
             'sampling_contract':sampling,
+            'fast_tail':fast,
             'actual_raw_optical_routing':routes,
             'optical_frontend':optical})
         write(a.output/'images.json',records)
@@ -209,6 +224,7 @@ def render(a):
             'output_PNG_identity_vs_completed_quality_run':True,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
             'sampling_contract':sampling,
+            'fast_tail':fast,
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,'LoRA_unmerged_for_both_models':True})
     write(a.output/'report.json',{'complete':True,'scope':'TEST' if is_test else ('DEV_software_latency' if latencies else 'DEV'),'source_commit':os.environ['T12_SOURCE_COMMIT'],
@@ -220,6 +236,7 @@ def render(a):
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
         'IP_adapter_scale':a.ip_scale,
         'sampling_contract':sampling,
+        'fast_tail':fast,
         'joint_image_context':state.get('joint_image_context',False),'frozen_TEST_protocol':frozen,
         'DEV_or_TRAIN_feature_tensors_opened':not is_test and head is not None,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
@@ -232,7 +249,8 @@ def main():
     for key in ['data','checkpoint','qwen','cache','model-path','adapter-path','output']:
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
-    p.add_argument('--steps',type=int,choices=[6,7,12,15,30],default=30,help='6/7/15 require a matched trained tail; 12/30 preserve the original sampler')
+    p.add_argument('--lcm-adapter',type=Path,help='Pinned, SHA-verified official SDXL LCM-LoRA; requires 4 or 8 steps, no extra input encoder')
+    p.add_argument('--steps',type=int,choices=[4,6,7,8,12,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
     p.add_argument('--scope',choices=['dev','test'],default='dev')
