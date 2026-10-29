@@ -7,6 +7,8 @@ from pathlib import Path
 import shutil
 import sys
 import traceback
+import time
+import statistics
 import torch
 from PIL import Image
 from .qwen3_scene_conditioning import QwenSDXLConditions
@@ -56,6 +58,14 @@ def render(a):
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
     inputs = inference_inputs(a.data)
     rows = [r for r in inputs if r['condition_id'] in ['0','1']]
+    expected=None;latencies=[]
+    if a.measure_software_latency:
+        if a.reference_run is None:raise ValueError('Timing requires a completed same-weight quality run for output identity')
+        verified=json.loads((a.reference_run/'report.json').read_text())
+        assert verified['complete'] and verified['checkpoint_sha256']==previous['best_sha256'] and verified['sampling_steps']==a.steps
+        expected={r['sample_id']:r for r in json.loads((a.reference_run/'images.json').read_text())}
+        rows=[r for category in ['lamp','pillow'] for r in [x for x in rows if x['category']==category][:4]]
+        assert len(rows)==8
     qwen = processor = head = identity = None
     optical=None
     exact_identity=False
@@ -95,20 +105,15 @@ def render(a):
         dst = a.output/(row['reference_id']+'.png')
         if not dst.exists(): shutil.copyfile(src,dst)
         with Image.open(src) as im: reference = im.convert('RGB').copy()
+        if a.measure_software_latency:torch.cuda.synchronize();began=time.perf_counter()
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
-        noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
         kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=7.5,latents=noise,generator=generator)
         conditioning_side=int(state.get('SDXL_conditioning_size',resolution))
         kwargs.update(original_size=(conditioning_side,conditioning_side),target_size=(conditioning_side,conditioning_side))
         with torch.inference_mode():
             if head is not None:
-                h,v,ids = raw_scene_features(qwen,processor,reference,row['prompt'],a.qwen_side)
-                key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
-                old = identity['features'][key]
-                assert torch.equal(ids,old['input_ids'])
-                if exact_identity:assert torch.equal(h,old['hidden']) and torch.equal(v,old['visual'])
-                else:assert h.shape==old['hidden'].shape and v.shape==old['visual'].shape and torch.isfinite(h).all() and torch.isfinite(v).all()
+                h,v,ids = raw_scene_features(qwen,processor,reference,row['prompt'],a.qwen_side,keep_on_device=a.measure_software_latency)
                 cond = head(h.unsqueeze(0).cuda().float(),v.unsqueeze(0).cuda().float())
                 images = torch.cat([state['negative_image'].cuda().bfloat16(),cond['image'].bfloat16()],dim=0).unsqueeze(1)
                 kwargs.update(prompt_embeds=cond['text'].bfloat16(),pooled_prompt_embeds=cond['pooled'].bfloat16(),
@@ -118,7 +123,21 @@ def render(a):
                 for t in [pipe.tokenizer,pipe.tokenizer_2]: checked_tokens(t,row['native_caption'])
                 kwargs.update(prompt=row['native_caption'],negative_prompt=state['negative_caption'],ip_adapter_image=reference)
             image = pipe(**kwargs).images[0]
+        if a.measure_software_latency:
+            torch.cuda.synchronize();latencies.append((time.perf_counter()-began)*1000)
+        # Diagnostics and disk output are outside the RGB/text-ready -> CPU RGB
+        # window. The first real generation remains in the measured requests.
+        noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
+        if head is not None:
+            key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest();old=identity['features'][key]
+            assert torch.equal(ids.cpu(),old['input_ids'])
+            if exact_identity:assert torch.equal(h.cpu(),old['hidden']) and torch.equal(v.cpu(),old['visual'])
+            else:assert h.shape==old['hidden'].shape and v.shape==old['visual'].shape and torch.isfinite(h).all() and torch.isfinite(v).all()
         name = row['sample_id']+'.png'; image.save(a.output/name)
+        if expected is not None:
+            wanted=expected[row['sample_id']]
+            assert digest(a.output/name)==wanted['generated_sha256'],'Timing graph changed output PNG'
+            assert noise_sha==wanted['initial_latent_sha256']
         records.append({**row,'split':'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
             'raw_Qwen_identity_exact':exact_identity,'resolution':resolution,'sampling_steps':a.steps,
@@ -127,7 +146,14 @@ def render(a):
         write(a.output/'progress.json',{'stage':'independent_raw_DEV_render','done':i+1,'total':len(rows)})
     generator_count = sum(p.numel() for p in {id(p):p for c in pipe.components.values()
         if isinstance(c,torch.nn.Module) for p in c.parameters()}.values())
-    write(a.output/'report.json',{'complete':True,'scope':'DEV','source_commit':os.environ['T12_SOURCE_COMMIT'],
+    if latencies:
+        write(a.output/'software_latency.json',{'boundary':'RGB PIL and text ready -> generated RGB returned to CPU; no disk output or identity checks in timed window',
+            'n':len(latencies),'requests_ms':latencies,'mean_ms':statistics.mean(latencies),'median_ms':statistics.median(latencies),
+            'first_request_ms':latencies[0],'model_load_excluded':True,'extra_warmup':False,'batch_size':1,
+            'output_PNG_identity_vs_completed_quality_run':True,'sampling_steps':a.steps,
+            'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
+            'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,'LoRA_unmerged_for_both_models':True})
+    write(a.output/'report.json',{'complete':True,'scope':'DEV_software_latency' if latencies else 'DEV','source_commit':os.environ['T12_SOURCE_COMMIT'],
         'generated_count':len(records),'prompt_profile':rows[0]['prompt_profile'],'training_performed':False,
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
         'independent_TEST_opened':False,'GT_mask_or_target_latent_files_opened':False,
@@ -145,6 +171,7 @@ def main():
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
     p.add_argument('--steps',type=int,choices=[12,30],default=30,help='Explicit sampling-budget ablation, not learned tail distillation')
+    p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
     a = p.parse_args()
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT','')) != 40 or os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:
         raise ValueError('Fresh run, published source and GPU6 required')

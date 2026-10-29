@@ -27,7 +27,7 @@ from .qwen3_scene_conditioning import QwenSDXLConditions, fresh_qwen, qwen_asset
 from .white_reference_scene_probe import GPU, digest, write, checked_tokens, model_manifest
 
 
-def raw_scene_features(model, processor, image, prompt, image_side):
+def raw_scene_features(model, processor, image, prompt, image_side,keep_on_device=False):
     content = [{'type': 'image', 'image': image}, {'type': 'text', 'text': prompt}]
     text = processor.apply_chat_template([{'role': 'user', 'content': content}], tokenize=False,
         add_generation_prompt=True, enable_thinking=False)
@@ -39,6 +39,7 @@ def raw_scene_features(model, processor, image, prompt, image_side):
         with torch.inference_mode(): hidden = model.model(**inputs, use_cache=False, return_dict=True).last_hidden_state
     finally: hook.remove()
     assert len(native) == 1 and native[0].shape == ((image_side//32)**2, 2048)
+    if keep_on_device:return hidden[0],native[0],inputs['input_ids']
     return hidden[0].cpu(), native[0].cpu(), inputs['input_ids'].cpu()
 
 
