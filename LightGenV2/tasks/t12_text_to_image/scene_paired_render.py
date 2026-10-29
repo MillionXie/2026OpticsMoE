@@ -41,6 +41,7 @@ def frozen_test_protocol(a,state,previous):
     assert model['Qwen_input_side']==state['Qwen_input_side']==256 and model['variant']==state['variant']
     assert model['joint_image_context']==state.get('joint_image_context',False)
     assert model['sampling_contract']==state.get('sampling_contract')
+    assert model.get('task_LoRA_fused',False)==bool(getattr(a,'fuse_task_lora',False))
     assert model['optical_frontend_sha256']==(state.get('optical_frontend') or {}).get('checkpoint_sha256')
     fast=getattr(a,'lcm_adapter',None)
     if fast:
@@ -84,6 +85,7 @@ def render(a):
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
     sampling=state.get('sampling_contract')
     fast=None
+    fuse_task=bool(getattr(a,'fuse_task_lora',False))
     if getattr(a,'lcm_adapter',None):
         from .scene_fast_tail import checked_tail
         fast=checked_tail(a.lcm_adapter)
@@ -111,6 +113,7 @@ def render(a):
         assert verified['complete'] and verified['checkpoint_sha256']==previous['best_sha256'] and verified['sampling_steps']==a.steps
         assert verified.get('IP_adapter_scale',.25)==a.ip_scale,'Timing and quality reference strengths differ'
         assert verified.get('fast_tail')==fast,'Timing and quality tail identities differ'
+        assert verified.get('task_LoRA_fused',False)==fuse_task,'Timing and quality task fusion graphs differ'
         expected={r['sample_id']:r for r in json.loads((a.reference_run/'images.json').read_text())}
         rows=[r for category in ['lamp','pillow'] for r in [x for x in rows if x['category']==category][:4]]
         assert len(rows)==8
@@ -143,12 +146,17 @@ def render(a):
     if fast:
         from .scene_fast_tail import install_tail
         assert fast==install_tail(pipe,a.lcm_adapter)
+    base_parameter_shapes={n:tuple(p.shape) for n,p in pipe.unet.named_parameters()}
     pipe.unet.add_adapter(LoraConfig(r=4, lora_alpha=4, init_lora_weights='gaussian',
         target_modules=['to_q','to_k','to_v','to_out.0']), adapter_name='scene_pair')
     named = dict(pipe.unet.named_parameters())
     assert set(state['unet_lora']) == {n for n in named if 'lora_' in n}
     with torch.no_grad():
         for n, value in state['unet_lora'].items(): named[n].copy_(value)
+    task_fusion=None
+    if fuse_task:
+        from .scene_fast_tail import fuse_task_adapter
+        task_fusion=fuse_task_adapter(pipe,base_parameter_shapes)
     # Expose reference strength as an explicit DEV ablation. The historical
     # default is unchanged; strength never adds another RGB encoder or network.
     pipe.set_ip_adapter_scale(a.ip_scale)
@@ -211,6 +219,7 @@ def render(a):
             'IP_adapter_scale':a.ip_scale,
             'sampling_contract':sampling,
             'fast_tail':fast,
+            'task_LoRA_fused':fuse_task,
             'actual_raw_optical_routing':routes,
             'optical_frontend':optical})
         write(a.output/'images.json',records)
@@ -226,7 +235,8 @@ def render(a):
             'sampling_contract':sampling,
             'fast_tail':fast,
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
-            'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,'LoRA_unmerged_for_both_models':True})
+            'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,
+            'LoRA_unmerged_for_both_models':not fuse_task,'task_LoRA_fused':fuse_task,'task_fusion':task_fusion})
     write(a.output/'report.json',{'complete':True,'scope':'TEST' if is_test else ('DEV_software_latency' if latencies else 'DEV'),'source_commit':os.environ['T12_SOURCE_COMMIT'],
         'generated_count':len(records),'prompt_profile':rows[0]['prompt_profile'],'training_performed':False,
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
@@ -237,6 +247,7 @@ def render(a):
         'IP_adapter_scale':a.ip_scale,
         'sampling_contract':sampling,
         'fast_tail':fast,
+        'task_LoRA_fused':fuse_task,'task_fusion':task_fusion,
         'joint_image_context':state.get('joint_image_context',False),'frozen_TEST_protocol':frozen,
         'DEV_or_TRAIN_feature_tensors_opened':not is_test and head is not None,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
@@ -250,6 +261,7 @@ def main():
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
     p.add_argument('--lcm-adapter',type=Path,help='Pinned, SHA-verified official SDXL LCM-LoRA; requires 4 or 8 steps, no extra input encoder')
+    p.add_argument('--fuse-task-lora',action='store_true',help='Fair optional merge for either model; requires a new quality run before timing')
     p.add_argument('--steps',type=int,choices=[4,6,7,8,12,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)

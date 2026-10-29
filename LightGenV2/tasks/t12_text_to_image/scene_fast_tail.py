@@ -44,6 +44,27 @@ def install_tail(pipe,root):
     return descriptor
 
 
+def fuse_task_adapter(pipe,base_parameter_shapes):
+    """Fair optional deployment merge for BOTH electronic and LG models.
+
+    Call only after the task checkpoint was loaded. A new quality rendering is
+    required because reduced-precision merge rounding can alter the output.
+    The separately pretrained fast adapter has already been fused/unloaded.
+    """
+    adapters=set()
+    for module in pipe.unet.modules():
+        if hasattr(module,'lora_A'):adapters.update(module.lora_A.keys())
+    if adapters!={'scene_pair'}:raise ValueError('Fuse exactly the loaded task adapter, once')
+    count=sum(p.numel() for name,p in pipe.unet.named_parameters() if 'lora_' in name)
+    if count<=0:raise ValueError('No active task weights to merge')
+    pipe.fuse_lora(adapter_names=['scene_pair'],safe_fusing=True)
+    pipe.unload_lora_weights()
+    assert not any('lora_' in name for name,p in pipe.unet.named_parameters())
+    assert base_parameter_shapes=={n:tuple(p.shape) for n,p in pipe.unet.named_parameters()}
+    return dict(task_LoRA_fused=True,task_adapter_raw_parameters=count,
+        added_deployed_structure=False,reduced_precision_requires_new_quality_render=True)
+
+
 def download(output):
     from huggingface_hub import snapshot_download
     import requests

@@ -65,6 +65,11 @@ TEST冻结和测速身份额外绑定该外部权重／采样器，旧模型不�
 方法／接口来源：[官方模型卡](https://huggingface.co/latent-consistency/lcm-lora-sdxl)、
 [官方Diffusers IP-Adapter说明](https://huggingface.co/docs/diffusers/v0.35.1/en/using-diffusers/ip_adapter)。
 
+正式公平测速另提供 `--fuse-task-lora`：对电子版和LG同样合并已加载的任务LoRA，
+验证部署UNet参数形状回到原基座；默认关闭，旧结果不变。不允许重复合并或混入未知adapter。
+BF16合并舍入可能改变生成，因此必须另跑完整质量图，不能套旧未合并PNG或计时；
+计时与TEST冻结均绑定该计算图标记。此选项尚未真实GPU生成／测速，不预称加速收益。
+
 当前实拍主表使用17.03M小版：原权重 `5b4f9a37…` 与末端decoder适配权重 `eeec…`
 分别保留。原权重仿真34.277751dB、未适配实拍27.551289dB；适配权重实拍31.552886dB、
 其自身仿真28.890612dB，不能跨权重拼成sim-exp差距。精确指标口径和原产物见下面复现入口。
