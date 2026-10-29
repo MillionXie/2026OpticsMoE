@@ -44,6 +44,16 @@ def install_tail(pipe,root):
     return descriptor
 
 
+def tail_configuration(root,guidance=1.):
+    """Explicit LCM inference choice; defaults preserve the first candidate.
+
+    The official tail recommends small guidance. Higher classifier-free values
+    use an unconditional/conditional batch and are timed as actually executed.
+    """
+    if guidance not in (1.,1.5,2.):raise ValueError('Only prespecified low LCM guidance values are supported')
+    return {**checked_tail(root),'CFG':float(guidance)}
+
+
 def fuse_task_adapter(pipe,base_parameter_shapes):
     """Fair optional deployment merge for BOTH electronic and LG models.
 

@@ -45,8 +45,8 @@ def frozen_test_protocol(a,state,previous):
     assert model['optical_frontend_sha256']==(state.get('optical_frontend') or {}).get('checkpoint_sha256')
     fast=getattr(a,'lcm_adapter',None)
     if fast:
-        from .scene_fast_tail import checked_tail
-        assert model['fast_tail']==checked_tail(fast)
+        from .scene_fast_tail import tail_configuration
+        assert model['fast_tail']==tail_configuration(fast,getattr(a,'lcm_guidance',1.))
     else:assert model.get('fast_tail') is None
     if a.measure_software_latency:raise ValueError('Use the separate fixed DEV timing protocol; TEST500 is generation-only')
     return {'manifest_sha256':digest(a.frozen_evaluation),'model_key':a.frozen_model_key,'descriptor':model}
@@ -87,9 +87,10 @@ def render(a):
     fast=None
     fuse_task=bool(getattr(a,'fuse_task_lora',False))
     if getattr(a,'lcm_adapter',None):
-        from .scene_fast_tail import checked_tail
-        fast=checked_tail(a.lcm_adapter)
+        from .scene_fast_tail import tail_configuration
+        fast=tail_configuration(a.lcm_adapter,getattr(a,'lcm_guidance',1.))
         assert sampling is None and a.steps in [4,8],'Do not stack an unvalidated task-distilled tail with pretrained LCM'
+    elif getattr(a,'lcm_guidance',1.)!=1.:raise ValueError('LCM guidance requires a checked LCM tail')
     if sampling:
         assert sampling['kind'] in ['guided_Euler12_to_conditional6_v1','progressive_guided_Euler_v2'] and a.steps==sampling['steps']
         assert len(sampling['timesteps'])==a.steps and all(x>y for x,y in zip(sampling['timesteps'],sampling['timesteps'][1:]))
@@ -144,8 +145,8 @@ def render(a):
             weight_name='ip-adapter-plus_sdxl_vit-h.safetensors', image_encoder_folder=None, local_files_only=True)
         pipe.set_ip_adapter_scale(.25); pipe.set_progress_bar_config(disable=True)
     if fast:
-        from .scene_fast_tail import install_tail
-        assert fast==install_tail(pipe,a.lcm_adapter)
+        from .scene_fast_tail import install_tail,checked_tail
+        assert checked_tail(a.lcm_adapter)==install_tail(pipe,a.lcm_adapter)
     base_parameter_shapes={n:tuple(p.shape) for n,p in pipe.unet.named_parameters()}
     pipe.unet.add_adapter(LoraConfig(r=4, lora_alpha=4, init_lora_weights='gaussian',
         target_modules=['to_q','to_k','to_v','to_out.0']), adapter_name='scene_pair')
@@ -171,7 +172,7 @@ def render(a):
         if a.measure_software_latency:torch.cuda.synchronize();began=time.perf_counter()
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
-        kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=1. if fast else 7.5,latents=noise,generator=generator)
+        kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=fast['CFG'] if fast else 7.5,latents=noise,generator=generator)
         if sampling:
             kwargs.pop('num_inference_steps')
             kwargs.update(timesteps=sampling['timesteps'],guidance_scale=sampling['CFG'])
@@ -262,6 +263,7 @@ def main():
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
     p.add_argument('--lcm-adapter',type=Path,help='Pinned, SHA-verified official SDXL LCM-LoRA; requires 4 or 8 steps, no extra input encoder')
     p.add_argument('--fuse-task-lora',action='store_true',help='Fair optional merge for either model; requires a new quality run before timing')
+    p.add_argument('--lcm-guidance',type=float,choices=[1.,1.5,2.],default=1.,help='Explicit low LCM guidance; >1 includes real classifier-free double batch cost')
     p.add_argument('--steps',type=int,choices=[4,6,7,8,12,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)

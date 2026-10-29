@@ -5,12 +5,20 @@ import unittest
 from unittest.mock import patch
 import torch
 from torch import nn
-from LightGenV2.tasks.t12_text_to_image.scene_fast_tail import checked_tail,REPO,REVISION,fuse_task_adapter
+from LightGenV2.tasks.t12_text_to_image.scene_fast_tail import checked_tail,REPO,REVISION,fuse_task_adapter,tail_configuration
 from LightGenV2.tasks.t12_text_to_image.scene_paired_render import frozen_test_protocol
 from LightGenV2.tasks.t12_text_to_image.tests.test_scene_frozen_test import FrozenSceneTEST
 
 
 class FastTailContract(unittest.TestCase):
+    def test_LCM_guidance_is_explicit_and_does_not_mutate_asset_identity(self):
+        original=dict(kind='verified-tail',CFG=1.,weight_sha256='pinned')
+        with patch('LightGenV2.tasks.t12_text_to_image.scene_fast_tail.checked_tail',return_value=original):
+            self.assertEqual(tail_configuration(Path('asset')),original)
+            self.assertEqual(tail_configuration(Path('asset'),2.)['CFG'],2.)
+            self.assertEqual(original['CFG'],1.)
+            with self.assertRaises(ValueError):tail_configuration(Path('asset'),7.5)
+
     def test_task_merge_retains_output_and_rejects_double_or_unknown_adapter(self):
         from peft import LoraConfig,inject_adapter_in_model
         from diffusers.utils.peft_utils import recurse_remove_peft_layers
