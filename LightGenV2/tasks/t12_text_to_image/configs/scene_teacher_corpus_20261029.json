@@ -1,0 +1,14 @@
+{
+  "prompt_profile": "coarse_shape_furnished_room_v2",
+  "resolution": 1024,
+  "sampling_steps": 30,
+  "text_guidance": 7.5,
+  "IP_scale": 0.25,
+  "Canny_scale": 0.35,
+  "Canny_end": 0.5,
+  "batch_size_max": 2,
+  "VAE_slicing": true,
+  "input_whitelist": ["white ABO RGB", "Generate request", "source-only sampling seed"],
+  "all_outputs_are_candidates_not_accepted_labels": true,
+  "TEST_predictions_or_GT": false
+}

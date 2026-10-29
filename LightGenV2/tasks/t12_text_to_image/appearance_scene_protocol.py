@@ -10,9 +10,10 @@ from .scene_generation_data import LAMP_SCENES,PILLOW_SCENES,request_seed
 from .white_reference_scene_probe import digest,write
 
 PROFILE='appearance_preserving_room_v1'
+COARSE_PROFILE='coarse_shape_furnished_room_v2'
 
 
-def conditions(category):
+def conditions(category,profile=PROFILE):
     if category not in ['lamp','pillow']:raise ValueError('Approved categories only')
     subject='table lamp' if category=='lamp' else 'cushion';out=[]
     for i,(scene,support,props) in enumerate(LAMP_SCENES if category=='lamp' else PILLOW_SCENES):
@@ -26,6 +27,16 @@ def conditions(category):
         out.append({'condition_id':str(i),'prompt_profile':PROFILE,'category':category,'prompt':prompt,'native_caption':caption,
           'reward_caption':compact,'requested_attributes':{'retain_coarse_shape':True,'retain_original_appearance':True,
            'change_product_color':False,'scene':scene,'support':support,'background_elements':props}})
+    if profile==COARSE_PROFILE:
+        for row in out:
+            row['prompt_profile']=profile
+            row['prompt']=row['prompt'].replace("Retain the product's overall shape and original appearance.",
+                "Retain the product's overall shape; fine details may vary naturally.")
+            row['native_caption']=row['native_caption'].replace('with its original shape and appearance.',
+                'with its overall shape retained; fine details may vary naturally.')
+            row['requested_attributes']['retain_original_appearance']=False
+            row['requested_attributes']['fine_details_free']=True
+    elif profile!=PROFILE:raise ValueError('Unreviewed scene contract')
     return out
 
 
