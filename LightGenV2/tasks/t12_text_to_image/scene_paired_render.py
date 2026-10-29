@@ -56,6 +56,11 @@ def render(a):
     a.qwen_side=state['Qwen_input_side'];resolution=state['resolution']
     previous = json.loads((a.checkpoint/'report.json').read_text())
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
+    sampling=state.get('sampling_contract')
+    if sampling:
+        assert sampling['kind']=='guided_Euler12_to_conditional6_v1' and a.steps==sampling['steps']==6
+        assert a.ip_scale==sampling['IP_scale'] and sampling['CFG']==1.
+    elif a.steps==6:raise ValueError('Six-step generation requires its trained distilled checkpoint')
     inputs = inference_inputs(a.data)
     rows = [r for r in inputs if r['condition_id'] in ['0','1']]
     expected=None;latencies=[]
@@ -113,13 +118,19 @@ def render(a):
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
         kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=7.5,latents=noise,generator=generator)
+        if sampling:
+            kwargs.pop('num_inference_steps')
+            kwargs.update(timesteps=sampling['timesteps'],guidance_scale=sampling['CFG'])
         conditioning_side=int(state.get('SDXL_conditioning_size',resolution))
         kwargs.update(original_size=(conditioning_side,conditioning_side),target_size=(conditioning_side,conditioning_side))
         with torch.inference_mode():
             if head is not None:
                 h,v,ids = raw_scene_features(qwen,processor,reference,row['prompt'],a.qwen_side,keep_on_device=a.measure_software_latency)
                 cond = head(h.unsqueeze(0).cuda().float(),v.unsqueeze(0).cuda().float())
-                images = torch.cat([state['negative_image'].cuda().bfloat16(),cond['image'].bfloat16()],dim=0).unsqueeze(1)
+                image_conditions=cond['image'].bfloat16()
+                if kwargs['guidance_scale']>1:
+                    image_conditions=torch.cat([state['negative_image'].cuda().bfloat16(),image_conditions],dim=0)
+                images=image_conditions.unsqueeze(1)
                 kwargs.update(prompt_embeds=cond['text'].bfloat16(),pooled_prompt_embeds=cond['pooled'].bfloat16(),
                     negative_prompt_embeds=state['negative_text'].cuda().bfloat16(),
                     negative_pooled_prompt_embeds=state['negative_pooled'].cuda().bfloat16(),ip_adapter_image_embeds=[images])
@@ -146,6 +157,7 @@ def render(a):
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
             'raw_Qwen_identity_exact':exact_identity,'resolution':resolution,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
+            'sampling_contract':sampling,
             'optical_frontend':optical})
         write(a.output/'images.json',records)
         write(a.output/'progress.json',{'stage':'independent_raw_DEV_render','done':i+1,'total':len(rows)})
@@ -157,6 +169,7 @@ def render(a):
             'first_request_ms':latencies[0],'model_load_excluded':True,'extra_warmup':False,'batch_size':1,
             'output_PNG_identity_vs_completed_quality_run':True,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
+            'sampling_contract':sampling,
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,'LoRA_unmerged_for_both_models':True})
     write(a.output/'report.json',{'complete':True,'scope':'DEV_software_latency' if latencies else 'DEV','source_commit':os.environ['T12_SOURCE_COMMIT'],
@@ -167,6 +180,7 @@ def render(a):
         'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None,
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
         'IP_adapter_scale':a.ip_scale,
+        'sampling_contract':sampling,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
         'head_parameters':0 if head is None else sum(p.numel() for p in head.parameters()),
         'factual_evaluation_captions':True})
@@ -177,7 +191,7 @@ def main():
     for key in ['data','checkpoint','qwen','cache','model-path','adapter-path','output']:
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
-    p.add_argument('--steps',type=int,choices=[12,30],default=30,help='Explicit sampling-budget ablation, not learned tail distillation')
+    p.add_argument('--steps',type=int,choices=[6,12,30],default=30,help='6 requires a matched trained tail; 12/30 preserve the original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
     a = p.parse_args()
