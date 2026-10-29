@@ -23,7 +23,8 @@ def main():
     width=(1+max(map(len,groups.values())))*180
     for page,start in enumerate(range(0,len(references),8)):
         selected=references[start:start+8];canvas=Image.new('RGB',(width,92+len(selected)*214),'white');draw=ImageDraw.Draw(canvas)
-        draw.text((8,3),'SYNTHETIC TRAIN/DEV DATA CANDIDATES | frozen public SDXL/IP/Canny | NOT Qwen output',font=font(13),fill='black')
+        teachers=sorted({r.get('teacher','unspecified teacher') for r in rows})
+        draw.text((8,3),'SYNTHETIC TRAIN/DEV DATA CANDIDATES | '+' / '.join(teachers)+' | NOT Qwen output',font=font(13),fill='black')
         draw.text((8,26),'Input: white ABO RGB + Generate text. Coarse shape retained; fine details free. No pasted product pixels.',font=font(12),fill='black')
         draw.text((8,48),'All candidates included. These boards do not certify every prompt clause or constitute test results.',font=font(12),fill='black')
         for i,ref in enumerate(selected):
