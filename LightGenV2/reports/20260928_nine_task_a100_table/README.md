@@ -1,5 +1,31 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：新A10080 Kimi MPS100三轮时间测量完成，能耗N/A
+
+`rental_timing_only_20261029_02/kimi_cap100_repeat01/02/03`三fresh轮各512不同原TEST、
+B1四帧、零推理预热、实际108SM；原完整文件输入至CPU评分连续窗及511内部间隙、
+原数学/精度/权重/head/逐字段元数据相等与512原字节SHA均保持并通过。
+三worker1532/19229/37068真退出，server CPU与本地独立时间审计全passed，
+24原文件66756062B已逐SHA保全本地及lab。能耗仍为TIMING_ONLY协议下的N/A，
+不报GPU平均W、J或能量比，不追认旧NVML失败或放宽250ms门。
+
+三轮T16为8.525288886216003、8.579832617891952、8.583260392857483s；
+总822.028220702894s/1536视频/96组，pooled **8.562793965655146s/16视频**。
+原生token1700352，总token/总时间为**2068.483729848198token/s**。
+对LG含resize/归一化等效45.94911715143696ms，时间比186.35382998620602，
+但LG共用Qwen分子token速率对Kimi原生比为75.08022418595112，不强行相等。
+跨A10080GB400W与lab40GB250W单列；LG仍非同范围物理E2E，不作物理百倍或能效结论。
+
+三report SHA为`e6ed3a44bc9c838c1e6e2d11b389c3ab0a771ede6cb9fa634a6b684cd355271d`、
+`9d240a245667fb2ad690f548afa337155fe1790be4e495bac729ab9377e4632a`、
+`7a0970a51b59c98e554aa2b7c95c38e1ca9bae9deb03a01943b52ab236874263`；
+lab receipt SHA为`56965014f8e3874c6891dce927336d6117f1be94b578a718e601ec5225b54284`、
+`c1b5eadf1d91b5e4f0453ab6483363e336fc611e5724645e8779d8b024c6520f`、
+`620706fcfaad13ea0059843be9bddb6eba711e41c65c805e3d24c6e472eec30e`。
+Unix1793265497.1572332实核唯一controller13364已转入DS50首轮worker54730加载，
+无error，现6/12点完成；原9fd1f4c22运行源、54源及1793278441.7376518截止不改。
+新增ABO Tiny冻结文搜图是人工后续任务，须等该12点队列释放后再独占入场，不能同卡并行。
+
 ## 2026-10-29：新A10080 Kimi MPS50三轮时间测量完成，能耗N/A
 
 `rental_timing_only_20261029_02/kimi_cap50_repeat01/02/03`三fresh轮各完成512不同原TEST视频、
