@@ -14,6 +14,7 @@ from PIL import Image
 from .qwen3_scene_conditioning import QwenSDXLConditions
 from .qwen3_scene_paired_train import new_qwen, raw_scene_features, pipeline
 from .white_reference_scene_probe import GPU, digest, write, checked_tokens
+from .scene_inference_sampler import descriptor as sampler_descriptor
 
 
 def inference_inputs(data,scope='dev'):
@@ -42,6 +43,7 @@ def frozen_test_protocol(a,state,previous):
     assert model['joint_image_context']==state.get('joint_image_context',False)
     assert model['sampling_contract']==state.get('sampling_contract')
     assert model.get('task_LoRA_fused',False)==bool(getattr(a,'fuse_task_lora',False))
+    assert model.get('inference_sampler')==sampler_descriptor(getattr(a,'sampler','original'))
     assert model['optical_frontend_sha256']==(state.get('optical_frontend') or {}).get('checkpoint_sha256')
     fast=getattr(a,'lcm_adapter',None)
     if fast:
@@ -84,6 +86,8 @@ def render(a):
     previous = json.loads((a.checkpoint/'report.json').read_text())
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
     sampling=state.get('sampling_contract')
+    sampler=sampler_descriptor(getattr(a,'sampler','original'))
+    if sampler and (sampling or getattr(a,'lcm_adapter',None)):raise ValueError('Do not stack independent sampler/tail candidates')
     fast=None
     fuse_task=bool(getattr(a,'fuse_task_lora',False))
     if getattr(a,'lcm_adapter',None):
@@ -121,6 +125,7 @@ def render(a):
         assert verified.get('IP_adapter_scale',.25)==a.ip_scale,'Timing and quality reference strengths differ'
         assert verified.get('fast_tail')==fast,'Timing and quality tail identities differ'
         assert verified.get('task_LoRA_fused',False)==fuse_task,'Timing and quality task fusion graphs differ'
+        assert verified.get('inference_sampler')==sampler,'Timing and quality samplers differ'
         expected={r['sample_id']:r for r in json.loads((a.reference_run/'images.json').read_text())}
         rows=[r for category in ['lamp','pillow'] for r in [x for x in rows if x['category']==category][:4]]
         assert len(rows)==8
@@ -153,6 +158,9 @@ def render(a):
     if fast:
         from .scene_fast_tail import install_tail,checked_tail
         assert checked_tail(a.lcm_adapter)==install_tail(pipe,a.lcm_adapter)
+    if sampler:
+        from .scene_inference_sampler import install
+        assert install(pipe,a.sampler)==sampler
     base_parameter_shapes={n:tuple(p.shape) for n,p in pipe.unet.named_parameters()}
     pipe.unet.add_adapter(LoraConfig(r=4, lora_alpha=4, init_lora_weights='gaussian',
         target_modules=['to_q','to_k','to_v','to_out.0']), adapter_name='scene_pair')
@@ -229,6 +237,7 @@ def render(a):
             'raw_Qwen_identity_exact':exact_identity and known_identity,'resolution':resolution,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
             'sampling_contract':sampling,
+            'inference_sampler':sampler,
             'fast_tail':fast,
             'task_LoRA_fused':fuse_task,
             'actual_raw_optical_routing':routes,
@@ -244,6 +253,7 @@ def render(a):
             'output_PNG_identity_vs_completed_quality_run':True,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
             'sampling_contract':sampling,
+            'inference_sampler':sampler,
             'fast_tail':fast,
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,
@@ -258,6 +268,10 @@ def render(a):
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
         'IP_adapter_scale':a.ip_scale,
         'sampling_contract':sampling,
+        'inference_sampler':sampler,
+        'actual_scheduler_class':type(pipe.scheduler).__name__,
+        'actual_timesteps':[float(x) for x in pipe.scheduler.timesteps.detach().cpu().tolist()],
+        'initial_noise_sigma':float(pipe.scheduler.init_noise_sigma),
         'fast_tail':fast,
         'task_LoRA_fused':fuse_task,'task_fusion':task_fusion,
         'joint_image_context':state.get('joint_image_context',False),'frozen_TEST_protocol':frozen,
@@ -276,6 +290,7 @@ def main():
     p.add_argument('--fuse-task-lora',action='store_true',help='Fair optional merge for either model; requires a new quality run before timing')
     p.add_argument('--lcm-guidance',type=float,choices=[1.,1.5,2.],default=1.,help='Explicit low LCM guidance; >1 includes real classifier-free double batch cost')
     p.add_argument('--expanded-development',type=Path,help='Audited original-DEV sixteen-view/eight-scene grid; never a TEST or timing override')
+    p.add_argument('--sampler',choices=['original','dpmpp2m-karras'],default='original',help='Matched inference solver ablation; no new weights, no stacking with LCM or learned tail')
     p.add_argument('--steps',type=int,choices=[4,6,7,8,12,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
