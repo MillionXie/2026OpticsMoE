@@ -4,6 +4,7 @@ Reuse original arithmetic, exact assets/head, cold input timing, actual NVML
 timestamps, 250ms gate and serialized original MPS guard. No LG/lab rerun.
 """
 import argparse
+import csv
 import os
 from pathlib import Path
 import sys
@@ -48,8 +49,20 @@ def initialize(args):
     # Only these already-approved TEST inputs are measured. The legacy rows()
     # demands presence of all2250 unused TRAIN files; avoid that storage-only
     # requirement without creating placeholders or changing any input/forward.
-    legacy.engine.base.old.rows=lambda: base.input_rows(args.manifest)
+    # Native runtime retains its558-row manifest/order identity check. Only
+    # the outer fullscope collector prepares/executes the first512 rows.
+    legacy.engine.base.old.rows=lambda: native_manifest_rows(args.manifest)
     return legacy
+
+
+def native_manifest_rows(manifest):
+    selected=base.input_rows(manifest)  # exact original manifest and first512
+    with Path(manifest).open(newline='',encoding='utf-8-sig') as stream:
+        rows=[r for r in csv.DictReader(stream) if r['split']=='test']
+    if (len(rows)!=558 or len({r['sample_id'] for r in rows})!=558
+            or rows[:512]!=selected):
+        raise ValueError('Original558 metadata with exact first512 required')
+    return rows
 
 def configure():
     global FROZEN_SOURCES

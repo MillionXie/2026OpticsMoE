@@ -37,8 +37,11 @@ def test_native_rows_subset():
     args=SimpleNamespace(profile='rental',gpu_uuid=entry.GPU,pipe='/data/tmp/rental_fullscope_20261029_01',suite_root=entry.ROOT,manifest=manifest)
     legacy=entry.initialize(args)
     rows=legacy.engine.base.old.rows()
-    assert len(rows)==512 and all(r['split']=='test' for r in rows)
-    assert entry.base.ordered_id_sha(rows)==entry.config()['first512_ids_sha256']
+    # Original native runtime insists on558 metadata rows. The outer
+    # measurement collector alone selects512; no unused file is opened here.
+    assert len(rows)==558 and all(r['split']=='test' for r in rows)
+    assert entry.base.ordered_id_sha(rows[:512])==entry.config()['first512_ids_sha256']
+    assert rows[:512]==entry.base.input_rows(manifest)
     assert 'torch' not in sys.modules
 
 if __name__=='__main__':
