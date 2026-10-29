@@ -8,7 +8,7 @@
 `rental_fullscope_20261029_01`、12点计划及新GPU UUID，复用原原生数学/精度/已训练评分头，
 不重新训练、量化或CPU offload。沿用直接NVML真实返回时间戳、250ms门及完整事务串行MPS守卫，
 最多八小时有限deadline，失败即停，不自动复活/更名重测；CPU四项测试passed，不代表正式GPU测量通过。
-新runtime只读取原manifest中同序首512 TEST输入，保持原manifest和first512 ID SHA；
+新runtime保留原558 TEST元数据身份检查，外层collector只准备/推理同序首512 TEST输入，保持原manifest和first512 ID SHA；
 不为legacy的未使用TRAIN文件存在性检查传输2250训练视频，不创建占位或替代样本。
 
 实核新卡NVIDIA A100-SXM4-80GB、默认400W、UUID
@@ -29,6 +29,15 @@ Git clone、模型、独立环境和结果均优先置于该盘，避免28GB系�
 共享文件只有通过原SHA才只读引用；不同的官方Python文件从原固定Git revision恢复，
 DS可由ModelScope镜像取得相同原字节，绝不因同名仓库就当作同一版本。
 源码只经Git发布/同步，数据/PT按清单+SHA；完成全部审计、备份及MPS释放确认前不通知可以释放租机。
+
+准备进展：512个原视频已分八块逐原SHA传入新数据盘，非训练/全精度重评；
+Kimi七个权重分片及全部官方代码现已逐原SHA一致，三个代码文件的原限流失败记录保留，
+通过固定不同镜像commit恢复相同原字节，旧训练评分head不变、不重新微调。
+原顺序pip下载在1800秒限时停止，完整torch/torchvision/numpy wheel仍保留；
+`provision_rental_python_20261029.py`采用明确不同的分段下载：PyPI官方元数据SHA、
+八个并发精确HTTPS range、整wheel SHA核对后本地安装，无无限retry，旧partial不删除。
+Torch2.6及其CUDA12.4依赖固定；Kimi/DS独立transformers与attention环境不互相污染。
+这些仍是准备阶段，不代表正式12点测量已完成或通过。
 
 ## 2026-10-29：LG扩展预处理与lab baseline测量交付，8配置24点完成
 
