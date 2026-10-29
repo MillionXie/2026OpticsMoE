@@ -45,6 +45,10 @@ def config():
 def initialize(args):
     legacy=NATIVE_INITIALIZE(args)
     legacy.engine.MPSGuard=serialized.serialized_guard_class(legacy.engine.MPSGuard)
+    # Only these already-approved TEST inputs are measured. The legacy rows()
+    # demands presence of all2250 unused TRAIN files; avoid that storage-only
+    # requirement without creating placeholders or changing any input/forward.
+    legacy.engine.base.old.rows=lambda: base.input_rows(args.manifest)
     return legacy
 
 def configure():

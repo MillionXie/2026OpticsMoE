@@ -31,6 +31,16 @@ def test_receiver():
     except ValueError:pass
     else:raise AssertionError('Other GPU must be rejected')
 
+def test_native_rows_subset():
+    from types import SimpleNamespace
+    manifest=entry.base.TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/provisioning/original_manifest.csv'
+    args=SimpleNamespace(profile='rental',gpu_uuid=entry.GPU,pipe='/data/tmp/rental_fullscope_20261029_01',suite_root=entry.ROOT,manifest=manifest)
+    legacy=entry.initialize(args)
+    rows=legacy.engine.base.old.rows()
+    assert len(rows)==512 and all(r['split']=='test' for r in rows)
+    assert entry.base.ordered_id_sha(rows)==entry.config()['first512_ids_sha256']
+    assert 'torch' not in sys.modules
+
 if __name__=='__main__':
-    test_exact_plan();test_cpu_scope();test_receiver()
-    print('{"status":"passed","tests":3,"torch_imported":false}')
+    test_exact_plan();test_cpu_scope();test_receiver();test_native_rows_subset()
+    print('{"status":"passed","tests":4,"torch_imported":false}')

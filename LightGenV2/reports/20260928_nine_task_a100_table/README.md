@@ -7,7 +7,9 @@
 新入口`measurement_protocol_20261024/run_rental_fullscope_20261029.py`固定单一新root
 `rental_fullscope_20261029_01`、12点计划及新GPU UUID，复用原原生数学/精度/已训练评分头，
 不重新训练、量化或CPU offload。沿用直接NVML真实返回时间戳、250ms门及完整事务串行MPS守卫，
-最多八小时有限deadline，失败即停，不自动复活/更名重测；CPU三项测试passed，不代表正式GPU测量通过。
+最多八小时有限deadline，失败即停，不自动复活/更名重测；CPU四项测试passed，不代表正式GPU测量通过。
+新runtime只读取原manifest中同序首512 TEST输入，保持原manifest和first512 ID SHA；
+不为legacy的未使用TRAIN文件存在性检查传输2250训练视频，不创建占位或替代样本。
 
 实核新卡NVIDIA A100-SXM4-80GB、默认400W、UUID
 `GPU-9f0b4728-5ee6-2c98-315f-f77a6b7c3ac5`，驱动580.65.06；未改功率/频率。
@@ -21,7 +23,11 @@ config/tokenizer等部分SHA与原一致，但三个官方Python文件SHA不一�
 `measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/rental80_fullscope_20261029_01/environment_initial.json`，
 SHA256=`cef033d6ff6aa70094f268157c71264ab7c480585f147ee9a6d314e08a3ed295`；
 同目录`lab_environment_backup_receipt01.json`记录远端数据路径与SHA，不将raw或凭据进Git。
-当前仍为环境/资产准备，尚无本次12点正式结果；人工已告知新增`/root/data`存储，待实际核验挂载容量。
+当前仍为环境/资产准备，尚无本次12点正式结果；已实核新增`/root/data`为256GB Lustre数据盘，
+Git clone、模型、独立环境和结果均优先置于该盘，避免28GB系统盘耗尽。
+`provision_rental_assets_20261029.py`仅接受旧固定revision、逐文件原SHA/size：
+共享文件只有通过原SHA才只读引用；不同的官方Python文件从原固定Git revision恢复，
+DS可由ModelScope镜像取得相同原字节，绝不因同名仓库就当作同一版本。
 源码只经Git发布/同步，数据/PT按清单+SHA；完成全部审计、备份及MPS释放确认前不通知可以释放租机。
 
 ## 2026-10-29：LG扩展预处理与lab baseline测量交付，8配置24点完成
