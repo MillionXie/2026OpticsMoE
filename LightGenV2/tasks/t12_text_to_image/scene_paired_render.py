@@ -63,6 +63,7 @@ def render(a):
         if a.reference_run is None:raise ValueError('Timing requires a completed same-weight quality run for output identity')
         verified=json.loads((a.reference_run/'report.json').read_text())
         assert verified['complete'] and verified['checkpoint_sha256']==previous['best_sha256'] and verified['sampling_steps']==a.steps
+        assert verified.get('IP_adapter_scale',.25)==a.ip_scale,'Timing and quality reference strengths differ'
         expected={r['sample_id']:r for r in json.loads((a.reference_run/'images.json').read_text())}
         rows=[r for category in ['lamp','pillow'] for r in [x for x in rows if x['category']==category][:4]]
         assert len(rows)==8
@@ -97,6 +98,9 @@ def render(a):
     assert set(state['unet_lora']) == {n for n in named if 'lora_' in n}
     with torch.no_grad():
         for n, value in state['unet_lora'].items(): named[n].copy_(value)
+    # Expose reference strength as an explicit DEV ablation. The historical
+    # default is unchanged; strength never adds another RGB encoder or network.
+    pipe.set_ip_adapter_scale(a.ip_scale)
     for c in pipe.components.values():
         if isinstance(c,torch.nn.Module): c.eval().requires_grad_(False)
     records = []
@@ -141,6 +145,7 @@ def render(a):
         records.append({**row,'split':'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
             'raw_Qwen_identity_exact':exact_identity,'resolution':resolution,'sampling_steps':a.steps,
+            'IP_adapter_scale':a.ip_scale,
             'optical_frontend':optical})
         write(a.output/'images.json',records)
         write(a.output/'progress.json',{'stage':'independent_raw_DEV_render','done':i+1,'total':len(rows)})
@@ -151,6 +156,7 @@ def render(a):
             'n':len(latencies),'requests_ms':latencies,'mean_ms':statistics.mean(latencies),'median_ms':statistics.median(latencies),
             'first_request_ms':latencies[0],'model_load_excluded':True,'extra_warmup':False,'batch_size':1,
             'output_PNG_identity_vs_completed_quality_run':True,'sampling_steps':a.steps,
+            'IP_adapter_scale':a.ip_scale,
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,'LoRA_unmerged_for_both_models':True})
     write(a.output/'report.json',{'complete':True,'scope':'DEV_software_latency' if latencies else 'DEV','source_commit':os.environ['T12_SOURCE_COMMIT'],
@@ -160,6 +166,7 @@ def render(a):
         'raw_Qwen_identity_checked':exact_identity,'image_feedback':False,'quality_accepted':False,
         'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None,
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
+        'IP_adapter_scale':a.ip_scale,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
         'head_parameters':0 if head is None else sum(p.numel() for p in head.parameters()),
         'factual_evaluation_captions':True})
@@ -171,8 +178,10 @@ def main():
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
     p.add_argument('--steps',type=int,choices=[12,30],default=30,help='Explicit sampling-budget ablation, not learned tail distillation')
+    p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
     a = p.parse_args()
+    if not 0<=a.ip_scale<=1:raise ValueError('Reference scale must be in [0,1]')
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT','')) != 40 or os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:
         raise ValueError('Fresh run, published source and GPU6 required')
     a.output.mkdir(parents=True); torch.set_num_threads(4); torch.cuda.set_per_process_memory_fraction(.8,0)
