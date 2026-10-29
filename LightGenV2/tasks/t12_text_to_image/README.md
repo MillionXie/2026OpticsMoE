@@ -11,6 +11,31 @@
 唯一入口：[复现与最终产物](reports/reproduction/README.md)。旧报告保留作历史记录，不代表当前部署入口。
 
 **2026-10-29人工更新：白底ABO参考＋详细文字生成有家具／层次的商品场景，先验证非Qwen模型。**
+用户已认可这种展示形式，并授权推进数据与Qwen baseline。输入为白底商品RGB、完整Generate文字、
+source像素与seed序号派生的随机种子；保留主体大致造型，未指定细节自由。无光照方向要求，
+TEST不设唯一正确图；明确颜色／材质／条纹及有家具的房间仍须遵循。历史严格编辑分数不能当新任务结果。
+新增`scene_generation_data`仅从已审核cohort的原始白底ABO source/target商品元数据取参考，
+不读取旧合成场景GT或掩码。TRAIN/DEV沿用44/8款、76/16视图；独立TEST沿用已审计排除父链曝光的
+10款商品，每款固定一原视图、50条不同请求，共500条请求，**不是500款独立商品**。
+TRAIN每视图16条件×2seed，预计2432请求；DEV每视图8个新组合、预计128；实际重复RGB+prompt+seed剔除，
+数量以新run审计为准。4色×2材质／纹样×8场景，通用完整prompt跨多个商品，未绑定SKU／品牌。
+seed与目标、prompt无关，同参考反事实共享初始噪声。模型可见清单仅id/reference/prompt/seed。
+这一步只是请求集，尚无获准训练标签；`scene_generation_pilot`先完整生成8款TRAIN商品×4条件×2seed的64张候选，
+用冻结公开SDXL＋RGB Canny ControlNet（强度.35，前50%去噪，1024/30步/CFG7.5），不加载IP-Adapter，
+不从DEV/TEST生成图选训练数据。所有候选保留、先查部件属性和粗造型再扩量，不自动将teacher输出称正确GT。
+
+新增`scene_metric_audit`独立重算均值／样本标准差，并校验三个独立评分进程中重复16输出的逐图数值和模型SHA。
+数值一致不代表属性正确：CLIP-T是全图图文相似度，DINOv2-I是外观代理，ImageReward_compact只覆盖短描述。
+独立BLIP-VQA在预先目视标注的TRAIN正反例上先校准，固定问题／答案同义词后才前向，
+不把这个小型非盲校准当论文准确率，也不在通过校准前用它自动验收训练标签。
+
+Qwen新baseline拟使用新鲜公开完整Qwen3-VL视觉＋语言作为唯一RGB文字入口，
+通过条件适配器接预训练SDXL latent生成器及原配VAE decoder，而非重用旧共适应单步回归UNet。
+先用TRAIN输入的原生生成器条件做对齐（CLIP仅训练教师，不增加推理分支），再在审核的多样TRAIN配对上
+用标准扩散噪声预测MSE及小规模LoRA微调；MSE监督噪声，不要求自由生成与某一GT逐像素一致。
+先冻结Qwen基础权重／VAE／生成器基础权重，训练适配器；后续LoRA需真实反向smoke及完整raw重载核验，
+不能仅凭条件loss下降声称生图成功。此段为新实现合同，未启动训练前不得写成已完成结果。
+
 新增先导`white_reference_outline_probe`／配置`white_reference_outline_sweep_20261029`验证参考粗几何：
 固定原4款TRAIN白底RGB、完整无光照方向Generate提示和两seed，使用冻结SDXL＋IP-Adapter Plus，
 再加官方`diffusers/controlnet-canny-sdxl-1.0@eb115a19a10d14909256db740ed109532ab1483c`。
