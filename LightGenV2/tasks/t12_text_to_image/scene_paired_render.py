@@ -23,6 +23,29 @@ def inference_inputs(data):
     return inputs
 
 
+def install_optical_frontend(qwen,folder,features,baseline_cache):
+    from .qwen_vl_postfree import apply_postfree
+    from .qwen_vl_hybrid import load_macro_state
+    if features is None:raise ValueError('LG teacher feature provenance required')
+    report=json.loads((folder/'report.json').read_text())
+    assert report['complete'] and report['stage']=='distill' and report['steps']>0
+    assert digest(folder/'best_checkpoint.pt')==report['best_sha256']
+    state=torch.load(folder/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+    assert state['schema']=='qwen3_scene_optical_frontend_v1' and state['step']>0
+    feature_report=json.loads((features/'report.json').read_text())
+    assert state['feature_cache_sha256']==feature_report['cache_sha256']
+    assert json.loads((features/'model_assets.json').read_text())==json.loads((baseline_cache/'model_assets.json').read_text())['Qwen']
+    vision_class=type(qwen.model.visual.blocks[0]);language_class=type(qwen.model.language_model.layers[0])
+    macros=apply_postfree(qwen,vision_pairs=1,language_pairs=1,residual_width=state['config']['residual_width'])
+    load_macro_state(macros,state['macros']);qwen.eval().requires_grad_(False)
+    counts={'vision':sum(type(x)==vision_class for x in qwen.model.visual.blocks),
+            'language':sum(type(x)==language_class for x in qwen.model.language_model.layers)}
+    assert counts=={'vision':6,'language':4}
+    assert all(.6<=f.alpha.item()<=.900001 for m in macros.values() for f in m.fusions)
+    return {'checkpoint_sha256':report['best_sha256'],'retained_original_TF':counts,'actual_removed_TF':42,
+            'feature_distillation_only_generator_recovery_not_yet_trained':True}
+
+
 def render(a):
     from peft import LoraConfig
     from diffusers import StableDiffusionXLPipeline
@@ -34,6 +57,7 @@ def render(a):
     inputs = inference_inputs(a.data)
     rows = [r for r in inputs if r['condition_id'] in ['0','1']]
     qwen = processor = head = identity = None
+    optical=None
     if state['variant'] == 'qwen':
         qwen, processor = new_qwen(a)
         head = QwenSDXLConditions().cuda().eval().requires_grad_(False)
@@ -41,7 +65,9 @@ def render(a):
         pipe = pipeline(a)
         identity = torch.load(a.cache/'DEV_frontend_identity_only.pt', map_location='cpu', weights_only=False)
         assert not identity['contains_targets_or_masks']
+        if a.lg_frontend:optical=install_optical_frontend(qwen,a.lg_frontend,a.lg_features,a.cache)
     else:
+        if a.lg_frontend:raise ValueError('LG replacement belongs to Qwen branch only')
         encoder = CLIPVisionModelWithProjection.from_pretrained(a.adapter_path/'models/image_encoder',
             torch_dtype=torch.bfloat16, local_files_only=True)
         pipe = StableDiffusionXLPipeline.from_pretrained(a.model_path, variant='fp16',
@@ -66,7 +92,7 @@ def render(a):
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
         noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
-        kwargs = dict(width=resolution,height=resolution,num_inference_steps=30,guidance_scale=7.5,latents=noise,generator=generator)
+        kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=7.5,latents=noise,generator=generator)
         conditioning_side=int(state.get('SDXL_conditioning_size',resolution))
         kwargs.update(original_size=(conditioning_side,conditioning_side),target_size=(conditioning_side,conditioning_side))
         with torch.inference_mode():
@@ -74,7 +100,9 @@ def render(a):
                 h,v,ids = raw_scene_features(qwen,processor,reference,row['prompt'],a.qwen_side)
                 key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
                 old = identity['features'][key]
-                assert torch.equal(h,old['hidden']) and torch.equal(v,old['visual']) and torch.equal(ids,old['input_ids'])
+                assert torch.equal(ids,old['input_ids'])
+                if optical is None:assert torch.equal(h,old['hidden']) and torch.equal(v,old['visual'])
+                else:assert h.shape==old['hidden'].shape and v.shape==old['visual'].shape and torch.isfinite(h).all() and torch.isfinite(v).all()
                 cond = head(h.unsqueeze(0).cuda().float(),v.unsqueeze(0).cuda().float())
                 images = torch.cat([state['negative_image'].cuda().bfloat16(),cond['image'].bfloat16()],dim=0).unsqueeze(1)
                 kwargs.update(prompt_embeds=cond['text'].bfloat16(),pooled_prompt_embeds=cond['pooled'].bfloat16(),
@@ -87,7 +115,8 @@ def render(a):
         name = row['sample_id']+'.png'; image.save(a.output/name)
         records.append({**row,'split':'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
-            'raw_Qwen_identity_exact':head is not None,'resolution':resolution,'sampling_steps':30})
+            'raw_Qwen_identity_exact':head is not None and optical is None,'resolution':resolution,'sampling_steps':a.steps,
+            'optical_frontend':optical})
         write(a.output/'images.json',records)
         write(a.output/'progress.json',{'stage':'independent_raw_DEV_render','done':i+1,'total':len(rows)})
     generator_count = sum(p.numel() for p in {id(p):p for c in pipe.components.values()
@@ -96,8 +125,9 @@ def render(a):
         'generated_count':len(records),'prompt_profile':rows[0]['prompt_profile'],'training_performed':False,
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
         'independent_TEST_opened':False,'GT_mask_or_target_latent_files_opened':False,
-        'raw_Qwen_identity_checked':head is not None,'image_feedback':False,'quality_accepted':False,
-        'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':30,
+        'raw_Qwen_identity_checked':head is not None and optical is None,'image_feedback':False,'quality_accepted':False,
+        'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None,
+        'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
         'head_parameters':0 if head is None else sum(p.numel() for p in head.parameters()),
         'factual_evaluation_captions':True})
@@ -107,6 +137,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     for key in ['data','checkpoint','qwen','cache','model-path','adapter-path','output']:
         p.add_argument('--'+key,type=Path,required=True)
+    p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
+    p.add_argument('--steps',type=int,choices=[12,30],default=30,help='Explicit sampling-budget ablation, not learned tail distillation')
     a = p.parse_args()
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT','')) != 40 or os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:
         raise ValueError('Fresh run, published source and GPU6 required')

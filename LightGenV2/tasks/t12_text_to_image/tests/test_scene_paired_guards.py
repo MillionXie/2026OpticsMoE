@@ -4,11 +4,14 @@ import tempfile
 from types import SimpleNamespace
 import unittest
 from LightGenV2.tasks.t12_text_to_image.qwen3_scene_paired_train import checked_pairs,native_negative_conditions
-from LightGenV2.tasks.t12_text_to_image.scene_paired_render import inference_inputs
+from LightGenV2.tasks.t12_text_to_image.scene_paired_render import inference_inputs,install_optical_frontend
 from LightGenV2.tasks.t12_text_to_image.white_reference_scene_probe import digest
 
 
 class PairedGuardsTest(unittest.TestCase):
+    def test_lg_render_requires_teacher_weight_provenance(self):
+        with self.assertRaises(ValueError):install_optical_frontend(None,Path('absent'),None,Path('absent'))
+
     def test_sdxl_default_negative_none_is_zero_without_encoding(self):
         text,pooled=native_negative_conditions([],[],None,True,device='cpu')
         self.assertEqual(tuple(text.shape),(1,77,2048));self.assertEqual(tuple(pooled.shape),(1,1280))
