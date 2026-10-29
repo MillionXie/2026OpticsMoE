@@ -149,15 +149,21 @@ def run(a):
             for _ in range(3):guard.check(False);time.sleep(10)
             gpu=subprocess.check_output(['nvidia-smi','--id='+GPU,'--query-gpu=uuid,name,memory.total,power.limit','--format=csv,noheader'],text=True,timeout=8)
             if GPU not in gpu or 'A100' not in gpu or '400.00 W' not in gpu:raise ValueError('Original A10080/400W identity')
-            identity['hardware']=gpu;guard.start();status('loading')
+            identity['hardware']=gpu
+            identity['host_snapshot']=dict(uname=list(os.uname()),cpuinfo=Path('/proc/cpuinfo').read_text(),
+                cgroup={str(p):p.read_text() for p in (Path('/sys/fs/cgroup/cpu.max'),Path('/sys/fs/cgroup/memory.max')) if p.exists()},
+                host_topology_is_not_container_exclusive=True)
+            guard.start();status('loading')
             import torch
             from LightGenV2.tasks.t08_abo_image_text_retrieval import abo_backbone_baselines as base
-            identity['packages']={n:importlib.metadata.version(n) for n in ('torch','torchvision','transformers','numpy','xformers')}
+            identity['packages']={n:importlib.metadata.version(n) for n in ('torch','torchvision','transformers','numpy','xformers','accelerate','opencv-python','Pillow','scipy')}
             if identity['packages']['transformers']!='4.38.2' or identity['packages']['numpy']!='1.26.4':raise ValueError('Verified rental DS numeric/runtime packages')
             bundle=base._load_deepseek(a.model,torch.device('cuda:0'))
             if torch.cuda.device_count()!=1 or torch.cuda.get_device_properties(0).multi_processor_count!=108:raise ValueError('Actual full A100108SM required')
             if bundle.metadata['backbone_total_parameters']!=3370501440 or bundle.image_width!=1280 or bundle.metadata['backbone_trainable_parameters']!=0:raise ValueError('Exact frozen Tiny; no fitted head')
-            identity['model_metadata']=bundle.metadata;write(a.output/'identity.json',identity)
+            identity['model_metadata']=bundle.metadata
+            identity['loaded_deepseek_source_SHA']={name:dict(path=str(Path(m.__file__).resolve()),sha256=sha(Path(m.__file__))) for name,m in list(sys.modules.items()) if name.startswith('deepseek_vl2') and getattr(m,'__file__',None) and str(m.__file__).endswith('.py')}
+            write(a.output/'identity.json',identity)
             image_features=[];text_features=[]
             with torch.inference_mode():
                 for i,row in enumerate(rows):
