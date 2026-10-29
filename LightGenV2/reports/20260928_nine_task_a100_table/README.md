@@ -1,5 +1,29 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-29：新增A10080的Kimi/DeepSeek全输入补测准备
+
+人工新授权独立租机补测Kimi-VL-A3B-Instruct与DeepSeek-VL2，MPS50/100各三fresh轮，
+每轮512不同原TEST、B1四帧、零推理预热、全文件准备至CPU评分连续窗；不重跑LG或lab已合格24点。
+新入口`measurement_protocol_20261024/run_rental_fullscope_20261029.py`固定单一新root
+`rental_fullscope_20261029_01`、12点计划及新GPU UUID，复用原原生数学/精度/已训练评分头，
+不重新训练、量化或CPU offload。沿用直接NVML真实返回时间戳、250ms门及完整事务串行MPS守卫，
+最多八小时有限deadline，失败即停，不自动复活/更名重测；CPU三项测试passed，不代表正式GPU测量通过。
+
+实核新卡NVIDIA A100-SXM4-80GB、默认400W、UUID
+`GPU-9f0b4728-5ee6-2c98-315f-f77a6b7c3ac5`，驱动580.65.06；未改功率/频率。
+宿主为AMD EPYC 7742双路、256可见逻辑CPU，容器实际cpu.max为2000000/100000（20核配额），
+memory.max=107374182400（100GiB）；宿主约1TiB内存不是容器独占资源。
+系统盘约28GB可用，初始/dev/shm50GiB。平台共享Kimi副本只作候选数据源：
+config/tokenizer等部分SHA与原一致，但三个官方Python文件SHA不一致，不能未经恢复固定版本与逐权重SHA验证直接采用。
+原固定revision、原训练head及运行版本仍需全部严格匹配。
+
+初始完整硬件/CPU/cgroup/磁盘/驱动快照457419B已逐字节及SHA双端保全到本地和lab
+`measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/rental80_fullscope_20261029_01/environment_initial.json`，
+SHA256=`cef033d6ff6aa70094f268157c71264ab7c480585f147ee9a6d314e08a3ed295`；
+同目录`lab_environment_backup_receipt01.json`记录远端数据路径与SHA，不将raw或凭据进Git。
+当前仍为环境/资产准备，尚无本次12点正式结果；人工已告知新增`/root/data`存储，待实际核验挂载容量。
+源码只经Git发布/同步，数据/PT按清单+SHA；完成全部审计、备份及MPS释放确认前不通知可以释放租机。
+
 ## 2026-10-29：LG扩展预处理与lab baseline测量交付，8配置24点完成
 
 最终CPU collector状态为`PASSED_8_CONFIG_24_POINT_FULL_INPUT_BASELINES`：
