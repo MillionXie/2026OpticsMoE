@@ -60,7 +60,9 @@ def main():
         assert all(('lora_' in n) for n,p in unet.named_parameters() if p.requires_grad)
         head=QwenSDXLConditions().cuda().train();state=torch.load(a.alignment/'best_checkpoint.pt',map_location='cpu',weights_only=False)
         head.load_state_dict(state['state_dict'],strict=True)
-        lora=[p for p in unet.parameters() if p.requires_grad];opt=torch.optim.AdamW([{'params':head.parameters(),'lr':1e-4},{'params':lora,'lr':1e-5}],weight_decay=.01)
+        lora=[p for p in unet.parameters() if p.requires_grad]
+        for p in lora:p.data=p.data.float()
+        opt=torch.optim.AdamW([{'params':head.parameters(),'lr':1e-4},{'params':lora,'lr':1e-5}],weight_decay=.01)
         scheduler=DDPMScheduler.from_config(pipe.scheduler.config);assert scheduler.config.prediction_type=='epsilon'
         results=[]
         for step,timestep in enumerate([128,384,640,896]):
