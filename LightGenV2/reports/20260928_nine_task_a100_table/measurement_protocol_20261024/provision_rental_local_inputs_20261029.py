@@ -26,13 +26,17 @@ def metadata(p):
     s=Path(p).stat()
     return dict(size_bytes=s.st_size,mtime_ns=s.st_mtime_ns,ctime_ns=s.st_ctime_ns,inode=s.st_ino)
 
-def decode_metadata_control(source):
+def decode_metadata_control(source,allow_existing=False):
     # A SEPARATE, non-measured inode: never preload decoded TEST inputs for a
     # measured call. This tests OpenCV's metadata behaviour on the new storage.
     import cv2
     target=LOCAL/'metadata_decode_control01.mp4'
-    with Path(source).open('rb') as f,target.open('xb') as out:shutil.copyfileobj(f,out)
-    target.chmod(0o444);before=metadata(target);digest=sha(target)
+    if target.exists():
+        if not allow_existing or sha(target)!=sha(source):raise ValueError('Existing control differs')
+    else:
+        with Path(source).open('rb') as f,target.open('xb') as out:shutil.copyfileobj(f,out)
+        target.chmod(0o444)
+    before=metadata(target);digest=sha(target)
     video=cv2.VideoCapture(str(target));total=int(video.get(cv2.CAP_PROP_FRAME_COUNT));positions=[]
     try:
         if total<=0:raise ValueError('Control video must decode')
@@ -46,11 +50,26 @@ def decode_metadata_control(source):
     return dict(path=str(target),separate_non_measured_inode=True,frames=4,positions=positions,
                 metadata_stable=True,bytes_SHA256=digest,no_decoded_input_reused=True)
 
+def preserve_and_switch_link(link,backup,target,expected_old_target):
+    if not link.is_symlink() or link.resolve()!=Path(expected_old_target).resolve():raise ValueError('Unexpected old link')
+    # Preserve the old symlink text, not rename a link across two filesystems.
+    # Actual replacement is atomic and remains inside its ORIGINAL parent.
+    backup.symlink_to(os.readlink(link))
+    if backup.resolve()!=Path(expected_old_target).resolve():raise ValueError('Recoverable old link differs')
+    temp=link.with_name('.lgvq_local_handover_'+backup.stem)
+    if temp.exists() or temp.is_symlink():raise FileExistsError('No overwrite of unknown handover temporary')
+    temp.symlink_to(target);os.replace(temp,link)
+    if link.resolve()!=Path(target).resolve():raise ValueError('New link target differs')
+
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--deadline',type=float,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--deadline',type=float,required=True)
+    p.add_argument('--resume-known-cross-device-link',action='store_true');a=p.parse_args()
     if not 0<a.deadline-time.time()<=600:raise ValueError('One finite CPU data provision only')
     if LOCAL.is_symlink() or LOCAL.resolve()!=LOCAL:raise ValueError('Exact local directory only')
-    LOCAL.mkdir(exist_ok=True);(LOCAL/'video_files').mkdir(exist_ok=False)
+    if a.resume_known_cross_device_link:
+        if Path('/proc/13015').exists() or 'Invalid cross-device link' not in (BASE/'input_local_overlay01.log').read_text():raise ValueError('Only explicit terminal EXDEV preparation failure')
+        if not (LOCAL/'video_files').is_dir():raise ValueError('Original complete copied directory required')
+    else:LOCAL.mkdir(exist_ok=True);(LOCAL/'video_files').mkdir(exist_ok=False)
     receipt=BASE/'input_local_overlay_receipt01.json'
     if receipt.exists():raise FileExistsError('No duplicate handover')
     path=BASE/'input_data/transfer_manifest512.json'
@@ -62,7 +81,10 @@ def main():
     state=json.loads((stopped/'suite_status.json').read_text())
     if state['status']!='stopped' or state['completed'] or state.get('mps_released') is not True:raise ValueError('Stopped/released failed timing01 only')
     if any(Path('/proc/'+str(pid)).exists() for pid in (3442,3443,3462)):raise ValueError('No input handover while any worker is alive')
-    backup=BASE/'input_symlink_handover01/old_links';backup.mkdir(parents=True,exist_ok=False)
+    backup=BASE/'input_symlink_handover01/old_links'
+    if a.resume_known_cross_device_link:
+        if not backup.is_dir() or any(backup.iterdir()):raise ValueError('Original EXDEV must have changed zero links')
+    else:backup.mkdir(parents=True,exist_ok=False)
     records=[]
     # Copy and independently verify every target BEFORE changing any input link.
     for i,r in enumerate(files):
@@ -71,18 +93,21 @@ def main():
         link=Path(r['original_path'])
         if not str(link).startswith('/DATA/DATA1/lixinyue/xyli/data/LGVQ/videos/') or not link.is_symlink() or link.resolve()!=src.resolve():raise ValueError('Only our exact original input link')
         if src.stat().st_size!=r['bytes'] or sha(src)!=r['sha256']:raise ValueError('Original source bytes differ')
-        with src.open('rb') as f,dst.open('xb') as out:shutil.copyfileobj(f,out,4194304)
+        if dst.exists():
+            if not a.resume_known_cross_device_link:raise FileExistsError('No overwrite of existing input')
+        else:
+            with src.open('rb') as f,dst.open('xb') as out:shutil.copyfileobj(f,out,4194304)
         if dst.stat().st_size!=r['bytes'] or sha(dst)!=r['sha256']:raise ValueError('Local byte copy differs')
-        dst.chmod(0o444)  # provisioning, before any new timing window; no timestamp fabrication
+        if not a.resume_known_cross_device_link:dst.chmod(0o444)  # provisioning only, never fabricate timestamps
+        elif dst.stat().st_mode&0o777!=0o444:raise ValueError('Original copied read-only mode required')
         records.append(dict(sample_id=r['sample_id'],original_path=str(link),old_target=str(src),new_target=str(dst),
             old_link_backup=str(backup/f'{i:05d}.link'),bytes=r['bytes'],sha256=r['sha256'],local_metadata=metadata(dst)))
-    control=decode_metadata_control(records[0]['new_target'])
+    control=decode_metadata_control(records[0]['new_target'],a.resume_known_cross_device_link)
     for r in records:
         if time.time()>=a.deadline:raise TimeoutError('Finite link handover')
         link=Path(r['original_path']);old=Path(r['old_link_backup'])
         if not link.is_symlink() or link.resolve()!=Path(r['old_target']).resolve():raise ValueError('Input link changed externally')
-        link.rename(old);link.symlink_to(Path(r['new_target']))
-        if link.resolve()!=Path(r['new_target']).resolve():raise ValueError('New link target differs')
+        preserve_and_switch_link(link,old,Path(r['new_target']),Path(r['old_target']))
     # A second actual read verifies metadata stability on this local filesystem;
     # this is input transport verification, not model inference or GPU warmup.
     for r in records:
