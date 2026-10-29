@@ -28,7 +28,7 @@ def main():
     checked={}
     for model in ('kimi','deepseek'):
         site=BASE/'venvs'/model/'lib/python3.12/site-packages'
-        while not site.exists():
+        while not site.exists() or not (BASE/'venvs'/model/'bin/python').exists():
             if time.time()>=deadline or not Path('/proc/'+str(setup['pid'])).exists():raise TimeoutError('Original setup cutoff')
             time.sleep(1)
         # Search path only: restores exact original numerical libraries without
