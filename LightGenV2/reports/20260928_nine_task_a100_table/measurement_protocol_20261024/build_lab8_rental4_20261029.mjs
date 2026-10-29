@@ -235,6 +235,7 @@ for(const [i,c] of configs.entries()){
   if(energyRemeasured){
     s.getRange(`H${row}`).formulas=[[`=${sum('K')}/${sum('G')}`]];
     s.getRange(`I${row}`).values=[['File to CPU score']];
+    s.getRange(`J${row}`).formulas=[[`=D${row}/$D$23`]];
   }else{
     s.getRange(`H${row}`).formulas=[[`=D${row}/$D$23`]];
     s.getRange(`I${row}`).formulas=[[`=IF(E${row}="N/A","N/A",$E$23/E${row})`]];
@@ -249,12 +250,14 @@ s.getRange('A27').values=[['Lab energy: NVML board integral plus the fixed 338.2
 s.getRange('A28').values=[['Rental and LG energy are unqualified: N/A. Native tokens use each baseline’s own numerator.']];
 s.getRange('A29').values=[['LG alone shares Qwen input-token counts. Model loading is outside each baseline timing window.']];
 if(energyRemeasured){
-  s.getRange('A22:I23').clear({applyTo:'contents'});
-  s.getRange('A22').values=[['LightGen rental software runtime and energy are on the next tab.']];
+  s.getRange('J5').values=[['Time / LG equivalent (x, different scope)']];
+  s.getRange('J22').values=[['Time / LG equivalent (x, different scope)']];
+  s.getRange('H23:J23').values=[['N/A','Equivalent scheduling',1]];
+  s.getRange('A24').values=[['LG45.949ms includes resize/normalization, excludes decode/RGB/crop/quality preparation. Not same-scope E2E.']];
   s.getRange('A25').values=[['36 baseline trials. DeepSeek uses authorized actual-sample ZOH. Per-trial protocol flags are in Trials.']];
   s.getRange('A26').values=[['Lab A10040GB/250W and rental A10080GB/400W are distinct hardware, not identical-device comparisons.']];
   s.getRange('A27').values=[['GPU board energy is measured. Column H adds the fixed338.2W host proxy once; it is not socket power.']];
-  s.getRange('A28').values=[['No old timing-only rental result is used. Missing utilization/memory diagnostics do not mean missing power.']];
+  s.getRange('A28').values=[['LG rental FFT software diagnostic685.421ms is separate on the next tab. It does not replace LG45.949ms.']];
   s.getRange('A29').values=[['Baseline loading is excluded. All511 gaps from the first file preparation to final CPU score are included.']];
   s.getRange('A30').values=[['Rental: six Kimi, one separate DS CPU derivation and five new DS rounds. Original failed files retained.']];
 }
@@ -270,6 +273,13 @@ s.getRange('B6:B23').format.horizontalAlignment='center';
 s.getRange('A22:I22').format.horizontalAlignment='center';
 const widths=[25,10,24,18,18,18,16,18,20];widths.forEach((w,i)=>s.getRangeByIndexes(0,i,29,1).format.columnWidth=w);
 if(energyRemeasured)s.getRange('F1:H29').format.columnWidth=22;
+if(energyRemeasured){
+  s.getRange('J1:J30').format={font:{name:'Arial',size:10},columnWidth:25,verticalAlignment:'center'};
+  for(const cell of ['J5','J22'])s.getRange(cell).format={fill:cell==='J5'?'#263C5A':'#526983',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},horizontalAlignment:'center',wrapText:true};
+  s.getRange('A5:J5').format.rowHeight=46;s.getRange('A22:J22').format.rowHeight=46;
+  s.getRange('J6:J23').setNumberFormat('0.0');s.getRange('J6:J23').format.horizontalAlignment='right';
+  s.getRange('A24:J24').format={font:{name:'Arial',size:10,italic:true},rowHeight:24};
+}
 s.getRange('A25:I29').format.font.italic=true;s.getRange('A25:I29').format.rowHeight=22;
 raw.getRange('A1:O37').format.rowHeight=28;raw.getRange('A1:O1').format.rowHeight=38;
 raw.getRange('A1:B37').format.columnWidth=22;raw.getRange('C1:C37').format.columnWidth=10;raw.getRange('D1:D37').format.columnWidth=25;
@@ -281,10 +291,15 @@ wb.recalculate();
 for(const [i,a] of summary.entries()){
   const row=6+i+(i>=8?2:0);close(s.getRange(`D${row}`).values[0][0],a.time16_s*1000);
   if(a.native_tokens_per_s)close(s.getRange(`E${row}`).values[0][0],a.native_tokens_per_s);
-  if(energyRemeasured){close(s.getRange(`F${row}`).values[0][0],configs[i].trials.reduce((n,t)=>n+t.gpu_j,0)/96);close(s.getRange(`H${row}`).values[0][0],a.energy16_j);close(s.getRange(`G${row}`).values[0][0],a.gpu_mean_w);}
+  if(energyRemeasured){close(s.getRange(`F${row}`).values[0][0],configs[i].trials.reduce((n,t)=>n+t.gpu_j,0)/96);close(s.getRange(`H${row}`).values[0][0],a.energy16_j);close(s.getRange(`G${row}`).values[0][0],a.gpu_mean_w);close(s.getRange(`J${row}`).values[0][0],a.time16_s/lg.LG_time16_s);}
 }
 const original=raw.getRange('H2').values[0][0],old=s.getRange('D6').values[0][0];raw.getRange('H2').values=[[original+1]];wb.recalculate();
 close(s.getRange('D6').values[0][0],old+1000/96);raw.getRange('H2').values=[[original]];wb.recalculate();close(s.getRange('D6').values[0][0],old);
+if(energyRemeasured){
+  const denominator=s.getRange('D23').values[0][0],ratio=s.getRange('J6').values[0][0];
+  s.getRange('D23').values=[[denominator*2]];wb.recalculate();close(s.getRange('J6').values[0][0],ratio/2);
+  s.getRange('D23').values=[[denominator]];wb.recalculate();close(s.getRange('J6').values[0][0],ratio);
+}
 if(energyRemeasured){
   const j=raw.getRange('J2').values[0][0],k=raw.getRange('K2').values[0][0],f=s.getRange('F6').values[0][0],h=s.getRange('H6').values[0][0];
   raw.getRange('J2:K2').values=[[j+10,k+10]];wb.recalculate();
@@ -294,7 +309,7 @@ if(energyRemeasured){
 console.log((await wb.inspect({kind:'table',range:'Comparison!A5:I19',include:'values,formulas',tableMaxRows:15,tableMaxCols:9,maxChars:3500})).ndjson);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:1500});console.log(errors.ndjson);
 assert(!/#REF!|#DIV\/0!|#VALUE!|#NAME\?|#NUM!|#NULL!|#SPILL!|#CALC!/.test(errors.ndjson),'Formula error scan');
-for(const [sheetName,range,name] of [['Comparison',energyRemeasured?'A1:I30':'A1:I29','comparison_preview.png'],...(energyRemeasured?[['LightGen rental','A1:C19','lightgen_preview.png']]:[]),...(includeABO?[['ABO retrieval','A1:H25','abo_preview.png']]:[]),['Trials','A1:L13','trials_preview.png']]){
+for(const [sheetName,range,name] of [['Comparison',energyRemeasured?'A1:J30':'A1:I29','comparison_preview.png'],...(energyRemeasured?[['LightGen rental','A1:C19','lightgen_preview.png']]:[]),...(includeABO?[['ABO retrieval','A1:H25','abo_preview.png']]:[]),['Trials','A1:L13','trials_preview.png']]){
   const blob=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(OUT,name),new Uint8Array(await blob.arrayBuffer()));
 }
 await (await SpreadsheetFile.exportXlsx(wb)).save(path.join(OUT,BOOK));
