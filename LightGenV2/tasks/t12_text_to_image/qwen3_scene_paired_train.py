@@ -54,6 +54,7 @@ def checked_pairs(a):
     report = json.loads((a.data/'report.json').read_text())
     review = json.loads((a.data/'visual_review.json').read_text())
     assert report['complete'] and report['role_disjoint'] and not report['TEST_opened']
+    assert not report.get('preview_only',False) and report.get('eligible_for_training',True)
     assert review['approved_for_training'] and review['pairs_sha256'] == digest(a.data/'pairs.json')
     rows = json.loads((a.data/'pairs.json').read_text())
     assert all(r['split'] in ['train', 'dev'] for r in rows)

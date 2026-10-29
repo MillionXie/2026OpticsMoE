@@ -119,7 +119,8 @@ def composite(rgba, background, category, placement=None):
 def compose(a):
     report = json.loads((a.sources/'report.json').read_text())
     backgrounds_report = json.loads((a.backgrounds/'report.json').read_text())
-    review = json.loads((a.backgrounds/'visual_review.json').read_text())
+    review_path = a.review_file or a.backgrounds/'visual_review.json'
+    review = json.loads(review_path.read_text())
     assert report['complete'] and not report['TEST_opened'] and backgrounds_report['complete']
     assert review['backgrounds_sha256'] == digest(a.backgrounds/'backgrounds.json')
     # Per-asset factual recaption is allowed only for TRAIN/DEV data preparation.
@@ -128,6 +129,13 @@ def compose(a):
     assets = json.loads((a.backgrounds/'backgrounds.json').read_text())
     assert set(accepted) <= {r['asset_id'] for r in assets}
     sources = json.loads((a.sources/'sources.json').read_text())
+    if a.stage == 'preview':
+        chosen = {}; limited = []
+        for source in sources:
+            key = source['split'],source['category'];seen_products = chosen.setdefault(key,set())
+            if len(seen_products)<2 and source['product_id'] not in seen_products:
+                seen_products.add(source['product_id']);limited.append(source)
+        sources = limited
     (a.output/'references').mkdir(); (a.output/'targets').mkdir()
     pairs = []; seen = set(); previews = {}; source_previews = []
     for source in sources:
@@ -175,6 +183,7 @@ def compose(a):
         if owners.setdefault(row['source_product_id'], row['split']) != row['split']: raise ValueError('SKU leakage')
         if pixel_owners.setdefault(row['source_RGBA_sha256'], row['split']) != row['split']: raise ValueError('Exact foreground leakage')
     write(a.output/'pairs.json', pairs)
+    shutil.copyfile(review_path,a.output/'applied_background_review.json')
     for name, values in [('all_background_placements_QA', list(previews.values())),
                          ('all_source_first_targets_QA', source_previews)]:
         for page, start in enumerate(range(0, len(values), 24)):
@@ -191,7 +200,8 @@ def compose(a):
         'pairs_sha256': digest(a.output/'pairs.json'), 'counts': dict(Counter(r['split'] for r in pairs)),
         'target_resolution': 1024, 'source_products': dict(Counter(owners.values())),
         'role_disjoint': True, 'TEST_opened': False, 'paired_targets_are_one_valid_training_example_not_unique_test_GT': True,
-        'source_report_sha256': digest(a.sources/'report.json'), 'background_review_sha256': digest(a.backgrounds/'visual_review.json'),
+        'source_report_sha256': digest(a.sources/'report.json'), 'background_review_sha256': digest(review_path),
+        'preview_only':a.stage=='preview','eligible_for_training':a.stage!='preview',
         'original_RGBA_native_sizes': report['native_size_counts'], 'compositing_at_inference': False,
         'foreground_attribution': 'Amazon Berkeley Objects (ABO), CC BY 4.0',
         'background_attribution': 'Own public SDXL-generated backdrops; not ABO photographs.',
@@ -200,7 +210,8 @@ def compose(a):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--stage', choices=['backgrounds', 'compose'], required=True)
+    p.add_argument('--stage', choices=['backgrounds', 'compose', 'preview'], required=True)
+    p.add_argument('--review-file',type=Path)
     for key in ['sources', 'backgrounds', 'model-path']: p.add_argument('--'+key, type=Path)
     p.add_argument('--output', type=Path, required=True)
     a = p.parse_args()
