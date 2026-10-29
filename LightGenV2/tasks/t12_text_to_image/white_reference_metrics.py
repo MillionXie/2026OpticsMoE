@@ -37,7 +37,10 @@ def reward_loader():
     return load
 
 
-def reward_caption(category, condition_id):
+def reward_caption(category, condition_id, profile='free_lighting_v2'):
+    if profile=='appearance_preserving_room_v1':
+        from .appearance_scene_protocol import conditions
+        return conditions(category)[int(condition_id)]['reward_caption']
     captions = {
         'lamp': [
             'A blue fabric lampshade and brass base on an oak desk in a study with bookshelves, curtains and a plant.',
@@ -141,7 +144,7 @@ def main():
         model.eval().requires_grad_(False)
         with torch.inference_mode():
             for i, row in enumerate(rows):
-                caption = reward_caption(row['category'], row['condition_id'])
+                caption = reward_caption(row['category'], row['condition_id'],row['prompt_profile'])
                 n = len(model.blip.tokenizer(caption, truncation=False)['input_ids'])
                 if n > 35: raise ValueError(f'ImageReward compact caption would truncate: {n}')
                 row.update(reward_evaluation_caption=caption, reward_caption_tokens=n,
@@ -162,7 +165,7 @@ def main():
                 'DINOv2_I':'facebook/dinov2-small CLS cosine, full reference and generated image; differs from original DreamBench DINOv1-S/16; not pure outline',
                 'CLIP_I':'OpenAI ViT-B/32 full-image cosine, auxiliary appearance metric',
                 'ImageReward_compact':'Official score() with fixed <=35-token caption. Auxiliary preference; does not score every full-prompt clause.'},
-              'limitations':['Four TRAIN products only, not independent test or automatic attribute accuracy.',
+              'limitations':[f"{len({r['reference_id'] for r in rows})} TRAIN references only, not independent test or automatic attribute accuracy.",
                 'Native generation resolutions differ; quality feasibility diagnostic, not fair resolution-controlled model ranking.',
                 'Appearance similarity can reward an unchanged white-background output that ignores text; never use it alone.',
                 'Reward captions omit peripheral details and lighting; original prompts remain preserved and fully scored by CLIP-T.',

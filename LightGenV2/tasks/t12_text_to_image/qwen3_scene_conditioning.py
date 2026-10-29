@@ -99,12 +99,18 @@ def cache_inputs(a,rows):
     for i,row in enumerate(rows):
         path=a.data/row['reference'];assert digest(path)==row['reference_sha256']
         with Image.open(path) as im:im=im.convert('RGB');hidden,visual,ids=raw_features(qwen,processor,im,row['prompt'])
-        key=hashlib.sha256(row['prompt'].encode()).hexdigest()
+        teacher_prompt=row['prompt']
+        if getattr(a,'use_native_caption_targets',False):
+            from .appearance_scene_protocol import PROFILE,conditions
+            assert row['prompt_profile']==PROFILE
+            teacher_prompt=conditions(row['category'])[int(row['condition_id'])]['native_caption']
+            assert teacher_prompt==row['native_caption']
+        key=hashlib.sha256(teacher_prompt.encode()).hexdigest()
         if key not in text_targets:
             features=[];lengths=[]
             for tokenizer,encoder in zip(tokenizers,encoders):
-                lengths.append(checked_tokens(tokenizer,row['prompt'])['full_token_count'])
-                tokens=tokenizer(row['prompt'],padding='max_length',max_length=77,truncation=False,return_tensors='pt').input_ids.cuda()
+                lengths.append(checked_tokens(tokenizer,teacher_prompt)['full_token_count'])
+                tokens=tokenizer(teacher_prompt,padding='max_length',max_length=77,truncation=False,return_tensors='pt').input_ids.cuda()
                 with torch.inference_mode():output=encoder(tokens,output_hidden_states=True)
                 features.append(output.hidden_states[-2].cpu().half())
             text_targets[key]={'text':torch.cat(features,dim=-1)[0],'pooled':output.text_embeds[0].cpu().half(),'token_lengths':lengths}
