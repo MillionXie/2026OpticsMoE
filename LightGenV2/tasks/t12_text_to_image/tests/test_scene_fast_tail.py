@@ -69,7 +69,7 @@ class FastTailContract(unittest.TestCase):
     def test_TEST_cannot_silently_change_to_an_unfrozen_fast_tail(self):
         with tempfile.TemporaryDirectory() as folder:
             a,state,ready,frozen=FrozenSceneTEST().fixture(Path(folder));a.lcm_adapter=Path('verified-asset')
-            descriptor=dict(kind='verified-fast-tail',sha256='external-weights')
+            descriptor=dict(kind='verified-fast-tail',sha256='external-weights',CFG=1.)
             with patch('LightGenV2.tasks.t12_text_to_image.scene_fast_tail.checked_tail',return_value=descriptor):
                 with self.assertRaises(KeyError):frozen_test_protocol(a,state,ready)
                 frozen['models']['qwen']['fast_tail']=descriptor;a.frozen_evaluation.write_text(json.dumps(frozen))
