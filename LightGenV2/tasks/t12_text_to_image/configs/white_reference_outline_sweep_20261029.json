@@ -1,0 +1,12 @@
+{
+  "schema": "abo_white_reference_scene_feasibility_v1",
+  "prompt_profile": "free_lighting_v2",
+  "seeds": [1042, 1043],
+  "negative_prompt": "people, readable text, logo, watermark, duplicate product, malformed structure, flat solid-color backdrop",
+  "sdxl_ipadapter": {"resolution": 1024, "steps": 30, "text_guidance": 7.5, "image_scale": 0.25, "prompt_style": "explicit_caption"},
+  "outline": {"white_threshold": 245, "minimum_component_area": 9, "maximum_product_extent": 0.68, "center_y": 0.53, "edge_width": 2},
+  "control_guidance_end": 0.65,
+  "variants": [{"name": "scale035", "control_scale": 0.35}, {"name": "scale065", "control_scale": 0.65}],
+  "controlnet_revision": "eb115a19a10d14909256db740ed109532ab1483c",
+  "protocol": "Frozen pretrained SDXL+IP-Adapter Plus+ControlNet Canny. Condition is the external silhouette derived from raw white TRAIN reference RGB, without internal texture edges, never target or GT mask. Position and scale normalized with aspect preserved to leave furniture space. Natural lighting free. Two strengths each retain all four products/two prompts/two seeds, shared explicit initial noise verified. Control active for first65% denoising only. This complete configuration differs from the previous no-ControlNet setup; do not assign changes causally to a single ingredient. Native1024, no output enhancement, no independent TEST, no training, no latency claim."
+}
