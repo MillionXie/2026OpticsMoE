@@ -34,7 +34,10 @@ def main():
               for r in rows if annotations[r['sample_id']]['approved']]
     products={s:{r['source_product_id'] for r in rows if r['split']==s} for s in ['train','dev']}
     assert not products['train']&products['dev']
-    for split in ['train','dev']:
+    # Every TRAIN product must have usable supervision. DEV generation keeps
+    # its complete input denominator even when a teacher failed every target
+    # for one product: never force a wrong image into the noise-loss labels.
+    for split in ['train']:
         accepted={r['source_product_id'] for r in selected if r['split']==split}
         if accepted!=products[split]:raise ValueError('Need valid additional candidates for '+split+': '+str(sorted(products[split]-accepted)))
     a.output.mkdir(parents=True);(a.output/'references').mkdir();(a.output/'targets').mkdir()
@@ -60,7 +63,7 @@ def main():
     shutil.copyfile(a.review,a.output/'candidate_review.json')
     pair_sha=digest(a.output/'pairs.json')
     write(a.output/'visual_review.json',{'approved_for_training':True,'pairs_sha256':pair_sha,
-        'basis':'Explicit per-candidate visual acceptance; all source products retained; original teacher failures preserved.',
+        'basis':'Explicit per-candidate coarse-shape/artifact screening; all TRAIN products and full DEV generation inputs retained; rejected DEV targets are not forced into noise supervision.',
         'review_sha256':digest(a.review),'not_a_test_accuracy_evaluation':True})
     write(a.output/'report.json',{'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],
         'source_sha256':digest(Path(__file__)),'pairs_sha256':pair_sha,'counts':dict(Counter(r['split'] for r in selected)),
