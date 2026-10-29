@@ -1,6 +1,6 @@
 import unittest
 import torch
-from ..qwen3_scene_conditioning import QwenSDXLConditions,alignment_loss
+from ..qwen3_scene_conditioning import QwenSDXLConditions,alignment_loss,qwen_asset_manifest
 
 
 class NativeConditionTests(unittest.TestCase):
@@ -24,6 +24,15 @@ class NativeConditionTests(unittest.TestCase):
     def test_perfect_interface_has_zero_loss(self):
         target={'text':torch.randn(2,77,12),'image':torch.randn(2,257,8),'pooled':torch.randn(2,8)}
         loss,_=alignment_loss(target,target);self.assertLess(abs(loss.item()),1e-6)
+
+    def test_hf_cache_parent_does_not_hide_actual_model_assets(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)/'.cache'/'hub'/'snapshot';root.mkdir(parents=True)
+            (root/'model.safetensors').write_bytes(b'asset identity fixture')
+            (root/'.cache').mkdir();(root/'.cache'/'metadata.json').write_text('{}')
+            self.assertEqual(set(qwen_asset_manifest(root)),{'model.safetensors'})
 
 
 if __name__=='__main__':unittest.main()

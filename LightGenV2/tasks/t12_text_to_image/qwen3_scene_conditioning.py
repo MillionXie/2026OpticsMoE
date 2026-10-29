@@ -21,6 +21,15 @@ from PIL import Image
 from .white_reference_scene_probe import GPU,digest,write,checked_tokens,model_manifest
 
 
+def qwen_asset_manifest(root):
+    # HF snapshots themselves live under an absolute .cache directory. Exclude
+    # download metadata relative to the snapshot, not its legitimate parent.
+    files=[p for p in root.rglob('*') if p.is_file() and '.cache' not in p.relative_to(root).parts
+           and p.suffix in {'.safetensors','.json','.txt','.md'}]
+    if not files or not any(p.suffix=='.safetensors' for p in files):raise ValueError('Complete Qwen snapshot required')
+    return {p.relative_to(root).as_posix():{'sha256':digest(p),'bytes':p.stat().st_size} for p in sorted(files)}
+
+
 class QueryCondition(nn.Module):
     def __init__(self,queries,output,width=512):
         super().__init__();self.query=nn.Parameter(torch.randn(1,queries,width)*.02)
@@ -221,7 +230,7 @@ def main():
     write(a.output/'execution.json',{'argv':sys.argv,'pid':os.getpid(),'source_commit':commit,'source_sha256':digest(Path(__file__)),
       'request_sha256':digest(a.data/'requests.json'),'phase':'TRAIN-only input-condition warmup, not completed baseline image training'})
     try:
-        write(a.output/'model_assets.json',{'Qwen':model_manifest(a.qwen),'SDXL':model_manifest(a.model_path),'IPAdapter':model_manifest(a.adapter_path)})
+        write(a.output/'model_assets.json',{'Qwen':qwen_asset_manifest(a.qwen),'SDXL':model_manifest(a.model_path),'IPAdapter':model_manifest(a.adapter_path)})
         cache=cache_inputs(a,rows);fit(a,cache);raw_generation(a,cache)
         write(a.output/'report.json',{'complete':True,'source_commit':commit,'n_TRAIN_conditions':len(rows),
           'paired_scene_training_performed':False,'DEV_or_TEST_inference':False,'generation_quality_established':False,'raw_TRAIN_generated':16,
