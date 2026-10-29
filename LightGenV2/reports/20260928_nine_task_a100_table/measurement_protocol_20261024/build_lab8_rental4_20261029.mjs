@@ -35,12 +35,15 @@ const lgFile=path.join(source,'LightGenII_resize_normalization_20261029_01/Light
 assert(sha(labFile)==='4edd1231fd94329f2f227c936d83c4bb2d05d567c1e5874c51dd6e546f45237e','Pinned lab summary');
 assert(sha(lgFile)==='08b4682698b2f67f16435444d35737677d61728c1ada5cc7a564eb9fcfb227ab','Pinned resize-inclusive LG summary');
 const lab=read(labFile),lg=read(lgFile);
-const rentalRoot=path.join(base,energyRemeasured?'rental_energy_remeasure_20261029_01':'rental_timing_only_20261029_02');
+const rentalRoot=path.join(base,energyRemeasured?'rental_energy_remeasure_20261029_02':'rental_timing_only_20261029_02');
+const priorEnergyRoot=path.join(base,'rental_energy_remeasure_20261029_01');
 const rootReceipt=path.join(rentalRoot,'whole_root_backup_receipt_complete01.json');
 if(energyRemeasured){
   const pin=process.argv.find(x=>x.startsWith('--rental-root-receipt-sha256='))?.split('=')[1];
   assert(pin&&/^[a-f0-9]{64}$/.test(pin)&&sha(rootReceipt)===pin,'Explicit SHA pin for new sealed rental root');
-  assert(read(path.join(rentalRoot,'suite_status.json')).status==='complete','All twelve new points complete');
+  const state=read(path.join(rentalRoot,'suite_status.json'));
+  assert(state.status==='complete'&&state.completed.length===7,'All seven remaining points complete');
+  assert(sha(path.join(priorEnergyRoot,'whole_root_backup_receipt_complete01.json'))==='81c24a2587832c8c1d4abc9e2e5456eb477127612a45126417da796d8737a057','Five original qualified points and failed sixth remain preserved');
 }else assert(sha(rootReceipt)==='9394417869da90fd83f24348a03b62bcb2d19631b6a2eee975dd06274774bac4','Sealed whole rental root');
 const candidates=new Map();
 for(const stem of ['qwen_fullscope_20261029_02','baselines_fullscope_20261029_02','baselines_fullscope_20261029_03']){
@@ -82,7 +85,10 @@ for(const c of lab.records){
   configs.push({key:a[0].key,model:c.model,cap:c.MPS_percent,hardware:a[0].hardware,energy:true,trials:a});
 }
 for(const model of ['kimi','deepseek'])for(const cap of [50,100]){
-  const a=[1,2,3].map(n=>addTrial(path.join(rentalRoot,`${model}_cap${cap}_repeat0${n}/report.json`),energyRemeasured,energyRemeasured));
+  const a=[1,2,3].map(n=>{
+    const prior=energyRemeasured&&model==='kimi'&&(cap===50||n<3);
+    return addTrial(path.join(prior?priorEnergyRoot:rentalRoot,`${model}_cap${cap}_repeat0${n}/report.json`),energyRemeasured,energyRemeasured);
+  });
   configs.push({key:a[0].key,model,cap,hardware:a[0].hardware,energy:energyRemeasured,trials:a});
 }
 assert(trials.length===36&&new Set(trials.map(t=>t.report_sha256)).size===36,'Exactly 36 distinct accepted trials');
@@ -222,6 +228,7 @@ if(energyRemeasured){
   s.getRange('A27').values=[['GPU board energy is measured. Column H adds the fixed338.2W host proxy once; it is not socket power.']];
   s.getRange('A28').values=[['No old timing-only rental result is used. Missing utilization/memory diagnostics do not mean missing power.']];
   s.getRange('A29').values=[['Baseline loading is excluded. All511 gaps from the first file preparation to final CPU score are included.']];
+  s.getRange('A30').values=[['Five qualified points retained. One267-video power-API failure preserved; only remaining seven points rerun.']];
 }
 raw.getRange('A40:B42').values=[['Source summary',rel(labFile)],['LG reference',rel(lgFile)],['Rental root receipt',rel(rootReceipt)]];
 for(const sheet of [s,raw]){
@@ -250,10 +257,16 @@ for(const [i,a] of summary.entries()){
 }
 const original=raw.getRange('H2').values[0][0],old=s.getRange('D6').values[0][0];raw.getRange('H2').values=[[original+1]];wb.recalculate();
 close(s.getRange('D6').values[0][0],old+1000/96);raw.getRange('H2').values=[[original]];wb.recalculate();close(s.getRange('D6').values[0][0],old);
+if(energyRemeasured){
+  const j=raw.getRange('J2').values[0][0],k=raw.getRange('K2').values[0][0],f=s.getRange('F6').values[0][0],h=s.getRange('H6').values[0][0];
+  raw.getRange('J2:K2').values=[[j+10,k+10]];wb.recalculate();
+  close(s.getRange('F6').values[0][0],f+10/96);close(s.getRange('H6').values[0][0],h+10/96);
+  raw.getRange('J2:K2').values=[[j,k]];wb.recalculate();close(s.getRange('F6').values[0][0],f);close(s.getRange('H6').values[0][0],h);
+}
 console.log((await wb.inspect({kind:'table',range:'Comparison!A5:I19',include:'values,formulas',tableMaxRows:15,tableMaxCols:9,maxChars:3500})).ndjson);
 const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:50},maxChars:1500});console.log(errors.ndjson);
 assert(!/#REF!|#DIV\/0!|#VALUE!|#NAME\?|#NUM!|#NULL!|#SPILL!|#CALC!/.test(errors.ndjson),'Formula error scan');
-for(const [sheetName,range,name] of [['Comparison','A1:I29','comparison_preview.png'],...(energyRemeasured?[['LightGen rental','A1:C19','lightgen_preview.png']]:[]),...(includeABO?[['ABO retrieval','A1:H25','abo_preview.png']]:[]),['Trials','A1:L13','trials_preview.png']]){
+for(const [sheetName,range,name] of [['Comparison',energyRemeasured?'A1:I30':'A1:I29','comparison_preview.png'],...(energyRemeasured?[['LightGen rental','A1:C19','lightgen_preview.png']]:[]),...(includeABO?[['ABO retrieval','A1:H25','abo_preview.png']]:[]),['Trials','A1:L13','trials_preview.png']]){
   const blob=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(OUT,name),new Uint8Array(await blob.arrayBuffer()));
 }
 await (await SpreadsheetFile.exportXlsx(wb)).save(path.join(OUT,BOOK));
