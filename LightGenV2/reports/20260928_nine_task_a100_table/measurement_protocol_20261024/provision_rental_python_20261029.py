@@ -121,8 +121,11 @@ def main():
         # the new installer has a valid complete receipt. Never restart a model.
         started=json.loads((BASE/'python_setup_started03.json').read_text())
         if a.deadline>started['deadline']:raise ValueError('Do not extend original setup cutoff')
-        cmd=Path(f"/proc/{started['pid']}/cmdline").read_bytes()
-        if b'provision_rental_python_20261029.py' not in cmd:raise ValueError('Exact old CPU downloader only')
+        proc=Path(f"/proc/{started['pid']}/cmdline")
+        if proc.exists():
+            if b'provision_rental_python_20261029.py' not in proc.read_bytes():raise ValueError('Exact old CPU downloader only')
+        elif 'urllib.error.URLError: <urlopen error timed out>' not in (BASE/'python_setup03.log').read_text():
+            raise ValueError('Explicit preserved original HTTPS timeout required')
         records=json.loads((BASE/'python_wheel_manifest03.json').read_text())
         if {r['package']:r['version'] for r in records[:-1]}!=PINS:raise ValueError('Original package pins')
         if records[-1]['name']!=FLASH or records[-1]['sha256']!=FLASH_SHA:raise ValueError('Original Flash SHA')
@@ -141,8 +144,9 @@ def main():
         install_packages(wheels,records,receipt,a.deadline)
         # Only our still-running, pre-model HTTP downloader is stopped; keep all
         # of its original partials/logs. A formal suite is not signalled.
-        try:os.killpg(started['pid'],signal.SIGTERM)
-        except ProcessLookupError:pass
+        if proc.exists() and b'provision_rental_python_20261029.py' in proc.read_bytes():
+            try:os.killpg(started['pid'],signal.SIGTERM)
+            except ProcessLookupError:pass
         write(BASE/'wheel_transport_handover03.json',{'status':'same_official_SHA_local_transport_completed',
               'old_downloader_pid':started['pid'],'time':time.time(),'no_formal_model_restarted':True})
         return

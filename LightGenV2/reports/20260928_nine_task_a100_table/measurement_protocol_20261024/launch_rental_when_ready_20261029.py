@@ -4,6 +4,7 @@ No model smoke, training, retry or second suite. Package/data preparation must
 finish first; formal inference starts immediately after CPU identity checks.
 """
 import hashlib
+import argparse
 import json
 import os
 import signal
@@ -29,14 +30,22 @@ def symlink(path,target):
     else:path.symlink_to(target,target_is_directory=True)
 
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--verified-setup-handover',action='store_true');args=parser.parse_args()
     if entry.REPO!=BASE/'repo' or time.time()>=DEADLINE-120:raise ValueError('Exact rental/finite deadline only')
-    marker=BASE/'readiness_launcher_started01.json'
+    suffix='02' if args.verified_setup_handover else '01'
+    if args.verified_setup_handover:
+        old=json.loads((BASE/'readiness_launcher_exit01.json').read_text())
+        if (old['status']!='stopped' or old['error']!="RuntimeError('Package installer exited without receipt; preserve log')"
+                or Path('/proc/'+str(old['pid'])).exists() or (BASE/'formal_controller_started01.json').exists()):
+            raise ValueError('Only exact terminal pre-model HTTPS/setup failure may hand over')
+    marker=BASE/('readiness_launcher_started'+suffix+'.json')
     if marker.exists() or entry.ROOT.exists():raise FileExistsError('Never launch a second canonical chain')
     commit=os.environ['MEASUREMENT_PUBLISHED_COMMIT']
     write(marker,{'pid':os.getpid(),'started':time.time(),'deadline':DEADLINE,'source_commit':commit})
     state={'status':'waiting_for_packages_only','pid':os.getpid()}
     try:
-        setup=json.loads((BASE/'python_setup_started03.json').read_text())
+        setup=json.loads((BASE/('python_setup_started04.json' if args.verified_setup_handover else 'python_setup_started03.json')).read_text())
         ready=BASE/'python_setup_receipt03.json'
         while not ready.exists():
             if time.time()>=min(DEADLINE-120,setup['deadline']):raise TimeoutError('Fixed setup/task cutoff; no extension')
@@ -104,6 +113,6 @@ def main():
         state.update(status='controller_exited',exit_code=code,finished=time.time())
     except BaseException as error:
         state.update(status='stopped',error=repr(error),finished=time.time());raise
-    finally:write(BASE/'readiness_launcher_exit01.json',state)
+    finally:write(BASE/('readiness_launcher_exit'+suffix+'.json'),state)
 
 if __name__=='__main__':main()
