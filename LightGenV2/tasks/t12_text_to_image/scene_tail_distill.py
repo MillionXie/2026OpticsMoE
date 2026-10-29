@@ -59,7 +59,8 @@ def load_generator(a,state,trainable=False):
     if trainable:
         for n,p in pipe.unet.named_parameters():
             if 'lora_' in n:p.requires_grad_(True);p.data=p.data.float()
-        pipe.unet.enable_gradient_checkpointing();pipe.unet.train()
+        if not getattr(a,'no_gradient_checkpointing',False):pipe.unet.enable_gradient_checkpointing()
+        pipe.unet.train()
     head=QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).cuda().eval().requires_grad_(False);head.load_state_dict(state['head'],strict=True)
     if trainable and a.adapt_head:head.train().requires_grad_(True)
     return pipe,head
@@ -73,7 +74,9 @@ def predict(unet,x,t,cond,state,sigma,guided):
     side=state.get('SDXL_conditioning_size',512)
     ids=torch.tensor([[side,side,0,0,side,side]],device='cuda',dtype=torch.bfloat16).repeat(len(x),1)
     # Match EulerDiscreteScheduler.scale_model_input dtype and rounding.
-    scaled=x/((torch.as_tensor(sigma,device=x.device,dtype=torch.float32)**2+1)**.5)
+    scale=((torch.as_tensor(sigma,device=x.device,dtype=torch.float32)**2+1)**.5)
+    if scale.ndim:scale=scale[:,None,None,None]
+    scaled=x/scale
     out=unet(scaled.bfloat16(),t,
         encoder_hidden_states=text.bfloat16(),added_cond_kwargs={'text_embeds':pool.bfloat16(),
         'time_ids':ids,'image_embeds':[images.bfloat16()]}).sample
@@ -171,20 +174,37 @@ def train(a):
             from .qwen3_scene_paired_train import electronic_condition_loss
             return main+.05*electronic_condition_loss(cond,payload,dict(row,split='train')),main
         return main,main
+    def loss_batch(rows):
+        if len(rows)==1:return loss_for(rows[0])
+        from .scene_tail_batches import pack_features,interval_loss
+        assert all(r['split']=='train' for r in rows)
+        if a.adapt_head:
+            h,v,padding=pack_features([payload['features'][r['input_key']] for r in rows],'cuda');cond=head(h,v,padding)
+        else:cond={name:torch.cat([conds[r['input_key']][name] for r in rows]) for name in ['text','image','pooled']}
+        x=torch.stack([r['x'] for r in rows]).cuda();wanted=torch.stack([r['target_epsilon'] for r in rows]).cuda()
+        predicted=predict(pipe.unet,x,torch.tensor([r['timestep'] for r in rows],device='cuda'),cond,state,[r['sigma'] for r in rows],False)
+        main=interval_loss(predicted,wanted)
+        if a.adapt_head:
+            from .qwen3_scene_paired_train import electronic_condition_loss
+            kd=sum(electronic_condition_loss({n:v[i:i+1] for n,v in cond.items()},payload,row) for i,row in enumerate(rows))/len(rows)
+            return main+.05*kd,main
+        return main,main
     trainable=lora+(list(head.parameters()) if a.adapt_head else [])
     def optimizer():
         groups=[{'params':lora,'lr':a.lr}]
         if a.adapt_head:groups.append({'params':head.parameters(),'lr':a.lr*.25})
         return torch.optim.AdamW(groups,weight_decay=.01)
-    initial=[p.detach().clone() for p in trainable];opt=optimizer();smoke=[]
-    for step,row in enumerate(targets['records'][:4]):
-        opt.zero_grad();loss,main=loss_for(row);direct={}
+    initial=[p.detach().clone() for p in trainable];opt=optimizer();smoke=[];torch.cuda.reset_peak_memory_stats()
+    for step in range(4):
+        rows=targets['records'][step*a.batch_size:(step+1)*a.batch_size]
+        opt.zero_grad();loss,main=loss_batch(rows);direct={}
         if a.adapt_head:
             gradients=torch.autograd.grad(main,[head.text.out.weight,head.image.out.weight],retain_graph=True)
             direct={n:g.abs().sum().item() for n,g in zip(['text','image'],gradients)};assert all(math.isfinite(v) and v>0 for v in direct.values())
         loss.backward();norm=torch.nn.utils.clip_grad_norm_(trainable,1.,error_if_nonfinite=True)
         assert torch.isfinite(loss) and float(norm)>0;opt.step();smoke.append({'step':step+1,'loss':loss.item(),'gradient_norm':float(norm),'trajectory_only_head_gradient':direct})
-    write(a.output/'smoke_report.json',{'complete':True,'real_backward_steps':smoke,'all_TRAIN':True,'reset_before_training':True})
+    write(a.output/'smoke_report.json',{'complete':True,'real_backward_steps':smoke,'all_TRAIN':True,'reset_before_training':True,
+        'batch_size':a.batch_size,'gradient_checkpointing':not a.no_gradient_checkpointing,'peak_allocated_bytes':torch.cuda.max_memory_allocated()})
     with torch.no_grad():
         for p,old in zip(trainable,initial):p.copy_(old)
     del initial,opt;opt=optimizer();rng=random.Random(1042);rows=list(targets['records']);history=[];updates=0;best=math.inf
@@ -192,12 +212,14 @@ def train(a):
     else:epochs=a.epochs
     for epoch in range(1,epochs+1):
         rng.shuffle(rows);running=[];began=time.monotonic()
-        for row in rows:
-            opt.zero_grad();loss,_=loss_for(row);loss.backward();torch.nn.utils.clip_grad_norm_(trainable,1.,error_if_nonfinite=True)
-            assert torch.isfinite(loss);opt.step();updates+=1;running.append(loss.item())
-            for index,group in enumerate(opt.param_groups):group['lr']=a.lr*(1 if index==0 else .25)*(.1+.9*.5*(1+math.cos(math.pi*updates/(len(rows)*epochs))))
-            if updates%20==0:write(a.output/'progress.json',{'stage':'TRAIN_progressive_guided_Euler_distillation','epoch':epoch,'update':updates,'total':len(rows)*epochs,'recent_loss':sum(running[-20:])/len(running[-20:])})
-        score=sum(running)/len(running);history.append({'epoch':epoch,'TRAIN_loss':score,'seconds':time.monotonic()-began});write(a.output/'history.json',history)
+        sizes=[];total_updates=math.ceil(len(rows)/a.batch_size)*epochs
+        for offset in range(0,len(rows),a.batch_size):
+            batch=rows[offset:offset+a.batch_size]
+            opt.zero_grad();loss,_=loss_batch(batch);loss.backward();torch.nn.utils.clip_grad_norm_(trainable,1.,error_if_nonfinite=True)
+            assert torch.isfinite(loss);opt.step();updates+=1;running.append(loss.item());sizes.append(len(batch))
+            for index,group in enumerate(opt.param_groups):group['lr']=a.lr*(1 if index==0 else .25)*(.1+.9*.5*(1+math.cos(math.pi*updates/total_updates)))
+            if updates%20==0:write(a.output/'progress.json',{'stage':'TRAIN_progressive_guided_Euler_distillation','epoch':epoch,'update':updates,'total':total_updates,'batch_size':a.batch_size,'recent_loss':sum(running[-20:])/len(running[-20:])})
+        score=sum(x*n for x,n in zip(running,sizes))/sum(sizes);history.append({'epoch':epoch,'TRAIN_loss':score,'seconds':time.monotonic()-began});write(a.output/'history.json',history)
         result=dict(state,step=updates,epoch=epoch,source_commit=os.environ['T12_SOURCE_COMMIT'],
             unet_lora={n:p.detach().cpu() for n,p in pipe.unet.named_parameters() if 'lora_' in n},
             head={n:p.detach().cpu() for n,p in head.state_dict().items()},
@@ -211,6 +233,7 @@ def train(a):
         'best_sha256':digest(a.output/'best_checkpoint.pt') if epochs else None,'actual_paired_updates':updates,
         'TRAIN_intervals':len(rows),'TRAIN_contexts':len(train_keys),'epochs':epochs,'trainable_UNet_LoRA_parameters':sum(p.numel() for p in lora),
         'trainable_existing_head_parameters':sum(p.numel() for p in head.parameters() if p.requires_grad),
+        'training_batch_size':a.batch_size,'gradient_checkpointing':not a.no_gradient_checkpointing,
         'head_frozen':not a.adapt_head,'Qwen_optical_VAE_frozen':True,'extra_deployment_parameters':0,'trajectory_sha256':ready['trajectory_sha256'],
         'parent_checkpoint_sha256':parent['best_sha256'],'student_cache_sha256':cache_report['cache_sha256'],
         'best_selection':'TRAIN trajectory loss only; DEV generation evaluation still required','quality_or_speed_accepted':False,'TEST_opened':False})
@@ -223,6 +246,7 @@ def main():
     p.add_argument('--epochs',type=int,default=2);p.add_argument('--lr',type=float,default=1e-5);p.add_argument('--ip-scale',type=float,default=.25)
     p.add_argument('--teacher-steps',type=int,choices=[12,30],default=12);p.add_argument('--student-steps',type=int)
     p.add_argument('--noise-index',type=int,default=137);p.add_argument('--adapt-head',action='store_true')
+    p.add_argument('--batch-size',type=int,choices=[1,2],default=1);p.add_argument('--no-gradient-checkpointing',action='store_true')
     p.add_argument('--teacher-quality-approval',type=Path)
     a=p.parse_args();assert not a.output.exists() and os.environ.get('CUDA_VISIBLE_DEVICES')==GPU and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
     a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0);torch.manual_seed(1042)
