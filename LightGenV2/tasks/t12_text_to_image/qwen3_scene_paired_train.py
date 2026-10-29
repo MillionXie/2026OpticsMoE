@@ -81,6 +81,24 @@ def pipeline(a):
     return pipe
 
 
+def native_negative_conditions(tokenizers,encoders,caption,force_zeros,device='cuda'):
+    # SDXL defaults to ZERO conditions when negative_prompt=None. An explicit
+    # negative string (including "") instead follows the native text encoders.
+    if caption is None and force_zeros:
+        return torch.zeros((1,77,2048),dtype=torch.bfloat16),torch.zeros((1,1280),dtype=torch.bfloat16)
+    conditions=[];pooled=None
+    for tokenizer,encoder in zip(tokenizers,encoders):
+        checked_tokens(tokenizer,caption or '')
+        ids=tokenizer(caption or '',padding='max_length',max_length=77,truncation=False,return_tensors='pt').input_ids.to(device)
+        with torch.inference_mode():out=encoder(ids,output_hidden_states=True)
+        conditions.append(out.hidden_states[-2].cpu())
+        if hasattr(out,'text_embeds'):pooled=out.text_embeds.cpu()
+    text=torch.cat(conditions,dim=-1)
+    assert text.shape==(1,77,2048) and pooled.shape==(1,1280)
+    assert torch.isfinite(text).all() and torch.isfinite(pooled).all()
+    return text,pooled
+
+
 def cache(a, rows):
     from transformers import CLIPTokenizer, CLIPTextModel, CLIPTextModelWithProjection, CLIPVisionModelWithProjection, CLIPImageProcessor
     write(a.output/'model_assets.json', {'Qwen':qwen_asset_manifest(a.qwen),
@@ -93,21 +111,10 @@ def cache(a, rows):
     vision = CLIPVisionModelWithProjection.from_pretrained(a.adapter_path/'models/image_encoder',
         torch_dtype=torch.bfloat16, local_files_only=True).cuda().eval().requires_grad_(False)
     image_processor = CLIPImageProcessor()
-    # Deployment constants, encoded once by frozen TRAIN-time teachers. A zero
-    # tensor is not the native CLIP empty/negative-text representation.
-    negative_conditions=[];negative_pooled=None
-    negative_caption=a.config_profile.get('negative_prompt','')
-    for tokenizer,encoder in zip(tokenizers,text_encoders):
-        checked_tokens(tokenizer,negative_caption)
-        ids=tokenizer(negative_caption,padding='max_length',max_length=77,truncation=False,return_tensors='pt').input_ids.cuda()
-        with torch.inference_mode(): out=encoder(ids,output_hidden_states=True)
-        negative_conditions.append(out.hidden_states[-2].cpu())
-        if hasattr(out,'text_embeds'):negative_pooled=out.text_embeds.cpu()
-    assert negative_pooled is not None
-    negative_text=torch.cat(negative_conditions,dim=-1)
-    assert negative_text.shape==(1,77,2048) and negative_pooled.shape==(1,1280)
-    assert torch.isfinite(negative_text).all() and torch.isfinite(negative_pooled).all()
-    assert negative_text.abs().sum()>0 and negative_pooled.abs().sum()>0
+    negative_caption=a.config_profile.get('negative_prompt')
+    model_config=json.loads((a.model_path/'model_index.json').read_text())
+    force_zeros=model_config.get('force_zeros_for_empty_prompt',True)
+    negative_text,negative_pooled=native_negative_conditions(tokenizers,text_encoders,negative_caption,force_zeros)
     features = {}; captions = {}; images = {}; records = []
     for i, row in enumerate(rows):
         path = a.data/row['reference']
@@ -170,7 +177,8 @@ def cache(a, rows):
         'target_resolution':a.resolution,'complete_DEV_frontend_contexts':len(dev_keys),
         'visual_tokens': (a.qwen_side//32)**2, 'complete_Qwen_parameters':frontend_count, 'vision_layers':24, 'language_layers':28,
         'TEST_opened': False, 'target_images_enter_Qwen': False,
-        'native_CFG_negative_caption':negative_caption,'negative_conditions_encoded_by_frozen_TRAIN_teachers':True,
+        'native_CFG_negative_caption':negative_caption,
+        'native_CFG_mode':'default_zero' if negative_caption is None and force_zeros else 'encoded_explicit_text',
         'cache_inputs_only_RGB_and_prompt': True, 'cache_is_training_optimization_not_deployment': True})
 
 
