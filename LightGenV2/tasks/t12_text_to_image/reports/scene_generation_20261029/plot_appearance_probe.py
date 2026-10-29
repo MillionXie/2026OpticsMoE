@@ -11,18 +11,18 @@ from ...appearance_scene_protocol import PROFILE
 
 
 def score_text(row):
-    return f"CLIP-T {row['CLIP_T']:.3f} | DINO-I {row['DINOv2_I']:.3f}",f"ImageReward {row['ImageReward_compact']:.3f}"
+    return f"CLIP-T {row['CLIP_T']:.3f} | DINOv2-I {row['DINOv2_I']:.3f}",f"ImageReward {row['ImageReward_compact']:.3f}"
 
 
 def panel(data,generation,rows,scores,summary,path,group='all'):
     out=Image.new('RGB',(960,138+len(rows)*468+28),'white');d=ImageDraw.Draw(out)
     d.text((8,4),'No color-change requests | Full Qwen3-VL -> SDXL | TRAIN development pilot',font=font(15),fill='black')
-    d.text((8,28),'CLIP-T: text match | DINO-I: reference appearance | ImageReward: compact-caption preference',font=font(12),fill='black')
+    d.text((8,28),'CLIP-T: text match | DINOv2-I: reference appearance | ImageReward: compact-caption preference',font=font(12),fill='black')
     d.text((8,47),'Higher is better; these scores are NOT instruction accuracy. Full request and all outputs retained.',font=font(12),fill='black')
     for j,name in enumerate(['existing','focused']):
         value=summary[name+'/'+group];s=value['scores']
         text=(f"Complete {group} group mean n={value['n']} | {name}: CLIP-T {s['CLIP_T']['mean']:.3f}, "
-              f"DINO-I {s['DINOv2_I']['mean']:.3f}, ImageReward {s['ImageReward_compact']['mean']:.3f}")
+              f"DINOv2-I {s['DINOv2_I']['mean']:.3f}, ImageReward {s['ImageReward_compact']['mean']:.3f}")
         d.text((8,69+j*20),text,font=font(12),fill='black')
     for i,row in enumerate(rows):
         y=138+i*468
@@ -33,7 +33,7 @@ def panel(data,generation,rows,scores,summary,path,group='all'):
         for x,name,label in [(232,'existing','Existing Qwen | no recolor'),(584,'focused','Text-adapted Qwen | no recolor')]:
             score=scores[(name,row['sample_id'])]
             d.text((x,y+66),label,font=font(12),fill='black')
-            for k,text in enumerate(score_text(score)):d.text((x,y+84+k*16),text,font=font(12),fill='black')
+            for k,text in enumerate(score_text(score)):d.text((x,y+82+k*18),text,font=font(14),fill='black')
             with Image.open(generation/name/score['generated_PNG']) as im:out.paste(im.convert('RGB').resize((336,336),Image.Resampling.LANCZOS),(x,y+120))
     d.text((8,out.height-21),'No unique GT | Same initial noise | Native1024 RGB previewed; no pixel enhancement or quality-based selection',font=font(11),fill='black')
     out.save(path)
