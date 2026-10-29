@@ -51,18 +51,22 @@ def reward_caption(category, condition_id, profile='free_lighting_v2'):
     return captions[category][int(condition_id)]
 
 
-def load_records(run):
+def load_records(run,allow_frozen_test=False):
     report = json.loads((run/'report.json').read_text(encoding='utf-8'))
+    is_test=report.get('scope')=='TEST'
+    if is_test and (not allow_frozen_test or not report.get('frozen_TEST_protocol')):
+        raise ValueError('Explicit frozen TEST metric scope required')
     if (report.get('complete') is not True or report.get('training_performed') is not False or
-            report.get('independent_TEST_opened') is not False):
+            report.get('independent_TEST_opened') is not is_test):
         raise ValueError('Only completed, frozen TRAIN feasibility runs allowed')
     records = json.loads((run/'images.json').read_text(encoding='utf-8'))
     keys = [(r['reference_id'], r['condition_id'], r['seed']) for r in records]
-    expected = 32 if report.get('scope') == 'DEV' else 16
+    expected = 500 if is_test else (32 if report.get('scope') == 'DEV' else 16)
     if len(records) != report['generated_count'] or len(records) != expected or len(set(keys)) != expected:
         raise ValueError('All prespecified unique outputs required; no best-of-seed selection')
     if report.get('scope') == 'DEV' and any(r.get('split') != 'dev' for r in records):
         raise ValueError('DEV comparison contains another split')
+    if is_test and any(r.get('split')!='test' for r in records):raise ValueError('TEST comparison contains another split')
     for r in records:
         if (Path(r['generated_PNG']).name != r['generated_PNG'] or
                 digest(run/r['generated_PNG']) != r['generated_sha256'] or
@@ -93,6 +97,7 @@ def main():
     p.add_argument('--clip-checkpoint', type=Path, required=True)
     p.add_argument('--dino-path', type=Path, required=True)
     p.add_argument('--reward-path', type=Path, required=True)
+    p.add_argument('--allow-frozen-test',action='store_true',help='Only after a shared model/protocol freeze; no DEV/TEST mixing')
     args = p.parse_args()
     commit = os.environ.get('T12_SOURCE_COMMIT', '')
     if args.output.exists() or len(commit) != 40 or os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:
@@ -108,7 +113,16 @@ def main():
         from transformers import AutoImageProcessor, AutoModel
         load_reward = reward_loader()
         torch.set_num_threads(4)
-        rows = [r for run in args.runs for r in load_records(run)]
+        reports=[json.loads((run/'report.json').read_text()) for run in args.runs]
+        if args.allow_frozen_test:
+            assert all(r.get('scope')=='TEST' for r in reports)
+            assert len({r['frozen_TEST_protocol']['manifest_sha256'] for r in reports})==1
+        rows = [r for run in args.runs for r in load_records(run,args.allow_frozen_test)]
+        if args.allow_frozen_test:
+            signatures=[]
+            for run in args.runs:
+                signatures.append({r['sample_id']:(r['input_sha256'],r['prompt'],r['seed'],r['initial_latent_sha256']) for r in rows if r['run_id']==run.name})
+            assert all(s==signatures[0] for s in signatures)
         if len({r.name for r in args.runs}) != len(args.runs): raise ValueError('Duplicate run identity')
         assets = {str(args.clip_checkpoint): digest(args.clip_checkpoint)}
         for root in [args.dino_path, args.reward_path]:
@@ -162,13 +176,13 @@ def main():
             for name, value in summary.items():writer.writerow([name,value['n']]+[value['scores'][m]['mean'] for m in ['CLIP_T','DINOv2_I','CLIP_I','ImageReward_compact']])
         write(args.output/'report.json', {'complete':True,'n':len(rows),'source_commit':commit,
               'input_whitelist':['generated RGB','white reference RGB','canonical full prompt','fixed compact evaluation caption'],
-              'unique_GT_or_masks_used':False,'independent_TEST_opened':False,'training_performed':False,
+              'unique_GT_or_masks_used':False,'independent_TEST_opened':args.allow_frozen_test,'training_performed':False,
               'automatic_scores_are_not_attribute_pass_rates':True,'quality_accepted':False,
               'metric_protocol':{'CLIP_T':'OpenAI ViT-B/32 cosine, untruncated canonical request, full generated image',
                 'DINOv2_I':'facebook/dinov2-small CLS cosine, full reference and generated image; differs from original DreamBench DINOv1-S/16; not pure outline',
                 'CLIP_I':'OpenAI ViT-B/32 full-image cosine, auxiliary appearance metric',
                 'ImageReward_compact':'Official score() with fixed <=35-token caption. Auxiliary preference; does not score every full-prompt clause.'},
-              'limitations':[f"{len({r['reference_id'] for r in rows})} reference views; TRAIN/DEV diagnosis only, not independent test or automatic attribute accuracy.",
+              'limitations':[f"{len({r['reference_id'] for r in rows})} reference views; "+('frozen TEST draws are clustered by product/context, not independent products or attribute accuracy.' if args.allow_frozen_test else 'TRAIN/DEV diagnosis only, not independent test or automatic attribute accuracy.'),
                 'Generation resolution/protocol must be checked in each source report before any ranking; historical runs may differ.',
                 'Appearance similarity can reward an unchanged white-background output that ignores text; never use it alone.',
                 'Reward captions omit peripheral details and lighting; original prompts remain preserved and fully scored by CLIP-T.',

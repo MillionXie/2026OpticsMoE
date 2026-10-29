@@ -16,13 +16,34 @@ from .qwen3_scene_paired_train import new_qwen, raw_scene_features, pipeline
 from .white_reference_scene_probe import GPU, digest, write, checked_tokens
 
 
-def inference_inputs(data):
-    inputs = json.loads((data/'inference_dev_inputs.json').read_text())
+def inference_inputs(data,scope='dev'):
+    if scope not in ['dev','test']:raise ValueError('Explicit DEV or frozen TEST scope required')
+    inputs = json.loads((data/('inference_inputs.json' if scope=='test' else 'inference_dev_inputs.json')).read_text())
     safe = {'sample_id','reference','prompt','seed','reference_id','reference_sha256','category',
             'condition_id','native_caption','reward_caption','prompt_profile'}
     if not inputs or not all(set(row) == safe for row in inputs):
         raise ValueError('Only reference/text/seed and public request metadata allowed at inference')
     return inputs
+
+
+def frozen_test_protocol(a,state,previous):
+    if a.frozen_evaluation is None or not a.frozen_model_key:raise ValueError('TEST requires a previously frozen model/protocol manifest')
+    frozen=json.loads(a.frozen_evaluation.read_text());report=json.loads((a.data/'report.json').read_text())
+    assert frozen['schema']=='scene_frozen_evaluation_v1' and frozen['development_selection_finished']
+    assert not frozen['TEST_used_for_model_selection'] and report['complete'] and report['role_disjoint']
+    assert frozen['frozen_before_first_TEST_prediction']
+    assert frozen['prompt_profile']==report['prompt_profile']=='two_sentence_furnished_room_v3'
+    assert frozen['request_sha256']==report['request_sha256']==digest(a.data/'inference_inputs.json')
+    assert report['current_pairs_sha256']==state['pair_sha256']
+    model=frozen['models'][a.frozen_model_key]
+    assert model['checkpoint_sha256']==previous['best_sha256'] and model['sampling_steps']==a.steps
+    assert model['IP_adapter_scale']==a.ip_scale and model['resolution']==state['resolution']==512
+    assert model['Qwen_input_side']==state['Qwen_input_side']==256 and model['variant']==state['variant']
+    assert model['joint_image_context']==state.get('joint_image_context',False)
+    assert model['sampling_contract']==state.get('sampling_contract')
+    assert model['optical_frontend_sha256']==(state.get('optical_frontend') or {}).get('checkpoint_sha256')
+    if a.measure_software_latency:raise ValueError('Use the separate fixed DEV timing protocol; TEST500 is generation-only')
+    return {'manifest_sha256':digest(a.frozen_evaluation),'model_key':a.frozen_model_key,'descriptor':model}
 
 
 def install_optical_frontend(qwen,folder,features,baseline_cache):
@@ -58,11 +79,21 @@ def render(a):
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
     sampling=state.get('sampling_contract')
     if sampling:
-        assert sampling['kind']=='guided_Euler12_to_conditional6_v1' and a.steps==sampling['steps']==6
+        assert sampling['kind'] in ['guided_Euler12_to_conditional6_v1','progressive_guided_Euler_v2'] and a.steps==sampling['steps']
+        assert len(sampling['timesteps'])==a.steps and all(x>y for x,y in zip(sampling['timesteps'],sampling['timesteps'][1:]))
         assert a.ip_scale==sampling['IP_scale'] and sampling['CFG']==1.
-    elif a.steps==6:raise ValueError('Six-step generation requires its trained distilled checkpoint')
-    inputs = inference_inputs(a.data)
-    rows = [r for r in inputs if r['condition_id'] in ['0','1']]
+    elif a.steps in [6,7,15]:raise ValueError('This few-step budget requires its trained distilled checkpoint')
+    is_test=getattr(a,'scope','dev')=='test'
+    frozen=frozen_test_protocol(a,state,previous) if is_test else None
+    inputs = inference_inputs(a.data,'test' if is_test else 'dev')
+    if is_test:
+        assert len(inputs)==500 and len({r['sample_id'] for r in inputs})==500
+        assets=json.loads((a.cache/'model_assets.json').read_text())
+        from .qwen3_scene_conditioning import qwen_asset_manifest
+        from .white_reference_scene_probe import model_manifest
+        assert assets['SDXL']==model_manifest(a.model_path) and assets['IPAdapter']==model_manifest(a.adapter_path)
+        if state['variant']=='qwen':assert assets['Qwen']==qwen_asset_manifest(a.qwen)
+    rows = inputs if is_test else [r for r in inputs if r['condition_id'] in ['0','1']]
     expected=None;latencies=[]
     if a.measure_software_latency:
         if a.reference_run is None:raise ValueError('Timing requires a completed same-weight quality run for output identity')
@@ -81,13 +112,14 @@ def render(a):
         head = QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).cuda().eval().requires_grad_(False)
         head.load_state_dict(state['head'], strict=True)
         pipe = pipeline(a)
-        identity = torch.load(a.cache/'DEV_frontend_identity_only.pt', map_location='cpu', weights_only=False)
-        assert not identity['contains_targets_or_masks']
+        if not is_test:
+            identity = torch.load(a.cache/'DEV_frontend_identity_only.pt', map_location='cpu', weights_only=False)
+            assert not identity['contains_targets_or_masks']
         if a.lg_frontend:optical=install_optical_frontend(qwen,a.lg_frontend,a.lg_features,a.cache)
         if state.get('optical_frontend'):
             assert optical['checkpoint_sha256']==state['optical_frontend']['checkpoint_sha256']
             optical['feature_distillation_only_generator_recovery_not_yet_trained']=False
-        exact_identity=optical is None or identity.get('optical_frontend',{}).get('checkpoint_sha256')==optical['checkpoint_sha256']
+        exact_identity=not is_test and (optical is None or identity.get('optical_frontend',{}).get('checkpoint_sha256')==optical['checkpoint_sha256'])
     else:
         if a.lg_frontend:raise ValueError('LG replacement belongs to Qwen branch only')
         encoder = CLIPVisionModelWithProjection.from_pretrained(a.adapter_path/'models/image_encoder',
@@ -143,24 +175,31 @@ def render(a):
         # Diagnostics and disk output are outside the RGB/text-ready -> CPU RGB
         # window. The first real generation remains in the measured requests.
         noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
-        if head is not None:
+        if head is not None and identity is not None:
             key = hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest();old=identity['features'][key]
             assert torch.equal(ids.cpu(),old['input_ids'])
             if exact_identity:assert torch.equal(h.cpu(),old['hidden']) and torch.equal(v.cpu(),old['visual'])
             else:assert h.shape==old['hidden'].shape and v.shape==old['visual'].shape and torch.isfinite(h).all() and torch.isfinite(v).all()
+        elif head is not None:
+            assert h.shape==(ids.shape[1],2048) and v.shape==((a.qwen_side//32)**2,2048)
+            assert torch.isfinite(h).all() and torch.isfinite(v).all()
         name = row['sample_id']+'.png'; image.save(a.output/name)
         if expected is not None:
             wanted=expected[row['sample_id']]
             assert digest(a.output/name)==wanted['generated_sha256'],'Timing graph changed output PNG'
             assert noise_sha==wanted['initial_latent_sha256']
-        records.append({**row,'split':'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
+        routes=None
+        if optical is not None:
+            routes={m:x.diagnostics() for m,x in qwen.model.hybrid.items()}
+        records.append({**row,'split':'test' if is_test else 'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
             'raw_Qwen_identity_exact':exact_identity,'resolution':resolution,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
             'sampling_contract':sampling,
+            'actual_raw_optical_routing':routes,
             'optical_frontend':optical})
         write(a.output/'images.json',records)
-        write(a.output/'progress.json',{'stage':'independent_raw_DEV_render','done':i+1,'total':len(rows)})
+        write(a.output/'progress.json',{'stage':'frozen_raw_TEST_render' if is_test else 'independent_raw_DEV_render','done':i+1,'total':len(rows)})
     generator_count = sum(p.numel() for p in {id(p):p for c in pipe.components.values()
         if isinstance(c,torch.nn.Module) for p in c.parameters()}.values())
     if latencies:
@@ -172,15 +211,17 @@ def render(a):
             'sampling_contract':sampling,
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,'LoRA_unmerged_for_both_models':True})
-    write(a.output/'report.json',{'complete':True,'scope':'DEV_software_latency' if latencies else 'DEV','source_commit':os.environ['T12_SOURCE_COMMIT'],
+    write(a.output/'report.json',{'complete':True,'scope':'TEST' if is_test else ('DEV_software_latency' if latencies else 'DEV'),'source_commit':os.environ['T12_SOURCE_COMMIT'],
         'generated_count':len(records),'prompt_profile':rows[0]['prompt_profile'],'training_performed':False,
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
-        'independent_TEST_opened':False,'GT_mask_or_target_latent_files_opened':False,
+        'independent_TEST_opened':is_test,'GT_mask_or_target_latent_files_opened':False,
         'raw_Qwen_identity_checked':exact_identity,'image_feedback':False,'quality_accepted':False,
-        'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None,
+        'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None and identity is not None,
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
         'IP_adapter_scale':a.ip_scale,
         'sampling_contract':sampling,
+        'joint_image_context':state.get('joint_image_context',False),'frozen_TEST_protocol':frozen,
+        'DEV_or_TRAIN_feature_tensors_opened':not is_test and head is not None,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
         'head_parameters':0 if head is None else sum(p.numel() for p in head.parameters()),
         'factual_evaluation_captions':True})
@@ -191,9 +232,11 @@ def main():
     for key in ['data','checkpoint','qwen','cache','model-path','adapter-path','output']:
         p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
-    p.add_argument('--steps',type=int,choices=[6,12,30],default=30,help='6 requires a matched trained tail; 12/30 preserve the original sampler')
+    p.add_argument('--steps',type=int,choices=[6,7,12,15,30],default=30,help='6/7/15 require a matched trained tail; 12/30 preserve the original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
+    p.add_argument('--scope',choices=['dev','test'],default='dev')
+    p.add_argument('--frozen-evaluation',type=Path);p.add_argument('--frozen-model-key')
     a = p.parse_args()
     if not 0<=a.ip_scale<=1:raise ValueError('Reference scale must be in [0,1]')
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT','')) != 40 or os.environ.get('CUDA_VISIBLE_DEVICES') != GPU:
