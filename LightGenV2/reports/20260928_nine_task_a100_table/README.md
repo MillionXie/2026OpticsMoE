@@ -24,6 +24,13 @@ LightGen另用同GPU100资源测实际FFT软件墙钟与电子段，不冒充物
 四张量包读取，SHA `0b952bd72ad258a3a120a1fa2bd7c9be0a252671d9e77710e11ec55d0169baee`，
 不伪装完整Qwen权重文件，也不传输或实例化未执行的Transformer层；已传的原片段保护保留。
 四张量各自原内容指纹精确通过，完整模型预测仍须在本次GPU执行后对原reference逐字节准入。
+新结果CPU复核入口`audit_rental_energy_LightGen_20261029.py`只读取完整、双端SHA保存后的新根，
+原250ms能量支持门、512输入身份及源码Git门不改；不能重复覆盖已接受审计收据。
+LightGen复放全部512及3预热场输出、原功率积分、原trace的kernel归属和资源调度估算，
+不加载模型、不初始化CUDA，不把软件积分称物理光路能耗。
+原表builder新增`--energy-remeasured --rental-root-receipt-sha256=<真实整根收据SHA>`模式，
+仅在12点及一轮LightGen全部完成、原始数据双端安全且独立CPU审计通过后生成新目录，
+保留原lab24点，替换为新租机12点并单列LightGen实际软件耗时，旧表不覆盖。
 
 ## 2026-10-29：测速与ABO合并表已交付，租机计算工作结束
 
