@@ -11,6 +11,7 @@ from .white_reference_scene_probe import digest,write
 
 PROFILE='appearance_preserving_room_v1'
 COARSE_PROFILE='coarse_shape_furnished_room_v2'
+SHORT_PROFILE='two_sentence_furnished_room_v3'
 
 
 def conditions(category,profile=PROFILE):
@@ -27,7 +28,7 @@ def conditions(category,profile=PROFILE):
         out.append({'condition_id':str(i),'prompt_profile':PROFILE,'category':category,'prompt':prompt,'native_caption':caption,
           'reward_caption':compact,'requested_attributes':{'retain_coarse_shape':True,'retain_original_appearance':True,
            'change_product_color':False,'scene':scene,'support':support,'background_elements':props}})
-    if profile==COARSE_PROFILE:
+    if profile in [COARSE_PROFILE,SHORT_PROFILE]:
         for row in out:
             row['prompt_profile']=profile
             row['prompt']=row['prompt'].replace("Retain the product's overall shape and original appearance.",
@@ -39,6 +40,17 @@ def conditions(category,profile=PROFILE):
             row['native_caption_style']='scene_first_v1'
             row['requested_attributes']['retain_original_appearance']=False
             row['requested_attributes']['fine_details_free']=True
+            if profile==SHORT_PROFILE:
+                props=attrs['background_elements'].replace(', curtains and a small plant',' and a plant')
+                # Two concrete background elements suffice; avoid a long list.
+                pieces=props.replace(' and ', ', ').split(', ')
+                props=' and '.join(pieces[:2])
+                row['prompt']=(f"Generate a photo of the reference {subject} {attrs['support']} in a {attrs['scene']} with {props}. "
+                    "Keep its overall shape visible; other details may vary.")
+                row['native_caption']=row['prompt']
+                row['native_caption_style']='same_two_sentence_request'
+                row['reward_caption']=f"A {subject} {attrs['support']} in a {attrs['scene']} with {props}."
+                attrs['background_elements']=props
     elif profile!=PROFILE:raise ValueError('Unreviewed scene contract')
     return out
 

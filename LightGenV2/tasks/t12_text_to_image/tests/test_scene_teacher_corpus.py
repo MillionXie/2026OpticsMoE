@@ -1,9 +1,16 @@
 import unittest
-from LightGenV2.tasks.t12_text_to_image.appearance_scene_protocol import PROFILE,COARSE_PROFILE,conditions
+from LightGenV2.tasks.t12_text_to_image.appearance_scene_protocol import PROFILE,COARSE_PROFILE,SHORT_PROFILE,conditions
 from LightGenV2.tasks.t12_text_to_image.scene_teacher_corpus import requests_for
 
 
 class CoarseSceneDataTest(unittest.TestCase):
+    def test_two_sentence_contract_no_extra_native_requests(self):
+        for category in ['lamp','pillow']:
+            for row in conditions(category,SHORT_PROFILE):
+                self.assertEqual(row['prompt'].count('.'),2)
+                self.assertLessEqual(len(row['prompt'].split()),45)
+                self.assertEqual(row['prompt'],row['native_caption'])
+                self.assertFalse(row['requested_attributes']['retain_original_appearance'])
     def sources(self):
         return [{'sample_id':category+str(i),'product_id':category+str(i),'split':'train' if i<4 else 'dev',
                  'category':category,'white_reference_sha256':category+str(i),'rgba_file_sha256':'rgba'+category+str(i)}

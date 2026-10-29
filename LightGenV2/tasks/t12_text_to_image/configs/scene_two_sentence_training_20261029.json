@@ -1,0 +1,22 @@
+{
+  "protocol": "white_ABO_to_two_sentence_furnished_room_v3",
+  "training_resolution": 512,
+  "Qwen_image_side": 256,
+  "Qwen_vision_layers": 24,
+  "Qwen_language_layers": 28,
+  "Qwen_and_VAE_and_UNet_base_frozen": true,
+  "UNet_LoRA_rank": 4,
+  "epochs": 3,
+  "warmup": 600,
+  "lr": 0.00001,
+  "condition_anchor_weight": 0.02,
+  "batch_size": 1,
+  "diffusion_loss": "standard random-timestep epsilon MSE",
+  "best_selection": "fixed DEV diffusion noise loss, not generation quality proof",
+  "image_feedback": false,
+  "sampling_steps": 30,
+  "SDXL_conditioning_size": 1024,
+  "negative_prompt": "drawing, painting, illustration, cartoon, sketch, line art, outlines, flat shading, CGI, 3d render, watermark, text",
+  "color_edits_or_rotation_requested": false,
+  "TEST_used_for_training_or_selection": false
+}
