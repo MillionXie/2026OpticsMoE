@@ -43,13 +43,19 @@ class QueryCondition(nn.Module):
 
 
 class QwenSDXLConditions(nn.Module):
-    def __init__(self,input_width=2048,width=512,text_width=2048,image_width=1280,pooled_width=1280):
+    def __init__(self,input_width=2048,width=512,text_width=2048,image_width=1280,pooled_width=1280,joint_image_context=False):
         super().__init__();self.project=nn.Sequential(nn.LayerNorm(input_width),nn.Linear(input_width,width))
         self.text=QueryCondition(77,text_width,width);self.image=QueryCondition(257,image_width,width)
         self.pooled=nn.Linear(width,pooled_width)
+        self.joint_image_context=joint_image_context
     def forward(self,hidden,visual,padding=None):
-        text,q=self.text(self.project(hidden),padding)
-        image,_=self.image(self.project(visual))
+        context=self.project(hidden);text,q=self.text(context,padding)
+        image_context=self.project(visual);image_padding=None
+        if self.joint_image_context:
+            image_context=torch.cat([image_context,context],dim=1)
+            if padding is not None:
+                image_padding=torch.cat([torch.zeros(visual.shape[:2],device=padding.device,dtype=torch.bool),padding],dim=1)
+        image,_=self.image(image_context,image_padding)
         return {'text':text,'image':image,'pooled':self.pooled(q.mean(dim=1))}
 
 

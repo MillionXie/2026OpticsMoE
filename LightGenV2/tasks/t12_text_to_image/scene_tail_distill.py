@@ -55,7 +55,7 @@ def load_generator(a,state,trainable=False):
         for n,p in pipe.unet.named_parameters():
             if 'lora_' in n:p.requires_grad_(True);p.data=p.data.float()
         pipe.unet.enable_gradient_checkpointing();pipe.unet.train()
-    head=QwenSDXLConditions().cuda().eval().requires_grad_(False);head.load_state_dict(state['head'],strict=True)
+    head=QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).cuda().eval().requires_grad_(False);head.load_state_dict(state['head'],strict=True)
     return pipe,head
 
 

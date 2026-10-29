@@ -252,6 +252,34 @@ def electronic_condition_loss(pred,payload,row):
         for name,weight in [('image',2.),('text',1.),('pooled',.25)])
 
 
+class TRAINReferenceContrast:
+    """Distinguish reference instances using frozen TRAIN teacher conditions.
+
+    Product IDs only exclude same-product negatives; none enters the model.
+    Common white-background components are centered before cosine comparison.
+    """
+    def __init__(self,payload,device='cuda'):
+        keys={r['input_key'] for r in payload['records'] if r['split']=='train'}
+        if set(payload['TRAIN_electronic_conditions'])!=keys:raise ValueError('Condition bank must contain exactly TRAIN keys')
+        rows={r['reference_sha256']:r for r in payload['records'] if r['split']=='train'}
+        self.rows=list(rows.values());self.rng=random.Random(1742)
+        self.vectors=torch.stack([payload['TRAIN_electronic_conditions'][r['input_key']]['image'].float().reshape(-1) for r in self.rows]).to(device)
+        self.mean=self.vectors.mean(0,keepdim=True)
+        self.vectors=F.normalize(self.vectors-self.mean,dim=1)
+        self.target=payload['TRAIN_electronic_conditions']
+    def loss(self,pred,row):
+        if row['split']!='train':raise ValueError('Reference contrast uses TRAIN only')
+        available=[i for i,r in enumerate(self.rows) if r['source_product_id']!=row['source_product_id']]
+        if not available:raise ValueError('Different TRAIN products required')
+        selected=self.rng.sample(available,min(16,len(available)))
+        positive=self.target[row['input_key']]['image'].float().reshape(1,-1).to(pred['image'].device)
+        wanted=F.normalize(positive-self.mean,dim=1)
+        choices=torch.cat([wanted,self.vectors[selected]],dim=0).detach()
+        actual=F.normalize(pred['image'].float().reshape(1,-1)-self.mean,dim=1)
+        logits=actual@choices.T/.1
+        return F.cross_entropy(logits,torch.zeros(1,device=logits.device,dtype=torch.long))
+
+
 def fit(a, payload):
     from diffusers import DDPMScheduler
     from peft import LoraConfig
@@ -279,7 +307,7 @@ def fit(a, payload):
     if payload.get('optical_frontend'):
         payload['optical_frontend']=dict(payload['optical_frontend'],feature_distillation_only_generator_recovery_not_yet_trained=False)
     if a.variant == 'qwen':
-        head = QwenSDXLConditions().cuda().train()
+        head = QwenSDXLConditions(joint_image_context=a.config_profile.get('joint_image_context',False)).cuda().train()
         if parent is not None:head.load_state_dict(parent['head'],strict=True)
         else:
             state = torch.load(a.alignment/'best_checkpoint.pt', map_location='cpu', weights_only=False)
@@ -302,6 +330,8 @@ def fit(a, payload):
             if step % 20 == 0: write(a.output/'progress.json', {'stage': 'TRAIN_only_full_cohort_condition_warmup', 'step': step+1, 'total': a.warmup, 'loss': loss.item()})
         del warm
     trainable = lora + ([] if head is None else list(head.parameters()))
+    contrast_weight=a.config_profile.get('TRAIN_reference_contrast_weight',0.)
+    reference_contrast=TRAINReferenceContrast(payload) if contrast_weight else None
     scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
     assert scheduler.config.prediction_type == 'epsilon'
     conditioning_side=int(a.config_profile.get('SDXL_conditioning_size',a.resolution))
@@ -321,7 +351,8 @@ def fit(a, payload):
         anchor = anchor_loss(cond, payload, row) if head is not None and auxiliary else noise_mse*0
         kd_weight=a.config_profile.get('teacher_condition_kd_weight',0.)
         kd=electronic_condition_loss(cond,payload,row) if auxiliary and kd_weight else noise_mse*0
-        return noise_mse+.02*anchor+kd_weight*kd, noise_mse, anchor
+        contrast=reference_contrast.loss(cond,row) if auxiliary and reference_contrast is not None else noise_mse*0
+        return noise_mse+.02*anchor+kd_weight*kd+contrast_weight*contrast, noise_mse, anchor
     def optimizer():
         groups = [{'params': lora, 'lr': a.lr}]
         if head is not None: groups.append({'params': head.parameters(), 'lr': a.lr})
@@ -390,6 +421,7 @@ def fit(a, payload):
             'negative_pooled':payload['negative_pooled'],'negative_caption':payload['negative_caption'],
             'optical_frontend':payload.get('optical_frontend'),
             'frozen_optical_frontend_head_UNet_recovery':bool(payload.get('optical_frontend'))}
+        state['joint_image_context']=False if head is None else head.joint_image_context
         torch.save(state, a.output/'last_checkpoint.pt')
         if score < best:
             best = score; stale = 0; torch.save(state, a.output/'best_checkpoint.pt')
@@ -410,6 +442,8 @@ def fit(a, payload):
         'optical_parameters_updated':False,
         'teacher_condition_kd_weight':a.config_profile.get('teacher_condition_kd_weight',0.),
         'condition_teacher_sha256':payload.get('condition_teacher_sha256'),
+        'joint_image_context':a.config_profile.get('joint_image_context',False),
+        'TRAIN_reference_contrast_weight':contrast_weight,
         'image_feedback': False, 'rotation': False, 'quality_or_speed_accepted': False})
 
 

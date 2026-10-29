@@ -26,7 +26,7 @@ def main():
             path=folder/(kind+'_checkpoint.pt');state=torch.load(path,map_location='cpu',weights_only=False)
             assert state['pair_sha256']==cache['pair_sha256'] and state['optical_frontend']['checkpoint_sha256']==cache['optical_frontend']['checkpoint_sha256']
             if kind=='last':assert state['step']==report['actual_paired_updates']
-            head=QwenSDXLConditions().eval().requires_grad_(False);head.load_state_dict(state['head'],strict=True)
+            head=QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).eval().requires_grad_(False);head.load_state_dict(state['head'],strict=True)
             values=[]
             with torch.inference_mode():
                 for key,row in rows.items():

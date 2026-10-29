@@ -78,7 +78,7 @@ def render(a):
     if state.get('optical_frontend') and a.lg_frontend is None:raise ValueError('LG-trained head requires its bound optical frontend')
     if state['variant'] == 'qwen':
         qwen, processor = new_qwen(a)
-        head = QwenSDXLConditions().cuda().eval().requires_grad_(False)
+        head = QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).cuda().eval().requires_grad_(False)
         head.load_state_dict(state['head'], strict=True)
         pipe = pipeline(a)
         identity = torch.load(a.cache/'DEV_frontend_identity_only.pt', map_location='cpu', weights_only=False)

@@ -24,7 +24,7 @@ def make(a):
     assert digest(a.teacher/'best_checkpoint.pt')==ready['best_sha256']
     state=torch.load(a.teacher/'best_checkpoint.pt',map_location='cpu',weights_only=False)
     assert state['variant']=='qwen' and state['pair_sha256']==student['pair_sha256'] and not state.get('optical_frontend')
-    head=QwenSDXLConditions().cuda().eval().requires_grad_(False);head.load_state_dict(state['head'],strict=True)
+    head=QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).cuda().eval().requires_grad_(False);head.load_state_dict(state['head'],strict=True)
     targets={}
     for row in teacher['records']:
         if row['split']!='train':continue

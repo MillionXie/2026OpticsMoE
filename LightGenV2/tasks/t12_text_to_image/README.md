@@ -72,6 +72,18 @@ teacher轨迹只从TRAIN参考＋文字条件和source派生noise生成，不需
 renderer仅允许绑定该sampling_contract的权重跑6步，旧权重不能直接降为6步冒充蒸馏；新候选仍需完整DEV图、
 语义／指标和独立计时门禁，不能先称效果或速度改善。方法依据为guided diffusion distillation
 （https://arxiv.org/abs/2210.03142），此处是保留现有Qwen条件接口的Euler轨迹候选，不声称复现该论文全部方法。
+条件KD三轮已完整完成：best为epoch1/252，SHA`23cb526f46d65469afde8a33ebc586845252c6d9029cc2a9e3243542f5f49943`，
+DEV噪声.0471813；12／30步各32图都已生成评分，DINO门槛仍失败，侧视靠垫仍跨类别，不能当成功。
+CPU TRAIN条件诊断144输入显示image归一MSE从.05443到best .05041／last .04691；这只是条件拟合，
+不等于生图或泛化改善，不能据此把噪声best或last直接认作最终图像最佳。
+进一步候选`scene_LG_joint_image_context_20261030.json`针对已确认的读出分离：旧image query只读visual，
+新flag `joint_image_context`让**同一个已有**image query读取visual＋完整融合language states，仍7791616参数，
+没有新增Transformer、编码器、RGB／VAE支路。默认false保持历史输出；mask扩展后继续屏蔽language padding。
+TRAIN-only centered cosine reference contrast（.02／temperature .1，最多16个不同商品负例）使用电子教师条件，
+同商品其他视图不当负例，商品ID只用于离线损失排除，绝不作为模型输入。教师条件bank严格只含TRAIN keys。
+此候选从已完成LG条件KD恢复，120步原生条件暖启动＋最多3轮配对；原head／UNet LoRA训练，光学前端冻结。
+需要原算式逐元素身份、参数数目、image对language／visual梯度、padding和TRAIN-only损失测试，
+再经真实4步反向、完整raw32和图像／指标门禁。当前只是在实现下一候选，不预称已经训练或改善。
 2026-10-29用户确认仍有参考图，并明确授权开始LG。输入始终白底ABO RGB＋两句文字，
 Qwen唯一图文入口、输入256／输出512。候选336张已全板目视筛查，剔除65个明显造型／主体缺失／
 摆放或房间失败，接受252TRAIN／19DEV噪声监督；44TRAIN款全覆盖，完整32DEV生成请求照旧保留，
