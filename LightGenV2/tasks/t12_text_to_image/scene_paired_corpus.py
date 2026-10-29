@@ -146,6 +146,10 @@ def compose(a):
             sample_id = source['sample_id']+'-'+asset['asset_id']
             target = 'targets/'+sample_id+'.png'
             with Image.open(a.backgrounds/asset['image']) as bg:
+                crop = factual.get('background_crop', [0,0,1024,1024])
+                if (len(crop) != 4 or not (0 <= crop[0] < crop[2] <= 1024 and 0 <= crop[1] < crop[3] <= 1024)
+                    or crop[2]-crop[0] != crop[3]-crop[1]): raise ValueError('Reviewed square background crop required')
+                bg = bg.convert('RGB').crop(crop).resize((1024,1024),Image.Resampling.LANCZOS)
                 result, alpha, box = composite(rgba, bg, source['category'], factual.get('placement'))
             result.save(a.output/target)
             seed = request_seed(source['white_reference_sha256'], asset['variant'])
@@ -159,7 +163,7 @@ def compose(a):
                 'reward_caption': factual.get('reward_caption', request['reward_caption']),
                 'condition_id': asset['condition_id'], 'seed': seed, 'source_product_id': source['product_id'],
                 'source_RGBA_sha256': source['rgba_file_sha256'], 'background_id': asset['asset_id'],
-                'background_sha256': asset['sha256'], 'target_product_bbox': box,
+                'background_sha256': asset['sha256'], 'background_crop':crop, 'target_product_bbox': box,
                 'foreground_pixels_recolored': False, 'composition_is_TRAIN_DEV_data_only': True})
             if asset['asset_id'] not in previews: previews[asset['asset_id']] = (sample_id, result.resize((256, 256)))
         own = [r for r in pairs if r['reference_id'] == source['sample_id']]

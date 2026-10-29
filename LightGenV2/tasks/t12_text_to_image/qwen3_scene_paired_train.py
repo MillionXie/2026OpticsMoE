@@ -230,6 +230,12 @@ def fit(a, payload):
     initial = [p.detach().clone() for p in trainable]; opt = optimizer(); smoke = []
     for step in range(4):
         began = time.monotonic(); loss, mse, anchor = loss_for(train[step], 1042+step)
+        direct = {}
+        if head is not None:
+            probes = [head.text.out.weight, head.image.out.weight]
+            gradients = torch.autograd.grad(mse, probes, retain_graph=True)
+            direct = {name: grad.float().abs().sum().item() for name,grad in zip(['text','image'],gradients)}
+            assert all(value > 0 and math.isfinite(value) for value in direct.values())
         opt.zero_grad(); loss.backward()
         lg = sum(p.grad.float().abs().sum().item() for p in lora if p.grad is not None)
         hg = 0 if head is None else sum(p.grad.float().abs().sum().item() for p in head.parameters() if p.grad is not None)
@@ -237,18 +243,22 @@ def fit(a, payload):
         assert all(torch.isfinite(p.grad).all() for p in trainable if p.grad is not None)
         torch.nn.utils.clip_grad_norm_(trainable, 1.); opt.step(); torch.cuda.synchronize()
         smoke.append({'step': step+1, 'loss': loss.item(), 'LoRA_gradient': lg, 'head_gradient': hg,
+                      'epsilon_only_head_gradient':direct,
                       'seconds_including_backward': time.monotonic()-began})
     write(a.output/'smoke_report.json', {'complete': True, 'resolution': 1024, 'steps': smoke,
         'Qwen_and_VAE_and_UNet_base_frozen': True, 'reset_after_smoke': True})
     with torch.no_grad():
         for p, before in zip(trainable, initial): p.copy_(before)
     del opt, initial; opt = optimizer(); best = math.inf; stale = 0; updates = 0
+    rng = random.Random(20261029); schedule = hashlib.sha256()
     total = len(train)*a.epochs
     for epoch in range(1, a.epochs+1):
         rng.shuffle(train); running = []; began = time.monotonic()
         for i, row in enumerate(train):
             assert row['split'] == 'train'
-            loss, mse, anchor = loss_for(row, rng.randrange(2**31))
+            noise_seed = rng.randrange(2**31)
+            schedule.update((row['sample_id']+'|'+str(noise_seed)+'\n').encode())
+            loss, mse, anchor = loss_for(row, noise_seed)
             opt.zero_grad(); loss.backward()
             if not torch.isfinite(loss): raise ValueError('Nonfinite TRAIN loss')
             torch.nn.utils.clip_grad_norm_(trainable, 1., error_if_nonfinite=True); opt.step()
@@ -290,6 +300,7 @@ def fit(a, payload):
         'trainable_UNet_LoRA_parameters': sum(p.numel() for p in lora), 'VAE_and_Qwen_and_UNet_base_frozen': True,
         'TEST_opened': False, 'training_resolution': 1024, 'training_precision': 'BF16 base, FP32 trainable parameters',
         'best_selection': 'Fixed DEV diffusion noise loss; not free-generation quality/comparability proof',
+        'training_input_order_noise_schedule_sha256':schedule.hexdigest(),
         'image_feedback': False, 'rotation': False, 'quality_or_speed_accepted': False})
 
 
