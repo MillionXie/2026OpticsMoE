@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import torch
 from torch import nn
 from LightGenV2.tasks.t12_text_to_image.qwen3_scene_joint_optical import forward_with_visual
+from LightGenV2.tasks.t12_text_to_image.scene_frontend_rebind import binding_metadata
 
 
 class Visual(nn.Module):
@@ -18,6 +19,15 @@ class CoupledModel(nn.Module):
 
 
 class RawJointOptical(unittest.TestCase):
+    def test_binding_rejects_unrelated_or_TEST_trained_frontends(self):
+        state=dict(optical_frontend=dict(checkpoint_sha256='old'))
+        report=dict(complete=True,only_existing_optical_macros_trainable=True,parent_frontend_sha256='old',
+            head_UNet_VAE_retained_Qwen_frozen=True,TEST_opened=False,DEV_or_TEST_forward_performed=False)
+        self.assertEqual(binding_metadata(state,report,'new')['checkpoint_sha256'],'new')
+        self.assertEqual(state['optical_frontend']['checkpoint_sha256'],'old')
+        for changed in [dict(parent_frontend_sha256='another'),dict(TEST_opened=True),dict(DEV_or_TEST_forward_performed=True)]:
+            with self.assertRaises(ValueError):binding_metadata(state,dict(report,**changed),'new')
+
     def test_language_condition_backpropagates_into_actual_visual_macro(self):
         torch.manual_seed(1042);model=CoupledModel();inputs=dict(pixels=torch.randn(1,3,4))
         h,v=forward_with_visual(model,inputs);h.square().mean().backward()
