@@ -45,20 +45,23 @@ def install_tail(pipe,root):
 
 
 def download(output):
-    from huggingface_hub import HfApi,snapshot_download
+    from huggingface_hub import snapshot_download
+    import requests
     if (output/'asset_report.json').exists():return checked_tail(output)
     if output.exists():raise ValueError('Keep incomplete asset evidence; use an explicit new retry directory')
-    meta=HfApi().model_info(REPO,revision=REVISION,files_metadata=True)
-    assert meta.sha==REVISION and meta.card_data.license=='openrail++'
-    official={r.rfilename:r for r in meta.siblings}
-    assert official[WEIGHT].lfs.sha256==WEIGHT_SHA
+    # The official JSON uses stable field names across the workstation's older
+    # and the server's modern huggingface_hub ModelInfo dataclass variants.
+    response=requests.get(f'https://huggingface.co/api/models/{REPO}/revision/{REVISION}?blobs=true',timeout=60);response.raise_for_status();meta=response.json()
+    assert meta['sha']==REVISION and meta['cardData']['license']=='openrail++'
+    official={r['rfilename']:r for r in meta['siblings']}
+    assert official[WEIGHT]['lfs']['sha256']==WEIGHT_SHA
     output.mkdir(parents=True)
     write(output/'download_execution.json',dict(argv=sys.argv,pid=os.getpid(),source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=digest(Path(__file__)),GPU_started=False))
     snapshot_download(REPO,revision=REVISION,allow_patterns=[WEIGHT,'README.md'],local_dir=output)
-    assert digest(output/WEIGHT)==WEIGHT_SHA and (output/WEIGHT).stat().st_size==official[WEIGHT].size
-    data=(output/'README.md').read_bytes();blob=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest();assert blob==official['README.md'].blob_id
+    assert digest(output/WEIGHT)==WEIGHT_SHA and (output/WEIGHT).stat().st_size==official[WEIGHT]['size']
+    data=(output/'README.md').read_bytes();blob=hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest();assert blob==official['README.md']['blobId']
     write(output/'asset_report.json',dict(complete=True,repo_id=REPO,revision=REVISION,license='openrail++',weight_sha256=WEIGHT_SHA,
-        weight_bytes=official[WEIGHT].size,model_card_git_blob=blob,download_only=True,training_or_generation_performed=False))
+        weight_bytes=official[WEIGHT]['size'],model_card_git_blob=blob,download_only=True,training_or_generation_performed=False))
     return checked_tail(output)
 
 
