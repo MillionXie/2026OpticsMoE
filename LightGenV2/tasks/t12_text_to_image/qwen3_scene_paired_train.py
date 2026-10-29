@@ -93,6 +93,21 @@ def cache(a, rows):
     vision = CLIPVisionModelWithProjection.from_pretrained(a.adapter_path/'models/image_encoder',
         torch_dtype=torch.bfloat16, local_files_only=True).cuda().eval().requires_grad_(False)
     image_processor = CLIPImageProcessor()
+    # Deployment constants, encoded once by frozen TRAIN-time teachers. A zero
+    # tensor is not the native CLIP empty/negative-text representation.
+    negative_conditions=[];negative_pooled=None
+    negative_caption=a.config_profile.get('negative_prompt','')
+    for tokenizer,encoder in zip(tokenizers,text_encoders):
+        checked_tokens(tokenizer,negative_caption)
+        ids=tokenizer(negative_caption,padding='max_length',max_length=77,truncation=False,return_tensors='pt').input_ids.cuda()
+        with torch.inference_mode(): out=encoder(ids,output_hidden_states=True)
+        negative_conditions.append(out.hidden_states[-2].cpu())
+        if hasattr(out,'text_embeds'):negative_pooled=out.text_embeds.cpu()
+    assert negative_pooled is not None
+    negative_text=torch.cat(negative_conditions,dim=-1)
+    assert negative_text.shape==(1,77,2048) and negative_pooled.shape==(1,1280)
+    assert torch.isfinite(negative_text).all() and torch.isfinite(negative_pooled).all()
+    assert negative_text.abs().sum()>0 and negative_pooled.abs().sum()>0
     features = {}; captions = {}; images = {}; records = []
     for i, row in enumerate(rows):
         path = a.data/row['reference']
@@ -145,7 +160,8 @@ def cache(a, rows):
         if i % 16 == 0: write(a.output/'progress.json', {'stage': 'TRAIN_DEV_target_latents_for_noise_loss_only', 'done': i+1, 'total': len(records)})
     del vae; gc.collect(); torch.cuda.empty_cache()
     payload = {'records': records, 'features': features, 'captions': captions, 'images': images,
-        'latents': latents, 'negative_image': negative, 'pair_sha256': digest(a.data/'pairs.json')}
+        'latents': latents, 'negative_image': negative, 'pair_sha256': digest(a.data/'pairs.json'),
+        'negative_text':negative_text,'negative_pooled':negative_pooled,'negative_caption':negative_caption}
     torch.save(payload, a.output/'paired_cache.pt')
     torch.save({'features': {k:v for k,v in features.items() if k in dev_keys}, 'Qwen_input_side':a.qwen_side,
         'contains_targets_or_masks':False}, a.output/'DEV_frontend_identity_only.pt')
@@ -154,6 +170,7 @@ def cache(a, rows):
         'target_resolution':a.resolution,'complete_DEV_frontend_contexts':len(dev_keys),
         'visual_tokens': (a.qwen_side//32)**2, 'complete_Qwen_parameters':frontend_count, 'vision_layers':24, 'language_layers':28,
         'TEST_opened': False, 'target_images_enter_Qwen': False,
+        'native_CFG_negative_caption':negative_caption,'negative_conditions_encoded_by_frozen_TRAIN_teachers':True,
         'cache_inputs_only_RGB_and_prompt': True, 'cache_is_training_optimization_not_deployment': True})
 
 
@@ -219,7 +236,8 @@ def fit(a, payload):
     trainable = lora + ([] if head is None else list(head.parameters()))
     scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
     assert scheduler.config.prediction_type == 'epsilon'
-    time_ids = torch.tensor([[a.resolution, a.resolution, 0, 0, a.resolution, a.resolution]], device='cuda', dtype=torch.bfloat16)
+    conditioning_side=int(a.config_profile.get('SDXL_conditioning_size',a.resolution))
+    time_ids = torch.tensor([[conditioning_side, conditioning_side, 0, 0, conditioning_side, conditioning_side]], device='cuda', dtype=torch.bfloat16)
     def loss_for(row, seed, auxiliary=True):
         cond = conditions_for(head, payload, row)
         latent = payload['latents'][row['target_sha256']].unsqueeze(0).cuda()
@@ -297,7 +315,9 @@ def fit(a, payload):
             'unet_lora': {n:p.detach().cpu() for n,p in unet.named_parameters() if 'lora_' in n},
             'negative_image': payload['negative_image'], 'DEV_epsilon_MSE': score,
             'pair_sha256': payload['pair_sha256'], 'cache_sha256': cache_digest,
-            'source_commit': os.environ['T12_SOURCE_COMMIT'], 'Qwen_input_side': a.qwen_side,'resolution':a.resolution}
+            'source_commit': os.environ['T12_SOURCE_COMMIT'], 'Qwen_input_side': a.qwen_side,'resolution':a.resolution,
+            'SDXL_conditioning_size':conditioning_side,'negative_text':payload['negative_text'],
+            'negative_pooled':payload['negative_pooled'],'negative_caption':payload['negative_caption']}
         torch.save(state, a.output/'last_checkpoint.pt')
         if score < best:
             best = score; stale = 0; torch.save(state, a.output/'best_checkpoint.pt')
@@ -328,6 +348,7 @@ def main():
     p.add_argument('--lr', type=float)
     a = p.parse_args()
     config = json.loads(a.config.read_text())
+    a.config_profile=config
     assert config['training_resolution'] in [512,1024] and config['Qwen_image_side'] in [256,512]
     a.resolution=config['training_resolution'];a.qwen_side=config['Qwen_image_side']
     assert config['UNet_LoRA_rank'] == 4 and config['condition_anchor_weight'] == .02 and config['batch_size'] == 1

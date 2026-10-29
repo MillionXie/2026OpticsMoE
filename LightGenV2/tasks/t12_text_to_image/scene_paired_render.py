@@ -67,6 +67,8 @@ def render(a):
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
         noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
         kwargs = dict(width=resolution,height=resolution,num_inference_steps=30,guidance_scale=7.5,latents=noise,generator=generator)
+        conditioning_side=int(state.get('SDXL_conditioning_size',resolution))
+        kwargs.update(original_size=(conditioning_side,conditioning_side),target_size=(conditioning_side,conditioning_side))
         with torch.inference_mode():
             if head is not None:
                 h,v,ids = raw_scene_features(qwen,processor,reference,row['prompt'],a.qwen_side)
@@ -76,11 +78,11 @@ def render(a):
                 cond = head(h.unsqueeze(0).cuda().float(),v.unsqueeze(0).cuda().float())
                 images = torch.cat([state['negative_image'].cuda().bfloat16(),cond['image'].bfloat16()],dim=0).unsqueeze(1)
                 kwargs.update(prompt_embeds=cond['text'].bfloat16(),pooled_prompt_embeds=cond['pooled'].bfloat16(),
-                    negative_prompt_embeds=torch.zeros_like(cond['text']).bfloat16(),
-                    negative_pooled_prompt_embeds=torch.zeros_like(cond['pooled']).bfloat16(),ip_adapter_image_embeds=[images])
+                    negative_prompt_embeds=state['negative_text'].cuda().bfloat16(),
+                    negative_pooled_prompt_embeds=state['negative_pooled'].cuda().bfloat16(),ip_adapter_image_embeds=[images])
             else:
                 for t in [pipe.tokenizer,pipe.tokenizer_2]: checked_tokens(t,row['native_caption'])
-                kwargs.update(prompt=row['native_caption'],ip_adapter_image=reference)
+                kwargs.update(prompt=row['native_caption'],negative_prompt=state['negative_caption'],ip_adapter_image=reference)
             image = pipe(**kwargs).images[0]
         name = row['sample_id']+'.png'; image.save(a.output/name)
         records.append({**row,'split':'dev','generated_PNG':name,'generated_sha256':digest(a.output/name),

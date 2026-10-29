@@ -15,6 +15,8 @@
   "best_selection": "fixed DEV diffusion noise loss, not generation quality proof",
   "image_feedback": false,
   "sampling_steps": 30,
+  "SDXL_conditioning_size": 1024,
+  "negative_prompt": "drawing, painting, illustration, cartoon, sketch, line art, outlines, flat shading, CGI, 3d render, watermark, text",
   "color_edits_or_rotation_requested": false,
   "TEST_used_for_training_or_selection": false
 }
