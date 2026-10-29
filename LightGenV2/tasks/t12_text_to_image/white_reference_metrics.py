@@ -58,8 +58,11 @@ def load_records(run):
         raise ValueError('Only completed, frozen TRAIN feasibility runs allowed')
     records = json.loads((run/'images.json').read_text(encoding='utf-8'))
     keys = [(r['reference_id'], r['condition_id'], r['seed']) for r in records]
-    if len(records) != report['generated_count'] or len(records) != 16 or len(set(keys)) != 16:
-        raise ValueError('All sixteen unique outputs required; no best-of-seed selection')
+    expected = 32 if report.get('scope') == 'DEV' else 16
+    if len(records) != report['generated_count'] or len(records) != expected or len(set(keys)) != expected:
+        raise ValueError('All prespecified unique outputs required; no best-of-seed selection')
+    if report.get('scope') == 'DEV' and any(r.get('split') != 'dev' for r in records):
+        raise ValueError('DEV comparison contains another split')
     for r in records:
         if (Path(r['generated_PNG']).name != r['generated_PNG'] or
                 digest(run/r['generated_PNG']) != r['generated_sha256'] or
@@ -165,8 +168,8 @@ def main():
                 'DINOv2_I':'facebook/dinov2-small CLS cosine, full reference and generated image; differs from original DreamBench DINOv1-S/16; not pure outline',
                 'CLIP_I':'OpenAI ViT-B/32 full-image cosine, auxiliary appearance metric',
                 'ImageReward_compact':'Official score() with fixed <=35-token caption. Auxiliary preference; does not score every full-prompt clause.'},
-              'limitations':[f"{len({r['reference_id'] for r in rows})} TRAIN references only, not independent test or automatic attribute accuracy.",
-                'Native generation resolutions differ; quality feasibility diagnostic, not fair resolution-controlled model ranking.',
+              'limitations':[f"{len({r['reference_id'] for r in rows})} reference views; TRAIN/DEV diagnosis only, not independent test or automatic attribute accuracy.",
+                'Generation resolution/protocol must be checked in each source report before any ranking; historical runs may differ.',
                 'Appearance similarity can reward an unchanged white-background output that ignores text; never use it alone.',
                 'Reward captions omit peripheral details and lighting; original prompts remain preserved and fully scored by CLIP-T.',
                 'FID not computed: no matched eligible scene reference distribution; white input images are not a valid scene GT pool.']})
