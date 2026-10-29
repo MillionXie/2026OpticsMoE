@@ -36,5 +36,11 @@ class DeliveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             p=Path(d)/'receipt.json';audit.save(p,dict(real=True))
             with self.assertRaises(FileExistsError):audit.save(p,dict(real=False))
+    def test_independent_overlap_integration_accepts_real_long_gap(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            (root/'telemetry.csv').write_text('host_monotonic_s,watts\n0,100\n0.4,200\n0.6,300\n')
+            audit.independent_held_board(root,dict(start_monotonic_s=.1,end_monotonic_s=.5,gpu_energy_j=50.,estimated_system_energy_j=50.+.4*338.2))
+            with self.assertRaises(ValueError):audit.independent_held_board(root,dict(start_monotonic_s=.1,end_monotonic_s=.5,gpu_energy_j=40.,estimated_system_energy_j=50.+.4*338.2))
 
 if __name__=='__main__':unittest.main()

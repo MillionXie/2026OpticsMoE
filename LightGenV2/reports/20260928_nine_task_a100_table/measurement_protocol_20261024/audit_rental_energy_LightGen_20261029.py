@@ -39,22 +39,19 @@ def preserved(root):
         if p.stat().st_size!=r['bytes'] or sha(p)!=r['sha256']:raise ValueError('Preserved original evidence differs')
     return sha(root/'whole_root_backup_receipt_complete01.json')
 
-def baselines():
+def strict_prefix():
     import run_rental_energy_remeasure_20261029 as entry
-    root=SIM/'rental_energy_remeasure_20261030_03';out=root/'local_independent_pooled_audit01.json'
-    if out.exists():raise FileExistsError('Do not repeat accepted independent audit')
-    receipt_sha=preserved(root);s=read(root/'suite_status.json')
+    root=SIM/'rental_energy_userZOH_20261030_04'
     prior=SIM/'rental_energy_remeasure_20261029_01';prior_sha=preserved(prior);old=read(prior/'suite_status.json')
     second=SIM/'rental_energy_remeasure_20261029_02';second_sha=preserved(second);mid=read(second/'suite_status.json')
     if old['status']!='stopped' or old['completed']!=EXPECTED[:5]:raise ValueError('Exact five-qualified-point prefix required')
     if mid['status']!='stopped' or mid['completed']!=EXPECTED[5:6] or not mid.get('mps_released'):raise ValueError('Qualified sixth point preserved across safe deadline transition')
-    if s['status']!='complete' or s['completed']!=EXPECTED[6:] or s.get('mps_released') is not True:raise ValueError('All six remaining original points must close')
     entry.configure()
     # Transport-only location of the unchanged exact-SHA receipt, not a gate change.
     entry.timing.STORAGE_RECEIPT=root/'evidence/input_local_overlay_receipt01.json'
     manifest=entry.base.TASK/'runs/simulation/lgvq_full_deepseek_kimi_rental_20261017/provisioning/original_manifest.csv'
     audits=[]
-    for name in EXPECTED:
+    for name in EXPECTED[:6]:
         leaf=(prior if name in EXPECTED[:5] else second if name==EXPECTED[5] else root)/name
         report=read(leaf/'report.json')
         source='LightGenV2/reports/20260928_nine_task_a100_table/measurement_protocol_20261024/rental_power_observer_20261029.py'
@@ -70,11 +67,55 @@ def baselines():
         if a['status']!='passed' or not a['energy_qualified'] or a['measured_videos']!=512:raise ValueError('New time+energy audit failed')
         audits.append(a)
     if 'torch' in sys.modules:raise RuntimeError('Baseline audit must not import Torch')
-    value=dict(status='passed',round_audits=audits,original_root_receipt_sha256=receipt_sha,prior_root_receipt_sha256=prior_sha,second_root_receipt_sha256=second_sha,
-               qualification='five original plus one qualified point plus six completion points; failed267-video attempt and unmeasured loading transition excluded and preserved',
+    value=dict(status='passed',round_audits=audits,prior_root_receipt_sha256=prior_sha,second_root_receipt_sha256=second_sha,
+               qualification='six original strict250ms Kimi points',
                actual_board_power_and_energy=True,host_power_is_fixed338_2W_proxy=True,
                full_window_replayed=True,original250ms_gate_retained=True,model_loaded=False,torch_imported=False)
-    save(out,value);return dict(status='passed',path=str(out),sha256=sha(out),rounds=len(audits))
+    return value
+
+def independent_held_board(leaf,cost):
+    with (leaf/'telemetry.csv').open(newline='') as f:raw=list(csv.DictReader(f))
+    start=cost['start_monotonic_s'];end=cost['end_monotonic_s']
+    stamps=[float(x['host_monotonic_s']) for x in raw]
+    if any(b<=a for a,b in zip(stamps,stamps[1:])) or stamps[0]>start or stamps[-1]<end:raise ValueError('Actual bracketed monotonic observations required')
+    value=sum(float(raw[i]['watts'])*max(0.,min(end,stamps[i+1])-max(start,stamps[i])) for i in range(len(raw)-1))
+    close(value,cost['gpu_energy_j']);close(value+(end-start)*338.2,cost['estimated_system_energy_j'])
+
+def zoh_five():
+    import run_rental_user_zoh_20261030 as user
+    user.entry.ROOT=user.ROOT;user.entry.PIPE=user.PIPE;user.entry.ENTRY=user.ENTRY;user.entry.PROTOCOL=user.PROTOCOL;user.configure()
+    user.entry.timing.STORAGE_RECEIPT=user.ROOT/'evidence/input_local_overlay_receipt01.json'
+    manifest=SIM/'lgvq_full_deepseek_kimi_rental_20261017/provisioning/original_manifest.csv'
+    audits=[]
+    for name in EXPECTED[7:]:
+        leaf=user.ROOT/name;a=user.audit(leaf,manifest);r=read(leaf/'report.json')
+        if a['status']!='passed' or a['qualification']!='user_authorized_ZOH_estimate_not_strict250ms':raise ValueError('Declared user ZOH audit required')
+        independent_held_board(leaf,r['cost']);audits.append(a)
+    if 'torch' in sys.modules:raise RuntimeError('CPU audit imported Torch')
+    return dict(status='passed',round_audits=audits,qualification='five user-authorized ZOH points',independent_overlap_integration=True,torch_imported=False)
+
+def baselines():
+    root=SIM/'rental_energy_userZOH_20261030_04';out=root/'local_independent_pooled_audit01.json'
+    if out.exists():raise FileExistsError('Do not repeat accepted independent audit')
+    pin=preserved(root);s=read(root/'suite_status.json')
+    if s['status']!='complete' or s['completed']!=EXPECTED[7:] or not s.get('mps_released'):raise ValueError('All five pending native points must close')
+    groups=[]
+    for phase in ['strict-prefix','zoh-five']:
+        p=root/('independent_'+phase.replace('-','_')+'_audit01.json')
+        if p.exists():value=read(p)
+        else:
+            result=subprocess.run([sys.executable,str(Path(__file__).resolve()),'--phase',phase],cwd=REPO,check=True,capture_output=True,text=True,timeout=300)
+            value=json.loads(result.stdout);save(p,value)
+        if value['status']!='passed':raise ValueError('Independent CPU stage failed')
+        groups.append(value['round_audits'])
+    p=HERE/'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/DeepSeek50_repeat01_userZOH_20261030_01'
+    if sha(p/'derived_report01.json')!='07c9c12eb1f24f45f695c673c5ad4d32783721377d9dbc5feac47ce28a9a382e' or sha(p/'late_input_verification01.json')!='a8404f961d2a07b1d1b05635ecd01d4b80ac83cf8b672b7d0397baaecddc76f9' or sha(p/'lab_derived_data_receipt01.json')!='ac06ed4dc855dc5cb1f7d8f2b801bfd8e93e4bbbe3a30e04b4da45095ff26926':raise ValueError('Accepted separate derivation changed')
+    d=read(p/'derived_report01.json')
+    derived=dict(status='passed',qualification=d['qualification'],original_failed_status_unchanged=True,report_sha256=sha(p/'derived_report01.json'),model='deepseek',cap=50,repeat=1,measured_videos=512,energy_qualified=True,strict250ms_qualified=False,cost=d['cost'])
+    audits=groups[0]+[derived]+groups[1]
+    if len(audits)!=12 or len({x['report_sha256'] for x in audits})!=12:raise ValueError('Twelve distinct completed observations required')
+    value=dict(status='passed',round_audits=audits,original_root_receipt_sha256=pin,qualification='six strict Kimi, one immutable-raw CPU ZOH derivation, five native user-ZOH DeepSeek',model_loaded=False,torch_imported=False,host_power_is_fixed338_2W_proxy=True)
+    save(out,value);return dict(status='passed',path=str(out),sha256=sha(out),rounds=12)
 
 def lightgen():
     import numpy as np
@@ -153,5 +194,5 @@ def lightgen_diagnostic(root,receipt_sha):
     save(out,value);return dict(status=value['status'],path=str(out),sha256=sha(out),software_window_s=elapsed,equal_scores=equal)
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=('baselines','lightgen'),required=True);a=p.parse_args()
-    print(json.dumps((baselines if a.phase=='baselines' else lightgen)(),ensure_ascii=True))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--phase',choices=('baselines','lightgen','strict-prefix','zoh-five'),required=True);a=p.parse_args()
+    print(json.dumps({'baselines':baselines,'lightgen':lightgen,'strict-prefix':strict_prefix,'zoh-five':zoh_five}[a.phase](),ensure_ascii=True))
