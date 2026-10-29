@@ -33,6 +33,38 @@ DEV128（16×8×1），TEST500为10款／10视图×8场景的80个参考文字�
 不能直接用作本任务自由场景的唯一GT主分数。论文CLIP是L/14@336图像相似度、DINO是B/14-reg，
 与此处既有B/32 CLIP-T和S/14 DINO分数需明确分列，不跨编码器／任务比较绝对值。
 
+同口径先导`scene_matched_DEV32_20261029`／`scene_matched_DEV96_metrics_20261029`已完整，
+源码`b7f100f81`；8款DEV商品、16原视图、每视图两场景，共32请求／模型，统一1024、30步、
+CFG7.5、IP .25，全部请求初始latent逐字节相同。不是独立TEST或500图正式成绩。
+Qwen仅使用旧64条件文字适配权重`db09e6f2…`，还未正式配对扩散微调；各原生对照同样未微调。
+
+| DEV32完整输出 | CLIP-T↑ | DINOv2-S/14-I↑ | CLIP-B/32-I↑ | ImageReward_compact↑ |
+|---|---:|---:|---:|---:|
+| 当前Qwen单次前向 | .304681 | .265778 | .748322 | −1.899808 |
+| 原生SDXL/IP-Adapter | .315142 | .375907 | .757795 | −1.180618 |
+| 原生SDXL/IP/Canny | .317208 | .447463 | .784125 | −1.585686 |
+
+Qwen文字余弦距第一原生对照约3.3%，但DINO低约29.3%；不能只凭前者声称可比。
+ImageReward含负值，不用相除得到百分比差距。全部96原图／逐图分数保留，不按seed挑图。
+父`scene_matched_DEV_workflow_20261029`完成并释放生成／评分子PID；后续背景素材GPU阶段串行。
+
+`scene_original_RGBA_92_20261029`已通过官方ZIP成员CRC取回76TRAIN／16DEV原始RGBA，
+**全部原生1024×1024**，不是从旧256JPEG放大；92张源视图QA板已查看，商品角色划分不变。
+`scene_paired_corpus`先单独生成32TRAIN／16DEV空房间背景候选，须逐背景记录视觉审核及必要的
+事实caption／支撑面位置，才可用真正alpha制作配对。ABO前景CC BY 4.0归属与自生成背景来源分列。
+背景生成prompt不是正确标签证明；缺少家具／不自然摆放不能自动验收，原候选全部保留。
+候选全通过时预算为1216TRAIN／128DEV，实际以审核后的配对manifest为准，不能与已有请求数混淆。
+
+新增`qwen3_scene_paired_train`／配置`scene_paired_training_20261029.json`实现正式训练入口，
+尚须GPU实际执行后才记结果：完整冻结Qwen以512输入得到256空间token；仍是原条件适配器，
+不新增TF、RGB编码器、参考VAE支路或图像回输。使用全TRAIN条件暖启动、BF16原生成器／FP32适配器
+与rank4 UNet LoRA、1024随机timestep噪声MSE，原VAE／Qwen／UNet基础权重冻结。
+真实4步1024反向门禁后恢复所有可训练张量，从同一初始状态正式训练；两个epoch为首轮预算，
+保best／last与TRAIN/DEV噪声曲线，不将DEV噪声loss当自由生成质量。原生SDXL/IP可在相同配对、
+更新数、LoRA范围及LR上独立微调；其未微调／微调行分列。新增输入与SHA审计后必须做raw生成比较。
+`scene_paired_render`只读取安全的DEV推理输入清单和不含目标的前端身份缓存，不打开配对目标或
+目标latent缓存；Qwen从实际RGB／全文独立重算，要求与冻结前端缓存逐元素相同。LG暂不启动。
+
 `qwen3_scene_appearance_probe`仅做小范围文字条件适配：原完整Qwen24视觉／28语言、SDXL/IP/VAE、
 已有图像读出及共享投影全部冻结，原7,791,616参数适配器内只更新文字读出和pooled头，无新增推理参数。
 固定8款TRAIN参考×8无换色场景为64条件，CLIP仅作为TRAIN文字教师，对与完整输入语义一致的产品摄影

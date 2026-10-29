@@ -10,6 +10,7 @@ from collections import Counter
 import gc
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import shutil
@@ -88,20 +89,26 @@ def generate(a):
         'license_note': 'AI-generated SDXL backdrop assets; separate from ABO CC BY 4.0 foreground attribution.'})
 
 
-def composite(rgba, background, category):
+def composite(rgba, background, category, placement=None):
     """Use true alpha, premultiplied resize, and a soft contact shadow."""
     if rgba.mode != 'RGBA' or background.size != (1024, 1024): raise ValueError('Original RGBA/1024 backdrop required')
     box = rgba.getchannel('A').getbbox()
     if box is None: raise ValueError('Empty product')
     # RGBa (premultiplied) prevents bright/black fringes around fine ABO edges.
     product = rgba.crop(box).convert('RGBa')
+    placement = placement or {}
     maxw, maxh = ((640, 710) if category == 'lamp' else (590, 510))
+    maxw = int(placement.get('max_width', maxw)); maxh = int(placement.get('max_height', maxh))
+    center = float(placement.get('center_x', .5)); bottom = int(placement.get('bottom_y', 900))
+    if not (200 <= maxw <= 820 and 200 <= maxh <= 820 and .2 <= center <= .8 and 550 <= bottom <= 980):
+        raise ValueError('Unreviewed product placement')
     scale = min(maxw/product.width, maxh/product.height)
     product = product.resize((round(product.width*scale), round(product.height*scale)), Image.Resampling.LANCZOS).convert('RGBA')
-    x = (1024-product.width)//2; y = 900-product.height
+    x = round(1024*center-product.width/2); y = bottom-product.height
+    if x < 0 or y < 0 or x+product.width > 1024: raise ValueError('Product would be cropped')
     alpha = Image.new('L', (1024, 1024)); alpha.paste(product.getchannel('A'), (x, y))
     shadow = Image.new('L', (1024, 1024)); draw = ImageDraw.Draw(shadow)
-    draw.ellipse((x+product.width*.08, 884, x+product.width*.92, 918), fill=42)
+    draw.ellipse((x+product.width*.08, bottom-16, x+product.width*.92, bottom+18), fill=42)
     shadow = np.asarray(shadow.filter(ImageFilter.GaussianBlur(12)), dtype=np.float32)/255
     rgb = np.asarray(background.convert('RGB'), dtype=np.float32)*(1-shadow[:, :, None])
     result = Image.fromarray(rgb.round().clip(0, 255).astype(np.uint8)).convert('RGBA')
@@ -122,7 +129,7 @@ def compose(a):
     assert set(accepted) <= {r['asset_id'] for r in assets}
     sources = json.loads((a.sources/'sources.json').read_text())
     (a.output/'references').mkdir(); (a.output/'targets').mkdir()
-    pairs = []; seen = set()
+    pairs = []; seen = set(); previews = {}; source_previews = []
     for source in sources:
         assert source['split'] in ['train', 'dev'] and digest(a.sources/source['original_rgba']) == source['rgba_file_sha256']
         reference = 'references/'+source['sample_id']+'.png'
@@ -138,7 +145,8 @@ def compose(a):
             caption = factual.get('native_caption', request['native_caption'])
             sample_id = source['sample_id']+'-'+asset['asset_id']
             target = 'targets/'+sample_id+'.png'
-            with Image.open(a.backgrounds/asset['image']) as bg: result, alpha, box = composite(rgba, bg, source['category'])
+            with Image.open(a.backgrounds/asset['image']) as bg:
+                result, alpha, box = composite(rgba, bg, source['category'], factual.get('placement'))
             result.save(a.output/target)
             seed = request_seed(source['white_reference_sha256'], asset['variant'])
             key = (reference, prompt, seed)
@@ -148,15 +156,32 @@ def compose(a):
                 'reference_id': source['sample_id'], 'reference': reference,
                 'reference_sha256': digest(a.output/reference), 'target': target, 'target_sha256': digest(a.output/target),
                 'prompt': prompt, 'native_caption': caption, 'prompt_profile': PROFILE,
+                'reward_caption': factual.get('reward_caption', request['reward_caption']),
                 'condition_id': asset['condition_id'], 'seed': seed, 'source_product_id': source['product_id'],
                 'source_RGBA_sha256': source['rgba_file_sha256'], 'background_id': asset['asset_id'],
                 'background_sha256': asset['sha256'], 'target_product_bbox': box,
                 'foreground_pixels_recolored': False, 'composition_is_TRAIN_DEV_data_only': True})
+            if asset['asset_id'] not in previews: previews[asset['asset_id']] = (sample_id, result.resize((256, 256)))
+        own = [r for r in pairs if r['reference_id'] == source['sample_id']]
+        if own:
+            with Image.open(a.output/own[0]['target']) as im: source_previews.append((source['sample_id'], im.resize((256, 256))))
     owners = {}
+    pixel_owners = {}
     for row in pairs:
         if owners.setdefault(row['source_product_id'], row['split']) != row['split']: raise ValueError('SKU leakage')
+        if pixel_owners.setdefault(row['source_RGBA_sha256'], row['split']) != row['split']: raise ValueError('Exact foreground leakage')
     write(a.output/'pairs.json', pairs)
-    write(a.output/'inference_dev_inputs.json', [{k:r[k] for k in ['sample_id','reference','prompt','seed']}
+    for name, values in [('all_background_placements_QA', list(previews.values())),
+                         ('all_source_first_targets_QA', source_previews)]:
+        for page, start in enumerate(range(0, len(values), 24)):
+            subset = values[start:start+24]
+            sheet = Image.new('RGB', (4*256, math.ceil(len(subset)/4)*282), 'white'); draw = ImageDraw.Draw(sheet)
+            for i, (label, im) in enumerate(subset):
+                x = (i%4)*256; y = (i//4)*282
+                draw.text((x+2, y+2), label, fill='black'); sheet.paste(im, (x, y+26))
+            sheet.save(a.output/(name+f'_page{page+1}.png'))
+    write(a.output/'inference_dev_inputs.json', [{k:r[k] for k in ['sample_id','reference','prompt','seed',
+        'reference_id','reference_sha256','category','condition_id','native_caption','reward_caption','prompt_profile']}
         for r in pairs if r['split'] == 'dev'])
     write(a.output/'report.json', {'complete': True, 'source_commit': os.environ['T12_SOURCE_COMMIT'],
         'pairs_sha256': digest(a.output/'pairs.json'), 'counts': dict(Counter(r['split'] for r in pairs)),

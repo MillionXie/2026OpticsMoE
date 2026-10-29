@@ -1,0 +1,20 @@
+{
+  "protocol": "white_ABO_to_appearance_preserving_furnished_scene",
+  "training_resolution": 1024,
+  "Qwen_image_side": 512,
+  "Qwen_vision_layers": 24,
+  "Qwen_language_layers": 28,
+  "Qwen_and_VAE_and_UNet_base_frozen": true,
+  "UNet_LoRA_rank": 4,
+  "epochs": 2,
+  "warmup": 600,
+  "lr": 0.00001,
+  "condition_anchor_weight": 0.02,
+  "batch_size": 1,
+  "diffusion_loss": "standard random-timestep epsilon MSE",
+  "best_selection": "fixed DEV diffusion noise loss, not generation quality proof",
+  "image_feedback": false,
+  "sampling_steps": 30,
+  "color_edits_or_rotation_requested": false,
+  "TEST_used_for_training_or_selection": false
+}

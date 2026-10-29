@@ -147,7 +147,7 @@ def main():
         model.eval().requires_grad_(False)
         with torch.inference_mode():
             for i, row in enumerate(rows):
-                caption = reward_caption(row['category'], row['condition_id'],row['prompt_profile'])
+                caption = row.get('reward_caption') or reward_caption(row['category'], row['condition_id'],row['prompt_profile'])
                 n = len(model.blip.tokenizer(caption, truncation=False)['input_ids'])
                 if n > 35: raise ValueError(f'ImageReward compact caption would truncate: {n}')
                 row.update(reward_evaluation_caption=caption, reward_caption_tokens=n,
