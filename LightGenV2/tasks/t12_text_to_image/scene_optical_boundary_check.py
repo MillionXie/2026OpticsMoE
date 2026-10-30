@@ -19,7 +19,6 @@ def main():
         if not a.measure_software_latency or a.lg_frontend is None or not a.fuse_task_lora:
             raise ValueError('Require evaluated single-EG merged graph and the fixed B1 diagnostic cohort')
         records=json.loads((a.reference_run/'images.json').read_text())
-        rows=[q for category in ['lamp','pillow'] for q in records if q['category']==category][:0]
         rows=[q for category in ['lamp','pillow'] for q in [x for x in records if x['category']==category][:4]]
         assert len(rows)==8
         expected=[]
