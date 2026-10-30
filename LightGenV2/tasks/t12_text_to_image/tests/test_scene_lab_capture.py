@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from LightGenV2.tasks.t12_text_to_image.scene_lab_capture import drive_codes
+from LightGenV2.tasks.t12_text_to_image.scene_lab_capture import drive_codes,await_payload
 from LightGenV2.tasks.t12_text_to_image.scene_lab_hardware import native
 
 
@@ -20,3 +20,12 @@ def test_capture_rejects_missing_batch_float_or_double_inverse():
         with pytest.raises(ValueError):drive_codes(bad,a,np.arange(256))
     inverse=np.arange(256);inverse[0]=1
     with pytest.raises(ValueError):drive_codes(a,a,inverse)
+
+
+def test_streaming_capture_wait_is_bounded_and_aborts(tmp_path):
+    import json
+    folder=tmp_path/'sample';folder.mkdir()
+    with pytest.raises(TimeoutError):await_payload(folder,tmp_path,0,lambda:None)
+    (tmp_path/'input_abort.json').write_text(json.dumps(dict(reason='fixture_failure')))
+    with pytest.raises(RuntimeError):await_payload(folder,tmp_path,1,lambda:None)
+    (folder/'input.ready').touch();await_payload(folder,tmp_path,0,lambda:None)

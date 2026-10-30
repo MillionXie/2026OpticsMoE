@@ -57,7 +57,16 @@ def validate_session(ledger,config,calibration,dark,gain):
     if s['amplitude_native_shape']!=[1080,1920]or s['phase_native_shape']!=[1200,1920]:raise ValueError('Panel identity mismatch')
 
 
-def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=False):
+def await_payload(folder,run,seconds,pump):
+    deadline=time.monotonic()+seconds
+    while not(folder/'input.ready').exists():
+        abort=run/'input_abort.json'
+        if abort.exists():raise RuntimeError(('Input producer/transfer stopped',json.loads(abort.read_text())))
+        if time.monotonic()>=deadline:raise TimeoutError('Timed out waiting for the next complete native input')
+        pump();time.sleep(.1)
+
+
+def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=False,input_wait_seconds=0):
     import cv2
     from LightGenV2.hardware_common.shs.phase_owner import message_pump
     out=Path(out);calibration=Path(calibration);out.mkdir(parents=True,exist_ok=False)
@@ -107,7 +116,11 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
             if ledger is not None:
                 for request in ledger.requests:
                     folder=ledger.folder(stage,request)
-                    if(folder/'receipt.json').exists():ledger.receipt(stage,request);continue
+                    if(folder/'receipt.json').exists():
+                        ledger.receipt(stage,request)
+                        if not(folder/'capture.ready').exists():(folder/'capture.ready').touch(exist_ok=False)
+                        continue
+                    if input_wait_seconds:await_payload(folder,out.parent,input_wait_seconds,pump)
                     ticket=json.loads((folder/'ticket.json').read_text())
                     with np.load(folder/'logical_fields.npz',allow_pickle=False)as z:
                         ag=z['amplitude_code'].copy();pg=z['phase_code'].copy()
@@ -117,6 +130,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
                         canonical_orientation=ledger.session['orientation'],exposure_us=config['exposure_us'],gain=config['gain'],wait_ms=config['wait_ms'],
                         frame_provenance='physical_linear_camera',native_frame_sha256=row['native_SHA256'],canonical_raw_sha256=array_sha(canonical),capture_UTC=row['capture_UTC'])
                     receipt=ledger.accept(stage,request,canonical,metadata,dark,gain);accepted.append(dict(sample_id=request['sample_id'],receipt_sha256=identity(receipt)))
+                    (folder/'capture.ready').touch(exist_ok=False)
         put(out/'report.json',dict(complete=True,accepted=accepted,model_TRAIN_CCD=len(accepted),canary_frames=2,raw_frames=len(rows),SDK_released=True,TEST_used=False,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
     except BaseException as error:
         put(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),frames_saved=len(rows),model_TRAIN_CCD=len(accepted),automatic_retry=False));raise
@@ -126,9 +140,10 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--calibration',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--ledger',type=Path);p.add_argument('--stage',choices=STAGES);p.add_argument('--camera-process',action='store_true');a=p.parse_args()
+    p.add_argument('--ledger',type=Path);p.add_argument('--stage',choices=STAGES);p.add_argument('--camera-process',action='store_true');p.add_argument('--input-wait-seconds',type=float,default=0);a=p.parse_args()
     if bool(a.ledger)!=bool(a.stage):raise ValueError('ledger and stage required together')
-    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage,camera_process=a.camera_process)
+    if not 0<=a.input_wait_seconds<=600:raise ValueError('Bounded input wait required')
+    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage,camera_process=a.camera_process,input_wait_seconds=a.input_wait_seconds)
 
 
 if __name__=='__main__':main()
