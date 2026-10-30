@@ -13,6 +13,29 @@ def review(folder,out):
     targets=np.asarray([r['expected']for r in proof['rows']]);observed=np.asarray([r['observed']for r in proof['rows']])
     a=np.column_stack([targets,np.ones(len(targets))]);fit=np.linalg.lstsq(a[:4],observed[:4],rcond=None)[0]
     residual=observed-a@fit;thresholds=[];panels=[]
+    # A separate calibration proposal uses ONLY the three source-axis spots.
+    # All five geometry points above remain held out from this proposed fit.
+    import cv2
+    from .scene_lab_hardware import corners
+    protocol=json.loads((folder/'protocol.json').read_text());config=protocol['config']
+    axis=json.loads((folder/'orientation.json').read_text())
+    if axis['selected']!='identity':raise ValueError('Explicit orientation composition required for nonidentity session')
+    source_axes=np.float64([[149.5,149.5,1],[329.5,149.5,1],[149.5,329.5,1]])
+    observed_axes=np.asarray(axis['centroids'],dtype=np.float64)
+    fit_axes=np.linalg.solve(source_axes,observed_axes[:3]);matrix=np.vstack([fit_axes.T,[0,0,1]])
+    predicted=np.column_stack([targets,np.ones(len(targets))])@fit_axes
+    holdout_error=np.linalg.norm(observed-predicted,axis=1)
+    original_warp=cv2.getPerspectiveTransform(corners(config['coordinates']),np.float32([[0,0],[477,0],[477,477],[0,477]]))
+    proposed_warp=np.linalg.inv(matrix)@original_warp
+    mapped=cv2.perspectiveTransform(observed.astype(np.float64)[None],np.linalg.inv(matrix))[0]
+    admitted=bool(max(holdout_error)<3 and max(np.linalg.norm(mapped-targets,axis=1))<3 and axis['repeat_error']<1)
+    mapping=dict(analysis_only=True,applied_to_capture=False,calibration_approved=admitted,original_coordinate_file=config['coordinates'],original_coordinate_SHA256=sha(config['coordinates']),
+        original_warp=original_warp.tolist(),canonical_warp=proposed_warp.tolist(),source_axis_fit_points=source_axes[:,:2].tolist(),measured_axis_points=observed_axes[:3].tolist(),
+        heldout_expected=targets.tolist(),heldout_observed=observed.tolist(),heldout_errors_before_rewarp_px=holdout_error.tolist(),heldout_errors_after_rewarp_px=np.linalg.norm(mapped-targets,axis=1).tolist(),
+        native_amplitude_origin_xy=[452,32],native_phase_origin_xy=[452,92],active_shape=[1016,1016],logical_shape=[478,478],
+        no_TEST_or_model_frames=True,no_physical_movement=True,no_device_LUT_edit=True,
+        interpretation='Fixed calibration-plane spatial registration only. Near-unit scale with a displacement; root cause not uniquely identified. Never sample-specific ideal fitting.')
+    put(out/'derived_mapping_proposal.json',mapping)
     for i,row in enumerate(proof['rows']):
         value=np.load(folder/f'geometry_{i}/canonical.npy',allow_pickle=False);w=(value.astype(float)-bg).clip(0);peak=np.percentile(w,99.7);y,x=np.indices(w.shape);centers=[]
         for threshold in (.1,.25,.5,.75):
