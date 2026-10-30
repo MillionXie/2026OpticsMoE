@@ -58,6 +58,17 @@ def wait_final_capture(ledger,request,seconds=600):
         time.sleep(.2)
 
 
+def complete_cohort_admission(ledger):
+    """Closed DATA cohorts admit replay, not unverified model inputs.
+
+    Ledger.infer still hashes all six original frames and tickets for EACH
+    request before its forward. Avoid a redundant whole-TRAIN disk sweep.
+    """
+    for stage in STAGES:
+        report=json.loads((ledger.root.parent/(stage+'_outputs_data_stream_complete.json')).read_text())
+        if not report['complete']or report['count']!=len(ledger.requests)or report['ledger_SHA256']!=ledger.key:raise ValueError('Incomplete/wrong actual DATA cohort')
+
+
 def features(a):
     import torch
     from .scene_paired_render import install_optical_frontend
@@ -66,9 +77,7 @@ def features(a):
     if c['models']['F6']!=F6 or c['models']['F9']!=F9 or c['session']['scope']!='reviewed_physical':raise ValueError('Wrong physical model/session')
     if len(ledger.requests)!=608 or any(r['split']!='train'for r in ledger.requests):raise ValueError('Only the complete TRAIN608 adaptation cohort is eligible')
     if a.stream_last_stage:streaming_admission(ledger)
-    else:
-        for stage in STAGES:
-            for request in ledger.requests:ledger.receipt(stage,request)
+    else:complete_cohort_admission(ledger)
     task=Path(__file__).resolve().parent;base=task/'runs/simulation'
     qwen,processor=new_qwen(SimpleNamespace(qwen=a.qwen,qwen_side=256))
     optical=install_optical_frontend(qwen,base/'qwen3_scene_LG_frontend_20261029',base/'qwen3_scene_LG_teacher_features_20261029',a.sim_cache)
@@ -78,8 +87,8 @@ def features(a):
     values={};chains={};began=time.monotonic()
     for index,request in enumerate(ledger.requests):
         if a.stream_last_stage:wait_final_capture(ledger,request)
-        result=ledger.infer(request,runner);values[request['sample_id']]=result['features']
-        chains[request['sample_id']]=identity([ledger.receipt(stage,request)[0] for stage in STAGES])
+        chain=[];result=ledger.infer(request,runner,receipt_chain=chain);values[request['sample_id']]=result['features']
+        chains[request['sample_id']]=identity(chain)
         if (index+1)%16==0 or index+1==len(ledger.requests):
             progress=dict(phase='complete_measured_Qwen_feature_replay',completed=index+1,total=len(ledger.requests),seconds=time.monotonic()-began)
             (a.out/'progress.json').write_text(json.dumps(progress));print(json.dumps(progress),flush=True)

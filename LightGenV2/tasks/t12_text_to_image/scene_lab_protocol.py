@@ -194,15 +194,21 @@ class Ledger:
         receipt=dict(**expected,metadata=metadata,ledger_sha256=self.key,raw_file_sha256=sha(folder/'raw.npy'),calibrated_file_sha256=sha(folder/'calibrated.npy'),fixed_dark_gain=True,no_per_frame_peak_normalization=True)
         put(folder/'receipt.json',receipt);return receipt
 
-    def infer(self,request,runner):
-        for stage in STAGES:self.receipt(stage,request)
+    def infer(self,request,runner,*,receipt_chain=None):
+        # One immutable, fully SHA-checked snapshot of THIS request. Retain the
+        # verified arrays through its single forward instead of rereading all
+        # camera files before, during and after that same forward. No cache or
+        # capability is shared with another request/process or saved to disk.
+        if receipt_chain is not None and receipt_chain!=[]:raise ValueError('Receipt-chain output must be an empty list')
+        verified={stage:self.receipt(stage,request)for stage in STAGES}
         order=[];prefix=[]
         def provider(stage,amplitude,phase,ideal=None):
             if ideal is not None or stage!=STAGES[len(order)]:raise ValueError('No FFT/ideal or order fallback')
             a,p,ag,pg=encode(amplitude,phase);folder=self.folder(stage,request);ticket=json.loads((folder/'ticket.json').read_text())
             expected=dict(ledger_sha256=self.key,request_sha256=identity(request),stage=stage,prefix_receipts=list(prefix),amplitude_sha256=array_sha(a),total_phase_sha256=array_sha(p),logical_amplitude_code_sha256=array_sha(ag),logical_phase_code_sha256=array_sha(pg))
             if ticket!=expected:raise ValueError('Final replay input identity changed')
-            r,v=self.receipt(stage,request);order.append(stage);prefix.append(identity(r));return v
+            r,v=verified[stage];order.append(stage);prefix.append(identity(r));return v
         result=runner(request,provider)
         if tuple(order)!=STAGES:raise ValueError('All six measured stages required')
+        if receipt_chain is not None:receipt_chain.extend(verified[stage][0]for stage in STAGES)
         return result

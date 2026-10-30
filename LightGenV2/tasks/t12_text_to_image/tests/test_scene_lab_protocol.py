@@ -127,3 +127,20 @@ def test_explicit_heldout_dev_is_not_train_and_test_remains_forbidden(tmp_path):
     with pytest.raises(ValueError):Ledger(tmp_path/'missing_admission',dict(session,evaluation_only=False),ledger.models,requests,create=True)
     with pytest.raises(ValueError):Ledger(tmp_path/'mixed',session,ledger.models,[requests[0],ledger.requests[1]],create=True)
     with pytest.raises(ValueError):Ledger(tmp_path/'test',dict(session,cohort_role='test'),ledger.models,[dict(r,split='test')for r in requests],create=True)
+def test_infer_retains_one_verified_snapshot_per_request(tmp_path):
+    ledger,dark,gain=fixture(tmp_path/'snapshot')
+    for stage in STAGES:
+        ledger.prepare(stage,runner)
+        for request in ledger.requests:accept(ledger,stage,request,dark,gain)
+    original=ledger.receipt;calls=[]
+    def counted(stage,request):
+        calls.append((stage,request['sample_id']));return original(stage,request)
+    ledger.receipt=counted;chain=[]
+    ledger.infer(ledger.requests[0],runner,receipt_chain=chain)
+    assert len(calls)==6 and len(chain)==6
+    ledger.infer(ledger.requests[1],runner)
+    assert len(calls)==12 # never reuse another sample's snapshot
+    folder=ledger.folder(STAGES[0],ledger.requests[0]);p=folder/'calibrated.npy'
+    raw=p.read_bytes();p.write_bytes(raw[:-1]+bytes([raw[-1]^1]))
+    with pytest.raises(ValueError):ledger.infer(ledger.requests[0],runner)
+
