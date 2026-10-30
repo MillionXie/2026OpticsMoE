@@ -84,7 +84,8 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
         if ledger_root is not None:
             c=json.loads((Path(ledger_root)/'contract.json').read_text())
             ledger=Ledger(ledger_root,c['session'],c['models'],c['requests']);validate_session(ledger,config,calibration,dark,gain);admission=ledger.admit_stage(stage)
-        put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,TRAIN_only=True,TEST_used=False,
+        role=ledger.requests[0]['split'] if ledger is not None else'calibration'
+        put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,cohort_role=role,TRAIN_only=role=='train',DEV_evaluation_only=role=='dev',TEST_used=False,
             parameter_changes=False,camera_process_isolated=camera_process,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
         factory=None
         if camera_process:
@@ -131,7 +132,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
                         frame_provenance='physical_linear_camera',native_frame_sha256=row['native_SHA256'],canonical_raw_sha256=array_sha(canonical),capture_UTC=row['capture_UTC'])
                     receipt=ledger.accept(stage,request,canonical,metadata,dark,gain,admission=admission);accepted.append(dict(sample_id=request['sample_id'],receipt_sha256=identity(receipt)))
                     (folder/'capture.ready').touch(exist_ok=False)
-        put(out/'report.json',dict(complete=True,accepted=accepted,model_TRAIN_CCD=len(accepted),canary_frames=2,raw_frames=len(rows),SDK_released=True,TEST_used=False,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
+        put(out/'report.json',dict(complete=True,accepted=accepted,model_CCD=len(accepted),cohort_role=role,model_TRAIN_CCD=len(accepted)if role=='train'else 0,model_DEV_CCD=len(accepted)if role=='dev'else 0,canary_frames=2,raw_frames=len(rows),SDK_released=True,TEST_used=False,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
     except BaseException as error:
         put(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),frames_saved=len(rows),model_TRAIN_CCD=len(accepted),automatic_retry=False));raise
     finally:

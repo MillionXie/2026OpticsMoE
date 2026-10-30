@@ -67,8 +67,14 @@ class Ledger:
             if len(session[k])!=2 or any(type(v)is not int or v<=0 for v in session[k]):raise ValueError('Invalid native shape')
         for k in required:
             if k.endswith('_sha256')and(len(session[k])!=64 or any(x not in '0123456789abcdef'for x in session[k])):raise ValueError(k)
-        if not requests or len({r['sample_id']for r in requests})!=len(requests)or any(r['split']!='train'for r in requests):
-            raise ValueError('This preparation ledger admits only explicit unique TRAIN requests')
+        role=session.get('cohort_role','train')
+        if role not in ('train','dev'):raise ValueError('Only TRAIN or explicit evaluation-only DEV; never TEST')
+        if role=='dev':
+            manifest=session.get('evaluation_manifest_sha256','')
+            if session.get('evaluation_only')is not True or len(manifest)!=64 or any(x not in '0123456789abcdef'for x in manifest):
+                raise ValueError('DEV requires an explicit frozen evaluation-only manifest')
+        if not requests or len({r['sample_id']for r in requests})!=len(requests)or any(r['split']!=role for r in requests):
+            raise ValueError('This ledger requires unique requests from its one explicit cohort role')
         if any(set(r)-{'sample_id','split','reference','reference_sha256','prompt','seed','category'}for r in requests):
             raise ValueError('No targets/masks/hidden/features/SKU captions in requests')
         if set(models)!={'F9','F6','source_commit'}or any(len(models[k])!=64 for k in('F9','F6')):raise ValueError('Frozen model identities required')

@@ -114,3 +114,14 @@ def test_native_head_flag_restoration_is_not_defaulted():
     assert "QwenSDXLConditions(joint_image_context=expected_joint)"in source and 'strict=True'in source
     assert 'use_cache=False' in source and 'simulation_diagnostic=False' in source
     assert "self.qwen.model(**inputs"in source and 'self.head(hidden.float(),native[0][None].float())'in source
+
+
+def test_explicit_heldout_dev_is_not_train_and_test_remains_forbidden(tmp_path):
+    ledger,_,_=fixture(tmp_path/'train')
+    session=dict(ledger.session,session_id='DEV_ONLY',cohort_role='dev',evaluation_only=True,evaluation_manifest_sha256='1'*64)
+    requests=[dict(r,split='dev')for r in ledger.requests]
+    dev=Ledger(tmp_path/'dev',session,ledger.models,requests,create=True)
+    assert dev.contract['requests'][0]['split']=='dev'
+    with pytest.raises(ValueError):Ledger(tmp_path/'missing_admission',dict(session,evaluation_only=False),ledger.models,requests,create=True)
+    with pytest.raises(ValueError):Ledger(tmp_path/'mixed',session,ledger.models,[requests[0],ledger.requests[1]],create=True)
+    with pytest.raises(ValueError):Ledger(tmp_path/'test',dict(session,cohort_role='test'),ledger.models,[dict(r,split='test')for r in requests],create=True)
