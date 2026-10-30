@@ -84,6 +84,10 @@ def main():
     gate=quality_gate(means(a.sim),means(a.exp));put(a.out/'quality_gate.json',gate)
     matched=quality_gate(means(a.matched_sim),means(a.exp))if a.matched_sim else gate
     put(a.out/'matched_weight_quality_gate.json',matched)
+    baseline=None
+    for run,report in zip(runs,reports):
+        if report['checkpoint_sha256']==F9 and report.get('actual_CCD_replay'):
+            baseline=quality_gate(means(a.sim),means(run));put(a.out/'original_F9_EXP_quality_gate.json',baseline);break
     paired=[];sim_rows={r['sample_id']:r for r in rows if r['run_id']==a.sim.name}
     import importlib.util
     perceptual=None
@@ -103,6 +107,7 @@ def main():
     put(a.out/'paired_image_change.json',dict(rows=paired,LPIPS_computed=perceptual is not None,LPIPS_note='Official AlexNet LPIPS, RGB [-1,1]; paired change, not attribute success'if perceptual is not None else'lpips package unavailable; not computed, never substitute PSNR for a perceptual success rate'))
     put(a.out/'report.json',dict(complete=True,source_commit=a.source_commit,DEV=128,runs=[str(r)for r in runs],all_twelve_proxy_gates_passed=gate['all_passed'],
         threshold=.05,matched_weight_gate_passed=matched['all_passed'],both_reference_gates_passed=gate['all_passed']and matched['all_passed'],primary_SIM_original_F9=F9,TEST_used=False,training_performed=False,development_metrics_only=True,
+        original_F9_physical_gates_passed=baseline['all_passed']if baseline else None,
         automatic_scores_are_not_attribute_accuracy=True,visual_review_still_required=True,metric_assets={str(a.clip_checkpoint):sha(a.clip_checkpoint),str(a.reward_path/'ImageReward.pt'):sha(a.reward_path/'ImageReward.pt')}))
     print(json.dumps(dict(complete=True,DEV=128,all_twelve_proxy_gates_passed=gate['all_passed'])),flush=True)
 
