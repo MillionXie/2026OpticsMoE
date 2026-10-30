@@ -85,12 +85,22 @@ def main():
     matched=quality_gate(means(a.matched_sim),means(a.exp))if a.matched_sim else gate
     put(a.out/'matched_weight_quality_gate.json',matched)
     paired=[];sim_rows={r['sample_id']:r for r in rows if r['run_id']==a.sim.name}
+    import importlib.util
+    perceptual=None
+    if importlib.util.find_spec('lpips')is not None:
+        import lpips
+        perceptual=lpips.LPIPS(net='alex').cuda().eval().requires_grad_(False)
     for row in [r for r in rows if r['run_id']==a.exp.name]:
         other=sim_rows[row['sample_id']]
         with Image.open(Path(other['run_path'])/other['generated_PNG'])as im:s=np.asarray(im.convert('RGB'),dtype=np.float64)/255
         with Image.open(Path(row['run_path'])/row['generated_PNG'])as im:e=np.asarray(im.convert('RGB'),dtype=np.float64)/255
-        mse=float(((s-e)**2).mean());paired.append(dict(sample_id=row['sample_id'],MAE=float(abs(s-e).mean()),PSNR_dB=None if mse==0 else -10*math.log10(mse),identical=mse==0))
-    put(a.out/'paired_image_change.json',dict(rows=paired,LPIPS_computed=False,LPIPS_note='not computed by this entry; do not substitute PSNR for a perceptual success rate'))
+        mse=float(((s-e)**2).mean());item=dict(sample_id=row['sample_id'],MAE=float(abs(s-e).mean()),PSNR_dB=None if mse==0 else -10*math.log10(mse),identical=mse==0)
+        if perceptual is not None:
+            with torch.inference_mode():
+                x=torch.from_numpy(s.copy()).permute(2,0,1)[None].cuda().float()*2-1;y=torch.from_numpy(e.copy()).permute(2,0,1)[None].cuda().float()*2-1
+                item['LPIPS_Alex']=float(perceptual(x,y).item())
+        paired.append(item)
+    put(a.out/'paired_image_change.json',dict(rows=paired,LPIPS_computed=perceptual is not None,LPIPS_note='Official AlexNet LPIPS, RGB [-1,1]; paired change, not attribute success'if perceptual is not None else'lpips package unavailable; not computed, never substitute PSNR for a perceptual success rate'))
     put(a.out/'report.json',dict(complete=True,source_commit=a.source_commit,DEV=128,runs=[str(r)for r in runs],all_twelve_proxy_gates_passed=gate['all_passed'],
         threshold=.05,matched_weight_gate_passed=matched['all_passed'],both_reference_gates_passed=gate['all_passed']and matched['all_passed'],primary_SIM_original_F9=F9,TEST_used=False,training_performed=False,development_metrics_only=True,
         automatic_scores_are_not_attribute_accuracy=True,visual_review_still_required=True,metric_assets={str(a.clip_checkpoint):sha(a.clip_checkpoint),str(a.reward_path/'ImageReward.pt'):sha(a.reward_path/'ImageReward.pt')}))
