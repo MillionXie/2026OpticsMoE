@@ -11,6 +11,7 @@ def test_physical_renderer_uses_supported_original_observer_not_a_generator_patc
     assert "fuse_task_lora=True,unet_precision='bf16'" in source
     assert "ledger.session.get('scope')!='reviewed_physical'" in source
     assert "receipt['metadata']['frame_provenance']!='physical_linear_camera'" in source
+    assert 'self.verified={stage:self.ledger.receipt(stage,self.active)for stage in STAGES}'in source
 
 
 def test_observer_actual_callback_math_and_lineage_against_synthetic_fixture(tmp_path):
@@ -32,11 +33,13 @@ def test_observer_actual_callback_math_and_lineage_against_synthetic_fixture(tmp
     # Deliberately bypass the physical-admission constructor FOR THIS UNIT TEST
     # to exercise the exact callback against an explicitly synthetic ledger.
     observer=MeasuredObserver.__new__(MeasuredObserver);observer.ledger=ledger;observer.active=request;observer.order=[];observer.prefix=[];observer.completed=0
+    observer.verified={stage:ledger.receipt(stage,request)for stage in STAGES}
     amplitude=np.full((1,478,478),.2,np.float32)
     for stage in STAGES:
         value=observer.provider(stage,torch.from_numpy(amplitude),torch.full((1,478,478),1.7),None)
         np.testing.assert_array_equal(value.numpy(),np.ones_like(amplitude))
         amplitude=np.full_like(amplitude,.1+float(value.mean())*.01)
-    observer.end({});assert observer.completed==1 and observer.active is None
+    observer.end({});assert observer.completed==1 and observer.active is None and observer.verified is None
     observer.active=request;observer.order=[];observer.prefix=[]
+    observer.verified={stage:ledger.receipt(stage,request)for stage in STAGES}
     with pytest.raises(ValueError):observer.provider(STAGES[0],torch.full((1,478,478),.2),torch.full((1,478,478),1.8),None)

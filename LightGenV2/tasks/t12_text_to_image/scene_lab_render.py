@@ -17,13 +17,15 @@ class MeasuredObserver:
         if ledger.session.get('scope')!='reviewed_physical' or ledger.models['F6']!=F6 or ledger.models['F9']!=F9:
             raise ValueError('Only the original F6/F9 reviewed physical ledger is eligible')
         if ledger.session.get('cohort_role')!='dev' or ledger.session.get('evaluation_manifest_sha256')!=manifest_sha256:raise ValueError('Wrong actual DEV manifest')
-        self.ledger=ledger;self.active=None;self.restore=None;self.order=[];self.prefix=[];self.completed=0
+        self.ledger=ledger;self.active=None;self.restore=None;self.order=[];self.prefix=[];self.completed=0;self.verified=None
         self.by_input={(r['reference_sha256'],r['prompt'],r['seed']):r for r in ledger.requests}
         if len(self.by_input)!=128:raise ValueError('Complete unique DEV128 required')
+        # Admit only six complete DATA cohorts. Actual bytes/provenance are
+        # still fully checked before EACH request's one complete Qwen forward;
+        # do not sweep all large camera files once here and once again later.
         for stage in STAGES:
-            for request in ledger.requests:
-                receipt,_=ledger.receipt(stage,request)
-                if receipt['metadata']['frame_provenance']!='physical_linear_camera':raise ValueError('Synthetic frame is not physical evidence')
+            path=ledger.root.parent/(stage+'_outputs_data_stream_complete.json');report=json.loads(path.read_text())
+            if not report['complete']or report['count']!=128 or report['ledger_SHA256']!=ledger.key:raise ValueError('Incomplete/wrong actual DEV DATA cohort')
 
     def prepare(self,qwen,processor,head,pipe):
         from .scene_optical_boundary import attach
@@ -33,6 +35,8 @@ class MeasuredObserver:
     def begin(self,row):
         if self.active is not None:raise ValueError('Nested physical request')
         self.active=self.by_input[(row['reference_sha256'],row['prompt'],row['seed'])];self.order=[];self.prefix=[]
+        self.verified={stage:self.ledger.receipt(stage,self.active)for stage in STAGES}
+        if any(receipt['metadata']['frame_provenance']!='physical_linear_camera'for receipt,_ in self.verified.values()):raise ValueError('Synthetic frame is not physical evidence')
 
     def provider(self,stage,amplitude,phase,ideal):
         import torch
@@ -41,12 +45,12 @@ class MeasuredObserver:
         expected=dict(ledger_sha256=self.ledger.key,request_sha256=identity(self.active),stage=stage,prefix_receipts=list(self.prefix),
             amplitude_sha256=array_sha(a),total_phase_sha256=array_sha(p),logical_amplitude_code_sha256=array_sha(ag),logical_phase_code_sha256=array_sha(pg))
         if json.loads((folder/'ticket.json').read_text())!=expected:raise ValueError('Physical input identity differs; never reuse these CCDs')
-        receipt,value=self.ledger.receipt(stage,self.active);self.order.append(stage);self.prefix.append(identity(receipt))
+        receipt,value=self.verified[stage];self.order.append(stage);self.prefix.append(identity(receipt))
         return torch.from_numpy(value.copy()).to(amplitude.device)
 
     def end(self,row):
         if tuple(self.order)!=STAGES:raise ValueError('Incomplete six actual stages')
-        self.completed+=1;self.active=None
+        self.completed+=1;self.active=None;self.verified=None
 
     def close(self):
         if self.restore is not None:self.restore();self.restore=None
