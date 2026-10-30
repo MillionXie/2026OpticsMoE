@@ -30,7 +30,8 @@ def install(unet):
         if set(module.lora_A)!={'scene_pair'} or set(module.lora_B)!={'scene_pair'}:raise ValueError('Only the existing task adapter is allowed')
         if module.lora_variant or module.lora_bias['scene_pair'] or module.fan_in_fan_out:raise ValueError('Unsupported LoRA variant')
         if module.get_base_layer().weight.dtype!=torch.bfloat16:raise ValueError('Explicit BF16 base required')
-        if module.lora_dropout['scene_pair'].p!=0:raise ValueError('No stochastic dropout in the deployment-matched forward')
+        dropout=module.lora_dropout['scene_pair']
+        if not isinstance(dropout,torch.nn.Identity) and getattr(dropout,'p',None)!=0:raise ValueError('No stochastic dropout in the deployment-matched forward')
         if not module.lora_A['scene_pair'].weight.requires_grad or not module.lora_B['scene_pair'].weight.requires_grad:raise ValueError('Existing LoRA must be trainable')
         if getattr(module,'_scene_fusion_aware',False):raise ValueError('Refuse repeated installation')
         module.forward=types.MethodType(fused_linear_forward,module);module._scene_fusion_aware=True;count+=1
