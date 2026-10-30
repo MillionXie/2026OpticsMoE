@@ -50,7 +50,8 @@
     },
     {
       "name": "diffuse_start_boundary",
-      "initialization": "diffuse_uniform_phase"
+      "initialization": "diffuse_uniform_phase",
+      "minimum_epochs": 30
     }
   ],
   "hypotheses": [

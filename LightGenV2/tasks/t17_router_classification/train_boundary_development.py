@@ -105,7 +105,7 @@ def main():
                 completed=epoch if not partial else epoch-1
                 write(out/'status.json',dict(state='training',epoch=epoch,best_epoch=best_epoch,best_original_test_development_accuracy=best[0]));write(a.out/'status.json',dict(state='training',variant=variant['name'],epoch=epoch,pid=os.getpid()));print(json.dumps(row),flush=True)
                 if partial:break
-                if epoch>=cfg['minimum_epochs'] and epoch-last_improvement>=cfg['patience']:stop_reason='plateau';break
+                if epoch>=variant.get('minimum_epochs',cfg['minimum_epochs']) and epoch-last_improvement>=cfg['patience']:stop_reason='plateau';break
             chosen=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(chosen['model'])
             assert torch.equal(model.router_phase.detach().cpu(),parent_state['router_phase'])
             result=dict(role=metadata['role'],independent_test_claim=False,variant=variant,selected_epoch=best_epoch,selected_kind=chosen['weights_kind'],completed_epochs=completed,
