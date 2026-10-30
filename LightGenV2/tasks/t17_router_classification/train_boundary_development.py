@@ -10,6 +10,7 @@ from .train_optical_four_ccd import evaluate
 from .test_exposed_data import load_raw_splits
 from .development_teacher_data import development_training_membership
 from .gpu_policy import require_non_a100_gpu
+from .phase_optimizer import WrappedPhaseAdam
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
@@ -65,6 +66,10 @@ def configure_phase_optimizer(model,phase_lr,variant):
     train_router=variant.get('train_router',False)
     model.router_phase.requires_grad_(train_router)
     parameters=[model.first_phase,model.global_phase]
+    if variant.get('phase_optimizer')=='wrapped_phase_adam':
+        if train_router:raise ValueError('Wrapped phase admission currently requires the router frozen')
+        return WrappedPhaseAdam(parameters,phase_lr,variant.get('phase_gradient_clip',5.)),parameters
+    if variant.get('phase_optimizer','raw_adam')!='raw_adam':raise ValueError('Unknown phase optimizer')
     groups=[dict(params=parameters.copy(),lr=phase_lr)]
     if train_router:
         router_lr=variant['router_lr']
@@ -156,7 +161,9 @@ def main():
                     loss.backward()
                     if any(p.grad is None or not torch.isfinite(p.grad).all() for p in trainable):raise RuntimeError('trainable phase gradient failure')
                     if not variant.get('train_router',False):assert model.router_phase.grad is None
-                    torch.nn.utils.clip_grad_norm_(trainable,cfg['gradient_clip'],error_if_nonfinite=True);optimizer.step()
+                    if not isinstance(optimizer,WrappedPhaseAdam):
+                        torch.nn.utils.clip_grad_norm_(trainable,cfg['gradient_clip'],error_if_nonfinite=True)
+                    optimizer.step()
                     loss_sum+=float(loss.detach())*len(idx);count+=len(idx)
                 row=dict(epoch=epoch,training_objective=loss_sum/max(count,1),seen_training_inputs=count,full_epoch=not partial,lr=lr)
                 if epoch==1 or epoch%cfg['evaluate_every']==0 or epoch==cfg['epochs'] or partial:
