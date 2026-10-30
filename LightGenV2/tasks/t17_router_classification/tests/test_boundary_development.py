@@ -69,3 +69,21 @@ def test_common_phase_gauge_preserves_optical_probabilities_and_relative_expert_
     assert torch.equal(before['route_power'],after['route_power']) and torch.equal(router,model.router_phase)
     assert torch.allclose(ratio,ratio.flatten()[0].expand_as(ratio),atol=2e-6,rtol=1e-5)
     assert len(diagnostics)==2 and all(d['geometric_Jacobian_gain']>=1 for d in diagnostics)
+
+
+def test_focal_boundary_loss_prioritizes_hard_examples_without_TEST_ground_truth():
+    logp=torch.tensor([[5.,-5.],[-1.,1.]],requires_grad=True).log_softmax(1)
+    teacher=torch.tensor([[1.,0.],[.99,.01]]);original=torch.tensor([True,False])
+    a=boundary_objective(logp,torch.tensor([0,0]),original,teacher,1.,.8,0.,focal_gamma=2.)
+    b=boundary_objective(logp,torch.tensor([0,1]),original,teacher,1.,.8,0.,focal_gamma=2.)
+    assert torch.equal(a,b);a.backward()
+    easy=boundary_objective(logp[:1].detach(),torch.tensor([0]),original[:1],teacher[:1],1.,.8,0.,focal_gamma=2.)
+    ordinary=boundary_objective(logp[:1].detach(),torch.tensor([0]),original[:1],teacher[:1],1.,.8,0.)
+    assert easy<ordinary*.001 and torch.isfinite(a)
+
+
+def test_focal_zero_preserves_original_boundary_loss_exactly():
+    logp=torch.randn(5,9).log_softmax(1);labels=torch.arange(5);teacher=torch.randn(5,9).softmax(1)
+    mask=torch.ones(5,dtype=torch.bool)
+    expected=torch.nn.functional.cross_entropy(logp/.1,labels)+.1*torch.nn.functional.nll_loss(logp,labels)
+    assert torch.equal(boundary_objective(logp,labels,mask,teacher,.1,.8,.1,focal_gamma=0.),expected)

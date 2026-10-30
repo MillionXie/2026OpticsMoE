@@ -14,14 +14,23 @@ from .phase_optimizer import WrappedPhaseAdam
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
-def boundary_objective(log_probabilities,labels,is_original_train,teacher_probabilities,temperature,confidence,nll_weight,class_weights=None):
+def boundary_objective(log_probabilities,labels,is_original_train,teacher_probabilities,temperature,confidence,nll_weight,class_weights=None,focal_gamma=0.):
     if temperature<=0:raise ValueError('positive training temperature required')
+    if focal_gamma<0:raise ValueError('nonnegative focal gamma required')
     teacher_confidence,pseudo=teacher_probabilities.max(1)
     targets=torch.where(is_original_train,labels,pseudo)
     mask=is_original_train|(teacher_confidence>=confidence)
     if not mask.any():return log_probabilities.sum()*0.
-    return (F.cross_entropy(log_probabilities[mask]/temperature,targets[mask],weight=class_weights)
-            +nll_weight*F.nll_loss(log_probabilities[mask],targets[mask],weight=class_weights))
+    scaled=log_probabilities[mask]/temperature
+    if focal_gamma==0:
+        classification=F.cross_entropy(scaled,targets[mask],weight=class_weights)
+    else:
+        log_pt=scaled.log_softmax(1).gather(1,targets[mask,None]).squeeze(1)
+        per_sample=-(1-log_pt.exp()).clamp_min(0).pow(focal_gamma)*log_pt
+        if class_weights is None:classification=per_sample.mean()
+        else:
+            weights=class_weights[targets[mask]];classification=(weights*per_sample).sum()/weights.sum()
+    return classification+nll_weight*F.nll_loss(log_probabilities[mask],targets[mask],weight=class_weights)
 
 
 def training_error_class_weights(confusion_matrix):
@@ -188,7 +197,7 @@ def main():
                 for start in range(0,len(order),cfg['batch']):
                     if time.time()>=cfg['stop_training_unix']:partial=True;stop_reason='deadline';break
                     idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');optimizer.zero_grad(set_to_none=True)
-                    result=model(union[idx],return_dense_route=bool(routing_weight));loss=boundary_objective(result['logits'],labels[idx],idx<n_train,teacher[idx],cfg['training_temperature'],cfg['teacher_confidence'],cfg['energy_nll_weight'],loss_weights)
+                    result=model(union[idx],return_dense_route=bool(routing_weight));loss=boundary_objective(result['logits'],labels[idx],idx<n_train,teacher[idx],cfg['training_temperature'],cfg['teacher_confidence'],cfg['energy_nll_weight'],loss_weights,cfg.get('focal_gamma',0.))
                     if routing_weight:
                         route_loss=dense_route_supervision(result['dense_route_power'],labels[idx],idx<n_train,teacher[idx],route_class_targets,cfg['teacher_confidence'])
                         loss=loss+routing_weight*route_loss;route_loss_sum+=float(route_loss.detach())*len(idx)
