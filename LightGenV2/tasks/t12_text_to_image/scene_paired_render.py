@@ -95,6 +95,9 @@ def render(a):
     from diffusers import StableDiffusionXLPipeline
     from transformers import CLIPVisionModelWithProjection
     state = torch.load(a.checkpoint/'best_checkpoint.pt', map_location='cpu', weights_only=False)
+    if state.get('depth_compression') is not None:
+        if getattr(a,'_verified_depth_compression',None)!=state['depth_compression']:
+            raise ValueError('Compressed UNet weights require their verified scene_depth_recovery render entry')
     a.qwen_side=state['Qwen_input_side'];resolution=state['resolution']
     previous = json.loads((a.checkpoint/'report.json').read_text())
     assert previous['complete'] and digest(a.checkpoint/'best_checkpoint.pt') == previous['best_sha256']
