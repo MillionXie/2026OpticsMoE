@@ -1,5 +1,25 @@
 # F9光路接口与现场校准（尚非完整实测放行包）
 
+## 2026-10-31：用户批准配准后接入实际采集入口
+
+`scene_lab_capture`现支持两帧暗白复核，以及已准备ledger的一整层TRAIN采集；
+导入模块不接SDK，不加载Qwen，不改曝光、gain、ROI、坐标或器件LUT。
+原始2048相机数组永久保留，固定warp到canonical478，幅度逆响应仅应用一次，
+相位仍为原总相位编码；每层输入ticket、设备BMP、原帧及接受收据均核SHA。
+整层本cohort采完后才prepare下一层，不复用其他上游的旧CCD；已接受的正确帧只验证不重拍。
+每次打开设备先用当前暗白检查新信号，有效才采模型数据；失败保留证据并关闭SDK，
+不自动重复、更换驱动、重设曝光或把历史空间验收冒称当前整条光路已验收。
+
+```text
+python -m LightGenV2.tasks.t12_text_to_image.scene_lab_capture --config <registered_config.json> --calibration <calibration_registered_01> --out <new_check_run>
+python -m LightGenV2.tasks.t12_text_to_image.scene_lab_capture --config <registered_config.json> --calibration <calibration_registered_01> --ledger <physical_ledger> --stage vision_router --out <new_stage_run>
+```
+
+固定TRAIN2真实Qwen字段由`scene_lab_pilot --mode prepare`准备，六阶段逐一处理；
+只有实际CCD收据完整才允许`--mode infer`，之后另用原SDXL生成核验。
+目前接口测试通过不代表已经采到模型CCD；实际采集数量以run收据为准。
+空间配准获用户批准；线性相位尚未认证、原linearVoltage LUT不变，须在实际pilot中如实评估误差。
+
 2026-10-30实际相机重试已成功：TUCam枚举1、2张原生2048x2048 uint16连接诊断帧。
 `scene_lab_hardware`另完成11张初始几何检查及40张派生会话校准；原20261029 TXT不改，
 固定派生采样映射使用3个校准轴点，5个全新未拟合位置最大误差2.160px，幅度响应heldout通过。
@@ -53,7 +73,7 @@ language_expert→language_global。原codec、电残差、optical identity delt
 - 当前接口不做SDK排他锁、硬件预览或曝光选择；现场driver必须另核设备所有权及有效信号守卫。
 - 确定的字节身份不保证相机物理状态不漂移，仍需校准DEV的响应与误差检查。
 
-## CLI与打包（均不采集）
+## 账本CLI与打包（下列命令本身不采集）
 
 ```text
 python -m LightGenV2.tasks.t12_text_to_image.scene_lab_entry --mode init --out <新run> --session <已审session.json> --train-manifest <TRAIN_input_manifest.json> --reference-root <scene_two_sentence_pairs目录> --count 2 --source-commit <已发布commit>
