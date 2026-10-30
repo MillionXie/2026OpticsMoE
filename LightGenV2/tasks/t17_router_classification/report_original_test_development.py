@@ -16,7 +16,9 @@ for d,name in [('kather2016','Kather2016（8类）'),('bloodmnist128','BloodMNIS
                          ('panel_a_boundary_joint_s17_20261031','gentle_joint_router','成熟主干温和联合路由'),
                          ('panel_a_training_error_weighted_s17_20261031','training_error_weighted','原TRAIN弱类别有界加权'),
                          ('panel_a_phase_gauge_s17_20261031','phase_gauge_recenter','整体相位坐标调整'),
-                         ('panel_a_wrapped_phase_s17_20261031','wrapped_phase_adam','周期相位坐标Adam')]:
+                         ('panel_a_wrapped_phase_s17_20261031','wrapped_phase_adam','周期相位坐标Adam'),
+                         ('panel_a_dense_router_supervision_s17_20261031','dense_pair_aux_002','光router类别对辅助KL .02'),
+                         ('panel_a_dense_router_supervision_s17_20261031','dense_pair_aux_010','光router类别对辅助KL .1')]:
   p=runs/run/d/suffix;q=read(p/'result.json');s=read(p/'status.json')
   if q:records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state='complete',label=label,result=q))
   elif p.parent.exists():records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state=s or {'state':'not_started_or_loading'},label=label))

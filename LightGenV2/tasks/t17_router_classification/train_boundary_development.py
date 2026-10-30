@@ -32,6 +32,28 @@ def training_error_class_weights(confusion_matrix):
     return np.clip(error/error.mean(),.5,2.)
 
 
+def class_pair_route_targets(original_train_class_counts):
+    """Deterministic prior-balanced training targets; no per-image oracle at inference."""
+    counts=np.asarray(original_train_class_counts,dtype=np.float64)
+    if counts.ndim!=1 or len(counts)<2 or np.any(counts<=0):raise ValueError('Positive original TRAIN class counts required')
+    pairs=[(i,j) for i in range(4) for j in range(i+1,4)]
+    load=np.zeros(4);targets=np.full((len(counts),4),.01,dtype=np.float32)
+    for c in sorted(range(len(counts)),key=lambda c:(-counts[c],c)):
+        def cost(pair):
+            candidate=load.copy();candidate[list(pair)]+=counts[c]/2
+            return float(np.square(candidate).sum()),pair
+        pair=min(pairs,key=cost);load[list(pair)]+=counts[c]/2;targets[c,list(pair)]+=.48
+    return targets
+
+
+def dense_route_supervision(dense_power,labels,is_original_train,teacher_probabilities,class_targets,confidence):
+    teacher_confidence,pseudo=teacher_probabilities.max(1)
+    targets=torch.where(is_original_train,labels,pseudo)
+    mask=is_original_train|(teacher_confidence>=confidence)
+    if not mask.any():return dense_power.sum()*0.
+    return F.kl_div(dense_power[mask].clamp_min(1e-12).log(),class_targets[targets[mask]],reduction='batchmean')
+
+
 def initialize_main_phases(model,kind,seed):
     if kind=='parent':return
     if kind=='common_phase_gauge':
@@ -96,6 +118,11 @@ def main():
                 teacher.append(torch.from_numpy(z['logits'][:,0]).cuda().softmax(1))
             del part['images']
         n_train=len(y['train']);union=torch.cat((x['train'],x['test']));labels=torch.cat((y['train'],y['test']));teacher=torch.cat(teacher)
+        route_class_targets=None
+        if cfg.get('routing_pair_class_counts') is not None:
+            counts=torch.bincount(y['train'],minlength=cfg['num_classes']).cpu().tolist()
+            if counts!=cfg['routing_pair_class_counts']:raise ValueError('Router supervision must use exact original TRAIN counts')
+            route_class_targets=torch.as_tensor(class_pair_route_targets(counts),device='cuda')
         write(a.out/'training_membership.json',dict(indices=membership.tolist(),removed=removed,full_permutation_each_epoch=True,evaluation_set_unchanged=True))
         parent=torch.load(a.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False)
         if cfg.get('expected_parent_checkpoint_sha256') and cfg['expected_parent_checkpoint_sha256']!=sha256(a.parent/'best_checkpoint.pt'):
@@ -123,6 +150,8 @@ def main():
                       original_test_ground_truth_used_in_student_loss=False,teacher_hard_pseudo_labels_on_original_test=True,
                       teacher_confidence=cfg['teacher_confidence'],router_frozen_by_variant={v['name']:not v.get('train_router',False) for v in cfg['variants']},parameter_count=479364,
                       training_class_weights=cfg.get('training_class_weights'),class_weight_source='parent_original_TRAIN_confusion_matrix' if loss_weights is not None else None,
+                      routing_supervision_class_targets=route_class_targets.cpu().tolist() if route_class_targets is not None else None,
+                      routing_supervision_absent_from_inference=True,
                       training_temperature_absent_from_inference=True,teacher_absent_from_inference=True,
                       parent_validation=parent_val,parent_original_test_development=parent_dev,D2NN_reference=baseline)
         write(a.out/'metadata.json',metadata);results=[]
@@ -132,6 +161,9 @@ def main():
             out=a.out/variant['name'];out.mkdir();model=FourRouterClassification('optical','ccd_grid',num_classes=cfg['num_classes']).cuda()
             model.load_state_dict(parent_state)
             initialization_report=initialize_main_phases(model,variant['initialization'],cfg['seed'])
+            routing_weight=variant.get('routing_supervision_weight',0.)
+            if routing_weight and (route_class_targets is None or not variant.get('train_router',False)):
+                raise ValueError('Dense router supervision requires training targets and trainable optical router')
             gauge_error=None
             if variant['initialization']=='common_phase_gauge':
                 _,scores,routes,_=evaluate(model,x['val'],y['val'],cfg['batch'])
@@ -149,14 +181,17 @@ def main():
             save_best(parent_state,0,'parent',parent_val,parent_dev)
             for epoch in range(1,cfg['epochs']+1):
                 if time.time()>=cfg['stop_training_unix']:stop_reason='deadline';break
-                begin=time.time();model.train();order=rng.permutation(membership);loss_sum=0.;count=0;partial=False
+                begin=time.time();model.train();order=rng.permutation(membership);loss_sum=0.;route_loss_sum=0.;count=0;partial=False
                 factor=.2+.8*.5*(1+np.cos(np.pi*(epoch-1)/max(1,cfg['epochs']-1)))
                 lr=cfg['phase_lr']*factor
                 for group,base_lr in zip(optimizer.param_groups,base_lrs):group['lr']=base_lr*factor
                 for start in range(0,len(order),cfg['batch']):
                     if time.time()>=cfg['stop_training_unix']:partial=True;stop_reason='deadline';break
                     idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');optimizer.zero_grad(set_to_none=True)
-                    result=model(union[idx]);loss=boundary_objective(result['logits'],labels[idx],idx<n_train,teacher[idx],cfg['training_temperature'],cfg['teacher_confidence'],cfg['energy_nll_weight'],loss_weights)
+                    result=model(union[idx],return_dense_route=bool(routing_weight));loss=boundary_objective(result['logits'],labels[idx],idx<n_train,teacher[idx],cfg['training_temperature'],cfg['teacher_confidence'],cfg['energy_nll_weight'],loss_weights)
+                    if routing_weight:
+                        route_loss=dense_route_supervision(result['dense_route_power'],labels[idx],idx<n_train,teacher[idx],route_class_targets,cfg['teacher_confidence'])
+                        loss=loss+routing_weight*route_loss;route_loss_sum+=float(route_loss.detach())*len(idx)
                     if not torch.isfinite(loss):raise RuntimeError('nonfinite boundary loss')
                     loss.backward()
                     if any(p.grad is None or not torch.isfinite(p.grad).all() for p in trainable):raise RuntimeError('trainable phase gradient failure')
@@ -166,6 +201,7 @@ def main():
                     optimizer.step()
                     loss_sum+=float(loss.detach())*len(idx);count+=len(idx)
                 row=dict(epoch=epoch,training_objective=loss_sum/max(count,1),seen_training_inputs=count,full_epoch=not partial,lr=lr)
+                if routing_weight:row['unweighted_dense_routing_KL']=route_loss_sum/max(count,1)
                 if epoch==1 or epoch%cfg['evaluate_every']==0 or epoch==cfg['epochs'] or partial:
                     val,*_=evaluate(model,x['val'],y['val'],cfg['batch']);dev,*_=evaluate(model,x['test'],y['test'],cfg['batch']);evaluations+=1
                     row.update(validation_diagnostic=val,original_test_dev=dev)
