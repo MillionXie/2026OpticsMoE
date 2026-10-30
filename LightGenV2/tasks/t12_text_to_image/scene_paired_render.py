@@ -34,7 +34,13 @@ def frozen_test_protocol(a,state,previous):
     assert frozen['schema']=='scene_frozen_evaluation_v1' and frozen['development_selection_finished']
     assert not frozen['TEST_used_for_model_selection'] and report['complete'] and report['role_disjoint']
     assert frozen['frozen_before_first_TEST_prediction']
-    assert frozen['prompt_profile']==report['prompt_profile']=='two_sentence_furnished_room_v3'
+    assert frozen['prompt_profile']==report['prompt_profile']
+    if report['prompt_profile']=='two_sentence_natural_room_v4':
+        assert report['schema']=='scene_natural_prompt_TEST_v1'
+        assert report['original_training_prompt_profile']=='two_sentence_furnished_room_v3'
+        assert frozen['source_TEST_request_sha256']==report['source_TEST_request_sha256']
+        assert len(report['source_TEST_request_sha256'])==64
+    else:assert report['prompt_profile']=='two_sentence_furnished_room_v3'
     assert frozen['request_sha256']==report['request_sha256']==digest(a.data/'inference_inputs.json')
     assert report['current_pairs_sha256']==state['pair_sha256']
     model=frozen['models'][a.frozen_model_key]

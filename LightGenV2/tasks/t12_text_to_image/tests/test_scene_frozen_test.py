@@ -43,6 +43,19 @@ class FrozenSceneTEST(unittest.TestCase):
             safe['target']='forbidden.png';(root/'inference_inputs.json').write_text(json.dumps([safe]))
             with self.assertRaises(ValueError):inference_inputs(root,'test')
 
+    def test_natural_prompt_TEST_revision_keeps_frozen_source_binding(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);a,state,ready,frozen=self.fixture(root)
+            report=json.loads((root/'report.json').read_text())
+            report.update(schema='scene_natural_prompt_TEST_v1',prompt_profile='two_sentence_natural_room_v4',
+                original_training_prompt_profile='two_sentence_furnished_room_v3',source_TEST_request_sha256='a'*64)
+            (root/'report.json').write_text(json.dumps(report))
+            frozen.update(prompt_profile=report['prompt_profile'],source_TEST_request_sha256='a'*64)
+            a.frozen_evaluation.write_text(json.dumps(frozen))
+            self.assertEqual(frozen_test_protocol(a,state,ready)['model_key'],'qwen')
+            frozen['source_TEST_request_sha256']='b'*64;a.frozen_evaluation.write_text(json.dumps(frozen))
+            with self.assertRaises(AssertionError):frozen_test_protocol(a,state,ready)
+
     def test_TEST_metrics_need_explicit_scope_and_all_draws(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);(root/'ref.png').write_bytes(b'reference');(root/'generated.png').write_bytes(b'generation')

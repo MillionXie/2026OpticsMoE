@@ -2,6 +2,7 @@
 import argparse
 import json
 import os
+import shutil
 from pathlib import Path
 from .scene_development_grid import expand
 from .appearance_scene_protocol import SHORT_PROFILE
@@ -47,14 +48,33 @@ def checked_revision(folder,data,state,original):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--data',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+    p.add_argument('--data',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--scope',choices=['dev','test'],default='dev');a=p.parse_args()
     assert not a.output.exists() and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
     previous=json.loads((a.data/'report.json').read_text());assert previous['complete'] and previous['role_disjoint']
-    original=json.loads((a.data/'inference_dev_inputs.json').read_text());rows=[revise(q) for q in expand(original)]
+    if a.scope=='test':
+        source=a.data/'inference_inputs.json';original=json.loads(source.read_text())
+        assert len(original)==500 and previous['prompt_profile']==SHORT_PROFILE
+        assert previous['request_sha256']==digest(source)
+        rows=[revise(q) for q in original]
+    else:
+        source=a.data/'inference_dev_inputs.json';original=json.loads(source.read_text());rows=[revise(q) for q in expand(original)]
     for q in rows:assert digest(a.data/q['reference'])==q['reference_sha256']
     a.output.mkdir(parents=True);write(a.output/'inference_inputs.json',rows)
+    if a.scope=='test':
+        for q in rows:
+            target=a.output/q['reference'];target.parent.mkdir(parents=True,exist_ok=True)
+            if not target.exists():shutil.copyfile(a.data/q['reference'],target)
+            assert digest(target)==q['reference_sha256']
+        write(a.output/'report.json',dict(previous,source_commit=os.environ['T12_SOURCE_COMMIT'],
+            schema='scene_natural_prompt_TEST_v1',prompt_profile=PROFILE,original_training_prompt_profile=SHORT_PROFILE,
+            source_TEST_request_sha256=digest(source),request_sha256=digest(a.output/'inference_inputs.json'),
+            reference_RGB_still_input=True,reference_pixels_and_seeds_unchanged=True,
+            TEST_request_preparation_only=True,model_inference_performed=False,TEST_opened=False,
+            targets_or_features_opened=False))
+        return
     write(a.output/'report.json',dict(complete=True,schema='scene_natural_prompt_DEV_v1',source_commit=os.environ['T12_SOURCE_COMMIT'],
-        prompt_profile=PROFILE,source_DEV_request_sha256=digest(a.data/'inference_dev_inputs.json'),
+        prompt_profile=PROFILE,source_DEV_request_sha256=digest(source),
         pairs_sha256=previous['pairs_sha256'],request_sha256=digest(a.output/'inference_inputs.json'),
         reference_RGB_still_input=True,reference_pixels_and_seeds_unchanged=True,contexts=128,reference_views=16,
         products=8,canonical_scenes=8,targets_or_features_opened=False,model_inference_performed=False,TEST_opened=False,
