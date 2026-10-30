@@ -27,17 +27,19 @@ def quality_gate(sim,exp,tolerance=.05):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ('sim','exp','out','clip-checkpoint','dino-path','reward-path'):p.add_argument('--'+name,type=Path,required=True)
-    p.add_argument('--extra',type=Path,nargs='*',default=[]);p.add_argument('--source-commit',required=True);a=p.parse_args()
+    p.add_argument('--extra',type=Path,nargs='*',default=[]);p.add_argument('--matched-sim',type=Path);p.add_argument('--source-commit',required=True);a=p.parse_args()
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU or len(a.source_commit)!=40:raise ValueError('Shared GPU1 and published source required')
     import torch,clip,numpy as np
     from PIL import Image
     from transformers import AutoImageProcessor,AutoModel
     from .white_reference_metrics import load_records,aggregate,reward_loader
-    runs=[a.sim,a.exp]+a.extra
+    runs=[a.sim,a.exp]+a.extra+([a.matched_sim]if a.matched_sim else[])
     if len({r.name for r in runs})!=len(runs):raise ValueError('Run names must be distinct')
     reports=[json.loads((run/'report.json').read_text())for run in runs]
     if reports[0]['checkpoint_sha256']!=F9 or reports[0].get('actual_CCD_replay'):raise ValueError('Primary reference must be the original frozen F9 SIM')
     if not reports[1].get('actual_CCD_replay'):raise ValueError('Primary EXP must replay all actual CCDs')
+    if reports[1]['checkpoint_sha256']!=F9 and (not a.matched_sim or reports[-1]['checkpoint_sha256']!=reports[1]['checkpoint_sha256'] or reports[-1].get('actual_CCD_replay')):
+        raise ValueError('Adapted heads also require a same-weight SIM comparison; original F9 reference is never replaced')
     if any(r['scope']!='DEV_expanded'or r['generated_count']!=128 or r.get('independent_TEST_opened') for r in reports):raise ValueError('Complete DEV128 only')
     rows=[r for run in runs for r in load_records(run)]
     signatures=[{r['sample_id']:(r['input_sha256'],r['prompt'],r['seed'],r['initial_latent_sha256'])for r in rows if r['run_id']==run.name}for run in runs]
@@ -46,6 +48,11 @@ def main():
     a.out.mkdir(parents=True,exist_ok=False);torch.set_num_threads(2);torch.cuda.set_per_process_memory_fraction(.25,0)
     put(a.out/'protocol.json',dict(source_commit=a.source_commit,source_SHA256=sha(__file__),DEV=128,metrics=METRICS,groups=['all','lamp','pillow'],
         threshold=.05,primary_reference_F9=F9,no_TEST_or_gradients=True,original_metric_implementation_SHA256=sha(Path(__file__).with_name('white_reference_metrics.py'))))
+    assets={str(a.clip_checkpoint):sha(a.clip_checkpoint)}
+    for folder in (a.dino_path,a.reward_path):
+        for file in sorted(folder.iterdir()):
+            if file.is_file()and file.suffix in ('.pt','.bin','.json','.safetensors'):assets[str(file)]=sha(file)
+    put(a.out/'model_assets.json',assets)
     def progress(stage,count):(a.out/'progress.json').write_text(json.dumps(dict(stage=stage,completed=count,total=len(rows))))
     model,preprocess=clip.load(str(a.clip_checkpoint),device='cuda',jit=False);model.eval().requires_grad_(False)
     with torch.inference_mode():
@@ -75,6 +82,8 @@ def main():
     put(a.out/'per_image.json',rows);put(a.out/'summary.json',summary)
     def means(run):return {group:{m:summary[run.name+'/'+group]['scores'][m]['mean']for m in METRICS}for group in ('all','lamp','pillow')}
     gate=quality_gate(means(a.sim),means(a.exp));put(a.out/'quality_gate.json',gate)
+    matched=quality_gate(means(a.matched_sim),means(a.exp))if a.matched_sim else gate
+    put(a.out/'matched_weight_quality_gate.json',matched)
     paired=[];sim_rows={r['sample_id']:r for r in rows if r['run_id']==a.sim.name}
     for row in [r for r in rows if r['run_id']==a.exp.name]:
         other=sim_rows[row['sample_id']]
@@ -83,7 +92,7 @@ def main():
         mse=float(((s-e)**2).mean());paired.append(dict(sample_id=row['sample_id'],MAE=float(abs(s-e).mean()),PSNR_dB=None if mse==0 else -10*math.log10(mse),identical=mse==0))
     put(a.out/'paired_image_change.json',dict(rows=paired,LPIPS_computed=False,LPIPS_note='not computed by this entry; do not substitute PSNR for a perceptual success rate'))
     put(a.out/'report.json',dict(complete=True,source_commit=a.source_commit,DEV=128,runs=[str(r)for r in runs],all_twelve_proxy_gates_passed=gate['all_passed'],
-        threshold=.05,primary_SIM_original_F9=F9,TEST_used=False,training_performed=False,development_metrics_only=True,
+        threshold=.05,matched_weight_gate_passed=matched['all_passed'],both_reference_gates_passed=gate['all_passed']and matched['all_passed'],primary_SIM_original_F9=F9,TEST_used=False,training_performed=False,development_metrics_only=True,
         automatic_scores_are_not_attribute_accuracy=True,visual_review_still_required=True,metric_assets={str(a.clip_checkpoint):sha(a.clip_checkpoint),str(a.reward_path/'ImageReward.pt'):sha(a.reward_path/'ImageReward.pt')}))
     print(json.dumps(dict(complete=True,DEV=128,all_twelve_proxy_gates_passed=gate['all_passed'])),flush=True)
 

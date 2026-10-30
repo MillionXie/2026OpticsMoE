@@ -14,12 +14,16 @@ GPU='GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d'
 
 class MeasuredObserver:
     def __init__(self,ledger,manifest_sha256):
+        if ledger.session.get('scope')!='reviewed_physical' or ledger.models['F6']!=F6 or ledger.models['F9']!=F9:
+            raise ValueError('Only the original F6/F9 reviewed physical ledger is eligible')
         if ledger.session.get('cohort_role')!='dev' or ledger.session.get('evaluation_manifest_sha256')!=manifest_sha256:raise ValueError('Wrong actual DEV manifest')
         self.ledger=ledger;self.active=None;self.restore=None;self.order=[];self.prefix=[];self.completed=0
         self.by_input={(r['reference_sha256'],r['prompt'],r['seed']):r for r in ledger.requests}
         if len(self.by_input)!=128:raise ValueError('Complete unique DEV128 required')
         for stage in STAGES:
-            for request in ledger.requests:ledger.receipt(stage,request)
+            for request in ledger.requests:
+                receipt,_=ledger.receipt(stage,request)
+                if receipt['metadata']['frame_provenance']!='physical_linear_camera':raise ValueError('Synthetic frame is not physical evidence')
 
     def prepare(self,qwen,processor,head,pipe):
         from .scene_optical_boundary import attach
