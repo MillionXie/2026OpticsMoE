@@ -115,6 +115,11 @@ def trajectories(a):
     assert type(pipe.scheduler).__name__=='EulerDiscreteScheduler' and pipe.scheduler.config.prediction_type=='epsilon'
     contexts={r['input_key']:r for r in payload['records'] if r['split']=='train'}
     dev={r['input_key'] for r in payload['records'] if r['split']=='dev'};assert not set(contexts)&dev
+    if payload.get('TRAIN_trajectory_keys') is not None:
+        keys=payload['TRAIN_trajectory_keys']
+        if not keys or len(set(keys))!=len(keys) or not set(keys)<=set(contexts) or set(keys)&dev:
+            raise ValueError('Trajectory subset must contain unique actual TRAIN inputs only')
+        contexts={k:contexts[k] for k in keys}
     records=[];sigmas=None;timesteps=None
     contract=teacher.get('sampling_contract')
     teacher_steps=contract['steps'] if contract else a.teacher_steps
