@@ -103,7 +103,7 @@
       "dataset": "crc9",
       "architecture": "LG",
       "classes": 9,
-      "checkpoint_sha256": "122915e9cd64698264d39ef0f8a1cf5ae221524a5d63d16a15a83f9c760a83b7",
+      "checkpoint_sha256": "30fd9ad76b558781f7f7335f53f45812142a4af47df487b7b30fdc5e726f8569",
       "strict_canonical_model_load": true,
       "learned_linear_modules": 0,
       "parameter_count": 479364,
@@ -122,7 +122,7 @@
           224
         ]
       },
-      "source_path": "runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_002/best_checkpoint.pt"
+      "source_path": "runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/best_checkpoint.pt"
     },
     {
       "dataset": "crc9",

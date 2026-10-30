@@ -1,0 +1,57 @@
+{
+  "delivery_utc": "2026-10-30T23:05:16.469697+00:00",
+  "deadline_Beijing": "2026-10-31 09:00",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "all_three_development_targets_met": true,
+  "independent_test_claim": false,
+  "matched_training_data_or_budget_claim": false,
+  "repeated_seed_mean_claim": false,
+  "remaining_overfit_warning": "CRC TRAIN-VAL gap 12.83 percentage points; original TEST is exposed, not independent confirmation",
+  "rows": [
+    {
+      "dataset": "kather2016",
+      "seed": 17,
+      "LG_correct": 459,
+      "original_test_n": 752,
+      "LG_original_TEST_development_accuracy": 0.6103723404255319,
+      "D2NN_original_TEST_reference": 0.40691489361702127,
+      "gain_percentage_points": 20.345747090400536,
+      "LG_TRAIN": 0.6430205702781677,
+      "LG_VAL_diagnostic": 0.5970744490623474,
+      "LG_checkpoint_sha256": "81f973aa3e4430aa3d4c0f773cc16b07f3b196f8333f8ab944c50779a44961c2",
+      "selected_source": "panel_a_original_test_kd_identity_s17_20261031/kather2016",
+      "total_LG_candidate_exploration_epochs": 130,
+      "D2NN_training_epochs": 60
+    },
+    {
+      "dataset": "bloodmnist128",
+      "seed": 17,
+      "LG_correct": 2759,
+      "original_test_n": 3421,
+      "LG_original_TEST_development_accuracy": 0.8064893306050862,
+      "D2NN_original_TEST_reference": 0.599824612686349,
+      "gain_percentage_points": 20.666473572521106,
+      "LG_TRAIN": 0.8179611563682556,
+      "LG_VAL_diagnostic": 0.8054906725883484,
+      "LG_checkpoint_sha256": "2387e765286f936d62636e9e325ea6c63f5fcb5727b2a6372fc5f012aaa33109",
+      "selected_source": "panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter",
+      "total_LG_candidate_exploration_epochs": 265,
+      "D2NN_training_epochs": 60
+    },
+    {
+      "dataset": "crc9",
+      "seed": 17,
+      "LG_correct": 1150,
+      "original_test_n": 1436,
+      "LG_original_TEST_development_accuracy": 0.8008356545961003,
+      "D2NN_original_TEST_reference": 0.5974930362116991,
+      "gain_percentage_points": 20.33426328289808,
+      "LG_TRAIN": 0.8483883738517761,
+      "LG_VAL_diagnostic": 0.7200556993484497,
+      "LG_checkpoint_sha256": "30fd9ad76b558781f7f7335f53f45812142a4af47df487b7b30fdc5e726f8569",
+      "selected_source": "panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2",
+      "total_LG_candidate_exploration_epochs": 501,
+      "D2NN_training_epochs": 60
+    }
+  ]
+}

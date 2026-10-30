@@ -51,7 +51,7 @@ for row,(d,name) in enumerate([('bloodmnist128','BloodMNIST-128'),('crc9','CRC9'
   else:ax.text(.5,.5,'No run in this snapshot',ha='center',transform=ax.transAxes,fontsize=9)
   ax.axhline(ref,ls=':',color='#777',label='Frozen D2NN reference')
   ax.axhline(ref+20,ls='--',color='#a44969',label='Requested +20 pp target')
-  ax.set_xlim(0,30 if col==0 else 40);ax.set_xlabel('Additional epochs in this branch');ax.grid(alpha=.15)
+  ax.set_xlim(0,31 if col==0 else 41);ax.set_xlabel('Additional epochs in this branch');ax.grid(alpha=.15)
   if col==0:ax.set_ylabel('Accuracy (%)')
 handles,labels=axes[0,0].get_legend_handles_labels();fig.legend(handles,labels,loc='outside lower center',ncol=3,fontsize=10)
 fig.suptitle('Seed 17 | Original TEST exposed to teacher training and model selection\nPer-branch convergence; TRAIN markers are selected-checkpoint evaluations, not epoch-wise training curves',fontsize=12)
@@ -71,8 +71,25 @@ for col,(variant,label) in enumerate([('dense_pair_aux_002','Dense route KL 0.02
   result=json.loads(result.read_text());axes[0,col].scatter([result['selected_epoch']],[100*result['train']['accuracy']],marker='D',color='#26846c',label='Selected-checkpoint TRAIN')
  for expert in range(4):axes[1,col].plot(epochs,[100*z['original_test_dev']['router']['mean_power'][expert] for z in data],label=f'Expert {expert+1}')
  axes[0,col].set_title(label);axes[0,col].set_ylabel('Accuracy (%)');axes[1,col].set_ylabel('Mean actual Top-2 power (%)')
- for ax in axes[:,col]:ax.set_xlabel('Additional epochs in this candidate');ax.set_xlim(0,40);ax.grid(alpha=.15)
+ for ax in axes[:,col]:ax.set_xlabel('Additional epochs in this candidate');ax.set_xlim(0,41);ax.grid(alpha=.15)
  axes[0,col].legend(fontsize=8);axes[1,col].legend(fontsize=8);axes[1,col].set_ylim(0,100)
 fig.suptitle('CRC9, seed 17 | Training-only router supervision\nOriginal TEST used for development; actual sparse power, not dense auxiliary targets',fontsize=12)
 fig.savefig(out/'router_supervision_curves.png',dpi=160);fig.savefig(out/'router_supervision_curves.svg');plt.close(fig)
 svg=out/'router_supervision_curves.svg';svg.write_text('\n'.join(line.rstrip() for line in svg.read_text(encoding='utf-8').splitlines())+'\n',encoding='utf-8')
+
+path=runs/'panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2'
+if (path/'history.json').exists():
+ data=json.loads((path/'history.json').read_text());evaluated=[z for z in data if 'original_test_dev' in z]
+ fig,axes=plt.subplots(1,2,figsize=(10,4),constrained_layout=True)
+ epochs=[z['epoch'] for z in evaluated]
+ axes[0].plot(epochs,[100*z['validation_diagnostic']['accuracy'] for z in evaluated],label='VAL diagnostic',color='#306c9c')
+ axes[0].plot(epochs,[100*z['original_test_dev']['accuracy'] for z in evaluated],label='Original TEST development',color='#d67227')
+ if (path/'result.json').exists():
+  result=json.loads((path/'result.json').read_text());axes[0].scatter([result['selected_epoch']],[100*result['train']['accuracy']],marker='D',color='#26846c',label='Selected-checkpoint TRAIN')
+ axes[0].axhline(100*(858/1436+.2),color='#a44969',ls='--',label='Requested +20 pp target')
+ axes[0].set_ylabel('Accuracy (%)');axes[0].legend(fontsize=8)
+ axes[1].plot([z['epoch'] for z in data],[z['training_objective'] for z in data],color='#26846c');axes[1].set_ylabel('Focal boundary + 0.1 energy NLL')
+ for ax in axes:ax.set_xlabel('Additional epochs in this candidate');ax.set_xlim(0,41);ax.grid(alpha=.15)
+ fig.suptitle('CRC9, seed 17 | Original TEST exposed development, not independent test',fontsize=12)
+ fig.savefig(out/'focal_boundary_curves.png',dpi=160);fig.savefig(out/'focal_boundary_curves.svg');plt.close(fig)
+ svg=out/'focal_boundary_curves.svg';svg.write_text('\n'.join(line.rstrip() for line in svg.read_text(encoding='utf-8').splitlines())+'\n',encoding='utf-8')

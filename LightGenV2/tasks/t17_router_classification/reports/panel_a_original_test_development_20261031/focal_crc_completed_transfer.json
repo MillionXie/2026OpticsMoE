@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/result.json",
+      "sha256": "9cd889d917c14ac28991a418d6e9ba969112645562e2d43a91ffaf0ee56be022"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/history.json",
+      "sha256": "b74073fcce7bc72892abe56045265e5b5c0b195ff73c947d6cbddc4ff76f899b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/status.json",
+      "sha256": "513aadcc913920d9f9f33abdcb995589b457a38003fcc3add975df1cb4a00c62"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/metadata.json",
+      "sha256": "ebbc2a9f9034cd5c8e0605c58fad48fd7296e0772198fafa973fb112de690ee5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/best_checkpoint.pt",
+      "sha256": "30fd9ad76b558781f7f7335f53f45812142a4af47df487b7b30fdc5e726f8569"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/last_checkpoint.pt",
+      "sha256": "de507560ab86dd97b75c4e19fd71b10ac1a1cd2d19f126ddd14b87cbb27fb5f4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/train_predictions.npz",
+      "sha256": "ccfa7f77bd36cf0de5852accebf3e4424cdd0ba24905d53a90b05f108f507580"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/val_predictions.npz",
+      "sha256": "86129884bec1d39dfdd1316b3234a2cfcd679f6ceb63630077d7604daa2602d3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/test_predictions.npz",
+      "sha256": "7b487b42b05012a510f4c7a3ec0b48c6f7dbc522e32502276b4191fe490d67b0"
+    }
+  ]
+}

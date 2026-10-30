@@ -1,0 +1,52 @@
+{
+  "role": "T17_FINAL_GPU_RELEASE_AUDIT",
+  "checked_unix": 1793401453.182113,
+  "t17_training_processes": [],
+  "latest_t17_gpu_allocations": [],
+  "latest_worker_pids": [
+    634287,
+    634288,
+    656657,
+    685930,
+    703264
+  ],
+  "other_processes_untouched": true,
+  "all_three_goals_verified_from_full_prediction_files": true,
+  "inference_and_training_dependency_sources": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/model_four.py",
+      "normalized_sha256": "e50cd0e663d454c3ff74c75266d414688a0910cd47b5168ae7c561af4c921a7e",
+      "matches_published_source": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/model_linear_ccd.py",
+      "normalized_sha256": "74ef2799e8fd4127eff0ffaf7880cafd2bcd2f7c745c5d7572fc38b2e8a0d22c",
+      "matches_published_source": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/train.py",
+      "normalized_sha256": "6fcaabb49d64c25f5427f3f9ddcf0c823b2df8b3ca5da4b40cbdc49ebe8b3be1",
+      "matches_published_source": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/phase_optimizer.py",
+      "normalized_sha256": "f9b6f8b81775f1e13c00d4a4959e1d928690bb97d75a472ac4fa2d13975eb1ce",
+      "matches_published_source": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/train_boundary_development.py",
+      "normalized_sha256": "da1d376f20606d84215baf7b3b4c0cb7ddb4fd1baabe11b172cfc5017bee5a25",
+      "matches_published_source": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
+    },
+    {
+      "path": "LightGenV2/demo_check/pure_optical/models.py",
+      "normalized_sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+      "matches_published_source": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
+    },
+    {
+      "path": "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py",
+      "normalized_sha256": "9c49da42d3a381dd3e7ab8cc31536315ee1243e557fc00daf37873531f5b4e0c",
+      "matches_published_source": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
+    }
+  ]
+}
