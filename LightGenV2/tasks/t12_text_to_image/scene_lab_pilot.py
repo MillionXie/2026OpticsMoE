@@ -3,9 +3,20 @@ import argparse
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from .scene_lab_protocol import Ledger, STAGES, NeedCapture, put, sha
+from .scene_lab_protocol import Ledger, STAGES, NeedCapture, array_sha, put, sha
 from .scene_lab_entry import train_requests
 from .scene_lab_native import NativeRunner, load_head, F9, F6
+
+
+def mark_input_ready(folder):
+    import numpy as np
+    folder=Path(folder);ticket=json.loads((folder/'ticket.json').read_text())
+    keys=dict(amplitude='amplitude_sha256',total_phase='total_phase_sha256',amplitude_code='logical_amplitude_code_sha256',phase_code='logical_phase_code_sha256')
+    with np.load(folder/'logical_fields.npz',allow_pickle=False)as z:
+        if set(z.files)!=set(keys)or any(array_sha(z[k])!=ticket[v]for k,v in keys.items()):raise ValueError('Incomplete/changed input payload')
+    marker=folder/'input.ready'
+    if not marker.exists():marker.touch(exist_ok=False)
+    return marker
 
 
 def main():
@@ -63,8 +74,7 @@ def main():
                 if a.ready_markers:
                     # Empty marker is created only after the native runner has
                     # unwound and closed the complete payload/ticket files.
-                    marker=folder/'input.ready'
-                    if not marker.exists():marker.touch(exist_ok=False)
+                    mark_input_ready(folder)
                 prepared+=1
                 if prepared%16==0 or prepared==len(requests):print(json.dumps(dict(stage=a.stage,prepared=prepared,total=len(requests))),flush=True)
                 if a.request_pause_ms:
