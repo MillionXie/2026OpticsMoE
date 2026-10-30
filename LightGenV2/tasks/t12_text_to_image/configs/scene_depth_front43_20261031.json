@@ -1,0 +1,8 @@
+{
+  "schema": "scene_depth_probe_v1",
+  "vision_keep": 4,
+  "language_keep": 3,
+  "UNet_deep_keep": 10,
+  "parent_generator_sha256": "f9fbdb7fd36d1c862686616a624e7c18f4e9149cef61b0704bbf97767de6eaec",
+  "parent_frontend_sha256": "6f34f2d720060c9193cda0e19ffb8fb4d157bc03e3fd5e5c1433c60ad884471e"
+}
