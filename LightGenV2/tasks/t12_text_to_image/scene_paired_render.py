@@ -190,6 +190,8 @@ def render(a):
     for c in pipe.components.values():
         if isinstance(c,torch.nn.Module): c.eval().requires_grad_(False)
     assert pipe.unet.dtype==scene_precision.dtype(a) and pipe.vae.dtype==torch.bfloat16
+    observer=getattr(a,'request_observer',None)
+    if observer is not None:processor=observer.prepare(qwen,processor,head,pipe)
     records = []
     for i,row in enumerate(rows):
         src = a.data/row['reference']; assert digest(src) == row['reference_sha256']
@@ -197,6 +199,7 @@ def render(a):
         if not dst.exists(): shutil.copyfile(src,dst)
         with Image.open(src) as im: reference = im.convert('RGB').copy()
         if a.measure_software_latency:torch.cuda.synchronize();began=time.perf_counter()
+        if observer is not None:observer.begin(row)
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
         kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=fast['CFG'] if fast else 7.5,latents=noise.to(dtype=pipe.unet.dtype),generator=generator)
@@ -223,6 +226,7 @@ def render(a):
             image = pipe(**kwargs).images[0]
         if a.measure_software_latency:
             torch.cuda.synchronize();latencies.append((time.perf_counter()-began)*1000)
+        if observer is not None:observer.end(row)
         # Diagnostics and disk output are outside the RGB/text-ready -> CPU RGB
         # window. The first real generation remains in the measured requests.
         noise_sha = hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
