@@ -1,4 +1,14 @@
-# F9光路接口准备版（无SDK，不是现场放行包）
+# F9光路接口与现场校准（尚非完整实测放行包）
+
+2026-10-30实际相机重试已成功：TUCam枚举1、2张原生2048x2048 uint16连接诊断帧。
+`scene_lab_hardware`另完成11张初始几何检查及40张派生会话校准；原20261029 TXT不改，
+固定派生采样映射使用3个校准轴点，5个全新未拟合位置最大误差2.160px，幅度响应heldout通过。
+这些是非模型校准帧，不是模型TRAIN采集；原linearVoltage LUT也仍不是已认证linearPhase。
+
+追加相位诊断发现白场消失：同BMP、读回设置及LUT，完整原帧p99由28988降至876，
+后者与暗场一致。有限白场canary两帧后停止并释放；未盲重拍或改变曝光/物理合同。
+目前模型TRAIN CCD仍0，不得创建假审核会话、宣称物理5%或完整Qwen/SDXL实拍通过。
+详见[现场接续证据](reports/scene_generation_20261029/HARDWARE_20261029_SESSION_20261030.md)。
 
 模块`scene_lab_protocol`管理按层全量账本，`scene_lab_native`把已有冻结Qwen/F6和F9头
 接到既有`scene_optical_boundary`。旧17M模型、旧包和旧runner均不改变。

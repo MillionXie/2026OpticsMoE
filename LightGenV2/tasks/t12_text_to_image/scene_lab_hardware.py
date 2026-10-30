@@ -174,7 +174,8 @@ def calibrate(c,out):
             put(out/'amplitude_inverse.json',dict(drive=drive,fit_grays=grays,fit_means=means,response=response,heldout=checks,device_LUT_changed=False))
             dark=orientations(bg)[orientation][None].astype(np.float32);gain=np.full_like(dark,1/(means[-1]-means[0]),dtype=np.float32)
             np.save(out/'dark.npy',dark,allow_pickle=False);np.save(out/'gain_map.npy',gain,allow_pickle=False)
-        put(out/'report.json',dict(passed=True,orientation=orientation,frames=len(rows),SDK_released=True,dark_sha256=array_sha(dark),gain_map_sha256=array_sha(gain),new_T12_session=True,TEST_used=False,actual_model_TRAIN_CCD=0,rows=rows))
+        put(out/'report.json',dict(passed=True,geometry_direction_amplitude_guards_passed=True,phase_direction_only=True,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False,
+            orientation=orientation,frames=len(rows),SDK_released=True,dark_sha256=array_sha(dark),gain_map_sha256=array_sha(gain),new_T12_session=True,TEST_used=False,actual_model_TRAIN_CCD=0,rows=rows))
     except BaseException as error:
         put(out/'failure.json',dict(error=repr(error),traceback=traceback.format_exc(),rows=rows,automatic_retry=False));raise
     finally:
