@@ -36,6 +36,13 @@ def supervised_train_only(logits,labels,is_original_train,weights,smoothing):
     return F.cross_entropy(logits[is_original_train],labels[is_original_train],weight=weights,label_smoothing=smoothing)
 
 
+def student_orientation_codes(count,device,probability=1.):
+    if not 0<=probability<=1:raise ValueError('augmentation probability must be in [0,1]')
+    codes=torch.randint(8,(count,),device=device)
+    if probability<1:codes=codes*torch.bernoulli(torch.full((count,),probability,device=device)).long()
+    return codes
+
+
 def main():
     ap=argparse.ArgumentParser()
     for name in ('profile','data-root','development-selection','teacher','out'):ap.add_argument('--'+name,type=Path,required=True)
@@ -88,14 +95,16 @@ def main():
                             validation_diagnostic=val,original_test_dev=dev,metadata=metadata),a.out/'best_checkpoint.pt')
         save_best(model,0,'parent',parent_val,parent_dev)
         optimizer=torch.optim.Adam([{'params':[model.first_phase,model.global_phase],'lr':cfg['kd_phase_lr']},{'params':[model.router_phase],'lr':cfg['kd_router_lr']}],weight_decay=0)
-        class_weights=inverse_sqrt_class_weights(y['train'],cfg['num_classes']);rng=np.random.default_rng(cfg['seed']);completed=0
+        class_weights=inverse_sqrt_class_weights(y['train'],cfg['num_classes']) if cfg.get('class_weighting',True) else None
+        rng=np.random.default_rng(cfg['seed']);completed=0
         for epoch in range(1,cfg['kd_epochs']+1):
             begin=time.time();model.train();factor=.1+.9*.5*(1+math.cos(math.pi*(epoch-1)/max(1,cfg['kd_epochs']-1)))
             for group,lr in zip(optimizer.param_groups,(cfg['kd_phase_lr'],cfg['kd_router_lr'])):group['lr']=lr*factor
             indices=rng.choice(membership,size=len(membership),replace=True,p=sampling_weights);total=0.;batches=0;grad_sum=torch.zeros(6,device='cuda')
             aux_weight=cfg['balance_loss_weight']*max(0.,1-(epoch-1)/cfg['balance_anneal_epochs']);coverage_weight=cfg['coverage_loss_weight']*max(0.,1-(epoch-1)/cfg['balance_anneal_epochs'])
             for start in range(0,len(indices),cfg['batch']):
-                idx=torch.as_tensor(indices[start:start+cfg['batch']],device='cuda');codes=torch.randint(8,(len(idx),),device='cuda');images=d4_amplitude(union[idx],codes)
+                idx=torch.as_tensor(indices[start:start+cfg['batch']],device='cuda')
+                codes=student_orientation_codes(len(idx),'cuda',cfg.get('student_d4_probability',1.));images=d4_amplitude(union[idx],codes)
                 target=F.softmax(teacher_logits[idx,codes]/cfg['kd_temperature'],1);is_train=idx<n_train
                 def objective(out):
                     ce=supervised_train_only(out['logits'],union_labels[idx],is_train,class_weights,cfg['label_smoothing'])

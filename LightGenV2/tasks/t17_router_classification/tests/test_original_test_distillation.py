@@ -1,5 +1,5 @@
 import torch
-from LightGenV2.tasks.t17_router_classification.distill_original_test_dev import supervised_train_only,d4_amplitude
+from LightGenV2.tasks.t17_router_classification.distill_original_test_dev import supervised_train_only,d4_amplitude,student_orientation_codes
 from LightGenV2.tasks.t17_router_classification.train_original_test_teacher import d4_images,teacher_head
 
 
@@ -9,6 +9,11 @@ def test_student_hard_label_loss_excludes_all_original_test_rows():
     second=supervised_train_only(logits,torch.tensor([1,5,7]),mask,weights,.01)
     assert torch.equal(first,second)
     first.backward();assert logits.grad[0].abs().sum()>0 and not logits.grad[1:].count_nonzero()
+
+
+def test_no_augmentation_profile_uses_identity_teacher_view_for_every_student():
+    codes=student_orientation_codes(50,'cpu',0.)
+    assert not codes.count_nonzero()
 
 
 def test_teacher_student_d4_orientation_matches_without_channel_permutation():
