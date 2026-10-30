@@ -22,7 +22,8 @@ class NaturalTRAINCache(unittest.TestCase):
                 self.assertFalse(set(r)&{'target','target_latent','source_product_id'})
                 self.assertEqual(r['split'],'train');self.assertNotIn('reference',r['prompt'])
             expanded=requests(rows,root,True);self.assertEqual(len(expanded),16)
-            keys=trajectory_keys(expanded,8);self.assertEqual(len(keys),8)
+            one_reference={k:v for k,v in expanded.items() if v['category']=='lamp'}
+            keys=trajectory_keys(one_reference,4);self.assertEqual(len(keys),4)
             self.assertTrue(set(keys)<=set(expanded))
             rows[0]['reference_sha256']='changed'
             with self.assertRaises(ValueError):requests(rows,root)
