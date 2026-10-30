@@ -1,5 +1,5 @@
 """Requested LG-first table sources. CPU-only saved-trace calculation, no rerun."""
-import hashlib,json,math,subprocess,sys
+import argparse,hashlib,json,math,subprocess,sys
 from pathlib import Path
 import lgvq_compute_scope_20261029 as scope
 import lgvq_resize_norm_20261029 as prep
@@ -25,7 +25,14 @@ def energy(schedule,fields):
     clock=dict(starts_ms={n['id']:n['start_s']*1000 for n in schedule['nodes']},ends_ms={n['id']:n['end_s']*1000 for n in schedule['nodes']},wall_ms=schedule['total_s']*1000)
     return component_energy(nodes,clock,fields)
 
-def entry(report,raw,*,rental=False):
+def entry(report,raw,*,rental=False,slm_hz=1400):
+    if slm_hz!=1400:
+        from recalculate_lg_front1886_20261030 import nodes_for
+        schedule=scope.compute_schedule(nodes_for(report,raw,slm_hz))
+        by={n['id']:n for n in schedule['nodes']};parts={}
+        for name in schedule['additive_path']:
+            n=by[name];parts[n['phase']]=parts.get(n['phase'],0)+n['duration_s']/report['fields']
+        report=dict(report,schedule=schedule,time16_s=schedule['total_s']/report['fields'],equivalent_s_per_group=parts)
     schedule=report['schedule'];fields=report['fields']
     close(sum(report['equivalent_s_per_group'].values()),schedule['total_s']/fields)
     close(report['time16_s'],schedule['total_s']/fields)
@@ -38,8 +45,10 @@ def entry(report,raw,*,rental=False):
                 equivalent_s_per_group=report['equivalent_s_per_group'],work_s_per_group=work,
                 component_energy=e,rental_numeric_gate_passed=not rental)
 
-def collect():
-    file=DEST/'lgvq_reorganized_sources01.json'
+def collect(standard1886=False):
+    dest=OUT/'LGVQ_standard1886_20261030_01' if standard1886 else DEST
+    slm_hz=1886 if standard1886 else 1400
+    file=dest/'lgvq_reorganized_sources01.json'
     if file.exists():raise FileExistsError('Preserve accepted new calculation, do not repeat')
     prior=OUT/'Lab8_Rental4_energy_LightGen_20261029_01/combined_summary.json'
     receipt=prior.parent/'lab_delivery_receipt01.json'
@@ -55,7 +64,7 @@ def collect():
         if sha(report)!=pin['report_sha256'] or sha(audit)!=pin['audit_sha256'] or not pin['all_scores_bitwise_equal']:raise ValueError('Exact lab triple required')
         r=read(report)
         if sha(rawfile)!=r['raw_operator_records_sha256']:raise ValueError('Original lab raw pin')
-        lab_rounds.append(entry(r,read(rawfile)))
+        lab_rounds.append(entry(r,read(rawfile),slm_hz=slm_hz))
         files.extend(dict(path=p.relative_to(REPO).as_posix(),sha256=sha(p)) for p in [report,audit,rawfile])
     root=SIM/'lightgen_rental_20261029_01';leaf=root/'lg_repeat01'
     receipt=root/'whole_root_backup_receipt_complete01.json'
@@ -71,7 +80,7 @@ def collect():
     if numeric['all_formal_scores_bitwise_equal'] or numeric['equal_scores']!=92:raise ValueError('Actual numeric qualification retained')
     kernels=scope.traced_kernels(read(leaf/'raw_kernel_trace.json'))
     r=prep.summarize_compute(kernels,raw['patch'],raw['tokenizer'],32)
-    rental=entry(r,raw,rental=True)
+    rental=entry(r,raw,rental=True,slm_hz=slm_hz)
     files.extend(dict(path=p.relative_to(REPO).as_posix(),sha256=sha(p)) for p in [prior,lgfile])
     def pool(rows):
         fields=sum(x['fields'] for x in rows);seconds=sum(x['total_s'] for x in rows)
@@ -81,7 +90,8 @@ def collect():
             work_s_per_group={k:sum(x['work_s_per_group'].get(k,0)*x['fields'] for x in rows)/fields for k in work},
             component_energy16_j=sum(x['component_energy']['energy_j'] for x in rows)/fields,
             component_energy=rows[0]['component_energy'],source_rounds=rows)
-    lab_result=pool(lab_rounds);rental_result=pool([rental]);close(lab_result['time16_s'],lab['LG_time16_s'])
+    lab_result=pool(lab_rounds);rental_result=pool([rental])
+    if not standard1886:close(lab_result['time16_s'],lab['LG_time16_s'])
     value=dict(status='LGVQ_ONLY_LG_FIRST_SAVED_DATA_REORGANIZATION',baselines=all36['records'],trials=all36['trials'],
         LG_lab=lab_result,LG_rental=rental_result,LG_rental_software=all36['LightGen_rental'],
         common_tokens16=lab['Qwen_effective_tokens']/96,component_powers_w=lab_result['component_energy']['powers_w'],
@@ -89,10 +99,24 @@ def collect():
         token_basis='common Qwen input numerator; native LG shared prompt mask counted once per16-video field',
         calculation='original two-field resource schedule, same measured CPU worker assignments and fixed optical cycles; not serial sum or wall/16',
         source_files=files,source_commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=REPO,text=True).strip(),torch_imported='torch' in sys.modules)
+    if standard1886:
+        frozen=DEST/'lgvq_reorganized_sources01.json'
+        if sha(frozen)!='9873a8a7c021a977dc67682b1dcb618fbbaabf7f4944eb4ed2e137bcc1decc1d':raise ValueError('Original frozen population pin')
+        old=read(frozen)
+        if value['baselines']!=old['baselines'] or value['trials']!=old['trials']:raise ValueError('All36 baseline observations must remain unchanged')
+        hardware=dest/'hardware_inventory01.json'
+        value.update(status='LGVQ_STANDARD_RESIZE_PATCH1886_ONLY',SLM_hz=1886,optical_layer_s=1/1886+.000300+.0000307,
+            includes_full_frontend_preparation=False,CPU_dispatch_and_queues_excluded=True,hardware=read(hardware),
+            hardware_inventory_sha256=sha(hardware),old_standard1400=dict(lab_ms16=old['LG_lab']['time16_s']*1000,rental_ms16=old['LG_rental']['time16_s']*1000))
+        value['source_files'] += [dict(path=p.relative_to(REPO).as_posix(),sha256=sha(p)) for p in [frozen,hardware]]
+        close(value['LG_lab']['time16_s']*1000,45.811069885871085)
+        close(value['LG_rental']['time16_s']*1000,29.194761633918024)
     if value['torch_imported']:raise RuntimeError('CPU-only collection imported Torch')
-    DEST.mkdir(parents=True,exist_ok=True)
+    dest.mkdir(parents=True,exist_ok=True)
     with file.open('x',encoding='utf8') as f:json.dump(value,f,ensure_ascii=True,indent=2,allow_nan=False)
     return dict(path=str(file),sha256=sha(file),lab_ms=lab_result['time16_s']*1000,rental_parallel_ms=rental_result['time16_s']*1000,
                 lab_proxy_J16=lab_result['component_energy16_j'],rental_proxy_J16=rental_result['component_energy16_j'],torch_imported=False)
 
-if __name__=='__main__':print(json.dumps(collect(),ensure_ascii=True))
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('--standard1886',action='store_true');args=parser.parse_args()
+    print(json.dumps(collect(args.standard1886),ensure_ascii=True))

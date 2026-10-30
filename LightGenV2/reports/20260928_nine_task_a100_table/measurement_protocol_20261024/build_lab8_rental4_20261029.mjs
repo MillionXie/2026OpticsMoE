@@ -12,8 +12,8 @@ const REPO=path.resolve(HERE,'../../../..');
 const runtime=process.env.ARTIFACT_RUNTIME_DIR;
 if(!runtime)throw Error('ARTIFACT_RUNTIME_DIR must point to the bundled dependency junction');
 const {Workbook,SpreadsheetFile}=await import(pathToFileURL(createRequire(path.join(runtime,'loader.cjs')).resolve('@oai/artifact-tool')).href);
-if(process.argv.includes('--lgvq-only-reorganized')){
-  await buildLGVQOnly();
+if(process.argv.includes('--lgvq-only-reorganized')||process.argv.includes('--lgvq-standard1886')){
+  await buildLGVQOnly(process.argv.includes('--lgvq-standard1886'));
 }else{
 const energyRemeasured=process.argv.includes('--energy-remeasured');
 const includeABO=energyRemeasured||process.argv.includes('--include-abo');
@@ -322,15 +322,17 @@ await fs.writeFile(path.join(OUT,'workbook_receipt.json'),JSON.stringify({file:B
 console.log(JSON.stringify({status:'exported_needs_visual_review_and_lab_backup',output:path.join(OUT,BOOK),sha256:sha(path.join(OUT,BOOK))}));
 }
 
-async function buildLGVQOnly(){
-  const out=path.join(HERE,'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/LGVQ_LG_first_parallel_20261030_01');
-  const book=path.join(out,'LGVQ_LightGen_first_parallel_20261030.xlsx'),input=path.join(out,'lgvq_reorganized_sources01.json');
+async function buildLGVQOnly(standard1886=false){
+  const out=path.join(HERE,'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b',standard1886?'LGVQ_standard1886_20261030_01':'LGVQ_LG_first_parallel_20261030_01');
+  const book=path.join(out,standard1886?'LGVQ_standard_scope_SLM1886_20261030.xlsx':'LGVQ_LightGen_first_parallel_20261030.xlsx'),input=path.join(out,'lgvq_reorganized_sources01.json');
   const sha=p=>crypto.createHash('sha256').update(fss.readFileSync(p)).digest('hex');
   const ok=(v,m)=>{if(!v)throw Error(m);};
   const close=(a,b)=>ok(typeof a==='number'&&Math.abs(a-b)<=Math.max(1e-7,Math.abs(b)*1e-9),`Calculation differs ${a} ${b}`);
   ok(!fss.existsSync(book),'Preserve existing workbook');
-  ok(sha(input)==='9873a8a7c021a977dc67682b1dcb618fbbaabf7f4944eb4ed2e137bcc1decc1d','Pinned new saved-data calculation');
+  const requestedSHA=process.argv.find(x=>x.startsWith('--source-sha256='))?.split('=')[1];
+  ok(sha(input)===(standard1886?requestedSHA:'9873a8a7c021a977dc67682b1dcb618fbbaabf7f4944eb4ed2e137bcc1decc1d'),'Pinned new saved-data calculation');
   const d=JSON.parse(fss.readFileSync(input,'utf8'));
+  if(standard1886)ok(d.status==='LGVQ_STANDARD_RESIZE_PATCH1886_ONLY'&&d.SLM_hz===1886&&!d.includes_full_frontend_preparation,'Only approved standard scope');
   ok(d.trials.length===36&&d.baselines.length===12&&!d.torch_imported,'Exact accepted source population');
   for(const f of d.source_files)ok(sha(path.join(REPO,f.path))===f.sha256,'Original source changed');
   const wb=Workbook.create(),s=wb.worksheets.add('主表'),detail=wb.worksheets.add('LG时间明细'),raw=wb.worksheets.add('轮次原值');
@@ -360,7 +362,7 @@ async function buildLGVQOnly(){
   put(detail,33,[['80GB：原单轮512视频。重放保存trace构造同一两场流水资源调度，未重测模型。']]);
   put(detail,34,[['80GB仅92/512输出逐位一致，数值门未通过；并行时间和组件能量均为诊断估算。']]);
   put(detail,35,[['保留原CPU工作线程分配和共享GPU/光学资源依赖，不把串行工作总和直接除以16。']]);
-  put(detail,36,[['固定每层光周期 = 1/1400 + 0.000300 + 0.0000307 秒，共6层。']]);
+  put(detail,36,[[`固定每层光周期 = 1/${standard1886?1886:1400} + 0.000300 + 0.0000307 秒，共6层。`]]);
   put(detail,37,[['包含resize、归一化、patch、embedding及电子算子；不包含文件解码/RGB裁剪/quality准备与调度等待。']]);
   title(detail,'A40','原固定组件功率与时间并集能量');
   put(detail,42,[['组件','功率/W','计算约定']]);header(detail,42,3);
@@ -405,6 +407,33 @@ async function buildLGVQOnly(){
   put(s,44,[['共同tokens/s采用相同Qwen分子，因此共同速率增益应等于时间比；自身tokens定义不同，不应当作公平跨模型吞吐。']]);
   put(s,45,[['详细阶段的关键路径贡献合计等于并行时间，执行工作列保留重叠，不误相加、不重复除以16。']]);
   const widths=[29,27,15,15,23,20,24,25,22,21,23,29,24];widths.forEach((x,i)=>s.getRangeByIndexes(0,i,45,1).format.columnWidth=x);
+  if(standard1886){
+    // Hardware is explicit; current CPU inventory is not historical CPU power evidence.
+    ok(d.hardware.lab.cpu_model_names.some(x=>x.includes('5218R'))&&d.hardware.rental.cpu_model_names.some(x=>x.includes('7742')),'CPU labels must match actual inventory');
+    s.getRange('N5:O5').values=[['CPU型号（当前主机实查）','GPU型号 / 显存 / 功率上限']];header(s,5,15);
+    for(let r=6;r<=19;r++){
+      const rental=r===7||r>=16;
+      s.getRange(`N${r}:O${r}`).values=[[rental?'AMD EPYC 7742 64-Core':'Intel Xeon Gold 5218R @2.10GHz',rental?'A100-SXM4 / 80GB / 400W':'A100-PCIe / 40GB / 250W']];
+    }
+    s.getRange('N5:N19').format.columnWidth=36;s.getRange('O5:O19').format.columnWidth=33;
+    s.getRange('N6:O19').format.font={name:'Arial',size:10};s.getRange('A6:O7').format.fill='#EDF3F9';
+    title(s,'A47','硬件与范围备注');
+    put(s,49,[['平台','CPU','可见逻辑CPU数','LG并行输入','SLM刷新率/Hz']]);header(s,49,5);
+    put(s,50,[['实验室','Xeon Gold 5218R @2.10GHz',d.hardware.lab.allowed_cpus,16,d.SLM_hz],['80GB租机','EPYC 7742 64-Core',d.hardware.rental.allowed_cpus,16,d.SLM_hz]]);
+    s.getRange('B49:B51').format.columnWidth=43;
+    put(s,53,[['CPU型号为本次只读实查，不是CPU性能测试；256/80为可见逻辑CPU，不等于每任务使用数。']]);
+    put(s,54,[['338.2W是原主机固定估计，不是上述CPU实测功耗；GPU功率上限与实测平均板卡功率分开。']]);
+    put(s,55,[['MPS50/100%是GPU资源配额；所有六个基线均batch=1。LG是16视频光场并行模型。']]);
+    put(s,56,[['SLM1886Hz为人工指定的计算参数，非本次硬件刷新率实测。完整前端预处理版本已撤回。']]);
+    detail.getRange('A69:H69').values=[['阶段归属','CPU','GPU','光学模型','对比说明',null,null,null]];header(detail,69,5);
+    put(detail,70,[['resize/归一化/patch/tokenizer','线程CPU时间',null,null,'沿用各自主机原记录，不互换'],['电子算子（详见上表）',null,'保存trace电子算子',null,'GPU与CPU都影响关键路径，不能归因CPU单项'],['六光层',null,null,'1886Hz+300us+30.7us','两边相同光周期；并行重叠后按DAG重算']]);
+    put(detail,74,[['未计入：文件打开/解码、RGB/crop、quality输入准备、CPU调度等待；不声称完整端到端。']]);
+    put(detail,76,[['SLM刷新率/Hz',d.SLM_hz],['曝光/us',300],['读出/us',30.7],['每光层设定/ms',null]]);
+    formula(detail,'B79','=1000/B76+B77/1000+B78/1000');
+    put(detail,81,[['旧1400Hz标准/ms每16视频','实验室','80GB'],['原已接受标准',d.old_standard1400.lab_ms16,d.old_standard1400.rental_ms16],['新1886Hz标准',null,null]]);
+    formula(detail,'B83','=E30');formula(detail,'C83','=F30');
+    detail.getRange('A69:H83').format.font={name:'Arial',size:10};detail.getRange('B76:C83').setNumberFormat('0.000000');
+  }
   s.getRange('E6:M19').setNumberFormat('#,##0.000');s.getRange('C28:L41').setNumberFormat('0.000');s.getRange('C6:D19').setNumberFormat('0');
   s.getRange('E6:M19').format.horizontalAlignment='right';s.getRange('C28:L41').format.horizontalAlignment='right';s.getRange('A21:M23').format.font.italic=true;s.getRange('A43:M45').format.font.italic=true;s.getRange('A6:M7').format.fill='#EDF3F9';
   wb.recalculate();
@@ -417,6 +446,7 @@ async function buildLGVQOnly(){
   change(detail,'B6',3,s.getRange('C30'),(b,old,delta)=>s.getRange('E8').values[0][0]/(d.LG_lab.time16_s*1000+delta/3));
   const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:1500});ok(!errors.ndjson.includes('"kind":"match"'),'Formula error scan');
   const previews=[['主表','A1:M23','main_preview.png'],['主表','A25:L45','ratios_preview.png'],['LG时间明细','A1:H37','lg_stages_preview.png'],['LG时间明细','A40:F65','lg_energy_preview.png'],['轮次原值','A25:L37','trials_preview.png']];
+  if(standard1886)previews.push(['主表','A47:M56','hardware_preview.png'],['LG时间明细','A69:H83','scope_preview.png']);
   for(const [sheetName,range,name] of previews){const p=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(out,name),new Uint8Array(await p.arrayBuffer()));}
   await (await SpreadsheetFile.exportXlsx(wb)).save(book);
   await fs.writeFile(path.join(out,'builder_checks.json'),JSON.stringify({status:'exported_needs_saved_file_and_visual_QA',file:path.basename(book),sha256:sha(book),input_sha256:sha(input),source_files_intact:true,baseline_trials:36,LG_rows_first:true,ABO_included:false,formula_perturbations_restored:true,common_token_ratio_equals_time_ratio:true,component_energy_is_proxy_not_metered:true,collector_source_sha256:sha(path.join(HERE,'collect_lgvq_reorganized_20261030.py'))},null,2),{flag:'wx'});
