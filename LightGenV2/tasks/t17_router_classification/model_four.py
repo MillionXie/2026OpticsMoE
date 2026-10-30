@@ -52,10 +52,20 @@ class FourRouterClassification(PhaseOnly):
         dense,capture=self.dense_route(amplitude)
         return (sparse_top2(dense) if dense is not None else None),capture
 
-    def forward(self,amplitude,return_debug=False,return_dense_route=False):
+    def forward(self,amplitude,return_debug=False,return_dense_route=False,
+                training_route='top2',training_uniform_mix=0.):
         if amplitude.ndim!=3 or amplitude.shape[-2:]!=(224,224):raise ValueError(amplitude.shape)
+        if training_route not in ('top2','dense_warmup'):raise ValueError(training_route)
+        if not 0<=training_uniform_mix<=1:raise ValueError(training_uniform_mix)
+        if training_route=='dense_warmup' and (not self.training or self.variant!='optical'):
+            raise ValueError('Dense routing is a training-only optical-LG warmup')
+        if training_route=='top2' and training_uniform_mix!=0:
+            raise ValueError('Uniform mixing is confined to dense training warmup')
         amplitude=amplitude/amplitude.square().sum((-2,-1),keepdim=True).clamp_min(1e-20).sqrt()
-        if return_dense_route:
+        if training_route=='dense_warmup':
+            dense,capture=self.dense_route(amplitude)
+            q=(1-training_uniform_mix)*dense+training_uniform_mix/4
+        elif return_dense_route:
             dense,capture=self.dense_route(amplitude)
             q=sparse_top2(dense) if dense is not None else None
         else:q,capture=self.route(amplitude)

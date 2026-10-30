@@ -32,11 +32,12 @@ def route_statistics(power):
 
 @torch.no_grad()
 def evaluate(model,x,y,batch):
-    scores=[];routes=[];dense=[]
+    scores=[];routes=[];dense=[];capture=[]
     model.eval()
     for start in range(0,len(y),batch):
         out=model(x[start:start+batch],return_dense_route=True)
         scores.append(out['probabilities'].cpu());routes.append(out['route_power'].cpu());dense.append(out['dense_route_power'].cpu())
+        capture.append(out['router_capture'].cpu())
     p=torch.cat(scores);q=torch.cat(routes).numpy();soft=torch.cat(dense).numpy()
     labels=y.cpu();pred=p.argmax(1);classes=p.shape[1]
     cm=torch.bincount(labels*classes+pred,minlength=classes*classes).reshape(classes,classes)
@@ -45,6 +46,9 @@ def evaluate(model,x,y,batch):
                  cross_entropy=float(-p[torch.arange(len(y)),labels].log().mean()),
                  confusion_matrix=cm.tolist(),n=len(y),router=route_statistics(q),
                  dense_router_mean_power=soft.mean(0).tolist())
+    capture=torch.cat(capture).numpy()
+    metrics['router_capture']=dict(mean=float(capture.mean()),minimum=float(capture.min()),
+                                   p05=float(np.quantile(capture,.05)))
     return metrics,p.numpy(),q,soft
 
 
