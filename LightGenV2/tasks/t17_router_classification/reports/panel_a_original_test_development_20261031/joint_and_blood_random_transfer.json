@@ -1,0 +1,84 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/result.json",
+      "sha256": "30b5e6efd4df2f7342f80e1c7f230b39e4c3627268832f2fd8249415710db066",
+      "bytes": 7872
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/history.json",
+      "sha256": "2c254c7f99fd7d4432713c66937eceaf2782507e12541296494229d2cd28c85c",
+      "bytes": 123041
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/status.json",
+      "sha256": "0d9c2078a9ad5f21dbefec581740ee3cddc597fb3fc91658a85f8b5d6e2e2128",
+      "bytes": 7895
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/best_checkpoint.pt",
+      "sha256": "b650f4ced47152ed89e943c696fe4baa3f64e5aac2fd0b5c0fe308b4045dc536",
+      "bytes": 1928332
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/last_checkpoint.pt",
+      "sha256": "283387435509d71aacb5ac65a974926f52de874f14bdd8f44a5e56234caca5a7",
+      "bytes": 5765106
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/train_predictions.npz",
+      "sha256": "dc57027fd1866389a9372b0abca92f0d38464f5aaca02d4ef6b72b71cc75d99a",
+      "bytes": 435726
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/val_predictions.npz",
+      "sha256": "f4f4b60f3aba49196bc970f066f5e4cfd8178cded88d0a1a0251ae1f09b0c3fe",
+      "bytes": 63921
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/test_predictions.npz",
+      "sha256": "1e2d909ca7d2d8f8b9b472bca1675b570dd35ccee3919d0f08909cc479b13d5c",
+      "bytes": 125914
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/result.json",
+      "sha256": "20472a787a21f7fa43cee5e5afb588b1646a540f17fa97c1264551d12e6ae09c",
+      "bytes": 7225
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/history.json",
+      "sha256": "8d78e1af3295dc242fb4f4e1b94f03abde0b0b1c6bf3e3249d6b1387cfc08068",
+      "bytes": 86247
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/status.json",
+      "sha256": "8a23455e18d71fd972a8e241845a4414f6eb55ce216b02c331c6121b1528e14b",
+      "bytes": 7248
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/best_checkpoint.pt",
+      "sha256": "dbc7b65a379a0558a140473f4da07cd2ac2e350a192179393bc17193f61ef9d6",
+      "bytes": 1927948
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/last_checkpoint.pt",
+      "sha256": "16d895f3ab8f99ba5be8ec36c647ccce55ed0ffa120dc2dd3ca4b47569771a95",
+      "bytes": 5362468
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/train_predictions.npz",
+      "sha256": "4e31535931d9a0f3e8e63c670b48d43d714e43f5da10db36aab30219473ab921",
+      "bytes": 658582
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/val_predictions.npz",
+      "sha256": "e31b049120777b5a5cb7917fb816305cc5848e0c88337887c95bfc8a05c912e1",
+      "bytes": 95496
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/diffuse_start_boundary/test_predictions.npz",
+      "sha256": "583165786e7e807fe821fb16ade8e45a71113d48b3726ae9e550520ccc03a079",
+      "bytes": 189507
+    }
+  ]
+}
