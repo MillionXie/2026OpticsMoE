@@ -1,9 +1,9 @@
-"""Frozen TRAIN2 native prefix preparation/replay. No SDK, training or FFT fallback."""
+"""Frozen TRAIN native prefix preparation/replay. No SDK, training or FFT fallback."""
 import argparse
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from .scene_lab_protocol import Ledger, STAGES, put, sha
+from .scene_lab_protocol import Ledger, STAGES, NeedCapture, put, sha
 from .scene_lab_entry import train_requests
 from .scene_lab_native import NativeRunner, load_head, F9, F6
 
@@ -17,15 +17,23 @@ def main():
     p.add_argument('--session',type=Path)
     p.add_argument('--source-commit',required=True)
     p.add_argument('--out',type=Path,required=True)
+    p.add_argument('--count',type=int,default=2)
+    p.add_argument('--gpu-memory-fraction',type=float)
+    p.add_argument('--request-pause-ms',type=float,default=0)
+    p.add_argument('--ready-markers',action='store_true')
     a=p.parse_args()
     import torch
     from .scene_paired_render import install_optical_frontend
     from .qwen3_scene_paired_train import new_qwen
     torch.set_num_threads(2)
+    if a.gpu_memory_fraction is not None:
+        if not 0<a.gpu_memory_fraction<=.5:raise ValueError('Explicit memory cap must be in (0,.5]')
+        torch.cuda.set_per_process_memory_fraction(a.gpu_memory_fraction,device=0)
+    if not 0<=a.request_pause_ms<=1000:raise ValueError('Invalid request pacing')
     task=Path(__file__).resolve().parent;base=task/'runs/simulation'
     if a.out.exists():raise FileExistsError(a.out)
     a.out.mkdir(parents=True)
-    requests=train_requests(base/'scene_natural_TRAIN608_condition_cache_20261030/TRAIN_input_manifest.json',base/'scene_two_sentence_pairs_20261029',2)
+    requests=train_requests(base/'scene_natural_TRAIN608_condition_cache_20261030/TRAIN_input_manifest.json',base/'scene_two_sentence_pairs_20261029',a.count)
     if (a.ledger/'contract.json').exists():
         contract=json.loads((a.ledger/'contract.json').read_text());session=contract['session']
         if contract['requests']!=requests:raise ValueError('Fixed TRAIN pilot changed')
@@ -46,8 +54,25 @@ def main():
     head,_=load_head(base/'scene_natural_single_EG_joint12_training_20261030/best_checkpoint.pt',expected_sha256=F9)
     runner=NativeRunner(qwen,processor,head.cuda(),base/'scene_two_sentence_pairs_20261029',frontend_sha256=F6,head_sha256=F9)
     if a.mode=='prepare':
-        pending=ledger.prepare(a.stage,runner)
-        put(a.out/'report.json',dict(complete=True,mode=a.mode,stage=a.stage,pending=pending,TRAIN_only=True,TEST_used=False,SDK=False,FFT_fallback=False,ledger_sha256=ledger.key))
+        prepared=0
+        def streamed(request,provider):
+            nonlocal prepared
+            try:return runner(request,provider)
+            except NeedCapture:
+                folder=ledger.folder(a.stage,request)
+                if a.ready_markers:
+                    # Empty marker is created only after the native runner has
+                    # unwound and closed the complete payload/ticket files.
+                    marker=folder/'input.ready'
+                    if not marker.exists():marker.touch(exist_ok=False)
+                prepared+=1
+                if prepared%16==0 or prepared==len(requests):print(json.dumps(dict(stage=a.stage,prepared=prepared,total=len(requests))),flush=True)
+                if a.request_pause_ms:
+                    import time
+                    time.sleep(a.request_pause_ms/1000)
+                raise
+        pending=ledger.prepare(a.stage,streamed)
+        put(a.out/'report.json',dict(complete=True,mode=a.mode,stage=a.stage,pending=pending,TRAIN=len(requests),TRAIN_only=True,TEST_used=False,SDK=False,FFT_fallback=False,ledger_sha256=ledger.key,gpu_memory_fraction=a.gpu_memory_fraction,request_pause_ms=a.request_pause_ms))
     else:
         rows=[]
         for request in requests:
