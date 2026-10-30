@@ -21,7 +21,8 @@ def evaluate(model, x, y, batch):
     model.eval()
     scores = torch.cat([model(x[i:i+batch])['probabilities'].cpu() for i in range(0, len(y), batch)])
     labels=y.cpu(); pred=scores.argmax(1)
-    cm=torch.bincount(labels*9+pred, minlength=81).reshape(9,9)
+    classes=scores.shape[1]
+    cm=torch.bincount(labels*classes+pred, minlength=classes*classes).reshape(classes,classes)
     metrics=dict(accuracy=float((pred==labels).float().mean()),
                  balanced_accuracy=float((cm.diag()/cm.sum(1).clamp_min(1)).mean()),
                  cross_entropy=float(-scores[torch.arange(len(y)),labels].log().mean()),

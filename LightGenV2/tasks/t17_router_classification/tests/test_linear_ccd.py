@@ -31,3 +31,19 @@ def test_final_detector_and_all_three_phase_gradients():
     for p in m.phases:
         assert p.grad is not None and torch.isfinite(p.grad).all()
         assert float(p.grad.abs().sum())>0
+
+
+def test_eight_class_ccd_covers_active_field_and_backpropagates():
+    torch.set_num_threads(4);torch.manual_seed(17);m=LinearD2NNCCD(num_classes=8)
+    x=torch.rand(2,224,224)
+    out=m(x)
+    expanded=torch.nn.functional.interpolate(x[:,None],(478,478),mode='bilinear',align_corners=False)[:,0]
+    expanded=expanded/expanded.square().sum((-2,-1),keepdim=True).sqrt()
+    field=m.propagate_field(torch.nn.functional.pad(expanded,(20,)*4).to(torch.complex64))
+    total=field.abs().square()[:,20:498,20:498].sum((-2,-1))
+    assert out['probabilities'].shape==(2,8)
+    assert torch.allclose(out['class_energies'].sum(1),total,rtol=1e-6)
+    assert torch.allclose(out['probabilities'].sum(1),torch.ones(2))
+    loss=-out['logits'][torch.arange(2),torch.tensor([0,7])].mean();loss.backward()
+    assert sum(p.numel() for p in m.parameters())==685452
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() and p.grad.abs().sum()>0 for p in m.phases)
