@@ -13,10 +13,22 @@
 六步距四倍仍差30.765ms，且未知设备传输H尚未加入；不能拿含FFT的软件4.19倍代替此列。
 `scene_depth_CCD_replay_timing_recovery_workflow_20261031`的48场逐元素身份门已过，
 全部自身GPU PID已释放；这是理想CCD时序模拟，不是物理相机或整机速度结果。
-下一轮`scene_joint_cached_rollout`已通过真实四步读出／LoRA梯度与合并门并开始正式TRAIN，
-尚不预称语义改善。另备`scene_packed_CCD_latency`把必要SLM像素量化移至GPU并以一份
+后续`scene_joint_cached_rollout`已完整300步，best
+`c6c572ecdc0ef67fb3404568816f163b419e542f145dcc75af760b39c0ef8a0d`；
+全部raw DEV128与384图评分完成，12项代理最大下降9.487206%。16板完整原图检查仍有
+台灯主体消失／半透明、主体漂浮、侧视靠垫变灯和额外模糊，因此该权重也未批准最终交接；
+人工诊断SHA`d45f2daf08e2a9a3c25f48a2b94b36a27c0992cb48e178fe5b173d77687e25ec`。
+`scene_packed_CCD_latency`把必要SLM像素量化移至GPU并以一份
 连续uint8包传CPU，减少两份浮点场传输；必须独立验证全部48场像素字节与原CPU路径完全一致，
 再测完整三轮。该工程优化不删电子工作、不改相位／幅度／CCD、不把未知SLM驱动成本视零。
+该新路径已实际通过全部48场振幅／相位与像素字节一致门。新三进程交错测同题电子30步、
+F9十二步和联合六步，均值分别2873.582／1261.286／707.571ms；联合六步对应4.06119倍
+无FFT固定周期整请求时序模拟，未知设备额外H余量仅10.824ms，**不是物理整机实测或最终达标**。
+本轮新鲜交错电子时间是主参照，不按快慢在旧2911.797ms与新参照间挑选。
+独立证据`scene_depth_joint6_fresh_packed_timing_evidence_20261031`已重核72张计时PNG身份。
+原仅等待的CPU计时协调器662377在任何GPU阶段前明确退出，保留替换收据；没有停止任何训练。
+`scene_depth_geometry_rollout6_workflow_20261031`已接续启动，按同192 TRAIN分析的新六点
+网格恢复同64块图，末次时间点133→67；现有联合读出冻结，不以网格几何误差下降预称画质改善。
 最终`scene_acceleration_delivery`逐轮核对独立PID、首请求、同权重原图SHA和完整请求边界，
 将五模型全部128组、软件及固定周期计时、人工原图批准状态分列；代理通过不覆盖图像否决。
 `scene_compact_frozen_render`另为合格后冻结的压缩图提供独立TEST入口：先绑定新权重、

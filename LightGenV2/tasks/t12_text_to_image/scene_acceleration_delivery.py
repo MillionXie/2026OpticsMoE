@@ -95,7 +95,7 @@ def build(manifest,output):
     status='原图审查通过；仍按下列计时及独立评估范围解释。'if review['approved_as_final_lightweight_model']else'尚未批准为最终轻量版：代理均值不能覆盖原图审查发现的失败。'
     base_build(manifest,output)
     page=output/'index.html';content=page.read_text(encoding='utf8')
-    content=content.replace('<h2>整体及分类均值</h2>','<div class="notice"><strong>'+status+'</strong> 本页显示全部128组开发结果，不是新权重独立TEST500或硬件验收。</div><h2>整体及分类均值</h2>',1)
+    content=content.replace('<h2>整体及分类均值</h2>','<div class="notice"><strong>'+status+'</strong> 本页显示全部128组开发结果，不是新权重独立TEST500或硬件验收。</div><p>CLIP-T评价完整两句提示；DINO-I／CLIP-I比较生成整图与白底输入的外观，不是纯轮廓保持率。ImageReward使用预定短评价描述（compact），不覆盖所有指令细节。四项都是自动代理，不能代替逐属性满足率。</p><h2>整体及分类均值</h2>',1)
     content=content.replace('<h2>耗时口径</h2>',table+'<h2>耗时口径</h2>',1)
     page.write_text(content,encoding='utf8')
     write(output/'timing.json',dict(complete=True,rows=times,physical_measurement=False))
