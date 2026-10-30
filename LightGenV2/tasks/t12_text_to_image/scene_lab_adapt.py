@@ -31,14 +31,44 @@ def gpu_setup(a):
     torch.set_num_threads(2);torch.cuda.set_per_process_memory_fraction(a.gpu_memory_fraction,0)
 
 
+def streaming_admission(ledger):
+    """Read-only final-output replay can overlap capture, never field creation.
+
+    Every preceding cohort must already be complete. The frozen final-stage
+    input producer must be finished/GPU-released. Each sample still passes the
+    full Ledger.infer SHA/lineage checks after its actual final CCD arrives.
+    """
+    base=ledger.root.parent
+    for stage in STAGES[:-1]:
+        report=json.loads((base/(stage+'_outputs_data_stream_complete.json')).read_text())
+        if not report['complete']or report['count']!=len(ledger.requests)or report['ledger_SHA256']!=ledger.key:raise ValueError('Incomplete/wrong preceding actual cohort')
+    release=json.loads((base/('native_'+STAGES[-1])/'release.json').read_text())
+    if release['returncode']!=0 or not release['own_GPU_process_absent']:raise ValueError('Final input producer must finish and release its GPU first')
+    if any(not(ledger.folder(STAGES[-1],r)/'input.ready').exists()for r in ledger.requests):raise ValueError('All final native inputs required before streaming replay')
+
+
+def wait_final_capture(ledger,request,seconds=600):
+    deadline=time.monotonic()+seconds;marker=ledger.folder(STAGES[-1],request)/'capture.ready'
+    while not marker.exists():
+        pointer=ledger.root.parent/(STAGES[-1]+'_active_capture.json');job='capture_'+STAGES[-1]
+        if pointer.exists():job=json.loads(pointer.read_text())['job']
+        returned=ledger.root.parent/(job+'_return.json')
+        if returned.exists()and json.loads(returned.read_text())['returncode']!=0:raise RuntimeError('Final actual capture stopped; never substitute ideal data')
+        if time.monotonic()>=deadline:raise TimeoutError('Bounded wait for an actual final CCD expired')
+        time.sleep(.2)
+
+
 def features(a):
     import torch
     from .scene_paired_render import install_optical_frontend
     from .qwen3_scene_paired_train import new_qwen
     c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests'])
     if c['models']['F6']!=F6 or c['models']['F9']!=F9 or c['session']['scope']!='reviewed_physical':raise ValueError('Wrong physical model/session')
-    for stage in STAGES:
-        for request in ledger.requests:ledger.receipt(stage,request)
+    if len(ledger.requests)!=608 or any(r['split']!='train'for r in ledger.requests):raise ValueError('Only the complete TRAIN608 adaptation cohort is eligible')
+    if a.stream_last_stage:streaming_admission(ledger)
+    else:
+        for stage in STAGES:
+            for request in ledger.requests:ledger.receipt(stage,request)
     task=Path(__file__).resolve().parent;base=task/'runs/simulation'
     qwen,processor=new_qwen(SimpleNamespace(qwen=a.qwen,qwen_side=256))
     optical=install_optical_frontend(qwen,base/'qwen3_scene_LG_frontend_20261029',base/'qwen3_scene_LG_teacher_features_20261029',a.sim_cache)
@@ -47,6 +77,7 @@ def features(a):
     runner=NativeRunner(qwen,processor,head.cuda(),base/'scene_two_sentence_pairs_20261029',frontend_sha256=F6,head_sha256=F9,export_features=True)
     values={};chains={};began=time.monotonic()
     for index,request in enumerate(ledger.requests):
+        if a.stream_last_stage:wait_final_capture(ledger,request)
         result=ledger.infer(request,runner);values[request['sample_id']]=result['features']
         chains[request['sample_id']]=identity([ledger.receipt(stage,request)[0] for stage in STAGES])
         if (index+1)%16==0 or index+1==len(ledger.requests):
@@ -58,7 +89,7 @@ def features(a):
     torch.save(payload,a.out/'paired_cache.pt')
     put(a.out/'report.json',dict(complete=True,cache_sha256=sha(a.out/'paired_cache.pt'),TRAIN=len(values),TRAIN_only=True,TEST_opened=False,
         source_commit=a.source_commit,source_SHA256=sha(__file__),native_adapter_SHA256=sha(Path(__file__).with_name('scene_lab_native.py')),
-        ledger_SHA256=ledger.key,F9=F9,F6=F6,all_six_stages_measured=True,native_forward_attempts=runner.native_forward_attempts,
+        ledger_SHA256=ledger.key,F9=F9,F6=F6,all_six_stages_measured=True,streamed_while_final_CCD_capture=a.stream_last_stage,native_forward_attempts=runner.native_forward_attempts,
         complete_Qwen_forwards=runner.completed_forwards,SDK_used=False,SDXL_images_generated=0,quality_accepted=False))
 
 
@@ -147,6 +178,7 @@ def main():
     p.add_argument('--out',type=Path,required=True);p.add_argument('--source-commit',required=True)
     p.add_argument('--gpu-memory-fraction',type=float,default=.25);p.add_argument('--steps',type=int,default=1200)
     p.add_argument('--batch-size',type=int,default=4);p.add_argument('--lr',type=float,default=3e-5);p.add_argument('--fit-seconds',type=float,default=900)
+    p.add_argument('--stream-last-stage',action='store_true',help='Read-only complete-Qwen replay after each actual last CCD arrives; fit still waits for all608')
     a=p.parse_args()
     if len(a.source_commit)!=40 or not 4<=a.steps<=1200 or not 1<=a.batch_size<=4 or not 0<a.lr<=1e-4 or not 0<a.fit_seconds<=900:raise ValueError('Bounded original-head training required')
     if a.mode=='features' and (not a.ledger or not a.qwen or not a.sim_cache):raise ValueError('Complete physical ledger/Qwen/original cache required')
