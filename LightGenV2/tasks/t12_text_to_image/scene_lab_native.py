@@ -27,13 +27,13 @@ class NativeRunner:
     Caller retains the original frontend loader, LoRA/sampler/generator contract.
     This returns conditions only, not a replacement SDXL renderer or device driver.
     """
-    def __init__(self,qwen,processor,head,reference_root,*,frontend_sha256,head_sha256):
+    def __init__(self,qwen,processor,head,reference_root,*,frontend_sha256,head_sha256,export_features=False):
         if frontend_sha256!=F6 or head_sha256!=F9 or not head.joint_image_context:
             raise ValueError('Require F6 and the F9 joint-image head')
         if any(p.requires_grad for m in(qwen,head)for p in m.parameters()):raise ValueError('Frozen modules required')
         if any(m.pairs!=1 for m in qwen.model.hybrid.values()):raise ValueError('One E/G pair per modality')
         self.qwen,self.processor,self.head=qwen,processor,head
-        self.reference_root=Path(reference_root);self.native_forward_attempts=0;self.completed_forwards=0
+        self.reference_root=Path(reference_root);self.native_forward_attempts=0;self.completed_forwards=0;self.export_features=export_features
 
     def __call__(self,request,provider):
         import torch
@@ -62,5 +62,10 @@ class NativeRunner:
                 result=self.head(hidden.float(),native[0][None].float())
         finally:restore();hook.remove()
         self.completed_forwards+=1
-        return dict(conditions={k:v.detach().cpu()for k,v in result.items()},input_ids=inputs['input_ids'].cpu(),
+        output=dict(conditions={k:v.detach().cpu()for k,v in result.items()},input_ids=inputs['input_ids'].cpu(),
                     Qwen_forwards=1,SDK_used=False,all_boundaries_measured=True)
+        if self.export_features:
+            # Read-only export from this SAME complete measured forward. No
+            # extra reference encoder, optical fallback or graph modification.
+            output['features']=dict(hidden=hidden[0].detach().cpu(),visual=native[0].detach().cpu(),input_ids=inputs['input_ids'].detach().cpu())
+        return output
