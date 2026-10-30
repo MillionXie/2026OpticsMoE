@@ -23,3 +23,36 @@ handles,labels=axes[0,0].get_legend_handles_labels();fig.legend(handles,labels,l
 fig.suptitle('Original TEST exposed to model development and teacher training\nSeed 17; not an independent test evaluation',fontsize=13)
 fig.savefig(out/'distillation_curves.png',dpi=180);fig.savefig(out/'distillation_curves.svg')
 print(out/'distillation_curves.png')
+
+# Additional epochs are shown per branch, never concatenated as a single training chain.
+fig,axes=plt.subplots(2,5,figsize=(18,7),sharey='row',constrained_layout=True)
+stages=[('panel_a_boundary_development_s17_20261031','frozen_router_boundary','Boundary loss'),
+        ('panel_a_boundary_continuation_s17_20261031','frozen_router_boundary','Bounded continuation'),
+        ('panel_a_boundary_joint_s17_20261031','gentle_joint_router','Gentle joint routing'),
+        ('panel_a_phase_gauge_s17_20261031','phase_gauge_recenter','Phase gauge initialization'),
+        ('panel_a_wrapped_phase_s17_20261031','wrapped_phase_adam','Periodic phase Adam')]
+summary=json.loads((out/'results.json').read_text(encoding='utf-8'))
+for row,(d,name) in enumerate([('bloodmnist128','BloodMNIST-128'),('crc9','CRC9')]):
+ ref=next(c for c in summary['cases'] if c['dataset']==d)['D2NN_development_reference']['original_test_dev']['accuracy']*100
+ for col,(run,suffix,title) in enumerate(stages):
+  ax=axes[row,col];path=runs/run/d/suffix;history=path/'history.json'
+  ax.set_title(name+' | '+title,fontsize=10)
+  if history.exists():
+   data=[z for z in json.loads(history.read_text()) if 'validation_diagnostic' in z]
+   epochs=[z['epoch'] for z in data]
+   ax.plot(epochs,[100*z['validation_diagnostic']['accuracy'] for z in data],color='#306c9c',label='VAL diagnostic')
+   ax.plot(epochs,[100*z['original_test_dev']['accuracy'] for z in data],color='#d67227',label='Original TEST development')
+   result=path/'result.json'
+   if result.exists():
+    result=json.loads(result.read_text());e=result['selected_epoch']
+    ax.scatter([e],[100*result['train']['accuracy']],marker='D',color='#26846c',s=25,label='TRAIN, selected checkpoint')
+    ax.scatter([e],[100*result['original_test_dev']['accuracy']],marker='*',color='#d67227',s=85,label='Selected development score',zorder=5)
+   else:ax.text(.98,.03,'IN PROGRESS',ha='right',transform=ax.transAxes,fontsize=8)
+  else:ax.text(.5,.5,'No run in this snapshot',ha='center',transform=ax.transAxes,fontsize=9)
+  ax.axhline(ref,ls=':',color='#777',label='Frozen D2NN reference')
+  ax.axhline(ref+20,ls='--',color='#a44969',label='Requested +20 pp target')
+  ax.set_xlim(0,30 if col==0 else 40);ax.set_xlabel('Additional epochs in this branch');ax.grid(alpha=.15)
+  if col==0:ax.set_ylabel('Accuracy (%)')
+handles,labels=axes[0,0].get_legend_handles_labels();fig.legend(handles,labels,loc='outside lower center',ncol=3,fontsize=10)
+fig.suptitle('Seed 17 | Original TEST exposed to teacher training and model selection\nPer-branch convergence; TRAIN markers are selected-checkpoint evaluations, not epoch-wise training curves',fontsize=12)
+fig.savefig(out/'boundary_curves.png',dpi=160);fig.savefig(out/'boundary_curves.svg');plt.close(fig)

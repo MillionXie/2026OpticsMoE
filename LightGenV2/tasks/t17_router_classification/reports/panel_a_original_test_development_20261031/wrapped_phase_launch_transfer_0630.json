@@ -1,0 +1,94 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/launch.json",
+      "sha256": "866ef332f5f5642051b62246141345e36834999526dd0374e31ee706cb79e4bc",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_a_wrapped_phase_admission_0630/admission.json",
+      "sha256": "b418d2b4ce5768d91ad40bb35ca40cf71d6af75f0a1032e66f182109e9303362",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/metadata.json",
+      "sha256": "b41cc55c7516143744af3bf36045299f1e7e02ed6d492eb1db5fcab1afb90f63",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/status.json",
+      "sha256": "42df8155790898a5dbdadf047bb244575af0b4079744049c67ec0506904ae621",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/exit_receipt.json",
+      "sha256": "b03f6f2ac8980eb2a635c438af6efa29459de0f58eae6d252ca5dcaa5df3d65c",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/metadata.json",
+      "sha256": "f45312e716862ced29f5bbea0321f28d26bd73c10402e75577cf2ac4d5f00763",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/history.json",
+      "sha256": "7c5d69620ed24d6de30bf92f10c47bc9d48049c2a9ee4128dc5e80d584afc702",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/status.json",
+      "sha256": "3c43df0f6078ccb28654a79b30db134e62182945f1120f1b5192c49f164ad4a3",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/metadata.json",
+      "sha256": "176e62f29495cd111dc810197b2ad41f4259f3a3339421e06c095c0bcd7afd4f",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/status.json",
+      "sha256": "f2b185e3e120bf2d506ea7372de0d20aeb17051c94b7b3b17cbf309d25d379a5",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/metadata.json",
+      "sha256": "f4acc0c70692b86c40aecf774ee360767f3b94f9d6c3c8a2107ba741548e2744",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/history.json",
+      "sha256": "b040aed923ab40fd0856eee50f49ee1c78e3d1982b9e9d22847d34398163ebe0",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/status.json",
+      "sha256": "b3f9d51a1e1aa8c162558edf9ee496c4a272dacd078b7e2a07d68bce92dc9749",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/metadata.json",
+      "sha256": "dd66f1576e565f13cb8a36ca2bf1a8d54ae9ecdfcb1a6247e9a6f29d2460c180",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/status.json",
+      "sha256": "38e7aebfc338d4b0a193ee10dc51966a2d28c8eeb4b113cf9493bff7a26fb953",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/metadata.json",
+      "sha256": "142527d97fab333de48044e345b94d929dcbb59c89d418a5cc1964be6c971705",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/history.json",
+      "sha256": "100812d870c3d6a36d952caf4f4e52d466781aa93dd8320925f80642312a6362",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/status.json",
+      "sha256": "123e97230ea7e1e39f68c5c0695bc01ee017aed26fe304431e3cd0573f952942",
+      "snapshot_not_completed_checkpoint": true
+    }
+  ]
+}

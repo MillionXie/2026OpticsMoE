@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "generated_utc": "2026-10-30T22:15:35.089103+00:00",
+  "generated_utc": "2026-10-30T22:28:21.739219+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "independent_test_claim": false,
   "all_rows_single_seed_not_repeated_means": true,
@@ -5431,6 +5431,16 @@
             },
             "gain_over_D2NN_pp": 19.555687372951404
           }
+        },
+        {
+          "run_id": "panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter",
+          "state": {
+            "state": "training",
+            "epoch": 29,
+            "best_epoch": 20,
+            "best_original_test_development_accuracy": 0.8056123852729797
+          },
+          "label": "整体相位坐标调整"
         }
       ],
       "teacher": {
@@ -6613,7 +6623,7 @@
       },
       "gain_pp": 19.555687372951404,
       "target_20pp_reached": false,
-      "all_optical_exploration_epoch_budget_completed": 225,
+      "all_optical_exploration_epoch_budget_completed": 254,
       "budget_note": "Each student run total_optical_executed_epochs counts its own branch; this aggregate also counts the competing KD branch. Teacher head epochs and ImageNet pretraining are additional."
     },
     {
@@ -6749,24 +6759,24 @@
         }
       },
       "LG_selected_development_metrics": {
-        "accuracy": 0.7332869172096252,
-        "balanced_accuracy": 0.6618280410766602,
-        "cross_entropy": 1.8488953113555908,
+        "accuracy": 0.7444289922714233,
+        "balanced_accuracy": 0.673767626285553,
+        "cross_entropy": 1.8387624025344849,
         "confusion_matrix": [
           [
-            196,
+            201,
             7,
-            6,
             5,
+            4,
             0,
-            21,
+            19,
             6,
             0,
-            6
+            5
           ],
           [
-            44,
-            60,
+            43,
+            61,
             7,
             0,
             4,
@@ -6776,15 +6786,15 @@
             1
           ],
           [
-            30,
+            29,
             8,
-            17,
+            18,
             0,
-            4,
+            5,
             6,
             0,
             3,
-            16
+            15
           ],
           [
             9,
@@ -6798,34 +6808,34 @@
             0
           ],
           [
-            6,
-            12,
-            6,
+            5,
+            14,
+            4,
             0,
-            37,
+            38,
             0,
             2,
             0,
             5
           ],
           [
-            75,
+            71,
             0,
             1,
-            8,
+            5,
             0,
-            55,
+            62,
             8,
             0,
             1
           ],
           [
-            1,
+            2,
             0,
             0,
             1,
             0,
-            5,
+            4,
             259,
             0,
             2
@@ -6847,10 +6857,10 @@
             3,
             7,
             1,
-            10,
+            9,
             21,
             0,
-            162
+            163
           ]
         ],
         "n": 1436,
@@ -6899,96 +6909,94 @@
           "p05": 0.008161654463037848
         }
       },
-      "LG_selected_source": "panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router",
+      "LG_selected_source": "panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter",
       "LG_full_selected_result": {
         "role": "ORIGINAL_TEST_EXPOSED_BOUNDARY_DEVELOPMENT",
         "independent_test_claim": false,
         "variant": {
-          "name": "gentle_joint_router",
-          "initialization": "parent",
-          "train_router": true,
-          "router_lr": 5e-05
+          "name": "phase_gauge_recenter",
+          "initialization": "common_phase_gauge"
         },
-        "selected_epoch": 38,
+        "selected_epoch": 40,
         "selected_kind": "online",
         "completed_epochs": 40,
-        "router_frozen": false,
-        "trainable_parameter_count": 479364,
-        "router_phase_L2_change": 2.717313051223755,
+        "router_frozen": true,
+        "trainable_parameter_count": 429188,
+        "router_phase_L2_change": 0.0,
         "stop_reason": "epoch_limit",
-        "elapsed_seconds": 599.841854095459,
+        "elapsed_seconds": 301.59266686439514,
         "selection_evaluations": 22,
-        "checkpoint_sha256": "b650f4ced47152ed89e943c696fe4baa3f64e5aac2fd0b5c0fe308b4045dc536",
+        "checkpoint_sha256": "c061bbea2ca99cf9bdf6cdff7af544c4f8d53ee77394a43fc38c3bfde2b1d6b1",
         "train": {
-          "accuracy": 0.7560684680938721,
-          "balanced_accuracy": 0.6751667261123657,
-          "cross_entropy": 1.821653962135315,
+          "accuracy": 0.7642260193824768,
+          "balanced_accuracy": 0.6834533214569092,
+          "cross_entropy": 1.8117057085037231,
           "confusion_matrix": [
             [
-              749,
-              22,
-              8,
-              14,
+              759,
+              25,
+              6,
+              9,
               1,
-              46,
-              20,
+              42,
+              18,
               0,
               13
             ],
             [
-              154,
-              221,
-              24,
+              138,
+              240,
+              22,
               0,
               5,
               6,
               0,
               0,
-              1
+              0
             ],
             [
-              100,
-              49,
-              60,
+              93,
+              54,
+              57,
               3,
-              15,
+              20,
               7,
               0,
               5,
               49
             ],
             [
-              46,
+              45,
               0,
               1,
-              364,
+              363,
               0,
-              24,
-              9,
+              27,
+              8,
               0,
               2
             ],
             [
-              33,
-              40,
-              22,
+              30,
+              45,
+              18,
               0,
-              111,
+              112,
               0,
               4,
               0,
-              30
+              31
             ],
             [
               236,
               1,
               1,
-              26,
+              18,
               0,
-              237,
-              7,
+              246,
+              5,
               0,
-              9
+              10
             ],
             [
               3,
@@ -6996,8 +7004,8 @@
               0,
               0,
               0,
-              16,
-              909,
+              15,
+              910,
               0,
               3
             ],
@@ -7013,15 +7021,15 @@
               6
             ],
             [
-              12,
+              13,
               0,
-              2,
+              1,
               8,
               0,
-              14,
-              119,
+              13,
+              115,
               0,
-              569
+              574
             ]
           ],
           "n": 5026,
@@ -7071,35 +7079,35 @@
           }
         },
         "val": {
-          "accuracy": 0.6727019548416138,
-          "balanced_accuracy": 0.6081531047821045,
-          "cross_entropy": 1.843635082244873,
+          "accuracy": 0.688022255897522,
+          "balanced_accuracy": 0.6235355138778687,
+          "cross_entropy": 1.8346275091171265,
           "confusion_matrix": [
             [
-              74,
+              78,
               7,
               3,
-              4,
+              2,
               0,
-              20,
+              18,
               5,
               0,
               0
             ],
             [
-              21,
-              36,
+              19,
+              38,
               0,
               0,
               4,
               1,
               0,
-              0,
-              1
+              1,
+              0
             ],
             [
-              18,
-              7,
+              17,
+              8,
               3,
               1,
               3,
@@ -7112,9 +7120,9 @@
               15,
               0,
               0,
-              40,
+              42,
               0,
-              5,
+              3,
               1,
               0,
               0
@@ -7131,12 +7139,12 @@
               2
             ],
             [
-              39,
+              38,
               0,
               0,
-              4,
+              3,
               0,
-              27,
+              29,
               4,
               0,
               2
@@ -7145,23 +7153,23 @@
               1,
               0,
               0,
-              1,
               0,
-              5,
+              0,
+              6,
               132,
               0,
               0
             ],
             [
-              0,
-              0,
               1,
+              0,
+              0,
               0,
               3,
               0,
               0,
-              76,
-              2
+              77,
+              1
             ],
             [
               3,
@@ -7222,24 +7230,24 @@
           }
         },
         "original_test_dev": {
-          "accuracy": 0.7332869172096252,
-          "balanced_accuracy": 0.6618280410766602,
-          "cross_entropy": 1.8488953113555908,
+          "accuracy": 0.7444289922714233,
+          "balanced_accuracy": 0.673767626285553,
+          "cross_entropy": 1.8387624025344849,
           "confusion_matrix": [
             [
-              196,
+              201,
               7,
-              6,
               5,
+              4,
               0,
-              21,
+              19,
               6,
               0,
-              6
+              5
             ],
             [
-              44,
-              60,
+              43,
+              61,
               7,
               0,
               4,
@@ -7249,15 +7257,15 @@
               1
             ],
             [
-              30,
+              29,
               8,
-              17,
+              18,
               0,
-              4,
+              5,
               6,
               0,
               3,
-              16
+              15
             ],
             [
               9,
@@ -7271,34 +7279,34 @@
               0
             ],
             [
-              6,
-              12,
-              6,
+              5,
+              14,
+              4,
               0,
-              37,
+              38,
               0,
               2,
               0,
               5
             ],
             [
-              75,
+              71,
               0,
               1,
-              8,
+              5,
               0,
-              55,
+              62,
               8,
               0,
               1
             ],
             [
-              1,
+              2,
               0,
               0,
               1,
               0,
-              5,
+              4,
               259,
               0,
               2
@@ -7320,10 +7328,10 @@
               3,
               7,
               1,
-              10,
+              9,
               21,
               0,
-              162
+              163
             ]
           ],
           "n": 1436,
@@ -7372,7 +7380,7 @@
             "p05": 0.008161654463037848
           }
         },
-        "gain_over_D2NN_pp": 13.579388099792611
+        "gain_over_D2NN_pp": 14.69359560597242
       },
       "development_trials": [
         {
@@ -11179,10 +11187,490 @@
         },
         {
           "run_id": "panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter",
+          "state": "complete",
+          "label": "整体相位坐标调整",
+          "result": {
+            "role": "ORIGINAL_TEST_EXPOSED_BOUNDARY_DEVELOPMENT",
+            "independent_test_claim": false,
+            "variant": {
+              "name": "phase_gauge_recenter",
+              "initialization": "common_phase_gauge"
+            },
+            "selected_epoch": 40,
+            "selected_kind": "online",
+            "completed_epochs": 40,
+            "router_frozen": true,
+            "trainable_parameter_count": 429188,
+            "router_phase_L2_change": 0.0,
+            "stop_reason": "epoch_limit",
+            "elapsed_seconds": 301.59266686439514,
+            "selection_evaluations": 22,
+            "checkpoint_sha256": "c061bbea2ca99cf9bdf6cdff7af544c4f8d53ee77394a43fc38c3bfde2b1d6b1",
+            "train": {
+              "accuracy": 0.7642260193824768,
+              "balanced_accuracy": 0.6834533214569092,
+              "cross_entropy": 1.8117057085037231,
+              "confusion_matrix": [
+                [
+                  759,
+                  25,
+                  6,
+                  9,
+                  1,
+                  42,
+                  18,
+                  0,
+                  13
+                ],
+                [
+                  138,
+                  240,
+                  22,
+                  0,
+                  5,
+                  6,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  93,
+                  54,
+                  57,
+                  3,
+                  20,
+                  7,
+                  0,
+                  5,
+                  49
+                ],
+                [
+                  45,
+                  0,
+                  1,
+                  363,
+                  0,
+                  27,
+                  8,
+                  0,
+                  2
+                ],
+                [
+                  30,
+                  45,
+                  18,
+                  0,
+                  112,
+                  0,
+                  4,
+                  0,
+                  31
+                ],
+                [
+                  236,
+                  1,
+                  1,
+                  18,
+                  0,
+                  246,
+                  5,
+                  0,
+                  10
+                ],
+                [
+                  3,
+                  0,
+                  0,
+                  0,
+                  0,
+                  15,
+                  910,
+                  0,
+                  3
+                ],
+                [
+                  4,
+                  0,
+                  2,
+                  1,
+                  3,
+                  0,
+                  0,
+                  580,
+                  6
+                ],
+                [
+                  13,
+                  0,
+                  1,
+                  8,
+                  0,
+                  13,
+                  115,
+                  0,
+                  574
+                ]
+              ],
+              "n": 5026,
+              "router": {
+                "mean_power": [
+                  0.12200302630662918,
+                  0.011129683814942837,
+                  0.8668656349182129,
+                  0.0
+                ],
+                "std_power": [
+                  0.08858954161405563,
+                  0.0378892719745636,
+                  0.0810425728559494,
+                  0.0
+                ],
+                "selected_fraction": [
+                  0.8840031834460804,
+                  0.11599681655391962,
+                  1.0,
+                  0.0
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.0,
+                  "0-2": 0.8840031834460804,
+                  "0-3": 0.0,
+                  "1-2": 0.11599681655391962,
+                  "1-3": 0.0,
+                  "2-3": 0.0
+                },
+                "fraction_outside_most_common_pair": 0.11599681655391958,
+                "effective_experts_from_mean_power": 1.3046916112527873,
+                "mean_per_sample_effective_experts": 1.3070989847183228,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 5026
+              },
+              "dense_router_mean_power": [
+                0.11767695844173431,
+                0.07671034336090088,
+                0.7974710464477539,
+                0.008142051286995411
+              ],
+              "router_capture": {
+                "mean": 0.010285444557666779,
+                "minimum": 0.005182178225368261,
+                "p05": 0.008133213501423597
+              }
+            },
+            "val": {
+              "accuracy": 0.688022255897522,
+              "balanced_accuracy": 0.6235355138778687,
+              "cross_entropy": 1.8346275091171265,
+              "confusion_matrix": [
+                [
+                  78,
+                  7,
+                  3,
+                  2,
+                  0,
+                  18,
+                  5,
+                  0,
+                  0
+                ],
+                [
+                  19,
+                  38,
+                  0,
+                  0,
+                  4,
+                  1,
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  17,
+                  8,
+                  3,
+                  1,
+                  3,
+                  4,
+                  0,
+                  2,
+                  11
+                ],
+                [
+                  15,
+                  0,
+                  0,
+                  42,
+                  0,
+                  3,
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  5,
+                  6,
+                  1,
+                  0,
+                  17,
+                  0,
+                  0,
+                  0,
+                  2
+                ],
+                [
+                  38,
+                  0,
+                  0,
+                  3,
+                  0,
+                  29,
+                  4,
+                  0,
+                  2
+                ],
+                [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  6,
+                  132,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  0,
+                  0,
+                  3,
+                  0,
+                  0,
+                  77,
+                  1
+                ],
+                [
+                  3,
+                  0,
+                  1,
+                  3,
+                  0,
+                  3,
+                  15,
+                  1,
+                  78
+                ]
+              ],
+              "n": 718,
+              "router": {
+                "mean_power": [
+                  0.12303827702999115,
+                  0.009000037796795368,
+                  0.8679612278938293,
+                  0.0
+                ],
+                "std_power": [
+                  0.08496984839439392,
+                  0.03129565715789795,
+                  0.077360138297081,
+                  0.0
+                ],
+                "selected_fraction": [
+                  0.8913649025069638,
+                  0.10863509749303621,
+                  1.0,
+                  0.0
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.0,
+                  "0-2": 0.8913649025069638,
+                  "0-3": 0.0,
+                  "1-2": 0.10863509749303621,
+                  "1-3": 0.0,
+                  "2-3": 0.0
+                },
+                "fraction_outside_most_common_pair": 0.10863509749303624,
+                "effective_experts_from_mean_power": 1.301107357850791,
+                "mean_per_sample_effective_experts": 1.3041462898254395,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 718
+              },
+              "dense_router_mean_power": [
+                0.11728214472532272,
+                0.07575943320989609,
+                0.7987383008003235,
+                0.008219921961426735
+              ],
+              "router_capture": {
+                "mean": 0.01030016504228115,
+                "minimum": 0.00548551557585597,
+                "p05": 0.008116346690803767
+              }
+            },
+            "original_test_dev": {
+              "accuracy": 0.7444289922714233,
+              "balanced_accuracy": 0.673767626285553,
+              "cross_entropy": 1.8387624025344849,
+              "confusion_matrix": [
+                [
+                  201,
+                  7,
+                  5,
+                  4,
+                  0,
+                  19,
+                  6,
+                  0,
+                  5
+                ],
+                [
+                  43,
+                  61,
+                  7,
+                  0,
+                  4,
+                  2,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  29,
+                  8,
+                  18,
+                  0,
+                  5,
+                  6,
+                  0,
+                  3,
+                  15
+                ],
+                [
+                  9,
+                  0,
+                  0,
+                  106,
+                  0,
+                  7,
+                  5,
+                  0,
+                  0
+                ],
+                [
+                  5,
+                  14,
+                  4,
+                  0,
+                  38,
+                  0,
+                  2,
+                  0,
+                  5
+                ],
+                [
+                  71,
+                  0,
+                  1,
+                  5,
+                  0,
+                  62,
+                  8,
+                  0,
+                  1
+                ],
+                [
+                  2,
+                  0,
+                  0,
+                  1,
+                  0,
+                  4,
+                  259,
+                  0,
+                  2
+                ],
+                [
+                  3,
+                  0,
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  161,
+                  4
+                ],
+                [
+                  3,
+                  0,
+                  3,
+                  7,
+                  1,
+                  9,
+                  21,
+                  0,
+                  163
+                ]
+              ],
+              "n": 1436,
+              "router": {
+                "mean_power": [
+                  0.12046051770448685,
+                  0.01126838754862547,
+                  0.8682635426521301,
+                  7.338062914641341e-06
+                ],
+                "std_power": [
+                  0.08588694781064987,
+                  0.033720724284648895,
+                  0.07613810896873474,
+                  0.00027797117945738137
+                ],
+                "selected_fraction": [
+                  0.866991643454039,
+                  0.13231197771587744,
+                  1.0,
+                  0.0006963788300835655
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.0,
+                  "0-2": 0.866991643454039,
+                  "0-3": 0.0,
+                  "1-2": 0.13231197771587744,
+                  "1-3": 0.0,
+                  "2-3": 0.0006963788300835655
+                },
+                "fraction_outside_most_common_pair": 0.133008356545961,
+                "effective_experts_from_mean_power": 1.3012035260245887,
+                "mean_per_sample_effective_experts": 1.30303955078125,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 1436
+              },
+              "dense_router_mean_power": [
+                0.11668697744607925,
+                0.07729532569646835,
+                0.7978621125221252,
+                0.00815652310848236
+              ],
+              "router_capture": {
+                "mean": 0.010365977883338928,
+                "minimum": 0.005301152355968952,
+                "p05": 0.008161654463037848
+              }
+            },
+            "gain_over_D2NN_pp": 14.69359560597242
+          }
+        },
+        {
+          "run_id": "panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam",
           "state": {
-            "state": "not_started_or_loading"
+            "state": "training",
+            "epoch": 1,
+            "best_epoch": 1,
+            "best_original_test_development_accuracy": 0.7479108572006226
           },
-          "label": "整体相位坐标调整"
+          "label": "周期相位坐标Adam"
         }
       ],
       "teacher": {
@@ -12573,9 +13061,9 @@
           0.14415041782729804
         ]
       },
-      "gain_pp": 13.579388099792611,
+      "gain_pp": 14.69359560597242,
       "target_20pp_reached": false,
-      "all_optical_exploration_epoch_budget_completed": 325,
+      "all_optical_exploration_epoch_budget_completed": 366,
       "budget_note": "Each student run total_optical_executed_epochs counts its own branch; this aggregate also counts the competing KD branch. Teacher head epochs and ImageNet pretraining are additional."
     }
   ]

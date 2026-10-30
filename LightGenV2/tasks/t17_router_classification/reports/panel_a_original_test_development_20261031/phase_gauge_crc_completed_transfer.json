@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/result.json",
+      "sha256": "868c9d81de2aff9f5ee5233d588cb524620954a897fc446f0c01a98c41b52d5a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/history.json",
+      "sha256": "7c5d69620ed24d6de30bf92f10c47bc9d48049c2a9ee4128dc5e80d584afc702"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/status.json",
+      "sha256": "3c43df0f6078ccb28654a79b30db134e62182945f1120f1b5192c49f164ad4a3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/metadata.json",
+      "sha256": "f45312e716862ced29f5bbea0321f28d26bd73c10402e75577cf2ac4d5f00763"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/best_checkpoint.pt",
+      "sha256": "c061bbea2ca99cf9bdf6cdff7af544c4f8d53ee77394a43fc38c3bfde2b1d6b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/last_checkpoint.pt",
+      "sha256": "c5a0b6e9004e5554b6f24683ff617f0feb596ca6a94df44bd87277678fe75e86"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/train_predictions.npz",
+      "sha256": "1872782c08261efd22a3faf0e75a5a317d5c9dbdf35d95b03ce3fc5d18e22f0b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/val_predictions.npz",
+      "sha256": "327812e828ccf3476c3f4bb238adf4a2c665ac1f4194038ce17aa6a5adcea204"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/test_predictions.npz",
+      "sha256": "2459a5f0166c9af18edf5453f3a9f2524c7d750d3fd7334867f68f6d796fc052"
+    }
+  ]
+}
