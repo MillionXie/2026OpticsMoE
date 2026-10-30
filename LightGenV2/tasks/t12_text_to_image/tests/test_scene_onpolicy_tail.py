@@ -19,7 +19,13 @@ class OnpolicyTeacher(unittest.TestCase):
         conditions={'text':torch.ones(1,2,8),'pooled':torch.ones(1,4),'image':torch.ones(1,3,4)}
         for begin,end in [(7,10),(20,23),(7,10)]:
             actual=local_teacher_endpoint(scheduler,model,start,conditions,state,begin,end);expected=start.detach().clone()
-            for j in range(begin,end):expected=(expected.float()+float(scheduler.sigmas[j+1]-scheduler.sigmas[j])).bfloat16()
+            # Compare against independent native stepping, including BF16
+            # sigma*epsilon rounding; a real-number constant decrement is not
+            # bit-identical to the installed scheduler's arithmetic.
+            reference=EulerDiscreteScheduler.from_config(scheduler.config);reference.set_timesteps(30);reference.set_begin_index(begin)
+            for j in range(begin,end):
+                reference.scale_model_input(expected,reference.timesteps[j])
+                expected=reference.step(torch.ones_like(expected),reference.timesteps[j],expected).prev_sample
             torch.testing.assert_close(actual,expected,rtol=0,atol=0)
             self.assertFalse(actual.requires_grad);self.assertIsNone(start.grad);self.assertIsNone(model.p.grad)
             self.assertEqual(scheduler.step_index,end)
