@@ -12,6 +12,9 @@ const REPO=path.resolve(HERE,'../../../..');
 const runtime=process.env.ARTIFACT_RUNTIME_DIR;
 if(!runtime)throw Error('ARTIFACT_RUNTIME_DIR must point to the bundled dependency junction');
 const {Workbook,SpreadsheetFile}=await import(pathToFileURL(createRequire(path.join(runtime,'loader.cjs')).resolve('@oai/artifact-tool')).href);
+if(process.argv.includes('--lgvq-only-reorganized')){
+  await buildLGVQOnly();
+}else{
 const energyRemeasured=process.argv.includes('--energy-remeasured');
 const includeABO=energyRemeasured||process.argv.includes('--include-abo');
 const OUT=path.join(HERE,'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b',energyRemeasured?'Lab8_Rental4_energy_LightGen_20261029_01':includeABO?'Lab8_Rental4_ABO_closeout_20261029_01':'Lab8_Rental4_timing_20261029_01');
@@ -317,3 +320,105 @@ const result={status:'36_ACCEPTED_TRIALS_12_CONFIGS_WITH_DISTINCT_HARDWARE_AND_E
 await fs.writeFile(path.join(OUT,'combined_summary.json'),JSON.stringify(result,null,2),{flag:repairDraft?'w':'wx'});
 await fs.writeFile(path.join(OUT,'workbook_receipt.json'),JSON.stringify({file:BOOK,sha256:sha(path.join(OUT,BOOK)),bytes:fss.statSync(path.join(OUT,BOOK)).size,tests:{trials:36,configs:12,formula_input_perturbation_and_restore:true,all_summary_time_formulas_match:true},source_pins:{lab:sha(labFile),lg:sha(lgFile),rental_root:sha(rootReceipt)}},null,2),{flag:repairDraft?'w':'wx'});
 console.log(JSON.stringify({status:'exported_needs_visual_review_and_lab_backup',output:path.join(OUT,BOOK),sha256:sha(path.join(OUT,BOOK))}));
+}
+
+async function buildLGVQOnly(){
+  const out=path.join(HERE,'outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/LGVQ_LG_first_parallel_20261030_01');
+  const book=path.join(out,'LGVQ_LightGen_first_parallel_20261030.xlsx'),input=path.join(out,'lgvq_reorganized_sources01.json');
+  const sha=p=>crypto.createHash('sha256').update(fss.readFileSync(p)).digest('hex');
+  const ok=(v,m)=>{if(!v)throw Error(m);};
+  const close=(a,b)=>ok(typeof a==='number'&&Math.abs(a-b)<=Math.max(1e-7,Math.abs(b)*1e-9),`Calculation differs ${a} ${b}`);
+  ok(!fss.existsSync(book),'Preserve existing workbook');
+  ok(sha(input)==='9873a8a7c021a977dc67682b1dcb618fbbaabf7f4944eb4ed2e137bcc1decc1d','Pinned new saved-data calculation');
+  const d=JSON.parse(fss.readFileSync(input,'utf8'));
+  ok(d.trials.length===36&&d.baselines.length===12&&!d.torch_imported,'Exact accepted source population');
+  for(const f of d.source_files)ok(sha(path.join(REPO,f.path))===f.sha256,'Original source changed');
+  const wb=Workbook.create(),s=wb.worksheets.add('主表'),detail=wb.worksheets.add('LG时间明细'),raw=wb.worksheets.add('轮次原值');
+  const baseStyle=sheet=>{sheet.showGridLines=false;sheet.getRange('A1:M70').format={font:{name:'Arial',size:10},verticalAlignment:'center',rowHeight:25};};
+  for(const sheet of [s,detail,raw])baseStyle(sheet);
+  const put=(sheet,row,values)=>sheet.getRangeByIndexes(row-1,0,values.length,values[0].length).values=values;
+  const formula=(sheet,cell,value)=>sheet.getRange(cell).formulas=[[value]];
+  const header=(sheet,row,cols)=>sheet.getRangeByIndexes(row-1,0,1,cols).format={fill:'#263C5A',font:{name:'Arial',size:10,bold:true,color:'#FFFFFF'},horizontalAlignment:'center',verticalAlignment:'center',wrapText:true,rowHeight:43};
+  const title=(sheet,cell,text)=>{sheet.getRange(cell).values=[[text]];sheet.getRange(cell).format.font={name:'Arial',size:15,bold:true};};
+  const labels={qwen:'Qwen3-VL-2B',glm:'GLM-4.6V-Flash',clip:'CLIP ViT-B/32',yolo:'YOLO11s',kimi:'Kimi-VL-A3B',deepseek:'DeepSeek-VL2 Full'};
+  // All36 immutable accepted round values remain intact, including protocol flags.
+  put(raw,1,[['Config','Model','MPS (%)','Hardware','Repeat','Videos','Groups of16','Continuous wall (s)','Native tokens','GPU energy (J)','Board+host proxy (J)','Energy accepted','Report SHA256','Original source','Independent audit SHA256','Energy protocol','Strict250ms qualified','Maximum support age (s)','Gaps over250ms','Gap support fraction']]);
+  raw.getRange('A2:T37').values=d.trials.map(t=>[t.key,labels[t.model],t.cap,t.hardware,t.repeat,t.videos,t.groups,t.seconds,t.tokens,t.gpu_j,t.system_j,t.energy,t.report_sha256,t.source,t.audit_sha256,t.qualification,t.strict250ms_qualified,t.max_power_sample_age_s,t.gap_over250ms_count,t.gap_over250ms_support_fraction]);
+  header(raw,1,20);raw.freezePanes.freezeRows(1);raw.freezePanes.freezeColumns(2);
+  raw.getRange('A1:D37').format.columnWidth=23;raw.getRange('E1:G37').format.columnWidth=13;raw.getRange('H1:L37').format.columnWidth=21;raw.getRange('M1:O37').format.columnWidth=75;raw.getRange('N1:N37').format.columnWidth=110;raw.getRange('P1:P37').format.columnWidth=65;raw.getRange('Q1:T37').format.columnWidth=24;
+  raw.getRange('H2:K37').setNumberFormat('#,##0.000000');raw.getRange('I2:I37').setNumberFormat('#,##0');raw.getRange('T2:T37').setNumberFormat('0.0000%');
+  title(detail,'A2','LightGen阶段时间与并行计算');
+  put(detail,3,[['每场16视频、64帧。关键路径贡献可相加，全部执行工作因并行重叠不能直接相加。']]);
+  put(detail,5,[['阶段','实验室r1/ms','实验室r2/ms','实验室r3/ms','实验室合并/ms','80GB并行/ms','实验室执行工作/ms','80GB执行工作/ms']]);header(detail,5,8);
+  const stages=[['resize','resize'],['normalization','归一化'],['patch','Patch与原BF16 cast'],['tokenizer','文字tokenizer'],['emb_text','文字embedding'],['emb_conv3d','视觉Conv3D embedding'],['emb_position','位置embedding'],['adapter_visual_pool','视觉pool'],['adapter_visual','视觉adapter'],['optics1','光学层1'],['oeo1','OEO1'],['optics2','光学层2'],['oeo2','OEO2'],['optics3','光学层3'],['oeo3','OEO3'],['merger','Merger'],['adapter_language','语言adapter'],['optics4','光学层4'],['oeo4','OEO4'],['optics5','光学层5'],['oeo5','OEO5'],['optics6','光学层6'],['oeo6','OEO6'],['decoder','Decoder与评分']];
+  for(const [i,[key,label]] of stages.entries()){
+    const r=6+i;put(detail,r,[[label,...d.LG_lab.source_rounds.map(x=>(x.equivalent_s_per_group[key]??0)*1000),null,(d.LG_rental.equivalent_s_per_group[key]??0)*1000,(d.LG_lab.work_s_per_group[key]??0)*1000,(d.LG_rental.work_s_per_group[key]??0)*1000]]);
+    formula(detail,'E'+r,`=SUM(B${r}:D${r})/3`);
+  }
+  put(detail,30,[['每16视频并行时间合计']]);for(const c of ['B','C','D','E','F'])formula(detail,c+'30',`=SUM(${c}6:${c}29)`);
+  put(detail,32,[['实验室：三轮，每轮512原TEST视频，32场，原输出逐位一致。']]);
+  put(detail,33,[['80GB：原单轮512视频。重放保存trace构造同一两场流水资源调度，未重测模型。']]);
+  put(detail,34,[['80GB仅92/512输出逐位一致，数值门未通过；并行时间和组件能量均为诊断估算。']]);
+  put(detail,35,[['保留原CPU工作线程分配和共享GPU/光学资源依赖，不把串行工作总和直接除以16。']]);
+  put(detail,36,[['固定每层光周期 = 1/1400 + 0.000300 + 0.0000307 秒，共6层。']]);
+  put(detail,37,[['包含resize、归一化、patch、embedding及电子算子；不包含文件解码/RGB裁剪/quality准备与调度等待。']]);
+  title(detail,'A40','原固定组件功率与时间并集能量');
+  put(detail,42,[['组件','功率/W','计算约定']]);header(detail,42,3);
+  put(detail,43,[['控制器',d.component_powers_w.controller,'全窗口时间并集只算一次'],['光器件',d.component_powers_w.optical_devices,'光学阶段时间并集'],['电子板卡',d.component_powers_w.electronic_board,'全部电子阶段时间并集，并行不重复']]);
+  put(detail,48,[['每16视频时间并集','实验室r1','实验室r2','实验室r3','实验室合并','80GB单轮']]);header(detail,48,6);
+  const kinds=[['controller_union_ms','控制器/s'],['optical_union_ms','光器件/s'],['electronic_union_ms','电子板卡/s'],['optical_electronic_overlap_ms','光电重叠/s']];
+  for(const [i,[key,label]] of kinds.entries()){
+    const r=49+i;put(detail,r,[[label,...d.LG_lab.source_rounds.map(x=>x.component_energy[key]/1000/x.fields),null,d.LG_rental.source_rounds[0].component_energy[key]/1000/32]]);formula(detail,'E'+r,`=SUM(B${r}:D${r})/3`);
+  }
+  put(detail,54,[['固定组件代理能量/J每16视频']]);
+  for(const c of ['B','C','D','E','F'])formula(detail,c+'54',`=${c}49*$B$43+${c}50*$B$44+${c}51*$B$45`);
+  put(detail,56,[['共同Qwen有效tokens/16视频',d.common_tokens16],['实验室LG自身tokens/16视频',d.LG_lab.native_tokens/d.LG_lab.fields],['80GB LG自身tokens/16视频',d.LG_rental.native_tokens/d.LG_rental.fields]]);
+  put(detail,60,[['80GB实际FFT软件/ms每16视频',d.LG_rental_software.actual_FFT_s_per_16_videos*1000],['80GB实际FFT板卡/J每16视频',d.LG_rental_software.gpu_board_energy_j/32],['80GB实际FFT板卡均功率/W',d.LG_rental_software.gpu_board_mean_w]]);
+  put(detail,64,[['组件能量是原功率模型的代理，不是光路部署电表实测，不能拿FFT板卡能量代替。']]);
+  put(detail,65,[['LG自身token按每场共享prompt只计一次；共同tokens统一采用原Qwen分子，二者不可混称。']]);
+  put(detail,67,[['来源汇总SHA256',sha(input)]]);
+  detail.getRange('A1:A67').format.columnWidth=40;detail.getRange('B1:H67').format.columnWidth=21;detail.getRange('B6:H62').setNumberFormat('#,##0.000000');
+  detail.getRange('A32:H37').format.font.italic=true;detail.getRange('A64:H65').format.font.italic=true;
+  title(s,'A2','LGVQ时间、能耗与吞吐倍率');
+  put(s,3,[['前两行是16视频光场并行的LG。基线为B1串行，统一折算每16视频/64帧，三轮合并不选最快。']]);
+  put(s,5,[['模型','平台','资源/%','并行视频','时间/ms每16视频','等效单帧/ms','代理能量/J每16视频','共同Qwen tokens/s','自身tokens/s','实测板卡均W','代理均功率/W','结果口径','实测板卡/J每16视频']]);header(s,5,13);
+  const L=[d.LG_lab,d.LG_rental];
+  for(const [i,x] of L.entries()){
+    const row=6+i,col=i?'F':'E';put(s,row,[[i?'LightGen-II（80GB）':'LightGen-II（实验室）',i?'A100 80GB / 400W':'A100 40GB / 250W',100,16,null,null,null,null,null,'N/A',null,i?'单轮诊断，并行估算':'三轮通过，并行估算','N/A']]);
+    formula(s,'E'+row,`='LG时间明细'!${col}30`);formula(s,'F'+row,`=E${row}/64`);formula(s,'G'+row,`='LG时间明细'!${col}54`);formula(s,'H'+row,`='LG时间明细'!$B$56/E${row}*1000`);formula(s,'I'+row,`='LG时间明细'!$B$${i?58:57}/E${row}*1000`);formula(s,'K'+row,`=G${row}/E${row}*1000`);
+  }
+  for(const [i,c] of d.baselines.entries()){
+    const row=8+i,key=JSON.stringify(c.key),sum=k=>`SUMIFS('轮次原值'!$${k}$2:$${k}$37,'轮次原值'!$A$2:$A$37,${key})`;
+    put(s,row,[[labels[c.model],c.hardware,c.cap,1,null,null,null,null,null,null,null,'三轮文件至CPU评分',null]]);
+    formula(s,'E'+row,`=${sum('H')}/${sum('G')}*1000`);formula(s,'F'+row,`=E${row}/64`);formula(s,'G'+row,`=${sum('K')}/${sum('G')}`);formula(s,'H'+row,`='LG时间明细'!$B$56/E${row}*1000`);formula(s,'I'+row,`=IF(${sum('I')}=0,"N/A",${sum('I')}/${sum('H')})`);formula(s,'J'+row,`=${sum('J')}/${sum('H')}`);formula(s,'K'+row,`=G${row}/E${row}*1000`);formula(s,'M'+row,`=${sum('J')}/${sum('G')}`);
+  }
+  put(s,21,[['LG为电子实测+固定光周期的并行调度估算；基线含文件解码至CPU评分。不是同范围物理端到端倍率。']]);
+  put(s,22,[['能量：LG使用原固定组件功率并集代理；基线为板卡积分+338.2W主机代理，均非插座电表整机实测。']]);
+  put(s,23,[['80GB LG数值门未通过，估算仅作诊断。实际685.421ms FFT软件窗口与板卡能量在LG时间明细中单列。']]);
+  title(s,'A25','相对两种LightGen的倍率');
+  put(s,27,[['模型','资源/%','时间比/LG实验室','时间比/LG80GB','能量比/LG实验室','能量比/LG80GB','共同速率增益/LG实验室','共同速率增益/LG80GB','自身速率比/LG实验室','自身速率比/LG80GB','代理功率比/LG实验室','代理功率比/LG80GB']]);header(s,27,12);
+  for(let i=0;i<14;i++){
+    const r=28+i,v=6+i;formula(s,'A'+r,`=A${v}`);formula(s,'B'+r,`=C${v}`);
+    for(const [col,f] of [['C',`=E${v}/$E$6`],['D',`=E${v}/$E$7`],['E',`=G${v}/$G$6`],['F',`=G${v}/$G$7`],['G',`=$H$6/H${v}`],['H',`=$H$7/H${v}`],['I',`=IF(I${v}="N/A","N/A",$I$6/I${v})`],['J',`=IF(I${v}="N/A","N/A",$I$7/I${v})`],['K',`=K${v}/$K$6`],['L',`=K${v}/$K$7`]])formula(s,col+r,f);
+  }
+  put(s,43,[['时间/能量/功率比 = 基线÷所选LG；共同/自身速率比 = 所选LG÷基线。LG参照行同样按此公式。']]);
+  put(s,44,[['共同tokens/s采用相同Qwen分子，因此共同速率增益应等于时间比；自身tokens定义不同，不应当作公平跨模型吞吐。']]);
+  put(s,45,[['详细阶段的关键路径贡献合计等于并行时间，执行工作列保留重叠，不误相加、不重复除以16。']]);
+  const widths=[29,27,15,15,23,20,24,25,22,21,23,29,24];widths.forEach((x,i)=>s.getRangeByIndexes(0,i,45,1).format.columnWidth=x);
+  s.getRange('E6:M19').setNumberFormat('#,##0.000');s.getRange('C28:L41').setNumberFormat('0.000');s.getRange('C6:D19').setNumberFormat('0');
+  s.getRange('E6:M19').format.horizontalAlignment='right';s.getRange('C28:L41').format.horizontalAlignment='right';s.getRange('A21:M23').format.font.italic=true;s.getRange('A43:M45').format.font.italic=true;s.getRange('A6:M7').format.fill='#EDF3F9';
+  wb.recalculate();
+  for(const [i,x] of L.entries()){close(s.getRange('E'+(6+i)).values[0][0],x.time16_s*1000);close(s.getRange('G'+(6+i)).values[0][0],x.component_energy16_j);}
+  for(let i=0;i<14;i++){const r=28+i;close(s.getRange('C'+r).values[0][0],s.getRange('G'+r).values[0][0]);close(s.getRange('D'+r).values[0][0],s.getRange('H'+r).values[0][0]);}
+  // Verify denominator, energy-power input, and baseline source dependencies.
+  const change=(sheet,cell,delta,target,expected)=>{const old=sheet.getRange(cell).values[0][0],before=target.values[0][0];sheet.getRange(cell).values=[[old+delta]];wb.recalculate();close(target.values[0][0],expected(before,old,delta));sheet.getRange(cell).values=[[old]];wb.recalculate();close(target.values[0][0],before);};
+  change(detail,'B43',1,s.getRange('G6'),(b)=>b+detail.getRange('E49').values[0][0]);
+  change(raw,'H2',1,s.getRange('E8'),b=>b+1000/96);
+  change(detail,'B6',3,s.getRange('C30'),(b,old,delta)=>s.getRange('E8').values[0][0]/(d.LG_lab.time16_s*1000+delta/3));
+  const errors=await wb.inspect({kind:'match',searchTerm:'#REF!|#DIV/0!|#VALUE!|#NAME\\?|#N/A|#NUM!|#NULL!|#SPILL!|#CALC!',options:{useRegex:true,maxResults:30},maxChars:1500});ok(!errors.ndjson.includes('"kind":"match"'),'Formula error scan');
+  const previews=[['主表','A1:M23','main_preview.png'],['主表','A25:L45','ratios_preview.png'],['LG时间明细','A1:H37','lg_stages_preview.png'],['LG时间明细','A40:F65','lg_energy_preview.png'],['轮次原值','A25:L37','trials_preview.png']];
+  for(const [sheetName,range,name] of previews){const p=await wb.render({sheetName,range,scale:1,format:'png'});await fs.writeFile(path.join(out,name),new Uint8Array(await p.arrayBuffer()));}
+  await (await SpreadsheetFile.exportXlsx(wb)).save(book);
+  await fs.writeFile(path.join(out,'builder_checks.json'),JSON.stringify({status:'exported_needs_saved_file_and_visual_QA',file:path.basename(book),sha256:sha(book),input_sha256:sha(input),source_files_intact:true,baseline_trials:36,LG_rows_first:true,ABO_included:false,formula_perturbations_restored:true,common_token_ratio_equals_time_ratio:true,component_energy_is_proxy_not_metered:true,collector_source_sha256:sha(path.join(HERE,'collect_lgvq_reorganized_20261030.py'))},null,2),{flag:'wx'});
+  console.log(JSON.stringify({file:book,sha256:sha(book),LG_lab_ms:d.LG_lab.time16_s*1000,LG80_parallel_ms:d.LG_rental.time16_s*1000,ABO_included:false}));
+}

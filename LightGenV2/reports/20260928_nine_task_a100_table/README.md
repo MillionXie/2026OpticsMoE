@@ -1,5 +1,36 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-30：按人工要求重整LGVQ专表，LG置首、恢复完整倍率和阶段明细
+
+最新交付不再包含ABO。新表为
+`measurement_protocol_20261024/outputs/01a183c0-ff52-76d3-bd5b-5763b23bfb5b/`
+`LGVQ_LG_first_parallel_20261030_01/LGVQ_LightGen_first_parallel_20261030.xlsx`，
+SHA256 `80229c86058c674d41974a321d9328713b9c869c0757b6dcb6cc2e43d659c410`。
+三页为主表、LG时间明细、轮次原值。主表前两数据行依次为实验室LG和A10080GB LG，
+后接原12个baseline配置。36轮原值/报告SHA/各自能量协议未改变，无新GPU测量。
+
+实验室LG保持三轮pooled的45.94911715143696ms/16视频。80GB按人工“并行算”的要求，
+从已双端SHA保存的原372,698,290B trace和CPU算子记录，使用原两场流水资源调度重放，
+得到29.332808899483833ms/16视频。没有将原685.4211618483532ms软件窗再除16，
+也没有将全部并行CPU工作相加。后者实际FFT软件窗及板卡能量单列，原92/512数值失败保留，
+新的并行结果仍是诊断估算，未伪造合格compute_report或物理光路实测。
+
+恢复时间、能量、共同Qwen tokens/s、自身tokens/s与代理均功率相对两种LG的完整倍率，
+共同速率倍率逐项等于时间比。LG自身prompt按每场38个token只计一次，不重复16份。
+阶段明细包含resize、归一化、patch、embedding、六光层/OEO、merger、语言adapter、decoder，
+三轮及80GB诊断均列出关键路径贡献和全部执行工作，贡献之和与并行时间闭合。
+
+LG能量恢复原固定组件模型：控制器41.388W、光器件80.358W、电子板卡62.842W，
+按各自时间并集计算，控制器和重叠电子流不重复。实验室/80GB分别约5.2808013/3.5488835J每16视频，
+是组件代理而非部署实测，不借FFT NVML功率冒充物理能量。基线仍用板卡积分+338.2W主机代理。
+CPU-only新汇总入口为`collect_lgvq_reorganized_20261030.py`，三个测试passed且未导入Torch；
+同一工作簿builder新增`--lgvq-only-reorganized`。五张预览已实际视检，保存XML/CRC、
+全部倍率方向、36轮原值、并行闭合和公式扰动恢复核验通过。原已交付表未写入或覆盖；
+核验时旧xlsx被用户打开锁定，未强行关闭或宣称重新读取成功。
+新表与八个JSON/预览支持文件共9文件已local+lab逐SHA保存，
+`lab_delivery_receipt01.json` SHA为
+`075b903b49e0a2d8ea9efad4220f7f3310df698ea766cc07c77d7e0b9b9dddf9`。
+
 ## 2026-10-30：LGVQ十二组时间/能量与LightGen诊断新表已双端交付
 
 原六Kimi、独立CPU派生DS50首轮及新根五个DS均已完成，合计四配置各三轮。
