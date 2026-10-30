@@ -1,7 +1,7 @@
 import pytest
 import torch
 from LightGenV2.tasks.t17_router_classification.model_four import FourRouterClassification
-from LightGenV2.tasks.t17_router_classification.optical_training_methods import augment_rgb_tiles,actual_top2_load_loss
+from LightGenV2.tasks.t17_router_classification.optical_training_methods import augment_rgb_tiles,actual_top2_load_loss,dark_expert_coverage_loss
 
 
 def test_dense_warmup_trains_all_four_experts_and_eval_remains_strict_top2():
@@ -37,3 +37,10 @@ def test_load_loss_has_gradient_when_soft_mean_is_uniform_but_actual_selection_c
     assert (dense.topk(2,dim=1).indices==dense.topk(2,dim=1).indices[0]).all()
     loss=actual_top2_load_loss(dense);loss.backward()
     assert torch.isfinite(logits.grad).all() and logits.grad.abs().sum()>0
+
+
+def test_dark_port_calibration_does_not_lose_gradient_at_tiny_probability():
+    logits=torch.tensor([[0.,0.,0.,-12.]],requires_grad=True)
+    loss=dark_expert_coverage_loss(logits.softmax(1));loss.backward()
+    assert torch.isfinite(logits.grad).all()
+    assert logits.grad[0,3]<-.2  # Gradient descent raises the dark port logit.

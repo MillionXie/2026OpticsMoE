@@ -14,7 +14,7 @@ import torch
 from torch.nn import functional as F
 from .model_four import FourRouterClassification
 from .train_optical_four_ccd import prepare_dataset,evaluate
-from .optical_training_methods import augment_rgb_tiles,actual_top2_load_loss,inverse_sqrt_class_weights,update_phase_ema
+from .optical_training_methods import augment_rgb_tiles,actual_top2_load_loss,dark_expert_coverage_loss,inverse_sqrt_class_weights,update_phase_ema
 from .train import write
 from .gpu_policy import require_non_a100_gpu
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
@@ -76,14 +76,16 @@ def main():
             for group,lr in zip(optimizer.param_groups,(cfg['phase_lr'],cfg['router_lr'])):group['lr']=lr*factor
             warm=epoch<=cfg['dense_warmup_epochs'];mix=cfg['initial_uniform_mix']*(1-(epoch-1)/cfg['dense_warmup_epochs']) if warm else 0.
             balance_weight=cfg['balance_loss_weight']*max(0.,1-(epoch-1)/cfg['balance_anneal_epochs'])
-            model.train();order=rng.permutation(len(y['train']));total=0.;supervised_sum=0.;balance_sum=0.
+            coverage_weight=cfg['coverage_loss_weight']*max(0.,1-(epoch-1)/cfg['balance_anneal_epochs'])
+            model.train();order=rng.permutation(len(y['train']));total=0.;supervised_sum=0.;balance_sum=0.;coverage_sum=0.
             gradient_sums=torch.zeros(6,device='cuda');batches=0
             for offset in range(0,len(order),cfg['batch']):
                 idx=torch.as_tensor(order[offset:offset+cfg['batch']],device='cuda');images=augment_rgb_tiles(x['train'][idx],cfg['d4_probability'])
                 optimizer.zero_grad(set_to_none=True)
                 out=model(images,return_dense_route=True,training_route='dense_warmup' if warm else 'top2',training_uniform_mix=mix)
                 ce=F.cross_entropy(out['logits'],y['train'][idx],weight=weights,label_smoothing=cfg['label_smoothing'])
-                auxiliary=actual_top2_load_loss(out['dense_route_power']);loss=ce+balance_weight*auxiliary
+                auxiliary=actual_top2_load_loss(out['dense_route_power']);coverage=dark_expert_coverage_loss(out['dense_route_power'])
+                loss=ce+balance_weight*auxiliary+coverage_weight*coverage
                 if not torch.isfinite(loss):raise RuntimeError('nonfinite training loss')
                 loss.backward()
                 if any(p.grad is None or not torch.isfinite(p.grad).all() for p in model.parameters()):raise RuntimeError('phase gradient failure')
@@ -93,6 +95,7 @@ def main():
                 torch.nn.utils.clip_grad_norm_(model.parameters(),cfg['gradient_clip'],error_if_nonfinite=True);optimizer.step()
                 update_phase_ema(ema,model,cfg['ema_decay'])
                 total+=float(loss.detach())*len(idx);supervised_sum+=float(ce.detach())*len(idx);balance_sum+=float(auxiliary.detach())*len(idx)
+                coverage_sum+=float(coverage.detach())*len(idx)
             online_val,*_=evaluate(model,x['val'],y['val'],cfg['batch']);ema_val,*_=evaluate(ema,x['val'],y['val'],cfg['batch'])
             kind,chosen,val=max([('online',model,online_val),('ema',ema,ema_val)],key=lambda item:score(item[2]))
             improved=score(val)>best
@@ -101,6 +104,7 @@ def main():
                 torch.save(checkpoint(chosen,epoch,kind,val),a.out/'best_checkpoint.pt')
             row=dict(fine_tune_epoch=epoch,training_objective=total/len(order),supervised_objective=supervised_sum/len(order),
                      unweighted_balance_loss=balance_sum/len(order),balance_coefficient=balance_weight,train_route='dense_warmup' if warm else 'top2',
+                     unweighted_coverage_loss=coverage_sum/len(order),coverage_coefficient=coverage_weight,
                      uniform_mix=mix,phase_lr=optimizer.param_groups[0]['lr'],router_lr=optimizer.param_groups[1]['lr'],
                      mean_raw_gradient_L1_experts_then_global_router=(gradient_sums/batches).cpu().tolist(),
                      validation=online_val,validation_ema=ema_val,selected=improved,selected_kind=best_kind,selected_fine_tune_epoch=best_epoch)

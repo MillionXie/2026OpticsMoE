@@ -61,5 +61,6 @@
   "label_smoothing": 0.01,
   "class_weight_power": 0.5,
   "ema_decay": 0.99,
-  "reporting_target_test_gain_percentage_points": 20.0
+  "reporting_target_test_gain_percentage_points": 20.0,
+  "coverage_loss_weight": 0.005
 }

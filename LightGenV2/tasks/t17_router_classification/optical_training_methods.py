@@ -1,4 +1,5 @@
 """Training-only utilities; no extra parameters or inference operations."""
+import math
 import torch
 
 
@@ -27,6 +28,11 @@ def actual_top2_load_loss(dense):
     mask=torch.zeros_like(dense).scatter(1,indices,1.)
     load=mask.detach().mean(0)/2
     return 4*(load*dense.mean(0)).sum()
+
+
+def dark_expert_coverage_loss(dense):
+    """KL(uniform || batch mean): a usable calibration gradient for very dark ports."""
+    return -dense.mean(0).clamp_min(1e-12).log().mean()-math.log(dense.shape[1])
 
 
 def inverse_sqrt_class_weights(labels,classes):
