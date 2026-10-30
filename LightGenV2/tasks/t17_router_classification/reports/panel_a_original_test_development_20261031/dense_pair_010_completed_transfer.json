@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/result.json",
+      "sha256": "a4701b8cdb7a9d6f2481be4fdb4d778de787f070af0f91667b536b688ca29c4e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/history.json",
+      "sha256": "104b24d2646e02e00cb756a349b14ca4782356ef2a14b31fdb14ff2bf2607699"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/status.json",
+      "sha256": "7cabfe92d67142498e16498109d512a0604992fb4c6319a02fa46218724d6f82"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/metadata.json",
+      "sha256": "bbcc9a24385c5f18103a8e59ca384b7ebd7b0d88245e62637e0f9b2a975b639c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/best_checkpoint.pt",
+      "sha256": "5effdd7f0af499a34e574a263180b6814e0c88b815fcbe449ebfb1e9f9ac447b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/last_checkpoint.pt",
+      "sha256": "311afe66842834b91f97de3199c94d60e358e607330939102ea2cf8dd7f0cef8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/train_predictions.npz",
+      "sha256": "a2a4fd8fb9c7d58f044fc46a956161c432d4cf8d1725da9dbff9be9a83140134"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/val_predictions.npz",
+      "sha256": "99113c7a81d3e2d658602d244e856b315c4461d1021243b076126251966b3fdf"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010/test_predictions.npz",
+      "sha256": "aa2920fa207ee8a46ecc2140d7308989b119b8ac709245aef309a67800d1346b"
+    }
+  ]
+}

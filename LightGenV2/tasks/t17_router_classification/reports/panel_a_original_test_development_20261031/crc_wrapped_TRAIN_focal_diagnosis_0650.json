@@ -1,0 +1,73 @@
+{
+  "role": "TRAIN_ONLY_FOCAL_DIAGNOSIS_WITH_ORIGINAL_TEST_EXPOSED_PARENT",
+  "source_run": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam",
+  "rows": [
+    {
+      "class_index": 0,
+      "n": 873,
+      "recall": 0.8556701030927835,
+      "mean_boundary_pt": 0.44200435280799866,
+      "mean_focal_weight_gamma2": 0.3282864987850189
+    },
+    {
+      "class_index": 1,
+      "n": 411,
+      "recall": 0.6958637469586375,
+      "mean_boundary_pt": 0.3835735023021698,
+      "mean_focal_weight_gamma2": 0.39701297879219055
+    },
+    {
+      "class_index": 2,
+      "n": 288,
+      "recall": 0.2361111111111111,
+      "mean_boundary_pt": 0.206885427236557,
+      "mean_focal_weight_gamma2": 0.6423307061195374
+    },
+    {
+      "class_index": 3,
+      "n": 446,
+      "recall": 0.8811659192825112,
+      "mean_boundary_pt": 0.4953572154045105,
+      "mean_focal_weight_gamma2": 0.27241605520248413
+    },
+    {
+      "class_index": 4,
+      "n": 240,
+      "recall": 0.475,
+      "mean_boundary_pt": 0.41364678740501404,
+      "mean_focal_weight_gamma2": 0.44509246945381165
+    },
+    {
+      "class_index": 5,
+      "n": 517,
+      "recall": 0.562862669245648,
+      "mean_boundary_pt": 0.334452360868454,
+      "mean_focal_weight_gamma2": 0.454120397567749
+    },
+    {
+      "class_index": 6,
+      "n": 931,
+      "recall": 0.9817400644468314,
+      "mean_boundary_pt": 0.8047007918357849,
+      "mean_focal_weight_gamma2": 0.057110000401735306
+    },
+    {
+      "class_index": 7,
+      "n": 596,
+      "recall": 0.9748322147651006,
+      "mean_boundary_pt": 0.9105077385902405,
+      "mean_focal_weight_gamma2": 0.03208993002772331
+    },
+    {
+      "class_index": 8,
+      "n": 724,
+      "recall": 0.787292817679558,
+      "mean_boundary_pt": 0.5708756446838379,
+      "mean_focal_weight_gamma2": 0.22221241891384125
+    }
+  ],
+  "interpretation": "A training-only focal boundary CE can reduce dominance of already-correct easy images without changing whole-class prior weights. Proposal: one bounded gamma2 angular-Adam frozen-router trial from the exact same completed parent, no geometry/head change, original TEST teacher pseudo labels only. Implemented, admitted and started; not evidence of an accuracy improvement.",
+  "actual_worker": 703264,
+  "source_commit": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63",
+  "actual_parent_run": "panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_002"
+}

@@ -23,16 +23,16 @@
     {
       "dataset": "crc9",
       "samples": 1436,
-      "correct": 1095,
-      "accuracy": 0.7625348189415042,
+      "correct": 1105,
+      "accuracy": 0.7694986072423399,
       "identical_ids_labels_vs_D2NN": true,
       "exactly_two_positive_routes_per_sample": true,
       "all_samples_preserved": true
     }
   ],
   "cpu_training_contract_tests": {
-    "passed": 69,
+    "passed": 71,
     "environment": "Lab Linux xml, CUDA_VISIBLE_DEVICES empty",
-    "source_commit": "98256bbfa11405f4befc78d2e1e83b34d96fe9bd"
+    "source_commit": "73eb43c5ca2f9834a7737671d3b92ff3f9b18e63"
   }
 }

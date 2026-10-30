@@ -1,0 +1,133 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "rows": [
+    {
+      "run": "panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam",
+      "epochs": 40,
+      "selected_epoch": 38,
+      "checkpoint_sha256": "fd2bd519f841245180bfa84019bff8c8177f5a7f3838b05765149c837677b5ee",
+      "train": 0.7886987924575806,
+      "val": 0.7047353982925415,
+      "original_test_dev": 0.7625347971916199,
+      "selected_actual_route": {
+        "mean_power": [
+          0.12046051770448685,
+          0.01126838754862547,
+          0.8682635426521301,
+          7.338062914641341e-06
+        ],
+        "std_power": [
+          0.08588694781064987,
+          0.033720724284648895,
+          0.07613810896873474,
+          0.00027797117945738137
+        ],
+        "selected_fraction": [
+          0.866991643454039,
+          0.13231197771587744,
+          1.0,
+          0.0006963788300835655
+        ],
+        "top2_pair_fraction": {
+          "0-1": 0.0,
+          "0-2": 0.866991643454039,
+          "0-3": 0.0,
+          "1-2": 0.13231197771587744,
+          "1-3": 0.0,
+          "2-3": 0.0006963788300835655
+        },
+        "fraction_outside_most_common_pair": 0.133008356545961,
+        "effective_experts_from_mean_power": 1.3012035260245887,
+        "mean_per_sample_effective_experts": 1.30303955078125,
+        "expert_numbering": "zero-based 0..3",
+        "samples": 1436
+      }
+    },
+    {
+      "run": "panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_002",
+      "epochs": 35,
+      "selected_epoch": 20,
+      "checkpoint_sha256": "122915e9cd64698264d39ef0f8a1cf5ae221524a5d63d16a15a83f9c760a83b7",
+      "train": 0.7984480857849121,
+      "val": 0.7130919098854065,
+      "original_test_dev": 0.7694985866546631,
+      "selected_actual_route": {
+        "mean_power": [
+          0.12791329622268677,
+          0.011952883563935757,
+          0.857343852519989,
+          0.0027905739843845367
+        ],
+        "std_power": [
+          0.0895392894744873,
+          0.034501101821660995,
+          0.07394657284021378,
+          0.009947395883500576
+        ],
+        "selected_fraction": [
+          0.7959610027855153,
+          0.1309192200557103,
+          1.0,
+          0.07311977715877438
+        ],
+        "top2_pair_fraction": {
+          "0-1": 0.0,
+          "0-2": 0.7959610027855153,
+          "0-3": 0.0,
+          "1-2": 0.1309192200557103,
+          "1-3": 0.0,
+          "2-3": 0.07311977715877438
+        },
+        "fraction_outside_most_common_pair": 0.2040389972144847,
+        "effective_experts_from_mean_power": 1.3305817391527102,
+        "mean_per_sample_effective_experts": 1.3291099071502686,
+        "expert_numbering": "zero-based 0..3",
+        "samples": 1436
+      }
+    },
+    {
+      "run": "panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010",
+      "epochs": 21,
+      "selected_epoch": 6,
+      "checkpoint_sha256": "5effdd7f0af499a34e574a263180b6814e0c88b815fcbe449ebfb1e9f9ac447b",
+      "train": 0.7934739589691162,
+      "val": 0.6949860453605652,
+      "original_test_dev": 0.7639275789260864,
+      "selected_actual_route": {
+        "mean_power": [
+          0.13145314157009125,
+          0.016393663361668587,
+          0.8473448753356934,
+          0.004808469209820032
+        ],
+        "std_power": [
+          0.0966074988245964,
+          0.04074562340974808,
+          0.07403570413589478,
+          0.014827769249677658
+        ],
+        "selected_fraction": [
+          0.7437325905292479,
+          0.16086350974930363,
+          1.0,
+          0.09540389972144847
+        ],
+        "top2_pair_fraction": {
+          "0-1": 0.0,
+          "0-2": 0.7437325905292479,
+          "0-3": 0.0,
+          "1-2": 0.16086350974930363,
+          "1-3": 0.0,
+          "2-3": 0.09540389972144847
+        },
+        "fraction_outside_most_common_pair": 0.2562674094707521,
+        "effective_experts_from_mean_power": 1.3594989277380967,
+        "mean_per_sample_effective_experts": 1.3534023761749268,
+        "expert_numbering": "zero-based 0..3",
+        "samples": 1436
+      }
+    }
+  ],
+  "additional_router_exploration_epochs": 56,
+  "interpretation": "Weak auxiliary improved development by about .70pp; strong auxiliary improved less. Selected sparse routing remains concentrated; auxiliary class-prior targets are not measured actual balanced routing. No claim of independent-test or single-factor structural superiority."
+}

@@ -58,3 +58,21 @@ fig.suptitle('Seed 17 | Original TEST exposed to teacher training and model sele
 fig.savefig(out/'boundary_curves.png',dpi=160);fig.savefig(out/'boundary_curves.svg');plt.close(fig)
 svg=out/'boundary_curves.svg'
 svg.write_text('\n'.join(line.rstrip() for line in svg.read_text(encoding='utf-8').splitlines())+'\n',encoding='utf-8')
+
+fig,axes=plt.subplots(2,2,figsize=(10,7),constrained_layout=True)
+for col,(variant,label) in enumerate([('dense_pair_aux_002','Dense route KL 0.02'),('dense_pair_aux_010','Dense route KL 0.10')]):
+ path=runs/'panel_a_dense_router_supervision_s17_20261031/crc9'/variant;history=path/'history.json'
+ if not history.exists():continue
+ data=[z for z in json.loads(history.read_text()) if 'original_test_dev' in z];epochs=[z['epoch'] for z in data]
+ axes[0,col].plot(epochs,[100*z['validation_diagnostic']['accuracy'] for z in data],label='VAL diagnostic',color='#306c9c')
+ axes[0,col].plot(epochs,[100*z['original_test_dev']['accuracy'] for z in data],label='Original TEST development',color='#d67227')
+ result=path/'result.json'
+ if result.exists():
+  result=json.loads(result.read_text());axes[0,col].scatter([result['selected_epoch']],[100*result['train']['accuracy']],marker='D',color='#26846c',label='Selected-checkpoint TRAIN')
+ for expert in range(4):axes[1,col].plot(epochs,[100*z['original_test_dev']['router']['mean_power'][expert] for z in data],label=f'Expert {expert+1}')
+ axes[0,col].set_title(label);axes[0,col].set_ylabel('Accuracy (%)');axes[1,col].set_ylabel('Mean actual Top-2 power (%)')
+ for ax in axes[:,col]:ax.set_xlabel('Additional epochs in this candidate');ax.set_xlim(0,40);ax.grid(alpha=.15)
+ axes[0,col].legend(fontsize=8);axes[1,col].legend(fontsize=8);axes[1,col].set_ylim(0,100)
+fig.suptitle('CRC9, seed 17 | Training-only router supervision\nOriginal TEST used for development; actual sparse power, not dense auxiliary targets',fontsize=12)
+fig.savefig(out/'router_supervision_curves.png',dpi=160);fig.savefig(out/'router_supervision_curves.svg');plt.close(fig)
+svg=out/'router_supervision_curves.svg';svg.write_text('\n'.join(line.rstrip() for line in svg.read_text(encoding='utf-8').splitlines())+'\n',encoding='utf-8')
