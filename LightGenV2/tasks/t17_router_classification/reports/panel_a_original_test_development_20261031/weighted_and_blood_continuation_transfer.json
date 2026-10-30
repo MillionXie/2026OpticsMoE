@@ -1,0 +1,84 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/result.json",
+      "sha256": "88b3899bef6a261ad19fc9b10316072581c6b5f7987b34dcf516030c6269c46d",
+      "bytes": 7269
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/status.json",
+      "sha256": "ab9be7b83d42e87895a1c6aebc02af2e6125263f657228a185ef38b9655e302b",
+      "bytes": 7292
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/history.json",
+      "sha256": "d3dd99e53e2182ee0db2bfe8325c3cff9bbe80aeb13fe9734c4da0a92659f9e7",
+      "bytes": 97289
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/best_checkpoint.pt",
+      "sha256": "050abf2d071a91679ac7372b66e370fd82dd8a7ffa68f89c89b1666f0aac2169",
+      "bytes": 1928268
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/last_checkpoint.pt",
+      "sha256": "583f2d07fc0f7066d8c99cd26cc1a838e9a1f7d34f038082a9cbd1b8bf9e00b5",
+      "bytes": 5362788
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/train_predictions.npz",
+      "sha256": "c76ea118de6ad4ffbfc2b2e53589bd2b1c063d4aca6af4779917eaaf8d09966f",
+      "bytes": 660938
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/val_predictions.npz",
+      "sha256": "e5db08fd887327b82fc5cdeba33f0e2cbc1e0e88a1b0f06f9a7b63046d1c552c",
+      "bytes": 95796
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/test_predictions.npz",
+      "sha256": "384bb8c40212c9215c16145fb13f5b8015ff52ef82d53a8c91fb36d9bb10529a",
+      "bytes": 190223
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/result.json",
+      "sha256": "007ade44e03612f954303e414f49c7f029e5d09766543b2c9e5999747db83801",
+      "bytes": 7807
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/status.json",
+      "sha256": "21781cd4687d09c5ab6344161887b74ebbfba16ba63cb27b69f17380956fbdb4",
+      "bytes": 7830
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/history.json",
+      "sha256": "ca09553ae9a15effe8324080aae7322d74e8ea704b423a310e8fd111609b3961",
+      "bytes": 64220
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/best_checkpoint.pt",
+      "sha256": "4dc1a27762ad09f9b064581f02253b31bf1981bd33c6c9ca398f26c52af1f76a",
+      "bytes": 1927820
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/last_checkpoint.pt",
+      "sha256": "00c8f9320ee7c0804e83e40bc942aee054029cd64dccbbb38f0c9ee6eea73005",
+      "bytes": 5363684
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/train_predictions.npz",
+      "sha256": "dc57027fd1866389a9372b0abca92f0d38464f5aaca02d4ef6b72b71cc75d99a",
+      "bytes": 435726
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/val_predictions.npz",
+      "sha256": "f4f4b60f3aba49196bc970f066f5e4cfd8178cded88d0a1a0251ae1f09b0c3fe",
+      "bytes": 63921
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted/test_predictions.npz",
+      "sha256": "1e2d909ca7d2d8f8b9b472bca1675b570dd35ccee3919d0f08909cc479b13d5c",
+      "bytes": 125914
+    }
+  ]
+}

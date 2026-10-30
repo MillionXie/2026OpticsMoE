@@ -1,0 +1,26 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/launch.json",
+      "sha256": "3232de6747956bdd732ab33db6955f59d8af1fe6ebf6953a95fe2c8aa452d89c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_a_phase_gauge_admission_0534/admission.json",
+      "sha256": "9cb1ec950e2ab60a5dab954078af7707677bca16b5ef845b035969013877a519"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_a_phase_gauge_admission_0534/attempt1_failure.json",
+      "sha256": "91ba180f74ee0ed5b97b7a3383920635c227028fb7691546b32e38c1bb608362"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/metadata.json",
+      "sha256": "b41cc55c7516143744af3bf36045299f1e7e02ed6d492eb1db5fcab1afb90f63"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/metadata.json",
+      "sha256": "f45312e716862ced29f5bbea0321f28d26bd73c10402e75577cf2ac4d5f00763"
+    }
+  ],
+  "source_commit": "43a0e9807b4fbaa7351ec4270a2d9eaa968faa4b",
+  "cpu_tests_passed": 63
+}
