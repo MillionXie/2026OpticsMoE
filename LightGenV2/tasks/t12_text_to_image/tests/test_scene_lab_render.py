@@ -14,6 +14,8 @@ def test_physical_renderer_uses_supported_original_observer_not_a_generator_patc
 
 
 def test_observer_actual_callback_math_and_lineage_against_synthetic_fixture(tmp_path):
+    import sys
+    if sys.platform=='win32':pytest.skip('Run the numeric Torch adapter test in the designated compute runtime, not the desktop DLL environment')
     try:import torch
     except (ImportError,OSError):pytest.skip('Torch runtime unavailable locally; run this CPU check on the compute runtime')
     import numpy as np
