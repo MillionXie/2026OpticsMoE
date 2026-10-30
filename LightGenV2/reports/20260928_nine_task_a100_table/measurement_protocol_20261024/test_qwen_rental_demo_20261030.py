@@ -1,5 +1,8 @@
 """CPU-only timing contract; never load a model or initialize CUDA."""
 import unittest
+from unittest.mock import patch
+from pathlib import Path
+import run_qwen_rental_demo_20261030 as demo
 from run_qwen_rental_demo_20261030 import timing
 def calls():
  return [dict(sample_id=str(i),preprocess_start=i,prepare_end=i+.1,model_call_start=i+.2,
@@ -15,4 +18,10 @@ class Contract(unittest.TestCase):
  def test_overlapping_inputs_rejected(self):
   r=calls();r[1]['preprocess_start']=.3
   with self.assertRaises(ValueError):timing(r)
+ def test_unused_TRAIN_and_tail_files_not_required(self):
+  if not demo.MANIFEST.exists():self.skipTest('Original raw manifest is external data')
+  with patch.object(Path,'is_file',return_value=True) as stat:
+   rows=demo.original_test_metadata(demo.MANIFEST)
+  self.assertEqual(len(rows),558);self.assertEqual(stat.call_count,512)
+  self.assertTrue(all(r['split']=='test' for r in rows))
 if __name__=='__main__':unittest.main()
