@@ -71,15 +71,31 @@ def wait_ready(folder,ledger,stage,direction,seconds):
         abort=ledger.root.parent/'input_abort.json'
         if abort.exists():raise RuntimeError('Run transfer/capture was stopped')
         if direction=='outputs':
-            returned=ledger.root.parent/('capture_'+stage+'_return.json')
+            pointer=ledger.root.parent/(stage+'_active_capture.json');job='capture_'+stage
+            if pointer.exists():
+                job=json.loads(pointer.read_text())['job']
+                if Path(job).name!=job or not job.startswith('capture_'+stage):raise ValueError('Invalid active-capture pointer')
+            returned=ledger.root.parent/(job+'_return.json')
             if returned.exists()and json.loads(returned.read_text())['returncode']!=0:raise RuntimeError('Capture stopped before this sample')
         if time.monotonic()>=deadline:raise TimeoutError(('Missing ready data',str(folder)))
         time.sleep(.2)
 
 
-def send(ledger,stage,direction,stream,wait_seconds):
+def completed_prefix(ledger,stage,direction):
+    count=0
+    for request in ledger.requests:
+        folder=ledger.folder(stage,request)
+        if not(folder/('input.ready'if direction=='inputs'else'capture.ready')).exists():break
+        if direction=='inputs':validate_inputs(json.loads((folder/'ticket.json').read_text()),(folder/'logical_fields.npz').read_bytes(),ledger,request,stage)
+        else:ledger.receipt(stage,request)
+        count+=1
+    return count
+
+
+def send(ledger,stage,direction,stream,wait_seconds,start_index=0):
+    if not 0<=start_index<=len(ledger.requests):raise ValueError('Invalid stream start')
     stream.write(MAGIC);stream.flush();names=('logical_fields.npz','ticket.json')if direction=='inputs'else('raw.npy','calibrated.npy','receipt.json')
-    for index,request in enumerate(ledger.requests):
+    for index,request in enumerate(ledger.requests[start_index:],start_index):
         folder=ledger.folder(stage,request);wait_ready(folder,ledger,stage,direction,wait_seconds)
         if direction=='outputs':ledger.receipt(stage,request)
         rows=[];blocks=[]
@@ -92,9 +108,10 @@ def send(ledger,stage,direction,stream,wait_seconds):
     packet(stream,dict(kind='end',count=len(ledger.requests),ledger=ledger.key,stage=stage,direction=direction))
 
 
-def receive(ledger,stage,direction,stream):
+def receive(ledger,stage,direction,stream,start_index=0):
+    if not 0<=start_index<=completed_prefix(ledger,stage,direction):raise ValueError('Resume prefix has not been verified')
     if exact(stream,len(MAGIC))!=MAGIC:raise ValueError('Not a T12 data stream')
-    count=0;allowed={'logical_fields.npz','ticket.json'}if direction=='inputs'else{'raw.npy','calibrated.npy','receipt.json'}
+    count=start_index;allowed={'logical_fields.npz','ticket.json'}if direction=='inputs'else{'raw.npy','calibrated.npy','receipt.json'}
     while True:
         header,files=read_packet(stream)
         if header['ledger']!=ledger.key or header['stage']!=stage or header['direction']!=direction:raise ValueError('Wrong destination ledger')
@@ -123,11 +140,12 @@ def receive(ledger,stage,direction,stream):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--mode',choices=('send','receive'),required=True);p.add_argument('--direction',choices=('inputs','outputs'),required=True);p.add_argument('--stage',choices=STAGES,required=True);p.add_argument('--ledger',type=Path,required=True);p.add_argument('--wait-seconds',type=float,default=240);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--mode',choices=('send','receive','prefix'),required=True);p.add_argument('--direction',choices=('inputs','outputs'),required=True);p.add_argument('--stage',choices=STAGES,required=True);p.add_argument('--ledger',type=Path,required=True);p.add_argument('--wait-seconds',type=float,default=240);p.add_argument('--start-index',type=int,default=0);a=p.parse_args()
     if not 0<a.wait_seconds<=600:raise ValueError('Bounded wait required')
     c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests']);ledger.ready(a.stage)
-    if a.mode=='send':send(ledger,a.stage,a.direction,sys.stdout.buffer,a.wait_seconds)
-    else:receive(ledger,a.stage,a.direction,sys.stdin.buffer)
+    if a.mode=='send':send(ledger,a.stage,a.direction,sys.stdout.buffer,a.wait_seconds,a.start_index)
+    elif a.mode=='receive':receive(ledger,a.stage,a.direction,sys.stdin.buffer,a.start_index)
+    else:print(json.dumps(dict(next_index=completed_prefix(ledger,a.stage,a.direction),ledger=ledger.key,stage=a.stage,direction=a.direction)),flush=True)
 
 
 if __name__=='__main__':main()
