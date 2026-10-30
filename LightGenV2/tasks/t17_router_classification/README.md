@@ -40,6 +40,12 @@ LG共479364个相位参数（router50176＋专家200704＋global228484）；
 最终各划分逐样本保存soft路由和实际稀疏路由，检测坍塌，不以平均功率代替逐样本分工。
 数据、预处理和测试去重口径分别复用下述对应D2NN；旧架构成绩不能直接套入新图。
 三个新run使用同一张非A100 GPU，完成退出释放；原权重和测试结果不覆盖。
+已在服务器GPU1（UUID `GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d`）并发启动三组，
+run根`runs/simulation/panel_a_optical_four_ccd_s17_20261031`，子目录为三个数据集名。
+训练源码`72456ba2623a6b0d8f10252fbc2bada09ce78338`已发布；46项CPU检查通过，
+三任务真实训练图前向/反向均通过，router/专家/global梯度有限非零。
+三份旧D2NN的best再次核验均为三张478²，CRC9旧80.64%光LG权重核验确含9×784的Linear。
+完整核验与启动收据见`reports/panel_a_four_ccd_20261031/protocol.json`；新LG测试分数待训练结束。
 
 ## Kather2016/BloodMNIST-128三层CCD-only D2NN（2026-10-30）
 

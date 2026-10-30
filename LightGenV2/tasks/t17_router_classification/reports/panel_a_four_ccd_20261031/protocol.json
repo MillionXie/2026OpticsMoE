@@ -1,0 +1,482 @@
+{
+  "date": "2026-10-31",
+  "source_commit": "72456ba2623a6b0d8f10252fbc2bada09ce78338",
+  "scope": "Panel A only; three optical-router LG runs, no electronic-router run; preserve prior results",
+  "D2NN": {
+    "satisfies_three_continuous_phase_layers": true,
+    "phase_shapes": [
+      478,
+      478
+    ],
+    "canvas_shapes": [
+      518,
+      518
+    ],
+    "parameters": 685452,
+    "intermediate_OEO": false,
+    "learned_frontend": false,
+    "learned_readout": false,
+    "linear_scope": "Encoded complex entrance field to terminal complex field; CCD square law and input/probability normalization are retained",
+    "checkpoint_audit": {
+      "kather2016": {
+        "selected_epoch": 41,
+        "weights": {
+          "phases.0": [
+            478,
+            478
+          ],
+          "phases.1": [
+            478,
+            478
+          ],
+          "phases.2": [
+            478,
+            478
+          ]
+        },
+        "parameters": 685452,
+        "sha256": "cf6d2ed22d569ccd26446a3665ec4a5b9f8106be821ab89bd8ef189b1e605b69"
+      },
+      "bloodmnist128": {
+        "selected_epoch": 52,
+        "weights": {
+          "phases.0": [
+            478,
+            478
+          ],
+          "phases.1": [
+            478,
+            478
+          ],
+          "phases.2": [
+            478,
+            478
+          ]
+        },
+        "parameters": 685452,
+        "sha256": "ca2a61223f6c5b6481872b1e547e0e4768df978516df830be00c23f0edbf2aa4"
+      },
+      "crc9": {
+        "selected_epoch": 35,
+        "weights": {
+          "phases.0": [
+            478,
+            478
+          ],
+          "phases.1": [
+            478,
+            478
+          ],
+          "phases.2": [
+            478,
+            478
+          ]
+        },
+        "parameters": 685452,
+        "sha256": "f45c4a2d686d5ee27e87176ddc532c070d81a29b90eaf75805738267ab921724"
+      }
+    }
+  },
+  "optical_LG": {
+    "allocated_experts": 4,
+    "active_top_k": 2,
+    "expert_shape": [
+      224,
+      224
+    ],
+    "expert_gap_pixels": 30,
+    "global_shape": [
+      478,
+      478
+    ],
+    "canvas_shape": [
+      518,
+      518
+    ],
+    "router_shape": [
+      224,
+      224
+    ],
+    "main_layers": 2,
+    "router_layers_separate": 1,
+    "learned_frontend": false,
+    "learned_readout": false,
+    "electronic_router": false,
+    "OEO_stages": 2,
+    "OEO_formula": "I=abs(U)^2; I/=mean(I); a=I/(1+I); a/=L2(a); real amplitude reencode",
+    "readout_intensity": "Intensity of real amplitude after second OEO; not raw unprocessed final CCD intensity",
+    "parameters": 479364,
+    "detector_regions": {
+      "8_class": {
+        "y": [
+          0,
+          239,
+          478
+        ],
+        "x": [
+          0,
+          119,
+          239,
+          358,
+          478
+        ]
+      },
+      "9_class": {
+        "y": [
+          0,
+          159,
+          318,
+          478
+        ],
+        "x": [
+          0,
+          159,
+          318,
+          478
+        ]
+      }
+    }
+  },
+  "fairness": {
+    "same_global_aperture": true,
+    "same_fixed_source_RGB_encoding": true,
+    "same_split_and_class_order_as_paired_D2NN": true,
+    "same_detector_region_boundaries": true,
+    "same_seed_epochs_batch_LR_clip_selection": true,
+    "equal_parameter_count": false,
+    "equal_main_depth": false,
+    "input_scope": "LG224 per expert; D2NN expands same224 encoded source to478 aperture; fourth quadrant remains zero",
+    "test_scope": "Development followup; one TEST per newly validation-selected model; no selection by test"
+  },
+  "historical_identity": {
+    "panel_A_first_two_LG": "Unknown; do not infer nine experts from shared datasets or bar height",
+    "confirmed_nine_expert_code": "Historical panel-B depth study, global498; not matched to current D2NN478",
+    "panel_A_CRC9_old_LG_parameter_shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        9,
+        784
+      ]
+    },
+    "old_scores_not_reused_for_new_architecture": true
+  },
+  "verification": {
+    "CPU_tests_passed": 46,
+    "real_training_image_admission": {
+      "GPU": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "CPU_tests_passed": 46,
+      "datasets": {
+        "kather2016": {
+          "data": {
+            "manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+            "index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+            "archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+            "classes": [
+              "01_TUMOR",
+              "02_STROMA",
+              "03_COMPLEX",
+              "04_LYMPHO",
+              "05_DEBRIS",
+              "06_MUCOSA",
+              "07_ADIPOSE",
+              "08_EMPTY"
+            ],
+            "counts": {
+              "train": 3496,
+              "val": 752,
+              "test": 752
+            },
+            "pixel_hash_overlap_counts": {
+              "train_val": 0,
+              "train_test": 0,
+              "val_test": 0
+            },
+            "duplicate_hashes_within_split": {
+              "train": 0,
+              "val": 0,
+              "test": 0
+            },
+            "patient_independence_verified": false
+          },
+          "input_shape": [
+            8,
+            224,
+            224
+          ],
+          "output_shape": [
+            8,
+            8
+          ],
+          "parameter_shapes": {
+            "first_phase": [
+              4,
+              224,
+              224
+            ],
+            "global_phase": [
+              478,
+              478
+            ],
+            "router_phase": [
+              224,
+              224
+            ]
+          },
+          "phase_gradient_L1": {
+            "first_phase": 71.33749389648438,
+            "global_phase": 77.15274810791016,
+            "router_phase": 6.504935264587402
+          },
+          "expert_gradient_L1": [
+            1.3800206184387207,
+            48.09018325805664,
+            21.867286682128906,
+            0.0
+          ],
+          "OEO_calls": [
+            [
+              8,
+              518,
+              518
+            ],
+            [
+              8,
+              518,
+              518
+            ]
+          ],
+          "initial_loss": 12.350740432739258,
+          "mean_initial_route_power": [
+            0.3166053891181946,
+            0.4314765930175781,
+            0.2519180178642273,
+            0.0
+          ]
+        },
+        "bloodmnist128": {
+          "data": {
+            "manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+            "index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+            "archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+            "classes": [
+              "basophil",
+              "eosinophil",
+              "erythroblast",
+              "immature_granulocytes",
+              "lymphocyte",
+              "monocyte",
+              "neutrophil",
+              "platelet"
+            ],
+            "counts": {
+              "train": 11948,
+              "val": 1712,
+              "test": 3421
+            },
+            "pixel_hash_overlap_counts": {
+              "train_val": 0,
+              "train_test": 5,
+              "val_test": 1
+            },
+            "duplicate_hashes_within_split": {
+              "train": 0,
+              "val": 0,
+              "test": 0
+            },
+            "patient_independence_verified": false
+          },
+          "input_shape": [
+            8,
+            224,
+            224
+          ],
+          "output_shape": [
+            8,
+            8
+          ],
+          "parameter_shapes": {
+            "first_phase": [
+              4,
+              224,
+              224
+            ],
+            "global_phase": [
+              478,
+              478
+            ],
+            "router_phase": [
+              224,
+              224
+            ]
+          },
+          "phase_gradient_L1": {
+            "first_phase": 45.61142349243164,
+            "global_phase": 47.75786590576172,
+            "router_phase": 4.535203456878662
+          },
+          "expert_gradient_L1": [
+            5.781179904937744,
+            31.059402465820312,
+            8.77083969116211,
+            0.0
+          ],
+          "OEO_calls": [
+            [
+              8,
+              518,
+              518
+            ],
+            [
+              8,
+              518,
+              518
+            ]
+          ],
+          "initial_loss": 9.601149559020996,
+          "mean_initial_route_power": [
+            0.5322364568710327,
+            0.3659781515598297,
+            0.10178540647029877,
+            0.0
+          ]
+        },
+        "crc9": {
+          "data": {
+            "archive_sha256": "287441e12c9f05c8257bf44b12b0157e77e934b88e5596e2dd9f85068484b51b",
+            "manifest_sha256": "419cdc19c1502a7b3b377a332114854d978ce15e7c47aeee5c926037a5477ad2",
+            "classes": [
+              "tumor",
+              "smooth_muscle",
+              "cancer_stroma",
+              "lymphocytes",
+              "debris",
+              "normal_mucosa",
+              "adipose",
+              "background",
+              "mucus"
+            ],
+            "counts": {
+              "train": 5026,
+              "val": 718,
+              "test": 1436
+            },
+            "patient_independence_verified": false
+          },
+          "input_shape": [
+            8,
+            224,
+            224
+          ],
+          "output_shape": [
+            8,
+            9
+          ],
+          "parameter_shapes": {
+            "first_phase": [
+              4,
+              224,
+              224
+            ],
+            "global_phase": [
+              478,
+              478
+            ],
+            "router_phase": [
+              224,
+              224
+            ]
+          },
+          "phase_gradient_L1": {
+            "first_phase": 26.999954223632812,
+            "global_phase": 25.41733169555664,
+            "router_phase": 0.5796190500259399
+          },
+          "expert_gradient_L1": [
+            10.165679931640625,
+            0.0,
+            16.834274291992188,
+            0.0
+          ],
+          "OEO_calls": [
+            [
+              8,
+              518,
+              518
+            ],
+            [
+              8,
+              518,
+              518
+            ]
+          ],
+          "initial_loss": 6.345481872558594,
+          "mean_initial_route_power": [
+            0.5321200489997864,
+            0.0,
+            0.4678799510002136,
+            0.0
+          ]
+        }
+      }
+    }
+  },
+  "launch": {
+    "supervisor_pid": 334756,
+    "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "source_commit": "72456ba2623a6b0d8f10252fbc2bada09ce78338",
+    "run_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031",
+    "commands": [
+      [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_optical_four_ccd",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/kather2016_optical_four_ccd_s17_20261031.json",
+        "--data-root",
+        "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/kather2016"
+      ],
+      [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_optical_four_ccd",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/bloodmnist128_optical_four_ccd_s17_20261031.json",
+        "--data-root",
+        "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/bloodmnist128"
+      ],
+      [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_optical_four_ccd",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/crc9_optical_four_ccd_s17_20261031.json",
+        "--data-root",
+        "/DATA/DATA1/guest3/demo_reproduction_data/kather2018_crc9_domains_v1",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/crc9"
+      ]
+    ],
+    "launched": 1793385507.7611458,
+    "actual_repo_HEAD": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40"
+  },
+  "new_LG_TEST_results": "pending"
+}
