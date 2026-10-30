@@ -8,7 +8,9 @@ cases=[]
 for d,name in [('kather2016','Kather2016（8类）'),('bloodmnist128','BloodMNIST-128（8类）'),('crc9','CRC-VAL-HE-7K（9类）')]:
  dev=read(runs/'panel_a_original_test_dev_s17_20261031'/d/'result.json')
  old=dev['selected_LG'];ref=dev['selected_D2NN_development_reference'];records=[]
- for run,suffix,label in [('panel_a_original_test_teacher_kd_s17_20261031','student','D4蒸馏'),('panel_a_original_test_kd_identity_s17_20261031','','无增强保守蒸馏')]:
+ for run,suffix,label in [('panel_a_original_test_teacher_kd_s17_20261031','student','D4蒸馏'),('panel_a_original_test_kd_identity_s17_20261031','','无增强保守蒸馏'),
+                         ('panel_a_boundary_development_s17_20261031','frozen_router_boundary','冻结光路由＋边界损失'),
+                         ('panel_a_boundary_development_s17_20261031','diffuse_start_boundary','随机主相位＋冻结光路由＋边界损失')]:
   p=runs/run/d/suffix;q=read(p/'result.json');s=read(p/'status.json')
   if q:records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state='complete',label=label,result=q))
   elif p.parent.exists():records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state=s or {'state':'not_started_or_loading'},label=label))
