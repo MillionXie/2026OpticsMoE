@@ -18,7 +18,9 @@ def main():
         def missing_host_key(self,client,hostname,key):
             if key.get_name()!=credential['host_key_type']or key.get_base64()!=credential['host_key_base64']:raise paramiko.SSHException('Compute host-key mismatch')
     client=paramiko.SSHClient();client.set_missing_host_key_policy(PinnedHostKey());began=time.monotonic()
-    c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests']);ledger.ready(a.stage)
+    c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests'])
+    # DATA-only movement needs exact current-file checks, not another complete
+    # predecessor I/O sweep. Only model/camera entries can admit a physical stage.
     def command(mode,start=0):
         args=['data','--mode',mode,'--direction',a.direction,'--stage',a.stage,'--ledger',a.server_ledger,'--wait-seconds','600','--start-index',str(start)]
         bootstrap='import sys,os;os.environ["CUDA_VISIBLE_DEVICES"]="";sys.path.insert(0,'+repr(credential['server_root'])+');from LightGenV2.tasks.t12_text_to_image.scene_lab_data_stream import main;sys.argv='+repr(args)+';main()'

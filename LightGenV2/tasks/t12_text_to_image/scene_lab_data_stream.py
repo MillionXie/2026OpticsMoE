@@ -142,7 +142,11 @@ def receive(ledger,stage,direction,stream,start_index=0):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--mode',choices=('send','receive','prefix'),required=True);p.add_argument('--direction',choices=('inputs','outputs'),required=True);p.add_argument('--stage',choices=STAGES,required=True);p.add_argument('--ledger',type=Path,required=True);p.add_argument('--wait-seconds',type=float,default=240);p.add_argument('--start-index',type=int,default=0);a=p.parse_args()
     if not 0<a.wait_seconds<=600:raise ValueError('Bounded wait required')
-    c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests']);ledger.ready(a.stage)
+    c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests'])
+    # This is DATA transport, not permission to execute a model or open devices.
+    # Current sample bytes/tickets/receipts are verified below. Rehashing every
+    # earlier stage here made a prefix query exceed its SSH timeout on busy disks.
+    # Whole-cohort predecessor admission remains in native preparation/capture.
     if a.mode=='send':send(ledger,a.stage,a.direction,sys.stdout.buffer,a.wait_seconds,a.start_index)
     elif a.mode=='receive':receive(ledger,a.stage,a.direction,sys.stdin.buffer,a.start_index)
     else:print(json.dumps(dict(next_index=completed_prefix(ledger,a.stage,a.direction),ledger=ledger.key,stage=a.stage,direction=a.direction)),flush=True)
