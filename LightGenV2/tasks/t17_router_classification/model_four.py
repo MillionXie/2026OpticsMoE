@@ -19,10 +19,11 @@ class FourRouterClassification(PhaseOnly):
     def __init__(self,variant,readout='linear',num_classes=9):
         if variant not in ('optical','electronic','d2nn'):raise ValueError(variant)
         if readout not in ('linear','ccd_grid'):raise ValueError(readout)
-        if num_classes<2 or (readout=='ccd_grid' and num_classes!=9):raise ValueError(num_classes)
+        if num_classes<2 or (readout=='ccd_grid' and num_classes not in (8,9)):raise ValueError(num_classes)
         super().__init__('full_d2nn' if variant=='d2nn' else 'dynamic_four',dict(CONTRACT))
         self.variant=variant
         self.readout=readout
+        self.num_classes=num_classes
         self.height=self.width=518
         self.active_height=self.active_width=478
         self.max_experts=4
@@ -82,12 +83,13 @@ class FourRouterClassification(PhaseOnly):
             logits=self.shared_head(features)
             energies=None
         else:
-            energies=ccd_grid_energies(active)
+            energies=ccd_grid_energies(active,self.num_classes)
             # Relative additive epsilon preserves gradients in dark regions.
             total=energies.sum(1,keepdim=True)
-            probabilities=(energies+1e-12*total)/(total*(1+9e-12))
+            probabilities=(energies+1e-12*total)/(total*(1+self.num_classes*1e-12))
             logits=probabilities.log()
         output=dict(logits=logits,route_power=q,router_capture=capture)
+        if self.readout=='ccd_grid':output['probabilities']=probabilities
         if return_dense_route:output['dense_route_power']=dense
         if energies is not None:output['class_energies']=energies
         if return_debug:
@@ -97,9 +99,11 @@ class FourRouterClassification(PhaseOnly):
 
 CCD_EDGES=(0,159,318,478)
 
-def ccd_grid_energies(active):
-    """Nine disjoint, full-coverage CCD regions, numbered row-major 0..8."""
+def ccd_grid_energies(active,num_classes=9):
+    """Fixed full-coverage CCD regions; identical layouts for LG and linear D2NN."""
     if active.shape[-2:]!=(478,478):raise ValueError(active.shape)
-    return torch.stack([active[:,CCD_EDGES[r]:CCD_EDGES[r+1],
-                                     CCD_EDGES[c]:CCD_EDGES[c+1]].sum((-2,-1))
-                        for r in range(3) for c in range(3)],dim=1)
+    if num_classes==9:ys=xs=CCD_EDGES
+    elif num_classes==8:ys=(0,239,478);xs=(0,119,239,358,478)
+    else:raise ValueError(num_classes)
+    return torch.stack([active[:,ys[r]:ys[r+1],xs[c]:xs[c+1]].sum((-2,-1))
+                        for r in range(len(ys)-1) for c in range(len(xs)-1)],dim=1)
