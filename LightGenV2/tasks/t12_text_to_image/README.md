@@ -1,5 +1,18 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 当前现场：相机恢复，空间注册通过；白场信号缺失，采集暂停
+
+用户指定的实验室`E:/code/guest/20261029.txt`已逐SHA核验，原文件未改。
+TUCam实际识别Dhyana 400BSI V3，两块SLM均已接入；共保存65张新原帧
+（2张连接诊断、63张SLM控制校准／诊断），**模型TRAIN CCD仍为0**。
+另存固定派生映射后，5个全新独立位置最大误差2.160px，通过预声明3px空间门；
+幅度响应通过独立检查，但相位斜坡实测约22–23px、名义原传播器约12.33px，
+尚未认证线性2pi或完整物理匹配，不能据空间门通过宣称EXP–SIM质量达标。
+最后同一全白BMP的全sensor均值从6995降至348，与暗场349几乎相同；
+曝光／增益／ROI／LUT与输入BMP身份均未变。当前等待现场确认光源、遮挡及SLM实际出光，
+已停止无依据重试，采集进程和自有设备锁均已释放，用户取消的定时任务未恢复。
+原始数据、派生映射和失败证据均保留；详见[本次现场报告](reports/scene_generation_20261029/HARDWARE_20261029_SESSION_20261030.md)。
+
 ### 当前：冻结独立500已通过10%可比门，移交光路集成
 
 `scene_natural_frozen500_workflow_20261030`已完整结束：E662电子30步和F9单组LG12步
@@ -20,7 +33,8 @@ TRAIN/校准DEV小pilot，再按层全量采集，目标为**同一LG的EXP相�
 正式交接记录`runs/hardware/scene_F9_deployment_handoff_20261030/handoff.json` SHA
 `e5ea8ba5dd115d453014b8a3c4e7d50565a550fb02892ce55095b5a18097e0d8`，本地／服务器均已核验。
 光路专用`scene_lab_*`与`build_lab_package.py`新profile由光路线程单写；原线程控制冻结评分／展示，
-不重复发采集指令，不操作实验台。**真实SDK／器件会话与5%实测仍未通过**，离线包不能冒称现场ready。
+不重复发采集指令，不操作实验台。真实SDK连接及空间注册已有上方实采证据，
+**完整相位响应及5%生成质量实测仍未通过**，离线包不能冒称现场ready。
 光路准备快照见[HARDWARE_READINESS](reports/scene_generation_20261029/HARDWARE_READINESS_20261030.md)。
 
 已另补齐持久资产闭包：`runs/hardware/scene_F9_persistent_asset_closure_20261030`，
