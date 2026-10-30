@@ -72,7 +72,7 @@ class ProcessorProxy:
 
 
 class Observer:
-    def __init__(self,output):self.output=Path(output);self.requests=[];self.cpu=[]
+    def __init__(self,output):self.output=Path(output);self.requests=[];self.cpu=[];self.backend=[]
     def prepare(self,qwen,processor,head,pipe):
         if qwen is None or not hasattr(qwen.model,'hybrid'):
             raise ValueError('This scope is exclusive to the real single-EG LG model')
@@ -88,9 +88,14 @@ class Observer:
             router._t12_physical_simulate=wrapped(router._t12_physical_simulate,'T12/FFT_simulation')
         self.macros=macros
         pipe.image_processor.postprocess=wrapped(pipe.image_processor.postprocess,'T12/CPU_output',self.cpu)
+        # CPU Python/scalar arithmetic inside the scheduler is not fully
+        # distinguishable from launch work by Kineto. Keep a conservative
+        # all-thread whole-backend CPU envelope, even though it ALSO includes
+        # excluded submission overhead. Do not silently price this work at 0.
+        cls=type(pipe);cls.__call__=wrapped(cls.__call__,'T12/backend_CPU_upper',self.backend)
         return ProcessorProxy(processor,self.cpu)
     def begin(self,row):
-        self.cpu.clear();self.profiler=torch.profiler.profile(activities=[
+        self.cpu.clear();self.backend.clear();self.profiler=torch.profiler.profile(activities=[
             torch.profiler.ProfilerActivity.CPU,torch.profiler.ProfilerActivity.CUDA])
         self.started=time.perf_counter();self.profiler.__enter__()
     def end(self,row):
@@ -105,7 +110,11 @@ class Observer:
         # another request, no padding fields or frame/batch amortization.
         assert {q['scope'] for q in self.cpu}=={'T12/CPU_preprocessing','T12/CPU_output'}
         cpu=sum(q['process_CPU_ms'] for q in self.cpu)
-        serial=result['retained_GPU_ms']+cpu+cycles*PERIOD_MS
+        assert len(self.backend)==1
+        output_cpu=sum(q['process_CPU_ms'] for q in self.cpu if q['scope']=='T12/CPU_output')
+        extra_cpu=max(0.,self.backend[0]['process_CPU_ms']-output_cpu)
+        known=result['retained_GPU_ms']+cpu+cycles*PERIOD_MS
+        serial=known+extra_cpu
         trace=self.output/(row['sample_id']+'.trace.json');self.profiler.export_chrome_trace(str(trace))
         zipped=Path(str(trace)+'.gz')
         with trace.open('rb') as f,gzip.open(zipped,'wb') as out:
@@ -118,6 +127,9 @@ class Observer:
         nodes=self.output/(row['sample_id']+'.kernel_nodes.json')
         nodes.write_text(json.dumps(result.pop('nodes')))
         item=dict(sample_id=row['sample_id'],serial_electronic_work_plus_optical_model_ms=serial,
+            serial_cost_is_conservative_CPU_work_envelope=True,
+            confirmed_kernel_preprocess_output_optical_model_ms=known,
+            conservative_backend_CPU_extra_ms=extra_cpu,backend_CPU_envelope=self.backend[0],
             optical_cycles=cycles,optical_period_ms=PERIOD_MS,optical_model_ms=cycles*PERIOD_MS,
             CPU_required_work_ms=cpu,CPU_scopes=list(self.cpu),instrumented_wall_ms=elapsed,
             actual_modal_cycles=counts,trace_gzip=zipped.name,trace_sha256=hashlib.sha256(zipped.read_bytes()).hexdigest(),
@@ -131,8 +143,9 @@ class Observer:
             cross_request_parallelism=False,preprocessing_covered_by_other_requests=False,
             optical_time_multiplied_by_UNet_steps=False,physical_optical_measurement=False,
             verified_physical_DMA_or_SDK_time=False,
-            count_scope='Retained actual GPU kernel work + all-thread required CPU work + 6 serial fixed optical cycles',
-            pure_submission_waits_electronic_residual_and_fusion_excluded=True,
+            count_scope='Retained GPU kernels + required CPU preprocessing/output + 6 optical cycles; conservatively ALSO retain whole-backend CPU work envelope',
+            GPU_simulation_electronic_residual_and_fusion_excluded=True,
+            CPU_queue_wait_wall_excluded=True,backend_CPU_submission_not_separable_upper_bound_retained=True,
             CPU_work_model_not_wall=True,software_profile_wall_has_instrumentation=True,
             quality_or_speed_accepted=False)
         (self.output/'scoped_latency.json').write_text(json.dumps(report,indent=2))
