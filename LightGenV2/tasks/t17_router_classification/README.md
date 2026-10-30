@@ -30,6 +30,24 @@ best E15/last E18均校验可读，未运行TEST；原run保留，GPU已释放�
 服务器保留已有仓库HEAD，T17源码由已发布main按路径Git同步；metadata分别记录
 服务器HEAD/source_commit及实际源码SHA，不把旧仓库HEAD误称为本轮源码版本。
 
+两组均完成60轮并正常退出，source commit为`79abc5fb878a19c03b00ced68b769f02cf315a79`。
+按验证macro recall/CE选中的同一best给出下表；每组仅seed17，不报告跨种子标准差。
+
+| 数据集 | best epoch | TRAIN准确率 | VAL准确率 | TEST准确率 | TEST宏召回 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Kather2016 | 41 | 46.94% | 42.15% | 40.69% | 40.69% |
+| BloodMNIST-128 | 52 | 61.50% | 62.38% | 59.98% | 51.20% |
+
+Blood的TEST-clean3415张准确率60.09%、宏召回51.25%，来自同一次TEST预测。
+Kather测试LYMPHO类召回为零；训练/验证差距4.79百分点，Blood为-0.88百分点。
+目前低训练准确率表明拟合能力仍有限，不能主要归因于严重过拟合，也不能声称充分收敛。
+本轮同时改变层数、OEO及读出，且原图a前两组代码/权重未核实，不能据此量化任一单因素影响。
+best/last均验证含三张478平方且已更新的相位；两组last均E60，完整逐轮历史无缺失。
+44项T17 CPU检查通过；29份运行文件逐文件SHA核验并传回本地，TRAIN/VAL/TEST及
+TEST-clean的指标与混淆矩阵独立复算一致；训练PID4176406/4176407已退出，不占GPU。
+权重、逐样本预测和原始历史保留于上述run，汇总见
+`reports/linear3_8class_lab_s17_20261030/summary.json`。
+
 ## CRC9三层线性传播D2NN，无OEO/Linear（2026-10-30）
 
 用户从A图第三组原D2NN提出新对照：原两层/两次OEO/Linear784→9，改为三层、

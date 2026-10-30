@@ -1,0 +1,1371 @@
+{
+  "run_id": "linear3_8class_lab_s17_20261030",
+  "source_commit": "79abc5fb878a19c03b00ced68b769f02cf315a79",
+  "role": "development_followup_historical_panel_A_baseline_source_unconfirmed",
+  "datasets": {
+    "kather2016": {
+      "profile": {
+        "profile": "kather2016_d2nn_linear3_ccd_s17_20261030",
+        "seed": 17,
+        "layers": 3,
+        "epochs": 60,
+        "batch": 8,
+        "learning_rate": 0.005,
+        "optimizer": "Adam",
+        "gradient_clip": 5.0,
+        "training_evaluate_every": 5,
+        "selection": "validation_macro_recall_then_cross_entropy",
+        "input": "Original four_top2 fixed bicubic RGB [R,G;B,0]224; bilinear full-aperture478; unit power",
+        "phase_side": 478,
+        "canvas_side": 518,
+        "wavelength_nm": 532,
+        "pixel_pitch_um": 17,
+        "distance_per_layer_m": 0.1,
+        "phase_parameterization": "2*pi*sigmoid(raw); raw initialized zero",
+        "phase_parameters": 685452,
+        "intermediate_OEO": false,
+        "learned_electronic_frontend": false,
+        "learned_electronic_readout": false,
+        "readout": "Final CCD only; fixed 2x4 disjoint full-coverage grid; y edges0/239/478, x edges0/119/239/358/478; row-major classes0..7",
+        "augmentation": false,
+        "ema": false,
+        "class_weighting": false,
+        "weight_decay": 0,
+        "test_policy": "Once after validation selection and checkpoint hash lock; development followup; historical panel-A baseline source unconfirmed",
+        "maximum_gpus": 1,
+        "A100_allowed": false,
+        "dataset": "kather2016",
+        "num_classes": 8,
+        "expected_counts": {
+          "train": 3496,
+          "val": 752,
+          "test": 752
+        },
+        "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+        "split_policy": "Saved Kather image IDs; Blood official splits with original 11 train exclusions from experiment_data_manifest.json"
+      },
+      "profile_sha256": "6792c602d6bf8da05872ec52013d89fb4713ebe6b09aecde115a7db3c46062c9",
+      "data": {
+        "manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+        "index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+        "archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+        "classes": [
+          "01_TUMOR",
+          "02_STROMA",
+          "03_COMPLEX",
+          "04_LYMPHO",
+          "05_DEBRIS",
+          "06_MUCOSA",
+          "07_ADIPOSE",
+          "08_EMPTY"
+        ],
+        "counts": {
+          "train": 3496,
+          "val": 752,
+          "test": 752
+        },
+        "pixel_hash_overlap_counts": {
+          "train_val": 0,
+          "train_test": 0,
+          "val_test": 0
+        },
+        "duplicate_hashes_within_split": {
+          "train": 0,
+          "val": 0,
+          "test": 0
+        },
+        "patient_independence_verified": false
+      },
+      "source_sha256": {
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py": "e1fe09b0a75d237f8b728faafe5f92d659f9b1e90a49a69106a5361c40c15787",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/model_linear_ccd.py": "74ef2799e8fd4127eff0ffaf7880cafd2bcd2f7c745c5d7572fc38b2e8a0d22c",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train_linear_ccd.py": "ab81560bb237bbd4f2f50fdde08b1940ae047544abd7fa4d9d5f7d0b5e5e9d34",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train.py": "6fcaabb49d64c25f5427f3f9ddcf0c823b2df8b3ca5da4b40cbdc49ebe8b3be1",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/model_four.py": "783fbab438af72ebc9c57a7157f1a568e2d4aa75ef26ddea81135306b3c51bda",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/pure_optical/models.py": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"
+      },
+      "actual_server_repo_HEAD_during_run": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+      "source_commit": "79abc5fb878a19c03b00ced68b769f02cf315a79",
+      "result": {
+        "selected_epoch": 41,
+        "checkpoint_sha256": "cf6d2ed22d569ccd26446a3665ec4a5b9f8106be821ab89bd8ef189b1e605b69",
+        "selection": "validation_macro_recall_then_cross_entropy",
+        "test_evaluations_before_lock": 0,
+        "train": {
+          "accuracy": 0.4693935811519623,
+          "balanced_accuracy": 0.46939361095428467,
+          "cross_entropy": 1.5594897270202637,
+          "confusion_matrix": [
+            [
+              324,
+              17,
+              84,
+              0,
+              2,
+              10,
+              0,
+              0
+            ],
+            [
+              14,
+              105,
+              197,
+              2,
+              106,
+              2,
+              10,
+              1
+            ],
+            [
+              44,
+              78,
+              299,
+              1,
+              14,
+              0,
+              0,
+              1
+            ],
+            [
+              346,
+              8,
+              43,
+              39,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              14,
+              76,
+              55,
+              3,
+              169,
+              5,
+              80,
+              35
+            ],
+            [
+              298,
+              4,
+              39,
+              16,
+              4,
+              69,
+              2,
+              5
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              230,
+              206
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              1,
+              30,
+              406
+            ]
+          ],
+          "n": 3496
+        },
+        "validation": {
+          "accuracy": 0.42154255509376526,
+          "balanced_accuracy": 0.42154252529144287,
+          "cross_entropy": 1.574468731880188,
+          "confusion_matrix": [
+            [
+              63,
+              6,
+              24,
+              0,
+              1,
+              0,
+              0,
+              0
+            ],
+            [
+              2,
+              28,
+              43,
+              1,
+              20,
+              0,
+              0,
+              0
+            ],
+            [
+              6,
+              21,
+              60,
+              0,
+              7,
+              0,
+              0,
+              0
+            ],
+            [
+              80,
+              2,
+              11,
+              0,
+              0,
+              1,
+              0,
+              0
+            ],
+            [
+              5,
+              14,
+              16,
+              0,
+              20,
+              2,
+              30,
+              7
+            ],
+            [
+              70,
+              0,
+              10,
+              2,
+              0,
+              10,
+              2,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              1,
+              0,
+              49,
+              44
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              7,
+              87
+            ]
+          ],
+          "n": 752
+        },
+        "test": {
+          "accuracy": 0.4069148898124695,
+          "balanced_accuracy": 0.4069148898124695,
+          "cross_entropy": 1.5820906162261963,
+          "confusion_matrix": [
+            [
+              68,
+              4,
+              19,
+              1,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              3,
+              17,
+              45,
+              0,
+              26,
+              0,
+              1,
+              2
+            ],
+            [
+              6,
+              23,
+              57,
+              0,
+              8,
+              0,
+              0,
+              0
+            ],
+            [
+              89,
+              0,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              4,
+              19,
+              20,
+              1,
+              21,
+              1,
+              19,
+              9
+            ],
+            [
+              69,
+              2,
+              8,
+              4,
+              1,
+              7,
+              3,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              50,
+              44
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8,
+              86
+            ]
+          ],
+          "n": 752
+        },
+        "test_clean": {
+          "accuracy": 0.40691489361702127,
+          "balanced_accuracy": 0.40691489361702127,
+          "cross_entropy": 1.5820904970169067,
+          "confusion_matrix": [
+            [
+              68,
+              4,
+              19,
+              1,
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              3,
+              17,
+              45,
+              0,
+              26,
+              0,
+              1,
+              2
+            ],
+            [
+              6,
+              23,
+              57,
+              0,
+              8,
+              0,
+              0,
+              0
+            ],
+            [
+              89,
+              0,
+              5,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            [
+              4,
+              19,
+              20,
+              1,
+              21,
+              1,
+              19,
+              9
+            ],
+            [
+              69,
+              2,
+              8,
+              4,
+              1,
+              7,
+              3,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              50,
+              44
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              8,
+              86
+            ]
+          ],
+          "n": 752
+        },
+        "test_evaluations": 1,
+        "completed_epochs": 60,
+        "elapsed_seconds": 445.58864974975586,
+        "role": "development_followup_historical_panel_A_baseline_source_unconfirmed"
+      },
+      "train_minus_val_accuracy_percentage_points": 4.785102605819702,
+      "zero_test_recall_classes": [
+        "04_LYMPHO"
+      ],
+      "checkpoint_audit": {
+        "weights": {
+          "best_checkpoint.pt": {
+            "epoch": 41,
+            "sha256": "cf6d2ed22d569ccd26446a3665ec4a5b9f8106be821ab89bd8ef189b1e605b69",
+            "parameters": 685452,
+            "phase_shapes": {
+              "phases.0": [
+                478,
+                478
+              ],
+              "phases.1": [
+                478,
+                478
+              ],
+              "phases.2": [
+                478,
+                478
+              ]
+            }
+          },
+          "last_checkpoint.pt": {
+            "epoch": 60,
+            "sha256": "10df831ffe99f97b61a9825eb4eafce9872ba60b4f5af82e99c7c18abf351515",
+            "parameters": 685452,
+            "phase_shapes": {
+              "phases.0": [
+                478,
+                478
+              ],
+              "phases.1": [
+                478,
+                478
+              ],
+              "phases.2": [
+                478,
+                478
+              ]
+            }
+          }
+        },
+        "history_complete_1_to_60": true,
+        "validation_selection_rechecked": true,
+        "training_pid": 4176406,
+        "original_training_process_exited": true,
+        "current_cmdline_for_pid": null
+      },
+      "final_epoch_validation": {
+        "accuracy": 0.36968085169792175,
+        "balanced_accuracy": 0.36968088150024414,
+        "cross_entropy": 1.5620448589324951,
+        "confusion_matrix": [
+          [
+            59,
+            21,
+            11,
+            1,
+            0,
+            2,
+            0,
+            0
+          ],
+          [
+            1,
+            80,
+            3,
+            1,
+            9,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            72,
+            13,
+            1,
+            5,
+            0,
+            0,
+            0
+          ],
+          [
+            64,
+            17,
+            4,
+            8,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            4,
+            31,
+            5,
+            3,
+            10,
+            4,
+            8,
+            29
+          ],
+          [
+            69,
+            5,
+            2,
+            4,
+            0,
+            11,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            3,
+            90
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            94
+          ]
+        ],
+        "n": 752
+      },
+      "final_epoch_training": {
+        "accuracy": 0.43421053886413574,
+        "balanced_accuracy": 0.43421053886413574,
+        "cross_entropy": 1.5466029644012451,
+        "confusion_matrix": [
+          [
+            315,
+            64,
+            47,
+            1,
+            0,
+            10,
+            0,
+            0
+          ],
+          [
+            7,
+            360,
+            10,
+            10,
+            36,
+            2,
+            3,
+            9
+          ],
+          [
+            37,
+            283,
+            100,
+            0,
+            15,
+            1,
+            0,
+            1
+          ],
+          [
+            271,
+            50,
+            17,
+            98,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            21,
+            175,
+            15,
+            7,
+            97,
+            7,
+            25,
+            90
+          ],
+          [
+            282,
+            19,
+            15,
+            25,
+            0,
+            88,
+            1,
+            7
+          ],
+          [
+            0,
+            0,
+            0,
+            1,
+            0,
+            1,
+            24,
+            411
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            436
+          ]
+        ],
+        "n": 3496
+      }
+    },
+    "bloodmnist128": {
+      "profile": {
+        "profile": "bloodmnist128_d2nn_linear3_ccd_s17_20261030",
+        "seed": 17,
+        "layers": 3,
+        "epochs": 60,
+        "batch": 8,
+        "learning_rate": 0.005,
+        "optimizer": "Adam",
+        "gradient_clip": 5.0,
+        "training_evaluate_every": 5,
+        "selection": "validation_macro_recall_then_cross_entropy",
+        "input": "Original four_top2 fixed bicubic RGB [R,G;B,0]224; bilinear full-aperture478; unit power",
+        "phase_side": 478,
+        "canvas_side": 518,
+        "wavelength_nm": 532,
+        "pixel_pitch_um": 17,
+        "distance_per_layer_m": 0.1,
+        "phase_parameterization": "2*pi*sigmoid(raw); raw initialized zero",
+        "phase_parameters": 685452,
+        "intermediate_OEO": false,
+        "learned_electronic_frontend": false,
+        "learned_electronic_readout": false,
+        "readout": "Final CCD only; fixed 2x4 disjoint full-coverage grid; y edges0/239/478, x edges0/119/239/358/478; row-major classes0..7",
+        "augmentation": false,
+        "ema": false,
+        "class_weighting": false,
+        "weight_decay": 0,
+        "test_policy": "Once after validation selection and checkpoint hash lock; development followup; historical panel-A baseline source unconfirmed",
+        "maximum_gpus": 1,
+        "A100_allowed": false,
+        "dataset": "bloodmnist128",
+        "num_classes": 8,
+        "expected_counts": {
+          "train": 11948,
+          "val": 1712,
+          "test": 3421
+        },
+        "source_archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+        "split_policy": "Saved Kather image IDs; Blood official splits with original 11 train exclusions from experiment_data_manifest.json"
+      },
+      "profile_sha256": "adf4749f6bcc1c632e859148322003c819ef5e7202a9b8a3aa2e44156fed2bdc",
+      "data": {
+        "manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+        "index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+        "archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+        "classes": [
+          "basophil",
+          "eosinophil",
+          "erythroblast",
+          "immature_granulocytes",
+          "lymphocyte",
+          "monocyte",
+          "neutrophil",
+          "platelet"
+        ],
+        "counts": {
+          "train": 11948,
+          "val": 1712,
+          "test": 3421
+        },
+        "pixel_hash_overlap_counts": {
+          "train_val": 0,
+          "train_test": 5,
+          "val_test": 1
+        },
+        "duplicate_hashes_within_split": {
+          "train": 0,
+          "val": 0,
+          "test": 0
+        },
+        "patient_independence_verified": false
+      },
+      "source_sha256": {
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train_linear_ccd_8class.py": "e1fe09b0a75d237f8b728faafe5f92d659f9b1e90a49a69106a5361c40c15787",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/model_linear_ccd.py": "74ef2799e8fd4127eff0ffaf7880cafd2bcd2f7c745c5d7572fc38b2e8a0d22c",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train_linear_ccd.py": "ab81560bb237bbd4f2f50fdde08b1940ae047544abd7fa4d9d5f7d0b5e5e9d34",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train.py": "6fcaabb49d64c25f5427f3f9ddcf0c823b2df8b3ca5da4b40cbdc49ebe8b3be1",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/model_four.py": "783fbab438af72ebc9c57a7157f1a568e2d4aa75ef26ddea81135306b3c51bda",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/pure_optical/models.py": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d"
+      },
+      "actual_server_repo_HEAD_during_run": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+      "source_commit": "79abc5fb878a19c03b00ced68b769f02cf315a79",
+      "result": {
+        "selected_epoch": 52,
+        "checkpoint_sha256": "ca2a61223f6c5b6481872b1e547e0e4768df978516df830be00c23f0edbf2aa4",
+        "selection": "validation_macro_recall_then_cross_entropy",
+        "test_evaluations_before_lock": 0,
+        "train": {
+          "accuracy": 0.6149983406066895,
+          "balanced_accuracy": 0.5226535201072693,
+          "cross_entropy": 1.4494786262512207,
+          "confusion_matrix": [
+            [
+              78,
+              115,
+              9,
+              579,
+              44,
+              5,
+              16,
+              3
+            ],
+            [
+              4,
+              1149,
+              5,
+              613,
+              0,
+              12,
+              377,
+              17
+            ],
+            [
+              20,
+              11,
+              554,
+              106,
+              31,
+              2,
+              117,
+              244
+            ],
+            [
+              22,
+              153,
+              31,
+              1621,
+              6,
+              82,
+              108,
+              0
+            ],
+            [
+              27,
+              4,
+              383,
+              125,
+              246,
+              4,
+              58,
+              2
+            ],
+            [
+              7,
+              100,
+              1,
+              716,
+              0,
+              140,
+              25,
+              3
+            ],
+            [
+              0,
+              50,
+              39,
+              289,
+              0,
+              3,
+              1939,
+              10
+            ],
+            [
+              0,
+              0,
+              11,
+              0,
+              0,
+              0,
+              11,
+              1621
+            ]
+          ],
+          "n": 11948
+        },
+        "validation": {
+          "accuracy": 0.6238317489624023,
+          "balanced_accuracy": 0.5318730473518372,
+          "cross_entropy": 1.4433296918869019,
+          "confusion_matrix": [
+            [
+              9,
+              21,
+              3,
+              79,
+              5,
+              3,
+              2,
+              0
+            ],
+            [
+              0,
+              171,
+              2,
+              84,
+              0,
+              0,
+              53,
+              2
+            ],
+            [
+              1,
+              1,
+              90,
+              16,
+              1,
+              1,
+              10,
+              35
+            ],
+            [
+              1,
+              19,
+              9,
+              221,
+              3,
+              19,
+              18,
+              0
+            ],
+            [
+              2,
+              0,
+              52,
+              27,
+              33,
+              0,
+              8,
+              0
+            ],
+            [
+              1,
+              6,
+              0,
+              110,
+              0,
+              24,
+              1,
+              1
+            ],
+            [
+              0,
+              2,
+              3,
+              39,
+              0,
+              0,
+              288,
+              1
+            ],
+            [
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              1,
+              232
+            ]
+          ],
+          "n": 1712
+        },
+        "test": {
+          "accuracy": 0.5998246073722839,
+          "balanced_accuracy": 0.5120042562484741,
+          "cross_entropy": 1.456337809562683,
+          "confusion_matrix": [
+            [
+              19,
+              45,
+              1,
+              162,
+              7,
+              8,
+              2,
+              0
+            ],
+            [
+              0,
+              322,
+              2,
+              186,
+              1,
+              1,
+              111,
+              1
+            ],
+            [
+              10,
+              3,
+              164,
+              29,
+              3,
+              3,
+              27,
+              72
+            ],
+            [
+              7,
+              61,
+              10,
+              432,
+              1,
+              23,
+              45,
+              0
+            ],
+            [
+              11,
+              0,
+              111,
+              38,
+              67,
+              2,
+              14,
+              0
+            ],
+            [
+              1,
+              29,
+              1,
+              204,
+              0,
+              44,
+              5,
+              0
+            ],
+            [
+              0,
+              16,
+              13,
+              87,
+              0,
+              3,
+              540,
+              7
+            ],
+            [
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              4,
+              464
+            ]
+          ],
+          "n": 3421
+        },
+        "test_clean": {
+          "accuracy": 0.600878477306003,
+          "balanced_accuracy": 0.5124852626120733,
+          "cross_entropy": 1.4556145668029785,
+          "confusion_matrix": [
+            [
+              19,
+              44,
+              1,
+              160,
+              7,
+              8,
+              2,
+              0
+            ],
+            [
+              0,
+              322,
+              2,
+              184,
+              1,
+              1,
+              111,
+              1
+            ],
+            [
+              10,
+              3,
+              164,
+              29,
+              3,
+              3,
+              27,
+              72
+            ],
+            [
+              7,
+              61,
+              10,
+              432,
+              1,
+              23,
+              45,
+              0
+            ],
+            [
+              11,
+              0,
+              111,
+              38,
+              67,
+              2,
+              14,
+              0
+            ],
+            [
+              1,
+              29,
+              1,
+              204,
+              0,
+              44,
+              5,
+              0
+            ],
+            [
+              0,
+              15,
+              13,
+              87,
+              0,
+              3,
+              540,
+              7
+            ],
+            [
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              4,
+              464
+            ]
+          ],
+          "n": 3415
+        },
+        "test_evaluations": 1,
+        "completed_epochs": 60,
+        "elapsed_seconds": 1324.788514137268,
+        "role": "development_followup_historical_panel_A_baseline_source_unconfirmed"
+      },
+      "train_minus_val_accuracy_percentage_points": -0.8833408355712891,
+      "zero_test_recall_classes": [],
+      "checkpoint_audit": {
+        "weights": {
+          "best_checkpoint.pt": {
+            "epoch": 52,
+            "sha256": "ca2a61223f6c5b6481872b1e547e0e4768df978516df830be00c23f0edbf2aa4",
+            "parameters": 685452,
+            "phase_shapes": {
+              "phases.0": [
+                478,
+                478
+              ],
+              "phases.1": [
+                478,
+                478
+              ],
+              "phases.2": [
+                478,
+                478
+              ]
+            }
+          },
+          "last_checkpoint.pt": {
+            "epoch": 60,
+            "sha256": "7cc9ff51c2e43bfa1d25ceb3a7be261d66d0859dd242694ee409b87e32d8e355",
+            "parameters": 685452,
+            "phase_shapes": {
+              "phases.0": [
+                478,
+                478
+              ],
+              "phases.1": [
+                478,
+                478
+              ],
+              "phases.2": [
+                478,
+                478
+              ]
+            }
+          }
+        },
+        "history_complete_1_to_60": true,
+        "validation_selection_rechecked": true,
+        "training_pid": 4176407,
+        "original_training_process_exited": true,
+        "current_cmdline_for_pid": null
+      },
+      "final_epoch_validation": {
+        "accuracy": 0.5975467562675476,
+        "balanced_accuracy": 0.4881015419960022,
+        "cross_entropy": 1.4342882633209229,
+        "confusion_matrix": [
+          [
+            0,
+            62,
+            3,
+            49,
+            4,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            250,
+            0,
+            37,
+            0,
+            0,
+            23,
+            2
+          ],
+          [
+            0,
+            7,
+            82,
+            15,
+            0,
+            0,
+            16,
+            35
+          ],
+          [
+            0,
+            92,
+            4,
+            165,
+            0,
+            5,
+            24,
+            0
+          ],
+          [
+            0,
+            0,
+            54,
+            29,
+            23,
+            0,
+            16,
+            0
+          ],
+          [
+            0,
+            47,
+            0,
+            88,
+            0,
+            4,
+            3,
+            1
+          ],
+          [
+            0,
+            45,
+            1,
+            20,
+            0,
+            0,
+            267,
+            0
+          ],
+          [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            2,
+            232
+          ]
+        ],
+        "n": 1712
+      },
+      "final_epoch_training": {
+        "accuracy": 0.5997656583786011,
+        "balanced_accuracy": 0.4879365563392639,
+        "cross_entropy": 1.439984679222107,
+        "confusion_matrix": [
+          [
+            0,
+            396,
+            13,
+            380,
+            35,
+            0,
+            23,
+            2
+          ],
+          [
+            0,
+            1741,
+            2,
+            266,
+            0,
+            1,
+            153,
+            14
+          ],
+          [
+            0,
+            50,
+            541,
+            93,
+            12,
+            0,
+            153,
+            236
+          ],
+          [
+            0,
+            586,
+            19,
+            1271,
+            1,
+            21,
+            125,
+            0
+          ],
+          [
+            0,
+            28,
+            403,
+            127,
+            175,
+            0,
+            113,
+            3
+          ],
+          [
+            0,
+            361,
+            0,
+            592,
+            0,
+            9,
+            29,
+            1
+          ],
+          [
+            0,
+            332,
+            15,
+            163,
+            0,
+            0,
+            1813,
+            7
+          ],
+          [
+            0,
+            0,
+            10,
+            0,
+            0,
+            0,
+            17,
+            1616
+          ]
+        ],
+        "n": 11948
+      }
+    }
+  },
+  "verification": {
+    "T17_CPU_tests_passed": 44,
+    "transferred_files": 29,
+    "all_files_SHA256_verified": true,
+    "TRAIN_VAL_TEST_TEST_clean_metrics_and_confusion_matrices_independently_recomputed": true,
+    "actual_imported_sources_match_source_commit": true,
+    "original_training_processes_exited": true,
+    "own_GPU_PIDs_absent_from_nvidia_smi": true
+  },
+  "limitations": [
+    "One seed17; no across-seed standard deviation.",
+    "Original panel-A first two model/checkpoint identities unconfirmed; not reproduction of those scores.",
+    "Depth, intermediate OEO and learned readout changed together; not one-factor ablation.",
+    "BloodMNIST-128 is distinct from the historical 28-pixel version.",
+    "Input encoding [R,G;B,0] leaves the fourth quadrant zero.",
+    "Patient independence unverified for image-level splits.",
+    "Complete optimization convergence is not established by a fixed 60-epoch budget."
+  ]
+}
