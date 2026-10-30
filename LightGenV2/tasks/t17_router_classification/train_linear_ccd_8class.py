@@ -139,6 +139,17 @@ def main():
             metrics[key],scores=evaluate(model,x[split],y[split],cfg['batch'])
             np.savez_compressed(args.out/f'{split}_predictions.npz',ids=ids[split],labels=y[split].cpu().numpy(),
                                 scores=scores,predictions=scores.argmax(1))
+            if split=='test':
+                seen={r['pixel_sha256'] for s in ('train','val') for r in rows[s]}
+                clean=np.array([r['pixel_sha256'] not in seen for r in rows[split]],dtype=bool)
+                labels=y[split].cpu().numpy();pred=scores.argmax(1)
+                cm=np.bincount(labels[clean]*8+pred[clean],minlength=64).reshape(8,8)
+                metrics['test_clean']=dict(accuracy=float((pred[clean]==labels[clean]).mean()),
+                    balanced_accuracy=float((cm.diagonal()/cm.sum(1)).mean()),
+                    cross_entropy=float(-np.log(scores[clean,labels[clean]]).mean()),
+                    confusion_matrix=cm.tolist(),n=int(clean.sum()))
+                write(args.out/'test_overlap_audit.json',dict(policy='Report full TEST plus pixel-disjoint TEST subset; no extra inference/selection',
+                    removed_test_ids=ids[split][~clean].tolist(),clean_test_ids=ids[split][clean].tolist()))
         assert metrics['validation']==ck['validation']
         result=dict(**lock,**metrics,test_evaluations=1,completed_epochs=cfg['epochs'],elapsed_seconds=time.time()-started,
                     role='development_followup_historical_panel_A_baseline_source_unconfirmed')

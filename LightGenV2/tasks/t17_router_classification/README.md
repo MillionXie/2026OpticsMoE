@@ -14,6 +14,9 @@ BloodMNIST使用128平方RGB版本，沿用官方VAL1712/TEST3421和manifest记�
 保留原实验剔除的3个TRAIN–VAL重复及8个训练内部重复，不悄然恢复全部11959张训练图。
 不把BloodMNIST-128与先前28平方版本结果直接等同；不声称本轮数据对应图a原分数。
 数据源归档、CSV、manifest和读入PNG像素均做SHA校验；测试图只在验证选定权重并锁SHA后读取。
+CSV像素SHA核验发现Blood官方TEST有5张与保留的TRAIN相同、1张与VAL相同；
+完整官方TEST3421张与排除这6张后的TEST-clean3415张均报告，从同一次预测计算，
+不据测试表现更改训练集或选模。Kather三个划分间没有发现完全相同的像素SHA。
 保存TRAIN/VAL/TEST预测、best/last、逐轮历史、类顺序、像素重复数和运行环境。
 仅占一张AutoDL非A100 GPU，两个任务顺序执行，完成各自退出释放CUDA。
 代码/配置/结果说明仅由本窗口维护T17；不改AutoDL其他工程及原数据。
