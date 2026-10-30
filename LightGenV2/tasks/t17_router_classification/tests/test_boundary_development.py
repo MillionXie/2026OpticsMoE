@@ -54,3 +54,18 @@ def test_bounded_weights_focus_low_TRAIN_recall_and_do_not_use_TEST_labels():
     labels=torch.tensor([0,1,1]);all_train=torch.ones(3,dtype=torch.bool)
     legacy=torch.nn.functional.cross_entropy(logits/.1,labels)+.1*torch.nn.functional.nll_loss(logits,labels)
     assert torch.equal(boundary_objective(logits,labels,all_train,teacher,.1,.8,.1),legacy)
+
+
+def test_common_phase_gauge_preserves_optical_probabilities_and_relative_expert_phase():
+    torch.manual_seed(17);model=FourRouterClassification('optical','ccd_grid',num_classes=9).eval()
+    with torch.no_grad():
+        model.first_phase.copy_(torch.randn_like(model.first_phase)*4)
+        model.global_phase.copy_(torch.randn_like(model.global_phase)*4)
+        original_first=model.transmission(model.first_phase).clone();router=model.router_phase.clone()
+        x=torch.rand(1,224,224);before=model(x)
+        diagnostics=initialize_main_phases(model,'common_phase_gauge',17);after=model(x)
+        ratio=model.transmission(model.first_phase)/original_first
+    assert torch.allclose(before['probabilities'],after['probabilities'],atol=1e-6,rtol=1e-5)
+    assert torch.equal(before['route_power'],after['route_power']) and torch.equal(router,model.router_phase)
+    assert torch.allclose(ratio,ratio.flatten()[0].expand_as(ratio),atol=2e-6,rtol=1e-5)
+    assert len(diagnostics)==2 and all(d['geometric_Jacobian_gain']>=1 for d in diagnostics)

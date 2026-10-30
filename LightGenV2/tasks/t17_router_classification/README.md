@@ -148,6 +148,32 @@ run根`runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9`，
 worker586032已实际进入加权训练，父PT/原TRAIN预测/类别顺序/权重重算检查均通过。
 Blood worker567046继续原90f3dc40、已记录旧入口SHA的训练，不重启、不中途换损失。
 
+#### 保持强度传递不变的整体相位坐标调整（05:34复盘）
+
+两项接续现已结束：Blood在35轮按平台停止，选E20的TRAIN80.60%/VAL79.32%/
+开发79.54%（差19.56个百分点）；CRC训练错误加权20轮未优于父权重，仍保留73.33%。
+加权失败及last均保留，不能把加权当成已改善。
+
+另做参数条件分析：在CRC联合父与Blood首轮父上，global相位的sigmoid导数<.01的像素
+分别约11.33%/16.75%。只用相位张量本身选择一个整体相位偏移后，导数几何均值
+分别提高约2.57/4.16倍；这不是准确率提升。选择不读图像或标签，诊断与代表TRAIN数值核验见
+`phase_gauge_conditioning_diagnosis_0534.json`及`phase_gauge_TRAIN_equivalence_0534.json`。
+
+当前无残差、每层后强度OEO的结构中，四专家**共同**乘同一个exp(iδ_E)，
+整个第一传播场只多一个整体相位；global层也可独立加δ_G，因其输入在active之外为零。
+两次CCD强度均不变，路由不变。因此可以在不改变初始强度函数和推理结构的情况下，
+把sigmoid相位坐标移离饱和区再优化。不能给各专家独立偏移，否则会改变干涉。
+9/8类各取原TRAIN代表图，已测最大概率差仅约3.0e−8/4.5e−8、预测不变、路由逐元素不变。
+这些测试针对所记录父SHA，不替代新父权重的实际准入。
+
+新增`common_phase_gauge`初始化选项，64个整体偏移只按平均log相位Jacobian选取，
+不按任何分类分数选偏移。配置`configs/{crc9,bloodmnist128}_phase_gauge_s17_20261031.json`
+固定实际完整父PT SHA；启动后对**完整VAL**概率、预测和路由核验不变才开始训练。
+原推理仍为2πsigmoid(raw)相位、Top-2、两次OEO及同CCD读出，无新参数或后处理。
+两任务各一条冻结路由、无类别加权、LR.001、最多40/至少20/15轮平台的候选，
+run根`runs/simulation/panel_a_phase_gauge_s17_20261031`，需检查发布/准入后才能启动。
+这是额外训练预算和训练初始坐标调整，不改原权重，不把数值条件改善冒称任务达标。
+
 `select_original_test_dev.py`在规定的VAL优化链结束后，比较基础best/last、优化best/last online/last EMA，
 按原TEST准确率、宏召回、CE选开发best；同时比较原D2NN best/last，另列固定VAL选中D2NN参照，
 不通过降低D2NN参照获得差值。各候选保存PT来源SHA、状态键、轮数及逐样本预测，候选数明确记录。

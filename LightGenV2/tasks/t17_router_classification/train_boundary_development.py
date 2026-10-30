@@ -33,6 +33,26 @@ def training_error_class_weights(confusion_matrix):
 
 def initialize_main_phases(model,kind,seed):
     if kind=='parent':return
+    if kind=='common_phase_gauge':
+        if model.variant!='optical' or model.cfg.get('oeo_activation')!='intensity_softsign':
+            raise ValueError('Gauge initialization requires the admitted optical/OEO geometry')
+        records=[]
+        with torch.no_grad():
+            # One common offset across all four experts preserves their interference.
+            for name in ('first_phase','global_phase'):
+                value=getattr(model,name);p=value.detach().double().sigmoid();phase=2*torch.pi*p
+                original=float((2*torch.pi*p*(1-p)).clamp_min(1e-20).log().mean());best=(original,0.)
+                for index in range(1,64):
+                    offset=2*torch.pi*index/64;q=torch.remainder(phase+offset,2*torch.pi)/(2*torch.pi)
+                    score=float((2*torch.pi*q*(1-q)).clamp_min(1e-20).log().mean())
+                    if score>best[0]:best=(score,offset)
+                if best[1]!=0:
+                    q=torch.remainder(phase+best[1],2*torch.pi)/(2*torch.pi)
+                    value.copy_(torch.logit(q.clamp(1e-9,1-1e-9)).to(value.dtype))
+                records.append(dict(parameter=name,common_offset_rad=best[1],mean_log_phase_Jacobian_before=original,
+                                    mean_log_phase_Jacobian_after=best[0],geometric_Jacobian_gain=float(np.exp(best[0]-original)),
+                                    offset_selection_uses_images_or_labels=False))
+        return records
     if kind!='diffuse_uniform_phase':raise ValueError(kind)
     with torch.random.fork_rng(devices=[torch.cuda.current_device()] if model.first_phase.is_cuda else []):
         torch.manual_seed(seed)
@@ -73,6 +93,8 @@ def main():
         n_train=len(y['train']);union=torch.cat((x['train'],x['test']));labels=torch.cat((y['train'],y['test']));teacher=torch.cat(teacher)
         write(a.out/'training_membership.json',dict(indices=membership.tolist(),removed=removed,full_permutation_each_epoch=True,evaluation_set_unchanged=True))
         parent=torch.load(a.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        if cfg.get('expected_parent_checkpoint_sha256') and cfg['expected_parent_checkpoint_sha256']!=sha256(a.parent/'best_checkpoint.pt'):
+            raise ValueError('Unexpected fixed parent checkpoint')
         loss_weights=None
         if cfg.get('training_class_weights') is not None:
             if cfg['class_weight_parent_sha256']!=sha256(a.parent/'best_checkpoint.pt'):raise ValueError('Class weights use another parent')
@@ -87,7 +109,7 @@ def main():
             loss_weights=torch.as_tensor(expected,device='cuda',dtype=torch.float32)
         baseline=json.loads((a.selection_root/'result.json').read_text())['selected_D2NN_development_reference']
         parent_model=FourRouterClassification('optical','ccd_grid',num_classes=cfg['num_classes']).cuda().eval();parent_model.load_state_dict(parent['model'])
-        parent_val,*_=evaluate(parent_model,x['val'],y['val'],cfg['batch']);parent_dev,*_=evaluate(parent_model,x['test'],y['test'],cfg['batch'])
+        parent_val,parent_val_scores,parent_val_routes,_=evaluate(parent_model,x['val'],y['val'],cfg['batch']);parent_dev,*_=evaluate(parent_model,x['test'],y['test'],cfg['batch'])
         parent_state={k:v.detach().cpu().clone() for k,v in parent_model.state_dict().items()};del parent_model
         metadata=dict(role='ORIGINAL_TEST_EXPOSED_BOUNDARY_DEVELOPMENT',independent_test_claim=False,profile=cfg,data=identity,
                       source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256=sha256(Path(__file__)),command=os.sys.argv,
@@ -104,10 +126,17 @@ def main():
             if time.time()>=cfg['stop_training_unix']:break
             out=a.out/variant['name'];out.mkdir();model=FourRouterClassification('optical','ccd_grid',num_classes=cfg['num_classes']).cuda()
             model.load_state_dict(parent_state)
-            initialize_main_phases(model,variant['initialization'],cfg['seed'])
+            initialization_report=initialize_main_phases(model,variant['initialization'],cfg['seed'])
+            gauge_error=None
+            if variant['initialization']=='common_phase_gauge':
+                _,scores,routes,_=evaluate(model,x['val'],y['val'],cfg['batch'])
+                gauge_error=float(np.max(np.abs(scores-parent_val_scores)))
+                if not np.allclose(scores,parent_val_scores,rtol=1e-5,atol=1e-6) or not np.array_equal(scores.argmax(1),parent_val_scores.argmax(1)) or not np.array_equal(routes,parent_val_routes):
+                    raise ValueError('Common-phase initialization failed full VAL numerical invariance')
             optimizer,trainable=configure_phase_optimizer(model,cfg['phase_lr'],variant);rng=np.random.default_rng(cfg['seed'])
             base_lrs=[group['lr'] for group in optimizer.param_groups]
-            trial_metadata=dict(metadata,router_frozen=not variant.get('train_router',False),trainable_parameter_count=sum(p.numel() for p in trainable))
+            trial_metadata=dict(metadata,router_frozen=not variant.get('train_router',False),trainable_parameter_count=sum(p.numel() for p in trainable),
+                                initialization_diagnostics=initialization_report,gauge_full_VAL_probability_max_difference=gauge_error)
             write(out/'metadata.json',trial_metadata)
             best=key(parent_dev);best_epoch=0;last_improvement=0;history=[];started=time.time();completed=0;stop_reason='epoch_limit';evaluations=1
             def save_best(state,epoch,kind,val,dev):

@@ -1,0 +1,63 @@
+{
+  "role": "TRAINING_COORDINATE_DIAGNOSTIC_ONLY",
+  "original_TEST_used_for_offset_selection": false,
+  "model_inference_results_not_measured_yet": true,
+  "rows": [
+    {
+      "dataset": "crc9",
+      "parameter": "first_phase",
+      "raw_min": -14.264877319335938,
+      "raw_max": 14.027261734008789,
+      "raw_std": 1.8106684684753418,
+      "fraction_abs_raw_over5": 0.030039262026548386,
+      "float32_zero_sigmoid_derivative_fraction": 0.0,
+      "fraction_phase_Jacobian_below_001": 0.02031847834587097,
+      "log_Jacobian_mean_before": 0.002982055683178854,
+      "best_common_phase_offset_rad": 5.890486225480862,
+      "log_Jacobian_mean_after": 0.13333560506420145,
+      "geometric_Jacobian_gain": 1.1392310865781854
+    },
+    {
+      "dataset": "crc9",
+      "parameter": "global_phase",
+      "raw_min": -15.433842658996582,
+      "raw_max": 15.189658164978027,
+      "raw_std": 3.783284902572632,
+      "fraction_abs_raw_over5": 0.14160291850566864,
+      "float32_zero_sigmoid_derivative_fraction": 0.0,
+      "fraction_phase_Jacobian_below_001": 0.1132902055978775,
+      "log_Jacobian_mean_before": -1.05934948950058,
+      "best_common_phase_offset_rad": 1.3744467859455345,
+      "log_Jacobian_mean_after": -0.11508888305481035,
+      "geometric_Jacobian_gain": 2.570911760068833
+    },
+    {
+      "dataset": "bloodmnist128",
+      "parameter": "first_phase",
+      "raw_min": -15.244980812072754,
+      "raw_max": 15.438820838928223,
+      "raw_std": 3.063041925430298,
+      "fraction_abs_raw_over5": 0.08583784848451614,
+      "float32_zero_sigmoid_derivative_fraction": 0.0,
+      "fraction_phase_Jacobian_below_001": 0.07234534621238708,
+      "log_Jacobian_mean_before": -0.5246870655499966,
+      "best_common_phase_offset_rad": 0.6872233929727672,
+      "log_Jacobian_mean_after": 0.02615381447496234,
+      "geometric_Jacobian_gain": 1.734711088653705
+    },
+    {
+      "dataset": "bloodmnist128",
+      "parameter": "global_phase",
+      "raw_min": -17.11014175415039,
+      "raw_max": 16.635835647583008,
+      "raw_std": 4.637655258178711,
+      "fraction_abs_raw_over5": 0.184726282954216,
+      "float32_zero_sigmoid_derivative_fraction": 2.1883370209252462e-05,
+      "fraction_phase_Jacobian_below_001": 0.16749094426631927,
+      "log_Jacobian_mean_before": -1.5353062370386668,
+      "best_common_phase_offset_rad": 4.81056375080937,
+      "log_Jacobian_mean_after": -0.11033177574649482,
+      "geometric_Jacobian_gain": 4.15775165779529
+    }
+  ]
+}

@@ -14,7 +14,8 @@ for d,name in [('kather2016','Kather2016（8类）'),('bloodmnist128','BloodMNIS
                          ('panel_a_boundary_continuation_s17_20261031','frozen_router_boundary','边界目标受限接续'),
                          ('panel_a_boundary_joint_s17_20261031','fixed_router_control','成熟主干固定路由控制'),
                          ('panel_a_boundary_joint_s17_20261031','gentle_joint_router','成熟主干温和联合路由'),
-                         ('panel_a_training_error_weighted_s17_20261031','training_error_weighted','原TRAIN弱类别有界加权')]:
+                         ('panel_a_training_error_weighted_s17_20261031','training_error_weighted','原TRAIN弱类别有界加权'),
+                         ('panel_a_phase_gauge_s17_20261031','phase_gauge_recenter','整体相位坐标调整')]:
   p=runs/run/d/suffix;q=read(p/'result.json');s=read(p/'status.json')
   if q:records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state='complete',label=label,result=q))
   elif p.parent.exists():records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state=s or {'state':'not_started_or_loading'},label=label))

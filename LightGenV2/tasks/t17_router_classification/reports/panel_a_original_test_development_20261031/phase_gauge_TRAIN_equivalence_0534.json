@@ -1,0 +1,54 @@
+{
+  "role": "NUMERICAL_GAUGE_INVARIANCE_DIAGNOSTIC_NOT_ACCURACY_IMPROVEMENT",
+  "rows": [
+    {
+      "dataset": "crc9",
+      "parent_checkpoint": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "b650f4ced47152ed89e943c696fe4baa3f64e5aac2fd0b5c0fe308b4045dc536",
+      "TRAIN_indices": [
+        4,
+        0,
+        15,
+        25,
+        49,
+        3,
+        11,
+        5,
+        6
+      ],
+      "offsets_rad": {
+        "first_phase": 5.890486225480862,
+        "global_phase": 1.3744467859455345
+      },
+      "max_probability_absolute_difference": 2.9802322387695312e-08,
+      "predictions_unchanged": true,
+      "routing_bitwise_unchanged": true,
+      "offset_selection_used_only_phase_parameters": true,
+      "original_TEST_not_read": true
+    },
+    {
+      "dataset": "bloodmnist128",
+      "parent_checkpoint": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_development_s17_20261031/bloodmnist128/frozen_router_boundary/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "d09f9b7e20ae3edcd05bbfad70ef8a1e27109c68933618ce5921e18048dcd3c6",
+      "TRAIN_indices": [
+        26,
+        10,
+        6,
+        1,
+        28,
+        22,
+        2,
+        0
+      ],
+      "offsets_rad": {
+        "first_phase": 0.6872233929727672,
+        "global_phase": 4.81056375080937
+      },
+      "max_probability_absolute_difference": 4.470348358154297e-08,
+      "predictions_unchanged": true,
+      "routing_bitwise_unchanged": true,
+      "offset_selection_used_only_phase_parameters": true,
+      "original_TEST_not_read": true
+    }
+  ]
+}
