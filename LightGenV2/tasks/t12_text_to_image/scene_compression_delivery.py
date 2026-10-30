@@ -4,6 +4,7 @@ import csv
 import html
 import json
 import math
+import os
 from pathlib import Path
 import shutil
 import statistics
@@ -110,9 +111,11 @@ body{font:15px/1.55 system-ui,sans-serif;color:#202936;background:#f6f7fa;margin
     (output/'index.html').write_text(page,encoding='utf8')
     with(output/'summary.csv').open('w',encoding='utf-8-sig',newline='') as stream:
         writer=csv.DictWriter(stream,fieldnames=list(summaries[0]));writer.writeheader();writer.writerows(summaries)
-    write(output/'per_image.json',[dict(model=m['label'],**r) for m in models for r in m['scores'].values()])
+    write(output/'per_image.json',[dict(r,display_model=m['label']) for m in models for r in m['scores'].values()])
     write(output/'delivery_manifest.json',dict(complete=True,scope='matched_DEV128',contexts=128,models=[dict(role=m['role'],label=m['label'],run=str(m['root']),report_sha256=digest(m['root']/'report.json'),metrics_sha256=m['metrics_manifest_sha256'])for m in models],
-        all640_outputs_shown=True,no_quality_selection=True,independent_TEST_opened=False,raw_data_manifest=manifest))
+        all640_outputs_shown=True,no_quality_selection=True,independent_TEST_opened=False,raw_data_manifest=manifest,
+        HTML_builder_source_sha256=digest(Path(__file__)),caller_source_commit=os.environ.get('T12_SOURCE_COMMIT'),
+        caller_commit_is_not_a_claim_all_components_equal_that_commit=True))
     write(output/'file_manifest.json',{p.relative_to(output).as_posix():dict(bytes=p.stat().st_size,sha256=digest(p))for p in sorted(output.rglob('*'))if p.is_file()})
 
 

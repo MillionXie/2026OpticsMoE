@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from ..scene_compression_delivery import verified_models,degradation,ROLES,METRICS
+from ..scene_compression_delivery import verified_models,degradation,build,ROLES,METRICS
 from ..white_reference_scene_probe import digest
 
 
@@ -16,10 +16,10 @@ def fixture(root):
             rows.append(dict(sample_id=str(index),reference_id=f'ref{index//8}',condition_id=str(index%8),
                 seed=index//8,initial_latent_sha256='fixed noise',category='lamp'if index<64 else'pillow',
                 input_sha256=digest(ref),split='dev',prompt='Generate a scene. Include a plant.',
-                generated_PNG=image.name,generated_sha256=digest(image)))
+                generated_PNG=image.name,generated_sha256=digest(image),model='source_model_identity'))
         report=dict(complete=True,scope='DEV_expanded',training_performed=False,independent_TEST_opened=False,
             generated_count=128,resolution=512,prompt_profile='two_sentence_natural_room_v4',
-            expanded_DEV_protocol={'identity':'same'},compression_training_performed=role=='light_lg')
+            expanded_DEV_protocol={'identity':'same'},compression_training_performed=role=='light_lg',sampling_steps=12)
         (run/'report.json').write_text(json.dumps(report));(run/'images.json').write_text(json.dumps(rows))
         (scores/'report.json').write_text(json.dumps(dict(complete=True,metric_protocol={'fixed':'v1'})))
         (scores/'per_image.json').write_text(json.dumps([dict(r,run_id=run.name,**{m:.5 for m in METRICS}) for r in rows]))
@@ -28,6 +28,15 @@ def fixture(root):
 
 
 class CompressionDeliveryAudit(unittest.TestCase):
+    def test_real_export_preserves_existing_model_field_and_writes_all640_scores(self):
+        with TemporaryDirectory()as temp:
+            root=Path(temp);manifest=fixture(root);build(manifest,root/'delivery')
+            scores=json.loads((root/'delivery/per_image.json').read_text())
+            self.assertEqual(len(scores),640)
+            self.assertTrue(all(r['model']=='source_model_identity'for r in scores))
+            self.assertEqual({r['display_model']for r in scores},set(ROLES))
+            self.assertTrue(json.loads((root/'delivery/delivery_manifest.json').read_text())['complete'])
+
     def test_complete_same_requests_are_accepted(self):
         with TemporaryDirectory()as temp:
             manifest=fixture(Path(temp));models=verified_models(manifest)
