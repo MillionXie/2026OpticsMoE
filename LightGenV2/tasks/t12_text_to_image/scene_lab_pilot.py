@@ -27,6 +27,7 @@ def main():
     p.add_argument('--ledger',type=Path,required=True)
     p.add_argument('--session',type=Path)
     p.add_argument('--source-commit',required=True)
+    p.add_argument('--runtime-source-commit',help='Execution source identity; frozen ledger/model identity remains unchanged')
     p.add_argument('--out',type=Path,required=True)
     p.add_argument('--count',type=int,default=2)
     p.add_argument('--gpu-memory-fraction',type=float)
@@ -44,6 +45,7 @@ def main():
     task=Path(__file__).resolve().parent;base=task/'runs/simulation'
     if a.out.exists():raise FileExistsError(a.out)
     a.out.mkdir(parents=True)
+    put(a.out/'execution.json',dict(runtime_source_commit=a.runtime_source_commit or a.source_commit,ledger_model_source_commit=a.source_commit,source_SHA256=sha(__file__),SDK=False))
     requests=train_requests(base/'scene_natural_TRAIN608_condition_cache_20261030/TRAIN_input_manifest.json',base/'scene_two_sentence_pairs_20261029',a.count)
     if (a.ledger/'contract.json').exists():
         contract=json.loads((a.ledger/'contract.json').read_text());session=contract['session']
@@ -55,7 +57,7 @@ def main():
     ledger=Ledger(a.ledger,session,dict(F9=F9,F6=F6,source_commit=a.source_commit),requests,create=not (a.ledger/'contract.json').exists())
     if a.mode=='prepare':
         if a.stage is None:raise ValueError('Pending stage required')
-        ledger.ready(a.stage)
+        admission=ledger.admit_stage(a.stage)
     else:
         for stage in STAGES:
             for request in requests:ledger.receipt(stage,request)
@@ -81,7 +83,7 @@ def main():
                     import time
                     time.sleep(a.request_pause_ms/1000)
                 raise
-        pending=ledger.prepare(a.stage,streamed)
+        pending=ledger.prepare(a.stage,streamed,admission=admission)
         put(a.out/'report.json',dict(complete=True,mode=a.mode,stage=a.stage,pending=pending,TRAIN=len(requests),TRAIN_only=True,TEST_used=False,SDK=False,FFT_fallback=False,ledger_sha256=ledger.key,gpu_memory_fraction=a.gpu_memory_fraction,request_pause_ms=a.request_pause_ms))
     else:
         rows=[]

@@ -117,14 +117,17 @@ class Ledger:
         self.ready(stage)
         return _StageAdmission(self,stage)
 
-    def prepare(self,stage,runner):
+    def prepare(self,stage,runner,*,admission=None):
         """runner(request, numpy_provider) performs native graph prefix replay.
 
         Whole cohort at layer k must be accepted before preparing k+1. Native
         prefixes are recomputed for acquisition only, never counted as one-forward
         deployment timing. A final inference calls runner exactly once.
         """
-        self.ready(stage);pending=[]
+        if admission is None:self.ready(stage)
+        elif not isinstance(admission,_StageAdmission)or admission.ledger is not self or admission.stage!=stage or admission.key!=self.key:
+            raise ValueError('Wrong process-local stage admission')
+        pending=[]
         for request in self.requests:
             if(self.folder(stage,request)/'receipt.json').exists():
                 self.receipt(stage,request)

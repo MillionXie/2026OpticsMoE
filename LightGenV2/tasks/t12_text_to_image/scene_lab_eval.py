@@ -53,7 +53,7 @@ def run(a):
     torch.set_num_threads(2);torch.cuda.set_per_process_memory_fraction(.4,0)
     c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests'])
     if len(ledger.requests)!=128 or ledger.session.get('cohort_role')!='dev' or ledger.session.get('evaluation_only')is not True:raise ValueError('Explicit DEV-only ledger required')
-    if a.mode=='prepare':ledger.ready(a.stage)
+    if a.mode=='prepare':admission=ledger.admit_stage(a.stage)
     else:
         for stage in STAGES:
             for request in ledger.requests:ledger.receipt(stage,request)
@@ -72,7 +72,7 @@ def run(a):
                 mark_input_ready(ledger.folder(a.stage,request));count+=1
                 if count%16==0:print(json.dumps(dict(stage=a.stage,DEV_prepared=count,total=128)),flush=True)
                 time.sleep(.03);raise
-        pending=ledger.prepare(a.stage,streamed)
+        pending=ledger.prepare(a.stage,streamed,admission=admission)
         put(a.out/'report.json',dict(complete=True,DEV=128,stage=a.stage,pending_count=len(pending),ledger_SHA256=ledger.key,SDK=False,TEST_used=False,gradients=False))
     else:
         features={}

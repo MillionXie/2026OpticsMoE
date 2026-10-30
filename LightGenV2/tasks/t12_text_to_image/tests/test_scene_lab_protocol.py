@@ -46,6 +46,8 @@ def test_batch_admission_keeps_whole_cohort_gate_and_per_sample_hashes(tmp_path)
     with pytest.raises(FileNotFoundError):ledger.admit_stage(STAGES[1])
     accept(ledger,STAGES[0],ledger.requests[1],dark,gain,admission=admission)
     ledger.prepare(STAGES[1],runner);next_admission=ledger.admit_stage(STAGES[1])
+    with pytest.raises(ValueError):ledger.prepare(STAGES[1],runner,admission=admission)
+    assert len(ledger.prepare(STAGES[1],runner,admission=next_admission))==2
     with pytest.raises(ValueError):accept(ledger,STAGES[1],ledger.requests[0],dark,gain,admission=admission)
     other=Ledger(ledger.root,ledger.session,ledger.models,ledger.requests)
     with pytest.raises(ValueError):accept(other,STAGES[1],ledger.requests[0],dark,gain,admission=next_admission)
