@@ -1,0 +1,153 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT_ARCHITECTURE_AUDIT",
+  "rows": [
+    {
+      "dataset": "kather2016",
+      "architecture": "LG",
+      "classes": 8,
+      "checkpoint_sha256": "81f973aa3e4430aa3d4c0f773cc16b07f3b196f8333f8ab944c50779a44961c2",
+      "strict_canonical_model_load": true,
+      "learned_linear_modules": 0,
+      "parameter_count": 479364,
+      "state_shapes": {
+        "first_phase": [
+          4,
+          224,
+          224
+        ],
+        "global_phase": [
+          478,
+          478
+        ],
+        "router_phase": [
+          224,
+          224
+        ]
+      },
+      "source_path": "runs/simulation/panel_a_original_test_kd_identity_s17_20261031/kather2016/best_checkpoint.pt"
+    },
+    {
+      "dataset": "kather2016",
+      "architecture": "D2NN",
+      "classes": 8,
+      "checkpoint_sha256": "0a1aeae2f9eb64d01b766c48e48239a39c389aa9abfccdb10abc62db5ee4465b",
+      "strict_canonical_model_load": true,
+      "learned_linear_modules": 0,
+      "parameter_count": 685452,
+      "state_shapes": {
+        "phases.0": [
+          478,
+          478
+        ],
+        "phases.1": [
+          478,
+          478
+        ],
+        "phases.2": [
+          478,
+          478
+        ]
+      },
+      "source_path": "runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/d2nn_val_best/best_checkpoint.pt"
+    },
+    {
+      "dataset": "bloodmnist128",
+      "architecture": "LG",
+      "classes": 8,
+      "checkpoint_sha256": "050abf2d071a91679ac7372b66e370fd82dd8a7ffa68f89c89b1666f0aac2169",
+      "strict_canonical_model_load": true,
+      "learned_linear_modules": 0,
+      "parameter_count": 479364,
+      "state_shapes": {
+        "first_phase": [
+          4,
+          224,
+          224
+        ],
+        "global_phase": [
+          478,
+          478
+        ],
+        "router_phase": [
+          224,
+          224
+        ]
+      },
+      "source_path": "runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/best_checkpoint.pt"
+    },
+    {
+      "dataset": "bloodmnist128",
+      "architecture": "D2NN",
+      "classes": 8,
+      "checkpoint_sha256": "2792825a8c77422e9bddad00f1943c9eccf4ba3c9e11a0846c08caf5ead77254",
+      "strict_canonical_model_load": true,
+      "learned_linear_modules": 0,
+      "parameter_count": 685452,
+      "state_shapes": {
+        "phases.0": [
+          478,
+          478
+        ],
+        "phases.1": [
+          478,
+          478
+        ],
+        "phases.2": [
+          478,
+          478
+        ]
+      },
+      "source_path": "runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/d2nn_val_best/best_checkpoint.pt"
+    },
+    {
+      "dataset": "crc9",
+      "architecture": "LG",
+      "classes": 9,
+      "checkpoint_sha256": "c061bbea2ca99cf9bdf6cdff7af544c4f8d53ee77394a43fc38c3bfde2b1d6b1",
+      "strict_canonical_model_load": true,
+      "learned_linear_modules": 0,
+      "parameter_count": 479364,
+      "state_shapes": {
+        "first_phase": [
+          4,
+          224,
+          224
+        ],
+        "global_phase": [
+          478,
+          478
+        ],
+        "router_phase": [
+          224,
+          224
+        ]
+      },
+      "source_path": "runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/best_checkpoint.pt"
+    },
+    {
+      "dataset": "crc9",
+      "architecture": "D2NN",
+      "classes": 9,
+      "checkpoint_sha256": "e6323be2cf029c75c5090ece76c3399a787642b2b8b76704ce217686ed4bdeae",
+      "strict_canonical_model_load": true,
+      "learned_linear_modules": 0,
+      "parameter_count": 685452,
+      "state_shapes": {
+        "phases.0": [
+          478,
+          478
+        ],
+        "phases.1": [
+          478,
+          478
+        ],
+        "phases.2": [
+          478,
+          478
+        ]
+      },
+      "source_path": "runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/d2nn_val_best/best_checkpoint.pt"
+    }
+  ],
+  "scope": "Actual selected checkpoint tensor structure; no new evaluation or training; OEO and propagation contracts additionally covered by 66 CPU tests."
+}

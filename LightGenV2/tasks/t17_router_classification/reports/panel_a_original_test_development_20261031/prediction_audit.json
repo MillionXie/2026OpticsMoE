@@ -14,8 +14,8 @@
     {
       "dataset": "bloodmnist128",
       "samples": 3421,
-      "correct": 2721,
-      "accuracy": 0.7953814674071908,
+      "correct": 2759,
+      "accuracy": 0.8064893306050862,
       "identical_ids_labels_vs_D2NN": true,
       "exactly_two_positive_routes_per_sample": true,
       "all_samples_preserved": true

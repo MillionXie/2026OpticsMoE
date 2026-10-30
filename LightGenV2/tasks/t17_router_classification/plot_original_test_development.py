@@ -56,3 +56,5 @@ for row,(d,name) in enumerate([('bloodmnist128','BloodMNIST-128'),('crc9','CRC9'
 handles,labels=axes[0,0].get_legend_handles_labels();fig.legend(handles,labels,loc='outside lower center',ncol=3,fontsize=10)
 fig.suptitle('Seed 17 | Original TEST exposed to teacher training and model selection\nPer-branch convergence; TRAIN markers are selected-checkpoint evaluations, not epoch-wise training curves',fontsize=12)
 fig.savefig(out/'boundary_curves.png',dpi=160);fig.savefig(out/'boundary_curves.svg');plt.close(fig)
+svg=out/'boundary_curves.svg'
+svg.write_text('\n'.join(line.rstrip() for line in svg.read_text(encoding='utf-8').splitlines())+'\n',encoding='utf-8')

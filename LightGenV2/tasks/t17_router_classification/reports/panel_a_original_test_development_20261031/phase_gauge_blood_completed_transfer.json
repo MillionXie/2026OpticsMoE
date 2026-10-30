@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/result.json",
+      "sha256": "2d619da9a9a187c0a6f6b88f773613f7b449e966e79f3ef67be8031b64261296"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/history.json",
+      "sha256": "37842efeed83c2968dd9486a7f557c68b1b89a506d46b2d9dff457bd6e86e2d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/status.json",
+      "sha256": "69006c87989537a5f72cb014c5998088ee5d7c2b327851c24a0d9a602126d2e5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/metadata.json",
+      "sha256": "f4acc0c70692b86c40aecf774ee360767f3b94f9d6c3c8a2107ba741548e2744"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/best_checkpoint.pt",
+      "sha256": "2387e765286f936d62636e9e325ea6c63f5fcb5727b2a6372fc5f012aaa33109"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/last_checkpoint.pt",
+      "sha256": "f58880673406e71d122630eb6778c54fa604e76a8fdd84e733185f04fcea2db6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/train_predictions.npz",
+      "sha256": "f2f9f068cac9bea1f0f7cf0d302fa290ab9d830aff1aed972047c985a17db470"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/val_predictions.npz",
+      "sha256": "40bffe37481d506f6b8419a108c8e2cc0ece197893fa2c2c6e35db3bc8d35f47"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/test_predictions.npz",
+      "sha256": "f795015299e81ef64d4e9ff96832fe18048f7d91604ec85c2b89cf37cf9bb99d"
+    }
+  ]
+}

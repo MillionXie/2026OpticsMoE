@@ -47,7 +47,12 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/status.json",
-      "sha256": "f2b185e3e120bf2d506ea7372de0d20aeb17051c94b7b3b17cbf309d25d379a5",
+      "sha256": "e2ff22650d29a7697a68b35c67292c9555bffd258d6afe5006d41c7da5dac9e4",
+      "snapshot_not_completed_checkpoint": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/exit_receipt.json",
+      "sha256": "afed153dfe202842d209fd1fbbe15f8dfab7c0c70e7272177067dbdc46f0807e",
       "snapshot_not_completed_checkpoint": true
     },
     {
@@ -57,12 +62,12 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/history.json",
-      "sha256": "b040aed923ab40fd0856eee50f49ee1c78e3d1982b9e9d22847d34398163ebe0",
+      "sha256": "37842efeed83c2968dd9486a7f557c68b1b89a506d46b2d9dff457bd6e86e2d8",
       "snapshot_not_completed_checkpoint": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/status.json",
-      "sha256": "b3f9d51a1e1aa8c162558edf9ee496c4a272dacd078b7e2a07d68bce92dc9749",
+      "sha256": "69006c87989537a5f72cb014c5998088ee5d7c2b327851c24a0d9a602126d2e5",
       "snapshot_not_completed_checkpoint": true
     },
     {
@@ -72,7 +77,7 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/status.json",
-      "sha256": "38e7aebfc338d4b0a193ee10dc51966a2d28c8eeb4b113cf9493bff7a26fb953",
+      "sha256": "331f0388d2000e5a5dc19f6945592935bc21a4b12e8ffe1411b4d88a18cbfb4a",
       "snapshot_not_completed_checkpoint": true
     },
     {
@@ -82,12 +87,12 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/history.json",
-      "sha256": "100812d870c3d6a36d952caf4f4e52d466781aa93dd8320925f80642312a6362",
+      "sha256": "28ecc874425f01d8591ccb0d2354c1a30508aff11314cb55d0551146050e7350",
       "snapshot_not_completed_checkpoint": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/status.json",
-      "sha256": "123e97230ea7e1e39f68c5c0695bc01ee017aed26fe304431e3cd0573f952942",
+      "sha256": "b7da3673890ed73fb4ed15bc6bca256001d78c23914acbe47ed4d9e42912b903",
       "snapshot_not_completed_checkpoint": true
     }
   ]
