@@ -21,6 +21,15 @@ CSV像素SHA核验发现Blood官方TEST有5张与保留的TRAIN相同、1张与V
 仅占一张AutoDL非A100 GPU，两个任务顺序执行，完成各自退出释放CUDA。
 代码/配置/结果说明仅由本窗口维护T17；不改AutoDL其他工程及原数据。
 
+按用户后续要求迁回实验室服务器202.120.62.181。AutoDL的Kather在E18停止，
+best E15/last E18均校验可读，未运行TEST；原run保留，GPU已释放，不算60轮正式结果。
+数据完整迁入`/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1`，
+数据包SHA `3be10c1973b262cb259c1113dd04191b679e6b25f16e7cb4c879bbc41c8f3dbe`。
+实验室run为`runs/simulation/linear3_8class_lab_s17_20261030`，两个数据集均从零开始60轮，
+同一张GPU3/4090并发，保留其他任务；无需把AutoDL部分训练与新run混合统计。
+服务器保留已有仓库HEAD，T17源码由已发布main按路径Git同步；metadata分别记录
+服务器HEAD/source_commit及实际源码SHA，不把旧仓库HEAD误称为本轮源码版本。
+
 ## CRC9三层线性传播D2NN，无OEO/Linear（2026-10-30）
 
 用户从A图第三组原D2NN提出新对照：原两层/两次OEO/Linear784→9，改为三层、

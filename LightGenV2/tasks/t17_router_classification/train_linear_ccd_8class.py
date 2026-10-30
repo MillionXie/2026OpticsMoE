@@ -95,6 +95,7 @@ def main():
                root/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
         metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),command=sys.argv,pid=os.getpid(),
                       git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
+                      source_commit=os.environ.get('T17_SOURCE_COMMIT') or subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
                       source_sha256={str(p):sha256(p) for p in paths},data=identity,
                       python=platform.python_version(),torch=torch.__version__,gpu_uuid=uuid,test_pixels_read=False)
         write(args.out/'metadata.json',metadata)
