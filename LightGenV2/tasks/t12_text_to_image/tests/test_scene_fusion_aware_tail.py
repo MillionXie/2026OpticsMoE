@@ -2,13 +2,16 @@ import copy
 import unittest
 import torch
 from peft.tuners.lora.layer import Linear
+from peft import LoraConfig,get_peft_model
 from LightGenV2.tasks.t12_text_to_image.scene_fusion_aware_tail import install
 
 
 def layer():
     torch.manual_seed(1042)
     base=torch.nn.Linear(16,12,bias=True).bfloat16().requires_grad_(False)
-    module=Linear(base,'scene_pair',r=4,lora_alpha=4,lora_dropout=0.,init_lora_weights=False)
+    wrapped=get_peft_model(torch.nn.Sequential(base),LoraConfig(r=4,lora_alpha=4,
+        target_modules=['0'],lora_dropout=0.,init_lora_weights=False),adapter_name='scene_pair')
+    module=next(m for m in wrapped.modules() if isinstance(m,Linear))
     for n,p in module.named_parameters():
         if 'lora_' in n:p.data=p.data.float();p.requires_grad_(True)
     return module
