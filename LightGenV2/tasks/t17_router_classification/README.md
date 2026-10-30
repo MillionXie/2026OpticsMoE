@@ -101,6 +101,16 @@ CRC9受限续训E20候选已到TRAIN待结束核验、VAL67.27%、开发72.14%�
 逐元素核对。已在运行的两个827402a9入口先核验其metadata固定了原源码SHA，
 它们继续执行已载入的旧函数，不重启或改已有run配置/含义。
 
+05:02轮跟进中，CRC9受限接续按平台规则在35轮结束、选第20轮，开发72.14%、
+差12.40个百分点；成熟主干固定/联合比较已由controller531784接着启动。
+Blood首条边界候选完整30轮结束，选第20轮开发79.13%、差19.15个百分点，
+距79.98%目标约0.85个百分点；同run随机初始化候选继续既定30轮，不重复启动。
+准备一次受限Blood接续`configs/bloodmnist128_boundary_continuation_s17_20261031.json`：
+待原run两候选完整结束，从其中开发最优且通过原验证保护的best起步；若父已达20个百分点则跳过。
+同冻结路由/损失/数据，仅LR.001、最多40轮、至少20轮、15轮无改善停止；
+共享run根`runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128`，
+不覆盖CRC9子目录或launch收据。原TEST暴露身份、候选预算、09:00截止和单卡约束不变。
+
 `select_original_test_dev.py`在规定的VAL优化链结束后，比较基础best/last、优化best/last online/last EMA，
 按原TEST准确率、宏召回、CE选开发best；同时比较原D2NN best/last，另列固定VAL选中D2NN参照，
 不通过降低D2NN参照获得差值。各候选保存PT来源SHA、状态键、轮数及逐样本预测，候选数明确记录。
