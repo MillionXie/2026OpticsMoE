@@ -1,6 +1,6 @@
 import copy
 import torch
-from LightGenV2.tasks.t17_router_classification.train_boundary_development import boundary_objective,initialize_main_phases,configure_phase_optimizer
+from LightGenV2.tasks.t17_router_classification.train_boundary_development import boundary_objective,initialize_main_phases,configure_phase_optimizer,training_error_class_weights
 from LightGenV2.tasks.t17_router_classification.model_four import FourRouterClassification
 
 
@@ -40,3 +40,17 @@ def test_default_frozen_training_step_is_bitwise_equal_to_original_optimizer():
         loss=boundary_objective(model(x)['logits'],y,torch.ones(1,dtype=torch.bool),teacher,.1,.8,.1)
         loss.backward();torch.nn.utils.clip_grad_norm_(params,5);opt.step()
     assert all(torch.equal(original.state_dict()[k],current.state_dict()[k]) for k in original.state_dict())
+
+
+def test_bounded_weights_focus_low_TRAIN_recall_and_do_not_use_TEST_labels():
+    import numpy as np
+    weights=training_error_class_weights([[9,1],[8,2]])
+    assert .5<=weights[0]<weights[1]<=2 and np.isfinite(weights).all()
+    logits=torch.randn(3,2).log_softmax(1).requires_grad_();teacher=torch.tensor([[.9,.1],[.1,.9],[.1,.9]])
+    mask=torch.tensor([True,False,False]);w=torch.as_tensor(weights,dtype=torch.float32)
+    a=boundary_objective(logits,torch.tensor([0,0,0]),mask,teacher,.1,.8,.1,w)
+    b=boundary_objective(logits,torch.tensor([0,1,1]),mask,teacher,.1,.8,.1,w)
+    assert torch.equal(a,b);a.backward();assert torch.isfinite(logits.grad).all() and logits.grad[1:].abs().sum()>0
+    labels=torch.tensor([0,1,1]);all_train=torch.ones(3,dtype=torch.bool)
+    legacy=torch.nn.functional.cross_entropy(logits/.1,labels)+.1*torch.nn.functional.nll_loss(logits,labels)
+    assert torch.equal(boundary_objective(logits,labels,all_train,teacher,.1,.8,.1),legacy)

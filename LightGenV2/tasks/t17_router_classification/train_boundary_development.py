@@ -13,14 +13,22 @@ from .gpu_policy import require_non_a100_gpu
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
-def boundary_objective(log_probabilities,labels,is_original_train,teacher_probabilities,temperature,confidence,nll_weight):
+def boundary_objective(log_probabilities,labels,is_original_train,teacher_probabilities,temperature,confidence,nll_weight,class_weights=None):
     if temperature<=0:raise ValueError('positive training temperature required')
     teacher_confidence,pseudo=teacher_probabilities.max(1)
     targets=torch.where(is_original_train,labels,pseudo)
     mask=is_original_train|(teacher_confidence>=confidence)
     if not mask.any():return log_probabilities.sum()*0.
-    return (F.cross_entropy(log_probabilities[mask]/temperature,targets[mask])
-            +nll_weight*F.nll_loss(log_probabilities[mask],targets[mask]))
+    return (F.cross_entropy(log_probabilities[mask]/temperature,targets[mask],weight=class_weights)
+            +nll_weight*F.nll_loss(log_probabilities[mask],targets[mask],weight=class_weights))
+
+
+def training_error_class_weights(confusion_matrix):
+    matrix=np.asarray(confusion_matrix,dtype=np.float64)
+    if matrix.ndim!=2 or matrix.shape[0]!=matrix.shape[1] or np.any(matrix<0) or np.any(matrix.sum(1)<=0):
+        raise ValueError('Full square TRAIN confusion matrix with every class required')
+    error=.1+1-np.diag(matrix)/matrix.sum(1)
+    return np.clip(error/error.mean(),.5,2.)
 
 
 def initialize_main_phases(model,kind,seed):
@@ -65,6 +73,18 @@ def main():
         n_train=len(y['train']);union=torch.cat((x['train'],x['test']));labels=torch.cat((y['train'],y['test']));teacher=torch.cat(teacher)
         write(a.out/'training_membership.json',dict(indices=membership.tolist(),removed=removed,full_permutation_each_epoch=True,evaluation_set_unchanged=True))
         parent=torch.load(a.parent/'best_checkpoint.pt',map_location='cpu',weights_only=False)
+        loss_weights=None
+        if cfg.get('training_class_weights') is not None:
+            if cfg['class_weight_parent_sha256']!=sha256(a.parent/'best_checkpoint.pt'):raise ValueError('Class weights use another parent')
+            if cfg['class_weight_class_names']!=identity['classes']:raise ValueError('Class-weight label order')
+            p=a.parent/'train_predictions.npz'
+            if cfg['class_weight_TRAIN_predictions_sha256']!=sha256(p):raise ValueError('Parent TRAIN prediction identity')
+            with np.load(p,allow_pickle=False) as z:
+                assert np.array_equal(z['ids'],ids['train']) and np.array_equal(z['labels'],raw['train']['labels'])
+                c=cfg['num_classes'];matrix=np.bincount(z['labels']*c+z['scores'].argmax(1),minlength=c*c).reshape(c,c)
+            expected=training_error_class_weights(matrix)
+            if not np.array_equal(matrix,np.asarray(cfg['class_weight_TRAIN_confusion_matrix'])) or not np.allclose(expected,cfg['training_class_weights'],rtol=1e-7):raise ValueError('TRAIN-derived weight mismatch')
+            loss_weights=torch.as_tensor(expected,device='cuda',dtype=torch.float32)
         baseline=json.loads((a.selection_root/'result.json').read_text())['selected_D2NN_development_reference']
         parent_model=FourRouterClassification('optical','ccd_grid',num_classes=cfg['num_classes']).cuda().eval();parent_model.load_state_dict(parent['model'])
         parent_val,*_=evaluate(parent_model,x['val'],y['val'],cfg['batch']);parent_dev,*_=evaluate(parent_model,x['test'],y['test'],cfg['batch'])
@@ -75,6 +95,7 @@ def main():
                       original_test_in_teacher_training=True,original_test_inputs_in_student_training=True,
                       original_test_ground_truth_used_in_student_loss=False,teacher_hard_pseudo_labels_on_original_test=True,
                       teacher_confidence=cfg['teacher_confidence'],router_frozen_by_variant={v['name']:not v.get('train_router',False) for v in cfg['variants']},parameter_count=479364,
+                      training_class_weights=cfg.get('training_class_weights'),class_weight_source='parent_original_TRAIN_confusion_matrix' if loss_weights is not None else None,
                       training_temperature_absent_from_inference=True,teacher_absent_from_inference=True,
                       parent_validation=parent_val,parent_original_test_development=parent_dev,D2NN_reference=baseline)
         write(a.out/'metadata.json',metadata);results=[]
@@ -101,7 +122,7 @@ def main():
                 for start in range(0,len(order),cfg['batch']):
                     if time.time()>=cfg['stop_training_unix']:partial=True;stop_reason='deadline';break
                     idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');optimizer.zero_grad(set_to_none=True)
-                    result=model(union[idx]);loss=boundary_objective(result['logits'],labels[idx],idx<n_train,teacher[idx],cfg['training_temperature'],cfg['teacher_confidence'],cfg['energy_nll_weight'])
+                    result=model(union[idx]);loss=boundary_objective(result['logits'],labels[idx],idx<n_train,teacher[idx],cfg['training_temperature'],cfg['teacher_confidence'],cfg['energy_nll_weight'],loss_weights)
                     if not torch.isfinite(loss):raise RuntimeError('nonfinite boundary loss')
                     loss.backward()
                     if any(p.grad is None or not torch.isfinite(p.grad).all() for p in trainable):raise RuntimeError('trainable phase gradient failure')

@@ -129,6 +129,20 @@ Blood随机初始化候选30轮完成仅74.48%，不替换79.13%父相位候选�
 其受限接续已由controller539702启动worker567046，当前读图/核验中，
 须等其metadata固定90f3dc40/实际入口SHA之后再升级共享入口，不能造成提交身份与实际源码错配。
 
+#### 针对原TRAIN弱类别的有界加权（05:34）
+
+Blood续训已记录原入口SHA，保持其已载入函数和旧配置不变；现在新增可选损失权重，
+默认None与原损失逐元素等价。`configs/crc9_training_error_weighted_s17_20261031.json`
+以完整联合E38实际best为父；由其原TRAIN混淆矩阵计算
+clip((.1+1−TRAIN召回)/类均值,.5,2)的九类权重，固定router、主干LR.001，
+其余训练目标/数据/教师/40轮上限与验证保护均不变。其目的在于给训练集中仍低召回的
+基质、正常黏膜等类别分配更多梯度，不能预先认定一定提高准确率。
+启动时核对父PT SHA、父TRAIN预测SHA、类别顺序、逐样本ID/标签，重算混淆矩阵和权重一致才训练。
+原TEST仍仅用既有TEST训练教师的高置信伪标签，原TEST真标签不进入权重推导或学生损失。
+推理仍用原CCD概率/argmax，不加类别偏置、温度或电子头。
+run根`runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9`，
+候选`training_error_weighted`，父权重参选、失败保留全部收据；源码检查/发布及GPU准入后才能启动。
+
 `select_original_test_dev.py`在规定的VAL优化链结束后，比较基础best/last、优化best/last online/last EMA，
 按原TEST准确率、宏召回、CE选开发best；同时比较原D2NN best/last，另列固定VAL选中D2NN参照，
 不通过降低D2NN参照获得差值。各候选保存PT来源SHA、状态键、轮数及逐样本预测，候选数明确记录。
