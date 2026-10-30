@@ -15,6 +15,24 @@
 该项只作读出诊断，不直接替换已批准的两次OEO模型或混入主结果。
 教师如使用原TEST增强样本、或学生蒸馏看到原TEST输入，必须在对应新profile及结果中逐项明示。
 
+教师备选入口`train_original_test_teacher.py`、学生入口`distill_original_test_dev.py`，
+配置`configs/*_original_test_teacher_kd_s17_20261031.json`。仅在上一步原TEST开发差值<20百分点时启用。
+教师使用离线缓存ImageNet ResNet18、冻结backbone，RGB缩为128²并按ImageNet均值/标准差归一化；
+缓存八种D4方向的512维特征。可训练教师头为LN512→Linear512/256→GELU→Dropout.2→Linear256/C，
+在TRAIN＋原TEST的增强视图上训练。为保持VAL诊断，去掉训练并集中与VAL相同像素及先前训练像素重复项，
+只按像素SHA去重，原TEST评估样本保持完整。教师head AdamW LR.001、decay1e-4、batch512、
+最多60轮、20轮后10轮VAL平台早停；按VAL accuracy/macro/CE选教师，保存backbone SHA及缓存SHA。
+
+蒸馏输入包含TRAIN及原TEST图像，原TEST作为开发训练数据，不能再声称独立TEST。
+学生硬标签CE只用于原TRAIN；全体输入使用温度2的教师KL（权重.5，乘T²），
+原TEST教师置信≥.7且原LG错分、教师正确的样本以2倍频率回放，显式记录使用原TEST标签进行难例采样。
+每次D4方向与对应教师缓存严格对齐；学生主损失始终使用真实Top-2，前5轮仅附加权重.2的稠密辅助损失，
+不用稠密前向替代主Top-2分类。仍使用短期load/coverage辅助及EMA，参数和推理图不增加。
+学生batch32、相位LR.001/router LR.0005、余弦、clip5，最多60轮；每5轮以原TEST开发准确率/macro/CE选PT，
+VAL诊断准确率/宏召回不得较父权重下降超过2/3百分点。20轮后15轮开发分数平台停止。
+比较父权重/online/EMA，记录每次开发集评估次数，保留best/last与逐样本路由。
+最终LG只保存三组相位张量，共479364参数，教师、MLP及预训练特征均不进入LG推理。
+
 ## 光路由LG训练优化：结构不变（2026-10-31）
 
 用户要求尽量较对应D2NN高20%以上，当前按20**个百分点**报告目标：
