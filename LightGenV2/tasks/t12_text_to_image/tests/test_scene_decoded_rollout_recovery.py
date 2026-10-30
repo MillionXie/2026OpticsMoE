@@ -25,5 +25,13 @@ class DecodedLossTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Frozen'):decoded_agreement(decoder,torch.ones(2),torch.ones(2),.13)
         with self.assertRaisesRegex(ValueError,'B3HW'):image_agreement(torch.ones(1,4,8,8),torch.ones(1,4,8,8))
 
+    def test_missing_low_contrast_boundary_has_finite_nonzero_relative_loss(self):
+        import torch
+        wanted=torch.zeros(1,3,16,16);wanted[...,8:,:]=.05
+        pixel,edge=image_agreement(torch.zeros_like(wanted),wanted)
+        self.assertGreater(float(pixel),0);self.assertGreater(float(edge),.1)
+        flat_pixel,flat_edge=image_agreement(torch.ones_like(wanted),torch.zeros_like(wanted))
+        self.assertEqual(float(flat_edge),0);self.assertTrue(torch.isfinite(flat_pixel+flat_edge))
+
 
 if __name__=='__main__':unittest.main()

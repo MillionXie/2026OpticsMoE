@@ -19,8 +19,11 @@ def image_agreement(actual,wanted):
         raise ValueError('Matched decoded B3HW images required')
     wanted=wanted.detach().float();actual=actual.float()
     pixel=torch.stack([(F.avg_pool2d(actual,k)-F.avg_pool2d(wanted,k)).abs().mean()for k in (1,2,4)]).mean()
-    edge=torch.stack([((actual[...,1:,:]-actual[...,:-1,:])-(wanted[...,1:,:]-wanted[...,:-1,:])).abs().mean(),
-                      ((actual[...,:,1:]-actual[...,:,:-1])-(wanted[...,:,1:]-wanted[...,:,:-1])).abs().mean()]).mean()
+    target_edges=[wanted[...,1:,:]-wanted[...,:-1,:],wanted[...,:,1:]-wanted[...,:,:-1]]
+    actual_edges=[actual[...,1:,:]-actual[...,:-1,:],actual[...,:,1:]-actual[...,:,:-1]]
+    # Teacher-only loss scaling makes missing low-contrast object boundaries
+    # visible to training; it never normalizes a deployed optical field/image.
+    edge=torch.stack([(x-y).abs().mean()/y.abs().mean().clamp_min(.01)for x,y in zip(actual_edges,target_edges)]).mean()
     return pixel,edge
 
 
@@ -36,7 +39,7 @@ def decoded_agreement(decoder,student,teacher,scaling_factor,gradient=False):
 
 
 def main():
-    p=argparse.ArgumentParser(add_help=False);p.add_argument('--decoded-pixel-weight',type=float,default=.5);p.add_argument('--decoded-edge-weight',type=float,default=.2)
+    p=argparse.ArgumentParser(add_help=False);p.add_argument('--decoded-pixel-weight',type=float,default=.5);p.add_argument('--decoded-edge-weight',type=float,default=.05)
     custom,remaining=p.parse_known_args()
     if not(0<custom.decoded_pixel_weight<=1 and 0<custom.decoded_edge_weight<=1):raise ValueError('Explicit weak positive TRAIN image losses required')
     from . import scene_joint_cached_rollout as base
@@ -44,6 +47,7 @@ def main():
     old_state,old_load,old_objective,old_run=base.complete_state,base.load_generator,base.objective,base.run
     holder={}
     contract=dict(schema='scene_TRAIN_decoded_rollout_v1',pixel_weight=custom.decoded_pixel_weight,edge_weight=custom.decoded_edge_weight,
+        edge_scale='teacher mean absolute directional gradient, floored at.01; TRAIN loss only',
         decoder_is_original_frozen_VAE=True,decoder_used_for_TRAIN_loss_only=True,VAE_encoder_used=False,
         target='Original frozen E30 terminal latents from the same192 TRAIN paths',extra_deployment_parameters=0)
     def state(folder):
