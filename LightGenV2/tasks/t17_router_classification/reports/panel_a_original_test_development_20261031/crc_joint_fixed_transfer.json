@@ -1,0 +1,49 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/result.json",
+      "sha256": "18ebc60f20d9922d483689673831d5fd16a308e9110d43c51de1c2614afb95b5",
+      "bytes": 7963
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/history.json",
+      "sha256": "75442db507eacff2021b1e943d0bf623dcbafb083e24118c11d9ae29f59439c0",
+      "bytes": 124562
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/status.json",
+      "sha256": "e4b2eaf1127dce08052b9eca372b656995e1f8066de131e6ab7d82cd8111761a",
+      "bytes": 7986
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/metadata.json",
+      "sha256": "b819806de8b0f1d87e193b5005fe606fbf7cdbed0914c21fb636dd052de489d9",
+      "bytes": 12101
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/best_checkpoint.pt",
+      "sha256": "2b16406440d22e548e38e19135144fe0c65a55ecda8f2fa95f0af9410581521b",
+      "bytes": 1928332
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/last_checkpoint.pt",
+      "sha256": "86ee006f89c4ad6add5e53d0c79fbd6888faabe4334024d44d02e162dbed2f1f",
+      "bytes": 5362724
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/train_predictions.npz",
+      "sha256": "f21fa63d28ab4186c4e68faebf9f0ac782a687b4e0177e5ac2ac2bc46ad1a798",
+      "bytes": 435957
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/val_predictions.npz",
+      "sha256": "2c1d30834fd1d1b05df52b9824e432573bcd8ecd4cb24fae1aff77b15c58e3bd",
+      "bytes": 63927
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_boundary_joint_s17_20261031/crc9/fixed_router_control/test_predictions.npz",
+      "sha256": "e1e5dbe345f981abe45fa0a9fdcf7724dd65a649df3b9ca9afbe9e4a8a2a7524",
+      "bytes": 126025
+    }
+  ]
+}
