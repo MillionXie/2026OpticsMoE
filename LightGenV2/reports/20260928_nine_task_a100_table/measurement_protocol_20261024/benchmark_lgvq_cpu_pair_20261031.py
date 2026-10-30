@@ -131,15 +131,19 @@ def main():
     # Alternate modes to reduce directional temperature/load drift.
     for repeat in range(6):
         for workers in ((1,16) if repeat % 2 == 0 else (16,1)):
-            barrier = threading.Barrier(workers + 1)
+            process_stamp = {}
+            # Last arrival stamps after every thread-local initializer. Earlier
+            # b595 raw process_cpu_ms included those initializers; its valid
+            # thread CPU / compute-span clocks are audited separately.
+            barrier = threading.Barrier(workers + 1, action=lambda: process_stamp.update(start=time.process_time()))
             def job(slots):
                 prep.processor(str(args.model))  # thread-local initialization untimed
                 barrier.wait(timeout=60)
                 return [calculate(slot) for slot in slots]
             with ThreadPoolExecutor(max_workers=workers) as pool:
                 futures = [pool.submit(job, list(range(i,16,workers))) for i in range(workers)]
-                process_start = time.process_time()
                 barrier.wait(timeout=60)
+                process_start = process_stamp['start']
                 values = [v for f in futures for v in f.result(timeout=60)]
                 process_end = time.process_time()
             values.sort(key=lambda x:x[1]['slot'])

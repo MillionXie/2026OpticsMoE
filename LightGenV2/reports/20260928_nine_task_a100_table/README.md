@@ -1,5 +1,39 @@
 # A100 nine-metric timing and energy table — 2026-09-28
 
+## 2026-10-31：两服务器CPU前处理单线程与16线程诊断
+
+人工要求直接比较CPU差异。`benchmark_lgvq_cpu_pair_20261031.py`执行同一份原LG
+resize/PIL、原processor归一化及已接受BF16 patch，使用相同首16个真实视频、每视频四帧
+原始RGB crop；视频、crop、原FP32 patch及BF16输出均逐SHA/逐位核验。不加载模型、
+不初始化CUDA、不含文件解码/光学时间，不替换既有LG表。每种模式一组预热、五组正式，
+单线程与16线程交替；每worker的Torch/inter-op/OpenCV均为1线程。
+
+| 当前主机环境实测 | 实验室Xeon5218R | 租机EPYC7742 | 租机速度因子 |
+|---|---:|---:|---:|
+| 单线程CPU均值，ms/视频 | 26.463909 | 19.077463 | 1.387182 |
+| 单线程完成16视频墙钟中位数，ms | 425.093507 | 306.332919 | 1.387685 |
+| 16线程CPU均值，ms/视频 | 62.936432 | 36.048981 | 1.745859 |
+| 16线程完成16视频墙钟中位数，ms | 131.343644 | 76.179634 | 1.724131 |
+
+16线程组墙钟范围分别119.523001–137.210173ms、74.009026–84.093705ms；包含真实
+GIL/OS/资源等待，没有把线程CPU均值直接当整组延迟，也不是原两场流水排程模型的45/29ms。
+实验室有其他用户负载，租机cpu.max为2000000/100000（20核配额）。两端Transformers
+4.57.3/NumPy1.26.4一致，但Pillow12.2/13.0、OpenCV4.10/4.11及Torch构建不同；
+因此结论仅为当前服务器软件/资源组合，不声称隔离了CPU型号的纯因果效应。
+
+实际执行源码为已发布`b595fe5832224796f4ead648f1b2a3711e4fdf8b`，两端仅导入Git
+objects并执行该提交的blob，原checkout HEAD未切换。实验室run为
+`T06/runs/simulation/lgvq_cpu_pair_20261031_01`，租机为同位置`_02`；两进程已退出。
+租机`_01`仅因未带原有GLVND运行库搜索路径在import停止，无计时样本，原件保留；
+补回原路径后运行`_02`，未安装或升级依赖。各3份新raw已本地SHA核验。
+CPU对照/独立复核在`measurement_protocol_20261024/outputs/`
+`01a183c0-ff52-76d3-bd5b-5763b23bfb5b/CPU_pair_20261031_01/`。
+实验室report SHA为`5493a79364f443eec448eba6ee13c3839d6ea80ccbbba11cabdbd2cf853d1552`，
+租机为`a5ac43ed4250e9cc41aaf3fc7ca0984773d9584e374a960be791cfca3a4fe97f`。
+旧b595的process_cpu_ms包含barrier前线程初始化，故不用于本次比较；独立审计只使用
+计时区内thread_time及实际compute start/end。后续源码修正该辅助计数起点，不回写旧raw，
+也未为此重复已完成测量。
+
 ## 2026-10-30：仅实验室LG参照，恢复直观能耗和自身token对比
 
 按最新人工要求，新Excel移除80GB LG行，只以实验室LG比较原六个baseline的50/100%MPS配置。
