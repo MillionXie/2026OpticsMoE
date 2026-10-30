@@ -110,6 +110,7 @@ def run(a):
             reference_head_adaptation=dict(parent_generator_sha256=ready['best_sha256'],
                 teacher_sha256=cache['condition_teacher_sha256'],image_queries_only=not all_conditions,all_existing_conditions=all_conditions))
         current['reference_head_adaptation']['TRAIN_condition_loss' if all_conditions else 'TRAIN_image_prefix_loss']=score
+        if cache.get('input_prompt_revision'):current['input_prompt_revision']=cache['input_prompt_revision']
         torch.save(current,a.output/name)
     for step in range(1,a.steps+1):
         indices=rng.sample(range(len(rows)),min(a.batch_size,len(rows)))
