@@ -32,6 +32,10 @@ def teacher_edges(teacher_grid,student_grid):
 
 
 def local_teacher_endpoint(scheduler,unet,start,cond,state,begin,end):
+    # set_begin_index alone does not reset a scheduler already used by the
+    # preceding local target. Use the public grid setter to reset its state.
+    grid=scheduler.timesteps.detach().cpu().tolist()
+    scheduler.set_timesteps(timesteps=grid,device=start.device)
     scheduler.set_begin_index(begin);x=start.detach().clone();sigmas=scheduler.sigmas.tolist()
     with torch.no_grad():
         for j in range(begin,end):
@@ -67,9 +71,10 @@ def run(a):
     assert digest(a.probe_trajectories/'TRAIN_trajectories.pt')==targets_report['trajectory_sha256']
     bank=torch.load(a.probe_trajectories/'TRAIN_trajectories.pt',map_location='cpu',weights_only=False,mmap=True)
     assert bank['timesteps']==state['sampling_contract']['timesteps'] and bank['pair_sha256']==state['pair_sha256']
-    probes=[row for row in bank['records'] if row['interval'] in [0,len(edges)//2,len(edges)-2]][:24]
-    assert probes and all(row['split']=='train' and row['input_key'] in train for row in probes)
     groups={category:sorted(k for k,row in train.items() if row['category']==category) for category in ['lamp','pillow']};assert all(groups.values())
+    probe_keys={key for keys in groups.values() for key in keys[:4]}
+    probes=[row for row in bank['records'] if row['input_key'] in probe_keys and row['interval'] in [0,(len(edges)-1)//2,len(edges)-2]]
+    assert len(probes)==24 and all(row['split']=='train' and row['input_key'] in train for row in probes)
     def loss_for(key,k,noise_index):
         student.scheduler.set_timesteps(timesteps=state['sampling_contract']['timesteps'],device='cuda')
         seed=request_seed(train[key]['reference_sha256'],noise_index);generator=torch.Generator(device='cuda').manual_seed(seed)

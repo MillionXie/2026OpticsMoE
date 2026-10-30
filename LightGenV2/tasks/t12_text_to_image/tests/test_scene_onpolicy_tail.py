@@ -17,11 +17,12 @@ class OnpolicyTeacher(unittest.TestCase):
         model=ConstantUNet();start=torch.randn(1,4,8,8,dtype=torch.bfloat16,requires_grad=True)
         state={'negative_text':torch.zeros(1,2,8),'negative_pooled':torch.zeros(1,4),'negative_image':torch.zeros(1,3,4),'SDXL_conditioning_size':512}
         conditions={'text':torch.ones(1,2,8),'pooled':torch.ones(1,4),'image':torch.ones(1,3,4)}
-        actual=local_teacher_endpoint(scheduler,model,start,conditions,state,7,10);expected=start.detach().clone()
-        for j in range(7,10):expected=(expected.float()+float(scheduler.sigmas[j+1]-scheduler.sigmas[j])).bfloat16()
-        torch.testing.assert_close(actual,expected,rtol=0,atol=0)
-        self.assertFalse(actual.requires_grad);self.assertIsNone(start.grad);self.assertIsNone(model.p.grad)
-        self.assertEqual(scheduler.step_index,10)
+        for begin,end in [(7,10),(20,23),(7,10)]:
+            actual=local_teacher_endpoint(scheduler,model,start,conditions,state,begin,end);expected=start.detach().clone()
+            for j in range(begin,end):expected=(expected.float()+float(scheduler.sigmas[j+1]-scheduler.sigmas[j])).bfloat16()
+            torch.testing.assert_close(actual,expected,rtol=0,atol=0)
+            self.assertFalse(actual.requires_grad);self.assertIsNone(start.grad);self.assertIsNone(model.p.grad)
+            self.assertEqual(scheduler.step_index,end)
     def test_nonuniform_native_endpoint_mapping_and_rejection(self):
         full=[90.,80.,70.,60.,50.,40.];self.assertEqual(teacher_edges(full,[90.,70.,60.]),[0,2,3,6])
         for invalid in [[80.,60.],[90.,75.],[90.,90.],[90.,60.,70.],[]]:
