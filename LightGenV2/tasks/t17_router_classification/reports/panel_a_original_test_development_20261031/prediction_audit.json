@@ -23,8 +23,8 @@
     {
       "dataset": "crc9",
       "samples": 1436,
-      "correct": 642,
-      "accuracy": 0.44707520891364905,
+      "correct": 1025,
+      "accuracy": 0.7137883008356546,
       "identical_ids_labels_vs_D2NN": true,
       "exactly_two_positive_routes_per_sample": true,
       "all_samples_preserved": true
