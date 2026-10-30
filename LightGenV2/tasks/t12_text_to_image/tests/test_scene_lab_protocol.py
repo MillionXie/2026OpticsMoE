@@ -94,4 +94,4 @@ def test_native_head_flag_restoration_is_not_defaulted():
     assert "expected_joint=expected_sha256==F9"in source
     assert "QwenSDXLConditions(joint_image_context=expected_joint)"in source and 'strict=True'in source
     assert 'use_cache=False' in source and 'simulation_diagnostic=False' in source
-    assert "self.qwen.model(**inputs"in source and 'self.head(hidden,native[0][None])'in source
+    assert "self.qwen.model(**inputs"in source and 'self.head(hidden.float(),native[0][None].float())'in source

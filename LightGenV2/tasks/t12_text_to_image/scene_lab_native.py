@@ -58,7 +58,8 @@ class NativeRunner:
             with torch.inference_mode():
                 hidden=self.qwen.model(**inputs,use_cache=False,return_dict=True).last_hidden_state
                 if len(native)!=1 or native[0].shape!=(64,2048):raise ValueError('Native visual hook differs')
-                result=self.head(hidden,native[0][None])
+                # Exactly the original renderer's bf16-Qwen -> fp32-head cast.
+                result=self.head(hidden.float(),native[0][None].float())
         finally:restore();hook.remove()
         self.completed_forwards+=1
         return dict(conditions={k:v.detach().cpu()for k,v in result.items()},input_ids=inputs['input_ids'].cpu(),
