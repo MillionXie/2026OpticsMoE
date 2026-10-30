@@ -1,0 +1,38 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "independent_test_claim": false,
+  "rows": [
+    {
+      "dataset": "kather2016",
+      "samples": 752,
+      "correct": 459,
+      "accuracy": 0.6103723404255319,
+      "identical_ids_labels_vs_D2NN": true,
+      "exactly_two_positive_routes_per_sample": true,
+      "all_samples_preserved": true
+    },
+    {
+      "dataset": "bloodmnist128",
+      "samples": 3421,
+      "correct": 2295,
+      "accuracy": 0.6708564747149957,
+      "identical_ids_labels_vs_D2NN": true,
+      "exactly_two_positive_routes_per_sample": true,
+      "all_samples_preserved": true
+    },
+    {
+      "dataset": "crc9",
+      "samples": 1436,
+      "correct": 642,
+      "accuracy": 0.44707520891364905,
+      "identical_ids_labels_vs_D2NN": true,
+      "exactly_two_positive_routes_per_sample": true,
+      "all_samples_preserved": true
+    }
+  ],
+  "cpu_training_contract_tests": {
+    "passed": 57,
+    "environment": "Lab Linux xml, CUDA_VISIBLE_DEVICES empty",
+    "source_commit": "ecd676ccb8fbe5f09e674ed6552ecea37b792c65"
+  }
+}

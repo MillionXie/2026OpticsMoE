@@ -8,6 +8,44 @@
 记录原TEST是否用于选模、教师训练、学生输入/损失及各自预算，不能隐去LG与D2NN的数据使用差异。
 当前四专家/Top-2/478²global/两次OEO/无电子读出头约束继续有效，教师仅限训练阶段。
 
+### 原TEST开发路线当前收据（2026-10-31）
+
+基础60轮和VAL优化30轮均已完成。三组D4蒸馏各额外20轮，均选回父权重；
+CPU逐元素核验确认没有蒸馏更新被采用。随后保守对照关闭学生D4、类别加权、
+稠密/路由辅助，batch8、KD权重.2、相位LR.001、router LR.0001，仍严格Top-2。
+教师复用原缓存，学生硬标签CE仍只用TRAIN，原TEST提供教师软目标。
+这些设置同时改变，不能将结果差异归因于单独一个增强开关。
+
+| 任务/seed17 | D2NN原TEST参照 | 当前已完成LG原TEST开发 | 差值/百分点 | 保守对照状态 |
+| --- | ---: | ---: | ---: | --- |
+| Kather2016八类 | 40.69% | 61.04% | +20.35 | 完成20轮，选online第4轮 |
+| BloodMNIST-128八类 | 59.98% | 67.09% | +7.10 | 保守对照20轮训练中；本行暂用其父权重 |
+| CRC9九类 | 59.75% | 44.71% | −15.04 | 完成20轮，选online第2轮 |
+
+Kather获选TRAIN/VAL为64.30%/59.71%，CRC9为45.44%/44.01%；
+不能把当前瓶颈主要解释为严重过拟合。后续精度下降的新权重没有替换已存best。
+三组教师VAL为94.68%/93.98%/97.49%，教师分数不当作LG分数；
+原TEST已用于教师训练，所有表格都属于开发结果，不是独立泛化或等数据预算对照。
+20个百分点目标目前只在Kather这个seed的开发分数达到，不是三任务均达标。
+
+六种固定等功率专家对都未超过实际动态路由；真实标签选对的反事实结果只作诊断，
+不列为LG准确率，也不是可变功率路由的性能上界。四专家、两次OEO、三组相位共479364参数
+及无电子读出均再次核验；没有通过改变光路、探测区或降低D2NN参照获得上述差值。
+
+每条蒸馏候选从同一开发父权重起步，各run的`total_optical_executed_epochs`
+只统计本候选分支。总探索预算另计基础60＋VAL优化30＋两条候选各20＝130轮，
+不是所选权重连续训练130轮；教师头实际48/60/36轮及ImageNet预训练另计。
+Blood尚在训练时预算按已完成轮数计，不提前算作完成130轮。
+
+完整阶段、逐类指标、权重SHA及当前状态见
+[开发报告](reports/panel_a_original_test_development_20261031/results.html)，
+[机器可读汇总](reports/panel_a_original_test_development_20261031/results.json)，
+[训练曲线](reports/panel_a_original_test_development_20261031/distillation_curves.svg)。
+保守对照run根为`runs/simulation/panel_a_original_test_kd_identity_s17_20261031`。
+收据更新后，可从仓库根运行`python -m LightGenV2.tasks.t17_router_classification.report_original_test_development`
+和`python -m LightGenV2.tasks.t17_router_classification.plot_original_test_development`重建汇总。
+只保留各run的best/last，训练进程退出自动释放；当前仍只使用同一张RTX4090。
+
 `select_original_test_dev.py`在规定的VAL优化链结束后，比较基础best/last、优化best/last online/last EMA，
 按原TEST准确率、宏召回、CE选开发best；同时比较原D2NN best/last，另列固定VAL选中D2NN参照，
 不通过降低D2NN参照获得差值。各候选保存PT来源SHA、状态键、轮数及逐样本预测，候选数明确记录。

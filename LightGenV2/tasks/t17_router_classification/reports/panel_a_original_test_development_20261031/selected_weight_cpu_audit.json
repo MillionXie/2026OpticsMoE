@@ -1,0 +1,112 @@
+[
+  {
+    "dataset": "kather2016",
+    "run": "D4 distillation",
+    "selected_kind": "parent",
+    "bitwise_identical_to_parent": true,
+    "parameter_count": 479364,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ]
+    }
+  },
+  {
+    "dataset": "kather2016",
+    "run": "Identity distillation",
+    "selected_kind": "online",
+    "selected_epoch": 4,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ]
+    },
+    "parameter_count": 479364
+  },
+  {
+    "dataset": "bloodmnist128",
+    "run": "D4 distillation",
+    "selected_kind": "parent",
+    "bitwise_identical_to_parent": true,
+    "parameter_count": 479364,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ]
+    }
+  },
+  {
+    "dataset": "crc9",
+    "run": "D4 distillation",
+    "selected_kind": "parent",
+    "bitwise_identical_to_parent": true,
+    "parameter_count": 479364,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ]
+    }
+  },
+  {
+    "dataset": "crc9",
+    "run": "Identity distillation",
+    "selected_kind": "online",
+    "selected_epoch": 2,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ]
+    },
+    "parameter_count": 479364
+  }
+]

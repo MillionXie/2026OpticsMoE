@@ -1,0 +1,143 @@
+{
+  "generated_utc": "2026-10-30T20:32:45.277178+00:00",
+  "jobs": [
+    {
+      "run": "panel_a_optical_four_ccd_s17_20261031/kather2016",
+      "pid": 334758,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_optical_four_ccd_s17_20261031/bloodmnist128",
+      "pid": 334759,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_optical_four_ccd_s17_20261031/crc9",
+      "pid": 334760,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_optical_four_ccd_refine_s17_20261031/kather2016",
+      "pid": 365496,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_optical_four_ccd_refine_s17_20261031/bloodmnist128",
+      "pid": 379170,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_optical_four_ccd_refine_s17_20261031/crc9",
+      "pid": 365498,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_teacher_kd_s17_20261031/kather2016/teacher",
+      "pid": 422253,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_teacher_kd_s17_20261031/kather2016/student",
+      "pid": 423828,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_teacher_kd_s17_20261031/bloodmnist128/teacher",
+      "pid": 427903,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_teacher_kd_s17_20261031/bloodmnist128/student",
+      "pid": 435700,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_teacher_kd_s17_20261031/crc9/teacher",
+      "pid": 416053,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_teacher_kd_s17_20261031/crc9/student",
+      "pid": 416441,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_kd_identity_s17_20261031/kather2016",
+      "pid": 449688,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    },
+    {
+      "run": "panel_a_original_test_kd_identity_s17_20261031/bloodmnist128",
+      "pid": 459509,
+      "state": "training",
+      "epoch": 5,
+      "process_still_owns_T17": true,
+      "gpu_allocation": {
+        "uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+        "memory": "6706 MiB"
+      }
+    },
+    {
+      "run": "panel_a_original_test_kd_identity_s17_20261031/crc9",
+      "pid": 449689,
+      "state": "complete",
+      "epoch": null,
+      "process_still_owns_T17": false,
+      "gpu_allocation": null
+    }
+  ],
+  "all_completed_trainers_have_released_GPU": true,
+  "maximum_active_GPU_count": 1,
+  "active_trainers": [
+    {
+      "run": "panel_a_original_test_kd_identity_s17_20261031/bloodmnist128",
+      "pid": 459509,
+      "state": "training",
+      "epoch": 5,
+      "process_still_owns_T17": true,
+      "gpu_allocation": {
+        "uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+        "memory": "6706 MiB"
+      }
+    }
+  ]
+}

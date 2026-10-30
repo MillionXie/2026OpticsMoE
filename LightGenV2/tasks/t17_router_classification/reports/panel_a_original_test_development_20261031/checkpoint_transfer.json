@@ -1,0 +1,264 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/kather2016/last_checkpoint.pt",
+      "bytes": 5763890,
+      "sha256": "e1ac9b6b0980c825ed4566b2a0ddf8dc647a519c2b9a33d1ed0a953ca3da7dbb"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/kather2016/best_checkpoint.pt",
+      "bytes": 5763890,
+      "sha256": "672c3acfdfd883a6f1d0a506024b0bff448e869acb1e14a08630a0a9f46c8bd9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/bloodmnist128/last_checkpoint.pt",
+      "bytes": 5763954,
+      "sha256": "5815bfaaf5894a80b013ad526dc2fa17b7aa1a240f34f118daf77769f48af463"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/bloodmnist128/best_checkpoint.pt",
+      "bytes": 5763954,
+      "sha256": "375e41eba9843bb5d7b3524ae973c2deb1c597b05dc36b480b57494b03747648"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/crc9/last_checkpoint.pt",
+      "bytes": 5763570,
+      "sha256": "b1635198a4e2c9508941fbdd671321be300e9166cf1b8bf573d65d3c051bf3f3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_s17_20261031/crc9/best_checkpoint.pt",
+      "bytes": 5763570,
+      "sha256": "0cf10875f561a0a2ed0c53dd55978a800992436263c2752f7d5dfd5acb9275e8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_refine_s17_20261031/kather2016/last_checkpoint.pt",
+      "bytes": 7682625,
+      "sha256": "c89d1bd91fa2265c87c215b2ed6815eef1e03dcf819d596e709a56c4bdea30a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_refine_s17_20261031/kather2016/best_checkpoint.pt",
+      "bytes": 1926220,
+      "sha256": "c38a616e94b49cac8526d7564a77a84427903c709d28d6084875ed6edca0d0ac"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_refine_s17_20261031/bloodmnist128/last_checkpoint.pt",
+      "bytes": 7682625,
+      "sha256": "e99aa90844311ee701fcaa88919794a8b1ebd6c598190c6989df3d1d8428398a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_refine_s17_20261031/bloodmnist128/best_checkpoint.pt",
+      "bytes": 1926284,
+      "sha256": "6c8dd2e199cb060aff3ea0ed777e17cbc8d522db889f2c11313196b5eb1e2daf"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_refine_s17_20261031/crc9/last_checkpoint.pt",
+      "bytes": 7682305,
+      "sha256": "65a60d5c0d6307994f18dae5d75ba412d424efac7348f0cbdf0b3c731e19aad6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_optical_four_ccd_refine_s17_20261031/crc9/best_checkpoint.pt",
+      "bytes": 1925964,
+      "sha256": "6edb6d37b281ba6f50892b612342c3206ef1d7a39f5a7fc2f3f73e8c624f22f7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "569ba01dd89ee4cd7d0f24160326526c9a1d3f107e9991c9dbaf3a3c8648dcac"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/refined_last/best_checkpoint.pt",
+      "bytes": 1919628,
+      "sha256": "17fcbba1810c51983c9d15f3853723a8d84b9054cf9060780197035b4721f13a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/refined_best/best_checkpoint.pt",
+      "bytes": 1919628,
+      "sha256": "6a1da31e4d1c634981f47008c04deb633227c60bb3a4b915b8ae1c8051055c58"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/d2nn_val_best/best_checkpoint.pt",
+      "bytes": 2744076,
+      "sha256": "0a1aeae2f9eb64d01b766c48e48239a39c389aa9abfccdb10abc62db5ee4465b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/base_best/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "dcf40117e941161f64e392aab55ba04f21457087ec681ca9acdecff9f89d5a07"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/refined_last_ema/best_checkpoint.pt",
+      "bytes": 1919692,
+      "sha256": "7cf9b29ead8320b4860d160872fd2d876c3896c00e791304464be3672d8d62f9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/base_last/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "66d74483c377e6f3a3b450fe9c022da56cd449d47c303fab8f6cfa5cb45ec2f6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/kather2016/candidates/d2nn_last/best_checkpoint.pt",
+      "bytes": 2744076,
+      "sha256": "fca9b13882c905364d6589bcfe7e719965d7461c1a290f33aa99322ef97fa5ec"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "2bc5d185b6fa404ebb5ab93063545fe9f507f1a6faeef934c7b0e3606b4a8a3b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/refined_last/best_checkpoint.pt",
+      "bytes": 1919628,
+      "sha256": "f84a26071510fe11a87bd758cadfcafdeec2303d13ec526310cf813751e0f3e7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/refined_best/best_checkpoint.pt",
+      "bytes": 1919628,
+      "sha256": "0b924c5e53d27e54d03c66bb84ffd037c2a3b0c0679764348a8f37491e33a83b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/d2nn_val_best/best_checkpoint.pt",
+      "bytes": 2744076,
+      "sha256": "2792825a8c77422e9bddad00f1943c9eccf4ba3c9e11a0846c08caf5ead77254"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/base_best/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "5a2323259537723d691f9c8992d42c6a7043a7c4e84bd66a91310fb1fce5447e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/refined_last_ema/best_checkpoint.pt",
+      "bytes": 1919692,
+      "sha256": "ed999dc919b976719613a7cf586a1a46f87b62c358606eccaea91e99aeaa1ef3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/base_last/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "30407ce6337621c15ab4c0f4192f665408fc4534595052099afeee97a59b0993"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/bloodmnist128/candidates/d2nn_last/best_checkpoint.pt",
+      "bytes": 2744076,
+      "sha256": "54c9f21d6b7de1886edc5bdd7910793ce0d96af699a4ae19402c43879877c878"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/best_checkpoint.pt",
+      "bytes": 1919820,
+      "sha256": "5382fe8b959506c48b3b840031d9b540b960e9b985e52c1687c97fb19161a189"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/refined_last/best_checkpoint.pt",
+      "bytes": 1919628,
+      "sha256": "a73d97aa4f561b5bfdabf8756c765008b2cece9ff218e582cc5b4d314e6b1df3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/refined_best/best_checkpoint.pt",
+      "bytes": 1919628,
+      "sha256": "918dc8fd1b30ad81e6f00327b5a7ffbe297781067aabadd657035353c7a24a5c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/d2nn_val_best/best_checkpoint.pt",
+      "bytes": 2744076,
+      "sha256": "e6323be2cf029c75c5090ece76c3399a787642b2b8b76704ce217686ed4bdeae"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/base_best/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "a187f1851672a3c9db02ab432e8f19a3238212924e219704deb10f1061664a17"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/refined_last_ema/best_checkpoint.pt",
+      "bytes": 1919628,
+      "sha256": "c78b522c2b0e17b658ec69b181f7b9790b2630e76fa72e3a56baba093d1321c7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/base_last/best_checkpoint.pt",
+      "bytes": 1919756,
+      "sha256": "a85df360aab3b8dd7b42afe2ea59ab77dbb465b1759134d75c0052388b1675a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_dev_s17_20261031/crc9/candidates/d2nn_last/best_checkpoint.pt",
+      "bytes": 2744076,
+      "sha256": "9f35b974fe84d63bd57f4cdb44c548dd09c6a518b6db87df6686bb2290678bf0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/kather2016/teacher/last_checkpoint.pt",
+      "bytes": 547224,
+      "sha256": "98e5d6b8cd03b9aa1e21be554181f68ba6c0cb3c40e26409f3a6fd9df280e76e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/kather2016/teacher/best_checkpoint.pt",
+      "bytes": 547224,
+      "sha256": "2f84824cea7fe8947f686198118d16df9b102ae1c3bd057ba813d5d3173cb3a5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/kather2016/student/last_checkpoint.pt",
+      "bytes": 7682817,
+      "sha256": "0db3473a32870177fc799b28630c343f6f9cf94046c3954641a737f0a5bba9a2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/kather2016/student/best_checkpoint.pt",
+      "bytes": 1928268,
+      "sha256": "dce9ce4c73079bf274106c0c1b6855528a58a43a3b5fe3319b4d1e31181503a3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/bloodmnist128/teacher/last_checkpoint.pt",
+      "bytes": 547288,
+      "sha256": "968309c49b2f2288a01817d9bcf586f3e43da74f8bbe18c35458d2d533d68baf"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/bloodmnist128/teacher/best_checkpoint.pt",
+      "bytes": 547288,
+      "sha256": "f88e5a38d0c4396300522c73c52a5f6d318e0c9c1b32a3309e0141e4bbbe7608"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/bloodmnist128/student/last_checkpoint.pt",
+      "bytes": 7682817,
+      "sha256": "a37110fcfa85ceffeda161efed2c05ddd354f31a74b2eac1f19c9103dcef82b1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/bloodmnist128/student/best_checkpoint.pt",
+      "bytes": 1928332,
+      "sha256": "36dc0a682f021c223944be73f0ce616f46dcfe53e40ed81075f0ab98e2c04ab3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/crc9/teacher/last_checkpoint.pt",
+      "bytes": 547992,
+      "sha256": "dbdd0823db36dfc9cd82f57c22a43cdf5a1eebeef0e4af7e6a2e2e7aa9225bd5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/crc9/teacher/best_checkpoint.pt",
+      "bytes": 547992,
+      "sha256": "58cb749bab40cdf2a6cfa67bfda51544920b0ed47ab837723034719505d6b7d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/crc9/student/last_checkpoint.pt",
+      "bytes": 7682433,
+      "sha256": "11f68cf374e73c396c31fd0a1dab24bb6b7789d801d563b510fac9c0ceb64152"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_teacher_kd_s17_20261031/crc9/student/best_checkpoint.pt",
+      "bytes": 1928012,
+      "sha256": "6ad25657485e88df96a94ee5c70a319b6d22cb33047f079b4ed48d4398842c6b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_kd_identity_s17_20261031/kather2016/last_checkpoint.pt",
+      "bytes": 7682241,
+      "sha256": "c6aba4ad18b780e5f274e6df3498b33c566de74c3674b32e5c216b10d41c602f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_kd_identity_s17_20261031/kather2016/best_checkpoint.pt",
+      "bytes": 1927692,
+      "sha256": "81f973aa3e4430aa3d4c0f773cc16b07f3b196f8333f8ab944c50779a44961c2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_kd_identity_s17_20261031/crc9/last_checkpoint.pt",
+      "bytes": 7681857,
+      "sha256": "707ea35af727d41254b1e1bad22c29d3b1180797a0a7e40808c0a1d5fdee2f28"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_original_test_kd_identity_s17_20261031/crc9/best_checkpoint.pt",
+      "bytes": 1927436,
+      "sha256": "940d1ab2321bef6e9d1415c4657c7ee726a882f6f38074754defe786e49a35ff"
+    }
+  ]
+}
