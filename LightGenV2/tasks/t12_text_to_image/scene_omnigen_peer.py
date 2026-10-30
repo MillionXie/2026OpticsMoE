@@ -19,6 +19,20 @@ from .white_reference_scene_probe import GPU,digest,write
 REVISION='016e2f61d12a98303f6bbdf122687694d7984268'
 
 
+def matched_natural_inputs(data,revision):
+    """Reuse the exact target-free natural DEV128 cohort, never the teacher corpus."""
+    from .scene_development_grid import SAFE
+    from .scene_natural_prompt import checked_revision
+    report=json.loads((data/'report.json').read_text())
+    if not report['complete'] or not report['role_disjoint'] or report['TEST_opened']:
+        raise ValueError('Completed role-disjoint paired DEV source required')
+    original=json.loads((data/'inference_dev_inputs.json').read_text())
+    if not all(set(r)==SAFE for r in original):raise ValueError('Non-public inference inputs')
+    rows,protocol=checked_revision(revision,data,{'pair_sha256':report['pairs_sha256']},original)
+    if len(rows)!=128:raise ValueError('All128 natural DEV requests required')
+    return rows,protocol
+
+
 def checked_assets(root,metadata):
     meta=json.loads(metadata.read_text(encoding='utf8'))
     assert meta['sha']==REVISION and meta['id']=='Shitao/OmniGen-v1-diffusers'
@@ -63,16 +77,23 @@ def inputs_for(sources,corpus=False):
 def generate(a):
     import torch
     from diffusers import OmniGenPipeline
-    report=json.loads((a.sources/'report.json').read_text(encoding='utf8'))
-    assert report['complete'] and not report['TEST_opened']
+    matched=getattr(a,'prompt_revision',None)
+    if matched and a.corpus:raise ValueError('Matched DEV must not generate TRAIN candidates')
+    protocol=None
+    if matched:
+        rows,protocol=matched_natural_inputs(a.sources,matched)
+    else:
+        report=json.loads((a.sources/'report.json').read_text(encoding='utf8'))
+        assert report['complete'] and not report['TEST_opened']
     assets=checked_assets(a.model_path,a.metadata)
     write(a.output/'model_assets.json',{'official_revision':REVISION,'files':assets})
-    sources=json.loads((a.sources/'sources.json').read_text(encoding='utf8'))
-    corpus=getattr(a,'corpus',False);rows=inputs_for(sources,corpus)
+    sources=[] if matched else json.loads((a.sources/'sources.json').read_text(encoding='utf8'))
+    corpus=getattr(a,'corpus',False)
+    if not matched:rows=inputs_for(sources,corpus)
     if corpus:
         assert len(rows)==336 and sum(r['split']=='train' for r in rows)==304
         (a.output/'references').mkdir();(a.output/'targets').mkdir()
-    else:assert len(rows)==32 and len({r['reference_id'] for r in rows})==16
+    else:assert len(rows)==(128 if matched else 32) and len({r['reference_id'] for r in rows})==16
     source_map={s['sample_id']:s for s in sources}
     write(a.output/'requests.json',rows)
     torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0)
@@ -82,7 +103,8 @@ def generate(a):
         if isinstance(component,torch.nn.Module):component.eval().requires_grad_(False)
     records=[]
     for i,row in enumerate(rows):
-        source=a.sources/source_map[row['reference_id']]['white_reference'];assert digest(source)==row['reference_sha256']
+        source=a.sources/(row['reference'] if matched else source_map[row['reference_id']]['white_reference'])
+        assert digest(source)==row['reference_sha256']
         reference_path=a.output/(row['reference'] if corpus else row['reference_id']+'.png')
         if not reference_path.exists():shutil.copyfile(source,reference_path)
         with Image.open(source) as im:reference=im.convert('RGB').copy()
@@ -95,7 +117,7 @@ def generate(a):
             use_input_image_size_as_output=False,generator=generator,latents=noise).images[0]
         assert image.size==(512,512)
         filename=('targets/' if corpus else '')+row['sample_id']+'.png';image.save(a.output/filename)
-        records.append({**row,'native_prompt':prompt,'generated_PNG':filename,'generated_sha256':digest(a.output/filename),
+        records.append({**row,'split':row.get('split','dev'),'native_prompt':prompt,'generated_PNG':filename,'generated_sha256':digest(a.output/filename),
             'initial_latent_sha256':noise_sha,
             'resolution':512,'sampling_steps':50,'model':'OmniGen-v1 official frozen','input_sha256':digest(source)})
         if corpus:records[-1].update(target=filename,target_sha256=digest(a.output/filename),QA_accepted=False,
@@ -104,13 +126,16 @@ def generate(a):
         write(a.output/'progress.json',{'stage':'TRAIN_DEV_whole_scene_candidates' if corpus else 'raw_frozen_OmniGen_DEV','done':i+1,'total':len(rows)})
     parameters=sum(p.numel() for p in {id(p):p for component in pipe.components.values()
         if isinstance(component,torch.nn.Module) for p in component.parameters()}.values())
-    final={'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],'scope':'TRAIN_DEV_candidates' if corpus else 'DEV',
+    final={'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],'scope':'TRAIN_DEV_candidates' if corpus else ('DEV_expanded' if matched else 'DEV'),
         'generated_count':len(rows),'resolution':512,'reference_max_side':256,'sampling_steps':50,
-        'parameters':parameters,'prompt_profile':SHORT_PROFILE if corpus else COARSE_PROFILE,'training_performed':False,'quality_accepted':False,
+        'parameters':parameters,'prompt_profile':protocol['prompt_profile'] if matched else (SHORT_PROFILE if corpus else COARSE_PROFILE),'training_performed':False,'quality_accepted':False,
         'native_official_guidance':{'text':2.5,'image':1.6},'official_weights_revision':REVISION,
         'GT_masks_or_targets_opened':False,'independent_TEST_opened':False,'image_feedback':False,
         'native_peer_reference_VAE_not_a_Qwen_branch':True,'factual_evaluation_captions':True,
         'different_official_sampling_budget_from_SDXL30_must_be_labelled':True}
+    if matched:final.update(expanded_DEV_protocol=protocol,matched_public_prompt_unmodified=True,
+        only_native_image_placeholder_added=True,source_request_sha256=protocol['request_sha256'],
+        no_task_tuning=True,not_same_training_budget_as_paired_models=True)
     if corpus:final.update(pilot_only=False,candidate_count=len(records),candidate_manifest_sha256=digest(a.output/'candidates.json'),
         TEST_opened=False,all_candidates_require_acceptance=True,eligible_for_training=False,
         backgrounds_are_AI_generated_not_external_room_photographs=True,no_foreground_compositing=True)
@@ -120,6 +145,7 @@ def generate(a):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--corpus',action='store_true',help='New two-sentence TRAIN/DEV candidate corpus; never auto-accepted')
+    parser.add_argument('--prompt-revision',type=Path,help='Matched natural DEV128, using --sources as paired-data root; not TRAIN corpus')
     for key in ['sources','model-path','metadata','output']:parser.add_argument('--'+key,type=Path,required=True)
     a=parser.parse_args()
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT',''))!=40 or os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU:
