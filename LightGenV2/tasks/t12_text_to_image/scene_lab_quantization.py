@@ -12,7 +12,13 @@ def main():
     from torch.nn import functional as F
     from .audited_unified import optical_path
     torch.set_num_threads(2);path=optical_path(224,224).eval();prop=path.core.propagator
-    receipt=json.loads((a.boundary_run/'boundary_fields_download_receipt.json').read_text());rows=[]
+    manifest=a.boundary_run/'boundary_fields_download_receipt.json'
+    if manifest.exists():receipt=json.loads(manifest.read_text())
+    else:
+        manifest=a.boundary_run/'boundary_check.json';original=json.loads(manifest.read_text())
+        if not original['complete']or original['hardware_accessed']:raise ValueError('Wrong boundary evidence')
+        receipt=dict(files={'boundaries/'+r['sample_id']+'/'+stage+'.npz':r['files'][stage+'.npz']for r in original['requests']for stage in original['STAGES']})
+    rows=[]
     with torch.inference_mode():
         for rel,record in receipt['files'].items():
             file=a.boundary_run/rel
@@ -32,7 +38,7 @@ def main():
     if len(rows)!=48:raise ValueError('Require all48 checked examples')
     put(a.out,dict(complete=True,CPU_only=True,SDK_used=False,GPU_used=False,TEST_used=False,n=48,rows=rows,
                   distance_m=prop.distance_m,grid_size=prop.grid_size,
-                  boundary_manifest_sha256=sha(a.boundary_run/'boundary_fields_download_receipt.json'),
+                  boundary_manifest_sha256=sha(manifest),
                   physical_or_generation_quality_gate=False,note='Local intensity quantization diagnostic, not end-to-end Qwen/SDXL quality or real camera acceptance'))
     print(json.dumps(dict(passed=True,n=48,max_continuous_reconstruction_NRMSE=max(r['continuous_reconstruction_NRMSE']for r in rows),max_quantized_CCD_NRMSE=max(r['quantized_CCD_NRMSE']for r in rows),distance_m=prop.distance_m,physical_or_generation_quality_gate=False)))
 
