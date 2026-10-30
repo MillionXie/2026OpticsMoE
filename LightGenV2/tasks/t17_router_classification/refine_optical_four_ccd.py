@@ -31,7 +31,8 @@ def main():
     parser=argparse.ArgumentParser()
     for name in ('profile','data-root','parent','out'):parser.add_argument('--'+name,type=Path,required=True)
     a=parser.parse_args();gpu=require_non_a100_gpu();cfg=json.loads(a.profile.read_text())
-    if cfg['architecture']!='optical_four_top2_ccd' or cfg['experts']!=4 or cfg['OEO_stages']!=2:raise ValueError('inference contract')
+    if (cfg['architecture']!='optical_four_top2_ccd' or cfg['experts']!=4 or cfg['OEO_stages']!=2
+        or cfg['class_weight_power']!=.5):raise ValueError('inference/training contract')
     if json.loads((a.parent/'status.json').read_text())['state']!='complete':raise ValueError('Parent must finish its predefined budget')
     a.out.mkdir(parents=True,exist_ok=False);torch.set_num_threads(4);torch.manual_seed(cfg['seed']);np.random.seed(cfg['seed'])
     try:

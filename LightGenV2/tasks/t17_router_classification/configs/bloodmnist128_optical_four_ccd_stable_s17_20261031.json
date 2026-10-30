@@ -1,9 +1,7 @@
 {
   "profile": "bloodmnist128_optical_four_ccd_stable_s17_20261031",
   "seed": 17,
-  "epochs": 60,
   "batch": 32,
-  "learning_rate": 0.005,
   "optimizer": "Adam",
   "gradient_clip": 5.0,
   "training_evaluate_every": 5,
@@ -48,7 +46,6 @@
   "trainable_parameters": 479364,
   "main_input": "Fixed RGB [R,G;B,0]224, one copy per expert weighted by sqrt(top2 power)",
   "comparison": "Optimized LG training recipe versus frozen 60-epoch D2NN; disclose unequal tuning/training budget, not pure architecture-only attribution",
-  "route_balance_loss_weight": 0.0,
   "refinement_epochs": 60,
   "minimum_refinement_epochs": 30,
   "validation_patience": 12,
