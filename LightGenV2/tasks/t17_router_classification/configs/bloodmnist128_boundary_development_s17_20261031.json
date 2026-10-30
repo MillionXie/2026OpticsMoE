@@ -1,0 +1,63 @@
+{
+  "seed": 17,
+  "dataset": "bloodmnist128",
+  "num_classes": 8,
+  "expected_counts": {
+    "train": 11948,
+    "val": 1712,
+    "test": 3421
+  },
+  "source_archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+  "input": "Fixed RGB [R,G;B,0]224; no trainable encoder; unit-power input; experts224, global478",
+  "phase_side": 478,
+  "canvas_side": 518,
+  "wavelength_nm": 532,
+  "pixel_pitch_um": 17,
+  "distance_per_layer_m": 0.1,
+  "architecture": "optical_four_top2_ccd",
+  "experts": 4,
+  "expert_side": 224,
+  "global_side": 478,
+  "main_layers": 2,
+  "OEO_stages": 2,
+  "learned_electronic_frontend": false,
+  "learned_electronic_readout": false,
+  "profile": "bloodmnist128_boundary_development_s17_20261031",
+  "role": "ORIGINAL_TEST_EXPOSED_BOUNDARY_DEVELOPMENT",
+  "independent_test_claim": false,
+  "batch": 32,
+  "epochs": 30,
+  "minimum_epochs": 10,
+  "patience": 10,
+  "evaluate_every": 2,
+  "phase_lr": 0.003,
+  "training_temperature": 0.1,
+  "teacher_confidence": 0.8,
+  "energy_nll_weight": 0.1,
+  "gradient_clip": 5.0,
+  "stop_training_unix": 1793407800.0,
+  "stop_training_Beijing": "2026-10-31 08:50:00",
+  "router_frozen": true,
+  "train_epoch_sampling": "full permutation without replacement after pixel deduplication",
+  "teacher_pseudo_labels_on_original_test": true,
+  "original_test_ground_truth_in_student_loss": false,
+  "original_test_in_teacher_training": true,
+  "inference_temperature": false,
+  "variants": [
+    {
+      "name": "frozen_router_boundary",
+      "initialization": "parent"
+    },
+    {
+      "name": "diffuse_start_boundary",
+      "initialization": "diffuse_uniform_phase"
+    }
+  ],
+  "hypotheses": [
+    "Frozen route separates main-optics optimization from route co-adaptation",
+    "Training-only temperature emphasizes classification boundary without changing inference",
+    "Diffuse main-phase initialization tests flat-phase local initialization; parent optical router unchanged"
+  ],
+  "maximum_gpus": 1,
+  "A100_allowed": false
+}
