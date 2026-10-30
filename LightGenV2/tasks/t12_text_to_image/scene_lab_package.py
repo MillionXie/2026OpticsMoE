@@ -1,7 +1,6 @@
 """Build the SDK-free F9 interface kit from published Git, not the old17M model."""
 import argparse
 import hashlib
-import io
 import json
 from pathlib import Path
 import subprocess
@@ -30,9 +29,16 @@ def main():
     for required in('scene_lab_protocol.py','scene_lab_native.py','scene_lab_entry.py','scene_lab_session_template.json'):
         if 'LightGenV2/tasks/t12_text_to_image/'+required not in names:raise ValueError('Commit lacks the new interface')
     members={}
-    archive=subprocess.check_output(['git','archive','--format=zip',pin,'--',*names],cwd=root)
-    with zipfile.ZipFile(io.BytesIO(archive))as z:
-        for name in names:members['source/'+name]=z.read(name)
+    # stdin batch avoids Windows command-line length limits; exact Git blobs.
+    stream=subprocess.check_output(['git','cat-file','--batch'],cwd=root,input=('\n'.join(pin+':'+n for n in names)+'\n').encode())
+    offset=0
+    for name in names:
+        end=stream.index(b'\n',offset);header=stream[offset:end].split()
+        if len(header)!=3 or header[1]!=b'blob':raise ValueError('Missing Git source blob')
+        size=int(header[2]);offset=end+1;members['source/'+name]=stream[offset:offset+size];offset+=size
+        if stream[offset:offset+1]!=b'\n':raise ValueError('Invalid Git batch stream')
+        offset+=1
+    if offset!=len(stream):raise ValueError('Unexpected Git batch data')
     # Whitelisted task weights; no CCD, feature cache, targets, masks or TEST requests.
     for name,expected in [('scene_two_sentence_qwen_paired_20261029',E662),('qwen3_scene_LG_frontend_20261029',F6),('scene_natural_single_EG_joint12_training_20261030',F9)]:
         file=task/'runs/simulation'/name/'best_checkpoint.pt'
