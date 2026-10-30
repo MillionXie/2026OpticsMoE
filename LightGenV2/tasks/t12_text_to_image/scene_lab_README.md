@@ -1,5 +1,25 @@
 # F9光路接口与现场校准（尚非完整实测放行包）
 
+## 2026-10-31 09:00前目标：先真实微调，再完整DEV128核5%门
+
+用户追加要求争取北京时间09:00前将EXP相对SIM下降控制在5%以内，不代表已保证或测得达标。
+全TRAIN608×6后原条件头适配已排队；随后有限DEV流程另采16个未用于TRAIN的参考视图、
+8个原自然提示场景，共128上下文×6=768张实际CCD。全部4416张样本CCD与暗白帧分开计数。
+DEV会话显式`cohort_role=dev/evaluation_only=true`，绑定原请求SHA，不把DEV伪装TRAIN，
+也不改原TRAIN ledger身份；两个cohort的RGB来源SHA集合已核不相交。独立TEST500不参与。
+
+`scene_lab_render`经原renderer已有observer接口回填六个真实CCD；RGB、提示、种子、
+12步、CFG7.5、IP.25、合并原任务LoRA及精度保持，不换生成器或FFT回退。
+验收同时保留原F9 SIM、未适配EXP、适配EXP与同适配权重SIM；不能用弱化的新SIM替换原F9质量参照。
+总体/lamp/pillow的CLIP-T、DINOv2-I、CLIP-I、IR compact共12项，下降用`(SIM-EXP)/abs(SIM)`，
+负IR同式、近零另列绝对差；原F9参照和同权重参照分别核5%。附逐图分数及LPIPS/PSNR变化，
+代理均值不等于属性准确率，最终仍须人工完整对照查看。若第一轮未达且预算允许，仅再做一次
+明确的TRAIN学习率/批量对照，不对TEST训练，不无限扫描。原版本及所有best/last均保留。
+
+源`704bf889e`让native准备复用已经完成的整层前置检查，但每张前缀仍逐SHA重核；
+冻结ledger的旧模型source身份与新runtime source分开记录，不重置已采数据。服务器真实Torch
+CPU回调/身份测试10项通过，系显式合成fixture而非实拍性能。新流程无周期自动化或新增聊天任务。
+
 ## 2026-10-31：已转为TRAIN608整层采集，不再重复TRAIN2试采
 
 用户要求直接全量，现用`runs/hardware/scene_F9_TRAIN608_registered_20261031`。
