@@ -1,5 +1,6 @@
+import copy
 import torch
-from LightGenV2.tasks.t17_router_classification.train_boundary_development import boundary_objective,initialize_main_phases
+from LightGenV2.tasks.t17_router_classification.train_boundary_development import boundary_objective,initialize_main_phases,configure_phase_optimizer
 from LightGenV2.tasks.t17_router_classification.model_four import FourRouterClassification
 
 
@@ -17,3 +18,25 @@ def test_diffuse_initialization_changes_only_main_phases_and_adds_no_parameters(
     assert set(dict(model.named_parameters()))=={'first_phase','global_phase','router_phase'}
     assert sum(p.numel() for p in model.parameters())==479364
     assert model.first_phase.std()>1 and torch.isfinite(model.global_phase).all()
+
+
+def test_optional_joint_router_preserves_inference_parameters_and_lr_ratio():
+    model=FourRouterClassification('optical','ccd_grid',num_classes=9)
+    optimizer,parameters=configure_phase_optimizer(model,.001,dict(train_router=True,router_lr=.00005))
+    assert model.router_phase.requires_grad and sum(p.numel() for p in parameters)==479364
+    assert [g['lr'] for g in optimizer.param_groups]==[.001,.00005]
+    optimizer,parameters=configure_phase_optimizer(model,.001,{})
+    assert not model.router_phase.requires_grad and sum(p.numel() for p in parameters)==429188
+    assert len(optimizer.param_groups)==1 and optimizer.param_groups[0]['lr']==.001
+
+
+def test_default_frozen_training_step_is_bitwise_equal_to_original_optimizer():
+    original=FourRouterClassification('optical','ccd_grid',num_classes=9)
+    original.router_phase.requires_grad_(False);current=copy.deepcopy(original)
+    legacy=torch.optim.Adam([original.first_phase,original.global_phase],lr=.003)
+    optimizer,parameters=configure_phase_optimizer(current,.003,{})
+    x=torch.rand(1,224,224);y=torch.tensor([2]);teacher=torch.nn.functional.one_hot(y,9).float()
+    for model,opt,params in [(original,legacy,[original.first_phase,original.global_phase]),(current,optimizer,parameters)]:
+        loss=boundary_objective(model(x)['logits'],y,torch.ones(1,dtype=torch.bool),teacher,.1,.8,.1)
+        loss.backward();torch.nn.utils.clip_grad_norm_(params,5);opt.step()
+    assert all(torch.equal(original.state_dict()[k],current.state_dict()[k]) for k in original.state_dict())
