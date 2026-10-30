@@ -36,8 +36,10 @@ def mapping(config):
 
 
 def live_settings(camera,config):
-    module=camera._module
-    actual=dict(exposure_us=camera._get_property(module.TUCAM_IDPROP.TUIDP_EXPOSURETM)*1000,
+    if hasattr(camera,'live_settings'):actual=camera.live_settings()
+    else:
+        module=camera._module
+        actual=dict(exposure_us=camera._get_property(module.TUCAM_IDPROP.TUIDP_EXPOSURETM)*1000,
                 gain=camera._get_property(module.TUCAM_IDPROP.TUIDP_GLOBALGAIN),
                 auto=camera._get_capability(module.TUCAM_IDCAPA.TUIDC_ATEXPOSURE))
     if abs(actual['exposure_us']-config['exposure_us'])>2 or actual['gain']!=config['gain']or actual['auto']!=0:
@@ -55,7 +57,7 @@ def validate_session(ledger,config,calibration,dark,gain):
     if s['amplitude_native_shape']!=[1080,1920]or s['phase_native_shape']!=[1200,1920]:raise ValueError('Panel identity mismatch')
 
 
-def run(config,calibration,out,*,ledger_root=None,stage=None):
+def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=False):
     import cv2
     from LightGenV2.hardware_common.shs.phase_owner import message_pump
     out=Path(out);calibration=Path(calibration);out.mkdir(parents=True,exist_ok=False)
@@ -74,8 +76,12 @@ def run(config,calibration,out,*,ledger_root=None,stage=None):
             c=json.loads((Path(ledger_root)/'contract.json').read_text())
             ledger=Ledger(ledger_root,c['session'],c['models'],c['requests']);validate_session(ledger,config,calibration,dark,gain);ledger.ready(stage)
         put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,TRAIN_only=True,TEST_used=False,
-            parameter_changes=False,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
-        with Bench(config,out)as bench:
+            parameter_changes=False,camera_process_isolated=camera_process,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
+        factory=None
+        if camera_process:
+            from .scene_lab_camera_process import CameraProcess
+            factory=lambda path,**kwargs:CameraProcess(path,allowed_root=out,**kwargs)
+        with Bench(config,out,camera_factory=factory)as bench:
             pump=message_pump()
             def capture(tag,ag,pg):
                 folder=out/tag;folder.mkdir();ap=folder/'amplitude.bmp';pp=folder/'phase.bmp'
@@ -120,9 +126,9 @@ def run(config,calibration,out,*,ledger_root=None,stage=None):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--calibration',type=Path,required=True);p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--ledger',type=Path);p.add_argument('--stage',choices=STAGES);a=p.parse_args()
+    p.add_argument('--ledger',type=Path);p.add_argument('--stage',choices=STAGES);p.add_argument('--camera-process',action='store_true');a=p.parse_args()
     if bool(a.ledger)!=bool(a.stage):raise ValueError('ledger and stage required together')
-    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage)
+    run(json.loads(a.config.read_text()),a.calibration,a.out,ledger_root=a.ledger,stage=a.stage,camera_process=a.camera_process)
 
 
 if __name__=='__main__':main()
