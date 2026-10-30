@@ -120,7 +120,7 @@ def trajectories(a):
         if not keys or len(set(keys))!=len(keys) or not set(keys)<=set(contexts) or set(keys)&dev:
             raise ValueError('Trajectory subset must contain unique actual TRAIN inputs only')
         contexts={k:contexts[k] for k in keys}
-    records=[];sigmas=None;timesteps=None
+    records=[];sigmas=None;timesteps=None;full_paths={}
     contract=teacher.get('sampling_contract')
     teacher_steps=contract['steps'] if contract else a.teacher_steps
     student_steps=a.student_steps or teacher_steps//2
@@ -134,6 +134,7 @@ def trajectories(a):
         sigmas=pipe.scheduler.sigmas.tolist();timesteps=pipe.scheduler.timesteps.cpu().tolist()
         generator=torch.Generator(device='cuda').manual_seed(request_seed(row['reference_sha256'],a.noise_index))
         x=torch.randn((1,4,64,64),generator=generator,device='cuda',dtype=torch.bfloat16)*pipe.scheduler.init_noise_sigma
+        waypoints=[x[0].cpu()] if getattr(a,'retain_full_teacher_path',False) else None
         f=payload['features'][key]
         with torch.inference_mode():
             cond=head(f['hidden'].unsqueeze(0).cuda().float(),f['visual'].unsqueeze(0).cuda().float())
@@ -145,10 +146,14 @@ def trajectories(a):
                     pipe.scheduler.scale_model_input(x,pipe.scheduler.timesteps[j])
                     epsilon=predict(pipe.unet,x,pipe.scheduler.timesteps[j],cond,teacher,sigmas[j],guided)
                     x=pipe.scheduler.step(epsilon,pipe.scheduler.timesteps[j],x).prev_sample
+                    if waypoints is not None:waypoints.append(x[0].cpu())
                 target=collapsed_epsilon(start,x,sigmas[edges[k]],sigmas[edges[k+1]])
                 assert torch.isfinite(target).all()
                 records.append({'split':'train','input_key':key,'interval':k,'x':start[0].cpu(),
                     'target_epsilon':target[0].cpu(),'sigma':sigmas[edges[k]],'timestep':timesteps[edges[k]]})
+        if waypoints is not None:
+            assert len(waypoints)==teacher_steps+1
+            full_paths[key]=torch.stack(waypoints)
         write(a.output/'progress.json',{'stage':'TRAIN_teacher_trajectory_targets','teacher_steps':teacher_steps,'student_steps':student_steps,'contexts':i+1,'total':len(contexts),'intervals':len(records)})
     grid=[timesteps[i] for i in edges[:-1]]
     check=type(pipe.scheduler).from_config(pipe.scheduler.config);check.set_timesteps(timesteps=grid,device='cuda')
@@ -157,12 +162,18 @@ def trajectories(a):
         'teacher_cache_sha256':cache_report['cache_sha256'],'teacher_steps':teacher_steps,'student_steps':student_steps,
         'timesteps':grid,'sigmas':[sigmas[i] for i in edges],'noise_index':a.noise_index}
     torch.save(saved,a.output/'TRAIN_trajectories.pt')
+    if full_paths:
+        torch.save(dict(paths=full_paths,pair_sha256=payload['pair_sha256'],teacher_sha256=identity['best_sha256'],
+            teacher_cache_sha256=cache_report['cache_sha256'],teacher_steps=teacher_steps,timesteps=timesteps,
+            sigmas=sigmas,noise_index=a.noise_index,all_TRAIN=True),a.output/'TRAIN_full_teacher_paths.pt')
     write(a.output/'report.json',{'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],
         'trajectory_sha256':digest(a.output/'TRAIN_trajectories.pt'),'TRAIN_contexts':len(contexts),'TRAIN_intervals':len(records),
         'teacher_sha256':identity['best_sha256'],'teacher_steps':teacher_steps,'teacher_CFG':7.5 if guided else 1.,'student_steps':student_steps,'student_CFG':1.,
         'synthetic_scene_GT_used_for_trajectory_targets':False,'DEV_or_TEST_targets_created':False,
         'teacher_is_full_electronic_Qwen':not bool(teacher.get('optical_frontend')),'noise_index':a.noise_index,
-        'teacher_quality_approval_sha256':digest(a.teacher_quality_approval) if approved else None,'quality_or_speed_accepted':False})
+        'teacher_quality_approval_sha256':digest(a.teacher_quality_approval) if approved else None,
+        'full_TRAIN_teacher_paths_sha256':digest(a.output/'TRAIN_full_teacher_paths.pt') if full_paths else None,
+        'quality_or_speed_accepted':False})
 
 
 def train(a):
@@ -283,6 +294,7 @@ def main():
     p.add_argument('--student-guidance',type=float,choices=[1.,7.5],default=1.,help='Keep external CFG7.5 while distilling step intervals, or legacy conditional1')
     p.add_argument('--batch-size',type=int,choices=[1,2],default=1);p.add_argument('--no-gradient-checkpointing',action='store_true')
     p.add_argument('--teacher-quality-approval',type=Path)
+    p.add_argument('--retain-full-teacher-path',action='store_true',help='TRAIN-only reuse of exact 30-step endpoints, without another teacher generation')
     a=p.parse_args();assert not a.output.exists() and os.environ.get('CUDA_VISIBLE_DEVICES')==GPU and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
     a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0);torch.manual_seed(1042)
     write(a.output/'execution.json',{'argv':sys.argv,'source_commit':os.environ['T12_SOURCE_COMMIT'],'source_sha256':digest(Path(__file__)),'pid':os.getpid()})
