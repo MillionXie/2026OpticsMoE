@@ -189,6 +189,7 @@ def render(a):
     pipe.set_ip_adapter_scale(a.ip_scale)
     for c in pipe.components.values():
         if isinstance(c,torch.nn.Module): c.eval().requires_grad_(False)
+    assert pipe.unet.dtype==scene_precision.dtype(a) and pipe.vae.dtype==torch.bfloat16
     records = []
     for i,row in enumerate(rows):
         src = a.data/row['reference']; assert digest(src) == row['reference_sha256']
@@ -282,6 +283,7 @@ def render(a):
         'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None and identity is not None and expanded is None,
         'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16' if scene_precision.name(a)=='bf16' else 'BF16_Qwen_FP16_UNet_BF16_VAE','resolution':resolution,'sampling_steps':a.steps,
         'unet_precision':scene_precision.name(a),'precision_contract':scene_precision.descriptor(a),
+        'actual_UNet_base_dtype':str(pipe.unet.dtype),'actual_VAE_dtype':str(pipe.vae.dtype),
         'IP_adapter_scale':a.ip_scale,
         'sampling_contract':sampling,
         'inference_sampler':sampler,

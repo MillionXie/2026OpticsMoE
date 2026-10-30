@@ -29,6 +29,10 @@ class PrecisionContract(unittest.TestCase):
         self.assertFalse(p.descriptor(SimpleNamespace())['last_latent_to_VAE_cast'])
         self.assertEqual(p.dtype(SimpleNamespace()),torch.bfloat16)
 
+    def test_nonfinite_final_latent_is_a_failure_not_a_black_PNG(self):
+        pipe=SimpleNamespace(num_timesteps=1,vae=SimpleNamespace(dtype=torch.bfloat16))
+        with self.assertRaises(ValueError):p.final_vae_cast(pipe,0,None,dict(latents=torch.tensor([float('nan')]).half()))
+
     def test_only_explicit_unet_change_is_supported(self):
         args=SimpleNamespace(unet_precision='fp16')
         good=SimpleNamespace(unet=SimpleNamespace(dtype=torch.float16),vae=SimpleNamespace(dtype=torch.bfloat16))

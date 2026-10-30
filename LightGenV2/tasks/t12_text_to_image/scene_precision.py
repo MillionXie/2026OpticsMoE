@@ -26,6 +26,7 @@ def condition(tensor,args):
 def final_vae_cast(pipe,step,timestep,values):
     result=dict(values)
     if step+1==pipe.num_timesteps:
+        if not torch.isfinite(result['latents']).all():raise ValueError('Nonfinite FP16 denoising result')
         result['latents']=result['latents'].to(dtype=pipe.vae.dtype)
     return result
 
