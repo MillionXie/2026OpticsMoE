@@ -1,5 +1,34 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 当前：冻结独立500已通过10%可比门，移交光路集成
+
+`scene_natural_frozen500_workflow_20261030`已完整结束：E662电子30步和F9单组LG12步
+各500原生输出、固定1000图评分，权重／请求／协议自首次TEST预测前冻结后未改，TEST未用于调参。
+三个自身子PID4017004/4045891/4061606均退出，GPU释放收据为true；原线程不再启动T12训练。
+总体及两类别12项代理均值均通过用户10%容限，最差下降5.7297%（靠垫DINO-I）。
+总体电子→LG：CLIP-T .3011685→.2959249，DINO-I .3485514→.3309013，
+CLIP-I .7802747→.7685478，IR compact -1.8456397→-1.8414377。
+500是10款／10视图、80图文上下文的多seed请求，不是500独立商品；全部1000图已SHA下载核验。
+系统人工查看各80上下文固定第一seed的160张输出，非全部1000图盲评；仍有背景要素缺失、
+参考造型改变、侧视靠垫变椅背，个别LG将靠垫生成灯。数值通过不代表绝对语义或全部图合格。
+固定权重的软件完整请求加速仍为2.3158倍，来自独立DEV8请求×3进程／模型，**不是TEST500全量计时或物理实测**。
+详细口径见[FROZEN500结果](reports/scene_generation_20261029/FROZEN500_RESULTS_20261030.md)。
+本地全部对照页为`runs/simulation/scene_single_EG_frozen500_delivery_20261030/index.html`。
+
+用户新授权已正式交接给“保住光路性能-实验室残差优化”聊天：先接口／包与真实会话核验、
+TRAIN/校准DEV小pilot，再按层全量采集，目标为**同一LG的EXP相对匹配SIM下降≤5%**。
+正式交接记录`runs/hardware/scene_F9_deployment_handoff_20261030/handoff.json` SHA
+`e5ea8ba5dd115d453014b8a3c4e7d50565a550fb02892ce55095b5a18097e0d8`，本地／服务器均已核验。
+光路专用`scene_lab_*`与`build_lab_package.py`新profile由光路线程单写；原线程控制冻结评分／展示，
+不重复发采集指令，不操作实验台。**真实SDK／器件会话与5%实测仍未通过**，离线包不能冒称现场ready。
+光路准备快照见[HARDWARE_READINESS](reports/scene_generation_20261029/HARDWARE_READINESS_20261030.md)。
+
+已另补齐持久资产闭包：`runs/hardware/scene_F9_persistent_asset_closure_20261030`，
+34份基础模型文件共14,583,745,230字节逐SHA匹配原资产，无需依赖`/tmp`；asset_manifest SHA
+`de7655ad9ffc0fea0eed12dbceb9a8e4d01d0f7b7b11c396ff3751bcacf4dd2f`。
+本地三PT及JSON／输入共25份、144,246,240字节已核验；没有重拷14.58GB基础模型或SFTP源代码。
+完整原资产含当前Qwen推理不加载的原生CLIP编码器，不能把原资产总量当实际部署参数。
+
 ### 自然两句v4：联合恢复F9通过开发可比门槛，冻结500条独立核验
 
 `scene_natural_adaptation_workflow_20261030`已完整结束，16个自身子PID均退出且GPU释放收据为true。
