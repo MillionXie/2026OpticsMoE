@@ -43,6 +43,12 @@ class NeedCapture(Exception):
     """Controlled prefix stop, never a request for ideal/FFT fallback."""
 
 
+class _StageAdmission:
+    """Process-local proof of one whole-cohort prefix check, not a saved bypass."""
+    def __init__(self,ledger,stage):
+        self.ledger=ledger;self.stage=stage;self.key=ledger.key
+
+
 class Ledger:
     def __init__(self,root,session,models,requests,*,create=False):
         self.root=Path(root);self.session=session;self.models=models;self.requests=requests
@@ -94,6 +100,17 @@ class Ledger:
         for previous in STAGES[:index]:
             for request in self.requests:self.receipt(previous,request)
 
+    def admit_stage(self,stage):
+        """Check every predecessor once; accept still hashes this sample's prefix.
+
+        Acquisition is exclusive and accepted data is never overwritten. Re-reading
+        the entire cohort for EVERY incoming frame was quadratic in cohort size.
+        The local capability cannot be serialized/reused by another Ledger/stage.
+        Each accepted frame additionally revalidates its own full prefix lineage.
+        """
+        self.ready(stage)
+        return _StageAdmission(self,stage)
+
     def prepare(self,stage,runner):
         """runner(request, numpy_provider) performs native graph prefix replay.
 
@@ -134,14 +151,19 @@ class Ledger:
             else:raise ValueError('Native runner did not pause at requested CCD boundary')
         return pending
 
-    def accept(self,stage,request,raw,metadata,dark,gain_map):
+    def accept(self,stage,request,raw,metadata,dark,gain_map,*,admission=None):
         """Import a manually supplied canonical camera array, not device capture.
 
         raw/dark in camera linear units; gain_map maps dark-subtracted values to
         fixed simulation intensity units. Same reviewed maps for all frames.
         """
-        self.ready(stage);folder=self.folder(stage,request);ticket=json.loads((folder/'ticket.json').read_text())
+        if admission is None:self.ready(stage)
+        elif not isinstance(admission,_StageAdmission)or admission.ledger is not self or admission.stage!=stage or admission.key!=self.key:
+            raise ValueError('Wrong process-local stage admission')
+        folder=self.folder(stage,request);ticket=json.loads((folder/'ticket.json').read_text())
         if ticket['ledger_sha256']!=self.key or ticket['stage']!=stage or ticket['request_sha256']!=identity(request):raise ValueError('Ticket ownership changed')
+        prefix=[identity(self.receipt(previous,request)[0])for previous in STAGES[:STAGES.index(stage)]]
+        if ticket['prefix_receipts']!=prefix:raise ValueError('Accepted frame prefix lineage changed')
         with np.load(folder/'logical_fields.npz',allow_pickle=False)as z:
             if any(array_sha(z[k])!=ticket[target]for k,target in [('amplitude','amplitude_sha256'),('total_phase','total_phase_sha256'),('amplitude_code','logical_amplitude_code_sha256'),('phase_code','logical_phase_code_sha256')]):raise ValueError('Payload hash changed')
         expected=dict(ticket_sha256=identity(ticket),session_sha256=identity(self.session),stage=stage,

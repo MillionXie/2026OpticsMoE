@@ -28,13 +28,32 @@ def runner(request,provider):
     return amplitude
 
 
-def accept(ledger,stage,request,dark,gain,wrong=False):
+def accept(ledger,stage,request,dark,gain,wrong=False,admission=None):
     folder=ledger.folder(stage,request);ticket=json.loads((folder/'ticket.json').read_text());raw=np.full_like(dark,6)
     metadata=dict(ticket_sha256=identity(ticket),session_sha256=identity(ledger.session),stage=stage,
         request_sha256=identity(request),canonical_orientation=ledger.session['orientation'],exposure_us=100,gain='fixture',wait_ms=240,
         frame_provenance='synthetic_fixture',native_frame_sha256='f'*64,canonical_raw_sha256=array_sha(raw),capture_UTC='2026-10-30T12:00:00Z')
     if wrong:metadata['stage']=STAGES[(STAGES.index(stage)+1)%len(STAGES)]
-    return ledger.accept(stage,request,raw,metadata,dark,gain)
+    return ledger.accept(stage,request,raw,metadata,dark,gain,admission=admission)
+
+
+def test_batch_admission_keeps_whole_cohort_gate_and_per_sample_hashes(tmp_path):
+    ledger,dark,gain=fixture(tmp_path/'run')
+    with pytest.raises(FileNotFoundError):ledger.admit_stage(STAGES[1])
+    ledger.prepare(STAGES[0],runner)
+    admission=ledger.admit_stage(STAGES[0])
+    accept(ledger,STAGES[0],ledger.requests[0],dark,gain,admission=admission)
+    with pytest.raises(FileNotFoundError):ledger.admit_stage(STAGES[1])
+    accept(ledger,STAGES[0],ledger.requests[1],dark,gain,admission=admission)
+    ledger.prepare(STAGES[1],runner);next_admission=ledger.admit_stage(STAGES[1])
+    with pytest.raises(ValueError):accept(ledger,STAGES[1],ledger.requests[0],dark,gain,admission=admission)
+    other=Ledger(ledger.root,ledger.session,ledger.models,ledger.requests)
+    with pytest.raises(ValueError):accept(other,STAGES[1],ledger.requests[0],dark,gain,admission=next_admission)
+    accept(ledger,STAGES[1],ledger.requests[0],dark,gain,admission=next_admission)
+    # A change made after cohort admission is still detected before accepting that sample.
+    path=ledger.folder(STAGES[0],ledger.requests[1])/'calibrated.npy'
+    np.save(path,np.zeros_like(dark))
+    with pytest.raises(ValueError):accept(ledger,STAGES[1],ledger.requests[1],dark,gain,admission=next_admission)
 
 
 def test_full_cohort_gate_and_six_layer_recompute(tmp_path):

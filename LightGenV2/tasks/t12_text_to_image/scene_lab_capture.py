@@ -83,7 +83,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
         ledger=None;dark=np.load(calibration/'dark.npy',allow_pickle=False);gain=np.load(calibration/'gain_map.npy',allow_pickle=False)
         if ledger_root is not None:
             c=json.loads((Path(ledger_root)/'contract.json').read_text())
-            ledger=Ledger(ledger_root,c['session'],c['models'],c['requests']);validate_session(ledger,config,calibration,dark,gain);ledger.ready(stage)
+            ledger=Ledger(ledger_root,c['session'],c['models'],c['requests']);validate_session(ledger,config,calibration,dark,gain);admission=ledger.admit_stage(stage)
         put(out/'protocol.json',dict(config=config,source_SHA256=sha(__file__),stage=stage,TRAIN_only=True,TEST_used=False,
             parameter_changes=False,camera_process_isolated=camera_process,phase_linearity_certified=False,model_CCD_requested=ledger is not None,calibration_report_SHA256=sha(calibration/'report.json')))
         factory=None
@@ -129,7 +129,7 @@ def run(config,calibration,out,*,ledger_root=None,stage=None,camera_process=Fals
                     metadata=dict(ticket_sha256=identity(ticket),session_sha256=identity(ledger.session),stage=stage,request_sha256=identity(request),
                         canonical_orientation=ledger.session['orientation'],exposure_us=config['exposure_us'],gain=config['gain'],wait_ms=config['wait_ms'],
                         frame_provenance='physical_linear_camera',native_frame_sha256=row['native_SHA256'],canonical_raw_sha256=array_sha(canonical),capture_UTC=row['capture_UTC'])
-                    receipt=ledger.accept(stage,request,canonical,metadata,dark,gain);accepted.append(dict(sample_id=request['sample_id'],receipt_sha256=identity(receipt)))
+                    receipt=ledger.accept(stage,request,canonical,metadata,dark,gain,admission=admission);accepted.append(dict(sample_id=request['sample_id'],receipt_sha256=identity(receipt)))
                     (folder/'capture.ready').touch(exist_ok=False)
         put(out/'report.json',dict(complete=True,accepted=accepted,model_TRAIN_CCD=len(accepted),canary_frames=2,raw_frames=len(rows),SDK_released=True,TEST_used=False,phase_linearity_certified=False,physical_SIM_EXP_quality_accepted=False))
     except BaseException as error:
