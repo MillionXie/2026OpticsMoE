@@ -6,12 +6,17 @@ import json
 import subprocess
 import zipfile
 from pathlib import Path
-import torch
-from .sealed_editor import build_sealed
-from .audited_unified import architecture_report
 
 
 def main():
+    import sys
+    if '--profile' in sys.argv and sys.argv[sys.argv.index('--profile')+1:][:1]==['scene-f9-interface']:
+        from .scene_lab_package import main as scene_main
+        return scene_main()
+    # Historical17M behavior is deliberately unchanged, including strict checks.
+    import torch
+    from .sealed_editor import build_sealed
+    from .audited_unified import architecture_report
     p=argparse.ArgumentParser()
     p.add_argument('--checkpoint',type=Path,required=True)
     p.add_argument('--contract',type=Path,required=True)
