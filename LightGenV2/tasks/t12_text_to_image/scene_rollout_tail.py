@@ -50,7 +50,12 @@ def run(a):
     assert not set(train)&{r['input_key'] for r in cache['records'] if r['split']=='dev'}
     student,head=load_generator(a,state,True);tp,th=load_generator(a,teacher,False)
     student.set_ip_adapter_scale(.25);tp.set_ip_adapter_scale(.25)
+    reference_unet=None
     if a.fusion_aware:
+        reference_unet=copy.deepcopy(student.unet).eval().requires_grad_(False)
+        from peft.tuners.lora.layer import Linear
+        for layer in reference_unet.modules():
+            if isinstance(layer,Linear):layer.merge(safe_merge=True,adapter_names=['scene_pair'])
         from .scene_fusion_aware_tail import install
         state['fusion_aware_training']=install(student.unet)
     parameters=[p for p in student.unet.parameters() if p.requires_grad];assert parameters and not any(p.requires_grad for p in head.parameters())
@@ -62,6 +67,14 @@ def run(a):
                 f=c['features'][key];d[key]={n:v.detach() for n,v in h(f['hidden'][None].cuda().float(),f['visual'][None].cuda().float()).items()}
     tp.scheduler.set_timesteps(30,device='cuda');teacher_grid=tp.scheduler.timesteps.cpu().tolist();grid=state['sampling_contract']['timesteps'];edges=teacher_edges(teacher_grid,grid)
     groups={c:sorted(k for k,r in train.items() if r['category']==c) for c in ['lamp','pillow']};assert all(groups.values())
+    if reference_unet is not None:
+        key=groups['lamp'][0];x=torch.randn((1,4,64,64),device='cuda',dtype=torch.bfloat16)
+        with torch.no_grad():
+            actual=predict(student.unet,x,torch.tensor(grid[0],device='cuda'),conds[key],state,float(tp.scheduler.sigmas[0]),True)
+            expected=predict(reference_unet,x,torch.tensor(grid[0],device='cuda'),conds[key],state,float(tp.scheduler.sigmas[0]),True)
+        assert torch.equal(actual,expected),'Training forward differs from the actual official merged full UNet'
+        write(a.output/'fusion_GPU_identity.json',dict(complete=True,full_UNet_CFG_prediction_exact=True,actual_TRAIN_conditions_used=True,teacher_or_TEST_not_modified=True))
+        del reference_unet,actual,expected;torch.cuda.empty_cache()
     probe_keys=[k for c in groups for k in groups[c][:4]]
     def noise(key,index):
         seed=request_seed(train[key]['reference_sha256'],index)
