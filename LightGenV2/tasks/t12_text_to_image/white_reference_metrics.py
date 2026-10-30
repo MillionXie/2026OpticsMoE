@@ -51,6 +51,34 @@ def reward_caption(category, condition_id, profile='free_lighting_v2'):
     return captions[category][int(condition_id)]
 
 
+def check_architecture_diagnostic(report, records):
+    """Admit the fixed 16-reference/two-scene ablation, never arbitrary subsets."""
+    from .scene_depth_probe import checked_config
+    graph=report.get('experimental_compression',{})
+    if graph.get('schema')!='scene_depth_probe_actual_graph_v1':
+        raise ValueError('Missing actual compressed-graph identity')
+    config=checked_config(graph.get('profile',{}))
+    protocol=report.get('expanded_DEV_protocol',{})
+    if (report.get('checkpoint_sha256')!=config['parent_generator_sha256'] or
+        protocol.get('contexts')!=32 or protocol.get('full_audited_contexts')!=128 or
+        protocol.get('deterministic_scene_subset')!=['0','1'] or
+        protocol.get('selection_by_quality') is not False or
+        graph.get('TEST_opened') is not False or graph.get('training_performed') is not False):
+        raise ValueError('Only the prespecified target-free depth diagnostic is supported')
+    refs={r['reference_id'] for r in records}
+    if len(records)!=32 or len(refs)!=16 or any(r.get('split')!='dev' for r in records):
+        raise ValueError('Require all thirty-two outputs from the sixteen DEV references')
+    if {c:sum(r.get('category')==c for r in records) for c in ('lamp','pillow')}!={'lamp':16,'pillow':16}:
+        raise ValueError('Architecture cohort must contain both complete categories')
+    for ref in refs:
+        group=[r for r in records if r['reference_id']==ref]
+        if (len(group)!=2 or {r['condition_id'] for r in group}!={'0','1'} or
+            len({r['seed'] for r in group})!=1 or len({r['input_sha256'] for r in group})!=1):
+            raise ValueError('Changed reference, source seed or prespecified scene pair')
+    if any(r.get('experimental_compression')!=graph for r in records):
+        raise ValueError('Per-image compressed graph differs from the run identity')
+
+
 def load_records(run,allow_frozen_test=False):
     report = json.loads((run/'report.json').read_text(encoding='utf-8'))
     is_test=report.get('scope')=='TEST'
@@ -63,10 +91,12 @@ def load_records(run,allow_frozen_test=False):
     keys = [(r['reference_id'], r['condition_id'], r['seed']) for r in records]
     expanded=report.get('scope')=='DEV_expanded'
     if expanded and not report.get('expanded_DEV_protocol'):raise ValueError('Expanded DEV requires its audited canonical-grid identity')
-    expected = 500 if is_test else (128 if expanded else (32 if report.get('scope') == 'DEV' else 16))
+    architecture=report.get('scope')=='DEV_architecture_diagnostic'
+    if architecture:check_architecture_diagnostic(report,records)
+    expected = 500 if is_test else (128 if expanded else (32 if architecture or report.get('scope') == 'DEV' else 16))
     if len(records) != report['generated_count'] or len(records) != expected or len(set(keys)) != expected:
         raise ValueError('All prespecified unique outputs required; no best-of-seed selection')
-    if report.get('scope') in ['DEV','DEV_expanded'] and any(r.get('split') != 'dev' for r in records):
+    if report.get('scope') in ['DEV','DEV_expanded','DEV_architecture_diagnostic'] and any(r.get('split') != 'dev' for r in records):
         raise ValueError('DEV comparison contains another split')
     if is_test and any(r.get('split')!='test' for r in records):raise ValueError('TEST comparison contains another split')
     for r in records:
@@ -120,6 +150,12 @@ def main():
             assert all(r.get('scope')=='TEST' for r in reports)
             assert len({r['frozen_TEST_protocol']['manifest_sha256'] for r in reports})==1
         rows = [r for run in args.runs for r in load_records(run,args.allow_frozen_test)]
+        if any(r.get('scope')=='DEV_architecture_diagnostic' for r in reports):
+            if not all(r.get('scope')=='DEV_architecture_diagnostic' for r in reports):
+                raise ValueError('Do not mix depth diagnostics with another evaluation cohort')
+            signatures=[{r['sample_id']:(r['input_sha256'],r['prompt'],r['seed'],r['initial_latent_sha256']) for r in rows if r['run_id']==run.name} for run in args.runs]
+            if not all(s==signatures[0] for s in signatures):
+                raise ValueError('Depth comparisons require the same complete RGB/prompt/noise requests')
         if any(r.get('scope')=='DEV_expanded' for r in reports):
             assert all(r.get('scope')=='DEV_expanded' for r in reports),'Do not mix expanded and original DEV cohorts'
             assert len({r['expanded_DEV_protocol']['manifest_sha256'] for r in reports})==1
