@@ -1,5 +1,21 @@
 # T17 单数据集路由分类对照
 
+## CRC9三层线性传播D2NN，无OEO/Linear（2026-10-30）
+
+用户从A图第三组原D2NN提出新对照：原两层/两次OEO/Linear784→9，改为三层、
+去掉全部OEO及可训练电子读出。入口`train_linear_ccd.py`、模型`model_linear_ccd.py`，
+profile `configs/crc9_d2nn_linear3_ccd_s17_20261030.json`。旧代码、权重及结果保持原状。
+无CNN/路由/电子残差；原固定RGB三格224平方编码双线性铺满478平方相位面，输入单位功率。
+三张478平方相位在518平方整场连续传播，每段10cm、17μm、532nm；最后仅一次平方律探测。
+复场相位+传播路径线性，不把归一化输入或最终光强分类整体称作线性函数。
+9个固定CCD区域覆盖478平方，边界0/159/318/478，行优先类别0..8；积分能量归一化直接分类。
+无额外相机传播、隐藏池化MLP、LN/ReLU/Softsign或中间强度重编码；共685452个可训练相位参数。
+CRC-VAL-HE-7K原5026/718/1436划分、seed17、Adam LR.005/batch8/clip5、60完整轮，
+无增强/EMA/类权重/weight decay；按验证macro recall选模，CE打破平局，模型锁SHA后一次TEST。
+每5轮及第1轮记录完整无增强TRAIN，最终同一best给出TRAIN/VAL/TEST及逐样本预测。
+这是已看过历史TEST后的开发跟进，三项结构同时改变，不冒称单因素或独立确认性验证。
+仅一张非A100 GPU，UUID绑定；run `runs/simulation/crc9_d2nn_linear3_ccd_s17_20261030`。
+
 ## 当前新数据集：PATCH16皮肤病理（2026-10-13）
 
 用户排除所有Kather/结直肠及BloodMNIST/血液类别，要求换病理类别并继续三组训练。
