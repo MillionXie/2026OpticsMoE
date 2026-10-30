@@ -1,5 +1,22 @@
 # F9光路接口与现场校准（尚非完整实测放行包）
 
+## 最新：分进程恢复取帧，TRAIN2已完成视觉Router和专家两层
+
+2026-10-31用户在同一SLM白场期间以Mosaic实际看到光场，并保存2048×2048 uint16原TIFF。
+Mosaic帧mean7999.84/p9933204；相机改为单独进程、SLM保持显示后，两张新SDK原帧
+mean6984.83/7007.71、p9929102/29726，读回仍1999.8us/gain0/auto0，均无饱和。
+这支持采用分进程后端继续部署，不应再把此前暗帧直接归咎于光源/器件；
+尚未唯一定位某个SDK内部冲突函数，不改固件或替换DLL。
+
+`scene_lab_camera_process`让原TucamCamera在独立子进程中持续取帧，父进程只持有SLM。
+通信仅传递原帧路径与设备元数据，子进程不初始化SLM SDK，无理想/FFT帧回退。
+**现场命令必须加`--camera-process`**，保持已验证的工作模式。
+`pilot_vision_router_20261031_01`及`pilot_vision_expert_20261031_01`均return0，
+各2张真实模型CCD已按完整cohort签收、核SHA并回传服务器；共完成4/12张模型CCD、2/6阶段。
+专家输入通过原冻结F6/F9模型、以已测Router重算得到，不复用仿真专家输入。
+曝光、坐标派生映射、器件LUT、模型和TRAIN2请求均未变，无TEST使用。
+完整Qwen重放及SDXL生成尚待余下四阶段，**不宣称物理SIM–EXP5%质量已通过**。
+
 ## 2026-10-31：用户批准配准后接入实际采集入口
 
 `scene_lab_capture`现支持两帧暗白复核，以及已准备ledger的一整层TRAIN采集；
@@ -11,13 +28,13 @@
 不自动重复、更换驱动、重设曝光或把历史空间验收冒称当前整条光路已验收。
 
 ```text
-python -m LightGenV2.tasks.t12_text_to_image.scene_lab_capture --config <registered_config.json> --calibration <calibration_registered_01> --out <new_check_run>
-python -m LightGenV2.tasks.t12_text_to_image.scene_lab_capture --config <registered_config.json> --calibration <calibration_registered_01> --ledger <physical_ledger> --stage vision_router --out <new_stage_run>
+python -m LightGenV2.tasks.t12_text_to_image.scene_lab_capture --config <registered_config.json> --calibration <calibration_registered_01> --out <new_check_run> --camera-process
+python -m LightGenV2.tasks.t12_text_to_image.scene_lab_capture --config <registered_config.json> --calibration <calibration_registered_01> --ledger <physical_ledger> --stage vision_router --out <new_stage_run> --camera-process
 ```
 
 固定TRAIN2真实Qwen字段由`scene_lab_pilot --mode prepare`准备，六阶段逐一处理；
 只有实际CCD收据完整才允许`--mode infer`，之后另用原SDXL生成核验。
-目前接口测试通过不代表已经采到模型CCD；实际采集数量以run收据为准。
+接口测试本身不代表采到模型CCD；最新实际采集数量见本页顶部及run收据。
 空间配准获用户批准；线性相位尚未认证、原linearVoltage LUT不变，须在实际pilot中如实评估误差。
 
 2026-10-30实际相机重试已成功：TUCam枚举1、2张原生2048x2048 uint16连接诊断帧。
@@ -27,7 +44,8 @@ python -m LightGenV2.tasks.t12_text_to_image.scene_lab_capture --config <registe
 
 追加相位诊断发现白场消失：同BMP、读回设置及LUT，完整原帧p99由28988降至876，
 后者与暗场一致。有限白场canary两帧后停止并释放；未盲重拍或改变曝光/物理合同。
-目前模型TRAIN CCD仍0，不得创建假审核会话、宣称物理5%或完整Qwen/SDXL实拍通过。
+截至10月30日晚该步骤模型TRAIN CCD仍0；10月31日恢复结果见本页顶部。
+不得据此前或当前部分采集，宣称物理5%或完整Qwen/SDXL实拍通过。
 详见[现场接续证据](reports/scene_generation_20261029/HARDWARE_20261029_SESSION_20261030.md)。
 
 模块`scene_lab_protocol`管理按层全量账本，`scene_lab_native`把已有冻结Qwen/F6和F9头
