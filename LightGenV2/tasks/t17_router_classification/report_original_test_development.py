@@ -11,7 +11,9 @@ for d,name in [('kather2016','Kather2016（8类）'),('bloodmnist128','BloodMNIS
  for run,suffix,label in [('panel_a_original_test_teacher_kd_s17_20261031','student','D4蒸馏'),('panel_a_original_test_kd_identity_s17_20261031','','无增强保守蒸馏'),
                          ('panel_a_boundary_development_s17_20261031','frozen_router_boundary','冻结光路由＋边界损失'),
                          ('panel_a_boundary_development_s17_20261031','diffuse_start_boundary','随机主相位＋冻结光路由＋边界损失'),
-                         ('panel_a_boundary_continuation_s17_20261031','frozen_router_boundary','边界目标受限接续')]:
+                         ('panel_a_boundary_continuation_s17_20261031','frozen_router_boundary','边界目标受限接续'),
+                         ('panel_a_boundary_joint_s17_20261031','fixed_router_control','成熟主干固定路由控制'),
+                         ('panel_a_boundary_joint_s17_20261031','gentle_joint_router','成熟主干温和联合路由')]:
   p=runs/run/d/suffix;q=read(p/'result.json');s=read(p/'status.json')
   if q:records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state='complete',label=label,result=q))
   elif p.parent.exists():records.append(dict(run_id=run+'/'+d+('/'+suffix if suffix else ''),state=s or {'state':'not_started_or_loading'},label=label))
