@@ -111,15 +111,18 @@ def run(a):
                 values=[float(interval_loss(predict(student.unet,row['x'][None].cuda(),torch.tensor(row['timestep'],device='cuda'),conds[row['input_key']],state,row['sigma'],True),row['target_epsilon'][None].cuda())) for row in probes]
             score=sum(values)/len(values);history.append(dict(step=step,fixed_TRAIN_teacher_state_probe_loss=score,onpolicy_TRAIN_recent_loss=sum(recent[-200:])/len(recent[-200:]),seconds=time.monotonic()-began));write(a.output/'history.json',history)
             assert all(torch.equal(v,head.state_dict()[n].cpu()) for n,v in head_before.items())
-            result=dict(state,source_commit=os.environ['T12_SOURCE_COMMIT'],step=step,
+            result=dict(state,source_commit=os.environ['T12_SOURCE_COMMIT'],step=step,cache_sha256=cache_report['cache_sha256'],
                 unet_lora={n:p.detach().cpu() for n,p in student.unet.named_parameters() if 'lora_' in n},
                 onpolicy_teacher_sha256=teacher_report['best_sha256'])
+            if result.get('optical_frontend'):
+                result['optical_frontend']=dict(result['optical_frontend'],generator_not_updated_after_frontend_recovery=False,TRAIN_generator_tail_recovery=True)
             torch.save(result,a.output/'last_checkpoint.pt')
             if score<best:best=score;torch.save(result,a.output/'best_checkpoint.pt')
     write(a.output/'report.json',dict(complete=True,source_commit=os.environ['T12_SOURCE_COMMIT'],steps=a.steps,best_sha256=digest(a.output/'best_checkpoint.pt'),
         parent_student_sha256=initial_report['best_sha256'],teacher_sha256=teacher_report['best_sha256'],teacher_fused=False,teacher_steps=30,
         sampling_contract=state['sampling_contract'],actual_teacher_step_edges=edges,TRAIN_contexts=len(train),fresh_source_noise_seeds=len(seeds),
         student_cache_sha256=cache_report['cache_sha256'],teacher_cache_sha256=tc_report['cache_sha256'],
+        fixed_TRAIN_probe_trajectory_sha256=targets_report['trajectory_sha256'],fixed_TRAIN_probe_count=len(probes),
         trainable_existing_UNet_LoRA_parameters=sum(p.numel() for p in parameters),extra_deployment_parameters=0,
         condition_heads_Qwen_optics_VAE_frozen=True,scene_GT_or_image_encoder_used=False,latent_states_not_returned_to_Qwen=True,
         best_selection='Fixed TRAIN teacher-state probe loss; DEV raw generation still required',seconds=time.monotonic()-began,
