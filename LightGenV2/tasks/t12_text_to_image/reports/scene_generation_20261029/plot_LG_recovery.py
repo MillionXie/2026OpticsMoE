@@ -29,8 +29,10 @@ def main():
     p.add_argument('--runs', nargs='+', required=True)
     p.add_argument('--labels', nargs='+', required=True)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--tolerance',type=float,default=.05)
+    p.add_argument('--reward-normalization',choices=['absolute','baseline-magnitude'],default='absolute')
     a = p.parse_args()
-    assert not a.output.exists() and len(a.runs) == len(a.labels)
+    assert not a.output.exists() and len(a.runs) == len(a.labels) and 0<=a.tolerance<1
     rows = json.loads((a.root/a.runs[0]/'images.json').read_text())
     scores = {(r['run_id'], r['sample_id']): r for r in json.loads((a.metrics/'per_image.json').read_text())}
     summary = json.loads((a.metrics/'summary.json').read_text())
@@ -76,15 +78,17 @@ def main():
         panel.save(a.output/name)
         pages.append(name)
     heading = [f'<h1>LG recovery: all {len(rows)} DEV requests</h1>', '<p>Same reference, two-sentence prompt and initial noise. Native output 512. No TEST use or image feedback. Scores are proxies; semantic review is required.</p>',
-        '<p>Group means and changes relative to the first model below. CLIP/DINO changes are percentages; negative ImageReward uses an absolute difference. Green/red checks only these proxy means, not complete instruction compliance or statistical equivalence.</p>',
+        f'<p>Group means relative to the first model. Relative tolerance: {a.tolerance:.0%}; negative ImageReward normalization: {a.reward_normalization}. Green/red checks proxy means, not complete instruction compliance or statistical equivalence.</p>',
         '<table><tr><th>Model</th><th>Group</th><th>CLIP-T</th><th>DINO-I</th><th>CLIP-I</th><th>IR compact</th></tr>']
     for name, label in zip(a.runs, a.labels):
         for group in ['all','lamp','pillow']:
             s=summary[name+'/'+group]['scores'];reference=summary[a.runs[0]+'/'+group]['scores'];cells=[]
             for metric in METRICS:
-                value=s[metric]['mean'];base=reference[metric]['mean'];change=value-base if metric=='ImageReward_compact' else value/base-1
-                text=f'{change:+.3f}' if metric=='ImageReward_compact' else f'{change:+.1%}'
-                passed=change>=(-.1 if metric=='ImageReward_compact' else -.05)
+                value=s[metric]['mean'];base=reference[metric]['mean']
+                absolute=metric=='ImageReward_compact' and a.reward_normalization=='absolute'
+                change=value-base if absolute else (value-base)/abs(base)
+                text=f'{change:+.3f}' if absolute else f'{change:+.1%}'
+                passed=change>=(-.1 if absolute else -a.tolerance)
                 suffix='' if name==a.runs[0] else f'<br><small style="color:{"#176838" if passed else "#a02020"}">{text}</small>'
                 cells.append(f'<td>{value:.4f}{suffix}</td>')
             heading.append('<tr><td>'+html.escape(label)+'</td><td>'+group+'</td>'+''.join(cells)+'</tr>')
@@ -92,7 +96,8 @@ def main():
     heading.extend(f'<p><a href="{n}"><img style="width:100%;max-width:1300px" src="{n}"></a></p>' for n in pages)
     (a.output/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>LG recovery review</title><style>body{font:16px Arial;margin:24px}td,th{padding:8px;border:1px solid #aaa}table{border-collapse:collapse}</style>'+''.join(heading),encoding='utf8')
     (a.output/'plot_data.json').write_text(json.dumps([scores[n,r['sample_id']] for r in rows for n in a.runs],indent=2),encoding='utf8')
-    (a.output/'report.json').write_text(json.dumps({'complete':True,'all_requests':len(rows),'model_runs':a.runs,'pages':pages,'image_and_noise_SHA_checked':True,'quality_selected':False,'source_sha256':sha(Path(__file__))},indent=2))
+    (a.output/'report.json').write_text(json.dumps({'complete':True,'all_requests':len(rows),'model_runs':a.runs,'pages':pages,'image_and_noise_SHA_checked':True,'quality_selected':False,'source_sha256':sha(Path(__file__)),
+        'relative_tolerance':a.tolerance,'ImageReward_normalization':a.reward_normalization},indent=2))
     print(a.output.resolve())
 
 
