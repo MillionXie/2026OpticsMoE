@@ -123,6 +123,12 @@ def calibrate(c,out):
     if any(p.exists()for p in others):raise RuntimeError('Another device owner exists')
     fd=os.open(lock,os.O_WRONLY|os.O_CREAT|os.O_EXCL);os.write(fd,json.dumps(dict(pid=os.getpid(),out=str(out))).encode());os.close(fd)
     warp=cv2.getPerspectiveTransform(corners(c['coordinates']),np.float32([[0,0],[477,0],[477,477],[0,477]]))
+    if c.get('derived_mapping'):
+        if sha(c['derived_mapping'])!=c['derived_mapping_sha256']:raise ValueError('Derived mapping changed')
+        mapping=json.loads(Path(c['derived_mapping']).read_text())
+        if not mapping['calibration_approved'] or not mapping['no_TEST_or_model_frames'] or mapping['original_coordinate_SHA256']!=sha(c['coordinates']):raise ValueError('Unverified calibration-plane mapping')
+        warp=np.asarray(mapping['canonical_warp'],np.float64)
+        if warp.shape!=(3,3) or not np.isfinite(warp).all():raise ValueError('Invalid fixed mapping')
     put(out/'protocol.json',dict(config=c,source_sha256=sha(__file__),TEST_used=False,model_inference=False,phase_lut_scope='linear voltage, not verified linear phase'))
     rows=[];zero=np.zeros((478,478),np.uint8)
     try:
@@ -143,11 +149,12 @@ def calibrate(c,out):
             orientation,proof=direction(images,bg)
             put(out/'orientation.json',dict(selected=orientation,**proof))
             geometry=[]
-            for k,(x,y) in enumerate(((100,100),(370,100),(100,370),(370,370),(240,240))):
+            geometry_points=c.get('independent_geometry_points',((100,100),(370,100),(100,370),(370,370),(240,240)))
+            for k,(x,y) in enumerate(geometry_points):
                 a=zero.copy();a[y-22:y+22,x-22:x+22]=255;v=snap('geometry_'+str(k),a,orientation=orientation)
                 point=centroid(v,orientations(bg)[orientation]);err=float(np.linalg.norm(point-[x-.5,y-.5]));geometry.append(dict(expected=[x-.5,y-.5],observed=point.tolist(),error_px=err))
             put(out/'geometry.json',dict(rows=geometry,max_error_px=max(r['error_px']for r in geometry),coordinates_changed=False))
-            if max(r['error_px']for r in geometry)>8:raise ValueError('User corner mapping failed independent spots; do not silently refit coordinates')
+            if max(r['error_px']for r in geometry)>c.get('geometry_gate_px',8):raise ValueError('User corner mapping failed independent spots; do not silently refit coordinates')
             center=zero.copy();center[217:261,217:261]=255
             base=snap('phase_flat',center,orientation=orientation);origin=centroid(base,orientations(bg)[orientation]);phase_rows=[]
             yy,xx=np.indices(zero.shape)
