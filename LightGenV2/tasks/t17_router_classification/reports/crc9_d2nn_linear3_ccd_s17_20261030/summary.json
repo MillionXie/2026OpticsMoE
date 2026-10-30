@@ -1,0 +1,438 @@
+{
+  "run_id": "crc9_d2nn_linear3_ccd_s17_20261030",
+  "source_commit": "6b22bd26815da107f8dd113f58c3078cb512d1cf",
+  "server_head_during_run": "ae9e5c0ff47f75a94f4b1ac35bfddb532d110b40",
+  "source_identity_note": "T17 source from recorded Git commit via path-scoped Git overlay; server repository HEAD intentionally retained. Runtime dependencies identified by source_sha256 in metadata.",
+  "profile": {
+    "profile": "crc9_d2nn_linear3_ccd_s17_20261030",
+    "seed": 17,
+    "layers": 3,
+    "epochs": 60,
+    "batch": 8,
+    "learning_rate": 0.005,
+    "optimizer": "Adam",
+    "gradient_clip": 5.0,
+    "training_evaluate_every": 5,
+    "selection": "validation_macro_recall_then_cross_entropy",
+    "input": "Original four_top2 fixed bicubic RGB [R,G;B,0]224; bilinear full-aperture478; unit power",
+    "phase_side": 478,
+    "canvas_side": 518,
+    "wavelength_nm": 532,
+    "pixel_pitch_um": 17,
+    "distance_per_layer_m": 0.1,
+    "phase_parameterization": "2*pi*sigmoid(raw); raw initialized zero",
+    "phase_parameters": 685452,
+    "intermediate_OEO": false,
+    "learned_electronic_frontend": false,
+    "learned_electronic_readout": false,
+    "readout": "Final CCD only; fixed3x3 disjoint full-coverage grid, edges0/159/318/478, row-major classes0..8",
+    "augmentation": false,
+    "ema": false,
+    "class_weighting": false,
+    "weight_decay": 0,
+    "test_policy": "Once after validation selection and checkpoint hash lock; development followup after previously seen TEST",
+    "maximum_gpus": 1,
+    "A100_allowed": false
+  },
+  "profile_sha256": "ecfe5fa4ce20ed1653a70575d33e12783854f76fc59b270e25c871e7fbc2fad9",
+  "data_sha256": "287441e12c9f05c8257bf44b12b0157e77e934b88e5596e2dd9f85068484b51b",
+  "manifest_sha256": "419cdc19c1502a7b3b377a332114854d978ce15e7c47aeee5c926037a5477ad2",
+  "source_sha256": {
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train_linear_ccd.py": "aa3a5c8dc935c88c297c48e441e0f42b9dbd0367bcf84f9426e640dc37335a5c",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/model_linear_ccd.py": "d4b2f2b4b53f4e86ecd9160f99bbb30059c566d21861fb8311ed3dafa755e20f",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/train.py": "6fcaabb49d64c25f5427f3f9ddcf0c823b2df8b3ca5da4b40cbdc49ebe8b3be1",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/model_four.py": "783fbab438af72ebc9c57a7157f1a568e2d4aa75ef26ddea81135306b3c51bda",
+    "LightGenV2/demo_check/pure_optical/models.py": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+    "LightGenV2/demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d",
+    "LightGenV2/tasks/t11_lifelong_optics/crc9_data.py": "c2114924f1e814fb1fca172eca18273b2c89c2f6c9cac30c93c473304470d8e8"
+  },
+  "result": {
+    "selected_epoch": 35,
+    "checkpoint_sha256": "f45c4a2d686d5ee27e87176ddc532c070d81a29b90eaf75805738267ab921724",
+    "selection": "validation_macro_recall_then_cross_entropy",
+    "test_evaluations_before_lock": 0,
+    "train": {
+      "accuracy": 0.6209709644317627,
+      "balanced_accuracy": 0.48033174872398376,
+      "cross_entropy": 1.6660147905349731,
+      "confusion_matrix": [
+        [
+          757,
+          42,
+          0,
+          0,
+          0,
+          0,
+          31,
+          0,
+          43
+        ],
+        [
+          111,
+          282,
+          0,
+          0,
+          0,
+          0,
+          2,
+          6,
+          10
+        ],
+        [
+          84,
+          60,
+          0,
+          0,
+          0,
+          0,
+          1,
+          39,
+          104
+        ],
+        [
+          278,
+          0,
+          0,
+          0,
+          0,
+          0,
+          160,
+          0,
+          8
+        ],
+        [
+          23,
+          63,
+          0,
+          0,
+          0,
+          0,
+          0,
+          115,
+          39
+        ],
+        [
+          412,
+          0,
+          0,
+          0,
+          0,
+          0,
+          58,
+          0,
+          47
+        ],
+        [
+          6,
+          0,
+          0,
+          0,
+          0,
+          0,
+          913,
+          0,
+          12
+        ],
+        [
+          8,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          588,
+          0
+        ],
+        [
+          18,
+          0,
+          0,
+          0,
+          0,
+          0,
+          123,
+          2,
+          581
+        ]
+      ],
+      "n": 5026
+    },
+    "validation": {
+      "accuracy": 0.6239554286003113,
+      "balanced_accuracy": 0.48448529839515686,
+      "cross_entropy": 1.674811840057373,
+      "confusion_matrix": [
+        [
+          98,
+          9,
+          0,
+          0,
+          0,
+          0,
+          3,
+          0,
+          3
+        ],
+        [
+          18,
+          40,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          1
+        ],
+        [
+          16,
+          12,
+          0,
+          0,
+          0,
+          0,
+          1,
+          6,
+          14
+        ],
+        [
+          35,
+          0,
+          0,
+          0,
+          0,
+          0,
+          24,
+          0,
+          2
+        ],
+        [
+          2,
+          9,
+          0,
+          0,
+          0,
+          0,
+          0,
+          17,
+          3
+        ],
+        [
+          59,
+          0,
+          0,
+          0,
+          0,
+          0,
+          10,
+          0,
+          7
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          138,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          82,
+          0
+        ],
+        [
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          13,
+          0,
+          90
+        ]
+      ],
+      "n": 718
+    },
+    "test": {
+      "accuracy": 0.597493052482605,
+      "balanced_accuracy": 0.45681989192962646,
+      "cross_entropy": 1.6875075101852417,
+      "confusion_matrix": [
+        [
+          199,
+          18,
+          0,
+          0,
+          0,
+          0,
+          14,
+          1,
+          15
+        ],
+        [
+          43,
+          64,
+          0,
+          0,
+          0,
+          0,
+          1,
+          4,
+          6
+        ],
+        [
+          32,
+          8,
+          0,
+          0,
+          0,
+          0,
+          1,
+          11,
+          32
+        ],
+        [
+          71,
+          0,
+          0,
+          0,
+          0,
+          0,
+          55,
+          0,
+          1
+        ],
+        [
+          3,
+          16,
+          0,
+          0,
+          0,
+          0,
+          0,
+          39,
+          10
+        ],
+        [
+          114,
+          0,
+          0,
+          0,
+          0,
+          0,
+          25,
+          0,
+          9
+        ],
+        [
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          264,
+          0,
+          2
+        ],
+        [
+          4,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          165,
+          0
+        ],
+        [
+          5,
+          0,
+          0,
+          0,
+          0,
+          0,
+          36,
+          0,
+          166
+        ]
+      ],
+      "n": 1436
+    },
+    "test_evaluations": 1,
+    "completed_epochs": 60,
+    "elapsed_seconds": 534.6307125091553,
+    "role": "development_followup_after_observed_original_TEST"
+  },
+  "checkpoint_checks": {
+    "best_checkpoint.pt": {
+      "epoch": 35,
+      "sha256": "f45c4a2d686d5ee27e87176ddc532c070d81a29b90eaf75805738267ab921724",
+      "state_shapes": {
+        "phases.0": [
+          478,
+          478
+        ],
+        "phases.1": [
+          478,
+          478
+        ],
+        "phases.2": [
+          478,
+          478
+        ]
+      },
+      "all_three_phase_arrays_changed_from_zero": true
+    },
+    "last_checkpoint.pt": {
+      "epoch": 60,
+      "sha256": "23c7f175e2230ef4c3ab9499b7be4b24c2ab08598a14330dc9f3c338d4719835",
+      "state_shapes": {
+        "phases.0": [
+          478,
+          478
+        ],
+        "phases.1": [
+          478,
+          478
+        ],
+        "phases.2": [
+          478,
+          478
+        ]
+      },
+      "all_three_phase_arrays_changed_from_zero": true
+    }
+  },
+  "release": {
+    "training_pid": 4057009,
+    "training_process_absent": true,
+    "training_pid_absent_from_nvidia_smi": true
+  },
+  "verification": {
+    "server_T17_cpu_tests_passed": 43,
+    "VAL_TEST_metrics_and_confusion_matrix_recomputed_from_saved_predictions": true,
+    "all_transferred_run_files_SHA_verified": true
+  },
+  "limitations": [
+    "Single seed17; no estimate of seed variation.",
+    "Changes depth, OEO, and readout together; not a one-factor ablation.",
+    "Development follow-up after historical TEST already observed.",
+    "Fixed RGB [R,G;B,0] encoding retains zero fourth quadrant.",
+    "Four TEST classes have zero recall: cancer_stroma, lymphocytes, debris, normal_mucosa.",
+    "Train/validation accuracy close; fit remains limited and complete convergence is not established."
+  ]
+}
