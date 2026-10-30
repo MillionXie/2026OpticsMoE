@@ -5,7 +5,7 @@ from .scene_lab_protocol import put,sha
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--out',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--config',type=Path,required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--display-only',action='store_true');a=p.parse_args()
     cfg=json.loads(a.config.read_text());a.out.mkdir(parents=True,exist_ok=False)
     root=Path(__file__).resolve().parents[3];lock=root/'LightGenV2/tasks/t12_text_to_image/runs/hardware/.t12_scene_device_owner.lock'
     if any(q.exists()for q in [root/'LightGenV2/tasks/t18_optical_residual_ablation/runs/hardware/.t18_sdk_owner.lock',root/'LightGenV2/hardware_common/shs/results/phase_sdk_owner.lock']):raise RuntimeError('Another owner')
@@ -25,6 +25,10 @@ def main():
                 except Exception:break
             displays.append(dict(device=d.DeviceName,label=d.DeviceString,flags=d.StateFlags,x=m.Position_x,y=m.Position_y,width=m.PelsWidth,height=m.PelsHeight,Hz=m.DisplayFrequency,monitors=monitors))
         result['displays']=displays
+        if a.display_only:
+            import win32ts
+            result.update(interactive_session=win32ts.ProcessIdToSessionId(os.getpid()),camera_SDK_opened=False,SDK_closed=True)
+            put(a.out/'report.json',result);print(json.dumps(result));return
         from experiments.hardware_sdk.drivers.tucam_camera import TucamCamera
         with TucamCamera(cfg['camera_sdk'],auto_exposure=None,exposure_us=None,analog_gain=None,warmup_frames=3,discard_frames_after_display=6,
                          saved_frame_size_wh=None,saved_frame_resize_mode='none',saved_frame_bit_depth=None)as camera:
