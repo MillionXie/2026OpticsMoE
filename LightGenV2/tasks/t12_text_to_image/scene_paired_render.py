@@ -113,6 +113,8 @@ def render(a):
     if a.steps==14 and not sampler:raise ValueError('The explicit fourteen-step ablation requires a DPM sampler')
     is_test=getattr(a,'scope','dev')=='test'
     expanded_folder=getattr(a,'expanded_development',None)
+    revision_folder=getattr(a,'prompt_revision',None)
+    if revision_folder and (expanded_folder or is_test):raise ValueError('Natural-prompt DEV revision is separate from old DEV and frozen TEST')
     if expanded_folder and (is_test or a.measure_software_latency):raise ValueError('Expanded DEV is separate from frozen TEST and fixed timing cohorts')
     frozen=frozen_test_protocol(a,state,previous) if is_test else None
     inputs = inference_inputs(a.data,'test' if is_test else 'dev')
@@ -120,6 +122,9 @@ def render(a):
     if expanded_folder:
         from .scene_development_grid import checked_grid
         inputs,expanded=checked_grid(expanded_folder,a.data,state,inputs)
+    if revision_folder:
+        from .scene_natural_prompt import checked_revision
+        inputs,expanded=checked_revision(revision_folder,a.data,state,inputs)
     if is_test:
         assert len(inputs)==500 and len({r['sample_id'] for r in inputs})==500
         assets=json.loads((a.cache/'model_assets.json').read_text())
@@ -138,6 +143,7 @@ def render(a):
         assert verified.get('task_LoRA_fused',False)==fuse_task,'Timing and quality task fusion graphs differ'
         assert verified.get('inference_sampler')==sampler,'Timing and quality samplers differ'
         assert verified.get('unet_precision','bf16')==scene_precision.name(a),'Timing and quality UNet precision differs'
+        if revision_folder:assert verified['expanded_DEV_protocol']==expanded,'Timing and quality natural prompt revisions differ'
         expected={r['sample_id']:r for r in json.loads((a.reference_run/'images.json').read_text())}
         rows=[r for category in ['lamp','pillow'] for r in [x for x in rows if x['category']==category][:4]]
         assert len(rows)==8
@@ -150,14 +156,14 @@ def render(a):
         head = QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).cuda().eval().requires_grad_(False)
         head.load_state_dict(state['head'], strict=True)
         pipe = pipeline(a)
-        if not is_test:
+        if not is_test and not revision_folder:
             identity = torch.load(a.cache/'DEV_frontend_identity_only.pt', map_location='cpu', weights_only=False)
             assert not identity['contains_targets_or_masks']
         if a.lg_frontend:optical=install_optical_frontend(qwen,a.lg_frontend,a.lg_features,a.cache)
         if state.get('optical_frontend'):
             assert optical['checkpoint_sha256']==state['optical_frontend']['checkpoint_sha256']
             optical['feature_distillation_only_generator_recovery_not_yet_trained']=False
-        exact_identity=not is_test and (optical is None or identity.get('optical_frontend',{}).get('checkpoint_sha256')==optical['checkpoint_sha256'])
+        exact_identity=identity is not None and (optical is None or identity.get('optical_frontend',{}).get('checkpoint_sha256')==optical['checkpoint_sha256'])
     else:
         if a.lg_frontend:raise ValueError('LG replacement belongs to Qwen branch only')
         encoder = CLIPVisionModelWithProjection.from_pretrained(a.adapter_path/'models/image_encoder',
@@ -278,7 +284,7 @@ def render(a):
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,
             'LoRA_unmerged_for_both_models':not fuse_task,'task_LoRA_fused':fuse_task,'task_fusion':task_fusion})
-    write(a.output/'report.json',{'complete':True,'scope':'TEST' if is_test else ('DEV_expanded' if expanded else ('DEV_software_latency' if latencies else 'DEV')),'source_commit':os.environ['T12_SOURCE_COMMIT'],
+    write(a.output/'report.json',{'complete':True,'scope':'TEST' if is_test else ('DEV_software_latency' if latencies else ('DEV_expanded' if expanded else 'DEV')),'source_commit':os.environ['T12_SOURCE_COMMIT'],
         'generated_count':len(records),'prompt_profile':rows[0]['prompt_profile'],'training_performed':False,
         'checkpoint_sha256':previous['best_sha256'],'paired_diffusion_training_performed':True,
         'independent_TEST_opened':is_test,'GT_mask_or_target_latent_files_opened':False,
@@ -298,7 +304,7 @@ def render(a):
         'fast_tail':fast,
         'task_LoRA_fused':fuse_task,'task_fusion':task_fusion,
         'joint_image_context':state.get('joint_image_context',False),'frozen_TEST_protocol':frozen,
-        'DEV_or_TRAIN_feature_tensors_opened':not is_test and head is not None,
+        'DEV_or_TRAIN_feature_tensors_opened':identity is not None,
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
         'head_parameters':0 if head is None else sum(p.numel() for p in head.parameters()),
         'factual_evaluation_captions':True})
@@ -314,6 +320,7 @@ def main():
     p.add_argument('--unet-precision',choices=['bf16','fp16'],default='bf16',help='Explicit UNet-only precision ablation; Qwen/VAE and unit-noise draw remain BF16')
     p.add_argument('--lcm-guidance',type=float,choices=[1.,1.5,2.],default=1.,help='Explicit low LCM guidance; >1 includes real classifier-free double batch cost')
     p.add_argument('--expanded-development',type=Path,help='Audited original-DEV sixteen-view/eight-scene grid; never a TEST or timing override')
+    p.add_argument('--prompt-revision',type=Path,help='Audited natural two-sentence DEV wording; actual reference RGB remains an input')
     p.add_argument('--sampler',choices=['original','dpmpp2m-karras','dpmpp2m-karras-teacher30'],default='original',help='Matched inference solver ablation; optional accepted Euler30 noise bounds; no stacking with LCM or learned tail')
     p.add_argument('--steps',type=int,choices=[4,6,7,8,12,14,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 14 requires explicit DPM; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
