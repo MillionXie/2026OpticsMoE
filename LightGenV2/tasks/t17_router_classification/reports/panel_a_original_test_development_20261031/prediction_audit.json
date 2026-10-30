@@ -14,8 +14,8 @@
     {
       "dataset": "bloodmnist128",
       "samples": 3421,
-      "correct": 2295,
-      "accuracy": 0.6708564747149957,
+      "correct": 2707,
+      "accuracy": 0.7912890967553347,
       "identical_ids_labels_vs_D2NN": true,
       "exactly_two_positive_routes_per_sample": true,
       "all_samples_preserved": true
@@ -23,16 +23,16 @@
     {
       "dataset": "crc9",
       "samples": 1436,
-      "correct": 1025,
-      "accuracy": 0.7137883008356546,
+      "correct": 1036,
+      "accuracy": 0.7214484679665738,
       "identical_ids_labels_vs_D2NN": true,
       "exactly_two_positive_routes_per_sample": true,
       "all_samples_preserved": true
     }
   ],
   "cpu_training_contract_tests": {
-    "passed": 57,
+    "passed": 61,
     "environment": "Lab Linux xml, CUDA_VISIBLE_DEVICES empty",
-    "source_commit": "ecd676ccb8fbe5f09e674ed6552ecea37b792c65"
+    "source_commit": "35d4b3210270fe9ec35392b4dd1178b099d640fa"
   }
 }
