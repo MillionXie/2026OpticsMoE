@@ -1,6 +1,6 @@
 {
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
-  "implementation_status": "PLANNED_NOT_IMPLEMENTED_NOT_LAUNCHED",
+  "implementation_status": "LAUNCHED",
   "hypothesis": "Current TRAIN recalls remain low for stroma and normal mucosa; use bounded TRAIN-error weights to direct main-optics gradients rather than blindly adding epochs.",
   "parent_candidate_run": "panel_a_boundary_joint_s17_20261031/crc9/gentle_joint_router",
   "parent_checkpoint_sha256": "b650f4ced47152ed89e943c696fe4baa3f64e5aac2fd0b5c0fe308b4045dc536",
@@ -151,5 +151,11 @@
     "mucus"
   ],
   "joint_comparison_complete": true,
-  "parent_development_accuracy": 0.7332869172096252
+  "parent_development_accuracy": 0.7332869172096252,
+  "implementation_source_commit": "4d22dbaaedb68231aa3c63151899969a9d80ca19",
+  "cpu_tests_passed": 62,
+  "real_TRAIN_GPU_admission_images": 9,
+  "pid": 586032,
+  "run_id": "panel_a_training_error_weighted_s17_20261031/crc9/training_error_weighted",
+  "activation_requirements_satisfied": true
 }

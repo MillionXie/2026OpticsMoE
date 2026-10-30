@@ -143,6 +143,11 @@ clip((.1+1−TRAIN召回)/类均值,.5,2)的九类权重，固定router、主干
 run根`runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9`，
 候选`training_error_weighted`，父权重参选、失败保留全部收据；源码检查/发布及GPU准入后才能启动。
 
+该入口已通过62项CPU检查和九类各一张真实TRAIN图的GPU前后向/更新准入，
+确认损失不修改推理概率、router冻结且没有新增Linear/CNN；源`4d22dbaa`已发布并按路径同步。
+worker586032已实际进入加权训练，父PT/原TRAIN预测/类别顺序/权重重算检查均通过。
+Blood worker567046继续原90f3dc40、已记录旧入口SHA的训练，不重启、不中途换损失。
+
 `select_original_test_dev.py`在规定的VAL优化链结束后，比较基础best/last、优化best/last online/last EMA，
 按原TEST准确率、宏召回、CE选开发best；同时比较原D2NN best/last，另列固定VAL选中D2NN参照，
 不通过降低D2NN参照获得差值。各候选保存PT来源SHA、状态键、轮数及逐样本预测，候选数明确记录。

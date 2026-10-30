@@ -1,0 +1,20 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/launch.json",
+      "sha256": "438dd78e7ca2b809267fd86caf5ea8b87af65e376e91b1413b568dc8aa024293"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/metadata.json",
+      "sha256": "9837654b2583338aa87b0ef405210b37209dfc3049fb03c83a04fc6e97a494df"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_training_error_weighted_s17_20261031/crc9/status.json",
+      "sha256": "78cd0149d9e35b202c28cdea827b3489e75f3e062683f6048e5bfbeb385af473"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_a_weighted_boundary_admission_0534/admission.json",
+      "sha256": "ebce4a84215bf987eb5c060cf51313e8436bceee642240a335e7750f0c6ebd25"
+    }
+  ]
+}
