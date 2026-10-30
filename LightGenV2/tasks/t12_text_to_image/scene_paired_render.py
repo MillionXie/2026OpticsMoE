@@ -15,6 +15,7 @@ from .qwen3_scene_conditioning import QwenSDXLConditions
 from .qwen3_scene_paired_train import new_qwen, raw_scene_features, pipeline
 from .white_reference_scene_probe import GPU, digest, write, checked_tokens
 from .scene_inference_sampler import descriptor as sampler_descriptor
+from . import scene_precision
 
 
 def inference_inputs(data,scope='dev'):
@@ -44,6 +45,7 @@ def frozen_test_protocol(a,state,previous):
     assert model['sampling_contract']==state.get('sampling_contract')
     assert model.get('task_LoRA_fused',False)==bool(getattr(a,'fuse_task_lora',False))
     assert model.get('inference_sampler')==sampler_descriptor(getattr(a,'sampler','original'))
+    assert model.get('unet_precision','bf16')==scene_precision.name(a)
     assert model['optical_frontend_sha256']==(state.get('optical_frontend') or {}).get('checkpoint_sha256')
     fast=getattr(a,'lcm_adapter',None)
     if fast:
@@ -95,6 +97,8 @@ def render(a):
     if sampler and (sampling or getattr(a,'lcm_adapter',None)):raise ValueError('Do not stack independent sampler/tail candidates')
     fast=None
     fuse_task=bool(getattr(a,'fuse_task_lora',False))
+    if scene_precision.name(a)=='fp16' and (state['variant']!='qwen' or sampler or getattr(a,'lcm_adapter',None)):
+        raise ValueError('UNet FP16 ablation supports Qwen with original or trained Euler only')
     if getattr(a,'lcm_adapter',None):
         from .scene_fast_tail import tail_configuration
         fast=tail_configuration(a.lcm_adapter,getattr(a,'lcm_guidance',1.))
@@ -133,6 +137,7 @@ def render(a):
         assert verified.get('fast_tail')==fast,'Timing and quality tail identities differ'
         assert verified.get('task_LoRA_fused',False)==fuse_task,'Timing and quality task fusion graphs differ'
         assert verified.get('inference_sampler')==sampler,'Timing and quality samplers differ'
+        assert verified.get('unet_precision','bf16')==scene_precision.name(a),'Timing and quality UNet precision differs'
         expected={r['sample_id']:r for r in json.loads((a.reference_run/'images.json').read_text())}
         rows=[r for category in ['lamp','pillow'] for r in [x for x in rows if x['category']==category][:4]]
         assert len(rows)==8
@@ -193,7 +198,8 @@ def render(a):
         if a.measure_software_latency:torch.cuda.synchronize();began=time.perf_counter()
         generator = torch.Generator(device='cuda').manual_seed(row['seed'])
         noise = torch.randn((1,4,resolution//8,resolution//8), generator=generator, device='cuda', dtype=torch.bfloat16)
-        kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=fast['CFG'] if fast else 7.5,latents=noise,generator=generator)
+        kwargs = dict(width=resolution,height=resolution,num_inference_steps=a.steps,guidance_scale=fast['CFG'] if fast else 7.5,latents=noise.to(dtype=pipe.unet.dtype),generator=generator)
+        kwargs.update(scene_precision.generation_kwargs(a,pipe))
         if sampling:
             kwargs.pop('num_inference_steps')
             kwargs.update(timesteps=sampling['timesteps'],guidance_scale=sampling['CFG'])
@@ -203,13 +209,13 @@ def render(a):
             if head is not None:
                 h,v,ids = raw_scene_features(qwen,processor,reference,row['prompt'],a.qwen_side,keep_on_device=a.measure_software_latency)
                 cond = head(h.unsqueeze(0).cuda().float(),v.unsqueeze(0).cuda().float())
-                image_conditions=cond['image'].bfloat16()
+                image_conditions=scene_precision.condition(cond['image'],a)
                 if kwargs['guidance_scale']>1:
-                    image_conditions=torch.cat([state['negative_image'].cuda().bfloat16(),image_conditions],dim=0)
+                    image_conditions=torch.cat([scene_precision.condition(state['negative_image'].cuda(),a),image_conditions],dim=0)
                 images=image_conditions.unsqueeze(1)
-                kwargs.update(prompt_embeds=cond['text'].bfloat16(),pooled_prompt_embeds=cond['pooled'].bfloat16(),
-                    negative_prompt_embeds=state['negative_text'].cuda().bfloat16(),
-                    negative_pooled_prompt_embeds=state['negative_pooled'].cuda().bfloat16(),ip_adapter_image_embeds=[images])
+                kwargs.update(prompt_embeds=scene_precision.condition(cond['text'],a),pooled_prompt_embeds=scene_precision.condition(cond['pooled'],a),
+                    negative_prompt_embeds=scene_precision.condition(state['negative_text'].cuda(),a),
+                    negative_pooled_prompt_embeds=scene_precision.condition(state['negative_pooled'].cuda(),a),ip_adapter_image_embeds=[images])
             else:
                 for t in [pipe.tokenizer,pipe.tokenizer_2]: checked_tokens(t,row['native_caption'])
                 kwargs.update(prompt=row['native_caption'],negative_prompt=state['negative_caption'],ip_adapter_image=reference)
@@ -246,6 +252,7 @@ def render(a):
             'sampling_contract':sampling,
             'inference_sampler':sampler,
             'fast_tail':fast,
+            'unet_precision':scene_precision.name(a),
             'task_LoRA_fused':fuse_task,
             'actual_raw_optical_routing':routes,
             'optical_frontend':optical})
@@ -262,6 +269,7 @@ def render(a):
             'sampling_contract':sampling,
             'inference_sampler':sampler,
             'fast_tail':fast,
+            'unet_precision':scene_precision.name(a),'precision_contract':scene_precision.descriptor(a),
             'contains_GPU_FFT_optical_simulation':optical is not None,'includes_electronic_residual':True,
             'physical_hardware_estimate_or_measurement':False,'single_process_round_only':True,
             'LoRA_unmerged_for_both_models':not fuse_task,'task_LoRA_fused':fuse_task,'task_fusion':task_fusion})
@@ -272,7 +280,8 @@ def render(a):
         'raw_Qwen_identity_checked':exact_identity and expanded is None,'image_feedback':False,'quality_accepted':False,
         'expanded_DEV_protocol':expanded,'original_DEV_raw_identity_rows':sum(r['raw_Qwen_identity_exact'] for r in records),
         'optical_frontend':optical,'raw_input_ids_match_teacher':head is not None and identity is not None and expanded is None,
-        'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16','resolution':resolution,'sampling_steps':a.steps,
+        'CLIP_encoders_loaded_at_inference':head is None,'precision':'BF16' if scene_precision.name(a)=='bf16' else 'BF16_Qwen_FP16_UNet_BF16_VAE','resolution':resolution,'sampling_steps':a.steps,
+        'unet_precision':scene_precision.name(a),'precision_contract':scene_precision.descriptor(a),
         'IP_adapter_scale':a.ip_scale,
         'sampling_contract':sampling,
         'inference_sampler':sampler,
@@ -296,6 +305,7 @@ def main():
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
     p.add_argument('--lcm-adapter',type=Path,help='Pinned, SHA-verified official SDXL LCM-LoRA; requires 4 or 8 steps, no extra input encoder')
     p.add_argument('--fuse-task-lora',action='store_true',help='Fair optional merge for either model; requires a new quality run before timing')
+    p.add_argument('--unet-precision',choices=['bf16','fp16'],default='bf16',help='Explicit UNet-only precision ablation; Qwen/VAE and unit-noise draw remain BF16')
     p.add_argument('--lcm-guidance',type=float,choices=[1.,1.5,2.],default=1.,help='Explicit low LCM guidance; >1 includes real classifier-free double batch cost')
     p.add_argument('--expanded-development',type=Path,help='Audited original-DEV sixteen-view/eight-scene grid; never a TEST or timing override')
     p.add_argument('--sampler',choices=['original','dpmpp2m-karras','dpmpp2m-karras-teacher30'],default='original',help='Matched inference solver ablation; optional accepted Euler30 noise bounds; no stacking with LCM or learned tail')

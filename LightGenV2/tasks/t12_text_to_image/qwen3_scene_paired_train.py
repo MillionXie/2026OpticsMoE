@@ -71,9 +71,13 @@ def checked_pairs(a):
 
 def pipeline(a):
     from diffusers import StableDiffusionXLPipeline
-    pipe = StableDiffusionXLPipeline.from_pretrained(a.model_path, variant='fp16', torch_dtype=torch.bfloat16,
+    from .scene_precision import dtype
+    pipe = StableDiffusionXLPipeline.from_pretrained(a.model_path, variant='fp16', torch_dtype=dtype(a),
         text_encoder=None, text_encoder_2=None, tokenizer=None, tokenizer_2=None, image_encoder=None,
         local_files_only=True).to('cuda')
+    # Load the optional UNet directly from the original FP16 asset. Converting
+    # an already BF16-rounded UNet back to FP16 cannot restore its precision.
+    pipe.vae.to(dtype=torch.bfloat16)
     pipe.load_ip_adapter(str(a.adapter_path), subfolder='sdxl_models',
         weight_name='ip-adapter-plus_sdxl_vit-h.safetensors', image_encoder_folder=None, local_files_only=True)
     pipe.set_ip_adapter_scale(.25); pipe.set_progress_bar_config(disable=True)
