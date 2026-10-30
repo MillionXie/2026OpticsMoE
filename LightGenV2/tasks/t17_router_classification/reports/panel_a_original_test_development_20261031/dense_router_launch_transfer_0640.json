@@ -1,0 +1,69 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/launch.json",
+      "sha256": "27bf588cbbcfd4ccc58b66f13f6a02b0864092730b5643619436441ca3105d59",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_a_dense_router_admission_0640/admission.json",
+      "sha256": "9a1544731028027d59012e0452ad1af110b10b9fd8b2fa6acae360222abc7eaa",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/metadata.json",
+      "sha256": "dd66f1576e565f13cb8a36ca2bf1a8d54ae9ecdfcb1a6247e9a6f29d2460c180",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/status.json",
+      "sha256": "d26283528e478e9f677b58051341a9679bf57f8e20550227d0a5217a9b1c0bbe",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/exit_receipt.json",
+      "sha256": "53d0bf3f40acea66e74f17e71f922d1148ce66dd812a5aac7fbab988ddd468f0",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/metadata.json",
+      "sha256": "142527d97fab333de48044e345b94d929dcbb59c89d418a5cc1964be6c971705",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/history.json",
+      "sha256": "2c7e0111395cee82988f1f7d607eba9d40c8333b3c461961ea8f8528dd985f84",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/status.json",
+      "sha256": "8802616fa0e9670dc829d992754d55226c43ffb809404de7d7910cbd0c54b065",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/metadata.json",
+      "sha256": "0d3370af3a1fe53e01b98f6faa9bfed2ab983bf50be7bad16550d5c6e9884f6b",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/status.json",
+      "sha256": "9b6d3f9b74467d51556037f3b36bd60e269f74d8bf58b6ca51158ba643504e20",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_002/metadata.json",
+      "sha256": "bbcc9a24385c5f18103a8e59ca384b7ebd7b0d88245e62637e0f9b2a975b639c",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_002/history.json",
+      "sha256": "6f22adcc37f21c47449cbc4584a4354e727663fde16f6eef7da8ee66140a06c7",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_002/status.json",
+      "sha256": "06153f533ca1e289858d0d0f8075226952fe2288eca64d9ab7700eb7a066d42d",
+      "snapshot": true
+    }
+  ]
+}

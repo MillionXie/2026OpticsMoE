@@ -1,6 +1,6 @@
 {
   "date": "2026-10-31",
-  "generated_utc": "2026-10-30T22:35:04.400312+00:00",
+  "generated_utc": "2026-10-30T22:45:28.758698+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "independent_test_claim": false,
   "all_rows_single_seed_not_repeated_means": true,
@@ -7169,108 +7169,108 @@
         }
       },
       "LG_selected_development_metrics": {
-        "accuracy": 0.7444289922714233,
-        "balanced_accuracy": 0.673767626285553,
-        "cross_entropy": 1.8387624025344849,
+        "accuracy": 0.7625347971916199,
+        "balanced_accuracy": 0.6984274387359619,
+        "cross_entropy": 1.8343086242675781,
         "confusion_matrix": [
           [
-            201,
-            7,
-            5,
+            195,
+            15,
+            4,
             4,
             0,
             19,
             6,
             0,
-            5
-          ],
-          [
-            43,
-            61,
-            7,
-            0,
-            4,
-            2,
-            0,
-            0,
-            1
+            4
           ],
           [
             29,
-            8,
+            76,
+            6,
+            0,
+            3,
+            2,
+            0,
+            1,
+            1
+          ],
+          [
+            27,
+            12,
             18,
             0,
-            5,
+            3,
             6,
             0,
             3,
             15
           ],
           [
-            9,
+            4,
             0,
             0,
-            106,
+            114,
             0,
-            7,
+            4,
             5,
             0,
             0
           ],
           [
-            5,
-            14,
+            1,
+            17,
             4,
             0,
             38,
-            0,
+            1,
             2,
             0,
             5
           ],
           [
-            71,
+            66,
             0,
             1,
-            5,
+            4,
             0,
-            62,
+            68,
             8,
             0,
             1
           ],
           [
-            2,
+            1,
             0,
             0,
             1,
             0,
-            4,
+            5,
             259,
             0,
             2
           ],
           [
-            3,
-            0,
-            1,
+            4,
             0,
             0,
             0,
             0,
-            161,
-            4
+            0,
+            0,
+            162,
+            3
           ],
           [
             3,
             0,
-            3,
+            2,
             7,
-            1,
-            9,
-            21,
             0,
-            163
+            8,
+            22,
+            0,
+            165
           ]
         ],
         "n": 1436,
@@ -7319,44 +7319,46 @@
           "p05": 0.008161654463037848
         }
       },
-      "LG_selected_source": "panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter",
+      "LG_selected_source": "panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam",
       "LG_full_selected_result": {
         "role": "ORIGINAL_TEST_EXPOSED_BOUNDARY_DEVELOPMENT",
         "independent_test_claim": false,
         "variant": {
-          "name": "phase_gauge_recenter",
-          "initialization": "common_phase_gauge"
+          "name": "wrapped_phase_adam",
+          "initialization": "parent",
+          "phase_optimizer": "wrapped_phase_adam",
+          "phase_gradient_clip": 5.0
         },
-        "selected_epoch": 40,
+        "selected_epoch": 38,
         "selected_kind": "online",
         "completed_epochs": 40,
         "router_frozen": true,
         "trainable_parameter_count": 429188,
         "router_phase_L2_change": 0.0,
         "stop_reason": "epoch_limit",
-        "elapsed_seconds": 301.59266686439514,
+        "elapsed_seconds": 482.57577681541443,
         "selection_evaluations": 22,
-        "checkpoint_sha256": "c061bbea2ca99cf9bdf6cdff7af544c4f8d53ee77394a43fc38c3bfde2b1d6b1",
+        "checkpoint_sha256": "fd2bd519f841245180bfa84019bff8c8177f5a7f3838b05765149c837677b5ee",
         "train": {
-          "accuracy": 0.7642260193824768,
-          "balanced_accuracy": 0.6834533214569092,
-          "cross_entropy": 1.8117057085037231,
+          "accuracy": 0.7886987924575806,
+          "balanced_accuracy": 0.716726541519165,
+          "cross_entropy": 1.8084559440612793,
           "confusion_matrix": [
             [
-              759,
-              25,
+              747,
+              42,
               6,
               9,
               1,
-              42,
-              18,
+              39,
+              19,
               0,
-              13
+              10
             ],
             [
-              138,
-              240,
-              22,
+              95,
+              286,
+              19,
               0,
               5,
               6,
@@ -7365,48 +7367,48 @@
               0
             ],
             [
-              93,
-              54,
-              57,
-              3,
-              20,
-              7,
-              0,
-              5,
-              49
-            ],
-            [
-              45,
-              0,
-              1,
-              363,
-              0,
-              27,
+              67,
+              68,
+              68,
               8,
+              14,
+              9,
               0,
-              2
+              6,
+              48
             ],
             [
-              30,
-              45,
-              18,
+              27,
               0,
-              112,
+              0,
+              393,
+              0,
+              16,
+              9,
+              0,
+              1
+            ],
+            [
+              16,
+              57,
+              19,
+              1,
+              114,
               0,
               4,
               0,
-              31
+              29
             ],
             [
-              236,
-              1,
-              1,
-              18,
+              188,
+              2,
+              2,
+              23,
               0,
-              246,
-              5,
+              291,
+              4,
               0,
-              10
+              7
             ],
             [
               3,
@@ -7414,32 +7416,32 @@
               0,
               0,
               0,
-              15,
-              910,
+              14,
+              914,
               0,
-              3
+              0
             ],
             [
-              4,
+              5,
               0,
               2,
               1,
-              3,
-              0,
-              0,
-              580,
-              6
-            ],
-            [
-              13,
+              2,
               0,
               1,
-              8,
+              581,
+              4
+            ],
+            [
+              9,
               0,
-              13,
-              115,
+              1,
+              10,
               0,
-              574
+              14,
+              120,
+              0,
+              570
             ]
           ],
           "n": 5026,
@@ -7489,70 +7491,70 @@
           }
         },
         "val": {
-          "accuracy": 0.688022255897522,
-          "balanced_accuracy": 0.6235355138778687,
-          "cross_entropy": 1.8346275091171265,
+          "accuracy": 0.7047353982925415,
+          "balanced_accuracy": 0.648124098777771,
+          "cross_entropy": 1.8324369192123413,
           "confusion_matrix": [
             [
               78,
-              7,
+              10,
               3,
               2,
               0,
-              18,
+              15,
               5,
               0,
               0
-            ],
-            [
-              19,
-              38,
-              0,
-              0,
-              4,
-              1,
-              0,
-              1,
-              0
-            ],
-            [
-              17,
-              8,
-              3,
-              1,
-              3,
-              4,
-              0,
-              2,
-              11
             ],
             [
               15,
-              0,
-              0,
               42,
               0,
-              3,
+              0,
+              4,
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              14,
+              9,
+              4,
+              2,
+              2,
+              4,
+              0,
+              2,
+              12
+            ],
+            [
+              9,
+              0,
+              0,
+              49,
+              0,
+              2,
               1,
               0,
               0
             ],
             [
-              5,
-              6,
+              3,
+              8,
               1,
               0,
-              17,
+              18,
               0,
               0,
               0,
-              2
+              1
             ],
             [
-              38,
+              37,
               0,
               0,
-              3,
+              4,
               0,
               29,
               4,
@@ -7573,9 +7575,9 @@
             [
               1,
               0,
+              1,
               0,
-              0,
-              3,
+              2,
               0,
               0,
               77,
@@ -7585,12 +7587,12 @@
               3,
               0,
               1,
-              3,
+              4,
               0,
-              3,
-              15,
+              2,
+              16,
               1,
-              78
+              77
             ]
           ],
           "n": 718,
@@ -7640,108 +7642,108 @@
           }
         },
         "original_test_dev": {
-          "accuracy": 0.7444289922714233,
-          "balanced_accuracy": 0.673767626285553,
-          "cross_entropy": 1.8387624025344849,
+          "accuracy": 0.7625347971916199,
+          "balanced_accuracy": 0.6984274387359619,
+          "cross_entropy": 1.8343086242675781,
           "confusion_matrix": [
             [
-              201,
-              7,
-              5,
+              195,
+              15,
+              4,
               4,
               0,
               19,
               6,
               0,
-              5
-            ],
-            [
-              43,
-              61,
-              7,
-              0,
-              4,
-              2,
-              0,
-              0,
-              1
+              4
             ],
             [
               29,
-              8,
+              76,
+              6,
+              0,
+              3,
+              2,
+              0,
+              1,
+              1
+            ],
+            [
+              27,
+              12,
               18,
               0,
-              5,
+              3,
               6,
               0,
               3,
               15
             ],
             [
-              9,
+              4,
               0,
               0,
-              106,
+              114,
               0,
-              7,
+              4,
               5,
               0,
               0
             ],
             [
-              5,
-              14,
+              1,
+              17,
               4,
               0,
               38,
-              0,
+              1,
               2,
               0,
               5
             ],
             [
-              71,
+              66,
               0,
               1,
-              5,
+              4,
               0,
-              62,
+              68,
               8,
               0,
               1
             ],
             [
-              2,
+              1,
               0,
               0,
               1,
               0,
-              4,
+              5,
               259,
               0,
               2
             ],
             [
-              3,
-              0,
-              1,
+              4,
               0,
               0,
               0,
               0,
-              161,
-              4
+              0,
+              0,
+              162,
+              3
             ],
             [
               3,
               0,
-              3,
+              2,
               7,
-              1,
-              9,
-              21,
               0,
-              163
+              8,
+              22,
+              0,
+              165
             ]
           ],
           "n": 1436,
@@ -7790,7 +7792,7 @@
             "p05": 0.008161654463037848
           }
         },
-        "gain_over_D2NN_pp": 14.69359560597242
+        "gain_over_D2NN_pp": 16.504176097992072
       },
       "development_trials": [
         {
@@ -12074,13 +12076,499 @@
         },
         {
           "run_id": "panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam",
+          "state": "complete",
+          "label": "周期相位坐标Adam",
+          "result": {
+            "role": "ORIGINAL_TEST_EXPOSED_BOUNDARY_DEVELOPMENT",
+            "independent_test_claim": false,
+            "variant": {
+              "name": "wrapped_phase_adam",
+              "initialization": "parent",
+              "phase_optimizer": "wrapped_phase_adam",
+              "phase_gradient_clip": 5.0
+            },
+            "selected_epoch": 38,
+            "selected_kind": "online",
+            "completed_epochs": 40,
+            "router_frozen": true,
+            "trainable_parameter_count": 429188,
+            "router_phase_L2_change": 0.0,
+            "stop_reason": "epoch_limit",
+            "elapsed_seconds": 482.57577681541443,
+            "selection_evaluations": 22,
+            "checkpoint_sha256": "fd2bd519f841245180bfa84019bff8c8177f5a7f3838b05765149c837677b5ee",
+            "train": {
+              "accuracy": 0.7886987924575806,
+              "balanced_accuracy": 0.716726541519165,
+              "cross_entropy": 1.8084559440612793,
+              "confusion_matrix": [
+                [
+                  747,
+                  42,
+                  6,
+                  9,
+                  1,
+                  39,
+                  19,
+                  0,
+                  10
+                ],
+                [
+                  95,
+                  286,
+                  19,
+                  0,
+                  5,
+                  6,
+                  0,
+                  0,
+                  0
+                ],
+                [
+                  67,
+                  68,
+                  68,
+                  8,
+                  14,
+                  9,
+                  0,
+                  6,
+                  48
+                ],
+                [
+                  27,
+                  0,
+                  0,
+                  393,
+                  0,
+                  16,
+                  9,
+                  0,
+                  1
+                ],
+                [
+                  16,
+                  57,
+                  19,
+                  1,
+                  114,
+                  0,
+                  4,
+                  0,
+                  29
+                ],
+                [
+                  188,
+                  2,
+                  2,
+                  23,
+                  0,
+                  291,
+                  4,
+                  0,
+                  7
+                ],
+                [
+                  3,
+                  0,
+                  0,
+                  0,
+                  0,
+                  14,
+                  914,
+                  0,
+                  0
+                ],
+                [
+                  5,
+                  0,
+                  2,
+                  1,
+                  2,
+                  0,
+                  1,
+                  581,
+                  4
+                ],
+                [
+                  9,
+                  0,
+                  1,
+                  10,
+                  0,
+                  14,
+                  120,
+                  0,
+                  570
+                ]
+              ],
+              "n": 5026,
+              "router": {
+                "mean_power": [
+                  0.12200302630662918,
+                  0.011129683814942837,
+                  0.8668656349182129,
+                  0.0
+                ],
+                "std_power": [
+                  0.08858954161405563,
+                  0.0378892719745636,
+                  0.0810425728559494,
+                  0.0
+                ],
+                "selected_fraction": [
+                  0.8840031834460804,
+                  0.11599681655391962,
+                  1.0,
+                  0.0
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.0,
+                  "0-2": 0.8840031834460804,
+                  "0-3": 0.0,
+                  "1-2": 0.11599681655391962,
+                  "1-3": 0.0,
+                  "2-3": 0.0
+                },
+                "fraction_outside_most_common_pair": 0.11599681655391958,
+                "effective_experts_from_mean_power": 1.3046916112527873,
+                "mean_per_sample_effective_experts": 1.3070989847183228,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 5026
+              },
+              "dense_router_mean_power": [
+                0.11767695844173431,
+                0.07671034336090088,
+                0.7974710464477539,
+                0.008142051286995411
+              ],
+              "router_capture": {
+                "mean": 0.010285444557666779,
+                "minimum": 0.005182178225368261,
+                "p05": 0.008133213501423597
+              }
+            },
+            "val": {
+              "accuracy": 0.7047353982925415,
+              "balanced_accuracy": 0.648124098777771,
+              "cross_entropy": 1.8324369192123413,
+              "confusion_matrix": [
+                [
+                  78,
+                  10,
+                  3,
+                  2,
+                  0,
+                  15,
+                  5,
+                  0,
+                  0
+                ],
+                [
+                  15,
+                  42,
+                  0,
+                  0,
+                  4,
+                  1,
+                  0,
+                  1,
+                  0
+                ],
+                [
+                  14,
+                  9,
+                  4,
+                  2,
+                  2,
+                  4,
+                  0,
+                  2,
+                  12
+                ],
+                [
+                  9,
+                  0,
+                  0,
+                  49,
+                  0,
+                  2,
+                  1,
+                  0,
+                  0
+                ],
+                [
+                  3,
+                  8,
+                  1,
+                  0,
+                  18,
+                  0,
+                  0,
+                  0,
+                  1
+                ],
+                [
+                  37,
+                  0,
+                  0,
+                  4,
+                  0,
+                  29,
+                  4,
+                  0,
+                  2
+                ],
+                [
+                  1,
+                  0,
+                  0,
+                  0,
+                  0,
+                  6,
+                  132,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  0,
+                  1,
+                  0,
+                  2,
+                  0,
+                  0,
+                  77,
+                  1
+                ],
+                [
+                  3,
+                  0,
+                  1,
+                  4,
+                  0,
+                  2,
+                  16,
+                  1,
+                  77
+                ]
+              ],
+              "n": 718,
+              "router": {
+                "mean_power": [
+                  0.12303827702999115,
+                  0.009000037796795368,
+                  0.8679612278938293,
+                  0.0
+                ],
+                "std_power": [
+                  0.08496984839439392,
+                  0.03129565715789795,
+                  0.077360138297081,
+                  0.0
+                ],
+                "selected_fraction": [
+                  0.8913649025069638,
+                  0.10863509749303621,
+                  1.0,
+                  0.0
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.0,
+                  "0-2": 0.8913649025069638,
+                  "0-3": 0.0,
+                  "1-2": 0.10863509749303621,
+                  "1-3": 0.0,
+                  "2-3": 0.0
+                },
+                "fraction_outside_most_common_pair": 0.10863509749303624,
+                "effective_experts_from_mean_power": 1.301107357850791,
+                "mean_per_sample_effective_experts": 1.3041462898254395,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 718
+              },
+              "dense_router_mean_power": [
+                0.11728214472532272,
+                0.07575943320989609,
+                0.7987383008003235,
+                0.008219921961426735
+              ],
+              "router_capture": {
+                "mean": 0.01030016504228115,
+                "minimum": 0.00548551557585597,
+                "p05": 0.008116346690803767
+              }
+            },
+            "original_test_dev": {
+              "accuracy": 0.7625347971916199,
+              "balanced_accuracy": 0.6984274387359619,
+              "cross_entropy": 1.8343086242675781,
+              "confusion_matrix": [
+                [
+                  195,
+                  15,
+                  4,
+                  4,
+                  0,
+                  19,
+                  6,
+                  0,
+                  4
+                ],
+                [
+                  29,
+                  76,
+                  6,
+                  0,
+                  3,
+                  2,
+                  0,
+                  1,
+                  1
+                ],
+                [
+                  27,
+                  12,
+                  18,
+                  0,
+                  3,
+                  6,
+                  0,
+                  3,
+                  15
+                ],
+                [
+                  4,
+                  0,
+                  0,
+                  114,
+                  0,
+                  4,
+                  5,
+                  0,
+                  0
+                ],
+                [
+                  1,
+                  17,
+                  4,
+                  0,
+                  38,
+                  1,
+                  2,
+                  0,
+                  5
+                ],
+                [
+                  66,
+                  0,
+                  1,
+                  4,
+                  0,
+                  68,
+                  8,
+                  0,
+                  1
+                ],
+                [
+                  1,
+                  0,
+                  0,
+                  1,
+                  0,
+                  5,
+                  259,
+                  0,
+                  2
+                ],
+                [
+                  4,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  162,
+                  3
+                ],
+                [
+                  3,
+                  0,
+                  2,
+                  7,
+                  0,
+                  8,
+                  22,
+                  0,
+                  165
+                ]
+              ],
+              "n": 1436,
+              "router": {
+                "mean_power": [
+                  0.12046051770448685,
+                  0.01126838754862547,
+                  0.8682635426521301,
+                  7.338062914641341e-06
+                ],
+                "std_power": [
+                  0.08588694781064987,
+                  0.033720724284648895,
+                  0.07613810896873474,
+                  0.00027797117945738137
+                ],
+                "selected_fraction": [
+                  0.866991643454039,
+                  0.13231197771587744,
+                  1.0,
+                  0.0006963788300835655
+                ],
+                "top2_pair_fraction": {
+                  "0-1": 0.0,
+                  "0-2": 0.866991643454039,
+                  "0-3": 0.0,
+                  "1-2": 0.13231197771587744,
+                  "1-3": 0.0,
+                  "2-3": 0.0006963788300835655
+                },
+                "fraction_outside_most_common_pair": 0.133008356545961,
+                "effective_experts_from_mean_power": 1.3012035260245887,
+                "mean_per_sample_effective_experts": 1.30303955078125,
+                "expert_numbering": "zero-based 0..3",
+                "samples": 1436
+              },
+              "dense_router_mean_power": [
+                0.11668697744607925,
+                0.07729532569646835,
+                0.7978621125221252,
+                0.00815652310848236
+              ],
+              "router_capture": {
+                "mean": 0.010365977883338928,
+                "minimum": 0.005301152355968952,
+                "p05": 0.008161654463037848
+              }
+            },
+            "gain_over_D2NN_pp": 16.504176097992072
+          }
+        },
+        {
+          "run_id": "panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_002",
           "state": {
             "state": "training",
-            "epoch": 36,
-            "best_epoch": 32,
-            "best_original_test_development_accuracy": 0.7611420750617981
+            "epoch": 1,
+            "best_epoch": 0,
+            "best_original_test_development_accuracy": 0.7625347971916199
           },
-          "label": "周期相位坐标Adam"
+          "label": "光router类别对辅助KL .02"
+        },
+        {
+          "run_id": "panel_a_dense_router_supervision_s17_20261031/crc9/dense_pair_aux_010",
+          "state": {
+            "state": "not_started_or_loading"
+          },
+          "label": "光router类别对辅助KL .1"
         }
       ],
       "teacher": {
@@ -13471,9 +13959,9 @@
           0.14415041782729804
         ]
       },
-      "gain_pp": 14.69359560597242,
+      "gain_pp": 16.504176097992072,
       "target_20pp_reached": false,
-      "all_optical_exploration_epoch_budget_completed": 401,
+      "all_optical_exploration_epoch_budget_completed": 406,
       "budget_note": "Each student run total_optical_executed_epochs counts its own branch; this aggregate also counts the competing KD branch. Teacher head epochs and ImageNet pretraining are additional."
     }
   ]

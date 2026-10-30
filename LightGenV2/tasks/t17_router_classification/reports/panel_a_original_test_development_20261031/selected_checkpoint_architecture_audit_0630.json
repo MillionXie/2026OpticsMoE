@@ -54,7 +54,7 @@
       "dataset": "bloodmnist128",
       "architecture": "LG",
       "classes": 8,
-      "checkpoint_sha256": "050abf2d071a91679ac7372b66e370fd82dd8a7ffa68f89c89b1666f0aac2169",
+      "checkpoint_sha256": "2387e765286f936d62636e9e325ea6c63f5fcb5727b2a6372fc5f012aaa33109",
       "strict_canonical_model_load": true,
       "learned_linear_modules": 0,
       "parameter_count": 479364,
@@ -73,7 +73,7 @@
           224
         ]
       },
-      "source_path": "runs/simulation/panel_a_boundary_continuation_s17_20261031/bloodmnist128/frozen_router_boundary/best_checkpoint.pt"
+      "source_path": "runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/best_checkpoint.pt"
     },
     {
       "dataset": "bloodmnist128",
@@ -103,7 +103,7 @@
       "dataset": "crc9",
       "architecture": "LG",
       "classes": 9,
-      "checkpoint_sha256": "c061bbea2ca99cf9bdf6cdff7af544c4f8d53ee77394a43fc38c3bfde2b1d6b1",
+      "checkpoint_sha256": "fd2bd519f841245180bfa84019bff8c8177f5a7f3838b05765149c837677b5ee",
       "strict_canonical_model_load": true,
       "learned_linear_modules": 0,
       "parameter_count": 479364,
@@ -122,7 +122,7 @@
           224
         ]
       },
-      "source_path": "runs/simulation/panel_a_phase_gauge_s17_20261031/crc9/phase_gauge_recenter/best_checkpoint.pt"
+      "source_path": "runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/best_checkpoint.pt"
     },
     {
       "dataset": "crc9",

@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/result.json",
+      "sha256": "0da7c63ae4494b3fe7c4f5f34bda30d3994f11eda73c26a2fe4f79b6bf13f595"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/history.json",
+      "sha256": "2c7e0111395cee82988f1f7d607eba9d40c8333b3c461961ea8f8528dd985f84"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/status.json",
+      "sha256": "8802616fa0e9670dc829d992754d55226c43ffb809404de7d7910cbd0c54b065"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/metadata.json",
+      "sha256": "142527d97fab333de48044e345b94d929dcbb59c89d418a5cc1964be6c971705"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/best_checkpoint.pt",
+      "sha256": "fd2bd519f841245180bfa84019bff8c8177f5a7f3838b05765149c837677b5ee"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/last_checkpoint.pt",
+      "sha256": "530328dbd462ccbc1f5b1649e5f7085360473aedda41020057defe767ded48f4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/train_predictions.npz",
+      "sha256": "d0c6cbb254eff5d226e516163088bf875a992cd131f911b0e6af9ea487e01866"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/val_predictions.npz",
+      "sha256": "8c4fbf6d485f09abdb864668475aa8ac9d3ccf25ca3e07a59b5418829414e1e3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_a_wrapped_phase_s17_20261031/crc9/wrapped_phase_adam/test_predictions.npz",
+      "sha256": "dbe918fcf5d31ab965e6fdc00e2e30ec7272a4c0583e722583f694e2497f3a0e"
+    }
+  ]
+}
