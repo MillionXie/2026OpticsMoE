@@ -3,7 +3,7 @@ import unittest
 import torch
 from peft.tuners.lora.layer import Linear
 from peft import LoraConfig,get_peft_model
-from LightGenV2.tasks.t12_text_to_image.scene_fusion_aware_tail import install
+from LightGenV2.tasks.t12_text_to_image.scene_fusion_aware_tail import install,trainer_arguments
 
 
 def layer():
@@ -18,6 +18,12 @@ def layer():
 
 
 class FusionAware(unittest.TestCase):
+    def test_trainer_selection_preserves_original_mode_and_stage_arguments(self):
+        args=['--student','a','--steps','600']
+        self.assertEqual(trainer_arguments(args),('onpolicy',args))
+        stage=['--stage','smoke','--student','a','--student-guidance','7.5']
+        self.assertEqual(trainer_arguments(['--trainer','trajectory',*stage]),('trajectory',stage))
+
     def test_forward_matches_actual_official_safe_merge_and_preserves_parameters(self):
         module=layer();reference=copy.deepcopy(module);reference.merge(safe_merge=True,adapter_names=['scene_pair'])
         saved={n:p.detach().clone() for n,p in module.named_parameters()};ids={n:id(p) for n,p in module.named_parameters()}

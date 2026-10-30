@@ -6,6 +6,8 @@ deployment layer or parameter is introduced. This is a numerical-domain training
 candidate, not a claim of quality or speed. The default on-policy trainer and all
 old checkpoints remain unchanged.
 """
+import argparse
+import sys
 import types
 import torch
 import torch.nn.functional as F
@@ -43,8 +45,19 @@ def install(unet):
         inference='ordinary renderer --fuse-task-lora; new full quality render required')
 
 
+def trainer_arguments(argv):
+    parser=argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--trainer',choices=['onpolicy','trajectory'],default='onpolicy')
+    choice,remaining=parser.parse_known_args(argv)
+    return choice.trainer,remaining
+
+
 def main():
-    from . import scene_onpolicy_tail as trainer
+    mode,remaining=trainer_arguments(sys.argv[1:]);sys.argv=[sys.argv[0],*remaining]
+    if mode=='trajectory':
+        from . import scene_tail_distill as trainer
+    else:
+        from . import scene_onpolicy_tail as trainer
     original=trainer.load_generator
     def loader(a,state,trainable=False):
         pipe,head=original(a,state,trainable)

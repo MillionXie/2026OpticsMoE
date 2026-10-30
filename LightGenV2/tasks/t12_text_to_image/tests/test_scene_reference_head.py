@@ -1,10 +1,30 @@
 import unittest
 import torch
 from LightGenV2.tasks.t12_text_to_image.qwen3_scene_conditioning import QwenSDXLConditions
-from LightGenV2.tasks.t12_text_to_image.scene_reference_head_train import configure,prefix_loss,reference_rows
+from LightGenV2.tasks.t12_text_to_image.scene_reference_head_train import configure,prefix_loss,reference_rows,condition_rows
 
 
 class ReferenceHead(unittest.TestCase):
+    def test_all_conditions_retain_joint_context_and_update_all_existing_heads(self):
+        from LightGenV2.tasks.t12_text_to_image.qwen3_scene_conditioning import alignment_loss
+        torch.manual_seed(18)
+        h=QwenSDXLConditions(input_width=8,width=8,text_width=12,image_width=16,pooled_width=10,joint_image_context=True)
+        ids={n:id(p) for n,p in h.named_parameters()};params=configure(h,True)
+        hidden=torch.randn(2,5,8);visual=torch.randn(2,4,8);mask=torch.tensor([[False]*5,[False]*3+[True]*2])
+        actual=h(hidden,visual,mask);wanted={n:torch.randn_like(v) for n,v in actual.items()}
+        loss=alignment_loss(actual,wanted)[0];loss.backward()
+        self.assertTrue(h.joint_image_context);self.assertEqual(len(params),len(ids));self.assertEqual(ids,{n:id(p) for n,p in h.named_parameters()})
+        for name in ['project','text','image','pooled']:
+            self.assertGreater(sum(float(p.grad.abs().sum()) for n,p in h.named_parameters() if n.startswith(name+'.') and p.grad is not None),0)
+
+    def test_complete_condition_targets_reject_DEV_and_keep_different_prompts(self):
+        rows=[dict(split='train',input_key=k,reference_sha256='same') for k in ['a','b']]+[dict(split='dev',input_key='c',reference_sha256='other')]
+        target={n:torch.randn(2,3) for n in ['text','image','pooled']}
+        cache=dict(records=rows,features={k:{} for k in ['a','b']},TRAIN_electronic_conditions={k:target for k in ['a','b']})
+        self.assertEqual(len(condition_rows(cache)),2)
+        cache['TRAIN_electronic_conditions']['c']=target
+        with self.assertRaises(ValueError):condition_rows(cache)
+
     def test_actual_backward_only_updates_existing_image_queries(self):
         torch.manual_seed(4)
         h=QwenSDXLConditions(input_width=8,width=8,text_width=12,image_width=16,pooled_width=10,joint_image_context=True)
