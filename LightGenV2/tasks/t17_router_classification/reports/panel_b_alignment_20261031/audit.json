@@ -1,0 +1,150 @@
+{
+  "role": "PANEL_B_ALIGNMENT_CHECK_NOT_NEW_TRAINING",
+  "source_commit": "bd383f3c648246fbaa5696fbd9226356014187c2",
+  "cpu_contract_tests": 80,
+  "independent_test_claim": false,
+  "new_training_started": false,
+  "gpu_used": false,
+  "CUDA_initialized": false,
+  "data": {
+    "classes": [
+      "01_TUMOR",
+      "02_STROMA",
+      "03_COMPLEX",
+      "04_LYMPHO",
+      "05_DEBRIS",
+      "06_MUCOSA",
+      "07_ADIPOSE",
+      "08_EMPTY"
+    ],
+    "split_checks": {
+      "train": {
+        "n": 3496,
+        "same_IDs_and_order": true,
+        "same_labels": true,
+        "all_original_pixels_match_native_index_hashes": true
+      },
+      "val": {
+        "n": 752,
+        "same_IDs_and_order": true,
+        "same_labels": true,
+        "all_original_pixels_match_native_index_hashes": true
+      },
+      "test": {
+        "n": 752,
+        "same_IDs_and_order": true,
+        "same_labels": true,
+        "all_original_pixels_match_native_index_hashes": true
+      }
+    },
+    "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+    "old_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+  },
+  "A_to_B_lowest_LG": {
+    "checkpoint_sha256": "81f973aa3e4430aa3d4c0f773cc16b07f3b196f8333f8ab944c50779a44961c2",
+    "samples": 752,
+    "correct": 459,
+    "accuracy": 0.6103723404255319,
+    "exact_A_B_probabilities": true,
+    "exact_A_B_sparse_and_dense_routes": true,
+    "A_B_probability_max_difference": 0.0,
+    "CPU_vs_archived_GPU_probability_max_difference": 2.086162567138672e-07,
+    "archived_predictions_identical": true,
+    "metric_role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT; graph/checkpoint replay, not new independent test"
+  },
+  "depth_contracts": [
+    {
+      "LG_main_layers": 2,
+      "LG_router_layers": 1,
+      "LG_total_phase_depth": 3,
+      "LG_experts_per_plane": 4,
+      "LG_expert_side": 224,
+      "LG_top_k_at_input": 2,
+      "LG_stages": [
+        "E",
+        "G"
+      ],
+      "LG_main_OEO_count": 2,
+      "LG_phase_parameters": 479364,
+      "D2NN_layers": 3,
+      "D2NN_phase_side": 478,
+      "D2NN_OEO_count": 3,
+      "D2NN_phase_parameters": 685452,
+      "global_side": 478,
+      "canvas_side": 518,
+      "pixel_pitch_um": 17,
+      "wavelength_nm": 532,
+      "propagation_m": 0.1,
+      "activation": "panel-A intensity_softsign, no LN or ReLU",
+      "OEO_after_final_layer": true,
+      "learned_electronic_frontend": false,
+      "learned_electronic_readout": false,
+      "CCD": "same panel-A full coverage 2x4 grid",
+      "later_expert_illumination": "continuing coherent field; no repeated Top2 gate"
+    },
+    {
+      "LG_main_layers": 4,
+      "LG_router_layers": 1,
+      "LG_total_phase_depth": 5,
+      "LG_experts_per_plane": 4,
+      "LG_expert_side": 224,
+      "LG_top_k_at_input": 2,
+      "LG_stages": [
+        "E",
+        "G",
+        "E",
+        "G"
+      ],
+      "LG_main_OEO_count": 4,
+      "LG_phase_parameters": 908552,
+      "D2NN_layers": 5,
+      "D2NN_phase_side": 478,
+      "D2NN_OEO_count": 5,
+      "D2NN_phase_parameters": 1142420,
+      "global_side": 478,
+      "canvas_side": 518,
+      "pixel_pitch_um": 17,
+      "wavelength_nm": 532,
+      "propagation_m": 0.1,
+      "activation": "panel-A intensity_softsign, no LN or ReLU",
+      "OEO_after_final_layer": true,
+      "learned_electronic_frontend": false,
+      "learned_electronic_readout": false,
+      "CCD": "same panel-A full coverage 2x4 grid",
+      "later_expert_illumination": "continuing coherent field; no repeated Top2 gate"
+    },
+    {
+      "LG_main_layers": 6,
+      "LG_router_layers": 1,
+      "LG_total_phase_depth": 7,
+      "LG_experts_per_plane": 4,
+      "LG_expert_side": 224,
+      "LG_top_k_at_input": 2,
+      "LG_stages": [
+        "E",
+        "G",
+        "E",
+        "G",
+        "E",
+        "G"
+      ],
+      "LG_main_OEO_count": 6,
+      "LG_phase_parameters": 1337740,
+      "D2NN_layers": 7,
+      "D2NN_phase_side": 478,
+      "D2NN_OEO_count": 7,
+      "D2NN_phase_parameters": 1599388,
+      "global_side": 478,
+      "canvas_side": 518,
+      "pixel_pitch_um": 17,
+      "wavelength_nm": 532,
+      "propagation_m": 0.1,
+      "activation": "panel-A intensity_softsign, no LN or ReLU",
+      "OEO_after_final_layer": true,
+      "learned_electronic_frontend": false,
+      "learned_electronic_readout": false,
+      "CCD": "same panel-A full coverage 2x4 grid",
+      "later_expert_illumination": "continuing coherent field; no repeated Top2 gate"
+    }
+  ]
+}
