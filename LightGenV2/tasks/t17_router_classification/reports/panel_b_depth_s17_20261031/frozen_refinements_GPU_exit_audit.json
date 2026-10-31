@@ -1,0 +1,29 @@
+{
+  "rows": [
+    {
+      "depth": 4,
+      "pid": 1502137,
+      "PID_absent_from_proc": true,
+      "no_GPU_allocation": true,
+      "exit_receipt": {
+        "pid": 1502137,
+        "timestamp": 1793436944.5637443
+      }
+    },
+    {
+      "depth": 6,
+      "pid": 1508458,
+      "PID_absent_from_proc": true,
+      "no_GPU_allocation": true,
+      "exit_receipt": {
+        "pid": 1508458,
+        "timestamp": 1793437237.1605482
+      }
+    }
+  ],
+  "checked": 1793437934.5477092,
+  "new_routeaux_pids": [
+    1535777,
+    1535778
+  ]
+}

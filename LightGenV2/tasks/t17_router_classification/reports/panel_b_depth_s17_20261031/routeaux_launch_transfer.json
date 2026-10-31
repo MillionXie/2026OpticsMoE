@@ -1,0 +1,79 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_b_routeaux_admission_s17_20261031/admission.json",
+      "sha256": "4cf6898a8c3824e41ded1f614362474f2071dcdbbc47573b48c2a0c4863b5bf6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/launch.json",
+      "sha256": "f513838f05301a02dea35989f37547f976de05172c040d5691ef702fee9e191f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/metadata.json",
+      "sha256": "e6f33a6529ccc836d0fe1b631bbd5c889c91c89e7e7576e2e98177d013f6cada",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/status.json",
+      "sha256": "09eca72277bf4662d3b0b4f5701a9684a39275e14f59f635d84c9dff78450eef",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/training_membership.json",
+      "sha256": "ed0c6480bb24e18c9635fe3a209351e9117010996d4d8b142aca43dfc4908318",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_router_control/metadata.json",
+      "sha256": "58776b9aa400001ec00f98238878bcecdb51bea0272c01e3b07f30255adeae69",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_router_control/status.json",
+      "sha256": "af028137ef4d5a043477b1b0160090384c0d42f678af3509a3bbd2f20336b165",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_router_control/history.json",
+      "sha256": "de918f851bc85c04fd2507948a8f0cf7e02b6cbd5f59538be06531a14be0670f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/launch.json",
+      "sha256": "492348896d5290593822b6fe2529e9bc0976548f79080d23dafdc8fe08d55a1e",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/metadata.json",
+      "sha256": "af8b0eddad3ada9378f2b5e7646c8ce991db41a4657cc2d609712d09812a800d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/status.json",
+      "sha256": "9d0661872fd7a80e54ee7f21375eb88be736c0ebd424e8c1ebb13db9e1360c0b",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/training_membership.json",
+      "sha256": "ed0c6480bb24e18c9635fe3a209351e9117010996d4d8b142aca43dfc4908318",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_router_control/metadata.json",
+      "sha256": "b53150cb2a23040c5fe1fbf93d548cb87b7543aed64a32a871a0b921eba5a00b",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_router_control/status.json",
+      "sha256": "cf6221b6a8114b0e118dc8bcd9e9fd03d920dc4d37fd8349383d90e3092f5d1c",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_router_control/history.json",
+      "sha256": "68e2c5848d6b6e5c0a33a29e0ce3995366cfbaf4abb86a45a96dbacd7463c05b",
+      "snapshot": true
+    }
+  ]
+}
