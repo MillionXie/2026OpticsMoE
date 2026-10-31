@@ -298,7 +298,10 @@ def fit(a, payload):
     assert all('lora_' in n for n, p in unet.named_parameters() if p.requires_grad)
     head = None
     parent=None
+    alignment_identity=None
     parent_data_transfer=None
+    original_alignment_sha=a.config_profile.get('fresh_original_alignment_sha256')
+    if original_alignment_sha and a.initial_paired is not None:raise ValueError('Fresh balanced baseline cannot inherit paired UNet LoRA')
     if payload.get('optical_frontend') and (a.variant!='qwen' or a.initial_paired is None):
         raise ValueError('LG recovery requires the matched paired Qwen parent')
     if a.initial_paired:
@@ -322,8 +325,8 @@ def fit(a, payload):
         if parent is not None:head.load_state_dict(parent['head'],strict=True)
         else:
             state = torch.load(a.alignment/'best_checkpoint.pt', map_location='cpu', weights_only=False)
-            identity = json.loads((a.alignment/'adaptation_report.json').read_text())
-            assert digest(a.alignment/'best_checkpoint.pt') == identity['best_sha256']
+            from .scene_initial_alignment import checked_alignment
+            alignment_identity=checked_alignment(a.alignment,state,original_alignment_sha)
             head.load_state_dict(state['state_dict'], strict=True)
     train = [r for r in payload['records'] if r['split'] == 'train']
     dev = [r for r in payload['records'] if r['split'] == 'dev' and r['condition_id'] in ['0', '1']]
@@ -428,6 +431,7 @@ def fit(a, payload):
             'negative_image': payload['negative_image'], 'DEV_epsilon_MSE': score,
             'pair_sha256': payload['pair_sha256'], 'cache_sha256': cache_digest,
             'reviewed_parent_data_transfer':parent_data_transfer,
+            'initial_alignment_identity':alignment_identity,
             'source_commit': os.environ['T12_SOURCE_COMMIT'], 'Qwen_input_side': a.qwen_side,'resolution':a.resolution,
             'SDXL_conditioning_size':conditioning_side,'negative_text':payload['negative_text'],
             'negative_pooled':payload['negative_pooled'],'negative_caption':payload['negative_caption'],
@@ -451,6 +455,7 @@ def fit(a, payload):
         'training_input_order_noise_schedule_sha256':schedule.hexdigest(),
         'optical_frontend':payload.get('optical_frontend'),
         'initial_paired_checkpoint_sha256':None if a.initial_paired is None else digest(a.initial_paired/'best_checkpoint.pt'),
+        'initial_alignment_identity':alignment_identity,
         'optical_parameters_updated':False,
         'teacher_condition_kd_weight':a.config_profile.get('teacher_condition_kd_weight',0.),
         'condition_teacher_sha256':payload.get('condition_teacher_sha256'),

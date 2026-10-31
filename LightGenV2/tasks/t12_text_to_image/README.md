@@ -12,6 +12,8 @@
 后续候选配置`scene_balanced_fresh_training_20261031.json`将重新从公开SDXL原底座＋零输出rank4 LoRA开始，
 Qwen读出只加载早期完整条件对齐头并在新TRAIN上warmup，不继承旧错配任务UNet LoRA。
 配置为1200次TRAIN条件warmup、最多6轮、lr3e-5；数据全部准入前不启动，完成后仍须全raw48验收。
+`scene_initial_alignment`按原TRAIN-only alignment报告、真实PT SHA和非扩散微调schema严格加载该旧条件头，
+默认旧adaptation路径不变。fresh配置显式拒绝`--initial-paired`，避免误带入旧任务UNet LoRA。
 输入白边规范化的24原生控制已全看完，仍有严重图案化和漏物体，未自动并入Qwen正式输入。
 定向教师制作新增显式版本`wide_support_v2`，要求完整承托家具／木桌，粗造型仍只从白底输入记录。
 其中靠垫复制白底或融为沙发的剩余组另有`loose_object_v3`制作对照，强调独立可移动靠垫，
