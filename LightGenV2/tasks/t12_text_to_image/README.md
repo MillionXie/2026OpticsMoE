@@ -25,6 +25,10 @@ padding和图像条件误差；特征距离不是图像遵从率，不更新任�
 `scene_omnigen_peer --visible-anchor-dev`现支持同一公开48请求／16视图，固定官方50步，
 仅添加原生图像占位符，不添加TRAIN构造提示、造型标签或目标。该对照不载入任务LoRA，
 其原生参考VAE只属于外部peer，不加入Qwen；未实际生成／逐图复核前不宣称可行性通过。
+另提供`scene_instruction_render --probe-conditioning-side 512`显式DEV消融：
+仅改变SDXL original_size/target_size微条件，输出仍512、训练权重／实际输入／30步不变。
+历史默认继续读取checkpoint的1024条件；新报告同时记录训练和推理条件，禁止该参数进入TEST或计时。
+这只是检验取景过近假设，不预先断言1024微条件是缺物体的病因，也不把新图混作旧版本结果。
 
 **R1准入已撤回**：原尺寸终检发现无扶手椅被写成armchair；随后全40个TRAIN扶手椅目标复核，
 另3项无法确认扶手而排除。保留原数据／审核／best/last和撤回前记录，不覆盖历史身份。

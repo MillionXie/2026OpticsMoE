@@ -134,6 +134,8 @@ def render(a):
     if revision_folder:
         from .scene_natural_prompt import checked_revision
         inputs,expanded=checked_revision(revision_folder,a.data,state,inputs)
+    from .scene_microconditioning import descriptor as micro_descriptor
+    micro=micro_descriptor(state,resolution,getattr(a,'probe_conditioning_side',None),'test'if is_test else'dev',bool(expanded),a.measure_software_latency)
     if is_test:
         assert len(inputs)==500 and len({r['sample_id'] for r in inputs})==500
         assets=json.loads((a.cache/'model_assets.json').read_text())
@@ -226,7 +228,7 @@ def render(a):
         if sampling:
             kwargs.pop('num_inference_steps')
             kwargs.update(timesteps=sampling['timesteps'],guidance_scale=sampling['CFG'])
-        conditioning_side=int(state.get('SDXL_conditioning_size',resolution))
+        conditioning_side=micro['inference_conditioning_side']
         kwargs.update(original_size=(conditioning_side,conditioning_side),target_size=(conditioning_side,conditioning_side))
         with torch.inference_mode():
             if head is not None:
@@ -273,6 +275,7 @@ def render(a):
             'input_sha256':digest(src),'initial_latent_sha256':noise_sha,'model':state['variant'],
             'raw_Qwen_identity_exact':exact_identity and known_identity,'resolution':resolution,'sampling_steps':a.steps,
             'IP_adapter_scale':a.ip_scale,
+            'size_conditioning':micro,
             'sampling_contract':sampling,
             'inference_sampler':sampler,
             'fast_tail':fast,
@@ -308,6 +311,7 @@ def render(a):
         'unet_precision':scene_precision.name(a),'precision_contract':scene_precision.descriptor(a),
         'actual_UNet_base_dtype':str(pipe.unet.dtype),'actual_VAE_dtype':str(pipe.vae.dtype),
         'IP_adapter_scale':a.ip_scale,
+        'size_conditioning':micro,
         'sampling_contract':sampling,
         'inference_sampler':sampler,
         'actual_scheduler_class':type(pipe.scheduler).__name__,
@@ -337,6 +341,7 @@ def main():
     p.add_argument('--sampler',choices=['original','dpmpp2m-karras','dpmpp2m-karras-teacher30'],default='original',help='Matched inference solver ablation; optional accepted Euler30 noise bounds; no stacking with LCM or learned tail')
     p.add_argument('--steps',type=int,choices=[4,6,7,8,12,14,15,30],default=30,help='4/8 require verified LCM; 6/7/15 require matched learned tail; 14 requires explicit DPM; 12/30 retain original sampler')
     p.add_argument('--ip-scale',type=float,default=.25,help='Explicit reference-conditioning strength, historical default .25')
+    p.add_argument('--probe-conditioning-side',type=int,choices=[512,1024],help='Explicit expanded-DEV-only size-conditioning ablation; no TEST or timing')
     p.add_argument('--measure-software-latency',action='store_true');p.add_argument('--reference-run',type=Path)
     p.add_argument('--scope',choices=['dev','test'],default='dev')
     p.add_argument('--frozen-evaluation',type=Path);p.add_argument('--frozen-model-key')
