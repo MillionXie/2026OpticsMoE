@@ -55,6 +55,10 @@ class NewTargets(unittest.TestCase):
                 pairs=__import__('json').loads((out/'pairs.json').read_text());self.assertEqual(len(pairs),2)
                 self.assertEqual(len(__import__('json').loads((out/'inference_inputs.json').read_text())),48)
                 self.assertTrue(data.checked_parent_transfer(out,parent,parent_sha,data.sha(out/'pairs.json'))['new_targets_and_new_prompts_not_recaptioned_old_pixels'])
+                from LightGenV2.tasks.t12_text_to_image.scene_paper_paired_render import checked_revision
+                current,protocol=checked_revision(out,out,dict(pair_sha256=data.sha(out/'pairs.json')),dv)
+                self.assertEqual(len(current),48);self.assertTrue(protocol['model_trained_on_revised_dataset'])
+                with self.assertRaises(ValueError):checked_revision(out,out,dict(pair_sha256=parent_sha),dv)
                 (out/pairs[0]['target']).write_bytes(b'changed')
                 with self.assertRaises(ValueError):data.checked_parent_transfer(out,parent,parent_sha,data.sha(out/'pairs.json'))
 

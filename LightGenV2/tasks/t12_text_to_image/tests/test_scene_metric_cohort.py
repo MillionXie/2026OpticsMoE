@@ -21,8 +21,13 @@ class MetricCohort(unittest.TestCase):
             with self.assertRaises(ValueError):expanded_identity(r)
     def test_informative_prompts_are_a_separate_zero_shot_cohort(self):
         r=self.report();p=r['expanded_DEV_protocol'];p.update(schema='scene_paper_scene_DEV_preflight_v1',prompt_profile='two_sentence_product_scene_v7',prior_model_on_new_prompts_not_retrained_model=True,model_trained_on_revised_dataset=False,old_results_not_relabelled=True,balanced_counterfactual_training_data=False)
-        self.assertEqual(expanded_identity(r,self.rows()),(48,('paper_scene_v7_zero_shot','a'*64)))
+        self.assertEqual(expanded_identity(r,self.rows()),(48,('paper_scene_v7_same_requests','a'*64)))
         p['model_trained_on_revised_dataset']=True
+        with self.assertRaises(ValueError):expanded_identity(r)
+    def test_new_trained_and_frozen_peer_share_only_the_same_public_grid(self):
+        r=self.report();p=r['expanded_DEV_protocol'];p.update(schema='scene_paper_scene_trained_DEV_v1',prompt_profile='two_sentence_product_scene_v7',model_trained_on_revised_dataset=True,old_results_not_relabelled=True,new_targets_reviewed=True,paired_dataset_sha256='c'*64)
+        self.assertEqual(expanded_identity(r,self.rows()),(48,('paper_scene_v7_same_requests','a'*64)))
+        p['new_targets_reviewed']=False
         with self.assertRaises(ValueError):expanded_identity(r)
 
 

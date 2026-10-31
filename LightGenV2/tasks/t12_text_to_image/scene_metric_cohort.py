@@ -3,13 +3,17 @@
 
 def expanded_identity(report,records=None):
     p=report.get('expanded_DEV_protocol')or{}
-    paper=p.get('schema')=='scene_paper_scene_DEV_preflight_v1'
+    trained=p.get('schema')=='scene_paper_scene_trained_DEV_v1'
+    paper=trained or p.get('schema')=='scene_paper_scene_DEV_preflight_v1'
     if not paper and p.get('schema')!='scene_visible_anchor_DEV_preflight_v1':
         return 128,('historical_expanded',p['manifest_sha256'])
     sha=p.get('request_sha256','')
     profile='two_sentence_product_scene_v7'if paper else'two_sentence_visible_anchor_v5'
     valid_lineage=(p.get('prior_model_on_new_prompts_not_retrained_model')is True
                    and p.get('model_trained_on_revised_dataset')is False and p.get('old_results_not_relabelled')is True)if paper else p.get('balanced_counterfactual_training_data')
+    if trained:
+        pair=p.get('paired_dataset_sha256','')
+        valid_lineage=(p.get('model_trained_on_revised_dataset')is True and p.get('old_results_not_relabelled')is True and p.get('new_targets_reviewed')is True and len(pair)==64 and all(c in'0123456789abcdef'for c in pair))
     if(p.get('prompt_profile')!=profile or p.get('contexts')!=48
        or p.get('reference_views')!=16 or p.get('TEST_opened')is not False
        or not valid_lineage or len(sha)!=64
@@ -25,4 +29,6 @@ def expanded_identity(report,records=None):
             if(len(rows)!=3 or {r['condition_id']for r in rows}!={'0','1','2'}
                or len({r['input_sha256']for r in rows})!=1 or len({r['seed']for r in rows})!=1):
                 raise ValueError('Preserve the same-RGB same-seed three-condition grid')
-    return 48,('paper_scene_v7_zero_shot'if paper else'visible_anchor_v5',sha)
+    # Training histories differ across peers; comparison still requires identical
+    # complete public RGB/prompt/seed grids, checked by the scorer before metrics.
+    return 48,('paper_scene_v7_same_requests'if paper else'visible_anchor_v5',sha)
