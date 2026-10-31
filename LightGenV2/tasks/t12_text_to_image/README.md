@@ -34,10 +34,25 @@ best `77bb3ef7f34bcb8f1a6d07e15627af5fdb0138800c546c87ad6228b81a98327d`。
 全图诊断SHA `1e678c20ae5aad2a1bc96c2f0be5603748910383ca1f42149e84e5409116ef2a`；
 全部自身GPU子PID退出，保留失败权重／图／分数，不以更高DINO或更低TRAIN loss替代画质。
 `scene_depth_decoded_rollout6_workflow_20261031`随后实际通过四次全六步反向／合并身份门，
-正以原冻结VAE decoder提供TRAIN多尺度RGB与相对边缘损失，联合恢复现有读出和LoRA200步。
+以原冻结VAE decoder提供TRAIN多尺度RGB与相对边缘损失，已完整联合恢复现有读出和LoRA200步，
+best `d8d7170faad51a5e548f7ce396d26fc7a71626c3b2dfdc31e1c1cd5f12fb1835`。
 本轮从较好的联合读出c6权重开始，保留原均匀六步网格，不继承失败的geometry权重。
 没有新增部署模块、VAE encoder、图像回输或采样步数；教师VAE解码确实在GPU执行，
-仅完整电子Qwen／UNet教师前向不重复。训练及后续raw128／评分未完成前不声称改善。
+仅完整电子Qwen／UNet教师前向不重复。raw DEV128与384图评分、六轮完整请求计时均已完整，
+12项代理均值最大下降8.323431%；但16板全128上下文仍有透明灯罩／灯杆消失、重影和侧视靠垫变灯，
+故否决最终交接。全图诊断SHA `7ad1e04ab65d4215d1fbb7b0669fbdb5ab42d33a33a1cea874d61aef3a4b208e`。
+该轮训练组合probe分数best .200331，仍略差于暖启动父.199571，不将“选中已训练best”说成训练改善。
+三进程各8请求的无FFT理想CCD固定周期请求均值698.503ms；对前次预定电子参照2873.582ms为4.1139倍。
+这是跨计时窗口的开发诊断，不是新交错配对计时或实机4倍；原图否决不被该比值覆盖。
+全部自身GPU子PID已退出；五模型全640图、逐图分数和以上限制在
+`scene_depth_decoded6_packed_fiveway_delivery_20261031/index.html`完整交付，775个DATA文件均SHA核验。
+
+`scene_depth_perceptual_rollout6_workflow_20261031`已通过4次实际反向／官方合并门并进入200步训练：
+在相同六步、64块及192 TRAIN条件中，额外用冻结官方AlexNet LPIPS v0.1提供.1感知特征损失；
+原RGB／边缘损失保留，LoRA／现有读出LR改为2e-5／1e-5。该网络只用于TRAIN，不增加部署参数。
+新的CPU六项梯度／冻结测试及真实官方LPIPS反向通过，训练网络权重另存SHA；效果尚待完整raw128审查。
+新增只读`scene_condition_gap`可比较同192 TRAIN条件的电子与F9读出，用于诊断监督条件差异；
+它不载入生成器／GPU／DEV／TEST，也不能单凭读出误差认定失败原因或新教师更好。
 最终`scene_acceleration_delivery`逐轮核对独立PID、首请求、同权重原图SHA和完整请求边界，
 将五模型全部128组、软件及固定周期计时、人工原图批准状态分列；代理通过不覆盖图像否决。
 `scene_compact_frozen_render`另为合格后冻结的压缩图提供独立TEST入口：先绑定新权重、
