@@ -87,7 +87,9 @@ def evaluate(model,x,labels,batch,domains=None):
     if domains is not None:
         metrics['domains']={}
         for domain,name in [(0,'RGB'),(1,'SAR')]:
-            mask=domains==domain;metrics['domains'][name]=dict(n=int(mask.sum()),correct=int((pred[mask]==truth[mask]).sum()),accuracy=float((pred[mask]==truth[mask]).mean()))
+            mask=domains==domain
+            if not mask.any():continue
+            metrics['domains'][name]=dict(n=int(mask.sum()),correct=int((pred[mask]==truth[mask]).sum()),accuracy=float((pred[mask]==truth[mask]).mean()))
             if routes:metrics['domains'][name]['router']=route_statistics(arrays['route_power'][mask])
         metrics['domain_mean_accuracy']=np.mean([m['accuracy'] for m in metrics['domains'].values()]).item()
         arrays['domains']=domains
