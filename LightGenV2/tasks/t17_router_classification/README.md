@@ -1,5 +1,18 @@
 # T17 单数据集路由分类对照
 
+## 成熟Linear冻结后的光学训练已启动（2026-10-31 19:03）
+
+公开evaluate_readout_checkpoint.py先对两份已存在last PT做后验开发评估，锁原PT SHA、零新训练，
+F仍905/2000、B6仍652/752；VAL选择权重继续保留。不冒称该后验检查为VAL选模。
+20文件45.2MB完整预测/缓存/锁已SHA备份，评估PID1704407已退出无GPU分配。
+
+source847a5f6a6通过130项CPU检查和两个精确父真实TRAIN GPU冻结/更新/初始forward等价准入。
+当前runs/simulation/figure_mature_optics_s17_20261031：F worker1707504、B6 worker1707505，同一新授权A100。
+F冻结Gram成熟Linear，训练原R/E/G共479364相位，LR.0005/原水平翻转；
+B6冻结Linear/路由/早期相位，仅训末E/G共429188相位，LR.00005/D4；
+两组max30/min10/pat10，TRAIN-only、VAL选模、父E0参与，无teacher/TEST训练、无新推理容量。
+实际已进入训练，不把启动当精度提高；B4/A/D旧权重保护，不盲目扩展预算。
+
 ## 成熟读出后的有限光学对照（准备）
 
 先对已存在的Gram最后PT做明确后验开发评估：不新增训练，锁定原PT SHA，保留VAL选择PT与last两个候选，

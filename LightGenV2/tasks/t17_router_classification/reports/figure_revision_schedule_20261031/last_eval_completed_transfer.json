@@ -1,0 +1,109 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex",
+    "runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/metadata.json",
+      "size": 4525,
+      "sha256": "f6f1139c1f48d9636a078b01e0fb4adec686d3a1e8b3e574e9c9d0c5b2ca39ca"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/result.json",
+      "size": 8332,
+      "sha256": "0038672cc5d9ebe6cbce666debed1c692d6c9a6ff474ea82a6dc644ecaecf18c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/selection_lock.json",
+      "size": 383,
+      "sha256": "96e69cb9cf50ee22c3ab2bf11faa6182294da5fb3ecb1af6c0cf017f969c9384"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/status.json",
+      "size": 44,
+      "sha256": "c034cacacb7fd83b7c58cf833f052ae361148232abe58953b64a98c8591fef1a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/test_features.npz",
+      "size": 5986279,
+      "sha256": "7b24f224fa7d69f47a32e537eecc16c258e3c20f9882976749a2228afa01e5d1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/test_predictions.npz",
+      "size": 137841,
+      "sha256": "9481c9e5f876fadc5c6bb75824f03ff2298a0a352cef040ab950a78dd9e03e4d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/train_features.npz",
+      "size": 17952413,
+      "sha256": "b33b7954a3fd6a40ca9ddb889ff19928d3e7137645ec994560350bc62be432a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/train_predictions.npz",
+      "size": 407632,
+      "sha256": "27275d3a50354e265c8c41337549c28bd16eb904d3f38a497dba50a484dbc9aa"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/val_features.npz",
+      "size": 5985971,
+      "sha256": "b9a2ac64fa722321c8448505b4a3f2dc4d8dea808c18c08e6df45111b1b0e9e7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/f_lg_convex/val_predictions.npz",
+      "size": 137706,
+      "sha256": "ec7b19647aa9c78dadea42fafedd2661ec7c5180decb107e060f2d724945e804"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/metadata.json",
+      "size": 3317,
+      "sha256": "324368116d817b299a7725d6a6d5e6591d7001d2b2f04a59b681219c96484c1f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/result.json",
+      "size": 6245,
+      "sha256": "7b4ce23b73dd3a093ba01cb3948706acf88d69558523c374aff246d3d4ed6c04"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/selection_lock.json",
+      "size": 384,
+      "sha256": "1010c0a0182c08765333ee780d1ade9491ae3a4ec1e6174ebc721317b5553fa1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/status.json",
+      "size": 44,
+      "sha256": "c034cacacb7fd83b7c58cf833f052ae361148232abe58953b64a98c8591fef1a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/test_features.npz",
+      "size": 2146772,
+      "sha256": "a5dc5648e3db97e5628c828be84b18b3769bb8f3e6a5184cb86171884281fe21"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/test_predictions.npz",
+      "size": 46671,
+      "sha256": "a51ab745bc36bc2ab5b524d96d05bfc597e8315075b6b3e4dabdacc88eecd2d8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/train_features.npz",
+      "size": 9971927,
+      "sha256": "936b6f189a15a4887e277e2b47c382a8f3920f4534c13c7faf82bc056c1019cb"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/train_predictions.npz",
+      "size": 207727,
+      "sha256": "3a84427ce841650b421f3944387cc722cb83038d2076cc2d60c9b5ad3a04d3cf"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/val_features.npz",
+      "size": 2146660,
+      "sha256": "c7a00c2e0f99d3f4921faa2d57c68a7b16cac37aef56556e09acad36c2054f85"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_last_eval_s17_20261031/worker0/b_lg6_convex/val_predictions.npz",
+      "size": 46721,
+      "sha256": "dabd0241b8ddb1f2f65229815038fd292ff6e293d1de0686adb838bade8b4dc9"
+    }
+  ]
+}

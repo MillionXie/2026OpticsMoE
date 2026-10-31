@@ -41,6 +41,15 @@ def main():
             gram_rows.append(f'<tr><td>{name}</td><td>{vals}</td><td>{result["final_training_gradient_max_abs"]:.3g}</td></tr>')
     note='<h2>相同目标、相同预算的TRAIN Gram数值坐标对照</h2><p>与上一轮使用相同原始父、相同原W锚定惩罚和150内部迭代上限；只用TRAIN求可逆坐标，导出时吸收到原单Linear。不存在推理白化层或新电子参数。</p><table><tr><th>任务</th><th>TRAIN / VAL / 原TEST开发</th><th>最终原W梯度最大值</th></tr>'+''.join(gram_rows)+'</table><p>B6为652/752=86.70%，相对固定D7高14.63pp，仍差3个正确达到15pp，不能四舍五入声称达标。F为905/2000=45.25%，原训练约56%而验证44.65%，仍需定位光学表征与泛化，不能将正则头最优等同于模型容量上限。</p>'
     page=page.replace('</html>',note+'</html>')
+    extra_rows=[];report['mature_fixed_head_optics']={};report['posthoc_existing_last_evaluation']={}
+    for name in ['figure_mature_f_lg_convex_s17_20261031','figure_mature_b_lg6_convex_s17_20261031']:
+        path=task/'runs/simulation/figure_mature_optics_s17_20261031'/name;status=read(path/'status.json') or dict(state='not_started');result=read(path/'result.json');report['mature_fixed_head_optics'][name]=dict(run=str(path.relative_to(task)),status=status,result=result)
+        values=' / '.join(f"{100*result[k]['accuracy']:.2f}%" for k in ['train','val','original_test_dev']) if result else '锁权重后填写'
+        extra_rows.append(f'<tr><td>{name}</td><td>{status["state"]}</td><td>{status.get("epoch",result["completed_epochs"] if result else 0)}/30</td><td>{values}</td></tr>')
+    for name in ['f_lg_convex','b_lg6_convex']:
+        report['posthoc_existing_last_evaluation'][name]=read(task/'runs/simulation/figure_Gram_last_eval_s17_20261031/worker0'/name/'result.json')
+    text='<h2>冻结成熟Linear后的有限光学训练</h2><p>此前显式后验比较已存在的last PT和VAL选择PT，没有新增训练。两份last开发正确数分别仍为F905/2000、B6 652/752，未带来提升；不能把该后验评估称作VAL选择。</p><p>新阶段F冻结唯一Linear、训练原R/E/G；B6冻结Linear/入口路由/早期相位，只训练末E/G。TRAIN-only原增强，父E0参加VAL选模，各最多30轮；无新电子参数或推理模块。B4和A已达标保护。</p><table><tr><th>任务</th><th>状态</th><th>轮数</th><th>TRAIN / VAL / 原TEST开发</th></tr>'+''.join(extra_rows)+'</table>'
+    page=page.replace('</html>',text+'</html>')
     (out/'results.html').write_text(page,encoding='utf-8');print([(n,r['status']['state']) for n,r in records.items()])
 
 
