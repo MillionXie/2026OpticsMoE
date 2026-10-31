@@ -1,0 +1,24 @@
+{
+  "authorized_gpu_uuids": [
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  ],
+  "jobs": {
+    "Kather_k2": {
+      "parent_checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k1/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "655e8e35026ed038441dce27ac60901e4ac3159a0d27f9536288c87bd66f7fc7",
+      "initialize_top_k": 2,
+      "changed_k_initialization": true
+    },
+    "Kather_k4": {
+      "parent_checkpoint": "runs/simulation/panel_d_Kather_boundary_refine_s17_20261101/kather2016/k3/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "cb1a52ffa60a81577e3c8fa0af535b01d88f97c405322cc265c0bad3ee8029ae",
+      "initialize_top_k": 4,
+      "changed_k_initialization": true
+    }
+  },
+  "maximum_internal_iterations_per_job": 150,
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "one_bounded_configuration": true,
+  "original_TEST_complete_fixed": true,
+  "k1_and_k3_results_protected": true
+}

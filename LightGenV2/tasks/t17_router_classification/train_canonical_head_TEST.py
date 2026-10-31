@@ -33,12 +33,23 @@ def fit_objective(weight, features, labels, anchor, teacher=None, hard_mask=None
         .001, 0., teacher, .5 if teacher is not None else 0., 2., hard_mask)
 
 
+def initialization_profile(parent,cfg):
+    profile=parent['metadata']['profile'];requested=cfg.get('initialize_top_k')
+    if requested is None:
+        if cfg.get('changed_k_initialization'):raise ValueError('Changed-k flag requires an explicit actual k')
+        return profile
+    previous=profile.get('top_k',2)
+    if type(requested) is not int or not cfg.get('changed_k_initialization') or profile.get('dataset')!='kather2016' or profile.get('architecture')!='LG' or profile.get('main_layers')!=2 or (previous,requested) not in ((1,2),(3,4)):
+        raise ValueError('Explicit adjacent Kather k1->2 or k3->4 optical initialization required')
+    return dict(profile,top_k=requested)
+
+
 def run_job(cfg, out):
     task=Path(__file__).resolve().parent
     parent_path=task/cfg['parent_checkpoint']
     if sha256(parent_path)!=cfg['parent_checkpoint_sha256']:raise ValueError('Parent SHA mismatch')
     parent=torch.load(parent_path,map_location='cpu',weights_only=False)
-    profile=parent['metadata']['profile']
+    profile=initialization_profile(parent,cfg)
     if profile['architecture']!='LG' or profile['main_layers']!=2:raise ValueError('Two-layer original LG required')
     joint=profile['dataset']=='eurosat_original_f'
     model=build_model(profile).cuda().eval();model.load_state_dict(parent['model'],strict=True);model.requires_grad_(False)
@@ -51,6 +62,9 @@ def run_job(cfg, out):
         pid=os.getpid(),data=identity,phase_updates=0,TEST_used_for_selection=True,VAL_gate=False,
         original_TEST_soft_in_loss=joint,TEST_hard_GT_in_loss=False,canonical_code0_only=True,
         maximum_internal_iterations=150,optimization_anchor='initial existing head; .001/2 Frobenius square')
+    meta['changed_k_initialization']=bool(cfg.get('changed_k_initialization'))
+    meta['parent_inference_top_k']=parent['metadata']['profile'].get('top_k',2)
+    meta['actual_inference_top_k']=profile.get('top_k',2)
     write(out/'metadata.json',meta)
     arrays={s:cache(model,part,out/f'{s}_features.npz',64) for s,part in raw.items()}
     write(out/'cache_manifest.json',dict(parent_checkpoint_sha256=sha256(parent_path),
@@ -66,7 +80,10 @@ def run_job(cfg, out):
     # This exact cache/float32 head must reproduce the original complete predictions.
     initial,_=metrics('test');expected=parent_path.parent/'test_predictions.npz'
     z=np.load(expected);_,score=metrics('test')
-    if not np.array_equal(score.argmax(1),z['predictions']):raise RuntimeError('Canonical cache parent replay mismatch')
+    if any(not np.array_equal(arrays['test'][name],z[name]) for name in ('ids','labels')):raise ValueError('Complete fixed parent TEST IDs/labels differ')
+    if not cfg.get('changed_k_initialization') and not np.array_equal(score.argmax(1),z['predictions']):raise RuntimeError('Canonical cache parent replay mismatch')
+    meta['initial_current_k_TEST_development']=initial
+    meta['parent_prediction_replay_required']=not bool(cfg.get('changed_k_initialization'))
     teacher=None;mask=None;train_x=x['train'].double();labels=y['train']
     if joint:
         targets=[]
