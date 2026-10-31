@@ -1,0 +1,33 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "completed_epochs": 25,
+  "selected_epoch": 10,
+  "checkpoint_sha256": "124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057",
+  "target_both_at_least_70": false,
+  "metrics": {
+    "train": {
+      "RGB": 0.6456666666666667,
+      "SAR": 0.5903333333333334
+    },
+    "val": {
+      "RGB": 0.562,
+      "SAR": 0.511
+    },
+    "original_test_dev": {
+      "RGB": 0.632,
+      "SAR": 0.483
+    }
+  },
+  "selected_same_PT_two_domains": true,
+  "development_correct_change_from_dual_teacher_RGB_SAR": [
+    -2,
+    16
+  ],
+  "phase_head_updates": 3150,
+  "TEST_random_views": 50000,
+  "head_blocks": 5,
+  "mixed_head_views": 320000,
+  "head_inner_steps": 200,
+  "interpretation": "Small domain score changes, not a solved70% goal and not proof of surrogate causal benefit. Full original TRAIN code0 router task gradients remain nearly opposite; surrogate and canonical joint router directions are nearly identical. All original weights and predictions retained.",
+  "next_method_status": "conditional bounded implementation plan, not implemented or launched"
+}

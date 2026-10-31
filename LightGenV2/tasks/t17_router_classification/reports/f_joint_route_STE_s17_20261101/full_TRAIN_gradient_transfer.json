@@ -1,0 +1,15 @@
+{
+  "verified_local_remote_SHA256": true,
+  "files": [
+    {
+      "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\smoke\\f_joint_full_TRAIN_router_gradient_s17_20261101\\router_physical_gradients.npz",
+      "sha256": "3ae75f7a5d4b632608bc4ef1373a1500438b8cacfa45c6849a2a88e2097b6280",
+      "bytes": 1172701
+    },
+    {
+      "path": "LightGenV2\\tasks\\t17_router_classification\\runs\\smoke\\f_joint_full_TRAIN_router_gradient_s17_20261101\\diagnosis.json",
+      "sha256": "42f8a39c6fbcac516caa94c567f2ead09859a972f114c58f1ba6cd7743245ca3",
+      "bytes": 1756
+    }
+  ]
+}

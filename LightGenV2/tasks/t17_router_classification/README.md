@@ -1,3 +1,13 @@
+## F路由surrogate候选已完整结束并核验；下一训练冲突投影待实现（2026-11-01）
+
+worker2195435已25轮平台停选E10，TRAIN RGB64.5667/SAR59.0333、VAL56.20/51.10、原TEST开发63.20/48.30%，同一PT SHA124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057，仍未两域70%。相对双教师父RGB少2/SAR多16例，不逐域拼PT，不声称surrogate造成因果提升。
+15文件11.06MB best/last/全部三split预测route/6000x8及2000x8 teacher缓存和manifest已远程本地SHA，strict4state/487204/唯一Linear/noCNN/原完整ID标签域/真Top2/teacher精确合并通过；完整2000 canonical TEST概率bitwise重放通过。自己的2156045/2195435均已退出无GPU分配，当前没有自己的训练。
+实际3150phase/head更新、50000TEST随机视图、5个64000头块共320000呈现/200内步，所有父和失败保留；主表当前63.20/48.30整行同PT，D四格保持定稿。
+只读完整原TRAIN6000/code0（各域3000），旧f8父router两域物理梯度余弦canonical-.9772/surrogate-.9719；新124父为-.97947/-.97896，canonical与surrogate联合router方向余弦.999669。全参数bitwise未变，无VAL/TEST统计；该证据仅原图code0，不外推全8视图、TEST-soft或容量上限。
+两套原始四份router梯度数组及诊断均已manifest+SHA本地/服务器保存，收据在reports/f_joint_route_STE_s17_20261101；TRAIN_gradient_report不是新准确率。两父均显示强冲突，说明仅打开未选端口梯度没有显著改变整体router方向，但不证明已找到全部瓶颈。
+下一有界方案目前仅HYPOTHESIS、未实现/未准入/未启动：只对RGB/SAR分组router梯度在物理角度坐标做同时冲突投影，再按实际样本数加权，转回raw.grad后仍原clip/WrappedAdam。E/G/head使用原混合损失梯度；域标签仅训练分组，不进forward，不固定专家/GT路由。
+拟从新124父，最多30/min15/pat10轮，保持现有KD/两教师/原TEST只soft/头64000和min域VAL选模。先实现可选默认兼容模块、坐标/投影/零梯度与GT隔离CPU检查、真实父GPU准入、Git发布后再跑，不能把计划当在训。投影不保证Adam后共同下降或70%。具体conditional_router_projection_plan.json。
+
 ## F联合双教师完整结束；下一有界训练梯度方案（2026-11-01）
 
 联合双教师候选完整60轮选E58：TRAIN RGB63.4667/SAR58.90，VAL55.20/50.70，原TEST开发63.40/46.70。同一PT SHAf8c1490824fb73e3d12ec7fa78633bbb9cae46cc79b15b84e1799e55230b1858，仍未两域70%；相对原父RGB+29例、SAR-3例，全部保留不逐域拼PT。

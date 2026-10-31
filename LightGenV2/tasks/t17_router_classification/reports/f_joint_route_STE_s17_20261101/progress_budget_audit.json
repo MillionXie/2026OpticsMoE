@@ -1,0 +1,42 @@
+{
+  "snapshot_only": true,
+  "completed_epochs_in_snapshot": 14,
+  "phase_head_updates": 1764,
+  "TEST_soft_random_views": 28000,
+  "head_blocks": [
+    {
+      "epoch": 5,
+      "inner_steps": 40,
+      "objective_before": 2.4597644603110655,
+      "objective_after": 2.3929023854927625
+    },
+    {
+      "epoch": 10,
+      "inner_steps": 40,
+      "objective_before": 2.4398179042026364,
+      "objective_after": 2.38804903363564
+    }
+  ],
+  "head_mixed_views": 128000,
+  "head_inner_steps": 80,
+  "best_VAL_epoch": 10,
+  "best_VAL_domains": {
+    "RGB": 0.562,
+    "SAR": 0.511
+  },
+  "latest_VAL_dense_training_not_used": true,
+  "canonical_VAL_router_mean_power": [
+    0.01984041929244995,
+    0.08218178898096085,
+    0.8979781270027161,
+    0.0
+  ],
+  "canonical_VAL_selected_fraction": [
+    0.1705,
+    0.8295,
+    1.0,
+    0.0
+  ],
+  "TEST_metrics_from_this_run_not_yet_evaluated": true,
+  "conclusion": "Surrogate backward is active but canonical VAL routing remains concentrated. Small interim VAL changes do not establish accuracy improvement or a capacity bound."
+}

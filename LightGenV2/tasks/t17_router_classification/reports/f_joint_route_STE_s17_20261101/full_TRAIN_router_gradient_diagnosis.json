@@ -1,0 +1,33 @@
+{
+  "parent_checkpoint_sha256": "f8c1490824fb73e3d12ec7fa78633bbb9cae46cc79b15b84e1799e55230b1858",
+  "source_sha256": {
+    "model_four.py": "9688016ef23e1bb0606f4821530d272f73d0a5bf0574a297ec5d0d45a865536e",
+    "model_linear_readout.py": "e5279ae41ab55d3a15b2621e40bfd4be76436359fffb10980bfaf1e960ef7d76",
+    "model_depth_ccd.py": "615e1eb8e8d65fab37a5c9efda55def43477f73872882e1a6b687eac64fb9bfc"
+  },
+  "original_TRAIN_images": 6000,
+  "images_each_domain": 3000,
+  "augmentation_code": 0,
+  "random_sampling": false,
+  "TRAIN_objective": "CE(label_smoothing=.02)+.5*KL(T=2); head anchor has zero router gradient",
+  "gradients": "sample-weighted full-domain dL/dphysical_router_phase; raw gradients divided by 2*pi*sigmoid(raw)*(1-sigmoid(raw))",
+  "forward_objective_both_modes": {
+    "RGB_top2": 2.340401070276897,
+    "RGB_top2_straight_through": 2.340401070276897,
+    "SAR_top2": 2.10971705087026,
+    "SAR_top2_straight_through": 2.10971705087026
+  },
+  "domain_gradient_cosine_canonical": -0.9771855553568318,
+  "domain_gradient_cosine_surrogate": -0.971880242629497,
+  "joint_router_gradient_cosine_canonical_vs_surrogate": 0.9944606092127314,
+  "physical_gradient_norms": {
+    "RGB_top2": 0.013621879410955912,
+    "RGB_top2_straight_through": 0.01324948554381164,
+    "SAR_top2": 0.015966804652946427,
+    "SAR_top2_straight_through": 0.015378548578009164
+  },
+  "all_model_state_bitwise_unchanged": true,
+  "VAL_TEST_statistics_used": false,
+  "limitations": "Original TRAIN code0 only, not all D4 views or TEST soft objective; router gradient comparison alone does not establish full optimizer step acceptance, capacity limit or accuracy.",
+  "gradient_file_sha256": "3ae75f7a5d4b632608bc4ef1373a1500438b8cacfa45c6849a2a88e2097b6280"
+}

@@ -15,13 +15,13 @@
     },
     {
       "path": "joint/status.json",
-      "sha256": "944a7dd32b97b213c680a199321f5d8b1b4850b41763ef5f4d3845abd036a10d",
-      "bytes": 105
+      "sha256": "4e72b315100841ce5493decefab32b054448f504e209bc8879de6071b38d0f6c",
+      "bytes": 14128
     },
     {
       "path": "joint/history.json",
-      "sha256": "b8527eef8829f710a73993c15b2bd5c2abd976e3e3d7de47c37d526dbb33766d",
-      "bytes": 130005
+      "sha256": "316f2ab832f280f7f72b9a42c4bd4d70f0f89d08f547f759e97a26f45c8b5b0d",
+      "bytes": 414674
     },
     {
       "path": "joint/teacher_manifest.json",
@@ -32,6 +32,16 @@
       "path": "joint/source_TEST_distillation_manifest.json",
       "sha256": "363a225b4b2135976f9a68cb4f039d9b2935a76099290b253df80b72181e0e92",
       "bytes": 1156
+    },
+    {
+      "path": "joint/result.json",
+      "sha256": "f3cce52023094d7a2da4b0663493e7ed781b393277e8523966388690623fa8dd",
+      "bytes": 14087
+    },
+    {
+      "path": "joint/selection_lock.json",
+      "sha256": "0c63abdce8b6431802ffd1918613540174a146fd58db7c597dcb0bdc5e4a814a",
+      "bytes": 245
     }
   ]
 }
