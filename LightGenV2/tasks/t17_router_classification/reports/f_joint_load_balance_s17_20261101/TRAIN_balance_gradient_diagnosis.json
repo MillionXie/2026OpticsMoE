@@ -1,0 +1,107 @@
+{
+  "role": "ORIGINAL_TRAIN_ONLY_READONLY_DIAGNOSIS",
+  "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+  "source_commit": "66eb0e8a6b9233ce1f4ca70868d7db7fa22ffd9c",
+  "GPU": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "pid": 2454165,
+  "original_TRAIN_images": 6000,
+  "VAL_TEST_evaluations": 0,
+  "phase_updates_persisted": 0,
+  "all_model_state_bitwise_restored": true,
+  "baseline": {
+    "mean_dense": [
+      [
+        0.05464937910437584,
+        0.07651037722826004,
+        0.8676823973655701,
+        0.0011577364057302475
+      ],
+      [
+        0.07322200387716293,
+        0.10014176368713379,
+        0.825383722782135,
+        0.0012527829967439175
+      ]
+    ],
+    "per_image_frequency": [
+      [
+        0.18700000643730164,
+        0.8130000233650208,
+        1.0,
+        0.0
+      ],
+      [
+        0.17133332788944244,
+        0.8286666870117188,
+        0.999666690826416,
+        0.00033333332976326346
+      ]
+    ],
+    "classification_KD": [
+      2.3162121772766113,
+      2.028954029083252
+    ],
+    "correct": [
+      2124.0,
+      1942.0
+    ],
+    "balance_KL": [
+      1.708796739578247,
+      1.561136245727539
+    ]
+  },
+  "single_reversible_probe": {
+    "mean_dense": [
+      [
+        0.05465935170650482,
+        0.07652583718299866,
+        0.8676570057868958,
+        0.0011578670237213373
+      ],
+      [
+        0.07323487848043442,
+        0.10015998035669327,
+        0.8253520727157593,
+        0.0012529119849205017
+      ]
+    ],
+    "per_image_frequency": [
+      [
+        0.18700000643730164,
+        0.8130000233650208,
+        1.0,
+        0.0
+      ],
+      [
+        0.17133332788944244,
+        0.8286666870117188,
+        0.999666690826416,
+        0.00033333332976326346
+      ]
+    ],
+    "classification_KD": [
+      2.3162496089935303,
+      2.028898000717163
+    ],
+    "correct": [
+      2126.0,
+      1942.0
+    ],
+    "balance_KL": [
+      1.7086796760559082,
+      1.561030626296997
+    ]
+  },
+  "probe_maximum_angle": 0.0003,
+  "training_route": "top2_straight_through",
+  "calibrated_auxiliary_coefficient": 0.008697278797626495,
+  "calibration": "20% norm of mean physical router TRAIN classification/KD gradient; clipped [1e-5,1]",
+  "domain_gradient_cosines": [
+    -0.38915565609931946,
+    0.37493497133255005
+  ],
+  "main_domain_gradient_cosine": -0.9795343279838562,
+  "original_TRAIN_forward_presentations": 18000,
+  "router_autograd_evaluations": 376,
+  "interpretation": "One fixed code0 reversible probe, not new accuracy or proof of convergence/capacity; real hard usage and both classification losses must be checked separately."
+}

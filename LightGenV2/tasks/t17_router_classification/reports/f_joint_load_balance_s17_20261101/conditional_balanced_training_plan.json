@@ -1,0 +1,27 @@
+{
+  "state": "CONDITIONAL_NOT_IMPLEMENTED_NOT_STARTED",
+  "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+  "evidence": "Complete original TRAIN6000/code0; population marginal KL gradient verified by exact chain rule; one reversible router probe, all state restored. Dense KL drops but actual Top2 frequencies unchanged, RGB classification/KD slightly worsens, so not evidence of balance/performance success.",
+  "suggested_single_bounded_candidate": {
+    "maximum_epochs": 20,
+    "min_epochs": 10,
+    "patience": 10,
+    "phase_lr": 0.0003,
+    "head_lr": 5e-05,
+    "modality_balance_loss": "mean over present domains KL(uniform || mean dense optical power)",
+    "fixed_weight": 0.008697278797626495,
+    "coefficient_source": "Full original TRAIN physical router gradients, 20% norm calibration, clipped [1e-5,1]; no TEST/VAL calibration",
+    "scope": "Original TRAIN and both original TEST soft-only branches; domain IDs only loss grouping, never forward or oracle routing",
+    "TEST_hard_CE": false,
+    "inference_contract_unchanged": true,
+    "existing_single_Linear_head_blocks": "64000 mixed views / max40 inner every5 epochs"
+  },
+  "prerequisites": [
+    "Organ k4 live run/shared entry must not be hot-edited; wait queue complete before shared trainer changes",
+    "Explicit optional balance key defaults off and old outputs/loss/grad bitwise compatible",
+    "prepare_joint_test_targets currently rejects domain_route_aux; keep legacy guard and add separately explicit tested non-oracle balance mode, do not bypass guard blindly",
+    "Latest canonical parent PT has no top-level validation field; use SHA-bound parent result.val for exact replay identity, never fabricate/overwrite parent PT or introduce a VAL selection gate",
+    "GT isolation on TEST soft branch, actual router/phase gradients and same hard Top2 inference, source metadata/helper SHA, exact-parent GPU admission, Git publish before launch",
+    "Full completed PT/ID/route/SHA/GPU exit; accuracy and actual per-domain hard usage, not only dense KL, assess tradeoff and keep parent"
+  ]
+}

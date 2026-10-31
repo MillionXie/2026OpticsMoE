@@ -1,0 +1,23 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_load_balance_full_TRAIN_s17_20261101/manifest.json",
+      "size": 313,
+      "sha256": "d92d9737417595a8ceaa36929e57d5712c6213369d038664d777e834c1a638f8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_load_balance_full_TRAIN_s17_20261101/physical_router_gradients.npz",
+      "size": 565501,
+      "sha256": "4c45063aca3d9358d0a75397774d043158309ac43a88e3a5805117b9c6757461"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_load_balance_full_TRAIN_s17_20261101/diagnosis.json",
+      "size": 2670,
+      "sha256": "4661fce5178858b2311753df9e2234d87d6e5a2539b085c4bffae08ba5644b77"
+    }
+  ],
+  "pid": 2454165,
+  "process_exited": true,
+  "no_GPU_allocation": true
+}

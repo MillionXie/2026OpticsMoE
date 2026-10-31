@@ -1,3 +1,10 @@
+## F负载优化的完整TRAIN数值诊断已完成；尚未启动新训练（2026-11-01）
+
+source66eb0e8a6新增f_load_balance.py（按模态KL[uniform||mean dense power]训练辅助）和diagnose_f_balance_gradient.py；旧loss/模型/运行入口未改，辅助未接入正式训练。8项相关CPU检查通过，包括不强迫每图均匀、不能用合并均值掩盖两域相反塌缩、梯度方向、完整均值链式梯度与不等长分块等价。
+在最新F真实父b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403上，完整原TRAIN6000/code0计算物理router梯度：两域分类/KD梯度余弦-0.97953；每域分类梯度与均衡KL梯度余弦RGB-0.38916、SAR+0.37493。按完整TRAIN平均router梯度范数20%校准固定辅助系数0.00869728，不读VAL/TEST。
+只做一次max角度.0003可逆router步，TRAIN均衡KL RGB1.708797→1.708680、SAR1.561136→1.561031；真实Top2被选频率完全未变，不能称负载改善。TRAIN分类/KD RGB2.316212→2.316250略升、SAR2.028954→2.028898略降；不是新测试/准确率结果，不保证后续训练成功。所有模型state已逐元素恢复，2454165退出无GPU；3份原始diagnosis/物理梯度/manifest全部远程本地SHA，18000 TRAIN前向呈现、376 router autograd评估，无VAL/TEST统计，无持久更新。
+新20轮有界均衡候选目前仅conditional_balanced_training_plan.json，未实现入口/未准入/未启动；Organ k4仍运行，不能热改其共享入口。后续须显式默认关闭的loss、GT隔离、保留联合TEST软输入且不误用旧固定域专家aux guard、真实父GPU准入/源码发布，再做一条有限对照，实际Top2频率和精度同时核查。新canonical父PT没有validation顶层键，原result.val按SHA核验重放可用作身份检查，不能篡改PT或偷偷恢复VAL选模门槛。
+
 ## F新增人工目标：两模态分别核验实际专家负载（2026-11-01）
 
 F交付除同一联合PT的RGB/SAR准确率，还需分别给TRAIN/VAL/原TEST开发每专家被选频率、Top2选择次数份额、Top2组合分布、平均硬门控后光功率以及逐类路由。图e若与新版F关联，必须引用同PT/同split/SHA的当前统计，不能沿用旧CNN或旧联合模型占比。
