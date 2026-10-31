@@ -47,6 +47,11 @@ shared projection、image读出、完整Qwen、UNet LoRA和VAE保持逐元素不
 原生CLIP image特征作监督，固定600步，仅训练已有image读出；text/pooled/shared projection
 和UNet均逐元素冻结。只使用44 TRAIN参考特征，不用场景GT或DEV选模，也不把原生CLIP
 编码器加入Qwen推理。与仅文字修正分开存权重和raw48，避免无法判断哪一项修改起效。
+两种条件修正的raw48均已生成；已见书架出现但主体消失等失败，不因特征误差改善放行。
+`scene_balanced_fixed_condition_recovery_20261031.json`随后固定修正后的整个读出，
+仅恢复UNet rank4 LoRA对新条件的适配，最多4轮、沿用同208 TRAIN／9 DEV标签。
+真实4步反向和每轮保存都核验完整head逐元素不变；选择仍是DEV noise loss诊断，
+完整48图的实际文字、粗造型和画质复核才决定是否可继续LG。
 
 **R1准入已撤回**：原尺寸终检发现无扶手椅被写成armchair；随后全40个TRAIN扶手椅目标复核，
 另3项无法确认扶手而排除。保留原数据／审核／best/last和撤回前记录，不覆盖历史身份。

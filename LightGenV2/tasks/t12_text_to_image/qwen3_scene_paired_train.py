@@ -330,6 +330,9 @@ def fit(a, payload):
             from .scene_initial_alignment import checked_alignment
             alignment_identity=checked_alignment(a.alignment,state,original_alignment_sha)
             head.load_state_dict(state['state_dict'], strict=True)
+    from .scene_fixed_condition_recovery import checked_freeze
+    frozen_head=checked_freeze(a.config_profile,parent,a.warmup,a.variant)
+    if frozen_head:head.eval().requires_grad_(False)
     train = [r for r in payload['records'] if r['split'] == 'train']
     group_weights={r['sample_id']:1. for r in train}
     if a.config_profile.get('balance_TRAIN_reference_condition_groups',False):
@@ -339,7 +342,7 @@ def fit(a, payload):
     assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
     cache_digest = digest(a.cache/'paired_cache.pt')
     history = []; rng = random.Random(20261029)
-    if head is not None:
+    if head is not None and not frozen_head:
         warm = torch.optim.AdamW(head.parameters(), lr=1e-4, weight_decay=.01)
         for step in range(a.warmup):
             chosen = rng.sample(train, 4)
@@ -349,7 +352,7 @@ def fit(a, payload):
             torch.nn.utils.clip_grad_norm_(head.parameters(), 1.); warm.step()
             if step % 20 == 0: write(a.output/'progress.json', {'stage': 'TRAIN_only_full_cohort_condition_warmup', 'step': step+1, 'total': a.warmup, 'loss': loss.item()})
         del warm
-    trainable = lora + ([] if head is None else list(head.parameters()))
+    trainable = lora + ([] if head is None or frozen_head else list(head.parameters()))
     contrast_weight=a.config_profile.get('TRAIN_reference_contrast_weight',0.)
     reference_contrast=TRAINReferenceContrast(payload) if contrast_weight else None
     scheduler = DDPMScheduler.from_config(pipe.scheduler.config)
@@ -377,14 +380,14 @@ def fit(a, payload):
         return loss, noise_mse, anchor
     def optimizer():
         groups = [{'params': lora, 'lr': a.lr}]
-        if head is not None: groups.append({'params': head.parameters(), 'lr': a.lr})
+        if head is not None and not frozen_head: groups.append({'params': head.parameters(), 'lr': a.lr})
         return torch.optim.AdamW(groups, weight_decay=.01)
     # Real 1024 backward smoke, then restore every trainable tensor before fitting.
     initial = [p.detach().clone() for p in trainable]; opt = optimizer(); smoke = []
     for step in range(4):
         began = time.monotonic(); loss, mse, anchor = loss_for(train[step], 1042+step)
         direct = {}
-        if head is not None:
+        if head is not None and not frozen_head:
             probes = [head.text.out.weight, head.image.out.weight]
             gradients = torch.autograd.grad(mse, probes, retain_graph=True)
             direct = {name: grad.float().abs().sum().item() for name,grad in zip(['text','image'],gradients)}
@@ -392,13 +395,15 @@ def fit(a, payload):
         opt.zero_grad(); loss.backward()
         lg = sum(p.grad.float().abs().sum().item() for p in lora if p.grad is not None)
         hg = 0 if head is None else sum(p.grad.float().abs().sum().item() for p in head.parameters() if p.grad is not None)
-        assert torch.isfinite(loss) and lg > 0 and (head is None or hg > 0)
+        assert torch.isfinite(loss) and lg > 0 and (head is None or frozen_head or hg > 0)
         assert all(torch.isfinite(p.grad).all() for p in trainable if p.grad is not None)
         torch.nn.utils.clip_grad_norm_(trainable, 1.); opt.step(); torch.cuda.synchronize()
         smoke.append({'step': step+1, 'loss': loss.item(), 'LoRA_gradient': lg, 'head_gradient': hg,
                       'epsilon_only_head_gradient':direct,
                       'seconds_including_backward': time.monotonic()-began})
+    if frozen_head:assert all(torch.equal(v.detach().cpu(),parent['head'][k])for k,v in head.state_dict().items())
     write(a.output/'smoke_report.json', {'complete': True, 'resolution': a.resolution, 'steps': smoke,
+        'condition_head_frozen':frozen_head,'frozen_head_exact_after_smoke':True if frozen_head else None,
         'Qwen_and_VAE_and_UNet_base_frozen': True, 'reset_after_smoke': True})
     with torch.no_grad():
         for p, before in zip(trainable, initial): p.copy_(before)
@@ -446,15 +451,19 @@ def fit(a, payload):
             'optical_frontend':payload.get('optical_frontend'),
             'frozen_optical_frontend_head_UNet_recovery':bool(payload.get('optical_frontend'))}
         state['joint_image_context']=False if head is None else head.joint_image_context
+        if frozen_head:
+            assert all(torch.equal(v,parent['head'][k])for k,v in state['head'].items())
+            state.update(condition_correction=parent['condition_correction'],image_condition_correction=parent['image_condition_correction'],frozen_condition_head_parent_sha256=digest(a.initial_paired/'best_checkpoint.pt'))
         torch.save(state, a.output/'last_checkpoint.pt')
         if score < best:
             best = score; stale = 0; torch.save(state, a.output/'best_checkpoint.pt')
         else: stale += 1
         if stale >= 2: break
         unet.train()
-        if head is not None: head.train()
+        if head is not None and not frozen_head: head.train()
     write(a.output/'report.json', {'complete': True, 'source_commit': os.environ['T12_SOURCE_COMMIT'],
         'variant': a.variant, 'epochs': len(history), 'actual_paired_updates': updates,
+        'condition_head_frozen':frozen_head,'head_exact_vs_corrected_parent':True if frozen_head else None,
         'TRAIN_pairs': len(train), 'DEV_noise_loss_pairs': len(dev), 'best_DEV_epsilon_MSE': best,
         'best_sha256': digest(a.output/'best_checkpoint.pt'), 'head_parameters': 0 if head is None else sum(p.numel() for p in head.parameters()),
         'trainable_UNet_LoRA_parameters': sum(p.numel() for p in lora), 'VAE_and_Qwen_and_UNet_base_frozen': True,
