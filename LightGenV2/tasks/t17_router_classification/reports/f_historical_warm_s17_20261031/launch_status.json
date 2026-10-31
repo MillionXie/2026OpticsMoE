@@ -2,7 +2,7 @@
   "status.json": {
     "state": "training",
     "pid": 1885725,
-    "epoch": 7,
+    "epoch": 60,
     "total_epochs": 60
   },
   "metadata.json": {
@@ -38,7 +38,7 @@
     "head_bootstrap_phases_bitwise_frozen": true
   },
   "history.json": {
-    "epoch": 7,
-    "VAL": 0.4355
+    "epoch": 60,
+    "VAL": 0.452
   }
 }

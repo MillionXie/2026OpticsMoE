@@ -19,7 +19,7 @@ from .figure_revision_data import load_panel_f
 from .train import write
 from .model_four import encode_rgb
 from .alternating_readout import domain_route_loss, anchored_classification, refit_existing_head
-from .original_f_teacher import prepare_original_teacher
+from .original_f_teacher import prepare_original_teacher, teacher_view_indices
 from .train_optical_four_ccd import route_statistics
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -115,7 +115,7 @@ def main():
     try:
         raw,identity=load_panel_f(cfg['data']) if cfg['dataset']=='eurosat_original_f' else load_raw(Path(cfg['data_root']),cfg)
         metadata['data']=identity;teacher_cfg=cfg.get('teacher');teacher_targets=prepare_original_teacher(raw,cfg,args.out) if teacher_cfg else None
-        if teacher_cfg and (not cfg.get('alternating_head') or cfg['augmentation']!='horizontal_flip'):raise ValueError('Teacher KD requires anchored head blocks and matching original hflip')
+        if teacher_cfg and (not cfg.get('alternating_head') or cfg['augmentation'] not in ('horizontal_flip','D4')):raise ValueError('Teacher KD requires anchored head blocks and matching cached augmentation')
         model=build_model(cfg).cuda();parent=None
         if cfg.get('parent_checkpoint'):
             parent_path=task/cfg['parent_checkpoint']
@@ -172,7 +172,7 @@ def main():
                 loss=anchored_classification(output['raw_logits'],y['train'][idx],model.shared_head.weight,anchor,block['anchor_strength'],cfg['label_smoothing']) if block else classification_objective(output,y['train'][idx],cfg)
                 if teacher_cfg:
                     from .original_f_teacher import teacher_KL
-                    loss=loss+teacher_cfg['weight']*teacher_KL(output['raw_logits'],teacher_targets[idx,(code==4).long()],teacher_cfg['temperature'])
+                    loss=loss+teacher_cfg['weight']*teacher_KL(output['raw_logits'],teacher_targets[idx,teacher_view_indices(code,cfg['augmentation'])],teacher_cfg['temperature'])
                 if aux:
                     acquisition=torch.as_tensor(raw['train']['domains'][order[start:start+cfg['batch']]],device='cuda',dtype=torch.long)
                     loss=loss+aux*domain_route_loss(output['dense_route_power'],acquisition)
@@ -188,9 +188,18 @@ def main():
             block_record=None
             if block and epoch%block['interval_epochs']==0:
                 model.eval();features=[]
+                refit_views=tuple(range(8)) if block.get('training_views')=='D4_all8' else (0,)
+                if block.get('training_views','unaugmented') not in ('unaugmented','D4_all8'):raise ValueError('Unknown head block training views')
+                if len(refit_views)>1 and cfg['augmentation']!='D4':raise ValueError('D4 head block requires D4 training')
                 with torch.no_grad():
-                    for start in range(0,len(y['train']),cfg['eval_batch']):features.append(model.optical_features(x['train'][start:start+cfg['eval_batch']])['ccd_features'])
-                block_record=refit_existing_head(model.shared_head,torch.cat(features),y['train'],anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'],teacher_targets[:,0] if teacher_cfg else None,teacher_cfg['weight'] if teacher_cfg else 0.,teacher_cfg['temperature'] if teacher_cfg else 2.)
+                    for view in refit_views:
+                        for start in range(0,len(y['train']),cfg['eval_batch']):
+                            field=x['train'][start:start+cfg['eval_batch']]
+                            if view:field=augment_packed(field,torch.full((len(field),),view,device=field.device,dtype=torch.long))
+                            features.append(model.optical_features(field)['ccd_features'])
+                refit_teacher=torch.cat([teacher_targets[:,view if cfg['augmentation']=='D4' else 0] for view in refit_views]) if teacher_cfg else None
+                block_record=refit_existing_head(model.shared_head,torch.cat(features),y['train'].repeat(len(refit_views)),anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'],refit_teacher,teacher_cfg['weight'] if teacher_cfg else 0.,teacher_cfg['temperature'] if teacher_cfg else 2.)
+                block_record.update(original_TRAIN_images=len(y['train']),augmentation_codes=list(refit_views))
                 head_opt.state.clear() # Momentum belongs to the old head coordinates.
             val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val)>best;stale=0 if improved else stale+1
             if improved:

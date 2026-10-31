@@ -1,0 +1,57 @@
+{
+  "only_original_TRAIN": true,
+  "TEST_accessed_for_metrics": false,
+  "augmentation": "rot90(code%4), then horizontal flip for code>=4; raw NHWC axes1,2; channels unchanged",
+  "teacher_checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+  "rows": [
+    {
+      "code": 0,
+      "TRAIN_accuracy": 0.8008333333333333,
+      "RGB": 0.8343333333333334,
+      "SAR": 0.7673333333333333
+    },
+    {
+      "code": 1,
+      "TRAIN_accuracy": 0.781,
+      "RGB": 0.8266666666666667,
+      "SAR": 0.7353333333333333
+    },
+    {
+      "code": 2,
+      "TRAIN_accuracy": 0.7931666666666667,
+      "RGB": 0.8333333333333334,
+      "SAR": 0.753
+    },
+    {
+      "code": 3,
+      "TRAIN_accuracy": 0.7825,
+      "RGB": 0.8293333333333334,
+      "SAR": 0.7356666666666667
+    },
+    {
+      "code": 4,
+      "TRAIN_accuracy": 0.8011666666666667,
+      "RGB": 0.8356666666666667,
+      "SAR": 0.7666666666666667
+    },
+    {
+      "code": 5,
+      "TRAIN_accuracy": 0.7803333333333333,
+      "RGB": 0.826,
+      "SAR": 0.7346666666666667
+    },
+    {
+      "code": 6,
+      "TRAIN_accuracy": 0.796,
+      "RGB": 0.835,
+      "SAR": 0.757
+    },
+    {
+      "code": 7,
+      "TRAIN_accuracy": 0.7806666666666666,
+      "RGB": 0.8273333333333334,
+      "SAR": 0.734
+    }
+  ],
+  "mean_D4_teacher_TRAIN_accuracy": 0.7894583333333334
+}

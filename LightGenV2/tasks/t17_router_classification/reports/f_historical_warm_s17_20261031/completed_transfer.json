@@ -1,0 +1,73 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/f_historical_warm_s17_20261031/warm"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/TRAIN_teacher_logits.npz",
+      "size": 469576,
+      "sha256": "bfef460f8fa248a5cd7972d85f6f658bfefcb815deebfac6ac39261100958f68"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/best_checkpoint.pt",
+      "size": 1960976,
+      "sha256": "c8bfa39ca7fe187d4c8de284bb23ee94c066466aff85ebac7c024189fe5de102"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/exit_receipt.json",
+      "size": 56,
+      "sha256": "bb40532e9edadecc0ee67c8fa32c4213dc6b422651140a1e81434ea9604c54e5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/history.json",
+      "size": 388285,
+      "sha256": "b31b156d713f4a647049560180f90dac2ecf151cd672e16875087d8859f5d1ec"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/last_checkpoint.pt",
+      "size": 5797239,
+      "sha256": "3e1fcc8f2f2019f177df42a7f502e7368b6473ba6d1cfccb6822948395ddfce5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/metadata.json",
+      "size": 8284,
+      "sha256": "3295f28e82ccd31dccfe06786b59029b1829b0d0926bbdc0e1f935ba244da9d5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/result.json",
+      "size": 13998,
+      "sha256": "aed6711fab78a01e092e937aa0d46eab02b8e766286ca05956f244581322ab51"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/selection_lock.json",
+      "size": 207,
+      "sha256": "6cc3c005ae79d76f2acc6b79aa1f0ea045e7df90955dbfea4092eca5cb0ccf6f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/status.json",
+      "size": 14039,
+      "sha256": "62ef034639f475ae0ef4d5127b1cae49f11795031756f1798df70e6b23a1e76a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/teacher_manifest.json",
+      "size": 894,
+      "sha256": "3664009afc2ab8536584e0ec806c3a6665c960c31429f44670f59a5280883cb1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/test_predictions.npz",
+      "size": 137362,
+      "sha256": "dec7a48c72908a51864e65b59b329d940e4436dcb409c97ad66a36961784250a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/train_predictions.npz",
+      "size": 405771,
+      "sha256": "efdd0de691987b8a388cee23b4f7338c2d99b7715b8d93ae6ac6802b2437a6c2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm/val_predictions.npz",
+      "size": 137174,
+      "sha256": "20fe7d8277fb899f6786c9c7ae997db404b59fcc5aad8ac9515f45fcd98fc80f"
+    }
+  ]
+}

@@ -1,0 +1,189 @@
+{
+  "historical_phase_import": {
+    "imported_phase_names": [
+      "first_phase",
+      "global_phase",
+      "router_phase"
+    ],
+    "all_imported_phases_bitwise_equal": true,
+    "historical_oeo": "none",
+    "new_oeo": "intensity_softsign",
+    "old_function_or_accuracy_inherited": false,
+    "old_CNN_in_student": false
+  },
+  "head_bootstrap": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 6000,
+    "numerical_ridge": 0.0017546638939934323,
+    "uncentred_Gram_eigen_min": 6.264856869709924e-08,
+    "uncentred_Gram_eigen_max": 1348.3243182198876,
+    "Gram_regularized_condition": 768396.6932619881,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 3.5578371467982857,
+    "objective_after": 2.364683038373,
+    "internal_steps": 150,
+    "closure_calls": 161,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": true
+  },
+  "head_bootstrap_old_phase_freeze": true,
+  "completed_epochs": 60,
+  "selected_epoch": 59,
+  "best_sha256": "c8bfa39ca7fe187d4c8de284bb23ee94c066466aff85ebac7c024189fe5de102",
+  "TRAIN_VAL_gap_pp": 7.649999999999996,
+  "splits": {
+    "train": {
+      "n": 6000,
+      "correct": 3201,
+      "accuracy": 0.5335,
+      "domains": {
+        "RGB": 0.5456666666666666,
+        "SAR": 0.5213333333333333
+      },
+      "macro_recall": 0.5335,
+      "mean_capture": 0.016809850931167603,
+      "mean_power": [
+        0.002282259054481983,
+        0.6774197816848755,
+        0.3202282190322876,
+        6.982124614296481e-05
+      ],
+      "mean_dense_power": [
+        0.08608212321996689,
+        0.6188333630561829,
+        0.2933277189731598,
+        0.001757128513418138
+      ],
+      "class_recall": [
+        0.43,
+        0.7683333333333333,
+        0.14333333333333334,
+        0.31666666666666665,
+        0.735,
+        0.4866666666666667,
+        0.445,
+        0.6466666666666666,
+        0.6966666666666667,
+        0.6666666666666666
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "val": {
+      "n": 2000,
+      "correct": 914,
+      "accuracy": 0.457,
+      "domains": {
+        "RGB": 0.47,
+        "SAR": 0.444
+      },
+      "macro_recall": 0.45699999999999996,
+      "mean_capture": 0.016794081777334213,
+      "mean_power": [
+        0.003178829327225685,
+        0.6776653528213501,
+        0.3191554546356201,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.0861750915646553,
+        0.6196014285087585,
+        0.29250404238700867,
+        0.0017189610516652465
+      ],
+      "class_recall": [
+        0.41,
+        0.655,
+        0.08,
+        0.2,
+        0.645,
+        0.575,
+        0.24,
+        0.59,
+        0.605,
+        0.57
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "test": {
+      "n": 2000,
+      "correct": 942,
+      "accuracy": 0.471,
+      "domains": {
+        "RGB": 0.537,
+        "SAR": 0.405
+      },
+      "macro_recall": 0.471,
+      "mean_capture": 0.01678340509533882,
+      "mean_power": [
+        0.0018096626736223698,
+        0.6808769702911377,
+        0.31731247901916504,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.0891968235373497,
+        0.6192066073417664,
+        0.28988274931907654,
+        0.0017134599620476365
+      ],
+      "class_recall": [
+        0.46,
+        0.62,
+        0.06,
+        0.22,
+        0.62,
+        0.39,
+        0.375,
+        0.5,
+        0.645,
+        0.82
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    }
+  },
+  "head_internal_steps": 480,
+  "teacher_TRAIN_IDs_only": true,
+  "teacher_cache_shape": [
+    6000,
+    2,
+    10
+  ],
+  "teacher_manifest": {
+    "checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+    "teacher_parameters": 94762,
+    "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/frozen_electronic/model.py",
+    "original_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+    "teacher_used_TEST": false,
+    "current_cache_splits": [
+      "TRAIN unaugmented",
+      "TRAIN horizontal_flip"
+    ],
+    "TEST_cached": false,
+    "teacher_parameters_bitwise_frozen": true,
+    "metrics": {
+      "train": {
+        "accuracy": 0.8008333333333333,
+        "domains": {
+          "RGB": 0.8343333333333334,
+          "SAR": 0.7673333333333333
+        }
+      },
+      "val": {
+        "accuracy": 0.7605,
+        "domains": {
+          "RGB": 0.769,
+          "SAR": 0.752
+        }
+      }
+    },
+    "logits_sha256": "bfef460f8fa248a5cd7972d85f6f658bfefcb815deebfac6ac39261100958f68"
+  },
+  "phase_updates": {
+    "first_phase": 23.669002532958984,
+    "global_phase": 40.97599411010742,
+    "router_phase": 12.32542610168457,
+    "shared_head.weight": 25.054216384887695
+  },
+  "independent_TEST_claim": false,
+  "interpretation": "Limited KD run completed; evaluate numeric gains without claiming old CNN range reached. Router fourth expert still unused. User confirmed same 478 main /224 router. Historical-mask adaptation completed; keep stronger 50% candidate if this is worse."
+}
