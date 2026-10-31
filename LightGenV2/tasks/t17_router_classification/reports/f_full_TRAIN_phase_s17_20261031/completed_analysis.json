@@ -1,0 +1,96 @@
+{
+  "source": "c16a22da27843dc6b71e69282401b1db774961b2",
+  "completed_epochs": 10,
+  "selected_epoch": 0,
+  "selected_parent": true,
+  "phase_optimizer_updates": 10,
+  "head_SGD_updates": 0,
+  "head_internal_steps": 80,
+  "head_feature_view_presentations": 96000,
+  "original_TRAIN_images": 6000,
+  "random_training_view_presentations": 60000,
+  "curve": [
+    {
+      "epoch": 1,
+      "training_objective_before_update": 1.7269053805669148,
+      "VAL": 0.156,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 2,
+      "training_objective_before_update": 16.32895719909668,
+      "VAL": 0.362,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 3,
+      "training_objective_before_update": 3.1875322030385336,
+      "VAL": 0.236,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 4,
+      "training_objective_before_update": 5.391951793670654,
+      "VAL": 0.2515,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 5,
+      "training_objective_before_update": 5.370634106953939,
+      "VAL": 0.523,
+      "head_objective_before": 4.496453147209216,
+      "head_objective_after": 1.7050335891070378
+    },
+    {
+      "epoch": 6,
+      "training_objective_before_update": 1.6990344457626343,
+      "VAL": 0.4145,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 7,
+      "training_objective_before_update": 2.399640556335449,
+      "VAL": 0.3855,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 8,
+      "training_objective_before_update": 2.7685121326446533,
+      "VAL": 0.408,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 9,
+      "training_objective_before_update": 2.632077421824137,
+      "VAL": 0.429,
+      "head_objective_before": null,
+      "head_objective_after": null
+    },
+    {
+      "epoch": 10,
+      "training_objective_before_update": 2.562618687947591,
+      "VAL": 0.515,
+      "head_objective_before": 2.5849653397697256,
+      "head_objective_after": 1.721701116837997
+    }
+  ],
+  "finding": "The fixed-head full Adam update was not constrained by a TRAIN decrease check. First VAL fell from 52.4% to 15.6%; subsequent sampled TRAIN objective rose from 1.727 to 16.329. E5 and E10 head refits reduced their own fixed-feature objectives to 1.705 and 1.722 and recovered VAL to 52.3% and 51.5%. Different epochs use different random D4 codes, so their objectives are not a controlled paired line-search measurement.",
+  "interpretation": "Step size and optical/head coordination are plausible causes. This does not establish overfitting or a model capacity bound.",
+  "next_method_status": "HYPOTHESIS_ONLY_NOT_IMPLEMENTED_NOT_STARTED",
+  "next_method": {
+    "name": "TRAIN-only physical-phase backtracking",
+    "parent": "protected D4 E22",
+    "scope": "Freeze router; train original expert/global phases; refit same single head in bounded blocks",
+    "acceptance": "For one fixed TRAIN augmentation-code vector and frozen head, evaluate candidate and baseline on the identical full TRAIN set; accept only a finite Armijo decrease, otherwise halve canonical physical phase step up to a fixed trial limit or restore all tensors bitwise.",
+    "constraints": "No VAL/TEST in step acceptance, no inference change, no additional parameters, no changed data. Tests, exact-parent GPU admission and published source required before launch.",
+    "budget": "One bounded candidate, proposed max20 rounds/min10/pat10, max8 forward trials per phase update, head block every5 rounds max40 inner steps; count all forward trial views separately."
+  },
+  "independent_TEST_claim": false
+}

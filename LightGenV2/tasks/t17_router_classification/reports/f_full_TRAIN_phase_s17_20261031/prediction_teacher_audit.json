@@ -1,0 +1,191 @@
+{
+  "phase_optimizer_update_count": 10,
+  "head_SGD_updates": 0,
+  "head_view_presentations": 96000,
+  "head_block_views_verified": true,
+  "completed_epochs": 10,
+  "selected_epoch": 0,
+  "best_sha256": "435cd51ba808f1031d6b9fc40b8448a59c6096417e2c90f2d1ab7921618cb459",
+  "TRAIN_VAL_gap_pp": 11.449999999999994,
+  "splits": {
+    "train": {
+      "n": 6000,
+      "correct": 3831,
+      "accuracy": 0.6385,
+      "domains": {
+        "RGB": 0.6533333333333333,
+        "SAR": 0.6236666666666667
+      },
+      "macro_recall": 0.6385,
+      "mean_capture": 0.08537475764751434,
+      "mean_power": [
+        0.018140481784939766,
+        0.0881626158952713,
+        0.893640398979187,
+        5.744375448557548e-05
+      ],
+      "mean_dense_power": [
+        0.0655580461025238,
+        0.09538942575454712,
+        0.8380581736564636,
+        0.0009947045473381877
+      ],
+      "class_recall": [
+        0.6133333333333333,
+        0.835,
+        0.38,
+        0.47333333333333333,
+        0.8133333333333334,
+        0.5866666666666667,
+        0.5,
+        0.6933333333333334,
+        0.7783333333333333,
+        0.7116666666666667
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "val": {
+      "n": 2000,
+      "correct": 1048,
+      "accuracy": 0.524,
+      "domains": {
+        "RGB": 0.55,
+        "SAR": 0.498
+      },
+      "macro_recall": 0.5239999999999999,
+      "mean_capture": 0.08522407710552216,
+      "mean_power": [
+        0.01855713315308094,
+        0.08808523416519165,
+        0.8933583498001099,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.0658993050456047,
+        0.09514494240283966,
+        0.83799809217453,
+        0.0009579393081367016
+      ],
+      "class_recall": [
+        0.545,
+        0.76,
+        0.24,
+        0.31,
+        0.69,
+        0.585,
+        0.265,
+        0.615,
+        0.64,
+        0.59
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "test": {
+      "n": 2000,
+      "correct": 1070,
+      "accuracy": 0.535,
+      "domains": {
+        "RGB": 0.6,
+        "SAR": 0.47
+      },
+      "macro_recall": 0.5349999999999999,
+      "mean_capture": 0.08434495329856873,
+      "mean_power": [
+        0.023621032014489174,
+        0.08586376905441284,
+        0.8905152678489685,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.0689190924167633,
+        0.09667946398258209,
+        0.8334559798240662,
+        0.0009452012018300593
+      ],
+      "class_recall": [
+        0.495,
+        0.64,
+        0.14,
+        0.285,
+        0.71,
+        0.45,
+        0.495,
+        0.595,
+        0.71,
+        0.83
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    }
+  },
+  "head_internal_steps": 80,
+  "teacher_TRAIN_IDs_only": true,
+  "teacher_cache_shape": [
+    6000,
+    8,
+    10
+  ],
+  "teacher_manifest": {
+    "checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+    "teacher_parameters": 94762,
+    "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/frozen_electronic/model.py",
+    "original_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+    "teacher_used_TEST": false,
+    "current_cache_splits": [
+      "TRAIN D4 code0",
+      "TRAIN D4 code1",
+      "TRAIN D4 code2",
+      "TRAIN D4 code3",
+      "TRAIN D4 code4",
+      "TRAIN D4 code5",
+      "TRAIN D4 code6",
+      "TRAIN D4 code7"
+    ],
+    "training_view_codes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "TEST_cached": false,
+    "teacher_parameters_bitwise_frozen": true,
+    "metrics": {
+      "train": {
+        "accuracy": 0.8008333333333333,
+        "domains": {
+          "RGB": 0.8343333333333334,
+          "SAR": 0.7673333333333333
+        },
+        "accuracy_by_augmentation_code": {
+          "0": 0.8008333333333333,
+          "1": 0.781,
+          "2": 0.7931666666666667,
+          "3": 0.7825,
+          "4": 0.8011666666666667,
+          "5": 0.7803333333333333,
+          "6": 0.796,
+          "7": 0.7806666666666666
+        }
+      },
+      "val": {
+        "accuracy": 0.7605,
+        "domains": {
+          "RGB": 0.769,
+          "SAR": 0.752
+        }
+      }
+    },
+    "logits_sha256": "9215b79ef41fabc76a96dd52ed311169e1453c0ce271221058332cc225452b2a"
+  },
+  "phase_updates": {
+    "first_phase": 0.0,
+    "global_phase": 0.0,
+    "router_phase": 0.0,
+    "shared_head.weight": 0.0
+  },
+  "independent_TEST_claim": false,
+  "interpretation": "Full TRAIN Adam candidate ended after ten rounds without improving parent VAL; E0 protected. No inference-model or dataset change. This is a failed optimization attempt, not evidence of capacity limit."
+}

@@ -78,6 +78,10 @@ def main():
     d4=read(task/'runs/simulation/f_D4_regularized_s17_20261031/D4/result.json');report['F_D4_regularized']=d4
     if d4:
         page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1><h2>F最新已完成：RGB60.00%、SAR47.00%</h2><p>D4正则化32轮早停、VAL选E22，TRAIN63.85/VAL52.40/原TEST开发53.50%。相比KD父开发+3.50pp，TRAIN/VAL差16.83→11.45pp，尚未达到旧图范围，不声称没有过拟合。全部原ID/划分保持、13文件10.55MB含完整三划分预测路由与TRAIN8视图教师缓存已SHA/strict核验，自己的GPU进程已退出。当前准备有限全TRAIN相位梯度聚合训练，推理模型不变，未把准备当完成。</p>')
+    full=read(task/'runs/simulation/f_full_TRAIN_phase_s17_20261031/full/result.json');report['F_full_TRAIN_phase']=full
+    if full:
+        page=page.replace('当前准备有限全TRAIN相位梯度聚合训练，推理模型不变，未把准备当完成。','全TRAIN聚合已完整10轮停止、选回E0，未改善父；当前自己的训练GPU进程已退出。')
+        page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1><p class="note">最新完整阶段：全TRAIN相位Adam未改善，10轮后选回D4父，RGB60.00/SAR47.00%。首轮VAL骤降、头重拟合后恢复，提示步长与头协调问题；不证明容量上限。10次相位更新、0次head SGD、80头内部步；全部权重/预测/路由SHA核验且自己的GPU已释放。TRAIN回溯仅为下一假设，尚未实现或启动。</p>')
     (out/'results.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     (out/'results.html').write_text(page,encoding='utf-8');print([(n,r['status']['state']) for n,r in records.items()])
 

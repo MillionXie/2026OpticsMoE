@@ -1,6 +1,16 @@
 # T17 单数据集路由分类对照
 
-## D4正则化已完成：泛化差缩小，有限全TRAIN梯度聚合准备（2026-10-31）
+## 全TRAIN聚合候选已结束：未改善，保护D4父（2026-10-31）
+
+worker1956118已10轮平台停止，VAL选回E0：TRAIN63.85/VAL52.40/原TEST开发53.50%，RGB60.00/SAR47.00。
+完整best/last、三划分逐样本预测/路由、仅TRAIN的6000×8×10教师缓存已远程本地SHA、strict模型/ID标签/Top2核验；自己的PID退出无GPU分配。
+实际10次全TRAIN相位更新、0次head SGD、2次48000视图head块共80内部步分别记录，不能当作10轮常规SGD预算。
+首轮VAL跌到15.60%，下一轮TRAIN目标显著升高；E5/E10头重拟合后VAL恢复至52.30/51.50%，均未超过父。
+跨轮随机D4码不同，不能将这些目标差当作严格配对的步长证据；提示相位步长/头协调值得诊断，不证明模型容量上限。
+下一条TRAIN-only物理相位回溯方案只是条件假设，尚未实现/启动：冻结路由，以同一完整TRAIN视图和固定head核验下降，有限回溯否则恢复原相位；须测试、真实GPU准入和Git发布。
+所有推理/数据合同不变，未达到旧图性能范围；没有自己的训练进程在跑。
+
+## D4正则化已完成：泛化差缩小（历史阶段，2026-10-31）
 
 D4 worker1908742已32轮早停、VAL选E22：TRAIN63.85/VAL52.40/原TEST开发53.50%，RGB60.00/SAR47.00。
 相比KD50%父，开发+3.50pp，TRAIN/VAL差从16.83缩至11.45pp，但尚未达到旧图范围，不能声称消除过拟合。
@@ -18,7 +28,7 @@ phase_optimizer_steps逐轮记录，不能将一次全TRAIN更新冒充94/47次S
 sourcec16a22da已通过默认bitwise更新兼容/真实光学整批与样本加权累积梯度等价等152项CPU检查，
 精确父真实TRAIN GPU累积梯度/有限phase更新/头block冻结准入通过，并main发布、服务器路径SHA。
 GPU逐元素首断言因head约2.3e-6绝对浮差未过，已按float32相对L2（约1e-5）实测复核，失败收据保留，不改数据/模型。
-worker1956118已启动，root runs/simulation/f_full_TRAIN_phase_s17_20261031/full，metadata明确full_TRAIN和无mini-batch head optimizer，最近E9。
+worker1956118已完整结束10轮、选回E0；root runs/simulation/f_full_TRAIN_phase_s17_20261031/full，metadata明确full_TRAIN和无mini-batch head optimizer。
 该聚合方法只是待证训练方法，保留所有失败与现有53.5%父，不保证达到旧图范围。
 
 ## 旧mask继承已完成，有限D4正则化对照准备（2026-10-31）
