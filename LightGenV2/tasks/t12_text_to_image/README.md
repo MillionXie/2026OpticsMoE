@@ -2,6 +2,18 @@
 
 ### 2026-10-31 当前优先：修正指令与训练目标不一致
 
+当前新数据已实际完成准入：`scene_visible_anchor_balanced_reviewed_pairs_20261031`，209 TRAIN＋9 DEV标签，
+44款TRAIN商品／44个白底视图，每个相同RGB有三种主要场景，132组全部有经审核目标；不复制GT冒充独立数据。
+pair SHA `c26c529af4255b5c75b2b3be6d9c58d11d1bef25477a7b85486321e522c997bb`，
+固定全16个DEV视图／48请求 SHA `c55082b24e479d80f57c0bb8894c150ffd6a193fee3ed8e4020b297439c7930f`。
+全部285份DATA文件83,441,526字节已本地逐SHA核验；完整218配对及48请求展示在
+`runs/simulation/scene_balanced_reviewed_dataset_delivery_20261031/index.html`，明确是训练目标，不是新模型输出。
+审核涵盖显式主体、承托家具／背景锚点及粗造型；原审核、所有被拒候选、原始制作文字与修订均保留。
+新独立流程`scene_visible_anchor_balanced_fresh_baselines_workflow_20261031`已实际启动，执行源码
+`e4e91c71080e2baba43d911f827fd47e1c93cfb5`，依次为完整Qwen真图文缓存、Qwen fresh配对训练／raw48、
+同数据原生SDXL＋IP fresh配对训练／raw48；不装旧配对UNet LoRA，不启动LG，不打开TEST。
+当前仅数据准入完成，两个新baseline的生成遵从尚待全图验收；即便噪声损失更低也不能直接认证成功。
+
 完整264候选已逐张复查：196可作TRAIN示例、36拒绝、32不确定；这是数据筛选记录，非模型成功率。
 随后按同一关系准则复查复制的48槽先导，发现其中还有长枕变方、床边落地灯及悬空灯等；
 准入以完整R2／先导R3记录为准，前述196不等于最终可训练数量。保留第一审核及所有修订理由。
