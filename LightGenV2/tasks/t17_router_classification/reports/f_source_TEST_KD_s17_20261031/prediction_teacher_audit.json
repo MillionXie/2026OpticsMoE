@@ -1,0 +1,204 @@
+{
+  "RGB": {
+    "source_TEST_soft_views": 40000,
+    "total_phase_updates": 2520,
+    "head_internal_steps": 320,
+    "mixed_head_views": 256000,
+    "selected_epoch": 32,
+    "completed_epochs": 40,
+    "TRAIN_VAL_gap_pp": 4.700000000000005,
+    "parts": {
+      "train": {
+        "accuracy": 0.623,
+        "domains": {
+          "RGB": {
+            "correct": 1869,
+            "n": 3000,
+            "accuracy": 0.623
+          }
+        },
+        "mean_power": [
+          0.20558546483516693,
+          0.09095077216625214,
+          0.7034637331962585,
+          0.0
+        ],
+        "selected_fraction": [
+          0.595,
+          0.405,
+          1.0,
+          0.0
+        ],
+        "mean_capture": 0.035744380205869675
+      },
+      "val": {
+        "accuracy": 0.576,
+        "domains": {
+          "RGB": {
+            "correct": 576,
+            "n": 1000,
+            "accuracy": 0.576
+          }
+        },
+        "mean_power": [
+          0.20130787789821625,
+          0.09136505424976349,
+          0.707327663898468,
+          0.0
+        ],
+        "selected_fraction": [
+          0.594,
+          0.406,
+          1.0,
+          0.0
+        ],
+        "mean_capture": 0.03566534444689751
+      },
+      "test": {
+        "accuracy": 0.368,
+        "domains": {
+          "RGB": {
+            "correct": 609,
+            "n": 1000,
+            "accuracy": 0.609
+          },
+          "SAR": {
+            "correct": 127,
+            "n": 1000,
+            "accuracy": 0.127
+          }
+        },
+        "mean_power": [
+          0.27030712366104126,
+          0.0741841271519661,
+          0.6555089354515076,
+          0.0
+        ],
+        "selected_fraction": [
+          0.734,
+          0.267,
+          0.999,
+          0.0
+        ],
+        "mean_capture": 0.03463030233979225
+      }
+    },
+    "teacher_source_TEST_exposed": true,
+    "student_TRAIN_only": false,
+    "teacher_cache_shape": [
+      3000,
+      8,
+      10
+    ],
+    "original_ID_label_domain_arrays_match": true,
+    "actual_Top2": true,
+    "checkpoint_sha256": "cfa3b0877befa64c131acd25d274bd2c3db14dabecbf47f55ead02f2315666ae",
+    "all_parameter_updates": {
+      "first_phase": 6.375215530395508,
+      "global_phase": 8.965035438537598,
+      "router_phase": 3.7515320777893066,
+      "shared_head.weight": 10.186731338500977
+    }
+  },
+  "SAR": {
+    "source_TEST_soft_views": 40000,
+    "total_phase_updates": 2520,
+    "head_internal_steps": 320,
+    "mixed_head_views": 256000,
+    "selected_epoch": 40,
+    "completed_epochs": 40,
+    "TRAIN_VAL_gap_pp": 1.5666666666666607,
+    "parts": {
+      "train": {
+        "accuracy": 0.5336666666666666,
+        "domains": {
+          "SAR": {
+            "correct": 1601,
+            "n": 3000,
+            "accuracy": 0.5336666666666666
+          }
+        },
+        "mean_power": [
+          0.4956248700618744,
+          0.4693388342857361,
+          0.03490183502435684,
+          0.0001343291369266808
+        ],
+        "selected_fraction": [
+          0.947,
+          0.9496666666666667,
+          0.103,
+          0.0003333333333333333
+        ],
+        "mean_capture": 0.025938736274838448
+      },
+      "val": {
+        "accuracy": 0.518,
+        "domains": {
+          "SAR": {
+            "correct": 518,
+            "n": 1000,
+            "accuracy": 0.518
+          }
+        },
+        "mean_power": [
+          0.5008627772331238,
+          0.4675475060939789,
+          0.03158972039818764,
+          0.0
+        ],
+        "selected_fraction": [
+          0.948,
+          0.955,
+          0.097,
+          0.0
+        ],
+        "mean_capture": 0.025798315182328224
+      },
+      "test": {
+        "accuracy": 0.2835,
+        "domains": {
+          "RGB": {
+            "correct": 111,
+            "n": 1000,
+            "accuracy": 0.111
+          },
+          "SAR": {
+            "correct": 456,
+            "n": 1000,
+            "accuracy": 0.456
+          }
+        },
+        "mean_power": [
+          0.433365136384964,
+          0.45981365442276,
+          0.10682114213705063,
+          0.0
+        ],
+        "selected_fraction": [
+          0.8055,
+          0.9425,
+          0.252,
+          0.0
+        ],
+        "mean_capture": 0.025176426395773888
+      }
+    },
+    "teacher_source_TEST_exposed": true,
+    "student_TRAIN_only": false,
+    "teacher_cache_shape": [
+      3000,
+      8,
+      10
+    ],
+    "original_ID_label_domain_arrays_match": true,
+    "actual_Top2": true,
+    "checkpoint_sha256": "3bfd112d11427cf1899c6964eec6091c6d57db6a8c8745295bf0a04e1163444b",
+    "all_parameter_updates": {
+      "first_phase": 7.347153186798096,
+      "global_phase": 6.949100017547607,
+      "router_phase": 4.976399898529053,
+      "shared_head.weight": 7.358363151550293
+    }
+  }
+}

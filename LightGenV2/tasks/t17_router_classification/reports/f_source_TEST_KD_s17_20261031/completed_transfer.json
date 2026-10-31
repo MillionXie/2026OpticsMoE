@@ -1,0 +1,159 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/f_source_TEST_KD_s17_20261031/RGB",
+    "runs/simulation/f_source_TEST_KD_s17_20261031/SAR"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/SOURCE_TEST_teacher_logits.npz",
+      "size": 301135,
+      "sha256": "5beae8716a9fce20d95916529a058bbecb41caa9b21e2f40f98513af140b613a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/TRAIN_teacher_logits.npz",
+      "size": 900211,
+      "sha256": "fe6cba4292cf8fea1381f47608153e5e99df5a3f3d7de96ae4216a928043c2c7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/best_checkpoint.pt",
+      "size": 1960016,
+      "sha256": "cfa3b0877befa64c131acd25d274bd2c3db14dabecbf47f55ead02f2315666ae"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/exit_receipt.json",
+      "size": 56,
+      "sha256": "e616ae7ff026b39ed3940aaae938bee8ff8fb2de246820d24250cdfcff8b9f69"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/history.json",
+      "size": 219924,
+      "sha256": "bb71de647b0f45fc9b02784382a7e2d147e4faaa67faa68b7364a0b9a4e6957d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/last_checkpoint.pt",
+      "size": 5796791,
+      "sha256": "fb0623cf7bd76cc61e9d0fe04e5e817d0cb74820d698571ec2c869d60512486c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/metadata.json",
+      "size": 7674,
+      "sha256": "4f64189ff9821dfb0ce1831a3530da39c7fa9632e2bdb6049652999a0fd88d67"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/result.json",
+      "size": 11527,
+      "sha256": "9ca167a7719a1283f3641d888957b9f95dc501d2f00cc33811dc7c4feff2116a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/selection_lock.json",
+      "size": 207,
+      "sha256": "bc62a900382449505a93134497b96e5e9875c8ca49e0359dc85bd4f6923b1eb2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/source_TEST_distillation_manifest.json",
+      "size": 290,
+      "sha256": "3f6ae56d2d88e2d2ebef7fa27dcfc6ef108042e9da650b3381794d7961c4e18f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/status.json",
+      "size": 11568,
+      "sha256": "a181260c6eeb4017b797cb310710407d177439df83927f078b3fb92a6c7cc23d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/teacher_manifest.json",
+      "size": 4133,
+      "sha256": "96ab4817cac8ca904a9215a11e0d4cac017f067aadab90f95716590ed02152ea"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/test_predictions.npz",
+      "size": 139115,
+      "sha256": "95df8abc23d79f6b422712d4990f6beff637f96da00c3a840ad534a0bdd67ce1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/train_predictions.npz",
+      "size": 208226,
+      "sha256": "7350a52e74118c2249fcec5108434d4e44af4cc3d08ab19355275a3b894da50d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/RGB/val_predictions.npz",
+      "size": 71223,
+      "sha256": "fa21aae559f1674ce4d9788eb86b08f3cbfb57bb0e462a6d224f8caa0fc0fe49"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/SOURCE_TEST_teacher_logits.npz",
+      "size": 301812,
+      "sha256": "ab779604056ddf556f328de57497afc870563e122572e134abad6ff607a34118"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/TRAIN_teacher_logits.npz",
+      "size": 901300,
+      "sha256": "134b7d37363041ac72381c8ebf9e8fc9f391f70f0930f29418a44978052d4cbe"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/best_checkpoint.pt",
+      "size": 1960016,
+      "sha256": "3bfd112d11427cf1899c6964eec6091c6d57db6a8c8745295bf0a04e1163444b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/exit_receipt.json",
+      "size": 56,
+      "sha256": "885b2f4660f99c08e389b20083a3935aa394b59ff79999a44145421719f42b65"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/history.json",
+      "size": 222100,
+      "sha256": "4f1d363cac8cdaa607b83247892b3a500731eb532c798d5d834058b72cc13921"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/last_checkpoint.pt",
+      "size": 5796791,
+      "sha256": "a63b74393c5364353e1f438c030696220fd995dd64bc4783baa911d4d91f7863"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/metadata.json",
+      "size": 7674,
+      "sha256": "ed9b3cd676b625d99c268f55fc9bb68a7fe9b8f92978f1dc4d084e198b0915d0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/result.json",
+      "size": 11862,
+      "sha256": "44c391f0447ff578c7cd1c9c024db643c89554dd5a0db953a1ab529445b72668"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/selection_lock.json",
+      "size": 207,
+      "sha256": "710b75691ce5a20e0ec57d0de0452a31805396338b9761b548c866310e0d58c9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/source_TEST_distillation_manifest.json",
+      "size": 290,
+      "sha256": "e70caf891611102840b814566377a69e7f01612192acfc879f0102323ea85718"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/status.json",
+      "size": 11903,
+      "sha256": "de352022c8f22c449533d382ea5daf4d1657b2833e8e972d4b13a194bd24c8bc"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/teacher_manifest.json",
+      "size": 4133,
+      "sha256": "5a7396ec8e1e10d59d45052d116619cc7faa46b70992a25aac3f9be645aad6e6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/test_predictions.npz",
+      "size": 138431,
+      "sha256": "731571cb24599d76c89218db4a0a2e9bc96cb47fdce50b555379ac8e91f713de"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/train_predictions.npz",
+      "size": 205776,
+      "sha256": "76f6712bf983d278790a8bb0b024e8d8d681b0e69ad42cd7583ae42ec6446a64"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_source_TEST_KD_s17_20261031/SAR/val_predictions.npz",
+      "size": 70529,
+      "sha256": "891dfcff86e8f33693236cce48d1f919c251b62d4a08ed7842faee1e1bde71e3"
+    }
+  ]
+}

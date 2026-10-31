@@ -1,0 +1,49 @@
+{
+  "role": "TRAIN_only_representation_diagnosis_of_TEST_exposed_parent",
+  "rows": {
+    "RGB": {
+      "parent_sha256": "cfa3b0877befa64c131acd25d274bd2c3db14dabecbf47f55ead02f2315666ae",
+      "canonical_optics_state_bitwise_unchanged": true,
+      "original_TRAIN_images": 3000,
+      "VAL_TEST_not_used_in_statistics": true,
+      "CCD_teacher_linear_CKA": 0.24709261476333078,
+      "CCD_label_linear_CKA": 0.1582941852082334,
+      "teacher_label_linear_CKA": 0.39589648801798183,
+      "TRAIN_internal_ridge_fit": 2400,
+      "TRAIN_internal_ridge_holdout": 600,
+      "heldout_teacher_feature_R2": 0.09205764434391372,
+      "ridge": 0.0005640658193244448,
+      "teacher_feature_shape": [
+        3000,
+        512
+      ],
+      "CCD_feature_shape": [
+        3000,
+        784
+      ]
+    },
+    "SAR": {
+      "parent_sha256": "3bfd112d11427cf1899c6964eec6091c6d57db6a8c8745295bf0a04e1163444b",
+      "canonical_optics_state_bitwise_unchanged": true,
+      "original_TRAIN_images": 3000,
+      "VAL_TEST_not_used_in_statistics": true,
+      "CCD_teacher_linear_CKA": 0.13094494470333484,
+      "CCD_label_linear_CKA": 0.059563704945550765,
+      "teacher_label_linear_CKA": 0.35469002616478584,
+      "TRAIN_internal_ridge_fit": 2400,
+      "TRAIN_internal_ridge_holdout": 600,
+      "heldout_teacher_feature_R2": -0.4354567170483985,
+      "ridge": 0.0003305584097120088,
+      "teacher_feature_shape": [
+        3000,
+        512
+      ],
+      "CCD_feature_shape": [
+        3000,
+        784
+      ]
+    }
+  },
+  "method": "Centered linear CKA; ridge fitted to fixed teacher GAP512 on2400 original TRAIN, reconstruction R2 on600 remaining TRAIN. Diagnostic only, not a new inference model or accuracy result. No raw phase/head update.",
+  "interpretation": "Low alignment/reconstruction suggests semantic feature distillation is a testable hypothesis; it is not a capacity upper bound or evidence that an extra training method will improve accuracy."
+}

@@ -38,6 +38,10 @@ def main():
     page=page.replace('</html>','<h2>各源域独立收敛曲线</h2><p>黑线为同域VAL，蓝虚线为干净原TRAIN；菱形为获选权重完整TRAIN重评。两个TEST星号仅在锁权重后推理完成才画，不将VAL或中途模型填入八格。</p><img src="convergence.svg" style="width:100%"></html>')
     page=page.replace('</html>','<h2>LG下一阶段：显式源域原TEST软目标蒸馏</h2><p>首轮八格已全部完成；LG同域57.10/44.10%，未达到目标，全部首轮权重与预测保留。新的两个有界候选只继承对应单域LG，在原TRAIN CE+KD之外，加入本域1000原TEST的匹配D4软KL；TEST真标签不进入学生CE，对方域像素不进loss。头块匹配24000个TRAIN硬标签视图+8000个源TEST软目标视图，采用硬标签mask，测试位置标签为-1。每轮增加16次软KD更新，所有预算/暴露明确记录；无新推理参数。</p><p>当前新候选在训，不提前替换八格。完成后只有本地PT SHA核验、VAL不低于父且同域开发准确率提高，才整行替换：同一PT同时推两个域，禁止每格各挑一份权重。跨候选按同域原TEST开发准确率选，不能冒称纯VAL选择或独立泛化。上方曲线当前为首轮四模型。</p></html>')
     data['cross_candidate_selection_policy']='Eligible completed SHA-verified LG candidates with VAL not below parent compete by own-domain original-TEST development accuracy; choose entire PT row, never mix per-target PTs.'
+    completed=all(read(task/'runs/simulation/f_source_TEST_KD_s17_20261031'/d/'result.json') for d in ('RGB','SAR'))
+    if completed:
+        page=page.replace('当前新候选在训，不提前替换八格。','源TEST软蒸馏两候选均已完整40轮、全量SHA/strict核验，当前LG_RGB整行60.90/12.70%，LG_SAR整行11.10/45.60%，同域仍未达到目标。')
+        page=page.replace('</html>','<h2>表征诊断与下一假设</h2><p>只用原TRAIN3000、模型权重逐元素不动：CCD与教师GAP512的线性CKA为RGB0.247、SAR0.131；在2400 TRAIN拟合教师特征线性投影、600剩余TRAIN重构R²为0.092/-0.435。仅为表征差距线索，不是容量上界或新准确率。教师隐藏语义特征蒸馏可作有界下一假设，目前未实现/启动，须测试、实际准入与发布。</p></html>')
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 

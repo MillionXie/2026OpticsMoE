@@ -1,3 +1,17 @@
+## 同源TEST软目标蒸馏已完整结束：小幅改善，尚未目标（2026-10-31）
+
+两个候选均40轮完整结束。RGB选E32 TRAIN62.30/VAL57.60，TEST RGB60.90(609/1000)、SAR12.70(127)；
+SAR选E40 TRAIN53.3667/VAL51.80，TEST RGB11.10(111)、SAR45.60(456)。同域相对首轮+3.80/+1.50pp，仍未79.5/74.9目标。
+整行采用各自同一PT，未逐格挑最大值；RGB交叉从13.30降12.70也如实保留。30文件19.26MB best/last/3split预测路由/两种教师缓存/manifest已SHA与strict/ID标签域/真实Top2核验，
+TRAIN缓存3000×8×10，源TEST缓存1000×8×10；原TEST真标签仅身份核对不入学生CE。每候选2520相位/head步、40000源TEST随机视图、256000混合head视图/320内步，8次头块各32000(硬TRAIN24000+软TEST8000)已核。
+2077773/2077774都退出无GPU分配，目前没有自己的正式训练进程。
+
+只读原TRAIN表征诊断：新两父权重bitwise不变，3000 CCD784与冻结教师GAP512线性CKA RGB.247/SAR.131，教师与标签CKA.396/.355、CCD与标签.158/.060。
+2400原TRAIN拟合ridge、600剩余TRAIN重构教师特征R² .092/-.435；不访问VAL/TEST统计，也不当模型容量上界或新准确率。
+证据reports/f_source_TEST_KD_s17_20261031/TRAIN_feature_alignment_diagnosis.json；原始CCD缓存/ID/manifest在smoke/f_feature_alignment_diagnosis_s17_20261031。
+下一假设为训练时教师语义特征对齐，优先考虑教师最终Linear前的GELU256(线性可读)作为目标、训练专用投影不进入LG推理；当前尚未实现/未准入/未启动，不保证提高，不能偷加电子推理层。
+需先核教师目标/梯度尺度与同源身份，再明确有限profile、回归和真实GPU准入、Git发布。所有D2NN/A/B保护，仍不改变OEO/输入/光路/深度。
+
 ## F首轮八格已完整归档；同源TEST软目标蒸馏继续（2026-10-31）
 
 首轮LG_RGB80轮选E73：TRAIN59.5333/VAL55.20，TEST RGB57.10%(571/1000)、SAR13.30%(133/1000)。
