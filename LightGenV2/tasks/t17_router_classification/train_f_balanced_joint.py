@@ -22,11 +22,12 @@ from .model_four import encode_rgb
 from .phase_optimizer import WrappedPhaseAdam
 from .gpu_policy import require_authorized_gpu
 from .report_f_load_balance import usage_statistics
+from .joint_hidden_distillation import prepare_joint_hidden,calibrate_joint_hidden,add_hidden_objective,hidden_payload
 from .train import write
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
-def balanced_objective(output, labels, domains, targets, head, anchor, cfg, soft_only=False):
+def balanced_objective(output, labels, domains, targets, head, anchor, cfg, soft_only=False, hidden=None):
     """Soft-only TEST path rejects hard labels; acquisition domains only group loss."""
     logits=output['raw_logits'];teacher=cfg['teacher'];strength=cfg['alternating_head']['anchor_strength']
     if soft_only:
@@ -36,9 +37,12 @@ def balanced_objective(output, labels, domains, targets, head, anchor, cfg, soft
         if labels is None:raise ValueError('TRAIN labels required')
         base=anchored_classification(logits,labels,head.weight,anchor,strength,cfg['label_smoothing'],targets,teacher['weight'],teacher['temperature'])
     coefficient=cfg['per_modality_balance']['weight']
-    if coefficient==0:return base,dict(main=float(base.detach()),balance=0.)
-    balance=modality_mean_power_KL(output['dense_route_power'],domains)
-    return base+coefficient*balance,dict(main=float(base.detach()),balance=float(balance.detach()))
+    balance=modality_mean_power_KL(output['dense_route_power'],domains) if coefficient else None
+    total=base+coefficient*balance if coefficient else base
+    total,hidden_value=add_hidden_objective(total,output.get('ccd_features'),hidden)
+    details=dict(main=float(base.detach()),balance=float(balance.detach()) if balance is not None else 0.)
+    if hidden_value is not None:details['hidden']=hidden_value
+    return total,details
 
 
 def refit_joint_head(model, fields, targets, labels, anchor, cfg):
@@ -66,7 +70,7 @@ def main():
     if cfg['selection_source']!='original_TEST_development' or cfg['training_scope']!='all' or cfg['epochs']>20 or cfg.get('training_domain') or cfg.get('domain_route_aux',0):raise ValueError('Explicit finite joint balance profile required')
     if cfg['per_modality_balance']['mode']!='modality_mean_power_KL' or not 0<cfg['per_modality_balance']['weight']<=1:raise ValueError('Invalid explicit balance loss')
     gpu=require_authorized_gpu(cfg['authorized_gpu_uuids']);torch.set_num_threads(4);torch.manual_seed(cfg['seed']);rng=np.random.default_rng(cfg['seed']);args.out.mkdir(parents=True,exist_ok=False)
-    paths=[Path(__file__),task/'f_load_balance.py',task/'train_figure_revision.py',task/'model_four.py',task/'model_depth_ccd.py',task/'model_linear_readout.py',task/'alternating_readout.py',task/'phase_optimizer.py',task/'f_joint_distillation.py',task/'joint_teacher_cache.py']
+    paths=[Path(__file__),task/'f_load_balance.py',task/'train_figure_revision.py',task/'model_four.py',task/'model_depth_ccd.py',task/'model_linear_readout.py',task/'alternating_readout.py',task/'phase_optimizer.py',task/'f_joint_distillation.py',task/'joint_teacher_cache.py',task/'joint_hidden_distillation.py',task/'semantic_distillation.py']
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},pid=os.getpid(),gpu_uuid=gpu,command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=False,teacher_used=True,training_only_modality_grouping=True,TEST_hard_GT_in_loss=False,VAL_gate=False)
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -85,8 +89,11 @@ def main():
         if parent_result['checkpoint_sha256']!=cfg['parent_checkpoint_sha256'] or val['correct']!=parent_result['val']['correct'] or any(dev['domains'][d]['correct']!=parent_result['original_test_dev']['domains'][d]['correct'] for d in ('RGB','SAR')):raise RuntimeError('Exact parent replay identity mismatch')
         metadata['parent_identity_replay']=dict(VAL_correct=val['correct'],development=dev['domains'],VAL_is_identity_check_not_selection=True);write(args.out/'metadata.json',metadata)
         phase_opt=WrappedPhaseAdam(phases,cfg['phase_lr']);head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=0);anchor=model.shared_head.weight.detach().clone();best=checkpoint_selection_key(val,dev,cfg);selected=0;stale=0;history=[]
+        hidden=prepare_joint_hidden(raw,cfg,args.out)
+        if hidden:
+            calibrate_joint_hidden(hidden,model,fields['train'],labels['train'],domains['train'],targets['train'],anchor,cfg);metadata['training_only_joint_hidden']=hidden['record'];write(args.out/'joint_hidden_manifest.json',hidden['record']);write(args.out/'metadata.json',metadata)
         def save(name,epoch):
-            payload=dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata)
+            payload=dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**hidden_payload(hidden))
             if name=='last_checkpoint.pt':payload.update(optimizer=phase_opt.state_dict(),head_optimizer=head_opt.state_dict(),rng_state=rng.bit_generator.state)
             torch.save(payload,args.out/name)
         save('best_checkpoint.pt',0)
@@ -96,21 +103,31 @@ def main():
                 for group in opt.param_groups:group['lr']=lr*ratio
             records={};steps=0
             for split in ('train','test'):
-                order=rng.permutation(len(fields[split]));codes=rng.integers(0,8,len(order));total=0.;main_total=0.;balance_total=0.
+                order=rng.permutation(len(fields[split]));codes=rng.integers(0,8,len(order));total=0.;main_total=0.;balance_total=0.;hidden_total=0.
                 for start in range(0,len(order),cfg['batch']):
                     idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(codes[start:start+cfg['batch']],device='cuda');phase_opt.zero_grad(set_to_none=True);head_opt.zero_grad(set_to_none=True)
+                    if hidden:hidden['optimizer'].zero_grad(set_to_none=True)
                     output=training_forward(model,augment_packed(fields[split][idx],code),cfg,return_dense_route=True)
-                    loss,details=balanced_objective(output,labels[split][idx] if split=='train' else None,domains[split][idx],targets[split][idx,code],model.shared_head,anchor,cfg,soft_only=split=='test');loss.backward()
+                    hidden_batch=dict(weight=hidden['weight'],projection=hidden['projection'],target=hidden['targets'][split][idx,code]) if hidden else None
+                    loss,details=balanced_objective(output,labels[split][idx] if split=='train' else None,domains[split][idx],targets[split][idx,code],model.shared_head,anchor,cfg,soft_only=split=='test',hidden=hidden_batch);loss.backward()
                     if any(p.grad is None or not torch.isfinite(p.grad).all() for p in phases+heads):raise RuntimeError('Nonfinite balanced phase/head gradient')
                     torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True);phase_opt.step();head_opt.step();steps+=1;total+=float(loss.detach())*len(idx);main_total+=details['main']*len(idx);balance_total+=details['balance']*len(idx)
+                    hidden_total+=details.get('hidden',0.)*len(idx)
+                    if hidden:
+                        torch.nn.utils.clip_grad_norm_(hidden['projection'].parameters(),5.,error_if_nonfinite=True);hidden['optimizer'].step()
                 records[split]=dict(images=len(order),random_D4_view_presentations=len(order),updates=(len(order)+cfg['batch']-1)//cfg['batch'],mean_total_loss=total/len(order),mean_main_loss=main_total/len(order),mean_balance_KL=balance_total/len(order),order_sha256=__import__('hashlib').sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_sha256=__import__('hashlib').sha256(codes.astype('<i8').tobytes()).hexdigest(),hard_labels_in_loss=split=='train')
+                if hidden:records[split]['mean_joint_hidden_MSE']=hidden_total/len(order)
             block=None
-            if epoch%5==0:block=refit_joint_head(model,fields,targets,labels,anchor,cfg);head_opt.state.clear()
+            if epoch%5==0:
+                before_projection={k:v.detach().clone() for k,v in hidden['projection'].state_dict().items()} if hidden else None
+                block=refit_joint_head(model,fields,targets,labels,anchor,cfg);head_opt.state.clear()
+                if hidden and not all(torch.equal(v,before_projection[k]) for k,v in hidden['projection'].state_dict().items()):raise RuntimeError('Head block changed semantic projection')
             val,_=evaluate(model,fields['val'],labels['val'],cfg['eval_batch'],raw['val']['domains']);dev,arrays=evaluate(model,fields['test'],labels['test'],cfg['eval_batch'],raw['test']['domains']);key=checkpoint_selection_key(val,dev,cfg)
             if key>best:best=key;selected=epoch;stale=0;save('best_checkpoint.pt',epoch)
             else:stale+=1
             usage={name:usage_statistics(arrays['route_power'][arrays['domains']==d],arrays['dense_route_power'][arrays['domains']==d]) for d,name in [(0,'RGB'),(1,'SAR')]}
             row=dict(epoch=epoch,validation=val,original_test_development_selection=dev,development_expert_usage=usage,selected_epoch=selected,phase_optimizer_steps=steps,head_minibatch_optimizer_steps=steps,parts=records,balance_weight=cfg['per_modality_balance']['weight'],seconds=time.time()-started)
+            if hidden:row['training_only_joint_hidden']=dict(weight=hidden['weight'],projection_updates=steps,extra_training_parameters=200704)
             if block:row['TRAIN_head_block']=block
             if epoch==1 or epoch%5==0:row['train'],_=evaluate(model,fields['train'],labels['train'],cfg['eval_batch'],raw['train']['domains'])
             history.append(row);write(args.out/'history.json',history);save('last_checkpoint.pt',epoch);write(args.out/'status.json',dict(state='training',epoch=epoch,total_epochs=cfg['epochs'],selected_epoch=selected,pid=os.getpid()));print(json.dumps(row),flush=True)
