@@ -23,6 +23,7 @@ from .alternating_readout import domain_route_loss, anchored_classification, ref
 from .original_f_teacher import prepare_original_teacher, teacher_view_indices
 from .phase_training import phase_update_mode,phase_parameter_groups,backward_training_loss
 from .semantic_distillation import prepare_semantic,calibrate_semantic,semantic_loss,semantic_checkpoint
+from .router_gradient_projection import validate_projection_profile,router_projection_for_batch
 from .train_optical_four_ccd import route_statistics
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -125,7 +126,7 @@ def assert_frozen(model,snapshot):
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--profile',type=Path,required=True);parser.add_argument('--out',type=Path,required=True);args=parser.parse_args()
-    cfg=json.loads(args.profile.read_text());gpu=require_authorized_gpu(cfg['authorized_gpu_uuids']);torch.set_num_threads(4)
+    cfg=json.loads(args.profile.read_text());validate_projection_profile(cfg);gpu=require_authorized_gpu(cfg['authorized_gpu_uuids']);torch.set_num_threads(4)
     torch.manual_seed(cfg['seed']);rng=np.random.default_rng(cfg['seed']);task=Path(__file__).resolve().parent
     args.out.mkdir(exist_ok=False,parents=True)
     paths=[Path(__file__),task/'alternating_readout.py',task/'train_convex_readout.py',task/'model_linear_readout.py',task/'model_depth_ccd.py',task/'model_four.py',task/'model_linear_ccd.py',task/'gpu_policy.py',task/'figure_revision_data.py',task/'phase_optimizer.py',task/'readout_data.py',task.parents[1]/'demo_check/pure_optical/models.py',task.parents[1]/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
@@ -135,6 +136,7 @@ def main():
     paths.append(task/'f_cross_domain.py')
     paths.append(task/'semantic_distillation.py')
     paths.append(task/'f_joint_distillation.py')
+    paths.append(task/'router_gradient_projection.py')
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=not bool(cfg.get('source_test_distillation')),teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -188,6 +190,7 @@ def main():
             for start in range(0,len(part['labels']),128):fields.append(encode_rgb(torch.from_numpy(part['images'][start:start+128]).cuda()))
             x[split]=torch.cat(fields);y[split]=torch.as_tensor(part['labels'],device='cuda',dtype=torch.long);del part['images']
         block=cfg.get('alternating_head');aux=cfg.get('domain_route_aux',0.)
+        projection_domains={s:torch.as_tensor(part['domains'],device='cuda') for s,part in raw.items()} if cfg.get('router_gradient_projection') else None
         if (block or aux) and (cfg['architecture']!='LG' or cfg['dataset']!='eurosat_original_f' or not heads):raise ValueError('Alternating/domain method requires original F LG with trainable head')
         anchor=model.shared_head.weight.detach().clone() if block else None
         if historical:
@@ -223,7 +226,7 @@ def main():
             for optimizer,lr in [(phase_opt,cfg['phase_lr']),(head_opt,cfg['head_lr'])]:
                 if optimizer:
                     for group in optimizer.param_groups:group['lr']=lr*ratio*group.get('lr_multiplier',1.)
-            loss_sum=0.
+            loss_sum=0.;projection_records=[]
             if aggregate:
                 phase_opt.zero_grad(set_to_none=True)
                 for p in heads:p.grad=None
@@ -242,7 +245,10 @@ def main():
                     loss=loss+aux*domain_route_loss(output['dense_route_power'],acquisition)
                 if semantic:loss=loss+semantic['weight']*semantic_loss(output['ccd_features'],semantic['targets']['train'][idx,code],semantic['projection'])
                 if not torch.isfinite(loss):raise RuntimeError('Nonfinite loss')
+                projected,projection_record=router_projection_for_batch(model,output,projection_domains['train'][idx] if projection_domains else None,y['train'][idx],teacher_targets[idx,teacher_view_indices(code,cfg['augmentation'])] if teacher_cfg else None,anchor,cfg)
                 backward_training_loss(loss,len(idx),len(order),aggregate)
+                if projected is not None:
+                    model.router_phase.grad.copy_(projected);projection_records.append(dict(part='TRAIN',**projection_record))
                 for p in phases+heads:
                     if p.grad is None or not torch.isfinite(p.grad).all():raise RuntimeError('Missing/nonfinite trainable gradient')
                 if cfg['phase_optimizer']!='wrapped' and not aggregate:torch.nn.utils.clip_grad_norm_(phases,5.,error_if_nonfinite=True)
@@ -278,7 +284,10 @@ def main():
                     output=training_forward(model,augment_packed(x['test'][source_test_indices[local]],code),cfg)
                     value=soft_only_source_test_loss(output['raw_logits'],source_test_targets[local,code],model.shared_head.weight,anchor,block['anchor_strength'],teacher_cfg['weight'],teacher_cfg['temperature'])
                     if semantic:value=value+semantic['weight']*semantic_loss(output['ccd_features'],semantic['targets']['test'][local,code],semantic['projection'])
+                    projected,projection_record=router_projection_for_batch(model,output,projection_domains['test'][source_test_indices[local]] if projection_domains else None,None,source_test_targets[local,code],anchor,cfg,soft_only=True)
                     value.backward()
+                    if projected is not None:
+                        model.router_phase.grad.copy_(projected);projection_records.append(dict(part='TEST_soft',**projection_record))
                     for p in phases+heads:
                         if p.grad is None or not torch.isfinite(p.grad).all():raise RuntimeError('Nonfinite source TEST KD gradient')
                     torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True);phase_opt.step();head_opt.step();soft_total+=float(value.detach())*len(local)
@@ -317,6 +326,9 @@ def main():
                 selected=epoch;best=metric_key(val,cfg);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
             if cfg.get('training_route')=='top2_straight_through':row['route_backward']='dense amplitude surrogate; forward is bitwise hard Top2'
+            if projection_records:
+                cosines=[v['cosine_before'] for v in projection_records if v['cosine_before'] is not None]
+                row['router_gradient_projection']=dict(coordinate='physical router phase',batches=len(projection_records),projected_batches=sum(v['projected'] for v in projection_records),task_gradient_evaluations=sum(v['task_gradient_evaluations'] for v in projection_records),mean_cosine_before=float(np.mean(cosines)) if cosines else None,min_cosine_before=min(cosines) if cosines else None,TEST_ground_truth_received=False,TRAIN_batches=sum(v['part']=='TRAIN' for v in projection_records),TEST_soft_batches=sum(v['part']=='TEST_soft' for v in projection_records))
             row['phase_optimizer_steps']=int(step_record['accepted']) if backtracking else 1 if aggregate else (len(order)+cfg['batch']-1)//cfg['batch']
             if step_record:
                 row['TRAIN_phase_backtracking']=step_record
