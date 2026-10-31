@@ -1,3 +1,11 @@
+## F新增人工目标：两模态分别核验实际专家负载（2026-11-01）
+
+F交付除同一联合PT的RGB/SAR准确率，还需分别给TRAIN/VAL/原TEST开发每专家被选频率、Top2选择次数份额、Top2组合分布、平均硬门控后光功率以及逐类路由。图e若与新版F关联，必须引用同PT/同split/SHA的当前统计，不能沿用旧CNN或旧联合模型占比。
+每图严格Top2：被选频率=选中图数/N，四项合计200%，均匀参考各50%；选择次数份额=选中次数/(2N)，合计100%，均匀参考各25%。平均光功率与dense端口功率不等于实际负载。两域分别核查，不能靠混合平均掩盖单域塌缩；不要求每张图四路均匀，不固定域专家/GT路由，不以强行均分权重伪造负载。
+当前同一最佳F PT（canonical_head_TEST/F_joint，开发64.6/49.6）的TEST开发RGB选择份额13.00/37.00/50.00/0.00%，SAR8.80/41.25/49.95/0.00%；每图被选频率RGB26/74/100/0%、SAR17.6/82.5/99.9/0%。两域第四专家均0，第三几乎总选，明确尚未均衡。硬Top2后光功率均值RGB2.986/5.935/91.080/0%，SAR2.014/9.471/88.515/0%，不可把功率当被选概率。
+report_f_load_balance.py按已核验selected PT SHA和completed_transfer逐文件SHA读全三split预测，输出reports/f_joint_load_balance_s17_20261101/results.html/json与expert_usage.svg；主F报告只在相同PT SHA时附表。3项纯NumPy测试验证Top2分母/均匀负载/拒绝dense伪装/组合动态统计，SVG已目视。仅统计，无参数或GPU训练变更。
+后续有限F微调须同时记录两域准确率和真实hard Top2负载，考虑按模态聚合的训练均衡辅助（目前未实现/未启动）；不把dense均匀/KL下降冒称实际均衡，不为均衡私改Top2、OEO、几何或推理头。原TEST开发准确率仍是人工指定主要PT选择依据，均衡作为明确额外目标和同精度候选取舍；保留准确率/均衡的取舍与全部失败，不保证双70%与负载同时达成。所有结果仍ORIGINAL_TEST_EXPOSED_DEVELOPMENT。
+
 ## 最新完整对照：Blood已严格递增；F仍未双70%，Kather仍未递增（2026-11-01）
 
 canonical_head_TEST_s17_20261101四任务worker2431358已完成并退出无GPU，source6e7baf184。62文件128.32MB含best/last/三split原CCD784特征/预测路由/教师cache全remote-localSHA；strict单Linear/无CNN/光学相位bitwise父、原完整ID标签/真实k、完整canonical TEST重放预测完全相同，概率max浮差1.20e-5，不称bitwise。最多150内部步；F实际100、Kather2/4与Blood4各150。

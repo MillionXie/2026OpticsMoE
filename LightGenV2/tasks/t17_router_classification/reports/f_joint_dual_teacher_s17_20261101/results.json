@@ -1,5 +1,5 @@
 {
-  "generated_UTC": "2026-10-31T19:27:06.898401+00:00",
+  "generated_UTC": "2026-10-31T19:32:32.772099+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "protocol": "one joint LG two outputs plus two finalized source-only D2NN four outputs",
   "records": {
@@ -10740,6 +10740,4152 @@
       }
     },
     "fully_verified": true
+  },
+  "same_checkpoint_per_modality_expert_usage": {
+    "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+    "selected_joint_run": "runs\\simulation\\canonical_head_TEST_s17_20261101\\F_joint",
+    "checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+    "definitions": {
+      "selection_frequency": "P(expert is in hard Top2); four entries sum to 2, balanced reference 50% each",
+      "selection_slot_share": "Expert selections / (2 * images); four entries sum to 1, balanced reference 25% each",
+      "post_Top2_mean_power": "Mean normalized optical power after the actual hard gate; sum=1; not selection frequency",
+      "pre_Top2_mean_dense_power": "Mean dense normalized detector power before hard gating; cannot demonstrate actual selection balance"
+    },
+    "balance_requirement": "Inspect RGB and SAR separately, all four physical experts, preserve true input-dependent Top2; uniform reference is a diagnostic goal, not a forced per-image dense route or a guarantee.",
+    "balance_achieved": false,
+    "balance_status": "当前尚未均衡：{'RGB': [4], 'SAR': [4]}为各模态零选择专家。",
+    "parts": {
+      "train": {
+        "RGB": {
+          "images": 3000,
+          "total_expert_selections": 6000,
+          "expert_selection_counts": [
+            561,
+            2439,
+            3000,
+            0
+          ],
+          "per_image_selection_frequency": [
+            0.187,
+            0.813,
+            1.0,
+            0.0
+          ],
+          "selection_slot_share": [
+            0.0935,
+            0.4065,
+            0.5,
+            0.0
+          ],
+          "post_Top2_mean_power": [
+            0.021020741204420726,
+            0.0641431638461848,
+            0.9148360946774483,
+            0.0
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.05464939125658323,
+            0.07651038688545425,
+            0.867682484904925,
+            0.0011577365711855237
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [
+            4
+          ],
+          "normalized_selection_entropy": 0.6737883342390254,
+          "effective_experts": 2.54484302502025,
+          "selection_share_CV": 0.8342289853511444,
+          "maximum_share_deviation_from_uniform": 0.25,
+          "pair_counts": {
+            "1+3": 561,
+            "2+3": 2439
+          },
+          "pair_frequencies": {
+            "1+3": 0.187,
+            "2+3": 0.813
+          },
+          "fraction_outside_most_common_pair": 0.18700000000000006,
+          "accuracy": 0.708,
+          "by_class": {
+            "0": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                145,
+                155,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.48333333333333334,
+                0.5166666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.24166666666666667,
+                0.25833333333333336,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.06503441949685415,
+                0.04927295704682668,
+                0.8856926230589549,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08994531645750006,
+                0.08880229582389196,
+                0.8201060644785563,
+                0.0011463217249062534
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.74979958856591,
+              "effective_experts": 2.8276414141366915,
+              "selection_share_CV": 0.7074995092263708,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 145,
+                "2+3": 155
+              },
+              "pair_frequencies": {
+                "1+3": 0.48333333333333334,
+                "2+3": 0.5166666666666667
+              },
+              "fraction_outside_most_common_pair": 0.4833333333333333
+            },
+            "1": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                0,
+                300,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0,
+                1.0,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0,
+                0.5,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0,
+                0.06701122651497524,
+                0.9329887717962265,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.02106448856803278,
+                0.06550278657426437,
+                0.9122717342774074,
+                0.0011609934320828566
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                1,
+                4
+              ],
+              "normalized_selection_entropy": 0.5,
+              "effective_experts": 2.0,
+              "selection_share_CV": 1.0,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 300
+              },
+              "pair_frequencies": {
+                "2+3": 1.0
+              },
+              "fraction_outside_most_common_pair": 0.0
+            },
+            "2": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                70,
+                230,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.23333333333333334,
+                0.7666666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.11666666666666667,
+                0.38333333333333336,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.024516519953807193,
+                0.061183546918133894,
+                0.9142999337116877,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06338361375033856,
+                0.07687074055274327,
+                0.858598260084788,
+                0.0011473867725968982
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6959442368711752,
+              "effective_experts": 2.6242196383763092,
+              "selection_share_CV": 0.8013876853447539,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 230,
+                "1+3": 70
+              },
+              "pair_frequencies": {
+                "1+3": 0.23333333333333334,
+                "2+3": 0.7666666666666667
+              },
+              "fraction_outside_most_common_pair": 0.23333333333333328
+            },
+            "3": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                49,
+                251,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.16333333333333333,
+                0.8366666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.08166666666666667,
+                0.41833333333333333,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.01669134221971035,
+                0.0696486131971081,
+                0.9136600440740585,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.056313151406745116,
+                0.07864520673950513,
+                0.8638700381914775,
+                0.0011716049387662981
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6605561606212295,
+              "effective_experts": 2.498586771588657,
+              "selection_share_CV": 0.8524604911014286,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 251,
+                "1+3": 49
+              },
+              "pair_frequencies": {
+                "1+3": 0.16333333333333333,
+                "2+3": 0.8366666666666667
+              },
+              "fraction_outside_most_common_pair": 0.16333333333333333
+            },
+            "4": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                68,
+                232,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.22666666666666666,
+                0.7733333333333333,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.11333333333333333,
+                0.38666666666666666,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.020008094385266306,
+                0.0632068981975317,
+                0.916785007317861,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.0618154382891953,
+                0.07557158241669337,
+                0.8614488120873769,
+                0.0011641661212585556
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6930387858951204,
+              "effective_experts": 2.6136710376177508,
+              "selection_share_CV": 0.8058673726006174,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 232,
+                "1+3": 68
+              },
+              "pair_frequencies": {
+                "1+3": 0.22666666666666666,
+                "2+3": 0.7733333333333333
+              },
+              "fraction_outside_most_common_pair": 0.22666666666666668
+            },
+            "5": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                7,
+                293,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.023333333333333334,
+                0.9766666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.011666666666666667,
+                0.48833333333333334,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0022230020662148795,
+                0.07913981008032958,
+                0.9186371876796087,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.03546420536314448,
+                0.07798754579077165,
+                0.8853820196787516,
+                0.001166226541584668
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5399419702905354,
+              "effective_experts": 2.113866021669041,
+              "selection_share_CV": 0.9769453527307566,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 293,
+                "1+3": 7
+              },
+              "pair_frequencies": {
+                "1+3": 0.023333333333333334,
+                "2+3": 0.9766666666666667
+              },
+              "fraction_outside_most_common_pair": 0.023333333333333317
+            },
+            "6": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                145,
+                155,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.48333333333333334,
+                0.5166666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.24166666666666667,
+                0.25833333333333336,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.055050203129649165,
+                0.049271156365672746,
+                0.895678641796112,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08630792497346798,
+                0.08795912024875482,
+                0.824583114584287,
+                0.0011498432216467335
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.74979958856591,
+              "effective_experts": 2.8276414141366915,
+              "selection_share_CV": 0.7074995092263708,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 145,
+                "2+3": 155
+              },
+              "pair_frequencies": {
+                "1+3": 0.48333333333333334,
+                "2+3": 0.5166666666666667
+              },
+              "fraction_outside_most_common_pair": 0.4833333333333333
+            },
+            "7": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                58,
+                242,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.19333333333333333,
+                0.8066666666666666,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.09666666666666666,
+                0.4033333333333333,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.01885795551041762,
+                0.06381418370952209,
+                0.9173278601964315,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06174321264028549,
+                0.0754602521409591,
+                0.8616629372040431,
+                0.0011335964762838558
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6770981716757609,
+              "effective_experts": 2.5565466355379156,
+              "selection_share_CV": 0.8295112349383152,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 242,
+                "1+3": 58
+              },
+              "pair_frequencies": {
+                "1+3": 0.19333333333333333,
+                "2+3": 0.8066666666666666
+              },
+              "fraction_outside_most_common_pair": 0.19333333333333336
+            },
+            "8": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                18,
+                282,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.06,
+                0.94,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.03,
+                0.47,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.007291319022576014,
+                0.07463378885140022,
+                0.9180748931566874,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.04410856102282802,
+                0.07586065500974655,
+                0.8788429766893386,
+                0.0011878061160678045
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5818612297886191,
+              "effective_experts": 2.240347397048756,
+              "selection_share_CV": 0.9419129471453294,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 282,
+                "1+3": 18
+              },
+              "pair_frequencies": {
+                "1+3": 0.06,
+                "2+3": 0.94
+              },
+              "fraction_outside_most_common_pair": 0.06000000000000005
+            },
+            "9": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                1,
+                299,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0033333333333333335,
+                0.9966666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0016666666666666668,
+                0.49833333333333335,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0005345562597115835,
+                0.06424945758034785,
+                0.9352159839868546,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.026348000094294548,
+                0.06244368355721235,
+                0.9100588917732239,
+                0.0011494203666613126
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5080575888029424,
+              "effective_experts": 2.0224656188665375,
+              "selection_share_CV": 0.9966722407870882,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 299,
+                "1+3": 1
+              },
+              "pair_frequencies": {
+                "1+3": 0.0033333333333333335,
+                "2+3": 0.9966666666666667
+              },
+              "fraction_outside_most_common_pair": 0.0033333333333332993
+            }
+          }
+        },
+        "SAR": {
+          "images": 3000,
+          "total_expert_selections": 6000,
+          "expert_selection_counts": [
+            514,
+            2486,
+            2999,
+            1
+          ],
+          "per_image_selection_frequency": [
+            0.17133333333333334,
+            0.8286666666666667,
+            0.9996666666666667,
+            0.0003333333333333333
+          ],
+          "selection_slot_share": [
+            0.08566666666666667,
+            0.41433333333333333,
+            0.49983333333333335,
+            0.00016666666666666666
+          ],
+          "post_Top2_mean_power": [
+            0.018758774306625127,
+            0.09362446951369445,
+            0.8875714030712843,
+            4.53537255525589e-05
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.07322199716325849,
+            0.10014176181298293,
+            0.825383459414045,
+            0.0012527829177027645
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [],
+          "normalized_selection_entropy": 0.6662692195598314,
+          "effective_experts": 2.5184541029215692,
+          "selection_share_CV": 0.8457996873439426,
+          "maximum_share_deviation_from_uniform": 0.24983333333333335,
+          "pair_counts": {
+            "1+3": 514,
+            "2+3": 2485,
+            "2+4": 1
+          },
+          "pair_frequencies": {
+            "1+3": 0.17133333333333334,
+            "2+3": 0.8283333333333334,
+            "2+4": 0.0003333333333333333
+          },
+          "fraction_outside_most_common_pair": 0.17166666666666663,
+          "accuracy": 0.6473333333333333,
+          "by_class": {
+            "0": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                128,
+                172,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.4266666666666667,
+                0.5733333333333334,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.21333333333333335,
+                0.2866666666666667,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.04097147359202306,
+                0.059517033447821936,
+                0.8995114936431249,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07727790555606286,
+                0.08599279442122983,
+                0.8355812297264735,
+                0.0011480738395281756
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7461067244500028,
+              "effective_experts": 2.8132025865893344,
+              "selection_share_CV": 0.7146716417737279,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 128,
+                "2+3": 172
+              },
+              "pair_frequencies": {
+                "1+3": 0.4266666666666667,
+                "2+3": 0.5733333333333334
+              },
+              "fraction_outside_most_common_pair": 0.42666666666666664
+            },
+            "1": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                1,
+                299,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0033333333333333335,
+                0.9966666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0016666666666666668,
+                0.49833333333333335,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.00029427682360013324,
+                0.10209466395278771,
+                0.8976110597451528,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06555594554791848,
+                0.09554419172306855,
+                0.8377285355329513,
+                0.001171329069378165
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5080575888029424,
+              "effective_experts": 2.0224656188665375,
+              "selection_share_CV": 0.9966722407870882,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 299,
+                "1+3": 1
+              },
+              "pair_frequencies": {
+                "1+3": 0.0033333333333333335,
+                "2+3": 0.9966666666666667
+              },
+              "fraction_outside_most_common_pair": 0.0033333333333332993
+            },
+            "2": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                28,
+                272,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.09333333333333334,
+                0.9066666666666666,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.04666666666666667,
+                0.4533333333333333,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.009081947629650434,
+                0.09470524042844772,
+                0.8962128134568532,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06781461919347445,
+                0.09565766673535109,
+                0.8353413665294647,
+                0.001186345688086779
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6118748137592158,
+              "effective_experts": 2.3355294346453284,
+              "selection_share_CV": 0.9114579285713387,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 272,
+                "1+3": 28
+              },
+              "pair_frequencies": {
+                "1+3": 0.09333333333333334,
+                "2+3": 0.9066666666666666
+              },
+              "fraction_outside_most_common_pair": 0.09333333333333338
+            },
+            "3": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                27,
+                273,
+                299,
+                1
+              ],
+              "per_image_selection_frequency": [
+                0.09,
+                0.91,
+                0.9966666666666667,
+                0.0033333333333333335
+              ],
+              "selection_slot_share": [
+                0.045,
+                0.455,
+                0.49833333333333335,
+                0.0016666666666666668
+              ],
+              "post_Top2_mean_power": [
+                0.008708808496594429,
+                0.09580388866364956,
+                0.8950337672233581,
+                0.000453537255525589
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.069842990723749,
+                0.09606866385787725,
+                0.8324954118827979,
+                0.0015929291509867956
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [],
+              "normalized_selection_entropy": 0.6171750430689682,
+              "effective_experts": 2.352753353315031,
+              "selection_share_CV": 0.9107994046745724,
+              "maximum_share_deviation_from_uniform": 0.24833333333333335,
+              "pair_counts": {
+                "2+3": 272,
+                "1+3": 27,
+                "2+4": 1
+              },
+              "pair_frequencies": {
+                "1+3": 0.09,
+                "2+3": 0.9066666666666666,
+                "2+4": 0.0033333333333333335
+              },
+              "fraction_outside_most_common_pair": 0.09333333333333338
+            },
+            "4": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                90,
+                210,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.3,
+                0.7,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.15,
+                0.35,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.02664667656024297,
+                0.06526448771357536,
+                0.9080888370672862,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07218335896730423,
+                0.08283267602324486,
+                0.8438439122835795,
+                0.0011400548281380906
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7203227248076732,
+              "effective_experts": 2.714422793182605,
+              "selection_share_CV": 0.7615773105863908,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 210,
+                "1+3": 90
+              },
+              "pair_frequencies": {
+                "1+3": 0.3,
+                "2+3": 0.7
+              },
+              "fraction_outside_most_common_pair": 0.30000000000000004
+            },
+            "5": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                16,
+                284,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.05333333333333334,
+                0.9466666666666667,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.02666666666666667,
+                0.47333333333333333,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.005311588048934937,
+                0.1030766012519598,
+                0.8916118103762468,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.0673466891857485,
+                0.10050313464055459,
+                0.8309159857034684,
+                0.0012341911188559606
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5750978543411954,
+              "effective_experts": 2.219440001674262,
+              "selection_share_CV": 0.9481678238699214,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 284,
+                "1+3": 16
+              },
+              "pair_frequencies": {
+                "1+3": 0.05333333333333334,
+                "2+3": 0.9466666666666667
+              },
+              "fraction_outside_most_common_pair": 0.053333333333333344
+            },
+            "6": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                12,
+                288,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.04,
+                0.96,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.02,
+                0.48,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0038960789889097213,
+                0.09592604219913482,
+                0.9001778799295426,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.0694227508455515,
+                0.09235914091269175,
+                0.8370510427157084,
+                0.0011670685361605138
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5605730472706038,
+              "effective_experts": 2.175197041927754,
+              "selection_share_CV": 0.9608329719571451,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 288,
+                "1+3": 12
+              },
+              "pair_frequencies": {
+                "1+3": 0.04,
+                "2+3": 0.96
+              },
+              "fraction_outside_most_common_pair": 0.040000000000000036
+            },
+            "7": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                38,
+                262,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.12666666666666668,
+                0.8733333333333333,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.06333333333333334,
+                0.43666666666666665,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.011735093767444292,
+                0.08338008125623067,
+                0.9048848261435827,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07167585674673319,
+                0.08702220877011617,
+                0.8401543082793553,
+                0.0011476299494582538
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6370562793625801,
+              "effective_experts": 2.4185000351056445,
+              "selection_share_CV": 0.8824712774677459,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 262,
+                "1+3": 38
+              },
+              "pair_frequencies": {
+                "1+3": 0.12666666666666668,
+                "2+3": 0.8733333333333333
+              },
+              "fraction_outside_most_common_pair": 0.1266666666666667
+            },
+            "8": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                58,
+                242,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.19333333333333333,
+                0.8066666666666666,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.09666666666666666,
+                0.4033333333333333,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.02417238973081112,
+                0.10045944407582283,
+                0.8753681649764379,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08044897470623255,
+                0.1098219932615757,
+                0.8082597349087397,
+                0.0014692998878793636
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6770981716757609,
+              "effective_experts": 2.5565466355379156,
+              "selection_share_CV": 0.8295112349383152,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 242,
+                "1+3": 58
+              },
+              "pair_frequencies": {
+                "1+3": 0.19333333333333333,
+                "2+3": 0.8066666666666666
+              },
+              "fraction_outside_most_common_pair": 0.19333333333333336
+            },
+            "9": {
+              "images": 300,
+              "total_expert_selections": 600,
+              "expert_selection_counts": [
+                116,
+                184,
+                300,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.38666666666666666,
+                0.6133333333333333,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.19333333333333333,
+                0.30666666666666664,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.056769409428040186,
+                0.13601721214751403,
+                0.8072133781512578,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.09065088015981018,
+                0.15561514778411947,
+                0.7524630665779114,
+                0.001270907108555548
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.740653676499563,
+              "effective_experts": 2.7920162784514777,
+              "selection_share_CV": 0.7250440599638679,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 116,
+                "2+3": 184
+              },
+              "pair_frequencies": {
+                "1+3": 0.38666666666666666,
+                "2+3": 0.6133333333333333
+              },
+              "fraction_outside_most_common_pair": 0.3866666666666667
+            }
+          }
+        }
+      },
+      "val": {
+        "RGB": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            184,
+            816,
+            1000,
+            0
+          ],
+          "per_image_selection_frequency": [
+            0.184,
+            0.816,
+            1.0,
+            0.0
+          ],
+          "selection_slot_share": [
+            0.092,
+            0.408,
+            0.5,
+            0.0
+          ],
+          "post_Top2_mean_power": [
+            0.020055446561425924,
+            0.06386407148838043,
+            0.9160804805159569,
+            0.0
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.05342597915511578,
+            0.07554855356737972,
+            0.8698664885759354,
+            0.0011589773774321657
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [
+            4
+          ],
+          "normalized_selection_entropy": 0.672187451424714,
+          "effective_experts": 2.5392015304667575,
+          "selection_share_CV": 0.8364878959076455,
+          "maximum_share_deviation_from_uniform": 0.25,
+          "pair_counts": {
+            "2+3": 816,
+            "1+3": 184
+          },
+          "pair_frequencies": {
+            "1+3": 0.184,
+            "2+3": 0.816
+          },
+          "fraction_outside_most_common_pair": 0.18400000000000005,
+          "accuracy": 0.559,
+          "by_class": {
+            "0": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                53,
+                47,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.53,
+                0.47,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.265,
+                0.235,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.06858799025416375,
+                0.04307495281100273,
+                0.8883370560407639,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.09078945424407721,
+                0.08509925618767739,
+                0.8229844534397125,
+                0.0011268348735757171
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7493503971419349,
+              "effective_experts": 2.8258811573254365,
+              "selection_share_CV": 0.7083784299369935,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 47,
+                "1+3": 53
+              },
+              "pair_frequencies": {
+                "1+3": 0.53,
+                "2+3": 0.47
+              },
+              "fraction_outside_most_common_pair": 0.47
+            },
+            "1": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                0,
+                100,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0,
+                1.0,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0,
+                0.5,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0,
+                0.06387532331049442,
+                0.9361246746778488,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.020443971958011387,
+                0.06246968679130077,
+                0.9159210515022278,
+                0.0011652847554069012
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                1,
+                4
+              ],
+              "normalized_selection_entropy": 0.5,
+              "effective_experts": 2.0,
+              "selection_share_CV": 1.0,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 100
+              },
+              "pair_frequencies": {
+                "2+3": 1.0
+              },
+              "fraction_outside_most_common_pair": 0.0
+            },
+            "2": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                30,
+                70,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.3,
+                0.7,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.15,
+                0.35,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.02968497294932604,
+                0.056473218649625775,
+                0.9138418078422547,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06840779215097427,
+                0.07564979184418917,
+                0.8548098015785217,
+                0.0011326195142464712
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7203227248076732,
+              "effective_experts": 2.714422793182605,
+              "selection_share_CV": 0.7615773105863908,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 70,
+                "1+3": 30
+              },
+              "pair_frequencies": {
+                "1+3": 0.3,
+                "2+3": 0.7
+              },
+              "fraction_outside_most_common_pair": 0.30000000000000004
+            },
+            "3": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                21,
+                79,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.21,
+                0.79,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.105,
+                0.395,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0207022675126791,
+                0.0645761663466692,
+                0.9147215676307678,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.05869530275464058,
+                0.07696470949798823,
+                0.8631606543064118,
+                0.0011793318134732545
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6853706849828184,
+              "effective_experts": 2.5860342272783625,
+              "selection_share_CV": 0.8174350127074324,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 79,
+                "1+3": 21
+              },
+              "pair_frequencies": {
+                "1+3": 0.21,
+                "2+3": 0.79
+              },
+              "fraction_outside_most_common_pair": 0.20999999999999996
+            },
+            "4": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                26,
+                74,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.26,
+                0.74,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.13,
+                0.37,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.021940033435821533,
+                0.0593192445486784,
+                0.9187407201528549,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.060290638040751215,
+                0.07419424179941415,
+                0.8643516653776169,
+                0.0011634589525056072
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7066865931231545,
+              "effective_experts": 2.663592136721669,
+              "selection_share_CV": 0.7843468620451031,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 74,
+                "1+3": 26
+              },
+              "pair_frequencies": {
+                "1+3": 0.26,
+                "2+3": 0.74
+              },
+              "fraction_outside_most_common_pair": 0.26
+            },
+            "5": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                0,
+                100,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0,
+                1.0,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0,
+                0.5,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0,
+                0.08872195154428482,
+                0.911278048157692,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.035682582706212995,
+                0.08544780157506465,
+                0.877689647078514,
+                0.0011799703317228705
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                1,
+                4
+              ],
+              "normalized_selection_entropy": 0.5,
+              "effective_experts": 2.0,
+              "selection_share_CV": 1.0,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 100
+              },
+              "pair_frequencies": {
+                "2+3": 1.0
+              },
+              "fraction_outside_most_common_pair": 0.0
+            },
+            "6": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                27,
+                73,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.27,
+                0.73,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.135,
+                0.365,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0324879340082407,
+                0.06202040020376444,
+                0.9054916673898696,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06958587162196636,
+                0.08226052038371563,
+                0.8470004761219024,
+                0.0011531276372261346
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7103661590520439,
+              "effective_experts": 2.677213729733857,
+              "selection_share_CV": 0.7783315488916018,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 73,
+                "1+3": 27
+              },
+              "pair_frequencies": {
+                "1+3": 0.27,
+                "2+3": 0.73
+              },
+              "fraction_outside_most_common_pair": 0.27
+            },
+            "7": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                18,
+                82,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.18,
+                0.82,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.09,
+                0.41,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.017385301813483238,
+                0.06282030265778303,
+                0.9197943913936615,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.05834094112738967,
+                0.0741680945456028,
+                0.8663532668352127,
+                0.0011376946530072018
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.67001926143207,
+              "effective_experts": 2.5315807853453203,
+              "selection_share_CV": 0.8395236744726142,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 82,
+                "1+3": 18
+              },
+              "pair_frequencies": {
+                "1+3": 0.18,
+                "2+3": 0.82
+              },
+              "fraction_outside_most_common_pair": 0.18000000000000005
+            },
+            "8": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                8,
+                92,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.08,
+                0.92,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.04,
+                0.46,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.008296794146299363,
+                0.07216662012040614,
+                0.9195365846157074,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.04713108068332076,
+                0.0746837130934,
+                0.8769818651676178,
+                0.0012033367936965078
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6005447975505682,
+              "effective_experts": 2.2991324737212593,
+              "selection_share_CV": 0.9234717104492156,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 92,
+                "1+3": 8
+              },
+              "pair_frequencies": {
+                "1+3": 0.08,
+                "2+3": 0.92
+              },
+              "fraction_outside_most_common_pair": 0.07999999999999996
+            },
+            "9": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                1,
+                99,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.01,
+                0.99,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.005,
+                0.495,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.001469171494245529,
+                0.06559253469109536,
+                0.9329382872581482,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.024892156263813376,
+                0.06454771995544434,
+                0.909412004351616,
+                0.0011481144494609908
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5201982839739778,
+              "effective_experts": 2.056792946767359,
+              "selection_share_CV": 0.9900505037623081,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 99,
+                "1+3": 1
+              },
+              "pair_frequencies": {
+                "1+3": 0.01,
+                "2+3": 0.99
+              },
+              "fraction_outside_most_common_pair": 0.010000000000000009
+            }
+          }
+        },
+        "SAR": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            171,
+            829,
+            1000,
+            0
+          ],
+          "per_image_selection_frequency": [
+            0.171,
+            0.829,
+            1.0,
+            0.0
+          ],
+          "selection_slot_share": [
+            0.0855,
+            0.4145,
+            0.5,
+            0.0
+          ],
+          "post_Top2_mean_power": [
+            0.02019480562210083,
+            0.09409029967337847,
+            0.8857148956656457,
+            0.0
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.07491484991100152,
+            0.10077290596633702,
+            0.8230836973786354,
+            0.001228547508155316
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [
+            4
+          ],
+          "normalized_selection_entropy": 0.6649968127416555,
+          "effective_experts": 2.514015640895635,
+          "selection_share_CV": 0.8464525976095767,
+          "maximum_share_deviation_from_uniform": 0.25,
+          "pair_counts": {
+            "2+3": 829,
+            "1+3": 171
+          },
+          "pair_frequencies": {
+            "1+3": 0.171,
+            "2+3": 0.829
+          },
+          "fraction_outside_most_common_pair": 0.17100000000000004,
+          "accuracy": 0.482,
+          "by_class": {
+            "0": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                51,
+                49,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.51,
+                0.49,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.255,
+                0.245,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.049565564766526224,
+                0.05031978078186512,
+                0.9001146501302719,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08132396563887596,
+                0.08248695619404316,
+                0.8350511592626572,
+                0.001137920348555781
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7499278604382025,
+              "effective_experts": 2.828144277318067,
+              "selection_share_CV": 0.7072481884034769,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 49,
+                "1+3": 51
+              },
+              "pair_frequencies": {
+                "1+3": 0.51,
+                "2+3": 0.49
+              },
+              "fraction_outside_most_common_pair": 0.49
+            },
+            "1": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                0,
+                100,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0,
+                1.0,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0,
+                0.5,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0,
+                0.1007536456733942,
+                0.8992463552951813,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06500284142792224,
+                0.09409752994775772,
+                0.8397260814905166,
+                0.0011735368683002889
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                1,
+                4
+              ],
+              "normalized_selection_entropy": 0.5,
+              "effective_experts": 2.0,
+              "selection_share_CV": 1.0,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 100
+              },
+              "pair_frequencies": {
+                "2+3": 1.0
+              },
+              "fraction_outside_most_common_pair": 0.0
+            },
+            "2": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                12,
+                88,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.12,
+                0.88,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.06,
+                0.44,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.011717289835214615,
+                0.09316166929900646,
+                0.895121043920517,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06945220459252596,
+                0.09662635825574398,
+                0.8327308464050293,
+                0.0011905952883535065
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.632340216321841,
+              "effective_experts": 2.4027398159057434,
+              "selection_share_CV": 0.8881441324469806,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 88,
+                "1+3": 12
+              },
+              "pair_frequencies": {
+                "1+3": 0.12,
+                "2+3": 0.88
+              },
+              "fraction_outside_most_common_pair": 0.12
+            },
+            "3": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                7,
+                93,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.07,
+                0.93,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.035,
+                0.465,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0064315075427293774,
+                0.0941970494389534,
+                0.8993714463710785,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06990763314068317,
+                0.09296465810388327,
+                0.8359462994337082,
+                0.0011814055539434776
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5914809127250559,
+              "effective_experts": 2.2704241267543614,
+              "selection_share_CV": 0.9326306878931231,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 93,
+                "1+3": 7
+              },
+              "pair_frequencies": {
+                "1+3": 0.07,
+                "2+3": 0.93
+              },
+              "fraction_outside_most_common_pair": 0.06999999999999995
+            },
+            "4": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                28,
+                72,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.28,
+                0.72,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.14,
+                0.36,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.028139217048883437,
+                0.0677390069514513,
+                0.9041217768192291,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.0763473929464817,
+                0.0828371504514962,
+                0.8396967661380768,
+                0.0011186949262264533
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7138627026400328,
+              "effective_experts": 2.690222326039141,
+              "selection_share_CV": 0.7725283166331186,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 28,
+                "2+3": 72
+              },
+              "pair_frequencies": {
+                "1+3": 0.28,
+                "2+3": 0.72
+              },
+              "fraction_outside_most_common_pair": 0.28
+            },
+            "5": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                0,
+                100,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0,
+                1.0,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0,
+                0.5,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0,
+                0.10717260718345642,
+                0.8928273922204971,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06497990094125271,
+                0.10009300351142883,
+                0.8337213456630707,
+                0.0012057539646048098
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                1,
+                4
+              ],
+              "normalized_selection_entropy": 0.5,
+              "effective_experts": 2.0,
+              "selection_share_CV": 1.0,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 100
+              },
+              "pair_frequencies": {
+                "2+3": 1.0
+              },
+              "fraction_outside_most_common_pair": 0.0
+            },
+            "6": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                2,
+                98,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.02,
+                0.98,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.01,
+                0.49,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0021112167835235594,
+                0.09693634822964668,
+                0.9009524345397949,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06948189523071051,
+                0.09151334173977375,
+                0.8378235393762589,
+                0.0011812215921236202
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5353601356354551,
+              "effective_experts": 2.1004817794440873,
+              "selection_share_CV": 0.9802040603874277,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 98,
+                "1+3": 2
+              },
+              "pair_frequencies": {
+                "1+3": 0.02,
+                "2+3": 0.98
+              },
+              "fraction_outside_most_common_pair": 0.020000000000000018
+            },
+            "7": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                17,
+                83,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.17,
+                0.83,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.085,
+                0.415,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.015583030804991722,
+                0.07838079288601875,
+                0.9060361802577972,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07225764054805041,
+                0.08575445793569088,
+                0.8408467483520508,
+                0.001141160239931196
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.664426194686055,
+              "effective_experts": 2.5120277287838344,
+              "selection_share_CV": 0.8472307831990054,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 83,
+                "1+3": 17
+              },
+              "pair_frequencies": {
+                "1+3": 0.17,
+                "2+3": 0.83
+              },
+              "fraction_outside_most_common_pair": 0.17000000000000004
+            },
+            "8": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                16,
+                84,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.16,
+                0.84,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.08,
+                0.42,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.02357382543385029,
+                0.10488712690770625,
+                0.8715390467643738,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08603366296738386,
+                0.1119195744022727,
+                0.8004775685071945,
+                0.0015691956161754206
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6585773886601415,
+              "effective_experts": 2.4917421395258588,
+              "selection_share_CV": 0.855102333057278,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 84,
+                "1+3": 16
+              },
+              "pair_frequencies": {
+                "1+3": 0.16,
+                "2+3": 0.84
+              },
+              "fraction_outside_most_common_pair": 0.16000000000000003
+            },
+            "9": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                38,
+                62,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.38,
+                0.62,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.19,
+                0.31,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.06482640400528908,
+                0.14735496938228607,
+                0.7878186303377152,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.09436136167612857,
+                0.16943602912127972,
+                0.7348166191577912,
+                0.0013859906833386048
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7395105055565749,
+              "effective_experts": 2.7875950750392926,
+              "selection_share_CV": 0.7271863585079137,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 62,
+                "1+3": 38
+              },
+              "pair_frequencies": {
+                "1+3": 0.38,
+                "2+3": 0.62
+              },
+              "fraction_outside_most_common_pair": 0.38
+            }
+          }
+        }
+      },
+      "test": {
+        "RGB": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            260,
+            740,
+            1000,
+            0
+          ],
+          "per_image_selection_frequency": [
+            0.26,
+            0.74,
+            1.0,
+            0.0
+          ],
+          "selection_slot_share": [
+            0.13,
+            0.37,
+            0.5,
+            0.0
+          ],
+          "post_Top2_mean_power": [
+            0.029855687648057936,
+            0.05934771092608571,
+            0.9107966018915177,
+            0.0
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.060232156191952525,
+            0.07818106046319008,
+            0.860433084487915,
+            0.0011536973204347306
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [
+            4
+          ],
+          "normalized_selection_entropy": 0.7066865931231545,
+          "effective_experts": 2.663592136721669,
+          "selection_share_CV": 0.7843468620451031,
+          "maximum_share_deviation_from_uniform": 0.25,
+          "pair_counts": {
+            "1+3": 260,
+            "2+3": 740
+          },
+          "pair_frequencies": {
+            "1+3": 0.26,
+            "2+3": 0.74
+          },
+          "fraction_outside_most_common_pair": 0.26,
+          "accuracy": 0.646,
+          "by_class": {
+            "0": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                63,
+                37,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.63,
+                0.37,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.315,
+                0.185,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.08124639920890331,
+                0.038618950843811034,
+                0.8801346492767333,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.10109614085406066,
+                0.09027220640331507,
+                0.8074912476539612,
+                0.001140397161943838
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7376680231717665,
+              "effective_experts": 2.7804840212242072,
+              "selection_share_CV": 0.7306161783043132,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 63,
+                "2+3": 37
+              },
+              "pair_frequencies": {
+                "1+3": 0.63,
+                "2+3": 0.37
+              },
+              "fraction_outside_most_common_pair": 0.37
+            },
+            "1": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                0,
+                100,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0,
+                1.0,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0,
+                0.5,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0,
+                0.0738534477725625,
+                0.9261465495824814,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.023117392603307963,
+                0.07193284198641776,
+                0.9037799471616745,
+                0.0011698209797032177
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                1,
+                4
+              ],
+              "normalized_selection_entropy": 0.5,
+              "effective_experts": 2.0,
+              "selection_share_CV": 1.0,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 100
+              },
+              "pair_frequencies": {
+                "2+3": 1.0
+              },
+              "fraction_outside_most_common_pair": 0.0
+            },
+            "2": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                37,
+                63,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.37,
+                0.63,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.185,
+                0.315,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.03964687116444111,
+                0.058638804405927655,
+                0.9017143201828003,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07522708583623171,
+                0.08506659891456365,
+                0.8385773134231568,
+                0.0011289998743450268
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7376680231717665,
+              "effective_experts": 2.7804840212242072,
+              "selection_share_CV": 0.7306161783043132,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 37,
+                "2+3": 63
+              },
+              "pair_frequencies": {
+                "1+3": 0.37,
+                "2+3": 0.63
+              },
+              "fraction_outside_most_common_pair": 0.37
+            },
+            "3": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                36,
+                64,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.36,
+                0.64,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.18,
+                0.32,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.04167660661041737,
+                0.05390797827392817,
+                0.9044154173135758,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07140494432300329,
+                0.08169777046889067,
+                0.8457298165559769,
+                0.001167464521713555
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7356707973138731,
+              "effective_experts": 2.772796223386838,
+              "selection_share_CV": 0.7343023900274328,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 64,
+                "1+3": 36
+              },
+              "pair_frequencies": {
+                "1+3": 0.36,
+                "2+3": 0.64
+              },
+              "fraction_outside_most_common_pair": 0.36
+            },
+            "4": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                31,
+                69,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.31,
+                0.69,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.155,
+                0.345,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.02798173576593399,
+                0.06122083701193333,
+                0.9107974332571029,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06871892258524895,
+                0.08001279667019844,
+                0.8500748085975647,
+                0.0011934708990156652
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7232933645944642,
+              "effective_experts": 2.7256243272009346,
+              "selection_share_CV": 0.7564390259630978,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 31,
+                "2+3": 69
+              },
+              "pair_frequencies": {
+                "1+3": 0.31,
+                "2+3": 0.69
+              },
+              "fraction_outside_most_common_pair": 0.31000000000000005
+            },
+            "5": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                3,
+                97,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.03,
+                0.97,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.015,
+                0.485,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0033406570553779604,
+                0.08748868510127067,
+                0.9091706591844558,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.04561119383201003,
+                0.0861899421736598,
+                0.8670165431499481,
+                0.0011823244323022663
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5485979644578941,
+              "effective_experts": 2.13938470069171,
+              "selection_share_CV": 0.9704638066409277,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 97,
+                "1+3": 3
+              },
+              "pair_frequencies": {
+                "1+3": 0.03,
+                "2+3": 0.97
+              },
+              "fraction_outside_most_common_pair": 0.030000000000000027
+            },
+            "6": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                61,
+                39,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.61,
+                0.39,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.305,
+                0.195,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.07699124537408351,
+                0.03781145922839642,
+                0.8851972961425781,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.09604260127991437,
+                0.09052306778728962,
+                0.812303574681282,
+                0.001130755374324508
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7411998871262718,
+              "effective_experts": 2.7941312181253015,
+              "selection_share_CV": 0.724016574395918,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 61,
+                "2+3": 39
+              },
+              "pair_frequencies": {
+                "1+3": 0.61,
+                "2+3": 0.39
+              },
+              "fraction_outside_most_common_pair": 0.39
+            },
+            "7": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                21,
+                79,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.21,
+                0.79,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.105,
+                0.395,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.02103317193686962,
+                0.06490120451897383,
+                0.9140656280517578,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06546307504177093,
+                0.07753300473093987,
+                0.8558718758821487,
+                0.001132041810778901
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6853706849828184,
+              "effective_experts": 2.5860342272783625,
+              "selection_share_CV": 0.8174350127074324,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 21,
+                "2+3": 79
+              },
+              "pair_frequencies": {
+                "1+3": 0.21,
+                "2+3": 0.79
+              },
+              "fraction_outside_most_common_pair": 0.20999999999999996
+            },
+            "8": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                8,
+                92,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.08,
+                0.92,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.04,
+                0.46,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.006640189364552498,
+                0.06901424627751113,
+                0.9243455642461776,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.04060660570859909,
+                0.07151867240667344,
+                0.8867104434967041,
+                0.0011642809689510613
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.6005447975505682,
+              "effective_experts": 2.2991324737212593,
+              "selection_share_CV": 0.9234717104492156,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 92,
+                "1+3": 8
+              },
+              "pair_frequencies": {
+                "1+3": 0.08,
+                "2+3": 0.92
+              },
+              "fraction_outside_most_common_pair": 0.07999999999999996
+            },
+            "9": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                0,
+                100,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.0,
+                1.0,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.0,
+                0.5,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0,
+                0.04802149582654238,
+                0.9519785016775131,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.01503359985537827,
+                0.04706370308995247,
+                0.9367752742767333,
+                0.0011274171812692658
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                1,
+                4
+              ],
+              "normalized_selection_entropy": 0.5,
+              "effective_experts": 2.0,
+              "selection_share_CV": 1.0,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 100
+              },
+              "pair_frequencies": {
+                "2+3": 1.0
+              },
+              "fraction_outside_most_common_pair": 0.0
+            }
+          }
+        },
+        "SAR": {
+          "images": 1000,
+          "total_expert_selections": 2000,
+          "expert_selection_counts": [
+            176,
+            825,
+            999,
+            0
+          ],
+          "per_image_selection_frequency": [
+            0.176,
+            0.825,
+            0.999,
+            0.0
+          ],
+          "selection_slot_share": [
+            0.088,
+            0.4125,
+            0.4995,
+            0.0
+          ],
+          "post_Top2_mean_power": [
+            0.020144262574613093,
+            0.09470906583219767,
+            0.885146673798561,
+            0.0
+          ],
+          "pre_Top2_mean_dense_power": [
+            0.07409169012855273,
+            0.10127857873402536,
+            0.8234220480620861,
+            0.0012076827879791382
+          ],
+          "selected_expert_share_target": [
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ],
+          "per_image_frequency_uniform_reference": [
+            0.5,
+            0.5,
+            0.5,
+            0.5
+          ],
+          "unused_experts": [
+            4
+          ],
+          "normalized_selection_entropy": 0.6678813931211279,
+          "effective_experts": 2.5240890091718393,
+          "selection_share_CV": 0.8423787746613752,
+          "maximum_share_deviation_from_uniform": 0.25,
+          "pair_counts": {
+            "1+3": 175,
+            "2+3": 824,
+            "1+2": 1
+          },
+          "pair_frequencies": {
+            "1+2": 0.001,
+            "1+3": 0.175,
+            "2+3": 0.824
+          },
+          "fraction_outside_most_common_pair": 0.17600000000000005,
+          "accuracy": 0.496,
+          "by_class": {
+            "0": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                34,
+                66,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.34,
+                0.66,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.17,
+                0.33,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0339163538813591,
+                0.06820500612258912,
+                0.8978786420822144,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.0760405269637704,
+                0.08785099517554044,
+                0.8349411195516586,
+                0.0011673609755234794
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7312046762432576,
+              "effective_experts": 2.755681883219194,
+              "selection_share_CV": 0.7424284477308234,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "1+3": 34,
+                "2+3": 66
+              },
+              "pair_frequencies": {
+                "1+3": 0.34,
+                "2+3": 0.66
+              },
+              "fraction_outside_most_common_pair": 0.33999999999999997
+            },
+            "1": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                1,
+                99,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.01,
+                0.99,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.005,
+                0.495,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0007963592559099197,
+                0.10075539670884609,
+                0.8984482449293136,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06592791747301817,
+                0.09469402991235257,
+                0.8382032179832458,
+                0.0011748322990024463
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5201982839739778,
+              "effective_experts": 2.056792946767359,
+              "selection_share_CV": 0.9900505037623081,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 99,
+                "1+3": 1
+              },
+              "pair_frequencies": {
+                "1+3": 0.01,
+                "2+3": 0.99
+              },
+              "fraction_outside_most_common_pair": 0.010000000000000009
+            },
+            "2": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                37,
+                63,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.37,
+                0.63,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.185,
+                0.315,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.03827460989356041,
+                0.06591013170778752,
+                0.8958152639865875,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08011567197740078,
+                0.0879180507734418,
+                0.8308239895105362,
+                0.0011422774156380911
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7376680231717665,
+              "effective_experts": 2.7804840212242072,
+              "selection_share_CV": 0.7306161783043132,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 63,
+                "1+3": 37
+              },
+              "pair_frequencies": {
+                "1+3": 0.37,
+                "2+3": 0.63
+              },
+              "fraction_outside_most_common_pair": 0.37
+            },
+            "3": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                12,
+                88,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.12,
+                0.88,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.06,
+                0.44,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.012503378540277481,
+                0.08963807187974453,
+                0.8978585493564606,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07337708607316017,
+                0.09293561965227128,
+                0.8324968755245209,
+                0.0011904179758857937
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.632340216321841,
+              "effective_experts": 2.4027398159057434,
+              "selection_share_CV": 0.8881441324469806,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 88,
+                "1+3": 12
+              },
+              "pair_frequencies": {
+                "1+3": 0.12,
+                "2+3": 0.88
+              },
+              "fraction_outside_most_common_pair": 0.12
+            },
+            "4": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                25,
+                75,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.25,
+                0.75,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.125,
+                0.375,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.022918227165937423,
+                0.07172908321022987,
+                0.905352691411972,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07367954112589359,
+                0.08448353968560696,
+                0.8406643092632293,
+                0.0011726132058538497
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7028195311147832,
+              "effective_experts": 2.649351128562104,
+              "selection_share_CV": 0.7905694150420949,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 75,
+                "1+3": 25
+              },
+              "pair_frequencies": {
+                "1+3": 0.25,
+                "2+3": 0.75
+              },
+              "fraction_outside_most_common_pair": 0.25
+            },
+            "5": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                2,
+                98,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.02,
+                0.98,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.01,
+                0.49,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0019200588762760163,
+                0.1027620530873537,
+                0.8953178888559341,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.06694166660308838,
+                0.09731425777077675,
+                0.8345375591516495,
+                0.0012065158120822162
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5353601356354551,
+              "effective_experts": 2.1004817794440873,
+              "selection_share_CV": 0.9802040603874277,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 98,
+                "1+3": 2
+              },
+              "pair_frequencies": {
+                "1+3": 0.02,
+                "2+3": 0.98
+              },
+              "fraction_outside_most_common_pair": 0.020000000000000018
+            },
+            "6": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                2,
+                98,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.02,
+                0.98,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.01,
+                0.49,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.0018878944963216782,
+                0.09671852208673953,
+                0.9013935858011246,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.0694096240401268,
+                0.0916406037658453,
+                0.8377992433309555,
+                0.0011505361506715416
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.5353601356354551,
+              "effective_experts": 2.1004817794440873,
+              "selection_share_CV": 0.9802040603874277,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 98,
+                "1+3": 2
+              },
+              "pair_frequencies": {
+                "1+3": 0.02,
+                "2+3": 0.98
+              },
+              "fraction_outside_most_common_pair": 0.020000000000000018
+            },
+            "7": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                14,
+                86,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.14,
+                0.86,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.07,
+                0.43,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.013053323253989219,
+                0.08311530292034149,
+                0.9038313746452331,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.07266487594693899,
+                0.08755110569298268,
+                0.8386184805631638,
+                0.0011655337864067406
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.646059702910714,
+              "effective_experts": 2.4488754595702646,
+              "selection_share_CV": 0.8713208364316786,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 86,
+                "1+3": 14
+              },
+              "pair_frequencies": {
+                "1+3": 0.14,
+                "2+3": 0.86
+              },
+              "fraction_outside_most_common_pair": 0.14
+            },
+            "8": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                17,
+                83,
+                100,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.17,
+                0.83,
+                1.0,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.085,
+                0.415,
+                0.5,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.022361901104450226,
+                0.09918073453009128,
+                0.8784573698043823,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08056415230035782,
+                0.10726466350257396,
+                0.8107385897636413,
+                0.001432594679063186
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.664426194686055,
+              "effective_experts": 2.5120277287838344,
+              "selection_share_CV": 0.8472307831990054,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 83,
+                "1+3": 17
+              },
+              "pair_frequencies": {
+                "1+3": 0.17,
+                "2+3": 0.83
+              },
+              "fraction_outside_most_common_pair": 0.17000000000000004
+            },
+            "9": {
+              "images": 100,
+              "total_expert_selections": 200,
+              "expert_selection_counts": [
+                32,
+                69,
+                99,
+                0
+              ],
+              "per_image_selection_frequency": [
+                0.32,
+                0.69,
+                0.99,
+                0.0
+              ],
+              "selection_slot_share": [
+                0.16,
+                0.345,
+                0.495,
+                0.0
+              ],
+              "post_Top2_mean_power": [
+                0.053810519278049466,
+                0.16907635606825352,
+                0.7771131271123886,
+                0.0
+              ],
+              "pre_Top2_mean_dense_power": [
+                0.08219583878177218,
+                0.18113292140886186,
+                0.7353970959782601,
+                0.0012741455796640366
+              ],
+              "selected_expert_share_target": [
+                0.25,
+                0.25,
+                0.25,
+                0.25
+              ],
+              "per_image_frequency_uniform_reference": [
+                0.5,
+                0.5,
+                0.5,
+                0.5
+              ],
+              "unused_experts": [
+                4
+              ],
+              "normalized_selection_entropy": 0.7274418626234247,
+              "effective_experts": 2.7413446609646837,
+              "selection_share_CV": 0.7473954776421918,
+              "maximum_share_deviation_from_uniform": 0.25,
+              "pair_counts": {
+                "2+3": 68,
+                "1+3": 31,
+                "1+2": 1
+              },
+              "pair_frequencies": {
+                "1+2": 0.01,
+                "1+3": 0.31,
+                "2+3": 0.68
+              },
+              "fraction_outside_most_common_pair": 0.31999999999999995
+            }
+          }
+        }
+      }
+    },
+    "prediction_SHA_evidence": {
+      "train": {
+        "path": "runs\\simulation\\canonical_head_TEST_s17_20261101\\F_joint\\train_predictions.npz",
+        "sha256": "52638339cd1c0db131d3f6dd64f5230821ede24b2e6dd2f6a95f1464b3739012",
+        "receipt": "reports\\canonical_head_TEST_s17_20261101\\completed_transfer.json"
+      },
+      "val": {
+        "path": "runs\\simulation\\canonical_head_TEST_s17_20261101\\F_joint\\val_predictions.npz",
+        "sha256": "27e5c149e7cb9918baac7268a4cf09b09305dcb1b0a0ea0103c2dcddffab1cbf",
+        "receipt": "reports\\canonical_head_TEST_s17_20261101\\completed_transfer.json"
+      },
+      "test": {
+        "path": "runs\\simulation\\canonical_head_TEST_s17_20261101\\F_joint\\test_predictions.npz",
+        "sha256": "8da43146f1953b64dcbce03ee44d6a32fa6e5ca35611743b377e1fe6ee918ef4",
+        "receipt": "reports\\canonical_head_TEST_s17_20261101\\completed_transfer.json"
+      }
+    }
   },
   "router_angle_sgd_candidate": {
     "status": {

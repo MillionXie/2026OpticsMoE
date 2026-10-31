@@ -110,6 +110,13 @@ def main():
     data['shared_joint_teacher']=joint_teacher;data['shared_joint_teacher_student']=dict(status=shared_status,result=shared_result,fully_verified=shared_verified)
     data['canonical_head_refit']=dict(status=head_status,result=head_result,fully_verified=head_verified)
     if head_status:page=page.replace('</html>','<h2>固定光学相位的canonical读出对照</h2><p>'+html.escape(str({k:v for k,v in head_status.items() if k in ('state','iteration','selected_iteration')}))+'。最多150个LBFGS内部步，只改原唯一Linear；TRAIN硬CE+联合教师KD、原TEST仅软目标，VAL无选模门槛。全量SHA与canonical重放核验后才可整行采用。</p></html>')
+    usage=read(task/'reports/f_joint_load_balance_s17_20261101/results.json')
+    if usage and usage['checkpoint_sha256']==selected['checkpoint_sha256']:
+        data['same_checkpoint_per_modality_expert_usage']=usage
+        usage_rows=[]
+        for name,entry in usage['parts']['test'].items():
+            usage_rows.append('<tr><td>'+name+'</td><td>'+' / '.join(pct(v) for v in entry['per_image_selection_frequency'])+'</td><td>'+' / '.join(pct(v) for v in entry['selection_slot_share'])+'</td></tr>')
+        page=page.replace('</html>','<h2>同一PT的RGB/SAR专家负载</h2><p>'+html.escape(usage['balance_status'])+' 被选频率以图像数为分母，四项合计200%；选择次数占比以2×图像数为分母，合计100%，均衡参考各25%。平均光功率不等于选择频率，两模态分别检查，不能用合并平均掩盖偏载。</p><table><tr><th>模态</th><th>E1/E2/E3/E4被选频率</th><th>选择次数占比</th></tr>'+''.join(usage_rows)+'</table><p><a href="../f_joint_load_balance_s17_20261101/results.html">完整TRAIN/VAL/开发TEST、逐类与Top2组合统计</a></p><img src="../f_joint_load_balance_s17_20261101/expert_usage.svg" style="width:100%"></html>')
     data['router_angle_sgd_candidate']=dict(status=sgd_status,result=sgd_result,fully_collected_local_SHA_verified=sgd_verified)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
