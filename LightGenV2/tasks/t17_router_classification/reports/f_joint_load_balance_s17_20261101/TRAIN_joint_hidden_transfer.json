@@ -1,0 +1,21 @@
+{
+  "verified_remote_and_local_SHA256": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_joint_teacher_hidden_TRAIN_s17_20261101/diagnosis.json",
+      "size": 2214,
+      "sha256": "0412f519e848f738cf04fd02c5eed6fc3b69a9f7317bdc8e8a63eea7229f0998"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_joint_teacher_hidden_TRAIN_s17_20261101/manifest.json",
+      "size": 326,
+      "sha256": "03ecd061c2405e3b5ca8b76d1221989a312ab42824e30bb123328c676fa92fb1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_joint_teacher_hidden_TRAIN_s17_20261101/training_only_projection_initialization.pt",
+      "size": 806964,
+      "sha256": "59371d7cfd83bab44114f42342ec43de57653f7f7b2faa3d28ebdcd09fc96996"
+    }
+  ],
+  "CPU_only": true
+}

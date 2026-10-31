@@ -1,0 +1,37 @@
+{
+  "state": "HYPOTHESIS_NOT_IMPLEMENTED_NOT_STARTED",
+  "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+  "teacher_checkpoint_sha256": "7b7626a9bfa229ebecd58c96d25b701107371b61698438c300ef2bfe981b4be4",
+  "evidence": {
+    "RGB": {
+      "original_TRAIN_images": 3000,
+      "heldout_TRAIN_images": 600,
+      "CCD_to_shared_GELU256_linear_CKA": 0.17920862274774166,
+      "heldout_TRAIN_hidden_R2": 0.12216967344284058,
+      "hidden_MSE": 0.9936677813529968
+    },
+    "SAR": {
+      "original_TRAIN_images": 3000,
+      "heldout_TRAIN_images": 600,
+      "CCD_to_shared_GELU256_linear_CKA": 0.1733476766907995,
+      "heldout_TRAIN_hidden_R2": 0.07795017957687378,
+      "hidden_MSE": 0.6727365851402283
+    }
+  },
+  "target": "shared joint teacher GELU256 before final Linear",
+  "extra_training_parameters": 200704,
+  "projection_in_inference": false,
+  "maximum_epochs": 20,
+  "normalization_and_projection_initialization": "original TRAIN only; all8 for target mean/std, code0 for Ridge",
+  "teacher_frozen": true,
+  "TEST_hard_GT_in_student_loss": false,
+  "required_tests": [
+    "optional disabled objective bitwise compatibility",
+    "hidden targets detach and no TEST hard CE",
+    "TRAIN-only normalization/cache ID and SHA binding",
+    "real physical phase gradients, projection separate optimizer",
+    "strict original4tensor model reload and bitwise same forward with auxiliary excluded",
+    "head refit freezes optics and projection"
+  ],
+  "not_a_capacity_or_success_claim": true
+}

@@ -1,0 +1,50 @@
+{
+  "role": "ORIGINAL_TRAIN_ONLY_READONLY_DIAGNOSIS",
+  "source_commit": "3df49aa23d02ec8aa8181e42f7d6734be1493947",
+  "pid": 2500945,
+  "device": "CPU only; no CUDA context",
+  "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+  "teacher_checkpoint_sha256": "7b7626a9bfa229ebecd58c96d25b701107371b61698438c300ef2bfe981b4be4",
+  "CCD_features_sha256": "dad6eedb3c92a640931768f8d5611bc8925e8703f9c45759c683e409c6ef3d20",
+  "teacher_features_sha256": "f151b587ecb56d646601b2da00d927e1faf512ebd93c671a87f2ffa158f33b21",
+  "TRAIN_images": 6000,
+  "TRAIN_regression_fit_images": 4800,
+  "TRAIN_regression_holdout_images": 1200,
+  "VAL_TEST_statistics": 0,
+  "student_updates": 0,
+  "teacher_updates": 0,
+  "all_optical_phases_match_verified_CCD_cache": true,
+  "teacher_hidden_before_final_Linear": "GELU256; frozen teacher eval; one jointly trained head",
+  "teacher_TRAIN_head_predictions_exact": true,
+  "teacher_TRAIN_logits_max_abs": 7.62939453125e-06,
+  "normalization_parts": "original TRAIN all8 views only",
+  "ridge_fit": {
+    "ridge": 0.00018270654678542543,
+    "training_images": 4800,
+    "affine_intercept_absorbed_in_mean_one_features": true
+  },
+  "full_TRAIN_initialization": {
+    "ridge": 0.00018482419512807919,
+    "training_images": 6000,
+    "affine_intercept_absorbed_in_mean_one_features": true
+  },
+  "extra_projection_training_parameters": 200704,
+  "projection_in_student_inference": false,
+  "domains": {
+    "RGB": {
+      "original_TRAIN_images": 3000,
+      "heldout_TRAIN_images": 600,
+      "CCD_to_shared_GELU256_linear_CKA": 0.17920862274774166,
+      "heldout_TRAIN_hidden_R2": 0.12216967344284058,
+      "hidden_MSE": 0.9936677813529968
+    },
+    "SAR": {
+      "original_TRAIN_images": 3000,
+      "heldout_TRAIN_images": 600,
+      "CCD_to_shared_GELU256_linear_CKA": 0.1733476766907995,
+      "heldout_TRAIN_hidden_R2": 0.07795017957687378,
+      "hidden_MSE": 0.6727365851402283
+    }
+  },
+  "interpretation": "TRAIN feature reconstruction diagnostic, not classification accuracy, new TEST results, convergence or a capacity bound. A future training-only feature auxiliary is a separate finite hypothesis, not an active run."
+}

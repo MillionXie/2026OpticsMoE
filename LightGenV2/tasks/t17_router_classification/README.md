@@ -1,3 +1,9 @@
+## F共享教师隐藏表征只读诊断：仍有表征差距，未启动新候选（2026-11-01）
+
+source3df49aa23d02ec8aa8181e42f7d6734be1493947的diagnose_joint_teacher_hidden.py已执行，CPU-only不创建CUDA。对同一最新b6e0父的完整原TRAIN6000 CCD784与共享teacher最终Linear前GELU256比较：RGB/SAR线性CKA0.17921/0.17335；4800 TRAIN拟合固定ridge投影、1200剩余TRAIN重构R²0.12217/0.07795。它们是TRAIN特征重构诊断，不是分类准确率、容量上限或新TEST结果。teacher TRAIN head预测与缓存完全一致，logitmax7.63e-6；原CCD缓存父相位/源/ID和teacher特征/PT均SHA核验，学生与教师都无更新。
+归一化只用原TRAIN8视图，Ridge截距折叠进每图均值1的CCD特征；原始诊断、TRAIN-only投影初始化/mean/std及manifest3文件已remote-localSHA保存。额外投影200704个训练参数目前仅诊断初始化，不进LG推理。
+下一方法可检验同一个共享teacher隐藏语义目标（区别于旧独立域teacher latent），但尚未实现/准入/启动：在现有联合蒸馏/均衡独立控制器上可选默认关闭joint_hidden_distillation，训练专用784->256投影与目标detach，保持canonical四tensor/唯一Linear487204不变，所有投影/optimizer只放PT外键；TRAIN-only归一/Ridge/梯度系数校准，TEST仅教师软/hidden目标、无硬GT。仅一条最多20轮候选，既有父E0/TESTonly选择、原D/推理合同/失败全部保留；默认兼容、GT隔离、同源ID/SHA/真实phase梯度与strict推理GPU准入、Git发布后才启动。不能把本诊断当在训或性能改善。
+
 ## D十二点已全部完成核验；F均衡对照完整失败保留父（2026-11-01）
 
 Organ k4已35轮早停选E20，开发6053/8216=73.6733%；11文件9.88MB全remote-localSHA、strict487988/唯一Linear/noCNN/同A OEO/原全部ID标签/真实k4核验，4090完整8216TEST重放预测完全相同、概率max3.10e-6（跨GPU非bitwise）。2432881与队列2326751均退出无GPU，T17已释放GPU6自身上下文，其他用户仍可能占用。Organ四点5848/5981/6039/6053严格递增；Blood2919/2945/3058/3098严格递增，两个数据集停止额外搜索。Kather601/595/604/604仍未递增，保持原最好结果与A/D/B2同K2 PT，不人工压低k1。
