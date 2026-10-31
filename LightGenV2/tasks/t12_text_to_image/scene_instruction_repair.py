@@ -18,6 +18,7 @@ from .scene_generation_data import request_seed
 FORM_PROFILE='TRAIN_source_form_support_teacher_v1'
 WIDE_SUPPORT='wide_support_v2'
 FORMS={'articulated_desk':('lamp','an adjustable desk lamp'),'column_lamp':('lamp','a table lamp with a column base'),
+       'solid_cylinder_lamp':('lamp','a table lamp with a wide solid cylindrical body'),'rectangular_column_lamp':('lamp','a table lamp with a solid rectangular column body'),
        'rounded_lamp':('lamp','a table lamp with a rounded base'),'ornamental_lamp':('lamp','a table lamp with a sculpted base'),
        'rectangular_cushion':('pillow','a rectangular cushion'),'square_cushion':('pillow','a square cushion')}
 

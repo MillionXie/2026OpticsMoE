@@ -33,6 +33,8 @@ class SourceGroundedRepair(unittest.TestCase):
         self.assertIn('seat of a two-seat sofa',wide);self.assertIn('whole two-seat sofa',wide)
         self.assertNotEqual(original,wide);self.assertEqual(wide.count('.'),2)
         self.assertNotIn('rectangular',condition('pillow','S')['prompt'])
+        self.assertIn('wide solid cylindrical body',form_teacher_prompt('lamp','W','solid_cylinder_lamp','wide_support_v2'))
+        self.assertIn('solid rectangular column body',form_teacher_prompt('lamp','D','rectangular_column_lamp','wide_support_v2'))
         with self.assertRaises(ValueError):form_teacher_prompt('pillow','S','rectangular_cushion','silent_change')
 
 
