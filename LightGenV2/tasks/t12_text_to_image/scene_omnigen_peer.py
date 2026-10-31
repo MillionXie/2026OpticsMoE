@@ -33,6 +33,19 @@ def matched_natural_inputs(data,revision):
     return rows,protocol
 
 
+def matched_visible_inputs(data):
+    """Public visible-anchor DEV48 only; never construction hints or targets."""
+    from .scene_instruction_render import checked_revision
+    from .scene_instruction_data import SAFE
+    report=json.loads((data/'report.json').read_text(encoding='utf8'))
+    original=json.loads((data/'inference_dev_inputs.json').read_text(encoding='utf8'))
+    if not all(set(r)==set(SAFE)for r in original):raise ValueError('Non-public DEV fields')
+    rows,protocol=checked_revision(data,data,{'pair_sha256':report['pairs_sha256']},original)
+    if len(rows)!=48 or len({r['reference_id']for r in rows})!=16:raise ValueError('Full48/16 visible-anchor DEV required')
+    protocol.update(peer_has_no_task_tuning=True,paired_model_not_loaded=True)
+    return rows,protocol
+
+
 def checked_assets(root,metadata):
     meta=json.loads(metadata.read_text(encoding='utf8'))
     assert meta['sha']==REVISION and meta['id']=='Shitao/OmniGen-v1-diffusers'
@@ -77,11 +90,13 @@ def inputs_for(sources,corpus=False):
 def generate(a):
     import torch
     from diffusers import OmniGenPipeline
-    matched=getattr(a,'prompt_revision',None)
+    visible=getattr(a,'visible_anchor_dev',False)
+    if visible and(getattr(a,'prompt_revision',None)or a.corpus):raise ValueError('Visible DEV cannot mix natural revision or TRAIN corpus')
+    matched=getattr(a,'prompt_revision',None)or(a.sources if visible else None)
     if matched and a.corpus:raise ValueError('Matched DEV must not generate TRAIN candidates')
     protocol=None
     if matched:
-        rows,protocol=matched_natural_inputs(a.sources,matched)
+        rows,protocol=matched_visible_inputs(a.sources)if visible else matched_natural_inputs(a.sources,matched)
     else:
         report=json.loads((a.sources/'report.json').read_text(encoding='utf8'))
         assert report['complete'] and not report['TEST_opened']
@@ -93,7 +108,7 @@ def generate(a):
     if corpus:
         assert len(rows)==336 and sum(r['split']=='train' for r in rows)==304
         (a.output/'references').mkdir();(a.output/'targets').mkdir()
-    else:assert len(rows)==(128 if matched else 32) and len({r['reference_id'] for r in rows})==16
+    else:assert len(rows)==(48 if visible else(128 if matched else 32)) and len({r['reference_id'] for r in rows})==16
     source_map={s['sample_id']:s for s in sources}
     write(a.output/'requests.json',rows)
     torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0)
@@ -146,6 +161,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--corpus',action='store_true',help='New two-sentence TRAIN/DEV candidate corpus; never auto-accepted')
     parser.add_argument('--prompt-revision',type=Path,help='Matched natural DEV128, using --sources as paired-data root; not TRAIN corpus')
+    parser.add_argument('--visible-anchor-dev',action='store_true',help='Exact target-free visible-anchor DEV48 on all16 original views; no TRAIN hints')
     for key in ['sources','model-path','metadata','output']:parser.add_argument('--'+key,type=Path,required=True)
     a=parser.parse_args()
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT',''))!=40 or os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU:
