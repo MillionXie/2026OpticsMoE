@@ -9,6 +9,7 @@
   "epochs": 3,
   "warmup": 600,
   "lr": 0.00001,
+  "condition_anchor_weight": 0.02,
   "condition_warmup_target": "bound_electronic",
   "teacher_condition_kd_weight": 1.0,
   "batch_size": 1,
