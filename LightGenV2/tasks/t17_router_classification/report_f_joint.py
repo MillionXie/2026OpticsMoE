@@ -46,6 +46,9 @@ def main():
     balanced_run=task/'runs/simulation/f_balanced_joint_s17_20261101/joint';balanced_result=read(balanced_run/'result.json');balanced_status=read(balanced_run/'status.json');balanced_report=task/'reports/f_balanced_joint_s17_20261101'
     balanced_verified=bool(balanced_result and (balanced_report/'model_audit.json').exists() and (balanced_report/'completed_transfer.json').exists() and hashlib.sha256((balanced_run/'best_checkpoint.pt').read_bytes()).hexdigest()==balanced_result['checkpoint_sha256'])
     if balanced_verified:choices.append(('Joint accuracy + modality load',balanced_result,balanced_run))
+    hidden_run=task/'runs/simulation/f_joint_hidden_s17_20261101/joint';hidden_result=read(hidden_run/'result.json');hidden_status=read(hidden_run/'status.json');hidden_report=task/'reports/f_joint_hidden_s17_20261101'
+    hidden_verified=bool(hidden_result and (hidden_report/'model_audit.json').exists() and (hidden_report/'completed_transfer.json').exists() and hashlib.sha256((hidden_run/'best_checkpoint.pt').read_bytes()).hexdigest()==hidden_result['checkpoint_sha256'])
+    if hidden_verified:choices.append(('Shared hidden semantic auxiliary',hidden_result,hidden_run))
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
     eligible=choices # Latest human rule: original TEST only; no validation floor.
     def development_key(item):
@@ -113,6 +116,8 @@ def main():
     data['shared_joint_teacher']=joint_teacher;data['shared_joint_teacher_student']=dict(status=shared_status,result=shared_result,fully_verified=shared_verified)
     data['canonical_head_refit']=dict(status=head_status,result=head_result,fully_verified=head_verified)
     data['joint_accuracy_balance_candidate']=dict(status=balanced_status,result=balanced_result,fully_verified=balanced_verified)
+    data['joint_hidden_semantic_candidate']=dict(status=hidden_status,result=hidden_result,fully_verified=hidden_verified)
+    if hidden_verified:page=page.replace('</html>','<h2>共享隐藏语义对照完整结束</h2><p>10轮早停、原TEST开发选回父E0，获选光学LG四tensor逐元素等于原父，未改善64.6/49.6或硬负载。19文件80.59MB含全部PT/预测route/logits及TRAIN6000×8×256、TEST2000×8×256隐藏目标，全SHA、strict与完整8视图teacher隐藏目标bitwise回放、完整2000canonical TEST概率bitwise回放通过。训练专用投影200704参数及其optimizer放PT外键、不在推理model；last投影与光学参数实际更新，父E0保护，失败完整保留。自身2510849已退出无GPU，不续训或扫系数。</p></html>')
     if balanced_status:
         completion='已10轮早停选回父E0，获选4tensor与父bitwise相同；全量SHA/strict/原ID标签/teacher目标与完整canonical2000TEST概率bitwise回放通过，自己的2468476已退出。dense均衡KL下降但第四专家实际仍未被选，分类与负载未实质改善，失败保留、不延长。' if balanced_verified else '未完整归档核验不替换主表。'
         page=page.replace('</html>','<h2>联合精度与每模态负载：有界新候选</h2><p>'+html.escape(str({k:v for k,v in balanced_status.items() if k in ('state','epoch','completed_epochs','selected_epoch')}))+'。独立训练控制器复用原光学模型与稳定helpers，不改Organ入口。固定TRAIN梯度校准权重0.00869728、最多20/min10/pat10；同一共享teacher与两域TEST仅软目标、TEST选PT、原父E0参选。均衡只在训练按模态聚合dense边际功率；每轮另核actual hard Top2选择频率，不以KL下降冒充实际均衡。'+completion+'</p></html>')

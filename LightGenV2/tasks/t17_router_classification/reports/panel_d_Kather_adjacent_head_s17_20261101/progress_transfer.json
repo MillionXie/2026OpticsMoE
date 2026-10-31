@@ -1,0 +1,38 @@
+{
+  "snapshot_only": true,
+  "not_final_PT_backup": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2/status.json",
+      "sha256": "8897f955532c58b2dd3cc5184b83626b215808f19710e5a47dec0217a8993052"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2/metadata.json",
+      "sha256": "70b5f6122a623f77c2f1923b1181e7eed128e27ddb479ee7db8dc44404d6630a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2/history.json",
+      "sha256": "173fe77554003fe89c970245a33ef20bf5dac063e155f4df28cb7e1527028266"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2/result.json",
+      "sha256": "845d96d91552d17fcacb4c2006da8788f5dc4d76b4333a42d01cb359d95908fe"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k4/status.json",
+      "sha256": "ef44db15224bddac4f83691b420564b85dca842268a397ec635b7217b84ad26b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k4/metadata.json",
+      "sha256": "8ba2196688bafbc7c0e6586cd53e28c2228098bbd612a82ca8376e97173c884c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k4/history.json",
+      "sha256": "b2f7acb5fba5645d22d8b283afea071ecdea0ca0b81369c6b429c70fcf2857a7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k4/result.json",
+      "sha256": "e6fdd3f4cfc42e11d0a60a7d3a36e8d46d7fbb0ac976b0960431f878a2dfaaf9"
+    }
+  ]
+}

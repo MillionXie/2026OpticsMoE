@@ -1,0 +1,335 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "completed_epochs": 10,
+  "selected_epoch": 0,
+  "phase_and_head_updates": 1260,
+  "original_TEST_random_soft_views": 20000,
+  "head_blocks": 2,
+  "head_mixed_view_presentations": 128000,
+  "head_internal_steps": 80,
+  "all_original_ID_labels_domains_exact": true,
+  "joint_teacher_caches_exact": true,
+  "TEST_hard_GT_excluded": true,
+  "TEST_selection_only_no_VAL_gate": true,
+  "selected_predictions_same_parent": true,
+  "parts": {
+    "train": {
+      "RGB": {
+        "n": 3000,
+        "correct": 2124,
+        "selection_slot_share": [
+          0.0935,
+          0.4065,
+          0.5,
+          0.0
+        ]
+      },
+      "SAR": {
+        "n": 3000,
+        "correct": 1942,
+        "selection_slot_share": [
+          0.08566666666666667,
+          0.41433333333333333,
+          0.49983333333333335,
+          0.00016666666666666666
+        ]
+      }
+    },
+    "val": {
+      "RGB": {
+        "n": 1000,
+        "correct": 559,
+        "selection_slot_share": [
+          0.092,
+          0.408,
+          0.5,
+          0.0
+        ]
+      },
+      "SAR": {
+        "n": 1000,
+        "correct": 482,
+        "selection_slot_share": [
+          0.0855,
+          0.4145,
+          0.5,
+          0.0
+        ]
+      }
+    },
+    "test": {
+      "RGB": {
+        "n": 1000,
+        "correct": 646,
+        "selection_slot_share": [
+          0.13,
+          0.37,
+          0.5,
+          0.0
+        ]
+      },
+      "SAR": {
+        "n": 1000,
+        "correct": 496,
+        "selection_slot_share": [
+          0.088,
+          0.4125,
+          0.4995,
+          0.0
+        ]
+      }
+    }
+  },
+  "epoch_development_usage": [
+    {
+      "epoch": 1,
+      "correct": {
+        "RGB": 653,
+        "SAR": 480
+      },
+      "share": {
+        "RGB": [
+          0.1395,
+          0.3605,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.0985,
+          0.402,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.6365813185373943,
+        "test": 1.6158612699508668
+      }
+    },
+    {
+      "epoch": 2,
+      "correct": {
+        "RGB": 651,
+        "SAR": 478
+      },
+      "share": {
+        "RGB": [
+          0.13,
+          0.37,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.089,
+          0.4115,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.6239077332814535,
+        "test": 1.601396089553833
+      }
+    },
+    {
+      "epoch": 3,
+      "correct": {
+        "RGB": 649,
+        "SAR": 488
+      },
+      "share": {
+        "RGB": [
+          0.126,
+          0.374,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.084,
+          0.4165,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.6106893100738526,
+        "test": 1.592165370941162
+      }
+    },
+    {
+      "epoch": 4,
+      "correct": {
+        "RGB": 650,
+        "SAR": 478
+      },
+      "share": {
+        "RGB": [
+          0.129,
+          0.371,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.0875,
+          0.413,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.6013896656036377,
+        "test": 1.5806965389251708
+      }
+    },
+    {
+      "epoch": 5,
+      "correct": {
+        "RGB": 643,
+        "SAR": 480
+      },
+      "share": {
+        "RGB": [
+          0.1305,
+          0.3695,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.0885,
+          0.412,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.5921736783981324,
+        "test": 1.5765217924118042
+      }
+    },
+    {
+      "epoch": 6,
+      "correct": {
+        "RGB": 649,
+        "SAR": 485
+      },
+      "share": {
+        "RGB": [
+          0.1305,
+          0.3695,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.088,
+          0.4125,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.583940821647644,
+        "test": 1.5663626050949098
+      }
+    },
+    {
+      "epoch": 7,
+      "correct": {
+        "RGB": 644,
+        "SAR": 485
+      },
+      "share": {
+        "RGB": [
+          0.131,
+          0.369,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.09,
+          0.4105,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.5752775475184122,
+        "test": 1.557368088722229
+      }
+    },
+    {
+      "epoch": 8,
+      "correct": {
+        "RGB": 644,
+        "SAR": 482
+      },
+      "share": {
+        "RGB": [
+          0.1305,
+          0.3695,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.089,
+          0.4115,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.565564535776774,
+        "test": 1.5498665103912352
+      }
+    },
+    {
+      "epoch": 9,
+      "correct": {
+        "RGB": 644,
+        "SAR": 485
+      },
+      "share": {
+        "RGB": [
+          0.1305,
+          0.3695,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.0885,
+          0.412,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.5608184849421183,
+        "test": 1.5417527179718018
+      }
+    },
+    {
+      "epoch": 10,
+      "correct": {
+        "RGB": 643,
+        "SAR": 484
+      },
+      "share": {
+        "RGB": [
+          0.1325,
+          0.3675,
+          0.5,
+          0.0
+        ],
+        "SAR": [
+          0.09,
+          0.4105,
+          0.4995,
+          0.0
+        ]
+      },
+      "balance_KL": {
+        "train": 1.5547198836008709,
+        "test": 1.536289712905884
+      }
+    }
+  ]
+}

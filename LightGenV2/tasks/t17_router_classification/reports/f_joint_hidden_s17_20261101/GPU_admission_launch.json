@@ -1,0 +1,149 @@
+{
+  "training_only_shared_hidden": {
+    "teacher_checkpoint_sha256": "7b7626a9bfa229ebecd58c96d25b701107371b61698438c300ef2bfe981b4be4",
+    "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+    "target": "one jointly trained teacher GELU256 before final Linear",
+    "normalization": "original TRAIN all8 views only; frozen diagnostic mean/std",
+    "initialization": "TRAIN-code0 affine Ridge, intercept folded into mean-one CCD",
+    "initialization_sha256": "59371d7cfd83bab44114f42342ec43de57653f7f7b2faa3d28ebdcd09fc96996",
+    "extra_training_parameters": 200704,
+    "projection_absent_from_inference": true,
+    "teacher_absent_from_inference": true,
+    "TEST_hard_GT_in_loss": false,
+    "targets": {
+      "train": {
+        "source_features_sha256": "f151b587ecb56d646601b2da00d927e1faf512ebd93c671a87f2ffa158f33b21",
+        "source_ID_sha256": "f6f535b4265e138f55116d82e504cd8d2b9a29cd6ec72cf858cdcbca61aab6c2",
+        "target_sha256": "bd52d042cf76560988d7afa8bb812c60fa29a125d6d56874e8bc8825aa5415b6",
+        "shape": [
+          6000,
+          8,
+          256
+        ]
+      },
+      "test": {
+        "source_features_sha256": "d1577648d65e8c8cc7c1212efbc121b36c2c051b74aa388f38e3ea931efc3f76",
+        "source_ID_sha256": "c9456506e259b967fc479d1ba33536f99dbb9bad9a226ea141922b673f45fef9",
+        "target_sha256": "22e077aa3527006e9ad3cfdcf7344effffa047aab127f5b600b82b8951b22755",
+        "shape": [
+          2000,
+          8,
+          256
+        ]
+      }
+    },
+    "calibration_TRAIN_images": 20,
+    "physical_main_gradient_norm": 0.4806154953919036,
+    "physical_hidden_gradient_norm": 0.05113776663238244,
+    "weight": 1.0,
+    "calibration": "20% main physical phase norm, clip .001..1; TRAIN only"
+  },
+  "projection_not_registered_in_model": true,
+  "canonical_reload_without_projection_bitwise": true,
+  "source_commit": "6448c952000a6a486524220a5f716885f21577dd",
+  "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+  "parent_full_replay": {
+    "val": {
+      "images": 2000,
+      "predictions_exact": true,
+      "probability_max_abs": 1.436471939086914e-05
+    },
+    "test": {
+      "images": 2000,
+      "predictions_exact": true,
+      "probability_max_abs": 1.195073127746582e-05
+    }
+  },
+  "real_TRAIN_and_TEST_soft_steps": {
+    "train": {
+      "samples": 20,
+      "loss": 2.624547243118286,
+      "loss_parts": {
+        "main": 1.9024279117584229,
+        "balance": 1.602933645248413,
+        "hidden": 0.7081781625747681
+      },
+      "aux_router_gradient_norm": 0.06520601361989975,
+      "all_parameter_updates": {
+        "first_phase": 0.06561953574419022,
+        "global_phase": 0.11146499961614609,
+        "router_phase": 0.0379670076072216,
+        "shared_head.weight": 0.004423944745212793
+      },
+      "physical_hidden_gradient_norm": 0.036041490733623505,
+      "projection_update_norm": 0.044363707304000854,
+      "TEST_GT_received": null
+    },
+    "test": {
+      "samples": 20,
+      "loss": 2.2688350677490234,
+      "loss_parts": {
+        "main": 1.3548849821090698,
+        "balance": 1.6151280403137207,
+        "hidden": 0.8999029397964478
+      },
+      "aux_router_gradient_norm": 0.065980926156044,
+      "all_parameter_updates": {
+        "first_phase": 0.04383047670125961,
+        "global_phase": 0.05900679901242256,
+        "router_phase": 0.024772601202130318,
+        "shared_head.weight": 0.002942743245512247
+      },
+      "physical_hidden_gradient_norm": 0.04640171676874161,
+      "projection_update_norm": 0.029872799292206764,
+      "TEST_GT_received": false
+    }
+  },
+  "forward_bitwise_original_hardTop2": true,
+  "head_block_phase_frozen": true,
+  "head_block": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 320,
+    "numerical_ridge": 0.0031023215272092774,
+    "uncentred_Gram_eigen_min": -1.5852284871134653e-13,
+    "uncentred_Gram_eigen_max": 2264.5800762809695,
+    "Gram_regularized_condition": 729964.0475226112,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 2.320928658601436,
+    "objective_after": 0.8491222892693648,
+    "internal_steps": 3,
+    "closure_calls": 8,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": false,
+    "hard_label_samples": 160,
+    "original_TRAIN_images": 20,
+    "source_original_TEST_images": 20,
+    "hard_TRAIN_view_presentations": 160,
+    "source_TEST_soft_view_presentations": 160,
+    "total_view_presentations": 320,
+    "augmentation_codes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "inference_parameters": 487204,
+  "model_state_tensors": 4,
+  "inference_Linear": 1,
+  "CNN": 0,
+  "entry_sha256": "79d2918086fe5bcaa52adc05c6731a190adb5487f67ef39d50256fe1580c03bd",
+  "balance_helper_sha256": "0e17eff80ac2b9827181bc0ca51ee1d624c9c7e0355d010b59ec9ae54f6b7a0a",
+  "profile_sha256": "c4fd57c51da845c6230957d99ee8b9a10c830c571ee63b69ec1ed5083801359b",
+  "pid": 2510849,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_f_balanced_joint",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_joint_hidden_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint"
+  ],
+  "time": 1793477687.5350966
+}

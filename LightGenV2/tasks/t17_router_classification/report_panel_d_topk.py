@@ -26,6 +26,10 @@ def main():
             head_run=task/'runs/simulation/canonical_head_TEST_s17_20261101'/head_name;value=read(head_run/'result.json');receipt=task/'reports/canonical_head_TEST_s17_20261101'
             if value and (receipt/'completed_transfer.json').exists() and (receipt/f'{head_name}_model_audit.json').exists() and hashlib.sha256((head_run/'best_checkpoint.pt').read_bytes()).hexdigest()==value['checkpoint_sha256'] and value['original_test_dev']['correct']>result['original_test_dev']['correct']:
                 result=value;folder=head_run;status=read(folder/'status.json');verified=True
+        if dataset=='kather2016' and k in (2,4):
+            adjacent=task/f'runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k{k}';value=read(adjacent/'result.json');receipt=task/'reports/panel_d_Kather_adjacent_head_s17_20261101'
+            if value and (receipt/'completed_transfer.json').exists() and (receipt/f'Kather_k{k}_model_audit.json').exists() and hashlib.sha256((adjacent/'best_checkpoint.pt').read_bytes()).hexdigest()==value['checkpoint_sha256'] and value['original_test_dev']['correct']>result['original_test_dev']['correct']:
+                result=value;folder=adjacent;status=read(folder/'status.json');verified=True
         history=read(folder/'history.json') or []
         scores=[percent(result[s]['accuracy']) for s in ('train','val','original_test_dev')] if verified else ['—']*3
         stage='A/D shared Top2 PT' if reference else (status or {}).get('state','admission pending')

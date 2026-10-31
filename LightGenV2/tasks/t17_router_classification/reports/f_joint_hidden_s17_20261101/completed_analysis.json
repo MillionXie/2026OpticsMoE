@@ -1,0 +1,26 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "completed_epochs": 10,
+  "selected_epoch": 0,
+  "outcome": "No improvement; all selected student tensors remain the protected parent",
+  "phase_head_updates": 1260,
+  "projection_updates": 1260,
+  "extra_training_parameters": 200704,
+  "inference_parameters": 487204,
+  "head_mixed_view_presentations": 128000,
+  "head_inner_steps": 80,
+  "original_TEST_random_soft_views": 20000,
+  "TEST_selection_evaluations_before_lock": 11,
+  "hidden_weight": 1.0,
+  "first_hidden_MSE": {
+    "train": 0.8488046391805013,
+    "test": 0.8739399700164795
+  },
+  "last_hidden_MSE": {
+    "train": 0.829743842124939,
+    "test": 0.8706528625488281
+  },
+  "teacher_targets_full8_replay_bitwise": true,
+  "canonical_2000_TEST_replay_bitwise": true,
+  "all_parent_weights_preserved": true
+}

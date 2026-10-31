@@ -52,6 +52,9 @@ def main():
         canonical=task/'runs/simulation/canonical_head_TEST_s17_20261101/Kather_k2';value=read(canonical/'result.json');receipt=task/'reports/canonical_head_TEST_s17_20261101'
         if dataset=='kather2016' and value and (receipt/'completed_transfer.json').exists() and (receipt/'Kather_k2_model_audit.json').exists() and hashlib.sha256((canonical/'best_checkpoint.pt').read_bytes()).hexdigest()==value['checkpoint_sha256'] and (name not in aligned_references or value['original_test_dev']['correct']>aligned_references[name]['result']['original_test_dev']['correct']):
             aligned_references[name]=dict(run=str(canonical.relative_to(task)),status=read(canonical/'status.json'),result=value)
+        adjacent=task/'runs/simulation/panel_d_Kather_adjacent_head_s17_20261101/Kather_k2';value=read(adjacent/'result.json');receipt=task/'reports/panel_d_Kather_adjacent_head_s17_20261101'
+        if dataset=='kather2016' and value and (receipt/'completed_transfer.json').exists() and (receipt/'Kather_k2_model_audit.json').exists() and hashlib.sha256((adjacent/'best_checkpoint.pt').read_bytes()).hexdigest()==value['checkpoint_sha256'] and (name not in aligned_references or value['original_test_dev']['correct']>aligned_references[name]['result']['original_test_dev']['correct']):
+            aligned_references[name]=dict(run=str(adjacent.relative_to(task)),status=read(adjacent/'status.json'),result=value)
     oldA=read(task/'reports/panel_a_original_test_development_20261031/results.json')
     baselineA={r['dataset']:r['D2NN_development_reference']['original_test_dev']['accuracy'] for r in oldA['cases']}
     baselineB={depth:read(task/f'runs/simulation/panel_b_d2nn60_s17_20261031/d2nn{depth}/result.json')['test']['accuracy'] for depth in (3,5,7)}

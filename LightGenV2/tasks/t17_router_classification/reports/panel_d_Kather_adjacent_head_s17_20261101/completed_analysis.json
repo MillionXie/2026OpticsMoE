@@ -1,0 +1,31 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "changed_k_explicit": true,
+  "complete_fixed_TEST": true,
+  "results": {
+    "Kather_k2": {
+      "selected_segment": 5,
+      "correct": 596,
+      "n": 752,
+      "head_internal_iterations": 150,
+      "canonical_optimization_presentations": 650256,
+      "phase_updates": 0
+    },
+    "Kather_k4": {
+      "selected_segment": 16,
+      "correct": 604,
+      "n": 752,
+      "head_internal_iterations": 150,
+      "canonical_optimization_presentations": 646760,
+      "phase_updates": 0
+    }
+  },
+  "selected_current_correct_by_k": [
+    601,
+    596,
+    604,
+    604
+  ],
+  "strictly_increasing": false,
+  "no_k1_lowering_or_example_removal": true
+}

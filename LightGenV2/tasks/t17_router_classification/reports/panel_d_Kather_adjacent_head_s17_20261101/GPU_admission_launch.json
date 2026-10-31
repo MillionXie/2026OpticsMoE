@@ -1,0 +1,74 @@
+{
+  "source_commit": "747e0ab6d5c4babf0478a624229b99af77a2816e",
+  "models": {
+    "Kather_k2": {
+      "parent_checkpoint_sha256": "655e8e35026ed038441dce27ac60901e4ac3159a0d27f9536288c87bd66f7fc7",
+      "parent_k": 1,
+      "actual_k": 2,
+      "all_initial_parameters_bitwise_parent": true,
+      "initial_feature_readout_forward_bitwise": true,
+      "old_parent_forward_not_claimed_identical_after_k_change": true,
+      "complete_fixed_TEST_ID_labels_unchanged": true,
+      "head_fit": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 8,
+        "numerical_ridge": 0.002444016231642793,
+        "uncentred_Gram_eigen_min": -2.2385845102489473e-13,
+        "uncentred_Gram_eigen_max": 1037.6937237288266,
+        "Gram_regularized_condition": 424586.44685129524,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 5.041464157878882,
+        "objective_after": 0.06302409423151531,
+        "internal_steps": 3,
+        "closure_calls": 8,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": true,
+        "hard_label_samples": 8
+      },
+      "phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "real_TRAIN_samples": 8
+    },
+    "Kather_k4": {
+      "parent_checkpoint_sha256": "cb1a52ffa60a81577e3c8fa0af535b01d88f97c405322cc265c0bad3ee8029ae",
+      "parent_k": 3,
+      "actual_k": 4,
+      "all_initial_parameters_bitwise_parent": true,
+      "initial_feature_readout_forward_bitwise": true,
+      "old_parent_forward_not_claimed_identical_after_k_change": true,
+      "complete_fixed_TEST_ID_labels_unchanged": true,
+      "head_fit": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 8,
+        "numerical_ridge": 0.001985877853821928,
+        "uncentred_Gram_eigen_min": -2.1491103330601755e-13,
+        "uncentred_Gram_eigen_max": 1126.870458225204,
+        "Gram_regularized_condition": 567442.9784572506,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 0.3890500606428037,
+        "objective_after": 0.047342149255192326,
+        "internal_steps": 3,
+        "closure_calls": 7,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": true,
+        "hard_label_samples": 8
+      },
+      "phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "real_TRAIN_samples": 8
+    }
+  },
+  "profile_sha256": "1e623e02b91066b23809b64403049e4f0b0157061f0a64c1ac601dc7df97a21c",
+  "pid": 2515631,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_Kather_adjacent_head_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_adjacent_head_s17_20261101"
+  ],
+  "time": 1793477867.5998964
+}

@@ -1,0 +1,28 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "parent_k": 1,
+  "actual_k": 2,
+  "original_TEST_complete_unchanged": true,
+  "phase_updates": 0,
+  "head_inner_iterations": 150,
+  "head_optimization_presentations": 650256,
+  "selected_segment": 5,
+  "TEST_selection_no_VAL_gate": true,
+  "parts": {
+    "train": {
+      "n": 3496,
+      "correct": 3051,
+      "actual_k": 2
+    },
+    "val": {
+      "n": 752,
+      "correct": 572,
+      "actual_k": 2
+    },
+    "test": {
+      "n": 752,
+      "correct": 596,
+      "actual_k": 2
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "snapshot_only": true,
+  "not_final_PT_backup": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/launch.json",
+      "sha256": "33148a286703330392ef781ca8245a8f441ccfafb5c7f53d18ebf96e2ba5a5c7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/metadata.json",
+      "sha256": "99024e5b0182431734d9d40bb178b5c324b0aeadfaff34206c0eda5e06bfe6b9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/status.json",
+      "sha256": "dc1a8bcc624dedcd41f4c25657751c77a2988d2c6abe0de7922dc07e0dfa2d76"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/history.json",
+      "sha256": "0217fe2cbab2490619bfd5b24a7545ccc05196ef9b125165c1099cff81a50bdb"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/teacher_manifest.json",
+      "sha256": "e936499cd5fc1c8e5f403871f70049c8076664be5da7929dd5cd76da506d0716"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/source_TEST_distillation_manifest.json",
+      "sha256": "6128b404553ce5a4d4461d8764c78da32f69dfffe1d6bb91e12ecf34b0ac838b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/joint_hidden_manifest.json",
+      "sha256": "bfb0c381199c80218a37d8ad39a2d52bd7b40a17a2a287fe4a48a9c78acb7ba2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/result.json",
+      "sha256": "0701b4d49e12694fcca1daef69b720a9f08519a77dba5977ee9c10b30af34a6e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/selection_lock.json",
+      "sha256": "a2694559ae588534dc68d6fda3d76406c706e4720cc4f390607cf69683927a36"
+    }
+  ]
+}

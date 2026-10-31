@@ -1,0 +1,103 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/f_joint_hidden_s17_20261101/joint"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/SOURCE_TEST_teacher_logits.npz",
+      "size": 595437,
+      "sha256": "701d3c1bfcd5cf9ed0b20af1ba5394345a68baab7194c6c99c10efce8c1a0be9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/TEST_joint_teacher_hidden.npy",
+      "size": 16384128,
+      "sha256": "22e077aa3527006e9ad3cfdcf7344effffa047aab127f5b600b82b8951b22755"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/TRAIN_joint_teacher_hidden.npy",
+      "size": 49152128,
+      "sha256": "bd52d042cf76560988d7afa8bb812c60fa29a125d6d56874e8bc8825aa5415b6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/TRAIN_teacher_logits.npz",
+      "size": 1784035,
+      "sha256": "c2040426d9161ee36a56b3f0be22bab4256c05a178fb6a985360dd6161e01932"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/best_checkpoint.pt",
+      "size": 2766100,
+      "sha256": "a3e74f008985e3e6234deddbabf0cd446fea64974c4d147df63a9b870058ab53"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/exit_receipt.json",
+      "size": 51,
+      "sha256": "a6fe1d8352aab3357ba897e2750144ebae21f4e6e434f8619e8f237579d6148c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/history.json",
+      "size": 160115,
+      "sha256": "0217fe2cbab2490619bfd5b24a7545ccc05196ef9b125165c1099cff81a50bdb"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/joint_hidden_initialization.pt",
+      "size": 806880,
+      "sha256": "bd8ad286cb790626b8f09528388ef64e401870523b9f379867b7cfc73e24cd0c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/joint_hidden_manifest.json",
+      "size": 1679,
+      "sha256": "bfb0c381199c80218a37d8ad39a2d52bd7b40a17a2a287fe4a48a9c78acb7ba2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/last_checkpoint.pt",
+      "size": 8210891,
+      "sha256": "871b0c3d99d38ea53fff2f223956aa747de6ccc21dd52b7fbd3da0b4541da33a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/metadata.json",
+      "size": 11343,
+      "sha256": "99024e5b0182431734d9d40bb178b5c324b0aeadfaff34206c0eda5e06bfe6b9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/result.json",
+      "size": 14032,
+      "sha256": "0701b4d49e12694fcca1daef69b720a9f08519a77dba5977ee9c10b30af34a6e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/selection_lock.json",
+      "size": 243,
+      "sha256": "a2694559ae588534dc68d6fda3d76406c706e4720cc4f390607cf69683927a36"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/source_TEST_distillation_manifest.json",
+      "size": 759,
+      "sha256": "6128b404553ce5a4d4461d8764c78da32f69dfffe1d6bb91e12ecf34b0ac838b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/status.json",
+      "size": 14073,
+      "sha256": "dc1a8bcc624dedcd41f4c25657751c77a2988d2c6abe0de7922dc07e0dfa2d76"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/teacher_manifest.json",
+      "size": 891,
+      "sha256": "e936499cd5fc1c8e5f403871f70049c8076664be5da7929dd5cd76da506d0716"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/test_predictions.npz",
+      "size": 138305,
+      "sha256": "aefb4774bd060ce54d7fe0c47c7f69abf3ec2021813556d75df39c5de59c52b8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/train_predictions.npz",
+      "size": 408112,
+      "sha256": "e24824b2aac8b58a791c7d08d2ea41cab682866752250e82885767081fcc3f4f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_hidden_s17_20261101/joint/val_predictions.npz",
+      "size": 137990,
+      "sha256": "3a578dce88258fe137633e88cb38eab2b675816252046a6bcde9bcd964cfbe8c"
+    }
+  ]
+}

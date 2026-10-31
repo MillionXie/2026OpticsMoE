@@ -1,3 +1,11 @@
+## 新共享隐藏语义与Kather相邻k对照均已完成核验；F仍需结构取舍（2026-11-01）
+
+F joint_hidden source6448c952000a6a486524220a5f716885f21577dd实际10轮早停，TEST选回E0、四tensor与父完全相同。TRAIN70.80/64.7333、VAL55.90/48.20仅记录、开发64.60/49.60，仍未双70%，负载同父E4两域0。19文件80.59MB best/last/预测route/两logitcache/两hidden.npy/初始化及manifest全remote-localSHA；strict4tensor487204唯一Linear无CNN、完整ID/teacher logits、TRAIN6000x8x256与TEST2000x8x256完整hidden target CPU bitwise回放、原TRAIN-only mean/std/Ridge核验，完整2000canonical TEST概率bitwise回放通过。last光学四参数及外部投影真实更新（投影L2约1.534），额外200704训练参数从未进入推理，头block相位/投影冻结准入通过；1260phase/head/projection更新、20000TEST随机视图、128000混合head视图/80内部步单列。2510849退出无GPU，失败保留，不续训/扫系数。
+
+Kather相邻k source747e0ab6d5c4babf0478a624229b99af77a2816e已两任务各150头LBFGS步完成：k1光学mask初始化实际k2并按新k重算特征，选第5段596/752（79.2553%，原595+1）；k3 mask初始化实际k4选16段604/752，与原correct相同，不替换原k4。30文件37.58MB全部SHA、strict485636单Linear无CNN/相位bitwise各父/真实k2和k4/固定原ID标签/完整752canonical TEST预测完全重放通过，概率max5.31e-6非bitwise。旧k与新k前向不同已经显式声明，无TEST筛样本/压低k1。A第一组Kather、D k2、B两层现共同引用新596 PT/SHA，旧A/595和更优k1均保留；A_D_Kather_identity.json同步。当前Kather601/596/604/604仍不严格递增，Blood/Organ严格递增保护不搜。
+
+所有正式任务与短GPU审计均已结束，自己的GPU1/GPU6分配已释放（不是整卡无别人）。F固定两层无CNN的联合logits/TEST软蒸馏、均衡与共享hidden对照均未达到70%或真正四专家均衡，不能把这些失败称作容量不可能证明，也不无限堆同类轮数。下一步若改变F主干深度须真人批准，因为此前明确与A的两主层统一；可选择保持原合同并交付真实未达，或额外允许四主层纯光学LG结构对照（不加CNN，Top2/OEO/Linear/router224/主干478保持，D2NN三层定稿不动、额外深度和参数预算明确另列），不保证四层一定成功。未批准前不改架构，不启动新结构训练。
+
 ## F共享教师隐藏表征只读诊断：仍有表征差距，未启动新候选（2026-11-01）
 
 source3df49aa23d02ec8aa8181e42f7d6734be1493947的diagnose_joint_teacher_hidden.py已执行，CPU-only不创建CUDA。对同一最新b6e0父的完整原TRAIN6000 CCD784与共享teacher最终Linear前GELU256比较：RGB/SAR线性CKA0.17921/0.17335；4800 TRAIN拟合固定ridge投影、1200剩余TRAIN重构R²0.12217/0.07795。它们是TRAIN特征重构诊断，不是分类准确率、容量上限或新TEST结果。teacher TRAIN head预测与缓存完全一致，logitmax7.63e-6；原CCD缓存父相位/源/ID和teacher特征/PT均SHA核验，学生与教师都无更新。

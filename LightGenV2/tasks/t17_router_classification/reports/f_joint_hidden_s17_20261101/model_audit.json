@@ -1,0 +1,66 @@
+{
+  "joint_hidden_targets": {
+    "targets": {
+      "train": {
+        "shape": [
+          6000,
+          8,
+          256
+        ],
+        "full8view_hidden_replay_bitwise": true,
+        "target_sha256": "bd52d042cf76560988d7afa8bb812c60fa29a125d6d56874e8bc8825aa5415b6"
+      },
+      "test": {
+        "shape": [
+          2000,
+          8,
+          256
+        ],
+        "full8view_hidden_replay_bitwise": true,
+        "target_sha256": "22e077aa3527006e9ad3cfdcf7344effffa047aab127f5b600b82b8951b22755"
+      }
+    },
+    "TRAIN_only_statistics_and_projection_exact_diagnostic": true,
+    "projection_absent_from_model": true,
+    "extra_training_parameters": 200704
+  },
+  "best_checkpoint.pt": {
+    "strict": true,
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "LayerNorm": 0,
+    "parameter_L2_from_parent": {
+      "first_phase": 0.0,
+      "global_phase": 0.0,
+      "router_phase": 0.0,
+      "shared_head.weight": 0.0
+    },
+    "head_optimizer_state_count": 0,
+    "head_momentum_cleared_after_block": false,
+    "external_projection_L2_update": 0.0
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "LayerNorm": 0,
+    "parameter_L2_from_parent": {
+      "first_phase": 1.8445855379104614,
+      "global_phase": 3.364475965499878,
+      "router_phase": 2.6484711170196533,
+      "shared_head.weight": 5.930553913116455
+    },
+    "head_optimizer_state_count": 0,
+    "head_momentum_cleared_after_block": true,
+    "external_projection_L2_update": 1.533600091934204
+  },
+  "full_canonical_TEST_replay": {
+    "predictions_exact": true,
+    "probabilities_bitwise": true,
+    "probability_max_abs": 0.0,
+    "images": 2000,
+    "gpu": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  }
+}
