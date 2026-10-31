@@ -30,7 +30,9 @@ def checked_revision(folder,data,state,original):
     return actual,dict(schema='scene_visible_anchor_DEV_preflight_v1',prompt_profile=PROFILE,
         contexts=48,reference_views=16,source_pairs_sha256=report['source_pairs_sha256'],
         request_sha256=report['request_sha256'],TEST_opened=False,
-        prior_model_on_new_prompts_not_retrained_model=True,new_task_results_not_old_score_relabeling=True)
+        prior_model_on_new_prompts_not_retrained_model=state['pair_sha256']==report['source_pairs_sha256'],
+        model_trained_on_revised_dataset=state['pair_sha256']==report['pairs_sha256'],
+        new_task_results_not_old_score_relabeling=True)
 
 
 def main():
