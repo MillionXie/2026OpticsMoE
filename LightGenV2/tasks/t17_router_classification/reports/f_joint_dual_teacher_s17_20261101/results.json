@@ -1,5 +1,5 @@
 {
-  "generated_UTC": "2026-10-31T17:05:40.376604+00:00",
+  "generated_UTC": "2026-10-31T17:17:46.948351+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "protocol": "one joint LG two outputs plus two finalized source-only D2NN four outputs",
   "records": {
@@ -5844,12 +5844,91 @@
   "router_projection_candidate": {
     "status": {
       "state": "training",
-      "epoch": 3,
+      "epoch": 11,
       "total_epochs": 30,
-      "selected_epoch": 0,
+      "selected_epoch": 10,
       "pid": 2220466
     },
     "result": null,
     "fully_collected_local_SHA_verified": false
+  },
+  "TRAIN_only_nonpersistent_router_step_probe": {
+    "pid": 2231881,
+    "parent_sha256": "124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057",
+    "original_TRAIN_images": 6000,
+    "augmentation_code": 0,
+    "teacher_sources": "same checked per-domain teachers; TRAIN only",
+    "scope": "Three nonpersistent one-router-step numerical probes on same complete TRAIN and fixed head/other phases; no persistent model or TEST/VAL results",
+    "TRAIN_forward_view_presentations": 24000,
+    "dry_trial_router_steps": 3,
+    "baseline": {
+      "RGB": 2.3050734990437824,
+      "SAR": 2.107170667648315
+    },
+    "projection": {
+      "projected": true,
+      "cosine_before": -0.9789595263417857,
+      "domain_weights": [
+        0.5,
+        0.5
+      ],
+      "physical_norms": [
+        0.013297026582861266,
+        0.016324764669387128
+      ],
+      "projected_direction_dot_original": [
+        3.681048187771599e-06,
+        5.5482533948686e-06
+      ],
+      "coordinate": "physical router phase",
+      "task_gradient_evaluations": 2
+    },
+    "trials": [
+      {
+        "name": "mean_WrappedAdam",
+        "domain_objective": {
+          "RGB": 2.3075458246866862,
+          "SAR": 2.107067273775737
+        },
+        "paired_change": {
+          "RGB": 0.002472325642903783,
+          "SAR": -0.00010339387257785049
+        },
+        "both_domain_objectives_nonincreasing": false,
+        "max_physical_angle_change": 0.0003000152452017346,
+        "all_nonrouter_state_bitwise_unchanged": true
+      },
+      {
+        "name": "projected_WrappedAdam",
+        "domain_objective": {
+          "RGB": 2.3067456684112546,
+          "SAR": 2.1077147763570143
+        },
+        "paired_change": {
+          "RGB": 0.001672169367472165,
+          "SAR": 0.0005441087086994756
+        },
+        "both_domain_objectives_nonincreasing": false,
+        "max_physical_angle_change": 0.0003000152452017346,
+        "all_nonrouter_state_bitwise_unchanged": true
+      },
+      {
+        "name": "projected_normalized_angle_SGD",
+        "domain_objective": {
+          "RGB": 2.3050698280334467,
+          "SAR": 2.1071628141403203
+        },
+        "paired_change": {
+          "RGB": -3.6710103357151525e-06,
+          "SAR": -7.853507994592945e-06
+        },
+        "both_domain_objectives_nonincreasing": true,
+        "max_physical_angle_change": 0.00029997563622430334,
+        "all_nonrouter_state_bitwise_unchanged": true
+      }
+    ],
+    "all_state_restored_bitwise": true,
+    "VAL_TEST_statistics_used": false,
+    "limitations": "Fresh Adam states and code0 only; not the running optimizer momentum, all8 D4 or TEST-soft objective. No classification or optimizer convergence claim."
   }
 }

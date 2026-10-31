@@ -15,6 +15,10 @@ def main():
     if (ste/'history.json').exists():
         sh=json.loads((ste/'history.json').read_text());sr=json.loads((ste/'result.json').read_text()) if (ste/'result.json').exists() else None
         branches.append(('Surrogate backward',sh,result,sr,'#cc6677'))
+    projected=task/'runs/simulation/f_joint_router_projection_s17_20261101/joint'
+    if (projected/'history.json').exists():
+        ph=json.loads((projected/'history.json').read_text());pr=json.loads((projected/'result.json').read_text()) if (projected/'result.json').exists() else None
+        branches.append(('Router projection',ph,sr,pr,'#228833'))
     fig,axes=plt.subplots(1,3,figsize=(15,4.5))
     for ax,domain in zip(axes[:2],('RGB','SAR')):
         for name,h,prior,final,color in branches:

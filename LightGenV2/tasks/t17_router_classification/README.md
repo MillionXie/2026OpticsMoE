@@ -5,6 +5,11 @@
 训练域仅用于损失分组，不进入forward、不固定专家；原TEST路径显式拒绝任何硬标签参数。原单头64000视图block保持，无额外推理参数。额外两域router autograd评估次数与负内积batch数/余弦逐轮记账，不能称等计算预算。
 新profile f_joint_router_projection_s17_20261101从精确124父，max30/min15/pat10，原STE反向/KD.5/T2/D4/两教师/TRAIN+TESTsoft、phase.0003/head.00005及min域VAL选择保持。原父E0参与/所有失败保存，不保证投影后Adam步共同下降或达到70%。186项CPU回归及精确124父真实TRAIN/TEST软输入GPU准入通过，source183293fb28744a21ce88a1bc6ea48c7f0fe19c42已GitHub/server路径SHA。worker2220466已在A100实际启动，root f_joint_router_projection_s17_20261101/joint，不重复启动/热改cfg。真实准入TRAIN router梯度余弦-.6353触发投影，投影方向与原两域梯度内积均正；非router混合损失梯度bitwise不变、前向bitwise、4state487204、TEST软无硬标签和head block相位冻结/父完整VAL重放均通过，未声称准确率改善。
 
+
+只读数值对照（不改在训候选）：精确124父、同一完整TRAIN6000/code0和固定head/E/G，做三次非持久router单步并逐位恢复。相同约.0003最大相位步，平均梯度WrappedAdam使RGB目标+0.002472/SAR-0.000103；投影后WrappedAdam为+0.001672/+0.000544；投影方向归一角度SGD为-0.00000367/-0.00000785。
+该检查使用新鲜Adam状态，不是当前运行中的动量，也不含8D4或TEST-soft；没有VAL/TEST/分类准确率指标，不能据此声称SGD泛化更好。记录3个临时步及24000 TRAIN前向呈现、所有参数bitwise恢复/探针PID退出与原诊断SHA，见TRAIN_paired_router_step_diagnosis/transfer.json。当前候选按预算继续，不热改。
+仅条件备选：若现有完整投影训练仍停滞，可实现保留投影方向的有界router角度SGD/配对TRAIN回溯；仍须默认兼容/真实GPU准入/发布，当前未实现/未启动，不能当现有训练或承诺改善。
+
 ## F路由surrogate候选已完整结束并核验；下一训练冲突投影待实现（2026-11-01）
 
 worker2195435已25轮平台停选E10，TRAIN RGB64.5667/SAR59.0333、VAL56.20/51.10、原TEST开发63.20/48.30%，同一PT SHA124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057，仍未两域70%。相对双教师父RGB少2/SAR多16例，不逐域拼PT，不声称surrogate造成因果提升。

@@ -1,0 +1,159 @@
+{
+  "snapshot_only": true,
+  "complete_epochs_in_snapshot": 11,
+  "phase_head_updates": 1386,
+  "extra_router_task_gradient_evaluations": 2772,
+  "conflict_projected_batches": 758,
+  "TEST_soft_random_views": 22000,
+  "mixed_head_views": 128000,
+  "head_inner_steps": 80,
+  "head_blocks": [
+    {
+      "epoch": 5,
+      "objective_before": 2.4269970442742825,
+      "objective_after": 2.3660993660581022,
+      "inner_steps": 40
+    },
+    {
+      "epoch": 10,
+      "objective_before": 2.407813446386106,
+      "objective_after": 2.362180448480754,
+      "inner_steps": 40
+    }
+  ],
+  "per_epoch_projection": [
+    {
+      "epoch": 1,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 65,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.0051583552218703735,
+      "min_cosine_before": -0.96672715114189,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 2,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 78,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.13427796003391793,
+      "min_cosine_before": -0.9594080386152511,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 3,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 71,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.06488865966767497,
+      "min_cosine_before": -0.9664721771511943,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 4,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 71,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.09021065747688929,
+      "min_cosine_before": -0.9515173254079787,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 5,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 65,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.09703567507283595,
+      "min_cosine_before": -0.9800348871012821,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 6,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 63,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": 0.034089291566751875,
+      "min_cosine_before": -0.969746429124467,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 7,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 63,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.01684942144269001,
+      "min_cosine_before": -0.9765816680308225,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 8,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 68,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.06348863760223351,
+      "min_cosine_before": -0.958282596101405,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 9,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 73,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.16015174340779195,
+      "min_cosine_before": -0.9624508612343327,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 10,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 73,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.08698912253920746,
+      "min_cosine_before": -0.9382864666079046,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 11,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 68,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.06133853949841609,
+      "min_cosine_before": -0.9791232049762039,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    }
+  ],
+  "TEST_metrics_from_this_run_not_yet_evaluated": true
+}

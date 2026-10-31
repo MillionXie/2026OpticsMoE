@@ -50,7 +50,11 @@ def main():
         page=page.replace('下一有界训练方法仅准备：','有界训练方法：').replace('尚未实现或启动，需默认兼容/GT隔离/数值与真实GPU准入后发布再运行；','已通过默认兼容/GT隔离/数值检查及真实GPU准入后发布并启动，详见下节；')
         text=f"{projection_status.get('state')}, epoch {projection_status.get('epoch',projection_status.get('completed_epochs',0))}"
         page=page.replace('</html>','<h2>两域router训练梯度冲突投影</h2><p>f_joint_router_projection_s17_20261101：'+html.escape(text)+'。186项CPU及精确124父真实GPU准入通过并启动，最多30/min15/pat10轮。仅对router的两域物理相位梯度作同时负内积投影，按实际样本数加权；E/G/head仍原混合损失梯度，学生forward完全不变。域标签只用于训练损失分组，TEST软目标分支拒绝硬标签输入。额外router任务梯度评估次数单独记账，投影不保证Adam步后两域下降或70%。未完成/未归档前主表仍保留63.20/48.30。</p></html>')
+    paired_probe=read(task/'reports/f_joint_router_projection_s17_20261101/TRAIN_paired_router_step_diagnosis.json')
+    if paired_probe:
+        page=page.replace('</html>','<p>另做了固定父权重、固定head与相同完整TRAIN/code0的三次非持久router单步数值检查，原参数全部恢复；只有训练目标，没有VAL/TEST或新准确率。检查说明物理梯度投影的几何性质不自动延续到Adam实际步。运行中的配置未据此热改，详见<a href="../f_joint_router_projection_s17_20261101/TRAIN_paired_router_step_diagnosis.json">配对数值记录</a>；任何后续优化仍须有限预算、测试和准入。</p></html>')
     data=dict(generated_UTC=datetime.now(timezone.utc).isoformat(),role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',protocol='one joint LG two outputs plus two finalized source-only D2NN four outputs',records=records,selected_joint_run=str(path.relative_to(task)),candidate_status=status,candidate_result=result,candidate_local_SHA_verified=verified,parent_result=reference,target_both_domains_at_least_70_percent=target,latest_history=history[-1] if history else None,route_STE_candidate=dict(status=ste_status,result=ste_result,fully_collected_local_SHA_verified=ste_verified),router_projection_candidate=dict(status=projection_status,result=projection_result,fully_collected_local_SHA_verified=projection_verified))
+    if paired_probe:data['TRAIN_only_nonpersistent_router_step_probe']=paired_probe
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 

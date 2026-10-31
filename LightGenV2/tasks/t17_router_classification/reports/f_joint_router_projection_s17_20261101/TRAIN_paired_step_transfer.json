@@ -1,0 +1,11 @@
+{
+  "verified_local_remote_SHA256": true,
+  "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_joint_router_paired_step_probe_s17_20261101/diagnosis.json",
+  "sha256": "3ab846b02a5cee30f6238795146d3c518402670e11dde0172fe104d509604a46",
+  "bytes": 2520,
+  "exit": {
+    "probe_pid": 2231881,
+    "process_exited": true,
+    "no_GPU_allocation": true
+  }
+}

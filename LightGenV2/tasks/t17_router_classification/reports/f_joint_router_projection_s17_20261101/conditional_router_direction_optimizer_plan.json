@@ -1,0 +1,9 @@
+{
+  "status": "CONDITIONAL_NUMERICAL_HYPOTHESIS_NOT_IMPLEMENTED_NOT_STARTED",
+  "immutable_parent_sha256": "124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057",
+  "evidence": "Same full6000 TRAIN code0/teacher targets/head/nonrouter parameters; three dry steps, all original state bitwise restored",
+  "observation": "Projected physical gradient has positive dot with each task, yet fresh WrappedAdam one-step raises both domain TRAIN objectives; max-angle-matched normalized projected SGD lowers both by small amounts. No TEST/VAL/accuracy claim.",
+  "conditional_next": "Only after current finite PCGrad-WrappedAdam run completes: consider preserving the projected router direction with a bounded canonical angle-SGD router step, ideally paired TRAIN-domain acceptance/backtracking. Keep E/G/head training and all inference unchanged. Must implement/default-regress/test/real-parent GPU-admit/publish before any run.",
+  "budget": "Current running budget not extended or modified; diagnostic3 nonpersistent steps and24000 TRAIN forward presentations separately recorded",
+  "limits": "Fresh Adam states and code0 only; not the running optimizer momentum, all8 D4 or TEST-soft objective. No classification or optimizer convergence claim."
+}
