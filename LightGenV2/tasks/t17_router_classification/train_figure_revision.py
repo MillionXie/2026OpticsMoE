@@ -117,11 +117,21 @@ def main():
     paths.extend([task/'original_f_teacher.py',task.parents[1]/'demo_check/frozen_electronic/model.py'])
     paths.append(task/'phase_training.py')
     paths.append(task/'phase_backtracking.py')
+    paths.append(task/'f_cross_domain.py')
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=True,teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
         raw,identity=load_panel_f(cfg['data']) if cfg['dataset']=='eurosat_original_f' else load_raw(Path(cfg['data_root']),cfg)
-        metadata['data']=identity;teacher_cfg=cfg.get('teacher');teacher_targets=prepare_original_teacher(raw,cfg,args.out) if teacher_cfg else None
+        if cfg.get('training_domain'):
+            if cfg['dataset']!='eurosat_original_f' or cfg.get('parent_checkpoint') or cfg.get('historical_optical_initialization'):raise ValueError('Single-domain F requires fresh initialization, no joint-domain parent')
+            from .f_cross_domain import select_source_domain
+            raw=select_source_domain(raw,cfg['training_domain']);identity['source_training_domain']=cfg['training_domain'];identity['selected_counts']={s:len(v['labels']) for s,v in raw.items()};identity['evaluation_domains']=['RGB','SAR']
+        metadata['data']=identity;teacher_cfg=cfg.get('teacher');teacher_targets=None
+        if teacher_cfg:
+            if teacher_cfg.get('cache_run'):
+                from .f_cross_domain import prepare_source_teacher
+                teacher_targets=prepare_source_teacher(raw,cfg,args.out)
+            else:teacher_targets=prepare_original_teacher(raw,cfg,args.out)
         if teacher_cfg and (not cfg.get('alternating_head') or cfg['augmentation'] not in ('horizontal_flip','D4')):raise ValueError('Teacher KD requires anchored head blocks and matching cached augmentation')
         model=build_model(cfg).cuda();parent=None
         if cfg.get('parent_checkpoint'):

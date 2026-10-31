@@ -1,0 +1,84 @@
+{
+  "seed": 17,
+  "epochs": 80,
+  "min_epochs": 30,
+  "patience": 20,
+  "batch": 64,
+  "eval_batch": 64,
+  "phase_optimizer": "wrapped",
+  "phase_lr": 0.001,
+  "head_lr": 0.0001,
+  "head_weight_decay": 0.0,
+  "label_smoothing": 0.02,
+  "cosine_lr": true,
+  "early_stop": true,
+  "training_temperature": 1.0,
+  "augmentation": "D4",
+  "authorized_gpu_uuids": [
+    "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+  ],
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "profile": "f_cross_LG_SAR_s17_20261031",
+  "dataset": "eurosat_original_f",
+  "architecture": "LG",
+  "num_classes": 10,
+  "main_layers": 2,
+  "layers": 3,
+  "training_scope": "all",
+  "data": {
+    "expected_counts": {
+      "train": 6000,
+      "val": 2000,
+      "test": 2000
+    },
+    "original_f_subset_preserved": true,
+    "trainval": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/manifest.json",
+      "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+      "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+    },
+    "holdout": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/manifest.json",
+      "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+      "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60"
+    }
+  },
+  "optical_contract": "Same A/B 4x224 expert, top2 once, E/G main2, global478/canvas518, 17um/532nm/.1m; identical intensity_softsign after every main phase; D3 full478 and same OEO, no Linear",
+  "readout": "LG single Linear784->10; D2NN fixed full-coverage CCD2x5",
+  "classes": [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "Pasture",
+    "PermanentCrop",
+    "Residential",
+    "River",
+    "SeaLake"
+  ],
+  "no_learned_frontend": true,
+  "teacher_used": true,
+  "training_labels": "Source-domain TRAIN true labels and source-domain TRAIN soft logits from teacher trained on source TRAIN+augmented original TEST; no opposite-domain teacher training; student uses no TEST images in loss",
+  "data_license": "Existing original data source metadata MIT; do not label CC BY4.0",
+  "human_A100_authorization_date": "2026-10-31 latest request",
+  "alternating_head": {
+    "interval_epochs": 5,
+    "inner_steps": 40,
+    "anchor_strength": 0.001,
+    "training_views": "D4_all8"
+  },
+  "domain_route_aux": 0.0,
+  "domain_supervision": "TRAIN acquisition only: RGB target power [.49,.49,.01,.01], SAR [.01,.01,.49,.49]; inference always model optical Top2",
+  "selection": "source-domain VAL macro recall then CE; lock one PT then evaluate both RGB and SAR original TEST",
+  "training_domain": "SAR",
+  "protocol": "RGB-trained and SAR-trained models each evaluated on both domains: 8 values across LG/D2NN. Fresh initialization; no joint-domain warm start.",
+  "teacher": {
+    "cache_run": "runs/simulation/f_cross_domain_s17_20261031/teacher_SAR",
+    "weight": 0.5,
+    "temperature": 2.0,
+    "teacher_inference_frontend": false
+  }
+}
