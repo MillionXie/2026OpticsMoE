@@ -1,6 +1,6 @@
 {
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
-  "generated_UTC": "2026-10-31T15:30:23.473296+00:00",
+  "generated_UTC": "2026-10-31T15:40:22.683937+00:00",
   "protocol": "four fresh source-domain models; each evaluated on both domains; eight TEST cells",
   "records": {
     "LG_RGB": {
@@ -3327,6 +3327,18 @@
           }
         },
         "local_checkpoint_SHA_verified": true
+      },
+      "semantic_candidate": {
+        "run": "runs\\simulation\\f_semantic_KD_s17_20261031\\RGB",
+        "status": {
+          "state": "training",
+          "epoch": 7,
+          "total_epochs": 30,
+          "selected_epoch": 0,
+          "pid": 2107545
+        },
+        "result": null,
+        "local_checkpoint_SHA_verified": false
       },
       "teacher": {
         "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
@@ -7087,6 +7099,18 @@
         },
         "local_checkpoint_SHA_verified": true
       },
+      "semantic_candidate": {
+        "run": "runs\\simulation\\f_semantic_KD_s17_20261031\\SAR",
+        "status": {
+          "state": "training",
+          "epoch": 4,
+          "total_epochs": 30,
+          "selected_epoch": 3,
+          "pid": 2107546
+        },
+        "result": null,
+        "local_checkpoint_SHA_verified": false
+      },
       "teacher": {
         "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
         "training_domain": "SAR",
@@ -8819,6 +8843,7 @@
         }
       },
       "source_TEST_KD_candidate": null,
+      "semantic_candidate": null,
       "teacher": null
     },
     "D2NN_SAR": {
@@ -10119,6 +10144,7 @@
         }
       },
       "source_TEST_KD_candidate": null,
+      "semantic_candidate": null,
       "teacher": null
     }
   },

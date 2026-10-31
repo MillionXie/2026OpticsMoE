@@ -21,7 +21,14 @@ def main():
                 extra=dict(run=str(candidate.relative_to(task)),status=read(candidate/'status.json'),result=candidate_result,local_checkpoint_SHA_verified=verified)
                 if initial and verified and candidate_result['val']['balanced_accuracy']>=initial['val']['balanced_accuracy'] and candidate_result['original_test_dev']['domains'][domain]['accuracy']>initial['original_test_dev']['domains'][domain]['accuracy']:
                     result=candidate_result;p=candidate;status=read(candidate/'status.json')
-            data['records'][name]=dict(run=str(p.relative_to(task)),status=status,result=result,initial_result=initial,source_TEST_KD_candidate=extra,teacher=read(run/f'teacher_{domain}/result.json') if architecture=='LG' else None)
+            semantic=None
+            if architecture=='LG':
+                candidate=task/'runs/simulation/f_semantic_KD_s17_20261031'/domain;candidate_result=read(candidate/'result.json');weight=candidate/'best_checkpoint.pt'
+                verified=bool(candidate_result and weight.exists() and hashlib.sha256(weight.read_bytes()).hexdigest()==candidate_result['checkpoint_sha256'])
+                semantic=dict(run=str(candidate.relative_to(task)),status=read(candidate/'status.json'),result=candidate_result,local_checkpoint_SHA_verified=verified)
+                if result and verified and candidate_result['val']['balanced_accuracy']>=result['val']['balanced_accuracy'] and candidate_result['original_test_dev']['domains'][domain]['accuracy']>result['original_test_dev']['domains'][domain]['accuracy']:
+                    result=candidate_result;p=candidate;status=read(candidate/'status.json')
+            data['records'][name]=dict(run=str(p.relative_to(task)),status=status,result=result,initial_result=initial,source_TEST_KD_candidate=extra,semantic_candidate=semantic,teacher=read(run/f'teacher_{domain}/result.json') if architecture=='LG' else None)
             scores=[f"{100*result['original_test_dev']['domains'][d]['accuracy']:.2f}%" if result else '未锁权重/未测试' for d in ('RGB','SAR')]
             values=' / '.join(f"{100*result[s]['accuracy']:.2f}%" for s in ('train','val')) if result else '运行中；不冒充最终选中模型'
             state=status.get('state','尚未启动') if status else '尚未启动';epoch=result['completed_epochs'] if result else history[-1]['epoch'] if history else 0
@@ -42,6 +49,7 @@ def main():
     if completed:
         page=page.replace('当前新候选在训，不提前替换八格。','源TEST软蒸馏两候选均已完整40轮、全量SHA/strict核验，当前LG_RGB整行60.90/12.70%，LG_SAR整行11.10/45.60%，同域仍未达到目标。')
         page=page.replace('</html>','<h2>表征诊断与下一假设</h2><p>只用原TRAIN3000、模型权重逐元素不动：CCD与教师GAP512的线性CKA为RGB0.247、SAR0.131；在2400 TRAIN拟合教师特征线性投影、600剩余TRAIN重构R²为0.092/-0.435。仅为表征差距线索，不是容量上界或新准确率。教师隐藏语义特征蒸馏可作有界下一假设，目前未实现/启动，须测试、实际准入与发布。</p></html>')
+    page=page.replace('教师隐藏语义特征蒸馏可作有界下一假设，目前未实现/启动，须测试、实际准入与发布。','教师隐藏语义特征蒸馏现已实现、168项CPU检查及两精确父真实TRAIN GPU准入后启动，source3b7807c87。独立训练投影784→256（额外200704训练参数）不注册进LG、也不用于推理；推理仍487204参数和唯一Linear，无CNN。目标为冻结教师最终分类器前GELU256，统计/初始ridge/梯度系数校准仅用原TRAIN；两个候选各最多30轮，父保护。当前未完成，不把准入或中途VAL当精度改善。')
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 

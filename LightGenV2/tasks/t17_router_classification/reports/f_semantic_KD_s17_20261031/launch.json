@@ -1,0 +1,117 @@
+{
+  "source_commit": "3b7807c87025f02640b4289d479df4a2eb1bb467",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "time": 1793461147.345001,
+  "jobs": [
+    {
+      "domain": "RGB",
+      "pid": 2107545,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_semantic_KD_RGB_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB"
+      ]
+    },
+    {
+      "domain": "SAR",
+      "pid": 2107546,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_semantic_KD_SAR_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR"
+      ]
+    }
+  ],
+  "admission": {
+    "source_commit": "3b7807c87025f02640b4289d479df4a2eb1bb467",
+    "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "rows": {
+      "RGB": {
+        "parent_sha256": "cfa3b0877befa64c131acd25d274bd2c3db14dabecbf47f55ead02f2315666ae",
+        "initial_forward_bitwise_unchanged": true,
+        "canonical_reload_excludes_aux_and_is_bitwise_equal": true,
+        "parameter_updates": {
+          "first_phase": 0.06437364965677261,
+          "global_phase": 0.08480570465326309,
+          "router_phase": 0.037234727293252945,
+          "shared_head.weight": 0.004269726574420929
+        },
+        "auxiliary": {
+          "ridge": 0.0005622316122566467,
+          "training_images": 3000,
+          "affine_intercept_absorbed_in_mean_one_features": true,
+          "target": "teacher GELU256 before final classifier; frozen teacher",
+          "extra_training_parameters": 200704,
+          "inference_parameters": 487204,
+          "projection_absent_from_inference": true,
+          "teacher_checkpoint_sha256": "d1a0e823110fa515b47f3b2360a791c9bc2a3afc17065d5e73351ebd4ca0ea27",
+          "teacher_inference_absent": true,
+          "statistics_parts": [
+            "source TRAIN only"
+          ],
+          "calibration_rule": "clip(.2 * physical main-gradient norm / feature-gradient norm, .001, 1) on20 class-balanced source TRAIN originals",
+          "calibration_TRAIN_images": 20,
+          "physical_main_gradient_norm": 0.14023428424870957,
+          "physical_feature_gradient_norm": 0.03721379230201334,
+          "auxiliary_weight": 0.7536683340983908
+        },
+        "extra_training_parameters": 200704,
+        "inference_parameters": 487204,
+        "Linear_in_inference": 1,
+        "CNN_in_inference": 0,
+        "TRAIN_phase_gradients_from_hidden_aux_finite": true,
+        "calibration_only_source_TRAIN": true
+      },
+      "SAR": {
+        "parent_sha256": "3bfd112d11427cf1899c6964eec6091c6d57db6a8c8745295bf0a04e1163444b",
+        "initial_forward_bitwise_unchanged": true,
+        "canonical_reload_excludes_aux_and_is_bitwise_equal": true,
+        "parameter_updates": {
+          "first_phase": 0.06441119313240051,
+          "global_phase": 0.08360860496759415,
+          "router_phase": 0.03695240244269371,
+          "shared_head.weight": 0.004255350679159164
+        },
+        "auxiliary": {
+          "ridge": 0.00033260974568344174,
+          "training_images": 3000,
+          "affine_intercept_absorbed_in_mean_one_features": true,
+          "target": "teacher GELU256 before final classifier; frozen teacher",
+          "extra_training_parameters": 200704,
+          "inference_parameters": 487204,
+          "projection_absent_from_inference": true,
+          "teacher_checkpoint_sha256": "2cea55efd176b14ff91b371d797d215e325174d23df3152fe7fc8ec718b643b3",
+          "teacher_inference_absent": true,
+          "statistics_parts": [
+            "source TRAIN only"
+          ],
+          "calibration_rule": "clip(.2 * physical main-gradient norm / feature-gradient norm, .001, 1) on20 class-balanced source TRAIN originals",
+          "calibration_TRAIN_images": 20,
+          "physical_main_gradient_norm": 0.09400956201218581,
+          "physical_feature_gradient_norm": 0.04312204820769554,
+          "auxiliary_weight": 0.4360162187073893
+        },
+        "extra_training_parameters": 200704,
+        "inference_parameters": 487204,
+        "Linear_in_inference": 1,
+        "CNN_in_inference": 0,
+        "TRAIN_phase_gradients_from_hidden_aux_finite": true,
+        "calibration_only_source_TRAIN": true
+      }
+    },
+    "source_sha256": {
+      "train_figure_revision.py": "7b8b7559de0ee2f4735204230aa25671ed2e2660b9550310a3e0285e0392069d",
+      "semantic_distillation.py": "ea95102a0f4561d1c9c516e3936c40626ce7bf90050ad34fdd6905d67c788903"
+    }
+  }
+}

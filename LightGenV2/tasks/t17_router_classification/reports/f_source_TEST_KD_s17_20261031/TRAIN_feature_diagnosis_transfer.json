@@ -1,0 +1,35 @@
+{
+  "all_remote_local_SHA256_verified": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_feature_alignment_diagnosis_s17_20261031/CCD_features_RGB.npy",
+      "sha256": "ecb234d9acefc265998eb729f6d6092bc2f6e379c70fb4e22153a80c84b6b4ef",
+      "bytes": 9408128
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_feature_alignment_diagnosis_s17_20261031/manifest.json",
+      "sha256": "d2364064a8d1b2c132e7541aff9efdf67aa7c9958a0e9f6b7fdb253141182ffb",
+      "bytes": 374
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_feature_alignment_diagnosis_s17_20261031/identities_RGB.npz",
+      "sha256": "f9d94064298004f8b1696fc9c42f913c33cd644cd325affd1ef5f39ec4046e63",
+      "bytes": 14673
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_feature_alignment_diagnosis_s17_20261031/diagnosis.json",
+      "sha256": "8074c45b2bc8c5c5a36f1aeab2a5dc9da4cd9797d5ad9f7c0de1c9ded2892270",
+      "bytes": 1969
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_feature_alignment_diagnosis_s17_20261031/identities_SAR.npz",
+      "sha256": "e840a961c2cb52c733c85d8cf0beb1b439821e943c7e6de157e3611b375be746",
+      "bytes": 14679
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/f_feature_alignment_diagnosis_s17_20261031/CCD_features_SAR.npy",
+      "sha256": "56bc7a3d8e3eae17b3ca8d82c35b775b972138e08bc19a3f360ee7c957dafa80",
+      "bytes": 9408128
+    }
+  ]
+}

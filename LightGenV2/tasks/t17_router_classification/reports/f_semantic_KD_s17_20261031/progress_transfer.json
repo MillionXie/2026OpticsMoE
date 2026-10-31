@@ -1,0 +1,65 @@
+{
+  "snapshot_only_not_final_PT_backup": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/status.json",
+      "sha256": "0e3d92bb64baa92227f0cef89791c7fa9e435337ab4380cb21236531e99a57a4",
+      "bytes": 103
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/metadata.json",
+      "sha256": "c76c0078bfe127586a0466c00329c6850ae48992d995fd7ba10839c00ef47716",
+      "bytes": 8818
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/history.json",
+      "sha256": "f7bee0c00900a186de4bffffeb9073c6b851d8df3903cbc909204acd8d792940",
+      "bytes": 40804
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/teacher_manifest.json",
+      "sha256": "96ab4817cac8ca904a9215a11e0d4cac017f067aadab90f95716590ed02152ea",
+      "bytes": 4133
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/source_TEST_distillation_manifest.json",
+      "sha256": "3f6ae56d2d88e2d2ebef7fa27dcfc6ef108042e9da650b3381794d7961c4e18f",
+      "bytes": 290
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/semantic_manifest.json",
+      "sha256": "7bcc6317270c37078a71f0f2e9da71eeb80a003a45461fb0391f246aa22a0dba",
+      "bytes": 824
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/status.json",
+      "sha256": "cbecabadc4e23e6839b0245966b5aeb2b641944d096a43a0b0e62677c0b8e621",
+      "bytes": 103
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/metadata.json",
+      "sha256": "2509801da4000c3c34cd7b9d640caf6ab8b23421a8b907f3cff0ed27d3d06113",
+      "bytes": 8820
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/history.json",
+      "sha256": "f38e576d6bd363df818208281531141374b881f72358f63e887f917c2df0f772",
+      "bytes": 22550
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/teacher_manifest.json",
+      "sha256": "5a7396ec8e1e10d59d45052d116619cc7faa46b70992a25aac3f9be645aad6e6",
+      "bytes": 4133
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/source_TEST_distillation_manifest.json",
+      "sha256": "e70caf891611102840b814566377a69e7f01612192acfc879f0102323ea85718",
+      "bytes": 290
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/semantic_manifest.json",
+      "sha256": "9f3235f53b4fd4117e37661adb4710501d6db571a8259c6e5aa6dd16cf8807e8",
+      "bytes": 826
+    }
+  ]
+}

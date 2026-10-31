@@ -1,3 +1,14 @@
+## 有界隐藏语义蒸馏已准入并启动（2026-10-31）
+
+source3b7807c87025f02640b4289d479df4a2eb1bb467已168项CPU检查(teacher detach/真实phase辅助梯度/affine投影折叠/strict模型无新增模块)、
+两精确新父实际TRAIN GPU准入通过并main发布/服务器路径SHA；init前后forward bitwise、单独注册aux后canonical严格重载推理bitwise一致，原4state/唯一Linear无CNN/487204不变。
+新root runs/simulation/f_semantic_KD_s17_20261031/{RGB,SAR}，worker2107545/4090与2107546/A100已真正启动，各最多30/min15/pat10，不重开旧40轮。
+目标为冻结教师最后Linear前GELU256；所有8视图target明确同源ID与cache/PT SHA，均以原TRAIN计算mean/std，初始784→256 affine ridge仅TRAIN3000并折叠截距。
+投影是独立训练辅助模块，额外200704训练参数不进入LG module/state；aux checkpoint单独存，不能冒称等训练容量或等预算。推理仍只有原单Linear和光学主干。
+原TRAIN20张均衡样本物理phase梯度按clip(.2*分类梯度范数/隐藏梯度范数,.001,1)确定辅助系数，准入RGB约.7537/SAR.4360；无VAL/TEST调权。不是按目标精度盲扫。
+在既有原TRAIN CE/KD+本域TEST软KD路径均加hidden MSE；原源域与TEST GT隔离、头32000混合视图方式保持。LR phase.0003/head.00005、auxAdam.0001；父参与同VAL选择，锁后再两域推理。
+教师、投影、归一统计都不进入推理，无新电子前端/OEO/输入/深度变化；不保证提高。现有整行60.9/12.7、11.1/45.6保护，D四格不动。
+
 ## 同源TEST软目标蒸馏已完整结束：小幅改善，尚未目标（2026-10-31）
 
 两个候选均40轮完整结束。RGB选E32 TRAIN62.30/VAL57.60，TEST RGB60.90(609/1000)、SAR12.70(127)；
