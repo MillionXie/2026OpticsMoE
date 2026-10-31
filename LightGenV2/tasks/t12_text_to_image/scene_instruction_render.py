@@ -10,9 +10,12 @@ from .scene_instruction_data import PROFILE, SAFE, condition, sha
 
 def checked_revision(folder,data,state,original):
     report=json.loads((folder/'report.json').read_text(encoding='utf8'))
-    if (not report['complete'] or report['schema']!='scene_visible_anchor_dataset_v1'
+    balanced=report['schema']=='scene_balanced_visible_anchor_dataset_v1'
+    if (not report['complete'] or report['schema']not in ['scene_visible_anchor_dataset_v1','scene_balanced_visible_anchor_dataset_v1']
         or report['prompt_profile']!=PROFILE or report['TEST_opened'] or not report['role_disjoint']):
         raise ValueError('Require the explicit completed revised dataset')
+    if balanced and(not report.get('eligible_for_training')or not report.get('all_reference_conditions_covered')or report.get('TRAIN_products')!=44 or report.get('TRAIN_reference_views')!=44 or report.get('TRAIN_condition_groups')!=132 or state['pair_sha256']!=report['pairs_sha256']):
+        raise ValueError('Balanced rendering requires complete reviewed coverage and its actual trained model')
     if state['pair_sha256'] not in [report['source_pairs_sha256'],report['pairs_sha256']]:raise ValueError('Unrelated model/data parent')
     actual=json.loads((folder/'inference_inputs.json').read_text(encoding='utf8'))
     if report['request_sha256']!=sha(folder/'inference_inputs.json'):raise ValueError('Changed requests')
@@ -32,6 +35,7 @@ def checked_revision(folder,data,state,original):
         request_sha256=report['request_sha256'],TEST_opened=False,
         prior_model_on_new_prompts_not_retrained_model=state['pair_sha256']==report['source_pairs_sha256'],
         model_trained_on_revised_dataset=state['pair_sha256']==report['pairs_sha256'],
+        balanced_counterfactual_training_data=balanced,
         new_task_results_not_old_score_relabeling=True)
 
 

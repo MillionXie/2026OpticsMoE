@@ -2,12 +2,19 @@ import tempfile
 import unittest
 from pathlib import Path
 from PIL import Image
-from ..scene_instruction_native_prior import checked_requests
+from ..scene_instruction_native_prior import checked_requests,descriptive_equivalent
 from ..scene_instruction_data import SAFE,sha,write
 from ..scene_instruction_balanced import scene_first_condition
 
 
 class NativeFeasibility(unittest.TestCase):
+    def test_native_caption_changes_format_only_without_extra_entities(self):
+        for category,codes in [('lamp','BDW'),('pillow','SAD')]:
+            for code in codes:
+                row=scene_first_condition(category,code);original=row['prompt'];caption=descriptive_equivalent(row)
+                self.assertEqual(row['prompt'],original);self.assertTrue(caption.startswith('An indoor photograph'))
+                self.assertNotIn('reference',caption);self.assertNotIn('red',caption);self.assertNotIn('sunlight',caption)
+                self.assertIn({'B':'bookshelves','D':'bed','W':'window','S':'sofa','A':'armchair'}[code],caption)
     def test_full_TRAIN_cohort_only_and_no_target_inputs(self):
         with tempfile.TemporaryDirectory()as temp:
             p=Path(temp);rows=[]

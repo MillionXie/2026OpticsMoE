@@ -67,6 +67,14 @@ class VisibleFacts(unittest.TestCase):
             data,folder,original,rows=self.revision_fixture(Path(temp));rows[0]['target']='forbidden';write(folder/'inference_inputs.json',rows)
             report=json.loads((folder/'report.json').read_text());report['request_sha256']=sha(folder/'inference_inputs.json');write(folder/'report.json',report)
             with self.assertRaises(ValueError):checked_revision(folder,data,{'pair_sha256':'old'},original)
+    def test_balanced_dataset_cannot_render_with_old_model_or_missing_scene_coverage(self):
+        with tempfile.TemporaryDirectory()as temp:
+            data,folder,original,_=self.revision_fixture(Path(temp));report=json.loads((folder/'report.json').read_text())
+            report.update(schema='scene_balanced_visible_anchor_dataset_v1',eligible_for_training=True,all_reference_conditions_covered=True,TRAIN_products=44,TRAIN_reference_views=44,TRAIN_condition_groups=132);write(folder/'report.json',report)
+            rows,protocol=checked_revision(folder,data,{'pair_sha256':'revised'},original);self.assertEqual(len(rows),48);self.assertTrue(protocol['balanced_counterfactual_training_data'])
+            with self.assertRaises(ValueError):checked_revision(folder,data,{'pair_sha256':'old'},original)
+            report['all_reference_conditions_covered']=False;write(folder/'report.json',report)
+            with self.assertRaises(ValueError):checked_revision(folder,data,{'pair_sha256':'revised'},original)
     def test_public_prompt_cannot_be_swapped_after_freeze(self):
         with tempfile.TemporaryDirectory()as temp:
             data,folder,original,rows=self.revision_fixture(Path(temp));rows[0]['prompt']='Generate whatever looks easy.';write(folder/'inference_inputs.json',rows)
