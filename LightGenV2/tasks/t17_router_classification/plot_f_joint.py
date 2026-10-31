@@ -19,7 +19,11 @@ def main():
     if (projected/'history.json').exists():
         ph=json.loads((projected/'history.json').read_text());pr=json.loads((projected/'result.json').read_text()) if (projected/'result.json').exists() else None
         branches.append(('Router projection',ph,sr,pr,'#228833'))
-    fig,axes=plt.subplots(1,3,figsize=(15,4.5))
+    sgd=task/'runs/simulation/f_joint_router_sgd_s17_20261101/joint'
+    if (sgd/'result.json').exists() and (task/'reports/f_joint_router_sgd_s17_20261101/model_audit.json').exists():
+        gh=json.loads((sgd/'history.json').read_text());gr=json.loads((sgd/'result.json').read_text())
+        branches.append(('Router angle SGD',gh,sr,gr,'#aa7733'))
+    fig,axes=plt.subplots(1,3,figsize=(15,5.5))
     for ax,domain in zip(axes[:2],('RGB','SAR')):
         for name,h,prior,final,color in branches:
             ax.plot([0]+[r['epoch'] for r in h],[100*prior['val']['domains'][domain]['accuracy']]+[100*r['validation']['domains'][domain]['accuracy'] for r in h],label=name+' VAL',color=color)
@@ -27,7 +31,7 @@ def main():
             ax.plot([0]+[r['epoch'] for r in clean],[100*prior['train']['domains'][domain]['accuracy']]+[100*r['train']['domains'][domain]['accuracy'] for r in clean],label=name+' TRAIN',linestyle='--',color=color,alpha=.7)
             if final:ax.scatter(final['selected_epoch'],100*final['original_test_dev']['domains'][domain]['accuracy'],marker='*',s=110,color=color,label=name+' locked DEV')
         ax.axhline(70,linestyle=':',color='#aa7733',label='70% goal')
-        ax.set(title=domain+' / one joint LG',xlabel='Additional epochs within each branch',ylabel='Accuracy (%)',ylim=(0,100));ax.grid(alpha=.2);ax.legend(fontsize=7)
+        ax.set(title=domain+' / one joint LG',xlabel='Additional epochs within each branch',ylabel='Accuracy (%)',ylim=(0,100));ax.grid(alpha=.2)
     for name,h,prior,final,color in branches:
         blocks=[r for r in h if 'TRAIN_head_block' in r]
         for i,r in enumerate(blocks):
@@ -37,7 +41,8 @@ def main():
             axes[2].scatter(r['epoch'],b['objective_after'],marker='v',color=color,label=name+' after' if i==0 else None)
     axes[2].set(title='Same-feature head refits',xlabel='Head-block epoch within each branch',ylabel='Mixed CE / KD + anchor objective');axes[2].grid(alpha=.2);axes[2].legend(fontsize=7)
     fig.suptitle('F seed17: original TEST exposed development; separate training branches\nSolid VAL, dashed clean TRAIN. DEV stars only after lock; branches are not joined as continuous epochs.',fontsize=11)
-    fig.tight_layout();out.mkdir(exist_ok=True);fig.savefig(out/'convergence.svg');fig.savefig(out/'convergence.png',dpi=150);plt.close(fig)
+    handles,labels=axes[0].get_legend_handles_labels();fig.legend(handles,labels,loc='lower center',ncol=4,fontsize=7)
+    fig.tight_layout(rect=(0,.20,1,.94));out.mkdir(exist_ok=True);fig.savefig(out/'convergence.svg');fig.savefig(out/'convergence.png',dpi=150);plt.close(fig)
     p=out/'convergence.svg';p.write_text('\n'.join(line.rstrip() for line in p.read_text().splitlines())+'\n')
 
 

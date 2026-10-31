@@ -1,3 +1,13 @@
+## F角度SGD完整结束，仍保留联合父63.20/48.30（2026-11-01）
+
+worker2260225已15轮平台停、VAL选回E0，四个获选参数张量逐元素等于124父；不是训练提升。
+同一PT TRAIN RGB64.5667/SAR59.0333，VAL56.20/51.10，原TEST开发63.20/48.30，仍差6.8/21.7pp到两域70%。
+新best文件SHA74f76207e0f9b9fd6b65f86ccd1da70a139c250fc4896b0e2988fcf71af76024含本run元数据；模型张量与原124 SHA父完全相同，不能将文件SHA差异当新模型。
+15文件10.60MB完整远程本地SHA，strict4state487204/唯一Linear无CNN、原ID标签域/真Top2/teacher精确合并、全2000canonicalTEST概率bitwise重放已通过，自己的PID退出无GPU分配。
+last所有参数真实更新；router没有Adam动量，E/G有两份Adam状态；1890phase/head与routerSGD步、3780额外任务梯度评估、30000TEST随机视图、3x64000混合头视图192000/120内步分别记账。
+该候选失败保留，不延长或盲扫。下一步先查canonical物理router的绝对收光/输入支撑限制（仅数值诊断，不改模型、几何或数据），不把当前结果当容量上限，也不恢复CNN追数。
+A/B与D2NN定稿保护，d仍暂缓。旧d架构只读追溯至原source：四专家、无可训前端、E/G/E/G四主层，但OEO含LN/ReLU、无Linear、输入第四tile是通道均值，与当前A/B/F不一致；证据见reports/figure_revision_schedule_20261031/panel_d_readonly_architecture_audit.json。
+
 ## F方向保留的router角度SGD候选已实现，待测试准入（2026-11-01）
 
 根据固定124父同完整TRAIN配对数值探针，实现WrappedPhaseAdam可选router_step_rule=normalized_angle_sgd；默认adam路径保持兼容，模型和推理state不变。

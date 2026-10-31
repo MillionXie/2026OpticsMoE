@@ -1,0 +1,33 @@
+{
+  "status": "HISTORICAL_D_READONLY_CHECK_NO_RETRAIN",
+  "evidence_path": "LightGenV2/tasks/t10_expert_scaling/reports/plotting/fixed478_topk_test_20260922/evidence/kather2016__moe_oeo_N4_k2_L4_lr0.002_s17__test_result.json",
+  "evidence_checkpoint_sha256": "a0cac4dd9239e4ccd9db0ab1ea3f060b67a2f72e1880abfab2e451cf8b68a586",
+  "evidence_source_commit": "5a1178ef09be40f45b58a20a8633a6e1add2d75d",
+  "source_model_sha256": "4b91274be7b5af1dfd4404a8d6c16eb325c2fd9d1e0f5b60c3fd88ea7e06c89d",
+  "experts": 4,
+  "learned_electronic_frontend": false,
+  "main_phase_layers": 4,
+  "sequence": "E-OEO-G-OEO-E-OEO-G-OEO, then extra free propagation and fixed CCD-window energy normalization",
+  "router_additional_phase_layers": 1,
+  "expert_side": 224,
+  "gap": 30,
+  "active_side": 478,
+  "canvas_side": 518,
+  "router_side": 224,
+  "terminal_Linear": false,
+  "terminal_readout": "32px fixed detector windows; normalized class energies",
+  "OEO": "spatial mean intensity normalization -> LayerNorm -> ReLU -> t/(1+t) -> L2 amplitude normalization -> zero-phase field",
+  "OEO_matches_current_ABF": false,
+  "input_encoding": "[R,G;B,mean(R,G,B)]",
+  "current_ABF_input_encoding": "[R,G;B,0]",
+  "current_A_F_main_layers": 2,
+  "current_B_main_layers": [
+    2,
+    4,
+    6
+  ],
+  "current_ABF_terminal": "unique bias-free Linear784->C",
+  "matches_current_complete_contract": false,
+  "retraining_remains_postponed": true,
+  "not_a_new_performance_result": true
+}

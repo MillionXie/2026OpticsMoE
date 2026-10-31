@@ -1,0 +1,73 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    }
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    }
+  },
+  "last_optimizer": {
+    "router_Adam_moments_absent": true,
+    "router_parameter_id": 2,
+    "E_G_Adam_states": 2,
+    "last_parameter_update_L2": {
+      "first_phase": 1.9219634532928467,
+      "global_phase": 3.471336603164673,
+      "router_phase": 0.24532073736190796,
+      "shared_head.weight": 3.671008586883545
+    }
+  },
+  "selected_parent_comparison": {
+    "selected_epoch": 0,
+    "all_tensors_bitwise_parent": true
+  },
+  "full_canonical_TEST_replay": {
+    "images": 2000,
+    "predictions_exact": true,
+    "probabilities_bitwise": true,
+    "probability_max_abs_difference": 0.0
+  }
+}
