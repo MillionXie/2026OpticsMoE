@@ -297,6 +297,7 @@ def fit(a, payload):
     assert all('lora_' in n for n, p in unet.named_parameters() if p.requires_grad)
     head = None
     parent=None
+    parent_data_transfer=None
     if payload.get('optical_frontend') and (a.variant!='qwen' or a.initial_paired is None):
         raise ValueError('LG recovery requires the matched paired Qwen parent')
     if a.initial_paired:
@@ -304,7 +305,12 @@ def fit(a, payload):
         assert ready['complete'] and digest(a.initial_paired/'best_checkpoint.pt')==ready['best_sha256']
         parent=torch.load(a.initial_paired/'best_checkpoint.pt',map_location='cpu',weights_only=False)
         assert parent['variant']==a.variant and parent['resolution']==a.resolution and parent['step']>0
-        assert parent['pair_sha256']==payload['pair_sha256'] and parent['Qwen_input_side']==a.qwen_side
+        if parent['pair_sha256']!=payload['pair_sha256']:
+            if getattr(a,'reviewed_parent_data',None) is None:
+                raise ValueError('Different paired data requires explicit reviewed recaption parent provenance')
+            from .scene_instruction_data import checked_parent_transfer
+            parent_data_transfer=checked_parent_transfer(a.data,a.reviewed_parent_data,parent['pair_sha256'],payload['pair_sha256'])
+        assert parent['Qwen_input_side']==a.qwen_side
         named=dict(unet.named_parameters());assert set(parent['unet_lora'])=={n for n in named if 'lora_' in n}
         with torch.no_grad():
             for n,value in parent['unet_lora'].items():named[n].copy_(value)
@@ -420,6 +426,7 @@ def fit(a, payload):
             'unet_lora': {n:p.detach().cpu() for n,p in unet.named_parameters() if 'lora_' in n},
             'negative_image': payload['negative_image'], 'DEV_epsilon_MSE': score,
             'pair_sha256': payload['pair_sha256'], 'cache_sha256': cache_digest,
+            'reviewed_parent_data_transfer':parent_data_transfer,
             'source_commit': os.environ['T12_SOURCE_COMMIT'], 'Qwen_input_side': a.qwen_side,'resolution':a.resolution,
             'SDXL_conditioning_size':conditioning_side,'negative_text':payload['negative_text'],
             'negative_pooled':payload['negative_pooled'],'negative_caption':payload['negative_caption'],
@@ -462,6 +469,7 @@ def main():
     p.add_argument('--warmup', type=int)
     p.add_argument('--lr', type=float)
     p.add_argument('--initial-paired',type=Path)
+    p.add_argument('--reviewed-parent-data',type=Path,help='Explicit old paired corpus for a SHA-bound visible-facts recaption transfer; default same-data guard unchanged')
     p.add_argument('--lg-frontend',type=Path);p.add_argument('--lg-features',type=Path)
     a = p.parse_args()
     config = json.loads(a.config.read_text())

@@ -60,6 +60,28 @@ def checked_annotations(candidates,review):
     return result
 
 
+def checked_parent_transfer(new_data,parent_data,parent_pair_sha,new_pair_sha):
+    """Permit explicit reviewed recaption lineage, never an unrelated warm start."""
+    new=json.loads((new_data/'report.json').read_text(encoding='utf8'))
+    old=json.loads((parent_data/'report.json').read_text(encoding='utf8'))
+    if (new.get('schema')!='scene_visible_anchor_dataset_v1' or new['prompt_profile']!=PROFILE
+        or not new['complete'] or not old['complete'] or not new['role_disjoint'] or not old['role_disjoint']
+        or new['TEST_opened'] or old['TEST_opened'] or new['source_pairs_sha256']!=parent_pair_sha
+        or old['pairs_sha256']!=parent_pair_sha or sha(parent_data/'pairs.json')!=parent_pair_sha
+        or new['pairs_sha256']!=new_pair_sha or sha(new_data/'pairs.json')!=new_pair_sha):
+        raise ValueError('Explicit reviewed parent-data transfer identity mismatch')
+    old_rows={r['sample_id']:r for r in json.loads((parent_data/'pairs.json').read_text(encoding='utf8'))}
+    rows=json.loads((new_data/'pairs.json').read_text(encoding='utf8'))
+    for r in rows:
+        prior=old_rows.get(r['original_sample_id'])
+        if prior is None or any(r[k]!=prior[k]for k in ['split','source_product_id','source_RGBA_sha256','reference_sha256','target_sha256']):
+            raise ValueError('Recaption changed target/input/role instead of only the reviewed label')
+        if r['original_prompt']!=prior['prompt']:raise ValueError('Missing original prompt provenance')
+    return dict(schema='scene_reviewed_recaption_parent_v1',parent_pair_sha256=parent_pair_sha,
+        new_pair_sha256=new_pair_sha,review_sha256=new['review_sha256'],old_pixels_and_roles_preserved=True,
+        prompts_changed_new_actual_Qwen_features_required=True,old_and_new_results_not_interchangeable=True)
+
+
 def prepare(corpus,paired,review_file,output):
     if output.exists():raise ValueError('Never overwrite a prior protocol')
     old=json.loads((paired/'report.json').read_text(encoding='utf8'))

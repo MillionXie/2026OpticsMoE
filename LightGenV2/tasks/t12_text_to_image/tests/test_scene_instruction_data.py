@@ -4,7 +4,7 @@ import tempfile
 import json
 from pathlib import Path
 from ..scene_instruction_data import LAMP,PILLOW,condition,checked_annotations,PROFILE
-from ..scene_instruction_data import SAFE,sha,write
+from ..scene_instruction_data import SAFE,sha,write,checked_parent_transfer
 from ..scene_instruction_render import checked_revision
 
 
@@ -72,6 +72,19 @@ class VisibleFacts(unittest.TestCase):
             data,folder,original,rows=self.revision_fixture(Path(temp));rows[0]['prompt']='Generate whatever looks easy.';write(folder/'inference_inputs.json',rows)
             report=json.loads((folder/'report.json').read_text());report['request_sha256']=sha(folder/'inference_inputs.json');write(folder/'report.json',report)
             with self.assertRaises(ValueError):checked_revision(folder,data,{'pair_sha256':'old'},original)
+    def test_reviewed_parent_transfer_keeps_pixels_and_roles(self):
+        with tempfile.TemporaryDirectory()as temp:
+            root=Path(temp);old=root/'old';new=root/'new';old.mkdir();new.mkdir()
+            prior=dict(sample_id='a',split='train',source_product_id='p',source_RGBA_sha256='rgba',reference_sha256='ref',target_sha256='target',prompt='original')
+            write(old/'pairs.json',[prior]);oldsha=sha(old/'pairs.json')
+            revised=dict(prior,original_sample_id='a',original_prompt='original',prompt='new factual request')
+            write(new/'pairs.json',[revised]);newsha=sha(new/'pairs.json')
+            write(old/'report.json',dict(complete=True,role_disjoint=True,TEST_opened=False,pairs_sha256=oldsha))
+            report=dict(complete=True,role_disjoint=True,TEST_opened=False,schema='scene_visible_anchor_dataset_v1',prompt_profile=PROFILE,source_pairs_sha256=oldsha,pairs_sha256=newsha,review_sha256='review')
+            write(new/'report.json',report)
+            self.assertTrue(checked_parent_transfer(new,old,oldsha,newsha)['old_pixels_and_roles_preserved'])
+            revised['target_sha256']='different_target';write(new/'pairs.json',[revised]);newsha=sha(new/'pairs.json');report['pairs_sha256']=newsha;write(new/'report.json',report)
+            with self.assertRaises(ValueError):checked_parent_transfer(new,old,oldsha,newsha)
 
 
 if __name__=='__main__':unittest.main()
