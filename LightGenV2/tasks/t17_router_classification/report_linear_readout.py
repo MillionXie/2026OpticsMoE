@@ -2,6 +2,7 @@
 from pathlib import Path
 import datetime
 import html
+import hashlib
 import json
 
 
@@ -14,6 +15,13 @@ def main():
     for worker,names in enumerate(cfg['worker_jobs']):
         for name in names:
             path=root/f'worker{worker}'/name;records[name]=dict(run=str(path.relative_to(task)),profile=cfg['jobs'][name],
+                status=read(path/'status.json') or dict(state='not_started'),result=read(path/'result.json'))
+    prior_cfg=read(task/'configs/panel_b_linear_CCDprior_s17_20261031.json')
+    additional={}
+    for worker,names in enumerate(prior_cfg['worker_jobs'] if prior_cfg else []):
+        for name in names:
+            path=task/f'runs/simulation/panel_b_linear_CCDprior_s17_20261031/worker{worker}'/name
+            additional[name]=dict(run=str(path.relative_to(task)),profile=prior_cfg['jobs'][name],
                 status=read(path/'status.json') or dict(state='not_started'),result=read(path/'result.json'))
     oldA=read(task/'reports/panel_a_original_test_development_20261031/results.json')
     baselineA={r['dataset']:r['D2NN_development_reference']['original_test_dev']['accuracy'] for r in oldA['cases']}
@@ -31,14 +39,32 @@ def main():
         state=f"完成{result['completed_epochs']}轮头训练，选E{result['selected_epoch']}" if result else record['status']['state']
         rows+=f'<tr><td>{panel}</td><td>{name}</td><td>{phase}+{head}</td><td>{html.escape(state)}</td>'+''.join(f'<td>{x}</td>' for x in values)+f'<td>{100*baseline:.2f}%</td><td>{gain:+.2f} pp</td></tr>' if gain is not None else f'<tr><td>{panel}</td><td>{name}</td><td>{phase}+{head}</td><td>{html.escape(state)}</td>'+''.join(f'<td>{x}</td>' for x in values)+f'<td>{100*baseline:.2f}%</td><td>—</td></tr>'
     out=task/'reports/panel_ab_linear_readout_20261031';out.mkdir(exist_ok=True)
+    selected={};optimized_rows=''
+    for name in records:
+        candidates=[records[name]]+([additional[name]] if name in additional else [])
+        eligible=[]
+        for candidate in candidates:
+            r=candidate['result'];pt=task/candidate['run']/'best_checkpoint.pt'
+            if r and pt.exists() and hashlib.sha256(pt.read_bytes()).hexdigest()==r['checkpoint_sha256']:
+                eligible.append(candidate)
+        if eligible:
+            selected[name]=max(eligible,key=lambda c:c['result']['original_test_dev']['correct'])
+    for panel,name,baseline in layouts:
+        if name not in selected:continue
+        r=selected[name]['result'];s=r['original_test_dev'];gain=100*(s['correct']/s['n']-baseline)
+        optimized_rows+=f'<tr><td>{panel}</td><td>{name}</td><td>{100*r["train"]["accuracy"]:.2f}%</td><td>{100*r["val"]["accuracy"]:.2f}%</td><td>{s["correct"]}/{s["n"]} = {100*s["correct"]/s["n"]:.2f}%</td><td>{100*baseline:.2f}%</td><td>{gain:+.2f} pp</td><td>{html.escape(selected[name]["run"])}</td></tr>'
     data=dict(role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',independent_test_claim=False,records=records,comparisons=comparisons,
+              CCD_geometry_prior_candidates=additional,selected_completed_development_candidates=selected,
+              selection_policy='Within each fit: VAL macro recall then CE. Across completed SHA-verified initial/prior candidates: original TEST development correct count, explicitly authorized and not independent TEST.',
               B2_reuses_A1_same_checkpoint=True,D2NN_unchanged=True,generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     page=f'''<!doctype html><html lang="zh"><meta charset="utf-8"><title>图a/b：统一末端Linear</title>
 <style>body{{font:16px/1.7 sans-serif;max-width:1280px;margin:30px auto;padding:0 16px}}table{{border-collapse:collapse;width:100%}}td,th{{padding:9px;border-bottom:1px solid #ddd;text-align:left}}.note{{background:#fff1d5;padding:14px}}</style>
 <h1>图a/b：LG末端Linear新版本，seed17</h1><p class="note">新架构：光学CCD→28×28平均池化→固定均值归一→单层无偏置Linear(784,C)。无新MLP/可训练前端。旧无Linear准确率仅作为历史保留，不能移植到新表。光学父权重已受原TEST开发影响，因此仍是开发结果。</p>
 <p>首阶段冻结光学相位，只用原TRAIN真标签训练读出，VAL选模；不把新TEST标签或教师用于头训练。最终整模型重新推理全部TEST并与绑定SHA的特征缓存比较。后续若联合微调另计预算。</p>
-<table><tr><th>图</th><th>LG任务</th><th>相位+电子参数</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th><th>固定D2NN</th><th>差值</th></tr>{rows}</table>
+<h2>第一轮随机初始化Linear（完整保留）</h2><table><tr><th>图</th><th>LG任务</th><th>相位+电子参数</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th><th>固定D2NN</th><th>差值</th></tr>{rows}</table>
+<h2>已完成候选的开发结果</h2><p>四/六层另补单层Linear的CCD几何先验初始化：将原固定探测区域能量映射投影到28²池化特征。初始化不使用图像/标签，不增加推理参数或额外分类支路。训练仍只用TRAIN、VAL选轮次。跨完整候选按已授权原TEST开发正确数选择，所有初始和失败结果保留；不可作为独立TEST泛化证据。</p>
+<table><tr><th>图</th><th>LG任务</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th><th>固定D2NN</th><th>差值</th><th>选中run</th></tr>{optimized_rows}</table>
 <p>图a的D2NN三层478²，无OEO、无Linear；图b的D2NN3/5/7层478²，逐层同OEO、无Linear。所有D2NN保持已完成60轮。B两层LG直接复用A Kather同一新权重。</p>
 <p>LG仍为四专家224²、入口Top2、gap30、global478、无可训前端；每个E/G后原intensity_softsign OEO，含末层。新增电子读出及不同训练预算公开列示，不能称纯光学或等预算因果消融。</p>
 <p>图d按人工要求暂缓；图f的数据范围待回复，其他图的要求及旧实现差异记录于architecture_contract.json。生成UTC：{data['generated_UTC']}。</p></html>'''

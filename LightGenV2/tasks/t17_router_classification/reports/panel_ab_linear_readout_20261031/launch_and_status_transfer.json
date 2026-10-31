@@ -1,0 +1,194 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/launch.json",
+      "sha256": "e952aa96b857c560e48ed8853631dd43ebc5c3df7b00486f5b32947ca59662b4",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_ab_linear_readout_admission_s17_20261031/admission.json",
+      "sha256": "ca9338a3cbf532ecbb1019c66e6357b7c06289747fce6df9bc6c1671a66bd749",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/launch_context.json",
+      "sha256": "68b9952f5b3a26fdc574f215e469b358e2092e1c77b063f234dbd8b258c91e27",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/status.json",
+      "sha256": "c351690b9cb66bbf4911c4c30841f6f387522d04e61f4374877469a5060b5d18",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/exit_receipt.json",
+      "sha256": "336f348fce36a8e75ed2c7f411052ef607fe7075993ee82ee73da56d3e1f0a3f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016/metadata.json",
+      "sha256": "67c8ad0c56e050250d32ab478a77bc509eeb07e66e6579f1d01cbbd7e8cf1673",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016/status.json",
+      "sha256": "75b265bbd1cb77eacd6d978001593f427e60c4e542ac87f8ae58e2b6c8ab6b9d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016/history.json",
+      "sha256": "a023245cb7e7b7c3752fb194732a1f8f87d096af66ca13997d1c3084b722695f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016/result.json",
+      "sha256": "009fe5c3b68dca99a91c4f44ab51894734afdce051ac5a96f2907fadf243db2f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016/selection_lock.json",
+      "sha256": "3d6dfcd962fc78fc2ac96c7775d1aa33d3578beadb8ae48f01ef9e9b33cdf33c",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016/cache_manifest.json",
+      "sha256": "4ff4828e7ce728199afd18d345d64013746de788dfab5713c401127423f5dba3",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128/metadata.json",
+      "sha256": "ea542add3da7f130eaac98e1272c489d9f08549f738e7ebeff02b42f7d9715fa",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128/status.json",
+      "sha256": "b55e092237236b422f67a7cfed93b5711d6ea89aaa05c510c8df1400c778b72c",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128/history.json",
+      "sha256": "3e07fd769b74615b1b775d33be100e30ec726b093e72accb7ec7c93e924ce8f5",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128/result.json",
+      "sha256": "a52f7314676346a1172e01a861358feb7b074b1f8c9914348ee80875252a8b91",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128/selection_lock.json",
+      "sha256": "69a2c67bcb33141662df5ba9035a02dfdaf617d35268cff363658e1320dcf79d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128/cache_manifest.json",
+      "sha256": "8d3cd3d011154286455cd49ea4385a6a7780d1c0eac863d445480039946776a6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9/metadata.json",
+      "sha256": "5150edabc6f67540de78d92de7f10bdb423caa660abd75ca728113e6b9a36c5d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9/status.json",
+      "sha256": "abd0331eddd25132ef97dd90dd043e43cf5909aa9df31a37838e493646fbeb02",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9/history.json",
+      "sha256": "b3cb517424f442789739885640097804729c08876be797d271dd6448aaf31a83",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9/result.json",
+      "sha256": "2252c63e772eca7d11ba3ffb32a57e4f51605a245ddf0b70acf27209d083f9f6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9/selection_lock.json",
+      "sha256": "052869eacaba7c546e5e3b8d322819c00912017318de1d090ed0465c83711e57",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_crc9/cache_manifest.json",
+      "sha256": "96dfc245698d7ba15e3f61bf223a21f78d697b45f21a988f46676b79fee3d377",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/launch_context.json",
+      "sha256": "972e5add9646cdc3b987b77013e3b8ebe816d1de8e89b1b57b82f2c0a6f059b1",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/status.json",
+      "sha256": "2d2e0cef7deddf747f69c8744beed9a0b4c31854ed38a0c133c917149412fea9",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/exit_receipt.json",
+      "sha256": "5983ad089e5a9b0eb48d660eed10b43d79ad31e42e588f54a69123429578d3a1",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather4/metadata.json",
+      "sha256": "5a9269c45b0717a5aa2656cc72a759e349ff780d60e8da6cc1364ebd58e2633b",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather4/status.json",
+      "sha256": "ba68fb58a9c8d7c7a971e6b54eb196e4a26ffa419a463ce0aee41b6f98f54cd6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather4/history.json",
+      "sha256": "4acc245292a4a40535a172c4e74bd25903bf6e605f06f12d0e0b2403b9582838",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather4/result.json",
+      "sha256": "99481944f74b7c76e31dc3370389b53dcade3dd7ef1553043caf8f450a3165f8",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather4/selection_lock.json",
+      "sha256": "cc5beed22e95defeb36aa8ed46f46465d340489d2c477499cd4edbdd59d45e1f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather4/cache_manifest.json",
+      "sha256": "945c4fcf57d7a67e4b1ab0b58b9626c14da1013e22f8f077f98df735a21a0df2",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather6/metadata.json",
+      "sha256": "79e62822d6a70bb72ff7322ea8adc6079437d3d005cf2ef42eb260d2c2dc08ae",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather6/status.json",
+      "sha256": "235cdbda046b11773bd53611248119e4e04e7ef99ecf6b6c2893e8702b1160b9",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather6/history.json",
+      "sha256": "65bb32194263016490934e7924ff8357d1e3996bba5ca48e834f7de5c16827e1",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather6/result.json",
+      "sha256": "68183e8fd33d6222c972309ae9f135e7771db02f8b09eb2d15aa5b46f60d3093",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather6/selection_lock.json",
+      "sha256": "d611f9a02ffae156c1457997f84045b0994e18b37d10f10a894b8d441700e21d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_ab_linear_readout_s17_20261031/worker1/b_kather6/cache_manifest.json",
+      "sha256": "0ba0381d6e3423a5db5538f1303e4b5afa740753f11195a1165ca22b7e32bb89",
+      "snapshot": true
+    }
+  ]
+}

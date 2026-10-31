@@ -1,5 +1,5 @@
 {
-  "status": "PREPARED_NOT_STARTED",
+  "status": "A_AND_B_LINEAR_FITS_COMPLETE_VALIDATED",
   "version": "USER_REVISION_20261031_LINEAR_READOUT",
   "panels": {
     "a": {
@@ -37,5 +37,12 @@
     "C8": 6272,
     "C9": 7056
   },
-  "B2_matches_A1_by_checkpoint": true
+  "B2_matches_A1_by_checkpoint": true,
+  "completed_run_roots": [
+    "panel_ab_linear_readout_s17_20261031",
+    "panel_b_linear_CCDprior_s17_20261031"
+  ],
+  "OEO_canonical": "PhaseOnly.oeo: active intensity / spatial mean -> x/(1+x) -> L2 amplitude normalization -> zero-phase field; includes final E/G layer",
+  "D2NN_baselines_changed": false,
+  "further_B_optimization": "Targets not yet reached; any joint phase/head refinement must use a separate bounded profile and preserve completed candidates"
 }

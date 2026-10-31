@@ -1,0 +1,175 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "job": "a_kather2016",
+      "passed": true,
+      "exactly_one_Linear_no_bias": true,
+      "no_CNN": true,
+      "all_phase_tensors_equal_parent": true,
+      "phase_parameters": 479364,
+      "head_parameters": 6272,
+      "total_parameters": 485636,
+      "best_checkpoint_sha256": "070f110187dcd57d6799fb87bd3f8eaa781a2c51c3b3bbfabc9c5cf9132aa7ea",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 2533,
+          "accuracy": 0.7245423340961098,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "val": {
+          "n": 752,
+          "correct": 526,
+          "accuracy": 0.699468085106383,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "test": {
+          "n": 752,
+          "correct": 526,
+          "accuracy": 0.699468085106383,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        }
+      }
+    },
+    {
+      "job": "a_bloodmnist128",
+      "passed": true,
+      "exactly_one_Linear_no_bias": true,
+      "no_CNN": true,
+      "all_phase_tensors_equal_parent": true,
+      "phase_parameters": 479364,
+      "head_parameters": 6272,
+      "total_parameters": 485636,
+      "best_checkpoint_sha256": "8d6a9a24a356da8b615b0d3f7b073bfd53055c99027b06689ca8c0ba9d0e25b3",
+      "splits": {
+        "train": {
+          "n": 11948,
+          "correct": 10092,
+          "accuracy": 0.8446601941747572,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "val": {
+          "n": 1712,
+          "correct": 1422,
+          "accuracy": 0.830607476635514,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "test": {
+          "n": 3421,
+          "correct": 2838,
+          "accuracy": 0.8295819935691319,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        }
+      }
+    },
+    {
+      "job": "a_crc9",
+      "passed": true,
+      "exactly_one_Linear_no_bias": true,
+      "no_CNN": true,
+      "all_phase_tensors_equal_parent": true,
+      "phase_parameters": 479364,
+      "head_parameters": 7056,
+      "total_parameters": 486420,
+      "best_checkpoint_sha256": "c02a3a87e6bb6c100e174c3da6a8d3140be7c66dec7fd0eec801bf7118a20f41",
+      "splits": {
+        "train": {
+          "n": 5026,
+          "correct": 4281,
+          "accuracy": 0.8517707918822125,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "val": {
+          "n": 718,
+          "correct": 553,
+          "accuracy": 0.7701949860724234,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "test": {
+          "n": 1436,
+          "correct": 1171,
+          "accuracy": 0.8154596100278552,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        }
+      }
+    },
+    {
+      "job": "b_kather4",
+      "passed": true,
+      "exactly_one_Linear_no_bias": true,
+      "no_CNN": true,
+      "all_phase_tensors_equal_parent": true,
+      "phase_parameters": 908552,
+      "head_parameters": 6272,
+      "total_parameters": 914824,
+      "best_checkpoint_sha256": "1a7e0dea891d09968f9f82cfd647c5080c7e2e44ea130421064395b17a1468f4",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 2642,
+          "accuracy": 0.755720823798627,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "val": {
+          "n": 752,
+          "correct": 530,
+          "accuracy": 0.7047872340425532,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "test": {
+          "n": 752,
+          "correct": 560,
+          "accuracy": 0.7446808510638298,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        }
+      }
+    },
+    {
+      "job": "b_kather6",
+      "passed": true,
+      "exactly_one_Linear_no_bias": true,
+      "no_CNN": true,
+      "all_phase_tensors_equal_parent": true,
+      "phase_parameters": 1337740,
+      "head_parameters": 6272,
+      "total_parameters": 1344012,
+      "best_checkpoint_sha256": "77974d177c96e819170d2c5711d6090244d7cc761311bbe45e44b3c085c6f447",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 2928,
+          "accuracy": 0.8375286041189931,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "val": {
+          "n": 752,
+          "correct": 558,
+          "accuracy": 0.7420212765957447,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        },
+        "test": {
+          "n": 752,
+          "correct": 614,
+          "accuracy": 0.8164893617021277,
+          "IDs_labels_match_parent": true,
+          "true_top2": true
+        }
+      }
+    }
+  ]
+}
