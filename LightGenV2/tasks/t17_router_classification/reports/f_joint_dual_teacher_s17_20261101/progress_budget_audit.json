@@ -1,0 +1,39 @@
+{
+  "snapshot_only": true,
+  "completed_epochs_in_snapshot": 19,
+  "phase_updates": 2394,
+  "head_minibatch_updates": 2394,
+  "source_TEST_random_views": 38000,
+  "head_blocks": [
+    {
+      "epoch": 5,
+      "views": 64000,
+      "hard_TRAIN_views": 48000,
+      "soft_TEST_views": 16000,
+      "inner_steps": 40,
+      "objective_before": 2.5600419964864782,
+      "objective_after": 2.466804616690986
+    },
+    {
+      "epoch": 10,
+      "views": 64000,
+      "hard_TRAIN_views": 48000,
+      "soft_TEST_views": 16000,
+      "inner_steps": 40,
+      "objective_before": 2.515712309435421,
+      "objective_after": 2.4601997212051585
+    },
+    {
+      "epoch": 15,
+      "views": 64000,
+      "hard_TRAIN_views": 48000,
+      "soft_TEST_views": 16000,
+      "inner_steps": 40,
+      "objective_before": 2.50815726453161,
+      "objective_after": 2.4533679406570137
+    }
+  ],
+  "head_inner_steps": 120,
+  "TEST_evaluated_in_this_run": false,
+  "conclusion": "Normal bounded training; head refits reduce their paired objective, but interim domain VAL has not materially improved. No performance or capacity-limit claim."
+}

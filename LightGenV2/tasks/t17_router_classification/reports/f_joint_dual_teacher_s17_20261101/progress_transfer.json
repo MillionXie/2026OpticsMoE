@@ -15,13 +15,13 @@
     },
     {
       "path": "joint/status.json",
-      "sha256": "77c95a5869bed1b4919b461b80cdb1b935f1e75e0ee16f98db4be826b92bc839",
-      "bytes": 103
+      "sha256": "944a7dd32b97b213c680a199321f5d8b1b4850b41763ef5f4d3845abd036a10d",
+      "bytes": 105
     },
     {
       "path": "joint/history.json",
-      "sha256": "8ea367a155d2d6280545f03b7fd740e8a6f82774d10d934ab21a52f9db67c1a4",
-      "bytes": 27615
+      "sha256": "b8527eef8829f710a73993c15b2bd5c2abd976e3e3d7de47c37d526dbb33766d",
+      "bytes": 130005
     },
     {
       "path": "joint/teacher_manifest.json",
