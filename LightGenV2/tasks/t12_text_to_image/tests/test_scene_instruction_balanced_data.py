@@ -1,13 +1,18 @@
 import tempfile
 from pathlib import Path
 import unittest
-from ..scene_instruction_balanced_data import checked_pool,curate,checked_dev_labels
+from ..scene_instruction_balanced_data import checked_pool,curate,checked_dev_labels,reference_condition_weights
 from ..scene_instruction_data import condition,write,sha
 from ..scene_omnigen_peer import REVISION
 from ..scene_generation_data import request_seed
 
 
 class CandidateAdmission(unittest.TestCase):
+    def test_group_weights_equalize_one_and_two_valid_targets_without_copying_GTs(self):
+        rows=[dict(sample_id=str(i),split='train',reference_id='one',condition_id=c)for i,c in enumerate(['0','1','1'])]
+        weights=reference_condition_weights(rows)
+        self.assertAlmostEqual(weights['0'],weights['1']+weights['2']);self.assertAlmostEqual(sum(weights.values()),3.)
+        with self.assertRaises(ValueError):reference_condition_weights([dict(rows[0],split='dev')])
     def test_DEV_relation_recheck_excludes_wrong_furniture_without_dropping_inputs(self):
         with tempfile.TemporaryDirectory()as temp:
             p=Path(temp);(p/'ok.png').write_bytes(b'ok');(p/'wrong.png').write_bytes(b'chair without arms')

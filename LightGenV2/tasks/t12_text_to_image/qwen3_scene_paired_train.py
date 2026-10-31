@@ -329,6 +329,10 @@ def fit(a, payload):
             alignment_identity=checked_alignment(a.alignment,state,original_alignment_sha)
             head.load_state_dict(state['state_dict'], strict=True)
     train = [r for r in payload['records'] if r['split'] == 'train']
+    group_weights={r['sample_id']:1. for r in train}
+    if a.config_profile.get('balance_TRAIN_reference_condition_groups',False):
+        from .scene_instruction_balanced_data import reference_condition_weights
+        group_weights=reference_condition_weights(train)
     dev = [r for r in payload['records'] if r['split'] == 'dev' and r['condition_id'] in ['0', '1']]
     assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
     cache_digest = digest(a.cache/'paired_cache.pt')
@@ -337,7 +341,7 @@ def fit(a, payload):
         warm = torch.optim.AdamW(head.parameters(), lr=1e-4, weight_decay=.01)
         for step in range(a.warmup):
             chosen = rng.sample(train, 4)
-            loss = sum(anchor_loss(conditions_for(head, payload, row), payload, row) for row in chosen)/4
+            loss = sum(group_weights[row['sample_id']]*anchor_loss(conditions_for(head, payload, row), payload, row) for row in chosen)/4
             warm.zero_grad(); loss.backward()
             assert torch.isfinite(loss) and all(torch.isfinite(p.grad).all() for p in head.parameters() if p.grad is not None)
             torch.nn.utils.clip_grad_norm_(head.parameters(), 1.); warm.step()
@@ -366,7 +370,9 @@ def fit(a, payload):
         kd_weight=a.config_profile.get('teacher_condition_kd_weight',0.)
         kd=electronic_condition_loss(cond,payload,row) if auxiliary and kd_weight else noise_mse*0
         contrast=reference_contrast.loss(cond,row) if auxiliary and reference_contrast is not None else noise_mse*0
-        return noise_mse+.02*anchor+kd_weight*kd+contrast_weight*contrast, noise_mse, anchor
+        loss=noise_mse+.02*anchor+kd_weight*kd+contrast_weight*contrast
+        if auxiliary:loss=loss*group_weights[row['sample_id']]
+        return loss, noise_mse, anchor
     def optimizer():
         groups = [{'params': lora, 'lr': a.lr}]
         if head is not None: groups.append({'params': head.parameters(), 'lr': a.lr})
@@ -456,6 +462,8 @@ def fit(a, payload):
         'optical_frontend':payload.get('optical_frontend'),
         'initial_paired_checkpoint_sha256':None if a.initial_paired is None else digest(a.initial_paired/'best_checkpoint.pt'),
         'initial_alignment_identity':alignment_identity,
+        'balanced_TRAIN_group_weighting':a.config_profile.get('balance_TRAIN_reference_condition_groups',False),
+        'TRAIN_group_weights_sha256':hashlib.sha256(json.dumps(group_weights,sort_keys=True).encode()).hexdigest(),
         'optical_parameters_updated':False,
         'teacher_condition_kd_weight':a.config_profile.get('teacher_condition_kd_weight',0.),
         'condition_teacher_sha256':payload.get('condition_teacher_sha256'),

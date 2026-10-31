@@ -16,6 +16,15 @@ from .scene_omnigen_peer import REVISION
 from .scene_instruction_native_prior import visible_caption
 
 
+def reference_condition_weights(rows):
+    """Equal group contribution while retaining every distinct accepted PNG."""
+    if not rows or any(r['split']!='train'for r in rows):raise ValueError('TRAIN-only condition balancing')
+    counts=Counter((r['reference_id'],r['condition_id'])for r in rows)
+    result={r['sample_id']:len(rows)/(len(counts)*counts[r['reference_id'],r['condition_id']])for r in rows}
+    if len(result)!=len(rows):raise ValueError('Distinct TRAIN sample IDs required')
+    return result
+
+
 def checked_pool(root,review_path,allowed):
     from .scene_instruction_repair import FORM_PROFILE,form_teacher_prompt
     from .scene_generation_data import request_seed
