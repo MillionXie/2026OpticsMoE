@@ -11593,16 +11593,16 @@
       "state": "admission_pending",
       "status": {
         "state": "training",
-        "epoch": 1,
+        "epoch": 20,
         "total_epochs": 60,
-        "selected_epoch": 0,
+        "selected_epoch": 20,
         "pid": 2432881
       },
       "result": null,
       "selected_run": "runs\\simulation\\panel_d_A_aligned_s17_20261101\\organcmnist\\k4",
       "selected_checkpoint_sha256": null,
       "fully_verified": false,
-      "latest_development_selection_accuracy": 0.6387536514118792,
+      "latest_development_selection_accuracy": 0.7367332035053554,
       "additional_boundary_status": null,
       "additional_boundary_result": null
     }
