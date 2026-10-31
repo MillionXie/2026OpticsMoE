@@ -1,5 +1,36 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 2026-11-01 当前实际运行与交付顺序
+
+当前生产为`scene_expanded_TRAIN1520_batched_workflow_20261101`，pin
+`c59ecfbadc2fda3549efda319ac8e64f4d6a2e55`：冻结OmniGen30步、B4、512输出，先复用SHA一致
+的旧首种子前缀／原132候选／原生pilot目标，再生成剩余TRAIN。原B1前缀在86张时仅停止自身PID，
+所有目标与日志保留并有`superseded_generation.json`；不重启旧`scene_paper_single_seed_expansion_workflow_20261101`。
+这不是LG速度结果：制作教师目标的B2约20.964秒／图，B4原生50步约12.749秒／图，
+B4原生30步约7.706秒／图，仅4图TRAIN小试吞吐。4张30步实际检查中2枕完整可用、
+1灯可作弱候选、1灯质量不确定须在准入时拒绝；批准继续造候选，不代表批准所有候选进梯度。
+另外真实试过冻结原始SDXL＋IP30的8图TRAIN小试，有棋盘格／主体消失／纹理铺满家具，
+已明确拒绝作为这批目标教师，失败证据保留，不用于扩充。相关PNGs、逐图判断和SHA在
+`scene_expanded_teacher_pilot_comparison_QA_20261101`，审核后上传到`scene_expanded_teacher_pilot_reviews_20261101`。
+
+连续后续为`scene_expanded_baseline_middle_followup_retry_workflow_20261101`，目前只等
+`scene_expanded_reviewed_TRAIN_TEST500_20261101`真正审查／原子发布以及自身生成GPU释放，
+不会把候选数当成准入对数。它串行执行：电子cache／TRAIN-only训练／完整TEST500选PT→
+F6真实新条件／TRAIN-only KD／配对恢复→所选E30完整TRAIN轨迹→同一个64块8步中间版蒸馏／
+完整TEST500选PT→两模型完整指标和三进程正式边界计时→先交付
+`scene_expanded_baseline_middle_delivery_20261101/index.html`；随后补同题压缩前LG／
+匹配训练SDXL＋IP／冻结OmniGen，生成`scene_expanded_middle_fiveway_delivery_20261101/index.html`。
+CPU等待者旧版`scene_expanded_baseline_middle_followup_workflow_20261101`在零GPU阶段时已记录并替换，不能重复启动。
+新接口两端CPU／实际Tensor合同测试通过，不代表本轮新数据已训练完成或新模型已达标。
+两个页面都保留完整500分母／失败图、逐图与总体／分类四指标、采样／训练预算和实测软件／光周期等待口径。
+只有相对电子总体／灯／枕四指标10%门、图像可用性与≥3倍同口径时间实际审查通过，
+才由主线程通知已有光路聊天一次；真实EXP对匹配新SIM≤5%仍由该聊天部署／微调／验收，主线程不操纵SDK。
+
+数量还须区分：1520是76视图×20个**文字模板**，不等于1520独立商品／独立场景。
+这些模板有少量同场景措辞变体；按较粗承托＋背景锚点归并，灯18类、枕17类，
+TRAIN为1328个参考－场景组合。TEST仍是500个不同RGB＋prompt请求、18款26视图，非500款独立商品。
+审计见`scene_expanded_template_dependence_audit_20261101/audit.json`；不靠同义改写或多种子宣称新增独立样本。
+
 ### 2026-11-01 扩充后的连续训练接口
 
 扩充候选准入由`scene_expanded_paired_data`执行：只把逐像素复核、主体可辨且画质可用的
