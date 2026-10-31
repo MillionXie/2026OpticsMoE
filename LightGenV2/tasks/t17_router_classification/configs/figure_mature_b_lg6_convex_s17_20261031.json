@@ -1,0 +1,43 @@
+{
+  "seed": 17,
+  "epochs": 30,
+  "min_epochs": 10,
+  "patience": 10,
+  "batch": 32,
+  "eval_batch": 64,
+  "phase_optimizer": "wrapped",
+  "phase_lr": 5e-05,
+  "head_lr": 0.0,
+  "head_weight_decay": 0.001,
+  "label_smoothing": 0.02,
+  "cosine_lr": true,
+  "early_stop": true,
+  "training_temperature": 1.0,
+  "augmentation": "D4",
+  "authorized_gpu_uuids": [
+    "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+  ],
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "dataset": "kather2016",
+  "num_classes": 8,
+  "expected_counts": {
+    "train": 3496,
+    "val": 752,
+    "test": 752
+  },
+  "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+  "main_layers": 6,
+  "parent_checkpoint": "runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex/best_checkpoint.pt",
+  "parent_checkpoint_sha256": "e91a124115643ca8b0a06ae5d080ffee2acdcac1874878aff94746c503207444",
+  "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+  "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "head_initialization": "Strict load selected new Linear parent; no head reset",
+  "head_prior_temperature": 0.1,
+  "profile": "figure_mature_b_lg6_convex",
+  "architecture": "LG",
+  "training_scope": "last_pair_fixed_head",
+  "reuse_cache_directory": "runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex",
+  "reuse_cache_manifest_sha256": "6b06a4e8bf2ca85d76d81922c89452618b8bf0cb10f8d79292958e41de527c2e",
+  "launch_gate": "B6 skipped if pre-existing last checkpoint already reaches655/752; F uses original VAL-selected mature head. No inference changes."
+}

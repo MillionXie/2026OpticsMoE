@@ -29,11 +29,19 @@ def build_model(cfg):
 
 
 def configure_parameters(model,cfg):
-    if cfg.get('training_scope')=='last_pair_and_head':
+    scope=cfg.get('training_scope','all')
+    if scope not in ('all','last_pair_and_head','last_pair_fixed_head','all_optics_fixed_head'):raise ValueError('Unknown training scope')
+    if scope in ('last_pair_and_head','last_pair_fixed_head'):
         if cfg['architecture']!='LG' or cfg['main_layers'] not in (4,6):raise ValueError('Last pair scope requires deep LG')
         last=cfg['main_layers']//2-2
-        names={'shared_head.weight',f'extra_expert_phases.{last}',f'extra_global_phases.{last}'}
+        names={f'extra_expert_phases.{last}',f'extra_global_phases.{last}'}
+        if scope=='last_pair_and_head':names.add('shared_head.weight')
         for name,p in model.named_parameters():p.requires_grad_(name in names)
+    elif scope=='all_optics_fixed_head':
+        if cfg['architecture']!='LG':raise ValueError('Fixed head scope requires LG')
+        for name,p in model.named_parameters():p.requires_grad_(name!='shared_head.weight')
+    else:
+        for p in model.parameters():p.requires_grad_(True)
     phases=[p for n,p in model.named_parameters() if p.requires_grad and n!='shared_head.weight']
     head=[p for n,p in model.named_parameters() if p.requires_grad and n=='shared_head.weight']
     return phases,head

@@ -56,3 +56,14 @@ def test_objective_has_no_test_teacher_or_domain_label_argument():
     loss=classification_objective(dict(raw_logits=logits),truth,cfg)
     assert torch.equal(loss,torch.nn.functional.cross_entropy(logits,truth,label_smoothing=.02))
     loss.backward();assert torch.isfinite(logits.grad).all()
+
+
+@pytest.mark.parametrize('scope,depth,count',[('last_pair_fixed_head',6,429188),('all_optics_fixed_head',2,479364)])
+def test_mature_head_cannot_update_during_optical_refinement(scope,depth,count):
+    model=LinearReadoutLG(depth,8);phases,head=configure_parameters(model,dict(training_scope=scope,architecture='LG',main_layers=depth))
+    assert not head and not model.shared_head.weight.requires_grad
+    assert sum(p.numel() for p in phases)==count
+
+
+def test_training_scope_typo_cannot_silently_unfreeze_everything():
+    with pytest.raises(ValueError,match='Unknown'):configure_parameters(LinearReadoutLG(2,8),dict(training_scope='last_typo',architecture='LG',main_layers=2))
