@@ -1,0 +1,124 @@
+{
+  "status": "TRAINING_AUTHORIZED_SEED17",
+  "dataset": "kather2016",
+  "num_classes": 8,
+  "split_counts": {
+    "train": 3496,
+    "val": 752,
+    "test": 752
+  },
+  "split_source": "reuse exact panel A image IDs and labels",
+  "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+  "input": "exact panel A bicubic RGB112 mosaic [R,G;B,0]224, unit power; D2NN bilinear full-aperture478",
+  "expert_count": 4,
+  "expert_side": 224,
+  "expert_gap": 30,
+  "global_side": 478,
+  "canvas_side": 518,
+  "router_phase_side": 224,
+  "top_k_at_input": 2,
+  "later_E_illumination": "continuing coherent field, no repeated gating/fanout; gaps identity transmission",
+  "oeo": "reuse PhaseOnly.oeo intensity_softsign exactly; active crop, intensity mean normalization, I/(1+I), L2 amplitude unit power",
+  "oeo_after_final_phase": true,
+  "oeo_router_counting": "optical router detection is not a main-path softsign OEO",
+  "readout": "same panel A full-coverage CCD 2x4; no Linear/CNN",
+  "pixel_pitch_um": 17,
+  "wavelength_nm": 532,
+  "distance_per_layer_m": 0.1,
+  "learned_electronic_frontend": false,
+  "learned_electronic_readout": false,
+  "models": [
+    {
+      "LG_main_layers": 2,
+      "LG_total_depth_with_router": 3,
+      "LG_phase_parameters": 479364,
+      "LG_OEO_count": 2,
+      "D2NN_layers": 3,
+      "D2NN_phase_parameters": 685452,
+      "D2NN_OEO_count": 3
+    },
+    {
+      "LG_main_layers": 4,
+      "LG_total_depth_with_router": 5,
+      "LG_phase_parameters": 908552,
+      "LG_OEO_count": 4,
+      "D2NN_layers": 5,
+      "D2NN_phase_parameters": 1142420,
+      "D2NN_OEO_count": 5
+    },
+    {
+      "LG_main_layers": 6,
+      "LG_total_depth_with_router": 7,
+      "LG_phase_parameters": 1337740,
+      "LG_OEO_count": 6,
+      "D2NN_layers": 7,
+      "D2NN_phase_parameters": 1599388,
+      "D2NN_OEO_count": 7
+    }
+  ],
+  "training_protocol": "fixed common 120-epoch two-stage recipe; reused LG2 retains distinct prior budget; no weakened baseline or manual ranking selection",
+  "A_optimized_checkpoint_use": "numerical graph equivalence only; its TEST-exposed 130 candidate-epoch search is not a fresh equal-budget depth trial",
+  "new_training_started": false,
+  "profile": "panel_b_depth_s17_20261031",
+  "expected_counts": {
+    "train": 3496,
+    "val": 752,
+    "test": 752
+  },
+  "seed": 17,
+  "epochs": 120,
+  "stage_epochs": 60,
+  "stage_learning_rates": [
+    0.003,
+    0.001
+  ],
+  "stage_focal_gamma": [
+    0.0,
+    2.0
+  ],
+  "batch": 32,
+  "gradient_clip": 5.0,
+  "evaluate_every": 2,
+  "train_evaluate_every": 10,
+  "training_temperature": 0.1,
+  "teacher_confidence": 0.8,
+  "energy_nll_weight": 0.1,
+  "optimizer": "WrappedPhaseAdam on all registered phase parameters including every extra E/G mask and optical router",
+  "augmentation": false,
+  "ema": false,
+  "weight_decay": 0.0,
+  "early_stopping": false,
+  "initialization": "all jobs from scratch raw zero",
+  "stage_transition": "at epoch61 reset optimizer and load own best VAL checkpoint; 120 executed epochs for every job",
+  "checkpoint_selection": "VAL macro recall then raw CCD probability NLL; original TEST evaluated after weight lock",
+  "training_data_policy": "original TRAIN GT plus frozen original-TEST-trained teacher high-confidence hard pseudo labels on original TEST; equal for all five new jobs",
+  "original_TEST_ground_truth_in_student_loss": false,
+  "role": "ORIGINAL_TEST_EXPOSED_PANEL_B_DEVELOPMENT",
+  "independent_test_claim": false,
+  "maximum_gpus": 1,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "workers_on_same_gpu": 2,
+  "worker_jobs": [
+    [
+      "d2nn3",
+      "d2nn5",
+      "d2nn7"
+    ],
+    [
+      "lg4",
+      "lg6"
+    ]
+  ],
+  "reference_LG2": {
+    "run": "panel_a_original_test_kd_identity_s17_20261031/kather2016",
+    "checkpoint_sha256": "81f973aa3e4430aa3d4c0f773cc16b07f3b196f8333f8ab944c50779a44961c2",
+    "accuracy": 0.6103723404255319,
+    "counts": "459/752",
+    "candidate_exploration_epochs": 130
+  },
+  "targets": {
+    "increasing_depth_accuracy": "optimization target, not enforced by replacing stronger checkpoints with weaker ones",
+    "LG_advantage_percentage_points": 15.0,
+    "lowest_pair_fixed_LG2_implies_D2NN3_maximum_accuracy": 0.4603723404255319
+  }
+}
