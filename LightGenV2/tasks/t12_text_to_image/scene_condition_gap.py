@@ -19,7 +19,9 @@ from .white_reference_scene_probe import digest,write
 def compare(actual,wanted):
     if actual.shape!=wanted.shape or not torch.isfinite(actual).all() or not torch.isfinite(wanted).all():
         raise ValueError('Same finite condition shape required')
-    a,b=actual.float().flatten(),wanted.float().flatten()
+    # Long text vectors can lose enough float32 reduction precision to fail a
+    # self-cosine check. Audit reductions use float64; model tensors stay intact.
+    a,b=actual.double().flatten(),wanted.double().flatten()
     return dict(relative_RMSE=float((a-b).square().mean().sqrt()/b.square().mean().sqrt().clamp_min(1e-8)),
         cosine=float(F.cosine_similarity(a[None],b[None]).item()))
 
@@ -53,7 +55,11 @@ def main():
                 f=cache['features'][key];outputs.append(h(f['hidden'][None].float(),f['visual'][None].float()))
             item=dict(input_key=key,category=rows[key]['category'],conditions={})
             for name in ['text','pooled','image']:
-                own=compare(outputs[0][name],outputs[0][name]);assert own['relative_RMSE']==0 and abs(own['cosine']-1)<1e-5
+                own=compare(outputs[0][name],outputs[0][name])
+                if own['relative_RMSE']!=0 or abs(own['cosine']-1)>=1e-10:
+                    write(a.output/'condition_self_identity_failure.json',dict(input_key=key,condition=name,statistics=own,
+                        norm=float(outputs[0][name].double().norm()),shape=list(outputs[0][name].shape)))
+                    raise ValueError('Condition self identity failed; retain diagnostic')
                 item['conditions'][name]=compare(outputs[1][name],outputs[0][name])
             values.append(item)
     summary={}
