@@ -1,13 +1,22 @@
 import tempfile
 from pathlib import Path
 import unittest
-from ..scene_instruction_balanced_data import checked_pool,curate
+from ..scene_instruction_balanced_data import checked_pool,curate,checked_dev_labels
 from ..scene_instruction_data import condition,write,sha
 from ..scene_omnigen_peer import REVISION
 from ..scene_generation_data import request_seed
 
 
 class CandidateAdmission(unittest.TestCase):
+    def test_DEV_relation_recheck_excludes_wrong_furniture_without_dropping_inputs(self):
+        with tempfile.TemporaryDirectory()as temp:
+            p=Path(temp);(p/'ok.png').write_bytes(b'ok');(p/'wrong.png').write_bytes(b'chair without arms')
+            rows=[dict(sample_id=k,split='dev',target=k+'.png',target_sha256=sha(p/(k+'.png')))for k in ['ok','wrong']]
+            write(p/'pairs.json',rows);review=dict(pairs_sha256=sha(p/'pairs.json'),all_DEV_labels_reviewed=True,rows=[dict(sample_id=r['sample_id'],target_sha256=r['target_sha256'],status='usable_DEV_label'if r['sample_id']=='ok'else'rejected',accepted_for_validation=r['sample_id']=='ok')for r in rows]);write(p/'review.json',review)
+            self.assertEqual([r['sample_id']for r in checked_dev_labels(p,p/'review.json')],['ok'])
+            with self.assertRaises(ValueError):checked_dev_labels(p,None)
+            review['rows'].pop();write(p/'review.json',review)
+            with self.assertRaises(ValueError):checked_dev_labels(p,p/'review.json')
     def test_missing_condition_never_emits_training_pairs_or_approval(self):
         with tempfile.TemporaryDirectory()as temp:
             p=Path(temp);plan=p/'plan';plan.mkdir();rows=[]

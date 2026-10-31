@@ -16,14 +16,23 @@ from .scene_instruction_balanced import primary_codes,TEACHER_RECIPE
 from .scene_generation_data import request_seed
 
 FORM_PROFILE='TRAIN_source_form_support_teacher_v1'
+WIDE_SUPPORT='wide_support_v2'
 FORMS={'articulated_desk':('lamp','an adjustable desk lamp'),'column_lamp':('lamp','a table lamp with a column base'),
        'rounded_lamp':('lamp','a table lamp with a rounded base'),'ornamental_lamp':('lamp','a table lamp with a sculpted base'),
        'rectangular_cushion':('pillow','a rectangular cushion'),'square_cushion':('pillow','a square cushion')}
 
 
-def form_teacher_prompt(category,code,hint):
+def form_teacher_prompt(category,code,hint,variant='original_v1'):
     if hint not in FORMS or FORMS[hint][0]!=category or code not in primary_codes(category):raise ValueError('Input-grounded supported coarse form required')
     noun=FORMS[hint][1]
+    if variant==WIDE_SUPPORT:
+        if category=='lamp':
+            if code=='D':return f'Generate a wide bedroom photograph of {noun} standing on a wooden bedside table. Show the table and a bed together.'
+            return f'Generate a wide indoor photograph of {noun} standing on a wooden table. '+LAMP[code][1]
+        support={'S':'two-seat sofa','A':'armchair','D':'bed'}[code]
+        if code=='D':return f'Generate a wide bedroom photograph of {noun} resting on a bed. Show the bed and cushion together in the room.'
+        return f'Generate a wide indoor photograph of {noun} resting on the seat of a {support}. Show the whole {support} and cushion together in the room.'
+    if variant!='original_v1':raise ValueError('Unknown versioned teacher construction')
     if category=='lamp':
         if code=='D':return f'Generate a bedroom photograph of {noun} on a bedside table. A bed is visible in the background.'
         return f'Generate an indoor photograph of {noun} on a table. '+LAMP[code][1]
@@ -40,16 +49,17 @@ def prepare(plan,specification,output):
     for case in cases:
         source=sources[case['reference_id']];code=case['anchor_code'];hint=case['source_form_hint']
         if source['split']!='train'or case['reference_sha256']!=source['reference_sha256']or (source['reference_id'],code)in seen:raise ValueError('Wrong source/role or duplicate repair group')
-        seen.add((source['reference_id'],code));prompt=form_teacher_prompt(source['category'],code,hint)
+        variant=case.get('teacher_construction_variant','original_v1')
+        seen.add((source['reference_id'],code));prompt=form_teacher_prompt(source['category'],code,hint,variant)
         if sha(plan/source['reference'])!=source['reference_sha256']:raise ValueError('Source input changed')
         audit=dict(reference_sha256=source['reference_sha256'],source_form_hint=hint)
         if annotations.setdefault(source['reference_id'],audit)!=audit:raise ValueError('Conflicting source form descriptions')
         dst=output/source['reference']
         if not dst.exists():shutil.copyfile(plan/source['reference'],dst)
         for index in [0,1]:
-            row=dict(source,**condition(source['category'],code));row.update(sample_id=source['reference_id']+'-form-repair-'+code+'-draw'+str(index),
+            row=dict(source,**condition(source['category'],code));row.update(sample_id=source['reference_id']+'-form-repair-'+code+('-wide'if variant==WIDE_SUPPORT else'')+'-draw'+str(index),
                 seed_index=index,seed=request_seed(source['reference_sha256'],index),prompt=prompt,native_caption=prompt,reward_caption=prompt,
-                prompt_profile=FORM_PROFILE,anchor_code=code,source_form_hint=hint,reused_reviewed_label=None,
+                prompt_profile=FORM_PROFILE,anchor_code=code,source_form_hint=hint,reused_reviewed_label=None,teacher_construction_variant=variant,
                 public_training_prompt=condition(source['category'],code)['prompt'],teacher_prompt_has_extra_input_form_description=True)
             requests.append(row)
     write(output/'source_form_annotations.json',annotations);write(output/'requests.json',requests)
@@ -68,7 +78,7 @@ def generate(a):
     report=json.loads((a.plan/'report.json').read_text(encoding='utf8'));rows=json.loads((a.plan/'requests.json').read_text(encoding='utf8'));forms=json.loads((a.plan/'source_form_annotations.json').read_text(encoding='utf8'))
     if report['schema']!='scene_source_form_repair_plan_v1'or sha(a.plan/'requests.json')!=report['request_sha256']or sha(a.plan/'source_form_annotations.json')!=report['source_form_annotations_sha256']or len(rows)!=report['requests']:raise ValueError('Changed repair plan')
     for row in rows:
-        if row['split']!='train'or row['prompt']!=form_teacher_prompt(row['category'],row['anchor_code'],row['source_form_hint'])or forms[row['reference_id']]!=dict(reference_sha256=row['reference_sha256'],source_form_hint=row['source_form_hint']):raise ValueError('Changed input-only teacher specification')
+        if row['split']!='train'or row['prompt']!=form_teacher_prompt(row['category'],row['anchor_code'],row['source_form_hint'],row.get('teacher_construction_variant','original_v1'))or forms[row['reference_id']]!=dict(reference_sha256=row['reference_sha256'],source_form_hint=row['source_form_hint']):raise ValueError('Changed input-only teacher specification')
     a.output.mkdir();(a.output/'references').mkdir();(a.output/'targets').mkdir();write(a.output/'requests.json',rows);shutil.copyfile(a.plan/'source_form_annotations.json',a.output/'source_form_annotations.json')
     write(a.output/'model_assets.json',dict(official_revision=REVISION,files=checked_assets(a.model_path,a.metadata)))
     torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0)

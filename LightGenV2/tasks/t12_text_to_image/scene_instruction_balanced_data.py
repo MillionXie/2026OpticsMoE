@@ -34,7 +34,7 @@ def checked_pool(root,review_path,allowed):
         if source is None or row['split']!='train'or any(row[k]!=source[k]for k in ['reference_sha256','source_product_id','source_RGBA_sha256','category']):raise ValueError('Candidate outside the fixed44 TRAIN sources')
         code=row['anchor_code'];profile=row['prompt_profile']
         if code not in primary_codes(row['category']):raise ValueError('Not a primary counterfactual condition')
-        expected=condition(row['category'],code)if profile==PROFILE else scene_first_condition(row['category'],code)if profile==SCENE_FIRST_PROFILE else bedside_condition()if profile==BEDSIDE_PROFILE and row['category']=='lamp'and code=='D'else dict(prompt=form_teacher_prompt(row['category'],code,row['source_form_hint']))if profile==FORM_PROFILE else None
+        expected=condition(row['category'],code)if profile==PROFILE else scene_first_condition(row['category'],code)if profile==SCENE_FIRST_PROFILE else bedside_condition()if profile==BEDSIDE_PROFILE and row['category']=='lamp'and code=='D'else dict(prompt=form_teacher_prompt(row['category'],code,row['source_form_hint'],row.get('teacher_construction_variant','original_v1')))if profile==FORM_PROFILE else None
         if expected is None or row['prompt']!=expected['prompt']:raise ValueError('Unrecorded teacher prompt')
         if row['seed']!=request_seed(row['reference_sha256'],row['seed_index']):raise ValueError('Teacher seed must depend only on original input and ordinal')
         if profile==FORM_PROFILE and(forms is None or forms.get(row['reference_id'])!=dict(reference_sha256=row['reference_sha256'],source_form_hint=row['source_form_hint'])or row['public_training_prompt']!=condition(row['category'],code)['prompt']):raise ValueError('Unbound source-form construction hint')
@@ -45,7 +45,24 @@ def checked_pool(root,review_path,allowed):
     return result
 
 
-def curate(plan,dev,pools,output):
+def checked_dev_labels(dev,review_path):
+    if review_path is None:raise ValueError('Explicit complete DEV support-relation recheck required')
+    review=json.loads(review_path.read_text(encoding='utf8'));rows=json.loads((dev/'pairs.json').read_text(encoding='utf8'))
+    if review['pairs_sha256']!=sha(dev/'pairs.json')or not review.get('all_DEV_labels_reviewed'):raise ValueError('Changed or incomplete DEV recheck')
+    annotations={r['sample_id']:r for r in review['rows']};labels=[r for r in rows if r['split']=='dev']
+    if len(annotations)!=len(labels)or set(annotations)!={r['sample_id']for r in labels}:raise ValueError('Every DEV target needs a bound review')
+    accepted=[]
+    for row in labels:
+        audit=annotations[row['sample_id']]
+        if sha(dev/row['target'])!=row['target_sha256']or audit['target_sha256']!=row['target_sha256']:raise ValueError('DEV target pixels changed')
+        valid=audit['status']=='usable_DEV_label'
+        if audit['accepted_for_validation']!=valid:raise ValueError('Uncertain/rejected DEV cannot be admitted')
+        if valid:accepted.append(row)
+    if not accepted:raise ValueError('No valid DEV supervision; choose an explicit alternative protocol')
+    return accepted
+
+
+def curate(plan,dev,pools,output,dev_review=None):
     if output.exists():raise ValueError('Preserve every prior curation')
     plan_report=json.loads((plan/'report.json').read_text(encoding='utf8'));requests=json.loads((plan/'requests.json').read_text(encoding='utf8'))
     if plan_report['schema']!='scene_balanced_visible_anchor_plan_v1'or sha(plan/'requests.json')!=plan_report['request_sha256']or len(requests)!=264:raise ValueError('Original fixed264 TRAIN plan required')
@@ -76,6 +93,7 @@ def curate(plan,dev,pools,output):
         return
     old=json.loads((dev/'report.json').read_text(encoding='utf8'));old_rows=json.loads((dev/'pairs.json').read_text(encoding='utf8'))
     if old['schema']!='scene_visible_anchor_dataset_v1'or not old['complete']or old['TEST_opened']or sha(dev/'pairs.json')!=old['pairs_sha256']:raise ValueError('Fixed factual DEV labels required')
+    valid_dev=checked_dev_labels(dev,dev_review)
     (output/'references').mkdir();(output/'targets').mkdir();pairs=[]
     def copy_pixels(root,row):
         for key in ['reference','target']:
@@ -98,7 +116,7 @@ def curate(plan,dev,pools,output):
             recaption_is_training_data_not_rescored_model_output=candidate['prompt']!=row['prompt'])
         copy_pixels(root,row);pairs.append(row)
     train_products={r['source_product_id']for r in pairs}
-    for row in old_rows:
+    for row in valid_dev:
         if row['split']=='dev':
             row=dict(row,previous_native_caption=row['native_caption'],native_caption=visible_caption(row['category'],row['anchor_code']))
             if row['source_product_id']in train_products:raise ValueError('Role leakage')
@@ -116,7 +134,7 @@ def curate(plan,dev,pools,output):
         for field in ['source_product_id','source_RGBA_sha256','reference_sha256']:
             if owners.setdefault((field,row[field]),row['split'])!=row['split']:raise ValueError('Cross-role source')
     write(output/'pairs.json',pairs);write(output/'inference_inputs.json',inputs);write(output/'inference_dev_inputs.json',inputs)
-    pairsha=sha(output/'pairs.json');write(output/'visual_review.json',dict(approved_for_training=True,pairs_sha256=pairsha,per_candidate_review_provenance=provenance,full_reference_condition_coverage=True,not_a_model_success_claim=True))
+    pairsha=sha(output/'pairs.json');write(output/'visual_review.json',dict(approved_for_training=True,pairs_sha256=pairsha,per_candidate_review_provenance=provenance,DEV_relation_review_sha256=sha(dev_review),full_reference_condition_coverage=True,not_a_model_success_claim=True))
     write(output/'report.json',dict(complete=True,schema='scene_balanced_visible_anchor_dataset_v1',source_commit=os.environ.get('T12_SOURCE_COMMIT'),prompt_profile=PROFILE,
         counts=dict(Counter(r['split']for r in pairs)),pairs_sha256=pairsha,request_sha256=sha(output/'inference_inputs.json'),source_pairs_sha256=old['source_pairs_sha256'],
         factual_parent_pairs_sha256=old['pairs_sha256'],role_disjoint=True,TRAIN_products=44,TRAIN_reference_views=44,TRAIN_condition_groups=132,
@@ -128,7 +146,8 @@ def curate(plan,dev,pools,output):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in ['plan','dev','pools','output']:p.add_argument('--'+key,type=Path,required=True)
-    a=p.parse_args();curate(a.plan,a.dev,json.loads(a.pools.read_text(encoding='utf8')),a.output)
+    p.add_argument('--dev-review',type=Path)
+    a=p.parse_args();curate(a.plan,a.dev,json.loads(a.pools.read_text(encoding='utf8')),a.output,a.dev_review)
 
 
 if __name__=='__main__':main()

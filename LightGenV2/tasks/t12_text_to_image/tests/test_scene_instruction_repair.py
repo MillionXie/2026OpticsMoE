@@ -27,6 +27,13 @@ class SourceGroundedRepair(unittest.TestCase):
     def test_teacher_wording_is_short_and_has_no_reference_or_identity(self):
         prompt=form_teacher_prompt('lamp','D','articulated_desk');self.assertEqual(prompt.count('.'),2)
         self.assertIn('bedside table',prompt);self.assertNotIn('reference',prompt);self.assertNotIn('SKU',prompt)
+    def test_wide_support_is_explicitly_versioned_and_public_prompt_is_unchanged(self):
+        original=form_teacher_prompt('pillow','S','rectangular_cushion')
+        wide=form_teacher_prompt('pillow','S','rectangular_cushion','wide_support_v2')
+        self.assertIn('seat of a two-seat sofa',wide);self.assertIn('whole two-seat sofa',wide)
+        self.assertNotEqual(original,wide);self.assertEqual(wide.count('.'),2)
+        self.assertNotIn('rectangular',condition('pillow','S')['prompt'])
+        with self.assertRaises(ValueError):form_teacher_prompt('pillow','S','rectangular_cushion','silent_change')
 
 
 if __name__=='__main__':unittest.main()
