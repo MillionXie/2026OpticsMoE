@@ -18,6 +18,8 @@ METRICS=['CLIP_T','DINOv2_I','CLIP_I','ImageReward_compact']
 def training_budget(report):
     if report.get('peer_has_no_task_tuning'):return '未任务微调（冻结公开模型）'
     history=report.get('checkpoint_training_history')or{}
+    if history.get('condition_alignment_updates'):
+        return '完成 '+str(history['condition_alignment_updates'])+' 次条件对齐；沿用 '+str(history.get('inherited_paired_updates',0))+' 次去噪更新'
     epochs=history.get('completed_epochs');updates=history.get('completed_updates')
     if epochs is None:
         return '完成 '+str(updates)+' 次恢复更新；不按完整epoch计数'

@@ -325,6 +325,7 @@ def render(a):
         'generator_loaded_parameters':generator_count,'Qwen_parameters':0 if qwen is None else sum(p.numel() for p in qwen.parameters()),
         'head_parameters':0 if head is None else sum(p.numel() for p in head.parameters()),
         'checkpoint_training_history':{'completed_epochs':previous.get('epochs'),'completed_updates':previous.get('actual_paired_updates'),
+            'condition_alignment_updates':previous.get('condition_alignment_updates',0),'inherited_paired_updates':previous.get('inherited_paired_updates',0),
             'selected_epoch':state.get('epoch'),'selected_step':state.get('step'),'source_commit':state.get('source_commit'),
             'selection':previous.get('best_selection'),'TEST_PT_selection_performed':previous.get('TEST_PT_selection_performed',False)},
         'factual_evaluation_captions':True})
