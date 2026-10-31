@@ -51,12 +51,15 @@ def load_cache(folder):
 
 def load_generator(a,state,trainable=False):
     from peft import LoraConfig
-    pipe=pipeline(a);pipe.vae.cpu();pipe.unet.add_adapter(LoraConfig(r=4,lora_alpha=4,init_lora_weights='gaussian',
+    pipe=pipeline(a);pipe.vae.cpu();base_shapes={n:tuple(p.shape) for n,p in pipe.unet.named_parameters()};pipe.unet.add_adapter(LoraConfig(r=4,lora_alpha=4,init_lora_weights='gaussian',
         target_modules=['to_q','to_k','to_v','to_out.0']),adapter_name='scene_pair')
     named=dict(pipe.unet.named_parameters());assert set(state['unet_lora'])=={n for n in named if 'lora_' in n}
     with torch.no_grad():
         for n,value in state['unet_lora'].items():named[n].copy_(value)
     pipe.unet.requires_grad_(False)
+    if not trainable and getattr(a,'fuse_teacher_task_lora',False):
+        from .scene_fast_tail import fuse_task_adapter
+        pipe._scene_teacher_fusion=fuse_task_adapter(pipe,base_shapes)
     if trainable:
         for n,p in pipe.unet.named_parameters():
             if 'lora_' in n:p.requires_grad_(True);p.data=p.data.float()
@@ -172,6 +175,7 @@ def trajectories(a):
         'synthetic_scene_GT_used_for_trajectory_targets':False,'DEV_or_TEST_targets_created':False,
         'teacher_is_full_electronic_Qwen':not bool(teacher.get('optical_frontend')),'noise_index':a.noise_index,
         'teacher_quality_approval_sha256':digest(a.teacher_quality_approval) if approved else None,
+        'teacher_task_LoRA_fusion':getattr(pipe,'_scene_teacher_fusion',None),
         'full_TRAIN_teacher_paths_sha256':digest(a.output/'TRAIN_full_teacher_paths.pt') if full_paths else None,
         'quality_or_speed_accepted':False})
 
@@ -295,6 +299,7 @@ def main():
     p.add_argument('--batch-size',type=int,choices=[1,2],default=1);p.add_argument('--no-gradient-checkpointing',action='store_true')
     p.add_argument('--teacher-quality-approval',type=Path)
     p.add_argument('--retain-full-teacher-path',action='store_true',help='TRAIN-only reuse of exact 30-step endpoints, without another teacher generation')
+    p.add_argument('--fuse-teacher-task-lora',action='store_true',help='Explicit new trajectory run using the official merged task weights, matching fused electronic quality rendering')
     a=p.parse_args();assert not a.output.exists() and os.environ.get('CUDA_VISIBLE_DEVICES')==GPU and len(os.environ.get('T12_SOURCE_COMMIT',''))==40
     a.output.mkdir(parents=True);torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.8,0);torch.manual_seed(1042)
     write(a.output/'execution.json',{'argv':sys.argv,'source_commit':os.environ['T12_SOURCE_COMMIT'],'source_sha256':digest(Path(__file__)),'pid':os.getpid()})

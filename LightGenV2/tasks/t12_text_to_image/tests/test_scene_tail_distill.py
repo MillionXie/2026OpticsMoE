@@ -15,6 +15,15 @@ class EulerTailContract(unittest.TestCase):
         with self.assertRaises(ValueError):collapsed_epsilon(torch.ones(1),torch.zeros(1),1.,1.)
         with self.assertRaises(ValueError):collapsed_epsilon(torch.ones(1),torch.zeros(1),0.,1.)
 
+    def test_standard_twelve_step_grid_matches_thirty_step_endpoints(self):
+        teacher=EulerDiscreteScheduler(beta_start=.00085,beta_end=.012,beta_schedule='scaled_linear',
+            timestep_spacing='leading',steps_offset=1,prediction_type='epsilon')
+        teacher.set_timesteps(30);edges=interval_edges(30,12)
+        student=EulerDiscreteScheduler.from_config(teacher.config)
+        student.set_timesteps(timesteps=teacher.timesteps[edges[:-1]].tolist())
+        torch.testing.assert_close(student.sigmas,teacher.sigmas[edges])
+        self.assertEqual(len(student.timesteps),12)
+
     def test_six_step_grid_exact_subset_of_leading_teacher(self):
         teacher=EulerDiscreteScheduler(beta_start=.00085,beta_end=.012,beta_schedule='scaled_linear',
             timestep_spacing='leading',steps_offset=1,prediction_type='epsilon')
