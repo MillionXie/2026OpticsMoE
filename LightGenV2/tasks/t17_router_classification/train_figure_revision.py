@@ -97,7 +97,11 @@ def evaluate(model,x,labels,batch,domains=None):
     return metrics,arrays
 
 
-def metric_key(metrics):return metrics['balanced_accuracy'],-metrics['cross_entropy']
+def metric_key(metrics,cfg=None):
+    if cfg and cfg.get('selection_mode')=='worst_domain_first':
+        if set(metrics.get('domains',{}))!={'RGB','SAR'}:raise ValueError('Worst-domain selection requires both VAL domains')
+        return min(v['accuracy'] for v in metrics['domains'].values()),metrics['balanced_accuracy'],-metrics['cross_entropy']
+    return metrics['balanced_accuracy'],-metrics['cross_entropy']
 
 
 def classification_objective(output,labels,cfg):
@@ -122,6 +126,7 @@ def main():
     paths.append(task/'phase_backtracking.py')
     paths.append(task/'f_cross_domain.py')
     paths.append(task/'semantic_distillation.py')
+    paths.append(task/'f_joint_distillation.py')
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=not bool(cfg.get('source_test_distillation')),teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -132,14 +137,20 @@ def main():
             raw=select_source_domain(raw,cfg['training_domain']);identity['source_training_domain']=cfg['training_domain'];identity['selected_counts']={s:len(v['labels']) for s,v in raw.items()};identity['evaluation_domains']=['RGB','SAR']
         metadata['data']=identity;teacher_cfg=cfg.get('teacher');teacher_targets=None
         if teacher_cfg:
-            if teacher_cfg.get('cache_run'):
+            if teacher_cfg.get('domain_cache_runs'):
+                from .f_joint_distillation import prepare_joint_teacher
+                teacher_targets=prepare_joint_teacher(raw,cfg,args.out)
+            elif teacher_cfg.get('cache_run'):
                 from .f_cross_domain import prepare_source_teacher
                 teacher_targets=prepare_source_teacher(raw,cfg,args.out)
             else:teacher_targets=prepare_original_teacher(raw,cfg,args.out)
         source_test_indices=source_test_targets=None
         if cfg.get('source_test_distillation'):
             from .f_cross_domain import prepare_source_test_targets,soft_only_source_test_loss
-            source_test_indices,source_test_targets=prepare_source_test_targets(raw,cfg,args.out)
+            if teacher_cfg.get('domain_cache_runs'):
+                from .f_joint_distillation import prepare_joint_test_targets
+                source_test_indices,source_test_targets=prepare_joint_test_targets(raw,cfg,args.out)
+            else:source_test_indices,source_test_targets=prepare_source_test_targets(raw,cfg,args.out)
         if teacher_cfg and (not cfg.get('alternating_head') or cfg['augmentation'] not in ('horizontal_flip','D4')):raise ValueError('Teacher KD requires anchored head blocks and matching cached augmentation')
         model=build_model(cfg).cuda();parent=None
         if cfg.get('parent_checkpoint'):
@@ -149,6 +160,9 @@ def main():
             if cfg.get('training_domain'):
                 from .f_cross_domain import validate_same_source_parent
                 validate_same_source_parent(parent,cfg)
+            elif teacher_cfg and teacher_cfg.get('domain_cache_runs'):
+                from .f_joint_distillation import validate_joint_parent
+                validate_joint_parent(parent,cfg)
             model.load_state_dict(parent['model'],strict=True)
         historical=cfg.get('historical_optical_initialization')
         if historical:
@@ -192,7 +206,7 @@ def main():
         groups=phase_parameter_groups(model,phases,cfg)
         phase_opt=CanonicalPhaseBacktracking(groups,cfg['phase_lr'],**cfg['backtracking']) if backtracking else WrappedPhaseAdam(groups,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(groups,lr=cfg['phase_lr'])
         head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads and not aggregate else None
-        val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val);stale=0;history=[]
+        val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val,cfg);stale=0;history=[]
         if parent is not None and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
         torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
         for epoch in range(1,cfg['epochs']+1):
@@ -262,7 +276,7 @@ def main():
                     torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True);phase_opt.step();head_opt.step();soft_total+=float(value.detach())*len(local)
                     if semantic:
                         torch.nn.utils.clip_grad_norm_(semantic['projection'].parameters(),5.,error_if_nonfinite=True);semantic['optimizer'].step()
-                source_test_record=dict(images=len(soft_order),augmentation_views_presented=len(soft_order),phase_updates=(len(soft_order)+cfg['batch']-1)//cfg['batch'],soft_KD_objective=soft_total/len(soft_order),TEST_ground_truth_in_loss=False,domain=cfg['training_domain'])
+                source_test_record=dict(images=len(soft_order),augmentation_views_presented=len(soft_order),phase_updates=(len(soft_order)+cfg['batch']-1)//cfg['batch'],soft_KD_objective=soft_total/len(soft_order),TEST_ground_truth_in_loss=False,domain=cfg.get('training_domain','RGB+SAR'))
             block_record=None
             if block and epoch%block['interval_epochs']==0:
                 model.eval();features=[]
@@ -290,9 +304,9 @@ def main():
                 block_record.update(original_TRAIN_images=len(y['train']),augmentation_codes=list(refit_views))
                 if source_test_targets is not None:block_record.update(source_original_TEST_images=len(source_test_indices),source_TEST_soft_view_presentations=len(source_test_indices)*len(refit_views))
                 if head_opt:head_opt.state.clear() # Momentum belongs to the old head coordinates.
-            val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val)>best;stale=0 if improved else stale+1
+            val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val,cfg)>best;stale=0 if improved else stale+1
             if improved:
-                selected=epoch;best=metric_key(val);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
+                selected=epoch;best=metric_key(val,cfg);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
             row['phase_optimizer_steps']=int(step_record['accepted']) if backtracking else 1 if aggregate else (len(order)+cfg['batch']-1)//cfg['batch']
             if step_record:
@@ -309,7 +323,8 @@ def main():
             write(args.out/'status.json',dict(state='training',epoch=epoch,total_epochs=cfg['epochs'],selected_epoch=selected,pid=os.getpid()));print(json.dumps(row),flush=True)
             if cfg['early_stop'] and epoch>=cfg['min_epochs'] and stale>=cfg['patience']:break
         selected_ck=torch.load(args.out/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(selected_ck['model'],strict=True);assert_frozen(model,frozen)
-        write(args.out/'selection_lock.json',dict(selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),selection='VAL macro recall then CE',TEST_evaluations_this_run_before_lock=0))
+        selection='minimum RGB/SAR VAL accuracy, then joint macro recall, then CE' if cfg.get('selection_mode')=='worst_domain_first' else 'VAL macro recall then CE'
+        write(args.out/'selection_lock.json',dict(selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),selection=selection,TEST_evaluations_this_run_before_lock=0))
         result=dict(role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',independent_test_claim=False,completed_epochs=epoch,selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),frozen_parameters_bitwise_unchanged=True,phase_update_L2={n:float((p.detach().cpu()-initial[n]).norm()) for n,p in model.named_parameters()},phase_parameters=metadata['phase_parameters'],head_parameters=metadata['head_parameters'])
         for split,key in [('train','train'),('val','val'),('test','original_test_dev')]:
             metrics,arrays=evaluate(model,x[split],y[split],cfg['eval_batch'],raw[split].get('domains'));result[key]=metrics

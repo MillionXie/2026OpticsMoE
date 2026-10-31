@@ -1,3 +1,12 @@
+## F联合LG继续优化：两域均超过70%为目标（2026-11-01）
+
+用户已确认联合LG两个主结果+D2NN四格，授权继续优化同一个LG，使RGB与SAR都超过70%；目标不保证，D2NN/A/B保护，d暂缓/j不管。
+新增有界候选f_joint_dual_teacher_s17_20261101：继承现有联合best774e2370，不复用单域学生；全R/E/G及原唯一Linear联合训练，原推理487204参数/Top2/两OEO/无CNN不变。
+利用已完整保存的两个冻结域内教师，各自提供本域原TRAIN3000和原TEST1000匹配D4软目标，按原6000/2000的ID顺序合并，学生始终一个模型。
+域标签只用于训练教师target匹配，不分配专家、不进入学生forward。原TRAIN硬CE+KD，原TEST只softKL不入硬CE，教师不进推理；完整暴露标ORIGINAL_TEST_EXPOSED_DEVELOPMENT。
+最大60/min25/pat15轮，phase wrapped角度LR.0003/head.00005，KD.5/T2，D4/batch64；每5轮原单头block最多40内步，64000呈现=48000硬TRAIN增强+16000软TEST增强，Gram仅数值坐标。
+新选模优先较弱域VAL准确率，再联合宏召回、再CE，精确父E0参与，锁定同一PT后评价两域，不逐域挑权重。此处为待测试/真实GPU准入后启动的配置说明，实际运行以新launch/metadata为准。
+
 ## F原图任务口径复核：D2NN定稿，LG应为联合双域模型（2026-11-01）
 
 用户确认D2NN两组单域模型的四格定稿：RGB训练→RGB50.90/SAR9.70，SAR训练→RGB17.30/SAR41.60；保护现有60轮权重，不再训练或改选。
