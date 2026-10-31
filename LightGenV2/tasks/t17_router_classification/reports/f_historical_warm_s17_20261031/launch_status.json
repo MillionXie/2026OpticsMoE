@@ -1,0 +1,44 @@
+{
+  "status.json": {
+    "state": "training",
+    "pid": 1885725,
+    "epoch": 7,
+    "total_epochs": 60
+  },
+  "metadata.json": {
+    "pid": 1885725,
+    "source_commit": "c0608fd38f69d5fe7e26132ac93a282ebb41569c",
+    "historical_initialization": {
+      "imported_phase_names": [
+        "first_phase",
+        "global_phase",
+        "router_phase"
+      ],
+      "all_imported_phases_bitwise_equal": true,
+      "historical_oeo": "none",
+      "new_oeo": "intensity_softsign",
+      "old_function_or_accuracy_inherited": false,
+      "old_CNN_in_student": false
+    },
+    "TRAIN_head_bootstrap": {
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 6000,
+      "numerical_ridge": 0.0017546638939934323,
+      "uncentred_Gram_eigen_min": 6.264856869709924e-08,
+      "uncentred_Gram_eigen_max": 1348.3243182198876,
+      "Gram_regularized_condition": 768396.6932619881,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 3.5578371467982857,
+      "objective_after": 2.364683038373,
+      "internal_steps": 150,
+      "closure_calls": 161,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true
+    },
+    "head_bootstrap_phases_bitwise_frozen": true
+  },
+  "history.json": {
+    "epoch": 7,
+    "VAL": 0.4355
+  }
+}

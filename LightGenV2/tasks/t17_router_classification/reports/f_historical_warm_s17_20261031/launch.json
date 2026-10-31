@@ -1,0 +1,63 @@
+{
+  "source_commit": "c0608fd38f69d5fe7e26132ac93a282ebb41569c",
+  "pid": 1885725,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_historical_warm_s17_20261031.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_historical_warm_s17_20261031/warm"
+  ],
+  "time": 1793452002.7079952,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "admission": {
+    "source_commit": "c0608fd38f69d5fe7e26132ac93a282ebb41569c",
+    "source_sha256": {
+      "train_figure_revision.py": "873faf0377f74405ccab3cd90460100c17fdd568f1737b9229e8df98a41e0f0c",
+      "model_linear_readout.py": "02eddba0c3e9d29fa5afaa9a03adf987b12651f8d5a9d25b6d9fd99da93397a9",
+      "alternating_readout.py": "ab02de54c00d7efbc7264bede66823039e417190d73f8d046acd77454e1413a0"
+    },
+    "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "historical_import": {
+      "imported_phase_names": [
+        "first_phase",
+        "global_phase",
+        "router_phase"
+      ],
+      "all_imported_phases_bitwise_equal": true,
+      "historical_oeo": "none",
+      "new_oeo": "intensity_softsign",
+      "old_function_or_accuracy_inherited": false,
+      "old_CNN_in_student": false
+    },
+    "bootstrap": {
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 20,
+      "numerical_ridge": 0.0017619331324182988,
+      "uncentred_Gram_eigen_min": -1.30007077097276e-13,
+      "uncentred_Gram_eigen_max": 1332.5998246550687,
+      "Gram_regularized_condition": 756329.2625398894,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 3.5918187505738013,
+      "objective_after": 0.4771744659572825,
+      "internal_steps": 10,
+      "closure_calls": 15,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true
+    },
+    "bootstrap_optical_phases_bitwise_old": true,
+    "finite_joint_updates": {
+      "first_phase": 0.11634814739227295,
+      "global_phase": 0.1652524471282959,
+      "router_phase": 0.06849478930234909,
+      "shared_head.weight": 0.004426031373441219
+    },
+    "TRAIN_only": true,
+    "TEST_not_evaluated": true,
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN_in_student": 0
+  }
+}

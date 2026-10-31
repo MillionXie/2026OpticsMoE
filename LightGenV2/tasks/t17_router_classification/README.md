@@ -13,7 +13,10 @@ KD .25 worker1866049已完整60轮、VAL选E58：TRAIN66.58/VAL49.75/DEV50.00%�
 保留新raw输入/Top2/两次OEO/唯一Linear；先在当前原TRAIN的光学特征上有界150步拟合新头，
 头bootstrap时三组相位逐元素冻结，随后该头作为锚定父，继续同原KD .25有限60/min20/pat15轮。
 旧CNN只作TRAIN教师，绝不恢复到LG推理；旧高分不复制到新结果。初始化的头内步与后续光学epoch分别记录。
-须通过138项CPU检查、旧真实PT/真实TRAIN GPU准入并main发布再启动；现有50%候选保留，失败候选完整归档。
+sourcec0608fd38已通过138项CPU检查与旧真实PT/20真实TRAIN GPU准入，并main发布、服务器按任务路径核SHA。
+旧mask候选worker1885725已实际启动，root runs/simulation/f_historical_warm_s17_20261031/warm；
+完整6000 TRAIN头bootstrap150步已完成且旧三相位bitwise冻结，最近E7，不能将准入/启动当作旧分数已继承。
+现有50%候选保留，失败候选完整归档。
 
 ## F旧权重兼容、mask与三层D2NN核验（2026-10-31）
 
