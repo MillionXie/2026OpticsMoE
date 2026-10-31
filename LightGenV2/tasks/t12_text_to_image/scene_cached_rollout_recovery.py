@@ -28,7 +28,7 @@ def rollout_from_scaled(scheduler,unet,initial,cond,state,grid,gradient=False):
     return x,points
 
 
-def run(a):
+def run(a,admission=None):
     state,parent=complete_state(a.student);cache,cr=load_cache(a.student_cache)
     descriptor=state.get('depth_compression',{});sampling=state['sampling_contract'];config=descriptor['profile']
     assert descriptor['schema']=='scene_compact_recovered_v1'and sampling['steps']in[6,8]and sampling['CFG']==7.5
@@ -38,9 +38,14 @@ def run(a):
     assert source['complete']and source['teacher_is_full_electronic_Qwen']and not source['DEV_or_TEST_targets_created']
     assert digest(path)==source['full_TRAIN_teacher_paths_sha256']
     teacher=torch.load(path,map_location='cpu',weights_only=False,mmap=True)
-    assert teacher['all_TRAIN']and teacher['teacher_sha256']=='662ff90f9a46670b28bf86d61629c59e4fb619ed69a62e4ae52ed8527ea76f76'
+    assert teacher['all_TRAIN']
+    if admission is None:
+        assert teacher['teacher_sha256']=='662ff90f9a46670b28bf86d61629c59e4fb619ed69a62e4ae52ed8527ea76f76'
+    else:
+        admission(state,parent,cache,teacher,source)
     train={r['input_key']:r for r in cache['records']if r['split']=='train'};dev={r['input_key']for r in cache['records']if r['split']=='dev'}
-    keys=set(teacher['paths']);assert len(keys)==192 and keys<=set(train)and not keys&dev
+    keys=set(teacher['paths']);assert keys<=set(train)and not keys&dev
+    if admission is None:assert len(keys)==192
     edges=[teacher['timesteps'].index(t)for t in sampling['timesteps']]+[30]
     assert edges[0]==0 and len(edges)==sampling['steps']+1 and all(x<y for x,y in zip(edges,edges[1:]))
     assert all(x.dtype==torch.bfloat16 and x.shape==(31,4,64,64)for x in teacher['paths'].values())
@@ -57,7 +62,8 @@ def run(a):
             f=cache['features'][key];conditions[key]={n:v.detach()for n,v in head(f['hidden'][None].cuda().float(),f['visual'][None].cuda().float()).items()}
     groups={c:sorted(k for k in keys if train[k]['category']==c)for c in ['lamp','pillow']};assert all(groups.values())
     probes=[k for c in groups for k in groups[c][::max(1,len(groups[c])//8)][:8]]
-    active={c:[k for k in groups[c]if k not in probes]for c in groups};assert all(active.values())and len(set(probes))==16
+    all_train=getattr(a,'reuse_all_TRAIN_contexts',False)
+    active={c:list(groups[c])if all_train else[k for k in groups[c]if k not in probes]for c in groups};assert all(active.values())and len(set(probes))==16
     key=groups['lamp'][0];initial=teacher['paths'][key][0:1].cuda();sigma=teacher['sigmas'][0];t=torch.tensor(sampling['timesteps'][0],device='cuda')
     with torch.no_grad():
         actual=predict(pipe.unet,initial,t,conditions[key],state,sigma,True);expected=predict(reference,initial,t,conditions[key],state,sigma,True)
@@ -86,9 +92,10 @@ def run(a):
         student_steps=sampling['steps'],peak_allocated_bytes=peak,history=smoke,teacher_GPU_loaded=False,initial_fixed_TRAIN_terminal_loss=before))
     if a.stage=='smoke':
         write(a.output/'report.json',dict(complete=True,stage='smoke',training_performed=False,quality_or_speed_accepted=False));return
-    rng=random.Random(20261031);best=math.inf;history=[];began=time.monotonic();recent=[]
+    rng=random.Random(20261031);best=math.inf;history=[];began=time.monotonic();recent=[];seen=set()
     for step in range(1,a.updates+1):
         key=rng.choice(active[['lamp','pillow'][step%2]])
+        seen.add(key)
         for group in opt.param_groups:group['lr']=a.lr*min(1.,step/20)*(.1+.9*.5*(1+math.cos(math.pi*step/a.updates)))
         opt.zero_grad();loss,terminal,anchor=sample(key,True);loss.backward();torch.nn.utils.clip_grad_norm_(parameters,1.,error_if_nonfinite=True)
         assert torch.isfinite(loss);opt.step();recent.append(float(terminal))
@@ -106,9 +113,9 @@ def run(a):
         best_sha256=digest(a.output/'best_checkpoint.pt'),last_sha256=digest(a.output/'last_checkpoint.pt'),
         depth_compression=descriptor,compression_training_performed=True,sampling_steps=sampling['steps'],
         parent_checkpoint_sha256=parent['best_sha256'],teacher_sha256=teacher['teacher_sha256'],teacher_paths_sha256=digest(path),
-        student_cache_sha256=cr['cache_sha256'],TRAIN_contexts=192,gradient_TRAIN_contexts=sum(len(g)for g in active.values()),
+        student_cache_sha256=cr['cache_sha256'],TRAIN_contexts=len(keys),gradient_TRAIN_contexts=len(seen),eligible_gradient_TRAIN_contexts=sum(len(g)for g in active.values()),
         fixed_probe_TRAIN_contexts=len(probes),initial_fixed_TRAIN_terminal_loss=before,best_TRAIN_terminal_loss=best,
-        best_selection='Reserved fixed TRAIN contexts, not DEV/TEST or image quality',gradient_through_all_student_steps=True,
+        best_selection=('Reused fixed TRAIN contexts, not a validation set or final PT choice'if all_train else'Reserved fixed TRAIN contexts, not DEV/TEST or image quality'),gradient_through_all_student_steps=True,
         exact_saved_scaled_noise=True,one_noise_per_reference_context_from_saved_teacher=True,teacher_GPU_forward_repeated=False,
         head_Qwen_optics_VAE_frozen=True,extra_deployment_parameters=0,scene_GT_or_reference_VAE_used=False,
         image_feedback_to_Qwen=False,independent_TEST_opened=False,quality_or_speed_accepted=False,seconds=time.monotonic()-began))
