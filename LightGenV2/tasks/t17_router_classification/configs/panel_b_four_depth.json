@@ -1,0 +1,62 @@
+{
+  "status": "MODEL_AND_CONTRACT_READY_NOT_TRAINED",
+  "dataset": "kather2016",
+  "num_classes": 8,
+  "split_counts": {
+    "train": 3496,
+    "val": 752,
+    "test": 752
+  },
+  "split_source": "reuse exact panel A image IDs and labels",
+  "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+  "input": "exact panel A bicubic RGB112 mosaic [R,G;B,0]224, unit power; D2NN bilinear full-aperture478",
+  "expert_count": 4,
+  "expert_side": 224,
+  "expert_gap": 30,
+  "global_side": 478,
+  "canvas_side": 518,
+  "router_phase_side": 224,
+  "top_k_at_input": 2,
+  "later_E_illumination": "continuing coherent field, no repeated gating/fanout; gaps identity transmission",
+  "oeo": "reuse PhaseOnly.oeo intensity_softsign exactly; active crop, intensity mean normalization, I/(1+I), L2 amplitude unit power",
+  "oeo_after_final_phase": true,
+  "oeo_router_counting": "optical router detection is not a main-path softsign OEO",
+  "readout": "same panel A full-coverage CCD 2x4; no Linear/CNN",
+  "pixel_pitch_um": 17,
+  "wavelength_nm": 532,
+  "distance_per_layer_m": 0.1,
+  "learned_electronic_frontend": false,
+  "learned_electronic_readout": false,
+  "models": [
+    {
+      "LG_main_layers": 2,
+      "LG_total_depth_with_router": 3,
+      "LG_phase_parameters": 479364,
+      "LG_OEO_count": 2,
+      "D2NN_layers": 3,
+      "D2NN_phase_parameters": 685452,
+      "D2NN_OEO_count": 3
+    },
+    {
+      "LG_main_layers": 4,
+      "LG_total_depth_with_router": 5,
+      "LG_phase_parameters": 908552,
+      "LG_OEO_count": 4,
+      "D2NN_layers": 5,
+      "D2NN_phase_parameters": 1142420,
+      "D2NN_OEO_count": 5
+    },
+    {
+      "LG_main_layers": 6,
+      "LG_total_depth_with_router": 7,
+      "LG_phase_parameters": 1337740,
+      "LG_OEO_count": 6,
+      "D2NN_layers": 7,
+      "D2NN_phase_parameters": 1599388,
+      "D2NN_OEO_count": 7
+    }
+  ],
+  "training_protocol": "NOT_SELECTED: use same data/teacher policy, optimizer, budget and checkpoint rule at every depth before training",
+  "A_optimized_checkpoint_use": "numerical graph equivalence only; its TEST-exposed 130 candidate-epoch search is not a fresh equal-budget depth trial",
+  "new_training_started": false
+}
