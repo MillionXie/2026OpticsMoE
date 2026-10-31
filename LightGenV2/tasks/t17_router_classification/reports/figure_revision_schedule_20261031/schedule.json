@@ -1,5 +1,5 @@
 {
-  "status": "PREPARED_NOT_YET_ADMITTED_OR_LAUNCHED",
+  "status": "FOUR_NEW_RUNS_STARTED_AND_GPU_ADMITTED",
   "panels": {
     "a": {
       "status": "COMPLETE_AND_PROTECTED",
@@ -37,5 +37,123 @@
       "latest_human_authorization": true
     }
   },
-  "new_training_uses_TEST_labels": false
+  "new_training_uses_TEST_labels": false,
+  "runtime_status": {
+    "panel_b_linear_joint4_s17_20261031": {
+      "state": "training",
+      "epoch": 7,
+      "total_epochs": 30,
+      "selected_epoch": 4,
+      "pid": 1643144
+    },
+    "panel_b_linear_joint6_s17_20261031": {
+      "state": "training",
+      "epoch": 7,
+      "total_epochs": 30,
+      "selected_epoch": 4,
+      "pid": 1643146
+    },
+    "panel_f_lg_s17_20261031": {
+      "state": "training",
+      "epoch": 8,
+      "total_epochs": 60,
+      "selected_epoch": 8,
+      "pid": 1643147
+    },
+    "panel_f_d2nn_s17_20261031": {
+      "state": "training",
+      "epoch": 8,
+      "total_epochs": 60,
+      "selected_epoch": 8,
+      "pid": 1643149
+    }
+  },
+  "source_commit": "fdd9f9b2c38a38c99ac74b81a79e67da45c0e252",
+  "F_G_alignment": {
+    "train": {
+      "all_F_images_and_labels_exact_subset_of_G": true,
+      "F_images": 6000,
+      "G_images": 31996
+    },
+    "val": {
+      "all_F_images_and_labels_exact_subset_of_G": true,
+      "F_images": 2000,
+      "G_images": 10930
+    },
+    "test": {
+      "all_F_images_and_labels_exact_subset_of_G": true,
+      "F_images": 2000,
+      "G_images": 10858
+    }
+  },
+  "launch_records": [
+    {
+      "job": "panel_b_linear_joint4_s17_20261031",
+      "pid": 1643144,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_b_linear_joint4_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031"
+      ],
+      "source_commit": "fdd9f9b2c38a38c99ac74b81a79e67da45c0e252",
+      "admission_sha256": "8e9ba866d62f39ab716b6a1a4e348fe5c44cd1b4abc0723621ee058658b3ff74"
+    },
+    {
+      "job": "panel_b_linear_joint6_s17_20261031",
+      "pid": 1643146,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_b_linear_joint6_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031"
+      ],
+      "source_commit": "fdd9f9b2c38a38c99ac74b81a79e67da45c0e252",
+      "admission_sha256": "b1ef24a2bca39302656526c531752aee1ef08ba483fcd22b94922763732660bf"
+    },
+    {
+      "job": "panel_f_lg_s17_20261031",
+      "pid": 1643147,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_f_lg_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031"
+      ],
+      "source_commit": "fdd9f9b2c38a38c99ac74b81a79e67da45c0e252",
+      "admission_sha256": "d644f34e31584309ba9aec04f084357262c453c486ce30ce73b645fd622c32f1"
+    },
+    {
+      "job": "panel_f_d2nn_s17_20261031",
+      "pid": 1643149,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-u",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_f_d2nn_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031"
+      ],
+      "source_commit": "fdd9f9b2c38a38c99ac74b81a79e67da45c0e252",
+      "admission_sha256": "f612e2f4d8768a2e9753ad5533cf361436c246b354116b3dffa1587390bacaf3"
+    }
+  ]
 }

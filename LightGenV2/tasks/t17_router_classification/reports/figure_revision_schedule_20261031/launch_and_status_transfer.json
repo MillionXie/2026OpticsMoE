@@ -1,0 +1,95 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/launch.json",
+      "sha256": "c6224c347bb32209954a15817092d38db5f7a1eb437bbd92843f6f4f35aa5a2f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/figure_revision_admission_s17_20261031/F_original_data_audit.json",
+      "sha256": "91b0c841a4140163c959695d119ea6b017bba045a10a97b6576a6966d83db5be",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/figure_revision_admission_s17_20261031/panel_b_linear_joint4_s17_20261031_admission.json",
+      "sha256": "8e9ba866d62f39ab716b6a1a4e348fe5c44cd1b4abc0723621ee058658b3ff74",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/figure_revision_admission_s17_20261031/panel_b_linear_joint6_s17_20261031_admission.json",
+      "sha256": "b1ef24a2bca39302656526c531752aee1ef08ba483fcd22b94922763732660bf",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/figure_revision_admission_s17_20261031/panel_f_lg_s17_20261031_admission.json",
+      "sha256": "d644f34e31584309ba9aec04f084357262c453c486ce30ce73b645fd622c32f1",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/figure_revision_admission_s17_20261031/panel_f_d2nn_s17_20261031_admission.json",
+      "sha256": "f612e2f4d8768a2e9753ad5533cf361436c246b354116b3dffa1587390bacaf3",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/metadata.json",
+      "sha256": "579dc4479adbd15ccd58ee7b37533177cd33f4ea3354befe79594045aed16c4c",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/status.json",
+      "sha256": "0ce5ee9221e422f293447d6e7ac6568bdf0fd6279f23b56423a6c1e86fb57d9a",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/history.json",
+      "sha256": "4c34675db75cbb22f7a91df800464b15f6c618d2e154849f261c2846f6b1d2b0",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/metadata.json",
+      "sha256": "6244e610bcba991e2a3e95958c58cf43b4836d5936a0fc087b984aed8a0dc830",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/status.json",
+      "sha256": "6a10ae24ded61d1bb11e442458e06e95c32b34132f8221da506dfe52ad08bd10",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/history.json",
+      "sha256": "202081ac3906f02b5b7acc76d01f9447de9c7f046f20a40e85bd701b0156e46d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/metadata.json",
+      "sha256": "90aa59c096615eab81fdea6fe5dbab177008a54f8493ae01984e129db5644222",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/status.json",
+      "sha256": "23cc32e49138651649b4ce1633188f33a2de4093284666c3a07097f795e53d7b",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/history.json",
+      "sha256": "1e0204bac5dca9cc98e408f8473778057fb5aec45f87902748a4270c9098b5dd",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/metadata.json",
+      "sha256": "d7757c966215fe4b7ac58fc1e9055d55ef6052a33e8b7547dc970ecbb615e24c",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/status.json",
+      "sha256": "9eb1dcb000037bb9d0ab193ead48023c95d5250f974a9092f4215f8151b80b34",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/history.json",
+      "sha256": "4120f15dcf4115cf0a4234fa8ca04f9793766a2dfdc936413cf3b223a0968b34",
+      "snapshot": true
+    }
+  ],
+  "gpu_inventory_snapshot": "0, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, NVIDIA GeForce RTX 4090, 4500 MiB, 51 %\n1, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, NVIDIA GeForce RTX 4090, 9663 MiB, 99 %\n2, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, NVIDIA GeForce RTX 3090, 2738 MiB, 100 %\n3, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, NVIDIA GeForce RTX 4090, 5714 MiB, 62 %\n4, GPU-1b963983-7909-af6e-0528-f0f0661ab549, NVIDIA GeForce RTX 4090, 4058 MiB, 25 %\n5, GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb, NVIDIA GeForce RTX 3090, 1080 MiB, 11 %\n6, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, NVIDIA A100-PCIE-40GB, 11979 MiB, 100 %\n"
+}
