@@ -27,7 +27,7 @@ def main():
             if result and worker==0:
                 result=dict(result,val=result['validation'],original_test_dev=result['test'])
                 result['original_test_dev']['correct']=int(np.trace(result['test']['confusion_matrix']))
-            records[job]=dict(reused=False,state=read(path/'status.json') or dict(state='not_started'),
+            records[job]=dict(reused=False,state=read(path/'status.json') or dict(state='loading_data' if (path/'metadata.json').exists() else 'not_started'),
                               worker_state=read(path.parent/'status.json'),result=result,epoch_budget=60 if worker==0 else 120)
             if result:
                 with np.load(path/'test_predictions.npz',allow_pickle=False) as z:

@@ -9,6 +9,8 @@ seed17、raw全零、batch8、raw Adam LR.005恒定、clip5、无增强/EMA/类�
 仅原TRAIN真标签、每轮同seed完整无放回顺序、每轮VAL宏召回优先再比较CCD NLL，60轮后锁权重评估。
 没有为拉大差距降低D2NN预算；原TEST已在前期开发中暴露，结果仍为开发指标。
 正式D2NN run根为`runs/simulation/panel_b_d2nn60_s17_20261031`。
+修正源码`5e200af04`已发布并同步服务器，83项CPU检查及三个深度实际TRAIN八类GPU梯度/更新检查通过。
+新D2NN监督进程1427941已启动，D3实际worker1427971已记录60轮配置；LG原worker1404560继续。
 
 误将五组设成120轮的旧D2NN worker1404559已中断；其D3完成39轮，best/last保留，
 旧目录`panel_b_depth_s17_20261031/worker0`标作取消的探索，不复用其教师数据/角度Adam权重，

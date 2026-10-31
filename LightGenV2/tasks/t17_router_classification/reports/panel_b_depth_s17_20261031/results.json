@@ -2,7 +2,7 @@
   "role": "ORIGINAL_TEST_EXPOSED_PANEL_B_DEVELOPMENT",
   "independent_test_claim": false,
   "seed": 17,
-  "generated_UTC": "2026-10-31T07:42:50.121732+00:00",
+  "generated_UTC": "2026-10-31T07:56:04.132275+00:00",
   "all_five_new_jobs_completed": false,
   "reused_LG2_is_separate_prior_optimization_budget": true,
   "records": {
@@ -424,50 +424,37 @@
     "d2nn3": {
       "reused": false,
       "state": {
-        "state": "training",
-        "epoch": 3,
-        "total_epochs": 120,
-        "selected_epoch": 1,
-        "pid": 1404559
+        "state": "loading_data"
       },
-      "worker_state": {
-        "state": "training",
-        "job": "d2nn3",
-        "pid": 1404559
-      },
-      "result": null
+      "worker_state": null,
+      "result": null,
+      "epoch_budget": 60
     },
     "d2nn5": {
       "reused": false,
       "state": {
         "state": "not_started"
       },
-      "worker_state": {
-        "state": "training",
-        "job": "d2nn3",
-        "pid": 1404559
-      },
-      "result": null
+      "worker_state": null,
+      "result": null,
+      "epoch_budget": 60
     },
     "d2nn7": {
       "reused": false,
       "state": {
         "state": "not_started"
       },
-      "worker_state": {
-        "state": "training",
-        "job": "d2nn3",
-        "pid": 1404559
-      },
-      "result": null
+      "worker_state": null,
+      "result": null,
+      "epoch_budget": 60
     },
     "lg4": {
       "reused": false,
       "state": {
         "state": "training",
-        "epoch": 2,
+        "epoch": 65,
         "total_epochs": 120,
-        "selected_epoch": 1,
+        "selected_epoch": 32,
         "pid": 1404560
       },
       "worker_state": {
@@ -475,7 +462,8 @@
         "job": "lg4",
         "pid": 1404560
       },
-      "result": null
+      "result": null,
+      "epoch_budget": 120
     },
     "lg6": {
       "reused": false,
@@ -487,7 +475,8 @@
         "job": "lg4",
         "pid": 1404560
       },
-      "result": null
+      "result": null,
+      "epoch_budget": 120
     }
   },
   "pairs": [
@@ -512,6 +501,18 @@
   ],
   "LG_strictly_increasing": null,
   "D2NN_strictly_increasing": null,
+  "cancelled_D2NN_pilot": {
+    "reason": "User clarified only D2NN budgets must match panel A 60 epochs; mistaken 120-epoch teacher-data control is not the formal panel-B D2NN run",
+    "stopped_owned_pid": 1404559,
+    "completed_pilot_epochs": 39,
+    "best_pilot_epoch": 32,
+    "valid_best_and_last_preserved": true,
+    "new_formal_D2NN_budget": 60,
+    "reuse_pilot_weights_for_formal_control": false,
+    "LG_worker_1404560_untouched": true
+  },
+  "formal_D2NN_epochs": 60,
+  "LG_budget": "accuracy-oriented; initial 120-epoch candidates",
   "D2NN_common_observed_epoch_prefix": 0,
   "D2NN_order_SHA_equal_on_common_prefix": true
 }

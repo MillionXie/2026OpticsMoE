@@ -2,9 +2,9 @@
 <style>body{font:16px/1.7 sans-serif;max-width:1080px;margin:35px auto;padding:0 20px}table{border-collapse:collapse;width:100%}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.notice{background:#fff0d7;padding:16px}</style>
 <h1>图b：四专家LG与逐层OEO D2NN，seed17</h1>
 <p class="notice">原TEST已用于教师训练及学生伪标签输入；结果为开发指标。最低LG复用图a额外优化后的权重，其他五组从头训练，不能称六组全部同训练预算。未完成模型不展示中途TEST分数。</p>
-<table><tr><th>模型</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th></tr><tr><td>lg2</td><td>复用图a</td><td>64.30%</td><td>59.71%</td><td>61.04%</td></tr><tr><td>d2nn3</td><td>training；3/120轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>lg4</td><td>training；2/120轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>d2nn5</td><td>not_started；0/120轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>lg6</td><td>not_started；0/120轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>d2nn7</td><td>not_started；0/120轮</td><td>—</td><td>—</td><td>—</td></tr></table>
+<table><tr><th>模型</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th></tr><tr><td>lg2</td><td>复用图a</td><td>64.30%</td><td>59.71%</td><td>61.04%</td></tr><tr><td>d2nn3</td><td>loading_data；0/60轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>lg4</td><td>training；65/120轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>d2nn5</td><td>not_started；0/60轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>lg6</td><td>not_started；0/120轮</td><td>—</td><td>—</td><td>—</td></tr><tr><td>d2nn7</td><td>not_started；0/60轮</td><td>—</td><td>—</td><td>—</td></tr></table>
 <p>对应关系：LG主干2/4/6层，另有一个入口router；D2NN为3/5/7层。四专家224²，global及D2NN相位均478²；同一intensity-softsign OEO、固定八区CCD，无Linear/CNN。</p>
-<p>五组基础预算均120轮：前60轮边界CE，后60轮从各自VAL最优继续focal gamma2；D2NN三组使用相同优化器、初始化、采样、教师数据政策和选模规则，不早停。</p>
+<p>按最新人工修正，仅D2NN统一为与图a相同的60轮：batch8、raw Adam LR.005、无教师、仅TRAIN真标签、每轮VAL宏召回再NLL选模。LG按准确率目标优化，4/6层当前候选为120轮，使用教师伪标签；两层复用图a优化结果。因此不能称LG与D2NN等训练/数据预算结构优势。旧D2NN的120轮方案已取消，实际完成探索及权重保留，未混入正式对照。</p>
 <p>深度单调及LG高15个百分点是待检验的目标，不通过选择较差D2NN权重、删除样本或更改统计强制满足。最低LG固定61.04%时，D2NN3最多346/752正确才能达到15个百分点差值。</p>
 <p>LG深度严格递增：None；D2NN深度严格递增：None。None表示尚未完成。</p>
-<p>数据、源SHA、逐轮指标、入口专家分配与best/last保存在各run。生成时间UTC：2026-10-31T07:42:50.121732+00:00。</p></html>
+<p>数据、源SHA、逐轮指标、入口专家分配与best/last保存在各run。生成时间UTC：2026-10-31T07:56:04.132275+00:00。</p></html>
