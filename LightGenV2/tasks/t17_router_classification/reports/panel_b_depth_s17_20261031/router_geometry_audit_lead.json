@@ -1,0 +1,45 @@
+{
+  "status": "GEOMETRY_HYPOTHESIS_NOT_A_REACHABILITY_PROOF",
+  "source": "Actual PhaseOnly.route and AngularSpectrumPropagator code, fixed current inference geometry",
+  "router_input_pixels": [
+    147,
+    371
+  ],
+  "empty_RGB_quadrant_pixels": [
+    259,
+    371,
+    259,
+    371
+  ],
+  "detector_side": 60,
+  "detector_centers": [
+    [
+      132,
+      132
+    ],
+    [
+      132,
+      386
+    ],
+    [
+      386,
+      132
+    ],
+    [
+      386,
+      386
+    ]
+  ],
+  "fourth_detector_pixels": [
+    356,
+    416,
+    356,
+    416
+  ],
+  "nearest_filled_input_pixel_axis_separation_to_fourth_detector": 98,
+  "empty_gap_pixels": 97,
+  "maximum_sampled_stationary_group_shift_per_axis_pixels": 92.06406533780456,
+  "warning": "This stationary-group displacement is not a hard diffraction-support bound. The exact FFT propagator has finite-aperture tails and periodic boundaries, so it does not prove port 3 unreachable. Before concluding physical bottleneck, run exact canonical capture-efficiency/phase-focusing or restricted-propagator numerical checks.",
+  "possible_implication": "Fourth ROI lies beyond the bright RGB support by slightly more than the sampled maximum stationary shift; poor absolute capture may contribute to low use. Conditional q is normalized over detected windows and cannot establish absolute routing efficiency.",
+  "authorized_action": "Do not alter router ROI, pitch, distance, source packing or inference contract. Keep current routeaux candidates intact. This is an audit lead only, not a new training run or accuracy result."
+}

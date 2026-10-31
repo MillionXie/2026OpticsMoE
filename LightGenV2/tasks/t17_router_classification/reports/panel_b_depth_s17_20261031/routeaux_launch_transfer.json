@@ -17,7 +17,7 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/status.json",
-      "sha256": "09eca72277bf4662d3b0b4f5701a9684a39275e14f59f635d84c9dff78450eef",
+      "sha256": "be6c2cda44e88401331c2ba1d867410321eec003c55c83d8bb1f99056bcf5e37",
       "snapshot": true
     },
     {
@@ -32,12 +32,32 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_router_control/status.json",
-      "sha256": "af028137ef4d5a043477b1b0160090384c0d42f678af3509a3bbd2f20336b165",
+      "sha256": "269f398d087ebd430908e02cd12320f861a573e5398de9c67a6ffec272856357",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_router_control/history.json",
-      "sha256": "de918f851bc85c04fd2507948a8f0cf7e02b6cbd5f59538be06531a14be0670f",
+      "sha256": "5389a97fc3d7fc8d1629a3b6c750a93b6f105a978e69a6b57abc2a2230215112",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_router_control/result.json",
+      "sha256": "5c5e1137aa03b7bfe282e6bbc503d872087e9cd769e7b93e783ba21f285c57ab",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/metadata.json",
+      "sha256": "7bf246b28be4c40e78bbcf88aa0651b97cb996b7b53e0a9c523889f004ac9120",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/status.json",
+      "sha256": "3cf6a834d9604ae1fb4f8578b5228b42145e4885a40253d10839881808f4d171",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/history.json",
+      "sha256": "6ea88db18327703c2be1bde2650039f3dcfad431b7ae5fe56c1966ede2058910",
       "snapshot": true
     },
     {
@@ -52,7 +72,7 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/status.json",
-      "sha256": "9d0661872fd7a80e54ee7f21375eb88be736c0ebd424e8c1ebb13db9e1360c0b",
+      "sha256": "7d916608a6881b609e82667fdaf99aecaa114d51d7b7740fbbc52179336a74c3",
       "snapshot": true
     },
     {
@@ -67,12 +87,32 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_router_control/status.json",
-      "sha256": "cf6221b6a8114b0e118dc8bcd9e9fd03d920dc4d37fd8349383d90e3092f5d1c",
+      "sha256": "8f1a5310219dd8c390f440d6847dbf646c8f83e7d5ae239cfeb327ef247fe968",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_router_control/history.json",
-      "sha256": "68e2c5848d6b6e5c0a33a29e0ce3995366cfbaf4abb86a45a96dbacd7463c05b",
+      "sha256": "4f86651cbbd731a92bca66f19adff685a19f14d75137262a699988fce06b8287",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_router_control/result.json",
+      "sha256": "bb907e3869529803ad43d1f7343a4134a1e70096b8621980dcde01189e857d92",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/metadata.json",
+      "sha256": "5a40e665346240aed8f7578ab1a12e1d0cac2133577661803fd2ad5e731d5bf5",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/status.json",
+      "sha256": "315200e6462f158922dbcaaf502becbfe9b83e0d7540ef6f19fab18441f7de71",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/history.json",
+      "sha256": "479a6926b1aabb78c3265ee981cc9fdc7e3df8701a89490fc248676fdc5bcb05",
       "snapshot": true
     }
   ]
