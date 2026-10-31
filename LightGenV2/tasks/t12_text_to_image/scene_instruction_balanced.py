@@ -82,6 +82,36 @@ def make_plan(data,output):
 
 TEACHER_RECIPE=dict(steps=50,text_guidance=2.5,image_guidance=1.6,input_size=256,output_size=512,dtype='bfloat16')
 SCENE_FIRST_PROFILE='two_sentence_scene_first_anchor_v6'
+BEDSIDE_PROFILE='two_sentence_explicit_bedside_anchor_v7'
+
+
+def bedside_condition():
+    row=condition('lamp','D')
+    prompt='Generate a bedroom photograph with a table lamp on a bedside table. A bed is visible next to the table.'
+    row.update(prompt=prompt,native_caption=prompt,reward_caption=prompt,prompt_profile=BEDSIDE_PROFILE,
+        required_visible_facts=['recognizable table lamp','lamp supported by a bedside table','visible bed beside the table','coherent indoor photograph'])
+    return row
+
+
+def prepare_bedside(plan,output):
+    if output.exists():raise ValueError('Fresh explicit-support pilot required')
+    report=json.loads((plan/'report.json').read_text(encoding='utf8'))
+    if report.get('schema')!='scene_balanced_visible_anchor_plan_v1'or sha(plan/'requests.json')!=report['request_sha256']:raise ValueError('Fixed balanced TRAIN plan required')
+    original=json.loads((plan/'requests.json').read_text(encoding='utf8'))
+    selected=[r for r in original if r['pilot']and r['category']=='lamp'and r['anchor_code']=='D']
+    if len(selected)!=8 or any(r['split']!='train'for r in selected):raise ValueError('All4 prespecified TRAIN lamps /2 seeds required')
+    output.mkdir();(output/'references').mkdir();rows=[]
+    for source in selected:
+        if sha(plan/source['reference'])!=source['reference_sha256']:raise ValueError('Input changed')
+        dst=output/source['reference']
+        if not dst.exists():shutil.copyfile(plan/source['reference'],dst)
+        row=dict(source,**bedside_condition());row.update(sample_id=source['sample_id']+'-bedside',previous_sample_id=source['sample_id'],previous_prompt=source['prompt'],reused_reviewed_label=None)
+        rows.append(row)
+    write(output/'requests.json',rows)
+    write(output/'report.json',dict(complete=True,schema='scene_explicit_bedside_pilot_plan_v1',prompt_profile=BEDSIDE_PROFILE,
+        source_commit=os.environ.get('T12_SOURCE_COMMIT'),source_plan_sha256=report['request_sha256'],request_sha256=sha(output/'requests.json'),
+        TRAIN_products=4,requests=8,same_references_and_source_seeds=True,explicit_support_relationship_changed=True,
+        DEV_or_TEST_generated=False,eligible_for_training=False,model_generation_performed=False))
 
 
 def scene_first_condition(category,code):
@@ -154,10 +184,11 @@ def generate(plan,model_path,metadata,output,pilot,reuse_candidates=None):
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU or output.exists():raise ValueError('Fresh run on GPU6 required')
     report=json.loads((plan/'report.json').read_text(encoding='utf8'));rows=json.loads((plan/'requests.json').read_text(encoding='utf8'))
     scene_first=report['schema']=='scene_balanced_scene_first_pilot_plan_v1'
-    if report['schema']not in ['scene_balanced_visible_anchor_plan_v1','scene_balanced_scene_first_pilot_plan_v1']or not report['complete']or sha(plan/'requests.json')!=report['request_sha256']:raise ValueError('Changed balanced plan')
-    if scene_first and(pilot or reuse_candidates is not None):raise ValueError('Scene-first pilot is a fresh24-request controlled comparison')
+    bedside=report['schema']=='scene_explicit_bedside_pilot_plan_v1'
+    if report['schema']not in ['scene_balanced_visible_anchor_plan_v1','scene_balanced_scene_first_pilot_plan_v1','scene_explicit_bedside_pilot_plan_v1']or not report['complete']or sha(plan/'requests.json')!=report['request_sha256']:raise ValueError('Changed balanced plan')
+    if (scene_first or bedside)and(pilot or reuse_candidates is not None):raise ValueError('Small prompt controls require fresh prespecified requests')
     rows=[r for r in rows if r['pilot']]if pilot else rows
-    if len(rows)!=(24 if scene_first else 48 if pilot else 264)or any(r['split']!='train'for r in rows):raise ValueError('Only prespecified TRAIN requests')
+    if len(rows)!=(8 if bedside else 24 if scene_first else 48 if pilot else 264)or any(r['split']!='train'for r in rows):raise ValueError('Only prespecified TRAIN requests')
     if pilot and reuse_candidates is not None:raise ValueError('Reuse is only for full264 expansion')
     assets=dict(official_revision=REVISION,files=checked_assets(model_path,metadata))
     previous=checked_prior_candidates(reuse_candidates,report,rows,assets)
@@ -195,7 +226,7 @@ def generate(plan,model_path,metadata,output,pilot,reuse_candidates=None):
             copied_prior_candidate=prior is not None,
             RGB_paste_or_target_inputs=False,scene_GT_is_one_valid_training_example=True))
         write(output/'candidates.json',records);write(output/'progress.json',dict(stage='balanced_TRAIN_teacher_candidates',done=len(records),total=len(rows),new_generated=generated,reused_reviewed=reused,reused_prior_candidates=prior_count))
-    write(output/'report.json',dict(complete=True,source_commit=os.environ.get('T12_SOURCE_COMMIT'),schema='scene_scene_first_TRAIN_candidates_v1'if scene_first else'scene_balanced_visible_anchor_candidates_v1',prompt_profile=report['prompt_profile'],
+    write(output/'report.json',dict(complete=True,source_commit=os.environ.get('T12_SOURCE_COMMIT'),schema='scene_bedside_TRAIN_candidates_v1'if bedside else'scene_scene_first_TRAIN_candidates_v1'if scene_first else'scene_balanced_visible_anchor_candidates_v1',prompt_profile=report['prompt_profile'],
         candidate_manifest_sha256=sha(output/'candidates.json'),plan_sha256=report['request_sha256'],pilot_only=pilot,counts=dict(Counter(r['split']for r in rows)),
         resolution=512,new_generated=generated,reused_reviewed=reused,reused_prior_candidates=prior_count,teacher_recipe=TEACHER_RECIPE,
         prior_candidate_manifest_sha256=None if reuse_candidates is None else sha(reuse_candidates/'candidates.json'),
@@ -204,12 +235,13 @@ def generate(plan,model_path,metadata,output,pilot,reuse_candidates=None):
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',choices=['prepare','prepare-scene-first','generate'],required=True)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--stage',choices=['prepare','prepare-scene-first','prepare-bedside','generate'],required=True)
     for key in ['data','plan','model-path','metadata','output','reuse-candidates']:p.add_argument('--'+key,type=Path)
     p.add_argument('--pilot',action='store_true');a=p.parse_args()
     if a.output is None or len(os.environ.get('T12_SOURCE_COMMIT',''))!=40:raise ValueError('Published source and explicit output required')
     if a.stage=='prepare':make_plan(a.data,a.output)
     elif a.stage=='prepare-scene-first':prepare_scene_first(a.plan,a.output)
+    elif a.stage=='prepare-bedside':prepare_bedside(a.plan,a.output)
     else:generate(a.plan,a.model_path,a.metadata,a.output,a.pilot,a.reuse_candidates)
 
 

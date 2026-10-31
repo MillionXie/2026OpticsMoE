@@ -45,6 +45,9 @@ best为epoch3，SHA `6e25df674f32ee44869355cd75df7cb4d6eb331fbeb071d8c08d63472e1
 24槽场景提前对照已经实际完成；逐图检查仍有落地灯／主体造型改变和靠垫变椅子，
 不能把简单调换两句顺序当作全局修复。新`scene_instruction_native_prior`再对同24条TRAIN请求，
 以未装旧任务LoRA的冻结原生SDXL＋IP30步检查生成先验，完整保留结果；不冒称Qwen结果或新的教师已合格。
+下一项小对照仅针对桌灯／床场景的支持关系：保留两句，将普通table改为bedside table，
+同4TRAIN灯／同两个source种子共8槽，`two_sentence_explicit_bedside_anchor_v7`，不新增颜色／照明方向／参考图说明。
+这是明确新关系的真实生图验证，不把旧床图直接重命名为新要求已通过；效果仍须逐张核实，不能预称修复。
 当前对照页`scene_instruction_repair_delivery_20261031/index.html`完整列出203配对及全部48请求的
 旧Qwen／193条重训Qwen／旧原生SDXL共144输出和逐图可见实体诊断；不是合格宣告或新TEST成绩。
 此处不选DEV生成得好的参考、不打开独立TEST、不新增Qwen推理分支；当前LG训练仍暂停。

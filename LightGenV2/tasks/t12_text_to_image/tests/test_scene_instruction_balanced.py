@@ -4,10 +4,14 @@ import json
 import unittest
 from PIL import Image
 from ..scene_instruction_data import sha,write,PROFILE
-from ..scene_instruction_balanced import make_plan,choose_sources,checked_prior_candidates,TEACHER_RECIPE,scene_first_condition
+from ..scene_instruction_balanced import make_plan,choose_sources,checked_prior_candidates,TEACHER_RECIPE,scene_first_condition,bedside_condition
 
 
 class BalancedCounterfactuals(unittest.TestCase):
+    def test_explicit_bedside_support_is_short_and_has_no_reference_directions(self):
+        row=bedside_condition();self.assertEqual(row['prompt'].count('.'),2)
+        self.assertLessEqual(len(row['prompt'].split()),24);self.assertIn('bedside table',row['prompt'])
+        self.assertNotIn('reference',row['prompt']);self.assertIn('visible bed beside the table',row['required_visible_facts'])
     def test_scene_first_keeps_entities_two_sentences_without_reference_directions(self):
         for category,codes in [('lamp','BDW'),('pillow','SAD')]:
             for code in codes:
