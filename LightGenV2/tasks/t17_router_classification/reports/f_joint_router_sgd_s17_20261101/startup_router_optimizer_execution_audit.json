@@ -1,0 +1,28 @@
+{
+  "snapshot_only": true,
+  "source_commit": "cfc3baaede563d77e8501202242f53408626daf4",
+  "actual_completed_epoch_records": 1,
+  "epoch_record_pending": false,
+  "rows": [
+    {
+      "epoch": 1,
+      "router_optimizer": {
+        "rule": "normalized_angle_sgd",
+        "step_calls": 126,
+        "maximum_requested_angle_step": 0.0003,
+        "router_Adam_moments_absent": true
+      },
+      "projection": {
+        "coordinate": "physical router phase",
+        "batches": 126,
+        "projected_batches": 65,
+        "task_gradient_evaluations": 252,
+        "mean_cosine_before": -0.005900154317825056,
+        "min_cosine_before": -0.9666075382301729,
+        "TEST_ground_truth_received": false,
+        "TRAIN_batches": 94,
+        "TEST_soft_batches": 32
+      }
+    }
+  ]
+}

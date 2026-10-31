@@ -1,5 +1,5 @@
 {
-  "generated_UTC": "2026-10-31T17:22:08.806040+00:00",
+  "generated_UTC": "2026-10-31T17:33:47.067841+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "protocol": "one joint LG two outputs plus two finalized source-only D2NN four outputs",
   "records": {
@@ -7403,5 +7403,16 @@
     "VAL_TEST_statistics_used": false,
     "limitations": "Fresh Adam states and code0 only; not the running optimizer momentum, all8 D4 or TEST-soft objective. No classification or optimizer convergence claim."
   },
-  "development_selection_policy": "Within each run: worst-domain VAL, then macro recall/CE. Across audited PTs: worst-domain original-TEST development accuracy, then mean, with original-parent worst-domain VAL floor; select a whole PT row. Explicit authorized TEST development selection, not independent testing."
+  "development_selection_policy": "Within each run: worst-domain VAL, then macro recall/CE. Across audited PTs: worst-domain original-TEST development accuracy, then mean, with original-parent worst-domain VAL floor; select a whole PT row. Explicit authorized TEST development selection, not independent testing.",
+  "router_angle_sgd_candidate": {
+    "status": {
+      "state": "training",
+      "epoch": 1,
+      "total_epochs": 30,
+      "selected_epoch": 0,
+      "pid": 2260225
+    },
+    "result": null,
+    "fully_collected_local_SHA_verified": false
+  }
 }

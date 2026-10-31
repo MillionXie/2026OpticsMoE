@@ -26,8 +26,11 @@ def main():
     if projection_result and (projection/'best_checkpoint.pt').exists():
         projection_verified=hashlib.sha256((projection/'best_checkpoint.pt').read_bytes()).hexdigest()==projection_result['checkpoint_sha256'] and (task/'reports/f_joint_router_projection_s17_20261101/model_audit.json').exists() and (task/'reports/f_joint_router_projection_s17_20261101/completed_transfer.json').exists()
         if projection_verified:selected=projection_result;path=projection
+    sgd=task/'runs/simulation/f_joint_router_sgd_s17_20261101/joint';sgd_result=read(sgd/'result.json');sgd_status=read(sgd/'status.json');sgd_verified=False
+    if sgd_result and (sgd/'best_checkpoint.pt').exists():
+        sgd_verified=hashlib.sha256((sgd/'best_checkpoint.pt').read_bytes()).hexdigest()==sgd_result['checkpoint_sha256'] and (task/'reports/f_joint_router_sgd_s17_20261101/model_audit.json').exists() and (task/'reports/f_joint_router_sgd_s17_20261101/completed_transfer.json').exists()
     choices=[('Original joint parent',reference,parent)]
-    for name,value,location,checked in [('Dual teacher',result,candidate,verified),('Surrogate backward',ste_result,ste,ste_verified),('Router projection',projection_result,projection,projection_verified)]:
+    for name,value,location,checked in [('Dual teacher',result,candidate,verified),('Surrogate backward',ste_result,ste,ste_verified),('Router projection',projection_result,projection,projection_verified),('Router angle SGD',sgd_result,sgd,sgd_verified)]:
         if checked:choices.append((name,value,location))
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
     eligible=[item for item in choices if min(v['accuracy'] for v in item[1]['val']['domains'].values())>=val_floor]
@@ -41,7 +44,7 @@ def main():
         rows.append('<tr>'+''.join(f'<td>{html.escape(str(v))}</td>' for v in [architecture,source,pct(r['train']['accuracy']),pct(r['val']['accuracy']),pct(r['original_test_dev']['domains']['RGB']['accuracy']),pct(r['original_test_dev']['domains']['SAR']['accuracy'])])+'</tr>')
     target=all(selected['original_test_dev']['domains'][d]['accuracy']>=.70 for d in ('RGB','SAR'))
     note='联合双教师候选尚未完成：主表显示保留的联合父，不能把中途VAL当TEST。' if not verified else '联合双教师候选已完成并核验；较新的训练梯度候选须完整归档核验后才替换。整行来自同一联合PT。'
-    display_status=projection_status or ste_status or status
+    display_status=sgd_status or projection_status or ste_status or status
     progress=' / '.join([display_status.get('state','尚未启动'),str(display_status.get('epoch',display_status.get('completed_epochs',0)))+'轮']) if display_status else '尚未抓取运行状态'
     page='''<!doctype html><html lang="zh"><meta charset="utf-8"><title>图F联合LG与定稿D2NN</title><style>body{font:16px/1.7 sans-serif;max-width:1100px;margin:32px auto;padding:0 18px}table{border-collapse:collapse;width:100%}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.note{background:#fff0cf;padding:14px}</style><h1>图F：联合LG两个主结果＋定稿D2NN四格</h1><p class="note">ORIGINAL_TEST_EXPOSED_DEVELOPMENT。原TEST已用于教师及LG软目标训练，不是独立测试或等训练预算结构优势。seed17，无多种子标准差。LG两个域必须使用同一份权重；D2NN四格已定稿。</p>'''
     page+='<p>'+note+'</p><table><tr><th>模型</th><th>训练域</th><th>原TRAIN</th><th>VAL</th><th>开发RGB</th><th>开发SAR</th></tr>'+''.join(rows)+'</table>'
@@ -71,9 +74,14 @@ def main():
     paired_probe=read(task/'reports/f_joint_router_projection_s17_20261101/TRAIN_paired_router_step_diagnosis.json')
     if paired_probe:
         page=page.replace('</html>','<p>另做了固定父权重、固定head与相同完整TRAIN/code0的三次非持久router单步数值检查，原参数全部恢复；只有训练目标，没有VAL/TEST或新准确率。检查说明物理梯度投影的几何性质不自动延续到Adam实际步。运行中的配置未据此热改，详见<a href="../f_joint_router_projection_s17_20261101/TRAIN_paired_router_step_diagnosis.json">配对数值记录</a>；任何后续优化仍须有限预算、测试和准入。</p></html>')
+    if sgd_status:
+        page=page.replace('当前没有自己的训练。','旧训练均已结束，新的角度SGD候选状态见下节。')
+        text=f"{sgd_status.get('state')}, epoch {sgd_status.get('epoch',sgd_status.get('completed_epochs',0))}"
+        page=page.replace('</html>','<h2>方向保留的router角度SGD</h2><p>f_joint_router_sgd_s17_20261101：'+html.escape(text)+'。194项CPU回归、精确124父真实TRAIN/TEST软输入GPU准入通过并启动。全phase仍先统一物理梯度clip5，E/G走原Adam；router沿投影方向作最大请求角度.0003的归一SGD，无router Adam动量，再导回同一canonical raw。真实GPU角度步方向余弦约0.99999987、max约.00029999；推理、GT隔离及头block冻结通过。最多30/min15/pat10，原父参选，不保证实际两域准确率改善；未完整核验前不替换主表。</p></html>')
     data=dict(generated_UTC=datetime.now(timezone.utc).isoformat(),role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',protocol='one joint LG two outputs plus two finalized source-only D2NN four outputs',records=records,selected_joint_run=str(path.relative_to(task)),candidate_status=status,candidate_result=result,candidate_local_SHA_verified=verified,parent_result=reference,target_both_domains_at_least_70_percent=target,latest_history=history[-1] if history else None,route_STE_candidate=dict(status=ste_status,result=ste_result,fully_collected_local_SHA_verified=ste_verified),router_projection_candidate=dict(status=projection_status,result=projection_result,fully_collected_local_SHA_verified=projection_verified))
     if paired_probe:data['TRAIN_only_nonpersistent_router_step_probe']=paired_probe
     data['development_selection_policy']='Within each run: worst-domain VAL, then macro recall/CE. Across audited PTs: worst-domain original-TEST development accuracy, then mean, with original-parent worst-domain VAL floor; select a whole PT row. Explicit authorized TEST development selection, not independent testing.'
+    data['router_angle_sgd_candidate']=dict(status=sgd_status,result=sgd_result,fully_collected_local_SHA_verified=sgd_verified)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 

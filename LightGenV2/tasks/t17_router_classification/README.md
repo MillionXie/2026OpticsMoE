@@ -3,7 +3,7 @@
 根据固定124父同完整TRAIN配对数值探针，实现WrappedPhaseAdam可选router_step_rule=normalized_angle_sgd；默认adam路径保持兼容，模型和推理state不变。
 仍先将所有phase转物理角度、graw除Jacobian并统一clip5；随后暂不让router参与Adam，由原角度沿clip后的投影方向归一化一步（最大请求角度为该组lr .0003），E/G仍原Adam，再统一规范导回raw。router无Adam动量，零router梯度保持raw bitwise。
 f_joint_router_sgd_s17_20261101从开发保留父124开始，原冲突投影/STE硬前向/两教师/KD/D4/原TEST只soft/64000头块/min域VAL选模都保持；max30/min15/pat10，不扫学习率/不延长。角度SGD的局部方向性质不保证整体训练两域下降或70%。
-目前仅实现/配置，尚未启动；需CPU默认兼容/坐标方向/周期/zero/失败恢复和真实父GPU前向/梯度/更新/GT隔离/无router动量/头block冻结准入，发布Git后再跑。
+194项CPU默认兼容/方向/周期/zero/失败恢复检查通过，精确124父真实TRAIN/TEST软输入GPU准入通过，sourcecfc3baaede563d77e8501202242f53408626daf4已发布GitHub/服务器路径SHA。真实GPUrouter角度步max.0002999945，实际步与投影下降方向cos.999999873、无router Adam动量，非router混合损失梯度bitwise一致、原forward bitwise/strict4state487204/单Linear/noCNN/TEST软无硬标签和头block相位冻结/完整父VAL重放通过。worker2260225已在A100实际启动，root f_joint_router_sgd_s17_20261101/joint，非计划，不重复启动或热改cfg/入口；不把准入当准确率改善。
 
 ## F冲突投影候选完整失败归档，保留63.20/48.30父（2026-11-01）
 
