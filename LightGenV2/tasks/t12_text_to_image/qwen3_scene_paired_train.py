@@ -333,7 +333,7 @@ def fit(a, payload):
     if a.config_profile.get('balance_TRAIN_reference_condition_groups',False):
         from .scene_instruction_balanced_data import reference_condition_weights
         group_weights=reference_condition_weights(train)
-    dev = [r for r in payload['records'] if r['split'] == 'dev' and r['condition_id'] in ['0', '1']]
+    dev = [r for r in payload['records'] if r['split'] == 'dev' and (a.config_profile.get('use_all_reviewed_DEV_labels',False)or r['condition_id'] in ['0', '1'])]
     assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
     cache_digest = digest(a.cache/'paired_cache.pt')
     history = []; rng = random.Random(20261029)

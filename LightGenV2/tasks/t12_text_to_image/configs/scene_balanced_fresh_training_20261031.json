@@ -21,6 +21,7 @@
   "TEST_used_for_training_or_selection": false,
   "joint_image_context": false,
   "balance_TRAIN_reference_condition_groups": true,
+  "use_all_reviewed_DEV_labels": true,
   "fresh_original_alignment_sha256": "b3f1abd51c54ad63b112b11e5322a9959a8c7b05f3476833c1e7580fd6a029eb",
   "initialization_protocol": "original pretrained SDXL plus fresh zero-output rank4 LoRA; Qwen head from original condition alignment, then TRAIN-only warmup; no prior paired UNet LoRA"
 }
