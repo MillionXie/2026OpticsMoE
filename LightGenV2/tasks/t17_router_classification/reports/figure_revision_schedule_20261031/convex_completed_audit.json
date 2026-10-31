@@ -1,0 +1,110 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "job": "f_lg_convex",
+      "passed": true,
+      "all_optical_phase_tensors_bitwise_parent": true,
+      "exactly_one_Linear_no_CNN": true,
+      "total_parameters": 487204,
+      "checkpoint_sha256": "10feed1a3519fe659f11f54e5507cd8a6cf8a040768c270599f1c0dbd9662d47",
+      "splits": {
+        "train": {
+          "n": 6000,
+          "correct": 3013,
+          "accuracy": 0.5021666666666667,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "val": {
+          "n": 2000,
+          "correct": 852,
+          "accuracy": 0.426,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "test": {
+          "n": 2000,
+          "correct": 848,
+          "accuracy": 0.424,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        }
+      },
+      "full_canonical_TEST_replay": {
+        "predictions_identical": true,
+        "max_probability_difference": 2.1457672119140625e-06
+      }
+    },
+    {
+      "job": "b_lg4_convex",
+      "passed": true,
+      "all_optical_phase_tensors_bitwise_parent": true,
+      "exactly_one_Linear_no_CNN": true,
+      "total_parameters": 914824,
+      "checkpoint_sha256": "74a5146bc60cecc9352053774d34d46898e1da1783a5f757b37074aa547288b5",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3047,
+          "accuracy": 0.8715675057208238,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "val": {
+          "n": 752,
+          "correct": 566,
+          "accuracy": 0.7526595744680851,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "test": {
+          "n": 752,
+          "correct": 628,
+          "accuracy": 0.8351063829787234,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        }
+      },
+      "full_canonical_TEST_replay": {
+        "predictions_identical": true,
+        "max_probability_difference": 3.6954879760742188e-06
+      }
+    },
+    {
+      "job": "b_lg6_convex",
+      "passed": true,
+      "all_optical_phase_tensors_bitwise_parent": true,
+      "exactly_one_Linear_no_CNN": true,
+      "total_parameters": 1344012,
+      "checkpoint_sha256": "42d9c7cca9ef11bf8f2b5a8e5c38e408a2a26de4f0a0beb0f5ad1ad18c0226ba",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3049,
+          "accuracy": 0.8721395881006865,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "val": {
+          "n": 752,
+          "correct": 566,
+          "accuracy": 0.7526595744680851,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "test": {
+          "n": 752,
+          "correct": 633,
+          "accuracy": 0.8417553191489362,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        }
+      },
+      "full_canonical_TEST_replay": {
+        "predictions_identical": true,
+        "max_probability_difference": 2.562999725341797e-06
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "status": "COMPLETED_AND_SHA_STRICT_AUDITED",
+  "B4_goal": true,
+  "B6_goal": false,
+  "selected_B4_correct": 628,
+  "selected_B6_correct": 633,
+  "total": 752,
+  "frozen_optical_phases": true,
+  "new_inference_parameters": false,
+  "solver_budget_inner_steps": 150,
+  "TRAIN_only": true,
+  "VAL_selection": true,
+  "all_scores_development": true,
+  "nonzero_final_gradients_preclude_global_optimum_claim": true,
+  "next_hypothesis": {
+    "status": "NOT_IMPLEMENTED_NOT_STARTED",
+    "method": "Use TRAIN uncentred feature Gram plus small numeric ridge as invertible Linear weight coordinate preconditioner; same original parents and same anchor penalty objective. Export to original one Linear before every validation, no whitening module in inference.",
+    "reason": "Bounded LBFGS still has nonzero original-coordinate gradients; separate numerical conditioning from representational capacity."
+  }
+}

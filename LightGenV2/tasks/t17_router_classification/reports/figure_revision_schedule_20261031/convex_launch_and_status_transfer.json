@@ -1,0 +1,119 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/launch.json",
+      "sha256": "03490980bff45cb6fa785c3d7dafdc923c259345b0892e6617ca7209fc4750ee",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/launch_context.json",
+      "sha256": "a588dbab87790e9e48d9df5869d9342742aa0d444ed34823050cdcff72812f06",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/status.json",
+      "sha256": "5abd4226318fbfcd573ecada686cf198fbb8025415796f9e34a97ef3a2e95ecb",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/exit_receipt.json",
+      "sha256": "e97334041c4808da481833e2e71b9a3c44c71f51e9952f19541e64261d1312dd",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/figure_convex_admission_s17_20261031/admission.json",
+      "sha256": "7b6a772822a9317c6acaf9f4811a043eb263e35925cf8b852e64e5fb5b61e1bc",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/f_lg_convex/metadata.json",
+      "sha256": "1fb249695a2f4cfa6cdd7d5b67620af315d0d8382cbbf7078a16dd341ec385bf",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/f_lg_convex/status.json",
+      "sha256": "c9c9633367870d58adb9f9d445dd609698bf6a2838932ca0b752d3f5ded0334e",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/f_lg_convex/history.json",
+      "sha256": "653619bdb5bf3d1cce8f2068849c8e3e237d1f63dc2b16e845d7e4e712b670af",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/f_lg_convex/result.json",
+      "sha256": "f4e16c98fc0794970a6a370f944cbd9be6675c17744b42881a81b964b6ded813",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/f_lg_convex/cache_manifest.json",
+      "sha256": "4e9c362cd1578f3a3dde10d1a95b39c3dd1e42642713a0c64d1323304830d5f3",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/f_lg_convex/selection_lock.json",
+      "sha256": "7ba4e7553ce31f030372f4bb6fedb0ad3a197f3a1b5dc6f9b93fa089fcf50819",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex/metadata.json",
+      "sha256": "2750117e30f5f838eeab2b1c4e23d799fc0b0c2ac80a6dab84ad1bb8d5a97b7d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex/status.json",
+      "sha256": "bc837b86ba1cb43acc63534c555b8cad58eb518ccc7f8eeb75bb58bcf67a3256",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex/history.json",
+      "sha256": "aad82fa2afafe90972d72b89e719e1891e76576ac5f49a47da9460f524735796",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex/result.json",
+      "sha256": "4f45d9ce9bfd739232fecf6a2e85bfb95e039bebc1bb9a88720bc2787470b82c",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex/cache_manifest.json",
+      "sha256": "e9454a035083b0a145f483b3c23e0c0e1b0ca2f287df342cd87e21c8a3fd1c93",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg4_convex/selection_lock.json",
+      "sha256": "612f9ceb7b4228c8d3241fcf340dd798fd0b5b880fd65e67556b5579c82dd9ff",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex/metadata.json",
+      "sha256": "971894bd8634db1a7fe2b91cc85965bfd99247c5105ec220660a4a1be70bb65a",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex/status.json",
+      "sha256": "daee578b0f4886233393a95bdca02ea7b07f03e0994bdae34fd1caebdc2bbd6d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex/history.json",
+      "sha256": "773cd0d008a1bd416a14f2497cbcef2296f8fcca79484b67fc4cc77e3e3a3d04",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex/result.json",
+      "sha256": "dea68e1b583205d3c6c0877688900edfb4b6e6f5e4dd644e0567f44859a8eaf1",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex/cache_manifest.json",
+      "sha256": "6b06a4e8bf2ca85d76d81922c89452618b8bf0cb10f8d79292958e41de527c2e",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex/selection_lock.json",
+      "sha256": "8674dbd201d7fb2d4045a2859dd82701962b420209329a96a33fda2dae09bbad",
+      "snapshot": true
+    }
+  ]
+}
