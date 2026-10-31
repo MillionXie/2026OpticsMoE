@@ -1,0 +1,94 @@
+{
+  "seed": 17,
+  "epochs": 20,
+  "min_epochs": 10,
+  "patience": 10,
+  "batch": 128,
+  "eval_batch": 64,
+  "phase_optimizer": "backtracking",
+  "phase_lr": 0.03,
+  "head_lr": 0.0,
+  "head_weight_decay": 0.0,
+  "label_smoothing": 0.02,
+  "cosine_lr": false,
+  "early_stop": true,
+  "training_temperature": 1.0,
+  "augmentation": "D4",
+  "authorized_gpu_uuids": [
+    "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+  ],
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "profile": "f_backtracking_s17_20261031",
+  "dataset": "eurosat_original_f",
+  "architecture": "LG",
+  "num_classes": 10,
+  "main_layers": 2,
+  "layers": 3,
+  "training_scope": "all_except_router",
+  "data": {
+    "expected_counts": {
+      "train": 6000,
+      "val": 2000,
+      "test": 2000
+    },
+    "original_f_subset_preserved": true,
+    "trainval": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/manifest.json",
+      "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+      "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+    },
+    "holdout": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/manifest.json",
+      "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+      "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60"
+    }
+  },
+  "optical_contract": "Same A/B 4x224 expert, top2 once, E/G main2, global478/canvas518, 17um/532nm/.1m; identical intensity_softsign after every main phase; D3 full478 and same OEO, no Linear",
+  "readout": "LG single Linear784->10; D2NN fixed full-coverage CCD2x5",
+  "classes": [
+    "AnnualCrop",
+    "Forest",
+    "HerbaceousVegetation",
+    "Highway",
+    "Industrial",
+    "Pasture",
+    "PermanentCrop",
+    "Residential",
+    "River",
+    "SeaLake"
+  ],
+  "no_learned_frontend": true,
+  "teacher_used": true,
+  "training_labels": "Original TRAIN true labels and matched D4 teacher logits only; no TEST training; all8 head-block views are augmentations of same6000 original images",
+  "data_license": "Existing original data source metadata MIT; do not label CC BY4.0",
+  "human_A100_authorization_date": "2026-10-31 latest request",
+  "parent_checkpoint": "runs/simulation/f_D4_regularized_s17_20261031/D4/best_checkpoint.pt",
+  "parent_checkpoint_sha256": "1a8355ba76aa712a7dcc0ada7765676579c432f25e0f904025627b49996febea",
+  "alternating_head": {
+    "interval_epochs": 5,
+    "inner_steps": 40,
+    "anchor_strength": 0.001,
+    "training_views": "D4_all8"
+  },
+  "domain_route_aux": 0.0,
+  "domain_supervision": "TRAIN acquisition only: RGB target power [.49,.49,.01,.01], SAR [.01,.01,.49,.49]; inference always model optical Top2",
+  "selection": "VAL macro recall then CE, original parent E0 competes; full TEST evaluated only after checkpoint lock",
+  "teacher": {
+    "checkpoint": "runs/smoke/f_original_teacher_s17_20261031/teacher_checkpoint.pt",
+    "checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+    "original_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+    "weight": 0.25,
+    "temperature": 2.0,
+    "teacher_inference_frontend": false
+  },
+  "phase_update_mode": "full_TRAIN_backtracking",
+  "router_lr_multiplier": 1.0,
+  "optimization_hypothesis": "Fixed input-dependent optical router; full TRAIN paired-view physical phase descent with bounded Armijo backtracking. Reject and restore bitwise if no TRAIN decrease; same head blocks. No validation/test in phase acceptance; no inference change.",
+  "backtracking": {
+    "max_trials": 8,
+    "armijo": 0.0001,
+    "min_decrease": 1e-06
+  }
+}

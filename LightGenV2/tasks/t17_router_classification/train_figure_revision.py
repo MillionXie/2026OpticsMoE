@@ -13,6 +13,7 @@ from torch.nn import functional as F
 from .model_linear_readout import LinearReadoutLG, load_historical_F_phases
 from .model_depth_ccd import DepthD2NN
 from .phase_optimizer import WrappedPhaseAdam
+from .phase_backtracking import CanonicalPhaseBacktracking
 from .gpu_policy import require_authorized_gpu
 from .readout_data import load_raw
 from .figure_revision_data import load_panel_f
@@ -33,7 +34,7 @@ def build_model(cfg):
 
 def configure_parameters(model,cfg):
     scope=cfg.get('training_scope','all')
-    if scope not in ('all','last_pair_and_head','last_pair_fixed_head','all_optics_fixed_head'):raise ValueError('Unknown training scope')
+    if scope not in ('all','last_pair_and_head','last_pair_fixed_head','all_optics_fixed_head','all_except_router'):raise ValueError('Unknown training scope')
     if scope in ('last_pair_and_head','last_pair_fixed_head'):
         if cfg['architecture']!='LG' or cfg['main_layers'] not in (4,6):raise ValueError('Last pair scope requires deep LG')
         last=cfg['main_layers']//2-2
@@ -43,6 +44,9 @@ def configure_parameters(model,cfg):
     elif scope=='all_optics_fixed_head':
         if cfg['architecture']!='LG':raise ValueError('Fixed head scope requires LG')
         for name,p in model.named_parameters():p.requires_grad_(name!='shared_head.weight')
+    elif scope=='all_except_router':
+        if cfg['architecture']!='LG':raise ValueError('Fixed router scope requires LG')
+        for name,p in model.named_parameters():p.requires_grad_(name!='router_phase')
     else:
         for p in model.parameters():p.requires_grad_(True)
     phases=[p for n,p in model.named_parameters() if p.requires_grad and n!='shared_head.weight']
@@ -112,6 +116,7 @@ def main():
     paths=[Path(__file__),task/'alternating_readout.py',task/'train_convex_readout.py',task/'model_linear_readout.py',task/'model_depth_ccd.py',task/'model_four.py',task/'model_linear_ccd.py',task/'gpu_policy.py',task/'figure_revision_data.py',task/'phase_optimizer.py',task/'readout_data.py',task.parents[1]/'demo_check/pure_optical/models.py',task.parents[1]/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
     paths.extend([task/'original_f_teacher.py',task.parents[1]/'demo_check/frozen_electronic/model.py'])
     paths.append(task/'phase_training.py')
+    paths.append(task/'phase_backtracking.py')
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=True,teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -154,12 +159,12 @@ def main():
             anchor=model.shared_head.weight.detach().clone();metadata['head_bootstrap_phases_bitwise_frozen']=True
             del bootstrap_features,before
             write(args.out/'metadata.json',metadata)
-        aggregate=phase_update_mode(cfg)=='full_TRAIN'
-        metadata['phase_update_mode']='full_TRAIN' if aggregate else 'mini_batch'
+        update_mode=phase_update_mode(cfg);aggregate=update_mode!='mini_batch';backtracking=update_mode=='full_TRAIN_backtracking'
+        metadata['phase_update_mode']=update_mode
         metadata['head_update_mode']='bounded block only, no minibatch head optimizer' if aggregate else 'minibatch optimizer plus optional bounded block'
         write(args.out/'metadata.json',metadata)
         groups=phase_parameter_groups(model,phases,cfg)
-        phase_opt=WrappedPhaseAdam(groups,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(groups,lr=cfg['phase_lr'])
+        phase_opt=CanonicalPhaseBacktracking(groups,cfg['phase_lr'],**cfg['backtracking']) if backtracking else WrappedPhaseAdam(groups,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(groups,lr=cfg['phase_lr'])
         head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads and not aggregate else None
         val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val);stale=0;history=[]
         if parent is not None and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
@@ -195,7 +200,22 @@ def main():
                 if not aggregate:phase_opt.step()
                 if head_opt:head_opt.step()
                 loss_sum+=float(loss.detach())*len(idx)
-            if aggregate:phase_opt.step()
+            step_record=None
+            if backtracking:
+                # Same fixed TRAIN order, D4 codes, teacher and head as the
+                # gradient pass; validation and test never enter acceptance.
+                @torch.no_grad()
+                def paired_TRAIN_objective():
+                    total=0.
+                    for start in range(0,len(order),cfg['batch']):
+                        idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(codes[start:start+cfg['batch']],device='cuda')
+                        output=model(augment_packed(x['train'][idx],code))
+                        value=anchored_classification(output['raw_logits'],y['train'][idx],model.shared_head.weight,anchor,block['anchor_strength'],cfg['label_smoothing'])
+                        if teacher_cfg:value=value+teacher_cfg['weight']*teacher_KL(output['raw_logits'],teacher_targets[idx,teacher_view_indices(code,cfg['augmentation'])],teacher_cfg['temperature'])
+                        total+=float(value)*len(idx)
+                    return total/len(order)
+                step_record=phase_opt.step(paired_TRAIN_objective,baseline_loss=loss_sum/len(order))
+            elif aggregate:phase_opt.step()
             block_record=None
             if block and epoch%block['interval_epochs']==0:
                 model.eval();features=[]
@@ -216,7 +236,10 @@ def main():
             if improved:
                 selected=epoch;best=metric_key(val);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
-            row['phase_optimizer_steps']=1 if aggregate else (len(order)+cfg['batch']-1)//cfg['batch']
+            row['phase_optimizer_steps']=int(step_record['accepted']) if backtracking else 1 if aggregate else (len(order)+cfg['batch']-1)//cfg['batch']
+            if step_record:
+                row['TRAIN_phase_backtracking']=step_record
+                row['TRAIN_forward_trial_view_presentations']=len(order)*step_record['forward_trials']
             row['head_minibatch_optimizer_steps']=0 if aggregate or not head_opt else row['phase_optimizer_steps']
             if block_record:row['TRAIN_head_block']=block_record
             if epoch==1 or epoch%5==0:row['train'],_=evaluate(model,x['train'],y['train'],cfg['eval_batch'],raw['train'].get('domains'))

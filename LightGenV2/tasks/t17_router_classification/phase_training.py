@@ -3,9 +3,11 @@
 
 def phase_update_mode(cfg):
     mode=cfg.get('phase_update_mode','mini_batch')
-    if mode not in ('mini_batch','full_TRAIN'):raise ValueError('Unknown phase update mode')
+    if mode not in ('mini_batch','full_TRAIN','full_TRAIN_backtracking'):raise ValueError('Unknown phase update mode')
     if mode=='full_TRAIN' and (cfg['architecture']!='LG' or cfg['phase_optimizer']!='wrapped' or not cfg.get('alternating_head')):
         raise ValueError('Full TRAIN phase accumulation requires wrapped LG and explicit head blocks')
+    if mode=='full_TRAIN_backtracking' and (cfg['architecture']!='LG' or cfg['phase_optimizer']!='backtracking' or not cfg.get('alternating_head') or cfg.get('training_scope')!='all_except_router' or cfg.get('domain_route_aux',0)):
+        raise ValueError('Backtracking requires LG, fixed router, explicit head blocks and no routing auxiliary')
     return mode
 
 
