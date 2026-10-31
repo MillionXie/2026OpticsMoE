@@ -2,6 +2,14 @@
 
 ### 2026-10-31 当前优先：修正指令与训练目标不一致
 
+当前R2为`scene_visible_anchor_balanced_R2_reviewed_pairs_20261031`：208 TRAIN＋9 DEV标签，
+pair SHA `536dac05bb15d7226ad79e7573c886f1af39982c75d9beaa7197b3102f1d3970`。
+全40个原TRAIN扶手椅目标已按原尺寸检查；排除1个无扶手／3个无法确认扶手，再以3张新生成且有明确扶手的目标补换。
+44款TRAIN／132组全部覆盖，原全16个DEV视图／48请求及其SHA `c55082b24e479d80f57c0bb8894c150ffd6a193fee3ed8e4020b297439c7930f` 不变。
+新R2完整Qwen／原生生成器流程`scene_visible_anchor_balanced_R2_fresh_baselines_workflow_20261031`已实际启动，
+执行pin `dba3f43f595f0c02c2bdc50430c8d6b69002c68d`，仍从原始底座＋原条件对齐头开始，不继承中断的R1 LoRA。
+R2标签复核不等于模型已遵从；两个模型仍须各完整raw48实际验收，LG继续暂停。
+
 **R1准入已撤回**：原尺寸终检发现无扶手椅被写成armchair；随后全40个TRAIN扶手椅目标复核，
 另3项无法确认扶手而排除。保留原数据／审核／best/last和撤回前记录，不覆盖历史身份。
 仅停止本线程正在训练的PID1435894（epoch3/update520），原父流程已退出并确认自身GPU释放，
@@ -9,7 +17,7 @@
 外置SHA撤回登记阻止旧R1再进入新训练／新正式渲染；补图与更正将使用新R2路径及新SHA。
 下段209＋9及启动记录是R1历史，不得当当前最终数据／baseline通过；新版本仍须全48实际生成验收。
 
-当前新数据已实际完成准入：`scene_visible_anchor_balanced_reviewed_pairs_20261031`，209 TRAIN＋9 DEV标签，
+【R1历史，已撤回】原数据`scene_visible_anchor_balanced_reviewed_pairs_20261031`，209 TRAIN＋9 DEV标签，
 44款TRAIN商品／44个白底视图，每个相同RGB有三种主要场景，132组全部有经审核目标；不复制GT冒充独立数据。
 pair SHA `c26c529af4255b5c75b2b3be6d9c58d11d1bef25477a7b85486321e522c997bb`，
 固定全16个DEV视图／48请求 SHA `c55082b24e479d80f57c0bb8894c150ffd6a193fee3ed8e4020b297439c7930f`。
