@@ -1,0 +1,58 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/best_checkpoint.pt",
+      "size": 3651028,
+      "sha256": "fda3300f3a4cfad05588f9fce5df65ea0413724bc73d223bf2b2ad421676326d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/history.json",
+      "size": 59065,
+      "sha256": "84de52d29486fede17464da2bd2b6729178c630acae186aa8c5f6719c2d75e97"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/last_checkpoint.pt",
+      "size": 10521355,
+      "sha256": "ac1f343d262402f5095d4201d0154fdda8a4da02245a7dd41483720adfc4c173"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/metadata.json",
+      "size": 15446,
+      "sha256": "ddc5e5d4ca7a81838fa5c1380273643b8a0d7d0004e484d76067de824d6a6857"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/result.json",
+      "size": 7283,
+      "sha256": "122b1c880408f34e8f7aaca1daa113e3f00ab00d81fc72c2a593b4a020a748ee"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/selection_lock.json",
+      "size": 169,
+      "sha256": "f489377d1afe40b367f99d13831c93a578a7c862e3476d467bbbffdf5442eddb"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/status.json",
+      "size": 7324,
+      "sha256": "63b9cc05c3ab46db65f58270277690de3b8f644ae79fea19fb8a1cb195d7c045"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/test_predictions.npz",
+      "size": 41905,
+      "sha256": "409530e8d9e883dfad7cb0e8ae0d6d52b5502889b824b820680d639535575884"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/train_predictions.npz",
+      "size": 186478,
+      "sha256": "8d21508637a91a498c25b63e98ca51e3a7e728da27241f1bba4163db31a4f33a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/val_predictions.npz",
+      "size": 41928,
+      "sha256": "dcaaed7dd52b99fdc306a89c07739f106814928cb2bc4c87c2f8e2154e1c7c35"
+    }
+  ]
+}

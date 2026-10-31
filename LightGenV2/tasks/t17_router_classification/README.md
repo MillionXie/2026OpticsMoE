@@ -82,7 +82,10 @@ LG6是否另行优化等D7完整结果后再按实际差值决定。
 LG4的精确父冻结对照已实际启动worker1502137，run panel_b_lg4_refine_s17_20261031/lg4，
 启动源码1864baeb3；frozen_router_control后顺序last_pair_only，各最多40轮且父参选。
 LG6因TRAIN后期上升、VAL未超过E72，也准备同一有限冻结比较profile panel_b_lg6_refine_s17.json；
-必须精确LG6父实际TRAIN准入后启动，当前不将准备当作已提升。LG2仍固定，D2NN三组不再续训。
+LG6的精确父实际TRAIN八类GPU前后向/更新及冻结逐元素准入已通过，实际worker1508458已启动读取，
+run panel_b_lg6_refine_s17_20261031/lg6，来源96069b0e5，不将启动当作已提升。LG2仍固定，D2NN三组不再续训。
+LG4冻结router控制已20轮平台停，选E2：TRAIN80.38%、VAL70.21%、原TEST开发77.39%，比父仅+0.66pp，
+其best/last和逐样本输出已完整SHA核验，仍未达到目标；共享worker继续last_pair_only，不能称整个微调已结束。
 新refine结果另存，首轮六点表不覆盖；全部为原TEST暴露开发结果。
 
 ## 图b后续有限优化准入（2026-10-31 16:46）

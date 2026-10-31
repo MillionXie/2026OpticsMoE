@@ -1,0 +1,15 @@
+{
+  "initial_training_pids": [
+    1404559,
+    1404560,
+    1427941,
+    1427971,
+    1445950,
+    1427941
+  ],
+  "no_initial_PID_has_GPU_allocation": true,
+  "active_new_refinement_pids": [
+    1502137
+  ],
+  "observed_time": 1793436669.0850773
+}

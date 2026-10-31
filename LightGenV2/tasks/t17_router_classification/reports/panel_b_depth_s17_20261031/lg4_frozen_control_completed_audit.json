@@ -1,0 +1,46 @@
+[
+  {
+    "job": "lg4",
+    "strict_state_load": true,
+    "no_Linear_or_Conv": true,
+    "phase_parameters": 908552,
+    "splits": [
+      {
+        "split": "train",
+        "n": 3496,
+        "correct": 2810,
+        "IDs_labels_match_A": true,
+        "route_mean_power": [
+          0.0038299125153571367,
+          0.8597612380981445,
+          0.13640867173671722,
+          0.0
+        ]
+      },
+      {
+        "split": "val",
+        "n": 752,
+        "correct": 528,
+        "IDs_labels_match_A": true,
+        "route_mean_power": [
+          0.004325078334659338,
+          0.8579862713813782,
+          0.13768891990184784,
+          0.0
+        ]
+      },
+      {
+        "split": "test",
+        "n": 752,
+        "correct": 582,
+        "IDs_labels_match_A": true,
+        "route_mean_power": [
+          0.0037323914002627134,
+          0.8620482683181763,
+          0.1342192441225052,
+          0.0
+        ]
+      }
+    ]
+  }
+]

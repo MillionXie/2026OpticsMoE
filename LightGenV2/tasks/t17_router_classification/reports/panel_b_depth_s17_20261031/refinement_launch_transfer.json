@@ -1,0 +1,84 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/launch.json",
+      "sha256": "e18ba35740735fa2b9ee7a953c2169ab841b9c49f4697b201313f52c26e2dbec",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_b_lg4_refine_admission_s17_20261031/admission.json",
+      "sha256": "3f72a20df8ccdaf79066fd1908760e15c3a4c7dded8eb19e0fe68b12e6d8c048",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/metadata.json",
+      "sha256": "8e101c05cbbae66a6a38086394363915d50efaae850971ac60620f28c8c0a462",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/status.json",
+      "sha256": "d5af983fa0234224a01d427a25ccac722c0e84f93acd2518765f910fbb409e1f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/training_membership.json",
+      "sha256": "ed0c6480bb24e18c9635fe3a209351e9117010996d4d8b142aca43dfc4908318",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/metadata.json",
+      "sha256": "ddc5e5d4ca7a81838fa5c1380273643b8a0d7d0004e484d76067de824d6a6857",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/status.json",
+      "sha256": "63b9cc05c3ab46db65f58270277690de3b8f644ae79fea19fb8a1cb195d7c045",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/history.json",
+      "sha256": "84de52d29486fede17464da2bd2b6729178c630acae186aa8c5f6719c2d75e97",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/result.json",
+      "sha256": "122b1c880408f34e8f7aaca1daa113e3f00ab00d81fc72c2a593b4a020a748ee",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/last_pair_only/metadata.json",
+      "sha256": "e04a59f2364fe58bdc0753fdf336a6615d4a062326f9920c490191565a82b549",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/last_pair_only/status.json",
+      "sha256": "014e6afc18dc4c117c37d960a07ad4d49d12c9a1d007f1f7f3bd0521ede02718",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/last_pair_only/history.json",
+      "sha256": "2ba824bf112b44055cb40d55befefd5808d4d8bb309db749917fb7a6178a256e",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/launch.json",
+      "sha256": "68a7ab63536dc10758762de5055db45b3b286d9af3f4d8ab5dc31d98709fcc72",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_b_lg6_refine_admission_s17_20261031/admission.json",
+      "sha256": "8537157e9488120ff7368f0ad845b0f712d00112792ca4f7a458fd3eba6300d1",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/metadata.json",
+      "sha256": "3784c9f73e2331a38de17fd485c5eb2611bbf7e1a6d956ae75783a9681fab778",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/status.json",
+      "sha256": "ec7910336cb48a1240634f51922113a2833d3b5aada2ccbba235bd46a45cb6ad",
+      "snapshot": true
+    }
+  ]
+}
