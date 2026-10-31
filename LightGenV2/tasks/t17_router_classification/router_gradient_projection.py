@@ -6,7 +6,11 @@ from .f_cross_domain import soft_only_source_test_loss
 
 def validate_projection_profile(cfg):
     mode=cfg.get('router_gradient_projection')
-    if mode is None:return
+    rule=cfg.get('router_step_rule','adam')
+    if rule not in ('adam','normalized_angle_sgd'):raise ValueError('Unknown router step rule')
+    if mode is None:
+        if rule!='adam':raise ValueError('Router angle SGD requires explicit projected joint training')
+        return
     if mode!='two_domain_physical' or cfg.get('architecture')!='LG' or cfg.get('main_layers')!=2 or cfg.get('dataset')!='eurosat_original_f' or cfg.get('training_domain') is not None:
         raise ValueError('Router projection requires explicit joint two-layer F LG')
     if cfg.get('phase_optimizer')!='wrapped' or cfg.get('phase_update_mode','mini_batch')!='mini_batch' or cfg.get('training_scope')!='all' or not cfg.get('source_test_distillation') or not cfg.get('alternating_head') or cfg.get('domain_route_aux',0) or cfg.get('semantic_distillation'):

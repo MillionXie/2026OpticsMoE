@@ -215,7 +215,8 @@ def main():
         metadata['head_update_mode']='bounded block only, no minibatch head optimizer' if aggregate else 'minibatch optimizer plus optional bounded block'
         write(args.out/'metadata.json',metadata)
         groups=phase_parameter_groups(model,phases,cfg)
-        phase_opt=CanonicalPhaseBacktracking(groups,cfg['phase_lr'],**cfg['backtracking']) if backtracking else WrappedPhaseAdam(groups,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(groups,lr=cfg['phase_lr'])
+        router_step_rule=cfg.get('router_step_rule','adam')
+        phase_opt=CanonicalPhaseBacktracking(groups,cfg['phase_lr'],**cfg['backtracking']) if backtracking else WrappedPhaseAdam(groups,cfg['phase_lr'],router_parameter=model.router_phase if router_step_rule=='normalized_angle_sgd' else None,router_step_rule=router_step_rule) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(groups,lr=cfg['phase_lr'])
         head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads and not aggregate else None
         val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val,cfg);stale=0;history=[]
         if parent is not None and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
@@ -326,6 +327,7 @@ def main():
                 selected=epoch;best=metric_key(val,cfg);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
             if cfg.get('training_route')=='top2_straight_through':row['route_backward']='dense amplitude surrogate; forward is bitwise hard Top2'
+            if router_step_rule=='normalized_angle_sgd':row['router_optimizer']=dict(rule=router_step_rule,step_calls=row.get('phase_optimizer_steps',0),maximum_requested_angle_step=phase_opt.last_router_step_bound,router_Adam_moments_absent=model.router_phase not in phase_opt.state)
             if projection_records:
                 cosines=[v['cosine_before'] for v in projection_records if v['cosine_before'] is not None]
                 row['router_gradient_projection']=dict(coordinate='physical router phase',batches=len(projection_records),projected_batches=sum(v['projected'] for v in projection_records),task_gradient_evaluations=sum(v['task_gradient_evaluations'] for v in projection_records),mean_cosine_before=float(np.mean(cosines)) if cosines else None,min_cosine_before=min(cosines) if cosines else None,TEST_ground_truth_received=False,TRAIN_batches=sum(v['part']=='TRAIN' for v in projection_records),TEST_soft_batches=sum(v['part']=='TEST_soft' for v in projection_records))
@@ -336,6 +338,7 @@ def main():
             row['head_minibatch_optimizer_steps']=0 if aggregate or not head_opt else row['phase_optimizer_steps']
             if source_test_record:
                 row['SOURCE_TEST_soft_distillation']=source_test_record;row['phase_optimizer_steps']+=source_test_record['phase_updates'];row['head_minibatch_optimizer_steps']+=source_test_record['phase_updates']
+            if router_step_rule=='normalized_angle_sgd':row['router_optimizer']['step_calls']=row['phase_optimizer_steps']
             if semantic:row['training_only_semantic']=dict(weight=semantic['weight'],projection_optimizer_steps=row['phase_optimizer_steps'],extra_training_parameters=200704)
             if block_record:row['TRAIN_head_block']=block_record
             if epoch==1 or epoch%5==0:row['train'],_=evaluate(model,x['train'],y['train'],cfg['eval_batch'],raw['train'].get('domains'))
