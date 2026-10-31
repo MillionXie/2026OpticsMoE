@@ -27,8 +27,17 @@ F9十二步和联合六步，均值分别2873.582／1261.286／707.571ms；联�
 本轮新鲜交错电子时间是主参照，不按快慢在旧2911.797ms与新参照间挑选。
 独立证据`scene_depth_joint6_fresh_packed_timing_evidence_20261031`已重核72张计时PNG身份。
 原仅等待的CPU计时协调器662377在任何GPU阶段前明确退出，保留替换收据；没有停止任何训练。
-`scene_depth_geometry_rollout6_workflow_20261031`已接续启动，按同192 TRAIN分析的新六点
-网格恢复同64块图，末次时间点133→67；现有联合读出冻结，不以网格几何误差下降预称画质改善。
+`scene_depth_geometry_rollout6_workflow_20261031`已完整300步与raw DEV128／384图评分，
+best `77bb3ef7f34bcb8f1a6d07e15627af5fdb0138800c546c87ad6228b81a98327d`。
+同192 TRAIN分析的新六点网格虽使TRAIN终端误差降低，但DEV靠垫IR下降13.032279%，
+超过10%门；16板全128上下文检查仍有灯罩／灯杆消失、发光块和额外模糊，明确否决。
+全图诊断SHA `1e678c20ae5aad2a1bc96c2f0be5603748910383ca1f42149e84e5409116ef2a`；
+全部自身GPU子PID退出，保留失败权重／图／分数，不以更高DINO或更低TRAIN loss替代画质。
+`scene_depth_decoded_rollout6_workflow_20261031`随后实际通过四次全六步反向／合并身份门，
+正以原冻结VAE decoder提供TRAIN多尺度RGB与相对边缘损失，联合恢复现有读出和LoRA200步。
+本轮从较好的联合读出c6权重开始，保留原均匀六步网格，不继承失败的geometry权重。
+没有新增部署模块、VAE encoder、图像回输或采样步数；教师VAE解码确实在GPU执行，
+仅完整电子Qwen／UNet教师前向不重复。训练及后续raw128／评分未完成前不声称改善。
 最终`scene_acceleration_delivery`逐轮核对独立PID、首请求、同权重原图SHA和完整请求边界，
 将五模型全部128组、软件及固定周期计时、人工原图批准状态分列；代理通过不覆盖图像否决。
 `scene_compact_frozen_render`另为合格后冻结的压缩图提供独立TEST入口：先绑定新权重、
@@ -84,7 +93,7 @@ CPU上界工作流释放GPU后，再用已发布入口对同6步图做300步全�
 decoder将同192条电子TRAIN路径终端解码，加入弱多尺度RGB与图像梯度损失；学生的同一
 decoder梯度传回原读出／LoRA及六个内部步。它不读取参考VAE latent、不训练VAE、不新增推理
 分支／网络／参数、不改变采样网格。best只按16个复用TRAIN probe的组合分数选取，
-与独立泛化、最终图像质量分列；该可选接口尚未GPU启动。
+与独立泛化、最终图像质量分列；本轮实际启动状态见上方decoded工作流记录。
 新`scene_compact_latency`分开无插桩完整请求wall与逐kernel计费：后者去除FFT／
 纯电子残差／纯融合，加入固定6光周期，保留其余GPU核及实际CPU预处理／输出。
 这列是两边相同范围的**已知串行工作成本**，未测调度CPU和通信另列未知，不是假定为零；
