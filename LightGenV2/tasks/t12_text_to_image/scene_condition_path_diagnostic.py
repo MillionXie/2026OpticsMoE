@@ -52,11 +52,23 @@ def diagnose(a):
                 chosen=names[min(range(len(names)),key=lambda i:distances[i])];nearest.append(dict(split=split,reference_id=rid,condition_id=row['condition_id'],correct_native_caption=chosen==row['native_caption']))
             rec=dict(split=split,reference_id=rid)
             for field in ['text','pooled']:rec[field]=centered_stats(torch.cat([p[field]for p in predictions]),torch.stack([p[field]for p in targets]))
+            pt=torch.cat([p['text']for p in predictions]);tt=torch.stack([p['text']for p in targets]).float();minimum=min(p['length']for p in targets);maximum=max(p['length']for p in targets)
+            rec['text_shared_active']=centered_stats(pt[:,:minimum],tt[:,:minimum])
+            rec['text_shared_padding']=centered_stats(pt[:,maximum:],tt[:,maximum:])if maximum<77 else None
+            rec['text_active_absolute_relative_MSE']=statistics.mean((p['text'][0,:t['length']]-t['text'][:t['length']].float()).square().mean().item()/max(t['text'].float().square().mean().item(),1e-6)for p,t in zip(predictions,targets))
+            rec['text_padding_absolute_relative_MSE']=statistics.mean((p['text'][0,t['length']:]-t['text'][t['length']:].float()).square().mean().item()/max(t['text'].float().square().mean().item(),1e-6)for p,t in zip(predictions,targets))
+            ref=next(iter(items.values()))['reference_sha256'];im=payload['images'].get(ref)
+            rec['source_image_absolute_relative_MSE']=None if im is None else(predictions[0]['image'][0]-im.float()).square().mean().item()/max(im.float().square().mean().item(),1e-6)
             rec['image_condition_max_change']=max((p['image']-predictions[0]['image']).abs().max().item()for p in predictions);records.append(rec)
     summary={}
     for split in ['train','dev']:
         rr=[r for r in records if r['split']==split];nn=[r for r in nearest if r['split']==split]
         summary[split]=dict(references=len(rr),native_caption_nearest_correct=sum(r['correct_native_caption']for r in nn),native_caption_nearest_total=len(nn),text_variation_ratio_median=statistics.median(r['text']['variation_ratio']for r in rr),pooled_variation_ratio_median=statistics.median(r['pooled']['variation_ratio']for r in rr),text_centered_relative_MSE_median=statistics.median(r['text']['centered_relative_MSE']for r in rr),pooled_centered_relative_MSE_median=statistics.median(r['pooled']['centered_relative_MSE']for r in rr),image_change_max=max(r['image_condition_max_change']for r in rr))
+        for field in ['text_shared_active','text_shared_padding']:
+            summary[split][field+'_centered_relative_MSE_median']=statistics.median(r[field]['centered_relative_MSE']for r in rr if r[field]is not None)
+        for field in ['text_active_absolute_relative_MSE','text_padding_absolute_relative_MSE','source_image_absolute_relative_MSE']:
+            values=[r[field]for r in rr if r[field]is not None];summary[split][field+'_median']=statistics.median(values)if values else None
+        summary[split]['source_image_error_reference_count']=sum(r['source_image_absolute_relative_MSE']is not None for r in rr)
     a.output.mkdir();write(a.output/'reference_triplets.json',records);write(a.output/'nearest_native_caption_diagnostic.json',nearest)
     write(a.output/'report.json',dict(complete=True,source_commit=os.environ.get('T12_SOURCE_COMMIT'),checkpoint_sha256=mr['best_sha256'],cache_sha256=cr['cache_sha256'],pairs_sha256=dr['pairs_sha256'],summary=summary,CPU_only=True,target_pixels_or_latents_used=False,model_parameters_updated=False,TEST_opened=False,feature_distances_are_not_image_adherence_or_quality=True))
     print(json.dumps(summary))
