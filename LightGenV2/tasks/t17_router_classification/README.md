@@ -45,6 +45,17 @@ CPU严格加载908552/685452相位参数，确认无Linear/Conv，全部ID/标�
 收据见reports/panel_b_depth_s17_20261031/first_completed_transfer.json与first_completed_audit.json。
 已建立本聊天后续跟进，健康在训保持静默，重要失败/阶段完成及最终结果通知，结束核自身GPU进程退出。
 
+## 图b D2NN5层完成核验（2026-10-31 16:28）
+
+正式D5完整60轮，VAL选E57：TRAIN77.09%（2695/3496）、VAL69.02%（519/752）、
+原TEST开发67.29%（506/752）；LG4现有76.73%比其高9.44个百分点，尚未达到15个百分点目标。
+D5的12文件27.7MB含best/last及三划分逐样本结果已远程/本地SHA核验；
+CPU严格加载1142420相位参数、无Linear/Conv、三划分ID/标签同图a，详见d5_completed_transfer.json与d5_completed_audit.json。
+D7随后已启动读取，LG6第二阶段继续，先保留当前训练计划不热改配置。
+LG4新的TRAIN/VAL诊断见lg4_TRAIN_VAL_diagnosis.json：前60轮最佳VAL65.29%，后60轮69.81%；
+TRAIN碎屑61.10%和基质64.53%召回低且相互混淆，CCD输出最大类概率均值.167。
+下一步以完整深层结果决定有限微调，不仅为均衡而提高辅助权重，也不将所有问题归为过拟合。
+
 ## 图b层数消融：对齐图a的待重训实现（2026-10-31）
 
 新入口是`model_depth_ccd.DepthLG`与`DepthD2NN`，模型清单在`configs/panel_b_four_depth.json`。
