@@ -1,0 +1,83 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "job": "figure_mature_f_lg_convex_s17_20261031",
+      "passed": true,
+      "total_parameters": 487204,
+      "one_Linear_no_CNN": true,
+      "Linear_and_all_other_frozen_tensors_bitwise_parent": true,
+      "changed_tensors": {
+        "first_phase": true,
+        "global_phase": true,
+        "router_phase": true,
+        "shared_head.weight": false
+      },
+      "checkpoint_sha256": "864389c97d0f9ea4a9d6f613707a65c8300e98f4b46fa9333b45d45c8a81bcca",
+      "splits": {
+        "train": {
+          "n": 6000,
+          "correct": 3387,
+          "accuracy": 0.5645,
+          "all_IDs_labels_match_parent": true,
+          "true_Top2": true
+        },
+        "val": {
+          "n": 2000,
+          "correct": 905,
+          "accuracy": 0.4525,
+          "all_IDs_labels_match_parent": true,
+          "true_Top2": true
+        },
+        "test": {
+          "n": 2000,
+          "correct": 918,
+          "accuracy": 0.459,
+          "all_IDs_labels_match_parent": true,
+          "true_Top2": true
+        }
+      }
+    },
+    {
+      "job": "figure_mature_b_lg6_convex_s17_20261031",
+      "passed": true,
+      "total_parameters": 1344012,
+      "one_Linear_no_CNN": true,
+      "Linear_and_all_other_frozen_tensors_bitwise_parent": true,
+      "changed_tensors": {
+        "first_phase": false,
+        "global_phase": false,
+        "router_phase": false,
+        "extra_expert_phases.0": false,
+        "extra_expert_phases.1": true,
+        "extra_global_phases.0": false,
+        "extra_global_phases.1": true,
+        "shared_head.weight": false
+      },
+      "checkpoint_sha256": "6e90debb34818d3e9b8290a50f7c28cacf68b6fba50d300e8e0f6487ad4b451c",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3201,
+          "accuracy": 0.9156178489702517,
+          "all_IDs_labels_match_parent": true,
+          "true_Top2": true
+        },
+        "val": {
+          "n": 752,
+          "correct": 566,
+          "accuracy": 0.7526595744680851,
+          "all_IDs_labels_match_parent": true,
+          "true_Top2": true
+        },
+        "test": {
+          "n": 752,
+          "correct": 652,
+          "accuracy": 0.8670212765957447,
+          "all_IDs_labels_match_parent": true,
+          "true_Top2": true
+        }
+      }
+    }
+  ]
+}

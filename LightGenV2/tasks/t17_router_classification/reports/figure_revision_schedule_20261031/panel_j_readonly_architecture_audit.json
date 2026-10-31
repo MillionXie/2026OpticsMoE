@@ -1,0 +1,50 @@
+{
+  "status": "READONLY_CONFIRMED_DIFFERENT_NOT_MODIFIED",
+  "formal_manifest": "LightGenV2/tasks/t18_optical_residual_ablation/reports/caltech20_final_20261024/final_manifest.json",
+  "historical_source_git": "51fbc9225ffd2ca19f67d40d15972d52b50c9ff3",
+  "source_proofs": [
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_rich_pair50_alpha_model.py",
+      "SHA256": "a49a7ae38ad7a34ad9b2a1feb392d172eec5f033364970120d09903dbddd2fae",
+      "historical_Git_and_current_source_match": true
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_alt246_genreg_model.py",
+      "SHA256": "c7f76542a360eaeab5de92958e022c92b28ff3488af87689fd19b52862f4d1bb",
+      "historical_Git_and_current_source_match": true
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/caltech20_alt246_biasfree_model.py",
+      "SHA256": "79ffe004fbe09a8808635ea8cb1d4c67d411136b0ada9f2fcbfd12619dab2f68",
+      "historical_Git_and_current_source_match": true
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/caltech_repair234_model.py",
+      "SHA256": "264d5e451007f68c7903bedede8626a225c5f1d1bb04949d310d78a432719629",
+      "historical_Git_and_current_source_match": true
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/caltech_diagnose_model.py",
+      "SHA256": "dab5a0e02c4ae44eef71a665390cffc9aeeea606bcf10b588e194f13fa0fbc21",
+      "historical_Git_and_current_source_match": true
+    },
+    {
+      "path": "LightGenV2/tasks/t18_optical_residual_ablation/caltech_deploy234_model.py",
+      "SHA256": "bec7cb121a3810de779adb24bbe0b774909ea1f7babc10af05c398237622d9a0",
+      "historical_Git_and_current_source_match": true
+    }
+  ],
+  "experts": 4,
+  "main_depths": [
+    2,
+    4,
+    6
+  ],
+  "routing": "dense all4, centered-RMS optical energies/temperature2/softmax/L2 amplitude normalization; not Top2",
+  "OEO": "relative intensity mean, clamp12, log1p, pool478/224, row LayerNorm, ReLU, RMS.25; not intensity_softsign",
+  "electronic_stage": "Each main layer9parameter bias-free3x3conv residual plus scalar learned alpha with RMS fusion; rho groups have asymmetric alpha bounds",
+  "terminal": "pool16x16 amplitude, feature LayerNorm, Linear256->20 with bias,5140parameters",
+  "optical_rho_not_all_residual": "rho0 still has electronic residual branches; do not call it all-residual-free",
+  "requires_new_protocol_if_unifying": "Changing OEO or removing stage electronics changes the graph and hardware intermediate inputs. Retain old weights/captures; new matched reruns/physical evidence needed before relabeling.",
+  "no_T18_write": true
+}

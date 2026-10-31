@@ -32,12 +32,27 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_f_lg_convex_s17_20261031/status.json",
-      "sha256": "c23c89a577492e3ecb1c56d6aa21f2ae098b9b6b2fc3f15b651c31bbdca00c64",
+      "sha256": "5ed0e44fea8fd837f0d5082055f004a16c73076991ad53b0a263d68c1296a322",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_f_lg_convex_s17_20261031/history.json",
-      "sha256": "02658f3ac2c81cd2746ad99a98f060afe6a22b9c5565d1bdd8414eaba7d5698a",
+      "sha256": "e4ae282c7c034db2439204991d4abd80a123ede77710d03ccc7df7829481bcb8",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_f_lg_convex_s17_20261031/result.json",
+      "sha256": "e7706b6fcd012a4fbab8133e0aaea79aaa958358d122fedc03b824714c2e94b8",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_f_lg_convex_s17_20261031/selection_lock.json",
+      "sha256": "8213fa3068845c8f2b78f36de4488b069dfc6ba1d48704e843dd626d91e6a041",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_f_lg_convex_s17_20261031/exit_receipt.json",
+      "sha256": "002db47e318e3f404f500613e7d1513c3b2f4e0d1d72e2306fc5e437a59e0c6d",
       "snapshot": true
     },
     {
@@ -47,12 +62,27 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_b_lg6_convex_s17_20261031/status.json",
-      "sha256": "7e335f428c38d92b697ab1f9a938d8daeb0350de85cbb100c95beed477887371",
+      "sha256": "9d9e3d1bf2176cd5d66046fd300b80bee573aa87c012da0d719097a2fe3c2ba4",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_b_lg6_convex_s17_20261031/history.json",
-      "sha256": "a9e2e53e565625b29c7c5c95fda084fd61e2bc295dea3ed81bb4b5f389786a7f",
+      "sha256": "751c26e4844cf112b108978f889e352e045ee967a1a5acb0ce2c389aa816aa71",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_b_lg6_convex_s17_20261031/result.json",
+      "sha256": "701ef6678ccc004e5253ee53881f266ecb9830e525d196229ba70c864c7ed0f4",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_b_lg6_convex_s17_20261031/selection_lock.json",
+      "sha256": "17bc05faece1715cd9016f76170b086adb58bc8e8215aeda0fbb91552ab0660e",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_mature_optics_s17_20261031/figure_mature_b_lg6_convex_s17_20261031/exit_receipt.json",
+      "sha256": "b2f4a8f2543d6c2f967f4c88384d488587a3c22b6ba8ff04b8066021f2446b7e",
       "snapshot": true
     },
     {

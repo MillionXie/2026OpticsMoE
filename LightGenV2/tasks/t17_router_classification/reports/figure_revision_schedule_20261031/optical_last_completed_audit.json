@@ -1,0 +1,42 @@
+[
+  {
+    "job": "figure_mature_f_lg_convex_s17_20261031",
+    "passed": true,
+    "splits": {
+      "train": {
+        "correct": 3367,
+        "n": 6000
+      },
+      "val": {
+        "correct": 888,
+        "n": 2000
+      },
+      "test": {
+        "correct": 917,
+        "n": 2000
+      }
+    },
+    "checkpoint_SHA_matches": true,
+    "frozen_model_assertion_executed_in_public_entry": true
+  },
+  {
+    "job": "figure_mature_b_lg6_convex_s17_20261031",
+    "passed": true,
+    "splits": {
+      "train": {
+        "correct": 3201,
+        "n": 3496
+      },
+      "val": {
+        "correct": 565,
+        "n": 752
+      },
+      "test": {
+        "correct": 653,
+        "n": 752
+      }
+    },
+    "checkpoint_SHA_matches": true,
+    "frozen_model_assertion_executed_in_public_entry": true
+  }
+]

@@ -32,6 +32,17 @@ def main():
         ax.set(title=title,xlabel='Additional epochs from parent' if name.startswith('panel_b') else 'Epochs from scratch',ylabel='Accuracy (%)',ylim=(0,100));ax.grid(alpha=.2);ax.legend(fontsize=8,loc='lower right')
     fig.suptitle('Seed17 | Single Linear LG revision | ORIGINAL_TEST_EXPOSED_DEVELOPMENT',fontsize=12)
     fig.savefig(out/'convergence.svg');fig.savefig(out/'convergence.png',dpi=160);plt.close(fig)
+    fig,axes=plt.subplots(1,2,figsize=(12,4.5),constrained_layout=True)
+    for ax,name,title in zip(axes,['figure_mature_f_lg_convex_s17_20261031','figure_mature_b_lg6_convex_s17_20261031'],['F: original optics, frozen mature Linear','B: main6 last E/G, frozen mature Linear']):
+        path=task/'runs/simulation/figure_mature_optics_s17_20261031'/name;history=read(path/'history.json') or [];result=read(path/'result.json');cfg=read(task/'configs'/f'{name}.json');parent=read((task/cfg['parent_checkpoint']).with_name('result.json'))
+        ax.scatter([0],[100*parent['val']['accuracy']],color='black',label='Parent VAL',s=20)
+        ax.plot([r['epoch'] for r in history],[100*r['validation']['accuracy'] for r in history],color='black',label='VAL')
+        train=[r for r in history if 'train' in r];ax.plot([r['epoch'] for r in train],[100*r['train']['accuracy'] for r in train],color='#377eb8',marker='.',label='Clean TRAIN')
+        if result:
+            ax.scatter([result['selected_epoch']],[100*result['original_test_dev']['accuracy']],marker='*',s=130,color='#c44e52',label='Locked original TEST development')
+            ax.scatter([result['selected_epoch']],[100*result['train']['accuracy']],marker='D',s=30,color='#377eb8',label='Selected model TRAIN')
+        ax.set(title=title,xlabel='Additional optical epochs',ylabel='Accuracy (%)',ylim=(0,100));ax.grid(alpha=.2);ax.legend(fontsize=8,loc='lower right')
+    fig.savefig(out/'mature_optics_convergence.svg');fig.savefig(out/'mature_optics_convergence.png',dpi=160);plt.close(fig)
 
 
 if __name__=='__main__':main()

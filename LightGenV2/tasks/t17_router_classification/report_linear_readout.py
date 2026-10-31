@@ -37,6 +37,10 @@ def main():
                          status=read(path/'status.json') or dict(state='not_started'),result=read(path/'result.json'))
     gram_path=task/'runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex'
     gram=dict(run=str(gram_path.relative_to(task)),status=read(gram_path/'status.json') or dict(state='not_started'),result=read(gram_path/'result.json'))
+    mature_path=task/'runs/simulation/figure_mature_optics_s17_20261031/figure_mature_b_lg6_convex_s17_20261031'
+    mature=dict(run=str(mature_path.relative_to(task)),status=read(mature_path/'status.json') or dict(state='not_started'),result=read(mature_path/'result.json'))
+    late_path=task/'runs/simulation/figure_optical_last_eval_s17_20261031/worker0/figure_mature_b_lg6_convex_s17_20261031';late_result=read(late_path/'result.json')
+    late=dict(run=str(late_path.relative_to(task)),status=read(late_path/'status.json') or dict(state='not_started'),result=late_result,checkpoint_path=late_result['checkpoint_reference'] if late_result else '')
     oldA=read(task/'reports/panel_a_original_test_development_20261031/results.json')
     baselineA={r['dataset']:r['D2NN_development_reference']['original_test_dev']['accuracy'] for r in oldA['cases']}
     baselineB={depth:read(task/f'runs/simulation/panel_b_d2nn60_s17_20261031/d2nn{depth}/result.json')['test']['accuracy'] for depth in (3,5,7)}
@@ -55,10 +59,10 @@ def main():
     out=task/'reports/panel_ab_linear_readout_20261031';out.mkdir(exist_ok=True)
     selected={};optimized_rows=''
     for name in records:
-        candidates=[records[name]]+([additional[name]] if name in additional else [])+([joint[name]] if name in joint else [])+([convex[name]] if name in convex else [])+([gram] if name=='b_kather6' else [])
+        candidates=[records[name]]+([additional[name]] if name in additional else [])+([joint[name]] if name in joint else [])+([convex[name]] if name in convex else [])+([gram,mature,late] if name=='b_kather6' else [])
         eligible=[]
         for candidate in candidates:
-            r=candidate['result'];pt=task/candidate['run']/'best_checkpoint.pt'
+            r=candidate['result'];pt=task/candidate['checkpoint_path'] if candidate.get('checkpoint_path') else task/candidate['run']/'best_checkpoint.pt'
             if r and pt.exists() and hashlib.sha256(pt.read_bytes()).hexdigest()==r['checkpoint_sha256']:
                 eligible.append(candidate)
         if eligible:
@@ -72,6 +76,7 @@ def main():
               last_pair_and_Linear_joint_candidates=joint,
               frozen_convex_Linear_candidates=convex,
               TRAIN_Gram_coordinate_candidate=gram,
+              mature_fixed_head_optics_candidate=mature,posthoc_existing_optical_last_candidate=late,
               selection_policy='Within each fit: VAL macro recall then CE. Across completed SHA-verified initial/prior/joint/convex candidates: original TEST development correct count, explicitly authorized and not independent TEST.',
               B2_reuses_A1_same_checkpoint=True,D2NN_unchanged=True,generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
@@ -82,7 +87,7 @@ def main():
 <h2>第一轮随机初始化Linear（完整保留）</h2><table><tr><th>图</th><th>LG任务</th><th>相位+电子参数</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th><th>固定D2NN</th><th>差值</th></tr>{rows}</table>
 <h2>已完成候选的开发结果</h2><p>四/六层另补单层Linear的CCD几何先验初始化与末E/G+Linear联合微调。几何先验将原固定探测区域能量映射投影到28²池化特征，初始化不使用图像/标签，不增加推理参数或额外分类支路。联合微调保留同一推理结构。跨完整候选按已授权原TEST开发正确数选择，所有初始和失败结果保留；不可作为独立TEST泛化证据。</p>
 <table><tr><th>图</th><th>LG任务</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th><th>固定D2NN</th><th>差值</th><th>选中run</th></tr>{optimized_rows}</table>
-<p>另纳入冻结光学的有界凸Linear拟合：TRAIN-only CE加相对父头的L2惩罚，150次L-BFGS内部迭代上限，仍为同一Linear；每次选模使用实际导出的float32 canonical模型。没有增加电子特征或推理参数，不将迭代数说成光学训练epoch。</p>
+<p>另纳入冻结光学的有界凸Linear拟合、TRAIN Gram数值坐标和冻结成熟头后的有限光学训练。所有推理仍原单Linear。最后另对已保存last PT做显式后验开发评估；B6最终653/752来自该last候选，不冒称VAL选择。B6相对D7高14.76pp，仍未15pp。没有增加电子特征或推理参数，不将头迭代数说成光学训练epoch。</p>
 <p>图a的D2NN三层478²，无OEO、无Linear；图b的D2NN3/5/7层478²，逐层同OEO、无Linear。所有D2NN保持已完成60轮。B两层LG直接复用A Kather同一新权重。</p>
 <p>LG仍为四专家224²、入口Top2、gap30、global478、无可训前端；每个E/G后原intensity_softsign OEO，含末层。新增电子读出及不同训练预算公开列示，不能称纯光学或等预算因果消融。</p>
 <p>图d按人工要求暂缓；图f已确认沿用原双域子集，LG/D2NN在新授权A100重跑，见../figure_revision_schedule_20261031/results.html。其他图旧实现差异记录于architecture_contract.json。生成UTC：{data['generated_UTC']}。</p></html>'''
