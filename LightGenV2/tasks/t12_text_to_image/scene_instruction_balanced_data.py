@@ -16,6 +16,14 @@ from .scene_omnigen_peer import REVISION
 from .scene_instruction_native_prior import visible_caption
 
 
+def assert_admission_current(data):
+    registry=data.parent/'scene_instruction_visible_facts_review_20261031/admission_revocations.json'
+    if registry.exists():
+        record=json.loads(registry.read_text(encoding='utf8'))
+        if record['schema']!='scene_dataset_admission_revocations_v1':raise ValueError('Invalid admission revocation registry')
+        if sha(data/'pairs.json')in {r['pairs_sha256']for r in record['rows']}:raise ValueError('Dataset admission withdrawn; preserve historical run but use corrected data')
+
+
 def reference_condition_weights(rows):
     """Equal group contribution while retaining every distinct accepted PNG."""
     if not rows or any(r['split']!='train'for r in rows):raise ValueError('TRAIN-only condition balancing')

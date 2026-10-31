@@ -17,6 +17,8 @@ def checked_balanced_input_identity(cache_report,state,identity,identity_sha):
 
 
 def checked_revision(folder,data,state,original):
+    from .scene_instruction_balanced_data import assert_admission_current
+    assert_admission_current(data)
     report=json.loads((folder/'report.json').read_text(encoding='utf8'))
     balanced=report['schema']=='scene_balanced_visible_anchor_dataset_v1'
     if (not report['complete'] or report['schema']not in ['scene_visible_anchor_dataset_v1','scene_balanced_visible_anchor_dataset_v1']

@@ -1,13 +1,21 @@
 import tempfile
 from pathlib import Path
 import unittest
-from ..scene_instruction_balanced_data import checked_pool,curate,checked_dev_labels,reference_condition_weights
+from ..scene_instruction_balanced_data import checked_pool,curate,checked_dev_labels,reference_condition_weights,assert_admission_current
 from ..scene_instruction_data import condition,write,sha
 from ..scene_omnigen_peer import REVISION
 from ..scene_generation_data import request_seed
 
 
 class CandidateAdmission(unittest.TestCase):
+    def test_withdrawn_admission_blocks_new_training_without_mutating_old_dataset(self):
+        with tempfile.TemporaryDirectory()as temp:
+            p=Path(temp);d=p/'data';d.mkdir();write(d/'pairs.json',[]);facts=p/'scene_instruction_visible_facts_review_20261031';facts.mkdir()
+            original=(d/'pairs.json').read_bytes();write(facts/'admission_revocations.json',dict(schema='scene_dataset_admission_revocations_v1',rows=[dict(pairs_sha256=sha(d/'pairs.json'))]))
+            with self.assertRaises(ValueError):assert_admission_current(d)
+            self.assertEqual((d/'pairs.json').read_bytes(),original)
+            write(facts/'admission_revocations.json',dict(schema='scene_dataset_admission_revocations_v1',rows=[dict(pairs_sha256='other')]))
+            assert_admission_current(d)
     def test_group_weights_equalize_one_and_two_valid_targets_without_copying_GTs(self):
         rows=[dict(sample_id=str(i),split='train',reference_id='one',condition_id=c)for i,c in enumerate(['0','1','1'])]
         weights=reference_condition_weights(rows)

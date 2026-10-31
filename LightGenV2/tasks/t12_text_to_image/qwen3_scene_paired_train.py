@@ -52,6 +52,8 @@ def new_qwen(a):
 
 
 def checked_pairs(a):
+    from .scene_instruction_balanced_data import assert_admission_current
+    assert_admission_current(a.data)
     report = json.loads((a.data/'report.json').read_text())
     review = json.loads((a.data/'visual_review.json').read_text())
     assert report['complete'] and report['role_disjoint'] and not report['TEST_opened']

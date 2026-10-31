@@ -18,6 +18,7 @@ from .scene_generation_data import request_seed
 FORM_PROFILE='TRAIN_source_form_support_teacher_v1'
 WIDE_SUPPORT='wide_support_v2'
 LOOSE_OBJECT='loose_object_v3'
+LOOSE_ARMRESTS='loose_armrests_v4'
 FORMS={'articulated_desk':('lamp','an adjustable desk lamp'),'column_lamp':('lamp','a table lamp with a column base'),
        'solid_cylinder_lamp':('lamp','a table lamp with a wide solid cylindrical body'),'rectangular_column_lamp':('lamp','a table lamp with a solid rectangular column body'),
        'rounded_lamp':('lamp','a table lamp with a rounded base'),'ornamental_lamp':('lamp','a table lamp with a sculpted base'),
@@ -27,10 +28,12 @@ FORMS={'articulated_desk':('lamp','an adjustable desk lamp'),'column_lamp':('lam
 def form_teacher_prompt(category,code,hint,variant='original_v1'):
     if hint not in FORMS or FORMS[hint][0]!=category or code not in primary_codes(category):raise ValueError('Input-grounded supported coarse form required')
     noun=FORMS[hint][1]
-    if variant==LOOSE_OBJECT:
+    if variant in [LOOSE_OBJECT,LOOSE_ARMRESTS]:
         if category!='pillow':raise ValueError('Loose-cushion construction only')
+        if variant==LOOSE_ARMRESTS and code!='A':raise ValueError('Explicit armchair construction only')
         support={'S':'sofa','A':'armchair','D':'bed'}[code]
         form='long narrow rectangular'if hint=='long_lumbar_cushion'else'rectangular'if hint=='rectangular_cushion'else'square'
+        if variant==LOOSE_ARMRESTS:return f'Generate an indoor photograph of an armchair with two visible armrests in a furnished room. One separate loose {form} throw pillow rests on its seat, distinct from its upholstery.'
         return f'Generate an indoor photograph of a {support} in a furnished room. One separate loose {form} throw pillow rests on the {support}, distinct from its upholstery.'
     if variant==WIDE_SUPPORT:
         if category=='lamp':
