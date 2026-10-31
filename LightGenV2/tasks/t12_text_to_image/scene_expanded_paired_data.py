@@ -83,7 +83,8 @@ def curate(plan,candidates,review_path,parent,output):
             source_RGBA_sha256=source['source_RGBA_sha256'],target=row['target'],target_sha256=row['target_sha256'],
             QA_accepted=True,training_admission_policy='basic_subject_quality_v2',supervision_weight=1. if full else .5,
             all_requested_facts_and_form_satisfied=full,teacher_candidate_manifest_sha256=cr['candidate_manifest_sha256'],
-            teacher_revision=row['teacher_revision']))
+            teacher_revision=row['teacher_revision'],teacher_kind=row.get('teacher_kind','frozen_official_OmniGen'),
+            teacher_generation_steps=row.get('teacher_generation_steps',50),teacher_inference_batch_size=row.get('teacher_inference_batch_size',1)))
     write(output/'pairs.json',pairs)
     for name in ['references.json','test_inputs.json','inference_inputs.json','selection_protocol.json','prompt_definitions.json']:
         shutil.copyfile(plan/name,output/name)
