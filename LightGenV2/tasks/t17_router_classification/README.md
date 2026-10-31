@@ -15,8 +15,11 @@ D4 worker1908742已32轮早停、VAL选E22：TRAIN63.85/VAL52.40/原TEST开发53
 最多25/min10/pat10轮、batch128，相位物理角度LR.03余弦、router为主干LR的.1，无mini-batch head Adam；
 头仍每5轮匹配全部8视图有界40内步。父E0参加同VAL选择，锁后一次原TEST开发评估。
 phase_optimizer_steps逐轮记录，不能将一次全TRAIN更新冒充94/47次SGD或等训练预算结构优势。
-须默认bitwise更新兼容/真实光学整批与样本加权累积梯度等价等152项CPU检查、精确父真实TRAIN GPU准入、
-main发布后启动。该聚合方法只是待证训练方法，保留所有失败与现有53.5%父，不保证达到旧图范围。
+sourcec16a22da已通过默认bitwise更新兼容/真实光学整批与样本加权累积梯度等价等152项CPU检查，
+精确父真实TRAIN GPU累积梯度/有限phase更新/头block冻结准入通过，并main发布、服务器路径SHA。
+GPU逐元素首断言因head约2.3e-6绝对浮差未过，已按float32相对L2（约1e-5）实测复核，失败收据保留，不改数据/模型。
+worker1956118已启动，root runs/simulation/f_full_TRAIN_phase_s17_20261031/full，metadata明确full_TRAIN和无mini-batch head optimizer，最近E9。
+该聚合方法只是待证训练方法，保留所有失败与现有53.5%父，不保证达到旧图范围。
 
 ## 旧mask继承已完成，有限D4正则化对照准备（2026-10-31）
 

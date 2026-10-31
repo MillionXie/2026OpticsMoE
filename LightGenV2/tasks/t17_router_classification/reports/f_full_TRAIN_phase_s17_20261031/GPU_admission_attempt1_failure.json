@@ -1,0 +1,7 @@
+{
+  "stage": "GPU admission only; formal training not launched",
+  "source_commit": "c16a22da27843dc6b71e69282401b1db774961b2",
+  "failure": "Elementwise allclose of split vs full20 gradient failed for shared_head.weight; optical phase tensors passed same bound. Measure floating-point differences before deciding a valid comparison.",
+  "public_CPU_actual_optical_gradient_equivalence_test_passed": true,
+  "modified_model_or_labels": false
+}

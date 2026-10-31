@@ -1,0 +1,65 @@
+{
+  "source_commit": "c16a22da27843dc6b71e69282401b1db774961b2",
+  "source_sha256": {
+    "train_figure_revision.py": "8d6e5e1dd8e1806334471d83daebf119bd2e5034042298b61ad8b7ec45362483",
+    "phase_training.py": "6688c6962981f926170c0a00eb465095f905f4c4f09506046d0014db7efa2722",
+    "model_linear_readout.py": "02eddba0c3e9d29fa5afaa9a03adf987b12651f8d5a9d25b6d9fd99da93397a9"
+  },
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "parent_sha256": "1a8355ba76aa712a7dcc0ada7765676579c432f25e0f904025627b49996febea",
+  "accumulated_7plus13_sample_gradient_matches_full20": true,
+  "gradient_max_difference": {
+    "first_phase": {
+      "max_abs": 1.2200325727462769e-07,
+      "relative_L2": 9.105936442210805e-06
+    },
+    "global_phase": {
+      "max_abs": 1.5459954738616943e-07,
+      "relative_L2": 1.583032644703053e-05
+    },
+    "router_phase": {
+      "max_abs": 1.1990778148174286e-08,
+      "relative_L2": 9.594268703949638e-06
+    },
+    "shared_head.weight": {
+      "max_abs": 2.302229404449463e-06,
+      "relative_L2": 1.2548158338177018e-05
+    }
+  },
+  "head_bitwise_unchanged_by_phase_update": true,
+  "physical_phase_step_max_abs": {
+    "first_phase": 0.030000722035765648,
+    "global_phase": 0.030000708997249603,
+    "router_phase": 0.0030007525347173214
+  },
+  "finite_phase_updates": {
+    "first_phase": 6.551192283630371,
+    "global_phase": 9.000186920166016,
+    "router_phase": 0.37735849618911743
+  },
+  "phase_group_lrs": [
+    0.03,
+    0.003
+  ],
+  "head_block": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 160,
+    "numerical_ridge": 0.003060916400872407,
+    "uncentred_Gram_eigen_min": -1.5667647547483005e-13,
+    "uncentred_Gram_eigen_max": 2257.299796752536,
+    "Gram_regularized_condition": 737459.8199222672,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 4.329050866656274,
+    "objective_after": 0.7028081219087972,
+    "internal_steps": 5,
+    "closure_calls": 10,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": true
+  },
+  "head_block_phases_bitwise_frozen": true,
+  "TRAIN_only": true,
+  "TEST_not_evaluated": true,
+  "inference_parameters": 487204,
+  "Linear_count": 1,
+  "CNN_in_student": 0
+}
