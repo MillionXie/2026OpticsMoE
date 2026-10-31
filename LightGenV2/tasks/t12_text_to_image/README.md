@@ -35,6 +35,14 @@ padding和图像条件误差；特征距离不是图像遵从率，不更新任�
 后续`scene_omnigen_peer --reference-framing white_rgb_bbox_pad12_v1`只用输入RGB可见范围，
 统一裁白边／补12%白边；原始输入SHA和实际预处理身份分列，所有48请求保留，
 不使用GT／掩码或只挑失败商品裁剪。原SDXL上的旧取景控制失败不等于该peer已测试此处理。
+CPU条件诊断`scene_visible_anchor_R2_condition_path_padding_split_20261031`中，
+全部44 TRAIN／16 DEV同RGB三请求的native caption最近条件均分类正确，但DEV文字条件
+中心化相对MSE中位数1.208、pooled约0.0139；普通绝对MSE小不能证明条件方向正确。
+新`scene_counterfactual_condition_alignment`用全部44 TRAIN三请求、固定800步CPU训练，
+仅更新现有text/pooled读出，补全77 token（含上下文padding）的同参考反事实监督；
+shared projection、image读出、完整Qwen、UNet LoRA和VAE保持逐元素不变，没有新推理参数。
+只按TRAIN条件损失存best/last，无DEV／TEST梯度或选模；真实反向smoke丢弃后重置。
+其后必须完整raw48生成和文字／造型／画质复核，特征损失、peer39/48或新数据准入都不能代替图像遵从。
 
 **R1准入已撤回**：原尺寸终检发现无扶手椅被写成armchair；随后全40个TRAIN扶手椅目标复核，
 另3项无法确认扶手而排除。保留原数据／审核／best/last和撤回前记录，不覆盖历史身份。
