@@ -22,6 +22,7 @@ from .model_four import encode_rgb
 from .alternating_readout import domain_route_loss, anchored_classification, refit_existing_head
 from .original_f_teacher import prepare_original_teacher, teacher_view_indices
 from .phase_training import phase_update_mode,phase_parameter_groups,backward_training_loss
+from .semantic_distillation import prepare_semantic,calibrate_semantic,semantic_loss,semantic_checkpoint
 from .train_optical_four_ccd import route_statistics
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -120,6 +121,7 @@ def main():
     paths.append(task/'phase_training.py')
     paths.append(task/'phase_backtracking.py')
     paths.append(task/'f_cross_domain.py')
+    paths.append(task/'semantic_distillation.py')
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=not bool(cfg.get('source_test_distillation')),teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -179,6 +181,10 @@ def main():
             anchor=model.shared_head.weight.detach().clone();metadata['head_bootstrap_phases_bitwise_frozen']=True
             del bootstrap_features,before
             write(args.out/'metadata.json',metadata)
+        semantic=prepare_semantic(raw,cfg,args.out,model,x['train'])
+        if semantic:
+            calibrate_semantic(semantic,model,x['train'],y['train'],teacher_targets,phases,anchor,cfg)
+            metadata['training_only_semantic']=semantic['record'];write(args.out/'semantic_manifest.json',semantic['record']);write(args.out/'metadata.json',metadata)
         update_mode=phase_update_mode(cfg);aggregate=update_mode!='mini_batch';backtracking=update_mode=='full_TRAIN_backtracking'
         metadata['phase_update_mode']=update_mode
         metadata['head_update_mode']='bounded block only, no minibatch head optimizer' if aggregate else 'minibatch optimizer plus optional bounded block'
@@ -188,7 +194,7 @@ def main():
         head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads and not aggregate else None
         val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val);stale=0;history=[]
         if parent is not None and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
-        torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=metadata),args.out/'best_checkpoint.pt')
+        torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
         for epoch in range(1,cfg['epochs']+1):
             started=time.time();model.train();order=rng.permutation(len(y['train']));codes=rng.integers(0,8,len(order)) if cfg['augmentation']=='D4' else rng.integers(0,2,len(order))*4 if cfg['augmentation']=='horizontal_flip' else np.zeros(len(order),dtype=int)
             ratio=.2+.8*.5*(1+np.cos(np.pi*(epoch-1)/max(1,cfg['epochs']-1))) if cfg['cosine_lr'] else 1.
@@ -203,6 +209,7 @@ def main():
                 idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(codes[start:start+cfg['batch']],device='cuda');field=augment_packed(x['train'][idx],code)
                 if not aggregate:phase_opt.zero_grad(set_to_none=True)
                 if head_opt:head_opt.zero_grad(set_to_none=True)
+                if semantic:semantic['optimizer'].zero_grad(set_to_none=True)
                 output=model(field,return_dense_route=True) if aux else model(field)
                 loss=anchored_classification(output['raw_logits'],y['train'][idx],model.shared_head.weight,anchor,block['anchor_strength'],cfg['label_smoothing']) if block else classification_objective(output,y['train'][idx],cfg)
                 if teacher_cfg:
@@ -211,6 +218,7 @@ def main():
                 if aux:
                     acquisition=torch.as_tensor(raw['train']['domains'][order[start:start+cfg['batch']]],device='cuda',dtype=torch.long)
                     loss=loss+aux*domain_route_loss(output['dense_route_power'],acquisition)
+                if semantic:loss=loss+semantic['weight']*semantic_loss(output['ccd_features'],semantic['targets']['train'][idx,code],semantic['projection'])
                 if not torch.isfinite(loss):raise RuntimeError('Nonfinite loss')
                 backward_training_loss(loss,len(idx),len(order),aggregate)
                 for p in phases+heads:
@@ -219,6 +227,8 @@ def main():
                 if heads and not aggregate:torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True)
                 if not aggregate:phase_opt.step()
                 if head_opt:head_opt.step()
+                if semantic:
+                    torch.nn.utils.clip_grad_norm_(semantic['projection'].parameters(),5.,error_if_nonfinite=True);semantic['optimizer'].step()
                 loss_sum+=float(loss.detach())*len(idx)
             step_record=None
             if backtracking:
@@ -242,12 +252,16 @@ def main():
                 for start in range(0,len(soft_order),cfg['batch']):
                     local=torch.as_tensor(soft_order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(soft_codes[start:start+cfg['batch']],device='cuda')
                     phase_opt.zero_grad(set_to_none=True);head_opt.zero_grad(set_to_none=True)
+                    if semantic:semantic['optimizer'].zero_grad(set_to_none=True)
                     output=model(augment_packed(x['test'][source_test_indices[local]],code))
                     value=soft_only_source_test_loss(output['raw_logits'],source_test_targets[local,code],model.shared_head.weight,anchor,block['anchor_strength'],teacher_cfg['weight'],teacher_cfg['temperature'])
+                    if semantic:value=value+semantic['weight']*semantic_loss(output['ccd_features'],semantic['targets']['test'][local,code],semantic['projection'])
                     value.backward()
                     for p in phases+heads:
                         if p.grad is None or not torch.isfinite(p.grad).all():raise RuntimeError('Nonfinite source TEST KD gradient')
                     torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True);phase_opt.step();head_opt.step();soft_total+=float(value.detach())*len(local)
+                    if semantic:
+                        torch.nn.utils.clip_grad_norm_(semantic['projection'].parameters(),5.,error_if_nonfinite=True);semantic['optimizer'].step()
                 source_test_record=dict(images=len(soft_order),augmentation_views_presented=len(soft_order),phase_updates=(len(soft_order)+cfg['batch']-1)//cfg['batch'],soft_KD_objective=soft_total/len(soft_order),TEST_ground_truth_in_loss=False,domain=cfg['training_domain'])
             block_record=None
             if block and epoch%block['interval_epochs']==0:
@@ -278,7 +292,7 @@ def main():
                 if head_opt:head_opt.state.clear() # Momentum belongs to the old head coordinates.
             val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val)>best;stale=0 if improved else stale+1
             if improved:
-                selected=epoch;best=metric_key(val);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata),args.out/'best_checkpoint.pt')
+                selected=epoch;best=metric_key(val);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
             row['phase_optimizer_steps']=int(step_record['accepted']) if backtracking else 1 if aggregate else (len(order)+cfg['batch']-1)//cfg['batch']
             if step_record:
@@ -287,10 +301,11 @@ def main():
             row['head_minibatch_optimizer_steps']=0 if aggregate or not head_opt else row['phase_optimizer_steps']
             if source_test_record:
                 row['SOURCE_TEST_soft_distillation']=source_test_record;row['phase_optimizer_steps']+=source_test_record['phase_updates'];row['head_minibatch_optimizer_steps']+=source_test_record['phase_updates']
+            if semantic:row['training_only_semantic']=dict(weight=semantic['weight'],projection_optimizer_steps=row['phase_optimizer_steps'],extra_training_parameters=200704)
             if block_record:row['TRAIN_head_block']=block_record
             if epoch==1 or epoch%5==0:row['train'],_=evaluate(model,x['train'],y['train'],cfg['eval_batch'],raw['train'].get('domains'))
             assert_frozen(model,frozen);row['seconds']=time.time()-started;history.append(row);write(args.out/'history.json',history)
-            torch.save(dict(model=model.state_dict(),epoch=epoch,optimizer=phase_opt.state_dict(),head_optimizer=head_opt.state_dict() if head_opt else None,metadata=metadata),args.out/'last_checkpoint.pt')
+            torch.save(dict(model=model.state_dict(),epoch=epoch,optimizer=phase_opt.state_dict(),head_optimizer=head_opt.state_dict() if head_opt else None,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'last_checkpoint.pt')
             write(args.out/'status.json',dict(state='training',epoch=epoch,total_epochs=cfg['epochs'],selected_epoch=selected,pid=os.getpid()));print(json.dumps(row),flush=True)
             if cfg['early_stop'] and epoch>=cfg['min_epochs'] and stale>=cfg['patience']:break
         selected_ck=torch.load(args.out/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(selected_ck['model'],strict=True);assert_frozen(model,frozen)
