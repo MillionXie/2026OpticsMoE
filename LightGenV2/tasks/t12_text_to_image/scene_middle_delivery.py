@@ -15,6 +15,21 @@ from .scene_compression_delivery import verified_models,request_signature,means,
 from .white_reference_scene_probe import digest,write
 
 
+def threefold_table(rows):
+    reference=next((r for r in rows if r['role']=='qwen'and r['mode']=='software'),None)
+    if reference is None or reference['mean_ms']<=0:raise ValueError('Positive electronic reference required')
+    baseline=reference['mean_ms'];parts=['<h2>同边界完整请求计时（本轮3倍目标）</h2><table><tr><th>模型</th><th>方式</th><th>均值 ms</th><th>相对电子30步</th><th>保持&gt;3倍的额外设备H上界</th></tr>']
+    for row in rows:
+        replay=row['mode']=='ideal_CCD_fixed_wait';value=row['mean_ms']
+        if value<=0:raise ValueError('Positive request time required')
+        row['extra_hardware_H_budget_for3x_ms']=baseline/3-value if replay else None
+        row['above3x_before_unknown_H']=baseline/value>3 if replay else None
+        budget=f"{row['extra_hardware_H_budget_for3x_ms']:.3f} ms"if replay else'—'
+        parts.append('<tr><th>'+html.escape(row['label'])+'</th><td>'+('无FFT＋固定6光周期'if replay else'完整电子软件请求')+'</td><td>'+f'{value:.3f}'+'</td><td>'+f'{baseline/value:.4f}×'+'</td><td>'+budget+'</td></tr>')
+    parts.append('</table><p>本表目标为超过3倍；H必须小于对应预算。完整请求理想CCD时序模拟与实机结果分列，未知SDK／SLM传输／额外DMA没有假定为零。</p>')
+    return ''.join(parts)
+
+
 def add_table_row(content,heading,row):
     pattern='('+re.escape(heading)+r'<table>.*?)(</table>)'
     result,n=re.subn(pattern,lambda m:m.group(1)+row+m.group(2),content,count=1,flags=re.S)
@@ -65,12 +80,17 @@ def build(manifest,output):
     content=content.replace('repeat(6,minmax(220px,1fr))','repeat(7,minmax(220px,1fr))')
     content=content.replace('<h1>LG轻量化与生成模型：同题完整对照</h1>','<h1>LG中间版、此前六步版与生成模型：完整同题对照</h1>')
     content=content.replace('<h2>全部128组输出</h2>','<p>每组依次为白底输入、中间版、此前六步版、原F9、完整Qwen、SDXL＋IP、OmniGen；共768张生成图，全部保留。三倍判定使用中间版与E30的新配对计时，未挪用旧六步版本的其他计时窗口。</p><h2>全部128组输出</h2>')
+    timing_path=output/'timing.json';timing=json.loads(timing_path.read_text());table=threefold_table(timing['rows'])
+    content,n=re.subn(r'<h2>同边界完整请求计时</h2><table>.*?</table>',lambda _:table,content,count=1,flags=re.S)
+    if n!=1:raise ValueError('One verified timing table required')
+    content=content.replace('只有H不超过表中预算时，这一时序模型才仍达到四倍','只有H小于表中预算时，这一时序模型才仍超过三倍')
+    timing.update(requested_speedup_above=3.,physical_measurement=False);write(timing_path,timing)
     page.write_text(content,encoding='utf8')
     csv_path=output/'summary.csv'
     with csv_path.open(encoding='utf-8-sig',newline='')as stream:reader=csv.DictReader(stream);fields=reader.fieldnames;rows=list(reader)
     with csv_path.open('w',encoding='utf-8-sig',newline='')as stream:writer=csv.DictWriter(stream,fieldnames=fields);writer.writeheader();writer.writerows(rows+additional)
     score_path=output/'per_image.json';scores=json.loads(score_path.read_text());scores.extend(dict(v,display_model=prior['label'])for v in prior['scores'].values());assert len(scores)==768;write(score_path,scores)
-    record=json.loads((output/'delivery_manifest.json').read_text());record.update(complete=True,six_model_augmentation_in_progress=False,all768_generated_outputs_shown=True,generated_model_count=6,middle_builder_source_sha256=digest(Path(__file__)),prior_candidate=dict(role='prior_light_lg',label=prior['label'],run=str(prior['root']),report_sha256=digest(prior['root']/'report.json'),metrics_sha256=prior['metrics_manifest_sha256']))
+    record=json.loads((output/'delivery_manifest.json').read_text());record.update(complete=True,six_model_augmentation_in_progress=False,requested_speedup_above=3.,all768_generated_outputs_shown=True,generated_model_count=6,middle_builder_source_sha256=digest(Path(__file__)),prior_candidate=dict(role='prior_light_lg',label=prior['label'],run=str(prior['root']),report_sha256=digest(prior['root']/'report.json'),metrics_sha256=prior['metrics_manifest_sha256']))
     write(output/'delivery_manifest.json',record)
     write(output/'file_manifest.json',{p.relative_to(output).as_posix():dict(bytes=p.stat().st_size,sha256=digest(p))for p in sorted(output.rglob('*'))if p.is_file()and p.name!='file_manifest.json'})
 
