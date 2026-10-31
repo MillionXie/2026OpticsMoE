@@ -1,0 +1,68 @@
+{
+  "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "rows": [
+    {
+      "domain": "RGB",
+      "architecture": "LG",
+      "parameters": 487204,
+      "updates": {
+        "first_phase": 0.2130817472934723,
+        "global_phase": 0.26615002751350403,
+        "router_phase": 0.11992933601140976,
+        "shared_head.weight": 0.008435445837676525
+      },
+      "finite_loss": 2.8292901515960693,
+      "only_real_source_TRAIN_used": true,
+      "TEST_not_evaluated": true
+    },
+    {
+      "domain": "RGB",
+      "architecture": "D2NN",
+      "parameters": 685452,
+      "updates": {
+        "phases.0": 2.0689878463745117,
+        "phases.1": 2.2480852603912354,
+        "phases.2": 2.22411847114563
+      },
+      "finite_loss": 16.84812355041504,
+      "only_real_source_TRAIN_used": true,
+      "TEST_not_evaluated": true
+    },
+    {
+      "domain": "SAR",
+      "architecture": "LG",
+      "parameters": 487204,
+      "updates": {
+        "first_phase": 0.21313683688640594,
+        "global_phase": 0.2660757005214691,
+        "router_phase": 0.11922025680541992,
+        "shared_head.weight": 0.008448146283626556
+      },
+      "finite_loss": 2.821077585220337,
+      "only_real_source_TRAIN_used": true,
+      "TEST_not_evaluated": true
+    },
+    {
+      "domain": "SAR",
+      "architecture": "D2NN",
+      "parameters": 685452,
+      "updates": {
+        "phases.0": 2.0675697326660156,
+        "phases.1": 2.217747926712036,
+        "phases.2": 2.1882269382476807
+      },
+      "finite_loss": 14.104107856750488,
+      "only_real_source_TRAIN_used": true,
+      "TEST_not_evaluated": true
+    }
+  ],
+  "teacher_backbone_frozen": true,
+  "teacher_head_real_TRAIN_gradient_finite": true,
+  "smoke_KD_targets": "fresh untrained teacher head on frozen ResNet features, gradient admission only; formal teacher will fit source TRAIN+source original TEST before student",
+  "source_sha256": {
+    "f_cross_domain.py": "8e442b3ca282489b4416ed8872494a059058fde64d815e597f3d46c52f32cc34",
+    "train_f_domain_teacher.py": "d0022f3d329c56eb40d0edfdd30a6a5aa29c694d372bd1404b44a429c5226607",
+    "train_figure_revision.py": "0ed73a26200235b575aa55103d412d51299372bbcd57b92af8c07479dd78c2a0"
+  }
+}

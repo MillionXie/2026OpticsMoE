@@ -1,0 +1,304 @@
+{
+  "RGB_pipeline.json": {
+    "state": "running",
+    "domain": "RGB",
+    "stage": "LG",
+    "worker_pid": 2038704,
+    "supervisor_pid": 2037899,
+    "command": [
+      "/home/guest3/miniconda3/envs/xml/bin/python",
+      "-m",
+      "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+      "--profile",
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_cross_LG_RGB_s17_20261031.json",
+      "--out",
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB"
+    ],
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729"
+  },
+  "SAR_pipeline.json": {
+    "state": "running",
+    "domain": "SAR",
+    "stage": "LG",
+    "worker_pid": 2038947,
+    "supervisor_pid": 2037901,
+    "command": [
+      "/home/guest3/miniconda3/envs/xml/bin/python",
+      "-m",
+      "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+      "--profile",
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_cross_LG_SAR_s17_20261031.json",
+      "--out",
+      "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR"
+    ],
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729"
+  },
+  "D2NN_RGB/status.json": {
+    "state": "training",
+    "pid": 2037898,
+    "epoch": 21,
+    "code": null,
+    "split": null,
+    "error": null
+  },
+  "D2NN_RGB/metadata.json": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "pid": 2037898,
+    "training_domain": null,
+    "data": {
+      "trainval": {
+        "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+        "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "holdout": {
+        "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+        "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+      "groups_disjoint": true,
+      "paired_modalities_not_jointly_input": true,
+      "counts": {
+        "train": 6000,
+        "val": 2000,
+        "test": 2000
+      },
+      "source_training_domain": "RGB",
+      "selected_counts": {
+        "train": 3000,
+        "val": 1000,
+        "test": 2000
+      },
+      "evaluation_domains": [
+        "RGB",
+        "SAR"
+      ]
+    },
+    "teacher_used": false
+  },
+  "D2NN_RGB/history.json": {
+    "epoch": 21,
+    "VAL": 0.341
+  },
+  "teacher_RGB/status.json": {
+    "state": "complete",
+    "pid": null,
+    "epoch": null,
+    "code": null,
+    "split": null,
+    "error": null
+  },
+  "teacher_RGB/metadata.json": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "pid": 2037902,
+    "training_domain": "RGB",
+    "data": {
+      "trainval": {
+        "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+        "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "holdout": {
+        "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+        "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+      "groups_disjoint": true,
+      "paired_modalities_not_jointly_input": true,
+      "counts": {
+        "train": 6000,
+        "val": 2000,
+        "test": 2000
+      }
+    },
+    "teacher_used": null
+  },
+  "teacher_RGB/history.json": {
+    "epoch": 25,
+    "VAL": 0.927
+  },
+  "LG_RGB/status.json": {
+    "state": "training",
+    "pid": 2038704,
+    "epoch": 9,
+    "code": null,
+    "split": null,
+    "error": null
+  },
+  "LG_RGB/metadata.json": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "pid": 2038704,
+    "training_domain": null,
+    "data": {
+      "trainval": {
+        "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+        "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "holdout": {
+        "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+        "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+      "groups_disjoint": true,
+      "paired_modalities_not_jointly_input": true,
+      "counts": {
+        "train": 6000,
+        "val": 2000,
+        "test": 2000
+      },
+      "source_training_domain": "RGB",
+      "selected_counts": {
+        "train": 3000,
+        "val": 1000,
+        "test": 2000
+      },
+      "evaluation_domains": [
+        "RGB",
+        "SAR"
+      ]
+    },
+    "teacher_used": true
+  },
+  "LG_RGB/history.json": {
+    "epoch": 9,
+    "VAL": 0.473
+  },
+  "D2NN_SAR/status.json": {
+    "state": "training",
+    "pid": 2037900,
+    "epoch": 14,
+    "code": null,
+    "split": null,
+    "error": null
+  },
+  "D2NN_SAR/metadata.json": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "pid": 2037900,
+    "training_domain": null,
+    "data": {
+      "trainval": {
+        "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+        "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "holdout": {
+        "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+        "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+      "groups_disjoint": true,
+      "paired_modalities_not_jointly_input": true,
+      "counts": {
+        "train": 6000,
+        "val": 2000,
+        "test": 2000
+      },
+      "source_training_domain": "SAR",
+      "selected_counts": {
+        "train": 3000,
+        "val": 1000,
+        "test": 2000
+      },
+      "evaluation_domains": [
+        "RGB",
+        "SAR"
+      ]
+    },
+    "teacher_used": false
+  },
+  "D2NN_SAR/history.json": {
+    "epoch": 14,
+    "VAL": 0.25
+  },
+  "teacher_SAR/status.json": {
+    "state": "complete",
+    "pid": null,
+    "epoch": null,
+    "code": null,
+    "split": null,
+    "error": null
+  },
+  "teacher_SAR/metadata.json": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "pid": 2037903,
+    "training_domain": "SAR",
+    "data": {
+      "trainval": {
+        "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+        "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "holdout": {
+        "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+        "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+      "groups_disjoint": true,
+      "paired_modalities_not_jointly_input": true,
+      "counts": {
+        "train": 6000,
+        "val": 2000,
+        "test": 2000
+      }
+    },
+    "teacher_used": null
+  },
+  "teacher_SAR/history.json": {
+    "epoch": 54,
+    "VAL": 0.731
+  },
+  "LG_SAR/status.json": {
+    "state": "training",
+    "pid": 2038947,
+    "epoch": 6,
+    "code": null,
+    "split": null,
+    "error": null
+  },
+  "LG_SAR/metadata.json": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "pid": 2038947,
+    "training_domain": null,
+    "data": {
+      "trainval": {
+        "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+        "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "holdout": {
+        "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+        "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60",
+        "original_split_sha256": "cfe8373dd33cc0fe64f083b9ca32377e767c21b078c3f1d91f2dacecc25cb776"
+      },
+      "task": "same ten-class land-cover prediction, individual RGB or SAR input",
+      "groups_disjoint": true,
+      "paired_modalities_not_jointly_input": true,
+      "counts": {
+        "train": 6000,
+        "val": 2000,
+        "test": 2000
+      },
+      "source_training_domain": "SAR",
+      "selected_counts": {
+        "train": 3000,
+        "val": 1000,
+        "test": 2000
+      },
+      "evaluation_domains": [
+        "RGB",
+        "SAR"
+      ]
+    },
+    "teacher_used": true
+  },
+  "LG_SAR/history.json": {
+    "epoch": 6,
+    "VAL": 0.419
+  }
+}

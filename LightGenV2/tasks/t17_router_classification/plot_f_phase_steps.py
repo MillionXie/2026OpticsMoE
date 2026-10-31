@@ -18,7 +18,8 @@ def main():
     axs[0].set(xlabel='Additional round',ylabel='TRAIN CE + KD + anchor',title='Within each pair: identical TRAIN views and head')
     axs[0].text(.02,.03,'Different rounds use different random D4 view sets.',transform=axs[0].transAxes,fontsize=8)
     axs[0].legend(fontsize=8);axs[0].grid(alpha=.2)
-    for rows,label,color in [(adam,'Full-TRAIN Adam (complete)','#e45756'),(paired,'Paired backtracking (in progress)','#4c78a8')]:
+    paired_state='complete' if (task/'runs/simulation/f_backtracking_s17_20261031/paired/result.json').exists() else 'in progress'
+    for rows,label,color in [(adam,'Full-TRAIN Adam (complete)','#e45756'),(paired,f'Paired backtracking ({paired_state})','#4c78a8')]:
         axs[1].plot([0]+[r['epoch'] for r in rows],[52.4]+[100*r['validation']['accuracy'] for r in rows],'.-',color=color,label=label)
     axs[1].axhline(52.4,color='black',linestyle='--',linewidth=1,label='Protected D4 parent VAL')
     for r in paired:

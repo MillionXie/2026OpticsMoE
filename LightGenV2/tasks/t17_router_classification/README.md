@@ -1,3 +1,24 @@
+## F最新人工协议：四个单域模型、八格交叉评估（2026-10-31）
+
+用户最新明确要求：LG_RGB、LG_SAR、D2NN_RGB、D2NN_SAR四个独立模型，各自推理RGB/SAR，共八个测试格。
+覆盖下方历史“一个联合LG+一个联合D”的范围，旧联合模型不能补进新八格。原数据/空间划分不变，
+学生各只使用源域3000原TRAIN，同域1000 VAL选模，原TEST两个域各1000全部评价；源域筛选不改变任何原像素/ID/标签。
+新四组均从头seed17，禁止继承旧联合模型，避免对方训练域信息进入权重。a/b保护、d暂缓、j不管。
+
+D2NN从头三层478、每层含末层同OEO、零Linear，恒定raw Adam.005/完整60轮/仅源域TRAIN/无教师；不降低基线。
+LG原四专家224+gap30/global478/router224/Top2/E-G两层/两次同OEO/单无偏置Linear784→10、无CNN前端不变，
+wrapped相位LR.001/head.0001、D4、最多80/min30/pat20，每5轮源TRAIN全部8视图24000呈现做原单头40内步。
+两个独立教师以冻结ImageNet ResNet18+MLP，在各自源域3000 TRAIN+1000原TEST的D4增强上学习，
+同域VAL只选模、对方域完全不进教师；学生仅源域TRAIN真标签+软目标KD.5/T2，不直接训练TEST图像。
+所有结果标ORIGINAL_TEST_EXPOSED_DEVELOPMENT，不能冒称独立TEST或等训练数据/预算结构优势；教师不进LG推理。
+
+source069310f390eea5a22a5f5aae9451c26e0da55729已160项CPU检查及四组真实源域TRAIN GPU梯度更新/相位数/唯一Linear/noCNN/真Top2准入，
+main发布并服务器路径SHA。root runs/simulation/f_cross_domain_s17_20261031：D2NN_RGB PID2037898/4090物理1、D2NN_SAR2037900/A100物理6，
+RGB pipeline supervisor2037899、SAR2037901；两教师已完整结束，已实际启动LG_RGB2038704与LG_SAR2038947，不能误认仍在排队。
+每卡最多两个自己的worker，不动其他进程。旧联合回溯1988674完整20选E16，TRAIN63.42/VAL53.20/DEV53.75，RGB60.50/SAR47.00，
+完整13文件6.61MB已SHA/strict/Armijo/固定router/完整ID标签域/真Top2核验，自己的旧GPU已退出。新八格目前未完成，不用这些数冒充。
+正式八格和历史过拟合对照见 reports/f_cross_domain_s17_20261031/results.html，由report_f_cross_domain.py生成。
+
 ## 有界TRAIN相位回溯已准入并启动（2026-10-31）
 
 source2c5ffb646已通过156项CPU检查（周期相位下降/拒绝及异常bitwise恢复/原默认兼容/真实光学scope），并发布main、服务器按路径SHA核验。

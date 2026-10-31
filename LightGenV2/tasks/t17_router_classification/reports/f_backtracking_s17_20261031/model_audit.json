@@ -1,0 +1,1 @@
+{"strict": true, "router_bitwise_equal_to_parent": true, "parameters": 487204, "Linear": 1, "CNN": 0, "state_keys": ["first_phase", "global_phase", "router_phase", "shared_head.weight"]}

@@ -1,0 +1,196 @@
+{
+  "extra_TRAIN_trial_views": 870000,
+  "original_TRAIN_images": 6000,
+  "random_gradient_view_presentations": 120000,
+  "all_paired_TRAIN_acceptance_checks_passed": true,
+  "router_frozen": true,
+  "phase_optimizer_update_count": 20,
+  "head_SGD_updates": 0,
+  "head_view_presentations": 192000,
+  "head_block_views_verified": true,
+  "completed_epochs": 20,
+  "selected_epoch": 16,
+  "best_sha256": "774e237080c406d532ade69b8278a7601279ac786ddd84e07cdcbb9d6e808f5e",
+  "TRAIN_VAL_gap_pp": 10.216666666666663,
+  "splits": {
+    "train": {
+      "n": 6000,
+      "correct": 3805,
+      "accuracy": 0.6341666666666667,
+      "domains": {
+        "RGB": 0.656,
+        "SAR": 0.6123333333333333
+      },
+      "macro_recall": 0.6341666666666667,
+      "mean_capture": 0.08537475764751434,
+      "mean_power": [
+        0.018140481784939766,
+        0.0881626158952713,
+        0.893640398979187,
+        5.744375448557548e-05
+      ],
+      "mean_dense_power": [
+        0.0655580461025238,
+        0.09538942575454712,
+        0.8380581736564636,
+        0.0009947045473381877
+      ],
+      "class_recall": [
+        0.615,
+        0.795,
+        0.3933333333333333,
+        0.4633333333333333,
+        0.82,
+        0.5966666666666667,
+        0.51,
+        0.6966666666666667,
+        0.7466666666666667,
+        0.705
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "val": {
+      "n": 2000,
+      "correct": 1064,
+      "accuracy": 0.532,
+      "domains": {
+        "RGB": 0.561,
+        "SAR": 0.503
+      },
+      "macro_recall": 0.5319999999999999,
+      "mean_capture": 0.08522407710552216,
+      "mean_power": [
+        0.01855713315308094,
+        0.08808523416519165,
+        0.8933583498001099,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.0658993050456047,
+        0.09514494240283966,
+        0.83799809217453,
+        0.0009579393081367016
+      ],
+      "class_recall": [
+        0.55,
+        0.71,
+        0.26,
+        0.33,
+        0.71,
+        0.61,
+        0.29,
+        0.62,
+        0.645,
+        0.595
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "test": {
+      "n": 2000,
+      "correct": 1075,
+      "accuracy": 0.5375,
+      "domains": {
+        "RGB": 0.605,
+        "SAR": 0.47
+      },
+      "macro_recall": 0.5375,
+      "mean_capture": 0.08434495329856873,
+      "mean_power": [
+        0.023621032014489174,
+        0.08586376905441284,
+        0.8905152678489685,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.0689190924167633,
+        0.09667946398258209,
+        0.8334559798240662,
+        0.0009452012018300593
+      ],
+      "class_recall": [
+        0.5,
+        0.59,
+        0.145,
+        0.295,
+        0.735,
+        0.44,
+        0.505,
+        0.595,
+        0.73,
+        0.84
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    }
+  },
+  "head_internal_steps": 160,
+  "teacher_TRAIN_IDs_only": true,
+  "teacher_cache_shape": [
+    6000,
+    8,
+    10
+  ],
+  "teacher_manifest": {
+    "checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+    "teacher_parameters": 94762,
+    "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/frozen_electronic/model.py",
+    "original_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+    "teacher_used_TEST": false,
+    "current_cache_splits": [
+      "TRAIN D4 code0",
+      "TRAIN D4 code1",
+      "TRAIN D4 code2",
+      "TRAIN D4 code3",
+      "TRAIN D4 code4",
+      "TRAIN D4 code5",
+      "TRAIN D4 code6",
+      "TRAIN D4 code7"
+    ],
+    "training_view_codes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "TEST_cached": false,
+    "teacher_parameters_bitwise_frozen": true,
+    "metrics": {
+      "train": {
+        "accuracy": 0.8008333333333333,
+        "domains": {
+          "RGB": 0.8343333333333334,
+          "SAR": 0.7673333333333333
+        },
+        "accuracy_by_augmentation_code": {
+          "0": 0.8008333333333333,
+          "1": 0.781,
+          "2": 0.7931666666666667,
+          "3": 0.7825,
+          "4": 0.8011666666666667,
+          "5": 0.7803333333333333,
+          "6": 0.796,
+          "7": 0.7806666666666666
+        }
+      },
+      "val": {
+        "accuracy": 0.7605,
+        "domains": {
+          "RGB": 0.769,
+          "SAR": 0.752
+        }
+      }
+    },
+    "logits_sha256": "9215b79ef41fabc76a96dd52ed311169e1453c0ce271221058332cc225452b2a"
+  },
+  "phase_updates": {
+    "first_phase": 0.5703634023666382,
+    "global_phase": 0.8514699935913086,
+    "router_phase": 0.0,
+    "shared_head.weight": 5.2866363525390625
+  },
+  "independent_TEST_claim": false,
+  "interpretation": "Paired TRAIN phase descent completed. An accepted TRAIN objective decrease is not evidence of improved independent TEST generalization. Compare actual locked domain results with protected D4 parent, preserve both and all rejected trials."
+}
