@@ -15,6 +15,7 @@ from PIL import Image
 from .appearance_scene_protocol import COARSE_PROFILE,SHORT_PROFILE,conditions
 from .scene_generation_data import request_seed
 from .white_reference_scene_probe import GPU,digest,write
+from .scene_reference_framing import frame_reference,FRAMING
 
 REVISION='016e2f61d12a98303f6bbdf122687694d7984268'
 
@@ -123,6 +124,7 @@ def generate(a):
         reference_path=a.output/(row['reference'] if corpus else row['reference_id']+'.png')
         if not reference_path.exists():shutil.copyfile(source,reference_path)
         with Image.open(source) as im:reference=im.convert('RGB').copy()
+        reference,framing=frame_reference(reference,getattr(a,'reference_framing','original'))
         generator=torch.Generator(device='cuda').manual_seed(row['seed'])
         noise=torch.randn((1,4,64,64),device='cuda',dtype=torch.bfloat16,generator=generator)
         noise_sha=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
@@ -134,7 +136,7 @@ def generate(a):
         filename=('targets/' if corpus else '')+row['sample_id']+'.png';image.save(a.output/filename)
         records.append({**row,'split':row.get('split','dev'),'native_prompt':prompt,'generated_PNG':filename,'generated_sha256':digest(a.output/filename),
             'initial_latent_sha256':noise_sha,
-            'resolution':512,'sampling_steps':50,'model':'OmniGen-v1 official frozen','input_sha256':digest(source)})
+            'resolution':512,'sampling_steps':50,'model':'OmniGen-v1 official frozen','input_sha256':digest(source),'reference_framing':framing})
         if corpus:records[-1].update(target=filename,target_sha256=digest(a.output/filename),QA_accepted=False,
             teacher='frozen official OmniGen-v1',RGB_paste_or_target_inputs=False)
         write(a.output/('candidates.json' if corpus else 'images.json'),records)
@@ -148,6 +150,7 @@ def generate(a):
         'GT_masks_or_targets_opened':False,'independent_TEST_opened':False,'image_feedback':False,
         'native_peer_reference_VAE_not_a_Qwen_branch':True,'factual_evaluation_captions':True,
         'different_official_sampling_budget_from_SDXL30_must_be_labelled':True}
+    final['reference_framing']=getattr(a,'reference_framing','original')
     if matched:final.update(expanded_DEV_protocol=protocol,matched_public_prompt_unmodified=True,
         only_native_image_placeholder_added=True,source_request_sha256=protocol['request_sha256'],
         no_task_tuning=True,not_same_training_budget_as_paired_models=True)
@@ -162,6 +165,7 @@ def main():
     parser.add_argument('--corpus',action='store_true',help='New two-sentence TRAIN/DEV candidate corpus; never auto-accepted')
     parser.add_argument('--prompt-revision',type=Path,help='Matched natural DEV128, using --sources as paired-data root; not TRAIN corpus')
     parser.add_argument('--visible-anchor-dev',action='store_true',help='Exact target-free visible-anchor DEV48 on all16 original views; no TRAIN hints')
+    parser.add_argument('--reference-framing',choices=['original',FRAMING],default='original',help='Source-RGB-only white-margin framing ablation, no GT/mask')
     for key in ['sources','model-path','metadata','output']:parser.add_argument('--'+key,type=Path,required=True)
     a=parser.parse_args()
     if a.output.exists() or len(os.environ.get('T12_SOURCE_COMMIT',''))!=40 or os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU:
