@@ -1,0 +1,83 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/SOURCE_TEST_teacher_logits.npz",
+      "size": 595437,
+      "sha256": "701d3c1bfcd5cf9ed0b20af1ba5394345a68baab7194c6c99c10efce8c1a0be9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/TRAIN_teacher_logits.npz",
+      "size": 1784035,
+      "sha256": "c2040426d9161ee36a56b3f0be22bab4256c05a178fb6a985360dd6161e01932"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/best_checkpoint.pt",
+      "size": 1960848,
+      "sha256": "8f789ef0ea432f3b8c29f05de85cf694c7fa163c162ecda932228ab9c90700b6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/exit_receipt.json",
+      "size": 55,
+      "sha256": "a23744126d774b2b0d772686c5c1803d28b65f9c679970e48313d59aea59bd82"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/history.json",
+      "size": 477210,
+      "sha256": "44568221071af0f6cd357adc6e43c0726dd910c33bc7653dec5cf7add57f21aa"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/last_checkpoint.pt",
+      "size": 5797175,
+      "sha256": "b869e1dd5182bed662c9438adf3e157a522fed7cb6ef4da5d56e03dc6b74bac6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/metadata.json",
+      "size": 8023,
+      "sha256": "8fa55d3b6d642b506cc815f408d1418a9b248edd2e8fa8f7084522544f733ba6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/result.json",
+      "size": 14048,
+      "sha256": "f8577a047827c965dbc2c5369f1725a5c359089cd656db495e340638d6ef1ad4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/selection_lock.json",
+      "size": 273,
+      "sha256": "3fe873475119cd533d9ab82091e5fa92143891aba68c5141e560afd78f5b8816"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/source_TEST_distillation_manifest.json",
+      "size": 759,
+      "sha256": "6128b404553ce5a4d4461d8764c78da32f69dfffe1d6bb91e12ecf34b0ac838b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/status.json",
+      "size": 14089,
+      "sha256": "5c49b73fc11a254a356f8ee7e5647e0e595c986de1ade18714aa2e7515539a91"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/teacher_manifest.json",
+      "size": 891,
+      "sha256": "e936499cd5fc1c8e5f403871f70049c8076664be5da7929dd5cd76da506d0716"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/test_predictions.npz",
+      "size": 138056,
+      "sha256": "dd6368ceb7f306bf2248b9e7a62b46255e22cb1a002cd8266d8ac24e583d91fe"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/train_predictions.npz",
+      "size": 407671,
+      "sha256": "bd241a961048caa0b980ebd2626c555183ef206ec70415eedbd6bd5e08a1c03e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/val_predictions.npz",
+      "size": 137725,
+      "sha256": "0f14f4149adbd02c8de91f3269b0e87896ca8a2d6fce813c3567dd99465ea4a9"
+    }
+  ]
+}

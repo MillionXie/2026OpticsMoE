@@ -1,0 +1,58 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    }
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    }
+  },
+  "full_canonical_TEST_replay": {
+    "images": 2000,
+    "predictions_exact": true,
+    "probabilities_bitwise": true,
+    "probability_max_abs_difference": 0.0
+  }
+}

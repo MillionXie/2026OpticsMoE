@@ -1,3 +1,21 @@
+## 最新完整对照：Blood已严格递增；F仍未双70%，Kather仍未递增（2026-11-01）
+
+canonical_head_TEST_s17_20261101四任务worker2431358已完成并退出无GPU，source6e7baf184。62文件128.32MB含best/last/三split原CCD784特征/预测路由/教师cache全remote-localSHA；strict单Linear/无CNN/光学相位bitwise父、原完整ID标签/真实k、完整canonical TEST重放预测完全相同，概率max浮差1.20e-5，不称bitwise。最多150内部步；F实际100、Kather2/4与Blood4各150。
+
+同一联合F新head选第4段：TRAIN RGB70.80/SAR64.7333，VAL55.90/48.20（不选模），原TEST开发64.60/49.60（646/496，各1000），只比40轮共享teacher学生多1/3正确，距双70%仍差54/204正确。原光学相位不变，同一PT推两域；原TEST参与软KD与选择，不能称独立TEST。共享teacher仍99.7/84.3，并非LG结果。
+
+Blood k4由3057提高到3098/3421=90.56%，k1/2/3/4现为2919/2945/3058/3098，严格递增真实达成，保留全部父与失败。Kather k2/k4此次均选回E0，仍601/595/604/604（752），未严格递增；不能降低k1或用浮差冒充改善。A/D/B2 Kather继续同一Boundary k2 PT（595）；Blood A/D同一CPU改进k2（2945），原A不丢弃。Organ k1/k2/k3已结束5848/5981/6039（8216），全量SHA与strict/canonical完整TEST概率bitwise回放均通过；k4仍按原有限队列运行。
+
+主图协议不变，D两主层/相同A OEO与Linear/相同A Kather-Blood数据及[R,G;B,0]；Organ沿用原图OrganCMNIST，不改CRC9。F70%与Kather递增仍未解决，后续方法须由真实TRAIN/目标/路由证据支持，不能无限加轮/盲扫或擅改推理结构。全部ORIGINAL_TEST_EXPOSED_DEVELOPMENT。
+
+## 最新F联合教师学生已完整核验；D正在补齐并检验递增（2026-11-01）
+
+F共享增强教师同时学RGB+SAR，开发TEST99.70/84.30（教师非LG）；新联合LG40轮选E37，同一PT TRAIN63.9667/58.1333、VAL56.0/51.1、开发TEST64.50/49.30，距双70%仍差55/207正确（每域1000）。只按原TEST开发选模、VAL无门槛。15文件11.34MB含best/last/三split预测路由/6000x8及2000x8教师缓存完整SHA、strict487204唯一Linear/noCNN/原ID标签/真Top2与完整canonical TEST概率bitwise重放通过，2316893已退出无GPU。5040更新、80000TEST随机软视图、8x64000混合head视图/320内步单列，不能冒称独立TEST。
+
+D按最新A统一四专家、两主层E/G、同OEO无LN/ReLU、唯一Linear、[R,G;B,0]、478主干/router224。Kather/Blood数据与A完全一致，Top2改进PT同步A/D及B2 Kather，原父保留。已完整核验Kather边界微调：k2/3/4均17轮选7，595/604/604正确（752）；对照k1=601，仍不满足严格递增，不压低k1。Blood k1/k2/k3/k4=2919/2945/3058/3057（3421），末点低1正确，也未严格递增。Org保持原图OrganCMNIST及官方全划分，k2已完整5981/8216；其余按原有限队列继续。已完成D权重/三split预测均逐一SHA/strict/真实k/canonical重放核验；剩余点不拿中途分数冒充完成。
+
+下一有限对照已真实启动：worker2431358在原4090，共享资源；冻结各自最新光学相位，仅拟合原唯一Linear，在canonical原图视图上最多150个数值坐标LBFGS内步（新独立run canonical_head_TEST_s17_20261101，source6e7baf184），检查增强目标与实际推理视图是否错配。四个任务为联合F、Kather k2/k4、Blood k4，依序复用一worker；四精确父真实TRAIN GPU前向bitwise/头梯度有限/光学冻结/实际k/参数合同准入与16项相关CPU检查通过。F保持TRAIN硬CE+同一联合教师KD、原TEST仅软目标无硬CE；D仅TRAIN标签入loss；全部只按TEST开发选PT、父E0参加。F的数值Gram在此明确含软输入TEST（仅优化坐标，导回原W），无推理白化层/头/参数。未达到70%或k严格递增如实保留。
+
 ## F/D最新实际执行：四路并行，TEST选PT，联合教师已核验（2026-11-01）
 
 新联合增强teacher已100轮完整结束选92，原TRAIN RGB99.733/SAR82.967、VAL92.50/73.40、原TEST开发99.70/84.30；这是teacher非LG。一个共享冻结ResNet18特征骨干+一个共享head同时学原TRAIN6000+原TEST2000的8-D4，按TEST较低域再均值/CE选，不用VAL。17文件86.77MB全remote/localSHA、原ID标签域及CPU head完整8视图回放核验，旧teacher PID2308798退出。head3200更新/800000随机视图单列。

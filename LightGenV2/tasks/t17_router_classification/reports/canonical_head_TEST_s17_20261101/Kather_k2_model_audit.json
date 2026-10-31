@@ -1,0 +1,36 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "phase_bitwise_parent": true,
+    "Linear": 1,
+    "CNN": 0,
+    "parameters": 485636
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "phase_bitwise_parent": true,
+    "Linear": 1,
+    "CNN": 0,
+    "parameters": 485636
+  },
+  "full_canonical_TEST_replay": {
+    "predictions_exact": true,
+    "probabilities_bitwise": false,
+    "probability_max_abs": 7.271766662597656e-06,
+    "images": 752
+  },
+  "original_ID_labels": {
+    "train": {
+      "images": 3496,
+      "correct": 3103
+    },
+    "val": {
+      "images": 752,
+      "correct": 578
+    },
+    "test": {
+      "images": 752,
+      "correct": 595
+    }
+  }
+}

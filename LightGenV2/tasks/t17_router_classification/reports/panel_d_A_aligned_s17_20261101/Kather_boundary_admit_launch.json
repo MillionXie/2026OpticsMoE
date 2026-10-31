@@ -1,0 +1,83 @@
+{
+  "source_commit": "36ee54d9058cd824cfd0a98d9e615f01c1b69756",
+  "queue_pid": 2375214,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.run_panel_d_queue",
+    "--profiles",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_kather_boundary_k2_s17_20261101.json",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_kather_boundary_k3_s17_20261101.json",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_kather_boundary_k4_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_Kather_boundary_refine_s17_20261101/kather2016",
+    "--admission",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/panel_d_kather_boundary_admission_s17_20261101/admission.json"
+  ],
+  "admission": {
+    "source_commit": "36ee54d9058cd824cfd0a98d9e615f01c1b69756",
+    "source_sha256": {
+      "train_figure_revision.py": "ea65222ce5ec57c6c53a3cdc8ed87088b8a42d906ac4094e3b9bf022d45cce75",
+      "model_four.py": "0bf0747af500e6ac5e449a947eda5a7ece061e1a938e736b4c294790981a7e5b",
+      "model_depth_ccd.py": "d0b36fb9af338d12e7ba764aad554b8479eea3ef6554c99e08873bf1c5ef7c86",
+      "model_linear_readout.py": "ea9839da8317e0f172e92e5d23f67bef1529576fd4f0e2a94540f1e57590216f",
+      "readout_data.py": "3be0f2a7bafd0721d50a310d9cc532ef61f7b927fe1970e2ed012e919d0640e5",
+      "panel_d_data.py": "87609aa5cd39c75888c147720c3005f9ad7e2da40cf2eb1949163cd38aa797df",
+      "phase_optimizer.py": "2e43c49b0fef68f24e1c077ae3756ec4c62600d450a8c48230c83dc298beb361",
+      "alternating_readout.py": "b94fdfa5c8e78291975a327a137d0c2c80166f4a0677c9ce8e157df376a7bee8"
+    },
+    "GPU": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "models": {
+      "kather2016_k2": {
+        "exact_parent_sha256": "e8e0285fc0bc9ff0600b1595a3e0f13966be175fd04255774298da3e8af52685",
+        "full_TEST_predictions_exact": true,
+        "full_TEST_probability_max_abs": 7.68899917602539e-06,
+        "parent_development_accuracy": 0.7792553191489362,
+        "actual_k": 2,
+        "real_TRAIN_samples": 8,
+        "router_bitwise_frozen": true,
+        "parameter_updates": {
+          "first_phase": 9.997044563293457,
+          "global_phase": 290.6070556640625,
+          "router_phase": 0.0,
+          "shared_head.weight": 0.003959738649427891
+        },
+        "inference_parameters": 485636
+      },
+      "kather2016_k3": {
+        "exact_parent_sha256": "f672c3c602714913b8d85867bd89c055f6f11794e7e08d38e68b366af62face3",
+        "full_TEST_predictions_exact": true,
+        "full_TEST_probability_max_abs": 0.0,
+        "parent_development_accuracy": 0.7978723404255319,
+        "actual_k": 3,
+        "real_TRAIN_samples": 8,
+        "router_bitwise_frozen": true,
+        "parameter_updates": {
+          "first_phase": 126.62413787841797,
+          "global_phase": 251.657958984375,
+          "router_phase": 0.0,
+          "shared_head.weight": 0.003959736321121454
+        },
+        "inference_parameters": 485636
+      },
+      "kather2016_k4": {
+        "exact_parent_sha256": "5d6d50da393e8fb384d84c7d733e915dbb3bd5c1303f1edb34847f5287dd6f0d",
+        "full_TEST_predictions_exact": true,
+        "full_TEST_probability_max_abs": 0.0,
+        "parent_development_accuracy": 0.7978723404255319,
+        "actual_k": 4,
+        "real_TRAIN_samples": 8,
+        "router_bitwise_frozen": true,
+        "parameter_updates": {
+          "first_phase": 126.30608367919922,
+          "global_phase": 252.3922882080078,
+          "router_phase": 0.0,
+          "shared_head.weight": 0.003959754481911659
+        },
+        "inference_parameters": 485636
+      }
+    }
+  },
+  "time": 1793472338.5325403
+}

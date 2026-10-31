@@ -1,0 +1,37 @@
+{
+  "role": "ORIGINAL_TRAIN_ONLY_READONLY_DIAGNOSIS",
+  "reference_checkpoint_sha256": "a6aaf53e2b017a65be6f3a617efebb79e54aa26680dae9d2b8ae2438315163bd",
+  "TRAIN_images": 12975,
+  "TRAIN_errors": 2445,
+  "paired_left_right_errors": 264,
+  "fraction_of_TRAIN_errors_between_left_right_pairs": 0.10797546012269939,
+  "pairs": [
+    {
+      "labels": [
+        1,
+        2
+      ],
+      "TRAIN_correct": 835,
+      "TRAIN_n": 1214
+    },
+    {
+      "labels": [
+        4,
+        5
+      ],
+      "TRAIN_correct": 1423,
+      "TRAIN_n": 2258
+    },
+    {
+      "labels": [
+        7,
+        8
+      ],
+      "TRAIN_correct": 2005,
+      "TRAIN_n": 2024
+    }
+  ],
+  "hypothesis": "Organ contains anatomical left/right classes. Full D4 may erase informative orientation; original T10 orientation-regularized branch explicitly avoids flips and quarter-turns. This is a training-augmentation hypothesis, not proof of corrupt labels or a new accuracy result.",
+  "no_model_or_data_changes": true,
+  "next_step": "If a bounded control is warranted, use a new no-reflection/no-quarter-turn profile on the same data and inference model; preserve existing D4 candidates and TEST-only selection. Never edit a running profile."
+}

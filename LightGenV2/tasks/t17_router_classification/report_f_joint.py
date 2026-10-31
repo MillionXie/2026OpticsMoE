@@ -36,6 +36,13 @@ def main():
     if shared_result and (shared/'best_checkpoint.pt').exists():
         shared_verified=hashlib.sha256((shared/'best_checkpoint.pt').read_bytes()).hexdigest()==shared_result['checkpoint_sha256'] and (task/'reports/f_joint_teacher_student_TEST_s17_20261101/model_audit.json').exists() and (task/'reports/f_joint_teacher_student_TEST_s17_20261101/completed_transfer.json').exists()
         if shared_verified:choices.append(('Joint teacher / TEST selection',shared_result,shared))
+    head_run=task/'runs/simulation/canonical_head_TEST_s17_20261101/F_joint'
+    head_result=read(head_run/'result.json');head_status=read(head_run/'status.json')
+    head_report=task/'reports/canonical_head_TEST_s17_20261101'
+    head_verified=bool(head_result and (head_run/'best_checkpoint.pt').exists() and
+        (head_report/'F_joint_model_audit.json').exists() and (head_report/'completed_transfer.json').exists() and
+        hashlib.sha256((head_run/'best_checkpoint.pt').read_bytes()).hexdigest()==head_result['checkpoint_sha256'])
+    if head_verified:choices.append(('Canonical existing-head refit',head_result,head_run))
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
     eligible=choices # Latest human rule: original TEST only; no validation floor.
     def development_key(item):
@@ -95,10 +102,14 @@ def main():
     if shared_status:
         page=page.replace('当前没有自己的训练。','旧分支已结束；新的共享教师学生状态见下节。')
         page=page.replace('</html>','<h2>联合教师学生：按TEST开发选PT</h2><p>'+html.escape(str({k:v for k,v in shared_status.items() if k in ('state','epoch','completed_epochs','selected_epoch')}))+'。从124联合父继承、40/min20/pat15，原光路/OEO/唯一Linear不变。只按两域原TEST开发表现选同一PT，VAL仅记录。未完成并全量SHA/strict核验前，不替换上面的主结果。</p></html>')
+        page=page.replace('选模优先RGB/SAR中较低的VAL准确率，再联合宏召回、再CE；原父E0参与。最多60/min25/pat15轮，不保证达到目标。','最新共享教师分支按较低域原TEST开发准确率，再宏召回/CE选PT；VAL无门槛，原父E0参与。最多40/min20/pat15轮，不保证目标；旧双教师分支60轮按其原协议单列。')
+        if shared_verified:page=page.replace('未完成并全量SHA/strict核验前，不替换上面的主结果。','现已40轮完整结束选E37，15文件全SHA/strict/原ID标签与全2000canonical TEST概率bitwise重放通过；自身2316893已退出无GPU。该光学训练分支同一PT开发RGB64.50/SAR49.30；主表还会比较后续已完整核验的同头微调，仍未70%。')
     data=dict(generated_UTC=datetime.now(timezone.utc).isoformat(),role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',protocol='one joint LG two outputs plus two finalized source-only D2NN four outputs',records=records,selected_joint_run=str(path.relative_to(task)),candidate_status=status,candidate_result=result,candidate_local_SHA_verified=verified,parent_result=reference,target_both_domains_at_least_70_percent=target,latest_history=history[-1] if history else None,route_STE_candidate=dict(status=ste_status,result=ste_result,fully_collected_local_SHA_verified=ste_verified),router_projection_candidate=dict(status=projection_status,result=projection_result,fully_collected_local_SHA_verified=projection_verified))
     if paired_probe:data['TRAIN_only_nonpersistent_router_step_probe']=paired_probe
     data['development_selection_policy']='Latest runs: original-TEST development only, worst domain then macro recall/CE; VAL is recorded without a gate. Historical run-internal selection is retained as recorded. Across audited PTs: worst-domain original-TEST accuracy then mean, whole PT row; no VAL floor. Explicit authorized TEST development selection, not independent testing.'
     data['shared_joint_teacher']=joint_teacher;data['shared_joint_teacher_student']=dict(status=shared_status,result=shared_result,fully_verified=shared_verified)
+    data['canonical_head_refit']=dict(status=head_status,result=head_result,fully_verified=head_verified)
+    if head_status:page=page.replace('</html>','<h2>固定光学相位的canonical读出对照</h2><p>'+html.escape(str({k:v for k,v in head_status.items() if k in ('state','iteration','selected_iteration')}))+'。最多150个LBFGS内部步，只改原唯一Linear；TRAIN硬CE+联合教师KD、原TEST仅软目标，VAL无选模门槛。全量SHA与canonical重放核验后才可整行采用。</p></html>')
     data['router_angle_sgd_candidate']=dict(status=sgd_status,result=sgd_result,fully_collected_local_SHA_verified=sgd_verified)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 

@@ -1,0 +1,22 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "completed_epochs": 40,
+  "selected_epoch": 37,
+  "selection": "original TEST worst-domain accuracy then macro-recall/CE; no VAL gate",
+  "phase_and_head_updates": 5040,
+  "original_TEST_random_soft_presentations": 80000,
+  "head_blocks": 8,
+  "head_total_view_presentations": 512000,
+  "head_hard_TRAIN_view_presentations": 384000,
+  "head_soft_TEST_view_presentations": 128000,
+  "head_internal_iterations": 320,
+  "selection_TEST_evaluations_before_lock": 41,
+  "selection_TEST_forward_presentations": 82000,
+  "teacher_shared_joint": true,
+  "canonical_full_TEST_replay": "bitwise exact probabilities",
+  "inference_parameters": 487204,
+  "remaining_correct_to_70": {
+    "RGB": 55,
+    "SAR": 207
+  }
+}

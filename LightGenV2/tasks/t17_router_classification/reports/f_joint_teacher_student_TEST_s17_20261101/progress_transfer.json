@@ -14,13 +14,13 @@
     },
     {
       "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/status.json",
-      "bytes": 105,
-      "sha256": "18442e49554d989a778ed86453c087ae81f91f98d3dab2451817d2278fcbfa22"
+      "bytes": 14089,
+      "sha256": "5c49b73fc11a254a356f8ee7e5647e0e595c986de1ade18714aa2e7515539a91"
     },
     {
       "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/history.json",
-      "bytes": 300198,
-      "sha256": "0d4b0382b26c5c6a986f6d499e0cbf21904fc02e71db4053ab98b01c56ca2868"
+      "bytes": 477210,
+      "sha256": "44568221071af0f6cd357adc6e43c0726dd910c33bc7653dec5cf7add57f21aa"
     },
     {
       "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/teacher_manifest.json",
@@ -31,6 +31,16 @@
       "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/source_TEST_distillation_manifest.json",
       "bytes": 759,
       "sha256": "6128b404553ce5a4d4461d8764c78da32f69dfffe1d6bb91e12ecf34b0ac838b"
+    },
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/selection_lock.json",
+      "bytes": 273,
+      "sha256": "3fe873475119cd533d9ab82091e5fa92143891aba68c5141e560afd78f5b8816"
+    },
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/result.json",
+      "bytes": 14048,
+      "sha256": "f8577a047827c965dbc2c5369f1725a5c359089cd656db495e340638d6ef1ad4"
     }
   ]
 }

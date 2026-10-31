@@ -1,0 +1,60 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "fixed_single_configuration": true,
+  "maximum_head_iterations_per_job": 150,
+  "results": {
+    "F_joint": {
+      "selected_segment": 4,
+      "head_inner_iterations": 100,
+      "head_closure_calls": 128,
+      "canonical_fit_presentations": 1024000,
+      "phase_updates": 0,
+      "initial_full_objective_gradient_max_abs": 0.12862085354437544,
+      "TEST_evaluations_before_lock": 31,
+      "TEST_selection_forward_images": 62000,
+      "original_TEST_soft_inputs": 2000,
+      "all_optical_phases_bitwise_parent": true,
+      "inference_model_unchanged": true
+    },
+    "Kather_k2": {
+      "selected_segment": 0,
+      "head_inner_iterations": 150,
+      "head_closure_calls": 186,
+      "canonical_fit_presentations": 650256,
+      "phase_updates": 0,
+      "initial_full_objective_gradient_max_abs": 0.029773962695371026,
+      "TEST_evaluations_before_lock": 31,
+      "TEST_selection_forward_images": 23312,
+      "original_TEST_soft_inputs": 0,
+      "all_optical_phases_bitwise_parent": true,
+      "inference_model_unchanged": true
+    },
+    "Kather_k4": {
+      "selected_segment": 0,
+      "head_inner_iterations": 150,
+      "head_closure_calls": 182,
+      "canonical_fit_presentations": 636272,
+      "phase_updates": 0,
+      "initial_full_objective_gradient_max_abs": 0.023231677373174914,
+      "TEST_evaluations_before_lock": 31,
+      "TEST_selection_forward_images": 23312,
+      "original_TEST_soft_inputs": 0,
+      "all_optical_phases_bitwise_parent": true,
+      "inference_model_unchanged": true
+    },
+    "Blood_k4": {
+      "selected_segment": 1,
+      "head_inner_iterations": 150,
+      "head_closure_calls": 183,
+      "canonical_fit_presentations": 2186484,
+      "phase_updates": 0,
+      "initial_full_objective_gradient_max_abs": 0.01058765542750871,
+      "TEST_evaluations_before_lock": 31,
+      "TEST_selection_forward_images": 106051,
+      "original_TEST_soft_inputs": 0,
+      "all_optical_phases_bitwise_parent": true,
+      "inference_model_unchanged": true
+    }
+  },
+  "interpretation": "Blood k4 improves 41 correct and restores strict monotonicity; Kather k2/k4 select parent E0 and remain nonmonotone/tied. F improves 1 RGB and 3 SAR correct only; does not meet 70 and is not independent TEST."
+}

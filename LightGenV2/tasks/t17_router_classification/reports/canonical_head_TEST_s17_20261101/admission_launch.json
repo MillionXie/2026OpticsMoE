@@ -1,0 +1,71 @@
+{
+  "source_commit": "6e7baf184ee336ad7b06dd142bb117960fb8858b",
+  "models": {
+    "F_joint": {
+      "parent_sha256": "8f789ef0ea432f3b8c29f05de85cf694c7fa163c162ecda932228ab9c90700b6",
+      "real_TRAIN_samples": 20,
+      "initial_forward_bitwise": true,
+      "physical_phases_bitwise_frozen": true,
+      "existing_head_gradient_norm": 7.85628817461684,
+      "head_objective_before": 1.9631882265672287,
+      "head_objective_after": 0.3198051157375562,
+      "strict_state_tensors": 4,
+      "inference_Linear": 1,
+      "inference_parameters": 487204,
+      "actual_k": 2
+    },
+    "Kather_k2": {
+      "parent_sha256": "651a6edcd0a616bfafd6d2652d847c6f5d015a0d3d17759b81fdee02078e54b0",
+      "real_TRAIN_samples": 8,
+      "initial_forward_bitwise": true,
+      "physical_phases_bitwise_frozen": true,
+      "existing_head_gradient_norm": 3.352858891265256,
+      "head_objective_before": 0.19950407081519517,
+      "head_objective_after": 0.035322496965529235,
+      "strict_state_tensors": 4,
+      "inference_Linear": 1,
+      "inference_parameters": 485636,
+      "actual_k": 2
+    },
+    "Kather_k4": {
+      "parent_sha256": "8b69354a54d8e7b45dbd8088306e662df6012c19a6b47060936edfd3c4a0d01a",
+      "real_TRAIN_samples": 8,
+      "initial_forward_bitwise": true,
+      "physical_phases_bitwise_frozen": true,
+      "existing_head_gradient_norm": 2.196919507427925,
+      "head_objective_before": 0.15020844903824085,
+      "head_objective_after": 0.025736075239769098,
+      "strict_state_tensors": 4,
+      "inference_Linear": 1,
+      "inference_parameters": 485636,
+      "actual_k": 4
+    },
+    "Blood_k4": {
+      "parent_sha256": "932b215b455103c080aba999bcdec1f1cb8889fe5084250d98ec85e5bf7ebe6e",
+      "real_TRAIN_samples": 8,
+      "initial_forward_bitwise": true,
+      "physical_phases_bitwise_frozen": true,
+      "existing_head_gradient_norm": 1.985573515942313,
+      "head_objective_before": 0.1701356616975676,
+      "head_objective_after": 0.029629062247734022,
+      "strict_state_tensors": 4,
+      "inference_Linear": 1,
+      "inference_parameters": 485636,
+      "actual_k": 4
+    }
+  },
+  "code_sha256": "1509fbe8134ad7fb0bf8f8716e6a30523f3034743483611e745e8bf477b34953",
+  "profile_sha256": "f6b91f9151a4d5d4f0cb8d940e27d08a75fe5f58d6c37995cbf3d82d0ca86ab8",
+  "pid": 2431358,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_canonical_head_TEST",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/canonical_head_TEST_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/canonical_head_TEST_s17_20261101"
+  ],
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "time": 1793474581.6517975
+}

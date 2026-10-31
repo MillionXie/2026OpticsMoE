@@ -1,0 +1,37 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "phase_bitwise_parent": true,
+    "Linear": 1,
+    "CNN": 0,
+    "parameters": 487204
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "phase_bitwise_parent": true,
+    "Linear": 1,
+    "CNN": 0,
+    "parameters": 487204
+  },
+  "full_canonical_TEST_replay": {
+    "predictions_exact": true,
+    "probabilities_bitwise": false,
+    "probability_max_abs": 1.195073127746582e-05,
+    "images": 2000
+  },
+  "original_ID_labels": {
+    "train": {
+      "images": 6000,
+      "correct": 4066
+    },
+    "val": {
+      "images": 2000,
+      "correct": 1041
+    },
+    "test": {
+      "images": 2000,
+      "correct": 1142
+    }
+  },
+  "TEST_GT_loss_isolation": "masked CE target -1; detached KD only; numerical and gradient tests passed"
+}

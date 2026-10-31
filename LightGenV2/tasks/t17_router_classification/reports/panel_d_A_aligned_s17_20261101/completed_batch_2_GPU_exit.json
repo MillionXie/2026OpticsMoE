@@ -1,0 +1,30 @@
+{
+  "2326752": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "2338962": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "2355410": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "2326754": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "2375215": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "2377965": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "2380512": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  }
+}

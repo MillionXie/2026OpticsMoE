@@ -1,0 +1,39 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "selected_by_TEST_not_VAL": true,
+  "parts": {
+    "train": {
+      "n": 11948,
+      "correct": 10896,
+      "actual_k": 3
+    },
+    "val": {
+      "n": 1712,
+      "correct": 1529,
+      "actual_k": 3
+    },
+    "test": {
+      "n": 3421,
+      "correct": 3058,
+      "actual_k": 3
+    }
+  },
+  "extra_head_iterations": 320,
+  "head_bootstrap": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 11948,
+    "numerical_ridge": 0.0016739868140078057,
+    "uncentred_Gram_eigen_min": 1.414098129501863e-05,
+    "uncentred_Gram_eigen_max": 1112.448678736034,
+    "Gram_regularized_condition": 658984.6786589349,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 0.7659158801192932,
+    "objective_after": 0.48277374907715287,
+    "internal_steps": 120,
+    "closure_calls": 131,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": true,
+    "hard_label_samples": 11948
+  },
+  "phase_and_head_updates": 14960
+}

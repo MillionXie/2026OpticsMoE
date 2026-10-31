@@ -1,0 +1,24 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "selected_by_TEST_not_VAL": true,
+  "parts": {
+    "train": {
+      "n": 3496,
+      "correct": 3108,
+      "actual_k": 4
+    },
+    "val": {
+      "n": 752,
+      "correct": 597,
+      "actual_k": 4
+    },
+    "test": {
+      "n": 752,
+      "correct": 604,
+      "actual_k": 4
+    }
+  },
+  "extra_head_iterations": 120,
+  "head_bootstrap": null,
+  "phase_and_head_updates": 1870
+}
