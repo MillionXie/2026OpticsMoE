@@ -34,9 +34,9 @@
     "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729"
   },
   "D2NN_RGB/status.json": {
-    "state": "training",
+    "state": "complete",
     "pid": 2037898,
-    "epoch": 21,
+    "epoch": null,
     "code": null,
     "split": null,
     "error": null
@@ -78,8 +78,8 @@
     "teacher_used": false
   },
   "D2NN_RGB/history.json": {
-    "epoch": 21,
-    "VAL": 0.341
+    "epoch": 60,
+    "VAL": 0.414
   },
   "teacher_RGB/status.json": {
     "state": "complete",
@@ -122,7 +122,7 @@
   "LG_RGB/status.json": {
     "state": "training",
     "pid": 2038704,
-    "epoch": 9,
+    "epoch": 64,
     "code": null,
     "split": null,
     "error": null
@@ -164,13 +164,13 @@
     "teacher_used": true
   },
   "LG_RGB/history.json": {
-    "epoch": 9,
-    "VAL": 0.473
+    "epoch": 64,
+    "VAL": 0.546
   },
   "D2NN_SAR/status.json": {
     "state": "training",
     "pid": 2037900,
-    "epoch": 14,
+    "epoch": 59,
     "code": null,
     "split": null,
     "error": null
@@ -212,8 +212,8 @@
     "teacher_used": false
   },
   "D2NN_SAR/history.json": {
-    "epoch": 14,
-    "VAL": 0.25
+    "epoch": 59,
+    "VAL": 0.418
   },
   "teacher_SAR/status.json": {
     "state": "complete",
@@ -256,7 +256,7 @@
   "LG_SAR/status.json": {
     "state": "training",
     "pid": 2038947,
-    "epoch": 6,
+    "epoch": 28,
     "code": null,
     "split": null,
     "error": null
@@ -298,7 +298,7 @@
     "teacher_used": true
   },
   "LG_SAR/history.json": {
-    "epoch": 6,
-    "VAL": 0.419
+    "epoch": 28,
+    "VAL": 0.448
   }
 }

@@ -1,0 +1,108 @@
+{
+  "RGB": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "selected_epoch": 57,
+    "completed_epochs": 60,
+    "source_only_TRAIN_3000_VAL_1000": true,
+    "TEST_original_both_domains_2000": true,
+    "teacher": false,
+    "TEST_training": false,
+    "fresh_initialization": true,
+    "head_parameters": 0,
+    "phase_parameters": 685452,
+    "parts": {
+      "train": {
+        "n": 3000,
+        "accuracy": 0.5136666666666667,
+        "domains": {
+          "RGB": {
+            "correct": 1541,
+            "n": 3000,
+            "accuracy": 0.5136666666666667
+          }
+        }
+      },
+      "val": {
+        "n": 1000,
+        "accuracy": 0.452,
+        "domains": {
+          "RGB": {
+            "correct": 452,
+            "n": 1000,
+            "accuracy": 0.452
+          }
+        }
+      },
+      "test": {
+        "n": 2000,
+        "accuracy": 0.303,
+        "domains": {
+          "RGB": {
+            "correct": 509,
+            "n": 1000,
+            "accuracy": 0.509
+          },
+          "SAR": {
+            "correct": 97,
+            "n": 1000,
+            "accuracy": 0.097
+          }
+        }
+      }
+    },
+    "checkpoint_sha256": "bf53ab6f83b0ba0a5d41636e689b3e374bdcaa35c63b1b9e4a983fae57be6323"
+  },
+  "SAR": {
+    "source_commit": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "selected_epoch": 58,
+    "completed_epochs": 60,
+    "source_only_TRAIN_3000_VAL_1000": true,
+    "TEST_original_both_domains_2000": true,
+    "teacher": false,
+    "TEST_training": false,
+    "fresh_initialization": true,
+    "head_parameters": 0,
+    "phase_parameters": 685452,
+    "parts": {
+      "train": {
+        "n": 3000,
+        "accuracy": 0.5053333333333333,
+        "domains": {
+          "SAR": {
+            "correct": 1516,
+            "n": 3000,
+            "accuracy": 0.5053333333333333
+          }
+        }
+      },
+      "val": {
+        "n": 1000,
+        "accuracy": 0.442,
+        "domains": {
+          "SAR": {
+            "correct": 442,
+            "n": 1000,
+            "accuracy": 0.442
+          }
+        }
+      },
+      "test": {
+        "n": 2000,
+        "accuracy": 0.2945,
+        "domains": {
+          "RGB": {
+            "correct": 173,
+            "n": 1000,
+            "accuracy": 0.173
+          },
+          "SAR": {
+            "correct": 416,
+            "n": 1000,
+            "accuracy": 0.416
+          }
+        }
+      }
+    },
+    "checkpoint_sha256": "7d405c180cd4e31c62d8236b567d215482c85ca72232bd0b323895349f3ab0c6"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "RGB": {
+    "strict": true,
+    "phase_shapes": [
+      [
+        478,
+        478
+      ],
+      [
+        478,
+        478
+      ],
+      [
+        478,
+        478
+      ]
+    ],
+    "Linear": 0,
+    "CNN": 0,
+    "parameters": 685452
+  },
+  "SAR": {
+    "strict": true,
+    "phase_shapes": [
+      [
+        478,
+        478
+      ],
+      [
+        478,
+        478
+      ],
+      [
+        478,
+        478
+      ]
+    ],
+    "Linear": 0,
+    "CNN": 0,
+    "parameters": 685452
+  }
+}
