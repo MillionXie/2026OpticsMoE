@@ -93,7 +93,9 @@ def load_records(run,allow_frozen_test=False):
     if expanded and not report.get('expanded_DEV_protocol'):raise ValueError('Expanded DEV requires its audited canonical-grid identity')
     architecture=report.get('scope')=='DEV_architecture_diagnostic'
     if architecture:check_architecture_diagnostic(report,records)
-    expected = 500 if is_test else (128 if expanded else (32 if architecture or report.get('scope') == 'DEV' else 16))
+    from .scene_metric_cohort import expanded_identity
+    expanded_count=expanded_identity(report,records)[0] if expanded else None
+    expected = 500 if is_test else (expanded_count if expanded else (32 if architecture or report.get('scope') == 'DEV' else 16))
     if len(records) != report['generated_count'] or len(records) != expected or len(set(keys)) != expected:
         raise ValueError('All prespecified unique outputs required; no best-of-seed selection')
     if report.get('scope') in ['DEV','DEV_expanded','DEV_architecture_diagnostic'] and any(r.get('split') != 'dev' for r in records):
@@ -158,7 +160,8 @@ def main():
                 raise ValueError('Depth comparisons require the same complete RGB/prompt/noise requests')
         if any(r.get('scope')=='DEV_expanded' for r in reports):
             assert all(r.get('scope')=='DEV_expanded' for r in reports),'Do not mix expanded and original DEV cohorts'
-            assert len({r['expanded_DEV_protocol']['manifest_sha256'] for r in reports})==1
+            from .scene_metric_cohort import expanded_identity
+            assert len({expanded_identity(r)[1] for r in reports})==1
             signatures=[{r['sample_id']:(r['input_sha256'],r['prompt'],r['seed'],r['initial_latent_sha256']) for r in rows if r['run_id']==run.name} for run in args.runs]
             assert all(s==signatures[0] for s in signatures)
         if args.allow_frozen_test:
