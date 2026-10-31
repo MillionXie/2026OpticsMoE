@@ -1,0 +1,116 @@
+{
+  "profile": "panel_ab_linear_readout_s17_20261031",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "user_revision": "All LG use one terminal Linear. A D2NN remains linear/no OEO/no Linear; B D2NN keeps OEO/no Linear. D postponed. F awaits data alignment choice.",
+  "head": "One bias-free Linear(784,C) after avgpool28 of unchanged final post-OEO active CCD intensity and fixed mean normalization",
+  "OEO": "Exact inherited PhaseOnly.oeo intensity_softsign, unchanged optical masks and propagation",
+  "training": {
+    "seed": 17,
+    "epochs": 60,
+    "min_epochs": 10,
+    "patience": 12,
+    "batch": 128,
+    "optical_batch": 32,
+    "learning_rate": 0.001,
+    "weight_decay": 0.01,
+    "label_smoothing": 0.02,
+    "optimizer": "AdamW on shared_head.weight only; frozen original optical body",
+    "new_head_training_data": "Original TRAIN labels only, no new teacher or original TEST optimization",
+    "selection": "VAL macro recall then cross entropy; one full-model original TEST replay after lock",
+    "readout_initialization": "Existing project head seed122, bias=False"
+  },
+  "jobs": {
+    "a_kather2016": {
+      "dataset": "kather2016",
+      "num_classes": 8,
+      "expected_counts": {
+        "train": 3496,
+        "val": 752,
+        "test": 752
+      },
+      "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+      "main_layers": 2,
+      "parent_checkpoint": "runs/simulation/panel_a_original_test_kd_identity_s17_20261031/kather2016/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "81f973aa3e4430aa3d4c0f773cc16b07f3b196f8333f8ab944c50779a44961c2",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+      "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+    },
+    "a_bloodmnist128": {
+      "dataset": "bloodmnist128",
+      "num_classes": 8,
+      "expected_counts": {
+        "train": 11948,
+        "val": 1712,
+        "test": 3421
+      },
+      "source_archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+      "main_layers": 2,
+      "parent_checkpoint": "runs/simulation/panel_a_phase_gauge_s17_20261031/bloodmnist128/phase_gauge_recenter/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "2387e765286f936d62636e9e325ea6c63f5fcb5727b2a6372fc5f012aaa33109",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128",
+      "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128/bloodmnist_128.npz",
+      "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96"
+    },
+    "a_crc9": {
+      "dataset": "crc9",
+      "num_classes": 9,
+      "expected_counts": {
+        "train": 5026,
+        "val": 718,
+        "test": 1436
+      },
+      "source_archive_sha256": "287441e12c9f05c8257bf44b12b0157e77e934b88e5596e2dd9f85068484b51b",
+      "main_layers": 2,
+      "parent_checkpoint": "runs/simulation/panel_a_focal_boundary_s17_20261031/crc9/focal_boundary_gamma2/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "30fd9ad76b558781f7f7335f53f45812142a4af47df487b7b30fdc5e726f8569",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/kather2018_crc9_domains_v1"
+    },
+    "b_kather4": {
+      "dataset": "kather2016",
+      "num_classes": 8,
+      "expected_counts": {
+        "train": 3496,
+        "val": 752,
+        "test": 752
+      },
+      "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+      "main_layers": 4,
+      "parent_checkpoint": "runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_router_control/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "47fd265db0c398d7d523b370ed10827b2bdf59ee26b3dd34688eac4dbb491ba9",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+      "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+    },
+    "b_kather6": {
+      "dataset": "kather2016",
+      "num_classes": 8,
+      "expected_counts": {
+        "train": 3496,
+        "val": 752,
+        "test": 752
+      },
+      "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+      "main_layers": 6,
+      "parent_checkpoint": "runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "61dda77f46e00f32cdf99d88156a7e5d04d96dc9d04163d18b0703f22d0bf1cc",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+      "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7"
+    }
+  },
+  "worker_jobs": [
+    [
+      "a_kather2016",
+      "a_bloodmnist128",
+      "a_crc9"
+    ],
+    [
+      "b_kather4",
+      "b_kather6"
+    ]
+  ],
+  "B2_reuse": "Exact a_kather2016 new checkpoint; no independent B2 training",
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "maximum_gpus": 1
+}

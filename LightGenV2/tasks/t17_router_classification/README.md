@@ -1,5 +1,27 @@
 # T17 单数据集路由分类对照
 
+## 最新人工改版：所有LG补末端Linear（2026-10-31，覆盖下方旧无头口径）
+
+图a三个LG和图b主干2/4/6的LG统一为：原光学体/原OEO→CCD active478²→avgpool28²→固定均值归一→
+唯一无偏置Linear(784,C)。不加MLP/CNN或可训前端；旧光学父和全部无头结果保留历史，不改名冒充新结果。
+图a D2NN继续3层478²、无OEO/Linear；图b D2NN继续3/5/7层478²、逐层同OEO、无Linear，原60轮结果不变。
+B两层LG必须直接复用新A Kather同一best/SHA，因此只有A三组+B4/B6共五个LG需要训练。
+8类电子头6272参数、9类7056，相位参数和光学体不变；图a不再固定旧61.04%数值，此次新读出已获明确授权。
+
+新入口model_linear_readout.py/train_linear_readout.py，profile configs/panel_ab_linear_readout_s17_20261031.json。
+先冻结所有原相位，只用原TRAIN真标签拟合头，AdamW lr.001/WD.01/smoothing.02/batch128，max60/min10/pat12、VAL宏召回再CE选模。
+新head训练不用TEST/教师，但相位父已TEST暴露，故结果仍ORIGINAL_TEST_EXPOSED_DEVELOPMENT，不称独立TEST。
+固定相位784特征按数据/源码/PT SHA缓存；Kather/Blood直接读取已核NPZ并逐图标签/像素SHA对齐原CSV，减少PNG I/O，划分不变。
+最终整个新模型对全部原TEST再推理，与缓存头概率/预测核验；每个相位与父逐元素不变。
+源码/CPU与实际父GPU准入后才启动，不能把此准备段当作已跑出准确率。
+新结果见[统一Linear新表](reports/panel_ab_linear_readout_20261031/results.html)；旧无头图a/b报告保留并标历史。
+
+图d暂缓，后续加相同Linear并对齐同数据/配置的复用点；图f需要重跑，LG四专家/OEO/Linear与a/b一致、D2NN有OEO无Linear。
+F已询问是沿用G EuroSAT配对RGB/SAR两域同划分，还是从四种任务另选两种，等待回复期间先推进a/b。
+图g旧实现双方单Linear784→10，视觉共享冻结CNN；OEO的非负强度softsign数学形式一致，但旧G末层没有显式回编码OEO，放置差异记录不隐藏。
+其他任务现用源码/权重先只读核验，不自动覆盖；J实际末端头/OEO还需按正式最终manifest核对，不能引用未启动的scope proposal。
+完整按图对照见reports/panel_ab_linear_readout_20261031/architecture_contract.json。
+
 ## 图b最新优化状态（2026-10-31 17:12）
 
 初轮六点和全部冻结候选均已完成并SHA归档。当前已完成候选中，LG4最高原TEST开发77.39%、

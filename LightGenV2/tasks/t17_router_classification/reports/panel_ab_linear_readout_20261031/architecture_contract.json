@@ -1,0 +1,41 @@
+{
+  "status": "PREPARED_NOT_STARTED",
+  "version": "USER_REVISION_20261031_LINEAR_READOUT",
+  "panels": {
+    "a": {
+      "LG": "4 experts, E/G main2, 2 identical OEO, no learned front, Linear784->C",
+      "D2NN": "3 full-global phase layers, no OEO, no Linear"
+    },
+    "b": {
+      "LG": "Same A optics and Linear; main2/4/6; B2 reuses A Kather exact checkpoint",
+      "D2NN": "3/5/7 full-global phase layers; identical OEO per layer; no Linear"
+    },
+    "d": {
+      "status": "POSTPONED",
+      "LG": "Must add same Linear and align reused dataset/config points before rerun"
+    },
+    "f": {
+      "status": "DATA_SCOPE_QUESTION_PENDING",
+      "LG": "4 experts, no learned front, same A/B OEO and Linear",
+      "D2NN": "OEO, no Linear",
+      "data": "Propose same G EuroSAT paired locations/splits, RGB and SAR domains; awaiting whether user instead wants two distinct G tasks"
+    },
+    "g": {
+      "status": "EXISTING_SOURCE_AUDITED_READONLY",
+      "LG": "16 experts, 4 per task; shared final Linear784->10",
+      "D2NN": "One shared final Linear784->10 as explicitly annotated in image g",
+      "front": "Shared frozen visual CNN for visual inputs",
+      "OEO": "Intensity normalization -> positive softsign -> L2 amplitude; mathematical activation matches A/B, but original G omits explicit final OEO. Placement recorded, no silent rewrite"
+    },
+    "j": {
+      "status": "READONLY_AUDIT_PENDING",
+      "contract": "4 experts, no learned front, OEO, terminal Linear; preserve residual experiment identity and weights"
+    }
+  },
+  "old_results": "Old no-head A/B runs preserved as history; not relabeled as new Linear results",
+  "trainable_head_parameters": {
+    "C8": 6272,
+    "C9": 7056
+  },
+  "B2_matches_A1_by_checkpoint": true
+}

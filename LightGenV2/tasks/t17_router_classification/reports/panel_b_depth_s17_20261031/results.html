@@ -1,6 +1,6 @@
 <!doctype html><html lang="zh"><meta charset="utf-8"><title>图b单seed17训练</title>
 <style>body{font:16px/1.7 sans-serif;max-width:1080px;margin:35px auto;padding:0 20px}table{border-collapse:collapse;width:100%}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.notice{background:#fff0d7;padding:16px}</style>
-<h1>图b：四专家LG与逐层OEO D2NN，seed17</h1>
+<div style="background:#ffe0a8;padding:16px;font-weight:bold">历史无Linear读出版本：用户已要求LG统一加入末端Linear。此页旧LG数值不代表新架构；<a href="../panel_ab_linear_readout_20261031/results.html">查看新的a/b Linear读出版本</a>。</div><h1>图b：四专家LG与逐层OEO D2NN，seed17</h1>
 <p class="notice">原TEST已用于教师训练及学生伪标签输入；结果为开发指标。最低LG复用图a额外优化后的权重，其他五组从头训练，不能称六组全部同训练预算。未完成模型不展示中途TEST分数。</p>
 <table><tr><th>模型</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th></tr><tr><td>lg2</td><td>复用图a</td><td>64.30%</td><td>59.71%</td><td>61.04%</td></tr><tr><td>d2nn3</td><td>完成60轮；选E52</td><td>58.61%</td><td>54.52%</td><td>53.99%</td></tr><tr><td>lg4</td><td>完成120轮；选E114</td><td>79.26%</td><td>69.81%</td><td>76.73%</td></tr><tr><td>d2nn5</td><td>完成60轮；选E57</td><td>77.09%</td><td>69.02%</td><td>67.29%</td></tr><tr><td>lg6</td><td>完成120轮；选E72</td><td>84.75%</td><td>72.87%</td><td>79.79%</td></tr><tr><td>d2nn7</td><td>完成60轮；选E57</td><td>86.90%</td><td>72.07%</td><td>72.07%</td></tr></table>
 <h2>已完成、权重SHA核验后的开发候选最好结果</h2>

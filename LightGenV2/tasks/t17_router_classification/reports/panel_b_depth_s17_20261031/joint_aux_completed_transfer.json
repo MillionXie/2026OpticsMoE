@@ -1,0 +1,109 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux",
+    "runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/best_checkpoint.pt",
+      "size": 3657044,
+      "sha256": "04776af64b19f6fc91cc59a2818d4da310bbe385ec4ff4bd916e77fbac9d3f9b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/history.json",
+      "size": 59979,
+      "sha256": "a328f4e8eb410a99cb5cdb4efc6fe23f4605574f435d8aa139c18e50f2175916"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/last_checkpoint.pt",
+      "size": 10930266,
+      "sha256": "61d5284bc7cee8d87ffcb69ce858dd2c48192233b03ec4ab58a5e115845a411d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/metadata.json",
+      "size": 24164,
+      "sha256": "7bf246b28be4c40e78bbcf88aa0651b97cb996b7b53e0a9c523889f004ac9120"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/result.json",
+      "size": 7224,
+      "sha256": "9cc43b82f31567bc9c1efcfab37ba81cc50d6978bb19f153ba20ce296fe88a83"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/selection_lock.json",
+      "size": 169,
+      "sha256": "e3edd4fd607600859833e770bc1585c5c15a264c65a7d79fb1c758ff265479ee"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/status.json",
+      "size": 7265,
+      "sha256": "027968095cea76a15415e51af781f1c9d23565c6a237fa5a4ba00c94c0427d76"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/test_predictions.npz",
+      "size": 41905,
+      "sha256": "409530e8d9e883dfad7cb0e8ae0d6d52b5502889b824b820680d639535575884"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/train_predictions.npz",
+      "size": 186478,
+      "sha256": "8d21508637a91a498c25b63e98ca51e3a7e728da27241f1bba4163db31a4f33a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_routeaux_s17_20261031/lg4/joint_dense_pair_aux/val_predictions.npz",
+      "size": 41928,
+      "sha256": "dcaaed7dd52b99fdc306a89c07739f106814928cb2bc4c87c2f8e2154e1c7c35"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/best_checkpoint.pt",
+      "size": 5369308,
+      "sha256": "61dda77f46e00f32cdf99d88156a7e5d04d96dc9d04163d18b0703f22d0bf1cc"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/history.json",
+      "size": 71032,
+      "sha256": "2bb45ea05333fd29ef13afc2e5036a32a5476150778334e8f6212c12d8be0b8b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/last_checkpoint.pt",
+      "size": 16077122,
+      "sha256": "60680cb78201c8a5242096e40f84424396693579487b83d8a6ffd561aabfb995"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/metadata.json",
+      "size": 17020,
+      "sha256": "5a40e665346240aed8f7578ab1a12e1d0cac2133577661803fd2ad5e731d5bf5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/result.json",
+      "size": 7389,
+      "sha256": "191636be60cb08985e5d4340991b0643e38fb8d4c01887d773a98cb44d743d2a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/selection_lock.json",
+      "size": 169,
+      "sha256": "57008db629f884506efc19a44b8dee85939a82bd89803fcf3a9aab3167d389a5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/status.json",
+      "size": 7430,
+      "sha256": "1b320d4c23e388b8ff4db47b8c2b22f237886a2ef3aa8a86f8456df7975d66fe"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/test_predictions.npz",
+      "size": 41827,
+      "sha256": "ae026684667e04f8ddeb523eb516e430b0b9ed40db0ae842e23e2882c9b53b7b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/train_predictions.npz",
+      "size": 186283,
+      "sha256": "7c3ab5ac3b2ebe789f591d3d7bc93f54629c2b18c7c380b83775790be5c3badc"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_routeaux_s17_20261031/lg6/joint_dense_pair_aux/val_predictions.npz",
+      "size": 41872,
+      "sha256": "5e401395be810734dd30c84c37264dea926413239c423bff5bfaba68beb1d362"
+    }
+  ]
+}
