@@ -18,6 +18,7 @@ from .readout_data import load_raw
 from .figure_revision_data import load_panel_f
 from .train import write
 from .model_four import encode_rgb
+from .alternating_readout import domain_route_loss, anchored_classification, refit_existing_head
 from .train_optical_four_ccd import route_statistics
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -106,7 +107,7 @@ def main():
     cfg=json.loads(args.profile.read_text());gpu=require_authorized_gpu(cfg['authorized_gpu_uuids']);torch.set_num_threads(4)
     torch.manual_seed(cfg['seed']);rng=np.random.default_rng(cfg['seed']);task=Path(__file__).resolve().parent
     args.out.mkdir(exist_ok=False,parents=True)
-    paths=[Path(__file__),task/'model_linear_readout.py',task/'model_depth_ccd.py',task/'model_four.py',task/'model_linear_ccd.py',task/'gpu_policy.py',task/'figure_revision_data.py',task/'phase_optimizer.py',task/'readout_data.py',task.parents[1]/'demo_check/pure_optical/models.py',task.parents[1]/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
+    paths=[Path(__file__),task/'alternating_readout.py',task/'train_convex_readout.py',task/'model_linear_readout.py',task/'model_depth_ccd.py',task/'model_four.py',task/'model_linear_ccd.py',task/'gpu_policy.py',task/'figure_revision_data.py',task/'phase_optimizer.py',task/'readout_data.py',task.parents[1]/'demo_check/pure_optical/models.py',task.parents[1]/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=True,teacher_used=False)
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -123,6 +124,9 @@ def main():
             fields=[]
             for start in range(0,len(part['labels']),128):fields.append(encode_rgb(torch.from_numpy(part['images'][start:start+128]).cuda()))
             x[split]=torch.cat(fields);y[split]=torch.as_tensor(part['labels'],device='cuda',dtype=torch.long);del part['images']
+        block=cfg.get('alternating_head');aux=cfg.get('domain_route_aux',0.)
+        if (block or aux) and (cfg['architecture']!='LG' or cfg['dataset']!='eurosat_original_f' or not heads):raise ValueError('Alternating/domain method requires original F LG with trainable head')
+        anchor=model.shared_head.weight.detach().clone() if block else None
         phase_opt=WrappedPhaseAdam(phases,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(phases,lr=cfg['phase_lr'])
         head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads else None
         val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val);stale=0;history=[]
@@ -139,7 +143,11 @@ def main():
                 idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(codes[start:start+cfg['batch']],device='cuda');field=augment_packed(x['train'][idx],code)
                 phase_opt.zero_grad(set_to_none=True)
                 if head_opt:head_opt.zero_grad(set_to_none=True)
-                output=model(field);loss=classification_objective(output,y['train'][idx],cfg)
+                output=model(field,return_dense_route=True) if aux else model(field)
+                loss=anchored_classification(output['raw_logits'],y['train'][idx],model.shared_head.weight,anchor,block['anchor_strength'],cfg['label_smoothing']) if block else classification_objective(output,y['train'][idx],cfg)
+                if aux:
+                    acquisition=torch.as_tensor(raw['train']['domains'][order[start:start+cfg['batch']]],device='cuda',dtype=torch.long)
+                    loss=loss+aux*domain_route_loss(output['dense_route_power'],acquisition)
                 if not torch.isfinite(loss):raise RuntimeError('Nonfinite loss')
                 loss.backward()
                 for p in phases+heads:
@@ -149,10 +157,18 @@ def main():
                 phase_opt.step()
                 if head_opt:head_opt.step()
                 loss_sum+=float(loss.detach())*len(idx)
+            block_record=None
+            if block and epoch%block['interval_epochs']==0:
+                model.eval();features=[]
+                with torch.no_grad():
+                    for start in range(0,len(y['train']),cfg['eval_batch']):features.append(model.optical_features(x['train'][start:start+cfg['eval_batch']])['ccd_features'])
+                block_record=refit_existing_head(model.shared_head,torch.cat(features),y['train'],anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'])
+                head_opt.state.clear() # Momentum belongs to the old head coordinates.
             val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val)>best;stale=0 if improved else stale+1
             if improved:
                 selected=epoch;best=metric_key(val);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
+            if block_record:row['TRAIN_head_block']=block_record
             if epoch==1 or epoch%5==0:row['train'],_=evaluate(model,x['train'],y['train'],cfg['eval_batch'],raw['train'].get('domains'))
             assert_frozen(model,frozen);row['seconds']=time.time()-started;history.append(row);write(args.out/'history.json',history)
             torch.save(dict(model=model.state_dict(),epoch=epoch,optimizer=phase_opt.state_dict(),head_optimizer=head_opt.state_dict() if head_opt else None,metadata=metadata),args.out/'last_checkpoint.pt')
