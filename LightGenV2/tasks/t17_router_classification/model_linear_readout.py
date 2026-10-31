@@ -6,8 +6,8 @@ from .model_depth_ccd import DepthLG
 
 
 class LinearReadoutLG(DepthLG):
-    def __init__(self, main_layers=2, num_classes=8):
-        super().__init__(main_layers,num_classes)
+    def __init__(self, main_layers=2, num_classes=8, top_k=2):
+        super().__init__(main_layers,num_classes,top_k=top_k,body_readout='features')
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(122)
             self.shared_head=nn.Linear(28*28,num_classes,bias=False)

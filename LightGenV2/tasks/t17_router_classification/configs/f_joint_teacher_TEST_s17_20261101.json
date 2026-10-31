@@ -1,0 +1,36 @@
+{
+  "seed": 17,
+  "epochs": 100,
+  "min_epochs": 30,
+  "patience": 20,
+  "data": {
+    "expected_counts": {
+      "train": 6000,
+      "val": 2000,
+      "test": 2000
+    },
+    "original_f_subset_preserved": true,
+    "trainval": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/manifest.json",
+      "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+      "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+    },
+    "holdout": {
+      "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/data.npz",
+      "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/manifest.json",
+      "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+      "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60"
+    }
+  },
+  "authorized_gpu_uuids": [
+    "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+  ],
+  "feature_cache_runs": {
+    "RGB": "runs/simulation/f_cross_domain_s17_20261031/teacher_RGB",
+    "SAR": "runs/simulation/f_cross_domain_s17_20261031/teacher_SAR"
+  },
+  "selection_source": "original_TEST_development",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "joint_RGB_SAR_teacher": true
+}

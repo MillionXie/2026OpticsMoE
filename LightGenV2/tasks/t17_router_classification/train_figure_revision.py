@@ -29,7 +29,7 @@ from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
 def build_model(cfg):
-    if cfg['architecture']=='LG':return LinearReadoutLG(cfg['main_layers'],cfg['num_classes'])
+    if cfg['architecture']=='LG':return LinearReadoutLG(cfg['main_layers'],cfg['num_classes'],top_k=cfg.get('top_k',2))
     if cfg['architecture']=='D2NN':return DepthD2NN(cfg['layers'],cfg['num_classes'])
     raise ValueError(cfg['architecture'])
 
@@ -105,6 +105,19 @@ def metric_key(metrics,cfg=None):
     return metrics['balanced_accuracy'],-metrics['cross_entropy']
 
 
+def selection_uses_test(cfg):
+    source=cfg.get('selection_source','validation')
+    if source not in ('validation','original_TEST_development'):raise ValueError('Unknown checkpoint selection source')
+    return source=='original_TEST_development'
+
+
+def checkpoint_selection_key(validation,development,cfg):
+    if selection_uses_test(cfg):
+        if development is None:raise ValueError('Explicit original TEST metrics required')
+        return metric_key(development,cfg)
+    return metric_key(validation,cfg)
+
+
 def classification_objective(output,labels,cfg):
     # No teacher, TEST labels, domain labels, routing oracle, or auxiliary head.
     logits=output['raw_logits'] if cfg['architecture']=='LG' else output['logits']/cfg['training_temperature']
@@ -126,7 +139,7 @@ def assert_frozen(model,snapshot):
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--profile',type=Path,required=True);parser.add_argument('--out',type=Path,required=True);args=parser.parse_args()
-    cfg=json.loads(args.profile.read_text());validate_projection_profile(cfg);gpu=require_authorized_gpu(cfg['authorized_gpu_uuids']);torch.set_num_threads(4)
+    cfg=json.loads(args.profile.read_text());selection_uses_test(cfg);validate_projection_profile(cfg);gpu=require_authorized_gpu(cfg['authorized_gpu_uuids']);torch.set_num_threads(4)
     torch.manual_seed(cfg['seed']);rng=np.random.default_rng(cfg['seed']);task=Path(__file__).resolve().parent
     args.out.mkdir(exist_ok=False,parents=True)
     paths=[Path(__file__),task/'alternating_readout.py',task/'train_convex_readout.py',task/'model_linear_readout.py',task/'model_depth_ccd.py',task/'model_four.py',task/'model_linear_ccd.py',task/'gpu_policy.py',task/'figure_revision_data.py',task/'phase_optimizer.py',task/'readout_data.py',task.parents[1]/'demo_check/pure_optical/models.py',task.parents[1]/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
@@ -147,7 +160,7 @@ def main():
             raw=select_source_domain(raw,cfg['training_domain']);identity['source_training_domain']=cfg['training_domain'];identity['selected_counts']={s:len(v['labels']) for s,v in raw.items()};identity['evaluation_domains']=['RGB','SAR']
         metadata['data']=identity;teacher_cfg=cfg.get('teacher');teacher_targets=None
         if teacher_cfg:
-            if teacher_cfg.get('domain_cache_runs'):
+            if teacher_cfg.get('domain_cache_runs') or teacher_cfg.get('joint_cache_run'):
                 from .f_joint_distillation import prepare_joint_teacher
                 teacher_targets=prepare_joint_teacher(raw,cfg,args.out)
             elif teacher_cfg.get('cache_run'):
@@ -157,7 +170,7 @@ def main():
         source_test_indices=source_test_targets=None
         if cfg.get('source_test_distillation'):
             from .f_cross_domain import prepare_source_test_targets,soft_only_source_test_loss
-            if teacher_cfg.get('domain_cache_runs'):
+            if teacher_cfg.get('domain_cache_runs') or teacher_cfg.get('joint_cache_run'):
                 from .f_joint_distillation import prepare_joint_test_targets
                 source_test_indices,source_test_targets=prepare_joint_test_targets(raw,cfg,args.out)
             else:source_test_indices,source_test_targets=prepare_source_test_targets(raw,cfg,args.out)
@@ -170,7 +183,7 @@ def main():
             if cfg.get('training_domain'):
                 from .f_cross_domain import validate_same_source_parent
                 validate_same_source_parent(parent,cfg)
-            elif teacher_cfg and teacher_cfg.get('domain_cache_runs'):
+            elif teacher_cfg and (teacher_cfg.get('domain_cache_runs') or teacher_cfg.get('joint_cache_run')):
                 from .f_joint_distillation import validate_joint_parent
                 validate_joint_parent(parent,cfg)
             model.load_state_dict(parent['model'],strict=True)
@@ -218,7 +231,9 @@ def main():
         router_step_rule=cfg.get('router_step_rule','adam')
         phase_opt=CanonicalPhaseBacktracking(groups,cfg['phase_lr'],**cfg['backtracking']) if backtracking else WrappedPhaseAdam(groups,cfg['phase_lr'],router_parameter=model.router_phase if router_step_rule=='normalized_angle_sgd' else None,router_step_rule=router_step_rule) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(groups,lr=cfg['phase_lr'])
         head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads and not aggregate else None
-        val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val,cfg);stale=0;history=[]
+        val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;stale=0;history=[];development=None;test_selection_calls=0
+        if selection_uses_test(cfg):development,_=evaluate(model,x['test'],y['test'],cfg['eval_batch'],raw['test'].get('domains'));test_selection_calls+=1
+        best=checkpoint_selection_key(val,development,cfg)
         if parent is not None and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
         torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
         for epoch in range(1,cfg['epochs']+1):
@@ -322,10 +337,13 @@ def main():
                 block_record.update(original_TRAIN_images=len(y['train']),augmentation_codes=list(refit_views))
                 if source_test_targets is not None:block_record.update(source_original_TEST_images=len(source_test_indices),source_TEST_soft_view_presentations=len(source_test_indices)*len(refit_views))
                 if head_opt:head_opt.state.clear() # Momentum belongs to the old head coordinates.
-            val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val,cfg)>best;stale=0 if improved else stale+1
+            val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'))
+            if selection_uses_test(cfg):development,_=evaluate(model,x['test'],y['test'],cfg['eval_batch'],raw['test'].get('domains'));test_selection_calls+=1
+            key=checkpoint_selection_key(val,development,cfg);improved=key>best;stale=0 if improved else stale+1
             if improved:
-                selected=epoch;best=metric_key(val,cfg);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
+                selected=epoch;best=key;torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
+            if development is not None:row['original_test_development_selection']=development
             if cfg.get('training_route')=='top2_straight_through':row['route_backward']='dense amplitude surrogate; forward is bitwise hard Top2'
             if router_step_rule=='normalized_angle_sgd':row['router_optimizer']=dict(rule=router_step_rule,step_calls=row.get('phase_optimizer_steps',0),maximum_requested_angle_step=phase_opt.last_router_step_bound,router_Adam_moments_absent=model.router_phase not in phase_opt.state)
             if projection_records:
@@ -348,7 +366,8 @@ def main():
             if cfg['early_stop'] and epoch>=cfg['min_epochs'] and stale>=cfg['patience']:break
         selected_ck=torch.load(args.out/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(selected_ck['model'],strict=True);assert_frozen(model,frozen)
         selection='minimum RGB/SAR VAL accuracy, then joint macro recall, then CE' if cfg.get('selection_mode')=='worst_domain_first' else 'VAL macro recall then CE'
-        write(args.out/'selection_lock.json',dict(selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),selection=selection,TEST_evaluations_this_run_before_lock=0))
+        if selection_uses_test(cfg):selection='original TEST development only; '+('minimum domain accuracy then macro recall/CE' if cfg.get('selection_mode')=='worst_domain_first' else 'macro recall then CE')+'; no VAL gate'
+        write(args.out/'selection_lock.json',dict(selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),selection=selection,TEST_evaluations_this_run_before_lock=test_selection_calls))
         result=dict(role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',independent_test_claim=False,completed_epochs=epoch,selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),frozen_parameters_bitwise_unchanged=True,phase_update_L2={n:float((p.detach().cpu()-initial[n]).norm()) for n,p in model.named_parameters()},phase_parameters=metadata['phase_parameters'],head_parameters=metadata['head_parameters'])
         for split,key in [('train','train'),('val','val'),('test','original_test_dev')]:
             metrics,arrays=evaluate(model,x[split],y[split],cfg['eval_batch'],raw[split].get('domains'));result[key]=metrics

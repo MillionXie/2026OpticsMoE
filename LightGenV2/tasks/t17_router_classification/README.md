@@ -1,3 +1,9 @@
+## 最新人工要求：F按TEST选模、联合增强教师；D统一A并补12点（2026-11-01）
+
+F只按原TEST开发表现选PT，取消VAL门槛；VAL可记录但不参与选择/早停。增强教师改为一份同时学习RGB/SAR的共享teacher head，复用已SHA核验同一冻结ResNet18的两域8-D4特征，不把两个独立域教师称作联合教师。TRAIN+增强原TEST可训练教师，学生TRAIN硬CE与TEST软KD保持真值隔离，全部ORIGINAL_TEST_EXPOSED_DEVELOPMENT。
+D已获准重跑，用户确认Kather2016/BloodMNIST128/OrganCMNIST，共3x4=12点；Kather/Blood的k2复用A相同PT/SHA/划分/像素，剩余10点新run。统一两主层E/G、原A相同OEO无LN/ReLU、[R,G;B,0]、唯一无biasLinear784->C、主干478/router224。Organ为11类，光学features分支跳过未参与Linear分类的旧CCD窗；原8/9/10类模型字段/计算与原光学输出做bitwise回归。
+k=1..4为真实输入光门控数；争取准确率随k增加，未单调如实保留并有界优化，不削弱更优点或改标签/挑样本制造趋势。A/B和F两D2NN定稿保护。新入口先默认兼容/GT隔离/真实父GPU准入和Git发布再跑，当前准备不冒充已启动。
+
 ## F角度SGD完整结束，仍保留联合父63.20/48.30（2026-11-01）
 
 worker2260225已15轮平台停、VAL选回E0，四个获选参数张量逐元素等于124父；不是训练提升。

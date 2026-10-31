@@ -11,7 +11,7 @@ from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 def validate_joint_profile(cfg):
     if cfg.get('training_domain') is not None or cfg.get('dataset')!='eurosat_original_f' or cfg.get('architecture')!='LG':
         raise ValueError('Joint teacher requires a joint original-F LG')
-    if set(cfg.get('teacher',{}).get('domain_cache_runs',{}))!={'RGB','SAR'}:
+    if not cfg.get('teacher',{}).get('joint_cache_run') and set(cfg.get('teacher',{}).get('domain_cache_runs',{}))!={'RGB','SAR'}:
         raise ValueError('Exactly two verified domain teachers are required')
     if cfg.get('augmentation')!='D4' or not cfg.get('alternating_head') or cfg.get('semantic_distillation'):
         raise ValueError('Joint logits distillation requires D4/head blocks without semantic aux')
@@ -23,6 +23,17 @@ def assemble_joint_targets(raw,cfg,task,split):
     if split not in ('train','test'):raise ValueError('No VAL targets may enter joint supervision')
     part=raw[split]
     if set(np.unique(part['domains']).tolist())!={0,1}:raise ValueError('Both original domains must be present')
+    if cfg['teacher'].get('joint_cache_run'):
+        folder=task/cfg['teacher']['joint_cache_run'];meta=json.loads((folder/'metadata.json').read_text());status=json.loads((folder/'result.json').read_text());manifest=json.loads((folder/'cache_manifest.json').read_text())
+        if not meta.get('joint_RGB_SAR_teacher') or meta['profile']['data']!=cfg['data']:raise ValueError('Joint teacher identity/data mismatch')
+        if sha256(folder/'best_checkpoint.pt')!=status['checkpoint_sha256']:raise ValueError('Joint teacher PT SHA differs')
+        path=folder/f'teacher_logits_{split}.npz'
+        if sha256(path)!=manifest[path.name]:raise ValueError('Joint teacher logits SHA differs')
+        with np.load(path,allow_pickle=False) as z:
+            if any(not np.array_equal(z[k],part[k]) for k in ('ids','labels','domains')):raise ValueError('Joint teacher sample order differs')
+            logits=z['logits'].copy()
+        if logits.shape!=(len(part['labels']),8,cfg['num_classes']) or not np.isfinite(logits).all():raise ValueError('Invalid joint teacher logits')
+        return logits,dict(shared_joint_teacher=dict(run=str(folder),checkpoint_sha256=status['checkpoint_sha256'],cache_sha256=sha256(path),images=len(logits),teacher_used_original_TEST=True))
     merged=np.empty((len(part['labels']),8,cfg['num_classes']),dtype=np.float32);sources={}
     for domain,number in [('RGB',0),('SAR',1)]:
         teacher_dir=task/cfg['teacher']['domain_cache_runs'][domain]

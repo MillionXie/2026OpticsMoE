@@ -8,16 +8,19 @@ No second fanout, per-expert lossless propagation, or additional gating is impli
 import torch
 from torch import nn
 from torch.nn import functional as F
-from .model_four import FourRouterClassification, CONTRACT, ccd_grid_energies, sparse_top2
+from .model_four import FourRouterClassification, CONTRACT, ccd_grid_energies, sparse_top2, sparse_topk
 from .model_linear_ccd import LinearD2NNCCD
 from LightGenV2.demo_check.pure_optical.models import PhaseOnly
 
 
 class DepthLG(FourRouterClassification):
-    def __init__(self, main_layers=2, num_classes=8):
+    def __init__(self, main_layers=2, num_classes=8, top_k=2, body_readout='ccd_grid'):
         if main_layers not in (2, 4, 6):
             raise ValueError('Panel B LG main depth must be 2/4/6, excluding its one router')
-        super().__init__('optical', 'ccd_grid', num_classes=num_classes)
+        if type(top_k) is not int or not 1<=top_k<=4:raise ValueError('Four-expert top-k must be 1..4')
+        if main_layers!=2 and top_k!=2:raise ValueError('Top-k ablation is restricted to the approved two-layer body')
+        super().__init__('optical', body_readout, num_classes=num_classes)
+        self.top_k=top_k
         self.main_layers = main_layers
         self.extra_expert_phases = nn.ParameterList([
             nn.Parameter(torch.zeros_like(self.first_phase)) for _ in range(main_layers//2-1)])
@@ -35,7 +38,7 @@ class DepthLG(FourRouterClassification):
         amplitude = amplitude/amplitude.square().sum((-2,-1), keepdim=True).clamp_min(1e-20).sqrt()
         if return_dense_route:
             dense, capture = self.dense_route(amplitude)
-            q = sparse_top2(dense)
+            q = sparse_topk(dense,self.top_k)
         else:
             q, capture = self.route(amplitude)
         coefficients = torch.where(q > 0, q.clamp_min(1e-20).sqrt(), torch.zeros_like(q))
@@ -59,11 +62,14 @@ class DepthLG(FourRouterClassification):
             field = self.oeo(self.propagator(field*F.pad(self.transmission(global_phase),(20,)*4,value=1)))
             if return_debug: fields.append(field)
         intensity = field.abs().square()
-        energies = ccd_grid_energies(intensity[:,20:498,20:498], self.num_classes)
-        total = energies.sum(1,keepdim=True)
-        p = (energies+1e-12*total)/(total*(1+self.num_classes*1e-12))
-        result = dict(logits=p.log(), probabilities=p, class_energies=energies,
-                      route_power=q, router_capture=capture)
+        if self.readout=='features':
+            result=dict(logits=None,route_power=q,router_capture=capture)
+        else:
+            energies = ccd_grid_energies(intensity[:,20:498,20:498], self.num_classes)
+            total = energies.sum(1,keepdim=True)
+            p = (energies+1e-12*total)/(total*(1+self.num_classes*1e-12))
+            result = dict(logits=p.log(), probabilities=p, class_energies=energies,
+                          route_power=q, router_capture=capture)
         if return_dense_route: result['dense_route_power'] = dense
         if return_debug: result.update(post_oeo_intensity=intensity, stage_fields=fields)
         return result

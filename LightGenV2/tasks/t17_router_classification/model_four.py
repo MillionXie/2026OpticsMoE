@@ -10,7 +10,12 @@ CONTRACT = dict(seed=17,architectures=['dynamic_four','full_d2nn'],input_size=22
     phase_init_std=0.,oeo_activation='intensity_softsign')
 
 def sparse_top2(weights):
-    chosen=weights.topk(2,dim=1).indices
+    return sparse_topk(weights,2)
+
+
+def sparse_topk(weights,k=2):
+    if type(k) is not int or not 1<=k<=4:raise ValueError('Four-expert top-k must be 1..4')
+    chosen=weights.topk(k,dim=1).indices
     mask=torch.zeros_like(weights).scatter(1,chosen,1.)
     q=weights*mask
     return q/q.sum(1,keepdim=True).clamp_min(1e-20)
@@ -28,12 +33,13 @@ def route_amplitudes(q,dense=None,straight_through=False):
 class FourRouterClassification(PhaseOnly):
     def __init__(self,variant,readout='linear',num_classes=9):
         if variant not in ('optical','electronic','d2nn'):raise ValueError(variant)
-        if readout not in ('linear','ccd_grid'):raise ValueError(readout)
+        if readout not in ('linear','ccd_grid','features'):raise ValueError(readout)
         if num_classes<2 or (readout=='ccd_grid' and num_classes not in (8,9,10)):raise ValueError(num_classes)
         super().__init__('full_d2nn' if variant=='d2nn' else 'dynamic_four',dict(CONTRACT))
         self.variant=variant
         self.readout=readout
         self.num_classes=num_classes
+        self.top_k=2
         self.height=self.width=518
         self.active_height=self.active_width=478
         self.max_experts=4
@@ -60,7 +66,7 @@ class FourRouterClassification(PhaseOnly):
 
     def route(self,amplitude):
         dense,capture=self.dense_route(amplitude)
-        return (sparse_top2(dense) if dense is not None else None),capture
+        return (sparse_topk(dense,self.top_k) if dense is not None else None),capture
 
     def forward(self,amplitude,return_debug=False,return_dense_route=False,
                 training_route='top2',training_uniform_mix=0.):
@@ -79,7 +85,7 @@ class FourRouterClassification(PhaseOnly):
             q=(1-training_uniform_mix)*dense+training_uniform_mix/4
         elif return_dense_route or training_route=='top2_straight_through':
             dense,capture=self.dense_route(amplitude)
-            q=sparse_top2(dense) if dense is not None else None
+            q=sparse_topk(dense,self.top_k) if dense is not None else None
         else:q,capture=self.route(amplitude)
         if self.variant=='d2nn':
             expanded=F.interpolate(amplitude[:,None],(478,478),mode='bilinear',align_corners=False)[:,0]
@@ -104,6 +110,8 @@ class FourRouterClassification(PhaseOnly):
             features=features/features.mean(1,keepdim=True).clamp_min(1e-20)
             logits=self.shared_head(features)
             energies=None
+        elif self.readout=='features':
+            logits=None;energies=None
         else:
             energies=ccd_grid_energies(active,self.num_classes)
             # Relative additive epsilon preserves gradients in dark regions.
