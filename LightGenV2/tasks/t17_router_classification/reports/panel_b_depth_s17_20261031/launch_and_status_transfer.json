@@ -1,0 +1,79 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/launch.json",
+      "sha256": "f02319ed504de7a6de0d3ed6b7d93919b9ef4160f4f6751e7f554ca5a3e17cf8",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/reference_lg2.json",
+      "sha256": "0b1f6373457d88d988d99eea423649a88ea805aa8a7dc0270b04b0b20670c5ca",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_b_depth_admission_s17_20261031/admission.json",
+      "sha256": "bdc29849bae21691cb2298941a2827350739bf5f554a9bed3cdacae6033eb715",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker0/metadata.json",
+      "sha256": "362daa125c9706af5d2754beb93e4d6117c571a84c04904e3c76d65340e72710",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker0/status.json",
+      "sha256": "0e179b2f15a636556741c9fca3c6db8213978ba42e4da124021192245f06f4b6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker0/training_membership.json",
+      "sha256": "5f57467c30478e90fe2294009cedff8b5489ad65b9dbaadd4a8ab2a4d858b681",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker0/d2nn3/metadata.json",
+      "sha256": "ce65be80b4281015e426a57e5d40c269dedf82719271720bb10aa0e612d08132",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker0/d2nn3/status.json",
+      "sha256": "efcf30566be4f91a866f3d1225a986b175482eae1f92702da102e6261e32ac49",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker0/d2nn3/history.json",
+      "sha256": "c7ed32afa6f3b8992354b9e1a1026b4b1f222312fe00e9466cd07da46f2b24c3",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/metadata.json",
+      "sha256": "118d85dcff55935b8def580051de270e0e56dc1ff764ef4c11e4ffb860a8fe18",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/status.json",
+      "sha256": "186b8fbd73c1710903dca56c492f92cdccc49d8aed5e2d5fc74bc9bd9470e3cb",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/training_membership.json",
+      "sha256": "5f57467c30478e90fe2294009cedff8b5489ad65b9dbaadd4a8ab2a4d858b681",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/metadata.json",
+      "sha256": "768f50f2f2fc7053d169ae2a85f699ae37d4461848ae9bb1012f36d1db941ef0",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/status.json",
+      "sha256": "4bb3e639a9462a23f4361b66041cfcc4577e934040645391f4f7230063417267",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/history.json",
+      "sha256": "49ed88de21217cf85498e9f6012c263d9c1ff773dd53e3bb60414c3a6c53c4cc",
+      "snapshot": true
+    }
+  ]
+}

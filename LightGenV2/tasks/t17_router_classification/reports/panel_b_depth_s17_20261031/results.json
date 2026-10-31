@@ -1,0 +1,517 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_PANEL_B_DEVELOPMENT",
+  "independent_test_claim": false,
+  "seed": 17,
+  "generated_UTC": "2026-10-31T07:42:50.121732+00:00",
+  "all_five_new_jobs_completed": false,
+  "reused_LG2_is_separate_prior_optimization_budget": true,
+  "records": {
+    "lg2": {
+      "reused": true,
+      "role": "REUSED_ORIGINAL_TEST_EXPOSED_PANEL_A_SEED17_NOT_NEW_MATCHED_BUDGET",
+      "result": {
+        "train": {
+          "accuracy": 0.6430205702781677,
+          "balanced_accuracy": 0.6430206298828125,
+          "cross_entropy": 1.409033179283142,
+          "confusion_matrix": [
+            [
+              298,
+              7,
+              47,
+              11,
+              0,
+              56,
+              18,
+              0
+            ],
+            [
+              0,
+              331,
+              12,
+              0,
+              22,
+              44,
+              28,
+              0
+            ],
+            [
+              33,
+              110,
+              224,
+              0,
+              0,
+              67,
+              3,
+              0
+            ],
+            [
+              132,
+              0,
+              28,
+              245,
+              0,
+              32,
+              0,
+              0
+            ],
+            [
+              0,
+              160,
+              4,
+              0,
+              81,
+              53,
+              139,
+              0
+            ],
+            [
+              78,
+              7,
+              15,
+              8,
+              0,
+              265,
+              64,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              396,
+              41
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              29,
+              408
+            ]
+          ],
+          "n": 3496,
+          "router": {
+            "mean_power": [
+              0.5186131596565247,
+              0.20434442162513733,
+              0.2770422101020813,
+              0.0
+            ],
+            "std_power": [
+              0.34313663840293884,
+              0.3003908097743988,
+              0.15603439509868622,
+              0.0
+            ],
+            "selected_fraction": [
+              0.7316933638443935,
+              0.34782608695652173,
+              0.9204805491990846,
+              0.0
+            ],
+            "top2_pair_fraction": {
+              "0-1": 0.07951945080091533,
+              "0-2": 0.6521739130434783,
+              "0-3": 0.0,
+              "1-2": 0.2683066361556064,
+              "1-3": 0.0,
+              "2-3": 0.0
+            },
+            "fraction_outside_most_common_pair": 0.34782608695652173,
+            "effective_experts_from_mean_power": 2.5808540537131317,
+            "mean_per_sample_effective_experts": 1.6524708271026611,
+            "expert_numbering": "zero-based 0..3",
+            "samples": 3496
+          },
+          "dense_router_mean_power": [
+            0.4837634265422821,
+            0.2414468675851822,
+            0.25853052735328674,
+            0.016259755939245224
+          ],
+          "router_capture": {
+            "mean": 0.004835574887692928,
+            "minimum": 0.0018900311551988125,
+            "p05": 0.002041950880084187
+          }
+        },
+        "val": {
+          "accuracy": 0.5970744490623474,
+          "balanced_accuracy": 0.5970745086669922,
+          "cross_entropy": 1.428301215171814,
+          "confusion_matrix": [
+            [
+              62,
+              3,
+              12,
+              3,
+              0,
+              10,
+              4,
+              0
+            ],
+            [
+              0,
+              74,
+              2,
+              0,
+              6,
+              11,
+              1,
+              0
+            ],
+            [
+              3,
+              42,
+              38,
+              1,
+              0,
+              10,
+              0,
+              0
+            ],
+            [
+              43,
+              0,
+              6,
+              37,
+              0,
+              8,
+              0,
+              0
+            ],
+            [
+              0,
+              25,
+              3,
+              0,
+              14,
+              10,
+              41,
+              1
+            ],
+            [
+              22,
+              2,
+              2,
+              1,
+              0,
+              52,
+              15,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              82,
+              12
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4,
+              90
+            ]
+          ],
+          "n": 752,
+          "router": {
+            "mean_power": [
+              0.5129202008247375,
+              0.20984762907028198,
+              0.2772321403026581,
+              0.0
+            ],
+            "std_power": [
+              0.34032103419303894,
+              0.3035433292388916,
+              0.1543923169374466,
+              0.0
+            ],
+            "selected_fraction": [
+              0.7313829787234043,
+              0.3497340425531915,
+              0.9188829787234043,
+              0.0
+            ],
+            "top2_pair_fraction": {
+              "0-1": 0.08111702127659574,
+              "0-2": 0.6502659574468085,
+              "0-3": 0.0,
+              "1-2": 0.26861702127659576,
+              "1-3": 0.0,
+              "2-3": 0.0
+            },
+            "fraction_outside_most_common_pair": 0.3497340425531915,
+            "effective_experts_from_mean_power": 2.604296809331201,
+            "mean_per_sample_effective_experts": 1.6628975868225098,
+            "expert_numbering": "zero-based 0..3",
+            "samples": 752
+          },
+          "dense_router_mean_power": [
+            0.4778532385826111,
+            0.24384324252605438,
+            0.2619665563106537,
+            0.016336919739842415
+          ],
+          "router_capture": {
+            "mean": 0.0048070028424263,
+            "minimum": 0.0018834806978702545,
+            "p05": 0.002042444166727364
+          }
+        },
+        "original_test_dev": {
+          "accuracy": 0.6103723645210266,
+          "balanced_accuracy": 0.6103723049163818,
+          "cross_entropy": 1.4265155792236328,
+          "confusion_matrix": [
+            [
+              60,
+              0,
+              9,
+              3,
+              0,
+              18,
+              4,
+              0
+            ],
+            [
+              0,
+              63,
+              6,
+              0,
+              6,
+              11,
+              8,
+              0
+            ],
+            [
+              8,
+              25,
+              45,
+              1,
+              0,
+              12,
+              3,
+              0
+            ],
+            [
+              43,
+              0,
+              3,
+              41,
+              0,
+              7,
+              0,
+              0
+            ],
+            [
+              0,
+              38,
+              2,
+              0,
+              12,
+              12,
+              30,
+              0
+            ],
+            [
+              17,
+              4,
+              4,
+              1,
+              0,
+              61,
+              7,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              87,
+              7
+            ],
+            [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              4,
+              90
+            ]
+          ],
+          "n": 752,
+          "router": {
+            "mean_power": [
+              0.5151310563087463,
+              0.20466385781764984,
+              0.280204713344574,
+              0.0
+            ],
+            "std_power": [
+              0.34483957290649414,
+              0.3028354048728943,
+              0.1514449268579483,
+              0.0
+            ],
+            "selected_fraction": [
+              0.726063829787234,
+              0.3351063829787234,
+              0.9388297872340425,
+              0.0
+            ],
+            "top2_pair_fraction": {
+              "0-1": 0.061170212765957445,
+              "0-2": 0.6648936170212766,
+              "0-3": 0.0,
+              "1-2": 0.27393617021276595,
+              "1-3": 0.0,
+              "2-3": 0.0
+            },
+            "fraction_outside_most_common_pair": 0.3351063829787234,
+            "effective_experts_from_mean_power": 2.59227207860554,
+            "mean_per_sample_effective_experts": 1.6532326936721802,
+            "expert_numbering": "zero-based 0..3",
+            "samples": 752
+          },
+          "dense_router_mean_power": [
+            0.4818953275680542,
+            0.24369166791439056,
+            0.25808286666870117,
+            0.016330353915691376
+          ],
+          "router_capture": {
+            "mean": 0.0047983210533857346,
+            "minimum": 0.0019076509634032845,
+            "p05": 0.0020427724812179804
+          }
+        },
+        "role": "ORIGINAL_TEST_EXPOSED_TEACHER_DISTILLATION",
+        "independent_test_claim": false,
+        "selected_epoch": 4,
+        "selected_kind": "online",
+        "completed_epochs": 20,
+        "prior_optical_executed_epochs": 90,
+        "total_optical_executed_epochs": 110,
+        "teacher_head_epochs": 48,
+        "original_test_selection_evaluations": 23,
+        "checkpoint_sha256": "81f973aa3e4430aa3d4c0f773cc16b07f3b196f8333f8ab944c50779a44961c2",
+        "elapsed_seconds": 366.0312728881836,
+        "gain_over_frozen_D2NN_pp": 20.345747090400536,
+        "gain_over_test_selected_D2NN_pp": 20.345747090400536
+      }
+    },
+    "d2nn3": {
+      "reused": false,
+      "state": {
+        "state": "training",
+        "epoch": 3,
+        "total_epochs": 120,
+        "selected_epoch": 1,
+        "pid": 1404559
+      },
+      "worker_state": {
+        "state": "training",
+        "job": "d2nn3",
+        "pid": 1404559
+      },
+      "result": null
+    },
+    "d2nn5": {
+      "reused": false,
+      "state": {
+        "state": "not_started"
+      },
+      "worker_state": {
+        "state": "training",
+        "job": "d2nn3",
+        "pid": 1404559
+      },
+      "result": null
+    },
+    "d2nn7": {
+      "reused": false,
+      "state": {
+        "state": "not_started"
+      },
+      "worker_state": {
+        "state": "training",
+        "job": "d2nn3",
+        "pid": 1404559
+      },
+      "result": null
+    },
+    "lg4": {
+      "reused": false,
+      "state": {
+        "state": "training",
+        "epoch": 2,
+        "total_epochs": 120,
+        "selected_epoch": 1,
+        "pid": 1404560
+      },
+      "worker_state": {
+        "state": "training",
+        "job": "lg4",
+        "pid": 1404560
+      },
+      "result": null
+    },
+    "lg6": {
+      "reused": false,
+      "state": {
+        "state": "not_started"
+      },
+      "worker_state": {
+        "state": "training",
+        "job": "lg4",
+        "pid": 1404560
+      },
+      "result": null
+    }
+  },
+  "pairs": [
+    {
+      "LG": "lg2",
+      "D2NN": "d2nn3",
+      "gain_percentage_points": null,
+      "target_15pp_met": null
+    },
+    {
+      "LG": "lg4",
+      "D2NN": "d2nn5",
+      "gain_percentage_points": null,
+      "target_15pp_met": null
+    },
+    {
+      "LG": "lg6",
+      "D2NN": "d2nn7",
+      "gain_percentage_points": null,
+      "target_15pp_met": null
+    }
+  ],
+  "LG_strictly_increasing": null,
+  "D2NN_strictly_increasing": null,
+  "D2NN_common_observed_epoch_prefix": 0,
+  "D2NN_order_SHA_equal_on_common_prefix": true
+}
