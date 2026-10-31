@@ -1,7 +1,8 @@
-"""TRAIN-only text/pooled correction in the same middle model, CPU only.
+"""TRAIN-only correction of existing conditions in the same middle, CPU only.
 
 Same-reference instruction differences are matched to the selected electronic
-head. Image head, shared projection, UNet LoRA, Qwen, phases and VAE stay exact.
+head. An explicit image-prefix mode instead fits reference-only image queries.
+All other head branches, shared projection, UNet, Qwen, phases and VAE stay exact.
 No additional inference branch, parser, parameter or denoising step is added.
 """
 import argparse,copy,hashlib,json,math,os,random,sys,time,traceback
@@ -25,6 +26,27 @@ def groups_for(records):
             else:part=[ordered[(start+j)%len(ordered)]for j in range(3)]
             result.append(part)
     return result
+
+
+def reference_representatives(records):
+    """One actual TRAIN input per reference, without counting repeated prompts."""
+    groups=groups_for(records)
+    references={}
+    for group in groups:
+        for row in group:references.setdefault(row['reference_id'],row)
+    return [references[k]for k in sorted(references)]
+
+
+def image_loss(pred,target):
+    import torch
+    import torch.nn.functional as F
+    target=target.float().detach();pred=pred.float()
+    if pred.shape!=target.shape:raise ValueError('Image prefix shape mismatch')
+    relative=(pred-target).square().mean()/target.square().mean().clamp_min(1e-6)
+    cosine=(1-F.cosine_similarity(pred,target,dim=-1)).mean()
+    loss=relative+.1*cosine
+    if not torch.isfinite(loss):raise ValueError('Nonfinite image condition objective')
+    return loss,dict(image_absolute=relative,image_cosine=cosine)
 
 
 def text_forward(head,features):
@@ -68,14 +90,28 @@ def fit(a):
         raise ValueError('Exact expanded single-EG64-block8-step parent and selected E condition bank required')
     records=payload['records'];groups=groups_for(records);keys={r['input_key']for r in records}
     if len(keys)!=624 or set(payload['TRAIN_electronic_conditions'])!=keys:raise ValueError('All actual624 TRAIN condition targets required')
-    targets=payload['TRAIN_electronic_conditions'];a.output.mkdir()
+    targets=payload['TRAIN_electronic_conditions'];image_only=a.mode=='image_prefix'
+    if image_only:
+        representatives=reference_representatives(records);by_ref={r['reference_id']:r for r in representatives}
+        for row in records:
+            first=by_ref[row['reference_id']]['input_key'];key=row['input_key']
+            if (not torch.equal(payload['features'][first]['visual'],payload['features'][key]['visual'])
+                or not torch.equal(targets[first]['image'],targets[key]['image'])):
+                raise ValueError('Reference-only features or teacher image prefix varies with prompt')
+        groups=[[r]for r in representatives]
+    prefixes=('image.',)if image_only else('text.','pooled.')
+    a.output.mkdir()
     write(a.output/'execution.json',dict(argv=sys.argv,pid=os.getpid(),source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=sha(__file__),CPU_only=True))
     def new():
         head=QwenSDXLConditions(joint_image_context=False).float();head.load_state_dict(parent['head'],strict=True);head.requires_grad_(False)
-        for module in [head.text,head.pooled]:module.requires_grad_(True)
+        for module in ([head.image]if image_only else[head.text,head.pooled]):module.requires_grad_(True)
         head.train();params=[p for p in head.parameters()if p.requires_grad]
         return head,torch.optim.AdamW(params,lr=a.lr,weight_decay=.01)
     def sample(head,group):
+        if image_only:
+            visual=torch.stack([payload['features'][r['input_key']]['visual'].float()for r in group])
+            actual=head.image(head.project(visual))[0]
+            return image_loss(actual,torch.stack([targets[r['input_key']]['image']for r in group]))
         pred=text_forward(head,[payload['features'][r['input_key']]for r in group])
         target={name:torch.stack([targets[r['input_key']][name]for r in group])for name in ['text','pooled']}
         return delta_loss(pred,target)
@@ -92,36 +128,38 @@ def fit(a):
         if not torch.isfinite(loss)or norm<=0:raise ValueError('Invalid actual CPU backward')
         opt.step();smoke.append(dict(step=i+1,loss=float(loss),gradient_norm=float(norm)))
     def frozen_exact(model):
-        return all(torch.equal(value,parent['head'][name])for name,value in model.state_dict().items()if not name.startswith(('text.','pooled.')))
+        return all(torch.equal(value,parent['head'][name])for name,value in model.state_dict().items()if not name.startswith(prefixes))
     assert frozen_exact(head)
-    write(a.output/'smoke_report.json',dict(complete=True,real_CPU_backward=smoke,shared_projection_image_head_exact=True,smoke_weights_discarded=True,initial_TRAIN_loss=before,initial_components=initial_terms))
+    write(a.output/'smoke_report.json',dict(complete=True,real_CPU_backward=smoke,all_nonselected_head_branches_exact=True,alignment_mode=a.mode,smoke_weights_discarded=True,initial_TRAIN_loss=before,initial_components=initial_terms))
     head,opt=new();rng=random.Random(20261101);order=[];best=math.inf;history=[];seen=set();began=time.monotonic()
     for step in range(1,a.steps+1):
         if not order:order=list(range(len(groups)));rng.shuffle(order)
         group=groups[order.pop()];seen.update(r['input_key']for r in group)
         opt.zero_grad();loss,_=sample(head,group);loss.backward();torch.nn.utils.clip_grad_norm_([p for p in head.parameters()if p.requires_grad],1.,error_if_nonfinite=True);opt.step()
-        if step%20==0:write(a.output/'progress.json',dict(stage='CPU_same_reference_selected_E_text_delta_KD',step=step,total=a.steps,loss=float(loss),seen_TRAIN_contexts=len(seen)))
+        if step%20==0:write(a.output/'progress.json',dict(stage='CPU_selected_E_reference_image_prefix_KD'if image_only else'CPU_same_reference_selected_E_text_delta_KD',step=step,total=a.steps,loss=float(loss),seen_TRAIN_contexts=len(seen)))
         if step%200==0 or step==a.steps:
             score,parts=measure(head);assert frozen_exact(head);history.append(dict(step=step,TRAIN_loss=score,components=parts,seconds=time.monotonic()-began));write(a.output/'history.json',history)
             state=copy.deepcopy(parent);state['head']={name:value.detach().cpu().clone()for name,value in head.state_dict().items()}
             state['depth_compression']=dict(state['depth_compression'],parent_head_unchanged=False)
             state['step']=step;state['source_commit']=os.environ['T12_SOURCE_COMMIT']
-            state['condition_correction']=dict(schema='expanded_same_reference_selected_E_text_delta_v1',parent_sha256=pr['best_sha256'],teacher_sha256=a.teacher_sha256,steps=step,TRAIN_loss=score,image_shared_projection_UNet_unchanged=True,new_inference_parameters=0)
+            if parent.get('condition_correction'):state['prior_condition_correction']=copy.deepcopy(parent['condition_correction'])
+            state['condition_correction']=dict(schema='expanded_selected_E_reference_image_prefix_v1'if image_only else'expanded_same_reference_selected_E_text_delta_v1',parent_sha256=pr['best_sha256'],teacher_sha256=a.teacher_sha256,steps=step,TRAIN_loss=score,alignment_mode=a.mode,all_nonselected_head_branches_unchanged=True,new_inference_parameters=0)
             assert all(torch.equal(v,parent['unet_lora'][n])for n,v in state['unet_lora'].items())
             torch.save(state,a.output/'last_checkpoint.pt')
             if score<best:best=score;torch.save(state,a.output/'best_checkpoint.pt')
     write(a.output/'report.json',dict(complete=True,source_commit=os.environ['T12_SOURCE_COMMIT'],best_sha256=sha(a.output/'best_checkpoint.pt'),last_sha256=sha(a.output/'last_checkpoint.pt'),
-        compression_training_performed=True,depth_compression=state['depth_compression'],sampling_steps=8,epochs=None,actual_paired_updates=0,condition_alignment_updates=a.steps,inherited_paired_updates=pr['actual_paired_updates'],
-        training_update_kind='existing text and pooled condition heads only; no denoising updates',TRAIN_contexts=624,actual_gradient_TRAIN_contexts=len(seen),TRAIN_references=len({r['reference_id']for r in records}),
-        TRAIN_groups=len(groups),single_request_groups=sum(len(g)==1 for g in groups),initial_TRAIN_loss=before,best_TRAIN_loss=best,
+        compression_training_performed=True,depth_compression=state['depth_compression'],sampling_steps=8,epochs=None,actual_paired_updates=0,condition_alignment_updates=a.steps+pr.get('condition_alignment_updates',0),current_condition_alignment_updates=a.steps,inherited_condition_alignment_updates=pr.get('condition_alignment_updates',0),inherited_paired_updates=pr['actual_paired_updates']+pr.get('inherited_paired_updates',0),
+        training_update_kind='existing image query head only; no denoising updates'if image_only else'existing text and pooled condition heads only; no denoising updates',alignment_mode=a.mode,TRAIN_contexts=624,actual_gradient_TRAIN_contexts=len(seen),TRAIN_references=len({r['reference_id']for r in records}),
+        TRAIN_groups=len(groups),single_request_groups=sum(len(g)==1 for g in groups_for(records)),reference_only_representatives=len(groups)if image_only else 0,initial_TRAIN_loss=before,best_TRAIN_loss=best,
         best_selection='All reused TRAIN condition groups, not validation or final model selection',parent_checkpoint_sha256=pr['best_sha256'],teacher_sha256=a.teacher_sha256,student_cache_sha256=cr['cache_sha256'],
-        existing_text_pooled_trainable_parameters=sum(p.numel()for p in head.parameters()if p.requires_grad),frozen_shared_projection_image_head_UNet_exact=True,Qwen_phases_VAE_frozen=True,
+        existing_condition_trainable_parameters=sum(p.numel()for p in head.parameters()if p.requires_grad),all_nonselected_head_branches_UNet_exact=True,shared_projection_frozen=True,text_pooled_frozen=image_only,image_head_frozen=not image_only,Qwen_phases_VAE_frozen=True,
         extra_deployment_parameters=0,TEST_used_for_gradient=False,validation_set=False,final_TEST_PT_selection_pending=True,quality_or_speed_accepted=False,CPU_only=True))
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in ['parent','cache','output']:p.add_argument('--'+key,type=Path,required=True)
+    p.add_argument('--mode',choices=['text_delta','image_prefix'],default='text_delta')
     p.add_argument('--parent-sha256',required=True);p.add_argument('--teacher-sha256',required=True)
     p.add_argument('--steps',type=int,default=800);p.add_argument('--lr',type=float,default=5e-5);a=p.parse_args()
     if a.steps!=800 or a.lr!=5e-5:raise ValueError('Fixed800-step text delta alignment recipe required')

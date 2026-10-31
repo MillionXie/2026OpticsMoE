@@ -1,5 +1,5 @@
 import unittest
-from ..scene_expanded_textdelta_recovery import groups_for
+from ..scene_expanded_textdelta_recovery import groups_for,reference_representatives
 
 
 class ActualReferenceGroups(unittest.TestCase):
@@ -17,6 +17,14 @@ class ActualReferenceGroups(unittest.TestCase):
         with self.assertRaises(ValueError):groups_for([row])
         row['split']='train'
         with self.assertRaises(ValueError):groups_for([row,dict(row,prompt='different')])
+
+    def test_reference_only_training_does_not_count_prompt_duplicates(self):
+        rows=[dict(split='train',reference_id=ref,input_key=ref+str(i),condition_id=str(i),prompt='request'+str(i))for ref,n in [('one',1),('many',8)]for i in range(n)]
+        representatives=reference_representatives(rows)
+        self.assertEqual(len(representatives),2)
+        self.assertEqual({r['reference_id']for r in representatives},{'one','many'})
+        self.assertTrue(all(r in rows for r in representatives))
+        with self.assertRaises(ValueError):reference_representatives([dict(rows[0],split='test')])
 
 
 if __name__=='__main__':unittest.main()
