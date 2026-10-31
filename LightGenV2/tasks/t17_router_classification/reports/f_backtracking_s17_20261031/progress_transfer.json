@@ -1,0 +1,25 @@
+{
+  "snapshot_only_not_checkpoint_backup": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_backtracking_s17_20261031/paired/history.json",
+      "sha256": "f18e639493fa67bb9c0fef9ace20dab7fb04cab11b09239fe775c7a0c32e0f81",
+      "bytes": 53016
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_backtracking_s17_20261031/paired/metadata.json",
+      "sha256": "5f436142b39531ae34b86e153518d53b1b9e092db94b000f86e5a5d5c9f528d9",
+      "bytes": 7691
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_backtracking_s17_20261031/paired/status.json",
+      "sha256": "4e25b81bd39b9fbd1104be673deeff4fc59370de6c42c6ba7cb14da00d133007",
+      "bytes": 103
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_backtracking_s17_20261031/paired/teacher_manifest.json",
+      "sha256": "660a5d436557602a7aa6b6dd6530a4b70c8872fd3131785c3a37e2de8a71246a",
+      "bytes": 1378
+    }
+  ]
+}

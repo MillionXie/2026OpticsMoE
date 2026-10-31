@@ -84,6 +84,8 @@ def main():
         page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1><p class="note">最新完整阶段：全TRAIN相位Adam未改善，10轮后选回D4父，RGB60.00/SAR47.00%。首轮VAL骤降、头重拟合后恢复，提示步长与头协调问题；不证明容量上限。10次相位更新、0次head SGD、80头内部步；全部权重/预测/路由SHA核验且自己的GPU已释放。TRAIN回溯仅为下一假设，尚未实现或启动。</p>')
     paired=task/'runs/simulation/f_backtracking_s17_20261031/paired'
     report['F_paired_TRAIN_backtracking']=dict(status=read(paired/'status.json'),result=read(paired/'result.json'))
+    report['F_paired_TRAIN_step_audit']=read(task/'reports/f_backtracking_s17_20261031/progress_step_audit.json')
+    page=page.replace('</html>','<h2>TRAIN相位步长配对核验</h2><p>已核验快照的全部接受步满足同一完整TRAIN视图的目标下降。每次试探额外前向呈现单独记账，不等于新增独立图像。跨轮随机D4码不同，不能将跨轮目标差当作配对步长收益；当前VAL变化不冒充锁后开发结果。</p><img src="../f_backtracking_s17_20261031/phase_steps.svg" style="width:100%"></html>')
     page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1><p class="note">最新新候选：有界TRAIN相位回溯，source2c5ffb646、156项CPU检查与真实TRAIN GPU准入通过，worker1988674已启动。固定路由参数/每轮原6000 TRAIN同一增强码和head做最多8次前向回溯，下降才接受；VAL/TEST不参与step接受。推理仍原Top2/两OEO/单Linear。准入20张目标下降不是最终训练或泛化结果，尚未完成，保护现有RGB60/SAR47。</p>')
     (out/'results.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     (out/'results.html').write_text(page,encoding='utf-8');print([(n,r['status']['state']) for n,r in records.items()])

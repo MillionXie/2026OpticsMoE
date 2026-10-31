@@ -1,7 +1,7 @@
 {
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "independent_test_claim": false,
-  "generated_UTC": "2026-10-31T14:18:00.365134+00:00",
+  "generated_UTC": "2026-10-31T14:26:12.395348+00:00",
   "records": {
     "panel_b_linear_joint4_s17_20261031": {
       "run": "runs\\simulation\\figure_revision_s17_20261031\\panel_b_linear_joint4_s17_20261031",
@@ -18270,7 +18270,126 @@
     }
   },
   "F_paired_TRAIN_backtracking": {
-    "status": null,
+    "status": {
+      "state": "training",
+      "epoch": 6,
+      "total_epochs": 20,
+      "selected_epoch": 5,
+      "pid": 1988674
+    },
     "result": null
+  },
+  "F_paired_TRAIN_step_audit": {
+    "source": "2c5ffb6467fe7994c0d59ba3930c267c1c1f0efa",
+    "snapshot_epoch": 6,
+    "completed": false,
+    "steps": [
+      {
+        "epoch": 1,
+        "VAL": 0.5185,
+        "selected_epoch": 0,
+        "objective_before": 1.7269053805669148,
+        "objective_after": 1.7243188543319703,
+        "forward_trials": 7,
+        "accepted": true,
+        "max_phase_step": 0.00046875,
+        "seconds": 63.15836524963379,
+        "head_block": null
+      },
+      {
+        "epoch": 2,
+        "VAL": 0.5225,
+        "selected_epoch": 0,
+        "objective_before": 1.7061753362019856,
+        "objective_after": 1.7051085526148477,
+        "forward_trials": 8,
+        "accepted": true,
+        "max_phase_step": 0.000234375,
+        "seconds": 65.54532051086426,
+        "head_block": null
+      },
+      {
+        "epoch": 3,
+        "VAL": 0.518,
+        "selected_epoch": 0,
+        "objective_before": 1.7047043959299724,
+        "objective_after": 1.7041005007425944,
+        "forward_trials": 8,
+        "accepted": true,
+        "max_phase_step": 0.000234375,
+        "seconds": 65.77312445640564,
+        "head_block": null
+      },
+      {
+        "epoch": 4,
+        "VAL": 0.5225,
+        "selected_epoch": 0,
+        "objective_before": 1.7054402720133464,
+        "objective_after": 1.705008003870646,
+        "forward_trials": 8,
+        "accepted": true,
+        "max_phase_step": 0.000234375,
+        "seconds": 65.49356508255005,
+        "head_block": null
+      },
+      {
+        "epoch": 5,
+        "VAL": 0.5285,
+        "selected_epoch": 5,
+        "objective_before": 1.7013595555623373,
+        "objective_after": 1.7007859980265299,
+        "forward_trials": 8,
+        "accepted": true,
+        "max_phase_step": 0.000234375,
+        "seconds": 117.70535397529602,
+        "head_block": {
+          "mode": "TRAIN_Gram_cholesky",
+          "TRAIN_samples": 48000,
+          "numerical_ridge": 0.0031212890348941086,
+          "uncentred_Gram_eigen_min": 3.4250862876030996e-11,
+          "uncentred_Gram_eigen_max": 2307.0780394363974,
+          "Gram_regularized_condition": 739143.7030077516,
+          "feature_transform_absent_from_inference": true,
+          "objective_before": 1.7068647520320606,
+          "objective_after": 1.6858018108425101,
+          "internal_steps": 40,
+          "closure_calls": 45,
+          "exported_dtype": "torch.float32",
+          "TRAIN_only": true,
+          "original_TRAIN_images": 6000,
+          "augmentation_codes": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ]
+        }
+      },
+      {
+        "epoch": 6,
+        "VAL": 0.523,
+        "selected_epoch": 5,
+        "objective_before": 1.6787721741994222,
+        "objective_after": 1.6775377270380656,
+        "forward_trials": 6,
+        "accepted": true,
+        "max_phase_step": 0.0009375,
+        "seconds": 52.657909870147705,
+        "head_block": null
+      }
+    ],
+    "accepted_steps": 6,
+    "head_SGD_steps": 0,
+    "extra_TRAIN_trial_views": 270000,
+    "independent_TRAIN_images": 6000,
+    "random_gradient_view_presentations": 36000,
+    "head_block_views": 48000,
+    "head_internal_steps": 40,
+    "interpretation": "All accepted steps satisfy the recorded paired TRAIN decrease check. Most of the proposed initial step is rejected; this isolates fixed-head optical overshoot on these views. Small accepted TRAIN decreases do not imply validation or unseen-test gains. The in-progress VAL gain and selected epoch are not final development results.",
+    "TEST_not_evaluated_in_this_run_yet": true
   }
 }
