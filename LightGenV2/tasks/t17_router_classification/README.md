@@ -1,5 +1,15 @@
 # T17 单数据集路由分类对照
 
+## 相同读出目标的TRAIN Gram数值坐标对照（准备）
+
+B4已超过15pp，保护不再搜索。仅F与B6在相同原始父、相同.001头锚定损失、相同150内部迭代预算下，
+比较TRAIN Gram预条件坐标；profile figure_Gram_readout_s17_20261031。缓存沿用上轮已核CCD特征，
+必须逐文件SHA、父PT、光学源码、原样本ID/标签完全核验，不因名称相同就复用。
+G=X_train.T X_train/n，L=chol(G+.001*mean(diagG)*I)，Xtilde=X L^{-T}、V=W L，
+每次验证/导出均还原W=V L^{-1}。正则始终作用于原W-Wparent；未中心化、不加新bias。
+只用TRAIN求坐标变换；VAL选模，TEST锁后评估。推理仍原单Linear，PT不包含额外白化层或可训前端。
+本段仅准备；实际GPU准入、发布Git与启动收据后才算在跑。
+
 ## 单Linear有界拟合完成（2026-10-31 18:42）
 
 source0a3a6a48e，122项CPU检查与三个真实父TRAIN GPU准入后启动，worker1672519已完整结束并无GPU分配。

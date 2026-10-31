@@ -1,0 +1,134 @@
+{
+  "profile": "figure_Gram_readout_s17_20261031",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "authorized_gpu_uuids": [
+    "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+  ],
+  "optimization": {
+    "outer_steps": 30,
+    "inner_steps": 5,
+    "maximum_LBFGS_inner_steps": 150,
+    "anchor_strength": 0.001,
+    "optical_batch": 64,
+    "stop_gradient_max_abs": 1e-07,
+    "TRAIN_only": true,
+    "VAL_selection": "macro recall then CE; original parent participates",
+    "coordinates": "TRAIN_Gram_cholesky"
+  },
+  "jobs": {
+    "f_lg_convex": {
+      "seed": 17,
+      "epochs": 60,
+      "min_epochs": 20,
+      "patience": 12,
+      "batch": 64,
+      "eval_batch": 64,
+      "phase_optimizer": "wrapped",
+      "phase_lr": 0.003,
+      "head_lr": 0.001,
+      "head_weight_decay": 0.001,
+      "label_smoothing": 0.02,
+      "cosine_lr": true,
+      "early_stop": true,
+      "training_temperature": 1.0,
+      "augmentation": "horizontal_flip",
+      "authorized_gpu_uuids": [
+        "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+      ],
+      "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+      "profile": "panel_f_lg_s17_20261031",
+      "dataset": "eurosat_original_f",
+      "architecture": "LG",
+      "num_classes": 10,
+      "main_layers": 2,
+      "layers": 3,
+      "training_scope": "all",
+      "data": {
+        "expected_counts": {
+          "train": 6000,
+          "val": 2000,
+          "test": 2000
+        },
+        "original_f_subset_preserved": true,
+        "trainval": {
+          "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/data.npz",
+          "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/phase_only_v1/manifest.json",
+          "data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+          "manifest_sha256": "f15e2a8e40257eb6fde0be060992a54a09f94fcf884b5226e64d580358996d70"
+        },
+        "holdout": {
+          "data": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/data.npz",
+          "manifest": "/DATA/DATA1/guest3/demo_reproduction_data/eurosat/shared_frontend_holdout_v1/manifest.json",
+          "data_sha256": "28724ecedaeb3b98cc4544c5dc73debc9a5a4ecb7ef4b81e1141749d66d8d61d",
+          "manifest_sha256": "f8d5dbaaf7593f2ee380bd4b1eae06d7791d4c8fe4f61b7a7cc4401a4dc78b60"
+        }
+      },
+      "optical_contract": "Same A/B 4x224 expert, top2 once, E/G main2, global478/canvas518, 17um/532nm/.1m; identical intensity_softsign after every main phase; D3 full478 and same OEO, no Linear",
+      "readout": "LG single Linear784->10; D2NN fixed full-coverage CCD2x5",
+      "classes": [
+        "AnnualCrop",
+        "Forest",
+        "HerbaceousVegetation",
+        "Highway",
+        "Industrial",
+        "Pasture",
+        "PermanentCrop",
+        "Residential",
+        "River",
+        "SeaLake"
+      ],
+      "no_learned_frontend": true,
+      "teacher_used": false,
+      "training_labels": "Original TRAIN only; no GT domain supervision; val lock before TEST",
+      "data_license": "Existing original data source metadata MIT; do not label CC BY4.0",
+      "human_A100_authorization_date": "2026-10-31 latest request",
+      "parent_checkpoint": "runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "5c1f49e75dfa0eec97f3c3b3425b5c792fc6f8762f23c3ed2a1c34e90f3655bf",
+      "reuse_cache_directory": "runs/simulation/figure_convex_readout_s17_20261031/worker0/f_lg_convex",
+      "reuse_cache_manifest_sha256": "4e9c362cd1578f3a3dde10d1a95b39c3dd1e42642713a0c64d1323304830d5f3"
+    },
+    "b_lg6_convex": {
+      "seed": 17,
+      "epochs": 30,
+      "min_epochs": 10,
+      "patience": 10,
+      "batch": 32,
+      "eval_batch": 64,
+      "phase_optimizer": "wrapped",
+      "phase_lr": 0.0002,
+      "head_lr": 0.0001,
+      "head_weight_decay": 0.001,
+      "label_smoothing": 0.02,
+      "cosine_lr": true,
+      "early_stop": true,
+      "training_temperature": 1.0,
+      "augmentation": "D4",
+      "authorized_gpu_uuids": [
+        "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+      ],
+      "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+      "dataset": "kather2016",
+      "num_classes": 8,
+      "expected_counts": {
+        "train": 3496,
+        "val": 752,
+        "test": 752
+      },
+      "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+      "main_layers": 6,
+      "parent_checkpoint": "runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "a5890402a4a8bf07186b4ff4d6ea1a2e8d5f29255947f8b7bd0306f737cca5ce",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+      "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+      "head_initialization": "Strict load selected new Linear parent; no head reset",
+      "head_prior_temperature": 0.1,
+      "profile": "panel_b_linear_joint6_s17_20261031",
+      "architecture": "LG",
+      "training_scope": "last_pair_and_head",
+      "reuse_cache_directory": "runs/simulation/figure_convex_readout_s17_20261031/worker0/b_lg6_convex",
+      "reuse_cache_manifest_sha256": "6b06a4e8bf2ca85d76d81922c89452618b8bf0cb10f8d79292958e41de527c2e"
+    }
+  },
+  "objective_comparison": "Same original parents and .001 anchor penalty and 150-inner-step budget as identity-coordinate run. Only solver coordinates differ; no inference whitening module."
+}

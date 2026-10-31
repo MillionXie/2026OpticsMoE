@@ -1,6 +1,6 @@
 import pytest
 import torch
-from LightGenV2.tasks.t17_router_classification.train_convex_readout import convex_objective
+from LightGenV2.tasks.t17_router_classification.train_convex_readout import convex_objective,training_coordinates,canonical_weight,coordinate_objective
 
 
 def test_frozen_feature_head_objective_is_convex_and_uses_only_train_labels():
@@ -20,3 +20,25 @@ def test_LBFGS_reduces_the_regularized_training_objective_without_modifying_feat
 @pytest.mark.parametrize('strength',[0.,-1.])
 def test_invalid_convex_regularization_is_rejected(strength):
     with pytest.raises(ValueError):convex_objective(torch.zeros(2,4),torch.ones(3,4),torch.zeros(3,dtype=torch.long),torch.zeros(2,4),strength)
+
+
+def test_cholesky_coordinates_preserve_logits_and_original_weight_penalty():
+    torch.manual_seed(17);x=torch.rand(40,8,dtype=torch.double);w=torch.randn(3,8,dtype=torch.double);y=torch.arange(40)%3
+    transformed,v,factor,info=training_coordinates(x,w,'TRAIN_Gram_cholesky')
+    assert info['TRAIN_samples']==40 and torch.allclose(canonical_weight(v,factor),w,atol=1e-12,rtol=1e-12)
+    assert torch.allclose(x@w.T,transformed@v.T,atol=1e-12,rtol=1e-12)
+    v=(v+.1).requires_grad_();base=convex_objective(canonical_weight(v,factor),x,y,w,.001);other=coordinate_objective(v,transformed,y,w,.001,factor)
+    assert torch.allclose(base,other,atol=1e-12,rtol=1e-12)
+    g1=torch.autograd.grad(base,v,retain_graph=True)[0];g2=torch.autograd.grad(other,v)[0]
+    assert torch.allclose(g1,g2,atol=1e-12,rtol=1e-12)
+
+
+def test_identity_coordinates_leave_original_objective_bitwise_unchanged():
+    x=torch.rand(20,6,dtype=torch.double);w=torch.rand(4,6,dtype=torch.double);y=torch.arange(20)%4
+    xt,v,factor,_=training_coordinates(x,w,'identity')
+    assert xt is x and factor is None and torch.equal(v,w)
+    assert torch.equal(coordinate_objective(v,xt,y,w,.001,factor),convex_objective(w,x,y,w,.001))
+
+
+def test_unknown_training_coordinate_mode_is_rejected():
+    with pytest.raises(ValueError):training_coordinates(torch.ones(3,4),torch.ones(2,4),'from_TEST')

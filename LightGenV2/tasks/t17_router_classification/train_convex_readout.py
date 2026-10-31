@@ -25,6 +25,46 @@ def convex_objective(weight,features,labels,anchor,strength):
     return F.cross_entropy(F.linear(features,weight),labels)+.5*strength*(weight-anchor).square().sum()
 
 
+def canonical_weight(coordinates,cholesky):
+    if cholesky is None:return coordinates
+    return torch.linalg.solve_triangular(cholesky.T,coordinates.T,upper=True).T
+
+
+@torch.no_grad()
+def training_coordinates(features,weight,mode):
+    if mode=='identity':return features,weight.clone(),None,dict(mode='identity')
+    if mode!='TRAIN_Gram_cholesky':raise ValueError(mode)
+    gram=features.T@features/len(features);gram=(gram+gram.T)/2
+    ridge=.001*gram.diagonal().mean();factor=torch.linalg.cholesky(gram+ridge*torch.eye(gram.shape[0],dtype=gram.dtype,device=gram.device))
+    transformed=torch.linalg.solve_triangular(factor,features.T,upper=False).T
+    coordinates=weight@factor;eigen=torch.linalg.eigvalsh(gram)
+    stats=dict(mode=mode,TRAIN_samples=len(features),numerical_ridge=float(ridge),uncentred_Gram_eigen_min=float(eigen[0]),uncentred_Gram_eigen_max=float(eigen[-1]),Gram_regularized_condition=float((eigen[-1]+ridge)/(eigen[0]+ridge)),feature_transform_absent_from_inference=True)
+    return transformed,coordinates,factor,stats
+
+
+def coordinate_objective(coordinates,features,labels,anchor,strength,cholesky):
+    if cholesky is None:return convex_objective(coordinates,features,labels,anchor,strength)
+    weight=canonical_weight(coordinates,cholesky)
+    return F.cross_entropy(F.linear(features,coordinates),labels)+.5*strength*(weight-anchor).square().sum()
+
+
+def verified_cache(model,part,path,batch,cfg,metadata,split):
+    if not cfg.get('reuse_cache_directory'):return cache(model,part,path,batch)
+    directory=Path(__file__).resolve().parent/cfg['reuse_cache_directory'];manifest_path=directory/'cache_manifest.json'
+    if sha256(manifest_path)!=cfg['reuse_cache_manifest_sha256']:raise ValueError('Reused cache manifest SHA')
+    manifest=json.loads(manifest_path.read_text())
+    if manifest['parent_checkpoint_sha256']!=cfg['parent_checkpoint_sha256']:raise ValueError('Cache parent changed')
+    for name,value in manifest['source_sha256'].items():
+        if name!='train_convex_readout.py' and metadata['source_sha256'].get(name)!=value:raise ValueError('Optical cache source mismatch: '+name)
+    source=directory/f'{split}_features.npz'
+    if sha256(source)!=manifest['feature_sha256'][split]:raise ValueError('Reused feature SHA')
+    with np.load(source,allow_pickle=False) as z:arrays={name:z[name].copy() for name in z.files}
+    for name in ['ids','labels']+(['domains'] if 'domains' in part else []):
+        if not np.array_equal(arrays[name],part[name]):raise ValueError('Cache identity changed: '+name)
+    os.link(source,path)
+    return arrays
+
+
 @torch.no_grad()
 def cache(model,part,path,batch):
     values={k:[] for k in ['ccd_features','route_power','dense_route_power','router_capture']}
@@ -48,34 +88,41 @@ def run_job(name,cfg,common,out):
     metadata['data']=identity;write(out/'metadata.json',metadata);arrays={};x={};y={}
     for split,part in raw.items():
         write(out/'status.json',dict(state='caching_frozen_optics',split=split,pid=os.getpid()))
-        arrays[split]=cache(model,part,out/f'{split}_features.npz',common['optical_batch']);x[split]=torch.from_numpy(arrays[split]['ccd_features']).cuda();y[split]=torch.tensor(part['labels'],device='cuda',dtype=torch.long)
+        arrays[split]=verified_cache(model,part,out/f'{split}_features.npz',common['optical_batch'],cfg,metadata,split);x[split]=torch.from_numpy(arrays[split]['ccd_features']).cuda();y[split]=torch.tensor(part['labels'],device='cuda',dtype=torch.long)
     write(out/'cache_manifest.json',dict(parent_checkpoint_sha256=sha256(parent_path),source_sha256=metadata['source_sha256'],feature_sha256={s:sha256(out/f'{s}_features.npz') for s in arrays},all_original_IDs_preserved=True,TEST_labels_absent_from_optimizer=True))
-    original=model.shared_head.weight.detach().double().clone();weight=torch.nn.Parameter(original.clone());features=x['train'].double()
+    original=model.shared_head.weight.detach().double().clone();original_features=x['train'].double()
+    features,initial_coordinates,factor,coordinate_info=training_coordinates(original_features,original,common.get('coordinates','identity'));weight=torch.nn.Parameter(initial_coordinates)
+    metadata['training_coordinates']=coordinate_info;metadata['optimization_coordinates']='float64 numerical Linear coordinates; export original float32 canonical head for all selections';write(out/'metadata.json',metadata)
+    if factor is not None:np.savez_compressed(out/'training_coordinate_transform.npz',cholesky=factor.cpu().numpy(),**{k:np.asarray(v) for k,v in coordinate_info.items() if isinstance(v,(float,int))})
     optimizer=torch.optim.LBFGS([weight],lr=1.,max_iter=common['inner_steps'],max_eval=common['inner_steps']*2,history_size=20,line_search_fn='strong_wolfe',tolerance_grad=1e-8,tolerance_change=1e-12)
     val,_=measure(model.shared_head,x['val'],y['val']);best=key(val);selected=0;history=[];evaluations=0
     torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=metadata),out/'best_checkpoint.pt')
     def closure():
         nonlocal evaluations
-        optimizer.zero_grad(set_to_none=True);loss=convex_objective(weight,features,y['train'],original,common['anchor_strength'])
+        optimizer.zero_grad(set_to_none=True);loss=coordinate_objective(weight,features,y['train'],original,common['anchor_strength'],factor)
         if not torch.isfinite(loss):raise RuntimeError('Nonfinite convex loss')
         loss.backward();evaluations+=1
         if not torch.isfinite(weight.grad).all():raise RuntimeError('Nonfinite head gradient')
         return loss
     for iteration in range(1,common['outer_steps']+1):
         start=time.time();optimizer.step(closure)
-        with torch.no_grad():model.shared_head.weight.copy_(weight.float())
+        with torch.no_grad():model.shared_head.weight.copy_(canonical_weight(weight,factor).float())
         train,_=measure(model.shared_head,x['train'],y['train']);val,_=measure(model.shared_head,x['val'],y['val'])
         if key(val)>best:
             best=key(val);selected=iteration;torch.save(dict(model=model.state_dict(),epoch=iteration,validation=val,metadata=metadata),out/'best_checkpoint.pt')
         objective=closure();state=optimizer.state[weight]
-        row=dict(iteration=iteration,training=train,validation=val,selected_iteration=selected,regularized_training_objective=float(objective.detach()),gradient_max_abs=float(weight.grad.abs().max()),lbfgs_inner_iterations=state.get('n_iter',0),function_evaluations=evaluations,seconds=time.time()-start);history.append(row);write(out/'history.json',history)
+        if factor is None:canonical_gradient=weight.grad
+        else:
+            canonical=canonical_weight(weight,factor).detach().requires_grad_(True)
+            original_objective=convex_objective(canonical,original_features,y['train'],original,common['anchor_strength']);canonical_gradient=torch.autograd.grad(original_objective,canonical)[0]
+        row=dict(iteration=iteration,training=train,validation=val,selected_iteration=selected,regularized_training_objective=float(objective.detach()),gradient_max_abs=float(canonical_gradient.abs().max()),coordinate_gradient_max_abs=float(weight.grad.abs().max()),lbfgs_inner_iterations=state.get('n_iter',0),function_evaluations=evaluations,seconds=time.time()-start);history.append(row);write(out/'history.json',history)
         torch.save(dict(model=model.state_dict(),epoch=iteration,optimizer=optimizer.state_dict(),metadata=metadata),out/'last_checkpoint.pt');write(out/'status.json',dict(state='fitting_convex_Linear',iteration=iteration,total_iterations=common['outer_steps'],pid=os.getpid()));print(json.dumps(row),flush=True)
         if row['gradient_max_abs']<common['stop_gradient_max_abs']:break
     ck=torch.load(out/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(ck['model'],strict=True)
     for n,v in parent['model'].items():
         if n!='shared_head.weight' and not torch.equal(model.state_dict()[n].cpu(),v):raise RuntimeError('Frozen optical tensor changed')
     write(out/'selection_lock.json',dict(selected_iteration=selected,checkpoint_sha256=sha256(out/'best_checkpoint.pt'),selection='VAL macro recall then CE, parent E0 participates',TEST_evaluations_before_lock=0))
-    result=dict(job=name,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',independent_test_claim=False,completed_outer_steps=iteration,completed_inner_steps=state.get('n_iter',0),function_evaluations=evaluations,selected_epoch=selected,checkpoint_sha256=sha256(out/'best_checkpoint.pt'),optical_phases_bitwise_parent=True,final_training_head_fit=history[-1]['training'],final_training_gradient_max_abs=history[-1]['gradient_max_abs'],parent_checkpoint_sha256=cfg['parent_checkpoint_sha256'])
+    result=dict(job=name,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',independent_test_claim=False,completed_outer_steps=iteration,completed_inner_steps=state.get('n_iter',0),function_evaluations=evaluations,selected_epoch=selected,checkpoint_sha256=sha256(out/'best_checkpoint.pt'),optical_phases_bitwise_parent=True,final_training_head_fit=history[-1]['training'],final_training_gradient_max_abs=history[-1]['gradient_max_abs'],parent_checkpoint_sha256=cfg['parent_checkpoint_sha256'],training_coordinates=coordinate_info)
     for split,label in [('train','train'),('val','val'),('test','original_test_dev')]:
         metrics,scores=measure(model.shared_head,x[split],y[split]);a=arrays[split];metrics['router']=route_statistics(a['route_power'])
         if 'domains' in a:
@@ -86,7 +133,7 @@ def run_job(name,cfg,common,out):
         for start in range(0,len(raw['test']['labels']),common['optical_batch']):replay.append(model(encode_rgb(torch.from_numpy(raw['test']['images'][start:start+common['optical_batch']]).cuda()))['probabilities'].cpu().numpy())
     replay=np.concatenate(replay);cached=np.load(out/'test_predictions.npz')['scores'];assert np.array_equal(replay.argmax(1),cached.argmax(1)) and np.allclose(replay,cached,atol=3e-6,rtol=1e-4)
     result['canonical_full_TEST_replay']=dict(predictions_identical=True,max_probability_difference=float(np.max(np.abs(replay-cached))))
-    write(out/'result.json',result);write(out/'status.json',dict(state='complete',pid=os.getpid(),**result));del model,weight,optimizer,features,arrays,x,y,raw,parent,ck;torch.cuda.empty_cache()
+    write(out/'result.json',result);write(out/'status.json',dict(state='complete',pid=os.getpid(),**result));del model,weight,optimizer,features,original_features,factor,arrays,x,y,raw,parent,ck;torch.cuda.empty_cache()
 
 
 def main():
