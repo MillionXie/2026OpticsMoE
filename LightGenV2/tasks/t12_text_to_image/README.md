@@ -43,6 +43,10 @@ CPU条件诊断`scene_visible_anchor_R2_condition_path_padding_split_20261031`�
 shared projection、image读出、完整Qwen、UNet LoRA和VAE保持逐元素不变，没有新推理参数。
 只按TRAIN条件损失存best/last，无DEV／TEST梯度或选模；真实反向smoke丢弃后重置。
 其后必须完整raw48生成和文字／造型／画质复核，特征损失、peer39/48或新数据准入都不能代替图像遵从。
+`scene_source_condition_alignment`为独立后续对照：以同类别4个不同TRAIN白底输入的
+原生CLIP image特征作监督，固定600步，仅训练已有image读出；text/pooled/shared projection
+和UNet均逐元素冻结。只使用44 TRAIN参考特征，不用场景GT或DEV选模，也不把原生CLIP
+编码器加入Qwen推理。与仅文字修正分开存权重和raw48，避免无法判断哪一项修改起效。
 
 **R1准入已撤回**：原尺寸终检发现无扶手椅被写成armchair；随后全40个TRAIN扶手椅目标复核，
 另3项无法确认扶手而排除。保留原数据／审核／best/last和撤回前记录，不覆盖历史身份。
