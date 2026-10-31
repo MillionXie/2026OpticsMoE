@@ -1,0 +1,64 @@
+{
+  "RGB": {
+    "strict": true,
+    "training_only_projection_shape": [
+      256,
+      784
+    ],
+    "projection_update_L2": 1.2532867193222046,
+    "training_only_aux_not_in_canonical_model": true,
+    "phase_head_shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    },
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0
+  },
+  "SAR": {
+    "strict": true,
+    "training_only_projection_shape": [
+      256,
+      784
+    ],
+    "projection_update_L2": 3.0580036640167236,
+    "training_only_aux_not_in_canonical_model": true,
+    "phase_head_shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    },
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0
+  }
+}

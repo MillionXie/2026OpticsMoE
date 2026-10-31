@@ -1,0 +1,270 @@
+{
+  "RGB": {
+    "extra_training_parameters": 200704,
+    "teacher_hidden_shapes": [
+      [
+        3000,
+        8,
+        256
+      ],
+      [
+        1000,
+        8,
+        256
+      ]
+    ],
+    "semantic": {
+      "ridge": 0.0005622316130518527,
+      "training_images": 3000,
+      "affine_intercept_absorbed_in_mean_one_features": true,
+      "target": "teacher GELU256 before final classifier; frozen teacher",
+      "extra_training_parameters": 200704,
+      "inference_parameters": 487204,
+      "projection_absent_from_inference": true,
+      "teacher_checkpoint_sha256": "d1a0e823110fa515b47f3b2360a791c9bc2a3afc17065d5e73351ebd4ca0ea27",
+      "teacher_inference_absent": true,
+      "statistics_parts": [
+        "source TRAIN only"
+      ],
+      "calibration_rule": "clip(.2 * physical main-gradient norm / feature-gradient norm, .001, 1) on20 class-balanced source TRAIN originals",
+      "calibration_TRAIN_images": 20,
+      "physical_main_gradient_norm": 0.1402341779694633,
+      "physical_feature_gradient_norm": 0.03721374431559476,
+      "auxiliary_weight": 0.7536687347566738
+    },
+    "auxiliary_optimizer_steps": 1323,
+    "source_TEST_soft_views": 21000,
+    "total_phase_updates": 1323,
+    "head_internal_steps": 160,
+    "mixed_head_views": 128000,
+    "selected_epoch": 11,
+    "completed_epochs": 21,
+    "TRAIN_VAL_gap_pp": 5.900000000000006,
+    "parts": {
+      "train": {
+        "accuracy": 0.635,
+        "domains": {
+          "RGB": {
+            "correct": 1905,
+            "n": 3000,
+            "accuracy": 0.635
+          }
+        },
+        "mean_power": [
+          0.2012661099433899,
+          0.09212067723274231,
+          0.7066135406494141,
+          0.0
+        ],
+        "selected_fraction": [
+          0.5876666666666667,
+          0.41233333333333333,
+          1.0,
+          0.0
+        ],
+        "mean_capture": 0.03655935823917389
+      },
+      "val": {
+        "accuracy": 0.576,
+        "domains": {
+          "RGB": {
+            "correct": 576,
+            "n": 1000,
+            "accuracy": 0.576
+          }
+        },
+        "mean_power": [
+          0.1980518251657486,
+          0.09148408472537994,
+          0.7104647755622864,
+          0.0
+        ],
+        "selected_fraction": [
+          0.591,
+          0.409,
+          1.0,
+          0.0
+        ],
+        "mean_capture": 0.03648123890161514
+      },
+      "test": {
+        "accuracy": 0.3725,
+        "domains": {
+          "RGB": {
+            "correct": 622,
+            "n": 1000,
+            "accuracy": 0.622
+          },
+          "SAR": {
+            "correct": 123,
+            "n": 1000,
+            "accuracy": 0.123
+          }
+        },
+        "mean_power": [
+          0.26592350006103516,
+          0.07472538948059082,
+          0.6593501567840576,
+          0.0
+        ],
+        "selected_fraction": [
+          0.73,
+          0.271,
+          0.999,
+          0.0
+        ],
+        "mean_capture": 0.03538327291607857
+      }
+    },
+    "teacher_source_TEST_exposed": true,
+    "student_TRAIN_only": false,
+    "teacher_cache_shape": [
+      3000,
+      8,
+      10
+    ],
+    "original_ID_label_domain_arrays_match": true,
+    "actual_Top2": true,
+    "checkpoint_sha256": "685fadc3917dc675879fede9504497675d3f9862d8be1f8d9d120134ae9cfcf1",
+    "all_parameter_updates": {
+      "first_phase": 1.6282148361206055,
+      "global_phase": 2.2643346786499023,
+      "router_phase": 0.9941092729568481,
+      "shared_head.weight": 7.2276530265808105
+    }
+  },
+  "SAR": {
+    "extra_training_parameters": 200704,
+    "teacher_hidden_shapes": [
+      [
+        3000,
+        8,
+        256
+      ],
+      [
+        1000,
+        8,
+        256
+      ]
+    ],
+    "semantic": {
+      "ridge": 0.00033260974568344174,
+      "training_images": 3000,
+      "affine_intercept_absorbed_in_mean_one_features": true,
+      "target": "teacher GELU256 before final classifier; frozen teacher",
+      "extra_training_parameters": 200704,
+      "inference_parameters": 487204,
+      "projection_absent_from_inference": true,
+      "teacher_checkpoint_sha256": "2cea55efd176b14ff91b371d797d215e325174d23df3152fe7fc8ec718b643b3",
+      "teacher_inference_absent": true,
+      "statistics_parts": [
+        "source TRAIN only"
+      ],
+      "calibration_rule": "clip(.2 * physical main-gradient norm / feature-gradient norm, .001, 1) on20 class-balanced source TRAIN originals",
+      "calibration_TRAIN_images": 20,
+      "physical_main_gradient_norm": 0.09400956201218581,
+      "physical_feature_gradient_norm": 0.04312204820769554,
+      "auxiliary_weight": 0.4360162187073893
+    },
+    "auxiliary_optimizer_steps": 1890,
+    "source_TEST_soft_views": 30000,
+    "total_phase_updates": 1890,
+    "head_internal_steps": 240,
+    "mixed_head_views": 192000,
+    "selected_epoch": 27,
+    "completed_epochs": 30,
+    "TRAIN_VAL_gap_pp": 1.9000000000000017,
+    "parts": {
+      "train": {
+        "accuracy": 0.54,
+        "domains": {
+          "SAR": {
+            "correct": 1620,
+            "n": 3000,
+            "accuracy": 0.54
+          }
+        },
+        "mean_power": [
+          0.4960077702999115,
+          0.472520112991333,
+          0.03147213160991669,
+          0.0
+        ],
+        "selected_fraction": [
+          0.9506666666666667,
+          0.955,
+          0.09433333333333334,
+          0.0
+        ],
+        "mean_capture": 0.027588732540607452
+      },
+      "val": {
+        "accuracy": 0.521,
+        "domains": {
+          "SAR": {
+            "correct": 521,
+            "n": 1000,
+            "accuracy": 0.521
+          }
+        },
+        "mean_power": [
+          0.5006076097488403,
+          0.47145840525627136,
+          0.027933986857533455,
+          0.0
+        ],
+        "selected_fraction": [
+          0.95,
+          0.962,
+          0.088,
+          0.0
+        ],
+        "mean_capture": 0.02744460478425026
+      },
+      "test": {
+        "accuracy": 0.2835,
+        "domains": {
+          "RGB": {
+            "correct": 110,
+            "n": 1000,
+            "accuracy": 0.11
+          },
+          "SAR": {
+            "correct": 457,
+            "n": 1000,
+            "accuracy": 0.457
+          }
+        },
+        "mean_power": [
+          0.4334040582180023,
+          0.46436890959739685,
+          0.10222740471363068,
+          0.0
+        ],
+        "selected_fraction": [
+          0.808,
+          0.951,
+          0.241,
+          0.0
+        ],
+        "mean_capture": 0.026806626468896866
+      }
+    },
+    "teacher_source_TEST_exposed": true,
+    "student_TRAIN_only": false,
+    "teacher_cache_shape": [
+      3000,
+      8,
+      10
+    ],
+    "original_ID_label_domain_arrays_match": true,
+    "actual_Top2": true,
+    "checkpoint_sha256": "19176538faaad3826cc572a0582393e6b9fb1726d13aa80a3149ffe6f1ffa31f",
+    "all_parameter_updates": {
+      "first_phase": 3.4158883094787598,
+      "global_phase": 3.9853274822235107,
+      "router_phase": 3.2856361865997314,
+      "shared_head.weight": 5.238802433013916
+    }
+  }
+}

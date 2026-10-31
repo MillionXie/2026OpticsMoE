@@ -1,0 +1,83 @@
+{
+  "teacher_hidden_cache_replay": {
+    "RGB": {
+      "train": {
+        "max_abs": 1.6689300537109375e-06,
+        "relative_L2": 2.711668116717192e-07,
+        "dtype": "float32",
+        "shape": [
+          3000,
+          8,
+          256
+        ]
+      },
+      "test": {
+        "max_abs": 1.9073486328125e-06,
+        "relative_L2": 2.902167750562512e-07,
+        "dtype": "float32",
+        "shape": [
+          1000,
+          8,
+          256
+        ]
+      }
+    },
+    "SAR": {
+      "train": {
+        "max_abs": 1.6033649444580078e-05,
+        "relative_L2": 5.727821417167434e-07,
+        "dtype": "float32",
+        "shape": [
+          3000,
+          8,
+          256
+        ]
+      },
+      "test": {
+        "max_abs": 1.2159347534179688e-05,
+        "relative_L2": 5.533974558602495e-07,
+        "dtype": "float32",
+        "shape": [
+          1000,
+          8,
+          256
+        ]
+      }
+    }
+  },
+  "all_owned_training_PIDs": {
+    "2107545": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "2107546": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "2077773": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "2077774": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "2038704": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "2038947": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "2037898": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "2037900": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    }
+  },
+  "all_owned_GPU_allocations_released": true
+}

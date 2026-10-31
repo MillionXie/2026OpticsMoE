@@ -1,3 +1,18 @@
+## F本轮优化全部结束并核验，目标未达，待架构选择（2026-10-31）
+
+当前最佳八格(每行同一PT两域推理)：LG_RGB62.20/12.30，LG_SAR11.00/45.70；D2NN_RGB50.90/9.70，D2NN_SAR17.30/41.60。
+LG_RGB语义蒸馏21轮早停选E11，TRAIN63.50/VAL57.60，PT685fadc3917dc675879fede9504497675d3f9862d8be1f8d9d120134ae9cfcf1；
+LG_SAR30轮选E27，TRAIN54.00/VAL52.10，PT19176538faaad3826cc572a0582393e6b9fb1726d13aa80a3149ffe6f1ffa31f。
+同域相对前40轮仅+1.30/+.10pp，仍未79.5/74.9旧图目标；不能继续盲目保证80，也不证明理论容量上限。
+38文件95.98MB best/last、aux状态/optimizer、初始投影/统计、两个float32 hidden target、两teacher logits缓存、完整三划分预测/route/hist/锁全部远程本地SHA。
+strict model4tensor/487204/唯一Linear/零CNN，aux训练投影200704独立真实更新、目标teacher head回放relative L2<6e-7、原完整ID标签域与真Top2均核验；所有自己的8个正式学生PID退出且无GPU分配，未杀他人进程。
+RGB语义候选1323相位/head/aux更新、21000源TEST随机视图、128000混合head视图/160内步；SAR1890更新、30000源TEST随机视图、192000混合视图/240内步。
+源域原TRAIN/TEST所有预算和父/失败路径在reports/f_cross_domain_s17_20261031/final_budget.json，实际LG搜索总轮RGB141/SAR150，不能说所选权重连续训练141/150轮；旧联合探索另档。
+完整8格和阶段曲线由report_f_cross_domain.py与plot_f_final_stages.py生成；每阶段/全部失败保留，标准差不适用(single seed17)。
+
+待人工选择的具体下一方案尚未启动：保持LG2/D3采用当前实测，或另列LG4/D5对照(沿用图B、四专家/同478与router224/同OEO、LG单Linear/D无Linear、无CNN、D从头60轮、单seed17各源两组共4模型/8格)。
+LG4含头916392参数、D5为1142420；这会改变用户明确指定F层数，必须获人批准后新profile再跑，原2/3全部保护，不擅自恢复CNN或改变数据/标签追目标。
+
 ## 有界隐藏语义蒸馏已准入并启动（2026-10-31）
 
 source3b7807c87025f02640b4289d479df4a2eb1bb467已168项CPU检查(teacher detach/真实phase辅助梯度/affine投影折叠/strict模型无新增模块)、

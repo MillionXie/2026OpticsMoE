@@ -1,0 +1,114 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "seed": 17,
+  "SD_available": false,
+  "single_source_protocol": {
+    "RGB": {
+      "LG_stages": [
+        {
+          "name": "initial",
+          "run": "runs\\simulation\\f_cross_domain_s17_20261031\\LG_RGB",
+          "completed_epochs": 80,
+          "selected_epoch": 73,
+          "checkpoint_sha256": "8da7b7c981f7e3b1fa9cb14ba5c95a4d6125466a91ccfeeac677263ba94b05f0",
+          "phase_updates": 3760,
+          "head_SGD_updates": 3760,
+          "source_TRAIN_random_views": 240000,
+          "source_TEST_soft_views": 0,
+          "head_feature_presentations": 384000,
+          "head_inner_steps": 640,
+          "extra_aux_optimizer_steps": 0
+        },
+        {
+          "name": "source_TEST_KD",
+          "run": "runs\\simulation\\f_source_TEST_KD_s17_20261031\\RGB",
+          "completed_epochs": 40,
+          "selected_epoch": 32,
+          "checkpoint_sha256": "cfa3b0877befa64c131acd25d274bd2c3db14dabecbf47f55ead02f2315666ae",
+          "phase_updates": 2520,
+          "head_SGD_updates": 2520,
+          "source_TRAIN_random_views": 120000,
+          "source_TEST_soft_views": 40000,
+          "head_feature_presentations": 256000,
+          "head_inner_steps": 320,
+          "extra_aux_optimizer_steps": 0
+        },
+        {
+          "name": "semantic_KD",
+          "run": "runs\\simulation\\f_semantic_KD_s17_20261031\\RGB",
+          "completed_epochs": 21,
+          "selected_epoch": 11,
+          "checkpoint_sha256": "685fadc3917dc675879fede9504497675d3f9862d8be1f8d9d120134ae9cfcf1",
+          "phase_updates": 1323,
+          "head_SGD_updates": 1323,
+          "source_TRAIN_random_views": 63000,
+          "source_TEST_soft_views": 21000,
+          "head_feature_presentations": 128000,
+          "head_inner_steps": 160,
+          "extra_aux_optimizer_steps": 1323
+        }
+      ],
+      "total_executed_LG_search_epochs": 141,
+      "not_continuous_optimizer_epochs": true,
+      "D2NN_clean_budget_epochs": 60,
+      "teacher_head_epochs": 25,
+      "teacher_selected_epoch": 13,
+      "teacher_ImageNet_pretraining_budget_not_included": true
+    },
+    "SAR": {
+      "LG_stages": [
+        {
+          "name": "initial",
+          "run": "runs\\simulation\\f_cross_domain_s17_20261031\\LG_SAR",
+          "completed_epochs": 80,
+          "selected_epoch": 80,
+          "checkpoint_sha256": "9706c49641b9dfba65de6a4374b01caafe504940a8d792effa7f4a2ee69a147f",
+          "phase_updates": 3760,
+          "head_SGD_updates": 3760,
+          "source_TRAIN_random_views": 240000,
+          "source_TEST_soft_views": 0,
+          "head_feature_presentations": 384000,
+          "head_inner_steps": 640,
+          "extra_aux_optimizer_steps": 0
+        },
+        {
+          "name": "source_TEST_KD",
+          "run": "runs\\simulation\\f_source_TEST_KD_s17_20261031\\SAR",
+          "completed_epochs": 40,
+          "selected_epoch": 40,
+          "checkpoint_sha256": "3bfd112d11427cf1899c6964eec6091c6d57db6a8c8745295bf0a04e1163444b",
+          "phase_updates": 2520,
+          "head_SGD_updates": 2520,
+          "source_TRAIN_random_views": 120000,
+          "source_TEST_soft_views": 40000,
+          "head_feature_presentations": 256000,
+          "head_inner_steps": 320,
+          "extra_aux_optimizer_steps": 0
+        },
+        {
+          "name": "semantic_KD",
+          "run": "runs\\simulation\\f_semantic_KD_s17_20261031\\SAR",
+          "completed_epochs": 30,
+          "selected_epoch": 27,
+          "checkpoint_sha256": "19176538faaad3826cc572a0582393e6b9fb1726d13aa80a3149ffe6f1ffa31f",
+          "phase_updates": 1890,
+          "head_SGD_updates": 1890,
+          "source_TRAIN_random_views": 90000,
+          "source_TEST_soft_views": 30000,
+          "head_feature_presentations": 192000,
+          "head_inner_steps": 240,
+          "extra_aux_optimizer_steps": 1890
+        }
+      ],
+      "total_executed_LG_search_epochs": 150,
+      "not_continuous_optimizer_epochs": true,
+      "D2NN_clean_budget_epochs": 60,
+      "teacher_head_epochs": 54,
+      "teacher_selected_epoch": 42,
+      "teacher_ImageNet_pretraining_budget_not_included": true
+    }
+  },
+  "historical_joint_protocol_not_reused_in_main_table": "Separate archived report: ../figure_revision_schedule_20261031/results.json",
+  "all_failed_and_parent_candidates_preserved": true,
+  "interpretation": "Executed search rounds and per-branch selection are separate; optimizer moments reset between stages. Additional TRAIN-only semantic projection has200704 training parameters but no additional inference parameters."
+}

@@ -50,6 +50,11 @@ def main():
         page=page.replace('当前新候选在训，不提前替换八格。','源TEST软蒸馏两候选均已完整40轮、全量SHA/strict核验，当前LG_RGB整行60.90/12.70%，LG_SAR整行11.10/45.60%，同域仍未达到目标。')
         page=page.replace('</html>','<h2>表征诊断与下一假设</h2><p>只用原TRAIN3000、模型权重逐元素不动：CCD与教师GAP512的线性CKA为RGB0.247、SAR0.131；在2400 TRAIN拟合教师特征线性投影、600剩余TRAIN重构R²为0.092/-0.435。仅为表征差距线索，不是容量上界或新准确率。教师隐藏语义特征蒸馏可作有界下一假设，目前未实现/启动，须测试、实际准入与发布。</p></html>')
     page=page.replace('教师隐藏语义特征蒸馏可作有界下一假设，目前未实现/启动，须测试、实际准入与发布。','教师隐藏语义特征蒸馏现已实现、168项CPU检查及两精确父真实TRAIN GPU准入后启动，source3b7807c87。独立训练投影784→256（额外200704训练参数）不注册进LG、也不用于推理；推理仍487204参数和唯一Linear，无CNN。目标为冻结教师最终分类器前GELU256，统计/初始ridge/梯度系数校准仅用原TRAIN；两个候选各最多30轮，父保护。当前未完成，不把准入或中途VAL当精度改善。')
+    semantic_done=all(read(task/'runs/simulation/f_semantic_KD_s17_20261031'/d/'result.json') for d in ('RGB','SAR'))
+    if semantic_done:
+        page=page.replace('当前未完成，不把准入或中途VAL当精度改善。','两候选已完整结束并核验，RGB21轮选E11，SAR30轮选E27；同域62.20/45.70%，仍未目标，全部训练进程已退出且GPU分配释放。')
+        page=page.replace('</html>','<h2>当前阶段交付：未达原图性能目标</h2><p>当前最佳LG_RGB：TRAIN63.50/VAL57.60%，开发RGB62.20/SAR12.30%；LG_SAR：TRAIN54.00/VAL52.10%，开发RGB11.00/SAR45.70%。跨候选均整行使用同一PT，D2NN四格保持50.90/9.70、17.30/41.60%。本轮全部38文件95.98MB包括aux/hidden targets完整SHA，strict模型/目标缓存回放/所有自己的GPU退出已核验。教师与训练投影不进入推理。</p><img src="refinement_stages.svg" style="width:100%"><p>各分支单独显示，未拼为连续优化；实际LG搜索RGB141轮、SAR150轮(80+40+21/30)，额外头内步、source TEST视图、aux更新、教师训练在final_budget.json单列。旧联合探索另行归档，不复用主表。</p><p>尚未启动的下一结构选项：保留LG2/D3使用当前实测；或经人工批准另列LG4/D5（沿用图B四层对照、无CNN、同478/OEO/单Linear规则、D仍60轮）。这会改变明确指定的F层数，不能自行启动；也不保证更深即可达到旧CNN版范围。当前训练结果不证明理论容量上限，但继续只加轮数没有明确收益依据。</p></html>')
+    data['final_budget']=read(out/'final_budget.json')
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 

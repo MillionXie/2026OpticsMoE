@@ -3,8 +3,8 @@
   "files": [
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/status.json",
-      "sha256": "0e3d92bb64baa92227f0cef89791c7fa9e435337ab4380cb21236531e99a57a4",
-      "bytes": 103
+      "sha256": "ac00ef8d211ff6ea028394744e7e01dfbef4be07aee230a2e900bd52129a9df0",
+      "bytes": 11741
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/metadata.json",
@@ -13,8 +13,8 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/history.json",
-      "sha256": "f7bee0c00900a186de4bffffeb9073c6b851d8df3903cbc909204acd8d792940",
-      "bytes": 40804
+      "sha256": "7c6f04c1d79e52c73b3b306b10114dbd3549e3971a64517951d95295a75ca4d8",
+      "bytes": 119901
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/teacher_manifest.json",
@@ -32,9 +32,14 @@
       "bytes": 824
     },
     {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/RGB/result.json",
+      "sha256": "cbe60400a001032e4bc6985ac6c46acab2d85e13eb7027c4803e37613c2a12f8",
+      "bytes": 11700
+    },
+    {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/status.json",
-      "sha256": "cbecabadc4e23e6839b0245966b5aeb2b641944d096a43a0b0e62677c0b8e621",
-      "bytes": 103
+      "sha256": "6f46249df90c7540af99d2c261582233c75fdb9847c55824e0cec8e6516f187b",
+      "bytes": 11767
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/metadata.json",
@@ -43,8 +48,8 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/history.json",
-      "sha256": "f38e576d6bd363df818208281531141374b881f72358f63e887f917c2df0f772",
-      "bytes": 22550
+      "sha256": "8c52909c3dfb20f04c81877400e9ad10df675162730ad2b36a6dc91260eb1d3a",
+      "bytes": 172099
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/teacher_manifest.json",
@@ -60,6 +65,11 @@
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/semantic_manifest.json",
       "sha256": "9f3235f53b4fd4117e37661adb4710501d6db571a8259c6e5aa6dd16cf8807e8",
       "bytes": 826
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_semantic_KD_s17_20261031/SAR/result.json",
+      "sha256": "4f1509703a395cfb1a825950fdadb2eaa4887c0ffbf063209838c880a748416f",
+      "bytes": 11726
     }
   ]
 }
