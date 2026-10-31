@@ -1,5 +1,15 @@
 # T17 单数据集路由分类对照
 
+## 冻结光学的单Linear拟合诊断（准备，2026-10-31）
+
+低F TRAIN提示先检查读出拟合是否充分。新入口train_convex_readout.py/profile figure_convex_readout_s17_20261031，
+从F完整best、B4受保护CCDprior父、B6完整joint best分别提取固定CCD784维特征，全光学相位冻结。
+唯一原Linear使用float64 L-BFGS数值坐标，损失TRAIN交叉熵+.001/2×相对父头权重平方范数；
+每5个内部迭代导回原float32模型、按VAL宏召回/CE选模，父E0参与；最多30×5=150内部迭代。
+不是新增MLP/电子特征或额外推理容量，不改变输入、光路、OEO；原TEST不进入优化，只锁后评估。
+固定特征缓存绑定父PT/源/逐样本身份SHA，最终整个canonical模型完整TEST重放核验。
+本段是准备状态，需通过测试、源码发布与实际父GPU准入后才启动，不预设精度提高。
+
 ## 四组首轮完成与未达标项（2026-10-31 18:32）
 
 本轮四组均完成；44文件约46MB best/last、三划分预测/路由、history/锁已远程本地SHA核验。
