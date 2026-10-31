@@ -7,7 +7,7 @@ import argparse
 import json
 from pathlib import Path
 import shutil
-from .scene_instruction_data import SAFE,sha,write
+from .scene_instruction_data import SAFE,sha
 from .scene_generation_data import request_seed
 
 PROFILE='two_sentence_product_scene_v7'
@@ -21,6 +21,11 @@ DEFINITIONS={
   ('Generate a living-room photograph with a cushion resting on a fabric sofa. Place a leafy floor plant beside the sofa.', 'A cushion on a fabric sofa with a leafy floor plant beside the sofa.', ['separate cushion','fabric sofa supports cushion','leafy floor plant beside sofa']),
   ('Generate a reading-corner photograph with a cushion resting on an armchair. Place a bookcase against the wall behind the chair.', 'A cushion on an armchair with a bookcase behind the chair.', ['separate cushion','armchair with armrest supports cushion','bookcase behind chair']),
   ('Generate a bedroom photograph with a cushion resting on a bed. Place a wooden bedside table next to the bed.', 'A cushion on a bed with a wooden bedside table next to the bed.', ['separate cushion','bed supports cushion','wooden bedside table next to bed'])]}
+
+
+def write(path,value):
+    # Canonical UTF8/LF bytes on Windows and Linux, before hashing requests.
+    Path(path).write_bytes(json.dumps(value,indent=2,ensure_ascii=False).encode('utf8'))
 
 
 def condition(category,index):
