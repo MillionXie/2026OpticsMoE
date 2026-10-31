@@ -1,0 +1,62 @@
+{
+  "all_this_round_processes_exited": true,
+  "all_this_round_GPU_allocations_released": true,
+  "processes": {
+    "1604532": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1604533": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1623650": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1623651": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1643144": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1643146": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1643147": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1643149": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1672519": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1688647": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1704407": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1707504": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1707505": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    },
+    "1721229": {
+      "process_exited": true,
+      "no_GPU_allocation": true
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "independent_test_claim": false,
-  "generated_UTC": "2026-10-31T11:18:37.746941+00:00",
+  "generated_UTC": "2026-10-31T11:46:57.200026+00:00",
   "records": {
     "panel_b_linear_joint4_s17_20261031": {
       "run": "runs\\simulation\\figure_revision_s17_20261031\\panel_b_linear_joint4_s17_20261031",
@@ -3933,7 +3933,7 @@
     }
   },
   "schedule": {
-    "status": "INITIAL_FOUR_RUNS_COMPLETE_SHA_AND_STRICT_AUDITED",
+    "status": "ABF_ROUND_COMPLETE_D_NOT_STARTED_J_EXCLUDED",
     "panels": {
       "a": {
         "status": "COMPLETE_AND_PROTECTED",
@@ -3957,7 +3957,7 @@
         "scope": "Joint RGB+SAR ten-class task within four-task lifelong protocol"
       },
       "j": {
-        "status": "READONLY_FINAL_SOURCE_AUDIT_PENDING"
+        "status": "EXCLUDED_BY_HUMAN_KEEP_EXISTING"
       }
     },
     "resources": {

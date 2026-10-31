@@ -1,5 +1,5 @@
 {
-  "status": "A_AND_B_LINEAR_FITS_COMPLETE_VALIDATED",
+  "status": "ABF_ROUND_COMPLETE_D_POSTPONED_J_EXCLUDED_BY_LATEST_HUMAN",
   "version": "USER_REVISION_20261031_LINEAR_READOUT",
   "panels": {
     "a": {
@@ -15,7 +15,7 @@
       "LG": "Must add same Linear and align reused dataset/config points before rerun"
     },
     "f": {
-      "status": "ORIGINAL_F_DATA_CONFIRMED_PREPARED",
+      "status": "RETRAINED_AND_CHECKPOINT_VERIFIED_PERFORMANCE_LOW",
       "LG": "4 experts, no learned front, same A/B OEO and Linear",
       "D2NN": "OEO, no Linear",
       "data": "Original F RGB/SAR individual inputs, original6000/2000/2000 subset, same ten-class labels as G but no joint-modal input"
@@ -28,14 +28,16 @@
       "OEO": "Intensity normalization -> positive softsign -> L2 amplitude; mathematical activation matches A/B, but original G omits explicit final OEO. Placement recorded, no silent rewrite"
     },
     "j": {
-      "status": "READONLY_CONFIRMED_DIFFERENT",
+      "status": "EXCLUDED_FROM_CURRENT_REVISION_BY_HUMAN",
       "contract": "4 experts, no learned front, OEO, terminal Linear; preserve residual experiment identity and weights",
       "actual_OEO": "relative intensity mean, clamp12, log1p, pool478/224, row LayerNorm, ReLU, RMS.25; not intensity_softsign",
       "actual_electronic_stage": "Each main layer9parameter bias-free3x3conv residual plus scalar learned alpha with RMS fusion; rho groups have asymmetric alpha bounds",
       "actual_terminal": "pool16x16 amplitude, feature LayerNorm, Linear256->20 with bias,5140parameters",
       "actual_routing": "dense all4, centered-RMS optical energies/temperature2/softmax/L2 amplitude normalization; not Top2",
       "not_uniform_with_abf": true,
-      "evidence": "figure_revision_schedule_20261031/panel_j_readonly_architecture_audit.json"
+      "evidence": "figure_revision_schedule_20261031/panel_j_readonly_architecture_audit.json",
+      "pending_scope_question": false,
+      "preserve_existing_model_and_residual_experiment": true
     }
   },
   "old_results": "Old no-head A/B runs preserved as history; not relabeled as new Linear results",

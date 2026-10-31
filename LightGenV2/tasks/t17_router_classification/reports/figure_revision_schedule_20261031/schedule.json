@@ -1,5 +1,5 @@
 {
-  "status": "INITIAL_FOUR_RUNS_COMPLETE_SHA_AND_STRICT_AUDITED",
+  "status": "ABF_ROUND_COMPLETE_D_NOT_STARTED_J_EXCLUDED",
   "panels": {
     "a": {
       "status": "COMPLETE_AND_PROTECTED",
@@ -23,7 +23,7 @@
       "scope": "Joint RGB+SAR ten-class task within four-task lifelong protocol"
     },
     "j": {
-      "status": "READONLY_FINAL_SOURCE_AUDIT_PENDING"
+      "status": "EXCLUDED_BY_HUMAN_KEEP_EXISTING"
     }
   },
   "resources": {

@@ -52,6 +52,8 @@ def main():
     page=page.replace('</html>',text+'</html>')
     optical_last={name:read(task/'runs/simulation/figure_optical_last_eval_s17_20261031/worker0'/name/'result.json') for name in ['figure_mature_f_lg_convex_s17_20261031','figure_mature_b_lg6_convex_s17_20261031']};report['posthoc_existing_optical_last']=optical_last
     page=page.replace('</html>','<h2>本轮交付与未达项</h2><p>A三组69.95/82.96/81.55%，均超过各自固定D2NN20pp。B两/四/六层69.95/83.51/86.84%，D3/5/7为53.99/67.29/72.07%；差15.96/16.22/14.76pp，六层仍差2个正确到15pp，不作达标声明。B6采用现存光学last的明确后验开发候选653/752；VAL选择权重652/752也保留。</p><p>F最终保留VAL选择918/2000=45.90%，RGB53.40/SAR38.40%；固定D2NN41.90%，RGB45.10/SAR38.70%。原始无前端协议下性能仍低；不存在CNN分数移植。后验last F917/2000更低，不替换。</p><img src="mature_optics_convergence.svg" style="width:100%"><p>已发现需另外处理的历史架构例外：图j正式原模型使用log1p/行LayerNorm/ReLU/RMS，而非本轮a/b/f的intensity_softsign；还有逐层电子残差与学习alpha、dense四路和Linear256→20。该结论按正式manifest历史Git及六份依赖SHA核对，未改T18或旧CCD，不能宣称全图OEO已经统一。图g末层OEO放置差异亦保留。</p></html>')
+    page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1><p class="note">最新人工范围：J为残差实验，本轮保持原样，不再待确认。A/B/F本轮已完成；D仍按此前要求暂缓，未重跑。完成训练不等于精度目标全部达成。</p>')
+    page=page.replace('按正式最终源码继续只读核验，不改现场硬件/旧结果。','残差消融：按最新人工要求排除本轮修改，保持旧模型与硬件数据。')
     (out/'results.html').write_text(page,encoding='utf-8');print([(n,r['status']['state']) for n,r in records.items()])
 
 
