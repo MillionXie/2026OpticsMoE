@@ -6,7 +6,7 @@
 新精确父20张TRAIN只读诊断：未选dense端口主分类/KD直接梯度严格0，20张都未选第四；RGB/SAR物理router梯度余弦约-.538，仅小样本线索，不当全TRAIN干扰证明或容量上界。
 据此新增待准入候选f_joint_route_STE_s17_20261101：从上面精确f8父继续，原Top2振幅forward逐元素保持，只有backward用dense振幅surrogate，未选端口获得分类梯度。无dense/uniform forward，无GT路由，无新参数/头/非线性/光路输入变化。
 新入口training_forward显式可选，旧默认兼容；辅助路由模式仅训练两层光LG允许，eval拒绝使用。模型state仍四tensor/487204，推理仍同一个光router动态Top2。
-两教师/KD/源TEST软目标/D4/head块及较弱域VAL选模保持，最多40/min20/pat15轮，父E0参选，失败完整保存；当前仅实现和配置，须回归测试、发布和真实父GPU准入后才启动。
+两教师/KD/源TEST软目标/D4/head块及较弱域VAL选模保持，最多40/min20/pat15轮，父E0参选，失败完整保存；176项CPU检查及精确f8父真实TRAIN/TEST软输入GPU准入已通过，source8bf83289964b15b9218f4e67ba3f511fc72ddbbc已发布/服务器路径SHA。worker2195435已在A100实际启动，root f_joint_route_STE_s17_20261101/joint，非计划；不热改cfg/入口。真实GPU准入原Top2 forward bitwise相同、masked端口分类梯度max约.5867非零、所有注册参数有限更新，头block相位冻结、完整父VAL重放通过，未声称性能改善。
 
 ## F联合LG继续优化：两域均超过70%为目标（2026-11-01）
 

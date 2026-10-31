@@ -1,5 +1,5 @@
 {
-  "generated_UTC": "2026-10-31T16:43:53.437137+00:00",
+  "generated_UTC": "2026-10-31T16:46:59.731616+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "protocol": "one joint LG two outputs plus two finalized source-only D2NN four outputs",
   "records": {
@@ -4357,5 +4357,16 @@
       "domain_mean_accuracy": 0.6248333333333334
     },
     "seconds": 26.79172682762146
+  },
+  "route_STE_candidate": {
+    "status": {
+      "state": "training",
+      "epoch": 4,
+      "total_epochs": 40,
+      "selected_epoch": 0,
+      "pid": 2195435
+    },
+    "result": null,
+    "fully_collected_local_SHA_verified": false
   }
 }
