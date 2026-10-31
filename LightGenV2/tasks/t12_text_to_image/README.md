@@ -9,6 +9,12 @@ pair SHA `536dac05bb15d7226ad79e7573c886f1af39982c75d9beaa7197b3102f1d3970`。
 新R2完整Qwen／原生生成器流程`scene_visible_anchor_balanced_R2_fresh_baselines_workflow_20261031`已实际启动，
 执行pin `dba3f43f595f0c02c2bdc50430c8d6b69002c68d`，仍从原始底座＋原条件对齐头开始，不继承中断的R1 LoRA。
 R2标签复核不等于模型已遵从；两个模型仍须各完整raw48实际验收，LG继续暂停。
+Qwen现已完成6轮／1248更新，best SHA `d1b51367b0a4e2165f3d0669ad2e83c3d7757076f5fab1c539df6d9edbb584ba`。
+完整raw48已逐张按预先固定清单检查：明确文字条件全确认9/48，连同粗造型／画质全确认6/48；
+这是助手目视开发诊断，不是盲评论文准确率。桌灯背景锚点仅2/24明确出现，靠垫仍常放错家具或无法确认。
+因此新Qwen仍被拒为合格baseline／LG教师，不能以清晰画面或更低noise loss宣称修好。
+同数据原生对照继续完成；另以CPU条件路径诊断检查同RGB三请求的text/pooled变化是否被压小，
+特征距离不是图像遵从率，不更新任何权重／独立TEST。
 
 **R1准入已撤回**：原尺寸终检发现无扶手椅被写成armchair；随后全40个TRAIN扶手椅目标复核，
 另3项无法确认扶手而排除。保留原数据／审核／best/last和撤回前记录，不覆盖历史身份。
