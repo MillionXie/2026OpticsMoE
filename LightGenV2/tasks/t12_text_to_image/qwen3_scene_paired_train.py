@@ -342,11 +342,14 @@ def fit(a, payload):
     assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
     cache_digest = digest(a.cache/'paired_cache.pt')
     history = []; rng = random.Random(20261029)
+    from .scene_electronic_warmup import checked_target
+    warmup_target=checked_target(a.config_profile,payload,None if a.initial_paired is None else digest(a.initial_paired/'best_checkpoint.pt'),a.variant)
     if head is not None and not frozen_head:
         warm = torch.optim.AdamW(head.parameters(), lr=1e-4, weight_decay=.01)
         for step in range(a.warmup):
             chosen = rng.sample(train, 4)
-            loss = sum(group_weights[row['sample_id']]*anchor_loss(conditions_for(head, payload, row), payload, row) for row in chosen)/4
+            objective=electronic_condition_loss if warmup_target=='bound_electronic' else anchor_loss
+            loss = sum(group_weights[row['sample_id']]*objective(conditions_for(head, payload, row), payload, row) for row in chosen)/4
             warm.zero_grad(); loss.backward()
             assert torch.isfinite(loss) and all(torch.isfinite(p.grad).all() for p in head.parameters() if p.grad is not None)
             torch.nn.utils.clip_grad_norm_(head.parameters(), 1.); warm.step()
@@ -478,6 +481,7 @@ def fit(a, payload):
         'optical_parameters_updated':False,
         'teacher_condition_kd_weight':a.config_profile.get('teacher_condition_kd_weight',0.),
         'condition_teacher_sha256':payload.get('condition_teacher_sha256'),
+        'condition_warmup_target':warmup_target,
         'joint_image_context':a.config_profile.get('joint_image_context',False),
         'TRAIN_reference_contrast_weight':contrast_weight,
         'image_feedback': False, 'rotation': False, 'quality_or_speed_accepted': False})
