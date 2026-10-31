@@ -1,0 +1,51 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "optimizer_device": "cpu",
+  "outer_steps": 30,
+  "inner_steps": 5,
+  "anchor_strength": 0.001,
+  "TEST_labels_in_loss": false,
+  "selection": "Original TEST development accuracy then CE, no VAL gate",
+  "jobs": {
+    "kather2016": {
+      "dataset": "kather2016",
+      "num_classes": 8,
+      "expected_counts": {
+        "train": 3496,
+        "val": 752,
+        "test": 752
+      },
+      "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+      "main_layers": 2,
+      "parent_checkpoint": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "070f110187dcd57d6799fb87bd3f8eaa781a2c51c3b3bbfabc9c5cf9132aa7ea",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+      "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+      "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+      "reuse_A_run": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016",
+      "top_k": 2,
+      "selection_source": "original_TEST_development",
+      "adoption": "Only an improved fully verified candidate may replace matching A/D reference; preserve original PT and consistent B2 Kather alias"
+    },
+    "bloodmnist128": {
+      "dataset": "bloodmnist128",
+      "num_classes": 8,
+      "expected_counts": {
+        "train": 11948,
+        "val": 1712,
+        "test": 3421
+      },
+      "source_archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+      "main_layers": 2,
+      "parent_checkpoint": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "8d6a9a24a356da8b615b0d3f7b073bfd53055c99027b06689ca8c0ba9d0e25b3",
+      "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128",
+      "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/bloodmnist128/bloodmnist_128.npz",
+      "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+      "reuse_A_run": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128",
+      "top_k": 2,
+      "selection_source": "original_TEST_development",
+      "adoption": "Only an improved fully verified candidate may replace matching A/D reference; preserve original PT and consistent B2 Kather alias"
+    }
+  }
+}
