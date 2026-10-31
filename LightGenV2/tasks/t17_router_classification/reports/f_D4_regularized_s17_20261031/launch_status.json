@@ -1,6 +1,8 @@
 {
   "status.json": {
-    "state": "loading_verified_inputs",
+    "state": "training",
+    "epoch": 11,
+    "total_epochs": 40,
     "pid": 1908742
   },
   "metadata.json": {
@@ -24,5 +26,9 @@
     },
     "pid": 1908742,
     "teacher_used": true
+  },
+  "history.json": {
+    "epoch": 11,
+    "validation": 0.5205
   }
 }

@@ -1,0 +1,274 @@
+{
+  "parent_checkpoint_sha256": "ccb01cfbbcc587672089700759c895574d64ef22539f33d7775e1c632e66bd98",
+  "data_scope": "Deterministic class/domain-balanced160 original TRAIN images, eight batches; no VAL/TEST loss or metrics",
+  "TEST_evaluated": false,
+  "seed": 20261031,
+  "read_only_no_optimizer": true,
+  "parent_all_state_bitwise_unchanged": true,
+  "source_sha256": {
+    "model_linear_readout.py": "02eddba0c3e9d29fa5afaa9a03adf987b12651f8d5a9d25b6d9fd99da93397a9",
+    "model_four.py": "814128f2862ca04d3f676b4ccf810d647c44f31c1bd43e1af9fa87ed68a02e7e",
+    "original_f_teacher.py": "0c7c404fa8159df4dc0ca512852bc1493b431a7dcaed561eeb19f8e757d3c90b"
+  },
+  "gradient_coordinates": "dL/dphysical_phase = dL/draw divided by 2*pi*sigmoid(raw)*(1-sigmoid(raw))",
+  "observations": {
+    "unaugmented": {
+      "TRAIN_samples": 160,
+      "balanced_class_domain_batches": 8,
+      "batch_size": 20,
+      "mean_training_loss": 1.4860845506191254,
+      "parameters": {
+        "first_phase": {
+          "batch_mean_angle_gradient_norm": 0.07168842297368479,
+          "mean_batch_gradient_norm": 0.21750251931330827,
+          "mean_gradient_power_over_batch_power": 0.1080326029037256,
+          "leave_one_batch_out_cosine_mean": -0.054654493943489355,
+          "leave_one_batch_out_cosine_min": -0.1605968604645714,
+          "zero_gradient_fraction_each_batch": [
+            0.43379304846938777,
+            0.4375,
+            0.4375,
+            0.4375,
+            0.4375,
+            0.4375,
+            0.4375,
+            0.4375
+          ]
+        },
+        "global_phase": {
+          "batch_mean_angle_gradient_norm": 0.03688981696815548,
+          "mean_batch_gradient_norm": 0.09700631666027848,
+          "mean_gradient_power_over_batch_power": 0.14188526685063668,
+          "leave_one_batch_out_cosine_mean": 0.04067572883941122,
+          "leave_one_batch_out_cosine_min": -0.24777579243235795,
+          "zero_gradient_fraction_each_batch": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "router_phase": {
+          "batch_mean_angle_gradient_norm": 0.006972547145845659,
+          "mean_batch_gradient_norm": 0.023483859800107258,
+          "mean_gradient_power_over_batch_power": 0.07210469581908349,
+          "leave_one_batch_out_cosine_mean": -0.08684501217288146,
+          "leave_one_batch_out_cosine_min": -0.7616264700704617,
+          "zero_gradient_fraction_each_batch": [
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ]
+        }
+      }
+    },
+    "D4": {
+      "TRAIN_samples": 160,
+      "balanced_class_domain_batches": 8,
+      "batch_size": 20,
+      "mean_training_loss": 2.4580191373825073,
+      "parameters": {
+        "first_phase": {
+          "batch_mean_angle_gradient_norm": 0.14155031915169974,
+          "mean_batch_gradient_norm": 0.3375402335130063,
+          "mean_gradient_power_over_batch_power": 0.11912731387060457,
+          "leave_one_batch_out_cosine_mean": -0.027414106244674052,
+          "leave_one_batch_out_cosine_min": -0.11637623862584362,
+          "zero_gradient_fraction_each_batch": [
+            0.4375,
+            0.4375,
+            0.4375,
+            0.4375,
+            0.4375,
+            0.4380630181760204,
+            0.4375,
+            0.4375
+          ]
+        },
+        "global_phase": {
+          "batch_mean_angle_gradient_norm": 0.03612715956132399,
+          "mean_batch_gradient_norm": 0.11738105456916564,
+          "mean_gradient_power_over_batch_power": 0.08888157442163654,
+          "leave_one_batch_out_cosine_mean": -0.13595039998589456,
+          "leave_one_batch_out_cosine_min": -0.3208809431388942,
+          "zero_gradient_fraction_each_batch": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "router_phase": {
+          "batch_mean_angle_gradient_norm": 0.01795871246666608,
+          "mean_batch_gradient_norm": 0.03576811966346494,
+          "mean_gradient_power_over_batch_power": 0.15082689989895529,
+          "leave_one_batch_out_cosine_mean": 0.13828543936796056,
+          "leave_one_batch_out_cosine_min": -0.3795682252640066,
+          "zero_gradient_fraction_each_batch": [
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25,
+            0.25
+          ]
+        }
+      }
+    }
+  },
+  "current_D4_head_blocks": [
+    {
+      "epoch": 5,
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 48000,
+      "numerical_ridge": 0.0031218281121445277,
+      "uncentred_Gram_eigen_min": 2.7149437529052276e-11,
+      "uncentred_Gram_eigen_max": 2291.0097940752644,
+      "Gram_regularized_condition": 733869.0067741888,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.8848094781577496,
+      "objective_after": 1.7663876575093116,
+      "internal_steps": 40,
+      "closure_calls": 44,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true,
+      "original_TRAIN_images": 6000,
+      "augmentation_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "epoch": 10,
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 48000,
+      "numerical_ridge": 0.003122760730431991,
+      "uncentred_Gram_eigen_min": 3.184160030404931e-11,
+      "uncentred_Gram_eigen_max": 2294.7950395572457,
+      "Gram_regularized_condition": 734861.9817571938,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.7703698153061795,
+      "objective_after": 1.756278076666476,
+      "internal_steps": 40,
+      "closure_calls": 45,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true,
+      "original_TRAIN_images": 6000,
+      "augmentation_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "epoch": 15,
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 48000,
+      "numerical_ridge": 0.0031187800621614004,
+      "uncentred_Gram_eigen_min": 3.348794174624837e-11,
+      "uncentred_Gram_eigen_max": 2298.3035164446155,
+      "Gram_regularized_condition": 736924.8759894249,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.7581344380800425,
+      "objective_after": 1.7497340561039454,
+      "internal_steps": 40,
+      "closure_calls": 46,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true,
+      "original_TRAIN_images": 6000,
+      "augmentation_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "epoch": 20,
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 48000,
+      "numerical_ridge": 0.0031155733974920635,
+      "uncentred_Gram_eigen_min": 3.3288209326703955e-11,
+      "uncentred_Gram_eigen_max": 2300.203171812343,
+      "Gram_regularized_condition": 738293.0746105606,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.7506026906824361,
+      "objective_after": 1.7447326729233579,
+      "internal_steps": 40,
+      "closure_calls": 44,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true,
+      "original_TRAIN_images": 6000,
+      "augmentation_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    },
+    {
+      "epoch": 25,
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 48000,
+      "numerical_ridge": 0.003119598309302668,
+      "uncentred_Gram_eigen_min": 3.384338159416962e-11,
+      "uncentred_Gram_eigen_max": 2304.7091979101237,
+      "Gram_regularized_condition": 738784.9537015008,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.7463913866641578,
+      "objective_after": 1.7410148695786267,
+      "internal_steps": 40,
+      "closure_calls": 44,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true,
+      "original_TRAIN_images": 6000,
+      "augmentation_codes": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  ],
+  "inference_fixed_zero_input_quadrant": "Last112x112 of each224 channel-packed entrance is exactly zero, hence direct modulation gradients there are zero; this does not prove global phase plane unreachable or a capacity bound.",
+  "limitations": "Only a fixed-parent,160-image,8x20 class/domain-balanced TRAIN diagnostic; not the actual64-image training batch distribution, not full-TRAIN gradient statistics, and not proof that a larger batch improves generalization.",
+  "interpretation": "Several leave-one-batch-out physical-phase gradient cosines are near zero or negative. This motivates checking aggregation if current D4 stalls, but does not establish a capacity limit or justify changing inference. Current D4 full8-view head blocks actually completed with48000 views and only original6000 TRAIN identities."
+}

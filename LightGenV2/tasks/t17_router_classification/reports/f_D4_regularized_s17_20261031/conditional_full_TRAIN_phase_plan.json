@@ -1,0 +1,18 @@
+{
+  "state": "conditional_training_hypothesis_only_not_implemented_or_launched",
+  "trigger": "Only after the current D4 run fully completes, archive metrics and inspect TRAIN/VAL trends; do not start while a useful D4 run is healthy.",
+  "evidence": "TRAIN_gradient_coherence_diagnosis.json",
+  "hypothesis": "Finite full-original-TRAIN phase-gradient accumulation with the same canonical physical-phase Adam, alternating with the same single Linear head solve, may reduce small-batch gradient cancellation.",
+  "candidate_constraints": "Keep current inference graph, wavelengths/pitches/masks224/478, same TRAIN/VAL/TEST, same teacher TRAIN-only8-view cache, same true optical Top2, no CNN in student. Protect completed best parent and all failed candidates.",
+  "possible_budget": {
+    "maximum_full_TRAIN_rounds": 25,
+    "phase_updates_per_round": 1,
+    "one_random_matched_D4_per_original_TRAIN_image": true,
+    "head_block_views": "all8 original TRAIN views, no VAL/TEST",
+    "suggested_phase_angle_lr": 0.03,
+    "bootstrap_or_head_inner_steps_per_round": 40,
+    "selection": "parentE0 plus VAL macro recall/CE, TEST once after lock"
+  },
+  "not_yet_supported": "Current entry performs a phase update per mini-batch; a new explicit optimizer mode, default compatibility/accumulated-gradient equivalence tests, real-parent GPU admission and Git publication would be required. Do not only change config or claim this plan is running.",
+  "alternative": "If D4 is still improving with modest gap, use its actual curve to choose finite continuation instead; avoid blind sweeps or unbounded epoch extensions."
+}
