@@ -1,0 +1,26 @@
+{
+  "authorized_gpu_uuids": [
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  ],
+  "jobs": {
+    "F_joint": {
+      "parent_checkpoint": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "8f789ef0ea432f3b8c29f05de85cf694c7fa163c162ecda932228ab9c90700b6"
+    },
+    "Kather_k2": {
+      "parent_checkpoint": "runs/simulation/panel_d_Kather_boundary_refine_s17_20261101/kather2016/k2/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "651a6edcd0a616bfafd6d2652d847c6f5d015a0d3d17759b81fdee02078e54b0"
+    },
+    "Kather_k4": {
+      "parent_checkpoint": "runs/simulation/panel_d_Kather_boundary_refine_s17_20261101/kather2016/k4/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "8b69354a54d8e7b45dbd8088306e662df6012c19a6b47060936edfd3c4a0d01a"
+    },
+    "Blood_k4": {
+      "parent_checkpoint": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k4/best_checkpoint.pt",
+      "parent_checkpoint_sha256": "932b215b455103c080aba999bcdec1f1cb8889fe5084250d98ec85e5bf7ebe6e"
+    }
+  },
+  "maximum_internal_iterations_per_job": 150,
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "one_bounded_configuration": true
+}
