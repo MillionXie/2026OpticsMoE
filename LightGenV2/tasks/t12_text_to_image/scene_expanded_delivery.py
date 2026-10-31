@@ -15,6 +15,15 @@ from .scene_paper_prompt_protocol import write
 METRICS=['CLIP_T','DINOv2_I','CLIP_I','ImageReward_compact']
 
 
+def training_budget(report):
+    if report.get('peer_has_no_task_tuning'):return '未任务微调（冻结公开模型）'
+    history=report.get('checkpoint_training_history')or{}
+    epochs=history.get('completed_epochs');updates=history.get('completed_updates')
+    if epochs is None:
+        return '完成 '+str(updates)+' 次恢复更新；不按完整epoch计数'
+    return '完成 '+str(epochs)+' 轮 / '+str(updates)+' 更新；所选第 '+str(history.get('selected_epoch'))+' 轮'
+
+
 def timing(rounds):
     all_ms=[];identity=True
     for folder in rounds:
@@ -66,13 +75,15 @@ def build(runs,labels,metrics,e_rounds,lg_rounds,workflow,output):
         for category in ['all','lamp','pillow']:
             s=summary[run.name+'/'+category]
             parts.append('<tr><td>'+esc(label)+' / '+category+'</td><td>'+str(s['n'])+'</td>'+''.join('<td>'+f'{s["scores"][x]["mean"]:.4f}'+'</td>' for x in METRICS)+'</tr>')
-    parts.append('</table><h2>模型与预算</h2><table><tr><th>模型</th><th>采样步数</th><th>实际加载参数</th><th>训练记录</th><th>权重身份</th></tr>')
+    passed=sum(r['passes_10_percent']is True for r in gates)
+    parts.append('</table><p class="note">相对电子版10%质量代理门：'+('通过'if gate['all12_proxy_gates_pass']else'未通过')+
+        '（'+str(passed)+'/12项）；同口径3倍时间门：'+('通过'if gate['modeled_speed_pass']else'未通过')+
+        '。质量代理通过仍须另做实际图像检查；时间不是物理整机实测。</p>')
+    parts.append('<h2>模型与预算</h2><table><tr><th>模型</th><th>采样步数</th><th>实际加载参数</th><th>训练记录</th><th>权重身份</th></tr>')
     for run,label,report in zip(runs,labels,reports):
         total=report.get('generator_loaded_parameters',0)+report.get('Qwen_parameters',0)+report.get('head_parameters',0)
         if not total:total=report.get('loaded_parameters')
-        history=report.get('checkpoint_training_history')or{}
-        budget=('未任务微调（冻结公开模型）' if report.get('peer_has_no_task_tuning') else
-                '完成 '+str(history.get('completed_epochs'))+' 轮 / '+str(history.get('completed_updates'))+' 更新；所选第 '+str(history.get('selected_epoch'))+' 轮')
+        budget=training_budget(report)
         parts.append('<tr><td>'+esc(label)+'</td><td>'+esc(report.get('sampling_steps'))+'</td><td>'+esc(total)+'</td><td>'+esc(budget)+'</td><td>'+esc(report['checkpoint_sha256'])+'</td></tr>')
     parts.append('</table><p>人工验图和正式放行仍待完成；页面生成不代表已经通知光路部署。</p>')
     for sid in sorted(common):
