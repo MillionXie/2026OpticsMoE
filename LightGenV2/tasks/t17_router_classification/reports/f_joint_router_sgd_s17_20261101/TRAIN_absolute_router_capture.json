@@ -1,0 +1,67 @@
+{
+  "role": "ORIGINAL_TRAIN_ONLY_READONLY_DIAGNOSIS",
+  "checkpoint_sha256": "124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057",
+  "source": "verified full originalTRAIN6000 canonical prediction cache",
+  "absolute_port_estimate": "dense fraction times total captured power; additive routing epsilon1e-12 makes this an estimate, not exact energy when very dark",
+  "data_or_student_changed": false,
+  "domains": {
+    "RGB": {
+      "n": 3000,
+      "mean_total_capture": 0.09742020815610886,
+      "mean_absolute_port_energy": [
+        0.004924356937408447,
+        0.007497754879295826,
+        0.08488846570253372,
+        0.00010953944001812488
+      ],
+      "median_absolute_port_energy": [
+        0.004735449329018593,
+        0.007360189221799374,
+        0.08253070712089539,
+        0.00010881093476200476
+      ],
+      "mean_dense_fraction": [
+        0.055444952100515366,
+        0.07923614233732224,
+        0.8641934990882874,
+        0.0011249949457123876
+      ],
+      "selected_fraction": [
+        0.17466666666666666,
+        0.8253333333333334,
+        1.0,
+        0.0
+      ]
+    },
+    "SAR": {
+      "n": 3000,
+      "mean_total_capture": 0.08140154182910919,
+      "mean_absolute_port_energy": [
+        0.006016712170094252,
+        0.008242185227572918,
+        0.0670480951666832,
+        9.45028368732892e-05
+      ],
+      "median_absolute_port_energy": [
+        0.0058380793780088425,
+        0.007940631359815598,
+        0.06898340582847595,
+        9.302284161094576e-05
+      ],
+      "mean_dense_fraction": [
+        0.0741870179772377,
+        0.10333202034235,
+        0.8212587237358093,
+        0.0012233247980475426
+      ],
+      "selected_fraction": [
+        0.15833333333333333,
+        0.8416666666666667,
+        0.9996666666666667,
+        0.0003333333333333333
+      ]
+    }
+  },
+  "synthetic_probe_summary": "Four independent phase-only masks on unit-power synthetic three-tile input reached target captures ~.35/.315/.323/.027 after60steps. This demonstrates fourth ROI is not strictly unreachable; finite local best values are not upper bounds or proof of classification capacity.",
+  "next_scope": "Before another student training, compare absolute capture and input support, and test whether one shared router can improve fourth-port usability without destroying current hard-Top2 forward. No physical geometry/input/OEO change or next training is authorized by this diagnostic alone."
+}

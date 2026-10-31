@@ -8,6 +8,10 @@ last所有参数真实更新；router没有Adam动量，E/G有两份Adam状态�
 该候选失败保留，不延长或盲扫。下一步先查canonical物理router的绝对收光/输入支撑限制（仅数值诊断，不改模型、几何或数据），不把当前结果当容量上限，也不恢复CNN追数。
 A/B与D2NN定稿保护，d仍暂缓。旧d架构只读追溯至原source：四专家、无可训前端、E/G/E/G四主层，但OEO含LN/ReLU、无Linear、输入第四tile是通道均值，与当前A/B/F不一致；证据见reports/figure_revision_schedule_20261031/panel_d_readonly_architecture_audit.json。
 
+只读补充：canonical传播器上两个起点、每端口独立60步的合成三tile相位聚焦探针，四端口最佳绝对收光约35.15/31.50/32.27/2.71%，证明第四端口不是严格不可达；这是四份独立诊断相位，不是一个通用router，更不是最大收光上界或准确率。
+固定124父完整TRAIN的绝对端口能量估计为RGB[.00492,.00750,.08489,.000110]、SAR[.00602,.00824,.06705,.0000945]，均归一输入功率；只有TRAIN，无新VAL/TEST统计。学生所有state逐位未变，CPU探针已经退出；数据角度数组/诊断共3文件manifest+SHA已本地服务器保存。
+这提供下一有限检查方向：在固定几何和共同一份router条件下，是否可以增加弱端口收光而不破坏原两域分类目标；必须先做TRAIN-only配对可逆试探，不能把独立单端口聚焦直接用作学生、不能保证均衡提升分类，不盲扫权重。
+
 ## F方向保留的router角度SGD候选已实现，待测试准入（2026-11-01）
 
 根据固定124父同完整TRAIN配对数值探针，实现WrappedPhaseAdam可选router_step_rule=normalized_angle_sgd；默认adam路径保持兼容，模型和推理state不变。

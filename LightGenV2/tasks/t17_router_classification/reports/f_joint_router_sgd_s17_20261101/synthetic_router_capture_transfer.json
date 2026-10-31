@@ -1,0 +1,21 @@
+{
+  "remote_local_SHA_verified": true,
+  "files": [
+    {
+      "path": "diagnosis.json",
+      "size": 70901,
+      "sha256": "83b38c52336d4c01a0d53fd92542720f26ff1bac4dd4f1f953b53214fa995e0d"
+    },
+    {
+      "path": "zero_diagnostic_angles.npy",
+      "size": 802944,
+      "sha256": "aa236848f3469b4e2a92f9477503b1f3c60f2b9649f98923dd59ebabf4b04d29"
+    },
+    {
+      "path": "parent_diagnostic_angles.npy",
+      "size": 802944,
+      "sha256": "551c56a7655e553ff4c81dcc5f6fc20550c19281cd91b62228de991afc367d5a"
+    }
+  ],
+  "diagnostic_only": true
+}
