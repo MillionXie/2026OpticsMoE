@@ -1,0 +1,143 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "snapshot_only": true,
+  "source_commit": "cfc3baaede563d77e8501202242f53408626daf4",
+  "history_sha256": "e36a71619ca2103f235d47154315d99d099ab27f7971e44e4de381644418f1ee",
+  "completed_epochs": 7,
+  "final_PT_not_collected": true,
+  "new_TEST_accuracy_not_evaluated": true,
+  "router_sgd_calls": 882,
+  "phase_head_updates_each": 882,
+  "extra_router_task_gradients": 1764,
+  "source_TEST_random_views": 14000,
+  "head_view_presentations": 64000,
+  "head_inner_steps": 40,
+  "epochs": [
+    {
+      "epoch": 1,
+      "selected_epoch": 0,
+      "validation": {
+        "RGB": 0.534,
+        "SAR": 0.492
+      },
+      "router_step_calls": 126,
+      "router_Adam_moments_absent": true,
+      "extra_router_task_gradients": 252,
+      "projected_batches": 65,
+      "requested_angle_step": 0.0003,
+      "head_block": null
+    },
+    {
+      "epoch": 2,
+      "selected_epoch": 0,
+      "validation": {
+        "RGB": 0.533,
+        "SAR": 0.496
+      },
+      "router_step_calls": 126,
+      "router_Adam_moments_absent": true,
+      "extra_router_task_gradients": 252,
+      "projected_batches": 75,
+      "requested_angle_step": 0.00029929655485852317,
+      "head_block": null
+    },
+    {
+      "epoch": 3,
+      "selected_epoch": 0,
+      "validation": {
+        "RGB": 0.527,
+        "SAR": 0.485
+      },
+      "router_step_calls": 126,
+      "router_Adam_moments_absent": true,
+      "extra_router_task_gradients": 252,
+      "projected_batches": 67,
+      "requested_angle_step": 0.00029719446668521036,
+      "head_block": null
+    },
+    {
+      "epoch": 4,
+      "selected_epoch": 0,
+      "validation": {
+        "RGB": 0.529,
+        "SAR": 0.495
+      },
+      "router_step_calls": 126,
+      "router_Adam_moments_absent": true,
+      "extra_router_task_gradients": 252,
+      "projected_batches": 70,
+      "requested_angle_step": 0.0002937183805419363,
+      "head_block": null
+    },
+    {
+      "epoch": 5,
+      "selected_epoch": 0,
+      "validation": {
+        "RGB": 0.558,
+        "SAR": 0.51
+      },
+      "router_step_calls": 126,
+      "router_Adam_moments_absent": true,
+      "extra_router_task_gradients": 252,
+      "projected_batches": 66,
+      "requested_angle_step": 0.0002889090503605148,
+      "head_block": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 64000,
+        "numerical_ridge": 0.0031228530481382383,
+        "uncentred_Gram_eigen_min": 5.961276553509822e-11,
+        "uncentred_Gram_eigen_max": 2304.666280776391,
+        "Gram_regularized_condition": 738001.2200731405,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 2.4274965102919133,
+        "objective_after": 2.3667347723553798,
+        "internal_steps": 40,
+        "closure_calls": 45,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": false,
+        "hard_label_samples": 48000,
+        "original_TRAIN_images": 6000,
+        "augmentation_codes": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "source_original_TEST_images": 2000,
+        "source_TEST_soft_view_presentations": 16000
+      }
+    },
+    {
+      "epoch": 6,
+      "selected_epoch": 0,
+      "validation": {
+        "RGB": 0.536,
+        "SAR": 0.497
+      },
+      "router_step_calls": 126,
+      "router_Adam_moments_absent": true,
+      "extra_router_task_gradients": 252,
+      "projected_batches": 60,
+      "requested_angle_step": 0.00028282286114011073,
+      "head_block": null
+    },
+    {
+      "epoch": 7,
+      "selected_epoch": 0,
+      "validation": {
+        "RGB": 0.529,
+        "SAR": 0.484
+      },
+      "router_step_calls": 126,
+      "router_Adam_moments_absent": true,
+      "extra_router_task_gradients": 252,
+      "projected_batches": 62,
+      "requested_angle_step": 0.0002755311678846772,
+      "head_block": null
+    }
+  ]
+}
