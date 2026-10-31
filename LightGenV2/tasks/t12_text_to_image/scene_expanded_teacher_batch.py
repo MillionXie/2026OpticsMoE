@@ -60,6 +60,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['plan','model-path','metadata','output']:p.add_argument('--'+name,type=Path,required=True)
     p.add_argument('--stage',choices=['pilot','generate'],required=True);p.add_argument('--batch-size',type=int,choices=[2,4],default=2)
+    p.add_argument('--steps',type=int,choices=[30,50],default=50)
     p.add_argument('--reuse',type=Path,nargs='*',default=[]);p.add_argument('--pilot-review',type=Path)
     a=p.parse_args()
     from .white_reference_scene_probe import GPU
@@ -68,7 +69,7 @@ def main():
     plan,rows=checked_plan(a.plan)
     if a.stage=='generate':
         review=json.loads(a.pilot_review.read_text())
-        if not review['approved_for_TRAIN_target_generation'] or review['batch_size']!=a.batch_size:
+        if not review['approved_for_TRAIN_target_generation'] or review['batch_size']!=a.batch_size or review['native_steps']!=a.steps:
             raise ValueError('Actual batched TRAIN pilot visual/resource review required')
     import torch
     from PIL import Image
@@ -118,7 +119,7 @@ def main():
             torch.cuda.synchronize();began=time.perf_counter()
             with torch.inference_mode():
                 outputs=pipe(prompt=['<img><|image_1|></img>\n'+r['prompt'] for r in group],input_images=images,
-                    height=512,width=512,num_inference_steps=50,max_input_image_size=256,guidance_scale=2.5,img_guidance_scale=1.6,
+                    height=512,width=512,num_inference_steps=a.steps,max_input_image_size=256,guidance_scale=2.5,img_guidance_scale=1.6,
                     use_input_image_size_as_output=False,generator=generators,latents=torch.cat(noises)).images
             torch.cuda.synchronize();durations.append(time.perf_counter()-began)
             if len(outputs)!=len(group):raise ValueError('Batch output/sample binding changed')
@@ -127,6 +128,7 @@ def main():
                 records[row['sample_id']]=dict(row,split='train',target=target,target_sha256=sha(a.output/target),
                     initial_latent_sha256=noise_sha,native_prompt='<img><|image_1|></img>\n'+row['prompt'],teacher_revision=REVISION,
                     GT_masks_or_targets_as_inputs=False,QA_accepted=False,teacher_inference_batch_size=len(group),
+                    teacher_generation_steps=a.steps,teacher_kind='frozen_official_OmniGen',
                     batching_may_change_rounding_and_pixels=True)
             publish()
         write(a.output/'report.json',dict(complete=True,schema='scene_paper_expanded_TRAIN_candidates_v1',prompt_profile=plan['prompt_profile'],
@@ -134,7 +136,7 @@ def main():
             candidate_manifest_sha256=sha(a.output/'candidates.json'),candidate_count=len(records),TRAIN_views=len({r['reference_id']for r in chosen}),
             batch_size=a.batch_size,batch_wall_seconds=durations,seconds_per_new_image=sum(durations)/max(1,len(todo)),
             peak_allocated_bytes=torch.cuda.max_memory_allocated(),reused_completed_targets=reused,
-            native_steps=50,semantic_review_not_performed=True,eligible_for_training=False,
+            native_steps=a.steps,semantic_review_not_performed=True,eligible_for_training=False,
             TEST_targets_or_predictions_created=False,pilot_only=a.stage=='pilot'))
     except BaseException:write(a.output/'failure.json',dict(traceback=traceback.format_exc()));raise
 
