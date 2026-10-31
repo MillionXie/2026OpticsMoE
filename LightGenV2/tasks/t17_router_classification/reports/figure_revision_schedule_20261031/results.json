@@ -1,7 +1,7 @@
 {
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "independent_test_claim": false,
-  "generated_UTC": "2026-10-31T14:11:10.424366+00:00",
+  "generated_UTC": "2026-10-31T14:18:00.365134+00:00",
   "records": {
     "panel_b_linear_joint4_s17_20261031": {
       "run": "runs\\simulation\\figure_revision_s17_20261031\\panel_b_linear_joint4_s17_20261031",
@@ -18268,5 +18268,9 @@
       },
       "domain_mean_accuracy": 0.5349999999999999
     }
+  },
+  "F_paired_TRAIN_backtracking": {
+    "status": null,
+    "result": null
   }
 }

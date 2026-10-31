@@ -1,3 +1,17 @@
+## 有界TRAIN相位回溯已准入并启动（2026-10-31）
+
+source2c5ffb646已通过156项CPU检查（周期相位下降/拒绝及异常bitwise恢复/原默认兼容/真实光学scope），并发布main、服务器按路径SHA核验。
+精确D4 E22父的20张真实TRAIN、两域十类GPU准入：初始完整forward逐元素一致，固定router和head时拒绝候选全部raw恢复，
+实际候选经两次回溯后同一20张TRAIN目标1.47619→1.38574；仅准入样本下降，不当作6000张训练或泛化改善。
+主干E/G真实更新，router/head逐元素冻结；同头有界拟合时全部光学phase冻结、真实Top2、唯一Linear/无CNN/487204均通过。
+
+worker1988674已真正启动，root runs/simulation/f_backtracking_s17_20261031/paired，profile同名；仍继承受保护53.5%父，不重开失败全TRAIN Adam。
+路由参数冻结而输入路由仍动态Top2。每轮6000 TRAIN随机匹配D4、固定head累积物理phase梯度，
+再用完全相同TRAIN顺序/增强码/教师目标做最多8次完整前向步长回溯，Armijo下降才接受，否则原raw逐元素恢复。
+相位最大起始角度.03、每次减半；不读VAL/TEST接受step，不改变OEO/读出/光学参数。head每5轮仍全8视图48000呈现、最多40内步。
+最多20/min10/pat10轮，父E0参与原VAL宏召回再CE选模；每轮保存试探目标、接受标记/步长、额外TRAIN前向视图数、相位更新次数。
+没有head minibatch SGD；光学epoch、接受的phase更新、所有拒绝试探/前向视图、head内步分别记。新候选尚未完成，未承诺旧图范围。
+
 # T17 单数据集路由分类对照
 
 ## 全TRAIN聚合候选已结束：未改善，保护D4父（2026-10-31）

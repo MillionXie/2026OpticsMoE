@@ -1,8 +1,6 @@
 {
   "status.json": {
-    "state": "training",
-    "epoch": 9,
-    "total_epochs": 25,
+    "state": "complete",
     "pid": 1956118
   },
   "metadata.json": {
@@ -31,7 +29,7 @@
     "head_update_mode": "bounded block only, no minibatch head optimizer"
   },
   "history.json": {
-    "epoch": 9,
-    "validation": 0.429
+    "epoch": 10,
+    "validation": 0.515
   }
 }

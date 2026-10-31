@@ -1,0 +1,143 @@
+{
+  "source_commit": "2c5ffb6467fe7994c0d59ba3930c267c1c1f0efa",
+  "pid": 1988674,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_backtracking_s17_20261031.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_backtracking_s17_20261031/paired"
+  ],
+  "time": 1793456239.7835696,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "admission": {
+    "source_commit": "2c5ffb6467fe7994c0d59ba3930c267c1c1f0efa",
+    "source_sha256": {
+      "train_figure_revision.py": "4bf8ae77f95c44101ce3c059e8247004c0266491df1c542e2de55389119888d8",
+      "phase_training.py": "65779e708cc2418c4fb21a43e283dac742d2d1a05119de25a26bfe38164bf021",
+      "phase_backtracking.py": "85a55865ef50cc9dc0fe4b8595aa758adfc0837a2c4bb30acca0764331f525d3"
+    },
+    "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+    "parent_sha256": "1a8355ba76aa712a7dcc0ada7765676579c432f25e0f904025627b49996febea",
+    "initial_forward_bitwise_equal": true,
+    "rejected_raw_all_tensors_bitwise_restored": true,
+    "paired_TRAIN_accepted_step": {
+      "accepted": true,
+      "baseline_objective": 1.4761916399002075,
+      "directional_derivative": -1.7015543980706007,
+      "forward_trials": 3,
+      "trials": [
+        {
+          "scale": 1.0,
+          "objective": 3.176521062850952,
+          "required_decrease": 0.0001701554398070601,
+          "accepted": false
+        },
+        {
+          "scale": 0.5,
+          "objective": 1.7894206047058105,
+          "required_decrease": 8.507771990353004e-05,
+          "accepted": false
+        },
+        {
+          "scale": 0.25,
+          "objective": 1.3857421875,
+          "required_decrease": 4.253885995176502e-05,
+          "accepted": true
+        }
+      ],
+      "accepted_scale": 0.25,
+      "objective_after": 1.3857421875,
+      "rejected_raw_restored_bitwise": false
+    },
+    "rejected_trials": {
+      "accepted": false,
+      "baseline_objective": 1.4761916399002075,
+      "directional_derivative": -1.7015543980706007,
+      "forward_trials": 8,
+      "trials": [
+        {
+          "scale": 1.0,
+          "objective": 2.4761916399002075,
+          "required_decrease": 0.0001701554398070601,
+          "accepted": false
+        },
+        {
+          "scale": 0.5,
+          "objective": 2.4761916399002075,
+          "required_decrease": 8.507771990353004e-05,
+          "accepted": false
+        },
+        {
+          "scale": 0.25,
+          "objective": 2.4761916399002075,
+          "required_decrease": 4.253885995176502e-05,
+          "accepted": false
+        },
+        {
+          "scale": 0.125,
+          "objective": 2.4761916399002075,
+          "required_decrease": 2.126942997588251e-05,
+          "accepted": false
+        },
+        {
+          "scale": 0.0625,
+          "objective": 2.4761916399002075,
+          "required_decrease": 1.0634714987941255e-05,
+          "accepted": false
+        },
+        {
+          "scale": 0.03125,
+          "objective": 2.4761916399002075,
+          "required_decrease": 5.317357493970628e-06,
+          "accepted": false
+        },
+        {
+          "scale": 0.015625,
+          "objective": 2.4761916399002075,
+          "required_decrease": 2.658678746985314e-06,
+          "accepted": false
+        },
+        {
+          "scale": 0.0078125,
+          "objective": 2.4761916399002075,
+          "required_decrease": 1.329339373492657e-06,
+          "accepted": false
+        }
+      ],
+      "accepted_scale": 0.0,
+      "objective_after": 1.4761916399002075,
+      "rejected_raw_restored_bitwise": true
+    },
+    "head_and_router_bitwise_unchanged_by_phase_update": true,
+    "parameter_update_L2": {
+      "first_phase": 1.6391181945800781,
+      "global_phase": 2.3242461681365967,
+      "router_phase": 0.0,
+      "shared_head.weight": 0.0
+    },
+    "head_block": {
+      "mode": "TRAIN_Gram_cholesky",
+      "TRAIN_samples": 160,
+      "numerical_ridge": 0.003081324192502,
+      "uncentred_Gram_eigen_min": -1.719338029593351e-13,
+      "uncentred_Gram_eigen_max": 2270.3442160472314,
+      "Gram_regularized_condition": 736808.9677232599,
+      "feature_transform_absent_from_inference": true,
+      "objective_before": 1.6948843870712786,
+      "objective_after": 0.5051461553199582,
+      "internal_steps": 5,
+      "closure_calls": 10,
+      "exported_dtype": "torch.float32",
+      "TRAIN_only": true
+    },
+    "head_block_phases_bitwise_frozen": true,
+    "TRAIN_only": true,
+    "TEST_not_evaluated": true,
+    "inference_parameters": 487204,
+    "Linear_count": 1,
+    "CNN_in_student": 0
+  }
+}
