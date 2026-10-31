@@ -1,0 +1,14 @@
+{
+  "selected_epoch": 72,
+  "best_checkpoint_sha256": "eeeee86ec4b0b84b97695ce1a384146455dd4ffda29e0200095683bb3bff20fe",
+  "selected_train": 0.8475400457665904,
+  "selected_val": 0.7287234042553191,
+  "selected_original_test_dev": 0.7978723404255319,
+  "train_val_gap_pp": 11.881664151127126,
+  "stage1_best_val": 0.6848404255319149,
+  "stage2_best_val": 0.7287234042553191,
+  "last_train": 0.8735697940503433,
+  "last_val": 0.7180851063829787,
+  "decision": "Depth trend LG2 61.04 < LG4 76.73 < LG6 79.79 is observed in original TEST development, but LG4 still only +9.44pp vs D5. LG6 later TRAIN rises without surpassing E72 VAL. Proceed with already published finite LG4 freeze-control comparison; keep LG6 parent and wait for D7 before choosing whether to refine LG6.",
+  "new_training_started": false
+}

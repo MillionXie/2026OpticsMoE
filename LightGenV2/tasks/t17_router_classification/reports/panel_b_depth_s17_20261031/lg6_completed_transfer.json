@@ -1,0 +1,58 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/panel_b_depth_s17_20261031/worker1/lg6"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/best_checkpoint.pt",
+      "size": 5362780,
+      "sha256": "eeeee86ec4b0b84b97695ce1a384146455dd4ffda29e0200095683bb3bff20fe"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/history.json",
+      "size": 198371,
+      "sha256": "180a55e11f0214a41b4a71d4453d935f4f70b17f5a1f03976b732bab59293378"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/last_checkpoint.pt",
+      "size": 16070530,
+      "sha256": "b0da305ccf752704e96cda26fbcbfc35b43fca27355593f72bf39aaeb1a9297d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/metadata.json",
+      "size": 8669,
+      "sha256": "55d9ca8c3b94764219978e1e6ad70b7efdeab2e7518235ee2a6eeb0107d51594"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/result.json",
+      "size": 7303,
+      "sha256": "f8aa6f7455ceae9aa4132ebbb57867a5b3b697b3623e5df006ad13092ac39d30"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/selection_lock.json",
+      "size": 212,
+      "sha256": "91a25f5a09b6d221025bf4b87a2202e4e7f2358164d9a74651ea1f907f189547"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/status.json",
+      "size": 7344,
+      "sha256": "94340ccac462763662cf5847549eac4fec63e760247d2da771924adccafc6487"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/test_predictions.npz",
+      "size": 41935,
+      "sha256": "e1430fc1c3f25cc29475f66dbcab67b5e3d7fe32364ac0c01215d5f1735b6906"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/train_predictions.npz",
+      "size": 186753,
+      "sha256": "ab32105fc28b3ed72b4278f48b0db3c00914ee582558f7b10011065f5e87a494"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/val_predictions.npz",
+      "size": 42037,
+      "sha256": "a1b08a042b89d8fda9d47424dd5ed57bb089a3c618767415e0cc6fc21c021f4c"
+    }
+  ]
+}

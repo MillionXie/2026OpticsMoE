@@ -47,6 +47,12 @@ def main():
         return None if any(s is None for s in scores) else all(a<b for a,b in zip(scores,scores[1:]))
     d_histories=[read(d_run/n/'history.json') or [] for n in d_names]
     n=min(map(len,d_histories));order_match=all([x['order_sha256'] for x in h[:n]]==[x['order_sha256'] for x in d_histories[0][:n]] for h in d_histories)
+    refinements={}
+    for name in ['lg4','lg6']:
+        root=task/f'runs/simulation/panel_b_{name}_refine_s17_20261031'/name
+        refinements[name]=dict(worker_state=read(root/'status.json'),candidates={
+            mode:dict(state=read(root/mode/'status.json'),result=read(root/mode/'result.json'))
+            for mode in ['frozen_router_control','last_pair_only']})
     data=dict(role='ORIGINAL_TEST_EXPOSED_PANEL_B_DEVELOPMENT',independent_test_claim=False,
               seed=17,generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
               all_five_new_jobs_completed=all(records[n]['result'] is not None for n in d_names+lg_names[1:]),
@@ -54,6 +60,7 @@ def main():
               LG_strictly_increasing=increasing(lg_names),D2NN_strictly_increasing=increasing(d_names),
               cancelled_D2NN_pilot=read(run/'D2NN_budget_correction.json'),
               formal_D2NN_epochs=60,LG_budget='accuracy-oriented; initial 120-epoch candidates',
+              initial_depth_candidates_only=True,additional_LG_refinements=refinements,
               D2NN_common_observed_epoch_prefix=n,D2NN_order_SHA_equal_on_common_prefix=order_match)
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     rows=''
@@ -73,6 +80,7 @@ def main():
 <table><tr><th>模型</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th></tr>{rows}</table>
 <p>对应关系：LG主干2/4/6层，另有一个入口router；D2NN为3/5/7层。四专家224²，global及D2NN相位均478²；同一intensity-softsign OEO、固定八区CCD，无Linear/CNN。</p>
 <p>按最新人工修正，仅D2NN统一为与图a相同的60轮：batch8、raw Adam LR.005、无教师、仅TRAIN真标签、每轮VAL宏召回再NLL选模。LG按准确率目标优化，4/6层当前候选为120轮，使用教师伪标签；两层复用图a优化结果。因此不能称LG与D2NN等训练/数据预算结构优势。旧D2NN的120轮方案已取消，实际完成探索及权重保留，未混入正式对照。</p>
+<p>本表为已完成的首轮深度候选。LG后续冻结对照须另计预算，未完成微调不替换表中数值；新增候选状态与全部结果保留于results.json的additional_LG_refinements。首轮递增不等于所有差值目标已满足。</p>
 <p>两层LG按用户要求固定图a61.04%，最浅对仅如实报告差值，不要求高15个百分点。4/6层LG的递增及相对D2NN5/7层高15个百分点是优化目标，不通过选择较差D2NN权重、删除样本或更改统计强制满足。</p>
 <p>首批完整曲线：<a href="convergence.svg">TRAIN/VAL与锁权重后的原TEST开发点</a>。逐样本及结构核验见first_completed_audit.json；完整best/last与预测SHA收据见first_completed_transfer.json。</p>
 <p>LG深度严格递增：{data['LG_strictly_increasing']}；D2NN深度严格递增：{data['D2NN_strictly_increasing']}。None表示尚未完成。</p>

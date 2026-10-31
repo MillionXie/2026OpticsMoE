@@ -1,0 +1,44 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/launch.json",
+      "sha256": "e18ba35740735fa2b9ee7a953c2169ab841b9c49f4697b201313f52c26e2dbec",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/panel_b_lg4_refine_admission_s17_20261031/admission.json",
+      "sha256": "3f72a20df8ccdaf79066fd1908760e15c3a4c7dded8eb19e0fe68b12e6d8c048",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/metadata.json",
+      "sha256": "8e101c05cbbae66a6a38086394363915d50efaae850971ac60620f28c8c0a462",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/status.json",
+      "sha256": "5b122cc04a10046a09f12afb6afb8f520f1bb3bed621afddc9c63046dfd838f6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/training_membership.json",
+      "sha256": "ed0c6480bb24e18c9635fe3a209351e9117010996d4d8b142aca43dfc4908318",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/metadata.json",
+      "sha256": "ddc5e5d4ca7a81838fa5c1380273643b8a0d7d0004e484d76067de824d6a6857",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/status.json",
+      "sha256": "d9fc801f7427d675b55fb426bb0080a4b4c603c3a0549dc4e2d38859bb5f7207",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/frozen_router_control/history.json",
+      "sha256": "57c57fa161e7c5b165439cd6a8ccb173b73389e016bf966a4da73e7137520f61",
+      "snapshot": true
+    }
+  ]
+}

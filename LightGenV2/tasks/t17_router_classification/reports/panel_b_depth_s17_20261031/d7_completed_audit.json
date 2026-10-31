@@ -1,0 +1,31 @@
+[
+  {
+    "job": "d2nn7",
+    "strict_state_load": true,
+    "no_Linear_or_Conv": true,
+    "phase_parameters": 1599388,
+    "splits": [
+      {
+        "split": "train",
+        "n": 3496,
+        "correct": 3038,
+        "IDs_labels_match_A": true,
+        "route_mean_power": null
+      },
+      {
+        "split": "val",
+        "n": 752,
+        "correct": 542,
+        "IDs_labels_match_A": true,
+        "route_mean_power": null
+      },
+      {
+        "split": "test",
+        "n": 752,
+        "correct": 542,
+        "IDs_labels_match_A": true,
+        "route_mean_power": null
+      }
+    ]
+  }
+]
