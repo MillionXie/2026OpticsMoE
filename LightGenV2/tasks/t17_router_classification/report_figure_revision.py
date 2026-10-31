@@ -33,6 +33,14 @@ def main():
     page=page.replace('</html>',completed_note+'</html>')
     convex_note='<h2>冻结光学后的有界单Linear拟合</h2><p>只优化原Linear，光学相位逐元素不变。TRAIN交叉熵+.001/2倍相对父头的平方范数，最多150个L-BFGS内部迭代；每5步导回float32 canonical模型，VAL选模并保留父。末梯度仍非零，不能宣称已经求得全局最优或将剩余差距证明为光学容量上限。</p><table><tr><th>任务</th><th>数值预算/选段</th><th>选中TRAIN / VAL / 原TEST开发</th><th>最终迭代TRAIN</th><th>最终梯度最大值</th></tr>'+''.join(convex_rows)+'</table><p>B4达到83.51%，比固定D5高16.22pp；B6为84.18%，比固定D7高12.10pp，尚未15pp。F为42.40%，改善有限，低分原因仍在定位。</p>'
     page=page.replace('</html>',convex_note+'</html>')
+    gram_rows=[];report['TRAIN_Gram_coordinate_candidates']={}
+    for name in ['f_lg_convex','b_lg6_convex']:
+        result=read(task/'runs/simulation/figure_Gram_readout_s17_20261031/worker0'/name/'result.json');report['TRAIN_Gram_coordinate_candidates'][name]=result
+        if result:
+            vals=' / '.join(f"{100*result[k]['accuracy']:.2f}%" for k in ['train','val','original_test_dev'])
+            gram_rows.append(f'<tr><td>{name}</td><td>{vals}</td><td>{result["final_training_gradient_max_abs"]:.3g}</td></tr>')
+    note='<h2>相同目标、相同预算的TRAIN Gram数值坐标对照</h2><p>与上一轮使用相同原始父、相同原W锚定惩罚和150内部迭代上限；只用TRAIN求可逆坐标，导出时吸收到原单Linear。不存在推理白化层或新电子参数。</p><table><tr><th>任务</th><th>TRAIN / VAL / 原TEST开发</th><th>最终原W梯度最大值</th></tr>'+''.join(gram_rows)+'</table><p>B6为652/752=86.70%，相对固定D7高14.63pp，仍差3个正确达到15pp，不能四舍五入声称达标。F为905/2000=45.25%，原训练约56%而验证44.65%，仍需定位光学表征与泛化，不能将正则头最优等同于模型容量上限。</p>'
+    page=page.replace('</html>',note+'</html>')
     (out/'results.html').write_text(page,encoding='utf-8');print([(n,r['status']['state']) for n,r in records.items()])
 
 

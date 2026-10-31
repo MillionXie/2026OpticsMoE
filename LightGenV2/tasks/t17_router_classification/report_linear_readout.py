@@ -35,6 +35,8 @@ def main():
         name=f'b_kather{depth}';job=f'b_lg{depth}_convex';path=task/'runs/simulation/figure_convex_readout_s17_20261031/worker0'/job
         convex[name]=dict(run=str(path.relative_to(task)),profile=convex_cfg['jobs'][job] if convex_cfg else None,
                          status=read(path/'status.json') or dict(state='not_started'),result=read(path/'result.json'))
+    gram_path=task/'runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex'
+    gram=dict(run=str(gram_path.relative_to(task)),status=read(gram_path/'status.json') or dict(state='not_started'),result=read(gram_path/'result.json'))
     oldA=read(task/'reports/panel_a_original_test_development_20261031/results.json')
     baselineA={r['dataset']:r['D2NN_development_reference']['original_test_dev']['accuracy'] for r in oldA['cases']}
     baselineB={depth:read(task/f'runs/simulation/panel_b_d2nn60_s17_20261031/d2nn{depth}/result.json')['test']['accuracy'] for depth in (3,5,7)}
@@ -53,7 +55,7 @@ def main():
     out=task/'reports/panel_ab_linear_readout_20261031';out.mkdir(exist_ok=True)
     selected={};optimized_rows=''
     for name in records:
-        candidates=[records[name]]+([additional[name]] if name in additional else [])+([joint[name]] if name in joint else [])+([convex[name]] if name in convex else [])
+        candidates=[records[name]]+([additional[name]] if name in additional else [])+([joint[name]] if name in joint else [])+([convex[name]] if name in convex else [])+([gram] if name=='b_kather6' else [])
         eligible=[]
         for candidate in candidates:
             r=candidate['result'];pt=task/candidate['run']/'best_checkpoint.pt'
@@ -69,6 +71,7 @@ def main():
               CCD_geometry_prior_candidates=additional,selected_completed_development_candidates=selected,
               last_pair_and_Linear_joint_candidates=joint,
               frozen_convex_Linear_candidates=convex,
+              TRAIN_Gram_coordinate_candidate=gram,
               selection_policy='Within each fit: VAL macro recall then CE. Across completed SHA-verified initial/prior/joint/convex candidates: original TEST development correct count, explicitly authorized and not independent TEST.',
               B2_reuses_A1_same_checkpoint=True,D2NN_unchanged=True,generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat())
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')

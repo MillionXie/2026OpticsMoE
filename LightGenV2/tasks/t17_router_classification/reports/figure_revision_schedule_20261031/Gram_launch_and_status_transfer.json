@@ -1,0 +1,89 @@
+{
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/launch.json",
+      "sha256": "51898e3d9afc4d63e6f47e902627fd1474f089e27be6216b576f062bd36b1686",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/launch_context.json",
+      "sha256": "e63d33860b1007cf1ec64b4ee15d2dc8f822eb7a5609d410dbc4d62a1e67c52a",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/status.json",
+      "sha256": "809725b09bab6143a8dc96cbcb1265ec15eb6b5cfdee1ff4caa7177a7b3b2bfc",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/exit_receipt.json",
+      "sha256": "02d5feada4afeb0796ae4554d0f1a6a82b65e9d5ee49f908da75184045c69e34",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/smoke/figure_Gram_admission_s17_20261031/admission.json",
+      "sha256": "be47b0da7ff31450fc74c57487605ca37e837a976baeb24280cce26a76d5b363",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/f_lg_convex/metadata.json",
+      "sha256": "8fc86fe4024f67b1329a3cf36e5f825f73d5ffe3468926c732d89b538337ade6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/f_lg_convex/status.json",
+      "sha256": "6f3e31e25e9afeec3e780fcedd12c75ca14804f3c278e1fed1274a1ef2fbdb2d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/f_lg_convex/history.json",
+      "sha256": "4e6359e740b346ff89bc670a983fe6f68ddf9576008952d37dc21c533eab374e",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/f_lg_convex/result.json",
+      "sha256": "05aa754f76b27418d651ef5f49e218e4de3fd2a1a382740933625c8de148589a",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/f_lg_convex/cache_manifest.json",
+      "sha256": "918fef4a15b9abd39dd8095503244008215c28cca79521a642ed17bd50ee528e",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/f_lg_convex/selection_lock.json",
+      "sha256": "b288d848bc8135a2e60fb27ee336f10adeef979cefbec867ea4d8a1cb7edc7b3",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex/metadata.json",
+      "sha256": "fb797555447459215952cb85c3aac001219c55c4705d12b8c3bde9fdee4b5386",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex/status.json",
+      "sha256": "2632552d38929b519e654a3ac7ecdbf1be802502b54179327b4982a61a72f082",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex/history.json",
+      "sha256": "8b45ec21882cb6d065b9eedee324df8c7b91504facdb3fcec56b11aef9dbb1fe",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex/result.json",
+      "sha256": "ce531cc3696d4ed608f6944baf00632283eda2cd4b9e2f69943303f7c1dff5fa",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex/cache_manifest.json",
+      "sha256": "3a29e4bb8197093dee1d35635ca06794dee3490f219ed9d68a5ce5aa25b1ace6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_Gram_readout_s17_20261031/worker0/b_lg6_convex/selection_lock.json",
+      "sha256": "0354229b023411cc2b4aaf6fb8cc765719e1b4a90ebb35c34d23db5159031185",
+      "snapshot": true
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "source_commit": "e42f17f157ffd0bdd0d8473ab9fa138a273d2bd8",
+  "completed_and_SHA_strict_verified": true,
+  "B6": {
+    "correct": 652,
+    "n": 752,
+    "gain_over_D_pp": 14.627659574468085,
+    "shortfall_correct": 3,
+    "goal_reached": false
+  },
+  "F": {
+    "correct": 905,
+    "n": 2000,
+    "selected_train": 0.5598333477973938,
+    "selected_val": 0.4465000331401825,
+    "final_gradient_max_abs": 5.094576524494569e-07
+  },
+  "same_objective_and_150_inner_step_budget": true,
+  "no_new_inference_capacity": true,
+  "next_step": "Not implemented: inspect mature-head TRAIN errors/last checkpoint and choose finite optical refinement; do not infinitely continue head solver."
+}

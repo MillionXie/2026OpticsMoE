@@ -1,0 +1,75 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "job": "f_lg_convex",
+      "passed": true,
+      "all_optical_phase_tensors_bitwise_parent": true,
+      "exactly_one_Linear_no_CNN": true,
+      "total_parameters": 487204,
+      "checkpoint_sha256": "29575339258b329a4172594d90ad9ca5ab46aa919d40763215ef8ff5acfca6ff",
+      "splits": {
+        "train": {
+          "n": 6000,
+          "correct": 3359,
+          "accuracy": 0.5598333333333333,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "val": {
+          "n": 2000,
+          "correct": 893,
+          "accuracy": 0.4465,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "test": {
+          "n": 2000,
+          "correct": 905,
+          "accuracy": 0.4525,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        }
+      },
+      "full_canonical_TEST_replay": {
+        "predictions_identical": true,
+        "max_probability_difference": 4.6193599700927734e-06
+      }
+    },
+    {
+      "job": "b_lg6_convex",
+      "passed": true,
+      "all_optical_phase_tensors_bitwise_parent": true,
+      "exactly_one_Linear_no_CNN": true,
+      "total_parameters": 1344012,
+      "checkpoint_sha256": "e91a124115643ca8b0a06ae5d080ffee2acdcac1874878aff94746c503207444",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 3192,
+          "accuracy": 0.9130434782608695,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "val": {
+          "n": 752,
+          "correct": 563,
+          "accuracy": 0.7486702127659575,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        },
+        "test": {
+          "n": 752,
+          "correct": 652,
+          "accuracy": 0.8670212765957447,
+          "all_IDs_labels_same_parent": true,
+          "true_Top2": true
+        }
+      },
+      "full_canonical_TEST_replay": {
+        "predictions_identical": true,
+        "max_probability_difference": 3.6954879760742188e-06
+      }
+    }
+  ]
+}
