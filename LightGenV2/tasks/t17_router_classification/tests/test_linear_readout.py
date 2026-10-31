@@ -4,7 +4,7 @@ import pytest
 import torch
 from torch.nn import functional as F
 from LightGenV2.tasks.t17_router_classification.model_depth_ccd import DepthLG
-from LightGenV2.tasks.t17_router_classification.model_linear_readout import LinearReadoutLG,load_optical_parent
+from LightGenV2.tasks.t17_router_classification.model_linear_readout import LinearReadoutLG,load_optical_parent,initialize_CCD_region_prior
 from LightGenV2.tasks.t17_router_classification.readout_data import align_raw_pixels
 
 
@@ -42,3 +42,20 @@ def test_fast_raw_cache_enforces_labels_and_exact_pixel_order():
     assert np.array_equal(result['images'],images)
     with pytest.raises(ValueError,match='label order'):align_raw_pixels(images,labels[::-1],rows,np.array(['a','b']))
     with pytest.raises(ValueError,match='pixel order'):align_raw_pixels(images[::-1],labels,rows,np.array(['a','b']))
+
+
+@pytest.mark.parametrize('classes',[8,9])
+def test_CCD_prior_is_only_an_initialization_of_the_same_one_Linear(classes):
+    model=LinearReadoutLG(2,classes);before={n:p.detach().clone() for n,p in model.named_parameters() if n!='shared_head.weight'}
+    initialize_CCD_region_prior(model)
+    assert all(torch.equal(p,before[n]) for n,p in model.named_parameters() if n in before)
+    ys=(0,239,478) if classes==8 else (0,159,318,478)
+    xs=(0,119,239,358,478) if classes==8 else ys
+    examples=[]
+    for y0,y1 in zip(ys,ys[1:]):
+        for x0,x1 in zip(xs,xs[1:]):
+            x=torch.ones(478,478);x[y0:y1,x0:x1]=3;examples.append(x)
+    features=F.adaptive_avg_pool2d(torch.stack(examples)[:,None],28).flatten(1)
+    features=features/features.mean(1,keepdim=True)
+    assert torch.equal(model.shared_head(features).argmax(1),torch.arange(classes))
+    assert sum(isinstance(m,torch.nn.Linear) for m in model.modules())==1

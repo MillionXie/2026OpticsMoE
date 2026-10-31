@@ -39,3 +39,30 @@ def load_optical_parent(model, state):
     status=model.load_state_dict(state,strict=False)
     if status.missing_keys!=['shared_head.weight'] or status.unexpected_keys:
         raise ValueError('Parent must match every optical tensor and lack only the new Linear head')
+
+
+@torch.no_grad()
+def initialize_CCD_region_prior(model, temperature=.1):
+    """Project fixed detector sums onto pooling bins; training initialization only.
+
+    The resulting classifier is still exactly the same one Linear. No ROI
+    classifier is blended into inference, and no sample/label is used here.
+    """
+    classes=model.shared_head.out_features
+    if classes not in (8,9) or temperature<=0:raise ValueError('Supported CCD prior requires C8/C9 and positive scale')
+    pooling=torch.zeros((28,478),dtype=torch.float64)
+    for i in range(28):
+        start=i*478//28;end=((i+1)*478+27)//28
+        pooling[i,start:end]=1/(end-start)
+    ys=(0,239,478) if classes==8 else (0,159,318,478)
+    xs=(0,119,239,358,478) if classes==8 else ys
+    weights=[]
+    for y0,y1 in zip(ys,ys[1:]):
+        sy=torch.zeros(478,dtype=torch.float64);sy[y0:y1]=1
+        wy=torch.linalg.lstsq(pooling.T,sy).solution
+        for x0,x1 in zip(xs,xs[1:]):
+            sx=torch.zeros(478,dtype=torch.float64);sx[x0:x1]=1
+            wx=torch.linalg.lstsq(pooling.T,sx).solution
+            weights.append(torch.outer(wy,wx).flatten())
+    value=torch.stack(weights)*(classes/(temperature*478**2))
+    model.shared_head.weight.copy_(value.to(model.shared_head.weight))

@@ -10,7 +10,7 @@ import time
 import numpy as np
 import torch
 from torch.nn import functional as F
-from .model_linear_readout import LinearReadoutLG,load_optical_parent
+from .model_linear_readout import LinearReadoutLG,load_optical_parent,initialize_CCD_region_prior
 from .model_depth_ccd import depth_contract
 from .readout_data import load_raw
 from .train import encode,write
@@ -51,6 +51,8 @@ def train_job(name,cfg,out,common):
     if sha256(parent_path)!=cfg['parent_checkpoint_sha256']:raise ValueError('Optical parent SHA')
     parent=torch.load(parent_path,map_location='cpu',weights_only=False)
     model=LinearReadoutLG(cfg['main_layers'],cfg['num_classes']).cuda();load_optical_parent(model,parent['model'])
+    if cfg.get('head_initialization','seed122')=='CCD_region_prior':
+        initialize_CCD_region_prior(model,cfg.get('head_prior_temperature',.1))
     for n,p in model.named_parameters():p.requires_grad_(n=='shared_head.weight')
     optical_count=sum(p.numel() for n,p in model.named_parameters() if n!='shared_head.weight')
     expected=depth_contract(cfg['main_layers'])['LG_phase_parameters']
