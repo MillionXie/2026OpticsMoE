@@ -22,6 +22,8 @@ class SourceGroundedRepair(unittest.TestCase):
                 self.assertNotIn('adjustable',row['public_training_prompt']);self.assertEqual(row['public_training_prompt'],condition('lamp','D')['prompt'])
                 self.assertNotIn('target',row)
             self.assertFalse(json.loads((out/'report.json').read_text())['eligible_for_training'])
+            write(spec,dict(form_labels_from_white_input_only=True,teacher_image_guidance=1.2,cases=[case]));prepare(plan,spec,p/'lower_guidance')
+            lowered=json.loads((p/'lower_guidance/requests.json').read_text());self.assertTrue(all(r['teacher_image_guidance']==1.2 for r in lowered));self.assertEqual([r['seed']for r in lowered],[r['seed']for r in rows])
             case['source_form_hint']='rectangular_cushion';write(spec,dict(form_labels_from_white_input_only=True,cases=[case]))
             with self.assertRaises(ValueError):prepare(plan,spec,p/'wrong_form')
     def test_teacher_wording_is_short_and_has_no_reference_or_identity(self):
@@ -35,6 +37,8 @@ class SourceGroundedRepair(unittest.TestCase):
         self.assertNotIn('rectangular',condition('pillow','S')['prompt'])
         self.assertIn('wide solid cylindrical body',form_teacher_prompt('lamp','W','solid_cylinder_lamp','wide_support_v2'))
         self.assertIn('solid rectangular column body',form_teacher_prompt('lamp','D','rectangular_column_lamp','wide_support_v2'))
+        self.assertIn('separate loose rectangular throw pillow',form_teacher_prompt('pillow','S','rectangular_cushion','loose_object_v3'))
+        with self.assertRaises(ValueError):form_teacher_prompt('lamp','W','column_lamp','loose_object_v3')
         with self.assertRaises(ValueError):form_teacher_prompt('pillow','S','rectangular_cushion','silent_change')
 
 

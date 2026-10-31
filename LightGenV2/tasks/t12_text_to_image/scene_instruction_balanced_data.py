@@ -38,6 +38,7 @@ def checked_pool(root,review_path,allowed):
         if expected is None or row['prompt']!=expected['prompt']:raise ValueError('Unrecorded teacher prompt')
         if row['seed']!=request_seed(row['reference_sha256'],row['seed_index']):raise ValueError('Teacher seed must depend only on original input and ordinal')
         if profile==FORM_PROFILE and(forms is None or forms.get(row['reference_id'])!=dict(reference_sha256=row['reference_sha256'],source_form_hint=row['source_form_hint'])or row['public_training_prompt']!=condition(row['category'],code)['prompt']):raise ValueError('Unbound source-form construction hint')
+        if profile==FORM_PROFILE and row.get('teacher_image_guidance',1.6)!=report['teacher_recipe']['image_guidance']:raise ValueError('Unbound TRAIN teacher image guidance')
         if sha(root/row['reference'])!=row['reference_sha256']or sha(root/row['target'])!=row['target_sha256']or annotation['target_sha256']!=row['target_sha256']:raise ValueError('Review pixel identity changed')
         accepted=annotation['status']=='usable_TRAIN_example'
         if annotation['accepted_for_training']!=accepted:raise ValueError('Uncertain/rejected is not usable')

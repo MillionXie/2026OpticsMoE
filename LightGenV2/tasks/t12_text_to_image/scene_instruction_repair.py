@@ -17,6 +17,7 @@ from .scene_generation_data import request_seed
 
 FORM_PROFILE='TRAIN_source_form_support_teacher_v1'
 WIDE_SUPPORT='wide_support_v2'
+LOOSE_OBJECT='loose_object_v3'
 FORMS={'articulated_desk':('lamp','an adjustable desk lamp'),'column_lamp':('lamp','a table lamp with a column base'),
        'solid_cylinder_lamp':('lamp','a table lamp with a wide solid cylindrical body'),'rectangular_column_lamp':('lamp','a table lamp with a solid rectangular column body'),
        'rounded_lamp':('lamp','a table lamp with a rounded base'),'ornamental_lamp':('lamp','a table lamp with a sculpted base'),
@@ -26,6 +27,11 @@ FORMS={'articulated_desk':('lamp','an adjustable desk lamp'),'column_lamp':('lam
 def form_teacher_prompt(category,code,hint,variant='original_v1'):
     if hint not in FORMS or FORMS[hint][0]!=category or code not in primary_codes(category):raise ValueError('Input-grounded supported coarse form required')
     noun=FORMS[hint][1]
+    if variant==LOOSE_OBJECT:
+        if category!='pillow':raise ValueError('Loose-cushion construction only')
+        support={'S':'sofa','A':'armchair','D':'bed'}[code]
+        form='rectangular'if hint=='rectangular_cushion'else'square'
+        return f'Generate an indoor photograph of a {support} in a furnished room. One separate loose {form} throw pillow rests on the {support}, distinct from its upholstery.'
     if variant==WIDE_SUPPORT:
         if category=='lamp':
             if code=='D':return f'Generate a wide bedroom photograph of {noun} standing on a wooden bedside table. Show the table and a bed together.'
@@ -45,6 +51,8 @@ def prepare(plan,specification,output):
     parent=json.loads((plan/'report.json').read_text(encoding='utf8'));rows=json.loads((plan/'requests.json').read_text(encoding='utf8'))
     if parent['schema']!='scene_balanced_visible_anchor_plan_v1'or sha(plan/'requests.json')!=parent['request_sha256']:raise ValueError('Fixed original TRAIN plan required')
     sources={r['reference_id']:r for r in rows};spec=json.loads(specification.read_text(encoding='utf8'));cases=spec['cases']
+    image_guidance=spec.get('teacher_image_guidance',1.6)
+    if image_guidance not in [1.,1.2,1.6]:raise ValueError('Explicit approved TRAIN teacher guidance required')
     if not spec.get('form_labels_from_white_input_only')or not cases:raise ValueError('Explicit input-only form audit required')
     annotations={};requests=[];seen=set();output.mkdir();(output/'references').mkdir()
     for case in cases:
@@ -60,13 +68,13 @@ def prepare(plan,specification,output):
         for index in [0,1]:
             row=dict(source,**condition(source['category'],code));row.update(sample_id=source['reference_id']+'-form-repair-'+code+('-wide'if variant==WIDE_SUPPORT else'')+'-draw'+str(index),
                 seed_index=index,seed=request_seed(source['reference_sha256'],index),prompt=prompt,native_caption=prompt,reward_caption=prompt,
-                prompt_profile=FORM_PROFILE,anchor_code=code,source_form_hint=hint,reused_reviewed_label=None,teacher_construction_variant=variant,
+                prompt_profile=FORM_PROFILE,anchor_code=code,source_form_hint=hint,reused_reviewed_label=None,teacher_construction_variant=variant,teacher_image_guidance=image_guidance,
                 public_training_prompt=condition(source['category'],code)['prompt'],teacher_prompt_has_extra_input_form_description=True)
             requests.append(row)
     write(output/'source_form_annotations.json',annotations);write(output/'requests.json',requests)
     write(output/'report.json',dict(complete=True,schema='scene_source_form_repair_plan_v1',source_commit=os.environ.get('T12_SOURCE_COMMIT'),
         source_plan_sha256=parent['request_sha256'],specification_sha256=sha(specification),request_sha256=sha(output/'requests.json'),
-        source_form_annotations_sha256=sha(output/'source_form_annotations.json'),requests=len(requests),TRAIN_only=True,
+        source_form_annotations_sha256=sha(output/'source_form_annotations.json'),requests=len(requests),teacher_image_guidance=image_guidance,TRAIN_only=True,
         source_form_labels_enter_teacher_construction_prompt_only=True,student_public_prompt_not_changed=True,DEV_or_TEST_accessed=False,eligible_for_training=False))
 
 
@@ -78,6 +86,8 @@ def generate(a):
     if os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU or a.output.exists():raise ValueError('Fresh serial GPU6 run required')
     report=json.loads((a.plan/'report.json').read_text(encoding='utf8'));rows=json.loads((a.plan/'requests.json').read_text(encoding='utf8'));forms=json.loads((a.plan/'source_form_annotations.json').read_text(encoding='utf8'))
     if report['schema']!='scene_source_form_repair_plan_v1'or sha(a.plan/'requests.json')!=report['request_sha256']or sha(a.plan/'source_form_annotations.json')!=report['source_form_annotations_sha256']or len(rows)!=report['requests']:raise ValueError('Changed repair plan')
+    image_guidance=report.get('teacher_image_guidance',1.6)
+    if image_guidance not in [1.,1.2,1.6]or any(r.get('teacher_image_guidance',1.6)!=image_guidance for r in rows):raise ValueError('Changed teacher image guidance')
     for row in rows:
         if row['split']!='train'or row['prompt']!=form_teacher_prompt(row['category'],row['anchor_code'],row['source_form_hint'],row.get('teacher_construction_variant','original_v1'))or forms[row['reference_id']]!=dict(reference_sha256=row['reference_sha256'],source_form_hint=row['source_form_hint']):raise ValueError('Changed input-only teacher specification')
     a.output.mkdir();(a.output/'references').mkdir();(a.output/'targets').mkdir();write(a.output/'requests.json',rows);shutil.copyfile(a.plan/'source_form_annotations.json',a.output/'source_form_annotations.json')
@@ -94,12 +104,12 @@ def generate(a):
         if not(a.output/row['reference']).exists():shutil.copyfile(src,a.output/row['reference'])
         generator=torch.Generator(device='cuda').manual_seed(row['seed']);noise=torch.randn((1,4,64,64),generator=generator,device='cuda',dtype=torch.bfloat16)
         noise_sha=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()
-        with torch.inference_mode():image=pipe(prompt='<img><|image_1|></img>\n'+row['prompt'],input_images=[reference],height=512,width=512,num_inference_steps=50,max_input_image_size=256,guidance_scale=2.5,img_guidance_scale=1.6,use_input_image_size_as_output=False,generator=generator,latents=noise).images[0]
+        with torch.inference_mode():image=pipe(prompt='<img><|image_1|></img>\n'+row['prompt'],input_images=[reference],height=512,width=512,num_inference_steps=50,max_input_image_size=256,guidance_scale=2.5,img_guidance_scale=image_guidance,use_input_image_size_as_output=False,generator=generator,latents=noise).images[0]
         filename='targets/'+row['sample_id']+'.png';image.save(a.output/filename)
         records.append(dict(row,target=filename,target_sha256=sha(a.output/filename),QA_accepted=False,initial_latent_sha256=noise_sha))
         write(a.output/'candidates.json',records);write(a.output/'progress.json',dict(stage='TRAIN_source_form_target_repair',done=len(records),total=len(rows)))
     write(a.output/'report.json',dict(complete=True,source_commit=os.environ.get('T12_SOURCE_COMMIT'),schema='scene_source_form_TRAIN_candidates_v1',prompt_profile=FORM_PROFILE,
-        candidate_manifest_sha256=sha(a.output/'candidates.json'),source_form_annotations_sha256=sha(a.output/'source_form_annotations.json'),teacher_recipe=TEACHER_RECIPE,
+        candidate_manifest_sha256=sha(a.output/'candidates.json'),source_form_annotations_sha256=sha(a.output/'source_form_annotations.json'),teacher_recipe=dict(TEACHER_RECIPE,image_guidance=image_guidance),
         requests=len(rows),TRAIN_only=True,DEV_or_TEST_forwarded=False,eligible_for_training=False,student_public_prompt_not_changed=True,
         stronger_teacher_construction_prompt_not_a_benchmark_output=True,all_candidates_require_per_fact_QA=True))
 
