@@ -1,0 +1,83 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/f_joint_router_projection_s17_20261101/joint"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/SOURCE_TEST_teacher_logits.npz",
+      "size": 600836,
+      "sha256": "d5047a1b9dac325d2ba0336f31750cdc997df15028a2a732b4478cf5378c239e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/TRAIN_teacher_logits.npz",
+      "size": 1799010,
+      "sha256": "e9d0015948c8ce122d6438687f2899b022d0dd37dd5fddcc1161e9348682ec48"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/best_checkpoint.pt",
+      "size": 1961168,
+      "sha256": "19c142ad0c159be1591d14142544c57e5ccbddd66a72ad943d1b9dbb5f1595d9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/exit_receipt.json",
+      "size": 56,
+      "sha256": "44be53f8bfd19383fd224212e2df0cf863aff352c2cf6cce2cad1039435fdd10"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/history.json",
+      "size": 151012,
+      "sha256": "683de926911234d6c0b4f31193e3aceb025d349f38f261a8c0854a90f9ac0a20"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/last_checkpoint.pt",
+      "size": 5797495,
+      "sha256": "7ff5c395ca0791faa7162999c74f03b9ef2db6d2bcb5509690a6b3287ce0cc38"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/metadata.json",
+      "size": 8321,
+      "sha256": "dda4a2bb1d422e31423e79059de6273111559c07c4f3cc07026b54e10ff9db39"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/result.json",
+      "size": 14092,
+      "sha256": "771e019c39c8083816fef0b3611a981a304e039b94e96ded69d96949e22a675c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/selection_lock.json",
+      "size": 245,
+      "sha256": "e0892fd9e2486d50132c6b45225632b43288a185da6100a82b556cb6332e1c61"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/source_TEST_distillation_manifest.json",
+      "size": 1156,
+      "sha256": "363a225b4b2135976f9a68cb4f039d9b2935a76099290b253df80b72181e0e92"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/status.json",
+      "size": 14133,
+      "sha256": "3cb61032f00c34168fe201f005456a444f6226c1cfa4eb7cbd2bb33d0ce25c7d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/teacher_manifest.json",
+      "size": 1288,
+      "sha256": "29c52c1a7d2350aa03fd0d09bb2b2cd8d884a143456f85399a6dd432d4530b98"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/test_predictions.npz",
+      "size": 138017,
+      "sha256": "ff5bf2d7fbf64f7d92ffbe3b6a84bd84dde26624530bf009ab40f7b252e78154"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/train_predictions.npz",
+      "size": 407371,
+      "sha256": "b506cd6214484f7a2077f1983e32ada7b04e2a460a45126d44f82191c4a76d67"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101/joint/val_predictions.npz",
+      "size": 137672,
+      "sha256": "378fa30022caa1a17d6f994401fdbd6538741687bbe31e39c203051049d1e204"
+    }
+  ]
+}

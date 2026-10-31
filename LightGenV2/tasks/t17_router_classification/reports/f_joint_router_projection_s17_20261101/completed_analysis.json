@@ -1,0 +1,35 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "complete_epochs": 20,
+  "selected_epoch": 10,
+  "checkpoint_sha256": "19c142ad0c159be1591d14142544c57e5ccbddd66a72ad943d1b9dbb5f1595d9",
+  "metrics": {
+    "train": {
+      "RGB": 0.646,
+      "SAR": 0.5916666666666667
+    },
+    "val": {
+      "RGB": 0.564,
+      "SAR": 0.512
+    },
+    "original_test_dev": {
+      "RGB": 0.631,
+      "SAR": 0.479
+    }
+  },
+  "development_correct_change_vs_parent_RGB_SAR": [
+    -1,
+    -4
+  ],
+  "parent_retained": true,
+  "parent_checkpoint_sha256": "124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057",
+  "phase_head_updates": 2520,
+  "router_task_gradient_evaluations": 5040,
+  "conflict_projected_batches": 1378,
+  "TEST_random_view_presentations": 40000,
+  "head_blocks": 4,
+  "head_view_presentations": 256000,
+  "head_inner_steps": 160,
+  "conclusion": "Bounded conflict-projection candidate did not improve either exposed-development domain; keep entire124 parent row. No capacity-bound inference. Existing numerical one-step optimizer probe supports a conditional direction-preserving router update, not a performance claim.",
+  "next_method_status": "HYPOTHESIS_NOT_IMPLEMENTED_NOT_STARTED"
+}

@@ -1,3 +1,12 @@
+## F冲突投影候选完整失败归档，保留63.20/48.30父（2026-11-01）
+
+worker2220466已20轮平台停选E10：TRAIN RGB64.60/SAR59.1667，VAL56.40/51.20，原TEST开发63.10/47.90，同一PT SHA19c142ad0c159be1591d14142544c57e5ccbddd66a72ad943d1b9dbb5f1595d9。两域各比124父少1/4正确，未达70，完整失败保留，不拼PT。
+15文件11.03MB best/last/完整三split scores/route/两teacher缓存及manifest已远程本地SHA、strict4state487204/唯一Linear/noCNN/原完整ID标签域/真实Top2/teacher精确合并/GT隔离、全2000canonicalTEST概率bitwise重放通过，PID退出无GPU分配；当前没有自己的训练。
+实际2520phase/head更新、5040额外router任务梯度评估、40000TEST随机视图、4x64000头呈现256000/160内步，实际冲突batch数见completed_analysis.json。
+主图保留同一124父开发63.20/48.30（TRAIN64.5667/59.0333、VAL56.20/51.10），而非自动采用最新失败权重。每run按VAL选权重；跨完整核验候选按已授权的较低域原TEST开发准确率、再均值选整行，并要求较低域VAL不低于原774e联合父。显式开发选择，不能冒称纯VAL选模或独立TEST；所有父/失败均列明。
+下一有界方法尚未实现/未启动：按同完整TRAIN非持久数值试探证据，保留router投影的物理方向，用规范角度SGD或配对TRAIN回溯代替破坏方向的Adam预条件；其余E/G/head保持原路径、同teacher/数据/Top2/OEO/单Linear无CNN。仅3个新鲜状态/原图code0试探，不是当前动量/所有D4或泛化证明，收益微小不保证70。
+需从精确124父实现默认兼容/数值与GT隔离/真实GPU准入/发布后再有限运行，不盲扫或无限加轮，不动D/A/B，d暂缓/j不管。
+
 ## F联合router冲突投影实现与有限候选（2026-11-01）
 
 按完整6000原TRAIN code0真实梯度冲突证据，实现可选router_gradient_projection=two_domain_physical；默认关闭，模型推理仍4state487204、唯一Linear无CNN/原Top2与OEO不变。

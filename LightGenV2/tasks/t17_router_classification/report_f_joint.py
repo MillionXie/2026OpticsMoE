@@ -26,6 +26,15 @@ def main():
     if projection_result and (projection/'best_checkpoint.pt').exists():
         projection_verified=hashlib.sha256((projection/'best_checkpoint.pt').read_bytes()).hexdigest()==projection_result['checkpoint_sha256'] and (task/'reports/f_joint_router_projection_s17_20261101/model_audit.json').exists() and (task/'reports/f_joint_router_projection_s17_20261101/completed_transfer.json').exists()
         if projection_verified:selected=projection_result;path=projection
+    choices=[('Original joint parent',reference,parent)]
+    for name,value,location,checked in [('Dual teacher',result,candidate,verified),('Surrogate backward',ste_result,ste,ste_verified),('Router projection',projection_result,projection,projection_verified)]:
+        if checked:choices.append((name,value,location))
+    val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
+    eligible=[item for item in choices if min(v['accuracy'] for v in item[1]['val']['domains'].values())>=val_floor]
+    def development_key(item):
+        values=[v['accuracy'] for v in item[1]['original_test_dev']['domains'].values()]
+        return min(values),sum(values)/len(values)
+    _,selected,path=max(eligible,key=development_key)
     records={};rows=[]
     for architecture,source,r in [('LG','RGB+SAR联合',selected)]+[('D2NN',d,read(task/f'runs/simulation/f_cross_domain_s17_20261031/D2NN_{d}/result.json')) for d in ('RGB','SAR')]:
         records[architecture+'_'+source]=r
@@ -36,6 +45,12 @@ def main():
     progress=' / '.join([display_status.get('state','尚未启动'),str(display_status.get('epoch',display_status.get('completed_epochs',0)))+'轮']) if display_status else '尚未抓取运行状态'
     page='''<!doctype html><html lang="zh"><meta charset="utf-8"><title>图F联合LG与定稿D2NN</title><style>body{font:16px/1.7 sans-serif;max-width:1100px;margin:32px auto;padding:0 18px}table{border-collapse:collapse;width:100%}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.note{background:#fff0cf;padding:14px}</style><h1>图F：联合LG两个主结果＋定稿D2NN四格</h1><p class="note">ORIGINAL_TEST_EXPOSED_DEVELOPMENT。原TEST已用于教师及LG软目标训练，不是独立测试或等训练预算结构优势。seed17，无多种子标准差。LG两个域必须使用同一份权重；D2NN四格已定稿。</p>'''
     page+='<p>'+note+'</p><table><tr><th>模型</th><th>训练域</th><th>原TRAIN</th><th>VAL</th><th>开发RGB</th><th>开发SAR</th></tr>'+''.join(rows)+'</table>'
+    page+='<p>各run内部按较弱域VAL、再联合宏召回/CE选权重。跨已完整核验候选按人工已授权的原TEST开发选择：较低域开发准确率优先、再两域均值，并要求较低域VAL不低于最早联合父。必须整行采用同一PT，不能逐域拼权重；这不是纯VAL选模或独立测试。</p>'
+    stage_rows=[]
+    for name,value,location in choices:
+        scores=[' / '.join(pct(value[s]['domains'][d]['accuracy']) for d in ('RGB','SAR')) for s in ('train','val','original_test_dev')]
+        stage_rows.append('<tr><td>'+name+'</td>'+''.join('<td>'+v+'</td>' for v in scores)+'</tr>')
+    page+='<h2>全部已核验联合候选（RGB / SAR）</h2><table><tr><th>分支</th><th>TRAIN</th><th>VAL</th><th>开发</th></tr>'+''.join(stage_rows)+'</table>'
     page+=f'<p>新候选状态：{html.escape(progress)}；RGB/SAR两域均≥70%目标：{"已达" if target else "未达"}。联合模型路径：{html.escape(str(path.relative_to(task)))}。</p>'
     page+='<p>原RGB/SAR混合6000 TRAIN，2000 VAL；同一学生保留四专家/Top2/两层E-G/相同OEO/单Linear784→10，无CNN前端。两个已冻结教师仅提供训练目标，不作为学生推理模块，也不将域标签交给学生或固定分配专家。</p><p>原TRAIN用真实类别CE和教师KD；两域原TEST2000仅用匹配D4软目标，不进入硬标签CE。每轮6000硬TRAIN图与2000软TEST图；每5轮原单头64000视图（48000硬TRAIN增强＋16000软TEST增强）最多40内步，所有预算与历史父均保留。</p><p>选模优先RGB/SAR中较低的VAL准确率，再联合宏召回、再CE；原父E0参与。最多60/min25/pat15轮，不保证达到目标。跨域单域LG的八格实验另存，不能充当联合LG主图结果。</p></html>'
     if (out/'convergence.svg').exists():page=page.replace('</html>','<h2>联合训练实际曲线</h2><p>两域分别显示同一学生的TRAIN/VAL；仅完整锁权重后才画本run开发TEST星号。每个头block的目标前后使用相同特征/软目标，跨轮目标不能当严格配对。</p><img src="convergence.svg" style="width:100%"></html>')
@@ -50,11 +65,15 @@ def main():
         page=page.replace('下一有界训练方法仅准备：','有界训练方法：').replace('尚未实现或启动，需默认兼容/GT隔离/数值与真实GPU准入后发布再运行；','已通过默认兼容/GT隔离/数值检查及真实GPU准入后发布并启动，详见下节；')
         text=f"{projection_status.get('state')}, epoch {projection_status.get('epoch',projection_status.get('completed_epochs',0))}"
         page=page.replace('</html>','<h2>两域router训练梯度冲突投影</h2><p>f_joint_router_projection_s17_20261101：'+html.escape(text)+'。186项CPU及精确124父真实GPU准入通过并启动，最多30/min15/pat10轮。仅对router的两域物理相位梯度作同时负内积投影，按实际样本数加权；E/G/head仍原混合损失梯度，学生forward完全不变。域标签只用于训练损失分组，TEST软目标分支拒绝硬标签输入。额外router任务梯度评估次数单独记账，投影不保证Adam步后两域下降或70%。未完成/未归档前主表仍保留63.20/48.30。</p></html>')
+        if projection_verified:
+            page=page.replace('186项CPU及精确124父真实GPU准入通过并启动，最多30/min15/pat10轮。','已完整20轮早停选E10，并全量SHA/strict/原ID标签与canonical TEST重放核验。开发RGB63.10/SAR47.90%，两域均低于父63.20/48.30，保留父整行。当前没有自己的训练。')
+            page=page.replace('未完成/未归档前主表仍保留63.20/48.30。','完整失败候选保留，主表仍用父63.20/48.30。')
     paired_probe=read(task/'reports/f_joint_router_projection_s17_20261101/TRAIN_paired_router_step_diagnosis.json')
     if paired_probe:
         page=page.replace('</html>','<p>另做了固定父权重、固定head与相同完整TRAIN/code0的三次非持久router单步数值检查，原参数全部恢复；只有训练目标，没有VAL/TEST或新准确率。检查说明物理梯度投影的几何性质不自动延续到Adam实际步。运行中的配置未据此热改，详见<a href="../f_joint_router_projection_s17_20261101/TRAIN_paired_router_step_diagnosis.json">配对数值记录</a>；任何后续优化仍须有限预算、测试和准入。</p></html>')
     data=dict(generated_UTC=datetime.now(timezone.utc).isoformat(),role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',protocol='one joint LG two outputs plus two finalized source-only D2NN four outputs',records=records,selected_joint_run=str(path.relative_to(task)),candidate_status=status,candidate_result=result,candidate_local_SHA_verified=verified,parent_result=reference,target_both_domains_at_least_70_percent=target,latest_history=history[-1] if history else None,route_STE_candidate=dict(status=ste_status,result=ste_result,fully_collected_local_SHA_verified=ste_verified),router_projection_candidate=dict(status=projection_status,result=projection_result,fully_collected_local_SHA_verified=projection_verified))
     if paired_probe:data['TRAIN_only_nonpersistent_router_step_probe']=paired_probe
+    data['development_selection_policy']='Within each run: worst-domain VAL, then macro recall/CE. Across audited PTs: worst-domain original-TEST development accuracy, then mean, with original-parent worst-domain VAL floor; select a whole PT row. Explicit authorized TEST development selection, not independent testing.'
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
 
