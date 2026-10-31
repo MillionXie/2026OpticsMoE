@@ -338,6 +338,11 @@ def fit(a, payload):
     if a.config_profile.get('balance_TRAIN_reference_condition_groups',False):
         from .scene_instruction_balanced_data import reference_condition_weights
         group_weights=reference_condition_weights(train)
+    if a.config_profile.get('weight_partial_reviewed_targets',False):
+        for row in train:
+            weight=row.get('supervision_weight')
+            if weight not in [0.5,1.0]or row.get('training_admission_policy')not in ['basic_subject_quality_v2','all_facts_form_quality_v1']:raise ValueError('Explicit reviewed partial-target weight required')
+            group_weights[row['sample_id']]*=weight
     dev = [r for r in payload['records'] if r['split'] == 'dev' and (a.config_profile.get('use_all_reviewed_DEV_labels',False)or r['condition_id'] in ['0', '1'])]
     assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
     cache_digest = digest(a.cache/'paired_cache.pt')

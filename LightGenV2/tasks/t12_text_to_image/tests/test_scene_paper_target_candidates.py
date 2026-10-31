@@ -1,6 +1,6 @@
 import copy
 import unittest
-from LightGenV2.tasks.t12_text_to_image.scene_paper_target_candidates import checked_train_rows
+from LightGenV2.tasks.t12_text_to_image.scene_paper_target_candidates import checked_train_rows,selected_rows
 from LightGenV2.tasks.t12_text_to_image.scene_paper_prompt_protocol import condition,PROFILE,PARENT_PAIRS
 from LightGenV2.tasks.t12_text_to_image.scene_generation_data import request_seed
 
@@ -19,6 +19,9 @@ class TargetRoleTest(unittest.TestCase):
 
     def test_complete_counterfactuals(self):
         r,rows,dev=self.fixture();self.assertEqual(len(checked_train_rows(r,rows,dev)),264)
+        first=selected_rows(rows,[0]);self.assertEqual(len(first),132);self.assertEqual(len({r['reference_id']for r in first}),44)
+        self.assertTrue(all(r['sample_id'].endswith('-draw0')for r in first))
+        with self.assertRaises(ValueError):selected_rows(rows,[0,0])
 
     def test_role_prompt_and_seed_guards(self):
         for field,value in [('reference_sha256','f'*64),('seed',-1),('prompt','A changed instruction.')]:

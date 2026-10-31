@@ -9,6 +9,12 @@ from LightGenV2.tasks.t12_text_to_image.scene_paper_paired_data import accepted_
 
 
 class NewTargets(unittest.TestCase):
+    def test_explicit_basic_policy_retains_hard_examples_without_full_success(self):
+        rows=[dict(sample_id=str(i),target_sha256='a'*64)for i in range(4)]
+        review=dict(schema='scene_paper_new_target_review_v1',all_candidates_reviewed=True,admission_policy='basic_subject_quality_v2',candidate_manifest_sha256='b'*64,rows=[dict(sample_id=str(i),target_sha256='a'*64,facts='YNN'if i==0 else'NYY'if i==1 else'YYY',coarse_form='N',quality='N'if i==2 else'Y',gross_subject_failure=i==3,accepted=i==0)for i in range(4)])
+        self.assertEqual(accepted_ids(rows,review,'b'*64),{'0'})
+        review.pop('admission_policy')
+        with self.assertRaises(ValueError):accepted_ids(rows,review,'b'*64)
     def test_uncertain_facts_and_shape_rejected(self):
         rows=[dict(sample_id=str(i),target_sha256='a'*64)for i in range(4)]
         review=dict(schema='scene_paper_new_target_review_v1',all_candidates_reviewed=True,candidate_manifest_sha256='b'*64,rows=[dict(sample_id=str(i),target_sha256='a'*64,facts=['YYY','YYU','YYY','YYY'][i],coarse_form='N'if i==2 else'Y',quality='N'if i==3 else'Y',accepted=i==0)for i in range(4)])

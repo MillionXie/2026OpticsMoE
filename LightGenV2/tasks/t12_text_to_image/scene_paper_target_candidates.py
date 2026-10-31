@@ -43,9 +43,17 @@ def checked_train_rows(report,rows,dev):
     return rows
 
 
+def selected_rows(rows,draws):
+    if draws not in [[0],[1],[0,1]]:raise ValueError('Explicit source-only draw selection required')
+    chosen=[r for r in rows if any(r['sample_id'].endswith('-draw'+str(j))for j in draws)]
+    if len(chosen)!=132*len(draws)or len({r['reference_id']for r in chosen})!=44:raise ValueError('Keep all44 TRAIN sources and all3 scenes')
+    return chosen
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['plan','model-path','metadata','output']:p.add_argument('--'+name,type=Path,required=True)
+    p.add_argument('--draws',type=int,nargs='+',default=[0,1]);p.add_argument('--reuse-verified',type=Path)
     a=p.parse_args();from .white_reference_scene_probe import GPU
     if a.output.exists()or len(os.environ.get('T12_SOURCE_COMMIT',''))!=40 or os.environ.get('CUDA_VISIBLE_DEVICES')!=GPU:
         raise ValueError('New run, published source and authorized GPU6 required')
@@ -53,6 +61,7 @@ def main():
     checked_train_rows(report,rows,dev)
     if sha(a.plan/'train_inputs.json')!=report['TRAIN_request_sha256']or sha(a.plan/'dev_inputs.json')!=report['request_sha256']:
         raise ValueError('Plan manifest changed')
+    rows=selected_rows(rows,a.draws)
     for r in rows:
         if sha(a.plan/r['reference'])!=r['reference_sha256']:raise ValueError('Reference bytes changed')
     a.output.mkdir(parents=True);(a.output/'references').mkdir();(a.output/'targets').mkdir()
@@ -62,16 +71,25 @@ def main():
         from PIL import Image
         from diffusers import OmniGenPipeline
         from .scene_omnigen_peer import checked_assets,REVISION
-        write(a.output/'model_assets.json',checked_assets(a.model_path,a.metadata));write(a.output/'requests.json',rows)
+        assets=checked_assets(a.model_path,a.metadata);write(a.output/'model_assets.json',assets);write(a.output/'requests.json',rows);reuse={}
+        if a.reuse_verified:
+            marker=json.loads((a.reuse_verified/'superseded_generation.json').read_text());execution=json.loads((a.reuse_verified/'execution.json').read_text())
+            if marker.get('own_generator_stopped')is not True or marker['candidate_manifest_sha256']!=sha(a.reuse_verified/'candidates.json')or execution['source_commit']!='63d2227dd4a41ad306ae13b13966a35e7f10a116'or json.loads((a.reuse_verified/'model_assets.json').read_text())!=assets:raise ValueError('Preserved exact-recipe source candidates required; never read a concurrently changing run')
+            prior=json.loads((a.reuse_verified/'candidates.json').read_text());reuse={r['sample_id']:r for r in prior}
         torch.set_num_threads(4)
         pipe=OmniGenPipeline.from_pretrained(a.model_path,torch_dtype=torch.bfloat16,local_files_only=True).to('cuda')
         pipe.set_progress_bar_config(disable=True);pipe.enable_vae_slicing()
         for component in pipe.components.values():
             if isinstance(component,torch.nn.Module):component.eval().requires_grad_(False)
-        records=[]
+        records=[];reused=0
         for i,r in enumerate(rows):
             source=a.plan/r['reference'];dst=a.output/r['reference']
             if not dst.exists():shutil.copyfile(source,dst)
+            if r['sample_id']in reuse:
+                prior=reuse[r['sample_id']];original=a.reuse_verified/prior['target']
+                if any(prior[k]!=r[k]for k in SAFE)or prior.get('teacher_revision')!=REVISION or prior.get('GT_masks_or_targets_as_inputs')is not False or prior['native_prompt']!='<img><|image_1|></img>\n'+r['prompt']or sha(original)!=prior['target_sha256']:raise ValueError('Reusable target identity or recipe changed')
+                shutil.copyfile(original,a.output/prior['target']);records.append(dict(prior,reused_from_candidate_run=str(a.reuse_verified)));reused+=1
+                write(a.output/'candidates.json',records);write(a.output/'progress.json',dict(stage='reuse_SHA_verified_completed_source_candidates',done=i+1,total=len(rows),reused=reused));continue
             with Image.open(source)as im:reference=im.convert('RGB').copy()
             generator=torch.Generator(device='cuda').manual_seed(r['seed']);noise=torch.randn((1,4,64,64),device='cuda',dtype=torch.bfloat16,generator=generator)
             noise_sha=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest();prompt='<img><|image_1|></img>\n'+r['prompt']
@@ -79,7 +97,7 @@ def main():
             assert image.size==(512,512);filename='targets/'+r['sample_id']+'.png';image.save(a.output/filename)
             records.append(dict(r,split='train',target=filename,target_sha256=sha(a.output/filename),initial_latent_sha256=noise_sha,native_prompt=prompt,teacher='frozen official OmniGen-v1',teacher_revision=REVISION,QA_accepted=False,GT_masks_or_targets_as_inputs=False))
             write(a.output/'candidates.json',records);write(a.output/'progress.json',dict(stage='new_v7_TRAIN_targets_pending_visual_review',done=i+1,total=len(rows)))
-        write(a.output/'report.json',dict(complete=True,schema='scene_paper_TRAIN_candidates_v1',prompt_profile=PROFILE,source_commit=os.environ['T12_SOURCE_COMMIT'],TRAIN_request_sha256=report['TRAIN_request_sha256'],candidate_manifest_sha256=sha(a.output/'candidates.json'),candidate_count=len(records),TRAIN_references=44,DEV_or_TEST_generated=False,training_performed=False,eligible_for_training=False,all_candidates_require_pixel_bound_review=True,old_target_pixels_or_prompts_not_relabelled=True,backgrounds_AI_generated_not_external_photographs=True))
+        write(a.output/'report.json',dict(complete=True,schema='scene_paper_TRAIN_candidates_v1',prompt_profile=PROFILE,source_commit=os.environ['T12_SOURCE_COMMIT'],TRAIN_request_sha256=report['TRAIN_request_sha256'],selected_draw_indices=a.draws,selected_request_sha256=sha(a.output/'requests.json'),reused_completed_targets=reused,candidate_manifest_sha256=sha(a.output/'candidates.json'),candidate_count=len(records),TRAIN_references=44,DEV_or_TEST_generated=False,training_performed=False,eligible_for_training=False,all_candidates_require_pixel_bound_review=True,old_target_pixels_or_prompts_not_relabelled=True,backgrounds_AI_generated_not_external_photographs=True))
     except BaseException:write(a.output/'failure.json',dict(traceback=traceback.format_exc()));raise
 
 

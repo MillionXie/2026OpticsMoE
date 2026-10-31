@@ -30,12 +30,15 @@ def accepted_ids(rows,review,manifest_sha):
     if len(annotations)!=len(rows)or set(annotations)!={r['sample_id']for r in rows}:
         raise ValueError('Every candidate, including failures, needs an annotation')
     accepted=set()
+    policy=review.get('admission_policy','all_facts_form_quality_v1')
+    if policy not in ['all_facts_form_quality_v1','basic_subject_quality_v2']:raise ValueError('Unknown explicit training-label admission')
     for row in rows:
         a=annotations[row['sample_id']];target_sha=row.get('target_sha256',row.get('generated_sha256'))
         if a['target_sha256']!=target_sha or len(a['facts'])!=3 or len(a['coarse_form'])!=1 or len(a['quality'])!=1 or any(x not in'YNU'for x in a['facts']+a['coarse_form']+a['quality']):
             raise ValueError('Changed target pixels or invalid review states')
         valid=a['facts']=='YYY'and a['coarse_form']=='Y'and a['quality']=='Y'
-        if a['accepted']is not valid:raise ValueError('Missing/uncertain facts or changed form cannot be silently approved')
+        if policy=='basic_subject_quality_v2':valid=a['facts'][0]=='Y'and a['quality']=='Y'and a.get('gross_subject_failure')is False
+        if a['accepted']is not valid:raise ValueError('Acceptance must follow the recorded training-label policy, not silently change evaluation success')
         if valid:accepted.add(row['sample_id'])
     return accepted
 
@@ -48,20 +51,24 @@ def curate(plan,parent,sources,train,train_review,dev,dev_review,output):
     requests=json.loads((plan/'train_inputs.json').read_text());devrequests=json.loads((plan/'dev_inputs.json').read_text())
     if len(requests)!=264 or len(devrequests)!=48 or sha(plan/'train_inputs.json')!=p['TRAIN_request_sha256']or sha(plan/'dev_inputs.json')!=p['request_sha256']:raise ValueError('Keep fixed complete input cohorts')
     tr=json.loads((train/'report.json').read_text());dr=json.loads((dev/'report.json').read_text())
+    draws=tr.get('selected_draw_indices',[0,1])
+    if draws not in [[0],[0,1]]:raise ValueError('Only full44-source three-scene first-draw or original two-draw plans')
+    expected_train=[r for r in requests if any(r['sample_id'].endswith('-draw'+str(j))for j in draws)]
     if not tr['complete']or not dr['complete']or tr.get('schema')!='scene_paper_TRAIN_candidates_v1'or tr['DEV_or_TEST_generated']or tr['TRAIN_request_sha256']!=p['TRAIN_request_sha256']:
         raise ValueError('Actual completed new TRAIN candidates required')
     if dr['prompt_profile']!=PROFILE or dr.get('independent_TEST_opened')or dr['generated_count']!=48 or dr.get('official_weights_revision')!=REVISION:raise ValueError('Full new-prompt frozen OmniGen DEV peer required')
     trainrows=json.loads((train/'candidates.json').read_text());devrows=json.loads((dev/'images.json').read_text())
     if any(r.get('teacher_revision')!=REVISION or r.get('GT_masks_or_targets_as_inputs')is not False for r in trainrows):raise ValueError('Frozen native teacher and target-free input evidence required')
     if sha(train/'candidates.json')!=tr['candidate_manifest_sha256']:raise ValueError('Changed TRAIN candidate manifest')
-    for expected,actual in [(requests,trainrows),(devrequests,devrows)]:
+    for expected,actual in [(expected_train,trainrows),(devrequests,devrows)]:
         if len(expected)!=len(actual)or any({k:r[k]for k in SAFE}!={k:a[k]for k in SAFE}for r,a in zip(expected,actual)):raise ValueError('Candidate input/prompt/source/seed changed')
     reviews=[json.loads(train_review.read_text()),json.loads(dev_review.read_text())]
     chosen=[accepted_ids(trainrows,reviews[0],sha(train/'candidates.json')),accepted_ids(devrows,reviews[1],sha(dev/'images.json'))]
     if not chosen[0]or not chosen[1]:raise ValueError('At least one reviewed TRAIN and DEV target required')
     catalog=source_inventory(sources,json.loads((parent/'pairs.json').read_text()));inference_refs={r['reference_id']for r in devrequests}
     output.mkdir();(output/'references').mkdir();(output/'targets').mkdir();pairs=[];owners={}
-    for split,root,rows,ids in [('train',train,trainrows,chosen[0]),('dev',dev,devrows,chosen[1])]:
+    for split,root,rows,ids,review in [('train',train,trainrows,chosen[0],reviews[0]),('dev',dev,devrows,chosen[1],reviews[1])]:
+        annotations={r['sample_id']:r for r in review['rows']}
         for r in rows:
             if r['sample_id']not in ids:continue
             source=catalog[r['reference_id']]
@@ -74,7 +81,8 @@ def curate(plan,parent,sources,train,train_review,dev,dev_review,output):
             dst=output/r['reference']
             if not dst.exists():shutil.copyfile(plan/r['reference'],dst)
             target='targets/'+r['sample_id']+'.png';shutil.copyfile(original,output/target)
-            pairs.append(dict({k:r[k]for k in SAFE},split=split,source_product_id=source['source_product_id'],source_RGBA_sha256=source['source_RGBA_sha256'],target=target,target_sha256=digest,QA_accepted=True,teacher='frozen official OmniGen-v1; newly generated v7 target',teacher_candidate_run=str(root),teacher_candidate_manifest_sha256=sha(root/('candidates.json'if split=='train'else'images.json')),scene_GT_is_one_valid_training_example=True,old_target_not_recaptioned=True,required_visible_facts=condition(r['category'],r['condition_id'])['required_visible_facts']))
+            a=annotations[r['sample_id']];full=a['facts']=='YYY'and a['coarse_form']=='Y'and a['quality']=='Y'
+            pairs.append(dict({k:r[k]for k in SAFE},split=split,source_product_id=source['source_product_id'],source_RGBA_sha256=source['source_RGBA_sha256'],target=target,target_sha256=digest,QA_accepted=True,training_admission_policy=review.get('admission_policy','all_facts_form_quality_v1'),all_requested_facts_and_form_satisfied=full,supervision_weight=1.0 if full else 0.5,teacher='frozen official OmniGen-v1; newly generated v7 target',teacher_candidate_run=str(root),teacher_candidate_manifest_sha256=sha(root/('candidates.json'if split=='train'else'images.json')),scene_GT_is_one_valid_training_example=full,old_target_not_recaptioned=True,required_visible_facts=condition(r['category'],r['condition_id'])['required_visible_facts']))
     for r in devrequests:
         dst=output/r['reference']
         if not dst.exists():shutil.copyfile(plan/r['reference'],dst)
@@ -82,8 +90,8 @@ def curate(plan,parent,sources,train,train_review,dev,dev_review,output):
     shutil.copyfile(sources,output/'source_catalog.json')
     count=Counter(r['split']for r in pairs);groups={(r['reference_id'],r['condition_id'])for r in pairs if r['split']=='train'}
     missing=sorted({(r['reference_id'],r['condition_id'])for r in requests}-groups)
-    write(output/'report.json',dict(schema='scene_paper_paired_dataset_v1',complete=True,eligible_for_training=True,prompt_profile=PROFILE,role_disjoint=True,TEST_opened=False,source_pairs_sha256=PARENT_PAIRS,pairs_sha256=sha(output/'pairs.json'),source_TRAIN_request_sha256=p['TRAIN_request_sha256'],request_sha256=p['request_sha256'],accepted_counts=dict(count),TRAIN_source_condition_groups=len(groups),missing_TRAIN_source_condition_groups=missing,all44_TRAIN_sources_fully_balanced=not missing,full48_DEV_inference_preserved=True,unique_GT_required_at_inference=False,old_targets_not_relabelled=True))
-    write(output/'visual_review.json',dict(approved_for_training=True,pairs_sha256=sha(output/'pairs.json'),all_new_candidates_reviewed=True,TRAIN_review_sha256=sha(train_review),DEV_review_sha256=sha(dev_review),uncertain_or_failed_targets_excluded=True))
+    write(output/'report.json',dict(schema='scene_paper_paired_dataset_v1',complete=True,eligible_for_training=True,prompt_profile=PROFILE,role_disjoint=True,TEST_opened=False,source_pairs_sha256=PARENT_PAIRS,pairs_sha256=sha(output/'pairs.json'),source_TRAIN_request_sha256=p['TRAIN_request_sha256'],selected_TRAIN_draws=draws,candidate_TRAIN_count=len(trainrows),partial_TRAIN_labels=sum(r['split']=='train'and not r['all_requested_facts_and_form_satisfied']for r in pairs),request_sha256=p['request_sha256'],accepted_counts=dict(count),TRAIN_source_condition_groups=len(groups),missing_TRAIN_source_condition_groups=missing,all44_TRAIN_sources_fully_balanced=not missing,full48_DEV_inference_preserved=True,unique_GT_required_at_inference=False,old_targets_not_relabelled=True))
+    write(output/'visual_review.json',dict(approved_for_training=True,pairs_sha256=sha(output/'pairs.json'),all_new_candidates_reviewed=True,TRAIN_admission_policy=reviews[0].get('admission_policy','all_facts_form_quality_v1'),TRAIN_review_sha256=sha(train_review),DEV_review_sha256=sha(dev_review),partial_training_labels_not_counted_as_complete_instruction_success=True))
 
 
 def checked_parent_transfer(new_data,parent_data,parent_sha,new_sha):
