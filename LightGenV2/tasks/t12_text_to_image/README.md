@@ -67,6 +67,13 @@ Qwen只读公开RGB／两句，native_caption只由其明确物体及关系生�
 效果未验证前不自动替换正式baseline／LG输入合同，也不将裁边当额外生成能力。
 新balanced电子版raw验证还将核验完整48条输入专用身份与实际训练cache的SHA及h/v/ids，
 该输入文件明确不含GT／mask；保留完整RGB＋文字真前向，不能使用缓存冒充部署。
+完整264候选已结束（140新生成、76复用已审核旧例、48复制先导含失败证据），原GPU子进程已退出；
+仍须逐项剔除未生成背景、缺桌面、长枕变方等，不因教师结束而放行。
+`scene_instruction_repair`只补已确认缺项的TRAIN组：粗造型说明来自原白底输入，冻结后进入更强的教师制作文字，
+例如adjustable desk lamp／column base；这些额外说明不是学生／benchmark公开输入。
+学生仍为RGB＋原两句，native条件描述只含原公开要求；额外造型字段不进入推理白名单。
+每张补图保留实际教师文字、输入注释SHA、初始噪声SHA及新目标，重新逐项检查，不伪称原请求直接生成成功，
+不复用TEST或对新目标重新绑定旧Qwen缓存。
 当前对照页`scene_instruction_repair_delivery_20261031/index.html`完整列出203配对及全部48请求的
 旧Qwen／193条重训Qwen／旧原生SDXL共144输出和逐图可见实体诊断；不是合格宣告或新TEST成绩。
 此处不选DEV生成得好的参考、不打开独立TEST、不新增Qwen推理分支；当前LG训练仍暂停。

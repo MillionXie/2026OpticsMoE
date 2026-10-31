@@ -17,9 +17,15 @@ from .scene_instruction_native_prior import visible_caption
 
 
 def checked_pool(root,review_path,allowed):
+    from .scene_instruction_repair import FORM_PROFILE,form_teacher_prompt
+    from .scene_generation_data import request_seed
     report=json.loads((root/'report.json').read_text(encoding='utf8'));rows=json.loads((root/'candidates.json').read_text(encoding='utf8'));review=json.loads(review_path.read_text(encoding='utf8'))
     if not report.get('complete')or report.get('DEV_or_TEST_forwarded')or sha(root/'candidates.json')!=report['candidate_manifest_sha256']or review['candidate_manifest_sha256']!=report['candidate_manifest_sha256']:raise ValueError('Changed or non-TRAIN teacher cohort')
     if json.loads((root/'model_assets.json').read_text(encoding='utf8'))['official_revision']!=REVISION:raise ValueError('Unapproved teacher identity')
+    forms=None
+    if report['prompt_profile']==FORM_PROFILE:
+        if sha(root/'source_form_annotations.json')!=report['source_form_annotations_sha256']:raise ValueError('Changed input-only form audit')
+        forms=json.loads((root/'source_form_annotations.json').read_text(encoding='utf8'))
     annotations={r['sample_id']:r for r in review['rows']}
     if len(annotations)!=len(rows)or set(annotations)!={r['sample_id']for r in rows}:raise ValueError('Review every candidate, including failures')
     result=[]
@@ -28,8 +34,10 @@ def checked_pool(root,review_path,allowed):
         if source is None or row['split']!='train'or any(row[k]!=source[k]for k in ['reference_sha256','source_product_id','source_RGBA_sha256','category']):raise ValueError('Candidate outside the fixed44 TRAIN sources')
         code=row['anchor_code'];profile=row['prompt_profile']
         if code not in primary_codes(row['category']):raise ValueError('Not a primary counterfactual condition')
-        expected=condition(row['category'],code)if profile==PROFILE else scene_first_condition(row['category'],code)if profile==SCENE_FIRST_PROFILE else bedside_condition()if profile==BEDSIDE_PROFILE and row['category']=='lamp'and code=='D'else None
+        expected=condition(row['category'],code)if profile==PROFILE else scene_first_condition(row['category'],code)if profile==SCENE_FIRST_PROFILE else bedside_condition()if profile==BEDSIDE_PROFILE and row['category']=='lamp'and code=='D'else dict(prompt=form_teacher_prompt(row['category'],code,row['source_form_hint']))if profile==FORM_PROFILE else None
         if expected is None or row['prompt']!=expected['prompt']:raise ValueError('Unrecorded teacher prompt')
+        if row['seed']!=request_seed(row['reference_sha256'],row['seed_index']):raise ValueError('Teacher seed must depend only on original input and ordinal')
+        if profile==FORM_PROFILE and(forms is None or forms.get(row['reference_id'])!=dict(reference_sha256=row['reference_sha256'],source_form_hint=row['source_form_hint'])or row['public_training_prompt']!=condition(row['category'],code)['prompt']):raise ValueError('Unbound source-form construction hint')
         if sha(root/row['reference'])!=row['reference_sha256']or sha(root/row['target'])!=row['target_sha256']or annotation['target_sha256']!=row['target_sha256']:raise ValueError('Review pixel identity changed')
         accepted=annotation['status']=='usable_TRAIN_example'
         if annotation['accepted_for_training']!=accepted:raise ValueError('Uncertain/rejected is not usable')

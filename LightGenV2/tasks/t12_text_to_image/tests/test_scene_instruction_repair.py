@@ -1,0 +1,32 @@
+import tempfile
+from pathlib import Path
+import json
+import unittest
+from ..scene_instruction_repair import form_teacher_prompt,prepare,FORM_PROFILE
+from ..scene_instruction_data import condition,sha,write
+from ..scene_generation_data import request_seed
+
+
+class SourceGroundedRepair(unittest.TestCase):
+    def test_form_hint_is_construction_only_and_noise_is_input_derived(self):
+        with tempfile.TemporaryDirectory()as temp:
+            p=Path(temp);plan=p/'plan';plan.mkdir();(plan/'ref.png').write_bytes(b'white input')
+            source=dict(condition('lamp','D'),reference_id='r',reference='ref.png',reference_sha256=sha(plan/'ref.png'),source_product_id='p',source_RGBA_sha256='rgba',split='train')
+            write(plan/'requests.json',[source]);write(plan/'report.json',dict(schema='scene_balanced_visible_anchor_plan_v1',request_sha256=sha(plan/'requests.json')))
+            case=dict(reference_id='r',reference_sha256=source['reference_sha256'],anchor_code='D',source_form_hint='articulated_desk')
+            spec=p/'spec.json';write(spec,dict(form_labels_from_white_input_only=True,cases=[case]));out=p/'repair';prepare(plan,spec,out)
+            rows=json.loads((out/'requests.json').read_text());self.assertEqual(len(rows),2)
+            for index,row in enumerate(rows):
+                self.assertEqual(row['seed'],request_seed(source['reference_sha256'],index));self.assertIsNone(row['reused_reviewed_label'])
+                self.assertEqual(row['prompt_profile'],FORM_PROFILE);self.assertIn('adjustable desk lamp',row['prompt'])
+                self.assertNotIn('adjustable',row['public_training_prompt']);self.assertEqual(row['public_training_prompt'],condition('lamp','D')['prompt'])
+                self.assertNotIn('target',row)
+            self.assertFalse(json.loads((out/'report.json').read_text())['eligible_for_training'])
+            case['source_form_hint']='rectangular_cushion';write(spec,dict(form_labels_from_white_input_only=True,cases=[case]))
+            with self.assertRaises(ValueError):prepare(plan,spec,p/'wrong_form')
+    def test_teacher_wording_is_short_and_has_no_reference_or_identity(self):
+        prompt=form_teacher_prompt('lamp','D','articulated_desk');self.assertEqual(prompt.count('.'),2)
+        self.assertIn('bedside table',prompt);self.assertNotIn('reference',prompt);self.assertNotIn('SKU',prompt)
+
+
+if __name__=='__main__':unittest.main()

@@ -4,6 +4,7 @@ import unittest
 from ..scene_instruction_balanced_data import checked_pool,curate
 from ..scene_instruction_data import condition,write,sha
 from ..scene_omnigen_peer import REVISION
+from ..scene_generation_data import request_seed
 
 
 class CandidateAdmission(unittest.TestCase):
@@ -22,15 +23,15 @@ class CandidateAdmission(unittest.TestCase):
     def test_uncertain_not_accepted_and_pixels_roles_and_prompts_are_bound(self):
         with tempfile.TemporaryDirectory()as temp:
             p=Path(temp);(p/'ref.png').write_bytes(b'input');(p/'target.png').write_bytes(b'target')
-            row=dict(condition('lamp','B'),sample_id='one',reference_id='r',split='train',reference='ref.png',reference_sha256=sha(p/'ref.png'),target='target.png',target_sha256=sha(p/'target.png'),source_product_id='p',source_RGBA_sha256='rgba')
-            write(p/'candidates.json',[row]);write(p/'report.json',dict(complete=True,DEV_or_TEST_forwarded=False,candidate_manifest_sha256=sha(p/'candidates.json')));write(p/'model_assets.json',dict(official_revision=REVISION))
+            row=dict(condition('lamp','B'),sample_id='one',reference_id='r',split='train',reference='ref.png',reference_sha256=sha(p/'ref.png'),target='target.png',target_sha256=sha(p/'target.png'),source_product_id='p',source_RGBA_sha256='rgba',seed_index=0,seed=request_seed(sha(p/'ref.png'),0))
+            write(p/'candidates.json',[row]);write(p/'report.json',dict(complete=True,prompt_profile=row['prompt_profile'],DEV_or_TEST_forwarded=False,candidate_manifest_sha256=sha(p/'candidates.json')));write(p/'model_assets.json',dict(official_revision=REVISION))
             review=dict(candidate_manifest_sha256=sha(p/'candidates.json'),rows=[dict(sample_id='one',target_sha256=row['target_sha256'],status='uncertain',accepted_for_training=False)]);write(p/'review.json',review)
             self.assertEqual(checked_pool(p,p/'review.json',{'r':row}),[])
             review['rows'][0].update(status='usable_TRAIN_example',accepted_for_training=True);write(p/'review.json',review)
             self.assertEqual(len(checked_pool(p,p/'review.json',{'r':row})),1)
             (p/'target.png').write_bytes(b'changed')
             with self.assertRaises(ValueError):checked_pool(p,p/'review.json',{'r':row})
-            (p/'target.png').write_bytes(b'target');row['split']='test';write(p/'candidates.json',[row]);write(p/'report.json',dict(complete=True,DEV_or_TEST_forwarded=False,candidate_manifest_sha256=sha(p/'candidates.json')));review['candidate_manifest_sha256']=sha(p/'candidates.json');write(p/'review.json',review)
+            (p/'target.png').write_bytes(b'target');row['split']='test';write(p/'candidates.json',[row]);write(p/'report.json',dict(complete=True,prompt_profile=row['prompt_profile'],DEV_or_TEST_forwarded=False,candidate_manifest_sha256=sha(p/'candidates.json')));review['candidate_manifest_sha256']=sha(p/'candidates.json');write(p/'review.json',review)
             with self.assertRaises(ValueError):checked_pool(p,p/'review.json',{'r':row})
 
 
