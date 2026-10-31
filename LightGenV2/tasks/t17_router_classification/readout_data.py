@@ -18,6 +18,9 @@ def align_raw_pixels(images, labels, rows, ids):
 
 def load_raw(data_root,cfg):
     if cfg['dataset']=='crc9':return load_raw_splits(data_root,cfg)
+    if cfg['dataset']=='organcmnist':
+        from .panel_d_data import load_organ
+        return load_organ(cfg)
     rows,ids,identity=prepare_index(data_root,cfg);result={}
     cache=Path(cfg['raw_cache'])
     if sha256(cache)!=cfg['raw_cache_sha256']:raise ValueError('Raw cache SHA differs')

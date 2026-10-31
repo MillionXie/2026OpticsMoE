@@ -1,0 +1,90 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "datasets": [
+    "kather2016",
+    "bloodmnist128",
+    "organcmnist"
+  ],
+  "total_points": 12,
+  "reused_A_points": 2,
+  "new_candidates": 10,
+  "contract": "A exact input/OEO/two-main-layer/one Linear, only true optical top-k changes",
+  "monotonicity_goal": true,
+  "monotonicity_guaranteed": false,
+  "points": [
+    {
+      "dataset": "kather2016",
+      "k": 2,
+      "reused_A_run": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_kather2016",
+      "checkpoint_sha256": "070f110187dcd57d6799fb87bd3f8eaa781a2c51c3b3bbfabc9c5cf9132aa7ea",
+      "no_new_training": true
+    },
+    {
+      "dataset": "kather2016",
+      "k": 1,
+      "profile": "configs/panel_d_kather2016_k1_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "kather2016",
+      "k": 3,
+      "profile": "configs/panel_d_kather2016_k3_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "kather2016",
+      "k": 4,
+      "profile": "configs/panel_d_kather2016_k4_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "bloodmnist128",
+      "k": 2,
+      "reused_A_run": "runs/simulation/panel_ab_linear_readout_s17_20261031/worker0/a_bloodmnist128",
+      "checkpoint_sha256": "8d6a9a24a356da8b615b0d3f7b073bfd53055c99027b06689ca8c0ba9d0e25b3",
+      "no_new_training": true
+    },
+    {
+      "dataset": "bloodmnist128",
+      "k": 1,
+      "profile": "configs/panel_d_bloodmnist128_k1_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "bloodmnist128",
+      "k": 3,
+      "profile": "configs/panel_d_bloodmnist128_k3_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "bloodmnist128",
+      "k": 4,
+      "profile": "configs/panel_d_bloodmnist128_k4_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "organcmnist",
+      "k": 2,
+      "profile": "configs/panel_d_organcmnist_k2_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "organcmnist",
+      "k": 1,
+      "profile": "configs/panel_d_organcmnist_k1_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "organcmnist",
+      "k": 3,
+      "profile": "configs/panel_d_organcmnist_k3_s17_20261101.json",
+      "state": "admission_pending"
+    },
+    {
+      "dataset": "organcmnist",
+      "k": 4,
+      "profile": "configs/panel_d_organcmnist_k4_s17_20261101.json",
+      "state": "admission_pending"
+    }
+  ]
+}

@@ -86,6 +86,10 @@ def evaluate(model,x,labels,batch,domains=None):
     arrays=dict(scores=scores,predictions=pred,labels=truth)
     if routes:
         arrays.update(route_power=np.concatenate(routes),dense_route_power=np.concatenate(dense),router_capture=np.concatenate(capture));metrics['router']=route_statistics(arrays['route_power'])
+        k=getattr(model,'top_k',2)
+        if k!=2:
+            q=arrays['route_power'];sets=['-'.join(map(str,np.flatnonzero(v>0))) for v in q];unique,counts=np.unique(sets,return_counts=True)
+            metrics['router'].update(actual_top_k=k,selected_set_fraction={v:float(n/len(q)) for v,n in zip(unique,counts)},top2_pair_fraction=None,fraction_outside_most_common_pair=None)
     if domains is not None:
         metrics['domains']={}
         for domain,name in [(0,'RGB'),(1,'SAR')]:
@@ -99,6 +103,7 @@ def evaluate(model,x,labels,batch,domains=None):
 
 
 def metric_key(metrics,cfg=None):
+    if cfg and cfg.get('selection_mode')=='accuracy_first':return metrics['accuracy'],-metrics['cross_entropy']
     if cfg and cfg.get('selection_mode')=='worst_domain_first':
         if set(metrics.get('domains',{}))!={'RGB','SAR'}:raise ValueError('Worst-domain selection requires both VAL domains')
         return min(v['accuracy'] for v in metrics['domains'].values()),metrics['balanced_accuracy'],-metrics['cross_entropy']
@@ -150,6 +155,7 @@ def main():
     paths.append(task/'semantic_distillation.py')
     paths.append(task/'f_joint_distillation.py')
     paths.append(task/'router_gradient_projection.py')
+    paths.extend([task/'joint_teacher_cache.py',task/'panel_d_data.py'])
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=not bool(cfg.get('source_test_distillation')),teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -180,6 +186,9 @@ def main():
             parent_path=task/cfg['parent_checkpoint']
             if sha256(parent_path)!=cfg['parent_checkpoint_sha256']:raise ValueError('Parent SHA differs')
             parent=torch.load(parent_path,map_location='cpu',weights_only=False)
+            if cfg.get('panel_d_A_initialization'):
+                from .panel_d_data import validate_panel_d_initialization
+                validate_panel_d_initialization(parent,cfg)
             if cfg.get('training_domain'):
                 from .f_cross_domain import validate_same_source_parent
                 validate_same_source_parent(parent,cfg)
@@ -204,7 +213,9 @@ def main():
             x[split]=torch.cat(fields);y[split]=torch.as_tensor(part['labels'],device='cuda',dtype=torch.long);del part['images']
         block=cfg.get('alternating_head');aux=cfg.get('domain_route_aux',0.)
         projection_domains={s:torch.as_tensor(part['domains'],device='cuda') for s,part in raw.items()} if cfg.get('router_gradient_projection') else None
-        if (block or aux) and (cfg['architecture']!='LG' or cfg['dataset']!='eurosat_original_f' or not heads):raise ValueError('Alternating/domain method requires original F LG with trainable head')
+        if (block or aux) and (cfg['architecture']!='LG' or not heads):raise ValueError('Alternating/domain method requires LG with trainable head')
+        if block and cfg['dataset']!='eurosat_original_f' and not cfg.get('panel_d_topk'):raise ValueError('Non-F head blocks require an explicit panel D profile')
+        if aux and cfg['dataset']!='eurosat_original_f':raise ValueError('Domain auxiliary is restricted to F')
         anchor=model.shared_head.weight.detach().clone() if block else None
         if historical:
             if not block or not heads:raise ValueError('Imported F phases require an explicit TRAIN-only head bootstrap')
@@ -219,6 +230,13 @@ def main():
             anchor=model.shared_head.weight.detach().clone();metadata['head_bootstrap_phases_bitwise_frozen']=True
             del bootstrap_features,before
             write(args.out/'metadata.json',metadata)
+        if cfg.get('head_bootstrap_steps'):
+            if not block or not heads or teacher_cfg:raise ValueError('Fresh D head bootstrap requires explicit TRAIN-only head block')
+            before={n:p.detach().clone() for n,p in model.named_parameters() if n!='shared_head.weight'};model.eval()
+            with torch.no_grad():features=torch.cat([model.optical_features(x['train'][s:s+cfg['eval_batch']])['ccd_features'] for s in range(0,len(y['train']),cfg['eval_batch'])])
+            metadata['TRAIN_head_bootstrap']=refit_existing_head(model.shared_head,features,y['train'],anchor,block['anchor_strength'],cfg['label_smoothing'],cfg['head_bootstrap_steps'])
+            if not all(torch.equal(dict(model.named_parameters())[n],v) for n,v in before.items()):raise RuntimeError('Head bootstrap changed optics')
+            metadata['head_bootstrap_phases_bitwise_frozen']=True;write(args.out/'metadata.json',metadata);del features,before
         semantic=prepare_semantic(raw,cfg,args.out,model,x['train'])
         if semantic:
             calibrate_semantic(semantic,model,x['train'],y['train'],teacher_targets,phases,anchor,cfg)
@@ -234,7 +252,7 @@ def main():
         val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;stale=0;history=[];development=None;test_selection_calls=0
         if selection_uses_test(cfg):development,_=evaluate(model,x['test'],y['test'],cfg['eval_batch'],raw['test'].get('domains'));test_selection_calls+=1
         best=checkpoint_selection_key(val,development,cfg)
-        if parent is not None and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
+        if parent is not None and not cfg.get('panel_d_A_initialization') and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
         torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
         for epoch in range(1,cfg['epochs']+1):
             started=time.time();model.train();order=rng.permutation(len(y['train']));codes=rng.integers(0,8,len(order)) if cfg['augmentation']=='D4' else rng.integers(0,2,len(order))*4 if cfg['augmentation']=='horizontal_flip' else np.zeros(len(order),dtype=int)
@@ -366,7 +384,7 @@ def main():
             if cfg['early_stop'] and epoch>=cfg['min_epochs'] and stale>=cfg['patience']:break
         selected_ck=torch.load(args.out/'best_checkpoint.pt',map_location='cpu',weights_only=False);model.load_state_dict(selected_ck['model'],strict=True);assert_frozen(model,frozen)
         selection='minimum RGB/SAR VAL accuracy, then joint macro recall, then CE' if cfg.get('selection_mode')=='worst_domain_first' else 'VAL macro recall then CE'
-        if selection_uses_test(cfg):selection='original TEST development only; '+('minimum domain accuracy then macro recall/CE' if cfg.get('selection_mode')=='worst_domain_first' else 'macro recall then CE')+'; no VAL gate'
+        if selection_uses_test(cfg):selection='original TEST development only; '+('minimum domain accuracy then macro recall/CE' if cfg.get('selection_mode')=='worst_domain_first' else 'accuracy then CE' if cfg.get('selection_mode')=='accuracy_first' else 'macro recall then CE')+'; no VAL gate'
         write(args.out/'selection_lock.json',dict(selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),selection=selection,TEST_evaluations_this_run_before_lock=test_selection_calls))
         result=dict(role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',independent_test_claim=False,completed_epochs=epoch,selected_epoch=selected,checkpoint_sha256=sha256(args.out/'best_checkpoint.pt'),frozen_parameters_bitwise_unchanged=True,phase_update_L2={n:float((p.detach().cpu()-initial[n]).norm()) for n,p in model.named_parameters()},phase_parameters=metadata['phase_parameters'],head_parameters=metadata['head_parameters'])
         for split,key in [('train','train'),('val','val'),('test','original_test_dev')]:
