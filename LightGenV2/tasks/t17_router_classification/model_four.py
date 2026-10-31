@@ -15,6 +15,16 @@ def sparse_top2(weights):
     q=weights*mask
     return q/q.sum(1,keepdim=True).clamp_min(1e-20)
 
+
+def route_amplitudes(q,dense=None,straight_through=False):
+    """Exact hard amplitudes; optional dense surrogate only in the backward pass."""
+    hard=torch.where(q>0,q.clamp_min(1e-20).sqrt(),torch.zeros_like(q))
+    if not straight_through:return hard
+    if dense is None or dense.shape!=q.shape:raise ValueError('Dense optical fractions required for surrogate backward')
+    soft=dense.clamp_min(1e-20).sqrt()
+    # Subtract identical tensors before adding hard, preserving forward bits.
+    return hard.detach()+(soft-soft.detach())
+
 class FourRouterClassification(PhaseOnly):
     def __init__(self,variant,readout='linear',num_classes=9):
         if variant not in ('optical','electronic','d2nn'):raise ValueError(variant)
@@ -55,17 +65,19 @@ class FourRouterClassification(PhaseOnly):
     def forward(self,amplitude,return_debug=False,return_dense_route=False,
                 training_route='top2',training_uniform_mix=0.):
         if amplitude.ndim!=3 or amplitude.shape[-2:]!=(224,224):raise ValueError(amplitude.shape)
-        if training_route not in ('top2','dense_warmup'):raise ValueError(training_route)
+        if training_route not in ('top2','dense_warmup','top2_straight_through'):raise ValueError(training_route)
         if not 0<=training_uniform_mix<=1:raise ValueError(training_uniform_mix)
         if training_route=='dense_warmup' and (not self.training or self.variant!='optical'):
             raise ValueError('Dense routing is a training-only optical-LG warmup')
-        if training_route=='top2' and training_uniform_mix!=0:
+        if training_route=='top2_straight_through' and (not self.training or self.variant!='optical'):
+            raise ValueError('Surrogate backward is training-only for optical LG')
+        if training_route!='dense_warmup' and training_uniform_mix!=0:
             raise ValueError('Uniform mixing is confined to dense training warmup')
         amplitude=amplitude/amplitude.square().sum((-2,-1),keepdim=True).clamp_min(1e-20).sqrt()
         if training_route=='dense_warmup':
             dense,capture=self.dense_route(amplitude)
             q=(1-training_uniform_mix)*dense+training_uniform_mix/4
-        elif return_dense_route:
+        elif return_dense_route or training_route=='top2_straight_through':
             dense,capture=self.dense_route(amplitude)
             q=sparse_top2(dense) if dense is not None else None
         else:q,capture=self.route(amplitude)
@@ -76,7 +88,7 @@ class FourRouterClassification(PhaseOnly):
         else:
             first=torch.zeros((len(amplitude),518,518),dtype=torch.complex64,device=amplitude.device)
             # Avoid sqrt(0)'s infinite derivative on masked experts.
-            coefficients=torch.where(q>0,q.clamp_min(1e-20).sqrt(),torch.zeros_like(q))
+            coefficients=route_amplitudes(q,dense if training_route=='top2_straight_through' else None,training_route=='top2_straight_through')
             for i,(y,x) in enumerate(self.apertures):
                 first[:,y:y+224,x:x+224]=(amplitude*coefficients[:,i,None,None]
                                                          *self.transmission(self.first_phase[i]))

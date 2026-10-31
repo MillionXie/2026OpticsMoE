@@ -1,0 +1,48 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "completed_epochs": 60,
+  "selected_epoch": 58,
+  "checkpoint_sha256": "f8c1490824fb73e3d12ec7fa78633bbb9cae46cc79b15b84e1799e55230b1858",
+  "target_both_at_least_70": false,
+  "metrics": {
+    "train": {
+      "RGB": 0.6346666666666667,
+      "SAR": 0.589
+    },
+    "val": {
+      "RGB": 0.552,
+      "SAR": 0.507
+    },
+    "original_test_dev": {
+      "RGB": 0.634,
+      "SAR": 0.467
+    }
+  },
+  "parent_development_RGB_SAR": [
+    0.605,
+    0.47
+  ],
+  "new_development_RGB_SAR": [
+    0.634,
+    0.467
+  ],
+  "development_correct_changes_RGB_SAR": [
+    29,
+    -3
+  ],
+  "same_PT_for_both_domains": true,
+  "phase_updates": 7560,
+  "head_minibatch_updates": 7560,
+  "TEST_random_view_presentations": 120000,
+  "head_blocks": 12,
+  "head_view_presentations": 768000,
+  "head_internal_steps": 480,
+  "route_mean_power": [
+    0.02317381650209427,
+    0.08336662501096725,
+    0.893458902835846,
+    0.0
+  ],
+  "conclusion": "Stronger teacher supervision did not resolve weak SAR accuracy; TRAIN also remains low. Router still concentrates ~89% optical power on one expert; fourth is unselected on VAL/TEST. No capacity-bound claim.",
+  "next_hypothesis": "Training-only dense amplitude surrogate backward, with bitwise identical canonical hard Top2 forward; no new inference parameters. Requires CPU regression and exact-parent GPU admission before launch."
+}

@@ -1,3 +1,13 @@
+## F联合双教师完整结束；下一有界训练梯度方案（2026-11-01）
+
+联合双教师候选完整60轮选E58：TRAIN RGB63.4667/SAR58.90，VAL55.20/50.70，原TEST开发63.40/46.70。同一PT SHAf8c1490824fb73e3d12ec7fa78633bbb9cae46cc79b15b84e1799e55230b1858，仍未两域70%；相对原父RGB+29例、SAR-3例，全部保留不逐域拼PT。
+15文件11.29MB best/last/全部三划分预测路由/两teacher缓存/manifest已远程本地SHA；strict4state487204/唯一Linear无CNN、原全部ID标签域/真实Top2、teacher缓存精确合并、完整2000 canonical TEST重放概率bitwise一致通过。worker2156045已退出无GPU分配。
+实际7560phase/head更新、120000TEST随机视图、12个64000视图头块共768000呈现/480内步，不能称只训TRAIN或独立TEST。D/A/B保护，d暂缓/j不管。
+新精确父20张TRAIN只读诊断：未选dense端口主分类/KD直接梯度严格0，20张都未选第四；RGB/SAR物理router梯度余弦约-.538，仅小样本线索，不当全TRAIN干扰证明或容量上界。
+据此新增待准入候选f_joint_route_STE_s17_20261101：从上面精确f8父继续，原Top2振幅forward逐元素保持，只有backward用dense振幅surrogate，未选端口获得分类梯度。无dense/uniform forward，无GT路由，无新参数/头/非线性/光路输入变化。
+新入口training_forward显式可选，旧默认兼容；辅助路由模式仅训练两层光LG允许，eval拒绝使用。模型state仍四tensor/487204，推理仍同一个光router动态Top2。
+两教师/KD/源TEST软目标/D4/head块及较弱域VAL选模保持，最多40/min20/pat15轮，父E0参选，失败完整保存；当前仅实现和配置，须回归测试、发布和真实父GPU准入后才启动。
+
 ## F联合LG继续优化：两域均超过70%为目标（2026-11-01）
 
 用户已确认联合LG两个主结果+D2NN四格，授权继续优化同一个LG，使RGB与SAR都超过70%；目标不保证，D2NN/A/B保护，d暂缓/j不管。

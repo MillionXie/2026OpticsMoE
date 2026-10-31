@@ -12,10 +12,10 @@ class LinearReadoutLG(DepthLG):
             torch.manual_seed(122)
             self.shared_head=nn.Linear(28*28,num_classes,bias=False)
 
-    def optical_features(self, amplitude, return_dense_route=False, return_debug=False):
+    def optical_features(self, amplitude, return_dense_route=False, return_debug=False,training_route='top2'):
         # The historical body computes its CCD diagnostics, but they do not
         # classify this model. Keep the identical propagation and final OEO.
-        old=super().forward(amplitude,return_debug=True,return_dense_route=return_dense_route)
+        old=super().forward(amplitude,return_debug=True,return_dense_route=return_dense_route,training_route=training_route)
         intensity=old['post_oeo_intensity']
         active=intensity[:,20:498,20:498]
         features=F.adaptive_avg_pool2d(active[:,None],(28,28)).flatten(1)
@@ -25,8 +25,8 @@ class LinearReadoutLG(DepthLG):
         if return_debug:result['post_oeo_intensity']=intensity
         return result
 
-    def forward(self, amplitude, return_dense_route=False, return_debug=False):
-        result=self.optical_features(amplitude,return_dense_route,return_debug)
+    def forward(self, amplitude, return_dense_route=False, return_debug=False,training_route='top2'):
+        result=self.optical_features(amplitude,return_dense_route,return_debug,training_route)
         raw=self.shared_head(result['ccd_features'])
         # Log probabilities preserve the established evaluator/CE interface.
         # Classification is solely the single Linear, without a hidden MLP.

@@ -110,6 +110,14 @@ def classification_objective(output,labels,cfg):
     return F.cross_entropy(logits,labels,label_smoothing=cfg['label_smoothing'])
 
 
+def training_forward(model,field,cfg,return_dense_route=False):
+    route=cfg.get('training_route','top2')
+    if route=='top2':return model(field,return_dense_route=return_dense_route) if return_dense_route else model(field)
+    if route!='top2_straight_through' or cfg['architecture']!='LG' or cfg['main_layers']!=2 or cfg.get('phase_update_mode','mini_batch')!='mini_batch':
+        raise ValueError('Surrogate backward requires explicit two-layer minibatch LG')
+    return model(field,return_dense_route=return_dense_route,training_route=route)
+
+
 def assert_frozen(model,snapshot):
     for name,p in model.named_parameters():
         if name in snapshot and not torch.equal(p.detach().cpu(),snapshot[name]):raise RuntimeError('Frozen tensor changed: '+name)
@@ -224,7 +232,7 @@ def main():
                 if not aggregate:phase_opt.zero_grad(set_to_none=True)
                 if head_opt:head_opt.zero_grad(set_to_none=True)
                 if semantic:semantic['optimizer'].zero_grad(set_to_none=True)
-                output=model(field,return_dense_route=True) if aux else model(field)
+                output=training_forward(model,field,cfg,return_dense_route=bool(aux))
                 loss=anchored_classification(output['raw_logits'],y['train'][idx],model.shared_head.weight,anchor,block['anchor_strength'],cfg['label_smoothing']) if block else classification_objective(output,y['train'][idx],cfg)
                 if teacher_cfg:
                     from .original_f_teacher import teacher_KL
@@ -267,7 +275,7 @@ def main():
                     local=torch.as_tensor(soft_order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(soft_codes[start:start+cfg['batch']],device='cuda')
                     phase_opt.zero_grad(set_to_none=True);head_opt.zero_grad(set_to_none=True)
                     if semantic:semantic['optimizer'].zero_grad(set_to_none=True)
-                    output=model(augment_packed(x['test'][source_test_indices[local]],code))
+                    output=training_forward(model,augment_packed(x['test'][source_test_indices[local]],code),cfg)
                     value=soft_only_source_test_loss(output['raw_logits'],source_test_targets[local,code],model.shared_head.weight,anchor,block['anchor_strength'],teacher_cfg['weight'],teacher_cfg['temperature'])
                     if semantic:value=value+semantic['weight']*semantic_loss(output['ccd_features'],semantic['targets']['test'][local,code],semantic['projection'])
                     value.backward()
@@ -308,6 +316,7 @@ def main():
             if improved:
                 selected=epoch;best=metric_key(val,cfg);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata,**semantic_checkpoint(semantic)),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
+            if cfg.get('training_route')=='top2_straight_through':row['route_backward']='dense amplitude surrogate; forward is bitwise hard Top2'
             row['phase_optimizer_steps']=int(step_record['accepted']) if backtracking else 1 if aggregate else (len(order)+cfg['batch']-1)//cfg['batch']
             if step_record:
                 row['TRAIN_phase_backtracking']=step_record

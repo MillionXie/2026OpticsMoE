@@ -24,11 +24,12 @@ class DepthLG(FourRouterClassification):
         self.extra_global_phases = nn.ParameterList([
             nn.Parameter(torch.zeros_like(self.global_phase)) for _ in range(main_layers//2-1)])
 
-    def forward(self, amplitude, return_debug=False, return_dense_route=False):
+    def forward(self, amplitude, return_debug=False, return_dense_route=False,training_route='top2'):
         if self.main_layers == 2:
             # Exact panel-A forward and checkpoint keys; no approximate reimplementation.
             return super().forward(amplitude, return_debug=return_debug,
-                                   return_dense_route=return_dense_route)
+                                   return_dense_route=return_dense_route,training_route=training_route)
+        if training_route!='top2':raise ValueError('Deep LG keeps canonical routing')
         if amplitude.ndim != 3 or amplitude.shape[-2:] != (224, 224):
             raise ValueError('Expected panel-A Bx224x224 encoded amplitude')
         amplitude = amplitude/amplitude.square().sum((-2,-1), keepdim=True).clamp_min(1e-20).sqrt()

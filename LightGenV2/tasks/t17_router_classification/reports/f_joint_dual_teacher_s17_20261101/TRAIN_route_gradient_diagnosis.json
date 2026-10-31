@@ -1,0 +1,28 @@
+{
+  "parent_checkpoint_sha256": "f8c1490824fb73e3d12ec7fa78633bbb9cae46cc79b15b84e1799e55230b1858",
+  "TRAIN_images": 20,
+  "classes_each_domain": 10,
+  "augmentation_code": 0,
+  "model_all_state_bitwise_unchanged": true,
+  "no_VAL_or_TEST_metrics": true,
+  "dense_mean_power": [
+    0.0680881068110466,
+    0.09792960435152054,
+    0.8328179717063904,
+    0.0011643033940345049
+  ],
+  "top2_selected_fraction": [
+    0.20000000298023224,
+    0.800000011920929,
+    1.0,
+    0.0
+  ],
+  "main_loss_gradient_directly_to_unselected_dense_ports_exact_zero": true,
+  "unselected_dense_gradient_max_abs": 0.0,
+  "domain_physical_phase_gradient_cosine": {
+    "first_phase": 0.06219660402696716,
+    "global_phase": 0.038868225037696186,
+    "router_phase": -0.5379222709040764
+  },
+  "interpretation": "Hard Top2 has zero direct classification/KD gradient to masked dense ports on these20 TRAIN examples. Small-sample domain gradient cosines do not establish population interference or a capacity bound. A training-only amplitude surrogate backward with bitwise-identical hard-Top2 forward is a testable bounded hypothesis, not a claimed improvement."
+}
