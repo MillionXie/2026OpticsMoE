@@ -15,7 +15,6 @@
     }
   },
   "four_values_meaning": "Two models trained jointly on RGB+SAR; each evaluated on RGB and SAR. Not a pair of single-domain training models.",
-  "pending_human_clarification": "Whether separately train two means LG/D joint models (current figure columns) or RGB-only/SAR-only models with cross-domain 2x2 evaluation",
   "current_new_runs": [
     {
       "name": "control",
@@ -55,5 +54,7 @@
   "parent_preserved": true,
   "training": "Original TRAIN labels only, VAL selection, parent E0 competes; optional original TRAIN acquisition-domain auxiliary; no TEST in current loss",
   "target": "Original figure ~RGB79.5/SAR74.9 are goals, no guarantee",
-  "state": "launched_not_yet_completed"
+  "state": "Both alternating refinements genuinely in training; latest full diagnostic control45/domain44, TEST not evaluated for these candidates",
+  "original_code_scope_verified": "The shared-frontend 79.5/74.9 version uses one joint RGB+SAR LG and one joint D, each evaluated on both domains; do not split LG into two domain-specific inference checkpoints.",
+  "old_reference_split": "79.5/74.9 VAL, same original PT TEST78.9/72.4; old CNN is absent from current LG."
 }

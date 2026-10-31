@@ -1,0 +1,59 @@
+{
+  "user_requested_original_code_check": true,
+  "conclusion": "The 79.5/74.9 shared-frontend version trains one joint RGB+SAR LG and one joint RGB+SAR D2NN; each selected checkpoint is evaluated on both domains. It does not train RGB-only LG and SAR-only LG.",
+  "evidence": [
+    {
+      "file": "LightGenV2/demo_check/shared_frontend/run.py",
+      "lines": [
+        93,
+        183,
+        184,
+        188,
+        193
+      ],
+      "meaning": "Loop over architecture, not domain; full mixed-domain arrays used for both architectures."
+    },
+    {
+      "file": "LightGenV2/demo_check/shared_frontend/evaluate_single_holdout.py",
+      "lines": [
+        38,
+        67
+      ],
+      "meaning": "Two architecture checkpoints selected, same holdout contains RGB and SAR."
+    },
+    {
+      "file": "LightGenV2/demo_check/shared_frontend/HANDOFF_README.md",
+      "meaning": "79.50/74.90 are validation results; input was common frozen 93472-parameter CNN, not current no-frontend LG."
+    },
+    {
+      "file": "LightGenV2/demo_check/reports/reproduction/EUROSAT_CONTINUATION_HOLDOUT_20260916.md",
+      "meaning": "The same original MoE PT later tested RGB78.90/SAR72.40, overall75.65; do not relabel original validation as test."
+    },
+    {
+      "file": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/train_eurosat.py",
+      "lines": [
+        73
+      ],
+      "meaning": "The earlier EuroSAT curriculum additionally trains A-only and B-only D2NN, selecting each on its own source-domain validation."
+    },
+    {
+      "file": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/evaluate_eurosat.py",
+      "lines": [
+        10,
+        35
+      ],
+      "meaning": "Earlier experiment evaluates all four models moe/A-only/B-only/AB on both domains."
+    }
+  ],
+  "source_sha256": {
+    "LightGenV2/demo_check/shared_frontend/run.py": "a0af6d67034be8157364bed1bffef865146a6be2ba3ff87003e7f46b33a7f287",
+    "LightGenV2/demo_check/shared_frontend/evaluate_single_holdout.py": "4942d7130ba16fcb0139da353a71ef1856824b58652cc764a6f26cadff63b474",
+    "LightGenV2/demo_check/shared_frontend/HANDOFF_README.md": "e1b98820f26f25dea3cf5ac70ea382d6a33de2fef7964a0881b3db4e0aefd8ae",
+    "LightGenV2/demo_check/reports/reproduction/EUROSAT_CONTINUATION_HOLDOUT_20260916.md": "c24eb2a454af1dcf5865d544e43aeb617270f363fea56252633ba0c99552d0ce",
+    "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/train_eurosat.py": "5e68486f360d5ce85efe22f3fd56778563ef9f70ddaa9461011e6efda90c2edc",
+    "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/evaluate_eurosat.py": "acd26bab1352191cdb30231609ae29b967f9afed52aa1a254b80d865243fb121"
+  },
+  "current_scope": "Continue joint LG optimization with unchanged inference contract; protect existing joint D. No RGB-only/SAR-only LG has been represented as completed.",
+  "old_figure_baseline_dashed_exact_checkpoint": "Not yet traced uniquely; earlier A-only/B-only scores cannot be copied into current architecture.",
+  "target": "Improve RGB and SAR outputs of the SAME LG checkpoint, not select a different checkpoint per domain."
+}

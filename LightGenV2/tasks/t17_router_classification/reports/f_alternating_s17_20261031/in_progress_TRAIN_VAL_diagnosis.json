@@ -1,0 +1,167 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "analysis_split": "TRAIN/VAL only, current candidates in progress",
+  "candidates": {
+    "control": {
+      "latest_epoch": 45,
+      "selected_epoch": 41,
+      "best_validation": {
+        "epoch": 41,
+        "accuracy": 0.468,
+        "domains": {
+          "RGB": 0.501,
+          "SAR": 0.435
+        },
+        "router": {
+          "mean_power": [
+            0.019709769636392593,
+            0.1064186617732048,
+            0.873870849609375,
+            0.0
+          ],
+          "std_power": [
+            0.05415624752640724,
+            0.06351304054260254,
+            0.05480608344078064,
+            0.0
+          ],
+          "selected_fraction": [
+            0.144,
+            0.8565,
+            0.9995,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.0005,
+            "0-2": 0.1435,
+            "0-3": 0.0,
+            "1-2": 0.856,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.14400000000000002,
+          "effective_experts_from_mean_power": 1.2897174550405457,
+          "mean_per_sample_effective_experts": 1.2820124626159668,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 2000
+        }
+      },
+      "latest_matched_TRAIN_VAL": {
+        "epoch": 45,
+        "train": 0.626,
+        "validation": 0.464,
+        "gap_pp": 16.2,
+        "train_recall": [
+          0.5866666666666667,
+          0.8016666666666666,
+          0.3516666666666667,
+          0.4633333333333333,
+          0.7666666666666667,
+          0.58,
+          0.5266666666666666,
+          0.685,
+          0.785,
+          0.7133333333333334
+        ],
+        "validation_recall": [
+          0.45,
+          0.7,
+          0.18,
+          0.24,
+          0.55,
+          0.51,
+          0.24,
+          0.6,
+          0.605,
+          0.565
+        ]
+      },
+      "head_blocks_completed": 9,
+      "head_inner_steps": 360,
+      "head_block_objective_never_increased": true,
+      "epoch_seconds_recent_median": 11.877577662467957,
+      "new_TEST_evaluations": 0
+    },
+    "domain": {
+      "latest_epoch": 44,
+      "selected_epoch": 44,
+      "best_validation": {
+        "epoch": 44,
+        "accuracy": 0.479,
+        "domains": {
+          "RGB": 0.503,
+          "SAR": 0.455
+        },
+        "router": {
+          "mean_power": [
+            0.05094075947999954,
+            0.10707253217697144,
+            0.841986894607544,
+            0.0
+          ],
+          "std_power": [
+            0.08359938114881516,
+            0.08704591542482376,
+            0.06239994615316391,
+            0.0
+          ],
+          "selected_fraction": [
+            0.3035,
+            0.697,
+            0.9995,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.0005,
+            "0-2": 0.303,
+            "0-3": 0.0,
+            "1-2": 0.6965,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.3035,
+          "effective_experts_from_mean_power": 1.3831231469937513,
+          "mean_per_sample_effective_experts": 1.3595649003982544,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 2000
+        }
+      },
+      "latest_matched_TRAIN_VAL": {
+        "epoch": 40,
+        "train": 0.6288333333333334,
+        "validation": 0.4685,
+        "gap_pp": 16.03333333333333,
+        "train_recall": [
+          0.6183333333333333,
+          0.8066666666666666,
+          0.34,
+          0.48,
+          0.7483333333333333,
+          0.5816666666666667,
+          0.53,
+          0.6716666666666666,
+          0.8016666666666666,
+          0.71
+        ],
+        "validation_recall": [
+          0.47,
+          0.715,
+          0.2,
+          0.235,
+          0.585,
+          0.485,
+          0.295,
+          0.565,
+          0.55,
+          0.585
+        ]
+      },
+      "head_blocks_completed": 8,
+      "head_inner_steps": 320,
+      "head_block_objective_never_increased": true,
+      "epoch_seconds_recent_median": 11.923282980918884,
+      "new_TEST_evaluations": 0
+    }
+  },
+  "interpretation": "Auxiliary changed route pair frequencies but expert4 still unused on VAL; neither current candidate has reached original figure range. TRAIN/VAL gap persists and low TRAIN also leaves representation/optimization unresolved. Refit blocks lower their own TRAIN objective, not proof of generalization. Let bounded runs finish before any new search."
+}
