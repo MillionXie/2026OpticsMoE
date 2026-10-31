@@ -17,7 +17,7 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/status.json",
-      "sha256": "d5af983fa0234224a01d427a25ccac722c0e84f93acd2518765f910fbb409e1f",
+      "sha256": "a3ed8493251c5d769047814a185861822fa1cc4677b9fbc388b2c2ec963ac46b",
       "snapshot": true
     },
     {
@@ -52,12 +52,17 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/last_pair_only/status.json",
-      "sha256": "014e6afc18dc4c117c37d960a07ad4d49d12c9a1d007f1f7f3bd0521ede02718",
+      "sha256": "b4fea38e4bf9cb32a28b7616db6446d4e4674437c1b46f1201c296d4e1261408",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/last_pair_only/history.json",
-      "sha256": "2ba824bf112b44055cb40d55befefd5808d4d8bb309db749917fb7a6178a256e",
+      "sha256": "5fc58e193309fc8dd8979b0bdc6264315df8a0fca1617f8872d58162f022ef99",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg4_refine_s17_20261031/lg4/last_pair_only/result.json",
+      "sha256": "5264aec3969020dff6db18fc869348b0a4025a233dec5b979fb94cb548997c87",
       "snapshot": true
     },
     {
@@ -77,7 +82,52 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/status.json",
-      "sha256": "ec7910336cb48a1240634f51922113a2833d3b5aada2ccbba235bd46a45cb6ad",
+      "sha256": "5eea77177d9a22ad22938da7af40f94dde2305f2caed778189793926c9c17062",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/training_membership.json",
+      "sha256": "ed0c6480bb24e18c9635fe3a209351e9117010996d4d8b142aca43dfc4908318",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/frozen_router_control/metadata.json",
+      "sha256": "d6dc1fac85264f2cca874f441ab6059788169bd13bf72c580bbc8bba313a3cd2",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/frozen_router_control/status.json",
+      "sha256": "6eab6e64cf5fd3bb98116cfa3e186a98af5b9e6e665aa4d1d14ba445805d5704",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/frozen_router_control/history.json",
+      "sha256": "feed47b0b4edc0449e14f7e635f8dfaa0c21caf2dfc3fadf1c00b65a51e11266",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/frozen_router_control/result.json",
+      "sha256": "f0a40f3784b1b364d658900cb9257c908c678e02e636d3fade68e64f4735afaa",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/last_pair_only/metadata.json",
+      "sha256": "d6d9d24017982bce09e15e0e8fe5aa675fbb8c60fb7421bc6930ee1dde450699",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/last_pair_only/status.json",
+      "sha256": "cf470259ca7044ce800f256b38228e0d1828ff1c160def7c1fe320739122d00f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/last_pair_only/history.json",
+      "sha256": "a92b28fa8dbc35cf043ec00e4e1c9529443f3934440b619c95de5f9e90a42178",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_lg6_refine_s17_20261031/lg6/last_pair_only/result.json",
+      "sha256": "81c237a95b180978f09adcd8b8cc999cd49eff982825862d4abcc1295ce8574c",
       "snapshot": true
     }
   ]

@@ -8,8 +8,6 @@
     1427941
   ],
   "no_initial_PID_has_GPU_allocation": true,
-  "active_new_refinement_pids": [
-    1502137
-  ],
-  "observed_time": 1793436669.0850773
+  "active_new_refinement_pids": [],
+  "observed_time": 1793437263.2676327
 }

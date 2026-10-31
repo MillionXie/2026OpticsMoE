@@ -1,0 +1,353 @@
+{
+  "role": "TRAIN_only_gradient_diagnosis_NOT_a_new_training_result",
+  "source_sha256": {
+    "model_four.py": "e50cd0e663d454c3ff74c75266d414688a0910cd47b5168ae7c561af4c921a7e",
+    "model_depth_ccd.py": "24c7ad5b3b5c1d239927d4f8d9aae50a20db9373ec4d23706e5f417a85881654",
+    "train_boundary_development.py": "da1d376f20606d84215baf7b3b4c0cb7ddb4fd1baabe11b172cfc5017bee5a25"
+  },
+  "class_counts": [
+    437,
+    437,
+    437,
+    437,
+    437,
+    437,
+    437,
+    437
+  ],
+  "targets": [
+    [
+      0.4899999797344208,
+      0.4899999797344208,
+      0.009999999776482582,
+      0.009999999776482582
+    ],
+    [
+      0.009999999776482582,
+      0.009999999776482582,
+      0.4899999797344208,
+      0.4899999797344208
+    ],
+    [
+      0.4899999797344208,
+      0.4899999797344208,
+      0.009999999776482582,
+      0.009999999776482582
+    ],
+    [
+      0.009999999776482582,
+      0.009999999776482582,
+      0.4899999797344208,
+      0.4899999797344208
+    ],
+    [
+      0.4899999797344208,
+      0.4899999797344208,
+      0.009999999776482582,
+      0.009999999776482582
+    ],
+    [
+      0.009999999776482582,
+      0.009999999776482582,
+      0.4899999797344208,
+      0.4899999797344208
+    ],
+    [
+      0.4899999797344208,
+      0.4899999797344208,
+      0.009999999776482582,
+      0.009999999776482582
+    ],
+    [
+      0.009999999776482582,
+      0.009999999776482582,
+      0.4899999797344208,
+      0.4899999797344208
+    ]
+  ],
+  "rows": [
+    {
+      "depth": 4,
+      "parent_epoch": 114,
+      "parent_sha256": "fb0dfedd73c5fe0ebb45387210726b33158aa30197f28ec5dc5e24b6844ba1dc",
+      "TRAIN_indices": [
+        3059,
+        2622,
+        437,
+        1748,
+        874,
+        2185,
+        0,
+        1311
+      ],
+      "TRAIN_labels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "primary_loss": 0.4956362247467041,
+      "aux_loss": 1.780418038368225,
+      "selected_experts": [
+        [
+          false,
+          true,
+          true,
+          false
+        ],
+        [
+          false,
+          true,
+          true,
+          false
+        ],
+        [
+          false,
+          true,
+          true,
+          false
+        ],
+        [
+          false,
+          true,
+          true,
+          false
+        ],
+        [
+          false,
+          true,
+          true,
+          false
+        ],
+        [
+          false,
+          true,
+          true,
+          false
+        ],
+        [
+          false,
+          true,
+          true,
+          false
+        ],
+        [
+          false,
+          true,
+          true,
+          false
+        ]
+      ],
+      "dense_power": [
+        [
+          0.10981918126344681,
+          0.7125991582870483,
+          0.16587018966674805,
+          0.011711478233337402
+        ],
+        [
+          0.08084269613027573,
+          0.8027967810630798,
+          0.10869080573320389,
+          0.007669779937714338
+        ],
+        [
+          0.06676241755485535,
+          0.8007702827453613,
+          0.12490513920783997,
+          0.007562145125120878
+        ],
+        [
+          0.09693688154220581,
+          0.7062574625015259,
+          0.18668125569820404,
+          0.010124356485903263
+        ],
+        [
+          0.02592363767325878,
+          0.877489447593689,
+          0.09050493687391281,
+          0.006081994157284498
+        ],
+        [
+          0.07536685466766357,
+          0.7347491979598999,
+          0.18156687915325165,
+          0.008317092433571815
+        ],
+        [
+          0.020696386694908142,
+          0.9153953194618225,
+          0.05844493210315704,
+          0.005463403183966875
+        ],
+        [
+          0.019335027784109116,
+          0.9154003262519836,
+          0.06002202257514,
+          0.0052426522597670555
+        ]
+      ],
+      "primary_dense_gradient_selected_max": 1.1056846380233765,
+      "primary_dense_gradient_unselected_max": 0.0,
+      "aux_dense_gradient_unselected_max": 11.68301773071289,
+      "first_expert_phase_gradient_L2": [
+        0.0,
+        0.034489843994379044,
+        0.011851241812109947,
+        0.0
+      ],
+      "router_physical_angle_primary_gradient_L2": 0.02166087613503649,
+      "router_physical_angle_aux_gradient_L2": 0.03480709480287382,
+      "router_gradient_cosine": 0.31026919845553264,
+      "aux_002_gradient_norm_ratio": 0.03213821508038939,
+      "aux_010_gradient_norm_ratio": 0.16069107540194696
+    },
+    {
+      "depth": 6,
+      "parent_epoch": 72,
+      "parent_sha256": "eeeee86ec4b0b84b97695ce1a384146455dd4ffda29e0200095683bb3bff20fe",
+      "TRAIN_indices": [
+        3059,
+        2622,
+        437,
+        1748,
+        874,
+        2185,
+        0,
+        1311
+      ],
+      "TRAIN_labels": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "primary_loss": 0.3828831911087036,
+      "aux_loss": 2.0044963359832764,
+      "selected_experts": [
+        [
+          true,
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ],
+        [
+          true,
+          true,
+          false,
+          false
+        ]
+      ],
+      "dense_power": [
+        [
+          0.1472555249929428,
+          0.7888579368591309,
+          0.06127109378576279,
+          0.0026154813822358847
+        ],
+        [
+          0.12519198656082153,
+          0.8118548393249512,
+          0.058886077255010605,
+          0.0040670717135071754
+        ],
+        [
+          0.10806267708539963,
+          0.8261882066726685,
+          0.06202768161892891,
+          0.0037214651238173246
+        ],
+        [
+          0.163942351937294,
+          0.7288517951965332,
+          0.10264989733695984,
+          0.004555930383503437
+        ],
+        [
+          0.03807202726602554,
+          0.9228823781013489,
+          0.03471684083342552,
+          0.004328765440732241
+        ],
+        [
+          0.09131395071744919,
+          0.8154062628746033,
+          0.08885824680328369,
+          0.004421634133905172
+        ],
+        [
+          0.028494838625192642,
+          0.9436352252960205,
+          0.0240776427090168,
+          0.0037922686897218227
+        ],
+        [
+          0.025219980627298355,
+          0.9465680718421936,
+          0.024588724598288536,
+          0.003623320022597909
+        ]
+      ],
+      "primary_dense_gradient_selected_max": 4.237072944641113,
+      "primary_dense_gradient_unselected_max": 0.0,
+      "aux_dense_gradient_unselected_max": 16.90438461303711,
+      "first_expert_phase_gradient_L2": [
+        0.015732213854789734,
+        0.051202528178691864,
+        0.0,
+        0.0
+      ],
+      "router_physical_angle_primary_gradient_L2": 0.023918355501954574,
+      "router_physical_angle_aux_gradient_L2": 0.0386842771393651,
+      "router_gradient_cosine": 0.368416954781588,
+      "aux_002_gradient_norm_ratio": 0.032346937176516065,
+      "aux_010_gradient_norm_ratio": 0.16173468588258033
+    }
+  ],
+  "interpretation": "Current sparse_top2 is hard masked normalization, not straight-through. Classification has zero direct dense-probability gradient at excluded ports and zero first-plane phase gradient at never-selected experts in this batch; optical router phase can still indirectly change all port powers. Dense optical supervision provides gradients to excluded ports, but does not guarantee better classification. Do not alter current frozen refinements; evaluate complete candidates first."
+}

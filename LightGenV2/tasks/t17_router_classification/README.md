@@ -88,6 +88,27 @@ LG4冻结router控制已20轮平台停，选E2：TRAIN80.38%、VAL70.21%、原TE
 其best/last和逐样本输出已完整SHA核验，仍未达到目标；共享worker继续last_pair_only，不能称整个微调已结束。
 新refine结果另存，首轮六点表不覆盖；全部为原TEST暴露开发结果。
 
+## 图b冻结比较结束与下一步路由诊断（2026-10-31 17:07）
+
+冻结比较全部结束：LG4控制20轮选E2为TRAIN80.38/VAL70.21/开发77.39%；
+只训末对30轮选E15为78.66/70.21/76.60%，未优于控制；LG6两个20轮候选都选回E0父，仍79.79%。
+完整best/last和逐样本结果已SHA核验；新6末对收据lg6_last_pair_completed_transfer/audit.json，
+其余frozen_refine_partial_completed_transfer/audit.json及已归档lg4_frozen_control收据均保留。
+两个worker已退出、无自身GPU分配，不能再称冻结训练正在跑。
+
+真实TRAIN每类一张的CPU梯度核验见TRAIN_route_gradient_diagnosis.json：
+此T17实现的sparse_top2是硬mask归一，**没有straight-through**；未选dense端口对主分类loss的直接梯度为0，
+该批次未选入口专家相位梯度也为0。Router相位仍可能间接改变所有端口，且后续E面四区仍可受光。
+前Top2的dense辅助KL可为未选端口提供梯度；系数.02/.1的router物理角度梯度范数约主分类的3.2%/16.1%。
+仅八张诊断，不是全数据统计，也不是性能提升证明。
+
+因此准备一个有限联合对照：joint_router_control与joint_dense_pair_aux(.1)，同父同LR/数据/预算，
+只差dense监督；解冻光router及全部原主干相位，保持推理结构/OEO/CCD与硬Top2不变。
+LG4从完整冻结控制E2父开始，LG6仍从原E72父开始；profiles为panel_b_lg{4,6}_routeaux_s17.json。
+目标只由原TRAIN计数437×8确定，每类专家对各.49、另两端口各.01；仅TRAIN真标签或原TEST教师伪标签用于监督，
+不把TEST真值送进loss，不在推理时使用标签路由，不加电子分类头。各最多40/min20/pat15，父参选。
+当前记录为实现/准入准备，实际启动须以新run的launch与metadata为准，不预设均衡必提高精度。
+
 ## 图b后续有限优化准入（2026-10-31 16:46）
 
 `refine_panel_b_depth.py`与`configs/panel_b_lg4_refine_s17.json`已通过88项CPU检查。

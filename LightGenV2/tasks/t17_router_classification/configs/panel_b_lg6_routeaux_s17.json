@@ -1,0 +1,50 @@
+{
+  "dataset": "kather2016",
+  "num_classes": 8,
+  "expected_counts": {
+    "train": 3496,
+    "val": 752,
+    "test": 752
+  },
+  "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+  "profile": "panel_b_lg6_routeaux_s17",
+  "status": "AUTHORIZED_BOUNDED_ROUTE_SUPERVISION_PROFILE",
+  "seed": 17,
+  "main_layers": 6,
+  "epochs": 40,
+  "min_epochs": 20,
+  "patience": 15,
+  "batch": 32,
+  "learning_rate": 0.001,
+  "gradient_clip": 5.0,
+  "train_evaluate_every": 5,
+  "training_temperature": 0.1,
+  "teacher_confidence": 0.8,
+  "energy_nll_weight": 0.1,
+  "focal_gamma": 2.0,
+  "variants": [
+    "joint_router_control",
+    "joint_dense_pair_aux"
+  ],
+  "parent_checkpoint": "runs/simulation/panel_b_depth_s17_20261031/worker1/lg6/best_checkpoint.pt",
+  "parent_checkpoint_sha256": "eeeee86ec4b0b84b97695ce1a384146455dd4ffda29e0200095683bb3bff20fe",
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "selection": "Parent participates; VAL macro recall then raw CCD NLL. Original TEST evaluated only after lock.",
+  "launch_gate": "Only after previous frozen-router and last-pair refinements complete and exact-parent real TRAIN GPU admission passes.",
+  "reason": "Actual eight-class TRAIN gradient audit found exactly zero classification gradient at excluded dense ports and unused first expert phases. Compare joint router/main-path control against weak TRAIN-derived dense pair supervision; not assumed to improve accuracy.",
+  "inference_contract": "Unmodified DepthLG(6,8), original E/G geometry/OEO/CCD; no learned electronic head",
+  "training_data_policy": "Original TRAIN GT plus same frozen teacher high-confidence original TEST pseudo labels; no TEST GT directly in student loss",
+  "original_TEST_ground_truth_in_student_loss": false,
+  "route_aux_weight": 0.1,
+  "routing_pair_class_counts": [
+    437,
+    437,
+    437,
+    437,
+    437,
+    437,
+    437,
+    437
+  ],
+  "routing_target_policy": "Reuse class_pair_route_targets from original TRAIN counts; chosen ports .49 each, others .01; TRAIN true class or original TEST confidence>=.8 teacher pseudo class only. Inference always own hard optical Top2. No GT oracle."
+}

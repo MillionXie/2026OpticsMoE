@@ -11,7 +11,7 @@ import torch
 from .model_depth_ccd import DepthLG, depth_contract
 from .train import encode, write
 from .train_panel_b_depth import evaluate, metric_key
-from .train_boundary_development import boundary_objective
+from .train_boundary_development import boundary_objective, class_pair_route_targets, dense_route_supervision
 from .test_exposed_data import load_raw_splits
 from .development_teacher_data import development_training_membership
 from .phase_optimizer import WrappedPhaseAdam
@@ -20,14 +20,15 @@ from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
 def configure_trainable(model, mode):
-    if mode not in ('frozen_router_control', 'last_pair_only'):
+    if mode not in ('frozen_router_control', 'last_pair_only', 'joint_router_control', 'joint_dense_pair_aux'):
         raise ValueError(mode)
     if model.main_layers not in (4, 6):
         raise ValueError('The human-fixed two-layer LG must not be refined')
     index = model.main_layers//2-2
     last = {f'extra_expert_phases.{index}', f'extra_global_phases.{index}'}
     for name, parameter in model.named_parameters():
-        parameter.requires_grad_(name != 'router_phase' if mode == 'frozen_router_control' else name in last)
+        parameter.requires_grad_(True if mode.startswith('joint_') else
+                                 name != 'router_phase' if mode == 'frozen_router_control' else name in last)
     return [p for p in model.parameters() if p.requires_grad]
 
 
@@ -37,12 +38,31 @@ def assert_frozen(model, snapshot):
             raise RuntimeError('Frozen phase changed: '+name)
 
 
+def refinement_objective(output, labels, original, teacher, cfg, mode, targets=None):
+    loss=boundary_objective(output['logits'],labels,original,teacher,
+                            cfg['training_temperature'],cfg['teacher_confidence'],
+                            cfg['energy_nll_weight'],focal_gamma=cfg['focal_gamma'])
+    weight=cfg.get('route_aux_weight',0.) if mode=='joint_dense_pair_aux' else 0.
+    aux=loss.new_zeros(())
+    if weight:
+        if weight<0 or targets is None:raise ValueError('Dense supervision requires TRAIN-derived targets')
+        aux=dense_route_supervision(output['dense_route_power'],labels,original,teacher,targets,cfg['teacher_confidence'])
+        loss=loss+weight*aux
+    return loss,aux
+
+
 def refine(mode, out, cfg, parent, metadata, x, y, ids, union, labels, teacher, membership):
     out.mkdir(exist_ok=False)
     torch.manual_seed(cfg['seed']);rng=np.random.default_rng(cfg['seed'])
     model=DepthLG(cfg['main_layers'],8).cuda();model.load_state_dict(parent['model'],strict=True)
     assert sum(p.numel() for p in model.parameters())==depth_contract(cfg['main_layers'])['LG_phase_parameters']
     parameters=configure_trainable(model,mode)
+    aux_weight=cfg.get('route_aux_weight',0.) if mode=='joint_dense_pair_aux' else 0.
+    targets=None
+    if aux_weight:
+        counts=torch.bincount(y['train'],minlength=8).cpu().tolist()
+        if counts!=cfg.get('routing_pair_class_counts'):raise ValueError('Only exact original TRAIN counts may define route targets')
+        targets=torch.as_tensor(class_pair_route_targets(counts),device='cuda',dtype=torch.float32)
     frozen={n:p.detach().cpu().clone() for n,p in model.named_parameters() if not p.requires_grad}
     initial={n:p.detach().cpu().clone() for n,p in model.named_parameters()}
     val,*_=evaluate(model,x['val'],y['val'],cfg['batch'])
@@ -51,25 +71,26 @@ def refine(mode, out, cfg, parent, metadata, x, y, ids, union, labels, teacher, 
     best=metric_key(val);selected=0;stale=0;history=[];started=time.time()
     meta=dict(metadata,variant=mode,trainable_names=[n for n,p in model.named_parameters() if p.requires_grad],
               trainable_parameters=sum(p.numel() for p in parameters),frozen_names=list(frozen),
-              parent_selected_epoch=parent['epoch'],parent_validation=val)
+              parent_selected_epoch=parent['epoch'],parent_validation=val,
+              routing_aux_weight=aux_weight,routing_class_targets=targets.cpu().tolist() if targets is not None else None,
+              routing_supervision_absent_from_inference=True)
     write(out/'metadata.json',meta)
     torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=meta),out/'best_checkpoint.pt')
     optimizer=WrappedPhaseAdam(parameters,cfg['learning_rate'],cfg['gradient_clip'])
     for epoch in range(1,cfg['epochs']+1):
         begin=time.time();lr=cfg['learning_rate']*(.2+.8*.5*(1+np.cos(np.pi*(epoch-1)/(cfg['epochs']-1))))
         for group in optimizer.param_groups:group['lr']=lr
-        model.train();order=rng.permutation(membership);loss_sum=0.
+        model.train();order=rng.permutation(membership);loss_sum=0.;aux_sum=0.
         for start in range(0,len(order),cfg['batch']):
             idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda')
             optimizer.zero_grad(set_to_none=True)
-            loss=boundary_objective(model(union[idx])['logits'],labels[idx],idx<len(y['train']),teacher[idx],
-                                    cfg['training_temperature'],cfg['teacher_confidence'],
-                                    cfg['energy_nll_weight'],focal_gamma=cfg['focal_gamma'])
+            output=model(union[idx],return_dense_route=bool(aux_weight))
+            loss,aux=refinement_objective(output,labels[idx],idx<len(y['train']),teacher[idx],cfg,mode,targets)
             if not torch.isfinite(loss):raise RuntimeError('Nonfinite loss')
             loss.backward()
             if any(p.grad is None or not torch.isfinite(p.grad).all() for p in parameters):
                 raise RuntimeError('Trainable phase gradient failure')
-            optimizer.step();loss_sum+=float(loss.detach())*len(idx)
+            optimizer.step();loss_sum+=float(loss.detach())*len(idx);aux_sum+=float(aux.detach())*len(idx)
         val,*_=evaluate(model,x['val'],y['val'],cfg['batch']);improved=metric_key(val)>best
         stale=0 if improved else stale+1
         if improved:
@@ -77,6 +98,7 @@ def refine(mode, out, cfg, parent, metadata, x, y, ids, union, labels, teacher, 
             torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=meta),out/'best_checkpoint.pt')
         row=dict(epoch=epoch,learning_rate=lr,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,
                  order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest())
+        if aux_weight:row['unweighted_dense_routing_KL']=aux_sum/len(order)
         if epoch==1 or epoch%cfg['train_evaluate_every']==0:
             row['original_TRAIN'],*_=evaluate(model,x['train'],y['train'],cfg['batch'])
         assert_frozen(model,frozen);row['seconds']=time.time()-begin;history.append(row)
