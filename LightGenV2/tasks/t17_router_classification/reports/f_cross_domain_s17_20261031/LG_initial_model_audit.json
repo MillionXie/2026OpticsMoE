@@ -1,0 +1,52 @@
+{
+  "RGB": {
+    "strict": true,
+    "phase_head_shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    },
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0
+  },
+  "SAR": {
+    "strict": true,
+    "phase_head_shapes": {
+      "first_phase": [
+        4,
+        224,
+        224
+      ],
+      "global_phase": [
+        478,
+        478
+      ],
+      "router_phase": [
+        224,
+        224
+      ],
+      "shared_head.weight": [
+        10,
+        784
+      ]
+    },
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0
+  }
+}

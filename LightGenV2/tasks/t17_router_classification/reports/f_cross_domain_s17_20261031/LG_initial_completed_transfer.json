@@ -1,0 +1,139 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/f_cross_domain_s17_20261031/LG_RGB",
+    "runs/simulation/f_cross_domain_s17_20261031/LG_SAR"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/TRAIN_teacher_logits.npz",
+      "size": 900211,
+      "sha256": "fe6cba4292cf8fea1381f47608153e5e99df5a3f3d7de96ae4216a928043c2c7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/best_checkpoint.pt",
+      "size": 1959696,
+      "sha256": "8da7b7c981f7e3b1fa9cb14ba5c95a4d6125466a91ccfeeac677263ba94b05f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/exit_receipt.json",
+      "size": 56,
+      "sha256": "cef7383242a12753bf94660493ba125311f75a7c8f6516b63beb35b8216e742e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/history.json",
+      "size": 415718,
+      "sha256": "4bb0c65b2102817709a2939c3e89cc9508bdd9f1d88918cfb5cfa99910e4ca4e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/last_checkpoint.pt",
+      "size": 5796407,
+      "sha256": "656fd8f52d19fa2b81db5c2d018f7c764d451e140c304a597cda009f83ba88df"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/metadata.json",
+      "size": 7327,
+      "sha256": "82701b0d528a266d74243deb6c5f8684c3843f61f1a8f45a89bc3021f951dfdb"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/result.json",
+      "size": 11788,
+      "sha256": "9d5f51b43ec39995015e9c17c62afa5f4f9fc8d65bc3709f9dd9e330a90389c8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/selection_lock.json",
+      "size": 207,
+      "sha256": "94b0f4ff3c3e68d9875dbfa4ba21da5cc91ca022dbf3364ffe41d74a2cc299b7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/status.json",
+      "size": 11829,
+      "sha256": "f1e972c7844083f1ea2ba2ebaec2ee5a6cdf6dccbbab787f7c5f2f8aa2b5f61e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/teacher_manifest.json",
+      "size": 4086,
+      "sha256": "e997f1c5485f640aa9dd78f05491517bda3cd6f4c26258b3031bd58d75df19d7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/test_predictions.npz",
+      "size": 138794,
+      "sha256": "021ea3b03eecc06af2dedb007c9f16a578c0406ab27fcdfeb6e021d4a0c2d24f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/train_predictions.npz",
+      "size": 208022,
+      "sha256": "0a3ab628d2ed03f7f1e744618a8e9dc1b6cc09d3f794a0218810ea57e553a4ed"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/val_predictions.npz",
+      "size": 71232,
+      "sha256": "664c334f4a0f6ad8f35d69e3cec9c197dc74f6155b32e48ba11e916289b0ea9a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/TRAIN_teacher_logits.npz",
+      "size": 901300,
+      "sha256": "134b7d37363041ac72381c8ebf9e8fc9f391f70f0930f29418a44978052d4cbe"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/best_checkpoint.pt",
+      "size": 1959696,
+      "sha256": "9706c49641b9dfba65de6a4374b01caafe504940a8d792effa7f4a2ee69a147f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/exit_receipt.json",
+      "size": 55,
+      "sha256": "a11e1fa2eef555783c3d2180476e681a8208d4e98289483e496f25b14ca81672"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/history.json",
+      "size": 418708,
+      "sha256": "133b91008875cf208bbed4febc106ccdcd2c24fb75a6e55c11482e7e5e8d6ed9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/last_checkpoint.pt",
+      "size": 5796407,
+      "sha256": "461fd2b8f381328cd8e2edc6af4806f1e016f037fa1ec97fb726dd6eec492fe8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/metadata.json",
+      "size": 7327,
+      "sha256": "0fccf205bba030d4dc8b835b7d00def6365cdaef8fb99e6b130c8d05bec4893e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/result.json",
+      "size": 11920,
+      "sha256": "5074b57a4fa9bfcac43fc4a80fe4ebcf3e356e0ec7c00e5bb5dee1483a3047c8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/selection_lock.json",
+      "size": 207,
+      "sha256": "3b0cdb9544033e8b3a2132c95fcc9ff9c25ffe5205444e091a772f56ea75fd51"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/status.json",
+      "size": 11961,
+      "sha256": "91076f25473017e6f922c65c5b66a4fa477e3db8331a8def0c613bb7b9c601c8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/teacher_manifest.json",
+      "size": 4086,
+      "sha256": "b3758fa7f7e7aeb51cf55f5db1af9b8d07532f0579ce32281620e5d47fdce2a5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/test_predictions.npz",
+      "size": 138154,
+      "sha256": "4eec83d33f85f0945a6ecad339ed4aa1293a2a6d20b7ce1921c76bcc9b634622"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/train_predictions.npz",
+      "size": 205668,
+      "sha256": "5d6b7d495eacd9d3ed3078b60890758e68c86a7e3c50847272f91ba2775cd3f4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/val_predictions.npz",
+      "size": 70465,
+      "sha256": "5b4689a5cab2a981905306daf3171e2da2e17f39c89bb782d1bbb122346346a3"
+    }
+  ]
+}

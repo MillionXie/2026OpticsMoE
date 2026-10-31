@@ -1,3 +1,20 @@
+## F首轮八格已完整归档；同源TEST软目标蒸馏继续（2026-10-31）
+
+首轮LG_RGB80轮选E73：TRAIN59.5333/VAL55.20，TEST RGB57.10%(571/1000)、SAR13.30%(133/1000)。
+LG_SAR80轮选E80：TRAIN50.8333/VAL50.30，TEST RGB10.90%(109/1000)、SAR44.10%(441/1000)。
+D2NN四格保护：RGB训练50.90/9.70，SAR训练17.30/41.60，均原60轮。两LG共26文件19.05MB全部SHA/strict、源域TRN/VAL与完整TEST ID标签域、
+3000×8×10教师TRAIN缓存、真实Top2/唯一Linear487204/无CNN核验；原LG两个PID与supervisor均退出，无GPU分配。
+LG训练—验证差仅4.33/0.53pp，当前低分不主要表现为严重过拟合；仍有优化/表征不足，不能证明容量上限或全部归因删CNN。
+
+按人工明确授权，新增独立cfg f_source_TEST_KD_{RGB,SAR}_s17_20261031，仅复用各自真实单域父，严格PT SHA+父training_domain/原data匹配，拒绝旧联合父。
+sourcef0b81885363162e41393f0047de553b3cd3ce884已164 CPU检查与两精确父真实源TEST软目标/GT隔离/相位更新/头块冻结GPU准入，通过main发布与server路径SHA。
+worker2077773(RGB/4090)、2077774(SAR/A100)在root runs/simulation/f_source_TEST_KD_s17_20261031/{RGB,SAR}已真正训练，最近E12/E14，不是准备。
+每轮原TRAIN3000的CE+KD后，额外本域原TEST1000匹配D4只做软KL，没有TEST真标签CE、没有对方域像素；新metadata明确new_training_only_original_TRAIN=false。
+每5轮头块使用24000 TRAIN硬标签视图+8000源TEST软视图，硬标签mask只选TRAIN，TEST位置标签-1；不在推理加任何模块/参数。
+每轮47个TRAIN相位/head步+16个TEST软目标步，分别记录TEST1000呈现；头块最多40内步，最多40/min20/pat15轮，小LR.0005/head.00005。
+所有当前指标开发用途，源TEST训练和配对地块标签暴露完整披露；不能称独立TEST、纯零样本跨域或等预算结构优势。教师不进推理，光路/OEO/输入/单Linear保持。
+报告保留首轮八格与每个候选：跨候选只有完整SHA权重、VAL不低于父、同域开发准确率提高才整行替换，同一PT推两个域，禁止逐格拼不同PT。
+
 ## F单域D2NN四格已完成并核验（2026-10-31）
 
 两组D2NN均完整60轮、从头seed17、仅源域TRAIN、无教师/TEST训练、三层478同OEO无Linear，后续保护不续训。

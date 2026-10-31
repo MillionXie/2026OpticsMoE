@@ -3,13 +3,13 @@
   "files": [
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/RGB_pipeline.json",
-      "sha256": "04e376ac601e5119e7d9581869eb3c09af569e5295d9f8d30684c1a40ff34e75",
-      "bytes": 569
+      "sha256": "46d571cb6ce470e9f393297c6a9de578dcf052b71048f56118ecff869c0a5700",
+      "bytes": 65
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/SAR_pipeline.json",
-      "sha256": "897526674617c319abc10709daabd5dba655f01b9b5dd15ee78a2f13d0547b18",
-      "bytes": 569
+      "sha256": "106746a03377922473d833c8d1ae26222fb898019960e5b0e8418a566379aee8",
+      "bytes": 65
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/D2NN_RGB/status.json",
@@ -53,8 +53,8 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/status.json",
-      "sha256": "1804e4f5793745174ff094d1c7c5cf54736f0f0972ccf9bbea6917bf72a25c7b",
-      "bytes": 105
+      "sha256": "f1e972c7844083f1ea2ba2ebaec2ee5a6cdf6dccbbab787f7c5f2f8aa2b5f61e",
+      "bytes": 11829
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/metadata.json",
@@ -63,13 +63,18 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/history.json",
-      "sha256": "bd364d2b1d79aee21394ee71538c1f66b4fb94eb3d4ebda99f02ecea623a157d",
-      "bytes": 329667
+      "sha256": "4bb0c65b2102817709a2939c3e89cc9508bdd9f1d88918cfb5cfa99910e4ca4e",
+      "bytes": 415718
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_RGB/result.json",
+      "sha256": "9d5f51b43ec39995015e9c17c62afa5f4f9fc8d65bc3709f9dd9e330a90389c8",
+      "bytes": 11788
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/D2NN_SAR/status.json",
-      "sha256": "b41bea6ae659aea460c609b6110e935b1bd442f323a06e4bd13456c1cacc3f2e",
-      "bytes": 105
+      "sha256": "41a49ad087686dc5f78714a35a55094733e6a0b88de60af9bf94a4b8d84c6883",
+      "bytes": 5570
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/D2NN_SAR/metadata.json",
@@ -78,8 +83,13 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/D2NN_SAR/history.json",
-      "sha256": "c4bf17f41334567d1901594836c72d400b9fd5bc55e6b3c9dbe68d4ba3608fa0",
-      "bytes": 161575
+      "sha256": "0766efc49096de051c6c1554bf43d1914bf90aea85ef40e189d8b031b08e470a",
+      "bytes": 165897
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/D2NN_SAR/result.json",
+      "sha256": "0de20b3b54bc3f8e4c849d61e5b6f07914ebac0bdb50eb8bf33307f00b7dc9ed",
+      "bytes": 5529
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/teacher_SAR/status.json",
@@ -103,8 +113,8 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/status.json",
-      "sha256": "e1895f36a95095c08673eb1819dd294fe2eab0aa37a017e38555a0c9eaae70c6",
-      "bytes": 105
+      "sha256": "91076f25473017e6f922c65c5b66a4fa477e3db8331a8def0c613bb7b9c601c8",
+      "bytes": 11961
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/metadata.json",
@@ -113,8 +123,13 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/history.json",
-      "sha256": "7303d76d877e766473343846c8eaa811fd257257e09205eaa2d61c19cde2e809",
-      "bytes": 145801
+      "sha256": "133b91008875cf208bbed4febc106ccdcd2c24fb75a6e55c11482e7e5e8d6ed9",
+      "bytes": 418708
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_cross_domain_s17_20261031/LG_SAR/result.json",
+      "sha256": "5074b57a4fa9bfcac43fc4a80fe4ebcf3e356e0ec7c00e5bb5dee1483a3047c8",
+      "bytes": 11920
     }
   ]
 }

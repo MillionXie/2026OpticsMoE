@@ -1,0 +1,196 @@
+{
+  "RGB": {
+    "selected_epoch": 73,
+    "completed_epochs": 80,
+    "TRAIN_VAL_gap_pp": 4.333333333333334,
+    "parts": {
+      "train": {
+        "accuracy": 0.5953333333333334,
+        "domains": {
+          "RGB": {
+            "correct": 1786,
+            "n": 3000,
+            "accuracy": 0.5953333333333334
+          }
+        },
+        "mean_power": [
+          0.21841607987880707,
+          0.09978699684143066,
+          0.6817973256111145,
+          0.0
+        ],
+        "selected_fraction": [
+          0.5926666666666667,
+          0.4086666666666667,
+          0.9986666666666667,
+          0.0
+        ],
+        "mean_capture": 0.032457686960697174
+      },
+      "val": {
+        "accuracy": 0.552,
+        "domains": {
+          "RGB": {
+            "correct": 552,
+            "n": 1000,
+            "accuracy": 0.552
+          }
+        },
+        "mean_power": [
+          0.2154390811920166,
+          0.09884262830018997,
+          0.6857181787490845,
+          0.0
+        ],
+        "selected_fraction": [
+          0.596,
+          0.405,
+          0.999,
+          0.0
+        ],
+        "mean_capture": 0.032373059540987015
+      },
+      "test": {
+        "accuracy": 0.352,
+        "domains": {
+          "RGB": {
+            "correct": 571,
+            "n": 1000,
+            "accuracy": 0.571
+          },
+          "SAR": {
+            "correct": 133,
+            "n": 1000,
+            "accuracy": 0.133
+          }
+        },
+        "mean_power": [
+          0.2882344424724579,
+          0.08023224025964737,
+          0.6315332055091858,
+          0.0
+        ],
+        "selected_fraction": [
+          0.733,
+          0.27,
+          0.997,
+          0.0
+        ],
+        "mean_capture": 0.031639717519283295
+      }
+    },
+    "teacher_source_TEST_exposed": true,
+    "student_TRAIN_only": true,
+    "teacher_cache_shape": [
+      3000,
+      8,
+      10
+    ],
+    "original_ID_label_domain_arrays_match": true,
+    "actual_Top2": true,
+    "checkpoint_sha256": "8da7b7c981f7e3b1fa9cb14ba5c95a4d6125466a91ccfeeac677263ba94b05f0",
+    "all_parameter_updates": {
+      "first_phase": 36.647438049316406,
+      "global_phase": 39.422760009765625,
+      "router_phase": 26.66185188293457,
+      "shared_head.weight": 19.337793350219727
+    }
+  },
+  "SAR": {
+    "selected_epoch": 80,
+    "completed_epochs": 80,
+    "TRAIN_VAL_gap_pp": 0.5333333333333301,
+    "parts": {
+      "train": {
+        "accuracy": 0.5083333333333333,
+        "domains": {
+          "SAR": {
+            "correct": 1525,
+            "n": 3000,
+            "accuracy": 0.5083333333333333
+          }
+        },
+        "mean_power": [
+          0.48229271173477173,
+          0.4535456895828247,
+          0.06401865929365158,
+          0.00014314163126982749
+        ],
+        "selected_fraction": [
+          0.9216666666666666,
+          0.9076666666666666,
+          0.17033333333333334,
+          0.0003333333333333333
+        ],
+        "mean_capture": 0.023356832563877106
+      },
+      "val": {
+        "accuracy": 0.503,
+        "domains": {
+          "SAR": {
+            "correct": 503,
+            "n": 1000,
+            "accuracy": 0.503
+          }
+        },
+        "mean_power": [
+          0.49194395542144775,
+          0.4548993408679962,
+          0.053156692534685135,
+          0.0
+        ],
+        "selected_fraction": [
+          0.932,
+          0.921,
+          0.147,
+          0.0
+        ],
+        "mean_capture": 0.023221001029014587
+      },
+      "test": {
+        "accuracy": 0.275,
+        "domains": {
+          "RGB": {
+            "correct": 109,
+            "n": 1000,
+            "accuracy": 0.109
+          },
+          "SAR": {
+            "correct": 441,
+            "n": 1000,
+            "accuracy": 0.441
+          }
+        },
+        "mean_power": [
+          0.41417309641838074,
+          0.43813174962997437,
+          0.14769531786441803,
+          0.0
+        ],
+        "selected_fraction": [
+          0.7655,
+          0.899,
+          0.3355,
+          0.0
+        ],
+        "mean_capture": 0.022704074159264565
+      }
+    },
+    "teacher_source_TEST_exposed": true,
+    "student_TRAIN_only": true,
+    "teacher_cache_shape": [
+      3000,
+      8,
+      10
+    ],
+    "original_ID_label_domain_arrays_match": true,
+    "actual_Top2": true,
+    "checkpoint_sha256": "9706c49641b9dfba65de6a4374b01caafe504940a8d792effa7f4a2ee69a147f",
+    "all_parameter_updates": {
+      "first_phase": 41.86293411254883,
+      "global_phase": 35.359073638916016,
+      "router_phase": 14.932598114013672,
+      "shared_head.weight": 15.665245056152344
+    }
+  }
+}

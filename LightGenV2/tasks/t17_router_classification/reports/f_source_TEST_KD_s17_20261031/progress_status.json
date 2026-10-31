@@ -1,0 +1,34 @@
+{
+  "RGB": {
+    "state": "training",
+    "epoch": 12,
+    "pid": 2077773,
+    "error": null,
+    "last_epoch": 12,
+    "VAL": 0.575,
+    "source_TEST_KD": {
+      "images": 1000,
+      "augmentation_views_presented": 1000,
+      "phase_updates": 16,
+      "soft_KD_objective": 1.546395058631897,
+      "TEST_ground_truth_in_loss": false,
+      "domain": "RGB"
+    }
+  },
+  "SAR": {
+    "state": "training",
+    "epoch": 14,
+    "pid": 2077774,
+    "error": null,
+    "last_epoch": 14,
+    "VAL": 0.508,
+    "source_TEST_KD": {
+      "images": 1000,
+      "augmentation_views_presented": 1000,
+      "phase_updates": 16,
+      "soft_KD_objective": 1.045820608139038,
+      "TEST_ground_truth_in_loss": false,
+      "domain": "SAR"
+    }
+  }
+}

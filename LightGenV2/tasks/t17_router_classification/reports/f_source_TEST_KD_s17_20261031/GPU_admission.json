@@ -1,0 +1,76 @@
+{
+  "source_commit": "f0b81885363162e41393f0047de553b3cd3ce884",
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "rows": {
+    "RGB": {
+      "parent_sha256": "8da7b7c981f7e3b1fa9cb14ba5c95a4d6125466a91ccfeeac677263ba94b05f0",
+      "only_source_TEST_pixels": true,
+      "source_TEST_targets": 1000,
+      "TEST_ground_truth_not_passed_to_student_loss": true,
+      "soft_step_parameter_updates": {
+        "first_phase": 0.10714767128229141,
+        "global_phase": 0.13828116655349731,
+        "router_phase": 0.06181464344263077,
+        "shared_head.weight": 0.004221791867166758
+      },
+      "head_block": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 30,
+        "numerical_ridge": 0.0029736309121311554,
+        "uncentred_Gram_eigen_min": -3.9881139196585966e-13,
+        "uncentred_Gram_eigen_max": 1846.7470953347445,
+        "Gram_regularized_condition": 621042.1278845927,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 2.251736714299705,
+        "objective_after": 0.364868475646176,
+        "internal_steps": 5,
+        "closure_calls": 9,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": false,
+        "hard_label_samples": 10
+      },
+      "head_block_phases_bitwise_frozen": true,
+      "inference_parameters": 487204,
+      "Linear_count": 1,
+      "CNN_in_student": 0
+    },
+    "SAR": {
+      "parent_sha256": "9706c49641b9dfba65de6a4374b01caafe504940a8d792effa7f4a2ee69a147f",
+      "only_source_TEST_pixels": true,
+      "source_TEST_targets": 1000,
+      "TEST_ground_truth_not_passed_to_student_loss": true,
+      "soft_step_parameter_updates": {
+        "first_phase": 0.1072278842329979,
+        "global_phase": 0.13728071749210358,
+        "router_phase": 0.061115413904190063,
+        "shared_head.weight": 0.004245548974722624
+      },
+      "head_block": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 30,
+        "numerical_ridge": 0.0029489167911015204,
+        "uncentred_Gram_eigen_min": -4.658480456805922e-13,
+        "uncentred_Gram_eigen_max": 1923.3405321435405,
+        "Gram_regularized_condition": 652220.3295691273,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 2.4981418166052194,
+        "objective_after": 0.4356806669197063,
+        "internal_steps": 5,
+        "closure_calls": 9,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": false,
+        "hard_label_samples": 10
+      },
+      "head_block_phases_bitwise_frozen": true,
+      "inference_parameters": 487204,
+      "Linear_count": 1,
+      "CNN_in_student": 0
+    }
+  },
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "source_sha256": {
+    "train_figure_revision.py": "3e5fb9f96955f1fbbb19d0693afe32486aee0d8f781a8d2e322e8aedfcba2156",
+    "f_cross_domain.py": "989ea5141f66497106a811e7dacb8998f4a9fd052a7973b4d0f4b359e608bc72",
+    "alternating_readout.py": "b94fdfa5c8e78291975a327a137d0c2c80166f4a0677c9ce8e157df376a7bee8"
+  }
+}
