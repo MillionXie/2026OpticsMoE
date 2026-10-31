@@ -1,0 +1,170 @@
+{
+  "control": {
+    "completed_epochs": 80,
+    "selected_epoch": 79,
+    "checkpoint_sha256": "ed4ba6059828afa267bd57beeb1b1e4eca0475e30f4e51725d09029e2bb7946b",
+    "TRAIN": 0.6378333333333334,
+    "VAL": 0.478,
+    "DEV": 0.482,
+    "split_audit": {
+      "train": {
+        "n": 6000,
+        "correct": 3827,
+        "domains": {
+          "RGB": 0.6583333333333333,
+          "SAR": 0.6173333333333333
+        },
+        "mean_capture": 0.07269097864627838,
+        "mean_dense_power": [
+          0.071273572742939,
+          0.10625942796468735,
+          0.8216565847396851,
+          0.0008101883577182889
+        ],
+        "mean_top2_power": [
+          0.02065413072705269,
+          0.09915164113044739,
+          0.8800875544548035,
+          0.00010772928362712264
+        ],
+        "all_original_ID_label_domain_arrays_match_parent": true
+      },
+      "val": {
+        "n": 2000,
+        "correct": 956,
+        "domains": {
+          "RGB": 0.513,
+          "SAR": 0.443
+        },
+        "mean_capture": 0.0725233182311058,
+        "mean_dense_power": [
+          0.0718860924243927,
+          0.10584305226802826,
+          0.8215314149856567,
+          0.0007393392734229565
+        ],
+        "mean_top2_power": [
+          0.021385880187153816,
+          0.09879059344530106,
+          0.8798245787620544,
+          0.0
+        ],
+        "all_original_ID_label_domain_arrays_match_parent": true
+      },
+      "test": {
+        "n": 2000,
+        "correct": 964,
+        "domains": {
+          "RGB": 0.554,
+          "SAR": 0.41
+        },
+        "mean_capture": 0.0718282014131546,
+        "mean_dense_power": [
+          0.0751129537820816,
+          0.10738269984722137,
+          0.8167770504951477,
+          0.0007279930869117379
+        ],
+        "mean_top2_power": [
+          0.026614345610141754,
+          0.09674901515245438,
+          0.87663733959198,
+          0.0
+        ],
+        "all_original_ID_label_domain_arrays_match_parent": true
+      }
+    },
+    "head_blocks": 16,
+    "LBFGS_inner_steps": 640,
+    "phase_update_L2": {
+      "first_phase": 34.31905746459961,
+      "global_phase": 48.466590881347656,
+      "router_phase": 18.447587966918945,
+      "shared_head.weight": 9.997259140014648
+    }
+  },
+  "domain": {
+    "completed_epochs": 64,
+    "selected_epoch": 44,
+    "checkpoint_sha256": "62784d6aa9ab0e84dcba747eb7171526806d0fd76ecdd18b51bcf54c310f1165",
+    "TRAIN": 0.6223333333333333,
+    "VAL": 0.479,
+    "DEV": 0.481,
+    "split_audit": {
+      "train": {
+        "n": 6000,
+        "correct": 3734,
+        "domains": {
+          "RGB": 0.635,
+          "SAR": 0.6096666666666667
+        },
+        "mean_capture": 0.05833560600876808,
+        "mean_dense_power": [
+          0.10239460319280624,
+          0.12340202927589417,
+          0.7188539505004883,
+          0.05534876510500908
+        ],
+        "mean_top2_power": [
+          0.05025031045079231,
+          0.10718834400177002,
+          0.8425624370574951,
+          0.0
+        ],
+        "all_original_ID_label_domain_arrays_match_parent": true
+      },
+      "val": {
+        "n": 2000,
+        "correct": 958,
+        "domains": {
+          "RGB": 0.503,
+          "SAR": 0.455
+        },
+        "mean_capture": 0.058181703090667725,
+        "mean_dense_power": [
+          0.1029815822839737,
+          0.12301792204380035,
+          0.7186179757118225,
+          0.055382899940013885
+        ],
+        "mean_top2_power": [
+          0.05094075947999954,
+          0.10707253217697144,
+          0.841986894607544,
+          0.0
+        ],
+        "all_original_ID_label_domain_arrays_match_parent": true
+      },
+      "test": {
+        "n": 2000,
+        "correct": 962,
+        "domains": {
+          "RGB": 0.546,
+          "SAR": 0.416
+        },
+        "mean_capture": 0.057743195444345474,
+        "mean_dense_power": [
+          0.10668699443340302,
+          0.1249350756406784,
+          0.713326632976532,
+          0.055051110684871674
+        ],
+        "mean_top2_power": [
+          0.059658825397491455,
+          0.10325826704502106,
+          0.8370818495750427,
+          0.0
+        ],
+        "all_original_ID_label_domain_arrays_match_parent": true
+      }
+    },
+    "head_blocks": 12,
+    "LBFGS_inner_steps": 480,
+    "phase_update_L2": {
+      "first_phase": 25.617740631103516,
+      "global_phase": 36.01287078857422,
+      "router_phase": 51.68092727661133,
+      "shared_head.weight": 10.128570556640625
+    }
+  }
+}

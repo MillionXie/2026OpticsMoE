@@ -19,6 +19,7 @@ from .figure_revision_data import load_panel_f
 from .train import write
 from .model_four import encode_rgb
 from .alternating_readout import domain_route_loss, anchored_classification, refit_existing_head
+from .original_f_teacher import prepare_original_teacher
 from .train_optical_four_ccd import route_statistics
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -108,11 +109,14 @@ def main():
     torch.manual_seed(cfg['seed']);rng=np.random.default_rng(cfg['seed']);task=Path(__file__).resolve().parent
     args.out.mkdir(exist_ok=False,parents=True)
     paths=[Path(__file__),task/'alternating_readout.py',task/'train_convex_readout.py',task/'model_linear_readout.py',task/'model_depth_ccd.py',task/'model_four.py',task/'model_linear_ccd.py',task/'gpu_policy.py',task/'figure_revision_data.py',task/'phase_optimizer.py',task/'readout_data.py',task.parents[1]/'demo_check/pure_optical/models.py',task.parents[1]/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
-    metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=True,teacher_used=False)
+    paths.extend([task/'original_f_teacher.py',task.parents[1]/'demo_check/frozen_electronic/model.py'])
+    metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=True,teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
         raw,identity=load_panel_f(cfg['data']) if cfg['dataset']=='eurosat_original_f' else load_raw(Path(cfg['data_root']),cfg)
-        metadata['data']=identity;model=build_model(cfg).cuda();parent=None
+        metadata['data']=identity;teacher_cfg=cfg.get('teacher');teacher_targets=prepare_original_teacher(raw,cfg,args.out) if teacher_cfg else None
+        if teacher_cfg and (not cfg.get('alternating_head') or cfg['augmentation']!='horizontal_flip'):raise ValueError('Teacher KD requires anchored head blocks and matching original hflip')
+        model=build_model(cfg).cuda();parent=None
         if cfg.get('parent_checkpoint'):
             parent_path=task/cfg['parent_checkpoint']
             if sha256(parent_path)!=cfg['parent_checkpoint_sha256']:raise ValueError('Parent SHA differs')
@@ -145,6 +149,9 @@ def main():
                 if head_opt:head_opt.zero_grad(set_to_none=True)
                 output=model(field,return_dense_route=True) if aux else model(field)
                 loss=anchored_classification(output['raw_logits'],y['train'][idx],model.shared_head.weight,anchor,block['anchor_strength'],cfg['label_smoothing']) if block else classification_objective(output,y['train'][idx],cfg)
+                if teacher_cfg:
+                    from .original_f_teacher import teacher_KL
+                    loss=loss+teacher_cfg['weight']*teacher_KL(output['raw_logits'],teacher_targets[idx,(code==4).long()],teacher_cfg['temperature'])
                 if aux:
                     acquisition=torch.as_tensor(raw['train']['domains'][order[start:start+cfg['batch']]],device='cuda',dtype=torch.long)
                     loss=loss+aux*domain_route_loss(output['dense_route_power'],acquisition)
@@ -162,7 +169,7 @@ def main():
                 model.eval();features=[]
                 with torch.no_grad():
                     for start in range(0,len(y['train']),cfg['eval_batch']):features.append(model.optical_features(x['train'][start:start+cfg['eval_batch']])['ccd_features'])
-                block_record=refit_existing_head(model.shared_head,torch.cat(features),y['train'],anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'])
+                block_record=refit_existing_head(model.shared_head,torch.cat(features),y['train'],anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'],teacher_targets[:,0] if teacher_cfg else None,teacher_cfg['weight'] if teacher_cfg else 0.,teacher_cfg['temperature'] if teacher_cfg else 2.)
                 head_opt.state.clear() # Momentum belongs to the old head coordinates.
             val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val)>best;stale=0 if improved else stale+1
             if improved:

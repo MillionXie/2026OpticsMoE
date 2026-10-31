@@ -1,0 +1,119 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/f_alternating_s17_20261031/control",
+    "runs/simulation/f_alternating_s17_20261031/domain"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/best_checkpoint.pt",
+      "size": 1958992,
+      "sha256": "ed4ba6059828afa267bd57beeb1b1e4eca0475e30f4e51725d09029e2bb7946b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/exit_receipt.json",
+      "size": 56,
+      "sha256": "4fd5b9a512298299e60c76f0f97d4a230a9c524817b7e7fad05089c7870ceea3"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/history.json",
+      "size": 521229,
+      "sha256": "ab4e9a5444c415d1960e04e321eb671162e1cf6c21aa0490e244dee4b1545df2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/last_checkpoint.pt",
+      "size": 5795319,
+      "sha256": "a0add79527f2bdafd7c14800e2b2dc78badfad6fcace714fc9a6cbdb35066a42"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/metadata.json",
+      "size": 6308,
+      "sha256": "99a8451662e5bff42e00a9045f1b4bedf35a2cf772be0561fb2c919275a0a358"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/result.json",
+      "size": 14084,
+      "sha256": "bc66d25a433fc021e6f3463e618d385fc8a09ddd920e1f625ce62ff52688ca84"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/selection_lock.json",
+      "size": 207,
+      "sha256": "e978c518d9981f621d141a34be43966a96909d5b800ef7b0cba95f148b9e1daf"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/status.json",
+      "size": 14125,
+      "sha256": "239b3944f42d554f1a026dc2b6046965225f76ed35fe19121dc6933935793280"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/test_predictions.npz",
+      "size": 137962,
+      "sha256": "baf3f87e6be62f325e47e21bccf50fcaabc2e71d695208acaa5c0b3c45706a67"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/train_predictions.npz",
+      "size": 407153,
+      "sha256": "b5ad705f26b5767971529df10e2fa6c97f8ca48c94c6f1c030681d1ac35deed9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control/val_predictions.npz",
+      "size": 137686,
+      "sha256": "394d934cbadbfe33cde2ae89d5e53e41fa390da1b3440dfc11be2d31142f2c86"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/best_checkpoint.pt",
+      "size": 1958992,
+      "sha256": "62784d6aa9ab0e84dcba747eb7171526806d0fd76ecdd18b51bcf54c310f1165"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/exit_receipt.json",
+      "size": 55,
+      "sha256": "00ab8972b18702eb44e8e8a3a398bfa0ca766eb94072b65a1244ec4b12bafd4c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/history.json",
+      "size": 412204,
+      "sha256": "e85dbc2160a93941b78404a54c1edb4843533e4f12eb91aa6b55c7105625adbe"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/last_checkpoint.pt",
+      "size": 5858886,
+      "sha256": "db46ecb8716208ebbd783db9d38c4f2ba67329c2407240cb483347beb591bc66"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/metadata.json",
+      "size": 6306,
+      "sha256": "4288751bb01c757b357e0258529fb8e4f3e0add3bc3983cccd2cff2ab3a6e8aa"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/result.json",
+      "size": 13871,
+      "sha256": "0bf10df4164b14b3738a029baaf8683efb3d2f6b331a7c640bcdd2cf82081f3f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/selection_lock.json",
+      "size": 207,
+      "sha256": "0e073968c538b536669822ce2bee1f1fd73723e73b659e1b45e5684578dfc437"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/status.json",
+      "size": 13912,
+      "sha256": "73b54350fe9f27739f00b63284465764228c85d7b287150f304e3d9240cb310d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/test_predictions.npz",
+      "size": 137723,
+      "sha256": "7aba88d346b119cb90c3ebb55dd951c650d7d0786fea43f04f679ce3cdbf6e8f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/train_predictions.npz",
+      "size": 406609,
+      "sha256": "96e08c8195e0807f9dd47b1828a0e0d6833c4bc429f6ce426c5b6fa0333f40c2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain/val_predictions.npz",
+      "size": 137454,
+      "sha256": "0a287967756c35fc63ab77cd6ca567785866e8f0e406b4860bd1c8b51cf9f5ca"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "source_checkpoint": "LightGenV2\\demo_check\\runs\\simulation\\eurosat_frozen_cnn_20260916\\electronic\\best_checkpoint.pt",
+  "dest": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/f_original_teacher_s17_20261031/teacher_checkpoint.pt",
+  "sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+  "bytes": 391844,
+  "old_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+  "old_teacher_TRAIN_only": true,
+  "source_metadata_sha256": "6ce5ffc9f81d6b7b4370e909250599f9653c5d656ac877b048bb1ee307e91142"
+}

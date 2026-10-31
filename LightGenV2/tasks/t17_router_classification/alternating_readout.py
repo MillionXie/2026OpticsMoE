@@ -2,6 +2,7 @@
 import torch
 from torch.nn import functional as F
 from .train_convex_readout import training_coordinates, canonical_weight
+from .original_f_teacher import teacher_KL
 
 
 def domain_route_loss(dense, domains):
@@ -16,13 +17,17 @@ def domain_route_loss(dense, domains):
     return F.kl_div(dense.clamp_min(1e-20).log(), target, reduction='batchmean')
 
 
-def anchored_classification(raw_logits, labels, weight, anchor, strength, smoothing):
+def anchored_classification(raw_logits, labels, weight, anchor, strength, smoothing, teacher_logits=None, teacher_weight=0., teacher_temperature=2.):
     if strength <= 0:
         raise ValueError('Positive head anchor required')
-    return F.cross_entropy(raw_logits, labels, label_smoothing=smoothing) + .5 * strength * (weight-anchor).square().sum()
+    loss=F.cross_entropy(raw_logits, labels, label_smoothing=smoothing) + .5 * strength * (weight-anchor).square().sum()
+    if teacher_weight:
+        if teacher_logits is None:raise ValueError('KD requires verified TRAIN teacher logits')
+        loss=loss+teacher_weight*teacher_KL(raw_logits,teacher_logits,teacher_temperature)
+    return loss
 
 
-def refit_existing_head(head, features, labels, anchor, strength, smoothing, inner_steps):
+def refit_existing_head(head, features, labels, anchor, strength, smoothing, inner_steps, teacher_logits=None, teacher_weight=0., teacher_temperature=2.):
     """One bounded TRAIN-only Gram-conditioned LBFGS block, exported to float32 W.
 
     All inputs are detached. No optical parameter can receive a gradient, and
@@ -42,7 +47,8 @@ def refit_existing_head(head, features, labels, anchor, strength, smoothing, inn
         nonlocal calls
         optimizer.zero_grad(set_to_none=True)
         weight = canonical_weight(coordinate, factor)
-        loss = anchored_classification(F.linear(transformed, coordinate), target, weight, prior, strength, smoothing)
+        loss = anchored_classification(F.linear(transformed, coordinate), target, weight, prior, strength, smoothing,
+            teacher_logits.detach().double() if teacher_logits is not None else None,teacher_weight,teacher_temperature)
         if not torch.isfinite(loss):
             raise RuntimeError('Nonfinite alternating head loss')
         loss.backward()
