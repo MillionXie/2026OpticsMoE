@@ -1,0 +1,124 @@
+{
+  "source_commit": "e5d5a4b7e806aa632aa83eb7270af829dd793c2f",
+  "source_sha256": {
+    "train_figure_revision.py": "d7499f9bb15e4bf4f0dc4c32dbc06d704c4a7655116971497014bd25e3d049bd",
+    "alternating_readout.py": "644424f32d16f7958a9bfa281124d73faeed7f2c6f85c292cfc0a07cf5cd3661"
+  },
+  "GPU_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "TRAIN_only": true,
+  "no_new_inference_module": true,
+  "checks": [
+    {
+      "candidate": "control",
+      "loss": 1.178615927696228,
+      "gradients": {
+        "first_phase": 0.09517551213502884,
+        "global_phase": 0.044779565185308456,
+        "router_phase": 0.020118845626711845,
+        "shared_head.weight": 3.459716796875
+      },
+      "updates": {
+        "first_phase": 0.21612480282783508,
+        "global_phase": 0.29153355956077576,
+        "router_phase": 0.12446196377277374,
+        "shared_head.weight": 6.628791809082031
+      },
+      "head_block": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 20,
+        "numerical_ridge": 0.003029371416055817,
+        "uncentred_Gram_eigen_min": -3.5610384077394937e-13,
+        "uncentred_Gram_eigen_max": 2224.05834837047,
+        "Gram_regularized_condition": 734165.9613660086,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 1.1591085318193233,
+        "objective_after": 0.17236692386990482,
+        "internal_steps": 5,
+        "closure_calls": 9,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": true
+      },
+      "head_block_phases_bitwise_unchanged": true,
+      "inference_parameter_count": 487204,
+      "Linear_count": 1,
+      "train_ids": [
+        "AnnualCrop_2796:0",
+        "Forest_2100:0",
+        "HerbaceousVegetation_1133:0",
+        "Highway_1698:0",
+        "Industrial_2251:0",
+        "Pasture_358:0",
+        "PermanentCrop_677:0",
+        "Residential_822:0",
+        "River_1143:0",
+        "SeaLake_1136:0",
+        "AnnualCrop_2796:1",
+        "Forest_2100:1",
+        "HerbaceousVegetation_1133:1",
+        "Highway_1698:1",
+        "Industrial_2251:1",
+        "Pasture_358:1",
+        "PermanentCrop_677:1",
+        "Residential_822:1",
+        "River_1143:1",
+        "SeaLake_1136:1"
+      ]
+    },
+    {
+      "candidate": "domain",
+      "loss": 1.2983959913253784,
+      "gradients": {
+        "first_phase": 0.09517551213502884,
+        "global_phase": 0.044779565185308456,
+        "router_phase": 0.02136685885488987,
+        "shared_head.weight": 3.459716796875
+      },
+      "updates": {
+        "first_phase": 0.21612480282783508,
+        "global_phase": 0.29153355956077576,
+        "router_phase": 0.12454941868782043,
+        "shared_head.weight": 6.629093647003174
+      },
+      "head_block": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 20,
+        "numerical_ridge": 0.0030289375962716902,
+        "uncentred_Gram_eigen_min": -2.9221971739732734e-13,
+        "uncentred_Gram_eigen_max": 2223.674879675509,
+        "Gram_regularized_condition": 734144.5104596262,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 1.1591740606878993,
+        "objective_after": 0.17236747084034199,
+        "internal_steps": 5,
+        "closure_calls": 9,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": true
+      },
+      "head_block_phases_bitwise_unchanged": true,
+      "inference_parameter_count": 487204,
+      "Linear_count": 1,
+      "train_ids": [
+        "AnnualCrop_2796:0",
+        "Forest_2100:0",
+        "HerbaceousVegetation_1133:0",
+        "Highway_1698:0",
+        "Industrial_2251:0",
+        "Pasture_358:0",
+        "PermanentCrop_677:0",
+        "Residential_822:0",
+        "River_1143:0",
+        "SeaLake_1136:0",
+        "AnnualCrop_2796:1",
+        "Forest_2100:1",
+        "HerbaceousVegetation_1133:1",
+        "Highway_1698:1",
+        "Industrial_2251:1",
+        "Pasture_358:1",
+        "PermanentCrop_677:1",
+        "Residential_822:1",
+        "River_1143:1",
+        "SeaLake_1136:1"
+      ]
+    }
+  ]
+}

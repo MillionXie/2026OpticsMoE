@@ -1,0 +1,59 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "seed": 17,
+  "scope": "B accepted/protected; A protected; D postponed; J excluded; optimize F only",
+  "current_completed_joint_models": {
+    "LG": {
+      "RGB": 0.534,
+      "SAR": 0.384,
+      "combined": 0.459
+    },
+    "D2NN": {
+      "RGB": 0.451,
+      "SAR": 0.387,
+      "combined": 0.419
+    }
+  },
+  "four_values_meaning": "Two models trained jointly on RGB+SAR; each evaluated on RGB and SAR. Not a pair of single-domain training models.",
+  "pending_human_clarification": "Whether separately train two means LG/D joint models (current figure columns) or RGB-only/SAR-only models with cross-domain 2x2 evaluation",
+  "current_new_runs": [
+    {
+      "name": "control",
+      "pid": 1822103,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_alternating_control_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control"
+      ],
+      "profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_alternating_control_s17_20261031.json",
+      "out": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/control",
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+    },
+    {
+      "name": "domain",
+      "pid": 1822104,
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.train_figure_revision",
+        "--profile",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_alternating_domain_s17_20261031.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain"
+      ],
+      "profile": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_alternating_domain_s17_20261031.json",
+      "out": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_alternating_s17_20261031/domain",
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55"
+    }
+  ],
+  "published_training_source": "e5d5a4b7e806aa632aa83eb7270af829dd793c2f",
+  "tests": 133,
+  "parent_preserved": true,
+  "training": "Original TRAIN labels only, VAL selection, parent E0 competes; optional original TRAIN acquisition-domain auxiliary; no TEST in current loss",
+  "target": "Original figure ~RGB79.5/SAR74.9 are goals, no guarantee",
+  "state": "launched_not_yet_completed"
+}

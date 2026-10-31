@@ -14,7 +14,8 @@ F当前TRAIN56.45/VAL45.25%，冻结成熟头的光学续训只到45.90%开发�
 同父两候选唯一差别：control无路由辅助；domain以.05权重监督Top2之前的四端口功率分布，
 RGB目标[.49,.49,.01,.01]、SAR目标[.01,.01,.49,.49]，仅原TRAIN采集域信息，实际推理由光router自身Top2选择。
 不是测试域GT路由，不增加域分类头；辅助未必提高精度，所有失败和总搜索预算保留。
-两份profile f_alternating_{control,domain}_s17_20261031，须测试、源码发布与真实TRAIN GPU准入后启动。
+两份profile f_alternating_{control,domain}_s17_20261031，sourcee5d5a4b7已通过133项CPU检查与20张真实TRAIN的GPU前向/梯度/更新/头block相位冻结准入，已发布并按任务路径核SHA。
+两个worker1822103/1822104已在原授权A100并行启动，root runs/simulation/f_alternating_s17_20261031；启动时已捕获源码身份与479364+7840推理参数。
 保留父E0、每轮VAL宏召回再CE选模，锁后一次完整原TEST开发评估；原图约79.5/74.9仅为优化目标。
 
 ## 最新范围确认：J保留，A/B/F已跑、D仍暂缓（2026-10-31）
