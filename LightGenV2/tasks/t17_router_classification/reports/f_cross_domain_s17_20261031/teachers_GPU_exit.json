@@ -1,0 +1,10 @@
+{
+  "2037902": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  },
+  "2037903": {
+    "process_exited": true,
+    "no_GPU_allocation": true
+  }
+}

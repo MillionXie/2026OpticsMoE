@@ -1,0 +1,5 @@
+{
+  "error": "NameError: private probe deleted teacher optimizer twice",
+  "formal_training_started": false,
+  "resolution": "Private probe variable cleanup fixed; second admission succeeded for all four model/domain cases. No model/data/labels changed."
+}

@@ -11,6 +11,7 @@ wrapped相位LR.001/head.0001、D4、最多80/min30/pat20，每5轮源TRAIN全�
 两个独立教师以冻结ImageNet ResNet18+MLP，在各自源域3000 TRAIN+1000原TEST的D4增强上学习，
 同域VAL只选模、对方域完全不进教师；学生仅源域TRAIN真标签+软目标KD.5/T2，不直接训练TEST图像。
 所有结果标ORIGINAL_TEST_EXPOSED_DEVELOPMENT，不能冒称独立TEST或等训练数据/预算结构优势；教师不进LG推理。
+RGB/SAR是配对地块，虽然教师不接触对方域像素，源域TEST标签已对应同一地块，因此交叉格亦不是未见地块的独立跨域测试。
 
 source069310f390eea5a22a5f5aae9451c26e0da55729已160项CPU检查及四组真实源域TRAIN GPU梯度更新/相位数/唯一Linear/noCNN/真Top2准入，
 main发布并服务器路径SHA。root runs/simulation/f_cross_domain_s17_20261031：D2NN_RGB PID2037898/4090物理1、D2NN_SAR2037900/A100物理6，

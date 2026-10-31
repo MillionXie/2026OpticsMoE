@@ -1,0 +1,10 @@
+{
+  "RGB": {
+    "strict_head_load": true,
+    "source_TRAIN_cache_replay_max_abs": 9.5367431640625e-07
+  },
+  "SAR": {
+    "strict_head_load": true,
+    "source_TRAIN_cache_replay_max_abs": 9.5367431640625e-07
+  }
+}

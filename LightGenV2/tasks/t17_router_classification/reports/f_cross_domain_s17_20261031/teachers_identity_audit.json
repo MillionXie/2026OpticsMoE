@@ -1,0 +1,36 @@
+{
+  "RGB": {
+    "source": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "checkpoint_sha256": "d1a0e823110fa515b47f3b2360a791c9bc2a3afc17065d5e73351ebd4ca0ea27",
+    "teacher_training_parts": [
+      "source-domain TRAIN",
+      "source-domain original TEST, augmented"
+    ],
+    "no_opposite_domain": true,
+    "all_original_ID_label_domain_arrays_match": true,
+    "counts": {
+      "train": 3000,
+      "val": 1000,
+      "test": 1000
+    },
+    "cached_views": 8,
+    "VAL": 0.931
+  },
+  "SAR": {
+    "source": "069310f390eea5a22a5f5aae9451c26e0da55729",
+    "checkpoint_sha256": "2cea55efd176b14ff91b371d797d215e325174d23df3152fe7fc8ec718b643b3",
+    "teacher_training_parts": [
+      "source-domain TRAIN",
+      "source-domain original TEST, augmented"
+    ],
+    "no_opposite_domain": true,
+    "all_original_ID_label_domain_arrays_match": true,
+    "counts": {
+      "train": 3000,
+      "val": 1000,
+      "test": 1000
+    },
+    "cached_views": 8,
+    "VAL": 0.738
+  }
+}
