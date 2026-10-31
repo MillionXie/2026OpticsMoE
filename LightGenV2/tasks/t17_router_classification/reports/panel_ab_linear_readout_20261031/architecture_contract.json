@@ -11,8 +11,17 @@
       "D2NN": "3/5/7 full-global phase layers; identical OEO per layer; no Linear"
     },
     "d": {
-      "status": "POSTPONED",
-      "LG": "Must add same Linear and align reused dataset/config points before rerun"
+      "status": "AUTHORIZED_A_ALIGNED_TRAINING",
+      "LG": "4 experts, main2 E/G, same A intensity_softsign OEO each layer, unique bias-free Linear784->C, true k1..4",
+      "datasets": [
+        "Kather2016 same A IDs/pixels",
+        "BloodMNIST128 same A filtered IDs/pixels",
+        "original OrganCMNIST official splits,11classes"
+      ],
+      "input": "[R,G;B,0]",
+      "total_points": 12,
+      "monotonic_accuracy_goal": "strictly increasing; not guaranteed or manufactured",
+      "original_old_D": "read-only historical audit; four layers/LN-ReLU OEO/no Linear not reused as new results"
     },
     "f": {
       "status": "RETRAINED_AND_CHECKPOINT_VERIFIED_PERFORMANCE_LOW",

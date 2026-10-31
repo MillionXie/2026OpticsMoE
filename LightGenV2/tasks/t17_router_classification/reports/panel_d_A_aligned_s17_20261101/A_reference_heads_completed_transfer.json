@@ -1,0 +1,119 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016",
+    "runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/best_checkpoint.pt",
+      "size": 1951504,
+      "sha256": "e8e0285fc0bc9ff0600b1595a3e0f13966be175fd04255774298da3e8af52685"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/exit_receipt.json",
+      "size": 50,
+      "sha256": "19a39bd2ae505e1e8cefbeb39a7c4b32ddfb22ca910382e5267b6902a050cfad"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/history.json",
+      "size": 113908,
+      "sha256": "12c796e2a8a86391a6d39352b33291fc9f6b3a6b94505691d57ce1d954311fe1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/last_checkpoint.pt",
+      "size": 4131310,
+      "sha256": "1fffee6b0029863ef4cdd4590b8df2c2917596cc67a5d89fb5af91ce6ebcb285"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/metadata.json",
+      "size": 6816,
+      "sha256": "824b9b87892f1788daf81d41b22ba8e9bd6726468f53d62eb8f121ed7900752a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/result.json",
+      "size": 3704,
+      "sha256": "145463140ad4280d99d7cd5b8641a0d076a96d9235aa4e2d6f282a5ea7386cc5"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/selection_lock.json",
+      "size": 233,
+      "sha256": "e118ab47ae2cc0fd2d7e345181924fe4df0e2ceac01ca63b94111f0ae9487caa"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/status.json",
+      "size": 3727,
+      "sha256": "98849f6151e2e1501d547c7209c2d5f5d76147cea7c7c2843739d80bb98d12e7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/test_predictions.npz",
+      "size": 46991,
+      "sha256": "abf8b92decd113c392a9d4850980784b81cd8b6879745ea584197caaa9ba6ae4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/train_predictions.npz",
+      "size": 209214,
+      "sha256": "4cdc392eac54ea5bec4d92326cdebc15c0bed485ea7c1c66c61c9c5716852a55"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/kather2016/val_predictions.npz",
+      "size": 46970,
+      "sha256": "ab0682ad8c389b2c94abb90b8a37d263c8b414ec52a3f1ad0813d4eac78c1bba"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/best_checkpoint.pt",
+      "size": 1951568,
+      "sha256": "66677286fa4c0466cca4fe46e6963880d7c3349ef2af8589e26c41784563941c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/exit_receipt.json",
+      "size": 50,
+      "sha256": "88553b1d6cb319c87f393f8ef4d368f51ce4b5d4d8f41d5c71f125026322bb85"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/history.json",
+      "size": 115416,
+      "sha256": "f943d2c093d7ff58a207365e20830833b2441e4978284e0708ee6da2f4896583"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/last_checkpoint.pt",
+      "size": 4131374,
+      "sha256": "3d9fb15863418a95b4eb24b40137cff1fd583d0a6d3e188aedaa856c6a40af4b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/metadata.json",
+      "size": 6905,
+      "sha256": "047fdfc801b58978c5a8872eb8efc6646a4be45ff170f433f81cfa574f6b6a20"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/result.json",
+      "size": 3753,
+      "sha256": "2879d46ee4f00e9e638ec89984f49060e1d503c5e5b79615afad812e8c4104f9"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/selection_lock.json",
+      "size": 234,
+      "sha256": "534bec73893ff160324a29b482468fe86a29e5980a9e115d5082bdb807d40328"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/status.json",
+      "size": 3776,
+      "sha256": "d76cf7f05aca76d6d701965d39445a06c076c0736d0090d827e10d2564d32ce1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/test_predictions.npz",
+      "size": 210073,
+      "sha256": "143f5769fcecae6f7a565dfad0ddc06ff99cf5f3ed9a42ac46f74e8e559ce786"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/train_predictions.npz",
+      "size": 729780,
+      "sha256": "1ff01ad300e46d0cdc7c5f92db9bc325f9769c149bd71383e2fd841ef7093819"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101/bloodmnist128/val_predictions.npz",
+      "size": 105892,
+      "sha256": "89740116e7a4f3c617563d2bf9d45f0af3f0ec390aebd021cc3a17b822242438"
+    }
+  ]
+}

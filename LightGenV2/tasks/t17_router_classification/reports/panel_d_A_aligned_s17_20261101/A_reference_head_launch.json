@@ -1,0 +1,16 @@
+{
+  "source_commit": "d078f22ea612861ff8a980b15f928eacf2376437",
+  "pid": 2347541,
+  "optimizer_device": "cpu",
+  "GPU_allocation_expected": false,
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_A_reference_TEST_readout",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_A_reference_TEST_readout_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_reference_TEST_readout_s17_20261101"
+  ],
+  "time": 1793471283.2828543
+}

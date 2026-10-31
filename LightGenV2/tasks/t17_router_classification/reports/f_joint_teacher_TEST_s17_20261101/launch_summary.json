@@ -1,0 +1,16 @@
+{
+  "source_commit": "67f3953460ddc0186fd837ae4a23435b43964ddd",
+  "pid": 2308798,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_f_joint_teacher",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_joint_teacher_TEST_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_teacher_TEST_s17_20261101/teacher"
+  ],
+  "admission": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/f_joint_teacher_TEST_admission_s17_20261101/admission.json",
+  "time": 1793469796.373446
+}

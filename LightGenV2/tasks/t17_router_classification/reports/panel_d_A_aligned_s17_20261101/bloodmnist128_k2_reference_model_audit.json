@@ -1,0 +1,25 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "all_optical_phases_bitwise_A": true,
+    "inference_parameters": 485636,
+    "Linear": 1,
+    "CNN": 0
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "all_optical_phases_bitwise_A": true,
+    "inference_parameters": 485636,
+    "Linear": 1,
+    "CNN": 0
+  },
+  "full_GPU_canonical_TEST_replay": {
+    "images": 3421,
+    "predictions_exact": true,
+    "probability_max_abs": 6.020069122314453e-06,
+    "probability_tolerance": {
+      "rtol": 0.0002,
+      "atol": 3e-05
+    }
+  }
+}

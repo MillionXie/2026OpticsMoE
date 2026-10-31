@@ -1,0 +1,23 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "parts": {
+    "train": {
+      "correct": 10551,
+      "n": 11948,
+      "original_A_ID_labels_routes_exact": true
+    },
+    "val": {
+      "correct": 1474,
+      "n": 1712,
+      "original_A_ID_labels_routes_exact": true
+    },
+    "test": {
+      "correct": 2945,
+      "n": 3421,
+      "original_A_ID_labels_routes_exact": true
+    }
+  },
+  "TEST_selection_only": true,
+  "phase_updates": 0,
+  "head_internal_iterations": 150
+}

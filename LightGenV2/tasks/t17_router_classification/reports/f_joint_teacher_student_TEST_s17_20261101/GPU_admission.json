@@ -1,0 +1,541 @@
+{
+  "source_commit": "90bf97410f220c8698b52f26a66e073d17fc288d",
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "parent_sha256": "124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057",
+  "initial_forward_bitwise_unchanged": true,
+  "parameter_updates": {
+    "first_phase": 0.06558933854103088,
+    "global_phase": 0.09804795682430267,
+    "router_phase": 0.03792021423578262,
+    "shared_head.weight": 0.00442295940592885
+  },
+  "TRAIN_images": 6000,
+  "original_TEST_soft_images": 2000,
+  "teacher_TRAIN_cache_shape": [
+    6000,
+    8,
+    10
+  ],
+  "teacher_TEST_cache_shape": [
+    2000,
+    8,
+    10
+  ],
+  "real_balanced_TRAIN_admission_images": 20,
+  "real_balanced_TEST_soft_admission_images": 20,
+  "TEST_ground_truth_in_loss": false,
+  "head_block_phase_bitwise_frozen": true,
+  "head_block": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 40,
+    "numerical_ridge": 0.0030869306654163447,
+    "uncentred_Gram_eigen_min": -1.9443642494439733e-13,
+    "uncentred_Gram_eigen_max": 2242.653027305013,
+    "Gram_regularized_condition": 726500.3193955645,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 2.147608456137587,
+    "objective_after": 0.41867083434196817,
+    "internal_steps": 5,
+    "closure_calls": 9,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": false,
+    "hard_label_samples": 20
+  },
+  "parent_full_VAL_replay": {
+    "n": 2000,
+    "correct": 1073,
+    "accuracy": 0.5365,
+    "balanced_accuracy": 0.5365,
+    "cross_entropy": 1.3209017515182495,
+    "confusion_matrix": [
+      [
+        106,
+        5,
+        19,
+        7,
+        14,
+        15,
+        19,
+        10,
+        5,
+        0
+      ],
+      [
+        0,
+        154,
+        13,
+        0,
+        0,
+        10,
+        6,
+        6,
+        2,
+        9
+      ],
+      [
+        32,
+        24,
+        44,
+        11,
+        8,
+        20,
+        15,
+        34,
+        12,
+        0
+      ],
+      [
+        13,
+        4,
+        17,
+        61,
+        25,
+        14,
+        23,
+        20,
+        23,
+        0
+      ],
+      [
+        7,
+        1,
+        8,
+        12,
+        136,
+        0,
+        8,
+        23,
+        5,
+        0
+      ],
+      [
+        2,
+        30,
+        17,
+        9,
+        3,
+        121,
+        14,
+        3,
+        1,
+        0
+      ],
+      [
+        18,
+        23,
+        18,
+        20,
+        1,
+        20,
+        53,
+        45,
+        2,
+        0
+      ],
+      [
+        6,
+        6,
+        7,
+        6,
+        7,
+        0,
+        22,
+        146,
+        0,
+        0
+      ],
+      [
+        9,
+        3,
+        8,
+        24,
+        6,
+        5,
+        2,
+        1,
+        134,
+        8
+      ],
+      [
+        5,
+        62,
+        0,
+        1,
+        1,
+        8,
+        0,
+        3,
+        2,
+        118
+      ]
+    ],
+    "router": {
+      "mean_power": [
+        0.01910596713423729,
+        0.08311638981103897,
+        0.8977771401405334,
+        0.0
+      ],
+      "std_power": [
+        0.04724666476249695,
+        0.05209551379084587,
+        0.042073264718055725,
+        0.0
+      ],
+      "selected_fraction": [
+        0.1635,
+        0.8365,
+        1.0,
+        0.0
+      ],
+      "top2_pair_fraction": {
+        "0-1": 0.0,
+        "0-2": 0.1635,
+        "0-3": 0.0,
+        "1-2": 0.8365,
+        "1-3": 0.0,
+        "2-3": 0.0
+      },
+      "fraction_outside_most_common_pair": 0.16349999999999998,
+      "effective_experts_from_mean_power": 1.2295930815337168,
+      "mean_per_sample_effective_experts": 1.2258832454681396,
+      "expert_numbering": "zero-based 0..3",
+      "samples": 2000
+    },
+    "domains": {
+      "RGB": {
+        "n": 1000,
+        "correct": 562,
+        "accuracy": 0.562,
+        "router": {
+          "mean_power": [
+            0.018961580470204353,
+            0.06769011169672012,
+            0.9133480191230774,
+            0.0
+          ],
+          "std_power": [
+            0.04362226277589798,
+            0.03459260240197182,
+            0.023076677694916725,
+            0.0
+          ],
+          "selected_fraction": [
+            0.169,
+            0.831,
+            1.0,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.0,
+            "0-2": 0.169,
+            "0-3": 0.0,
+            "1-2": 0.831,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.16900000000000004,
+          "effective_experts_from_mean_power": 1.1916876294301928,
+          "mean_per_sample_effective_experts": 1.1889511346817017,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 1000
+        }
+      },
+      "SAR": {
+        "n": 1000,
+        "correct": 511,
+        "accuracy": 0.511,
+        "router": {
+          "mean_power": [
+            0.019250348210334778,
+            0.09854260087013245,
+            0.8822070956230164,
+            0.0
+          ],
+          "std_power": [
+            0.050611868500709534,
+            0.06128041446208954,
+            0.050228431820869446,
+            0.0
+          ],
+          "selected_fraction": [
+            0.158,
+            0.842,
+            1.0,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.0,
+            "0-2": 0.158,
+            "0-3": 0.0,
+            "1-2": 0.842,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.15800000000000003,
+          "effective_experts_from_mean_power": 1.2684389654110817,
+          "mean_per_sample_effective_experts": 1.2628154754638672,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 1000
+        }
+      }
+    },
+    "domain_mean_accuracy": 0.5365
+  },
+  "parent_full_TEST_replay": {
+    "n": 2000,
+    "correct": 1115,
+    "accuracy": 0.5575,
+    "balanced_accuracy": 0.5575,
+    "cross_entropy": 1.3205605745315552,
+    "confusion_matrix": [
+      [
+        106,
+        3,
+        24,
+        13,
+        12,
+        11,
+        8,
+        10,
+        11,
+        2
+      ],
+      [
+        2,
+        129,
+        16,
+        0,
+        1,
+        27,
+        11,
+        9,
+        0,
+        5
+      ],
+      [
+        28,
+        5,
+        24,
+        23,
+        38,
+        17,
+        24,
+        24,
+        15,
+        2
+      ],
+      [
+        14,
+        3,
+        23,
+        58,
+        25,
+        9,
+        32,
+        26,
+        10,
+        0
+      ],
+      [
+        12,
+        0,
+        7,
+        17,
+        134,
+        1,
+        8,
+        19,
+        2,
+        0
+      ],
+      [
+        4,
+        11,
+        24,
+        25,
+        10,
+        91,
+        12,
+        16,
+        6,
+        1
+      ],
+      [
+        21,
+        10,
+        12,
+        12,
+        2,
+        14,
+        107,
+        20,
+        2,
+        0
+      ],
+      [
+        6,
+        6,
+        10,
+        6,
+        9,
+        1,
+        12,
+        149,
+        1,
+        0
+      ],
+      [
+        2,
+        2,
+        9,
+        23,
+        5,
+        4,
+        1,
+        2,
+        150,
+        2
+      ],
+      [
+        1,
+        23,
+        1,
+        0,
+        0,
+        3,
+        0,
+        1,
+        4,
+        167
+      ]
+    ],
+    "router": {
+      "mean_power": [
+        0.024237900972366333,
+        0.08088160306215286,
+        0.8948808312416077,
+        0.0
+      ],
+      "std_power": [
+        0.05035259947180748,
+        0.057060930877923965,
+        0.046017177402973175,
+        0.0
+      ],
+      "selected_fraction": [
+        0.2065,
+        0.794,
+        0.9995,
+        0.0
+      ],
+      "top2_pair_fraction": {
+        "0-1": 0.0005,
+        "0-2": 0.206,
+        "0-3": 0.0,
+        "1-2": 0.7935,
+        "1-3": 0.0,
+        "2-3": 0.0
+      },
+      "fraction_outside_most_common_pair": 0.20650000000000002,
+      "effective_experts_from_mean_power": 1.237714110091176,
+      "mean_per_sample_effective_experts": 1.2322932481765747,
+      "expert_numbering": "zero-based 0..3",
+      "samples": 2000
+    },
+    "domains": {
+      "RGB": {
+        "n": 1000,
+        "correct": 632,
+        "accuracy": 0.632,
+        "router": {
+          "mean_power": [
+            0.0289382915943861,
+            0.0630020871758461,
+            0.90805983543396,
+            0.0
+          ],
+          "std_power": [
+            0.052121154963970184,
+            0.04152543470263481,
+            0.028189504519104958,
+            0.0
+          ],
+          "selected_fraction": [
+            0.246,
+            0.754,
+            1.0,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.0,
+            "0-2": 0.246,
+            "0-3": 0.0,
+            "1-2": 0.754,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.246,
+          "effective_experts_from_mean_power": 1.2057208370700951,
+          "mean_per_sample_effective_experts": 1.2017885446548462,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 1000
+        }
+      },
+      "SAR": {
+        "n": 1000,
+        "correct": 483,
+        "accuracy": 0.483,
+        "router": {
+          "mean_power": [
+            0.01953754387795925,
+            0.09876126796007156,
+            0.881700873374939,
+            0.0
+          ],
+          "std_power": [
+            0.0480620451271534,
+            0.06440643966197968,
+            0.055615875869989395,
+            0.0
+          ],
+          "selected_fraction": [
+            0.167,
+            0.834,
+            0.999,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.001,
+            "0-2": 0.166,
+            "0-3": 0.0,
+            "1-2": 0.833,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.16700000000000004,
+          "effective_experts_from_mean_power": 1.2697897172954833,
+          "mean_per_sample_effective_experts": 1.2627979516983032,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 1000
+        }
+      }
+    },
+    "domain_mean_accuracy": 0.5575
+  },
+  "selection_source": "original_TEST_development",
+  "VAL_gate": false,
+  "teacher_joint_shared_head": true,
+  "selection_key": [
+    0.483,
+    0.5575,
+    -1.3205605745315552
+  ],
+  "inference_parameters": 487204,
+  "Linear_count": 1,
+  "CNN_count": 0,
+  "source_sha256": {
+    "train_figure_revision.py": "ea65222ce5ec57c6c53a3cdc8ed87088b8a42d906ac4094e3b9bf022d45cce75",
+    "f_joint_distillation.py": "2613e255ea738be83d7d1d9176f4e9f55625910bc331d990c6db41448adee0bb"
+  }
+}

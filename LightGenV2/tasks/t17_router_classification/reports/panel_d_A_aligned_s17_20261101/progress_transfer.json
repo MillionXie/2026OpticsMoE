@@ -1,0 +1,186 @@
+{
+  "snapshot_only": true,
+  "final_PT_not_collected": true,
+  "files": [
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/launch.json",
+      "bytes": 810,
+      "sha256": "c1ddb2d73a7f2819de078facb2345176b746476ce3f24d432bb78235e63c0818"
+    },
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/metadata.json",
+      "bytes": 8023,
+      "sha256": "8fa55d3b6d642b506cc815f408d1418a9b248edd2e8fa8f7084522544f733ba6"
+    },
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/status.json",
+      "bytes": 105,
+      "sha256": "18442e49554d989a778ed86453c087ae81f91f98d3dab2451817d2278fcbfa22"
+    },
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/history.json",
+      "bytes": 300198,
+      "sha256": "0d4b0382b26c5c6a986f6d499e0cbf21904fc02e71db4053ab98b01c56ca2868"
+    },
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/teacher_manifest.json",
+      "bytes": 891,
+      "sha256": "e936499cd5fc1c8e5f403871f70049c8076664be5da7929dd5cd76da506d0716"
+    },
+    {
+      "path": "runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint/source_TEST_distillation_manifest.json",
+      "bytes": 759,
+      "sha256": "6128b404553ce5a4d4461d8764c78da32f69dfffe1d6bb91e12ecf34b0ac838b"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/launch.json",
+      "bytes": 3724,
+      "sha256": "a18c134df2daa55b1a744c37a8531d617411d4cbfd1a92b2b1282d234a8250ac"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/queue_status.json",
+      "bytes": 875,
+      "sha256": "c074d9b4f74f4dab8386fe0a094abe5e5fdd4367ef7077cdde06666206ae2e77"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k1/metadata.json",
+      "bytes": 6793,
+      "sha256": "d9ac353e9440164aedaed73b641e80a9d69cc5846861f46ffde70b6799e945ab"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k1/status.json",
+      "bytes": 6259,
+      "sha256": "767ae215e4661ddbd7979ba89c7d17a6f9093017438a3f0372ca00b952833d52"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k1/history.json",
+      "bytes": 83469,
+      "sha256": "0d165a77365afaf2a8b00d688e1b92e8fc1ec0bb48d2ab456f401a404fd1490d"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k1/selection_lock.json",
+      "bytes": 244,
+      "sha256": "54df143fa6c65b986554bef57e910b977c37671f0c96e9a678002a9688d567e4"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k1/result.json",
+      "bytes": 6218,
+      "sha256": "da8725cc6e0ae10b3ab6f22ef251a600e1963072db491a75b3d8c69f6502d488"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3/metadata.json",
+      "bytes": 6794,
+      "sha256": "1bb1e08a4f03a60c393e733d273374c9d6470fdd139efb1cf1c5cd6b6fdce946"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3/status.json",
+      "bytes": 6282,
+      "sha256": "4df5b32834c8636c8444d015c09f249fc181877a62e542a2051b9c77106d6555"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3/history.json",
+      "bytes": 83640,
+      "sha256": "7179b300169575e3e7b451e1b3a242a72f5ad989b60babc6ccb299976fa2b15e"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3/selection_lock.json",
+      "bytes": 244,
+      "sha256": "689d31b872b256703019e835e332f68e4dc053918f35d5a046217f4fe6c3e860"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k3/result.json",
+      "bytes": 6241,
+      "sha256": "60fb40b914fdad68ec6e032b7347cbcc4703e1ab9f8402f4c774c88c6fe0573d"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k4/metadata.json",
+      "bytes": 6796,
+      "sha256": "73b80caacc8e897a53bca21f79849ad85648458d9925da8e289869c2530986d3"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k4/status.json",
+      "bytes": 6038,
+      "sha256": "c48c53380b17c923f44deef2bdfff4c283da0d584b22ffc4f67acf31b1eaa6a5"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k4/history.json",
+      "bytes": 80791,
+      "sha256": "575b9bfde6ba83f788004edc4aac03e6af81dba7aa73aea9828fc79921bc6798"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k4/selection_lock.json",
+      "bytes": 244,
+      "sha256": "5dd1dbb3f2e1b2a08ec6701c4a74909b63a147750322d428a656c4105e8d6243"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/kather2016/k4/result.json",
+      "bytes": 5997,
+      "sha256": "2e7dbdbeb0e8ccd3943798ad3d8958d605b06a71a66e73ebe81a50740ff7d125"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/queue_status.json",
+      "bytes": 896,
+      "sha256": "097d08468fce474347f3dbe034771e06cca624a0fd2b8973f505ac5cca9f97dd"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k1/metadata.json",
+      "bytes": 6853,
+      "sha256": "a1d3f55d4f002b479ac476c88c0eac77925f49941d72709f236ffc3e907d61f2"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k1/status.json",
+      "bytes": 6076,
+      "sha256": "f9a9a61f3a666d0532b81e845da8e80f08785de9cbd4aa6c57ca40ea3887ef1b"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k1/history.json",
+      "bytes": 86331,
+      "sha256": "19e2fe04d34a8ed384bf3dae2619a99581ea31ab000f208bf30cd5cd41134e37"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k1/selection_lock.json",
+      "bytes": 244,
+      "sha256": "f4de65a03c9e6e67a6b9a900035c78caa27b6aa1e562fadc9dbb56481fa4ad8e"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k1/result.json",
+      "bytes": 6035,
+      "sha256": "6ed53ec4d8faa7cb1baaeb25a8165e8ded095cd03204d8be570c3c642f9d64ff"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k3/metadata.json",
+      "bytes": 6853,
+      "sha256": "3b4296b92ae3b2b183c075873d2fd32aad25993e936a6cb35b2aa664f8515079"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k3/status.json",
+      "bytes": 105,
+      "sha256": "4b05a4bb6b7e68eef7482c70411ae7b548d2526411f335a548aaed29f23eb704"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128/k3/history.json",
+      "bytes": 128621,
+      "sha256": "1a836e88056740eef68a1b111c8c7f4fd175b03caf7b99e4c04107b952c056c6"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/queue_status.json",
+      "bytes": 619,
+      "sha256": "3783f2cd80914b58d31bfb0d53f4ced3eb8bca8a270487ea289719db52baf7cf"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k2/metadata.json",
+      "bytes": 6688,
+      "sha256": "0f1d97e796ff56edd2441ac1a90fb47bda6c413e1b39d3620451bf03289626ea"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k2/status.json",
+      "bytes": 103,
+      "sha256": "25d901086f7247394062156dd2da244f9389a8571ab7a8ca61246d6eb7189897"
+    },
+    {
+      "path": "runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist/k2/history.json",
+      "bytes": 60483,
+      "sha256": "766de51831c41073d7bdd1e4478889cbbd28c3650563248c5a8cd1ee08e5ddc7"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "one_joint_shared_teacher": true,
+  "teacher_selected_by_original_TEST": true,
+  "VAL_gate": false,
+  "strict_head": true,
+  "selected_epoch": 92,
+  "completed_epochs": 100,
+  "head_optimizer_updates": 3200,
+  "training_original_images": 8000,
+  "original_TRAIN": 6000,
+  "original_TEST_exposed": 2000,
+  "random_augmented_view_presentations": 800000,
+  "parts": {
+    "train": {
+      "images": 6000,
+      "shape": [
+        6000,
+        8,
+        10
+      ],
+      "all_original_ID_labels_domains_exact": true,
+      "logits_replay_max_abs": 1.049041748046875e-05,
+      "domain_counts": {
+        "0": 3000,
+        "1": 3000
+      }
+    },
+    "val": {
+      "images": 2000,
+      "shape": [
+        2000,
+        8,
+        10
+      ],
+      "all_original_ID_labels_domains_exact": true,
+      "logits_replay_max_abs": 8.58306884765625e-06,
+      "domain_counts": {
+        "0": 1000,
+        "1": 1000
+      }
+    },
+    "test": {
+      "images": 2000,
+      "shape": [
+        2000,
+        8,
+        10
+      ],
+      "all_original_ID_labels_domains_exact": true,
+      "logits_replay_max_abs": 9.5367431640625e-06,
+      "domain_counts": {
+        "0": 1000,
+        "1": 1000
+      }
+    }
+  },
+  "teacher_not_in_LG_inference": true
+}

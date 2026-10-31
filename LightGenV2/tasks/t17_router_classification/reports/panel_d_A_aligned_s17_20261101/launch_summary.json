@@ -1,0 +1,78 @@
+{
+  "queue_source_commit": "71c1a4ed4606a1dcf7b949af339991a79aa33e03",
+  "training_source_commit": "90bf97410f220c8698b52f26a66e073d17fc288d",
+  "time": 1793470468.0542989,
+  "queues": [
+    {
+      "dataset": "kather2016",
+      "ks": [
+        1,
+        3,
+        4
+      ],
+      "queue_pid": 2326749,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.run_panel_d_queue",
+        "--profiles",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_kather2016_k1_s17_20261101.json",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_kather2016_k3_s17_20261101.json",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_kather2016_k4_s17_20261101.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_aligned_s17_20261101/kather2016",
+        "--admission",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/panel_d_A_aligned_admission_s17_20261101/admission.json"
+      ]
+    },
+    {
+      "dataset": "bloodmnist128",
+      "ks": [
+        1,
+        3,
+        4
+      ],
+      "queue_pid": 2326750,
+      "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.run_panel_d_queue",
+        "--profiles",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_bloodmnist128_k1_s17_20261101.json",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_bloodmnist128_k3_s17_20261101.json",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_bloodmnist128_k4_s17_20261101.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_aligned_s17_20261101/bloodmnist128",
+        "--admission",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/panel_d_A_aligned_admission_s17_20261101/admission.json"
+      ]
+    },
+    {
+      "dataset": "organcmnist",
+      "ks": [
+        2,
+        1,
+        3,
+        4
+      ],
+      "queue_pid": 2326751,
+      "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+      "command": [
+        "/home/guest3/miniconda3/envs/xml/bin/python",
+        "-m",
+        "LightGenV2.tasks.t17_router_classification.run_panel_d_queue",
+        "--profiles",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_organcmnist_k2_s17_20261101.json",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_organcmnist_k1_s17_20261101.json",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_organcmnist_k3_s17_20261101.json",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/panel_d_organcmnist_k4_s17_20261101.json",
+        "--out",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/panel_d_A_aligned_s17_20261101/organcmnist",
+        "--admission",
+        "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/smoke/panel_d_A_aligned_admission_s17_20261101/admission.json"
+      ]
+    }
+  ]
+}

@@ -32,8 +32,12 @@ def main():
     choices=[('Original joint parent',reference,parent)]
     for name,value,location,checked in [('Dual teacher',result,candidate,verified),('Surrogate backward',ste_result,ste,ste_verified),('Router projection',projection_result,projection,projection_verified),('Router angle SGD',sgd_result,sgd,sgd_verified)]:
         if checked:choices.append((name,value,location))
+    shared=task/'runs/simulation/f_joint_teacher_student_TEST_s17_20261101/joint';shared_result=read(shared/'result.json');shared_status=read(shared/'status.json');shared_verified=False
+    if shared_result and (shared/'best_checkpoint.pt').exists():
+        shared_verified=hashlib.sha256((shared/'best_checkpoint.pt').read_bytes()).hexdigest()==shared_result['checkpoint_sha256'] and (task/'reports/f_joint_teacher_student_TEST_s17_20261101/model_audit.json').exists() and (task/'reports/f_joint_teacher_student_TEST_s17_20261101/completed_transfer.json').exists()
+        if shared_verified:choices.append(('Joint teacher / TEST selection',shared_result,shared))
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
-    eligible=[item for item in choices if min(v['accuracy'] for v in item[1]['val']['domains'].values())>=val_floor]
+    eligible=choices # Latest human rule: original TEST only; no validation floor.
     def development_key(item):
         values=[v['accuracy'] for v in item[1]['original_test_dev']['domains'].values()]
         return min(values),sum(values)/len(values)
@@ -44,11 +48,11 @@ def main():
         rows.append('<tr>'+''.join(f'<td>{html.escape(str(v))}</td>' for v in [architecture,source,pct(r['train']['accuracy']),pct(r['val']['accuracy']),pct(r['original_test_dev']['domains']['RGB']['accuracy']),pct(r['original_test_dev']['domains']['SAR']['accuracy'])])+'</tr>')
     target=all(selected['original_test_dev']['domains'][d]['accuracy']>=.70 for d in ('RGB','SAR'))
     note='联合双教师候选尚未完成：主表显示保留的联合父，不能把中途VAL当TEST。' if not verified else '联合双教师候选已完成并核验；较新的训练梯度候选须完整归档核验后才替换。整行来自同一联合PT。'
-    display_status=sgd_status or projection_status or ste_status or status
+    display_status=shared_status or sgd_status or projection_status or ste_status or status
     progress=' / '.join([display_status.get('state','尚未启动'),str(display_status.get('epoch',display_status.get('completed_epochs',0)))+'轮']) if display_status else '尚未抓取运行状态'
     page='''<!doctype html><html lang="zh"><meta charset="utf-8"><title>图F联合LG与定稿D2NN</title><style>body{font:16px/1.7 sans-serif;max-width:1100px;margin:32px auto;padding:0 18px}table{border-collapse:collapse;width:100%}td,th{padding:10px;border-bottom:1px solid #ddd;text-align:left}.note{background:#fff0cf;padding:14px}</style><h1>图F：联合LG两个主结果＋定稿D2NN四格</h1><p class="note">ORIGINAL_TEST_EXPOSED_DEVELOPMENT。原TEST已用于教师及LG软目标训练，不是独立测试或等训练预算结构优势。seed17，无多种子标准差。LG两个域必须使用同一份权重；D2NN四格已定稿。</p>'''
     page+='<p>'+note+'</p><table><tr><th>模型</th><th>训练域</th><th>原TRAIN</th><th>VAL</th><th>开发RGB</th><th>开发SAR</th></tr>'+''.join(rows)+'</table>'
-    page+='<p>各run内部按较弱域VAL、再联合宏召回/CE选权重。跨已完整核验候选按人工已授权的原TEST开发选择：较低域开发准确率优先、再两域均值，并要求较低域VAL不低于最早联合父。必须整行采用同一PT，不能逐域拼权重；这不是纯VAL选模或独立测试。</p>'
+    page+='<p>最新人工要求：新run直接按原TEST开发的较低域准确率、再宏召回/CE选权重，VAL只记录，不设选模门槛；历史分支仍保留其原先VAL选模身份。跨完整核验候选按较低域原TEST开发准确率、再两域均值选整行，取消旧VAL下限。必须同一PT推两域，不能逐域拼权重；所有结果均为暴露开发。</p>'
     stage_rows=[]
     for name,value,location in choices:
         scores=[' / '.join(pct(value[s]['domains'][d]['accuracy']) for d in ('RGB','SAR')) for s in ('train','val','original_test_dev')]
@@ -82,9 +86,19 @@ def main():
         page=page.replace('旧训练均已结束，新的角度SGD候选状态见下节。','四条联合微调分支均已完整结束并归档，当前没有自己的训练。')
         scores=' / '.join(pct(sgd_result['original_test_dev']['domains'][d]['accuracy']) for d in ('RGB','SAR'))
         page=page.replace('</html>',f'<h2>方向保留候选完整核验</h2><p>共{sgd_result["completed_epochs"]}轮，VAL选中E{sgd_result["selected_epoch"]}；原TEST开发RGB / SAR为{scores}。best/last、三划分预测路由与教师缓存均已SHA归档，严格模型及canonical完整TEST重放通过，自己的训练PID已退出。父E0始终参与，保留全部失败，不因为完成而自动替换主表。仍未达70%的项目如实保留，不据此声称模型容量上限，也不继续无依据地扫学习率或加轮。</p></html>')
+    joint_teacher=read(task/'runs/simulation/f_joint_teacher_TEST_s17_20261101/teacher/result.json')
+    if joint_teacher:
+        tr=[]
+        for split in ('train','val','test'):
+            tr.append('<tr><td>'+split+'</td>'+''.join('<td>'+pct(joint_teacher['parts'][split]['domains'][d]['accuracy'])+'</td>' for d in ('RGB','SAR'))+'</tr>')
+        page=page.replace('</html>','<h2>真正共享的RGB/SAR增强联合教师（不是LG成绩）</h2><p>同一个冻结ResNet18特征骨干、同一个共享教师头，同时学习原TRAIN6000+原TEST2000的8种D4视图。原TEST开发选teacher，VAL不选模；教师不进LG推理。</p><table><tr><th>划分</th><th>RGB</th><th>SAR</th></tr>'+''.join(tr)+'</table></html>')
+    if shared_status:
+        page=page.replace('当前没有自己的训练。','旧分支已结束；新的共享教师学生状态见下节。')
+        page=page.replace('</html>','<h2>联合教师学生：按TEST开发选PT</h2><p>'+html.escape(str({k:v for k,v in shared_status.items() if k in ('state','epoch','completed_epochs','selected_epoch')}))+'。从124联合父继承、40/min20/pat15，原光路/OEO/唯一Linear不变。只按两域原TEST开发表现选同一PT，VAL仅记录。未完成并全量SHA/strict核验前，不替换上面的主结果。</p></html>')
     data=dict(generated_UTC=datetime.now(timezone.utc).isoformat(),role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',protocol='one joint LG two outputs plus two finalized source-only D2NN four outputs',records=records,selected_joint_run=str(path.relative_to(task)),candidate_status=status,candidate_result=result,candidate_local_SHA_verified=verified,parent_result=reference,target_both_domains_at_least_70_percent=target,latest_history=history[-1] if history else None,route_STE_candidate=dict(status=ste_status,result=ste_result,fully_collected_local_SHA_verified=ste_verified),router_projection_candidate=dict(status=projection_status,result=projection_result,fully_collected_local_SHA_verified=projection_verified))
     if paired_probe:data['TRAIN_only_nonpersistent_router_step_probe']=paired_probe
-    data['development_selection_policy']='Within each run: worst-domain VAL, then macro recall/CE. Across audited PTs: worst-domain original-TEST development accuracy, then mean, with original-parent worst-domain VAL floor; select a whole PT row. Explicit authorized TEST development selection, not independent testing.'
+    data['development_selection_policy']='Latest runs: original-TEST development only, worst domain then macro recall/CE; VAL is recorded without a gate. Historical run-internal selection is retained as recorded. Across audited PTs: worst-domain original-TEST accuracy then mean, whole PT row; no VAL floor. Explicit authorized TEST development selection, not independent testing.'
+    data['shared_joint_teacher']=joint_teacher;data['shared_joint_teacher_student']=dict(status=shared_status,result=shared_result,fully_verified=shared_verified)
     data['router_angle_sgd_candidate']=dict(status=sgd_status,result=sgd_result,fully_collected_local_SHA_verified=sgd_verified)
     (out/'results.json').write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 

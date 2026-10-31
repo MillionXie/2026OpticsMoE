@@ -1,0 +1,375 @@
+{
+  "source_commit": "90bf97410f220c8698b52f26a66e073d17fc288d",
+  "GPU": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "source_sha256": {
+    "train_figure_revision.py": "ea65222ce5ec57c6c53a3cdc8ed87088b8a42d906ac4094e3b9bf022d45cce75",
+    "model_four.py": "0bf0747af500e6ac5e449a947eda5a7ece061e1a938e736b4c294790981a7e5b",
+    "model_depth_ccd.py": "d0b36fb9af338d12e7ba764aad554b8479eea3ef6554c99e08873bf1c5ef7c86",
+    "model_linear_readout.py": "ea9839da8317e0f172e92e5d23f67bef1529576fd4f0e2a94540f1e57590216f",
+    "readout_data.py": "3be0f2a7bafd0721d50a310d9cc532ef61f7b927fe1970e2ed012e919d0640e5",
+    "panel_d_data.py": "87609aa5cd39c75888c147720c3005f9ad7e2da40cf2eb1949163cd38aa797df",
+    "phase_optimizer.py": "2e43c49b0fef68f24e1c077ae3756ec4c62600d450a8c48230c83dc298beb361",
+    "alternating_readout.py": "b94fdfa5c8e78291975a327a137d0c2c80166f4a0677c9ce8e157df376a7bee8"
+  },
+  "data_identities": {
+    "kather2016": {
+      "manifest_sha256": "f859b19f58b95eea781d6b9305ce064209fcb6b8c5f8637df5545913db22dcfd",
+      "index_sha256": "0c55563ce242cb64f9cc6f2faae07d1b88bf1456b639fbcd6f74e2f387327d7b",
+      "archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+      "classes": [
+        "01_TUMOR",
+        "02_STROMA",
+        "03_COMPLEX",
+        "04_LYMPHO",
+        "05_DEBRIS",
+        "06_MUCOSA",
+        "07_ADIPOSE",
+        "08_EMPTY"
+      ],
+      "counts": {
+        "train": 3496,
+        "val": 752,
+        "test": 752
+      },
+      "pixel_hash_overlap_counts": {
+        "train_val": 0,
+        "train_test": 0,
+        "val_test": 0
+      },
+      "duplicate_hashes_within_split": {
+        "train": 0,
+        "val": 0,
+        "test": 0
+      },
+      "patient_independence_verified": false,
+      "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+      "raw_pixel_and_label_alignment_checked": true
+    },
+    "bloodmnist128": {
+      "manifest_sha256": "26ab322731705b9b421689db441c884dc2c2ec466de7d6d9424424731baedea9",
+      "index_sha256": "ebc387e95236cccec1a606f4d07279831d227af86fb6dfee9bfeb4169fe40b0d",
+      "archive_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+      "classes": [
+        "basophil",
+        "eosinophil",
+        "erythroblast",
+        "immature_granulocytes",
+        "lymphocyte",
+        "monocyte",
+        "neutrophil",
+        "platelet"
+      ],
+      "counts": {
+        "train": 11948,
+        "val": 1712,
+        "test": 3421
+      },
+      "pixel_hash_overlap_counts": {
+        "train_val": 0,
+        "train_test": 5,
+        "val_test": 1
+      },
+      "duplicate_hashes_within_split": {
+        "train": 0,
+        "val": 0,
+        "test": 0
+      },
+      "patient_independence_verified": false,
+      "raw_cache_sha256": "2c2c2a1787db749abcac06779eb6988c2a3919445f01617ada7fe1468828fa96",
+      "raw_pixel_and_label_alignment_checked": true
+    },
+    "organcmnist": {
+      "source_archive_sha256": "69cd6d6b6343adc25f916c1c6e2fc786e82443670e25d5da275b1c4e32e8da7a",
+      "raw_cache_sha256": "d87270da86f22dfe8aaadee7302b0f3be19992f7bfd9fb4a6b0170923ab35121",
+      "manifest_sha256": "e4f6d7cd307448836e0e65b5402468a01ec1faf6c8d28f2b99c8e4564fd1086e",
+      "classes": [
+        "bladder",
+        "femur-left",
+        "femur-right",
+        "heart",
+        "kidney-left",
+        "kidney-right",
+        "liver",
+        "lung-left",
+        "lung-right",
+        "pancreas",
+        "spleen"
+      ],
+      "license": "CC BY 4.0",
+      "counts": {
+        "train": 12975,
+        "val": 2392,
+        "test": 8216
+      },
+      "original_TRAIN_VAL_pixels_labels_IDs_exact": true,
+      "original_official_TEST_all_retained": true,
+      "patient_independence_verified": true
+    }
+  },
+  "models": {
+    "kather2016_k1": {
+      "actual_k": 1,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 137.344482421875,
+        "global_phase": 574.3004150390625,
+        "router_phase": 0.3165985643863678,
+        "shared_head.weight": 0.0039598108269274235
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "kather2016_k2": {
+      "actual_k": 2,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": true,
+      "A_k2_probability_max_abs": 9.5367431640625e-07,
+      "A_k2_probabilities_bitwise": false,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 196.90414428710938,
+        "global_phase": 670.5875854492188,
+        "router_phase": 0.3165593445301056,
+        "shared_head.weight": 0.003959808498620987
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "kather2016_k3": {
+      "actual_k": 3,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 195.32455444335938,
+        "global_phase": 680.0462036132812,
+        "router_phase": 0.31648895144462585,
+        "shared_head.weight": 0.003959823399782181
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "kather2016_k4": {
+      "actual_k": 4,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 200.64259338378906,
+        "global_phase": 685.3283081054688,
+        "router_phase": 0.31664523482322693,
+        "shared_head.weight": 0.0039598289877176285
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "bloodmnist128_k1": {
+      "actual_k": 1,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 30.63141441345215,
+        "global_phase": 76.36029052734375,
+        "router_phase": 192.0358428955078,
+        "shared_head.weight": 0.003959802910685539
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "bloodmnist128_k2": {
+      "actual_k": 2,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": true,
+      "A_k2_probability_max_abs": 2.115964889526367e-06,
+      "A_k2_probabilities_bitwise": false,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 30.600839614868164,
+        "global_phase": 65.92156982421875,
+        "router_phase": 198.08399963378906,
+        "shared_head.weight": 0.003959820605814457
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "bloodmnist128_k3": {
+      "actual_k": 3,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 21.61905288696289,
+        "global_phase": 79.628173828125,
+        "router_phase": 240.1094512939453,
+        "shared_head.weight": 0.003959819674491882
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "bloodmnist128_k4": {
+      "actual_k": 4,
+      "initial_state_exact_A": true,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 8,
+      "parameter_updates": {
+        "first_phase": 37.27958679199219,
+        "global_phase": 79.62797546386719,
+        "router_phase": 239.86888122558594,
+        "shared_head.weight": 0.003959817346185446
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 485636,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "organcmnist_k1": {
+      "actual_k": 1,
+      "initial_state_exact_A": false,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 11,
+      "parameter_updates": {
+        "first_phase": 0.2130884975194931,
+        "global_phase": 0.27018076181411743,
+        "router_phase": 0.09630972146987915,
+        "shared_head.weight": 0.008949127979576588
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 487988,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "organcmnist_k2": {
+      "actual_k": 2,
+      "initial_state_exact_A": false,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 11,
+      "parameter_updates": {
+        "first_phase": 0.21318870782852173,
+        "global_phase": 0.26508787274360657,
+        "router_phase": 0.1205080971121788,
+        "shared_head.weight": 0.00886352825909853
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 487988,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "organcmnist_k3": {
+      "actual_k": 3,
+      "initial_state_exact_A": false,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 11,
+      "parameter_updates": {
+        "first_phase": 0.21322084963321686,
+        "global_phase": 0.26317352056503296,
+        "router_phase": 0.12147519737482071,
+        "shared_head.weight": 0.00881221890449524
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 487988,
+      "Linear": 1,
+      "CNN": 0
+    },
+    "organcmnist_k4": {
+      "actual_k": 4,
+      "initial_state_exact_A": false,
+      "A_k2_full_TEST_predictions_exact": false,
+      "A_k2_probability_max_abs": null,
+      "A_k2_probabilities_bitwise": null,
+      "A_original_replay_tolerance": {
+        "rtol": 0.0001,
+        "atol": 2e-06
+      },
+      "real_TRAIN_images": 11,
+      "parameter_updates": {
+        "first_phase": 0.22107671201229095,
+        "global_phase": 0.2633126378059387,
+        "router_phase": 0.12147912383079529,
+        "shared_head.weight": 0.008813434280455112
+      },
+      "head_block_phase_bitwise_frozen": true,
+      "inference_parameters": 487988,
+      "Linear": 1,
+      "CNN": 0
+    }
+  }
+}

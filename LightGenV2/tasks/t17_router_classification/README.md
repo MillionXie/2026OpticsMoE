@@ -1,3 +1,13 @@
+## F/D最新实际执行：四路并行，TEST选PT，联合教师已核验（2026-11-01）
+
+新联合增强teacher已100轮完整结束选92，原TRAIN RGB99.733/SAR82.967、VAL92.50/73.40、原TEST开发99.70/84.30；这是teacher非LG。一个共享冻结ResNet18特征骨干+一个共享head同时学原TRAIN6000+原TEST2000的8-D4，按TEST较低域再均值/CE选，不用VAL。17文件86.77MB全remote/localSHA、原ID标签域及CPU head完整8视图回放核验，旧teacher PID2308798退出。head3200更新/800000随机视图单列。
+F新student2316893在A100实际训练，root f_joint_teacher_student_TEST_s17_20261101/joint，source90bf97410f220c8698b52f26a66e073d17fc288d。只按原TEST开发两域较低准确率再宏召回/CE，VAL只记录、不作门槛；原TEST真GT不进student CE，TRAIN真实CE+joint teacherKD/两域TEST软KL/D4/同头64000视图块保留，max40/min20/pat15。未完整核验不替换主表63.20/48.30。
+D三队列已在两卡启动：Kather/Blood原4090物理1、Organ A100物理6；队列source71c1a4ed4606a1dcf7b949af339991a79aa33e03，实际训练source90bf，12种k/类数均真实TRAIN GPU准入+同Linear/两OEO/实际k通过，206 CPU检查通过。每卡最多两自己GPU worker，共卡其他用户不动。队列自身不创建CUDA上下文，逐子任务复用；不要求整卡空。
+Kather/Blood的k2原同PT已核全TEST预测与A完全一致，概率浮差max9.54e-7/2.116e-6，按原A重放容差rtol1e-4/atol2e-6通过，不称概率bitwise。Organ完整12975/2392/8216、11类、28灰度复制3通道，原TRAIN/VAL像素/标签/ID逐一等于旧D缓存，TEST保留原官方全量；统一当前[R,G;B,0]，不再用旧D第四tile均值。
+Kather初轮k1/3/4已15轮各完整结束：开发601/600/600（752）；k1已全SHA/strict及CPU canonical TEST预测完全重放。初轮不单调，不能压低k1。原A k2=526，独立只拟合同一头的CPU有界150内部步后k2=586；Blood k2由2838提高到2945/3421。两新k2的所有相位bitwise等于A，22文件13.77MB全SHA、strict单Linear/完整canonicalGPU TEST预测相同；A/D对应点与B2 Kather引用同一改进PT，旧权重/首轮表均保留。CPU拟合仅TRAIN标签入loss、TEST选PT，VAL无门槛，不是新光学epochs。
+为真正争取严格递增，下一单条Kather追加队列k2/3/4从各自现有同k父出发，固定router参数但仍输入动态路由，只训原E/G与同一头、TRAIN D4、CE smoothing0、phaseLR.0001/head.00005、max20/min10/pat10、TEST选模、父E0参选；这是一次有界边界微调，不设置准确率上限、不削弱已更优点。新profile已准备，需精确父准入后才算启动，不能当现已运行。
+D十二点报告reports/panel_d_A_aligned_s17_20261101/results.html；F主报告仍reports/f_joint_dual_teacher_s17_20261101/results.html。全部ORIGINAL_TEST_EXPOSED_DEVELOPMENT、seed17无SD，不称独立TEST/等预算结构优势。不保证70%或严格递增，未达与失败保留。208 CPU检查通过，包括新共享教师/真实topk/11类/TEST隔离/缓存绑定。仅T17修改，所有原D2NN定稿不动。
+
 ## 最新人工要求：F按TEST选模、联合增强教师；D统一A并补12点（2026-11-01）
 
 F只按原TEST开发表现选PT，取消VAL门槛；VAL可记录但不参与选择/早停。增强教师改为一份同时学习RGB/SAR的共享teacher head，复用已SHA核验同一冻结ResNet18的两域8-D4特征，不把两个独立域教师称作联合教师。TRAIN+增强原TEST可训练教师，学生TRAIN硬CE与TEST软KD保持真值隔离，全部ORIGINAL_TEST_EXPOSED_DEVELOPMENT。

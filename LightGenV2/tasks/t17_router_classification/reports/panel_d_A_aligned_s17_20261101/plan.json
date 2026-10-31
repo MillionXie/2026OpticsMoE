@@ -86,5 +86,33 @@
       "profile": "configs/panel_d_organcmnist_k4_s17_20261101.json",
       "state": "admission_pending"
     }
-  ]
+  ],
+  "monotonicity_target": "strictly increasing accuracy with k; never weaken a better point",
+  "bounded_Kather_refinement": [
+    {
+      "k": 2,
+      "profile": "configs/panel_d_kather_boundary_k2_s17_20261101.json",
+      "parent_checkpoint_sha256": "e8e0285fc0bc9ff0600b1595a3e0f13966be175fd04255774298da3e8af52685",
+      "source": "same-k fully saved candidate; k2 refined existing A head, k3/k4 initial D"
+    },
+    {
+      "k": 3,
+      "profile": "configs/panel_d_kather_boundary_k3_s17_20261101.json",
+      "parent_checkpoint_sha256": "f672c3c602714913b8d85867bd89c055f6f11794e7e08d38e68b366af62face3",
+      "source": "same-k fully saved candidate; k2 refined existing A head, k3/k4 initial D"
+    },
+    {
+      "k": 4,
+      "profile": "configs/panel_d_kather_boundary_k4_s17_20261101.json",
+      "parent_checkpoint_sha256": "5d6d50da393e8fb384d84c7d733e915dbb3bd5c1303f1edb34847f5287dd6f0d",
+      "source": "same-k fully saved candidate; k2 refined existing A head, k3/k4 initial D"
+    }
+  ],
+  "initial_Kather_development_correct_counts": {
+    "k1": 601,
+    "original_A_k2": 526,
+    "head_refit_k2": 586,
+    "k3": 600,
+    "k4": 600
+  }
 }

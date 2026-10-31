@@ -1,0 +1,25 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 485636,
+    "Linear": 1,
+    "CNN": 0,
+    "top_k": 1
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 485636,
+    "Linear": 1,
+    "CNN": 0,
+    "top_k": 1
+  },
+  "full_CPU_canonical_TEST_replay": {
+    "images": 752,
+    "predictions_exact": true,
+    "probability_max_abs": 9.953975677490234e-06,
+    "probability_tolerance": {
+      "rtol": 0.0002,
+      "atol": 3e-05
+    }
+  }
+}
