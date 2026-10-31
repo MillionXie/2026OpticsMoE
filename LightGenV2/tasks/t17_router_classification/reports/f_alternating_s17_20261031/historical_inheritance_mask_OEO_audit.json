@@ -1,0 +1,75 @@
+{
+  "historical_checkpoint_sha256": "635ff1258ef3c7dc153f6ca28df78b6d65a2edc055c09a9108ebd5700c252e1c",
+  "historical_phase_shapes": {
+    "first_phase": [
+      4,
+      224,
+      224
+    ],
+    "global_phase": [
+      478,
+      478
+    ],
+    "router_phase": [
+      224,
+      224
+    ]
+  },
+  "all_three_optical_tensors_copied_bitwise": true,
+  "missing_historical_key_only": "shared_head.weight",
+  "old_actual_OEO": "none",
+  "old_forward_router": "dense four branches",
+  "old_input": "frozen 93472-parameter CNN -> GAP128 -> fixed16x8 feature cells",
+  "old_readout": "ten32x32 detector windows, no Linear",
+  "new_input": "raw RGB/SAR channels 112 tiles ->224 amplitude",
+  "new_router": "one hard Top2 optical entrance",
+  "new_readout": "mean-normalized 28x28 active CCD intensity -> one bias-free Linear784->10",
+  "new_mask_geometry": {
+    "main_active_side": 478,
+    "main_canvas_side": 518,
+    "canvas_boundary_padding": 20,
+    "expert_tensor_shape": [
+      4,
+      224,
+      224
+    ],
+    "expert_pitch": 254,
+    "gap": 30,
+    "expert_assembled_side": 478,
+    "global_shape": [
+      478,
+      478
+    ],
+    "router_trainable_shape": [
+      224,
+      224
+    ],
+    "router_padding_to_canvas": 147
+  },
+  "new_D2NN": {
+    "layers": 3,
+    "shapes": [
+      [
+        478,
+        478
+      ],
+      [
+        478,
+        478
+      ],
+      [
+        478,
+        478
+      ]
+    ],
+    "Linear_count": 0,
+    "OEO_activation": "intensity_softsign",
+    "same_OEO_function": true
+  },
+  "actual_full_forward_OEO_calls": {
+    "LG": 2,
+    "D2NN": 3
+  },
+  "can_reuse_old_optical_tensors_as_initialization": true,
+  "old_accuracy_not_inherited": "Input features, hard routing, OEO and readout differ; equal tensor shapes do not preserve the old function or its accuracy."
+}

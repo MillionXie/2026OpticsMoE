@@ -1,5 +1,22 @@
 # T17 单数据集路由分类对照
 
+## F旧权重兼容、mask与三层D2NN核验（2026-10-31）
+
+用户要求确认旧权重继承和除g外主干mask478；已对真实旧MoE checkpoint和当前D2NN checkpoint严格加载核验。
+旧479364光学参数与新LG形状完全相同：first_phase[4,224,224]、global_phase[478,478]、router_phase[224,224]；
+调用load_optical_parent后三组相位逐元素完全相同，唯一缺少的是新Linear。可以用旧相位初始化，不能说旧精度随之继承。
+实际79.5/74.9旧checkpoint的oeo_activation缺省none，旧输入含冻结93472参数CNN特征编码、dense四路、十个32窗口读出；
+新F无前端、RGB/SAR三通道拼接、Top2、两次同原intensity_softsign OEO、唯一Linear，功能差异不只末端Linear。
+当前F D2NN严格加载三份[478,478] phase且零Linear；真实完整forward计数OEO为LG2次、D2NN3次，函数对象完全相同。
+主干专家拼接有效面2*224+30=478，Global478，D三个层全478；518为补零传播画布。
+入口router当前可训练区224、居中pad147到518；是否也应变478已单独询问，未擅自改动正在训练的物理合同。
+详见historical_inheritance_mask_OEO_audit.json。旧三组相位warm-start待按确认后的尺寸合同比较；没有恢复旧CNN进入LG推理。
+
+新增KD .25已真实启动：sourceeb7317266，136项CPU检查和20真实TRAIN GPU准入通过，worker1866049，
+root runs/simulation/f_teacher_s17_20261031/025，最近E26。它继承的是已完成control E79（48.20%开发）权重，不是从零训练；
+旧CNN教师TRAIN80.08/VAL76.05，仅作为训练监督、全部参数bitwise冻结，不在LG推理图中。
+.75配置仅准备未启动，不把它记入完成预算。新的训练/缓存只有TRAIN无翻转与匹配hflip，不读取TEST作为教师或学生损失。
+
 ## F继续原任务、两条交替优化已完整结束（2026-10-31）
 
 用户最新明确按原代码任务，不拆成两个单域LG。保持6000/2000/2000原划分、两个联合架构各测两域。

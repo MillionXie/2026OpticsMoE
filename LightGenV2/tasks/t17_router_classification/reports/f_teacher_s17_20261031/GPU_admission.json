@@ -1,0 +1,98 @@
+{
+  "teacher_manifest": {
+    "checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+    "teacher_parameters": 94762,
+    "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/frozen_electronic/model.py",
+    "original_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+    "teacher_used_TEST": false,
+    "current_cache_splits": [
+      "TRAIN unaugmented",
+      "TRAIN horizontal_flip"
+    ],
+    "TEST_cached": false,
+    "teacher_parameters_bitwise_frozen": true,
+    "metrics": {
+      "train": {
+        "accuracy": 0.8008333333333333,
+        "domains": {
+          "RGB": 0.8343333333333334,
+          "SAR": 0.7673333333333333
+        }
+      },
+      "val": {
+        "accuracy": 0.7605,
+        "domains": {
+          "RGB": 0.769,
+          "SAR": 0.752
+        }
+      }
+    },
+    "logits_sha256": "bfef460f8fa248a5cd7972d85f6f658bfefcb815deebfac6ac39261100958f68"
+  },
+  "source_commit": "eb73172669733b87b96c8c8db5300e37d8c29209",
+  "source_sha256": {
+    "train_figure_revision.py": "a399436ae550d9c0840dae4df8435200bb81020aac81a5c3d3214a1684ff717b",
+    "alternating_readout.py": "ab02de54c00d7efbc7264bede66823039e417190d73f8d046acd77454e1413a0"
+  },
+  "GPU_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "TRAIN_only": true,
+  "no_new_inference_module": true,
+  "checks": [
+    {
+      "candidate": "025",
+      "loss": 1.3296360969543457,
+      "gradients": {
+        "first_phase": 0.18097805976867676,
+        "global_phase": 0.08125250041484833,
+        "router_phase": 0.034407518804073334,
+        "shared_head.weight": 3.7895050048828125
+      },
+      "updates": {
+        "first_phase": 0.2175222635269165,
+        "global_phase": 0.2967909276485443,
+        "router_phase": 0.12545505166053772,
+        "shared_head.weight": 5.867893218994141
+      },
+      "head_block": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 20,
+        "numerical_ridge": 0.003043322826424354,
+        "uncentred_Gram_eigen_min": -4.167529274492002e-13,
+        "uncentred_Gram_eigen_max": 2236.793042215786,
+        "Gram_regularized_condition": 734984.8219924025,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 1.2958045869214092,
+        "objective_after": 0.37490894601340435,
+        "internal_steps": 5,
+        "closure_calls": 9,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": true
+      },
+      "head_block_phases_bitwise_unchanged": true,
+      "inference_parameter_count": 487204,
+      "Linear_count": 1,
+      "train_ids": [
+        "AnnualCrop_2796:0",
+        "Forest_2100:0",
+        "HerbaceousVegetation_1133:0",
+        "Highway_1698:0",
+        "Industrial_2251:0",
+        "Pasture_358:0",
+        "PermanentCrop_677:0",
+        "Residential_822:0",
+        "River_1143:0",
+        "SeaLake_1136:0",
+        "AnnualCrop_2796:1",
+        "Forest_2100:1",
+        "HerbaceousVegetation_1133:1",
+        "Highway_1698:1",
+        "Industrial_2251:1",
+        "Pasture_358:1",
+        "PermanentCrop_677:1",
+        "Residential_822:1",
+        "River_1143:1",
+        "SeaLake_1136:1"
+      ]
+    }
+  ]
+}
