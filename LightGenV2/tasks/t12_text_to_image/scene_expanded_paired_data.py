@@ -19,6 +19,29 @@ from .scene_paper_prompt_protocol import write
 PAIRED_SCHEMA='scene_expanded_train_only_pairs_v1'
 
 
+def checked_candidate_rows(report,rows,expected,reviewed_prefix=False):
+    ids={r['sample_id'] for r in rows}
+    if len(ids)!=len(rows):raise ValueError('Repeated candidate input')
+    selected=[r for r in expected if r['sample_id'] in ids]
+    if reviewed_prefix:
+        if(not report.get('partial_TRAIN_prefix') or report.get('original_TRAIN_request_count')!=len(expected)
+           or report.get('candidate_count')!=len(rows) or not 0<len(rows)<len(expected)):
+            raise ValueError('Explicit stopped partial TRAIN pool required')
+    elif len(rows)!=len(expected):raise ValueError('Complete original TRAIN candidate plan required')
+    if len(selected)!=len(rows) or any({k:r[k] for k in SAFE}!=e for r,e in zip(rows,selected)):
+        raise ValueError('Actual candidates must retain their original public input identities and order')
+
+
+def checked_fast_coverage(rows,refs):
+    training=[r for r in refs if r['split']=='train'];catalog={r['reference_id']:r for r in training}
+    expected_groups={(r['category'],str(i)) for r in training for i in range(len(conditions(r['category'])))}
+    if(len(rows)<600 or len({r['sample_id']for r in rows})!=len(rows) or {r['reference_id'] for r in rows}!=set(catalog)
+       or {(r['category'],r['condition_id']) for r in rows}!=expected_groups):
+        raise ValueError('Fast admission needs at least600 usable TRAIN pairs, all source views and all public template groups')
+    return dict(usable_TRAIN_pairs=len(rows),TRAIN_views=len(catalog),TRAIN_products=len({r['source_product_id']for r in training}),
+                template_groups=len(expected_groups),all_source_views_and_template_groups_covered=True)
+
+
 def checked_dataset(data,verify_pixels=True):
     report=json.loads((data/'report.json').read_text());review=json.loads((data/'visual_review.json').read_text())
     rows=json.loads((data/'pairs.json').read_text());test=json.loads((data/'inference_inputs.json').read_text())
@@ -50,18 +73,30 @@ def checked_dataset(data,verify_pixels=True):
                or row['supervision_weight'] not in [.5,1.] or row['source_product_id']!=source['source_product_id']
                or row['source_RGBA_sha256']!=source['source_RGBA_sha256']):raise ValueError('TRAIN admission identity missing')
             if verify_pixels and sha(data/row['target'])!=row['target_sha256']:raise ValueError('Changed reviewed target pixels')
+    if report.get('TRAIN_plan_mode')=='reviewed_prefix_fast_v1':
+        marker=data/'generation_stop_receipt.json';stop=json.loads(marker.read_text())
+        if(sha(marker)!=report['generation_stop_receipt_sha256'] or not stop['own_generator_stopped']
+           or not stop['GPU_released'] or stop['candidate_manifest_sha256']!=report['candidate_manifest_sha256']):
+            raise ValueError('Stopped TRAIN pool identity and resource receipt required')
+        checked_fast_coverage(rows,refs)
     return rows,test,report
 
 
-def curate(plan,candidates,review_path,parent,output):
+def curate(plan,candidates,review_path,parent,output,reviewed_prefix=False):
     if output.exists():raise ValueError('Keep every historical dataset unchanged')
     pr,expected=checked_plan(plan);cr=json.loads((candidates/'report.json').read_text())
     rows=json.loads((candidates/'candidates.json').read_text());review=json.loads(review_path.read_text())
     if(not cr['complete'] or cr.get('schema')!='scene_paper_expanded_TRAIN_candidates_v1'
        or cr['TRAIN_request_sha256']!=pr['TRAIN_request_sha256'] or cr['TEST_targets_or_predictions_created']
-       or sha(candidates/'candidates.json')!=cr['candidate_manifest_sha256'] or len(rows)!=len(expected)
-       or any({k:r[k] for k in SAFE}!=e for r,e in zip(rows,expected))):
-        raise ValueError('Completed exact TRAIN1520 candidates required')
+       or sha(candidates/'candidates.json')!=cr['candidate_manifest_sha256']):
+        raise ValueError('Completed exact TRAIN candidate pool required')
+    checked_candidate_rows(cr,rows,expected,reviewed_prefix)
+    if reviewed_prefix:
+        marker=candidates/'generation_stop_receipt.json';stop=json.loads(marker.read_text())
+        if(not stop['own_generator_stopped'] or not stop['GPU_released']
+           or stop['candidate_manifest_sha256']!=cr['candidate_manifest_sha256']
+           or cr['generation_stop_receipt_sha256']!=sha(marker)):
+            raise ValueError('Actual stopped own generation and pixel-bound prefix receipt required')
     if review.get('admission_policy')!='basic_subject_quality_v2':raise ValueError('Explicit partial TRAIN admission required')
     admitted=accepted_ids(rows,review,sha(candidates/'candidates.json'))
     if not admitted:raise ValueError('No usable TRAIN targets')
@@ -85,6 +120,8 @@ def curate(plan,candidates,review_path,parent,output):
             all_requested_facts_and_form_satisfied=full,teacher_candidate_manifest_sha256=cr['candidate_manifest_sha256'],
             teacher_revision=row['teacher_revision'],teacher_kind=row.get('teacher_kind','frozen_official_OmniGen'),
             teacher_generation_steps=row.get('teacher_generation_steps',50),teacher_inference_batch_size=row.get('teacher_inference_batch_size',1)))
+    coverage=checked_fast_coverage(pairs,refs) if reviewed_prefix else None
+    if reviewed_prefix:shutil.copyfile(marker,output/'generation_stop_receipt.json')
     write(output/'pairs.json',pairs)
     for name in ['references.json','test_inputs.json','inference_inputs.json','selection_protocol.json','prompt_definitions.json']:
         shutil.copyfile(plan/name,output/name)
@@ -95,6 +132,11 @@ def curate(plan,candidates,review_path,parent,output):
         pairs_sha256=pairsha,request_sha256=sha(output/'inference_inputs.json'),source_plan_request_sha256=pr['TRAIN_request_sha256'],
         source_parent_pairs_sha256=sha(parent/'pairs.json'),candidate_manifest_sha256=cr['candidate_manifest_sha256'],
         candidate_run=str(candidates),
+        TRAIN_plan_mode='reviewed_prefix_fast_v1' if reviewed_prefix else 'full_candidate_plan',
+        original_TRAIN_candidate_plan=len(expected),actual_TRAIN_candidates_reviewed=len(rows),
+        full_original_TRAIN_candidate_plan_generated=not reviewed_prefix,
+        fast_admission_coverage=coverage,
+        generation_stop_receipt_sha256=sha(marker) if reviewed_prefix else None,
         TRAIN_pairs=len(pairs),TRAIN_products=len({r['source_product_id'] for r in pairs}),TRAIN_views=len({r['reference_id'] for r in pairs}),
         partial_TRAIN_pairs=sum(r['supervision_weight']==.5 for r in pairs),TEST_requests=500,TEST_target_images=0,
         validation_set=False,TEST_used_for_model_selection=True,role_disjoint=True,independent_generalization_claim=False,
@@ -116,7 +158,8 @@ def checked_parent_transfer(data,parent,parent_sha,new_sha):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for name in ['plan','candidates','review','parent','output']:p.add_argument('--'+name,type=Path,required=True)
-    a=p.parse_args();curate(a.plan,a.candidates,a.review,a.parent,a.output)
+    p.add_argument('--reviewed-prefix',action='store_true',help='Time-priority reviewed subset; at least600 usable pairs and all source/template groups')
+    a=p.parse_args();curate(a.plan,a.candidates,a.review,a.parent,a.output,a.reviewed_prefix)
 
 
 if __name__=='__main__':main()
