@@ -40,7 +40,8 @@ def main():
         a,b=records[lg]['result'],records[d2nn]['result']
         gain=100*(a['original_test_dev']['accuracy']-b['original_test_dev']['accuracy']) if a and b else None
         pairs.append(dict(LG=lg,D2NN=d2nn,gain_percentage_points=gain,
-                          target_15pp_met=(gain>=15 if gain is not None else None)))
+                          target_15pp_required=lg!='lg2',
+                          target_15pp_met=(gain>=15 if gain is not None and lg!='lg2' else None)))
     def increasing(names):
         scores=[records[n]['result']['original_test_dev']['accuracy'] if records[n]['result'] else None for n in names]
         return None if any(s is None for s in scores) else all(a<b for a,b in zip(scores,scores[1:]))
@@ -72,7 +73,8 @@ def main():
 <table><tr><th>模型</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th></tr>{rows}</table>
 <p>对应关系：LG主干2/4/6层，另有一个入口router；D2NN为3/5/7层。四专家224²，global及D2NN相位均478²；同一intensity-softsign OEO、固定八区CCD，无Linear/CNN。</p>
 <p>按最新人工修正，仅D2NN统一为与图a相同的60轮：batch8、raw Adam LR.005、无教师、仅TRAIN真标签、每轮VAL宏召回再NLL选模。LG按准确率目标优化，4/6层当前候选为120轮，使用教师伪标签；两层复用图a优化结果。因此不能称LG与D2NN等训练/数据预算结构优势。旧D2NN的120轮方案已取消，实际完成探索及权重保留，未混入正式对照。</p>
-<p>深度单调及LG高15个百分点是待检验的目标，不通过选择较差D2NN权重、删除样本或更改统计强制满足。最低LG固定61.04%时，D2NN3最多346/752正确才能达到15个百分点差值。</p>
+<p>两层LG按用户要求固定图a61.04%，最浅对仅如实报告差值，不要求高15个百分点。4/6层LG的递增及相对D2NN5/7层高15个百分点是优化目标，不通过选择较差D2NN权重、删除样本或更改统计强制满足。</p>
+<p>首批完整曲线：<a href="convergence.svg">TRAIN/VAL与锁权重后的原TEST开发点</a>。逐样本及结构核验见first_completed_audit.json；完整best/last与预测SHA收据见first_completed_transfer.json。</p>
 <p>LG深度严格递增：{data['LG_strictly_increasing']}；D2NN深度严格递增：{data['D2NN_strictly_increasing']}。None表示尚未完成。</p>
 <p>数据、源SHA、逐轮指标、入口专家分配与best/last保存在各run。生成时间UTC：{data['generated_UTC']}。</p></html>'''
     (out/'results.html').write_text(page,encoding='utf-8')

@@ -1,0 +1,119 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/panel_b_depth_s17_20261031/worker1/lg4",
+    "runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/best_checkpoint.pt",
+      "size": 3645460,
+      "sha256": "fb0dfedd73c5fe0ebb45387210726b33158aa30197f28ec5dc5e24b6844ba1dc"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/history.json",
+      "size": 198758,
+      "sha256": "c38b5c2ca0faeab270ae9eca2b9308acf10df463c28b587919ba00a25ea7ba0e"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/last_checkpoint.pt",
+      "size": 10917914,
+      "sha256": "c3a181f5859075ac620e22c23600330e23044ba3564a4d6a432209f6642a0219"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/metadata.json",
+      "size": 8645,
+      "sha256": "768f50f2f2fc7053d169ae2a85f699ae37d4461848ae9bb1012f36d1db941ef0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/result.json",
+      "size": 7199,
+      "sha256": "96ac7c89c3d84f7ac0d775f5b4f4519a3da113162726601668b29b7941baa5a6"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/selection_lock.json",
+      "size": 213,
+      "sha256": "9aa859a649efec6e389cfe888fec7e728248f898f5b4da84e3bc58f820797b56"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/status.json",
+      "size": 7240,
+      "sha256": "0e864a05fc34bc4609a3b1312a17fbebe33697c63b56c13ea381cd23a5572e2f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/test_predictions.npz",
+      "size": 41901,
+      "sha256": "9b8bc6563dcf9294f4f6ec8626d2a2bbef812630267c40d54e92480530f179c1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/train_predictions.npz",
+      "size": 186449,
+      "sha256": "7aab8326d725ed40f10452ac994674029f4d8e2e7996f18492a297a685b4c3df"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_depth_s17_20261031/worker1/lg4/val_predictions.npz",
+      "size": 41938,
+      "sha256": "b94709a63fcd96452c6780b8ff7ca5152070f6ba5cbec7b6f26a2f921ea985c0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/best_checkpoint.pt",
+      "size": 8235186,
+      "sha256": "9be9f95d90b6df5967cd073f99f9b7a6bae8f9b00b35731aa7231eb8ab7577b8"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/exit_receipt.json",
+      "size": 118,
+      "sha256": "904ac69cd0e9b150f6ccf740b7c793e4e6ae0f19c3c91715af3304b0a1580f59"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/history.json",
+      "size": 101835,
+      "sha256": "190511a65405b1ded6a005f05f8420df4381ab650eb1657d9c261ea709c3146d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/last_checkpoint.pt",
+      "size": 8235186,
+      "sha256": "a78f6ae67a1a9e869ec2e31d9ff4e02a63e54b63e94355dfc8dd14d814c760c2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/metadata.json",
+      "size": 4904,
+      "sha256": "97e90130c94f58ab383d066b41304d0480d624b4ff83f5a13b548b2033ee7784"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/result.json",
+      "size": 4522,
+      "sha256": "963f77aaf0c09de235f310d6a9f4387f5919037d4c11277fc6a1dbdf79f9b0e2"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/status.json",
+      "size": 4545,
+      "sha256": "88f343ee6669aed8bfe8bf379503e7ad92f3b68cf25ac267d370b11bda1b3921"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/test_overlap_audit.json",
+      "size": 12181,
+      "sha256": "9484022600bf3436871c84569347c9898525c2d1bf27b4ea8cb7018a28fa4131"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/test_predictions.npz",
+      "size": 25166,
+      "sha256": "8c291c559956f5e57836cc76b0158a03518f0b6b0563e54859ad538ce12644b4"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/test_selection_lock.json",
+      "size": 216,
+      "sha256": "52e888ef163153559fd77b417509b562490a0fe6ea1de62a08c3e8eaab8ee80a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/train_predictions.npz",
+      "size": 111024,
+      "sha256": "b96126b77d4d3da96ef5b113f9251afa3ca996f3fd9e3f8d0ab7dac607b12d28"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/panel_b_d2nn60_s17_20261031/d2nn3/val_predictions.npz",
+      "size": 25190,
+      "sha256": "07bcbd3617b322c47ef493e1cbaba20fe6da0a608d2649cdd82b3201fa7e182f"
+    }
+  ]
+}
