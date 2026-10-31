@@ -17,17 +17,21 @@ def domain_route_loss(dense, domains):
     return F.kl_div(dense.clamp_min(1e-20).log(), target, reduction='batchmean')
 
 
-def anchored_classification(raw_logits, labels, weight, anchor, strength, smoothing, teacher_logits=None, teacher_weight=0., teacher_temperature=2.):
+def anchored_classification(raw_logits, labels, weight, anchor, strength, smoothing, teacher_logits=None, teacher_weight=0., teacher_temperature=2., hard_label_mask=None):
     if strength <= 0:
         raise ValueError('Positive head anchor required')
-    loss=F.cross_entropy(raw_logits, labels, label_smoothing=smoothing) + .5 * strength * (weight-anchor).square().sum()
+    if hard_label_mask is not None:
+        if hard_label_mask.dtype!=torch.bool or hard_label_mask.shape!=labels.shape or not bool(hard_label_mask.any()):raise ValueError('Nonempty TRAIN hard-label mask required')
+        classification=F.cross_entropy(raw_logits[hard_label_mask],labels[hard_label_mask],label_smoothing=smoothing)
+    else:classification=F.cross_entropy(raw_logits, labels, label_smoothing=smoothing)
+    loss=classification + .5 * strength * (weight-anchor).square().sum()
     if teacher_weight:
         if teacher_logits is None:raise ValueError('KD requires verified TRAIN teacher logits')
         loss=loss+teacher_weight*teacher_KL(raw_logits,teacher_logits,teacher_temperature)
     return loss
 
 
-def refit_existing_head(head, features, labels, anchor, strength, smoothing, inner_steps, teacher_logits=None, teacher_weight=0., teacher_temperature=2.):
+def refit_existing_head(head, features, labels, anchor, strength, smoothing, inner_steps, teacher_logits=None, teacher_weight=0., teacher_temperature=2., hard_label_mask=None):
     """One bounded TRAIN-only Gram-conditioned LBFGS block, exported to float32 W.
 
     All inputs are detached. No optical parameter can receive a gradient, and
@@ -48,7 +52,7 @@ def refit_existing_head(head, features, labels, anchor, strength, smoothing, inn
         optimizer.zero_grad(set_to_none=True)
         weight = canonical_weight(coordinate, factor)
         loss = anchored_classification(F.linear(transformed, coordinate), target, weight, prior, strength, smoothing,
-            teacher_logits.detach().double() if teacher_logits is not None else None,teacher_weight,teacher_temperature)
+            teacher_logits.detach().double() if teacher_logits is not None else None,teacher_weight,teacher_temperature,hard_label_mask)
         if not torch.isfinite(loss):
             raise RuntimeError('Nonfinite alternating head loss')
         loss.backward()
@@ -65,4 +69,5 @@ def refit_existing_head(head, features, labels, anchor, strength, smoothing, inn
         head.weight.copy_(canonical_weight(coordinate, factor).to(head.weight))
     return dict(**info, objective_before=before, objective_after=after,
         internal_steps=optimizer.state[coordinate].get('n_iter', 0), closure_calls=calls,
-        exported_dtype=str(head.weight.dtype), TRAIN_only=True)
+        exported_dtype=str(head.weight.dtype), TRAIN_only=hard_label_mask is None,
+        hard_label_samples=len(labels) if hard_label_mask is None else int(hard_label_mask.sum()))

@@ -120,12 +120,12 @@ def main():
     paths.append(task/'phase_training.py')
     paths.append(task/'phase_backtracking.py')
     paths.append(task/'f_cross_domain.py')
-    metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=True,teacher_used=bool(cfg.get('teacher')))
+    metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=not bool(cfg.get('source_test_distillation')),teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
         raw,identity=load_panel_f(cfg['data']) if cfg['dataset']=='eurosat_original_f' else load_raw(Path(cfg['data_root']),cfg)
         if cfg.get('training_domain'):
-            if cfg['dataset']!='eurosat_original_f' or cfg.get('parent_checkpoint') or cfg.get('historical_optical_initialization'):raise ValueError('Single-domain F requires fresh initialization, no joint-domain parent')
+            if cfg['dataset']!='eurosat_original_f' or cfg.get('historical_optical_initialization') or (cfg.get('parent_checkpoint') and not cfg.get('source_test_distillation')):raise ValueError('Single-domain F requires fresh initialization or explicitly checked same-source development')
             from .f_cross_domain import select_source_domain
             raw=select_source_domain(raw,cfg['training_domain']);identity['source_training_domain']=cfg['training_domain'];identity['selected_counts']={s:len(v['labels']) for s,v in raw.items()};identity['evaluation_domains']=['RGB','SAR']
         metadata['data']=identity;teacher_cfg=cfg.get('teacher');teacher_targets=None
@@ -134,12 +134,20 @@ def main():
                 from .f_cross_domain import prepare_source_teacher
                 teacher_targets=prepare_source_teacher(raw,cfg,args.out)
             else:teacher_targets=prepare_original_teacher(raw,cfg,args.out)
+        source_test_indices=source_test_targets=None
+        if cfg.get('source_test_distillation'):
+            from .f_cross_domain import prepare_source_test_targets,soft_only_source_test_loss
+            source_test_indices,source_test_targets=prepare_source_test_targets(raw,cfg,args.out)
         if teacher_cfg and (not cfg.get('alternating_head') or cfg['augmentation'] not in ('horizontal_flip','D4')):raise ValueError('Teacher KD requires anchored head blocks and matching cached augmentation')
         model=build_model(cfg).cuda();parent=None
         if cfg.get('parent_checkpoint'):
             parent_path=task/cfg['parent_checkpoint']
             if sha256(parent_path)!=cfg['parent_checkpoint_sha256']:raise ValueError('Parent SHA differs')
-            parent=torch.load(parent_path,map_location='cpu',weights_only=False);model.load_state_dict(parent['model'],strict=True)
+            parent=torch.load(parent_path,map_location='cpu',weights_only=False)
+            if cfg.get('training_domain'):
+                from .f_cross_domain import validate_same_source_parent
+                validate_same_source_parent(parent,cfg)
+            model.load_state_dict(parent['model'],strict=True)
         historical=cfg.get('historical_optical_initialization')
         if historical:
             if parent is not None or cfg['architecture']!='LG':raise ValueError('Historical phase initialization cannot mix with a full new-model parent')
@@ -228,6 +236,19 @@ def main():
                     return total/len(order)
                 step_record=phase_opt.step(paired_TRAIN_objective,baseline_loss=loss_sum/len(order))
             elif aggregate:phase_opt.step()
+            source_test_record=None
+            if source_test_targets is not None:
+                soft_order=rng.permutation(len(source_test_indices));soft_codes=rng.integers(0,8,len(soft_order));soft_total=0.
+                for start in range(0,len(soft_order),cfg['batch']):
+                    local=torch.as_tensor(soft_order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(soft_codes[start:start+cfg['batch']],device='cuda')
+                    phase_opt.zero_grad(set_to_none=True);head_opt.zero_grad(set_to_none=True)
+                    output=model(augment_packed(x['test'][source_test_indices[local]],code))
+                    value=soft_only_source_test_loss(output['raw_logits'],source_test_targets[local,code],model.shared_head.weight,anchor,block['anchor_strength'],teacher_cfg['weight'],teacher_cfg['temperature'])
+                    value.backward()
+                    for p in phases+heads:
+                        if p.grad is None or not torch.isfinite(p.grad).all():raise RuntimeError('Nonfinite source TEST KD gradient')
+                    torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True);phase_opt.step();head_opt.step();soft_total+=float(value.detach())*len(local)
+                source_test_record=dict(images=len(soft_order),augmentation_views_presented=len(soft_order),phase_updates=(len(soft_order)+cfg['batch']-1)//cfg['batch'],soft_KD_objective=soft_total/len(soft_order),TEST_ground_truth_in_loss=False,domain=cfg['training_domain'])
             block_record=None
             if block and epoch%block['interval_epochs']==0:
                 model.eval();features=[]
@@ -241,8 +262,19 @@ def main():
                             if view:field=augment_packed(field,torch.full((len(field),),view,device=field.device,dtype=torch.long))
                             features.append(model.optical_features(field)['ccd_features'])
                 refit_teacher=torch.cat([teacher_targets[:,view if cfg['augmentation']=='D4' else 0] for view in refit_views]) if teacher_cfg else None
-                block_record=refit_existing_head(model.shared_head,torch.cat(features),y['train'].repeat(len(refit_views)),anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'],refit_teacher,teacher_cfg['weight'] if teacher_cfg else 0.,teacher_cfg['temperature'] if teacher_cfg else 2.)
+                block_labels=y['train'].repeat(len(refit_views));hard_mask=None
+                if source_test_targets is not None:
+                    with torch.no_grad():
+                        for view in refit_views:
+                            for start in range(0,len(source_test_indices),cfg['eval_batch']):
+                                field=x['test'][source_test_indices[start:start+cfg['eval_batch']]]
+                                if view:field=augment_packed(field,torch.full((len(field),),view,device=field.device,dtype=torch.long))
+                                features.append(model.optical_features(field)['ccd_features'])
+                    count=len(source_test_indices)*len(refit_views);hard_mask=torch.cat([torch.ones(len(block_labels),device='cuda',dtype=torch.bool),torch.zeros(count,device='cuda',dtype=torch.bool)])
+                    block_labels=torch.cat([block_labels,torch.full((count,),-1,device='cuda',dtype=torch.long)]);refit_teacher=torch.cat([refit_teacher]+[source_test_targets[:,view] for view in refit_views])
+                block_record=refit_existing_head(model.shared_head,torch.cat(features),block_labels,anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'],refit_teacher,teacher_cfg['weight'] if teacher_cfg else 0.,teacher_cfg['temperature'] if teacher_cfg else 2.,hard_mask)
                 block_record.update(original_TRAIN_images=len(y['train']),augmentation_codes=list(refit_views))
+                if source_test_targets is not None:block_record.update(source_original_TEST_images=len(source_test_indices),source_TEST_soft_view_presentations=len(source_test_indices)*len(refit_views))
                 if head_opt:head_opt.state.clear() # Momentum belongs to the old head coordinates.
             val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val)>best;stale=0 if improved else stale+1
             if improved:
@@ -253,6 +285,8 @@ def main():
                 row['TRAIN_phase_backtracking']=step_record
                 row['TRAIN_forward_trial_view_presentations']=len(order)*step_record['forward_trials']
             row['head_minibatch_optimizer_steps']=0 if aggregate or not head_opt else row['phase_optimizer_steps']
+            if source_test_record:
+                row['SOURCE_TEST_soft_distillation']=source_test_record;row['phase_optimizer_steps']+=source_test_record['phase_updates'];row['head_minibatch_optimizer_steps']+=source_test_record['phase_updates']
             if block_record:row['TRAIN_head_block']=block_record
             if epoch==1 or epoch%5==0:row['train'],_=evaluate(model,x['train'],y['train'],cfg['eval_batch'],raw['train'].get('domains'))
             assert_frozen(model,frozen);row['seconds']=time.time()-started;history.append(row);write(args.out/'history.json',history)
