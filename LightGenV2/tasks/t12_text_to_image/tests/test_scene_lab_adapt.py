@@ -13,6 +13,33 @@ def test_pairs_exact_input_identity_not_row_order():
     assert match_train(requests,records)==[('0','key0'),('1','key1')]
 
 
+def test_nominal_anchor_bounds():
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_adapt import validate_nominal_anchor
+    assert validate_nominal_anchor(0)==0
+    assert validate_nominal_anchor(1)==1
+    for value in (-1,1.01,float('nan'),float('inf')):
+        with pytest.raises(ValueError):validate_nominal_anchor(value)
+
+
+def test_dual_domain_loss_preserves_default_and_both_gradients():
+    import os
+    if os.name=='nt':pytest.skip('Local Windows Torch DLL unavailable; real CPU check is mandatory on server')
+    import torch
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_adapt import domain_alignment_loss
+    from LightGenV2.tasks.t12_text_to_image.qwen3_scene_conditioning import alignment_loss
+    target={k:torch.ones(2,3)for k in ('text','image','pooled')}
+    actual={k:torch.full((2,3),.3,requires_grad=True)for k in target}
+    nominal={k:torch.full((2,3),.7,requires_grad=True)for k in target}
+    original=alignment_loss(actual,target)[0]/3
+    assert torch.equal(domain_alignment_loss(actual,None,target,0),original)
+    expected=(original+alignment_loss(nominal,target)[0]/3)/2
+    loss=domain_alignment_loss(actual,nominal,target,1)
+    assert torch.equal(loss,expected)
+    loss.backward()
+    assert all(v.grad is not None and torch.isfinite(v.grad).all()and v.grad.abs().sum()>0 for v in [*actual.values(),*nominal.values()])
+    with pytest.raises(ValueError):domain_alignment_loss(actual,None,target,1)
+
+
 def test_no_test_changed_prompt_or_duplicate_teacher():
     requests,records=fixture()
     for changed in ([dict(requests[0],split='test'),requests[1]],[dict(requests[0],prompt='different'),requests[1]],requests+[requests[0]]):

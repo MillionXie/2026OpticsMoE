@@ -12,6 +12,22 @@ from .scene_lab_protocol import Ledger,STAGES,identity,sha,put
 from .scene_lab_native import F9,F6,NativeRunner,load_head
 
 
+def validate_nominal_anchor(weight):
+    if not math.isfinite(weight) or not 0<=weight<=1:
+        raise ValueError('Nominal TRAIN anchoring weight must be finite in [0,1]')
+    return weight
+
+
+def domain_alignment_loss(actual,nominal,target,weight):
+    """Optional dual-domain TRAIN objective, with no new deployment module."""
+    from .qwen3_scene_conditioning import alignment_loss
+    validate_nominal_anchor(weight)
+    physical=alignment_loss(actual,target)[0]/3
+    if weight==0:return physical
+    if nominal is None:raise ValueError('Nominal TRAIN features required for anchoring')
+    return (physical+weight*alignment_loss(nominal,target)[0]/3)/(1+weight)
+
+
 def match_train(requests,records):
     """Join physical and SIM inputs by exact source pixels AND public prompt."""
     if not requests or any(r.get('split')!='train' for r in requests+records):raise ValueError('Only TRAIN may be used for adaptation')
@@ -115,6 +131,8 @@ def fit(a):
         raise ValueError('Only actual complete frozen F6/F9 features may adapt this head')
     if sim['optical_frontend']['checkpoint_sha256']!=F6:raise ValueError('Wrong nominal optical teacher')
     pairs=match_train(physical['records'],sim['records'])
+    nominal_anchor=validate_nominal_anchor(a.nominal_anchor_weight)
+    sim_keys=dict(pairs)
     if len(pairs)!=608 or set(physical['features'])!={r[0] for r in pairs}:raise ValueError('Complete TRAIN608 required')
     parent_path=Path(__file__).resolve().parent/'runs/simulation/scene_natural_single_EG_joint12_training_20261030/best_checkpoint.pt'
     teacher,parent=load_head(parent_path,expected_sha256=F9);teacher=teacher.cuda()
@@ -132,7 +150,11 @@ def fit(a):
     def objective(indices):
         names=[ids[i] for i in indices];hidden,visual,padding=pack_features([physical['features'][sid] for sid in names],'cuda')
         wanted={n:torch.stack([targets[sid][n] for sid in names]).cuda().float() for n in ('text','image','pooled')}
-        return alignment_loss(head(hidden,visual,padding),wanted)[0]/3
+        nominal=None
+        if nominal_anchor:
+            h,v,p=pack_features([sim['features'][sim_keys[sid]] for sid in names],'cuda')
+            nominal=head(h,v,p)
+        return domain_alignment_loss(head(hidden,visual,padding),nominal,wanted,nominal_anchor)
     def evaluate():
         head.eval()
         with torch.no_grad():value=sum(float(objective(list(range(i,min(i+a.batch_size,len(ids))))))*(min(i+a.batch_size,len(ids))-i) for i in range(0,len(ids),a.batch_size))/len(ids)
@@ -143,12 +165,14 @@ def fit(a):
             lab_adaptation=dict(schema='scene_lab_existing_head_adaptation_v1',parent_F9_SHA256=F9,frontend_F6_SHA256=F6,
                 measured_ledger_SHA256=physical['ledger_SHA256'],physical_feature_cache_SHA256=physical_report['cache_sha256'],
                 SIM_feature_cache_SHA256=sim_report['cache_sha256'],steps=step,TRAIN_condition_loss=score,TEST_used=False,
+                nominal_TRAIN_anchor_weight=nominal_anchor,
                 unchanged_frontend_alpha_optics_UNet_LoRA=True,added_deployment_parameters=0))
         torch.save(adapted,a.out/name)
     save('best_checkpoint.pt',baseline);save('last_checkpoint.pt',baseline)
     put(a.out/'protocol.json',dict(parent_F9_SHA256=F9,frontend_F6_SHA256=F6,steps_max=a.steps,fit_seconds_max=a.fit_seconds,
         batch_size=a.batch_size,lr=a.lr,weight_decay=.01,trainable_existing_head_parameters=count,TRAIN=608,
         loss='mean(normalized_MSE + 0.1*(1-cosine)) for text/image/pooled, matching frozen F9 SIM conditions',
+        nominal_TRAIN_anchor_weight=nominal_anchor,domain_objective='(actual_CCD_TRAIN_loss + w*nominal_TRAIN_loss)/(1+w)',
         selected_by='TRAIN condition loss only; not an image-quality or independent-generalization metric',
         TEST_used=False,DEV_used=False,SDK_used=False,new_parameters=0,physical_ledger_SHA256=physical['ledger_SHA256']))
     for step in range(1,a.steps+1):
@@ -177,6 +201,7 @@ def fit(a):
         baseline_TRAIN_condition_loss=baseline,best_TRAIN_condition_loss=best,strict_reload_TRAIN_condition_loss=verified,
         best_sha256=sha(a.out/'best_checkpoint.pt'),last_sha256=sha(a.out/'last_checkpoint.pt'),parent_F9_SHA256=F9,frontend_F6_SHA256=F6,
         trainable_existing_head_parameters=count,added_deployment_parameters=0,original_best_retained=best_step==0,
+        nominal_TRAIN_anchor_weight=nominal_anchor,
         original_optics_alpha_Qwen_and_UNet_LoRA_unchanged=True,TEST_used=False,DEV_used=False,SDK_used=False,
         best_selected_by='TRAIN-only condition reconstruction loss',generation_quality_accepted=False,physical_5percent_gate_passed=False))
 
@@ -187,8 +212,10 @@ def main():
     p.add_argument('--out',type=Path,required=True);p.add_argument('--source-commit',required=True)
     p.add_argument('--gpu-memory-fraction',type=float,default=.25);p.add_argument('--steps',type=int,default=1200)
     p.add_argument('--batch-size',type=int,default=4);p.add_argument('--lr',type=float,default=3e-5);p.add_argument('--fit-seconds',type=float,default=900)
+    p.add_argument('--nominal-anchor-weight',type=float,default=0.,help='Optional TRAIN-only nominal-condition preservation; no inference change')
     p.add_argument('--stream-last-stage',action='store_true',help='Read-only complete-Qwen replay after each actual last CCD arrives; fit still waits for all608')
     a=p.parse_args()
+    validate_nominal_anchor(a.nominal_anchor_weight)
     if len(a.source_commit)!=40 or not 4<=a.steps<=1200 or not 1<=a.batch_size<=4 or not 0<a.lr<=1e-4 or not 0<a.fit_seconds<=900:raise ValueError('Bounded original-head training required')
     if a.mode=='features' and (not a.ledger or not a.qwen or not a.sim_cache):raise ValueError('Complete physical ledger/Qwen/original cache required')
     if a.mode=='fit' and (not a.features or not a.sim_cache):raise ValueError('Measured and original SIM caches required')
