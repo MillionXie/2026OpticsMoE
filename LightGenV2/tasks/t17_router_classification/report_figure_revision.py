@@ -75,6 +75,9 @@ def main():
         page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1>'+summary)
     if historical:
         page=page.replace('旧相位warm-start兼容性已核，尚未冒充完成候选。','旧相位继承候选已完整60轮：TRAIN53.35/VAL45.70/原TEST开发47.10%，RGB53.70/SAR40.50；未替换更好的50%权重。头bootstrap150内步的三旧相位冻结与后续更新均留证，源码/权重/预测路由SHA已核验。')
+    d4=read(task/'runs/simulation/f_D4_regularized_s17_20261031/D4/result.json');report['F_D4_regularized']=d4
+    if d4:
+        page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1><h2>F最新已完成：RGB60.00%、SAR47.00%</h2><p>D4正则化32轮早停、VAL选E22，TRAIN63.85/VAL52.40/原TEST开发53.50%。相比KD父开发+3.50pp，TRAIN/VAL差16.83→11.45pp，尚未达到旧图范围，不声称没有过拟合。全部原ID/划分保持、13文件10.55MB含完整三划分预测路由与TRAIN8视图教师缓存已SHA/strict核验，自己的GPU进程已退出。当前准备有限全TRAIN相位梯度聚合训练，推理模型不变，未把准备当完成。</p>')
     (out/'results.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     (out/'results.html').write_text(page,encoding='utf-8');print([(n,r['status']['state']) for n,r in records.items()])
 

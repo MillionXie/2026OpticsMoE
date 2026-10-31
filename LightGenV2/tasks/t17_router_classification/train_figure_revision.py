@@ -20,6 +20,7 @@ from .train import write
 from .model_four import encode_rgb
 from .alternating_readout import domain_route_loss, anchored_classification, refit_existing_head
 from .original_f_teacher import prepare_original_teacher, teacher_view_indices
+from .phase_training import phase_update_mode,phase_parameter_groups,backward_training_loss
 from .train_optical_four_ccd import route_statistics
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
@@ -110,6 +111,7 @@ def main():
     args.out.mkdir(exist_ok=False,parents=True)
     paths=[Path(__file__),task/'alternating_readout.py',task/'train_convex_readout.py',task/'model_linear_readout.py',task/'model_depth_ccd.py',task/'model_four.py',task/'model_linear_ccd.py',task/'gpu_policy.py',task/'figure_revision_data.py',task/'phase_optimizer.py',task/'readout_data.py',task.parents[1]/'demo_check/pure_optical/models.py',task.parents[1]/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
     paths.extend([task/'original_f_teacher.py',task.parents[1]/'demo_check/frozen_electronic/model.py'])
+    paths.append(task/'phase_training.py')
     metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),source_commit=os.environ.get('T17_SOURCE_COMMIT'),source_sha256={p.name:sha256(p) for p in paths},gpu_uuid=gpu,pid=os.getpid(),command=sys.argv,python=platform.python_version(),torch=torch.__version__,role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',new_training_only_original_TRAIN=True,teacher_used=bool(cfg.get('teacher')))
     write(args.out/'metadata.json',metadata);write(args.out/'status.json',dict(state='loading_verified_inputs',pid=os.getpid()))
     try:
@@ -152,8 +154,13 @@ def main():
             anchor=model.shared_head.weight.detach().clone();metadata['head_bootstrap_phases_bitwise_frozen']=True
             del bootstrap_features,before
             write(args.out/'metadata.json',metadata)
-        phase_opt=WrappedPhaseAdam(phases,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(phases,lr=cfg['phase_lr'])
-        head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads else None
+        aggregate=phase_update_mode(cfg)=='full_TRAIN'
+        metadata['phase_update_mode']='full_TRAIN' if aggregate else 'mini_batch'
+        metadata['head_update_mode']='bounded block only, no minibatch head optimizer' if aggregate else 'minibatch optimizer plus optional bounded block'
+        write(args.out/'metadata.json',metadata)
+        groups=phase_parameter_groups(model,phases,cfg)
+        phase_opt=WrappedPhaseAdam(groups,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(groups,lr=cfg['phase_lr'])
+        head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads and not aggregate else None
         val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val);stale=0;history=[]
         if parent is not None and abs(val['accuracy']-parent['validation']['accuracy'])>1e-7:raise RuntimeError('Exact parent VAL does not reproduce')
         torch.save(dict(model=model.state_dict(),epoch=0,validation=val,metadata=metadata),args.out/'best_checkpoint.pt')
@@ -162,11 +169,14 @@ def main():
             ratio=.2+.8*.5*(1+np.cos(np.pi*(epoch-1)/max(1,cfg['epochs']-1))) if cfg['cosine_lr'] else 1.
             for optimizer,lr in [(phase_opt,cfg['phase_lr']),(head_opt,cfg['head_lr'])]:
                 if optimizer:
-                    for group in optimizer.param_groups:group['lr']=lr*ratio
+                    for group in optimizer.param_groups:group['lr']=lr*ratio*group.get('lr_multiplier',1.)
             loss_sum=0.
+            if aggregate:
+                phase_opt.zero_grad(set_to_none=True)
+                for p in heads:p.grad=None
             for start in range(0,len(order),cfg['batch']):
                 idx=torch.as_tensor(order[start:start+cfg['batch']],device='cuda');code=torch.as_tensor(codes[start:start+cfg['batch']],device='cuda');field=augment_packed(x['train'][idx],code)
-                phase_opt.zero_grad(set_to_none=True)
+                if not aggregate:phase_opt.zero_grad(set_to_none=True)
                 if head_opt:head_opt.zero_grad(set_to_none=True)
                 output=model(field,return_dense_route=True) if aux else model(field)
                 loss=anchored_classification(output['raw_logits'],y['train'][idx],model.shared_head.weight,anchor,block['anchor_strength'],cfg['label_smoothing']) if block else classification_objective(output,y['train'][idx],cfg)
@@ -177,14 +187,15 @@ def main():
                     acquisition=torch.as_tensor(raw['train']['domains'][order[start:start+cfg['batch']]],device='cuda',dtype=torch.long)
                     loss=loss+aux*domain_route_loss(output['dense_route_power'],acquisition)
                 if not torch.isfinite(loss):raise RuntimeError('Nonfinite loss')
-                loss.backward()
+                backward_training_loss(loss,len(idx),len(order),aggregate)
                 for p in phases+heads:
                     if p.grad is None or not torch.isfinite(p.grad).all():raise RuntimeError('Missing/nonfinite trainable gradient')
-                if cfg['phase_optimizer']!='wrapped':torch.nn.utils.clip_grad_norm_(phases,5.,error_if_nonfinite=True)
-                if heads:torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True)
-                phase_opt.step()
+                if cfg['phase_optimizer']!='wrapped' and not aggregate:torch.nn.utils.clip_grad_norm_(phases,5.,error_if_nonfinite=True)
+                if heads and not aggregate:torch.nn.utils.clip_grad_norm_(heads,5.,error_if_nonfinite=True)
+                if not aggregate:phase_opt.step()
                 if head_opt:head_opt.step()
                 loss_sum+=float(loss.detach())*len(idx)
+            if aggregate:phase_opt.step()
             block_record=None
             if block and epoch%block['interval_epochs']==0:
                 model.eval();features=[]
@@ -200,11 +211,13 @@ def main():
                 refit_teacher=torch.cat([teacher_targets[:,view if cfg['augmentation']=='D4' else 0] for view in refit_views]) if teacher_cfg else None
                 block_record=refit_existing_head(model.shared_head,torch.cat(features),y['train'].repeat(len(refit_views)),anchor,block['anchor_strength'],cfg['label_smoothing'],block['inner_steps'],refit_teacher,teacher_cfg['weight'] if teacher_cfg else 0.,teacher_cfg['temperature'] if teacher_cfg else 2.)
                 block_record.update(original_TRAIN_images=len(y['train']),augmentation_codes=list(refit_views))
-                head_opt.state.clear() # Momentum belongs to the old head coordinates.
+                if head_opt:head_opt.state.clear() # Momentum belongs to the old head coordinates.
             val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));improved=metric_key(val)>best;stale=0 if improved else stale+1
             if improved:
                 selected=epoch;best=metric_key(val);torch.save(dict(model=model.state_dict(),epoch=epoch,validation=val,metadata=metadata),args.out/'best_checkpoint.pt')
             row=dict(epoch=epoch,phase_lr=cfg['phase_lr']*ratio,head_lr=cfg['head_lr']*ratio,training_objective=loss_sum/len(order),validation=val,selected_epoch=selected,order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest(),augmentation_codes_sha256=hashlib.sha256(codes.astype('<i8').tobytes()).hexdigest())
+            row['phase_optimizer_steps']=1 if aggregate else (len(order)+cfg['batch']-1)//cfg['batch']
+            row['head_minibatch_optimizer_steps']=0 if aggregate or not head_opt else row['phase_optimizer_steps']
             if block_record:row['TRAIN_head_block']=block_record
             if epoch==1 or epoch%5==0:row['train'],_=evaluate(model,x['train'],y['train'],cfg['eval_batch'],raw['train'].get('domains'))
             assert_frozen(model,frozen);row['seconds']=time.time()-started;history.append(row);write(args.out/'history.json',history)

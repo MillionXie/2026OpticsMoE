@@ -12,8 +12,9 @@ def main():
     jobs=[('Alternating control',task/'runs/simulation/f_alternating_s17_20261031/control'),
           ('Domain auxiliary',task/'runs/simulation/f_alternating_s17_20261031/domain'),
           ('Teacher KD 0.25',task/'runs/simulation/f_teacher_s17_20261031/025'),
-          ('Historical masks',task/'runs/simulation/f_historical_warm_s17_20261031/warm')]
-    fig,axs=plt.subplots(1,3,figsize=(15,4.8));colors=['#4c78a8','#f58518','#54a24b','#b279a2']
+          ('Historical masks',task/'runs/simulation/f_historical_warm_s17_20261031/warm'),
+          ('D4 regularized',task/'runs/simulation/f_D4_regularized_s17_20261031/D4')]
+    fig,axs=plt.subplots(1,3,figsize=(15,4.8));colors=['#4c78a8','#f58518','#54a24b','#b279a2','#e45756']
     results=[]
     for (name,path),color in zip(jobs,colors):
         history=json.loads((path/'history.json').read_text());result=json.loads((path/'result.json').read_text());results.append(result)
@@ -22,9 +23,9 @@ def main():
         axs[0].plot([r['epoch'] for r in train],[100*r['train']['accuracy'] for r in train],color=color,linestyle='--',alpha=.7)
         axs[0].scatter(result['selected_epoch'],100*result['val']['accuracy'],color=color,marker='D',s=20)
     axs[0].set(xlabel='Additional epochs within each branch',ylabel='Accuracy (%)',title='Solid: VAL; dashed: clean TRAIN',ylim=(35,75))
-    axs[0].legend(fontsize=8,loc='upper left');axs[0].grid(alpha=.2)
+    axs[0].legend(fontsize=7,ncol=2,loc='upper center');axs[0].grid(alpha=.2)
     baseline=json.loads((task/'runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/result.json').read_text())
-    labels=['D2NN 3L','Control','Domain aux','Teacher KD','Old masks'];all_results=[baseline]+results;x=np.arange(len(all_results))
+    labels=['D2NN 3L','Control','Domain aux','Teacher KD','Old masks','D4 reg.'];all_results=[baseline]+results;x=np.arange(len(all_results))
     for domain,offset,color in [('RGB',-.18,'#4c78a8'),('SAR',.18,'#f2b65d')]:
         values=[100*r['original_test_dev']['domains'][domain]['accuracy'] for r in all_results]
         axs[1].bar(x+offset,values,.35,label=domain,color=color)
