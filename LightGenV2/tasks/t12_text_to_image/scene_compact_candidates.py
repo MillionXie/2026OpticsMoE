@@ -65,7 +65,7 @@ def targets(a):
         DEV_or_TEST_targets_created=False,TEST_opened=False,quality_or_speed_accepted=False))
 
 
-def training(config,steps,remaining):
+def training(config,steps,remaining,admission=None):
     import copy,torch
     from . import scene_tail_distill as trainer
     from .scene_fusion_aware_tail import install
@@ -90,7 +90,8 @@ def training(config,steps,remaining):
         state,parent=trainer.complete_state(a.student);ready=json.loads((a.trajectories/'report.json').read_text())
         assert parent['best_sha256']==config['parent_generator_sha256'] and not state.get('depth_compression')
         assert a.student_guidance==7.5 and not a.adapt_head and ready['student_steps']==steps
-        assert ready['TRAIN_contexts']==192 and not ready['DEV_or_TEST_targets_created']
+        if admission is None:assert ready['TRAIN_contexts']==192 and not ready['DEV_or_TEST_targets_created']
+        else:admission(state,parent,ready,a)
         old_train(a);out=json.loads((a.output/'report.json').read_text())
         descriptor=dict(schema='scene_compact_recovered_v1',profile=config,sampling_steps=steps,
             parent_checkpoint_sha256=parent['best_sha256'],parent_head_unchanged=True,
@@ -121,7 +122,7 @@ class GraphObserver:
     def end(self,row):pass
 
 
-def rendering(config,steps,remaining):
+def rendering(config,steps,remaining,expected_contexts=128):
     import torch
     from . import scene_paired_render as renderer
     from .white_reference_scene_probe import digest,write
@@ -136,7 +137,7 @@ def rendering(config,steps,remaining):
         assert a.scope=='dev' and a.prompt_revision and a.fuse_task_lora and a.sampler=='original' and not a.lcm_adapter
         a._verified_depth_compression=descriptor;observer=GraphObserver(config);a.request_observer=observer
         old(a);out=json.loads((a.output/'report.json').read_text())
-        assert out['generated_count']==(8 if a.measure_software_latency else 128)
+        assert out['generated_count']==(8 if a.measure_software_latency else expected_contexts)
         out.update(compression_training_performed=True,experimental_compression=observer.graph,depth_compression=descriptor)
         write(a.output/'report.json',out)
     renderer.render=render;sys.argv=[sys.argv[0],*remaining]
