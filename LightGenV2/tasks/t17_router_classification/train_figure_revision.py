@@ -10,7 +10,7 @@ import time
 import numpy as np
 import torch
 from torch.nn import functional as F
-from .model_linear_readout import LinearReadoutLG
+from .model_linear_readout import LinearReadoutLG, load_historical_F_phases
 from .model_depth_ccd import DepthD2NN
 from .phase_optimizer import WrappedPhaseAdam
 from .gpu_policy import require_authorized_gpu
@@ -121,6 +121,14 @@ def main():
             parent_path=task/cfg['parent_checkpoint']
             if sha256(parent_path)!=cfg['parent_checkpoint_sha256']:raise ValueError('Parent SHA differs')
             parent=torch.load(parent_path,map_location='cpu',weights_only=False);model.load_state_dict(parent['model'],strict=True)
+        historical=cfg.get('historical_optical_initialization')
+        if historical:
+            if parent is not None or cfg['architecture']!='LG':raise ValueError('Historical phase initialization cannot mix with a full new-model parent')
+            original=task/historical['checkpoint']
+            if sha256(original)!=historical['checkpoint_sha256']:raise ValueError('Historical F checkpoint SHA differs')
+            old_payload=torch.load(original,map_location='cpu',weights_only=False)
+            metadata['historical_initialization']=load_historical_F_phases(model,old_payload)
+            del old_payload
         phases,heads=configure_parameters(model,cfg);frozen={n:p.detach().cpu().clone() for n,p in model.named_parameters() if not p.requires_grad};initial={n:p.detach().cpu().clone() for n,p in model.named_parameters()}
         metadata.update(trainable_names=[n for n,p in model.named_parameters() if p.requires_grad],phase_parameters=sum(p.numel() for n,p in model.named_parameters() if n!='shared_head.weight'),head_parameters=sum(p.numel() for n,p in model.named_parameters() if n=='shared_head.weight'))
         write(args.out/'metadata.json',metadata);x={};y={}
@@ -131,6 +139,19 @@ def main():
         block=cfg.get('alternating_head');aux=cfg.get('domain_route_aux',0.)
         if (block or aux) and (cfg['architecture']!='LG' or cfg['dataset']!='eurosat_original_f' or not heads):raise ValueError('Alternating/domain method requires original F LG with trainable head')
         anchor=model.shared_head.weight.detach().clone() if block else None
+        if historical:
+            if not block or not heads:raise ValueError('Imported F phases require an explicit TRAIN-only head bootstrap')
+            before={n:p.detach().clone() for n,p in model.named_parameters() if n!='shared_head.weight'}
+            model.eval();bootstrap_features=[]
+            with torch.no_grad():
+                for start in range(0,len(y['train']),cfg['eval_batch']):bootstrap_features.append(model.optical_features(x['train'][start:start+cfg['eval_batch']])['ccd_features'])
+            metadata['TRAIN_head_bootstrap']=refit_existing_head(model.shared_head,torch.cat(bootstrap_features),y['train'],anchor,block['anchor_strength'],cfg['label_smoothing'],historical['head_bootstrap_steps'],teacher_targets[:,0] if teacher_cfg else None,teacher_cfg['weight'] if teacher_cfg else 0.,teacher_cfg['temperature'] if teacher_cfg else 2.)
+            assert all(torch.equal(dict(model.named_parameters())[n],v) for n,v in before.items())
+            # Subsequent joint refinement anchors the newly fitted head, not a
+            # random classifier from the incompatible historical readout.
+            anchor=model.shared_head.weight.detach().clone();metadata['head_bootstrap_phases_bitwise_frozen']=True
+            del bootstrap_features,before
+            write(args.out/'metadata.json',metadata)
         phase_opt=WrappedPhaseAdam(phases,cfg['phase_lr']) if cfg['phase_optimizer']=='wrapped' else torch.optim.Adam(phases,lr=cfg['phase_lr'])
         head_opt=torch.optim.AdamW(heads,lr=cfg['head_lr'],weight_decay=cfg['head_weight_decay']) if heads else None
         val,_=evaluate(model,x['val'],y['val'],cfg['eval_batch'],raw['val'].get('domains'));selected=0;best=metric_key(val);stale=0;history=[]

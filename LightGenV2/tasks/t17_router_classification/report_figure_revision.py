@@ -65,8 +65,12 @@ def main():
     for name in ['025','075']:
         path=task/'runs/simulation/f_teacher_s17_20261031'/name
         report['F_teacher_refinement'][name]=dict(status=read(path/'status.json'),result=read(path/'result.json'))
-    latest='<h2>最新人工范围与F继续优化</h2><p>B已由用户接受，不再搜索；J保持原样，D暂缓。F仍为两个联合RGB/SAR模型各测两域，不拆单域LG。下方早期各阶段数字是保留的历史候选。</p><table><tr><th>F LG交替候选</th><th>轮数</th><th>TRAIN / VAL</th><th>锁后原TEST开发RGB / SAR</th></tr>'+''.join(f_rows)+'</table><p>固定三层D2NN为RGB45.10/SAR38.70%，每层含末层同一intensity_softsign OEO、无Linear。LG两层同一OEO、唯一末端Linear；主干整面478，四专家各224加30间隔，路由器可训练区224，画布518仅含边界。路由器是否也改478待人工确认，当前未改变光学合同。</p><p>旧79.5/74.9版含冻结CNN、dense四路、无OEO、窗口读出；旧三组相位形状可逐元素加载到新LG，但不能继承旧函数或精度。CNN目前只作为TRAIN-only教师，新LG推理无CNN。136项CPU检查与真实TRAIN GPU准入已通过，KD .25候选已启动，.75仅准备未启动。</p>'
+    latest='<h2>最新人工范围与F继续优化</h2><p>B已由用户接受，不再搜索；J保持原样，D暂缓。F仍为两个联合RGB/SAR模型各测两域，不拆单域LG。下方早期各阶段数字是保留的历史候选。</p><table><tr><th>F LG交替候选</th><th>轮数</th><th>TRAIN / VAL</th><th>锁后原TEST开发RGB / SAR</th></tr>'+''.join(f_rows)+'</table><p>固定三层D2NN为RGB45.10/SAR38.70%，每层含末层同一intensity_softsign OEO、无Linear。LG两层同一OEO、唯一末端Linear；主干整面478，四专家各224加30间隔，路由器可训练区224，画布518仅含边界。用户已确认主干整面478，router保留224（沿用A/B），未改变光学合同。</p><p>旧79.5/74.9版含冻结CNN、dense四路、无OEO、窗口读出；旧三组相位形状可逐元素加载到新LG，但不能继承旧函数或精度。CNN目前只作为TRAIN-only教师，新LG推理无CNN。136项CPU检查与真实TRAIN GPU准入已通过，KD .25候选已启动，.75仅准备未启动。</p>'
     page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1>'+latest)
+    teacher_result=report['F_teacher_refinement']['025']['result']
+    if teacher_result:
+        scores=teacher_result['original_test_dev'];summary=f'<h2>F教师蒸馏已完整完成，仍未达到目标</h2><p>KD .25共{teacher_result["completed_epochs"]}轮，VAL选E{teacher_result["selected_epoch"]}；TRAIN{100*teacher_result["train"]["accuracy"]:.2f}%、VAL{100*teacher_result["val"]["accuracy"]:.2f}%、原TEST开发{100*scores["accuracy"]:.2f}%（RGB{100*scores["domains"]["RGB"]["accuracy"]:.2f}%、SAR{100*scores["domains"]["SAR"]["accuracy"]:.2f}%）。固定D2NN三层仍为45.10/38.70%。教师仅训练使用、无CNN进LG推理；样本/原划分和OEO合同保持，单seed17，未宣称达到原图范围。自己的worker已退出且无GPU分配。旧相位warm-start兼容性已核，尚未冒充完成候选。</p><img src="../f_teacher_s17_20261031/convergence.svg" style="width:100%">'
+        page=page.replace('<h1>图a—j改版排程</h1>','<h1>图a—j改版排程</h1>'+summary)
     (out/'results.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     (out/'results.html').write_text(page,encoding='utf-8');print([(n,r['status']['state']) for n,r in records.items()])
 

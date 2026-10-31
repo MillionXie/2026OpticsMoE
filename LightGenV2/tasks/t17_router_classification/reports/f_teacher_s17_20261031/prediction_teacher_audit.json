@@ -1,0 +1,161 @@
+{
+  "completed_epochs": 60,
+  "selected_epoch": 58,
+  "best_sha256": "ccb01cfbbcc587672089700759c895574d64ef22539f33d7775e1c632e66bd98",
+  "TRAIN_VAL_gap_pp": 16.83333333333334,
+  "splits": {
+    "train": {
+      "n": 6000,
+      "correct": 3995,
+      "accuracy": 0.6658333333333334,
+      "domains": {
+        "RGB": 0.6846666666666666,
+        "SAR": 0.647
+      },
+      "macro_recall": 0.6658333333333333,
+      "mean_capture": 0.08104480057954788,
+      "mean_power": [
+        0.023844292387366295,
+        0.08424603193998337,
+        0.8918067216873169,
+        0.00010243066208204255
+      ],
+      "mean_dense_power": [
+        0.06924492120742798,
+        0.09523168951272964,
+        0.8345922827720642,
+        0.0009308145963586867
+      ],
+      "class_recall": [
+        0.6466666666666666,
+        0.7966666666666666,
+        0.41,
+        0.5316666666666666,
+        0.825,
+        0.6133333333333333,
+        0.5683333333333334,
+        0.745,
+        0.8083333333333333,
+        0.7133333333333334
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "val": {
+      "n": 2000,
+      "correct": 995,
+      "accuracy": 0.4975,
+      "domains": {
+        "RGB": 0.534,
+        "SAR": 0.461
+      },
+      "macro_recall": 0.49750000000000005,
+      "mean_capture": 0.08088696748018265,
+      "mean_power": [
+        0.02424769289791584,
+        0.08413659781217575,
+        0.8916155099868774,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.06966297328472137,
+        0.09494642913341522,
+        0.8345264196395874,
+        0.0008646214264445007
+      ],
+      "class_recall": [
+        0.48,
+        0.68,
+        0.245,
+        0.285,
+        0.62,
+        0.58,
+        0.285,
+        0.62,
+        0.61,
+        0.57
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    },
+    "test": {
+      "n": 2000,
+      "correct": 1000,
+      "accuracy": 0.5,
+      "domains": {
+        "RGB": 0.573,
+        "SAR": 0.427
+      },
+      "macro_recall": 0.5,
+      "mean_capture": 0.08008037507534027,
+      "mean_power": [
+        0.029465606436133385,
+        0.08213050663471222,
+        0.8884036540985107,
+        0.0
+      ],
+      "mean_dense_power": [
+        0.07284185290336609,
+        0.09644515812397003,
+        0.8298609852790833,
+        0.0008520056144334376
+      ],
+      "class_recall": [
+        0.405,
+        0.57,
+        0.15,
+        0.265,
+        0.65,
+        0.435,
+        0.435,
+        0.615,
+        0.655,
+        0.82
+      ],
+      "complete_ID_label_domain_arrays_match_parent": true
+    }
+  },
+  "head_internal_steps": 480,
+  "teacher_TRAIN_IDs_only": true,
+  "teacher_cache_shape": [
+    6000,
+    2,
+    10
+  ],
+  "teacher_manifest": {
+    "checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+    "teacher_parameters": 94762,
+    "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/frozen_electronic/model.py",
+    "original_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+    "teacher_used_TEST": false,
+    "current_cache_splits": [
+      "TRAIN unaugmented",
+      "TRAIN horizontal_flip"
+    ],
+    "TEST_cached": false,
+    "teacher_parameters_bitwise_frozen": true,
+    "metrics": {
+      "train": {
+        "accuracy": 0.8008333333333333,
+        "domains": {
+          "RGB": 0.8343333333333334,
+          "SAR": 0.7673333333333333
+        }
+      },
+      "val": {
+        "accuracy": 0.7605,
+        "domains": {
+          "RGB": 0.769,
+          "SAR": 0.752
+        }
+      }
+    },
+    "logits_sha256": "bfef460f8fa248a5cd7972d85f6f658bfefcb815deebfac6ac39261100958f68"
+  },
+  "phase_updates": {
+    "first_phase": 12.456467628479004,
+    "global_phase": 19.375986099243164,
+    "router_phase": 7.688348770141602,
+    "shared_head.weight": 9.772899627685547
+  },
+  "independent_TEST_claim": false,
+  "interpretation": "Limited KD run completed; evaluate numeric gains without claiming old CNN range reached. Router fourth expert still unused. Pending human router-size interpretation before structural or inherited-mask follow-up."
+}

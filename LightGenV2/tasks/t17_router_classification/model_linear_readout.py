@@ -41,6 +41,27 @@ def load_optical_parent(model, state):
         raise ValueError('Parent must match every optical tensor and lack only the new Linear head')
 
 
+def load_historical_F_phases(model, payload):
+    """Training initialization only: geometry must match; no CNN or old readout.
+
+    The historical OEO/routing/input differences are deliberately NOT hidden:
+    importing phase tensors does not import that old forward function.
+    """
+    if model.main_layers != 2 or model.shared_head.out_features != 10:
+        raise ValueError('Historical F initialization is only for two-layer ten-class LG')
+    old=payload['optical_config']
+    for key in ['input_size','active_size','canvas_size','pixel_size_m','wavelength_m','propagation_m']:
+        if old[key] != model.cfg[key]:raise ValueError('Historical optical geometry differs: '+key)
+    if set(payload['model']) != {'first_phase','global_phase','router_phase'}:
+        raise ValueError('Expected exactly three original optical tensors, no CNN/head')
+    load_optical_parent(model,payload['model'])
+    for name,value in payload['model'].items():
+        if not torch.equal(model.state_dict()[name].cpu(),value.cpu()):raise RuntimeError('Historical phase import differs')
+    return dict(imported_phase_names=sorted(payload['model']),all_imported_phases_bitwise_equal=True,
+        historical_oeo=old.get('oeo_activation','none'),new_oeo=model.cfg['oeo_activation'],
+        old_function_or_accuracy_inherited=False,old_CNN_in_student=False)
+
+
 @torch.no_grad()
 def initialize_CCD_region_prior(model, temperature=.1):
     """Project fixed detector sums onto pooling bins; training initialization only.

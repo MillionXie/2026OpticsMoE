@@ -1,8 +1,6 @@
 {
   "status.json": {
-    "state": "training",
-    "epoch": 26,
-    "total_epochs": 60,
+    "state": "complete",
     "pid": 1866049
   },
   "metadata.json": {
@@ -28,7 +26,7 @@
     "teacher_used": true
   },
   "history.json": {
-    "epoch": 26,
-    "validation": 0.49
+    "epoch": 60,
+    "validation": 0.494
   }
 }

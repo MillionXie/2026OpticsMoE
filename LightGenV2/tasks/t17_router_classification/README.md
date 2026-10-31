@@ -1,5 +1,20 @@
 # T17 单数据集路由分类对照
 
+## F尺寸人工确认、KD完成及旧mask继承候选（2026-10-31）
+
+用户已明确选择：主干专家拼接相位面478，Global478，router224（沿用A/B），F D2NN三层各478。
+现有A/B/F不因尺寸变更重训。任务仍是一个联合LG与一个联合D2NN各测RGB/SAR，原数据与划分不变。
+KD .25 worker1866049已完整60轮、VAL选E58：TRAIN66.58/VAL49.75/DEV50.00%，RGB57.30/SAR42.70。
+13文件9.34MB含best/last、完整预测路由、TRAIN教师logits/manifest已远程/本地SHA核验；
+严格487204参数/唯一Linear/无CNN、三划分完整ID标签域、每例真Top2、教师仅TRAIN缓存均通过。
+自己的PID已退出且无GPU分配；TRAIN/VAL仍有16.83pp差，第四专家VAL/TEST仍未用，不称达标或均衡。
+
+按人工要求准备旧mask warm-start：f_historical_warm_s17_20261031。仅继承旧PT精确三组相位，
+保留新raw输入/Top2/两次OEO/唯一Linear；先在当前原TRAIN的光学特征上有界150步拟合新头，
+头bootstrap时三组相位逐元素冻结，随后该头作为锚定父，继续同原KD .25有限60/min20/pat15轮。
+旧CNN只作TRAIN教师，绝不恢复到LG推理；旧高分不复制到新结果。初始化的头内步与后续光学epoch分别记录。
+须通过138项CPU检查、旧真实PT/真实TRAIN GPU准入并main发布再启动；现有50%候选保留，失败候选完整归档。
+
 ## F旧权重兼容、mask与三层D2NN核验（2026-10-31）
 
 用户要求确认旧权重继承和除g外主干mask478；已对真实旧MoE checkpoint和当前D2NN checkpoint严格加载核验。
@@ -9,7 +24,7 @@
 新F无前端、RGB/SAR三通道拼接、Top2、两次同原intensity_softsign OEO、唯一Linear，功能差异不只末端Linear。
 当前F D2NN严格加载三份[478,478] phase且零Linear；真实完整forward计数OEO为LG2次、D2NN3次，函数对象完全相同。
 主干专家拼接有效面2*224+30=478，Global478，D三个层全478；518为补零传播画布。
-入口router当前可训练区224、居中pad147到518；是否也应变478已单独询问，未擅自改动正在训练的物理合同。
+用户已明确确认：主干整面478，router保留224，沿用A/B；无需因尺寸重跑A/B。router居中pad147到518，物理合同保持。
 详见historical_inheritance_mask_OEO_audit.json。旧三组相位warm-start待按确认后的尺寸合同比较；没有恢复旧CNN进入LG推理。
 
 新增KD .25已真实启动：sourceeb7317266，136项CPU检查和20真实TRAIN GPU准入通过，worker1866049，
