@@ -1,0 +1,119 @@
+{
+  "verified_all_remote_and_local_SHA256": true,
+  "completed_jobs": [
+    "runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031",
+    "runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031"
+  ],
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/best_checkpoint.pt",
+      "size": 3667416,
+      "sha256": "b9aa04b9b2a55f48d9a4b6a20299facb67776ae0eb144b82244f6cf87f884578"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/exit_receipt.json",
+      "size": 56,
+      "sha256": "810b64700917da6a23d2b204d6059dedb2bced557c6698dabbb3f1d2ff393a1b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/history.json",
+      "size": 42144,
+      "sha256": "ee0be38d03f4c9a379c402d7fd4f41f9791906c1ca8f51466dc5724095c1ad4a"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/last_checkpoint.pt",
+      "size": 7153345,
+      "sha256": "16148db9976bc9142fdc397484f1a175d3e2e1405e14d255c62ef5aa38fee39d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/metadata.json",
+      "size": 4512,
+      "sha256": "579dc4479adbd15ccd58ee7b37533177cd33f4ea3354befe79594045aed16c4c"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/result.json",
+      "size": 6308,
+      "sha256": "11d468662792c58060ea03b24f0d37678ba7a7a91f32642c8c3521afc48f1717"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/selection_lock.json",
+      "size": 206,
+      "sha256": "94fc668670667b7ae41711d9eb608fb03559152fac4e086d04735f24f6c1835b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/status.json",
+      "size": 6349,
+      "sha256": "20efab6805469e7075d1148a30d4e4dbc5d73d8dd9c12bebb91165a26e4f8549"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/test_predictions.npz",
+      "size": 46304,
+      "sha256": "597697acd31cb318d8254faba1f8815eb422ca8925148c56020179404af53945"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/train_predictions.npz",
+      "size": 206090,
+      "sha256": "24f59ae47ce3613a24d1c7df726af8bc5e2bccba34c609ebb97d4965ae510ead"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/val_predictions.npz",
+      "size": 46304,
+      "sha256": "8c954d3d4e0d5bb115d5363eadd615bc8a898651cf3bd701c9d819377a1b9f68"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/best_checkpoint.pt",
+      "size": 5384800,
+      "sha256": "a5890402a4a8bf07186b4ff4d6ea1a2e8d5f29255947f8b7bd0306f737cca5ce"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/exit_receipt.json",
+      "size": 56,
+      "sha256": "5bd072e0bf8474ae5ef3fa2931b53db6018a6894c32c1535c18b786487fd73dd"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/history.json",
+      "size": 61593,
+      "sha256": "577a92742b6bd68ceb4a15243f25fad65a12b5177ddf5c18ad638a99fd214b2f"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/last_checkpoint.pt",
+      "size": 8870731,
+      "sha256": "6bc14326ff9174ce2bfb6887713cd73009d3647e483685bfb18db70e04605617"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/metadata.json",
+      "size": 4513,
+      "sha256": "6244e610bcba991e2a3e95958c58cf43b4836d5936a0fc087b984aed8a0dc830"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/result.json",
+      "size": 6352,
+      "sha256": "4e17e1ebf9bdee69a08b1c89b5166cb30114f6f6273c6304a365ab264b534145"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/selection_lock.json",
+      "size": 207,
+      "sha256": "4705fb3f5da3b746655f4216e038005ec405d219f37e6e8a06981becd9074b9d"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/status.json",
+      "size": 6393,
+      "sha256": "37fcd42bc21ca631d3938319f461ff102740d445e18cfb2c48bc8bec2364bcd7"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/test_predictions.npz",
+      "size": 46197,
+      "sha256": "2a4f9296708f89de802c4ef121bf8cf1805d8b12a4b66772e9e20cd9ae3bbc07"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/train_predictions.npz",
+      "size": 205574,
+      "sha256": "5f985658c3896ef147714ae26f8baeabb27fda28de405de84c74e1af231d01c1"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/val_predictions.npz",
+      "size": 46230,
+      "sha256": "ef2c682d4edebdbab92a44a45c2a569b9e72416f1743832f83851d25cc8887ed"
+    }
+  ]
+}

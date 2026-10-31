@@ -1,0 +1,55 @@
+{
+  "status": "COMPLETED_CANDIDATES_NOT_TARGET_SUCCESS",
+  "B": {
+    "main4": {
+      "joint_train": 0.7994851258581236,
+      "joint_val": 0.711436170212766,
+      "joint_dev": 0.7819148936170213,
+      "selected_parent_dev": 0.7872340425531915,
+      "keep_parent": true,
+      "completed_epochs": 14,
+      "selected_epoch": 4
+    },
+    "main6": {
+      "joint_train": 0.8446796338672768,
+      "joint_val": 0.7340425531914894,
+      "joint_dev": 0.8311170212765957,
+      "old_dev": 0.8257978723404256,
+      "gain_correct": 4,
+      "completed_epochs": 20,
+      "selected_epoch": 10,
+      "gain_over_fixed_D2NN_pp": 11.037234042553191,
+      "target_correct": 655,
+      "shortfall_correct": 30
+    }
+  },
+  "F": {
+    "LG": {
+      "train": 0.4191666666666667,
+      "val": 0.418,
+      "dev": 0.416,
+      "dev_RGB": 0.479,
+      "dev_SAR": 0.353,
+      "completed_epochs": 32,
+      "selected_epoch": 20
+    },
+    "D2NN": {
+      "train": 0.4415,
+      "val": 0.4085,
+      "dev": 0.419,
+      "dev_RGB": 0.451,
+      "dev_SAR": 0.387,
+      "completed_epochs": 60,
+      "selected_epoch": 55
+    },
+    "interpretation": "Both fail to fit original TRAIN well. Small TRAIN/VAL gaps do not support attributing poor scores merely to severe overfitting. Old frozen-CNN79.50/74.90 scores belong to a different architecture.",
+    "route": "LG RGB/SAR dominant expert2 about83-87% incident power, fourth near unused; measured concentration is not demonstrated semantic specialization."
+  },
+  "audit_note": "Bitwise route-cache comparison across batch32/64 failed at ~1.2e-7. Frozen registered tensors remain bitwise parent; route selection exact; measured differences and tolerances recorded in B_joint_completed_audit.json.",
+  "next_hypothesis": {
+    "status": "NOT_IMPLEMENTED_NOT_STARTED",
+    "purpose": "Separate frozen-feature single-Linear fitting from optical representation limitation",
+    "candidate": "Freeze completed LG optics; bounded regularized convex Linear fit, TRAIN only, VAL selection, parent participates. Same inference parameters; no CNN/new module. Use fitting convergence and TRAIN/VAL changes to decide further optical refinement.",
+    "protect": "All four completed parents, all D2NN60-epoch baselines, all samples. No blind epoch increase or OEO/frontend change."
+  }
+}

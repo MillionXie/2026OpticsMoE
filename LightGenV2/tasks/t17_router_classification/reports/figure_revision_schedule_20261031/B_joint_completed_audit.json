@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "rows": [
+    {
+      "job": "panel_b_linear_joint4_s17_20261031",
+      "passed": true,
+      "exactly_one_Linear_no_CNN": true,
+      "phase_parameters": 908552,
+      "head_parameters": 6272,
+      "total_parameters": 914824,
+      "changed_tensors": {
+        "first_phase": false,
+        "global_phase": false,
+        "router_phase": false,
+        "extra_expert_phases.0": true,
+        "extra_global_phases.0": true,
+        "shared_head.weight": true
+      },
+      "all_frozen_tensors_bitwise_parent": true,
+      "checkpoint_sha256": "b9aa04b9b2a55f48d9a4b6a20299facb67776ae0eb144b82244f6cf87f884578",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 2795,
+          "accuracy": 0.7994851258581236,
+          "route_selection_exact_parent": true,
+          "route_power_max_abs_difference": 1.1920928955078125e-07,
+          "route_replay_tolerance_reason": "Parent cache optical batch32 versus complete new evaluation batch64; frozen registered router phase is bitwise identical"
+        },
+        "val": {
+          "n": 752,
+          "correct": 535,
+          "accuracy": 0.711436170212766,
+          "route_selection_exact_parent": true,
+          "route_power_max_abs_difference": 1.1920928955078125e-07,
+          "route_replay_tolerance_reason": "Parent cache optical batch32 versus complete new evaluation batch64; frozen registered router phase is bitwise identical"
+        },
+        "test": {
+          "n": 752,
+          "correct": 588,
+          "accuracy": 0.7819148936170213,
+          "route_selection_exact_parent": true,
+          "route_power_max_abs_difference": 1.1920928955078125e-07,
+          "route_replay_tolerance_reason": "Parent cache optical batch32 versus complete new evaluation batch64; frozen registered router phase is bitwise identical"
+        }
+      }
+    },
+    {
+      "job": "panel_b_linear_joint6_s17_20261031",
+      "passed": true,
+      "exactly_one_Linear_no_CNN": true,
+      "phase_parameters": 1337740,
+      "head_parameters": 6272,
+      "total_parameters": 1344012,
+      "changed_tensors": {
+        "first_phase": false,
+        "global_phase": false,
+        "router_phase": false,
+        "extra_expert_phases.0": false,
+        "extra_expert_phases.1": true,
+        "extra_global_phases.0": false,
+        "extra_global_phases.1": true,
+        "shared_head.weight": true
+      },
+      "all_frozen_tensors_bitwise_parent": true,
+      "checkpoint_sha256": "a5890402a4a8bf07186b4ff4d6ea1a2e8d5f29255947f8b7bd0306f737cca5ce",
+      "splits": {
+        "train": {
+          "n": 3496,
+          "correct": 2953,
+          "accuracy": 0.8446796338672768,
+          "route_selection_exact_parent": true,
+          "route_power_max_abs_difference": 1.1920928955078125e-07,
+          "route_replay_tolerance_reason": "Parent cache optical batch32 versus complete new evaluation batch64; frozen registered router phase is bitwise identical"
+        },
+        "val": {
+          "n": 752,
+          "correct": 552,
+          "accuracy": 0.7340425531914894,
+          "route_selection_exact_parent": true,
+          "route_power_max_abs_difference": 1.1920928955078125e-07,
+          "route_replay_tolerance_reason": "Parent cache optical batch32 versus complete new evaluation batch64; frozen registered router phase is bitwise identical"
+        },
+        "test": {
+          "n": 752,
+          "correct": 625,
+          "accuracy": 0.8311170212765957,
+          "route_selection_exact_parent": true,
+          "route_power_max_abs_difference": 1.1920928955078125e-07,
+          "route_replay_tolerance_reason": "Parent cache optical batch32 versus complete new evaluation batch64; frozen registered router phase is bitwise identical"
+        }
+      }
+    }
+  ]
+}

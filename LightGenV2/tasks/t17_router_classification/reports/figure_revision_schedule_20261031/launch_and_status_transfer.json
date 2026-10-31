@@ -37,12 +37,27 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/status.json",
-      "sha256": "0ce5ee9221e422f293447d6e7ac6568bdf0fd6279f23b56423a6c1e86fb57d9a",
+      "sha256": "20efab6805469e7075d1148a30d4e4dbc5d73d8dd9c12bebb91165a26e4f8549",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/history.json",
-      "sha256": "4c34675db75cbb22f7a91df800464b15f6c618d2e154849f261c2846f6b1d2b0",
+      "sha256": "ee0be38d03f4c9a379c402d7fd4f41f9791906c1ca8f51466dc5724095c1ad4a",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/result.json",
+      "sha256": "11d468662792c58060ea03b24f0d37678ba7a7a91f32642c8c3521afc48f1717",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/selection_lock.json",
+      "sha256": "94fc668670667b7ae41711d9eb608fb03559152fac4e086d04735f24f6c1835b",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint4_s17_20261031/exit_receipt.json",
+      "sha256": "810b64700917da6a23d2b204d6059dedb2bced557c6698dabbb3f1d2ff393a1b",
       "snapshot": true
     },
     {
@@ -52,12 +67,27 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/status.json",
-      "sha256": "6a10ae24ded61d1bb11e442458e06e95c32b34132f8221da506dfe52ad08bd10",
+      "sha256": "37fcd42bc21ca631d3938319f461ff102740d445e18cfb2c48bc8bec2364bcd7",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/history.json",
-      "sha256": "202081ac3906f02b5b7acc76d01f9447de9c7f046f20a40e85bd701b0156e46d",
+      "sha256": "577a92742b6bd68ceb4a15243f25fad65a12b5177ddf5c18ad638a99fd214b2f",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/result.json",
+      "sha256": "4e17e1ebf9bdee69a08b1c89b5166cb30114f6f6273c6304a365ab264b534145",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/selection_lock.json",
+      "sha256": "4705fb3f5da3b746655f4216e038005ec405d219f37e6e8a06981becd9074b9d",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_b_linear_joint6_s17_20261031/exit_receipt.json",
+      "sha256": "5bd072e0bf8474ae5ef3fa2931b53db6018a6894c32c1535c18b786487fd73dd",
       "snapshot": true
     },
     {
@@ -67,12 +97,27 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/status.json",
-      "sha256": "23cc32e49138651649b4ce1633188f33a2de4093284666c3a07097f795e53d7b",
+      "sha256": "0c5e44321ae9f95e53945a87574955484b31d45d8e049fca7581eb059f033df0",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/history.json",
-      "sha256": "1e0204bac5dca9cc98e408f8473778057fb5aec45f87902748a4270c9098b5dd",
+      "sha256": "4aec1a3d38554aa5ea3b5107239653655338c57ebd7560fa0a2748e13fb9ba9b",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/result.json",
+      "sha256": "46c4e6ef0df2c99ffe046c38a40e31a6ab25befcd9287ab190f2c962764f1a69",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/selection_lock.json",
+      "sha256": "d9357aa3b24c0a7f1413e1dc2150b01071be13b232877f1026a27a7a94632fcb",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_lg_s17_20261031/exit_receipt.json",
+      "sha256": "f8bdf93be7ec39d5317b12d7eb7739e4a9232d49239af95cff5eb6ce76a4028f",
       "snapshot": true
     },
     {
@@ -82,14 +127,29 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/status.json",
-      "sha256": "9eb1dcb000037bb9d0ab193ead48023c95d5250f974a9092f4215f8151b80b34",
+      "sha256": "68920b235959b5a162ef1feda22816880a52f3c76adde5867de1c02d3f9de2a7",
       "snapshot": true
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/history.json",
-      "sha256": "4120f15dcf4115cf0a4234fa8ca04f9793766a2dfdc936413cf3b223a0968b34",
+      "sha256": "b8843be3319db57c6b10091729663be40132ced40aa6668e41eaf2baac032537",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/result.json",
+      "sha256": "7dbfe341dcbe0d7fcb7cce4e82c7ec139fed9950561285d7fb0f7822cd7577b6",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/selection_lock.json",
+      "sha256": "97e2e92bc9d309b14cd127a7708ba84af0b6eaa8a3ef5ca1ba140b3d1b8e4f09",
+      "snapshot": true
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/figure_revision_s17_20261031/panel_f_d2nn_s17_20261031/exit_receipt.json",
+      "sha256": "6cbcae5d4d53d720e83fd4665f3b8dfe44a947baf9035f6b6e3ac68847207b82",
       "snapshot": true
     }
   ],
-  "gpu_inventory_snapshot": "0, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, NVIDIA GeForce RTX 4090, 4500 MiB, 51 %\n1, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, NVIDIA GeForce RTX 4090, 9663 MiB, 99 %\n2, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, NVIDIA GeForce RTX 3090, 2738 MiB, 100 %\n3, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, NVIDIA GeForce RTX 4090, 5714 MiB, 62 %\n4, GPU-1b963983-7909-af6e-0528-f0f0661ab549, NVIDIA GeForce RTX 4090, 4058 MiB, 25 %\n5, GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb, NVIDIA GeForce RTX 3090, 1080 MiB, 11 %\n6, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, NVIDIA A100-PCIE-40GB, 11979 MiB, 100 %\n"
+  "gpu_inventory_snapshot": "0, GPU-afc19890-6209-ee4d-622d-e619da5bd5b2, NVIDIA GeForce RTX 4090, 4500 MiB, 33 %\n1, GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d, NVIDIA GeForce RTX 4090, 2330 MiB, 33 %\n2, GPU-6dcca91a-8e08-1a50-9aa6-81defeaed50b, NVIDIA GeForce RTX 3090, 2738 MiB, 100 %\n3, GPU-4d8bfdb9-8777-05a6-3811-ab18ff4eadfd, NVIDIA GeForce RTX 4090, 5714 MiB, 56 %\n4, GPU-1b963983-7909-af6e-0528-f0f0661ab549, NVIDIA GeForce RTX 4090, 4058 MiB, 25 %\n5, GPU-d53ce4c8-272d-c2fb-dc09-f182d586c4eb, NVIDIA GeForce RTX 3090, 1080 MiB, 7 %\n6, GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55, NVIDIA A100-PCIE-40GB, 437 MiB, 0 %\n"
 }

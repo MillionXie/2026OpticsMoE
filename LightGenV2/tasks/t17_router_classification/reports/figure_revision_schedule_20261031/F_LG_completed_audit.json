@@ -1,0 +1,67 @@
+{
+  "passed": true,
+  "phase_parameters": 479364,
+  "head_parameters": 7840,
+  "total_parameters": 487204,
+  "exactly_one_Linear_no_CNN": true,
+  "checkpoint_sha256": "5c1f49e75dfa0eec97f3c3b3425b5c792fc6f8762f23c3ed2a1c34e90f3655bf",
+  "splits": {
+    "train": {
+      "n": 6000,
+      "correct": 2515,
+      "accuracy": 0.4191666666666667,
+      "domains": {
+        "RGB": {
+          "n": 3000,
+          "correct": 1349,
+          "accuracy": 0.44966666666666666
+        },
+        "SAR": {
+          "n": 3000,
+          "correct": 1166,
+          "accuracy": 0.38866666666666666
+        }
+      },
+      "all_original_IDs_labels_pixels_verified": true,
+      "true_Top2": true
+    },
+    "val": {
+      "n": 2000,
+      "correct": 836,
+      "accuracy": 0.418,
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 450,
+          "accuracy": 0.45
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 386,
+          "accuracy": 0.386
+        }
+      },
+      "all_original_IDs_labels_pixels_verified": true,
+      "true_Top2": true
+    },
+    "test": {
+      "n": 2000,
+      "correct": 832,
+      "accuracy": 0.416,
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 479,
+          "accuracy": 0.479
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 353,
+          "accuracy": 0.353
+        }
+      },
+      "all_original_IDs_labels_pixels_verified": true,
+      "true_Top2": true
+    }
+  }
+}

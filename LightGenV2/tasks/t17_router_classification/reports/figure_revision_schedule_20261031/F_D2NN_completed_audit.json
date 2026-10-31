@@ -1,0 +1,67 @@
+{
+  "passed": true,
+  "phase_parameters": 685452,
+  "head_parameters": 0,
+  "total_parameters": 685452,
+  "no_Linear_no_CNN": true,
+  "checkpoint_sha256": "6de84910f0ed7ed355873ae9591b9a45b6c1163020ccc2061ee1927c3ed2563e",
+  "splits": {
+    "train": {
+      "n": 6000,
+      "correct": 2649,
+      "accuracy": 0.4415,
+      "domains": {
+        "RGB": {
+          "n": 3000,
+          "correct": 1355,
+          "accuracy": 0.45166666666666666
+        },
+        "SAR": {
+          "n": 3000,
+          "correct": 1294,
+          "accuracy": 0.43133333333333335
+        }
+      },
+      "all_original_IDs_labels_pixels_verified": true,
+      "no_router": true
+    },
+    "val": {
+      "n": 2000,
+      "correct": 817,
+      "accuracy": 0.4085,
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 397,
+          "accuracy": 0.397
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 420,
+          "accuracy": 0.42
+        }
+      },
+      "all_original_IDs_labels_pixels_verified": true,
+      "no_router": true
+    },
+    "test": {
+      "n": 2000,
+      "correct": 838,
+      "accuracy": 0.419,
+      "domains": {
+        "RGB": {
+          "n": 1000,
+          "correct": 451,
+          "accuracy": 0.451
+        },
+        "SAR": {
+          "n": 1000,
+          "correct": 387,
+          "accuracy": 0.387
+        }
+      },
+      "all_original_IDs_labels_pixels_verified": true,
+      "no_router": true
+    }
+  }
+}
