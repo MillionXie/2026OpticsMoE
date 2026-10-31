@@ -71,12 +71,20 @@ def main():
         review=json.loads(a.pilot_review.read_text())
         if not review['approved_for_TRAIN_target_generation'] or review['batch_size']!=a.batch_size or review['native_steps']!=a.steps:
             raise ValueError('Actual batched TRAIN pilot visual/resource review required')
+        pilot=a.plan.parent/review['pilot_run_id']
+        if(pilot.name!=review['pilot_run_id'] or not review['all_pilot_images_actually_inspected']
+           or sha(pilot/'candidates.json')!=review['candidate_manifest_sha256']
+           or sha(pilot/'report.json')!=review['source_report_sha256']
+           or sha(pilot/'model_assets.json')!=review['teacher_model_assets_sha256']):
+            raise ValueError('Pilot review must bind actual completed images, recipe and assets')
     import torch
     from PIL import Image
     from diffusers import OmniGenPipeline
     from .scene_omnigen_peer import checked_assets,REVISION
     torch.set_num_threads(4);torch.cuda.set_per_process_memory_fraction(.88,0)
     assets=checked_assets(a.model_path,a.metadata);a.output.mkdir(parents=True)
+    if a.stage=='generate' and json.loads((pilot/'model_assets.json').read_text())!=assets:
+        raise ValueError('Generation assets differ from the inspected pilot')
     (a.output/'targets').mkdir();(a.output/'references').mkdir()
     write(a.output/'execution.json',dict(source_commit=os.environ['T12_SOURCE_COMMIT'],source_sha256=sha(__file__),argv=sys.argv,pid=os.getpid()))
     write(a.output/'model_assets.json',assets)
