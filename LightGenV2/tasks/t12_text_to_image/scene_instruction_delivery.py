@@ -26,6 +26,50 @@ def checked_run(path,requests):
     return report,indexed
 
 
+def checked_teacher_syntax(before,after):
+    """Keep the full controlled24 TRAIN cohort; never certify image success."""
+    from .scene_instruction_balanced import SCENE_FIRST_PROFILE,scene_first_condition,TEACHER_RECIPE
+    old_report=json.loads((before/'report.json').read_text(encoding='utf8'));new_report=json.loads((after/'report.json').read_text(encoding='utf8'))
+    old=json.loads((before/'candidates.json').read_text(encoding='utf8'));new=json.loads((after/'candidates.json').read_text(encoding='utf8'))
+    if not old_report['complete']or not new_report['complete']or len(old)!=48 or len(new)!=24 or new_report['prompt_profile']!=SCENE_FIRST_PROFILE:raise ValueError('Full completed48/24 TRAIN cohorts required')
+    if any(r.get('split')!='train'for r in old+new):raise ValueError('TRAIN-only teacher comparison')
+    if sha(before/'candidates.json')!=old_report['candidate_manifest_sha256']or sha(after/'candidates.json')!=new_report['candidate_manifest_sha256']:raise ValueError('Changed teacher manifests')
+    legacy_recipe=old_report.get('teacher_recipe')is None and old_report.get('source_commit')=='d2919422b6035d60918f8a944e7e055b0fbda212'
+    if not(old_report.get('teacher_recipe')==TEACHER_RECIPE or legacy_recipe)or new_report.get('teacher_recipe')!=TEACHER_RECIPE:raise ValueError('Changed teacher sampling budget')
+    if (before/'model_assets.json').read_bytes()!=(after/'model_assets.json').read_bytes():raise ValueError('Teacher asset identity differs')
+    selected={r['sample_id']:r for r in old if r['seed_index']==0}
+    if len(selected)!=24 or len({r['previous_sample_id']for r in new})!=24 or {r['previous_sample_id']for r in new}!=set(selected):raise ValueError('No selected easy subset')
+    result=[]
+    for row in new:
+        prior=selected[row['previous_sample_id']];code=prior['sample_id'].split('-balanced-')[1].split('-draw')[0]
+        if row['prompt']!=scene_first_condition(row['category'],code)['prompt']or row['previous_prompt']!=prior['prompt']or any(row[k]!=prior[k]for k in ['reference_sha256','reference_id','seed','seed_index','category','required_visible_facts']):raise ValueError('Changed controlled reference/seed/facts')
+        if prior.get('initial_latent_sha256')is not None and row.get('initial_latent_sha256')!=prior['initial_latent_sha256']:raise ValueError('Changed actual noise despite matching seed')
+        for root,r in [(before,prior),(after,row)]:
+            if sha(root/r['reference'])!=r['reference_sha256']or sha(root/r['target'])!=r['target_sha256']:raise ValueError('Changed teacher pixels')
+        result.append((prior,row))
+    return result
+
+
+def build_teacher_syntax(before,after,output,review):
+    rows=checked_teacher_syntax(before,after)
+    if output.exists():raise ValueError('Preserve previous delivery')
+    if review['candidate_manifest_sha256']!=sha(after/'candidates.json')or {r['sample_id']for r in review['rows']}!={r['sample_id']for _,r in rows}:raise ValueError('Review must cover all24 new pixels')
+    indexed={r['sample_id']:r for r in review['rows']}
+    output.mkdir();(output/'images').mkdir();e=html.escape
+    parts=['<!doctype html><meta charset="utf-8"><title>TRAIN同图同种子措辞对照</title><style>body{font:16px Arial;margin:24px;background:#fafafa}article{background:white;padding:18px;margin:20px 0;border:1px solid #ddd}.row{display:flex;gap:16px}figure{margin:0;max-width:32%}img{width:100%}.warn{background:#fff0d2;padding:14px}</style><h1>TRAIN教师：同参考、同种子的两句措辞对照</h1><p class="warn">全部24组，冻结公开OmniGen50步生成；不是Qwen或LG输出，不是DEV／TEST。原目标与新目标都保留，不把改变文字后重新命名旧图当成功。逐图检查只用于筛选训练候选，不是盲评论文准确率。</p>']
+    for i,(old,new)in enumerate(rows):
+        annotation=indexed[new['sample_id']]
+        if annotation['target_sha256']!=new['target_sha256']:raise ValueError('Review pixel mismatch')
+        parts.append('<article><h3>'+e(new['reference_id'])+' / '+str(new['seed'])+'</h3><div class="row">')
+        for root,row,kind,label in [(before,old,'reference','白底参考'),(before,old,'target','原措辞'),(after,new,'target','场景要求提前')]:
+            src=root/row[kind];name=f'{i:02d}_'+label+'.png';shutil.copyfile(src,output/'images'/name)
+            parts.append('<figure><figcaption>'+label+'</figcaption><img loading="lazy" src="images/'+name+'"><p>'+(''if kind=='reference'else e(row['prompt']))+'</p></figure>')
+        parts.append('</div><p>'+e(annotation['status']+'：'+annotation['note'])+'</p></article>')
+    (output/'index.html').write_text(''.join(parts),encoding='utf8');write(output/'review.json',review)
+    write(output/'report.json',dict(complete=True,all24_controlled_pairs=True,TRAIN_teacher_only=True,new_Qwen_or_LG_result=False,
+        independent_TEST_opened=False,automatic_instruction_success_certification=False,prior_candidate_manifest_sha256=sha(before/'candidates.json'),new_candidate_manifest_sha256=sha(after/'candidates.json')))
+
+
 def build(data,models,output,review=None):
     if output.exists():raise ValueError('New output directory required')
     report=json.loads((data/'report.json').read_text(encoding='utf8'));pairs=json.loads((data/'pairs.json').read_text(encoding='utf8'))
