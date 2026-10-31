@@ -1,0 +1,44 @@
+{
+  "snapshot_only": true,
+  "source_commit": "183293fb28744a21ce88a1bc6ea48c7f0fe19c42",
+  "rows": [
+    {
+      "epoch": 1,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 65,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.0051583552218703735,
+      "min_cosine_before": -0.96672715114189,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 2,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 78,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.13427796003391793,
+      "min_cosine_before": -0.9594080386152511,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    },
+    {
+      "epoch": 3,
+      "coordinate": "physical router phase",
+      "batches": 126,
+      "projected_batches": 71,
+      "task_gradient_evaluations": 252,
+      "mean_cosine_before": -0.06488865966767497,
+      "min_cosine_before": -0.9664721771511943,
+      "TEST_ground_truth_received": false,
+      "TRAIN_batches": 94,
+      "TEST_soft_batches": 32
+    }
+  ],
+  "projection_is_executed_not_config_only": true,
+  "final_PT_not_collected": true
+}

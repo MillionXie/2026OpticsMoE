@@ -1,0 +1,37 @@
+{
+  "snapshot_only": true,
+  "final_checkpoints_not_collected": true,
+  "remote_root": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101",
+  "files": [
+    {
+      "path": "launch.json",
+      "sha256": "511c1a522987252fab296f727947f44c6c740f2017bec255568f0df4c9dd7fb9",
+      "bytes": 8766
+    },
+    {
+      "path": "joint/metadata.json",
+      "sha256": "dda4a2bb1d422e31423e79059de6273111559c07c4f3cc07026b54e10ff9db39",
+      "bytes": 8321
+    },
+    {
+      "path": "joint/status.json",
+      "sha256": "4b553e56966034ea2ae99d7af31c0a0552e87378c0a6433e20ed41d1e1bebf00",
+      "bytes": 103
+    },
+    {
+      "path": "joint/history.json",
+      "sha256": "4d5f9965f07b35799dde0589b6a1b30da985d46fc4303280c2b1b01d588fb3ed",
+      "bytes": 23438
+    },
+    {
+      "path": "joint/teacher_manifest.json",
+      "sha256": "29c52c1a7d2350aa03fd0d09bb2b2cd8d884a143456f85399a6dd432d4530b98",
+      "bytes": 1288
+    },
+    {
+      "path": "joint/source_TEST_distillation_manifest.json",
+      "sha256": "363a225b4b2135976f9a68cb4f039d9b2935a76099290b253df80b72181e0e92",
+      "bytes": 1156
+    }
+  ]
+}

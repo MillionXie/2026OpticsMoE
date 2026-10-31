@@ -1,0 +1,6 @@
+{
+  "source_commit": "183293fb28744a21ce88a1bc6ea48c7f0fe19c42",
+  "pid": 2220466,
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "run": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_joint_router_projection_s17_20261101"
+}

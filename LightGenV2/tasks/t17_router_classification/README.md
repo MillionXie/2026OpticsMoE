@@ -3,7 +3,7 @@
 按完整6000原TRAIN code0真实梯度冲突证据，实现可选router_gradient_projection=two_domain_physical；默认关闭，模型推理仍4state487204、唯一Linear无CNN/原Top2与OEO不变。
 模块router_gradient_projection.py将两域router dL/draw各自除相位Jacobian，负内积时同时投影（使用原始两向量），按该batch域样本数加权，再乘Jacobian放回raw.grad，后续仍原WrappedPhaseAdam角度转换/clip5。只有router梯度替换，E/G/head保留原混合目标梯度。
 训练域仅用于损失分组，不进入forward、不固定专家；原TEST路径显式拒绝任何硬标签参数。原单头64000视图block保持，无额外推理参数。额外两域router autograd评估次数与负内积batch数/余弦逐轮记账，不能称等计算预算。
-新profile f_joint_router_projection_s17_20261101从精确124父，max30/min15/pat10，原STE反向/KD.5/T2/D4/两教师/TRAIN+TESTsoft、phase.0003/head.00005及min域VAL选择保持。原父E0参与/所有失败保存，不保证投影后Adam步共同下降或达到70%。此处仅实现/配置，仍须CPU回归、精确父GPU准入和Git发布后启动。
+新profile f_joint_router_projection_s17_20261101从精确124父，max30/min15/pat10，原STE反向/KD.5/T2/D4/两教师/TRAIN+TESTsoft、phase.0003/head.00005及min域VAL选择保持。原父E0参与/所有失败保存，不保证投影后Adam步共同下降或达到70%。186项CPU回归及精确124父真实TRAIN/TEST软输入GPU准入通过，source183293fb28744a21ce88a1bc6ea48c7f0fe19c42已GitHub/server路径SHA。worker2220466已在A100实际启动，root f_joint_router_projection_s17_20261101/joint，不重复启动/热改cfg。真实准入TRAIN router梯度余弦-.6353触发投影，投影方向与原两域梯度内积均正；非router混合损失梯度bitwise不变、前向bitwise、4state487204、TEST软无硬标签和head block相位冻结/父完整VAL重放均通过，未声称准确率改善。
 
 ## F路由surrogate候选已完整结束并核验；下一训练冲突投影待实现（2026-11-01）
 

@@ -1,5 +1,5 @@
 {
-  "generated_UTC": "2026-10-31T16:58:45.321529+00:00",
+  "generated_UTC": "2026-10-31T17:05:40.376604+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "protocol": "one joint LG two outputs plus two finalized source-only D2NN four outputs",
   "records": {
@@ -5840,5 +5840,16 @@
       }
     },
     "fully_collected_local_SHA_verified": true
+  },
+  "router_projection_candidate": {
+    "status": {
+      "state": "training",
+      "epoch": 3,
+      "total_epochs": 30,
+      "selected_epoch": 0,
+      "pid": 2220466
+    },
+    "result": null,
+    "fully_collected_local_SHA_verified": false
   }
 }

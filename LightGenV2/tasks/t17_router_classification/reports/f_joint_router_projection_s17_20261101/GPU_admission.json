@@ -1,0 +1,339 @@
+{
+  "source_commit": "183293fb28744a21ce88a1bc6ea48c7f0fe19c42",
+  "gpu_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "parent_sha256": "124f530bf9c511604649ed8f43fc6698702a9d9e365543a491c5e3a0679a4057",
+  "initial_forward_bitwise_unchanged": true,
+  "STE_forward_bitwise_equal_to_canonical": true,
+  "masked_port_classification_gradient_max_abs": 0.6352967619895935,
+  "training_only_surrogate_backward": true,
+  "router_projection_TRAIN": {
+    "projected": true,
+    "cosine_before": -0.6352704511441829,
+    "domain_weights": [
+      0.5,
+      0.5
+    ],
+    "physical_norms": [
+      0.02206045524457033,
+      0.04812329583988175
+    ],
+    "projected_direction_dot_original": [
+      0.00014513076478142763,
+      0.0006906233691492573
+    ],
+    "coordinate": "physical router phase",
+    "task_gradient_evaluations": 2
+  },
+  "router_projection_TEST_soft": {
+    "projected": false,
+    "cosine_before": 0.340736265592718,
+    "domain_weights": [
+      0.5,
+      0.5
+    ],
+    "physical_norms": [
+      0.06270926271240548,
+      0.029625130933361967
+    ],
+    "projected_direction_dot_original": [
+      0.0022827306412357257,
+      0.0007553290176784016
+    ],
+    "coordinate": "physical router phase",
+    "task_gradient_evaluations": 2
+  },
+  "nonrouter_mixed_loss_gradients_bitwise_unchanged": true,
+  "TEST_hard_labels_not_received_by_projection": true,
+  "parameter_updates": {
+    "first_phase": 0.0655832514166832,
+    "global_phase": 0.09803915023803711,
+    "router_phase": 0.03792866691946983,
+    "shared_head.weight": 0.004424013197422028
+  },
+  "TRAIN_images": 6000,
+  "original_TEST_soft_images": 2000,
+  "teacher_TRAIN_cache_shape": [
+    6000,
+    8,
+    10
+  ],
+  "teacher_TEST_cache_shape": [
+    2000,
+    8,
+    10
+  ],
+  "real_balanced_TRAIN_admission_images": 20,
+  "real_balanced_TEST_soft_admission_images": 20,
+  "TEST_ground_truth_in_loss": false,
+  "head_block_phase_bitwise_frozen": true,
+  "head_block": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 40,
+    "numerical_ridge": 0.003086674465434722,
+    "uncentred_Gram_eigen_min": -1.6917231127097066e-13,
+    "uncentred_Gram_eigen_max": 2242.44424380736,
+    "Gram_regularized_condition": 726492.9799744547,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 1.9494664801741315,
+    "objective_after": 0.4285506775317697,
+    "internal_steps": 5,
+    "closure_calls": 9,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": false,
+    "hard_label_samples": 20
+  },
+  "parent_full_VAL_replay": {
+    "n": 2000,
+    "correct": 1073,
+    "accuracy": 0.5365,
+    "balanced_accuracy": 0.5365,
+    "cross_entropy": 1.3209017515182495,
+    "confusion_matrix": [
+      [
+        106,
+        5,
+        19,
+        7,
+        14,
+        15,
+        19,
+        10,
+        5,
+        0
+      ],
+      [
+        0,
+        154,
+        13,
+        0,
+        0,
+        10,
+        6,
+        6,
+        2,
+        9
+      ],
+      [
+        32,
+        24,
+        44,
+        11,
+        8,
+        20,
+        15,
+        34,
+        12,
+        0
+      ],
+      [
+        13,
+        4,
+        17,
+        61,
+        25,
+        14,
+        23,
+        20,
+        23,
+        0
+      ],
+      [
+        7,
+        1,
+        8,
+        12,
+        136,
+        0,
+        8,
+        23,
+        5,
+        0
+      ],
+      [
+        2,
+        30,
+        17,
+        9,
+        3,
+        121,
+        14,
+        3,
+        1,
+        0
+      ],
+      [
+        18,
+        23,
+        18,
+        20,
+        1,
+        20,
+        53,
+        45,
+        2,
+        0
+      ],
+      [
+        6,
+        6,
+        7,
+        6,
+        7,
+        0,
+        22,
+        146,
+        0,
+        0
+      ],
+      [
+        9,
+        3,
+        8,
+        24,
+        6,
+        5,
+        2,
+        1,
+        134,
+        8
+      ],
+      [
+        5,
+        62,
+        0,
+        1,
+        1,
+        8,
+        0,
+        3,
+        2,
+        118
+      ]
+    ],
+    "router": {
+      "mean_power": [
+        0.01910596713423729,
+        0.08311638981103897,
+        0.8977771401405334,
+        0.0
+      ],
+      "std_power": [
+        0.04724666476249695,
+        0.05209551379084587,
+        0.042073264718055725,
+        0.0
+      ],
+      "selected_fraction": [
+        0.1635,
+        0.8365,
+        1.0,
+        0.0
+      ],
+      "top2_pair_fraction": {
+        "0-1": 0.0,
+        "0-2": 0.1635,
+        "0-3": 0.0,
+        "1-2": 0.8365,
+        "1-3": 0.0,
+        "2-3": 0.0
+      },
+      "fraction_outside_most_common_pair": 0.16349999999999998,
+      "effective_experts_from_mean_power": 1.2295930815337168,
+      "mean_per_sample_effective_experts": 1.2258832454681396,
+      "expert_numbering": "zero-based 0..3",
+      "samples": 2000
+    },
+    "domains": {
+      "RGB": {
+        "n": 1000,
+        "correct": 562,
+        "accuracy": 0.562,
+        "router": {
+          "mean_power": [
+            0.018961580470204353,
+            0.06769011169672012,
+            0.9133480191230774,
+            0.0
+          ],
+          "std_power": [
+            0.04362226277589798,
+            0.03459260240197182,
+            0.023076677694916725,
+            0.0
+          ],
+          "selected_fraction": [
+            0.169,
+            0.831,
+            1.0,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.0,
+            "0-2": 0.169,
+            "0-3": 0.0,
+            "1-2": 0.831,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.16900000000000004,
+          "effective_experts_from_mean_power": 1.1916876294301928,
+          "mean_per_sample_effective_experts": 1.1889511346817017,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 1000
+        }
+      },
+      "SAR": {
+        "n": 1000,
+        "correct": 511,
+        "accuracy": 0.511,
+        "router": {
+          "mean_power": [
+            0.019250348210334778,
+            0.09854260087013245,
+            0.8822070956230164,
+            0.0
+          ],
+          "std_power": [
+            0.050611868500709534,
+            0.06128041446208954,
+            0.050228431820869446,
+            0.0
+          ],
+          "selected_fraction": [
+            0.158,
+            0.842,
+            1.0,
+            0.0
+          ],
+          "top2_pair_fraction": {
+            "0-1": 0.0,
+            "0-2": 0.158,
+            "0-3": 0.0,
+            "1-2": 0.842,
+            "1-3": 0.0,
+            "2-3": 0.0
+          },
+          "fraction_outside_most_common_pair": 0.15800000000000003,
+          "effective_experts_from_mean_power": 1.2684389654110817,
+          "mean_per_sample_effective_experts": 1.2628154754638672,
+          "expert_numbering": "zero-based 0..3",
+          "samples": 1000
+        }
+      }
+    },
+    "domain_mean_accuracy": 0.5365
+  },
+  "selection_key": [
+    0.511,
+    0.5365,
+    -1.3209017515182495
+  ],
+  "inference_parameters": 487204,
+  "Linear_count": 1,
+  "CNN_count": 0,
+  "source_sha256": {
+    "train_figure_revision.py": "2824a072419c0c2db62f6d0da014bcf90bf50b02a36e5fda02162a8616ca7a0f",
+    "f_joint_distillation.py": "5791782005b3eaa8a2d09eba0b1bd0ade57ea8d7d655b7fe01507e91be28a0c0",
+    "router_gradient_projection.py": "ba0e32115996dfcf634b61125db6901b4442e4aa9a1154e3e17eb183eaaabaa7"
+  }
+}
