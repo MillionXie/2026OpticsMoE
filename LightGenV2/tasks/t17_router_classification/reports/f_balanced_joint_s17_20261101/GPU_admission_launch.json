@@ -1,0 +1,102 @@
+{
+  "source_commit": "14ac6c0e490caa9305c9a48df0e70c0854ef8c09",
+  "parent_checkpoint_sha256": "b6e0a73ed5cdcf8db9a6dfd6d63b7563030b41c6185c6ad447fa047a8dcd9403",
+  "parent_full_replay": {
+    "val": {
+      "images": 2000,
+      "predictions_exact": true,
+      "probability_max_abs": 1.436471939086914e-05
+    },
+    "test": {
+      "images": 2000,
+      "predictions_exact": true,
+      "probability_max_abs": 1.195073127746582e-05
+    }
+  },
+  "real_TRAIN_and_TEST_soft_steps": {
+    "train": {
+      "samples": 20,
+      "loss": 1.916369080543518,
+      "loss_parts": {
+        "main": 1.9024279117584229,
+        "balance": 1.602933645248413
+      },
+      "aux_router_gradient_norm": 0.06520601361989975,
+      "all_parameter_updates": {
+        "first_phase": 0.06562063843011856,
+        "global_phase": 0.10944022238254547,
+        "router_phase": 0.03796287626028061,
+        "shared_head.weight": 0.004423944745212793
+      },
+      "TEST_GT_received": null
+    },
+    "test": {
+      "samples": 20,
+      "loss": 1.3690483570098877,
+      "loss_parts": {
+        "main": 1.3550018072128296,
+        "balance": 1.615053653717041
+      },
+      "aux_router_gradient_norm": 0.06598050892353058,
+      "all_parameter_updates": {
+        "first_phase": 0.043793268501758575,
+        "global_phase": 0.07281331717967987,
+        "router_phase": 0.024978376924991608,
+        "shared_head.weight": 0.002943156287074089
+      },
+      "TEST_GT_received": false
+    }
+  },
+  "forward_bitwise_original_hardTop2": true,
+  "head_block_phase_frozen": true,
+  "head_block": {
+    "mode": "TRAIN_Gram_cholesky",
+    "TRAIN_samples": 320,
+    "numerical_ridge": 0.0031022177779936847,
+    "uncentred_Gram_eigen_min": -1.3492726385224708e-13,
+    "uncentred_Gram_eigen_max": 2264.4880823072085,
+    "Gram_regularized_condition": 729958.8058218161,
+    "feature_transform_absent_from_inference": true,
+    "objective_before": 2.320329134814781,
+    "objective_after": 0.849010233467834,
+    "internal_steps": 3,
+    "closure_calls": 8,
+    "exported_dtype": "torch.float32",
+    "TRAIN_only": false,
+    "hard_label_samples": 160,
+    "original_TRAIN_images": 20,
+    "source_original_TEST_images": 20,
+    "hard_TRAIN_view_presentations": 160,
+    "source_TEST_soft_view_presentations": 160,
+    "total_view_presentations": 320,
+    "augmentation_codes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "inference_parameters": 487204,
+  "model_state_tensors": 4,
+  "inference_Linear": 1,
+  "CNN": 0,
+  "entry_sha256": "50c6a5e0655ebf2b875ba89b7243be96c31d61bc97a8be1fbc95404ab080f1f8",
+  "balance_helper_sha256": "0e17eff80ac2b9827181bc0ca51ee1d624c9c7e0355d010b59ec9ae54f6b7a0a",
+  "profile_sha256": "9f5526fd255132177160e3c48546255a7748868eebd89d2b8ea80517d66fdd6f",
+  "pid": 2468476,
+  "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+  "command": [
+    "/home/guest3/miniconda3/envs/xml/bin/python",
+    "-m",
+    "LightGenV2.tasks.t17_router_classification.train_f_balanced_joint",
+    "--profile",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/configs/f_balanced_joint_s17_20261101.json",
+    "--out",
+    "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint"
+  ],
+  "time": 1793476020.2439494
+}

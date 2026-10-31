@@ -1,0 +1,30 @@
+{
+  "snapshot_only": true,
+  "not_final_PT_backup": true,
+  "files": [
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/launch.json",
+      "sha256": "68cc8cf705aa09c95ba2b41869df30f012e6c91298029d36833df9faf1b417f0"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/metadata.json",
+      "sha256": "d7e7ef8a63f5c7928d77d226a20df3a89361ddf94c2c078f9213bc2783616a1b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/status.json",
+      "sha256": "a0b815e2ad4ba63841fe2684ff9699e289618d9b960f239101f4855a21f1e649"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/history.json",
+      "sha256": "a09160178d3317a426872778a0359652c3a1561775c2b3217664614651e86d25"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/teacher_manifest.json",
+      "sha256": "e936499cd5fc1c8e5f403871f70049c8076664be5da7929dd5cd76da506d0716"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/source_TEST_distillation_manifest.json",
+      "sha256": "6128b404553ce5a4d4461d8764c78da32f69dfffe1d6bb91e12ecf34b0ac838b"
+    }
+  ]
+}

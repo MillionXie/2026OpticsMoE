@@ -1,5 +1,5 @@
 {
-  "generated_UTC": "2026-10-31T19:32:32.772099+00:00",
+  "generated_UTC": "2026-10-31T19:47:36.290159+00:00",
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
   "protocol": "one joint LG two outputs plus two finalized source-only D2NN four outputs",
   "records": {
@@ -10740,6 +10740,17 @@
       }
     },
     "fully_verified": true
+  },
+  "joint_accuracy_balance_candidate": {
+    "status": {
+      "state": "training",
+      "epoch": 3,
+      "total_epochs": 20,
+      "selected_epoch": 0,
+      "pid": 2468476
+    },
+    "result": null,
+    "fully_verified": false
   },
   "same_checkpoint_per_modality_expert_usage": {
     "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",

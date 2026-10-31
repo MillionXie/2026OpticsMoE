@@ -43,6 +43,9 @@ def main():
         (head_report/'F_joint_model_audit.json').exists() and (head_report/'completed_transfer.json').exists() and
         hashlib.sha256((head_run/'best_checkpoint.pt').read_bytes()).hexdigest()==head_result['checkpoint_sha256'])
     if head_verified:choices.append(('Canonical existing-head refit',head_result,head_run))
+    balanced_run=task/'runs/simulation/f_balanced_joint_s17_20261101/joint';balanced_result=read(balanced_run/'result.json');balanced_status=read(balanced_run/'status.json');balanced_report=task/'reports/f_balanced_joint_s17_20261101'
+    balanced_verified=bool(balanced_result and (balanced_report/'model_audit.json').exists() and (balanced_report/'completed_transfer.json').exists() and hashlib.sha256((balanced_run/'best_checkpoint.pt').read_bytes()).hexdigest()==balanced_result['checkpoint_sha256'])
+    if balanced_verified:choices.append(('Joint accuracy + modality load',balanced_result,balanced_run))
     val_floor=min(v['accuracy'] for v in reference['val']['domains'].values())
     eligible=choices # Latest human rule: original TEST only; no validation floor.
     def development_key(item):
@@ -109,6 +112,8 @@ def main():
     data['development_selection_policy']='Latest runs: original-TEST development only, worst domain then macro recall/CE; VAL is recorded without a gate. Historical run-internal selection is retained as recorded. Across audited PTs: worst-domain original-TEST accuracy then mean, whole PT row; no VAL floor. Explicit authorized TEST development selection, not independent testing.'
     data['shared_joint_teacher']=joint_teacher;data['shared_joint_teacher_student']=dict(status=shared_status,result=shared_result,fully_verified=shared_verified)
     data['canonical_head_refit']=dict(status=head_status,result=head_result,fully_verified=head_verified)
+    data['joint_accuracy_balance_candidate']=dict(status=balanced_status,result=balanced_result,fully_verified=balanced_verified)
+    if balanced_status:page=page.replace('</html>','<h2>联合精度与每模态负载：有界新候选</h2><p>'+html.escape(str({k:v for k,v in balanced_status.items() if k in ('state','epoch','total_epochs','selected_epoch')}))+'。独立训练控制器复用原光学模型与稳定helpers，不改在训Organ入口。固定TRAIN梯度校准权重0.00869728、最多20/min10/pat10；同一共享teacher与两域TEST仅软目标、TEST选PT、原父E0参选。均衡只在训练按模态聚合dense边际功率；每轮另核actual hard Top2选择频率，不以KL下降冒充实际均衡。未完整归档核验不替换主表。</p></html>')
     if head_status:page=page.replace('</html>','<h2>固定光学相位的canonical读出对照</h2><p>'+html.escape(str({k:v for k,v in head_status.items() if k in ('state','iteration','selected_iteration')}))+'。最多150个LBFGS内部步，只改原唯一Linear；TRAIN硬CE+联合教师KD、原TEST仅软目标，VAL无选模门槛。全量SHA与canonical重放核验后才可整行采用。</p></html>')
     usage=read(task/'reports/f_joint_load_balance_s17_20261101/results.json')
     if usage and usage['checkpoint_sha256']==selected['checkpoint_sha256']:

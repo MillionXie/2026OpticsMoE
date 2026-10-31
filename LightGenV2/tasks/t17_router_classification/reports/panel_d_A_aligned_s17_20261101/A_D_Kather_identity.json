@@ -1,0 +1,35 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "A_panel_dataset_order": [
+    {
+      "panel": 1,
+      "dataset": "kather2016"
+    },
+    {
+      "panel": 2,
+      "dataset": "bloodmnist128"
+    },
+    {
+      "panel": 3,
+      "dataset": "crc9"
+    }
+  ],
+  "Kather_is_A_panel": 1,
+  "A_panel3_dataset": "crc9",
+  "D_Kather_k2_run": "runs\\simulation\\panel_d_Kather_boundary_refine_s17_20261101\\kather2016\\k2",
+  "A_Kather_current_run": "runs\\simulation\\panel_d_Kather_boundary_refine_s17_20261101\\kather2016\\k2",
+  "B_main2_alias_same_PT": true,
+  "shared_checkpoint_sha256": "651a6edcd0a616bfafd6d2652d847c6f5d015a0d3d17759b81fdee02078e54b0",
+  "same_A_D_Kather_dataset_split_ID_pixels": true,
+  "evidence": "D original GPU admission + shared reference identity/canonical replay audits; latest full state/ID and immutable prediction receipts",
+  "fixed_complete_TEST_n": 752,
+  "current_k_correct": [
+    601,
+    595,
+    604,
+    604
+  ],
+  "strictly_increasing": false,
+  "all_best_candidates_preserved": true,
+  "lowering_k1_or_reselecting_TEST_examples_to_force_trend": false
+}

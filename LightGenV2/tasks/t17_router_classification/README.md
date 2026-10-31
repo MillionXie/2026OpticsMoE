@@ -1,3 +1,10 @@
+## 新一轮F精度＋每模态负载联合微调已真正启动（2026-11-01）
+
+独立入口train_f_balanced_joint.py复用原模型/稳定训练helpers，不修改仍在跑Organ的共享入口；source14ac6c0e490caa9305c9a48df0e70c0854ef8c09已main/GitHub/server路径SHA。14项相关CPU测试通过（默认关闭均衡loss bitwise、TEST硬GT拒绝/teacher detach、population均值梯度等）；精确b6e0父全2000VAL/2000TEST重放预测完全相同、真实20TRAIN和20TEST软输入有限梯度/所有注册phase-head更新/aux router梯度非零/头block相位冻结、推理strict4state487204/唯一Linear/noCNN/真Top2准入通过。原forward与STE训练forward bitwise同，前向没有dense软路由。
+worker2468476在原4090实际运行，root f_balanced_joint_s17_20261101/joint，cfg f_balanced_joint_s17_20261101.json，已至少E3，父E0暂保留，不能当已改善。全R/E/G/head联合，max20/min10/pat10、phase.0003/head.00005余弦、D4、同一冻结共享增强teacher、TRAIN真CE+KD/TEST仅softKL，固定均衡系数0.0086972788来自完整TRAIN梯度校准；两训练分支按采集域聚合KL(uniform||mean dense power)，域不进forward，不固定专家。每轮94TRAIN+32TEST软=126 phase/head步，每5轮原单头64000视图（48000硬TRAIN+16000软TEST）/最多40内部步，头block时phase冻结；TEST-only选PT，VAL只记录，父E0参选。每轮记录实际两域hard Top2负载和分类分数，dense KL下降不称负载达标。不保证双70%或均衡同时实现。
+当前主表仍保留完整核验64.6/49.6同一PT，新的未完成候选不替换；状态t17_F_balanced_joint_status.py只是快照，不含最终PT。完成需全best/last/hist/metadata/锁/三split预测route/dense/capture/6000x8及2000x8教师cache与manifest，全SHA/strict/GT隔离/真实负载/预算/source和自身GPU退出核验。旧F所有父及失败保留，不重开。
+Kather对应A第一组，不是第三组CRC9；D k2、A第一组LG与B两层LG已核同一PT SHA651a6edc...、同原Kather ID/标签/像素/划分。A_D_Kather_identity.json给出可复核映射。当前601/595/604/604仍不递增，保留最高真实k1，不筛TEST样本或压低好结果制造单调；继续争取提高k2与后续点，未达如实报告。
+
 ## F负载优化的完整TRAIN数值诊断已完成；尚未启动新训练（2026-11-01）
 
 source66eb0e8a6新增f_load_balance.py（按模态KL[uniform||mean dense power]训练辅助）和diagnose_f_balance_gradient.py；旧loss/模型/运行入口未改，辅助未接入正式训练。8项相关CPU检查通过，包括不强迫每图均匀、不能用合并均值掩盖两域相反塌缩、梯度方向、完整均值链式梯度与不等长分块等价。
