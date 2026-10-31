@@ -93,6 +93,7 @@ def curate(plan,candidates,review_path,parent,output):
     write(output/'report.json',dict(schema=PAIRED_SCHEMA,complete=True,eligible_for_training=True,prompt_profile=PROFILE,
         pairs_sha256=pairsha,request_sha256=sha(output/'inference_inputs.json'),source_plan_request_sha256=pr['TRAIN_request_sha256'],
         source_parent_pairs_sha256=sha(parent/'pairs.json'),candidate_manifest_sha256=cr['candidate_manifest_sha256'],
+        candidate_run=str(candidates),
         TRAIN_pairs=len(pairs),TRAIN_products=len({r['source_product_id'] for r in pairs}),TRAIN_views=len({r['reference_id'] for r in pairs}),
         partial_TRAIN_pairs=sum(r['supervision_weight']==.5 for r in pairs),TEST_requests=500,TEST_target_images=0,
         validation_set=False,TEST_used_for_model_selection=True,role_disjoint=True,independent_generalization_claim=False,

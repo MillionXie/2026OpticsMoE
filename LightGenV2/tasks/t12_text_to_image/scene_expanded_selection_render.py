@@ -14,6 +14,26 @@ from .scene_expanded_paired_data import PAIRED_SCHEMA
 from .scene_paper_prompt_protocol import write
 
 
+def public_inputs(data,scope='dev'):
+    # The shared renderer internally calls its revised-request path "dev".
+    # This explicit entry instead reads TEST inputs, never creates a DEV alias.
+    rows=json.loads((data/'inference_inputs.json').read_text())
+    if len(rows)!=500 or any(set(r)!=set(SAFE) for r in rows):raise ValueError('Complete target-free TEST500 required')
+    return rows
+
+
+def benchmark_order(rows):
+    chosen=[]
+    for category in ['lamp','pillow']:
+        refs=sorted({r['reference_id'] for r in rows if r['category']==category})[:4]
+        for index,rid in enumerate(refs):
+            group=[r for r in rows if r['reference_id']==rid]
+            chosen.append(next((r for r in group if r['condition_id']==str(index)),group[0]))
+    ids={r['sample_id'] for r in chosen}
+    if len(ids)!=8:raise ValueError('Four distinct sources per category required for timing')
+    return chosen+[r for r in rows if r['sample_id']not in ids]
+
+
 def checked_revision(folder,data,state,original):
     report=json.loads((folder/'report.json').read_text());rows=json.loads((folder/'inference_inputs.json').read_text())
     protocol=json.loads((folder/'selection_protocol.json').read_text())
@@ -31,10 +51,10 @@ def checked_revision(folder,data,state,original):
             raise ValueError('Public target-free input identity changed')
         if any(row[k]!=definition[k] for k in ['prompt','native_caption','reward_caption','prompt_profile']):
             raise ValueError('Canonical facts changed after plan freeze')
-    return rows,dict(schema='scene_expanded_TEST_selection_v1',prompt_profile=PROFILE,contexts=500,reference_views=26,
+    return benchmark_order(rows),dict(schema='scene_expanded_TEST_selection_v1',prompt_profile=PROFILE,contexts=500,reference_views=26,
         request_sha256=report['request_sha256'],paired_dataset_sha256=state['pair_sha256'],validation_set=False,
         TEST_used_for_model_selection=True,independent_generalization_claim=False,balanced_counterfactual_training_data=False,
-        model_trained_on_expanded_TRAIN=True)
+        model_trained_on_expanded_TRAIN=True,timing_subset_rule='first4_distinct_sources_each_category_condition_ordinal_or_first_available')
 
 
 def public_report(output):
@@ -56,13 +76,13 @@ def public_report(output):
 def main():
     from . import scene_natural_prompt as prompts
     from . import scene_paired_render as renderer
-    old_check=prompts.checked_revision;old_render=renderer.render
+    old_check=prompts.checked_revision;old_render=renderer.render;old_inputs=renderer.inference_inputs
     def render(a):
         if a.scope!='dev' or a.prompt_revision is None:raise ValueError('Use explicit new selection revision entry')
         old_render(a);public_report(a.output)
-    prompts.checked_revision=checked_revision;renderer.render=render
+    prompts.checked_revision=checked_revision;renderer.render=render;renderer.inference_inputs=public_inputs
     try:renderer.main()
-    finally:prompts.checked_revision=old_check;renderer.render=old_render
+    finally:prompts.checked_revision=old_check;renderer.render=old_render;renderer.inference_inputs=old_inputs
 
 
 if __name__=='__main__':main()

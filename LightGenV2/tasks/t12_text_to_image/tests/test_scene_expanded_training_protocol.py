@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from LightGenV2.tasks.t12_text_to_image.scene_paper_expanded_data import make_requests,PROFILE
 from LightGenV2.tasks.t12_text_to_image.scene_expanded_paired_data import checked_dataset,PAIRED_SCHEMA
-from LightGenV2.tasks.t12_text_to_image.scene_expanded_selection_render import checked_revision,public_report
+from LightGenV2.tasks.t12_text_to_image.scene_expanded_selection_render import checked_revision,public_report,public_inputs,benchmark_order
 from LightGenV2.tasks.t12_text_to_image.scene_expanded_middle import checked_profile,F6
 from LightGenV2.tasks.t12_text_to_image.scene_instruction_data import sha
 from LightGenV2.tasks.t12_text_to_image.scene_paper_prompt_protocol import write
@@ -50,6 +50,10 @@ class ExpandedTrainingProtocol(unittest.TestCase):
             for row in pairs:(root/row['target']).unlink()
             # Raw inference only checks public inputs; TRAIN target pixels are absent.
             rows,protocol=checked_revision(root,root,state,[])
+            self.assertEqual(len(public_inputs(root)),500)
+            self.assertFalse((root/'inference_dev_inputs.json').exists())
+            for cat in ['lamp','pillow']:
+                self.assertEqual(len({r['reference_id'] for r in rows[:8] if r['category']==cat}),4)
             self.assertEqual(len(rows),500);self.assertTrue(protocol['TEST_used_for_model_selection'])
             test.pop();write(root/'inference_inputs.json',test)
             with self.assertRaises(ValueError):checked_revision(root,root,state,[])

@@ -33,9 +33,12 @@ def checked_training(c,state,parent,targets,guidance,adapt_head):
 
 def main():
     from .scene_instruction_middle import main as run
-    from .scene_expanded_selection_render import checked_revision,public_report
+    from .scene_expanded_selection_render import checked_revision,public_report,public_inputs
+    from . import scene_paired_render as renderer
     mode=sys.argv[sys.argv.index('--middle-mode')+1]
-    run(checked_profile,checked_training,checked_revision,expected_contexts=500)
+    old_inputs=renderer.inference_inputs;renderer.inference_inputs=public_inputs
+    try:run(checked_profile,checked_training,checked_revision,expected_contexts=500)
+    finally:renderer.inference_inputs=old_inputs
     if mode!='train':
         output=Path(sys.argv[sys.argv.index('--output')+1]);public_report(output)
 
