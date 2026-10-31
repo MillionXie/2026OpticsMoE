@@ -38,6 +38,7 @@ class SourceGroundedRepair(unittest.TestCase):
         self.assertIn('wide solid cylindrical body',form_teacher_prompt('lamp','W','solid_cylinder_lamp','wide_support_v2'))
         self.assertIn('solid rectangular column body',form_teacher_prompt('lamp','D','rectangular_column_lamp','wide_support_v2'))
         self.assertIn('separate loose rectangular throw pillow',form_teacher_prompt('pillow','S','rectangular_cushion','loose_object_v3'))
+        self.assertIn('long narrow rectangular throw pillow',form_teacher_prompt('pillow','S','long_lumbar_cushion','loose_object_v3'))
         with self.assertRaises(ValueError):form_teacher_prompt('lamp','W','column_lamp','loose_object_v3')
         with self.assertRaises(ValueError):form_teacher_prompt('pillow','S','rectangular_cushion','silent_change')
 

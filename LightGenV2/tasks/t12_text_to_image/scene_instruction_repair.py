@@ -21,7 +21,7 @@ LOOSE_OBJECT='loose_object_v3'
 FORMS={'articulated_desk':('lamp','an adjustable desk lamp'),'column_lamp':('lamp','a table lamp with a column base'),
        'solid_cylinder_lamp':('lamp','a table lamp with a wide solid cylindrical body'),'rectangular_column_lamp':('lamp','a table lamp with a solid rectangular column body'),
        'rounded_lamp':('lamp','a table lamp with a rounded base'),'ornamental_lamp':('lamp','a table lamp with a sculpted base'),
-       'rectangular_cushion':('pillow','a rectangular cushion'),'square_cushion':('pillow','a square cushion')}
+       'rectangular_cushion':('pillow','a rectangular cushion'),'long_lumbar_cushion':('pillow','a long narrow rectangular cushion'),'square_cushion':('pillow','a square cushion')}
 
 
 def form_teacher_prompt(category,code,hint,variant='original_v1'):
@@ -30,7 +30,7 @@ def form_teacher_prompt(category,code,hint,variant='original_v1'):
     if variant==LOOSE_OBJECT:
         if category!='pillow':raise ValueError('Loose-cushion construction only')
         support={'S':'sofa','A':'armchair','D':'bed'}[code]
-        form='rectangular'if hint=='rectangular_cushion'else'square'
+        form='long narrow rectangular'if hint=='long_lumbar_cushion'else'rectangular'if hint=='rectangular_cushion'else'square'
         return f'Generate an indoor photograph of a {support} in a furnished room. One separate loose {form} throw pillow rests on the {support}, distinct from its upholstery.'
     if variant==WIDE_SUPPORT:
         if category=='lamp':
