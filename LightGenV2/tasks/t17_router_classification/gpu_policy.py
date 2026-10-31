@@ -30,3 +30,17 @@ def require_non_a100_gpu():
         raise ValueError('each PATCH16 trainer requires one explicit GPU UUID')
     validate_gpu_uuids(uuids, gpu_inventory())
     return uuids[0]
+
+
+def require_authorized_gpu(approved_uuids):
+    """New revision only: explicit UUID allowlist, including human-authorized A100.
+
+    Legacy trainers keep their original A100 rejection unchanged.
+    """
+    visible=os.environ.get('CUDA_VISIBLE_DEVICES','').strip()
+    inventory=gpu_inventory()
+    if ',' in visible or not visible.startswith('GPU-') or visible not in inventory:
+        raise ValueError('one verified full GPU UUID required')
+    if visible not in approved_uuids:
+        raise ValueError('GPU absent from this revision explicit authorization')
+    return visible

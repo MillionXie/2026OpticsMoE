@@ -11,8 +11,8 @@ class LinearD2NNCCD(nn.Module):
         super().__init__()
         if layers != 3:
             raise ValueError('This profile fixes three main phase layers')
-        if num_classes not in (8, 9):
-            raise ValueError('Fixed CCD layouts support eight or nine classes')
+        if num_classes not in (8, 9, 10):
+            raise ValueError('Fixed CCD layouts support eight, nine or ten classes')
         self.num_classes = num_classes
         self.phases = nn.ParameterList([nn.Parameter(torch.zeros(478, 478)) for _ in range(layers)])
         self.propagator = AngularSpectrumPropagator(
@@ -33,8 +33,8 @@ class LinearD2NNCCD(nn.Module):
         expanded = expanded / expanded.square().sum((-2, -1), keepdim=True).clamp_min(1e-20).sqrt()
         field = self.propagate_field(F.pad(expanded, (20,)*4).to(torch.complex64))
         intensity = field.abs().square()[:, 20:498, 20:498]
-        if self.num_classes == 9:
-            energy = ccd_grid_energies(intensity)
+        if self.num_classes in (9,10):
+            energy = ccd_grid_energies(intensity,self.num_classes)
         else:
             # Eight disjoint regions cover the entire active CCD, row-major 0..7.
             ys = (0, 239, 478)

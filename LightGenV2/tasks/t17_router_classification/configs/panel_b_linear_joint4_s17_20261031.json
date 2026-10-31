@@ -1,0 +1,40 @@
+{
+  "seed": 17,
+  "epochs": 30,
+  "min_epochs": 10,
+  "patience": 10,
+  "batch": 32,
+  "eval_batch": 64,
+  "phase_optimizer": "wrapped",
+  "phase_lr": 0.0002,
+  "head_lr": 0.0001,
+  "head_weight_decay": 0.001,
+  "label_smoothing": 0.02,
+  "cosine_lr": true,
+  "early_stop": true,
+  "training_temperature": 1.0,
+  "augmentation": "D4",
+  "authorized_gpu_uuids": [
+    "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  ],
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "dataset": "kather2016",
+  "num_classes": 8,
+  "expected_counts": {
+    "train": 3496,
+    "val": 752,
+    "test": 752
+  },
+  "source_archive_sha256": "47756bfdb12c48870e8738dd601c7dfe8b116050399e69f4fe8b7bf082387f44",
+  "main_layers": 4,
+  "parent_checkpoint": "runs/simulation/panel_b_linear_CCDprior_s17_20261031/worker0/b_kather4/best_checkpoint.pt",
+  "parent_checkpoint_sha256": "005720c2dd385654dc577e562285bada9ab8ea3d51a3f449e3070e086d59741b",
+  "data_root": "/DATA/DATA1/guest3/demo_reproduction_data/lg2_a12_native_s17_v1/kather2016",
+  "raw_cache": "/DATA/DATA1/guest3/demo_reproduction_data/kather2016/kather2016_fixed_split.npz",
+  "raw_cache_sha256": "b6d887d8dfc890f5829639b47dd63e7fe22d1fee100119617a36756e32631ce7",
+  "head_initialization": "Strict load selected new Linear parent; no head reset",
+  "head_prior_temperature": 0.1,
+  "profile": "panel_b_linear_joint4_s17_20261031",
+  "architecture": "LG",
+  "training_scope": "last_pair_and_head"
+}

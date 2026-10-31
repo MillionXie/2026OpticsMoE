@@ -19,7 +19,7 @@ class FourRouterClassification(PhaseOnly):
     def __init__(self,variant,readout='linear',num_classes=9):
         if variant not in ('optical','electronic','d2nn'):raise ValueError(variant)
         if readout not in ('linear','ccd_grid'):raise ValueError(readout)
-        if num_classes<2 or (readout=='ccd_grid' and num_classes not in (8,9)):raise ValueError(num_classes)
+        if num_classes<2 or (readout=='ccd_grid' and num_classes not in (8,9,10)):raise ValueError(num_classes)
         super().__init__('full_d2nn' if variant=='d2nn' else 'dynamic_four',dict(CONTRACT))
         self.variant=variant
         self.readout=readout
@@ -114,6 +114,7 @@ def ccd_grid_energies(active,num_classes=9):
     if active.shape[-2:]!=(478,478):raise ValueError(active.shape)
     if num_classes==9:ys=xs=CCD_EDGES
     elif num_classes==8:ys=(0,239,478);xs=(0,119,239,358,478)
+    elif num_classes==10:ys=(0,239,478);xs=(0,95,191,286,382,478)
     else:raise ValueError(num_classes)
     return torch.stack([active[:,ys[r]:ys[r+1],xs[c]:xs[c+1]].sum((-2,-1))
                         for r in range(len(ys)-1) for c in range(len(xs)-1)],dim=1)

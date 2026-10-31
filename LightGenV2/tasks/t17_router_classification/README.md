@@ -1,5 +1,27 @@
 # T17 单数据集路由分类对照
 
+## 当前排程与图f/g判别口径（2026-10-31最新人工回复）
+
+图f明确沿用原来的EuroSAT RGB/SAR双域与原子集划分，不改成图g的双模态联合输入。
+F仍为同一十类地物分类，RGB或SAR单独输入，一个模型同时处理两域，分别统计RGB/SAR及两域平均。
+每类每域TRAIN300、VAL100、旧空间TEST100，合计6000/2000/2000张；成对地块跨模态绑定划分。
+G使用同源完整15998/5465/5429对地块，两种模态共同编码进一次输入，RGB还含冻结CLEVR视觉特征条，
+预测同一十类地物标签。它不是判断RGB/SAR是否匹配或识别是哪种模态；另外三个终身学习任务有各自目标。
+G正式终身学习表以宏平均召回率为主，F另列普通准确率/宏召回，不能跨口径复用性能。
+
+此次优先排程：B4/B6新增单层Linear后的有限末E/G+头联合微调，原4090两个worker；
+F从头LG和D2NN各一组，使用本次人工额外允许的A100两个worker。A三组新头已完成保护；D暂缓；G/J只读核验。
+F保持四专家/Top2、E/G两层主干、224专家/478 global/518画布，无可训前端；
+LG末端唯一Linear(784,10,bias=False)；D2NN三块478²相位、无Linear，全孔径输入。
+双方逐层含末层直接调用原PhaseOnly.oeo，不引入LN/ReLU或不同激活。
+F D2NN十分类采用固定覆盖全探测面的2×5区域，原8/9类分支和旧权重行为保持不变。
+保留旧样本56²RGB中心裁剪/SAR VV,VH及均值编码，只做固定112²三通道拼图，SAR不做Hue/饱和度扰动。
+LG4/6联合微调最多30/min10/pat10，只用TRAIN/D4、冻结入口路由与早期相位；原父参加VAL选模。
+F D2NN从头60轮固定预算；LG最多60/min20/pat12后按收敛决定下一步，不承诺人为拉开差距。
+源协议授权仍按MIT记录，不能标为CC BY4.0；本次人工明确选择沿用旧F数据。
+旧TEST已参与历史开发，因此各项报告仍标ORIGINAL_TEST_EXPOSED_DEVELOPMENT。
+仅在源码测试、Git发布与实际父GPU准入后启动；准确运行状态见reports/figure_revision_schedule_20261031/schedule.json。
+
 ## Linear第一阶段完成与读出初始化对照（2026-10-31）
 
 五组随机初始化Linear已全部完成并核验，另补B4/B6的无标签CCD区域先验初始化，仍为相同单层Linear。
@@ -39,7 +61,7 @@ B两层LG必须直接复用新A Kather同一best/SHA，因此只有A三组+B4/B6
 新结果见[统一Linear新表](reports/panel_ab_linear_readout_20261031/results.html)；旧无头图a/b报告保留并标历史。
 
 图d暂缓，后续加相同Linear并对齐同数据/配置的复用点；图f需要重跑，LG四专家/OEO/Linear与a/b一致、D2NN有OEO无Linear。
-F已询问是沿用G EuroSAT配对RGB/SAR两域同划分，还是从四种任务另选两种，等待回复期间先推进a/b。
+F已获回复沿用原F数据；不改为G的联合输入，最新排程见顶部。
 图g旧实现双方单Linear784→10，视觉共享冻结CNN；OEO的非负强度softsign数学形式一致，但旧G末层没有显式回编码OEO，放置差异记录不隐藏。
 其他任务现用源码/权重先只读核验，不自动覆盖；J实际末端头/OEO还需按正式最终manifest核对，不能引用未启动的scope proposal。
 完整按图对照见reports/panel_ab_linear_readout_20261031/architecture_contract.json。

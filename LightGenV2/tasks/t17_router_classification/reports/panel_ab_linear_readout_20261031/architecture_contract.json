@@ -15,10 +15,10 @@
       "LG": "Must add same Linear and align reused dataset/config points before rerun"
     },
     "f": {
-      "status": "DATA_SCOPE_QUESTION_PENDING",
+      "status": "ORIGINAL_F_DATA_CONFIRMED_PREPARED",
       "LG": "4 experts, no learned front, same A/B OEO and Linear",
       "D2NN": "OEO, no Linear",
-      "data": "Propose same G EuroSAT paired locations/splits, RGB and SAR domains; awaiting whether user instead wants two distinct G tasks"
+      "data": "Original F RGB/SAR individual inputs, original6000/2000/2000 subset, same ten-class labels as G but no joint-modal input"
     },
     "g": {
       "status": "EXISTING_SOURCE_AUDITED_READONLY",
