@@ -63,6 +63,9 @@ def checked_annotations(candidates,review):
 def checked_parent_transfer(new_data,parent_data,parent_pair_sha,new_pair_sha):
     """Permit explicit reviewed recaption lineage, never an unrelated warm start."""
     new=json.loads((new_data/'report.json').read_text(encoding='utf8'))
+    if new.get('schema')=='scene_expanded_train_only_pairs_v1':
+        from .scene_expanded_paired_data import checked_parent_transfer as checked_expanded
+        return checked_expanded(new_data,parent_data,parent_pair_sha,new_pair_sha)
     if new.get('schema')=='scene_paper_paired_dataset_v1':
         from .scene_paper_paired_data import checked_parent_transfer as checked_new_targets
         return checked_new_targets(new_data,parent_data,parent_pair_sha,new_pair_sha)

@@ -1,5 +1,34 @@
 # T12 图文条件商品编辑：main 统一入口
 
+### 2026-11-01 扩充后的连续训练接口
+
+扩充候选准入由`scene_expanded_paired_data`执行：只把逐像素复核、主体可辨且画质可用的
+TRAIN目标放入`pairs.json`，难例缺项仍显式记为0.5权重，不把它计作完整指令成功；
+TEST500只有公开RGB／两句文字／种子和元数据，没有GT、latent或validation标签。
+新的`no_validation_test_PT_selection`显式开关允许已有配对训练器在TRAIN-only目标上训练，
+完整Qwen／原VAE／UNet base冻结，只训练现有条件头和r4 LoRA；旧DEV协议默认保持不变。
+正式fit仍先4步真实反向并重置，只保留best TRAIN-loss候选和last；最终不按TRAIN loss定PT，
+由`scene_test_PT_selection`对两个实际不同候选的同完整TEST500图像评分选PT，若两文件同SHA只评一次。
+每个候选保留完整输出／逐图分数和源PT身份，selected目录绑定原文件，不伪称每轮PT都做过测试。
+
+`scene_expanded_selection_render`和`scene_expanded_middle`显式暴露`TEST_selection`新scope，
+复用原真实RGB／Qwen前向与已验证64块8步压缩加载器。旧DEV／独立冻结TEST接口不放宽。
+训练阶段可编码500个无目标TEST输入为冻结前端身份核验；缓存不是部署，最终500张仍真实raw重算。
+原兼容内部tensor文件名`DEV_frontend_identity_only.pt`在此新协议仅存TEST输入特征、无目标，
+不表示额外validation；所有新公开报告标`validation_set=false / TEST_used_for_model_selection=true`。
+电子版选定后，串行F6真实条件／TRAIN条件KD／配对恢复／电子30步TRAIN路径／同一个64块8步蒸馏，
+再对该中间版best／last完整TEST500选PT。没有额外轻量／标准架构分支。
+
+最终同题页由`scene_expanded_delivery`生成：保留500请求每个模型全部输出、完整提示词、四项逐图分数、
+总体与灯／枕均值；分别列实际软件完整wall与移除FFT＋六固定光周期的等待模拟边界。
+三独立进程×8 B1请求保留首请求、禁止删warmup；未知现场H不假定为0，附维持≥3倍的H预算。
+基线IR接近0时相对百分比不可靠，单列绝对差且不自动判10%质量门通过。
+页面／代理门通过不代替人工图像审查，也不自动发送光路部署；最终实际达标后由主线程只交接一次。
+
+为缩短教师目标制作，另有原生50步B2／B4 TRAIN吞吐pilot接口`scene_expanded_teacher_batch`，
+先真实试跑／检查图片与显存再决定是否启用。批处理可改变浮点舍入／PNG，须记录新配方；
+不能宣称与B1逐像素相等，也不能把教师制作吞吐当LG推理加速。已完成目标按SHA保留复用。
+
 ### 2026-11-01 种子澄清与扩充实际执行
 
 用户澄清允许**制作TRAIN数据时冻结教师使用不同随机种子生成不同目标**，

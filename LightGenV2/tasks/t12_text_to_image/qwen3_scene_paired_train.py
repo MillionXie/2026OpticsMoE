@@ -55,6 +55,10 @@ def checked_pairs(a):
     from .scene_instruction_balanced_data import assert_admission_current
     assert_admission_current(a.data)
     report = json.loads((a.data/'report.json').read_text())
+    if a.config_profile.get('no_validation_test_PT_selection',False):
+        from .scene_expanded_paired_data import checked_dataset
+        rows,_,_=checked_dataset(a.data)
+        return rows
     review = json.loads((a.data/'visual_review.json').read_text())
     assert report['complete'] and report['role_disjoint'] and not report['TEST_opened']
     assert not report.get('preview_only',False) and report.get('eligible_for_training',True)
@@ -116,11 +120,12 @@ def optical_cache(a,rows):
     assert [r['sample_id'] for r in rows]==[r['sample_id'] for r in payload['records']]
     qwen,processor=new_qwen(a)
     optical=install_optical_frontend(qwen,a.lg_frontend,a.lg_features,a.cache)
-    features={};dev_keys=set();all_rows=rows+[dict(r,split='dev') for r in inference_inputs(a.data)]
+    no_val=a.config_profile.get('no_validation_test_PT_selection',False)
+    features={};dev_keys=set();all_rows=rows+[dict(r,split='test' if no_val else 'dev') for r in inference_inputs(a.data,'test' if no_val else 'dev')]
     for i,row in enumerate(all_rows):
         src=a.data/row['reference'];assert digest(src)==row['reference_sha256']
         key=hashlib.sha256(src.read_bytes()+b'\0'+row['prompt'].encode()+f'\0Qwen{a.qwen_side}'.encode()).hexdigest()
-        if row['split']=='dev':dev_keys.add(key)
+        if row['split']in['dev','test']:dev_keys.add(key)
         if key not in features:
             with Image.open(src) as im:h,v,ids=raw_scene_features(qwen,processor,im.convert('RGB'),row['prompt'],a.qwen_side)
             assert torch.equal(ids,payload['features'][key]['input_ids'])
@@ -138,7 +143,8 @@ def optical_cache(a,rows):
         'optical_frontend':optical,'n':len(rows),'complete_DEV_frontend_contexts':len(dev_keys),
         'Qwen_input_side':a.qwen_side,'target_resolution':a.resolution,'visual_tokens':64,
         'TRAIN_DEV_targets_and_native_condition_supervision_reused_unchanged':True,
-        'actual_LG_RGB_text_forward_not_teacher_features_at_deployment':True,'TEST_opened':False})
+        'actual_LG_RGB_text_forward_not_teacher_features_at_deployment':True,'TEST_opened':no_val,
+        'TEST_inputs_only_encoded':no_val,'TEST_target_images_loaded':False,'validation_set':not no_val})
 
 
 def cache(a, rows):
@@ -184,7 +190,8 @@ def cache(a, rows):
         if i % 16 == 0: write(a.output/'progress.json', {'stage': 'full_Qwen_and_native_condition_cache', 'Qwen_input_side':a.qwen_side,'done': i+1, 'total': len(rows)})
     # The final raw renderer must evaluate the fixed complete DEV input set,
     # including requests whose teacher candidate was rejected as a noise-loss GT.
-    dev_inputs=json.loads((a.data/'inference_dev_inputs.json').read_text())
+    no_val=a.config_profile.get('no_validation_test_PT_selection',False)
+    dev_inputs=json.loads((a.data/('inference_inputs.json' if no_val else 'inference_dev_inputs.json')).read_text())
     dev_keys=set()
     for row in dev_inputs:
         path=a.data/row['reference'];assert digest(path)==row['reference_sha256']
@@ -219,7 +226,8 @@ def cache(a, rows):
         'cache_sha256': digest(a.output/'paired_cache.pt'), 'DEV_input_identity_sha256':digest(a.output/'DEV_frontend_identity_only.pt'), 'n': len(rows), 'Qwen_input_side': a.qwen_side,
         'target_resolution':a.resolution,'complete_DEV_frontend_contexts':len(dev_keys),
         'visual_tokens': (a.qwen_side//32)**2, 'complete_Qwen_parameters':frontend_count, 'vision_layers':24, 'language_layers':28,
-        'TEST_opened': False, 'target_images_enter_Qwen': False,
+        'TEST_opened': no_val, 'target_images_enter_Qwen': False,
+        'TEST_inputs_only_encoded':no_val,'TEST_target_images_loaded':False,'validation_set':not no_val,
         'native_CFG_negative_caption':negative_caption,
         'native_CFG_mode':'default_zero' if negative_caption is None and force_zeros else 'encoded_explicit_text',
         'cache_inputs_only_RGB_and_prompt': True, 'cache_is_training_optimization_not_deployment': True})
@@ -344,7 +352,11 @@ def fit(a, payload):
             if weight not in [0.5,1.0]or row.get('training_admission_policy')not in ['basic_subject_quality_v2','all_facts_form_quality_v1']:raise ValueError('Explicit reviewed partial-target weight required')
             group_weights[row['sample_id']]*=weight
     dev = [r for r in payload['records'] if r['split'] == 'dev' and (a.config_profile.get('use_all_reviewed_DEV_labels',False)or r['condition_id'] in ['0', '1'])]
-    assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
+    no_val=a.config_profile.get('no_validation_test_PT_selection',False)
+    if no_val:
+        if not train or dev or any(r['split']!='train' for r in payload['records']):raise ValueError('New no-validation training requires TRAIN-only target records')
+    else:
+        assert train and dev and not ({r['source_product_id'] for r in train} & {r['source_product_id'] for r in dev})
     cache_digest = digest(a.cache/'paired_cache.pt')
     history = []; rng = random.Random(20261029)
     from .scene_electronic_warmup import checked_target
@@ -442,14 +454,17 @@ def fit(a, payload):
             for row in dev:
                 _, mse, _ = loss_for(row, row['seed'], auxiliary=False)
                 validation.append(mse.item())
-        score = sum(validation)/len(validation)
+        # This saves two TRAIN candidates only. The final PT is chosen later
+        # using complete TEST500 generated-image scores, never a fake DEV set.
+        score = sum(running)/len(running) if no_val else sum(validation)/len(validation)
         history.append({'epoch': epoch, 'step': updates, 'TRAIN_epsilon_MSE': sum(running)/len(running),
-                        'DEV_epsilon_MSE': score, 'DEV_n': len(dev), 'epoch_seconds': time.monotonic()-began})
+                        'DEV_epsilon_MSE': None if no_val else score, 'DEV_n': len(dev),
+                        'TRAIN_candidate_retention_MSE':score if no_val else None,'epoch_seconds': time.monotonic()-began})
         write(a.output/'history.json', history)
         state = {'schema': 'qwen3_scene_paired_v1', 'variant': a.variant, 'step': updates, 'epoch': epoch,
             'head': None if head is None else {n:p.detach().cpu() for n,p in head.state_dict().items()},
             'unet_lora': {n:p.detach().cpu() for n,p in unet.named_parameters() if 'lora_' in n},
-            'negative_image': payload['negative_image'], 'DEV_epsilon_MSE': score,
+            'negative_image': payload['negative_image'], 'DEV_epsilon_MSE': None if no_val else score,
             'pair_sha256': payload['pair_sha256'], 'cache_sha256': cache_digest,
             'reviewed_parent_data_transfer':parent_data_transfer,
             'initial_alignment_identity':alignment_identity,
@@ -459,6 +474,7 @@ def fit(a, payload):
             'optical_frontend':payload.get('optical_frontend'),
             'frozen_optical_frontend_head_UNet_recovery':bool(payload.get('optical_frontend'))}
         state['joint_image_context']=False if head is None else head.joint_image_context
+        state['no_validation_test_PT_selection']=no_val
         if frozen_head:
             assert all(torch.equal(v,parent['head'][k])for k,v in state['head'].items())
             state.update(condition_correction=parent['condition_correction'],image_condition_correction=parent['image_condition_correction'],frozen_condition_head_parent_sha256=digest(a.initial_paired/'best_checkpoint.pt'))
@@ -466,17 +482,18 @@ def fit(a, payload):
         if score < best:
             best = score; stale = 0; torch.save(state, a.output/'best_checkpoint.pt')
         else: stale += 1
-        if stale >= 2: break
+        if stale >= 2 and not no_val: break
         unet.train()
         if head is not None and not frozen_head: head.train()
     write(a.output/'report.json', {'complete': True, 'source_commit': os.environ['T12_SOURCE_COMMIT'],
         'variant': a.variant, 'epochs': len(history), 'actual_paired_updates': updates,
         'condition_head_frozen':frozen_head,'head_exact_vs_corrected_parent':True if frozen_head else None,
-        'TRAIN_pairs': len(train), 'DEV_noise_loss_pairs': len(dev), 'best_DEV_epsilon_MSE': best,
+        'TRAIN_pairs': len(train), 'DEV_noise_loss_pairs': len(dev), 'best_DEV_epsilon_MSE': None if no_val else best,
         'best_sha256': digest(a.output/'best_checkpoint.pt'), 'head_parameters': 0 if head is None else sum(p.numel() for p in head.parameters()),
         'trainable_UNet_LoRA_parameters': sum(p.numel() for p in lora), 'VAE_and_Qwen_and_UNet_base_frozen': True,
         'TEST_opened': False, 'training_resolution': a.resolution, 'training_precision': 'BF16 base, FP32 trainable parameters',
-        'best_selection': 'Fixed DEV diffusion noise loss; not free-generation quality/comparability proof',
+        'best_selection': ('TRAIN loss retains a candidate plus last; final PT requires full TEST500 image metrics' if no_val else 'Fixed DEV diffusion noise loss; not free-generation quality/comparability proof'),
+        'validation_set':not no_val,'final_TEST_PT_selection_pending':no_val,'TEST_used_for_model_selection':no_val,
         'training_input_order_noise_schedule_sha256':schedule.hexdigest(),
         'optical_frontend':payload.get('optical_frontend'),
         'initial_paired_checkpoint_sha256':None if a.initial_paired is None else digest(a.initial_paired/'best_checkpoint.pt'),

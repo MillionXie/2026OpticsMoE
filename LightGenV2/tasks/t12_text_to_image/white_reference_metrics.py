@@ -8,7 +8,7 @@ checked to fit its 35-token window without truncation; it does NOT evaluate ever
 clause of the long instruction. No unique target, mask, selected seed, or GT crop.
 """
 import argparse
-from collections import defaultdict
+from collections import defaultdict,Counter
 import csv
 import gc
 import importlib.metadata
@@ -81,6 +81,13 @@ def check_architecture_diagnostic(report, records):
 
 def load_records(run,allow_frozen_test=False):
     report = json.loads((run/'report.json').read_text(encoding='utf-8'))
+    selection=report.get('scope')=='TEST_selection'
+    if selection:
+        p=report.get('TEST_selection_protocol')or{}
+        if(p.get('schema')!='scene_expanded_TEST_selection_v1' or p.get('contexts')!=500
+           or p.get('prompt_profile')!='two_sentence_product_scene_expanded_v8' or p.get('validation_set')is not False
+           or not p.get('TEST_used_for_model_selection') or report.get('independent_generalization_claim')is not False):
+            raise ValueError('Explicit full expanded TEST-for-selection scope required')
     is_test=report.get('scope')=='TEST'
     if is_test and (not allow_frozen_test or not report.get('frozen_TEST_protocol')):
         raise ValueError('Explicit frozen TEST metric scope required')
@@ -95,12 +102,16 @@ def load_records(run,allow_frozen_test=False):
     if architecture:check_architecture_diagnostic(report,records)
     from .scene_metric_cohort import expanded_identity
     expanded_count=expanded_identity(report,records)[0] if expanded else None
-    expected = 500 if is_test else (expanded_count if expanded else (32 if architecture or report.get('scope') == 'DEV' else 16))
+    expected = 500 if is_test or selection else (expanded_count if expanded else (32 if architecture or report.get('scope') == 'DEV' else 16))
     if len(records) != report['generated_count'] or len(records) != expected or len(set(keys)) != expected:
         raise ValueError('All prespecified unique outputs required; no best-of-seed selection')
     if report.get('scope') in ['DEV','DEV_expanded','DEV_architecture_diagnostic'] and any(r.get('split') != 'dev' for r in records):
         raise ValueError('DEV comparison contains another split')
-    if is_test and any(r.get('split')!='test' for r in records):raise ValueError('TEST comparison contains another split')
+    if (is_test or selection) and any(r.get('split')!='test' for r in records):raise ValueError('TEST comparison contains another split')
+    if selection:
+        if(Counter(r['category'] for r in records)!={'lamp':250,'pillow':250}
+           or any(r.get('checkpoint_sha256')!=report['checkpoint_sha256'] for r in records)):
+            raise ValueError('Both full categories and per-image checkpoint binding required')
     for r in records:
         if (Path(r['generated_PNG']).name != r['generated_PNG'] or
                 digest(run/r['generated_PNG']) != r['generated_sha256'] or
@@ -148,10 +159,19 @@ def main():
         load_reward = reward_loader()
         torch.set_num_threads(4)
         reports=[json.loads((run/'report.json').read_text()) for run in args.runs]
+        selection=any(r.get('scope')=='TEST_selection' for r in reports)
+        if selection:
+            if not all(r.get('scope')=='TEST_selection' for r in reports) or args.allow_frozen_test:
+                raise ValueError('Do not mix TEST selection with old DEV or independent frozen TEST')
+            if len({r['TEST_selection_protocol']['request_sha256'] for r in reports})!=1:
+                raise ValueError('Selection comparisons require identical fixed requests')
         if args.allow_frozen_test:
             assert all(r.get('scope')=='TEST' for r in reports)
             assert len({r['frozen_TEST_protocol']['manifest_sha256'] for r in reports})==1
         rows = [r for run in args.runs for r in load_records(run,args.allow_frozen_test)]
+        if selection:
+            signatures=[{r['sample_id']:(r['input_sha256'],r['prompt'],r['seed'],r['initial_latent_sha256']) for r in rows if r['run_id']==run.name} for run in args.runs]
+            if not all(s==signatures[0] for s in signatures):raise ValueError('Changed TEST500 RGB/prompt/seed/noise grid')
         if any(r.get('scope')=='DEV_architecture_diagnostic' for r in reports):
             if not all(r.get('scope')=='DEV_architecture_diagnostic' for r in reports):
                 raise ValueError('Do not mix depth diagnostics with another evaluation cohort')
@@ -223,6 +243,8 @@ def main():
         write(args.output/'report.json', {'complete':True,'n':len(rows),'source_commit':commit,
               'input_whitelist':['generated RGB','white reference RGB','canonical full prompt','fixed compact evaluation caption'],
               'unique_GT_or_masks_used':False,'independent_TEST_opened':args.allow_frozen_test,'training_performed':False,
+              'TEST_used_for_model_selection':selection,'validation_set':False if selection else None,
+              'independent_generalization_claim':False if selection else None,
               'automatic_scores_are_not_attribute_pass_rates':True,'quality_accepted':False,
               'metric_protocol':{'CLIP_T':'OpenAI ViT-B/32 cosine, untruncated canonical request, full generated image',
                 'DINOv2_I':'facebook/dinov2-small CLS cosine, full reference and generated image; differs from original DreamBench DINOv1-S/16; not pure outline',

@@ -7,7 +7,7 @@ import sys
 from .scene_R2_middle_protocol import checked_profile,checked_training
 
 
-def main(profile_check=checked_profile,training_check=checked_training,revision_check=None):
+def main(profile_check=checked_profile,training_check=checked_training,revision_check=None,expected_contexts=48):
     parser=argparse.ArgumentParser(add_help=False)
     parser.add_argument('--middle-mode',choices=['train','render','export','packed-replay'],required=True)
     parser.add_argument('--middle-profile',type=Path,required=True)
@@ -20,7 +20,7 @@ def main(profile_check=checked_profile,training_check=checked_training,revision_
     from .scene_instruction_render import checked_revision
     old_revision=prompts.checked_revision;prompts.checked_revision=revision_check or checked_revision
     if custom.middle_mode=='render':
-        try:compact.rendering(config,8,remaining,expected_contexts=48)
+        try:compact.rendering(config,8,remaining,expected_contexts=expected_contexts)
         finally:prompts.checked_revision=old_revision
         return
     import torch
