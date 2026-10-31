@@ -1,34 +1,32 @@
 # T17 单数据集路由分类对照
 
-## 图b单seed17训练已获授权（2026-10-31）
+## 图b训练预算修正（2026-10-31，最新人工口径）
 
-用户确认入口一次Top2、后续E面连续受光的扩展方式。保留图a两层LG原权重（459/752=61.04%），
-新增五组：LG主干4/6层、带OEO的D2NN3/5/7层，均seed17。
-入口`train_panel_b_depth.py`，profile `configs/panel_b_training_s17_20261031.json`。
+**仅D2NN统一预算：图a和图b各D2NN均从头60轮；LG按准确率目标优化，不要求等轮数。**
+图b正式D2NN入口沿用`train_linear_ccd_8class.py`，profile为`configs/panel_b_d{3,5,7}_s17.json`。
+除3/5/7层以及图b每层使用同一intensity_softsign OEO外，完整沿用图a训练配方：
+seed17、raw全零、batch8、raw Adam LR.005恒定、clip5、无增强/EMA/类权重/教师，
+仅原TRAIN真标签、每轮同seed完整无放回顺序、每轮VAL宏召回优先再比较CCD NLL，60轮后锁权重评估。
+没有为拉大差距降低D2NN预算；原TEST已在前期开发中暴露，结果仍为开发指标。
+正式D2NN run根为`runs/simulation/panel_b_d2nn60_s17_20261031`。
 
-三组D2NN严格相同120轮预算、batch32、采样/选模/初始化/教师数据政策：从头raw=0，
-前60轮角度Adam LR.003余弦到.0006，分类边界CE；后60轮载入各自VAL最优权重，
-重置角度Adam LR.001余弦到.0002，分类项改focal gamma2，两阶段均保留.1功率NLL。
-不早停，所有层/光router从首轮一起优化；每模型共享相同seed17的逐轮无放回样本顺序，并保存顺序SHA。
-LG4/6也先用同一120轮基础协议，不把图a130轮候选探索的旧最低点称同预算从头训练。
+误将五组设成120轮的旧D2NN worker1404559已中断；其D3完成39轮，best/last保留，
+旧目录`panel_b_depth_s17_20261031/worker0`标作取消的探索，不复用其教师数据/角度Adam权重，
+不混入正式60轮D2NN对照。修正收据`D2NN_budget_correction.json`记录实际额外探索预算。
 
-五组共用原TRAIN真标签与原TEST已训练教师的高置信伪标签；不重训教师、不用TEST真值直接做学生损失。
-VAL每2轮选宏平均召回及原CCD概率NLL，训练集每10轮完整诊断，锁权重后评估原TEST开发分数。
-全部指标保持ORIGINAL_TEST_EXPOSED_DEVELOPMENT，不能称独立TEST。
-保存best/last、完整曲线、逐图预测、入口专家分配、相位更新及环境/源SHA。
-默认仅物理GPU1非A100的同一4090，两worker共享；不使用GPU6/A100。
+LG主干4/6层继续原worker1404560，从头120轮是当前首个优化候选，而非预算上限或等预算控制。
+前60轮角度Adam LR.003余弦到.0006、边界CE；后60轮载入各自VAL最优，
+LR.001余弦到.0002、focal gamma2，两阶段保留.1功率NLL。
+原TRAIN真标签加原TEST教师高置信伪标签，VAL每2轮选模，训练集每10轮完整诊断。
+保留图a两层LG原权重459/752=61.04%，未获人工答复前不额外优化该参考。
+当前LG入口`train_panel_b_depth.py`、旧profile和源码1285c14fc保持其运行含义，不修改已运行配置。
+所有当前结果标为ORIGINAL_TEST_EXPOSED_DEVELOPMENT，不能称独立TEST或全部等数据/训练预算结构优势。
 
-深度递增及对应LG高15个百分点是优化目标，不通过丢种子、选较差D2NN或手工调整结果强制满足。
-固定最低LG61.04%意味着第一对若要+15个百分点，D2NN3必须≤46.04%；若正常训练后不满足如实报告。
-已询问用户是否允许必要时进一步优化两层LG并同步更新图a；未回复前保护其原权重。
-更深性能下降也可能是优化不足或反复OEO的信息压缩，不只由过拟合造成。
-
-本轮入口源码`1285c14fc`已通过82项CPU检查和五个新模型各32张真实TRAIN图的GPU两阶段前后向准入，
-全部额外Expert/Global相位均有非零更新，最大准入分配约2.14GiB（不含完整训练输入缓存）。
-两个worker已实际开始：1404559负责D2NN3/5/7，1404560负责LG4/6，共享同一GPU1。
-正式run根`runs/simulation/panel_b_depth_s17_20261031`，保存独立元数据、来源SHA与固定LG2参考。
-按首批实测每轮D3约12秒、LG4约17秒估计，整套基础训练约2小时；这是估计，后续按实际深度速度更新。
-当前状态及完成结果见[图b训练进度](reports/panel_b_depth_s17_20261031/results.html)。
+深度递增、对应LG高15个百分点是优化目标，不选较差D2NN或改写数据强制满足。
+深度下降也可能是优化不足或反复OEO信息压缩，不只由过拟合造成。
+保存best/last、实际配置/源SHA、完整曲线和逐图预测、LG入口专家占比。
+默认仅同一张物理GPU1非A100 4090，两worker共享；不占GPU6/A100，结束核验自身PID退出。
+当前进度见[图b训练进度](reports/panel_b_depth_s17_20261031/results.html)。
 
 ## 图b层数消融：对齐图a的待重训实现（2026-10-31）
 

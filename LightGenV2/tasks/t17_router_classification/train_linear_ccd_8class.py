@@ -20,6 +20,15 @@ from .gpu_policy import require_non_a100_gpu
 from LightGenV2.tasks.t11_lifelong_optics.crc9_data import sha256
 
 
+def build_model(cfg):
+    if cfg.get('architecture') == 'panel_b_depth_oeo':
+        from .model_depth_ccd import DepthD2NN
+        if cfg.get('intermediate_OEO') is not True:
+            raise ValueError('Panel B requires its agreed per-layer OEO')
+        return DepthD2NN(layers=cfg['layers'], num_classes=8)
+    return LinearD2NNCCD(layers=cfg['layers'], num_classes=8)
+
+
 def prepare_index(data_root, cfg):
     """Use provenance/CSV only; never read test pixels during training."""
     manifest_path=data_root/'experiment_data_manifest.json'
@@ -93,6 +102,8 @@ def main():
                Path(__file__).with_name('train.py'),Path(__file__).with_name('model_four.py'),
                root/'demo_check/pure_optical/models.py',
                root/'demo_check/adrenal_softsign_code_export_20260915_145336/code/optical_reference/optics.py']
+        if cfg.get('architecture') == 'panel_b_depth_oeo':
+            paths.append(Path(__file__).with_name('model_depth_ccd.py'))
         metadata=dict(profile=cfg,profile_sha256=sha256(args.profile),command=sys.argv,pid=os.getpid(),
                       git_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
                       source_commit=os.environ.get('T17_SOURCE_COMMIT') or subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
@@ -101,7 +112,7 @@ def main():
         write(args.out/'metadata.json',metadata)
         x={};y={}
         for split in ('train','val'):x[split],y[split]=load_encoded(args.data_root,rows[split])
-        model=LinearD2NNCCD(layers=cfg['layers'],num_classes=8).cuda()
+        model=build_model(cfg).cuda()
         assert sum(p.numel() for p in model.parameters())==cfg['phase_parameters']
         optimizer=torch.optim.Adam(model.parameters(),lr=cfg['learning_rate'],weight_decay=0)
         rng=np.random.default_rng(cfg['seed']);history=[];best=(-1.,float('-inf'));started=time.time()
@@ -117,7 +128,8 @@ def main():
                 torch.nn.utils.clip_grad_norm_(model.parameters(),cfg['gradient_clip'],error_if_nonfinite=True)
                 optimizer.step();loss_sum+=float(loss.detach())*len(index)
             val,_=evaluate(model,x['val'],y['val'],cfg['batch'])
-            row=dict(epoch=epoch,train_objective=loss_sum/len(order),validation=val)
+            row=dict(epoch=epoch,train_objective=loss_sum/len(order),validation=val,
+                     order_sha256=hashlib.sha256(order.astype('<i8').tobytes()).hexdigest())
             if epoch==1 or epoch%cfg['training_evaluate_every']==0:
                 row['training'],_=evaluate(model,x['train'],y['train'],cfg['batch'])
             score=(val['balanced_accuracy'],-val['cross_entropy']);improved=score>best
@@ -153,7 +165,7 @@ def main():
                     removed_test_ids=ids[split][~clean].tolist(),clean_test_ids=ids[split][clean].tolist()))
         assert metrics['validation']==ck['validation']
         result=dict(**lock,**metrics,test_evaluations=1,completed_epochs=cfg['epochs'],elapsed_seconds=time.time()-started,
-                    role='development_followup_historical_panel_A_baseline_source_unconfirmed')
+                    role=cfg.get('result_role','development_followup_historical_panel_A_baseline_source_unconfirmed'))
         write(args.out/'result.json',result);write(args.out/'status.json',dict(state='complete',**result))
         print(json.dumps(result),flush=True)
     except BaseException as error:

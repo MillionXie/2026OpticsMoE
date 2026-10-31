@@ -7,6 +7,7 @@ import numpy as np
 
 task=Path(__file__).resolve().parent
 run=task/'runs/simulation/panel_b_depth_s17_20261031'
+d_run=task/'runs/simulation/panel_b_d2nn60_s17_20261031'
 out=task/'reports/panel_b_depth_s17_20261031'
 out.mkdir(parents=True,exist_ok=True)
 
@@ -21,9 +22,13 @@ def main():
     records={'lg2':dict(reused=True,role=reference['role'],result=reference['result'])}
     for worker,jobs in [(0,['d2nn3','d2nn5','d2nn7']),(1,['lg4','lg6'])]:
         for job in jobs:
-            path=run/f'worker{worker}'/job;result=read(path/'result.json')
+            path=(d_run/job if worker==0 else run/f'worker{worker}'/job)
+            result=read(path/'result.json')
+            if result and worker==0:
+                result=dict(result,val=result['validation'],original_test_dev=result['test'])
+                result['original_test_dev']['correct']=int(np.trace(result['test']['confusion_matrix']))
             records[job]=dict(reused=False,state=read(path/'status.json') or dict(state='not_started'),
-                              worker_state=read(path.parent/'status.json'),result=result)
+                              worker_state=read(path.parent/'status.json'),result=result,epoch_budget=60 if worker==0 else 120)
             if result:
                 with np.load(path/'test_predictions.npz',allow_pickle=False) as z:
                     correct=int((z['scores'].argmax(1)==z['labels']).sum())
@@ -39,13 +44,15 @@ def main():
     def increasing(names):
         scores=[records[n]['result']['original_test_dev']['accuracy'] if records[n]['result'] else None for n in names]
         return None if any(s is None for s in scores) else all(a<b for a,b in zip(scores,scores[1:]))
-    d_histories=[read(run/'worker0'/n/'history.json') or [] for n in d_names]
+    d_histories=[read(d_run/n/'history.json') or [] for n in d_names]
     n=min(map(len,d_histories));order_match=all([x['order_sha256'] for x in h[:n]]==[x['order_sha256'] for x in d_histories[0][:n]] for h in d_histories)
     data=dict(role='ORIGINAL_TEST_EXPOSED_PANEL_B_DEVELOPMENT',independent_test_claim=False,
               seed=17,generated_UTC=datetime.datetime.now(datetime.timezone.utc).isoformat(),
               all_five_new_jobs_completed=all(records[n]['result'] is not None for n in d_names+lg_names[1:]),
               reused_LG2_is_separate_prior_optimization_budget=True,records=records,pairs=pairs,
               LG_strictly_increasing=increasing(lg_names),D2NN_strictly_increasing=increasing(d_names),
+              cancelled_D2NN_pilot=read(run/'D2NN_budget_correction.json'),
+              formal_D2NN_epochs=60,LG_budget='accuracy-oriented; initial 120-epoch candidates',
               D2NN_common_observed_epoch_prefix=n,D2NN_order_SHA_equal_on_common_prefix=order_match)
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     rows=''
@@ -56,7 +63,7 @@ def main():
             status='复用图a' if row['reused'] else f"完成{r['completed_epochs']}轮；选E{r['selected_epoch']}"
             values=[percent(r[k]['accuracy']) for k in ['train','val','original_test_dev']]
         else:
-            s=row['state'];status=f"{s['state']}；{s.get('epoch',0)}/120轮";values=['—']*3
+            s=row['state'];status=f"{s['state']}；{s.get('epoch',0)}/{row['epoch_budget']}轮";values=['—']*3
         rows+=f'<tr><td>{name}</td><td>{html.escape(status)}</td>'+''.join(f'<td>{v}</td>' for v in values)+'</tr>'
     page=f'''<!doctype html><html lang="zh"><meta charset="utf-8"><title>图b单seed17训练</title>
 <style>body{{font:16px/1.7 sans-serif;max-width:1080px;margin:35px auto;padding:0 20px}}table{{border-collapse:collapse;width:100%}}td,th{{padding:10px;border-bottom:1px solid #ddd;text-align:left}}.notice{{background:#fff0d7;padding:16px}}</style>
@@ -64,7 +71,7 @@ def main():
 <p class="notice">原TEST已用于教师训练及学生伪标签输入；结果为开发指标。最低LG复用图a额外优化后的权重，其他五组从头训练，不能称六组全部同训练预算。未完成模型不展示中途TEST分数。</p>
 <table><tr><th>模型</th><th>状态</th><th>TRAIN</th><th>VAL</th><th>原TEST开发</th></tr>{rows}</table>
 <p>对应关系：LG主干2/4/6层，另有一个入口router；D2NN为3/5/7层。四专家224²，global及D2NN相位均478²；同一intensity-softsign OEO、固定八区CCD，无Linear/CNN。</p>
-<p>五组基础预算均120轮：前60轮边界CE，后60轮从各自VAL最优继续focal gamma2；D2NN三组使用相同优化器、初始化、采样、教师数据政策和选模规则，不早停。</p>
+<p>按最新人工修正，仅D2NN统一为与图a相同的60轮：batch8、raw Adam LR.005、无教师、仅TRAIN真标签、每轮VAL宏召回再NLL选模。LG按准确率目标优化，4/6层当前候选为120轮，使用教师伪标签；两层复用图a优化结果。因此不能称LG与D2NN等训练/数据预算结构优势。旧D2NN的120轮方案已取消，实际完成探索及权重保留，未混入正式对照。</p>
 <p>深度单调及LG高15个百分点是待检验的目标，不通过选择较差D2NN权重、删除样本或更改统计强制满足。最低LG固定61.04%时，D2NN3最多346/752正确才能达到15个百分点差值。</p>
 <p>LG深度严格递增：{data['LG_strictly_increasing']}；D2NN深度严格递增：{data['D2NN_strictly_increasing']}。None表示尚未完成。</p>
 <p>数据、源SHA、逐轮指标、入口专家分配与best/last保存在各run。生成时间UTC：{data['generated_UTC']}。</p></html>'''
