@@ -1,0 +1,28 @@
+{
+  "status.json": {
+    "state": "loading_verified_inputs",
+    "pid": 1908742
+  },
+  "metadata.json": {
+    "source_commit": "ae932f65cdd658653d66ebcaaf766a80d2545af5",
+    "source_sha256": {
+      "train_figure_revision.py": "16cc350d6c9572209a1b54cc25a4ce64c14309e7c587b6e9bc139f3098394ef5",
+      "alternating_readout.py": "ab02de54c00d7efbc7264bede66823039e417190d73f8d046acd77454e1413a0",
+      "train_convex_readout.py": "a9b1f79004dd57fa2420e2e7903917b35198117808bccdbab41fc027597e1561",
+      "model_linear_readout.py": "02eddba0c3e9d29fa5afaa9a03adf987b12651f8d5a9d25b6d9fd99da93397a9",
+      "model_depth_ccd.py": "24c7ad5b3b5c1d239927d4f8d9aae50a20db9373ec4d23706e5f417a85881654",
+      "model_four.py": "814128f2862ca04d3f676b4ccf810d647c44f31c1bd43e1af9fa87ed68a02e7e",
+      "model_linear_ccd.py": "3dc69b7bd5ee4f04d8c5a19d7ca792f2de0df08565e9544dbcac82882205673b",
+      "gpu_policy.py": "309af91619f0a2824a2fdd46486773bf1679d06eb4bb1b37ba793e21afa694ed",
+      "figure_revision_data.py": "42188f0dbbef6256192b1eec9b2831659ac5e62c0f9565dd3deb14aaa0a12c66",
+      "phase_optimizer.py": "f9b6f8b81775f1e13c00d4a4959e1d928690bb97d75a472ac4fa2d13975eb1ce",
+      "readout_data.py": "ca406358519d1fa7f9ffb43a714b3195004403dd1dbcd544c389856b3f86962a",
+      "models.py": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+      "optics.py": "b250627b14357a254eb12c785caf20f3aff2bf3fe30121a05321094803c73a7d",
+      "original_f_teacher.py": "0c7c404fa8159df4dc0ca512852bc1493b431a7dcaed561eeb19f8e757d3c90b",
+      "model.py": "b919cd34c193f7613822e1dd3c31c54a1f00d6926d4a94695e24ad7c084a1469"
+    },
+    "pid": 1908742,
+    "teacher_used": true
+  }
+}

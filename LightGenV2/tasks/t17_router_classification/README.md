@@ -13,7 +13,8 @@ KD50%父仍有TRAIN66.58/VAL49.75的16.83pp泛化差。已只用完整原TRAIN�
 教师TRAIN缓存显式扩为6000×8×10并与相同D4码对齐，VAL/TEST仍无增强；没有增加原始样本或改变空间划分。
 每5轮头block也使用当前原TRAIN全部8个视图（48000视图呈现）匹配相同KD目标，而非用未增强拟合抵消正则化；
 最多40/min15/pat10，其他LR/头锚定/KD权重与已完成KD相同，父E0参与。head内步、视图呈现与光学epoch分别记录。
-默认hflip缓存和旧前向/损失兼容，须148项CPU检查与真实TRAIN GPU码对齐/更新/冻结准入、main发布后再启动。
+默认hflip缓存和旧前向/损失兼容。sourceae932f65已通过148项CPU检查与真实TRAIN的8码对齐/有限更新/头block相位冻结GPU准入，已main发布并服务器路径SHA核验。
+worker1908742已实际启动，root runs/simulation/f_D4_regularized_s17_20261031/D4；其metadata已捕获实际source与缓存生成状态，不把启动称为精度改善。
 推理仍旧478主干/224router、Top2/两OEO/单Linear，无CNN、无新电子模块；D2NN和A/B保持。
 
 ## F尺寸人工确认、KD完成及旧mask继承候选（2026-10-31）

@@ -1,0 +1,124 @@
+{
+  "teacher_manifest": {
+    "checkpoint_sha256": "281523a2a62525ddf491b5937c1eaf4b2e13bbfbf76e8c4652e2bc79e28ad4fc",
+    "teacher_parameters": 94762,
+    "training_source": "/DATA/DATA1/guest3/2026OpticsMoE/LightGenV2/demo_check/frozen_electronic/model.py",
+    "original_TRAIN_data_sha256": "f543d0c9ce330272063a1669ebacef082b26dc77994ec76b251f477634e350bd",
+    "teacher_used_TEST": false,
+    "current_cache_splits": [
+      "TRAIN D4 code0",
+      "TRAIN D4 code1",
+      "TRAIN D4 code2",
+      "TRAIN D4 code3",
+      "TRAIN D4 code4",
+      "TRAIN D4 code5",
+      "TRAIN D4 code6",
+      "TRAIN D4 code7"
+    ],
+    "training_view_codes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "TEST_cached": false,
+    "teacher_parameters_bitwise_frozen": true,
+    "metrics": {
+      "train": {
+        "accuracy": 0.8008333333333333,
+        "domains": {
+          "RGB": 0.8343333333333334,
+          "SAR": 0.7673333333333333
+        },
+        "accuracy_by_augmentation_code": {
+          "0": 0.8008333333333333,
+          "1": 0.781,
+          "2": 0.7931666666666667,
+          "3": 0.7825,
+          "4": 0.8011666666666667,
+          "5": 0.7803333333333333,
+          "6": 0.796,
+          "7": 0.7806666666666666
+        }
+      },
+      "val": {
+        "accuracy": 0.7605,
+        "domains": {
+          "RGB": 0.769,
+          "SAR": 0.752
+        }
+      }
+    },
+    "logits_sha256": "9215b79ef41fabc76a96dd52ed311169e1453c0ce271221058332cc225452b2a"
+  },
+  "source_commit": "ae932f65cdd658653d66ebcaaf766a80d2545af5",
+  "source_sha256": {
+    "train_figure_revision.py": "16cc350d6c9572209a1b54cc25a4ce64c14309e7c587b6e9bc139f3098394ef5",
+    "alternating_readout.py": "ab02de54c00d7efbc7264bede66823039e417190d73f8d046acd77454e1413a0"
+  },
+  "GPU_uuid": "GPU-3f60d773-4dd8-d706-ef48-a4dfc5af6c55",
+  "TRAIN_only": true,
+  "no_new_inference_module": true,
+  "checks": [
+    {
+      "candidate": "D4",
+      "loss": 1.6393572092056274,
+      "gradients": {
+        "first_phase": 0.39560019969940186,
+        "global_phase": 0.14997544884681702,
+        "router_phase": 0.02951597049832344,
+        "shared_head.weight": 4.256341934204102
+      },
+      "updates": {
+        "first_phase": 0.2182200402021408,
+        "global_phase": 0.30083534121513367,
+        "router_phase": 0.12578584253787994,
+        "shared_head.weight": 14.45356273651123
+      },
+      "head_block": {
+        "mode": "TRAIN_Gram_cholesky",
+        "TRAIN_samples": 160,
+        "numerical_ridge": 0.0030899022433110274,
+        "uncentred_Gram_eigen_min": -1.4321112803686109e-13,
+        "uncentred_Gram_eigen_max": 2263.836690548452,
+        "Gram_regularized_condition": 732657.4118829634,
+        "feature_transform_absent_from_inference": true,
+        "objective_before": 1.5783570005915342,
+        "objective_after": 0.5078635079237193,
+        "internal_steps": 5,
+        "closure_calls": 10,
+        "exported_dtype": "torch.float32",
+        "TRAIN_only": true
+      },
+      "head_block_phases_bitwise_unchanged": true,
+      "inference_parameter_count": 487204,
+      "Linear_count": 1,
+      "train_ids": [
+        "AnnualCrop_2796:0",
+        "Forest_2100:0",
+        "HerbaceousVegetation_1133:0",
+        "Highway_1698:0",
+        "Industrial_2251:0",
+        "Pasture_358:0",
+        "PermanentCrop_677:0",
+        "Residential_822:0",
+        "River_1143:0",
+        "SeaLake_1136:0",
+        "AnnualCrop_2796:1",
+        "Forest_2100:1",
+        "HerbaceousVegetation_1133:1",
+        "Highway_1698:1",
+        "Industrial_2251:1",
+        "Pasture_358:1",
+        "PermanentCrop_677:1",
+        "Residential_822:1",
+        "River_1143:1",
+        "SeaLake_1136:1"
+      ]
+    }
+  ]
+}
