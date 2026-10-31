@@ -1,6 +1,6 @@
 {
   "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
-  "generated_UTC": "2026-10-31T15:53:09.306347+00:00",
+  "generated_UTC": "2026-10-31T16:06:20.706229+00:00",
   "protocol": "four fresh source-domain models; each evaluated on both domains; eight TEST cells",
   "records": {
     "LG_RGB": {
@@ -13975,6 +13975,219 @@
         }
       }
     }
+  },
+  "latest_protocol_review": {
+    "generated_UTC": "2026-10-31T16:06:20.615083+00:00",
+    "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+    "request": "Confirm original F joint LG task and expert allocation; finalize D2NN only",
+    "conclusions": {
+      "original_LG_training": "one shared RGB+SAR mixed-domain model, not two source-only LGs",
+      "original_LG_figure_values": {
+        "RGB": 0.795,
+        "SAR": 0.749,
+        "split": "validation",
+        "selected_epoch": 20
+      },
+      "same_original_checkpoint_later_TEST": {
+        "RGB": 0.789,
+        "SAR": 0.724
+      },
+      "fixed_domain_expert_partition": false,
+      "original_router": "learned input-dependent dense four-port optical power fractions; no domain label passed to model",
+      "earlier_expert_curriculum_is_a_different_experiment": true,
+      "previous_eight_cell_LG_scope": "valid supplementary single-domain cross-evaluation, not the original joint-LG main result",
+      "suggested_main_plot": "two domain scores from one joint LG checkpoint plus four finalized source-to-target D2NN cells",
+      "new_training_started": false,
+      "inference_contract_changed": false
+    },
+    "D2NN_finalized": [
+      {
+        "model": "D2NN_RGB",
+        "run": "runs\\simulation\\f_cross_domain_s17_20261031\\D2NN_RGB",
+        "checkpoint_sha256": "bf53ab6f83b0ba0a5d41636e689b3e374bdcaa35c63b1b9e4a983fae57be6323",
+        "train_accuracy": 0.5136666666666667,
+        "validation_accuracy": 0.452,
+        "test_domains": {
+          "RGB": {
+            "n": 1000,
+            "correct": 509,
+            "accuracy": 0.509
+          },
+          "SAR": {
+            "n": 1000,
+            "correct": 97,
+            "accuracy": 0.097
+          }
+        },
+        "human_finalized": true
+      },
+      {
+        "model": "D2NN_SAR",
+        "run": "runs\\simulation\\f_cross_domain_s17_20261031\\D2NN_SAR",
+        "checkpoint_sha256": "7d405c180cd4e31c62d8236b567d215482c85ca72232bd0b323895349f3ab0c6",
+        "train_accuracy": 0.5053333333333333,
+        "validation_accuracy": 0.442,
+        "test_domains": {
+          "RGB": {
+            "n": 1000,
+            "correct": 173,
+            "accuracy": 0.173
+          },
+          "SAR": {
+            "n": 1000,
+            "correct": 416,
+            "accuracy": 0.416
+          }
+        },
+        "human_finalized": true
+      }
+    ],
+    "current_joint_LG": {
+      "run": "runs\\simulation\\f_backtracking_s17_20261031\\paired",
+      "checkpoint_sha256": "774e237080c406d532ade69b8278a7601279ac786ddd84e07cdcbb9d6e808f5e",
+      "selected_epoch": 16,
+      "completed_epochs": 20,
+      "metrics": {
+        "train": {
+          "RGB": {
+            "n": 3000,
+            "correct": 1968,
+            "accuracy": 0.656
+          },
+          "SAR": {
+            "n": 3000,
+            "correct": 1837,
+            "accuracy": 0.6123333333333333
+          }
+        },
+        "val": {
+          "RGB": {
+            "n": 1000,
+            "correct": 561,
+            "accuracy": 0.561
+          },
+          "SAR": {
+            "n": 1000,
+            "correct": 503,
+            "accuracy": 0.503
+          }
+        },
+        "original_test_dev": {
+          "RGB": {
+            "n": 1000,
+            "correct": 605,
+            "accuracy": 0.605
+          },
+          "SAR": {
+            "n": 1000,
+            "correct": 470,
+            "accuracy": 0.47
+          }
+        }
+      },
+      "target_met": false
+    },
+    "source_evidence": [
+      {
+        "path": "LightGenV2/demo_check/shared_frontend/run.py",
+        "sha256": "a0af6d67034be8157364bed1bffef865146a6be2ba3ff87003e7f46b33a7f287",
+        "excerpts": [
+          {
+            "first_line": 91,
+            "last_line": 108,
+            "text": "def train(frontend,cfg,optical_cfg,arrays,train_data,val,out):\n    frozen=tensors_sha(frontend.state_dict());summaries=[]\n    for architecture in cfg['architectures']:\n        dest=out/architecture;dest.mkdir()\n        model=FrontendOptics(frontend,architecture,optical_cfg).cuda()\n        initial=tensors_sha(dict(model.optical.named_parameters()))\n        initial_validation,_=base.evaluate(model,val,cfg);save(dest/'initial_validation.json',initial_validation)\n        optimizer=torch.optim.Adam(model.optical.parameters(),lr=cfg['learning_rate'],weight_decay=0.)\n        scheduler=torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,cfg['epochs'],eta_min=cfg['learning_rate']*cfg['minimum_lr_ratio'])\n        best=(-1.,float('-inf'));history=[];started=time.perf_counter()\n        for epoch in range(1,cfg['epochs']+1):\n            model.train();total=0.;correct=0;n=0;feature_digest=hashlib.sha256();gradients=None\n            order=torch.randperm(len(train_data[1]),generator=torch.Generator().manual_seed(cfg['seed']*1000003+epoch))\n            aug_seed=cfg['seed']*99991+epoch\n            for images,labels,_,_ in batches(*train_data,order,cfg['batch_size'],augment_seed=aug_seed):\n                optimizer.zero_grad(set_to_none=True)\n                output=model(images);loss=objective(output,labels)\n                assert bool(torch.isfinite(loss));loss.backward()"
+          },
+          {
+            "first_line": 180,
+            "last_line": 194,
+            "text": "    else:\n        with np.load(args.data,allow_pickle=False) as z:arrays={k:z[k].copy() for k in z.files}\n        assert not any(k.startswith('test') for k in arrays)\n        train_data=tuple(torch.from_numpy(arrays['train_'+k]) for k in ['images','labels','domains'])\n        val=tuple(torch.from_numpy(arrays['validation_'+k]) for k in ['images','labels','domains'])\n        assert not set(arrays['train_ids'])&set(arrays['validation_ids'])\n        for split,data in [('train',train_data),('validation',val)]:\n            assert tuple(data[0].shape[1:])==(56,56,3)\n            for domain in (0,1):assert torch.bincount(data[1][data[2]==domain],minlength=10).tolist()==[optical_cfg[split+'_pairs_per_class']]*10\n        if args.phase=='train':\n            (args.out/'frontend').mkdir()\n            torch.save(dict(model=frontend.state_dict(),provenance=provenance),args.out/'frontend/best_checkpoint.pt')\n            save(args.out/'frontend/summary.json',dict(**provenance,checkpoint_sha256=sha(args.out/'frontend/best_checkpoint.pt')))\n            train(frontend,cfg,optical_cfg,arrays,train_data,val,args.out)\n        else:"
+          }
+        ]
+      },
+      {
+        "path": "LightGenV2/demo_check/shared_frontend/model.py",
+        "sha256": "8acfa2a44d19551f1c409b48633ba154070a6206580c91c526bf6543b9a8d2b7",
+        "excerpts": [
+          {
+            "first_line": 53,
+            "last_line": 66,
+            "text": "    if bool((energy <= 1e-12).any()):\n        raise ValueError('Zero feature power')\n    return field * (power/energy).sqrt()\n\n\nclass FrontendOptics(nn.Module):\n    def __init__(self, frontend, architecture, optical_config):\n        super().__init__()\n        self.frontend = frontend.requires_grad_(False).eval()\n        self.optical = PhaseOnly(architecture, optical_config)\n\n    def forward(self, images):\n        features = self.frontend(images)\n        amplitude = encode_features(features, self.optical.cfg['main_input_power'])"
+          }
+        ]
+      },
+      {
+        "path": "LightGenV2/demo_check/pure_optical/models.py",
+        "sha256": "a9685984d1f80cdcf97dcaccb2beb1216e60575d91df8708144d6b3e360bb76c",
+        "excerpts": [
+          {
+            "first_line": 79,
+            "last_line": 86,
+            "text": "    def route(self, amplitude):\n        if self.router_phase is None:\n            return amplitude.new_full((len(amplitude), 4), 0.25), None\n        field = F.pad(amplitude.to(torch.complex64) * self.transmission(self.router_phase), (147,)*4)\n        intensity = self.propagator(field).abs().square()\n        energy = self.detect(intensity, self.router_centers, self.cfg['router_detector_size'])\n        fractions = (energy + 1e-12) / (energy.sum(1, keepdim=True) + 4e-12)\n        return fractions, energy.sum(1)"
+          },
+          {
+            "first_line": 92,
+            "last_line": 110,
+            "text": "    def forward_amplitude(self, amplitude):\n        \"\"\"Shared propagation backend for fixed image or frozen-feature encodings.\"\"\"\n        if amplitude.ndim != 3 or tuple(amplitude.shape[1:]) != (224, 224):\n            raise ValueError('Expected Bx224x224 real amplitude')\n        q, router_capture = self.route(amplitude)\n        if self.architecture == 'full_d2nn':\n            expanded = F.interpolate(amplitude[:, None], (478, 478), mode='bilinear', align_corners=False)[:, 0]\n            expanded = expanded * (self.cfg['main_input_power'] / expanded.square().sum((-2,-1), keepdim=True)).sqrt()\n            entrance = F.pad(expanded, (20,)*4).to(torch.complex64)\n            first = F.pad(expanded * self.transmission(self.first_phase), (20,)*4)\n        else:\n            entrance = amplitude.new_zeros((len(amplitude), 518, 518), dtype=torch.complex64)\n            first = torch.zeros_like(entrance)\n            for i, (y, x) in enumerate(self.apertures):\n                value = amplitude * q[:, i, None, None].sqrt()\n                entrance[:, y:y+224, x:x+224] = value\n                first[:, y:y+224, x:x+224] = value * self.transmission(self.first_phase[i])\n        # Full-canvas coherent propagation; no independent-window propagation,\n        # intermediate detector, re-encoding, or lossless software concatenation."
+          }
+        ]
+      },
+      {
+        "path": "LightGenV2/demo_check/pure_optical/run.py",
+        "sha256": "51084146e80e37fc3fec38c129296cf919a2e3bb89c0640bc9f76fe538e4cf20",
+        "excerpts": [
+          {
+            "first_line": 46,
+            "last_line": 62,
+            "text": "def evaluate(model, data, cfg):\n    model.eval()\n    x,y,d = data\n    predictions, powers, routes, losses = [], [], [], []\n    for images, labels, _, _ in batches(x,y,d,torch.arange(len(y)),cfg['batch_size']):\n        output = model(images)\n        losses.append((float(objective(output,labels)),len(labels)))\n        predictions.append(output['probabilities'].cpu().numpy())\n        powers.append(output['detector_capture'].cpu().numpy())\n        if output['route_power'] is not None:\n            routes.append(output['route_power'].cpu().numpy())\n    prob = np.concatenate(predictions);target=y.numpy();domain=d.numpy();pred=prob.argmax(1)\n    confusion = np.zeros((10,10),dtype=int)\n    np.add.at(confusion,(target,pred),1)\n    metrics = dict(accuracy=float((pred==target).mean()),\n                   domain_accuracy={str(k):float((pred[domain==k]==target[domain==k]).mean()) for k in (0,1)},\n                   loss=sum(v*n for v,n in losses)/len(y), confusion_matrix=confusion.tolist(),"
+          }
+        ]
+      },
+      {
+        "path": "LightGenV2/demo_check/shared_frontend/HANDOFF_README.md",
+        "sha256": "e1b98820f26f25dea3cf5ac70ea382d6a33de2fef7964a0881b3db4e0aefd8ae",
+        "excerpts": [
+          {
+            "first_line": 3,
+            "last_line": 8,
+            "text": "本包固定为原20轮光学训练版本，验证结果如下；后续优化请新建输出目录。\n\n| 模型 | RGB准确率 | SAR准确率 | 综合准确率 | 最佳光学epoch |\n|---|---:|---:|---:|---:|\n| 共享前端＋动态四支路MoE | 79.50% | 74.90% | 77.20% | 20 |\n| 共享前端＋整孔径D2NN | 72.60% | 74.70% | 73.65% | 15 |"
+          },
+          {
+            "first_line": 53,
+            "last_line": 67,
+            "text": "## 数据与原训练\n\n10类×两域，每类每域训练300张、验证100张。域0为RGB，域1为SAR。\nRGB为64×64图像中心裁剪56×56；SAR VV/VH重投影至同一裁剪区域，逐图1%/99%分位截断，\n使用固定均值[-12.59,-20.26]、标准差[5.26,5.91]映射到[0,1]，第三通道为前两通道均值，量化为uint8。\n训练/验证来自原空间分组划分，同位置RGB/SAR保持配对，空间组无交集。\n仅训练时图像水平翻转，然后输入CNN；没有ColorJitter，也不对特征网格再翻转。\n\n原光学训练：seed42，20轮，batch32，Adam lr0.01余弦降至0.001，weight decay0，梯度裁剪1。\n只优化光学相位，损失为真实类别探测概率的负对数。\n按验证准确率最高、其次NLL最低、再次较早epoch选模。每轮记录电子冻结校验和实际特征哈希。\n\n重新初始化光学、保持前端不变，重跑原20轮：\n\n```bash"
+          }
+        ]
+      },
+      {
+        "path": "LightGenV2/demo_check/reports/reproduction/EUROSAT_CONTINUATION_HOLDOUT_20260916.md",
+        "sha256": "c24eb2a454af1dcf5865d544e43aeb617270f363fea56252633ba0c99552d0ce",
+        "excerpts": [
+          {
+            "first_line": 38,
+            "last_line": 45,
+            "text": "MoE验证上涨7张，独立测试仅净增加1张；D2NN测试净增加9张。\n\n| 模型 | 测试RGB | 测试SAR |\n|---|---:|---:|\n| 原MoE | 78.90% | 72.40% |\n| 续训MoE | 79.20% | 72.20% |\n| 原D2NN | 75.60% | 70.10% |\n| 续训D2NN | 75.30% | 71.30% |"
+          }
+        ]
+      },
+      {
+        "path": "LightGenV2/demo_check/EuroSAT_MoE_D2NN/code/PLAN.json",
+        "sha256": "a239c1bd3e45f4ad17604e5ee6dba8837a0b1166d068a89954f4212679b673f7",
+        "excerpts": [
+          {
+            "first_line": 1,
+            "last_line": 60,
+            "text": "{\n  \"status\": \"data_verified_ready_for_seal\",\n  \"training_authorized\": true,\n  \"seed\": 42,\n  \"experiment_type\": \"supervised domain expert pretraining and merging; shared sees A+B\",\n  \"dataset\": \"EuroSAT_RGB_and_author_EuroSAT_SAR_10class_geographic_split\",\n  \"split_records_sha256\": \"46e42dad5f19bff7ad638d13a359f118348ccd3e6eab4d76dc4b97be0340dc59\",\n  \"counts\": {\n    \"A\": {\n      \"train\": 15998,\n      \"validation\": 5465,\n      \"test\": 5429\n    },\n    \"B\": {\n      \"train\": 15998,\n      \"validation\": 5465,\n      \"test\": 5429\n    }\n  },\n  \"batch_size\": 60,\n  \"moe_stages\": [\n    {\n      \"name\": \"shared\",\n      \"epochs\": 40,\n      \"steps_per_epoch\": 250,\n      \"domains\": [\n        \"A\",\n        \"B\"\n      ]\n    },\n    {\n      \"name\": \"expert_A\",\n      \"epochs\": 15,\n      \"steps_per_epoch\": 125,\n      \"domains\": [\n        \"A\"\n      ]\n    },\n    {\n      \"name\": \"expert_B\",\n      \"epochs\": 15,\n      \"steps_per_epoch\": 125,\n      \"domains\": [\n        \"B\"\n      ]\n    },\n    {\n      \"name\": \"router\",\n      \"epochs\": 15,\n      \"steps_per_epoch\": 250,\n      \"domains\": [\n        \"A\",\n        \"B\"\n      ]\n    }\n  ],\n  \"d2nn_A_only\": {\n    \"epochs\": 70,\n    \"steps_per_epoch\": 125\n  },"
+          }
+        ]
+      }
+    ],
+    "checks": {
+      "original_forward_has_no_domain_argument": true,
+      "original_router_weights_applied_to_all_four_experts": true,
+      "completed_D2NN_60_epochs_and_exact_PT_SHA": true,
+      "joint_LG_same_PT_SHA": true
+    },
+    "no_causal_claim": "Old/new differ in frontend, routing, OEO and readout; no single-factor attribution or transfer of old accuracy."
   },
   "cross_candidate_selection_policy": "Eligible completed SHA-verified LG candidates with VAL not below parent compete by own-domain original-TEST development accuracy; choose entire PT row, never mix per-target PTs.",
   "final_budget": {

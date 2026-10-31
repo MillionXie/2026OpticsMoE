@@ -11,6 +11,8 @@ def read(path):return json.loads(path.read_text()) if path.exists() else None
 def main():
     task=Path(__file__).resolve().parent;run=task/'runs/simulation/f_cross_domain_s17_20261031';out=task/'reports/f_cross_domain_s17_20261031';out.mkdir(exist_ok=True)
     data=dict(role='ORIGINAL_TEST_EXPOSED_DEVELOPMENT',generated_UTC=datetime.now(timezone.utc).isoformat(),protocol='four fresh source-domain models; each evaluated on both domains; eight TEST cells',records={},historical_joint={})
+    review=read(task/'reports/f_protocol_review_20261101/audit.json')
+    if review:data['latest_protocol_review']=review
     rows=[]
     for architecture in ('LG','D2NN'):
         for domain in ('RGB','SAR'):
@@ -54,6 +56,8 @@ def main():
     if semantic_done:
         page=page.replace('当前未完成，不把准入或中途VAL当精度改善。','两候选已完整结束并核验，RGB21轮选E11，SAR30轮选E27；同域62.20/45.70%，仍未目标，全部训练进程已退出且GPU分配释放。')
         page=page.replace('</html>','<h2>当前阶段交付：未达原图性能目标</h2><p>当前最佳LG_RGB：TRAIN63.50/VAL57.60%，开发RGB62.20/SAR12.30%；LG_SAR：TRAIN54.00/VAL52.10%，开发RGB11.00/SAR45.70%。跨候选均整行使用同一PT，D2NN四格保持50.90/9.70、17.30/41.60%。本轮全部38文件95.98MB包括aux/hidden targets完整SHA，strict模型/目标缓存回放/所有自己的GPU退出已核验。教师与训练投影不进入推理。</p><img src="refinement_stages.svg" style="width:100%"><p>各分支单独显示，未拼为连续优化；实际LG搜索RGB141轮、SAR150轮(80+40+21/30)，额外头内步、source TEST视图、aux更新、教师训练在final_budget.json单列。旧联合探索另行归档，不复用主表。</p><p>尚未启动的下一结构选项：保留LG2/D3使用当前实测；或经人工批准另列LG4/D5（沿用图B四层对照、无CNN、同478/OEO/单Linear规则、D仍60轮）。这会改变明确指定的F层数，不能自行启动；也不保证更深即可达到旧CNN版范围。当前训练结果不证明理论容量上限，但继续只加轮数没有明确收益依据。</p></html>')
+    if review:
+        page=page.replace('<h1>图F：四个单域模型、八格评估</h1>','<h1>图F补充实验：四个单域模型、八格评估</h1><p class="note"><strong>2026-11-01原图口径复核：</strong>D2NN两个单域模型、四个测试格已获用户定稿。原图LG的79.5/74.9来自同一个RGB+SAR混合训练模型，分别评价两域；没有固定把两专家分给RGB、另两专家分给SAR。下方两个单域LG及四格为补充跨域实验，不是原图LG主结果。按该图意，主图应区分联合LG两个域结果与单域D2NN四个格子。已有无前端联合LG同一PT开发RGB60.50/SAR47.00，仍未原图目标；未启动新训练，保留全部旧权重和预测。</p>')
     data['final_budget']=read(out/'final_budget.json')
     (out/'results.json').write_text(json.dumps(data,indent=2,ensure_ascii=False)+'\n',encoding='utf-8');(out/'results.html').write_text(page,encoding='utf-8')
 
