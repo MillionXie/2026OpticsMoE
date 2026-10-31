@@ -10,9 +10,19 @@
 不伪称全1520制作完成；旧计划、已生成目标和失败证据保留。TEST仍完整500请求、无validation、TEST选PT不进梯度。
 新电子／单一64块8步中间LG／计时／早期HTML及交接门不降低；仅缩短本轮数据等待和实际训练量。
 
-### 2026-11-01 当前实际运行与交付顺序
+快速准入现已实际完成：冻结703个候选，703均有像素绑定审核，准入624 TRAIN对
+（365完整、259弱监督），79排除；44款76视图及40个类别／文字模板组均有覆盖。
+数据`scene_expanded_reviewed_TRAIN_TEST500_20261101`的pair SHA为
+`c2e30cbdbd871094df8827c78f4a02bc23305a0e39898ab53c6acf4178835fd0`；TEST500无目标且不缩减。
+执行pin `11100739142069485c113f266aae26853308329e`两端测试／Git字节通过；新唯一后续为
+`scene_expanded_fast_baseline_middle_workflow_20261101`，已进入真实完整Qwen数据编码，尚不能称新模型训练／验收完成。
+原候选生成在自身PID2217948退出且GPU释放后，保留全部703图／原1520请求计划／日志，
+另建`scene_expanded_fast_prefix_candidates_20261101`完整冻结快照。原生成父的计划终止rc15证据不删，
+不能误当成要重启的生产故障；旧retry等待父2223524仅在零GPU阶段被新父替换。
 
-当前生产为`scene_expanded_TRAIN1520_batched_workflow_20261101`，pin
+### 2026-11-01 提速前流程与保留证据
+
+提速前生产为`scene_expanded_TRAIN1520_batched_workflow_20261101`，pin
 `c59ecfbadc2fda3549efda319ac8e64f4d6a2e55`：冻结OmniGen30步、B4、512输出，先复用SHA一致
 的旧首种子前缀／原132候选／原生pilot目标，再生成剩余TRAIN。原B1前缀在86张时仅停止自身PID，
 所有目标与日志保留并有`superseded_generation.json`；不重启旧`scene_paper_single_seed_expansion_workflow_20261101`。
@@ -23,7 +33,7 @@ B4原生30步约7.706秒／图，仅4图TRAIN小试吞吐。4张30步实际检�
 已明确拒绝作为这批目标教师，失败证据保留，不用于扩充。相关PNGs、逐图判断和SHA在
 `scene_expanded_teacher_pilot_comparison_QA_20261101`，审核后上传到`scene_expanded_teacher_pilot_reviews_20261101`。
 
-连续后续为`scene_expanded_baseline_middle_followup_retry_workflow_20261101`，目前只等
+提速前连续后续为`scene_expanded_baseline_middle_followup_retry_workflow_20261101`，当时只等
 `scene_expanded_reviewed_TRAIN_TEST500_20261101`真正审查／原子发布以及自身生成GPU释放，
 不会把候选数当成准入对数。它串行执行：电子cache／TRAIN-only训练／完整TEST500选PT→
 F6真实新条件／TRAIN-only KD／配对恢复→所选E30完整TRAIN轨迹→同一个64块8步中间版蒸馏／
