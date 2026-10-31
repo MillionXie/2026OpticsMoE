@@ -113,7 +113,9 @@ def main():
     data['shared_joint_teacher']=joint_teacher;data['shared_joint_teacher_student']=dict(status=shared_status,result=shared_result,fully_verified=shared_verified)
     data['canonical_head_refit']=dict(status=head_status,result=head_result,fully_verified=head_verified)
     data['joint_accuracy_balance_candidate']=dict(status=balanced_status,result=balanced_result,fully_verified=balanced_verified)
-    if balanced_status:page=page.replace('</html>','<h2>联合精度与每模态负载：有界新候选</h2><p>'+html.escape(str({k:v for k,v in balanced_status.items() if k in ('state','epoch','total_epochs','selected_epoch')}))+'。独立训练控制器复用原光学模型与稳定helpers，不改在训Organ入口。固定TRAIN梯度校准权重0.00869728、最多20/min10/pat10；同一共享teacher与两域TEST仅软目标、TEST选PT、原父E0参选。均衡只在训练按模态聚合dense边际功率；每轮另核actual hard Top2选择频率，不以KL下降冒充实际均衡。未完整归档核验不替换主表。</p></html>')
+    if balanced_status:
+        completion='已10轮早停选回父E0，获选4tensor与父bitwise相同；全量SHA/strict/原ID标签/teacher目标与完整canonical2000TEST概率bitwise回放通过，自己的2468476已退出。dense均衡KL下降但第四专家实际仍未被选，分类与负载未实质改善，失败保留、不延长。' if balanced_verified else '未完整归档核验不替换主表。'
+        page=page.replace('</html>','<h2>联合精度与每模态负载：有界新候选</h2><p>'+html.escape(str({k:v for k,v in balanced_status.items() if k in ('state','epoch','completed_epochs','selected_epoch')}))+'。独立训练控制器复用原光学模型与稳定helpers，不改Organ入口。固定TRAIN梯度校准权重0.00869728、最多20/min10/pat10；同一共享teacher与两域TEST仅软目标、TEST选PT、原父E0参选。均衡只在训练按模态聚合dense边际功率；每轮另核actual hard Top2选择频率，不以KL下降冒充实际均衡。'+completion+'</p></html>')
     if head_status:page=page.replace('</html>','<h2>固定光学相位的canonical读出对照</h2><p>'+html.escape(str({k:v for k,v in head_status.items() if k in ('state','iteration','selected_iteration')}))+'。最多150个LBFGS内部步，只改原唯一Linear；TRAIN硬CE+联合教师KD、原TEST仅软目标，VAL无选模门槛。全量SHA与canonical重放核验后才可整行采用。</p></html>')
     usage=read(task/'reports/f_joint_load_balance_s17_20261101/results.json')
     if usage and usage['checkpoint_sha256']==selected['checkpoint_sha256']:

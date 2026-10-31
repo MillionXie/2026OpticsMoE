@@ -27,6 +27,10 @@ def main():
     if (shared/'result.json').exists() and (task/'reports/f_joint_teacher_student_TEST_s17_20261101/model_audit.json').exists():
         hh=json.loads((shared/'history.json').read_text());hr=json.loads((shared/'result.json').read_text())
         branches.append(('Shared teacher TEST-selected',hh,sr,hr,'#aa4499'))
+    balanced=task/'runs/simulation/f_balanced_joint_s17_20261101/joint'
+    if (balanced/'result.json').exists() and (task/'reports/f_balanced_joint_s17_20261101/model_audit.json').exists():
+        bh=json.loads((balanced/'history.json').read_text());br=json.loads((balanced/'result.json').read_text());bp=json.loads((task/'runs/simulation/canonical_head_TEST_s17_20261101/F_joint/result.json').read_text())
+        branches.append(('Modality load auxiliary',bh,bp,br,'#009988'))
     fig,axes=plt.subplots(1,3,figsize=(15,5.5))
     for ax,domain in zip(axes[:2],('RGB','SAR')):
         for name,h,prior,final,color in branches:
@@ -44,7 +48,7 @@ def main():
             axes[2].scatter(r['epoch'],b['objective_before'],marker='o',color=color,label=name+' before' if i==0 else None)
             axes[2].scatter(r['epoch'],b['objective_after'],marker='v',color=color,label=name+' after' if i==0 else None)
     axes[2].set(title='Same-feature head refits',xlabel='Head-block epoch within each branch',ylabel='Mixed CE / KD + anchor objective');axes[2].grid(alpha=.2);axes[2].legend(fontsize=7)
-    fig.suptitle('F seed17: original TEST exposed development; separate training branches\nSolid VAL, dashed clean TRAIN; final DEV stars. New shared-teacher branch selects on TEST every epoch.',fontsize=11)
+    fig.suptitle('F seed17: original TEST exposed development; separate training branches\nSolid VAL, dashed clean TRAIN; selected DEV stars. Shared-teacher and load branches select on TEST every epoch.',fontsize=11)
     handles,labels=axes[0].get_legend_handles_labels();fig.legend(handles,labels,loc='lower center',ncol=4,fontsize=7)
     fig.tight_layout(rect=(0,.20,1,.94));out.mkdir(exist_ok=True);fig.savefig(out/'convergence.svg');fig.savefig(out/'convergence.png',dpi=150);plt.close(fig)
     p=out/'convergence.svg';p.write_text('\n'.join(line.rstrip() for line in p.read_text().splitlines())+'\n')

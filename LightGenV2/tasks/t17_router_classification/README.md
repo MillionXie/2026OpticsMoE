@@ -1,3 +1,12 @@
+## D十二点已全部完成核验；F均衡对照完整失败保留父（2026-11-01）
+
+Organ k4已35轮早停选E20，开发6053/8216=73.6733%；11文件9.88MB全remote-localSHA、strict487988/唯一Linear/noCNN/同A OEO/原全部ID标签/真实k4核验，4090完整8216TEST重放预测完全相同、概率max3.10e-6（跨GPU非bitwise）。2432881与队列2326751均退出无GPU，T17已释放GPU6自身上下文，其他用户仍可能占用。Organ四点5848/5981/6039/6053严格递增；Blood2919/2945/3058/3098严格递增，两个数据集停止额外搜索。Kather601/595/604/604仍未递增，保持原最好结果与A/D/B2同K2 PT，不人工压低k1。
+
+D十二点均有完整PT/预测SHA与strict/canonical重放；新增plot_panel_d_topk.py/topk.svg显示真实12点和正确数，Kather非单调如实画出，单seed不编SD。主表按真实正确数验证单调，不将不同搜索预算解释为k的因果优势。
+F均衡worker2468476已10轮平台停，TEST选回E0，获选四tensor逐元素等于原canonical父。TRAIN70.8/64.7333、VAL55.9/48.2、开发64.6/49.6，分类和真实负载均未改善；第四专家每轮两域TEST均0。dense均衡KL的TRAIN1.6367→1.5550、TEST软1.6162→1.5363下降，不能当hard负载达标。last所有参数真实更新，训练不是空跑；E10 head块后清空headAdam旧动量是原策略，last保存三phase Adam状态/空head状态及RNG。
+15文件11.02MB全SHA/strict4state487204/唯一Linear/noCNN/原ID标签域/联合teacher目标及TEST硬GT隔离/完整2000canonical TEST概率bitwise重放通过，2468476已退出无GPU。1260phase/head更新、20000TEST随机软视图、2x64000混合head呈现128000/80内部步、11次选模TEST评估单列，不续训/扫aux权重。当前没有T17正式GPU训练。主F表仍同一原PT64.6/49.6，匹配负载表不变，所有父与失败保留。
+下一步F/Kather仍未目标，必须用新证据的有限方法而非重复同一优化器；可检查共享联合teacher GELU256与当前CCD的TRAIN表征差距，只有诊断支持才考虑一次训练专用语义投影辅助（不进推理、不得恢复CNN/改OEO/光路），目前未启动。若没有有依据方法则如实交付瓶颈，不保证70%和单调。
+
 ## 新一轮F精度＋每模态负载联合微调已真正启动（2026-11-01）
 
 独立入口train_f_balanced_joint.py复用原模型/稳定训练helpers，不修改仍在跑Organ的共享入口；source14ac6c0e490caa9305c9a48df0e70c0854ef8c09已main/GitHub/server路径SHA。14项相关CPU测试通过（默认关闭均衡loss bitwise、TEST硬GT拒绝/teacher detach、population均值梯度等）；精确b6e0父全2000VAL/2000TEST重放预测完全相同、真实20TRAIN和20TEST软输入有限梯度/所有注册phase-head更新/aux router梯度非零/头block相位冻结、推理strict4state487204/唯一Linear/noCNN/真Top2准入通过。原forward与STE训练forward bitwise同，前向没有dense软路由。

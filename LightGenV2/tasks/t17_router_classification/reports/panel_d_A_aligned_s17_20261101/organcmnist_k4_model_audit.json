@@ -1,0 +1,32 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 487988,
+    "Linear": 1,
+    "CNN": 0,
+    "LayerNorm": 0,
+    "main_layers": 2,
+    "OEO_same_function_A": true,
+    "actual_k": 4,
+    "router_frozen": false
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "inference_parameters": 487988,
+    "Linear": 1,
+    "CNN": 0,
+    "LayerNorm": 0,
+    "main_layers": 2,
+    "OEO_same_function_A": true,
+    "actual_k": 4,
+    "router_frozen": false
+  },
+  "full_canonical_TEST_replay": {
+    "images": 8216,
+    "predictions_exact": true,
+    "probabilities_bitwise": false,
+    "probability_max_abs": 3.0994415283203125e-06,
+    "gpu_uuid": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d",
+    "all_original_ID_labels_exact": true
+  }
+}

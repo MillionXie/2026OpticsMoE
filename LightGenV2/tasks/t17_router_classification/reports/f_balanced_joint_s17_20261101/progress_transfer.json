@@ -12,11 +12,11 @@
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/status.json",
-      "sha256": "a0b815e2ad4ba63841fe2684ff9699e289618d9b960f239101f4855a21f1e649"
+      "sha256": "6ca7a3da642a7440283264358d31e364467dd0b0cb8013957d7132045acc4ee9"
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/history.json",
-      "sha256": "a09160178d3317a426872778a0359652c3a1561775c2b3217664614651e86d25"
+      "sha256": "029c44f9c3762a47394347ebd8e1ee6e2cc5b3bdc5e92e1237e33f24201e6d4a"
     },
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/teacher_manifest.json",
@@ -25,6 +25,14 @@
     {
       "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/source_TEST_distillation_manifest.json",
       "sha256": "6128b404553ce5a4d4461d8764c78da32f69dfffe1d6bb91e12ecf34b0ac838b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/result.json",
+      "sha256": "0cce943bb7757f356bb19634d7733db3a009a1f077b513b7b802742c5e179a3b"
+    },
+    {
+      "path": "LightGenV2/tasks/t17_router_classification/runs/simulation/f_balanced_joint_s17_20261101/joint/selection_lock.json",
+      "sha256": "ab2620007b31104c45a81a29384610fdd187076ccafff10188a53d5d75738eba"
     }
   ]
 }

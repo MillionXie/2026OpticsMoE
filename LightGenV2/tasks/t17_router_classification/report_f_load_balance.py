@@ -91,6 +91,7 @@ def main():
             bottom+=values
         ax.set(title=title,ylim=(0,100),ylabel='Share (%)');ax.grid(axis='y',alpha=.15);ax.set_axisbelow(True)
     axes[0].legend(ncol=4,loc='upper center',bbox_to_anchor=(.5,-.09));fig.suptitle('F / one joint LG / original TEST exposed development\n'+('Unused expert(s) remain; balance not achieved' if has_unused else 'Per-modality usage; inspect load and accuracy together'),fontsize=12);fig.tight_layout(rect=(0,.04,1,.9));fig.savefig(out/'expert_usage.svg');fig.savefig(out/'expert_usage.png',dpi=160);plt.close(fig)
+    svg=out/'expert_usage.svg';svg.write_text('\n'.join(line.rstrip() for line in svg.read_text().splitlines())+'\n')
     print(json.dumps({n:{k:v for k,v in parts['test'][n].items() if k in ('per_image_selection_frequency','selection_slot_share','unused_experts')} for n in names}))
 
 

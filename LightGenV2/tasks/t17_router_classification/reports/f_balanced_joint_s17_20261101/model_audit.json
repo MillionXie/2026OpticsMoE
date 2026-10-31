@@ -1,0 +1,39 @@
+{
+  "best_checkpoint.pt": {
+    "strict": true,
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "LayerNorm": 0,
+    "parameter_L2_from_parent": {
+      "first_phase": 0.0,
+      "global_phase": 0.0,
+      "router_phase": 0.0,
+      "shared_head.weight": 0.0
+    },
+    "head_optimizer_state_count": 0,
+    "head_momentum_cleared_after_block": false
+  },
+  "last_checkpoint.pt": {
+    "strict": true,
+    "parameters": 487204,
+    "Linear": 1,
+    "CNN": 0,
+    "LayerNorm": 0,
+    "parameter_L2_from_parent": {
+      "first_phase": 1.691821813583374,
+      "global_phase": 3.1734697818756104,
+      "router_phase": 2.6527702808380127,
+      "shared_head.weight": 5.960495948791504
+    },
+    "head_optimizer_state_count": 0,
+    "head_momentum_cleared_after_block": true
+  },
+  "full_canonical_TEST_replay": {
+    "predictions_exact": true,
+    "probabilities_bitwise": true,
+    "probability_max_abs": 0.0,
+    "images": 2000,
+    "gpu": "GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d"
+  }
+}

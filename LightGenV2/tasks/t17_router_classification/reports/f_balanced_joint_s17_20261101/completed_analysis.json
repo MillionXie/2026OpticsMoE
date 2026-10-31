@@ -1,0 +1,26 @@
+{
+  "role": "ORIGINAL_TEST_EXPOSED_DEVELOPMENT",
+  "completed_epochs": 10,
+  "selected_epoch": 0,
+  "outcome": "No improvement; protected parent model selected bitwise",
+  "phase_head_updates": 1260,
+  "original_TEST_random_soft_views": 20000,
+  "head_mixed_view_presentations": 128000,
+  "head_hard_TRAIN_presentations": 96000,
+  "head_soft_TEST_presentations": 32000,
+  "head_inner_steps": 80,
+  "TEST_selection_evaluations_before_lock": 11,
+  "TEST_selection_forward_images": 22000,
+  "first_epoch_balance_KL": {
+    "train": 1.636724983215332,
+    "test": 1.6161924571990967
+  },
+  "last_epoch_balance_KL": {
+    "train": 1.5550335788726806,
+    "test": 1.536313241958618
+  },
+  "all_epochs_TEST_expert4_selection_zero": true,
+  "inference_contract_unchanged": true,
+  "canonical_TEST_replay": "2000 probabilities bitwise exact",
+  "audit_note": "Head Adam state intentionally cleared immediately after each bounded head block; last E10 stores zero head moments plus three phase Adam states and RNG. Initial audit expected one head state and was corrected to the documented block policy; weights unchanged."
+}
