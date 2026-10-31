@@ -2,6 +2,7 @@
 from pathlib import Path
 import hashlib
 import json
+import sys
 from PIL import Image, ImageDraw, ImageFont
 
 TASK = Path(__file__).resolve().parents[2]
@@ -31,6 +32,57 @@ def sha(path):
 
 def font(size, bold=False):
     return ImageFont.truetype('C:/Windows/Fonts/msyhbd.ttc' if bold else 'C:/Windows/Fonts/msyh.ttc', size)
+
+def build_minimal():
+    """User-requested layout: only original prompts, Qwen and lg2 outputs."""
+    sheet = Image.new('RGB', (1568, 2320), 'white')
+    pen = ImageDraw.Draw(sheet)
+    regular = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 27)
+    heading = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 38)
+    for x, label in ((440, 'Qwen'), (976, 'lg2')):
+        width = pen.textlength(label, font=heading)
+        pen.text((x + (512-width)/2, 20), label, font=heading, fill='black')
+    indexes = [{r['sample_id']: r for r in read(folder/'images.json')} for folder in (BASE, EXP)]
+    provenance = {'layout': 'prompts_Qwen_lg2_only', 'Qwen': str(BASE.relative_to(TASK)),
+                  'lg2': str(EXP.relative_to(TASK)), 'examples': []}
+    for i, sample_id in enumerate(SAMPLES):
+        y = 88 + 560*i
+        pair = [index[sample_id] for index in indexes]
+        for key in ('prompt','seed','input_sha256','initial_latent_sha256'):
+            assert pair[0][key] == pair[1][key], (sample_id, key)
+        lines, line = [], ''
+        for word in pair[0]['prompt'].split():
+            candidate = (line+' '+word).strip()
+            if line and pen.textlength(candidate,font=regular)>350:
+                lines.append(line)
+                line = word
+            else:
+                line = candidate
+        lines.append(line)
+        top = y+(512-38*len(lines))/2
+        for j, line in enumerate(lines):
+            pen.text((48,top+38*j),line,font=regular,fill='black')
+        entry = {'sample_id': sample_id,'prompt':pair[0]['prompt'],'files':[]}
+        for x,folder,record in zip((440,976),(BASE,EXP),pair):
+            path = folder/record['generated_PNG']
+            digest = sha(path)
+            assert digest == record['generated_sha256']
+            with Image.open(path) as im:
+                assert im.size == (512,512)
+                sheet.paste(im.convert('RGB'),(x,y))
+            entry['files'].append({'path':str(path.relative_to(TASK)),'sha256':digest})
+        provenance['examples'].append(entry)
+    output = REPORT/'QWEN_LG2_4EXAMPLES_20261031.png'
+    sheet.save(output,dpi=(200,200))
+    provenance['figure_sha256'] = sha(output)
+    (DEV/'QWEN_LG2_4EXAMPLES_20261031_manifest.json').write_text(json.dumps(provenance,indent=2),encoding='utf-8')
+    sheet.thumbnail((1019,1508),Image.Resampling.LANCZOS)
+    sheet.save(DEV/'QWEN_LG2_4EXAMPLES_20261031_preview.png')
+    print(output)
+
+if '--minimal' in sys.argv:
+    build_minimal()
+    raise SystemExit(0)
 
 canvas = Image.new('RGB', (2160, 3110), 'white')
 draw = ImageDraw.Draw(canvas)
