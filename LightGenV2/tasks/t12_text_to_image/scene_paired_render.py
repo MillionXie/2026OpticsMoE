@@ -165,9 +165,13 @@ def render(a):
         head = QwenSDXLConditions(joint_image_context=state.get('joint_image_context',False)).cuda().eval().requires_grad_(False)
         head.load_state_dict(state['head'], strict=True)
         pipe = pipeline(a)
-        if not is_test and not revision_folder:
+        balanced_revision=bool(expanded and expanded.get('balanced_counterfactual_training_data'))
+        if not is_test and(not revision_folder or balanced_revision):
             identity = torch.load(a.cache/'DEV_frontend_identity_only.pt', map_location='cpu', weights_only=False)
             assert not identity['contains_targets_or_masks']
+            if balanced_revision:
+                from .scene_instruction_render import checked_balanced_input_identity
+                checked_balanced_input_identity(json.loads((a.cache/'report.json').read_text()),state,identity,digest(a.cache/'DEV_frontend_identity_only.pt'))
         if a.lg_frontend:optical=install_optical_frontend(qwen,a.lg_frontend,a.lg_features,a.cache)
         if state.get('optical_frontend'):
             assert optical['checkpoint_sha256']==state['optical_frontend']['checkpoint_sha256']

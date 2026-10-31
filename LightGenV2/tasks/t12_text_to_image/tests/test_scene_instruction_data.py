@@ -5,10 +5,18 @@ import json
 from pathlib import Path
 from ..scene_instruction_data import LAMP,PILLOW,condition,checked_annotations,PROFILE
 from ..scene_instruction_data import SAFE,sha,write,checked_parent_transfer
-from ..scene_instruction_render import checked_revision
+from ..scene_instruction_render import checked_revision,checked_balanced_input_identity
 
 
 class VisibleFacts(unittest.TestCase):
+    def test_balanced_raw_identity_is_full_input_only_and_bound_to_actual_training(self):
+        report=dict(complete=True,cache_sha256='actual_cache',DEV_input_identity_sha256='input_only')
+        state=dict(cache_sha256='actual_cache',Qwen_input_side=256)
+        identity=dict(contains_targets_or_masks=False,Qwen_input_side=256,features={str(i):{}for i in range(48)})
+        self.assertTrue(checked_balanced_input_identity(report,state,identity,'input_only'))
+        with self.assertRaises(ValueError):checked_balanced_input_identity(report,dict(state,cache_sha256='other_cache'),identity,'input_only')
+        with self.assertRaises(ValueError):checked_balanced_input_identity(report,state,dict(identity,contains_targets_or_masks=True),'input_only')
+        with self.assertRaises(ValueError):checked_balanced_input_identity(report,state,dict(identity,features={}), 'input_only')
     def test_two_sentence_concrete_contract(self):
         prompts=[]
         for category,codes in [('lamp',LAMP),('pillow',PILLOW)]:
@@ -70,7 +78,12 @@ class VisibleFacts(unittest.TestCase):
     def test_balanced_dataset_cannot_render_with_old_model_or_missing_scene_coverage(self):
         with tempfile.TemporaryDirectory()as temp:
             data,folder,original,_=self.revision_fixture(Path(temp));report=json.loads((folder/'report.json').read_text())
-            report.update(schema='scene_balanced_visible_anchor_dataset_v1',eligible_for_training=True,all_reference_conditions_covered=True,TRAIN_products=44,TRAIN_reference_views=44,TRAIN_condition_groups=132);write(folder/'report.json',report)
+            from ..scene_instruction_native_prior import visible_caption
+            actual=json.loads((folder/'inference_inputs.json').read_text())
+            for row in actual:
+                code=({'0':'B','1':'D','2':'W'}if row['category']=='lamp'else{'0':'S','1':'A','2':'D'})[row['condition_id']];row['native_caption']=visible_caption(row['category'],code)
+            write(folder/'inference_inputs.json',actual)
+            report.update(schema='scene_balanced_visible_anchor_dataset_v1',eligible_for_training=True,all_reference_conditions_covered=True,TRAIN_products=44,TRAIN_reference_views=44,TRAIN_condition_groups=132,native_caption_style='public_fact_equivalent_description_v1',request_sha256=sha(folder/'inference_inputs.json'));write(folder/'report.json',report)
             rows,protocol=checked_revision(folder,data,{'pair_sha256':'revised'},original);self.assertEqual(len(rows),48);self.assertTrue(protocol['balanced_counterfactual_training_data'])
             with self.assertRaises(ValueError):checked_revision(folder,data,{'pair_sha256':'old'},original)
             report['all_reference_conditions_covered']=False;write(folder/'report.json',report)

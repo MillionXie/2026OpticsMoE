@@ -13,6 +13,7 @@ import shutil
 from .scene_instruction_data import PROFILE,condition,sha,write
 from .scene_instruction_balanced import SCENE_FIRST_PROFILE,BEDSIDE_PROFILE,scene_first_condition,bedside_condition,primary_codes
 from .scene_omnigen_peer import REVISION
+from .scene_instruction_native_prior import visible_caption
 
 
 def checked_pool(root,review_path,allowed):
@@ -76,6 +77,7 @@ def curate(plan,dev,pools,output):
             elif sha(dst)!=row[key+'_sha256']:raise ValueError('Filename collision')
     for root,candidate,review_path in selected:
         row=dict(candidate,**condition(candidate['category'],candidate['anchor_code']))
+        row['native_caption']=visible_caption(row['category'],row['anchor_code'])
         generated_prompt=candidate['prompt'];reuse=candidate.get('reused_reviewed_label')
         if reuse is not None:
             earlier=Path(reuse['data_root']);earlier_report=json.loads((earlier/'report.json').read_text(encoding='utf8'))
@@ -90,11 +92,14 @@ def curate(plan,dev,pools,output):
     train_products={r['source_product_id']for r in pairs}
     for row in old_rows:
         if row['split']=='dev':
+            row=dict(row,previous_native_caption=row['native_caption'],native_caption=visible_caption(row['category'],row['anchor_code']))
             if row['source_product_id']in train_products:raise ValueError('Role leakage')
             copy_pixels(dev,row);pairs.append(row)
     inputs=json.loads((dev/'inference_inputs.json').read_text(encoding='utf8'))
     if len(inputs)!=48 or len({r['reference_id']for r in inputs})!=16:raise ValueError('All original16 DEV views/48 requests required')
     for row in inputs:
+        code=({'0':'B','1':'D','2':'W'}if row['category']=='lamp'else{'0':'S','1':'A','2':'D'})[row['condition_id']]
+        row['native_caption']=visible_caption(row['category'],code)
         src=dev/row['reference'];dst=output/row['reference']
         if sha(src)!=row['reference_sha256']:raise ValueError('DEV reference changed')
         if not dst.exists():shutil.copyfile(src,dst)
@@ -108,6 +113,7 @@ def curate(plan,dev,pools,output):
         counts=dict(Counter(r['split']for r in pairs)),pairs_sha256=pairsha,request_sha256=sha(output/'inference_inputs.json'),source_pairs_sha256=old['source_pairs_sha256'],
         factual_parent_pairs_sha256=old['pairs_sha256'],role_disjoint=True,TRAIN_products=44,TRAIN_reference_views=44,TRAIN_condition_groups=132,
         all_reference_conditions_covered=True,eligible_for_training=True,target_resolution=512,preview_only=False,TEST_opened=False,
+        native_caption_style='public_fact_equivalent_description_v1',native_caption_has_no_target_or_SKU_attributes=True,
         old_TEST_scores_do_not_apply=True,baseline_instruction_success_certified=False))
 
 

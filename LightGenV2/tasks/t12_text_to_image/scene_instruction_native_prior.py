@@ -12,6 +12,16 @@ import shutil
 from PIL import Image
 from .scene_instruction_data import sha,write,SAFE
 from .scene_instruction_balanced import SCENE_FIRST_PROFILE
+from .scene_reference_framing import frame_reference,FRAMING
+
+
+def visible_caption(category,code):
+    """Same visible entities in descriptive CLIP format; no target-derived facts."""
+    if category=='lamp':return 'An indoor photograph of a table lamp standing on a table, with '+{'B':'bookshelves','D':'a bed','W':'a window','S':'a sofa','A':'an armchair'}[code]+' in the background.'
+    if category=='pillow':
+        if code=='W':return 'An indoor photograph of a cushion on a wooden surface, with a window in the background.'
+        return 'An indoor photograph of a cushion resting on '+{'S':'a sofa','A':'an armchair','D':'a bed'}[code]+'.'
+    raise ValueError('Approved product category required')
 
 
 def descriptive_equivalent(row):
@@ -19,8 +29,7 @@ def descriptive_equivalent(row):
     from .scene_instruction_balanced import scene_first_condition
     code=({'0':'B','1':'D','2':'W'}if row['category']=='lamp'else{'0':'S','1':'A','2':'D'})[row['condition_id']]
     if row['prompt']!=scene_first_condition(row['category'],code)['prompt']:raise ValueError('Only the explicit public-equivalent condition is supported')
-    if row['category']=='lamp':return 'An indoor photograph of a table lamp standing on a table, with '+{'B':'bookshelves','D':'a bed','W':'a window'}[code]+' in the background.'
-    return 'An indoor photograph of a cushion resting on '+{'S':'a sofa','A':'an armchair','D':'a bed'}[code]+'.'
+    return visible_caption(row['category'],code)
 
 
 def checked_requests(plan):
@@ -55,27 +64,29 @@ def generate(a):
     for row in rows:
         for tokenizer in [pipe.tokenizer,pipe.tokenizer_2]:checked_tokens(tokenizer,row['prompt'])
         with Image.open(a.plan/row['reference'])as im:reference=im.convert('RGB').copy()
+        model_reference,framing=frame_reference(reference,a.reference_framing)
         dst=a.output/row['reference']
         if not dst.exists():shutil.copyfile(a.plan/row['reference'],dst)
         generator=torch.Generator(device='cuda').manual_seed(row['seed']);noise=torch.randn((1,4,64,64),generator=generator,device='cuda',dtype=torch.bfloat16)
         native_prompt=descriptive_equivalent(row)if a.condition_style=='descriptive_equivalent'else row['prompt']
         for tokenizer in [pipe.tokenizer,pipe.tokenizer_2]:checked_tokens(tokenizer,native_prompt)
-        with torch.inference_mode():image=pipe(prompt=native_prompt,negative_prompt=negative,ip_adapter_image=reference,height=512,width=512,
+        with torch.inference_mode():image=pipe(prompt=native_prompt,negative_prompt=negative,ip_adapter_image=model_reference,height=512,width=512,
             original_size=(1024,1024),target_size=(1024,1024),num_inference_steps=30,guidance_scale=7.5,latents=noise,generator=generator).images[0]
         filename='generated/'+row['sample_id']+'.png';image.save(a.output/filename)
-        records.append(dict(row,native_condition_prompt=native_prompt,generated_PNG=filename,generated_sha256=sha(a.output/filename),initial_latent_sha256=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()))
+        records.append(dict(row,native_condition_prompt=native_prompt,reference_framing=framing,generated_PNG=filename,generated_sha256=sha(a.output/filename),initial_latent_sha256=hashlib.sha256(noise.view(torch.uint16).cpu().numpy().tobytes()).hexdigest()))
         write(a.output/'images.json',records);write(a.output/'progress.json',dict(stage='fresh_native_TRAIN24_generation',done=len(records),total=24))
     write(a.output/'report.json',dict(complete=True,source_commit=os.environ.get('T12_SOURCE_COMMIT'),schema='scene_fresh_native_TRAIN_feasibility_v1',
         prompt_profile=SCENE_FIRST_PROFILE,request_sha256=sha(a.plan/'requests.json'),requests=24,resolution=512,sampling_steps=30,IP_scale=.25,
         old_task_LoRA_installed=False,Qwen_used=False,TRAIN_only=True,DEV_or_TEST_accessed=False,automatic_instruction_success_certification=False,
         teacher_or_Qwen_baseline_accepted=False,negative_prompt=negative,SDXL_conditioning_size=1024,native_condition_style=a.condition_style,
-        native_caption_is_public_semantic_equivalent=True,no_SKU_GT_or_unrequested_attributes_in_caption=True))
+        native_caption_is_public_semantic_equivalent=True,no_SKU_GT_or_unrequested_attributes_in_caption=True,reference_framing=a.reference_framing))
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     for key in ['plan','model-path','adapter-path','output']:p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--condition-style',choices=['public_instruction','descriptive_equivalent'],default='public_instruction')
+    p.add_argument('--reference-framing',choices=['original',FRAMING],default='original')
     a=p.parse_args()
     if len(os.environ.get('T12_SOURCE_COMMIT',''))!=40:raise ValueError('Published source identity required')
     generate(a)

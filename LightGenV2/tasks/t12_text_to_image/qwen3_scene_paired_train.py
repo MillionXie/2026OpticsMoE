@@ -132,6 +132,7 @@ def optical_cache(a,rows):
     shutil.copyfile(a.cache/'model_assets.json',a.output/'model_assets.json')
     write(a.output/'report.json',{'complete':True,'source_commit':os.environ['T12_SOURCE_COMMIT'],
         'cache_sha256':digest(a.output/'paired_cache.pt'),'parent_electronic_cache_sha256':parent_sha,
+        'DEV_input_identity_sha256':digest(a.output/'DEV_frontend_identity_only.pt'),
         'optical_frontend':optical,'n':len(rows),'complete_DEV_frontend_contexts':len(dev_keys),
         'Qwen_input_side':a.qwen_side,'target_resolution':a.resolution,'visual_tokens':64,
         'TRAIN_DEV_targets_and_native_condition_supervision_reused_unchanged':True,
@@ -213,7 +214,7 @@ def cache(a, rows):
     torch.save({'features': {k:v for k,v in features.items() if k in dev_keys}, 'Qwen_input_side':a.qwen_side,
         'contains_targets_or_masks':False}, a.output/'DEV_frontend_identity_only.pt')
     write(a.output/'report.json', {'complete': True, 'source_commit': os.environ['T12_SOURCE_COMMIT'],
-        'cache_sha256': digest(a.output/'paired_cache.pt'), 'n': len(rows), 'Qwen_input_side': a.qwen_side,
+        'cache_sha256': digest(a.output/'paired_cache.pt'), 'DEV_input_identity_sha256':digest(a.output/'DEV_frontend_identity_only.pt'), 'n': len(rows), 'Qwen_input_side': a.qwen_side,
         'target_resolution':a.resolution,'complete_DEV_frontend_contexts':len(dev_keys),
         'visual_tokens': (a.qwen_side//32)**2, 'complete_Qwen_parameters':frontend_count, 'vision_layers':24, 'language_layers':28,
         'TEST_opened': False, 'target_images_enter_Qwen': False,
