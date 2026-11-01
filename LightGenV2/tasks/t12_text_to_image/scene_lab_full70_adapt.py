@@ -20,11 +20,23 @@ def full_binding(binding):
     return binding
 
 
-def fit_protocol(steps,seconds,lr,batch,anchor):
+def fit_protocol(steps,seconds,lr,batch,anchor,paired_consistency=0.):
     if (type(steps)is not int or not 4<=steps<=1200 or not math.isfinite(seconds)or not 0<seconds<=900
         or not math.isfinite(lr)or not 0<lr<=1e-4 or type(batch)is not int or not 1<=batch<=4
-        or anchor not in (0.,.1,1.)):
+        or anchor not in (0.,.1,1.) or paired_consistency not in (0.,1.)
+        or (paired_consistency and anchor!=.1)):
         raise ValueError('Finite existing-head recipe required; registered anchor only0,0.1 or1.0')
+
+
+def paired_calibration_loss(actual,nominal,target,anchor,consistency):
+    """TRAIN-only agreement with a stop-gradient nominal branch; no inference change."""
+    from .scene_lab_adapt import domain_alignment_loss
+    value=domain_alignment_loss(actual,nominal,target,anchor)
+    if not consistency:return value
+    if consistency!=1. or anchor!=.1 or nominal is None:raise ValueError('Only the registered paired calibration recipe')
+    from .qwen3_scene_conditioning import alignment_loss
+    agreement=alignment_loss(actual,{k:v.detach()for k,v in nominal.items()})[0]/3
+    return(value+agreement)/2
 
 
 def equal_value(left,right):
@@ -97,7 +109,9 @@ def fit(a,binding):
     from .scene_lab_adapt import domain_alignment_loss
     from .scene_tail_batches import pack_features
     if os.environ.get('CUDA_VISIBLE_DEVICES')!='GPU-e8837b85-d55b-8e81-aaa5-ec1ac326932d':raise ValueError('Only authorized deployment GPU1')
-    fit_protocol(a.steps,a.fit_seconds,a.lr,a.batch_size,a.nominal_anchor)
+    fit_protocol(a.steps,a.fit_seconds,a.lr,a.batch_size,a.nominal_anchor,a.paired_consistency)
+    if a.fixed_sim_reference not in (None,PARENT)or bool(a.fixed_sim_reference)!=bool(a.paired_consistency):
+        raise ValueError('Explicit approved fixed original SIM required only for the new paired calibration')
     torch.set_num_threads(2);torch.cuda.set_per_process_memory_fraction(.25,0);torch.manual_seed(20261101)
     physical_report=json.loads((a.measured/'report.json').read_text());physical_file=a.measured/'TRAIN_measured_features.pt'
     nominal_report=json.loads((a.nominal/'report.json').read_text());nominal_file=a.nominal/'paired_cache.pt'
@@ -123,7 +137,7 @@ def fit(a,binding):
         anchored=None
         if raw is not None:
             nh,nv,npad=pack_features([raw['features'][key]for _,key in group],device);anchored=head(nh,nv,npad)
-        return domain_alignment_loss(head(h,v,p),anchored,target,a.nominal_anchor)
+        return paired_calibration_loss(head(h,v,p),anchored,target,a.nominal_anchor,a.paired_consistency)
     def evaluate(device='cuda'):
         head.eval()
         with torch.no_grad():score=sum(float(objective(list(range(i,min(i+a.batch_size,624))),device))*(min(a.batch_size,624-i))for i in range(0,624,a.batch_size))/624
@@ -137,11 +151,16 @@ def fit(a,binding):
                 measured_ledger_SHA256=physical['ledger_SHA256'],measured_features_SHA256=physical_report['feature_SHA256'],
                 nominal_conditions_SHA256=nominal_report['cache_sha256'],TRAIN_condition_loss=score,step=step,
                 TEST_gradients=False,added_deployment_parameters=0,frozen_body_exact=True,trainable_parameters=count,
-                nominal_anchor_weight=a.nominal_anchor,requires_fresh_same_weight_SIM=True))
+                nominal_anchor_weight=a.nominal_anchor,paired_consistency_weight=a.paired_consistency,
+                fixed_SIM_reference_SHA256=a.fixed_sim_reference,
+                requires_fresh_same_weight_SIM=not bool(a.fixed_sim_reference)))
         torch.save(child,a.out/name)
     put(a.out/'protocol.json',dict(parent_generator_SHA256=PARENT,TRAIN=624,TEST_gradients=False,steps_max=a.steps,
         fit_seconds_max=a.fit_seconds,lr=a.lr,batch_size=a.batch_size,weight_decay=.01,nominal_anchor_weight=a.nominal_anchor,
         loss='mean(normalized_MSE + 0.1 cosine distance), original-head nominal TRAIN conditions',
+        paired_consistency_weight=a.paired_consistency,nominal_agreement_branch_stop_gradient=True,
+        fixed_SIM_reference_SHA256=a.fixed_sim_reference,
+        comparison='Fixed pre-adaptation SIM, not same-PT SIM'if a.fixed_sim_reference else'Fresh same-PT SIM required',
         head_parameters=count,new_deployment_parameters=0,best_selection='TRAIN loss only; subsequent complete TEST500 is development selection'))
     save('best_checkpoint.pt',baseline);save('last_checkpoint.pt',baseline)
     for step in range(1,a.steps+1):
@@ -165,7 +184,8 @@ def fit(a,binding):
         compression_training_inherited_not_repeated=True,best_sha256=sha(a.out/'best_checkpoint.pt'),last_sha256=sha(a.out/'last_checkpoint.pt'),
         steps=step,best_step=best_step,baseline_TRAIN_condition_loss=baseline,best_TRAIN_condition_loss=best,
         nominal_anchor_weight=a.nominal_anchor,TEST_gradients=False,SDK=False,added_deployment_parameters=0,
-        quality_accepted=False,original_parent_head_retained=best_step==0,requires_fresh_same_weight_SIM=True)
+        paired_consistency_weight=a.paired_consistency,fixed_SIM_reference_SHA256=a.fixed_sim_reference,
+        quality_accepted=False,original_parent_head_retained=best_step==0,requires_fresh_same_weight_SIM=not bool(a.fixed_sim_reference))
     checked_child(selected,parent,report,binding)
     head.cpu();torch.cuda.empty_cache();head.load_state_dict(selected['head'],strict=True)
     verified=evaluate('cpu')
@@ -180,6 +200,7 @@ def main():
     for name in ('nominal-features','data','measured','nominal'):p.add_argument('--'+name,type=Path)
     p.add_argument('--steps',type=int,default=1200);p.add_argument('--fit-seconds',type=float,default=900)
     p.add_argument('--lr',type=float,default=3e-5);p.add_argument('--batch-size',type=int,default=4);p.add_argument('--nominal-anchor',type=float,default=0.)
+    p.add_argument('--paired-consistency',type=float,default=0.);p.add_argument('--fixed-sim-reference')
     a=p.parse_args();binding=full_binding(json.loads(a.binding.read_text()))
     if not hex_sha(os.environ.get('T12_SOURCE_COMMIT'),40):raise ValueError('Published execution-source commit required')
     if a.mode=='nominal'and(a.nominal_features is None or a.data is None):p.error('Nominal mode requires explicit original features/data')

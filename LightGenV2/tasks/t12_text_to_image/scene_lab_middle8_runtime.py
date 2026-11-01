@@ -195,9 +195,12 @@ def render_main(binding,ledger_path,remaining):
             public_report(a.output)
             path=a.output/'report.json';out=json.loads(path.read_text())
             if out['generated_count']!=500:raise ValueError('All500 quality outputs required')
+            fixed_reference=state.get('lab_adaptation',{}).get('fixed_SIM_reference_SHA256')
             out.update(lab_middle8_binding=binding,actual_CCD_replay=measured is not None,SDK_used=False,
                 adapted_existing_head=a.adapted_parent is not None,parent_physical_generator_SHA256=binding['generator_sha256'],
-                matching_new_PT_SIM_required=a.adapted_parent is not None,
+                matching_new_PT_SIM_required=a.adapted_parent is not None and not bool(fixed_reference),
+                fixed_SIM_reference_SHA256=fixed_reference,
+                comparison_reference='fixed_pre_adaptation_SIM'if fixed_reference else'same_checkpoint_SIM',
                 depth_compression=state['depth_compression'],experimental_compression=observer.depth.graph,
                 compression_training_performed=True,physical_ledger_SHA256=measured.ledger.key if measured else None,
                 physical_CCD_stage_calls=3000 if measured else 0,TEST_gradients=False,quality_accepted=False)

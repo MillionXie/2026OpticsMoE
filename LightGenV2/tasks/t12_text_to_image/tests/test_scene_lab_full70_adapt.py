@@ -52,3 +52,18 @@ def test_child_shape_or_unproven_report_rejected():
     bad=copy.deepcopy(child);bad['head']['w']=bad['head']['w'][:1]
     with pytest.raises(ValueError):a.checked_child(bad,parent,report,binding)
     with pytest.raises(ValueError):a.checked_child(child,parent,dict(report,lab_adaptation_complete=False),binding)
+
+
+def test_registered_paired_recipe_and_stop_gradient():
+    a.fit_protocol(1200,900,3e-5,4,.1,1.)
+    for anchor,weight in [(0.,1.),(1.,1.),(.1,.2)]:
+        with pytest.raises(ValueError):a.fit_protocol(1200,900,3e-5,4,anchor,weight)
+    if os.name=='nt':pytest.skip('Real CPU check on server required')
+    import torch
+    target={k:torch.ones(2,3)for k in ('text','image','pooled')}
+    actual={k:torch.full((2,3),.3,requires_grad=True)for k in target}
+    nominal={k:torch.full((2,3),.7,requires_grad=True)for k in target}
+    from LightGenV2.tasks.t12_text_to_image.scene_lab_adapt import domain_alignment_loss
+    assert torch.equal(a.paired_calibration_loss(actual,None,target,0,0),domain_alignment_loss(actual,None,target,0))
+    loss=a.paired_calibration_loss(actual,nominal,target,.1,1);loss.backward()
+    assert all(v.grad is not None and torch.isfinite(v.grad).all()for v in [*actual.values(),*nominal.values()])
