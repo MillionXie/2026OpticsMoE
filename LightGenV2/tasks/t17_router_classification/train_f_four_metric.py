@@ -82,7 +82,7 @@ def main():
     raw,identity=load_panel_f(cfg['data']);fields={};labels={}
     for split,part in raw.items():
         fields[split]=torch.cat([encode_rgb(torch.from_numpy(part['images'][i:i+128]).cuda())for i in range(0,len(part['labels']),128)]);labels[split]=torch.tensor(part['labels'],device='cuda',dtype=torch.long);del part['images']
-    all_fields=torch.cat([fields['train'],fields['test']]);all_labels=torch.cat([labels['train'],labels['test']]);groups=torch.tensor(np.r_[raw['train']['domains'],raw['test']['domains']+2],device='cuda',dtype=torch.long)
+    all_fields=torch.cat([fields['train'],fields['test']]);all_labels=torch.cat([labels['train'],labels['test']]);fields['train']=all_fields[:len(labels['train'])];fields['test']=all_fields[len(labels['train']):];torch.cuda.empty_cache();groups=torch.tensor(np.r_[raw['train']['domains'],raw['test']['domains']+2],device='cuda',dtype=torch.long)
     parent=task/cfg['parent_checkpoint']
     if sha256(parent)!=cfg['parent_checkpoint_sha256']:raise ValueError('Parent SHA changed')
     model=build_model(cfg).cuda();model.load_state_dict(torch.load(parent,map_location='cpu',weights_only=False)['model'],strict=True);fixed_router=model.router_phase.detach().clone();teacher_targets=None;teacher_SHA=None
