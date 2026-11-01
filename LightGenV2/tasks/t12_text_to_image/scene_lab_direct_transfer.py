@@ -5,7 +5,7 @@ are never arguments, files, profiles or output. No SDK or model is initialized.
 """
 import argparse,base64,json,shlex,sys,time
 from pathlib import Path
-from .scene_lab_protocol import Ledger,STAGES,put
+from .scene_lab_protocol import STAGES,put,open_ledger
 from .scene_lab_data_stream import completed_prefix,send,receive
 
 
@@ -18,7 +18,7 @@ def main():
         def missing_host_key(self,client,hostname,key):
             if key.get_name()!=credential['host_key_type']or key.get_base64()!=credential['host_key_base64']:raise paramiko.SSHException('Compute host-key mismatch')
     client=paramiko.SSHClient();client.set_missing_host_key_policy(PinnedHostKey());began=time.monotonic()
-    c=json.loads((a.ledger/'contract.json').read_text());ledger=Ledger(a.ledger,c['session'],c['models'],c['requests'])
+    ledger=open_ledger(a.ledger)
     # DATA-only movement needs exact current-file checks, not another complete
     # predecessor I/O sweep. Only model/camera entries can admit a physical stage.
     def command(mode,start=0):
